@@ -21,7 +21,9 @@ services:
       retries: 20
 
   mu-server:
-    image: emapupi/mu-linux-97k:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     cap_add:
       - SYS_PTRACE
     security_opt:

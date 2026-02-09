@@ -1,6 +1,7 @@
 # Mu Linux 97K
 
-[![Docker Hub](https://img.shields.io/badge/dockerhub-emapupi%2Fmu--linux--97k-blue)](https://hub.docker.com/r/emapupi/mu-linux-97k)
+![Docker Hub (Server)](https://img.shields.io/docker/v/emapupi/mu-linux-97k?label=server&logo=docker)
+![Docker Hub (Web)](https://img.shields.io/docker/v/emapupi/mu-linux-97k-web?label=web&logo=docker)
 
 Proyecto para portar y operar MuEmu 0.97k en Linux de forma nativa, con foco en Docker y despliegues on-demand. Incluye fuentes del servidor, cliente y encoder necesarios para operar, y automatiza el build dentro del contenedor.
 
