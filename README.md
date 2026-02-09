@@ -1,5 +1,7 @@
 # Mu Linux 97K
 
+[![Docker Hub](https://img.shields.io/badge/dockerhub-emapupi%2Fmu--linux--97k-blue)](https://hub.docker.com/r/emapupi/mu-linux-97k)
+
 Proyecto para portar y operar MuEmu 0.97k en Linux de forma nativa, con foco en Docker y despliegues on-demand. Incluye fuentes del servidor, cliente y encoder necesarios para operar, y automatiza el build dentro del contenedor.
 
 ## Base y referencia
@@ -14,6 +16,15 @@ https://github.com/nicomuratona/MuEmu-0.97k-kayito
 - Servidor nativo en Linux (epoll + ajustes de compatibilidad)
 - Base de datos MySQL (sin dependencias MSSQL)
 - Docker listo para levantar en un VPS y conectar con el cliente
+
+## Docker Hub
+Imagen publica (solo mu-server):
+
+```
+docker pull emapupi/mu-linux-97k:latest
+```
+
+La base de datos y el panel web se levantan con `docker-compose` desde este repo.
 
 ## Uso rapido (Docker)
 1. Edita `.env` y ajusta credenciales, IP publica y secrets.
