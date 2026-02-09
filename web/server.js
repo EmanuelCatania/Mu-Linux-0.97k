@@ -19,8 +19,11 @@ const {
   TURNSTILE_SITE_KEY = '',
   TURNSTILE_SECRET_KEY = '',
   ADMIN_USER = 'admin',
-  ADMIN_PASS = '123456'
+  ADMIN_PASS = '123456',
+  TRUST_PROXY = '0'
 } = process.env;
+
+const trustProxyEnabled = String(TRUST_PROXY).toLowerCase() === '1' || String(TRUST_PROXY).toLowerCase() === 'true';
 
 const pool = mysql.createPool({
   host: DB_HOST,
@@ -38,6 +41,7 @@ const sessionStore = new MySQLStore({}, pool);
 app.use(helmet({
   contentSecurityPolicy: false
 }));
+app.set('trust proxy', trustProxyEnabled ? 1 : false);
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');

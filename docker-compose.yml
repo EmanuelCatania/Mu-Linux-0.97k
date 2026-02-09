@@ -59,6 +59,7 @@ services:
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
       ADMIN_USER: ${ADMIN_USER}
       ADMIN_PASS: ${ADMIN_PASS}
+      TRUST_PROXY: ${TRUST_PROXY}
     depends_on:
       mysql:
         condition: service_healthy

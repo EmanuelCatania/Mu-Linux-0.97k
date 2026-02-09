@@ -45,6 +45,7 @@ Variables principales:
 - `PUBLIC_IP`
 - `WEB_PORT`, `SESSION_SECRET`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
 - `ADMIN_USER`, `ADMIN_PASS`
+- `TRUST_PROXY` (1 si usas proxy inverso como Nginx Proxy Manager)
 - `SEED_TEST_DATA` (1 para cargar cuentas de prueba, 0 para DB limpia)
 
 Nota: si cambias credenciales de MySQL despues del primer arranque, recrea el volumen:
