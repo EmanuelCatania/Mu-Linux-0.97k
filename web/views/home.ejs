@@ -1,0 +1,115 @@
+<%- include('partials/site_head', { pageTitle, page }) %>
+
+<main class="flex-grow-1">
+  <div class="container mt-5">
+    <div class="row justify-content-left">
+      <div class="col-lg-4">
+        <div class="bg-dark bg-opacity-50 rounded-4 p-3 shadow-lg overflow-hidden">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="flex-shrink-0 rounded-full p-2">
+              <img src="/assets/images/icon.png" width="130" height="70" alt="Server Icon" class="img-fluid">
+            </div>
+            <div class="flex-1 text-end ms-4">
+              <p class="text-light text-sm mb-2">Jugadores en linea: <span class="badge bg-primary text-white text-xs font-semibold" id="players-online"><%= playersOnline %></span></p>
+              <p class="text-light text-sm mb-2">Hora del servidor: <span class="badge bg-danger text-white text-xs font-semibold" id="server-time"><%= serverTime %></span></p>
+              <p class="text-light text-sm mb-2">Tu hora: <span class="badge bg-success text-white text-xs font-semibold" id="user-time">--:--:--</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container my-5">
+    <div class="p-4 bg-light shadow-lg">
+      <div class="row">
+        <div class="col-12 col-lg-8 bg-white border p-3 shadow-sm">
+          <h2 class="fw-bold mb-5 text-center text-dark">Ultimas noticias</h2>
+
+          <% if (!news || news.length === 0) { %>
+            <div class="news-item mb-4 p-4 border rounded-3 shadow-sm">
+              <p class="text-muted mb-0">Todavia no hay noticias publicadas.</p>
+            </div>
+          <% } else { %>
+            <% news.forEach(function(item) { %>
+              <div class="news-item mb-4 p-4 border rounded-3 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="text-muted fs-6"><%= new Date(item.created_at).toLocaleDateString('es-ES') %></span>
+                  <span class="badge text-bg-primary rounded-pill px-3 py-2">Noticia</span>
+                </div>
+                <h5 class="news-title text-dark fs-5 fw-bold mb-2"><%= item.title %></h5>
+                <p class="news-description text-muted mb-3"><%= item.excerpt %></p>
+                <a href="/news/<%= item.id %>" class="text-decoration-none text-primary fs-6">Leer mas</a>
+              </div>
+            <% }); %>
+          <% } %>
+        </div>
+
+        <div class="col-12 col-lg-4 bg-white border p-3 shadow-sm">
+          <div class="bg-white mb-4 p-4 border rounded-3 shadow-sm">
+            <% if (session && session.user) { %>
+              <p class="text-center mb-3 fs-5 fw-bold">Sesion iniciada</p>
+              <p class="text-center mb-3 text-muted">Cuenta: <strong><%= session.user.id %></strong></p>
+              <div class="d-grid gap-2">
+                <a class="btn btn-primary" href="/account">Ver cuenta</a>
+                <a class="btn btn-outline-secondary" href="/logout">Salir</a>
+              </div>
+            <% } else { %>
+              <p class="text-center mb-4 fs-5 fw-bold">Ingresar</p>
+              <form action="/login" method="POST">
+                <div class="mb-3">
+                  <input type="text" class="form-control border-2 rounded-3 shadow-sm" name="account" placeholder="Usuario" required>
+                </div>
+                <div class="mb-3">
+                  <input type="password" class="form-control border-2 rounded-3 shadow-sm" name="password" placeholder="Contrasena" required>
+                </div>
+                <div class="text-center">
+                  <button type="submit" class="btn btn-primary w-100 py-2 px-4 rounded-pill shadow-sm">Entrar</button>
+                </div>
+              </form>
+              <div class="text-center mt-3">
+                <a href="/register" class="text-decoration-none">Crear cuenta</a>
+              </div>
+            <% } %>
+          </div>
+
+          <div class="col-12 bg-white p-4 border rounded-3 shadow-sm">
+            <h5 class="text-center mb-4 text-dark fw-bold">Top 10 Rankings</h5>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>GR</th>
+                    <th>Reset</th>
+                    <th>Nivel</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (!ranking || ranking.length === 0) { %>
+                    <tr>
+                      <td colspan="5" class="text-center">Sin datos</td>
+                    </tr>
+                  <% } else { %>
+                    <% ranking.forEach(function(row, idx) { %>
+                      <tr>
+                        <td><%= idx + 1 %></td>
+                        <td><%= row.Name %></td>
+                        <td><%= row.GrandResetCount %></td>
+                        <td><%= row.ResetCount %></td>
+                        <td><%= row.cLevel %></td>
+                      </tr>
+                    <% }); %>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/site_footer') %>

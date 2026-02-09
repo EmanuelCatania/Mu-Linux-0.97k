@@ -1,0 +1,35 @@
+<%- include('partials/site_head', { pageTitle, page }) %>
+
+<main class="flex-grow-1">
+  <div class="container my-5">
+    <div class="p-4 bg-light shadow-lg">
+      <div class="bg-white border p-4 shadow-sm">
+        <h2 class="fw-bold mb-4 text-center text-dark">Descargas</h2>
+        <p class="text-muted text-center mb-4">Aqui puedes publicar el cliente completo, parches y utilidades.</p>
+
+        <div class="row g-4">
+          <div class="col-12 col-lg-6">
+            <div class="border rounded-3 p-4 h-100">
+              <h5 class="fw-bold mb-2">Cliente completo</h5>
+              <p class="text-muted mb-3">Incluye todos los archivos necesarios para jugar.</p>
+              <a href="#" class="btn btn-primary">Descargar cliente</a>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="border rounded-3 p-4 h-100">
+              <h5 class="fw-bold mb-2">Parches</h5>
+              <p class="text-muted mb-3">Actualizaciones y fixes.</p>
+              <a href="#" class="btn btn-outline-primary">Descargar parche</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-info mt-4">
+          Edita los links en <code>web/views/download.ejs</code> cuando tengas los archivos listos.
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/site_footer') %>

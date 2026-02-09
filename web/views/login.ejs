@@ -1,0 +1,30 @@
+<%- include('partials/site_head', { pageTitle, page }) %>
+
+<main class="flex-grow-1">
+  <div class="container my-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-5">
+        <div class="bg-white border p-4 shadow-sm rounded-3">
+          <h3 class="fw-bold mb-3 text-center">Ingresar</h3>
+          <% if (error) { %>
+            <div class="alert alert-danger"><%= error %></div>
+          <% } %>
+          <form action="/login" method="POST">
+            <div class="mb-3">
+              <input type="text" class="form-control" name="account" placeholder="Usuario" required>
+            </div>
+            <div class="mb-3">
+              <input type="password" class="form-control" name="password" placeholder="Contrasena" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Entrar</button>
+          </form>
+          <div class="text-center mt-3">
+            <a href="/register">Crear cuenta</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/site_footer') %>

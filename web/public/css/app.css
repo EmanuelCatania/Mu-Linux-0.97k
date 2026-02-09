@@ -1,0 +1,175 @@
+:root {
+  --bg: #0f1216;
+  --card: #1b2028;
+  --text: #e8e8e8;
+  --muted: #a8b0bd;
+  --accent: #7dd3fc;
+  --danger: #f87171;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.site-header {
+  background: #0b0e12;
+  border-bottom: 1px solid #1f252d;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.nav a {
+  color: var(--text);
+  text-decoration: none;
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+.hero {
+  margin: 24px 0;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid #242a33;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.narrow {
+  max-width: 520px;
+  margin: 0 auto 20px;
+}
+
+.alert {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid var(--danger);
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label {
+  font-size: 14px;
+}
+
+input,
+textarea {
+  background: #10141a;
+  border: 1px solid #2a313b;
+  color: var(--text);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.button-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list li {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #2a313b;
+  padding: 8px 0;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 8px;
+  border-bottom: 1px solid #2a313b;
+  text-align: left;
+}
+
+.row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 0;
+}
+
+.captcha {
+  margin: 6px 0;
+}
+
+.site-footer {
+  border-top: 1px solid #1f252d;
+  padding: 16px 0;
+  margin-top: 40px;
+  text-align: center;
+  color: var(--muted);
+}

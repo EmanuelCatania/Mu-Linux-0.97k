@@ -1,0 +1,37 @@
+  <footer class="py-4 text-light text-center">
+    <div class="container">
+      <div class="row justify-content-center mb-4">
+        <div class="col-auto">
+          <a href="/" class="footer-logo d-block">
+            <img src="/assets/images/icon.png" alt="MuLinux Logo" width="200" height="150" class="img-fluid" loading="lazy">
+          </a>
+        </div>
+      </div>
+      <div class="row justify-content-center mt-3">
+        <div class="col-auto">
+          <p class="mb-0">&copy; <%= year %> <%= appName %>. Todos los derechos reservados.</p>
+          <p class="mb-0">Template by Trifon Dinev</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/assets/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/custom.js"></script>
+  <script>
+    (function () {
+      function pad(n) {
+        return n < 10 ? '0' + n : String(n);
+      }
+      function updateUserTime() {
+        var el = document.getElementById('user-time');
+        if (!el) return;
+        var now = new Date();
+        el.textContent = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+      }
+      updateUserTime();
+      setInterval(updateUserTime, 1000);
+    })();
+  </script>
+</body>
+</html>

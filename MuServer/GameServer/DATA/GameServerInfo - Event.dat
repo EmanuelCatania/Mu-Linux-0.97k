@@ -1,0 +1,83 @@
+[GameServerInfo]
+;==================================================
+; Blood Castle Event Settings
+;==================================================
+; Enable Blood Castle Event (0 = No / 1 = Yes)
+BloodCastleEvent=1
+
+; Blood Castle Maximum Users per Castle
+BloodCastleMaxUser=10
+
+; Blood Castle enable PVP? (0 = No / 1 = Yes)
+BloodCastleAllowPK=1
+
+;==================================================
+; Bonus Manager Settings
+;==================================================
+; Enable Bonus Manager Event (0 = No / 1 = Yes)
+BonusManagerSwitch=1
+
+;==================================================
+; Devil Square Event Settings
+;==================================================
+; Enable Devil Square Event (0 = No / 1 = Yes)
+DevilSquareEvent=1
+
+; Devil Square Maximum Users per Square
+DevilSquareMaxUser=15
+
+; Devil Square enable PVP? (0 = No / 1 = Yes)
+DevilSquareAllowPK=1
+
+;==================================================
+; Invasion Manager Settings
+;==================================================
+; Enable Invasions (0 = No / 1 = Yes)
+InvasionManagerSwitch=1
+
+; Enable Invasion Flying Dragons Effect (0 = No / 1 = Yes)
+FlyingDragonsSwitch=1
+
+; Dragons will only spawn in the map of the boss (0 = No / 1 = Yes)
+FlyingDragonsOnlyBossMapSpawn=0
+
+; Dragons will disappear when the boss dies (0 = No / 1 = Yes)
+FlyingDragonsKillBossDisappear=0
+
+;==================================================
+; Golden Archer Settings
+;==================================================
+; Required Renas to exchange for ItemBag
+; Use 0 to disable the button
+RenaExchangeRequired1=10
+RenaExchangeRequired2=50
+RenaExchangeRequired3=100
+RenaExchangeRequired4=500
+
+; Required Stones to exchange for VIP
+; Use 0 to disable the button
+; VipTime is in hours
+StoneExchangeRequiredVIP1=100
+StoneExchangeVIPTime1=1
+
+StoneExchangeRequiredVIP2=250
+StoneExchangeVIPTime2=1
+
+StoneExchangeRequiredVIP3=500
+StoneExchangeVIPTime3=1
+
+; Required Stones to exchange for Lucky Number
+; Use 0 to disable the button
+StoneExchangeRequiredLuckyNumber=50
+
+;==================================================
+; Golden Archer Bingo Settings
+;==================================================
+; Enable Golden Archer Bingo Event (0 = No / 1 = Yes)
+GoldenArcherBingoEvent=1
+
+; Define the amount of winners
+GoldenArcherWinnersAmount=1
+
+; Delete all registered at the end of the event
+GoldenArcherDeleteRegistered=1

@@ -1,0 +1,111 @@
+/* General Body Styles */
+body {
+  background-image: url(../images/background.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+/* Apply blur only to header background */
+header {
+  background-color: rgba(129, 129, 129, 0.1);
+  border-bottom: 1px solid #5c5c5c;
+  backdrop-filter: blur(5px);
+  position: relative;
+  z-index: 1;
+}
+
+/* Top Navbar */
+.top-navbar {
+  background-color: #0e1420;
+  position: relative;
+  z-index: 2;
+  border-bottom: 1px solid #5c5c5c;
+}
+
+/* Nav and for Top Navbar Text */
+nav .nav-link,
+nav .dropdown-item {
+  color: #ffffff !important;
+}
+
+nav .nav-link:hover,
+nav .dropdown-item:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* User Avatar Dropdown */
+nav .dropdown-menu {
+  background-color: #0e1420;
+  color: #ffffff;
+  border: none;
+}
+
+nav .dropdown-menu .dropdown-divider {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Make navbar-toggler (hamburger) white for dark background */
+.navbar-toggler {
+  filter: invert(100%);
+}
+
+/* Make navbar links with uppercase text */
+.navbar .nav-link {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  color: #e3e3e3;
+}
+
+.navbar .nav-link:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #e1e1e1;
+  backdrop-filter: none;
+  position: absolute;
+  z-index: 1050;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Dropdown Toggle */
+.dropdown-toggle {
+  backdrop-filter: none;
+}
+
+/* Make sure the dropdown items are visible */
+.dropdown-item {
+  color: #e1e1e1;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Footer */
+footer {
+  padding: 20px;
+  background-color: #0d1321e3;
+  color: #e3e3e3;
+  text-align: center;
+}
+
+footer a {
+  color: #e3e3e3;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+footer a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}

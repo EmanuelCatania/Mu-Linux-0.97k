@@ -1,0 +1,42 @@
+<%- include('partials/header') %>
+
+<section class="card">
+  <div class="row-between">
+    <h2>Noticias</h2>
+    <div>
+      <a class="button-link" href="/admin/news/new">Nueva noticia</a>
+      <a class="button-link" href="/admin/logout">Salir</a>
+    </div>
+  </div>
+  <% if (news.length === 0) { %>
+    <p class="muted">No hay noticias.</p>
+  <% } else { %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Titulo</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% news.forEach(item => { %>
+          <tr>
+            <td><%= item.id %></td>
+            <td><%= item.title %></td>
+            <td><%= item.published ? 'Publicado' : 'Oculto' %></td>
+            <td class="actions">
+              <a href="/admin/news/<%= item.id %>/edit">Editar</a>
+              <form method="post" action="/admin/news/<%= item.id %>/delete">
+                <button type="submit" class="link-button">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

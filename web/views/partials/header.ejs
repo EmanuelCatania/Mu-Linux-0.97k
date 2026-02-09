@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= appName %> - Panel</title>
+    <link rel="stylesheet" href="/css/app.css" />
+    <% if (turnstileSiteKey) { %>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <% } %>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-row">
+        <div class="logo"><%= appName %></div>
+        <nav class="nav">
+          <a href="/">Inicio</a>
+          <a href="/news">Noticias</a>
+          <a href="/rankings">Rankings</a>
+          <% if (session.user) { %>
+            <a href="/account">Cuenta</a>
+            <a href="/logout">Salir</a>
+          <% } else { %>
+            <a href="/login">Ingresar</a>
+            <a href="/register">Registro</a>
+          <% } %>
+        </nav>
+      </div>
+    </header>
+    <main class="container">

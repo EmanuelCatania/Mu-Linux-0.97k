@@ -1,0 +1,14 @@
+//==============================================================
+// SHOP
+//==============================================================
+//SLOTS X = 0~7 , Y = 0~14 , * = Orden original
+//Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
+6 0 0 -1 0 0 0 0 -1 -1 // Small Shield
+6 1 0 -1 0 0 0 0 -1 -1 // Horn Shield
+6 2 0 -1 0 0 0 0 -1 -1 // Kite Shield
+2 1 0 -1 0 0 0 0 -1 -1 // Morning Star
+3 1 0 -1 0 0 0 0 -1 -1 // Spear
+3 5 0 -1 0 0 0 0 -1 -1 // Double Poleaxe
+
+end
+

@@ -1,0 +1,20 @@
+{
+  "name": "mu-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MU Online 97k web panel",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-mysql-session": "^3.0.2",
+    "express-rate-limit": "^7.4.0",
+    "express-session": "^1.18.0",
+    "helmet": "^7.1.0",
+    "mysql2": "^3.11.0"
+  }
+}

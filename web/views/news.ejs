@@ -1,0 +1,28 @@
+<%- include('partials/site_head', { pageTitle, page }) %>
+
+<main class="flex-grow-1">
+  <div class="container my-5">
+    <div class="p-4 bg-light shadow-lg">
+      <div class="bg-white border p-4 shadow-sm">
+        <h2 class="fw-bold mb-4 text-center text-dark">Noticias</h2>
+        <% if (!news || news.length === 0) { %>
+          <p class="text-muted">No hay noticias publicadas.</p>
+        <% } else { %>
+          <% news.forEach(function(item) { %>
+            <div class="news-item mb-4 p-4 border rounded-3 shadow-sm">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted fs-6"><%= new Date(item.created_at).toLocaleDateString('es-ES') %></span>
+                <span class="badge text-bg-primary rounded-pill px-3 py-2">Noticia</span>
+              </div>
+              <h5 class="news-title text-dark fs-5 fw-bold mb-2"><%= item.title %></h5>
+              <p class="news-description text-muted mb-3"><%= item.body %></p>
+              <a href="/news/<%= item.id %>" class="text-decoration-none text-primary fs-6">Leer mas</a>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/site_footer') %>

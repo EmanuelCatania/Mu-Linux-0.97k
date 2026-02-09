@@ -1,0 +1,27 @@
+<%- include('partials/header') %>
+
+<section class="card">
+  <h2><%= item ? 'Editar noticia' : 'Nueva noticia' %></h2>
+  <% if (error) { %>
+    <div class="alert"><%= error %></div>
+  <% } %>
+  <form method="post" action="<%= item ? '/admin/news/' + item.id + '/edit' : '/admin/news/new' %>">
+    <label>Titulo</label>
+    <input type="text" name="title" value="<%= item ? item.title : '' %>" required maxlength="120" />
+
+    <label>Contenido</label>
+    <textarea name="body" rows="10" required><%= item ? item.body : '' %></textarea>
+
+    <label class="checkbox">
+      <input type="checkbox" name="published" value="1" <%= item ? (item.published ? 'checked' : '') : 'checked' %> />
+      Publicar
+    </label>
+
+    <div class="row-between">
+      <button type="submit">Guardar</button>
+      <a class="button-link" href="/admin/news">Volver</a>
+    </div>
+  </form>
+</section>
+
+<%- include('partials/footer') %>

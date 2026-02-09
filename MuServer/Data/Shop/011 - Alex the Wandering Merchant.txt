@@ -1,0 +1,16 @@
+//==============================================================
+// SHOP
+//==============================================================
+//SLOTS X = 0~7 , Y = 0~14 , * = Orden original
+//Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
+14 1 0 -1 0 0 0 0 -1 -1 // Small Healing Potion
+14 2 0 -1 0 0 0 0 -1 -1 // Medium Healing Potion
+14 4 0 -1 0 0 0 0 -1 -1 // Small Mana Potion
+14 5 0 -1 0 0 0 0 -1 -1 // Medium Mana Potion
+14 10 0 -1 0 0 0 0 -1 -1 // Town Portal Scroll
+0 1 0 -1 0 0 0 0 -1 -1 // Short Sword
+1 1 0 -1 0 0 0 0 -1 -1 // Hand Axe
+4 0 0 -1 0 0 0 0 -1 -1 // Short Bow
+
+end
+

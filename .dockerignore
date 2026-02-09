@@ -1,0 +1,10 @@
+.git
+Client
+Tools
+Dependencies
+Main
+Encoder
+MuServer/MSSQL
+Source/**/x64
+Source/**/Debug
+Source/**/Release

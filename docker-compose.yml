@@ -1,0 +1,78 @@
+services:
+  mysql:
+    image: mysql:5.7
+    networks:
+      - default
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      SEED_TEST_DATA: ${SEED_TEST_DATA}
+    volumes:
+      - mu_mysql:/var/lib/mysql
+      - ./MuServer/MySQL/DB/CreateDatabase.sql:/docker-entrypoint-initdb.d/01-create.sql:ro
+      - ./docker/mysql/02-populate.sh:/docker-entrypoint-initdb.d/02-populate.sh:ro
+      - ./MuServer/MySQL/DB/PoblateDatabase.sql:/docker-entrypoint-initdb.d/seed/PoblateDatabase.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mu-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      PUBLIC_IP: ${PUBLIC_IP}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "44405:44405/tcp"
+      - "55601:55601/udp"
+      - "55901:55901/tcp"
+    networks:
+      - default
+
+  mu-web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      WEB_PORT: ${WEB_PORT}
+      SESSION_SECRET: ${SESSION_SECRET}
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASS: ${ADMIN_PASS}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8085:8080"
+    networks:
+      - default
+      - proxy_net
+
+volumes:
+  mu_mysql:
+
+networks:
+  proxy_net:
+    external: true

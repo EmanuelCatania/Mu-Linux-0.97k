@@ -1,0 +1,18 @@
+//==============================================================
+// SHOP
+//==============================================================
+//SLOTS X = 0~7 , Y = 0~14 , * = Orden original
+//Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
+7 2 0 -1 0 0 0 0 -1 -1 // Pad Helm
+8 2 0 -1 0 0 0 0 -1 -1 // Pad Armor
+9 2 0 -1 0 0 0 0 -1 -1 // Pad Pants
+10 2 0 -1 0 0 0 0 -1 -1 // Pad Gloves
+11 2 0 -1 0 0 0 0 -1 -1 // Pad Boots
+7 5 0 -1 0 0 0 0 -1 -1 // Leather Helm
+8 5 0 -1 0 0 0 0 -1 -1 // Leather Armor
+9 5 0 -1 0 0 0 0 -1 -1 // Leather Pants
+10 5 0 -1 0 0 0 0 -1 -1 // Leather Gloves
+11 5 0 -1 0 0 0 0 -1 -1 // Leather Boots
+
+end
+

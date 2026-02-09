@@ -1,0 +1,189 @@
+//Max Message size = 128
+//Index	Message
+
+//----------------------------------------------------------------------------------------------------
+// Event Devil Square
+//----------------------------------------------------------------------------------------------------
+0	"Devil Square fechará em %d minuto(s)"
+1	"Devil Square fechado"
+2	"Devil Square %d começará em %d minuto(s)"
+3	"Devil Square começou"
+4	"Devil Square concluído"
+5	"Você não é forte o suficiente para se juntar a este Devil Square"
+
+//----------------------------------------------------------------------------------------------------
+// Event Blood Castle
+//----------------------------------------------------------------------------------------------------
+6	"Blood Castle fechará em %d minuto(s)"
+7	"Blood Castle fechado"
+8	"Blood Castle %d começará em %d minuto(s)"
+9	"Blood Castle começou"
+10	"Todos os monstros foram derrotados"
+11	"Todos os chefes foram derrotados"
+12	"Blood Castle concluído"
+13	"Você não é forte o suficiente para se juntar a este Blood Castle"
+14	"'%s' deixou cair a arma do anjo"
+15	"'%s' pegou a arma do anjo"
+16	"'%s' destruiu o portão do castelo"
+17	"'%s' destruiu a estátua"
+
+//----------------------------------------------------------------------------------------------------
+// INVASIONS AND BONUS
+//----------------------------------------------------------------------------------------------------
+18	"'%s' começará em %d minuto(s)"
+19	"'%s' iniciado"
+20	"'%s' derrotou '%s'"
+21	"'%s' concluído"
+
+//----------------------------------------------------------------------------------------------------
+// TRADE
+//----------------------------------------------------------------------------------------------------
+22	"Você não pode negociar quando estiver morrendo"
+
+//----------------------------------------------------------------------------------------------------
+// GUILD
+//----------------------------------------------------------------------------------------------------
+23	"O jogo começará automaticamente em 10 segundos(s)"
+
+//----------------------------------------------------------------------------------------------------
+// PARTY
+//----------------------------------------------------------------------------------------------------
+24	"Diferença de nível máximo %d"
+
+//----------------------------------------------------------------------------------------------------
+//NPCS
+//----------------------------------------------------------------------------------------------------
+25	"Os guardas nao falam com assassinos."
+26	"A loja está vazia"
+// Guard NPC
+27	"Cuide-se."
+// Golden archer
+28	"Você não tem o suficiente. %d obrigatório"
+29	"Você não pode receber um nível diferente de VIP"
+30	"Você já tem um Lucky Number"
+// Golden archer Bingo
+31	"[%s] Não houve vencedores."
+32	"[%s] Archer estará em %s (%d, %d) por %d minutos"
+// Guild
+33	"Você já está em uma guilda"
+34	"Você precisa de %d Levels para criar uma Guild"
+35	"Você precisa de %d Resets para criar uma Guild"
+
+//----------------------------------------------------------------------------------------------------
+// OTHER MESSAGES
+//----------------------------------------------------------------------------------------------------
+// Login messages
+36	"Nível da conta: Free"
+37	"Nível da conta: VIP Bronze (%s)"
+38	"Nível da conta: VIP Prata (%s)"
+39	"Nível da conta: VIP Ouro (%s)"
+40	"Você tem: %d Resets | %d Grand Resets"
+41	"Bem-vindo '%s'!"
+42	"Atenção! Alguém está tentando entrar nesta conta"
+
+// Leaving game conditions
+43	"Você não pode sair do jogo com o Trade aberto"
+44	"Você não pode sair do jogo com o Baú aberto"
+45	"Você não pode sair do jogo com o Chaos Machine aberto"
+46	"Você não pode sair do jogo com a Defesa Pessoal"
+
+// Max level
+47	"Você está no nível máximo"
+
+// Server status
+48	"Servidor fechado"
+49	"O servidor fechará automaticamente em %d segundo(s)"
+50	"O servidor será desligado automaticamente em 1 minuto(s)"
+51	"O servidor será desligado automaticamente em 3 minuto(s)"
+52	"O servidor será desligado automaticamente em 5 minuto(s)"
+53	"Você sairá do jogo em %d segundo(s)"
+
+// Dupe
+54	"Este é um item duplicado, entre em contato com o Administrador"
+
+// Self defense
+55	"Defesa pessoal contra '%s' iniciada"
+56	"Defesa pessoal contra '%s' finalizada"
+
+//----------------------------------------------------------------------------------------------------
+// Commands - General
+//----------------------------------------------------------------------------------------------------
+57	"Você não tem permissão para usá-lo"
+58	"Você deve ter %d Zen para usá-lo"
+59	"Apenas personagens acima do nível %d podem usá-lo"
+60	"Apenas personagens abaixo do nível %d podem usá-lo"
+61	"Apenas caracteres acima do Reset %d podem usá-lo"
+62	"Apenas caracteres abaixo do Reset %d podem usá-lo"
+63	"Você tem que esperar %d segundos para usá-lo novamente"
+64	"Você não pode usar comandos com interfaces abertas"
+
+//----------------------------------------------------------------------------------------------------
+// Commands
+//----------------------------------------------------------------------------------------------------
+// MOVE
+65	"Você não pode se mover agora"
+66	"Você não pode se mover sendo PK"
+67	"Você não pode mover este mapa com montaria"
+68	"Você não pode mover este mapa sem asas"
+// POST
+69	"[POST][%s] %s"
+// ADD
+70	"Você não tem pontos suficientes para adicionar"
+71	"Atributos máximos são %d"
+72	"Você adicionou %d pontos, restando %d pontos para adicionar"
+73	"Adição automática de pontos: (%d)"
+74	"Adição automática de pontos: Desativado"
+// RESET
+75	"Você não pode resetar agora"
+76	"Você atingiu o máximo de resets: %d"
+77	"Você não pode resetar com itens equipados"
+78	"Você só pode resetar %d vezes por dia"
+79	"Você só pode resetar %d vezes por semana"
+80	"Você só pode resetar %d vezes por mês"
+81	"Você fez reset corretamente. Agora você tem %d resets"
+82	"Reset automático: Ativado"
+83	"Reset automático: Desligado"
+// GRANDRESET
+84	"Você não pode fazer um grand reset agora"
+85	"Você atingiu o máximo de grand resets: %d"
+86	"Você não pode fazer um grand reset com itens equipados"
+87	"Você só pode fazer um grand reset %d vezes por dia"
+88	"Você só pode fazer um grand reset %d vezes por semana"
+89	"Você só pode fazer um grand reset %d vezes por mês"
+90	"Você fez grand reset corretamente. Agora você tem %d grand resets"
+//PKCLEAR
+91	"Você não é PK"
+92	"Você limpou seu PK"
+// ADDMONEY, SUBMONEY, CHASE, BRING, GMOVE
+93	"Você inseriu um valor inválido"
+94	"Você inseriu um alvo inválido"
+// EVO
+95	"Você não pode evoluir mais"
+96	"Você evoluiu com sucesso"
+// WARE
+97	"Você não pode mudar de baú agora"
+98	"Você inseriu um valor de baú inválido"
+99	"Você mudou para %d baú com sucesso"
+// MAKE, DROP, MAKESET, CLEARINV
+100	"Item criado"
+101	"Seu inventário agora está limpo"
+// MAKEMOB
+102	"Monstro criado"
+// SOLICITAR
+103	"Pedidos: ATIVADO"
+104	"Pedidos: DESLIGADO"
+105	"Pedidos: Aceitação Automática"
+// ON-LINE
+106	"%d JOGADORES ON-LINE"
+
+//----------------------------------------------------------------------------------------------------
+// Items
+//----------------------------------------------------------------------------------------------------
+107	"Este item não pertence a você."
+108	"Este é um item de Quest e você não está fazendo essa quest."
+109	"Você não pode ter mais deste item de Quest."
+110	"Seu inventário está cheio."
+111	"Você atingiu o zen máximo."
+112	"Você não tem zen suficiente."
+end
+

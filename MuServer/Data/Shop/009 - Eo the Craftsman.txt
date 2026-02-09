@@ -1,0 +1,14 @@
+//==============================================================
+// SHOP
+//==============================================================
+//SLOTS X = 0~7 , Y = 0~14 , * = Orden original
+//Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
+6 0 0 -1 0 0 0 0 -1 -1 // Small Shield
+7 0 0 -1 0 0 0 0 -1 -1 // Bronze Helm
+8 0 0 -1 0 0 0 0 -1 -1 // Bronze Armor
+9 0 0 -1 0 0 0 0 -1 -1 // Bronze Pants
+10 0 0 -1 0 0 0 0 -1 -1 // Bronze Gloves
+11 0 0 -1 0 0 0 0 -1 -1 // Bronze Boots
+
+end
+

@@ -1,0 +1,14 @@
+# Compilation folders
+Obj/
+bin/
+
+# Visual Studio
+.vs
+*.suo
+
+# Compilation result files
+*.pdb
+*.map
+
+# C# packages
+packages/

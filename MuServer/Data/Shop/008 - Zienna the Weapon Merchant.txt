@@ -1,0 +1,15 @@
+//==============================================================
+// SHOP
+//==============================================================
+//SLOTS X = 0~7 , Y = 0~14 , * = Orden original
+//Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
+4 0 0 -1 0 0 0 0 -1 -1 // Short Bow
+4 1 0 -1 0 0 0 0 -1 -1 // Bow
+4 2 0 -1 0 0 0 0 -1 -1 // Elven Bow
+4 8 0 -1 0 0 0 0 -1 -1 // Crossbow
+4 9 0 -1 0 0 0 0 -1 -1 // Golden Crossbow
+4 7 0 -1 0 0 0 0 -1 -1 // Bolts
+4 15 0 -1 0 0 0 0 -1 -1 // Arrows
+
+end
+

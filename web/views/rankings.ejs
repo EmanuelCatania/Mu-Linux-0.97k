@@ -1,0 +1,45 @@
+<%- include('partials/site_head', { pageTitle, page }) %>
+
+<main class="flex-grow-1">
+  <div class="container my-5">
+    <div class="p-4 bg-light shadow-lg">
+      <div class="bg-white border p-4 shadow-sm">
+        <h2 class="fw-bold mb-4 text-center text-dark">Rankings</h2>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>GR</th>
+                <th>Reset</th>
+                <th>Nivel</th>
+                <th>Clase</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!rows || rows.length === 0) { %>
+                <tr>
+                  <td colspan="6" class="text-center">Sin datos</td>
+                </tr>
+              <% } else { %>
+                <% rows.forEach(function(row, idx) { %>
+                  <tr>
+                    <td><%= idx + 1 %></td>
+                    <td><%= row.Name %></td>
+                    <td><%= row.GrandResetCount %></td>
+                    <td><%= row.ResetCount %></td>
+                    <td><%= row.cLevel %></td>
+                    <td><%= row.ClassName %></td>
+                  </tr>
+                <% }); %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/site_footer') %>

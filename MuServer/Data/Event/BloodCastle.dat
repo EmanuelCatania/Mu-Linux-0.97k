@@ -1,0 +1,65 @@
+// WarningTime = Time to close the entrance (in Minutes)
+// NotifyTime = Time of wait to start the event (in Minutes)
+// EventTime = Duration of the event playing (in Minutes)
+// CloseTime = Time of wait before move players to Devias after event end (in Minutes)
+0
+//WarningTime	NotifyTime	EventTime	CloseTime
+5		1		5		3
+end
+
+// DOW: 1=Sunday / 2=Monday / 3=Tuesday / 4=Wednesday / 5=Thursday / 6=Friday / 7=Saturday
+1
+//Year	Month	Day	DoW	Hour	Minute	Second
+*	*	*	*	0	0	0
+*	*	*	*	2	0	0
+*	*	*	*	4	0	0
+*	*	*	*	6	0	0
+*	*	*	*	8	0	0
+*	*	*	*	10	0	0
+*	*	*	*	12	0	0
+*	*	*	*	14	0	0
+*	*	*	*	16	0	0
+*	*	*	*	18	0	0
+*	*	*	*	20	0	0
+*	*	*	*	22	0	0
+end
+
+2
+//Level	ExperienceTable1	ExperienceTable2
+0	20000			5000
+1	50000			10000
+2	80000			15000
+3	90000			20000
+4	100000			25000
+5	110000			30000
+end
+
+3
+//Level	MoneyTable1		MoneyTable2
+0	20000			10000
+1	50000			25000
+2	100000			50000
+3	150000			80000
+4	200000			100000
+5	250000			120000
+end
+
+4
+//Level	GateNpcLife		StatueNpcLife
+0	65000			150000
+1	105000			205000
+2	145000			260000
+3	185000			325000
+4	225000			400000
+5	265000			480000
+end
+
+5
+//Level	MinRequiredLevel	MaxRequiredLevel	MinRequiredMGLevel	MaxRequiredMGLevel
+0	15			80			10			60
+1	81			130			61			110
+2	131			180			111			160
+3	181			230			161			210
+4	231			280			211			260
+5	281			99999			261			99999
+end

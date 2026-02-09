@@ -1,0 +1,15 @@
+//==============================================================
+// SHOP
+//==============================================================
+//SLOTS X = 0~7 , Y = 0~14 , * = Orden original
+//Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
+0 0 0 -1 0 0 0 0 -1 -1 // Kris
+0 1 0 -1 0 0 0 0 -1 -1 // Short Sword
+0 2 0 -1 0 0 0 0 -1 -1 // Rapier
+1 0 0 -1 0 0 0 0 -1 -1 // Small Axe
+1 1 0 -1 0 0 0 0 -1 -1 // Hand Axe
+2 0 0 -1 0 0 0 0 -1 -1 // Mace
+6 0 0 -1 0 0 0 0 -1 -1 // Small Shield
+
+end
+
