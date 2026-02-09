@@ -103,6 +103,23 @@ El control basico es desde Docker/Portainer (start/stop/restart). Los logs se pu
 
 ---
 
+**Pterodactyl**
+Eggs disponibles en `Pterodactyl eggs/` y también en la Release v0.1.0 (asset `Pterodactyl eggs.zip`).
+
+Imágenes Docker:
+- emapupi/mu-linux-97k:latest
+- emapupi/mu-linux-97k-web:latest
+
+Notas:
+- Requiere UDP abierto (puerto 55601) para jugar.
+- La DB debe crearse desde el panel y asignarse al servidor.
+- La web usa el mismo MySQL (variables DB_*).
+
+Release:
+https://github.com/EmanuelCatania/Mu-Linux-0.97k/releases/tag/v0.1.0
+
+---
+
 ## Upstream README (referencia original)
 
 # kayito MuEmu 0.97k Full Package
