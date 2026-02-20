@@ -3,11 +3,26 @@
 //==============================================================
 //SLOTS X = 0~7 , Y = 0~14 , * = Orden original
 //Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
-5 0 0 -1 0 0 0 0 -1 -1 // Skull Staff
-5 1 0 -1 0 0 0 0 -1 -1 // Angelic Staff
-15 0 0 -1 0 0 0 0 -1 -1 // Scroll of Poison
-15 1 0 -1 0 0 0 0 -1 -1 // Scroll of Meteorite
-15 2 0 -1 0 0 0 0 -1 -1 // Scroll of Lightning
-
+15 0 0 -1 0 0 0 0 0 0 // Scroll of Poison
+15 1 0 -1 0 0 0 0 1 0 // Scroll of Meteorite
+15 2 0 -1 0 0 0 0 2 0 // Scroll of Meteorite
+15 3 0 -1 0 0 0 0 3 0 // Scroll of Meteorite
+15 4 0 -1 0 0 0 0 4 0 // Scroll of Meteorite
+15 5 0 -1 0 0 0 0 5 0 // Scroll of Meteorite
+15 6 0 -1 0 0 0 0 6 0 // Scroll of Meteorite
+15 7 0 -1 0 0 0 0 7 0 // Scroll of Meteorite
+7 2 0 -1 1 1 1 0 0 2 // Pad Helm
+8 2 0 -1 1 1 1 0 0 4 // Pad Helm
+9 2 0 -1 1 1 1 0 0 8 // Pad Helm
+10 2 0 -1 1 1 1 0 0 6 // Pad Helm
+11 2 0 -1 1 1 1 0 0 10 // Pad Helm
+7 4 0 -1 1 1 1 0 2 2 // Pad Helm
+8 4 0 -1 1 1 1 0 2 4 // Pad Helm
+9 4 0 -1 1 1 1 0 2 8 // Pad Helm
+10 4 0 -1 1 1 1 0 2 6 // Pad Helm
+11 4 0 -1 1 1 1 0 2 10 // Pad Helm
+5 0 0 -1 1 1 1 0 4 2 // Pad Helm
+5 1 0 -1 1 1 1 0 5 2 // Pad Helm
+5 2 0 -1 1 1 1 0 4 5 // Pad Helm
+6 0 0 -1 1 1 1 0 4 8 // Pad Helm
 end
-

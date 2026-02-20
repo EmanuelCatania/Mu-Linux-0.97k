@@ -1,0 +1,255 @@
+﻿<%- include('partials/header') %>
+
+<section class="card">
+  <div class="row-between">
+    <h2>Editor del servidor</h2>
+    <div class="admin-links">
+      <a class="button-link" href="/admin/accounts">Cuentas</a>
+      <a class="button-link" href="/admin/news">Noticias</a>
+      <a class="button-link" href="/admin/logout">Salir</a>
+    </div>
+  </div>
+
+  <% if (!editorEnabled) { %>
+    <div class="alert">
+      El editor del servidor esta deshabilitado. Para activarlo, inicia el stack con
+      <code>EDITOR_ENABLED=1</code> y el compose del editor.
+    </div>
+  <% } else { %>
+    <div class="alert success">
+      Editor habilitado. API: <code><%= editorApiUrl %></code>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de shops</h3>
+      <p class="muted">Edita los archivos <code>MuServer/Data/Shop</code> con grid grafico.</p>
+      <a class="button-link" href="/admin/server-editor/shops">Abrir editor de shops</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de spawns</h3>
+      <p class="muted">Edita <code>MonsterSetBase.txt</code> con mapa y posiciones.</p>
+      <a class="button-link" href="/admin/server-editor/spawns">Abrir editor de spawns</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de monsters</h3>
+      <p class="muted">Edita <code>Monster.txt</code> (HP, daño, exp, etc).</p>
+      <a class="button-link" href="/admin/server-editor/monsters">Abrir editor de monsters</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de gates</h3>
+      <p class="muted">Edita <code>Gate.txt</code> con mapa y rectangulos.</p>
+      <a class="button-link" href="/admin/server-editor/gates">Abrir editor de gates</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de moves</h3>
+      <p class="muted">Edita <code>Move.txt</code> (lista del boton M).</p>
+      <a class="button-link" href="/admin/server-editor/moves">Abrir editor de moves</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Customs</h3>
+      <p class="muted">
+        Edita <code>CustomSafeZone.txt</code>, <code>CustomPkFree.txt</code> y <code>CustomNpcMove.txt</code>.
+      </p>
+      <a class="button-link" href="/admin/server-editor/customs">Abrir customs</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de items base</h3>
+      <p class="muted">Edita <code>Item.txt</code>, <code>ItemValue.txt</code> y <code>ItemStack.txt</code>.</p>
+      <a class="button-link" href="/admin/server-editor/items">Abrir editor de items</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de drop</h3>
+      <p class="muted">Edita <code>ItemDrop.txt</code> (drops especiales por mapa/monster).</p>
+      <a class="button-link" href="/admin/server-editor/drop">Abrir editor de drop</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de reset/exp</h3>
+      <p class="muted">Edita <code>ResetTable.txt</code> y <code>ExperienceTable.txt</code>.</p>
+      <a class="button-link" href="/admin/server-editor/reset-exp">Abrir editor de reset/exp</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de mapas</h3>
+      <p class="muted">Edita <code>MapManager.txt</code> (indices y rates de mapas).</p>
+      <a class="button-link" href="/admin/server-editor/mapmanager">Abrir editor de mapas</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de GM</h3>
+      <p class="muted">Edita <code>GameMaster.txt</code> con niveles por personaje.</p>
+      <a class="button-link" href="/admin/server-editor/gms">Abrir editor de GM</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de notices</h3>
+      <p class="muted">Edita <code>Notice.txt</code> (mensajes automaticos).</p>
+      <a class="button-link" href="/admin/server-editor/notices">Abrir editor de notices</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Editor de blacklist</h3>
+      <p class="muted">Edita <code>Blacklist.dat</code> (IP y HWID).</p>
+      <a class="button-link" href="/admin/server-editor/blacklist">Abrir editor de blacklist</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>CFG general</h3>
+      <p class="muted">Edita toda la configuracion del <code>GameServerInfo - Common.dat</code>.</p>
+      <a class="button-link" href="/admin/server-editor/rates">Abrir CFG general</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>CFG comandos</h3>
+      <p class="muted">Edita <code>GameServerInfo - Command.dat</code>.</p>
+      <a class="button-link" href="/admin/server-editor/commands">Abrir CFG comandos</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>CFG skills</h3>
+      <p class="muted">Edita <code>GameServerInfo - Skill.dat</code>.</p>
+      <a class="button-link" href="/admin/server-editor/skills">Abrir CFG skills</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>CFG eventos</h3>
+      <p class="muted">Edita <code>GameServerInfo - Event.dat</code>.</p>
+      <a class="button-link" href="/admin/server-editor/events">Abrir CFG eventos</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>CFG chaos mix</h3>
+      <p class="muted">Edita <code>GameServerInfo - ChaosMix.dat</code> (maquina del chaos).</p>
+      <a class="button-link" href="/admin/server-editor/chaosmix">Abrir CFG chaos mix</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Event ItemBag</h3>
+      <p class="muted">
+        Edita <code>EventItemBagManager.txt</code> y los bags de <code>Data/EventItemBag</code>.
+      </p>
+      <a class="button-link" href="/admin/server-editor/event-item-bag">Abrir Event ItemBag</a>
+    </div>
+
+    <div class="card-sub">
+      <h3>Backups del servidor</h3>
+      <p class="muted">
+        Se guardan hasta <strong><%= editorMaxBackups %></strong> backups por archivo y
+        hasta <strong><%= editorMaxSnapshots %></strong> snapshots completos.
+      </p>
+
+      <div class="backup-actions">
+        <label>Nombre (opcional)</label>
+        <input type="text" id="backupLabel" placeholder="ej: antes-de-spawns" maxlength="40" />
+        <button type="button" id="createBackupBtn">Crear backup</button>
+      </div>
+
+      <div class="backup-restore">
+        <label>Restaurar snapshot</label>
+        <select id="backupSelect"></select>
+        <button type="button" class="btn-danger" id="restoreBackupBtn">Restaurar</button>
+      </div>
+
+      <div id="backupMessage" class="muted"></div>
+    </div>
+
+    <div class="card-sub">
+      <h3>Notas</h3>
+      <ul>
+        <li>Restaurar un snapshot sobrescribe <code>Data</code> y <code>GameServer/Data</code> dentro del contenedor.</li>
+        <li>Recomendado reiniciar el contenedor del GameServer despues de restaurar.</li>
+      </ul>
+    </div>
+  <% } %>
+</section>
+
+<% if (editorEnabled) { %>
+<script>
+  const messageEl = document.getElementById('backupMessage');
+  const selectEl = document.getElementById('backupSelect');
+  const labelEl = document.getElementById('backupLabel');
+  const createBtn = document.getElementById('createBackupBtn');
+  const restoreBtn = document.getElementById('restoreBackupBtn');
+
+  function setMessage(text, isError) {
+    messageEl.textContent = text || '';
+    messageEl.style.color = isError ? 'var(--danger)' : 'var(--muted)';
+  }
+
+  async function loadSnapshots() {
+    try {
+      const res = await fetch('/admin/server-editor/api/backups');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo cargar');
+      const snapshots = data.snapshots || [];
+      selectEl.innerHTML = '';
+      if (snapshots.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No hay backups';
+        selectEl.appendChild(option);
+        restoreBtn.disabled = true;
+        return;
+      }
+      snapshots.forEach((snap) => {
+        const option = document.createElement('option');
+        option.value = snap.name;
+        const sizeKb = Math.round((snap.size || 0) / 1024);
+        option.textContent = `${snap.name} (${sizeKb} KB)`;
+        selectEl.appendChild(option);
+      });
+      restoreBtn.disabled = false;
+    } catch (err) {
+      setMessage(err.message, true);
+    }
+  }
+
+  createBtn?.addEventListener('click', async () => {
+    setMessage('Creando backup...', false);
+    try {
+      const res = await fetch('/admin/server-editor/api/backups/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: labelEl.value })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo crear');
+      setMessage('Backup creado correctamente.', false);
+      await loadSnapshots();
+    } catch (err) {
+      setMessage(err.message, true);
+    }
+  });
+
+  restoreBtn?.addEventListener('click', async () => {
+    const name = selectEl.value;
+    if (!name) return;
+    if (!confirm(`Restaurar el snapshot ${name}? Esto sobrescribira los datos actuales.`)) return;
+    setMessage('Restaurando backup...', false);
+    try {
+      const res = await fetch('/admin/server-editor/api/backups/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo restaurar');
+      setMessage('Backup restaurado. Reinicia el GameServer.', false);
+      await loadSnapshots();
+    } catch (err) {
+      setMessage(err.message, true);
+    }
+  });
+
+  loadSnapshots();
+</script>
+<% } %>
+
+<%- include('partials/footer') %>

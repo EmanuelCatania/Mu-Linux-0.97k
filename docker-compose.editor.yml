@@ -1,0 +1,41 @@
+﻿services:
+  mu-editor:
+    build:
+      context: ./editor
+      dockerfile: Dockerfile
+    environment:
+      EDITOR_ENABLED: ${EDITOR_ENABLED}
+      EDITOR_PORT: ${EDITOR_PORT}
+      EDITOR_MU_ROOT: /opt/mu
+      EDITOR_BACKUP_DIR: /backups
+      EDITOR_MAX_BACKUPS: ${EDITOR_MAX_BACKUPS}
+      EDITOR_MAX_SNAPSHOTS: ${EDITOR_MAX_SNAPSHOTS}
+    volumes:
+      - mu_data:/opt/mu/Data:rw
+      - mu_gameserver_data:/opt/mu/GameServer/Data:rw
+      - mu_editor_backups:/backups
+    networks:
+      - default
+    # Optional: expose API to host for direct testing
+    # ports:
+    #   - "${EDITOR_PORT:-8090}:8090"
+
+  mu-web:
+    environment:
+      EDITOR_ENABLED: ${EDITOR_ENABLED}
+      EDITOR_API_URL: ${EDITOR_API_URL}
+      EDITOR_MAX_SNAPSHOTS: ${EDITOR_MAX_SNAPSHOTS}
+
+  mu-server:
+    volumes:
+      - mu_data:/opt/mu/Data:rw
+      - mu_gameserver_data:/opt/mu/GameServer/Data:rw
+
+networks:
+  proxy_net:
+    external: true
+
+volumes:
+  mu_data:
+  mu_gameserver_data:
+  mu_editor_backups:

@@ -3,12 +3,7 @@
 //==============================================================
 //SLOTS X = 0~7 , Y = 0~14 , * = Orden original
 //Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
-7 6 0 -1 0 0 0 0 -1 -1 // Scale Helm
-8 6 0 -1 0 0 0 0 -1 -1 // Scale Armor
-9 6 0 -1 0 0 0 0 -1 -1 // Scale Pants
-10 6 0 -1 0 0 0 0 -1 -1 // Scale Gloves
-11 6 0 -1 0 0 0 0 -1 -1 // Scale Boots
-6 7 0 -1 0 0 0 0 -1 -1 // Spiked Shield
-
+13 14 0 -1 0 0 0 0 0 0 // Loch's Feather
+14 9 0 -1 0 0 0 0 1 0 // Ale
+14 10 0 -1 0 0 0 0 2 0 // Town Portal Scroll
 end
-

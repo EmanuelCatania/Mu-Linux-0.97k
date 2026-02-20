@@ -1,8 +1,112 @@
 #include "stdafx.h"
 #include "CustomMonster.h"
 #include "LoadModels.h"
+#include <cstdlib>
+#include <cstring>
 
 CCustomMonster gCustomMonster;
+
+namespace
+{
+	const int kNpcNameMax = 24;
+	char gNpcNames[MAX_MONSTER][kNpcNameMax + 1];
+	bool gNpcNamesLoaded = false;
+
+	void LoadNpcNames()
+	{
+		if (gNpcNamesLoaded)
+		{
+			return;
+		}
+
+		gNpcNamesLoaded = true;
+		memset(gNpcNames, 0, sizeof(gNpcNames));
+
+		const char* paths[] = { "Data\\Local\\NPCName.txt", "Data\\Local\\NPCName(kor).txt" };
+		FILE* file = nullptr;
+
+		for (int i = 0; i < 2 && file == nullptr; i++)
+		{
+			file = fopen(paths[i], "r");
+		}
+
+		if (file == nullptr)
+		{
+			return;
+		}
+
+		char line[256] = { 0 };
+
+		while (fgets(line, sizeof(line), file))
+		{
+			if (line[0] == '/' && line[1] == '/')
+			{
+				continue;
+			}
+
+			char* cursor = line;
+			char* endPtr = nullptr;
+			long index = strtol(cursor, &endPtr, 10);
+
+			if (endPtr == cursor)
+			{
+				continue;
+			}
+
+			cursor = endPtr;
+			strtol(cursor, &endPtr, 10);
+
+			const char* quoteStart = strchr(endPtr, '"');
+			if (quoteStart == nullptr)
+			{
+				continue;
+			}
+
+			const char* quoteEnd = strchr(quoteStart + 1, '"');
+			if (quoteEnd == nullptr)
+			{
+				continue;
+			}
+
+			if (index >= 0 && index < MAX_MONSTER)
+			{
+				size_t len = (size_t)(quoteEnd - (quoteStart + 1));
+				if (len > (size_t)kNpcNameMax)
+				{
+					len = kNpcNameMax;
+				}
+
+				memcpy(gNpcNames[index], quoteStart + 1, len);
+				gNpcNames[index][len] = '\0';
+			}
+		}
+
+		fclose(file);
+	}
+
+	const char* GetNpcName(int index)
+	{
+		if (index < 0 || index >= MAX_MONSTER)
+		{
+			return nullptr;
+		}
+
+		return (gNpcNames[index][0] != '\0') ? gNpcNames[index] : nullptr;
+	}
+
+	void WriteMonsterName(DWORD object, const char* name)
+	{
+		if (object == 0 || name == nullptr)
+		{
+			return;
+		}
+
+		char* out = (char*)(object + 0x1C1);
+
+		memset(out, 0, kNpcNameMax);
+		strncpy(out, name, kNpcNameMax - 1);
+	}
+}
 
 CCustomMonster::CCustomMonster()
 {
@@ -74,6 +178,8 @@ CUSTOM_MONSTER_INFO* CCustomMonster::GetInfoByIndex(int index)
 
 void CCustomMonster::Init()
 {
+	LoadNpcNames();
+
 	SetCompleteHook(0xE8, 0x00429CF6, &this->CreateCustomMonster);
 
 	SetCompleteHook(0xE8, 0x0042A288, &this->CreateCustomMonster);
@@ -162,6 +268,8 @@ void OpenNpcModel(CUSTOM_MONSTER_INFO* lpInfo)
 
 DWORD CCustomMonster::CreateCustomMonster(int Type, int PositionX, int PositionY, int Key)
 {
+	LoadNpcNames();
+
 	CUSTOM_MONSTER_INFO* lpInfo = gCustomMonster.GetInfoByIndex(Type);
 
 	if (lpInfo != NULL) // Is Custom Monster
@@ -181,7 +289,14 @@ DWORD CCustomMonster::CreateCustomMonster(int Type, int PositionX, int PositionY
 
 		*(float*)(c + 0xC) = lpInfo->Scale; // c->Object.Scale
 
-		memcpy((char*)(c + 0x1C1), getMonsterName(Type), 24); // c->ID -> Max 24 characters
+		const char* npcName = GetNpcName(Type);
+
+		if (npcName == nullptr)
+		{
+			npcName = getMonsterName(Type);
+		}
+
+		WriteMonsterName(c, npcName); // c->ID -> Max 24 characters
 
 		*(BYTE*)(c + 0x2EB) = Type; // c->MonsterIndex
 
@@ -194,7 +309,16 @@ DWORD CCustomMonster::CreateCustomMonster(int Type, int PositionX, int PositionY
 		return c;
 	}
 
-	return CreateMonster(Type, PositionX, PositionY, Key);
+	DWORD c = CreateMonster(Type, PositionX, PositionY, Key);
+
+	const char* npcName = GetNpcName(Type);
+
+	if (npcName != nullptr)
+	{
+		WriteMonsterName(c, npcName);
+	}
+
+	return c;
 }
 
 _declspec(naked) void CCustomMonster::CustomMonsterDie()

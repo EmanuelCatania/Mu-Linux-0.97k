@@ -5,33 +5,81 @@
     <div class="p-4 bg-light shadow-lg">
       <div class="bg-white border p-4 shadow-sm">
         <h2 class="fw-bold mb-4 text-center text-dark">Rankings</h2>
+
+        <div class="d-flex flex-wrap gap-2 justify-content-center mb-4">
+          <a class="btn btn-sm <%= type === 'level' ? 'btn-primary' : 'btn-outline-primary' %>" href="/rankings?type=level">Nivel</a>
+          <a class="btn btn-sm <%= type === 'resets' ? 'btn-primary' : 'btn-outline-primary' %>" href="/rankings?type=resets">Resets</a>
+          <a class="btn btn-sm <%= type === 'gr' ? 'btn-primary' : 'btn-outline-primary' %>" href="/rankings?type=gr">Grand Resets</a>
+          <a class="btn btn-sm <%= type === 'class' ? 'btn-primary' : 'btn-outline-primary' %>" href="/rankings?type=class">Por Clase</a>
+          <a class="btn btn-sm <%= type === 'guilds' ? 'btn-primary' : 'btn-outline-primary' %>" href="/rankings?type=guilds">Guilds</a>
+        </div>
+
+        <% if (type === 'class') { %>
+          <form class="row g-2 align-items-end mb-4" method="get" action="/rankings">
+            <input type="hidden" name="type" value="class" />
+            <div class="col-12 col-md-6">
+              <label class="form-label">Clase</label>
+              <select class="form-select" name="class">
+                <% classOptions.forEach(function(opt) { %>
+                  <option value="<%= opt.value %>" <%= String(classFilter) === String(opt.value) ? 'selected' : '' %>><%= opt.label %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-12 col-md-3">
+              <button class="btn btn-primary w-100" type="submit">Filtrar</button>
+            </div>
+          </form>
+        <% } %>
+
         <div class="table-responsive">
           <table class="table table-bordered table-striped mb-0">
             <thead>
-              <tr>
-                <th>#</th>
-                <th>Nombre</th>
-                <th>GR</th>
-                <th>Reset</th>
-                <th>Nivel</th>
-                <th>Clase</th>
-              </tr>
+              <% if (type === 'guilds') { %>
+                <tr>
+                  <th>#</th>
+                  <th>Guild</th>
+                  <th>Master</th>
+                  <th>Score</th>
+                  <th>Miembros</th>
+                </tr>
+              <% } else { %>
+                <tr>
+                  <th>#</th>
+                  <th>Nombre</th>
+                  <th>GR</th>
+                  <th>Reset</th>
+                  <th>Nivel</th>
+                  <th>Clase</th>
+                </tr>
+              <% } %>
             </thead>
             <tbody>
               <% if (!rows || rows.length === 0) { %>
                 <tr>
-                  <td colspan="6" class="text-center">Sin datos</td>
+                  <td colspan="<%= type === 'guilds' ? 5 : 6 %>" class="text-center">Sin datos</td>
                 </tr>
               <% } else { %>
                 <% rows.forEach(function(row, idx) { %>
-                  <tr>
-                    <td><%= idx + 1 %></td>
-                    <td><%= row.Name %></td>
-                    <td><%= row.GrandResetCount %></td>
-                    <td><%= row.ResetCount %></td>
-                    <td><%= row.cLevel %></td>
-                    <td><%= row.ClassName %></td>
-                  </tr>
+                  <% if (type === 'guilds') { %>
+                    <tr>
+                      <td><%= idx + 1 %></td>
+                      <td><%= row.GuildName %></td>
+                      <td><%= row.GuildMaster || '-' %></td>
+                      <td><%= row.GuildScore %></td>
+                      <td><%= row.Members %></td>
+                    </tr>
+                  <% } else { %>
+                    <tr>
+                      <td><%= idx + 1 %></td>
+                      <td><%= row.Name %></td>
+                      <td><%= row.GrandResetCount %></td>
+                      <td><%= row.ResetCount %></td>
+                      <td><%= row.cLevel %></td>
+                      <td class="text-center">
+                        <img src="<%= row.ClassIcon %>" alt="<%= row.ClassName %>" title="<%= row.ClassName %>" class="class-icon" />
+                      </td>
+                    </tr>
+                  <% } %>
                 <% }); %>
               <% } %>
             </tbody>

@@ -15,6 +15,7 @@
     "express-rate-limit": "^7.4.0",
     "express-session": "^1.18.0",
     "helmet": "^7.1.0",
-    "mysql2": "^3.11.0"
+    "mysql2": "^3.11.0",
+    "sanitize-html": "^2.13.0"
   }
 }

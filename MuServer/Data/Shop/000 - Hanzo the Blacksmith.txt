@@ -3,13 +3,24 @@
 //==============================================================
 //SLOTS X = 0~7 , Y = 0~14 , * = Orden original
 //Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
-0 0 0 -1 0 0 0 0 -1 -1 // Kris
-0 1 0 -1 0 0 0 0 -1 -1 // Short Sword
-0 2 0 -1 0 0 0 0 -1 -1 // Rapier
-1 0 0 -1 0 0 0 0 -1 -1 // Small Axe
-1 1 0 -1 0 0 0 0 -1 -1 // Hand Axe
-2 0 0 -1 0 0 0 0 -1 -1 // Mace
-6 0 0 -1 0 0 0 0 -1 -1 // Small Shield
-
+7 5 0 -1 0 1 1 0 0 0 // Scale Boots
+8 5 0 -1 0 1 1 0 0 2 // Scale Boots
+9 5 0 -1 0 1 1 0 0 7 // Scale Boots
+10 5 0 -1 0 1 1 0 0 5 // Scale Boots
+11 5 0 -1 0 1 1 0 0 9 // Scale Boots
+7 0 0 -1 0 0 0 0 2 0 // Scale Gloves
+8 0 0 -1 0 0 0 0 2 2 // Scale Gloves
+9 0 0 -1 0 0 0 0 2 6 // Scale Gloves
+10 0 0 -1 0 0 0 0 2 4 // Scale Gloves
+11 0 0 -1 0 0 0 0 2 8 // Scale Gloves
+0 1 0 -1 1 1 1 0 4 0 // Scale Boots
+0 4 0 -1 1 1 1 0 5 0 // Scale Boots
+0 8 0 -1 1 1 1 0 6 0 // Serpent Sword
+1 2 0 -1 1 1 1 0 7 0 // Double Axe
+6 4 0 -1 1 1 1 0 4 3 // Buckler
+6 1 0 -1 1 1 1 0 6 3 // Horn Shield
+12 7 0 -1 0 0 1 0 4 5 // Orb of Twisting Slash
+12 13 0 -1 0 0 1 0 5 5 // Orb of Impale
+12 12 0 -1 0 0 1 0 6 5 // Orb of Impale
+12 19 0 -1 0 0 1 0 7 5 // Orb of Impale
 end
-

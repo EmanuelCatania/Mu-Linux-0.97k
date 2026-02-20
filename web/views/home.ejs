@@ -11,7 +11,7 @@
             </div>
             <div class="flex-1 text-end ms-4">
               <p class="text-light text-sm mb-2">Jugadores en linea: <span class="badge bg-primary text-white text-xs font-semibold" id="players-online"><%= playersOnline %></span></p>
-              <p class="text-light text-sm mb-2">Hora del servidor: <span class="badge bg-danger text-white text-xs font-semibold" id="server-time"><%= serverTime %></span></p>
+              <p class="text-light text-sm mb-2">Hora del servidor: <span class="badge bg-danger text-white text-xs font-semibold" id="server-time" data-tz="<%= timeZone || '' %>"><%= serverTime %></span></p>
               <p class="text-light text-sm mb-2">Tu hora: <span class="badge bg-success text-white text-xs font-semibold" id="user-time">--:--:--</span></p>
             </div>
           </div>
@@ -32,14 +32,29 @@
             </div>
           <% } else { %>
             <% news.forEach(function(item) { %>
+              <% const hasImage = item.featuredImage && item.featuredImage.length > 0; %>
+              <% const hasText = item.excerpt && item.excerpt.trim().length > 0; %>
               <div class="news-item mb-4 p-4 border rounded-3 shadow-sm">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <span class="text-muted fs-6"><%= new Date(item.created_at).toLocaleDateString('es-ES') %></span>
                   <span class="badge text-bg-primary rounded-pill px-3 py-2">Noticia</span>
                 </div>
-                <h5 class="news-title text-dark fs-5 fw-bold mb-2"><%= item.title %></h5>
-                <p class="news-description text-muted mb-3"><%= item.excerpt %></p>
-                <a href="/news/<%= item.id %>" class="text-decoration-none text-primary fs-6">Leer mas</a>
+                <div class="news-body <%= hasImage && hasText ? 'news-body--thumb' : '' %>">
+                  <% if (hasImage) { %>
+                    <div class="<%= hasText ? 'news-thumb' : 'news-banner' %>">
+                      <img src="<%= item.featuredImage %>" alt="<%= item.title %>" loading="lazy" />
+                    </div>
+                  <% } %>
+                  <div class="news-text">
+                    <% if (!item.hide_title) { %>
+                      <h5 class="news-title text-dark fs-5 fw-bold mb-2"><%= item.title %></h5>
+                    <% } %>
+                    <% if (hasText) { %>
+                      <p class="news-description text-muted mb-3"><%= item.excerpt %></p>
+                    <% } %>
+                    <a href="/news/<%= item.id %>" class="text-decoration-none text-primary fs-6">Leer mas</a>
+                  </div>
+                </div>
               </div>
             <% }); %>
           <% } %>
@@ -84,12 +99,13 @@
                     <th>GR</th>
                     <th>Reset</th>
                     <th>Nivel</th>
+                    <th>Clase</th>
                   </tr>
                 </thead>
                 <tbody>
                   <% if (!ranking || ranking.length === 0) { %>
                     <tr>
-                      <td colspan="5" class="text-center">Sin datos</td>
+                      <td colspan="6" class="text-center">Sin datos</td>
                     </tr>
                   <% } else { %>
                     <% ranking.forEach(function(row, idx) { %>
@@ -99,6 +115,41 @@
                         <td><%= row.GrandResetCount %></td>
                         <td><%= row.ResetCount %></td>
                         <td><%= row.cLevel %></td>
+                        <td class="text-center">
+                          <img src="<%= row.ClassIcon %>" alt="<%= row.ClassName %>" title="<%= row.ClassName %>" class="class-icon" />
+                        </td>
+                      </tr>
+                    <% }); %>
+                  <% } %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="col-12 bg-white p-4 border rounded-3 shadow-sm mt-4">
+            <h5 class="text-center mb-4 text-dark fw-bold">Proximos eventos</h5>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped mb-0">
+                <thead>
+                  <tr>
+                    <th>Evento</th>
+                    <th>Proxima hora</th>
+                    <th>Faltan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (!events || events.length === 0) { %>
+                    <tr>
+                      <td colspan="3" class="text-center">Sin datos</td>
+                    </tr>
+                  <% } else { %>
+                    <% events.forEach(function(ev) { %>
+                      <tr>
+                        <td><%= ev.name %></td>
+                        <td><%= ev.nextTime %></td>
+                        <td>
+                          <span class="event-countdown" data-countdown="<%= ev.nextAt %>"><%= ev.remainingSeconds %></span>
+                        </td>
                       </tr>
                     <% }); %>
                   <% } %>

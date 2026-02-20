@@ -67,6 +67,7 @@
 #define EventType *(DWORD*)0x07EAA120
 #define GuildCreatorOpened *(BYTE*)0x07EAA124
 #define QuestNPCOpened *(BYTE*)0x00583D7F // DWORD g_csQuest = *(DWORD*)0x00583D8C -> *(BYTE*)(g_csQuest + 0x1C87F)
+#define g_csQuest *(DWORD*)0x00583D8C
 #define GoldenArcherOpenType *(int*)0x07EAA128
 #define GoldenArcherItemCount *(int*)0x07EAA12C
 #define GoldenArcherLuckyNumber (&*(WORD*)0x00559F58)

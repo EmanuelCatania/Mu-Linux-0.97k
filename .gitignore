@@ -1,27 +1,3 @@
-# Template source (not needed for build)
+MuEmu-0.97k-kayito-master/
+kayito_ref/
 web/_template/
-
-# Node
-**/node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Env (keep .env example in repo)
-.env.local
-.env.*.local
-
-# OS junk
-.DS_Store
-Thumbs.db
-
-# IDE
-.vs/
-
-# Build artifacts / logs / core dumps
-/build/
-**/build/
-*.log
-core
-core.*

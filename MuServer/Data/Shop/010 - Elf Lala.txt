@@ -3,15 +3,31 @@
 //==============================================================
 //SLOTS X = 0~7 , Y = 0~14 , * = Orden original
 //Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
-4 0 0 -1 0 0 0 0 -1 -1 // Short Bow
-4 1 0 -1 0 0 0 0 -1 -1 // Bow
-4 2 0 -1 0 0 0 0 -1 -1 // Elven Bow
-4 15 0 -1 0 0 0 0 -1 -1 // Arrows
-7 10 0 -1 0 0 0 0 -1 -1 // Vine Helm
-8 10 0 -1 0 0 0 0 -1 -1 // Vine Armor
-9 10 0 -1 0 0 0 0 -1 -1 // Vine Pants
-10 10 0 -1 0 0 0 0 -1 -1 // Vine Gloves
-11 10 0 -1 0 0 0 0 -1 -1 // Vine Boots
-
+7 10 0 -1 1 1 4 0 0 0 // Vine Helm
+8 10 0 -1 1 1 4 0 0 2 // Vine Armor
+9 10 0 -1 1 1 4 0 0 6 // Vine Pants
+10 10 0 -1 1 1 4 0 0 4 // Vine Gloves
+11 10 0 -1 1 1 4 0 0 8 // Vine Boots
+7 12 0 -1 1 1 4 0 4 0 // Wind Helm
+8 12 0 -1 1 1 4 0 4 2 // Wind Armor
+9 12 0 -1 1 1 4 0 4 6 // Wind Pants
+10 12 0 -1 1 1 4 0 4 4 // Wind Gloves
+11 12 0 -1 1 1 4 0 4 8 // Wind Boots
+11 11 0 -1 1 1 4 0 2 8 // Silk Boots
+10 11 0 -1 1 1 4 0 2 4 // Silk Gloves
+9 11 0 -1 1 1 4 0 2 6 // Silk Pants
+8 11 0 -1 1 1 4 0 2 2 // Silk Armor
+7 11 0 -1 1 1 4 0 2 0 // Silk Helm
+12 8 0 -1 0 0 0 0 6 0 // Healing Orb
+12 9 0 -1 0 0 0 0 7 0 // Healing Orb
+12 10 0 -1 0 0 0 0 6 1 // Healing Orb
+12 11 0 -1 0 0 0 0 7 1 // Orb of Summoning
+12 11 1 -1 0 0 0 0 6 2 // Orb of Summoning
+12 11 2 -1 0 0 0 0 7 2 // Orb of Summoning
+12 11 3 -1 0 0 0 0 6 3 // Orb of Summoning
+12 11 4 -1 0 0 0 0 7 3 // Orb of Summoning
+12 17 0 -1 0 0 0 0 6 4 // Orb of Penetration
+12 18 0 -1 0 0 0 0 7 4 // Orb of Ice Arrow
+2 7 0 -1 1 1 0 0 6 5 // Elemental Mace
+2 0 0 -1 1 1 0 0 7 5 // Mace
 end
-

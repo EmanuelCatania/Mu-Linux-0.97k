@@ -1,0 +1,32 @@
+<%- include('partials/header') %>
+
+<section class="card">
+  <div class="row-between">
+    <h2>Editor de mapas</h2>
+    <div class="admin-links">
+      <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+      <a class="button-link" href="/admin/accounts">Cuentas</a>
+      <a class="button-link" href="/admin/news">Noticias</a>
+      <a class="button-link" href="/admin/logout">Salir</a>
+    </div>
+  </div>
+
+  <% if (!editorEnabled) { %>
+    <div class="alert">
+      El editor del servidor esta deshabilitado. Para activarlo, inicia el stack con
+      <code>EDITOR_ENABLED=1</code> y el compose del editor.
+    </div>
+  <% } else { %>
+    <div class="alert warning" style="margin-bottom: 12px;">
+      Nota: los indices de <code>MapManager.txt</code> deben estar alineados con Terrain, Gate,
+      Move y MonsterSetBase. Cambiar indices rompe teleports y spawns.
+    </div>
+    <div id="mapmanager-editor"></div>
+  <% } %>
+</section>
+
+<% if (editorEnabled) { %>
+<script src="/js/mapmanager-editor.js"></script>
+<% } %>
+
+<%- include('partials/footer') %>

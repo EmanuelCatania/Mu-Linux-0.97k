@@ -109,3 +109,60 @@ footer a:hover {
   color: #ffffff;
   text-decoration: underline;
 }
+
+.class-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 4px;
+}
+
+.news-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0.75rem auto;
+}
+
+.news-content .center {
+  text-align: center;
+}
+
+.news-content .img-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.news-body {
+  display: block;
+}
+
+.news-body--thumb {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.news-thumb img,
+.news-banner img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.news-banner img {
+  max-height: 320px;
+  object-fit: contain;
+  background-color: #0e1420;
+}
+
+@media (max-width: 768px) {
+  .news-body--thumb {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,64 @@
+<%- include('partials/header') %>
+
+<section class="card">
+  <div class="row-between">
+    <h2>Nueva cuenta</h2>
+    <div class="admin-links">
+      <a class="button-link" href="/admin/accounts">Volver</a>
+      <% if (editorEnabled) { %>
+        <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+      <% } %>
+      <a class="button-link" href="/admin/logout">Salir</a>
+    </div>
+  </div>
+
+  <% if (error) { %>
+    <div class="alert"><%= error %></div>
+  <% } %>
+
+  <form method="post" action="/admin/accounts/new">
+    <label>Usuario</label>
+    <input type="text" name="account" value="<%= form.account %>" required maxlength="10" />
+
+    <label>Contraseña</label>
+    <input type="password" name="password" required maxlength="10" />
+
+    <label>Confirmar contraseña</label>
+    <input type="password" name="confirm" required maxlength="10" />
+
+    <label>Nombre</label>
+    <input type="text" name="name" value="<%= form.name %>" required maxlength="10" />
+
+    <label>Email</label>
+    <input type="email" name="email" value="<%= form.email %>" maxlength="50" />
+
+    <label>Codigo (18 numeros)</label>
+    <input type="text" name="code" value="<%= form.code %>" required maxlength="18" />
+
+    <label>Account Level</label>
+    <select name="account_level">
+      <option value="0" <%= Number(form.accountLevel) === 0 ? 'selected' : '' %>>0 - Cuenta normal</option>
+      <option value="1" <%= Number(form.accountLevel) === 1 ? 'selected' : '' %>>1 - VIP 1</option>
+      <option value="2" <%= Number(form.accountLevel) === 2 ? 'selected' : '' %>>2 - VIP 2</option>
+      <option value="3" <%= Number(form.accountLevel) === 3 ? 'selected' : '' %>>3 - VIP 3</option>
+    </select>
+
+    <label>Expira</label>
+    <input type="datetime-local" name="account_expire" value="<%= form.accountExpire %>" />
+
+    <label class="checkbox">
+      <input type="checkbox" name="blocked" value="1" <%= form.blocked ? 'checked' : '' %> />
+      Bloqueado
+    </label>
+
+    <label>Expira bloqueo</label>
+    <input type="datetime-local" name="block_expire" value="<%= form.blockExpire %>" />
+
+    <div class="row-between">
+      <button type="submit">Crear</button>
+      <a class="button-link" href="/admin/accounts">Cancelar</a>
+    </div>
+  </form>
+</section>
+
+<%- include('partials/footer') %>

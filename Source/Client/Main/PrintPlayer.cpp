@@ -233,7 +233,7 @@ void CPrintPlayer::RenderExperience()
 
 	DisableAlphaBlend();
 
-	glColor3f(1.0f, 1.0f, 1.0f);
+	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
 	Width = 198.0f;
 

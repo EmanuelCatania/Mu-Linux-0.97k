@@ -3,14 +3,17 @@
 //==============================================================
 //SLOTS X = 0~7 , Y = 0~14 , * = Orden original
 //Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
-14 0 0 -1 0 0 0 0 -1 -1 // Apple
-14 1 0 -1 0 0 0 0 -1 -1 // Small Healing Potion
-14 2 0 -1 0 0 0 0 -1 -1 // Medium Healing Potion
-14 4 0 -1 0 0 0 0 -1 -1 // Small Mana Potion
-14 5 0 -1 0 0 0 0 -1 -1 // Medium Mana Potion
-14 8 0 -1 0 0 0 0 -1 -1 // Antidote
-14 9 0 -1 0 0 0 0 -1 -1 // Ale
-14 10 0 -1 0 0 0 0 -1 -1 // Town Portal Scroll
-
+14 1 9 255 0 0 0 0 0 0 // Small Healing Potion
+14 2 9 255 0 0 0 0 1 0 // Medium Healing Potion
+14 3 9 255 0 0 0 0 2 0 // Large Healing Potion
+14 4 9 255 0 0 0 0 3 0 // Small Mana Potion
+14 5 9 255 0 0 0 0 4 0 // Medium Mana Potion
+14 6 9 255 0 0 0 0 5 0 // Large Mana Potion
+14 10 0 -1 0 0 0 0 7 0 // Town Portal Scroll
+14 8 0 -1 0 0 0 0 6 0 // Antidote
+12 0 0 -1 0 0 0 0 5 2 // Wings of Elf
+12 1 0 -1 0 0 0 0 0 1 // Wings of Heaven
+12 2 0 -1 0 0 0 0 0 4 // Wings of Satan
+14 0 0 -1 0 0 0 0 5 1 // Apple
+14 22 0 -1 0 0 0 0 6 1 // Jewel of Creation
 end
-

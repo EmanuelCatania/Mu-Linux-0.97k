@@ -26,7 +26,7 @@ ServerVersion=0.97.11
 ServerSerial=TbYehR2hFUPBKgZj
 
 ; Maximum users (MAX: 1000)
-ServerMaxUserNumber=3
+ServerMaxUserNumber=100
 
 ;==================================================
 ; Connection Settings

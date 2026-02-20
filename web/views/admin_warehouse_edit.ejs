@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+
+<section class="card">
+  <div class="row-between">
+    <h2>Editar baul</h2>
+    <div class="admin-links">
+      <a class="button-link" href="/admin/accounts/<%= accountId %>">Cuenta</a>
+      <a class="button-link" href="/admin/accounts">Cuentas</a>
+      <% if (editorEnabled) { %>
+        <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+      <% } %>
+      <a class="button-link" href="/admin/logout">Salir</a>
+    </div>
+  </div>
+
+  <% if (notice) { %>
+    <div class="alert success"><%= notice.text %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert"><%= error.text %></div>
+  <% } %>
+
+  <p class="muted">Para editar, la cuenta debe estar desconectada. Si dejas el hex vacio, se completa con FF.</p>
+
+  <form method="post" action="/admin/accounts/<%= accountId %>/warehouse">
+    <label>Cuenta</label>
+    <input type="text" value="<%= accountId %>" readonly />
+
+    <label>Zen</label>
+    <input type="number" name="money" value="<%= warehouse.Money %>" min="0" />
+
+    <label>Password</label>
+    <input type="number" name="pw" value="<%= warehouse.pw %>" min="0" max="65535" />
+
+    <label>Items (hex 2400 chars)</label>
+    <textarea name="items_hex" rows="6" spellcheck="false"><%= warehouse.ItemsHex %></textarea>
+
+    <div class="row-between">
+      <button type="submit" name="action" value="save">Guardar</button>
+      <button type="submit" name="action" value="clear" class="link-button">Vaciar baul</button>
+    </div>
+  </form>
+</section>
+
+<%- include('partials/footer') %>

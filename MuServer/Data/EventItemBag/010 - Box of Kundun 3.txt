@@ -3,13 +3,12 @@
 //======================================
 
 0
-//EventName		DropZen	ItemDropRate	ItemDropCount	ItemDropType	Fireworks	
-"EventName"		1000	100		1		1		0
+//EventName  DropZen  ItemDropRate  ItemDropCount  ItemDropType  Fireworks
+"EventName"  1000  100  1  1  0
 end
 
 1
-//Item	MinLvl	MaxLvl	Skill	Luck	Opt	Exce	Comment
-//00,000	0	0	0	0	0	0	//Comment
+//Item  MinLvl  MaxLvl  Skill  Luck  Opt  Exce  Comment
 end
 
 //======================================
@@ -17,19 +16,47 @@ end
 //======================================
 
 2
-//Index	DropRate
-0	10000
+//Index  DropRate
+0  10000
 end
 
 3
-//Index	Section	SectionRate	MoneyAmount	OptionValue	DW	DK	FE	MG
-//0	4	10000		0		0		1	1	1	1
+//Index  Section  SectionRate  MoneyAmount  OptionValue  DW  DK  FE  MG
+0  4  10000  0  0  1  1  1  1
 end
 
-// ItemGrade works when ExcellentRate = 0
-// LevelRate, SkillRate, LuckRate, OptionRate and ExcellentRate
-// Uses ItemOptionRate Indexes
 4
-//ItemIndex	ItemLevel	ItemGrade	LevelRate	SkillRate	LuckRate	OptionRate	ExcellentRate	Comment
-//00,000		0		0		*		*		*		*		*		//
+//ItemType  ItemIndex  ItemLevel  ItemGrade  LevelRate  SkillRate  LuckRate  OptionRate  ExcellentRate  Comment
+0  11  0  0  3  5  7  13  15  //Legendary Sword
+3  2  0  0  3  5  7  13  15  //Dragon Lance
+5  5  0  0  3  5  7  13  15  //Legendary Staff
+6  5  0  0  3  5  7  13  15  //Dragon Slayer Shield
+6  13  0  0  3  5  7  13  15  //Dragon Shield
+6  14  0  0  3  5  7  13  15  //Legendary Shield
+7  1  0  0  3  5  7  13  15  //Dragon Helm
+7  3  0  0  3  5  7  13  15  //Legendary Helm
+7  12  0  0  3  5  7  13  15  //Wind Helm
+7  14  0  0  3  5  7  13  15  //Guardian Helm
+7  16  0  0  3  5  7  13  15  //Black Dragon Helm
+8  1  0  0  3  5  7  13  15  //Dragon Armor
+8  3  0  0  3  5  7  13  15  //Legendary Armor
+8  12  0  0  3  5  7  13  15  //Wind Armor
+8  14  0  0  3  5  7  13  15  //Guardian Armor
+8  16  0  0  3  5  7  13  15  //Black Dragon Armor
+9  1  0  0  3  5  7  13  15  //Dragon Pants
+9  3  0  0  3  5  7  13  15  //Legendary Pants
+9  12  0  0  3  5  7  13  15  //Wind Pants
+9  14  0  0  3  5  7  13  15  //Guardian Pants
+9  16  0  0  3  5  7  13  15  //Black Dragon Pants
+10  1  0  0  3  5  7  13  15  //Dragon Gloves
+10  3  0  0  3  5  7  13  15  //Legendary Gloves
+10  12  0  0  3  5  7  13  15  //Wind Gloves
+10  14  0  0  3  5  7  13  15  //Guardian Gloves
+10  16  0  0  3  5  7  13  15  //Black Dragon Gloves
+11  1  0  0  3  5  7  13  15  //Dragon Boots
+11  3  0  0  3  5  7  13  15  //Legendary Boots
+11  12  0  0  3  5  7  13  15  //Wind Boots
+11  14  0  0  3  5  7  13  15  //Guardian Boots
+11  16  0  0  3  5  7  13  15  //Black Dragon Boots
 end
+

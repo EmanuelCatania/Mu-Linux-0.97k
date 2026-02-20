@@ -1,0 +1,13 @@
+﻿{
+  "name": "mu-editor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MuLinux server data editor API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

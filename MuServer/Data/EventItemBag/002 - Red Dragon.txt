@@ -3,13 +3,12 @@
 //======================================
 
 0
-//EventName		DropZen	ItemDropRate	ItemDropCount	ItemDropType	Fireworks	
-"EventName"		1000	100		1		1		0
+//EventName  DropZen  ItemDropRate  ItemDropCount  ItemDropType  Fireworks
+"EventName"  1000  100  1  1  0
 end
 
 1
-//Item	MinLvl	MaxLvl	Skill	Luck	Opt	Exce	Comment
-//00,000	0	0	0	0	0	0	//Comment
+//Item  MinLvl  MaxLvl  Skill  Luck  Opt  Exce  Comment
 end
 
 //======================================
@@ -17,19 +16,22 @@ end
 //======================================
 
 2
-//Index	DropRate
-0	10000
+//Index  DropRate
+0  10000
 end
 
 3
-//Index	Section	SectionRate	MoneyAmount	OptionValue	DW	DK	FE	MG
-//0	4	10000		0		0		1	1	1	1
+//Index  Section  SectionRate  MoneyAmount  OptionValue  DW  DK  FE  MG
+0  4  10000  0  0  1  1  1  1
 end
 
-// ItemGrade works when ExcellentRate = 0
-// LevelRate, SkillRate, LuckRate, OptionRate and ExcellentRate
-// Uses ItemOptionRate Indexes
 4
-//ItemIndex	ItemLevel	ItemGrade	LevelRate	SkillRate	LuckRate	OptionRate	ExcellentRate	Comment
-//00,000		0		0		*		*		*		*		*		//
+//ItemType  ItemIndex  ItemLevel  ItemGrade  LevelRate  SkillRate  LuckRate  OptionRate  ExcellentRate  Comment
+14  11  0  0  3  5  5  5  5  //Box of Luck
+14  11  0  0  4  5  5  5  5  //Star of Christmas
+14  11  0  0  6  5  5  5  5  //Heart of Love
+14  11  0  0  8  5  5  5  5  //Silver Medal
+14  11  0  0  9  5  5  5  5  //Gold Medal
+14  11  0  0  10  5  5  5  5  //Box of Heaven
 end
+

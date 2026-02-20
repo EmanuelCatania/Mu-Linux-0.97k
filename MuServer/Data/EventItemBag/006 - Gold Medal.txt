@@ -3,13 +3,12 @@
 //======================================
 
 0
-//EventName		DropZen	ItemDropRate	ItemDropCount	ItemDropType	Fireworks	
-"EventName"		1000	100		1		1		0
+//EventName  DropZen  ItemDropRate  ItemDropCount  ItemDropType  Fireworks
+"EventName"  1000  100  1  1  0
 end
 
 1
-//Item	MinLvl	MaxLvl	Skill	Luck	Opt	Exce	Comment
-//00,000	0	0	0	0	0	0	//Comment
+//Item  MinLvl  MaxLvl  Skill  Luck  Opt  Exce  Comment
 end
 
 //======================================
@@ -17,19 +16,19 @@ end
 //======================================
 
 2
-//Index	DropRate
-0	10000
+//Index  DropRate
+0  10000
 end
 
 3
-//Index	Section	SectionRate	MoneyAmount	OptionValue	DW	DK	FE	MG
-//0	4	10000		0		0		1	1	1	1
+//Index  Section  SectionRate  MoneyAmount  OptionValue  DW  DK  FE  MG
+0  4  5000  0  0  1  1  1  1
+0  99  5000  120000  0  1  1  1  1
 end
 
-// ItemGrade works when ExcellentRate = 0
-// LevelRate, SkillRate, LuckRate, OptionRate and ExcellentRate
-// Uses ItemOptionRate Indexes
 4
-//ItemIndex	ItemLevel	ItemGrade	LevelRate	SkillRate	LuckRate	OptionRate	ExcellentRate	Comment
-//00,000		0		0		*		*		*		*		*		//
+//ItemType  ItemIndex  ItemLevel  ItemGrade  LevelRate  SkillRate  LuckRate  OptionRate  ExcellentRate  Comment
+13  12  0  0  3  5  5  5  12  //Pendant of Lightning
+13  13  0  0  3  5  5  5  12  //Pendant of Fire
 end
+

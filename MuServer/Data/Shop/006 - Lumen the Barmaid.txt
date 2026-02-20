@@ -3,14 +3,27 @@
 //==============================================================
 //SLOTS X = 0~7 , Y = 0~14 , * = Orden original
 //Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
-14 0 0 -1 0 0 0 0 -1 -1 // Apple
-14 1 0 -1 0 0 0 0 -1 -1 // Small Healing Potion
-14 2 0 -1 0 0 0 0 -1 -1 // Medium Healing Potion
-14 4 0 -1 0 0 0 0 -1 -1 // Small Mana Potion
-14 5 0 -1 0 0 0 0 -1 -1 // Medium Mana Potion
-14 8 0 -1 0 0 0 0 -1 -1 // Antidote
-14 9 0 -1 0 0 0 0 -1 -1 // Ale
-14 10 0 -1 0 0 0 0 -1 -1 // Town Portal Scroll
-
+13 2 0 -1 0 0 0 0 6 0 // Horn of Uniria
+13 1 0 -1 0 0 0 0 6 1 // Imp
+13 0 0 -1 0 0 0 0 7 1 // Guardian Angel
+7 19 11 -1 1 1 24 63 0 0 // Divine Helm
+8 19 11 -1 1 1 24 63 0 2 // Divine Armor
+9 19 11 -1 1 1 24 63 0 6 // Divine Pants
+10 19 11 -1 1 1 24 63 0 4 // Divine Gloves
+11 19 11 -1 1 1 24 63 0 8 // Divine Boots
+7 16 11 -1 1 1 24 63 2 0 // Black Dragon Helm
+8 16 11 -1 1 1 24 63 2 2 // Black Dragon Armor
+9 16 11 -1 1 1 24 63 2 7 // Black Dragon Pants
+10 16 11 -1 1 1 24 63 2 5 // Black Dragon Gloves
+11 16 11 -1 1 1 24 63 2 9 // Black Dragon Boots
+7 18 11 -1 1 1 24 63 4 0 // Grand Soul Helm
+8 18 11 -1 1 1 24 63 4 2 // Grand Soul Armor
+9 18 11 -1 1 1 24 63 4 7 // Grand Soul Pants
+10 18 11 -1 1 1 24 63 4 5 // Grand Soul Gloves
+11 18 11 -1 1 1 24 63 4 9 // Grand Soul Boots
+13 3 0 -1 0 0 0 0 7 0 // Horn of Dinorant
+8 20 11 -1 1 1 24 63 6 2 // Thunder Hawk Armor
+9 20 11 -1 1 1 24 63 6 7 // Thunder Hawk Pants
+10 20 11 -1 1 1 24 63 6 5 // Thunder Hawk Gloves
+11 20 11 -1 1 1 24 63 6 9 // Thunder Hawk Boots
 end
-

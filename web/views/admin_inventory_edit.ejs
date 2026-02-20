@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+
+<section class="card">
+  <div class="row-between">
+    <h2>Inventario - <%= charName %></h2>
+    <div class="admin-links">
+      <a class="button-link" href="/admin/accounts/<%= accountId %>">Cuenta</a>
+      <a class="button-link" href="/admin/accounts">Cuentas</a>
+      <% if (editorEnabled) { %>
+        <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+      <% } %>
+      <a class="button-link" href="/admin/logout">Salir</a>
+    </div>
+  </div>
+
+  <% if (notice) { %>
+    <div class="alert success"><%= notice.text %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert"><%= error.text %></div>
+  <% } %>
+
+  <% if (!offline) { %>
+    <div class="alert">La cuenta esta en linea. Desconectala para guardar cambios.</div>
+  <% } %>
+
+  <div id="inventory-editor"
+       data-mode="inventory"
+       data-account="<%= accountId %>"
+       data-character="<%= charName %>"
+       data-hex="<%= inventoryHex %>">
+  </div>
+
+  <form method="post" action="/admin/accounts/<%= accountId %>/characters/<%= encodeURIComponent(charName) %>/inventory">
+    <input type="hidden" name="inventory_hex" id="inventory-hex" value="<%= inventoryHex %>" />
+    <div class="row-between">
+      <button type="submit">Guardar inventario</button>
+      <a class="button-link" href="/admin/accounts/<%= accountId %>/characters/<%= encodeURIComponent(charName) %>">Volver</a>
+    </div>
+  </form>
+</section>
+
+<script src="/js/inventory-editor.js"></script>
+
+<%- include('partials/footer') %>

@@ -6,6 +6,12 @@
       <div class="col-12 col-lg-6">
         <div class="bg-white border p-4 shadow-sm rounded-3">
           <h3 class="fw-bold mb-3 text-center">Mi cuenta</h3>
+          <% if (notice) { %>
+            <div class="alert alert-success"><%= notice.text %></div>
+          <% } %>
+          <% if (error) { %>
+            <div class="alert alert-danger"><%= error.text %></div>
+          <% } %>
           <table class="table table-bordered mb-0">
             <tbody>
               <tr>
@@ -28,6 +34,52 @@
           </table>
           <div class="d-grid mt-3">
             <a class="btn btn-outline-secondary" href="/logout">Salir</a>
+          </div>
+        </div>
+
+        <div class="bg-white border p-4 shadow-sm rounded-3 mt-4">
+          <h4 class="fw-bold mb-3 text-center">Personajes</h4>
+          <p class="text-muted small">Las acciones solo funcionan si la cuenta esta desconectada. Cooldown: 30 min por personaje y accion.</p>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Nivel</th>
+                  <th>Clase</th>
+                  <th>Mapa</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!characters || characters.length === 0) { %>
+                  <tr>
+                    <td colspan="5" class="text-center">Sin personajes</td>
+                  </tr>
+                <% } else { %>
+                  <% characters.forEach(function(char) { %>
+                    <tr>
+                      <td><%= char.Name %></td>
+                      <td><%= char.cLevel %></td>
+                      <td class="text-center">
+                        <img src="<%= char.ClassIcon %>" alt="<%= char.ClassName %>" title="<%= char.ClassName %>" class="class-icon" />
+                      </td>
+                      <td title="Mapa <%= char.MapNumber %>"><%= char.MapName %></td>
+                      <td>
+                        <div class="d-flex flex-wrap gap-2">
+                          <form method="post" action="/account/character/<%= encodeURIComponent(char.Name) %>/move-home">
+                            <button class="btn btn-sm btn-outline-primary" type="submit">Mover a zona segura</button>
+                          </form>
+                          <form method="post" action="/account/character/<%= encodeURIComponent(char.Name) %>/clear-inventory" onsubmit="return confirm('Seguro que queres borrar el inventario de este personaje?');">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">Borrar inventario</button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } %>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

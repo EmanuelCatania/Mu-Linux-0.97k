@@ -62,6 +62,8 @@ services:
       ADMIN_USER: ${ADMIN_USER}
       ADMIN_PASS: ${ADMIN_PASS}
       TRUST_PROXY: ${TRUST_PROXY}
+      TZ: ${TZ}
+      TIMEZONE: ${TIMEZONE}
     depends_on:
       mysql:
         condition: service_healthy

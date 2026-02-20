@@ -3,12 +3,15 @@
 //==============================================================
 //SLOTS X = 0~7 , Y = 0~14 , * = Orden original
 //Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
-6 0 0 -1 0 0 0 0 -1 -1 // Small Shield
-7 0 0 -1 0 0 0 0 -1 -1 // Bronze Helm
-8 0 0 -1 0 0 0 0 -1 -1 // Bronze Armor
-9 0 0 -1 0 0 0 0 -1 -1 // Bronze Pants
-10 0 0 -1 0 0 0 0 -1 -1 // Bronze Gloves
-11 0 0 -1 0 0 0 0 -1 -1 // Bronze Boots
-
+4 0 0 -1 1 1 0 0 0 0 // Short Bow
+4 1 0 -1 1 1 0 0 2 0 // Bow
+4 2 0 -1 1 1 0 0 4 0 // Elven Bow
+4 3 0 -1 1 1 0 0 6 0 // Battle Bow
+4 8 0 -1 1 1 0 0 0 3 // Crossbow
+4 9 0 -1 1 1 0 0 2 3 // Golden Crossbow
+4 11 0 -1 1 1 0 0 4 3 // Light Crossbow
+4 12 0 -1 1 1 0 0 6 3 // Serpent Crossbow
+6 16 0 -1 1 1 0 0 0 5 // Elemental Shield
+4 7 0 -1 0 0 0 0 2 5 // Bolts
+4 15 0 -1 0 0 0 0 3 5 // Arrows
 end
-

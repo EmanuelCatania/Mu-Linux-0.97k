@@ -1,7 +1,17 @@
 <%- include('partials/header') %>
 
 <section class="card">
-  <h2><%= item ? 'Editar noticia' : 'Nueva noticia' %></h2>
+  <div class="row-between">
+    <h2><%= item ? 'Editar noticia' : 'Nueva noticia' %></h2>
+    <div class="admin-links">
+      <a class="button-link" href="/admin/accounts">Cuentas</a>
+      <% if (editorEnabled) { %>
+        <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+      <% } %>
+      <a class="button-link" href="/admin/news">Noticias</a>
+      <a class="button-link" href="/admin/logout">Salir</a>
+    </div>
+  </div>
   <% if (error) { %>
     <div class="alert"><%= error %></div>
   <% } %>
@@ -11,6 +21,20 @@
 
     <label>Contenido</label>
     <textarea name="body" rows="10" required><%= item ? item.body : '' %></textarea>
+    <p class="muted" style="margin-top:6px">
+      Si activas HTML podes usar <code>&lt;img&gt;</code> y <code>&lt;iframe&gt;</code> (YouTube/Vimeo).
+      Para centrar imagenes usa <code>&lt;img class="img-center"&gt;</code> o envuelve en <code>&lt;p class="center"&gt;...&lt;/p&gt;</code>.
+    </p>
+
+    <label class="checkbox">
+      <input type="checkbox" name="allow_html" value="1" <%= item ? (item.body_is_html ? 'checked' : '') : '' %> />
+      Permitir HTML en el contenido
+    </label>
+
+    <label class="checkbox">
+      <input type="checkbox" name="hide_title" value="1" <%= item ? (item.hide_title ? 'checked' : '') : '' %> />
+      Ocultar titulo en la noticia
+    </label>
 
     <label class="checkbox">
       <input type="checkbox" name="published" value="1" <%= item ? (item.published ? 'checked' : '') : 'checked' %> />

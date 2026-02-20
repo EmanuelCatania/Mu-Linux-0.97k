@@ -14,8 +14,10 @@
                 <span class="text-muted fs-6"><%= new Date(item.created_at).toLocaleDateString('es-ES') %></span>
                 <span class="badge text-bg-primary rounded-pill px-3 py-2">Noticia</span>
               </div>
-              <h5 class="news-title text-dark fs-5 fw-bold mb-2"><%= item.title %></h5>
-              <p class="news-description text-muted mb-3"><%= item.body %></p>
+              <% if (!item.hide_title) { %>
+                <h5 class="news-title text-dark fs-5 fw-bold mb-2"><%= item.title %></h5>
+              <% } %>
+              <p class="news-description text-muted mb-3"><%= item.excerpt %></p>
               <a href="/news/<%= item.id %>" class="text-decoration-none text-primary fs-6">Leer mas</a>
             </div>
           <% }); %>

@@ -7,4 +7,5 @@
 "test2"		"test2bk"			2
 "test2"		"test2elf"			2
 "test2"		"test2mg"			2
+"admin"		"GmTest"			2
 end

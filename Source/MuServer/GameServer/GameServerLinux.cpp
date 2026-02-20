@@ -5,9 +5,136 @@
 #include "QueueTimer.h"
 #include "ServerDisplayer.h"
 #include "ServerInfo.h"
+#include "Path.h"
 #include "SocketManager.h"
 #include "SocketManagerUdp.h"
 #include "Util.h"
+
+void CheckEditorReload()
+{
+	static DWORD lastCheck = 0;
+	DWORD now = GetTickCount();
+	if ((now - lastCheck) < 10000)
+	{
+		return;
+	}
+	lastCheck = now;
+
+	const char* flagPath = gPath.GetFullPath("EditorReload.flag");
+	FILE* file;
+	if (fopen_s(&file, flagPath, "r") != 0)
+	{
+		return;
+	}
+
+	char data[512] = { 0 };
+	size_t bytes = fread(data, 1, sizeof(data) - 1, file);
+	fclose(file);
+	remove(flagPath);
+
+	if (bytes == 0)
+	{
+		return;
+	}
+
+	for (size_t i = 0; i < bytes; i++)
+	{
+		data[i] = (char)tolower((unsigned char)data[i]);
+	}
+
+	const char* delimiters = " ,;\t\r\n";
+	char* token = strtok(data, delimiters);
+	while (token != 0)
+	{
+		if (_stricmp(token, "all") == 0)
+		{
+			gServerInfo.ReloadAll();
+			LogAdd(LOG_BLUE, "[ServerInfo] ReloadAll by editor flag");
+		}
+		else if (_stricmp(token, "common") == 0)
+		{
+			gServerInfo.ReadCommonInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Common reloaded by editor flag");
+		}
+		else if (_stricmp(token, "shop") == 0)
+		{
+			gServerInfo.ReadShopInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Shop reloaded by editor flag");
+		}
+		else if (_stricmp(token, "monster") == 0)
+		{
+			gServerInfo.ReloadMonsterInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Monster reloaded by editor flag");
+		}
+		else if (_stricmp(token, "move") == 0 || _stricmp(token, "gate") == 0)
+		{
+			gServerInfo.ReadMoveInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Move reloaded by editor flag");
+		}
+		else if (_stricmp(token, "quest") == 0)
+		{
+			gServerInfo.ReadQuestInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Quest reloaded by editor flag");
+		}
+		else if (_stricmp(token, "util") == 0)
+		{
+			gServerInfo.ReadUtilInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Util reloaded by editor flag");
+		}
+		else if (_stricmp(token, "item") == 0)
+		{
+			gServerInfo.ReadItemInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Item reloaded by editor flag");
+		}
+		else if (_stricmp(token, "skill") == 0)
+		{
+			gServerInfo.ReadSkillInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Skill reloaded by editor flag");
+		}
+		else if (_stricmp(token, "event") == 0)
+		{
+			gServerInfo.ReadEventInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Event reloaded by editor flag");
+		}
+		else if (_stricmp(token, "eventitembag") == 0)
+		{
+			gServerInfo.ReadEventItemBagInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] EventItemBag reloaded by editor flag");
+		}
+		else if (_stricmp(token, "chaosmix") == 0)
+		{
+			gServerInfo.ReadChaosMixInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] ChaosMix reloaded by editor flag");
+		}
+		else if (_stricmp(token, "command") == 0)
+		{
+			gServerInfo.ReadCommandInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Command reloaded by editor flag");
+		}
+		else if (_stricmp(token, "custom") == 0)
+		{
+			gServerInfo.ReadCustomInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Custom reloaded by editor flag");
+		}
+		else if (_stricmp(token, "character") == 0)
+		{
+			gServerInfo.ReadCharacterInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Character reloaded by editor flag");
+		}
+		else if (_stricmp(token, "map") == 0)
+		{
+			gServerInfo.ReadMapInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Map reloaded by editor flag");
+		}
+		else if (_stricmp(token, "hack") == 0)
+		{
+			gServerInfo.ReadHackInfo();
+			LogAdd(LOG_BLUE, "[ServerInfo] Hack reloaded by editor flag");
+		}
+
+		token = strtok(0, delimiters);
+	}
+}
 
 int main()
 {
@@ -70,6 +197,7 @@ int main()
 		{
 			JoinServerReconnect(nullptr);
 			DataServerReconnect(nullptr);
+			CheckEditorReload();
 			nextSlow = now + std::chrono::seconds(10);
 		}
 

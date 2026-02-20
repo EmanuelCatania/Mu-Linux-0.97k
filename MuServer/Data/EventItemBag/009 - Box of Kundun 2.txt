@@ -3,13 +3,12 @@
 //======================================
 
 0
-//EventName		DropZen	ItemDropRate	ItemDropCount	ItemDropType	Fireworks	
-"EventName"		1000	100		1		1		0
+//EventName  DropZen  ItemDropRate  ItemDropCount  ItemDropType  Fireworks
+"EventName"  1000  100  1  1  0
 end
 
 1
-//Item	MinLvl	MaxLvl	Skill	Luck	Opt	Exce	Comment
-//00,000	0	0	0	0	0	0	//Comment
+//Item  MinLvl  MaxLvl  Skill  Luck  Opt  Exce  Comment
 end
 
 //======================================
@@ -17,19 +16,78 @@ end
 //======================================
 
 2
-//Index	DropRate
-0	10000
+//Index  DropRate
+0  10000
 end
 
 3
-//Index	Section	SectionRate	MoneyAmount	OptionValue	DW	DK	FE	MG
-//0	4	10000		0		0		1	1	1	1
+//Index  Section  SectionRate  MoneyAmount  OptionValue  DW  DK  FE  MG
+0  4  10000  0  0  1  1  1  1
 end
 
-// ItemGrade works when ExcellentRate = 0
-// LevelRate, SkillRate, LuckRate, OptionRate and ExcellentRate
-// Uses ItemOptionRate Indexes
 4
-//ItemIndex	ItemLevel	ItemGrade	LevelRate	SkillRate	LuckRate	OptionRate	ExcellentRate	Comment
-//00,000		0		0		*		*		*		*		*		//
+//ItemType  ItemIndex  ItemLevel  ItemGrade  LevelRate  SkillRate  LuckRate  OptionRate  ExcellentRate  Comment
+0  3  0  0  3  5  7  13  15  //Katana
+0  5  0  0  3  5  7  13  15  //Blade
+0  10  0  0  3  5  7  13  15  //Light Saber
+0  13  0  0  3  5  7  13  15  //Double Blade
+0  14  0  0  3  5  7  13  15  //Lightning Sword
+1  1  0  0  3  5  7  13  15  //Hand Axe
+1  2  0  0  3  5  7  13  15  //Double Axe
+1  3  0  0  3  5  7  13  15  //Tomahawk
+1  4  0  0  3  5  7  13  15  //Elven Axe
+1  8  0  0  3  5  7  13  15  //Crescent Axe
+2  0  0  0  3  5  7  13  15  //Mace
+2  1  0  0  3  5  7  13  15  //Morning Star
+2  2  0  0  3  5  7  13  15  //Flail
+3  0  0  0  3  5  7  13  15  //Light Spear
+3  1  0  0  3  5  7  13  15  //Spear
+3  3  0  0  3  5  7  13  15  //Giant Trident
+3  4  0  0  3  5  7  13  15  //Serpent Spear
+3  5  0  0  3  5  7  13  15  //Double Poleaxe
+3  6  0  0  3  5  7  13  15  //Halberd
+3  7  0  0  3  5  7  13  15  //Berdysh
+3  8  0  0  3  5  7  13  15  //Great Scythe
+3  9  0  0  3  5  7  13  15  //Bill of Balrog
+4  0  0  0  3  5  7  13  15  //Short Bow
+4  1  0  0  3  5  7  13  15  //Bow
+4  2  0  0  3  5  7  13  15  //Elven Bow
+4  3  0  0  3  5  7  13  15  //Battle Bow
+4  4  0  0  3  5  7  13  15  //Tiger Bow
+4  5  0  0  3  5  7  13  15  //Silver Bow
+4  8  0  0  3  5  7  13  15  //Crossbow
+4  9  0  0  3  5  7  13  15  //Golden Crossbow
+4  10  0  0  3  5  7  13  15  //Arquebus
+4  11  0  0  3  5  7  13  15  //Light Crossbow
+4  12  0  0  3  5  7  13  15  //Serpent Crossbow
+6  0  0  0  3  5  7  13  15  //Small Shield
+6  1  0  0  3  5  7  13  15  //Horn Shield
+6  3  0  0  3  5  7  13  15  //Elven Shield
+6  4  0  0  3  5  7  13  15  //Buckler
+7  0  0  0  3  5  7  13  15  //Bronze Helm
+7  5  0  0  3  5  7  13  15  //Leather Helm
+7  8  0  0  3  5  7  13  15  //Brass Helm
+7  11  0  0  3  5  7  13  15  //Silk Helm
+7  13  0  0  3  5  7  13  15  //Spirit Helm
+8  0  0  0  3  5  7  13  15  //Bronze Armor
+8  5  0  0  3  5  7  13  15  //Leather Armor
+8  8  0  0  3  5  7  13  15  //Brass Armor
+8  11  0  0  3  5  7  13  15  //Silk Armor
+8  13  0  0  3  5  7  13  15  //Spirit Armor
+9  0  0  0  3  5  7  13  15  //Bronze Pants
+9  5  0  0  3  5  7  13  15  //Leather Pants
+9  8  0  0  3  5  7  13  15  //Brass Pants
+9  11  0  0  3  5  7  13  15  //Silk Pants
+9  13  0  0  3  5  7  13  15  //Spirit Pants
+10  0  0  0  3  5  7  13  15  //Bronze Gloves
+10  5  0  0  3  5  7  13  15  //Leather Gloves
+10  8  0  0  3  5  7  13  15  //Brass Gloves
+10  11  0  0  3  5  7  13  15  //Silk Gloves
+10  13  0  0  3  5  7  13  15  //Spirit Gloves
+11  0  0  0  3  5  7  13  15  //Bronze Boots
+11  5  0  0  3  5  7  13  15  //Leather Boots
+11  8  0  0  3  5  7  13  15  //Brass Boots
+11  11  0  0  3  5  7  13  15  //Silk Boots
+11  13  0  0  3  5  7  13  15  //Spirit Boots
 end
+

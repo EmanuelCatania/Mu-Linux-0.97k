@@ -3,7 +3,11 @@
 <section class="card">
   <div class="row-between">
     <h2>Noticias</h2>
-    <div>
+    <div class="admin-links">
+      <a class="button-link" href="/admin/accounts">Cuentas</a>
+      <% if (editorEnabled) { %>
+        <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+      <% } %>
       <a class="button-link" href="/admin/news/new">Nueva noticia</a>
       <a class="button-link" href="/admin/logout">Salir</a>
     </div>

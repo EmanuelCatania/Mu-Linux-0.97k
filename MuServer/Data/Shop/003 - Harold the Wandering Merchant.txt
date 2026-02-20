@@ -3,16 +3,14 @@
 //==============================================================
 //SLOTS X = 0~7 , Y = 0~14 , * = Orden original
 //Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
-7 2 0 -1 0 0 0 0 -1 -1 // Pad Helm
-8 2 0 -1 0 0 0 0 -1 -1 // Pad Armor
-9 2 0 -1 0 0 0 0 -1 -1 // Pad Pants
-10 2 0 -1 0 0 0 0 -1 -1 // Pad Gloves
-11 2 0 -1 0 0 0 0 -1 -1 // Pad Boots
-7 5 0 -1 0 0 0 0 -1 -1 // Leather Helm
-8 5 0 -1 0 0 0 0 -1 -1 // Leather Armor
-9 5 0 -1 0 0 0 0 -1 -1 // Leather Pants
-10 5 0 -1 0 0 0 0 -1 -1 // Leather Gloves
-11 5 0 -1 0 0 0 0 -1 -1 // Leather Boots
-
+3 6 7 -1 1 1 0 0 0 0 // Halberd
+3 7 7 -1 1 1 0 0 2 0 // Berdysh
+7 9 0 -1 1 1 0 0 4 0 // Plate Helm
+8 9 0 -1 1 1 0 0 4 2 // Plate Armor
+9 9 0 -1 1 1 0 0 4 4 // Plate Pants
+10 9 0 -1 1 1 0 0 4 6 // Plate Gloves
+11 9 0 -1 1 1 0 0 4 8 // Plate Boots
+6 9 0 -1 1 1 0 0 6 0 // Plate Shield
+15 5 0 -1 0 0 0 0 6 2 // Scroll of Teleport
+15 14 0 -1 0 0 0 0 7 2 // Scroll of Teleport Ally
 end
-

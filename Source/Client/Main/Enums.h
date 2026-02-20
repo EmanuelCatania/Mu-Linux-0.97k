@@ -23,6 +23,16 @@ enum eMapNumber
 	MAP_BLOOD_CASTLE6 = 16
 };
 
+/* QUEST STATE */
+
+enum eQuestState
+{
+	QUEST_NORMAL = 0,
+	QUEST_ACCEPT = 1,
+	QUEST_FINISH = 2,
+	QUEST_CANCEL = 3,
+};
+
 /* BUFFS */
 
 enum eEffectState

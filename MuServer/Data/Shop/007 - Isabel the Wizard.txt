@@ -3,11 +3,20 @@
 //==============================================================
 //SLOTS X = 0~7 , Y = 0~14 , * = Orden original
 //Index	Level	Dur	Skill	Luck	Option	ExcOp	SlotX	SlotY	Comment
-5 0 0 -1 0 0 0 0 -1 -1 // Skull Staff
-5 1 0 -1 0 0 0 0 -1 -1 // Angelic Staff
-15 0 0 -1 0 0 0 0 -1 -1 // Scroll of Poison
-15 1 0 -1 0 0 0 0 -1 -1 // Scroll of Meteorite
-15 2 0 -1 0 0 0 0 -1 -1 // Scroll of Lightning
-
+15 8 0 -1 0 0 0 0 2 0 // Scroll of Evil Spirit
+15 9 0 -1 0 0 0 0 3 0 // Scroll of Hellfire
+15 10 0 -1 0 0 0 0 4 0 // Scroll of Power Wave
+15 11 0 -1 0 0 0 0 5 0 // Scroll of Aqua Beam
+15 12 0 -1 0 0 0 0 6 0 // Scroll of Cometfall
+15 13 0 -1 0 0 0 0 7 0 // Scroll of Inferno
+15 14 0 -1 0 0 0 0 6 2 // Scroll of Teleport Ally
+15 15 0 -1 0 0 0 0 7 2 // Scroll of Soul Barrier
+7 3 0 -1 1 1 4 0 0 0 // Legendary Helm
+8 3 0 -1 1 1 4 0 0 2 // Legendary Armor
+9 3 0 -1 1 1 4 0 0 6 // Legendary Pants
+10 3 0 -1 1 1 4 0 0 4 // Legendary Gloves
+11 3 0 -1 1 1 4 0 0 8 // Legendary Boots
+5 5 0 -1 1 1 4 0 2 6 // Legendary Staff
+6 14 0 -1 1 1 4 0 4 2 // Legendary Shield
+5 7 0 -1 1 1 4 0 2 2 // Chaos Lightning Staff
 end
-
