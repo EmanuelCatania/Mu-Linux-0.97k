@@ -1,5 +1,9 @@
 # Mu Linux 97K
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k?label=server&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k)
+[![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-web?label=web&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-web)
+[![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-mu-editor?label=editor&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-mu-editor)
+
 Proyecto para portar y operar MuEmu 0.97k en Linux de forma nativa, con foco en Docker y despliegues on-demand. Incluye fuentes del servidor, cliente y encoder necesarios para operar, y automatiza el build dentro del contenedor.
 
 ## Base y referencia
@@ -15,8 +19,38 @@ https://github.com/nicomuratona/MuEmu-0.97k-kayito
 - Base de datos MySQL (sin dependencias MSSQL)
 - Docker listo para levantar en un VPS y conectar con el cliente
 
-## Cambios recientes (desde la ultima publicacion)
-- Editor web completo para data del servidor con recarga automatica (via EditorReload.flag).
+## Imagenes oficiales (Docker Hub)
+- `emapupi/mu-linux-97k` (server)
+- `emapupi/mu-linux-97k-web` (web)
+- `emapupi/mu-linux-97k-mu-editor` (editor API)
+
+Tags recomendados:
+- Server/Web: `latest`, `0.1.1`
+- Editor API: `latest`, `0.1.0`
+
+## Update 1 (2026-02-20)
+### Configuracion basica
+1. Copiar `.env.example` a `.env` y ajustar:
+   - `PUBLIC_IP`, `WEB_PORT`, `SESSION_SECRET`
+   - `MYSQL_*`, `DB_*`
+   - `ADMIN_USER`, `ADMIN_PASS`
+2. Levantar el stack base:
+   ```bash
+   docker compose up --build -d
+   ```
+
+### Editor del servidor (opcional)
+1. Habilitar en `.env`:
+   - `EDITOR_ENABLED=1`
+   - `EDITOR_API_URL=http://mu-editor:8090`
+2. Levantar con compose extendido:
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.editor.yml up -d --build
+   ```
+3. Incluye backups por archivo y snapshots completos (ver seccion "Editor del servidor").
+
+### Funcionalidades incluidas
+- Editor web completo para data del servidor con recarga automatica (EditorReload.flag).
 - Servicio opcional `mu-editor` (API interna) con backups por archivo y snapshots completos.
 - Editor de cuentas/personajes con inventario y baul grafico.
 - Editor de shops grafico con import/export de .txt.
@@ -37,7 +71,7 @@ https://github.com/nicomuratona/MuEmu-0.97k-kayito
 - Fix del cliente: boton de quest proceed (ver Sources del cliente).
 
 ## Uso rapido (Docker)
-1. Edita `.env` y ajusta credenciales, IP publica y secrets.
+1. Copia `.env.example` a `.env` y ajusta credenciales, IP publica y secrets.
 2. En el servidor:
    ```bash
    docker-compose up --build -d
@@ -48,7 +82,8 @@ https://github.com/nicomuratona/MuEmu-0.97k-kayito
    - `55901/tcp` (GameServer)
 
 ## Configuracion por variables de entorno
-El stack usa un archivo `.env` incluido como ejemplo. Cambia los valores antes de produccion.
+El stack usa un archivo `.env` local (ignorado por git) basado en `.env.example`.
+Cambia los valores antes de produccion.
 Variables principales:
 - `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`
 - `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`
