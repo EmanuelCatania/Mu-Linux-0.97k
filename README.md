@@ -148,15 +148,15 @@ Pasos:
 1. `docker compose down -v`
 2. `docker compose up -d --build`
 
-## Ediciï¿½n de data (shops, mensajes, etc.)
+## Edición de data (shops, mensajes, etc.)
 - Shops: editar `MuServer/Data/Shop/*.txt`.  
-  Formato por lï¿½nea: `Index Level Dur Skill Luck Option ExcOp SlotX SlotY`  
+  Formato por línea: `Index Level Dur Skill Luck Option ExcOp SlotX SlotY`  
   Usa `SlotX`/`SlotY` = `-1 -1` para autoubicar en la grilla.
 - Mensajes del server: `MuServer/Data/Message_Eng.txt`, `Message_Spn.txt`, `Message_Por.txt` y avisos globales en `MuServer/Data/Util/Notice.txt`.
 - **Encoding**: guardar estos `.txt` en **ANSI / Windows-1252** y sin BOM (UTF-8 rompe acentos en el cliente).
 
-## Prueba rï¿½pida (solo testing)
-Creaciï¿½n manual de cuenta para verificar login (temporal hasta definir flujo definitivo):
+## Prueba rápida (solo testing)
+Creación manual de cuenta para verificar login (temporal hasta definir flujo definitivo):
 ```sql
 INSERT INTO MEMB_INFO
   (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, bloc_code)
@@ -166,10 +166,10 @@ VALUES
 INSERT IGNORE INTO MEMB_STAT (memb___id, ConnectStat)
 VALUES ('test', 0);
 ```
-Nota: en esta base `MD5Encryption=2`, la password se guarda en MD5 binario. No usar esto en producciï¿½n.
+Nota: en esta base `MD5Encryption=2`, la password se guarda en MD5 binario. No usar esto en producción.
 
 ## Logs y control
-El control bï¿½sico es desde Docker/Portainer (start/stop/restart). Los logs se pueden ver en la consola del contenedor (Portainer ? Logs o `docker logs -f`).
+El control básico es desde Docker/Portainer (start/stop/restart). Los logs se pueden ver en la consola del contenedor (Portainer ? Logs o `docker logs -f`).
 
 ## Estructura del repo
 - `Source/`: fuentes del servidor (nuestras modificaciones)
@@ -514,6 +514,9 @@ hacia otro archivo separado en
 - Se eliminÃ³ el log de chaos mix al subir a +11
 - Se aÃ±adiÃ³ la opciÃ³n Infinity Arrows al Common.dat
 - Se corrigiÃ³ un error en el Kayito Editor que fallaba al cambiar la fecha de Ban y de VIP
+
+
+
 
 
 
