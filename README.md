@@ -3,6 +3,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k?label=server&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-web?label=web&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-web)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-mu-editor?label=editor&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-mu-editor)
+[![Docker Pulls](https://img.shields.io/docker/pulls/emapupi/mu-linux-97k-mysql?label=mysql&logo=docker)](https://hub.docker.com/r/emapupi/mu-linux-97k-mysql)
 
 Proyecto para portar y operar MuEmu 0.97k en Linux de forma nativa, con foco en Docker y despliegues on-demand. Incluye fuentes del servidor, cliente y encoder necesarios para operar, y automatiza el build dentro del contenedor.
 
@@ -23,10 +24,12 @@ https://github.com/nicomuratona/MuEmu-0.97k-kayito
 - `emapupi/mu-linux-97k` (server)
 - `emapupi/mu-linux-97k-web` (web)
 - `emapupi/mu-linux-97k-mu-editor` (editor API)
+- `emapupi/mu-linux-97k-mysql` (mysql + init)
 
 Tags recomendados:
 - Server/Web: `latest`, `0.1.1`
 - Editor API: `latest`, `0.1.0`
+- MySQL: `latest`, `0.1.1`
 
 ## Update 1 (2026-02-20)
 ### Configuracion basica
