@@ -1,0 +1,65 @@
+<%- include('partials/header') %>
+
+<section class="card">
+  <div class="row-between">
+    <h2>Descargas</h2>
+    <div class="admin-links">
+      <% if (editorEnabled) { %>
+        <a class="button-link" href="/admin/server-editor">Editor servidor</a>
+      <% } %>
+      <a class="button-link" href="/admin/accounts">Cuentas</a>
+      <a class="button-link" href="/admin/news">Noticias</a>
+      <a class="button-link" href="/admin/logout">Salir</a>
+    </div>
+  </div>
+
+  <% if (notice) { %>
+    <div class="alert success"><%= notice.text %></div>
+  <% } %>
+  <% if (error) { %>
+    <div class="alert"><%= error.text %></div>
+  <% } %>
+
+  <div class="card-sub">
+    <h3>Links publicos</h3>
+    <p class="muted">Usa URLs externas (MediaFire, Drive, R2) o rutas locales como <code>/downloads/cliente.zip</code>.</p>
+    <form method="post" action="/admin/downloads">
+      <label for="client_url">Cliente completo (URL)</label>
+      <input id="client_url" name="client_url" type="text" value="<%= config.clientUrl %>" placeholder="https://... o /downloads/cliente.zip" />
+
+      <label for="client_subtitle">Descripcion cliente</label>
+      <input id="client_subtitle" name="client_subtitle" type="text" value="<%= config.clientSubtitle %>" placeholder="Ej: Incluye todo para jugar." />
+
+      <label for="patch_url">Parches / updates manuales (URL)</label>
+      <input id="patch_url" name="patch_url" type="text" value="<%= config.patchUrl %>" placeholder="https://... o /downloads/updates.zip" />
+
+      <label for="patch_subtitle">Descripcion parche</label>
+      <input id="patch_subtitle" name="patch_subtitle" type="text" value="<%= config.patchSubtitle %>" placeholder="Ej: Glow rosa Grand Soul." />
+
+      <div class="actions">
+        <button type="submit">Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-sub">
+    <h3>Archivos locales detectados</h3>
+    <p class="muted">Coloca archivos en <code>web/public/downloads</code> para servirlos desde el contenedor.</p>
+
+    <h4>Downloads</h4>
+    <ul class="list">
+      <% if (!files.downloads.length) { %>
+        <li><span class="muted">Sin archivos en downloads.</span></li>
+      <% } else { %>
+        <% files.downloads.forEach((file) => { %>
+          <li>
+            <span><code><%= file.name %></code></span>
+            <span class="meta"><%= file.sizeLabel %></span>
+          </li>
+        <% }) %>
+      <% } %>
+    </ul>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

@@ -154,7 +154,7 @@
 06,012		255	127	000	// Bronze Shield
 06,013		255	127	000	// Dragon Shield
 06,014		255	127	000	// Legendary Shield
-06,015		255	127	000	// Grand Soul Shield
+06,015		255	076	076	// Grand Soul Shield
 06,016		153	204	102	// Elemental Shield
 
 //// ------------------------------------------------------------------ ////
@@ -269,11 +269,11 @@
 10,017		127	127	204	// Dark Phoenix Gloves
 11,017		127	127	204	// Dark Phoenix Boots
 
-07,018		255	255	255	// Grand Soul Helm
-08,018		255	255	255	// Grand Soul Armor
-09,018		255	255	255	// Grand Soul Pant
-10,018		255	255	255	// Grand Soul Gloves
-11,018		255	255	255	// Grand Soul Boots
+07,018		255	076	076	// Grand Soul Helm
+08,018		255	076	076	// Grand Soul Armor
+09,018		255	076	076	// Grand Soul Pant
+10,018		255	076	076	// Grand Soul Gloves
+11,018		255	076	076	// Grand Soul Boots
 
 07,019		127	127	204	// Divine Helm
 08,019		127	127	204	// Divine Armor

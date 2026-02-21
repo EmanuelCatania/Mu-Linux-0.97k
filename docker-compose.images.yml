@@ -1,0 +1,99 @@
+services:
+  mysql:
+    image: emapupi/mu-linux-97k-mysql:latest
+    networks:
+      - default
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      SEED_TEST_DATA: ${SEED_TEST_DATA}
+    volumes:
+      - mu_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mu-server:
+    image: emapupi/mu-linux-97k:latest
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      PUBLIC_IP: ${PUBLIC_IP}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "44405:44405/tcp"
+      - "55601:55601/udp"
+      - "55901:55901/tcp"
+    volumes:
+      - mu_data:/opt/mu/Data:rw
+      - mu_gameserver_data:/opt/mu/GameServer/Data:rw
+    networks:
+      - default
+
+  mu-web:
+    image: emapupi/mu-linux-97k-web:latest
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      WEB_PORT: ${WEB_PORT}
+      SESSION_SECRET: ${SESSION_SECRET}
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASS: ${ADMIN_PASS}
+      TRUST_PROXY: ${TRUST_PROXY}
+      TZ: ${TZ}
+      TIMEZONE: ${TIMEZONE}
+      EDITOR_ENABLED: ${EDITOR_ENABLED}
+      EDITOR_API_URL: ${EDITOR_API_URL}
+      EDITOR_MAX_SNAPSHOTS: ${EDITOR_MAX_SNAPSHOTS}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8085:8080"
+    networks:
+      - default
+      - proxy_net
+
+  mu-editor:
+    image: emapupi/mu-linux-97k-mu-editor:latest
+    environment:
+      EDITOR_ENABLED: ${EDITOR_ENABLED}
+      EDITOR_PORT: ${EDITOR_PORT}
+      EDITOR_MU_ROOT: /opt/mu
+      EDITOR_BACKUP_DIR: /backups
+      EDITOR_MAX_BACKUPS: ${EDITOR_MAX_BACKUPS}
+      EDITOR_MAX_SNAPSHOTS: ${EDITOR_MAX_SNAPSHOTS}
+    volumes:
+      - mu_data:/opt/mu/Data:rw
+      - mu_gameserver_data:/opt/mu/GameServer/Data:rw
+      - mu_editor_backups:/backups
+    networks:
+      - default
+
+volumes:
+  mu_mysql:
+  mu_data:
+  mu_gameserver_data:
+  mu_editor_backups:
+
+networks:
+  proxy_net:
+    external: true

@@ -29,7 +29,8 @@ const {
   EDITOR_ENABLED = '0',
   EDITOR_API_URL = 'http://mu-editor:8090',
   EDITOR_MAX_BACKUPS = '5',
-  EDITOR_MAX_SNAPSHOTS = '5'
+  EDITOR_MAX_SNAPSHOTS = '5',
+  DOWNLOADS_CONFIG_PATH = ''
 } = process.env;
 
 const trustProxyEnabled = String(TRUST_PROXY).toLowerCase() === '1' || String(TRUST_PROXY).toLowerCase() === 'true';
@@ -41,6 +42,9 @@ const resolvedAssetVersion = ASSET_VERSION || String(Date.now());
 const editorEnabled = String(EDITOR_ENABLED).toLowerCase() === '1' || String(EDITOR_ENABLED).toLowerCase() === 'true';
 const editorMaxBackups = Number.parseInt(EDITOR_MAX_BACKUPS, 10) || 5;
 const editorMaxSnapshots = Number.parseInt(EDITOR_MAX_SNAPSHOTS, 10) || 5;
+const downloadsConfigPath = DOWNLOADS_CONFIG_PATH
+  ? path.resolve(DOWNLOADS_CONFIG_PATH)
+  : path.join(__dirname, 'config', 'downloads.json');
 
 const pool = mysql.createPool({
   host: DB_HOST,
@@ -240,6 +244,81 @@ function loadEventConfig() {
   } catch {
     return { events: [] };
   }
+}
+
+const DEFAULT_DOWNLOADS_CONFIG = {
+  clientUrl: '',
+  clientSubtitle: '',
+  patchUrl: '',
+  patchSubtitle: ''
+};
+
+function sanitizeDownloadUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (raw.startsWith('/')) return raw;
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  return '';
+}
+
+function sanitizeDownloadText(value, maxLen = 160) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  return text.length > maxLen ? text.slice(0, maxLen) : text;
+}
+
+function loadDownloadsConfig() {
+  try {
+    const raw = fs.readFileSync(downloadsConfigPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return {
+      clientUrl: sanitizeDownloadUrl(parsed?.clientUrl),
+      clientSubtitle: sanitizeDownloadText(parsed?.clientSubtitle),
+      patchUrl: sanitizeDownloadUrl(parsed?.patchUrl),
+      patchSubtitle: sanitizeDownloadText(parsed?.patchSubtitle)
+    };
+  } catch {
+    return { ...DEFAULT_DOWNLOADS_CONFIG };
+  }
+}
+
+function saveDownloadsConfig(config) {
+  const payload = {
+    clientUrl: sanitizeDownloadUrl(config.clientUrl),
+    clientSubtitle: sanitizeDownloadText(config.clientSubtitle),
+    patchUrl: sanitizeDownloadUrl(config.patchUrl),
+    patchSubtitle: sanitizeDownloadText(config.patchSubtitle)
+  };
+  fs.mkdirSync(path.dirname(downloadsConfigPath), { recursive: true });
+  fs.writeFileSync(downloadsConfigPath, JSON.stringify(payload, null, 2));
+  return payload;
+}
+
+function listDownloadFiles() {
+  const downloadsDir = path.join(__dirname, 'public', 'downloads');
+
+  const readDir = (dir) => {
+    try {
+      return fs.readdirSync(dir, { withFileTypes: true })
+        .filter((entry) => entry.isFile())
+        .map((entry) => {
+          const filePath = path.join(dir, entry.name);
+          const stat = fs.statSync(filePath);
+          const sizeMb = stat.size / (1024 * 1024);
+          return {
+            name: entry.name,
+            size: stat.size,
+            sizeLabel: `${sizeMb >= 1 ? sizeMb.toFixed(2) : (stat.size / 1024).toFixed(1)} ${sizeMb >= 1 ? 'MB' : 'KB'}`
+          };
+        });
+    } catch {
+      return [];
+    }
+  };
+
+  return {
+    downloads: readDir(downloadsDir)
+  };
 }
 
 function parseTimeString(value) {
@@ -1012,7 +1091,8 @@ app.get('/rankings', async (req, res) => {
 });
 
 app.get('/download', (req, res) => {
-  res.render('download', { page: 'download', pageTitle: 'MuLinux - Descargas' });
+  const downloads = loadDownloadsConfig();
+  res.render('download', { page: 'download', pageTitle: 'MuLinux - Descargas', downloads });
 });
 
 app.get('/news', async (req, res) => {
@@ -1075,6 +1155,32 @@ app.post('/admin/password', requireAdmin, async (req, res) => {
   await pool.query('UPDATE web_admin SET password_hash = ?, must_change_password = 0 WHERE id = ?', [hash, req.session.admin.id]);
   req.session.admin.mustChange = false;
   return res.redirect('/admin/news');
+});
+
+app.get('/admin/downloads', requireAdmin, requireAdminPasswordChange, (req, res) => {
+  const notice = req.query.ok ? { type: 'success', text: decodeURIComponent(String(req.query.ok)) } : null;
+  const error = req.query.err ? { type: 'danger', text: decodeURIComponent(String(req.query.err)) } : null;
+  const config = loadDownloadsConfig();
+  const files = listDownloadFiles();
+  res.render('admin_downloads', { config, files, notice, error });
+});
+
+app.post('/admin/downloads', requireAdmin, requireAdminPasswordChange, (req, res) => {
+  const rawClient = String(req.body.client_url || '').trim();
+  const rawPatch = String(req.body.patch_url || '').trim();
+  const clientSubtitle = sanitizeDownloadText(req.body.client_subtitle);
+  const patchSubtitle = sanitizeDownloadText(req.body.patch_subtitle);
+  const clientUrl = sanitizeDownloadUrl(rawClient);
+  const patchUrl = sanitizeDownloadUrl(rawPatch);
+
+  if (rawClient && !clientUrl) {
+    return res.redirect(`/admin/downloads?err=${encodeURIComponent('URL de cliente invalida. Usa http(s):// o una ruta /downloads/...')}`);
+  }
+  if (rawPatch && !patchUrl) {
+    return res.redirect(`/admin/downloads?err=${encodeURIComponent('URL de parches invalida. Usa http(s):// o una ruta /downloads/...')}`);
+  }
+  saveDownloadsConfig({ clientUrl, clientSubtitle, patchUrl, patchSubtitle });
+  return res.redirect(`/admin/downloads?ok=${encodeURIComponent('Links de descargas actualizados.')}`);
 });
 
 app.get('/admin/accounts', requireAdmin, requireAdminPasswordChange, async (req, res) => {

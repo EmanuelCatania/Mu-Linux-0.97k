@@ -7,26 +7,39 @@
         <h2 class="fw-bold mb-4 text-center text-dark">Descargas</h2>
         <p class="text-muted text-center mb-4">Aqui puedes publicar el cliente completo, parches y utilidades.</p>
 
+        <% const clientUrl = downloads?.clientUrl || ''; %>
+        <% const patchUrl = downloads?.patchUrl || ''; %>
+        <% const clientSubtitle = downloads?.clientSubtitle || 'Incluye todos los archivos necesarios para jugar.'; %>
+        <% const patchSubtitle = downloads?.patchSubtitle || 'Actualizaciones y fixes manuales.'; %>
+        <% const hasDownloads = clientUrl || patchUrl; %>
+
         <div class="row g-4">
-          <div class="col-12 col-lg-6">
-            <div class="border rounded-3 p-4 h-100">
-              <h5 class="fw-bold mb-2">Cliente completo</h5>
-              <p class="text-muted mb-3">Incluye todos los archivos necesarios para jugar.</p>
-              <a href="#" class="btn btn-primary">Descargar cliente</a>
+          <% if (clientUrl) { %>
+            <div class="col-12 col-lg-6">
+              <div class="border rounded-3 p-4 h-100">
+                <h5 class="fw-bold mb-2">Cliente completo</h5>
+                <p class="text-muted mb-3"><%= clientSubtitle %></p>
+                <a href="<%= clientUrl %>" class="btn btn-primary">Descargar cliente</a>
+              </div>
             </div>
-          </div>
-          <div class="col-12 col-lg-6">
-            <div class="border rounded-3 p-4 h-100">
-              <h5 class="fw-bold mb-2">Parches</h5>
-              <p class="text-muted mb-3">Actualizaciones y fixes.</p>
-              <a href="#" class="btn btn-outline-primary">Descargar parche</a>
+          <% } %>
+
+          <% if (patchUrl) { %>
+            <div class="col-12 col-lg-6">
+              <div class="border rounded-3 p-4 h-100">
+                <h5 class="fw-bold mb-2">Parches</h5>
+                <p class="text-muted mb-3"><%= patchSubtitle %></p>
+                <a href="<%= patchUrl %>" class="btn btn-outline-primary">Descargar parche</a>
+              </div>
             </div>
-          </div>
+          <% } %>
         </div>
 
-        <div class="alert alert-info mt-4">
-          Edita los links en <code>web/views/download.ejs</code> cuando tengas los archivos listos.
-        </div>
+        <% if (!hasDownloads) { %>
+          <div class="alert alert-info mt-4">
+            Descargas no disponibles aun. Vuelve mas tarde.
+          </div>
+        <% } %>
       </div>
     </div>
   </div>

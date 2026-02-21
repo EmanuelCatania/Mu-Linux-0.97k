@@ -70,6 +70,8 @@ Tags recomendados:
 - Bloqueo de guardado cuando hay campos invalidos en editores sensibles.
 - Fix del cliente: boton de quest proceed (ver Sources del cliente).
 
+
+
 ## Uso rapido (Docker)
 1. Copia `.env.example` a `.env` y ajusta credenciales, IP publica y secrets.
 2. En el servidor:
@@ -80,7 +82,16 @@ Tags recomendados:
    - `44405/tcp` (ConnectServer)
    - `55601/udp` (ConnectServer UDP)
    - `55901/tcp` (GameServer)
-
+## Uso rapido (Docker Hub, sin build)
+1. Copia `.env.example` a `.env` y ajusta credenciales, IP publica y secrets.
+2. En el servidor:
+   ```bash
+   docker compose -f docker-compose.images.yml up -d
+   ```
+3. Puertos requeridos:
+   - `44405/tcp` (ConnectServer)
+   - `55601/udp` (ConnectServer UDP)
+   - `55901/tcp` (GameServer)
 ## Configuracion por variables de entorno
 El stack usa un archivo `.env` local (ignorado por git) basado en `.env.example`.
 Cambia los valores antes de produccion.
@@ -148,15 +159,15 @@ Pasos:
 1. `docker compose down -v`
 2. `docker compose up -d --build`
 
-## Edici髇 de data (shops, mensajes, etc.)
+## Edici贸n de data (shops, mensajes, etc.)
 - Shops: editar `MuServer/Data/Shop/*.txt`.  
-  Formato por l韓ea: `Index Level Dur Skill Luck Option ExcOp SlotX SlotY`  
+  Formato por l铆nea: `Index Level Dur Skill Luck Option ExcOp SlotX SlotY`  
   Usa `SlotX`/`SlotY` = `-1 -1` para autoubicar en la grilla.
 - Mensajes del server: `MuServer/Data/Message_Eng.txt`, `Message_Spn.txt`, `Message_Por.txt` y avisos globales en `MuServer/Data/Util/Notice.txt`.
 - **Encoding**: guardar estos `.txt` en **ANSI / Windows-1252** y sin BOM (UTF-8 rompe acentos en el cliente).
 
-## Prueba r醦ida (solo testing)
-Creaci髇 manual de cuenta para verificar login (temporal hasta definir flujo definitivo):
+## Prueba r谩pida (solo testing)
+Creaci贸n manual de cuenta para verificar login (temporal hasta definir flujo definitivo):
 ```sql
 INSERT INTO MEMB_INFO
   (memb___id, memb__pwd, memb_name, mail_addr, sno__numb, AccountLevel, bloc_code)
@@ -166,10 +177,10 @@ VALUES
 INSERT IGNORE INTO MEMB_STAT (memb___id, ConnectStat)
 VALUES ('test', 0);
 ```
-Nota: en esta base `MD5Encryption=2`, la password se guarda en MD5 binario. No usar esto en producci髇.
+Nota: en esta base `MD5Encryption=2`, la password se guarda en MD5 binario. No usar esto en producci贸n.
 
 ## Logs y control
-El control b醩ico es desde Docker/Portainer (start/stop/restart). Los logs se pueden ver en la consola del contenedor (Portainer ? Logs o `docker logs -f`).
+El control b谩sico es desde Docker/Portainer (start/stop/restart). Los logs se pueden ver en la consola del contenedor (Portainer ? Logs o `docker logs -f`).
 
 ## Estructura del repo
 - `Source/`: fuentes del servidor (nuestras modificaciones)
@@ -514,6 +525,7 @@ hacia otro archivo separado en
 - Se elimin贸 el log de chaos mix al subir a +11
 - Se a帽adi贸 la opci贸n Infinity Arrows al Common.dat
 - Se corrigi贸 un error en el Kayito Editor que fallaba al cambiar la fecha de Ban y de VIP
+
 
 
 
