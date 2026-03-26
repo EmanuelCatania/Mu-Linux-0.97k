@@ -97,6 +97,9 @@ void CPatchs::Init()
 
 	SetByte(0x004032A8, 0x0); // Fix Quest Item Preview
 
+	SetByte(0x004C394A, 0x07); // Fix Item Info Window on higher resolutions
+	SetByte(0x004C3803, 0x68); // Fix Item Info Window on higher resolutions
+
 	SetCompleteHook(0xE9, 0x004028EA, &this->FixQuestProceedButton);
 
 	// Remove JPG size limit
@@ -142,6 +145,10 @@ void CPatchs::Init()
 	SetCompleteHook(0xE8, 0x0050E6A0, &this->OpenObjectsEnc); // Decrypt OBJ
 
 	SetCompleteHook(0xE8, 0x0041ED4C, &this->ReadMainVersion);
+
+	SetCompleteHook(0xE9, 0x0050F750, &this->MyOpenMacro);
+
+	SetCompleteHook(0xE9, 0x0050F700, &this->MySaveMacro);
 
 	SetCompleteHook(0xE8, 0x005269EC, &this->MySaveScreen);
 
@@ -792,6 +799,47 @@ BOOL CPatchs::ReadMainVersion()
 	}
 
 	return TRUE;
+}
+
+void CPatchs::MyOpenMacro(char* FileName)
+{
+	FILE* fp = nullptr;
+
+	if (fopen_s(&fp, FileName, "rt") != 0 || fp == nullptr)
+	{
+		return;
+	}
+
+	memset(MacroText, 0, sizeof(char) * 10 * 256);
+
+	for (int i = 0; i < 10; ++i)
+	{
+		if (fgets(MacroText[i], 256, fp) == nullptr)
+		{
+			break;
+		}
+
+		MacroText[i][strcspn(MacroText[i], "\r\n")] = '\0';
+	}
+
+	fclose(fp);
+}
+
+void CPatchs::MySaveMacro(char* FileName)
+{
+	FILE* fp = nullptr;
+
+	if (fopen_s(&fp, FileName, "wt") != 0 || fp == nullptr)
+	{
+		return;
+	}
+
+	for (int i = 0; i < 10; ++i)
+	{
+		fprintf(fp, "%s\n", MacroText[i]);
+	}
+
+	fclose(fp);
 }
 
 void CPatchs::MySaveScreen()

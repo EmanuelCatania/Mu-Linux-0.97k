@@ -310,11 +310,23 @@ bool CAttack::Attack(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, bool send, in
 
 			GCManaSend(lpObj->Index, 0xFF, (int)lpObj->Mana, lpObj->BP);
 		}
+
+		if (lpObj->Inventory[0].m_Index == GET_ITEM(2, 4) || lpObj->Inventory[1].m_Index == GET_ITEM(2, 4) // Crystal Morning Star
+			|| lpObj->Inventory[0].m_Index == GET_ITEM(2, 5) || lpObj->Inventory[1].m_Index == GET_ITEM(2, 5)) // Crystal Sword
+		{
+			if (rand() % 20 == 0)
+			{
+				if (this->ApplySkillEffect(lpObj, lpTarget, SKILL_ICE, damage) != 0)
+				{
+					gSkillManager.GCSkillAttackSend(lpObj, SKILL_ICE, lpTarget->Index, 0);
+				}
+			}
+		}
 	}
 
 	if (lpSkill != 0 && count <= 1)
 	{
-		if (this->ApplySkillEffect(lpObj, lpTarget, lpSkill, damage) == false)
+		if (this->ApplySkillEffect(lpObj, lpTarget, lpSkill->m_index, damage) == false)
 		{
 			if (send != false)
 			{
@@ -763,34 +775,68 @@ bool CAttack::CheckPlayerTarget(LPOBJ lpObj, LPOBJ lpTarget)
 		return false;
 	}
 
-	if (lpObj->Guild != 0 && lpTarget->Guild != 0)
+	if (lpObj->Guild != 0 && lpObj->Guild->WarState != GUILD_WAR_STATE_NONE)
 	{
-		if (lpObj->Guild->WarState != GUILD_WAR_STATE_NONE && lpTarget->Guild->WarState != GUILD_WAR_STATE_NONE)
+		if (lpTarget->Guild == 0)
 		{
-			if (lpObj->Guild->Number == lpTarget->Guild->Number)
-			{
-				return false;
-			}
+			return false;
+		}
+
+		if (lpObj->Guild->Number == lpTarget->Guild->Number)
+		{
+			return false;
+		}
+
+		if (lpTarget->Guild->WarState == GUILD_WAR_STATE_NONE)
+		{
+			return false;
+		}
+
+		if (strcmp(lpObj->Guild->TargetGuildNode->Name, lpTarget->Guild->Name) != 0)
+		{
+			return false;
+		}
+
+		if (lpTarget->Guild->WarType == GUILD_WAR_TYPE_SOCCER && lpTarget->Map != MAP_ARENA)
+		{
+			return false;
 		}
 	}
 
-	if (gGuild.GuildWarStateCheck(lpObj, lpTarget) == false)
+	if (lpTarget->Guild != 0 && lpTarget->Guild->WarState != GUILD_WAR_STATE_NONE)
 	{
-		if (lpTarget->Guild != 0 && lpTarget->Guild->WarState != GUILD_WAR_STATE_NONE)
+		if (lpObj->Guild == 0)
 		{
-			if (lpTarget->Guild->WarType == GUILD_WAR_TYPE_SOCCER && lpTarget->Map != MAP_ARENA && gMapManager.GetMapNonPK(lpTarget->Map) == 0)
-			{
-				return true;
-			}
+			return false;
+		}
+
+		if (lpTarget->Guild->Number == lpObj->Guild->Number)
+		{
+			return false;
+		}
+
+		if (lpObj->Guild->WarState == GUILD_WAR_STATE_NONE)
+		{
+			return false;
+		}
+
+		if (strcmp(lpTarget->Guild->TargetGuildNode->Name, lpObj->Guild->Name) != 0)
+		{
+			return false;
+		}
+
+		if (lpObj->Guild->WarType == GUILD_WAR_TYPE_SOCCER && lpObj->Map != MAP_ARENA)
+		{
+			return false;
 		}
 	}
 
-	if (DS_MAP_RANGE(lpObj->Map) != false && DS_MAP_RANGE(lpTarget->Map) != false)
+	if (DS_MAP_RANGE(lpObj->Map) != 0 && DS_MAP_RANGE(lpTarget->Map) != 0)
 	{
 		return false;
 	}
 
-	if (BC_MAP_RANGE(lpObj->Map) != false && BC_MAP_RANGE(lpTarget->Map) != false)
+	if (BC_MAP_RANGE(lpObj->Map) != 0 && BC_MAP_RANGE(lpTarget->Map) != 0)
 	{
 		return false;
 	}
@@ -854,18 +900,18 @@ bool CAttack::MissCheck(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, int send, 
 	return true;
 }
 
-bool CAttack::ApplySkillEffect(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, int damage)
+bool CAttack::ApplySkillEffect(LPOBJ lpObj, LPOBJ lpTarget, int skill, int damage)
 {
-	if (gSkillManager.GetSkillType(lpSkill->m_index) != -1 && gObjCheckResistance(lpTarget, gSkillManager.GetSkillType(lpSkill->m_index)) != false)
+	if (gSkillManager.GetSkillType(skill) != -1 && gObjCheckResistance(lpTarget, gSkillManager.GetSkillType(skill)) != false)
 	{
 		return false;
 	}
 
-	switch (lpSkill->m_skill)
+	switch (skill)
 	{
 		case SKILL_POISON:
 		{
-			gEffectManager.AddEffect(lpTarget, 0, gSkillManager.GetSkillEffect(lpSkill->m_index), 20, lpObj->Index, 2, 3, 0);
+			gEffectManager.AddEffect(lpTarget, 0, gSkillManager.GetSkillEffect(skill), 20, lpObj->Index, 2, 3, 0);
 
 			break;
 		}
@@ -879,7 +925,7 @@ bool CAttack::ApplySkillEffect(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, int
 
 		case SKILL_ICE:
 		{
-			gEffectManager.AddEffect(lpTarget, 0, gSkillManager.GetSkillEffect(lpSkill->m_index), 10, 0, 0, 0, 0);
+			gEffectManager.AddEffect(lpTarget, 0, gSkillManager.GetSkillEffect(skill), 10, 0, 0, 0, 0);
 
 			break;
 		}
@@ -921,14 +967,14 @@ bool CAttack::ApplySkillEffect(LPOBJ lpObj, LPOBJ lpTarget, CSkill* lpSkill, int
 
 		case SKILL_ICE_ARROW:
 		{
-			gEffectManager.AddEffect(lpTarget, 0, gSkillManager.GetSkillEffect(lpSkill->m_index), 7, 0, 0, 0, 0);
+			gEffectManager.AddEffect(lpTarget, 0, gSkillManager.GetSkillEffect(skill), 7, 0, 0, 0, 0);
 
 			break;
 		}
 
 		case SKILL_FIRE_SLASH:
 		{
-			gSkillManager.ApplyFireSlashEffect(lpObj, lpTarget, lpSkill, damage);
+			gSkillManager.ApplyFireSlashEffect(lpObj, lpTarget, skill, damage);
 
 			break;
 		}

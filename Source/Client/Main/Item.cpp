@@ -44,6 +44,12 @@ void CItem::Init()
 	SetCompleteHook(0xE9, 0x004C3EF0, &this->ConvertRepairGold);
 	
 	SetByte(0x004C5EC4, 0xEB); // Skip reducing damage in staffs
+
+	SetByte(0x004C2EC9, 0xEB); // Skip reducing damage in staffs (Help Window -> Item Info)
+
+	SetByte(0x004C2F1F, 0xEB); // Skip reducing damage in staffs (Help Window -> Item Info)
+
+	SetByte(0x004E08B0, 0x28); // Allow drop Divine items
 }
 
 void CItem::ItemConvert(ITEM* ip, BYTE Attribute1, BYTE Attribute2)

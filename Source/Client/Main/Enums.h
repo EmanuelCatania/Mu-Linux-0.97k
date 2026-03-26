@@ -263,3 +263,10 @@ enum ePkLevel
 	PKLVL_OUTLAW = 5,
 	PKLVL_KILLER = 6
 };
+
+/* War Types */
+enum eGuildWarType
+{
+	GUILD_WAR_TYPE_NORMAL = 0,
+	GUILD_WAR_TYPE_SOCCER = 1,
+};

@@ -73,6 +73,16 @@ Tags recomendados:
 - Bloqueo de guardado cuando hay campos invalidos en editores sensibles.
 - Fix del cliente: boton de quest proceed (ver Sources del cliente).
 
+## Update 2 (2026-03-26)
+- Cliente: fix de item info para staffs en Help Window y ajuste del item info en resoluciones altas.
+- Cliente: fix de transparencia de Character Info.
+- Cliente: fix de fondo/render del logo de guild y soporte correcto para declaracion de Guild War.
+- Cliente: fix de guardado y carga de macros.
+- Cliente/Server: habilitado drop de Divine items.
+- Server: fix de Crystal Sword y Crystal Morning Star para aplicar correctamente el efecto de hielo.
+- Server: fix de targeteo/ataque entre guilds en war y battle soccer.
+- Server: ajuste del flujo de quests para priorizar la quest activa al hablar con NPCs.
+
 
 
 ## Uso rapido (Docker)
