@@ -1,3 +1,5 @@
+# Integração legada preservada somente como referência histórica.
+# As imagens emapupi/* não são publicadas nem mantidas pelo projeto MU 0.97k.
 services:
   mysql:
     image: emapupi/mu-linux-97k-mysql:latest

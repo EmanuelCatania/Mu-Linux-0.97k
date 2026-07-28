@@ -8,8 +8,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-COPY Source/MuServer /src/Source/MuServer
-WORKDIR /src/Source/MuServer
+COPY src/server /src/server
+WORKDIR /src/server
 
 RUN cmake -S . -B /build -DCMAKE_BUILD_TYPE=Release \
     && cmake --build /build -j
@@ -30,20 +30,20 @@ COPY --from=build /build/bin/JoinServer /opt/mu/JoinServer/JoinServer
 COPY --from=build /build/bin/DataServer /opt/mu/DataServer/DataServer
 COPY --from=build /build/bin/GameServer /opt/mu/GameServer/GameServer
 
-COPY MuServer/ConnectServer/ConnectServer.ini /opt/mu/ConnectServer/
-COPY MuServer/ConnectServer/ServerList.dat /opt/mu/ConnectServer/
+COPY runtime/server/ConnectServer/ConnectServer.ini /opt/mu/ConnectServer/
+COPY runtime/server/ConnectServer/ServerList.dat /opt/mu/ConnectServer/
 
-COPY MuServer/MySQL/JoinServer/JoinServer.ini /opt/mu/JoinServer/
-COPY MuServer/MySQL/JoinServer/AllowableIpList.txt /opt/mu/JoinServer/
+COPY runtime/server/MySQL/JoinServer/JoinServer.ini /opt/mu/JoinServer/
+COPY runtime/server/MySQL/JoinServer/AllowableIpList.txt /opt/mu/JoinServer/
 
-COPY MuServer/MySQL/DataServer/DataServer.ini /opt/mu/DataServer/
-COPY MuServer/MySQL/DataServer/AllowableIpList.txt /opt/mu/DataServer/
-COPY MuServer/MySQL/DataServer/BadSyntax.txt /opt/mu/DataServer/
+COPY runtime/server/MySQL/DataServer/DataServer.ini /opt/mu/DataServer/
+COPY runtime/server/MySQL/DataServer/AllowableIpList.txt /opt/mu/DataServer/
+COPY runtime/server/MySQL/DataServer/BadSyntax.txt /opt/mu/DataServer/
 
-COPY MuServer/GameServer/DATA /opt/mu/GameServer/DATA
-COPY MuServer/Data /opt/mu/Data
+COPY runtime/server/GameServer/DATA /opt/mu/GameServer/DATA
+COPY runtime/server/Data /opt/mu/Data
 
-COPY docker/entrypoint.sh /opt/mu/entrypoint.sh
+COPY deploy/docker/server/entrypoint.sh /opt/mu/entrypoint.sh
 
 RUN chmod +x /opt/mu/entrypoint.sh \
     /opt/mu/ConnectServer/ConnectServer \

@@ -1,3 +1,5 @@
+name: mu-097k
+
 services:
   mysql:
     image: mysql:5.7
@@ -11,9 +13,9 @@ services:
       SEED_TEST_DATA: ${SEED_TEST_DATA}
     volumes:
       - mu_mysql:/var/lib/mysql
-      - ./MuServer/MySQL/DB/CreateDatabase.sql:/docker-entrypoint-initdb.d/01-create.sql:ro
-      - ./docker/mysql/02-populate.sh:/docker-entrypoint-initdb.d/02-populate.sh:ro
-      - ./MuServer/MySQL/DB/PoblateDatabase.sql:/docker-entrypoint-initdb.d/seed/PoblateDatabase.sql:ro
+      - ./runtime/server/MySQL/DB/CreateDatabase.sql:/docker-entrypoint-initdb.d/01-create.sql:ro
+      - ./deploy/docker/mysql/02-populate.sh:/docker-entrypoint-initdb.d/02-populate.sh:ro
+      - ./runtime/server/MySQL/DB/PoblateDatabase.sql:/docker-entrypoint-initdb.d/seed/PoblateDatabase.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 5s
@@ -23,7 +25,7 @@ services:
   mu-server:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: deploy/docker/server/Dockerfile
     cap_add:
       - SYS_PTRACE
     security_opt:
@@ -47,7 +49,7 @@ services:
 
   mu-web:
     build:
-      context: ./web
+      context: ./services/web
       dockerfile: Dockerfile
     environment:
       DB_HOST: ${DB_HOST}
@@ -71,11 +73,6 @@ services:
       - "8085:8080"
     networks:
       - default
-      - proxy_net
 
 volumes:
   mu_mysql:
-
-networks:
-  proxy_net:
-    external: true

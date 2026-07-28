@@ -1,7 +1,30 @@
+# Ambientes locais e segredos
+.env
+.env.*
+!.env.example
+.env.local
+
+# Builds C++, CMake e Visual Studio
+src/**/Obj/
+src/**/bin/
+src/**/Debug/
+src/**/Release/
+src/**/x64/
+src/**/.vs/
+src/**/*.pdb
+src/**/*.map
+build/
+out/
+cmake-build-*/
+
+# Dependências e ferramentas locais
+services/**/node_modules/
+.idea/
+*.suo
+*.user
+*.log
+
+# Referências extraídas fora da árvore oficial
 MuEmu-0.97k-kayito-master/
 kayito_ref/
-web/_template/
-
-# Configuracion local y secretos
-.env
-.env.local
+services/web/_template/

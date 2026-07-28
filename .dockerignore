@@ -1,12 +1,13 @@
 .git
-Client
-Tools
-Dependencies
-Main
-Encoder
-MuServer/MSSQL
-Source/**/x64
-Source/**/Debug
-Source/**/Release
-Pterodactyl eggs/
-Pterodactyl eggs/**
+.vscode
+docs
+runtime/client
+runtime/encoder
+runtime/server/MSSQL
+services
+src/client
+src/tools
+src/**/x64
+src/**/Debug
+src/**/Release
+deploy/legacy

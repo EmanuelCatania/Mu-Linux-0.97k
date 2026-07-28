@@ -23,22 +23,24 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $devRoot = Split-Path (Split-Path $repoRoot -Parent) -Parent
-$runtimeBase = [System.IO.Path]::GetFullPath((Join-Path $devRoot "runtime"))
+$externalRuntimeBase = [System.IO.Path]::GetFullPath((Join-Path $devRoot "runtime"))
+$clientTemplate = Join-Path $repoRoot "runtime\client"
+$encoderTemplate = Join-Path $repoRoot "runtime\encoder"
 
 if ([string]::IsNullOrWhiteSpace($RuntimeRoot)) {
-    $RuntimeRoot = Join-Path $runtimeBase "mu-097k"
+    $RuntimeRoot = Join-Path $externalRuntimeBase "mu-097k"
 }
 
 $RuntimeRoot = [System.IO.Path]::GetFullPath($RuntimeRoot)
-$runtimePrefix = $runtimeBase.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+$runtimePrefix = $externalRuntimeBase.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
 
 if (-not $RuntimeRoot.StartsWith($runtimePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "RuntimeRoot must be a child of '$runtimeBase'. Resolved value: '$RuntimeRoot'."
+    throw "RuntimeRoot must be a child of '$externalRuntimeBase'. Resolved value: '$RuntimeRoot'."
 }
 
 $runtimeClient = Join-Path $RuntimeRoot "client"
 $runtimeEncoder = Join-Path $RuntimeRoot "encoder"
-$solutionPath = Join-Path $repoRoot "Source\Client\Client.sln"
+$solutionPath = Join-Path $repoRoot "src\client\Client.sln"
 
 function Get-BuildEnvironment {
     $vsWhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
@@ -127,8 +129,8 @@ function Initialize-Runtime {
     }
 
     New-Item -ItemType Directory -Path $RuntimeRoot -Force | Out-Null
-    Invoke-RobocopyMirror -Source (Join-Path $repoRoot "Client") -Destination $runtimeClient
-    Invoke-RobocopyMirror -Source (Join-Path $repoRoot "Encoder") -Destination $runtimeEncoder
+    Invoke-RobocopyMirror -Source $clientTemplate -Destination $runtimeClient
+    Invoke-RobocopyMirror -Source $encoderTemplate -Destination $runtimeEncoder
 
     $mainInfo = Join-Path $runtimeEncoder "MainInfo.ini"
     Set-IniValue -Path $mainInfo -Key "IpAddress" -Value $ServerAddress
@@ -211,7 +213,7 @@ function Invoke-Encoder {
 function Deploy-Client {
     Assert-RuntimeInitialized
 
-    $outputRoot = Join-Path $repoRoot "Source\Client\bin\$Configuration"
+    $outputRoot = Join-Path $repoRoot "src\client\bin\$Configuration"
     $mainDll = Join-Path $outputRoot "Main\Main.dll"
     $mainPdb = Join-Path $outputRoot "Main\Main.pdb"
     $infoEncoder = Join-Path $outputRoot "InfoEncoder\InfoEncoder.exe"

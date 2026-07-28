@@ -161,7 +161,7 @@
     {
       "label": "Server: Up (WSL)",
       "type": "shell",
-      "command": "docker network inspect proxy_net >/dev/null 2>&1 || docker network create proxy_net; docker compose up --build -d",
+      "command": "docker compose up --build -d",
       "options": {
         "cwd": "${workspaceFolder}"
       },

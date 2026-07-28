@@ -1,2 +1,16 @@
-# Auto detect text files and perform LF normalization
+# Detecta texto e normaliza o conteúdo armazenado pelo Git.
 * text=auto
+
+*.sh text eol=lf
+*.ps1 text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+*.sln text eol=crlf
+*.vcxproj text eol=crlf
+*.props text eol=crlf
+
+src/server/Dependencies/** linguist-vendored
+services/**/public/assets/**/*.min.* linguist-vendored

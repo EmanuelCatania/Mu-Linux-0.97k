@@ -1,7 +1,7 @@
 ﻿services:
   mu-editor:
     build:
-      context: ./editor
+      context: ./services/editor
       dockerfile: Dockerfile
     environment:
       EDITOR_ENABLED: ${EDITOR_ENABLED}
@@ -30,10 +30,6 @@
     volumes:
       - mu_data:/opt/mu/Data:rw
       - mu_gameserver_data:/opt/mu/GameServer/Data:rw
-
-networks:
-  proxy_net:
-    external: true
 
 volumes:
   mu_data:

@@ -1,8 +1,8 @@
 ﻿{
-  "name": "mu-editor",
+  "name": "mu-097k-editor",
   "version": "1.0.0",
   "private": true,
-  "description": "MuLinux server data editor API",
+  "description": "MU 0.97k server data editor API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
