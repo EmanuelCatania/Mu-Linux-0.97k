@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  client-windows:
+    name: Client Win32
+    runs-on: windows-2025
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate repository
+        shell: pwsh
+        run: ./scripts/validate-repository.ps1
+
+      - name: Build Debug
+        shell: pwsh
+        run: ./scripts/client-workflow.ps1 -Action Build -Configuration Debug
+
+      - name: Build Release
+        shell: pwsh
+        run: ./scripts/client-workflow.ps1 -Action Build -Configuration Release
+
+      - name: Clean build outputs
+        if: always()
+        shell: pwsh
+        run: |
+          ./scripts/client-workflow.ps1 -Action Clean -Configuration Debug
+          ./scripts/client-workflow.ps1 -Action Clean -Configuration Release
+
+      - name: Verify clean worktree
+        if: always()
+        shell: pwsh
+        run: |
+          $changes = git status --porcelain
+          if ($changes) {
+            $changes
+            throw "Client validation modified tracked or unignored files."
+          }
+
+  server-linux:
+    name: Server Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate repository
+        shell: pwsh
+        run: ./scripts/validate-repository.ps1
+
+      - name: Prepare local environment
+        run: cp .env.example .env
+
+      - name: Validate Compose
+        run: |
+          docker compose config --quiet
+          docker compose -f compose.yaml -f compose.editor.yaml config --quiet
+
+      - name: Build server image
+        run: docker compose build mu-server
+
+      - name: Start MySQL and server
+        run: docker compose up -d mysql mu-server
+
+      - name: Smoke test server ports
+        shell: bash
+        run: |
+          wait_for_port() {
+            local port="$1"
+            for attempt in {1..60}; do
+              if (echo >"/dev/tcp/127.0.0.1/${port}") 2>/dev/null; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "Port ${port} did not become available." >&2
+            return 1
+          }
+
+          wait_for_port 44405
+          wait_for_port 55901
+          docker compose ps
+
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --no-color --tail=200 mysql mu-server
+
+      - name: Stop services
+        if: always()
+        run: docker compose down --remove-orphans
+
+      - name: Verify clean worktree
+        if: always()
+        run: |
+          changes="$(git status --porcelain)"
+          if [ -n "$changes" ]; then
+            echo "$changes"
+            echo "Server validation modified tracked or unignored files." >&2
+            exit 1
+          fi

@@ -46,22 +46,46 @@ function Get-BuildEnvironment {
     $vsWhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
 
     if (-not (Test-Path -LiteralPath $vsWhere -PathType Leaf)) {
-        throw "vswhere.exe was not found. Install Visual Studio Build Tools 2026 with Desktop development with C++."
+        throw "vswhere.exe was not found. Install Visual Studio or Build Tools with Desktop development with C++."
     }
 
-    $vsRoot = & $vsWhere -latest -products * -version "[18.0,19.0)" `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -property installationPath | Select-Object -First 1
+    $installations = @(& $vsWhere -latest -products * -version "[17.0,19.0)" `
+        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -format json | ConvertFrom-Json)
 
-    if ([string]::IsNullOrWhiteSpace($vsRoot)) {
-        throw "Visual Studio Build Tools 2026 with MSVC x86/x64 was not found."
+    if ($installations.Count -eq 0) {
+        throw "Visual Studio 2022/2026 or Build Tools with MSVC x86/x64 was not found."
     }
 
-    $vsRoot = $vsRoot.Trim()
+    $installation = $installations[0]
+    $vsRoot = $installation.installationPath.Trim()
+    $vsVersion = [version]$installation.installationVersion
 
-    $versionFile = Join-Path $vsRoot "VC\Auxiliary\Build\Microsoft.VCToolsVersion.v143.default.txt"
-    if (-not (Test-Path -LiteralPath $versionFile -PathType Leaf)) {
-        throw "The installed Build Tools do not expose a v143 compiler version file: '$versionFile'."
+    if ($vsVersion.Major -eq 17) {
+        $platformToolset = "v143"
+        $versionFileCandidates = @(
+            "VC\Auxiliary\Build\Microsoft.VCToolsVersion.v143.default.txt"
+            "VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt"
+        )
+    }
+    elseif ($vsVersion.Major -eq 18) {
+        # Build Tools 2026 hosts the installed v143 compiler through its current
+        # platform toolset while VCToolsVersion selects the 14.4x compiler.
+        $platformToolset = "v145"
+        $versionFileCandidates = @(
+            "VC\Auxiliary\Build\Microsoft.VCToolsVersion.v143.default.txt"
+        )
+    }
+    else {
+        throw "Unsupported Visual Studio installation version '$($installation.installationVersion)' at '$vsRoot'."
+    }
+
+    $versionFile = $versionFileCandidates |
+        ForEach-Object { Join-Path $vsRoot $_ } |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+        Select-Object -First 1
+
+    if ([string]::IsNullOrWhiteSpace($versionFile)) {
+        throw "The installation at '$vsRoot' does not expose an MSVC v143 compiler version file."
     }
 
     $vcToolsVersion = (Get-Content -Raw -LiteralPath $versionFile).Trim()
@@ -79,6 +103,7 @@ function Get-BuildEnvironment {
     return [pscustomobject]@{
         VsRoot         = $vsRoot
         MsBuild        = $msBuild
+        PlatformToolset = $platformToolset
         VCToolsVersion = $vcToolsVersion
     }
 }
@@ -153,12 +178,12 @@ function Invoke-ClientBuild {
         "/t:$Target"
         "/p:Configuration=$Configuration"
         "/p:Platform=Win32"
-        "/p:PlatformToolset=v145"
+        "/p:PlatformToolset=$($buildEnvironment.PlatformToolset)"
         "/p:VCToolsVersion=$($buildEnvironment.VCToolsVersion)"
         "/verbosity:minimal"
     )
 
-    Write-Host "MSBuild $Target ($Configuration|Win32) with MSVC $($buildEnvironment.VCToolsVersion)."
+    Write-Host "MSBuild $Target ($Configuration|Win32) with $($buildEnvironment.PlatformToolset) and MSVC $($buildEnvironment.VCToolsVersion)."
     & $buildEnvironment.MsBuild @arguments
 
     if ($LASTEXITCODE -ne 0) {

@@ -9,6 +9,11 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 
 ## [Não lançado]
 
+### Adicionado
+
+- Validação automatizada de configurações, links, JSON, PowerShell e scripts shell.
+- CI para compilar o cliente Win32 e realizar build e smoke test do servidor Linux.
+
 ## [0.1.0] - 2026-07-28
 
 ### Adicionado
