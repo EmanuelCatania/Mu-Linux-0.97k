@@ -9,10 +9,27 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 
 ## [Não lançado]
 
+## [0.2.0] - 2026-07-28
+
 ### Adicionado
 
 - Validação automatizada de configurações, links, JSON, PowerShell e scripts shell.
-- CI para compilar o cliente Win32 e realizar build e smoke test do servidor Linux.
+- Validação de ponta a ponta do runtime externo, deploy e encoder do cliente Win32.
+- Health checks do servidor e do painel web com verificação real do MySQL.
+- Lockfile das dependências de produção do painel web.
+
+### Alterado
+
+- CI Linux ampliada para validar schema, servidor, painel web, portas TCP e HTTP.
+- Painel web atualizado para Node.js 24.18.0 e instalações reproduzíveis com
+  `npm ci`.
+- Branch `main` protegida pelos checks obrigatórios `Client Win32` e
+  `Server Linux` em modo estrito.
+
+### Corrigido
+
+- Códigos de sucesso do `robocopy` deixam de causar falha residual no GitHub
+  Actions.
 
 ## [0.1.0] - 2026-07-28
 
@@ -36,5 +53,6 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 
 - Inicialização do MySQL quando `SEED_TEST_DATA=0`.
 
-[Não lançado]: https://github.com/aldomigge/mu-097k/compare/fork-v0.1.0...HEAD
+[Não lançado]: https://github.com/aldomigge/mu-097k/compare/fork-v0.2.0...HEAD
+[0.2.0]: https://github.com/aldomigge/mu-097k/compare/fork-v0.1.0...fork-v0.2.0
 [0.1.0]: https://github.com/aldomigge/mu-097k/releases/tag/fork-v0.1.0
