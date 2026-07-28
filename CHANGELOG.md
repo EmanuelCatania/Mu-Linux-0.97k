@@ -4,7 +4,8 @@ Todas as mudanças relevantes da linha independente MU 0.97k serão registradas 
 O histórico anterior permanece em `docs/history/`.
 
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). As
-versões deste fork são independentes da versão de compatibilidade MU 0.97k.
+versões deste fork são independentes da versão de compatibilidade MU 0.97k e usam
+tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 
 ## [Não lançado]
 
@@ -30,5 +31,5 @@ versões deste fork são independentes da versão de compatibilidade MU 0.97k.
 
 - Inicialização do MySQL quando `SEED_TEST_DATA=0`.
 
-[Não lançado]: https://github.com/aldomigge/mu-097k/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/aldomigge/mu-097k/releases/tag/v0.1.0
+[Não lançado]: https://github.com/aldomigge/mu-097k/compare/fork-v0.1.0...HEAD
+[0.1.0]: https://github.com/aldomigge/mu-097k/releases/tag/fork-v0.1.0
