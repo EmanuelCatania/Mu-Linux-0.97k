@@ -8,7 +8,7 @@ param(
     [string]$Configuration = "Debug",
 
     [ValidateSet("MSBuild", "CMake")]
-    [string]$BuildSystem = "MSBuild",
+    [string]$BuildSystem = "CMake",
 
     [ValidatePattern("^[A-Za-z0-9.-]+$")]
     [string]$ServerAddress = "127.0.0.1",

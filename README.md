@@ -54,7 +54,7 @@ oficial.
 
 ## Requisitos principais
 
-- PowerShell 7, Git e VS Code no Windows;
+- PowerShell 7, Git, CMake, Ninja e VS Code no Windows;
 - Visual Studio Build Tools com C++ e MSVC compatível com o projeto;
 - Ubuntu 24.04, Docker Engine e Docker Compose no WSL2;
 - clones Windows e WSL separados e sincronizados pelo Git.
@@ -91,7 +91,9 @@ pwsh -File .\scripts\client-workflow.ps1 -Action Encode
 
 O cliente executável fica em `C:\Dev\runtime\mu-097k\client`. O script também
 oferece `Build`, `Deploy`, `Clean` e builds Release. No VS Code, a configuração
-`Client: Debug Main.dll (x86)` prepara o runtime e inicia o debugger.
+`Client: Debug Main.dll (x86)` prepara o runtime e inicia o debugger. CMake/Ninja é
+o sistema de build padrão; MSBuild permanece disponível com
+`-BuildSystem MSBuild` durante a transição.
 
 ## Estrutura
 

@@ -9,6 +9,8 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 
 ## [Não lançado]
 
+## [0.3.0] - 2026-07-28
+
 ### Adicionado
 
 - Entrada CMake/Ninja na raiz com presets Linux Debug e Release para os quatro
@@ -23,8 +25,10 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
   o mesmo preset Release no Docker e no desenvolvimento local.
 - CI Linux passou a validar os builds nativos Debug e Release antes do smoke test do
   stack Compose.
-- Workflow do cliente passou a aceitar `-BuildSystem MSBuild|CMake`, mantendo
-  MSBuild como padrão e validando ambos os caminhos na CI.
+- Workflow do cliente passou a aceitar `-BuildSystem CMake|MSBuild`, usando CMake
+  como padrão e mantendo MSBuild como fallback validado pela CI.
+- Tarefas e debug do VS Code passaram a construir e implantar o cliente com
+  CMake/Ninja.
 
 ## [0.2.0] - 2026-07-28
 
@@ -70,6 +74,7 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 
 - Inicialização do MySQL quando `SEED_TEST_DATA=0`.
 
-[Não lançado]: https://github.com/aldomigge/mu-097k/compare/fork-v0.2.0...HEAD
+[Não lançado]: https://github.com/aldomigge/mu-097k/compare/fork-v0.3.0...HEAD
+[0.3.0]: https://github.com/aldomigge/mu-097k/compare/fork-v0.2.0...fork-v0.3.0
 [0.2.0]: https://github.com/aldomigge/mu-097k/compare/fork-v0.1.0...fork-v0.2.0
 [0.1.0]: https://github.com/aldomigge/mu-097k/releases/tag/fork-v0.1.0

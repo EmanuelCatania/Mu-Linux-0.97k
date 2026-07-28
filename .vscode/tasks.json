@@ -34,7 +34,9 @@
         "-Action",
         "Build",
         "-Configuration",
-        "Debug"
+        "Debug",
+        "-BuildSystem",
+        "CMake"
       ],
       "linux": {
         "command": "bash",
@@ -57,7 +59,9 @@
         "-Action",
         "Build",
         "-Configuration",
-        "Release"
+        "Release",
+        "-BuildSystem",
+        "CMake"
       ],
       "linux": {
         "command": "bash",
@@ -80,7 +84,9 @@
         "-Action",
         "BuildDeploy",
         "-Configuration",
-        "Debug"
+        "Debug",
+        "-BuildSystem",
+        "CMake"
       ],
       "linux": {
         "command": "bash",
@@ -107,7 +113,9 @@
         "-Action",
         "BuildDeploy",
         "-Configuration",
-        "Release"
+        "Release",
+        "-BuildSystem",
+        "CMake"
       ],
       "linux": {
         "command": "bash",
@@ -130,7 +138,9 @@
         "-Action",
         "Clean",
         "-Configuration",
-        "Debug"
+        "Debug",
+        "-BuildSystem",
+        "CMake"
       ],
       "linux": {
         "command": "bash",

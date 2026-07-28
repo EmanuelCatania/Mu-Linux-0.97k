@@ -107,9 +107,16 @@ jobs:
           $infoEncoder = Join-Path $runtimeRoot "encoder\InfoEncoder.exe"
           $clientInfo = Join-Path $runtimeRoot "client\Data\Local\ClientInfo.bmd"
 
-          foreach ($buildSystem in @("MSBuild", "CMake")) {
+          foreach ($buildSystem in @("CMake", "MSBuild")) {
+            $buildSystemArguments = if ($buildSystem -eq "CMake") {
+              @{}
+            }
+            else {
+              @{ BuildSystem = "MSBuild" }
+            }
+
             Write-Host "Validating $buildSystem Debug."
-            ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Debug -BuildSystem $buildSystem
+            ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Debug @buildSystemArguments
             Assert-File $mainDll "$buildSystem Debug Main.dll"
             Assert-File $mainPdb "$buildSystem Debug Main.pdb"
             Assert-File $infoEncoder "$buildSystem Debug InfoEncoder.exe"
@@ -118,7 +125,7 @@ jobs:
             Assert-PeX86WithResources $infoEncoder
 
             $firstHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $clientInfo).Hash
-            ./scripts/client-workflow.ps1 -Action Encode -Configuration Debug -BuildSystem $buildSystem
+            ./scripts/client-workflow.ps1 -Action Encode -Configuration Debug @buildSystemArguments
             $secondHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $clientInfo).Hash
             if ($firstHash -ne $secondHash) {
               throw "$buildSystem InfoEncoder output is not deterministic for identical inputs."
@@ -137,7 +144,7 @@ jobs:
             }
 
             Write-Host "Validating $buildSystem Release."
-            ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Release -BuildSystem $buildSystem
+            ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Release @buildSystemArguments
             Assert-File $mainDll "$buildSystem Release Main.dll"
             Assert-File $infoEncoder "$buildSystem Release InfoEncoder.exe"
             Assert-File $clientInfo "$buildSystem Release ClientInfo.bmd"
@@ -180,10 +187,10 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          foreach ($buildSystem in @("MSBuild", "CMake")) {
-            ./scripts/client-workflow.ps1 -Action Clean -Configuration Debug -BuildSystem $buildSystem
-            ./scripts/client-workflow.ps1 -Action Clean -Configuration Release -BuildSystem $buildSystem
-          }
+          ./scripts/client-workflow.ps1 -Action Clean -Configuration Debug
+          ./scripts/client-workflow.ps1 -Action Clean -Configuration Release
+          ./scripts/client-workflow.ps1 -Action Clean -Configuration Debug -BuildSystem MSBuild
+          ./scripts/client-workflow.ps1 -Action Clean -Configuration Release -BuildSystem MSBuild
 
       - name: Remove temporary runtime
         if: always()

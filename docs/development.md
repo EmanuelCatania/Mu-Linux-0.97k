@@ -55,17 +55,17 @@ C:\Dev\runtime\mu-097k\encoder\MainInfo.ini
 pwsh -File .\scripts\client-workflow.ps1 -Action Encode
 ```
 
-O script aceita `-BuildSystem MSBuild|CMake`. MSBuild permanece como padrão nesta
-etapa e CMake/Ninja pode ser selecionado explicitamente para comparação:
+O script aceita `-BuildSystem CMake|MSBuild`. CMake/Ninja é o padrão; MSBuild
+permanece disponível como fallback explícito durante o período de transição:
 
 ```powershell
-# Fluxo de referência e padrão atual
+# Fluxo padrão com CMake/Ninja
 pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
 pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Release
 
-# Fluxo paralelo com CMake/Ninja
-pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug -BuildSystem CMake
-pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Release -BuildSystem CMake
+# Fallback temporário com MSBuild
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug -BuildSystem MSBuild
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Release -BuildSystem MSBuild
 ```
 
 O modo CMake localiza o Build Tools, prepara um ambiente MSVC x86 temporário com
@@ -75,11 +75,11 @@ MSBuild permanecem em `src/client/bin/<configuração>`. CMake e Ninja devem est
 `PATH`.
 
 As outras ações disponíveis são `Build`, `Deploy` e `Clean`, sempre usando o mesmo
-`-BuildSystem` escolhido para o build. No VS Code, use
-`Client: Debug Main.dll (x86)` para executar o fluxo padrão Debug, implantar a DLL e
-o PDB e iniciar `main.exe` com `cppvsdbg`. A configuração automática do CMake ao
-abrir o workspace fica desativada; os presets podem ser selecionados manualmente na
-extensão CMake Tools.
+`-BuildSystem` escolhido para o build. As tarefas de cliente do VS Code usam CMake
+explicitamente. A configuração `Client: Debug Main.dll (x86)` executa BuildDeploy
+Debug, implanta a DLL e o PDB e inicia `main.exe` com `cppvsdbg`. A configuração
+automática do CMake ao abrir o workspace fica desativada; os presets podem ser
+selecionados manualmente na extensão CMake Tools.
 
 ## Servidor no WSL2
 
@@ -167,5 +167,5 @@ docker compose up --build -d
 ```
 
 Confirme que `git status` continua limpo depois de build, deploy e execução dos
-containers. A CI compila Debug e Release do cliente pelos dois sistemas enquanto o
-MSBuild permanecer como fallback.
+containers. A CI compila Debug e Release primeiro pelo padrão CMake e depois pelo
+fallback MSBuild, que permanecerá disponível pelo menos até a próxima release.
