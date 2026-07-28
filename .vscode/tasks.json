@@ -1,0 +1,213 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Client: Initialize Runtime",
+      "type": "process",
+      "command": "pwsh",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/scripts/client-workflow.ps1",
+        "-Action",
+        "InitializeRuntime"
+      ],
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "echo 'Esta tarefa deve ser executada no clone aberto pelo VS Code no Windows.' >&2; exit 1"
+        ]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Client: Build Debug",
+      "type": "process",
+      "command": "pwsh",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/scripts/client-workflow.ps1",
+        "-Action",
+        "Build",
+        "-Configuration",
+        "Debug"
+      ],
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "echo 'Esta tarefa deve ser executada no clone aberto pelo VS Code no Windows.' >&2; exit 1"
+        ]
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Client: Build Release",
+      "type": "process",
+      "command": "pwsh",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/scripts/client-workflow.ps1",
+        "-Action",
+        "Build",
+        "-Configuration",
+        "Release"
+      ],
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "echo 'Esta tarefa deve ser executada no clone aberto pelo VS Code no Windows.' >&2; exit 1"
+        ]
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Client: Build + Deploy Debug",
+      "type": "process",
+      "command": "pwsh",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/scripts/client-workflow.ps1",
+        "-Action",
+        "BuildDeploy",
+        "-Configuration",
+        "Debug"
+      ],
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "echo 'Esta tarefa deve ser executada no clone aberto pelo VS Code no Windows.' >&2; exit 1"
+        ]
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Client: Build + Deploy Release",
+      "type": "process",
+      "command": "pwsh",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/scripts/client-workflow.ps1",
+        "-Action",
+        "BuildDeploy",
+        "-Configuration",
+        "Release"
+      ],
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "echo 'Esta tarefa deve ser executada no clone aberto pelo VS Code no Windows.' >&2; exit 1"
+        ]
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Client: Clean",
+      "type": "process",
+      "command": "pwsh",
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-File",
+        "${workspaceFolder}/scripts/client-workflow.ps1",
+        "-Action",
+        "Clean",
+        "-Configuration",
+        "Debug"
+      ],
+      "linux": {
+        "command": "bash",
+        "args": [
+          "-lc",
+          "echo 'Esta tarefa deve ser executada no clone aberto pelo VS Code no Windows.' >&2; exit 1"
+        ]
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Server: Validate Compose (WSL)",
+      "type": "shell",
+      "command": "docker compose config --quiet",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "windows": {
+        "command": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-Command",
+          "throw 'Abra o clone pelo VS Code no WSL antes de executar esta tarefa.'"
+        ]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Server: Up (WSL)",
+      "type": "shell",
+      "command": "docker compose up --build -d",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "windows": {
+        "command": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-Command",
+          "throw 'Abra o clone pelo VS Code no WSL antes de executar esta tarefa.'"
+        ]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Server: Down (WSL)",
+      "type": "shell",
+      "command": "docker compose down",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "windows": {
+        "command": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-Command",
+          "throw 'Abra o clone pelo VS Code no WSL antes de executar esta tarefa.'"
+        ]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Server: Logs (WSL)",
+      "type": "shell",
+      "command": "docker compose logs --follow --tail=200",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "windows": {
+        "command": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-Command",
+          "throw 'Abra o clone pelo VS Code no WSL antes de executar esta tarefa.'"
+        ]
+      },
+      "problemMatcher": []
+    }
+  ]
+}

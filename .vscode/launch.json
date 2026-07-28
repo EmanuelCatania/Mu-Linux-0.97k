@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Client: Debug Main.dll (x86)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/../../runtime/mu-097k/client/main.exe",
+      "cwd": "${workspaceFolder}/../../runtime/mu-097k/client",
+      "preLaunchTask": "Client: Build + Deploy Debug",
+      "stopAtEntry": false,
+      "externalConsole": false,
+      "symbolOptions": {
+        "searchPaths": [
+          "${workspaceFolder}/../../runtime/mu-097k/client"
+        ],
+        "searchMicrosoftSymbolServer": false
+      },
+      "logging": {
+        "engineLogging": false
+      }
+    }
+  ]
+}

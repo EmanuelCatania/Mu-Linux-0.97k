@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "ms-vscode.cpptools",
+    "ms-vscode.cpp-devtools",
+    "ms-vscode.cmake-tools",
+    "ms-vscode.powershell",
+    "ms-vscode-remote.remote-wsl",
+    "ms-azuretools.vscode-containers",
+    "redhat.vscode-yaml"
+  ]
+}
