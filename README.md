@@ -37,8 +37,10 @@ Tags recomendados:
    - `PUBLIC_IP`, `WEB_PORT`, `SESSION_SECRET`
    - `MYSQL_*`, `DB_*`
    - `ADMIN_USER`, `ADMIN_PASS`
-2. Levantar el stack base:
+2. Validar y levantar el stack base:
    ```bash
+   docker compose config --quiet
+   docker network inspect proxy_net >/dev/null 2>&1 || docker network create proxy_net
    docker compose up --build -d
    ```
 
@@ -89,7 +91,9 @@ Tags recomendados:
 1. Copia `.env.example` a `.env` y ajusta credenciales, IP publica y secrets.
 2. En el servidor:
    ```bash
-   docker-compose up --build -d
+   docker compose config --quiet
+   docker network inspect proxy_net >/dev/null 2>&1 || docker network create proxy_net
+   docker compose up --build -d
    ```
 3. Puertos requeridos:
    - `44405/tcp` (ConnectServer)
@@ -108,6 +112,7 @@ Tags recomendados:
 ## Configuracion por variables de entorno
 El stack usa un archivo `.env` local (ignorado por git) basado en `.env.example`.
 Cambia los valores antes de produccion.
+Para desarrollo local con el cliente Windows y el servidor en WSL2, usa `PUBLIC_IP=127.0.0.1`.
 Variables principales:
 - `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`
 - `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`
@@ -200,6 +205,37 @@ El control básico es desde Docker/Portainer (start/stop/restart). Los logs se p
 - `MuServer/`: data/config para correr
 - `Client/` y `Encoder/`: esenciales para operar
 - `kayito_ref/`: referencia de archivos Windows (ignorado por git)
+
+## Desarrollo local (Windows 11 + WSL2)
+
+El cliente se compila en Windows con Visual Studio Build Tools y se ejecuta desde
+`C:\Dev\runtime\mu-097k`, fuera del repositorio. Los archivos rastreados de `Client/`
+y `Encoder/` se usan como plantillas y no se modifican durante build o deploy.
+
+En PowerShell 7, desde el clone de Windows:
+
+```powershell
+pwsh -File .\scripts\client-workflow.ps1 -Action InitializeRuntime
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
+```
+
+Usa `-ForceRuntime` con `InitializeRuntime` solamente cuando quieras recrear la copia
+externa. En VS Code, `Client: Build + Deploy Debug` es la tarea de build predeterminada
+y la configuracion `Client: Debug Main.dll (x86)` compila, despliega e inicia el cliente
+con el debugger de Visual C++.
+
+En el clone de WSL2:
+
+```bash
+cp .env.example .env
+# Ajusta los secrets locales y define PUBLIC_IP=127.0.0.1
+docker compose config --quiet
+docker network inspect proxy_net >/dev/null 2>&1 || docker network create proxy_net
+docker compose up --build -d
+```
+
+El flujo base usa solamente `mysql`, `mu-web` y `mu-server`. Para detenerlo sin borrar
+los volumenes persistentes, usa `docker compose down`.
 
 ---
 
