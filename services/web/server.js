@@ -63,6 +63,16 @@ app.use(helmet({
   contentSecurityPolicy: false
 }));
 app.set('trust proxy', trustProxyEnabled ? 1 : false);
+
+app.get('/healthz', async (_req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    return res.status(200).json({ status: 'ok' });
+  } catch (_err) {
+    return res.status(503).json({ status: 'unhealthy' });
+  }
+});
+
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));

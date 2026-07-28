@@ -44,6 +44,12 @@ services:
       - "44405:44405/tcp"
       - "55601:55601/udp"
       - "55901:55901/tcp"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 44405 && nc -z 127.0.0.1 55901"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
     networks:
       - default
 
@@ -71,6 +77,16 @@ services:
         condition: service_healthy
     ports:
       - "8085:8080"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8080/healthz').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
     networks:
       - default
 

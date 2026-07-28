@@ -159,36 +159,61 @@ jobs:
           docker compose config --quiet
           docker compose -f compose.yaml -f compose.editor.yaml config --quiet
 
-      - name: Build server image
-        run: docker compose build mu-server
+      - name: Build stack images
+        run: docker compose build mu-server mu-web
 
-      - name: Start MySQL and server
-        run: docker compose up -d mysql mu-server
+      - name: Start stack and wait for health checks
+        run: docker compose up -d --wait --wait-timeout 180 mysql mu-server mu-web
 
-      - name: Smoke test server ports
+      - name: Smoke test database, server and web
         shell: bash
         run: |
-          wait_for_port() {
-            local port="$1"
-            for attempt in {1..60}; do
-              if (echo >"/dev/tcp/127.0.0.1/${port}") 2>/dev/null; then
-                return 0
-              fi
-              sleep 2
-            done
-            echo "Port ${port} did not become available." >&2
-            return 1
-          }
+          set -a
+          source .env
+          set +a
 
-          wait_for_port 44405
-          wait_for_port 55901
+          tables="$(docker compose exec -T mysql mysql \
+            --batch --skip-column-names \
+            -uroot -p"${MYSQL_ROOT_PASSWORD}" "${MYSQL_DATABASE}" \
+            -e 'SHOW TABLES')"
+
+          for table in MEMB_INFO Character warehouse; do
+            if ! grep -Fxq "${table}" <<<"${tables}"; then
+              echo "Required database table was not found: ${table}" >&2
+              exit 1
+            fi
+          done
+
+          for service in mysql mu-server mu-web; do
+            container_id="$(docker compose ps -q "${service}")"
+            health="$(docker inspect --format '{{.State.Health.Status}}' "${container_id}")"
+            if [ "${health}" != "healthy" ]; then
+              echo "Service ${service} is not healthy: ${health}" >&2
+              exit 1
+            fi
+          done
+
+          for port in 44405 55901; do
+            if ! (echo >"/dev/tcp/127.0.0.1/${port}") 2>/dev/null; then
+              echo "Server port ${port} is not reachable from the runner." >&2
+              exit 1
+            fi
+          done
+
+          health_response="$(curl --fail --silent --show-error http://127.0.0.1:8085/healthz)"
+          if [ "${health_response}" != '{"status":"ok"}' ]; then
+            echo "Unexpected web health response: ${health_response}" >&2
+            exit 1
+          fi
+
+          curl --fail --silent --show-error --output /dev/null http://127.0.0.1:8085/
           docker compose ps
 
       - name: Show service logs on failure
         if: failure()
         run: |
           docker compose ps
-          docker compose logs --no-color --tail=200 mysql mu-server
+          docker compose logs --no-color --tail=200 mysql mu-server mu-web
 
       - name: Stop services
         if: always()
