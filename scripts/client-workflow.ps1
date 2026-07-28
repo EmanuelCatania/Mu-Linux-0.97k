@@ -123,6 +123,11 @@ function Invoke-RobocopyMirror {
     if ($robocopyExitCode -ge 8) {
         throw "robocopy failed with exit code $robocopyExitCode while mirroring '$Source' to '$Destination'."
     }
+
+    # GitHub Actions propagates the last native exit code when the PowerShell
+    # process ends. robocopy codes 0-7 are successful and must not leak as a
+    # failing step status.
+    $global:LASTEXITCODE = 0
 }
 
 function Set-IniValue {
@@ -215,7 +220,7 @@ function Invoke-Encoder {
 
     Push-Location $runtimeEncoder
     try {
-        & $encoderExecutable
+        & $encoderExecutable --non-interactive
         if ($LASTEXITCODE -ne 0) {
             throw "InfoEncoder.exe failed with exit code $LASTEXITCODE."
         }

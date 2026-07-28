@@ -27,13 +27,81 @@ jobs:
         shell: pwsh
         run: ./scripts/validate-repository.ps1
 
-      - name: Build Debug
+      - name: Initialize temporary runtime
         shell: pwsh
-        run: ./scripts/client-workflow.ps1 -Action Build -Configuration Debug
+        run: |
+          $repoRoot = [System.IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
+          $devRoot = Split-Path (Split-Path $repoRoot -Parent) -Parent
+          $runtimeRoot = Join-Path $devRoot "runtime\mu-097k"
+          if (Test-Path -LiteralPath $runtimeRoot) {
+            throw "Temporary runtime already exists: '$runtimeRoot'."
+          }
+          ./scripts/client-workflow.ps1 -Action InitializeRuntime -RuntimeRoot $runtimeRoot
 
-      - name: Build Release
+      - name: Build and deploy Debug
         shell: pwsh
-        run: ./scripts/client-workflow.ps1 -Action Build -Configuration Release
+        run: ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Debug
+
+      - name: Verify Debug runtime and deterministic encoder
+        shell: pwsh
+        run: |
+          $repoRoot = [System.IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
+          $devRoot = Split-Path (Split-Path $repoRoot -Parent) -Parent
+          $runtimeRoot = Join-Path $devRoot "runtime\mu-097k"
+          $requiredFiles = @(
+            (Join-Path $runtimeRoot "client\Main.dll")
+            (Join-Path $runtimeRoot "client\Main.pdb")
+            (Join-Path $runtimeRoot "encoder\InfoEncoder.exe")
+            (Join-Path $runtimeRoot "client\Data\Local\ClientInfo.bmd")
+          )
+
+          foreach ($path in $requiredFiles) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Expected Debug runtime artifact was not found: '$path'."
+            }
+            if ((Get-Item -LiteralPath $path).Length -eq 0) {
+              throw "Debug runtime artifact is empty: '$path'."
+            }
+          }
+
+          $clientInfo = Join-Path $runtimeRoot "client\Data\Local\ClientInfo.bmd"
+          $firstHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $clientInfo).Hash
+          ./scripts/client-workflow.ps1 -Action Encode -Configuration Debug
+          $secondHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $clientInfo).Hash
+
+          if ($firstHash -ne $secondHash) {
+            throw "InfoEncoder output is not deterministic for identical inputs."
+          }
+
+      - name: Build and deploy Release
+        shell: pwsh
+        run: ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Release
+
+      - name: Verify Release runtime
+        shell: pwsh
+        run: |
+          $repoRoot = [System.IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
+          $devRoot = Split-Path (Split-Path $repoRoot -Parent) -Parent
+          $runtimeRoot = Join-Path $devRoot "runtime\mu-097k"
+          $requiredFiles = @(
+            (Join-Path $runtimeRoot "client\Main.dll")
+            (Join-Path $runtimeRoot "encoder\InfoEncoder.exe")
+            (Join-Path $runtimeRoot "client\Data\Local\ClientInfo.bmd")
+          )
+
+          foreach ($path in $requiredFiles) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Expected Release runtime artifact was not found: '$path'."
+            }
+            if ((Get-Item -LiteralPath $path).Length -eq 0) {
+              throw "Release runtime artifact is empty: '$path'."
+            }
+          }
+
+          $debugSymbols = Join-Path $runtimeRoot "client\Main.pdb"
+          if (Test-Path -LiteralPath $debugSymbols) {
+            throw "Debug symbols remained in the Release runtime: '$debugSymbols'."
+          }
 
       - name: Clean build outputs
         if: always()
@@ -41,6 +109,24 @@ jobs:
         run: |
           ./scripts/client-workflow.ps1 -Action Clean -Configuration Debug
           ./scripts/client-workflow.ps1 -Action Clean -Configuration Release
+
+      - name: Remove temporary runtime
+        if: always()
+        shell: pwsh
+        run: |
+          $repoRoot = [System.IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
+          $devRoot = Split-Path (Split-Path $repoRoot -Parent) -Parent
+          $runtimeBase = [System.IO.Path]::GetFullPath((Join-Path $devRoot "runtime"))
+          $runtimeRoot = [System.IO.Path]::GetFullPath((Join-Path $runtimeBase "mu-097k"))
+          $runtimePrefix = $runtimeBase.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+
+          if (-not $runtimeRoot.StartsWith($runtimePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Refusing to remove runtime outside '$runtimeBase': '$runtimeRoot'."
+          }
+
+          if (Test-Path -LiteralPath $runtimeRoot) {
+            Remove-Item -LiteralPath $runtimeRoot -Recurse -Force
+          }
 
       - name: Verify clean worktree
         if: always()

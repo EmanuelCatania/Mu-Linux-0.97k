@@ -43,8 +43,42 @@ struct MAIN_FILE_INFO
 	MAP_FOG_INFO MapFogInfo[MAX_MAPS];
 };
 
+bool ParseArguments(int argc, _TCHAR* argv[], bool& nonInteractive)
+{
+	nonInteractive = false;
+
+	for (int n = 1; n < argc; n++)
+	{
+		if (_tcscmp(argv[n], _T("--non-interactive")) == 0)
+		{
+			nonInteractive = true;
+			continue;
+		}
+
+		std::cerr << "ERROR: Unknown argument." << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+void PauseIfInteractive(bool nonInteractive)
+{
+	if (nonInteractive == false)
+	{
+		system("pause");
+	}
+}
+
 int _tmain(int argc, _TCHAR* argv[])
 {
+	bool nonInteractive = false;
+
+	if (ParseArguments(argc, argv, nonInteractive) == false)
+	{
+		return 64;
+	}
+
 	setlocale(LC_ALL, "es_ES.1252");
 
 	SetConsoleOutputCP(1252);
@@ -167,7 +201,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		std::cout << "ERROR: Couldn't create the file." << std::endl;
 
-		system("pause");
+		PauseIfInteractive(nonInteractive);
 
 		return 1;
 	}
@@ -180,7 +214,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		std::cout << "ERROR: Couldn't create the file." << std::endl;
 
-		system("pause");
+		PauseIfInteractive(nonInteractive);
 
 		return 2;
 	}
@@ -189,7 +223,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	std::cout << "SUCCESS: File created." << std::endl;
 
-	system("pause");
+	PauseIfInteractive(nonInteractive);
 
 	return 0;
 }
