@@ -14,6 +14,8 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 - Entrada CMake/Ninja na raiz com presets Linux Debug e Release para os quatro
   processos do servidor.
 - Descoberta obrigatória do MySQL Connector/C++ por target importado.
+- Targets CMake/Ninja Win32 Debug e Release para `Main.dll` e `InfoEncoder.exe`,
+  preservando recursos, PCH e runtimes MSVC dos projetos existentes.
 
 ### Alterado
 
@@ -21,6 +23,8 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
   o mesmo preset Release no Docker e no desenvolvimento local.
 - CI Linux passou a validar os builds nativos Debug e Release antes do smoke test do
   stack Compose.
+- Workflow do cliente passou a aceitar `-BuildSystem MSBuild|CMake`, mantendo
+  MSBuild como padrão e validando ambos os caminhos na CI.
 
 ## [0.2.0] - 2026-07-28
 

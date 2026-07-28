@@ -7,7 +7,7 @@ exclusivamente pelo Git.
 ## Arquitetura
 
 ```text
-src/client ──build Windows──> C:\Dev\runtime\mu-097k\client
+src/client ──MSBuild/CMake──> C:\Dev\runtime\mu-097k\client
      │                              ▲
      └──InfoEncoder + MainInfo.ini──┘
 
@@ -20,9 +20,10 @@ para um runtime externo, compila `Main.dll` e `InfoEncoder.exe`, executa o encod
 instala `ClientInfo.bmd`. Os binários rastreados no repositório não são sobrescritos.
 
 O ponto de entrada CMake fica na raiz do repositório. No Linux, ele seleciona os
-quatro processos em `src/server`; o Dockerfile usa o mesmo preset Ninja Release e
-instala os binários junto aos dados de `runtime/server`. MySQL, servidor e painel
-compartilham a rede privada do Compose. O editor é opcional e usa
+quatro processos em `src/server`; no Windows, seleciona `Main.dll` e
+`InfoEncoder.exe` em `src/client`. O Dockerfile usa o preset Ninja Release do
+servidor e instala os binários junto aos dados de `runtime/server`. MySQL, servidor
+e painel compartilham a rede privada do Compose. O editor é opcional e usa
 `compose.editor.yaml`.
 
 ## Cliente Windows
@@ -54,16 +55,31 @@ C:\Dev\runtime\mu-097k\encoder\MainInfo.ini
 pwsh -File .\scripts\client-workflow.ps1 -Action Encode
 ```
 
-Para compilar e implantar:
+O script aceita `-BuildSystem MSBuild|CMake`. MSBuild permanece como padrão nesta
+etapa e CMake/Ninja pode ser selecionado explicitamente para comparação:
 
 ```powershell
+# Fluxo de referência e padrão atual
 pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
 pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Release
+
+# Fluxo paralelo com CMake/Ninja
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug -BuildSystem CMake
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Release -BuildSystem CMake
 ```
 
-As outras ações disponíveis são `Build`, `Deploy` e `Clean`. No VS Code, use
-`Client: Debug Main.dll (x86)` para executar o build Debug, implantar a DLL e o PDB e
-iniciar `main.exe` com `cppvsdbg`.
+O modo CMake localiza o Build Tools, prepara um ambiente MSVC x86 temporário com
+`vcvarsall.bat -vcvars_ver=14.44` e usa os presets `client-windows-debug` e
+`client-windows-release`. Os artefatos ficam em `out/build/<preset>/bin`; os do
+MSBuild permanecem em `src/client/bin/<configuração>`. CMake e Ninja devem estar no
+`PATH`.
+
+As outras ações disponíveis são `Build`, `Deploy` e `Clean`, sempre usando o mesmo
+`-BuildSystem` escolhido para o build. No VS Code, use
+`Client: Debug Main.dll (x86)` para executar o fluxo padrão Debug, implantar a DLL e
+o PDB e iniciar `main.exe` com `cppvsdbg`. A configuração automática do CMake ao
+abrir o workspace fica desativada; os presets podem ser selecionados manualmente na
+extensão CMake Tools.
 
 ## Servidor no WSL2
 
@@ -151,4 +167,5 @@ docker compose up --build -d
 ```
 
 Confirme que `git status` continua limpo depois de build, deploy e execução dos
-containers.
+containers. A CI compila Debug e Release do cliente pelos dois sistemas enquanto o
+MSBuild permanecer como fallback.

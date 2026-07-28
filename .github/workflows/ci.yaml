@@ -17,7 +17,7 @@ jobs:
   client-windows:
     name: Client Win32
     runs-on: windows-2025
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -38,77 +38,152 @@ jobs:
           }
           ./scripts/client-workflow.ps1 -Action InitializeRuntime -RuntimeRoot $runtimeRoot
 
-      - name: Build and deploy Debug
-        shell: pwsh
-        run: ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Debug
-
-      - name: Verify Debug runtime and deterministic encoder
+      - name: Build, deploy and compare MSBuild and CMake
         shell: pwsh
         run: |
-          $repoRoot = [System.IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
-          $devRoot = Split-Path (Split-Path $repoRoot -Parent) -Parent
-          $runtimeRoot = Join-Path $devRoot "runtime\mu-097k"
-          $requiredFiles = @(
-            (Join-Path $runtimeRoot "client\Main.dll")
-            (Join-Path $runtimeRoot "client\Main.pdb")
-            (Join-Path $runtimeRoot "encoder\InfoEncoder.exe")
-            (Join-Path $runtimeRoot "client\Data\Local\ClientInfo.bmd")
-          )
-
-          foreach ($path in $requiredFiles) {
-            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-              throw "Expected Debug runtime artifact was not found: '$path'."
+          function Assert-File([string]$Path, [string]$Description) {
+            if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+              throw "$Description was not found: '$Path'."
             }
-            if ((Get-Item -LiteralPath $path).Length -eq 0) {
-              throw "Debug runtime artifact is empty: '$path'."
+            if ((Get-Item -LiteralPath $Path).Length -eq 0) {
+              throw "$Description is empty: '$Path'."
             }
           }
 
+          function Get-PeInfo([string]$Path) {
+            $stream = [System.IO.File]::OpenRead($Path)
+            try {
+              $reader = [System.IO.BinaryReader]::new($stream)
+              $stream.Position = 0x3c
+              $peOffset = $reader.ReadInt32()
+              $stream.Position = $peOffset
+              if ($reader.ReadUInt32() -ne 0x00004550) {
+                throw "Artifact is not a PE image: '$Path'."
+              }
+
+              $machine = $reader.ReadUInt16()
+              $sectionCount = $reader.ReadUInt16()
+              $stream.Position += 12
+              $optionalHeaderSize = $reader.ReadUInt16()
+              $stream.Position += 2 + $optionalHeaderSize
+              $sections = for ($index = 0; $index -lt $sectionCount; $index++) {
+                $name = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(8)).Trim([char]0)
+                $stream.Position += 32
+                $name
+              }
+
+              return [pscustomobject]@{ Machine = $machine; Sections = @($sections) }
+            }
+            finally {
+              $stream.Dispose()
+            }
+          }
+
+          function Assert-PeX86WithResources([string]$Path) {
+            $pe = Get-PeInfo -Path $Path
+            if ($pe.Machine -ne 0x014c) {
+              throw "Expected an x86 PE image at '$Path', machine was 0x$('{0:X4}' -f $pe.Machine)."
+            }
+            if ($pe.Sections -notcontains ".rsrc") {
+              throw "PE resource section was not found in '$Path'."
+            }
+          }
+
+          function Assert-CommandFlag([object[]]$Commands, [string]$FilePattern, [string]$FlagPattern) {
+            $entry = @($Commands | Where-Object file -Like $FilePattern)
+            if ($entry.Count -ne 1) {
+              throw "Expected one compile command matching '$FilePattern', found $($entry.Count)."
+            }
+            if ($entry[0].command -notmatch $FlagPattern) {
+              throw "Expected flag '$FlagPattern' for '$($entry[0].file)'."
+            }
+          }
+
+          $repoRoot = [System.IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
+          $devRoot = Split-Path (Split-Path $repoRoot -Parent) -Parent
+          $runtimeRoot = Join-Path $devRoot "runtime\mu-097k"
+          $mainDll = Join-Path $runtimeRoot "client\Main.dll"
+          $mainPdb = Join-Path $runtimeRoot "client\Main.pdb"
+          $infoEncoder = Join-Path $runtimeRoot "encoder\InfoEncoder.exe"
           $clientInfo = Join-Path $runtimeRoot "client\Data\Local\ClientInfo.bmd"
-          $firstHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $clientInfo).Hash
-          ./scripts/client-workflow.ps1 -Action Encode -Configuration Debug
-          $secondHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $clientInfo).Hash
 
-          if ($firstHash -ne $secondHash) {
-            throw "InfoEncoder output is not deterministic for identical inputs."
+          foreach ($buildSystem in @("MSBuild", "CMake")) {
+            Write-Host "Validating $buildSystem Debug."
+            ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Debug -BuildSystem $buildSystem
+            Assert-File $mainDll "$buildSystem Debug Main.dll"
+            Assert-File $mainPdb "$buildSystem Debug Main.pdb"
+            Assert-File $infoEncoder "$buildSystem Debug InfoEncoder.exe"
+            Assert-File $clientInfo "$buildSystem Debug ClientInfo.bmd"
+            Assert-PeX86WithResources $mainDll
+            Assert-PeX86WithResources $infoEncoder
+
+            $firstHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $clientInfo).Hash
+            ./scripts/client-workflow.ps1 -Action Encode -Configuration Debug -BuildSystem $buildSystem
+            $secondHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $clientInfo).Hash
+            if ($firstHash -ne $secondHash) {
+              throw "$buildSystem InfoEncoder output is not deterministic for identical inputs."
+            }
+
+            if ($buildSystem -eq "CMake") {
+              $debugCommands = Get-Content -Raw out/build/client-windows-debug/compile_commands.json | ConvertFrom-Json
+              Assert-CommandFlag $debugCommands "*/Main/Main.cpp" '(?:^|\s)[/-]MDd(?:\s|$)'
+              Assert-CommandFlag $debugCommands "*/Main/Main.cpp" '(?:^|\s)/Yu'
+              Assert-CommandFlag $debugCommands "*/InfoEncoder/InfoEncoder.cpp" '(?:^|\s)[/-]MTd(?:\s|$)'
+              Assert-CommandFlag $debugCommands "*/InfoEncoder/InfoEncoder.cpp" '(?:^|\s)/Yu'
+              $stbCommand = @($debugCommands | Where-Object file -Like "*/Main/stb.cpp")
+              if ($stbCommand.Count -ne 1 -or $stbCommand[0].command -match '(?:^|\s)/Yu') {
+                throw "stb.cpp must compile exactly once without the Main precompiled header."
+              }
+            }
+
+            Write-Host "Validating $buildSystem Release."
+            ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Release -BuildSystem $buildSystem
+            Assert-File $mainDll "$buildSystem Release Main.dll"
+            Assert-File $infoEncoder "$buildSystem Release InfoEncoder.exe"
+            Assert-File $clientInfo "$buildSystem Release ClientInfo.bmd"
+            Assert-PeX86WithResources $mainDll
+            Assert-PeX86WithResources $infoEncoder
+            if (Test-Path -LiteralPath $mainPdb) {
+              throw "$buildSystem Release left Debug symbols in the runtime: '$mainPdb'."
+            }
+
+            if ($buildSystem -eq "CMake") {
+              $releaseCommands = Get-Content -Raw out/build/client-windows-release/compile_commands.json | ConvertFrom-Json
+              Assert-CommandFlag $releaseCommands "*/Main/Main.cpp" '(?:^|\s)[/-]MD(?:\s|$)'
+              Assert-CommandFlag $releaseCommands "*/Main/Main.cpp" '(?:^|\s)/GL(?:\s|$)'
+              Assert-CommandFlag $releaseCommands "*/InfoEncoder/InfoEncoder.cpp" '(?:^|\s)[/-]MT(?:\s|$)'
+              Assert-CommandFlag $releaseCommands "*/InfoEncoder/InfoEncoder.cpp" '(?:^|\s)/GL(?:\s|$)'
+            }
           }
 
-      - name: Build and deploy Release
-        shell: pwsh
-        run: ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Release
-
-      - name: Verify Release runtime
+      - name: Reject an x64 CMake environment
         shell: pwsh
         run: |
-          $repoRoot = [System.IO.Path]::GetFullPath($env:GITHUB_WORKSPACE)
-          $devRoot = Split-Path (Split-Path $repoRoot -Parent) -Parent
-          $runtimeRoot = Join-Path $devRoot "runtime\mu-097k"
-          $requiredFiles = @(
-            (Join-Path $runtimeRoot "client\Main.dll")
-            (Join-Path $runtimeRoot "encoder\InfoEncoder.exe")
-            (Join-Path $runtimeRoot "client\Data\Local\ClientInfo.bmd")
-          )
+          $vsWhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsRoot = (& $vsWhere -latest -products * -version "[17.0,19.0)" `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            -property installationPath | Select-Object -First 1).Trim()
+          $vcVarsAll = Join-Path $vsRoot "VC\Auxiliary\Build\vcvarsall.bat"
+          $buildDirectory = Join-Path $env:GITHUB_WORKSPACE "out\build\client-windows-x64-rejection"
+          $command = "`"$vcVarsAll`" x64 -vcvars_ver=14.44 >nul && cmake -S `"$env:GITHUB_WORKSPACE`" -B `"$buildDirectory`" -G Ninja"
 
-          foreach ($path in $requiredFiles) {
-            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-              throw "Expected Release runtime artifact was not found: '$path'."
-            }
-            if ((Get-Item -LiteralPath $path).Length -eq 0) {
-              throw "Release runtime artifact is empty: '$path'."
-            }
+          & $env:ComSpec /d /s /c $command
+          if ($LASTEXITCODE -eq 0) {
+            throw "Client CMake configuration unexpectedly accepted an x64 compiler environment."
           }
 
-          $debugSymbols = Join-Path $runtimeRoot "client\Main.pdb"
-          if (Test-Path -LiteralPath $debugSymbols) {
-            throw "Debug symbols remained in the Release runtime: '$debugSymbols'."
-          }
+          # The configure failure is the expected result and must not leak as the
+          # final process exit code of the GitHub Actions PowerShell step.
+          $global:LASTEXITCODE = 0
 
       - name: Clean build outputs
         if: always()
         shell: pwsh
         run: |
-          ./scripts/client-workflow.ps1 -Action Clean -Configuration Debug
-          ./scripts/client-workflow.ps1 -Action Clean -Configuration Release
+          foreach ($buildSystem in @("MSBuild", "CMake")) {
+            ./scripts/client-workflow.ps1 -Action Clean -Configuration Debug -BuildSystem $buildSystem
+            ./scripts/client-workflow.ps1 -Action Clean -Configuration Release -BuildSystem $buildSystem
+          }
 
       - name: Remove temporary runtime
         if: always()

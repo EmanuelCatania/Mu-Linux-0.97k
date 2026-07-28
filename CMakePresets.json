@@ -37,6 +37,38 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
+    },
+    {
+      "name": "client-windows-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "client-windows-debug",
+      "displayName": "Client Windows Debug",
+      "description": "Build Main.dll and InfoEncoder.exe as Win32 Debug targets.",
+      "inherits": "client-windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "client-windows-release",
+      "displayName": "Client Windows Release",
+      "description": "Build Main.dll and InfoEncoder.exe as Win32 Release targets.",
+      "inherits": "client-windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
@@ -47,6 +79,14 @@
     {
       "name": "server-linux-release",
       "configurePreset": "server-linux-release"
+    },
+    {
+      "name": "client-windows-debug",
+      "configurePreset": "client-windows-debug"
+    },
+    {
+      "name": "client-windows-release",
+      "configurePreset": "client-windows-release"
     }
   ]
 }

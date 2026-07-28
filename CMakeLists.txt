@@ -7,9 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_subdirectory(src/server)
 elseif(WIN32)
-  message(FATAL_ERROR
-    "The Windows client CMake targets are not available yet. "
-    "Use scripts/client-workflow.ps1 with MSBuild until issue #22 is implemented.")
+  add_subdirectory(src/client)
 else()
   message(FATAL_ERROR "Unsupported platform '${CMAKE_SYSTEM_NAME}'.")
 endif()

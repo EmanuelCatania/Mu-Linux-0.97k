@@ -7,6 +7,9 @@ param(
     [ValidateSet("Debug", "Release")]
     [string]$Configuration = "Debug",
 
+    [ValidateSet("MSBuild", "CMake")]
+    [string]$BuildSystem = "MSBuild",
+
     [ValidatePattern("^[A-Za-z0-9.-]+$")]
     [string]$ServerAddress = "127.0.0.1",
 
@@ -41,6 +44,7 @@ if (-not $RuntimeRoot.StartsWith($runtimePrefix, [System.StringComparison]::Ordi
 $runtimeClient = Join-Path $RuntimeRoot "client"
 $runtimeEncoder = Join-Path $RuntimeRoot "encoder"
 $solutionPath = Join-Path $repoRoot "src\client\Client.sln"
+$cmakePreset = "client-windows-$($Configuration.ToLowerInvariant())"
 
 function Get-BuildEnvironment {
     $vsWhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
@@ -91,6 +95,7 @@ function Get-BuildEnvironment {
     $vcToolsVersion = (Get-Content -Raw -LiteralPath $versionFile).Trim()
     $vcToolsDirectory = Join-Path $vsRoot "VC\Tools\MSVC\$vcToolsVersion"
     $msBuild = Join-Path $vsRoot "MSBuild\Current\Bin\MSBuild.exe"
+    $vcVarsAll = Join-Path $vsRoot "VC\Auxiliary\Build\vcvarsall.bat"
 
     if (-not (Test-Path -LiteralPath $vcToolsDirectory -PathType Container)) {
         throw "MSVC $vcToolsVersion is declared but its tool directory was not found: '$vcToolsDirectory'."
@@ -100,12 +105,64 @@ function Get-BuildEnvironment {
         throw "MSBuild was not found: '$msBuild'."
     }
 
-    return [pscustomobject]@{
-        VsRoot         = $vsRoot
-        MsBuild        = $msBuild
-        PlatformToolset = $platformToolset
-        VCToolsVersion = $vcToolsVersion
+    if (-not (Test-Path -LiteralPath $vcVarsAll -PathType Leaf)) {
+        throw "vcvarsall.bat was not found: '$vcVarsAll'."
     }
+
+    $versionParts = $vcToolsVersion.Split(".")
+    if ($versionParts.Count -lt 2) {
+        throw "The MSVC tools version '$vcToolsVersion' is invalid."
+    }
+
+    $vcVarsVersion = "$($versionParts[0]).$($versionParts[1])"
+    if ($vcVarsVersion -ne "14.44") {
+        throw "This workflow requires MSVC 14.44, but '$vcToolsVersion' was selected."
+    }
+
+    return [pscustomobject]@{
+        VsRoot          = $vsRoot
+        MsBuild         = $msBuild
+        PlatformToolset = $platformToolset
+        VCToolsVersion  = $vcToolsVersion
+        VcVarsAll       = $vcVarsAll
+        VcVarsVersion   = $vcVarsVersion
+    }
+}
+
+function Initialize-MsvcEnvironment {
+    param(
+        [Parameter(Mandatory)]
+        [pscustomobject]$BuildEnvironment
+    )
+
+    $command = "`"$($BuildEnvironment.VcVarsAll)`" x86 -vcvars_ver=$($BuildEnvironment.VcVarsVersion) >nul && set"
+    $environmentLines = & $env:ComSpec /d /s /c $command
+    if ($LASTEXITCODE -ne 0) {
+        throw "vcvarsall.bat failed to initialize MSVC $($BuildEnvironment.VcVarsVersion) for x86."
+    }
+
+    foreach ($line in $environmentLines) {
+        $separator = $line.IndexOf("=")
+        if ($separator -le 0) {
+            continue
+        }
+
+        $name = $line.Substring(0, $separator)
+        $value = $line.Substring($separator + 1)
+        [System.Environment]::SetEnvironmentVariable($name, $value, "Process")
+    }
+}
+
+function Get-RequiredApplication {
+    param([Parameter(Mandatory)][string]$Name)
+
+    $command = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($null -eq $command) {
+        throw "'$Name' was not found in PATH. Install it before using -BuildSystem CMake."
+    }
+
+    return $command.Source
 }
 
 function Invoke-RobocopyMirror {
@@ -177,22 +234,69 @@ function Invoke-ClientBuild {
     )
 
     $buildEnvironment = Get-BuildEnvironment
-    $arguments = @(
-        $solutionPath
-        "/m"
-        "/t:$Target"
-        "/p:Configuration=$Configuration"
-        "/p:Platform=Win32"
-        "/p:PlatformToolset=$($buildEnvironment.PlatformToolset)"
-        "/p:VCToolsVersion=$($buildEnvironment.VCToolsVersion)"
-        "/verbosity:minimal"
-    )
 
-    Write-Host "MSBuild $Target ($Configuration|Win32) with $($buildEnvironment.PlatformToolset) and MSVC $($buildEnvironment.VCToolsVersion)."
-    & $buildEnvironment.MsBuild @arguments
+    if ($BuildSystem -eq "MSBuild") {
+        $arguments = @(
+            $solutionPath
+            "/m"
+            "/t:$Target"
+            "/p:Configuration=$Configuration"
+            "/p:Platform=Win32"
+            "/p:PlatformToolset=$($buildEnvironment.PlatformToolset)"
+            "/p:VCToolsVersion=$($buildEnvironment.VCToolsVersion)"
+            "/verbosity:minimal"
+        )
+
+        Write-Host "MSBuild $Target ($Configuration|Win32) with $($buildEnvironment.PlatformToolset) and MSVC $($buildEnvironment.VCToolsVersion)."
+        & $buildEnvironment.MsBuild @arguments
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "MSBuild $Target failed with exit code $LASTEXITCODE."
+        }
+
+        return
+    }
+
+    $cmake = Get-RequiredApplication -Name "cmake.exe"
+    $null = Get-RequiredApplication -Name "ninja.exe"
+    Initialize-MsvcEnvironment -BuildEnvironment $buildEnvironment
+
+    $buildDirectory = Join-Path $repoRoot "out\build\$cmakePreset"
+    if ($Target -eq "Clean") {
+        $ninjaFile = Join-Path $buildDirectory "build.ninja"
+        if (-not (Test-Path -LiteralPath $ninjaFile -PathType Leaf)) {
+            Write-Host "CMake $Configuration output is already clean; '$buildDirectory' is not configured."
+            return
+        }
+
+        Write-Host "CMake Clean ($Configuration|Win32) with Ninja and MSVC $($buildEnvironment.VCToolsVersion)."
+        & $cmake --build --preset $cmakePreset --target clean
+    }
+    else {
+        Write-Host "CMake Build ($Configuration|Win32) with Ninja and MSVC $($buildEnvironment.VCToolsVersion)."
+        & $cmake --preset $cmakePreset
+        if ($LASTEXITCODE -eq 0) {
+            & $cmake --build --preset $cmakePreset
+        }
+    }
 
     if ($LASTEXITCODE -ne 0) {
-        throw "MSBuild $Target failed with exit code $LASTEXITCODE."
+        throw "CMake $Target failed for preset '$cmakePreset' with exit code $LASTEXITCODE."
+    }
+}
+
+function Get-ClientArtifacts {
+    if ($BuildSystem -eq "MSBuild") {
+        $outputRoot = Join-Path $repoRoot "src\client\bin\$Configuration"
+    }
+    else {
+        $outputRoot = Join-Path $repoRoot "out\build\$cmakePreset\bin"
+    }
+
+    return [pscustomobject]@{
+        MainDll    = Join-Path $outputRoot "Main\Main.dll"
+        MainPdb    = Join-Path $outputRoot "Main\Main.pdb"
+        InfoEncoder = Join-Path $outputRoot "InfoEncoder\InfoEncoder.exe"
     }
 }
 
@@ -243,14 +347,14 @@ function Invoke-Encoder {
 function Deploy-Client {
     Assert-RuntimeInitialized
 
-    $outputRoot = Join-Path $repoRoot "src\client\bin\$Configuration"
-    $mainDll = Join-Path $outputRoot "Main\Main.dll"
-    $mainPdb = Join-Path $outputRoot "Main\Main.pdb"
-    $infoEncoder = Join-Path $outputRoot "InfoEncoder\InfoEncoder.exe"
+    $artifacts = Get-ClientArtifacts
+    $mainDll = $artifacts.MainDll
+    $mainPdb = $artifacts.MainPdb
+    $infoEncoder = $artifacts.InfoEncoder
 
     foreach ($artifact in @($mainDll, $infoEncoder)) {
         if (-not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
-            throw "Build artifact '$artifact' was not found. Run -Action Build first."
+            throw "$BuildSystem build artifact '$artifact' was not found. Run -Action Build first with the same -BuildSystem."
         }
     }
 
