@@ -151,6 +151,36 @@ jobs:
         shell: pwsh
         run: ./scripts/validate-repository.ps1
 
+      - name: Install native server build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            libmysqlcppconn-dev \
+            ninja-build
+
+      - name: Verify MySQL Connector is required
+        run: |
+          if cmake -S . -B out/build/server-linux-without-mysql \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_DISABLE_FIND_PACKAGE_MySQLConnectorCpp=TRUE; then
+            echo "Server configuration unexpectedly succeeded without MySQL Connector/C++." >&2
+            exit 1
+          fi
+
+      - name: Build server Debug and Release with CMake presets
+        run: |
+          for preset in server-linux-debug server-linux-release; do
+            cmake --preset "${preset}"
+            cmake --build --preset "${preset}"
+
+            for executable in ConnectServer JoinServer DataServer GameServer; do
+              artifact="out/build/${preset}/bin/${executable}"
+              test -x "${artifact}"
+              file "${artifact}" | grep -q 'ELF 64-bit'
+            done
+          done
+
       - name: Prepare local environment
         run: cp .env.example .env
 

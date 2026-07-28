@@ -16,6 +16,7 @@ src/**/*.map
 build/
 out/
 cmake-build-*/
+CMakeUserPresets.json
 
 # Dependências e ferramentas locais
 services/**/node_modules/

@@ -11,17 +11,19 @@ src/client ──build Windows──> C:\Dev\runtime\mu-097k\client
      │                              ▲
      └──InfoEncoder + MainInfo.ini──┘
 
-src/server ──build Docker──> mu-server ──> MySQL
-runtime/server───────────────┘       └──> services/web
+CMake/Ninja ──> src/server ──build Docker──> mu-server ──> MySQL
+runtime/server──────────────────────────────┘       └──> services/web
 ```
 
 `runtime/client` e `runtime/encoder` são templates rastreados. A automação os copia
 para um runtime externo, compila `Main.dll` e `InfoEncoder.exe`, executa o encoder e
 instala `ClientInfo.bmd`. Os binários rastreados no repositório não são sobrescritos.
 
-O Dockerfile compila `src/server` com CMake e instala os binários junto aos dados de
-`runtime/server`. MySQL, servidor e painel compartilham a rede privada do Compose. O
-editor é opcional e usa `compose.editor.yaml`.
+O ponto de entrada CMake fica na raiz do repositório. No Linux, ele seleciona os
+quatro processos em `src/server`; o Dockerfile usa o mesmo preset Ninja Release e
+instala os binários junto aos dados de `runtime/server`. MySQL, servidor e painel
+compartilham a rede privada do Compose. O editor é opcional e usa
+`compose.editor.yaml`.
 
 ## Cliente Windows
 
@@ -81,6 +83,28 @@ Revise as credenciais. Para o cliente Windows conectado ao WSL2, mantenha:
 PUBLIC_IP=127.0.0.1
 ```
 
+Para compilar o servidor diretamente no WSL2, instale as dependências uma vez:
+
+```bash
+sudo apt update
+sudo apt install build-essential cmake ninja-build libmysqlcppconn-dev
+```
+
+Configure e compile a variante desejada a partir da raiz do repositório:
+
+```bash
+cmake --preset server-linux-debug
+cmake --build --preset server-linux-debug
+
+cmake --preset server-linux-release
+cmake --build --preset server-linux-release
+```
+
+Os quatro executáveis são gravados em
+`out/build/<preset>/bin`. `CMakeUserPresets.json` pode ser usado para ajustes locais
+e não é versionado. A ausência do MySQL Connector/C++ interrompe a configuração em
+vez de produzir um build incompleto.
+
 Valide e inicie o stack base:
 
 ```bash
@@ -120,6 +144,8 @@ pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debu
 ```
 
 ```bash
+cmake --preset server-linux-debug
+cmake --build --preset server-linux-debug
 docker compose config --quiet
 docker compose up --build -d
 ```

@@ -4,15 +4,17 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
+        ninja-build \
         libmysqlcppconn-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-COPY src/server /src/server
-WORKDIR /src/server
+COPY CMakeLists.txt CMakePresets.json ./
+COPY cmake ./cmake
+COPY src/server ./src/server
 
-RUN cmake -S . -B /build -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build /build -j
+RUN cmake --preset server-linux-release \
+    && cmake --build --preset server-linux-release
 
 FROM ubuntu:22.04
 
@@ -25,10 +27,10 @@ RUN apt-get update \
 
 WORKDIR /opt/mu
 
-COPY --from=build /build/bin/ConnectServer /opt/mu/ConnectServer/ConnectServer
-COPY --from=build /build/bin/JoinServer /opt/mu/JoinServer/JoinServer
-COPY --from=build /build/bin/DataServer /opt/mu/DataServer/DataServer
-COPY --from=build /build/bin/GameServer /opt/mu/GameServer/GameServer
+COPY --from=build /src/out/build/server-linux-release/bin/ConnectServer /opt/mu/ConnectServer/ConnectServer
+COPY --from=build /src/out/build/server-linux-release/bin/JoinServer /opt/mu/JoinServer/JoinServer
+COPY --from=build /src/out/build/server-linux-release/bin/DataServer /opt/mu/DataServer/DataServer
+COPY --from=build /src/out/build/server-linux-release/bin/GameServer /opt/mu/GameServer/GameServer
 
 COPY runtime/server/ConnectServer/ConnectServer.ini /opt/mu/ConnectServer/
 COPY runtime/server/ConnectServer/ServerList.dat /opt/mu/ConnectServer/

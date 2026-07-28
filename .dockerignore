@@ -1,5 +1,7 @@
 .git
 .vscode
+out
+CMakeUserPresets.json
 docs
 runtime/client
 runtime/encoder

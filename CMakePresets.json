@@ -1,0 +1,52 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "server-linux-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "server-linux-debug",
+      "displayName": "Server Linux Debug",
+      "description": "Build the four Linux server processes with debug information.",
+      "inherits": "server-linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "server-linux-release",
+      "displayName": "Server Linux Release",
+      "description": "Build the four Linux server processes with release optimizations.",
+      "inherits": "server-linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "server-linux-debug",
+      "configurePreset": "server-linux-debug"
+    },
+    {
+      "name": "server-linux-release",
+      "configurePreset": "server-linux-release"
+    }
+  ]
+}

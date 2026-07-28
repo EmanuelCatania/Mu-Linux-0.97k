@@ -9,6 +9,19 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 
 ## [Não lançado]
 
+### Adicionado
+
+- Entrada CMake/Ninja na raiz com presets Linux Debug e Release para os quatro
+  processos do servidor.
+- Descoberta obrigatória do MySQL Connector/C++ por target importado.
+
+### Alterado
+
+- Build do servidor passou a usar listas explícitas de fontes, `Threads::Threads` e
+  o mesmo preset Release no Docker e no desenvolvimento local.
+- CI Linux passou a validar os builds nativos Debug e Release antes do smoke test do
+  stack Compose.
+
 ## [0.2.0] - 2026-07-28
 
 ### Adicionado

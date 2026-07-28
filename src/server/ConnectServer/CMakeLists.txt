@@ -1,0 +1,17 @@
+mu_add_server(ConnectServer
+  ClientManager.cpp
+  ConnectServerLinux.cpp
+  ConnectServerProtocol.cpp
+  Console.cpp
+  CriticalSection.cpp
+  IpManager.cpp
+  Log.cpp
+  MiniDump.cpp
+  Queue.cpp
+  ReadScript.cpp
+  ServerDisplayer.cpp
+  ServerList.cpp
+  SocketManagerLinux.cpp
+  SocketManagerUdpLinux.cpp
+  stdafx.cpp
+  Util.cpp)
