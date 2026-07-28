@@ -13,13 +13,16 @@ projeto ainda não definiu sua primeira versão pública independente.
 - Fluxo reproduzível para build, deploy, encode e debug do cliente Windows.
 - Tarefas e recomendações de extensões para VS Code.
 - Documentação em português brasileiro e inglês.
-- Documentos de arquitetura, operação, segurança e proveniência.
+- Guia consolidado de desenvolvimento, arquitetura e operação local.
 
 ### Alterado
 
 - Estrutura do repositório organizada por código, runtime, serviços e deployment.
 - Compose local independente de uma rede externa de proxy.
 - Nome público do projeto alterado para MU 0.97k.
+- Projeto reposicionado em torno de gameplay e conteúdo, identidade clássica e
+  experiência de desenvolvimento.
+- Créditos e proveniência consolidados no README e no aviso legal.
 
 ### Corrigido
 

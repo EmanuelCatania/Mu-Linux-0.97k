@@ -1,99 +1,97 @@
 # MU 0.97k
 
-[English version](README.en.md)
+[Short English overview](README.en.md)
 
-Preservação e modernização independente do MU Online 0.97k, com cliente Windows,
-servidor C++ para Linux e ambiente local baseado em WSL2 e Docker Compose.
+Fork independente do MU Online 0.97k voltado à evolução do jogo e de sua base
+técnica. O projeto busca manter a identidade clássica, adicionar conteúdo e
+qualidade de vida e tornar o desenvolvimento mais previsível no Windows e no Linux.
 
 > [!IMPORTANT]
-> Este repositório contém código e assets legados cuja licença original não foi
-> identificada. Consulte [NOTICE.md](NOTICE.md) e
-> [docs/provenance.md](docs/provenance.md) antes de redistribuir ou reutilizar o
-> conteúdo.
+> O cliente original, as marcas e os assets de MU Online pertencem à Webzen. O
+> código comunitário deste repositório possui origens e condições de licenciamento
+> distintas. Leia o [aviso de proveniência e licenciamento](NOTICE.md) antes de
+> reutilizar ou redistribuir qualquer material.
 
-## Estado do projeto
+## Visão do projeto
 
-- Cliente: Windows, Win32, Visual Studio Build Tools e MSVC.
-- Servidor: Linux, CMake e Docker.
-- Desenvolvimento suportado: Windows 11 com WSL2 Ubuntu 24.04.
-- Objetivo atual: preservar a compatibilidade 0.97k enquanto o build, a estrutura e
-  a experiência de desenvolvimento são modernizados.
-- Distribuição pública de binários e imagens: ainda não suportada.
+O trabalho segue três pilares com a mesma importância:
 
-## Componentes
+- **Gameplay e conteúdo:** correções, qualidade de vida, eventos, itens, mapas e
+  novos sistemas.
+- **Identidade clássica:** a experiência 0.97k permanece reconhecível; mudanças que
+  alterem essa experiência devem ser configuráveis sempre que viável.
+- **Plataforma de desenvolvimento:** builds reproduzíveis, automação, testes,
+  ferramentas e manutenção mais simples.
 
-| Componente | Local | Execução |
+Esse modelo é chamado de **clássico extensível**: a base histórica é preservada como
+referência, mas não impede a evolução independente do jogo.
+
+## Como o projeto funciona
+
+O `main.exe` é o cliente fechado original e seu código-fonte não está disponível. A
+`Main.dll` é um plugin comunitário carregado pelo cliente que aplica hooks, correções
+e extensões. O `InfoEncoder.exe` transforma `MainInfo.ini` e os arquivos auxiliares
+em `ClientInfo.bmd`, consumido pela DLL.
+
+O servidor é uma emulação comunitária em C++, derivada do trabalho de Kayito e
+posteriormente adaptada por Emanuel Catania para execução nativa no Linux, MySQL e
+Docker. Cliente, DLL, encoder e servidor precisam evoluir de forma coordenada quando
+uma funcionalidade altera protocolo ou configuração.
+
+## Estado atual
+
+| Componente | Ambiente | Local |
 | --- | --- | --- |
-| Cliente e encoder | `src/client` | Windows |
-| Servidor | `src/server` | Linux/WSL2 |
-| Runtime do cliente | `runtime/client` | Template rastreado |
-| Dados do servidor | `runtime/server` | Docker |
-| Painel web | `services/web` | Node.js/Docker |
-| Editor opcional | `services/editor` | Node.js/Docker |
+| Cliente, `Main.dll` e encoder | Windows Win32 | `src/client` |
+| Servidor C++ | Linux/WSL2 | `src/server` |
+| Templates e dados de runtime | Windows/Linux | `runtime` |
+| Painel web | Node.js/Docker | `services/web` |
+| Editor opcional | Node.js/Docker | `services/editor` |
 
-## Requisitos
+O ambiente suportado atualmente é Windows 11 com VS Code e um clone separado no
+WSL2 Ubuntu 24.04. A publicação de binários e imagens ainda não faz parte do fluxo
+oficial.
 
-No Windows:
+## Requisitos principais
 
-- PowerShell 7;
-- Git e VS Code;
-- Visual Studio Build Tools 2026 com Desktop C++, toolset v145 e MSVC 14.44;
-- extensões recomendadas pelo workspace.
+- PowerShell 7, Git e VS Code no Windows;
+- Visual Studio Build Tools com C++ e MSVC compatível com o projeto;
+- Ubuntu 24.04, Docker Engine e Docker Compose no WSL2;
+- clones Windows e WSL separados e sincronizados pelo Git.
 
-No WSL2:
-
-- Ubuntu 24.04;
-- Docker Engine e Docker Compose;
-- clone Linux separado do clone Windows.
-
-## Servidor local
+## Início rápido do servidor
 
 No clone do WSL2:
 
 ```bash
 cp .env.example .env
-# Revise senhas e mantenha PUBLIC_IP=127.0.0.1 para desenvolvimento local.
+# Revise as credenciais e mantenha PUBLIC_IP=127.0.0.1 no ambiente local.
 docker compose config --quiet
 docker compose up --build -d
 ```
 
-Serviços expostos:
+O servidor expõe `44405/tcp` e `55901/tcp`; o painel fica disponível em
+<http://127.0.0.1:8085>. Para desligar sem remover o banco, use
+`docker compose down`.
 
-- ConnectServer: `127.0.0.1:44405/tcp`;
-- GameServer: `127.0.0.1:55901/tcp`;
-- painel web: <http://127.0.0.1:8085>.
+## Início rápido do cliente
 
-Para desligar sem apagar o banco:
-
-```bash
-docker compose down
-```
-
-## Cliente Windows
-
-No primeiro uso, a partir do clone Windows:
+No clone Windows:
 
 ```powershell
 pwsh -File .\scripts\client-workflow.ps1 -Action InitializeRuntime
 pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
 ```
 
-O runtime executável é criado fora do Git em:
-
-```text
-C:\Dev\runtime\mu-097k\client
-```
-
-Execute o cliente preservando o diretório de trabalho:
+Configure `C:\Dev\runtime\mu-097k\encoder\MainInfo.ini` e execute:
 
 ```powershell
-Start-Process `
-    -FilePath "C:\Dev\runtime\mu-097k\client\main.exe" `
-    -WorkingDirectory "C:\Dev\runtime\mu-097k\client"
+pwsh -File .\scripts\client-workflow.ps1 -Action Encode
 ```
 
-O script também oferece `Build`, `Deploy`, `Encode`, `Clean` e builds Release. No
-VS Code, use as tarefas `Client:*` no clone Windows e `Server:*` no clone WSL.
+O cliente executável fica em `C:\Dev\runtime\mu-097k\client`. O script também
+oferece `Build`, `Deploy`, `Clean` e builds Release. No VS Code, a configuração
+`Client: Debug Main.dll (x86)` prepara o runtime e inicia o debugger.
 
 ## Estrutura
 
@@ -101,29 +99,39 @@ VS Code, use as tarefas `Client:*` no clone Windows e `Server:*` no clone WSL.
 src/          Código C++ do cliente, servidor e ferramentas
 runtime/      Templates do cliente/encoder e dados do servidor
 services/     Painel web e editor opcional
-deploy/       Docker e integrações legadas
-docs/         Arquitetura, desenvolvimento, operação e histórico
+deploy/       Dockerfiles e integrações legadas não suportadas
 scripts/      Automação do ambiente local
+docs/         Guia de desenvolvimento e histórico upstream
 ```
 
-## Documentação
+Consulte o [guia de desenvolvimento](docs/development.md) para arquitetura, runtime,
+build, debug e operação local. Veja também o [changelog](CHANGELOG.md), as
+[diretrizes de contribuição](CONTRIBUTING.md) e a [política de segurança](SECURITY.md).
 
-- [Arquitetura](docs/architecture.md)
-- [Cliente no Windows](docs/development/windows-client.md)
-- [Servidor no WSL2](docs/development/wsl-server.md)
-- [Operação com Docker](docs/operations/docker.md)
-- [Proveniência e atribuições](docs/provenance.md)
-- [Histórico upstream em espanhol](docs/history/upstream-readme.es.md)
-- [Como contribuir](CONTRIBUTING.md)
-- [Política de segurança](SECURITY.md)
+## Direção
 
-## Manutenção
+A trilha **Gameplay e Conteúdo** cobre correções funcionais, qualidade de vida,
+opções configuráveis, itens, mapas, eventos e sistemas. A trilha **Plataforma e
+Desenvolvimento** cobre CI, testes, dependências, segurança, CMake/Ninja, vcpkg e
+ferramentas. O backlog detalhado será mantido nos Issues e Milestones do GitHub.
 
-`main` é protegida. Mudanças entram por branches curtas e pull requests neste
-repositório. O remoto upstream existe somente para consulta; correções externas são
-avaliadas e importadas manualmente.
+## Créditos
 
-## Aviso
+- [Nico Muratona (Kayito)](https://github.com/nicomuratona/MuEmu-0.97k-kayito):
+  sources e ferramentas-base do MuEmu 0.97k.
+- [Emanuel Catania](https://github.com/EmanuelCatania/Mu-Linux-0.97k): linha Linux,
+  Docker, MySQL e repositório que originou este fork.
+- **Trifon Dinev:** template web Simple MU Online Templates.
+- **Kapocha33, SetecSoft, Zeus e ogocx:** contribuições específicas registradas no
+  [histórico upstream](docs/history/upstream-readme.es.md).
+- [Aldo Migge](https://github.com/aldomigge): manutenção da linha independente atual.
 
-Este projeto não é afiliado nem endossado pelos proprietários de MU Online. Nomes,
-marcas e assets permanecem pertencentes aos respectivos titulares.
+## Propriedade e licenciamento
+
+MU Online, seu cliente original, nomes, marcas, músicas, imagens, sons e demais
+assets pertencem à Webzen e/ou aos respectivos titulares. Esses materiais não devem
+ser confundidos com o código do servidor emulado e com as extensões comunitárias.
+
+Não foi identificada uma licença que abranja todo o conteúdo legado. Este projeto não
+é afiliado nem endossado pela Webzen e não concede direitos sobre material de
+terceiros. Consulte [NOTICE.md](NOTICE.md) para detalhes e atribuições.

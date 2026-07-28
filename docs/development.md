@@ -1,0 +1,128 @@
+# Desenvolvimento local
+
+Este guia reúne a arquitetura, a preparação do runtime, o build do cliente Windows e
+a operação do servidor no WSL2. O fluxo mantém clones separados e sincroniza mudanças
+exclusivamente pelo Git.
+
+## Arquitetura
+
+```text
+src/client ──build Windows──> C:\Dev\runtime\mu-097k\client
+     │                              ▲
+     └──InfoEncoder + MainInfo.ini──┘
+
+src/server ──build Docker──> mu-server ──> MySQL
+runtime/server───────────────┘       └──> services/web
+```
+
+`runtime/client` e `runtime/encoder` são templates rastreados. A automação os copia
+para um runtime externo, compila `Main.dll` e `InfoEncoder.exe`, executa o encoder e
+instala `ClientInfo.bmd`. Os binários rastreados no repositório não são sobrescritos.
+
+O Dockerfile compila `src/server` com CMake e instala os binários junto aos dados de
+`runtime/server`. MySQL, servidor e painel compartilham a rede privada do Compose. O
+editor é opcional e usa `compose.editor.yaml`.
+
+## Cliente Windows
+
+Use o clone em `C:\Dev\projects\mu-097k` com PowerShell 7, VS Code e Visual Studio
+Build Tools. O projeto atual é Win32 e usa MSVC 14.44 por meio do toolset compatível
+instalado no Build Tools.
+
+Inicialize o runtime uma vez:
+
+```powershell
+pwsh -File .\scripts\client-workflow.ps1 -Action InitializeRuntime
+```
+
+O destino padrão é `C:\Dev\runtime\mu-097k`. `-ForceRuntime` recria essa cópia a
+partir dos templates e deve ser usado somente quando as alterações locais puderem ser
+descartadas.
+
+Edite a configuração externa:
+
+```text
+C:\Dev\runtime\mu-097k\encoder\MainInfo.ini
+```
+
+`ClientSerial` e `ClientVersion` devem corresponder a `ServerSerial` e
+`ServerVersion` no GameServer. Gere `ClientInfo.bmd` com:
+
+```powershell
+pwsh -File .\scripts\client-workflow.ps1 -Action Encode
+```
+
+Para compilar e implantar:
+
+```powershell
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Release
+```
+
+As outras ações disponíveis são `Build`, `Deploy` e `Clean`. No VS Code, use
+`Client: Debug Main.dll (x86)` para executar o build Debug, implantar a DLL e o PDB e
+iniciar `main.exe` com `cppvsdbg`.
+
+## Servidor no WSL2
+
+Mantenha o clone Linux em `~/Dev/projects/mu-097k`. Não edite ou compile o mesmo
+working tree simultaneamente pelo Windows e pelo WSL.
+
+Prepare a configuração local:
+
+```bash
+cd ~/Dev/projects/mu-097k
+cp .env.example .env
+```
+
+Revise as credenciais. Para o cliente Windows conectado ao WSL2, mantenha:
+
+```dotenv
+PUBLIC_IP=127.0.0.1
+```
+
+Valide e inicie o stack base:
+
+```bash
+docker compose config --quiet
+docker compose up --build -d
+docker compose ps
+```
+
+O stack base contém `mysql`, `mu-server` e `mu-web`. Para acompanhar logs:
+
+```bash
+docker compose logs --follow --tail=200
+```
+
+Use `docker compose down` para desligar sem excluir o volume MySQL. Não use `-v` sem
+confirmar que os dados persistentes podem ser descartados.
+
+## Editor opcional
+
+Inicie o editor somente quando necessário:
+
+```bash
+docker compose -f compose.yaml -f compose.editor.yaml up --build -d
+```
+
+O overlay adiciona volumes de dados e backup compartilhados com o servidor. Os
+arquivos em `deploy/legacy` referenciam imagens upstream e Pterodactyl e permanecem
+somente como referência histórica; eles não fazem parte do fluxo suportado.
+
+## Sincronização e validação
+
+Faça alterações em apenas um clone por vez, envie a branch ao `origin` e atualize o
+outro clone pelo Git. Antes de abrir um pull request, execute as validações relevantes:
+
+```powershell
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
+```
+
+```bash
+docker compose config --quiet
+docker compose up --build -d
+```
+
+Confirme que `git status` continua limpo depois de build, deploy e execução dos
+containers.

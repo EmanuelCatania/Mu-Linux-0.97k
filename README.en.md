@@ -1,129 +1,56 @@
 # MU 0.97k
 
-[Versão em português brasileiro](README.md)
+[Documentação principal em português brasileiro](README.md)
 
-Independent preservation and modernization of MU Online 0.97k, with a Windows
-client, a C++ Linux server, and a local WSL2/Docker Compose environment.
+MU 0.97k is an independent fork focused on evolving both the game and its development
+platform while keeping the classic 0.97k identity recognizable.
 
 > [!IMPORTANT]
-> This repository contains legacy code and assets for which no original license
-> has been identified. Read [NOTICE.md](NOTICE.md) and
-> [docs/provenance.md](docs/provenance.md) before redistributing or reusing any
-> content.
+> MU Online, its original closed-source client, trademarks, and original assets belong
+> to Webzen. Community code in this repository has separate origins and licensing
+> conditions. Read [NOTICE.md](NOTICE.md) before reusing or redistributing anything.
 
-## Project status
+## Project pillars
 
-- Client: Windows, Win32, Visual Studio Build Tools, and MSVC.
-- Server: Linux, CMake, and Docker.
-- Supported development environment: Windows 11 with WSL2 Ubuntu 24.04.
-- Current goal: preserve 0.97k compatibility while modernizing the build,
-  repository structure, and developer experience.
-- Public binary and container distribution: not supported yet.
+- **Gameplay and content:** fixes, quality of life, configurable features, events,
+  items, maps, and new systems.
+- **Classic identity:** changes that alter the classic experience should remain
+  configurable whenever practical.
+- **Development platform:** reproducible builds, automation, tests, tooling, and
+  maintainability across Windows and Linux.
 
-## Components
+The original `main.exe` client is closed source. The community-developed `Main.dll`
+plugin uses hooks to provide fixes and extensions, while `InfoEncoder.exe` generates
+the configuration consumed by the DLL. The community server emulator runs natively on
+Linux through WSL2 and Docker.
 
-| Component | Location | Runtime |
-| --- | --- | --- |
-| Client and encoder | `src/client` | Windows |
-| Server | `src/server` | Linux/WSL2 |
-| Client runtime | `runtime/client` | Tracked template |
-| Server data | `runtime/server` | Docker |
-| Web panel | `services/web` | Node.js/Docker |
-| Optional editor | `services/editor` | Node.js/Docker |
+## Development environment
 
-## Requirements
+- Client, plugin, and encoder: Windows, Win32, MSVC, and VS Code.
+- Server: C++, Linux, CMake, WSL2, and Docker Compose.
+- Web panel and optional editor: Node.js and Docker.
 
-On Windows:
+The canonical setup, build, debug, and operation instructions are maintained in
+Portuguese in the [development guide](docs/development.md).
 
-- PowerShell 7;
-- Git and VS Code;
-- Visual Studio Build Tools 2026 with Desktop C++, v145 toolset, and MSVC 14.44;
-- the extensions recommended by this workspace.
+## Direction
 
-On WSL2:
+Work is organized into two equal tracks: **Gameplay and Content** and **Platform and
+Development**. The detailed backlog lives in GitHub Issues and Milestones. New content
+follows a classic-extensible model instead of treating preservation as the project's
+only purpose.
 
-- Ubuntu 24.04;
-- Docker Engine and Docker Compose;
-- a Linux clone separate from the Windows clone.
+## Credits
 
-## Local server
+- [Nico Muratona (Kayito)](https://github.com/nicomuratona/MuEmu-0.97k-kayito) —
+  base MuEmu 0.97k sources and tools.
+- [Emanuel Catania](https://github.com/EmanuelCatania/Mu-Linux-0.97k) — Linux,
+  Docker, and MySQL project line from which this fork originated.
+- Trifon Dinev — Simple MU Online Templates web template.
+- Kapocha33, SetecSoft, Zeus, and ogocx — specific contributions recorded in the
+  [upstream history](docs/history/upstream-readme.es.md).
+- [Aldo Migge](https://github.com/aldomigge) — current independent fork maintainer.
 
-From the WSL2 clone:
-
-```bash
-cp .env.example .env
-# Review all passwords and keep PUBLIC_IP=127.0.0.1 for local development.
-docker compose config --quiet
-docker compose up --build -d
-```
-
-Exposed services:
-
-- ConnectServer: `127.0.0.1:44405/tcp`;
-- GameServer: `127.0.0.1:55901/tcp`;
-- web panel: <http://127.0.0.1:8085>.
-
-Stop the stack without deleting the database:
-
-```bash
-docker compose down
-```
-
-## Windows client
-
-For the first run, from the Windows clone:
-
-```powershell
-pwsh -File .\scripts\client-workflow.ps1 -Action InitializeRuntime
-pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
-```
-
-The executable runtime is created outside Git at:
-
-```text
-C:\Dev\runtime\mu-097k\client
-```
-
-Launch the client with the correct working directory:
-
-```powershell
-Start-Process `
-    -FilePath "C:\Dev\runtime\mu-097k\client\main.exe" `
-    -WorkingDirectory "C:\Dev\runtime\mu-097k\client"
-```
-
-The script also supports `Build`, `Deploy`, `Encode`, `Clean`, and Release builds.
-Use `Client:*` VS Code tasks from the Windows clone and `Server:*` tasks from WSL.
-
-## Repository layout
-
-```text
-src/          C++ client, server, and tool sources
-runtime/      Client/encoder templates and server data
-services/     Web panel and optional editor
-deploy/       Docker resources and legacy integrations
-docs/         Architecture, development, operations, and history
-scripts/      Local development automation
-```
-
-## Documentation
-
-- [Architecture](docs/architecture.md)
-- [Windows client](docs/development/windows-client.md)
-- [WSL2 server](docs/development/wsl-server.md)
-- [Docker operations](docs/operations/docker.md)
-- [Provenance and attribution](docs/provenance.md)
-- [Upstream history in Spanish](docs/history/upstream-readme.es.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security policy](SECURITY.md)
-
-## Maintenance
-
-`main` is protected. Changes use short-lived branches and pull requests in this
-repository. The upstream remote is read-only and used only as a reference; external
-fixes are reviewed and imported manually.
-
-## Disclaimer
-
-This project is not affiliated with or endorsed by the owners of MU Online. Names,
-trademarks, and assets remain the property of their respective owners.
+This project is not affiliated with or endorsed by Webzen. No repository-wide license
+has been identified for the legacy material, and no rights over third-party content
+are granted here.
