@@ -4,6 +4,9 @@
   "private": true,
   "description": "MU Online 97k web panel",
   "main": "server.js",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "start": "node server.js"
   },
