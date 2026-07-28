@@ -40,6 +40,7 @@ Tags recomendados:
 2. Validar y levantar el stack base:
    ```bash
    docker compose config --quiet
+   docker network inspect proxy_net >/dev/null 2>&1 || docker network create proxy_net
    docker compose up --build -d
    ```
 
@@ -91,6 +92,7 @@ Tags recomendados:
 2. En el servidor:
    ```bash
    docker compose config --quiet
+   docker network inspect proxy_net >/dev/null 2>&1 || docker network create proxy_net
    docker compose up --build -d
    ```
 3. Puertos requeridos:
@@ -228,6 +230,7 @@ En el clone de WSL2:
 cp .env.example .env
 # Ajusta los secrets locales y define PUBLIC_IP=127.0.0.1
 docker compose config --quiet
+docker network inspect proxy_net >/dev/null 2>&1 || docker network create proxy_net
 docker compose up --build -d
 ```
 
