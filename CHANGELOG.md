@@ -9,6 +9,26 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 
 ## [Não lançado]
 
+## [0.4.0] - 2026-07-30
+
+### Adicionado
+
+- Editor moderno de input para chat e login.
+- Histórico de mensagens do chat.
+- Seleção por teclado, clipboard e substituição de seleção.
+- Configuração compartilhada de IntelliSense para o cliente Win32.
+
+### Alterado
+
+- Caret e rolagem horizontal preservam o alinhamento nas resoluções suportadas.
+- Colagem converte Unicode compatível para Windows-1252.
+- Campos de login mantêm a senha mascarada.
+
+### Segurança
+
+- Copiar e recortar a senha são bloqueados.
+- Colagem remove controles, quebras de linha e caracteres incompatíveis.
+
 ## [0.3.0] - 2026-07-28
 
 ### Adicionado
@@ -74,6 +94,8 @@ tags no formato `fork-vX.Y.Z` para não colidir com tags herdadas do upstream.
 
 - Inicialização do MySQL quando `SEED_TEST_DATA=0`.
 
+[Não lançado]: https://github.com/aldomigge/mu-097k/compare/fork-v0.4.0...HEAD
+[0.4.0]: https://github.com/aldomigge/mu-097k/compare/fork-v0.3.0...fork-v0.4.0
 [Não lançado]: https://github.com/aldomigge/mu-097k/compare/fork-v0.3.0...HEAD
 [0.3.0]: https://github.com/aldomigge/mu-097k/compare/fork-v0.2.0...fork-v0.3.0
 [0.2.0]: https://github.com/aldomigge/mu-097k/compare/fork-v0.1.0...fork-v0.2.0
