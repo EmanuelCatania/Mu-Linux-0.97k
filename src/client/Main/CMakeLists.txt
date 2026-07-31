@@ -19,6 +19,7 @@ add_library(Main SHARED
   HWID.cpp
   Interface.cpp
   Item.cpp
+  ItemLink.cpp
   ItemManager.cpp
   ItemOption.cpp
   ItemPosition.cpp

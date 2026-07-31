@@ -143,6 +143,7 @@
     <ClInclude Include="InvasionManager.h" />
     <ClInclude Include="IpManager.h" />
     <ClInclude Include="Item.h" />
+    <ClInclude Include="ItemLink.h" />
     <ClInclude Include="ItemBag.h" />
     <ClInclude Include="ItemBagEx.h" />
     <ClInclude Include="ItemBagManager.h" />
@@ -245,6 +246,7 @@
     <ClCompile Include="InvasionManager.cpp" />
     <ClCompile Include="IpManager.cpp" />
     <ClCompile Include="Item.cpp" />
+    <ClCompile Include="ItemLink.cpp" />
     <ClCompile Include="ItemBag.cpp" />
     <ClCompile Include="ItemBagEx.cpp" />
     <ClCompile Include="ItemBagManager.cpp" />

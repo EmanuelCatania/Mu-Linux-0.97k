@@ -39,6 +39,7 @@ mu_add_server(GameServer
   InvasionManager.cpp
   IpManager.cpp
   Item.cpp
+  ItemLink.cpp
   ItemBag.cpp
   ItemBagEx.cpp
   ItemBagManager.cpp

@@ -9,7 +9,7 @@
       "cwd": "${workspaceFolder}/../../runtime/mu-097k/client",
       "preLaunchTask": "Client: Build + Deploy Debug",
       "stopAtEntry": false,
-      "externalConsole": false,
+      "externalConsole": true,
       "symbolOptions": {
         "searchPaths": [
           "${workspaceFolder}/../../runtime/mu-097k/client"

@@ -63,6 +63,16 @@ CInput::CInput()
 	this->m_HistoryPosition = 0;
 
 	this->m_HistoryBrowsing = false;
+
+	this->m_TokenActive = false;
+
+	this->m_TokenStart = 0;
+
+	this->m_TokenLength = 0;
+
+	this->m_TokenValue = 0;
+
+	memset(this->m_TokenText, 0, sizeof(this->m_TokenText));
 }
 
 CInput::~CInput()
@@ -778,6 +788,13 @@ void CInput::InsertText(int Index, const char* Text)
 
 	this->DeleteSelection(Index);
 
+	if (Index == 0 && this->m_TokenActive != false)
+	{
+		this->m_CaretPosition[Index] = this->SkipToken(
+			this->m_CaretPosition[Index],
+			1);
+	}
+
 	int Length = this->GetInputLength(Index);
 
 	int Available = min(
@@ -810,6 +827,11 @@ void CInput::InsertText(int Index, const char* Text)
 		Text,
 		InsertLength);
 
+	this->UpdateTokenAfterEdit(
+		Position,
+		0,
+		InsertLength);
+
 	this->m_CaretPosition[Index] += InsertLength;
 
 	this->ClearSelection(Index);
@@ -835,12 +857,26 @@ void CInput::DeleteCharacterBeforeCaret(int Index)
 		return;
 	}
 
+	if (Index == 0 && this->m_TokenActive != false &&
+		Position > this->m_TokenStart &&
+		Position <= (this->m_TokenStart + this->m_TokenLength))
+	{
+		this->DeleteRange(
+			Index,
+			this->m_TokenStart,
+			this->m_TokenStart + this->m_TokenLength);
+
+		return;
+	}
+
 	int Length = this->GetInputLength(Index);
 
 	memmove(
 		InputText[Index] + Position - 1,
 		InputText[Index] + Position,
 		Length - Position + 1);
+
+	this->UpdateTokenAfterEdit(Position - 1, 1, 0);
 
 	this->m_CaretPosition[Index]--;
 
@@ -869,10 +905,24 @@ void CInput::DeleteCharacterAtCaret(int Index)
 		return;
 	}
 
+	if (Index == 0 && this->m_TokenActive != false &&
+		Position >= this->m_TokenStart &&
+		Position < (this->m_TokenStart + this->m_TokenLength))
+	{
+		this->DeleteRange(
+			Index,
+			this->m_TokenStart,
+			this->m_TokenStart + this->m_TokenLength);
+
+		return;
+	}
+
 	memmove(
 		InputText[Index] + Position,
 		InputText[Index] + Position + 1,
 		Length - Position);
+
+	this->UpdateTokenAfterEdit(Position, 1, 0);
 
 	this->UpdateInputLength(Index);
 
@@ -892,12 +942,24 @@ bool CInput::DeleteSelection(int Index)
 
 	int SelectionEnd = this->GetSelectionEnd(Index);
 
+	if (Index == 0)
+	{
+		this->ExpandRangeForToken(
+			&SelectionStart,
+			&SelectionEnd);
+	}
+
 	int Length = this->GetInputLength(Index);
 
 	memmove(
 		InputText[Index] + SelectionStart,
 		InputText[Index] + SelectionEnd,
 		Length - SelectionEnd + 1);
+
+	this->UpdateTokenAfterEdit(
+		SelectionStart,
+		SelectionEnd - SelectionStart,
+		0);
 
 	this->m_CaretPosition[Index] = SelectionStart;
 
@@ -1048,6 +1110,11 @@ void CInput::SetInputText(int Index, const char* Text)
 		INPUT_TEXT_SIZE,
 		Text,
 		_TRUNCATE);
+
+	if (Index == 0)
+	{
+		this->ClearAtomicToken();
+	}
 
 	this->UpdateInputLength(Index);
 
@@ -1421,7 +1488,10 @@ bool CInput::HandleKeyDown(WPARAM wParam)
 				Position = this->GetSelectionStart(Index);
 			}
 
-			this->MoveCaret(Index, Position, ShiftPressed);
+			this->MoveCaret(
+				Index,
+				this->SkipToken(Position, -1),
+				ShiftPressed);
 
 			return true;
 		}
@@ -1436,7 +1506,10 @@ bool CInput::HandleKeyDown(WPARAM wParam)
 				Position = this->GetSelectionEnd(Index);
 			}
 
-			this->MoveCaret(Index, Position, ShiftPressed);
+			this->MoveCaret(
+				Index,
+				this->SkipToken(Position, 1),
+				ShiftPressed);
 
 			return true;
 		}
@@ -1511,4 +1584,297 @@ bool CInput::HandleChar(WPARAM wParam)
 		(char)wParam);
 
 	return true;
+}
+
+bool CInput::IsChatInputActive()
+{
+	eInputContext Context;
+
+	int Index;
+
+	return (this->GetActiveContext(&Context, &Index) != false &&
+		Context == INPUT_CONTEXT_CHAT &&
+		Index == 0);
+}
+
+void CInput::ClearChatInput()
+{
+	this->SetInputText(0, "");
+	this->ResetHistoryNavigation();
+}
+
+bool CInput::InsertAtomicToken(const char* Text, DWORD Value)
+{
+	if (Text == NULL || Text[0] == 0 ||
+		this->IsChatInputActive() == false)
+	{
+		return false;
+	}
+
+	int TokenLength = (int)strnlen_s(Text, INPUT_TEXT_SIZE);
+
+	if (TokenLength <= 0 || TokenLength >= INPUT_TEXT_SIZE)
+	{
+		return false;
+	}
+
+	int Index = 0;
+
+	this->SyncCaret(INPUT_CONTEXT_CHAT, Index);
+
+	if (this->m_TokenActive != false)
+	{
+		int ExistingStart = 0;
+
+		int ExistingLength = 0;
+
+		DWORD ExistingValue = 0;
+
+		this->GetAtomicToken(
+			&ExistingStart,
+			&ExistingLength,
+			&ExistingValue);
+	}
+
+	int CurrentLength = this->GetInputLength(Index);
+
+	int RemovedLength = 0;
+
+	if (this->m_TokenActive != false)
+	{
+		RemovedLength = this->m_TokenLength;
+	}
+	else if (this->HasSelection(Index) != false)
+	{
+		RemovedLength = this->GetSelectionEnd(Index) -
+			this->GetSelectionStart(Index);
+	}
+
+	int Limit = min(
+		this->GetInputLimit(Index),
+		INPUT_TEXT_SIZE - 1);
+
+	if ((CurrentLength - RemovedLength + TokenLength) > Limit)
+	{
+		return false;
+	}
+
+	int Position = this->m_CaretPosition[Index];
+
+	if (this->m_TokenActive != false)
+	{
+		Position = this->m_TokenStart;
+
+		this->DeleteRange(
+			Index,
+			this->m_TokenStart,
+			this->m_TokenStart + this->m_TokenLength);
+	}
+	else if (this->HasSelection(Index) != false)
+	{
+		Position = this->GetSelectionStart(Index);
+
+		this->DeleteSelection(Index);
+	}
+
+	int Length = this->GetInputLength(Index);
+
+	memmove(
+		InputText[Index] + Position + TokenLength,
+		InputText[Index] + Position,
+		Length - Position + 1);
+
+	memcpy(
+		InputText[Index] + Position,
+		Text,
+		TokenLength);
+
+	this->m_TokenActive = true;
+
+	this->m_TokenStart = Position;
+
+	this->m_TokenLength = TokenLength;
+
+	this->m_TokenValue = Value;
+
+	memset(this->m_TokenText, 0, sizeof(this->m_TokenText));
+
+	memcpy(this->m_TokenText, Text, TokenLength);
+
+	this->m_CaretPosition[Index] = Position + TokenLength;
+
+	this->ClearSelection(Index);
+
+	this->UpdateInputLength(Index);
+
+	this->UpdateViewStart(Index);
+
+	this->ResetHistoryNavigation();
+
+	return true;
+}
+
+bool CInput::GetAtomicToken(
+	int* Start,
+	int* Length,
+	DWORD* Value)
+{
+	if (this->m_TokenActive == false ||
+		Start == NULL || Length == NULL || Value == NULL)
+	{
+		return false;
+	}
+
+	int InputLengthValue = this->GetInputLength(0);
+
+	if (this->m_TokenStart < 0 || this->m_TokenLength <= 0 ||
+		(this->m_TokenStart + this->m_TokenLength) > InputLengthValue ||
+		memcmp(
+			InputText[0] + this->m_TokenStart,
+			this->m_TokenText,
+			this->m_TokenLength) != 0)
+	{
+		this->ClearAtomicToken();
+
+		return false;
+	}
+
+	*Start = this->m_TokenStart;
+
+	*Length = this->m_TokenLength;
+
+	*Value = this->m_TokenValue;
+
+	return true;
+}
+
+void CInput::ClearAtomicToken()
+{
+	this->m_TokenActive = false;
+
+	this->m_TokenStart = 0;
+
+	this->m_TokenLength = 0;
+
+	this->m_TokenValue = 0;
+
+	SecureZeroMemory(
+		this->m_TokenText,
+		sizeof(this->m_TokenText));
+}
+
+bool CInput::TokenOverlaps(int Start, int End)
+{
+	if (this->m_TokenActive == false || End <= Start)
+	{
+		return false;
+	}
+
+	int TokenEnd = this->m_TokenStart + this->m_TokenLength;
+
+	return (Start < TokenEnd && End > this->m_TokenStart);
+}
+
+void CInput::ExpandRangeForToken(int* Start, int* End)
+{
+	if (Start == NULL || End == NULL ||
+		this->TokenOverlaps(*Start, *End) == false)
+	{
+		return;
+	}
+
+	*Start = min(*Start, this->m_TokenStart);
+
+	*End = max(
+		*End,
+		this->m_TokenStart + this->m_TokenLength);
+}
+
+void CInput::UpdateTokenAfterEdit(
+	int Start,
+	int RemovedLength,
+	int InsertedLength)
+{
+	if (this->m_TokenActive == false)
+	{
+		return;
+	}
+
+	int End = Start + RemovedLength;
+
+	if (this->TokenOverlaps(Start, End) != false ||
+		(RemovedLength == 0 && Start > this->m_TokenStart &&
+		 Start < (this->m_TokenStart + this->m_TokenLength)))
+	{
+		this->ClearAtomicToken();
+
+		return;
+	}
+
+	if (Start <= this->m_TokenStart)
+	{
+		this->m_TokenStart += InsertedLength - RemovedLength;
+	}
+}
+
+void CInput::DeleteRange(int Index, int Start, int End)
+{
+	if (this->IsValidInputIndex(Index) == false)
+	{
+		return;
+	}
+
+	int Length = this->GetInputLength(Index);
+
+	Start = max(0, min(Start, Length));
+
+	End = max(Start, min(End, Length));
+
+	if (End <= Start)
+	{
+		return;
+	}
+
+	this->ExpandRangeForToken(&Start, &End);
+
+	memmove(
+		InputText[Index] + Start,
+		InputText[Index] + End,
+		Length - End + 1);
+
+	this->UpdateTokenAfterEdit(Start, End - Start, 0);
+
+	this->m_CaretPosition[Index] = Start;
+
+	this->ClearSelection(Index);
+
+	this->UpdateInputLength(Index);
+
+	this->UpdateViewStart(Index);
+
+	this->ResetHistoryNavigation();
+}
+
+int CInput::SkipToken(int Position, int Direction)
+{
+	if (this->m_TokenActive == false)
+	{
+		return Position;
+	}
+
+	int TokenEnd = this->m_TokenStart + this->m_TokenLength;
+
+	if (Direction < 0 &&
+		Position >= this->m_TokenStart && Position < TokenEnd)
+	{
+		return this->m_TokenStart;
+	}
+
+	if (Direction > 0 &&
+		Position > this->m_TokenStart && Position <= TokenEnd)
+	{
+		return TokenEnd;
+	}
+
+	return Position;
 }

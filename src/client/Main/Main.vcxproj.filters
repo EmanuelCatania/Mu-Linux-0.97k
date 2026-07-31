@@ -214,6 +214,9 @@
     <ClInclude Include="Item.h">
       <Filter>Item\Management</Filter>
     </ClInclude>
+    <ClInclude Include="ItemLink.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
     <ClInclude Include="ItemManager.h">
       <Filter>Item\Management</Filter>
     </ClInclude>
@@ -371,6 +374,9 @@
     </ClCompile>
     <ClCompile Include="Item.cpp">
       <Filter>Item\Management</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemLink.cpp">
+      <Filter>Interface</Filter>
     </ClCompile>
     <ClCompile Include="ItemManager.cpp">
       <Filter>Item\Management</Filter>

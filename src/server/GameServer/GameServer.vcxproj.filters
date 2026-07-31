@@ -93,6 +93,9 @@
     <ClInclude Include="Item.h">
       <Filter>Items</Filter>
     </ClInclude>
+    <ClInclude Include="ItemLink.h">
+      <Filter>Items</Filter>
+    </ClInclude>
     <ClInclude Include="ItemBag.h">
       <Filter>Items</Filter>
     </ClInclude>
@@ -393,6 +396,9 @@
       <Filter>Events\Invasion</Filter>
     </ClCompile>
     <ClCompile Include="Item.cpp">
+      <Filter>Items</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemLink.cpp">
       <Filter>Items</Filter>
     </ClCompile>
     <ClCompile Include="ItemBag.cpp">

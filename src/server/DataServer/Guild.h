@@ -74,6 +74,17 @@ struct SDHP_GUILD_GLOBAL_NOTICE_RECV
 	char message[60];
 };
 
+struct SDHP_GUILD_ITEM_LINK_RECV
+{
+	PSBMSG_HEAD header; // C1:07:0A
+	char GuildName[9];
+	char Name[11];
+	char message[60];
+	BYTE linkStart;
+	BYTE linkLength;
+	BYTE ItemInfo[4];
+};
+
 //**********************************************//
 //********** DataServer -> GameServer **********//
 //**********************************************//
@@ -159,6 +170,21 @@ struct SDHP_GUILD_GLOBAL_NOTICE_SEND
 	char message[60];
 };
 
+struct SDHP_GUILD_ITEM_LINK_SEND
+{
+	PSBMSG_HEAD header; // C1:07:0A
+	char GuildName[9];
+	char Name[11];
+	char message[60];
+	BYTE linkStart;
+	BYTE linkLength;
+	BYTE ItemInfo[4];
+};
+
+static_assert(sizeof(SDHP_GUILD_ITEM_LINK_RECV) == 90, "Invalid guild item link receive packet size");
+
+static_assert(sizeof(SDHP_GUILD_ITEM_LINK_SEND) == 90, "Invalid guild item link send packet size");
+
 struct SDHP_GUILD_INFO_SEND
 {
 	PSWMSG_HEAD header; // C2:07:09
@@ -211,6 +237,10 @@ public:
 	void GDGuildGlobalChatRecv(SDHP_GUILD_GLOBAL_CHAT_RECV* lpMsg);
 
 	void GDGuildGlobalNoticeRecv(SDHP_GUILD_GLOBAL_NOTICE_RECV* lpMsg);
+
+	void GDGuildItemLinkRecv(
+		SDHP_GUILD_ITEM_LINK_RECV* lpMsg,
+		int size);
 };
 
 extern CGuild gGuild;

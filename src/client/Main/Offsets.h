@@ -50,6 +50,7 @@
 #define OffsetInventoryItems 0x07EA8410
 #define GetInventoryItem(slot) (ITEM*)(OffsetInventoryItems + (sizeof(ITEM) * slot))
 #define GetItemFromInventory(inventory, slot) (ITEM*)(inventory + (sizeof(ITEM) * slot))
+#define PointedInventoryItem (*(ITEM**)0x07EAA160)
 #define CreateGuildMark ((void(_cdecl*)(int nMarkIndex, bool blend)) 0x004F0100)
 #define RenderBoolean ((void(_cdecl*)(int x, int y, DWORD c)) 0x00480E00)
 #define OpenJPG ((bool(_cdecl*)(const char *szFileName, GLuint uiTextureIndex, GLuint uiFilter, GLuint uiWrapMode, char *bFullPath, bool bCheck)) 0x00529740)
@@ -118,6 +119,12 @@
 #define GlobalText ((char(*)[300])0x07D29D24)
 #define ChaosEventName ((char(*)[100])0x00559FFC)
 #define UIChatLogWindow_AddText ((void(_cdecl*)(const char* strID, const char* strText, int MsgType)) 0x00480620)
+#define ReceiveChatMessage ((void(_cdecl*)(void* message)) 0x00427630)
+#define RenderChatText ((int(_cdecl*)(int x, int y, const char* text, int width, int sort, SIZE* textSize)) 0x0047F7A0)
+#define ChatLogBuffer 0x07DF9380
+#define ChatLogCount *(int*)0x07E11DA4
+#define ChatLogViewStart *(int*)0x00559CE0
+#define ChatLogRenderFrame *(DWORD*)0x07E11DA8
 #define CreateNotice ((void(_cdecl*)(char *Text, int Color)) 0x0047FAE0)
 #define RenderTipText ((void(_cdecl*)(int sx, int sy, char* Text)) 0x0047F7F0)
 #define OpenTextData ((void(_cdecl*)()) 0x00510FE0)
@@ -187,6 +194,7 @@
 #define SendGetItem *(int*)0x0055967C
 #define InsertInventoryItem ((void(_cdecl*)(ITEM *Inv, int Width, int Height, int Index, BYTE* Item, bool First)) 0x004CC660)
 #define ConvertItemType ((int(_cdecl*)(BYTE* Item)) 0x0047B110)
+#define DecodeItemInfo ((void(_cdecl*)(ITEM* Item, BYTE Level, BYTE Option)) 0x0047B910)
 #define ItemObjectAttribute ((void(_cdecl*)(DWORD o)) 0x00502BA0)
 #define RenderItem3D ((void(_cdecl*)(float sx, float sy, float Width, float Height, int Type, int Level, int Option1, bool PickUp)) 0x004E1BE0)
 #define RenderItemInfo ((void(_cdecl*)(int sx, int sy, ITEM *ip, bool Sell)) 0x004C4650)

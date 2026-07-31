@@ -368,3 +368,56 @@ void CGuild::GDGuildGlobalNoticeRecv(SDHP_GUILD_GLOBAL_NOTICE_RECV* lpMsg)
 		}
 	}
 }
+
+void CGuild::GDGuildItemLinkRecv(
+	SDHP_GUILD_ITEM_LINK_RECV* lpMsg,
+	int size)
+{
+	if (lpMsg == NULL ||
+		size != sizeof(SDHP_GUILD_ITEM_LINK_RECV) ||
+		lpMsg->header.size != sizeof(SDHP_GUILD_ITEM_LINK_RECV))
+	{
+		return;
+	}
+
+	lpMsg->GuildName[sizeof(lpMsg->GuildName) - 1] = 0;
+
+	lpMsg->Name[sizeof(lpMsg->Name) - 1] = 0;
+
+	lpMsg->message[sizeof(lpMsg->message) - 1] = 0;
+
+	int messageLength = (int)strnlen(
+		lpMsg->message,
+		sizeof(lpMsg->message));
+
+	if (lpMsg->linkLength == 0 ||
+		lpMsg->linkStart >= messageLength ||
+		(lpMsg->linkStart + lpMsg->linkLength) > messageLength)
+	{
+		return;
+	}
+
+	SDHP_GUILD_ITEM_LINK_SEND pMsg;
+
+	pMsg.header.set(0x07, 0x0A, sizeof(pMsg));
+
+	memcpy(pMsg.GuildName, lpMsg->GuildName, sizeof(pMsg.GuildName));
+
+	memcpy(pMsg.Name, lpMsg->Name, sizeof(pMsg.Name));
+
+	memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
+
+	pMsg.linkStart = lpMsg->linkStart;
+
+	pMsg.linkLength = lpMsg->linkLength;
+
+	memcpy(pMsg.ItemInfo, lpMsg->ItemInfo, sizeof(pMsg.ItemInfo));
+
+	for (int n = 0; n < MAX_SERVER; n++)
+	{
+		if (gServerManager[n].CheckState() != false)
+		{
+			gSocketManager.DataSend(n, (BYTE*)&pMsg, sizeof(pMsg));
+		}
+	}
+}

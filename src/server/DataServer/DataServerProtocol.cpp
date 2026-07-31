@@ -337,6 +337,15 @@ void DataServerProtocolCore(int index, BYTE head, BYTE* lpMsg, int size)
 
 					break;
 				}
+
+				case 0x0A:
+				{
+					gGuild.GDGuildItemLinkRecv(
+						(SDHP_GUILD_ITEM_LINK_RECV*)lpMsg,
+						size);
+
+					break;
+				}
 			}
 
 			break;

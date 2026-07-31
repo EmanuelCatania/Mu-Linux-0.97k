@@ -7,6 +7,7 @@
 #include "HealthBar.h"
 #include "HWID.h"
 #include "ItemManager.h"
+#include "ItemLink.h"
 #include "ItemStack.h"
 #include "ItemValue.h"
 #include "Language.h"
@@ -425,6 +426,14 @@ bool CProtocol::TranslateProtocol(BYTE head, BYTE* lpMsg, int Size)
 				case 0xE3:
 				{
 					gItemStack.GCItemStackListRecv((PMSG_ITEM_STACK_LIST_RECV*)lpMsg);
+
+					return true;
+				}
+
+				case 0xE7:
+				{
+					gItemLink.GCItemLinkRecv(
+						(PMSG_ITEM_LINK_RECV*)lpMsg);
 
 					return true;
 				}
@@ -977,6 +986,11 @@ void CProtocol::GCHealthBarRecv(PMSG_HEALTH_BAR_RECV* lpMsg)
 void CProtocol::DataSend(BYTE* lpMsg, DWORD size)
 {
 	//ConsoleProtocolLog(CON_PROTO_TCP_SEND, lpMsg, size);
+
+	if (gItemLink.HandleOutgoingChat(lpMsg, size) != false)
+	{
+		return;
+	}
 
 	BYTE EncBuff[2048];
 

@@ -11,6 +11,7 @@
 #include "HealthBar.h"
 #include "Interface.h"
 #include "Item.h"
+#include "ItemLink.h"
 #include "ItemPosition.h"
 #include "ItemStack.h"
 #include "ItemValue.h"
@@ -59,6 +60,17 @@ extern "C" _declspec(dllexport) void _cdecl EntryProc()
 		MessageBoxA(
 			NULL,
 			"Input: main.exe incompatível.",
+			"MU 0.97k",
+			MB_OK | MB_ICONERROR);
+
+		return;
+	}
+
+	if (gItemLink.Init() == false)
+	{
+		MessageBoxA(
+			NULL,
+			"ItemLink: main.exe incompatível.",
 			"MU 0.97k",
 			MB_OK | MB_ICONERROR);
 

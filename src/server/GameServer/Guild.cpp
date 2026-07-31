@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Guild.h"
 #include "GuildManager.h"
+#include "ItemLink.h"
 #include "BattleSoccerManager.h"
 #include "GameMain.h"
 #include "Map.h"
@@ -895,6 +896,97 @@ void CGuild::DGGuildGlobalChatRecv(SDHP_GUILD_GLOBAL_CHAT_RECV* lpMsg)
 	memcpy(pMsg.name, lpMsg->Name, sizeof(pMsg.name));
 
 	memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
+
+	this->DataSendToAll(lpGuild, (BYTE*)&pMsg, pMsg.header.size);
+}
+
+void CGuild::GDGuildItemLinkSend(
+	char* GuildName,
+	char* Name,
+	char* message,
+	BYTE linkStart,
+	BYTE linkLength,
+	BYTE* itemInfo)
+{
+	if (GuildName == NULL || Name == NULL ||
+		message == NULL || itemInfo == NULL)
+	{
+		return;
+	}
+
+	SDHP_GUILD_ITEM_LINK_SEND pMsg;
+
+	pMsg.header.set(0x07, 0x0A, sizeof(pMsg));
+
+	memset(pMsg.GuildName, 0, sizeof(pMsg.GuildName));
+
+	strncpy(pMsg.GuildName, GuildName, sizeof(pMsg.GuildName) - 1);
+
+	memset(pMsg.Name, 0, sizeof(pMsg.Name));
+
+	strncpy(pMsg.Name, Name, sizeof(pMsg.Name) - 1);
+
+	memset(pMsg.message, 0, sizeof(pMsg.message));
+
+	strncpy(pMsg.message, message, sizeof(pMsg.message) - 1);
+
+	pMsg.linkStart = linkStart;
+
+	pMsg.linkLength = linkLength;
+
+	memcpy(pMsg.ItemInfo, itemInfo, sizeof(pMsg.ItemInfo));
+
+	gDataServerConnection.DataSend((BYTE*)&pMsg, pMsg.header.size);
+}
+
+void CGuild::DGGuildItemLinkRecv(
+	SDHP_GUILD_ITEM_LINK_RECV* lpMsg,
+	int size)
+{
+	if (lpMsg == NULL ||
+		size != sizeof(SDHP_GUILD_ITEM_LINK_RECV) ||
+		lpMsg->header.size != sizeof(SDHP_GUILD_ITEM_LINK_RECV))
+	{
+		return;
+	}
+
+	lpMsg->GuildName[sizeof(lpMsg->GuildName) - 1] = 0;
+
+	lpMsg->Name[sizeof(lpMsg->Name) - 1] = 0;
+
+	lpMsg->message[sizeof(lpMsg->message) - 1] = 0;
+
+	int messageLength = (int)strnlen(
+		lpMsg->message,
+		sizeof(lpMsg->message));
+
+	if (lpMsg->linkLength == 0 ||
+		lpMsg->linkStart >= messageLength ||
+		(lpMsg->linkStart + lpMsg->linkLength) > messageLength)
+	{
+		return;
+	}
+
+	GUILD_INFO* lpGuild = gGuildManager.SearchGuild(lpMsg->GuildName);
+
+	if (lpGuild == 0)
+	{
+		return;
+	}
+
+	PMSG_ITEM_LINK_SEND pMsg;
+
+	pMsg.header.set(0xF3, 0xE7, sizeof(pMsg));
+
+	memcpy(pMsg.name, lpMsg->Name, sizeof(pMsg.name));
+
+	memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
+
+	pMsg.linkStart = lpMsg->linkStart;
+
+	pMsg.linkLength = lpMsg->linkLength;
+
+	memcpy(pMsg.ItemInfo, lpMsg->ItemInfo, sizeof(pMsg.ItemInfo));
 
 	this->DataSendToAll(lpGuild, (BYTE*)&pMsg, pMsg.header.size);
 }

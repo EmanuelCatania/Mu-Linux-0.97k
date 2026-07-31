@@ -133,6 +133,7 @@
     <ClInclude Include="HWID.h" />
     <ClInclude Include="Interface.h" />
     <ClInclude Include="Item.h" />
+    <ClInclude Include="ItemLink.h" />
     <ClInclude Include="ItemManager.h" />
     <ClInclude Include="ItemOption.h" />
     <ClInclude Include="ItemStack.h" />
@@ -190,6 +191,7 @@
     <ClCompile Include="HWID.cpp" />
     <ClCompile Include="Interface.cpp" />
     <ClCompile Include="Item.cpp" />
+    <ClCompile Include="ItemLink.cpp" />
     <ClCompile Include="ItemManager.cpp" />
     <ClCompile Include="ItemOption.cpp" />
     <ClCompile Include="ItemStack.cpp" />

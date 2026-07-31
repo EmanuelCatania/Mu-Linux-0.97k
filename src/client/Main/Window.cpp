@@ -2,6 +2,7 @@
 #include "Window.h"
 #include "Controller.h"
 #include "Input.h"
+#include "ItemLink.h"
 #include "Font.h"
 #include "PingSystem.h"
 #include "PrintPlayer.h"
@@ -96,6 +97,11 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 	{
 		case WM_KEYDOWN:
 		{
+			if (gItemLink.HandleKeyDown(wParam))
+			{
+				return 0;
+			}
+
 			if (gInput.HandleKeyDown(wParam))
 			{
 				return 0;
@@ -106,6 +112,11 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 		case WM_CHAR:
 		{
+			if (gItemLink.HandleChar(wParam))
+			{
+				return 0;
+			}
+
 			if (gInput.HandleChar(wParam))
 			{
 				return 0;
@@ -115,6 +126,11 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		case WM_LBUTTONDOWN:
 		{
+			if (gItemLink.HandleLeftButtonDown())
+			{
+				return 0;
+			}
+
 			if (MouseRButton || MouseRButtonPush)
 			{
 				return 0;

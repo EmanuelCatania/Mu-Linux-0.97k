@@ -16,6 +16,7 @@
 #include "GuildManager.h"
 #include "HackPacketCheck.h"
 #include "ItemManager.h"
+#include "ItemLink.h"
 #include "JSProtocol.h"
 #include "Log.h"
 #include "Map.h"
@@ -544,6 +545,16 @@ void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int
 				case 0x30:
 				{
 					CGOptionDataRecv((PMSG_OPTION_DATA_RECV*)lpMsg, aIndex);
+
+					break;
+				}
+
+				case 0xE7:
+				{
+					gItemLink.CGItemLinkRecv(
+						(PMSG_ITEM_LINK_RECV*)lpMsg,
+						size,
+						aIndex);
 
 					break;
 				}

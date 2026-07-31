@@ -21,6 +21,19 @@ public:
 
 	bool HandleChar(WPARAM wParam);
 
+	bool IsChatInputActive();
+
+	void ClearChatInput();
+
+	bool InsertAtomicToken(const char* Text, DWORD Value);
+
+	bool GetAtomicToken(
+		int* Start,
+		int* Length,
+		DWORD* Value);
+
+	void ClearAtomicToken();
+
 private:
 
 	enum
@@ -120,6 +133,19 @@ private:
 
 	bool CanCopySelection(eInputContext Context, int Index);
 
+	bool TokenOverlaps(int Start, int End);
+
+	void ExpandRangeForToken(int* Start, int* End);
+
+	void UpdateTokenAfterEdit(
+		int Start,
+		int RemovedLength,
+		int InsertedLength);
+
+	void DeleteRange(int Index, int Start, int End);
+
+	int SkipToken(int Position, int Direction);
+
 	int m_CaretPosition[MAX_INPUT_TEXTS];
 
 	int m_SelectionAnchor[MAX_INPUT_TEXTS];
@@ -147,6 +173,16 @@ private:
 	bool m_HistoryBrowsing;
 
 	char m_HistoryDraft[INPUT_TEXT_SIZE];
+
+	bool m_TokenActive;
+
+	int m_TokenStart;
+
+	int m_TokenLength;
+
+	DWORD m_TokenValue;
+
+	char m_TokenText[INPUT_TEXT_SIZE];
 };
 
 extern CInput gInput;

@@ -2,6 +2,7 @@
 #include "Interface.h"
 #include "Camera3D.h"
 #include "EventTimer.h"
+#include "ItemLink.h"
 #include "MiniMap.h"
 #include "MoveList.h"
 #include "Protect.h"
@@ -86,6 +87,8 @@ void Interface::MyRenderWindows()
 	gMoveList.Render();
 
 	gEventTimer.Render();
+
+	gItemLink.RenderTooltip();
 }
 
 void Interface::RenderLeftDragon(int Texture, float x, float y, float Width, float Height, float u, float v, float uWidth, float vHeight, bool Scale, bool StartScale)
