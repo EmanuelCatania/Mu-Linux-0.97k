@@ -51,7 +51,7 @@ add_library(Main SHARED
   Util.cpp
   WeaponView.cpp
   Window.cpp
-  ChatInput.cpp)
+  Input.cpp)
 
 mu_configure_client_output(Main)
 set_target_properties(Main PROPERTIES

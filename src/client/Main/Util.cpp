@@ -74,6 +74,44 @@ void SetCompleteHook(BYTE head, DWORD offset, ...)
 	VirtualProtect((void*)offset, 5, OldProtect, &OldProtect);
 }
 
+bool CheckBytes(DWORD Address, const BYTE* Expected, SIZE_T Size)
+{
+	if (Address == 0 || Expected == NULL || Size == 0)
+	{
+		return false;
+	}
+
+	MEMORY_BASIC_INFORMATION MemoryInfo;
+
+	if (VirtualQuery(
+		(LPCVOID)Address,
+		&MemoryInfo,
+		sizeof(MemoryInfo)) == 0)
+	{
+		return false;
+	}
+
+	if (MemoryInfo.State != MEM_COMMIT ||
+		(MemoryInfo.Protect & (PAGE_GUARD | PAGE_NOACCESS)) != 0)
+	{
+		return false;
+	}
+
+	SIZE_T RegionOffset =
+		(SIZE_T)Address - (SIZE_T)MemoryInfo.BaseAddress;
+
+	if (RegionOffset > MemoryInfo.RegionSize ||
+		Size > (MemoryInfo.RegionSize - RegionOffset))
+	{
+		return false;
+	}
+
+	return (memcmp(
+		(const void*)Address,
+		Expected,
+		Size) == 0);
+}
+
 void MemoryCpy(DWORD offset, void* value, DWORD size)
 {
 	DWORD OldProtect;
@@ -188,7 +226,7 @@ bool FileExists(char* name)
 
 int GetTextWidth(char* buff)
 {
-	SIZE sz;
+	SIZE sz = { 0 };
 
 	GetTextExtentPoint(m_hFontDC, buff, strlen(buff), &sz);
 

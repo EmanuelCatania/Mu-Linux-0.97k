@@ -12,6 +12,8 @@ void SetDouble(DWORD offset, double value);
 
 void SetCompleteHook(BYTE head, DWORD offset, ...);
 
+bool CheckBytes(DWORD Address, const BYTE* Expected, SIZE_T Size);
+
 void MemoryCpy(DWORD offset, void* value, DWORD size);
 
 void MemorySet(DWORD offset, DWORD value, DWORD size);

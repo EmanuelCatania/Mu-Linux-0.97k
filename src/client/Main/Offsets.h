@@ -126,6 +126,8 @@
 
 // Input
 #define InputText ((char(*)[256])0x07DB8710)
+#define InputLength ((int*)0x07D780A8)
+#define InputTextHide ((BYTE*)0x07E113D8)
 #define InputIndex *(int*)0x07E11D78
 #define InputEnable *(bool*)0x00559C84
 #define TabInputEnable *(bool*)0x07E11D71

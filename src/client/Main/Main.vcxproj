@@ -165,7 +165,7 @@
     <ClInclude Include="Util.h" />
     <ClInclude Include="WeaponView.h" />
     <ClInclude Include="Window.h" />
-    <ClInclude Include="ChatInput.h" />
+    <ClInclude Include="Input.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Buff.cpp" />
@@ -225,7 +225,7 @@
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="WeaponView.cpp" />
     <ClCompile Include="Window.cpp" />
-    <ClCompile Include="ChatInput.cpp" />
+    <ClCompile Include="Input.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Main.rc" />

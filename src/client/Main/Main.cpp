@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Buff.h"
 #include "ChaosMix.h"
-#include "ChatInput.h"
+#include "Input.h"
 #include "Controller.h"
 #include "MapFog.h"
 #include "Font.h"
@@ -54,11 +54,11 @@ extern "C" _declspec(dllexport) void _cdecl EntryProc()
 
 	gProtect.CheckInstance();
 
-	if (gChatInput.Init() == false)
+	if (gInput.Init() == false)
 	{
 		MessageBoxA(
 			NULL,
-			"ChatInput: main.exe incompatível.",
+			"Input: main.exe incompatível.",
 			"MU 0.97k",
 			MB_OK | MB_ICONERROR);
 

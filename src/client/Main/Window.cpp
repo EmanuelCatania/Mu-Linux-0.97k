@@ -1,6 +1,7 @@
 ﻿#include "StdAfx.h"
 #include "Window.h"
 #include "Controller.h"
+#include "Input.h"
 #include "Font.h"
 #include "PingSystem.h"
 #include "PrintPlayer.h"
@@ -93,6 +94,25 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 {
 	switch (msg)
 	{
+		case WM_KEYDOWN:
+		{
+			if (gInput.HandleKeyDown(wParam))
+			{
+				return 0;
+			}
+
+			break;
+		}
+
+		case WM_CHAR:
+		{
+			if (gInput.HandleChar(wParam))
+			{
+				return 0;
+			}
+
+			break;
+		}
 		case WM_LBUTTONDOWN:
 		{
 			if (MouseRButton || MouseRButtonPush)
