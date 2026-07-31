@@ -1,112 +1,133 @@
 # Desenvolvimento local
 
-Este guia reúne a arquitetura, a preparação do runtime, o build do cliente Windows e
-a operação do servidor no WSL2. O fluxo mantém clones separados e sincroniza mudanças
-exclusivamente pelo Git.
+Este é o fluxo suportado para desenvolver o cliente no Windows e o servidor no
+WSL2. Os clones são separados: altere e compile um por vez e sincronize o outro pelo
+Git.
 
-## Arquitetura
+## Visão rápida
 
 ```text
-src/client ──MSBuild/CMake──> C:\Dev\runtime\mu-097k\client
-     │                              ▲
-     └──InfoEncoder + MainInfo.ini──┘
+Windows: src/client -> CMake/Ninja -> C:\Dev\runtime\mu-097k -> main.exe
+                         InfoEncoder -> ClientInfo.bmd
 
-CMake/Ninja ──> src/server ──build Docker──> mu-server ──> MySQL
-runtime/server──────────────────────────────┘       └──> services/web
+WSL2: src/server -> CMake/Ninja/Docker -> mu-server -> MySQL
+                                      \-> mu-web
 ```
 
-`runtime/client` e `runtime/encoder` são templates rastreados. A automação os copia
-para um runtime externo, compila `Main.dll` e `InfoEncoder.exe`, executa o encoder e
-instala `ClientInfo.bmd`. Os binários rastreados no repositório não são sobrescritos.
+O `main.exe` original é fechado. `Main.dll` é carregada por ele e aplica hooks e
+extensões. O encoder lê `MainInfo.ini` e gera a configuração que a DLL consome.
 
-O ponto de entrada CMake fica na raiz do repositório. No Linux, ele seleciona os
-quatro processos em `src/server`; no Windows, seleciona `Main.dll` e
-`InfoEncoder.exe` em `src/client`. O Dockerfile usa o preset Ninja Release do
-servidor e instala os binários junto aos dados de `runtime/server`. MySQL, servidor
-e painel compartilham a rede privada do Compose. O editor é opcional e usa
-`compose.editor.yaml`.
+## Requisitos
+
+### Windows
+
+- PowerShell 7, Git, CMake, Ninja e VS Code;
+- Visual Studio Build Tools com C++ e o MSVC 14.44 usado pelo projeto;
+- extensão C/C++ e as tarefas recomendadas pelo workspace.
+
+### WSL2
+
+- Ubuntu 24.04;
+- Docker Engine e Docker Compose;
+- para build nativo: `build-essential`, CMake, Ninja e MySQL Connector/C++.
 
 ## Cliente Windows
 
-Use o clone em `C:\Dev\projects\mu-097k` com PowerShell 7, VS Code e Visual Studio
-Build Tools. O projeto atual é Win32 e usa MSVC 14.44 por meio do toolset compatível
-instalado no Build Tools.
+Use `C:\Dev\projects\mu-097k` no Windows. O runtime de execução fica fora do Git,
+em `C:\Dev\runtime\mu-097k`.
 
-Inicialize o runtime uma vez:
+### 1. Criar o runtime
 
 ```powershell
 pwsh -File .\scripts\client-workflow.ps1 -Action InitializeRuntime
 ```
 
-O destino padrão é `C:\Dev\runtime\mu-097k`. `-ForceRuntime` recria essa cópia a
-partir dos templates e deve ser usado somente quando as alterações locais puderem ser
-descartadas.
+O script copia os templates rastreados de `runtime/client` e `runtime/encoder`.
+Para recriar uma cópia existente, use `-ForceRuntime` somente se puder perder as
+alterações feitas nela.
 
-Edite a configuração externa:
+### 2. Configurar o encoder
+
+Edite o arquivo externo:
 
 ```text
 C:\Dev\runtime\mu-097k\encoder\MainInfo.ini
 ```
 
-`ClientSerial` e `ClientVersion` devem corresponder a `ServerSerial` e
-`ServerVersion` no GameServer. Gere `ClientInfo.bmd` com:
+Para um servidor local, use `IpAddress=127.0.0.1` e a porta TCP do ConnectServer,
+normalmente `IpAddressPort=44405`. `ClientSerial` e `ClientVersion` precisam coincidir
+com `ServerSerial` e `ServerVersion` em `runtime/server/GameServer/DATA/GameServerInfo - StartUp.dat`.
+
+### 3. Compilar, implantar e gerar a configuração
+
+O sistema padrão é CMake/Ninja. `BuildDeploy` compila `Main.dll` e `InfoEncoder.exe`,
+os copia para o runtime e executa o encoder automaticamente:
+
+```powershell
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
+```
+
+O cliente executável fica em `C:\Dev\runtime\mu-097k\client`. Para gerar novamente
+somente o `ClientInfo.bmd` depois de alterar o INI, use:
 
 ```powershell
 pwsh -File .\scripts\client-workflow.ps1 -Action Encode
 ```
 
-O script aceita `-BuildSystem CMake|MSBuild`. CMake/Ninja é o padrão; MSBuild
-permanece disponível como fallback explícito durante o período de transição:
+O encoder não é interativo quando chamado pelo script. Executado sem argumentos,
+`InfoEncoder.exe` mantém o comportamento manual original.
+
+### 4. Debug e Release
+
+No VS Code, `F5` usa a configuração `Client: Debug Main.dll (x86)`. Ela executa a
+tarefa `Client: Build + Deploy Debug`, inicia `main.exe` no runtime externo e carrega
+os símbolos `Main.pdb`.
+
+Release não é uma segunda configuração de F5. Para preparar uma versão otimizada:
 
 ```powershell
-# Fluxo padrão com CMake/Ninja
-pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
 pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Release
-
-# Fallback temporário com MSBuild
-pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug -BuildSystem MSBuild
-pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Release -BuildSystem MSBuild
 ```
 
-O modo CMake localiza o Build Tools, prepara um ambiente MSVC x86 temporário com
-`vcvarsall.bat -vcvars_ver=14.44` e usa os presets `client-windows-debug` e
-`client-windows-release`. Os artefatos ficam em `out/build/<preset>/bin`; os do
-MSBuild permanecem em `src/client/bin/<configuração>`. CMake e Ninja devem estar no
-`PATH`.
+Também é possível usar a tarefa `Client: Build + Deploy Release`. O PDB não é mantido
+no runtime Release.
 
-As outras ações disponíveis são `Build`, `Deploy` e `Clean`, sempre usando o mesmo
-`-BuildSystem` escolhido para o build. As tarefas de cliente do VS Code usam CMake
-explicitamente. A configuração `Client: Debug Main.dll (x86)` executa BuildDeploy
-Debug, implanta a DLL e o PDB e inicia `main.exe` com `cppvsdbg`. A configuração
-automática do CMake ao abrir o workspace fica desativada; os presets podem ser
-selecionados manualmente na extensão CMake Tools.
+MSBuild continua disponível como fallback:
+
+```powershell
+pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy `
+  -Configuration Debug -BuildSystem MSBuild
+```
+
+As ações `Build`, `Deploy`, `Encode` e `Clean` aceitam o mesmo `-BuildSystem`
+usado para compilar. O CMake usa os presets `client-windows-debug` e
+`client-windows-release`; os artefatos ficam em `out/build/<preset>/bin`.
 
 ## Servidor no WSL2
 
-Mantenha o clone Linux em `~/Dev/projects/mu-097k`. Não edite ou compile o mesmo
-working tree simultaneamente pelo Windows e pelo WSL.
+Use `~/Dev/projects/mu-097k` no Ubuntu. Não compile o mesmo working tree ao mesmo
+tempo no Windows e no WSL2.
 
-Prepare a configuração local:
+### 1. Ambiente local
 
 ```bash
 cd ~/Dev/projects/mu-097k
 cp .env.example .env
 ```
 
-Revise as credenciais. Para o cliente Windows conectado ao WSL2, mantenha:
+Revise as credenciais e mantenha `PUBLIC_IP=127.0.0.1` para o cliente Windows local.
+O arquivo `.env` não deve ser commitado.
 
-```dotenv
-PUBLIC_IP=127.0.0.1
-```
+### 2. Build nativo opcional
 
-Para compilar o servidor diretamente no WSL2, instale as dependências uma vez:
+Instale as dependências uma vez:
 
 ```bash
 sudo apt update
 sudo apt install build-essential cmake ninja-build libmysqlcppconn-dev
 ```
 
-Configure e compile a variante desejada a partir da raiz do repositório:
+Compile as variantes do servidor:
 
 ```bash
 cmake --preset server-linux-debug
@@ -116,12 +137,10 @@ cmake --preset server-linux-release
 cmake --build --preset server-linux-release
 ```
 
-Os quatro executáveis são gravados em
-`out/build/<preset>/bin`. `CMakeUserPresets.json` pode ser usado para ajustes locais
-e não é versionado. A ausência do MySQL Connector/C++ interrompe a configuração em
-vez de produzir um build incompleto.
+Os quatro executáveis ficam em `out/build/<preset>/bin`. A ausência do MySQL
+Connector/C++ interrompe a configuração.
 
-Valide e inicie o stack base:
+### 3. Subir e parar o Compose
 
 ```bash
 docker compose config --quiet
@@ -129,43 +148,30 @@ docker compose up --build -d
 docker compose ps
 ```
 
-O stack base contém `mysql`, `mu-server` e `mu-web`. Para acompanhar logs:
+O fluxo base usa `mysql`, `mu-server` e `mu-web`. O painel responde em
+<http://127.0.0.1:8085>; as portas do servidor são `44405/tcp` e `55901/tcp`.
+Verifique logs com `docker compose logs --follow --tail=200` e desligue com:
 
 ```bash
-docker compose logs --follow --tail=200
+docker compose down
 ```
 
-Use `docker compose down` para desligar sem excluir o volume MySQL. Não use `-v` sem
-confirmar que os dados persistentes podem ser descartados.
+Não use `docker compose down -v` sem confirmar que o volume MySQL pode ser removido.
+O editor é opcional e usa `compose.editor.yaml` quando necessário.
 
-## Editor opcional
+## Antes de abrir um PR
 
-Inicie o editor somente quando necessário:
-
-```bash
-docker compose -f compose.yaml -f compose.editor.yaml up --build -d
-```
-
-O overlay adiciona volumes de dados e backup compartilhados com o servidor. Os
-arquivos em `deploy/legacy` referenciam imagens upstream e Pterodactyl e permanecem
-somente como referência histórica; eles não fazem parte do fluxo suportado.
-
-## Sincronização e validação
-
-Faça alterações em apenas um clone por vez, envie a branch ao `origin` e atualize o
-outro clone pelo Git. Antes de abrir um pull request, execute as validações relevantes:
+Valide a documentação e scripts:
 
 ```powershell
-pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
+pwsh -File .\scripts\validate-repository.ps1
+git diff --check
 ```
 
-```bash
-cmake --preset server-linux-debug
-cmake --build --preset server-linux-debug
-docker compose config --quiet
-docker compose up --build -d
-```
+No cliente, execute pelo menos um `BuildDeploy` Debug. No servidor, execute os dois
+presets quando houver alteração C++ e valide o Compose. Confirme que `git status` está
+limpo depois de build, deploy e containers.
 
-Confirme que `git status` continua limpo depois de build, deploy e execução dos
-containers. A CI compila Debug e Release primeiro pelo padrão CMake e depois pelo
-fallback MSBuild, que permanecerá disponível pelo menos até a próxima release.
+Problemas de MSVC normalmente indicam que o Build Tools ou o MSVC 14.44 não está
+instalado. Se o runtime já existir, `InitializeRuntime` exige `-ForceRuntime`; isso
+evita apagar configurações locais por engano.

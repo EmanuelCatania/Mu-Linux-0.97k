@@ -1,21 +1,12 @@
 # Segurança
 
-## Versões suportadas
-
-O projeto ainda não publicou uma versão independente estável. Somente o estado atual
-de `main` recebe correções.
-
-## Relato de vulnerabilidades
+O projeto suporta o estado atual de `main` e a release mais recente.
 
 Não publique credenciais, tokens, dados pessoais ou detalhes exploráveis em Issues.
-Use um [aviso de segurança privado](https://github.com/aldomigge/mu-097k/security/advisories/new)
-para relatar vulnerabilidades.
+Use o [relato privado de vulnerabilidade do
+GitHub](https://github.com/aldomigge/mu-097k/security/advisories/new).
 
-Inclua o componente afetado, passos de reprodução, impacto esperado e qualquer
-mitigação conhecida. Não inclua dados reais de servidores ou jogadores.
-
-## Escopo
-
-Credenciais de exemplo, software legado e dependências desatualizadas não devem ser
-expostos à internet sem revisão e hardening adicionais. O ambiente documentado é para
-desenvolvimento local.
+Inclua o componente afetado, passos para reproduzir, impacto e uma possível
+mitigação. Não envie dados reais de servidores ou jogadores. O ambiente documentado é
+local; não exponha o Compose, o painel ou o servidor à internet sem uma revisão de
+segurança específica.
