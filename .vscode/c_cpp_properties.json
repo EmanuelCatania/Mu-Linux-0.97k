@@ -1,0 +1,66 @@
+{
+    "configurations": [
+        {
+            "name": "Client Debug - MSVC Win32",
+            "compilerPath": "cl.exe",
+            "intelliSenseMode": "windows-msvc-x86",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "includePath": [
+                "${workspaceFolder}/src/client/Main",
+                "${workspaceFolder}/src/client/InfoEncoder"
+            ],
+            "defines": [
+                "WIN32",
+                "_DEBUG",
+                "_WINDOWS",
+                "_USRDLL",
+                "MAIN_EXPORTS",
+                "GLEW_STATIC",
+                "_MBCS"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/src/client/Main",
+                    "${workspaceFolder}/src/client/InfoEncoder"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "compileCommands": [
+                "${workspaceFolder}/out/build/client-windows-debug/compile_commands.json"
+            ]
+        },
+        {
+            "name": "Client Release - MSVC Win32",
+            "compilerPath": "cl.exe",
+            "intelliSenseMode": "windows-msvc-x86",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "includePath": [
+                "${workspaceFolder}/src/client/Main",
+                "${workspaceFolder}/src/client/InfoEncoder"
+            ],
+            "defines": [
+                "WIN32",
+                "NDEBUG",
+                "_WINDOWS",
+                "_USRDLL",
+                "MAIN_EXPORTS",
+                "GLEW_STATIC",
+                "_MBCS"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/src/client/Main",
+                    "${workspaceFolder}/src/client/InfoEncoder"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "compileCommands": [
+                "${workspaceFolder}/out/build/client-windows-release/compile_commands.json"
+            ]
+        }
+    ],
+    "version": 4,
+    "enableConfigurationSquiggles": true
+}
