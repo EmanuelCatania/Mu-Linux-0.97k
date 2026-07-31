@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Buff.h"
 #include "ChaosMix.h"
+#include "ChatInput.h"
 #include "Controller.h"
 #include "MapFog.h"
 #include "Font.h"
@@ -52,6 +53,17 @@ extern "C" _declspec(dllexport) void _cdecl EntryProc()
 	gProtect.CheckLauncher();
 
 	gProtect.CheckInstance();
+
+	if (gChatInput.Init() == false)
+	{
+		MessageBoxA(
+			NULL,
+			"ChatInput: main.exe incompatível.",
+			"MU 0.97k",
+			MB_OK | MB_ICONERROR);
+
+		return;
+	}
 
 	if (!gPacketManager.LoadEncryptionKey("Data\\Enc1.dat") || !gPacketManager.LoadDecryptionKey("Data\\Dec2.dat"))
 	{

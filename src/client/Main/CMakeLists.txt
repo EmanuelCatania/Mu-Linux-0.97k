@@ -50,7 +50,8 @@ add_library(Main SHARED
   stdafx.cpp
   Util.cpp
   WeaponView.cpp
-  Window.cpp)
+  Window.cpp
+  ChatInput.cpp)
 
 mu_configure_client_output(Main)
 set_target_properties(Main PROPERTIES

@@ -241,6 +241,9 @@
     <ClInclude Include="OpenglUtil.h">
       <Filter>Util Files</Filter>
     </ClInclude>
+    <ClInclude Include="ChatInput.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CCRC32.Cpp">
@@ -395,6 +398,9 @@
     </ClCompile>
     <ClCompile Include="OpenglUtil.cpp">
       <Filter>Util Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChatInput.cpp">
+      <Filter>Interface</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
