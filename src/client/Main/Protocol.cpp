@@ -438,6 +438,14 @@ bool CProtocol::TranslateProtocol(BYTE head, BYTE* lpMsg, int Size)
 					return true;
 				}
 
+				case 0xE8:
+				{
+					gItemLink.GCItemPostLinkRecv(
+						(PMSG_ITEM_POST_LINK_SEND*)lpMsg);
+
+					return true;
+				}
+
 				case 0xE4:
 				{
 					gItemValue.GCItemValueListRecv((PMSG_ITEM_VALUE_LIST_RECV*)lpMsg);

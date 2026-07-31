@@ -20,6 +20,16 @@ static const BYTE CHAT_RENDER_TEXT_BYTES[5] =
 
 static const DWORD ITEM_LINK_EQUIPMENT_FLAG = 0x80000000;
 
+static bool IsPostMessage(const char* Message)
+{
+	if (Message == NULL || _strnicmp(Message, "/post", 5) != 0)
+	{
+		return false;
+	}
+
+	return (Message[5] == 0 || Message[5] == ' ' || Message[5] == '\t');
+}
+
 static int (__thiscall* OriginalChatWindowLineRender)(
 	int This,
 	int LineIndex) = NULL;
@@ -609,27 +619,40 @@ bool CItemLink::HandleOutgoingChat(BYTE* lpMsg, DWORD size)
 		return true;
 	}
 
-	PMSG_ITEM_LINK_SEND pMsg;
+	if (IsPostMessage(Message) != false)
+	{
+		PMSG_ITEM_POST_LINK_RECV pMsg;
 
-	pMsg.header.set(0xF3, 0xE7, sizeof(pMsg));
+		pMsg.header.set(0xF3, 0xE8, sizeof(pMsg));
 
-	pMsg.itemType[0] = HIBYTE(Type);
+		pMsg.itemType[0] = HIBYTE(Type);
+		pMsg.itemType[1] = LOBYTE(Type);
+		pMsg.itemLevel = Level;
+		pMsg.slot = Slot;
+		pMsg.linkStart = (BYTE)LinkStart;
+		pMsg.linkLength = (BYTE)LinkLength;
+		memset(pMsg.message, 0, sizeof(pMsg.message));
+		memcpy(pMsg.message, Message, MessageLength);
 
-	pMsg.itemType[1] = LOBYTE(Type);
+		gProtocol.DataSend((BYTE*)&pMsg, sizeof(pMsg));
+	}
+	else
+	{
+		PMSG_ITEM_LINK_SEND pMsg;
 
-	pMsg.itemLevel = Level;
+		pMsg.header.set(0xF3, 0xE7, sizeof(pMsg));
 
-	pMsg.slot = Slot;
+		pMsg.itemType[0] = HIBYTE(Type);
+		pMsg.itemType[1] = LOBYTE(Type);
+		pMsg.itemLevel = Level;
+		pMsg.slot = Slot;
+		pMsg.linkStart = (BYTE)LinkStart;
+		pMsg.linkLength = (BYTE)LinkLength;
+		memset(pMsg.message, 0, sizeof(pMsg.message));
+		memcpy(pMsg.message, Message, MessageLength);
 
-	pMsg.linkStart = (BYTE)LinkStart;
-
-	pMsg.linkLength = (BYTE)LinkLength;
-
-	memset(pMsg.message, 0, sizeof(pMsg.message));
-
-	memcpy(pMsg.message, Message, MessageLength);
-
-	gProtocol.DataSend((BYTE*)&pMsg, sizeof(pMsg));
+		gProtocol.DataSend((BYTE*)&pMsg, sizeof(pMsg));
+	}
 
 #if defined(_DEBUG)
 	gConsole.Write(
@@ -683,37 +706,65 @@ bool CItemLink::HandleMainChatSend()
 		sizeof(Chat));
 }
 
-void CItemLink::GCItemLinkRecv(
-	PMSG_ITEM_LINK_RECV* lpMsg)
+void CItemLink::ReceiveItemLinkMessage(
+	const char* Name,
+	const char* Message,
+	BYTE LinkStart,
+	BYTE LinkLength,
+	const BYTE* ItemInfo,
+	BYTE Channel)
 {
-	if (lpMsg == NULL ||
-		lpMsg->header.size != sizeof(PMSG_ITEM_LINK_RECV))
+	if (Name == NULL || Message == NULL || ItemInfo == NULL)
 	{
 		return;
 	}
-
-	lpMsg->name[sizeof(lpMsg->name) - 1] = 0;
-
-	lpMsg->message[sizeof(lpMsg->message) - 1] = 0;
 
 	int MessageLength = (int)strnlen_s(
-		lpMsg->message,
-		sizeof(lpMsg->message));
+		Message,
+		60);
 
-	if (lpMsg->linkLength == 0 ||
-		lpMsg->linkStart >= MessageLength ||
-		(lpMsg->linkStart + lpMsg->linkLength) > MessageLength)
+	if (MessageLength <= 0 || LinkLength == 0 ||
+		LinkStart >= MessageLength ||
+		(LinkStart + LinkLength) > MessageLength)
 	{
 		return;
 	}
 
-	this->SynchronizeMetadata(0);
+	bool StructuredPost = (Channel <= 2);
 
-	int OldCount = this->m_IdentityCount;
+	if (StructuredPost != false)
+	{
+		if ((Channel == 0 && (Message[0] == '~' || Message[0] == '@')) ||
+			(Channel == 1 && Message[0] != '~') ||
+			(Channel == 2 && Message[0] != '@'))
+		{
+			return;
+		}
 
-	int AddedLines = this->GetMessageLineCount(
-		lpMsg->name,
-		lpMsg->message);
+#if defined(_DEBUG)
+		ItemLinkDebug(
+			"[ItemLink] post recv style=%u name='%s' message='%s' start=%u length=%u",
+			(unsigned int)Channel,
+			Name,
+			Message,
+			(unsigned int)LinkStart,
+			(unsigned int)LinkLength);
+#endif
+	}
+
+	int OldCount = 0;
+	int AddedLines = 0;
+
+	if (StructuredPost == false)
+	{
+		this->SynchronizeMetadata(0);
+
+		OldCount = this->m_IdentityCount;
+
+		AddedLines = this->GetMessageLineCount(
+			Name,
+			Message);
+	}
 
 	PMSG_STANDARD_CHAT Chat;
 
@@ -721,41 +772,116 @@ void CItemLink::GCItemLinkRecv(
 
 	memset(Chat.name, 0, sizeof(Chat.name));
 
-	memcpy(Chat.name, lpMsg->name, sizeof(Chat.name));
+	memcpy(Chat.name, Name, sizeof(Chat.name));
 
 	memset(Chat.message, 0, sizeof(Chat.message));
 
-	memcpy(Chat.message, lpMsg->message, MessageLength);
+	memcpy(Chat.message, Message, MessageLength);
 
-	ReceiveChatMessage(&Chat);
+	if (StructuredPost == false)
+	{
+		ReceiveChatMessage(&Chat);
+	}
+	else if (Channel == 0)
+	{
+		/* Match the original C1:02 post path.  Type 0 is the gold post
+		 * style and avoids the normal-chat overhead/bubble processing. */
+		RegisterWhisperName(10, Name);
 
-	int MinimumShift = max(
-		0,
-		(OldCount + AddedLines) - MAX_CHAT_LINES);
+		if (m_bWhisperSound != false)
+		{
+			PlayBuffer(38, 0, FALSE);
+		}
 
-	int FirstNewLine = this->SynchronizeMetadata(MinimumShift);
+		UIChatLogWindow_AddText(Name, Message, 0);
 
-	int NewCount = this->m_IdentityCount;
+#if defined(_DEBUG)
+		ItemLinkDebug("[ItemLink] post gold path type=0");
+#endif
+	}
+	else
+	{
+		/* The server includes '~' or '@'; ReceiveChatMessage selects the
+		 * original blue/green post render path and strips the marker. */
+		ReceiveChatMessage(&Chat);
+
+#if defined(_DEBUG)
+		ItemLinkDebug(
+			"[ItemLink] post colored path marker=%c",
+			Message[0]);
+#endif
+	}
 
 	ITEM Item;
 
-	this->DecodeItem(lpMsg->ItemInfo, &Item);
+	this->DecodeItem(ItemInfo, &Item);
 
 	this->AttachUiLink(
+		Name,
+		Message,
+		LinkStart,
+		LinkLength,
+		&Item);
+
+	if (StructuredPost == false)
+	{
+		int MinimumShift = max(
+			0,
+			(OldCount + AddedLines) - MAX_CHAT_LINES);
+
+		int FirstNewLine = this->SynchronizeMetadata(MinimumShift);
+
+		int NewCount = this->m_IdentityCount;
+
+		this->AttachReceivedLink(
+			Message,
+			LinkStart,
+			LinkLength,
+			&Item,
+			FirstNewLine,
+			NewCount);
+	}
+
+}
+
+void CItemLink::GCItemLinkRecv(PMSG_ITEM_LINK_RECV* lpMsg)
+{
+	if (lpMsg == NULL || lpMsg->header.size != sizeof(PMSG_ITEM_LINK_RECV))
+	{
+		return;
+	}
+
+	lpMsg->name[sizeof(lpMsg->name) - 1] = 0;
+	lpMsg->message[sizeof(lpMsg->message) - 1] = 0;
+
+	this->ReceiveItemLinkMessage(
 		lpMsg->name,
 		lpMsg->message,
 		lpMsg->linkStart,
 		lpMsg->linkLength,
-		&Item);
+		lpMsg->ItemInfo,
+		0xFF);
+}
 
-	this->AttachReceivedLink(
+void CItemLink::GCItemPostLinkRecv(PMSG_ITEM_POST_LINK_SEND* lpMsg)
+{
+	if (lpMsg == NULL ||
+		lpMsg->header.size != sizeof(PMSG_ITEM_POST_LINK_SEND) ||
+		lpMsg->style > 2)
+	{
+		return;
+	}
+
+	lpMsg->name[sizeof(lpMsg->name) - 1] = 0;
+	lpMsg->message[sizeof(lpMsg->message) - 1] = 0;
+
+	this->ReceiveItemLinkMessage(
+		lpMsg->name,
 		lpMsg->message,
 		lpMsg->linkStart,
 		lpMsg->linkLength,
-		&Item,
-		FirstNewLine,
-		NewCount);
-
+		lpMsg->ItemInfo,
+		lpMsg->style);
 }
 
 void CItemLink::ClearLink(CHAT_LINK* Link)

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ItemLink.h"
+#include "CommandManager.h"
 #include "Filter.h"
 #include "Guild.h"
 #include "ItemManager.h"
@@ -11,6 +12,92 @@
 #include "Util.h"
 
 CItemLink gItemLink;
+
+void CItemLink::CGItemPostLinkRecv(
+	PMSG_ITEM_POST_LINK_RECV* lpMsg,
+	int size,
+	int aIndex)
+{
+	if (lpMsg == NULL || size != sizeof(PMSG_ITEM_POST_LINK_RECV) ||
+		lpMsg->header.size != sizeof(PMSG_ITEM_POST_LINK_RECV) ||
+		gObjIsConnectedGP(aIndex) == 0)
+	{
+		return;
+	}
+
+	char source[60] = { 0 };
+	memcpy(source, lpMsg->message, sizeof(source) - 1);
+
+	if (_strnicmp(source, "/post", 5) != 0 ||
+		(source[5] != ' ' && source[5] != '\t'))
+	{
+		return;
+	}
+
+	int ArgumentStart = 5;
+
+	while (source[ArgumentStart] == ' ' || source[ArgumentStart] == '\t')
+	{
+		ArgumentStart++;
+	}
+
+	int SourceLength = (int)strnlen(source, sizeof(source));
+
+	if (source[ArgumentStart] == 0 ||
+		lpMsg->linkLength == 0 ||
+		lpMsg->linkStart < ArgumentStart ||
+		lpMsg->linkStart + lpMsg->linkLength > SourceLength)
+	{
+		return;
+	}
+
+	PMSG_ITEM_LINK_RECV Argument;
+	memset(&Argument, 0, sizeof(Argument));
+	Argument.itemType[0] = lpMsg->itemType[0];
+	Argument.itemType[1] = lpMsg->itemType[1];
+	Argument.itemLevel = lpMsg->itemLevel;
+	Argument.slot = lpMsg->slot;
+	Argument.linkStart = (BYTE)(lpMsg->linkStart - ArgumentStart);
+	Argument.linkLength = lpMsg->linkLength;
+	memcpy(Argument.message, source + ArgumentStart, SourceLength - ArgumentStart);
+
+	char message[60] = { 0 };
+	BYTE linkStart = 0;
+	BYTE linkLength = 0;
+	BYTE itemInfo[MAX_ITEM_INFO] = { 0 };
+
+	if (this->BuildCanonicalMessage(
+		&Argument,
+		message,
+		sizeof(message),
+		&linkStart,
+		&linkLength,
+		itemInfo,
+		aIndex) == false)
+	{
+		return;
+	}
+
+	LPOBJ lpObj = &gObj[aIndex];
+
+	if (lpObj->ChatLimitTime > 0)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(63, lpObj->Lang), lpObj->ChatLimitTime);
+		return;
+	}
+
+	if ((lpObj->Penalty & 2) != 0)
+	{
+		return;
+	}
+
+	gCommandManager.ManagementItemPost(
+		lpObj,
+		message,
+		linkStart,
+		linkLength,
+		itemInfo);
+}
 
 void CItemLink::CGItemLinkRecv(
 	PMSG_ITEM_LINK_RECV* lpMsg,

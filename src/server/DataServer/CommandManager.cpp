@@ -100,3 +100,33 @@ void CCommandManager::GDCommandGrandResetRecv(SDHP_COMMAND_RESET_RECV* lpMsg, in
 
 	gSocketManager.DataSend(index, (BYTE*)&pMsg, pMsg.header.size);
 }
+
+void CCommandManager::GDGlobalPostLinkRecv(
+	SDHP_GLOBAL_POST_LINK_RECV* lpMsg,
+	int index)
+{
+	if (lpMsg == NULL || lpMsg->header.size != sizeof(SDHP_GLOBAL_POST_LINK_RECV) ||
+		lpMsg->type > 2 || lpMsg->linkLength == 0 ||
+		lpMsg->linkStart + lpMsg->linkLength >= sizeof(lpMsg->message))
+	{
+		return;
+	}
+
+	SDHP_GLOBAL_POST_LINK_SEND pMsg;
+	pMsg.header.set(0x05, 0x06, sizeof(pMsg));
+	pMsg.type = lpMsg->type;
+	memcpy(pMsg.name, lpMsg->name, sizeof(pMsg.name));
+	memcpy(pMsg.message, lpMsg->message, sizeof(pMsg.message));
+	memcpy(pMsg.serverName, lpMsg->serverName, sizeof(pMsg.serverName));
+	pMsg.linkStart = lpMsg->linkStart;
+	pMsg.linkLength = lpMsg->linkLength;
+	memcpy(pMsg.ItemInfo, lpMsg->ItemInfo, sizeof(pMsg.ItemInfo));
+
+	for (int n = 0; n < MAX_SERVER; n++)
+	{
+		if (gServerManager[n].CheckState() != 0)
+		{
+			gSocketManager.DataSend(n, (BYTE*)&pMsg, pMsg.header.size);
+		}
+	}
+}

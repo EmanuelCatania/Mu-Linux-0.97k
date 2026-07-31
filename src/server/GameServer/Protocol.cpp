@@ -558,6 +558,16 @@ void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int
 
 					break;
 				}
+
+				case 0xE8:
+				{
+					gItemLink.CGItemPostLinkRecv(
+						(PMSG_ITEM_POST_LINK_RECV*)lpMsg,
+						size,
+						aIndex);
+
+					break;
+				}
 			}
 
 			break;

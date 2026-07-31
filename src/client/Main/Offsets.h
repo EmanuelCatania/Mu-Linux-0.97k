@@ -119,6 +119,7 @@
 #define GlobalText ((char(*)[300])0x07D29D24)
 #define ChaosEventName ((char(*)[100])0x00559FFC)
 #define UIChatLogWindow_AddText ((void(_cdecl*)(const char* strID, const char* strText, int MsgType)) 0x00480620)
+#define RegisterWhisperName ((void(_cdecl*)(int count, const char* name)) 0x004801C0)
 #define ReceiveChatMessage ((void(_cdecl*)(void* message)) 0x00427630)
 #define RenderChatText ((int(_cdecl*)(int x, int y, const char* text, int width, int sort, SIZE* textSize)) 0x0047F7A0)
 #define ChatLogBuffer 0x07DF9380

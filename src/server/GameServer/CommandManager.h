@@ -74,6 +74,34 @@ struct SDHP_GLOBAL_POST_SEND
 	char serverName[60];
 };
 
+struct SDHP_GLOBAL_POST_LINK_RECV
+{
+	PSBMSG_HEAD header; // C1:05:06
+	BYTE type;
+	char name[11];
+	char message[60];
+	char serverName[60];
+	BYTE linkStart;
+	BYTE linkLength;
+	BYTE ItemInfo[4];
+};
+
+struct SDHP_GLOBAL_POST_LINK_SEND
+{
+	PSBMSG_HEAD header; // C1:05:06
+	BYTE type;
+	char name[11];
+	char message[60];
+	char serverName[60];
+	BYTE linkStart;
+	BYTE linkLength;
+	BYTE ItemInfo[4];
+};
+
+static_assert(sizeof(SDHP_GLOBAL_POST_LINK_RECV) == 142, "Invalid global post item link receive packet size");
+
+static_assert(sizeof(SDHP_GLOBAL_POST_LINK_SEND) == 142, "Invalid global post item link send packet size");
+
 struct SDHP_COMMAND_RESET_SEND
 {
 	PSBMSG_HEAD header; // C1:05:04 | C1:05:05
@@ -141,6 +169,13 @@ public:
 
 	bool ManagementCore(LPOBJ lpObj, char* message);
 
+	bool ManagementItemPost(
+		LPOBJ lpObj,
+		char* message,
+		BYTE linkStart,
+		BYTE linkLength,
+		const BYTE* itemInfo);
+
 	//Commands
 
 	void CommandMove(LPOBJ lpObj, char* arg);
@@ -151,11 +186,34 @@ public:
 
 	void DGGlobalPostRecv(SDHP_GLOBAL_POST_RECV* lpMsg);
 
+	void GDGlobalPostLinkSend(
+		BYTE type,
+		char* name,
+		char* message,
+		BYTE linkStart,
+		BYTE linkLength,
+		const BYTE* itemInfo);
+
+	void DGGlobalPostLinkRecv(SDHP_GLOBAL_POST_LINK_SEND* lpMsg);
+
 	void GCPostMessageGold(char* name, char* serverName, int message, char* text);
 
 	void GCPostMessageBlue(char* name, char* serverName, int message, char* text);
 
 	void GCPostMessageGreen(char* name, char* serverName, int message, char* text);
+
+	void GCPostMessageLink(
+		BYTE type,
+		char* name,
+		char* serverName,
+		char* text,
+		BYTE linkStart,
+		BYTE linkLength,
+		const BYTE* itemInfo);
+
+	bool ValidateCommand(LPOBJ lpObj, const COMMAND_LIST& command);
+
+	void CommitCommand(LPOBJ lpObj, const COMMAND_LIST& command);
 
 	void CommandAddPoint(LPOBJ lpObj, char* arg, int type);
 

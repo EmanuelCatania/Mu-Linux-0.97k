@@ -27,6 +27,32 @@ static_assert(sizeof(PMSG_ITEM_LINK_RECV) == 81, "Invalid item link receive pack
 
 static_assert(sizeof(PMSG_ITEM_LINK_SEND) == 70, "Invalid item link send packet size");
 
+struct PMSG_ITEM_POST_LINK_RECV
+{
+	PSBMSG_HEAD header; // C1:F3:E8
+	BYTE itemType[2];
+	BYTE itemLevel;
+	BYTE slot;
+	BYTE linkStart;
+	BYTE linkLength;
+	char message[60];
+};
+
+struct PMSG_ITEM_POST_LINK_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:E8
+	char name[11];
+	char message[60];
+	BYTE linkStart;
+	BYTE linkLength;
+	BYTE style;
+	BYTE ItemInfo[4];
+};
+
+static_assert(sizeof(PMSG_ITEM_POST_LINK_RECV) == 70, "Invalid item post link receive packet size");
+
+static_assert(sizeof(PMSG_ITEM_POST_LINK_SEND) == 82, "Invalid item post link send packet size");
+
 class CItemLink
 {
 public:
@@ -46,6 +72,8 @@ public:
 	bool HandleMainChatSend();
 
 	void GCItemLinkRecv(PMSG_ITEM_LINK_RECV* lpMsg);
+
+	void GCItemPostLinkRecv(PMSG_ITEM_POST_LINK_SEND* lpMsg);
 
 	void RenderTooltip();
 
@@ -140,6 +168,14 @@ private:
 		int NewCount);
 
 	void DecodeItem(const BYTE* ItemInfo, ITEM* Item);
+
+	void ReceiveItemLinkMessage(
+		const char* Name,
+		const char* Message,
+		BYTE LinkStart,
+		BYTE LinkLength,
+		const BYTE* ItemInfo,
+		BYTE Channel);
 
 	CHAT_LINK* FindHoveredLink();
 

@@ -5,6 +5,7 @@
 #include "GameMain.h"
 #include "GameMaster.h"
 #include "Guild.h"
+#include "ItemLink.h"
 #include "ItemManager.h"
 #include "Log.h"
 #include "ReadScript.h"
@@ -21,6 +22,17 @@
 #include "Monster.h"
 
 CCommandManager gCommandManager;
+
+static bool BuildPostLinkMessage(
+	BYTE type,
+	char* serverName,
+	char* text,
+	BYTE linkStart,
+	BYTE linkLength,
+	int language,
+	char* output,
+	int outputSize,
+	BYTE* outputLinkStart);
 
 CCommandManager::CCommandManager()
 {
@@ -249,68 +261,8 @@ bool CCommandManager::ManagementCore(LPOBJ lpObj, char* message)
 		argument++;
 	}
 
-	if (CommandData.Enable[lpObj->AccountLevel] == 0)
+	if (this->ValidateCommand(lpObj, CommandData) == false)
 	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(57, lpObj->Lang));
-
-		return false;
-	}
-
-	if (lpObj->Money < (DWORD)CommandData.Money[lpObj->AccountLevel] && CommandData.Money[lpObj->AccountLevel] != -1)
-	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(58, lpObj->Lang), CommandData.Money[lpObj->AccountLevel]);
-
-		return false;
-	}
-
-	if (lpObj->Level < CommandData.MinLevel[lpObj->AccountLevel] && CommandData.MinLevel[lpObj->AccountLevel] != -1)
-	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(59, lpObj->Lang), CommandData.MinLevel[lpObj->AccountLevel]);
-
-		return false;
-	}
-
-	if (lpObj->Level > CommandData.MaxLevel[lpObj->AccountLevel] && CommandData.MaxLevel[lpObj->AccountLevel] != -1)
-	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(60, lpObj->Lang), CommandData.MaxLevel[lpObj->AccountLevel]);
-
-		return false;
-	}
-
-	if (lpObj->Reset < CommandData.MinReset[lpObj->AccountLevel] && CommandData.MinReset[lpObj->AccountLevel] != -1)
-	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(61, lpObj->Lang), CommandData.MinReset[lpObj->AccountLevel]);
-
-		return false;
-	}
-
-	if (lpObj->Reset > CommandData.MaxReset[lpObj->AccountLevel] && CommandData.MaxReset[lpObj->AccountLevel] != -1)
-	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(62, lpObj->Lang), CommandData.MaxReset[lpObj->AccountLevel]);
-
-		return false;
-	}
-
-	DWORD tick = (GetTickCount() - lpObj->CommandLastTick[CommandData.Index]) / 1000;
-
-	if (tick < (DWORD)CommandData.Delay)
-	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(63, lpObj->Lang), (CommandData.Delay - tick));
-
-		return false;
-	}
-
-	if (CommandData.GameMaster != 0 && gGameMaster.CheckGameMasterLevel(lpObj, CommandData.GameMaster) == false)
-	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(57, lpObj->Lang));
-
-		return false;
-	}
-
-	if (lpObj->Interface.type == INTERFACE_TRADE || lpObj->Interface.type == INTERFACE_SHOP || lpObj->Interface.type == INTERFACE_WAREHOUSE || lpObj->Interface.type == INTERFACE_CHAOS_BOX)
-	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(64, lpObj->Lang));
-
 		return false;
 	}
 
@@ -528,11 +480,161 @@ bool CCommandManager::ManagementCore(LPOBJ lpObj, char* message)
 		}
 	}
 
+	this->CommitCommand(lpObj, CommandData);
+
+	return true;
+}
+
+bool CCommandManager::ValidateCommand(
+	LPOBJ lpObj,
+	const COMMAND_LIST& CommandData)
+{
+	if (lpObj == NULL || lpObj->AccountLevel < 0 || lpObj->AccountLevel >= MAX_ACCOUNT_LEVEL)
+	{
+		return false;
+	}
+
+	int Level = lpObj->AccountLevel;
+
+	if (CommandData.Enable[Level] == 0)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(57, lpObj->Lang));
+		return false;
+	}
+
+	if (lpObj->Money < (DWORD)CommandData.Money[Level] && CommandData.Money[Level] != -1)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(58, lpObj->Lang), CommandData.Money[Level]);
+		return false;
+	}
+
+	if (lpObj->Level < CommandData.MinLevel[Level] && CommandData.MinLevel[Level] != -1)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(59, lpObj->Lang), CommandData.MinLevel[Level]);
+		return false;
+	}
+
+	if (lpObj->Level > CommandData.MaxLevel[Level] && CommandData.MaxLevel[Level] != -1)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(60, lpObj->Lang), CommandData.MaxLevel[Level]);
+		return false;
+	}
+
+	if (lpObj->Reset < CommandData.MinReset[Level] && CommandData.MinReset[Level] != -1)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(61, lpObj->Lang), CommandData.MinReset[Level]);
+		return false;
+	}
+
+	if (lpObj->Reset > CommandData.MaxReset[Level] && CommandData.MaxReset[Level] != -1)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(62, lpObj->Lang), CommandData.MaxReset[Level]);
+		return false;
+	}
+
+	DWORD Tick = (GetTickCount() - lpObj->CommandLastTick[CommandData.Index]) / 1000;
+
+	if (Tick < (DWORD)CommandData.Delay)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(63, lpObj->Lang), (CommandData.Delay - Tick));
+		return false;
+	}
+
+	if (CommandData.GameMaster != 0 && gGameMaster.CheckGameMasterLevel(lpObj, CommandData.GameMaster) == false)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(57, lpObj->Lang));
+		return false;
+	}
+
+	if (lpObj->Interface.type == INTERFACE_TRADE ||
+		lpObj->Interface.type == INTERFACE_SHOP ||
+		lpObj->Interface.type == INTERFACE_WAREHOUSE ||
+		lpObj->Interface.type == INTERFACE_CHAOS_BOX)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, gMessage.GetTextMessage(64, lpObj->Lang));
+		return false;
+	}
+
+	return true;
+}
+
+void CCommandManager::CommitCommand(
+	LPOBJ lpObj,
+	const COMMAND_LIST& CommandData)
+{
 	lpObj->Money -= CommandData.Money[lpObj->AccountLevel];
-
 	GCMoneySend(lpObj->Index, lpObj->Money);
-
 	lpObj->CommandLastTick[CommandData.Index] = GetTickCount();
+}
+
+bool CCommandManager::ManagementItemPost(
+	LPOBJ lpObj,
+	char* message,
+	BYTE linkStart,
+	BYTE linkLength,
+	const BYTE* itemInfo)
+{
+	if (lpObj == NULL || message == NULL || itemInfo == NULL ||
+		linkLength == 0 || linkStart + linkLength > strlen(message))
+	{
+		return false;
+	}
+
+	COMMAND_LIST CommandData;
+	bool Found = false;
+
+	for (std::map<int, COMMAND_LIST>::iterator It = this->m_CommandInfo.begin(); It != this->m_CommandInfo.end(); It++)
+	{
+		if (It->second.Index == COMMAND_POST)
+		{
+			CommandData = It->second;
+			Found = true;
+			break;
+		}
+	}
+
+	if (Found == false || this->ValidateCommand(lpObj, CommandData) == false)
+	{
+		return false;
+	}
+
+	BYTE Type = (BYTE)gServerInfo.m_CommandPostType;
+
+	if (Type > 5)
+	{
+		return false;
+	}
+
+	BYTE Style = (Type <= 2) ? Type : (BYTE)(Type - 3);
+	char Preview[60] = { 0 };
+	BYTE PreviewLinkStart = 0;
+
+	if (BuildPostLinkMessage(
+		Style,
+		gServerInfo.m_ServerName,
+		message,
+		linkStart,
+		linkLength,
+		lpObj->Lang,
+		Preview,
+		sizeof(Preview),
+		&PreviewLinkStart) == false)
+	{
+		gNotice.GCNoticeSend(lpObj->Index, 1, "A mensagem do post excede o limite.");
+		return false;
+	}
+
+	if (Type <= 2)
+	{
+		this->GCPostMessageLink(Type, lpObj->Name, gServerInfo.m_ServerName, message, linkStart, linkLength, itemInfo);
+	}
+	else
+	{
+		this->GDGlobalPostLinkSend((BYTE)(Type - 3), lpObj->Name, message, linkStart, linkLength, itemInfo);
+	}
+
+	gLog.Output(LOG_COMMAND, "[CommandPost][%s][%s] - (Message: %s)", lpObj->Account, lpObj->Name, message);
+	this->CommitCommand(lpObj, CommandData);
 
 	return true;
 }
@@ -592,6 +694,185 @@ void CCommandManager::GDGlobalPostSend(BYTE type, char* name, char* message)
 	memcpy(pMsg.serverName, gServerInfo.m_ServerName, sizeof(pMsg.serverName));
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
+}
+
+static bool BuildPostLinkMessage(
+	BYTE type,
+	char* serverName,
+	char* text,
+	BYTE linkStart,
+	BYTE linkLength,
+	int language,
+	char* output,
+	int outputSize,
+	BYTE* outputLinkStart)
+{
+	if (serverName == NULL || text == NULL || output == NULL ||
+		outputLinkStart == NULL || outputSize < 60 || type > 2)
+	{
+		return false;
+	}
+
+	char Prefix[256] = { 0 };
+	const char* Format = gMessage.GetTextMessage(69, language);
+
+	if (Format == NULL)
+	{
+		return false;
+	}
+
+	wsprintf(Prefix, Format, serverName, "");
+
+	int MarkerLength = (type == 0) ? 0 : 1;
+	int ArgumentOffset = MarkerLength + (int)strlen(Prefix);
+	int TextLength = (int)strlen(text);
+	int FinalLength = ArgumentOffset + TextLength;
+
+	if (linkLength == 0 || linkStart + linkLength > TextLength ||
+		FinalLength <= 0 || FinalLength >= outputSize || FinalLength > MAX_CHAT_MESSAGE_SIZE)
+	{
+		return false;
+	}
+
+	memset(output, 0, outputSize);
+
+	if (type == 1)
+	{
+		output[0] = '~';
+	}
+	else if (type == 2)
+	{
+		output[0] = '@';
+	}
+
+	wsprintf(output + MarkerLength, Format, serverName, text);
+
+	int ActualLength = (int)strlen(output);
+
+	if (ActualLength != FinalLength ||
+		ArgumentOffset + linkStart + linkLength > ActualLength)
+	{
+		return false;
+	}
+
+	*outputLinkStart = (BYTE)(ArgumentOffset + linkStart);
+	return true;
+}
+
+void CCommandManager::GCPostMessageLink(
+	BYTE type,
+	char* name,
+	char* serverName,
+	char* text,
+	BYTE linkStart,
+	BYTE linkLength,
+	const BYTE* itemInfo)
+{
+	if (name == NULL || serverName == NULL || text == NULL || itemInfo == NULL || type > 2)
+	{
+		return;
+	}
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) == 0)
+		{
+			continue;
+		}
+
+		char message[60] = { 0 };
+		BYTE finalLinkStart = 0;
+
+		if (BuildPostLinkMessage(type, serverName, text, linkStart, linkLength, gObj[n].Lang, message, sizeof(message), &finalLinkStart) == false)
+		{
+			continue;
+		}
+
+		PMSG_ITEM_POST_LINK_SEND pMsg;
+		pMsg.header.set(0xF3, 0xE8, sizeof(pMsg));
+		memset(pMsg.name, 0, sizeof(pMsg.name));
+		strncpy(pMsg.name, name, sizeof(pMsg.name) - 1);
+		memset(pMsg.message, 0, sizeof(pMsg.message));
+		memcpy(pMsg.message, message, sizeof(pMsg.message));
+		pMsg.linkStart = finalLinkStart;
+		pMsg.linkLength = linkLength;
+		// The command type also encodes reach (0-2 local, 3-5 global).
+		// The client only needs the visual style in the range 0-2.
+		pMsg.style = (BYTE)(type % 3);
+		memcpy(pMsg.ItemInfo, itemInfo, sizeof(pMsg.ItemInfo));
+
+		DataSend(n, (BYTE*)&pMsg, pMsg.header.size);
+	}
+}
+
+void CCommandManager::GDGlobalPostLinkSend(
+	BYTE type,
+	char* name,
+	char* message,
+	BYTE linkStart,
+	BYTE linkLength,
+	const BYTE* itemInfo)
+{
+	if (type > 2 || name == NULL || message == NULL || itemInfo == NULL)
+	{
+		return;
+	}
+
+	SDHP_GLOBAL_POST_LINK_RECV pMsg;
+	pMsg.header.set(0x05, 0x06, sizeof(pMsg));
+	pMsg.type = type;
+	memset(pMsg.name, 0, sizeof(pMsg.name));
+	strncpy(pMsg.name, name, sizeof(pMsg.name) - 1);
+	memset(pMsg.message, 0, sizeof(pMsg.message));
+	strncpy(pMsg.message, message, sizeof(pMsg.message) - 1);
+	memset(pMsg.serverName, 0, sizeof(pMsg.serverName));
+	strncpy(pMsg.serverName, gServerInfo.m_ServerName, sizeof(pMsg.serverName) - 1);
+	pMsg.linkStart = linkStart;
+	pMsg.linkLength = linkLength;
+	memcpy(pMsg.ItemInfo, itemInfo, sizeof(pMsg.ItemInfo));
+
+	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
+}
+
+void CCommandManager::DGGlobalPostLinkRecv(SDHP_GLOBAL_POST_LINK_SEND* lpMsg)
+{
+	if (lpMsg == NULL || lpMsg->header.size != sizeof(SDHP_GLOBAL_POST_LINK_SEND) ||
+		lpMsg->type > 2 || lpMsg->linkLength == 0)
+	{
+		return;
+	}
+
+	lpMsg->name[sizeof(lpMsg->name) - 1] = 0;
+	lpMsg->message[sizeof(lpMsg->message) - 1] = 0;
+	lpMsg->serverName[sizeof(lpMsg->serverName) - 1] = 0;
+
+	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
+	{
+		if (gObjIsConnectedGP(n) == 0)
+		{
+			continue;
+		}
+
+		char message[60] = { 0 };
+		BYTE finalLinkStart = 0;
+
+		if (BuildPostLinkMessage(lpMsg->type, lpMsg->serverName, lpMsg->message, lpMsg->linkStart, lpMsg->linkLength, gObj[n].Lang, message, sizeof(message), &finalLinkStart) == false)
+		{
+			continue;
+		}
+
+		PMSG_ITEM_POST_LINK_SEND pMsg;
+		pMsg.header.set(0xF3, 0xE8, sizeof(pMsg));
+		memset(pMsg.name, 0, sizeof(pMsg.name));
+		strncpy(pMsg.name, lpMsg->name, sizeof(pMsg.name) - 1);
+		memcpy(pMsg.message, message, sizeof(pMsg.message));
+		pMsg.linkStart = finalLinkStart;
+		pMsg.linkLength = lpMsg->linkLength;
+		pMsg.style = (BYTE)(lpMsg->type % 3);
+		memcpy(pMsg.ItemInfo, lpMsg->ItemInfo, sizeof(pMsg.ItemInfo));
+
+		DataSend(n, (BYTE*)&pMsg, pMsg.header.size);
+	}
 }
 
 void CCommandManager::DGGlobalPostRecv(SDHP_GLOBAL_POST_RECV* lpMsg)

@@ -231,6 +231,13 @@ void DataServerProtocolCore(int index, BYTE head, BYTE* lpMsg, int size)
 					break;
 				}
 
+				case 0x06:
+				{
+					gCommandManager.GDGlobalPostLinkRecv((SDHP_GLOBAL_POST_LINK_RECV*)lpMsg, index);
+
+					break;
+				}
+
 				case 0x04:
 				{
 					gCommandManager.GDCommandResetRecv((SDHP_COMMAND_RESET_RECV*)lpMsg, index);
