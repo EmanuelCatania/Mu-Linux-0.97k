@@ -27,7 +27,8 @@ private:
 	{
 		MAX_INPUT_TEXTS = 10,
 		INPUT_TEXT_SIZE = 256,
-		MAX_INPUT_HISTORY = 50
+		MAX_INPUT_HISTORY = 50,
+		INPUT_CODE_PAGE = 1252
 	};
 
 	static void RenderChatInputTextHook(
@@ -44,6 +45,8 @@ private:
 
 	bool GetActiveContext(eInputContext* Context, int* Index);
 
+	bool IsActiveInput(eInputContext Context, int Index);
+
 	bool IsValidInputIndex(int Index);
 
 	int GetInputLength(int Index);
@@ -53,6 +56,16 @@ private:
 	void SyncCaret(eInputContext Context, int Index);
 
 	void SetCaretPosition(int Index, int Position);
+
+	void MoveCaret(int Index, int Position, bool ExtendSelection);
+
+	void ClearSelection(int Index);
+
+	bool HasSelection(int Index);
+
+	int GetSelectionStart(int Index);
+
+	int GetSelectionEnd(int Index);
 
 	void UpdateInputLength(int Index);
 
@@ -76,7 +89,16 @@ private:
 		int Y,
 		int Index);
 
+	void RenderSelection(
+		int X,
+		int Y,
+		int Index);
+
 	void InsertCharacter(int Index, char Character);
+
+	void InsertText(int Index, const char* Text);
+
+	bool DeleteSelection(int Index);
 
 	void DeleteCharacterBeforeCaret(int Index);
 
@@ -90,7 +112,17 @@ private:
 
 	void SetInputText(int Index, const char* Text);
 
+	bool CopySelection(int Index);
+
+	bool SetClipboardText(const char* Text, int Length);
+
+	bool GetClipboardText(char* Text, int TextSize);
+
+	bool CanCopySelection(eInputContext Context, int Index);
+
 	int m_CaretPosition[MAX_INPUT_TEXTS];
+
+	int m_SelectionAnchor[MAX_INPUT_TEXTS];
 
 	int m_LastLength[MAX_INPUT_TEXTS];
 

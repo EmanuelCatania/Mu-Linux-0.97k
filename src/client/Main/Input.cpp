@@ -35,6 +35,8 @@ CInput::CInput()
 {
 	memset(this->m_CaretPosition, 0, sizeof(this->m_CaretPosition));
 
+	memset(this->m_SelectionAnchor, 0, sizeof(this->m_SelectionAnchor));
+
 	memset(this->m_RenderWidth, 0, sizeof(this->m_RenderWidth));
 
 	memset(this->m_ViewStart, 0, sizeof(this->m_ViewStart));
@@ -171,33 +173,9 @@ bool CInput::GetActiveContext(eInputContext* Context, int* Index)
 		return false;
 	}
 
-	if (this->IsValidInputIndex(InputIndex) == false)
-	{
-		return false;
-	}
-
-	if (InputIndex > 1)
-	{
-		return false;
-	}
-
-	if (this->m_ActiveContext == INPUT_CONTEXT_CHAT)
-	{
-		if (SceneFlag != MAIN_SCENE ||
-			g_bGameServerConnected == FALSE ||
-			(InputEnable == false && TabInputEnable == false))
-		{
-			return false;
-		}
-	}
-	else if (this->m_ActiveContext == INPUT_CONTEXT_LOGIN)
-	{
-		if (SceneFlag != LOG_IN_SCENE || InputEnable == false)
-		{
-			return false;
-		}
-	}
-	else
+	if (this->IsActiveInput(
+		this->m_ActiveContext,
+		InputIndex) == false)
 	{
 		return false;
 	}
@@ -207,6 +185,34 @@ bool CInput::GetActiveContext(eInputContext* Context, int* Index)
 	*Index = InputIndex;
 
 	return true;
+}
+
+bool CInput::IsActiveInput(eInputContext Context, int Index)
+{
+	if (this->IsValidInputIndex(Index) == false || Index > 1)
+	{
+		return false;
+	}
+
+	if (Index != InputIndex)
+	{
+		return false;
+	}
+
+	if (Context == INPUT_CONTEXT_CHAT)
+	{
+		return (SceneFlag == MAIN_SCENE &&
+			g_bGameServerConnected != FALSE &&
+			(InputEnable != false || TabInputEnable != false));
+	}
+
+	if (Context == INPUT_CONTEXT_LOGIN)
+	{
+		return (SceneFlag == LOG_IN_SCENE &&
+			InputEnable != false);
+	}
+
+	return false;
 }
 
 bool CInput::IsValidInputIndex(int Index)
@@ -260,6 +266,8 @@ void CInput::SyncCaret(eInputContext Context, int Index)
 		{
 			this->m_CaretPosition[Index] = Length;
 
+			this->m_SelectionAnchor[Index] = Length;
+
 			this->m_ViewStart[Index] = 0;
 
 			this->m_LastLength[Index] = Length;
@@ -277,6 +285,8 @@ void CInput::SyncCaret(eInputContext Context, int Index)
 		this->m_LastLength[Index] != Length)
 	{
 		this->m_CaretPosition[Index] = Length;
+
+		this->m_SelectionAnchor[Index] = Length;
 
 		this->m_ViewStart[Index] = 0;
 
@@ -313,7 +323,81 @@ void CInput::SetCaretPosition(int Index, int Position)
 
 	this->m_CaretPosition[Index] = Position;
 
+	if (this->m_SelectionAnchor[Index] < 0)
+	{
+		this->m_SelectionAnchor[Index] = 0;
+	}
+
+	if (this->m_SelectionAnchor[Index] > Length)
+	{
+		this->m_SelectionAnchor[Index] = Length;
+	}
+
 	this->UpdateViewStart(Index);
+}
+
+void CInput::MoveCaret(
+	int Index,
+	int Position,
+	bool ExtendSelection)
+{
+	if (this->IsValidInputIndex(Index) == false)
+	{
+		return;
+	}
+
+	this->SetCaretPosition(Index, Position);
+
+	if (ExtendSelection == false)
+	{
+		this->ClearSelection(Index);
+	}
+}
+
+void CInput::ClearSelection(int Index)
+{
+	if (this->IsValidInputIndex(Index) == false)
+	{
+		return;
+	}
+
+	this->m_SelectionAnchor[Index] =
+		this->m_CaretPosition[Index];
+}
+
+bool CInput::HasSelection(int Index)
+{
+	if (this->IsValidInputIndex(Index) == false)
+	{
+		return false;
+	}
+
+	return (this->m_SelectionAnchor[Index] !=
+		this->m_CaretPosition[Index]);
+}
+
+int CInput::GetSelectionStart(int Index)
+{
+	if (this->HasSelection(Index) == false)
+	{
+		return this->m_CaretPosition[Index];
+	}
+
+	return min(
+		this->m_SelectionAnchor[Index],
+		this->m_CaretPosition[Index]);
+}
+
+int CInput::GetSelectionEnd(int Index)
+{
+	if (this->HasSelection(Index) == false)
+	{
+		return this->m_CaretPosition[Index];
+	}
+
+	return max(
+		this->m_SelectionAnchor[Index],
+		this->m_CaretPosition[Index]);
 }
 
 void CInput::UpdateInputLength(int Index)
@@ -467,6 +551,8 @@ void CInput::RenderInputTextManaged(
 
 	this->m_LastRenderTick = GetTickCount();
 
+	bool ActiveInput = this->IsActiveInput(Context, Index);
+
 	if (Context == INPUT_CONTEXT_CHAT && WindowWidth > 0)
 	{
 		this->m_RenderWidth[Index] =
@@ -480,6 +566,11 @@ void CInput::RenderInputTextManaged(
 	this->SyncCaret(Context, Index);
 
 	this->UpdateViewStart(Index);
+
+	if (ActiveInput != false)
+	{
+		this->RenderSelection(X, Y, Index);
+	}
 
 	char OriginalText[INPUT_TEXT_SIZE];
 
@@ -522,7 +613,10 @@ void CInput::RenderInputTextManaged(
 		OriginalText,
 		sizeof(OriginalText));
 
-	this->RenderCaret(X, Y, Index);
+	if (ActiveInput != false)
+	{
+		this->RenderCaret(X, Y, Index);
+	}
 
 	SecureZeroMemory(VisibleText, sizeof(VisibleText));
 
@@ -568,26 +662,157 @@ void CInput::RenderCaret(
 		sizeof(TextBeforeCaret));
 }
 
+void CInput::RenderSelection(
+	int X,
+	int Y,
+	int Index)
+{
+	if (Index != InputIndex ||
+		this->HasSelection(Index) == false)
+	{
+		return;
+	}
+
+	int SelectionStart = max(
+		this->GetSelectionStart(Index),
+		this->m_ViewStart[Index]);
+
+	int SelectionEnd = this->GetSelectionEnd(Index);
+
+	if (SelectionEnd <= SelectionStart)
+	{
+		return;
+	}
+
+	char TextBeforeSelection[INPUT_TEXT_SIZE];
+
+	char SelectedText[INPUT_TEXT_SIZE];
+
+	this->BuildVisibleText(
+		Index,
+		this->m_ViewStart[Index],
+		SelectionStart,
+		TextBeforeSelection,
+		sizeof(TextBeforeSelection));
+
+	this->BuildVisibleText(
+		Index,
+		SelectionStart,
+		SelectionEnd,
+		SelectedText,
+		sizeof(SelectedText));
+
+	int SelectionX = GetTextWidth(TextBeforeSelection);
+
+	int SelectionWidth = GetTextWidth(SelectedText);
+
+	int MaximumWidth = this->m_RenderWidth[Index];
+
+	if (SelectionX < MaximumWidth)
+	{
+		if ((SelectionX + SelectionWidth) > MaximumWidth)
+		{
+			SelectionWidth = MaximumWidth - SelectionX;
+		}
+
+		if (SelectionWidth > 0)
+		{
+			SIZE TextSize = { 0 };
+
+			GetTextExtentPointA(
+				m_hFontDC,
+				"Ag",
+				2,
+				&TextSize);
+
+			int SelectionHeight = TextSize.cy;
+
+			if (SelectionHeight <= 0)
+			{
+				SelectionHeight = 10;
+			}
+
+			EnableAlphaTest(true);
+
+			glColor4f(0.20f, 0.45f, 0.80f, 0.55f);
+
+			RenderColor(
+				(float)(X + SelectionX),
+				(float)Y,
+				(float)SelectionWidth,
+				(float)SelectionHeight);
+
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+			EnableAlphaTest(true);
+		}
+	}
+
+	SecureZeroMemory(
+		SelectedText,
+		sizeof(SelectedText));
+
+	SecureZeroMemory(
+		TextBeforeSelection,
+		sizeof(TextBeforeSelection));
+}
+
 void CInput::InsertCharacter(int Index, char Character)
 {
+	char Text[2];
+
+	Text[0] = Character;
+
+	Text[1] = '\0';
+
+	this->InsertText(Index, Text);
+}
+
+void CInput::InsertText(int Index, const char* Text)
+{
+	if (this->IsValidInputIndex(Index) == false ||
+		Text == NULL || Text[0] == '\0')
+	{
+		return;
+	}
+
+	this->DeleteSelection(Index);
+
 	int Length = this->GetInputLength(Index);
 
-	if (Length >= this->GetInputLimit(Index) ||
-		Length >= (INPUT_TEXT_SIZE - 1))
+	int Available = min(
+		this->GetInputLimit(Index),
+		INPUT_TEXT_SIZE - 1) - Length;
+
+	if (Available <= 0)
 	{
 		return;
 	}
 
 	int Position = this->m_CaretPosition[Index];
 
+	int InsertLength = (int)strnlen_s(
+		Text,
+		INPUT_TEXT_SIZE);
+
+	if (InsertLength > Available)
+	{
+		InsertLength = Available;
+	}
+
 	memmove(
-		InputText[Index] + Position + 1,
+		InputText[Index] + Position + InsertLength,
 		InputText[Index] + Position,
 		Length - Position + 1);
 
-	InputText[Index][Position] = Character;
+	memcpy(
+		InputText[Index] + Position,
+		Text,
+		InsertLength);
 
-	this->m_CaretPosition[Index]++;
+	this->m_CaretPosition[Index] += InsertLength;
+
+	this->ClearSelection(Index);
 
 	this->UpdateInputLength(Index);
 
@@ -598,6 +823,11 @@ void CInput::InsertCharacter(int Index, char Character)
 
 void CInput::DeleteCharacterBeforeCaret(int Index)
 {
+	if (this->DeleteSelection(Index))
+	{
+		return;
+	}
+
 	int Position = this->m_CaretPosition[Index];
 
 	if (Position <= 0)
@@ -614,6 +844,8 @@ void CInput::DeleteCharacterBeforeCaret(int Index)
 
 	this->m_CaretPosition[Index]--;
 
+	this->ClearSelection(Index);
+
 	this->UpdateInputLength(Index);
 
 	this->UpdateViewStart(Index);
@@ -623,6 +855,11 @@ void CInput::DeleteCharacterBeforeCaret(int Index)
 
 void CInput::DeleteCharacterAtCaret(int Index)
 {
+	if (this->DeleteSelection(Index))
+	{
+		return;
+	}
+
 	int Position = this->m_CaretPosition[Index];
 
 	int Length = this->GetInputLength(Index);
@@ -642,6 +879,37 @@ void CInput::DeleteCharacterAtCaret(int Index)
 	this->UpdateViewStart(Index);
 
 	this->ResetHistoryNavigation();
+}
+
+bool CInput::DeleteSelection(int Index)
+{
+	if (this->HasSelection(Index) == false)
+	{
+		return false;
+	}
+
+	int SelectionStart = this->GetSelectionStart(Index);
+
+	int SelectionEnd = this->GetSelectionEnd(Index);
+
+	int Length = this->GetInputLength(Index);
+
+	memmove(
+		InputText[Index] + SelectionStart,
+		InputText[Index] + SelectionEnd,
+		Length - SelectionEnd + 1);
+
+	this->m_CaretPosition[Index] = SelectionStart;
+
+	this->ClearSelection(Index);
+
+	this->UpdateInputLength(Index);
+
+	this->UpdateViewStart(Index);
+
+	this->ResetHistoryNavigation();
+
+	return true;
 }
 
 void CInput::ResetHistoryNavigation()
@@ -785,9 +1053,249 @@ void CInput::SetInputText(int Index, const char* Text)
 
 	this->m_CaretPosition[Index] = this->GetInputLength(Index);
 
+	this->ClearSelection(Index);
+
 	this->m_ViewStart[Index] = 0;
 
 	this->UpdateViewStart(Index);
+}
+
+bool CInput::CopySelection(int Index)
+{
+	if (this->HasSelection(Index) == false)
+	{
+		return false;
+	}
+
+	int SelectionStart = this->GetSelectionStart(Index);
+
+	int SelectionLength =
+		this->GetSelectionEnd(Index) - SelectionStart;
+
+	char SelectedText[INPUT_TEXT_SIZE];
+
+	memcpy(
+		SelectedText,
+		InputText[Index] + SelectionStart,
+		SelectionLength);
+
+	SelectedText[SelectionLength] = '\0';
+
+	bool Result = this->SetClipboardText(
+		SelectedText,
+		SelectionLength);
+
+	SecureZeroMemory(
+		SelectedText,
+		sizeof(SelectedText));
+
+	return Result;
+}
+
+bool CInput::SetClipboardText(
+	const char* Text,
+	int Length)
+{
+	if (Text == NULL || Length <= 0 ||
+		Length >= INPUT_TEXT_SIZE ||
+		GetForegroundWindow() != g_hWnd)
+	{
+		return false;
+	}
+
+	wchar_t WideText[INPUT_TEXT_SIZE];
+
+	int WideLength = MultiByteToWideChar(
+		INPUT_CODE_PAGE,
+		0,
+		Text,
+		Length,
+		WideText,
+		INPUT_TEXT_SIZE - 1);
+
+	if (WideLength <= 0)
+	{
+		SecureZeroMemory(WideText, sizeof(WideText));
+
+		return false;
+	}
+
+	WideText[WideLength] = L'\0';
+
+	SIZE_T MemorySize =
+		(WideLength + 1) * sizeof(wchar_t);
+
+	HGLOBAL ClipboardMemory = GlobalAlloc(
+		GMEM_MOVEABLE,
+		MemorySize);
+
+	if (ClipboardMemory == NULL)
+	{
+		SecureZeroMemory(WideText, sizeof(WideText));
+
+		return false;
+	}
+
+	void* ClipboardData = GlobalLock(ClipboardMemory);
+
+	if (ClipboardData == NULL)
+	{
+		GlobalFree(ClipboardMemory);
+
+		SecureZeroMemory(WideText, sizeof(WideText));
+
+		return false;
+	}
+
+	memcpy(ClipboardData, WideText, MemorySize);
+
+	GlobalUnlock(ClipboardMemory);
+
+	SecureZeroMemory(WideText, sizeof(WideText));
+
+	if (OpenClipboard(g_hWnd) == FALSE)
+	{
+		GlobalFree(ClipboardMemory);
+
+		return false;
+	}
+
+	bool Result = false;
+
+	if (EmptyClipboard() != FALSE &&
+		SetClipboardData(
+			CF_UNICODETEXT,
+			ClipboardMemory) != NULL)
+	{
+		ClipboardMemory = NULL;
+
+		Result = true;
+	}
+
+	CloseClipboard();
+
+	if (ClipboardMemory != NULL)
+	{
+		GlobalFree(ClipboardMemory);
+	}
+
+	return Result;
+}
+
+bool CInput::GetClipboardText(
+	char* Text,
+	int TextSize)
+{
+	if (Text == NULL || TextSize <= 1)
+	{
+		return false;
+	}
+
+	Text[0] = '\0';
+
+	if (GetForegroundWindow() != g_hWnd ||
+		IsClipboardFormatAvailable(CF_UNICODETEXT) == FALSE ||
+		OpenClipboard(g_hWnd) == FALSE)
+	{
+		return false;
+	}
+
+	HANDLE ClipboardHandle = GetClipboardData(CF_UNICODETEXT);
+
+	if (ClipboardHandle == NULL)
+	{
+		CloseClipboard();
+
+		return false;
+	}
+
+	SIZE_T ClipboardSize = GlobalSize(ClipboardHandle);
+
+	const wchar_t* WideText =
+		(const wchar_t*)GlobalLock(ClipboardHandle);
+
+	if (ClipboardSize < sizeof(wchar_t) || WideText == NULL)
+	{
+		if (WideText != NULL)
+		{
+			GlobalUnlock(ClipboardHandle);
+		}
+
+		CloseClipboard();
+
+		return false;
+	}
+
+	SIZE_T WideCapacity = ClipboardSize / sizeof(wchar_t);
+
+	int OutputIndex = 0;
+
+	for (SIZE_T n = 0;
+		n < WideCapacity && OutputIndex < (TextSize - 1);
+		n++)
+	{
+		wchar_t Character = WideText[n];
+
+		if (Character == L'\0')
+		{
+			break;
+		}
+
+		if (Character == L'\r' ||
+			Character == L'\n' ||
+			Character == L'\t')
+		{
+			if (OutputIndex > 0 &&
+				Text[OutputIndex - 1] != ' ')
+			{
+				Text[OutputIndex++] = ' ';
+			}
+
+			continue;
+		}
+
+		if (Character < 0x20 ||
+			(Character >= 0x7F && Character <= 0x9F))
+		{
+			continue;
+		}
+
+		char ConvertedCharacter = '\0';
+
+		BOOL UsedDefaultCharacter = FALSE;
+
+		int ConvertedLength = WideCharToMultiByte(
+			INPUT_CODE_PAGE,
+			WC_NO_BEST_FIT_CHARS,
+			&Character,
+			1,
+			&ConvertedCharacter,
+			1,
+			NULL,
+			&UsedDefaultCharacter);
+
+		if (ConvertedLength == 1 &&
+			UsedDefaultCharacter == FALSE &&
+			ConvertedCharacter != '\0')
+		{
+			Text[OutputIndex++] = ConvertedCharacter;
+		}
+	}
+
+	Text[OutputIndex] = '\0';
+
+	GlobalUnlock(ClipboardHandle);
+
+	CloseClipboard();
+
+	return (OutputIndex > 0);
+}
+
+bool CInput::CanCopySelection(
+	eInputContext Context,
+	int Index)
+{
+	return (Context != INPUT_CONTEXT_LOGIN || Index != 1);
 }
 
 bool CInput::HandleKeyDown(WPARAM wParam)
@@ -802,6 +1310,71 @@ bool CInput::HandleKeyDown(WPARAM wParam)
 	}
 
 	this->SyncCaret(Context, Index);
+
+	bool ControlPressed =
+		(GetKeyState(VK_CONTROL) & 0x8000) != 0;
+
+	bool AltPressed =
+		(GetKeyState(VK_MENU) & 0x8000) != 0;
+
+	bool ShiftPressed =
+		(GetKeyState(VK_SHIFT) & 0x8000) != 0;
+
+	if (ControlPressed != false && AltPressed == false)
+	{
+		switch (wParam)
+		{
+			case 'A':
+			{
+				this->m_SelectionAnchor[Index] = 0;
+
+				this->SetCaretPosition(
+					Index,
+					this->GetInputLength(Index));
+
+				return true;
+			}
+
+			case 'C':
+			{
+				if (this->CanCopySelection(Context, Index))
+				{
+					this->CopySelection(Index);
+				}
+
+				return true;
+			}
+
+			case 'X':
+			{
+				if (this->CanCopySelection(Context, Index) &&
+					this->CopySelection(Index))
+				{
+					this->DeleteSelection(Index);
+				}
+
+				return true;
+			}
+
+			case 'V':
+			{
+				char ClipboardText[INPUT_TEXT_SIZE];
+
+				if (this->GetClipboardText(
+					ClipboardText,
+					sizeof(ClipboardText)))
+				{
+					this->InsertText(Index, ClipboardText);
+				}
+
+				SecureZeroMemory(
+					ClipboardText,
+					sizeof(ClipboardText));
+
+				return true;
+			}
+		}
+	}
 
 	if (Context == INPUT_CONTEXT_CHAT && Index == 0)
 	{
@@ -823,42 +1396,64 @@ bool CInput::HandleKeyDown(WPARAM wParam)
 		{
 			this->PushHistory(InputText[Index]);
 
+			this->ClearSelection(Index);
+
 			return false;
 		}
+	}
+
+	if (wParam == VK_ESCAPE)
+	{
+		this->ClearSelection(Index);
+
+		return false;
 	}
 
 	switch (wParam)
 	{
 		case VK_LEFT:
 		{
-			this->SetCaretPosition(
-				Index,
-				this->m_CaretPosition[Index] - 1);
+			int Position = this->m_CaretPosition[Index] - 1;
+
+			if (ShiftPressed == false &&
+				this->HasSelection(Index))
+			{
+				Position = this->GetSelectionStart(Index);
+			}
+
+			this->MoveCaret(Index, Position, ShiftPressed);
 
 			return true;
 		}
 
 		case VK_RIGHT:
 		{
-			this->SetCaretPosition(
-				Index,
-				this->m_CaretPosition[Index] + 1);
+			int Position = this->m_CaretPosition[Index] + 1;
+
+			if (ShiftPressed == false &&
+				this->HasSelection(Index))
+			{
+				Position = this->GetSelectionEnd(Index);
+			}
+
+			this->MoveCaret(Index, Position, ShiftPressed);
 
 			return true;
 		}
 
 		case VK_HOME:
 		{
-			this->SetCaretPosition(Index, 0);
+			this->MoveCaret(Index, 0, ShiftPressed);
 
 			return true;
 		}
 
 		case VK_END:
 		{
-			this->SetCaretPosition(
+			this->MoveCaret(
 				Index,
-				this->GetInputLength(Index));
+				this->GetInputLength(Index),
+				ShiftPressed);
 
 			return true;
 		}
@@ -896,6 +1491,8 @@ bool CInput::HandleChar(WPARAM wParam)
 
 	if (wParam == VK_RETURN || wParam == VK_TAB)
 	{
+		this->ClearSelection(Index);
+
 		return false;
 	}
 
@@ -904,7 +1501,7 @@ bool CInput::HandleChar(WPARAM wParam)
 		return true;
 	}
 
-	if (wParam > 0xFF)
+	if (wParam == 0x7F || wParam > 0xFF)
 	{
 		return false;
 	}
