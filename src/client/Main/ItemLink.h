@@ -133,7 +133,7 @@ private:
 		int Unused,
 		int LineIndex);
 
-	static DWORD GetLinkColor(BYTE Channel);
+	static DWORD GetItemLinkTextColor(const ITEM* Item);
 
 	bool IsSupportedClient();
 

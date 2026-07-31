@@ -20,6 +20,10 @@ static const BYTE CHAT_RENDER_TEXT_BYTES[5] =
 
 static const DWORD ITEM_LINK_EQUIPMENT_FLAG = 0x80000000;
 
+/* Existing client code passes visual RGB values to the legacy Color4b macro;
+ * this encodes the opaque #08090C token background. */
+static const DWORD ITEM_LINK_BACKGROUND_COLOR = Color4b(8, 9, 12, 255);
+
 static bool IsPostMessage(const char* Message)
 {
 	if (Message == NULL || _strnicmp(Message, "/post", 5) != 0)
@@ -47,29 +51,70 @@ struct PMSG_STANDARD_CHAT
 
 CItemLink gItemLink;
 
-DWORD CItemLink::GetLinkColor(BYTE Channel)
+DWORD CItemLink::GetItemLinkTextColor(const ITEM* Item)
 {
-	/* Keep the link brighter than the channel text.  The channel itself still
-	 * owns the prefix/suffix color; only the item token changes color. */
-	switch (Channel)
+	if (Item == NULL || Item->Type < 0 || Item->Type >= MAX_ITEM)
 	{
-		case 1: // Party
-			return Color4b(255, 230, 100, 255);
+		return Color4b(255, 255, 255, 255);
+	}
 
-		case 2: // Guild
-			return Color4b(255, 160, 255, 255);
+	const int Type = Item->Type;
+	const int Level = GET_ITEM_OPT_LEVEL(Item->Level);
+	const BYTE Excellent = GET_ITEM_OPT_EXC(Item->Option1);
+	const BYTE SpecialCount = Item->SpecialNum;
 
-		case 3: // Whisper/system variants
-			return Color4b(255, 240, 190, 255);
+	int ColorType = 0;
 
-		case 4:
-			return Color4b(100, 255, 180, 255);
+	/* This is the title-color selection performed by RenderItemInfo at
+	 * 0x004C4650. Keep the item-specific overrides before the generic option
+	 * rules, including the special wing range. */
+	if (Type == 0x1CD || Type == 0x1CE || Type == 0x18F ||
+		Type == 0x1D0 || Type == 0x1D6 || Type == 0x1D1 ||
+		Type == 0x1D2 || Type == 0x1D3 || Type == 0x1B0 ||
+		Type == 0x1B1)
+	{
+		ColorType = 3;
+	}
+	else if (Type == 0xAA || Type == 0x13 || Type == 0x92)
+	{
+		ColorType = 6;
+	}
+	else if (SpecialCount != 0 && Excellent != 0)
+	{
+		ColorType = 4;
+	}
+	else if (Level > 6)
+	{
+		ColorType = 3;
+	}
+	else if (SpecialCount != 0)
+	{
+		ColorType = 1;
+	}
 
-		case 5:
-			return Color4b(255, 190, 100, 255);
+	if (Type > 0x182 && Type < 0x187)
+	{
+		ColorType = (Level < 7) ?
+			((SpecialCount != 0) ? 1 : 0) :
+			3;
+	}
 
-		default: // Normal chat
-			return Color4b(80, 200, 255, 255);
+	switch (ColorType)
+	{
+		case 1: /* native blue: #7FB2FF */
+			return Color4b(127, 178, 255, 255);
+
+		case 3: /* native yellow: #FFCC19 */
+			return Color4b(255, 204, 25, 255);
+
+		case 4: /* native excellent green: #19FF7F */
+			return Color4b(25, 255, 127, 255);
+
+		case 6: /* native special magenta: #FF19FF */
+			return Color4b(255, 25, 255, 255);
+
+		default: /* native white: #FFFFFF */
+			return Color4b(255, 255, 255, 255);
 	}
 }
 
@@ -1493,11 +1538,13 @@ void CItemLink::RenderUiLink(
 	int Y = *(int*)(This + 0x30) + (LayoutLineIndex * -13) - 16;
 
 	DWORD OriginalColor = SetTextColor;
-	SetTextColor = CItemLink::GetLinkColor(
-		(BYTE)(*(int*)(LineNode + 0x114)));
+	DWORD OriginalBackgroundColor = SetBackgroundTextColor;
+	SetTextColor = CItemLink::GetItemLinkTextColor(&FoundLink->item);
+	SetBackgroundTextColor = ITEM_LINK_BACKGROUND_COLOR;
 
 	RenderText(X, Y, Token, 0, 0, NULL);
 
+	SetBackgroundTextColor = OriginalBackgroundColor;
 	SetTextColor = OriginalColor;
 
 	int HitWidth = GetTextWidth(Token);
@@ -1629,6 +1676,7 @@ int CItemLink::RenderChatTextHook(
 		_TRUNCATE);
 
 	DWORD OriginalColor = SetTextColor;
+	DWORD OriginalBackgroundColor = SetBackgroundTextColor;
 
 	int CurrentX = X;
 
@@ -1639,8 +1687,9 @@ int CItemLink::RenderChatTextHook(
 		CurrentX += GetTextWidth(Prefix);
 	}
 
-	SetTextColor = CItemLink::GetLinkColor(
-		gItemLink.m_Links[Index].identity.type);
+	SetTextColor = CItemLink::GetItemLinkTextColor(
+		&gItemLink.m_Links[Index].item);
+	SetBackgroundTextColor = ITEM_LINK_BACKGROUND_COLOR;
 
 	RenderChatText(CurrentX, Y, Token, 0, Sort, NULL);
 
@@ -1656,6 +1705,7 @@ int CItemLink::RenderChatTextHook(
 
 	CurrentX += Link->hitWidth;
 
+	SetBackgroundTextColor = OriginalBackgroundColor;
 	SetTextColor = OriginalColor;
 
 	int Result = 0;
