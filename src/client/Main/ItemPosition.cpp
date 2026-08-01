@@ -6,7 +6,7 @@ CItemPosition gItemPosition;
 
 CItemPosition::CItemPosition()
 {
-	this->m_ItemLinkPreview = false;
+	this->m_ItemPreview = false;
 
 	for (int n = 0; n < MAX_ITEM; n++)
 	{
@@ -21,14 +21,14 @@ CItemPosition::~CItemPosition()
 
 }
 
-void CItemPosition::SetItemLinkPreview(bool Active)
+void CItemPosition::SetItemPreview(bool Active)
 {
-	this->m_ItemLinkPreview = Active;
+	this->m_ItemPreview = Active;
 }
 
-bool CItemPosition::IsItemLinkPreview() const
+bool CItemPosition::IsItemPreview() const
 {
-	return this->m_ItemLinkPreview;
+	return this->m_ItemPreview;
 }
 
 void CItemPosition::Init(ITEM_POSITION_INFO* info)
@@ -73,7 +73,7 @@ void CItemPosition::MyRenderItem3D(float sx, float sy, float Width, float Height
 {
 	bool Success = false;
 
-	if (gItemPosition.IsItemLinkPreview() == false &&
+	if (gItemPosition.IsItemPreview() == false &&
 		(!*(DWORD*)0x7E91388 || PickUp) &&
 		IsWorkZone((int)sx, (int)sy, (int)Width, (int)Height))
 	{
@@ -333,7 +333,7 @@ void CItemPosition::MyRenderItem3D(float sx, float sy, float Width, float Height
 		sy += Height * 0.6f;
 	}
 
-	if (gItemPosition.IsItemLinkPreview() != false)
+	if (gItemPosition.IsItemPreview() != false)
 	{
 		/* Inventory cells use a type-specific horizontal offset.  It makes
 		 * sense for the grid, but shifts a model inside the tooltip.  Keep the

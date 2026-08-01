@@ -22,7 +22,7 @@ public:
 
 	void MyRenderItem3D(float sx, float sy, float Width, float Height, ITEM* Item, bool PickUp);
 
-	void RenderItemLink3D(float sx, float sy, float Width, float Height, ITEM* Item);
+	void RenderItemPreview3D(float sx, float sy, float Width, float Height, ITEM* Item);
 
 	int GetInventoryItemCount(int index, int level);
 

@@ -217,6 +217,12 @@
     <ClInclude Include="ItemLink.h">
       <Filter>Interface</Filter>
     </ClInclude>
+    <ClInclude Include="ItemLinkChat.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemLinkTooltip.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
     <ClInclude Include="ItemManager.h">
       <Filter>Item\Management</Filter>
     </ClInclude>
@@ -376,6 +382,12 @@
       <Filter>Item\Management</Filter>
     </ClCompile>
     <ClCompile Include="ItemLink.cpp">
+      <Filter>Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemLinkChat.cpp">
+      <Filter>Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemLinkTooltip.cpp">
       <Filter>Interface</Filter>
     </ClCompile>
     <ClCompile Include="ItemManager.cpp">

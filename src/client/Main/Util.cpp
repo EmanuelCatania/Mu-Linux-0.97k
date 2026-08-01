@@ -122,6 +122,223 @@ bool CheckRelativeCall(DWORD Address, DWORD Target)
 	return CheckBytes(Address, Expected, sizeof(Expected));
 }
 
+bool InstallRelativeCallHook(RELATIVE_CALL_HOOK* Hook)
+{
+	if (Hook == NULL || Hook->Installed != false ||
+		Hook->Address == 0 || Hook->Target == 0 || Hook->Hook == 0 ||
+		CheckRelativeCall(Hook->Address, Hook->Target) == false)
+	{
+		return false;
+	}
+
+	memcpy(
+		Hook->Original,
+		(const void*)Hook->Address,
+		sizeof(Hook->Original));
+
+	BYTE Patch[5] = { 0xE8, 0, 0, 0, 0 };
+	DWORD Relative = Hook->Hook - (Hook->Address + sizeof(Patch));
+
+	memcpy(Patch + 1, &Relative, sizeof(Relative));
+
+	DWORD PreviousProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Hook->Address,
+		sizeof(Patch),
+		PAGE_EXECUTE_READWRITE,
+		&PreviousProtection) == FALSE)
+	{
+		return false;
+	}
+
+	memcpy((void*)Hook->Address, Patch, sizeof(Patch));
+
+	FlushInstructionCache(
+		GetCurrentProcess(),
+		(void*)Hook->Address,
+		sizeof(Patch));
+
+	DWORD IgnoredProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Hook->Address,
+		sizeof(Patch),
+		PreviousProtection,
+		&IgnoredProtection) == FALSE)
+	{
+		DWORD RollbackProtection = 0;
+
+		if (VirtualProtect(
+			(void*)Hook->Address,
+			sizeof(Hook->Original),
+			PAGE_EXECUTE_READWRITE,
+			&RollbackProtection) != FALSE)
+		{
+			memcpy(
+				(void*)Hook->Address,
+				Hook->Original,
+				sizeof(Hook->Original));
+
+			FlushInstructionCache(
+				GetCurrentProcess(),
+				(void*)Hook->Address,
+				sizeof(Hook->Original));
+
+			DWORD RestoreProtection = 0;
+			VirtualProtect(
+				(void*)Hook->Address,
+				sizeof(Hook->Original),
+				RollbackProtection,
+				&RestoreProtection);
+		}
+
+		return false;
+	}
+
+	Hook->Installed = true;
+
+	return true;
+}
+
+void RestoreRelativeCallHook(RELATIVE_CALL_HOOK* Hook)
+{
+	if (Hook == NULL || Hook->Installed == false)
+	{
+		return;
+	}
+
+	DWORD PreviousProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Hook->Address,
+		sizeof(Hook->Original),
+		PAGE_EXECUTE_READWRITE,
+		&PreviousProtection) != FALSE)
+	{
+		memcpy(
+			(void*)Hook->Address,
+			Hook->Original,
+			sizeof(Hook->Original));
+
+		FlushInstructionCache(
+			GetCurrentProcess(),
+			(void*)Hook->Address,
+			sizeof(Hook->Original));
+
+		DWORD IgnoredProtection = 0;
+		VirtualProtect(
+			(void*)Hook->Address,
+			sizeof(Hook->Original),
+			PreviousProtection,
+			&IgnoredProtection);
+	}
+
+	Hook->Installed = false;
+}
+
+bool InstallVtableHook(VTABLE_HOOK* Hook)
+{
+	if (Hook == NULL || Hook->Installed != false ||
+		Hook->Address == 0 || Hook->Expected == 0 || Hook->Hook == 0 ||
+		CheckBytes(
+			Hook->Address,
+			(const BYTE*)&Hook->Expected,
+			sizeof(Hook->Expected)) == false)
+	{
+		return false;
+	}
+
+	Hook->Original = *(DWORD*)Hook->Address;
+
+	DWORD PreviousProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Hook->Address,
+		sizeof(Hook->Original),
+		PAGE_EXECUTE_READWRITE,
+		&PreviousProtection) == FALSE)
+	{
+		return false;
+	}
+
+	*(DWORD*)Hook->Address = Hook->Hook;
+
+	FlushInstructionCache(
+		GetCurrentProcess(),
+		(void*)Hook->Address,
+		sizeof(Hook->Original));
+
+	DWORD IgnoredProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Hook->Address,
+		sizeof(Hook->Original),
+		PreviousProtection,
+		&IgnoredProtection) == FALSE)
+	{
+		DWORD RollbackProtection = 0;
+
+		if (VirtualProtect(
+			(void*)Hook->Address,
+			sizeof(Hook->Original),
+			PAGE_EXECUTE_READWRITE,
+			&RollbackProtection) != FALSE)
+		{
+			*(DWORD*)Hook->Address = Hook->Original;
+			FlushInstructionCache(
+				GetCurrentProcess(),
+				(void*)Hook->Address,
+				sizeof(Hook->Original));
+
+			DWORD RestoreProtection = 0;
+			VirtualProtect(
+				(void*)Hook->Address,
+				sizeof(Hook->Original),
+				RollbackProtection,
+				&RestoreProtection);
+		}
+
+		return false;
+	}
+
+	Hook->Installed = true;
+
+	return true;
+}
+
+void RestoreVtableHook(VTABLE_HOOK* Hook)
+{
+	if (Hook == NULL || Hook->Installed == false)
+	{
+		return;
+	}
+
+	DWORD PreviousProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Hook->Address,
+		sizeof(Hook->Original),
+		PAGE_EXECUTE_READWRITE,
+		&PreviousProtection) != FALSE)
+	{
+		*(DWORD*)Hook->Address = Hook->Original;
+		FlushInstructionCache(
+			GetCurrentProcess(),
+			(void*)Hook->Address,
+			sizeof(Hook->Original));
+
+		DWORD IgnoredProtection = 0;
+		VirtualProtect(
+			(void*)Hook->Address,
+			sizeof(Hook->Original),
+			PreviousProtection,
+			&IgnoredProtection);
+	}
+
+	Hook->Installed = false;
+}
+
 void MemoryCpy(DWORD offset, void* value, DWORD size)
 {
 	DWORD OldProtect;

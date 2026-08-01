@@ -23,17 +23,6 @@
 
 CCommandManager gCommandManager;
 
-static bool BuildPostLinkMessage(
-	BYTE type,
-	char* serverName,
-	char* text,
-	BYTE linkStart,
-	BYTE linkLength,
-	int language,
-	char* output,
-	int outputSize,
-	BYTE* outputLinkStart);
-
 CCommandManager::CCommandManager()
 {
 
@@ -598,32 +587,15 @@ bool CCommandManager::ManagementItemPost(
 		return false;
 	}
 
-	BYTE Style = (Type <= 2) ? Type : (BYTE)(Type - 3);
-	char Preview[60] = { 0 };
-	BYTE PreviewLinkStart = 0;
-
-	if (BuildPostLinkMessage(
-		Style,
-		gServerInfo.m_ServerName,
+	if (gItemLink.ExecutePostLink(
+		lpObj,
 		message,
 		linkStart,
 		linkLength,
-		lpObj->Lang,
-		Preview,
-		sizeof(Preview),
-		&PreviewLinkStart) == false)
+		itemInfo,
+		Type) == false)
 	{
-		gNotice.GCNoticeSend(lpObj->Index, 1, "A mensagem do post excede o limite.");
 		return false;
-	}
-
-	if (Type <= 2)
-	{
-		this->GCPostMessageLink(Type, lpObj->Name, gServerInfo.m_ServerName, message, linkStart, linkLength, itemInfo);
-	}
-	else
-	{
-		this->GDGlobalPostLinkSend((BYTE)(Type - 3), lpObj->Name, message, linkStart, linkLength, itemInfo);
 	}
 
 	gLog.Output(LOG_COMMAND, "[CommandPost][%s][%s] - (Message: %s)", lpObj->Account, lpObj->Name, message);
@@ -687,220 +659,6 @@ void CCommandManager::GDGlobalPostSend(BYTE type, char* name, char* message)
 	memcpy(pMsg.serverName, gServerInfo.m_ServerName, sizeof(pMsg.serverName));
 
 	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
-}
-
-static bool BuildPostLinkMessage(
-	BYTE type,
-	char* serverName,
-	char* text,
-	BYTE linkStart,
-	BYTE linkLength,
-	int language,
-	char* output,
-	int outputSize,
-	BYTE* outputLinkStart)
-{
-	if (serverName == NULL || text == NULL || output == NULL ||
-		outputLinkStart == NULL || outputSize < 60 || type > 2)
-	{
-		return false;
-	}
-
-	char Prefix[256] = { 0 };
-	const char* Format = gMessage.GetTextMessage(69, language);
-
-	if (Format == NULL)
-	{
-		return false;
-	}
-
-	int PrefixLength = snprintf(
-		Prefix,
-		sizeof(Prefix),
-		Format,
-		serverName,
-		"");
-
-	if (PrefixLength < 0 || PrefixLength >= (int)sizeof(Prefix))
-	{
-		return false;
-	}
-
-	int MarkerLength = (type == 0) ? 0 : 1;
-	int ArgumentOffset = MarkerLength + (int)strlen(Prefix);
-	int TextLength = (int)strlen(text);
-	int FinalLength = ArgumentOffset + TextLength;
-
-	if (linkLength == 0 || linkStart + linkLength > TextLength ||
-		FinalLength <= 0 || FinalLength >= outputSize || FinalLength > MAX_CHAT_MESSAGE_SIZE)
-	{
-		return false;
-	}
-
-	memset(output, 0, outputSize);
-
-	if (type == 1)
-	{
-		output[0] = '~';
-	}
-	else if (type == 2)
-	{
-		output[0] = '@';
-	}
-
-	int WrittenLength = snprintf(
-		output + MarkerLength,
-		outputSize - MarkerLength,
-		Format,
-		serverName,
-		text);
-
-	if (WrittenLength < 0 || WrittenLength >= (outputSize - MarkerLength))
-	{
-		return false;
-	}
-
-	int ActualLength = (int)strlen(output);
-
-	if (ActualLength != FinalLength ||
-		ArgumentOffset + linkStart + linkLength > ActualLength)
-	{
-		return false;
-	}
-
-	*outputLinkStart = (BYTE)(ArgumentOffset + linkStart);
-	return true;
-}
-
-void CCommandManager::GCPostMessageLink(
-	BYTE type,
-	char* name,
-	char* serverName,
-	char* text,
-	BYTE linkStart,
-	BYTE linkLength,
-	const BYTE* itemInfo)
-{
-	if (name == NULL || serverName == NULL || text == NULL || itemInfo == NULL || type > 2)
-	{
-		return;
-	}
-
-	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
-	{
-		if (gObjIsConnectedGP(n) == 0)
-		{
-			continue;
-		}
-
-		char message[60] = { 0 };
-		BYTE finalLinkStart = 0;
-
-		if (BuildPostLinkMessage(type, serverName, text, linkStart, linkLength, gObj[n].Lang, message, sizeof(message), &finalLinkStart) == false)
-		{
-			continue;
-		}
-
-		PMSG_ITEM_POST_LINK_SEND pMsg;
-		pMsg.header.set(0xF3, 0xE8, sizeof(pMsg));
-		memset(pMsg.name, 0, sizeof(pMsg.name));
-		strncpy(pMsg.name, name, sizeof(pMsg.name) - 1);
-		memset(pMsg.message, 0, sizeof(pMsg.message));
-		memcpy(pMsg.message, message, sizeof(pMsg.message));
-		pMsg.linkStart = finalLinkStart;
-		pMsg.linkLength = linkLength;
-		// The command type also encodes reach (0-2 local, 3-5 global).
-		// The client only needs the visual style in the range 0-2.
-		pMsg.style = (BYTE)(type % 3);
-		memcpy(pMsg.ItemInfo, itemInfo, sizeof(pMsg.ItemInfo));
-
-		DataSend(n, (BYTE*)&pMsg, pMsg.header.size);
-	}
-}
-
-void CCommandManager::GDGlobalPostLinkSend(
-	BYTE type,
-	char* name,
-	char* message,
-	BYTE linkStart,
-	BYTE linkLength,
-	const BYTE* itemInfo)
-{
-	if (type > 2 || name == NULL || message == NULL || itemInfo == NULL)
-	{
-		return;
-	}
-
-	SDHP_GLOBAL_POST_LINK_RECV pMsg;
-	pMsg.header.set(0x05, 0x06, sizeof(pMsg));
-	pMsg.type = type;
-	memset(pMsg.name, 0, sizeof(pMsg.name));
-	strncpy(pMsg.name, name, sizeof(pMsg.name) - 1);
-	memset(pMsg.message, 0, sizeof(pMsg.message));
-	strncpy(pMsg.message, message, sizeof(pMsg.message) - 1);
-	memset(pMsg.serverName, 0, sizeof(pMsg.serverName));
-	strncpy(pMsg.serverName, gServerInfo.m_ServerName, sizeof(pMsg.serverName) - 1);
-	pMsg.linkStart = linkStart;
-	pMsg.linkLength = linkLength;
-	memcpy(pMsg.ItemInfo, itemInfo, sizeof(pMsg.ItemInfo));
-
-	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
-}
-
-void CCommandManager::DGGlobalPostLinkRecv(
-	SDHP_GLOBAL_POST_LINK_SEND* lpMsg,
-	int size)
-{
-	if (lpMsg == NULL || size != sizeof(SDHP_GLOBAL_POST_LINK_SEND) ||
-		lpMsg->header.size != sizeof(SDHP_GLOBAL_POST_LINK_SEND) ||
-		lpMsg->type > 2 || lpMsg->linkLength == 0)
-	{
-		return;
-	}
-
-	char name[sizeof(lpMsg->name)] = { 0 };
-	char postMessage[sizeof(lpMsg->message)] = { 0 };
-	char serverName[sizeof(lpMsg->serverName)] = { 0 };
-
-	memcpy(name, lpMsg->name, sizeof(name) - 1);
-	memcpy(postMessage, lpMsg->message, sizeof(postMessage) - 1);
-	memcpy(serverName, lpMsg->serverName, sizeof(serverName) - 1);
-
-	if (lpMsg->message[sizeof(lpMsg->message) - 1] != 0 ||
-		lpMsg->name[sizeof(lpMsg->name) - 1] != 0 ||
-		lpMsg->serverName[sizeof(lpMsg->serverName) - 1] != 0 ||
-		lpMsg->linkStart + lpMsg->linkLength > strlen(postMessage))
-	{
-		return;
-	}
-
-	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
-	{
-		if (gObjIsConnectedGP(n) == 0)
-		{
-			continue;
-		}
-
-		char formattedMessage[60] = { 0 };
-		BYTE finalLinkStart = 0;
-
-		if (BuildPostLinkMessage(lpMsg->type, serverName, postMessage, lpMsg->linkStart, lpMsg->linkLength, gObj[n].Lang, formattedMessage, sizeof(formattedMessage), &finalLinkStart) == false)
-		{
-			continue;
-		}
-
-		PMSG_ITEM_POST_LINK_SEND pMsg;
-		pMsg.header.set(0xF3, 0xE8, sizeof(pMsg));
-		memset(pMsg.name, 0, sizeof(pMsg.name));
-		strncpy(pMsg.name, name, sizeof(pMsg.name) - 1);
-		memcpy(pMsg.message, formattedMessage, sizeof(pMsg.message));
-		pMsg.linkStart = finalLinkStart;
-		pMsg.linkLength = lpMsg->linkLength;
-		pMsg.style = (BYTE)(lpMsg->type % 3);
-		memcpy(pMsg.ItemInfo, lpMsg->ItemInfo, sizeof(pMsg.ItemInfo));
-
-		DataSend(n, (BYTE*)&pMsg, pMsg.header.size);
-	}
 }
 
 void CCommandManager::DGGlobalPostRecv(SDHP_GLOBAL_POST_RECV* lpMsg)

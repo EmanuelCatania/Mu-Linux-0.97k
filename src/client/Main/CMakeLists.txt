@@ -20,6 +20,8 @@ add_library(Main SHARED
   Interface.cpp
   Item.cpp
   ItemLink.cpp
+  ItemLinkChat.cpp
+  ItemLinkTooltip.cpp
   ItemManager.cpp
   ItemOption.cpp
   ItemPosition.cpp

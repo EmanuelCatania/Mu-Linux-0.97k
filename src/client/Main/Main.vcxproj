@@ -134,6 +134,8 @@
     <ClInclude Include="Interface.h" />
     <ClInclude Include="Item.h" />
     <ClInclude Include="ItemLink.h" />
+    <ClInclude Include="ItemLinkChat.h" />
+    <ClInclude Include="ItemLinkTooltip.h" />
     <ClInclude Include="ItemManager.h" />
     <ClInclude Include="ItemOption.h" />
     <ClInclude Include="ItemStack.h" />
@@ -192,6 +194,8 @@
     <ClCompile Include="Interface.cpp" />
     <ClCompile Include="Item.cpp" />
     <ClCompile Include="ItemLink.cpp" />
+    <ClCompile Include="ItemLinkChat.cpp" />
+    <ClCompile Include="ItemLinkTooltip.cpp" />
     <ClCompile Include="ItemManager.cpp" />
     <ClCompile Include="ItemOption.cpp" />
     <ClCompile Include="ItemStack.cpp" />

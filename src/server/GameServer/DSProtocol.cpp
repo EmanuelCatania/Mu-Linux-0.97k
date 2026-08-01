@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "DSProtocol.h"
+#include "ItemLink.h"
 #include "BloodCastle.h"
 #include "ChaosBox.h"
 #include "CommandManager.h"
@@ -184,7 +185,7 @@ void DataServerProtocolCore(BYTE head, BYTE* lpMsg, int size)
 
 				case 0x06:
 				{
-					gCommandManager.DGGlobalPostLinkRecv(
+					gItemLink.DGGlobalPostLinkRecv(
 						(SDHP_GLOBAL_POST_LINK_SEND*)lpMsg,
 						size);
 

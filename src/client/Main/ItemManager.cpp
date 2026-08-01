@@ -641,7 +641,47 @@ int CItemManager::GetInventoryItemSlot(int index, int level)
 	return -1;
 }
 
-void CItemManager::RenderItemLink3D(float sx, float sy, float Width, float Height, ITEM* Item)
+struct ITEM_PREVIEW_CONTEXT
+{
+	GLint PreviousMatrixMode;
+	GLfloat PreviousMousePosition[3];
+	GLfloat PreviousObjectSelectAngle[3];
+	GLfloat PreviousObjectSelectHeadAngle[3];
+	GLfloat PreviousAnimationFrame;
+	GLfloat PreviousPriorAnimationFrame;
+	short PreviousObjectSelectType;
+	BYTE PreviousPriorAction;
+	bool PreviousPreview;
+
+	void Capture()
+	{
+		this->PreviousMatrixMode = GL_MODELVIEW;
+		VectorCopy(MousePosition, this->PreviousMousePosition);
+		VectorCopy(ObjectSelect_Angle, this->PreviousObjectSelectAngle);
+		VectorCopy(ObjectSelect_HeadAngle, this->PreviousObjectSelectHeadAngle);
+		this->PreviousAnimationFrame = ObjectSelect_AnimationFrame;
+		this->PreviousPriorAnimationFrame = ObjectSelect_PriorAnimationFrame;
+		this->PreviousObjectSelectType = ObjectSelect_Type;
+		this->PreviousPriorAction = ObjectSelect_PriorAction;
+		this->PreviousPreview = gItemPosition.IsItemPreview();
+		glGetIntegerv(GL_MATRIX_MODE, &this->PreviousMatrixMode);
+	}
+
+	void Restore()
+	{
+		VectorCopy(this->PreviousMousePosition, MousePosition);
+		VectorCopy(this->PreviousObjectSelectAngle, ObjectSelect_Angle);
+		VectorCopy(this->PreviousObjectSelectHeadAngle, ObjectSelect_HeadAngle);
+		ObjectSelect_AnimationFrame = this->PreviousAnimationFrame;
+		ObjectSelect_PriorAnimationFrame = this->PreviousPriorAnimationFrame;
+		ObjectSelect_Type = this->PreviousObjectSelectType;
+		ObjectSelect_PriorAction = this->PreviousPriorAction;
+		gItemPosition.SetItemPreview(this->PreviousPreview);
+		glMatrixMode(this->PreviousMatrixMode);
+	}
+};
+
+void CItemManager::RenderItemPreview3D(float sx, float sy, float Width, float Height, ITEM* Item)
 {
 	if (Item == NULL || Item->Type < 0 || Item->Type >= MAX_ITEM ||
 		Width <= 0.0f || Height <= 0.0f)
@@ -649,20 +689,10 @@ void CItemManager::RenderItemLink3D(float sx, float sy, float Width, float Heigh
 		return;
 	}
 
-	GLint PreviousMatrixMode = GL_MODELVIEW;
-	GLfloat PreviousMousePosition[3];
-	GLfloat PreviousObjectSelectAngle[3];
-	GLfloat PreviousObjectSelectHeadAngle[3];
+	ITEM_PREVIEW_CONTEXT Context;
 	GLfloat PreviewMousePosition[3];
-	GLfloat PreviousAnimationFrame = ObjectSelect_AnimationFrame;
-	GLfloat PreviousPriorAnimationFrame = ObjectSelect_PriorAnimationFrame;
-	short PreviousObjectSelectType = ObjectSelect_Type;
-	BYTE PreviousPriorAction = ObjectSelect_PriorAction;
 
-	VectorCopy(MousePosition, PreviousMousePosition);
-	VectorCopy(ObjectSelect_Angle, PreviousObjectSelectAngle);
-	VectorCopy(ObjectSelect_HeadAngle, PreviousObjectSelectHeadAngle);
-	glGetIntegerv(GL_MATRIX_MODE, &PreviousMatrixMode);
+	Context.Capture();
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 
 	EndBitmap();
@@ -691,9 +721,9 @@ void CItemManager::RenderItemLink3D(float sx, float sy, float Width, float Heigh
 		PreviewMousePosition);
 	VectorCopy(PreviewMousePosition, MousePosition);
 
-	gItemPosition.SetItemLinkPreview(true);
+	gItemPosition.SetItemPreview(true);
 	RenderItem3D(sx, sy, Width, Height, Item->Type, Item->Level, Item->Option1, false);
-	gItemPosition.SetItemLinkPreview(false);
+	gItemPosition.SetItemPreview(false);
 
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
@@ -706,13 +736,5 @@ void CItemManager::RenderItemLink3D(float sx, float sy, float Width, float Heigh
 	 * Re-establish the 2D UI state before the native cursor is drawn. */
 	DisableDepthTest();
 	EnableAlphaBlend();
-	glMatrixMode(PreviousMatrixMode);
-
-	VectorCopy(PreviousMousePosition, MousePosition);
-	VectorCopy(PreviousObjectSelectAngle, ObjectSelect_Angle);
-	VectorCopy(PreviousObjectSelectHeadAngle, ObjectSelect_HeadAngle);
-	ObjectSelect_AnimationFrame = PreviousAnimationFrame;
-	ObjectSelect_PriorAnimationFrame = PreviousPriorAnimationFrame;
-	ObjectSelect_Type = PreviousObjectSelectType;
-	ObjectSelect_PriorAction = PreviousPriorAction;
+	Context.Restore();
 }
