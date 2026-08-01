@@ -1,34 +1,6 @@
 #include "stdafx.h"
 #include "Input.h"
 
-static const DWORD CHAT_INPUT_TEXT_CALL = 0x004BE5DF;
-
-static const DWORD CHAT_INPUT_WHISPER_CALL = 0x004BE60F;
-
-static const DWORD LOGIN_INPUT_ACCOUNT_CALL = 0x00521778;
-
-static const DWORD LOGIN_INPUT_PASSWORD_CALL = 0x005217A0;
-
-static const BYTE CHAT_INPUT_TEXT_BYTES[5] =
-{
-	0xE8, 0xCC, 0x0A, 0xFC, 0xFF
-};
-
-static const BYTE CHAT_INPUT_WHISPER_BYTES[5] =
-{
-	0xE8, 0x9C, 0x0A, 0xFC, 0xFF
-};
-
-static const BYTE LOGIN_INPUT_ACCOUNT_BYTES[5] =
-{
-	0xE8, 0x33, 0xD9, 0xF5, 0xFF
-};
-
-static const BYTE LOGIN_INPUT_PASSWORD_BYTES[5] =
-{
-	0xE8, 0x0B, 0xD9, 0xF5, 0xFF
-};
-
 CInput gInput;
 
 CInput::CInput()
@@ -89,22 +61,22 @@ bool CInput::Init()
 
 	SetCompleteHook(
 		0xE8,
-		CHAT_INPUT_TEXT_CALL,
+		ChatInputTextCall,
 		&CInput::RenderChatInputTextHook);
 
 	SetCompleteHook(
 		0xE8,
-		CHAT_INPUT_WHISPER_CALL,
+		ChatInputWhisperCall,
 		&CInput::RenderChatInputTextHook);
 
 	SetCompleteHook(
 		0xE8,
-		LOGIN_INPUT_ACCOUNT_CALL,
+		LoginInputAccountCall,
 		&CInput::RenderLoginInputTextHook);
 
 	SetCompleteHook(
 		0xE8,
-		LOGIN_INPUT_PASSWORD_CALL,
+		LoginInputPasswordCall,
 		&CInput::RenderLoginInputTextHook);
 
 	return true;
@@ -112,39 +84,18 @@ bool CInput::Init()
 
 bool CInput::IsSupportedClient()
 {
-	if (CheckBytes(
-		CHAT_INPUT_TEXT_CALL,
-		CHAT_INPUT_TEXT_BYTES,
-		sizeof(CHAT_INPUT_TEXT_BYTES)) == false)
-	{
-		return false;
-	}
-
-	if (CheckBytes(
-		CHAT_INPUT_WHISPER_CALL,
-		CHAT_INPUT_WHISPER_BYTES,
-		sizeof(CHAT_INPUT_WHISPER_BYTES)) == false)
-	{
-		return false;
-	}
-
-	if (CheckBytes(
-		LOGIN_INPUT_ACCOUNT_CALL,
-		LOGIN_INPUT_ACCOUNT_BYTES,
-		sizeof(LOGIN_INPUT_ACCOUNT_BYTES)) == false)
-	{
-		return false;
-	}
-
-	if (CheckBytes(
-		LOGIN_INPUT_PASSWORD_CALL,
-		LOGIN_INPUT_PASSWORD_BYTES,
-		sizeof(LOGIN_INPUT_PASSWORD_BYTES)) == false)
-	{
-		return false;
-	}
-
-	return true;
+	return CheckRelativeCall(
+		ChatInputTextCall,
+		RenderInputTextAddress) &&
+		CheckRelativeCall(
+			ChatInputWhisperCall,
+			RenderInputTextAddress) &&
+		CheckRelativeCall(
+			LoginInputAccountCall,
+			RenderInputTextAddress) &&
+		CheckRelativeCall(
+			LoginInputPasswordCall,
+			RenderInputTextAddress);
 }
 
 void CInput::RenderChatInputTextHook(

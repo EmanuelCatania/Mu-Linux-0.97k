@@ -140,6 +140,10 @@
 #define ItemLinkChatLogRenderMode 0x005590AC
 
 // Input
+#define ChatInputTextCall 0x004BE5DF
+#define ChatInputWhisperCall 0x004BE60F
+#define LoginInputAccountCall 0x00521778
+#define LoginInputPasswordCall 0x005217A0
 #define InputText ((char(*)[256])0x07DB8710)
 #define InputLength ((int*)0x07D780A8)
 #define InputTextHide ((BYTE*)0x07E113D8)
@@ -155,7 +159,8 @@
 #define InputNumber *(int*)0x00559C88
 #define MacroText ((char (*)[256])0x07E0FFC8)
 #define ClearInput ((void(_cdecl*)(BOOL bClearWhisperTarget)) 0x0047EC60)
-#define RenderInputText ((void(_cdecl*)(int x, int y, int Index)) 0x0047F0B0)
+#define RenderInputTextAddress 0x0047F0B0
+#define RenderInputText ((void(_cdecl*)(int x, int y, int Index)) RenderInputTextAddress)
 
 // Monster
 #define MonsterScript (&*(MONSTER_SCRIPT*)0x07CF2000)
