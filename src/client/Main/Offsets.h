@@ -199,6 +199,10 @@
 #define ItemObjectAttribute ((void(_cdecl*)(DWORD o)) 0x00502BA0)
 #define RenderItem3D ((void(_cdecl*)(float sx, float sy, float Width, float Height, int Type, int Level, int Option1, bool PickUp)) 0x004E1BE0)
 #define RenderItemInfo ((void(_cdecl*)(int sx, int sy, ITEM *ip, bool Sell)) 0x004C4650)
+#define RenderItemTextListAddress 0x004C2420
+#define RenderItemTextLineAddress 0x0040F610
+#define RenderItemTextList ((void(_cdecl*)(void* TextListPointer, int Y, int TextCount, int Width, int Arg5, int Arg6)) RenderItemTextListAddress)
+#define RenderItemTextLine ((void(__thiscall*)(void* This, int X, int Y, const char* Text, int Arg4, int Arg5, int Arg6, int Arg7, int Arg8)) RenderItemTextLineAddress)
 #define ObjectSelect_Angle (&*(float*)0x07EA952C)
 #define ObjectSelect_HeadAngle (&*(float*)0x07EA9538)
 #define ObjectSelect_Type *(short*)0x07EA9512
@@ -344,6 +348,13 @@
 #define CreateCharacter ((DWORD(_cdecl*)(int Key, int Type, BYTE PositionX, BYTE PositionY, float Rotation)) 0x0045BFA0)
 #define CreateScreenVector ((void(_cdecl*)(int sx, int sy, float Target[3])) 0x005112F0)
 #define RenderObjectScreen ((void(_cdecl*)(int Type, int ItemLevel, int Option1, float Target[3], int Select, bool PickUp)) 0x004E13A0)
+#define ItemTooltipTextListCall 0x004C8C26
+#define ItemTooltipLineTextCall 0x004C27DD
+#define ItemTooltipBorderTopCall 0x004C25F5
+#define ItemTooltipBorderLeftCall 0x004C2614
+#define ItemTooltipBorderRightCall 0x004C2635
+#define ItemTooltipBorderBottomCall 0x004C2663
+#define ItemTooltipFillCall 0x004C2690
 #define BMD_Animation ((void(__thiscall*)(DWORD This, float (*BoneMatrix)[3][4], float AnimationFrame, float PriorFrame, unsigned __int8 PriorAction, float Angle[3], float HeadAngle[3], bool Parent, bool Translate)) 0x00440060)
 #define BoneTransform ((float(*)[3][4])0x06970A9C)
 

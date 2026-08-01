@@ -133,7 +133,51 @@ private:
 		int Unused,
 		int LineIndex);
 
+	static void __cdecl RenderTooltipTextListHook(
+		void* TextListPointer,
+		int Y,
+		int TextCount,
+		int Width,
+		int Arg5,
+		int Arg6);
+
+	static void __fastcall RenderTooltipLineHook(
+		void* This,
+		void* Unused,
+		int X,
+		int Y,
+		const char* Text,
+		int Arg4,
+		int Arg5,
+		int Arg6,
+		int Arg7,
+		int Arg8);
+
+	static void __cdecl RenderTooltipTopHook(float X, float Y, float Width, float Height);
+
+	static void __cdecl RenderTooltipLeftHook(float X, float Y, float Width, float Height);
+
+	static void __cdecl RenderTooltipRightHook(float X, float Y, float Width, float Height);
+
+	static void __cdecl RenderTooltipBottomHook(float X, float Y, float Width, float Height);
+
+	static void __cdecl RenderTooltipFillHook(float X, float Y, float Width, float Height);
+
 	static DWORD GetItemLinkTextColor(const ITEM* Item);
+
+	static bool IsExpectedCall(DWORD Address, DWORD Target);
+
+	static int GetTooltipLineHeight();
+
+	static int GetTooltipModelSize(const ITEM* Item);
+
+	static bool IsTooltipSeparator(const char* Text);
+
+	static int CalculateTooltipTextHeight(int TextCount);
+
+	static void PrepareTooltipRectangle(float Y, float Height);
+
+	static void RenderTooltipBorder(float X, float Y, float Width, float Height, int Part);
 
 	bool IsSupportedClient();
 
@@ -190,6 +234,8 @@ private:
 		int This,
 		int LineIndex);
 
+	void RenderTooltipModel(const ITEM* Item);
+
 	bool IsInsideHitBox(const CHAT_LINK* Link);
 
 	CHAT_LINK m_Links[MAX_CHAT_LINES];
@@ -223,6 +269,29 @@ private:
 	int m_PinnedX;
 
 	int m_PinnedY;
+
+	struct TOOLTIP_LAYOUT
+	{
+		bool active;
+		bool rectangleValid;
+		bool titleCaptured;
+		bool bodyCaptured;
+		int extraHeight;
+		int modelSize;
+		int offsetY;
+		int x;
+		int y;
+		int width;
+		int height;
+		int nativeTextHeight;
+		int titleY;
+		int bodyY;
+		int bodyDirection;
+	};
+
+	static TOOLTIP_LAYOUT m_TooltipLayout;
+
+	bool m_TooltipHooksInstalled;
 };
 
 extern CItemLink gItemLink;

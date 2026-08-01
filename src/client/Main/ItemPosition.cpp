@@ -6,6 +6,8 @@ CItemPosition gItemPosition;
 
 CItemPosition::CItemPosition()
 {
+	this->m_ItemLinkPreview = false;
+
 	for (int n = 0; n < MAX_ITEM; n++)
 	{
 		this->m_ItemPositionInfo[n].ItemIndex = -1;
@@ -17,6 +19,16 @@ CItemPosition::CItemPosition()
 CItemPosition::~CItemPosition()
 {
 
+}
+
+void CItemPosition::SetItemLinkPreview(bool Active)
+{
+	this->m_ItemLinkPreview = Active;
+}
+
+bool CItemPosition::IsItemLinkPreview() const
+{
+	return this->m_ItemLinkPreview;
 }
 
 void CItemPosition::Init(ITEM_POSITION_INFO* info)
@@ -61,12 +73,15 @@ void CItemPosition::MyRenderItem3D(float sx, float sy, float Width, float Height
 {
 	bool Success = false;
 
-	if ((!*(DWORD*)0x7E91388 || PickUp) && IsWorkZone((int)sx, (int)sy, (int)Width, (int)Height))
+	if (gItemPosition.IsItemLinkPreview() == false &&
+		(!*(DWORD*)0x7E91388 || PickUp) &&
+		IsWorkZone((int)sx, (int)sy, (int)Width, (int)Height))
 	{
 		Success = true;
 	}
 
 	int RealLevel = GET_ITEM_OPT_LEVEL(Level);
+	const float OriginalSX = sx;
 
 	if (Type >= GET_ITEM(0, 0) && Type < GET_ITEM(1, 0)) // Swords
 	{
@@ -316,6 +331,15 @@ void CItemPosition::MyRenderItem3D(float sx, float sy, float Width, float Height
 		sx += Width * 0.5f;
 
 		sy += Height * 0.6f;
+	}
+
+	if (gItemPosition.IsItemLinkPreview() != false)
+	{
+		/* Inventory cells use a type-specific horizontal offset.  It makes
+		 * sense for the grid, but shifts a model inside the tooltip.  Keep the
+		 * native vertical offset because it compensates for each model's
+		 * origin and silhouette. */
+		sx = OriginalSX + (Width * 0.5f);
 	}
 
 	vec3_t Position;

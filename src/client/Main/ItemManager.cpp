@@ -3,6 +3,7 @@
 #include "CustomBow.h"
 #include "CustomWing.h"
 #include "ItemStack.h"
+#include "ItemPosition.h"
 
 CItemManager gItemManager;
 
@@ -638,4 +639,80 @@ int CItemManager::GetInventoryItemSlot(int index, int level)
 	}
 
 	return -1;
+}
+
+void CItemManager::RenderItemLink3D(float sx, float sy, float Width, float Height, ITEM* Item)
+{
+	if (Item == NULL || Item->Type < 0 || Item->Type >= MAX_ITEM ||
+		Width <= 0.0f || Height <= 0.0f)
+	{
+		return;
+	}
+
+	GLint PreviousMatrixMode = GL_MODELVIEW;
+	GLfloat PreviousMousePosition[3];
+	GLfloat PreviousObjectSelectAngle[3];
+	GLfloat PreviousObjectSelectHeadAngle[3];
+	GLfloat PreviewMousePosition[3];
+	GLfloat PreviousAnimationFrame = ObjectSelect_AnimationFrame;
+	GLfloat PreviousPriorAnimationFrame = ObjectSelect_PriorAnimationFrame;
+	short PreviousObjectSelectType = ObjectSelect_Type;
+	BYTE PreviousPriorAction = ObjectSelect_PriorAction;
+
+	VectorCopy(MousePosition, PreviousMousePosition);
+	VectorCopy(ObjectSelect_Angle, PreviousObjectSelectAngle);
+	VectorCopy(ObjectSelect_HeadAngle, PreviousObjectSelectHeadAngle);
+	glGetIntegerv(GL_MATRIX_MODE, &PreviousMatrixMode);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+	EndBitmap();
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glViewport2(0, 0, WindowWidth, WindowHeight);
+	gluPerspective2(
+		1.0f,
+		(float)WindowWidth / (float)WindowHeight,
+		20.0f,
+		2000.0f);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	GetOpenGLMatrix(CameraMatrix);
+	EnableDepthTest();
+	EnableDepthMask();
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	CreateScreenVector(
+		(int)(sx + (Width / 2.0f)),
+		(int)(sy + (Height / 2.0f)),
+		PreviewMousePosition);
+	VectorCopy(PreviewMousePosition, MousePosition);
+
+	gItemPosition.SetItemLinkPreview(true);
+	RenderItem3D(sx, sy, Width, Height, Item->Type, Item->Level, Item->Option1, false);
+	gItemPosition.SetItemLinkPreview(false);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+
+	BeginBitmap();
+	glPopAttrib();
+	/* Some wing render paths change the engine's alpha state internally.
+	 * Re-establish the 2D UI state before the native cursor is drawn. */
+	DisableDepthTest();
+	EnableAlphaBlend();
+	glMatrixMode(PreviousMatrixMode);
+
+	VectorCopy(PreviousMousePosition, MousePosition);
+	VectorCopy(PreviousObjectSelectAngle, ObjectSelect_Angle);
+	VectorCopy(PreviousObjectSelectHeadAngle, ObjectSelect_HeadAngle);
+	ObjectSelect_AnimationFrame = PreviousAnimationFrame;
+	ObjectSelect_PriorAnimationFrame = PreviousPriorAnimationFrame;
+	ObjectSelect_Type = PreviousObjectSelectType;
+	ObjectSelect_PriorAction = PreviousPriorAction;
 }

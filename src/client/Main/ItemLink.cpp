@@ -2,6 +2,7 @@
 #include "ItemLink.h"
 #include "Input.h"
 #include "Protocol.h"
+#include "ItemManager.h"
 
 static const DWORD CHAT_RENDER_TEXT_CALL = 0x00480BC8;
 
@@ -38,6 +39,9 @@ static int (__thiscall* OriginalChatWindowLineRender)(
 	int This,
 	int LineIndex) = NULL;
 
+static const int ITEM_TOOLTIP_MODEL_SIZE = 64;
+static const int ITEM_TOOLTIP_MODEL_GAP = 8;
+
 #if defined(_DEBUG)
 static void ItemLinkDebug(const char* Format, ...);
 #endif
@@ -50,6 +54,294 @@ struct PMSG_STANDARD_CHAT
 };
 
 CItemLink gItemLink;
+CItemLink::TOOLTIP_LAYOUT CItemLink::m_TooltipLayout = {};
+
+bool CItemLink::IsExpectedCall(DWORD Address, DWORD Target)
+{
+	return *(BYTE*)Address == 0xE8 &&
+		(DWORD)(Address + 5 + *(int*)(Address + 1)) == Target;
+}
+
+int CItemLink::GetTooltipLineHeight()
+{
+	SIZE TextSize = { 0, 0 };
+	const char* Text = "Ag";
+
+	if (m_hFontDC != NULL)
+	{
+		GetTextExtentPointA(m_hFontDC, Text, 2, &TextSize);
+	}
+
+	return max(1, TextSize.cy);
+}
+
+bool CItemLink::IsTooltipSeparator(const char* Text)
+{
+	return Text != NULL &&
+		(Text[0] == '\n' || (Text[0] == ' ' && Text[1] == '\0'));
+}
+
+int CItemLink::CalculateTooltipTextHeight(int TextCount)
+{
+	if (m_hFontDC == NULL || TextCount <= 0 || TextCount > 64)
+	{
+		return 0;
+	}
+
+	int Height = 0;
+	SIZE TextSize = { 0, 0 };
+	HGDIOBJ PreviousFont = GetCurrentObject(m_hFontDC, OBJ_FONT);
+
+	for (int Index = 0; Index < TextCount; Index++)
+	{
+		const char* Text = TextList[Index];
+
+		if (Text[0] == 0)
+		{
+			break;
+		}
+
+		SelectObject(
+			m_hFontDC,
+			(TextBold[Index] != 0) ? g_hFontBold : g_hFont);
+		TextSize.cx = 0;
+		TextSize.cy = 0;
+		GetTextExtentPointA(
+			m_hFontDC,
+			Text,
+			lstrlenA(Text),
+			&TextSize);
+
+		Height += (Text[0] == '\n') ?
+			(TextSize.cy / 2) : TextSize.cy;
+	}
+
+	SelectObject(m_hFontDC, PreviousFont);
+
+	if (g_fScreenRate_y <= 0.0f)
+	{
+		return Height;
+	}
+
+	return (int)ceilf(
+		(float)Height / (g_fScreenRate_y * 0.9090909f));
+}
+
+void CItemLink::PrepareTooltipRectangle(float Y, float Height)
+{
+	if (CItemLink::m_TooltipLayout.active == false ||
+		CItemLink::m_TooltipLayout.rectangleValid != false)
+	{
+		return;
+	}
+
+	const int NativeY = (int)floorf(Y + 1.0f);
+	CItemLink::m_TooltipLayout.height =
+		max(0, (int)ceilf(Height - 1.0f));
+
+	const int ExpandedHeight =
+		CItemLink::m_TooltipLayout.height +
+		CItemLink::m_TooltipLayout.extraHeight;
+
+	CItemLink::m_TooltipLayout.offsetY = 0;
+
+	if (NativeY + ExpandedHeight > WindowHeight)
+	{
+		CItemLink::m_TooltipLayout.offsetY =
+			WindowHeight - (NativeY + ExpandedHeight);
+	}
+
+	if (NativeY + CItemLink::m_TooltipLayout.offsetY < 0)
+	{
+		CItemLink::m_TooltipLayout.offsetY = -NativeY;
+	}
+
+	CItemLink::m_TooltipLayout.y =
+		NativeY + CItemLink::m_TooltipLayout.offsetY;
+	CItemLink::m_TooltipLayout.height = ExpandedHeight;
+	CItemLink::m_TooltipLayout.rectangleValid = true;
+}
+
+void CItemLink::RenderTooltipBorder(
+	float X,
+	float Y,
+	float Width,
+	float Height,
+	int Part)
+{
+	if (CItemLink::m_TooltipLayout.active == false)
+	{
+		RenderColor(X, Y, Width, Height);
+
+		return;
+	}
+
+	if (Part == 1)
+	{
+		CItemLink::PrepareTooltipRectangle(Y, Height);
+	}
+	else if (Part == 0 &&
+		CItemLink::m_TooltipLayout.rectangleValid == false)
+	{
+		CItemLink::m_TooltipLayout.x = (int)floorf(X + 1.0f);
+		if (CItemLink::m_TooltipLayout.nativeTextHeight <= 0)
+		{
+			CItemLink::m_TooltipLayout.y = (int)floorf(Y + 1.0f);
+		}
+		CItemLink::m_TooltipLayout.width =
+			max(0, (int)ceilf(Width - 1.0f));
+	}
+
+	float RenderY = Y + (float)CItemLink::m_TooltipLayout.offsetY;
+	float RenderHeight = Height;
+
+	switch (Part)
+	{
+		case 1:
+		case 2:
+			RenderHeight += (float)CItemLink::m_TooltipLayout.extraHeight;
+			break;
+
+		case 3:
+			RenderY += (float)CItemLink::m_TooltipLayout.extraHeight;
+			break;
+
+		case 4:
+			RenderHeight += (float)CItemLink::m_TooltipLayout.extraHeight;
+			break;
+	}
+
+	RenderColor(X, RenderY, Width, RenderHeight);
+}
+
+void __cdecl CItemLink::RenderTooltipTextListHook(
+	void* TextListPointer,
+	int Y,
+	int TextCount,
+	int Width,
+	int Arg5,
+	int Arg6)
+{
+	if (CItemLink::m_TooltipLayout.active != false)
+	{
+		CItemLink::m_TooltipLayout.nativeTextHeight =
+			CItemLink::CalculateTooltipTextHeight(TextCount);
+
+		/* The border hook has the authoritative tooltip rectangle.  When
+		 * RenderItemTextList runs first, keep a provisional offset only until
+		 * the border arrives; otherwise do not undo the border's correction. */
+		if (CItemLink::m_TooltipLayout.rectangleValid == false)
+		{
+			CItemLink::m_TooltipLayout.offsetY = 0;
+
+			const int ExpandedHeight = max(1,
+				CItemLink::m_TooltipLayout.nativeTextHeight) +
+				CItemLink::m_TooltipLayout.extraHeight;
+
+			if (Y + ExpandedHeight > WindowHeight)
+			{
+				CItemLink::m_TooltipLayout.offsetY =
+					WindowHeight - (Y + ExpandedHeight);
+			}
+
+			if (Y + CItemLink::m_TooltipLayout.offsetY < 0)
+			{
+				CItemLink::m_TooltipLayout.offsetY = -Y;
+			}
+		}
+	}
+
+	RenderItemTextList(
+		TextListPointer,
+		Y,
+		TextCount,
+		Width,
+		Arg5,
+		Arg6);
+}
+
+void __fastcall CItemLink::RenderTooltipLineHook(
+	void* This,
+	void*,
+	int X,
+	int Y,
+	const char* Text,
+	int Arg4,
+	int Arg5,
+	int Arg6,
+	int Arg7,
+	int Arg8)
+{
+	bool IsTitle = false;
+	int RenderY = Y;
+
+	if (CItemLink::m_TooltipLayout.active != false)
+	{
+		RenderY += CItemLink::m_TooltipLayout.offsetY;
+
+		if (Text != NULL && Text[0] != 0 &&
+			CItemLink::IsTooltipSeparator(Text) == false)
+		{
+			if (CItemLink::m_TooltipLayout.titleCaptured == false)
+			{
+				CItemLink::m_TooltipLayout.titleY = RenderY;
+				CItemLink::m_TooltipLayout.titleCaptured = true;
+				IsTitle = true;
+			}
+			else if (CItemLink::m_TooltipLayout.bodyCaptured == false)
+			{
+				CItemLink::m_TooltipLayout.bodyY = RenderY;
+				CItemLink::m_TooltipLayout.bodyDirection =
+					(RenderY >= CItemLink::m_TooltipLayout.titleY) ? 1 : -1;
+				CItemLink::m_TooltipLayout.bodyCaptured = true;
+			}
+
+			if (IsTitle == false)
+			{
+				RenderY +=
+					(CItemLink::m_TooltipLayout.bodyDirection >= 0) ?
+					CItemLink::m_TooltipLayout.extraHeight :
+					-CItemLink::m_TooltipLayout.extraHeight;
+			}
+		}
+	}
+
+	RenderItemTextLine(
+		This,
+		X,
+		RenderY,
+		Text,
+		Arg4,
+		Arg5,
+		Arg6,
+		Arg7,
+		Arg8);
+}
+
+void __cdecl CItemLink::RenderTooltipTopHook(float X, float Y, float Width, float Height)
+{
+	CItemLink::RenderTooltipBorder(X, Y, Width, Height, 0);
+}
+
+void __cdecl CItemLink::RenderTooltipLeftHook(float X, float Y, float Width, float Height)
+{
+	CItemLink::RenderTooltipBorder(X, Y, Width, Height, 1);
+}
+
+void __cdecl CItemLink::RenderTooltipRightHook(float X, float Y, float Width, float Height)
+{
+	CItemLink::RenderTooltipBorder(X, Y, Width, Height, 2);
+}
+
+void __cdecl CItemLink::RenderTooltipBottomHook(float X, float Y, float Width, float Height)
+{
+	CItemLink::RenderTooltipBorder(X, Y, Width, Height, 3);
+}
+
+void __cdecl CItemLink::RenderTooltipFillHook(float X, float Y, float Width, float Height)
+{
+	CItemLink::RenderTooltipBorder(X, Y, Width, Height, 4);
+}
 
 DWORD CItemLink::GetItemLinkTextColor(const ITEM* Item)
 {
@@ -180,6 +472,26 @@ CItemLink::CItemLink()
 	this->m_PinnedX = 0;
 
 	this->m_PinnedY = 0;
+
+	this->m_TooltipHooksInstalled = false;
+}
+
+int CItemLink::GetTooltipModelSize(const ITEM* Item)
+{
+	if (Item == NULL || Item->Type < 0 || Item->Type >= MAX_ITEM)
+	{
+		return ITEM_TOOLTIP_MODEL_SIZE;
+	}
+
+	/* Jewels and consumables have a naturally small native preview.  Keeping
+	 * their reserved area compact prevents a large empty gap in the tooltip. */
+	if (Item->Type >= GET_ITEM(14, 0) &&
+		Item->Type < GET_ITEM(15, 0))
+	{
+		return 32;
+	}
+
+	return ITEM_TOOLTIP_MODEL_SIZE;
 }
 
 bool CItemLink::Init()
@@ -187,6 +499,34 @@ bool CItemLink::Init()
 	if (this->IsSupportedClient() == false)
 	{
 		return false;
+	}
+
+	if (IsExpectedCall(ItemTooltipTextListCall, RenderItemTextListAddress) != false &&
+		IsExpectedCall(ItemTooltipLineTextCall, RenderItemTextLineAddress) != false &&
+		IsExpectedCall(ItemTooltipBorderTopCall, (DWORD)RenderColor) != false &&
+		IsExpectedCall(ItemTooltipBorderLeftCall, (DWORD)RenderColor) != false &&
+		IsExpectedCall(ItemTooltipBorderRightCall, (DWORD)RenderColor) != false &&
+		IsExpectedCall(ItemTooltipBorderBottomCall, (DWORD)RenderColor) != false &&
+		IsExpectedCall(ItemTooltipFillCall, (DWORD)RenderColor) != false)
+	{
+		SetCompleteHook(0xE8, ItemTooltipTextListCall, &CItemLink::RenderTooltipTextListHook);
+		SetCompleteHook(0xE8, ItemTooltipLineTextCall, &CItemLink::RenderTooltipLineHook);
+		SetCompleteHook(0xE8, ItemTooltipBorderTopCall, &CItemLink::RenderTooltipTopHook);
+		SetCompleteHook(0xE8, ItemTooltipBorderLeftCall, &CItemLink::RenderTooltipLeftHook);
+		SetCompleteHook(0xE8, ItemTooltipBorderRightCall, &CItemLink::RenderTooltipRightHook);
+		SetCompleteHook(0xE8, ItemTooltipBorderBottomCall, &CItemLink::RenderTooltipBottomHook);
+		SetCompleteHook(0xE8, ItemTooltipFillCall, &CItemLink::RenderTooltipFillHook);
+		this->m_TooltipHooksInstalled = true;
+
+#if defined(_DEBUG)
+		ItemLinkDebug("[ItemLink] 3D tooltip layout hooks installed");
+#endif
+	}
+	else
+	{
+#if defined(_DEBUG)
+		ItemLinkDebug("[ItemLink] 3D tooltip layout unavailable; textual tooltip only");
+#endif
 	}
 
 	SetCompleteHook(
@@ -1786,21 +2126,95 @@ void CItemLink::RenderTooltip()
 
 	if (Hovered != NULL)
 	{
+		memset(&CItemLink::m_TooltipLayout, 0, sizeof(CItemLink::m_TooltipLayout));
+		CItemLink::m_TooltipLayout.active = this->m_TooltipHooksInstalled;
+		CItemLink::m_TooltipLayout.modelSize =
+			CItemLink::GetTooltipModelSize(&Hovered->item);
+		CItemLink::m_TooltipLayout.extraHeight =
+			this->m_TooltipHooksInstalled ?
+			CItemLink::m_TooltipLayout.modelSize + ITEM_TOOLTIP_MODEL_GAP : 0;
+
 		RenderItemInfo(
 			MouseX,
 			MouseY,
 			&Hovered->item,
 			false);
 
+		CItemLink::m_TooltipLayout.active = false;
+		this->RenderTooltipModel(&Hovered->item);
+
 		return;
 	}
 
 	if (this->m_Pinned != false)
 	{
+		memset(&CItemLink::m_TooltipLayout, 0, sizeof(CItemLink::m_TooltipLayout));
+		CItemLink::m_TooltipLayout.active = this->m_TooltipHooksInstalled;
+		CItemLink::m_TooltipLayout.modelSize =
+			CItemLink::GetTooltipModelSize(&this->m_PinnedItem);
+		CItemLink::m_TooltipLayout.extraHeight =
+			this->m_TooltipHooksInstalled ?
+			CItemLink::m_TooltipLayout.modelSize + ITEM_TOOLTIP_MODEL_GAP : 0;
+
 		RenderItemInfo(
 			this->m_PinnedX,
 			this->m_PinnedY,
 			&this->m_PinnedItem,
 			false);
+
+		CItemLink::m_TooltipLayout.active = false;
+		this->RenderTooltipModel(&this->m_PinnedItem);
 	}
+}
+
+void CItemLink::RenderTooltipModel(const ITEM* Item)
+{
+	if (this->m_TooltipHooksInstalled == false ||
+		Item == NULL || Item->Type < 0 || Item->Type >= MAX_ITEM ||
+		CItemLink::m_TooltipLayout.rectangleValid == false ||
+		CItemLink::m_TooltipLayout.titleCaptured == false)
+	{
+		return;
+	}
+
+	const int LineStep =
+		(CItemLink::m_TooltipLayout.bodyCaptured != false) ?
+		abs(CItemLink::m_TooltipLayout.bodyY -
+			CItemLink::m_TooltipLayout.titleY) :
+		this->GetTooltipLineHeight();
+
+	const int ModelSize = (CItemLink::m_TooltipLayout.modelSize > 0) ?
+		CItemLink::m_TooltipLayout.modelSize : ITEM_TOOLTIP_MODEL_SIZE;
+
+	int X = CItemLink::m_TooltipLayout.x +
+		(CItemLink::m_TooltipLayout.width - ModelSize) / 2;
+	int Y = CItemLink::m_TooltipLayout.titleY;
+
+	if (CItemLink::m_TooltipLayout.bodyDirection >= 0)
+	{
+		Y += LineStep;
+	}
+	else
+	{
+		Y -= ModelSize + LineStep;
+	}
+
+	const int MinimumX = CItemLink::m_TooltipLayout.x;
+	const int MaximumX =
+		CItemLink::m_TooltipLayout.x +
+		CItemLink::m_TooltipLayout.width - ModelSize;
+	const int MinimumY = CItemLink::m_TooltipLayout.y;
+	const int MaximumY =
+		CItemLink::m_TooltipLayout.y +
+		CItemLink::m_TooltipLayout.height - ModelSize;
+
+	X = max(MinimumX, min(X, MaximumX));
+	Y = max(MinimumY, min(Y, MaximumY));
+
+	gItemManager.RenderItemLink3D(
+		(float)X,
+		(float)Y,
+		(float)ModelSize,
+		(float)ModelSize,
+		(ITEM*)Item);
 }

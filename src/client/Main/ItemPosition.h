@@ -21,6 +21,10 @@ public:
 
 	void Init(ITEM_POSITION_INFO* info);
 
+	void SetItemLinkPreview(bool Active);
+
+	bool IsItemLinkPreview() const;
+
 private:
 
 	void SetInfo(ITEM_POSITION_INFO info);
@@ -36,6 +40,8 @@ private:
 private:
 
 	ITEM_POSITION_INFO m_ItemPositionInfo[MAX_ITEM];
+
+	bool m_ItemLinkPreview;
 };
 
 extern CItemPosition gItemPosition;
