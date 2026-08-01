@@ -89,7 +89,7 @@ public:
 
 	void GDGlobalPostRecv(SDHP_GLOBAL_POST_RECV* lpMsg, int index);
 
-	void GDGlobalPostLinkRecv(SDHP_GLOBAL_POST_LINK_RECV* lpMsg, int index);
+	void GDGlobalPostLinkRecv(SDHP_GLOBAL_POST_LINK_RECV* lpMsg, int index, int size);
 
 	void GDCommandResetRecv(SDHP_COMMAND_RESET_RECV* lpMsg, int index);
 

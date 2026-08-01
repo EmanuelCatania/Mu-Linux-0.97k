@@ -20,6 +20,7 @@ void CItemLink::CGItemPostLinkRecv(
 {
 	if (lpMsg == NULL || size != sizeof(PMSG_ITEM_POST_LINK_RECV) ||
 		lpMsg->header.size != sizeof(PMSG_ITEM_POST_LINK_RECV) ||
+		lpMsg->message[sizeof(lpMsg->message) - 1] != 0 ||
 		gObjIsConnectedGP(aIndex) == 0)
 	{
 		return;
@@ -106,6 +107,7 @@ void CItemLink::CGItemLinkRecv(
 {
 	if (lpMsg == NULL || size != sizeof(PMSG_ITEM_LINK_RECV) ||
 		lpMsg->header.size != sizeof(PMSG_ITEM_LINK_RECV) ||
+		lpMsg->message[sizeof(lpMsg->message) - 1] != 0 ||
 		gObjIsConnectedGP(aIndex) == 0)
 	{
 		return;
@@ -228,7 +230,7 @@ bool CItemLink::BuildCanonicalMessage(
 	BYTE* itemInfo,
 	int aIndex)
 {
-	if (message == NULL || messageSize < 60 ||
+	if (lpMsg == NULL || message == NULL || messageSize < 60 ||
 		linkStart == NULL || linkLength == NULL || itemInfo == NULL ||
 		INVENTORY_RANGE(lpMsg->slot) == 0)
 	{
@@ -243,10 +245,13 @@ bool CItemLink::BuildCanonicalMessage(
 
 	int sourceLength = (int)strnlen(source, sizeof(source));
 
+	int LinkStart = lpMsg->linkStart;
+	int LinkLength = lpMsg->linkLength;
+
 	if (sourceLength <= 0 || sourceLength >= sizeof(source) ||
-		lpMsg->linkLength == 0 ||
-		lpMsg->linkStart >= sourceLength ||
-		(lpMsg->linkStart + lpMsg->linkLength) > sourceLength ||
+		LinkLength <= 0 ||
+		LinkStart >= sourceLength ||
+		(LinkStart + LinkLength) > sourceLength ||
 		source[0] == '/' || source[0] == '#' ||
 		(source[0] == '@' && source[1] == '>'))
 	{
@@ -304,9 +309,9 @@ bool CItemLink::BuildCanonicalMessage(
 		return false;
 	}
 
-	int suffixStart = lpMsg->linkStart + lpMsg->linkLength;
+	int suffixStart = LinkStart + LinkLength;
 
-	int finalLength = lpMsg->linkStart +
+	int finalLength = LinkStart +
 		tokenLength +
 		(sourceLength - suffixStart);
 
@@ -315,18 +320,18 @@ bool CItemLink::BuildCanonicalMessage(
 		return false;
 	}
 
-	memcpy(message, source, lpMsg->linkStart);
+	memcpy(message, source, LinkStart);
 
-	memcpy(message + lpMsg->linkStart, token, tokenLength);
+	memcpy(message + LinkStart, token, tokenLength);
 
 	memcpy(
-		message + lpMsg->linkStart + tokenLength,
+		message + LinkStart + tokenLength,
 		source + suffixStart,
 		sourceLength - suffixStart);
 
 	message[finalLength] = 0;
 
-	*linkStart = lpMsg->linkStart;
+	*linkStart = (BYTE)LinkStart;
 
 	*linkLength = (BYTE)tokenLength;
 

@@ -580,23 +580,16 @@ bool CCommandManager::ManagementItemPost(
 		return false;
 	}
 
-	COMMAND_LIST CommandData;
-	bool Found = false;
+	std::map<int, COMMAND_LIST>::iterator It =
+		this->m_CommandInfo.find(COMMAND_POST);
 
-	for (std::map<int, COMMAND_LIST>::iterator It = this->m_CommandInfo.begin(); It != this->m_CommandInfo.end(); It++)
-	{
-		if (It->second.Index == COMMAND_POST)
-		{
-			CommandData = It->second;
-			Found = true;
-			break;
-		}
-	}
-
-	if (Found == false || this->ValidateCommand(lpObj, CommandData) == false)
+	if (It == this->m_CommandInfo.end() ||
+		this->ValidateCommand(lpObj, It->second) == false)
 	{
 		return false;
 	}
+
+	COMMAND_LIST CommandData = It->second;
 
 	BYTE Type = (BYTE)gServerInfo.m_CommandPostType;
 
@@ -721,7 +714,17 @@ static bool BuildPostLinkMessage(
 		return false;
 	}
 
-	wsprintf(Prefix, Format, serverName, "");
+	int PrefixLength = snprintf(
+		Prefix,
+		sizeof(Prefix),
+		Format,
+		serverName,
+		"");
+
+	if (PrefixLength < 0 || PrefixLength >= (int)sizeof(Prefix))
+	{
+		return false;
+	}
 
 	int MarkerLength = (type == 0) ? 0 : 1;
 	int ArgumentOffset = MarkerLength + (int)strlen(Prefix);
@@ -745,7 +748,17 @@ static bool BuildPostLinkMessage(
 		output[0] = '@';
 	}
 
-	wsprintf(output + MarkerLength, Format, serverName, text);
+	int WrittenLength = snprintf(
+		output + MarkerLength,
+		outputSize - MarkerLength,
+		Format,
+		serverName,
+		text);
+
+	if (WrittenLength < 0 || WrittenLength >= (outputSize - MarkerLength))
+	{
+		return false;
+	}
 
 	int ActualLength = (int)strlen(output);
 
@@ -834,17 +847,32 @@ void CCommandManager::GDGlobalPostLinkSend(
 	gDataServerConnection.DataSend((BYTE*)&pMsg, sizeof(pMsg));
 }
 
-void CCommandManager::DGGlobalPostLinkRecv(SDHP_GLOBAL_POST_LINK_SEND* lpMsg)
+void CCommandManager::DGGlobalPostLinkRecv(
+	SDHP_GLOBAL_POST_LINK_SEND* lpMsg,
+	int size)
 {
-	if (lpMsg == NULL || lpMsg->header.size != sizeof(SDHP_GLOBAL_POST_LINK_SEND) ||
+	if (lpMsg == NULL || size != sizeof(SDHP_GLOBAL_POST_LINK_SEND) ||
+		lpMsg->header.size != sizeof(SDHP_GLOBAL_POST_LINK_SEND) ||
 		lpMsg->type > 2 || lpMsg->linkLength == 0)
 	{
 		return;
 	}
 
-	lpMsg->name[sizeof(lpMsg->name) - 1] = 0;
-	lpMsg->message[sizeof(lpMsg->message) - 1] = 0;
-	lpMsg->serverName[sizeof(lpMsg->serverName) - 1] = 0;
+	char name[sizeof(lpMsg->name)] = { 0 };
+	char postMessage[sizeof(lpMsg->message)] = { 0 };
+	char serverName[sizeof(lpMsg->serverName)] = { 0 };
+
+	memcpy(name, lpMsg->name, sizeof(name) - 1);
+	memcpy(postMessage, lpMsg->message, sizeof(postMessage) - 1);
+	memcpy(serverName, lpMsg->serverName, sizeof(serverName) - 1);
+
+	if (lpMsg->message[sizeof(lpMsg->message) - 1] != 0 ||
+		lpMsg->name[sizeof(lpMsg->name) - 1] != 0 ||
+		lpMsg->serverName[sizeof(lpMsg->serverName) - 1] != 0 ||
+		lpMsg->linkStart + lpMsg->linkLength > strlen(postMessage))
+	{
+		return;
+	}
 
 	for (int n = OBJECT_START_USER; n < MAX_OBJECT; n++)
 	{
@@ -853,10 +881,10 @@ void CCommandManager::DGGlobalPostLinkRecv(SDHP_GLOBAL_POST_LINK_SEND* lpMsg)
 			continue;
 		}
 
-		char message[60] = { 0 };
+		char formattedMessage[60] = { 0 };
 		BYTE finalLinkStart = 0;
 
-		if (BuildPostLinkMessage(lpMsg->type, lpMsg->serverName, lpMsg->message, lpMsg->linkStart, lpMsg->linkLength, gObj[n].Lang, message, sizeof(message), &finalLinkStart) == false)
+		if (BuildPostLinkMessage(lpMsg->type, serverName, postMessage, lpMsg->linkStart, lpMsg->linkLength, gObj[n].Lang, formattedMessage, sizeof(formattedMessage), &finalLinkStart) == false)
 		{
 			continue;
 		}
@@ -864,8 +892,8 @@ void CCommandManager::DGGlobalPostLinkRecv(SDHP_GLOBAL_POST_LINK_SEND* lpMsg)
 		PMSG_ITEM_POST_LINK_SEND pMsg;
 		pMsg.header.set(0xF3, 0xE8, sizeof(pMsg));
 		memset(pMsg.name, 0, sizeof(pMsg.name));
-		strncpy(pMsg.name, lpMsg->name, sizeof(pMsg.name) - 1);
-		memcpy(pMsg.message, message, sizeof(pMsg.message));
+		strncpy(pMsg.name, name, sizeof(pMsg.name) - 1);
+		memcpy(pMsg.message, formattedMessage, sizeof(pMsg.message));
 		pMsg.linkStart = finalLinkStart;
 		pMsg.linkLength = lpMsg->linkLength;
 		pMsg.style = (BYTE)(lpMsg->type % 3);

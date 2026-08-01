@@ -194,7 +194,7 @@ public:
 		BYTE linkLength,
 		const BYTE* itemInfo);
 
-	void DGGlobalPostLinkRecv(SDHP_GLOBAL_POST_LINK_SEND* lpMsg);
+	void DGGlobalPostLinkRecv(SDHP_GLOBAL_POST_LINK_SEND* lpMsg, int size);
 
 	void GCPostMessageGold(char* name, char* serverName, int message, char* text);
 

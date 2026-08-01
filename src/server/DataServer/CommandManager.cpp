@@ -103,11 +103,16 @@ void CCommandManager::GDCommandGrandResetRecv(SDHP_COMMAND_RESET_RECV* lpMsg, in
 
 void CCommandManager::GDGlobalPostLinkRecv(
 	SDHP_GLOBAL_POST_LINK_RECV* lpMsg,
-	int index)
+	int index,
+	int size)
 {
-	if (lpMsg == NULL || lpMsg->header.size != sizeof(SDHP_GLOBAL_POST_LINK_RECV) ||
+	if (lpMsg == NULL || size != sizeof(SDHP_GLOBAL_POST_LINK_RECV) ||
+		lpMsg->header.size != sizeof(SDHP_GLOBAL_POST_LINK_RECV) ||
 		lpMsg->type > 2 || lpMsg->linkLength == 0 ||
-		lpMsg->linkStart + lpMsg->linkLength >= sizeof(lpMsg->message))
+		lpMsg->linkStart + lpMsg->linkLength >= sizeof(lpMsg->message) ||
+		lpMsg->message[sizeof(lpMsg->message) - 1] != 0 ||
+		lpMsg->name[sizeof(lpMsg->name) - 1] != 0 ||
+		lpMsg->serverName[sizeof(lpMsg->serverName) - 1] != 0)
 	{
 		return;
 	}

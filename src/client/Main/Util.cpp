@@ -112,6 +112,16 @@ bool CheckBytes(DWORD Address, const BYTE* Expected, SIZE_T Size)
 		Size) == 0);
 }
 
+bool CheckRelativeCall(DWORD Address, DWORD Target)
+{
+	BYTE Expected[5] = { 0xE8, 0, 0, 0, 0 };
+	DWORD Relative = Target - (Address + sizeof(Expected));
+
+	memcpy(Expected + 1, &Relative, sizeof(Relative));
+
+	return CheckBytes(Address, Expected, sizeof(Expected));
+}
+
 void MemoryCpy(DWORD offset, void* value, DWORD size)
 {
 	DWORD OldProtect;

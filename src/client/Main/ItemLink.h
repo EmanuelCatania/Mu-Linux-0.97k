@@ -27,7 +27,7 @@ static_assert(sizeof(PMSG_ITEM_LINK_RECV) == 81, "Invalid item link receive pack
 
 static_assert(sizeof(PMSG_ITEM_LINK_SEND) == 70, "Invalid item link send packet size");
 
-struct PMSG_ITEM_POST_LINK_RECV
+struct PMSG_ITEM_POST_LINK_REQUEST
 {
 	PSBMSG_HEAD header; // C1:F3:E8
 	BYTE itemType[2];
@@ -38,7 +38,7 @@ struct PMSG_ITEM_POST_LINK_RECV
 	char message[60];
 };
 
-struct PMSG_ITEM_POST_LINK_SEND
+struct PMSG_ITEM_POST_LINK_RESPONSE
 {
 	PSBMSG_HEAD header; // C1:F3:E8
 	char name[11];
@@ -49,9 +49,9 @@ struct PMSG_ITEM_POST_LINK_SEND
 	BYTE ItemInfo[4];
 };
 
-static_assert(sizeof(PMSG_ITEM_POST_LINK_RECV) == 70, "Invalid item post link receive packet size");
+static_assert(sizeof(PMSG_ITEM_POST_LINK_REQUEST) == 70, "Invalid item post link request packet size");
 
-static_assert(sizeof(PMSG_ITEM_POST_LINK_SEND) == 82, "Invalid item post link send packet size");
+static_assert(sizeof(PMSG_ITEM_POST_LINK_RESPONSE) == 82, "Invalid item post link response packet size");
 
 class CItemLink
 {
@@ -71,9 +71,9 @@ public:
 
 	bool HandleMainChatSend();
 
-	void GCItemLinkRecv(PMSG_ITEM_LINK_RECV* lpMsg);
+	void GCItemLinkRecv(PMSG_ITEM_LINK_RECV* lpMsg, DWORD size);
 
-	void GCItemPostLinkRecv(PMSG_ITEM_POST_LINK_SEND* lpMsg);
+	void GCItemPostLinkRecv(PMSG_ITEM_POST_LINK_RESPONSE* lpMsg, DWORD size);
 
 	void RenderTooltip();
 
@@ -165,8 +165,6 @@ private:
 
 	static DWORD GetItemLinkTextColor(const ITEM* Item);
 
-	static bool IsExpectedCall(DWORD Address, DWORD Target);
-
 	static int GetTooltipLineHeight();
 
 	static int GetTooltipModelSize(const ITEM* Item);
@@ -243,8 +241,6 @@ private:
 	CHAT_LINK m_UiLinks[MAX_CHAT_LINES];
 
 	int m_UiLinkCursor;
-
-	DWORD m_LastUiRenderFrame;
 
 	DWORD m_LastUiOwner;
 

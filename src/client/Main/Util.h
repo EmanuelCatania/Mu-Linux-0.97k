@@ -14,6 +14,8 @@ void SetCompleteHook(BYTE head, DWORD offset, ...);
 
 bool CheckBytes(DWORD Address, const BYTE* Expected, SIZE_T Size);
 
+bool CheckRelativeCall(DWORD Address, DWORD Target);
+
 void MemoryCpy(DWORD offset, void* value, DWORD size);
 
 void MemorySet(DWORD offset, DWORD value, DWORD size);

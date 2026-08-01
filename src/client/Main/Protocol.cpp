@@ -430,18 +430,20 @@ bool CProtocol::TranslateProtocol(BYTE head, BYTE* lpMsg, int Size)
 					return true;
 				}
 
-				case 0xE7:
-				{
-					gItemLink.GCItemLinkRecv(
-						(PMSG_ITEM_LINK_RECV*)lpMsg);
+			case 0xE7:
+			{
+				gItemLink.GCItemLinkRecv(
+					(PMSG_ITEM_LINK_RECV*)lpMsg,
+					Size);
 
 					return true;
 				}
 
-				case 0xE8:
-				{
-					gItemLink.GCItemPostLinkRecv(
-						(PMSG_ITEM_POST_LINK_SEND*)lpMsg);
+			case 0xE8:
+			{
+				gItemLink.GCItemPostLinkRecv(
+					(PMSG_ITEM_POST_LINK_RESPONSE*)lpMsg,
+					Size);
 
 					return true;
 				}

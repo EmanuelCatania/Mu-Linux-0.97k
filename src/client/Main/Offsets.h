@@ -122,6 +122,7 @@
 #define RegisterWhisperName ((void(_cdecl*)(int count, const char* name)) 0x004801C0)
 #define ReceiveChatMessage ((void(_cdecl*)(void* message)) 0x00427630)
 #define RenderChatText ((int(_cdecl*)(int x, int y, const char* text, int width, int sort, SIZE* textSize)) 0x0047F7A0)
+#define RenderChatTextAddress 0x0047F7A0
 #define ChatLogBuffer 0x07DF9380
 #define ChatLogCount *(int*)0x07E11DA4
 #define ChatLogViewStart *(int*)0x00559CE0
@@ -131,6 +132,12 @@
 #define OpenTextData ((void(_cdecl*)()) 0x00510FE0)
 #define OpenDialogFile ((void(_cdecl*)(char* FileName)) 0x0047B020)
 #define SeparateTextIntoLines ((int(_cdecl*)(const char *lpszText, char *lpszSeparated, int iMaxLine, int iLineSize)) 0x0051D600)
+
+#define ItemLinkChatRenderTextCall 0x00480BC8
+#define ItemLinkChatWindowVTable 0x005525CC
+#define ItemLinkChatWindowLineRenderSlot 0x5C
+#define ItemLinkChatWindowLineRenderExpected 0x0040D610
+#define ItemLinkChatLogRenderMode 0x005590AC
 
 // Input
 #define InputText ((char(*)[256])0x07DB8710)

@@ -4,22 +4,20 @@
 #include "Protocol.h"
 #include "ItemManager.h"
 
-static const DWORD CHAT_RENDER_TEXT_CALL = 0x00480BC8;
-
-static const DWORD CHAT_WINDOW_VTABLE = 0x005525CC;
-static const DWORD CHAT_WINDOW_LINE_RENDER_SLOT = 0x5C;
-static const DWORD CHAT_WINDOW_LINE_RENDER_EXPECTED = 0x0040D610;
-
 /* UIChatLogWindow_LineLayout applies this mode-specific scroll offset before
  * calculating the Y coordinate in the traditional chat view. */
-static const DWORD CHAT_LOG_RENDER_MODE = 0x005590AC;
-
-static const BYTE CHAT_RENDER_TEXT_BYTES[5] =
-{
-	0xE8, 0xD3, 0xEB, 0xFF, 0xFF
-};
 
 static const DWORD ITEM_LINK_EQUIPMENT_FLAG = 0x80000000;
+
+static const DWORD CHAT_LINE_NODE_OFFSET = 0x64;
+static const DWORD CHAT_LINE_MESSAGE_OFFSET = 0x13;
+static const DWORD CHAT_LINE_SCROLL_OFFSET = 0x11C;
+static const DWORD CHAT_WINDOW_STATE_OFFSET = 0x88;
+static const DWORD CHAT_WINDOW_SCROLL_OFFSET = 0x8C;
+static const DWORD CHAT_WINDOW_POS_X_OFFSET = 0x2C;
+static const DWORD CHAT_WINDOW_POS_Y_OFFSET = 0x30;
+static const DWORD CHAT_ENTRY_MESSAGE_OFFSET = 0x0B;
+static const DWORD CHAT_ENTRY_TYPE_OFFSET = 0x10C;
 
 /* Existing client code passes visual RGB values to the legacy Color4b macro;
  * this encodes the opaque #08090C token background. */
@@ -39,6 +37,183 @@ static int (__thiscall* OriginalChatWindowLineRender)(
 	int This,
 	int LineIndex) = NULL;
 
+struct ITEM_LINK_CALL_HOOK
+{
+	DWORD Address;
+	DWORD Target;
+	DWORD Hook;
+	BYTE Original[5];
+	bool Installed;
+};
+
+static bool InstallRelativeCallHook(ITEM_LINK_CALL_HOOK* Hook)
+{
+	if (Hook == NULL ||
+		CheckRelativeCall(Hook->Address, Hook->Target) == false)
+	{
+		return false;
+	}
+
+	memcpy(Hook->Original, (const void*)Hook->Address, sizeof(Hook->Original));
+
+	BYTE Patch[5] = { 0xE8, 0, 0, 0, 0 };
+	DWORD Relative = Hook->Hook - (Hook->Address + sizeof(Patch));
+
+	memcpy(Patch + 1, &Relative, sizeof(Relative));
+
+	DWORD PreviousProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Hook->Address,
+		sizeof(Patch),
+		PAGE_EXECUTE_READWRITE,
+		&PreviousProtection) == FALSE)
+	{
+		return false;
+	}
+
+	memcpy((void*)Hook->Address, Patch, sizeof(Patch));
+
+	FlushInstructionCache(
+		GetCurrentProcess(),
+		(void*)Hook->Address,
+		sizeof(Patch));
+
+	DWORD IgnoredProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Hook->Address,
+		sizeof(Patch),
+		PreviousProtection,
+		&IgnoredProtection) == FALSE)
+	{
+		memcpy((void*)Hook->Address, Hook->Original, sizeof(Hook->Original));
+		FlushInstructionCache(
+			GetCurrentProcess(),
+			(void*)Hook->Address,
+			sizeof(Hook->Original));
+
+		return false;
+	}
+
+	Hook->Installed = true;
+
+	return true;
+}
+
+static void RestoreRelativeCallHook(ITEM_LINK_CALL_HOOK* Hook)
+{
+	if (Hook == NULL || Hook->Installed == false)
+	{
+		return;
+	}
+
+	DWORD PreviousProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Hook->Address,
+		sizeof(Hook->Original),
+		PAGE_EXECUTE_READWRITE,
+		&PreviousProtection) != FALSE)
+	{
+		memcpy(
+			(void*)Hook->Address,
+			Hook->Original,
+			sizeof(Hook->Original));
+
+		FlushInstructionCache(
+			GetCurrentProcess(),
+			(void*)Hook->Address,
+			sizeof(Hook->Original));
+
+		DWORD IgnoredProtection = 0;
+		VirtualProtect(
+			(void*)Hook->Address,
+			sizeof(Hook->Original),
+			PreviousProtection,
+			&IgnoredProtection);
+	}
+
+	Hook->Installed = false;
+}
+
+static bool InstallVtableHook(
+	DWORD Address,
+	DWORD Expected,
+	DWORD Hook,
+	DWORD* Original)
+{
+	if (Original == NULL ||
+		CheckBytes(Address, (const BYTE*)&Expected, sizeof(Expected)) == false)
+	{
+		return false;
+	}
+
+	*Original = *(DWORD*)Address;
+
+	DWORD PreviousProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Address,
+		sizeof(DWORD),
+		PAGE_EXECUTE_READWRITE,
+		&PreviousProtection) == FALSE)
+	{
+		return false;
+	}
+
+	*(DWORD*)Address = Hook;
+
+	FlushInstructionCache(
+		GetCurrentProcess(),
+		(void*)Address,
+		sizeof(DWORD));
+
+	DWORD IgnoredProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Address,
+		sizeof(DWORD),
+		PreviousProtection,
+		&IgnoredProtection) == FALSE)
+	{
+		*(DWORD*)Address = *Original;
+		FlushInstructionCache(
+			GetCurrentProcess(),
+			(void*)Address,
+			sizeof(DWORD));
+
+		return false;
+	}
+
+	return true;
+}
+
+static void RestoreVtableHook(DWORD Address, DWORD Original)
+{
+	DWORD PreviousProtection = 0;
+
+	if (VirtualProtect(
+		(void*)Address,
+		sizeof(DWORD),
+		PAGE_EXECUTE_READWRITE,
+		&PreviousProtection) != FALSE)
+	{
+		*(DWORD*)Address = Original;
+		FlushInstructionCache(
+			GetCurrentProcess(),
+			(void*)Address,
+			sizeof(DWORD));
+
+		DWORD IgnoredProtection = 0;
+		VirtualProtect(
+			(void*)Address,
+			sizeof(DWORD),
+			PreviousProtection,
+			&IgnoredProtection);
+	}
+}
+
 static const int ITEM_TOOLTIP_MODEL_SIZE = 64;
 static const int ITEM_TOOLTIP_MODEL_GAP = 8;
 
@@ -55,12 +230,6 @@ struct PMSG_STANDARD_CHAT
 
 CItemLink gItemLink;
 CItemLink::TOOLTIP_LAYOUT CItemLink::m_TooltipLayout = {};
-
-bool CItemLink::IsExpectedCall(DWORD Address, DWORD Target)
-{
-	return *(BYTE*)Address == 0xE8 &&
-		(DWORD)(Address + 5 + *(int*)(Address + 1)) == Target;
-}
 
 int CItemLink::GetTooltipLineHeight()
 {
@@ -422,15 +591,7 @@ static void ItemLinkDebug(const char* Format, ...)
 
 	OutputDebugStringA(Buffer);
 	OutputDebugStringA("\n");
-
-	FILE* File = NULL;
-
-	if (fopen_s(&File, "ItemLink-debug.log", "a") == 0 &&
-		File != NULL)
-	{
-		fprintf(File, "%s\n", Buffer);
-		fclose(File);
-	}
+	gConsole.Write((char*)"%s", Buffer);
 }
 #endif
 
@@ -456,7 +617,6 @@ CItemLink::CItemLink()
 
 	this->m_IdentityCount = 0;
 	this->m_UiLinkCursor = 0;
-	this->m_LastUiRenderFrame = MAXDWORD;
 	this->m_LastUiOwner = 0;
 
 	this->m_IdentityInitialized = false;
@@ -496,90 +656,115 @@ int CItemLink::GetTooltipModelSize(const ITEM* Item)
 
 bool CItemLink::Init()
 {
+	ITEM_LINK_CALL_HOOK ChatTextHook = {};
+	ChatTextHook.Address = ItemLinkChatRenderTextCall;
+	ChatTextHook.Target = RenderChatTextAddress;
+	ChatTextHook.Hook = (DWORD)&CItemLink::RenderChatTextHook;
+
+	ITEM_LINK_CALL_HOOK TooltipHooks[7] = {};
+
+	TooltipHooks[0].Address = ItemTooltipTextListCall;
+	TooltipHooks[0].Target = RenderItemTextListAddress;
+	TooltipHooks[0].Hook = (DWORD)&CItemLink::RenderTooltipTextListHook;
+	TooltipHooks[1].Address = ItemTooltipLineTextCall;
+	TooltipHooks[1].Target = RenderItemTextLineAddress;
+	TooltipHooks[1].Hook = (DWORD)&CItemLink::RenderTooltipLineHook;
+	TooltipHooks[2].Address = ItemTooltipBorderTopCall;
+	TooltipHooks[2].Target = (DWORD)RenderColor;
+	TooltipHooks[2].Hook = (DWORD)&CItemLink::RenderTooltipTopHook;
+	TooltipHooks[3].Address = ItemTooltipBorderLeftCall;
+	TooltipHooks[3].Target = (DWORD)RenderColor;
+	TooltipHooks[3].Hook = (DWORD)&CItemLink::RenderTooltipLeftHook;
+	TooltipHooks[4].Address = ItemTooltipBorderRightCall;
+	TooltipHooks[4].Target = (DWORD)RenderColor;
+	TooltipHooks[4].Hook = (DWORD)&CItemLink::RenderTooltipRightHook;
+	TooltipHooks[5].Address = ItemTooltipBorderBottomCall;
+	TooltipHooks[5].Target = (DWORD)RenderColor;
+	TooltipHooks[5].Hook = (DWORD)&CItemLink::RenderTooltipBottomHook;
+	TooltipHooks[6].Address = ItemTooltipFillCall;
+	TooltipHooks[6].Target = (DWORD)RenderColor;
+	TooltipHooks[6].Hook = (DWORD)&CItemLink::RenderTooltipFillHook;
+
+	DWORD LineRenderEntry =
+		ItemLinkChatWindowVTable + ItemLinkChatWindowLineRenderSlot;
+
 	if (this->IsSupportedClient() == false)
 	{
 		return false;
 	}
 
-	if (IsExpectedCall(ItemTooltipTextListCall, RenderItemTextListAddress) != false &&
-		IsExpectedCall(ItemTooltipLineTextCall, RenderItemTextLineAddress) != false &&
-		IsExpectedCall(ItemTooltipBorderTopCall, (DWORD)RenderColor) != false &&
-		IsExpectedCall(ItemTooltipBorderLeftCall, (DWORD)RenderColor) != false &&
-		IsExpectedCall(ItemTooltipBorderRightCall, (DWORD)RenderColor) != false &&
-		IsExpectedCall(ItemTooltipBorderBottomCall, (DWORD)RenderColor) != false &&
-		IsExpectedCall(ItemTooltipFillCall, (DWORD)RenderColor) != false)
-	{
-		SetCompleteHook(0xE8, ItemTooltipTextListCall, &CItemLink::RenderTooltipTextListHook);
-		SetCompleteHook(0xE8, ItemTooltipLineTextCall, &CItemLink::RenderTooltipLineHook);
-		SetCompleteHook(0xE8, ItemTooltipBorderTopCall, &CItemLink::RenderTooltipTopHook);
-		SetCompleteHook(0xE8, ItemTooltipBorderLeftCall, &CItemLink::RenderTooltipLeftHook);
-		SetCompleteHook(0xE8, ItemTooltipBorderRightCall, &CItemLink::RenderTooltipRightHook);
-		SetCompleteHook(0xE8, ItemTooltipBorderBottomCall, &CItemLink::RenderTooltipBottomHook);
-		SetCompleteHook(0xE8, ItemTooltipFillCall, &CItemLink::RenderTooltipFillHook);
-		this->m_TooltipHooksInstalled = true;
+	bool TooltipSupported = true;
 
-#if defined(_DEBUG)
-		ItemLinkDebug("[ItemLink] 3D tooltip layout hooks installed");
-#endif
-	}
-	else
+	for (int n = 0; n < (int)(sizeof(TooltipHooks) / sizeof(TooltipHooks[0])); n++)
 	{
-#if defined(_DEBUG)
-		ItemLinkDebug("[ItemLink] 3D tooltip layout unavailable; textual tooltip only");
-#endif
+		if (CheckRelativeCall(
+			TooltipHooks[n].Address,
+			TooltipHooks[n].Target) == false)
+		{
+			TooltipSupported = false;
+			break;
+		}
 	}
 
-	SetCompleteHook(
-		0xE8,
-		CHAT_RENDER_TEXT_CALL,
-		&CItemLink::RenderChatTextHook);
-
-	DWORD* LineRenderEntry = (DWORD*)
-		(CHAT_WINDOW_VTABLE + CHAT_WINDOW_LINE_RENDER_SLOT);
-
-	if (*LineRenderEntry != CHAT_WINDOW_LINE_RENDER_EXPECTED)
+	if (InstallRelativeCallHook(&ChatTextHook) == false)
 	{
 		return false;
 	}
 
-	DWORD PreviousProtection = 0;
+	DWORD OriginalLineRender = 0;
 
-	if (VirtualProtect(
+	if (InstallVtableHook(
 		LineRenderEntry,
-		sizeof(DWORD),
-		PAGE_EXECUTE_READWRITE,
-		&PreviousProtection) == FALSE)
+		ItemLinkChatWindowLineRenderExpected,
+		(DWORD)&CItemLink::RenderChatLineHook,
+		&OriginalLineRender) == false)
 	{
+		RestoreRelativeCallHook(&ChatTextHook);
+
 		return false;
 	}
 
 	OriginalChatWindowLineRender =
-		(int (__thiscall*)(int, int))*LineRenderEntry;
+		(int (__thiscall*)(int, int))OriginalLineRender;
 
-	*LineRenderEntry = (DWORD)&CItemLink::RenderChatLineHook;
+	if (TooltipSupported != false)
+	{
+		for (int n = 0; n < (int)(sizeof(TooltipHooks) / sizeof(TooltipHooks[0])); n++)
+		{
+			if (InstallRelativeCallHook(&TooltipHooks[n]) == false)
+			{
+				for (int Previous = n - 1; Previous >= 0; Previous--)
+				{
+					RestoreRelativeCallHook(&TooltipHooks[Previous]);
+				}
 
-	FlushInstructionCache(
-		GetCurrentProcess(),
-		LineRenderEntry,
-		sizeof(DWORD));
+				TooltipSupported = false;
 
-	DWORD IgnoredProtection = 0;
+				break;
+			}
+		}
+	}
 
-	VirtualProtect(
-		LineRenderEntry,
-		sizeof(DWORD),
-		PreviousProtection,
-		&IgnoredProtection);
+	this->m_TooltipHooksInstalled = TooltipSupported;
 
 #if defined(_DEBUG)
 	ItemLinkDebug(
 		"[ItemLink] render hook installed at %08X",
-		CHAT_RENDER_TEXT_CALL);
+		ItemLinkChatRenderTextCall);
 	ItemLinkDebug(
 		"[ItemLink] UI line hook installed vtable=%08X slot=%02X original=%08X",
-		CHAT_WINDOW_VTABLE,
-		CHAT_WINDOW_LINE_RENDER_SLOT,
+		ItemLinkChatWindowVTable,
+		ItemLinkChatWindowLineRenderSlot,
 		(DWORD)OriginalChatWindowLineRender);
+
+	if (TooltipSupported != false)
+	{
+		ItemLinkDebug("[ItemLink] 3D tooltip layout hooks installed");
+	}
+	else
+	{
+		ItemLinkDebug("[ItemLink] 3D tooltip layout unavailable; textual tooltip only");
+	}
 #endif
 
 	return true;
@@ -587,10 +772,17 @@ bool CItemLink::Init()
 
 bool CItemLink::IsSupportedClient()
 {
-	return CheckBytes(
-		CHAT_RENDER_TEXT_CALL,
-		CHAT_RENDER_TEXT_BYTES,
-		sizeof(CHAT_RENDER_TEXT_BYTES));
+	DWORD LineRenderEntry =
+		ItemLinkChatWindowVTable + ItemLinkChatWindowLineRenderSlot;
+	DWORD ExpectedLineRender = ItemLinkChatWindowLineRenderExpected;
+
+	return CheckRelativeCall(
+		ItemLinkChatRenderTextCall,
+		RenderChatTextAddress) &&
+		CheckBytes(
+			LineRenderEntry,
+			(const BYTE*)&ExpectedLineRender,
+			sizeof(ExpectedLineRender));
 }
 
 bool CItemLink::HandleLeftButtonDown()
@@ -825,7 +1017,7 @@ bool CItemLink::GetPointedItem(
 		return false;
 	}
 
-	for (int n = 0; n < INVENTORY_MAX_SIZE; n++)
+	for (int n = 0; n < INVENTORY_ITEM_SIZE; n++)
 	{
 		ITEM* Candidate = GetInventoryItem((BYTE)n);
 
@@ -855,7 +1047,7 @@ bool CItemLink::GetPointedItem(
 	 * tooltip is being updated. Match that copy against the real slots so
 	 * Shift+click still resolves to the authoritative slot.
 	 */
-	for (int n = 0; n < INVENTORY_MAX_SIZE; n++)
+	for (int n = 0; n < INVENTORY_ITEM_SIZE; n++)
 	{
 		ITEM* Candidate = GetInventoryItem((BYTE)n);
 
@@ -1006,7 +1198,7 @@ bool CItemLink::HandleOutgoingChat(BYTE* lpMsg, DWORD size)
 
 	if (IsPostMessage(Message) != false)
 	{
-		PMSG_ITEM_POST_LINK_RECV pMsg;
+		PMSG_ITEM_POST_LINK_REQUEST pMsg;
 
 		pMsg.header.set(0xF3, 0xE8, sizeof(pMsg));
 
@@ -1229,40 +1421,62 @@ void CItemLink::ReceiveItemLinkMessage(
 
 }
 
-void CItemLink::GCItemLinkRecv(PMSG_ITEM_LINK_RECV* lpMsg)
+void CItemLink::GCItemLinkRecv(PMSG_ITEM_LINK_RECV* lpMsg, DWORD size)
 {
-	if (lpMsg == NULL || lpMsg->header.size != sizeof(PMSG_ITEM_LINK_RECV))
+	int MessageLength = (lpMsg != NULL) ?
+		(int)strnlen_s(lpMsg->message, sizeof(lpMsg->message)) : 0;
+
+	if (lpMsg == NULL || size != sizeof(PMSG_ITEM_LINK_RECV) ||
+		lpMsg->header.size != sizeof(PMSG_ITEM_LINK_RECV) ||
+		lpMsg->name[sizeof(lpMsg->name) - 1] != 0 ||
+		lpMsg->message[sizeof(lpMsg->message) - 1] != 0 ||
+		lpMsg->linkLength == 0 ||
+		lpMsg->linkStart + lpMsg->linkLength > MessageLength)
 	{
 		return;
 	}
 
-	lpMsg->name[sizeof(lpMsg->name) - 1] = 0;
-	lpMsg->message[sizeof(lpMsg->message) - 1] = 0;
+	char Name[sizeof(lpMsg->name)] = { 0 };
+	char Message[sizeof(lpMsg->message)] = { 0 };
+
+	memcpy(Name, lpMsg->name, sizeof(Name) - 1);
+	memcpy(Message, lpMsg->message, sizeof(Message) - 1);
 
 	this->ReceiveItemLinkMessage(
-		lpMsg->name,
-		lpMsg->message,
+		Name,
+		Message,
 		lpMsg->linkStart,
 		lpMsg->linkLength,
 		lpMsg->ItemInfo,
 		0xFF);
 }
 
-void CItemLink::GCItemPostLinkRecv(PMSG_ITEM_POST_LINK_SEND* lpMsg)
+void CItemLink::GCItemPostLinkRecv(PMSG_ITEM_POST_LINK_RESPONSE* lpMsg, DWORD size)
 {
+	int MessageLength = (lpMsg != NULL) ?
+		(int)strnlen_s(lpMsg->message, sizeof(lpMsg->message)) : 0;
+
 	if (lpMsg == NULL ||
-		lpMsg->header.size != sizeof(PMSG_ITEM_POST_LINK_SEND) ||
-		lpMsg->style > 2)
+		size != sizeof(PMSG_ITEM_POST_LINK_RESPONSE) ||
+		lpMsg->header.size != sizeof(PMSG_ITEM_POST_LINK_RESPONSE) ||
+		lpMsg->style > 2 ||
+		lpMsg->name[sizeof(lpMsg->name) - 1] != 0 ||
+		lpMsg->message[sizeof(lpMsg->message) - 1] != 0 ||
+		lpMsg->linkLength == 0 ||
+		lpMsg->linkStart + lpMsg->linkLength > MessageLength)
 	{
 		return;
 	}
 
-	lpMsg->name[sizeof(lpMsg->name) - 1] = 0;
-	lpMsg->message[sizeof(lpMsg->message) - 1] = 0;
+	char Name[sizeof(lpMsg->name)] = { 0 };
+	char Message[sizeof(lpMsg->message)] = { 0 };
+
+	memcpy(Name, lpMsg->name, sizeof(Name) - 1);
+	memcpy(Message, lpMsg->message, sizeof(Message) - 1);
 
 	this->ReceiveItemLinkMessage(
-		lpMsg->name,
-		lpMsg->message,
+		Name,
+		Message,
 		lpMsg->linkStart,
 		lpMsg->linkLength,
 		lpMsg->ItemInfo,
@@ -1300,10 +1514,10 @@ void CItemLink::ReadIdentity(
 	strncpy_s(
 		Identity->message,
 		sizeof(Identity->message),
-		(char*)(Entry + 0x0B),
+		(char*)(Entry + CHAT_ENTRY_MESSAGE_OFFSET),
 		_TRUNCATE);
 
-	Identity->type = *(BYTE*)(Entry + 0x10C);
+	Identity->type = *(BYTE*)(Entry + CHAT_ENTRY_TYPE_OFFSET);
 }
 
 bool CItemLink::IdentityEquals(
@@ -1684,7 +1898,7 @@ void CItemLink::RenderUiLink(
 	int This,
 	int LineIndex)
 {
-	if (This == 0 || LineIndex < 0 || LineIndex > MAX_CHAT_LINES)
+	if (This == 0 || LineIndex < 0 || LineIndex >= MAX_CHAT_LINES)
 	{
 		return;
 	}
@@ -1710,17 +1924,16 @@ void CItemLink::RenderUiLink(
 		}
 
 		this->m_LastUiOwner = (DWORD)This;
-		this->m_LastUiRenderFrame = ChatLogRenderFrame;
 	}
 
-	DWORD LineNode = *(DWORD*)(This + 0x64);
+	DWORD LineNode = *(DWORD*)(This + CHAT_LINE_NODE_OFFSET);
 
 	if (LineNode == 0)
 	{
 		return;
 	}
 
-	char* Message = (char*)(LineNode + 0x13);
+	char* Message = (char*)(LineNode + CHAT_LINE_MESSAGE_OFFSET);
 	int MessageLength = (int)strnlen_s(Message, CHAT_TEXT_SIZE);
 
 	if (MessageLength <= 0 || MessageLength >= CHAT_TEXT_SIZE)
@@ -1735,13 +1948,13 @@ void CItemLink::RenderUiLink(
 	 * scrolls upward. */
 	int LayoutLineIndex = LineIndex;
 
-	if (*(int*)CHAT_LOG_RENDER_MODE == 0)
+	if (*(int*)ItemLinkChatLogRenderMode == 0)
 	{
-		int ScrollOffset = *(int*)(LineNode + 0x11C);
+		int ScrollOffset = *(int*)(LineNode + CHAT_LINE_SCROLL_OFFSET);
 
-		if (ScrollOffset != 0 && *(int*)(This + 0x88) == 0)
+		if (ScrollOffset != 0 && *(int*)(This + CHAT_WINDOW_STATE_OFFSET) == 0)
 		{
-			if (((*(int*)(This + 0x8C) - ScrollOffset) -
+			if (((*(int*)(This + CHAT_WINDOW_SCROLL_OFFSET) - ScrollOffset) -
 				LineIndex - 1) < 0)
 			{
 				return;
@@ -1872,10 +2085,10 @@ void CItemLink::RenderUiLink(
 		sprintf_s(NamePrefix, sizeof(NamePrefix), "%s: ", Name);
 	}
 
-	int X = *(int*)(This + 0x2C) + 10 +
+	int X = *(int*)(This + CHAT_WINDOW_POS_X_OFFSET) + 10 +
 		GetTextWidth(NamePrefix) + GetTextWidth(Prefix);
 
-	int Y = *(int*)(This + 0x30) + (LayoutLineIndex * -13) - 16;
+	int Y = *(int*)(This + CHAT_WINDOW_POS_Y_OFFSET) + (LayoutLineIndex * -13) - 16;
 
 	DWORD OriginalColor = SetTextColor;
 	DWORD OriginalBackgroundColor = SetBackgroundTextColor;
@@ -2031,7 +2244,13 @@ int CItemLink::RenderChatTextHook(
 		&gItemLink.m_Links[Index].item);
 	SetBackgroundTextColor = ITEM_LINK_BACKGROUND_COLOR;
 
-	RenderChatText(CurrentX, Y, Token, 0, Sort, NULL);
+	int Result = RenderChatText(
+		CurrentX,
+		Y,
+		Token,
+		0,
+		Sort,
+		(Suffix[0] == 0) ? TextSize : NULL);
 
 	Link->hitX = CurrentX;
 
@@ -2047,8 +2266,6 @@ int CItemLink::RenderChatTextHook(
 
 	SetBackgroundTextColor = OriginalBackgroundColor;
 	SetTextColor = OriginalColor;
-
-	int Result = 0;
 
 	if (Suffix[0] != 0)
 	{
