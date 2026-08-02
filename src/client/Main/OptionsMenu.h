@@ -10,6 +10,7 @@ class COptionsMenu
 		OPTION_ANTILAG = 2,
 		OPTION_WINDOW = 3,
 		OPTION_FONT = 4,
+		OPTION_NOTIFICATIONS = 5,
 		MAX_OPTIONS,
 	};
 
@@ -88,6 +89,12 @@ private:
 
 	void RenderFont();
 	bool CheckFont();
+
+	void RenderNotifications();
+	bool CheckNotifications();
+	void RenderNotificationsTitle(float PosX, float PosY);
+	void RenderNotificationWarning(float PosX, float PosY);
+	bool CheckNotificationWarning(int PosX, int PosY);
 	void RenderFontTitle(float PosX, float PosY);
 	void RenderFontStyle(float PosX, float& PosY);
 	bool CheckFontStyle(int PosX, int PosY);

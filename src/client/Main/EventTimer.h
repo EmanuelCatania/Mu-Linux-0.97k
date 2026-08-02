@@ -47,7 +47,7 @@ public:
 
 	void UpdateMouse();
 
-	void GCEventTimeRecv(PMSG_EVENT_TIME_RECV* lpMsg);
+	bool GCEventTimeRecv(PMSG_EVENT_TIME_RECV* lpMsg, int Size);
 
 private:
 

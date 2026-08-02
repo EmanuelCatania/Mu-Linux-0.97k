@@ -12,6 +12,7 @@
 #include "ItemValue.h"
 #include "Language.h"
 #include "MoveList.h"
+#include "Notification.h"
 #include "PacketManager.h"
 #include "PrintPlayer.h"
 #include "Protect.h"
@@ -464,7 +465,7 @@ bool CProtocol::TranslateProtocol(BYTE head, BYTE* lpMsg, int Size)
 
 				case 0xE6:
 				{
-					gEventTimer.GCEventTimeRecv((PMSG_EVENT_TIME_RECV*)lpMsg);
+					gEventTimer.GCEventTimeRecv((PMSG_EVENT_TIME_RECV*)lpMsg, Size);
 
 					return true;
 				}
@@ -524,7 +525,7 @@ void CProtocol::GCUserDieRecv(PMSG_USER_DIE_RECV* lpMsg)
 	{
 		gPrintPlayer.ViewCurHP = 0;
 
-		gWindow.ShowTrayMessage((char*)(Hero + 0x1C1), "You Died");
+		gNotification.NotifyDeath();
 	}
 }
 
@@ -785,6 +786,8 @@ void CProtocol::GCCharacterMaxLevelRecv(PMSG_CHARACTER_MAX_LEVEL_RECV* lpMsg)
 
 void CProtocol::GCConnectClientRecv(PMSG_CONNECT_CLIENT_RECV* lpMsg)
 {
+	gNotification.ResetSession();
+
 	gPrintPlayer.ViewIndex = MAKE_NUMBERW(lpMsg->index[0], lpMsg->index[1]);
 
 	gLanguage.SendLanguage();
@@ -799,16 +802,22 @@ void CProtocol::GCConnectAccountRecv(PMSG_CONNECT_ACCOUNT_RECV* lpMsg)
 
 void CProtocol::GCCloseClientRecv(PMSG_CLOSE_CLIENT_RECV* lpMsg)
 {
+	gNotification.ResetSession();
+
 	gReconnect.ReconnectOnCloseClient(lpMsg->result);
 }
 
 void CProtocol::GCCharacterListRecv(PMSG_CHARACTER_LIST_RECV* lpMsg)
 {
+	gNotification.ResetSession();
+
 	gReconnect.ReconnectOnCharacterList();
 }
 
 void CProtocol::GCCharacterInfoRecv(PMSG_CHARACTER_INFO_RECV* lpMsg)
 {
+	gNotification.ResetSession();
+
 	gReconnect.ReconnectOnCharacterInfo();
 }
 

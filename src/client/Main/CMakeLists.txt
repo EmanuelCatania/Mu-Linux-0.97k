@@ -36,6 +36,7 @@ add_library(Main SHARED
   MathLib.cpp
   MiniMap.cpp
   MoveList.cpp
+	Notification.cpp
   MP3.cpp
   OpenglUtil.cpp
   OptionsMenu.cpp

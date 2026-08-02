@@ -206,6 +206,7 @@
     <ClCompile Include="MapManager.cpp" />
     <ClCompile Include="MathLib.cpp" />
     <ClCompile Include="MoveList.cpp" />
+    <ClCompile Include="Notification.cpp" />
     <ClCompile Include="MP3.cpp" />
     <ClCompile Include="Camera3D.cpp" />
     <ClCompile Include="OpenglUtil.cpp" />

@@ -291,6 +291,9 @@
     <ClCompile Include="MoveList.cpp">
       <Filter>Interface</Filter>
     </ClCompile>
+    <ClCompile Include="Notification.cpp">
+      <Filter>Interface</Filter>
+    </ClCompile>
     <ClCompile Include="MapManager.cpp">
       <Filter>Map</Filter>
     </ClCompile>

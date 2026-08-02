@@ -2,8 +2,17 @@
 #include "EventTimer.h"
 #include "MiniMap.h"
 #include "MoveList.h"
+#include "Notification.h"
 
 CEventTimer gEventTimer;
+
+#ifdef _DEBUG
+static void EventTimerDebug(const char* Message)
+{
+	OutputDebugStringA(Message);
+	OutputDebugStringA("\n");
+}
+#endif
 
 CEventTimer::CEventTimer()
 {
@@ -20,6 +29,8 @@ CEventTimer::CEventTimer()
 	this->MainEndX = (this->MainPosX + 5.0f) + (this->MainWidth - 10.0f);
 
 	this->m_EventTimeInfo.clear();
+
+	this->m_EventTimeInfo.reserve(64);
 }
 
 CEventTimer::~CEventTimer()
@@ -320,22 +331,49 @@ char* CEventTimer::GetEventRemainTime(int status, int time)
 	return buff;
 }
 
-void CEventTimer::GCEventTimeRecv(PMSG_EVENT_TIME_RECV* lpMsg)
+bool CEventTimer::GCEventTimeRecv(PMSG_EVENT_TIME_RECV* lpMsg, int Size)
 {
-	this->m_EventTimeInfo.clear();
+	if (lpMsg == NULL || Size < (int)sizeof(PMSG_EVENT_TIME_RECV) || Size > (int)(sizeof(PMSG_EVENT_TIME_RECV) + (64 * sizeof(PMSG_EVENT_TIME))) ||
+		lpMsg->header.type != 0xC2 || lpMsg->header.head != 0xF3 || lpMsg->header.subh != 0xE6 ||
+		MAKEWORD(lpMsg->header.size[1], lpMsg->header.size[0]) != Size ||
+		lpMsg->count > 64 || Size != (int)(sizeof(PMSG_EVENT_TIME_RECV) + (lpMsg->count * sizeof(PMSG_EVENT_TIME))))
+	{
+#ifdef _DEBUG
+		EventTimerDebug("EventTimer: rejected invalid E6 packet.");
+#endif
+		return false;
+	}
+
+	PMSG_EVENT_TIME Events[64];
+
+	memset(Events, 0, sizeof(Events));
 
 	for (int i = 0; i < lpMsg->count; i++)
 	{
 		PMSG_EVENT_TIME* lpInfo = (PMSG_EVENT_TIME*)(((BYTE*)lpMsg) + sizeof(PMSG_EVENT_TIME_RECV) + (sizeof(PMSG_EVENT_TIME) * i));
 
-		PMSG_EVENT_TIME info;
+		if (memchr(lpInfo->name, 0, sizeof(lpInfo->name)) == NULL || lpInfo->status > EVENT_STATE_START)
+		{
+#ifdef _DEBUG
+			EventTimerDebug("EventTimer: rejected invalid E6 record.");
+#endif
+			return false;
+		}
 
-		memcpy(info.name, lpInfo->name, sizeof(info.name));
-
-		info.status = lpInfo->status;
-
-		info.time = lpInfo->time;
-
-		this->m_EventTimeInfo.push_back(info);
+		memcpy(Events[i].name, lpInfo->name, sizeof(Events[i].name));
+		Events[i].name[sizeof(Events[i].name) - 1] = 0;
+		Events[i].status = lpInfo->status;
+		Events[i].time = lpInfo->time;
 	}
+
+	this->m_EventTimeInfo.clear();
+
+	for (int i = 0; i < lpMsg->count; i++)
+	{
+		this->m_EventTimeInfo.push_back(Events[i]);
+	}
+
+	gNotification.OnEventSnapshot(Events, lpMsg->count);
+
+	return true;
 }

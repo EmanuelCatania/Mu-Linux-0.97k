@@ -3,6 +3,7 @@
 #include "Controller.h"
 #include "Input.h"
 #include "ItemLink.h"
+#include "Notification.h"
 #include "Font.h"
 #include "PingSystem.h"
 #include "PrintPlayer.h"
@@ -10,10 +11,75 @@
 #include "Protocol.h"
 #include "resource.h"
 
+#ifndef NIIF_RESPECT_QUIET_TIME
+#define NIIF_RESPECT_QUIET_TIME 0x00000080
+#endif
+
+#ifndef NIF_SHOWTIP
+#define NIF_SHOWTIP 0x00000080
+#endif
+
 CWindow	gWindow;
+
+static UINT TaskbarCreatedMessage = 0;
+
+#ifdef _DEBUG
+static void WindowDebug(const char* Format, ...)
+{
+	char Buffer[512] = { 0 };
+	va_list Args;
+	va_start(Args, Format);
+	vsprintf_s(Buffer, sizeof(Buffer), Format, Args);
+	va_end(Args);
+
+	OutputDebugStringA(Buffer);
+	OutputDebugStringA("\n");
+}
+#endif
+
+static bool CopyAnsiToWide(const char* Source, wchar_t* Destination, int Capacity)
+{
+	if (Source == NULL || Destination == NULL || Capacity <= 0)
+	{
+		return false;
+	}
+
+	Destination[0] = 0;
+
+	int Length = MultiByteToWideChar(1252, MB_PRECOMPOSED, Source, -1, Destination, Capacity);
+
+	if (Length <= 0)
+	{
+		Destination[0] = 0;
+		return false;
+	}
+
+	Destination[Capacity - 1] = 0;
+
+	return true;
+}
+
+static bool TickIsBefore(DWORD Current, DWORD Deadline)
+{
+	return (Deadline != 0 && (LONG)(Current - Deadline) < 0);
+}
 
 CWindow::CWindow()
 {
+	InitializeCriticalSection(&this->m_NotificationCriticalSection);
+
+	this->m_WindowIcon = NULL;
+	this->m_TrayMode = TRAY_MODE_NONE;
+	this->m_TrayIconVisible = false;
+	this->m_WindowReady = false;
+	this->m_WindowActive = false;
+	this->m_WindowMinimized = false;
+	this->m_NotificationQueueHead = 0;
+	this->m_NotificationQueueTail = 0;
+	this->m_NotificationQueueCount = 0;
+	this->m_NextNotificationTick = 0;
+	this->m_LastTrayToggleTick = 0;
+
 	this->iResolutionValues[R640x480] = std::make_pair<WORD, WORD>(640, 480);
 	this->iResolutionValues[R800x600] = std::make_pair<WORD, WORD>(800, 600);
 	this->iResolutionValues[R1024x768] = std::make_pair<WORD, WORD>(1024, 768);
@@ -24,6 +90,8 @@ CWindow::CWindow()
 	this->iResolutionValues[R1920x1080] = std::make_pair<WORD, WORD>(1920, 1080);
 
 	sprintf_s(this->m_WindowName, sizeof(this->m_WindowName), "%s", gProtect.m_MainInfo.WindowName);
+
+	this->m_CharacterName[0] = 0;
 
 	this->m_WindowMode = WINDOW_MODE;
 
@@ -42,6 +110,16 @@ CWindow::CWindow()
 
 CWindow::~CWindow()
 {
+	this->RemoveTrayIcon();
+
+	if (this->m_WindowIcon != NULL)
+	{
+		DestroyIcon(this->m_WindowIcon);
+		this->m_WindowIcon = NULL;
+	}
+
+	DeleteCriticalSection(&this->m_NotificationCriticalSection);
+
 	char Text[33] = { 0 };
 
 	wsprintf(Text, "%d", this->m_WindowMode);
@@ -60,6 +138,8 @@ CWindow::~CWindow()
 void CWindow::Init(HINSTANCE hins)
 {
 	this->Instance = hins;
+
+	TaskbarCreatedMessage = RegisterWindowMessage("TaskbarCreated");
 
 	this->m_WindowIcon = (HICON)LoadImage(hins, MAKEINTRESOURCE(IDI_ICON), IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR);
 
@@ -93,8 +173,51 @@ LONG WINAPI CWindow::FixDisplaySettingsOnClose(DEVMODEA* lpDevMode, DWORD dwFlag
 
 LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+	if (TaskbarCreatedMessage != 0 && msg == TaskbarCreatedMessage)
+	{
+		gWindow.HandleTaskbarCreated();
+
+		return 0;
+	}
+
 	switch (msg)
 	{
+		case WM_ACTIVATE:
+		{
+			if (LOWORD(wParam) == WA_INACTIVE)
+			{
+				gWindow.m_WindowActive = false;
+			}
+			else
+			{
+				gWindow.HandleWindowActivated();
+			}
+
+			break;
+		}
+
+		case WM_ACTIVATEAPP:
+		{
+			if (wParam == FALSE)
+			{
+				gWindow.m_WindowActive = false;
+			}
+			else if (GetForegroundWindow() == hwnd && !IsIconic(hwnd))
+			{
+				gWindow.HandleWindowActivated();
+			}
+
+			break;
+		}
+
+		case WM_DESTROY:
+		{
+			gWindow.m_WindowReady = false;
+			gWindow.m_TrayMode = TRAY_MODE_NONE;
+			gWindow.RemoveTrayIcon();
+
+			break;
+		}
 		case WM_KEYDOWN:
 		{
 			if (gItemLink.HandleKeyDown(wParam))
@@ -174,6 +297,15 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 		case WM_SIZE: // Fix disconnect when minimize
 		{
+			if (wParam == SIZE_MINIMIZED)
+			{
+				gWindow.m_WindowMinimized = true;
+			}
+			else if (wParam == SIZE_RESTORED || wParam == SIZE_MAXIMIZED)
+			{
+				gWindow.m_WindowMinimized = false;
+			}
+
 			return 0;
 		}
 
@@ -181,6 +313,15 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		{
 			switch (wParam)
 			{
+				case WM_NOTIFICATION_TIMER:
+				{
+					KillTimer(hwnd, WM_NOTIFICATION_TIMER);
+
+					gWindow.ProcessNotificationQueue();
+
+					return 0;
+				}
+
 				case WM_AUTOCLICKTIMER:
 				{
 					gController.AutoClickState ^= 1;
@@ -213,17 +354,40 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 		case WM_TRAY_MODE_MESSAGE:
 		{
-			switch (lParam)
+			if ((UINT)HIWORD(lParam) != WM_TRAY_MODE_ICON)
 			{
-				case WM_LBUTTONDOWN:
-				{
-					gWindow.ToggleTrayMode();
+				break;
+			}
 
-					break;
+			UINT TrayMessage = (UINT)LOWORD(lParam);
+
+			if (TrayMessage == NIN_BALLOONUSERCLICK)
+			{
+				gWindow.RestoreFromNotification();
+			}
+			else if (TrayMessage == WM_LBUTTONUP || TrayMessage == NIN_SELECT
+			#ifdef NIN_KEYSELECT
+				|| TrayMessage == NIN_KEYSELECT
+			#endif
+				)
+			{
+				DWORD Tick = GetTickCount();
+
+				if (gWindow.m_LastTrayToggleTick == 0 || (Tick - gWindow.m_LastTrayToggleTick) >= 250)
+				{
+					gWindow.m_LastTrayToggleTick = Tick;
+					gWindow.RestoreFromNotification();
 				}
 			}
 
 			break;
+		}
+
+		case WM_NOTIFICATION_MESSAGE:
+		{
+			gWindow.ProcessNotificationQueue();
+
+			return 0;
 		}
 	}
 
@@ -390,96 +554,367 @@ bool CWindow::CreateOpenglWindow()
 
 	SetFocus(g_hWnd); // Give the window keyboard focus.
 
+	gWindow.m_WindowReady = true;
+	gWindow.m_WindowActive = true;
+	gWindow.m_WindowMinimized = false;
+	gWindow.m_TrayMode = TRAY_MODE_NONE;
+	gWindow.RemoveTrayIcon();
+
 	return true;
 }
 
 void CWindow::ToggleTrayMode()
 {
-	if (IsWindowVisible(g_hWnd) == FALSE)
+	if (this->m_TrayMode == TRAY_MODE_F12)
 	{
-		ShowWindow(g_hWnd, SW_SHOW);
+		this->RestoreFromNotification();
+	}
+	else if (this->m_TrayMode == TRAY_MODE_NOTIFICATION)
+	{
+		this->m_TrayMode = TRAY_MODE_F12;
 
-		this->ShowTrayNotify(false);
+		ShowWindow(g_hWnd, SW_HIDE);
+
+		if (!this->EnsureTrayIcon(TRAY_MODE_F12))
+		{
+			this->m_TrayMode = TRAY_MODE_NONE;
+			ShowWindow(g_hWnd, SW_SHOW);
+		}
 	}
 	else
 	{
+		this->m_TrayMode = TRAY_MODE_F12;
+		this->m_WindowActive = false;
+
 		ShowWindow(g_hWnd, SW_HIDE);
 
-		this->ShowTrayNotify(true);
-
-		//this->ShowTrayMessage(gProtect.m_MainInfo.WindowName, "Ha sido minimizado.");
+		if (!this->EnsureTrayIcon(TRAY_MODE_F12))
+		{
+			this->m_TrayMode = TRAY_MODE_NONE;
+			ShowWindow(g_hWnd, SW_SHOW);
+		}
 	}
 }
 
-void CWindow::ShowTrayNotify(bool mode)
+bool CWindow::IsInactive() const
 {
-	NOTIFYICONDATA nid;
-
-	memset(&nid, 0, sizeof(nid));
-
-	nid.cbSize = sizeof(NOTIFYICONDATA);
-
-	nid.hWnd = g_hWnd;
-
-	nid.uID = WM_TRAY_MODE_ICON;
-
-	nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_INFO;
-
-	nid.uCallbackMessage = WM_TRAY_MODE_MESSAGE;
-
-	nid.hIcon = this->m_WindowIcon;
-
-	nid.dwInfoFlags = NIIF_INFO;
-
-	nid.uTimeout = 5000;
-
-	strcpy_s(nid.szInfo, "I'm Here");
-
-	strcpy_s(nid.szInfoTitle, gProtect.m_MainInfo.WindowName);
-
-	strcpy_s(nid.szTip, gProtect.m_MainInfo.WindowName);
-
-	Shell_NotifyIcon(((mode == false) ? NIM_DELETE : NIM_ADD), &nid);
+	return (!this->m_WindowReady || this->m_TrayMode != TRAY_MODE_NONE || !this->m_WindowActive || this->m_WindowMinimized || GetForegroundWindow() != g_hWnd || IsWindowVisible(g_hWnd) == FALSE);
 }
 
-void CWindow::ShowTrayMessage(char* Title, char* Message)
+void CWindow::HandleWindowActivated()
 {
-	NOTIFYICONDATA Icon = { 0 };
+	this->m_WindowActive = true;
 
-	Icon.cbSize = sizeof(NOTIFYICONDATA);
+	if (this->m_TrayMode != TRAY_MODE_F12)
+	{
+		this->m_TrayMode = TRAY_MODE_NONE;
+		this->RemoveTrayIcon();
+		this->ClearNotificationQueue();
+	}
 
-	Icon.uID = WM_TRAY_MODE_ICON;
+	gNotification.Update();
+}
 
+const char* CWindow::GetWindowName() const
+{
+	return this->m_WindowName;
+}
+
+const char* CWindow::GetCharacterName() const
+{
+	return this->m_CharacterName;
+}
+
+bool CWindow::EnsureTrayIcon(eTrayMode Mode)
+{
+	if (Mode == TRAY_MODE_NONE || g_hWnd == NULL || this->m_WindowIcon == NULL)
+	{
+		return false;
+	}
+
+	if (this->m_TrayMode == TRAY_MODE_F12 && Mode == TRAY_MODE_NOTIFICATION)
+	{
+		Mode = TRAY_MODE_F12;
+	}
+
+	if (this->m_TrayIconVisible)
+	{
+		this->m_TrayMode = Mode;
+		return true;
+	}
+
+	NOTIFYICONDATAW Icon;
+
+	memset(&Icon, 0, sizeof(Icon));
+
+	Icon.cbSize = sizeof(Icon);
 	Icon.hWnd = g_hWnd;
-
-	Icon.uFlags = NIF_ICON | NIF_MESSAGE | NIF_INFO;
-
+	Icon.uID = WM_TRAY_MODE_ICON;
+	Icon.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_SHOWTIP;
+	Icon.uCallbackMessage = WM_TRAY_MODE_MESSAGE;
 	Icon.hIcon = this->m_WindowIcon;
 
+	if (!CopyAnsiToWide(this->m_WindowName, Icon.szTip, ARRAYSIZE(Icon.szTip)))
+	{
+		CopyAnsiToWide("MU Online", Icon.szTip, ARRAYSIZE(Icon.szTip));
+	}
+
+	if (!Shell_NotifyIconW(NIM_ADD, &Icon))
+	{
+#ifdef _DEBUG
+		WindowDebug("Shell_NotifyIconW(NIM_ADD) failed: %lu", GetLastError());
+#endif
+		return false;
+	}
+
+	Icon.uVersion = NOTIFYICON_VERSION_4;
+
+	if (!Shell_NotifyIconW(NIM_SETVERSION, &Icon))
+	{
+#ifdef _DEBUG
+		WindowDebug("Shell_NotifyIconW(NIM_SETVERSION) failed: %lu", GetLastError());
+#endif
+		if (!Shell_NotifyIconW(NIM_DELETE, &Icon))
+		{
+#ifdef _DEBUG
+			WindowDebug("Shell_NotifyIconW(NIM_DELETE) cleanup failed: %lu", GetLastError());
+#endif
+		}
+		return false;
+	}
+
+	this->m_TrayIconVisible = true;
+	this->m_TrayMode = Mode;
+
+	return true;
+}
+
+void CWindow::RemoveTrayIcon()
+{
+	if (!this->m_TrayIconVisible || g_hWnd == NULL)
+	{
+		this->m_TrayIconVisible = false;
+		return;
+	}
+
+	NOTIFYICONDATAW Icon;
+
+	memset(&Icon, 0, sizeof(Icon));
+
+	Icon.cbSize = sizeof(Icon);
+	Icon.hWnd = g_hWnd;
+	Icon.uID = WM_TRAY_MODE_ICON;
+
+	if (!Shell_NotifyIconW(NIM_DELETE, &Icon))
+	{
+#ifdef _DEBUG
+		WindowDebug("Shell_NotifyIconW(NIM_DELETE) failed: %lu", GetLastError());
+#endif
+	}
+
+	this->m_TrayIconVisible = false;
+}
+
+bool CWindow::IsNotificationAllowed() const
+{
+	if (!this->IsInactive())
+	{
+		return false;
+	}
+
+	QUERY_USER_NOTIFICATION_STATE State;
+
+	if (SUCCEEDED(SHQueryUserNotificationState(&State)) && State != QUNS_ACCEPTS_NOTIFICATIONS)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void CWindow::QueueNotification(const char* Title, const char* Message)
+{
+	if (Title == NULL || Message == NULL || !this->IsInactive() || g_hWnd == NULL)
+	{
+		return;
+	}
+
+	EnterCriticalSection(&this->m_NotificationCriticalSection);
+
+	if (this->m_NotificationQueueCount >= NOTIFICATION_QUEUE_SIZE)
+	{
+		LeaveCriticalSection(&this->m_NotificationCriticalSection);
+
+#ifdef _DEBUG
+		WindowDebug("Notification queue full; dropping newest message.");
+#endif
+
+		return;
+	}
+
+	NOTIFICATION_MESSAGE* Item = &this->m_NotificationQueue[this->m_NotificationQueueTail];
+
+	strncpy_s(Item->Title, sizeof(Item->Title), Title, _TRUNCATE);
+	strncpy_s(Item->Message, sizeof(Item->Message), Message, _TRUNCATE);
+
+	this->m_NotificationQueueTail = (this->m_NotificationQueueTail + 1) % NOTIFICATION_QUEUE_SIZE;
+	this->m_NotificationQueueCount++;
+
+	LeaveCriticalSection(&this->m_NotificationCriticalSection);
+
+	if (!PostMessage(g_hWnd, WM_NOTIFICATION_MESSAGE, 0, 0))
+	{
+	#ifdef _DEBUG
+		WindowDebug("PostMessage(WM_NOTIFICATION_MESSAGE) failed: %lu", GetLastError());
+	#endif
+		this->ClearNotificationQueue();
+	}
+}
+
+void CWindow::ClearNotificationQueue()
+{
+	EnterCriticalSection(&this->m_NotificationCriticalSection);
+
+	this->m_NotificationQueueHead = 0;
+	this->m_NotificationQueueTail = 0;
+	this->m_NotificationQueueCount = 0;
+	this->m_NextNotificationTick = 0;
+
+	LeaveCriticalSection(&this->m_NotificationCriticalSection);
+
+	if (g_hWnd != NULL)
+	{
+		KillTimer(g_hWnd, WM_NOTIFICATION_TIMER);
+	}
+}
+
+void CWindow::ProcessNotificationQueue()
+{
+	if (!this->IsNotificationAllowed())
+	{
+		this->ClearNotificationQueue();
+		return;
+	}
+
+	DWORD Tick = GetTickCount();
+
+	if (TickIsBefore(Tick, this->m_NextNotificationTick))
+	{
+		DWORD Delay = this->m_NextNotificationTick - Tick;
+
+		SetTimer(g_hWnd, WM_NOTIFICATION_TIMER, (Delay == 0) ? 1 : Delay, NULL);
+		return;
+	}
+
+	NOTIFICATION_MESSAGE Item;
+
+	EnterCriticalSection(&this->m_NotificationCriticalSection);
+
+	if (this->m_NotificationQueueCount == 0)
+	{
+		LeaveCriticalSection(&this->m_NotificationCriticalSection);
+		return;
+	}
+
+	memcpy(&Item, &this->m_NotificationQueue[this->m_NotificationQueueHead], sizeof(Item));
+
+	this->m_NotificationQueueHead = (this->m_NotificationQueueHead + 1) % NOTIFICATION_QUEUE_SIZE;
+	this->m_NotificationQueueCount--;
+
+	LeaveCriticalSection(&this->m_NotificationCriticalSection);
+
+	if (!this->EnsureTrayIcon(TRAY_MODE_NOTIFICATION))
+	{
+		return;
+	}
+
+	if (!this->ShowTrayMessage(Item.Title, Item.Message))
+	{
+		return;
+	}
+	this->m_NextNotificationTick = GetTickCount() + 1200;
+
+	EnterCriticalSection(&this->m_NotificationCriticalSection);
+	bool More = (this->m_NotificationQueueCount != 0);
+	LeaveCriticalSection(&this->m_NotificationCriticalSection);
+
+	if (More)
+	{
+		SetTimer(g_hWnd, WM_NOTIFICATION_TIMER, 1200, NULL);
+	}
+}
+
+void CWindow::RestoreFromNotification()
+{
+	this->m_TrayMode = TRAY_MODE_NONE;
+	this->m_WindowMinimized = false;
+
+	ShowWindow(g_hWnd, SW_SHOW);
+	SetForegroundWindow(g_hWnd);
+	SetFocus(g_hWnd);
+	this->m_WindowActive = true;
+	this->RemoveTrayIcon();
+	this->ClearNotificationQueue();
+}
+
+void CWindow::HandleTaskbarCreated()
+{
+	this->m_TrayIconVisible = false;
+
+	if (this->m_TrayMode != TRAY_MODE_NONE)
+	{
+		this->EnsureTrayIcon(this->m_TrayMode);
+	}
+}
+
+bool CWindow::ShowTrayMessage(const char* Title, const char* Message)
+{
+	if (!this->IsNotificationAllowed())
+	{
+		return false;
+	}
+
+	NOTIFYICONDATAW Icon;
+
+	memset(&Icon, 0, sizeof(Icon));
+
+	Icon.cbSize = sizeof(Icon);
+	Icon.hWnd = g_hWnd;
+	Icon.uID = WM_TRAY_MODE_ICON;
+	Icon.uFlags = NIF_MESSAGE | NIF_ICON | NIF_INFO;
+	Icon.hIcon = this->m_WindowIcon;
 	Icon.uCallbackMessage = WM_TRAY_MODE_MESSAGE;
-
-	Icon.dwInfoFlags = NIIF_INFO;
-
+	Icon.dwInfoFlags = NIIF_INFO | NIIF_RESPECT_QUIET_TIME;
 	Icon.uTimeout = 5000;
 
-	strcpy_s(Icon.szInfo, Message);
+	CopyAnsiToWide(Message, Icon.szInfo, ARRAYSIZE(Icon.szInfo));
+	CopyAnsiToWide(Title, Icon.szInfoTitle, ARRAYSIZE(Icon.szInfoTitle));
 
-	strcpy_s(Icon.szInfoTitle, Title);
+	if (!Shell_NotifyIconW(NIM_MODIFY, &Icon))
+	{
+#ifdef _DEBUG
+		WindowDebug("Shell_NotifyIconW(NIM_MODIFY) failed: %lu", GetLastError());
+#endif
+		this->m_TrayIconVisible = false;
+		return false;
+	}
 
-	Shell_NotifyIcon(NIM_MODIFY, &Icon);
+	return true;
 }
 
 void CWindow::ChangeWindowText()
 {
 	if (SceneFlag != MAIN_SCENE)
 	{
+		this->m_CharacterName[0] = 0;
 		sprintf_s(this->m_WindowName, sizeof(this->m_WindowName), "%s", gProtect.m_MainInfo.WindowName);
 	}
 	else
 	{
 		STRUCT_DECRYPT;
 
-		sprintf_s(this->m_WindowName, sizeof(this->m_WindowName), "%s", (char*)(CharacterAttribute + 0x00));
+		sprintf_s(this->m_CharacterName, sizeof(this->m_CharacterName), "%s", (char*)(CharacterAttribute + 0x00));
+		sprintf_s(this->m_WindowName, sizeof(this->m_WindowName), "%s", this->m_CharacterName);
 
 		if (!gProtect.m_MainInfo.DisableResets)
 		{

@@ -24,7 +24,7 @@ CEventTimeManager::~CEventTimeManager()
 
 void CEventTimeManager::GCEventTimeSend(int aIndex)
 {
-	BYTE send[4096];
+	BYTE send[sizeof(PMSG_EVENT_TIME_SEND) + (64 * sizeof(PMSG_EVENT_TIME))];
 
 	PMSG_EVENT_TIME_SEND pMsg;
 
@@ -42,7 +42,8 @@ void CEventTimeManager::GCEventTimeSend(int aIndex)
 
 	if (gServerInfo.m_DevilSquareEvent)
 	{
-		strcpy_s(info.name, "Devil Square");
+		memset(&info, 0, sizeof(info));
+		std::snprintf(info.name, sizeof(info.name), "%s", "Devil Square");
 
 		info.time = 0;
 
@@ -67,16 +68,20 @@ void CEventTimeManager::GCEventTimeSend(int aIndex)
 			info.status = EVENT_STATE_BLANK;
 		}
 
-		memcpy(&send[size], &info, sizeof(info));
+		if (pMsg.count < 64)
+		{
+			memcpy(&send[size], &info, sizeof(info));
 
-		size += sizeof(info);
+			size += sizeof(info);
 
-		pMsg.count++;
+			pMsg.count++;
+		}
 	}
 
 	if (gServerInfo.m_BloodCastleEvent)
 	{
-		strcpy_s(info.name, "Blood Castle");
+		memset(&info, 0, sizeof(info));
+		std::snprintf(info.name, sizeof(info.name), "%s", "Blood Castle");
 
 		info.time = 0;
 
@@ -101,11 +106,14 @@ void CEventTimeManager::GCEventTimeSend(int aIndex)
 			info.status = EVENT_STATE_BLANK;
 		}
 
-		memcpy(&send[size], &info, sizeof(info));
+		if (pMsg.count < 64)
+		{
+			memcpy(&send[size], &info, sizeof(info));
 
-		size += sizeof(info);
+			size += sizeof(info);
 
-		pMsg.count++;
+			pMsg.count++;
+		}
 	}
 
 	if (gServerInfo.m_InvasionManagerSwitch)
@@ -119,7 +127,10 @@ void CEventTimeManager::GCEventTimeSend(int aIndex)
 				continue;
 			}
 
-			strcpy_s(info.name, gInvasionManager.GetInvasionName(i));
+			if (pMsg.count >= 64) { break; }
+
+			memset(&info, 0, sizeof(info));
+			std::snprintf(info.name, sizeof(info.name), "%s", gInvasionManager.GetInvasionName(i));
 
 			if (state == INVASION_STATE_EMPTY)
 			{
@@ -153,7 +164,10 @@ void CEventTimeManager::GCEventTimeSend(int aIndex)
 				continue;
 			}
 
-			strcpy_s(info.name, gBonusManager.GetBonusName(i));
+			if (pMsg.count >= 64) { break; }
+
+			memset(&info, 0, sizeof(info));
+			std::snprintf(info.name, sizeof(info.name), "%s", gBonusManager.GetBonusName(i));
 
 			if (state == BONUS_STATE_EMPTY)
 			{
@@ -178,46 +192,47 @@ void CEventTimeManager::GCEventTimeSend(int aIndex)
 
 	if (gServerInfo.m_GoldenArcherBingoEvent)
 	{
-		strcpy_s(info.name, gGoldenArcherBingo.GetEventName());
-
-		info.time = 0;
-
-		state = gGoldenArcherBingo.GetState();
-
-		if (state == BINGO_STATE_START)
+		if (pMsg.count < 64)
 		{
-			info.status = EVENT_STATE_START;
-		}
-		else if (state == BINGO_STATE_EMPTY)
-		{
-			info.status = EVENT_STATE_STAND;
+			memset(&info, 0, sizeof(info));
+			std::snprintf(info.name, sizeof(info.name), "%s", gGoldenArcherBingo.GetEventName());
 
-			info.time = gGoldenArcherBingo.GetCurrentRemainTime();
-		}
-		else if (state == BINGO_STATE_STAND)
-		{
-			info.status = EVENT_STATE_OPEN;
-		}
-		else
-		{
-			info.status = EVENT_STATE_BLANK;
-		}
+			info.time = 0;
 
-		memcpy(&send[size], &info, sizeof(info));
+			state = gGoldenArcherBingo.GetState();
 
-		size += sizeof(info);
+			if (state == BINGO_STATE_START)
+			{
+				info.status = EVENT_STATE_START;
+			}
+			else if (state == BINGO_STATE_EMPTY)
+			{
+				info.status = EVENT_STATE_STAND;
 
-		pMsg.count++;
+				info.time = gGoldenArcherBingo.GetCurrentRemainTime();
+			}
+			else if (state == BINGO_STATE_STAND)
+			{
+				info.status = EVENT_STATE_OPEN;
+			}
+			else
+			{
+				info.status = EVENT_STATE_BLANK;
+			}
+
+			memcpy(&send[size], &info, sizeof(info));
+
+			size += sizeof(info);
+
+			pMsg.count++;
+		}
 	}
 
-	if (pMsg.count > 0)
-	{
-		pMsg.header.size[0] = SET_NUMBERHB(size);
+	pMsg.header.size[0] = SET_NUMBERHB(size);
 
-		pMsg.header.size[1] = SET_NUMBERLB(size);
+	pMsg.header.size[1] = SET_NUMBERLB(size);
 
-		memcpy(send, &pMsg, sizeof(pMsg));
+	memcpy(send, &pMsg, sizeof(pMsg));
 
-		DataSend(aIndex, send, size);
-	}
+	DataSend(aIndex, send, size);
 }

@@ -3,6 +3,7 @@
 #include "Font.h"
 #include "HealthBar.h"
 #include "Language.h"
+#include "Notification.h"
 #include "Sound.h"
 #include "Window.h"
 #include "WeaponView.h"
@@ -167,6 +168,13 @@ void COptionsMenu::RenderOptionsMenu()
 			break;
 		}
 
+		case OPTION_NOTIFICATIONS:
+		{
+			this->RenderNotifications();
+
+			break;
+		}
+
 		default:
 		{
 			this->RenderAllOptions();
@@ -202,6 +210,11 @@ bool COptionsMenu::CheckOptionsMenu()
 		case OPTION_FONT:
 		{
 			return this->CheckFont();
+		}
+
+		case OPTION_NOTIFICATIONS:
+		{
+			return this->CheckNotifications();
 		}
 
 		default:
@@ -261,6 +274,13 @@ void COptionsMenu::RenderAllOptions()
 	/* FONT */
 	this->RenderBox(PosX, PosY, Width, Height);
 	sprintf_s(Text, "%s", GlobalText[921]);
+	EnableAlphaTest(true);
+	RenderText((int)PosX, CenterTextPosY(Text, (int)(PosY + (Height / 2.0f))), Text, REAL_WIDTH((int)Width), RT3_SORT_CENTER, NULL);
+	PosY += (Height + 7.0f);
+
+	/* NOTIFICATIONS */
+	this->RenderBox(PosX, PosY, Width, Height);
+	sprintf_s(Text, "%s", (gLanguage.LangNum == LANGUAGE_PORTUGUESE) ? "Notificacoes" : ((gLanguage.LangNum == LANGUAGE_SPANISH) ? "Notificaciones" : "Notifications"));
 	EnableAlphaTest(true);
 	RenderText((int)PosX, CenterTextPosY(Text, (int)(PosY + (Height / 2.0f))), Text, REAL_WIDTH((int)Width), RT3_SORT_CENTER, NULL);
 	PosY += (Height + 7.0f);
@@ -1827,6 +1847,200 @@ bool COptionsMenu::CheckResolutions(int PosX, int& PosY)
 	}
 
 	return false;
+}
+
+void COptionsMenu::RenderNotifications()
+{
+	float PosX = this->MainPosX;
+	float PosY = this->MainPosY;
+
+	SetBackgroundTextColor = Color4b(255, 255, 255, 0);
+	SetTextColor = Color4b(255, 255, 255, 255);
+
+	this->RenderNotificationsTitle(PosX, PosY);
+	PosY += (float)this->BoxHeight + 7.0f;
+
+	char Text[64] = { 0 };
+	const char* State = (gLanguage.LangNum == LANGUAGE_PORTUGUESE) ? "Estado" : ((gLanguage.LangNum == LANGUAGE_SPANISH) ? "Estado" : "Status");
+	const char* On = (gLanguage.LangNum == LANGUAGE_PORTUGUESE) ? "Ligado" : ((gLanguage.LangNum == LANGUAGE_SPANISH) ? "Activado" : "Enabled");
+	const char* Off = (gLanguage.LangNum == LANGUAGE_PORTUGUESE) ? "Desligado" : ((gLanguage.LangNum == LANGUAGE_SPANISH) ? "Desactivado" : "Disabled");
+	const char* Open = (gLanguage.LangNum == LANGUAGE_PORTUGUESE) ? "Aberto" : ((gLanguage.LangNum == LANGUAGE_SPANISH) ? "Abierto" : "Open");
+	const char* Death = (gLanguage.LangNum == LANGUAGE_PORTUGUESE) ? "Morte" : ((gLanguage.LangNum == LANGUAGE_SPANISH) ? "Muerte" : "Death");
+
+	this->RenderBox(PosX, PosY, (float)this->BoxWidth, (float)this->BoxHeight);
+	sprintf_s(Text, sizeof(Text), "%s: %s", State, gNotification.GetEnabled() ? On : Off);
+	EnableAlphaTest(true);
+	RenderText((int)PosX, CenterTextPosY(Text, (int)(PosY + (this->BoxHeight / 2))), Text, REAL_WIDTH(this->BoxWidth), RT3_SORT_CENTER, NULL);
+	PosY += this->BoxHeight + 7;
+
+	this->RenderNotificationWarning(PosX, PosY);
+	PosY += this->BoxHeight + 7;
+
+	this->RenderBox(PosX, PosY, (float)this->BoxWidth, (float)this->BoxHeight);
+	sprintf_s(Text, sizeof(Text), "%s: %s", Open, gNotification.GetNotifyOpen() ? On : Off);
+	EnableAlphaTest(true);
+	RenderText((int)PosX, CenterTextPosY(Text, (int)(PosY + (this->BoxHeight / 2))), Text, REAL_WIDTH(this->BoxWidth), RT3_SORT_CENTER, NULL);
+	PosY += this->BoxHeight + 7;
+
+	this->RenderBox(PosX, PosY, (float)this->BoxWidth, (float)this->BoxHeight);
+	sprintf_s(Text, sizeof(Text), "%s: %s", Death, gNotification.GetNotifyDeath() ? On : Off);
+	EnableAlphaTest(true);
+	RenderText((int)PosX, CenterTextPosY(Text, (int)(PosY + (this->BoxHeight / 2))), Text, REAL_WIDTH(this->BoxWidth), RT3_SORT_CENTER, NULL);
+	PosY += this->BoxHeight + 7;
+
+	this->RenderBack(PosX, PosY);
+}
+
+void COptionsMenu::RenderNotificationsTitle(float PosX, float PosY)
+{
+	DisableAlphaBlend();
+
+	glColor3f(0.8f, 0.6f, 0.4f);
+
+	RenderBitmap(240, PosX, PosY, (float)this->BoxWidth, (float)this->BoxHeight, (0.0f / 256.0f), (0.0f / 64.0f), (213.0f / 256.0f), (64.0f / 64.0f), true, true);
+
+	char Text[64] = { 0 };
+
+	sprintf_s(Text, "%s", (gLanguage.LangNum == LANGUAGE_PORTUGUESE) ? "Notificacoes" : ((gLanguage.LangNum == LANGUAGE_SPANISH) ? "Notificaciones" : "Notifications"));
+
+	EnableAlphaTest(true);
+
+	RenderText((int)PosX, CenterTextPosY(Text, ((int)PosY + (this->BoxHeight / 2))), Text, REAL_WIDTH(this->BoxWidth), RT3_SORT_CENTER, NULL);
+}
+
+void COptionsMenu::RenderNotificationWarning(float PosX, float PosY)
+{
+	this->RenderBox(PosX, PosY, (float)this->BoxWidth, (float)this->BoxHeight);
+
+	char Text[64] = { 0 };
+	const char* Warning = (gLanguage.LangNum == LANGUAGE_PORTUGUESE) ? "Aviso" : ((gLanguage.LangNum == LANGUAGE_SPANISH) ? "Aviso" : "Warning");
+	const char* Disabled = (gLanguage.LangNum == LANGUAGE_PORTUGUESE) ? "Desligado" : ((gLanguage.LangNum == LANGUAGE_SPANISH) ? "Desactivado" : "Disabled");
+
+	if (gNotification.GetWarningMinutes() == 0)
+	{
+		sprintf_s(Text, sizeof(Text), "%s: %s", Warning, Disabled);
+	}
+	else
+	{
+		sprintf_s(Text, sizeof(Text), "%s: %d min", Warning, gNotification.GetWarningMinutes());
+	}
+
+	EnableAlphaTest(true);
+	RenderText((int)PosX, CenterTextPosY(Text, ((int)PosY + (this->BoxHeight / 2))), Text, REAL_WIDTH(this->BoxWidth), RT3_SORT_CENTER, NULL);
+
+	if (gNotification.GetWarningMinutes() != 0)
+	{
+		if (IsWorkZone((int)PosX, (int)PosY, this->BoxHeight, this->BoxHeight))
+		{
+			RenderBitmap(MouseLButtonPush ? 0x100 : 0xFF, PosX, PosY, (float)this->BoxHeight, (float)this->BoxHeight, (0.0f / 32.0f), (0.0f / 32.0f), (32.0f / 32.0f), (32.0f / 32.0f), true, true);
+		}
+		else
+		{
+			RenderBitmap(0xFE, PosX, PosY, (float)this->BoxHeight, (float)this->BoxHeight, (0.0f / 32.0f), (0.0f / 32.0f), (32.0f / 32.0f), (32.0f / 32.0f), true, true);
+		}
+	}
+
+	if (gNotification.GetWarningMinutes() != 10)
+	{
+		float ArrowPosX = PosX + (float)(this->BoxWidth - this->BoxHeight);
+
+		if (IsWorkZone((int)ArrowPosX, (int)PosY, this->BoxHeight, this->BoxHeight))
+		{
+			RenderBitmap(MouseLButtonPush ? 0x100 : 0xFF, ArrowPosX, PosY, (float)this->BoxHeight, (float)this->BoxHeight, (32.0f / 32.0f), (0.0f / 32.0f), (-32.0f / 32.0f), (32.0f / 32.0f), true, true);
+		}
+		else
+		{
+			RenderBitmap(0xFE, ArrowPosX, PosY, (float)this->BoxHeight, (float)this->BoxHeight, (32.0f / 32.0f), (0.0f / 32.0f), (-32.0f / 32.0f), (32.0f / 32.0f), true, true);
+		}
+	}
+}
+
+bool COptionsMenu::CheckNotificationWarning(int PosX, int PosY)
+{
+	if (IsWorkZone(PosX, PosY, this->BoxHeight, this->BoxHeight))
+	{
+		if (MouseLButton && MouseLButtonPush)
+		{
+			int Value = gNotification.GetWarningMinutes();
+
+			if (Value == 1) Value = 0;
+			else if (Value == 5) Value = 1;
+			else if (Value == 10) Value = 5;
+
+			if (Value != gNotification.GetWarningMinutes())
+			{
+				MouseLButtonPush = false;
+				MouseUpdateTime = 0;
+				MouseUpdateTimeMax = 6;
+				PlayBuffer(25, 0, 0);
+				gNotification.SetWarningMinutes(Value);
+			}
+		}
+
+		return true;
+	}
+
+	int ArrowPosX = PosX + (this->BoxWidth - this->BoxHeight);
+
+	if (IsWorkZone(ArrowPosX, PosY, this->BoxHeight, this->BoxHeight))
+	{
+		if (MouseLButton && MouseLButtonPush)
+		{
+			int Value = gNotification.GetWarningMinutes();
+
+			if (Value == 0) Value = 1;
+			else if (Value == 1) Value = 5;
+			else if (Value == 5) Value = 10;
+
+			if (Value != gNotification.GetWarningMinutes())
+			{
+				MouseLButtonPush = false;
+				MouseUpdateTime = 0;
+				MouseUpdateTimeMax = 6;
+				PlayBuffer(25, 0, 0);
+				gNotification.SetWarningMinutes(Value);
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool COptionsMenu::CheckNotifications()
+{
+	int PosX = (int)this->MainPosX;
+	int PosY = (int)this->MainPosY + this->BoxHeight + 7;
+
+	for (int Row = 0; Row < 4; Row++)
+	{
+		if (Row == 1 && this->CheckNotificationWarning(PosX, PosY))
+		{
+			return true;
+		}
+
+		if (IsWorkZone(PosX, PosY, this->BoxWidth, this->BoxHeight))
+		{
+			if (MouseLButton && MouseLButtonPush)
+			{
+				MouseLButtonPush = false;
+				MouseUpdateTime = 0;
+				MouseUpdateTimeMax = 6;
+				PlayBuffer(25, 0, 0);
+
+				if (Row == 0) gNotification.SetEnabled(!gNotification.GetEnabled());
+				else if (Row == 2) gNotification.SetNotifyOpen(!gNotification.GetNotifyOpen());
+				else if (Row == 3) gNotification.SetNotifyDeath(!gNotification.GetNotifyDeath());
+			}
+
+			return true;
+		}
+
+		PosY += this->BoxHeight + 7;
+	}
+
+	return this->CheckBack(PosX, PosY);
 }
 
 void COptionsMenu::RenderFont()

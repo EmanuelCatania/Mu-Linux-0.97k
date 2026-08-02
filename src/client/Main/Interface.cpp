@@ -5,6 +5,7 @@
 #include "ItemLink.h"
 #include "MiniMap.h"
 #include "MoveList.h"
+#include "Notification.h"
 #include "Protect.h"
 #include "Window.h"
 
@@ -80,6 +81,8 @@ void Interface::MyUpdateWindowsMouse()
 
 void Interface::MyRenderWindows()
 {
+	gNotification.Update();
+
 	((void(_cdecl*)()) 0x004C3530)();
 
 	gMiniMap.Render();
