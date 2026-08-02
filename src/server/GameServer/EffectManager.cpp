@@ -151,6 +151,7 @@ void CEffectManager::MainProc()
 		}
 
 		LPOBJ lpObj = &gObj[n];
+		bool changed = false;
 
 		for (int i = 0; i < MAX_EFFECT_LIST; i++)
 		{
@@ -172,8 +173,15 @@ void CEffectManager::MainProc()
 					this->GCEffectStateSend(lpObj, 0, lpEffect->m_index);
 
 					lpEffect->Clear();
+
+					changed = true;
 				}
 			}
+		}
+
+		if (changed != false)
+		{
+			GCBuffListSend(lpObj);
 		}
 	}
 }
@@ -226,6 +234,8 @@ bool CEffectManager::AddEffect(LPOBJ lpObj, bool type, int index, int count, WOR
 
 				this->GCEffectStateSend(lpObj, 1, lpEffect->m_index);
 
+				GCBuffListSend(lpObj);
+
 				return true;
 			}
 		}
@@ -245,6 +255,8 @@ bool CEffectManager::AddEffect(LPOBJ lpObj, bool type, int index, int count, WOR
 				this->InsertEffect(lpObj, lpEffect);
 
 				this->GCEffectStateSend(lpObj, 1, lpEffect->m_index);
+
+				GCBuffListSend(lpObj);
 
 				return true;
 			}
@@ -273,6 +285,8 @@ bool CEffectManager::DelEffect(LPOBJ lpObj, int index)
 
 			lpEffect->Clear();
 
+			GCBuffListSend(lpObj);
+
 			return true;
 		}
 	}
@@ -298,6 +312,8 @@ bool CEffectManager::DelEffectByGroup(LPOBJ lpObj, int group)
 			this->GCEffectStateSend(lpObj, 0, lpEffect->m_index);
 
 			lpEffect->Clear();
+
+			GCBuffListSend(lpObj);
 
 			return true;
 		}
@@ -663,10 +679,14 @@ void CEffectManager::ClearAllEffect(LPOBJ lpObj)
 
 		lpEffect->Clear();
 	}
+
+	GCBuffListSend(lpObj);
 }
 
 void CEffectManager::ClearDebuffEffect(LPOBJ lpObj, int count)
 {
+	bool changed = false;
+
 	for (int n = 0; n < MAX_EFFECT_LIST; n++)
 	{
 		CEffect* lpEffect = &lpObj->Effect[n];
@@ -683,7 +703,14 @@ void CEffectManager::ClearDebuffEffect(LPOBJ lpObj, int count)
 			this->GCEffectStateSend(lpObj, 0, lpEffect->m_index);
 
 			lpEffect->Clear();
+
+			changed = true;
 		}
+	}
+
+	if (changed != false)
+	{
+		GCBuffListSend(lpObj);
 	}
 }
 

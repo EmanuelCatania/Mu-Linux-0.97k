@@ -169,6 +169,9 @@
     <ClInclude Include="Buff.h">
       <Filter>Fixes</Filter>
     </ClInclude>
+    <ClInclude Include="BuffDisplay.h">
+      <Filter>Fixes</Filter>
+    </ClInclude>
     <ClInclude Include="OptionsMenu.h">
       <Filter>Interface</Filter>
     </ClInclude>
@@ -340,6 +343,9 @@
       <Filter>Connection</Filter>
     </ClCompile>
     <ClCompile Include="Buff.cpp">
+      <Filter>Fixes</Filter>
+    </ClCompile>
+    <ClCompile Include="BuffDisplay.cpp">
       <Filter>Fixes</Filter>
     </ClCompile>
     <ClCompile Include="OptionsMenu.cpp">

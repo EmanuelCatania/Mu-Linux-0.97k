@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Patchs.h"
 #include "LoadModels.h"
+#include "BuffDisplay.h"
 #include "PrintPlayer.h"
 #include "Protect.h"
 #include "Protocol.h"
@@ -892,6 +893,8 @@ void CPatchs::MyBeginBitmap()
 
 bool CPatchs::RenderNumArrow()
 {
+	gBuffDisplay.SetArrowHud(0, 0, false);
+
 	STRUCT_DECRYPT;
 
 	ITEM* PlayerRightHand = &*(ITEM*)(CharacterMachine + (536 + (68 * EQUIPMENT_WEAPON_RIGHT)));
@@ -902,7 +905,7 @@ bool CPatchs::RenderNumArrow()
 	{
 		int screenWidth = GetScreenWidth();
 
-		int MaxQuant = ((int(__cdecl*)()) 0x00482850)();
+		int MaxQuant = GetMaxArrowQuantity();
 
 		char text[128] = { '\0' };
 
@@ -916,6 +919,8 @@ bool CPatchs::RenderNumArrow()
 		{
 			PosX -= 60;
 		}
+
+		gBuffDisplay.SetArrowHud(screenWidth, PosX, true);
 
 		EnableAlphaTest(true);
 
@@ -942,7 +947,7 @@ bool CPatchs::RenderNumArrow()
 	{
 		int screenWidth = GetScreenWidth();
 
-		int MaxQuant = ((int(__cdecl*)()) 0x00482850)();
+		int MaxQuant = GetMaxArrowQuantity();
 
 		char text[128] = { '\0' };
 
@@ -956,6 +961,8 @@ bool CPatchs::RenderNumArrow()
 		{
 			PosX -= 60;
 		}
+
+		gBuffDisplay.SetArrowHud(screenWidth, PosX, true);
 
 		EnableAlphaTest(true);
 

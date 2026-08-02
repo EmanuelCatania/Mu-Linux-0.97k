@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Interface.h"
+#include "BuffDisplay.h"
 #include "Camera3D.h"
 #include "EventTimer.h"
 #include "ItemLink.h"
@@ -90,6 +91,8 @@ void Interface::MyRenderWindows()
 	gMoveList.Render();
 
 	gEventTimer.Render();
+
+	gBuffDisplay.RenderTooltip();
 
 	gItemLink.RenderTooltip();
 }

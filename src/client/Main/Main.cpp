@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Buff.h"
+#include "BuffDisplay.h"
 #include "ChaosMix.h"
 #include "Input.h"
 #include "Controller.h"
@@ -93,6 +94,8 @@ extern "C" _declspec(dllexport) void _cdecl EntryProc()
 	gPatchs.Init();
 
 	gBuff.Init();
+
+	gBuffDisplay.Init();
 
 	gProtocol.Init();
 

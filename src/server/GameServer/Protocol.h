@@ -611,6 +611,21 @@ struct PMSG_EVENT_TIME
 	DWORD time;
 };
 
+struct PMSG_BUFF_LIST_SEND
+{
+	PSWMSG_HEAD header; // C2:F3:E9
+	BYTE count;
+};
+
+#pragma pack(push, 1)
+struct PMSG_BUFF_INFO_SEND
+{
+	BYTE effect;
+	DWORD count;
+	WORD value[4];
+};
+#pragma pack(pop)
+
 //**********************************************//
 //**********************************************//
 //**********************************************//
@@ -730,3 +745,5 @@ void GCNewCharacterInfoSend(LPOBJ lpObj);
 void GCNewCharacterCalcSend(LPOBJ lpObj);
 
 void GCHealthBarSend(int aIndex);
+
+void GCBuffListSend(LPOBJ lpObj);

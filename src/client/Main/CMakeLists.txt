@@ -1,5 +1,6 @@
 add_library(Main SHARED
   Buff.cpp
+  BuffDisplay.cpp
   Camera3D.cpp
   CCRC32.Cpp
   ChaosMix.cpp

@@ -34,6 +34,11 @@
 #include "Viewport.h"
 #include "Warehouse.h"
 
+static bool IsPlayerBuffEffect(BYTE effect)
+{
+	return (effect == EFFECT_GREATER_DAMAGE || effect == EFFECT_GREATER_DEFENSE || effect == EFFECT_MANA_SHIELD || effect == EFFECT_GREATER_LIFE);
+}
+
 void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int serial)
 {
 	ConsoleProtocolLog(CON_PROTO_TCP_RECV, aIndex, lpMsg, size);
@@ -2252,6 +2257,52 @@ void GCNewCharacterCalcSend(LPOBJ lpObj)
 	DataSend(lpObj->Index, (BYTE*)&pMsg, pMsg.header.size);
 
 #endif
+}
+
+void GCBuffListSend(LPOBJ lpObj)
+{
+	if (lpObj == 0 || lpObj->Type != OBJECT_USER || lpObj->Connected != OBJECT_ONLINE)
+	{
+		return;
+	}
+
+	BYTE buffer[sizeof(PMSG_BUFF_LIST_SEND) + (MAX_EFFECT_LIST * sizeof(PMSG_BUFF_INFO_SEND))] = { 0 };
+
+	PMSG_BUFF_LIST_SEND* header = (PMSG_BUFF_LIST_SEND*)buffer;
+	PMSG_BUFF_INFO_SEND* info = (PMSG_BUFF_INFO_SEND*)(buffer + sizeof(PMSG_BUFF_LIST_SEND));
+
+	int size = sizeof(PMSG_BUFF_LIST_SEND);
+	BYTE count = 0;
+
+	for (int n = 0; n < MAX_EFFECT_LIST; n++)
+	{
+		CEffect* effect = &lpObj->Effect[n];
+
+		if (effect->IsEffect() == false || IsPlayerBuffEffect(effect->m_index) == false)
+		{
+			continue;
+		}
+
+		if (count >= MAX_EFFECT_LIST)
+		{
+			break;
+		}
+
+		info[count].effect = effect->m_index;
+		info[count].count = ((effect->m_count == 0) ? 0xFFFFFFFF : effect->m_count);
+		info[count].value[0] = effect->m_value[0];
+		info[count].value[1] = effect->m_value[1];
+		info[count].value[2] = effect->m_value[2];
+		info[count].value[3] = effect->m_value[3];
+
+		count++;
+		size += sizeof(PMSG_BUFF_INFO_SEND);
+	}
+
+	header->header.set(0xF3, 0xE9, size);
+	header->count = count;
+
+	DataSend(lpObj->Index, buffer, size);
 }
 
 void GCHealthBarSend(int aIndex)

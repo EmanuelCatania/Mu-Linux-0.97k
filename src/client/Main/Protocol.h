@@ -336,6 +336,21 @@ struct PMSG_HEALTH_BAR_RECV
 	BYTE count;
 };
 
+struct PMSG_BUFF_LIST_RECV
+{
+	PSWMSG_HEAD header; // C2:F3:E9
+	BYTE count;
+};
+
+#pragma pack(push, 1)
+struct PMSG_BUFF_INFO_RECV
+{
+	BYTE effect;
+	DWORD count;
+	WORD value[4];
+};
+#pragma pack(pop)
+
 //**********************************************//
 //************ Client -> GameServer ************//
 //**********************************************//

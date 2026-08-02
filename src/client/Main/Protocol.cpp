@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Protocol.h"
+#include "BuffDisplay.h"
 #include "ChaosMix.h"
 #include "EventTimer.h"
 #include "GoldenArcher.h"
@@ -440,11 +441,20 @@ bool CProtocol::TranslateProtocol(BYTE head, BYTE* lpMsg, int Size)
 					return true;
 				}
 
-			case 0xE8:
-			{
-				gItemLink.GCItemPostLinkRecv(
-					(PMSG_ITEM_POST_LINK_RESPONSE*)lpMsg,
-					Size);
+				case 0xE8:
+				{
+					gItemLink.GCItemPostLinkRecv(
+						(PMSG_ITEM_POST_LINK_RESPONSE*)lpMsg,
+						Size);
+
+					return true;
+				}
+
+				case 0xE9:
+				{
+					gBuffDisplay.GCRecv(
+						(PMSG_BUFF_LIST_RECV*)lpMsg,
+						Size);
 
 					return true;
 				}

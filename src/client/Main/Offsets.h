@@ -82,6 +82,7 @@
 #define SetErrorMessage ((void(_cdecl*)(int message)) 0x005142D0)
 #define UpdateWindowsMouse ((void(_cdecl*)())0x004ECB00)
 #define GetScreenWidth ((int(_cdecl*)()) 0x004CB520)
+#define GetMaxArrowQuantity ((int(_cdecl*)()) 0x00482850)
 #define RenderInventoryInterface ((void(_cdecl*)(int StartX, int StartY, int Flag)) 0x004ECBA0)
 #define CreateDialogInterface ((void(_cdecl*)(int InitialTextNumber, BYTE TextQuantity)) 0x0051D780)
 #define CreateOkMessageBox ((void(_cdecl*)(char* strMsg)) 0x0051D6F0)
@@ -103,6 +104,9 @@
 #define DeleteJoint ((void(_cdecl*)(int Type, DWORD Target, int SubType)) 0x0046FE00)
 #define RenderTerrainAlphaBitmap ((void(_cdecl*)(int Texture, float xf, float yf, float SizeX, float SizeY, vec3_t Light, float Rotation, float Alpha)) 0x004F8BB0)
 #define RenderSpriteUV ((void(_cdecl*)(int Texture, vec3_t Position, float Width, float Height, float(*UV)[2], vec3_t Light[4], float Alpha)) 0x00511FB0)
+#define BuffDisplayRenderCall 0x004BC0A9
+#define BuffDisplayRenderTarget 0x004BC220
+#define RenderGuildWarInfo ((void(_cdecl*)()) 0x004BC220)
 
 // Font
 #define FontHeight *(int*)0x07D78080

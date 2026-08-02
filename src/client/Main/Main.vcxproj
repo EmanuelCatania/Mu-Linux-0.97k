@@ -110,6 +110,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Buff.h" />
+    <ClInclude Include="BuffDisplay.h" />
     <ClInclude Include="CCRC32.H" />
     <ClInclude Include="ChaosMix.h" />
     <ClInclude Include="Console.h" />
@@ -172,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Buff.cpp" />
+    <ClCompile Include="BuffDisplay.cpp" />
     <ClCompile Include="CCRC32.Cpp" />
     <ClCompile Include="ChaosMix.cpp" />
     <ClCompile Include="Console.cpp" />
