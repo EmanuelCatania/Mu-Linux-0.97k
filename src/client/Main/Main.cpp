@@ -56,27 +56,9 @@ extern "C" _declspec(dllexport) void _cdecl EntryProc()
 
 	gProtect.CheckInstance();
 
-	if (gInput.Init() == false)
-	{
-		MessageBoxA(
-			NULL,
-			"Input: main.exe incompatível.",
-			"MU 0.97k",
-			MB_OK | MB_ICONERROR);
+	gInput.Init();
 
-		return;
-	}
-
-	if (gItemLink.Init() == false)
-	{
-		MessageBoxA(
-			NULL,
-			"ItemLink: main.exe incompatível.",
-			"MU 0.97k",
-			MB_OK | MB_ICONERROR);
-
-		return;
-	}
+	gItemLink.Init();
 
 	if (!gPacketManager.LoadEncryptionKey("Data\\Enc1.dat") || !gPacketManager.LoadDecryptionKey("Data\\Dec2.dat"))
 	{

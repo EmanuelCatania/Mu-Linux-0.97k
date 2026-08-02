@@ -12,36 +12,6 @@ void SetDouble(DWORD offset, double value);
 
 void SetCompleteHook(BYTE head, DWORD offset, ...);
 
-bool CheckBytes(DWORD Address, const BYTE* Expected, SIZE_T Size);
-
-bool CheckRelativeCall(DWORD Address, DWORD Target);
-
-struct RELATIVE_CALL_HOOK
-{
-	DWORD Address;
-	DWORD Target;
-	DWORD Hook;
-	BYTE Original[5];
-	bool Installed;
-};
-
-bool InstallRelativeCallHook(RELATIVE_CALL_HOOK* Hook);
-
-void RestoreRelativeCallHook(RELATIVE_CALL_HOOK* Hook);
-
-struct VTABLE_HOOK
-{
-	DWORD Address;
-	DWORD Expected;
-	DWORD Hook;
-	DWORD Original;
-	bool Installed;
-};
-
-bool InstallVtableHook(VTABLE_HOOK* Hook);
-
-void RestoreVtableHook(VTABLE_HOOK* Hook);
-
 void MemoryCpy(DWORD offset, void* value, DWORD size);
 
 void MemorySet(DWORD offset, DWORD value, DWORD size);

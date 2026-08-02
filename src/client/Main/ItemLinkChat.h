@@ -14,7 +14,7 @@ public:
 
 	CItemLinkChat();
 
-	bool Init();
+	void Init();
 
 	int GetIdentityCount() const;
 
@@ -126,8 +126,6 @@ private:
 	int m_IdentityCount;
 	bool m_IdentityInitialized;
 	DWORD m_LastRenderFrame;
-	RELATIVE_CALL_HOOK m_TextHook;
-	VTABLE_HOOK m_LineHook;
 };
 
 extern CItemLinkChat gItemLinkChat;

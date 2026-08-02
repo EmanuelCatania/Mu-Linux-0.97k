@@ -52,13 +52,8 @@ CInput::~CInput()
 
 }
 
-bool CInput::Init()
+void CInput::Init()
 {
-	if (this->IsSupportedClient() == false)
-	{
-		return false;
-	}
-
 	SetCompleteHook(
 		0xE8,
 		ChatInputTextCall,
@@ -79,23 +74,6 @@ bool CInput::Init()
 		LoginInputPasswordCall,
 		&CInput::RenderLoginInputTextHook);
 
-	return true;
-}
-
-bool CInput::IsSupportedClient()
-{
-	return CheckRelativeCall(
-		ChatInputTextCall,
-		RenderInputTextAddress) &&
-		CheckRelativeCall(
-			ChatInputWhisperCall,
-			RenderInputTextAddress) &&
-		CheckRelativeCall(
-			LoginInputAccountCall,
-			RenderInputTextAddress) &&
-		CheckRelativeCall(
-			LoginInputPasswordCall,
-			RenderInputTextAddress);
 }
 
 void CInput::RenderChatInputTextHook(

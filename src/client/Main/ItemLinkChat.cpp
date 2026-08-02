@@ -17,74 +17,33 @@ static CHAT_LINE_RENDER OriginalChatWindowLineRender = NULL;
 
 CItemLinkChat gItemLinkChat;
 
-#if defined(_DEBUG)
-static void ItemLinkDebug(const char* Format, ...)
-{
-	char Buffer[256] = { 0 };
-	va_list Args;
-
-	va_start(Args, Format);
-	vsprintf_s(Buffer, sizeof(Buffer), Format, Args);
-	va_end(Args);
-
-	OutputDebugStringA(Buffer);
-	OutputDebugStringA("\n");
-	gConsole.Write((char*)"%s", Buffer);
-}
-#endif
-
 CItemLinkChat::CItemLinkChat()
 {
 	memset(this, 0, sizeof(*this));
 	this->m_LastRenderFrame = MAXDWORD;
 }
 
-bool CItemLinkChat::Init()
+void CItemLinkChat::Init()
 {
-	if (this->m_TextHook.Installed != false &&
-		this->m_LineHook.Installed != false)
+	if (OriginalChatWindowLineRender != NULL)
 	{
-		return true;
+		return;
 	}
 
-	memset(&this->m_TextHook, 0, sizeof(this->m_TextHook));
-	memset(&this->m_LineHook, 0, sizeof(this->m_LineHook));
+	SetCompleteHook(
+		0xE8,
+		ItemLinkChatRenderTextCall,
+		&CItemLinkChat::RenderTextHook);
 
-	this->m_TextHook.Address = ItemLinkChatRenderTextCall;
-	this->m_TextHook.Target = RenderChatTextAddress;
-	this->m_TextHook.Hook = (DWORD)&CItemLinkChat::RenderTextHook;
-
-	this->m_LineHook.Address =
+	DWORD LineRenderAddress =
 		ItemLinkChatWindowVTable + ItemLinkChatWindowLineRenderSlot;
-	this->m_LineHook.Expected = ItemLinkChatWindowLineRenderExpected;
-	this->m_LineHook.Hook = (DWORD)&CItemLinkChat::RenderLineHook;
-
-	if (CheckRelativeCall(
-		this->m_TextHook.Address,
-		this->m_TextHook.Target) == false ||
-		CheckBytes(
-			this->m_LineHook.Address,
-			(const BYTE*)&this->m_LineHook.Expected,
-			sizeof(this->m_LineHook.Expected)) == false)
-	{
-		return false;
-	}
-
-	if (InstallRelativeCallHook(&this->m_TextHook) == false)
-	{
-		return false;
-	}
-
-	if (InstallVtableHook(&this->m_LineHook) == false)
-	{
-		RestoreRelativeCallHook(&this->m_TextHook);
-		return false;
-	}
 
 	OriginalChatWindowLineRender =
-		(CHAT_LINE_RENDER)this->m_LineHook.Original;
+		(CHAT_LINE_RENDER)(*(DWORD*)LineRenderAddress);
 
-	return true;
+	SetDword(
+		LineRenderAddress,
+		(DWORD)&CItemLinkChat::RenderLineHook);
 }
 
 int CItemLinkChat::GetIdentityCount() const
@@ -476,14 +435,6 @@ void CItemLinkChat::AttachUiLink(
 		Message + ((Message[0] == '~' || Message[0] == '@') ? 1 : 0),
 		_TRUNCATE);
 
-#if defined(_DEBUG)
-	ItemLinkDebug(
-		"[ItemLink] ui link queued name='%s' message='%s' start=%d length=%d",
-		Link->identity.name,
-		Link->identity.message,
-		Link->linkStart,
-		Link->linkLength);
-#endif
 }
 
 int __fastcall CItemLinkChat::RenderLineHook(

@@ -9,85 +9,49 @@ CItemLinkTooltip::CItemLinkTooltip()
 	memset(this, 0, sizeof(*this));
 }
 
-bool CItemLinkTooltip::IsSupportedClient()
-{
-	for (int n = 0; n < TOOLTIP_HOOK_COUNT; n++)
-	{
-		if (CheckRelativeCall(
-			this->m_Hooks[n].Address,
-			this->m_Hooks[n].Target) == false)
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool CItemLinkTooltip::Init()
+void CItemLinkTooltip::Init()
 {
 	if (this->m_HooksInstalled != false)
 	{
-		return true;
+		return;
 	}
 
-	memset(this->m_Hooks, 0, sizeof(this->m_Hooks));
+	SetCompleteHook(
+		0xE8,
+		ItemTooltipTextListCall,
+		&CItemLinkTooltip::RenderTextListHook);
 
-	this->m_Hooks[TOOLTIP_TEXT_LIST].Address = ItemTooltipTextListCall;
-	this->m_Hooks[TOOLTIP_TEXT_LIST].Target = RenderItemTextListAddress;
-	this->m_Hooks[TOOLTIP_TEXT_LIST].Hook =
-		(DWORD)&CItemLinkTooltip::RenderTextListHook;
+	SetCompleteHook(
+		0xE8,
+		ItemTooltipLineTextCall,
+		&CItemLinkTooltip::RenderLineHook);
 
-	this->m_Hooks[TOOLTIP_TEXT_LINE].Address = ItemTooltipLineTextCall;
-	this->m_Hooks[TOOLTIP_TEXT_LINE].Target = RenderItemTextLineAddress;
-	this->m_Hooks[TOOLTIP_TEXT_LINE].Hook =
-		(DWORD)&CItemLinkTooltip::RenderLineHook;
+	SetCompleteHook(
+		0xE8,
+		ItemTooltipBorderTopCall,
+		&CItemLinkTooltip::RenderTopHook);
 
-	this->m_Hooks[TOOLTIP_BORDER_TOP].Address = ItemTooltipBorderTopCall;
-	this->m_Hooks[TOOLTIP_BORDER_TOP].Target = (DWORD)RenderColor;
-	this->m_Hooks[TOOLTIP_BORDER_TOP].Hook =
-		(DWORD)&CItemLinkTooltip::RenderTopHook;
+	SetCompleteHook(
+		0xE8,
+		ItemTooltipBorderLeftCall,
+		&CItemLinkTooltip::RenderLeftHook);
 
-	this->m_Hooks[TOOLTIP_BORDER_LEFT].Address = ItemTooltipBorderLeftCall;
-	this->m_Hooks[TOOLTIP_BORDER_LEFT].Target = (DWORD)RenderColor;
-	this->m_Hooks[TOOLTIP_BORDER_LEFT].Hook =
-		(DWORD)&CItemLinkTooltip::RenderLeftHook;
+	SetCompleteHook(
+		0xE8,
+		ItemTooltipBorderRightCall,
+		&CItemLinkTooltip::RenderRightHook);
 
-	this->m_Hooks[TOOLTIP_BORDER_RIGHT].Address = ItemTooltipBorderRightCall;
-	this->m_Hooks[TOOLTIP_BORDER_RIGHT].Target = (DWORD)RenderColor;
-	this->m_Hooks[TOOLTIP_BORDER_RIGHT].Hook =
-		(DWORD)&CItemLinkTooltip::RenderRightHook;
+	SetCompleteHook(
+		0xE8,
+		ItemTooltipBorderBottomCall,
+		&CItemLinkTooltip::RenderBottomHook);
 
-	this->m_Hooks[TOOLTIP_BORDER_BOTTOM].Address = ItemTooltipBorderBottomCall;
-	this->m_Hooks[TOOLTIP_BORDER_BOTTOM].Target = (DWORD)RenderColor;
-	this->m_Hooks[TOOLTIP_BORDER_BOTTOM].Hook =
-		(DWORD)&CItemLinkTooltip::RenderBottomHook;
-
-	this->m_Hooks[TOOLTIP_FILL].Address = ItemTooltipFillCall;
-	this->m_Hooks[TOOLTIP_FILL].Target = (DWORD)RenderColor;
-	this->m_Hooks[TOOLTIP_FILL].Hook =
-		(DWORD)&CItemLinkTooltip::RenderFillHook;
-
-	if (this->IsSupportedClient() == false)
-	{
-		return false;
-	}
-
-	for (int n = 0; n < TOOLTIP_HOOK_COUNT; n++)
-	{
-		if (InstallRelativeCallHook(&this->m_Hooks[n]) == false)
-		{
-			for (int Previous = n - 1; Previous >= 0; Previous--)
-			{
-				RestoreRelativeCallHook(&this->m_Hooks[Previous]);
-			}
-
-			return false;
-		}
-	}
+	SetCompleteHook(
+		0xE8,
+		ItemTooltipFillCall,
+		&CItemLinkTooltip::RenderFillHook);
 
 	this->m_HooksInstalled = true;
-	return true;
 }
 
 void CItemLinkTooltip::Pin(const ITEM* Item, int X, int Y)

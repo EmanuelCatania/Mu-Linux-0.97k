@@ -15,7 +15,7 @@ public:
 
 	~CInput();
 
-	bool Init();
+	void Init();
 
 	bool HandleKeyDown(WPARAM wParam);
 
@@ -53,8 +53,6 @@ private:
 		int X,
 		int Y,
 		int Index);
-
-	bool IsSupportedClient();
 
 	bool GetActiveContext(eInputContext* Context, int* Index);
 

@@ -19,10 +19,6 @@ static bool IsPostMessage(const char* Message)
 }
 
 
-#if defined(_DEBUG)
-static void ItemLinkDebug(const char* Format, ...);
-#endif
-
 struct PMSG_STANDARD_CHAT
 {
 	PBMSG_HEAD header;
@@ -32,46 +28,15 @@ struct PMSG_STANDARD_CHAT
 
 CItemLink gItemLink;
 
-#if defined(_DEBUG)
-static void ItemLinkDebug(const char* Format, ...)
-{
-	char Buffer[256] = { 0 };
-	va_list Args;
-
-	va_start(Args, Format);
-	vsprintf_s(Buffer, sizeof(Buffer), Format, Args);
-	va_end(Args);
-
-	OutputDebugStringA(Buffer);
-	OutputDebugStringA("\n");
-	gConsole.Write((char*)"%s", Buffer);
-}
-#endif
-
 CItemLink::CItemLink()
 {
 	this->m_ConsumeChatReturn = false;
 }
 
-bool CItemLink::Init()
+void CItemLink::Init()
 {
-	if (gItemLinkChat.Init() == false)
-	{
-		return false;
-	}
-
-#if defined(_DEBUG)
-	ItemLinkDebug("[ItemLink] chat hooks installed");
-#endif
-
-	if (gItemLinkTooltip.Init() == false)
-	{
-#if defined(_DEBUG)
-		ItemLinkDebug("[ItemLink] 3D tooltip layout unavailable; textual tooltip only");
-#endif
-	}
-
-	return true;
+	gItemLinkChat.Init();
+	gItemLinkTooltip.Init();
 }
 
 bool CItemLink::HandleLeftButtonDown()
@@ -158,9 +123,6 @@ bool CItemLink::TryInsertPointedItem()
 
 	if (this->GetPointedItem(&Item, &Slot, &Equipment) == false)
 	{
-#if defined(_DEBUG)
-		ItemLinkDebug("[ItemLink] click rejected: no pointed slot");
-#endif
 		return false;
 	}
 
@@ -202,18 +164,6 @@ bool CItemLink::TryInsertPointedItem()
 	{
 		return true;
 	}
-
-#if defined(_DEBUG)
-		ItemLinkDebug(
-			"[ItemLink] click accepted slot=%d type=%d level=%d x=%d y=%d token='%s'",
-			Slot,
-			Item.Type,
-			Level,
-			Item.x,
-			Item.y,
-			Token);
-#endif
-
 	DWORD Value = Slot |
 		(((DWORD)(WORD)Item.Type) << 8) |
 		(((DWORD)(BYTE)Level) << 24);
@@ -510,17 +460,6 @@ bool CItemLink::HandleOutgoingChat(BYTE* lpMsg, DWORD size)
 
 		gProtocol.DataSend((BYTE*)&pMsg, sizeof(pMsg));
 	}
-
-#if defined(_DEBUG)
-	gConsole.Write(
-		"[ItemLink] send slot=%d type=%d level=%d start=%d length=%d",
-		Slot,
-		Type,
-		Level,
-		LinkStart,
-		LinkLength);
-#endif
-
 	return true;
 }
 
@@ -597,16 +536,6 @@ void CItemLink::ReceiveItemLinkMessage(
 		{
 			return;
 		}
-
-#if defined(_DEBUG)
-		ItemLinkDebug(
-			"[ItemLink] post recv style=%u name='%s' message='%s' start=%u length=%u",
-			(unsigned int)Channel,
-			Name,
-			Message,
-			(unsigned int)LinkStart,
-			(unsigned int)LinkLength);
-#endif
 	}
 
 	int OldCount = 0;
@@ -651,22 +580,12 @@ void CItemLink::ReceiveItemLinkMessage(
 		}
 
 		UIChatLogWindow_AddText(Name, Message, 0);
-
-#if defined(_DEBUG)
-		ItemLinkDebug("[ItemLink] post gold path type=0");
-#endif
 	}
 	else
 	{
 		/* The server includes '~' or '@'; ReceiveChatMessage selects the
 		 * original blue/green post render path and strips the marker. */
 		ReceiveChatMessage(&Chat);
-
-#if defined(_DEBUG)
-		ItemLinkDebug(
-			"[ItemLink] post colored path marker=%c",
-			Message[0]);
-#endif
 	}
 
 	ITEM Item;

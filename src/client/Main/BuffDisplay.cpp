@@ -34,7 +34,6 @@ CBuffDisplay::CBuffDisplay()
 	this->m_ArrowHudLeft = 0;
 	this->m_ArrowHudVisible = false;
 	this->m_TimerFont = NULL;
-	memset(&this->m_RenderHook, 0, sizeof(this->m_RenderHook));
 }
 
 CBuffDisplay::~CBuffDisplay()
@@ -45,8 +44,13 @@ CBuffDisplay::~CBuffDisplay()
 	}
 }
 
-bool CBuffDisplay::Init()
+void CBuffDisplay::Init()
 {
+	if (this->m_Initialized != false)
+	{
+		return;
+	}
+
 	int TimerFontHeight = FontHeight - 3;
 
 	if (TimerFontHeight < 8)
@@ -75,20 +79,12 @@ bool CBuffDisplay::Init()
 		this->m_TimerFont = g_hFont;
 	}
 
-	this->m_RenderHook.Address = BuffDisplayRenderCall;
-	this->m_RenderHook.Target = BuffDisplayRenderTarget;
-	this->m_RenderHook.Hook = (DWORD)&CBuffDisplay::RenderBeforeMainWindows;
-
-	if (InstallRelativeCallHook(&this->m_RenderHook) == false)
-	{
-#if defined(_DEBUG)
-		gConsole.Write((char*)"[BuffDisplay] render hook disabled (main.exe mismatch)\n");
-#endif
-		return false;
-	}
+	SetCompleteHook(
+		0xE8,
+		BuffDisplayRenderCall,
+		&CBuffDisplay::RenderBeforeMainWindows);
 
 	this->m_Initialized = true;
-	return true;
 }
 
 void CBuffDisplay::Reset()

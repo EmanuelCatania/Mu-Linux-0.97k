@@ -59,7 +59,7 @@ public:
 
 	CItemLink();
 
-	bool Init();
+	void Init();
 
 	bool HandleLeftButtonDown();
 

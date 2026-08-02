@@ -140,7 +140,6 @@
 #define ItemLinkChatRenderTextCall 0x00480BC8
 #define ItemLinkChatWindowVTable 0x005525CC
 #define ItemLinkChatWindowLineRenderSlot 0x5C
-#define ItemLinkChatWindowLineRenderExpected 0x0040D610
 #define ItemLinkChatLogRenderMode 0x005590AC
 
 // Input

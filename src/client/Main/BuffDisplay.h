@@ -23,7 +23,7 @@ public:
 
 	virtual ~CBuffDisplay();
 
-	bool Init();
+	void Init();
 
 	void Reset();
 
@@ -79,7 +79,6 @@ private:
 
 	HFONT m_TimerFont;
 
-	RELATIVE_CALL_HOOK m_RenderHook;
 };
 
 extern CBuffDisplay gBuffDisplay;

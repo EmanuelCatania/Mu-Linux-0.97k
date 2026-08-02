@@ -11,7 +11,7 @@ public:
 
 	CItemLinkTooltip();
 
-	bool Init();
+	void Init();
 
 	void Pin(
 		const ITEM* Item,
@@ -28,18 +28,6 @@ private:
 	{
 		ITEM_TOOLTIP_MODEL_SIZE = 64,
 		ITEM_TOOLTIP_MODEL_GAP = 8
-	};
-
-	enum TOOLTIP_HOOK_INDEX
-	{
-		TOOLTIP_TEXT_LIST,
-		TOOLTIP_TEXT_LINE,
-		TOOLTIP_BORDER_TOP,
-		TOOLTIP_BORDER_LEFT,
-		TOOLTIP_BORDER_RIGHT,
-		TOOLTIP_BORDER_BOTTOM,
-		TOOLTIP_FILL,
-		TOOLTIP_HOOK_COUNT
 	};
 
 	struct TOOLTIP_LAYOUT
@@ -110,11 +98,8 @@ private:
 
 	void RenderTooltipModel(const ITEM* Item);
 
-	bool IsSupportedClient();
-
 	TOOLTIP_LAYOUT m_TooltipLayout;
 	bool m_HooksInstalled;
-	RELATIVE_CALL_HOOK m_Hooks[TOOLTIP_HOOK_COUNT];
 	bool m_Pinned;
 	ITEM m_PinnedItem;
 	int m_PinnedX;
