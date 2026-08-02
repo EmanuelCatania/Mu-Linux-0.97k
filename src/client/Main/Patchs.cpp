@@ -56,7 +56,7 @@ void CPatchs::Init()
 
 	SetDword(0x0047FB96, 0x190); // Expand global message size before newline jump
 
-	MemoryCpy(0x005616D0, "data\\music\\mutheme.mp3", 24); // Correct login music
+	MemoryCpy(0x005616D0, "data\\music\\login_theme.mp3", 29); // Correct login music
 
 	SetCompleteHook(0xE9, 0x00524146, 0x00524231); // Remove Select Character Texts
 
