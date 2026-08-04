@@ -36,6 +36,7 @@
 #include "Notice.h"
 #include "PacketManager.h"
 #include "Path.h"
+#include "Protocol.h"
 #include "Quest.h"
 #include "QuestObjective.h"
 #include "QuestReward.h"
@@ -181,6 +182,14 @@ void CServerInfo::ReadCommonInfo()
 	gMessage.Load(gPath.GetFullPath("Message_Por.txt"), LANGUAGE_PORTUGUESE);
 
 	gObjSetExperienceTable();
+
+	for (int n = 0; n < MAX_OBJECT; n++)
+	{
+		if (gObj[n].Type == OBJECT_USER && gObj[n].Connected == OBJECT_ONLINE)
+		{
+			GCPotionTooltipInfoSend(n);
+		}
+	}
 
 	LogAdd(LOG_BLUE, "[ServerInfo] Common loaded successfully");
 }

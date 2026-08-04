@@ -10,7 +10,9 @@ CItem gItem;
 
 CItem::CItem()
 {
+	this->m_PotionTooltipRatesReady = false;
 
+	memset(this->m_PotionTooltipRates, 0, sizeof(this->m_PotionTooltipRates));
 }
 
 CItem::~CItem()
@@ -23,6 +25,11 @@ void CItem::Init()
 	SetCompleteHook(0xE9, 0x0047B910, &this->ItemConvert);
 
 	SetCompleteHook(0xE9, 0x004C86A9, &this->InsertOptionText);
+	// The native tooltip path skips the option loop entirely when the item has
+	// no special options (the case for consumables). Keep the original loop
+	// body hooked, but remove that early branch so our tooltip line can be
+	// appended for those items as well.
+	MemorySet(0x004C86A3, 0x90, 6);
 
 	SetCompleteHook(0xE8, 0x004C5BC4, &this->OptionAddExcellentDamageRate);
 
@@ -50,6 +57,131 @@ void CItem::Init()
 	SetByte(0x004C2F1F, 0xEB); // Skip reducing damage in staffs (Help Window -> Item Info)
 
 	SetByte(0x004E08B0, 0x28); // Allow drop Divine items
+}
+
+void CItem::SetPotionTooltipRates(const DWORD* rates)
+{
+	if (rates == NULL)
+	{
+		return;
+	}
+
+	memcpy(this->m_PotionTooltipRates, rates, sizeof(this->m_PotionTooltipRates));
+
+	this->m_PotionTooltipRatesReady = true;
+}
+
+void CItem::ClearPotionTooltipRates()
+{
+	memset(this->m_PotionTooltipRates, 0, sizeof(this->m_PotionTooltipRates));
+
+	this->m_PotionTooltipRatesReady = false;
+}
+
+void CItem::AppendPotionTooltipText(ITEM* ip)
+{
+	if (ip == NULL)
+	{
+		return;
+	}
+
+	const char* format = NULL;
+	DWORD rate = 0;
+
+	switch (ip->Type)
+	{
+		case GET_ITEM(14, 0):
+		{
+			format = GlobalText[943];
+			rate = this->m_PotionTooltipRates[0];
+			break;
+		}
+
+		case GET_ITEM(14, 1):
+		{
+			format = GlobalText[943];
+			rate = this->m_PotionTooltipRates[1];
+			break;
+		}
+
+		case GET_ITEM(14, 2):
+		{
+			format = GlobalText[943];
+			rate = this->m_PotionTooltipRates[2];
+			break;
+		}
+
+		case GET_ITEM(14, 3):
+		{
+			format = GlobalText[943];
+			rate = this->m_PotionTooltipRates[3];
+			break;
+		}
+
+		case GET_ITEM(14, 4):
+		{
+			format = GlobalText[944];
+			rate = this->m_PotionTooltipRates[4];
+			break;
+		}
+
+		case GET_ITEM(14, 5):
+		{
+			format = GlobalText[944];
+			rate = this->m_PotionTooltipRates[5];
+			break;
+		}
+
+		case GET_ITEM(14, 6):
+		{
+			format = GlobalText[944];
+			rate = this->m_PotionTooltipRates[6];
+			break;
+		}
+
+		case GET_ITEM(14, 8):
+		{
+			format = GlobalText[945];
+			break;
+		}
+
+		default:
+		{
+			return;
+		}
+	}
+
+	if (ip->Type != GET_ITEM(14, 8) && this->m_PotionTooltipRatesReady == false)
+	{
+		return;
+	}
+
+	char text[100];
+
+	if (ip->Type == GET_ITEM(14, 8))
+	{
+		wsprintf(text, format);
+	}
+	else
+	{
+		wsprintf(text, format, (int)rate);
+	}
+
+	for (int n = 0; n < TextNum; n++)
+	{
+		if (strcmp(TextList[n], text) == 0)
+		{
+			return;
+		}
+	}
+
+	wsprintf(TextList[TextNum], "%s", text);
+
+	TextListColor[TextNum] = TEXT_COLOR_BLUE;
+
+	TextBold[TextNum] = false;
+
+	TextNum += 1;
 }
 
 void CItem::ItemConvert(ITEM* ip, BYTE Attribute1, BYTE Attribute2)
@@ -526,6 +658,8 @@ _declspec(naked) void CItem::InsertOptionText()
 		Pushad;
 		Mov ip, Ebx;
 	}
+
+	gItem.AppendPotionTooltipText(ip);
 
 	for (i = 0; i < ip->SpecialNum; i++)
 	{

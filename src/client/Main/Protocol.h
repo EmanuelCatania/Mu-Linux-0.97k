@@ -378,6 +378,20 @@ static_assert(sizeof(PMSG_PARTY_DISPLAY_RECV) == 6, "Invalid party display heade
 static_assert(sizeof(PMSG_PARTY_DISPLAY_MEMBER_RECV) == 6, "Invalid party display member size");
 static_assert(sizeof(PMSG_PARTY_DISPLAY_EFFECT_RECV) == 5, "Invalid party display effect size");
 
+struct PMSG_POTION_TOOLTIP_INFO_RECV
+{
+	PSBMSG_HEAD header; // C1:F3:EB
+	DWORD ApplePotionRate;
+	DWORD SmallLifePotionRate;
+	DWORD MidleLifePotionRate;
+	DWORD LargeLifePotionRate;
+	DWORD SmallManaPotionRate;
+	DWORD MidleManaPotionRate;
+	DWORD LargeManaPotionRate;
+};
+
+static_assert(sizeof(PMSG_POTION_TOOLTIP_INFO_RECV) == 32, "Invalid potion tooltip packet size");
+
 //**********************************************//
 //************ Client -> GameServer ************//
 //**********************************************//
@@ -525,6 +539,8 @@ private:
 	void GCHealthBarRecv(PMSG_HEALTH_BAR_RECV* lpMsg);
 
 	void GCPartyDisplayRecv(PMSG_PARTY_DISPLAY_RECV* lpMsg, int Size);
+
+	void GCPotionTooltipInfoRecv(PMSG_POTION_TOOLTIP_INFO_RECV* lpMsg, int Size);
 
 public:
 

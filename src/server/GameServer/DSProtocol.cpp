@@ -731,6 +731,8 @@ void DGCharacterInfoRecv(SDHP_CHARACTER_INFO_RECV* lpMsg)
 
 	gItemValue.GCItemValueListSend(lpObj->Index);
 
+	GCPotionTooltipInfoSend(lpObj->Index);
+
 	gGuild.GDGuildMemberGetInfoSend(lpObj->Index, lpObj->Name);
 
 	gItemManager.GCItemListSend(lpObj->Index);

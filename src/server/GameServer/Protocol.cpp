@@ -2372,3 +2372,25 @@ void GCHealthBarSend(int aIndex)
 
 	DataSend(lpObj->Index, send, size);
 }
+
+void GCPotionTooltipInfoSend(int aIndex)
+{
+	if (OBJECT_RANGE(aIndex) == 0 || gObj[aIndex].Type != OBJECT_USER || gObj[aIndex].Connected != OBJECT_ONLINE)
+	{
+		return;
+	}
+
+	PMSG_POTION_TOOLTIP_INFO_SEND pMsg;
+
+	pMsg.header.set(0xF3, 0xEB, sizeof(pMsg));
+
+	pMsg.ApplePotionRate = gServerInfo.m_ApplePotionRate;
+	pMsg.SmallLifePotionRate = gServerInfo.m_SmallLifePotionRate;
+	pMsg.MidleLifePotionRate = gServerInfo.m_MidleLifePotionRate;
+	pMsg.LargeLifePotionRate = gServerInfo.m_LargeLifePotionRate;
+	pMsg.SmallManaPotionRate = gServerInfo.m_SmallManaPotionRate;
+	pMsg.MidleManaPotionRate = gServerInfo.m_MidleManaPotionRate;
+	pMsg.LargeManaPotionRate = gServerInfo.m_LargeManaPotionRate;
+
+	DataSend(aIndex, (BYTE*)&pMsg, pMsg.header.size);
+}

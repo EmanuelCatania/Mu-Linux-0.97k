@@ -617,6 +617,20 @@ struct PMSG_BUFF_LIST_SEND
 	BYTE count;
 };
 
+struct PMSG_POTION_TOOLTIP_INFO_SEND
+{
+	PSBMSG_HEAD header; // C1:F3:EB
+	DWORD ApplePotionRate;
+	DWORD SmallLifePotionRate;
+	DWORD MidleLifePotionRate;
+	DWORD LargeLifePotionRate;
+	DWORD SmallManaPotionRate;
+	DWORD MidleManaPotionRate;
+	DWORD LargeManaPotionRate;
+};
+
+static_assert(sizeof(PMSG_POTION_TOOLTIP_INFO_SEND) == 32, "Invalid potion tooltip packet size");
+
 #pragma pack(push, 1)
 struct PMSG_BUFF_INFO_SEND
 {
@@ -747,3 +761,5 @@ void GCNewCharacterCalcSend(LPOBJ lpObj);
 void GCHealthBarSend(int aIndex);
 
 void GCBuffListSend(LPOBJ lpObj);
+
+void GCPotionTooltipInfoSend(int aIndex);

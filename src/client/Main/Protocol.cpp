@@ -7,6 +7,7 @@
 #include "HackCheck.h"
 #include "HealthBar.h"
 #include "HWID.h"
+#include "Item.h"
 #include "ItemManager.h"
 #include "ItemLink.h"
 #include "ItemStack.h"
@@ -467,6 +468,13 @@ bool CProtocol::TranslateProtocol(BYTE head, BYTE* lpMsg, int Size)
 					return true;
 				}
 
+				case 0xEB:
+				{
+					this->GCPotionTooltipInfoRecv((PMSG_POTION_TOOLTIP_INFO_RECV*)lpMsg, Size);
+
+					return true;
+				}
+
 				case 0xE4:
 				{
 					gItemValue.GCItemValueListRecv((PMSG_ITEM_VALUE_LIST_RECV*)lpMsg);
@@ -521,6 +529,29 @@ void CProtocol::GCNoticeRecv(PMSG_NOTICE_RECV* lpMsg)
 
 		((void(_cdecl*)(char* strID, char* strText, int MsgType))0x00480620)((char*)0x005826D3C, text, 1);
 	}
+}
+
+void CProtocol::GCPotionTooltipInfoRecv(PMSG_POTION_TOOLTIP_INFO_RECV* lpMsg, int Size)
+{
+	if (lpMsg == NULL || Size != (int)sizeof(PMSG_POTION_TOOLTIP_INFO_RECV) ||
+		lpMsg->header.type != 0xC1 || lpMsg->header.head != 0xF3 || lpMsg->header.subh != 0xEB ||
+		lpMsg->header.size != sizeof(PMSG_POTION_TOOLTIP_INFO_RECV))
+	{
+		return;
+	}
+
+	DWORD rates[7] =
+	{
+		lpMsg->ApplePotionRate,
+		lpMsg->SmallLifePotionRate,
+		lpMsg->MidleLifePotionRate,
+		lpMsg->LargeLifePotionRate,
+		lpMsg->SmallManaPotionRate,
+		lpMsg->MidleManaPotionRate,
+		lpMsg->LargeManaPotionRate,
+	};
+
+	gItem.SetPotionTooltipRates(rates);
 }
 
 void CProtocol::GCDamageRecv(PMSG_DAMAGE_RECV* lpMsg)
@@ -835,6 +866,8 @@ void CProtocol::GCCharacterListRecv(PMSG_CHARACTER_LIST_RECV* lpMsg)
 void CProtocol::GCCharacterInfoRecv(PMSG_CHARACTER_INFO_RECV* lpMsg)
 {
 	gNotification.ResetSession();
+
+	gItem.ClearPotionTooltipRates();
 
 	gReconnect.ReconnectOnCharacterInfo();
 }

@@ -10,6 +10,10 @@ public:
 
 	void Init();
 
+	void SetPotionTooltipRates(const DWORD* rates);
+
+	void ClearPotionTooltipRates();
+
 private:
 
 	static void ItemConvert(ITEM* ip, BYTE Attribute1, BYTE Attribute2);
@@ -33,6 +37,12 @@ private:
 	static DWORD ItemValue(ITEM* ip, int goldType);
 
 	static DWORD ConvertRepairGold(int Gold, int Durability, int MaxDurability, short Type, char* Text);
+
+	void AppendPotionTooltipText(ITEM* ip);
+
+	bool m_PotionTooltipRatesReady;
+
+	DWORD m_PotionTooltipRates[7];
 };
 
 extern CItem gItem;
