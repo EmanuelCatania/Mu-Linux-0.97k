@@ -38,6 +38,8 @@ public:
 
 	static void ServerNameChange(char* Text, char* Format, DWORD arg1, DWORD arg2);
 
+	bool GetSelectedServerInfo(char* Name, int NameCapacity, BYTE* Percent) const;
+
 	void GCCustomServerListRecv(PMSG_CUSTOM_SERVER_LIST_RECV* lpMsg);
 
 	static void ServerBoxTexture(int Texture, float x, float y, float Width, float Height, float u, float v, float uWidth, float vHeight, bool Scale, bool StartScale);

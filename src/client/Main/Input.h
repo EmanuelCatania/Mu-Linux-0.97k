@@ -17,6 +17,10 @@ public:
 
 	void Init();
 
+	void SetLoginInputText(int Index, const char* Text);
+
+	void SetLoginPlaceholder(bool Enabled);
+
 	bool HandleKeyDown(WPARAM wParam);
 
 	bool HandleChar(WPARAM wParam);
@@ -181,6 +185,8 @@ private:
 	DWORD m_TokenValue;
 
 	char m_TokenText[INPUT_TEXT_SIZE];
+
+	bool m_LoginPlaceholder;
 };
 
 extern CInput gInput;

@@ -10,12 +10,12 @@ CPatchs gPatchs;
 
 CPatchs::CPatchs()
 {
-	GetPrivateProfileString("User", "Username", "", m_ID, 10, ".\\Config.ini");
+	// GetPrivateProfileString("User", "Username", "", m_ID, 10, ".\\Config.ini");
 }
 
 CPatchs::~CPatchs()
 {
-	WritePrivateProfileString("User", "Username", m_ID, ".\\Config.ini");
+	// WritePrivateProfileString("User", "Username", m_ID, ".\\Config.ini");
 }
 
 void CPatchs::Init()

@@ -147,6 +147,7 @@
 #define ChatInputWhisperCall 0x004BE60F
 #define LoginInputAccountCall 0x00521778
 #define LoginInputPasswordCall 0x005217A0
+#define LoginPanelY *(int*)0x005616A4
 #define InputText ((char(*)[256])0x07DB8710)
 #define InputLength ((int*)0x07D780A8)
 #define InputTextHide ((BYTE*)0x07E113D8)

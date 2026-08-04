@@ -3,6 +3,7 @@
 #include "Font.h"
 #include "HealthBar.h"
 #include "Language.h"
+#include "LoginCredentials.h"
 #include "Notification.h"
 #include "Sound.h"
 #include "Window.h"
@@ -352,6 +353,9 @@ void COptionsMenu::RenderGeneral()
 		PosY += ((float)this->BoxHeight + 7.0f);
 	}
 
+	this->RenderHideUsername(PosX, PosY);
+	PosY += ((float)this->BoxHeight + 7.0f);
+
 	this->RenderPVPWithoutControl(PosX, PosY);
 	PosY += ((float)this->BoxHeight + 7.0f);
 
@@ -391,6 +395,13 @@ bool COptionsMenu::CheckGeneral()
 
 		PosY += (this->BoxHeight + 7);
 	}
+
+	if (this->CheckHideUsername(PosX, PosY))
+	{
+		return true;
+	}
+
+	PosY += (this->BoxHeight + 7);
 
 	if (this->CheckPVPWithoutControl(PosX, PosY))
 	{
@@ -439,6 +450,53 @@ bool COptionsMenu::CheckGeneral()
 
 	if (this->CheckBack(PosX, PosY))
 	{
+		return true;
+	}
+
+	return false;
+}
+
+void COptionsMenu::RenderHideUsername(float PosX, float PosY)
+{
+	this->RenderBox(PosX, PosY, (float)this->BoxWidth, (float)this->BoxHeight);
+
+	char Text[96] = { 0 };
+	const char* State = "Off";
+
+	if (gLanguage.LangNum == LANGUAGE_PORTUGUESE)
+	{
+		State = gLoginCredentials.IsHideUsernameEnabled() ? "Ativado" : "Desativado";
+		sprintf_s(Text, "%s: %s", gLoginCredentials.GetHideUsernameLabel(), State);
+	}
+	else if (gLanguage.LangNum == LANGUAGE_SPANISH)
+	{
+		State = gLoginCredentials.IsHideUsernameEnabled() ? "Activado" : "Desactivado";
+		sprintf_s(Text, "%s: %s", gLoginCredentials.GetHideUsernameLabel(), State);
+	}
+	else
+	{
+		State = gLoginCredentials.IsHideUsernameEnabled() ? "On" : "Off";
+		sprintf_s(Text, "%s: %s", gLoginCredentials.GetHideUsernameLabel(), State);
+	}
+
+	EnableAlphaTest(true);
+	RenderText((int)PosX, CenterTextPosY(Text, ((int)PosY + (this->BoxHeight / 2))), Text, REAL_WIDTH(this->BoxWidth), RT3_SORT_CENTER, NULL);
+	SecureZeroMemory(Text, sizeof(Text));
+}
+
+bool COptionsMenu::CheckHideUsername(int PosX, int PosY)
+{
+	if (IsWorkZone(PosX, PosY, this->BoxWidth, this->BoxHeight))
+	{
+		if (MouseLButton && MouseLButtonPush)
+		{
+			MouseLButtonPush = false;
+			MouseUpdateTime = 0;
+			MouseUpdateTimeMax = 6;
+			PlayBuffer(25, 0, 0);
+			gLoginCredentials.SetHideUsername(!gLoginCredentials.IsHideUsernameEnabled());
+		}
+
 		return true;
 	}
 

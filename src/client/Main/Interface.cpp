@@ -4,6 +4,7 @@
 #include "Camera3D.h"
 #include "EventTimer.h"
 #include "ItemLink.h"
+#include "LoginCredentials.h"
 #include "MiniMap.h"
 #include "MoveList.h"
 #include "Notification.h"
@@ -45,8 +46,10 @@ void Interface::Init()
 void Interface::RenderLogInScene(HDC Hdc)
 {
 	gWindow.ChangeWindowText();
-
+	gLoginCredentials.Prepare();
 	((void(__cdecl*)(HDC Hdc)) 0x00521630)(Hdc);
+	gLoginCredentials.Render();
+
 }
 
 void Interface::RenderCharacterScene(HDC Hdc)
@@ -54,6 +57,7 @@ void Interface::RenderCharacterScene(HDC Hdc)
 	gWindow.ChangeWindowText();
 
 	((void(__cdecl*)(HDC Hdc)) 0x00523B30)(Hdc);
+	gLoginCredentials.Render();
 }
 
 void Interface::RenderMainScene()
@@ -61,6 +65,7 @@ void Interface::RenderMainScene()
 	gWindow.ChangeWindowText();
 
 	((void(__cdecl*)()) 0x00525A00)();
+	gLoginCredentials.Render();
 }
 
 void Interface::LoadImages()
@@ -98,6 +103,8 @@ void Interface::MyRenderWindows()
 	gBuffDisplay.RenderTooltip();
 
 	gItemLink.RenderTooltip();
+
+	gLoginCredentials.Render();
 
 }
 

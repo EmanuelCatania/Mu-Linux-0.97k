@@ -259,6 +259,9 @@
     <ClInclude Include="Input.h">
       <Filter>Interface</Filter>
     </ClInclude>
+    <ClInclude Include="LoginCredentials.h">
+      <Filter>Interface</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CCRC32.Cpp">
@@ -433,6 +436,9 @@
       <Filter>Util Files</Filter>
     </ClCompile>
     <ClCompile Include="Input.cpp">
+      <Filter>Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="LoginCredentials.cpp">
       <Filter>Interface</Filter>
     </ClCompile>
   </ItemGroup>

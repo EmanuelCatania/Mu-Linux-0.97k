@@ -2,6 +2,7 @@
 #include "Window.h"
 #include "Controller.h"
 #include "Input.h"
+#include "LoginCredentials.h"
 #include "ItemLink.h"
 #include "Notification.h"
 #include "Font.h"
@@ -220,6 +221,11 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		case WM_KEYDOWN:
 		{
+			if (gLoginCredentials.HandleKeyDown(wParam))
+			{
+				return 0;
+			}
+
 			if (gItemLink.HandleKeyDown(wParam))
 			{
 				return 0;
@@ -235,6 +241,11 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 		case WM_CHAR:
 		{
+			if (gLoginCredentials.HandleChar(wParam))
+			{
+				return 0;
+			}
+
 			if (gItemLink.HandleChar(wParam))
 			{
 				return 0;
@@ -249,6 +260,11 @@ LRESULT WINAPI CWindow::MyWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		case WM_LBUTTONDOWN:
 		{
+			if (gLoginCredentials.HandleLeftButtonDown(hwnd, lParam))
+			{
+				return 0;
+			}
+
 			if (gItemLink.HandleLeftButtonDown())
 			{
 				return 0;

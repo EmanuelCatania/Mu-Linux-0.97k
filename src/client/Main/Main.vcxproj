@@ -171,6 +171,7 @@
     <ClInclude Include="WeaponView.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="LoginCredentials.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Buff.cpp" />
@@ -237,6 +238,7 @@
     <ClCompile Include="WeaponView.cpp" />
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="LoginCredentials.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Main.rc" />

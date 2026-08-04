@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Protocol.h"
+#include "LoginCredentials.h"
 #include "BuffDisplay.h"
 #include "ChaosMix.h"
 #include "EventTimer.h"
@@ -849,6 +850,8 @@ void CProtocol::GCConnectAccountRecv(PMSG_CONNECT_ACCOUNT_RECV* lpMsg)
 {
 	gItem.ClearPotionTooltipRates();
 
+	gLoginCredentials.OnConnectAccountResult(lpMsg->result);
+
 	gReconnect.ReconnectOnConnectAccount(lpMsg->result);
 }
 
@@ -856,6 +859,8 @@ void CProtocol::GCCloseClientRecv(PMSG_CLOSE_CLIENT_RECV* lpMsg)
 {
 	gNotification.ResetSession();
 	gItem.ClearPotionTooltipRates();
+
+	gLoginCredentials.OnDisconnect();
 
 	gReconnect.ReconnectOnCloseClient(lpMsg->result);
 }

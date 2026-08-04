@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Input.h"
+#include "LoginCredentials.h"
 
 CInput gInput;
 
@@ -45,6 +46,8 @@ CInput::CInput()
 	this->m_TokenValue = 0;
 
 	memset(this->m_TokenText, 0, sizeof(this->m_TokenText));
+
+	this->m_LoginPlaceholder = false;
 }
 
 CInput::~CInput()
@@ -76,6 +79,21 @@ void CInput::Init()
 
 }
 
+void CInput::SetLoginInputText(int Index, const char* Text)
+{
+	if (Index < 0 || Index > 1 || Text == NULL)
+	{
+		return;
+	}
+
+	this->SetInputText(Index, Text);
+}
+
+void CInput::SetLoginPlaceholder(bool Enabled)
+{
+	this->m_LoginPlaceholder = Enabled;
+}
+
 void CInput::RenderChatInputTextHook(
 	int X,
 	int Y,
@@ -98,6 +116,14 @@ void CInput::RenderLoginInputTextHook(
 		X,
 		Y,
 		Index);
+
+	// The native login routine draws its controls after the text fields. Keep
+	// the custom options in that same pass so they remain visible on builds
+	// where the outer scene hook is followed by another native clear.
+	if (Index == 1)
+	{
+		gLoginCredentials.RenderLoginOptions();
+	}
 }
 
 bool CInput::GetActiveContext(eInputContext* Context, int* Index)
@@ -506,7 +532,8 @@ void CInput::RenderInputTextManaged(
 
 	this->UpdateViewStart(Index);
 
-	if (ActiveInput != false)
+	if (ActiveInput != false &&
+		(Context != INPUT_CONTEXT_LOGIN || this->m_LoginPlaceholder == false))
 	{
 		this->RenderSelection(X, Y, Index);
 	}
@@ -520,16 +547,28 @@ void CInput::RenderInputTextManaged(
 		InputText[Index],
 		sizeof(OriginalText));
 
-	this->BuildVisibleText(
-		Index,
-		this->m_ViewStart[Index],
-		this->GetInputLength(Index),
-		VisibleText,
-		sizeof(VisibleText));
+	if (Context == INPUT_CONTEXT_LOGIN && this->m_LoginPlaceholder != false)
+	{
+		strncpy_s(
+			VisibleText,
+			sizeof(VisibleText),
+			gLoginCredentials.GetSavedLoginPlaceholderText(),
+			_TRUNCATE);
+	}
+	else
+	{
+		this->BuildVisibleText(
+			Index,
+			this->m_ViewStart[Index],
+			this->GetInputLength(Index),
+			VisibleText,
+			sizeof(VisibleText));
+	}
 
 	BYTE OriginalHide = InputTextHide[Index];
 
 	int OriginalInputIndex = InputIndex;
+	int OriginalInputLength = InputLength[Index];
 
 	strncpy_s(
 		InputText[Index],
@@ -541,9 +580,21 @@ void CInput::RenderInputTextManaged(
 
 	InputIndex = -1;
 
-	RenderInputText(X, Y, Index);
+	if (Context == INPUT_CONTEXT_LOGIN && this->m_LoginPlaceholder != false)
+	{
+		// The native input renderer applies a horizontal view offset intended
+		// for editable text. That offset clips the leading '[' of the visual
+		// placeholder on some client revisions. Draw this read-only label
+		// directly while keeping the real field untouched.
+		RenderText(X, Y, VisibleText, 0, RT3_SORT_LEFT, NULL);
+	}
+	else
+	{
+		RenderInputText(X, Y, Index);
+	}
 
 	InputIndex = OriginalInputIndex;
+	InputLength[Index] = OriginalInputLength;
 
 	InputTextHide[Index] = OriginalHide;
 
@@ -552,7 +603,8 @@ void CInput::RenderInputTextManaged(
 		OriginalText,
 		sizeof(OriginalText));
 
-	if (ActiveInput != false)
+	if (ActiveInput != false &&
+		(Context != INPUT_CONTEXT_LOGIN || this->m_LoginPlaceholder == false))
 	{
 		this->RenderCaret(X, Y, Index);
 	}

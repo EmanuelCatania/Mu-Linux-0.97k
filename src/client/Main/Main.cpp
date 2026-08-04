@@ -3,6 +3,7 @@
 #include "BuffDisplay.h"
 #include "ChaosMix.h"
 #include "Input.h"
+#include "LoginCredentials.h"
 #include "Controller.h"
 #include "MapFog.h"
 #include "Font.h"
@@ -58,6 +59,8 @@ extern "C" _declspec(dllexport) void _cdecl EntryProc()
 	gProtect.CheckInstance();
 
 	gInput.Init();
+
+	gLoginCredentials.Init();
 
 	gItemLink.Init();
 

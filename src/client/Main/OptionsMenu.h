@@ -41,6 +41,8 @@ private:
 	void RenderGeneralTitle(float PosX, float PosY);
 	void RenderLanguage(float PosX, float PosY);
 	bool CheckLanguage(int PosX, int PosY);
+	void RenderHideUsername(float PosX, float PosY);
+	bool CheckHideUsername(int PosX, int PosY);
 	void RenderPVPWithoutControl(float PosX, float PosY);
 	bool CheckPVPWithoutControl(int PosX, int PosY);
 	void RenderAutomaticAttack(float PosX, float PosY);

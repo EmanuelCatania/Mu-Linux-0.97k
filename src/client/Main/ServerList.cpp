@@ -51,6 +51,70 @@ void CServerList::ServerNameChange(char* Text, char* Format, DWORD arg1, DWORD a
 	wsprintf(Text, "%s", gServerList.m_ServerListInfo[(abs((int)((*(DWORD*)(0x00561694) - 23) * 20)) + (*(DWORD*)(0x0056169C) - 1))]);
 }
 
+bool CServerList::GetSelectedServerInfo(
+	char* Name,
+	int NameCapacity,
+	BYTE* Percent) const
+{
+	if (Name == NULL || NameCapacity <= 0)
+	{
+		return false;
+	}
+
+	Name[0] = '\0';
+
+	if (Percent != NULL)
+	{
+		*Percent = 0;
+	}
+
+	const int Group = abs(ServerSelectHi - 23);
+	const int Local = ServerLocalSelect - 1;
+
+	if (Group < 0 || Group >= MAX_SERVER_HI ||
+		Local < 0 || Local >= MAX_SERVER_LO)
+	{
+		return false;
+	}
+
+	const int ServerCode = (Group * MAX_SERVER_LO) + Local;
+
+	if (ServerCode < 0 || ServerCode >= MAX_SERVER_CODE)
+	{
+		return false;
+	}
+
+	if (gServerList.m_ServerListInfo[ServerCode][0] != '\0')
+	{
+		strncpy_s(
+			Name,
+			NameCapacity,
+			gServerList.m_ServerListInfo[ServerCode],
+			_TRUNCATE);
+	}
+	else if (ServerList[Group].Name[0] != '\0')
+	{
+		strncpy_s(
+			Name,
+			NameCapacity,
+			ServerList[Group].Name,
+			_TRUNCATE);
+	}
+
+	if (Name[0] == '\0')
+	{
+		return false;
+	}
+
+	if (Percent != NULL)
+	{
+		*Percent = (ServerList[Group].Server[Local].Percent > 100) ?
+			100 : ServerList[Group].Server[Local].Percent;
+	}
+
+	return true;
+}
+
 void CServerList::GCCustomServerListRecv(PMSG_CUSTOM_SERVER_LIST_RECV* lpMsg)
 {
 	int count = MAKE_NUMBERW(lpMsg->count[0], lpMsg->count[1]);
