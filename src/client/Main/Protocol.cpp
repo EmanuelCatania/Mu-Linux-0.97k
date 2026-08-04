@@ -836,6 +836,7 @@ void CProtocol::GCCharacterMaxLevelRecv(PMSG_CHARACTER_MAX_LEVEL_RECV* lpMsg)
 void CProtocol::GCConnectClientRecv(PMSG_CONNECT_CLIENT_RECV* lpMsg)
 {
 	gNotification.ResetSession();
+	gItem.ClearPotionTooltipRates();
 
 	gPrintPlayer.ViewIndex = MAKE_NUMBERW(lpMsg->index[0], lpMsg->index[1]);
 
@@ -846,12 +847,15 @@ void CProtocol::GCConnectClientRecv(PMSG_CONNECT_CLIENT_RECV* lpMsg)
 
 void CProtocol::GCConnectAccountRecv(PMSG_CONNECT_ACCOUNT_RECV* lpMsg)
 {
+	gItem.ClearPotionTooltipRates();
+
 	gReconnect.ReconnectOnConnectAccount(lpMsg->result);
 }
 
 void CProtocol::GCCloseClientRecv(PMSG_CLOSE_CLIENT_RECV* lpMsg)
 {
 	gNotification.ResetSession();
+	gItem.ClearPotionTooltipRates();
 
 	gReconnect.ReconnectOnCloseClient(lpMsg->result);
 }
@@ -859,6 +863,7 @@ void CProtocol::GCCloseClientRecv(PMSG_CLOSE_CLIENT_RECV* lpMsg)
 void CProtocol::GCCharacterListRecv(PMSG_CHARACTER_LIST_RECV* lpMsg)
 {
 	gNotification.ResetSession();
+	gItem.ClearPotionTooltipRates();
 
 	gReconnect.ReconnectOnCharacterList();
 }

@@ -41,6 +41,8 @@
 
 #define MAX_ITEM_INFO 4
 
+#define ITEM_TOOLTIP_MAX_LINES 20 /* Native tooltip color/style arrays contain 20 entries. */
+
 #define GET_ITEM_OPT_LEVEL(x)	((x >> 3) & 0xF) // GET_ITEM_OPT_LEVEL(TargetItem->Level)
 #define GET_ITEM_OPT_DUR(x)	((x < 0) ? (x + 256) : x) // GET_ITEM_OPT_DUR(TargetItem->Durability)
 #define GET_ITEM_OPT_SKILL(x)	((x >> 7) & 1) // GET_ITEM_OPT_SKILL(TargetItem->Level)

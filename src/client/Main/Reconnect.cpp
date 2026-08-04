@@ -3,6 +3,7 @@
 #include "HackCheck.h"
 #include "Protect.h"
 #include "Protocol.h"
+#include "Item.h"
 
 CReconnect gReconnect;
 
@@ -304,6 +305,8 @@ BOOL CReconnect::ReconnectCloseSocket(DWORD This)
 
 void CReconnect::ReconnectOnCloseSocket()
 {
+	gItem.ClearPotionTooltipRates();
+
 	if (SceneFlag == 5 && this->ReconnectStatus != RECONNECT_STATUS_DISCONNECT)
 	{
 		this->ReconnectSetInfo(RECONNECT_STATUS_RECONNECT, RECONNECT_PROGRESS_NONE, 30000, gProtect.m_MainInfo.ReconnectTime);

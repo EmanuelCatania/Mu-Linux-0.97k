@@ -377,6 +377,7 @@
 #define RenderObjectScreen ((void(_cdecl*)(int Type, int ItemLevel, int Option1, float Target[3], int Select, bool PickUp)) 0x004E13A0)
 #define ItemTooltipTextListCall 0x004C8C26
 #define ItemTooltipLineTextCall 0x004C27DD
+#define ItemTooltipSkipEmptyTextBranch 0x004C86A3 // Native JBE skipped so consumables can append a tooltip line.
 #define ItemTooltipBorderTopCall 0x004C25F5
 #define ItemTooltipBorderLeftCall 0x004C2614
 #define ItemTooltipBorderRightCall 0x004C2635

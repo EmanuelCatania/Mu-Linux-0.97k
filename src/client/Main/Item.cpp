@@ -8,6 +8,28 @@
 
 CItem gItem;
 
+namespace
+{
+	struct POTION_TOOLTIP_ENTRY
+	{
+		short ItemType;
+		int RateIndex;
+		int TextIndex;
+	};
+
+	const POTION_TOOLTIP_ENTRY PotionTooltipEntries[] =
+	{
+		{ GET_ITEM(14, 0), 0, 943 },
+		{ GET_ITEM(14, 1), 1, 943 },
+		{ GET_ITEM(14, 2), 2, 943 },
+		{ GET_ITEM(14, 3), 3, 943 },
+		{ GET_ITEM(14, 4), 4, 944 },
+		{ GET_ITEM(14, 5), 5, 944 },
+		{ GET_ITEM(14, 6), 6, 944 },
+		{ GET_ITEM(14, 8), -1, 945 },
+	};
+}
+
 CItem::CItem()
 {
 	this->m_PotionTooltipRatesReady = false;
@@ -25,11 +47,7 @@ void CItem::Init()
 	SetCompleteHook(0xE9, 0x0047B910, &this->ItemConvert);
 
 	SetCompleteHook(0xE9, 0x004C86A9, &this->InsertOptionText);
-	// The native tooltip path skips the option loop entirely when the item has
-	// no special options (the case for consumables). Keep the original loop
-	// body hooked, but remove that early branch so our tooltip line can be
-	// appended for those items as well.
-	MemorySet(0x004C86A3, 0x90, 6);
+	MemorySet(ItemTooltipSkipEmptyTextBranch, 0x90, 6);
 
 	SetCompleteHook(0xE8, 0x004C5BC4, &this->OptionAddExcellentDamageRate);
 
@@ -85,86 +103,37 @@ void CItem::AppendPotionTooltipText(ITEM* ip)
 		return;
 	}
 
-	const char* format = NULL;
-	DWORD rate = 0;
+	const POTION_TOOLTIP_ENTRY* entry = NULL;
 
-	switch (ip->Type)
+	for (int n = 0; n < (int)(sizeof(PotionTooltipEntries) / sizeof(PotionTooltipEntries[0])); n++)
 	{
-		case GET_ITEM(14, 0):
+		if (PotionTooltipEntries[n].ItemType == ip->Type)
 		{
-			format = GlobalText[943];
-			rate = this->m_PotionTooltipRates[0];
+			entry = &PotionTooltipEntries[n];
 			break;
-		}
-
-		case GET_ITEM(14, 1):
-		{
-			format = GlobalText[943];
-			rate = this->m_PotionTooltipRates[1];
-			break;
-		}
-
-		case GET_ITEM(14, 2):
-		{
-			format = GlobalText[943];
-			rate = this->m_PotionTooltipRates[2];
-			break;
-		}
-
-		case GET_ITEM(14, 3):
-		{
-			format = GlobalText[943];
-			rate = this->m_PotionTooltipRates[3];
-			break;
-		}
-
-		case GET_ITEM(14, 4):
-		{
-			format = GlobalText[944];
-			rate = this->m_PotionTooltipRates[4];
-			break;
-		}
-
-		case GET_ITEM(14, 5):
-		{
-			format = GlobalText[944];
-			rate = this->m_PotionTooltipRates[5];
-			break;
-		}
-
-		case GET_ITEM(14, 6):
-		{
-			format = GlobalText[944];
-			rate = this->m_PotionTooltipRates[6];
-			break;
-		}
-
-		case GET_ITEM(14, 8):
-		{
-			format = GlobalText[945];
-			break;
-		}
-
-		default:
-		{
-			return;
 		}
 	}
 
-	if (ip->Type != GET_ITEM(14, 8) && this->m_PotionTooltipRatesReady == false)
+	if (entry == NULL || (entry->RateIndex >= 0 && this->m_PotionTooltipRatesReady == false))
 	{
 		return;
 	}
 
+	if (TextNum < 0 || TextNum >= ITEM_TOOLTIP_MAX_LINES)
+	{
+		return;
+	}
+
+	const char* format = GlobalText[entry->TextIndex];
 	char text[100];
 
-	if (ip->Type == GET_ITEM(14, 8))
+	if (entry->RateIndex < 0)
 	{
 		wsprintf(text, format);
 	}
 	else
 	{
-		wsprintf(text, format, (int)rate);
+		wsprintf(text, format, (int)this->m_PotionTooltipRates[entry->RateIndex]);
 	}
 
 	for (int n = 0; n < TextNum; n++)
