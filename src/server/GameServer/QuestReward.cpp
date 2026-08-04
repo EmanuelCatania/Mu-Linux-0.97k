@@ -2,6 +2,7 @@
 #include "QuestReward.h"
 #include "ReadScript.h"
 #include "ObjectManager.h"
+#include "Party.h"
 #include "Quest.h"
 #include "ServerInfo.h"
 #include "SkillManager.h"
@@ -173,6 +174,11 @@ void CQuestReward::InsertQuestReward(LPOBJ lpObj, int QuestIndex)
 				lpObj->DBClass = ((lpObj->DBClass / 16) * 16) + 1;
 
 				lpObj->ChangeUp = lpObj->DBClass % 16;
+
+				if (OBJECT_RANGE(lpObj->PartyNumber) != 0)
+				{
+					gParty.GCPartyDisplayBroadcast(lpObj->PartyNumber);
+				}
 			}
 
 			gObjectManager.CharacterMakePreviewCharSet(lpObj->Index);
@@ -213,6 +219,11 @@ void CQuestReward::InsertQuestReward(LPOBJ lpObj, int QuestIndex)
 				lpObj->DBClass = ((lpObj->DBClass / 16) * 16) + 2;
 
 				lpObj->ChangeUp = lpObj->DBClass % 16;
+
+				if (OBJECT_RANGE(lpObj->PartyNumber) != 0)
+				{
+					gParty.GCPartyDisplayBroadcast(lpObj->PartyNumber);
+				}
 			}
 
 			gObjectManager.CharacterMakePreviewCharSet(lpObj->Index);

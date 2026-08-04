@@ -74,6 +74,34 @@ struct PMSG_PARTY_LIFE
 	BYTE number;
 };
 
+// Custom party HUD metadata.  The native 0x42/0x44 packets remain unchanged.
+#pragma pack(push, 1)
+struct PMSG_PARTY_DISPLAY_SEND
+{
+	PSWMSG_HEAD header; // C2:F3:EA
+	BYTE count;
+};
+
+struct PMSG_PARTY_DISPLAY_MEMBER
+{
+	BYTE number;
+	WORD level;
+	BYTE Class;
+	BYTE ChangeUp;
+	BYTE effectCount;
+};
+
+struct PMSG_PARTY_DISPLAY_EFFECT
+{
+	BYTE effect;
+	DWORD count;
+};
+#pragma pack(pop)
+
+static_assert(sizeof(PMSG_PARTY_DISPLAY_SEND) == 6, "Invalid party display header size");
+static_assert(sizeof(PMSG_PARTY_DISPLAY_MEMBER) == 6, "Invalid party display member size");
+static_assert(sizeof(PMSG_PARTY_DISPLAY_EFFECT) == 5, "Invalid party display effect size");
+
 //**********************************************//
 //**********************************************//
 //**********************************************//
@@ -131,6 +159,10 @@ public:
 	void GCPartyDelMemberSend(int aIndex);
 
 	void GCPartyLifeSend(int index);
+
+	void GCPartyDisplaySend(int aIndex);
+
+	void GCPartyDisplayBroadcast(int index);
 
 public:
 

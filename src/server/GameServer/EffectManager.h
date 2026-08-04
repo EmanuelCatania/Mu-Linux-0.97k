@@ -7,6 +7,8 @@
 #define MAX_EFFECT 71
 #define MAX_EFFECT_LIST 16
 
+bool IsPlayerBuffEffect(BYTE effect);
+
 #define EFFECT_RANGE(x) (((x)<0)?false:((x)>=MAX_EFFECT)?false:true)
 
 enum eEffectNumber
@@ -67,6 +69,8 @@ struct PMSG_PARTY_EFFECT_LIST
 	DWORD count;
 #pragma pack()
 };
+
+static_assert(sizeof(PMSG_PARTY_EFFECT_LIST) == 8, "Invalid party effect list size");
 
 //**********************************************//
 //**********************************************//

@@ -42,6 +42,7 @@ add_library(Main SHARED
   OpenglUtil.cpp
   OptionsMenu.cpp
   PacketManager.cpp
+  PartyDisplay.cpp
   Patchs.cpp
   PingSystem.cpp
   PrintPlayer.cpp

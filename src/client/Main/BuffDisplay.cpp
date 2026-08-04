@@ -42,6 +42,7 @@ CBuffDisplay::~CBuffDisplay()
 	{
 		DeleteObject((HGDIOBJ)this->m_TimerFont);
 	}
+
 }
 
 void CBuffDisplay::Init()
@@ -92,6 +93,51 @@ void CBuffDisplay::Reset()
 	memset(this->m_Entry, 0, sizeof(this->m_Entry));
 	this->m_Count = 0;
 	this->m_ArrowHudVisible = false;
+}
+
+void CBuffDisplay::RenderPartyEntry(BYTE Effect, int PosX, int PosY, int SlotSize)
+{
+	if (this->m_Initialized == false || IsDisplayableEffect(Effect) == false || SlotSize <= 0)
+	{
+		return;
+	}
+
+	int Cell = this->GetSkill(Effect) - 1;
+	if (Cell >= 0)
+	{
+		int Column = Cell % BUFF_DISPLAY_ATLAS_COLUMNS;
+		int Row = Cell / BUFF_DISPLAY_ATLAS_COLUMNS;
+		// glPushAttrib does not restore main.exe's logical texture cache.
+		const int PreviousTextureCache = MainTextureCache;
+		const BYTE PreviousTextureEnabled = MainTextureEnabled;
+		const BYTE PreviousAlphaTestEnabled = MainAlphaTestEnabled;
+		const DWORD PreviousBlendMode = MainBlendMode;
+		glPushAttrib(GL_ALL_ATTRIB_BITS);
+		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+		EnableAlphaTest(true);
+		// Force the physical bind for every slot.
+		MainTextureCache = -1;
+		BindTexture(BUFF_DISPLAY_TEXTURE);
+		int SourceX = (Column * BUFF_DISPLAY_ATLAS_CELL_WIDTH) + BUFF_DISPLAY_ICON_LEFT;
+		int SourceY = (Row * BUFF_DISPLAY_ATLAS_CELL_HEIGHT) + BUFF_DISPLAY_ICON_TOP;
+		RenderBitmap(
+			BUFF_DISPLAY_TEXTURE,
+			(float)PosX + ((float)SlotSize - BUFF_DISPLAY_ICON_WIDTH) / 2.0f,
+			(float)PosY + ((float)SlotSize - BUFF_DISPLAY_ICON_HEIGHT) / 2.0f,
+			(float)BUFF_DISPLAY_ICON_WIDTH,
+			(float)BUFF_DISPLAY_ICON_HEIGHT,
+			(SourceX + 0.5f) / BUFF_DISPLAY_ATLAS_SIZE,
+			(SourceY + 0.5f) / BUFF_DISPLAY_ATLAS_SIZE,
+			(float)(BUFF_DISPLAY_ICON_SOURCE_WIDTH - 1) / BUFF_DISPLAY_ATLAS_SIZE,
+			(float)(BUFF_DISPLAY_ICON_SOURCE_HEIGHT - 1) / BUFF_DISPLAY_ATLAS_SIZE,
+			true,
+			true);
+		glPopAttrib();
+		MainTextureCache = PreviousTextureCache;
+		MainTextureEnabled = PreviousTextureEnabled;
+		MainAlphaTestEnabled = PreviousAlphaTestEnabled;
+		MainBlendMode = PreviousBlendMode;
+	}
 }
 
 void CBuffDisplay::SetArrowHud(int ScreenWidth, int Left, bool Visible)

@@ -163,9 +163,10 @@ bool CParty::Destroy(int index)
 	{
 		if (OBJECT_RANGE(this->m_PartyInfo[index].Index[n]) != 0)
 		{
-			gObj[this->m_PartyInfo[index].Index[n]].PartyNumber = -1;
+			int aIndex = this->m_PartyInfo[index].Index[n];
+			gObj[aIndex].PartyNumber = -1;
 
-			this->GCPartyDelMemberSend(this->m_PartyInfo[index].Index[n]);
+			this->GCPartyDelMemberSend(aIndex);
 
 			this->m_PartyInfo[index].Count--;
 
@@ -536,6 +537,8 @@ void CParty::CGPartyListRecv(int aIndex)
 	memcpy(send, &pMsg, sizeof(pMsg));
 
 	DataSend(aIndex, send, size);
+
+	this->GCPartyDisplaySend(aIndex);
 }
 
 void CParty::CGPartyDelMemberRecv(PMSG_PARTY_DEL_MEMBER_RECV* lpMsg, int aIndex)
@@ -642,6 +645,111 @@ void CParty::GCPartyListSend(int index)
 		if (OBJECT_RANGE(this->m_PartyInfo[index].Index[n]) != 0)
 		{
 			DataSend(this->m_PartyInfo[index].Index[n], send, size);
+		}
+	}
+
+	this->GCPartyDisplayBroadcast(index);
+}
+
+void CParty::GCPartyDisplaySend(int aIndex)
+{
+	if (gObjIsConnectedGP(aIndex) == 0)
+	{
+		return;
+	}
+
+	LPOBJ lpObj = &gObj[aIndex];
+
+	if (this->IsParty(lpObj->PartyNumber) == 0)
+	{
+		return;
+	}
+
+	BYTE send[1024] = { 0 };
+	PMSG_PARTY_DISPLAY_SEND* header = (PMSG_PARTY_DISPLAY_SEND*)send;
+	int size = sizeof(PMSG_PARTY_DISPLAY_SEND);
+	BYTE count = 0;
+	for (int n = 0; n < MAX_PARTY_USER; n++)
+	{
+		int index = this->m_PartyInfo[lpObj->PartyNumber].Index[n];
+
+		if (OBJECT_RANGE(index) == 0 || gObjIsConnectedGP(index) == 0)
+		{
+			continue;
+		}
+
+		LPOBJ lpTarget = &gObj[index];
+		PMSG_PARTY_DISPLAY_MEMBER info = {};
+
+		info.number = n;
+		info.level = (WORD)lpTarget->Level;
+		info.Class = lpTarget->Class;
+		info.ChangeUp = lpTarget->ChangeUp;
+
+		BYTE effectBuffer[MAX_EFFECT_LIST * sizeof(PMSG_PARTY_EFFECT_LIST)] = { 0 };
+		int effectSize = 0;
+		int generatedCount = gEffectManager.GeneratePartyEffectList(lpTarget, effectBuffer, &effectSize);
+		PMSG_PARTY_DISPLAY_EFFECT effects[4] = {};
+		BYTE effectCount = 0;
+
+		for (int k = 0; k < generatedCount && effectCount < 4; k++)
+		{
+			if (effectSize < ((k + 1) * (int)sizeof(PMSG_PARTY_EFFECT_LIST)))
+			{
+				break;
+			}
+
+			PMSG_PARTY_EFFECT_LIST* source = (PMSG_PARTY_EFFECT_LIST*)(effectBuffer + (k * sizeof(PMSG_PARTY_EFFECT_LIST)));
+			bool duplicate = false;
+			for (int e = 0; e < effectCount; e++)
+			{
+				if (effects[e].effect == source->effect)
+				{
+					duplicate = true;
+					break;
+				}
+			}
+
+			if (duplicate == false)
+			{
+				effects[effectCount].effect = source->effect;
+				effects[effectCount].count = source->count;
+				effectCount++;
+			}
+		}
+
+		info.effectCount = effectCount;
+		if (size + (int)sizeof(info) + (effectCount * (int)sizeof(effects[0])) > (int)sizeof(send))
+		{
+			break;
+		}
+
+		memcpy(&send[size], &info, sizeof(info));
+		size += sizeof(info);
+		memcpy(&send[size], effects, effectCount * sizeof(effects[0]));
+		size += effectCount * sizeof(effects[0]);
+		count++;
+	}
+
+	header->header.set(0xF3, 0xEA, (WORD)size);
+	header->count = count;
+	DataSend(aIndex, send, size);
+}
+
+void CParty::GCPartyDisplayBroadcast(int index)
+{
+	if (this->IsParty(index) == 0)
+	{
+		return;
+	}
+
+	for (int n = 0; n < MAX_PARTY_USER; n++)
+	{
+		int aIndex = this->m_PartyInfo[index].Index[n];
+
+		if (OBJECT_RANGE(aIndex) != 0)
+		{
+			this->GCPartyDisplaySend(aIndex);
 		}
 	}
 }

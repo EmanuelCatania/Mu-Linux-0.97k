@@ -633,7 +633,7 @@ int CEffectManager::GeneratePartyEffectList(LPOBJ lpObj, BYTE* lpMsg, int* size)
 
 	for (int n = 0; n < MAX_EFFECT_LIST; n++)
 	{
-		if (lpObj->Effect[n].IsEffect() != false)
+		if (lpObj->Effect[n].IsEffect() != false && IsPlayerBuffEffect(lpObj->Effect[n].m_index) != false)
 		{
 			info.effect = lpObj->Effect[n].m_index;
 
@@ -861,3 +861,7 @@ void CEffectManager::GCEffectStateSend(LPOBJ lpObj, BYTE state, BYTE effect)
 	MsgSendV2(lpObj, (BYTE*)&pMsg, pMsg.header.size);
 }
 
+bool IsPlayerBuffEffect(BYTE effect)
+{
+	return (effect == EFFECT_GREATER_DAMAGE || effect == EFFECT_GREATER_DEFENSE || effect == EFFECT_MANA_SHIELD || effect == EFFECT_GREATER_LIFE);
+}

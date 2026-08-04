@@ -133,6 +133,9 @@
     <ClInclude Include="PacketManager.h">
       <Filter>Connection</Filter>
     </ClInclude>
+    <ClInclude Include="PartyDisplay.h">
+      <Filter>Connection</Filter>
+    </ClInclude>
     <ClInclude Include="Protocol.h">
       <Filter>Connection</Filter>
     </ClInclude>
@@ -316,6 +319,9 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="PacketManager.cpp">
+      <Filter>Connection</Filter>
+    </ClCompile>
+    <ClCompile Include="PartyDisplay.cpp">
       <Filter>Connection</Filter>
     </ClCompile>
     <ClCompile Include="Protocol.cpp">

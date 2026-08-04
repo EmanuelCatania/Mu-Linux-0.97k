@@ -7,6 +7,7 @@
 #include "MiniMap.h"
 #include "MoveList.h"
 #include "Notification.h"
+#include "PartyDisplay.h"
 #include "Protect.h"
 #include "Window.h"
 
@@ -78,6 +79,8 @@ void Interface::MyUpdateWindowsMouse()
 	gMoveList.UpdateMouse();
 
 	gEventTimer.UpdateMouse();
+
+	gPartyDisplay.UpdateMouse();
 }
 
 void Interface::MyRenderWindows()
@@ -95,6 +98,7 @@ void Interface::MyRenderWindows()
 	gBuffDisplay.RenderTooltip();
 
 	gItemLink.RenderTooltip();
+
 }
 
 void Interface::RenderLeftDragon(int Texture, float x, float y, float Width, float Height, float u, float v, float uWidth, float vHeight, bool Scale, bool StartScale)

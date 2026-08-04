@@ -13,6 +13,7 @@
 #include "Move.h"
 #include "Notice.h"
 #include "ObjectManager.h"
+#include "Party.h"
 #include "Protocol.h"
 #include "Quest.h"
 #include "QuestReward.h"
@@ -1190,6 +1191,11 @@ void CCommandManager::DGCommandResetRecv(SDHP_COMMAND_RESET_RECV* lpMsg)
 
 		lpObj->ChangeUp = lpObj->DBClass % 16;
 
+		if (OBJECT_RANGE(lpObj->PartyNumber) != 0)
+		{
+			gParty.GCPartyDisplayBroadcast(lpObj->PartyNumber);
+		}
+
 		gObjectManager.CharacterMakePreviewCharSet(lpObj->Index);
 
 		BYTE Class = (lpObj->ChangeUp * 16);
@@ -1462,6 +1468,11 @@ void CCommandManager::DGCommandGrandResetRecv(SDHP_COMMAND_RESET_RECV* lpMsg)
 		lpObj->DBClass = ((lpObj->DBClass / 16) * 16);
 
 		lpObj->ChangeUp = lpObj->DBClass % 16;
+
+		if (OBJECT_RANGE(lpObj->PartyNumber) != 0)
+		{
+			gParty.GCPartyDisplayBroadcast(lpObj->PartyNumber);
+		}
 
 		gObjectManager.CharacterMakePreviewCharSet(lpObj->Index);
 

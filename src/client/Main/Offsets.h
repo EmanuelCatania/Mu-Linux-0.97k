@@ -179,6 +179,13 @@
 #define Party (&*(PARTY_t*)0x07E11E80)
 #define CharactersClient *(DWORD*)0x07ABF5D0
 #define SelectedCharacter *(DWORD*)0x00559C50
+
+// Native party window (main.exe 0.97k). These addresses are kept here so
+// hooks and input code do not duplicate hard-coded renderer offsets.
+#define PartyWindowX *(int*)0x07EA5B24
+#define PartyWindowY *(int*)0x07EA5B28
+#define PartyNativeRenderCall 0x004F5B84
+#define PartyNativeRender ((void(__cdecl*)(int, int))0x004EF160)
 #define DeleteCharacter ((void(_cdecl*)(int Key)) 0x0045AC20)
 #define Projection ((void(_cdecl*)(float *Position, int *sx, int *sy)) 0x005113F0)
 #define Action ((void(_cdecl*)(DWORD c, DWORD o)) 0x0048D640)
@@ -271,6 +278,11 @@
 #define TEXCOORD ((void(_cdecl*)(float *c, float u, float v)) 0x00511BF0)
 #define BindTexture ((void(_cdecl*)(int tex)) 0x00511480)
 #define DisableTexture ((void(_cdecl*)(bool AlphaTest)) 0x00511590)
+// main.exe texture cache and 2D render-state flags.
+#define MainTextureCache *(int*)0x00561574
+#define MainTextureEnabled *(BYTE*)0x083A4125
+#define MainAlphaTestEnabled *(BYTE*)0x083A411D
+#define MainBlendMode *(DWORD*)0x083A412C
 #define KillGLWindow ((void(__cdecl*)()) 0x00412AF0)
 #define SaveScreen ((void(__cdecl*)()) 0x00511140)
 #define GrabFileName (char*)0x083A4174

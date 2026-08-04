@@ -152,6 +152,7 @@
     <ClInclude Include="OpenglUtil.h" />
     <ClInclude Include="OptionsMenu.h" />
     <ClInclude Include="PacketManager.h" />
+    <ClInclude Include="PartyDisplay.h" />
     <ClInclude Include="Patchs.h" />
     <ClInclude Include="PingSystem.h" />
     <ClInclude Include="PrintPlayer.h" />
@@ -214,6 +215,7 @@
     <ClCompile Include="OpenglUtil.cpp" />
     <ClCompile Include="OptionsMenu.cpp" />
     <ClCompile Include="PacketManager.cpp" />
+    <ClCompile Include="PartyDisplay.cpp" />
     <ClCompile Include="Patchs.cpp" />
     <ClCompile Include="PingSystem.cpp" />
     <ClCompile Include="PrintPlayer.cpp" />

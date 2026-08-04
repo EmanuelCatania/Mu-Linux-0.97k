@@ -35,6 +35,9 @@ public:
 
 	void RenderTooltip();
 
+	// Renders only the native atlas icon for a party buff.
+	void RenderPartyEntry(BYTE Effect, int PosX, int PosY, int SlotSize = 16);
+
 private:
 
 	static void __cdecl RenderBeforeMainWindows();

@@ -1036,6 +1036,11 @@ bool CObjectManager::CharacterLevelUp(LPOBJ lpObj, DWORD AddExperience, int MaxL
 
 	GCLevelUpSend(lpObj);
 
+	if (OBJECT_RANGE(lpObj->PartyNumber) != 0)
+	{
+		gParty.GCPartyDisplayBroadcast(lpObj->PartyNumber);
+	}
+
 	if ((GetTickCount() - lpObj->CharSaveTime) > 60000)
 	{
 		lpObj->CharSaveTime = GetTickCount();

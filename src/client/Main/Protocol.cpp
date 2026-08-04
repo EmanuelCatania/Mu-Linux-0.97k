@@ -16,6 +16,7 @@
 #include "Notification.h"
 #include "PacketManager.h"
 #include "PrintPlayer.h"
+#include "PartyDisplay.h"
 #include "Protect.h"
 #include "Reconnect.h"
 #include "ServerList.h"
@@ -455,6 +456,13 @@ bool CProtocol::TranslateProtocol(BYTE head, BYTE* lpMsg, int Size)
 					gBuffDisplay.GCRecv(
 						(PMSG_BUFF_LIST_RECV*)lpMsg,
 						Size);
+
+					return true;
+				}
+
+				case 0xEA:
+				{
+					this->GCPartyDisplayRecv((PMSG_PARTY_DISPLAY_RECV*)lpMsg, Size);
 
 					return true;
 				}
@@ -1010,6 +1018,11 @@ void CProtocol::GCHealthBarRecv(PMSG_HEALTH_BAR_RECV* lpMsg)
 
 		gHealthBar.InsertHealthBar(lpInfo->index, lpInfo->type, lpInfo->rateHP);
 	}
+}
+
+void CProtocol::GCPartyDisplayRecv(PMSG_PARTY_DISPLAY_RECV* lpMsg, int Size)
+{
+	gPartyDisplay.GCRecv(lpMsg, Size);
 }
 
 void CProtocol::DataSend(BYTE* lpMsg, DWORD size)

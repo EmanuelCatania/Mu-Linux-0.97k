@@ -22,6 +22,7 @@
 #include "MoveList.h"
 #include "OptionsMenu.h"
 #include "PacketManager.h"
+#include "PartyDisplay.h"
 #include "Patchs.h"
 #include "PingSystem.h"
 #include "PrintPlayer.h"
@@ -78,6 +79,8 @@ extern "C" _declspec(dllexport) void _cdecl EntryProc()
 	gBuff.Init();
 
 	gBuffDisplay.Init();
+
+	gPartyDisplay.Init();
 
 	gProtocol.Init();
 

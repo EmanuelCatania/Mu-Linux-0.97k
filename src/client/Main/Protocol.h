@@ -351,6 +351,33 @@ struct PMSG_BUFF_INFO_RECV
 };
 #pragma pack(pop)
 
+#pragma pack(push, 1)
+struct PMSG_PARTY_DISPLAY_RECV
+{
+	PSWMSG_HEAD header; // C2:F3:EA
+	BYTE count;
+};
+
+struct PMSG_PARTY_DISPLAY_MEMBER_RECV
+{
+	BYTE number;
+	WORD level;
+	BYTE Class;
+	BYTE ChangeUp;
+	BYTE effectCount;
+};
+
+struct PMSG_PARTY_DISPLAY_EFFECT_RECV
+{
+	BYTE effect;
+	DWORD count;
+};
+#pragma pack(pop)
+
+static_assert(sizeof(PMSG_PARTY_DISPLAY_RECV) == 6, "Invalid party display header size");
+static_assert(sizeof(PMSG_PARTY_DISPLAY_MEMBER_RECV) == 6, "Invalid party display member size");
+static_assert(sizeof(PMSG_PARTY_DISPLAY_EFFECT_RECV) == 5, "Invalid party display effect size");
+
 //**********************************************//
 //************ Client -> GameServer ************//
 //**********************************************//
@@ -496,6 +523,8 @@ private:
 	void GCNewCharacterCalcRecv(PMSG_NEW_CHARACTER_CALC_RECV* lpMsg);
 
 	void GCHealthBarRecv(PMSG_HEALTH_BAR_RECV* lpMsg);
+
+	void GCPartyDisplayRecv(PMSG_PARTY_DISPLAY_RECV* lpMsg, int Size);
 
 public:
 

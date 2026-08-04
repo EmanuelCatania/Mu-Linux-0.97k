@@ -34,11 +34,6 @@
 #include "Viewport.h"
 #include "Warehouse.h"
 
-static bool IsPlayerBuffEffect(BYTE effect)
-{
-	return (effect == EFFECT_GREATER_DAMAGE || effect == EFFECT_GREATER_DEFENSE || effect == EFFECT_MANA_SHIELD || effect == EFFECT_GREATER_LIFE);
-}
-
 void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int serial)
 {
 	ConsoleProtocolLog(CON_PROTO_TCP_RECV, aIndex, lpMsg, size);
@@ -573,6 +568,7 @@ void ProtocolCore(BYTE head, BYTE* lpMsg, int size, int aIndex, int encrypt, int
 
 					break;
 				}
+
 			}
 
 			break;
@@ -2303,6 +2299,11 @@ void GCBuffListSend(LPOBJ lpObj)
 	header->count = count;
 
 	DataSend(lpObj->Index, buffer, size);
+
+	if (OBJECT_RANGE(lpObj->PartyNumber) != 0)
+	{
+		gParty.GCPartyDisplayBroadcast(lpObj->PartyNumber);
+	}
 }
 
 void GCHealthBarSend(int aIndex)
