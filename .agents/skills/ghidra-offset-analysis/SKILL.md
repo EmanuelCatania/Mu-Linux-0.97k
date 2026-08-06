@@ -5,123 +5,63 @@ description: Locate or revalidate a function, global, hook site, offset, byte si
 
 # Ghidra offset analysis
 
-## Goal
+Produce a reproducible finding tied to the exact supported executable.
 
-Produce a reproducible finding tied to one exact executable, not only a hexadecimal address.
+## Load
 
-## Read first
+Always read:
 
-Read only:
+- `docs/client-reverse-engineering.md`;
+- `docs/reverse-engineering/main-exe.md`;
+- the relevant existing finding and source files.
 
-1. `docs/client-reverse-engineering.md`;
-2. `docs/reverse-engineering/main-exe.md`;
-3. the relevant finding under `docs/reverse-engineering/findings/`, when present;
-4. source files related to the requested behavior.
+Run [`scripts/fingerprint-main.ps1`](scripts/fingerprint-main.ps1) when the
+executable must be identified or compared. Read
+[`references/ghidra-mcp-tool-selection.md`](references/ghidra-mcp-tool-selection.md)
+only when instance selection, capability discovery, tool groups, or a version
+mismatch requires it.
 
-All paths are repository-root-relative.
+## Guardrails
 
-## Tool baseline
-
-The validated baseline is `bethington/ghidra-mcp` `v6.0.0` with Ghidra `12.1.2`. If the installed version differs, discover capabilities at runtime and update the baseline only after verification.
-
-Use management tools rather than assuming schema-generated names:
-
-- `list_instances` and `connect_instance`;
-- `check_tools` and `search_tools`;
-- `list_tool_groups` and `load_tool_group`.
-
-The core `listing`, `function`, and `program` groups should already be loaded.
-
-## Safety
-
-- Default to read-only analysis.
-- Select the program explicitly for every program-aware operation.
-- Do not rename, retype, comment, patch, create data types, run scripts, emulate code, or use the debugger unless the task requires it.
-- Do not pause or alter a running client through debugger controls without explicit approval.
-- Use `dry_run` before an approved mutation when available.
+- Select the Ghidra program explicitly and default to read-only analysis.
 - Never patch `main.exe` through MCP.
-- Keep the MCP service on loopback and do not weaken authentication.
+- Do not mutate the project, execute scripts, emulate, or control the debugger
+  without explicit task approval.
+- Stop when the imported program, repository executable, and deployed runtime do
+  not share the documented fingerprint.
 
 ## Workflow
 
-### 1. Verify the target
+1. **Verify the target.** Confirm PE32/x86, completed analysis, SHA-256, size, PE
+   timestamp, image base, and entry-point RVA. A different executable is a
+   separate target.
+2. **Build anchors.** Derive at least two independent anchors when available:
+   strings, imports, call sites, packet shapes, constants, globals, established
+   callers/callees, or matching source behavior.
+3. **Inspect candidates.** Compare decompilation with bounded x86 disassembly;
+   inspect boundaries, references, callers, callees, and surrounding state;
+   distinguish an address from a pointer stored at that address.
+4. **Establish the contract.** Determine ABI or data layout, record VA and RVA
+   separately, and derive file offsets only through PE section mapping. Build
+   signatures from complete stable instructions, explain wildcards, and measure
+   match count.
+5. **Confirm only as needed.** Use bounded debugger evidence only when static
+   analysis cannot establish identity, ABI, state, or hook safety.
+6. **Record the result.** Update `docs/reverse-engineering/findings/`; add it to
+   the accepted index in `docs/reverse-engineering/main-exe.md` only at Medium or
+   High confidence.
 
-- Connect to the intended Ghidra instance.
-- Confirm `main.exe`, PE32/x86, completed analysis, and explicit program selection.
-- Compare SHA-256, size, PE timestamp, and image base with `docs/reverse-engineering/main-exe.md`.
-- Stop on a mismatch.
-- If required fingerprint fields remain `TBD`, continue only as a candidate investigation and do not publish a permanent source offset.
+## Result standard
 
-### 2. Build independent anchors
-
-Derive semantic anchors from repository code, then search with the strongest available evidence:
-
-1. unique strings and references;
-2. imported APIs and call sites;
-3. packet opcode/subcode handling;
-4. distinctive constants or table sizes;
-5. known global accesses;
-6. callers and callees of established functions;
-7. source behavior that matches control flow.
-
-Do not accept a candidate supported by only one weak anchor.
-
-### 3. Inspect candidates
-
-For each candidate:
-
-- inspect function or data boundaries;
-- compare decompiled output with raw x86 instructions;
-- inspect incoming and outgoing references, callers, and callees;
-- compare strings, constants, globals, and control flow with expected behavior;
-- reject contradictory candidates.
-
-Treat decompiler names and types as hypotheses.
-
-### 4. Establish the contract
-
-Use `docs/client-reverse-engineering.md` to determine:
-
-- function ABI, arguments, registers, stack cleanup, return behavior, and ownership; or
-- global/structure width, signedness, storage, bounds, alignment, packing, and lifetime.
-
-Separate verified facts from inference.
-
-### 5. Record addresses and signatures
-
-- Record VA and RVA separately.
-- Record file offset only when derived through PE section mapping.
-- State how ASLR affects runtime translation.
-- When a signature is needed, use stable complete instructions, wildcard build-dependent bytes, and verify the match count.
-- A unique signature supports relocation; it does not prove semantic identity.
-
-### 6. Use dynamic confirmation only when needed
-
-Use bounded debugger tracing or breakpoints when static evidence cannot establish identity, ABI, state, or hook safety. Verify static-to-dynamic translation and record observed arguments, registers, call order, and return behavior.
-
-### 7. Record and report
-
-Create or update a finding under `docs/reverse-engineering/findings/`. Update the index in `docs/reverse-engineering/main-exe.md` only for an accepted result.
-
-Report:
-
-- executable fingerprint;
-- VA and RVA;
-- identification anchors;
-- callers, callees, and references;
-- ABI or layout;
-- relevant instructions;
-- signature and match count, when applicable;
-- confidence, facts, inferences, uncertainty, and revalidation steps;
-- source files likely affected.
-
-## Confidence and stop conditions
+Report fingerprint, VA/RVA, anchors, references, ABI or layout, relevant
+instructions, signature evidence, facts, inferences, uncertainty, validation,
+and affected source files.
 
 - **High:** independent static anchors plus runtime confirmation.
-- **Medium:** multiple coherent static anchors and ABI/layout evidence.
+- **Medium:** multiple coherent static anchors plus ABI/layout evidence.
 - **Low:** plausible candidate with unresolved identity, ABI, or uniqueness.
 - **Rejected:** fingerprint mismatch or contradictory evidence.
 
-Do not add a production hard-coded address from a Low result.
-
-Stop rather than guess when the fingerprint differs, the program cannot be selected explicitly, analysis is incomplete, evidence conflicts, the ABI is unsafe to infer, a signature has unexplained matches, or a required capability is unavailable.
+Never publish a production hard-coded address from a Low result. Stop rather than
+guess when evidence conflicts, analysis is incomplete, ABI is unsafe to infer,
+a signature has unexplained matches, or a required capability is unavailable.

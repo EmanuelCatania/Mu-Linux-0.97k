@@ -5,119 +5,47 @@ description: Add or modify an item, jewel, monster, wing, bow, glow, map, effect
 
 # Runtime entity change
 
-## Goal
+Implement a cross-component entity without conflicting IDs, missing
+representations, or stale generated data.
 
-Implement a cross-component entity without leaving conflicting IDs, missing assets, incomplete server rules, or stale generated data.
+## Load
 
-## Read first
+Always read `docs/runtime-data.md`, `docs/architecture.md`, relevant parts of
+`docs/testing.md`, the nearest existing entries, and each changed format's parser
+and consumers. Read protocol, database, or reverse-engineering docs only when
+those contracts change.
 
-Read only:
+Load only the applicable differential checklist:
 
-1. `docs/runtime-data.md`;
-2. `docs/architecture.md`;
-3. the relevant sections of `docs/testing.md`;
-4. existing entries nearest to the requested entity;
-5. parsers and consumers of every file to be changed.
+- items, jewels, equipment, wings, bows, glows, and item-bound effects:
+  [`references/item-system.md`](references/item-system.md);
+- monsters, NPCs, summons, maps, gates, terrain, minimaps, and spawns:
+  [`references/world-entity.md`](references/world-entity.md);
+- shops, drops, rewards, events, and mixes:
+  [`references/economy-and-progression.md`](references/economy-and-progression.md).
 
-Read `docs/protocol.md`, `docs/database.md`, or `docs/client-reverse-engineering.md` only when the entity changes those contracts.
+Load multiple references only when the requested behavior crosses those domains.
 
 ## Workflow
 
-### 1. Classify the entity
+1. **Classify.** Define behavior, canonical ID namespace/range, authoritative
+   component, and whether the change is data-only, code-backed, protocol-visible,
+   persisted, generated, or configurable.
+2. **Map representations.** Search IDs, names, assets, options, parsers, and
+   consumers across encoder, client, server, runtime data, database, web, and
+   editor. Mark each relevant location `Changed`, `Reviewed / no change`, or
+   `Not applicable`.
+3. **Preserve contracts.** Update the authoritative source before mirrors;
+   preserve format syntax, ordering, sentinels, ranges, duplicated layouts, and
+   server authority. Do not hand-edit generated binaries or use unlicensed
+   assets.
+4. **Generate and validate.** Re-run the encoder when its inputs change; compare
+   deterministic outputs; select checks from the representation matrix,
+   differential references, and `docs/testing.md`. Use the protocol skill when
+   wire state changes.
+5. **Report.** Record ID evidence, loaded references, representation matrix,
+   authoritative and mirrored sources, generated outputs, asset provenance,
+   validation, and restart or compatibility requirements.
 
-Define:
-
-- entity kind and requested behavior;
-- canonical ID namespace and allowed range;
-- authoritative component;
-- whether the change is data-only, code-backed, protocol-visible, or persisted;
-- whether classic behavior changes and must be configurable.
-
-Do not choose an ID only because it appears unused in one file.
-
-### 2. Build the representation matrix
-
-Search for matching IDs, names, models, textures, options, and parsers in:
-
-- `runtime/encoder/`;
-- `src/client/InfoEncoder/`;
-- `src/client/Main/`;
-- `runtime/client/Data/`;
-- `src/server/GameServer/` and related server code;
-- `runtime/server/`;
-- `runtime/server/MySQL/`, when persisted;
-- `services/web/data/`, views, and public assets;
-- `services/editor/`, when editable.
-
-Mark each location as changed, reviewed/no change, or not applicable.
-
-### 3. Preserve file contracts
-
-For every INI, DAT, TXT, SQL, or generated format:
-
-- locate the parser;
-- preserve encoding, delimiters, section markers, terminators, order, and case;
-- verify ranges, sentinels, duplicate behavior, and cross-file references;
-- avoid mass formatting;
-- keep deterministic ordering when it affects generated indices or bytes.
-
-### 4. Coordinate client and encoder
-
-Verify:
-
-- encoded structure and deterministic defaults;
-- generated `ClientInfo.bmd` compatibility;
-- item/model/texture/effect references;
-- names, descriptions, positions, options, and rendering paths;
-- source-side limits and array bounds;
-- asset provenance and authorization.
-
-Do not hand-edit generated binaries or import assets from another game without permission.
-
-### 5. Coordinate server and persistence
-
-Verify:
-
-- authoritative stats and behavior;
-- drop, shop, mix, reward, trade, inventory, and modification rules;
-- duplication and disconnect behavior;
-- serialization and database compatibility;
-- packet changes, if the entity exposes new wire state;
-- restart or reload requirements;
-- classic-mode or feature-flag behavior when appropriate.
-
-Use `.agents/skills/protocol-change/SKILL.md` when the wire contract changes.
-
-### 6. Coordinate web and editor
-
-Verify display metadata, images, limits, database queries, and editor parsing only when the entity is represented there. Administrative editing must preserve backups and file contracts.
-
-### 7. Generate and validate
-
-When encoder inputs change:
-
-```powershell
-pwsh -File ./scripts/client-workflow.ps1 -Action Encode
-```
-
-Generate twice and compare hashes for identical inputs.
-
-Run the client, server, Compose, web, database, and editor validations selected by the representation matrix and `docs/testing.md`. Test one normal use, boundary/invalid cases, persistence or reconnect behavior, and missing-asset behavior when relevant.
-
-## Output
-
-Report:
-
-- chosen ID and namespace evidence;
-- representation matrix;
-- canonical source and duplicated contracts;
-- generated files;
-- client, server, database, and web effects;
-- asset provenance;
-- validation performed;
-- restart/reload and compatibility requirements;
-- reviewed locations that required no change.
-
-## Stop conditions
-
-Stop rather than guess when the ID namespace is unclear, a parser contract is unknown, an asset lacks provenance, a generated layout cannot remain compatible, server authority is undefined, or required client/server representations are unavailable.
+Stop rather than guess when the namespace, parser, authority, asset provenance,
+or compatibility boundary is unresolved.

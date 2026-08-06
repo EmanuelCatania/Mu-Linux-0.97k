@@ -8,10 +8,10 @@ $ErrorActionPreference = "Stop"
 
 $RepositoryRoot = [System.IO.Path]::GetFullPath($RepositoryRoot)
 
-function Get-TrackedFiles {
+function Get-RepositoryFiles {
     param([Parameter(Mandatory)][string]$Pathspec)
 
-    $files = @(& git -C $RepositoryRoot ls-files -- $Pathspec)
+    $files = @(& git -C $RepositoryRoot ls-files --cached --others --exclude-standard -- $Pathspec)
     if ($LASTEXITCODE -ne 0) {
         throw "git ls-files failed for '$Pathspec'."
     }
@@ -51,16 +51,16 @@ function Assert-Equal {
     }
 }
 
-Write-Host "Validating tracked JSON files."
-foreach ($file in Get-TrackedFiles "*.json") {
+Write-Host "Validating repository JSON files."
+foreach ($file in Get-RepositoryFiles "*.json") {
     $document = [System.Text.Json.JsonDocument]::Parse(
         [System.IO.File]::ReadAllText((Resolve-RepositoryPath $file))
     )
     $document.Dispose()
 }
 
-Write-Host "Validating tracked PowerShell files."
-foreach ($file in Get-TrackedFiles "*.ps1") {
+Write-Host "Validating repository PowerShell files."
+foreach ($file in Get-RepositoryFiles "*.ps1") {
     $tokens = $null
     $errors = $null
     [System.Management.Automation.Language.Parser]::ParseFile(
@@ -76,8 +76,8 @@ foreach ($file in Get-TrackedFiles "*.ps1") {
 }
 
 if (-not $IsWindows) {
-    Write-Host "Validating tracked shell scripts."
-    foreach ($file in Get-TrackedFiles "*.sh") {
+    Write-Host "Validating repository shell scripts."
+    foreach ($file in Get-RepositoryFiles "*.sh") {
         & bash -n -- (Resolve-RepositoryPath $file)
         if ($LASTEXITCODE -ne 0) {
             throw "Shell syntax validation failed for '$file'."
@@ -89,7 +89,7 @@ else {
 }
 
 Write-Host "Validating local Markdown links."
-foreach ($file in Get-TrackedFiles "*.md") {
+foreach ($file in Get-RepositoryFiles "*.md") {
     $absoluteFile = Resolve-RepositoryPath $file
     $content = [System.IO.File]::ReadAllText($absoluteFile)
 
@@ -116,7 +116,7 @@ foreach ($file in Get-TrackedFiles "*.md") {
 }
 
 Write-Host "Validating repository-local agent skills."
-$skillEntries = @(Get-TrackedFiles ".agents/skills")
+$skillEntries = @(Get-RepositoryFiles ".agents/skills")
 $skillDirectories = @(
     $skillEntries |
         ForEach-Object {
@@ -130,7 +130,7 @@ $skillDirectories = @(
 foreach ($skillDirectory in $skillDirectories) {
     $skillFile = ".agents/skills/$skillDirectory/SKILL.md"
     if ($skillEntries -notcontains $skillFile) {
-        throw "Agent skill '$skillDirectory' does not contain a tracked SKILL.md."
+        throw "Agent skill '$skillDirectory' does not contain a repository SKILL.md."
     }
 
     $lines = [System.IO.File]::ReadAllLines((Resolve-RepositoryPath $skillFile))
@@ -210,10 +210,10 @@ Assert-Equal (& $normalize $encoderStruct.Groups['body'].Value) `
     (& $normalize $clientStruct.Groups['body'].Value) `
     "MAIN_FILE_INFO layouts differ between encoder and client."
 
-$trackedEnvironmentFiles = @(Get-TrackedFiles ".env") + @(Get-TrackedFiles ".env.*")
-$unexpectedEnvironmentFiles = @($trackedEnvironmentFiles | Where-Object { $_ -ne ".env.example" })
+$environmentFiles = @(Get-RepositoryFiles ".env") + @(Get-RepositoryFiles ".env.*")
+$unexpectedEnvironmentFiles = @($environmentFiles | Where-Object { $_ -ne ".env.example" })
 if ($unexpectedEnvironmentFiles.Count -gt 0) {
-    throw "Environment files with possible secrets are tracked: $($unexpectedEnvironmentFiles -join ', ')."
+    throw "Environment files with possible secrets are present and not ignored: $($unexpectedEnvironmentFiles -join ', ')."
 }
 
 Write-Host "Repository validation completed successfully."
