@@ -2,7 +2,9 @@
 
 Create one Markdown file per verified function, global, structure, packet handler, or hook site. Use kebab-case names, for example `render-item.md` or `main-window-handle.md`.
 
-Add each accepted finding to the index in `../main-exe.md`.
+Add High- or Medium-confidence findings to the accepted index in `../main-exe.md`.
+Keep Low-confidence records in the candidate index until their unresolved identity,
+ABI, control-flow, or runtime questions are closed.
 
 ## Finding template
 
@@ -47,6 +49,7 @@ Add each accepted finding to the index in `../main-exe.md`.
 - Patch primitive: typed write/block write/`CALL` callsite/complete `JMP`/naked
   interceptor/direct control-flow patch
 - Hook type:
+- Replacement target:
 - Required patch length:
 - Overwritten instructions:
 - Resume VA:
@@ -87,6 +90,7 @@ Add each accepted finding to the index in `../main-exe.md`.
 - Include enough evidence for another analyst to reproduce the result.
 - Do not paste large decompiler listings; quote only the relevant instructions or pseudocode fragments.
 - A byte signature must explain wildcards and expected uniqueness.
+- Do not state an expected match count unless it was actually measured.
 - A Low-confidence candidate must not be presented as an established offset.
 - A patch site must have one owner. Search the project before recording a new
   hook or memory write at an existing address.
@@ -94,3 +98,5 @@ Add each accepted finding to the index in `../main-exe.md`.
   value/bytes, and whether the target is code or data.
 - For naked interceptors, record every reproduced instruction and continuation;
   `Pushad/Popad` does not by itself preserve flags, FPU, or SIMD state.
+- State explicitly when Ghidra names, runtime validation, signature uniqueness,
+  or expected-byte preflight have not yet been recorded.

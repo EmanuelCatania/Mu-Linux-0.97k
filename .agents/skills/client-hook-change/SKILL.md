@@ -28,92 +28,45 @@ those contracts.
 - Require an accepted Medium- or High-confidence finding for the target. If it
   is missing or uncertain, run `ghidra-offset-analysis` first.
 - Search the whole project for the address, symbol, and nearby patch sites.
-  One patch site must have one owner; do not install competing hooks from
-  independent subsystems.
-- Classify the change before implementation: typed write, block write, callsite
-  hook, complete replacement, naked interceptor, or direct control-flow patch.
+  One patch site must have one owner.
+- Classify the patch using the primitives and hook categories documented in
+  `docs/client-reverse-engineering.md`.
 
-## Patch primitives
+## Verify the contract
 
-`SetByte`, `SetWord`, `SetDword`, `SetFloat`, and `SetDouble` write fixed-width
-values. Record the original value, replacement value, width, type, endianness,
-and whether the address is data, a pointer, an immediate operand, or an opcode.
-Explain expressions such as `address + 1` in terms of the instruction field they
-modify.
+From the finding and current disassembly, confirm:
 
-`MemoryCpy` replaces an exact byte block. `MemorySet` fills a byte block, often
-with `0x90`. For code, record complete instructions, incoming branches, and the
-effect of removing each instruction. Never choose a NOP size approximately.
+- exact VA/RVA and expected original bytes or value;
+- instruction boundaries, overwrite length, destination, and continuation;
+- calling convention, argument locations, stack cleanup, and return behavior;
+- registers, flags, FPU, and SIMD state that may be live;
+- pointer ownership, lifetime, nullability, and reentrancy;
+- whether original instructions or the original callee must still execute;
+- whether another patch owns or reaches the same region.
 
-`SetCompleteHook` writes exactly five bytes (`opcode + rel32`). It does not
-validate original bytes, create a trampoline, preserve overwritten instructions,
-verify an ABI, flush the instruction cache, or coordinate with other patches.
-Perform those checks before invoking it. The `0xFF` form preserves the existing
-opcode while changing the relative operand; it has no validated use here.
+Do not hide uncertainty with a cast, varargs call, or naked wrapper. Stop when
+the target, ABI, continuation, or ownership is unresolved.
 
-Treat `VirtualizeOffset` as legacy and unavailable for new work unless a finding
-revalidates instruction relocation, relative operands, executable trampoline
-memory under DEP, allocation failure, and lifetime.
+## Implement narrowly
 
-## Hook categories
-
-### `0xE8` callsite replacement
-
-- Confirm the address is an existing `CALL rel32` instruction, not the callee's
-  entry point.
-- Match the callsite calling convention, argument locations, return value, stack
-  cleanup, and relevant registers.
-- Return normally so execution resumes at `callsite + 5`.
-- Call the original implementation explicitly when the behavior is a wrapper.
-
-### `0xE9` complete function replacement
-
-- Confirm the address is the function entry.
-- Implement the complete native contract; there is no automatic return to the
-  original function body.
-- Match calling convention, hidden `ECX`/`EDX` use, return mechanism, object
-  lifetime, and stack cleanup. Do not introduce an unverified hidden `this`.
-
-### `0xE9` naked interceptor
-
-- Confirm the patch is in the middle of a function.
-- Record every overwritten instruction and every resume/branch address.
-- Reproduce original instructions when their effects are still required.
-- Preserve registers, flags, stack, FPU, and SIMD state according to the
-  surrounding contract. `Pushad/Popad` does not preserve flags, FPU, or SIMD.
-- Use explicit jumps to continuations; do not use a normal C++ `return`.
-
-### `0xE9` direct control-flow patch
-
-- Treat a direct jump to another native address as a flow patch, not a callable
-  function hook.
-- Verify instruction boundaries, destination, skipped side effects, and every
-  branch that can reach the patched region.
-
-## ABI and machine state
-
-Confirm `__cdecl`, `__stdcall`, `__fastcall`, or `__thiscall`; stack cleanup;
-parameter widths and signedness; `ECX`/`EDX`; return registers or FPU values;
-packing and offsets; ownership; nullability; and reentrancy.
-
-Do not hide an uncertain contract with a cast or an unverified naked wrapper.
-Avoid allocation, blocking I/O, locks, and exceptions on sensitive paths unless
-their reentrancy and failure behavior are established.
-
-## Implementation
-
-- Centralize verified addresses in `Offsets.h` or the established address owner.
+- Reuse the established patch mechanism when it satisfies the verified contract.
+- Centralize verified addresses in `Offsets.h` or the existing address owner.
+- Compare expected bytes or values before writing. On mismatch, leave the
+  executable unmodified and report the failure.
 - Preserve original behavior outside the requested condition.
-- Add layout assertions when a verified structure is shared with native code.
-- Preflight expected bytes before patching. If the preflight fails, leave the
-  executable unmodified and report the mismatch.
-- Prevent recursive entry and duplicate installation.
-- Keep visual presentation separate from native buffers and protocol data.
-- For render/input hooks, prefer the native render pass, save and restore global
-  render state, and consume only owned WndProc events.
-- Test initialization, scene transitions, shutdown, and neighboring patches.
+- Reproduce or relocate overwritten instructions only after proving their
+  semantics and relative-address behavior.
+- Prevent recursive entry, duplicate installation, and competing patch owners.
+- Keep sensitive hooks bounded; avoid allocation, blocking I/O, locks, and
+  exceptions unless their failure and reentrancy behavior are established.
+- Add layout assertions when verified structures cross the native boundary.
+- Update the finding with the final owner, replacement target, original bytes,
+  preflight behavior, continuation, and remaining uncertainty.
 
-## Validation
+For render or input hooks, use the native render pass when practical, restore
+global render state, and consume only events owned by the custom control.
+
+## Validate
 
 At minimum:
 
@@ -127,9 +80,9 @@ Also:
 - run MSBuild parity when project or compiler settings changed;
 - manually test installation, normal execution, the changed path, transitions,
   and shutdown;
-- verify the original-byte mismatch path does not patch;
-- inspect crashes, stack imbalance, recursion, rendering corruption, and state
-  transitions;
+- verify the expected-byte mismatch path does not patch;
+- inspect crashes, stack imbalance, changed flags, recursion, rendering
+  corruption, and neighboring patches;
 - run repository validation and `git diff --check`.
 
 ## Output
@@ -137,16 +90,15 @@ Also:
 Report:
 
 - finding and executable fingerprint used;
-- patch category, opcode, site, overwrite length, and destination;
-- original bytes or values and the preflight result;
+- patch category, site, owner, overwrite length, and destination;
+- expected bytes or value and the preflight result;
 - ABI, preserved machine state, and continuation behavior;
 - original behavior retained, wrapped, or replaced;
-- affected files and patch owner;
-- validation performed and remaining runtime risks.
+- affected files, validation performed, and remaining runtime risks.
 
 ## Stop conditions
 
 Stop rather than implement when the fingerprint differs, the finding is Low
-confidence, instruction boundaries are unclear, expected bytes do not match, the
-ABI is unresolved, the target is not uniquely identified, the trampoline or
-continuation is unsafe, or another patch owns the site.
+confidence, expected bytes do not match, instruction boundaries are unclear, the
+ABI is unresolved, the target is not unique, the continuation or trampoline is
+unsafe, or another patch owns the site.

@@ -10,20 +10,17 @@ mitigation. Do not submit real server or player data. The documented environment
 intended for local use; do not expose the Compose stack, web panel, or game server to
 the internet without a dedicated security review.
 
-## Client credential rules
+## Client credentials
 
-Client features that handle login credentials must use Windows Credential
-Manager or DPAPI rather than plaintext files. Never place a password, credential
-blob, or transient snapshot in `Config.ini`, logs, console output, crash reports,
-or debug messages. Keep placeholders and masks strictly visual; native input
-buffers must contain only the real values required by the existing protocol.
-
-Clear temporary copies with `SecureZeroMemory` as soon as their work is complete.
-Persist credentials only after the user submits them and authentication succeeds.
-Invalid credentials must be removed according to the feature's defined state
-machine, while reconnect and logout paths must not accidentally overwrite them.
+- Never persist credentials in plaintext files, logs, crash reports, console
+  output, or debug messages.
+- Use Windows Credential Manager or DPAPI for local credential persistence.
+- Minimize the lifetime and number of plaintext copies in memory, and clear
+  temporary buffers when they are no longer required.
+- Keep visual placeholders and masks separate from native input buffers and
+  protocol data.
+- Document the threat model and lifecycle of any credential-handling feature.
 
 Credential Manager protects storage for the Windows user profile; it does not
 protect secrets from malware, a debugger, or code running as the same user. The
-password may also exist briefly in the `main.exe` process because the native
-client still requires it for submission.
+native client may also require plaintext credentials briefly during submission.

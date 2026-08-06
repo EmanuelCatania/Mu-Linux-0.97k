@@ -22,6 +22,22 @@ Apply these patterns to new or modified code without reformatting entire legacy 
 - Do not throw exceptions across boundaries that are not exception-safe.
 - Logs must provide operational context without exposing credentials or personal data.
 
+## Client credential lifecycle
+
+- Store saved credentials only through Windows Credential Manager or DPAPI; do
+  not use `Config.ini` or another plaintext file.
+- Keep placeholders and masks visual. Native input buffers must contain only the
+  values required by the existing client and protocol.
+- Define the state transitions for load, edit, foreground submit, authentication
+  result, reconnect, logout, disconnect, and deletion.
+- A reconnect response must not be mistaken for a pending foreground login
+  result or overwrite the user's saved-login choice.
+- Clear submit snapshots, credential blobs, temporary render copies, and
+  reconnect-owned plaintext buffers as soon as their lifecycle permits.
+- When legacy code retains plaintext longer than the desired policy, document
+  the limitation and fix it in a focused change rather than claiming full
+  compliance.
+
 ## JavaScript and services
 
 - Keep handlers small; extract logic only when there is a clear responsibility.

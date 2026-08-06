@@ -30,7 +30,7 @@
 | Add or modify a packet or handler | `.agents/skills/protocol-change/SKILL.md` |
 | Add or modify an item, monster, map, or custom entity | `.agents/skills/runtime-entity-change/SKILL.md` |
 | Encoder, runtime, DAT/INI/TXT, or asset | `docs/runtime-data.md` |
-| Client-local secrets or credential persistence | `SECURITY.md` and `src/client/AGENTS.md` |
+| Client-local secrets or credential persistence | `SECURITY.md` and `docs/coding-patterns.md` |
 | Server schema, SQL, or persistence | `docs/database.md` |
 | Web panel, authentication, or editor | `docs/services-patterns.md` |
 | Planning and validation | `docs/testing.md` |

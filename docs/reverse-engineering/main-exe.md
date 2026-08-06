@@ -48,12 +48,22 @@ Do not accept a permanent offset until both hashes match this record.
 - Revalidate every hard-coded address, signature, and hook when the executable changes.
 - Do not commit another executable solely to support this record.
 
-## Findings index
+## Accepted findings
+
+Only High- or Medium-confidence records belong in this table.
 
 | Symbol or behavior | VA | RVA | Kind | Confidence | Record |
 |---|---:|---:|---|---|---|
 | Login account render callsite | `0x00521778` | `0x00121778` | `CALL` | Medium | [login-account-render-call.md](findings/login-account-render-call.md) |
 | Login password render callsite | `0x005217A0` | `0x001217A0` | `CALL` | Medium | [login-password-render-call.md](findings/login-password-render-call.md) |
 | Login scene render callsite | `0x0052698A` | `0x0012698A` | `CALL` | Medium | [login-scene-render-call.md](findings/login-scene-render-call.md) |
-| Reconnect account capture site | `0x00520428` | `0x00120428` | `JMP` / `naked` | Medium | [reconnect-account-capture.md](findings/reconnect-account-capture.md) |
-| Login panel vertical global | `0x005616A4` | `0x001616A4` | `DWORD` | Medium | [login-panel-y.md](findings/login-panel-y.md) |
+
+## Candidate findings
+
+Low-confidence candidates document current source assumptions but must be
+revalidated before modification or reuse.
+
+| Symbol or behavior | VA | RVA | Kind | Confidence | Record |
+|---|---:|---:|---|---|---|
+| Reconnect account capture site | `0x00520428` | `0x00120428` | `JMP` / `naked` | Low | [reconnect-account-capture.md](findings/reconnect-account-capture.md) |
+| Login panel vertical global | `0x005616A4` | `0x001616A4` | `DWORD` | Low | [login-panel-y.md](findings/login-panel-y.md) |

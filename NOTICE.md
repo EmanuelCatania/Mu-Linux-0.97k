@@ -23,7 +23,8 @@ The principal community origins declared by the upstream projects are:
 The current independent line is maintained by
 [Aldo Migge](https://github.com/aldomigge). Its divergence point is recorded by the
 signed tag `upstream-baseline-a735600`. The full inherited history remains available
-through Git and the linked upstream repositories.
+through Git and the linked upstream repositories. A non-normative documentation
+snapshot is indexed under [`docs/history/`](docs/history/README.md).
 
 ## Licensing
 

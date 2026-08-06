@@ -86,7 +86,9 @@ own finding.
 `SetCompleteHook` writes exactly five bytes: an opcode followed by a relative
 32-bit displacement. It does not create a trampoline, preserve overwritten
 instructions, validate the original bytes, verify an ABI, or coordinate with
-other patches. Classify each use before changing it:
+other patches. It obtains the destination from an untyped x86 varargs stack
+slot, so successful compilation does not validate the target prototype or ABI.
+Classify each use before changing it:
 
 1. `0xE8` replacing a callsite. The wrapper must match the callsite ABI and
    returns naturally to `callsite + 5`.
@@ -101,6 +103,11 @@ other patches. Classify each use before changing it:
 The `0xFF` option preserves the existing opcode while replacing the relative
 operand. It has no validated use in this project and should not be introduced
 without a dedicated finding.
+
+The current helpers do not provide expected-byte preflight, rollback, or
+instruction-cache flushing. Treat preflight as an implementation requirement
+and an open code-level hardening task; do not claim that `SetCompleteHook`,
+`MemoryCpy`, or `MemorySet` provides it.
 
 `VirtualizeOffset` is legacy code with no known current callsite. Do not use it
 for new work without rechecking instruction relocation, a minimum five-byte

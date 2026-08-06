@@ -115,6 +115,66 @@ foreach ($file in Get-TrackedFiles "*.md") {
     }
 }
 
+Write-Host "Validating repository-local agent skills."
+$skillEntries = @(Get-TrackedFiles ".agents/skills")
+$skillDirectories = @(
+    $skillEntries |
+        ForEach-Object {
+            if ($_ -match '^\.agents/skills/([^/]+)/') {
+                $Matches[1]
+            }
+        } |
+        Sort-Object -Unique
+)
+
+foreach ($skillDirectory in $skillDirectories) {
+    $skillFile = ".agents/skills/$skillDirectory/SKILL.md"
+    if ($skillEntries -notcontains $skillFile) {
+        throw "Agent skill '$skillDirectory' does not contain a tracked SKILL.md."
+    }
+
+    $lines = [System.IO.File]::ReadAllLines((Resolve-RepositoryPath $skillFile))
+    if ($lines.Count -lt 4 -or $lines[0].Trim() -ne "---") {
+        throw "Agent skill '$skillDirectory' has invalid front matter."
+    }
+
+    $closingDelimiter = -1
+    for ($lineIndex = 1; $lineIndex -lt $lines.Count; $lineIndex++) {
+        if ($lines[$lineIndex].Trim() -eq "---") {
+            $closingDelimiter = $lineIndex
+            break
+        }
+    }
+
+    if ($closingDelimiter -lt 2) {
+        throw "Agent skill '$skillDirectory' has no closing front-matter delimiter."
+    }
+
+    $metadata = @{}
+    for ($lineIndex = 1; $lineIndex -lt $closingDelimiter; $lineIndex++) {
+        $match = [regex]::Match(
+            $lines[$lineIndex],
+            '^(?<key>[A-Za-z0-9_-]+):\s*(?<value>.+?)\s*$'
+        )
+
+        if ($match.Success) {
+            $metadata[$match.Groups['key'].Value] = $match.Groups['value'].Value
+        }
+    }
+
+    if (-not $metadata.ContainsKey("name")) {
+        throw "Agent skill '$skillDirectory' is missing front-matter field 'name'."
+    }
+
+    if (-not $metadata.ContainsKey("description") -or
+        [string]::IsNullOrWhiteSpace($metadata["description"])) {
+        throw "Agent skill '$skillDirectory' is missing front-matter field 'description'."
+    }
+
+    Assert-Equal $metadata["name"] $skillDirectory `
+        "Agent skill name does not match its directory."
+}
+
 Write-Host "Validating client and server configuration invariants."
 $clientInfo = Read-KeyValueFile "runtime/encoder/MainInfo.ini"
 $serverInfo = Read-KeyValueFile "runtime/server/GameServer/DATA/GameServerInfo - StartUp.dat"
