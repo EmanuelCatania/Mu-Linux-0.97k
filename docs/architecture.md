@@ -43,7 +43,8 @@ The diagram shows responsibility, not every socket or process-to-process connect
 |---|---|
 | Packet/opcode | client, server, packing, length checks, and states |
 | Item/monster/map | encoder, client, GameServer, runtime, and web assets |
-| Login/session | JoinServer, GameServer, database, web, and security |
+| Local login UI or client credential storage | client input/rendering, client security, and existing native login flow |
+| Authentication/session/protocol | client, ConnectServer, JoinServer, GameServer, and security |
 | Persistence | DataServer, schema, seeds, web, and editor |
 | Port/address | encoder, ConnectServer, Compose, and health checks |
 | `ClientInfo.bmd` field | InfoEncoder, `Main.dll`, defaults, and determinism |

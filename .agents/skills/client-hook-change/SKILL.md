@@ -1,13 +1,12 @@
 ---
 name: client-hook-change
-description: Add, replace, or modify a Main.dll hook, detour, trampoline, patch site, function-pointer call, or other integration with the supported x86 main.exe.
+description: Add, replace, or modify a Main.dll hook, detour, trampoline, patch site, function-pointer call, memory patch, or other integration with the supported x86 main.exe.
 ---
 
 # Client hook change
 
-## Goal
-
-Implement the smallest safe hook while preserving the original x86 ABI, control flow, and supported executable contract.
+Implement the smallest safe patch while preserving the original x86 ABI,
+control flow, and supported executable contract.
 
 ## Read first
 
@@ -19,76 +18,102 @@ Read only:
 4. the client section of `docs/testing.md`;
 5. affected source and initialization code.
 
-Read `docs/protocol.md` or `docs/runtime-data.md` only when the hook changes those contracts.
+Read `docs/protocol.md` or `docs/runtime-data.md` only when the patch changes
+those contracts.
 
 ## Preconditions
 
-- The target `main.exe` fingerprint must match `docs/reverse-engineering/main-exe.md`.
-- The target address or function must have an accepted Medium- or High-confidence finding.
-- If the target is missing or uncertain, run `.agents/skills/ghidra-offset-analysis/SKILL.md` first.
-- Define the intended behavior and whether the original function or overwritten instructions must still execute.
+- Confirm that the analyzed and deployed `main.exe` matches
+  `docs/reverse-engineering/main-exe.md`.
+- Require an accepted Medium- or High-confidence finding for the target. If it
+  is missing or uncertain, run `ghidra-offset-analysis` first.
+- Search the whole project for the address, symbol, and nearby patch sites.
+  One patch site must have one owner; do not install competing hooks from
+  independent subsystems.
+- Classify the change before implementation: typed write, block write, callsite
+  hook, complete replacement, naked interceptor, or direct control-flow patch.
 
-## Workflow
+## Patch primitives
 
-### 1. Inspect existing hook infrastructure
+`SetByte`, `SetWord`, `SetDword`, `SetFloat`, and `SetDouble` write fixed-width
+values. Record the original value, replacement value, width, type, endianness,
+and whether the address is data, a pointer, an immediate operand, or an opcode.
+Explain expressions such as `address + 1` in terms of the instruction field they
+modify.
 
-- Locate existing hook helpers, initialization order, address definitions, and nearby hooks.
-- Reuse an established mechanism when it satisfies the contract.
-- Do not introduce a new detour framework for one change.
-- Identify startup, shutdown, enable/disable, and failure behavior.
+`MemoryCpy` replaces an exact byte block. `MemorySet` fills a byte block, often
+with `0x90`. For code, record complete instructions, incoming branches, and the
+effect of removing each instruction. Never choose a NOP size approximately.
 
-### 2. Verify the patch site
+`SetCompleteHook` writes exactly five bytes (`opcode + rel32`). It does not
+validate original bytes, create a trampoline, preserve overwritten instructions,
+verify an ABI, flush the instruction cache, or coordinate with other patches.
+Perform those checks before invoking it. The `0xFF` form preserves the existing
+opcode while changing the relative operand; it has no validated use here.
 
-From the finding and disassembly, confirm:
+Treat `VirtualizeOffset` as legacy and unavailable for new work unless a finding
+revalidates instruction relocation, relative operands, executable trampoline
+memory under DEP, allocation failure, and lifetime.
 
-- exact VA/RVA and expected original bytes;
-- complete x86 instruction boundaries;
-- transfer instruction size and relative-displacement range;
-- total overwrite length;
-- fall-through, branch targets, and resume address;
-- instructions that must be relocated into a trampoline;
-- absolute-address and ASLR assumptions.
+## Hook categories
 
-Fail closed when expected bytes do not match. Do not patch a merely similar sequence.
+### `0xE8` callsite replacement
 
-### 3. Verify ABI and machine state
+- Confirm the address is an existing `CALL rel32` instruction, not the callee's
+  entry point.
+- Match the callsite calling convention, argument locations, return value, stack
+  cleanup, and relevant registers.
+- Return normally so execution resumes at `callsite + 5`.
+- Call the original implementation explicitly when the behavior is a wrapper.
 
-Confirm:
+### `0xE9` complete function replacement
 
-- calling convention and stack cleanup;
-- argument locations and widths;
-- `ECX`/`EDX` meaning;
-- return mechanism;
-- registers, flags, FPU, or SIMD state that must be preserved;
-- object lifetime, nullability, and ownership;
-- thread and reentrancy assumptions.
+- Confirm the address is the function entry.
+- Implement the complete native contract; there is no automatic return to the
+  original function body.
+- Match calling convention, hidden `ECX`/`EDX` use, return mechanism, object
+  lifetime, and stack cleanup. Do not introduce an unverified hidden `this`.
 
-Do not hide an uncertain contract with a cast or naked wrapper.
+### `0xE9` naked interceptor
 
-### 4. Implement narrowly
+- Confirm the patch is in the middle of a function.
+- Record every overwritten instruction and every resume/branch address.
+- Reproduce original instructions when their effects are still required.
+- Preserve registers, flags, stack, FPU, and SIMD state according to the
+  surrounding contract. `Pushad/Popad` does not preserve flags, FPU, or SIMD.
+- Use explicit jumps to continuations; do not use a normal C++ `return`.
 
-- Centralize the verified address and use a typed function alias.
-- Add `static_assert` or `offsetof` checks for verified layouts when useful.
-- Keep work inside the hook bounded; avoid allocation, blocking I/O, locks, and exceptions on sensitive paths.
-- Call the original implementation exactly as intended and prevent accidental recursion.
+### `0xE9` direct control-flow patch
+
+- Treat a direct jump to another native address as a flow patch, not a callable
+  function hook.
+- Verify instruction boundaries, destination, skipped side effects, and every
+  branch that can reach the patched region.
+
+## ABI and machine state
+
+Confirm `__cdecl`, `__stdcall`, `__fastcall`, or `__thiscall`; stack cleanup;
+parameter widths and signedness; `ECX`/`EDX`; return registers or FPU values;
+packing and offsets; ownership; nullability; and reentrancy.
+
+Do not hide an uncertain contract with a cast or an unverified naked wrapper.
+Avoid allocation, blocking I/O, locks, and exceptions on sensitive paths unless
+their reentrancy and failure behavior are established.
+
+## Implementation
+
+- Centralize verified addresses in `Offsets.h` or the established address owner.
 - Preserve original behavior outside the requested condition.
-- Provide a safe no-hook path when initialization verification fails.
+- Add layout assertions when a verified structure is shared with native code.
+- Preflight expected bytes before patching. If the preflight fails, leave the
+  executable unmodified and report the mismatch.
+- Prevent recursive entry and duplicate installation.
+- Keep visual presentation separate from native buffers and protocol data.
+- For render/input hooks, prefer the native render pass, save and restore global
+  render state, and consume only owned WndProc events.
+- Test initialization, scene transitions, shutdown, and neighboring patches.
 
-### 5. Review integration risks
-
-Check:
-
-- initialization before first use;
-- shutdown and DLL detach;
-- multiple installation attempts;
-- concurrent calls;
-- recursive rendering or message paths;
-- stale pointers after map, character, window, or device transitions;
-- compatibility with neighboring patches at the same region.
-
-Update the reverse-engineering finding with final hook type, patch length, overwritten instructions, resume VA, and trampoline details.
-
-### 6. Validate
+## Validation
 
 At minimum:
 
@@ -100,9 +125,11 @@ pwsh -File ./scripts/client-workflow.ps1 -Action BuildDeploy -Configuration Rele
 Also:
 
 - run MSBuild parity when project or compiler settings changed;
-- manually test installation, normal execution, the changed path, and shutdown;
+- manually test installation, normal execution, the changed path, transitions,
+  and shutdown;
 - verify the original-byte mismatch path does not patch;
-- inspect crashes, stack imbalance, recursion, rendering corruption, and state transitions;
+- inspect crashes, stack imbalance, recursion, rendering corruption, and state
+  transitions;
 - run repository validation and `git diff --check`.
 
 ## Output
@@ -110,13 +137,16 @@ Also:
 Report:
 
 - finding and executable fingerprint used;
-- hook type, site, overwrite length, and resume address;
-- ABI and preserved machine state;
-- original behavior retained or replaced;
-- affected files;
-- validation performed;
-- remaining runtime risks or unverified scenarios.
+- patch category, opcode, site, overwrite length, and destination;
+- original bytes or values and the preflight result;
+- ABI, preserved machine state, and continuation behavior;
+- original behavior retained, wrapped, or replaced;
+- affected files and patch owner;
+- validation performed and remaining runtime risks.
 
 ## Stop conditions
 
-Stop rather than implement when the fingerprint differs, the finding is Low confidence, instruction boundaries are unclear, the trampoline cannot preserve semantics, the ABI is unresolved, expected bytes do not match, the target site is ambiguous, or the hook conflicts with another patch.
+Stop rather than implement when the fingerprint differs, the finding is Low
+confidence, instruction boundaries are unclear, expected bytes do not match, the
+ABI is unresolved, the target is not uniquely identified, the trampoline or
+continuation is unsafe, or another patch owns the site.

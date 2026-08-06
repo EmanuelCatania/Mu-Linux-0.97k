@@ -24,13 +24,14 @@
 |---|---|
 | Setup, build, or local runtime | `docs/development.md` |
 | New feature or structural change | `docs/architecture.md` and `docs/coding-patterns.md` |
-| Hook, address, ABI, or `main.exe` analysis | `docs/client-reverse-engineering.md` |
+| Hook, patch, address, ABI, or `main.exe` analysis | `docs/client-reverse-engineering.md` |
 | Locate or revalidate a `main.exe` offset | `.agents/skills/ghidra-offset-analysis/SKILL.md` |
 | Add or modify a client hook | `.agents/skills/client-hook-change/SKILL.md` |
 | Add or modify a packet or handler | `.agents/skills/protocol-change/SKILL.md` |
 | Add or modify an item, monster, map, or custom entity | `.agents/skills/runtime-entity-change/SKILL.md` |
 | Encoder, runtime, DAT/INI/TXT, or asset | `docs/runtime-data.md` |
-| Schema, SQL, or persistence | `docs/database.md` |
+| Client-local secrets or credential persistence | `SECURITY.md` and `src/client/AGENTS.md` |
+| Server schema, SQL, or persistence | `docs/database.md` |
 | Web panel, authentication, or editor | `docs/services-patterns.md` |
 | Planning and validation | `docs/testing.md` |
 | Branch, commit, and pull request | `CONTRIBUTING.md` |
@@ -44,7 +45,9 @@
 - Prefer small, compatible, and verifiable changes. Avoid speculative abstractions and overengineering.
 - Do not change a protocol, binary structure, ID, or duplicated setting in only one component.
 - Preserve legacy formats, ordering, terminators, case, encoding, and layout when they are runtime contracts.
-- Do not add credentials, real player data, local paths, or production values.
+- Do not add credentials, real player data, user-specific local paths, or
+  production values. Canonical development paths documented by the project are
+  permitted when they are required by a reproducible workflow.
 - Do not add binaries or assets without verifiable provenance and authorization.
 - Do not edit vendored code during unrelated changes.
 - Do not hide failures with casts, unsafe defaults, generic handling, or removed validation.

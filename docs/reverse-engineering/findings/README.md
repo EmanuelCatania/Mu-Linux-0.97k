@@ -44,11 +44,16 @@ Add each accepted finding to the index in `../main-exe.md`.
 
 ## Hook details, when applicable
 
+- Patch primitive: typed write/block write/`CALL` callsite/complete `JMP`/naked
+  interceptor/direct control-flow patch
 - Hook type:
 - Required patch length:
 - Overwritten instructions:
 - Resume VA:
 - Trampoline requirements:
+- Patch owner:
+- Original values or bytes:
+- Preflight verification:
 
 ## Signature
 
@@ -83,3 +88,9 @@ Add each accepted finding to the index in `../main-exe.md`.
 - Do not paste large decompiler listings; quote only the relevant instructions or pseudocode fragments.
 - A byte signature must explain wildcards and expected uniqueness.
 - A Low-confidence candidate must not be presented as an established offset.
+- A patch site must have one owner. Search the project before recording a new
+  hook or memory write at an existing address.
+- For typed or block writes, record width, original value/bytes, replacement
+  value/bytes, and whether the target is code or data.
+- For naked interceptors, record every reproduced instruction and continuation;
+  `Pushad/Popad` does not by itself preserve flags, FPU, or SIMD state.

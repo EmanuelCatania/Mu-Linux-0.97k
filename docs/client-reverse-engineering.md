@@ -55,6 +55,58 @@ Use `.agents/skills/ghidra-offset-analysis/SKILL.md` for offset discovery or rev
 - Verify whether ASLR or relocations affect address resolution.
 - Never calculate an RVA by subtracting an assumed image base; read the preferred image base from the verified PE.
 
+## Patch primitives in `Util.cpp`
+
+`src/client/Main/Util.cpp` contains low-level write helpers. They change the
+running image directly and do not provide byte verification, rollback, or
+instruction-cache flushing. Treat every call as a binary patch that needs its
+own finding.
+
+### Typed writes
+
+- `SetByte`, `SetWord`, `SetDword`, `SetFloat`, and `SetDouble` write exactly
+  1, 2, 4, 4, and 8 bytes respectively.
+- Record the original value, replacement value, width, type, and endianness.
+- State whether the address contains data, a pointer, an immediate operand, or
+  an opcode. An expression such as `address + 1` must identify the instruction
+  field being changed, not just the resulting address.
+- Revalidate all readers and writers when changing a typed value.
+
+### Block writes
+
+- `MemoryCpy` replaces an exact byte sequence. Record the complete original
+  bytes, replacement bytes, size, and whether the target is code or data.
+- `MemorySet` fills a region. When it writes `0x90`, prove that the region
+  covers complete instructions, that no branch enters its middle, and that
+  removing each instruction preserves the intended control flow.
+- Do not use an approximate byte count for a code patch.
+
+### Relative transfers
+
+`SetCompleteHook` writes exactly five bytes: an opcode followed by a relative
+32-bit displacement. It does not create a trampoline, preserve overwritten
+instructions, validate the original bytes, verify an ABI, or coordinate with
+other patches. Classify each use before changing it:
+
+1. `0xE8` replacing a callsite. The wrapper must match the callsite ABI and
+   returns naturally to `callsite + 5`.
+2. `0xE9` replacing a complete function. The replacement owns the complete
+   function contract; there is no automatic return to the original body.
+3. `0xE9` entering a `__declspec(naked)` interceptor in the middle of a
+   function. Record overwritten instructions, every continuation address, and
+   all machine state that must be preserved or reproduced.
+4. `0xE9` jumping directly to another native address. Treat this as a control-
+   flow patch, not as a callable function hook.
+
+The `0xFF` option preserves the existing opcode while replacing the relative
+operand. It has no validated use in this project and should not be introduced
+without a dedicated finding.
+
+`VirtualizeOffset` is legacy code with no known current callsite. Do not use it
+for new work without rechecking instruction relocation, a minimum five-byte
+size, relative instructions, executable trampoline memory under DEP, allocation
+failure, and lifetime. It does not provide those guarantees itself.
+
 ## x86 ABI
 
 Explicitly confirm:
@@ -75,6 +127,16 @@ Explicitly confirm:
 - Preserve flags and registers when required by the contract.
 - Avoid allocation, locks, or exceptions in sensitive paths without analyzing reentrancy.
 - Validate pointers before accessing memory owned by `main.exe`.
+- Search the whole project for the address, symbol, and nearby patch sites before
+  installing a hook. A patch site has one owner; independent subsystems must not
+  install competing hooks at the same address.
+- For a `__declspec(naked)` interceptor, do not treat `Pushad/Popad` as complete
+  preservation: flags, FPU, and SIMD state may still be live.
+- Keep visual presentation separate from native buffers or protocol data.
+- Render extensions in the native render pass when possible, and save/restore
+  global render state.
+- WndProc hooks consume only events owned by the custom control. Test startup,
+  scene transitions, and shutdown, not only the steady-state screen.
 
 ## Confidence levels
 

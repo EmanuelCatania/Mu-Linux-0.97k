@@ -10,6 +10,16 @@ git diff --check
 git status --short
 ```
 
+When validating a repository-local Codex skill, use the project-independent
+`uv` environment so the validator's YAML dependency does not rely on a global
+Python installation:
+
+```powershell
+uv run --with pyyaml python `
+  C:\Users\aldob\.codex\skills\.system\skill-creator\scripts\quick_validate.py `
+  .agents/skills/<skill-name>
+```
+
 ## Matrix
 
 | Change | Additional validation |
