@@ -1,94 +1,88 @@
 # MU 0.97k
 
-[English overview](README.en.md)
+Independent MU Online 0.97k fork focused on evolving the game without losing its
+classic identity, while making development easier to build, test, and debug.
 
-Fork independente de MU Online 0.97k. O objetivo é evoluir o jogo sem perder a
-identidade clássica e, ao mesmo tempo, deixar o desenvolvimento mais simples de
-compilar, testar e depurar.
+## Goals
 
-## O que este projeto busca
+- **Gameplay and content:** fixes, quality-of-life improvements, events, items, maps,
+  and new systems.
+- **Classic identity:** changes that affect the original experience should remain
+  configurable when practical.
+- **Development:** reproducible builds, tooling, and documentation that do not depend
+  on hidden knowledge.
 
-- **Gameplay e conteúdo:** correções, qualidade de vida, eventos, itens, mapas e
-  sistemas novos.
-- **Identidade clássica:** mudanças que alterem a experiência original devem ser
-  configuráveis quando isso for viável.
-- **Desenvolvimento:** builds reproduzíveis, ferramentas e documentação que não
-  dependam de conhecimento escondido.
+## Components
 
-## Componentes
+The original `main.exe` client is closed source. The project uses `Main.dll`, a
+community plugin that applies hooks and extensions, and `InfoEncoder.exe` generates
+the `ClientInfo.bmd` configuration consumed by the DLL.
 
-O `main.exe` é o cliente original fechado. Como seu código-fonte não está disponível,
-o projeto usa `Main.dll`, um plugin comunitário que aplica hooks e extensões. O
-`InfoEncoder.exe` gera o `ClientInfo.bmd` usado pela DLL.
+The community server emulator is written in C++ and runs on Linux. The current stack
+uses WSL2, Docker, MySQL, and a Node.js web panel. Client, plugin, encoder, and server
+changes must remain coordinated when a feature affects protocols or configuration.
 
-O servidor é uma emulação comunitária em C++ executada no Linux. A linha atual usa
-WSL2, Docker, MySQL e um painel web. Cliente, plugin, encoder e servidor precisam ser
-alterados em conjunto quando uma funcionalidade muda protocolo ou configuração.
+## Supported environments
 
-## Estado e ambientes
+- Client, `Main.dll`, and encoder: Windows 11, Win32/x86, MSVC, and VS Code.
+- Server: Ubuntu 24.04 on WSL2, CMake/Ninja, and Docker Compose.
+- Web panel: Node.js and Docker.
+- The executable runtime is kept outside the repository at
+  `C:\Dev\runtime\mu-097k`.
+- No official binary or container image distribution is currently provided.
 
-- Cliente, `Main.dll` e encoder: Windows 11, Win32, MSVC e VS Code.
-- Servidor: Ubuntu 24.04 no WSL2, CMake/Ninja e Docker Compose.
-- Painel web: Node.js e Docker.
-- O runtime de execução fica fora do repositório, em `C:\Dev\runtime\mu-097k`.
-- Não há distribuição oficial de binários ou imagens neste momento.
+## Quick start
 
-## Começo rápido
-
-No clone do WSL2:
+In the WSL2 clone:
 
 ```bash
 cp .env.example .env
-# Revise as credenciais e mantenha PUBLIC_IP=127.0.0.1 para uso local.
+# Review local credentials and keep PUBLIC_IP=127.0.0.1 for local use.
 docker compose config --quiet
 docker compose up --build -d
 ```
 
-O painel fica em <http://127.0.0.1:8085>. Para parar os serviços sem remover o banco,
-use `docker compose down`.
+The web panel is available at <http://127.0.0.1:8085>. Stop the services without
+removing the database with `docker compose down`.
 
-No clone do Windows:
+In the Windows clone:
 
 ```powershell
 pwsh -File .\scripts\client-workflow.ps1 -Action InitializeRuntime
 ```
 
-Edite `C:\Dev\runtime\mu-097k\encoder\MainInfo.ini` e depois execute:
+Edit `C:\Dev\runtime\mu-097k\encoder\MainInfo.ini`, then run:
 
 ```powershell
 pwsh -File .\scripts\client-workflow.ps1 -Action BuildDeploy -Configuration Debug
 ```
 
-`BuildDeploy` compila, copia os artefatos e executa o encoder. O guia de
-[desenvolvimento](docs/development.md) explica Release, F5, MSBuild, CMake e os
-testes do servidor.
+`BuildDeploy` builds and deploys the artifacts, then runs the encoder. See the
+[development guide](docs/development.md) for Release builds, F5 debugging, MSBuild,
+CMake, and server validation.
 
-## Estrutura
+## Repository layout
 
 ```text
-src/       código do cliente, servidor e ferramentas
-runtime/   templates rastreados e dados do servidor
-services/  painel web e editor opcional
-deploy/    Dockerfiles e integrações legadas
-scripts/   automação local
-docs/      desenvolvimento e histórico upstream
+src/       client, server, and tool sources
+runtime/   tracked templates and server data
+services/  web panel and optional editor
+deploy/    Dockerfiles and legacy integrations
+scripts/   local automation
+docs/      development and technical documentation
 ```
 
-Veja também as [regras de contribuição](CONTRIBUTING.md), a [política de
-segurança](SECURITY.md) e o [aviso legal e de proveniência](NOTICE.md).
+See the [contribution guidelines](CONTRIBUTING.md), [security policy](SECURITY.md),
+and [legal and provenance notice](NOTICE.md).
 
-## Créditos
+## Credits and licensing
 
-- [Nico Muratona (Kayito)](https://github.com/nicomuratona/MuEmu-0.97k-kayito):
-  sources e ferramentas-base do MuEmu 0.97k.
-- [Emanuel Catania](https://github.com/EmanuelCatania/Mu-Linux-0.97k): linha Linux,
-  Docker, MySQL e o repositório que originou este fork.
-- **Trifon Dinev:** template web Simple MU Online Templates.
-- **Kapocha33, SetecSoft, Zeus e ogocx:** contribuições registradas no
-  [README histórico](docs/history/upstream-readme.es.md).
-- [Aldo Migge](https://github.com/aldomigge): mantenedor da linha independente atual.
+This independent line is maintained by
+[Aldo Migge](https://github.com/aldomigge). Its community origins include
+[MuEmu 0.97k](https://github.com/nicomuratona/MuEmu-0.97k-kayito) and
+[Mu-Linux-0.97k](https://github.com/EmanuelCatania/Mu-Linux-0.97k).
 
-MU Online, o cliente original, marcas, músicas, imagens e demais assets pertencem à
-Webzen e/ou aos respectivos titulares. Este projeto não é afiliado nem endossado pela
-Webzen. A situação de licenciamento do material legado está descrita em
-[`NOTICE.md`](NOTICE.md); nenhum direito de terceiros é concedido aqui.
+MU Online, the original client, trademarks, music, images, and other assets belong to
+Webzen and/or their respective owners. This project is not affiliated with or
+endorsed by Webzen. See [`NOTICE.md`](NOTICE.md) for complete attribution,
+provenance, and licensing limitations.

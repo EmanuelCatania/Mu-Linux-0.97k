@@ -1,32 +1,33 @@
-# Aviso legal e proveniência
+# Legal and provenance notice
 
-Este repositório reúne código comunitário legado, extensões independentes e materiais
-relacionados a MU Online. Essas partes têm origens e direitos diferentes.
+This repository combines legacy community code, independent extensions, and material
+related to MU Online. These parts have different origins and rights holders.
 
-## Propriedade e créditos
+## Ownership and attribution
 
-MU Online, o `main.exe` original fechado, nomes, marcas, músicas, imagens, sons e
-demais assets pertencem à Webzen e/ou aos respectivos titulares. Este projeto não é
-afiliado nem endossado pela Webzen e não possui o código-fonte do cliente original.
+MU Online, the original closed-source `main.exe`, names, trademarks, music, images,
+sounds, and other assets belong to Webzen and/or their respective owners. This
+project is not affiliated with or endorsed by Webzen and does not contain the source
+code of the original client.
 
-As principais origens comunitárias declaradas pelo upstream são:
+The principal community origins declared by the upstream projects are:
 
 - [MuEmu 0.97k — Nico Muratona/Kayito](https://github.com/nicomuratona/MuEmu-0.97k-kayito),
-  base das sources e ferramentas;
+  which provided the base sources and tools;
 - [Mu-Linux-0.97k — Emanuel Catania](https://github.com/EmanuelCatania/Mu-Linux-0.97k),
-  linha Linux, Docker e MySQL que originou este fork;
-- template web Simple MU Online Templates, de Trifon Dinev;
-- contribuições de Kapocha33, SetecSoft, Zeus e ogocx, preservadas no
-  [README histórico](docs/history/upstream-readme.es.md).
+  the Linux, Docker, and MySQL line from which this fork originated;
+- the Simple MU Online Templates web template by Trifon Dinev;
+- contributions by Kapocha33, SetecSoft, Zeus, and ogocx recorded in the upstream
+  project history.
 
-A linha independente atual é mantida por [Aldo Migge](https://github.com/aldomigge).
-O ponto de divergência está registrado na tag assinada `upstream-baseline-a735600`.
+The current independent line is maintained by
+[Aldo Migge](https://github.com/aldomigge). Its divergence point is recorded by the
+signed tag `upstream-baseline-a735600`. The full inherited history remains available
+through Git and the linked upstream repositories.
 
-## Licenciamento
+## Licensing
 
-Não foi identificada uma licença que cubra todo o código, binários e assets recebidos.
-Este repositório não declara MIT, GPL ou outra licença comum para o conjunto legado e
-não concede permissão para copiar, redistribuir, sublicenciar ou comercializar
-material de terceiros.
-
-O histórico e as atribuições originais permanecem preservados no documento histórico.
+No license has been identified that covers all inherited code, binaries, and assets.
+This repository does not declare MIT, GPL, or another common license for the legacy
+collection and grants no permission to copy, redistribute, sublicense, or
+commercialize third-party material.
