@@ -74,7 +74,10 @@
 
 ## Assessment
 
-- Confidence: Medium.
+- Confidence: Medium — source-backed.
+- Maintenance scope: accepted for the existing hook while fingerprint, bytes,
+  owner, target, and continuation remain unchanged; revalidate before
+  relocation, ABI changes, or reuse.
 - Verified facts: fingerprint, VA/RVA, original bytes, target calculation,
   caller cleanup, source owner, and replacement target.
 - Inferences: the `HDC` contract is complete and no additional machine state is

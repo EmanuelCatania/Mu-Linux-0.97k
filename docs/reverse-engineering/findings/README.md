@@ -1,10 +1,15 @@
 # Reverse-engineering findings
 
-Create one Markdown file per verified function, global, structure, packet handler, or hook site. Use kebab-case names, for example `render-item.md` or `main-window-handle.md`.
+Create one Markdown file per verified function, global, structure, packet
+handler, or hook site. Use kebab-case names, for example `render-item.md` or
+`main-window-handle.md`.
 
-Add High- or Medium-confidence findings to the accepted index in `../main-exe.md`.
-Keep Low-confidence records in the candidate index until their unresolved identity,
-ABI, control-flow, or runtime questions are closed.
+Add High- or Medium-confidence findings to the accepted index in
+`../main-exe.md`. An existing `Medium — source-backed` record may remain accepted
+only when exact fingerprint, source owner, original bytes, target, continuation,
+and unresolved evidence are explicit. Keep Low-confidence records in the
+candidate index until their unresolved identity, ABI, control-flow, or runtime
+questions are closed.
 
 ## Finding template
 
@@ -77,7 +82,7 @@ ABI, control-flow, or runtime questions are closed.
 
 ## Assessment
 
-- Confidence: High/Medium/Low/Rejected
+- Confidence: High/Medium/Medium — source-backed/Low/Rejected
 - Verified facts:
 - Inferences:
 - Remaining uncertainty:
@@ -88,9 +93,14 @@ ABI, control-flow, or runtime questions are closed.
 
 - Separate verified facts from inferences.
 - Include enough evidence for another analyst to reproduce the result.
-- Do not paste large decompiler listings; quote only the relevant instructions or pseudocode fragments.
+- Do not paste large decompiler listings; quote only relevant instructions or
+  pseudocode fragments.
 - A byte signature must explain wildcards and expected uniqueness.
 - Do not state an expected match count unless it was actually measured.
+- Use `Medium — source-backed` only for an existing source-derived record; do
+  not use it as a substitute for a new Ghidra analysis.
+- Revalidate a source-backed record before relocation, ABI changes, or reuse at
+  another site.
 - A Low-confidence candidate must not be presented as an established offset.
 - A patch site must have one owner. Search the project before recording a new
   hook or memory write at an existing address.

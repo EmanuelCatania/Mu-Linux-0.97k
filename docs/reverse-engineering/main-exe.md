@@ -1,6 +1,8 @@
 # Supported main.exe
 
-This file identifies the exact closed-source executable supported by the current client hooks. Do not fill fields from memory or from another MU Online distribution.
+This file identifies the exact closed-source executable supported by the current
+client hooks. Do not fill fields from memory or from another MU Online
+distribution.
 
 ## Executable fingerprint
 
@@ -21,42 +23,42 @@ This file identifies the exact closed-source executable supported by the current
 | Ghidra MCP implementation | `bethington/ghidra-mcp` |
 | Ghidra MCP release | `v6.0.0` |
 
-## Populate or verify the fingerprint
+## Verify the fingerprint
 
-Run against the same file imported into Ghidra and copied to the external runtime:
-
-```powershell
-$MainExe = (Resolve-Path .\runtime\client\main.exe).Path
-Get-FileHash -Algorithm SHA256 $MainExe
-(Get-Item $MainExe).Length
-dumpbin /headers $MainExe
-```
-
-Use `dumpbin` or Ghidra program information to record the PE timestamp, preferred image base, and entry-point RVA. Verify the external runtime copy separately:
+Compare the repository and runtime executables:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 C:\Dev\runtime\mu-097k\client\main.exe
+pwsh -File ./.agents/skills/ghidra-offset-analysis/scripts/fingerprint-main.ps1 `
+  -Path ./runtime/client/main.exe `
+  -ComparePath C:\Dev\runtime\mu-097k\client\main.exe
 ```
 
-Do not accept a permanent offset until both hashes match this record.
+Proceed only when the fingerprint matches this document and `MatchesPrimary` is
+`True`. Use `-AsJson` for automated consumption.
 
 ## Verification rules
 
 - Calculate SHA-256 from the exact `main.exe` being analyzed and executed.
 - Stop analysis when the fingerprint does not match this record.
-- Record a new executable as a separate supported target; do not silently replace this fingerprint.
-- Revalidate every hard-coded address, signature, and hook when the executable changes.
+- Record a new executable as a separate supported target; do not silently
+  replace this fingerprint.
+- Revalidate every hard-coded address, signature, and hook when the executable
+  changes.
 - Do not commit another executable solely to support this record.
 
 ## Accepted findings
 
 Only High- or Medium-confidence records belong in this table.
+`Medium — source-backed` identifies an existing source-derived record whose
+fingerprint, bytes, owner, target, and continuation are known, while persisted
+Ghidra identity, signature uniqueness, or runtime confirmation remains
+incomplete.
 
 | Symbol or behavior | VA | RVA | Kind | Confidence | Record |
 |---|---:|---:|---|---|---|
-| Login account render callsite | `0x00521778` | `0x00121778` | `CALL` | Medium | [login-account-render-call.md](findings/login-account-render-call.md) |
-| Login password render callsite | `0x005217A0` | `0x001217A0` | `CALL` | Medium | [login-password-render-call.md](findings/login-password-render-call.md) |
-| Login scene render callsite | `0x0052698A` | `0x0012698A` | `CALL` | Medium | [login-scene-render-call.md](findings/login-scene-render-call.md) |
+| Login account render callsite | `0x00521778` | `0x00121778` | `CALL` | Medium — source-backed | [login-account-render-call.md](findings/login-account-render-call.md) |
+| Login password render callsite | `0x005217A0` | `0x001217A0` | `CALL` | Medium — source-backed | [login-password-render-call.md](findings/login-password-render-call.md) |
+| Login scene render callsite | `0x0052698A` | `0x0012698A` | `CALL` | Medium — source-backed | [login-scene-render-call.md](findings/login-scene-render-call.md) |
 
 ## Candidate findings
 

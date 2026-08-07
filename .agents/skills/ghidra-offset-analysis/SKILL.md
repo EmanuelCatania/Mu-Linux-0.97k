@@ -25,8 +25,10 @@ mismatch requires it.
 
 - Select the Ghidra program explicitly and default to read-only analysis.
 - Never patch `main.exe` through MCP.
-- Do not mutate the project, execute scripts, emulate, or control the debugger
-  without explicit task approval.
+- Repository-local read-only validation scripts referenced by this skill may be
+  executed as part of the workflow.
+- Do not mutate the Ghidra project, execute Ghidra-side scripts, emulate code, or
+  control the debugger without explicit task approval.
 - Stop when the imported program, repository executable, and deployed runtime do
   not share the documented fingerprint.
 

@@ -19,6 +19,7 @@ These rules extend the root `AGENTS.md` for `src/client/`.
 - Packet changes: `../../.agents/skills/protocol-change/SKILL.md`.
 - Custom entities: `../../.agents/skills/runtime-entity-change/SKILL.md`.
 - Binary analysis: `../../docs/client-reverse-engineering.md`.
+- Binary patching: `../../docs/client-patching.md`.
 - Encoder and data: `../../docs/runtime-data.md`.
 - General patterns: `../../docs/coding-patterns.md`.
 - Validation: `../../docs/testing.md`.

@@ -130,7 +130,7 @@ $skillDirectories = @(
 foreach ($skillDirectory in $skillDirectories) {
     $skillFile = ".agents/skills/$skillDirectory/SKILL.md"
     if ($skillEntries -notcontains $skillFile) {
-        throw "Agent skill '$skillDirectory' does not contain a repository SKILL.md."
+        throw "Agent skill '$skillDirectory' does not contain SKILL.md."
     }
 
     $lines = [System.IO.File]::ReadAllLines((Resolve-RepositoryPath $skillFile))

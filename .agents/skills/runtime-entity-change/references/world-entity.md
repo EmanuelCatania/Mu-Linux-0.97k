@@ -15,8 +15,9 @@ Use for monsters, NPCs, summons, maps, gates, terrain, minimaps, and spawn data.
 - Verify coordinates, directions, radii, pathfinding, reload/restart semantics,
   event cleanup, and duplicate-reward or stale-actor prevention.
 - Record all asset provenance and exact file naming/case.
-- Load `economy-and-progression.md` only when drops, rewards, shops, or mixes are
-  part of the requested change.
+- Load
+  [`economy-and-progression.md`](economy-and-progression.md)
+  only when drops, rewards, shops, or mixes are part of the requested change.
 
 ## Validate
 

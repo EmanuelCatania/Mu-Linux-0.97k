@@ -72,7 +72,10 @@
 
 ## Assessment
 
-- Confidence: Medium.
+- Confidence: Medium — source-backed.
+- Maintenance scope: accepted for the existing hook while fingerprint, bytes,
+  owner, target, and continuation remain unchanged; revalidate before
+  relocation, ABI changes, or reuse.
 - Verified facts: fingerprint, VA/RVA, original bytes, target calculation,
   resume address, source owner, and replacement target.
 - Inferences: the surrounding native stack and registers satisfy the wrapper's

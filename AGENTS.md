@@ -24,7 +24,8 @@
 |---|---|
 | Setup, build, or local runtime | `docs/development.md` |
 | New feature or structural change | `docs/architecture.md` and `docs/coding-patterns.md` |
-| Hook, patch, address, ABI, or `main.exe` analysis | `docs/client-reverse-engineering.md` |
+| `main.exe` analysis, address, signature, or ABI | `docs/client-reverse-engineering.md` |
+| Hook, patch, detour, trampoline, or memory write | `docs/client-patching.md` |
 | Locate or revalidate a `main.exe` offset | `.agents/skills/ghidra-offset-analysis/SKILL.md` |
 | Add or modify a client hook | `.agents/skills/client-hook-change/SKILL.md` |
 | Add or modify a packet or handler | `.agents/skills/protocol-change/SKILL.md` |

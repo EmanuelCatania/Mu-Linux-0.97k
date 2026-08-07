@@ -15,8 +15,9 @@ Use for items, equipment, jewels, wings, bows, glows, and item-bound effects.
   server-side enforcement.
 - Record model, texture, icon, effect, sound, and other asset provenance; verify
   exact loader paths and case.
-- Load `economy-and-progression.md` only when acquisition, sale, drop, reward, or
-  mix behavior changes.
+- Load
+  [`economy-and-progression.md`](economy-and-progression.md)
+  only when acquisition, sale, drop, reward, or mix behavior changes.
 
 ## Validate
 

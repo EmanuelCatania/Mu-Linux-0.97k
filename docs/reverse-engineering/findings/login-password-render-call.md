@@ -74,13 +74,17 @@
 
 ## Assessment
 
-- Confidence: Medium.
+- Confidence: Medium — source-backed.
+- Maintenance scope: accepted for the existing hook while fingerprint, bytes,
+  owner, target, and continuation remain unchanged; revalidate before
+  relocation, ABI changes, or reuse.
 - Verified facts: fingerprint, VA/RVA, original bytes, target calculation,
-  resume address, source owner, and replacement target.
-- Inferences: the surrounding native stack and registers satisfy the wrapper's
-  current parameters.
+  resume address, source owner, replacement target, and post-call input-state
+  access.
+- Inferences: the current caller setup and following state access remain
+  compatible with the wrapper's parameters.
 - Remaining uncertainty: persisted Ghidra function identity, measured signature
   uniqueness, and runtime ABI validation.
 - Revalidation procedure: confirm fingerprint, exact bytes, containing function,
-  surrounding argument setup, and unique signature match in Ghidra before
-  changing the hook.
+  pre-call argument setup, post-call state access, and a unique signature match
+  in Ghidra before changing the hook.

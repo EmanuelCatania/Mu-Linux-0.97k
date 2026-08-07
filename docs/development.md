@@ -169,6 +169,7 @@ Read only the document relevant to the current task:
 - [Architecture](architecture.md)
 - [Implementation patterns](coding-patterns.md)
 - [Client reverse engineering](client-reverse-engineering.md)
+- [Client patching](client-patching.md)
 - [Client/server protocol](protocol.md)
 - [Runtime, encoder, and data](runtime-data.md)
 - [Database](database.md)

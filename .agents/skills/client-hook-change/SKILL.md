@@ -12,25 +12,28 @@ control flow, and supported executable contract.
 
 Read only:
 
-1. `docs/client-reverse-engineering.md`;
+1. `docs/client-patching.md`;
 2. the target record under `docs/reverse-engineering/findings/`;
 3. `docs/coding-patterns.md`;
 4. the client section of `docs/testing.md`;
 5. affected source and initialization code.
 
-Read `docs/protocol.md` or `docs/runtime-data.md` only when the patch changes
-those contracts.
+Read `docs/client-reverse-engineering.md` only when the target must be located or
+revalidated. Read `docs/protocol.md` or `docs/runtime-data.md` only when the patch
+changes those contracts.
 
 ## Preconditions
 
 - Confirm that the analyzed and deployed `main.exe` matches
   `docs/reverse-engineering/main-exe.md`.
-- Require an accepted Medium- or High-confidence finding for the target. If it
-  is missing or uncertain, run `ghidra-offset-analysis` first.
+- Require an accepted Medium- or High-confidence finding for the target. A
+  `Medium — source-backed` finding may support maintenance of the existing patch
+  only while its exact bytes, owner, and continuation still match. Run
+  `ghidra-offset-analysis` before relocation, ABI changes, or reuse elsewhere.
 - Search the whole project for the address, symbol, and nearby patch sites.
   One patch site must have one owner.
 - Classify the patch using the primitives and hook categories documented in
-  `docs/client-reverse-engineering.md`.
+  `docs/client-patching.md`.
 
 ## Verify the contract
 
