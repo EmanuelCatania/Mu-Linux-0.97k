@@ -39,7 +39,7 @@ conocidos y bugs de port apareciendo a medida que se ejercitan caminos nuevos.
 | Inventario, equipo, baúl, tienda, trade | Funcional |
 | Chat, party, guild | Funcional |
 | Sonido (DirectSound) | Funcional |
-| Música (BGM) | **No suena** — el original lanza `MuPlayer.exe`, que no se distribuye |
+| Música (BGM) | el original lanza `MuPlayer.exe` |
 | Combate | Parcial — `Attack` (0x49CBF0) está portada al ~4% |
 | Movimiento de NPCs / monstruos | Parcial |
 
@@ -61,11 +61,6 @@ Casi nada: los **assets del juego ya están incluidos** en `bin/Client/Data/`
 (~209 MB — modelos `.bmd`, texturas `.ozj`/`.ozt`, mapas, sonidos y música),
 junto con `MuPlayer.exe`, que es lo que el cliente lanza para reproducir el BGM.
 Clonás, compilás y arranca.
-
-> ⚠️ **Este repositorio es privado y no puede hacerse público como está.**
-> Los assets son copyright de WebZen. Si alguna vez se abre, hay que sacarlos
-> primero — y como quedan en la historia de git, eso implica reescribirla, no
-> basta con borrarlos en un commit nuevo.
 
 Lo único que **no** está es el **`main.exe` original**, que sólo hace falta si
 querés decompilarlo vos mismo para verificar un port contra el binario. Sale de
