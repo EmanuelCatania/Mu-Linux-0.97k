@@ -356,6 +356,11 @@ unsigned int __cdecl FUN_0043f3e0(int sx, int sy, int tx, int ty,
     // El camino original queda detrás de un switch porque FUN_0043f500 todavía
     // no se ejercitó en runtime: nuestro A* sustituto sigue siendo el default.
     // Poner PF_USE_ORIGINAL en 1 para usar el algoritmo del binario.
+    // 2026-08-17: probado en runtime con 1 → CRASH inmediato en la primera llamada
+    // (0xC0000005 leyendo 0x63082BFC). El contexto se construye bien -el log
+    // muestra `pfCtx check #1: vtbl@0x414=0x6960b4 pfReady=1`-, asi que el ctor
+    // esta ok y el problema esta dentro de la propia portacion de FUN_0043f500.
+    // Queda en 0 hasta auditar esa funcion contra el decompile. Ver DESCOBERTAS.md.
     #define PF_USE_ORIGINAL 0
     bool pfReady = false;
 #if PF_USE_ORIGINAL
