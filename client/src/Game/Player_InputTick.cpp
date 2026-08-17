@@ -1737,13 +1737,27 @@ void __cdecl FUN_004acef0(void)
                             (int)DAT_07e016c0, (int)DAT_07e016c4);
                           DbgLogPublic(d); }
 
-                        // Terrain walkability check
+                        // DAT_07e11d64 es `DontMove` (0x07E11D64 en el binario), NO un
+                        // "walkable": es COSMETICO, sólo elige el sprite del cursor
+                        // (10 = prohibido / 3 = mover) en el render del puntero. No
+                        // bloquea nada, ni acá ni en el original — que también lo usa
+                        // sólo para eso (3 xrefs: dos escrituras en MoveHero y una
+                        // lectura en el dibujo del cursor).
+                        //
+                        // MoveHero @ 0x004ACEF0 lo calcula con un operador coma:
+                        //     if ((TerrainWall[idx] < 8) ||
+                        //        (DontMove = true, (TerrainWall[idx] & 0x20) == 0x20)) {
+                        //         DontMove = false;
+                        //     }
+                        // o sea DontMove = true  <=>  attr >= 8 && !(attr & 0x20),
+                        // que es exactamente lo que hace la forma de abajo. Es fiel;
+                        // el nombre "walkability" del comentario viejo confundía.
                         int terrIdx = DAT_07e016c0 + DAT_07e016c4 * 0x100;
                         unsigned char terrAttr = ((unsigned char*)&DAT_0838bc70)[terrIdx];
                         if (terrAttr < 8 || (terrAttr & 0x20) == 0x20)
-                            DAT_07e11d64 = 0;
+                            DAT_07e11d64 = 0;   // DontMove = false
                         else
-                            DAT_07e11d64 = 1;
+                            DAT_07e11d64 = 1;   // DontMove = true
 
                         // La rama de piso de 004ACEF0 no rechaza una animación de
                         // acción/ataque activa. Resuelve el click sobre el terreno
@@ -1756,7 +1770,7 @@ void __cdecl FUN_004acef0(void)
                             int srcY = *(int*)(ent + 0x38c);
 
                             { char d[160]; wsprintfA(d,
-                                "PIT pathfind src=(%d,%d) dst=(%d,%d) terrAttr=%02X walkable=%d",
+                                "PIT pathfind src=(%d,%d) dst=(%d,%d) terrAttr=%02X dontMove=%d",
                                 srcX, srcY, (int)DAT_07e016c0, (int)DAT_07e016c4,
                                 terrAttr, (int)DAT_07e11d64);
                               DbgLogPublic(d); }
