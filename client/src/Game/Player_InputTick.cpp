@@ -1606,10 +1606,43 @@ void __cdecl FUN_004acef0(void)
             }
 
             // ── Ground click: ray cast → terrain check → pathfind ────────────
-            // BUG-FIX 2026-04-28: gate por bHoverActive (click real one-shot).
-            // Sin esto el handler corría cada frame con bHoverOrClick=true →
-            // hero seguía al mouse continuamente sin click.
-            if (!bHoverActive) goto end_tick_inc;
+            // 2026-08-17 — REVERTIDO el gate one-shot de 2026-04-28.
+            //
+            // El gate era `if (!bHoverActive) goto end_tick_inc;`, y bHoverActive
+            // es one-shot (lo cierra el latch s_clickCycleConsumed en la línea
+            // ~1183). Eso convertía MANTENER el botón en un click único: el héroe
+            // daba un paso y se plantaba.
+            //
+            // El original NO hace eso. MoveHero @ 0x004ACEF0:
+            //     bVar32 = MouseLButtonPush != false;
+            //     if (bVar32) MouseLButtonPush = false;      // consume el flanco
+            //     bVar31 = MouseLButton != false || bVar32;  // ESTADO SOSTENIDO || flanco
+            //     if (MouseLButton == false && !bVar32) { ...sale sin mover... }
+            // bVar31 — lo que habilita el movimiento — es el estado en tiempo real
+            // del botón O el flanco de bajada. Mantener el botón camina de forma
+            // continua: es el comportamiento clásico del MU.
+            //
+            // El comentario del fix viejo decía "sin esto el hero seguía al mouse
+            // continuamente sin click": seguir al mouse mientras el botón está
+            // apretado ES lo correcto. El bug real era que DAT_083a42c4 quedaba
+            // pegado en 1 tras soltar (de ahí el "sin click"); hoy WndProc lo
+            // mantiene bien (WinMain.cpp:1182-1204), así que la causa ya no existe.
+            //
+            // La repetición la limita el debounce de la línea ~955
+            // (DAT_00559bec <= DAT_07e11d28), igual que el original la limita con
+            // MouseUpdateTimeMax <= MouseUpdateTime. Los gates de UI de abajo
+            // (g_MouseOnWindow, s_clickStartedOnWindow) siguen intactos.
+            //
+            // 2026-08-17 (b): leer DAT_083a42c4 EN VIVO, no la copia bClickHeld
+            // capturada en la línea ~1059. Las líneas ~1214-1216 limpian los flags
+            // de click cuando el cursor pasa a estar sobre una ventana, y con la
+            // copia vieja ese limpiado no tenía efecto hasta el frame siguiente:
+            // manteniendo el botón y arrastrando el cursor sobre la UI, el ground
+            // click seguía recalculando destino desde el píxel bajo el cursor y,
+            // como la cámara sigue al héroe, el destino huía con ella → caminata
+            // infinita. Con el estado en vivo el hold se corta en el acto, igual
+            // que el original, que lee MouseLButton directo y no una copia.
+            if (DAT_083a42c4 == 0 && !bClickEdge) goto end_tick_inc;
             // 2026-05-04: per IDA Player_InputTick:416,566 — block ground click
             // cuando el mouse está sobre cualquier panel abierto (MouseOnWindow=1). Sin
             // esto, clickear el botón [+] de stats o la X de cerrar del panel también
