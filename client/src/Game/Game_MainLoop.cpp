@@ -47,7 +47,22 @@
 // (_rand ya está definido como `_rand() rand()` en stdafx.h)
 
 extern "C" { void DbgLogPublic(const char* msg); void ChkHeapPublic(const char* tag); }
+
+// 2026-08-17 — FRENO DE RENDIMIENTO, no es parte del port.
+// ChkHeapPublic() llama _CrtCheckMemory(), que recorre TODO el heap de debug
+// validando los guard bytes de cada bloque asignado. Con los modelos, texturas
+// y el terreno cargados son decenas/centenas de miles de bloques, y abajo se
+// invocaba 16 VECES POR FRAME → el chequeo solo puede costar más que el frame
+// entero. El original no tiene nada equivalente: es instrumentación nuestra
+// para cazar corrupción de heap (ver ChkHeapPublic en WinMain.cpp).
+// Queda detrás de un switch, apagado por defecto. Poner en 1 para reactivarlo
+// cuando haya que volver a rastrear corrupción de heap.
+#define ML_HEAP_CHECK 0
+#if ML_HEAP_CHECK
 #define CHK(tag) ChkHeapPublic(tag)
+#else
+#define CHK(tag) ((void)0)
+#endif
 
 void __cdecl Game_MainLoop(HDC param_1)
 {
