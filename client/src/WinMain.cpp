@@ -822,10 +822,18 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // FUN_0047d3d0(DAT_07cf1ffc);   // HashTable_Init — TODO: implement
     DAT_07abf5d8 = (char*)DAT_07abf5d0;  // player ptr = entity array slot 0
 
-    // Contexto A* del pathfinder (DAT_05826df4) — FUN_0043f2d0 lo accede en el offset 0x3FC.
-    // InitPath toca [0xFF, 0x102, 0x103, 0x104] (DWORD*) → necesita >= 0x105*4 = 0x414 bytes.
-    DAT_05826df4 = (DWORD)malloc(0x420);
-    memset((void*)DAT_05826df4, 0, 0x420);
+    // Contexto del pathfinder (DAT_05826df4).
+    //
+    // 2026-08-17: antes era `malloc(0x420)` + memset, que dejaba el vtable de la
+    // cola de prioridad (+0x414) en NULL — por eso FUN_0043f500 (PATH::FindPath)
+    // no se podia usar. Ahora se construye igual que el binario
+    // (0x0043F280..0x0043F2C7: reserva de 0x424 bytes, vtable y campos en cero).
+    //
+    // InitPath (0x0043F2D0) NO se llama aca: ya estaba portada en
+    // stubs_externs.cpp y la llama FUN_0050f690 (World_Init) desde Scene_Intro,
+    // igual que en el binario. Este ctor corre antes, que es el orden correcto.
+    extern void __cdecl PathContext_Create(void);   // src/Game/PathFinder.cpp
+    PathContext_Create();
 
     // 22: vtable object construction (font/UI system objects)
     // 2026-04-29: antes se había identificado DAT_055c9ff0 como HGLRC y se

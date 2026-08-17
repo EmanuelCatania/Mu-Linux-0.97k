@@ -343,14 +343,24 @@ unsigned int __cdecl FUN_0043f3e0(int sx, int sy, int tx, int ty,
     // Antes pasábamos `(void*)sx` → la función deref-eaba un coord como ptr.
     void* pfCtx = (void*)(intptr_t)DAT_05826df4;
 
-    // BUG-FIX 2026-04-29: el contexto está alocado en WinMain (malloc 0x420)
-    // pero NO inicializado completamente — el vtable de la priority queue en
-    // _this+0x414 queda NULL → FUN_0043f500 crashea al dereferenciarlo.
-    // Como no tenemos el ctor del PQueue portado, usamos fallback line-of-sight:
-    // 1 waypoint directo al target. Funciona para mover aunque ignore obstáculos.
-    // 2026-05-03: forzar pfReady=false para usar siempre nuestro A* en vez del
-    // FUN_0043f500 IDA-original (que requiere PriorityQueue ctor no portado).
+    // 2026-08-17: el contexto YA se construye completo. Antes se reservaba en
+    // WinMain con `malloc(0x420)` + memset y el vtable de la cola de prioridad
+    // (+0x414) quedaba NULL, así que FUN_0043f500 (PATH::FindPath) crasheaba al
+    // dereferenciarlo — de ahí el `pfReady = false` forzado desde 2026-05-03.
+    // Ahora PathContext_Create() (src/Game/PathFinder.cpp, llamada desde WinMain)
+    // replica el ctor del binario: 0x0043F280..0x0043F2C7, reserva de 0x424 bytes
+    // -no 0x420- y vtable en +0x414. InitPath (FUN_0043f2d0, mas abajo en este
+    // mismo archivo) ya estaba portada y la llama FUN_0050f690 (World_Init), igual
+    // que en el binario; corre despues del ctor, que es el orden correcto.
+    //
+    // El camino original queda detrás de un switch porque FUN_0043f500 todavía
+    // no se ejercitó en runtime: nuestro A* sustituto sigue siendo el default.
+    // Poner PF_USE_ORIGINAL en 1 para usar el algoritmo del binario.
+    #define PF_USE_ORIGINAL 0
     bool pfReady = false;
+#if PF_USE_ORIGINAL
+    pfReady = (pfCtx != nullptr) && (((DWORD*)pfCtx)[0x105] != 0);
+#endif
     {
         static int s_dbg_pf = 0;
         if (s_dbg_pf++ < 5) {
@@ -359,8 +369,8 @@ unsigned int __cdecl FUN_0043f3e0(int sx, int sy, int tx, int ty,
             if (pfCtx && (uintptr_t)pfCtx >= 0x100000) {
                 vtbl = ((DWORD*)pfCtx)[0x105];
             }
-            wsprintfA(b, "pfCtx check #%d: pfCtx=%p vtbl@0x414=0x%x pfReady=forced_false",
-                      s_dbg_pf, pfCtx, (unsigned)vtbl);
+            wsprintfA(b, "pfCtx check #%d: pfCtx=%p vtbl@0x414=0x%x pfReady=%d",
+                      s_dbg_pf, pfCtx, (unsigned)vtbl, (int)pfReady);
             DbgLogPublic(b);
         }
     }

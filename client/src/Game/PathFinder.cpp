@@ -737,3 +737,79 @@ LAB_0043fc4d:
 LAB_0043fd21:
   return (uint)pbVar4 & 0xffffff00;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTRUCCION E INICIALIZACION DEL CONTEXTO PATH  (2026-08-17)
+//
+// Hasta ahora el contexto (DAT_05826df4) se reservaba en WinMain con
+// `malloc(0x420)` + memset, y por eso el vtable de la cola de prioridad en
+// +0x414 quedaba NULL: FUN_0043f500 (PATH::FindPath) crashea al llamarlo, y de
+// ahi venia el `pfReady = false` forzado en stubs_externs.cpp, que obliga a usar
+// el A* sustituto. Estas dos funciones portan lo que faltaba.
+//
+// ── Layout del contexto, leido del binario ───────────────────────────────────
+//   indice DWORD (byte)      contenido
+//   [0]     +0x000           ancho del grid   = 0x100
+//   [1]     +0x004           alto del grid    = 0x100
+//   [2]     +0x008           celdas totales   = 0x10000
+//   [3]     +0x00c           puntero a TerrainWall
+//   [4]     +0x010           largo del camino resuelto
+//   [0xff]  +0x3fc           mapa de flags (0x10000 bytes)
+//   [0x100] +0x400           rango sucio: min (centinela 1950000000)
+//   [0x101] +0x404           rango sucio: max (centinela -1)
+//   [0x102] +0x408           mapa de costes   (0x10000 DWORDs)
+//   [0x103] +0x40c           padre X          (0x10000 DWORDs)
+//   [0x104] +0x410           padre Y          (0x10000 DWORDs)
+//   [0x105] +0x414           vtable de la cola de prioridad
+//   [0x106] +0x418           cantidad de nodos en la cola
+//   [0x107] +0x41c           raiz del arbol de la cola
+//   ademas: [+0x207..] path_x  y  [+0x3fb..] path_y
+//
+// ── El vtable ────────────────────────────────────────────────────────────────
+// El ctor escribe `MOV dword ptr [EAX + 0x414], 0x552840`, y en 0x00552840 hay
+// un unico puntero: 0x00422DE0. Esa direccion no esta definida como funcion en
+// el Ghidra, pero sus bytes son `8B 41 04 C3`:
+//     MOV EAX, [ECX+4]
+//     RET
+// o sea un `__thiscall int GetCount()` que devuelve el campo en this+4. Con
+// this = contexto+0x414, ese campo es +0x418: la cantidad de nodos de la cola.
+// Encaja con el uso en FindPath: `iVar2 = (**(code **)in_ECX[0x105])();` seguido
+// de `while ((0 < iVar2 && (0 < iVar10)))`.
+extern "C" int __fastcall PathPQueue_GetCount(void *_this, void * /*edx*/)
+{
+    return *(int *)((char *)_this + 4);
+}
+
+// El vtable de una sola entrada que vive en 0x00552840 en el binario.
+static void *s_PathPQueueVtbl[1] = { (void *)&PathPQueue_GetCount };
+
+// Ctor del contexto — binario 0x0043F280..0x0043F2C7 (no esta definido como
+// funcion en el Ghidra, va inline antes de InitPath):
+//     PUSH 0x424 ; CALL operator_new ; XOR ECX,ECX ; CMP EAX,ECX ; JZ fail
+//     MOV [EAX+0x414], 0x552840
+//     MOV [EAX+0x418], ECX     MOV [EAX+0x41c], ECX
+//     MOV [EAX+0x3fc], ECX     MOV [EAX+0x408], ECX
+//     MOV [EAX+0x40c], ECX     MOV [EAX+0x410], ECX
+//     MOV [0x05826df4], EAX
+// Ojo con el tamano: son 0x424 bytes, no 0x420. Con 0x420 el ultimo campo del
+// contexto (+0x41c, la raiz del arbol) cae fuera de la reserva.
+void __cdecl PathContext_Create(void)
+{
+    DWORD *p = (DWORD *)operator_new(0x424);
+    if (p == nullptr) {
+        DAT_05826df4 = 0;
+        return;
+    }
+    p[0x105] = (DWORD)(uintptr_t)s_PathPQueueVtbl;   // +0x414 vtable
+    p[0x106] = 0;                                    // +0x418 count
+    p[0x107] = 0;                                    // +0x41c root
+    p[0xff]  = 0;                                    // +0x3fc flagmap
+    p[0x102] = 0;                                    // +0x408 costmap
+    p[0x103] = 0;                                    // +0x40c parentX
+    p[0x104] = 0;                                    // +0x410 parentY
+    DAT_05826df4 = (DWORD)(uintptr_t)p;
+}
+
+// ZzzAI::InitPath (0x0043F2D0) NO va aca: ya estaba portada, y correctamente,
+// en stubs_externs.cpp (FUN_0043f2d0). La llama FUN_0050f690 (World_Init) desde
+// Scene_Intro, igual que en el binario. Definirla de nuevo aca daba LNK2005.
