@@ -1,0 +1,75 @@
+# ─────────────────────────────────────────────────────────────
+#  Artefactos de compilación de Visual Studio
+#
+#  Ojo: bin/Client/ NO se ignora entero — ahí viven los assets
+#  (Data/) y la config, que sí se versionan. Sólo se excluye lo
+#  que produce el compilador, archivo por archivo.
+# ─────────────────────────────────────────────────────────────
+obj/
+.vs/
+
+bin/Client/main.exe
+bin/Client/main.pdb
+bin/Client/main.map
+bin/Client/main.ilk
+bin/Client/*.log
+
+# Herramienta de trazado de OpenGL (se baja aparte, no es del proyecto)
+bin/Client/opengl32.dll.apitrace
+
+*.obj
+*.pch
+*.pdb
+*.idb
+*.ilk
+*.exp
+*.tlog
+*.lastbuildstate
+*.user
+
+# libjpeg: se versiona el source (jpeg-6b/) y el .vcxproj; los builds no.
+lib/libjpeg/Debug/
+lib/libjpeg/Release/
+lib/libjpeg/obj/
+
+# ─────────────────────────────────────────────────────────────
+#  Assets del juego (bin/Client/Data/)
+#
+#  SE VERSIONAN. El repo es privado y sólo se comparte con
+#  colaboradores, así que los assets van adentro para que quien
+#  clone tenga el cliente completo y andando.
+#
+#  Son ~209 MB en ~3.500 archivos, todos por debajo del límite de
+#  100 MB por archivo de GitHub. Copyright de WebZen: este repo
+#  NO puede hacerse público sin sacarlos antes.
+# ─────────────────────────────────────────────────────────────
+
+# Config con la dirección del server propio.
+# Se versiona server.cfg.example en su lugar.
+bin/Client/server.cfg
+
+# ─────────────────────────────────────────────────────────────
+#  Logs y volcados de trabajo
+# ─────────────────────────────────────────────────────────────
+*.log
+build*.txt
+debug.log
+debugcrash.log
+effect_tmp.txt
+ghidra_function_list.txt
+_skip.txt
+
+# Backup del volcado crudo de Ghidra: no se compila, es histórico.
+*.ghidra_backup
+
+# ─────────────────────────────────────────────────────────────
+#  Scripts auxiliares del port (herramientas propias, no del cliente)
+# ─────────────────────────────────────────────────────────────
+_b.bat
+_fix_batch12.py
+_test_build.bat
+build_tmp.bat
+compile_check.bat
+compile_globals.bat
+patch_pools.py
+csm_decode.py

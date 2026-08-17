@@ -1,0 +1,14 @@
+# Plantilla de configuración del server.
+#
+# Copiar este archivo a  bin/Client/server.cfg  y poner la dirección propia.
+# El server.cfg real está en .gitignore para no publicar direcciones.
+#
+# Línea 1: ConnectServer (lista de servers + barra de carga).
+# Línea 2: GameServer fallback.
+#
+# Con 2 líneas se activa el flujo ConnectServer (barra de carga dinámica).
+# Con 1 sola línea → conexión directa al GameServer (comportamiento clásico).
+#
+# Formato: <IP o host> <puerto>
+127.0.0.1 44405
+127.0.0.1 55901

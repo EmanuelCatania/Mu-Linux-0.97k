@@ -1,0 +1,57 @@
+# ─────────────────────────────────────────────────────────────
+#  Reglas de tratamiento de archivos
+#
+#  CRÍTICO: los assets de bin/Client/Data/ tienen que viajar byte
+#  por byte. Si git los toma por texto, convierte LF <-> CRLF y los
+#  CORROMPE en silencio: el modelo no carga, la textura sale rota y
+#  el bug parece del código.
+#
+#  Marcar de más como "binary" es inofensivo (git guarda los bytes
+#  tal cual). Marcar de menos no lo es. Ante la duda, binary.
+# ─────────────────────────────────────────────────────────────
+
+# Por defecto, que git detecte y normalice los finales de línea.
+* text=auto
+
+# ── Código fuente y proyecto (texto, CRLF en el working tree) ──
+*.cpp      text eol=crlf
+*.h        text eol=crlf
+*.rc       text eol=crlf
+*.sln      text eol=crlf
+*.vcxproj  text eol=crlf
+*.md       text
+*.gitignore text
+.gitattributes text
+
+# ── Assets del juego — BINARIOS, no tocar ──
+*.bmd  binary
+*.ozj  binary
+*.ozt  binary
+*.ozb  binary
+*.att  binary
+*.map  binary
+*.obj  binary
+*.smd  binary
+*.dat  binary
+
+# Imágenes
+*.jpg  binary
+*.jpeg binary
+*.tga  binary
+*.bmp  binary
+*.ppm  binary
+*.ico  binary
+
+# Audio
+*.wav  binary
+*.mp3  binary
+
+# Ejecutables y librerías
+*.exe  binary
+*.dll  binary
+*.lib  binary
+
+# Los .txt de Data/ son data files que parsea GetToken: se preservan
+# tal cual, sin normalizar finales de línea.
+bin/Client/Data/**/*.txt binary
+bin/Client/Data/*.txt    binary
