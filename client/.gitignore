@@ -17,7 +17,6 @@ bin/Client/*.log
 # Herramienta de trazado de OpenGL (se baja aparte, no es del proyecto)
 bin/Client/opengl32.dll.apitrace
 
-*.obj
 *.pch
 *.pdb
 *.idb
@@ -73,3 +72,15 @@ compile_check.bat
 compile_globals.bat
 patch_pools.py
 csm_decode.py
+Camera.obj
+Entity_Render.obj
+Game_CharSelectTick.obj
+globals.obj
+lib/libjpeg/jpeg-6b/jdosabcc.obj
+lib/libjpeg/jpeg-6b/jdosamsc.obj
+Player_InputTick.obj
+Scene_CharSelect.obj
+Scene_Dispatch.obj
+stdafx.obj
+stubs.obj
+Terrain_Render.obj
