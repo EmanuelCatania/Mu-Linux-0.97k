@@ -1,6 +1,5 @@
 #include "stdafx.h"
 
-extern "C" BYTE ShopItems[];   // pool dedicado de la tienda
 // RenderItemInfo.cpp  @0x004C4650 / 0x004C8D70
 // Populates the item info tooltip string buffer (lpString_07e90798, stride 100, ~0x18 slots)
 // and the color-flag array (DAT_07e91708). Called from inventory/shop tooltip draw path.
@@ -344,123 +343,70 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
     return false;
 }
 
+// Color del NOMBRE del item (slot 1) — port literal de RenderItemInfo
+// @0x004C4650, bloque 0x004C4750..0x004C4820 (variable `local_8c` del decompile).
+//
+// 2026-08-18: lo que habia aca era una invencion de ~110 lineas con listas de
+// tipos de versiones POSTERIORES del MU (Chaos Card, Ancient sets, alas de
+// 3er nivel...), y ademas devolvia un color 9 que NO EXISTE: DrawItemInfoBox
+// solo mapea 0..6, cualquier otro valor cae al `default` del switch y HEREDA
+// el color de la linea anterior.  El binario 0.97k es mucho mas corto:
+//
+//   Type in {0x1CD, 0x1CE, 0x18F, 0x1D0, 0x1D6}   -> 3 (dorado)
+//   Type in {0xAA, 0x13, 0x92}                    -> 6 (magenta)
+//   Type in {0x1D1, 0x1D2, 0x1D3, 0x1B0, 0x1B1}   -> 3
+//   si no hay excellent (SpecialNum==0 || (Option1 & 0x3F)==0):
+//        level > 6 -> 3        si no -> (SpecialNum != 0) ? 1 : 0
+//   con excellent                                 -> 4 (verde)
+//
+//   y al final, para 0x183..0x186 (que caen dentro del rango de arriba pero
+//   tienen regla propia):
+//        level < 7 -> (SpecialNum != 0) ? 1 : 0   si no -> 3
+//
+// `level` es (ip->Level >> 3) & 0xF, igual que `local_88` en el decompile.
 static int GetInventorySpecialNameColor(ITEM* ip)
 {
     if (!ip) {
         return 0;
     }
 
-    constexpr short ITEM_SWORD_BASE = 0;
-    constexpr short ITEM_MACE_BASE = 64;
-    constexpr short ITEM_BOW_BASE = 128;
-    constexpr short ITEM_STAFF_BASE = 160;
-    constexpr short ITEM_WING_BASE = 384;
-    constexpr short ITEM_HELPER_BASE = 416;
-    constexpr short ITEM_POTION_BASE = 448;
-    constexpr int TEXT_COLOR_WHITE = 0;
-    constexpr int TEXT_COLOR_BLUE = 1;
-    constexpr int TEXT_COLOR_YELLOW = 3;
-    constexpr int TEXT_COLOR_GREEN = 4;
-    constexpr int TEXT_COLOR_DARKRED = 5;
-    constexpr int TEXT_COLOR_PURPLE = 6;
-    constexpr int TEXT_COLOR_VIOLET = 6;
-    constexpr int TEXT_COLOR_GREEN_BLUE = 9;
-    const short type = ip->Type;
-    const int level = (ip->Level >> 3) & 0xF;
-    const bool hasSpecial = (ip->SpecialNum != 0);
-    const bool hasExcellent = ((ip->Option1 & 0x3F) != 0);
-    const bool hasSet = (ip->Color == 4);
-    int color = TEXT_COLOR_WHITE;
+    const short sVar6    = ip->Type;
+    const int   local_88 = (ip->Level >> 3) & 0xf;
+    int         local_8c;
 
-    if (type == ITEM_POTION_BASE + 13 || type == ITEM_POTION_BASE + 14 ||
-        type == ITEM_WING_BASE + 15 || type == ITEM_POTION_BASE + 31 ||
-        (type >= ITEM_POTION_BASE + 65 && type <= ITEM_POTION_BASE + 68) ||
-        type == ITEM_HELPER_BASE + 52 || type == ITEM_HELPER_BASE + 53 ||
-        type == ITEM_POTION_BASE + 100 ||
-        (type >= ITEM_POTION_BASE + 141 && type <= ITEM_POTION_BASE + 144) ||
-        (type >= ITEM_HELPER_BASE + 135 && type <= ITEM_HELPER_BASE + 145) ||
-        (type >= ITEM_POTION_BASE + 160 && type <= ITEM_POTION_BASE + 161) ||
-        type == ITEM_POTION_BASE + 16 || type == ITEM_POTION_BASE + 22 ||
-        type == ITEM_POTION_BASE + 112 || type == ITEM_POTION_BASE + 113 ||
-        (type >= ITEM_POTION_BASE + 114 && type <= ITEM_POTION_BASE + 124) ||
-        (type >= ITEM_POTION_BASE + 126 && type <= ITEM_POTION_BASE + 140) ||
-        type == ITEM_HELPER_BASE + 64 || type == ITEM_HELPER_BASE + 65 ||
-        type == ITEM_HELPER_BASE + 66 || type == ITEM_HELPER_BASE + 67 ||
-        type == ITEM_HELPER_BASE + 68 || type == ITEM_HELPER_BASE + 69 ||
-        type == ITEM_HELPER_BASE + 70 || (type >= ITEM_HELPER_BASE + 71 && type <= ITEM_HELPER_BASE + 76) ||
-        type == ITEM_HELPER_BASE + 80 || type == ITEM_HELPER_BASE + 81 || type == ITEM_HELPER_BASE + 82 ||
-        type == ITEM_HELPER_BASE + 93 || type == ITEM_HELPER_BASE + 94 ||
-        (type >= ITEM_HELPER_BASE + 97 && type <= ITEM_HELPER_BASE + 99) ||
-        (type >= ITEM_HELPER_BASE + 103 && type <= ITEM_HELPER_BASE + 107) ||
-        (type >= ITEM_HELPER_BASE + 109 && type <= ITEM_HELPER_BASE + 116) ||
-        (type >= ITEM_HELPER_BASE + 121 && type <= ITEM_HELPER_BASE + 145) ||
-        (type >= ITEM_WING_BASE + 130 && type <= ITEM_WING_BASE + 135)) {
-        color = TEXT_COLOR_YELLOW;
-    } else if (type == ITEM_STAFF_BASE + 10 || type == ITEM_SWORD_BASE + 19 ||
-               type == ITEM_BOW_BASE + 18 || type == ITEM_MACE_BASE + 13) {
-        color = TEXT_COLOR_PURPLE;
-    } else if (type == ITEM_POTION_BASE + 17 || type == ITEM_POTION_BASE + 18 || type == ITEM_POTION_BASE + 19) {
-        color = TEXT_COLOR_YELLOW;
-    } else if (type == ITEM_HELPER_BASE + 16 || type == ITEM_HELPER_BASE + 17) {
-        color = TEXT_COLOR_YELLOW;
-    } else if (hasSet) {
-        color = TEXT_COLOR_GREEN_BLUE;
-    } else if (hasExcellent && hasSpecial) {
-        color = TEXT_COLOR_GREEN;
-    } else if (level >= 7) {
-        color = TEXT_COLOR_YELLOW;
-    } else if (hasSpecial) {
-        color = TEXT_COLOR_BLUE;
-    } else {
-        color = TEXT_COLOR_WHITE;
+    if (((sVar6 == 0x1cd) || (sVar6 == 0x1ce)) || (sVar6 == 399) ||
+        ((sVar6 == 0x1d0) || (sVar6 == 0x1d6))) {
+        local_8c = 3;
+    }
+    else if ((sVar6 == 0xaa) || ((sVar6 == 0x13) || (sVar6 == 0x92))) {
+        local_8c = 6;
+    }
+    else if ((((sVar6 == 0x1d1) || (sVar6 == 0x1d2)) || (sVar6 == 0x1d3)) ||
+             ((sVar6 == 0x1b0) || (sVar6 == 0x1b1))) {
+        local_8c = 3;
+    }
+    else if ((ip->SpecialNum == 0) || ((ip->Option1 & 0x3f) == 0)) {
+        if (6 < local_88) {
+            local_8c = 3;
+        }
+        else {
+            local_8c = (ip->SpecialNum != 0);
+        }
+    }
+    else {
+        local_8c = 4;
     }
 
-    if ((type >= ITEM_WING_BASE + 3 && type <= ITEM_WING_BASE + 6) ||
-        type == ITEM_HELPER_BASE + 30 ||
-        (type >= ITEM_WING_BASE + 36 && type <= ITEM_WING_BASE + 40) ||
-        (type >= ITEM_WING_BASE + 42 && type <= ITEM_WING_BASE + 43) ||
-        (type >= ITEM_WING_BASE + 49 && type <= ITEM_WING_BASE + 50)) {
-        color = (level >= 7) ? TEXT_COLOR_YELLOW : (hasSpecial ? TEXT_COLOR_BLUE : TEXT_COLOR_WHITE);
+    if ((0x182 < sVar6) && (sVar6 < 0x187)) {
+        if (local_88 < 7) {
+            local_8c = (ip->SpecialNum != 0);
+        }
+        else {
+            local_8c = 3;
+        }
     }
 
-    if (type == ITEM_POTION_BASE + 21 ||
-        (type >= ITEM_POTION_BASE + 23 && type <= ITEM_POTION_BASE + 26) ||
-        type == ITEM_POTION_BASE + 28 ||
-        (type >= ITEM_POTION_BASE + 41 && type <= ITEM_POTION_BASE + 44) ||
-        (type >= ITEM_POTION_BASE + 45 && type <= ITEM_POTION_BASE + 54) ||
-        (type >= ITEM_POTION_BASE + 58 && type <= ITEM_POTION_BASE + 62) ||
-        (type >= ITEM_POTION_BASE + 70 && type <= ITEM_POTION_BASE + 71) ||
-        (type >= ITEM_POTION_BASE + 78 && type <= ITEM_POTION_BASE + 98) ||
-        (type >= ITEM_POTION_BASE + 101 && type <= ITEM_POTION_BASE + 109) ||
-        type == ITEM_POTION_BASE + 111 ||
-        (type >= ITEM_POTION_BASE + 145 && type <= ITEM_POTION_BASE + 156) ||
-        type == ITEM_HELPER_BASE + 7 || type == ITEM_HELPER_BASE + 11 ||
-        type == ITEM_HELPER_BASE + 14 || type == ITEM_HELPER_BASE + 15 ||
-        type == ITEM_HELPER_BASE + 19 || type == ITEM_HELPER_BASE + 20 ||
-        type == ITEM_HELPER_BASE + 29 ||
-        (type >= ITEM_HELPER_BASE + 32 && type <= ITEM_HELPER_BASE + 63)) {
-        color = TEXT_COLOR_YELLOW;
-    }
-
-    if ((type >= ITEM_WING_BASE + 60 && type <= ITEM_WING_BASE + 65) ||
-        (type >= ITEM_WING_BASE + 70 && type <= ITEM_WING_BASE + 74) ||
-        (type >= ITEM_WING_BASE + 100 && type <= ITEM_WING_BASE + 129)) {
-        color = TEXT_COLOR_VIOLET;
-    }
-
-    if (type == ITEM_POTION_BASE + 41 || type == ITEM_POTION_BASE + 42 ||
-        type == ITEM_POTION_BASE + 43 || type == ITEM_POTION_BASE + 44 ||
-        type == ITEM_HELPER_BASE + 38) {
-        color = TEXT_COLOR_YELLOW;
-    }
-
-    if (type == 19 || type == 77 || type == 146 || type == 170 ||
-        type == ITEM_STAFF_BASE + 10 || type == ITEM_SWORD_BASE + 19 ||
-        type == ITEM_BOW_BASE + 18 || type == ITEM_MACE_BASE + 13) {
-        color = TEXT_COLOR_PURPLE;
-    }
-
-    return color;
+    return local_8c;
 }
 // REMOVIDA 2026-07-20 — GetInventoryTooltipAddOptionData, junto con sus 5
 // callers.  Pertenecia al sistema de items por PERIODO de versiones
@@ -1531,6 +1477,42 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
     // El precio de reparacion lo calcula RenderRepairInfo, que es la otra rama
     // del dispatch de Scene_MapTick.
     // ── Slot: item NAME line (with +N suffix when level > 0) ────────────────
+    // ── Precio (bloque LAB_004c4a61, 0x004C4A61..0x004C4CED) ────────────────
+    // 2026-08-18: este bloque estaba AL FINAL del tooltip y con color/negrita
+    // propios.  En el binario va ACA, entre el separador del slot 0 y el nombre
+    // del item, y hereda el MISMO color que el nombre (local_8c) con negrita.
+    //
+    //   if (ShopOpened) {
+    //       precio = ItemValue(ip, Sell);
+    //       sprintf(linea, GlobalText[Sell ? 0x3e : 0x3f], precioFormateado);
+    //       TextListColor[TextNum] = local_8c;   TextBold[TextNum] = 1;
+    //       TextNum++;
+    //       sprintf(linea, DAT_0055a4e4);        // separador de media altura
+    //       TextNum++;  SkipNum++;
+    //   }
+    //
+    // El gate real es ShopOpened (en el decompile aparece como `cStack_71`, que
+    // es su valor desofuscado tras el bloque de hash-table anti-tamper).  El
+    // port usaba `param_4` (bSell) como gate y ademas deducia compra-vs-venta
+    // comparando el puntero del item contra el rango del pool de la tienda;
+    // el binario lo decide con `Sell` a secas.
+    if (ShopOpened != 0 && DAT_07eaa154 < 28) {
+        int   price = FUN_0047c690((void*)param_3, param_4 ? 1 : 0);
+        char  priceStr[32];
+        FormatThousands(priceStr, sizeof(priceStr), price);
+        const char* gt = GlobalText[param_4 ? 62 : 63];
+        char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
+        if (gt && gt[0]) snprintf(dst, 100, gt, priceStr);
+        else             snprintf(dst, 100, "%s", priceStr);
+        DAT_07e91708[DAT_07eaa154] = GetInventorySpecialNameColor((ITEM*)param_3);
+        DAT_07ea7b10[DAT_07eaa154] = 1;
+        DAT_07eaa154++;
+
+        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, DAT_0055a4e4);
+        DAT_07eaa154++;
+        DAT_07eaa158++;
+    }
+
     // Per IDA L786-829: most items render `Name +N`. Exceptions: item types
     // 19/146/170 use Name only with optional Level. Items with excellent
     // options (Option1 & 0x3F != 0) prepend "Excellent " (GlobalText[620]).
@@ -1569,6 +1551,12 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
     }
     DAT_07ea7b10[DAT_07eaa154] = 1;
     DAT_07eaa154++;
+
+    // Separador de media altura tras el nombre (switchD_004c4db2_caseD_4):
+    //   sprintf(linea, DAT_0055a570);  TextNum++;  SkipNum++;
+    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, DAT_0055a570);
+    DAT_07eaa154++;
+    DAT_07eaa158++;
 
     // ── Stat lines: damage, defense, magic defense, attack/walk speed ──────
     // Per IDA L1080-1163. Each row only added if the corresponding ITEM field
@@ -1671,40 +1659,6 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
                 DAT_07eaa154++;
             }
 
-        }
-
-        // ── Sell price (when in shop sell mode = bSell != 0) ────────────────
-        // FIX 2026-07-20: usaba GlobalText[78], que NO es el precio: en el
-        // Text.bmd la 78 es "Incrementa velocidad de movimiento" (sin ningun
-        // especificador), asi que imprimia esa frase literal.
-        // Los indices reales, sacados del Text.bmd desencriptado, son:
-        //     [62] "Precio de compra: %s"
-        //     [63] "Precio de venta: %s"
-        // Ojo: llevan %s, NO %d — el numero va pre-formateado con separador de
-        // miles ("4,700").  Pasarle un int a un %s haria que snprintf lo
-        // deferencie como char* → basura o AV.
-        if (param_4 != 0 && DAT_07eaa154 < 28) {
-            // 2026-07-27: distinguir COMPRA (item de TIENDA) vs VENTA (item del
-            // inventario del jugador).  El pool de tienda es el overlay
-            // Inventory[32..152].WalkSpeed (offset +24, stride 0x44).  Si el item
-            // hovereado (param_3) cae en ese rango → precio de COMPRA
-            // (GlobalText[62], modo 0 = valor completo).  Si no → precio de VENTA
-            // (GlobalText[63], modo 1 = valor/3).  Antes SIEMPRE mostraba venta.
-            unsigned char* shopLo = (unsigned char*)ShopItems;
-            unsigned char* shopHi = (unsigned char*)ShopItems + 120 * 0x44;
-            bool isBuy = ((unsigned char*)param_3 >= shopLo &&
-                          (unsigned char*)param_3 <  shopHi);
-            int price = FUN_0047c690((void*)param_3, isBuy ? 0 : 1);
-            char priceStr[32];
-            FormatThousands(priceStr, sizeof(priceStr), price);
-            const char* gt = GlobalText[isBuy ? 62 : 63];
-            char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
-            if (gt && gt[0]) snprintf(dst, 100, gt, priceStr);
-            else             snprintf(dst, 100, isBuy ? "Precio de compra: %s"
-                                                      : "Precio de venta: %s", priceStr);
-            DAT_07e91708[DAT_07eaa154] = 5;   // gold tint
-            DAT_07ea7b10[DAT_07eaa154] = 0;
-            DAT_07eaa154++;
         }
 
         AppendInventorySpecialTooltipLines(it);
