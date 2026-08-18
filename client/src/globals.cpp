@@ -1322,16 +1322,18 @@ char     DAT_0055a42c[] = "";
 char     DAT_0055a430[] = "";
 char     DAT_0055a434[] = "";
 // RenderItemInfo string constants
-// 2026-08-18: los cinco son un salto de linea en el binario (leidos en
-// 0x0055A4E0, 0x0055A5F4, 0x0055A5F0, 0x0055A5FC, 0x0055A640) - lineas
-// separadoras de MEDIA altura, que es lo que cuenta SkipNum (DAT_07eaa158).
-// Estaban como cadena vacia, y como DrawItemInfoBox corta el conteo en la
-// primera linea vacia, el slot 0 dejaba el tooltip entero sin dibujar.
-char     DAT_0055a4e0[] = "\n";  // 0x0055A4E0 - separador de media altura (slot 0)
-char     DAT_0055a5f4[] = "\n";  // 0x0055A5F4 - separador de media altura
-char     DAT_0055a5f0[] = "\n";  // 0x0055A5F0 - separador de media altura (RenderItemInfo)
-char     DAT_0055a5fc[] = "\n";  // 0x0055A5FC - separador de media altura (RenderRepairInfo)
-char     DAT_0055a640[] = "\n";  // 0x0055A640 - separador de media altura (RenderRepairInfo, final)
+// 2026-08-18: los SIETE son "\n" en el binario (leidos en 0x0055A4E0,
+// 0x0055A4E4, 0x0055A570, 0x0055A5F4, 0x0055A5F0, 0x0055A5FC, 0x0055A640) —
+// lineas separadoras de MEDIA altura, que es lo que cuenta SkipNum
+// (DAT_07eaa158).  Estaban como cadena vacia, y como DrawItemInfoBox corta el
+// conteo en la primera linea vacia, el slot 0 dejaba el tooltip sin dibujar.
+char     DAT_0055a4e4[] = "\n";  // 0x0055A4E4 — separador tras la linea de precio
+char     DAT_0055a570[] = "\n";  // 0x0055A570 — separador tras el nombre del item
+char     DAT_0055a4e0[] = "\n";  // 0x0055A4E0 — separador de media altura (slot 0)
+char     DAT_0055a5f4[] = "\n";  // 0x0055A5F4 — separador de media altura
+char     DAT_0055a5f0[] = "\n";  // 0x0055A5F0 — separador de media altura (RenderItemInfo)
+char     DAT_0055a5fc[] = "\n";  // 0x0055A5FC — separador de media altura (RenderRepairInfo)
+char     DAT_0055a640[] = "\n";  // 0x0055A640 — separador de media altura (RenderRepairInfo, final)
 char     DAT_0055a608[] = "";    // s__s__s format
 char     DAT_0055a630[] = "";    // secondary stats line
 char     DAT_07d3b40c[] = "";    // item level line format
