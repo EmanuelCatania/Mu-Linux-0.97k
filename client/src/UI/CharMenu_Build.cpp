@@ -85,7 +85,7 @@ void FUN_004c3530(void)
         crt_sprintf(lpString_07e90798, s_ChMenu_HdrA);
         int iVar4 = DAT_07eaa154 + 1;
         DAT_07e91708[iVar4] = 1;
-        (&DAT_07ea7b10)[iVar4] = 1;
+        DAT_07ea7b10[iVar4] = 1;
         slot_strcpy(iVar4, &DAT_07d329c4);
         DAT_07eaa154 = iVar4 + 1;   // +2
 
@@ -98,7 +98,7 @@ void FUN_004c3530(void)
         char *local_c = lpString_07e90798 + DAT_07eaa154 * 100;
         while (pcVar5 != nullptr && (int)pcVar5 < 0x7d34134) {
             DAT_07e91708[DAT_07eaa154] = 0;
-            (&DAT_07ea7b10)[DAT_07eaa154] = 0;
+            DAT_07ea7b10[DAT_07eaa154] = 0;
             slot_strcpy(DAT_07eaa154, pcVar5);
             DAT_07eaa154++;
             pcVar5 += 300;
@@ -122,7 +122,7 @@ void FUN_004c3530(void)
         crt_sprintf(lpString_07e90798, s_ChMenu_HdrB);
         int iVar4 = DAT_07eaa154 + 1;
         DAT_07e91708[iVar4] = 1;
-        (&DAT_07ea7b10)[iVar4] = 1;
+        DAT_07ea7b10[iVar4] = 1;
         slot_strcpy(iVar4, &DAT_07d34134);
         DAT_07eaa154 = iVar4 + 1;   // +2
 
@@ -133,7 +133,7 @@ void FUN_004c3530(void)
         char *local_c = lpString_07e90798 + DAT_07eaa154 * 100;
         while (pcVar5 != nullptr && (int)pcVar5 < 0x7d358a4) {
             DAT_07e91708[DAT_07eaa154] = 0;
-            (&DAT_07ea7b10)[DAT_07eaa154] = 0;
+            DAT_07ea7b10[DAT_07eaa154] = 0;
             slot_strcpy(DAT_07eaa154, pcVar5);
             DAT_07eaa154++;
             pcVar5 += 300;
@@ -193,14 +193,14 @@ void FUN_004c3530(void)
     crt_sprintf(lpString_07e90798, s_ChMenu_HdrC);
     int iVar7b = DAT_07eaa154 + 2;
     DAT_07e91708[DAT_07eaa154 + 1] = 1;
-    (&DAT_07ea7b10)[DAT_07eaa154 + 1] = 1;
+    DAT_07ea7b10[DAT_07eaa154 + 1] = 1;
     slot_strcpy(DAT_07eaa154 + 1, &DAT_07d358a4);
     DAT_07e91708[iVar7b] = 1;
-    (&DAT_07ea7b10)[iVar7b] = 1;
+    DAT_07ea7b10[iVar7b] = 1;
 
     crt_sprintf(lpString_07e90798 + iVar7b * 100, s_ChMenu_SubC1);
     DAT_07e91708[DAT_07eaa154] = 0;
-    (&DAT_07ea7b10)[DAT_07eaa154] = 1;
+    DAT_07ea7b10[DAT_07eaa154] = 1;
     DAT_07eaa154 = iVar7b + 1;
 
     crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_SubC2);
@@ -218,13 +218,13 @@ void FUN_004c3530(void)
     for (unsigned u = uVar3 >> 2; u; u--) *pu++ = 0x20202020;
     DAT_07e91708[iVar7c] = 0;
     for (unsigned u = uVar3 & 3; u; u--) *(unsigned char *)pu++ = 0x20;
-    (&DAT_07ea7b10)[iVar7c] = 0;
+    DAT_07ea7b10[iVar7c] = 0;
     DAT_07eaa154 += 2;
     pPad[uVar3] = 0;
 
     // Extra blank rows for type ≠ 5
     if (local_8 > 0) {
-        unsigned char *pu10 = (unsigned char *)(&DAT_07ea7b10 + DAT_07eaa154);
+        unsigned char *pu10 = (unsigned char *)(DAT_07ea7b10 + DAT_07eaa154);
         for (char *p2 = (char *)local_8; p2; p2--) { *pu10 = 0; pu10 += 4; }
         char *pb = &lpString_07e90798[0] + DAT_07eaa154 * 100 + 1;
         while (local_8 > 0) {
@@ -298,62 +298,285 @@ void FUN_004c3530(void)
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004c2420 @ 0x004c2420 — CharMenu_RenderTextList
+// FUN_004c2420 @ 0x004c2420 — DrawItemInfoBox(x, y, count, fixedWidth, iSort, drawBox)
 //
-// Renders the text-list buffer (lpString_07e90798) into the char-menu panel.
-// param_1 = mode (1 = with shadow border, else plain)
-// param_2 = start index, param_3 = count
-// param_4 = x position, param_5 = layout type, param_6 = border flag
+// Port fiel, verificado sobre el desensamblado 0x004c2420..0x004c285e.  Es la
+// MISMA rutina que usan el menú de personaje (RenderHelpWindow @0x004c3530,
+// FUN_004c2c10, FUN_004c2d50), el tooltip de ítem (RenderItemInfo @0x004c4650)
+// y el de reparación (RenderRepairInfo @0x004c8d70): dibuja el recuadro y la
+// lista de líneas de lpString_07e90798.
 //
-// Selects font via DAT_07ea7b10 per entry, measures width with GetTextExtentPointA,
-// colors from DAT_07e91708 color table (types 0-6).
-// FUN_0040f610 — text render; FUN_005124c0 — filled rect (shadow box).
+//   param_1 = x del CENTRO del recuadro       param_4 = ancho fijo (0 = automático)
+//   param_2 = y del borde superior            param_5 = iSort (2 = centrado)
+//   param_3 = cantidad de líneas              param_6 = 1 → dibuja el recuadro
+//
+// Globales:
+//   lpString_07e90798 (0x07E90798) líneas, stride 100 — corta en la 1ª vacía
+//   DAT_07e91708      (0x07E91708) TextListColor, color por línea
+//   DAT_07ea7b10      (0x07EA7B10) TextBold, negrita por línea
+//   m_hFontDC         (0x055C9FEC) DC de medición
+//   DAT_055ca00c/010  g_hFont / g_hFontBold
+//   _DAT_055c9b70/74  g_fScreenRate_x / g_fScreenRate_y
+//   DAT_0056156c      WindowWidth
+//   m_dwBackColor     (0x00559C80) 0xff0000a0 SOLO para el color 5, si no 0
+//
+// Constantes mágicas (leídas del binario):
+//   0x00552504 = 0.5   0x0055256c = 1.0   0x0055264c = 2.0   0x00552650 = 4.0
+//   0x00552ae8 = 0.9090909   0x005529b4 = 1.1
+//
+// Colores — glColor3f, jump table en 0x004c2860:
+//   0 y 5 → (1,1,1)     1 → (0.5,0.7,1.0)   2 → (1.0,0.2,0.1)
+//   3 → (1.0,0.8,0.1)   4 → (0.1,1.0,0.5)   6 → (1.0,0.1,1.0)
+//   >6 → cae al default SIN tocar glColor (conserva el color de la línea previa)
+
+// Los siete destinos del switch, en el orden de la jump table de 0x004c2860.
+static const float DrawItemInfoBox_glColor[7][3] = {
+    { 1.0f, 1.0f, 1.0f },   // 0 → 0x004c272b
+    { 0.5f, 0.7f, 1.0f },   // 1 → 0x004c2737
+    { 1.0f, 0.2f, 0.1f },   // 2 → 0x004c2748
+    { 1.0f, 0.8f, 0.1f },   // 3 → 0x004c2754
+    { 0.1f, 1.0f, 0.5f },   // 4 → 0x004c2760
+    { 1.0f, 1.0f, 1.0f },   // 5 → 0x004c272b (comparte destino con el 0)
+    { 1.0f, 0.1f, 1.0f },   // 6 → 0x004c2771
+};
+
+// DESVIACIÓN CONSCIENTE: en el binario el color de texto llega por glColor3f
+// porque el subclass de CUIRenderText sube el glifo como textura y la MODULA
+// con el color actual de GL.  Nuestro FUN_0040f610 pinta glifos con
+// wglUseFontBitmaps y toma el color de m_dwTextColor (0x00559C78, formato ABGR
+// 0xAABBGGRR — ver la nota de CUIRenderText_BakeTextTexture @0x0040FCD0).
+// Emitimos los dos: el glColor3f fiel y el ABGR equivalente.
+static const DWORD DrawItemInfoBox_TextColor[7] = {
+    0xffffffff,   // 0  (1.0,1.0,1.0)
+    0xffffb380,   // 1  (0.5,0.7,1.0)
+    0xff1a33ff,   // 2  (1.0,0.2,0.1)
+    0xff1accff,   // 3  (1.0,0.8,0.1)
+    0xff80ff1a,   // 4  (0.1,1.0,0.5)
+    0xffffffff,   // 5  (1.0,1.0,1.0)
+    0xffff1aff,   // 6  (1.0,0.1,1.0)
+};
+
+// FUN_0040fb70 @ 0x0040FB70 — RenderText del subclass de CUIRenderText, al que
+// llega DrawItemInfoBox vía el dispatcher 0x0040F610.  Portamos la parte que
+// define el layout: el offset de alineación (iSort) y el AVANCE VERTICAL que
+// devuelve, que es lo que hace que cada línea quede donde va.
+//
+//   iSort 1 → izquierda con ancho fijo   2 → centrado   3 → derecha
+//   retorna (cy / g_fScreenRate_y) / (text[0]=='\n' ? 2.0 : 1.0)
+//
+// DESVIACIÓN: el original rasteriza la línea a una textura de iBoxWidth px con
+// TextOutA desplazado fVar4 px dentro de ella (0x0040FCD0).  Nosotros pintamos
+// glifos directo en unidades del ortho, así que el desplazamiento se aplica
+// sobre la x, convertido de píxeles a ortho con g_fScreenRate_x.
+// OJO (armadilla 1 de CLAUDE.md): stubs_bulk_misc.cpp ya define un
+// `FUN_0040fb70` __fastcall que es un stub vacio (return 0.0f) y no lo llama
+// nadie.  Para no crear dos simbolos con el mismo nombre y distinta firma,
+// esta copia lleva otro nombre; el canonico va en el comentario.
+static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
+                          int iBoxWidth, int iSort, int iMaxWidth)
+{
+    SIZE  local_8;
+    float fVar4;
+    int   iWidth;
+
+    if ((pszText == NULL) || (*pszText == '\0')) {
+        return 0.0f;
+    }
+    local_8.cx = 0;
+    local_8.cy = 0;
+    GetTextExtentPointA(m_hFontDC, pszText, lstrlenA(pszText), &local_8);
+    fVar4  = 0.0f;
+    iWidth = local_8.cx;
+    if (iSort == 1) {
+        if (0 < iBoxWidth) {
+            iWidth = iBoxWidth;
+        }
+    }
+    else if (iSort == 2) {
+        fVar4  = (float)((iBoxWidth - local_8.cx) / 2);
+        iWidth = local_8.cx + (int)fVar4 * 2;
+    }
+    else if (iSort == 3) {
+        fVar4  = (float)(iBoxWidth - local_8.cx);
+        iWidth = local_8.cx + (int)fVar4;
+    }
+    if ((float)iMaxWidth < (float)iPos_x + (float)iWidth / g_fScreenRate_x) {
+        iPos_x = (int)((float)iMaxWidth - (float)iWidth / g_fScreenRate_x);
+    }
+    // Fondo de la linea (m_dwBackColor).  En el binario este nivel NO lo pinta:
+    // CUIRenderText_BakeTextTexture (0x0040FCD0) rasteriza la linea a una
+    // textura de ancho iBoxWidth — NO del ancho del texto (`iStack_260 =
+    // param_2; if (param_2 == 0) iStack_260 = sz.cx;`) — y FUN_004105f0 rellena
+    // con m_dwBackColor todo pixel que no sea glifo.  Por eso la franja del
+    // color 5 (clase requerida) va de punta a punta de la caja.
+    //
+    // DESVIACIÓN: nuestro FUN_0040f610 pinta el fondo solo detras del texto, y
+    // no recibe el ancho del box.  Emitimos la franja aca con el ancho
+    // correcto y le sacamos el fondo al render de glifos para no pintarlo dos
+    // veces.
+    if (((m_dwBackColor >> 24) != 0) && (0 < iBoxWidth)) {
+        GLfloat prevColor[4];
+        glGetFloatv(GL_CURRENT_COLOR, prevColor);
+
+        // OJO — el glEnable(0xde1) CRUDO que DrawItemInfoBox hace despues del
+        // recuadro (fiel al binario, 0x004C2698) deja DESINCRONIZADO el cache
+        // de estado de FUN_00511590/FUN_00511680: DAT_083a4125 (TextureEnable)
+        // sigue diciendo "apagada" mientras GL la tiene encendida.  Si entramos
+        // a FUN_005124c0 asi, FUN_00511590 se cree el cache, NO llama a
+        // glDisable(0xde1), y la franja se dibuja modulada por la textura que
+        // hubiera bound en ese momento — que cambia frame a frame.  Eso es el
+        // parpadeo.  Resincronizamos el cache con el estado real antes de
+        // dibujar; FUN_00511590 apaga la textura de verdad y ambos quedan
+        // coherentes.
+        DAT_083a4125 = '\x01';
+
+        glColor4ub((GLubyte)( m_dwBackColor        & 0xff),   // R (formato ABGR)
+                   (GLubyte)((m_dwBackColor >>  8) & 0xff),   // G
+                   (GLubyte)((m_dwBackColor >> 16) & 0xff),   // B
+                   (GLubyte)((m_dwBackColor >> 24) & 0xff));  // A
+        FUN_005124c0((float)iPos_x, (float)iPos_y,
+                     (float)iBoxWidth / g_fScreenRate_x,
+                     (float)local_8.cy / _DAT_055c9b74);
+        glColor4fv(prevColor);
+        // No volvemos a encender la textura: FUN_0040f610 la apaga por su
+        // cuenta para los glifos, y dejarla apagada mantiene GL y cache de
+        // acuerdo.  El proximo tooltip la reenciende via FUN_00511680.
+    }
+    {
+        const DWORD dwSavedBack = m_dwBackColor;
+        m_dwBackColor = 0;
+        FUN_0040f610((HDC)(uintptr_t)DAT_055c9ff8,
+                     iPos_x + (int)(fVar4 / g_fScreenRate_x), iPos_y, pszText, 0);
+        m_dwBackColor = dwSavedBack;
+    }
+
+    if (*pszText != '\n') {
+        return ((float)local_8.cy / _DAT_055c9b74) / 1.0f;
+    }
+    return ((float)local_8.cy / _DAT_055c9b74) / 2.0f;
+}
 
 void __cdecl FUN_004c2420(int param_1, int param_2, int param_3,
-                            int param_4, int param_5, int param_6)
+                          int param_4, int param_5, int param_6)
 {
-    TEXTMETRICA tm;
-    SIZE        sz;
-    HDC         hdc = (HDC)DAT_055c9fec;
-    int         x0, y0, entry_h;
-    int         iVar1;
+    float  y;
+    float  x;
+    float  Height;
+    int    iVar1;
+    int    iVar4;
+    int   *piVar2;
+    char  *pCVar3;
+    HFONT  pHVar9;
+    float  local_18;
+    int    local_14;
+    int    local_10;
+    SIZE   local_8;
 
-    // guard: nothing to draw
-    if (param_3 <= 0) return;
-
-    // Row height from TEXTMETRIC
-    GetTextMetricsA(hdc, &tm);
-    entry_h = tm.tmHeight + tm.tmExternalLeading;
-
-    x0 = param_4;
-    y0 = param_2 * entry_h;     // start Y
-
-    for (int i = 0; i < param_3; i++) {
-        char *pText = lpString_07e90798 + i * 100;
-        int   colorType = DAT_07e91708[i];
-        int   fontIdx   = (&DAT_07ea7b10)[i];
-
-        // Select font
-        if (fontIdx != 0)
-            FUN_00511600();
-
-        // Measure text
-        GetTextExtentPointA(hdc, pText, (int)strlen(pText), &sz);
-
-        if (param_6 == 1) {
-            // Draw shadow/border rect first
-            FUN_005124c0((float)(x0 - 2), (float)(y0 + i * entry_h - 1), (float)(sz.cx + 4), (float)(entry_h + 2));
-        }
-
-        // Color from table (0=white,1=yellow,2=green,3=red,4=cyan,5=gray,6=orange)
-        static const DWORD colorTable[7] = {
-            0xFFFFFFFF, 0xFFFFFF00, 0xFF00FF00,
-            0xFFFF0000, 0xFF00FFFF, 0xFF808080, 0xFFFF8000
-        };
-        iVar1 = (colorType < 7) ? colorType : 0;
-
-        FUN_0040f610(hdc, x0, y0 + i * entry_h, pText, colorTable[iVar1]);
+    iVar4      = 0;
+    local_8.cx = 0;
+    local_8.cy = 0;
+    local_10   = 0;
+    local_14   = 0;
+    local_18   = 0.0f;
+    iVar1      = param_3;
+    if (0 < param_3) {
+        pCVar3 = lpString_07e90798;
+        piVar2 = DAT_07ea7b10;
+        do {
+            iVar1 = iVar4;
+            if (*pCVar3 == '\0') break;          // corta el conteo en la 1ª vacía
+            pHVar9 = (HFONT)(uintptr_t)DAT_055ca00c;
+            if (*piVar2 != 0) {
+                pHVar9 = (HFONT)(uintptr_t)DAT_055ca010;
+            }
+            SelectObject(m_hFontDC, pHVar9);
+            GetTextExtentPointA(m_hFontDC, pCVar3, lstrlenA(pCVar3), &local_8);
+            if (local_18 < (float)local_8.cx) {
+                local_18 = (float)local_8.cx;
+            }
+            if (*pCVar3 == '\n') {
+                local_14 = local_14 + 1;         // línea de media altura
+            }
+            else {
+                local_10 = local_10 + 1;
+            }
+            iVar4  = iVar4 + 1;
+            piVar2 = piVar2 + 1;
+            pCVar3 = pCVar3 + 100;
+            iVar1  = param_3;
+        } while (iVar4 < param_3);
     }
+    param_3 = iVar1;
+    Height = ((float)local_14 * (float)local_8.cy * 0.5f + (float)(local_10 * local_8.cy)) /
+             (_DAT_055c9b74 * 0.9090909f);
+    FUN_00511680(1);                             // EnableAlphaTest
+    local_18 = local_18 / g_fScreenRate_x;
+    if (0 < param_4) {
+        local_18 = (float)param_4 / g_fScreenRate_x + (float)param_4 / g_fScreenRate_x;
+    }
+    local_18 = local_18 + 4.0f;
+    param_4 = (int)((float)param_1 - local_18 * 0.5f);   // el recuadro se CENTRA en param_1
+    if (param_4 < 0) {
+        param_4 = 0;
+    }
+    if ((float)DAT_0056156c / g_fScreenRate_x < (float)param_4 + local_18) {
+        param_4 = (int)((float)DAT_0056156c / g_fScreenRate_x - local_18 - 1.0f);
+    }
+    if (param_6 == 1) {
+        glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
+        y = (float)param_2 - 1.0f;
+        x = (float)param_4 - 1.0f;
+        FUN_005124c0(x, y, local_18 + 1.0f, 1.0f);                  // borde superior
+        FUN_005124c0(x, y, 1.0f, Height + 1.0f);                    // borde izquierdo
+        FUN_005124c0(x + local_18 + 1.0f, y, 1.0f, Height + 1.0f);  // borde derecho
+        FUN_005124c0(x, y + Height + 1.0f, local_18 + 2.0f, 1.0f);  // borde inferior
+        glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
+        FUN_005124c0((float)param_4, (float)param_2, local_18, Height);
+        glEnable(0xde1);
+    }
+    param_4 = param_4 + 1;
+    x = (float)param_4;
+    y = (float)param_2;
+    iVar1 = 0;
+    if (0 < param_3) {
+        pCVar3 = lpString_07e90798;
+        do {
+            float fAdvance;
+            pHVar9 = (HFONT)(uintptr_t)DAT_055ca00c;
+            if (DAT_07ea7b10[iVar1] != 0) {
+                pHVar9 = (HFONT)(uintptr_t)DAT_055ca010;
+            }
+            SelectObject(m_hFontDC, pHVar9);
+            if ((*pCVar3 == '\n') || ((*pCVar3 == ' ') && (pCVar3[1] == '\0'))) {
+                GetTextExtentPointA(m_hFontDC, pCVar3, lstrlenA(pCVar3), &local_8);
+                if (*pCVar3 == '\n') {
+                    fAdvance = ((float)local_8.cy / _DAT_055c9b74) / 2.0f;
+                }
+                else {
+                    fAdvance = ((float)local_8.cy / _DAT_055c9b74) / 1.0f;
+                }
+            }
+            else {
+                iVar4 = DAT_07e91708[iVar1];
+                if ((unsigned int)iVar4 <= 6) {
+                    glColor3f(DrawItemInfoBox_glColor[iVar4][0],
+                              DrawItemInfoBox_glColor[iVar4][1],
+                              DrawItemInfoBox_glColor[iVar4][2]);
+                    m_dwTextColor = DrawItemInfoBox_TextColor[iVar4];
+                }
+                m_dwBackColor = (DAT_07e91708[iVar1] != 5) ? 0 : 0xff0000a0;
+                fAdvance = RenderText_0040fb70((int)x, (int)y, pCVar3,
+                                        (int)((local_18 - 2.0f) * g_fScreenRate_x),
+                                        param_5, 0x280);
+            }
+            y = y + fAdvance * 1.1f;
+            iVar1  = iVar1 + 1;
+            pCVar3 = pCVar3 + 100;
+        } while (iVar1 < param_3);
+    }
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    FUN_00511600();                              // DisableAlphaBlend
+    return;
 }
 
 
@@ -387,7 +610,7 @@ void __cdecl FUN_004c2880(int param_1)
             DAT_07e91708[DAT_07eaa154] = 2;  // green
         }
 
-        (&DAT_07ea7b10)[DAT_07eaa154] = 0;
+        DAT_07ea7b10[DAT_07eaa154] = 0;
         slot_strcpy(DAT_07eaa154, buf);
         DAT_07eaa154++;
         DAT_07eaa158++;
@@ -420,7 +643,7 @@ void __cdecl FUN_004c2c10(int row, unsigned char *color, int *value,
         GetTextExtentPointA(hdc, buf, (int)strlen(buf), &sz);
 
         DAT_07e91708[DAT_07eaa154] = (color ? color[i] : 0);
-        (&DAT_07ea7b10)[DAT_07eaa154] = 0;
+        DAT_07ea7b10[DAT_07eaa154] = 0;
         slot_strcpy(DAT_07eaa154, buf);
         DAT_07eaa154++;
     }

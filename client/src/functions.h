@@ -710,7 +710,7 @@ void  __cdecl FUN_004afb00(void);        // Hover_ProcessClick
 char  __cdecl FUN_004e5980(void);        // SecondPassword_IsActive
 
 // ── Char menu builder helpers (FUN_004c3530) ──────────────────────────────────
-void  __cdecl FUN_004c2420(int, int, int, int, int, int);  // list UI init (mode, a, count, b, type, c)
+void  __cdecl FUN_004c2420(int, int, int, int, int, int);  // DrawItemInfoBox(x, y, count, fixedWidth, iSort, drawBox)
 void  __cdecl FUN_004c2880(int class_data_ptr);            // build class info block
 void  __cdecl FUN_004c2c10(int row, unsigned char *color, int *value, const char *label, int x, int flags); // draw stat row
 void  __cdecl FUN_004c2d50(int row, int value, int col_width); // draw value column

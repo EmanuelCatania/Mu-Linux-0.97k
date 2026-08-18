@@ -1192,8 +1192,8 @@ extern DWORD   DAT_0056169c;        // selected channel (port % 0x14 + 1)
 extern int     DAT_07e11d20;        // UI mode: 1=class-list-A, 2=class-list-B, 3=stats
 extern int     DAT_07e11d24;        // character class/subtype ID (range 0..0x1FF)
 extern char    lpString_07e90798[]; // string list buffer (100 bytes per entry, ~30 slots)
-extern int     DAT_07e91708[20];    // color flag array (20 ints = 80 bytes)
-extern int     DAT_07ea7b10;        // enabled flag array base (index by slot)
+extern int     DAT_07e91708[30];    // TextListColor @0x07E91708 - color por linea
+extern int     DAT_07ea7b10[30];    // TextBold      @0x07EA7B10 - negrita por linea
 extern char    DAT_07d329c4;        // class name table A (first entry base)
 extern char    DAT_07d32af0;        // class info list A (stride 300, limit 0x7d34134)
 extern char    DAT_07d34134;        // class name table B (first entry base)
@@ -1252,7 +1252,9 @@ extern char    DAT_0055a434[];
 // RenderItemInfo string constants
 extern char    DAT_0055a4e0[];   // item name format string
 extern char    DAT_0055a5f4[];   // item stats header format string
-extern char    DAT_0055a5fc[];   // item class/type format string
+extern char    DAT_0055a5f0[];   // salto de linea - separador de media altura
+extern char    DAT_0055a5fc[];   // salto de linea - separador de media altura
+extern char    DAT_0055a640[];   // salto de linea - separador de media altura
 extern char    DAT_0055a608[];   // s__s__s format
 extern char    DAT_0055a630[];   // secondary stats line
 extern char    DAT_07d3b40c[];   // item level line format
