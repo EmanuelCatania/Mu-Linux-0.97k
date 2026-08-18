@@ -1279,7 +1279,11 @@ static void AppendInventorySpecialOptionLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         addLine("\n", 4);
 }
 
-static void AppendInventoryRequirementTooltipLines(ITEM* ip)
+// 2026-08-18: los Require* se leian de `ip` (la INSTANCIA); viven en la fila
+// de ItemAttribute.  Por eso no salia ninguna linea de requisitos.  Los
+// indices de GlobalText ya estaban bien: 0x49=73 fuerza, 0x4B=75 agilidad,
+// 0x4C=76 nivel, 0x4D=77 energia (verificado en 0x004C6xxx).
+static void AppendInventoryRequirementTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* pAttr)
 {
     if (!ip || DAT_07eaa154 >= 28)
         return;
@@ -1320,11 +1324,11 @@ static void AppendInventoryRequirementTooltipLines(ITEM* ip)
     const int agility = *(WORD*)(CA + 0x16);
     const int energy = *(WORD*)(CA + 0x1A);
 
-    addRequirementLine(GlobalText[73], (int)ip->RequireStrength, strength, TEXT_COLOR_WHITE);
-    addRequirementLine(GlobalText[75], (int)ip->RequireDexterity, agility, TEXT_COLOR_WHITE);
-    addRequirementLine(GlobalText[77], (int)ip->RequireEnergy, energy, TEXT_COLOR_WHITE);
-    if (ip->RequireLevel && ip->Type != 416 + 14) {
-        addRequirementLine(GlobalText[76], (int)ip->RequireLevel, level, TEXT_COLOR_WHITE);
+    addRequirementLine(GlobalText[73], (int)pAttr->RequireStrength, strength, TEXT_COLOR_WHITE);
+    addRequirementLine(GlobalText[75], (int)pAttr->RequireAgility, agility, TEXT_COLOR_WHITE);
+    addRequirementLine(GlobalText[77], (int)pAttr->RequireEnergy, energy, TEXT_COLOR_WHITE);
+    if (pAttr->RequireLevel && ip->Type != 0x1ae) {
+        addRequirementLine(GlobalText[76], (int)pAttr->RequireLevel, level, TEXT_COLOR_WHITE);
     }
 }
 
@@ -1606,9 +1610,17 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
         ITEM_ATTRIBUTE* p = (ITEM_ATTRIBUTE*)(uintptr_t)attrBase;
         BYTE excFlags = it->Option1 & 0x3F;
 
+        // 2026-08-18: TODAS las stats de abajo se leian de `it` (la INSTANCIA
+        // del item), pero viven en `p` — la fila de ItemAttribute indexada por
+        // tipo.  `p` estaba declarado aca y no se usaba.  Resultado: Defense,
+        // DamageMin/Max, MagicDefense y las velocidades salian 0 y sus lineas
+        // NO se emitian; en el tooltip solo sobrevivia la durabilidad.
+        // De `it` solo salen los campos de la instancia (Option1, Level,
+        // SpecialNum, Durability actual).
+
         // ── Damage range — for weapons (slot+0x18 = DamageMin, +0x1C = Max).
-        int damageMin = (int)it->DamageMin;
-        int damageMax = (int)it->DamageMax;
+        int damageMin = (int)p->DamageMin;
+        int damageMax = (int)p->DamageMax;
         if (damageMin) {
             int dmgMin = damageMin, dmgMax = damageMax;
             if (itemType >= 160 && itemType <= 192) {
@@ -1616,7 +1628,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
                 dmgMin /= 2;
                 dmgMax /= 2;
             }
-            int twoHand = (int)it->TwoHand;
+            int twoHand = (int)p->TwoHand;
             int gtIdx = (twoHand & 1) ? 41 : 40;   // GlobalText[40] = "Damage", [41] = "TwoHand"
             const char* gt = GlobalText[gtIdx];
             char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
@@ -1628,7 +1640,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
         }
 
         // ── Defense (armor)
-        int defense = (int)it->Defense;
+        int defense = (int)p->Defense;
         if (defense) {
             const char* gt = GlobalText[65];
             char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
@@ -1642,7 +1654,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
         }
 
         // ── Magic Defense
-        int magicDef = (int)it->MagicDefense;
+        int magicDef = (int)p->MagicDefense;
         if (magicDef) {
             const char* gt = GlobalText[66];
             char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
@@ -1678,11 +1690,11 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
             }
 
             // ── Walk Speed (boots)
-            if (it->WalkSpeed) {
+            if (p->WalkSpeed) {
                 const char* gt = GlobalText[68];
                 char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
-                if (gt && gt[0]) snprintf(dst, 100, gt, (int)it->WalkSpeed);
-                else             snprintf(dst, 100, "Walk Speed: %d", (int)it->WalkSpeed);
+                if (gt && gt[0]) snprintf(dst, 100, gt, (int)p->WalkSpeed);
+                else             snprintf(dst, 100, "Walk Speed: %d", (int)p->WalkSpeed);
                 DAT_07e91708[DAT_07eaa154] = 0;
                 DAT_07ea7b10[DAT_07eaa154] = 0;
                 DAT_07eaa154++;
@@ -1696,7 +1708,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
         // de los requisitos, ANTES del bloque de opciones excellent.  Antes se
         // emitía última.  Verificado contra la salida del cliente de referencia
         // (mismo binario que tenemos en IDA): requisitos → clase → excellent.
-        AppendInventoryRequirementTooltipLines(it);
+        AppendInventoryRequirementTooltipLines(it, p);
         AppendInventoryRequireClassLines(p);
         AppendInventoryLateBonusTooltipLines(it, p);
         AppendInventorySpecialOptionLines(it, p);
@@ -1838,7 +1850,7 @@ extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* para
 
     AppendInventorySpecialTooltipLines((ITEM*)param_3);
     AppendInventoryDurabilityTooltipLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase, level, attrBase);
-    AppendInventoryRequirementTooltipLines((ITEM*)param_3);
+    AppendInventoryRequirementTooltipLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase);
     AppendInventoryRequireClassLines((ITEM_ATTRIBUTE*)(uintptr_t)attrBase);   // ver nota de orden arriba
     AppendInventoryLateBonusTooltipLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase);
     AppendInventorySpecialOptionLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase);
