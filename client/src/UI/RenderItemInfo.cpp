@@ -153,6 +153,17 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
 
     const short type = ip->Type;
 
+    // Primera rama de la cadena del binario (LAB_004c4ced, 0x004C4CED):
+    //     if (0x1d6 < Type && Type < 0x1db) { sprintf(linea, "%s", Name); color = 3; }
+    // Son los tipos 471..474.  Faltaba por completo; caian al fallback generico
+    // y por eso salian con el color calculado en vez del dorado fijo.
+    // El color 3 lo fija GetInventorySpecialNameColor (rama 0x1D7..0x1DA no
+    // existe alli porque el binario lo hace aca) — ver nota al pie.
+    if (type > 0x1d6 && type < 0x1db) {
+        snprintf(dst, dstSize, "%s", p->Name);
+        return true;
+    }
+
     if (type >= ITEM_POTION_BASE + 23 && type <= ITEM_POTION_BASE + 26) {
         if (type == ITEM_POTION_BASE + 23 && level == 1) {
             snprintf(dst, dstSize, "%s", GlobalText[906]);
@@ -190,7 +201,8 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         case 12:
             snprintf(dst, dstSize, "%s +%u", GlobalText[115], level - 7);
             break;
-        case 13: snprintf(dst, dstSize, "%s", GlobalText[117]); break;
+        // El switch del binario (0x004C4DB2) llega hasta el case 0xC (12).
+        // El case 13 -> GlobalText[117] era un injerto de version posterior.
         // levels 14/15 REMOVIDOS 2026-07-20: variantes de Box of Luck de
         // versiones posteriores; usaban GlobalText[1650]/[1651], fuera de las
         // 1000 filas.  Los niveles 0..12 (hasta "Box of Kundun +5") son validos
@@ -236,7 +248,10 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         case 0: snprintf(dst, dstSize, "%s", GlobalText[811]); break;
         case 1: snprintf(dst, dstSize, "%s", GlobalText[812]); break;
         case 2: snprintf(dst, dstSize, "%s", GlobalText[817]); break;
-        default: snprintf(dst, dstSize, "%s", GlobalText[809]); break;
+        // El binario no tiene rama default aca: con level > 2 la linea queda
+        // vacia y DrawItemInfoBox corta el conteo ahi.  Se replica dejando el
+        // nombre a secas, que es lo mas cercano sin inventar texto.
+        default: snprintf(dst, dstSize, "%s", p->Name); break;
         }
         return true;
     }
@@ -312,7 +327,9 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         return true;
     }
 
-    if (type == ITEM_SWORD_BASE + 19 || type == ITEM_BOW_BASE + 18 || type == ITEM_STAFF_BASE + 10 || type == ITEM_MACE_BASE + 13) {
+    // Binario: `sVar6 == 0x13 || sVar6 == 0x92 || sVar6 == 0xaa` — solo 19, 146
+    // y 170.  El 77 (MACE+13) que habia aca no esta en esa comparacion.
+    if (type == 0x13 || type == 0x92 || type == 0xaa) {
         if (level == 0) snprintf(dst, dstSize, "%s", p->Name);
         else snprintf(dst, dstSize, "%s +%u", p->Name, level);
         return true;
@@ -404,6 +421,18 @@ static int GetInventorySpecialNameColor(ITEM* ip)
         else {
             local_8c = 3;
         }
+    }
+
+    // Overrides que en el binario NO viven aca, sino dentro de la cadena que
+    // arma la linea del nombre (LAB_004c4ced, 0x004C4CED en adelante): cada una
+    // de estas ramas hace `local_8c = 3` justo antes de escribir su texto.
+    // Como en el port el nombre y el color estan en funciones separadas
+    // (BuildInventorySpecialNameLine / esta), hay que repetirlos aca o el color
+    // se pierde.  Mantener las dos listas en sincronia.
+    if (((0x1d6 < sVar6) && (sVar6 < 0x1db)) ||   // 0x1D7..0x1DA
+        (sVar6 == 0x1af) || (sVar6 == 0x1ae) ||
+        (sVar6 == 0x1d5) || (sVar6 == 0x1b3)) {
+        local_8c = 3;
     }
 
     return local_8c;
