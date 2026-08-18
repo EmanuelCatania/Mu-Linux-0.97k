@@ -1317,6 +1317,23 @@ static void Text_PixelToOrthoScale(float* outX, float* outY)
 // Es el equivalente correcto, para nuestro pipeline, del `sz.cx /
 // g_fScreenRate_x` que hace IDA en RenderText (0x47F650) y RenderTipText
 // (0x47F7F0).
+// Escala pixeles-de-framebuffer -> unidades del ortho en las que dibuja el
+// stack de texto (la misma que aplica FUN_0040f610 a los glifos).
+//
+// OJO, NO es lo mismo que g_fScreenRate_x: ese es el factor del BINARIO, que
+// pasa a espacio-640 porque su CUIRenderText reescala internamente. En nuestro
+// pipeline el reescalado lo hace el ortho, asi que un ancho medido con
+// GetTextExtentPointA hay que dividirlo por ESTE factor para mezclarlo con el
+// layout. Usar los dos mezclados deja la caja y el texto a escalas distintas
+// (ver el fix del ancho del tooltip en CharMenu_Build.cpp).
+extern "C" float Text_GetOrthoScaleX(void)
+{
+    float sx, sy;
+    Text_PixelToOrthoScale(&sx, &sy);
+    (void)sy;
+    return sx;
+}
+
 extern "C" int Text_MeasureOrthoWidth(const char* text)
 {
     if (!text || !*text) return 0;
