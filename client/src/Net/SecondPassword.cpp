@@ -2450,11 +2450,18 @@ label_119:
         if (*(int *)(param_1 + 4) > 0xcd && *(int *)(param_1 + 4) < 0xd1)
             FUN_00404bc0(0x5d, param_1, 0);
         if (*(short *)(DAT_05828d58 + 0xaa + etype * 0xbc) != -1) {
-            // 2026-05-04: leemos action ID actual del entity (+0x105 anim_state),
-            // ya que el SetAction acaba de escribirlo. Antes era `uVar8` local.
-            unsigned int curAction = *(unsigned char *)(param_1 + 0x105);
+            // BUG-FIX 2026-08-18: el indice de la tabla de sonidos era el action ID
+            // actual del entity (+0x105 anim_state). IDA 0x443930 L288-289 es:
+            //     v19 = rand() % 2;
+            //     PlayBuffer(*(short*)(Models + 2*(v19 + 94*type) + 170) + 170, c, 0);
+            // o sea la tabla tiene SOLO 2 entradas (los dos sonidos de paso del
+            // modelo) y se elige una al azar. Con el action ID (13..33 al caminar)
+            // el indice se iba muy lejos de esas 2 entradas y leia campos ajenos
+            // del struct de modelo -> ids basura: 136 -> mBaliAttack2 (sonido de
+            // ATAQUE sonando al caminar) y 104 -> slot 274, que ni existe.
+            int v19 = rand() % 2;
             int iVar9 = 0;
-            FUN_00404bc0(*(short *)(DAT_05828d58 + 0xaa + ((int)curAction + etype * 0x5e) * 2) + 0xaa,
+            FUN_00404bc0(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa,
                          param_1, iVar9);
         }
     }

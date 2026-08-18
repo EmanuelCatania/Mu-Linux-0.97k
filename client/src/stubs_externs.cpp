@@ -3551,7 +3551,17 @@ void __cdecl FUN_004ffe70(const char *path) {
     MapFileDecrypt((BYTE*)buf, (int)sz);
 
     int count = (int)*(short*)(buf + 2);
-    if (count > 0 && count < 5000) {
+    // BUG-FIX 2026-08-17: el guard era `count > 0 && count < 5000`, un tope
+    // inventado por el port (IDA 0x4FFE70 sólo chequea `> 0`). Los conteos
+    // reales del 0.97k son Lorencia 2870, Dungeon 4488, Atlans 5205,
+    // LostTower 5380 y Noria 9399 — o sea el cap descartaba el archivo ENTERO
+    // en los tres últimos y esos mapas quedaban sin un solo objeto (paredes,
+    // puentes, props). Ahora el bound sale del tamaño real del buffer, que es
+    // lo único que hace falta para no leer fuera: el header son 4 bytes y cada
+    // entrada 30 (verificado: 4 + 30*count == filesize exacto en los 5 mapas).
+    int maxByBuf = ((int)sz - 4) / 30;
+    if (count > maxByBuf) count = maxByBuf;
+    if (count > 0) {
         short *p = (short*)(buf + 4);
         for (int i = 0; i < count; i++, p += 0xf) {
             float pos[3]  = { *(float*)(p+1), *(float*)(p+3), *(float*)(p+5) };
@@ -3730,9 +3740,30 @@ void __cdecl FUN_0050c4d0(void) {
         FUN_00505c80(0xb2, "Object7/", 0x2600, '\x01');
         break;
     case 7:
+        // BUG-FIX 2026-08-17: el basename era "Object8" → pedía Object802..Object810,
+        // que no existen; los 9 peces de Atlans no cargaban. IDA 0050C4D0 L171:
+        //   AccessModel(v3, "Data\Object8\", "Fish", v3 - 180)  para v3 = 182..190
         for (int i = 0xb6; i < 0xbf; i++) {
-            FUN_005060b0(i, "Data/Object8/", "Object8", i - 0xb4);
+            FUN_005060b0(i, "Data/Object8/", "Fish", i - 0xb4);
             FUN_00505c80(i, "Object8/", 0x2600, '\x01');
+        }
+        // BUG-FIX 2026-08-17: faltaba entero el bloque de texturas de agua de
+        // Atlans (IDA L175-199). Carga wt00..wt31 en Bitmaps[65..96] y además
+        // copia el nombre corto en Bitmaps[n].FileName (offset 0 del slot,
+        // stride 0x38), que es de donde lo lee el render de tiles de agua.
+        // El "if (v5 >= &Bitmaps[75])" del decompile es simplemente v4 >= 10:
+        // wt00..wt09 llevan cero a la izquierda, wt10..wt31 no.
+        {
+            char Buffer[64];
+            for (int v4 = 0; v4 < 32; v4++) {
+                const char* fmtFull = (v4 >= 10) ? "Object8/wt%d.jpg" : "Object8/wt0%d.jpg";
+                _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtFull, v4);
+                FUN_00529740(Buffer, v4 + 65, 0x2601, 0x2901, 0, '\0');
+
+                const char* fmtLeaf = (v4 >= 10) ? "wt%d.jpg" : "wt0%d.jpg";
+                _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtLeaf, v4);
+                lstrcpynA(&g_BitmapsRaw[(v4 + 65) * 0x38], Buffer, 0x20);
+            }
         }
         break;
     case 8:

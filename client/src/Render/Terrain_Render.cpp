@@ -7,7 +7,6 @@ extern void __cdecl FUN_004fc030(unsigned char *entity, unsigned int slot, int f
 extern void __cdecl FUN_00405540(void *buf, const char *msg);
 extern void __cdecl FUN_00403f80(void *ctx, void *obj, void *key);
 
-extern "C" { void DbgLogPublic(const char*); }
 
 // ── Mejora INTENCIONAL del cliente final (cámara mejorada del DLL) — NO es 1:1 ─
 // El 0.97k culea objetos del mundo con CollisionRange (obj[+0xD0] ≈ -30 cross-

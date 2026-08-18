@@ -135,27 +135,6 @@ void __cdecl FUN_0046be40(void)
         float rot     = *(float*)(slot + 36);
         float scaleF  = *(float*)(slot + 12);
 
-        // [DIAG TEMP #4] effect-pool entries near-hero (≤25 tiles). REMOVER al cerrar #4.
-        {
-            BYTE* hh = (BYTE*)DAT_07abf5d8;
-            if (hh) {
-                float ddx = (posX - *(float*)(hh+0x10)) * 0.01f;
-                float ddy = (posY - *(float*)(hh+0x14)) * 0.01f;
-                if (ddx*ddx + ddy*ddy < 625.0f) {
-                    static DWORD s_et = 0; static int s_ec = 0;
-                    DWORD nw = GetTickCount();
-                    if (nw - s_et > 1000) { s_et = nw; s_ec = 0; }
-                    if (s_ec < 150) { s_ec++;
-                        char b[200];
-                        _snprintf_s(b, sizeof(b), _TRUNCATE,
-                            "EFX type=%d variant=%d counter=%d pos=(%.0f,%.0f)",
-                            (int)typeCode, variant, counter, posX, posY);
-                        DbgLogPublic(b);
-                    }
-                }
-            }
-        }
-
         _rand();                              // IDA calls rand() once unconditionally
         // IDA 0046BE40: EnableAlphaBlend().  00511790 is the separate
         // "minus" blend mode; using it here makes the normal particle pass

@@ -10,7 +10,6 @@
 #include "stdafx.h"
 #include <dsound.h>
 
-extern "C" void DbgLogPublic(const char* msg);   // probe SNDDBG (temporal)
 
 
 // ============================================================================
@@ -42,26 +41,6 @@ HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped)
     // BufferChannel fuera de rango indexaria memoria ajena.
     if (BufferChannel[Buffer] < 0 || BufferChannel[Buffer] >= 4) {
         BufferChannel[Buffer] = 0;
-    }
-
-    // ─── PROBE SNDDBG (temporal) ─────────────────────────────────────────────
-    // Vuelca cada PlayBuffer con su id, el estado del juego y si el slot esta
-    // cargado. Sirve para identificar los disparos espurios (sonidos que suenan
-    // donde no corresponde) y los slots que se piden sin haber cargado.
-    // Tope de 400 lineas para no inundar el log.
-    {
-        static int s_sndDbg = 0;
-        if (s_sndDbg < 400) {
-            ++s_sndDbg;
-            char line[256];
-            sprintf_s(line, sizeof(line),
-                      "SNDDBG id=%d ch=%d/%d loaded=%d state=%d world=%d name=%s",
-                      Buffer, BufferChannel[Buffer], MaxBufferChannel[Buffer],
-                      g_lpDSBuffer[Buffer][0] ? 1 : 0,
-                      (int)g_GameState, (int)World,
-                      BufferName[Buffer][0] ? BufferName[Buffer] : "(vacio)");
-            DbgLogPublic(line);
-        }
     }
 
     LPDIRECTSOUNDBUFFER pBuf = g_lpDSBuffer[Buffer][BufferChannel[Buffer]];

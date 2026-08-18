@@ -80,7 +80,7 @@ void __cdecl FUN_0046c3e0_DISABLED(void)
 
                         iVar3 = piVar2[1];
                         // Vertex pair A (tail side)
-                        glTexCoord2f((float)local_8 / (float)iVar3, (float)0x3f800000);  // v=1
+                        glTexCoord2f((float)local_8 / (float)iVar3, 1.0f);  // v=1
                         glVertex3fv((float *)(piVar4 - 0x5a));
                         glTexCoord2f((float)local_8 / (float)iVar3, 0.0f);
                         glVertex3fv((float *)piVar4);
@@ -99,7 +99,7 @@ void __cdecl FUN_0046c3e0_DISABLED(void)
                         // Vertex pair B (head side)
                         glTexCoord2f((float)local_8 / (float)iVar3, 0.0f);
                         glVertex3fv((float *)(piVar4 + 3));
-                        glTexCoord2f((float)local_8 / (float)iVar3, (float)0x3f800000);
+                        glTexCoord2f((float)local_8 / (float)iVar3, 1.0f);
                         glVertex3fv((float *)(piVar4 - 0x57));
 
                         glEnd();

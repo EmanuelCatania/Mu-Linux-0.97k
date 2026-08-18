@@ -599,7 +599,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             FUN_004795c0(0x4cf,pfVar10,(float)(int)(uVar8 + 4) * _DAT_005526e4,pfVar14,(int)pfVar22,fVar13,uVar29);
             uVar29 = 0;
             iVar9 = _rand();
-            FUN_004795c0(0x47e,pfVar10,0x3f800000,pfVar15,(int)param_1,(float)(iVar9 % 0x168),uVar29);
+            FUN_004795c0(0x47e,pfVar10,1.0f,pfVar15,(int)param_1,(float)(iVar9 % 0x168),uVar29);
             if ((param_1[1] == 1.4013e-45) &&
                (fVar17 = FUN_004f7500(param_1[4], param_1[5]), (float10)param_1[6] < fVar17)) {
               local_354 = *pfVar10;
@@ -663,7 +663,7 @@ void FUN_00466ad0(float *param_1, int param_2)
               local_1a4[5] = 1.0f;
               FUN_00475220(0x4b0,&local_260,param_1 + 7,local_1a4 + (uint)(fVar13 == 4.2039e-45f) * 3,
                            5,0.4f,0);
-              FUN_004795c0(0x4fa,&local_260,0x3f800000,&local_368,*(int*)&param_1[0x3f],0,0);
+              FUN_004795c0(0x4fa,&local_260,1.0f,&local_368,*(int*)&param_1[0x3f],0,0);
               local_35c = (float *)((int)pfVar10 + 1);
             } while ((int)local_35c < 3);
             break;
@@ -671,7 +671,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             local_1f4 = (float)(int)fVar13 * _DAT_005524f4;
             local_1f0 = local_1f4;
             local_1ec = local_1f4;
-            FUN_004795c0(0x4fa,param_1 + 4,0x3fc00000,&local_1f4,*(int*)&param_1[0x3f],0,0);
+            FUN_004795c0(0x4fa,param_1 + 4,1.5f,&local_1f4,*(int*)&param_1[0x3f],0,0);
           }
           break;
         case 0x566:
@@ -1204,13 +1204,13 @@ LAB_00468772:
         local_264 = 0x3f800000;
         uVar29 = 0;
         iVar9 = _rand();
-        FUN_004795c0(0x4cf,&local_354,0x3fc00000,(float*)&local_26c,0,(float)(iVar9 % 0x168),uVar29);
+        FUN_004795c0(0x4cf,&local_354,1.5f,(float*)&local_26c,0,(float)(iVar9 % 0x168),uVar29);
         uVar29 = 0;
         iVar9 = _rand();
-        FUN_004795c0(0x4cf,&local_354,0x3fc00000,(float*)&local_26c,0,(float)(iVar9 % 0x168),uVar29);
+        FUN_004795c0(0x4cf,&local_354,1.5f,(float*)&local_26c,0,(float)(iVar9 % 0x168),uVar29);
         uVar29 = 0;
         iVar9 = _rand();
-        FUN_004795c0(0x47e,&local_354,0x40600000,&local_368,0,(float)(iVar9 % 0x168),uVar29);
+        FUN_004795c0(0x47e,&local_354,3.5f,&local_368,0,(float)(iVar9 % 0x168),uVar29);
       }
       break;
     case 0xcc:
@@ -1405,10 +1405,10 @@ switchD_00466b93_caseD_c7:
         pfVar10 = param_1 + 4;
         uVar29 = 0;
         lVar19 = (longlong)DAT_05826e08;   // IDA: (__int64)WorldTime * 0.1
-        FUN_004795c0(0x4a7,pfVar10,0x3f000000,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
+        FUN_004795c0(0x4a7,pfVar10,0.5f,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
         lVar19 = (longlong)DAT_05826e08;   // IDA: -(__int64)WorldTime * 0.1
-        FUN_004795c0(0x4a7,pfVar10,0x3f800000,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
+        FUN_004795c0(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {
           uVar8 = _rand();
@@ -1448,10 +1448,10 @@ switchD_00466b93_caseD_c7:
         pfVar10 = param_1 + 4;
         uVar29 = 0;
         lVar19 = (longlong)DAT_05826e08;   // IDA: (__int64)WorldTime * 0.1
-        FUN_004795c0(0x4a7,pfVar10,0x3f000000,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
+        FUN_004795c0(0x4a7,pfVar10,0.5f,pfVar15,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
         lVar19 = (longlong)DAT_05826e08;   // IDA: -(__int64)WorldTime * 0.1
-        FUN_004795c0(0x4a7,pfVar10,0x3f800000,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
+        FUN_004795c0(0x4a7,pfVar10,1.0f,pfVar15,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         local_35c = (float *)0x4;
         do {
           uVar8 = _rand();
@@ -1486,10 +1486,10 @@ switchD_00466b93_caseD_c7:
         pfVar10 = param_1 + 4;
         uVar29 = 0;
         lVar19 = (longlong)DAT_05826e08;   // IDA: (__int64)WorldTime * 0.1
-        FUN_004795c0(0x47e,pfVar10,0x3f800000,&local_368,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
+        FUN_004795c0(0x47e,pfVar10,1.0f,&local_368,(int)param_1,(float)(int)lVar19 * _DAT_005524f4,uVar29);
         uVar29 = 0;
         lVar19 = (longlong)DAT_05826e08;   // IDA: -(__int64)WorldTime * 0.1
-        FUN_004795c0(0x47e,pfVar10,0x40000000,&local_368,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
+        FUN_004795c0(0x47e,pfVar10,2.0f,&local_368,(int)param_1,(float)-(int)lVar19 * _DAT_005524f4,uVar29);
         iVar9 = 4;
         do {
           uVar8 = _rand();
@@ -1692,7 +1692,7 @@ switchD_00466b93_caseD_c7:
       local_368 = 1.0;
       local_364 = 0.8;
       local_360 = 0.6;
-      FUN_004795c0(0x47e,&local_354,0x40000000,&local_368,(int)param_1,0,0);
+      FUN_004795c0(0x47e,&local_354,2.0f,&local_368,(int)param_1,0,0);
       if (param_1[1] == 0.0) {
         uVar8 = (*(uint*)&param_1[0x18]) & 0x80000007;
         bVar16 = uVar8 == 0;

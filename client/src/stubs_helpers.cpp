@@ -2289,16 +2289,18 @@ int __cdecl FUN_0050e2c0(void) {
 void* __cdecl FUN_00456590(int entity, int effectType, float scale, int bone, float x, int flags, float yOff)
 {
     // offset vector at bone position + x/yOff
-    float offset[4];
+    // BUG-FIX 2026-08-18 (A): el vector de offset se pasaba desde `&offset[3]`,
+    // o sea leia offset[3],[4],[5] - dos floats FUERA del array. IDA sub_456590
+    // arma v9[0]=a5, v9[1]=a6, v9[2]=a7 y pasa v9, el indice 0.
+    float offset[3];
     offset[0] = x;
     offset[1] = (float)flags;   // param_6 (undefined4 packed as float here)
-    offset[2] = (float)yOff;
-    offset[3] = scale;          // param_5 (kept for alignment)
+    offset[2] = yOff;
 
     float outPos[3];
     void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * 0xbc);
     float *boneMat = (float *)(*(int *)(entity + 0x114) + bone * 0x30);
-    FUN_004409a0(modelPtr, boneMat, &offset[3], outPos, '\x01');
+    FUN_004409a0(modelPtr, boneMat, offset, outPos, '\x01');
 
     // Pulsing light: sin(animTick * period) * amp + base
     float sinVal = (float)fsin((double)DAT_05826e08 * (double)_DAT_005528e0);
@@ -2307,7 +2309,12 @@ void* __cdecl FUN_00456590(int entity, int effectType, float scale, int bone, fl
     light[1] = light[0] * _DAT_00552534;
     light[2] = light[0] * _DAT_005528b4;
 
-    FUN_004795c0((unsigned short)effectType, outPos, (float)effectType, light, entity, 0.0f, 0);
+    // BUG-FIX 2026-08-18 (B): el 3er argumento de CreateSprite es la ESCALA y se
+    // pasaba (float)effectType - o sea escala 1191 para el tipo 1191. IDA
+    // sub_456590: CreateSprite(Type, Position, Scale, Light, Owner, 0.0, 0).
+    // Con eso el quad media 152448 unidades y, pintado con Light=(v, v*0.6,
+    // v*0.4) = salmon, tapaba la pantalla entera en Atlans.
+    FUN_004795c0((unsigned short)effectType, outPos, scale, light, entity, 0.0f, 0);
     return (void *)entity;
 }
 

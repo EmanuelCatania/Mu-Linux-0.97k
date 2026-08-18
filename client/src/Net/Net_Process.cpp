@@ -1975,6 +1975,21 @@ static void Recv_LogOut(const BYTE* Msg)
         BYTE pkt[4] = { 0xC1, 0x04, 0xF3, 0x00 };
         NetLog("NET:    F3/00 char-list request (post-JoinChar)");
         Net_SendSmallPacket(pkt, 4);
+
+        // ── BUG-FIX 2026-08-17: faltaba la cola de ReceiveLogOut ──────────────
+        // IDA 0x4247D0 LABEL_117: DESPUÉS del send, la rama sub==1 hace
+        // `CurrentProtocolState = 0` e `InitGame()`, igual que la rama sub==2.
+        // Sin el InitGame quedaba `World` (DAT_0055a7ac) con el mapa anterior.
+        // Eso importa porque nuestro RequestTerrainHeight (Terrain_Utils.cpp:49)
+        // gatea con `World < 0` en vez del `g_GameState != 5` del original — una
+        // desviación deliberada por el orden del JoinMapServer. Con World=7
+        // (Atlans) heredado y su heightmap todavía cargado, CreateCharacterPointer
+        // le daba a cada personaje del char-select la altura del terreno de
+        // Atlans en vez de 0 → aparecían flotando más arriba. `World = -1` de
+        // InitGame es justamente lo que hace que el guard relajado se comporte
+        // como el original acá.
+        DAT_05826cb0 = 0;                // CurrentProtocolState
+        InitGame();
         return;
     }
 
@@ -5278,7 +5293,8 @@ void Net_ProcessPacket(void)
                     extern void UIChatLogWindow_AddText(const char* strID,
                                                        const char* msg,
                                                        int color);
-                    UIChatLogWindow_AddText(nullptr, text, 1);
+                    // IDA pasa una cadena vacía como strID, no NULL.
+                    UIChatLogWindow_AddText("", text, 1);
                 } else if (type == 2) {
                     // Guild notice — gold centered banner. Original IDA
                     // formats with GlobalText[483] ("Guild Notice: %s").

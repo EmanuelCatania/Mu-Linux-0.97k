@@ -274,8 +274,19 @@ void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mod
     // tanto. Una línea de chat vacía nunca es legítima, así que la ignoramos.
     if (!msg || msg[0] == '\0') return;
 
+    // BUG-FIX 2026-08-17: el dispatch de abajo estaba gateado con `&& label`, y
+    // el handler del notice 0x0D type=1 (Net_Process) llama con label = nullptr.
+    // Resultado: los mensajes del server (incluido el contador "You will quit
+    // game in N second(s)") nunca entraban a la lista del listbox, así que
+    // in-game no se veían — sólo aparecían al pasar a char-select, donde los
+    // dibuja el otro sink (sub_480980, gateado a g_bUseChatListBox||state!=5).
+    // En IDA 0x480620 el dispatch es la PRIMERA sentencia y es incondicional;
+    // el original nunca pasa NULL (usa cadena vacía). Normalizamos acá, que
+    // además evita el lstrcpynA con origen NULL de más abajo.
+    if (!label) label = "";
+
     // ── 1. Engine vtable dispatch (slot +0x70) ────────────────────────────────
-    if (DAT_055c9ff0 && label && msg) {
+    if (DAT_055c9ff0 && msg) {
         DWORD* obj = (DWORD*)DAT_055c9ff0;
         void** vt = (void**)*obj;
         if (vt) {

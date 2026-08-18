@@ -296,16 +296,15 @@ int __cdecl FUN_0053ea90(void *param) {
 
 // StopBuffer @ 0x00404C60 — real implementation at stubs.cpp:275 (forwards to FUN_00404c60).
 
-// StopMp3 @ 0x004127F0 (44 lines) — Stop MP3 via external MuPlayer process
-// Finds "MuPlayer" window, sends WM_DESTROY to stop playback.
+// StopMp3 @ 0x004127F0 — delega al port fiel (FUN_004127f0, src/Sound/Music.cpp).
+//
+// Esta era una SEGUNDA implementacion del mismo simbolo del binario, y es la que
+// usaba StopMusic. Estaba mal en tres cosas: ignoraba `cmd` (cerraba el
+// reproductor aunque estuviera sonando otro track), mandaba WM_DESTROY en vez de
+// WM_CLOSE, y no limpiaba Mp3FileName — asi que el siguiente PlayMp3 creia que
+// el track viejo seguia en curso. Ver [[simbolo-duplicado-patron]].
 void __cdecl StopMp3(char *cmd, int param) {
-    (void)cmd; (void)param;
-    // In original: compares cmd with current Mp3FileName, if match:
-    // FindWindowA(NULL, "MuPlayer") → SendMessageA(hWnd, WM_DESTROY, 0, 0)
-    HWND hWnd = FindWindowA(NULL, "MuPlayer");
-    if (hWnd != NULL) {
-        SendMessageA(hWnd, WM_DESTROY, 0, 0);
-    }
+    FUN_004127f0((DWORD)(uintptr_t)cmd, param);
 }
 
 // DeleteObjects @ 0x004FFD50 (90 lines) — Release all world objects
