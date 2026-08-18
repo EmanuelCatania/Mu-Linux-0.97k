@@ -126,87 +126,6 @@ static bool GetInventoryItemAddOption(short type, INVENTORY_ITEM_ADD_OPTION& out
     return true;
 }
 
-static void RenderItemTooltipTextList(int sx, int sy, int itemHeightCells, int count)
-{
-    if (count <= 0)
-        return;
-
-    if (count > 20)
-        count = 20;
-
-    HDC hdc = (HDC)(uintptr_t)DAT_055c9fec;
-    TEXTMETRICA tm = {};
-    GetTextMetricsA(hdc, &tm);
-    const int lineH = tm.tmHeight + tm.tmExternalLeading;
-    const int padX = 4;
-    const int padY = 3;
-    const int gapY = 1;
-
-    int maxWidth = 0;
-    int visibleLines = 0;
-    for (int i = 0; i < count; ++i) {
-        const char* pText = lpString_07e90798 + i * 100;
-        if (!pText[0] || (pText[0] == '\n' && pText[1] == '\0')) {
-            ++visibleLines;
-            continue;
-        }
-        SIZE sz = {};
-        GetTextExtentPointA(hdc, pText, (int)strlen(pText), &sz);
-        if (sz.cx > maxWidth)
-            maxWidth = sz.cx;
-        ++visibleLines;
-    }
-
-    if (visibleLines <= 0)
-        return;
-
-    const int boxW = maxWidth + padX * 2;
-    const int boxH = visibleLines * lineH + (visibleLines - 1) * gapY + padY * 2;
-
-    int drawX = sx - boxW / 2;
-    int drawY = sy - boxH;
-    if (drawY < 0)
-        drawY = sy + itemHeightCells * 20;
-    if (drawX < 0)
-        drawX = 0;
-    if (drawX + boxW > (int)WindowWidth)
-        drawX = (int)WindowWidth - boxW;
-    if (drawX < 0)
-        drawX = 0;
-
-    EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-    FUN_005124c0((float)(drawX - 1), (float)(drawY - 1), (float)(boxW + 2), 1.0f);
-    FUN_005124c0((float)(drawX - 1), (float)(drawY + boxH), (float)(boxW + 2), 1.0f);
-    FUN_005124c0((float)(drawX - 1), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
-    FUN_005124c0((float)(drawX + boxW), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
-    glColor4f(0.0f, 0.0f, 0.0f, 0.82f);
-    FUN_005124c0((float)drawX, (float)drawY, (float)boxW, (float)boxH);
-
-    static const DWORD colorTable[7] = {
-        0xFFFFFFFF, 0xFFFFFF00, 0xFF00FF00,
-        0xFFFF0000, 0xFF00FFFF, 0xFFFFC040, 0xFFFF80FF
-    };
-
-    int lineY = drawY + padY;
-    for (int i = 0; i < count; ++i) {
-        char* pText = lpString_07e90798 + i * 100;
-        int colorType = DAT_07e91708[i];
-        int fontIdx = (&DAT_07ea7b10)[i];
-
-        SelectObject(hdc, fontIdx ? g_hFontBold : g_hFont);
-
-        if (pText[0] && !(pText[0] == '\n' && pText[1] == '\0')) {
-            int colorIdx = (colorType >= 0 && colorType < 7) ? colorType : 0;
-            m_dwBackColor = 0;
-            DAT_00559c78 = colorTable[colorIdx];
-            FUN_0040f610((HDC)(uintptr_t)DAT_055c9ff8, drawX + padX, lineY, pText, 0);
-        }
-
-        lineY += lineH + gapY;
-    }
-}
-
 static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned int level, char* dst, size_t dstSize)
 {
     if (!ip || !p || !dst || dstSize == 0)
@@ -623,7 +542,7 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, "%s", text);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -633,7 +552,7 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, fmt, value);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -643,7 +562,7 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, fmt, value1, value2);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -653,7 +572,7 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, fmt, text);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -1003,7 +922,7 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, "%s", text);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -1013,7 +932,7 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, fmt, value);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -1023,7 +942,7 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, fmt, value1, value2);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -1135,7 +1054,7 @@ static void AppendInventoryLateBonusTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, "%s", text);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -1145,7 +1064,7 @@ static void AppendInventoryLateBonusTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, fmt, value);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -1335,7 +1254,7 @@ static void AppendInventorySpecialOptionLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, "%s", text);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -1345,7 +1264,7 @@ static void AppendInventorySpecialOptionLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, fmt, value);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = bold ? 1 : 0;
+        DAT_07ea7b10[DAT_07eaa154] = bold ? 1 : 0;
         DAT_07eaa154++;
     };
 
@@ -1365,7 +1284,7 @@ static void AppendInventorySpecialOptionLines(ITEM* ip, ITEM_ATTRIBUTE* p)
 
         if (wrote) {
             DAT_07e91708[DAT_07eaa154] = C_BLUE;
-            ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+            DAT_07ea7b10[DAT_07eaa154] = 0;
             DAT_07eaa154++;
         }
 
@@ -1405,7 +1324,7 @@ static void AppendInventoryRequirementTooltipLines(ITEM* ip)
 
         const bool missing = currentVal < reqVal;
         DAT_07e91708[DAT_07eaa154] = missing ? TEXT_COLOR_RED : okColor;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+        DAT_07ea7b10[DAT_07eaa154] = 0;
         DAT_07eaa154++;
 
         if (missing && DAT_07eaa154 < 28) {
@@ -1416,7 +1335,7 @@ static void AppendInventoryRequirementTooltipLines(ITEM* ip)
                 snprintf(needDst, 100, "Need: %d", reqVal - currentVal);
             }
             DAT_07e91708[DAT_07eaa154] = TEXT_COLOR_RED;
-            ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+            DAT_07ea7b10[DAT_07eaa154] = 0;
             DAT_07eaa154++;
         }
     };
@@ -1456,7 +1375,7 @@ static void AppendInventoryRequireClassLines(ITEM_ATTRIBUTE* pItem)
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         snprintf(dst, 100, "%s", text);
         DAT_07e91708[DAT_07eaa154] = color;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+        DAT_07ea7b10[DAT_07eaa154] = 0;
         DAT_07eaa154++;
     };
 
@@ -1556,7 +1475,10 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
     DAT_07eaa154 = 0;
     DAT_07eaa158 = 0;
 
-    // Clear color array (0x14 DWORDs at DAT_07e91708)
+    // Clear color array — el binario limpia SOLO 0x14 slots (bucle de 20 en
+    // 0x004c4686), aunque lpString_07e90798 tiene 30.  Se respeta tal cual: un
+    // tooltip de mas de 20 lineas hereda el color de la llamada anterior en los
+    // slots 20..29, igual que el original.
     for (int i = 0; i < 0x14; i++)
         DAT_07e91708[i] = 0;
 
@@ -1645,7 +1567,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
         int specialNameColor = GetInventorySpecialNameColor((ITEM*)param_3);
         DAT_07e91708[DAT_07eaa154] = specialNameColor;
     }
-    ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 1;
+    DAT_07ea7b10[DAT_07eaa154] = 1;
     DAT_07eaa154++;
 
     // ── Stat lines: damage, defense, magic defense, attack/walk speed ──────
@@ -1658,7 +1580,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
         if (v2 == INT_MIN) snprintf(dst, 100, fmt, v1);
         else               snprintf(dst, 100, fmt, v1, v2);
         DAT_07e91708[DAT_07eaa154] = colorFlag;
-        ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+        DAT_07ea7b10[DAT_07eaa154] = 0;
         DAT_07eaa154++;
     };
 
@@ -1684,7 +1606,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
             if (gt && gt[0]) snprintf(dst, 100, gt, dmgMin, dmgMax);
             else             snprintf(dst, 100, "Damage: %d ~ %d", dmgMin, dmgMax);
             DAT_07e91708[DAT_07eaa154] = (excFlags != 0) ? 1 : 0;
-            ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+            DAT_07ea7b10[DAT_07eaa154] = 0;
             DAT_07eaa154++;
         }
 
@@ -1698,7 +1620,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
             int hl = (itemType >= 224 && itemType < 384 &&
                       excFlags != 0) ? 1 : 0;
             DAT_07e91708[DAT_07eaa154] = hl;
-            ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+            DAT_07ea7b10[DAT_07eaa154] = 0;
             DAT_07eaa154++;
         }
 
@@ -1710,7 +1632,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
             if (gt && gt[0]) snprintf(dst, 100, gt, magicDef);
             else             snprintf(dst, 100, "Magic Defense: %d", magicDef);
             DAT_07e91708[DAT_07eaa154] = 0;
-            ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+            DAT_07ea7b10[DAT_07eaa154] = 0;
             DAT_07eaa154++;
         }
 
@@ -1723,7 +1645,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
                 if (gt && gt[0]) snprintf(dst, 100, gt, block);
                 else             snprintf(dst, 100, "Defense Rate: %d", block);
                 DAT_07e91708[DAT_07eaa154] = (excFlags != 0) ? 1 : 0;
-                ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+                DAT_07ea7b10[DAT_07eaa154] = 0;
                 DAT_07eaa154++;
             }
 
@@ -1734,7 +1656,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
                 if (gt && gt[0]) snprintf(dst, 100, gt, (int)it->WeaponSpeed);
                 else             snprintf(dst, 100, "Attack Speed: %d", (int)it->WeaponSpeed);
                 DAT_07e91708[DAT_07eaa154] = 0;
-                ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+                DAT_07ea7b10[DAT_07eaa154] = 0;
                 DAT_07eaa154++;
             }
 
@@ -1745,7 +1667,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
                 if (gt && gt[0]) snprintf(dst, 100, gt, (int)it->WalkSpeed);
                 else             snprintf(dst, 100, "Walk Speed: %d", (int)it->WalkSpeed);
                 DAT_07e91708[DAT_07eaa154] = 0;
-                ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+                DAT_07ea7b10[DAT_07eaa154] = 0;
                 DAT_07eaa154++;
             }
 
@@ -1781,7 +1703,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
             else             snprintf(dst, 100, isBuy ? "Precio de compra: %s"
                                                       : "Precio de venta: %s", priceStr);
             DAT_07e91708[DAT_07eaa154] = 5;   // gold tint
-            ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 0;
+            DAT_07ea7b10[DAT_07eaa154] = 0;
             DAT_07eaa154++;
         }
 
@@ -1797,27 +1719,38 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
         AppendInventorySpecialOptionLines(it, p);
     }
 
-    // 2026-05-08: BUG-FIX — port previo populaba lpString_07e90798 pero
-    // nunca llamaba al draw. Per IDA L2824:
-    //   sub_4C2420(v308, sx, v309, TextNum, 0.0, 2, 1)
-    // Donde sx/sy son las coords de pantalla (param_1/param_2 en nuestra sig).
-    // FUN_004c2420 dibuja la lista de líneas en lpString_07e90798.
+    // Epilogo fiel a 0x004c8b71..0x004c8c2b:
+    //   sprintf(lpString[TextNum], "\n");  TextNum++;  SkipNum++;
+    //   GetTextExtentPointA(m_hFontDC, lpString[0], 1, &sz);
+    //   h = (TextNum - SkipNum)*sz.cy + (SkipNum*sz.cy)/2;
+    //   y = sy - (int)(h / g_fScreenRate_y);
+    //   if (y < 0) y = sy + ItemAttr.Height * 0x14;      // debajo del item
+    //   DrawItemInfoBox(sx, y, TextNum, 0, 2, 1);
+    //
+    // El recuadro se CENTRA en sx (lo hace FUN_004c2420) y cada linea va
+    // centrada dentro de el (iSort = 2).
     {
-        // AUDITORIA 2026-07-20 — REMOVIDO (2 sitios, uno por cada funcion de
-        // render).  Anteponia una linea con GlobalText[2011] para los tipos
-        // 480..482 (Scroll of Poison / Meteorite / Lightning), con un tinte
-        // distinto por tipo (6/2/1).  El indice 2011 esta fuera de las 1000
-        // filas del Text.bmd, asi que la linea salia VACIA pero igual
-        // incrementaba el contador: el resultado visible era un renglon en
-        // blanco en el tooltip de esos tres scrolls.
-        // Los items son reales, pero la linea no puede ser del 0.97k — su texto
-        // no existe en el archivo.  Se conserva la llamada a
-        // RenderItemTooltipTextList, que es el fix real del 2026-05-08.
-        int sxScreen = (int)(uintptr_t)param_1;
-        int syScreen = (int)(uintptr_t)param_2;
-        int itemHeightCells = ((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK)[itemType].Height;
-        if (itemHeightCells <= 0) itemHeightCells = 1;
-        RenderItemTooltipTextList(sxScreen, syScreen, itemHeightCells, DAT_07eaa154);
+        SIZE tStack_6c;
+        int  iVar21;
+        int  iStack_70;
+        int  iVar15;
+
+        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, DAT_0055a5f0);
+        DAT_07eaa154++;
+        DAT_07eaa158++;
+
+        tStack_6c.cx = 0;
+        tStack_6c.cy = 0;
+        GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &tStack_6c);
+        iVar21 = DAT_07eaa154;
+        iStack_70 = (DAT_07eaa154 - DAT_07eaa158) * tStack_6c.cy +
+                    (DAT_07eaa158 * tStack_6c.cy) / 2;
+        iVar15 = (int)(uintptr_t)param_2 - (int)((float)iStack_70 / _DAT_055c9b74);
+        if (iVar15 < 0) {
+            iVar15 = (int)(uintptr_t)param_2 +
+                     (int)((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK)[itemType].Height * 0x14;
+        }
+        FUN_004c2420((int)(uintptr_t)param_1, iVar15, iVar21, 0, 2, 1);
     }
 }
 
@@ -1912,7 +1845,7 @@ extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* para
         int specialNameColor = GetInventorySpecialNameColor((ITEM*)param_3);
         DAT_07e91708[DAT_07eaa154] = specialNameColor;
     }
-    ((int*)&DAT_07ea7b10)[DAT_07eaa154] = 1;
+    DAT_07ea7b10[DAT_07eaa154] = 1;
     DAT_07eaa154++;
 
     // Slot 2: class/subtype
@@ -1927,23 +1860,27 @@ extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* para
     AppendInventoryLateBonusTooltipLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase);
     AppendInventorySpecialOptionLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase);
 
-    // 2026-05-08: BUG-FIX — port previo populaba lpString_07e90798 pero
-    // nunca llamaba al draw. Misma fix que FUN_004c4650.
+    // Epilogo fiel a 0x004c9664..0x004c971b.  Igual que RenderItemInfo salvo
+    // que la conversion vertical es entera: (h * 15 * 32) / WindowHeight, que
+    // es el equivalente de h / g_fScreenRate_y con DIV sin signo.
     {
-        // AUDITORIA 2026-07-20 — REMOVIDO (2 sitios, uno por cada funcion de
-        // render).  Anteponia una linea con GlobalText[2011] para los tipos
-        // 480..482 (Scroll of Poison / Meteorite / Lightning), con un tinte
-        // distinto por tipo (6/2/1).  El indice 2011 esta fuera de las 1000
-        // filas del Text.bmd, asi que la linea salia VACIA pero igual
-        // incrementaba el contador: el resultado visible era un renglon en
-        // blanco en el tooltip de esos tres scrolls.
-        // Los items son reales, pero la linea no puede ser del 0.97k — su texto
-        // no existe en el archivo.  Se conserva la llamada a
-        // RenderItemTooltipTextList, que es el fix real del 2026-05-08.
-        int sxScreen = (int)(uintptr_t)param_1;
-        int syScreen = param_2;
-        int itemHeightCells = ((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK_)[itemType].Height;
-        if (itemHeightCells <= 0) itemHeightCells = 1;
-        RenderItemTooltipTextList(sxScreen, syScreen, itemHeightCells, DAT_07eaa154);
+        SIZE sz;
+        int  h;
+        int  yBox;
+
+        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, DAT_0055a640);
+        DAT_07eaa154++;
+        DAT_07eaa158++;
+
+        sz.cx = 0;
+        sz.cy = 0;
+        GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
+        h = (DAT_07eaa154 - DAT_07eaa158) * sz.cy + (DAT_07eaa158 * sz.cy) / 2;
+        yBox = param_2 - (int)((unsigned int)(h * 15 * 32) / DAT_00561570);
+        if (yBox < 0) {
+            yBox = param_2 +
+                   (int)((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK_)[itemType].Height * 0x14;
+        }
+        FUN_004c2420((int)(uintptr_t)param_1, yBox, DAT_07eaa154, 0, 2, 1);
     }
 }

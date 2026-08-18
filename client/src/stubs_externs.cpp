@@ -794,8 +794,8 @@ void __cdecl FUN_0040e330(unsigned long val) {
 extern "C++" {
 extern char    GlobalText[GLOBALTEXT_ROWS][300];   // ver globals.h
 extern char    lpString_07e90798[];
-extern int     DAT_07e91708[20];
-extern int     DAT_07ea7b10;
+extern int     DAT_07e91708[30];
+extern int     DAT_07ea7b10[30];
 extern HDC     m_hFontDC;
 extern float   _DAT_055c9b74;
 }
@@ -892,7 +892,7 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     char* TextList0 = lpString_07e90798;
     auto TextListN = [&](int i) -> char* { return lpString_07e90798 + i * 100; };
     int* TextListColor = DAT_07e91708;
-    int* TextBold = (&DAT_07ea7b10);
+    int* TextBold = DAT_07ea7b10;
 
     sprintf_s(TextList0, 100, "\n");
     sprintf_s(TextListN(1), 100, "%s", szName);
@@ -1055,94 +1055,102 @@ void __cdecl FUN_004c9730(float a1, int a2, int a3)
         }
     }
 
-    struct SkillTooltipLine {
-        char text[160];
-        DWORD color;
-        int bold;
+    // ── Build TextList lines ────────────────────────────────────────────────
+    // Estructura del binario (0x004C97xx, y el volcado de IDA que quedo en
+    // FUN_004c9730_old bajo `#if 0`):
+    //   slot 0 = "\n"                       (separador de media altura)
+    //   slot 1 = nombre de la skill         color 1 (azul claro), NEGRITA
+    //   slot 2 = "\n"
+    //   slot 3+ = dano / rango / mana / AG  color 0 (blanco)
+    //   opcional "no puede usarla"          color 5 (blanco con franja)
+    //   ultimo  = "\n"
+    //
+    // 2026-08-18: antes esto pintaba su PROPIA caja (cuarta reimplementacion
+    // inventada del tooltip, con colores ARGB y textos en ingles hardcodeados).
+    // Ahora usa lpString_07e90798 + FUN_004c2420, que es lo que hace el binario
+    // — misma rutina que el tooltip de item y el menu de personaje.
+    auto  TextListN     = [](int i) -> char* { return lpString_07e90798 + i * 100; };
+    auto  GlobalTextOr  = [](int idx, const char* fallback) -> const char* {
+        if (idx >= 0 && idx < GLOBALTEXT_ROWS && GlobalText[idx][0])
+            return GlobalText[idx];
+        return fallback;
     };
 
-    SkillTooltipLine lines[16] = {};
-    int lineCount = 0;
-    auto push_line = [&](DWORD color, int bold, const char* fmt, auto... args) {
-        if (lineCount >= 16) return;
-        _snprintf_s(lines[lineCount].text, sizeof(lines[lineCount].text), _TRUNCATE, fmt, args...);
-        lines[lineCount].color = color;
-        lines[lineCount].bold = bold;
-        lineCount++;
-    };
-
-    for (char* p = szName; *p; ++p) {
-        unsigned char ch = (unsigned char)*p;
-        if (ch < 32 || ch > 126) {
-            *p = ' ';
-        }
-    }
-    if (szName[0] == 0) {
-        _snprintf_s(szName, sizeof(szName), _TRUNCATE, "Skill %u", (unsigned)skillType);
+    int idx = 0;
+    for (int i = 0; i < 30; ++i) {
+        lpString_07e90798[i * 100] = 0;
     }
 
-    push_line(0xFFFFFF00u, 1, "%s", szName);
+    crt_sprintf(TextListN(idx), "\n");
+    DAT_07e91708[idx] = 0;
+    DAT_07ea7b10[idx] = 0;
+    idx++;
 
-    if (piMinDamage > 0 || piMaxDamage > 0)
-        push_line(0xFFFFFFFFu, 0, "Damage: %d ~ %d", piMinDamage, piMaxDamage);
+    _snprintf_s(TextListN(idx), 100, _TRUNCATE, "%s", szName);
+    DAT_07e91708[idx] = 1;
+    DAT_07ea7b10[idx] = 1;
+    idx++;
 
-    if (piDistance > 0) push_line(0xFFFFFFFFu, 0, "Range: %d", piDistance);
-    push_line(0xFFFFFFFFu, 0, "Mana: %d", piMana);
-    if (piSkillMana > 0) push_line(0xFFFFFFFFu, 0, "AG: %d", piSkillMana);
+    crt_sprintf(TextListN(idx), "\n");
+    DAT_07e91708[idx] = 0;
+    DAT_07ea7b10[idx] = 0;
+    idx++;
 
-    if (lineCount <= 0) return;
-
-    HDC hdc = m_hFontDC;
-    const int padX = 6;
-    const int padY = 4;
-    const int gapY = 2;
-    int maxWidth = 0;
-    int lineH = 14;
-
-    for (int i = 0; i < lineCount; ++i) {
-        if (hdc) {
-            SelectObject(hdc, lines[i].bold ? g_hFontBold : g_hFont);
-            TEXTMETRICA tm = {};
-            if (GetTextMetricsA(hdc, &tm)) {
-                lineH = tm.tmHeight + tm.tmExternalLeading;
-            }
-            SIZE sz = {};
-            if (GetTextExtentPointA(hdc, lines[i].text, (int)strlen(lines[i].text), &sz)) {
-                if (sz.cx > maxWidth) maxWidth = sz.cx;
-                continue;
-            }
-        }
-        int fallbackW = (int)strlen(lines[i].text) * 7;
-        if (fallbackW > maxWidth) maxWidth = fallbackW;
+    if (piMinDamage > 0 || piMaxDamage > 0) {
+        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+                    GlobalTextOr(170, "Wizardry Dmg:%d~%d"), piMinDamage, piMaxDamage);
+        DAT_07e91708[idx] = 0;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
+    }
+    if (piDistance > 0) {
+        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+                    GlobalTextOr(174, "Range: %d"), piDistance);
+        DAT_07e91708[idx] = 0;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
+    }
+    {
+        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+                    GlobalTextOr(175, "Mana: %d"), piMana);
+        DAT_07e91708[idx] = 0;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
+    }
+    if (piSkillMana > 0) {
+        _snprintf_s(TextListN(idx), 100, _TRUNCATE,
+                    GlobalTextOr(360, "AG: %d"), piSkillMana);
+        DAT_07e91708[idx] = 0;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
     }
 
-    const int boxW = maxWidth + padX * 2;
-    const int boxH = lineCount * lineH + (lineCount - 1) * gapY + padY * 2;
-    int drawX = skillTipX - boxW / 2;
-    int drawY = a2 - boxH - 8;
-    if (drawY < 0) drawY = a2 + 8;
-    if (drawX < 0) drawX = 0;
-    if (drawX + boxW > (int)WindowWidth) drawX = (int)WindowWidth - boxW;
-    if (drawX < 0) drawX = 0;
+    // DK (clase 1) con la skill 47: linea de "no puede usarla", color 5 — el
+    // unico color con franja de fondo (m_dwBackColor = 0xff0000a0).
+    if (Hero && ((*(BYTE*)((char*)Hero + 0x1BC) & 7) == 1) && skillType == 47) {
+        _snprintf_s(TextListN(idx), 100, _TRUNCATE, "%s", GlobalTextOr(96, ""));
+        DAT_07e91708[idx] = 5;
+        DAT_07ea7b10[idx] = 0;
+        idx++;
+    }
 
-    EnableAlphaTest(true);
-    glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-    FUN_005124c0((float)(drawX - 1), (float)(drawY - 1), (float)(boxW + 2), 1.0f);
-    FUN_005124c0((float)(drawX - 1), (float)(drawY + boxH), (float)(boxW + 2), 1.0f);
-    FUN_005124c0((float)(drawX - 1), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
-    FUN_005124c0((float)(drawX + boxW), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
-    glColor4f(0.0f, 0.0f, 0.0f, 0.82f);
-    FUN_005124c0((float)drawX, (float)drawY, (float)boxW, (float)boxH);
+    crt_sprintf(TextListN(idx), "\n");
+    DAT_07e91708[idx] = 0;
+    DAT_07ea7b10[idx] = 0;
+    idx++;
 
-    int lineY = drawY + padY;
-    for (int i = 0; i < lineCount; ++i) {
-        if (hdc) {
-            SelectObject(hdc, lines[i].bold ? g_hFontBold : g_hFont);
-        }
-        m_dwBackColor = 0;
-        DAT_00559c78 = lines[i].color;
-        RenderText(drawX + padX, lineY, lines[i].text, 0, 0, 0);
-        lineY += lineH + gapY;
+    // Posicion Y — port literal de 0x004C9DF7..0x004C9E36:
+    //   v31 = (count - 3) * cy + (3 * cy) / 2
+    //   y   = a2 - (int)(v31 / g_fScreenRate_y)
+    //   DrawItemInfoBox(x, y, count, 0, 2, 1)
+    {
+        SIZE sz;
+        sz.cx = 0;
+        sz.cy = 0;
+        GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
+        int v31 = (idx - 3) * sz.cy + (3 * sz.cy) / 2;
+        int yBox = a2 - (int)((float)v31 / _DAT_055c9b74);
+        FUN_004c2420(skillTipX, yBox, idx, 0, 2, 1);
     }
 }
 
