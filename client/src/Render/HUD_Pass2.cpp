@@ -83,7 +83,11 @@ extern "C" void __cdecl CreateGuildMark(int markIndex, bool blend);
 static bool HUD_IsQuestPanelOpenRuntime(void)
 {
     return (g_csQuest != 0) &&
-           (*(BYTE*)((BYTE*)(uintptr_t)g_csQuest + 0x1C8FF) != 0);
+           // 2026-08-21: era 0x1C8FF.  El flag "panel de quest abierto" esta en
+           // g_csQuest + 116863 (0x1C87F) — IDA lo usa asi en 9 sitios, uno de
+           // ellos este mismo GetScreenWidth (0x4CB520 L103).  Con 0x1C8FF se
+           // leia un byte 0x80 mas adelante.
+           (*(BYTE*)((BYTE*)(uintptr_t)g_csQuest + 0x1C87F) != 0);
 }
 
 static bool HUD_IsGoldenArcherPanelRuntime(void)
@@ -192,7 +196,7 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
 //                                                        → 260
 //   * Inventory only                                     → 450
 //   * Character / Party / Guild / GuildCreator           → 450
-//   * Quest panel (g_csQuest+0x1C8FF == 1)               → 450
+//   * Quest panel (g_csQuest+0x1C87F == 1)               → 450
 //   * ServerDivision panel                               → 450
 //   * default                                            → 640
 //

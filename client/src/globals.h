@@ -317,7 +317,15 @@ extern char*   g_lpszMp3[6];
 #define PTR_DAT_005615d0 DAT_005615d0
 #define PTR_DAT_005615d4 DAT_005615d4
 #define PTR_DAT_005615d8 DAT_005615d8
-extern DWORD   DAT_005615dc;   // login/scene misc flag
+// DAT_005615dc @ 0x005615DC ES `g_iCurrentDialogScript` — el índice del diálogo
+// de quest activo.  Lo escriben CSQuest::ShowDialogText (0x4017E7) y sub_51D840,
+// y lo leen sub_401AF0 y UI_InGameMenu.  La etiqueta vieja ("login/scene misc
+// flag") era una misidentificación.
+// 2026-08-21: `g_iCurrentDialogScript` era un global APARTE en globals.cpp, así
+// que el writer y el reader no se veían (mismo patrón que SetTextColor_0 /
+// DAT_00559c7c).  Ahora es un alias.
+extern DWORD   DAT_005615dc;
+#define g_iCurrentDialogScript  (*(int*)&DAT_005615dc)
 extern DWORD   DAT_005615e0;
 extern DWORD   DAT_005615e8;   // fade timer
 // CameraWalk[7][6] contiguous waypoint table (see globals.cpp for layout).
@@ -627,9 +635,6 @@ extern DWORD*  DAT_07c74f54;   // = g_PlayerRenderPool + 0xEC (v1 anchor)
 // ── g_CharData XOR-encoded block (0x07cfxxxx) ─────────────────────────────────
 extern void   *DAT_07cf1ff4;   // g_CharData sub-pointer (XOR-encoded)
 extern void   *DAT_07cf1ffc;   // g_CharData pointer (XOR-encoded, 0x584 bytes)
-extern DWORD   DAT_07cf5734;   // char data field A (item/reward check)
-extern DWORD   DAT_07cf5738;   // char data field B
-extern int     DAT_07cf5760;   // char-slot type table: [server*0x100+slot]*4, value 1/2/3
 
 // ── Player input / targeting state (0x07e01xxx – 0x07e11xxx) ─────────────────
 extern DWORD   DAT_07e016c0;   // target grid X (from ray cast or hover click)
@@ -988,7 +993,14 @@ extern char    DAT_083a42eb;   // auto-drop trigger flag (inventory)
 extern DWORD   DAT_083a42ec;
 // DAT_083a42fc  — macro alias dentro de DAT_083a42f8 (ver bloque de dialog button rects)
 extern DWORD   DAT_083a4320;
-extern DWORD   DAT_083a4324;   // shop item list display count
+// DAT_083a4324 @ 0x083A4324 ES `g_iNumLineMessageBoxCustom` — la cantidad de
+// lineas que SeparateTextIntoLines dejo en el cuadro de dialogo.
+// Confirmado en el disassembly de CSQuest::ShowDialogText 0x401806:
+// `a3 24 43 3a 08` = `mov [0x083A4324], eax` justo despues del
+// SeparateTextIntoLines.  La etiqueta vieja ("shop item list display count")
+// era una misidentificacion.
+extern DWORD   DAT_083a4324;
+#define g_iNumLineMessageBoxCustom  (*(int*)&DAT_083a4324)
 extern DWORD   DAT_083a4328;
 // CurrentCameraPosition[3] contiguous (see globals.cpp).
 extern float   CurrentCameraPosition[3];
@@ -1042,7 +1054,10 @@ extern DWORD   DAT_083a7c00;
 extern DWORD   DAT_083a7c04;   // in-game UI context A
 extern DWORD   DAT_083a7c08;   // in-game UI context B
 extern char    DAT_083a7c09;   // in-game UI flag byte
-extern DWORD   DAT_083a7c0c;   // in-game UI context C
+// DAT_083a7c0c @ 0x083A7C0C ES `g_iNumAnswer`.  Disassembly 0x40182E:
+// `89 35 0c 7c 3a 08` = `mov [0x083A7C0C], esi`.
+extern DWORD   DAT_083a7c0c;
+#define g_iNumAnswer  (*(int*)&DAT_083a7c0c)
 extern DWORD   DAT_083a7c10;
 extern int     DAT_083a7c14;   // login sub-state machine
 extern DWORD   DAT_083a7c18;
@@ -1570,7 +1585,12 @@ extern char    DAT_07d699d8;   // NPC/vendor info line B
 extern char    DAT_07d69b04;   // NPC entry 0 line A
 extern char    DAT_07d69c30;   // NPC entry 0 line B
 // DAT_083a4304  — macro alias dentro de DAT_083a42f8 (ver bloque de dialog button rects)
-extern char    DAT_083a4348[380]; // guild multi-line text entry buffer (stride 0x26 per line, ~10 lines)
+// DAT_083a4348 @ 0x083A4348 ES `g_lpszDialogAnswer` — las 10 respuestas del
+// dialogo, 38 (0x26) bytes cada una.  Disassembly 0x401812:
+// `bf 48 43 3a 08` = `mov edi, 0x083A4348` seguido de `mov ecx, 5Fh; rep stosd`
+// = 0x5F dwords = 380 bytes = 10 * 38, que fija el tamano real.
+extern char    DAT_083a4348[10][1][38];
+#define g_lpszDialogAnswer  DAT_083a4348
 // Guild message decode state
 // DAT_083a7c08 — declared above as DWORD (line 772)
 extern char    DAT_083a7c09;   // guild dialog flag B
@@ -2135,8 +2155,40 @@ extern int     DAT_07cf1ff0;       // item record shadow array base (mirrors DAT
 extern int     DAT_07cf1ff8;       // skill record shadow array base
 extern int     DAT_07d29d20;       // skill/gate data array base
 extern DWORD   DAT_07cf5600;       // gate data array base (stride 9 bytes, 100 entries) — malloc'd in WinMain
-extern DWORD   DAT_07cf5608[];     // dialog data array base (4 bytes/entry, 200KB total)
-extern char    DAT_07cf5788;       // char name table: [server*0x10+slot]*0x40, 0x40 bytes each
+// ── g_DialogScript @ 0x07CF5608 — 200 entradas x 0x400 bytes ────────────────
+// Layout verificado contra el disassembly de CSQuest::ShowDialogText (0x4017E0):
+//   0x4017F1  shl eax, 0Ah            → stride de entrada = 0x400
+//   0x4017F6  add eax, g_DialogScript → m_lpszText en +0x000
+//   0x401834  cmp [ecx+0x07CF5734]    → m_iNumAnswer      en +0x12C
+//   0x40184D  add eax, 0x07CF5788     → m_lpszAnswer      en +0x180, paso 0x40
+// y contra los xrefs de sub_401AF0 / UI_InGameMenu para los otros dos campos:
+//   0x07CF5738 = m_iLinkForAnswer   (+0x130)  — índice del diálogo siguiente
+//   0x07CF5760 = m_iReturnForAnswer (+0x158)  — acción de la respuesta (1/2/3)
+// Cierra exacto: 0x180 + 10*0x40 = 0x400, y 0x130 + 10*4 = 0x158 + 10*4 = 0x180.
+//
+// 2026-08-21: los cuatro campos estaban como globals ESCALARES sueltos y los
+// consumidores hacían `&DAT_07cf5734 + idx * 0x400` sobre punteros tipados
+// (paso 4x) — lecturas fuera de rango garantizadas.  Ahora hay una sola tabla.
+#define DIALOG_SCRIPT_COUNT   200
+struct DIALOG_SCRIPT {
+    /*+0x000*/ char m_lpszText[300];
+    /*+0x12C*/ int  m_iNumAnswer;
+    /*+0x130*/ int  m_iLinkForAnswer[10];
+    /*+0x158*/ int  m_iReturnForAnswer[10];
+    /*+0x180*/ char m_lpszAnswer[10][0x40];
+};
+extern DWORD   DAT_07cf5608[];     // base real de la tabla (DIALOG_SCRIPT_COUNT * 0x400)
+#define g_DialogScript  ((DIALOG_SCRIPT*)DAT_07cf5608)
+static_assert(sizeof(DIALOG_SCRIPT)                        == 0x400, "DIALOG_SCRIPT: stride de entrada");
+static_assert(offsetof(DIALOG_SCRIPT, m_iNumAnswer)        == 0x12C, "DIALOG_SCRIPT: m_iNumAnswer");
+static_assert(offsetof(DIALOG_SCRIPT, m_iLinkForAnswer)    == 0x130, "DIALOG_SCRIPT: m_iLinkForAnswer");
+static_assert(offsetof(DIALOG_SCRIPT, m_iReturnForAnswer)  == 0x158, "DIALOG_SCRIPT: m_iReturnForAnswer");
+static_assert(offsetof(DIALOG_SCRIPT, m_lpszAnswer)        == 0x180, "DIALOG_SCRIPT: m_lpszAnswer");
+// Los cuatro DAT_ viejos son los campos de la ENTRADA 0, no globals aparte.
+#define DAT_07cf5734   (g_DialogScript[0].m_iNumAnswer)
+#define DAT_07cf5738   (g_DialogScript[0].m_iLinkForAnswer[0])
+#define DAT_07cf5760   (g_DialogScript[0].m_iReturnForAnswer[0])
+#define DAT_07cf5788   (g_DialogScript[0].m_lpszAnswer[0][0])
 extern char    DAT_07d566d0;       // fallback char name string (no-char placeholder)
 extern char    s__d___s_005580b0[];// "%d %s" format string for char-select display
 extern int     DAT_07d78078;       // NPC name count
@@ -2511,11 +2563,11 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 // (HUD passes + ChatListBox) se perdían → texto blanco. DAT_00559c78/80 declarados arriba.
 #define m_dwTextColor  DAT_00559c78
 #define m_dwBackColor  DAT_00559c80
-extern int     g_iNumAnswer;       // Quest dialog answer count
-extern int     g_iNumLineMessageBoxCustom; // Quest dialog line count
+// g_iNumAnswer — alias de DAT_083a7c0c (ver arriba).
+// g_iNumLineMessageBoxCustom — alias de DAT_083a4324 (ver arriba).
 extern char   *g_lpszMessageBoxCustom[16]; // Quest dialog text lines
-extern int     g_iCurrentDialogScript;     // Quest dialog current script index
-extern char    g_lpszDialogAnswer[16][1][38]; // Quest dialog answer text lines
+// g_iCurrentDialogScript — alias de DAT_005615dc (ver arriba).
+// g_lpszDialogAnswer — alias de DAT_083a4348 (ver arriba).
 // 2026-07-19: m_hFontDC NO es un global aparte — en IDA sub_50F5F0 hace
 // `m_hFontDC = CreateCompatibleDC(hdc)` y ese mismo DC es DAT_055c9fec (el font
 // memory DC, declarado en stdafx.h). Tenerlos separados dejaba m_hFontDC en NULL

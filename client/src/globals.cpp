@@ -1426,10 +1426,6 @@ DWORD    DAT_083a7c2c  = 0;
 DWORD    DAT_083a4324  = 0;
 // see comment near DAT_083a44ea — sized as 7×0x26 message-box-custom buffer.
 char     DAT_083a44c4[7 * 0x26] = {0};
-DWORD    DAT_07cf5734  = 0;
-DWORD    DAT_07cf5738  = 0;
-int      DAT_07cf5760  = 0;   // char-slot type table base
-char     DAT_07cf5788  = 0;   // char name table (server*0x10+slot)*0x40
 char     DAT_07d566d0  = 0;   // fallback char name string
 char     s__d___s_005580b0[] = "%d %s";
 DWORD    DAT_005615dc  = 0;
@@ -1669,7 +1665,7 @@ char     DAT_07d699d8  = 0;
 char     DAT_07d69b04  = 0;
 char     DAT_07d69c30  = 0;
 // DAT_083a4304 — ahora macro dentro de DAT_083a42f8 (dialog button rects)
-char     DAT_083a4348[380] = {};
+char     DAT_083a4348[10][1][38] = {};   // g_lpszDialogAnswer (10 x 38 = 380)
 // DAT_083a7c08 — defined above (DWORD, line 877)
 // DAT_083a7c09 — defined above (char, line 879)
 // DAT_083a7c0c — defined above (DWORD, line 880)
@@ -2322,7 +2318,7 @@ int     DAT_07d29d20    = 0;       // skill/gate data array base
 DWORD   DAT_07cf5600    = 0;       // gate data array base — malloc'd in WinMain
 // dialog data array — original ocupaba 0x07cf5608..0x07d27608 (0x32000 bytes).
 // Declaramos un buffer real de ese tamaño en DWORDs para que &DAT_07cf5608 apunte a memoria válida.
-DWORD   DAT_07cf5608[0x32000 / 4] = {};   // dialog data array base (200KB)
+DWORD   DAT_07cf5608[(DIALOG_SCRIPT_COUNT * 0x400) / 4] = {};   // g_DialogScript (200 x 0x400 = 200 KB)
 int     DAT_07d78078    = 0;       // NPC name count (EditMonsterNumber)
 // MonsterScript / DAT_07cf2000 / DAT_07cf2001 son la MISMA tabla en 0x07CF2000
 // (verificado en IDA: getMonsterName lee `MonsterScript` = 0x07CF2000, y
@@ -2622,11 +2618,7 @@ DWORD  DAT_0055339c       = 0;
 // ChatListBox render) escribía a un global que el render de texto (FUN_0040f610, lee
 // DAT_00559c78) NUNCA leía → colores perdidos = texto blanco. Ahora son macros
 // (globals.h) que apuntan al global real. Ver [[charselect-deferred-issues]].
-int    g_iNumAnswer       = 0;
-int    g_iNumLineMessageBoxCustom = 0;
 char  *g_lpszMessageBoxCustom[16] = {0};
-int    g_iCurrentDialogScript = 0;
-char   g_lpszDialogAnswer[16][1][38] = {};
 // m_hFontDC ahora es macro sobre DAT_055c9fec (ver globals.h)
 HFONT  g_hFontBold        = NULL;
 

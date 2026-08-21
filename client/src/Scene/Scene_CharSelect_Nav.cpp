@@ -1171,9 +1171,17 @@ void __fastcall FUN_004017e0(int param_1)
 {
     char local_48[72];
 
-    DAT_005615dc = (DWORD)param_1;
+    // 2026-08-21: los accesos a la tabla de dialogos ahora van por la struct
+    // DIALOG_SCRIPT (ver globals.h).  Antes eran cuatro globals escalares
+    // sueltos indexados con aritmetica de puntero tipado -> lecturas fuera de
+    // rango.  El de m_lpszText acertaba de casualidad: `DAT_07cf5608` es
+    // DWORD* y `+ param_1 * 0x100` da los 0x400 bytes correctos.
+    if (param_1 < 0 || param_1 >= DIALOG_SCRIPT_COUNT) return;   // guard de port
+    const DIALOG_SCRIPT *dlg = &g_DialogScript[param_1];
+
+    g_iCurrentDialogScript = param_1;
     DAT_083a4324 = SeparateTextIntoLines(
-        (const char *)(DAT_07cf5608 + param_1 * 0x100),
+        dlg->m_lpszText,
         (char *)&DAT_083a44c4, 7, 0x26);
 
     // Zero the name display buffer (0x5f DWORD-slots = 0x17c bytes)
@@ -1184,14 +1192,15 @@ void __fastcall FUN_004017e0(int param_1)
     int iVar3 = 0;
     DAT_083a7c0c = 0;
 
-    int charCount = *(int *)(&DAT_07cf5734 + DAT_005615dc * 0x400);
+    int charCount = dlg->m_iNumAnswer;
+    if (charCount > 10) charCount = 10;   // la tabla tiene 10 slots de respuesta
     if (charCount > 0) {
         char *pbVar6 = (char *)DAT_083a4348;
         int iVar7 = 0;
         do {
             iVar3 = iVar7 + 1;
             wsprintfA((LPSTR)local_48, s__d___s_005580b0, iVar3,
-                      &DAT_07cf5788 + (int)(DAT_005615dc * 0x10 + (DWORD)iVar7) * 0x40);
+                      dlg->m_lpszAnswer[iVar7]);
             int iVar2 = SeparateTextIntoLines(local_48, pbVar6, 1, 0x26);
             if (iVar2 < 0) {
                 ((char *)DAT_083a4348)[(iVar2 + iVar7) * 0x26] = 0;
@@ -1203,8 +1212,10 @@ void __fastcall FUN_004017e0(int param_1)
     }
 
     if (charCount == 0) {
-        // No characters: use fallback name
-        wsprintfA((LPSTR)local_48, s__d___s_005580b0, iVar3 + 1, &DAT_07d566d0);
+        // Sin respuestas: el binario ofrece la de cerrar, GlobalText[609]
+        // (disasm 0x4018B9: `push offset GlobalText+2C9Ah`, y 0x2C9AC/300 = 609).
+        // 2026-08-21: el port usaba &DAT_07d566d0, que no sale de IDA.
+        wsprintfA((LPSTR)local_48, s__d___s_005580b0, iVar3 + 1, GlobalText[609]);
         // Copy string to DAT_083a4348
         uint uVar4 = (uint)strlen(local_48) + 1;
         DAT_083a7c0c = 1;
@@ -1296,7 +1307,12 @@ void __fastcall FUN_00401af0(void *param_1)
     char local_d29 = '\0';
 
     // Lee el tipo de slot de la tabla
-    int slotType = *(int *)(&DAT_07cf5760 + (DAT_005615dc * 0x100 + slot) * 4);
+    // m_iReturnForAnswer[slot] del dialogo activo (IDA sub_401AF0 0x401BE4:
+    // `mov eax, [eax*4 + 0x07CF5760]` con eax = curScript*0x100 + slot).
+    int curScript = g_iCurrentDialogScript;
+    int slotType  = 0;
+    if (curScript >= 0 && curScript < DIALOG_SCRIPT_COUNT && slot >= 0 && slot < 10)
+        slotType = g_DialogScript[curScript].m_iReturnForAnswer[slot];
 
     auto sendPkt = [&](BYTE *pktBuf, int rawLen) {
         int encLen = FUN_0053cc30(0, pktBuf, rawLen);
@@ -1383,8 +1399,15 @@ void __fastcall FUN_00401af0(void *param_1)
 
 done:
     FUN_00404bc0(0x1c, 0, 0);
-    if ((0 < *(int *)(&DAT_07cf5738 + (DAT_005615dc * 0x100 + slot) * 4)) && local_d29 == '\0') {
-        FUN_004017e0(*(int *)(&DAT_07cf5738 + (DAT_005615dc * 0x100 + slot) * 4));
+    // m_iLinkForAnswer[slot] = indice del dialogo siguiente (IDA sub_401AF0
+    // L387: `v64 = g_DialogScript[g_iCurrentDialogScript].m_iLinkForAnswer[v100];`
+    // y solo encadena `if (v64 > 0 && !v98)`).
+    {
+        int cur = g_iCurrentDialogScript;
+        if (cur >= 0 && cur < DIALOG_SCRIPT_COUNT && slot >= 0 && slot < 10) {
+            int link = g_DialogScript[cur].m_iLinkForAnswer[slot];
+            if (link > 0 && local_d29 == '\0') FUN_004017e0(link);
+        }
     }
 }
 

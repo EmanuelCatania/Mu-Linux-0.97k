@@ -374,28 +374,18 @@ void __fastcall CSQuest__CheckQuestState(void *This, int state) {
     (void)lpQuest;
 }
 
-// CSQuest__ShowDialogText @ 0x004017E0 (76 lines) — Quest dialog setup
-// Prepares dialog text + answer options for quest NPC interaction.
+// CSQuest__ShowDialogText @ 0x004017E0
+// 2026-08-21: acá había una SEGUNDA implementación inventada (armaba el cuadro
+// con una sola respuesta fija y no tocaba la tabla de diálogos), mientras el
+// port fiel de la misma dirección vivía en Scene_CharSelect_Nav.cpp como
+// FUN_004017e0.  Dos implementaciones del mismo address escribiendo globals
+// distintos — el patrón de siempre.  Ahora delega.
+// El 2do parámetro no existe en IDA (`CSQuest::ShowDialogText(This, iDialogIndex)`
+// es thiscall; el índice es el único dato que se usa).
+void __fastcall FUN_004017e0(int param_1);
 void __cdecl CSQuest__ShowDialogText(int param_1, int param_2) {
     (void)param_2;
-    // Minimal but structured port:
-    // keep current dialog script index, reset answer buffer and provide the
-    // vanilla default "close" answer so the popup runtime can render and
-    // close cleanly even while the full DialogScript table is still missing.
-    g_iCurrentDialogScript = param_1;
-    DAT_083a7c08 = (DWORD)param_1;
-    DAT_083a7c04 = (DWORD)param_1;
-    DAT_083a7c09 = 0;
-    memset(DAT_083a44c4, 0, sizeof(DAT_083a44c4));
-    if (param_1 >= 0 && GlobalText[param_1] && GlobalText[param_1][0]) {
-        g_iNumLineMessageBoxCustom = SeparateTextIntoLines(GlobalText[param_1], &DAT_083a44c4[0], 7, 38);
-    } else {
-        g_iNumLineMessageBoxCustom = 0;
-    }
-    memset(g_lpszDialogAnswer, 0, sizeof(g_lpszDialogAnswer));
-    g_iNumAnswer = 1;
-    wsprintfA(g_lpszDialogAnswer[0][0], "%d) %s", 1, GlobalText[609]);
-    SetErrorMessage(0);
+    FUN_004017e0(param_1);
 }
 
 // CloseInventoryRelatedWindows @ 0x004CBA60 (218 lines) — Close all trade/shop/inventory windows
