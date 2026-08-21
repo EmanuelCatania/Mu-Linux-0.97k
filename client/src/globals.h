@@ -435,7 +435,14 @@ extern DWORD   DAT_055c9d00;
 extern DWORD   DAT_055c9e04;
 extern DWORD   DAT_055c9e44;
 extern DWORD   DAT_055c9e48;
-extern DWORD   DAT_055c9e58;   // random table base ptr
+// RandomTable @ 0x055C9E58 — 100 enteros (`rand() % 360`) que siembra WinMain
+// (0x41E8A0 L522-525).  Sólo lo usa Entity_Render (0x5038E0) para repartir en
+// círculo las monedas del montón de Zen del suelo.
+// 2026-08-21: estaba declarado como un único DWORD = 0 y nadie lo sembraba, así
+// que los ángulos y radios salían todos 0 y las monedas se apilaban en un mismo
+// punto (el "Zen sin sprite expandido").
+extern int     DAT_055c9e58[100];
+#define RandomTable  DAT_055c9e58
 extern DWORD   DAT_055c9ff0;   // HGLRC (OpenGL context)
 extern DWORD   DAT_055c9ff4;
 extern DWORD   DAT_055c9ff8;
@@ -2323,9 +2330,14 @@ extern unsigned char* TerrainWall;
 
 #endif
 
-// ── SkillAttribute table — 1000 entries × 300 bytes @ 0x07D29D20 ─────────────
-// Each entry: bytes [0-3]=padding, [4+]=skill name (char). Stride 300.
-struct _SkillAttrEntry { char Name[300]; };
+// ── SkillAttribute @ 0x07D29D20 — 64 entradas × 40 bytes ─────────────────────
+// WinMain reserva 0xA00 (= 2560) bytes y OpenSkillScript / el anti-tamper copian
+// de a 0x28 (40) bytes por entrada, así que la stride es 40 — no 300.  Los
+// consumidores indexan por BYTE: `&SkillAttribute[8 * (5*Level + 150)]`
+// (= entrada 30+Level), con el nombre en el offset 0 de la entrada.
+// 2026-08-21: antes era un único bloque de 300 bytes, así que cualquier índice
+// leía fuera del objeto.
+struct _SkillAttrEntry { char Raw[2560]; };
 extern _SkillAttrEntry SkillAttribute;  // base of table @ 0x07D29D20
 
 // ── CharactersClient extra BMD heap buffer ────────────────────────────────────

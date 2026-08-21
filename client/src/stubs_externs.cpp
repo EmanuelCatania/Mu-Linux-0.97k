@@ -3633,9 +3633,13 @@ void __cdecl FUN_004f7270(const char *path) {
 // del binario original (0x07E12840 .. 0x07E907E0). En nuestro proceso esa
 // dirección no existe → AV. Indexamos el array real ahora que está en
 // globals.cpp con tamaño correcto.
+// 2026-08-21: limpiaba el offset 0 de cada slot.  IDA arranca en
+// `&Items[0][72]` — el flag activo vive en ip+72, que es el que leen
+// Net_Process (0x20), FUN_005038e0 y MoveItems.  O sea ClearItems no borraba
+// nada y los items del mapa anterior seguían "vivos" al cambiar de zona.
 void __cdecl FUN_00502b80(void) {
     for (int i = 0; i < 1000; ++i) {
-        DAT_07e12840[i * 0x204] = 0;
+        DAT_07e12840[i * 0x204 + 72] = 0;
     }
 }
 

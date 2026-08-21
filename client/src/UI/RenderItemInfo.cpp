@@ -266,7 +266,11 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
     }
 
     if (type == ITEM_WING_BASE + 11) {
-        const char* skillName = (const char*)((char*)&SkillAttribute + (30 + (int)level) * 300 + 4);
+        // IDA (RenderItemInfo case 395): `v315 = 8 * (5 * Level + 150);`
+        // → entrada 30+Level de SkillAttribute, que tiene stride 40, con el
+        // nombre en el offset 0.  2026-08-21: el port usaba stride 300 + 4 y
+        // leía hasta 10 KB fuera de la tabla (que son 2560 bytes en total).
+        const char* skillName = (const char*)((char*)&SkillAttribute + 8 * (5 * (int)level + 150));
         if ((uintptr_t)skillName > 0x100000 && (uintptr_t)skillName < 0x80000000 && skillName[0]) {
             snprintf(dst, dstSize, "%s %s", skillName, GlobalText[102]);
         } else {

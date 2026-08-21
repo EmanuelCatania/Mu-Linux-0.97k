@@ -547,7 +547,7 @@ DWORD    DAT_055c9d00  = 0;
 DWORD    DAT_055c9e04  = 0;
 DWORD    DAT_055c9e44  = 0;
 DWORD    DAT_055c9e48  = 0;
-DWORD    DAT_055c9e58  = 0;
+int      DAT_055c9e58[100] = {};   // RandomTable — lo siembra WinMain
 DWORD    DAT_055c9ff0  = 0;  // HGLRC
 DWORD    DAT_055c9ff4  = 0;
 DWORD    DAT_055c9ff8  = 0;
@@ -2264,8 +2264,10 @@ char    DAT_0056337c     = 0;
 
 // ── Misc.cpp / Entity gravity globals ────────────────────────────────────────
 float   _DAT_00552570   = -0.2f;   // gravity min clamp
-float   _DAT_005527d0   = 0.01f;   // gravity decay factor
-float   _DAT_00552a28   = -1.0f;   // velocity reflect factor
+// 2026-08-21: los dos valían un valor inventado.  Leídos del binario:
+// 0x5527D0 = 40 C0 00 00 → 6.0f  y  0x552A28 = C1 20 00 00 → -10.0f.
+float   _DAT_005527d0   = 6.0f;    // MoveItems: decaimiento de la velocidad Z por frame
+float   _DAT_00552a28   = -10.0f;  // MoveItems: giro del item mientras cae
 
 
 // ── Terrain map globals (FUN_004f6f90, FUN_004ffe70, FUN_004f7270) ────────────

@@ -151,22 +151,11 @@ void __cdecl FUN_00500aa0(void)
 //   5. Special bombs (type 863): scatter pattern con N copies.
 //   6. RenderPartObject (FUN_00505a10) en posición.
 //   7. Projection a screen → save sx/sy en entity[+0xB8/+0xBA].
-// Forward decls — externals already in functions.h, just use as-is.
-// RandomTable - 100 random values used for type 863 scatter pattern.
-// Not declared globally; use a local fallback. The original engine seeds this
-// from rand() at boot; for our port we use deterministic pseudorandom indices.
-static int RandomTable_local[100] = {
-    27, 91, 53, 18, 64, 45, 82, 31, 76, 9,
-    14, 38, 62, 25, 89, 47, 11, 73, 5,  56,
-    29, 87, 42, 68, 17, 95, 36, 8,  79, 50,
-    23, 71, 4,  66, 32, 93, 19, 58, 10, 84,
-    37, 6,  72, 28, 65, 13, 80, 44, 99, 21,
-    55, 41, 88, 16, 67, 35, 12, 92, 24, 70,
-    3,  85, 46, 26, 94, 33, 7,  77, 51, 86,
-    20, 60, 39, 81, 49, 22, 75, 30, 96, 15,
-    63, 40, 78, 2,  69, 43, 90, 34, 57, 98,
-    1,  61, 48, 83, 52, 74, 0,  97, 59, 54
-};
+// RandomTable (0x055C9E58) la siembra WinMain con `rand() % 360`; la usa el
+// montón de monedas del tipo 863 (Zen) para repartirlas en círculo.
+// 2026-08-21: acá había una tabla local inventada con valores 0..99, así que
+// `% 360` daba ángulos de sólo 0..99° → las monedas salían en una cuña en vez
+// de en círculo, y siempre en el mismo patrón.
 
 void __cdecl FUN_005038e0(void)
 {
@@ -209,8 +198,12 @@ void __cdecl FUN_005038e0(void)
                 // BMD_Animation
                 float angles_in[3]  = { *(float*)(v0 - 233), *(float*)(v0 - 229), *(float*)(v0 - 225) };
                 float headA[3]      = { *(float*)(v0 - 221), *(float*)(v0 - 217), *(float*)(v0 - 213) };
+                // AnimationFrame / PriorFrame: IDA los toma en v0+3 y v0+7 —
+                // offsets de BYTE (disasm 0x5039E9/0x5039ED: `mov ecx,[esi+7]`,
+                // `mov edx,[esi+3]`).  2026-08-21: el port usaba v0+12 y v0+28,
+                // que es la misma confusión float*/BYTE* que el Alpha de arriba.
                 FUN_00440060(model, (int)&DAT_06970a9c,
-                             *(float*)(v0 + 12), *(unsigned int*)(v0 + 28),
+                             *(float*)(v0 + 3), *(unsigned int*)(v0 + 7),
                              v0[1], (unsigned int*)angles_in, headA, 0, 0);
 
                 // Compute lighting from terrain + entity color offset.
@@ -231,9 +224,9 @@ void __cdecl FUN_005038e0(void)
                     int v9 = 1, v10 = v14;
                     while (v9 < pts) {
                         float angles_r[3] = {0.0f, 0.0f,
-                            (float)(RandomTable_local[v10 % 100] % 360)};
+                            (float)(RandomTable[v10 % 100] % 360)};
                         float in1[3] = {
-                            (float)(RandomTable_local[(v9 + v16) % 100] % (pts + 20)),
+                            (float)(RandomTable[(v9 + v16) % 100] % (pts + 20)),
                             0.0f, 0.0f
                         };
                         float in2[3][4];
@@ -243,7 +236,11 @@ void __cdecl FUN_005038e0(void)
                         *(float*)(v0 - 245) = out[0] + sx_orig;
                         *(float*)(v0 - 241) = out[1] + sy_orig;
                         *(float*)(v0 - 237) = out[2] + sz_orig;
-                        FUN_00505a10((int)v1, type, 0, Light, *(float*)(v0 + 396),
+                        // Alpha: IDA `*(float *)(v0 + 99)` — offset de BYTE
+                        // (disasm 0x503B4C: `mov eax, [esi+63h]`), o sea Items+432,
+                        // el mismo campo que usa el draw principal (v1 + 360).
+                        // 2026-08-21: el port tenía v0 + 396 (Items+729).
+                        FUN_00505a10((int)v1, type, 0, Light, *(float*)(v0 + 99),
                                      *(DWORD*)(v0 - 325), *(v0 - 302),
                                      1, 1, 1, 0, 2);
                         ++v9; ++v10;
@@ -257,8 +254,11 @@ void __cdecl FUN_005038e0(void)
                 float v21 = *(float*)(v1 + 20);
                 float v22 = *(float*)(v1 + 24);
 
-                if (DAT_0055a7ac == 10) {  // World 11 sea-bob
-                    *(float*)(v1 + 24) = (float)(sin((double)(v15) * 0.0020000001) * 10.0 + v22);
+                if (DAT_0055a7ac == 10) {  // World 10 (Icarus) — bamboleo
+                    // IDA: sin((v15 + WorldTime) * flt_5528E0) * flt_552488 + z
+                    *(float*)(v1 + 24) = (float)(sin(((double)v15 + (double)DAT_05826e08)
+                                                     * (double)_DAT_005528e0)
+                                                 * (double)_DAT_00552488 + v22);
                 }
 
                 // 2026-07-27 FIX (item del suelo renderizaba mal, "árbol"):

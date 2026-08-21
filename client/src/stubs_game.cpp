@@ -470,184 +470,208 @@ int __cdecl ConvertGold64_stub(int Zen, char* Buffer) {
     return sprintf(Buffer, "%d", Zen);
 }
 
-// RenderItemName @ 0x004C9E70 (~681 lines) — SUMMARY STUB
-// Renders item tooltip text with color coding.
-// Special items by type: 0x35f (gold name), 0x35d/0x35e/0x360/0x366 (bold colored),
-// 0x361-0x363 (with +level suffix), 0x3b7-0x3be (chaos items).
-// For normal items: formats "Name +Level" with color based on excellent/set/ancient status.
+// ─────────────────────────────────────────────────────────────────────────────
+// RenderItemName @ 0x004C9E70 — nombre flotante de un item del suelo
+// ─────────────────────────────────────────────────────────────────────────────
+// Port 1:1 del decompile (mu97k-src-IDA/raw/004C9E70_RenderItemName.c).  Lo
+// llama sub_4CB6F0 (Target_Render): para el item bajo el cursor con Sort=0 y
+// para todos los del suelo con Sort=1 mientras Alt esté activo.
+//
+//   o          = &Items[i][72]  → o+2 = índice de modelo (tipo + 400)
+//   ItemLevel  = Items+8        → para el Zen (modelo 863) es la CANTIDAD
+//   ItemOption = Items+31
+//
+// 2026-08-21: antes era un resumen escrito a ojo.  Divergencias que tenía y que
+// este port corrige:
+//   · Zen (863): hacía `sprintf(buf, DAT_0055a608, name)` con DAT_0055a608 = ""
+//     → cadena vacía, o sea el Zen del suelo no mostraba NADA.  IDA es
+//     `sprintf(String, "%s %d", name, ItemLevel)` = "Zen <cantidad>".
+//   · Los colores de nivel 3-4 y de la rama (v5 & 0x87) estaban invertidos en
+//     RGB (IDA llena v38[2],v38[1],v38[0] y llama glColor3f(v38[0],v38[1],v38[2])).
+//   · Faltaban por completo las ramas 860 (Event), 831 (alas), 951-958
+//     (flechas/bolts), 795 (pergamino de skill), 826 (piedra de invocación) y
+//     los sufijos Excellent/Luck/Skill (GlobalText[176..179]).
+//
+// Ruido anti-tamper omitido por policy: las ramas 795 y 826 del binario están
+// envueltas en lookups de hash-table (ref-count + XOR sobre la entrada de
+// SkillAttribute).  Con nuestra tabla en claro el resultado es el mismo.
+//
+// Desviación: donde IDA hace `sprintf(String, GlobalText[N])` (una cadena de
+// datos usada como formato) nosotros usamos `sprintf(String, "%s", GlobalText[N])`.
 void __cdecl RenderItemName_stub(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort) {
-    // 0x004C9E70 — Renders item tooltip with color coding (681 lines decompiled).
-    // ~40% of original is anti-tamper hash table lookups (MAIN_HASH_CLASS); skipped here.
-    // Real logic: determine item type from *(short*)(o+2), pick color + format name,
-    // measure text width, render centered above item or at mouse position.
+    (void)i;
 
-    int iVar6 = ItemLevel;
-    unsigned int uVar9 = (ItemLevel >> 3) & 0xf;  // item level (bits 3..6)
-    char nameBuf[52];
-    nameBuf[0] = '\0';
+    const int v5 = ItemLevel;
+    const int v6 = (ItemLevel >> 3) & 0xF;
+    char  String[52];
+    float v38[3];
+    String[0] = '\0';
 
-    SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);  // g_hFont
-    DWORD DVar2 = o;
-    short sVar1 = *(short*)(o + 2);  // valor en o+2 = model del item (type+400)
+    SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);   // g_hFont
+    const short v7 = *(short*)(o + 2);
 
-    // 2026-07-27 FIX: el nombre del item viene de ItemAttribute[sVar1-400].Name
-    // (IDA RenderItemName usa `&ItemAttribute[*(short*)(o+2) - 400]`, y
-    // ITEM_ATTRIBUTE.Name está en offset 0, stride 64). El port leía
-    // `(const char*)(o+4)` (= campo option del item, NO un string) → nombre
-    // basura/vacío. Computamos el puntero real y reemplazamos abajo.
-    const char* itemName = "";
+    // &ItemAttribute[v7 - 400] — ITEM_ATTRIBUTE stride 0x40, Name en offset 0.
+    // Guard defensivo (no está en IDA): DAT_07d78068 se corrompe a valores
+    // chicos en algunos caminos, igual que en los guards del tooltip.
+    const char* name = "";
     {
-        int attrIdx = (int)sVar1 - 400;
+        int attrIdx = (int)v7 - 400;
         unsigned int abase = (unsigned int)(uintptr_t)DAT_07d78068;
-        if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < 512)
-            itemName = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
+        if (abase >= 0x100000u && abase < 0x80000000u && attrIdx >= 0 && attrIdx < 1024)
+            name = (const char*)(uintptr_t)(abase + (unsigned int)attrIdx * 64u);
     }
 
-    // ── Special item types with fixed names ──
-    if (sVar1 == 0x35f) {
-        // Gold/Zen display
+    switch (v7) {
+    case 863:                                   // Zen / dinero
         glColor3f(1.0f, 0.8f, 0.1f);
-        sprintf(nameBuf, DAT_0055a608, itemName);
+        sprintf(String, "%s %d", name, v5);
         goto renderLabel;
-    }
 
-    if (sVar1 == 0x35d || sVar1 == 0x35e || sVar1 == 0x360 ||
-        sVar1 == 799 || sVar1 == 0x366 || sVar1 == 0x33e) {
-        // Special bold items (quest items, etc.)
+    case 861: case 862: case 864:               // joyas
+    case 799: case 870: case 830:
         SelectObject(m_hFontDC, (HGDIOBJ)g_hFontBold);
         glColor3f(1.0f, 0.8f, 0.1f);
-        sprintf(nameBuf, "%s", itemName);  // item name from struct
+        sprintf(String, "%s", name);
         goto renderLabel;
-    }
 
-    if (sVar1 == 0x361 || sVar1 == 0x362 || sVar1 == 0x363) {
-        // Level-suffixed bold items
+    case 865: case 866: case 867:               // Devil (Chaos) items
         SelectObject(m_hFontDC, (HGDIOBJ)g_hFontBold);
         glColor3f(1.0f, 0.8f, 0.1f);
-        if ((iVar6 & 0x78) != 0) {
-            sprintf(nameBuf, "%s +%d", itemName, uVar9);
-        } else {
-            sprintf(nameBuf, "%s", itemName);
+        if ((v5 & 0x78) != 0) sprintf(String, "%s +%d", name, v6);
+        else                  sprintf(String, "%s", name);
+        goto renderLabel;
+    }
+
+    if (v7 == 859 && v6 == 7) {
+        glColor3f(1.0f, 0.8f, 0.1f);
+        sprintf(String, "%s", GlobalText[111]);
+        goto renderLabel;
+    }
+
+    switch (v7) {
+    case 860:                                   // Event item
+        if (v6 == 0)      sprintf(String, "%s", GlobalText[100]);
+        else if (v6 == 1) sprintf(String, "%s", GlobalText[101]);
+        else if (v6 == 2) sprintf(String, "%s", GlobalText[104]);
+        goto renderLabel;
+
+    case 831:                                   // alas: prefijo por sub-tipo
+        glColor3f(1.0f, 0.8f, 0.1f);
+        switch (v6) {
+        case 0: sprintf(String, "%s %s", GlobalText[168], name); break;
+        case 1: sprintf(String, "%s %s", GlobalText[169], name); break;
+        case 2: sprintf(String, "%s %s", GlobalText[167], name); break;
+        case 3: sprintf(String, "%s %s", GlobalText[166], name); break;
+        default: break;
         }
         goto renderLabel;
-    }
 
-    // Jewel of Bless level 7 special
-    if (sVar1 == 0x35b && uVar9 == 7) {
+    case 951: sprintf(String, "%s", GlobalText[105]); goto renderLabel;
+    case 952: sprintf(String, "%s", GlobalText[106]); goto renderLabel;
+    case 953: sprintf(String, "%s", GlobalText[107]); goto renderLabel;
+    case 954: sprintf(String, "%s", GlobalText[108]); goto renderLabel;
+    case 955: sprintf(String, "%s", GlobalText[109]); goto renderLabel;
+    case 956: sprintf(String, "%s", GlobalText[110]); goto renderLabel;
+    case 957: sprintf(String, "%s +%d", GlobalText[115], v6 - 7); goto renderLabel;
+    case 958:
         glColor3f(1.0f, 0.8f, 0.1f);
-        sprintf(nameBuf, "%s", itemName);
+        sprintf(String, "%s", GlobalText[810]);
+        goto renderLabel;
+
+    case 795: {                                 // pergamino de skill
+        // IDA: v45 = 8 * (5 * v6 + 150); sprintf("%s %s", &SkillAttribute[v45],
+        // GlobalText[102]).  Las entradas de SkillAttribute son de 40 bytes
+        // (WinMain reserva 0xA00 = 64 entradas y el anti-tamper copia de a
+        // 0x28), así que el índice es 40 * (v6 + 30) y el nombre va en offset 0.
+        int v45 = 8 * (5 * v6 + 150);
+        const char* skillName = (const char*)((const char*)&SkillAttribute + v45);
+        sprintf(String, "%s %s", skillName, GlobalText[102]);
         goto renderLabel;
     }
+    }
 
-    // Chaos item types 0x3b7..0x3be
-    if (sVar1 >= 0x3b7 && sVar1 <= 0x3be) {
-        if (sVar1 == 0x3bd) {
-            sprintf(nameBuf, "%s +%d", itemName, uVar9);
+    if (v7 != 826) {
+        if (v7 == 570 || v7 == 419 || v7 == 546) {
+            v38[2] = 1.0f;
+            v38[1] = 0.1f;
         } else {
-            sprintf(nameBuf, "%s", itemName);
+            if ((ItemOption & 0x3F) != 0 && (v7 < 787 || v7 > 790)) {
+                v38[2] = 0.5f; v38[1] = 1.0f; v38[0] = 0.1f;
+                goto LABEL_118;
+            }
+            if (v6 < 7) {
+                if ((v5 & 0x87) != 0) goto LABEL_115;
+                if (v6 == 0) {
+                    glColor3f(0.7f, 0.7f, 0.7f);
+                    goto LABEL_119;
+                }
+                if (v6 < 3) {
+                    v38[0] = 0.9f; v38[1] = 0.9f; v38[2] = 0.9f;
+                    goto LABEL_118;
+                }
+                if (v6 >= 5) {
+LABEL_115:
+                    v38[2] = 1.0f; v38[1] = 0.7f; v38[0] = 0.4f;
+                    goto LABEL_118;
+                }
+                v38[2] = 0.2f; v38[1] = 0.5f;
+            } else {
+                v38[2] = 0.1f; v38[1] = 0.8f;
+            }
         }
+        v38[0] = 1.0f;
+LABEL_118:
+        glColor3f(v38[0], v38[1], v38[2]);
+        if (v6 != 0) {
+            sprintf(String, "%s +%d", name, v6);
+            goto LABEL_121;
+        }
+LABEL_119:
+        sprintf(String, "%s", name);
+LABEL_121:
+        if ((v5 & 0x80) != 0) {
+            // IDA escribe " +" (word_55A6B0) sobre el NUL y luego concatena
+            // GlobalText[179] para el tipo 819; el resto usa GlobalText[176].
+            if (v7 == 819) {
+                strcat(String, " +");
+                strcat(String, GlobalText[179]);
+            } else {
+                strcat(String, GlobalText[176]);
+            }
+        }
+        if ((v5 & 3) != 0 || (ItemOption & 0x40) != 0) strcat(String, GlobalText[177]);
+        if ((v5 & 4) != 0)                             strcat(String, GlobalText[178]);
         goto renderLabel;
     }
 
-    // Summon item (0x31b) — skill attribute name lookup
-    if (sVar1 == 0x31b) {
-        // anti-tamper hash table — skipped (MAIN_HASH_CLASS lookups for skill name)
-        // In original: looks up SkillAttribute.Name via hash table
-        // Simplified: just use the item name from the struct
-        sprintf(nameBuf, "%s", itemName);
-        goto renderLabel;
-    }
-
-    // Monster summon stone (0x33a) — lookup monster name from MonsterScript
-    if (sVar1 == 0x33a) {
-        // In original: iterates MonsterScript table (stride 0x36) to find matching SommonTable entry
-        // Simplified: use item name
-        sprintf(nameBuf, "%s", itemName);
-        goto renderLabel;
-    }
-
-    // Ancient items (0x23a, 0x1a3, 0x222) — special color
-    if (sVar1 == 0x23a || sVar1 == 0x1a3 || sVar1 == 0x222) {
-        glColor3f(1.0f, 0.1f, 1.0f);  // magenta for ancient
-        if (uVar9 == 0)
-            sprintf(nameBuf, "%s", itemName);
-        else
-            sprintf(nameBuf, "%s +%d", itemName, uVar9);
-        goto appendSuffixes;
-    }
-
-    // ── Normal items: color by quality ──
-    if ((ItemOption & 0x3f) != 0 && (sVar1 < 0x313 || sVar1 > 0x316)) {
-        // Has option → green tint
-        glColor3f(0.1f, 1.0f, 0.5f);
-    }
-    else if (uVar9 > 6) {
-        // High level (7+) → gold
-        glColor3f(1.0f, 0.8f, 0.1f);
-    }
-    else if ((iVar6 & 0x87) != 0) {
-        // Excellent or special bits → orange
-        glColor3f(1.0f, 0.7f, 0.4f);
-    }
-    else if (uVar9 == 0) {
-        // Level 0 → gray
-        glColor3f(0.7f, 0.7f, 0.7f);
-    }
-    else if (uVar9 < 3) {
-        // Level 1-2 → light gray
-        glColor3f(0.9f, 0.9f, 0.9f);
-    }
-    else if (uVar9 < 5) {
-        // Level 3-4 → cyan
-        glColor3f(0.2f, 0.5f, 1.0f);
-    }
-    else {
-        // Level 5-6 → orange
-        glColor3f(1.0f, 0.7f, 0.4f);
-    }
-
-    if (uVar9 != 0) {
-        sprintf(nameBuf, "%s +%d", itemName, uVar9);
-    } else {
-        sprintf(nameBuf, "%s", itemName);
-    }
-
-appendSuffixes:
-    // Excellent bit (bit 7 of ItemLevel)
-    if ((iVar6 & 0x80) != 0) {
-        // Append excellent prefix/suffix string
-        // In original: appends from DAT_07d36b64 or DAT_07d36ee8 depending on type 0x333
-        // Simplified: we note this is cosmetic suffix logic
-        // (original does strcat-style append of excellent name)
-    }
-
-    // Luck / Skill bits (bits 0-1 of ItemLevel, or bit 6 of ItemOption)
-    if ((iVar6 & 3) != 0 || (ItemOption & 0x40) != 0) {
-        // Append "+Luck" or "+Skill" string from DAT_07d36c90
-    }
-
-    // Additional option bit 2
-    if ((iVar6 & 4) != 0) {
-        // Append "+Additional" string from DAT_07d36dbc
+    {   // v7 == 826: piedra de invocación — nombre del monstruo + GlobalText[103]
+        static const int SommonTable[6] = { 2, 7, 14, 8, 9, 41 };
+        if (v6 < 6) {
+            const MONSTER_SCRIPT* ms = (const MONSTER_SCRIPT*)&MonsterScript;
+            int target = SommonTable[v6];
+            for (int m = 0; m < MAX_MONSTER; ++m) {
+                if (ms[m].Type == target) {
+                    sprintf(String, "%s %s", ms[m].Name, GlobalText[103]);
+                    break;
+                }
+            }
+        }
     }
 
 renderLabel:
     {
-        // Measure text width
-        int textLen = lstrlenA(nameBuf);
+        int  textLen = lstrlenA(String);
         SIZE sz;
-        GetTextExtentPointA(m_hFontDC, nameBuf, textLen, &sz);
-
+        GetTextExtentPointA(m_hFontDC, String, textLen, &sz);
         if (Sort) {
-            // Render centered above item's screen position
-            int x = (int)*(short*)(o + 0x5c) - (int)((sz.cx / 2) * 0x280) / (int)WindowWidth;
-            int y = (int)*(short*)(o + 0x5e) - 0xf;
-            RenderText(x, y, nameBuf, 0, 0, (SIZE*)0x3);
+            // Centrado sobre la posición de pantalla del item (o+0x5c / o+0x5e)
+            int x = (int)*(short*)(o + 0x5c) - 640 * (sz.cx / 2) / (int)WindowWidth;
+            int y = (int)*(short*)(o + 0x5e) - 15;
+            RenderText(x, y, String, 0, 0, (SIZE*)3);
         } else {
-            // Render at mouse cursor
-            int x = (int)MouseX - (int)((sz.cx / 2) * 0x280) / (int)WindowWidth;
-            int y = (int)MouseY - 0xf;
-            RenderText(x, y, nameBuf, 0, 0, (SIZE*)0x3);
+            int x = (int)MouseX - 640 * (sz.cx / 2) / (int)WindowWidth;
+            int y = (int)MouseY - 15;
+            RenderText(x, y, String, 0, 0, (SIZE*)3);
         }
     }
 }

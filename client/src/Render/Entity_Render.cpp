@@ -87,11 +87,11 @@
 //     local_70 += puVar9[-0x19]   (entity X angle offset)
 //     local_6c += puVar9[-0x15]   (entity Y angle offset)
 //
-//     // Special case: entity class 0x35f (trail/chain entity)
+//     // Caso especial: modelo 0x35f (863 = Gold01, el Zen del suelo)
 //     if sVar6 == 0x35f:
-//       n = ftol(distance_to_cam / 2)  clamped to [3, 80]
+//       n = ftol(sqrt(cantidad de Zen) / 2)  acotado a [3, 80]
 //       for i in 1..n:
-//         // compute orbital offset using pseudo-random table DAT_055c9e58
+//         // desplazamiento en círculo tomado de RandomTable (DAT_055c9e58)
 //         local_60 = {random_angle, 0, 0}
 //         local_3c = {random_radius, 0, 0}
 //         FUN_004f9db0(local_60, local_3c+3) → Matrix_FromEuler
@@ -129,7 +129,7 @@
 //     0x186  = Dark Wizard (or player class remap)
 //     0x3b3  = special NPC sub-type 0
 //     0x3b4  = special NPC sub-type 2
-//     0x35f  = trail/chain entity (renders multiple copies)
+//     0x35f  = Zen del suelo (dibuja N copias del modelo de moneda)
 //
 //   Model entry fields:
 //     +0x6c  float: world X
@@ -148,7 +148,7 @@
 //   FUN_005113f0  → World_ToScreen(pos[3], out_x, out_y)
 //   FUN_004f9db0  → Matrix_FromEuler(angles[3], out_mat[12])
 //   FUN_004fa0b0  → Matrix_TransformPoint(pt, mat, out)
-//   DAT_055c9e58  → random lookup table (100 ints, used for trail orbital positions)
+//   DAT_055c9e58  → RandomTable (100 ints; reparte en círculo las monedas del Zen)
 //   DAT_05826e08  → frame oscillation counter (for Z bob in sub-state 10)
 //   DAT_0055284c  → Z bob amplitude constant
 //   DAT_00552488  → Z oscillation scale factor
@@ -159,8 +159,15 @@
 
 extern "C" void DbgLogPublic(const char* msg);
 
+// ⚠ CÓDIGO MUERTO — NO USAR.  La copia VIVA de Entity_Render (0x5038E0) es
+// `FUN_005038e0` en stubs_render_helpers.cpp: es la que llama Render_Frame.cpp
+// (`FUN_005038e0()`), y nadie llama a `Entity_Render()`.  Esta copia además
+// camina el pool con el ancla equivocada (base + 0x105 en vez de base + 0x14D,
+// o sea lee el flag `active` en Items+0 y no en Items+72).  Se deja porque
+// documenta la función, pero cualquier arreglo va en la copia viva.
+//
 // Entity_Render (sprite loop) @ 0x005038E0 (147 lines)
-// Iterates all sprite entities, does LOD/visibility, handles comet trail (type 0x35f),
+// Iterates all ground items, does LOD/visibility, handles the Zen coin pile (type 0x35f),
 // applies Z-bob in sub-state 10, then calls Entity_DrawAt and projects to screen.
 //
 // 2026-05-03: AUTO-SKIP removed. The "DAT_07e12945" walker base is +0x105 bytes
@@ -251,17 +258,23 @@ void Entity_Render(void)
                 local_74[1] += *(float *)(puVar9 + -0x19);
                 local_74[2] += *(float *)(puVar9 + -0x15);
 
-                // ── Comet trail (type 0x35f) ─────────────────────────────────
+                // ── Montón de monedas del Zen del suelo (modelo 863 = 0x35f) ──
+                // IDA 0x503A46-0x503BCA: para el Zen se dibuja el modelo Gold01
+                // N veces repartido en círculo alrededor del punto de drop, con
+                // N = clamp(sqrt(cantidad) / 2, 3, 80).  La cantidad vive en
+                // Items+8 (= puVar9 - 0x145), que es donde CreateItem la guarda
+                // para el tipo 463.
+                //
+                // 2026-08-21: el port calculaba N con la distancia a la cámara
+                // (mal-guess del artefacto __ftol) y encima leía RandomTable con
+                // aritmética de DWORD* (paso de 16 bytes) sobre un global que era
+                // un único DWORD = 0 → todas las monedas con ángulo y radio 0,
+                // apiladas en un punto.  De ahí el "Zen sin sprite expandido".
                 if (*(short *)(puVar9 + -0x103) == 0x35f) {
                     fVar2 = *pfVar1;
                     fVar3 = *(float *)(puVar9 + -0xf1);
                     fVar4 = *(float *)(puVar9 + -0xed);
-                    // __ftol: FPU held distance to camera (approx from FrustumCull_2D output)
-                    // Use entity distance to camera as trail count basis
-                    {
-                        float _dx = fVar2 - _DAT_083a42d4, _dy = fVar3 - _DAT_083a42d8;
-                        lVar12 = (longlong)sqrtf(_dx*_dx + _dy*_dy);
-                    }
+                    lVar12 = (longlong)sqrt((double)*(int *)(puVar9 + -0x145));
                     local_a0 = (int)lVar12 / 2;
                     if (local_a0 < 3)    local_a0 = 3;
                     if (0x50 < local_a0) local_a0 = 0x50;
@@ -273,8 +286,8 @@ void Entity_Render(void)
                             // Orbital offsets from random table
                             local_60[0] = 0.0f; local_60[1] = 0.0f;
                             local_3c[1] = 0.0f; local_3c[2] = 0.0f;
-                            local_60[2] = (float)(*(int *)(&DAT_055c9e58 + (iVar7 % 100) * 4) % 0x168);
-                            local_3c[0] = (float)(*(int *)(&DAT_055c9e58 + ((iVar10 + local_94) % 100) * 4)
+                            local_60[2] = (float)(RandomTable[iVar7 % 100] % 0x168);
+                            local_3c[0] = (float)(RandomTable[(iVar10 + local_94) % 100]
                                                   % (local_a0 + 0x14));
                             FUN_004f9db0(local_60, local_3c + 3);         // Matrix_FromEuler
                             FUN_004fa0b0(local_3c, local_3c + 3, local_xyz); // Matrix_TransformPoint

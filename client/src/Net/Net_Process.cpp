@@ -5422,15 +5422,30 @@ void Net_ProcessPacket(void)
                     //   ip+352..364 float scale (-12.5..-12.5..-12.5..25.0..25.0..25.0)
                     *(WORD*)(ip + 4) = (WORD)itemType;
                     if (itemType == 463) {
-                        // Jewel of Chaos: tipo empaquetado en 24 bits + byte extra en info[4]
+                        // Zen (GET_ITEM(14,15)): la CANTIDAD viaja en 24 bits
+                        // repartidos en info[1] (bits 16-23), info[2] (8-15) e
+                        // info[4] (0-7) — ver Viewport.cpp:926 del server.
+                        // Queda en ip+8, que es de donde la leen Entity_Render
+                        // (para el tamaño del montón de monedas) y RenderItemName
+                        // (para el texto "Zen <cantidad>").
                         int v5 = (int)itemInfo[4] + (((int)itemInfo[2] + ((int)itemInfo[1] << 8)) << 8);
                         *(int*)(ip + 8) = v5;
                         ip[30] = 0;
                         ip[31] = 0;
+                        if (createFlag) PlayBuffer(31, 0, 0);   // pDropMoney.wav
                     } else {
                         *(int*)(ip + 8) = (int)itemInfo[1];
                         ip[30] = itemInfo[2];
                         ip[31] = itemInfo[3];
+                        if (createFlag) {
+                            // IDA CreateItem L38-46: joyas y pergaminos suenan
+                            // distinto que el resto.
+                            if (itemType == 461 || itemType == 462 || itemType == 464 ||
+                                itemType == 399 || itemType == 470)
+                                PlayBuffer(49, (DWORD)(uintptr_t)(ip + 72), 0);
+                            else
+                                PlayBuffer(30, (DWORD)(uintptr_t)(ip + 72), 0);
+                        }
                     }
                     ip[72] = 1;                                    // active flag
                     *(WORD*)(ip + 74) = (WORD)(itemType + 400);    // model index
@@ -5466,13 +5481,16 @@ void Net_ProcessPacket(void)
                     // quedar sin scale/flags → invisible.
                     FUN_00502ba0((int)(ip + 72));
 
-                    // Render scale matrix init (per IDA L129-134).
-                    *(int*)(ip + 352) = (int)0xC1480000;  // -12.5f
-                    *(int*)(ip + 356) = (int)0xC1480000;
-                    *(int*)(ip + 360) = (int)0xC1480000;
-                    *(int*)(ip + 364) = (int)0x41C80000;  //  25.0f
-                    *(int*)(ip + 368) = (int)0x41C80000;
-                    *(int*)(ip + 372) = (int)0x41C80000;
+                    // BoundingBox del objeto (IDA CreateItem L129-134):
+                    // min = (-30,-30,-30), max = (30,30,30).
+                    // 2026-08-21: el port tenía -12.5 / 25.0 (mal decodificados
+                    // desde los literales -1041235968 / 1106247680).
+                    *(int*)(ip + 352) = (int)0xC1F00000;  // -30.0f
+                    *(int*)(ip + 356) = (int)0xC1F00000;
+                    *(int*)(ip + 360) = (int)0xC1F00000;
+                    *(int*)(ip + 364) = (int)0x41F00000;  //  30.0f
+                    *(int*)(ip + 368) = (int)0x41F00000;
+                    *(int*)(ip + 372) = (int)0x41F00000;
 
                     // World position: ((grid + 0.5) * 100.0)
                     *(float*)(ip + 88) = ((float)gx + 0.5f) * 100.0f;
@@ -5480,7 +5498,26 @@ void Net_ProcessPacket(void)
                     // Z: terrain height (RequestTerrainHeight 0x004F7500).
                     extern float __cdecl FUN_004f7500(float, float);
                     float terrainH = FUN_004f7500(*(float*)(ip + 88), *(float*)(ip + 92));
-                    *(float*)(ip + 96) = terrainH;
+
+                    // Caída del item recién dropeado (IDA CreateItem L139-172):
+                    // nace por encima del suelo con velocidad Z en ip+288 y
+                    // MoveItems (0x503760) lo hace caer y rebotar.  Sin esto el
+                    // item aparecía clavado en el suelo, sin animación de drop.
+                    // Omitido: los CreateEffect(250)/CreateEffect(248) de las
+                    // flechas/bolts (modelos 955/956), que necesitan los args
+                    // vec3 de CreateEffect.
+                    if (createFlag) {
+                        WORD model = *(WORD*)(ip + 74);
+                        if (model == 955 || model == 956) {
+                            *(int*)(ip + 288)   = (int)0x42480000;   // 50.0f
+                            *(float*)(ip + 96)  = terrainH + 3.0f;
+                        } else {
+                            *(int*)(ip + 288)   = (int)0x41A00000;   // 20.0f
+                            *(float*)(ip + 96)  = terrainH + 180.0f;
+                        }
+                    } else {
+                        *(float*)(ip + 96) = terrainH;
+                    }
 
                     // ItemAngle (CreateItem final): setea rotación del item en
                     // el suelo según el terreno.
