@@ -1571,9 +1571,47 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
     const GLuint s_fontListBase = s_cache[slot].base;
     const int    s_ascent       = s_cache[slot].ascent;
 
-    // Y-flip: game pasa y con top=0, ortho GL usa bottom=0.
-    extern DWORD DAT_00561570;  // alto del ortho 2D
+    // ── CLAMP A LA PANTALLA (port de sub_47F4C0 L18-46) ─────────────────────
+    // El binario NO deja que la caja de texto se salga: antes de dibujarla
+    // corre el origen para que entre.  Con a7 = 0 (que es como la llama
+    // sub_410AF0) las ramas que aplican son:
+    //     if (x < 0) x = 0;
+    //     if (Width + x > WindowWidth)  x = WindowWidth - Width;
+    //     if (byte_7E11D6E) {
+    //         if (y < 0) y = 0;
+    //         v12 = WindowHeight - 47 * WindowHeight / 640;
+    //         if (Height + y > v12) y = v12 - Height;
+    //     }
+    // Width/Height son el extent en píxeles; acá los pasamos a unidades del
+    // ortho con la misma escala que ya usa el fondo.
+    //
+    // 2026-08-21: sin esto, al llegar al borde el quad de fondo se dibujaba
+    // (glVertex2f se clipea normal) pero los glifos no, porque glRasterPos
+    // fuera del viewport invalida la posición y glCallLists no emite nada →
+    // quedaba un recuadro negro vacío en el borde.
+    extern DWORD DAT_0056156c;  // ancho del ortho 2D
+    extern DWORD DAT_00561570;  // alto  del ortho 2D
     DWORD vh = DAT_00561570 ? DAT_00561570 : 480;
+    DWORD vw = DAT_0056156c ? DAT_0056156c : 640;
+    {
+        float csx, csy;
+        Text_PixelToOrthoScale(&csx, &csy);
+        SIZE tot = {0, 0};
+        GetTextExtentPointA(hFontDC, drawText, (int)strlen(drawText), &tot);
+        float wOrtho = (float)tot.cx / csx;
+        float hOrtho = (float)tot.cy / csy;
+        if (x < 0) x = 0;
+        if ((float)x + wOrtho > (float)vw) x = (int)((float)vw - wOrtho);
+        if (DAT_07e11d6e) {
+            if (y < 0) y = 0;
+            float bottom = (float)vh - (47.0f * (float)vh) / 640.0f;
+            if ((float)y + hOrtho > bottom) y = (int)(bottom - hOrtho);
+        }
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+    }
+
+    // Y-flip: game pasa y con top=0, ortho GL usa bottom=0.
     int   rasterY = (int)vh - y - s_ascent;
 
     // Color base desde DAT_00559c78 (COLORREF 0x00BBGGRR + opcional alpha en

@@ -90,36 +90,6 @@ void __cdecl Game_MainLoop(HDC param_1)
         }
     }
 
-    // ── SONDA PANELFLAGS (2026-08-21, temporal) ──────────────────────────────
-    // Vigila los 9 bytes de flags de paneles (0x07EAA114..11C) y loguea cada
-    // cambio con el estado del juego.  Sirve para separar "alguien llama al
-    // toggle" de "alguien pisa la memoria": si cambian VARIOS bytes en el mismo
-    // frame es una escritura por rango (corrupción), si cambia uno solo es un
-    // toggle real.  Remover cuando esté cerrado.
-    {
-        static unsigned char s_prev[9] = {0,0,0,0,0,0,0,0,0};
-        static int s_first = 1, s_lines = 0;
-        const unsigned char* cur = (const unsigned char*)&DAT_07eaa114;
-        if (s_lines < 200) {
-            int changed = 0;
-            for (int i = 0; i < 9; ++i) if (cur[i] != s_prev[i]) changed = 1;
-            if (changed && !s_first) {
-                char b[220];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "PANELFLAGS state=%d sub=%d  114:%u->%u 115:%u->%u 116:%u->%u "
-                    "117:%u->%u 118:%u->%u 119:%u->%u 11a:%u->%u 11b:%u->%u 11c:%u->%u",
-                    (int)DAT_005615c0, (int)DAT_0055a7ac,
-                    s_prev[0],cur[0], s_prev[1],cur[1], s_prev[2],cur[2],
-                    s_prev[3],cur[3], s_prev[4],cur[4], s_prev[5],cur[5],
-                    s_prev[6],cur[6], s_prev[7],cur[7], s_prev[8],cur[8]);
-                DbgLogPublic(b);
-                ++s_lines;
-            }
-            s_first = 0;
-            for (int i = 0; i < 9; ++i) s_prev[i] = cur[i];
-        }
-    }
-
     // ── RECEIVE INCOMING PACKETS ─────────────────────────────────────────────
     FUN_0043fd70();
     CHK("ML/post_recv");
