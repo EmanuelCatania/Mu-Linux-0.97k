@@ -351,27 +351,16 @@ void __cdecl ClearItems(void) {
 // haya dos comportamientos distintos para el mismo 0x45ABB0.
 void __cdecl ClearCharacters(int Key) { FUN_0045abb0(Key); }
 
-// CSQuest__CheckQuestState @ 0x00401730 (49 lines) — Quest state machine check
-// Checks quest conditions based on state (1=act, 2=find, 3=request).
+// CSQuest__CheckQuestState @ 0x00401730
+// 2026-08-21: acá había un resumen inventado ("State machine dispatch
+// (simplified)") que sólo escribía el byte de estado y descartaba el resto,
+// mientras el port fiel de la misma dirección vive en Scene_CharSelect_Nav.cpp
+// como FUN_00401730 (despacha por estado 1/2/3 a CheckActCondition /
+// FindQuestContext / CheckRequestCondition).  Ahora delega.
+void __fastcall FUN_00401730(void *pThis, char param_1);
 void __fastcall CSQuest__CheckQuestState(void *This, int state) {
     if (!This) return;
-    // Quest entry at: This + questIndex*0x248 + 8
-    // questIndex at This+0x1c87a
-    BYTE questIdx = *(BYTE *)((int)This + 0x1c87a);
-    int lpQuest = (int)This + (uint)questIdx * 0x248 + 8;
-
-    if (state == 0xff) {
-        // Auto-resolve state
-        // Original calls CSQuest__getQuestState(This, -1)
-        *(BYTE *)((int)This + 0x1c882) = 0;
-    } else {
-        *(BYTE *)((int)This + 0x1c882) = (BYTE)state;
-    }
-    // State machine dispatch (simplified):
-    // State 1: CheckActCondition → FindQuestContext(type=2)
-    // State 2: FindQuestContext(type=3) → store in +0x1c880
-    // State 3: CheckRequestCondition → FindQuestContext(type=0)
-    (void)lpQuest;
+    FUN_00401730(This, (char)state);
 }
 
 // CSQuest__ShowDialogText @ 0x004017E0
