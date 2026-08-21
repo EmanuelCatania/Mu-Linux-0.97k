@@ -636,7 +636,7 @@ extern DWORD   DAT_07e016c0;   // target grid X (from ray cast or hover click)
 extern DWORD   DAT_07e016c4;   // target grid Y
 extern DWORD   DAT_07e109c8;   // hover NPC entity index (for pathfind target)
 extern DWORD   DAT_07db8708;   // hover target entity type (from entity+2)
-extern DWORD   DAT_07e113e4;   // name copy buffer (0x100 bytes per slot) for 2nd pass
+extern char    DAT_07e113e4[5 * 256];   // historial de chat: 5 entradas x 256B
 
 // ── UI / HUD data (0x07e1xxxx – 0x07eaxxxx) ──────────────────────────────────
 extern DWORD  _DAT_07e118e4;   // player facing angle (float, sent in movement packets)
@@ -1239,10 +1239,16 @@ static __forceinline unsigned int ItemAttribute_Base(void) {
     return p;
 }
 extern int     DAT_07d78080;        // font height (set by resolution in WinMain step 15)
-extern int     DAT_07e91530;        // stat display flag: extra stat 1
-extern int     DAT_07e91534;        // stat display flag: extra stat 2
-extern int     DAT_07e9153c;        // stat display flag: extra stat 3
-extern int     DAT_07e91540;        // stat display flag: extra stat 4
+// DAT_07e91530/534/53c/540 — columnas 2/3/5/6 de la fila 0 de DAT_07e91528
+// (ver la declaracion de la tabla mas abajo).
+#define DAT_07e91530   (DAT_07e91528[2])
+#define DAT_07e91534   (DAT_07e91528[3])
+#define DAT_07e91538   (DAT_07e91528[4])
+#define DAT_07e9153c   (DAT_07e91528[5])
+#define DAT_07e91540   (DAT_07e91528[6])
+#define DAT_07e91544   (DAT_07e91528[7])
+#define DAT_07e91548   (DAT_07e91528[8])
+#define DAT_07e9154c   (DAT_07e91528[9])
 // Strings de formato de la UI (datos de sólo lectura en el binario)
 extern char    DAT_0055a408[];
 extern char    DAT_0055a40c[];
@@ -1523,8 +1529,12 @@ extern char    g_BoneNormalBuf[32 * 15000 * 4];
 extern int     DAT_07eaa158;           // secondary text-entry counter (CharMenu_AppendSkillReq)
 extern char    DAT_0055a400[];         // skill-req format string A (met)
 extern char    DAT_0055a404[];         // skill-req format string B (not met)
-extern int     DAT_07e91528[12];       // stat requirement array (12 ints = 48 bytes)
-extern int     DAT_07e9152c;           // stat values array base (slot 0; read by CharMenu_AppendStatRows)
+// Tabla de requisitos de stats @ 0x07E91528 — 12 filas x 10 ints.  Los simbolos
+// DAT_07e9152c/530/534/538/53c/540/544/548/54c son las COLUMNAS 1..9 de la fila 0
+// (macros de arriba), no globals independientes.  Fila i, columna c =
+// DAT_07e91528[10*i + c].
+extern int     DAT_07e91528[12 * 10];
+#define DAT_07e9152c   (DAT_07e91528[1])
 extern char    DAT_07d359d0;           // skill description string table base (slot 0, stride ~0x138)
 extern int     DAT_00559fe0;           // class-data cache guard (last built class_id)
 

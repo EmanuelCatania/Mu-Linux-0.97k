@@ -1214,7 +1214,13 @@ char&    DAT_07e113d9 = reinterpret_cast<char&>(DAT_07e113d8[1]);
 DWORD    DAT_07e016c0  = 0;
 DWORD    DAT_07e016c4  = 0;
 DWORD    DAT_07e109c8  = 0;
-DWORD    DAT_07e113e4  = 0;
+// Historial de chat @ 0x07E113E4 — anillo de 5 entradas x 256 bytes.
+// Lo confirma el propio binario: el walker de RenderChatInput termina en
+// 0x07E118E4, y 0x7E118E4 - 0x7E113E4 = 0x500 = 5 * 256.
+// 2026-08-21: estaba como un solo DWORD, y Chat_InputTick (flechas arriba/abajo)
+// hace `memcpy((char*)&DAT_07e113e4 + idx * 0x100, ...)` — escritura de hasta
+// 1280 bytes fuera del global.
+char     DAT_07e113e4[5 * 256] = {};
 // _DAT_07e118e4 already defined at line ~470
 
 DWORD    DAT_07d78094  = 0;
@@ -1313,10 +1319,8 @@ int      DAT_07d78068 = 0;
 // DAT_07d78068 caused the corruption writer (2 consecutive int writes
 // 0x00000001 + 0x00000000) to clobber both. Now lives in a different .obj.
 int      DAT_07d78080 = 0;       // font height (set by resolution in WinMain)
-int      DAT_07e91530 = 0;
-int      DAT_07e91534 = 0;
-int      DAT_07e9153c = 0;
-int      DAT_07e91540 = 0;
+// DAT_07e91530/534/53c/540 pasaron a ser macros sobre DAT_07e91528 (ver globals.h):
+// en el binario son COLUMNAS de la misma tabla, no globals sueltos.
 // UI text strings
 char     DAT_0055a408[] = "";
 char     DAT_0055a40c[] = "";
@@ -1628,8 +1632,14 @@ char     g_BoneNormalBuf[32 * 15000 *  4] = {0};  // 1,920,000 bytes
 int      DAT_07eaa158  = 0;
 char     DAT_0055a400[64] = {};
 char     DAT_0055a404[64] = {};
-int      DAT_07e91528[12] = {};
-int      DAT_07e9152c  = 0;
+// Tabla de requisitos de stats @ 0x07E91528 — 12 filas x 10 ints (480 bytes).
+// sub_4C2E20 escribe `dword_7E91528[10*i]`, `dword_7E91530[10*i]`, etc. (paso de
+// fila = 40 bytes) y sub_4C2C10 la recorre con `v9 += 10`.
+// 2026-08-21: estaba como `int[12]` mas nueve globals sueltos para las columnas,
+// y el port hacia `&DAT_07e91530 + i * 4` sobre un int* (64 bytes de paso) —
+// escritura fuera de rango de ~176 bytes cada vez que se arma el menu de
+// personaje.  Mismo patron que BoneQuaternion.
+int      DAT_07e91528[12 * 10] = {};
 char     DAT_07d359d0  = 0;
 int      DAT_00559fe0  = -1;
 

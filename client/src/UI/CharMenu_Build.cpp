@@ -658,7 +658,10 @@ void __cdecl FUN_004c2c10(int row, unsigned char *color, int *value,
     if (flags == 5) return;
 
     for (int i = 0; i <= 0xb; i++) {
-        int val = *(int*)(&DAT_07e9152c + i * 4);
+        // IDA sub_4C2C10: `v9 = &dword_7E9152C; ... v9 += 10;` — columna 1 de
+        // cada fila, paso de 10 ints.  (El port usaba `&DAT_07e9152c + i * 4`
+        // sobre un int*: 64 bytes de paso sobre un global de 4 bytes.)
+        int val = DAT_07e91528[10 * i + 1];
         if (val == 0) continue;
 
         crt_sprintf(buf, label, val);
@@ -714,9 +717,11 @@ void __cdecl FUN_004c2e20(int param_1)
     // Base class data pointer
     int classBase = DAT_07d78068 + param_1 * 0x40;
 
-    // Clear stat requirement array
+    // Limpiar la tabla entera (12 filas x 10 columnas).
+    // 2026-08-21: antes limpiaba solo 12 ints (= la fila 0 y un poco), porque el
+    // global estaba declarado como int[12] en vez de la tabla completa.
     piDst = DAT_07e91528;
-    for (int i = 0; i <= 11; i++) piDst[i] = 0;
+    for (int i = 0; i < 12 * 10; i++) piDst[i] = 0;
 
     // Build per-level scaled requirements
     for (int i = 0; i <= 11; i++) {
@@ -732,9 +737,15 @@ void __cdecl FUN_004c2e20(int param_1)
         iVar2 = base_def  + (level_req * *(int*)(classBase + 0x34));
         iVar3 = base_mana + (level_req * *(int*)(classBase + 0x38));
 
-        DAT_07e91528[i] = iVar1;
-        *(int*)(&DAT_07e91530 + i * 4) = iVar2;
-        *(int*)(&DAT_07e9153c + i * 4) = iVar3;
+        // Fila i, columnas 0 / 2 / 5.  IDA sub_4C2E20 L220-228: `v23 = 10 * i;`
+        // y despues `dword_7E91528[v23]`, `dword_7E91530[v23]`, `dword_7E9153C[v23]`
+        // — o sea paso de fila de 10 ints.
+        // 2026-08-21: el port hacia `&DAT_07e91530 + i * 4` sobre un int*, que
+        // avanza 64 bytes por vuelta sobre un global de 4 bytes → escribia hasta
+        // 176 bytes fuera, encima de lo que el linker pusiera al lado.
+        DAT_07e91528[10 * i + 0] = iVar1;
+        DAT_07e91528[10 * i + 2] = iVar2;
+        DAT_07e91528[10 * i + 5] = iVar3;
     }
 
     // HashTable XOR-obfuscation (ref-count at DAT_00559050+0x161)

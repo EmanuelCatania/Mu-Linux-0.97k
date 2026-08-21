@@ -4793,7 +4793,10 @@ bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
             Net_SendSmallPacket(usePkt, 5);
 
             // Play sound based on item type
-            short itemType = *(short*)((DWORD)&DAT_07ea8410 + slot * 0x44);  // OffsetInventoryItems[slot].Type
+            // 2026-08-21: leía DAT_07ea8410, que es un DWORD suelto de 4 bytes —
+            // no el pool del inventario (mismo error que ya estaba documentado
+            // para FUN_004d23b0).  El grid vive en OffsetInventoryItems, stride 0x44.
+            short itemType = *(short*)(OffsetInventoryItems + (size_t)slot * 0x44);
             int soundId;
             if (itemType == 0x1c0) {
                 soundId = 0x21;  // healing potion sound
