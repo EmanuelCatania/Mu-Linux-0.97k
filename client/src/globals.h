@@ -516,7 +516,7 @@ extern DWORD   DAT_05826e04;
 // DAT_05826e08 se declara más abajo, con su comentario, en la sección "Entity / animation tick globals"
 extern DWORD   DAT_05826e0c;
 extern DWORD   DAT_05826e10;
-extern DWORD   DAT_05826e18;
+extern char    DAT_05826e18[200 * 0x10];   // BoneQuaternion scratch (200 huesos x 16B)
 // DAT_05828d58 declared below in "Model data table" section
 
 // ── Bone / skeleton data (0x06970xxx) ─────────────────────────────────────────

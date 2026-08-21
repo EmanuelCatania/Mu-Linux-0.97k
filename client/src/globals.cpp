@@ -652,7 +652,16 @@ float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};
 DWORD    DAT_05826e0c  = 0;
 DWORD    DAT_05826e10  = 0;
-DWORD    DAT_05826e18  = 0;
+// BoneQuaternion @ 0x05826E18 — scratch de cuaterniones por hueso que llena
+// BMD_Animation (0x440060 L157-166: `(char *)&unk_5826E18 + 16 * boneIdx`).
+// MAX_BONES = 200, igual que g_BoneScratch → 200 x 16 bytes.
+// 2026-08-21: estaba declarado como UN SOLO DWORD y el port además hacía
+// `&DAT_05826e18 + boneIdx * 0x10` sobre un DWORD*, o sea 64 bytes de paso en
+// vez de 16.  Cada frame de animación pisaba ~12 KB de globals vecinos.  Lo que
+// se rompía dependía de qué caía al lado en el layout de BSS: con el layout de
+// esta rama caía justo sobre los flags de paneles (0x07EAA114..117 =
+// ShopOpened/PartyOpened/.../InventoryOpened) y los menús se abrían solos.
+char     DAT_05826e18[200 * 0x10] = {0};
 DWORD    DAT_05828d58  = 0;  // Models
 void*    DAT_06f42a58  = nullptr;  // model memory pool
 
