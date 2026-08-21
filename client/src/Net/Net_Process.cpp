@@ -4892,6 +4892,10 @@ void Net_ProcessPacket(void)
                 if (Size < 4) break;
                 BYTE slot = Msg[3];
                 NetLog("NET:  → 0x22 GetItem slot=0x%02x", slot);
+                // IDA arma un puntero `Item` en cada rama y DESPUÉS decide el
+                // sonido una sola vez con ConvertItemType(Item) — ver el bloque
+                // compartido al final del case.
+                const BYTE* Item = nullptr;
                 if (slot == 0xFF) {
                     // Pickup failed
                 } else if (slot == 0xFE) {
@@ -4901,7 +4905,13 @@ void Net_ProcessPacket(void)
                         BYTE* charMachine = (BYTE*)(uintptr_t)DAT_07cf1ffc;
                         *(DWORD*)(charMachine + 0x548) = gold;
                     }
-                    PlayBuffer(49, (DWORD)(uintptr_t)Hero, 0);  // jewel pickup sound
+                    // IDA ReceiveGetItem L38-40: en la rama del zen `Item` queda
+                    // apuntando a CharacterMachine, no a los bytes del paquete.
+                    // Es una rareza del binario, pero es lo que hace: el
+                    // ConvertItemType de abajo termina leyendo los primeros bytes
+                    // de la struct del personaje, casi nunca da un tipo de joya y
+                    // por eso el zen suena con pGetItem.wav (29).
+                    Item = (const BYTE*)(uintptr_t)DAT_07cf1ffc;
                 } else {
                     // 2026-07-27 FIX (item levantado no aparecía en inventario):
                     // PMSG_ITEM_GET_SEND es [C3][08][22][result][i0..i3] = Size 8
@@ -4915,8 +4925,18 @@ void Net_ProcessPacket(void)
                         memcpy(itembytes, (BYTE*)Msg + 4, 4);
                         FUN_004cc660(OffsetInventoryItems, 8, 8, (int)slot, itembytes, 1);
                     }
-                    // Sonido: 49 para joyas/tipos especiales, 29 para los normales
-                    short type = (short)(Msg[4] + ((Msg[7] & 0x80) << 1));  // ConvertItemType
+                    if (Size >= 8) Item = (const BYTE*)Msg + 4;   // ConvertItemType lee hasta Item[3]
+                }
+
+                // Sonido de pickup — IDA L61-71, compartido por las dos ramas:
+                //   ConvertItemType(Item) in {461,462,464,399,470} → 49 (eGem.wav)
+                //   resto                                          → 29 (pGetItem.wav)
+                // 2026-08-21: la rama del zen tenía PlayBuffer(49) hardcodeado
+                // ("jewel pickup sound"), que es invención del port — al levantar
+                // zen sonaba la joya en vez del pickup normal.
+                if (slot != 0xFF && Item != nullptr) {
+                    // ConvertItemType (0x0047B110): Item[0] + (Item[3] & 0x80) * 2
+                    int type = (int)Item[0] + ((Item[3] & 0x80) ? 256 : 0);
                     bool jewel = (type == 461 || type == 462 || type == 464 ||
                                   type == 399 || type == 470);
                     PlayBuffer(jewel ? 49 : 29, (DWORD)(uintptr_t)Hero, 0);
