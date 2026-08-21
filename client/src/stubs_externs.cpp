@@ -1590,6 +1590,19 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
     glGetFloatv(GL_CURRENT_COLOR, curColor);
     GLubyte callerA = (GLubyte)(curColor[3] * 255.0f + 0.5f);
 
+    // 2026-08-21: el color del caller (glColor3f) también MODULA el RGB, no
+    // sólo el alpha.  En el binario el subclass por defecto de CUIRenderText
+    // (sub_410AF0, g_iRenderTextType != 1) hace TextOut a un DIB, copia los
+    // píxeles a una textura pintándolos con m_dwTextColor / m_dwBackColor
+    // (sub_40F6C0) y dibuja el quad con RenderBitmap (0x5125A0) — que NO llama
+    // a glColor, así que la textura sale modulada por el color que dejó el
+    // caller.  O sea: color final = m_dwTextColor × glColor.
+    //
+    // Sin esto, los `glColor3f` de RenderItemName (0x4C9E70) no hacían nada y
+    // los nombres del suelo salían todos con m_dwTextColor: el Zen sin su
+    // dorado y los items +N sin su color por nivel.
+    GLfloat callerR = curColor[0], callerG = curColor[1], callerB = curColor[2];
+
     glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LIST_BIT);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_DEPTH_TEST);
@@ -1642,6 +1655,9 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
                 GLubyte bG = (GLubyte)((bc >>  8) & 0xFF);
                 GLubyte bB = (GLubyte)((bc >> 16) & 0xFF);
                 GLubyte bFinal = (GLubyte)((unsigned)bA * (unsigned)callerA / 255u);
+                bR = (GLubyte)((float)bR * callerR + 0.5f);
+                bG = (GLubyte)((float)bG * callerG + 0.5f);
+                bB = (GLubyte)((float)bB * callerB + 0.5f);
                 // glRasterPos deja el ORIGEN DEL GLIFO en la baseline, así que el
                 // texto ocupa [rasterY - descent, rasterY + ascent]. Antes usaba
                 // `rasterY-2 .. rasterY+cy-2`, que corría la caja hacia arriba y
@@ -1674,6 +1690,11 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
             GLubyte A = (GLubyte)((fg >> 24) & 0xFF);
             if (A == 0) A = 0xFF;
             GLubyte finalA = (GLubyte)((unsigned)A * (unsigned)callerA / 255u);
+
+            // Modulación por el color del caller (ver la nota de arriba).
+            R = (GLubyte)((float)R * callerR + 0.5f);
+            G = (GLubyte)((float)G * callerG + 0.5f);
+            B = (GLubyte)((float)B * callerB + 0.5f);
 
             glColor4ub(R, G, B, finalA);
             glRasterPos2f(runX, (float)rasterY);
