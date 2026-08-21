@@ -435,7 +435,14 @@ extern DWORD   DAT_055c9d00;
 extern DWORD   DAT_055c9e04;
 extern DWORD   DAT_055c9e44;
 extern DWORD   DAT_055c9e48;
-extern DWORD   DAT_055c9e58;   // random table base ptr
+// RandomTable @ 0x055C9E58 — 100 enteros (`rand() % 360`) que siembra WinMain
+// (0x41E8A0 L522-525).  Sólo lo usa Entity_Render (0x5038E0) para repartir en
+// círculo las monedas del montón de Zen del suelo.
+// 2026-08-21: estaba declarado como un único DWORD = 0 y nadie lo sembraba, así
+// que los ángulos y radios salían todos 0 y las monedas se apilaban en un mismo
+// punto (el "Zen sin sprite expandido").
+extern int     DAT_055c9e58[100];
+#define RandomTable  DAT_055c9e58
 extern DWORD   DAT_055c9ff0;   // HGLRC (OpenGL context)
 extern DWORD   DAT_055c9ff4;
 extern DWORD   DAT_055c9ff8;
@@ -509,7 +516,7 @@ extern DWORD   DAT_05826e04;
 // DAT_05826e08 se declara más abajo, con su comentario, en la sección "Entity / animation tick globals"
 extern DWORD   DAT_05826e0c;
 extern DWORD   DAT_05826e10;
-extern DWORD   DAT_05826e18;
+extern char    DAT_05826e18[200 * 0x10];   // BoneQuaternion scratch (200 huesos x 16B)
 // DAT_05828d58 declared below in "Model data table" section
 
 // ── Bone / skeleton data (0x06970xxx) ─────────────────────────────────────────
@@ -629,7 +636,7 @@ extern DWORD   DAT_07e016c0;   // target grid X (from ray cast or hover click)
 extern DWORD   DAT_07e016c4;   // target grid Y
 extern DWORD   DAT_07e109c8;   // hover NPC entity index (for pathfind target)
 extern DWORD   DAT_07db8708;   // hover target entity type (from entity+2)
-extern DWORD   DAT_07e113e4;   // name copy buffer (0x100 bytes per slot) for 2nd pass
+extern char    DAT_07e113e4[5 * 256];   // historial de chat: 5 entradas x 256B
 
 // ── UI / HUD data (0x07e1xxxx – 0x07eaxxxx) ──────────────────────────────────
 extern DWORD  _DAT_07e118e4;   // player facing angle (float, sent in movement packets)
@@ -1232,10 +1239,16 @@ static __forceinline unsigned int ItemAttribute_Base(void) {
     return p;
 }
 extern int     DAT_07d78080;        // font height (set by resolution in WinMain step 15)
-extern int     DAT_07e91530;        // stat display flag: extra stat 1
-extern int     DAT_07e91534;        // stat display flag: extra stat 2
-extern int     DAT_07e9153c;        // stat display flag: extra stat 3
-extern int     DAT_07e91540;        // stat display flag: extra stat 4
+// DAT_07e91530/534/53c/540 — columnas 2/3/5/6 de la fila 0 de DAT_07e91528
+// (ver la declaracion de la tabla mas abajo).
+#define DAT_07e91530   (DAT_07e91528[2])
+#define DAT_07e91534   (DAT_07e91528[3])
+#define DAT_07e91538   (DAT_07e91528[4])
+#define DAT_07e9153c   (DAT_07e91528[5])
+#define DAT_07e91540   (DAT_07e91528[6])
+#define DAT_07e91544   (DAT_07e91528[7])
+#define DAT_07e91548   (DAT_07e91528[8])
+#define DAT_07e9154c   (DAT_07e91528[9])
 // Strings de formato de la UI (datos de sólo lectura en el binario)
 extern char    DAT_0055a408[];
 extern char    DAT_0055a40c[];
@@ -1516,8 +1529,12 @@ extern char    g_BoneNormalBuf[32 * 15000 * 4];
 extern int     DAT_07eaa158;           // secondary text-entry counter (CharMenu_AppendSkillReq)
 extern char    DAT_0055a400[];         // skill-req format string A (met)
 extern char    DAT_0055a404[];         // skill-req format string B (not met)
-extern int     DAT_07e91528[12];       // stat requirement array (12 ints = 48 bytes)
-extern int     DAT_07e9152c;           // stat values array base (slot 0; read by CharMenu_AppendStatRows)
+// Tabla de requisitos de stats @ 0x07E91528 — 12 filas x 10 ints.  Los simbolos
+// DAT_07e9152c/530/534/538/53c/540/544/548/54c son las COLUMNAS 1..9 de la fila 0
+// (macros de arriba), no globals independientes.  Fila i, columna c =
+// DAT_07e91528[10*i + c].
+extern int     DAT_07e91528[12 * 10];
+#define DAT_07e9152c   (DAT_07e91528[1])
 extern char    DAT_07d359d0;           // skill description string table base (slot 0, stride ~0x138)
 extern int     DAT_00559fe0;           // class-data cache guard (last built class_id)
 
@@ -2323,9 +2340,14 @@ extern unsigned char* TerrainWall;
 
 #endif
 
-// ── SkillAttribute table — 1000 entries × 300 bytes @ 0x07D29D20 ─────────────
-// Each entry: bytes [0-3]=padding, [4+]=skill name (char). Stride 300.
-struct _SkillAttrEntry { char Name[300]; };
+// ── SkillAttribute @ 0x07D29D20 — 64 entradas × 40 bytes ─────────────────────
+// WinMain reserva 0xA00 (= 2560) bytes y OpenSkillScript / el anti-tamper copian
+// de a 0x28 (40) bytes por entrada, así que la stride es 40 — no 300.  Los
+// consumidores indexan por BYTE: `&SkillAttribute[8 * (5*Level + 150)]`
+// (= entrada 30+Level), con el nombre en el offset 0 de la entrada.
+// 2026-08-21: antes era un único bloque de 300 bytes, así que cualquier índice
+// leía fuera del objeto.
+struct _SkillAttrEntry { char Raw[2560]; };
 extern _SkillAttrEntry SkillAttribute;  // base of table @ 0x07D29D20
 
 // ── CharactersClient extra BMD heap buffer ────────────────────────────────────

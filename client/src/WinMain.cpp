@@ -782,6 +782,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // 18: seed RNG
     srand((unsigned int)time(NULL));
 
+    // RandomTable — IDA WinMain L522-525: `for (j=0;j<100;++j) RandomTable[j] = rand() % 360;`
+    // La consume Entity_Render (0x5038E0) para el montón de monedas del Zen.
+    for (int j = 0; j < 100; ++j)
+        RandomTable[j] = rand() % 360;
+
     // 19: alocación de buffers (tamaños sacados del decompile)
     DAT_07cf5600 = (DWORD)malloc(900);     memset((void*)DAT_07cf5600, 0, 0xe1 * 4);
     DAT_07d29d20 = (int)malloc(0xa00);     memset((void*)DAT_07d29d20, 0, 0x280 * 4);

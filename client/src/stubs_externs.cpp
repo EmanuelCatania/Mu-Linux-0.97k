@@ -1571,9 +1571,47 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
     const GLuint s_fontListBase = s_cache[slot].base;
     const int    s_ascent       = s_cache[slot].ascent;
 
-    // Y-flip: game pasa y con top=0, ortho GL usa bottom=0.
-    extern DWORD DAT_00561570;  // alto del ortho 2D
+    // ── CLAMP A LA PANTALLA (port de sub_47F4C0 L18-46) ─────────────────────
+    // El binario NO deja que la caja de texto se salga: antes de dibujarla
+    // corre el origen para que entre.  Con a7 = 0 (que es como la llama
+    // sub_410AF0) las ramas que aplican son:
+    //     if (x < 0) x = 0;
+    //     if (Width + x > WindowWidth)  x = WindowWidth - Width;
+    //     if (byte_7E11D6E) {
+    //         if (y < 0) y = 0;
+    //         v12 = WindowHeight - 47 * WindowHeight / 640;
+    //         if (Height + y > v12) y = v12 - Height;
+    //     }
+    // Width/Height son el extent en píxeles; acá los pasamos a unidades del
+    // ortho con la misma escala que ya usa el fondo.
+    //
+    // 2026-08-21: sin esto, al llegar al borde el quad de fondo se dibujaba
+    // (glVertex2f se clipea normal) pero los glifos no, porque glRasterPos
+    // fuera del viewport invalida la posición y glCallLists no emite nada →
+    // quedaba un recuadro negro vacío en el borde.
+    extern DWORD DAT_0056156c;  // ancho del ortho 2D
+    extern DWORD DAT_00561570;  // alto  del ortho 2D
     DWORD vh = DAT_00561570 ? DAT_00561570 : 480;
+    DWORD vw = DAT_0056156c ? DAT_0056156c : 640;
+    {
+        float csx, csy;
+        Text_PixelToOrthoScale(&csx, &csy);
+        SIZE tot = {0, 0};
+        GetTextExtentPointA(hFontDC, drawText, (int)strlen(drawText), &tot);
+        float wOrtho = (float)tot.cx / csx;
+        float hOrtho = (float)tot.cy / csy;
+        if (x < 0) x = 0;
+        if ((float)x + wOrtho > (float)vw) x = (int)((float)vw - wOrtho);
+        if (DAT_07e11d6e) {
+            if (y < 0) y = 0;
+            float bottom = (float)vh - (47.0f * (float)vh) / 640.0f;
+            if ((float)y + hOrtho > bottom) y = (int)(bottom - hOrtho);
+        }
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+    }
+
+    // Y-flip: game pasa y con top=0, ortho GL usa bottom=0.
     int   rasterY = (int)vh - y - s_ascent;
 
     // Color base desde DAT_00559c78 (COLORREF 0x00BBGGRR + opcional alpha en
@@ -1589,6 +1627,19 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
     GLfloat curColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     glGetFloatv(GL_CURRENT_COLOR, curColor);
     GLubyte callerA = (GLubyte)(curColor[3] * 255.0f + 0.5f);
+
+    // 2026-08-21: el color del caller (glColor3f) también MODULA el RGB, no
+    // sólo el alpha.  En el binario el subclass por defecto de CUIRenderText
+    // (sub_410AF0, g_iRenderTextType != 1) hace TextOut a un DIB, copia los
+    // píxeles a una textura pintándolos con m_dwTextColor / m_dwBackColor
+    // (sub_40F6C0) y dibuja el quad con RenderBitmap (0x5125A0) — que NO llama
+    // a glColor, así que la textura sale modulada por el color que dejó el
+    // caller.  O sea: color final = m_dwTextColor × glColor.
+    //
+    // Sin esto, los `glColor3f` de RenderItemName (0x4C9E70) no hacían nada y
+    // los nombres del suelo salían todos con m_dwTextColor: el Zen sin su
+    // dorado y los items +N sin su color por nivel.
+    GLfloat callerR = curColor[0], callerG = curColor[1], callerB = curColor[2];
 
     glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LIST_BIT);
     glDisable(GL_TEXTURE_2D);
@@ -1642,6 +1693,9 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
                 GLubyte bG = (GLubyte)((bc >>  8) & 0xFF);
                 GLubyte bB = (GLubyte)((bc >> 16) & 0xFF);
                 GLubyte bFinal = (GLubyte)((unsigned)bA * (unsigned)callerA / 255u);
+                bR = (GLubyte)((float)bR * callerR + 0.5f);
+                bG = (GLubyte)((float)bG * callerG + 0.5f);
+                bB = (GLubyte)((float)bB * callerB + 0.5f);
                 // glRasterPos deja el ORIGEN DEL GLIFO en la baseline, así que el
                 // texto ocupa [rasterY - descent, rasterY + ascent]. Antes usaba
                 // `rasterY-2 .. rasterY+cy-2`, que corría la caja hacia arriba y
@@ -1674,6 +1728,11 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
             GLubyte A = (GLubyte)((fg >> 24) & 0xFF);
             if (A == 0) A = 0xFF;
             GLubyte finalA = (GLubyte)((unsigned)A * (unsigned)callerA / 255u);
+
+            // Modulación por el color del caller (ver la nota de arriba).
+            R = (GLubyte)((float)R * callerR + 0.5f);
+            G = (GLubyte)((float)G * callerG + 0.5f);
+            B = (GLubyte)((float)B * callerB + 0.5f);
 
             glColor4ub(R, G, B, finalA);
             glRasterPos2f(runX, (float)rasterY);
@@ -3633,9 +3692,13 @@ void __cdecl FUN_004f7270(const char *path) {
 // del binario original (0x07E12840 .. 0x07E907E0). En nuestro proceso esa
 // dirección no existe → AV. Indexamos el array real ahora que está en
 // globals.cpp con tamaño correcto.
+// 2026-08-21: limpiaba el offset 0 de cada slot.  IDA arranca en
+// `&Items[0][72]` — el flag activo vive en ip+72, que es el que leen
+// Net_Process (0x20), FUN_005038e0 y MoveItems.  O sea ClearItems no borraba
+// nada y los items del mapa anterior seguían "vivos" al cambiar de zona.
 void __cdecl FUN_00502b80(void) {
     for (int i = 0; i < 1000; ++i) {
-        DAT_07e12840[i * 0x204] = 0;
+        DAT_07e12840[i * 0x204 + 72] = 0;
     }
 }
 

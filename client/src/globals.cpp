@@ -547,7 +547,7 @@ DWORD    DAT_055c9d00  = 0;
 DWORD    DAT_055c9e04  = 0;
 DWORD    DAT_055c9e44  = 0;
 DWORD    DAT_055c9e48  = 0;
-DWORD    DAT_055c9e58  = 0;
+int      DAT_055c9e58[100] = {};   // RandomTable — lo siembra WinMain
 DWORD    DAT_055c9ff0  = 0;  // HGLRC
 DWORD    DAT_055c9ff4  = 0;
 DWORD    DAT_055c9ff8  = 0;
@@ -652,7 +652,16 @@ float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};
 DWORD    DAT_05826e0c  = 0;
 DWORD    DAT_05826e10  = 0;
-DWORD    DAT_05826e18  = 0;
+// BoneQuaternion @ 0x05826E18 — scratch de cuaterniones por hueso que llena
+// BMD_Animation (0x440060 L157-166: `(char *)&unk_5826E18 + 16 * boneIdx`).
+// MAX_BONES = 200, igual que g_BoneScratch → 200 x 16 bytes.
+// 2026-08-21: estaba declarado como UN SOLO DWORD y el port además hacía
+// `&DAT_05826e18 + boneIdx * 0x10` sobre un DWORD*, o sea 64 bytes de paso en
+// vez de 16.  Cada frame de animación pisaba ~12 KB de globals vecinos.  Lo que
+// se rompía dependía de qué caía al lado en el layout de BSS: con el layout de
+// esta rama caía justo sobre los flags de paneles (0x07EAA114..117 =
+// ShopOpened/PartyOpened/.../InventoryOpened) y los menús se abrían solos.
+char     DAT_05826e18[200 * 0x10] = {0};
 DWORD    DAT_05828d58  = 0;  // Models
 void*    DAT_06f42a58  = nullptr;  // model memory pool
 
@@ -1205,7 +1214,13 @@ char&    DAT_07e113d9 = reinterpret_cast<char&>(DAT_07e113d8[1]);
 DWORD    DAT_07e016c0  = 0;
 DWORD    DAT_07e016c4  = 0;
 DWORD    DAT_07e109c8  = 0;
-DWORD    DAT_07e113e4  = 0;
+// Historial de chat @ 0x07E113E4 — anillo de 5 entradas x 256 bytes.
+// Lo confirma el propio binario: el walker de RenderChatInput termina en
+// 0x07E118E4, y 0x7E118E4 - 0x7E113E4 = 0x500 = 5 * 256.
+// 2026-08-21: estaba como un solo DWORD, y Chat_InputTick (flechas arriba/abajo)
+// hace `memcpy((char*)&DAT_07e113e4 + idx * 0x100, ...)` — escritura de hasta
+// 1280 bytes fuera del global.
+char     DAT_07e113e4[5 * 256] = {};
 // _DAT_07e118e4 already defined at line ~470
 
 DWORD    DAT_07d78094  = 0;
@@ -1304,10 +1319,8 @@ int      DAT_07d78068 = 0;
 // DAT_07d78068 caused the corruption writer (2 consecutive int writes
 // 0x00000001 + 0x00000000) to clobber both. Now lives in a different .obj.
 int      DAT_07d78080 = 0;       // font height (set by resolution in WinMain)
-int      DAT_07e91530 = 0;
-int      DAT_07e91534 = 0;
-int      DAT_07e9153c = 0;
-int      DAT_07e91540 = 0;
+// DAT_07e91530/534/53c/540 pasaron a ser macros sobre DAT_07e91528 (ver globals.h):
+// en el binario son COLUMNAS de la misma tabla, no globals sueltos.
 // UI text strings
 char     DAT_0055a408[] = "";
 char     DAT_0055a40c[] = "";
@@ -1619,8 +1632,14 @@ char     g_BoneNormalBuf[32 * 15000 *  4] = {0};  // 1,920,000 bytes
 int      DAT_07eaa158  = 0;
 char     DAT_0055a400[64] = {};
 char     DAT_0055a404[64] = {};
-int      DAT_07e91528[12] = {};
-int      DAT_07e9152c  = 0;
+// Tabla de requisitos de stats @ 0x07E91528 — 12 filas x 10 ints (480 bytes).
+// sub_4C2E20 escribe `dword_7E91528[10*i]`, `dword_7E91530[10*i]`, etc. (paso de
+// fila = 40 bytes) y sub_4C2C10 la recorre con `v9 += 10`.
+// 2026-08-21: estaba como `int[12]` mas nueve globals sueltos para las columnas,
+// y el port hacia `&DAT_07e91530 + i * 4` sobre un int* (64 bytes de paso) —
+// escritura fuera de rango de ~176 bytes cada vez que se arma el menu de
+// personaje.  Mismo patron que BoneQuaternion.
+int      DAT_07e91528[12 * 10] = {};
 char     DAT_07d359d0  = 0;
 int      DAT_00559fe0  = -1;
 
@@ -2264,8 +2283,10 @@ char    DAT_0056337c     = 0;
 
 // ── Misc.cpp / Entity gravity globals ────────────────────────────────────────
 float   _DAT_00552570   = -0.2f;   // gravity min clamp
-float   _DAT_005527d0   = 0.01f;   // gravity decay factor
-float   _DAT_00552a28   = -1.0f;   // velocity reflect factor
+// 2026-08-21: los dos valían un valor inventado.  Leídos del binario:
+// 0x5527D0 = 40 C0 00 00 → 6.0f  y  0x552A28 = C1 20 00 00 → -10.0f.
+float   _DAT_005527d0   = 6.0f;    // MoveItems: decaimiento de la velocidad Z por frame
+float   _DAT_00552a28   = -10.0f;  // MoveItems: giro del item mientras cae
 
 
 // ── Terrain map globals (FUN_004f6f90, FUN_004ffe70, FUN_004f7270) ────────────

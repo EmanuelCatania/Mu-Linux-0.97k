@@ -78,7 +78,7 @@
 //
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 //
-//   DAT_05826e18  — bone result buffer: blended quaternions (stride 0x10, max 32 bones)
+//   DAT_05826e18  — BoneQuaternion: cuaterniones ya interpolados (stride 0x10, 200 huesos)
 //   DAT_005528b0  — animation blend scale constant
 //   this[+0x22]   — bone count for this model
 //   this[+0x26]   — total frame count

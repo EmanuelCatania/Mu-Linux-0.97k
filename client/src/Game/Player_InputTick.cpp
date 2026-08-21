@@ -573,12 +573,21 @@ void __cdecl FUN_004acef0(void)
         // Copy name into password buffer
         memcpy(DAT_07db8810, nameSrc, 0x40);
 
-        // Stage through DAT_07e113e4 slot (iVar19 = DAT_00559c50 * 0x100)
-        memcpy((void*)(DAT_07e113e4 + DAT_00559c50 * 0x100), nameSrc, 0x40);
+        // El slot del historial es dword_559CC4 (0..4), NO SelectedCharacter.
+        // IDA Player_InputTick L344-349:
+        //     v11 = dword_559CC4;
+        //     v12 = &byte_7E113E4[256 * v11];
+        // 2026-08-21: el port indexaba con DAT_00559c50 (SelectedCharacter, que
+        // llega hasta 399) sobre una tabla de 5 entradas → escribía 0x40 bytes
+        // hasta ~100 KB fuera del global cada vez que se hacía click derecho
+        // sobre un jugador con el chat abierto.
+        int histSlot = (int)DAT_00559cc4;
+        if (histSlot < 0 || histSlot > 4) histSlot = 0;
+        memcpy((void*)(DAT_07e113e4 + histSlot * 0x100), nameSrc, 0x40);
 
         // Pone en cero el buffer de contraseña y después copia de vuelta desde el slot preparado
         memset(DAT_07db8810, 0, 0x40 * sizeof(DWORD));
-        memcpy(DAT_07db8810, (void*)(DAT_07e113e4 + DAT_00559c50 * 0x100), 0x40);
+        memcpy(DAT_07db8810, (void*)(DAT_07e113e4 + histSlot * 0x100), 0x40);
 
         // Setea el largo de la contraseña y dispara el BGM 0x19
         DAT_07d780ac = (DWORD)strlen((char*)DAT_07db8810);

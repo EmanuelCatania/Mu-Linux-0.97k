@@ -236,7 +236,11 @@ void __cdecl FUN_00440060(void* this_, int param_1, float param_2, unsigned int 
                     quatB[3] = *(float*)(animPtrB[2] + frameOffB + 0xc);
                 }
                 // slerp between quatA and quatB
-                float* outQuat = (float*)(&DAT_05826e18 + boneIdx * 0x10);
+                // IDA: `(char *)&unk_5826E18 + 16 * boneIdx` — paso de 16 BYTES.
+                // Con `&DAT_05826e18` (DWORD*) el paso salía de 64 bytes.
+                int quatBone = boneIdx;
+                if (quatBone < 0 || quatBone >= 200) quatBone = 0;   // guard: la tabla es de 200 huesos
+                float* outQuat = (float*)(DAT_05826e18 + quatBone * 0x10);
                 int same = FUN_004f9c70((int)&quatA, (int)&quatB, 0, 0);
                 if (!same)
                     FUN_004fa350((int)&quatA, (int)&quatB, *(int*)&fFrac, (int)outQuat); // BUG-FIX: pass float bits, not truncated int

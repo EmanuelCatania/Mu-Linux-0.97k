@@ -4892,6 +4892,10 @@ void Net_ProcessPacket(void)
                 if (Size < 4) break;
                 BYTE slot = Msg[3];
                 NetLog("NET:  → 0x22 GetItem slot=0x%02x", slot);
+                // IDA arma un puntero `Item` en cada rama y DESPUÉS decide el
+                // sonido una sola vez con ConvertItemType(Item) — ver el bloque
+                // compartido al final del case.
+                const BYTE* Item = nullptr;
                 if (slot == 0xFF) {
                     // Pickup failed
                 } else if (slot == 0xFE) {
@@ -4901,7 +4905,13 @@ void Net_ProcessPacket(void)
                         BYTE* charMachine = (BYTE*)(uintptr_t)DAT_07cf1ffc;
                         *(DWORD*)(charMachine + 0x548) = gold;
                     }
-                    PlayBuffer(49, (DWORD)(uintptr_t)Hero, 0);  // jewel pickup sound
+                    // IDA ReceiveGetItem L38-40: en la rama del zen `Item` queda
+                    // apuntando a CharacterMachine, no a los bytes del paquete.
+                    // Es una rareza del binario, pero es lo que hace: el
+                    // ConvertItemType de abajo termina leyendo los primeros bytes
+                    // de la struct del personaje, casi nunca da un tipo de joya y
+                    // por eso el zen suena con pGetItem.wav (29).
+                    Item = (const BYTE*)(uintptr_t)DAT_07cf1ffc;
                 } else {
                     // 2026-07-27 FIX (item levantado no aparecía en inventario):
                     // PMSG_ITEM_GET_SEND es [C3][08][22][result][i0..i3] = Size 8
@@ -4915,8 +4925,18 @@ void Net_ProcessPacket(void)
                         memcpy(itembytes, (BYTE*)Msg + 4, 4);
                         FUN_004cc660(OffsetInventoryItems, 8, 8, (int)slot, itembytes, 1);
                     }
-                    // Sonido: 49 para joyas/tipos especiales, 29 para los normales
-                    short type = (short)(Msg[4] + ((Msg[7] & 0x80) << 1));  // ConvertItemType
+                    if (Size >= 8) Item = (const BYTE*)Msg + 4;   // ConvertItemType lee hasta Item[3]
+                }
+
+                // Sonido de pickup — IDA L61-71, compartido por las dos ramas:
+                //   ConvertItemType(Item) in {461,462,464,399,470} → 49 (eGem.wav)
+                //   resto                                          → 29 (pGetItem.wav)
+                // 2026-08-21: la rama del zen tenía PlayBuffer(49) hardcodeado
+                // ("jewel pickup sound"), que es invención del port — al levantar
+                // zen sonaba la joya en vez del pickup normal.
+                if (slot != 0xFF && Item != nullptr) {
+                    // ConvertItemType (0x0047B110): Item[0] + (Item[3] & 0x80) * 2
+                    int type = (int)Item[0] + ((Item[3] & 0x80) ? 256 : 0);
                     bool jewel = (type == 461 || type == 462 || type == 464 ||
                                   type == 399 || type == 470);
                     PlayBuffer(jewel ? 49 : 29, (DWORD)(uintptr_t)Hero, 0);
@@ -5422,15 +5442,30 @@ void Net_ProcessPacket(void)
                     //   ip+352..364 float scale (-12.5..-12.5..-12.5..25.0..25.0..25.0)
                     *(WORD*)(ip + 4) = (WORD)itemType;
                     if (itemType == 463) {
-                        // Jewel of Chaos: tipo empaquetado en 24 bits + byte extra en info[4]
+                        // Zen (GET_ITEM(14,15)): la CANTIDAD viaja en 24 bits
+                        // repartidos en info[1] (bits 16-23), info[2] (8-15) e
+                        // info[4] (0-7) — ver Viewport.cpp:926 del server.
+                        // Queda en ip+8, que es de donde la leen Entity_Render
+                        // (para el tamaño del montón de monedas) y RenderItemName
+                        // (para el texto "Zen <cantidad>").
                         int v5 = (int)itemInfo[4] + (((int)itemInfo[2] + ((int)itemInfo[1] << 8)) << 8);
                         *(int*)(ip + 8) = v5;
                         ip[30] = 0;
                         ip[31] = 0;
+                        if (createFlag) PlayBuffer(31, 0, 0);   // pDropMoney.wav
                     } else {
                         *(int*)(ip + 8) = (int)itemInfo[1];
                         ip[30] = itemInfo[2];
                         ip[31] = itemInfo[3];
+                        if (createFlag) {
+                            // IDA CreateItem L38-46: joyas y pergaminos suenan
+                            // distinto que el resto.
+                            if (itemType == 461 || itemType == 462 || itemType == 464 ||
+                                itemType == 399 || itemType == 470)
+                                PlayBuffer(49, (DWORD)(uintptr_t)(ip + 72), 0);
+                            else
+                                PlayBuffer(30, (DWORD)(uintptr_t)(ip + 72), 0);
+                        }
                     }
                     ip[72] = 1;                                    // active flag
                     *(WORD*)(ip + 74) = (WORD)(itemType + 400);    // model index
@@ -5466,13 +5501,16 @@ void Net_ProcessPacket(void)
                     // quedar sin scale/flags → invisible.
                     FUN_00502ba0((int)(ip + 72));
 
-                    // Render scale matrix init (per IDA L129-134).
-                    *(int*)(ip + 352) = (int)0xC1480000;  // -12.5f
-                    *(int*)(ip + 356) = (int)0xC1480000;
-                    *(int*)(ip + 360) = (int)0xC1480000;
-                    *(int*)(ip + 364) = (int)0x41C80000;  //  25.0f
-                    *(int*)(ip + 368) = (int)0x41C80000;
-                    *(int*)(ip + 372) = (int)0x41C80000;
+                    // BoundingBox del objeto (IDA CreateItem L129-134):
+                    // min = (-30,-30,-30), max = (30,30,30).
+                    // 2026-08-21: el port tenía -12.5 / 25.0 (mal decodificados
+                    // desde los literales -1041235968 / 1106247680).
+                    *(int*)(ip + 352) = (int)0xC1F00000;  // -30.0f
+                    *(int*)(ip + 356) = (int)0xC1F00000;
+                    *(int*)(ip + 360) = (int)0xC1F00000;
+                    *(int*)(ip + 364) = (int)0x41F00000;  //  30.0f
+                    *(int*)(ip + 368) = (int)0x41F00000;
+                    *(int*)(ip + 372) = (int)0x41F00000;
 
                     // World position: ((grid + 0.5) * 100.0)
                     *(float*)(ip + 88) = ((float)gx + 0.5f) * 100.0f;
@@ -5480,7 +5518,26 @@ void Net_ProcessPacket(void)
                     // Z: terrain height (RequestTerrainHeight 0x004F7500).
                     extern float __cdecl FUN_004f7500(float, float);
                     float terrainH = FUN_004f7500(*(float*)(ip + 88), *(float*)(ip + 92));
-                    *(float*)(ip + 96) = terrainH;
+
+                    // Caída del item recién dropeado (IDA CreateItem L139-172):
+                    // nace por encima del suelo con velocidad Z en ip+288 y
+                    // MoveItems (0x503760) lo hace caer y rebotar.  Sin esto el
+                    // item aparecía clavado en el suelo, sin animación de drop.
+                    // Omitido: los CreateEffect(250)/CreateEffect(248) de las
+                    // flechas/bolts (modelos 955/956), que necesitan los args
+                    // vec3 de CreateEffect.
+                    if (createFlag) {
+                        WORD model = *(WORD*)(ip + 74);
+                        if (model == 955 || model == 956) {
+                            *(int*)(ip + 288)   = (int)0x42480000;   // 50.0f
+                            *(float*)(ip + 96)  = terrainH + 3.0f;
+                        } else {
+                            *(int*)(ip + 288)   = (int)0x41A00000;   // 20.0f
+                            *(float*)(ip + 96)  = terrainH + 180.0f;
+                        }
+                    } else {
+                        *(float*)(ip + 96) = terrainH;
+                    }
 
                     // ItemAngle (CreateItem final): setea rotación del item en
                     // el suelo según el terreno.

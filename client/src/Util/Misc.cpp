@@ -191,35 +191,47 @@ undefined4 __cdecl FUN_00402fd0(void *param_1)
 // gravity-field anchor that the orphan DAT_07e12858 used to alias).
 void FUN_00503760(void)
 {
-  short sVar1;
-  float *pfVar2;
-  float10 fVar3;
-
+  // 2026-08-21: el walker estaba corrido 72 bytes.  Tomaba `DAT_07e12840` como
+  // si fuera `Items + 72` (leía el flag activo en slot+0), pero en nuestro build
+  // ese símbolo ES la base del item — es lo que asumen Net_Process (0x20) y
+  // FUN_005038e0 (que escriben/leen active en ip+72).  Resultado: el flag activo
+  // salía siempre 0 y la función no hacía NADA: los items no caían al suelo, no
+  // giraban al caer y no soltaban destellos.
+  //
+  // IDA MoveItems (0x503760) trabaja sobre `v0 = &Items[0][96]` (la Z), así que
+  // los offsets equivalentes desde la base del item son:
+  //   ip+72  active   ·  ip+74  modelo  ·  ip+88/92  X,Y  ·  ip+96  Z
+  //   ip+100/104  Angle[0]/Angle[1]     ·  ip+288  velocidad Z
   for (int slotIdx = 0; slotIdx < 1000; ++slotIdx) {
-    pfVar2 = (float *)((unsigned char *)DAT_07e12840 + slotIdx * 0x204 + 0x18);
-    if (*(char *)(pfVar2 + -6) != '\0') {
-      *pfVar2 = pfVar2[0x30] + *pfVar2;
-      pfVar2[0x30] = pfVar2[0x30] - _DAT_005527d0;
-      // BUG-FIX 2026-04-28: pos at pfVar2[-2]/[-1] (= pfVar2 - 8/-4)
-      fVar3 = (float10)FUN_004f7500(pfVar2[-2], pfVar2[-1]);
-      sVar1 = *(short *)((int)pfVar2 + -0x16);
-      fVar3 = fVar3 + (float10)_DAT_0055284c;
-      if ((399 < sVar1) && (sVar1 < 0x250)) {
-        fVar3 = fVar3 + (float10)_DAT_005528e4;
-      }
-      if (fVar3 < (float10)*pfVar2) {
-        if ((sVar1 < 0x250) || (0x26f < sVar1)) {
-          pfVar2[1] = pfVar2[0x30] * _DAT_00552a28;
-        }
-        else {
-          pfVar2[2] = pfVar2[0x30] * _DAT_00552a28;
-        }
+    unsigned char *ip = (unsigned char *)DAT_07e12840 + slotIdx * 0x204;
+    if (ip[72] == 0) continue;
+
+    float *pZ  = (float *)(ip + 96);
+    float *pVz = (float *)(ip + 288);
+
+    *pZ  = *pVz + *pZ;
+    *pVz = *pVz - _DAT_005527d0;
+
+    float10 fVar3 = (float10)FUN_004f7500(*(float *)(ip + 88), *(float *)(ip + 92));
+    short  sVar1  = *(short *)(ip + 74);
+    fVar3 = fVar3 + (float10)_DAT_0055284c;
+    if ((399 < sVar1) && (sVar1 < 0x250)) {
+      fVar3 = fVar3 + (float10)_DAT_005528e4;
+    }
+    if (fVar3 < (float10)*pZ) {
+      // Todavía en el aire: gira mientras cae.
+      if ((sVar1 < 0x250) || (0x26f < sVar1)) {
+        *(float *)(ip + 100) = *pVz * _DAT_00552a28;
       }
       else {
-        *pfVar2 = (float)fVar3;
-        FUN_005030c0((int)(pfVar2 + -6));
+        *(float *)(ip + 104) = *pVz * _DAT_00552a28;
       }
-      FUN_00503650((int)(pfVar2 + -6));
     }
+    else {
+      // Tocó el suelo: se apoya sobre el terreno.
+      *pZ = (float)fVar3;
+      FUN_005030c0((int)(ip + 72));
+    }
+    FUN_00503650((int)(ip + 72));
   }
 }
