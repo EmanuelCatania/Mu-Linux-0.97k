@@ -146,11 +146,25 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     float c3[3] = { DAT_07eab1d4, DAT_07eab1d8, DAT_07eab1dc };  // bot-right
     float c4[3] = { DAT_07eab1e0, DAT_07eab1e4, DAT_07eab1e8 };  // bot-left
 
-    FUN_004fa4d0(c0, c1, c2, plane0);  // right plane:  apex, TL, TR
-    FUN_004fa4d0(c0, c2, c3, plane1);  // bottom plane: apex, TR, BR
-    FUN_004fa4d0(c0, c3, c4, plane2);  // top plane:    apex, BR, BL
-    FUN_004fa4d0(c0, c4, c1, plane3);  // left plane:   apex, BL, TL
-    FUN_004fa4d0(c2, c1, c0, plane4);  // near plane:   TR, TL, apex (inward normal)
+    // IDA Camera_SetupFrustum L169-173 — los 4 planos laterales salen del ápice
+    // y el quinto es la BASE de la pirámide (el que corta por distancia):
+    //     FaceNormalize(V[0], V[1], V[2], normal[0]);
+    //     FaceNormalize(V[0], V[2], V[3], normal[1]);
+    //     FaceNormalize(V[0], V[3], V[4], normal[2]);
+    //     FaceNormalize(V[0], V[4], V[1], normal[3]);
+    //     FaceNormalize(V[3], V[2], V[1], normal[4]);   <-- base, NO el ápice
+    //
+    // 2026-08-21: el quinto se armaba con (V[2], V[1], V[0]) y su D se
+    // referenciaba a V[2] en vez de V[1], así que el plano de corte quedaba
+    // pasando por la cámara en vez de por la base.  Efecto: todo lo que se
+    // alejaba un poco caía del lado de afuera y se marcaba como no visible —
+    // por eso desaparecían los nombres (y el modelo) de los items del suelo
+    // sin estar realmente lejos.  Afecta a TODO lo que pasa por sub_4F9590.
+    FUN_004fa4d0(c0, c1, c2, plane0);
+    FUN_004fa4d0(c0, c2, c3, plane1);
+    FUN_004fa4d0(c0, c3, c4, plane2);
+    FUN_004fa4d0(c0, c4, c1, plane3);
+    FUN_004fa4d0(c3, c2, c1, plane4);
 
     // Store plane normals to globals (read by Frustum_IsVisible)
     DAT_0838b7c4 = plane0[0]; DAT_0838b7c8 = plane0[1]; DAT_0838b7cc = plane0[2];
@@ -160,12 +174,13 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     DAT_0838b7f4 = plane4[0]; DAT_0838b7f8 = plane4[1]; DAT_0838b7fc = plane4[2];
 
     // Step 6 — Plane D values: D = -(normal · reference_point) ───────────────
-    // Planes 0–3 use the apex (c0); plane 4 (near) uses c2 (top-right)
+    // Los planos 0-3 se referencian al ápice (V[0] = c0); el 4 a V[1] = c1
+    // (IDA L186-188: `FrustrumFaceD[4] = -(dot(normal[4], FrustrumVertex[1]))`).
     Ff(DAT_07eeb200) = -(plane0[0]*c0[0] + plane0[1]*c0[1] + plane0[2]*c0[2]);
     Ff(DAT_07eeb204) = -(plane1[0]*c0[0] + plane1[1]*c0[1] + plane1[2]*c0[2]);
     Ff(DAT_07eeb208) = -(plane2[0]*c0[0] + plane2[1]*c0[1] + plane2[2]*c0[2]);
     Ff(DAT_07eeb20c) = -(plane3[0]*c0[0] + plane3[1]*c0[1] + plane3[2]*c0[2]);
-    Ff(DAT_07eeb210) = -(plane4[0]*c2[0] + plane4[1]*c2[1] + plane4[2]*c2[2]);
+    Ff(DAT_07eeb210) = -(plane4[0]*c1[0] + plane4[1]*c1[1] + plane4[2]*c1[2]);
 
     // Step 7 — Apply camera view matrix
     FUN_004f8eb0(param_2);
