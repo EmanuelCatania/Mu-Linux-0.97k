@@ -981,12 +981,13 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     if ((int)EnableUse > 0) continue;
                     EnableUse = 10;
 
-                    // Paquete 0x29 = usar scroll/poción del slot.
+                    // IDA 0x004D23B0 builds this as 0x26 and sends it through
+                    // the C3/serial path (not as a direct C1 frame).
                     BYTE pkt[5];
-                    pkt[0] = 0x29;
+                    pkt[0] = 0x26;
                     pkt[1] = (BYTE)(slotIdx + 12);
                     pkt[2] = 0;
-                    SendC1Packet(pkt, 3);
+                    SendC3Packet(pkt, 3);
 
                     // Sonido: 33 para el tipo 448, 32 para 449..457.
                     short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
@@ -1039,10 +1040,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     EnableUse = 10;
 
                     BYTE pkt[3];
-                    pkt[0] = 0x29;
+                    // Use the reference client's encrypted C3 envelope.
+                    pkt[0] = 0x26;
                     pkt[1] = (BYTE)(slotIdx + 12);
                     pkt[2] = 0;
-                    SendC1Packet(pkt, 3);
+                    SendC3Packet(pkt, 3);
 
                     short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
                     if (t == 448)               FUN_00404bc0(33, 0, 0);
@@ -1072,10 +1074,13 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     EnableUse = 10;
 
                     BYTE pkt[3];
-                    pkt[0] = 0x29;
+                    // IDA 0x004D23B0 proves the reference client sends 0x26
+                    // through the C3/serial path. A raw C1 0x26 is rejected
+                    // by the deployed server and causes an immediate FD_CLOSE.
+                    pkt[0] = 0x26;
                     pkt[1] = (BYTE)(slotIdx + 12);
                     pkt[2] = 0;
-                    SendC1Packet(pkt, 3);
+                    SendC3Packet(pkt, 3);
 
                     short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
                     if (t == 448)              FUN_00404bc0(33, 0, 0);

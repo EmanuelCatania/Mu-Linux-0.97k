@@ -718,6 +718,22 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
         }
     }
 
+    // IDA 0x4E13A0 rotates an item only when this flag is one.  Keep a
+    // throttled trace for the three reported scrolls so any remaining false
+    // hover can be tied to its exact rectangle instead of guessed from a shot.
+    if (Success && Type >= 488 && Type <= 490) {
+        static DWORD lastHoverTrace = 0;
+        DWORD now = GetTickCount();
+        if (now - lastHoverTrace >= 500) {
+            lastHoverTrace = now;
+            char trace[180];
+            _snprintf_s(trace, sizeof(trace), _TRUNCATE,
+                "SCROLLHOVER type=%d mouse=(%.0f,%.0f) rect=(%.0f,%.0f %.0fx%.0f)",
+                Type, (float)DAT_083a427c, (float)DAT_083a4278, sx, sy, Width, Height);
+            DbgLogPublic(trace);
+        }
+    }
+
     // Per-type screen-position offset (centro del modelo dentro del slot).
     // Branch tree extraído fielmente del IDA decompile.
     float ofsXmul = 0.5f, ofsYmul = 0.5f;  // defaults
@@ -996,20 +1012,6 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
         case 462:
             modelId = MODEL_POTION + 14;
             break;
-        case 493:
-            modelId = MODEL_POTION + 45;
-            break;
-        case 494:
-        case 495:
-        case 496:
-            modelId = MODEL_POTION + 46;
-            break;
-        case 497:
-            modelId = MODEL_POTION + 49;
-            break;
-        case 498:
-            modelId = MODEL_POTION + 50;
-            break;
         case 548:
             modelId = MODEL_POTION + 100;
             break;
@@ -1023,8 +1025,12 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
         char* modelEntry = (char*)DAT_05828d58 + modelId * 0xbc;
         short numMesh = *(short*)(modelEntry + 0x24);
         int meshBase = *(int*)(modelEntry + 0x28);
-        if (numMesh <= 0 || numMesh > 1000) return;
-        if (meshBase == 0 || (uintptr_t)meshBase < 0x100000) return;
+        // Books 1..16 are loaded at model IDs 880..895.  The original
+        // RenderItem3D has no early-out here; specifically do not hide Book16
+        // (Soul Barrier) because a transient mesh check says it is unavailable.
+        const bool nativeBook = modelId >= 880 && modelId <= 895;
+        if (!nativeBook && (numMesh <= 0 || numMesh > 1000)) return;
+        if (!nativeBook && (meshBase == 0 || (uintptr_t)meshBase < 0x100000)) return;
     }
 
     // IDA 0x004E1BE0 calls RenderObjectScreen(Type+400, Level, Option1, Position, Success, PickUp).

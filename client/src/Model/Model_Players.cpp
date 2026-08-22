@@ -127,9 +127,6 @@ void __cdecl FUN_005079d0(void)
         }
         FUN_00505e90((int)0x31f, "Data2\\Item\\", "\xBD\xBA\xC5\xC0.smd");
 
-        // Magic books (0x370-0x37f)
-        for (int i = 0; i < 0x10; i++)
-            FUN_00506050((int)(i + 0x370), "Data2\\Item\\Etc\\Magic_book", 1);
     }
 
     // ── BMD compressed asset loads (always run) ───────────────────────────────
@@ -327,8 +324,10 @@ void __cdecl FUN_005079d0(void)
 
     FUN_005060b0(799, "Data\\Item\\", "Jewel", 0xf);
 
-    // Magic books BMD (0x370-0x37f)
-    for (int i = 0x370; i-0x36f < 0x10; i++)
+    // Magic books BMD (Book01..Book16 / models 0x370..0x37f).
+    // IDA OpenItems loads the inclusive range; stopping before 0x37f leaves
+    // Book16 unloaded, which is Soul Barrier (type 495/model 895).
+    for (int i = 0x370; i <= 0x37f; i++)
         FUN_005060b0(i, "Data\\Item\\", "Book", i - 0x36f);
 
     // NoneBlendMesh flags — RE-HABILITADO 2026-07-16 (fix del filo glowing).

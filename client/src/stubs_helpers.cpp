@@ -1186,6 +1186,12 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     float camPos[3] = { _DAT_083a4284, _DAT_083a4288, _DAT_083a428c };
     FUN_004f9ce0(camPos, param_7 ? 0.07f : 0.1f, direction, outPos);
 
+    // Book01..Book16 have no position adjustment in the original renderer.
+    // Keep its ray-projected location before the reconstructed generic table
+    // below has a chance to apply overlapping potion-model adjustments.
+    const bool nativeBook = param_1 >= 880 && param_1 <= 895;
+    const float nativeBookPos[3] = { outPos[0], outPos[1], outPos[2] };
+
     // ── ITEM3D: ver el bloque SCALE3D más abajo (después de resolver local_3bc).
     // ── (round-trip ya verificado: proj_pos == proj_tgt, cadena consistente)
 #if 0
@@ -2143,6 +2149,21 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     // visualmente corridos. En IDA no puede pasar: la rama de [624,784) termina
     // con `goto LABEL_142`, saltándose el resto de la lógica de escala.
     else if (local_3bc == 0) local_3bc = 0x3b23d70a;
+
+    // OpenMu/IDA 0x4E13A0 treats Book01..Book16 (models 880..895) as plain
+    // item models: fixed pose (270,-10,0), 0.0025 scale, and Y rotation only
+    // while the item is selected.  The reconstructed generic item table above
+    // reuses this numeric range for potion-specific poses, which overwrote the
+    // native Book state after it had been established.
+    if (nativeBook) {
+        outPos[0] = nativeBookPos[0];
+        outPos[1] = nativeBookPos[1];
+        outPos[2] = nativeBookPos[2];
+        _DAT_07ea952c = 270.0f;
+        _DAT_07ea9530 = param_6 == 1 ? (float)DAT_05826e08 * 0.45f : -10.0f;
+        _DAT_07ea9534 = 0.0f;
+        local_3bc = 0x3b23d70a; // 0.0025f
+    }
 
     // Reset render state globals
     _DAT_07ea9618 = 0;

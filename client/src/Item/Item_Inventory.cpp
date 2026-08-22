@@ -101,20 +101,19 @@ static int FindFirstInventoryTypeExact(const int* types, int count)
 extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
 void __cdecl SeedQuickPotionTypesFromInventory()
 {
-    // 97k HUD order in IDA:
-    //   slot 0 -> life group
-    //   slot 1 -> mana group
+    // 97k HUD order in IDA (item group 14):
+    //   slot 0 -> life group (449..451)
+    //   slot 1 -> mana group (452..454)
     //   slot 2 -> auxiliary group
-    DAT_00559c60 = 452;
-    DAT_00559c64 = 448;
+    DAT_00559c60 = 449;
+    DAT_00559c64 = 452;
     DAT_00559c68 = 456;
 
-    int hpType = FindFirstInventoryTypeInRange(454, 452);
-    if (hpType == -1) hpType = FindFirstInventoryTypeInRange(451, 448);
+    int hpType = FindFirstInventoryTypeInRange(451, 449);
+    if (hpType == -1) hpType = FindFirstInventoryTypeInRange(448, 448);
     if (hpType != -1) DAT_00559c60 = hpType;
 
-    int mpType = FindFirstInventoryTypeInRange(451, 448);
-    if (mpType == -1) mpType = FindFirstInventoryTypeInRange(454, 452);
+    int mpType = FindFirstInventoryTypeInRange(454, 452);
     if (mpType != -1) DAT_00559c64 = mpType;
 
     // Keep the auxiliary slot on real consumables only.

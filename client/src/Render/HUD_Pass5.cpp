@@ -79,12 +79,10 @@ static bool HUD_IsGuildFamilyActive(void)
 }
 
 // =============================================================================
-// sub_482E40 — count inventory items matching a category index.
-// Categories:
-//   a1 == 0 → arrow types (dword_559C60 → primary equipped arrow)
-//   a1 == 1 → bolt/charge types (dword_559C64 → secondary)
-//   a1 == 2 → mid-range types (dword_559C68 → backup)
-//   a1 >= 3 → exact item type a1
+// sub_482E40 — count inventory items matching a quick-slot category.
+// The original walks its inventory grid.  In this port the authoritative
+// inventory storage is OffsetInventoryItems, which is also what renders the
+// hotbar and receives every server inventory update.
 // =============================================================================
 extern "C" int __cdecl sub_482E40(int a1)
 {
@@ -156,26 +154,28 @@ extern "C" int __cdecl sub_482E40(int a1)
     }
 
     int total = 0;
-    for (int wanted = rangeHi; wanted >= rangeLo; --wanted) {
-        // 2026-08-22: mismo reenraizado que en HUD_Pass3 — esto caminaba
-        // g_InventoryGridPool (buffer suelto y vacio) en vez del inventario.
-        int* row = &DAT_07ea9504;      // slot 63, campo Key
-        do {
-            int* cell = row;
-            int count = 8;
-            do {
-                if (*((short*)cell - 28) == wanted && *cell > 0) {
-                    if (countAsStacks) {
-                        ++total;
-                    } else {
-                        total += *((unsigned char*)cell - 30);
-                    }
-                }
-                cell -= 136;
-                --count;
-            } while (count);
-            row -= 17;
-        } while (row >= &DAT_07ea9328);   // hasta el slot 56
+    // Se conserva la forma legible de `main` (recorrer el inventario como
+    // ITEM[64]) en vez del walk de punteros del decompile: son equivalentes —
+    // IDA visita cada (tipo buscado, slot) y acá se filtra por rango, y el
+    // acumulador `*((unsigned __int8 *)v6 - 30)` es el byte +26 = Durability.
+    //
+    // Lo unico que se corrige es el GATE.  IDA sub_482E40 usa
+    // `*((__int16 *)v6 - 28) == v9 && *v6 > 0`, donde `*v6` es el campo en
+    // slot+56 = ITEM::Key, no Durability.  Coinciden casi siempre porque
+    // InsertInventoryItem hace `Key = max(Durability, 1)`, pero no cuando la
+    // durabilidad es 0: ahi el item sigue teniendo Key = 1 y el original lo
+    // cuenta igual (suma 0, o +1 si countAsStacks).
+    const ITEM* inventory = (const ITEM*)OffsetInventoryItems;
+    for (int slot = 0; slot < 64; ++slot) {
+        const ITEM& item = inventory[slot];
+        if (item.Type < rangeLo || item.Type > rangeHi || (int)item.Key <= 0) {
+            continue;
+        }
+        if (countAsStacks) {
+            ++total;
+        } else {
+            total += item.Durability;
+        }
     }
     return total;
 }
