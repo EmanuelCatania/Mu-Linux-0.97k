@@ -2061,6 +2061,117 @@ static void Recv_Revival(const BYTE* Msg, int Size)
 }
 
 // ---------------------------------------------------------------------------
+// F3/05 — ReceiveLevelUp  (@ 0x00431180)
+//
+// Sin este handler el panel de personaje se quedaba clavado en el nivel que
+// traía el F3/03: seguía diciendo "Nivel: 1" con la experiencia por encima de
+// la requerida, y los puntos de stat no aparecían hasta salir a char-select y
+// volver (que re-pide el F3/03 y repuebla CharacterAttribute).
+//
+// PMSG_LEVEL_UP_SEND (Protocol.h:445, `header.set` → frame C1 plano), con el
+// padding de MSVC:
+//    +0..3   PSBMSG_HEAD (C1, size, F3, 05)
+//    +4      WORD Level
+//    +6      WORD LevelUpPoint
+//    +8      WORD MaxLife
+//    +10     WORD MaxMana
+//    +12     WORD MaxBP
+//    +14     WORD FruitAddPoint
+//    +16     WORD MaxFruitAddPoint
+//    +18     WORD FruitSubPoint
+//    +20     WORD MaxFruitSubPoint
+//    +22,23  padding
+//    +24     DWORD ViewPoint / +28 ViewMaxHP / +32 ViewMaxMP / +36 ViewMaxBP
+//    +40     DWORD ViewExperience / +44 DWORD ViewNextExperience
+// Los offsets +4..+16 coinciden con los que lee IDA
+// (`*((_WORD *)ReceiveBuffer + 2..8)`).
+//
+// Detalle fiel a IDA: la vida y el maná ACTUALES se igualan al máximo
+// (CA+28 = CA+32, CA+30 = CA+34) — al subir de nivel el pj queda full.
+// Y la experiencia del próximo nivel NO viene en el paquete: la recalcula el
+// cliente con CharData_CalcNextLevelExp (0x47E350) a partir del nivel nuevo.
+// Ese es el "Experiencia: 6280 / 63" de la captura del bug: CA+52 quedaba con
+// el valor viejo porque nadie lo recalculaba.
+//
+// El ruido de hash-table (STRUCT_DECRYPT/ENCRYPT sobre CharacterMachine, ~75%
+// del decompile) se omite por policy del proyecto.
+// ---------------------------------------------------------------------------
+// CharData_CalcNextLevelExp (0x0047E350) — definida en Scene/Scene_CharSelect_Nav.cpp
+// y sin entrada en functions.h.
+void __fastcall FUN_0047e350(int param_1);
+
+static void Recv_LevelUp(const BYTE* Msg, int Size)
+{
+    // El paquete sin los View* mide 22 bytes (header 4 + hasta +20 inclusive).
+    if (Size < 18 || !CharacterAttribute) {
+        NetLog("NET:    F3/05 LevelUp paquete corto (Size=%d) - descartado", Size);
+        return;
+    }
+
+    BYTE* CA = (BYTE*)CharacterAttribute;
+
+    const WORD level        = *(const WORD*)(Msg +  4);
+    const WORD levelUpPoint = *(const WORD*)(Msg +  6);
+    const WORD maxLife      = *(const WORD*)(Msg +  8);
+    const WORD maxMana      = *(const WORD*)(Msg + 10);
+    const WORD maxBP        = *(const WORD*)(Msg + 12);
+
+    *(WORD*)(CA + 14) = level;          // CharacterLevel
+    *(WORD*)(CA + 84) = levelUpPoint;   // puntos de stat disponibles
+
+    *(WORD*)(CA + 32) = maxLife;        // MaxLife
+    *(WORD*)(CA + 34) = maxMana;        // MaxMana
+    *(WORD*)(CA + 28) = maxLife;        // Life  = MaxLife  (full al subir)
+    *(WORD*)(CA + 30) = maxMana;        // Mana  = MaxMana
+    *(WORD*)(CA + 38) = maxBP;          // MaxBP
+
+    if (Size >= 22) {
+        *(WORD*)(CA + 46) = *(const WORD*)(Msg + 14);   // FruitAddPoint
+        *(WORD*)(CA + 48) = *(const WORD*)(Msg + 16);   // MaxFruitAddPoint
+    }
+
+    // Experiencia del próximo nivel.
+    //
+    // DESVIACIÓN DELIBERADA respecto de IDA: el binario la deriva del nivel con
+    // CharData_CalcNextLevelExp (0x47E350, `10 * lvl^2 * (lvl+9)`), pero MuEmu
+    // usa su propia curva y manda el valor ya resuelto en ViewNextExperience.
+    // Para nivel 5 la fórmula del 0.97k da 3500 y el server dice 7969 — o sea la
+    // fórmula dejaría el panel en desacuerdo con el server y con lo que el propio
+    // F3/03 muestra al volver de char-select.  Mismo criterio que el F3/06 de
+    // stats y el 0xA3 de quest prize: si vienen los View*, mandan ellos.
+    if (Size >= 48) {
+        *(DWORD*)(CA + 16) = *(const DWORD*)(Msg + 40);              // ViewExperience
+        *(DWORD*)(CA + 52) = *(const DWORD*)(Msg + 44);              // ViewNextExperience
+        *(WORD*)(CA + 84) = ClampToWord(*(const DWORD*)(Msg + 24));  // ViewPoint
+        *(WORD*)(CA + 32) = ClampToWord(*(const DWORD*)(Msg + 28));  // ViewMaxHP
+        *(WORD*)(CA + 34) = ClampToWord(*(const DWORD*)(Msg + 32));  // ViewMaxMP
+        *(WORD*)(CA + 38) = ClampToWord(*(const DWORD*)(Msg + 36));  // ViewMaxBP
+        *(WORD*)(CA + 28) = *(WORD*)(CA + 32);   // Life = MaxLife (full al subir)
+        *(WORD*)(CA + 30) = *(WORD*)(CA + 34);   // Mana = MaxMana
+    } else {
+        FUN_0047e350((int)(uintptr_t)CharacterMachine);
+    }
+
+    NetLog("NET:  -> F3/05 LevelUp lvl=%u pts=%u HP=%u MP=%u BP=%u next=%u",
+           (unsigned)level, (unsigned)levelUpPoint, (unsigned)maxLife,
+           (unsigned)maxMana, (unsigned)maxBP,
+           (unsigned)*(DWORD*)(CA + 52));
+
+    // Efecto visual de subida de nivel: 15 joints 1249 + el aura 1264.
+    if (DAT_07abf5d8) {
+        BYTE* hero = (BYTE*)DAT_07abf5d8;
+        for (int i = 0; i < 15; ++i) {
+            FUN_0046d840(1249, (float*)(hero + 16), (float*)(hero + 16),
+                         (float*)(hero + 28), 0, (int)(uintptr_t)hero,
+                         40.0f, 2, 0);
+        }
+        FUN_00460dc0(1264, (float*)(hero + 16), (float*)(hero + 28),
+                     (float*)(hero + 232), nullptr, (float*)hero,
+                     (float*)-1, nullptr, 0);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // F1/02 — ReceiveLogOut  (@ 0x004247D0)
 // Respuesta del server al packet C1/05/F1/02/<sub> que envía UI_InGameMenu
 // (botones Salir / Ir-a-otro-server / Ir-a-otro-char).  Sub-byte Msg[4]:
@@ -2414,6 +2525,10 @@ void Net_ProcessPacket(void)
                     case 0x04:
                         // Respawn tras la muerte (issue #5).  Ver Recv_Revival.
                         Recv_Revival(Msg, Size);
+                        break;
+                    case 0x05:
+                        // Subida de nivel.  Ver Recv_LevelUp.
+                        Recv_LevelUp(Msg, Size);
                         break;
                     case 0x06: {
                         // ── F3/06 PMSG_LEVEL_UP_POINT_SEND ───────────────────
