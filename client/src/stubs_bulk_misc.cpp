@@ -66,22 +66,107 @@ void __fastcall FUN_00402ff0(int param_1) {
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
-// FUN_00403320 @ 0x00403320 (~75 lines) — Quest NPC dialog: render inventory + NPC info + quest state
-// __fastcall(ecx=questObj). Shows inventory interface, NPC name, quest buy/sell button,
-// gold display (ConvertGold64), close button with tooltip.
+extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text);
+int __cdecl FUN_004c3dd0(int param_1);
+
+// FUN_00403320 @ 0x00403320 (955 bytes) — ventana de quest del NPC
+// Port fiel del decompile.  2026-08-21: acá había un resumen que sólo dibujaba
+// el fondo y dejaba el resto como comentarios ("stub: full render logic
+// omitted"); ni siquiera llamaba a FUN_00402ff0, que es la que dibuja el texto
+// del diálogo y las respuestas.  Con el flag del panel prendido, GetScreenWidth
+// angostaba el viewport a 450 y esa franja quedaba en negro.
+//
+// Desviación: la llamada a sub_403150 (que dibuja la lista de items pedidos por
+// la quest y devuelve si están todos en el inventario) queda pendiente — su
+// decompile sale con "positive sp value has been detected, the output may be
+// wrong" y Hex-Rays perdió los parámetros.  Acá se asume "cumple" para el color
+// del botón; lo único que cambia es que el botón sale habilitado y la lista de
+// items no se dibuja.
 void __fastcall FUN_00403320(void* param_1) {
+    char Buffer[100];
+    int  This = (int)(uintptr_t)param_1;
+
     glColor3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    RenderInventoryInterface_stub(0x1c2, 0, 1);
-    m_dwTextColor = 0xffd2e6ff;
+    RenderInventoryInterface_stub(450, 0, 1);
+    m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
-    // If quest state == 1: render confirm bar + check button
-    // If quest state == 3: render gold amount display (ConvertGold64)
-    // Render close button (bitmap 0x118) at 475,395 with tooltip on hover
-    // Render NPC name via getMonsterName() and quest dialog text
-    // Calls FUN_00402ff0 for dialog answers
-    // stub: full render logic omitted
+
+    char state = *(char*)(This + 116866);      // +0x1C882
+    if (state == 1) {
+        FUN_005125a0(279, 450.0f, 325.0f, 190.0f, 10.0f,
+                     0.0f, 0.0f, 0.7421875f, 0.625f, 1, 1);
+        // TODO(sub_403150): lista de items requeridos + "¿los tiene?"
+        m_dwTextColor = 0xFFD2E6FFu;
+
+        if ((double)MouseX >= 485.0 && (double)MouseX < 605.0 &&
+            (double)MouseY >= 355.0 && (double)MouseY < 379.0 && MouseLButtonPush) {
+            glColor3f(0.4f, 0.4f, 0.4f);
+            if (MouseLButtonPop) {
+                MouseLButtonPush = 0;
+                MouseLButton = 0;
+            }
+        }
+        SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);
+        FUN_005125a0(240, 485.0f, 355.0f, 120.0f, 24.0f,
+                     0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+        RenderCenterText(545, 360, GlobalText[699]);
+        glColor3f(1.0f, 1.0f, 1.0f);
+    }
+    else if (state == 3) {
+        FUN_005125a0(271, 500.0f, 367.7f, 113.0f, 18.0f,
+                     0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
+        m_dwBackColor = 0xFF282828u;
+        m_dwTextColor = 0xFF96DCFFu;
+        RenderText(470, 370, GlobalText[198], 0, 0, nullptr);
+        int zen = *(int*)(This + 116868);       // +0x1C884
+        m_dwTextColor = (DWORD)FUN_004c3dd0(zen);
+        ConvertGold64_stub(zen, Buffer);
+        RenderText(510, 370, Buffer, 0, 0, nullptr);
+    }
+
+    // Botón de cerrar + su tooltip
+    FUN_005125a0(280, 475.0f, 395.0f, 24.0f, 24.0f,
+                 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    if ((double)MouseX >= 475.0 && (double)MouseX < 499.0 &&
+        (double)MouseY >= 395.0 && (double)MouseY < 419.0) {
+        SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);
+        m_dwTextColor = 0xFFFFFFFFu;
+        m_dwBackColor = 0xFF000000u;
+        RenderTipText(475, 382, GlobalText[225]);
+    }
+
+    m_dwBackColor = 0;
+    SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);
+    m_dwTextColor = 0xFFF0FF96u;
+
+    int questIdx  = *(unsigned char*)(This + 116858);   // +0x1C87A
+    int questBase = This + 584 * questIdx;
+    int nameW = 120 * (int)WindowWidth / 0x280;
+    // getMonsterName devuelve NULL mientras MonsterScript no esté parseada
+    // (ver la nota de CLAUDE.md); el original no lo contempla.
+    char* npcName = getMonsterName(*(unsigned char*)(questBase + 12));
+    if (npcName) RenderText(485, 12, npcName, nameW, 1, (void*)3);
+
+    m_dwTextColor = 0xFFFFDCC8u;
+    RenderText(472, 22, (char*)(questBase + 13),
+               150 * (int)WindowWidth / 0x280, 1, nullptr);
+
+    FUN_00402ff0(This);      // texto del diálogo + respuestas
     glColor3f(1.0f, 1.0f, 1.0f);
+}
+
+// FUN_00403f30 @ 0x00403F30 (30 bytes) — dispatcher del render de quest.
+// 2026-08-21: no existía y nadie lo llamaba.  sub_4F5820 (Render_QuickButtons_)
+// lo invoca entre RenderGoldenArcherWindow y RenderServerDivision; sin eso el
+// panel de quest nunca se dibujaba aunque su flag estuviera prendido.
+void __fastcall FUN_00403a40(void* param_1);
+char __fastcall FUN_00403f30(void* param_1) {
+    if (param_1 == nullptr) return 1;
+    unsigned char mode = *(unsigned char*)((int)(uintptr_t)param_1 + 116863);  // +0x1C87F
+    if (mode == 1)      FUN_00403320(param_1);
+    else if (mode == 2) FUN_00403a40(param_1);
+    return 1;
 }
 
 // FUN_00403700 @ 0x00403700 (~116 lines) — Quest list: render quest entries filtered by state
@@ -123,7 +208,8 @@ void __fastcall FUN_00403a40(void* param_1) {
     } else if (cVar1 == '\x02') {
         FUN_00403a30();
     }
-    // Close button + NPC name + FUN_00402ff0 for answers
+    // 2026-08-21: faltaba el render del texto del dialogo + respuestas.
+    FUN_00402ff0((int)(uintptr_t)param_1);
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 

@@ -1025,6 +1025,7 @@ char* __cdecl getMonsterName(int type);                              // 0x0047d2
 bool  __cdecl getEqualMonster(int addV);                             // 0x0047ebd1
 void  __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster, int iKillMonster); // 0x0047eba0
 void  __cdecl FUN_00401010(void);   // unknown_libname_1 — ctor estatico de CSQuest
+char  __fastcall FUN_00403f30(void *pCSQuest);   // dispatcher del render de quest (0x403F30)
 void  __fastcall CSQuest__setQuestList(int ecx, int edx, int index, int result); // 0x004011b0
 void  __fastcall CSQuest__setQuestLists(int ecx, int edx, BYTE *byList, int num, int Class); // 0x00401160
 
