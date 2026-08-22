@@ -1001,8 +1001,8 @@ void __cdecl FUN_004b14f0(void)
     // for the item in hotbar slot N: `[0xC1, 0x04, 0x26, slot_index]`.
     // Plays sound 33 for type 448 (potion of mana), 32 for types 449-457
     // (other potions/scrolls). Skipped if WarehouseOpened or TradeOpened.
-    // Rate-limited by EnableUse cooldown (DAT_07eaa0d0): set to 10 on use,
-    // decremented elsewhere.
+    // Rate-limited by EnableUse: the server acknowledges the item use with
+    // 0x26/0xFD and clears this exact latch.
     {
         struct { int vk; int slotIdx; } qwe[] = {
             { 'Q', 0 },
@@ -1021,8 +1021,8 @@ void __cdecl FUN_004b14f0(void)
                         WarehouseOpened == '\0' &&
                         DAT_07eaa11b == '\0')   // !TradeOpened
                     {
-                        if ((int)DAT_07eaa0d0 <= 0) {
-                            DAT_07eaa0d0 = 10;   // EnableUse cooldown
+                        if ((int)EnableUse <= 0) {
+                            EnableUse = 10;
                             // The deployed server expects item use through the
                             // C3/serial path.  Chat_SendPacket only XORs the raw
                             // C1 payload, corrupting the slot on the wire and
