@@ -258,6 +258,12 @@ static void ItemData_FillStats(ITEM* slot, int level)
         slot->SuccessfulBlocking = a->DefenseRate;
         slot->WalkSpeed     = a->WalkSpeed;
         slot->WeaponSpeed   = a->AttackSpeed;
+        // Los Require* quedan sembrados con el valor CRUDO de la tabla; el
+        // requisito real lo calcula `ItemConvert` (0x0047B910) un par de lineas
+        // mas abajo, escalandolo por el nivel del item:
+        //     Require = 3 * attr.Require * (attr.Level + 3*itemLevel) / 100 + 20
+        // Se dejan como fallback por si ItemConvert corta temprano (tabla sin
+        // cargar), pero NO son el numero que debe mostrar el tooltip.
         slot->RequireLevel  = a->RequireLevel;
         slot->RequireStrength = a->RequireStrength;
         slot->RequireDexterity = a->RequireAgility;

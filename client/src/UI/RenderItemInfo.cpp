@@ -1283,9 +1283,26 @@ static void AppendInventorySpecialOptionLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         addLine("\n", 4);
 }
 
-// 2026-08-18: los Require* se leian de `ip` (la INSTANCIA); viven en la fila
-// de ItemAttribute.  Por eso no salia ninguna linea de requisitos.  Los
-// indices de GlobalText ya estaban bien: 0x49=73 fuerza, 0x4B=75 agilidad,
+// Requisitos de stat del tooltip.
+//
+// 2026-08-22 FIX ("las Leather Gloves piden 80 de fuerza"): estas lineas leian
+// `pAttr->Require*`, o sea el valor CRUDO de la fila de ItemAttribute, que NO es
+// el requisito final — es el coeficiente que escala `ItemConvert` (0x0047B910
+// L227-234) con el nivel del item:
+//
+//     Require = 3 * attr.Require * (attr.Level + 3 * itemLevel) / 100 + 20
+//
+// (en el decompile la division sale como la constante magica 4123168605 >> 37,
+//  que es exactamente `* 3 / 100`; la forma legible esta en sub_4C2E20 L188).
+// Para las Leather Gloves +0 eso da 20, no 80.  IDA lee los CUATRO requisitos de
+// la INSTANCIA — `ip->RequireStrength` L1459, `ip->RequireDexterity` L1684,
+// `ip->RequireLevel` L1906, `ip->RequireEnergy` L2353 — que es donde
+// `ItemConvert` deja el valor ya escalado.
+//
+// La nota vieja (2026-08-18) decia que leer de `ip` no mostraba ninguna linea;
+// eso ya no aplica: `ItemData_FillStats` siembra la instancia con el crudo antes
+// de que `ItemConvert` la recalcule, asi que el campo nunca queda en 0.
+// Los indices de GlobalText ya estaban bien: 0x49=73 fuerza, 0x4B=75 agilidad,
 // 0x4C=76 nivel, 0x4D=77 energia (verificado en 0x004C6xxx).
 static void AppendInventoryRequirementTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* pAttr)
 {
@@ -1328,11 +1345,12 @@ static void AppendInventoryRequirementTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* pAt
     const int agility = *(WORD*)(CA + 0x16);
     const int energy = *(WORD*)(CA + 0x1A);
 
-    addRequirementLine(GlobalText[73], (int)pAttr->RequireStrength, strength, TEXT_COLOR_WHITE);
-    addRequirementLine(GlobalText[75], (int)pAttr->RequireAgility, agility, TEXT_COLOR_WHITE);
-    addRequirementLine(GlobalText[77], (int)pAttr->RequireEnergy, energy, TEXT_COLOR_WHITE);
-    if (pAttr->RequireLevel && ip->Type != 0x1ae) {
-        addRequirementLine(GlobalText[76], (int)pAttr->RequireLevel, level, TEXT_COLOR_WHITE);
+    (void)pAttr;   // los requisitos salen de la instancia, no de la tabla
+    addRequirementLine(GlobalText[73], (int)ip->RequireStrength,  strength, TEXT_COLOR_WHITE);
+    addRequirementLine(GlobalText[75], (int)ip->RequireDexterity, agility,  TEXT_COLOR_WHITE);
+    addRequirementLine(GlobalText[77], (int)ip->RequireEnergy,    energy,   TEXT_COLOR_WHITE);
+    if (ip->RequireLevel && ip->Type != 0x1ae) {
+        addRequirementLine(GlobalText[76], (int)ip->RequireLevel, level, TEXT_COLOR_WHITE);
     }
 }
 
