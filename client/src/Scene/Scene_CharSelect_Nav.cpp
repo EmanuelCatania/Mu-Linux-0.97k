@@ -1159,7 +1159,7 @@ void FUN_00401020(void) {}
 // 3-byte repeating XOR key at DAT_00558090.
 void __cdecl FUN_00401120(int buf, int size) {
     for (int i = 0; i < size; i++)
-        *(byte *)(buf + i) ^= (&DAT_00558090)[i % 3];
+        *(byte *)(buf + i) ^= (byte)DAT_00558090[i % 3];
 }
 
 // ── FUN_004017e0 — movida desde stubs_helpers.cpp (refactor B3) ──

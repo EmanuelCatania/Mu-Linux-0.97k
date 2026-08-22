@@ -1701,7 +1701,7 @@ extern char    DAT_0055de84;
 extern char    DAT_0055de10;
 extern FILE   *DAT_07d7806c;   // file handle (MonsterSetBase2 parser)
 extern char    DAT_005580ac[]; // "rb" fopen mode string
-extern char    DAT_00558090;   // Quest XOR decrypt key[0] (3-byte key used by FUN_00401120)
+extern char    DAT_00558090[3];   // bBuxCode — clave XOR de Quest.bmd (FC CF AB)
 extern char    DAT_07cf1ef0;   // sentinel compare buffer
 extern char    DAT_00559088;   // sentinel "END" string base
 extern int     DAT_07d7807c;   // spawn slot index
