@@ -14,7 +14,6 @@
 
 extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
 
-extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl FUN_0054158c(void* ptr);
 extern void FUN_004fa5a0(void);
 
@@ -718,22 +717,6 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
         }
     }
 
-    // IDA 0x4E13A0 rotates an item only when this flag is one.  Keep a
-    // throttled trace for the three reported scrolls so any remaining false
-    // hover can be tied to its exact rectangle instead of guessed from a shot.
-    if (Success && Type >= 488 && Type <= 490) {
-        static DWORD lastHoverTrace = 0;
-        DWORD now = GetTickCount();
-        if (now - lastHoverTrace >= 500) {
-            lastHoverTrace = now;
-            char trace[180];
-            _snprintf_s(trace, sizeof(trace), _TRUNCATE,
-                "SCROLLHOVER type=%d mouse=(%.0f,%.0f) rect=(%.0f,%.0f %.0fx%.0f)",
-                Type, (float)DAT_083a427c, (float)DAT_083a4278, sx, sy, Width, Height);
-            DbgLogPublic(trace);
-        }
-    }
-
     // Per-type screen-position offset (centro del modelo dentro del slot).
     // Branch tree extraído fielmente del IDA decompile.
     float ofsXmul = 0.5f, ofsYmul = 0.5f;  // defaults
@@ -897,72 +880,6 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
     }
 
     float _sx = sx + Width  * ofsXmul;
-    // ── ANCHORDIFF (temporal): re-implementación FIEL de la cadena de anclaje de
-    // IDA `RenderItem3D` (0x4E1BE0) para Type >= 384, con los `goto LABEL_xx`
-    // resueltos. Compara contra lo que calculó el código de arriba y loguea SÓLO
-    // las discrepancias — así no hace falta identificar cada item por nombre.
-    if (Type >= 384) {
-        const float L90x = 0.50f, L90y = 0.95f;   // LABEL_90
-        const float L79x = 0.50f, L79y = 0.90f;   // LABEL_79
-        const float L85x = 0.50f, L85y = 0.75f;   // LABEL_85
-        const float L65x = 0.50f, L65y = 0.80f;   // LABEL_65
-        const float L62x = 0.50f, L62y = 0.50f;   // LABEL_62
-        float rx = -1.0f, ry = -1.0f;             // -1 = "sin offset" (LABEL_93)
-        int lvl3 = Level >> 3;
-
-        if (Type == 430 || Type == 431)      { rx = 0.60f; ry = 1.00f; }
-        else if (Type == 432 || Type == 433) { rx = L79x;  ry = L79y;  }
-        else if (Type == 434)                { rx = L85x;  ry = L85y;  }
-        else if (Type == 435) {
-            if (lvl3 == 0)      { rx = L62x; ry = L62y; }
-            else if (lvl3 == 1) { rx = 0.70f; ry = 0.80f; }
-            else if (lvl3 == 2) { rx = 0.70f; ry = 0.70f; }   // LABEL_54
-            else                { rx = 0.0f;  ry = 0.0f;  }
-        }
-        else if (Type >= 416 && Type < 448)  { rx = 0.50f; ry = 0.70f; }
-        else if (Type == 459 || Type == 460) {
-            if ((Level & 0xF8) == 24) { rx = L62x; ry = L62y; }
-            else                      { rx = L90x; ry = L90y; }
-        }
-        else if (Type == 457) {
-            if ((Level & 0xFFFFFFF8) != 8) { rx = L90x; ry = L90y; }
-            else                           { rx = L65x; ry = L65y; }
-        }
-        else if (Type == 465 || Type == 466 || Type == 467) { rx = L62x; ry = L62y; }
-        else if (Type == 469) {
-            if (lvl3 == 0)      { rx = L62x; ry = L62y; }
-            else if (lvl3 == 1) { rx = 0.40f; ry = 0.80f; }
-            else                { rx = 0.0f;  ry = 0.0f;  }
-        }
-        else if (Type >= 470 && Type < 473) { rx = L90x; ry = L90y; }
-        else if (Type >= 473 && Type < 475) { rx = L79x; ry = L79y; }
-        else if (Type == 387) { rx = 0.50f; ry = 0.45f; }
-        else if (Type == 388) { rx = 0.50f; ry = 0.40f; }
-        else if (Type == 389) { rx = L85x;  ry = L85y;  }
-        else if (Type == 390) { rx = 0.50f; ry = 0.55f; }
-        else if (Type < 448 || Type >= 480) { rx = 0.50f; ry = 0.60f; }
-        else { rx = L90x; ry = L90y; }
-
-        if (rx >= 0.0f) {
-            float dx = ofsXmul - rx, dy = ofsYmul - ry;
-            if (dx < 0) dx = -dx;
-            if (dy < 0) dy = -dy;
-            if (dx > 0.001f || dy > 0.001f) {
-                static int  s_seen[64]; static int s_n = 0;
-                bool dup = false;
-                for (int q = 0; q < s_n; ++q) if (s_seen[q] == Type) { dup = true; break; }
-                if (!dup && s_n < 64) {
-                    s_seen[s_n++] = Type;
-                    char db[190];
-                    _snprintf_s(db, sizeof(db), _TRUNCATE,
-                        "ANCHORDIFF type=%d lvl=%d lvl3=%d  nuestro=(%.2f,%.2f)  IDA=(%.2f,%.2f)",
-                        Type, Level, lvl3, ofsXmul, ofsYmul, rx, ry);
-                    DbgLogPublic(db);
-                }
-            }
-        }
-    }
-
     float _sy = sy + Height * ofsYmul;
 
     // Convert screen-space → world-space ray endpoint.
