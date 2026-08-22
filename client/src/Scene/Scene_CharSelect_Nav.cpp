@@ -1257,10 +1257,16 @@ unsigned int __cdecl FUN_00402f40(void *param_1) {
 }
 
 // ── FUN_00401af0 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-// FUN_00401af0 @ 0x00401AF0 — CharSelect_ClickHandler(state_ptr)
-// Full char-select row click handler: computes row from mouse Y, resolves
-// char slot, builds XOR-encrypted selection packet and sends.
-// Slot types from DAT_07cf5760[server*0x100+slot]: 1/3→send packet, 2→FUN_00401960
+// FUN_00401af0 @ 0x00401AF0 — CSQuest: click sobre las respuestas del dialogo.
+// NO es char-select (el comentario anterior decia eso y era un mal-guess del
+// port): hit-test sobre las lineas de respuesta del panel de quest, y despacho
+// por m_iReturnForAnswer del dialogo activo.
+//   1 = aceptar la quest  -> CheckRequestCondition(bLastCheck=1); si falla,
+//                            muestra el dialogo de rechazo y no manda nada.
+//   2 = cerrar            -> CSQuest::clearQuest
+//   3 = continuar         -> manda el paquete sin verificar condiciones
+// Todas las ramas convergen en LABEL_107 (PlayBuffer 28 + encadenar
+// m_iLinkForAnswer si es > 0 y no hubo rechazo).
 // Paquete cliente->server de quest.  IDA sub_401AF0 arma en los dos sitios
 // (L152-199 y L399-446) exactamente el mismo buffer:
 //     *(DWORD*)v103 = 0x01C10003   -> len=3, packet = C1 ?? A2
@@ -1337,7 +1343,11 @@ void __fastcall FUN_00401af0(void *param_1)
         uint ok = FUN_00401230(param_1, slotData, '\x01');
         if ((char)ok == '\0') {
             local_d29 = '\x01';
-            FUN_004017e0(*(int *)((int)param_1 + 0x1c880));
+            // IDA L145: `v65 = *(__int16 *)(v1 + 116864);` — es un SHORT.
+            // Leerlo como int se lleva ademas el byte de estado (0x1c882),
+            // que CheckRequestCondition acaba de poner en 5, asi que el
+            // indice salia con 5<<16 y el dialogo de fallo nunca se mostraba.
+            FUN_004017e0(*(short *)((int)param_1 + 0x1c880));
             goto done;
         }
         Quest_SendState(param_1);
