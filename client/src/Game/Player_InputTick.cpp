@@ -313,6 +313,11 @@ static void HUD_HotkeyTick(void)
     if (DAT_07e11d70 != '\0') return;  // g_ChatMode
     if (DAT_00559c84 != '\0') return;  // g_TextMode (login / dialog text)
     if (DAT_07e11d71 != '\0') return;  // g_IME_Mode
+    // 2026-08-21: con la ventana de quest abierta el original NO deja tocar los
+    // hotkeys de panel (IDA Chat_InputTick L3978-3985 corta con
+    // `*(BYTE*)(g_csQuest + 116863) == 1`).  Sin este gate se podia abrir el
+    // inventario encima del panel de quest — los dos se dibujan en x=450.
+    if (HUD_IsQuestPanelOpenRuntime()) return;
 
     // Cada llamada a Key_IsJustPressed tiene efectos secundarios de detección por flanco, así que
     // capturamos los resultados antes de combinarlos (V o I invierten el inventario).

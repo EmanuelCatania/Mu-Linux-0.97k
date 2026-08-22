@@ -242,20 +242,24 @@ void __cdecl FUN_00479e50(const char* path)
 // FUN_0047d120 — implemented in src/Item/NPC_Data.cpp     (NPCName_Load)
 
 // ── Char-select click helpers (called from FUN_00402850/402f40) ───────────────
-// FUN_00401960 @ 0x00401960 — CharSelect_SendClickPacket(state_ptr)
-// Sends a 3-byte packet [0xC1][0x03][0x31] to select a character slot.
+extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
+
+// CSQuest::clearQuest @ 0x00401960 — cierra la ventana de quest.
+// 2026-08-21: acá había un "CharSelect_SendClickPacket" que SÓLO mandaba el
+// paquete.  Le faltaban las dos cosas que realmente cierran el panel, así que
+// el botón X (y cualquier otro camino de cierre) no hacía nada: el flag
+// +0x1C87F seguía en 1, GetScreenWidth seguía devolviendo 450 y el panel
+// quedaba dibujado para siempre.  IDA:
+//     *(_BYTE *)(This + 116863) = 0;
+//     CloseInventoryRelatedWindows();
+//     send([C1][03][31]);
+// El 0x31 (49) va como C1 plano — HackPacketCheck le da Encrypt = 0.
 void __fastcall FUN_00401960(int param_1) {
-    char pkt[3] = { (char)0xC1, 0x03, 0x31 };
-    (void)param_1;
-    if (DAT_055ca168 != 0xffffffff) {
-        int sent = 0;
-        int rem = 3;
-        do {
-            int r = send((SOCKET)DAT_055ca168, pkt + sent, rem, 0);
-            if (r <= 0) break;
-            sent += r; rem -= r;
-        } while (rem > 0);
-    }
+    if (param_1 == 0) return;
+    *(BYTE *)(param_1 + 0x1c87f) = 0;
+    CloseInventoryRelatedWindows();
+    BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
+    Net_SendC1Packet(pkt, 3);
 }
 
 // ── Bone / 3D sound helpers ───────────────────────────────────────────────────
