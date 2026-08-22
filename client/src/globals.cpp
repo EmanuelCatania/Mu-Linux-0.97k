@@ -663,13 +663,19 @@ DWORD    DAT_05828d58  = 0;  // Models
 void*    DAT_06f42a58  = nullptr;  // model memory pool
 
 // BMD bounding-box scratch arrays (FUN_00442e60)
-short    DAT_077d87fc  = 0;        // vertex ref-count table base
-DWORD    DAT_05827a98  = 0;        // bbox max[0] base
-DWORD    DAT_05827a9c  = 0;        // bbox max[1] base
-DWORD    DAT_05827aa0  = 0;        // bbox max[2] base
-DWORD    DAT_06f42a5c  = 0;        // bbox min[0] base
-DWORD    DAT_06f42a60  = 0;        // bbox min[1] base
-DWORD    DAT_06f42a64  = 0;        // bbox min[2] base
+// Tablas scratch de BMD_CreateBoundingBox (0x442E60), la unica funcion del
+// binario que las toca.  Se recorren UNA ENTRADA POR HUESO hasta numBones
+// (= *(short*)(model+34)): word_77D87FC[bone] es el contador de vertices y
+// flt_5827A98 / flt_6F42A5C son el max/min del bbox, 3 floats por hueso.
+// 2026-08-22: estaban declaradas como escalares sueltos (2 y 4 bytes), asi que
+// desde el hueso 1 en adelante escribian sobre los globals vecinos en cada
+// carga de modelo — o sea al entrar al juego y en cada cambio de mapa.
+// El vecino inmediato de word_77D87FC era DAT_07db870c (el flag de la lista de
+// skills), que por eso aparecia abierta sola.  MAX_BONES = 200, igual que
+// g_BoneScratch / BoneTransform / BoneQuaternion.
+short    DAT_077d87fc[200]    = {0};   // contador de vertices por hueso
+float    DAT_05827a98[200*3]  = {0};   // bbox max, 3 floats por hueso
+float    DAT_06f42a5c[200*3]  = {0};   // bbox min, 3 floats por hueso
 
 // UI name-list panel data (FUN_0051e240)
 // DAT_083a430c — ahora macro dentro de DAT_083a42f8 (dialog button rects)
@@ -1483,7 +1489,6 @@ DWORD    DAT_07ea8408  = 0;
 // BUG-FIX 2026-04-28: macro hotkey table — 10 slots × 0x100 bytes.
 // Era char (1 byte). OpenMacro escribe a [0x07e0ffc8 .. 0x07e109c8] = 2560 bytes.
 char     DAT_07e0ffc8[10 * 0x100] = {};
-char     DAT_07e108c8  = 0;
 char     DAT_005592dc  = 0;
 DWORD    DAT_005592d8  = 0;
 DWORD    DAT_005592d4  = 0;

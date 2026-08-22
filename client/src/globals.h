@@ -1131,13 +1131,17 @@ extern char    g_BoneVertexBuf[32 * 15000 * 12];
 #define DAT_05846224  (*(DWORD*)(g_BoneVertexBuf + 8))
 
 // ── BMD bounding-box scratch arrays (FUN_00442e60 — BMD_ComputeBounds) ────────
-extern short   DAT_077d87fc;   // vertex ref-count table base (short per bone, 256 max)
-extern DWORD   DAT_05827a98;   // bbox max[0] base (float array: 3 floats × bone, stride 0xc)
-extern DWORD   DAT_05827a9c;   // bbox max[1] base
-extern DWORD   DAT_05827aa0;   // bbox max[2] base
-extern DWORD   DAT_06f42a5c;   // bbox min[0] base
-extern DWORD   DAT_06f42a60;   // bbox min[1] base
-extern DWORD   DAT_06f42a64;   // bbox min[2] base
+// Scratch de BMD_CreateBoundingBox — una entrada por hueso (ver globals.cpp).
+// Los companions +4/+8 son macros que proyectan dentro del slot 0 de su base,
+// igual que DAT_081cb60c, para que `(char*)&DAT_x + n` y `((float*)&DAT_x)[i]`
+// sigan valiendo lo mismo que en el binario.
+extern short   DAT_077d87fc[200];      // contador de vertices por hueso
+extern float   DAT_05827a98[200*3];    // bbox max, 3 floats por hueso
+extern float   DAT_06f42a5c[200*3];    // bbox min, 3 floats por hueso
+#define DAT_05827a9c   (*(DWORD*)((char*)&DAT_05827a98[0] + 4))
+#define DAT_05827aa0   (*(DWORD*)((char*)&DAT_05827a98[0] + 8))
+#define DAT_06f42a60   (*(DWORD*)((char*)&DAT_06f42a5c[0] + 4))
+#define DAT_06f42a64   (*(DWORD*)((char*)&DAT_06f42a5c[0] + 8))
 
 // ── UI name-list panel data (FUN_0051e240) ────────────────────────────────────
 // DAT_083a430c  — macro alias dentro de DAT_083a42f8 (ver bloque de dialog button rects)
@@ -1330,7 +1334,11 @@ extern DWORD   DAT_07ea8408;           // UI cursor / hotkey Y position
 
 // Chat input channel buffers (9 channels × 0x100 bytes)
 extern char    DAT_07e0ffc8[10 * 0x100];   // macro hotkey table: 10 slots × 256 bytes
-extern char    DAT_07e108c8;           // whisper-target buffer (channel 9 / separate)
+// Fila 9 de la tabla de arriba (0x07E0FFC8 + 0x900 = 0x07E108C8), no un global
+// aparte: es el buffer del destinatario de susurro y lo llenan FUN_00494520,
+// strcmp/strlen/memcpy.  2026-08-22: estaba declarado como UN char, o sea
+// escribia 255 bytes sobre los globals vecinos.
+#define DAT_07e108c8   (DAT_07e0ffc8[0x900])
 
 // Player name (for chat name-match / tab-complete)
 extern char    DAT_005592dc;           // player name string (char array)
