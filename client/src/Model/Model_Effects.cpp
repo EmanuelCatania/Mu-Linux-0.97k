@@ -60,8 +60,10 @@ void __cdecl FUN_00508d10(void)
     FUN_00505c80(0x1fa, "Item\\", 0x2600, '\x01');
     FUN_00505c80(0x1d7, "Item\\", 0x2600, '\x01');
 
-    // Large block: 0x190-0x310 range (17 types x 11 offsets)
-    for (int i = 0x1b0; i-0x1af < 0x11; i++) {
+    // Large block: 0x190-0x310 range (17 types x 11 offsets).
+    // The original client includes the final index (0x1c0), which binds
+    // model 0x320 (Gem10 / Orb of Fire Slash) among the affected models.
+    for (int i = 0x1b0; i - 0x1b0 < 0x11; i++) {
         FUN_00505c80(i - 0x20, "Item\\", 0x2600, '\x01');
         FUN_00505c80(i,        "Item\\", 0x2600, '\x01');
         FUN_00505c80(i + 0x20, "Item\\", 0x2600, '\x01');

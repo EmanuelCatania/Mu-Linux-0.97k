@@ -2375,8 +2375,35 @@ void Net_ProcessPacket(void)
                         }
                         BYTE count = Msg[4];
                         NetLog("NET:  → F3/11 SkillList count=%d size=%d", count, Size);
-                        if (!DAT_07cf1ff4 || count > 20) break;
+                        if (!DAT_07cf1ff4) break;
                         BYTE* CA = (BYTE*)(uintptr_t)DAT_07cf1ff4;
+
+                        // The server uses the same F3:11 packet for a delta:
+                        // count=0xFE adds one skill and count=0xFF removes one.
+                        // Treating those values as an oversized full list made a
+                        // learned scroll visible only after the next login.
+                        if (count == 0xFE || count == 0xFF) {
+                            if (Size < 8) break;
+                            BYTE slot = Msg[5];
+                            BYTE skill = Msg[6];
+                            if (slot >= 20) break;
+                            CA[87 + slot] = (count == 0xFE) ? skill : 0;
+
+                            int total = 0;
+                            for (int i = 0; i < 20; ++i) {
+                                if (CA[87 + i] != 0) ++total;
+                            }
+                            CA[86] = (BYTE)total;
+                            if (DAT_07abf5d8) {
+                                BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
+                                if (hero[913] >= 20) hero[913] = 0;
+                            }
+                            NetLog("NET:    F3/11 Skill%s slot=%d skill=%d total=%d",
+                                   (count == 0xFE) ? "Add" : "Del", slot, skill, total);
+                            break;
+                        }
+
+                        if (count > 20) break;
 
                         // Primero limpia los 60 slots para evitar basura vieja que
                         // crashearía el tooltip al pasar el mouse (RenderSkillIcon

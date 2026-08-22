@@ -82,12 +82,10 @@ static bool HUD_IsGuildFamilyActive(void)
 }
 
 // =============================================================================
-// sub_482E40 — count inventory items matching a category index.
-// Categories:
-//   a1 == 0 → arrow types (dword_559C60 → primary equipped arrow)
-//   a1 == 1 → bolt/charge types (dword_559C64 → secondary)
-//   a1 == 2 → mid-range types (dword_559C68 → backup)
-//   a1 >= 3 → exact item type a1
+// sub_482E40 — count inventory items matching a quick-slot category.
+// The original walks its inventory grid.  In this port the authoritative
+// inventory storage is OffsetInventoryItems, which is also what renders the
+// hotbar and receives every server inventory update.
 // =============================================================================
 extern "C" int __cdecl sub_482E40(int a1)
 {
@@ -159,24 +157,17 @@ extern "C" int __cdecl sub_482E40(int a1)
     }
 
     int total = 0;
-    for (int wanted = rangeHi; wanted >= rangeLo; --wanted) {
-        int* row = (int*)((BYTE*)g_InventoryGridPool + 0x1DC);
-        do {
-            int* cell = row;
-            int count = 8;
-            do {
-                if (*((short*)cell - 28) == wanted && *cell > 0) {
-                    if (countAsStacks) {
-                        ++total;
-                    } else {
-                        total += *((unsigned char*)cell - 30);
-                    }
-                }
-                cell -= 136;
-                --count;
-            } while (count);
-            row -= 17;
-        } while ((BYTE*)row >= (BYTE*)g_InventoryGridPool);
+    const ITEM* inventory = (const ITEM*)OffsetInventoryItems;
+    for (int slot = 0; slot < 64; ++slot) {
+        const ITEM& item = inventory[slot];
+        if (item.Type < rangeLo || item.Type > rangeHi || item.Durability == 0) {
+            continue;
+        }
+        if (countAsStacks) {
+            ++total;
+        } else {
+            total += item.Durability;
+        }
     }
     return total;
 }
