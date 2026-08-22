@@ -1017,20 +1017,6 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
         case 462:
             modelId = MODEL_POTION + 14;
             break;
-        case 493:
-            modelId = MODEL_POTION + 45;
-            break;
-        case 494:
-        case 495:
-        case 496:
-            modelId = MODEL_POTION + 46;
-            break;
-        case 497:
-            modelId = MODEL_POTION + 49;
-            break;
-        case 498:
-            modelId = MODEL_POTION + 50;
-            break;
         case 548:
             modelId = MODEL_POTION + 100;
             break;
