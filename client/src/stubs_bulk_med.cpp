@@ -686,7 +686,13 @@ int __cdecl FUN_00482dd0(int param_1, int param_2, uint param_3)
 {
     int iVar3 = 0;
     int *piVar4 = &DAT_07ea9504;
-    for (int outer = 0; outer < 7; ++outer) {
+    // 2026-08-22: eran 7 columnas y son 8.  El bound de IDA es
+    // `while (v5 >= &unk_7EA9328)` arrancando en &unk_7EA9504 con paso de -17
+    // ints (-68 bytes): (0x7EA9504 - 0x7EA9328) / 68 + 1 = 8.  Con 7 se salteaba
+    // una columna entera del inventario, asi que un item de quest que estuviera
+    // ahi contaba como faltante: la lista salia en rojo y el boton en gris
+    // aunque el personaje lo tuviera.
+    for (int outer = 0; outer < 8; ++outer) {
         int *piVar1 = piVar4;
         for (int iVar2 = 7; iVar2 >= 0; --iVar2) {
             if ((((short)piVar1[-0xe] == param_1) && (0 < *piVar1)) &&

@@ -7866,13 +7866,15 @@ int __stdcall FUN_004824c0_stub(void) {
     // Scan equipment table from DAT_07ea9504 downward (stride 0x11 dwords = 0x44 bytes per slot)
     // 8 rows x 8 columns, looking for first slot matching weaponGroup with durability > 0
     //
-    // BUG-FIX 2026-05-03: original used `if ((int)piRow < 0x7ea9328) return -1;` —
-    // hardcoded absolute end address from source binary. In our build &DAT_07ea9504
-    // is linker-placed elsewhere so the bound was meaningless (early -1 OR infinite
-    // loop). Replaced with explicit 7-iteration outer loop matching grid bounds.
+    // BUG-FIX 2026-05-03: el original usa `if ((int)piRow < 0x7ea9328) return -1;`
+    // — una direccion absoluta del binario fuente, que en nuestro build no
+    // significa nada.  Reemplazado por un contador explicito.
+    // 2026-08-22: ese contador era de 7 y son 8 columnas
+    // ((0x7EA9504 - 0x7EA9328) / 68 + 1 = 8).  Se nota tambien en `col`, que
+    // arranca en 7 y tiene que llegar hasta 0.
     int* piRow = &DAT_07ea9504;
     int col = 7;
-    for (int outer = 0; outer < 7; ++outer) {
+    for (int outer = 0; outer < 8; ++outer) {
         int slotIdx = col + 0x38;
         int* piSlot = piRow;
         for (int row = 7; row >= 0; --row) {
@@ -7919,21 +7921,24 @@ int __stdcall FUN_00482850_stub(void) {
         weaponGroup = weaponClass;
     }
 
-    // Scan equipment table from DAT_07ea9504 downward, counting all matching slots
+    // Recorre la grilla desde DAT_07ea9504 hacia atras contando coincidencias.
+    // 2026-08-22: el bound seguia siendo el literal del binario fuente
+    // (`while ((int)piRow > 0x7ea9327)`).  En nuestro build piRow es una
+    // direccion de BSS mucho mas baja que 0x7EA9327, asi que la condicion daba
+    // falsa en la primera vuelta y el do-while contaba UNA sola columna de las
+    // 8.  Contador explicito, igual que los otros dos walkers de esta grilla.
     int count = 0;
     int* piRow = &DAT_07ea9504;
-    do {
+    for (int outer = 0; outer < 8; ++outer) {
         int* piSlot = piRow;
-        int row = 8;
-        do {
+        for (int row = 8; row != 0; --row) {
             if ((short)*(piSlot - 0x0E) == (short)weaponGroup && *piSlot > 0) {
                 count++;
             }
             piSlot -= 0x88;
-            row--;
-        } while (row != 0);
+        }
         piRow -= 0x11;
-    } while ((int)piRow > 0x7ea9327);
+    }
     return count;
 }
 
