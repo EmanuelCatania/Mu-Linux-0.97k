@@ -114,7 +114,6 @@ void __cdecl SeedQuickPotionTypesFromInventory()
     if (hpType != -1) DAT_00559c60 = hpType;
 
     int mpType = FindFirstInventoryTypeInRange(454, 452);
-    if (mpType == -1) mpType = FindFirstInventoryTypeInRange(451, 449);
     if (mpType != -1) DAT_00559c64 = mpType;
 
     // Keep the auxiliary slot on real consumables only.
