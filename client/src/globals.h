@@ -392,7 +392,15 @@ extern char    s__s__s_0056191c[];
 extern char    s__s__s_00561924[];
 
 // ── Misc game globals (0x00583dxx – 0x00590xxx) ───────────────────────────────
-extern char    DAT_00583d8c[];  // quest manager object (~116KB)
+// DAT_00583d8c @ 0x00583D8C ES `g_csQuest` — el PUNTERO al objeto CSQuest, no
+// el objeto.  Lo confirman los xrefs: ReceiveQuestHistory / State / Result
+// referencian 0x583D8C y el decompile los muestra como `g_csQuest`; el objeto
+// es `unk_567500` (= DAT_00567500), que es a donde apunta.
+// 2026-08-21: acá estaba declarado como un objeto de 0x1D000 bytes, o sea
+// convivían DOS objetos CSQuest: éste (donde cargaba Quest.bmd) y DAT_00567500
+// (al que apunta g_csQuest).  Todos los consumidores ya lo usan como puntero
+// (`(uintptr_t)DAT_00583d8c + 0x1c87f`), así que el alias los arregla a todos.
+#define DAT_00583d8c   g_csQuest
 extern DWORD   DAT_00583dac;
 extern DWORD   DAT_00585e7c;
 extern DWORD   DAT_0058c780;

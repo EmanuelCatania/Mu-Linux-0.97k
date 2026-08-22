@@ -456,10 +456,7 @@ char     s__s__s_0056191c[]                 = "%s%s";
 char     s__s__s_00561924[]                 = "%s%s";
 
 // ── Misc game globals ─────────────────────────────────────────────────────────
-// Quest manager object — original en 0x00583d8c, size >= 0x1D000 bytes
-// (header 8 + 0x7210 DWORDs quest data + ~0x38 bytes de flags al final).
-// Pasamos &DAT_00583d8c a FUN_00401040 como "this" pointer.
-char     DAT_00583d8c[0x1D000] = {};
+// DAT_00583d8c es un alias de g_csQuest (ver globals.h).
 DWORD    DAT_00583dac  = 0;
 DWORD    DAT_00585e7c  = 0;
 DWORD    DAT_0058c780  = 0;

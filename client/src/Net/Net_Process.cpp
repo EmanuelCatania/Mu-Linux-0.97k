@@ -5579,7 +5579,7 @@ void Net_ProcessPacket(void)
             // estuvieran portados.  ProtocolCore (0x4389A0 L1376-1387) los
             // manda a ReceiveQuestHistory / State / Result / Prize.
             case 0xA0: {   // ReceiveQuestHistory @ 0x00437450
-                if (Size < 4) break;
+                if (Size < 4 || g_csQuest == 0) break;
                 NetLog("NET:  → 0xA0 QuestHistory num=%d", Msg[3]);
                 int heroClass = -1;
                 if (DAT_07abf5d8 != 0)
@@ -5598,7 +5598,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0xA1: {   // ReceiveQuestState @ 0x00437480
-                if (Size < 5) break;
+                if (Size < 5 || g_csQuest == 0) break;
                 NetLog("NET:  → 0xA1 QuestState index=%d result=%d", Msg[3], Msg[4]);
                 CSQuest__setQuestList((int)g_csQuest, 0, Msg[3], Msg[4]);
                 CSQuest__ShowQuestNpcWindow((void*)(uintptr_t)g_csQuest, 0, -1);
@@ -5606,7 +5606,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0xA2: {   // ReceiveQuestResult @ 0x004374B0
-                if (Size < 6) break;
+                if (Size < 6 || g_csQuest == 0) break;
                 NetLog("NET:  → 0xA2 QuestResult index=%d err=%d state=%d",
                        Msg[3], Msg[4], Msg[5]);
                 if (Msg[4] == 0) {          // IDA: sólo si el byte 4 es 0
