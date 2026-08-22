@@ -845,9 +845,24 @@ DWORD    DAT_07ea8414  = 0;
 // across rows in a tiled layout).  Initialise all Type fields (every 56-th
 // byte = byte at row-relative offset -56, but here we just zero-fill and
 // stamp 0xFFFF in HUD_InitInventoryPools).
-BYTE   g_EquipGridBuf[0x12DC] = {0};
-int   *p_DAT_07ea9504_ = (int*)&g_EquipGridBuf[0x12DC - 4];
-int   *p_DAT_07ea9328_ = (int*)&g_EquipGridBuf[0x12DC - 4 - 0x1DC];
+// unk_7EA9504 / unk_7EA9328 son POSICIONES DENTRO DEL INVENTARIO REAL, no un
+// buffer aparte.  OffsetInventoryItems esta en 0x07EA8410 y la cuenta cierra
+// exacta con slots de 0x44 y el campo Key en +56:
+//     0x7EA9504 - 0x07EA8410 = 4340 = 63 * 0x44 + 56   -> slot 63, Key
+//     0x7EA9328 - 0x07EA8410 = 3864 = 56 * 0x44 + 56   -> slot 56, Key
+// El walker de FindQuestItemsInInven / FUN_004824c0 / FUN_00482850 recorre los
+// slots 63..56 por afuera (paso -0x44) y por adentro salta de a -8 slots
+// (paso -544), o sea cubre los 64 slots del grid 8x8.  Lo que lee en cada uno:
+//     v7          = slot + 56  -> Key   ( > 0 = celda ocupada )
+//     v7 - 56     = slot + 0   -> Type
+//     v7 - 52     = slot + 4   -> Level
+//
+// 2026-08-22: acá había un `g_EquipGridBuf[0x12DC]` suelto, en cero, que nadie
+// escribía nunca — los tres walkers recorrían memoria vacía y siempre reportaban
+// "no tenés el item".  Por eso la lista de items de quest salía en rojo con el
+// item en el inventario.  Ahora los dos punteros se reenraízan sobre el pool real.
+int   *p_DAT_07ea9504_ = (int*)&OffsetInventoryItems[63 * 0x44 + 56];
+int   *p_DAT_07ea9328_ = (int*)&OffsetInventoryItems[56 * 0x44 + 56];
 DWORD    DAT_07ea9800  = 0;
 DWORD    g_ItemMoveSourcePool = 0;
 DWORD    g_ItemMoveTargetPool = 0;

@@ -739,22 +739,11 @@ extern DWORD   DAT_07ea5b1c;
 extern DWORD   DAT_07ea5b20;
 extern DWORD   DAT_07ea8410;
 extern DWORD   DAT_07ea8414;
-// Equipment grid buffer.  IDA layout:
-//   FUN_00482be0 walks `&unk_7EA9504` outer-stride -68 (= -17 dwords) for 7
-//   filas, y stride interno -544 (= -136 dwords) para 8 columnas, leyendo
-//   `*(short*)(v7 - 56)` (Type) y `*v7` (Qty). El externo va desde
-//   unk_7EA9504 down to unk_7EA9328 (= 7*68 = 476 bytes back).  Inner
-//   avanza 8 celdas × 544 bytes = 4352 bytes hacia atrás desde la posición externa.
-//   O sea el buffer se extiende al menos desde (unk_7EA9504 - 4828) hasta
-//   unk_7EA9504, totalling 4828 bytes.
-//
-// Acá exponemos un único buffer contiguo y reenraizamos DAT_07ea9504 y
-// DAT_07ea9328 sobre los EXTREMOS de puntero dentro de ese buffer (vía accesores
-// inline en stubs.cpp). Así `&DAT_07ea9504` == fin-del-buffer y el recorrido
-// reads valid ITEM-shaped memory throughout.
-extern BYTE    g_EquipGridBuf[0x12DC];           // 4828 bytes
-extern int    *p_DAT_07ea9504_;                  // &g_EquipGridBuf[end-4]
-extern int    *p_DAT_07ea9328_;                  // &g_EquipGridBuf[end-0x1E0]
+// unk_7EA9504 / unk_7EA9328 NO son un buffer aparte: son dos posiciones dentro
+// del inventario real (OffsetInventoryItems @ 0x07EA8410).  Ver la derivación
+// completa en globals.cpp, junto a la definición de los punteros.
+extern int    *p_DAT_07ea9504_;   // &OffsetInventoryItems[63*0x44+56] (slot 63, Key)
+extern int    *p_DAT_07ea9328_;   // &OffsetInventoryItems[56*0x44+56] (slot 56, Key)
 #define DAT_07ea9504  (*p_DAT_07ea9504_)
 #define DAT_07ea9328  (*p_DAT_07ea9328_)
 extern DWORD   DAT_07ea9800;
