@@ -29,6 +29,7 @@
 #include "Net/Net.h"
 
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
+extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // Inventory grid base — used by section 11 (Q/W/E quick-use sound feedback).
 // Defined in src/Render/HUD_Pass3.cpp.
@@ -1022,20 +1023,12 @@ void __cdecl FUN_004b14f0(void)
                     {
                         if ((int)DAT_07eaa0d0 <= 0) {
                             DAT_07eaa0d0 = 10;   // EnableUse cooldown
-                            // BUG-FIX 2026-07-19 (DESCONEXIÓN ESTANDO QUIETO):
-                            // se mandaba `[C1][04][26][slot]` = 4 bytes con el slot
-                            // CRUDO. El server espera PMSG_ITEM_USE_RECV (ItemManager.h):
-                            //   PBMSG_HEAD header;  // C1:26   (3 bytes)
-                            //   BYTE SourceSlot;    // +3
-                            //   BYTE TargetSlot;    // +4      → 5 bytes en total
-                            // y valida `INVENTORY_RANGE(SourceSlot)` + rechaza si
-                            // `SourceSlot == TargetSlot`. Con 4 bytes leía TargetSlot
-                            // fuera del paquete → protocolo inválido → FD_CLOSE ~60ms
-                            // después. El índice además va +12 (los 12 slots de equipo
-                            // preceden a la grilla del inventario), igual que el otro
-                            // sender de 0x26 en Combat.cpp.
+                            // The deployed server expects item use through the
+                            // C3/serial path.  Chat_SendPacket only XORs the raw
+                            // C1 payload, corrupting the slot on the wire and
+                            // causing an immediate disconnect.
                             BYTE pkt[5] = { 0xC1, 0x05, 0x26, (BYTE)(slot + 12), 0x00 };
-                            Chat_SendPacket(pkt, 5, 3);   // chain-XOR desde el byte 3
+                            Net_SendSmallPacket(pkt, 5);
                             // Sound feedback by item type
                             int itemType = *(int*)(OffsetInventoryItems + slot * 0x44);
                             if (itemType == 448) {
