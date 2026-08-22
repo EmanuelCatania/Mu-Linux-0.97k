@@ -981,9 +981,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     if ((int)EnableUse > 0) continue;
                     EnableUse = 10;
 
-                    // Paquete 0x29 = usar scroll/poción del slot.
+                    // MuEmu routes item use through CGItemUseRecv (0x26).
+                    // 0x29 is server-to-client only (special-item timer), so
+                    // sending it leaves EnableUse latched when no reply arrives.
                     BYTE pkt[5];
-                    pkt[0] = 0x29;
+                    pkt[0] = 0x26;
                     pkt[1] = (BYTE)(slotIdx + 12);
                     pkt[2] = 0;
                     SendC1Packet(pkt, 3);
@@ -1039,7 +1041,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     EnableUse = 10;
 
                     BYTE pkt[3];
-                    pkt[0] = 0x29;
+                    // C1:26 is PMSG_ITEM_USE_RECV for this 0.97k/MuEmu pair.
+                    pkt[0] = 0x26;
                     pkt[1] = (BYTE)(slotIdx + 12);
                     pkt[2] = 0;
                     SendC1Packet(pkt, 3);
@@ -1072,7 +1075,9 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     EnableUse = 10;
 
                     BYTE pkt[3];
-                    pkt[0] = 0x29;
+                    // Magic scrolls (e.g. Cometfall, type 489) must use the
+                    // same C1:26 item-use request as the reference client.
+                    pkt[0] = 0x26;
                     pkt[1] = (BYTE)(slotIdx + 12);
                     pkt[2] = 0;
                     SendC1Packet(pkt, 3);
