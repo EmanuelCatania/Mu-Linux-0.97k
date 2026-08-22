@@ -43,18 +43,18 @@ extern "C" {
     // (so IDA-ported toggle code and render gates share the same byte).
 }
 
-// BUG-FIX 2026-05-01: el alias `SummonLife = DAT_07e11d28` colisiona con el
-// uso de DAT_07e11d28 como walker movement debounce counter en
-// Player_InputTick.cpp:825 (`DAT_07e11d28 = DAT_07e11d28 + 1` cada tick).
-// El walker incrementa este global cada frame, lo que hace que SummonLife
-// SIEMPRE sea != 0 → la barra HP del "Monstruo Invocado" se renderea siempre,
-// produciendo el triángulo cyan visible de mitad de pantalla.
-//
-// El binario original presumiblemente usa una variable separada para el
-// walker debounce. Hasta porteemos el packet handler que setea el summon
-// life real, mantenemos SummonLife como una variable nueva que arranca en 0.
-static DWORD _g_SummonLife_local = 0;
-#define SummonLife               _g_SummonLife_local
+// 2026-08-22: `SummonLife` NO es DAT_07e11d28.  Una nota vieja lo aliaseaba
+// ahí y colisionaba con el contador de debounce del walker
+// (Player_InputTick.cpp), que lo incrementa cada frame — por eso la barra de HP
+// del monstruo invocado se dibujaba siempre (el triángulo cyan).  El parche de
+// entonces fue una variable local nueva, o sea el global quedó partido en dos.
+// `ida_xrefs_to("SummonLife")` da la dirección real: **0x05826D24**
+// (= DAT_05826d24), escrita por InitGame, ReceiveRevival (3 sitios) y el
+// F3/0x20 de ProtocolCore, y leída por RenderEquipedHelperLife.  Ahora el alias
+// apunta ahí, así que el reset de Recv_Revival lo ve este render.
+// (Pendiente: portar el F3/0x20 `SummonLife = ReceiveBuffer[4]`, el único
+//  productor del valor; hasta entonces queda en 0 y la barra no se dibuja.)
+#define SummonLife               DAT_05826d24
 #define g_bEventChipDialogEnable _g_bEventChipDialogEnable
 #define byte_7E113E4         (*(char(*)[5][256])&DAT_07e113e4)
 #define flt_7E118E4_PTR      (((char*)&DAT_07e113e4) + 5*256)  // one past last

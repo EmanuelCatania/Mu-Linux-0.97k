@@ -517,10 +517,13 @@ extern DWORD   DAT_05826cf8;
 extern DWORD   DAT_05826d08;   // chat rate-limit counter (max 0x46 = 70 ticks)
 extern int     DAT_05826d04;   // teleport / consumable use flag (runtime global)
 extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit compare)
-extern char    DAT_05826d14;   // NPC script: keepalive-sent flag
+extern char    DAT_05826d14;   // Teleport (IDA `Teleport` @0x05826D14) — 0=normal,
+                               // 1=gate/teleport en curso.  La etiqueta vieja
+                               // ("NPC script keepalive") era falsa.
 extern DWORD   DAT_05826d1c;
 extern DWORD   DAT_05826d20;
-extern DWORD   DAT_05826d24;
+extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la mascota
+                               // invocada; lo alias-ea HUD_Pass2.cpp.
 extern DWORD   DAT_05826d30;
 extern char    DAT_05826d31;
 extern char    DAT_05826d32;
