@@ -8294,8 +8294,8 @@ void __stdcall InitGame(void)
     EnableUse = 0;
     DAT_07e11998 = -1;    // SendGetItem
     DAT_07e11d28 = 0;     // SummonLife (DWORD)
-    DAT_07e11e10 = 0;     // SoccerTime
-    DAT_07e11e14 = 0;     // SoccerObserver
+    DAT_05826c08 = 0;     // SoccerTime    (IDA InitGame @0x4244B4)
+    DAT_05826d33 = 0;     // SoccerObserver (IDA InitGame @0x4244BA)
     DAT_07e11994 = -1;    // SelectedNpc
     DAT_07e11990 = -1;    // SelectedOperate
     DAT_07e1198c = -1;    // SelectedCharacter

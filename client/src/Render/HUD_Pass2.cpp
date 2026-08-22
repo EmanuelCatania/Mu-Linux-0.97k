@@ -286,8 +286,15 @@ void Render_ChatBox(void) { Render_ChatBox_(); }
 // 100-name (8000-byte) bound — see DWORD_7EA51EC_LIMIT.
 // =============================================================================
 
-#define DAT_07e11e10_alias  DAT_07e11e10   // SoccerTime
-#define DAT_07e11e14_alias  DAT_07e11e14   // SoccerObserver
+// 2026-08-22: `SoccerTime` y `SoccerObserver` NO son DAT_07e11e10 / DAT_07e11e14.
+// `ida_xrefs_to` da 0x05826C08 y 0x05826D33; de 0x07E11E10 el unico xref en todo
+// el binario es sub_494520 (el bloque anti-tamper de IME/RC4), o sea el alias
+// viejo era inventado.  Mientras estuvo mal, los escritores (InitGame y ahora
+// los handlers F3/22 y F3/23) y este lector estaban en memorias distintas, asi
+// que el reloj del evento y el marcador nunca se dibujaban.  Ver
+// [[global-partido-en-dos]].
+#define DAT_07e11e10_alias  DAT_05826c08   // SoccerTime
+#define DAT_07e11e14_alias  DAT_05826d33   // SoccerObserver
 
 extern "C" char __cdecl Render_CharInfoPanel_(void);
 char Render_CharInfoPanel_(void)
