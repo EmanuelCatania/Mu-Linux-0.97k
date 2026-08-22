@@ -51,10 +51,7 @@ extern "C" void   __cdecl SeedQuickPotionTypesFromInventory(void);
 #define byte_559C6C    DAT_00559c6c
 
 // Inventory grid pool — same one HUD_Pass3.cpp's sub_482850 walks.
-// `g_InventoryGridPool` is defined with external linkage in HUD_Pass3.cpp.
-extern "C" DWORD g_InventoryGridPool[2176];
 extern "C" BYTE  OffsetInventoryItems[];
-extern "C" DWORD g_InventoryGridPool[];
 
 static bool HUD_IsQuestPanelOpenRuntime(void)
 {
@@ -160,7 +157,9 @@ extern "C" int __cdecl sub_482E40(int a1)
 
     int total = 0;
     for (int wanted = rangeHi; wanted >= rangeLo; --wanted) {
-        int* row = (int*)((BYTE*)g_InventoryGridPool + 0x1DC);
+        // 2026-08-22: mismo reenraizado que en HUD_Pass3 — esto caminaba
+        // g_InventoryGridPool (buffer suelto y vacio) en vez del inventario.
+        int* row = &DAT_07ea9504;      // slot 63, campo Key
         do {
             int* cell = row;
             int count = 8;
@@ -176,7 +175,7 @@ extern "C" int __cdecl sub_482E40(int a1)
                 --count;
             } while (count);
             row -= 17;
-        } while ((BYTE*)row >= (BYTE*)g_InventoryGridPool);
+        } while (row >= &DAT_07ea9328);   // hasta el slot 56
     }
     return total;
 }
