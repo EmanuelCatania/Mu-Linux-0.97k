@@ -97,6 +97,7 @@ extern "C" int __cdecl sub_482E40(int a1)
             rangeLo = rangeHi;
             break;
         case 457:
+        case 458:
         case 468:
             countAsStacks = 1;
             rangeLo = rangeHi;
@@ -118,6 +119,7 @@ extern "C" int __cdecl sub_482E40(int a1)
             rangeLo = rangeHi;
             break;
         case 457:
+        case 458:
         case 468:
             countAsStacks = 1;
             rangeLo = rangeHi;
@@ -134,7 +136,8 @@ extern "C" int __cdecl sub_482E40(int a1)
         }
     } else if (a1 == 2) {
         rangeHi = dword_559C68;
-        if (rangeHi == 457 || rangeHi == 468) {
+        // IDA: `v2 >= 457 && (v2 <= 458 || v2 == 468)`
+        if ((rangeHi >= 457 && rangeHi <= 458) || rangeHi == 468) {
             countAsStacks = 1;
             rangeLo = rangeHi;
         } else if (rangeHi >= 448 && rangeHi <= 451) {
