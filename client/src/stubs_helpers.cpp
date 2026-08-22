@@ -2144,6 +2144,18 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     // con `goto LABEL_142`, saltándose el resto de la lógica de escala.
     else if (local_3bc == 0) local_3bc = 0x3b23d70a;
 
+    // OpenMu/IDA 0x4E13A0 treats Book01..Book16 (models 880..895) as plain
+    // item models: fixed pose (270,-10,0), 0.0025 scale, and Y rotation only
+    // while the item is selected.  The reconstructed generic item table above
+    // reuses this numeric range for potion-specific poses, which overwrote the
+    // native Book state after it had been established.
+    if (param_1 >= 880 && param_1 <= 895) {
+        _DAT_07ea952c = 270.0f;
+        _DAT_07ea9530 = param_6 == 1 ? (float)DAT_05826e08 * 0.45f : -10.0f;
+        _DAT_07ea9534 = 0.0f;
+        local_3bc = 0x3b23d70a; // 0.0025f
+    }
+
     // Reset render state globals
     _DAT_07ea9618 = 0;
     _DAT_07ea961c = 0;
