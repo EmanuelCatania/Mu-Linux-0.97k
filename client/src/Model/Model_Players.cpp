@@ -127,9 +127,6 @@ void __cdecl FUN_005079d0(void)
         }
         FUN_00505e90((int)0x31f, "Data2\\Item\\", "\xBD\xBA\xC5\xC0.smd");
 
-        // Magic books (0x370-0x37f)
-        for (int i = 0; i < 0x10; i++)
-            FUN_00506050((int)(i + 0x370), "Data2\\Item\\Etc\\Magic_book", 1);
     }
 
     // ── BMD compressed asset loads (always run) ───────────────────────────────
