@@ -2573,7 +2573,12 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 #define m_dwBackColor  DAT_00559c80
 // g_iNumAnswer — alias de DAT_083a7c0c (ver arriba).
 // g_iNumLineMessageBoxCustom — alias de DAT_083a4324 (ver arriba).
-extern char   *g_lpszMessageBoxCustom[16]; // Quest dialog text lines
+// g_lpszMessageBoxCustom — alias de DAT_083a44c4 (el buffer real de 7 lineas x
+// 0x26).  2026-08-21: era un array de 16 PUNTEROS en NULL, o sea los writers
+// (ShowDialogText, CreateOkMessageBox) llenaban DAT_083a44c4 y los readers
+// (sub_402FF0) leian punteros nulos → el texto del dialogo de quest nunca se
+// dibujaba.  Sexto global partido en dos de este subsistema.
+#define g_lpszMessageBoxCustom  ((char (*)[0x26])DAT_083a44c4)
 // g_iCurrentDialogScript — alias de DAT_005615dc (ver arriba).
 // g_lpszDialogAnswer — alias de DAT_083a4348 (ver arriba).
 // 2026-07-19: m_hFontDC NO es un global aparte — en IDA sub_50F5F0 hace

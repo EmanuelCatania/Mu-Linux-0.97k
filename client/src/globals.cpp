@@ -2622,7 +2622,7 @@ DWORD  DAT_0055339c       = 0;
 // ChatListBox render) escribía a un global que el render de texto (FUN_0040f610, lee
 // DAT_00559c78) NUNCA leía → colores perdidos = texto blanco. Ahora son macros
 // (globals.h) que apuntan al global real. Ver [[charselect-deferred-issues]].
-char  *g_lpszMessageBoxCustom[16] = {0};
+// g_lpszMessageBoxCustom es un alias de DAT_083a44c4 (ver globals.h).
 // m_hFontDC ahora es macro sobre DAT_055c9fec (ver globals.h)
 HFONT  g_hFontBold        = NULL;
 

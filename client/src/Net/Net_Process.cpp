@@ -5581,9 +5581,23 @@ void Net_ProcessPacket(void)
             case 0xA0: {   // ReceiveQuestHistory @ 0x00437450
                 if (Size < 4 || g_csQuest == 0) break;
                 NetLog("NET:  → 0xA0 QuestHistory num=%d", Msg[3]);
+                // IDA lee `*(BYTE*)(Hero + 444)` directo, pero en nuestro
+                // build este paquete llega ANTES de que exista la entidad del
+                // heroe (en el mismo tick se ve "0x12 SKIP - hero not yet
+                // allocated"), asi que Hero es 0.  Con Class = -1
+                // setQuestLists NO escribe This+4, que queda en el 0xFF que le
+                // pone el ctor — y FindQuestContext lo usa como indice de clase
+                // para leer `pQuest + 44 + clase`, o sea se iba 255 bytes fuera
+                // de la entrada, no encontraba contexto y caia en el LABEL_5
+                // que decrementa el indice de quest (0 -> 255).  Ese era el
+                // qIdx=255 del panel.
+                // Fallback: CharacterAttribute+11, que el char-select ya dejo
+                // seteado y es de donde Recv_JoinMapServer copia hero+444.
                 int heroClass = -1;
                 if (DAT_07abf5d8 != 0)
                     heroClass = *(BYTE*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 444);
+                else if (CharacterAttribute != nullptr)
+                    heroClass = *(BYTE*)((BYTE*)CharacterAttribute + 11);
                 // El destino (CSQuest + 0x1C848) son 0x32 bytes: IDA hace
                 // memset de 48 + el WORD de +0x1C878.  El server manda
                 // QuestInfo[50] con count = MAX_QUEST_LIST/4 = 48 (cada byte
