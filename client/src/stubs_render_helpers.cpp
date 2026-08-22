@@ -572,6 +572,7 @@ extern "C" void Net_SendChaosBoxClose(void) {
 //
 // Anti-tamper hash table noise (PACKET_ENCRYPT etc) skipped per project policy.
 extern "C" SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText);
+extern "C" int __cdecl GetScreenWidth(void);
 void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
 {
     DAT_07e11d6e = 1;
@@ -647,15 +648,21 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
     if (!name[0]) return;
 
     if (kind == 2) {
-        // Monster: render name centered above target (mob banner)
-        DAT_00559c80 = 0xFF000064;  // m_dwBackColor (dark blue)
-        DAT_00559c78 = 0xFFC8E6FF;  // m_dwTextColor (light cyan)
-        int xCenter = 320;
-        if (DAT_07cf1ff4) {
-            BYTE invOpen = *(BYTE*)((uintptr_t)DAT_07cf1ff4 + 0x14E);
-            if (invOpen) xCenter = 225;
-        }
-        RenderCenteredText(xCenter, 10, name);
+        // Monstruo: el nombre va arriba del todo, centrado.
+        DAT_00559c80 = 0xFF000064;  // m_dwBackColor (azul oscuro)
+        DAT_00559c78 = 0xFFC8E6FF;  // m_dwTextColor (celeste)
+        // IDA sub_4CB6F0 LABEL_35: `RenderCenteredText(v13 / 2, 10, v3)`, donde
+        // v13 se calcula con EL MISMO arbol de decision que GetScreenWidth
+        // (0x4CB520, verificado linea por linea): 260 con inventario + panel
+        // lateral, 450 con cualquier panel abierto, 640 con ninguno.
+        //
+        // 2026-08-22: aca habia un criterio inventado — leia un byte de
+        // CharacterAttribute + 0x14E como si fuera "inventario abierto".  Ese
+        // offset es un campo cualquiera del struct del personaje, asi que en
+        // cuanto valia != 0 el nombre quedaba centrado en 225 (= el caso 450)
+        // de forma permanente, sin ningun panel abierto.  Ademas faltaba el
+        // caso 260.  Ahora sale de GetScreenWidth, que es la misma fuente.
+        RenderCenteredText(GetScreenWidth() / 2, 10, name);
     } else if (kind == 1) {
         // Player: chat bubble per IDA (NOT chat log).
         FUN_00481ba0((char*)name, (char*)"", (DWORD)ent, 0, -1);

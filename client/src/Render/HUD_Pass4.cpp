@@ -332,6 +332,12 @@ void Render_QuickButtons_(void)
     RenderEventWindow();
     RenderGoldenArcherWindow();
 
+    // 2026-08-21: faltaba el render del panel de quest.  IDA sub_4F5820 L38:
+    // `sub_403F30((_BYTE *)g_csQuest);` entre RenderGoldenArcherWindow y
+    // RenderServerDivision.  Sin esto, con el flag del panel prendido
+    // GetScreenWidth angostaba el viewport a 450 y esa franja quedaba negra.
+    FUN_00403f30((void*)(uintptr_t)g_csQuest);
+
     // ── In-world drop dispatcher (2026-05-08) ────────────────────────────────
     // Mirrors what Net_PacketSession.cpp:284 does for state=4 char-select but
     // for in-world. Gated internally on dword_7E91388 > 0 (= player carrying

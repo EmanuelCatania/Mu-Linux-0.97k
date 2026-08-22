@@ -313,6 +313,11 @@ static void HUD_HotkeyTick(void)
     if (DAT_07e11d70 != '\0') return;  // g_ChatMode
     if (DAT_00559c84 != '\0') return;  // g_TextMode (login / dialog text)
     if (DAT_07e11d71 != '\0') return;  // g_IME_Mode
+    // 2026-08-21: con la ventana de quest abierta el original NO deja tocar los
+    // hotkeys de panel (IDA Chat_InputTick L3978-3985 corta con
+    // `*(BYTE*)(g_csQuest + 116863) == 1`).  Sin este gate se podia abrir el
+    // inventario encima del panel de quest — los dos se dibujan en x=450.
+    if (HUD_IsQuestPanelOpenRuntime()) return;
 
     // Cada llamada a Key_IsJustPressed tiene efectos secundarios de detección por flanco, así que
     // capturamos los resultados antes de combinarlos (V o I invierten el inventario).
@@ -754,7 +759,15 @@ void __cdecl FUN_004acef0(void)
                     }
                     // 2026-07-27: llegada al item (2ed==1) → mandar pickup 0x22.
                     else if (actionQueued == 1) {
-                        int itemSlotIdx = (int)DAT_00559c48;
+                        // 2026-08-22: aca se releia SelectedItem EN VIVO al
+                        // llegar.  IDA latchea el indice al hacer click
+                        // (Player_InputTick L1278-1283: `ItemKey = v181;` junto
+                        // con `c[749] = 1`) y `Action` (0x48D640) arma el pickup
+                        // con ItemKey, no con SelectedItem.  Releerlo en vivo
+                        // hace que, con varios items juntos, se levante el que
+                        // este bajo el cursor AL LLEGAR y no el que se clickeo:
+                        // el nombre flotante decia uno y entraba otro.
+                        int itemSlotIdx = (int)ItemKey;
                         if (itemSlotIdx >= 0 && itemSlotIdx < 1000) {
                             BYTE* itemEnt = (BYTE*)&DAT_07e12840[0]
                                           + (uintptr_t)itemSlotIdx * 0x204;
@@ -1559,7 +1572,7 @@ void __cdecl FUN_004acef0(void)
             if (DAT_00559c48 != -1 && bClickEdge) {
                 // 2026-05-06: bClickEdge en vez de bHoverActive (mismo fix).
                 *(unsigned char*)(ent + 0x2ed) = 1;
-                DAT_07e109c8 = (DWORD)DAT_00559c48;
+                ItemKey = (DWORD)DAT_00559c48;   // latch, IDA L1281
                 // 2026-07-27 BUG-FIX: DAT_00559c48 es índice del pool de items
                 // del suelo (DAT_07e12840, stride 0x204), NO del pool de
                 // personajes (DAT_07abf5d0, stride 0x394). El port anterior leía

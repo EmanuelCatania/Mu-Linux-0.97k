@@ -575,6 +575,15 @@ static int __cdecl HeapAssertReportHook(int reportType, char* msg, int* retVal)
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow)
 {
+    // CSQuest: en el binario el objeto lo construye `unknown_libname_1`
+    // (0x401010), que esta en la tabla de inicializadores estaticos del CRT y
+    // corre ANTES de WinMain.  Aca nadie lo llamaba, asi que `g_csQuest` se
+    // quedaba en 0 y cualquier acceso al objeto escribia sobre la pagina cero
+    // (crash 0xC0000005 con param1 = 0x1C848, que es el offset de la lista de
+    // quests).  Los lectores viejos no reventaban porque estaban gateados con
+    // `g_csQuest != 0`; los handlers de quest nuevos si.
+    FUN_00401010();
+
     // Todos los paths de datos del original son relativos (p.ej. Data\\Skill\\Fire01.bmd).
     // El binario reconstruido lo puede lanzar un debugger o una app con el
     // workspace como directorio actual, a diferencia del launcher retail. Anclamos

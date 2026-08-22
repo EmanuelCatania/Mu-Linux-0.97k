@@ -79,7 +79,7 @@ void  __cdecl FUN_00404cd0(void);          // HashTable maintenance (no args)
 
 // ── Config / net connect ──────────────────────────────────────────────────────
 undefined4 __cdecl FUN_00402fd0(void *);
-void  __cdecl FUN_00403150(int);
+char  __fastcall FUN_00403150(void *pThis, int edx, char a2, char a3);   // lista de items de la quest (0x403150)
 void  __cdecl FUN_00405540(void* ht, const char* msg, ...);
 void  __cdecl FUN_004055a0(int);
 void  __cdecl FUN_004058b0(void);
@@ -1024,7 +1024,10 @@ short __cdecl FUN_0047d000(short *param_1);                          // Item fie
 char* __cdecl getMonsterName(int type);                              // 0x0047d200
 bool  __cdecl getEqualMonster(int addV);                             // 0x0047ebd1
 void  __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster, int iKillMonster); // 0x0047eba0
+void  __cdecl FUN_00401010(void);   // unknown_libname_1 — ctor estatico de CSQuest
+char  __fastcall FUN_00403f30(void *pCSQuest);   // dispatcher del render de quest (0x403F30)
 void  __fastcall CSQuest__setQuestList(int ecx, int edx, int index, int result); // 0x004011b0
+void  __fastcall CSQuest__setQuestLists(int ecx, int edx, BYTE *byList, int num, int Class); // 0x00401160
 
 // Blur / trail
 void  __cdecl MoveBlurs(void);                                       // 0x0046c3b0

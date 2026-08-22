@@ -1159,7 +1159,7 @@ void FUN_00401020(void) {}
 // 3-byte repeating XOR key at DAT_00558090.
 void __cdecl FUN_00401120(int buf, int size) {
     for (int i = 0; i < size; i++)
-        *(byte *)(buf + i) ^= (&DAT_00558090)[i % 3];
+        *(byte *)(buf + i) ^= (byte)DAT_00558090[i % 3];
 }
 
 // ── FUN_004017e0 — movida desde stubs_helpers.cpp (refactor B3) ──
@@ -1171,9 +1171,17 @@ void __fastcall FUN_004017e0(int param_1)
 {
     char local_48[72];
 
-    DAT_005615dc = (DWORD)param_1;
+    // 2026-08-21: los accesos a la tabla de dialogos ahora van por la struct
+    // DIALOG_SCRIPT (ver globals.h).  Antes eran cuatro globals escalares
+    // sueltos indexados con aritmetica de puntero tipado -> lecturas fuera de
+    // rango.  El de m_lpszText acertaba de casualidad: `DAT_07cf5608` es
+    // DWORD* y `+ param_1 * 0x100` da los 0x400 bytes correctos.
+    if (param_1 < 0 || param_1 >= DIALOG_SCRIPT_COUNT) return;   // guard de port
+    const DIALOG_SCRIPT *dlg = &g_DialogScript[param_1];
+
+    g_iCurrentDialogScript = param_1;
     DAT_083a4324 = SeparateTextIntoLines(
-        (const char *)(DAT_07cf5608 + param_1 * 0x100),
+        dlg->m_lpszText,
         (char *)&DAT_083a44c4, 7, 0x26);
 
     // Zero the name display buffer (0x5f DWORD-slots = 0x17c bytes)
@@ -1184,14 +1192,15 @@ void __fastcall FUN_004017e0(int param_1)
     int iVar3 = 0;
     DAT_083a7c0c = 0;
 
-    int charCount = *(int *)(&DAT_07cf5734 + DAT_005615dc * 0x400);
+    int charCount = dlg->m_iNumAnswer;
+    if (charCount > 10) charCount = 10;   // la tabla tiene 10 slots de respuesta
     if (charCount > 0) {
         char *pbVar6 = (char *)DAT_083a4348;
         int iVar7 = 0;
         do {
             iVar3 = iVar7 + 1;
             wsprintfA((LPSTR)local_48, s__d___s_005580b0, iVar3,
-                      &DAT_07cf5788 + (int)(DAT_005615dc * 0x10 + (DWORD)iVar7) * 0x40);
+                      dlg->m_lpszAnswer[iVar7]);
             int iVar2 = SeparateTextIntoLines(local_48, pbVar6, 1, 0x26);
             if (iVar2 < 0) {
                 ((char *)DAT_083a4348)[(iVar2 + iVar7) * 0x26] = 0;
@@ -1203,8 +1212,10 @@ void __fastcall FUN_004017e0(int param_1)
     }
 
     if (charCount == 0) {
-        // No characters: use fallback name
-        wsprintfA((LPSTR)local_48, s__d___s_005580b0, iVar3 + 1, &DAT_07d566d0);
+        // Sin respuestas: el binario ofrece la de cerrar, GlobalText[609]
+        // (disasm 0x4018B9: `push offset GlobalText+2C9Ah`, y 0x2C9AC/300 = 609).
+        // 2026-08-21: el port usaba &DAT_07d566d0, que no sale de IDA.
+        wsprintfA((LPSTR)local_48, s__d___s_005580b0, iVar3 + 1, GlobalText[609]);
         // Copy string to DAT_083a4348
         uint uVar4 = (uint)strlen(local_48) + 1;
         DAT_083a7c0c = 1;
@@ -1246,19 +1257,44 @@ unsigned int __cdecl FUN_00402f40(void *param_1) {
 }
 
 // ── FUN_00401af0 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-// FUN_00401af0 @ 0x00401AF0 — CharSelect_ClickHandler(state_ptr)
-// Full char-select row click handler: computes row from mouse Y, resolves
-// char slot, builds XOR-encrypted selection packet and sends.
-// Slot types from DAT_07cf5760[server*0x100+slot]: 1/3→send packet, 2→FUN_00401960
+// FUN_00401af0 @ 0x00401AF0 — CSQuest: click sobre las respuestas del dialogo.
+// NO es char-select (el comentario anterior decia eso y era un mal-guess del
+// port): hit-test sobre las lineas de respuesta del panel de quest, y despacho
+// por m_iReturnForAnswer del dialogo activo.
+//   1 = aceptar la quest  -> CheckRequestCondition(bLastCheck=1); si falla,
+//                            muestra el dialogo de rechazo y no manda nada.
+//   2 = cerrar            -> CSQuest::clearQuest
+//   3 = continuar         -> manda el paquete sin verificar condiciones
+// Todas las ramas convergen en LABEL_107 (PlayBuffer 28 + encadenar
+// m_iLinkForAnswer si es > 0 y no hubo rechazo).
+// Paquete cliente->server de quest.  IDA sub_401AF0 arma en los dos sitios
+// (L152-199 y L399-446) exactamente el mismo buffer:
+//     *(DWORD*)v103 = 0x01C10003   -> len=3, packet = C1 ?? A2
+//     v103[4] = 0xA2               -> opcode
+//     append  *(BYTE*)(this + 116858)   (indice de quest actual)
+//     append  1
+// = [C1][05][A2][questIndex][01].  El wrapper anti-tamper lo mete en un frame
+// C3 (`local_914[0] = 0xC3`), que es lo que corresponde: HackPacketCheck.txt
+// da Encrypt = 1 para el indice 162 (0xA2), o sea C3/C4 con serial.
+// El server (Protocol.cpp case 0xA2 -> CGQuestStateRecv) sólo lee QuestIndex y
+// avanza el estado él mismo; el byte 1 del final lo ignora.
+//
+// 2026-08-21: el port armaba `{0xC1,1,0,0xA2,0}` con un XOR a mano y lo mandaba
+// por un sendPkt propio — ni el opcode quedaba en su lugar ni el indice de
+// quest viajaba.  Ahora usa el sender estandar del proyecto.
+static void Quest_SendState(void *pThis)
+{
+    BYTE pkt[5];
+    pkt[0] = 0xC1;
+    pkt[1] = 0x05;
+    pkt[2] = 0xA2;
+    pkt[3] = *(BYTE *)((int)pThis + 0x1c87a);   // indice de quest actual
+    pkt[4] = 0x01;
+    Net_SendSmallPacket(pkt, 5);
+}
+
 void __fastcall FUN_00401af0(void *param_1)
 {
-    static const BYTE xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
-
     // Compute Y-base of char list
     int yBase;
     if (*(char *)((int)param_1 + 0x1c882) != '\x01' &&
@@ -1290,63 +1326,16 @@ void __fastcall FUN_00401af0(void *param_1)
         return;
     }
 
-    char local_914[260];
-    char local_810[1028];
-    BYTE local_40c[1024];
     char local_d29 = '\0';
 
     // Lee el tipo de slot de la tabla
-    int slotType = *(int *)(&DAT_07cf5760 + (DAT_005615dc * 0x100 + slot) * 4);
+    // m_iReturnForAnswer[slot] del dialogo activo (IDA sub_401AF0 0x401BE4:
+    // `mov eax, [eax*4 + 0x07CF5760]` con eax = curScript*0x100 + slot).
+    int curScript = g_iCurrentDialogScript;
+    int slotType  = 0;
+    if (curScript >= 0 && curScript < DIALOG_SCRIPT_COUNT && slot >= 0 && slot < 10)
+        slotType = g_DialogScript[curScript].m_iReturnForAnswer[slot];
 
-    auto sendPkt = [&](BYTE *pktBuf, int rawLen) {
-        int encLen = FUN_0053cc30(0, pktBuf, rawLen);
-        if (encLen < 0x100) {
-            uint sLen = (uint)encLen + 2;
-            local_914[0] = (char)0xc3;
-            local_914[1] = (char)sLen;
-            FUN_0053cc30((int)(local_914 + 2), pktBuf, rawLen);
-            int sent = 0; uint rem = sLen;
-            if (DAT_055ca168 != 0xffffffff) {
-                do {
-                    int r = send((SOCKET)DAT_055ca168, local_914 + sent, (int)(sLen-(uint)sent), 0);
-                    if (r == -1) {
-                        int e = WSAGetLastError();
-                        if (e == 0x2733 && (int)(sLen + DAT_055cc16c) < 0x2001) {
-                            memcpy(DAT_055ca16c + DAT_055cc16c, local_914, sLen);
-                            DAT_055cc16c += sLen;
-                        } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                        break;
-                    }
-                    if (r == 0) break;
-                    if (DAT_055ce174 != 0) FUN_0043de60();
-                    sent += r; rem -= (uint)r;
-                } while ((int)rem > 0);
-            }
-        } else {
-            uint sLen = (uint)encLen + 3;
-            local_810[0] = (char)0xc4;
-            local_810[1] = (char)(sLen >> 8);
-            local_810[2] = (char)sLen;
-            FUN_0053cc30((int)(local_810 + 3), pktBuf, rawLen);
-            int sent = 0; uint rem = sLen;
-            if (DAT_055ca168 != 0xffffffff) {
-                do {
-                    int r = send((SOCKET)DAT_055ca168, local_810 + sent, (int)(sLen-(uint)sent), 0);
-                    if (r == -1) {
-                        int e = WSAGetLastError();
-                        if (e == 0x2733 && (int)(sLen + DAT_055cc16c) < 0x2001) {
-                            memcpy(DAT_055ca16c + DAT_055cc16c, local_810, sLen);
-                            DAT_055cc16c += sLen;
-                        } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                        break;
-                    }
-                    if (r == 0) break;
-                    if (DAT_055ce174 != 0) FUN_0043de60();
-                    sent += r; rem -= (uint)r;
-                } while ((int)rem > 0);
-            }
-        }
-    };
 
     if (slotType == 1) {
         short *slotData = (short *)((int)param_1
@@ -1354,16 +1343,14 @@ void __fastcall FUN_00401af0(void *param_1)
         uint ok = FUN_00401230(param_1, slotData, '\x01');
         if ((char)ok == '\0') {
             local_d29 = '\x01';
-            FUN_004017e0(*(int *)((int)param_1 + 0x1c880));
+            // IDA L145: `v65 = *(__int16 *)(v1 + 116864);` — es un SHORT.
+            // Leerlo como int se lleva ademas el byte de estado (0x1c882),
+            // que CheckRequestCondition acaba de poner en 5, asi que el
+            // indice salia con 5<<16 y el dialogo de fallo nunca se mostraba.
+            FUN_004017e0(*(short *)((int)param_1 + 0x1c880));
             goto done;
         }
-        // Build XOR-encrypted selection packet (C1 1 opcode_a2)
-        BYTE pkt[5] = { 0xc1, 1, 0, 0xa2, 0 };
-        pkt[3] ^= xorKey[3 & 0x1f] ^ pkt[4];
-        uint pktLen = 4;
-        local_40c[pktLen] = (BYTE)_rand();
-        memcpy(local_40c, pkt, pktLen);
-        sendPkt(local_40c + 1, (int)(pktLen - 1));
+        Quest_SendState(param_1);
     } else if (slotType == 2) {
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
@@ -1373,18 +1360,20 @@ void __fastcall FUN_00401af0(void *param_1)
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        BYTE pkt3[5] = { 0xc1, 1, 0, 0xa2, 0 };
-        pkt3[3] ^= xorKey[3 & 0x1f] ^ pkt3[4];
-        uint pktLen3 = 4;
-        local_40c[pktLen3] = (BYTE)_rand();
-        memcpy(local_40c, pkt3, pktLen3);
-        sendPkt(local_40c + 1, (int)(pktLen3 - 1));
+        Quest_SendState(param_1);
     }
 
 done:
     FUN_00404bc0(0x1c, 0, 0);
-    if ((0 < *(int *)(&DAT_07cf5738 + (DAT_005615dc * 0x100 + slot) * 4)) && local_d29 == '\0') {
-        FUN_004017e0(*(int *)(&DAT_07cf5738 + (DAT_005615dc * 0x100 + slot) * 4));
+    // m_iLinkForAnswer[slot] = indice del dialogo siguiente (IDA sub_401AF0
+    // L387: `v64 = g_DialogScript[g_iCurrentDialogScript].m_iLinkForAnswer[v100];`
+    // y solo encadena `if (v64 > 0 && !v98)`).
+    {
+        int cur = g_iCurrentDialogScript;
+        if (cur >= 0 && cur < DIALOG_SCRIPT_COUNT && slot >= 0 && slot < 10) {
+            int link = g_DialogScript[cur].m_iLinkForAnswer[slot];
+            if (link > 0 && local_d29 == '\0') FUN_004017e0(link);
+        }
     }
 }
 

@@ -29,8 +29,8 @@ extern "C" {
     // 0x81 PMSG_WAREHOUSE_MONEY_RECV (stubs_render_helpers.cpp)
     void Net_SendWarehouseMoney(BYTE type, DWORD money);
 }
-extern int  g_iCurrentDialogScript;
-extern char g_lpszDialogAnswer[16][1][38];
+// g_iCurrentDialogScript es un macro sobre DAT_005615dc (globals.h)
+// g_lpszDialogAnswer es un macro sobre DAT_083a4348 (globals.h): 10 x 38.
 
 // ---------------------------------------------------------------------------
 // Local helpers
@@ -731,37 +731,38 @@ void __cdecl FUN_00514310(void)
         if (v352 < 18 * numAnswer && absDx <= 106) {
             int v353 = v352 / 18;
             if (v353 >= 0) {
-                int curScript = g_iCurrentDialogScript ? g_iCurrentDialogScript
-                                                       : (int)DAT_083a7c08;
-                int m_iNumAnswer = numAnswer;        // (was = g_DialogScript[].m_iNumAnswer)
-                if (m_iNumAnswer <= 1) m_iNumAnswer = 1;
-                if (v353 < m_iNumAnswer) {
+                if (numAnswer <= 1) numAnswer = 1;   // IDA L3910-3912
+                if (v353 < numAnswer) {
                     DAT_083a4124 = 0;
                     DAT_07e11d28 = 0;
                     DAT_00559bec = 6;
-                    FUN_00404bc0(0x19, 0, 0);
-                    PlayBuffer(28, 0, 0);
+                    PlayBuffer(25, 0, 0);   // IDA L3917: un solo sonido, el 25
 
-                    g_iCurrentDialogScript = curScript;
-                    DAT_083a7c08 = (DWORD)curScript;
-                    char* line = &g_lpszDialogAnswer[v353][0][0];
-                    bool closeOnly = (v353 == 0);
-                    if (line[0] != 0) {
-                        const char* closeText = GlobalText[609];
-                        const char* answerText = strchr(line, ')');
-                        if (answerText) {
-                            ++answerText;
-                            while (*answerText == ' ') ++answerText;
-                            if (closeText && _stricmp(answerText, closeText) == 0) {
-                                closeOnly = true;
-                            }
-                        }
-                    }
+                    // IDA L3918-3931:
+                    //   v355 = v353 + (g_iCurrentDialogScript << 8);
+                    //   if (g_DialogScript[0].m_iLinkForAnswer[v355] < 0) { cerrar }
+                    //   else { sub_51D840(m_iLinkForAnswer[v355]); }
+                    // `<< 8` son 256 ints = 0x400 bytes = el stride de entrada,
+                    // o sea `g_DialogScript[curScript].m_iLinkForAnswer[v353]`.
+                    //
+                    // 2026-08-21: el port decidia si cerrar comparando el TEXTO
+                    // de la respuesta contra GlobalText[609] (invencion), y le
+                    // pasaba a FUN_0051d840 el indice de RESPUESTA en vez del
+                    // link.  Con la tabla ya reconciliada se puede hacer lo que
+                    // hace el binario.
+                    int cur  = g_iCurrentDialogScript;
+                    int link = -1;
+                    if (cur >= 0 && cur < DIALOG_SCRIPT_COUNT && v353 < 10)
+                        link = g_DialogScript[cur].m_iLinkForAnswer[v353];
 
-                    if (closeOnly) {
-                        SetErrorMessage(0);
+                    if (link < 0) {
+                        int prev = (int)DAT_083a7c28;      // NextErrorMessage
+                        DAT_083a7c28 = 0;
+                        DAT_083a7c24 = (DWORD)prev;        // ErrorMessage
                     } else {
-                        FUN_0051d840(v353);
+                        DAT_083a7c24 = DAT_083a7c28;
+                        DAT_083a7c28 = 0;
+                        FUN_0051d840(link);
                     }
                 }
             }

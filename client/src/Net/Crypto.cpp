@@ -768,27 +768,65 @@ void __cdecl FUN_00404370(void *vparam_1, void *vparam_2) {
 // ── FUN_00408e30 — movida desde stubs_externs.cpp (refactor B3) ──
 int  __cdecl    FUN_00408e30(DWORD *a1);
 
-// FUN_00402850 @ 0x00402850 — Packet_ParseType1 (char-select click handler type 1)
-// Maneja el click izquierdo en el área de stats del personaje (0x1e4<x<0x25d, 0x162<y<0x17b) cuando
-// DAT_083a4124 está seteado. Arma el paquete encriptado con XOR usando la misma clave que el login y lo manda.
-// También llama a FUN_00401af0 y FUN_00401960 para interacciones de UI relacionadas.
-// La lógica de SEH+XOR+envío vive adentro de FUN_00401af0 (entrada aparte); este
-// wrapper sólo hace el hit-test del hotspot y delega. Resuelto: FUN_00401af0
-// body is defined later in this file, so no additional implementation needed here.
+extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
+
+// sub_402850 @ 0x00402850 (1774 bytes) — input de la ventana de quest del NPC.
+// IDA, sacando el ruido anti-tamper del armado del paquete:
+//
+//   if (MouseX in [450,640) && MouseY in [0,433))  MouseOnWindow = 1;
+//   sub_401AF0(This);
+//   if (MouseX in [485,605) && MouseY in [355,379) && MouseLButtonPush) {
+//       send([C1][05][A2][questIndex][01]);
+//       MouseLButtonPush = 0; MouseLButton = 0; PlayBuffer(28, 0, 0);
+//   }
+//   if (MouseX in [475,499) && MouseY in [395,419) && MouseLButtonPush) {
+//       MouseLButtonPush = 0; MouseUpdateTime = 0; MouseUpdateTimeMax = 6;
+//       CSQuest::clearQuest(This);
+//   }
+//   result = MouseLButtonPop;  if (MouseLButtonPop) MouseLButtonPop = 0;
+//
+// 2026-08-22: acá había un resumen con SÓLO la rama del botón de cerrar.
+// Faltaba la del botón de aceptar/continuar la quest — el que sub_403320
+// dibuja en (485,355) 120x24 con GlobalText[699] ("Proceder con la quest").
+// O sea el botón se veía y hasta se pintaba al pasar el mouse (ese feedback
+// está en sub_403320), pero el click no mandaba nada y la quest no avanzaba.
 int __cdecl FUN_00402850(void *param_1) {
     if ((0x1c1 < DAT_083a427c) && (DAT_083a427c < 0x280) &&
         (-1 < DAT_083a4278) && (DAT_083a4278 < 0x1b1))
-        DAT_07d78094 = 1;
+        DAT_07d78094 = 1;                       // MouseOnWindow
+
     FUN_00401af0(param_1);
+
+    // Botón de aceptar / continuar la quest.
+    if ((484 < DAT_083a427c) && (DAT_083a427c < 605) &&
+        (354 < DAT_083a4278) && (DAT_083a4278 < 379) &&
+        (DAT_083a4124 != 0)) {
+        // Mismo paquete que las respuestas del diálogo (ver Quest_SendState en
+        // Scene_CharSelect_Nav.cpp): el server sólo lee QuestIndex y avanza el
+        // estado él mismo.
+        BYTE pkt[5];
+        pkt[0] = 0xC1;
+        pkt[1] = 0x05;
+        pkt[2] = 0xA2;
+        pkt[3] = *(BYTE *)((int)param_1 + 0x1c87a);   // índice de quest actual
+        pkt[4] = 0x01;
+        Net_SendSmallPacket(pkt, 5);
+
+        DAT_083a4124 = 0;                       // MouseLButtonPush
+        DAT_083a42c4 = 0;                       // MouseLButton
+        PlayBuffer(28, 0, 0);
+    }
+
+    // Botón de cerrar.
     if ((0x1da < DAT_083a427c) && (DAT_083a427c < 499) &&
         (0x18a < DAT_083a4278) && (DAT_083a4278 < 0x1a3) &&
         (IsClickPushed())) {
-        DAT_083a4124 = '\0';
+        DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         FUN_00401960((int)param_1);
     }
-    if (DAT_083a413c != '\0') DAT_083a413c = '\0';
+    if (DAT_083a413c != 0) DAT_083a413c = 0;
     return 1;
 }
 

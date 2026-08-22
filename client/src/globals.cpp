@@ -456,10 +456,7 @@ char     s__s__s_0056191c[]                 = "%s%s";
 char     s__s__s_00561924[]                 = "%s%s";
 
 // ── Misc game globals ─────────────────────────────────────────────────────────
-// Quest manager object — original en 0x00583d8c, size >= 0x1D000 bytes
-// (header 8 + 0x7210 DWORDs quest data + ~0x38 bytes de flags al final).
-// Pasamos &DAT_00583d8c a FUN_00401040 como "this" pointer.
-char     DAT_00583d8c[0x1D000] = {};
+// DAT_00583d8c es un alias de g_csQuest (ver globals.h).
 DWORD    DAT_00583dac  = 0;
 DWORD    DAT_00585e7c  = 0;
 DWORD    DAT_0058c780  = 0;
@@ -666,13 +663,19 @@ DWORD    DAT_05828d58  = 0;  // Models
 void*    DAT_06f42a58  = nullptr;  // model memory pool
 
 // BMD bounding-box scratch arrays (FUN_00442e60)
-short    DAT_077d87fc  = 0;        // vertex ref-count table base
-DWORD    DAT_05827a98  = 0;        // bbox max[0] base
-DWORD    DAT_05827a9c  = 0;        // bbox max[1] base
-DWORD    DAT_05827aa0  = 0;        // bbox max[2] base
-DWORD    DAT_06f42a5c  = 0;        // bbox min[0] base
-DWORD    DAT_06f42a60  = 0;        // bbox min[1] base
-DWORD    DAT_06f42a64  = 0;        // bbox min[2] base
+// Tablas scratch de BMD_CreateBoundingBox (0x442E60), la unica funcion del
+// binario que las toca.  Se recorren UNA ENTRADA POR HUESO hasta numBones
+// (= *(short*)(model+34)): word_77D87FC[bone] es el contador de vertices y
+// flt_5827A98 / flt_6F42A5C son el max/min del bbox, 3 floats por hueso.
+// 2026-08-22: estaban declaradas como escalares sueltos (2 y 4 bytes), asi que
+// desde el hueso 1 en adelante escribian sobre los globals vecinos en cada
+// carga de modelo — o sea al entrar al juego y en cada cambio de mapa.
+// El vecino inmediato de word_77D87FC era DAT_07db870c (el flag de la lista de
+// skills), que por eso aparecia abierta sola.  MAX_BONES = 200, igual que
+// g_BoneScratch / BoneTransform / BoneQuaternion.
+short    DAT_077d87fc[200]    = {0};   // contador de vertices por hueso
+float    DAT_05827a98[200*3]  = {0};   // bbox max, 3 floats por hueso
+float    DAT_06f42a5c[200*3]  = {0};   // bbox min, 3 floats por hueso
 
 // UI name-list panel data (FUN_0051e240)
 // DAT_083a430c — ahora macro dentro de DAT_083a42f8 (dialog button rects)
@@ -848,9 +851,24 @@ DWORD    DAT_07ea8414  = 0;
 // across rows in a tiled layout).  Initialise all Type fields (every 56-th
 // byte = byte at row-relative offset -56, but here we just zero-fill and
 // stamp 0xFFFF in HUD_InitInventoryPools).
-BYTE   g_EquipGridBuf[0x12DC] = {0};
-int   *p_DAT_07ea9504_ = (int*)&g_EquipGridBuf[0x12DC - 4];
-int   *p_DAT_07ea9328_ = (int*)&g_EquipGridBuf[0x12DC - 4 - 0x1DC];
+// unk_7EA9504 / unk_7EA9328 son POSICIONES DENTRO DEL INVENTARIO REAL, no un
+// buffer aparte.  OffsetInventoryItems esta en 0x07EA8410 y la cuenta cierra
+// exacta con slots de 0x44 y el campo Key en +56:
+//     0x7EA9504 - 0x07EA8410 = 4340 = 63 * 0x44 + 56   -> slot 63, Key
+//     0x7EA9328 - 0x07EA8410 = 3864 = 56 * 0x44 + 56   -> slot 56, Key
+// El walker de FindQuestItemsInInven / FUN_004824c0 / FUN_00482850 recorre los
+// slots 63..56 por afuera (paso -0x44) y por adentro salta de a -8 slots
+// (paso -544), o sea cubre los 64 slots del grid 8x8.  Lo que lee en cada uno:
+//     v7          = slot + 56  -> Key   ( > 0 = celda ocupada )
+//     v7 - 56     = slot + 0   -> Type
+//     v7 - 52     = slot + 4   -> Level
+//
+// 2026-08-22: acá había un `g_EquipGridBuf[0x12DC]` suelto, en cero, que nadie
+// escribía nunca — los tres walkers recorrían memoria vacía y siempre reportaban
+// "no tenés el item".  Por eso la lista de items de quest salía en rojo con el
+// item en el inventario.  Ahora los dos punteros se reenraízan sobre el pool real.
+int   *p_DAT_07ea9504_ = (int*)&OffsetInventoryItems[63 * 0x44 + 56];
+int   *p_DAT_07ea9328_ = (int*)&OffsetInventoryItems[56 * 0x44 + 56];
 DWORD    DAT_07ea9800  = 0;
 DWORD    g_ItemMoveSourcePool = 0;
 DWORD    g_ItemMoveTargetPool = 0;
@@ -1426,10 +1444,6 @@ DWORD    DAT_083a7c2c  = 0;
 DWORD    DAT_083a4324  = 0;
 // see comment near DAT_083a44ea — sized as 7×0x26 message-box-custom buffer.
 char     DAT_083a44c4[7 * 0x26] = {0};
-DWORD    DAT_07cf5734  = 0;
-DWORD    DAT_07cf5738  = 0;
-int      DAT_07cf5760  = 0;   // char-slot type table base
-char     DAT_07cf5788  = 0;   // char name table (server*0x10+slot)*0x40
 char     DAT_07d566d0  = 0;   // fallback char name string
 char     s__d___s_005580b0[] = "%d %s";
 DWORD    DAT_005615dc  = 0;
@@ -1475,7 +1489,6 @@ DWORD    DAT_07ea8408  = 0;
 // BUG-FIX 2026-04-28: macro hotkey table — 10 slots × 0x100 bytes.
 // Era char (1 byte). OpenMacro escribe a [0x07e0ffc8 .. 0x07e109c8] = 2560 bytes.
 char     DAT_07e0ffc8[10 * 0x100] = {};
-char     DAT_07e108c8  = 0;
 char     DAT_005592dc  = 0;
 DWORD    DAT_005592d8  = 0;
 DWORD    DAT_005592d4  = 0;
@@ -1493,7 +1506,6 @@ char     DAT_07d3c0f0  = 0;
 char     DAT_07d3d608  = 0;
 char     DAT_07d3d734  = 0;
 DWORD    DAT_07e11dac  = 0;
-char     DAT_07eaa130  = 0;
 char     DAT_07eaa132  = 0;
 DWORD    lpDefault_00583d88 = 0;
 char     DAT_07d55410  = 0;
@@ -1669,7 +1681,7 @@ char     DAT_07d699d8  = 0;
 char     DAT_07d69b04  = 0;
 char     DAT_07d69c30  = 0;
 // DAT_083a4304 — ahora macro dentro de DAT_083a42f8 (dialog button rects)
-char     DAT_083a4348[380] = {};
+char     DAT_083a4348[10][1][38] = {};   // g_lpszDialogAnswer (10 x 38 = 380)
 // DAT_083a7c08 — defined above (DWORD, line 877)
 // DAT_083a7c09 — defined above (char, line 879)
 // DAT_083a7c0c — defined above (DWORD, line 880)
@@ -1793,7 +1805,14 @@ char    DAT_0055de84 = 0;
 char    DAT_0055de10 = 0;
 FILE   *DAT_07d7806c = nullptr;
 char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
-char    DAT_00558090 = 0;   // Quest XOR key[0]
+// bBuxCode @ 0x00558090 — la clave XOR de 3 bytes de BuxConvert_1 (0x401120),
+// la que descifra Quest.bmd.  Leida del binario: FC CF AB — la misma que usa
+// BuxConvert_0 (DAT_00559bb4), pero es otra copia en otra direccion.
+// 2026-08-21: estaba declarada como UN char = 0, asi que FUN_00401120 hacia
+// `(&DAT_00558090)[i % 3]` sobre un cero y dos bytes de globals vecinos: el
+// script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
+// equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.
+char    DAT_00558090[3] = { (char)0xFC, (char)0xCF, (char)0xAB };
 char    DAT_07cf1ef0 = 0;
 char    DAT_00559088 = 0;
 int     DAT_07d7807c = 0;
@@ -2322,7 +2341,7 @@ int     DAT_07d29d20    = 0;       // skill/gate data array base
 DWORD   DAT_07cf5600    = 0;       // gate data array base — malloc'd in WinMain
 // dialog data array — original ocupaba 0x07cf5608..0x07d27608 (0x32000 bytes).
 // Declaramos un buffer real de ese tamaño en DWORDs para que &DAT_07cf5608 apunte a memoria válida.
-DWORD   DAT_07cf5608[0x32000 / 4] = {};   // dialog data array base (200KB)
+DWORD   DAT_07cf5608[(DIALOG_SCRIPT_COUNT * 0x400) / 4] = {};   // g_DialogScript (200 x 0x400 = 200 KB)
 int     DAT_07d78078    = 0;       // NPC name count (EditMonsterNumber)
 // MonsterScript / DAT_07cf2000 / DAT_07cf2001 son la MISMA tabla en 0x07CF2000
 // (verificado en IDA: getMonsterName lee `MonsterScript` = 0x07CF2000, y
@@ -2622,11 +2641,7 @@ DWORD  DAT_0055339c       = 0;
 // ChatListBox render) escribía a un global que el render de texto (FUN_0040f610, lee
 // DAT_00559c78) NUNCA leía → colores perdidos = texto blanco. Ahora son macros
 // (globals.h) que apuntan al global real. Ver [[charselect-deferred-issues]].
-int    g_iNumAnswer       = 0;
-int    g_iNumLineMessageBoxCustom = 0;
-char  *g_lpszMessageBoxCustom[16] = {0};
-int    g_iCurrentDialogScript = 0;
-char   g_lpszDialogAnswer[16][1][38] = {};
+// g_lpszMessageBoxCustom es un alias de DAT_083a44c4 (ver globals.h).
 // m_hFontDC ahora es macro sobre DAT_055c9fec (ver globals.h)
 HFONT  g_hFontBold        = NULL;
 

@@ -317,7 +317,15 @@ extern char*   g_lpszMp3[6];
 #define PTR_DAT_005615d0 DAT_005615d0
 #define PTR_DAT_005615d4 DAT_005615d4
 #define PTR_DAT_005615d8 DAT_005615d8
-extern DWORD   DAT_005615dc;   // login/scene misc flag
+// DAT_005615dc @ 0x005615DC ES `g_iCurrentDialogScript` — el índice del diálogo
+// de quest activo.  Lo escriben CSQuest::ShowDialogText (0x4017E7) y sub_51D840,
+// y lo leen sub_401AF0 y UI_InGameMenu.  La etiqueta vieja ("login/scene misc
+// flag") era una misidentificación.
+// 2026-08-21: `g_iCurrentDialogScript` era un global APARTE en globals.cpp, así
+// que el writer y el reader no se veían (mismo patrón que SetTextColor_0 /
+// DAT_00559c7c).  Ahora es un alias.
+extern DWORD   DAT_005615dc;
+#define g_iCurrentDialogScript  (*(int*)&DAT_005615dc)
 extern DWORD   DAT_005615e0;
 extern DWORD   DAT_005615e8;   // fade timer
 // CameraWalk[7][6] contiguous waypoint table (see globals.cpp for layout).
@@ -384,7 +392,15 @@ extern char    s__s__s_0056191c[];
 extern char    s__s__s_00561924[];
 
 // ── Misc game globals (0x00583dxx – 0x00590xxx) ───────────────────────────────
-extern char    DAT_00583d8c[];  // quest manager object (~116KB)
+// DAT_00583d8c @ 0x00583D8C ES `g_csQuest` — el PUNTERO al objeto CSQuest, no
+// el objeto.  Lo confirman los xrefs: ReceiveQuestHistory / State / Result
+// referencian 0x583D8C y el decompile los muestra como `g_csQuest`; el objeto
+// es `unk_567500` (= DAT_00567500), que es a donde apunta.
+// 2026-08-21: acá estaba declarado como un objeto de 0x1D000 bytes, o sea
+// convivían DOS objetos CSQuest: éste (donde cargaba Quest.bmd) y DAT_00567500
+// (al que apunta g_csQuest).  Todos los consumidores ya lo usan como puntero
+// (`(uintptr_t)DAT_00583d8c + 0x1c87f`), así que el alias los arregla a todos.
+#define DAT_00583d8c   g_csQuest
 extern DWORD   DAT_00583dac;
 extern DWORD   DAT_00585e7c;
 extern DWORD   DAT_0058c780;
@@ -627,14 +643,16 @@ extern DWORD*  DAT_07c74f54;   // = g_PlayerRenderPool + 0xEC (v1 anchor)
 // ── g_CharData XOR-encoded block (0x07cfxxxx) ─────────────────────────────────
 extern void   *DAT_07cf1ff4;   // g_CharData sub-pointer (XOR-encoded)
 extern void   *DAT_07cf1ffc;   // g_CharData pointer (XOR-encoded, 0x584 bytes)
-extern DWORD   DAT_07cf5734;   // char data field A (item/reward check)
-extern DWORD   DAT_07cf5738;   // char data field B
-extern int     DAT_07cf5760;   // char-slot type table: [server*0x100+slot]*4, value 1/2/3
 
 // ── Player input / targeting state (0x07e01xxx – 0x07e11xxx) ─────────────────
 extern DWORD   DAT_07e016c0;   // target grid X (from ray cast or hover click)
 extern DWORD   DAT_07e016c4;   // target grid Y
-extern DWORD   DAT_07e109c8;   // hover NPC entity index (for pathfind target)
+// 0x07E109C8 es `ItemKey` (confirmado por xrefs de IDA: lo escribe
+// Player_InputTick al clickear un item del suelo y lo leen los 3 sitios de
+// `Action` que arman el pickup).  NO es un indice de NPC — esa etiqueta
+// vieja hizo que el camino de llegada releyera SelectedItem en vivo.
+extern DWORD   DAT_07e109c8;
+#define ItemKey  DAT_07e109c8
 extern DWORD   DAT_07db8708;   // hover target entity type (from entity+2)
 extern char    DAT_07e113e4[5 * 256];   // historial de chat: 5 entradas x 256B
 
@@ -726,22 +744,11 @@ extern DWORD   DAT_07ea5b1c;
 extern DWORD   DAT_07ea5b20;
 extern DWORD   DAT_07ea8410;
 extern DWORD   DAT_07ea8414;
-// Equipment grid buffer.  IDA layout:
-//   FUN_00482be0 walks `&unk_7EA9504` outer-stride -68 (= -17 dwords) for 7
-//   filas, y stride interno -544 (= -136 dwords) para 8 columnas, leyendo
-//   `*(short*)(v7 - 56)` (Type) y `*v7` (Qty). El externo va desde
-//   unk_7EA9504 down to unk_7EA9328 (= 7*68 = 476 bytes back).  Inner
-//   avanza 8 celdas × 544 bytes = 4352 bytes hacia atrás desde la posición externa.
-//   O sea el buffer se extiende al menos desde (unk_7EA9504 - 4828) hasta
-//   unk_7EA9504, totalling 4828 bytes.
-//
-// Acá exponemos un único buffer contiguo y reenraizamos DAT_07ea9504 y
-// DAT_07ea9328 sobre los EXTREMOS de puntero dentro de ese buffer (vía accesores
-// inline en stubs.cpp). Así `&DAT_07ea9504` == fin-del-buffer y el recorrido
-// reads valid ITEM-shaped memory throughout.
-extern BYTE    g_EquipGridBuf[0x12DC];           // 4828 bytes
-extern int    *p_DAT_07ea9504_;                  // &g_EquipGridBuf[end-4]
-extern int    *p_DAT_07ea9328_;                  // &g_EquipGridBuf[end-0x1E0]
+// unk_7EA9504 / unk_7EA9328 NO son un buffer aparte: son dos posiciones dentro
+// del inventario real (OffsetInventoryItems @ 0x07EA8410).  Ver la derivación
+// completa en globals.cpp, junto a la definición de los punteros.
+extern int    *p_DAT_07ea9504_;   // &OffsetInventoryItems[63*0x44+56] (slot 63, Key)
+extern int    *p_DAT_07ea9328_;   // &OffsetInventoryItems[56*0x44+56] (slot 56, Key)
 #define DAT_07ea9504  (*p_DAT_07ea9504_)
 #define DAT_07ea9328  (*p_DAT_07ea9328_)
 extern DWORD   DAT_07ea9800;
@@ -988,7 +995,14 @@ extern char    DAT_083a42eb;   // auto-drop trigger flag (inventory)
 extern DWORD   DAT_083a42ec;
 // DAT_083a42fc  — macro alias dentro de DAT_083a42f8 (ver bloque de dialog button rects)
 extern DWORD   DAT_083a4320;
-extern DWORD   DAT_083a4324;   // shop item list display count
+// DAT_083a4324 @ 0x083A4324 ES `g_iNumLineMessageBoxCustom` — la cantidad de
+// lineas que SeparateTextIntoLines dejo en el cuadro de dialogo.
+// Confirmado en el disassembly de CSQuest::ShowDialogText 0x401806:
+// `a3 24 43 3a 08` = `mov [0x083A4324], eax` justo despues del
+// SeparateTextIntoLines.  La etiqueta vieja ("shop item list display count")
+// era una misidentificacion.
+extern DWORD   DAT_083a4324;
+#define g_iNumLineMessageBoxCustom  (*(int*)&DAT_083a4324)
 extern DWORD   DAT_083a4328;
 // CurrentCameraPosition[3] contiguous (see globals.cpp).
 extern float   CurrentCameraPosition[3];
@@ -1042,7 +1056,10 @@ extern DWORD   DAT_083a7c00;
 extern DWORD   DAT_083a7c04;   // in-game UI context A
 extern DWORD   DAT_083a7c08;   // in-game UI context B
 extern char    DAT_083a7c09;   // in-game UI flag byte
-extern DWORD   DAT_083a7c0c;   // in-game UI context C
+// DAT_083a7c0c @ 0x083A7C0C ES `g_iNumAnswer`.  Disassembly 0x40182E:
+// `89 35 0c 7c 3a 08` = `mov [0x083A7C0C], esi`.
+extern DWORD   DAT_083a7c0c;
+#define g_iNumAnswer  (*(int*)&DAT_083a7c0c)
 extern DWORD   DAT_083a7c10;
 extern int     DAT_083a7c14;   // login sub-state machine
 extern DWORD   DAT_083a7c18;
@@ -1119,13 +1136,17 @@ extern char    g_BoneVertexBuf[32 * 15000 * 12];
 #define DAT_05846224  (*(DWORD*)(g_BoneVertexBuf + 8))
 
 // ── BMD bounding-box scratch arrays (FUN_00442e60 — BMD_ComputeBounds) ────────
-extern short   DAT_077d87fc;   // vertex ref-count table base (short per bone, 256 max)
-extern DWORD   DAT_05827a98;   // bbox max[0] base (float array: 3 floats × bone, stride 0xc)
-extern DWORD   DAT_05827a9c;   // bbox max[1] base
-extern DWORD   DAT_05827aa0;   // bbox max[2] base
-extern DWORD   DAT_06f42a5c;   // bbox min[0] base
-extern DWORD   DAT_06f42a60;   // bbox min[1] base
-extern DWORD   DAT_06f42a64;   // bbox min[2] base
+// Scratch de BMD_CreateBoundingBox — una entrada por hueso (ver globals.cpp).
+// Los companions +4/+8 son macros que proyectan dentro del slot 0 de su base,
+// igual que DAT_081cb60c, para que `(char*)&DAT_x + n` y `((float*)&DAT_x)[i]`
+// sigan valiendo lo mismo que en el binario.
+extern short   DAT_077d87fc[200];      // contador de vertices por hueso
+extern float   DAT_05827a98[200*3];    // bbox max, 3 floats por hueso
+extern float   DAT_06f42a5c[200*3];    // bbox min, 3 floats por hueso
+#define DAT_05827a9c   (*(DWORD*)((char*)&DAT_05827a98[0] + 4))
+#define DAT_05827aa0   (*(DWORD*)((char*)&DAT_05827a98[0] + 8))
+#define DAT_06f42a60   (*(DWORD*)((char*)&DAT_06f42a5c[0] + 4))
+#define DAT_06f42a64   (*(DWORD*)((char*)&DAT_06f42a5c[0] + 8))
 
 // ── UI name-list panel data (FUN_0051e240) ────────────────────────────────────
 // DAT_083a430c  — macro alias dentro de DAT_083a42f8 (ver bloque de dialog button rects)
@@ -1318,7 +1339,11 @@ extern DWORD   DAT_07ea8408;           // UI cursor / hotkey Y position
 
 // Chat input channel buffers (9 channels × 0x100 bytes)
 extern char    DAT_07e0ffc8[10 * 0x100];   // macro hotkey table: 10 slots × 256 bytes
-extern char    DAT_07e108c8;           // whisper-target buffer (channel 9 / separate)
+// Fila 9 de la tabla de arriba (0x07E0FFC8 + 0x900 = 0x07E108C8), no un global
+// aparte: es el buffer del destinatario de susurro y lo llenan FUN_00494520,
+// strcmp/strlen/memcpy.  2026-08-22: estaba declarado como UN char, o sea
+// escribia 255 bytes sobre los globals vecinos.
+#define DAT_07e108c8   (DAT_07e0ffc8[0x900])
 
 // Player name (for chat name-match / tab-complete)
 extern char    DAT_005592dc;           // player name string (char array)
@@ -1342,7 +1367,14 @@ extern char    DAT_07d3d734;           // pvp-toggle result message buffer
 extern DWORD   DAT_07e11dac;           // command-result flag (1=whisper, 0=pvp-off)
 
 // B-key toggle guards
-extern char    DAT_07eaa130;           // guard flag for tab/key inputs
+// 0x07EAA130 ES g_bServerDivisionEnable (confirmado por xrefs de IDA:
+// ReceiveTalk, SendMove, sub_492F10, Chat_InputTick, GetScreenWidth,
+// RenderServerDivision).  2026-08-22: estaba partido en dos variables —
+// el writer era g_bServerDivisionEnable (Net_Process, ReceiveTalk sub 5) y
+// los readers DAT_07eaa130, que nadie seteaba nunca.  Por eso el panel de
+// division de servidor no se dibujaba y GetScreenWidth no lo contaba.
+// El byte 1 de ese int es 0x07EAA131, que ya se usa asi en stubs_externs.
+#define DAT_07eaa130   (*(char*)&g_bServerDivisionEnable)
 extern char    DAT_07eaa132;           // guard for B-key toggle enable
 extern char    DAT_07eaa134;           // RepairEnable_0
 
@@ -1570,7 +1602,12 @@ extern char    DAT_07d699d8;   // NPC/vendor info line B
 extern char    DAT_07d69b04;   // NPC entry 0 line A
 extern char    DAT_07d69c30;   // NPC entry 0 line B
 // DAT_083a4304  — macro alias dentro de DAT_083a42f8 (ver bloque de dialog button rects)
-extern char    DAT_083a4348[380]; // guild multi-line text entry buffer (stride 0x26 per line, ~10 lines)
+// DAT_083a4348 @ 0x083A4348 ES `g_lpszDialogAnswer` — las 10 respuestas del
+// dialogo, 38 (0x26) bytes cada una.  Disassembly 0x401812:
+// `bf 48 43 3a 08` = `mov edi, 0x083A4348` seguido de `mov ecx, 5Fh; rep stosd`
+// = 0x5F dwords = 380 bytes = 10 * 38, que fija el tamano real.
+extern char    DAT_083a4348[10][1][38];
+#define g_lpszDialogAnswer  DAT_083a4348
 // Guild message decode state
 // DAT_083a7c08 — declared above as DWORD (line 772)
 extern char    DAT_083a7c09;   // guild dialog flag B
@@ -1673,7 +1710,7 @@ extern char    DAT_0055de84;
 extern char    DAT_0055de10;
 extern FILE   *DAT_07d7806c;   // file handle (MonsterSetBase2 parser)
 extern char    DAT_005580ac[]; // "rb" fopen mode string
-extern char    DAT_00558090;   // Quest XOR decrypt key[0] (3-byte key used by FUN_00401120)
+extern char    DAT_00558090[3];   // bBuxCode — clave XOR de Quest.bmd (FC CF AB)
 extern char    DAT_07cf1ef0;   // sentinel compare buffer
 extern char    DAT_00559088;   // sentinel "END" string base
 extern int     DAT_07d7807c;   // spawn slot index
@@ -2135,8 +2172,40 @@ extern int     DAT_07cf1ff0;       // item record shadow array base (mirrors DAT
 extern int     DAT_07cf1ff8;       // skill record shadow array base
 extern int     DAT_07d29d20;       // skill/gate data array base
 extern DWORD   DAT_07cf5600;       // gate data array base (stride 9 bytes, 100 entries) — malloc'd in WinMain
-extern DWORD   DAT_07cf5608[];     // dialog data array base (4 bytes/entry, 200KB total)
-extern char    DAT_07cf5788;       // char name table: [server*0x10+slot]*0x40, 0x40 bytes each
+// ── g_DialogScript @ 0x07CF5608 — 200 entradas x 0x400 bytes ────────────────
+// Layout verificado contra el disassembly de CSQuest::ShowDialogText (0x4017E0):
+//   0x4017F1  shl eax, 0Ah            → stride de entrada = 0x400
+//   0x4017F6  add eax, g_DialogScript → m_lpszText en +0x000
+//   0x401834  cmp [ecx+0x07CF5734]    → m_iNumAnswer      en +0x12C
+//   0x40184D  add eax, 0x07CF5788     → m_lpszAnswer      en +0x180, paso 0x40
+// y contra los xrefs de sub_401AF0 / UI_InGameMenu para los otros dos campos:
+//   0x07CF5738 = m_iLinkForAnswer   (+0x130)  — índice del diálogo siguiente
+//   0x07CF5760 = m_iReturnForAnswer (+0x158)  — acción de la respuesta (1/2/3)
+// Cierra exacto: 0x180 + 10*0x40 = 0x400, y 0x130 + 10*4 = 0x158 + 10*4 = 0x180.
+//
+// 2026-08-21: los cuatro campos estaban como globals ESCALARES sueltos y los
+// consumidores hacían `&DAT_07cf5734 + idx * 0x400` sobre punteros tipados
+// (paso 4x) — lecturas fuera de rango garantizadas.  Ahora hay una sola tabla.
+#define DIALOG_SCRIPT_COUNT   200
+struct DIALOG_SCRIPT {
+    /*+0x000*/ char m_lpszText[300];
+    /*+0x12C*/ int  m_iNumAnswer;
+    /*+0x130*/ int  m_iLinkForAnswer[10];
+    /*+0x158*/ int  m_iReturnForAnswer[10];
+    /*+0x180*/ char m_lpszAnswer[10][0x40];
+};
+extern DWORD   DAT_07cf5608[];     // base real de la tabla (DIALOG_SCRIPT_COUNT * 0x400)
+#define g_DialogScript  ((DIALOG_SCRIPT*)DAT_07cf5608)
+static_assert(sizeof(DIALOG_SCRIPT)                        == 0x400, "DIALOG_SCRIPT: stride de entrada");
+static_assert(offsetof(DIALOG_SCRIPT, m_iNumAnswer)        == 0x12C, "DIALOG_SCRIPT: m_iNumAnswer");
+static_assert(offsetof(DIALOG_SCRIPT, m_iLinkForAnswer)    == 0x130, "DIALOG_SCRIPT: m_iLinkForAnswer");
+static_assert(offsetof(DIALOG_SCRIPT, m_iReturnForAnswer)  == 0x158, "DIALOG_SCRIPT: m_iReturnForAnswer");
+static_assert(offsetof(DIALOG_SCRIPT, m_lpszAnswer)        == 0x180, "DIALOG_SCRIPT: m_lpszAnswer");
+// Los cuatro DAT_ viejos son los campos de la ENTRADA 0, no globals aparte.
+#define DAT_07cf5734   (g_DialogScript[0].m_iNumAnswer)
+#define DAT_07cf5738   (g_DialogScript[0].m_iLinkForAnswer[0])
+#define DAT_07cf5760   (g_DialogScript[0].m_iReturnForAnswer[0])
+#define DAT_07cf5788   (g_DialogScript[0].m_lpszAnswer[0][0])
 extern char    DAT_07d566d0;       // fallback char name string (no-char placeholder)
 extern char    s__d___s_005580b0[];// "%d %s" format string for char-select display
 extern int     DAT_07d78078;       // NPC name count
@@ -2511,11 +2580,16 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 // (HUD passes + ChatListBox) se perdían → texto blanco. DAT_00559c78/80 declarados arriba.
 #define m_dwTextColor  DAT_00559c78
 #define m_dwBackColor  DAT_00559c80
-extern int     g_iNumAnswer;       // Quest dialog answer count
-extern int     g_iNumLineMessageBoxCustom; // Quest dialog line count
-extern char   *g_lpszMessageBoxCustom[16]; // Quest dialog text lines
-extern int     g_iCurrentDialogScript;     // Quest dialog current script index
-extern char    g_lpszDialogAnswer[16][1][38]; // Quest dialog answer text lines
+// g_iNumAnswer — alias de DAT_083a7c0c (ver arriba).
+// g_iNumLineMessageBoxCustom — alias de DAT_083a4324 (ver arriba).
+// g_lpszMessageBoxCustom — alias de DAT_083a44c4 (el buffer real de 7 lineas x
+// 0x26).  2026-08-21: era un array de 16 PUNTEROS en NULL, o sea los writers
+// (ShowDialogText, CreateOkMessageBox) llenaban DAT_083a44c4 y los readers
+// (sub_402FF0) leian punteros nulos → el texto del dialogo de quest nunca se
+// dibujaba.  Sexto global partido en dos de este subsistema.
+#define g_lpszMessageBoxCustom  ((char (*)[0x26])DAT_083a44c4)
+// g_iCurrentDialogScript — alias de DAT_005615dc (ver arriba).
+// g_lpszDialogAnswer — alias de DAT_083a4348 (ver arriba).
 // 2026-07-19: m_hFontDC NO es un global aparte — en IDA sub_50F5F0 hace
 // `m_hFontDC = CreateCompatibleDC(hdc)` y ese mismo DC es DAT_055c9fec (el font
 // memory DC, declarado en stdafx.h). Tenerlos separados dejaba m_hFontDC en NULL

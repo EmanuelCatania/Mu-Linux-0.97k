@@ -51,10 +51,7 @@ extern "C" void   __cdecl SeedQuickPotionTypesFromInventory(void);
 #define byte_559C6C    DAT_00559c6c
 
 // Inventory grid pool — same one HUD_Pass3.cpp's sub_482850 walks.
-// `g_InventoryGridPool` is defined with external linkage in HUD_Pass3.cpp.
-extern "C" DWORD g_InventoryGridPool[2176];
 extern "C" BYTE  OffsetInventoryItems[];
-extern "C" DWORD g_InventoryGridPool[];
 
 static bool HUD_IsQuestPanelOpenRuntime(void)
 {
@@ -100,6 +97,7 @@ extern "C" int __cdecl sub_482E40(int a1)
             rangeLo = rangeHi;
             break;
         case 457:
+        case 458:
         case 468:
             countAsStacks = 1;
             rangeLo = rangeHi;
@@ -121,6 +119,7 @@ extern "C" int __cdecl sub_482E40(int a1)
             rangeLo = rangeHi;
             break;
         case 457:
+        case 458:
         case 468:
             countAsStacks = 1;
             rangeLo = rangeHi;
@@ -137,7 +136,8 @@ extern "C" int __cdecl sub_482E40(int a1)
         }
     } else if (a1 == 2) {
         rangeHi = dword_559C68;
-        if (rangeHi == 457 || rangeHi == 468) {
+        // IDA: `v2 >= 457 && (v2 <= 458 || v2 == 468)`
+        if ((rangeHi >= 457 && rangeHi <= 458) || rangeHi == 468) {
             countAsStacks = 1;
             rangeLo = rangeHi;
         } else if (rangeHi >= 448 && rangeHi <= 451) {
@@ -157,10 +157,21 @@ extern "C" int __cdecl sub_482E40(int a1)
     }
 
     int total = 0;
+    // Se conserva la forma legible de `main` (recorrer el inventario como
+    // ITEM[64]) en vez del walk de punteros del decompile: son equivalentes —
+    // IDA visita cada (tipo buscado, slot) y acá se filtra por rango, y el
+    // acumulador `*((unsigned __int8 *)v6 - 30)` es el byte +26 = Durability.
+    //
+    // Lo unico que se corrige es el GATE.  IDA sub_482E40 usa
+    // `*((__int16 *)v6 - 28) == v9 && *v6 > 0`, donde `*v6` es el campo en
+    // slot+56 = ITEM::Key, no Durability.  Coinciden casi siempre porque
+    // InsertInventoryItem hace `Key = max(Durability, 1)`, pero no cuando la
+    // durabilidad es 0: ahi el item sigue teniendo Key = 1 y el original lo
+    // cuenta igual (suma 0, o +1 si countAsStacks).
     const ITEM* inventory = (const ITEM*)OffsetInventoryItems;
     for (int slot = 0; slot < 64; ++slot) {
         const ITEM& item = inventory[slot];
-        if (item.Type < rangeLo || item.Type > rangeHi || item.Durability == 0) {
+        if (item.Type < rangeLo || item.Type > rangeHi || (int)item.Key <= 0) {
             continue;
         }
         if (countAsStacks) {

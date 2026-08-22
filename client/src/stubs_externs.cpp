@@ -2021,16 +2021,48 @@ void __cdecl FUN_0051da80(int p1, void *data)
 // Selects character slot `slot` for the in-game item/skill list display.
 // Sets DAT_005615dc, populates DAT_083a4324 and skill/item display arrays,
 // then transitions UI state to 0x8e.
+// 2026-08-21: era un stub que salteaba el texto ("requires DAT_07cf5608 char
+// data arrays not yet mapped").  La tabla ya esta reconciliada (DIALOG_SCRIPT
+// en globals.h), asi que ahora es el port fiel de sub_51D840: arma el cuadro de
+// dialogo desde g_DialogScript[a1] igual que CSQuest::ShowDialogText, mas el
+// memset de los rects de boton y ErrorMessage = 142.
 int __cdecl FUN_0051d840(int param_1) {
-    DAT_005615dc = (DWORD)param_1;
-    // SeparateTextIntoLines and skill data population skipped
-    // (requires DAT_07cf5608 char data arrays not yet mapped)
-    DAT_083a7c0c = 1;
-    if (DAT_083a7c24 == 0) {
-        DAT_083a7c24 = 0x8e;
-    } else {
-        DAT_083a7c28 = 0x8e;
+    char szText[72];
+
+    if (param_1 < 0 || param_1 >= DIALOG_SCRIPT_COUNT) return 1;   // guard de port
+    const DIALOG_SCRIPT *dlg = &g_DialogScript[param_1];
+
+    g_iCurrentDialogScript = param_1;
+    g_iNumLineMessageBoxCustom =
+        SeparateTextIntoLines(dlg->m_lpszText, &DAT_083a44c4[0], 7, 38);
+
+    memset(DAT_083a42f8, 0, 0x28);              // rects de los botones
+    memset(g_lpszDialogAnswer, 0, sizeof(g_lpszDialogAnswer));
+
+    int i = 0;
+    g_iNumAnswer = 0;
+    int nAnswer = dlg->m_iNumAnswer;
+    if (nAnswer > 10) nAnswer = 10;             // la tabla tiene 10 slots
+    if (nAnswer > 0) {
+        char *dst = &g_lpszDialogAnswer[0][0][0];
+        do {
+            wsprintfA(szText, "%d) %s", i + 1, dlg->m_lpszAnswer[i]);
+            int nLine = SeparateTextIntoLines(szText, dst, 1, 38);
+            if (nLine < 0) g_lpszDialogAnswer[i][nLine][0] = 0;
+            ++i;
+            ++g_iNumAnswer;
+            dst += 38;
+        } while (i < nAnswer);
     }
+    if (dlg->m_iNumAnswer == 0) {
+        wsprintfA(szText, "%d) %s", i + 1, GlobalText[609]);
+        g_iNumAnswer = 1;
+        strcpy(&g_lpszDialogAnswer[0][0][0], szText);
+    }
+
+    // IDA: ErrorMessage = 142, o NextErrorMessage si ya hay un cartel arriba.
+    if (DAT_083a7c24 != 0) DAT_083a7c28 = 142;
+    else                   DAT_083a7c24 = 142;
     return 1;
 }
 // FUN_0051e7e0 — implemented in src/Scene/Scene_ServerSelect_Input.cpp

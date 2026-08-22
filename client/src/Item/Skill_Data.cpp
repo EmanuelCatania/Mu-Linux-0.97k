@@ -111,12 +111,25 @@ void __cdecl FUN_0047ac50(const char *path)
         return;
     }
 
+    // IDA copia CADA registro descifrado a las DOS tablas (0x47AC50, quitando
+    // el ruido de hash-table):
+    //     qmemcpy(&SkillAttribute[j],  <registro>, 40u);
+    //     qmemcpy(&SkillAttribute2[j], <registro>, 40u);
+    //     SkillAttribute2[j - 2] *= 2;        // el byte +0x26 de la sombra
+    //
+    // 2026-08-22: aca solo se llenaba SkillAttribute2 (= DAT_07cf1ff8, 0x7CF1FF8,
+    // confirmado por xrefs de IDA).  SkillAttribute (0x07D29D20) quedaba en
+    // ceros, y es la que leen TODOS los consumidores: RenderItemName case 795,
+    // RenderItemInfo y GetSkillInformation.  Por eso el nombre de los orbes en
+    // el suelo salia solo como "Jewel" — el sprintf es
+    // `"%s %s"` con `&SkillAttribute[8*(5*Level+150)]` y GlobalText[102]
+    // ("Jewel"), y el primer %s salia vacio.
     int off = 0;
     do {
         FUN_00479910((int)buf, 0x28);
-        // copy decrypted record into skill shadow table
+        if (off + 0x28 <= (int)sizeof(SkillAttribute.Raw))
+            memcpy(SkillAttribute.Raw + off, buf, 0x28);
         memcpy((char *)DAT_07cf1ff8 + off, buf, 0x28);
-        // [+0x26] field shift
         *((BYTE *)DAT_07cf1ff8 + off + 0x26) <<= 1;
         off += 0x28;
         buf += 0x28;

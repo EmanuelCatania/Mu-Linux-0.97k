@@ -40,7 +40,6 @@ extern "C" int __cdecl sub_4E9300_(void);
 // `dword_7EA9328` but our globals.h already declares DAT_07ea9328 as a
 // sentinel int; expose our own backing array under a unique name with
 // external linkage so HUD_Pass5.cpp's sub_482E40 can share the same pool.
-extern "C" DWORD g_InventoryGridPool[2176] = {0};
 
 // Public init helper called from WinMain.  Sets every ITEM slot's Type
 // field (offset 0, WORD) to 0xFFFF so empty inventory cells aren't
@@ -70,27 +69,16 @@ extern "C" void HUD_InitInventoryPools(void)
     // es un item válido (Kris) en vez del marcador de celda vacía (0xFFFF) → las
     // 120 celdas del baúl mostraban un Kris fantasma con durabilidad 0/20.
     initPool(OffsetWarehouseItems,  120 * 0x44);
-    // g_InventoryGridPool stride 136 (= 0x88), 64 slots ≈ 8704 b.
-    BYTE* gp = (BYTE*)g_InventoryGridPool;
-    for (size_t i = 0; i < sizeof(g_InventoryGridPool); i += 0x88) {
-        *(WORD*)(gp + i) = 0xFFFF;
-    }
+    // 2026-08-22: acá se estampaba Type=0xFFFF sobre `g_InventoryGridPool`, otro
+    // buffer suelto que nadie llenaba.  Sus consumidores ya leen el inventario
+    // real, así que no hace falta.
 
-    // g_EquipGridBuf — IDA layout walked by FUN_00482be0:
-    //   8 rows × 7 cols (or 7 outer × 8 inner — equivalent traversal).
-    //   Cell base = (buf_end - row*68 - col*544);  Type lives at cell-56.
-    // Stamp Type=0xFFFF at each Type slot so empty cells don't false-match.
-    extern BYTE g_EquipGridBuf[];
-    BYTE* end = g_EquipGridBuf + 0x12DC;
-    for (int row = 0; row < 8; ++row) {
-        for (int col = 0; col < 8; ++col) {
-            BYTE* cell_base = end - row * 0x44 - col * 0x220;
-            BYTE* type_addr = cell_base - 56;
-            if (type_addr >= g_EquipGridBuf && type_addr + 2 <= end) {
-                *(WORD*)type_addr = 0xFFFF;
-            }
-        }
-    }
+    // 2026-08-22: acá se estampaba Type=0xFFFF sobre un `g_EquipGridBuf` suelto
+    // para que sus celdas vacías no dieran falso positivo.  Ese buffer no existía
+    // en el binario: unk_7EA9504 / unk_7EA9328 son posiciones dentro del
+    // inventario real (ver globals.cpp).  Con los punteros ya reenraizados, este
+    // loop escribiría 0xFFFF encima del Type de slots REALES.  Removido — el
+    // inventario ya lo inicializa initPool() unas líneas más arriba.
 }
 
 extern "C" {
@@ -241,10 +229,14 @@ int __cdecl FUN_00482850_(void)
     }
 
     int count = 0;
-    // Walk the inventory 8x8 grid backwards (matches IDA).
-    int* base = (int*)&g_InventoryGridPool[0];
-    int* end_ptr  = base + 119;     // (&unk_7EA9504 - &unk_7EA9328) / 4 = 119 dwords
-    int* row = end_ptr;
+    // Recorre la grilla 8x8 del inventario hacia atras, igual que IDA.
+    // 2026-08-22: esto caminaba `g_InventoryGridPool`, otro buffer suelto que
+    // nadie llenaba (mismo caso que g_EquipGridBuf).  unk_7EA9328 y unk_7EA9504
+    // son posiciones dentro de OffsetInventoryItems — ver la derivacion en
+    // globals.cpp.  Encima, con la base equivocada el `cell -= 136` (544 bytes)
+    // se iba 3876 bytes por DEBAJO del buffer.
+    int* base = &DAT_07ea9328;      // slot 56, campo Key
+    int* row  = &DAT_07ea9504;      // slot 63, campo Key  (= base + 119 dwords)
     while (row >= base) {
         int* cell = row;
         for (int i = 0; i < 8; ++i) {
