@@ -1025,6 +1025,7 @@ char* __cdecl getMonsterName(int type);                              // 0x0047d2
 bool  __cdecl getEqualMonster(int addV);                             // 0x0047ebd1
 void  __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster, int iKillMonster); // 0x0047eba0
 void  __fastcall CSQuest__setQuestList(int ecx, int edx, int index, int result); // 0x004011b0
+void  __fastcall CSQuest__setQuestLists(int ecx, int edx, BYTE *byList, int num, int Class); // 0x00401160
 
 // Blur / trail
 void  __cdecl MoveBlurs(void);                                       // 0x0046c3b0
