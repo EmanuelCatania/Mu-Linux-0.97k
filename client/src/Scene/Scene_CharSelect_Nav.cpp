@@ -1261,15 +1261,34 @@ unsigned int __cdecl FUN_00402f40(void *param_1) {
 // Full char-select row click handler: computes row from mouse Y, resolves
 // char slot, builds XOR-encrypted selection packet and sends.
 // Slot types from DAT_07cf5760[server*0x100+slot]: 1/3→send packet, 2→FUN_00401960
+// Paquete cliente->server de quest.  IDA sub_401AF0 arma en los dos sitios
+// (L152-199 y L399-446) exactamente el mismo buffer:
+//     *(DWORD*)v103 = 0x01C10003   -> len=3, packet = C1 ?? A2
+//     v103[4] = 0xA2               -> opcode
+//     append  *(BYTE*)(this + 116858)   (indice de quest actual)
+//     append  1
+// = [C1][05][A2][questIndex][01].  El wrapper anti-tamper lo mete en un frame
+// C3 (`local_914[0] = 0xC3`), que es lo que corresponde: HackPacketCheck.txt
+// da Encrypt = 1 para el indice 162 (0xA2), o sea C3/C4 con serial.
+// El server (Protocol.cpp case 0xA2 -> CGQuestStateRecv) sólo lee QuestIndex y
+// avanza el estado él mismo; el byte 1 del final lo ignora.
+//
+// 2026-08-21: el port armaba `{0xC1,1,0,0xA2,0}` con un XOR a mano y lo mandaba
+// por un sendPkt propio — ni el opcode quedaba en su lugar ni el indice de
+// quest viajaba.  Ahora usa el sender estandar del proyecto.
+static void Quest_SendState(void *pThis)
+{
+    BYTE pkt[5];
+    pkt[0] = 0xC1;
+    pkt[1] = 0x05;
+    pkt[2] = 0xA2;
+    pkt[3] = *(BYTE *)((int)pThis + 0x1c87a);   // indice de quest actual
+    pkt[4] = 0x01;
+    Net_SendSmallPacket(pkt, 5);
+}
+
 void __fastcall FUN_00401af0(void *param_1)
 {
-    static const BYTE xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
-
     // Compute Y-base of char list
     int yBase;
     if (*(char *)((int)param_1 + 0x1c882) != '\x01' &&
@@ -1301,9 +1320,6 @@ void __fastcall FUN_00401af0(void *param_1)
         return;
     }
 
-    char local_914[260];
-    char local_810[1028];
-    BYTE local_40c[1024];
     char local_d29 = '\0';
 
     // Lee el tipo de slot de la tabla
@@ -1314,55 +1330,6 @@ void __fastcall FUN_00401af0(void *param_1)
     if (curScript >= 0 && curScript < DIALOG_SCRIPT_COUNT && slot >= 0 && slot < 10)
         slotType = g_DialogScript[curScript].m_iReturnForAnswer[slot];
 
-    auto sendPkt = [&](BYTE *pktBuf, int rawLen) {
-        int encLen = FUN_0053cc30(0, pktBuf, rawLen);
-        if (encLen < 0x100) {
-            uint sLen = (uint)encLen + 2;
-            local_914[0] = (char)0xc3;
-            local_914[1] = (char)sLen;
-            FUN_0053cc30((int)(local_914 + 2), pktBuf, rawLen);
-            int sent = 0; uint rem = sLen;
-            if (DAT_055ca168 != 0xffffffff) {
-                do {
-                    int r = send((SOCKET)DAT_055ca168, local_914 + sent, (int)(sLen-(uint)sent), 0);
-                    if (r == -1) {
-                        int e = WSAGetLastError();
-                        if (e == 0x2733 && (int)(sLen + DAT_055cc16c) < 0x2001) {
-                            memcpy(DAT_055ca16c + DAT_055cc16c, local_914, sLen);
-                            DAT_055cc16c += sLen;
-                        } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                        break;
-                    }
-                    if (r == 0) break;
-                    if (DAT_055ce174 != 0) FUN_0043de60();
-                    sent += r; rem -= (uint)r;
-                } while ((int)rem > 0);
-            }
-        } else {
-            uint sLen = (uint)encLen + 3;
-            local_810[0] = (char)0xc4;
-            local_810[1] = (char)(sLen >> 8);
-            local_810[2] = (char)sLen;
-            FUN_0053cc30((int)(local_810 + 3), pktBuf, rawLen);
-            int sent = 0; uint rem = sLen;
-            if (DAT_055ca168 != 0xffffffff) {
-                do {
-                    int r = send((SOCKET)DAT_055ca168, local_810 + sent, (int)(sLen-(uint)sent), 0);
-                    if (r == -1) {
-                        int e = WSAGetLastError();
-                        if (e == 0x2733 && (int)(sLen + DAT_055cc16c) < 0x2001) {
-                            memcpy(DAT_055ca16c + DAT_055cc16c, local_810, sLen);
-                            DAT_055cc16c += sLen;
-                        } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                        break;
-                    }
-                    if (r == 0) break;
-                    if (DAT_055ce174 != 0) FUN_0043de60();
-                    sent += r; rem -= (uint)r;
-                } while ((int)rem > 0);
-            }
-        }
-    };
 
     if (slotType == 1) {
         short *slotData = (short *)((int)param_1
@@ -1373,13 +1340,7 @@ void __fastcall FUN_00401af0(void *param_1)
             FUN_004017e0(*(int *)((int)param_1 + 0x1c880));
             goto done;
         }
-        // Build XOR-encrypted selection packet (C1 1 opcode_a2)
-        BYTE pkt[5] = { 0xc1, 1, 0, 0xa2, 0 };
-        pkt[3] ^= xorKey[3 & 0x1f] ^ pkt[4];
-        uint pktLen = 4;
-        local_40c[pktLen] = (BYTE)_rand();
-        memcpy(local_40c, pkt, pktLen);
-        sendPkt(local_40c + 1, (int)(pktLen - 1));
+        Quest_SendState(param_1);
     } else if (slotType == 2) {
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
@@ -1389,12 +1350,7 @@ void __fastcall FUN_00401af0(void *param_1)
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        BYTE pkt3[5] = { 0xc1, 1, 0, 0xa2, 0 };
-        pkt3[3] ^= xorKey[3 & 0x1f] ^ pkt3[4];
-        uint pktLen3 = 4;
-        local_40c[pktLen3] = (BYTE)_rand();
-        memcpy(local_40c, pkt3, pktLen3);
-        sendPkt(local_40c + 1, (int)(pktLen3 - 1));
+        Quest_SendState(param_1);
     }
 
 done:
