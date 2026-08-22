@@ -338,7 +338,6 @@ void __cdecl FUN_004fa5c0(int param_1,int param_2,int param_3,int param_4)
 // Solución: usar gluProject con el GL state actual. Más robusto que recrear
 // la perspective math; respeta cualquier viewport/projection set por
 // FUN_005119b0.
-extern "C" void DbgLogPublic(const char*);
 void __cdecl FUN_005113f0(float *param_1,int *param_2,int *param_3)
 {
   // Port directo del IDA Projection (sub_5113F0). Usa la matriz de cámara
@@ -350,31 +349,6 @@ void __cdecl FUN_005113f0(float *param_1,int *param_2,int *param_3)
   float TPos[3];
   FUN_004fa170(param_1, (float*)&DAT_083a4140, TPos);
 
-  // ── DIAG: log first few projections per second to verify matrix/globals ─
-  static DWORD s_lastProj = 0;
-  static int   s_projCount = 0;
-  DWORD now = GetTickCount();
-  if (now - s_lastProj > 1000) {
-      s_lastProj = now;
-      s_projCount = 0;
-  }
-  if (s_projCount < 3) {
-      s_projCount++;
-      float* M = (float*)&DAT_083a4140;
-      char b[400];
-      _snprintf_s(b, sizeof(b), _TRUNCATE,
-          "PROJ in=(%.1f,%.1f,%.1f) TPos=(%.2f,%.2f,%.2f) "
-          "M[0..2]=(%.3f,%.3f,%.3f,%.3f / %.3f,%.3f,%.3f,%.3f / %.3f,%.3f,%.3f,%.3f) "
-          "ScrCtr=(%d,%d) Persp=(%.6f,%.6f) Win=(%d,%d)",
-          param_1[0], param_1[1], param_1[2],
-          TPos[0], TPos[1], TPos[2],
-          M[0],M[1],M[2],M[3], M[4],M[5],M[6],M[7], M[8],M[9],M[10],M[11],
-          (int)DAT_083a429c, (int)DAT_083a42a0,
-          _DAT_083a42a4, _DAT_083a42a8,
-          (int)DAT_0056156c, (int)DAT_00561570);
-      DbgLogPublic(b);
-  }
-
   // Perspective divide (eye-space → NDC → window pixels)
   if (TPos[2] == 0.0f) { *param_2 = -1000; *param_3 = -1000; return; }
   float invZ = 1.0f / TPos[2];
@@ -382,26 +356,20 @@ void __cdecl FUN_005113f0(float *param_1,int *param_2,int *param_3)
   int sy = (int)DAT_083a42a0 + (int)(TPos[1] * invZ / _DAT_083a42a8);
 
   // Scale from real-window pixels to logical 640×480
-  unsigned int ww = (unsigned int)DAT_0056156c;
-  unsigned int wh = (unsigned int)DAT_00561570;
+  // IDA: `*sx = 640 * *sx / (int)WindowWidth;` — aritmetica CON SIGNO (el cast
+  // a (int) del divisor esta justamente para eso).
+  // 2026-08-22: aca se casteaba sx/sy a unsigned. Con un item fuera de pantalla
+  // a la izquierda sx es negativo, y como unsigned pasaba a ~4.29e9: el
+  // resultado salia positivo grande y el nombre del item saltaba al borde
+  // DERECHO de la pantalla.
+  int ww = (int)DAT_0056156c;
+  int wh = (int)DAT_00561570;
   if (ww == 0) ww = 640;
   if (wh == 0) wh = 480;
-  int outX = (int)(640u * (unsigned int)sx / ww);
-  int outY = (int)(480u * (unsigned int)sy / wh);
+  int outX = 640 * sx / ww;
+  int outY = 480 * sy / wh;
 
-  // ── DIAG part 2: log intermediate sx/sy and final out, gated by same throttle
-  static DWORD s_lastProj2 = 0;
-  static int   s_projCount2 = 0;
-  DWORD now2 = GetTickCount();
-  if (now2 - s_lastProj2 > 1000) { s_lastProj2 = now2; s_projCount2 = 0; }
-  if (s_projCount2 < 3) {
-      s_projCount2++;
-      char b[200];
-      _snprintf_s(b, sizeof(b), _TRUNCATE,
-          "PROJ2 invZ=%.6f sx=%d sy=%d ww=%u wh=%u → out=(%d,%d)",
-          invZ, sx, sy, ww, wh, outX, outY);
-      DbgLogPublic(b);
-  }
+
 
   *param_2 = outX;
   *param_3 = outY;
