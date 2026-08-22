@@ -69,6 +69,84 @@ void __fastcall FUN_00402ff0(int param_1) {
 extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text);
 int __cdecl FUN_004c3dd0(int param_1);
 
+// sub_403150 @ 0x00403150 (438 bytes) — lista de items que pide la quest.
+//
+// Devuelve 1 si el personaje TIENE todos los items requeridos, 0 si falta
+// alguno.  sub_403320 usa ese retorno para pintar el boton de "Proceder" en
+// claro o en gris; sub_4BFDE0 la llama con a3 = 0 para dibujar los modelos 3D
+// de los items en el panel.
+//
+//   a2 = estado esperado (se compara contra This + 0x1C882)
+//   a3 = 0 -> dibuja los items en 3D;  != 0 -> dibuja "Nombre x N" como texto
+//
+// 2026-08-22: portada desde el DISASSEMBLY, no desde el decompile.  Hex-Rays
+// emite "positive sp value has been detected, the output may be wrong" para
+// esta funcion y pierde los parametros (lee Buffer[92] y v18 sin inicializar),
+// asi que el decompile no sirve.  El disassembly, en cambio, sale limpio.
+//
+// Layout de la entrada de quest (18 bytes, arranca en pQuest + 40 + 18*i):
+//   +0  categoria del item      -> nType = categoria * 32 + indice
+//   +1  indice del item
+//   +2  cantidad pedida
+//   +4  flags de disponibilidad por clase (se indexa con This[4])
+//   -1  (= pQuest + 39 + 18*i) 1 = la entrada pide un item
+char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
+{
+    const int This = (int)(uintptr_t)pThis;
+
+    if (*(BYTE *)(This + 0x1c87f) == 0) return 0;      // el panel no esta abierto
+    if (*(char *)(This + 0x1c882) != a2) return 0;     // el estado no es el pedido
+
+    float sy  = 235.0f;
+    char  ret = 1;
+    if (a3 != 0) {
+        SelectObject(m_hFontDC, (HGDIOBJ)g_hFontBold);
+        sy = 240.0f;
+        m_dwBackColor = 0;
+    }
+
+    const int    questIdx = *(unsigned char *)(This + 0x1c87a);
+    const BYTE  *pQuest   = (const BYTE *)(This + 584 * questIdx + 8);
+    const int    nEntry   = *(const short *)pQuest;
+    const int    klass    = *(unsigned char *)(This + 4);
+
+    char buf[100];
+    for (int i = 0; i < nEntry; ++i) {
+        const BYTE *e = pQuest + 40 + 18 * i;
+        if (*(const BYTE *)(e + 4 + klass) != 1) continue;   // no aplica a esta clase
+        if (*(const BYTE *)(e - 1) != 1)         continue;   // la entrada no pide item
+
+        const int nType  = (int)e[1] + 32 * (int)e[0];
+        const int nCount = (int)e[2];
+
+        if (a3 != 0) {
+            // FindQuestItemsInInven devuelve 0 si ya los tiene, o cuantos
+            // faltan.  De ahi que "0" pinte en celeste y "!= 0" en rojo.
+            int missing = FUN_00482dd0(nType, nCount, 0xFFFFFFFFu);
+            if (missing == 0) {
+                m_dwTextColor = 0xFF67BFDFu;
+            } else {
+                m_dwTextColor = 0xFF1E1EFFu;
+                ret = 0;
+            }
+            const char *name = "";
+            unsigned int abase = (unsigned int)(uintptr_t)DAT_07d78068;
+            if (abase >= 0x100000u && abase < 0x80000000u && nType >= 0 && nType < 1024)
+                name = (const char *)(uintptr_t)(abase + (unsigned int)nType * 64u);
+            crt_sprintf(buf, "%s x %d", name, nCount);
+            RenderText(510, (int)sy, buf, 0, 0, nullptr);
+        } else {
+            // Desviacion conocida del binario: el DLL de inyeccion parchea el
+            // byte de 0x004032A8 ("Fix Quest Item Preview") para que este
+            // Level sea 0 en vez de -1, porque con -1 la vista previa del item
+            // sale mal.  Se deja fiel a IDA.
+            RenderItem3D(480.0f, sy, 20.0f, 20.0f, nType, -1, 0, 0, false);
+        }
+        sy += _DAT_00552464;
+    }
+    return ret;
+}
+
 // FUN_00403320 @ 0x00403320 (955 bytes) — ventana de quest del NPC
 // Port fiel del decompile.  2026-08-21: acá había un resumen que sólo dibujaba
 // el fondo y dejaba el resto como comentarios ("stub: full render logic
@@ -96,8 +174,11 @@ void __fastcall FUN_00403320(void* param_1) {
     if (state == 1) {
         FUN_005125a0(279, 450.0f, 325.0f, 190.0f, 10.0f,
                      0.0f, 0.0f, 0.7421875f, 0.625f, 1, 1);
-        // TODO(sub_403150): lista de items requeridos + "¿los tiene?"
-        m_dwTextColor = 0xFFD2E6FFu;
+        if (FUN_00403150(param_1, 0, state, 1)) {
+            m_dwTextColor = 0xFFD2E6FFu;
+        } else {
+            glColor3f(0.3f, 0.3f, 0.3f);
+        }
 
         if ((double)MouseX >= 485.0 && (double)MouseX < 605.0 &&
             (double)MouseY >= 355.0 && (double)MouseY < 379.0 && MouseLButtonPush) {

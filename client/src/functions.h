@@ -79,7 +79,7 @@ void  __cdecl FUN_00404cd0(void);          // HashTable maintenance (no args)
 
 // ── Config / net connect ──────────────────────────────────────────────────────
 undefined4 __cdecl FUN_00402fd0(void *);
-void  __cdecl FUN_00403150(int);
+char  __fastcall FUN_00403150(void *pThis, int edx, char a2, char a3);   // lista de items de la quest (0x403150)
 void  __cdecl FUN_00405540(void* ht, const char* msg, ...);
 void  __cdecl FUN_004055a0(int);
 void  __cdecl FUN_004058b0(void);
