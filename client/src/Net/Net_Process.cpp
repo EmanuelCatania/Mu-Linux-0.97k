@@ -2139,6 +2139,12 @@ static void Recv_LevelUp(const BYTE* Msg, int Size)
     // fórmula dejaría el panel en desacuerdo con el server y con lo que el propio
     // F3/03 muestra al volver de char-select.  Mismo criterio que el F3/06 de
     // stats y el 0xA3 de quest prize: si vienen los View*, mandan ellos.
+    //
+    // CONFIRMADO contra el DLL de inyección: `CProtocol::GCLevelUpRecv`
+    // (Source/Client/Main/Protocol.cpp:816-817) hace exactamente esto —
+    // `ViewExperience`/`ViewNextExperience` directo del paquete, sin tocar la
+    // fórmula del 0.97k.  Idem su handler del F3/03 (L871).  O sea la referencia
+    // toma la misma decisión, no hay una tercera variante que contemplar.
     if (Size >= 48) {
         *(DWORD*)(CA + 16) = *(const DWORD*)(Msg + 40);              // ViewExperience
         *(DWORD*)(CA + 52) = *(const DWORD*)(Msg + 44);              // ViewNextExperience
@@ -2600,6 +2606,194 @@ void Net_ProcessPacket(void)
                             }
                             NetLog("NET:  → F3/06 AddPoint OK (no-extra) slot=%d maxLifeMana=%u",
                                    slot, maxLifeMana);
+                        }
+                        break;
+                    }
+
+                    case 0x07: {
+                        // PMSG_MONSTER_DAMAGE_SEND (Protocol.h:485) - dano que
+                        // nos hace un monstruo.  IDA lo resuelve inline:
+                        //   v51 = RB[5] + (RB[4] << 8);
+                        //   if (CA+28 < v51) CA+28 = 0; else CA+28 -= v51;
+                        // Layout con el padding de MSVC:
+                        //   +4,+5 BYTE damage[2]  .  +6,+7 padding
+                        //   +8  DWORD ViewCurHP   .  +12 DWORD ViewDamageHP
+                        // Con GAMESERVER_EXTRA el server manda la vida que le
+                        // queda al pj ya resuelta: es autoritativa y evita que
+                        // el cliente se desincronice restando de su propia copia.
+                        if (Size < 6 || !CharacterAttribute) break;
+                        BYTE* CA = (BYTE*)CharacterAttribute;
+                        if (Size >= 16) {
+                            *(WORD*)(CA + 28) = ClampToWord(*(const DWORD*)(Msg + 8));
+                        } else {
+                            const WORD dmg = (WORD)(Msg[5] + (Msg[4] << 8));
+                            WORD hp = *(WORD*)(CA + 28);
+                            *(WORD*)(CA + 28) = (hp < dmg) ? 0 : (WORD)(hp - dmg);
+                        }
+                        NetLog("NET:  -> F3/07 MonsterDamage hp=%u",
+                               (unsigned)*(WORD*)(CA + 28));
+                        break;
+                    }
+
+                    case 0x08: {
+                        // ReceivePK (0x00431DC0) - PMSG_PK_LEVEL_SEND
+                        // (Protocol.h:495): index[2] en +4,+5 y PKLevel en +6.
+                        // Hasta ahora el PKLevel solo llegaba con el F3/03, o
+                        // sea no se actualizaba en vivo.  El campo es +746
+                        // (0x2EA), el mismo que gatea el tinte rojo del render
+                        // (Entity_UpdateRender: `>= 6`).
+                        if (Size < 7 || !DAT_07abf5d0) break;
+                        const int pkKey = Msg[5] + (Msg[4] << 8);
+                        const int pkIdx = FUN_0045ac80(pkKey);
+                        if (pkIdx < 0 || pkIdx >= 400) break;
+                        BYTE* pkEnt = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)pkIdx * 0x394;
+                        const BYTE pkLevel = Msg[6];
+                        pkEnt[746]            = pkLevel;
+                        *(WORD*)(pkEnt + 446) = (WORD)(pkLevel >= 6);
+                        NetLog("NET:  -> F3/08 PKLevel key=%d idx=%d lvl=%u",
+                               pkKey, pkIdx, (unsigned)pkLevel);
+                        // Aviso en el chat.  El decompile perdio los break de
+                        // cada case (se leen como fall-through), pero cada uno
+                        // elige su texto y su color y cae en la MISMA llamada.
+                        int pkColor = 0;
+                        int pkText  = -1;
+                        switch (pkLevel) {
+                            case 2: pkColor = 1; pkText = 487; break;
+                            case 3: pkColor = 1; pkText = 488; break;
+                            case 4: pkColor = 2; pkText = 489; break;
+                            case 5: pkColor = 2; pkText = 490; break;
+                            case 6: pkColor = 2; pkText = 491; break;
+                            default: break;
+                        }
+                        if (pkText >= 0 && GlobalText[pkText] && GlobalText[pkText][0]) {
+                            UIChatLogWindow_AddText((char*)(pkEnt + 449),
+                                                    GlobalText[pkText], pkColor);
+                        }
+                        break;
+                    }
+
+                    case 0x13: {
+                        // PMSG_ITEM_EQUIPMENT_SEND (ItemManager.h:162) - cambio
+                        // de equipo de OTRO jugador del viewport.
+                        //   +4,+5 index[2]  .  +6..+16 CharSet[11]
+                        // IDA pasa `ReceiveBuffer + 7`, que es `&CharSet[1]`:
+                        // los otros dos callers de ChangeCharacterExt
+                        // (ReceiveCharacterList L68, Combat_PacketDispatch L317)
+                        // pasan literalmente `&CharSet[1]`, o sea la funcion
+                        // espera el CharSet SIN el byte de clase.  Coincide 1:1
+                        // con el layout del server.
+                        if (Size < 17) break;
+                        const int eqKey = Msg[5] + (Msg[4] << 8);
+                        const int eqIdx = FUN_0045ac80(eqKey);
+                        NetLog("NET:  -> F3/13 ItemEquipment key=%d idx=%d", eqKey, eqIdx);
+                        if (eqIdx < 0 || eqIdx >= 400) break;
+                        FUN_0045c8c0(eqIdx, (BYTE*)Msg + 7);
+                        break;
+                    }
+
+                    case 0x14: {
+                        // PMSG_ITEM_MODIFY_SEND (ItemManager.h:169) - el server
+                        // reescribe una celda del inventario.
+                        //   +4 slot  .  +5.. ItemInfo
+                        if (Size < 6) break;
+                        NetLog("NET:  -> F3/14 ItemModify slot=%d", Msg[4]);
+                        DAT_07e91388 = 0;            // suelta el item agarrado
+                        FUN_004cc660(OffsetInventoryItems, 8, 8, Msg[4],
+                                     (BYTE*)Msg + 5, 0);
+                        PlayBuffer(49, 0, 0);
+                        break;
+                    }
+
+                    case 0x20:
+                        // PMSG_SUMMON_LIFE_SEND (Protocol.h:502) - HP % de la
+                        // mascota invocada.  Es el UNICO productor del valor;
+                        // sin el, la barra del monstruo invocado nunca se
+                        // dibuja (el gate del HUD es `if (SummonLife)`).
+                        if (Size < 5) break;
+                        DAT_05826d24 = Msg[4];       // SummonLife
+                        NetLog("NET:  -> F3/20 SummonLife=%u", (unsigned)Msg[4]);
+                        break;
+
+                    case 0x22:
+                        // PMSG_TIME_VIEW_SEND (Protocol.h:508) - `WORD time` en
+                        // +4.  IDA lo llama `SoccerTime` (0x05826C08) y lo lee
+                        // igual: `*((WORD *)ReceiveBuffer + 2)`.
+                        if (Size < 6) break;
+                        DAT_05826c08 = *(const WORD*)(Msg + 4);   // SoccerTime
+                        NetLog("NET:  -> F3/22 TimeView=%u", (unsigned)DAT_05826c08);
+                        break;
+
+                    case 0x23: {
+                        // Marcador de guild war / soccer.  MuEmu no manda este
+                        // sub-opcode (no hay ningun sender con 0xF3,0x23), asi
+                        // que hoy es codigo inerte; se porta por completitud.
+                        //   +4..+11  nombre equipo 0   .  +12 score equipo 0
+                        //   +13..+20 nombre equipo 1   .  +21 score equipo 1
+                        // (0xFF en el score = no hay partido en curso)
+                        if (Size < 23) break;
+                        memcpy(&SoccerTeamName[0][0], Msg + 4, 8);
+                        *(WORD*)&SoccerTeamName[0][8] = *(const WORD*)(Msg + 12);
+                        memcpy(&SoccerTeamName[1][0], Msg + 13, 8);
+                        *(WORD*)&SoccerTeamName[1][8] = *(const WORD*)(Msg + 21);
+                        SoccerTeamName[0][8] = 0;    // el WORD de arriba escribe
+                        SoccerTeamName[1][8] = 0;    // 2 bytes; aca se corta en NUL
+                        GuildWarScore[0] = Msg[12];
+                        GuildWarScore[1] = Msg[21];
+                        DAT_05826d33 = (char)(Msg[12] != 255);   // SoccerObserver
+                        NetLog("NET:  -> F3/23 GuildWarScore %d-%d obs=%d",
+                               GuildWarScore[0], GuildWarScore[1], (int)DAT_05826d33);
+                        break;
+                    }
+
+                    case 0x40: {
+                        // ReceiveServerCommand (0x00436550).  Dos senders del
+                        // server comparten este sub-opcode y se distinguen por
+                        // el byte `type` en +4: GCFireworksSend (type 0, con x/y
+                        // en +5/+6) y GCServerCommandSend (el resto).
+                        if (Size < 5) break;
+                        NetLog("NET:  -> F3/40 ServerCommand type=%d arg=%d",
+                               Msg[4], (Size >= 6) ? Msg[5] : -1);
+                        switch (Msg[4]) {
+                            case 0: {   // fuegos artificiales sobre una celda
+                                if (Size < 7) break;
+                                float Position[3];
+                                float Angle[3] = { 0.0f, 0.0f, 0.0f };
+                                float Light[3] = { 1.0f, 1.0f, 1.0f };
+                                Position[0] = ((float)Msg[5] + 0.5f) * 100.0f;
+                                Position[1] = ((float)Msg[6] + 0.5f) * 100.0f;
+                                Position[2] = FUN_004f7500(Position[0], Position[1]);
+                                FUN_00460dc0(1248, Position, Angle, Light,
+                                             nullptr, nullptr, (float*)-1, nullptr, 0);
+                                break;
+                            }
+                            case 1: {   // aviso de texto (dos bloques de GlobalText)
+                                if (Size < 6) break;
+                                const int gt = (Msg[5] < 20) ? (Msg[5] + 650)
+                                                             : (Msg[5] + 810);
+                                if (GlobalText[gt] && GlobalText[gt][0])
+                                    CreateOkMessageBox(GlobalText[gt]);
+                                break;
+                            }
+                            case 2:
+                                PlayBuffer(70, 0, 0);
+                                break;
+                            case 3: {
+                                if (Size < 6) break;
+                                const int gt = Msg[5] + 710;
+                                if (GlobalText[gt] && GlobalText[gt][0])
+                                    CreateOkMessageBox(GlobalText[gt]);
+                                break;
+                            }
+                            case 5:
+                                if (Size < 6) break;
+                                FUN_0051d840(Msg[5]);      // avanza el dialogo
+                                break;
+                            case 6:
+                                if (GlobalText[449] && GlobalText[449][0])
+                                    CreateOkMessageBox(GlobalText[449]);
+                                break;
+                            default:
+                                break;
                         }
                         break;
                     }
