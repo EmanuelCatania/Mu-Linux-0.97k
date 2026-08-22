@@ -2178,6 +2178,134 @@ static void Recv_LevelUp(const BYTE* Msg, int Size)
 }
 
 // ---------------------------------------------------------------------------
+// 0x25 — ReceiveChangePlayer  (@ 0x00429230)
+//
+// Cambio de UNA pieza de equipo de un jugador del viewport (el propio incluido).
+// Es el que faltaba para que se vea en vivo cuando otro se pone o se saca algo:
+// el F3/13 solo lo manda el server al abrir un trade (Trade.cpp:51), asi que
+// cubre el estado inicial, no los cambios.
+//
+// PMSG_ITEM_CHANGE_SEND (ItemManager.h:108, `header.set` -> C1 con PBMSG_HEAD de
+// 3 bytes):
+//    +0..2  {C1, size, 0x25}
+//    +3,+4  BYTE index[2]      (key de la entidad, big-endian)
+//    +5..   BYTE ItemInfo[]
+// El server empaqueta el slot y el nivel juntos en ItemInfo[1] (= +6):
+//    `ItemInfo[1] = slot * 16 | (LevelSmallConvert(level) & 0x0F)`
+// o sea `Msg[6] >> 4` = slot de equipo (0..8) y `Msg[6] & 0xF` = nivel.
+// Coincide exactamente con como lo lee IDA.
+//
+// Trampa del decompile: Hex-Rays reusa la variable `Type` para dos cosas —
+// primero `Type = (int)(ReceiveBuffer + 5)` (un PUNTERO) y despues
+// `Type = ConvertItemType(ReceiveBuffer + 5)` (el tipo).  Las comparaciones
+// `*(_BYTE *)Type == 0xFF` son del PRIMER uso, o sea `Msg[5] == 0xFF`
+// (= slot vacio); los `Type + 400` son del segundo.
+//
+// Asimetria fiel a IDA: el slot 0 (mano izquierda) escribe el nivel CRUDO,
+// mientras que del 1 al 6 pasan por LevelConvert.  No es un error de port.
+// ---------------------------------------------------------------------------
+
+// LevelConvert (0x0045C850) — mapea el nibble de nivel del paquete al +N real.
+static int Net_LevelConvert(BYTE Level)
+{
+    switch (Level) {
+        case 1: return 3;
+        case 2: return 5;
+        case 3: return 7;
+        case 4: return 8;
+        case 5: return 9;
+        case 6: return 10;
+        case 7: return 11;
+        default: return 0;
+    }
+}
+
+static void Recv_ChangePlayer(const BYTE* Msg, int Size)
+{
+    if (Size < 9 || !DAT_07abf5d0) return;
+
+    const int key = Msg[4] + (Msg[3] << 8);
+    const int idx = FUN_0045ac80(key);
+    if (idx < 0 || idx >= 400) {
+        NetLog("NET:  -> 0x25 ChangePlayer key=%d (entidad ausente)", key);
+        return;
+    }
+    BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 0x394;
+
+    const bool  empty  = (Msg[5] == 0xFF);
+    const int   type   = ConvertItemType((BYTE*)Msg + 5);   // 0x0047B110
+    const BYTE  level  = (BYTE)(Msg[6] & 0x0F);
+    const BYTE  option = (BYTE)(Msg[8] & 0x3F);
+    const int   slot   = Msg[6] >> 4;
+    // Modelo por defecto de la clase cuando la pieza se saca:
+    //   912/919/926/933/940 + (skin & 7) + 4 * (skin >> 3)
+    const BYTE  skin   = c[444];
+    const int   klass  = (skin & 7) + 4 * (skin >> 3);
+
+    NetLog("NET:  -> 0x25 ChangePlayer key=%d idx=%d slot=%d type=%d lvl=%u%s",
+           key, idx, slot, type, (unsigned)level, empty ? " (vacio)" : "");
+
+    switch (slot) {
+        case 0:   // mano izquierda — nivel CRUDO, sin LevelConvert (fiel a IDA)
+            if (empty) { *(WORD*)(c + 624) = (WORD)-1; c[627] = 0; }
+            else       { *(WORD*)(c + 624) = (WORD)(type + 400); c[626] = level; c[627] = option; }
+            break;
+        case 1:   // mano derecha
+            if (empty) { *(WORD*)(c + 648) = (WORD)-1; c[651] = 0; }
+            else       { *(WORD*)(c + 648) = (WORD)(type + 400);
+                         c[650] = (BYTE)Net_LevelConvert(level); c[651] = option; }
+            break;
+        case 2:   // casco
+            if (empty) { *(WORD*)(c + 504) = (WORD)(klass + 912); c[506] = 0; c[507] = 0; }
+            else       { *(WORD*)(c + 504) = (WORD)(type + 400);
+                         c[506] = (BYTE)Net_LevelConvert(level); c[507] = option; }
+            break;
+        case 3:   // armadura
+            if (empty) { *(WORD*)(c + 528) = (WORD)(klass + 919); c[530] = 0; c[531] = 0; }
+            else       { *(WORD*)(c + 528) = (WORD)(type + 400);
+                         c[530] = (BYTE)Net_LevelConvert(level); c[531] = option; }
+            break;
+        case 4:   // pantalones
+            if (empty) { *(WORD*)(c + 552) = (WORD)(klass + 926); c[554] = 0; c[555] = 0; }
+            else       { *(WORD*)(c + 552) = (WORD)(type + 400);
+                         c[554] = (BYTE)Net_LevelConvert(level); c[555] = option; }
+            break;
+        case 5:   // guantes
+            if (empty) { *(WORD*)(c + 576) = (WORD)(klass + 933); c[578] = 0; c[579] = 0; }
+            else       { *(WORD*)(c + 576) = (WORD)(type + 400);
+                         c[578] = (BYTE)Net_LevelConvert(level); c[579] = option; }
+            break;
+        case 6:   // botas
+            if (empty) { *(WORD*)(c + 600) = (WORD)(klass + 940); c[602] = 0; c[603] = 0; }
+            else       { *(WORD*)(c + 600) = (WORD)(type + 400);
+                         c[602] = (BYTE)Net_LevelConvert(level); c[603] = option; }
+            break;
+        case 7:   // alas
+            if (empty) { *(WORD*)(c + 672) = (WORD)-1; }
+            else       { *(WORD*)(c + 672) = (WORD)(type + 400); c[674] = 0; }
+            break;
+        case 8: {  // helper / mascota
+            if (empty) {
+                *(WORD*)(c + 696) = (WORD)-1;
+                FUN_004fffa0((DWORD)(uintptr_t)c);        // DeleteBug
+            } else {
+                *(WORD*)(c + 696) = (WORD)(type + 400);
+                c[698] = 0;
+                float* pos = (float*)(c + 16);
+                if (type == 416)      FUN_004fffd0(816, (void*)pos, (void*)c, 0);
+                else if (type == 418) FUN_004fffd0(195, (void*)pos, (void*)c, 0);
+                else if (type == 419) FUN_004fffd0(267, (void*)pos, (void*)c, 0);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    FUN_0045c050((int)(uintptr_t)c);   // SetCharacterScale
+}
+
+// ---------------------------------------------------------------------------
 // F1/02 — ReceiveLogOut  (@ 0x004247D0)
 // Respuesta del server al packet C1/05/F1/02/<sub> que envía UI_InGameMenu
 // (botones Salir / Ir-a-otro-server / Ir-a-otro-char).  Sub-byte Msg[4]:
@@ -4257,6 +4385,11 @@ void Net_ProcessPacket(void)
                 NetLog("NET:  → 0x17 Die id=%d slot=%d", entityId, entitySlot);
                 break;
             }
+
+            case 0x25:
+                // Cambio de una pieza de equipo de un jugador del viewport.
+                Recv_ChangePlayer(Msg, Size);
+                break;
 
             case 0x24: {
                 // 2026-05-09: Server response to PMSG_ITEM_MOVE_RECV (client
