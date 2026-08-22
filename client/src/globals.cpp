@@ -1506,7 +1506,6 @@ char     DAT_07d3c0f0  = 0;
 char     DAT_07d3d608  = 0;
 char     DAT_07d3d734  = 0;
 DWORD    DAT_07e11dac  = 0;
-char     DAT_07eaa130  = 0;
 char     DAT_07eaa132  = 0;
 DWORD    lpDefault_00583d88 = 0;
 char     DAT_07d55410  = 0;

@@ -647,7 +647,12 @@ extern void   *DAT_07cf1ffc;   // g_CharData pointer (XOR-encoded, 0x584 bytes)
 // ── Player input / targeting state (0x07e01xxx – 0x07e11xxx) ─────────────────
 extern DWORD   DAT_07e016c0;   // target grid X (from ray cast or hover click)
 extern DWORD   DAT_07e016c4;   // target grid Y
-extern DWORD   DAT_07e109c8;   // hover NPC entity index (for pathfind target)
+// 0x07E109C8 es `ItemKey` (confirmado por xrefs de IDA: lo escribe
+// Player_InputTick al clickear un item del suelo y lo leen los 3 sitios de
+// `Action` que arman el pickup).  NO es un indice de NPC — esa etiqueta
+// vieja hizo que el camino de llegada releyera SelectedItem en vivo.
+extern DWORD   DAT_07e109c8;
+#define ItemKey  DAT_07e109c8
 extern DWORD   DAT_07db8708;   // hover target entity type (from entity+2)
 extern char    DAT_07e113e4[5 * 256];   // historial de chat: 5 entradas x 256B
 
@@ -1362,7 +1367,14 @@ extern char    DAT_07d3d734;           // pvp-toggle result message buffer
 extern DWORD   DAT_07e11dac;           // command-result flag (1=whisper, 0=pvp-off)
 
 // B-key toggle guards
-extern char    DAT_07eaa130;           // guard flag for tab/key inputs
+// 0x07EAA130 ES g_bServerDivisionEnable (confirmado por xrefs de IDA:
+// ReceiveTalk, SendMove, sub_492F10, Chat_InputTick, GetScreenWidth,
+// RenderServerDivision).  2026-08-22: estaba partido en dos variables —
+// el writer era g_bServerDivisionEnable (Net_Process, ReceiveTalk sub 5) y
+// los readers DAT_07eaa130, que nadie seteaba nunca.  Por eso el panel de
+// division de servidor no se dibujaba y GetScreenWidth no lo contaba.
+// El byte 1 de ese int es 0x07EAA131, que ya se usa asi en stubs_externs.
+#define DAT_07eaa130   (*(char*)&g_bServerDivisionEnable)
 extern char    DAT_07eaa132;           // guard for B-key toggle enable
 extern char    DAT_07eaa134;           // RepairEnable_0
 
