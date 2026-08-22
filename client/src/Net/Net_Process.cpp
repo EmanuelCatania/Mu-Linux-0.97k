@@ -1918,6 +1918,149 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 }
 
 // ---------------------------------------------------------------------------
+// F3/04 — ReceiveRevival  (@ 0x004264D0)
+//
+// Respawn tras la muerte.  El server MuEmu lo manda SOLO, por timer: al morir
+// pone `DieRegen = 1` (ObjectManager.cpp:2759 / Monster.cpp), y el tick
+// `ObjectSetStateCreate` (ObjectManager.cpp:80) lo pasa a 2 cuando venció
+// `MaxRegenTime + 1000`; ahí `CObjectManager::Run` (ObjectManager.cpp:262-341)
+// restaura Life/Mana/BP, reubica al pj (`CharacterGetRespawnLocation`) y llama
+// `GCCharacterRegenSend`.  El cliente NO pide nada: sólo tiene que procesar
+// este paquete.  Como no teníamos el handler, el pj quedaba muerto para
+// siempre (issue #5).
+//
+// PMSG_CHARACTER_REGEN_SEND (Protocol.h:426, `setE` → frame C3), con el
+// padding de MSVC:
+//    +0..3   PSBMSG_HEAD (C3, size, F3, 04)
+//    +4      BYTE  X
+//    +5      BYTE  Y
+//    +6      BYTE  Map
+//    +7      BYTE  Dir
+//    +8      WORD  Life
+//    +10     WORD  Mana
+//    +12     WORD  BP
+//    +14,15  padding (Experience DWORD se alinea a 4)
+//    +16     DWORD Experience
+//    +20     DWORD Money
+//    +24     DWORD ViewCurHP   (GAMESERVER_EXTRA)
+//    +28     DWORD ViewCurMP
+//    +32     DWORD ViewCurBP
+// Los offsets +8/+10/+12/+16/+20 coinciden exactamente con los que lee IDA
+// (`*((_WORD *)ReceiveBuffer + 4/5/6)`, `*((_DWORD *)ReceiveBuffer + 4/5)`).
+//
+// El ruido de hash-table (STRUCT_DECRYPT/ENCRYPT sobre CharacterMachine, ~60%
+// del decompile) se omite por policy del proyecto.
+// ---------------------------------------------------------------------------
+static void Recv_Revival(const BYTE* Msg, int Size)
+{
+    // El paquete sin los View* mide 24 bytes (header 4 + hasta Money en +20).
+    if (Size < 24) {
+        NetLog("NET:    F3/04 Revival paquete corto (Size=%d) - descartado", Size);
+        return;
+    }
+
+    const BYTE PosX      = Msg[4];
+    const BYTE PosY      = Msg[5];
+    const BYTE map       = Msg[6];
+    const BYTE direction = Msg[7];
+
+    NetLog("NET:  → F3/04 Revival map=%d pos=(%d,%d) dir=%d HP=%u MP=%u",
+           map, PosX, PosY, direction,
+           (unsigned)*(const WORD*)(Msg + 8), (unsigned)*(const WORD*)(Msg + 10));
+
+    // (1) Reset de input + estado de teleport, y baja del slot del héroe viejo.
+    DAT_083a42c4 = 0;                                  // MouseLButton = 0
+    DAT_05826d14 = 0;                                  // Teleport = 0
+    if (DAT_07abf5d8) *(BYTE*)DAT_07abf5d8 = 0;        // *(BYTE *)Hero = 0
+
+    // (2) Stats desde el paquete.
+    if (CharacterAttribute) {
+        BYTE* CA = (BYTE*)CharacterAttribute;
+        *(WORD*)(CA + 28) = *(const WORD*)(Msg +  8);  // Life  → HP actual
+        *(WORD*)(CA + 30) = *(const WORD*)(Msg + 10);  // Mana  → MP actual
+        *(WORD*)(CA + 36) = *(const WORD*)(Msg + 12);  // BP
+        *(DWORD*)(CA + 16) = *(const DWORD*)(Msg + 16);// Experience
+    }
+    if (DAT_07cf1ffc) {
+        // Money → CharacterMachine + 1352 (mismo campo que puebla el F3/03).
+        *(DWORD*)((BYTE*)(uintptr_t)DAT_07cf1ffc + 1352) = *(const DWORD*)(Msg + 20);
+    }
+
+    if (!DAT_07abf5d0) return;
+
+    // (3) Desactiva las 400 entidades del pool (el server reenvía el viewport).
+    for (int i = 0; i < 400; ++i)
+        *((BYTE*)(uintptr_t)DAT_07abf5d0 + i * 0x394) = 0;
+
+    // (4) Se preservan dos campos del héroe viejo antes de re-crearlo:
+    //     +474 (WORD) y +746 (BYTE, skill/curse slot que llega en el F3/03).
+    WORD savedW474 = 0;
+    BYTE saved746  = 0;
+    if (DAT_07abf5d8) {
+        savedW474 = *(const WORD*)((BYTE*)DAT_07abf5d8 + 474);
+        saved746  = *((const BYTE*)DAT_07abf5d8 + 746);
+    }
+
+    // (5) Re-crea al héroe EN EL MISMO SLOT (HeroIndex no cambia).
+    unsigned char* heroPtr =
+        (unsigned char*)(uintptr_t)DAT_07abf5d0 + (DAT_05826ca0 * 0x394);
+    const float Rotation = ((float)direction - 1.0f) * 45.0f;
+    FUN_0045adc0(heroPtr, 390, PosX, PosY, Rotation);
+
+    *(WORD*)(heroPtr + 476) = g_HeroKey;
+
+    // (6) Clase / flags.
+    heroPtr[445] = 0;
+    if (CharacterAttribute)
+        heroPtr[444] = *((const BYTE*)CharacterAttribute + 11);
+    heroPtr[746] = saved746;
+    heroPtr[132] = 1;                                  // vivo
+    *(WORD*)(heroPtr + 474) = savedW474;
+    heroPtr[846] = 1;                                  // SafeZone (ver +0x34E)
+
+    DAT_07abf5d8 = (char*)heroPtr;                     // re-bind del puntero Hero
+
+    // (7) Reconstruye el cuerpo desde CharacterMachine y corta la animación
+    //     de muerte; después el efecto visual de aparición.
+    FUN_0045c130((int)(uintptr_t)heroPtr);             // SetCharacterClass
+    FUN_004430c0((int)(uintptr_t)heroPtr);             // SetPlayerStop
+    FUN_00460dc0(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
+                 (float*)(heroPtr + 232), nullptr, (float*)heroPtr,
+                 (float*)-1, nullptr, 0);              // CreateEffect(1265)
+
+    // (8) Si había una tienda abierta, se cierra el inventario asociado.
+    if (ShopOpened) {
+        InventoryOpened = 0;
+        CloseInventoryRelatedWindows();
+    }
+
+    ClearItems();
+    ClearCharacters(g_HeroKey);
+
+    // (9) Cambio de mapa (respawn en otro mapa) + altura del terreno.
+    if ((int)DAT_0055a7ac == (int)map) {
+        DAT_05826d24 = 0;   // SummonLife = 0
+        return;
+    }
+
+    DAT_0055a7ac = map;
+    FUN_0050e5a0();                                    // OpenWorld(World)
+
+    float z;
+    if ((int)DAT_0055a7ac == -1 ||
+        *(const WORD*)(heroPtr + 696) != 819 ||        // sin Dinorant
+        heroPtr[846] != 0) {
+        z = FUN_004f7500(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20));
+    } else if (DAT_0055a7ac == 8 || DAT_0055a7ac == 10) {
+        z = FUN_004f7500(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 90.0f;
+    } else {
+        z = FUN_004f7500(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 30.0f;
+    }
+    *(float*)(heroPtr + 24) = z;
+    DAT_05826d24 = 0;       // SummonLife = 0
+}
+
+// ---------------------------------------------------------------------------
 // F1/02 — ReceiveLogOut  (@ 0x004247D0)
 // Respuesta del server al packet C1/05/F1/02/<sub> que envía UI_InGameMenu
 // (botones Salir / Ir-a-otro-server / Ir-a-otro-char).  Sub-byte Msg[4]:
@@ -2267,6 +2410,10 @@ void Net_ProcessPacket(void)
                     case 0x03:
                         NetLog("NET:  → F3/03 JoinMapServer world=%d", Msg[6]);
                         Recv_JoinMapServer(Msg, (int)bEncrypted);
+                        break;
+                    case 0x04:
+                        // Respawn tras la muerte (issue #5).  Ver Recv_Revival.
+                        Recv_Revival(Msg, Size);
                         break;
                     case 0x06: {
                         // ── F3/06 PMSG_LEVEL_UP_POINT_SEND ───────────────────

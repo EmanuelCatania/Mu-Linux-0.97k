@@ -108,7 +108,7 @@ void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
 
     // ── Real initialization (lines 481+ in Ghidra) ───────────────────────────
 
-    // Test terrain attribute at spawn position → set dead_flag
+    // Atributo del terreno en la posición de spawn → SafeZone (+0x34E)
     int terrainAttr = FUN_004f6c40((int)grid_x, (int)grid_y);
     if ((unsigned char)DAT_0838bc70[terrainAttr] & 1) {
         param_1[0x34e] = 1;   // spawn dentro de zona segura
@@ -129,7 +129,9 @@ void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
     param_1[0xe4]  = 0;
     param_1[0x110] = 1;
     param_1[0x8c]  = 0;
-    param_1[0x2fd] = 0;   // render_visible
+    param_1[0x2fd] = 0;   // dead_flag (IDA L440 `*(BYTE*)(v5+765) = 0`) — es el
+                          // campo que `ReceiveDie` pone en 1; la etiqueta vieja
+                          // ("render_visible") era falsa.
     param_1[0x2fe] = 0;
     param_1[0x2e9] = 0;
     param_1[0x300] = 0;   // stamina_counter
