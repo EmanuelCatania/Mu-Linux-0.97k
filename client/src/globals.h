@@ -493,7 +493,8 @@ extern DWORD   DAT_055ce174;
 extern DWORD   DAT_05826bdc;
 extern DWORD   DAT_05826c00;
 extern DWORD   DAT_05826c04;
-extern DWORD   DAT_05826c08;
+extern DWORD   DAT_05826c08;   // SoccerTime (IDA @0x05826C08) - reloj del
+                               // evento; lo escriben InitGame y el F3/22.
 extern DWORD   DAT_00562e48[4];   // CSimpleModulus XOR-deobfuscate key table
 extern DWORD   DAT_05826c10[17];  // g_SimpleModulusCS (17 DWORDs = 68 bytes)
 extern DWORD   DAT_05826c58[17];  // g_SimpleModulusSC (17 DWORDs = 68 bytes)
@@ -517,10 +518,13 @@ extern DWORD   DAT_05826cf8;
 extern DWORD   DAT_05826d08;   // chat rate-limit counter (max 0x46 = 70 ticks)
 extern int     DAT_05826d04;   // teleport / consumable use flag (runtime global)
 extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit compare)
-extern char    DAT_05826d14;   // NPC script: keepalive-sent flag
+extern char    DAT_05826d14;   // Teleport (IDA `Teleport` @0x05826D14) — 0=normal,
+                               // 1=gate/teleport en curso.  La etiqueta vieja
+                               // ("NPC script keepalive") era falsa.
 extern DWORD   DAT_05826d1c;
 extern DWORD   DAT_05826d20;
-extern DWORD   DAT_05826d24;
+extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la mascota
+                               // invocada; lo alias-ea HUD_Pass2.cpp.
 extern DWORD   DAT_05826d30;
 extern char    DAT_05826d31;
 extern char    DAT_05826d32;
@@ -1162,7 +1166,9 @@ extern char    s____s___005618c8[];// list entry format string (" %s " etc.)
 // ── Entity / animation tick globals ───────────────────────────────────────────
 extern int     DAT_05826e08;   // g_AnimTick — global frame/animation counter
 // DAT_05826d31 — declared above (line 416)
-extern char    DAT_05826d33;   // guild name comparison flag B
+extern char    DAT_05826d33;   // SoccerObserver (IDA @0x05826D33) - lo escriben
+                               // InitGame y el F3/23, y lo lee RenderCharacter.
+                               // La etiqueta vieja ("guild name flag B") era falsa.
 extern char    lpString_05826bfc[0x50]; // player guild name A (wide->char cache)
 extern char    lpString_05826cc0[0x50]; // player guild name B
 extern char    lpString_05826cc9[0x50]; // player guild name C

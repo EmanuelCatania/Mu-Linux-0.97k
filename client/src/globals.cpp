@@ -631,10 +631,10 @@ DWORD    DAT_05826cf8  = 0;
 DWORD    DAT_05826cf0  = 0;  // g_bGameServerConnected
 DWORD    DAT_05826d08  = 0;
 int      DAT_05826d04  = 0;
-char     DAT_05826d14  = 0;   // NPC script: keepalive-sent flag (set 1 on first entry=0 send)
+char     DAT_05826d14  = 0;   // Teleport (IDA @0x05826D14) — flag de gate/teleport en curso
 DWORD    DAT_05826d1c  = 0;
 DWORD    DAT_05826d20  = 0;
-DWORD    DAT_05826d24  = 0;
+DWORD    DAT_05826d24  = 0;   // SummonLife (IDA @0x05826D24) — HP % de la mascota invocada
 DWORD    DAT_05826d30  = 0;
 char     DAT_05826d31  = 0;
 char     DAT_05826d32  = 0;

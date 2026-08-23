@@ -1918,6 +1918,394 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 }
 
 // ---------------------------------------------------------------------------
+// F3/04 — ReceiveRevival  (@ 0x004264D0)
+//
+// Respawn tras la muerte.  El server MuEmu lo manda SOLO, por timer: al morir
+// pone `DieRegen = 1` (ObjectManager.cpp:2759 / Monster.cpp), y el tick
+// `ObjectSetStateCreate` (ObjectManager.cpp:80) lo pasa a 2 cuando venció
+// `MaxRegenTime + 1000`; ahí `CObjectManager::Run` (ObjectManager.cpp:262-341)
+// restaura Life/Mana/BP, reubica al pj (`CharacterGetRespawnLocation`) y llama
+// `GCCharacterRegenSend`.  El cliente NO pide nada: sólo tiene que procesar
+// este paquete.  Como no teníamos el handler, el pj quedaba muerto para
+// siempre (issue #5).
+//
+// PMSG_CHARACTER_REGEN_SEND (Protocol.h:426, `setE` → frame C3), con el
+// padding de MSVC:
+//    +0..3   PSBMSG_HEAD (C3, size, F3, 04)
+//    +4      BYTE  X
+//    +5      BYTE  Y
+//    +6      BYTE  Map
+//    +7      BYTE  Dir
+//    +8      WORD  Life
+//    +10     WORD  Mana
+//    +12     WORD  BP
+//    +14,15  padding (Experience DWORD se alinea a 4)
+//    +16     DWORD Experience
+//    +20     DWORD Money
+//    +24     DWORD ViewCurHP   (GAMESERVER_EXTRA)
+//    +28     DWORD ViewCurMP
+//    +32     DWORD ViewCurBP
+// Los offsets +8/+10/+12/+16/+20 coinciden exactamente con los que lee IDA
+// (`*((_WORD *)ReceiveBuffer + 4/5/6)`, `*((_DWORD *)ReceiveBuffer + 4/5)`).
+//
+// El ruido de hash-table (STRUCT_DECRYPT/ENCRYPT sobre CharacterMachine, ~60%
+// del decompile) se omite por policy del proyecto.
+// ---------------------------------------------------------------------------
+static void Recv_Revival(const BYTE* Msg, int Size)
+{
+    // El paquete sin los View* mide 24 bytes (header 4 + hasta Money en +20).
+    if (Size < 24) {
+        NetLog("NET:    F3/04 Revival paquete corto (Size=%d) - descartado", Size);
+        return;
+    }
+
+    const BYTE PosX      = Msg[4];
+    const BYTE PosY      = Msg[5];
+    const BYTE map       = Msg[6];
+    const BYTE direction = Msg[7];
+
+    NetLog("NET:  → F3/04 Revival map=%d pos=(%d,%d) dir=%d HP=%u MP=%u",
+           map, PosX, PosY, direction,
+           (unsigned)*(const WORD*)(Msg + 8), (unsigned)*(const WORD*)(Msg + 10));
+
+    // (1) Reset de input + estado de teleport, y baja del slot del héroe viejo.
+    DAT_083a42c4 = 0;                                  // MouseLButton = 0
+    DAT_05826d14 = 0;                                  // Teleport = 0
+    if (DAT_07abf5d8) *(BYTE*)DAT_07abf5d8 = 0;        // *(BYTE *)Hero = 0
+
+    // (2) Stats desde el paquete.
+    if (CharacterAttribute) {
+        BYTE* CA = (BYTE*)CharacterAttribute;
+        *(WORD*)(CA + 28) = *(const WORD*)(Msg +  8);  // Life  → HP actual
+        *(WORD*)(CA + 30) = *(const WORD*)(Msg + 10);  // Mana  → MP actual
+        *(WORD*)(CA + 36) = *(const WORD*)(Msg + 12);  // BP
+        *(DWORD*)(CA + 16) = *(const DWORD*)(Msg + 16);// Experience
+    }
+    if (DAT_07cf1ffc) {
+        // Money → CharacterMachine + 1352 (mismo campo que puebla el F3/03).
+        *(DWORD*)((BYTE*)(uintptr_t)DAT_07cf1ffc + 1352) = *(const DWORD*)(Msg + 20);
+    }
+
+    if (!DAT_07abf5d0) return;
+
+    // (3) Desactiva las 400 entidades del pool (el server reenvía el viewport).
+    for (int i = 0; i < 400; ++i)
+        *((BYTE*)(uintptr_t)DAT_07abf5d0 + i * 0x394) = 0;
+
+    // (4) Se preservan dos campos del héroe viejo antes de re-crearlo:
+    //     +474 (WORD) y +746 (BYTE, skill/curse slot que llega en el F3/03).
+    WORD savedW474 = 0;
+    BYTE saved746  = 0;
+    if (DAT_07abf5d8) {
+        savedW474 = *(const WORD*)((BYTE*)DAT_07abf5d8 + 474);
+        saved746  = *((const BYTE*)DAT_07abf5d8 + 746);
+    }
+
+    // (5) Re-crea al héroe EN EL MISMO SLOT (HeroIndex no cambia).
+    unsigned char* heroPtr =
+        (unsigned char*)(uintptr_t)DAT_07abf5d0 + (DAT_05826ca0 * 0x394);
+    const float Rotation = ((float)direction - 1.0f) * 45.0f;
+    FUN_0045adc0(heroPtr, 390, PosX, PosY, Rotation);
+
+    *(WORD*)(heroPtr + 476) = g_HeroKey;
+
+    // (6) Clase / flags.
+    heroPtr[445] = 0;
+    if (CharacterAttribute)
+        heroPtr[444] = *((const BYTE*)CharacterAttribute + 11);
+    heroPtr[746] = saved746;
+    heroPtr[132] = 1;                                  // vivo
+    *(WORD*)(heroPtr + 474) = savedW474;
+    heroPtr[846] = 1;                                  // SafeZone (ver +0x34E)
+
+    DAT_07abf5d8 = (char*)heroPtr;                     // re-bind del puntero Hero
+
+    // (7) Reconstruye el cuerpo desde CharacterMachine y corta la animación
+    //     de muerte; después el efecto visual de aparición.
+    FUN_0045c130((int)(uintptr_t)heroPtr);             // SetCharacterClass
+    FUN_004430c0((int)(uintptr_t)heroPtr);             // SetPlayerStop
+    FUN_00460dc0(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
+                 (float*)(heroPtr + 232), nullptr, (float*)heroPtr,
+                 (float*)-1, nullptr, 0);              // CreateEffect(1265)
+
+    // (8) Si había una tienda abierta, se cierra el inventario asociado.
+    if (ShopOpened) {
+        InventoryOpened = 0;
+        CloseInventoryRelatedWindows();
+    }
+
+    ClearItems();
+    ClearCharacters(g_HeroKey);
+
+    // (9) Cambio de mapa (respawn en otro mapa) + altura del terreno.
+    if ((int)DAT_0055a7ac == (int)map) {
+        DAT_05826d24 = 0;   // SummonLife = 0
+        return;
+    }
+
+    DAT_0055a7ac = map;
+    FUN_0050e5a0();                                    // OpenWorld(World)
+
+    float z;
+    if ((int)DAT_0055a7ac == -1 ||
+        *(const WORD*)(heroPtr + 696) != 819 ||        // sin Dinorant
+        heroPtr[846] != 0) {
+        z = FUN_004f7500(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20));
+    } else if (DAT_0055a7ac == 8 || DAT_0055a7ac == 10) {
+        z = FUN_004f7500(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 90.0f;
+    } else {
+        z = FUN_004f7500(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 30.0f;
+    }
+    *(float*)(heroPtr + 24) = z;
+    DAT_05826d24 = 0;       // SummonLife = 0
+}
+
+// ---------------------------------------------------------------------------
+// F3/05 — ReceiveLevelUp  (@ 0x00431180)
+//
+// Sin este handler el panel de personaje se quedaba clavado en el nivel que
+// traía el F3/03: seguía diciendo "Nivel: 1" con la experiencia por encima de
+// la requerida, y los puntos de stat no aparecían hasta salir a char-select y
+// volver (que re-pide el F3/03 y repuebla CharacterAttribute).
+//
+// PMSG_LEVEL_UP_SEND (Protocol.h:445, `header.set` → frame C1 plano), con el
+// padding de MSVC:
+//    +0..3   PSBMSG_HEAD (C1, size, F3, 05)
+//    +4      WORD Level
+//    +6      WORD LevelUpPoint
+//    +8      WORD MaxLife
+//    +10     WORD MaxMana
+//    +12     WORD MaxBP
+//    +14     WORD FruitAddPoint
+//    +16     WORD MaxFruitAddPoint
+//    +18     WORD FruitSubPoint
+//    +20     WORD MaxFruitSubPoint
+//    +22,23  padding
+//    +24     DWORD ViewPoint / +28 ViewMaxHP / +32 ViewMaxMP / +36 ViewMaxBP
+//    +40     DWORD ViewExperience / +44 DWORD ViewNextExperience
+// Los offsets +4..+16 coinciden con los que lee IDA
+// (`*((_WORD *)ReceiveBuffer + 2..8)`).
+//
+// Detalle fiel a IDA: la vida y el maná ACTUALES se igualan al máximo
+// (CA+28 = CA+32, CA+30 = CA+34) — al subir de nivel el pj queda full.
+// Y la experiencia del próximo nivel NO viene en el paquete: la recalcula el
+// cliente con CharData_CalcNextLevelExp (0x47E350) a partir del nivel nuevo.
+// Ese es el "Experiencia: 6280 / 63" de la captura del bug: CA+52 quedaba con
+// el valor viejo porque nadie lo recalculaba.
+//
+// El ruido de hash-table (STRUCT_DECRYPT/ENCRYPT sobre CharacterMachine, ~75%
+// del decompile) se omite por policy del proyecto.
+// ---------------------------------------------------------------------------
+// CharData_CalcNextLevelExp (0x0047E350) — definida en Scene/Scene_CharSelect_Nav.cpp
+// y sin entrada en functions.h.
+void __fastcall FUN_0047e350(int param_1);
+
+static void Recv_LevelUp(const BYTE* Msg, int Size)
+{
+    // El paquete sin los View* mide 22 bytes (header 4 + hasta +20 inclusive).
+    if (Size < 18 || !CharacterAttribute) {
+        NetLog("NET:    F3/05 LevelUp paquete corto (Size=%d) - descartado", Size);
+        return;
+    }
+
+    BYTE* CA = (BYTE*)CharacterAttribute;
+
+    const WORD level        = *(const WORD*)(Msg +  4);
+    const WORD levelUpPoint = *(const WORD*)(Msg +  6);
+    const WORD maxLife      = *(const WORD*)(Msg +  8);
+    const WORD maxMana      = *(const WORD*)(Msg + 10);
+    const WORD maxBP        = *(const WORD*)(Msg + 12);
+
+    *(WORD*)(CA + 14) = level;          // CharacterLevel
+    *(WORD*)(CA + 84) = levelUpPoint;   // puntos de stat disponibles
+
+    *(WORD*)(CA + 32) = maxLife;        // MaxLife
+    *(WORD*)(CA + 34) = maxMana;        // MaxMana
+    *(WORD*)(CA + 28) = maxLife;        // Life  = MaxLife  (full al subir)
+    *(WORD*)(CA + 30) = maxMana;        // Mana  = MaxMana
+    *(WORD*)(CA + 38) = maxBP;          // MaxBP
+
+    if (Size >= 22) {
+        *(WORD*)(CA + 46) = *(const WORD*)(Msg + 14);   // FruitAddPoint
+        *(WORD*)(CA + 48) = *(const WORD*)(Msg + 16);   // MaxFruitAddPoint
+    }
+
+    // Experiencia del próximo nivel.
+    //
+    // DESVIACIÓN DELIBERADA respecto de IDA: el binario la deriva del nivel con
+    // CharData_CalcNextLevelExp (0x47E350, `10 * lvl^2 * (lvl+9)`), pero MuEmu
+    // usa su propia curva y manda el valor ya resuelto en ViewNextExperience.
+    // Para nivel 5 la fórmula del 0.97k da 3500 y el server dice 7969 — o sea la
+    // fórmula dejaría el panel en desacuerdo con el server y con lo que el propio
+    // F3/03 muestra al volver de char-select.  Mismo criterio que el F3/06 de
+    // stats y el 0xA3 de quest prize: si vienen los View*, mandan ellos.
+    //
+    // CONFIRMADO contra el DLL de inyección: `CProtocol::GCLevelUpRecv`
+    // (Source/Client/Main/Protocol.cpp:816-817) hace exactamente esto —
+    // `ViewExperience`/`ViewNextExperience` directo del paquete, sin tocar la
+    // fórmula del 0.97k.  Idem su handler del F3/03 (L871).  O sea la referencia
+    // toma la misma decisión, no hay una tercera variante que contemplar.
+    if (Size >= 48) {
+        *(DWORD*)(CA + 16) = *(const DWORD*)(Msg + 40);              // ViewExperience
+        *(DWORD*)(CA + 52) = *(const DWORD*)(Msg + 44);              // ViewNextExperience
+        *(WORD*)(CA + 84) = ClampToWord(*(const DWORD*)(Msg + 24));  // ViewPoint
+        *(WORD*)(CA + 32) = ClampToWord(*(const DWORD*)(Msg + 28));  // ViewMaxHP
+        *(WORD*)(CA + 34) = ClampToWord(*(const DWORD*)(Msg + 32));  // ViewMaxMP
+        *(WORD*)(CA + 38) = ClampToWord(*(const DWORD*)(Msg + 36));  // ViewMaxBP
+        *(WORD*)(CA + 28) = *(WORD*)(CA + 32);   // Life = MaxLife (full al subir)
+        *(WORD*)(CA + 30) = *(WORD*)(CA + 34);   // Mana = MaxMana
+    } else {
+        FUN_0047e350((int)(uintptr_t)CharacterMachine);
+    }
+
+    NetLog("NET:  -> F3/05 LevelUp lvl=%u pts=%u HP=%u MP=%u BP=%u next=%u",
+           (unsigned)level, (unsigned)levelUpPoint, (unsigned)maxLife,
+           (unsigned)maxMana, (unsigned)maxBP,
+           (unsigned)*(DWORD*)(CA + 52));
+
+    // Efecto visual de subida de nivel: 15 joints 1249 + el aura 1264.
+    if (DAT_07abf5d8) {
+        BYTE* hero = (BYTE*)DAT_07abf5d8;
+        for (int i = 0; i < 15; ++i) {
+            FUN_0046d840(1249, (float*)(hero + 16), (float*)(hero + 16),
+                         (float*)(hero + 28), 0, (int)(uintptr_t)hero,
+                         40.0f, 2, 0);
+        }
+        FUN_00460dc0(1264, (float*)(hero + 16), (float*)(hero + 28),
+                     (float*)(hero + 232), nullptr, (float*)hero,
+                     (float*)-1, nullptr, 0);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 0x25 — ReceiveChangePlayer  (@ 0x00429230)
+//
+// Cambio de UNA pieza de equipo de un jugador del viewport (el propio incluido).
+// Es el que faltaba para que se vea en vivo cuando otro se pone o se saca algo:
+// el F3/13 solo lo manda el server al abrir un trade (Trade.cpp:51), asi que
+// cubre el estado inicial, no los cambios.
+//
+// PMSG_ITEM_CHANGE_SEND (ItemManager.h:108, `header.set` -> C1 con PBMSG_HEAD de
+// 3 bytes):
+//    +0..2  {C1, size, 0x25}
+//    +3,+4  BYTE index[2]      (key de la entidad, big-endian)
+//    +5..   BYTE ItemInfo[]
+// El server empaqueta el slot y el nivel juntos en ItemInfo[1] (= +6):
+//    `ItemInfo[1] = slot * 16 | (LevelSmallConvert(level) & 0x0F)`
+// o sea `Msg[6] >> 4` = slot de equipo (0..8) y `Msg[6] & 0xF` = nivel.
+// Coincide exactamente con como lo lee IDA.
+//
+// Trampa del decompile: Hex-Rays reusa la variable `Type` para dos cosas —
+// primero `Type = (int)(ReceiveBuffer + 5)` (un PUNTERO) y despues
+// `Type = ConvertItemType(ReceiveBuffer + 5)` (el tipo).  Las comparaciones
+// `*(_BYTE *)Type == 0xFF` son del PRIMER uso, o sea `Msg[5] == 0xFF`
+// (= slot vacio); los `Type + 400` son del segundo.
+//
+// Asimetria fiel a IDA: el slot 0 (mano izquierda) escribe el nivel CRUDO,
+// mientras que del 1 al 6 pasan por LevelConvert.  No es un error de port.
+// ---------------------------------------------------------------------------
+
+// LevelConvert (0x0045C850) — mapea el nibble de nivel del paquete al +N real.
+static int Net_LevelConvert(BYTE Level)
+{
+    switch (Level) {
+        case 1: return 3;
+        case 2: return 5;
+        case 3: return 7;
+        case 4: return 8;
+        case 5: return 9;
+        case 6: return 10;
+        case 7: return 11;
+        default: return 0;
+    }
+}
+
+static void Recv_ChangePlayer(const BYTE* Msg, int Size)
+{
+    if (Size < 9 || !DAT_07abf5d0) return;
+
+    const int key = Msg[4] + (Msg[3] << 8);
+    const int idx = FUN_0045ac80(key);
+    if (idx < 0 || idx >= 400) {
+        NetLog("NET:  -> 0x25 ChangePlayer key=%d (entidad ausente)", key);
+        return;
+    }
+    BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)idx * 0x394;
+
+    const bool  empty  = (Msg[5] == 0xFF);
+    const int   type   = ConvertItemType((BYTE*)Msg + 5);   // 0x0047B110
+    const BYTE  level  = (BYTE)(Msg[6] & 0x0F);
+    const BYTE  option = (BYTE)(Msg[8] & 0x3F);
+    const int   slot   = Msg[6] >> 4;
+    // Modelo por defecto de la clase cuando la pieza se saca:
+    //   912/919/926/933/940 + (skin & 7) + 4 * (skin >> 3)
+    const BYTE  skin   = c[444];
+    const int   klass  = (skin & 7) + 4 * (skin >> 3);
+
+    NetLog("NET:  -> 0x25 ChangePlayer key=%d idx=%d slot=%d type=%d lvl=%u%s",
+           key, idx, slot, type, (unsigned)level, empty ? " (vacio)" : "");
+
+    switch (slot) {
+        case 0:   // mano izquierda — nivel CRUDO, sin LevelConvert (fiel a IDA)
+            if (empty) { *(WORD*)(c + 624) = (WORD)-1; c[627] = 0; }
+            else       { *(WORD*)(c + 624) = (WORD)(type + 400); c[626] = level; c[627] = option; }
+            break;
+        case 1:   // mano derecha
+            if (empty) { *(WORD*)(c + 648) = (WORD)-1; c[651] = 0; }
+            else       { *(WORD*)(c + 648) = (WORD)(type + 400);
+                         c[650] = (BYTE)Net_LevelConvert(level); c[651] = option; }
+            break;
+        case 2:   // casco
+            if (empty) { *(WORD*)(c + 504) = (WORD)(klass + 912); c[506] = 0; c[507] = 0; }
+            else       { *(WORD*)(c + 504) = (WORD)(type + 400);
+                         c[506] = (BYTE)Net_LevelConvert(level); c[507] = option; }
+            break;
+        case 3:   // armadura
+            if (empty) { *(WORD*)(c + 528) = (WORD)(klass + 919); c[530] = 0; c[531] = 0; }
+            else       { *(WORD*)(c + 528) = (WORD)(type + 400);
+                         c[530] = (BYTE)Net_LevelConvert(level); c[531] = option; }
+            break;
+        case 4:   // pantalones
+            if (empty) { *(WORD*)(c + 552) = (WORD)(klass + 926); c[554] = 0; c[555] = 0; }
+            else       { *(WORD*)(c + 552) = (WORD)(type + 400);
+                         c[554] = (BYTE)Net_LevelConvert(level); c[555] = option; }
+            break;
+        case 5:   // guantes
+            if (empty) { *(WORD*)(c + 576) = (WORD)(klass + 933); c[578] = 0; c[579] = 0; }
+            else       { *(WORD*)(c + 576) = (WORD)(type + 400);
+                         c[578] = (BYTE)Net_LevelConvert(level); c[579] = option; }
+            break;
+        case 6:   // botas
+            if (empty) { *(WORD*)(c + 600) = (WORD)(klass + 940); c[602] = 0; c[603] = 0; }
+            else       { *(WORD*)(c + 600) = (WORD)(type + 400);
+                         c[602] = (BYTE)Net_LevelConvert(level); c[603] = option; }
+            break;
+        case 7:   // alas
+            if (empty) { *(WORD*)(c + 672) = (WORD)-1; }
+            else       { *(WORD*)(c + 672) = (WORD)(type + 400); c[674] = 0; }
+            break;
+        case 8: {  // helper / mascota
+            if (empty) {
+                *(WORD*)(c + 696) = (WORD)-1;
+                FUN_004fffa0((DWORD)(uintptr_t)c);        // DeleteBug
+            } else {
+                *(WORD*)(c + 696) = (WORD)(type + 400);
+                c[698] = 0;
+                float* pos = (float*)(c + 16);
+                if (type == 416)      FUN_004fffd0(816, (void*)pos, (void*)c, 0);
+                else if (type == 418) FUN_004fffd0(195, (void*)pos, (void*)c, 0);
+                else if (type == 419) FUN_004fffd0(267, (void*)pos, (void*)c, 0);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    FUN_0045c050((int)(uintptr_t)c);   // SetCharacterScale
+}
+
+// ---------------------------------------------------------------------------
 // F1/02 — ReceiveLogOut  (@ 0x004247D0)
 // Respuesta del server al packet C1/05/F1/02/<sub> que envía UI_InGameMenu
 // (botones Salir / Ir-a-otro-server / Ir-a-otro-char).  Sub-byte Msg[4]:
@@ -2268,6 +2656,14 @@ void Net_ProcessPacket(void)
                         NetLog("NET:  → F3/03 JoinMapServer world=%d", Msg[6]);
                         Recv_JoinMapServer(Msg, (int)bEncrypted);
                         break;
+                    case 0x04:
+                        // Respawn tras la muerte (issue #5).  Ver Recv_Revival.
+                        Recv_Revival(Msg, Size);
+                        break;
+                    case 0x05:
+                        // Subida de nivel.  Ver Recv_LevelUp.
+                        Recv_LevelUp(Msg, Size);
+                        break;
                     case 0x06: {
                         // ── F3/06 PMSG_LEVEL_UP_POINT_SEND ───────────────────
                         // 2026-08-08 FIX ("al subir un punto los números se
@@ -2338,6 +2734,194 @@ void Net_ProcessPacket(void)
                             }
                             NetLog("NET:  → F3/06 AddPoint OK (no-extra) slot=%d maxLifeMana=%u",
                                    slot, maxLifeMana);
+                        }
+                        break;
+                    }
+
+                    case 0x07: {
+                        // PMSG_MONSTER_DAMAGE_SEND (Protocol.h:485) - dano que
+                        // nos hace un monstruo.  IDA lo resuelve inline:
+                        //   v51 = RB[5] + (RB[4] << 8);
+                        //   if (CA+28 < v51) CA+28 = 0; else CA+28 -= v51;
+                        // Layout con el padding de MSVC:
+                        //   +4,+5 BYTE damage[2]  .  +6,+7 padding
+                        //   +8  DWORD ViewCurHP   .  +12 DWORD ViewDamageHP
+                        // Con GAMESERVER_EXTRA el server manda la vida que le
+                        // queda al pj ya resuelta: es autoritativa y evita que
+                        // el cliente se desincronice restando de su propia copia.
+                        if (Size < 6 || !CharacterAttribute) break;
+                        BYTE* CA = (BYTE*)CharacterAttribute;
+                        if (Size >= 16) {
+                            *(WORD*)(CA + 28) = ClampToWord(*(const DWORD*)(Msg + 8));
+                        } else {
+                            const WORD dmg = (WORD)(Msg[5] + (Msg[4] << 8));
+                            WORD hp = *(WORD*)(CA + 28);
+                            *(WORD*)(CA + 28) = (hp < dmg) ? 0 : (WORD)(hp - dmg);
+                        }
+                        NetLog("NET:  -> F3/07 MonsterDamage hp=%u",
+                               (unsigned)*(WORD*)(CA + 28));
+                        break;
+                    }
+
+                    case 0x08: {
+                        // ReceivePK (0x00431DC0) - PMSG_PK_LEVEL_SEND
+                        // (Protocol.h:495): index[2] en +4,+5 y PKLevel en +6.
+                        // Hasta ahora el PKLevel solo llegaba con el F3/03, o
+                        // sea no se actualizaba en vivo.  El campo es +746
+                        // (0x2EA), el mismo que gatea el tinte rojo del render
+                        // (Entity_UpdateRender: `>= 6`).
+                        if (Size < 7 || !DAT_07abf5d0) break;
+                        const int pkKey = Msg[5] + (Msg[4] << 8);
+                        const int pkIdx = FUN_0045ac80(pkKey);
+                        if (pkIdx < 0 || pkIdx >= 400) break;
+                        BYTE* pkEnt = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)pkIdx * 0x394;
+                        const BYTE pkLevel = Msg[6];
+                        pkEnt[746]            = pkLevel;
+                        *(WORD*)(pkEnt + 446) = (WORD)(pkLevel >= 6);
+                        NetLog("NET:  -> F3/08 PKLevel key=%d idx=%d lvl=%u",
+                               pkKey, pkIdx, (unsigned)pkLevel);
+                        // Aviso en el chat.  El decompile perdio los break de
+                        // cada case (se leen como fall-through), pero cada uno
+                        // elige su texto y su color y cae en la MISMA llamada.
+                        int pkColor = 0;
+                        int pkText  = -1;
+                        switch (pkLevel) {
+                            case 2: pkColor = 1; pkText = 487; break;
+                            case 3: pkColor = 1; pkText = 488; break;
+                            case 4: pkColor = 2; pkText = 489; break;
+                            case 5: pkColor = 2; pkText = 490; break;
+                            case 6: pkColor = 2; pkText = 491; break;
+                            default: break;
+                        }
+                        if (pkText >= 0 && GlobalText[pkText] && GlobalText[pkText][0]) {
+                            UIChatLogWindow_AddText((char*)(pkEnt + 449),
+                                                    GlobalText[pkText], pkColor);
+                        }
+                        break;
+                    }
+
+                    case 0x13: {
+                        // PMSG_ITEM_EQUIPMENT_SEND (ItemManager.h:162) - cambio
+                        // de equipo de OTRO jugador del viewport.
+                        //   +4,+5 index[2]  .  +6..+16 CharSet[11]
+                        // IDA pasa `ReceiveBuffer + 7`, que es `&CharSet[1]`:
+                        // los otros dos callers de ChangeCharacterExt
+                        // (ReceiveCharacterList L68, Combat_PacketDispatch L317)
+                        // pasan literalmente `&CharSet[1]`, o sea la funcion
+                        // espera el CharSet SIN el byte de clase.  Coincide 1:1
+                        // con el layout del server.
+                        if (Size < 17) break;
+                        const int eqKey = Msg[5] + (Msg[4] << 8);
+                        const int eqIdx = FUN_0045ac80(eqKey);
+                        NetLog("NET:  -> F3/13 ItemEquipment key=%d idx=%d", eqKey, eqIdx);
+                        if (eqIdx < 0 || eqIdx >= 400) break;
+                        FUN_0045c8c0(eqIdx, (BYTE*)Msg + 7);
+                        break;
+                    }
+
+                    case 0x14: {
+                        // PMSG_ITEM_MODIFY_SEND (ItemManager.h:169) - el server
+                        // reescribe una celda del inventario.
+                        //   +4 slot  .  +5.. ItemInfo
+                        if (Size < 6) break;
+                        NetLog("NET:  -> F3/14 ItemModify slot=%d", Msg[4]);
+                        DAT_07e91388 = 0;            // suelta el item agarrado
+                        FUN_004cc660(OffsetInventoryItems, 8, 8, Msg[4],
+                                     (BYTE*)Msg + 5, 0);
+                        PlayBuffer(49, 0, 0);
+                        break;
+                    }
+
+                    case 0x20:
+                        // PMSG_SUMMON_LIFE_SEND (Protocol.h:502) - HP % de la
+                        // mascota invocada.  Es el UNICO productor del valor;
+                        // sin el, la barra del monstruo invocado nunca se
+                        // dibuja (el gate del HUD es `if (SummonLife)`).
+                        if (Size < 5) break;
+                        DAT_05826d24 = Msg[4];       // SummonLife
+                        NetLog("NET:  -> F3/20 SummonLife=%u", (unsigned)Msg[4]);
+                        break;
+
+                    case 0x22:
+                        // PMSG_TIME_VIEW_SEND (Protocol.h:508) - `WORD time` en
+                        // +4.  IDA lo llama `SoccerTime` (0x05826C08) y lo lee
+                        // igual: `*((WORD *)ReceiveBuffer + 2)`.
+                        if (Size < 6) break;
+                        DAT_05826c08 = *(const WORD*)(Msg + 4);   // SoccerTime
+                        NetLog("NET:  -> F3/22 TimeView=%u", (unsigned)DAT_05826c08);
+                        break;
+
+                    case 0x23: {
+                        // Marcador de guild war / soccer.  MuEmu no manda este
+                        // sub-opcode (no hay ningun sender con 0xF3,0x23), asi
+                        // que hoy es codigo inerte; se porta por completitud.
+                        //   +4..+11  nombre equipo 0   .  +12 score equipo 0
+                        //   +13..+20 nombre equipo 1   .  +21 score equipo 1
+                        // (0xFF en el score = no hay partido en curso)
+                        if (Size < 23) break;
+                        memcpy(&SoccerTeamName[0][0], Msg + 4, 8);
+                        *(WORD*)&SoccerTeamName[0][8] = *(const WORD*)(Msg + 12);
+                        memcpy(&SoccerTeamName[1][0], Msg + 13, 8);
+                        *(WORD*)&SoccerTeamName[1][8] = *(const WORD*)(Msg + 21);
+                        SoccerTeamName[0][8] = 0;    // el WORD de arriba escribe
+                        SoccerTeamName[1][8] = 0;    // 2 bytes; aca se corta en NUL
+                        GuildWarScore[0] = Msg[12];
+                        GuildWarScore[1] = Msg[21];
+                        DAT_05826d33 = (char)(Msg[12] != 255);   // SoccerObserver
+                        NetLog("NET:  -> F3/23 GuildWarScore %d-%d obs=%d",
+                               GuildWarScore[0], GuildWarScore[1], (int)DAT_05826d33);
+                        break;
+                    }
+
+                    case 0x40: {
+                        // ReceiveServerCommand (0x00436550).  Dos senders del
+                        // server comparten este sub-opcode y se distinguen por
+                        // el byte `type` en +4: GCFireworksSend (type 0, con x/y
+                        // en +5/+6) y GCServerCommandSend (el resto).
+                        if (Size < 5) break;
+                        NetLog("NET:  -> F3/40 ServerCommand type=%d arg=%d",
+                               Msg[4], (Size >= 6) ? Msg[5] : -1);
+                        switch (Msg[4]) {
+                            case 0: {   // fuegos artificiales sobre una celda
+                                if (Size < 7) break;
+                                float Position[3];
+                                float Angle[3] = { 0.0f, 0.0f, 0.0f };
+                                float Light[3] = { 1.0f, 1.0f, 1.0f };
+                                Position[0] = ((float)Msg[5] + 0.5f) * 100.0f;
+                                Position[1] = ((float)Msg[6] + 0.5f) * 100.0f;
+                                Position[2] = FUN_004f7500(Position[0], Position[1]);
+                                FUN_00460dc0(1248, Position, Angle, Light,
+                                             nullptr, nullptr, (float*)-1, nullptr, 0);
+                                break;
+                            }
+                            case 1: {   // aviso de texto (dos bloques de GlobalText)
+                                if (Size < 6) break;
+                                const int gt = (Msg[5] < 20) ? (Msg[5] + 650)
+                                                             : (Msg[5] + 810);
+                                if (GlobalText[gt] && GlobalText[gt][0])
+                                    CreateOkMessageBox(GlobalText[gt]);
+                                break;
+                            }
+                            case 2:
+                                PlayBuffer(70, 0, 0);
+                                break;
+                            case 3: {
+                                if (Size < 6) break;
+                                const int gt = Msg[5] + 710;
+                                if (GlobalText[gt] && GlobalText[gt][0])
+                                    CreateOkMessageBox(GlobalText[gt]);
+                                break;
+                            }
+                            case 5:
+                                if (Size < 6) break;
+                                FUN_0051d840(Msg[5]);      // avanza el dialogo
+                                break;
+                            case 6:
+                                if (GlobalText[449] && GlobalText[449][0])
+                                    CreateOkMessageBox(GlobalText[449]);
+                                break;
+                            default:
+                                break;
                         }
                         break;
                     }
@@ -3801,6 +4385,11 @@ void Net_ProcessPacket(void)
                 NetLog("NET:  → 0x17 Die id=%d slot=%d", entityId, entitySlot);
                 break;
             }
+
+            case 0x25:
+                // Cambio de una pieza de equipo de un jugador del viewport.
+                Recv_ChangePlayer(Msg, Size);
+                break;
 
             case 0x24: {
                 // 2026-05-09: Server response to PMSG_ITEM_MOVE_RECV (client
