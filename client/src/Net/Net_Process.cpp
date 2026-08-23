@@ -4699,6 +4699,17 @@ void Net_ProcessPacket(void)
                     PlayBuffer(29, 0, 0);
                 }
                 SeedQuickPotionTypesFromInventory();
+                // IDA `case 0x32` (ProtocolCore L832) resetea `dword_5826D18`, el
+                // cooldown de COMPRA, y lo hace INCONDICIONALMENTE — incluso con
+                // result == 0xFF (compra rechazada).  Ese reset faltaba: mientras
+                // los dos cooldowns compartian byte funcionaba de casualidad, y
+                // al separarlos (0x05826D18 vs 0x05826D1C) el de compra quedo sin
+                // quien lo bajara → sólo se podía comprar UNA vez por sesión.
+                DAT_05826d18 = 0;
+                // El reset de DAT_05826d1c (EnableUse) en este case es un add-on
+                // del port —IDA no lo hace acá—, pero hoy es lo que evita que
+                // equipar/usar se trabe.  Se conserva hasta portar sus writers
+                // reales (InitGame / ReceiveLife / ReceiveDurability).
                 DAT_05826d1c = 0;
                 break;
             }
