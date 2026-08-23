@@ -73,6 +73,16 @@ void FUN_00466ad0(float *param_1, int param_2)
   // asi las direcciones relativas son las del binario.
   alignas(16) unsigned char __mfr[0x374];
 
+  // 2026-08-23: `param_1[0x3f]` es el PUNTERO al owner del efecto.  El port lo
+  // leia como float y despues hacia `(int)`, que convierte NUMERICAMENTE: los
+  // bits de una direccion dan ~1e-27 y `(int)` de eso es 0, o sea se
+  // deferenciaba NULL+offset.  IDA lo lee como DWORD:
+  // `*((_DWORD *)param_1 + 63)`.  Son los efectos que siguen a su entidad duena.
+  int __owner_fVar13 = 0;
+  int __owner_fVar4 = 0;
+  int __owner_fVar5 = 0;
+
+
   void *pvVar1;
   char cVar2;
   short sVar3;
@@ -646,21 +656,21 @@ void FUN_00466ad0(float *param_1, int param_2)
               if (fVar13 == 4.2039e-45f) {
                 fVar17 = -fVar17;
               }
-              fVar4 = param_1[0x3f];
+              __owner_fVar4 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
               fVar18 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552998 +
                                      (float10)(int)local_35c * (float10)_DAT_0055299c);
               local_35c = (float *)(int)(float)(fVar18 * (float10)_DAT_005524fc + (float10)_DAT_00552598);
               fVar18 = (float10)fsin(fVar17);
               local_260 = (float)(fVar18 * (float10)(int)local_35c +
-                                 (float10)*(float *)((int)fVar4 + 0x10));
+                                 (float10)*(float *)(__owner_fVar4 + 0x10));
               fVar17 = (float10)fcos(fVar17);
               local_25c = (float)(fVar17 * (float10)(int)local_35c +
-                                 (float10)*(float *)((int)fVar4 + 0x14));
+                                 (float10)*(float *)(__owner_fVar4 + 0x14));
               fVar5 = _DAT_0055285c;
               if (fVar13 == 4.2039e-45f) {
                 fVar5 = _DAT_00552994;
               }
-              local_258 = fVar5 * *(float *)((int)fVar4 + 0xc) + *(float *)((int)fVar4 + 0x18);
+              local_258 = fVar5 * *(float *)(__owner_fVar4 + 0xc) + *(float *)(__owner_fVar4 + 0x18);
               local_1a4[0] = 0.65f;
               local_1a4[1] = 0.65f;
               local_1a4[2] = 0.65f;
@@ -834,11 +844,11 @@ LAB_00469366:
         param_1[0x36] = (float)(fVar17 * (float10)_DAT_005524fc + (float10)_DAT_0055284c);
         FUN_004f9db0(param_1 + 10,local_1a4 + 6);
         FUN_004fa0b0(&local_31c,local_1a4 + 6,&local_354);
-        fVar13 = param_1[0x3f];
-        local_354 = local_354 + *(float *)((int)fVar13 + 0x10);
-        local_350 = local_350 + *(float *)((int)fVar13 + 0x14);
+        __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+        local_354 = local_354 + *(float *)(__owner_fVar13 + 0x10);
+        local_350 = local_350 + *(float *)(__owner_fVar13 + 0x14);
         local_368 = 1.0;
-        local_34c = local_34c + *(float *)((int)fVar13 + 0x18) + param_1[0x36];
+        local_34c = local_34c + *(float *)(__owner_fVar13 + 0x18) + param_1[0x36];
         local_364 = 1.0;
         local_360 = 1.0;
         FUN_00475220(0x4ad,&local_354,param_1 + 7,&local_368,10,2.0,0);
@@ -1091,10 +1101,10 @@ LAB_004695b5:
       goto LAB_004695c0;
     case 0xc2:
     case 0x103:
-      fVar13 = param_1[0x3f];
-      fVar4 = *(float *)((int)fVar13 + 0x14);
-      fVar5 = *(float *)((int)fVar13 + 0x18);
-      param_1[4] = *(float *)((int)fVar13 + 0x10);
+      __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+      fVar4 = *(float *)(__owner_fVar13 + 0x14);
+      fVar5 = *(float *)(__owner_fVar13 + 0x18);
+      param_1[4] = *(float *)(__owner_fVar13 + 0x10);
       param_1[5] = fVar4;
       param_1[6] = fVar5;
       break;
@@ -1162,10 +1172,10 @@ LAB_00468772:
       local_360 = local_36c * _DAT_005526e4;
       goto LAB_00468736;
     case 0xca:
-      fVar4 = param_1[0x3f];
-      fVar6 = *(float *)((int)fVar4 + 0x18) + _DAT_005524f0;
-      fVar5 = *(float *)((int)fVar4 + 0x14);
-      param_1[4] = *(float *)((int)fVar4 + 0x10);
+      __owner_fVar4 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+      fVar6 = *(float *)(__owner_fVar4 + 0x18) + _DAT_005524f0;
+      fVar5 = *(float *)(__owner_fVar4 + 0x14);
+      param_1[4] = *(float *)(__owner_fVar4 + 0x10);
       param_1[5] = fVar5;
       param_1[6] = fVar6;
       param_1[8] = param_1[8] + _DAT_005524fc;
@@ -1609,11 +1619,11 @@ switchD_00466b93_caseD_c7:
         param_1[0x1a] = (float)(*(int*)&param_1[0x18]) * _DAT_00552a00;
       }
       else {
-        fVar13 = param_1[0x3f];
-        fVar4 = *(float *)((int)fVar13 + 0x10);
-        fVar5 = *(float *)((int)fVar13 + 0x14);
+        __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+        fVar4 = *(float *)(__owner_fVar13 + 0x10);
+        fVar5 = *(float *)(__owner_fVar13 + 0x14);
         param_1[3] = param_1[3] + _DAT_005524f8;
-        fVar13 = *(float *)((int)fVar13 + 0x18);
+        fVar13 = *(float *)(__owner_fVar13 + 0x18);
         param_1[4] = fVar4;
         param_1[5] = fVar5;
         param_1[6] = fVar13;
@@ -1652,11 +1662,11 @@ switchD_00466b93_caseD_c7:
       local_314 = 0;
       FUN_004f9db0(pfVar10,local_1a4 + 6);
       FUN_004fa0b0(&local_31c,local_1a4 + 6,&local_354);
-      fVar13 = param_1[0x3f];
+      __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
       pfVar15 = param_1 + 4;
-      *pfVar15 = local_354 + *(float *)((int)fVar13 + 0x10);
-      param_1[5] = local_350 + *(float *)((int)fVar13 + 0x14);
-      param_1[6] = local_34c + *(float *)((int)fVar13 + 0x18);
+      *pfVar15 = local_354 + *(float *)(__owner_fVar13 + 0x10);
+      param_1[5] = local_350 + *(float *)(__owner_fVar13 + 0x14);
+      param_1[6] = local_34c + *(float *)(__owner_fVar13 + 0x18);
       param_1[9] = param_1[9] - _DAT_005529fc;
       FUN_00475220(0x4c4,pfVar15,pfVar10,param_1 + 0x3a,3,1.0,0);
       local_368 = local_36c * _DAT_005528b8;
@@ -1769,24 +1779,24 @@ LAB_00466e5e:
       }
       else {
         if (fVar4 == 4.2039e-45) {
-          fVar5 = param_1[0x3f];
-          param_1[5] = *(float *)((int)fVar5 + 0x14);
-          iVar9 = *(int *)((int)fVar5 + 0xfc);
-          param_1[6] = *(float *)((int)fVar5 + 0x18);
+          __owner_fVar5 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+          param_1[5] = *(float *)(__owner_fVar5 + 0x14);
+          iVar9 = *(int *)(__owner_fVar5 + 0xfc);
+          param_1[6] = *(float *)(__owner_fVar5 + 0x18);
           param_1[4] = *(float *)(iVar9 + 0x10) + _DAT_0055297c;
           goto LAB_00466e5e;
         }
         if (fVar4 == 5.60519e-45) {
           fVar7 = param_1[3] + _DAT_00552a08;
-          fVar5 = param_1[0x3f];
-          fVar6 = *(float *)((int)fVar5 + 0x10);
+          __owner_fVar5 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+          fVar6 = *(float *)(__owner_fVar5 + 0x10);
           param_1[3] = fVar7;
           fVar7 = fVar7 * _DAT_00552a04;
           param_1[4] = fVar6;
-          param_1[5] = *(float *)((int)fVar5 + 0x14);
+          param_1[5] = *(float *)(__owner_fVar5 + 0x14);
           fVar7 = fVar7 + param_1[0x36];
           param_1[0x36] = fVar7;
-          param_1[6] = fVar7 + *(float *)((int)fVar5 + 0x18);
+          param_1[6] = fVar7 + *(float *)(__owner_fVar5 + 0x18);
           goto LAB_00466e5e;
         }
       }
