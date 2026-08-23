@@ -632,7 +632,13 @@ int   __cdecl FUN_0051db00(void);   // GuildMemberList_Render2
 void  __cdecl FUN_005125a0(int id, float x, float y, float w,     // Texture_Draw2D
                             float h, float u0, float v0,
                             float u1, float v1, char fx, char fy);
-void  __cdecl FUN_005128c0(int, int, int, int);
+// FUN_005128c0 = RenderBitmapUV(int Texture, float x, float y, float Width,
+//   float Height, float u, float v, float uWidth, float vHeight).  La firma
+//   `(int,int,int,int)` de antes estaba mal y por eso nadie la usaba.
+//   Implementada en Render/Render_Frame.cpp (static).  NO es intercambiable con
+//   RenderBitmap (0x5125A0): esta mapea un cuadrilatero SESGADO en V, aquella un
+//   rectangulo.
+void  __cdecl FUN_005128c0(int, int, int, int);   // (firma vieja, sin uso)
 float10 __cdecl FUN_005129f0(float angle);  // |a| (abs)
 double  __cdecl FUN_00512a10(float a, float b); // min(a,b)
 double  __cdecl FUN_00512a30(float a, float b); // max(a,b)
