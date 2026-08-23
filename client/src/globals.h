@@ -267,7 +267,9 @@ extern int     g_PartyPanelScratchX, g_PartyPanelScratchY;
 extern int     g_GuildCreatorScratchX, g_GuildCreatorScratchY;   // 1 = talk 0x30 enviado, server puede tener Interface.use=1
 extern "C" { extern int g_bServerDivisionEnable; extern int g_bServerDivisionAccept; }  // ReceiveTalk sub 5
 extern DWORD   DAT_0055a3e4;
-extern BYTE    DAT_0055a76c;    // unk_55A76C — terrain alpha-overlay present flag (never written in bin → 0)
+extern BYTE    DAT_0055a76c;    // unk_55A76C — gate de la 2da pasada del terreno
+                                // (capa de billboards de pasto/arena).  Constante
+                                // de .data: vale 1 en el binario.
 extern BYTE    DAT_0055a770;    // BuxConvert 3-byte XOR key [0] (key spans +0,+1,+2)
 extern DWORD   DAT_0055a774;
 extern DWORD   DAT_0055a778;
