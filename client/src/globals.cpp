@@ -1162,7 +1162,7 @@ DWORD    DAT_083a7c24  = 0;
 DWORD    DAT_083a7c28  = 0;
 DWORD    DAT_083a7c38  = 0;
 DWORD    DAT_083a7c3c  = 0;
-DWORD    DAT_083a7c40  = 0;  // ServerNumber
+DWORD    DAT_083a7c40  = 0;  // cantidad de servers del F4/02 (ReceiveServerList)
 DWORD    DAT_083a7c44  = 0;
 // BUG-FIX: DAT_083a7c48 es char en el binario original (flag "connection check
 // enable" leído como byte en Game_MainLoop). Declararlo DWORD hacía que
