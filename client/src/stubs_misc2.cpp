@@ -2057,7 +2057,9 @@ void __cdecl FUN_00505e90(int Type, const char* Dir, const char* ModelFileName) 
 // all available in stdafx-included <cctype>/<cstdio>/<cstdlib>.
 int __cdecl FUN_0047a1f0(void)
 {
-    char* TokenStringBuf = (char*)&DAT_083a3ff4;
+    // 2026-08-22 FIX: escribia en DAT_083a3ff4, que es el buffer del OTRO
+    // tokenizer (Parse_NextToken / OpenWorldModels).  TokenString es 0x07CF1EF0.
+    char* TokenStringBuf = (char*)&DAT_07cf1ef0[0];
     int&   CurrentToken  = _DAT_083a40f4;
     float& TokenNumber   = _DAT_083a40f8;
 

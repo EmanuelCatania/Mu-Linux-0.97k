@@ -937,9 +937,15 @@ HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped);  // 0x00404b
 #define BuxConvert_0 FUN_00479910
 
 // ── Token parser aliases ──────────────────────────────────────────────────────
-// GetToken = FUN_0047a1f0  reads next token from open file into DAT_083a3ff4
+// GetToken = FUN_0047a1f0 — lee el proximo token del archivo abierto y lo deja en
+// TokenString (= DAT_07cf1ef0, IDA @0x07CF1EF0).
+// OJO: hay DOS tokenizers con buffers DISTINTOS y el arbol los tenia mezclados
+// (corregido 2026-08-22):
+//   GetToken        0x0047A1F0 -> TokenString    0x07CF1EF0  (Item/Monster/Skill/
+//                                                             NPC/Gate/Filter.txt)
+//   Parse_NextToken 0x0050E2C0 -> DAT_083a3ff4   0x083A3FF4  (OpenWorldModels)
 #define GetToken    FUN_0047a1f0
-#define TokenString DAT_083a3ff4   // char[256] token read buffer
+#define TokenString DAT_07cf1ef0   // char[256] — salida de GetToken (0x47A1F0)
 
 // ── Character helpers ─────────────────────────────────────────────────────────
 void  __cdecl SetPlayerStop(void *ch);         // 0x004430c0 (CHARACTER* param)

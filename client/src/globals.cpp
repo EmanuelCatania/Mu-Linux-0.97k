@@ -1813,7 +1813,7 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
 // equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.
 char    DAT_00558090[3] = { (char)0xFC, (char)0xCF, (char)0xAB };
-char    DAT_07cf1ef0 = 0;
+char    DAT_07cf1ef0[256] = {};   // TokenString (IDA @0x07CF1EF0) — buffer de GetToken (0x47A1F0)
 char    DAT_00559088 = 0;
 int     DAT_07d7807c = 0;
 char    s_Data_Monster__0055ddf8[] = "Data/Monster/";

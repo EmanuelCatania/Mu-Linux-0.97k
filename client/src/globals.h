@@ -1717,7 +1717,10 @@ extern char    DAT_0055de10;
 extern FILE   *DAT_07d7806c;   // file handle (MonsterSetBase2 parser)
 extern char    DAT_005580ac[]; // "rb" fopen mode string
 extern char    DAT_00558090[3];   // bBuxCode — clave XOR de Quest.bmd (FC CF AB)
-extern char    DAT_07cf1ef0;   // sentinel compare buffer
+extern char    DAT_07cf1ef0[256];   // TokenString (IDA @0x07CF1EF0) — salida de
+                                   // GetToken (0x47A1F0).  NO confundir con
+                                   // DAT_083a3ff4, que es el buffer del OTRO
+                                   // tokenizer (Parse_NextToken, 0x50E2C0).
 extern char    DAT_00559088;   // sentinel "END" string base
 extern int     DAT_07d7807c;   // spawn slot index
 extern char    s_Data_Monster__0055ddf8[];  // "Data/Monster/"

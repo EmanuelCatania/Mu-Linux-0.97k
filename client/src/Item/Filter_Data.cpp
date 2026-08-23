@@ -19,7 +19,7 @@ void __cdecl FUN_004799d0(const char *path)
         char *dst = DAT_07d73104 + DAT_07d78070 * 0x14;
         // strlen(DAT_07cf1ef0) then memcpy
         UINT len = 0xFFFFFFFF;
-        const char *p = &DAT_07cf1ef0;
+        const char *p = TokenString;
         while (*p++ != '\0') len--;
         len = ~len;  // actual length including NUL
         const char *src = p - len;

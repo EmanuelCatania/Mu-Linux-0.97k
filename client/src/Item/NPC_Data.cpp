@@ -34,7 +34,7 @@ void __cdecl FUN_0047d120(const char *path)
     while (1) {
         int tok = FUN_0047a1f0();                    // GetToken → Type token
         if (tok == 2) break;                          // EOF
-        if (tok == 0 && strcmp("end", (char *)&DAT_083a3ff4) == 0) break;  // sentinel
+        if (tok == 0 && strcmp("end", TokenString) == 0) break;  // sentinel
         if (DAT_07d78078 >= 512) break;               // tabla llena
 
         BYTE *m = &MonsterScript[DAT_07d78078 * 0x36];
@@ -45,7 +45,7 @@ void __cdecl FUN_0047d120(const char *path)
         FUN_0047a1f0();                               // columna 3 = Name (TokenString)
 
         char *dst = (char *)(m + 1);                  // Name en [1]
-        const char *src = (const char *)&DAT_083a3ff4; // TokenString
+        const char *src = TokenString;
         int n = 0;
         while (src[n] != '\0' && n < 31) { dst[n] = src[n]; n++; }
         dst[n] = '\0';
