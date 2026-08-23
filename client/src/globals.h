@@ -521,7 +521,9 @@ extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit 
 extern char    DAT_05826d14;   // Teleport (IDA `Teleport` @0x05826D14) — 0=normal,
                                // 1=gate/teleport en curso.  La etiqueta vieja
                                // ("NPC script keepalive") era falsa.
-extern DWORD   DAT_05826d1c;
+extern DWORD   DAT_05826d18;   // cooldown de COMPRA en tienda (IDA dword_5826D18 @0x05826D18):
+                               // lo escribe ProtocolCore y lo lee sub_4D23B0.
+extern DWORD   DAT_05826d1c;   // cooldown de equipar/usar item (EnableUse)
 extern DWORD   DAT_05826d20;
 extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la mascota
                                // invocada; lo alias-ea HUD_Pass2.cpp.
@@ -1717,7 +1719,10 @@ extern char    DAT_0055de10;
 extern FILE   *DAT_07d7806c;   // file handle (MonsterSetBase2 parser)
 extern char    DAT_005580ac[]; // "rb" fopen mode string
 extern char    DAT_00558090[3];   // bBuxCode — clave XOR de Quest.bmd (FC CF AB)
-extern char    DAT_07cf1ef0;   // sentinel compare buffer
+extern char    DAT_07cf1ef0[256];   // TokenString (IDA @0x07CF1EF0) — salida de
+                                   // GetToken (0x47A1F0).  NO confundir con
+                                   // DAT_083a3ff4, que es el buffer del OTRO
+                                   // tokenizer (Parse_NextToken, 0x50E2C0).
 extern char    DAT_00559088;   // sentinel "END" string base
 extern int     DAT_07d7807c;   // spawn slot index
 extern char    s_Data_Monster__0055ddf8[];  // "Data/Monster/"

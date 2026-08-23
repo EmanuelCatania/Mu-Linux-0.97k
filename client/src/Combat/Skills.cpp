@@ -6,7 +6,10 @@
 // Packet 0x16 format: [C1][len][0x16][caster_hi][caster_lo][target_hi][target_lo][exp_bytes...]
 //
 // Entity offsets referenced here (new, not in other files):
-//   +0x2EB  byte  magic_channel_flag  — 0x4D ('M') = magic channel active; suppresses UI 0x51
+//   +0x2EB  byte  tipo de monstruo (Monster.txt).  NO es un "magic_channel_flag":
+//                   los unicos writers son CreateCharacterPointer (= -1, o sea 0xFF
+//                   para el heroe) y CreateMonster (= Type).  El `!= 77` de mas
+//                   abajo compara contra un TIPO, no contra la letra 'M'.
 //   +0x301  byte  is_pvp              — target_id >> 15
 //   +0x303  byte  combo_counter       — incremented on skill_type 0x17
 //   +0x2F4  byte  teleport_state      — 2 = teleporting

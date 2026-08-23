@@ -59,12 +59,20 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // ── Globals que el original referencia por nombre simbólico ─────────────────
 // Definimos #defines para que los nombres estilo IDA coincidan con el storage que
 // ya tenemos, y el código portado quede visualmente cerca del decompile.
-#define ScreenCenterX        DAT_00561560     // already in our build (assumed)
-#define ScreenCenterY        DAT_00561564
-#define PerspectiveX         _DAT_00561558
-#define PerspectiveY         _DAT_0056155c
-// ↑ si estos no existen, van a aparecer como errores de enlazado y los agregamos.
-// Por ahora sólo USAMOS Projection() (FUN_005113f0), que ya los envuelve.
+// 2026-08-22 FIX: estos cuatro apuntaban a 0x00561558..0x00561564 con el
+// comentario "already in our build (assumed)" — una suposición que nunca se
+// verificó y que estaba mal.  `ida_xrefs_to` da las direcciones reales, las
+// cuatro escritas por `gluPerspective2` (0x511220):
+//     ScreenCenterX 0x083A429C · ScreenCenterY 0x083A42A0
+//     PerspectiveX  0x083A42A4 · PerspectiveY  0x083A42A8
+// 0x00561558 es otra cosa (la escribe `BeginOpengl`, 0x5119B0).
+// Nadie usaba estos nombres todavía, así que el bug nunca se disparó — pero eran
+// cuatro trampas armadas para el próximo port que los usara, porque nuestro
+// `FUN_00511220` sí escribe en los DAT_083a42xx.
+#define ScreenCenterX        DAT_083a429c
+#define ScreenCenterY        DAT_083a42a0
+#define PerspectiveX         _DAT_083a42a4
+#define PerspectiveY         _DAT_083a42a8
 
 #define byte_7E11D6E         DAT_07e11d6e
 #define dword_55C9BC8        DAT_055c9bc8

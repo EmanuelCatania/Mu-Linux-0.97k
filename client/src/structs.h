@@ -405,7 +405,17 @@ struct SERVER_LIST_t
 // Connection
 #define g_bGameServerConnected  DAT_05826cf0 // BOOL (add to globals if needed)
 #define ServerList          (*(SERVER_LIST_t(*)[MAX_SERVER_HI])&DAT_083a45d8)
-#define ServerNumber        DAT_083a7c40     // BYTE (use as char)
+// 2026-08-22: `ServerNumber` es un nombre INVENTADO del port y describe mal el
+// campo.  `0x083A7C40` es la **cantidad de servidores** que trajo el F4/02
+// (`ReceiveServerList` L15: `unk_83A7C40 = ReceiveBuffer[5]`), y `Game_SceneUpdate`
+// lo pone en 0 al entrar al login.  Nadie lo LEE — se guarda y no se consume.
+//
+// El "numero de server" que decide con que nombre/color se dibuja cada rectangulo
+// del select-server es OTRA cosa: es `group = ServerCode / 20` (0..N), que indexa
+// la tabla de nombres `DAT_07d52c34` (stride 300) — ver `Recv_ServerList`.  El
+// grupo 12 es un caso especial: usa `GlobalText[559]` y va al slot 24.
+#define ServerListCount     DAT_083a7c40     // BYTE (use as char)
+#define ServerNumber        ServerListCount  // alias historico, no usar en codigo nuevo
 
 // Models
 // Address of bone-scratch base, reinterpreted as an array of 3x4 bone matrices.

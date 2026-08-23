@@ -1084,9 +1084,26 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
     auto clear_slot = [&](int slotIndex) {
         if (slotIndex < 0) return;
         if (isMainInventory && slotIndex < 12) {
-            BYTE* slot = Inv + slotIndex * 0x44;
-            memset(slot, 0, 0x44);
-            *(short*)slot = (short)0xFFFF;
+            // 2026-08-22 FIX (items que desaparecian al equipar/desequipar):
+            // esto hacia `Inv + slotIndex * 0x44`, que es la CELDA `slotIndex`
+            // del grid 8x8 — no el wear slot.  Al equipar los pants (slot 4) se
+            // borraba la pocion de la celda 4, o sea la primera fila del
+            // inventario; el server nunca se enteraba, de ahi que el item
+            // "volviera" al reentrar (llega el F3/10) y que rechazara cualquier
+            // drop en esa celda.
+            //
+            // Los 12 wear slots NO tienen espejo en `OffsetInventoryItems`:
+            // viven en `CharacterMachine + 536 + 68*slot`.  Es la sexta copia de
+            // este mismo error (ver CLAUDE.md, 2026-08-08 g-bis).
+            static const int kEquipOffsets[12] = {
+                536, 604, 672, 740, 808, 876, 944, 1012, 1080, 1148, 1216, 1284
+            };
+            if (DAT_07cf1ffc) {
+                BYTE* wear = (BYTE*)(uintptr_t)DAT_07cf1ffc + kEquipOffsets[slotIndex];
+                memset(wear, 0, 0x44);
+                *(short*)wear = (short)0xFFFF;
+                *(int*)(wear + 56) = -1;      // Key: mismo estado que deja el F3/10
+            }
             return;
         }
 
@@ -1132,6 +1149,14 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
                       First ? 1 : 0, durability, byteHi, extByte);
         return;
     }
+    // ─────────────────────────────────────────────────────────────────────────
+    // CODIGO MUERTO: el bloque de arriba termina en `return` incondicional, asi
+    // que nada de esto se ejecuta.  Se conserva por su documentacion de los
+    // campos del slot, pero OJO antes de reactivarlo: el `Inv + Index * 0x44` de
+    // abajo tiene el MISMO bug que se acaba de arreglar en `clear_slot` — para
+    // `Index < 12` indexa la celda del grid en vez del wear slot de
+    // CharacterMachine.
+    // ─────────────────────────────────────────────────────────────────────────
     int type = ConvertItemType(Item);
     if (type == 0xFF) return;                     // empty / sentinel slot
     if (Index < 0) return;
@@ -2057,7 +2082,9 @@ void __cdecl FUN_00505e90(int Type, const char* Dir, const char* ModelFileName) 
 // all available in stdafx-included <cctype>/<cstdio>/<cstdlib>.
 int __cdecl FUN_0047a1f0(void)
 {
-    char* TokenStringBuf = (char*)&DAT_083a3ff4;
+    // 2026-08-22 FIX: escribia en DAT_083a3ff4, que es el buffer del OTRO
+    // tokenizer (Parse_NextToken / OpenWorldModels).  TokenString es 0x07CF1EF0.
+    char* TokenStringBuf = (char*)&DAT_07cf1ef0[0];
     int&   CurrentToken  = _DAT_083a40f4;
     float& TokenNumber   = _DAT_083a40f8;
 

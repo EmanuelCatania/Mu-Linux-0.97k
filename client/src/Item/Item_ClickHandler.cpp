@@ -79,9 +79,13 @@ static BYTE* const g_InventoryPoolForClickGuard = Inventory;
 #define byte_7EA9844       (*((BYTE*)&DAT_07ea9844))   // first byte of dword_7EA9844 = mode flag
 #define byte_83A42EB       DAT_083a42eb        // auto-drop trigger flag
 #define dword_55CC16C      DAT_055cc16c        // queued send buffer cursor
-// El dword_5826D18 de IDA aliasa lo que nosotros tenemos en +0x05826d1c (cooldown de RepairEnable).
+// 2026-08-22 FIX: este alias apuntaba a DAT_05826d1c, que es OTRO global.
+// `ida_xrefs_to` los separa: 0x05826D18 lo escribe ProtocolCore y lo lee
+// sub_4D23B0 (cooldown de COMPRA), mientras 0x05826D1C lo escriben InitGame,
+// ReceiveLife y ReceiveDurability (cooldown de equipar/usar, `EnableUse`).
+// Compartiendo el mismo byte, comprar bloqueaba el equipar y viceversa.
 // Las dos direcciones están a ~4 bytes; acá las tratamos como el mismo concepto.
-#define dword_5826D18      DAT_05826d1c
+#define dword_5826D18      DAT_05826d18
 
 // CheckInventory: aliasa el puntero al ITEM del slot bajo el mouse que usa Scene_MapTick
 // to dispatch RenderItemInfo (tooltip).

@@ -111,7 +111,7 @@ void __cdecl FUN_0047d020(LPCSTR param_1)
       lVar7 = (longlong)_DAT_083a40f8;   // IDA sub_47D020: (__int64)TokenNumber
       if (iVar2 == 2) break;
       if (iVar2 == 0) {
-        pbVar5 = (byte*)&DAT_07cf1ef0;
+        pbVar5 = (byte*)TokenString;
         pbVar3 = (byte*)&DAT_00559088;
         do {
           bVar1 = *pbVar3;

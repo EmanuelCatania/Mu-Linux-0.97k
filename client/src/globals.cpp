@@ -632,7 +632,8 @@ DWORD    DAT_05826cf0  = 0;  // g_bGameServerConnected
 DWORD    DAT_05826d08  = 0;
 int      DAT_05826d04  = 0;
 char     DAT_05826d14  = 0;   // Teleport (IDA @0x05826D14) — flag de gate/teleport en curso
-DWORD    DAT_05826d1c  = 0;
+DWORD    DAT_05826d18  = 0;   // cooldown de COMPRA en tienda (IDA dword_5826D18)
+DWORD    DAT_05826d1c  = 0;   // cooldown de equipar/usar item (EnableUse)
 DWORD    DAT_05826d20  = 0;
 DWORD    DAT_05826d24  = 0;   // SummonLife (IDA @0x05826D24) — HP % de la mascota invocada
 DWORD    DAT_05826d30  = 0;
@@ -1161,7 +1162,7 @@ DWORD    DAT_083a7c24  = 0;
 DWORD    DAT_083a7c28  = 0;
 DWORD    DAT_083a7c38  = 0;
 DWORD    DAT_083a7c3c  = 0;
-DWORD    DAT_083a7c40  = 0;  // ServerNumber
+DWORD    DAT_083a7c40  = 0;  // cantidad de servers del F4/02 (ReceiveServerList)
 DWORD    DAT_083a7c44  = 0;
 // BUG-FIX: DAT_083a7c48 es char en el binario original (flag "connection check
 // enable" leído como byte en Game_MainLoop). Declararlo DWORD hacía que
@@ -1813,7 +1814,7 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
 // equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.
 char    DAT_00558090[3] = { (char)0xFC, (char)0xCF, (char)0xAB };
-char    DAT_07cf1ef0 = 0;
+char    DAT_07cf1ef0[256] = {};   // TokenString (IDA @0x07CF1EF0) — buffer de GetToken (0x47A1F0)
 char    DAT_00559088 = 0;
 int     DAT_07d7807c = 0;
 char    s_Data_Monster__0055ddf8[] = "Data/Monster/";

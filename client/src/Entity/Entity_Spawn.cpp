@@ -42,7 +42,8 @@
 // +0x2d0 = unk_2d0 (short, init 0xffff)
 // +0x2e9 = unk_2e9 (byte)
 // +0x2ea = unk_2ea (byte, init 3)
-// +0x2eb = unk_2eb (byte, init 0xff)
+// +0x2eb = tipo de monstruo (byte).  CreateCharacterPointer lo deja en 0xFF
+//          (= sin tipo, el valor del heroe) y CreateMonster escribe el Type real.
 // +0x2ec = unk_2ec (byte)
 // +0x2ed = unk_2ed (implicit)
 // +0x2fa = unk_2fa (short, init 10)
