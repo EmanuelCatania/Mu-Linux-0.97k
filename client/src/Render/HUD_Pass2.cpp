@@ -398,163 +398,105 @@ void Render_CharInfoPanel(void) { Render_CharInfoPanel_(); }
 // NULL so the inner block is skipped.
 // =============================================================================
 extern "C" int __cdecl RenderEquipedHelperLife_(bool a2);
-static bool IsHudHelperType(WORD helperType)
-{
-    if (helperType >= MODEL_HELPER && helperType <= MODEL_HELPER + 4) return true;
-    switch (helperType) {
-    case MODEL_HELPER + 37:
-    case MODEL_HELPER + 64:
-    case MODEL_HELPER + 65:
-    case MODEL_HELPER + 67:
-    case MODEL_HELPER + 80:
-    case MODEL_HELPER + 106:
-    case MODEL_HELPER + 123:
-        return true;
-    default:
-        return false;
-    }
-}
-
-static bool IsHudHelperSlotOccupied(const ITEM* slot)
-{
-    if (!slot || slot->Type == -1) {
-        return false;
-    }
-    if (*(const DWORD*)((const BYTE*)slot + 56) > 0) {
-        return true;
-    }
-    if (slot->Durability > 0) {
-        return true;
-    }
-    if (slot->Key > 0) {
-        return true;
-    }
-    return false;
-}
-
-static const char* ResolveHudHelperName(WORD helperType)
-{
-    if (helperType == MODEL_HELPER + 2) return GlobalText[355];
-    if (helperType == MODEL_HELPER + 3) return GlobalText[354];
-    if (helperType >= 400 && helperType - 400 >= 0) {
-        const char* attrName = ItemAttribute[helperType - 400].Name;
-        if (attrName && *attrName) return attrName;
-    }
-    return "";
-}
-
-static ITEM* ResolveHudHelperItemSource()
-{
-    if (CharacterMachine) {
-        ITEM* cmHelper = (ITEM*)((BYTE*)CharacterMachine + 536 + 68 * 8);
-        if (IsHudHelperSlotOccupied(cmHelper) && IsHudHelperType((WORD)cmHelper->Type)) {
-            return cmHelper;
-        }
-    }
-
-    // 2026-08-08: acá había un fallback a `(ITEM*)OffsetInventoryItems + 8`
-    // como "slot del helper". Es la CELDA 8 del grid 8×8 (el índice de celda es
-    // `slot - 12`, ver AddItemToGrid:396), no el wear slot — el helper vive sólo
-    // en `CharacterMachine + 536 + 68*8`, que es lo que chequea el bloque de
-    // arriba. Con el fallback, una mascota guardada en el inventario se mostraba
-    // en el HUD como si estuviera equipada. Removido.
-    return nullptr;
-}
+// (Aca vivian IsHudHelperType / IsHudHelperSlotOccupied / ResolveHudHelperName /
+//  ResolveHudHelperItemSource: una cadena de fallbacks inventada por el port que
+//  buscaba el pet en el slot de ITEM.  IDA resuelve todo con `Hero + 0x2B8`, asi
+//  que quedaron sin uso.  `IsHudHelperType` ademas aceptaba tipos que no existen
+//  en el 0.97k — MODEL_HELPER + 37/64/65/67/80/106/123 son pets de versiones
+//  posteriores; el binario gatea solo el rango 816..819.)
 
 int RenderEquipedHelperLife_(bool a2)
 {
-    int posY = a2 ? 24 : 4;
-    const int screenWidth = 640;
+    // 2026-08-22 FIX (la barra del pet no se dibujaba): el gate leia el SLOT DE
+    // ITEM (`CharacterMachine + 536 + 68*8`) a traves de una cadena de fallbacks
+    // inventada por el port.  IDA (0x4BEC00, verificado en el disassembly del
+    // prologo) lee la ENTIDAD del heroe:
+    //     mov ax, [eax+2B8h]   ; Hero + 696 = tipo del helper
+    //     cmp ax, 330h / 333h  ; 816..819
+    // Ese campo lo escriben SetCharacterClass, ChangeCharacterExt y el handler
+    // 0x25.  El slot de item se usa SOLO para la vida y para el nombre por
+    // defecto.
+    //
+    // (`+0x2B8` esta etiquetado como `char_class` en la tabla de offsets de
+    //  CLAUDE.md — es falso, es el tipo del helper/pet equipado.)
+    int retY = 15;                       // `mov esi, 0Fh` del prologo
+
+    const BYTE* hero = (const BYTE*)DAT_07abf5d8;
+    const WORD helperType = hero ? *(const WORD*)(hero + 0x2B8) : 0;
 
     DWORD backupBgTextColor = DAT_00559c80;
     DWORD backupTextColor   = DAT_00559c78;
 
-    WORD helperType = 0xFFFF;
-    ITEM* helperSlot = ResolveHudHelperItemSource();
-    ITEM* cmHelperSlot = nullptr;
-    if (helperSlot) {
-        helperType = (WORD)helperSlot->Type;
-    }
-    if (CharacterMachine) {
-        cmHelperSlot = (ITEM*)((BYTE*)CharacterMachine + 536 + 68 * 8);
-    }
-    if (IsHudHelperType(helperType)) {
-        const char* text = ResolveHudHelperName(helperType);
-        if (!text || !*text) {
-            text = "Helper";
-        }
+    if (helperType >= 816 && helperType <= 819) {
+        const float posY = a2 ? 24.0f : 4.0f;
+
+        // x = GetScreenWidth() - 50.0 - (PartyNumber > 0 ? 50.0 : 0.0) - 15.0
+        // (flt_552598 = 50.0 y flt_552834 = 15.0, leidos del binario).  Queda
+        // arriba a la DERECHA; el port anterior la centraba en pantalla.
+        const float x = (float)GetScreenWidth()
+                      - 50.0f
+                      - ((PartyNumber > 0) ? 50.0f : 0.0f)
+                      - 15.0f;
+
+        // Vida = durabilidad del item del slot helper (CharacterMachine + 1106
+        // = wear slot 8 en +1080, campo Durability en +26).  Escala sobre 255.
+        BYTE life = 0;
+        if (CharacterMachine) life = *(const BYTE*)((const BYTE*)CharacterMachine + 1106);
+        const int bar = 50 * (int)life / 255;
+
+        const char* text = "";
+        if (helperType == 818)      text = GlobalText[355];
+        else if (helperType == 819) text = GlobalText[354];
+        else if (ItemAttribute)     text = ItemAttribute[helperType - 400].Name;
+        if (!text) text = "";
 
         SelectObject(m_hFontDC, g_hFont);
         EnableAlphaTest(true);
         DAT_00559c80 = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
 
-        SIZE helperTextSize = { 0, 0 };
-        GetTextExtentPointA(m_hFontDC, text, lstrlenA(text), &helperTextSize);
-        helperTextSize.cx = (LONG)((double)helperTextSize.cx / g_fScreenRate_x);
-        helperTextSize.cy = (LONG)((double)helperTextSize.cy / _DAT_055c9b74);
-
-        int posX = (screenWidth - 50) / 2;
-        if (posX < 0) posX = 0;
-        int textX = (screenWidth - helperTextSize.cx) / 2;
+        // IDA centra el texto en el rango [x, x+50] (sub_47F6F0 recibe x en st0
+        // y x+50 como 2do arg).  Nuestra reimplementacion de esa funcion toma
+        // (x, y, texto), asi que el centrado se calcula aca.
+        SIZE ts = { 0, 0 };
+        GetTextExtentPointA(m_hFontDC, text, lstrlenA(text), &ts);
+        ts.cx = (LONG)((double)ts.cx / g_fScreenRate_x);
+        int textX = (int)x + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
+        FUN_0047f6f0(textX, (int)posY, text, 0, 0, 0);
 
-        FUN_0047f6f0(textX, posY, text, 0, 0, 0);
-        posY += 12;
-
-        BYTE helperLife = 255;
-        if (!IsHudHelperSlotOccupied(helperSlot)) {
-            helperLife = 0;
-        } else {
-            if (CharacterMachine && helperSlot == cmHelperSlot) {
-                BYTE cmLife = *(BYTE*)((BYTE*)CharacterMachine + 1106);
-                if (cmLife > 0) {
-                    helperLife = cmLife;
-                }
-            }
-            if (helperLife == 255 && helperSlot && helperSlot->Durability > 0) {
-                helperLife = helperSlot->Durability;
-            }
-            if (helperLife == 255 && cmHelperSlot && cmHelperSlot->Type != -1 && cmHelperSlot->Durability > 0) {
-                helperLife = cmHelperSlot->Durability;
-            }
-            if (helperLife == 255) {
-                helperLife = 0;
-            }
-        }
-        float helperBar = (50.0f * (float)helperLife) / 255.0f;
-        RenderBar((float)posX, (float)posY, 50.0f, 2.0f, helperBar, false, true);
+        RenderBar(x, posY + 12.0f, 50.0f, 2.0f, (float)bar, false, true);
         glColor3f(1.0f, 1.0f, 1.0f);
-        posY += 11;
+
+        retY = (int)posY + 23;
     }
 
+    // Barra de la mascota INVOCADA por skill.  Es un bloque independiente del de
+    // arriba: otra posicion, otra fuente de vida (SummonLife, escala 0..100) y
+    // coordenadas FIJAS (y=4 el texto, y=16 la barra) — no encadena con posY.
     if (SummonLife) {
+        const float xs = (float)GetScreenWidth() - 50.0f - 150.0f;
+
         SelectObject(m_hFontDC, g_hFont);
         EnableAlphaTest(true);
         DAT_00559c80 = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
 
-        int posX = screenWidth - 50 - 150;
-        if (posX < 0) posX = 0;
-        const char* summonText = GlobalText[356];
-        SIZE summonTextSize = { 0, 0 };
-        GetTextExtentPointA(m_hFontDC, summonText, lstrlenA(summonText), &summonTextSize);
-        summonTextSize.cx = (LONG)((double)summonTextSize.cx / g_fScreenRate_x);
-        summonTextSize.cy = (LONG)((double)summonTextSize.cy / _DAT_055c9b74);
-        int summonTextX = posX + (50 - summonTextSize.cx) / 2;
-        if (summonTextX < 0) summonTextX = 0;
-        FUN_0047f6f0(summonTextX, posY, summonText, 0, 0, 0);
-        posY += 12;
+        const char* summonText = GlobalText[356] ? GlobalText[356] : "";
+        SIZE ts = { 0, 0 };
+        GetTextExtentPointA(m_hFontDC, summonText, lstrlenA(summonText), &ts);
+        ts.cx = (LONG)((double)ts.cx / g_fScreenRate_x);
+        int textX = (int)xs + (50 - ts.cx) / 2;
+        if (textX < 0) textX = 0;
+        FUN_0047f6f0(textX, 4, summonText, 0, 0, 0);
 
-        float summonBar = (float)(50 * SummonLife / 100);
-        RenderBar((float)posX, (float)posY, 50.0f, 2.0f, summonBar, false, true);
+        RenderBar(xs, 16.0f, 50.0f, 2.0f, (float)(50 * (int)SummonLife / 100), false, true);
         glColor3f(1.0f, 1.0f, 1.0f);
-        posY += 11;
     }
 
     DAT_00559c80 = backupBgTextColor;
     DAT_00559c78 = backupTextColor;
-    return posY;
+    return retY;
 }
 
 void Render_CharPartyInfo(void)
