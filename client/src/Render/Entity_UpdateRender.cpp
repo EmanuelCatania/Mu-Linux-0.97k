@@ -143,8 +143,10 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     void *local_78 = NULL;  // same as pvVar23 in outer switch
     void *local_74 = NULL;  // dead/anim flag
 
-    // ── 2. Skill-channel switch on magic_channel_flag (+0x2EB) ───────────────
-    char cVar6 = *(char *)((int)param_1 + 0x2eb);  // magic_channel_flag
+    // ── 2. Switch por TIPO DE MONSTRUO (+0x2EB) ──────────────────────────────
+    // (2026-08-22: se llamaba "magic_channel_flag"; es el tipo que escribe
+    //  CreateMonster.  La logica ya comparaba contra tipos, solo mentia el nombre.)
+    char cVar6 = *(char *)((int)param_1 + 0x2eb);  // tipo de monstruo
     switch (cVar6) {
     case 'Y': case '_': case 'p': case 'v': case '|':
     case (char)-0x7e: case (char)-0x78:
@@ -195,7 +197,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     }
 
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
-    BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // magic_channel_flag as BYTE
+    BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
 
     if ((bVar7 == 0x26) || (bVar7 == 0x34) || (bVar7 == 0x43)) {
         FUN_00504960(model, (int)puVar13, entity_type,
@@ -498,7 +500,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     // Resultado visual: monsters invisibles excepto por sparkles/particles.
     //
     // Gate: entity_type != 390 (player) && kind != 8 (KIND_TRAP).
-    // Excluded +0x2EB flags:
+    // Tipos de monstruo excluidos (+0x2EB):
     //   25 (cloth-cape variants) / 22 (frost) / 42 (special-weapon dual-axe)
     //   -14 = 242 (reserved) / 59 (charge state) / 63 (reserved)
     // Excluded World == 10 (heaven map — different render path)
