@@ -3512,6 +3512,33 @@ void Net_ProcessPacket(void)
                             *(int*)(hero + 0x38c) = y;
                             hero[0x306] = tx;
                             hero[0x307] = ty;
+
+                            // 2026-08-22: vuelta de una transformacion (anillo).
+                            // El 0x45 (GCViewportSimpleChangeSend) convierte al
+                            // heroe en monstruo llamando CreateMonster con SU
+                            // key; al sacarse el anillo el server manda este 0x12
+                            // con el player normal.  IDA no filtra por HeroKey:
+                            // `Combat_PacketDispatch` L86 llama
+                            // `CreateCharacter(key, 390, x, y, 0.0)` para TODAS
+                            // las entradas, y eso reusa el slot por key y lo
+                            // recrea como player — ese es el camino de vuelta.
+                            // Nosotros salteamos la entrada propia para no
+                            // clonar al heroe (nuestro scan por key excluye su
+                            // slot), asi que replicamos solo la restauracion.
+                            if (*(short*)(hero + 2) != 390) {
+                                const float rot = ((float)dir - 1.0f) * 45.0f;
+                                FUN_0045adc0(hero, 390, x, y, rot);
+                                *(WORD*)(hero + 0x1DC) = g_HeroKey;
+                                if (CharacterAttribute)
+                                    hero[444] = *((const BYTE*)CharacterAttribute + 11);
+                                hero[445]   = 0;
+                                hero[0x2EA] = (BYTE)(dirpk & 0x0F);   // PKLevel
+                                hero[132]   = 1;
+                                hero[0x306] = tx;
+                                hero[0x307] = ty;
+                                FUN_0045c130((int)(uintptr_t)hero);   // SetCharacterClass
+                                NetLog("NET:    0x12 heroe restaurado de transformacion");
+                            }
                         }
                         NetLog("NET:    0x12 own HeroKey=%u synchronized, no viewport clone",
                                (unsigned)entityId);
