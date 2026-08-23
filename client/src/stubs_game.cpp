@@ -2943,6 +2943,17 @@ void __cdecl RenderGuildMark_stub(float p1, float p2, float p3, float p4, int p5
 // AddTerrainLightClip @ 0x004F7800 (~74 lines) — adds clamped light to terrain buffer
 // Iterates a square region around (xf,yf). Per cell: falloff = (Range-dist)/Range.
 // Adds Light * falloff to Buffer, clamps to [0.0, 1.0].
+// AddTerrainLightClip (0x004F7800).
+//
+// 2026-08-23: quedo SIN CALLERS en nuestro arbol, y es correcto que asi sea — no
+// es codigo muerto para borrar.  Hasta hoy `structs.h` aliaseaba
+// `AddTerrainLight` (0x4F76C0) a esta funcion, y por eso toda la luz dinamica
+// quedaba clampeada a 1.0.  En el binario esta variante tiene UN solo caller
+// (0x4C0E59, dentro de una funcion que todavia no portamos); cuando se porte,
+// debe llamar a esta y no a AddTerrainLight.
+//
+// Diferencia entre las dos: esta clampea a [0, 1]; 0x4F76C0 solo evita negativos
+// y deja que la luz supere 1.0 (que es lo que produce el resplandor del fuego).
 void __cdecl AddTerrainLightClip_stub(float xf, float yf, float Light[3], int Range, float Buffer[3]) {
     // 0x004F7800 — Add clamped light to terrain light buffer.
     // Iterates a square region of radius Range around (xf,yf) in grid coords.

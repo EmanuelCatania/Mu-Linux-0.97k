@@ -433,7 +433,23 @@ extern char g_BitmapsRaw[];
 // Functions (map companion-project names → FUN_ addresses from functions.h):
 #define SetAction(ent, act)  FUN_0043e820((int)(ent), (int)(act))
 #define VectorRotate         FUN_004fa110
-#define AddTerrainLight      AddTerrainLightClip_stub
+// 2026-08-23 FIX (el fuego no iluminaba): esto aliaseaba `AddTerrainLight` a
+// `AddTerrainLightClip_stub`, que es OTRA funcion del binario.
+//   AddTerrainLight     0x004F76C0  sin clamp superior  · decenas de callers
+//   AddTerrainLightClip 0x004F7800  clampea a 1.0       · UN caller (0x4C0E59)
+// Con el alias, toda la luz dinamica (fuego, antorchas, efectos) quedaba cortada
+// en 1.0 y no llegaba a saturar — de ahi que el fuego se dibujara pero sin
+// resplandor.  El port correcto de 0x4F76C0 ya existia como `FUN_004f76c0`
+// (Render/SMD_Parser.cpp), mal etiquetado en functions.h como "Terrain_SetHeight
+// or similar"; ese nombre inventado es lo que llevo a crear este alias.
+//
+// Wrapper en vez de `#define` a secas porque `FUN_004f76c0` quedo tipada con los
+// punteros como `int` (artefacto del decompile) y los call sites pasan `float*`.
+void __cdecl FUN_004f76c0(float, float, int, int, int);   // decl local: structs.h no incluye functions.h
+inline void AddTerrainLight(float xf, float yf, float* Light, int Range, float* Buffer)
+{
+    FUN_004f76c0(xf, yf, (int)(uintptr_t)Light, Range, (int)(uintptr_t)Buffer);
+}
 #define AngleMatrix          AngleMatrix
 #define CreateEffect         FUN_00460dc0
 #define CreateBomb           FUN_004660f0

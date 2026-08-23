@@ -723,7 +723,11 @@ unsigned int  __cdecl FUN_004e93a0(void);  // Scene_CheckReady — returns conne
 bool  __cdecl FUN_00440aa0(void* pvVar9, float* rot, float* scale, void* extra, float fVar); // BMD_AnimTick
 extern "C" bool __cdecl CharacterAnimation(int c, int o);    // 0x00448600 — per-char anim tick
 // ── Effect_Create helpers ─────────────────────────────────────────────────────
-void  __cdecl FUN_004f76c0(float, float, int, int, int);          // Terrain_SetHeight or similar
+void  __cdecl FUN_004f76c0(float, float, int, int, int);          // AddTerrainLight (0x4F76C0)
+// ^ es `AddTerrainLight(float xf, float yf, float Light[3], int Range, float Buffer[3])`.
+//   Los dos punteros quedaron tipados como `int` por el decompile; el wrapper
+//   `AddTerrainLight` de structs.h le pone la firma real.  NO confundir con
+//   `AddTerrainLightClip` (0x4F7800), que es otra funcion y clampea a 1.0.
 float* __cdecl FUN_0045fec0(uint, float*, float, int, short);     // Particle_SpawnFX
 
 // ── Monster_Data sub-functions ────────────────────────────────────────────────
