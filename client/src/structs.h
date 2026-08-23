@@ -429,7 +429,19 @@ extern char g_BitmapsRaw[];
 // Globals:
 #define WorldTime            DAT_05826e08          // int — g_AnimTick
 #define InputEnable          DAT_00559c84          // DWORD
-#define PrimaryTerrainLight  ((float(*)[3])&DAT_07eab250)  // float[N][3]
+// 2026-08-23 FIX: esto apuntaba a `DAT_07eab250`, que es un DWORD de 4 bytes.
+// El propio `globals.h:837` ya documentaba el mislabel ("NO es
+// PrimaryTerrainLight (ese es DAT_081cb608)") pero el macro nunca se corrigio.
+// Consecuencias, las dos graves:
+//   1. Los 23 call sites de `AddTerrainLight(..., PrimaryTerrainLight[0])`
+//      escribian la luz dinamica en un global muerto, asi que el fuego, las
+//      antorchas y los efectos NUNCA iluminaban — el render lee DAT_081cb608.
+//   2. `AddTerrainLight` indexa `Buffer[768*y + 3*x]` con x,y hasta 255, o sea
+//      escribia hasta ~786 KB pasado un DWORD: desborde masivo sobre BSS.
+// Y como nadie resetea el buffer muerto, la luz se acumulaba sin techo (medido:
+// el tile del fuego llego a 64.0 y subiendo). `Terrain_Water` (0x4F95E0) si
+// resetea DAT_081cb608 por frame, que es lo que acota la acumulacion.
+#define PrimaryTerrainLight  ((float(*)[3])&DAT_081cb608[0])  // float[256*256][3]
 // Functions (map companion-project names → FUN_ addresses from functions.h):
 #define SetAction(ent, act)  FUN_0043e820((int)(ent), (int)(act))
 #define VectorRotate         FUN_004fa110

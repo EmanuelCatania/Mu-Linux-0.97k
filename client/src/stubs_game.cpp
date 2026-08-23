@@ -6788,7 +6788,7 @@ void __stdcall MoveParticles_stub(void)
                     lt0[0] = lightF;  // placeholder
                     lt0[1] = lightF;
                     lt0[2] = lightF;
-                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt0, 6, (int)&DAT_07eab250);
+                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt0, 6, (int)&DAT_081cb608[0]);
                 }
                 // AddTerrainLight — second call with color modulation
                 {
@@ -6796,7 +6796,7 @@ void __stdcall MoveParticles_stub(void)
                     lt1[0] = lightF * _DAT_005526e4;
                     lt1[1] = lightF * _DAT_005528b4;
                     lt1[2] = lightF;
-                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt1, 4, (int)&DAT_07eab250);
+                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt1, 4, (int)&DAT_081cb608[0]);
                 }
                 continue;
             }
@@ -7026,7 +7026,7 @@ void __stdcall MoveParticles_stub(void)
             float ltA2 = lightA * _DAT_00552530;
             {
                 float ltBuf[3] = { ltA0, ltA1, ltA2 };
-                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)ltBuf, 3, (int)&DAT_07eab250);
+                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)ltBuf, 3, (int)&DAT_081cb608[0]);
             }
             if (P_SUB(iVar9) == 2) {
                 int entPtr = P_ENT(iVar9);
@@ -7171,7 +7171,7 @@ void __stdcall MoveParticles_stub(void)
             if (P_SUB(iVar9) != 1) {
                 float ltBF = (float)P_LIFE(iVar9) * _DAT_00552a10;
                 float lt4[3] = { ltBF * _DAT_00552504, ltBF * _DAT_005528b8, ltBF * _DAT_005524f4 };
-                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt4, 4, (int)&DAT_07eab250);
+                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt4, 4, (int)&DAT_081cb608[0]);
             }
             break;
         }

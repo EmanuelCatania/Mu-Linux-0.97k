@@ -834,7 +834,9 @@ extern DWORD   DAT_07eab1f4;
 extern DWORD   DAT_07eab1f8;
 extern float   DAT_07eab200[256 * 256];  // water-wave heights (row*256+col floats)
 extern DWORD   DAT_07eab24c;   // BackTerrainHeight array base
-extern DWORD   DAT_07eab250;   // MISLABEL: NO es PrimaryTerrainLight (ese es DAT_081cb608 @0x081CB608). Global muerto/no asignado.
+extern DWORD   DAT_07eab250;   // MISLABEL: NO es PrimaryTerrainLight (ese es
+                               // DAT_081cb608 @0x081CB608). Global muerto, sin
+                               // usos desde 2026-08-23 — no reintroducirlo.
 extern DWORD   DAT_07eeb200;
 extern DWORD   DAT_07eeb204;
 extern DWORD   DAT_07eeb208;

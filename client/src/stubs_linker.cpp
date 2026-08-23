@@ -55,8 +55,8 @@ extern void FUN_004fa5a0(void);
 // p1/p2 = grid X/Y, p3 = tile size, p4 = index step, p5 = texcoord array ptr,
 // p6 = enable lighting, p7 = alpha value.
 void __cdecl FUN_004f8740(float p1, float p2, float p3, int p4, int p5, char p6, float p7) {
-    // BUG-FIX 2026-04-29: guard contra DAT_07eab24c (BackTerrainHeight) y
-    // DAT_07eab250 (PrimaryTerrainLight) no inicializados. Crash AV en
+    // BUG-FIX 2026-04-29: guard contra DAT_07eab24c (BackTerrainHeight) no
+    // inicializado. Crash AV en
     // 0x410E4597 venía de cursor billboard FUN_004f8bb0 dereferenciando
     // el buffer NULL.
     if (DAT_07eab24c == 0 || (uintptr_t)DAT_07eab24c < 0x100000) return;
@@ -88,7 +88,10 @@ void __cdecl FUN_004f8740(float p1, float p2, float p3, int p4, int p5, char p6,
     if (p6 != '\0') {
         int indices[4] = { idx0, idx1, idx2, idx3 };
         for (int v = 0; v < 4; v++) {
-            float *src = (float *)(DAT_07eab250 + indices[v] * 12); // PrimaryTerrainLight
+            // 2026-08-23: leia DAT_07eab250, que es un DWORD muerto y NO es
+            // PrimaryTerrainLight (ver globals.h:837).  El buffer real es
+            // DAT_081cb608, el mismo que resetea Terrain_Water por frame.
+            float *src = &DAT_081cb608[indices[v] * 3];
             light[v][0] = src[0]; light[v][1] = src[1]; light[v][2] = src[2];
         }
     }
