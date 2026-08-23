@@ -454,7 +454,20 @@ int __cdecl FUN_00475220(int param_1, float *param_2, float *param_3, float *par
             *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
             return iVar6;
         }
-        return iVar6;
+        // 2026-08-23 FIX: aca habia un `return iVar6;` que se tragaba TODOS los
+        // tipos entre 0x49c y 0x4c4 sin case propio en este arbol — o sea 9 tipos
+        // de particula que SI tienen su inicializacion en el switch de mas abajo:
+        //   0x4a7, 0x4ab (fuego), 0x4ac, 0x4ad, 0x4b0 (Flame01), 0x4b5, 0x4b6,
+        //   0x4bf, 0x4c0.
+        // Quedaban con el `life` en el default 2 (en vez de 24 para el fuego) y
+        // sin escala/rotacion propias: se creaban ~150 por segundo y morian a los
+        // 2 frames, asi que en pantalla habia ~10 a la vez y el fuego se veia como
+        // un puntito en vez de una masa.
+        //
+        // El `if (param_1 < 0x4c5)` de arriba NO es un rango real: es el arbol
+        // binario de busqueda que genera Ghidra para un switch disperso, y el port
+        // lo convirtio en un if/else con `return` que corta el fall-through.
+        goto particleSpawn_outerSwitch;
 
         // 0x4b5/0x4b6 shared path
 switchD_4b5:
@@ -480,7 +493,9 @@ switchD_4b5:
         return iVar6;
     }
 
-    // ── param_1 >= 0x4c5 outer switch ─────────────────────────────────────────
+    // ── switch por tipo (los `case` de aca cubren tipos a ambos lados de
+    //    0x4c5; ver la nota del `goto particleSpawn_outerSwitch` de arriba) ────
+particleSpawn_outerSwitch:
     switch (param_1) {
     case 0x4a7: {
         switch (param_5) {
