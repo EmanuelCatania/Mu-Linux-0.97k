@@ -59,6 +59,9 @@ extern "C" {
 #define byte_7E113E4         (*(char(*)[5][256])&DAT_07e113e4)
 #define flt_7E118E4_PTR      (((char*)&DAT_07e113e4) + 5*256)  // one past last
 #define byte_7E919BC         (*(char(*)[80])&DAT_07e919bc)     // single 80-byte slot view
+// Cosmetico: el nombre correcto es `dword_559CC4` (0x00559CC4 — Player_InputTick
+// y Chat_InputTick).  0x055C9CC4 no existe en el binario; la direccion del alias
+// siempre estuvo bien, solo el nombre estaba mal tipeado.
 #define dword_55C9CC4        DAT_00559cc4                      // chat scroll cursor
 #define byte_7E11D6E         DAT_07e11d6e
 #define ItemAttribute        ((ITEM_ATTRIBUTE*)DAT_07d78068)

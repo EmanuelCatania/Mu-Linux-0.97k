@@ -521,7 +521,9 @@ extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit 
 extern char    DAT_05826d14;   // Teleport (IDA `Teleport` @0x05826D14) — 0=normal,
                                // 1=gate/teleport en curso.  La etiqueta vieja
                                // ("NPC script keepalive") era falsa.
-extern DWORD   DAT_05826d1c;
+extern DWORD   DAT_05826d18;   // cooldown de COMPRA en tienda (IDA dword_5826D18 @0x05826D18):
+                               // lo escribe ProtocolCore y lo lee sub_4D23B0.
+extern DWORD   DAT_05826d1c;   // cooldown de equipar/usar item (EnableUse)
 extern DWORD   DAT_05826d20;
 extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la mascota
                                // invocada; lo alias-ea HUD_Pass2.cpp.
