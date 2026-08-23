@@ -333,7 +333,18 @@ void Render_GameFrame(void)
 
         FUN_005125a0(0x494,
                      0.0f, 0.0f, 640.0f, 435.0f,
-                     scrollA, 0.0f, scrollA + 2.0f, 3.0f,
+                     // 2026-08-23 FIX (el "patron" que se ve moverse por toda
+                     // la pantalla en Tarkan): esta capa iba con
+                     // uWidth/vHeight = 2.0/3.0, o sea la textura de arena se
+                     // repetia 2x3 veces y se leia como un mosaico.  IDA
+                     // (Render_GameFrame L19) usa 0.3/0.3, con lo que la
+                     // textura sale AMPLIADA y da la arena difusa del original.
+                     // La capa 2 (0x495) ya estaba bien con 3.0/2.0.
+                     // Nota: IDA llama `RenderBitmapUV` (0x5128C0), que toma
+                     // (u, v, uWidth, vHeight); aca usamos `RenderBitmap`
+                     // (0x5125A0), que toma (u0, v0, u1, v1) — de ahi el
+                     // `scroll + ancho` en el tercer par.
+                     scrollA, 0.0f, scrollA + 0.30000001f, 0.30000001f,
                      '\x01', '\x01');
         FUN_005125a0(0x495,
                      0.0f, 0.0f, 640.0f, 435.0f,
