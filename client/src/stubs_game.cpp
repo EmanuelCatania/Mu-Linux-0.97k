@@ -1004,7 +1004,15 @@ unsigned long long __cdecl CheckInventorySpace_stub(int p1, int p2, unsigned sho
                     if (gx >= 0 && gy >= 0 && gx < p4 && gy < p5) {
                         // Check if cell is empty (-1)
                         BYTE* cell = (BYTE*)p3 + (rowOffset + gx) * 0x44;
-                        if (*(short*)cell == -1 || *(int*)(cell + 0x38) <= 0) {
+                        // 2026-08-24 FIX (issue #15, "la jewel solo aplicaba en la 1er celda"):
+                        // aca decia `|| *(int*)(cell + 0x38) <= 0`, o sea contaba la celda como
+                        // VACIA cuando su Key era 0. Pero AddItemToGrid deja Key=0 en todas las
+                        // celdas NO primarias de un item multi-celda (usa Key=1 solo para marcar
+                        // la primaria), asi que de un item 2x2 tres de sus cuatro celdas se
+                        // reportaban libres. IDA sub_4D5D70 L47 mira UNICAMENTE el Type:
+                        //     if ( a3[34 * v13 + 34 * v14] == -1 )  ++v20;
+                        // El campo Key solo gatea el RENDER (sub_4E38B0 L60), no la ocupacion.
+                        if (*(short*)cell == -1) {
                             emptyCount++;
                         }
                     }
@@ -1250,7 +1258,11 @@ unsigned int __cdecl FindEmptySlotNearMouse_stub(int p1, int p2, int p3, int p4,
                         short* cell = (short*)(p3 + 68 * (gx + rowBase + i));
                         int leftH = itemH;
                         do {
-                            if (*cell == (short)0xFFFF || *(int*)((BYTE*)cell + 0x38) <= 0) {
+                            // Mismo fix que en CheckInventorySpace_stub: IDA sub_4D6020 L71 es
+                            // `if ( *v14 == 0xFFFF )`, sin mirar Key. Con el chequeo de Key este
+                            // scanner daba por libres las celdas no primarias de un item multi-celda
+                            // y elegia como hueco un lugar ya ocupado.
+                            if (*cell == (short)0xFFFF) {
                                 ++emptyCount;
                             }
                             cell += 34 * p4;
@@ -1526,23 +1538,47 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                     + (DWORD)*(invBase + targetSlot * 0x44 + 0x3e)
                 );
 
-                // Check trade/warehouse context
-                if (DAT_07eaa119 == '\0') {
-                    // Not warehouse — check TradeOpened
-                    // anti-tamper hash table — skipped (TradeOpened check)
-                    if (DAT_07eaa11b == '\0') {
-                        // Not in trade either — check EnableUse
-                        if ((int)EnableUse < 1) {
-                            EnableUse = 10;
-                        }
-                        // anti-tamper hash table — skipped (serial number insertion)
-                        // Build and send equipment move packet via SendRequestEquipmentItem
-                        InventoryMove_SetPendingPools(sourceInvBase, &OffsetInventoryItems[0]);
-                        SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
-                            (ITEM*)DAT_07e91350, 0, (int)DAT_07e11e78);
+                // Con el baul o el trade abiertos no se puede aplicar la
+                // jewel: IDA salta a LABEL_807, que muestra el mensaje. Por eso
+                // `canStack` queda en false en esos dos casos (antes se ponia
+                // en true al final incondicionalmente y el aviso no salia).
+                if (DAT_07eaa119 == '\0' && DAT_07eaa11b == '\0') {
+                    // 2026-08-24 FIX (issue #15, "las jewels no se consumen"):
+                    // aca se mandaba `SendRequestEquipmentItem_stub`, o sea
+                    // 0x24 PMSG_ITEM_MOVE_RECV (11 bytes). El server trata eso
+                    // como MOVER la jewel a una celda ocupada -> lo rechaza y
+                    // el cliente la devuelve al inventario. IDA (sub_4D6470
+                    // L5919-5931) manda 0x26 PMSG_ITEM_USE_RECV, que es el que
+                    // dispara CharacterUseJewelOfBles/Soul/Life en el server
+                    // (ItemManager.cpp:2753+) y contesta con GCItemDeleteSend +
+                    // GCItemModifySend (F3/14).
+                    //
+                    //   struct PMSG_ITEM_USE_RECV {   // ItemManager.h:49
+                    //       PBMSG_HEAD header;        // C1 : 5 : 0x26
+                    //       BYTE SourceSlot;          // +3
+                    //       BYTE TargetSlot;          // +4
+                    //   };
+                    //
+                    // Va por Net_SendSmallPacket porque HackPacketCheck.txt da
+                    // Encrypt=1 para el indice 38 -> el frame final tiene que
+                    // ser C3 con serial. El 0xC1 que arma IDA es el texto plano
+                    // previo al encriptador, no el frame que viaja.
+                    if ((int)EnableUse < 1) {
+                        // IDA: `if (EnableUse > 0) goto LABEL_808;` — durante el
+                        // cooldown NO se manda nada. Antes se mandaba igual.
+                        EnableUse = 10;
+
+                        BYTE pkt[8];
+                        memset(pkt, 0, sizeof(pkt));
+                        pkt[0] = 0xC1;
+                        pkt[1] = 5;                          // lo pisa el serial
+                        pkt[2] = 0x26;                       // ItemUse
+                        pkt[3] = (BYTE)(int)DAT_07ea5b18;    // SourceSlot (la jewel)
+                        pkt[4] = (BYTE)(int)DAT_07e11e78;    // TargetSlot (el item)
+                        Net_SendSmallPacket(pkt, 5);
                         actionTaken = true;
 
-                        // Play sound based on item type
+                        // Sonido segun el item de origen (IDA LABEL_802).
                         short sndItem = *(short*)((char*)OffsetInventoryItems + ((int)DAT_07ea5b18 - 0xc) * 0x44);
                         if (sndItem == 0x1c0) {
                             PlayBuffer(0x21, 0, 0);
@@ -1550,8 +1586,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                             PlayBuffer(0x20, 0, 0);
                         }
                     }
+                    canStack = true;
                 }
-                canStack = true;
             }
         }
         if (!canStack) {

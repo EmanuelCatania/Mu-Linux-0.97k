@@ -645,6 +645,10 @@
 #include "Net/HWID.h"
 #include "Net/MuEmu.h"
 
+// Definida en Item/Item_ClickHandler.cpp — devuelve el item agarrado a su slot
+// de origen. La usa el rechazo de venta del handler 0x33.
+void RestorePickedItemToSource(void);
+
 // C1:36 PMSG_TRADE_REQUEST_SEND carries the requester name but no viewport
 // clave. MuEmu asocia el peer del lado del server; preservamos el nombre para el
 // faithful response layout.
@@ -4761,7 +4765,23 @@ void Net_ProcessPacket(void)
                         PlayBuffer(29, 0, 0);
                     }
                 } else {
-                    ItemMove_ClearPickedState();
+                    // result == 0: el server RECHAZO la venta (no esta abierta la
+                    // interfaz de shop, el slot no tiene item, o el item no es vendible
+                    // segun ItemMove.txt). Aca se llamaba `ItemMove_ClearPickedState()`,
+                    // que DESCARTA el item agarrado: como el pickup ya habia limpiado su
+                    // celda, el item desaparecia de pantalla aunque el server nunca lo
+                    // borro — reaparecia al reentrar (llega el F3/10) y mientras tanto su
+                    // celda quedaba en un estado inconsistente.
+                    //
+                    // IDA ProtocolCore L834 gatea TODO el case con `if (byte[3] != 0)`,
+                    // o sea con result 0 no toca nada y el item sigue agarrado.
+                    //
+                    // Desviacion consciente: en vez de dejarlo pegado al cursor lo
+                    // devolvemos a su slot de origen. El efecto observable es el mismo
+                    // (no se pierde) y ademas libera `EquipmentItem` (DAT_07eaa165), un
+                    // guard propio del port que IDA no tiene y que si queda seteado
+                    // bloquea los drops siguientes.
+                    RestorePickedItemToSource();
                     DAT_05826d1c = 0;
                 }
                 break;
