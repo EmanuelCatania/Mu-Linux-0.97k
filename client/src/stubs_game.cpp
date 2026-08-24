@@ -1004,7 +1004,15 @@ unsigned long long __cdecl CheckInventorySpace_stub(int p1, int p2, unsigned sho
                     if (gx >= 0 && gy >= 0 && gx < p4 && gy < p5) {
                         // Check if cell is empty (-1)
                         BYTE* cell = (BYTE*)p3 + (rowOffset + gx) * 0x44;
-                        if (*(short*)cell == -1 || *(int*)(cell + 0x38) <= 0) {
+                        // 2026-08-24 FIX (issue #15, "la jewel solo aplicaba en la 1er celda"):
+                        // aca decia `|| *(int*)(cell + 0x38) <= 0`, o sea contaba la celda como
+                        // VACIA cuando su Key era 0. Pero AddItemToGrid deja Key=0 en todas las
+                        // celdas NO primarias de un item multi-celda (usa Key=1 solo para marcar
+                        // la primaria), asi que de un item 2x2 tres de sus cuatro celdas se
+                        // reportaban libres. IDA sub_4D5D70 L47 mira UNICAMENTE el Type:
+                        //     if ( a3[34 * v13 + 34 * v14] == -1 )  ++v20;
+                        // El campo Key solo gatea el RENDER (sub_4E38B0 L60), no la ocupacion.
+                        if (*(short*)cell == -1) {
                             emptyCount++;
                         }
                     }
@@ -1250,7 +1258,11 @@ unsigned int __cdecl FindEmptySlotNearMouse_stub(int p1, int p2, int p3, int p4,
                         short* cell = (short*)(p3 + 68 * (gx + rowBase + i));
                         int leftH = itemH;
                         do {
-                            if (*cell == (short)0xFFFF || *(int*)((BYTE*)cell + 0x38) <= 0) {
+                            // Mismo fix que en CheckInventorySpace_stub: IDA sub_4D6020 L71 es
+                            // `if ( *v14 == 0xFFFF )`, sin mirar Key. Con el chequeo de Key este
+                            // scanner daba por libres las celdas no primarias de un item multi-celda
+                            // y elegia como hueco un lugar ya ocupado.
+                            if (*cell == (short)0xFFFF) {
                                 ++emptyCount;
                             }
                             cell += 34 * p4;
