@@ -449,7 +449,9 @@ extern "C" void __cdecl SyncPickedItemVisualState(void);
 // 2026-07-27: devuelve el item agarrado a su slot de origen y suelta el cursor.
 // Se usa al cancelar los diálogos de confirmación (venta / drop al suelo); sin
 // esto el item quedaba pegado al mouse y no había forma de soltarlo.
-static void RestorePickedItemToSource(void)
+// No es `static`: la usa tambien el handler del 0x33 (venta rechazada por el
+// server) en Net/Net_Process.cpp.
+void RestorePickedItemToSource(void)
 {
     if (dword_7E91388 == 0) return;
     BYTE* srcPool = (BYTE*)(uintptr_t)dword_7EA9800;
