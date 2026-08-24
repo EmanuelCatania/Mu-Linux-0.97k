@@ -2522,7 +2522,16 @@ DWORD  DAT_00578200       = 0x00578200;  // name-filter BMD checksum seed (liter
 char   lpText_07d2aa08[256] = {};  // fatal-error message string (shown by ExitProgram)
 
 // ── BuxConvert XOR key and misc ───────────────────────────────────────────────
-BYTE   DAT_0055a76c       = 0;    // unk_55A76C — terrain alpha-overlay flag (never written in bin → 0)
+BYTE   DAT_0055a76c       = 1;    // unk_55A76C — gate de la 2da pasada del terreno
+                                  // (TerrainFlag=2, la capa de billboards de
+                                  // pasto/arena que se mueve con el viento).
+                                  // 2026-08-23: estaba en 0 con el comentario
+                                  // "never written in bin -> 0".  Nadie lo
+                                  // escribe —un solo xref, la lectura en
+                                  // RenderTerrain— pero es constante de .data y
+                                  // en el binario vale 1 (ida_get_bytes
+                                  // 0x0055A76C -> 01 00 00 00).  Con 0 el
+                                  // overlay no se dibujaba en ningun mapa.
 BYTE   DAT_0055a770       = 0;    // BuxConvert key byte [0]  (+1, +2 are adjacent bytes)
 
 // ── SkillAttribute table ──────────────────────────────────────────────────────

@@ -18,7 +18,9 @@
 //
 // Helper functions identified:
 //   FUN_004742b0  = Entity_WeaponHit    — weapon hit sparkle particle at bone[0]
-//   FUN_0042bc00  = Entity_ResetToWalk  — clears attack state, resets to walk anim
+//   FUN_0042bc00  = SetPlayerBow (nombre real en IDA; el alias
+//                   `Entity_ResetToWalk` es inventado del port).  Toma el
+//                   PUNTERO a la entidad, no el indice.
 //   FUN_00444a80  = Entity_SelectTarget_Player — set caster's attack target to player entity
 //   FUN_00444d90  = Entity_TeleportEnd  — completes teleport, snaps entity to final pos
 //   FUN_004792c0  = Entity_TeleportAnim — starts teleport animation at world pos
@@ -55,7 +57,7 @@ extern "C" void DbgLogPublic(const char* msg);
 // Forward declarations for functions identified in decompilation
 extern "C" void __cdecl CreateTeleportBegin(unsigned int entity); // 0x004742b0
 extern "C" void __cdecl CreateTeleportEnd(unsigned int entity);   // 0x00474310
-extern void Entity_ResetToWalk(int entity_idx);             // 0x0042bc00
+extern void Entity_ResetToWalk(int entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
 extern void Entity_TeleportEnd(int entity_idx);             // 0x00444d90
 extern void Entity_TeleportAnim(float* world_pos, float, float, float); // 0x004792c0
 extern void UI_ShowExpGainOverlay(int amount);              // 0x00480620
@@ -191,9 +193,17 @@ void PacketHandler_0x19(BYTE* pkt)
     {
         // UI event 0x3C = ranged hit indicator
         // FUN_00413900(0x3C, caster_idx) — UI dispatch
-        // If caster is currently in an attack anim, reset walk first
-        if (*(BYTE*)(caster + 0x7C) != 0)
-            Entity_ResetToWalk(caster_idx);
+        //
+        // 2026-08-23 CRASH-FIX: aca habia
+        //     if (*(BYTE*)(caster + 0x7C) != 0) Entity_ResetToWalk(caster_idx);
+        // con DOS errores.  (1) IDA no llama a esa funcion en este camino:
+        // `LABEL_107` (0042BCA0 L178-184) solo hace `SetPlayerMagic(sc)` para las
+        // entidades que no son el heroe.  La unica que la llama es
+        // `SetPlayerBow` en los cases 0x18/0x34/0x33, que ya la invocan bien.
+        // (2) le pasaba el INDICE (`caster_idx`) donde la funcion espera el
+        // PUNTERO: adentro hace `*(short*)(param_1 + 0x288)`, asi que con
+        // idx=124 deferenciaba 124 + 0x288 = 0x304 -> AV.  Verificado contra los
+        // registros del crash (`eax=0000007C`, `param1=0x00000304`).
         AnimateRemoteSkillCaster97k(caster);
         goto common_tail;
     }

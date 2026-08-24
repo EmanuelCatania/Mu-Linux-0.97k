@@ -2943,6 +2943,17 @@ void __cdecl RenderGuildMark_stub(float p1, float p2, float p3, float p4, int p5
 // AddTerrainLightClip @ 0x004F7800 (~74 lines) — adds clamped light to terrain buffer
 // Iterates a square region around (xf,yf). Per cell: falloff = (Range-dist)/Range.
 // Adds Light * falloff to Buffer, clamps to [0.0, 1.0].
+// AddTerrainLightClip (0x004F7800).
+//
+// 2026-08-23: quedo SIN CALLERS en nuestro arbol, y es correcto que asi sea — no
+// es codigo muerto para borrar.  Hasta hoy `structs.h` aliaseaba
+// `AddTerrainLight` (0x4F76C0) a esta funcion, y por eso toda la luz dinamica
+// quedaba clampeada a 1.0.  En el binario esta variante tiene UN solo caller
+// (0x4C0E59, dentro de una funcion que todavia no portamos); cuando se porte,
+// debe llamar a esta y no a AddTerrainLight.
+//
+// Diferencia entre las dos: esta clampea a [0, 1]; 0x4F76C0 solo evita negativos
+// y deja que la luz supere 1.0 (que es lo que produce el resplandor del fuego).
 void __cdecl AddTerrainLightClip_stub(float xf, float yf, float Light[3], int Range, float Buffer[3]) {
     // 0x004F7800 — Add clamped light to terrain light buffer.
     // Iterates a square region of radius Range around (xf,yf) in grid coords.
@@ -6777,7 +6788,7 @@ void __stdcall MoveParticles_stub(void)
                     lt0[0] = lightF;  // placeholder
                     lt0[1] = lightF;
                     lt0[2] = lightF;
-                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt0, 6, (int)&DAT_07eab250);
+                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt0, 6, (int)&DAT_081cb608[0]);
                 }
                 // AddTerrainLight — second call with color modulation
                 {
@@ -6785,7 +6796,7 @@ void __stdcall MoveParticles_stub(void)
                     lt1[0] = lightF * _DAT_005526e4;
                     lt1[1] = lightF * _DAT_005528b4;
                     lt1[2] = lightF;
-                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt1, 4, (int)&DAT_07eab250);
+                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt1, 4, (int)&DAT_081cb608[0]);
                 }
                 continue;
             }
@@ -7015,7 +7026,7 @@ void __stdcall MoveParticles_stub(void)
             float ltA2 = lightA * _DAT_00552530;
             {
                 float ltBuf[3] = { ltA0, ltA1, ltA2 };
-                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)ltBuf, 3, (int)&DAT_07eab250);
+                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)ltBuf, 3, (int)&DAT_081cb608[0]);
             }
             if (P_SUB(iVar9) == 2) {
                 int entPtr = P_ENT(iVar9);
@@ -7160,7 +7171,7 @@ void __stdcall MoveParticles_stub(void)
             if (P_SUB(iVar9) != 1) {
                 float ltBF = (float)P_LIFE(iVar9) * _DAT_00552a10;
                 float lt4[3] = { ltBF * _DAT_00552504, ltBF * _DAT_005528b8, ltBF * _DAT_005524f4 };
-                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt4, 4, (int)&DAT_07eab250);
+                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt4, 4, (int)&DAT_081cb608[0]);
             }
             break;
         }

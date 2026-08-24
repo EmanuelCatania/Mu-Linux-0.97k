@@ -65,6 +65,24 @@
 
 void FUN_00466ad0(float *param_1, int param_2)
 {
+  // 2026-08-23 FIX [[locales-contiguos-ghidra]]: el codigo pasa `&local_XXX` a
+  // funciones que leen 3 floats consecutivos (Position, Light, matrices), o sea
+  // depende de que los locales queden contiguos y en el orden del frame
+  // original.  MSVC no lo garantiza.  Se reconstruye el frame como UN bloque y
+  // cada `local_XXX` es una referencia a su offset real (idx = 0x36c - offset),
+  // asi las direcciones relativas son las del binario.
+  alignas(16) unsigned char __mfr[0x374];
+
+  // 2026-08-23: `param_1[0x3f]` es el PUNTERO al owner del efecto.  El port lo
+  // leia como float y despues hacia `(int)`, que convierte NUMERICAMENTE: los
+  // bits de una direccion dan ~1e-27 y `(int)` de eso es 0, o sea se
+  // deferenciaba NULL+offset.  IDA lo lee como DWORD:
+  // `*((_DWORD *)param_1 + 63)`.  Son los efectos que siguen a su entidad duena.
+  int __owner_fVar13 = 0;
+  int __owner_fVar4 = 0;
+  int __owner_fVar5 = 0;
+
+
   void *pvVar1;
   char cVar2;
   short sVar3;
@@ -96,130 +114,128 @@ void FUN_00466ad0(float *param_1, int param_2)
   byte bVar28;
   undefined4 uVar29;
   int iVar30;
-  float local_36c;
-  float local_368;
-  float local_364;
-  float local_360;
+  float &local_36c = *(float*)&__mfr[0x0];
+  float &local_368 = *(float*)&__mfr[0x4];
+  float &local_364 = *(float*)&__mfr[0x8];
+  float &local_360 = *(float*)&__mfr[0xc];
   float *local_35c;
-  float local_358;
-  float local_354;
-  float local_350;
-  float local_34c;
-  float local_348;
-  float local_344;
-  float local_340;
-  float local_33c;
-  float local_338;
-  float local_334;
-  float local_330;
-  float local_32c;
-  float local_328;
-  float local_324;
-  float local_320;
-  float local_31c;
-  undefined4 local_318;
-  undefined4 local_314;
-  float local_310;
-  float local_30c;
-  undefined4 local_308;
-  float local_304;
-  float local_300;
-  float local_2fc;
-  float local_2f8;
-  float local_2f4;
-  float local_2f0;
-  float local_2ec;
-  float local_2e8;
-  float local_2e4;
-  float local_2e0;
-  float local_2dc;
-  float local_2d8;
-  float local_2d4;
-  float local_2d0;
-  float local_2cc;
-  float local_2c8;
-  float local_2c4;
-  float local_2c0;
-  float local_2bc;
-  float local_2b8;
-  float local_2b4;
-  float local_2b0;
-  float local_2ac;
-  float local_2a8;
-  float local_2a4;
-  float local_2a0;
-  float local_29c;
-  float local_298;
-  float local_294;
-  float local_290;
-  float local_28c;
-  uint local_288;
-  float local_284;
-  float local_280;
-  float local_27c;
-  float local_278;
-  undefined4 local_274;
-  float local_270;
-  undefined4 local_26c;
-  undefined4 local_268;
-  undefined4 local_264;
-  float local_260;
-  float local_25c;
-  float local_258;
-  float local_254;
-  undefined4 local_250;
-  undefined4 local_24c;
-  float local_248;
-  float local_244;
-  float local_240;
-  float local_23c;
-  float local_238;
-  float local_234;
-  float local_230;
-  float local_22c;
-  undefined4 local_228;
-  float local_224;
-  float local_220;
-  float local_21c;
-  float local_218;
-  float local_214;
-  undefined4 local_210;
-  float local_20c;
-  undefined4 local_208;
-  undefined4 local_204;
-  float local_200;
-  float local_1fc;
-  undefined4 local_1f8;
-  float local_1f4;
-  float local_1f0;
-  float local_1ec;
-  float local_1e8;
-  undefined4 local_1e4;
-  float local_1e0;
-  float local_1dc;
-  undefined4 local_1d8;
-  float local_1d4;
-  float local_1d0;
-  float local_1cc;
-  float local_1c8;
-  float local_1c4;
-  undefined4 local_1c0;
-  float local_1bc;
-  float local_1b8;
-  undefined4 local_1b4;
-  undefined4 local_1b0;
-  undefined4 local_1ac;
-  undefined4 local_1a8;
-  float local_1a4[18];
-  float local_15c[12];
-  float local_12c[12];
-  float local_fc[12];
-  float local_cc[12];
-  float local_9c[12];
-  float local_6c[13];
-  float local_38[14];
-
-// SECTION_BODY_START
+  float &local_358 = *(float*)&__mfr[0x14];
+  float &local_354 = *(float*)&__mfr[0x18];
+  float &local_350 = *(float*)&__mfr[0x1c];
+  float &local_34c = *(float*)&__mfr[0x20];
+  float &local_348 = *(float*)&__mfr[0x24];
+  float &local_344 = *(float*)&__mfr[0x28];
+  float &local_340 = *(float*)&__mfr[0x2c];
+  float &local_33c = *(float*)&__mfr[0x30];
+  float &local_338 = *(float*)&__mfr[0x34];
+  float &local_334 = *(float*)&__mfr[0x38];
+  float &local_330 = *(float*)&__mfr[0x3c];
+  float &local_32c = *(float*)&__mfr[0x40];
+  float &local_328 = *(float*)&__mfr[0x44];
+  float &local_324 = *(float*)&__mfr[0x48];
+  float &local_320 = *(float*)&__mfr[0x4c];
+  float &local_31c = *(float*)&__mfr[0x50];
+  undefined4 &local_318 = *(undefined4*)&__mfr[0x54];
+  undefined4 &local_314 = *(undefined4*)&__mfr[0x58];
+  float &local_310 = *(float*)&__mfr[0x5c];
+  float &local_30c = *(float*)&__mfr[0x60];
+  undefined4 &local_308 = *(undefined4*)&__mfr[0x64];
+  float &local_304 = *(float*)&__mfr[0x68];
+  float &local_300 = *(float*)&__mfr[0x6c];
+  float &local_2fc = *(float*)&__mfr[0x70];
+  float &local_2f8 = *(float*)&__mfr[0x74];
+  float &local_2f4 = *(float*)&__mfr[0x78];
+  float &local_2f0 = *(float*)&__mfr[0x7c];
+  float &local_2ec = *(float*)&__mfr[0x80];
+  float &local_2e8 = *(float*)&__mfr[0x84];
+  float &local_2e4 = *(float*)&__mfr[0x88];
+  float &local_2e0 = *(float*)&__mfr[0x8c];
+  float &local_2dc = *(float*)&__mfr[0x90];
+  float &local_2d8 = *(float*)&__mfr[0x94];
+  float &local_2d4 = *(float*)&__mfr[0x98];
+  float &local_2d0 = *(float*)&__mfr[0x9c];
+  float &local_2cc = *(float*)&__mfr[0xa0];
+  float &local_2c8 = *(float*)&__mfr[0xa4];
+  float &local_2c4 = *(float*)&__mfr[0xa8];
+  float &local_2c0 = *(float*)&__mfr[0xac];
+  float &local_2bc = *(float*)&__mfr[0xb0];
+  float &local_2b8 = *(float*)&__mfr[0xb4];
+  float &local_2b4 = *(float*)&__mfr[0xb8];
+  float &local_2b0 = *(float*)&__mfr[0xbc];
+  float &local_2ac = *(float*)&__mfr[0xc0];
+  float &local_2a8 = *(float*)&__mfr[0xc4];
+  float &local_2a4 = *(float*)&__mfr[0xc8];
+  float &local_2a0 = *(float*)&__mfr[0xcc];
+  float &local_29c = *(float*)&__mfr[0xd0];
+  float &local_298 = *(float*)&__mfr[0xd4];
+  float &local_294 = *(float*)&__mfr[0xd8];
+  float &local_290 = *(float*)&__mfr[0xdc];
+  float &local_28c = *(float*)&__mfr[0xe0];
+  uint &local_288 = *(uint*)&__mfr[0xe4];
+  float &local_284 = *(float*)&__mfr[0xe8];
+  float &local_280 = *(float*)&__mfr[0xec];
+  float &local_27c = *(float*)&__mfr[0xf0];
+  float &local_278 = *(float*)&__mfr[0xf4];
+  undefined4 &local_274 = *(undefined4*)&__mfr[0xf8];
+  float &local_270 = *(float*)&__mfr[0xfc];
+  undefined4 &local_26c = *(undefined4*)&__mfr[0x100];
+  undefined4 &local_268 = *(undefined4*)&__mfr[0x104];
+  undefined4 &local_264 = *(undefined4*)&__mfr[0x108];
+  float &local_260 = *(float*)&__mfr[0x10c];
+  float &local_25c = *(float*)&__mfr[0x110];
+  float &local_258 = *(float*)&__mfr[0x114];
+  float &local_254 = *(float*)&__mfr[0x118];
+  undefined4 &local_250 = *(undefined4*)&__mfr[0x11c];
+  undefined4 &local_24c = *(undefined4*)&__mfr[0x120];
+  float &local_248 = *(float*)&__mfr[0x124];
+  float &local_244 = *(float*)&__mfr[0x128];
+  float &local_240 = *(float*)&__mfr[0x12c];
+  float &local_23c = *(float*)&__mfr[0x130];
+  float &local_238 = *(float*)&__mfr[0x134];
+  float &local_234 = *(float*)&__mfr[0x138];
+  float &local_230 = *(float*)&__mfr[0x13c];
+  float &local_22c = *(float*)&__mfr[0x140];
+  undefined4 &local_228 = *(undefined4*)&__mfr[0x144];
+  float &local_224 = *(float*)&__mfr[0x148];
+  float &local_220 = *(float*)&__mfr[0x14c];
+  float &local_21c = *(float*)&__mfr[0x150];
+  float &local_218 = *(float*)&__mfr[0x154];
+  float &local_214 = *(float*)&__mfr[0x158];
+  undefined4 &local_210 = *(undefined4*)&__mfr[0x15c];
+  float &local_20c = *(float*)&__mfr[0x160];
+  undefined4 &local_208 = *(undefined4*)&__mfr[0x164];
+  undefined4 &local_204 = *(undefined4*)&__mfr[0x168];
+  float &local_200 = *(float*)&__mfr[0x16c];
+  float &local_1fc = *(float*)&__mfr[0x170];
+  undefined4 &local_1f8 = *(undefined4*)&__mfr[0x174];
+  float &local_1f4 = *(float*)&__mfr[0x178];
+  float &local_1f0 = *(float*)&__mfr[0x17c];
+  float &local_1ec = *(float*)&__mfr[0x180];
+  float &local_1e8 = *(float*)&__mfr[0x184];
+  undefined4 &local_1e4 = *(undefined4*)&__mfr[0x188];
+  float &local_1e0 = *(float*)&__mfr[0x18c];
+  float &local_1dc = *(float*)&__mfr[0x190];
+  undefined4 &local_1d8 = *(undefined4*)&__mfr[0x194];
+  float &local_1d4 = *(float*)&__mfr[0x198];
+  float &local_1d0 = *(float*)&__mfr[0x19c];
+  float &local_1cc = *(float*)&__mfr[0x1a0];
+  float &local_1c8 = *(float*)&__mfr[0x1a4];
+  float &local_1c4 = *(float*)&__mfr[0x1a8];
+  undefined4 &local_1c0 = *(undefined4*)&__mfr[0x1ac];
+  float &local_1bc = *(float*)&__mfr[0x1b0];
+  float &local_1b8 = *(float*)&__mfr[0x1b4];
+  undefined4 &local_1b4 = *(undefined4*)&__mfr[0x1b8];
+  undefined4 &local_1b0 = *(undefined4*)&__mfr[0x1bc];
+  undefined4 &local_1ac = *(undefined4*)&__mfr[0x1c0];
+  undefined4 &local_1a8 = *(undefined4*)&__mfr[0x1c4];
+  float (&local_1a4)[18] = *(float(*)[18])&__mfr[0x1c8];
+  float (&local_15c)[12] = *(float(*)[12])&__mfr[0x210];
+  float (&local_12c)[12] = *(float(*)[12])&__mfr[0x240];
+  float (&local_fc)[12] = *(float(*)[12])&__mfr[0x270];
+  float (&local_cc)[12] = *(float(*)[12])&__mfr[0x2a0];
+  float (&local_9c)[12] = *(float(*)[12])&__mfr[0x2d0];
+  float (&local_6c)[13] = *(float(*)[13])&__mfr[0x300];
+  float (&local_38)[14] = *(float(*)[14])&__mfr[0x334];
   do {
     uVar8 = _rand();
     uVar8 = uVar8 & 0x80000003;
@@ -640,21 +656,21 @@ void FUN_00466ad0(float *param_1, int param_2)
               if (fVar13 == 4.2039e-45f) {
                 fVar17 = -fVar17;
               }
-              fVar4 = param_1[0x3f];
+              __owner_fVar4 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
               fVar18 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552998 +
                                      (float10)(int)local_35c * (float10)_DAT_0055299c);
               local_35c = (float *)(int)(float)(fVar18 * (float10)_DAT_005524fc + (float10)_DAT_00552598);
               fVar18 = (float10)fsin(fVar17);
               local_260 = (float)(fVar18 * (float10)(int)local_35c +
-                                 (float10)*(float *)((int)fVar4 + 0x10));
+                                 (float10)*(float *)(__owner_fVar4 + 0x10));
               fVar17 = (float10)fcos(fVar17);
               local_25c = (float)(fVar17 * (float10)(int)local_35c +
-                                 (float10)*(float *)((int)fVar4 + 0x14));
+                                 (float10)*(float *)(__owner_fVar4 + 0x14));
               fVar5 = _DAT_0055285c;
               if (fVar13 == 4.2039e-45f) {
                 fVar5 = _DAT_00552994;
               }
-              local_258 = fVar5 * *(float *)((int)fVar4 + 0xc) + *(float *)((int)fVar4 + 0x18);
+              local_258 = fVar5 * *(float *)(__owner_fVar4 + 0xc) + *(float *)(__owner_fVar4 + 0x18);
               local_1a4[0] = 0.65f;
               local_1a4[1] = 0.65f;
               local_1a4[2] = 0.65f;
@@ -828,11 +844,11 @@ LAB_00469366:
         param_1[0x36] = (float)(fVar17 * (float10)_DAT_005524fc + (float10)_DAT_0055284c);
         FUN_004f9db0(param_1 + 10,local_1a4 + 6);
         FUN_004fa0b0(&local_31c,local_1a4 + 6,&local_354);
-        fVar13 = param_1[0x3f];
-        local_354 = local_354 + *(float *)((int)fVar13 + 0x10);
-        local_350 = local_350 + *(float *)((int)fVar13 + 0x14);
+        __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+        local_354 = local_354 + *(float *)(__owner_fVar13 + 0x10);
+        local_350 = local_350 + *(float *)(__owner_fVar13 + 0x14);
         local_368 = 1.0;
-        local_34c = local_34c + *(float *)((int)fVar13 + 0x18) + param_1[0x36];
+        local_34c = local_34c + *(float *)(__owner_fVar13 + 0x18) + param_1[0x36];
         local_364 = 1.0;
         local_360 = 1.0;
         FUN_00475220(0x4ad,&local_354,param_1 + 7,&local_368,10,2.0,0);
@@ -1085,10 +1101,10 @@ LAB_004695b5:
       goto LAB_004695c0;
     case 0xc2:
     case 0x103:
-      fVar13 = param_1[0x3f];
-      fVar4 = *(float *)((int)fVar13 + 0x14);
-      fVar5 = *(float *)((int)fVar13 + 0x18);
-      param_1[4] = *(float *)((int)fVar13 + 0x10);
+      __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+      fVar4 = *(float *)(__owner_fVar13 + 0x14);
+      fVar5 = *(float *)(__owner_fVar13 + 0x18);
+      param_1[4] = *(float *)(__owner_fVar13 + 0x10);
       param_1[5] = fVar4;
       param_1[6] = fVar5;
       break;
@@ -1156,10 +1172,10 @@ LAB_00468772:
       local_360 = local_36c * _DAT_005526e4;
       goto LAB_00468736;
     case 0xca:
-      fVar4 = param_1[0x3f];
-      fVar6 = *(float *)((int)fVar4 + 0x18) + _DAT_005524f0;
-      fVar5 = *(float *)((int)fVar4 + 0x14);
-      param_1[4] = *(float *)((int)fVar4 + 0x10);
+      __owner_fVar4 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+      fVar6 = *(float *)(__owner_fVar4 + 0x18) + _DAT_005524f0;
+      fVar5 = *(float *)(__owner_fVar4 + 0x14);
+      param_1[4] = *(float *)(__owner_fVar4 + 0x10);
       param_1[5] = fVar5;
       param_1[6] = fVar6;
       param_1[8] = param_1[8] + _DAT_005524fc;
@@ -1603,11 +1619,11 @@ switchD_00466b93_caseD_c7:
         param_1[0x1a] = (float)(*(int*)&param_1[0x18]) * _DAT_00552a00;
       }
       else {
-        fVar13 = param_1[0x3f];
-        fVar4 = *(float *)((int)fVar13 + 0x10);
-        fVar5 = *(float *)((int)fVar13 + 0x14);
+        __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+        fVar4 = *(float *)(__owner_fVar13 + 0x10);
+        fVar5 = *(float *)(__owner_fVar13 + 0x14);
         param_1[3] = param_1[3] + _DAT_005524f8;
-        fVar13 = *(float *)((int)fVar13 + 0x18);
+        fVar13 = *(float *)(__owner_fVar13 + 0x18);
         param_1[4] = fVar4;
         param_1[5] = fVar5;
         param_1[6] = fVar13;
@@ -1646,11 +1662,11 @@ switchD_00466b93_caseD_c7:
       local_314 = 0;
       FUN_004f9db0(pfVar10,local_1a4 + 6);
       FUN_004fa0b0(&local_31c,local_1a4 + 6,&local_354);
-      fVar13 = param_1[0x3f];
+      __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
       pfVar15 = param_1 + 4;
-      *pfVar15 = local_354 + *(float *)((int)fVar13 + 0x10);
-      param_1[5] = local_350 + *(float *)((int)fVar13 + 0x14);
-      param_1[6] = local_34c + *(float *)((int)fVar13 + 0x18);
+      *pfVar15 = local_354 + *(float *)(__owner_fVar13 + 0x10);
+      param_1[5] = local_350 + *(float *)(__owner_fVar13 + 0x14);
+      param_1[6] = local_34c + *(float *)(__owner_fVar13 + 0x18);
       param_1[9] = param_1[9] - _DAT_005529fc;
       FUN_00475220(0x4c4,pfVar15,pfVar10,param_1 + 0x3a,3,1.0,0);
       local_368 = local_36c * _DAT_005528b8;
@@ -1763,24 +1779,24 @@ LAB_00466e5e:
       }
       else {
         if (fVar4 == 4.2039e-45) {
-          fVar5 = param_1[0x3f];
-          param_1[5] = *(float *)((int)fVar5 + 0x14);
-          iVar9 = *(int *)((int)fVar5 + 0xfc);
-          param_1[6] = *(float *)((int)fVar5 + 0x18);
+          __owner_fVar5 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+          param_1[5] = *(float *)(__owner_fVar5 + 0x14);
+          iVar9 = *(int *)(__owner_fVar5 + 0xfc);
+          param_1[6] = *(float *)(__owner_fVar5 + 0x18);
           param_1[4] = *(float *)(iVar9 + 0x10) + _DAT_0055297c;
           goto LAB_00466e5e;
         }
         if (fVar4 == 5.60519e-45) {
           fVar7 = param_1[3] + _DAT_00552a08;
-          fVar5 = param_1[0x3f];
-          fVar6 = *(float *)((int)fVar5 + 0x10);
+          __owner_fVar5 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
+          fVar6 = *(float *)(__owner_fVar5 + 0x10);
           param_1[3] = fVar7;
           fVar7 = fVar7 * _DAT_00552a04;
           param_1[4] = fVar6;
-          param_1[5] = *(float *)((int)fVar5 + 0x14);
+          param_1[5] = *(float *)(__owner_fVar5 + 0x14);
           fVar7 = fVar7 + param_1[0x36];
           param_1[0x36] = fVar7;
-          param_1[6] = fVar7 + *(float *)((int)fVar5 + 0x18);
+          param_1[6] = fVar7 + *(float *)(__owner_fVar5 + 0x18);
           goto LAB_00466e5e;
         }
       }

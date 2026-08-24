@@ -3717,6 +3717,9 @@ void __cdecl FUN_00449900(int p1)
             }
             // L1664: seteo de flag sólo para el Hero (anti-tamper removido)
             // salteado — era una ronda de hash-encrypt sobre CharacterMachine
+            // 2026-08-23: faltaba el sonido del skill (IDA L1817, justo despues
+            // del bloque de hash-encrypt que se omite por policy).
+            PlayBuffer(97, 0, 0);
             break;
         }
         case 49: {  // Magic — uses dword_5826D10 hotkey state

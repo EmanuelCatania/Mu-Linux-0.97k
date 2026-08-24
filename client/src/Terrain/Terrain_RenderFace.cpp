@@ -133,8 +133,11 @@ void __cdecl FUN_004f7fb0(float xf, float yf, int xi, int yi, float lodf)
     (void)xi; (void)yi; (void)lodf;   // los TerrainVertex/Index ya los fijó RenderTerrainTile
 
     if (TER_FLAG == 2) {
-        // ── grass-overlay billboard pass (inerte: unk_55A76C nunca seteado →
-        //    RenderTerrain nunca pone TerrainFlag=2; portado por fidelidad) ──
+        // ── capa de billboards de pasto/arena, movida por el viento ────────
+        // 2026-08-23: estuvo inerte porque `unk_55A76C` (DAT_0055a76c) estaba
+        // inicializado en 0.  Nadie lo escribe, pero es constante de .data y en
+        // el binario vale 1 — con 0 esta pasada no corria en ningun mapa y se
+        // perdia el pasto de Lorencia/Noria y la arena volando de Tarkan.
         if (TER_ALPHA[TER_IDX1] <= 0.0f && TER_ALPHA[TER_IDX2] <= 0.0f &&
             TER_ALPHA[TER_IDX3] <= 0.0f && TER_ALPHA[TER_IDX4] <= 0.0f &&
             !DAT_0814b2dc && (World < 11 || World > 16))   // CurrentLayer

@@ -289,6 +289,49 @@ unsigned int Game_RenderTick(void)
 // pending 1:1 IDA ports in dedicated sessions because each pulls in 5-15
 // new globals (GuildWarScore[], HeroSoccerTeam, EnableGuildWar, ...) plus
 // CRT/Win32 helpers (CreateGuildMark, RenderText_1, RenderBitmap, ...).
+
+static inline float ConvertX_RF(float x) { return x * (float)((double)WindowWidth  / 640.0); }
+static inline float ConvertY_RF(float y) { return y * (float)((double)WindowHeight / 480.0); }
+
+// ── RenderBitmapUV (0x005128C0) ─────────────────────────────────────────────
+// 2026-08-23: no estaba implementada (functions.h la declaraba mal, como
+// `(int,int,int,int)`), asi que el unico caller —la tormenta de arena de
+// Tarkan— usaba `RenderBitmap` (0x5125A0) en su lugar.  No son intercambiables:
+//
+//   RenderBitmap   toma (u0, v0, u1, v1) y mapea un RECTANGULO de UV.
+//   RenderBitmapUV toma (u, v, uWidth, vHeight) y mapea un cuadrilatero
+//                  SESGADO — la V de las dos esquinas izquierdas va a
+//                  `v + 0.25*vHeight` y `v + 0.75*vHeight`, mientras las
+//                  derechas van a `v + vHeight` y `v`.
+//
+// Ese sesgo es lo que da el arrastre/perspectiva de la arena; con el rectangulo
+// plano de RenderBitmap la textura se lee como un mosaico.
+//
+// Decodificado del decompile por offsets de stack: el loop
+// `glTexCoord2f(t[v9-1], t[v9]); glVertex2f(ya[v9-1], ya[v9])` con v9 = 0,2,4,6
+// desborda los arrays `t[5]`/`ya[2]` a proposito y toca los locales vecinos
+// (`s`, `v15`, `v16`, `xa`, `v19`..`v23`), o sea depende del layout del frame
+// original — [[locales-contiguos-ghidra]].  Aca se escriben las 4 esquinas
+// explicitas, que es lo mismo sin depender del stack.
+static void RenderBitmapUV(int Texture, float x, float y, float Width, float Height,
+                           float u, float v, float uWidth, float vHeight)
+{
+    const float x0 = ConvertX_RF(x);
+    const float y0 = (float)WindowHeight - ConvertY_RF(y);
+    const float w  = ConvertX_RF(Width);
+    const float h  = ConvertY_RF(Height);
+    const float q  = vHeight * 0.25f;
+
+    FUN_00511480(Texture);          // BindTexture
+
+    glBegin(GL_TRIANGLE_FAN);
+      glTexCoord2f(u,          v + q);            glVertex2f(x0,     y0);
+      glTexCoord2f(u,          v + vHeight - q);  glVertex2f(x0,     y0 - h);
+      glTexCoord2f(u + uWidth, v + vHeight);      glVertex2f(x0 + w, y0 - h);
+      glTexCoord2f(u + uWidth, v);                glVertex2f(x0 + w, y0);
+    glEnd();
+}
+
 void Render_GameFrame(void)
 {
     // 2026-05-08: per-frame watchdog. Some unknown writer occasionally
@@ -323,22 +366,22 @@ void Render_GameFrame(void)
     }
 
     if (DAT_0055a7ac == 8) {
-        FUN_00511680('\x01');
+        // Tarkan: dos capas de arena a pantalla completa, blend aditivo.
+        // IDA Render_GameFrame L14-21.
+        FUN_00511680('');                  // EnableAlphaTest(1)
         glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
-        FUN_00511710();
+        FUN_00511710();                        // EnableAlphaBlend (aditivo)
         glColor3f(0.3f, 0.3f, 0.25f);
 
-        const float scrollA = (float)((int)DAT_05826e08 % 100000) * _DAT_00552b88;
-        const float scrollB = (float)((int)DAT_05826e08 % 100000) * _DAT_00552500;
+        const float scrollA = (float)((int)DAT_05826e08 % 100000) * _DAT_00552b88; // 0.0002
+        const float scrollB = (float)((int)DAT_05826e08 % 100000) * _DAT_00552500; // 0.001
 
-        FUN_005125a0(0x494,
-                     0.0f, 0.0f, 640.0f, 435.0f,
-                     scrollA, 0.0f, scrollA + 2.0f, 3.0f,
-                     '\x01', '\x01');
-        FUN_005125a0(0x495,
-                     0.0f, 0.0f, 640.0f, 435.0f,
-                     scrollB, 0.0f, scrollB + 3.0f, 2.0f,
-                     '\x01', '\x01');
+        // 2026-08-23: antes esto llamaba a `RenderBitmap` (0x5125A0) con
+        // (u0,v0,u1,v1), que mapea un RECTANGULO — la textura se leia como un
+        // mosaico.  El original usa `RenderBitmapUV` (0x5128C0), que mapea un
+        // cuadrilatero SESGADO en V y produce el arrastre de la arena.
+        RenderBitmapUV(0x494, 0.0f, 0.0f, 640.0f, 435.0f, scrollA, 0.0f, 0.30000001f, 0.30000001f);
+        RenderBitmapUV(0x495, 0.0f, 0.0f, 640.0f, 435.0f, scrollB, 0.0f, 3.0f, 2.0f);
     }
 
     glColor3f(1.0f, 1.0f, 1.0f);
