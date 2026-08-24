@@ -1677,6 +1677,28 @@ void __cdecl FUN_004acef0(void)
             // clickear afuera cierra el diálogo del NPC.  El close 0x31 va en C1
             // (el talk 0x30 es C3, pero el close es C1 — HackPacketCheck).
             if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
+                // 2026-08-24 FIX (issue #15, "la segunda tienda ya no vende"): este
+                // bloque disparaba tambien con el boton MANTENIDO, no solo con un
+                // click nuevo. El talk 0x30 se manda al LLEGAR al NPC (actionQueued
+                // == 2, mas arriba en este mismo tick) y deja `g_NpcTalkActive = 1`;
+                // si el usuario venia sosteniendo el boton del click-to-move, el gate
+                // lo veia activo en el MISMO tick y mandaba el close. El log lo
+                // mostraba con el mismo milisegundo:
+                //     [1748718953] PIT NPC-TALK send (C3): npcId=15
+                //     [1748718953] PIT CLOSE-NPC (move): sending 0x31 close
+                // El server procesaba talk (TargetShopNumber=15, Interface.use=1) y
+                // acto seguido close, que hace `TargetShopNumber = -1` +
+                // `Interface.use = 0` (NpcTalk.cpp:330-332). El cliente ya habia
+                // recibido el 0x30 y mostraba la tienda, pero toda venta caia en el
+                // `if (SHOP_RANGE(lpObj->TargetShopNumber) == 0) return;` de
+                // CGItemSellRecv -> 0x33 con result 0. De ahi "la primera tienda
+                // vende y la segunda no": dependia de si se solto el boton antes de
+                // llegar caminando al NPC.
+                //
+                // Un boton que venia sostenido desde ANTES de que la ventana se
+                // abriera no es "el usuario clickeo afuera". Sin edge no cerramos, y
+                // tampoco movemos (que es lo que este bloque venia a evitar).
+                if (!bClickEdge) goto end_tick_inc;
                 extern void __cdecl CloseInventoryRelatedWindows(void);
                 CloseInventoryRelatedWindows();          // limpia Shop/Warehouse/Mix/Trade + pools
                 DAT_07eaa117 = 0;                         // InventoryOpened
