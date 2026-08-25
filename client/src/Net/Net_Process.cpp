@@ -1441,7 +1441,7 @@ extern "C" {
     int  g_CharListCacheLen   = 0;
 }
 
-static void Recv_CharList(const BYTE* Msg)
+static void Recv_CharList(const BYTE* Msg, int Size)
 {
     const int CHAR_STRIDE  = 0x394;
     const int CHAR_SLOT_AT = 0x2D2;       // entity+0x2D2 = "selected" flag
@@ -1449,10 +1449,17 @@ static void Recv_CharList(const BYTE* Msg)
 
     // 2026-05-05: cache para replay en JoinChar
     {
-        int len = (int)Msg[1];
-        if (len > 0 && len <= 255) {
-            memcpy(g_CharListCache, Msg, len);
-            g_CharListCacheLen = len;
+        // 2026-08-25 (issue #13): esto releia `Msg[1]`, el byte de tamaño del
+        // frame — que para un paquete re-enmarcado desde C3/C4 de mas de 255
+        // bytes esta truncado. Ahora usa el `Size` real que calcula el
+        // dispatcher. El clamp es contra el tamaño del cache, no contra 255.
+        if (Size > 0 && Size <= (int)sizeof(g_CharListCache)) {
+            memcpy(g_CharListCache, Msg, Size);
+            g_CharListCacheLen = Size;
+        } else if (Size > (int)sizeof(g_CharListCache)) {
+            NetLog("NET: F3/00 char-list %d bytes > cache %d — no se cachea",
+                   Size, (int)sizeof(g_CharListCache));
+            g_CharListCacheLen = 0;
         }
     }
 
@@ -1529,7 +1536,12 @@ static void Recv_CharList(const BYTE* Msg)
 // desde JoinChar (replay de la char-list desde el cache).
 extern "C" void Recv_CharListReplay(const BYTE* Msg)
 {
-    Recv_CharList(Msg);
+    // El replay viene del cache, cuyo largo real guardamos aparte (el byte
+    // `Msg[1]` puede estar truncado — ver el fix del issue #13).
+    const int len = (Msg == g_CharListCache && g_CharListCacheLen > 0)
+                        ? g_CharListCacheLen
+                        : (int)Msg[1];
+    Recv_CharList(Msg, len);
 }
 
 // ---------------------------------------------------------------------------
@@ -2595,12 +2607,28 @@ void Net_ProcessPacket(void)
             // Corre el payload 1 byte para hacer lugar al byte plainLen
             BYTE plain[0x800];
             plain[0] = 0xC1;
+            // 2026-08-25 FIX (issue #13): `plain[1]` es UN byte, asi que para un paquete
+            // de mas de 255 el tamaño se trunca. Medido con el F3/10 del inventario:
+            // 306 bytes reales reportaban Size=49 (= 306 & 0xFF).
+            //
+            // No rompia el inventario porque ese parser itera por `count` y los DATOS
+            // del buffer si estan completos — solo el byte de tamaño se pierde. Pero
+            // cualquier handler que valide o recorra por `Size` cortaba mal.
+            //
+            // El arreglo es llevar el tamaño APARTE del buffer: `Size` es un int, se
+            // toma del valor real y NO se relee de `Msg[1]`. El byte de `plain[1]`
+            // queda truncado igual que antes, pero ya no lo consume nadie.
+            //
+            // Se descarto re-enmarcar como C2 (que es lo que haria el original para un
+            // paquete largo): eso correria +1 todos los offsets del cuerpo y obligaria
+            // a revisar cada handler que hoy asume el layout C1. Con el tamaño aparte
+            // el layout no cambia y el fix es cerrado.
             plain[1] = (BYTE)(bodyLen + 2);
             memcpy(plain + 2, scratch + 1, bodyLen);
             memcpy(Msg, plain, bodyLen + 2);
             hdr      = 0xC1;
             HeadCode = Msg[2];
-            Size     = Msg[1];
+            Size     = bodyLen + 2;   // real, no `Msg[1]` (que puede estar truncado)
             NetLog("NET: C3->C1 decoded encLen=%d → plainLen=%d op=%02X",
                    encLen, bodyLen + 2, HeadCode);
         } else if (hdr == 0xC1) {
@@ -2646,7 +2674,7 @@ void Net_ProcessPacket(void)
                 switch (sub) {
                     case 0x00:
                         NetLog("NET:  → F3/00 CharList count=%d", Msg[4]);
-                        Recv_CharList(Msg);
+                        Recv_CharList(Msg, Size);
                         break;
                     case 0x01:
                         NetLog("NET:  → F3/01 CreateChar result=%d", Msg[4]);
