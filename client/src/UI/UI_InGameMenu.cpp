@@ -10,6 +10,8 @@
 
 #include "Net/MuEmu.h"
 #include "Net/Net.h"  // 2026-05-05: Net_SendSmallPacket (proper C3 wrap with serial)
+// 2026-08-25: los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
+extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)
@@ -464,9 +466,13 @@ void __cdecl FUN_00514310(void)
         if (DAT_07eaa108 == 2) {
             // PMSG_TRADE_MONEY_RECV (MuEmu Trade.h). The amount is little-
             // endian, matching the server's DWORD field.
+            // 2026-08-25 FIX (issue #12): iba por `Net_SendSmallPacket`, que
+            // emite C3 — pero HackPacketCheck.txt da Encrypt=0 para el indice
+            // 59 (0x3B), asi que el server lo rechaza con "Packet encryption
+            // error" y CIERRA la conexion. Va C1 plano.
             BYTE pkt[7] = { 0xC1, 0x07, 0x3B, 0, 0, 0, 0 };
             memcpy(pkt + 3, &gold, sizeof(DWORD));
-            Net_SendSmallPacket(pkt, sizeof(pkt));
+            Net_SendC1Packet(pkt, sizeof(pkt));
         } else if (gold > 0) {
             Net_SendWarehouseMoney((BYTE)(DAT_07eaa108 & 1), (DWORD)gold);
         }
@@ -595,9 +601,20 @@ void __cdecl FUN_00514310(void)
             return;
 
         DAT_083a4124 = 0;
+        // 2026-08-25 FIX (issue #12): mismo caso que el 0x3B — el indice 55
+        // (0x37) es Encrypt=0, o sea C1 plano. Con C3 el server cerraba la
+        // conexion al aceptar o rechazar un trade.
+        //
+        //   struct PMSG_TRADE_RESPONSE_RECV {   // Trade.h:18
+        //       PBMSG_HEAD header;   // C1 : 20 : 0x37
+        //       BYTE  response;      // +3
+        //       char  name[10];      // +4
+        //       WORD  level;         // +14
+        //       DWORD GuildNumber;   // +16
+        //   };
         BYTE pkt[20] = { 0xC1, 0x14, 0x37, (BYTE)(yes ? 1 : 0) };
         memcpy(pkt + 4, s_tradeRequestName, 10);
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        Net_SendC1Packet(pkt, sizeof(pkt));
         goto tail;
     }
 
@@ -965,10 +982,36 @@ void __cdecl FUN_00514310(void)
 
         case 0x77:
         {
+            // 2026-08-25 FIX (issue #12, el trade request lo rechazaba el
+            // server): este envio tenia CUATRO errores a la vez.
+            //
+            //   struct PMSG_TRADE_REQUEST_RECV {   // Trade.h:12
+            //       PBMSG_HEAD header;   // C1 : 5 : 0x36
+            //       BYTE index[2];       // +3, +4
+            //   };
+            //
+            //  1. Tamaño 6 con un byte 0x00 de mas: el struct son 5 bytes y el
+            //     index va en +3/+4, no en +4/+5.
+            //  2. Index en little-endian. El server lo lee con
+            //     `MAKE_NUMBERW(index[0], index[1])`, que es
+            //     `(index[1]) | (index[0] << 8)` — o sea index[0] es el byte
+            //     ALTO (ProtocolDefines.h:10).
+            //  3. Frame C1 cuando el opcode pide C3: HackPacketCheck.txt indice
+            //     54 -> Encrypt=1, y `CheckPacketHack` cierra la conexion si no
+            //     coincide.
+            //  4. `SendLoginPacket` aplica el XOR de la clave de LOGIN sobre un
+            //     paquete in-game. `Net_SendSmallPacket` es el camino correcto:
+            //     chain-XOR + serial + C3.
             BYTE hi = (BYTE)((DAT_07eaa0d8 >> 8) & 0xff);
             BYTE lo = (BYTE)(DAT_07eaa0d8 & 0xff);
-            BYTE pkt[6] = { 0xC1, 0x06, 0x36, 0x00, lo, hi };
-            SendLoginPacket(pkt, 6);
+            BYTE pkt[8];
+            memset(pkt, 0, sizeof(pkt));
+            pkt[0] = 0xC1;
+            pkt[1] = 5;          // lo pisa el serial
+            pkt[2] = 0x36;
+            pkt[3] = hi;         // index[0] = byte alto
+            pkt[4] = lo;         // index[1] = byte bajo
+            Net_SendSmallPacket(pkt, 5);
         }
         break;
 
