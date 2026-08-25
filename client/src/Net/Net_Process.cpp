@@ -2629,8 +2629,16 @@ void Net_ProcessPacket(void)
             hdr      = 0xC1;
             HeadCode = Msg[2];
             Size     = bodyLen + 2;   // real, no `Msg[1]` (que puede estar truncado)
-            NetLog("NET: C3->C1 decoded encLen=%d → plainLen=%d op=%02X",
-                   encLen, bodyLen + 2, HeadCode);
+            // El byte truncado se loguea al lado a proposito: cuando difiere de
+            // `Size`, esa linea es un paquete que ANTES se procesaba con el
+            // tamaño equivocado (ver el fix del issue #13).
+            if (Size > 0xFF) {
+                NetLog("NET: C3->C1 decoded encLen=%d -> Size=%d op=%02X  [byte truncado=%d — ANTES se usaba ESTE]",
+                       encLen, Size, HeadCode, (int)Msg[1]);
+            } else {
+                NetLog("NET: C3->C1 decoded encLen=%d -> Size=%d op=%02X",
+                       encLen, Size, HeadCode);
+            }
         } else if (hdr == 0xC1) {
             HeadCode = Msg[2];
             Size     = Msg[1];
@@ -3487,8 +3495,20 @@ void Net_ProcessPacket(void)
                 int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 NetLog("NET:  → 0x12 ViewportPlayer count=%d size=%d hdr=%02X",
                        Msg[3 + hdrOff], Size, Msg[0]);
-                if (!DAT_07abf5d8) {
-                    NetLog("NET:    0x12 SKIP - hero not yet allocated");
+                // 2026-08-25 FIX (reportado: "al entrar desde char-select, si hay
+                // NPCs en la zona no cargan; hay que salir y volver a entrar"):
+                // aca se DESCARTABA el viewport entero si el heroe todavia no
+                // estaba creado. Al entrar al mundo el server manda el viewport
+                // junto con el spawn del heroe, asi que ese `break` tiraba a
+                // todas las entidades de la zona y solo aparecian al reentrar.
+                //
+                // IDA `Combat_PacketDispatch` (0x429690) NO tiene ese guard:
+                // crea las entidades con `CreateCharacter` sin mirar al heroe.
+                // Lo unico que hace falta es el ARRAY de entidades. El filtro de
+                // mas abajo ya tolera `DAT_07abf5d8 == 0` (`heroEnt ? ... :
+                // g_HeroKey`) y el bloque del heroe tiene su propio `if (hero)`.
+                if (!DAT_07abf5d0) {
+                    NetLog("NET:    0x12 SKIP - entity array no alocado");
                     break;
                 }
                 int count = Msg[3 + hdrOff];
