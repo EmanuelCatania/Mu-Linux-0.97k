@@ -2390,9 +2390,17 @@ int     DAT_0055a3fc  = 0;   // auth mode param B
 // ── SecondPassword Screen5/6/7 additional globals ────────────────────────────
 DWORD   DAT_07eaa120  = 0;   // SecondPassword_Screen5 mode
 char    DAT_07eaa0dc  = 0;   // SecondPassword selected grid index
-char    DAT_07ea51ec  = 0;   // PIN entry char prefix buffer base
-DWORD   DAT_07ea51f0  = 0;   // PIN entry packed data
-char    DAT_07ea51f5  = 0;   // PIN grid selection buffer base
+// 2026-08-25: NO son "PIN entry" — esa etiqueta mentia. Son los buffers del
+// editor de creacion de GUILD, y estaban declarados como escalares de 1-4 bytes
+// mientras el codigo los recorre como arrays:
+//   RenderGuildCreation lee `mark[gx + gy*8]` con gx,gy en 0..7 -> 64 bytes
+//   sobre un `char`, o sea 63 bytes de desborde en CADA frame del editor.
+// Layout del binario (contiguo, verificado contra el vecino DAT_07ea5240 que
+// deja 75 bytes de espacio):
+//   0x7EA51EC  GuildName[8]   (IDA lo lee como 2 DWORDs: +0 y +4)
+//   0x7EA51F5  GuildMark[64]  (1 byte por celda de la grilla 8x8)
+char    DAT_07ea51ec[8]  = {0};   // GuildName
+char    DAT_07ea51f5[64] = {0};   // GuildMark (grilla 8x8)
 float  _DAT_00552c20  = 425.0f; // Screen5 button X upper bound
 float  _DAT_00552c1c  = 33.0f; // Screen5 button height
 float  _DAT_00552c28  = 210.0f; // Screen5 button Y base

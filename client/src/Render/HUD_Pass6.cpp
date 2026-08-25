@@ -79,7 +79,7 @@ extern "C" void   __cdecl CreateGuildMark(int nMarkIndex, bool blend);
 extern "C" int    InputTextWidth;
 #define dword_7E91388 DAT_07e91388
 extern "C" DWORD DAT_07e91388;
-extern "C" char   DAT_07ea51f5;
+extern "C" char   DAT_07ea51f5[64];
 extern "C" char   DAT_07eaa0dc;
 // ShopOpened/WarehouseOpened/ChaosMixOpened/EventWindowOpened/PartyOpened/
 // GuildOpened/GuildCreatorOpened now #defined in globals.h to DAT_07eaa11x.

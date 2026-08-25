@@ -2266,9 +2266,12 @@ extern int     DAT_0055a3fc;   // auth mode param B
 // ── SecondPassword Screen5/6/7 additional globals ────────────────────────────
 extern DWORD   DAT_07eaa120;   // SecondPassword_Screen5 mode (0=normal, 1=equip-select)
 extern char    DAT_07eaa0dc;   // SecondPassword selected grid index (byte)
-extern char    DAT_07ea51ec;   // PIN entry char prefix buffer (6 bytes, null-term)
-extern DWORD   DAT_07ea51f0;   // PIN entry packed data
-extern char    DAT_07ea51f5;   // PIN grid selection buffer base (multi-byte, stride 1)
+// 2026-08-25: buffers del editor de creacion de GUILD (la etiqueta "PIN entry"
+// era falsa). Estaban como escalares y el render los recorre como arrays —
+// 64 bytes de mark sobre un `char`. Ver la nota en globals.cpp.
+extern char    DAT_07ea51ec[8];    // GuildName
+#define DAT_07ea51f0 (*(DWORD*)&DAT_07ea51ec[4])   // 2do DWORD del nombre
+extern char    DAT_07ea51f5[64];   // GuildMark (grilla 8x8, 1 byte por celda)
 extern float  _DAT_00552c20;   // Screen5 button X upper bound
 extern float  _DAT_00552c1c;   // Screen5 button height
 extern float  _DAT_00552c28;   // Screen5 button Y base
