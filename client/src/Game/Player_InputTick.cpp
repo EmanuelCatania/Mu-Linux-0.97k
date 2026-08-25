@@ -379,7 +379,26 @@ static void HUD_HotkeyTick(void)
     }
     if (kP) {
         if (DAT_07eaa115) DAT_07eaa115 = 0;
-        else { CloseNpcWindowsIfAny(); DAT_07eaa115 = 1; DAT_07eaa114 = 0; DAT_07eaa124 = 0; /* close Guild */ }
+        else {
+            CloseNpcWindowsIfAny(); DAT_07eaa115 = 1; DAT_07eaa114 = 0; DAT_07eaa124 = 0; /* close Guild */
+            // 2026-08-25 FIX (el panel de party se abria con los datos en 0):
+            // la tecla P solo hacia el toggle LOCAL — nunca se pedia la lista,
+            // asi que el 0x42 no llegaba y `Party[]`/`PartyNumber` quedaban con
+            // lo que hubiera (normalmente ceros).
+            //
+            // El envio existia en `Chat_InputTick` (seccion 13 de IDA), pero esa
+            // seccion se removio entera el 2026-05-08 al arreglar el
+            // doble-toggle de C/V — y el toggle que quedo aca nunca lo repuso.
+            // Al guild le paso lo mismo y se corrigio el 2026-08-15; el party
+            // quedo pendiente.
+            //
+            // Per IDA: limpiar PartyNumber y pedir la lista. El 0x42 pide
+            // Encrypt=0 (indice 66), o sea C1 plano — mandarlo como C3 haria que
+            // el server cierre la conexion, igual que pasaba con el guild.
+            PartyNumber = 0;
+            const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
+            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+        }
     }
     if (kV || kI) {
         // 2026-07-27 FIX: el gate era HUD_IsInventoryFamilyActive(), que incluye

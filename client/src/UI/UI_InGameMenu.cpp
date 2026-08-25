@@ -896,11 +896,18 @@ void __cdecl FUN_00514310(void)
         const WORD partyKey = (WORD)DAT_07eaa0e4;
         BYTE pkt[6] = { 0xC1, 0x06, 0x41, (BYTE)(accept ? 1 : 0),
                         (BYTE)(partyKey >> 8), (BYTE)partyKey };
-        if (accept) {
-            Net_SendSmallPacket(pkt, sizeof(pkt));
-        } else if (DAT_055ca168 != 0xFFFFFFFF) {
-            ::send(DAT_055ca168, (const char*)pkt, sizeof(pkt), 0);
-        }
+        // 2026-08-25 FIX: la rama de RECHAZO mandaba el paquete con `::send`
+        // crudo — C1 sin encriptar — cuando el 0x41 pide Encrypt=1
+        // (HackPacketCheck.txt indice 65). El server lo rechaza con "Packet
+        // encryption error" y CIERRA la conexion, o sea rechazar una invitacion
+        // de party desconectaba. Aceptar ya iba bien por C3.
+        //
+        //   struct PMSG_PARTY_REQUEST_RESULT_RECV {   // Party.h:19
+        //       PBMSG_HEAD header;   // C1 : 6 : 0x41
+        //       BYTE result;         // +3
+        //       BYTE index[2];       // +4, +5  (index[0] = byte ALTO)
+        //   };
+        Net_SendSmallPacket(pkt, sizeof(pkt));
 
         DAT_083a4124 = 0;
         DAT_083a7c24 = DAT_083a7c28;
