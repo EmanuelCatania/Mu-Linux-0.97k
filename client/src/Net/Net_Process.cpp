@@ -1441,7 +1441,7 @@ extern "C" {
     int  g_CharListCacheLen   = 0;
 }
 
-static void Recv_CharList(const BYTE* Msg)
+static void Recv_CharList(const BYTE* Msg, int Size)
 {
     const int CHAR_STRIDE  = 0x394;
     const int CHAR_SLOT_AT = 0x2D2;       // entity+0x2D2 = "selected" flag
@@ -1449,10 +1449,17 @@ static void Recv_CharList(const BYTE* Msg)
 
     // 2026-05-05: cache para replay en JoinChar
     {
-        int len = (int)Msg[1];
-        if (len > 0 && len <= 255) {
-            memcpy(g_CharListCache, Msg, len);
-            g_CharListCacheLen = len;
+        // 2026-08-25 (issue #13): esto releia `Msg[1]`, el byte de tamaño del
+        // frame — que para un paquete re-enmarcado desde C3/C4 de mas de 255
+        // bytes esta truncado. Ahora usa el `Size` real que calcula el
+        // dispatcher. El clamp es contra el tamaño del cache, no contra 255.
+        if (Size > 0 && Size <= (int)sizeof(g_CharListCache)) {
+            memcpy(g_CharListCache, Msg, Size);
+            g_CharListCacheLen = Size;
+        } else if (Size > (int)sizeof(g_CharListCache)) {
+            NetLog("NET: F3/00 char-list %d bytes > cache %d — no se cachea",
+                   Size, (int)sizeof(g_CharListCache));
+            g_CharListCacheLen = 0;
         }
     }
 
@@ -1529,7 +1536,12 @@ static void Recv_CharList(const BYTE* Msg)
 // desde JoinChar (replay de la char-list desde el cache).
 extern "C" void Recv_CharListReplay(const BYTE* Msg)
 {
-    Recv_CharList(Msg);
+    // El replay viene del cache, cuyo largo real guardamos aparte (el byte
+    // `Msg[1]` puede estar truncado — ver el fix del issue #13).
+    const int len = (Msg == g_CharListCache && g_CharListCacheLen > 0)
+                        ? g_CharListCacheLen
+                        : (int)Msg[1];
+    Recv_CharList(Msg, len);
 }
 
 // ---------------------------------------------------------------------------
@@ -2595,14 +2607,38 @@ void Net_ProcessPacket(void)
             // Corre el payload 1 byte para hacer lugar al byte plainLen
             BYTE plain[0x800];
             plain[0] = 0xC1;
+            // 2026-08-25 FIX (issue #13): `plain[1]` es UN byte, asi que para un paquete
+            // de mas de 255 el tamaño se trunca. Medido con el F3/10 del inventario:
+            // 306 bytes reales reportaban Size=49 (= 306 & 0xFF).
+            //
+            // No rompia el inventario porque ese parser itera por `count` y los DATOS
+            // del buffer si estan completos — solo el byte de tamaño se pierde. Pero
+            // cualquier handler que valide o recorra por `Size` cortaba mal.
+            //
+            // El arreglo es llevar el tamaño APARTE del buffer: `Size` es un int, se
+            // toma del valor real y NO se relee de `Msg[1]`. El byte de `plain[1]`
+            // queda truncado igual que antes, pero ya no lo consume nadie.
+            //
+            // Se descarto re-enmarcar como C2 (que es lo que haria el original para un
+            // paquete largo): eso correria +1 todos los offsets del cuerpo y obligaria
+            // a revisar cada handler que hoy asume el layout C1. Con el tamaño aparte
+            // el layout no cambia y el fix es cerrado.
             plain[1] = (BYTE)(bodyLen + 2);
             memcpy(plain + 2, scratch + 1, bodyLen);
             memcpy(Msg, plain, bodyLen + 2);
             hdr      = 0xC1;
             HeadCode = Msg[2];
-            Size     = Msg[1];
-            NetLog("NET: C3->C1 decoded encLen=%d → plainLen=%d op=%02X",
-                   encLen, bodyLen + 2, HeadCode);
+            Size     = bodyLen + 2;   // real, no `Msg[1]` (que puede estar truncado)
+            // El byte truncado se loguea al lado a proposito: cuando difiere de
+            // `Size`, esa linea es un paquete que ANTES se procesaba con el
+            // tamaño equivocado (ver el fix del issue #13).
+            if (Size > 0xFF) {
+                NetLog("NET: C3->C1 decoded encLen=%d -> Size=%d op=%02X  [byte truncado=%d — ANTES se usaba ESTE]",
+                       encLen, Size, HeadCode, (int)Msg[1]);
+            } else {
+                NetLog("NET: C3->C1 decoded encLen=%d -> Size=%d op=%02X",
+                       encLen, Size, HeadCode);
+            }
         } else if (hdr == 0xC1) {
             HeadCode = Msg[2];
             Size     = Msg[1];
@@ -2646,7 +2682,7 @@ void Net_ProcessPacket(void)
                 switch (sub) {
                     case 0x00:
                         NetLog("NET:  → F3/00 CharList count=%d", Msg[4]);
-                        Recv_CharList(Msg);
+                        Recv_CharList(Msg, Size);
                         break;
                     case 0x01:
                         NetLog("NET:  → F3/01 CreateChar result=%d", Msg[4]);
@@ -3459,12 +3495,38 @@ void Net_ProcessPacket(void)
                 int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 NetLog("NET:  → 0x12 ViewportPlayer count=%d size=%d hdr=%02X",
                        Msg[3 + hdrOff], Size, Msg[0]);
-                if (!DAT_07abf5d8) {
-                    NetLog("NET:    0x12 SKIP - hero not yet allocated");
+                // 2026-08-25 FIX (reportado: "al entrar desde char-select, si hay
+                // NPCs en la zona no cargan; hay que salir y volver a entrar"):
+                // aca se DESCARTABA el viewport entero si el heroe todavia no
+                // estaba creado. Al entrar al mundo el server manda el viewport
+                // junto con el spawn del heroe, asi que ese `break` tiraba a
+                // todas las entidades de la zona y solo aparecian al reentrar.
+                //
+                // IDA `Combat_PacketDispatch` (0x429690) NO tiene ese guard:
+                // crea las entidades con `CreateCharacter` sin mirar al heroe.
+                // Lo unico que hace falta es el ARRAY de entidades. El filtro de
+                // mas abajo ya tolera `DAT_07abf5d8 == 0` (`heroEnt ? ... :
+                // g_HeroKey`) y el bloque del heroe tiene su propio `if (hero)`.
+                if (!DAT_07abf5d0) {
+                    NetLog("NET:    0x12 SKIP - entity array no alocado");
                     break;
                 }
                 int count = Msg[3 + hdrOff];
-                if (count <= 0 || count > 30) {
+                // 2026-08-25 FIX (los monstruos no cargaban al entrar a un mapa poblado):
+                // el limite era `count > 30`, una invencion del port. Medido: el viewport
+                // inicial de Lost Tower llega con `count=41 size=497` y se descartaba
+                // ENTERO —"0x13 SKIP - count=41 out of range"—, asi que no se creaba
+                // ninguna de las 41 entidades. Se veian los "Miss" de sus ataques y los
+                // `0x18`/`0x10` de sus movimientos con "key not found", pero no habia nada
+                // dibujado; solo aparecian los pocos que llegaban despues en viewports
+                // chicos (count<=30).
+                //
+                // IDA (`ReceiveCreateMonsterViewport` 0x42A230, `Combat_PacketDispatch`
+                // 0x429690) NO tiene limite: itera `if (ReceiveBuffer[4]) do {...} while`
+                // por el count crudo, que es un BYTE. El tope real es 255 y la cota util
+                // es la validacion por `Size` que ya esta abajo — que recien ahora es
+                // confiable, con el fix del tamaño truncado de este mismo PR.
+                if (count <= 0 || count > 255) {
                     NetLog("NET:    0x12 SKIP - count=%d out of range", count);
                     break;
                 }
@@ -3664,7 +3726,7 @@ void Net_ProcessPacket(void)
                 const int count = Msg[3 + hdrOff];
                 const int entryStart = 4 + hdrOff;
                 constexpr int entryStride = 32;
-                if (count <= 0 || count > 30 || entryStart + count * entryStride > Size) {
+                if (count <= 0 || count > 255 || entryStart + count * entryStride > Size) {
                     NetLog("NET:    0x45 SKIP count=%d size=%d", count, Size);
                     break;
                 }
@@ -3721,12 +3783,23 @@ void Net_ProcessPacket(void)
                 int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 NetLog("NET:  → 0x13 ViewportMonster count=%d size=%d hdr=%02X",
                        Msg[3 + hdrOff], Size, Msg[0]);
-                if (!DAT_07abf5d8) {
-                    NetLog("NET:    0x13 SKIP - hero not allocated");
+                // 2026-08-25 FIX (mismo bug que el 0x12, reportado con los
+                // monstruos): se descartaba el viewport entero si el heroe aun
+                // no estaba creado. Al entrar al mapa el server manda el
+                // viewport junto con el spawn del heroe, asi que los monstruos
+                // de la zona no se creaban nunca — se veian los "Miss" de sus
+                // ataques pero no habia entidad que dibujar, y solo aparecian
+                // al salir y volver a entrar.
+                //
+                // IDA `ReceiveCreateMonsterViewport` (0x42A230) no tiene ese
+                // guard, y este handler no usa `DAT_07abf5d8` en ningun lado de
+                // su cuerpo: lo unico que necesita es el ARRAY de entidades.
+                if (!DAT_07abf5d0) {
+                    NetLog("NET:    0x13 SKIP - entity array no alocado");
                     break;
                 }
                 int count = Msg[3 + hdrOff];
-                if (count <= 0 || count > 30) {
+                if (count <= 0 || count > 255) {
                     NetLog("NET:    0x13 SKIP - count=%d out of range", count);
                     break;
                 }
@@ -4205,10 +4278,12 @@ void Net_ProcessPacket(void)
                 const int countOff = 3 + hdrOff;
                 const int entryStart = 4 + hdrOff;
                 const int entryStride = 22;
-                if (Size <= countOff || !DAT_07abf5d8) break;
+                // 2026-08-25: idem 0x12/0x13 — el `!DAT_07abf5d8` descartaba el
+                // paquete al entrar al mapa. Este handler tampoco usa el heroe.
+                if (Size <= countOff || !DAT_07abf5d0) break;
 
                 const int count = Msg[countOff];
-                if (count <= 0 || count > 30 ||
+                if (count <= 0 || count > 255 ||
                     entryStart + count * entryStride > Size) {
                     NetLog("NET:    0x1F SKIP - malformed summon viewport count=%d size=%d",
                            count, Size);
