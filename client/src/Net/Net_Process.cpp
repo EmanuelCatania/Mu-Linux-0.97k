@@ -3769,8 +3769,19 @@ void Net_ProcessPacket(void)
                 int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 NetLog("NET:  → 0x13 ViewportMonster count=%d size=%d hdr=%02X",
                        Msg[3 + hdrOff], Size, Msg[0]);
-                if (!DAT_07abf5d8) {
-                    NetLog("NET:    0x13 SKIP - hero not allocated");
+                // 2026-08-25 FIX (mismo bug que el 0x12, reportado con los
+                // monstruos): se descartaba el viewport entero si el heroe aun
+                // no estaba creado. Al entrar al mapa el server manda el
+                // viewport junto con el spawn del heroe, asi que los monstruos
+                // de la zona no se creaban nunca — se veian los "Miss" de sus
+                // ataques pero no habia entidad que dibujar, y solo aparecian
+                // al salir y volver a entrar.
+                //
+                // IDA `ReceiveCreateMonsterViewport` (0x42A230) no tiene ese
+                // guard, y este handler no usa `DAT_07abf5d8` en ningun lado de
+                // su cuerpo: lo unico que necesita es el ARRAY de entidades.
+                if (!DAT_07abf5d0) {
+                    NetLog("NET:    0x13 SKIP - entity array no alocado");
                     break;
                 }
                 int count = Msg[3 + hdrOff];
@@ -4253,7 +4264,9 @@ void Net_ProcessPacket(void)
                 const int countOff = 3 + hdrOff;
                 const int entryStart = 4 + hdrOff;
                 const int entryStride = 22;
-                if (Size <= countOff || !DAT_07abf5d8) break;
+                // 2026-08-25: idem 0x12/0x13 — el `!DAT_07abf5d8` descartaba el
+                // paquete al entrar al mapa. Este handler tampoco usa el heroe.
+                if (Size <= countOff || !DAT_07abf5d0) break;
 
                 const int count = Msg[countOff];
                 if (count <= 0 || count > 30 ||
