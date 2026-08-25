@@ -3117,10 +3117,22 @@ static inline void mc_AngleVectorOffset(float *origin7, float ax, float ay, floa
     out[2] += origin7[6];
 }
 
-static inline void mc_DeleteJoint(int /*Type*/, DWORD /*Owner*/, int /*flag*/)
+// 2026-08-24 FIX (Soul Barrier: arcos gruesos y "dobles"): esto era un NO-OP,
+// con el comentario "no-op until joint pool wired" — pero el pool esta cableado
+// desde 2026-05-08, cuando se porto `DeleteJoint` (0x0046FE00). Quedo el stub
+// local y `MoveCharacter` siguio llamandolo, o sea el borrado nunca ocurria.
+//
+// Efecto medido: el skill 16 spawnea 5 joints 266 con Scale 20 y ANTES hace
+// `DeleteJoint(266, Owner, 0)` para sacar los que ya hubiera. Los de Scale 50
+// que deja `InsertBuffPhysicalEffect` (0x43BDE0, el camino de viewport cuando la
+// entidad aparece con el buff ya activo) nunca se borraban, asi que convivian
+// los dos grupos: censo del pool `quads20=3190 quads50=3190`, exactamente 50/50,
+// ~10 joints donde el original tiene 5. De ahi que los arcos se vieran mas
+// gruesos y cargados que en el cliente original.
+extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType);
+static inline void mc_DeleteJoint(int Type, DWORD Owner, int SubType)
 {
-    // 0x0046DCC0 — joint pool scan + clear; no-op until joint pool wired.
-    // Skipped per "render renderers" gating policy (round 7).
+    DeleteJoint(Type, Owner, SubType);
 }
 
 static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
