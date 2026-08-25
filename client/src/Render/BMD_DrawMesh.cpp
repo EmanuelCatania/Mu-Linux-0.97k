@@ -555,20 +555,29 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
     // confiamos en el glColor que cada rama del switch ya dejó puesto.
     // El "rectangulo negro" que intentaba prevenir este bloque se resolvió
     // correctamente vía el fix integer del blend-mesh + FUN_004fdc00 ramp.
-    // Hada del login (modelo 816 = Helper1) — SOLO en la escena de server-select
-    // (g_GameState==2): forzar blend aditivo (glow). La textura del hada
-    // (fairy.jpg/fairy2.jpg) NO lleva marcador TextureScript `_R`, así que el
-    // parse de BMD_Load la deja como mesh normal → RENDER_TEXTURE opaco → el fondo
-    // negro de la textura de glow se dibuja como recuadro negro.
-    // GATE: el hada 816 orbita al char TANTO en server-select (state 2) COMO en
-    // char-select (state 4) — en ambas debe glowear aditivo. El gate previo solo
-    // cubría state 2 → en char-select el mesh quedaba opaco = cuadro negro
-    // (2026-07-18, confirmado por diag FBLK: mismo estado GL salvo el func heredado;
-    // el mesh del hada nunca forzaba aditivo en state 4). NO se incluye state 5
-    // (in-world): ahí el modelo 816 puede renderizarse como pet-item de inventario
-    // (opaco). Char-select no tiene inventario, así que forzar aditivo es seguro.
-    if (bmd_obj == (void*)(DAT_05828d58 + 816 * 0xbc) &&
-        (DAT_005615c0 == 2 || DAT_005615c0 == 4)) {
+    // Helper1 (modelo 816) — el "hada"/Guardian Angel. Su BMD tiene 2 meshes:
+    //   mesh 0 = fairy.jpg   (el cuerpo, 46 triangulos)
+    //   mesh 1 = fairy2.jpg  (el glow, 4 triangulos = 2 quads)
+    // Ninguna de las dos lleva el marcador `_R` en el nombre (verificado leyendo
+    // Helper01.bmd, que es version 10 y NO esta encriptado), asi que
+    // `TextureScriptParsing::parsingTScript` (0x40C190 — reconoce R/H/S/N tras
+    // un `_`) no las marca como bright y el mesh del glow queda RENDER_TEXTURE
+    // opaco: el fondo negro del JPG se dibuja como un recuadro negro.
+    //
+    // 2026-08-24: antes esto se gateaba por ESCENA (`g_GameState == 2 || == 4`),
+    // dejando in-world afuera a proposito "porque ahi el 816 puede renderizarse
+    // como pet-item de inventario (opaco)". Consecuencia: con el Guardian Angel
+    // equipado, en el mundo se veia el recuadro negro (reportado sobre el pet de
+    // otro jugador). El gate correcto no es la escena sino la MESH: solo el glow
+    // (mesh 1) necesita el aditivo; el cuerpo (mesh 0) debe seguir opaco. Asi
+    // vale igual en el mundo y en el inventario, donde el glow tambien es glow.
+    //
+    // DESVIACION documentada: no encontre en IDA el mecanismo por el que el
+    // original decide este blend — no sale del asset (el BMD v10 no tiene campo
+    // de RenderType; se deriva del nombre de textura) ni de `RenderLinkObject`
+    // (0x455430), que no toca BlendMesh. Queda como forzado explicito, igual que
+    // el gate por escena que reemplaza.
+    if (bmd_obj == (void*)(DAT_05828d58 + 816 * 0xbc) && meshIndex == 1) {
         EnableAlphaBlend();
     }
 

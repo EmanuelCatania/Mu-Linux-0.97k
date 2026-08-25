@@ -3509,7 +3509,15 @@ void Net_ProcessPacket(void)
                     // como eco al personaje local. El original mantiene al Hero como único objeto
                     // para HeroKey; pasarlo por CreateCharacter crea
                     // una segunda copia del jugador, renderizada por separado.
-                    if (entityId == g_HeroKey) {
+                    // 2026-08-24 (issue #14): el filtro comparaba SOLO contra `g_HeroKey`,
+                    // un global del port que se fija una vez en el JoinServer. Si alguna vez
+                    // quedara desfasado del Key real de la entidad, la entrada del propio
+                    // heroe no entraria aca: `CreateCharacter` reusaria su slot por Key y lo
+                    // re-inicializaria SIN pasar por la restauracion de abajo (se perderia,
+                    // entre otras cosas, el byte de clase +0x1BC). Comparamos contra los dos.
+                    BYTE* heroEnt = (BYTE*)(uintptr_t)DAT_07abf5d8;
+                    const WORD heroKeyReal = heroEnt ? *(WORD*)(heroEnt + 0x1DC) : g_HeroKey;
+                    if (entityId == g_HeroKey || entityId == heroKeyReal) {
                         BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
                         if (hero) {
                             *(int*)(hero + 0x388) = x;
@@ -3548,23 +3556,36 @@ void Net_ProcessPacket(void)
                                (unsigned)entityId);
                         continue;
                     }
-                    // CreateCharacter (0045BFA0) first reuses a matching key,
-                    // y después cae a un slot inactivo. Mantenemos ese orden:
-                    // packets may refresh an already visible player.
-                    int spawnSlot = -1;
-                    for (int s = 0; s < 400; ++s) {
-                        BYTE* slot = basePtr + s * 0x394;
-                        if (slot == (BYTE*)DAT_07abf5d8) continue;
-                        if (slot[0] != 0 && *(WORD*)(slot + 476) == entityId) {
-                            spawnSlot = s;
-                            break;
-                        }
-                        if (slot[0] == 0 && spawnSlot < 0) spawnSlot = s;
-                    }
-                    if (spawnSlot >= 0) {
-                        BYTE* slot = basePtr + spawnSlot * 0x394;
-                        float rot = ((float)dir - 1.0f) * 45.0f;
-                        FUN_0045adc0(slot, 390, x, y, rot);
+                    // 2026-08-24 (issue #14, deuda): aca habia un scan de
+                    // slots propio, o sea una SEGUNDA implementacion de
+                    // CreateCharacter, y difería del original en dos puntos:
+                    //
+                    //  1. `if (slot == (BYTE*)DAT_07abf5d8) continue;` — excluia
+                    //     el slot del heroe TAMBIEN del match por Key. IDA
+                    //     (`Combat_PacketDispatch` L86) llama
+                    //     `CreateCharacter(key, 390, x, y, 0.0)` para TODAS las
+                    //     entradas, sin excluir a nadie: si llega el propio
+                    //     heroe se reusa SU slot. Con la exclusion, cualquier
+                    //     entrada que trajera su Key —y que el filtro de
+                    //     `g_HeroKey` de mas arriba no atrapara— caia al primer
+                    //     slot libre y clonaba al jugador.
+                    //  2. No llamaba `DeleteCloth` antes de reusar un slot
+                    //     inactivo, asi que la capa (cloth) de la entidad
+                    //     anterior quedaba colgada.
+                    //
+                    // `FUN_0045bfa0` ya hace las dos cosas y es el port fiel
+                    // (Monster.cpp:526). Delegar en el elimina la divergencia:
+                    // una sola implementacion de "buscar slot por Key, si no
+                    // reusar uno inactivo".
+                    //
+                    // Su centinela de pool lleno (`base + 366400` = slot 400)
+                    // cae dentro del buffer: WinMain aloca 0x764D4 = 529 slots
+                    // y el offset random inicial se come a lo sumo 127, o sea
+                    // quedan 402 utiles.
+                    float rot = ((float)dir - 1.0f) * 45.0f;
+                    BYTE* slot = (BYTE*)(uintptr_t)FUN_0045bfa0(entityId, 390, x, y, rot);
+                    int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / 0x394);
+                    if (slot) {
                         *(WORD*)(slot + 0x1dc) = entityId;
                         // Combat_PacketDispatch (00429690) applies the packed
                         // la clase/estado del jugador y después ChangeCharacterExt con
