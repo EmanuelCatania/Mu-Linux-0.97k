@@ -3512,7 +3512,21 @@ void Net_ProcessPacket(void)
                     break;
                 }
                 int count = Msg[3 + hdrOff];
-                if (count <= 0 || count > 30) {
+                // 2026-08-25 FIX (los monstruos no cargaban al entrar a un mapa poblado):
+                // el limite era `count > 30`, una invencion del port. Medido: el viewport
+                // inicial de Lost Tower llega con `count=41 size=497` y se descartaba
+                // ENTERO —"0x13 SKIP - count=41 out of range"—, asi que no se creaba
+                // ninguna de las 41 entidades. Se veian los "Miss" de sus ataques y los
+                // `0x18`/`0x10` de sus movimientos con "key not found", pero no habia nada
+                // dibujado; solo aparecian los pocos que llegaban despues en viewports
+                // chicos (count<=30).
+                //
+                // IDA (`ReceiveCreateMonsterViewport` 0x42A230, `Combat_PacketDispatch`
+                // 0x429690) NO tiene limite: itera `if (ReceiveBuffer[4]) do {...} while`
+                // por el count crudo, que es un BYTE. El tope real es 255 y la cota util
+                // es la validacion por `Size` que ya esta abajo — que recien ahora es
+                // confiable, con el fix del tamaño truncado de este mismo PR.
+                if (count <= 0 || count > 255) {
                     NetLog("NET:    0x12 SKIP - count=%d out of range", count);
                     break;
                 }
@@ -3712,7 +3726,7 @@ void Net_ProcessPacket(void)
                 const int count = Msg[3 + hdrOff];
                 const int entryStart = 4 + hdrOff;
                 constexpr int entryStride = 32;
-                if (count <= 0 || count > 30 || entryStart + count * entryStride > Size) {
+                if (count <= 0 || count > 255 || entryStart + count * entryStride > Size) {
                     NetLog("NET:    0x45 SKIP count=%d size=%d", count, Size);
                     break;
                 }
@@ -3785,7 +3799,7 @@ void Net_ProcessPacket(void)
                     break;
                 }
                 int count = Msg[3 + hdrOff];
-                if (count <= 0 || count > 30) {
+                if (count <= 0 || count > 255) {
                     NetLog("NET:    0x13 SKIP - count=%d out of range", count);
                     break;
                 }
@@ -4269,7 +4283,7 @@ void Net_ProcessPacket(void)
                 if (Size <= countOff || !DAT_07abf5d0) break;
 
                 const int count = Msg[countOff];
-                if (count <= 0 || count > 30 ||
+                if (count <= 0 || count > 255 ||
                     entryStart + count * entryStride > Size) {
                     NetLog("NET:    0x1F SKIP - malformed summon viewport count=%d size=%d",
                            count, Size);
