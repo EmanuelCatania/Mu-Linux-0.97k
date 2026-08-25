@@ -1166,10 +1166,35 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         return;
     }
 
-    // Attack.c case 16 has no self-cast path: it returns unless the selected
-    // el personaje es un miembro de party elegible. Esto también coincide con lo que hace
-    // party-number validation in SkillManaShield.
+    // 2026-08-24 FIX (Soul Barrier no se podia castear sobre uno mismo):
+    // aca habia un early-return inventado —
+    //     if (iType == 16 && SelectedCharacter == -1) return;
+    // con el comentario "Attack.c case 16 has no self-cast path". Es falso.
+    // IDA (0x49CBF0 L7134-7140) hace lo contrario: SIN target no corta, sino
+    //     if ( SelectedCharacter != -1 ) MovementSkillTarget = SelectedCharacter;
+    //     else                           MovementSkillTarget = 0;
+    // y sigue al chequeo de rango y al envio. El gate de party de abajo SI es
+    // fiel, pero esta dentro de `if (SelectedCharacter != -1)`, o sea solo
+    // aplica cuando apuntas a alguien. Sin target el skill se castea sobre
+    // uno mismo — confirmado contra el cliente original, y no es algo que
+    // agregue el DLL.
     if (iType == 16 && DAT_00559c50 == -1) {
+        // El target del self-cast es el propio heroe.
+        //
+        // DESVIACION documentada: IDA pone `MovementSkillTarget = 0` (L7138), pero
+        // nuestro `UseSkillWizard_stub` usa ese indice como el target REAL —
+        // `CharactersClient[MovementSkillTarget]` — y corta con
+        // `if (targetIdx < 0 || targetIdx >= 400) return;`. Con 0 apuntaria a una
+        // entidad cualquiera del slot 0; con -1 (lo que se probo primero) el
+        // UseSkillWizard salia sin hacer nada — medido: `WIZ ENTER skill=16
+        // target=-1` y ninguna animacion. Pasamos el indice del heroe, que es lo
+        // que el skill hace igual: castearse sobre uno mismo.
+        int heroIdx = (DAT_07abf5d8 && CharactersClient)
+            ? (int)(((uintptr_t)DAT_07abf5d8 - (uintptr_t)CharactersClient) / 916)
+            : -1;
+        if (heroIdx < 0 || heroIdx >= 400) return;
+        Combat_SeedRuntimeState97k(iType, heroIdx);
+        UseSkillWizard_stub((DWORD)entity, (DWORD)entity);
         return;
     }
 

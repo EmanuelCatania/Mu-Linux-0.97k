@@ -2521,10 +2521,49 @@ void __cdecl FUN_0045c130(int c) {
         short v = *(short*)(v7 + srcOff);
         *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)(v + 400);
     };
+    // 2026-08-24: valor previo del helper, para detectar el CAMBIO abajo.
+    const short prevHelper = *(short*)(c + 696);
     writeSlot(0,   624);
     writeSlot(68,  648);
     writeSlot(476, 672);
     writeSlot(544, 696);
+
+    // ── Spawn/borrado del pet del HEROE (Guardian Angel y monturas) ─────────
+    // El pet NO se dibuja desde RenderCharacter: `ChangeCharacterExt`
+    // (0x45C8C0 L73-88) lo crea como entidad del pool de bugs —
+    //     *(WORD*)(c + 696) = Type + 816;
+    //     CreateBug(816 | 195 | 267, c + 16, c, 0, 0);
+    // — y de ahi lo tickea MoveBugs y lo dibuja RenderBugs. Por eso
+    // RenderCharacter solo tiene rama para el Imp (817) y ninguna para el 816.
+    //
+    // Pero `ChangeCharacterExt` se llama SOLO con el CharSet que llega por red:
+    // char-select (ReceiveCharacterList L68), otros jugadores del viewport
+    // (Combat_PacketDispatch L317) y el F3/13 (ProtocolCore L1629). El equipo
+    // del HEROE in-world no viene por ahi sino de CharacterMachine, o sea pasa
+    // por esta funcion — que setea el tipo pero nunca creaba el bug. Medido con
+    // sonda: todos los `CreateBug type=816` salian con `isHero=0`, y el pet
+    // propio no se dibujaba nunca (el de otros jugadores si).
+    //
+    // DESVIACION documentada: IDA no crea el bug en SetCharacterClass. No
+    // encontre el camino por el que el original se lo da al heroe; puede estar
+    // en el arrastre del pool desde char-select. Replicamos aca el par
+    // DeleteBug+CreateBug de ChangeCharacterExt, gateado al CAMBIO de tipo para
+    // no re-spawnear en cada llamada (esta funcion corre al cambiar el equipo,
+    // no por frame).
+    {
+        const short newHelper = *(short*)(c + 696);
+        if (newHelper != prevHelper) {
+            FUN_004fffa0((DWORD)(uintptr_t)c);          // DeleteBug
+            int bugType = 0;
+            if      (newHelper == 816) bugType = 816;   // Guardian Angel
+            else if (newHelper == 818) bugType = 195;   // Uniria
+            else if (newHelper == 819) bugType = 267;   // Dinorant
+            // 817 (Imp) NO lleva bug: lo dibuja RenderLinkObject desde
+            // Render_PlayerHelper, fiel a RenderCharacter L1267-1287.
+            if (bugType)
+                FUN_004fffd0(bugType, (void*)(c + 16), (void*)(uintptr_t)c, 0);
+        }
+    }
 
     *(unsigned char*)(c + 626) = (unsigned char)((*(int*)(v7 + 4)   >> 3) & 0xF);
     *(unsigned char*)(c + 650) = (unsigned char)((*(int*)(v7 + 72)  >> 3) & 0xF);
@@ -3078,10 +3117,22 @@ static inline void mc_AngleVectorOffset(float *origin7, float ax, float ay, floa
     out[2] += origin7[6];
 }
 
-static inline void mc_DeleteJoint(int /*Type*/, DWORD /*Owner*/, int /*flag*/)
+// 2026-08-24 FIX (Soul Barrier: arcos gruesos y "dobles"): esto era un NO-OP,
+// con el comentario "no-op until joint pool wired" — pero el pool esta cableado
+// desde 2026-05-08, cuando se porto `DeleteJoint` (0x0046FE00). Quedo el stub
+// local y `MoveCharacter` siguio llamandolo, o sea el borrado nunca ocurria.
+//
+// Efecto medido: el skill 16 spawnea 5 joints 266 con Scale 20 y ANTES hace
+// `DeleteJoint(266, Owner, 0)` para sacar los que ya hubiera. Los de Scale 50
+// que deja `InsertBuffPhysicalEffect` (0x43BDE0, el camino de viewport cuando la
+// entidad aparece con el buff ya activo) nunca se borraban, asi que convivian
+// los dos grupos: censo del pool `quads20=3190 quads50=3190`, exactamente 50/50,
+// ~10 joints donde el original tiene 5. De ahi que los arcos se vieran mas
+// gruesos y cargados que en el cliente original.
+extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType);
+static inline void mc_DeleteJoint(int Type, DWORD Owner, int SubType)
 {
-    // 0x0046DCC0 — joint pool scan + clear; no-op until joint pool wired.
-    // Skipped per "render renderers" gating policy (round 7).
+    DeleteJoint(Type, Owner, SubType);
 }
 
 static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,

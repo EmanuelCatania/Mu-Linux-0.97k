@@ -2269,14 +2269,29 @@ void __cdecl FUN_00443e70(void) {
     int  magicSpeed  = (int)(*(unsigned short*)(ca + 0x44));
 
     float v34 = (float)attackSpeed * _DAT_005524bc;  // = AttackSpeed * 0.004
-    float v39 = (float)magicSpeed  * _DAT_005524bc;  // = MagicSpeed  * 0.004 (unused below)
-    (void)v39;
+    float v39 = (float)magicSpeed  * _DAT_005524bc;  // = MagicSpeed  * 0.004
     float v35 = (float)magicSpeed  * _DAT_005528e0;  // = MagicSpeed  * 0.002
 
-    // v33 / v38 — uninitialized in IDA decompile. Default to 0 so base
-    // animation speeds (0.6, 0.25, etc.) are applied without stat scaling.
-    float v33 = 0.0f;
-    float v38 = 0.0f;
+    // 2026-08-24 FIX (animaciones largas terminaban tarde): aca decia
+    //     float v33 = 0.0f;  float v38 = 0.0f;
+    // con el comentario "uninitialized in IDA decompile", asi que TODA la tabla
+    // de velocidades quedaba en su valor base (0.6, 0.25, 0.30...) sin escalar
+    // por los stats del personaje. Con AttackSpeed alto la diferencia es del
+    // orden del doble: el original terminaba la animacion y el nuestro seguia.
+    //
+    // Que v33/v38 aparezcan sin inicializar es un artefacto de Hex-Rays, no del
+    // binario: `v34` (= AttackSpeed*0.004) y `v39` (= MagicSpeed*0.004) SI se
+    // calculan y despues no se usan para nada, mientras v33/v38 se usan sin
+    // origen. Los slots intermedios (v34/v35/v36) estan declarados BYREF porque
+    // se los pasa al hash-table anti-tamper — o sea el valor real se guarda,
+    // pasa por el encrypt/decrypt y se recupera, y el decompile perdio el
+    // vinculo entre el que se guarda y el que se lee.
+    //
+    // El emparejamiento se confirma por el USO: v33 alimenta todas las anims de
+    // ATAQUE (FIST +0.6, SWORD +0.25, SKILL_SWORD3 +0.27...) y v38 la de
+    // PLAYER_SKILL_ELF1 (+0.25), que es magia.
+    float v33 = v34;   // AttackSpeed * 0.004
+    float v38 = v39;   // MagicSpeed  * 0.004
 
     // Models[Player(390)] base animation table pointer at offset 0x11E18
     // (= 188*390 + 48 = entry +0x30 = animation array ptr).

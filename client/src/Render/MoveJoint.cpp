@@ -473,8 +473,28 @@ LAB_0047036e:
         if ((int)uVar7 < 0) {
             bVar21 = ((uVar7 - 1 | 0xfffffffe) == 0xffffffff);
         }
-        float dc_signed = bVar21 ? local_dc_f : -local_dc_f;
-        iVar13 = float_as_int(dc_signed) + (int)(param_2 * 0xd1e3);
+        // 2026-08-24 FIX (Soul Barrier: el efecto se deformaba y cubria al pj en
+        // vez de orbitar): la semilla era `local_dc_f`, que es el DELTA X
+        // (Position.x - Target.x) — un valor geometrico. IDA (0x470030 L1035-1039)
+        // usa MoveSceneFrame, el contador de frames:
+        //     v49 = LODWORD(v297);                      // v297 = MoveSceneFrame
+        //     if ( !(iIndex % 2) ) v49 = -LODWORD(v297);
+        //     v52 = iIndex + v49 + 53730 * iIndex;
+        // Con el delta X la posicion del joint se calcula a partir de si misma:
+        // realimentacion -> la orbita se abre en cada frame hasta cubrir al pj.
+        // Hex-Rays reusa el slot `v297` varias veces en esta funcion y el port
+        // tomo el valor de otro tramo.
+        //
+        // `LODWORD` sobre un float toma sus BITS: MoveSceneFrame es un contador
+        // entero (DAT_083a7c00, DWORD) que Hex-Rays tipeo float, asi que el valor
+        // correcto es el entero directo — no `float_as_int` de un float negado,
+        // que solo invierte el bit de signo y da otra cosa.
+        //
+        // Ojo el sentido: IDA niega cuando el indice es PAR (`if (!(iIndex % 2))`),
+        // al reves de lo que hacia el port.
+        const int frameSeed = (int)DAT_083a7c00;          // MoveSceneFrame
+        const int dc_signed = bVar21 ? -frameSeed : frameSeed;
+        iVar13 = dc_signed + (int)(param_2 * 0xd1e3);
         local_a8[2] = 0.1113f;
         iVar16 = *(int *)(param_1 + 8);
         float fFreq  = _DAT_00552a9c;
