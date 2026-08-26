@@ -201,9 +201,9 @@ DWORD    DAT_005590ac  = 1;
 // Valores LEÍDOS DEL BINARIO en 0x5590B0 (12 bytes: 00 80 93 43 | 00 80 d0 43 |
 // 00 00 90 41) → 295.0f, 417.0f, 18.0f.  Los usan sub_40E400 (hit-test, slot 26)
 // y sub_40DEF0 (render, slot 24 vía el thunk sub_40D600).
-float    DAT_005590b0  = 295.0f;   // X del primer botón
-float    DAT_005590b4  = 417.0f;   // Y de los tres
-float    DAT_005590b8  =  18.0f;   // separación horizontal entre botones
+float    ChatListBox_TabButtonsX  = 295.0f;   // DAT_005590b0 — X del primer botón
+float    ChatListBox_TabButtonsY  = 417.0f;   // DAT_005590b4 — Y de los tres
+float    ChatListBox_TabButtonSpacing  = 18.0f; // DAT_005590b8 — separación horizontal entre botones
 // Version (5 bytes) @ 0x0055961c: obfuscated as Version[i]-i-1 in login packet.
 //
 // HISTORICAL VALUE from original main.exe (MD5 eb95ac0785e40a7ad60c9ddb5d8bef34):
@@ -1814,7 +1814,7 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
 // equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.
 char    DAT_00558090[3] = { (char)0xFC, (char)0xCF, (char)0xAB };
-char    DAT_07cf1ef0[256] = {};   // TokenString (IDA @0x07CF1EF0) — buffer de GetToken (0x47A1F0)
+char    TextParserTokenString[256] = {}; // DAT_07CF1EF0 — GetToken buffer (0x47A1F0)
 char    DAT_00559088 = 0;
 int     DAT_07d7807c = 0;
 char    s_Data_Monster__0055ddf8[] = "Data/Monster/";
@@ -2480,8 +2480,8 @@ char   DAT_00559b78[7] = {};   // MoveEffect byte lookup table A
 char   DAT_00559b7f[7] = {};   // MoveEffect byte lookup table B
 
 // ── Map_LoadObjectModels (0x0050c4d0) ─────────────────────────────────────────
-FILE*  DAT_083a40fc       = nullptr;      // file handle for custom-map object list
-char   DAT_083a3ff4[256]  = {};           // token read buffer
+FILE*  ParserFileHandle       = nullptr;  // DAT_083A40FC — file handle for custom-map object list
+char   ParserTokenString[256] = {};       // DAT_083A3FF4 — token read buffer
 char   DAT_083a4100       = 0;            // Lorencia models-loaded flag
 // Icarus water-tile name table — 32 entries × 0x38 bytes (= 0x700 bytes total).
 // Was 1 byte → Scene_Objects.cpp case 7 (Icarus map) wrote 32 filename strings
@@ -2518,8 +2518,8 @@ float  DAT_00862274       = 0.0f;         // normal Y channel base
 short  DAT_008b3f08       = 0;            // normal index table base
 
 // ── Parse_NextToken (0x0050e2c0) ─────────────────────────────────────────────
-int    _DAT_083a40f4      = 0;            // last token type code
-float  _DAT_083a40f8      = 0.0f;         // last numeric token value
+int    ParserCurrentToken = 0;             // DAT_083A40F4 — last token type code
+float  ParserTokenNumber  = 0.0f;          // DAT_083A40F8 — last numeric token value
 
 // ── RenderObjectScreen (0x004e13a0) ──────────────────────────────────────────
 float  _DAT_07ea952c      = 0.0f;         // item render: rotation X offset

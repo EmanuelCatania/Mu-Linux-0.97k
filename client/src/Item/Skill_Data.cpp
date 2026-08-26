@@ -4,7 +4,7 @@
 
 // ── FUN_0047a5b0 @ 0x0047A5B0 — Skill_LoadData(path) ────────────────────────
 // Reads a text-format skill data file.
-// Parser uses FUN_0047a1f0 (record type 0/1/2):
+// Parser uses TextParser_GetToken (record type 0/1/2):
 //   0 = section separator — strcmp with "END"; break inner loop
 //   1 = record: lVar21 = skill_id (×0x28); reads name string into
 //       DAT_07d29d20 + skill_id*0x28, then fields:
@@ -28,12 +28,12 @@ void __cdecl FUN_0047a5b0(const char *path)
     if (!DAT_07d7806c) return;
 
     // Streaming text parser — logic mirrors Ghidra decompile of FUN_0047a5b0.
-    // The real loop calls FUN_0047a1f0 to tokenize floats/strings from the
-    // open file handle DAT_07d7806c, using DAT_07cf1ef0 as a temp string buf.
+    // The real loop calls TextParser_GetToken to tokenize floats/strings from the
+    // open file handle DAT_07d7806c, using TextParserTokenString as a temp string buf.
     // Skill records are stored at DAT_07d29d20 + index*0x28 (stride 0x28).
     // Each record written is also registered in the hash table (DAT_055c9bc8).
     // Stub: call parser until EOF.
-    while (FUN_0047a1f0() != 2) { /* parse handled by FUN_0047a1f0 side-effects */ }
+    while (TextParser_GetToken() != 2) { /* parse handled by TextParser_GetToken side-effects */ }
     FUN_0054150f(DAT_07d7806c);
 }
 

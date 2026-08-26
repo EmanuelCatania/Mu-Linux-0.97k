@@ -1,6 +1,6 @@
-// stubs_bulk_med.cpp
+// Runtime_Medium.cpp
 //
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 14828-15881 (1054 lines).
+// Extracted from stubs_bulk_med.cpp (B3: stubs.cpp lines 14828-15881).
 //
 // BATCH 2-4: Functions 56-200+ bytes, sorted by size.
 //   BATCH 2 — generic 56-200 byte functions

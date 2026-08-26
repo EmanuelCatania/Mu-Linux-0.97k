@@ -1,6 +1,6 @@
-// stubs_bulk_small.cpp
+// Runtime_Small.cpp
 //
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 14828-16129 (1302 lines).
+// Extracted from stubs_bulk_small.cpp (B3: stubs.cpp lines 14828-16129).
 //
 // BATCH: Small unmapped functions (1-60 bytes), sorted by size.
 // Decompiled from Ghidra in bulk — closes ~3KB of the binary gap.

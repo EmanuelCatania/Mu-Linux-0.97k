@@ -389,25 +389,25 @@ section2:
         // Custom / unknown map — load models from a data file
         if (DAT_0055a7c4 == '\0') {
             crt_sprintf(local_384, "%d" /* DAT_0055e714 format: zone index path */);
-            DAT_083a40fc = (FILE*)FUN_0054173f(local_384, DAT_005580ac);
-            if (DAT_083a40fc != NULL) {
+            ParserFileHandle = (FILE*)FUN_0054173f(local_384, DAT_005580ac);
+            if (ParserFileHandle != NULL) {
                 while (true) {
-                    int typeId = FUN_0050e2c0();
-                    long long lv = (longlong)_DAT_083a40f8;   // IDA: (__int64)TokenNumber  (_DAT_083a40f8)
+                    int typeId = ParseNextToken();
+                    long long lv = (longlong)ParserTokenNumber;   // IDA: (__int64)TokenNumber  (ParserTokenNumber)
                     int puVar10 = (int)lv;
                     if (typeId == 2) break;
-                    FUN_0050e2c0();
-                    // local_300 ← DAT_083a3ff4 (filename token)
-                    memcpy(local_300, &DAT_083a3ff4, sizeof(local_300));
-                    FUN_0050e2c0();
-                    memcpy(local_200, &DAT_083a3ff4, sizeof(local_200));
-                    FUN_0050e2c0();
-                    memcpy(local_100, &DAT_083a3ff4, sizeof(local_100));
+                    ParseNextToken();
+                    // local_300 ← ParserTokenString (filename token)
+                    memcpy(local_300, &ParserTokenString, sizeof(local_300));
+                    ParseNextToken();
+                    memcpy(local_200, &ParserTokenString, sizeof(local_200));
+                    ParseNextToken();
+                    memcpy(local_100, &ParserTokenString, sizeof(local_100));
                     crt_sprintf(local_384, "Data2/Object/%d/");
                     // If local_200 is empty, load model with just local_300
                     FUN_00505e90(puVar10, local_384, local_300);
                 }
-                FUN_0054150f(DAT_083a40fc);
+                FUN_0054150f(ParserFileHandle);
             }
         }
         // Animations for custom map objects 0x00..0x9f

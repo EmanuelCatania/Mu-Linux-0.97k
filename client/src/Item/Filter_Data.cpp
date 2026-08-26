@@ -4,20 +4,20 @@
 
 // ── FUN_004799d0 @ 0x004799D0 — Filter_LoadData(path) ───────────────────────
 // Reads a text-format filter/word-list data file (used for chat filtering).
-// Parser uses FUN_0047a1f0 (type 2=EOF).
-// For each token read, copies the string from DAT_07cf1ef0 into
+// Parser uses TextParser_GetToken (type 2=EOF).
+// For each token read, copies the string from TextParserTokenString into
 // DAT_07d73104 + DAT_07d78070 * 0x14 (stride 0x14, each entry 20 bytes),
 // then increments DAT_07d78070 (filter entry count).
-// Loop ends when FUN_0047a1f0 returns 2 (EOF).
+// Loop ends when TextParser_GetToken returns 2 (EOF).
 void __cdecl FUN_004799d0(const char *path)
 {
     DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
 
-    while (FUN_0047a1f0() != 2) {
-        // token string is in DAT_07cf1ef0; copy to filter table entry
+    while (TextParser_GetToken() != 2) {
+        // token string is in TextParserTokenString; copy to filter table entry
         char *dst = DAT_07d73104 + DAT_07d78070 * 0x14;
-        // strlen(DAT_07cf1ef0) then memcpy
+        // strlen(TextParserTokenString) then memcpy
         UINT len = 0xFFFFFFFF;
         const char *p = TokenString;
         while (*p++ != '\0') len--;

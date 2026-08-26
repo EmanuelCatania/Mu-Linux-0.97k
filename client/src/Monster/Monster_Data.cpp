@@ -73,7 +73,7 @@ void FUN_0050b510(void)
 // Monster_ParseSetBase2 — parses "Data2/MonsterSetBase2.txt" to
 // populate the monster spawn table.
 //
-// Opens the file via FUN_0054173f, then reads records with FUN_0047a1f0.
+// Opens the file via FUN_0054173f, then reads records with TextParser_GetToken.
 // For each record:
 //   - field 0 (ftol) = monster type
 //   - fields 1,2,3  = skipped
@@ -81,7 +81,7 @@ void FUN_0050b510(void)
 //   - field 5        = skipped
 //   - field 6 (ftol) = spawn Y
 //   - Stops on record type 2 or when the sentinel string (DAT_00559088)
-//     matches DAT_07cf1ef0.
+//     matches TextParserTokenString.
 // Creates the monster via FUN_0045ccf0 and sets field +0x84 = ' '.
 //
 // Globals:
@@ -105,10 +105,10 @@ void __cdecl FUN_0047d020(LPCSTR param_1)
 
   DAT_07d7806c = (FILE *)FUN_0054173f(param_1,DAT_005580ac);
   if (DAT_07d7806c != (FILE *)0x0) {
-    FUN_0047a1f0();
+    TextParser_GetToken();
     while( true ) {
-      iVar2 = FUN_0047a1f0();
-      lVar7 = (longlong)_DAT_083a40f8;   // IDA sub_47D020: (__int64)TokenNumber
+      iVar2 = TextParser_GetToken();
+      lVar7 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (__int64)TokenNumber
       if (iVar2 == 2) break;
       if (iVar2 == 0) {
         pbVar5 = (byte*)TokenString;
@@ -132,13 +132,13 @@ LAB_0047d096:
 LAB_0047d09b:
         if (iVar2 == 0) break;
       }
-      FUN_0047a1f0();
-      FUN_0047a1f0();
-      FUN_0047a1f0();
-      lVar8 = (longlong)_DAT_083a40f8;   // IDA sub_47D020: (__int64)TokenNumber
-      FUN_0047a1f0();
-      lVar9 = (longlong)_DAT_083a40f8;   // IDA sub_47D020: (__int64)TokenNumber
-      FUN_0047a1f0();
+      TextParser_GetToken();
+      TextParser_GetToken();
+      TextParser_GetToken();
+      lVar8 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (__int64)TokenNumber
+      TextParser_GetToken();
+      lVar9 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (__int64)TokenNumber
+      TextParser_GetToken();
       if (DAT_07d7807c == DAT_05826cac) {
         DAT_07d7807c = DAT_07d7807c + 1;
       }

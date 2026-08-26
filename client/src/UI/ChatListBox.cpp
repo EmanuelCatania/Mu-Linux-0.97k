@@ -957,7 +957,7 @@ static int __fastcall ChatLB_advanceCursor(DWORD* self)
 //     (el botón de cerrar del borde derecho) O sobre una de las 3
 //     bandas de toggle de canal de abajo (cuando está activo).
 //
-// 2026-07-20: flt_5590B0/B4/B8 YA tienen storage propio (DAT_005590b0/b4/b8 en
+// 2026-07-20: flt_5590B0/B4/B8 YA tienen storage propio (ChatListBox_TabButtonsX/b4/b8 en
 // globals.cpp, leídos del binario = 295 / 417 / 18).  El comentario anterior
 // decía que "no existen en nuestro build" y por eso el segundo return usaba un
 // rect inventado (160,420,60,16) que no cubría los botones — ver abajo.
@@ -999,8 +999,8 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
     // constantes.  Como no cubría x=295..349, al clickear un botón este hit-test
     // devolvía 0, slot 7 nunca despachaba el slot 26 y el click se perdía:
     // los botones se veían pero no respondían.
-    if (self[48] == 1 && FUN_0040c490((int)DAT_005590b0, (int)DAT_005590b4,
-                                      (int)(DAT_005590b8 * 3.0f), 16, 1)) {
+    if (self[48] == 1 && FUN_0040c490((int)ChatListBox_TabButtonsX, (int)ChatListBox_TabButtonsY,
+                                      (int)(ChatListBox_TabButtonSpacing * 3.0f), 16, 1)) {
         return 1;
     }
     return 0;
@@ -1373,9 +1373,9 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
     m_dwTextColor = 0xFFFFFFFFu;
     m_dwBackColor = 0xFF000000u;                   // -16777216
 
-    const float bx  = DAT_005590b0;
-    const float by  = DAT_005590b4;
-    const float gap = DAT_005590b8;
+    const float bx  = ChatListBox_TabButtonsX;
+    const float by  = ChatListBox_TabButtonsY;
+    const float gap = ChatListBox_TabButtonSpacing;
 
     int hovered = 0;
     if      (FUN_0040c490(bx,           by, 16, 16, 1)) hovered = 1;
@@ -1470,7 +1470,7 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
     // ── Los 3 botones popup del chat — PORT FIEL de IDA sub_40E400 ──────────
     // 2026-07-19: antes se salteaban por no tener las constantes de layout.
     // Leídas del binario en 0x5590B0..0x5590B8 (3 floats) → ahora viven en
-    // globals.cpp como DAT_005590b0/b4/b8 = 295.0 / 417.0 / 18.0, compartidas
+    // globals.cpp como ChatListBox_TabButtonsX/b4/b8 = 295.0 / 417.0 / 18.0, compartidas
     // con el RENDER (slot 24 = ChatLB_renderFooter / IDA sub_40DEF0).
     // → tres rects de 16×16 en (295,417), (313,417) y (331,417). Caen en la
     // misma franja donde sub_4BE4F0 dibuja el input box (y≈415-422), por eso
@@ -1482,9 +1482,9 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
     //   maneja el fade de los botones en sub_40DEF0.  El comentario anterior
     //   ("puntero a método / widget inicializado") era incorrecto.
     if (self[48] != 0 && DAT_00559c84 == 0) {
-        const int bx  = (int)DAT_005590b0, by = (int)DAT_005590b4;
+        const int bx  = (int)ChatListBox_TabButtonsX, by = (int)ChatListBox_TabButtonsY;
         const int bw  = 16, bh = 16;
-        const int gap = (int)DAT_005590b8;
+        const int gap = (int)ChatListBox_TabButtonSpacing;
 
         // Botón 1 — "ver chat on/off" (mismo flag que la tecla F2).
         if (FUN_0040c490(bx, by, bw, bh, 1)) {

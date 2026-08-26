@@ -1,4 +1,4 @@
-﻿// Model_Gates.cpp  —  OpenSounds @ 0x0050F030
+// Model_Gates.cpp  —  OpenSounds @ 0x0050F030
 //
 // Precarga los sonidos globales del juego (ids 0..109) via FUN_00404a10
 // (LoadWaveFile).  El nombre del archivo viene del port anterior; a pesar de

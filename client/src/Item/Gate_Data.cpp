@@ -4,7 +4,7 @@
 
 // ── FUN_0047a010 @ 0x0047A010 — Gate_LoadData(path) ─────────────────────────
 // Reads text-format gate/warp data file (Data2/Gate.txt Korean locale).
-// Parser uses FUN_0047a1f0 (type 0=comment/END, 1=record, 2=EOF).
+// Parser uses TextParser_GetToken (type 0=comment/END, 1=record, 2=EOF).
 // Gate data structure: DAT_07cf5600 + gate_id * 9 bytes (stride 9).
 //   Each 9-byte record stores: [0]=flag, [1]=mapid, [2]=x, [3]=y,
 //     [4]=dst_mapid, [5]=dst_x, [6]=dst_y, [7]=size, [8]=dir.
@@ -16,13 +16,13 @@ void __cdecl FUN_0047a010(const char *path)
 
     do {
         while (true) {
-            int recType = FUN_0047a1f0();
+            int recType = TextParser_GetToken();
             if (recType == 2) goto EOF_done;
             if (recType == 0) break;   // compare with "END"; break if matched
             if (recType == 1) {
                 long long lv = 0; (void)lv;
-                // gate_id = (int)__ftol() from FUN_0047a1f0
-                // Then read 9 fields sequentially; each FUN_0047a1f0 call
+                // gate_id = (int)__ftol() from TextParser_GetToken
+                // Then read 9 fields sequentially; each TextParser_GetToken call
                 // returns the next token as float; cast to byte.
                 // ptr = &DAT_07cf5600 + gate_id * 9
                 // ptr[0..8] = 9 successive field reads
