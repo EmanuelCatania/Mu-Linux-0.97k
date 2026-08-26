@@ -216,8 +216,16 @@ switchD_0051bea9_caseD_8b:
       piVar7 = &DAT_083a4304;
       for (int btnIdx = 0; btnIdx < 2; ++btnIdx) {
         if (0 < piVar7[-3]) {
+          // 2026-08-26: el ANCHO estaba como `*(float*)piVar7`, o sea
+          // reinterpretando los bits, mientras que el ALTO de la linea de al
+          // lado convertia con `(float)`. Los dos salen del mismo descriptor de
+          // ints (CreateOkMessageBox escribe `v1[3] = 70; v1[4] = 21;`), asi que
+          // los dos tienen que convertir. Reinterpretado, el 70 daba 9.8e-44:
+          // ancho cero y boton invisible — el cartel de "OK" no se podia cerrar
+          // con el mouse. Misma familia que los bugs de `(float)(uintptr_t)`,
+          // con la mezcla de estilos dentro de la misma expresion como pista.
           local_d4 = (float)piVar7[1];
-          float local_dc_f = *(float*)piVar7;  // reinterpret as float
+          float local_dc_f = (float)*piVar7;
           FUN_005125a0(piVar7[-3] + 0xf0,(float)piVar7[-2] + _DAT_00552d40,
                        (float)piVar7[-1] + _DAT_0055290c,local_dc_f,local_d4,0.0,0.0,
                        local_dc_f * _DAT_00552d44,local_d4 * _DAT_00552ae4,'\x01','\x01');

@@ -618,30 +618,29 @@ void __cdecl FUN_00514310(void)
         goto tail;
     }
 
-    // ── NPC shop item list — display / navigation ─────────────────────────
-    case 0x8b:
-    case 0x8c:
-    case 0x9a:
-    {
-        // Iterate shop item list (stride 5, up to DAT_083a4324 entries)
-        // Requires click (MouseLButtonPush) — not hover.
-        int *piVar10 = (int *)&DAT_083a42fc;
-        int  count   = (int)DAT_083a4324;
-        for (int i = 0; i < count; ++i)
-        {
-            // Hit-test each row
-            int rowY = 0x2c + i * 0x10;
-            if (mouseY >= rowY && mouseY < rowY + 0x10 &&
-                mouseX >= 0x6a  && mouseX <= 0x16a && IsClickPushed())
-            {
-                DAT_083a4124 = 0;
-                DAT_083a7c2c = (DWORD)i;
-                DAT_083a7c28 = 0x8f;
-                goto tail;
-            }
-        }
-        goto tail;
-    }
+    // ── 0x8b / 0x8c / 0x9a — REMOVIDO 2026-08-26 ─────────────────────────
+    // Acá había un case agrupado etiquetado "NPC shop item list" que terminaba
+    // en `goto tail` INCONDICIONAL. `tail` hace `ErrorMessage = NextErrorMessage`,
+    // o sea limpiaba el estado en el mismo frame, antes de que
+    // `RenderInformation -> FUN_0051af50` alcanzara a dibujarlo.
+    //
+    // Los tres estados son message boxes, no una lista de tienda:
+    //   0x8b (139) — CreateOkMessageBox      (0x0051D6F0)
+    //   0x8c (140) — FUN_0051d9e0            (ranking de Devil Square, lista)
+    //   0x9a (154) — FUN_0051da80            (ranking de Devil Square, 1 fila)
+    //
+    // Y el switch de IDA (raw 00514310) NO tiene case para ninguno: 139, 140,
+    // 141, 142 y 154 se agrupan en una rama propia (L1381) que sólo dismissea
+    // al clickear un botón. Sin case, caen al `default` de abajo, que ya
+    // persiste hasta el click en OK o Enter — que es el comportamiento fiel.
+    //
+    // Sintoma que tenia: el cartel del tiempo de los eventos (click derecho
+    // sobre "Devil's Invitation" / "Cloak of Invisibility") no aparecia nunca,
+    // aunque el paquete iba y el server respondia bien.
+    //
+    // La geometria que usaba tampoco salia de ningun lado: filas de 16 px desde
+    // y=0x2c entre x=0x6a y x=0x16a, contra las dos filas de 35 px en y=180/265
+    // (x 245-395) que el original usa para el estado 143.
 
     // ── State 141 (0x8d) — Yes/No dialog with paging arrows ──────────────
     // Per IDA L3867-3963. The 7-line message-box buffer (g_lpszMessageBoxCustom)
@@ -964,6 +963,31 @@ void __cdecl FUN_00514310(void)
             bool enterHit = (DAT_055ca038 != '\0');
             bool okClick = (mouseX >= 284 && mouseX < 354 &&
                             mouseY >= 98 && mouseY < 119 && IsClickPushed());
+
+            // 2026-08-26: el rect fijo de arriba sirve para los carteles del
+            // login, pero no para los que arma `CreateOkMessageBox` (139) y
+            // compania: esos traen su propio descriptor de boton en
+            // DAT_083a42f8 (5 ints por entrada: bitmapId-240, x, y, w, h) y
+            // `FUN_0051af50` los dibuja en (x + _DAT_00552d40, y + _DAT_0055290c)
+            // = (x+213, y+60). Para el 139 el descriptor es {1, 71, 140, 70, 21},
+            // o sea el OK cae en (284..354, 200..221) — 100 px mas abajo que el
+            // rect fijo, asi que con el mouse no se podia cerrar (solo con Enter).
+            //
+            // Se aceptan los dos rects en vez de reemplazar uno por el otro: el
+            // original usa el descriptor, pero el rect fijo cubre los estados
+            // del login que hoy dependen de el.
+            if (!okClick && IsClickPushed()) {
+                const int* desc = (const int*)&DAT_083a42f8[0];
+                for (int b = 0; b < 2 && !okClick; ++b, desc += 5) {
+                    if (desc[0] <= 0) continue;          // entrada vacia
+                    const int bx = desc[1] + (int)_DAT_00552d40;
+                    const int by = desc[2] + (int)_DAT_0055290c;
+                    if (mouseX >= bx && mouseX < bx + desc[3] &&
+                        mouseY >= by && mouseY < by + desc[4])
+                        okClick = true;
+                }
+            }
+
             if (okClick || enterHit) {
                 DAT_083a4124 = 0;     // consume click
                 DAT_055ca038 = '\0';  // consume Enter
