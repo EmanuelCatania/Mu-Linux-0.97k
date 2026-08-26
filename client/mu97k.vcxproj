@@ -193,6 +193,7 @@
     <ClCompile Include="src\Render\Joint_Render.cpp" />
     <ClCompile Include="src\Render\Sprite.cpp" />
     <ClCompile Include="src\Render\Camera.cpp" />
+    <ClCompile Include="src\Render\Camera_Movement.cpp" />
     <ClCompile Include="src\Render\Entity_Render.cpp" />
     <ClCompile Include="src\Net\Crypto.cpp" />
     <ClCompile Include="src\Game\Timer.cpp" />
@@ -202,6 +203,7 @@
     <ClCompile Include="src\Render\Effect_Tick.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Light.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RenderFace.cpp" />
+    <ClCompile Include="src\Terrain\Terrain_RenderBlocks.cpp" />
     <ClCompile Include="src\Sound\Sound_DS3D.cpp" />
     <ClCompile Include="src\Net\Net_Connect.cpp" />
     <ClCompile Include="src\Net\Net_PacketSession.cpp" />
@@ -263,6 +265,7 @@
     <ClCompile Include="src\Item\Item_Inventory.cpp" />
     <ClCompile Include="src\Item\Item_InventoryGrid.cpp" />
     <ClCompile Include="src\Item\Item_InventoryRender.cpp" />
+    <ClCompile Include="src\Item\Item_ChaosMix.cpp" />
     <ClCompile Include="src\Item\Item_ClickHandler.cpp" />
     <ClCompile Include="src\Item\Skill_Data.cpp" />
     <ClCompile Include="src\Item\Gate_Data.cpp" />
@@ -270,6 +273,7 @@
     <ClCompile Include="src\Item\Dialog_Data.cpp" />
     <ClCompile Include="src\Item\Quest_Data.cpp" />
     <ClCompile Include="src\Item\NPC_Data.cpp" />
+    <ClCompile Include="src\Item\NPC_ModelLoad.cpp" />
     <ClCompile Include="src\Render\Font_Layout.cpp" />
     <ClCompile Include="src\Monster\Monster.cpp" />
     <ClCompile Include="src\Net\SecondPassword.cpp" />
@@ -294,6 +298,7 @@
     <ClCompile Include="src\Render\RenderLinkObject.cpp" />
     <ClCompile Include="src\Render\SkillEffect_Render.cpp" />
     <ClCompile Include="src\Render\Sprite_Draw.cpp" />
+    <ClCompile Include="src\Render\Render_SpriteHelpers.cpp" />
     <ClCompile Include="src\Render\Terrain_Render.cpp" />
     <ClCompile Include="src\Render\Terrain_Water.cpp" />
     <ClCompile Include="src\Render\Texture\Texture.cpp" />
@@ -308,6 +313,8 @@
     <ClCompile Include="src\UI\Chat_InputTick.cpp" />
     <ClCompile Include="src\UI\RenderItemInfo.cpp" />
     <ClCompile Include="src\Scene\Scene_Objects.cpp" />
+    <ClCompile Include="src\Scene\Scene_ObjectInteraction.cpp" />
+    <ClCompile Include="src\Scene\Scene_ObjectUpdate.cpp" />
     <ClCompile Include="src\Render\BMD_SkinUpdate.cpp" />
   </ItemGroup>
 
