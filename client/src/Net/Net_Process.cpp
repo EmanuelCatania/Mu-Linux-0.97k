@@ -1039,6 +1039,7 @@ extern "C" void GuildList_Clear(void);
 extern "C" void GuildList_AddMember(const char* name, char connected, char partyNumber);
 #define byte_7E919BC  DAT_07e919bc   // tabla global stride 80 (ver globals.h)
 extern "C" void GuildCreator_OpenFromServer(void);
+extern "C" void GuildCreator_OpenQuestionFromServer(void);
 extern "C" void GuildCreator_CloseFromResult(void);
 
 // 00434DC0 owns a 1000 × 80 guild-mark table (07E919BC..07EA51EC), separate
@@ -3321,6 +3322,23 @@ void Net_ProcessPacket(void)
             }
 
             case 0x54: {
+                // 2026-08-25 FIX (el NPC de crear guild no abria nada): el server
+                // manda `[C1][03][54]` (`GCGuildMasterQuestionSend`,
+                // Protocol.cpp:1795) al hablar con el Guild Master cumpliendo los
+                // requisitos, y aca se lo tragaba `Recv_InventoryClose`.
+                //
+                // Si NO se cumplen, el server ni siquiera manda esto: contesta un
+                // chat o un notice (NpcTalk.cpp:197-220 — ya estas en un guild,
+                // nivel insuficiente, resets insuficientes). Por eso probandolo
+                // con un personaje que ya tenia guild no se abria nada, y eso es
+                // correcto.
+                //
+                // Mismo criterio que el 0x55 de abajo: se distingue por tamaño.
+                if (Size == 3) {
+                    GuildCreator_OpenQuestionFromServer();
+                    NetLog("NET: GuildCreatorQuestion (dialogo previo)");
+                    break;
+                }
                 // 0x54 — server requests "close inventory" (port 0.52 sub_407BA0).
                 NetLog("NET:  → 0x54 InventoryClose");
                 Recv_InventoryClose(Msg);

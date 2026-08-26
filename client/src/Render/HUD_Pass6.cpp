@@ -780,6 +780,24 @@ extern "C" void GuildCreator_OpenFromServer(void)
         *(short*)((BYTE*)Hero + 474) = 999;
 }
 
+// 2026-08-25: el dialogo previo "¿crear guild?" — modo 0 del mismo panel.
+// El server lo abre con `[C1][03][54]` (`GCGuildMasterQuestionSend`,
+// Protocol.cpp:1795) cuando hablas con el NPC Guild Master Y cumplis los
+// requisitos; si ya estas en un guild o te falta nivel/resets manda un chat o
+// un notice y no abre nada (NpcTalk.cpp:197-220).
+//
+// Per `ProtocolCore` L1245-1254: cierra las ventanas de NPC y abre el creador
+// con el keypad APAGADO — lo que hace que los dos botones manden 0x54 en vez de
+// 0x55/0x57 (ver el hit-test en FUN_004e4760).
+extern "C" void GuildCreator_OpenQuestionFromServer(void)
+{
+    ShopOpened      = 0;
+    WarehouseOpened = 0;
+    TradeOpened     = 0;
+    GuildCreatorOpened = 1;
+    g_iKeyPadEnable    = 0;
+}
+
 extern "C" void GuildCreator_CloseFromResult(void)
 {
     FUN_0047ec60(0);
