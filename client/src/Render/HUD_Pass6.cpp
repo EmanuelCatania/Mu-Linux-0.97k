@@ -655,10 +655,25 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             RenderText(a1 + 20, a2 + dy, GlobalText[191 + i], 0, 0, 0);
         }
     } else {
-        DWORD* slot = (DWORD*)(Party + 24);
+        // 2026-08-25 FIX (el panel mostraba coords y HP en basura): la base
+        // estaba en `Party + 24`, o sea TODOS los campos corridos 24 bytes —
+        // se leia dentro del registro SIGUIENTE. IDA `RenderParty` (0x4EF160
+        // L435) usa `v4 = 36 * row + Party`, la base del registro:
+        //     +0        name[10]
+        //     +12       map      -> GlobalText[map + 30]
+        //     +13, +14  X, Y
+        //     +16, +20  CurLife, MaxLife (DWORD)
+        // El +24 SI es correcto para las barras del HUD de mas arriba (ahi el
+        // byte de paso de vida vive en +24, IDA L297 `v67 = &Party + 6`), pero
+        // no para este panel.
+        //
+        // Los offsets relativos ya estaban bien; lo unico que fallaba era la
+        // base — y el nombre lo compensaba a mano con `v4 - 24`.
+        DWORD* slot = (DWORD*)Party;
         for (int row = 0; row < PartyNumber; ++row) {
             BYTE* v4 = (BYTE*)(slot + row * 9);
-            // Class string (member byte at +12 = class id).
+            // +12 NO es la clase: es el MAPA (IDA lo resuelve con
+            // GlobalText[map + 30], y GlobalText[55]/[56] para fuera de rango).
             int classByte = v4[12];
             const char* className;
             if (classByte == 10) className = GlobalText[55];
@@ -680,7 +695,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // Member name renders from v4-24 in IDA — that's the 24-byte
             // header containing sender ID.  Approximate with the slot ptr.
             CHAR Buffer[100];
-            wsprintfA(Buffer, "%s", (char*)(v4 - 24));
+            wsprintfA(Buffer, "%s", (char*)v4);   // name[10] en +0
             SelectObject(m_hFontDC, g_hFontBold);
             RenderText(a1 + 20, a2 + 52 + 35 * row, Buffer, 0, 0, 0);
             m_dwBackColor = 0;

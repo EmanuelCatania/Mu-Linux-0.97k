@@ -266,12 +266,22 @@ void __cdecl FUN_004e4760(void) {
             //       BYTE Mark[32];       // +11
             //   };
             //
-            // Ademas el gate estaba INVERTIDO: IDA usa `if (g_iKeyPadEnable)` en los dos
-            // botones — o sea procede cuando el server AUTORIZO la creacion (responde
-            // 0x55) — y aca decia `== 0`. Funcionaba por accidente porque
-            // `DAT_07eaa144` (= g_iKeyPadEnable, 0x7EAA144) nunca se ponia en 1: el
-            // handler del 0x55 seteaba un `static` homonimo de HUD_Pass6.cpp en vez del
-            // global. Ver [[global-partido-en-dos]].
+            // `g_iKeyPadEnable` (= DAT_07eaa144, 0x7EAA144) distingue DOS MODOS del
+            // mismo panel, no autoriza nada — `ProtocolCore` L1253-1258:
+            //     0x54 recibido -> GuildCreatorOpened=1, g_iKeyPadEnable=0
+            //                      (dialogo previo "¿crear guild?", OK/Cancel)
+            //     0x55 recibido -> GuildCreatorOpened=1, g_iKeyPadEnable=1
+            //                      (UI de creacion: nombre + marca)
+            // y cada boton cambia de opcode segun el modo (IDA sub_4E4760):
+            //     izquierdo: modo 0 -> 0x54 result=1   |  modo 1 -> 0x55 CREAR
+            //     derecho:   modo 0 -> 0x54            |  modo 1 -> 0x57 cancelar
+            //
+            // El `== 0` de este gate era correcto: es la rama del dialogo previo,
+            // que ya mandaba bien su 0x54. Lo que faltaba era la OTRA rama.
+            //
+            // Nota aparte: el flag estaba partido en dos — `HUD_Pass6.cpp` tenia un
+            // `static int g_iKeyPadEnable` homonimo que el handler del 0x55 seteaba
+            // mientras este hit-test leia el global. Unificados.
             if (DAT_07eaa144) {
                 if (FUN_00513570()) {
                     // nombre invalido / vacio
@@ -309,6 +319,42 @@ void __cdecl FUN_004e4760(void) {
                         memcpy(pkt + 3,  DAT_07ea51ec, 8);
                         memcpy(pkt + 11, mark, 32);
                         Net_SendC1Packet(pkt, 43);
+                    }
+                }
+            } else {
+                // Modo 0 = dialogo previo "¿crear guild?": el boton izquierdo
+                // responde 0x54 con result=1 (PMSG_GUILD_MASTER_OPEN_RECV). El
+                // server valida nivel y resets (Guild.cpp:37-45) y, si pasa,
+                // contesta el 0x55 que abre la UI de creacion.
+                // Send auth packet (opcode 0xC1/0x01/0x54 keepalive-style, 4 bytes)
+                {
+                    BYTE pkt[4];
+                    // 2026-08-08: el size byte iba en 1 -> el server corta con
+                    // "Protocol size error" (size < 3). PMSG_GUILD_MASTER_OPEN_RECV
+                    // (Guild.h:212) = [C1][04][54][result], 4 bytes.
+                    pkt[0] = 0xC1; pkt[1] = 4; pkt[2] = 0x54; pkt[3] = 1;
+                    // XOR encode byte 3
+                    static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
+                                                  0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
+                                                  0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
+                                                  0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
+                    pkt[3] ^= key[3] ^ pkt[2];
+                    int off = 0; unsigned int rem = 4;
+                    if (DAT_055ca168 != 0xffffffff) {
+                        do {
+                            int r = send((SOCKET)DAT_055ca168, (char*)pkt+off, (int)(rem-off), 0);
+                            if (r == -1) {
+                                int e = WSAGetLastError();
+                                if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
+                                    memcpy(DAT_055ca16c + DAT_055cc16c, pkt, rem);
+                                    DAT_055cc16c += rem;
+                                } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                                break;
+                            }
+                            if (r == 0) break;
+                            if (DAT_055ce174 != 0) FUN_0043de60();
+                            rem -= r; off += r;
+                        } while ((int)rem > 0);
                     }
                 }
             }
