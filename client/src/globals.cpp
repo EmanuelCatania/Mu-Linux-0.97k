@@ -2047,7 +2047,14 @@ BYTE    DAT_07ea5b68[0x1FE0] = {0};   // see globals.h
 BYTE    DAT_07ea9880[0x0880] = {0};
 DWORD   DAT_07eaa0e8   = 0;
 BYTE    DAT_07ea7b88[0x880] = {0};
-DWORD   DAT_07e11f34   = 0;  // MarkColor[16] — guild mark color palette (uint ARGB)
+// 2026-08-25: el comentario decia "MarkColor[16]" y estaba declarado como UN
+// DWORD. `CreateGuildMark` (0x4F0100) escribe los 16 colores y
+// `RenderGuildMark` (0x4F02F0) indexa `MarkColor[p5]` con p5 en 0..15, o sea 60
+// bytes de desborde sobre el vecino en BSS. `MarkColor[1] = 0xFF000000` es
+// justamente el valor que aparecia en el crash del editor de marca
+// (0xC0000005 leyendo 0xFF000000 dentro del driver GL).
+// El hueco hasta DAT_07e11f78 es de 68 bytes, asi que los 16 entran.
+DWORD   DAT_07e11f34[16] = {0};  // MarkColor[16] — paleta de la marca (ARGB)
 BYTE    DAT_07e11f78[0x880] = {0};
 BYTE    DAT_07ea52d0[0x880] = {0};
 BYTE    DAT_07ea7bc0[0x880] = {0};

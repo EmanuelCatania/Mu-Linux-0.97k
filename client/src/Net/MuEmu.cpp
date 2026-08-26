@@ -21,6 +21,60 @@ static bool g_active = true;
 bool IsActive() { return g_active; }
 void SetActive(bool on) { g_active = on; }
 
+// Clave en uso (ver MuEmu.h). Arranca en los valores historicos, que son los
+// que corresponden a CustomerName="MuLinux".
+BYTE g_EncKey1   = kEncKey1Default;
+BYTE g_EncKeyAdd = kEncKeyAddDefault;
+
+// Valores por defecto de este fork, usados cuando server.cfg no los trae.
+static const char kDefaultCustomerName[] = "MuLinux";
+static const char kDefaultServerSerial[] = "TbYehR2hFUPBKgZj";
+
+// -----------------------------------------------------------------------------
+// InitKeys — port fiel de GameServer/HackCheck.cpp::InitHackCheck.
+//
+// Los tamanos de buffer son los del server (CustomerName[32], ServerSerial[17])
+// y el loop recorre el array entero, no strlen: el relleno de ceros participa
+// del calculo. Los dos campos se copian igual que lo hace
+// GetPrivateProfileString (trunca al tamano del buffer y garantiza el NUL).
+//
+// `char` con signo a proposito: el termino `CustomerName[n] - ServerSerial[..]`
+// da otro resultado con unsigned char, y el server usa `char`.
+// -----------------------------------------------------------------------------
+void InitKeys(const char* customerName, const char* serverSerial)
+{
+    if (customerName == nullptr || customerName[0] == 0) customerName = kDefaultCustomerName;
+    if (serverSerial == nullptr || serverSerial[0] == 0) serverSerial = kDefaultServerSerial;
+
+    char cust[32] = { 0 };   // CServerInfo::m_CustomerName[32]
+    char ser[17]  = { 0 };   // CServerInfo::m_ServerSerial[17]
+    lstrcpynA(cust, customerName, sizeof(cust));
+    lstrcpynA(ser,  serverSerial, sizeof(ser));
+
+    WORD encDecKey = 0;
+    for (int n = 0; n < (int)sizeof(cust); ++n) {
+        const char c = cust[n];
+        const char t = ser[n % (int)sizeof(ser)];
+        encDecKey = (WORD)(encDecKey + (BYTE)(c ^ t));
+        encDecKey = (WORD)(encDecKey ^ (BYTE)(c - t));
+    }
+
+    const BYTE encDecKey1 = (BYTE)(0xB0 + LOBYTE(encDecKey));
+    const BYTE encDecKey2 = (BYTE)(0xF8 + HIBYTE(encDecKey));
+
+    g_EncKey1   = encDecKey1;
+    g_EncKeyAdd = (BYTE)(encDecKey2 * encDecKey1);   // el server usa el producto
+
+    {
+        char line[192];
+        wsprintfA(line,
+                  "MuEmu: InitKeys CustomerName='%s' Serial='%s' -> "
+                  "EncDecKey1=0x%02X EncDecKey2=0x%02X (xor=0x%02X add=0x%02X)",
+                  cust, ser, encDecKey1, encDecKey2, g_EncKey1, g_EncKeyAdd);
+        DbgLogPublic(line);
+    }
+}
+
 // -----------------------------------------------------------------------------
 // Hex/ASCII dump helper for diagnostics (first/last N bytes of a buffer).
 //
@@ -54,7 +108,8 @@ static void DumpHex(const char* tag, const BYTE* buf, int len)
 //
 // Mirrors GameServer/HackCheck.cpp::DecryptData:
 //     lpMsg[n] = (lpMsg[n] ^ EncDecKey1) - (EncDecKey2 * EncDecKey1);
-// with (EncDecKey1, EncDecKey2*EncDecKey1) = (kEncKey1, kEncKeyAdd) = (0x42, 0x42).
+// con (EncDecKey1, EncDecKey2*EncDecKey1) = (g_EncKey1, g_EncKeyAdd), que
+// deriva InitKeys de CustomerName+ServerSerial (ver MuEmu.h).
 // -----------------------------------------------------------------------------
 void DecryptRecv(BYTE* buf, int len)
 {
@@ -62,7 +117,7 @@ void DecryptRecv(BYTE* buf, int len)
 
     DumpHex("recv cipher", buf, len);
     for (int i = 0; i < len; ++i) {
-        buf[i] = (BYTE)((buf[i] ^ kEncKey1) - kEncKeyAdd);
+        buf[i] = (BYTE)((buf[i] ^ g_EncKey1) - g_EncKeyAdd);
     }
     DumpHex("recv plain ", buf, len);
 }
@@ -79,7 +134,7 @@ void EncryptSend(BYTE* buf, int len)
 
     DumpHex("send plain ", buf, len);
     for (int i = 0; i < len; ++i) {
-        buf[i] = (BYTE)((buf[i] + kEncKeyAdd) ^ kEncKey1);
+        buf[i] = (BYTE)((buf[i] + g_EncKeyAdd) ^ g_EncKey1);
     }
     DumpHex("send cipher", buf, len);
 }

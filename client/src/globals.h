@@ -1988,7 +1988,7 @@ extern BYTE    DAT_07ea5b68[0x1FE0];   // 8160 bytes
 extern BYTE    DAT_07ea9880[0x0880];   // 2176 bytes
 extern DWORD   DAT_07eaa0e8;
 extern BYTE    DAT_07ea7b88[0x880];     // see DAT_07ea5298 above
-extern DWORD   DAT_07e11f34;   // MarkColor[16] — guild mark color palette (uint ARGB)
+extern DWORD   DAT_07e11f34[16];   // MarkColor[16] — paleta de la marca de guild (ARGB)
 extern BYTE    DAT_07e11f78[0x880];
 extern BYTE    DAT_07ea52d0[0x880];
 extern BYTE    DAT_07ea7bc0[0x880];

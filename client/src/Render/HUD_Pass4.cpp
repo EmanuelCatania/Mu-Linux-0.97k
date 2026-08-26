@@ -56,7 +56,13 @@ extern "C" {
     int   InputFrame              = 0;
 
     // Guild mark colour palette (16 entries × DWORD ARGB).
-    DWORD MarkColor[16]           = {0};
+    // 2026-08-25: esto era una copia LOCAL del array. El global real es
+    // 0x7E11F34 (= DAT_07e11f34), que es el que lee `RenderGuildMark`
+    // (0x4F02F0, nuestro RenderGuildMark_stub): `CreateGuildMark` llenaba esta
+    // copia y el render leia el global, que quedaba en ceros — y encima estaba
+    // declarado como UN DWORD, asi que indexarlo 0..15 desbordaba.
+    // Ver [[global-partido-en-dos]].
+    #define MarkColor DAT_07e11f34
 
     // Per-mark 8×8 nibble palette source (16 marks × 80 bytes — matches IDA
     // stride 80 for byte_7E919C5).  Storage opened here; the engine's mark
