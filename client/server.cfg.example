@@ -25,5 +25,8 @@
 #   ServerSerial=TbYehR2hFUPBKgZj
 #
 # La clave derivada queda registrada en debug.log ("MuEmu: InitKeys ...").
+# ServerSerial cumple DOS funciones: entra en la derivación de la clave y el
+# server lo valida aparte en el login F1/01 (memcmp contra m_ServerSerial; si
+# no coincide devuelve "versión incorrecta"). Las dos salen de esta línea.
 CustomerName=MuLinux
 ServerSerial=TbYehR2hFUPBKgZj

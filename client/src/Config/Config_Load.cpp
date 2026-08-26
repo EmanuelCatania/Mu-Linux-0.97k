@@ -347,8 +347,22 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
 
                 if (_stricmp(key, "CustomerName") == 0)
                     lstrcpynA(cfgCustomerName, val, sizeof(cfgCustomerName));
-                else if (_stricmp(key, "ServerSerial") == 0)
+                else if (_stricmp(key, "ServerSerial") == 0) {
                     lstrcpynA(cfgServerSerial, val, sizeof(cfgServerSerial));
+
+                    // El serial no sirve solo para derivar la clave: el server
+                    // TAMBIEN lo valida en el login F1/01
+                    // (Protocol.cpp:1193, memcmp contra m_ServerSerial ->
+                    // GCConnectAccountSend(6) si no coincide). Asi que el mismo
+                    // valor tiene que ir al buffer que se manda en el paquete,
+                    // o la clave saldria bien y el login fallaria igual.
+                    // Se rellena con ceros porque el server compara 16 bytes
+                    // contra su m_ServerSerial[17], que tambien viene en cero.
+                    memset(DAT_00559624, 0, sizeof(DAT_00559624));
+                    int serLen = (int)strlen(cfgServerSerial);
+                    if (serLen > (int)sizeof(DAT_00559624)) serLen = (int)sizeof(DAT_00559624);
+                    memcpy(DAT_00559624, cfgServerSerial, serLen);
+                }
 
                 continue;   // nunca es una dirección
             }
