@@ -30,3 +30,8 @@
 # no coincide devuelve "versión incorrecta"). Las dos salen de esta línea.
 CustomerName=MuLinux
 ServerSerial=TbYehR2hFUPBKgZj
+
+# ClientVersion tiene que coincidir con ServerVersion del mismo .dat: el server
+# también lo compara en el login y devuelve el mismo error. Se acepta "0.97.11"
+# o "09711" — las dos formas dan lo mismo.
+ClientVersion=0.97.11

@@ -95,19 +95,63 @@ Librerías enlazadas (todas del SDK de Windows, salvo libjpeg que va incluida):
 
 ### Ejecutar
 
-1. Copiar `server.cfg.example` a `bin/Client/server.cfg` y editar la dirección
-   del server (es el único archivo que no viene en el repo).
+1. Copiar `server.cfg.example` a `bin/Client/server.cfg` y editarlo (es el único
+   archivo que no viene en el repo).
 2. Ejecutar `bin/Client/main.exe`.
 
-`server.cfg` acepta una o dos líneas `<IP> <puerto>`:
+#### `server.cfg`
+
+Dos tipos de línea: las direcciones (`<IP> <puerto>`) y las de identidad del
+server (`clave=valor`). Las que empiezan con `#` o `;` son comentarios.
 
 ```
-127.0.0.1 44405    ← ConnectServer (lista de servers + barra de carga)
-127.0.0.1 55901    ← GameServer (fallback)
+127.0.0.1 44405        ← ConnectServer (lista de servers + barra de carga)
+127.0.0.1 55901        ← GameServer (fallback)
+
+CustomerName=MuLinux
+ServerSerial=TbYehR2hFUPBKgZj
+ClientVersion=0.97.11
 ```
 
-Con una sola línea se conecta directo al GameServer, que es el comportamiento
-clásico.
+**Direcciones.** Con dos líneas se usa el flujo ConnectServer: el cliente pide
+la lista real (`F4/02`), el server contesta con nombres y ocupación, y al elegir
+uno el `F4/03` redirige al GameServer. Con **una sola línea** se conecta directo
+al GameServer — el comportamiento clásico, y en ese caso el select-server muestra
+una entrada estática de relleno.
+
+> El select-server aparece **siempre**, incluso apuntando directo al GameServer:
+> es una pantalla del flujo original, no un indicio de que estés llegando al
+> ConnectServer.
+
+**Identidad del server.** Los tres valores tienen que coincidir con los del
+GameServer (`MuServer/GameServer/DATA/GameServerInfo - StartUp.dat`). Si alguno
+no coincide, el cliente **conecta pero no entra**, y sin ningún mensaje útil:
+
+| Clave | De dónde sale | Qué pasa si no coincide |
+|---|---|---|
+| `CustomerName` | `CustomerName=` del `.dat` | El cliente conecta, desencripta basura y se queda en *"conectando al GameServer"* para siempre |
+| `ServerSerial` | `ServerSerial=` del `.dat` | Igual que arriba, **y además** el login devuelve *"versión incorrecta"* |
+| `ClientVersion` | `ServerVersion=` del `.dat` | Login rechazado con *"versión incorrecta"* |
+
+`CustomerName` y `ServerSerial` alimentan la clave de encriptación, que el
+GameServer deriva de los dos combinados (`GameServer/HackCheck.cpp::InitHackCheck`);
+por eso cambiar el nombre del cliente rompe la conexión aunque todo lo demás esté
+bien. `ServerSerial` cumple doble función: entra en esa derivación y además el
+server lo compara byte a byte en el login.
+
+Si se omiten, se usan los valores por defecto de este fork (los de la tabla de
+arriba). `ClientVersion` acepta tanto `0.97.11` como `09711`.
+
+**Para diagnosticar**, `bin/Client/debug.log` registra la clave derivada al
+arrancar:
+
+```
+MuEmu: InitKeys CustomerName='MuLinux' Serial='TbYehR2hFUPBKgZj' -> EncDecKey1=0xC2 EncDecKey2=0x01 (xor=0xC2 add=0xC2)
+server.cfg: ClientVersion='09711'
+```
+
+Si el cliente se queda colgado conectando, esa línea es lo primero que hay que
+mirar: comparala con el `CustomerName` del server.
 
 ---
 

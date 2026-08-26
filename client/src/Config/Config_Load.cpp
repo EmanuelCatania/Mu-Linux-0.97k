@@ -46,6 +46,8 @@
 #include "Config/Config.h"
 #include "Net/MuEmu.h"
 
+extern "C" void DbgLogPublic(const char* msg);
+
 // Globals set by Config_Load
 int   g_ScreenW    = 640;    // DAT_0056156c
 int   g_ScreenH    = 480;    // DAT_00561570
@@ -362,6 +364,36 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
                     int serLen = (int)strlen(cfgServerSerial);
                     if (serLen > (int)sizeof(DAT_00559624)) serLen = (int)sizeof(DAT_00559624);
                     memcpy(DAT_00559624, cfgServerSerial, serLen);
+                }
+                else if (_stricmp(key, "ClientVersion") == 0) {
+                    // El server compara los 5 bytes contra su m_ServerVersion
+                    // (Protocol.cpp:1186) y devuelve el mismo error que el
+                    // serial si no coinciden.
+                    //
+                    // Se acepta tanto "0.97.11" (igual que ServerVersion en el
+                    // .dat del server, comodo para copiar y pegar) como "09711"
+                    // ya condensado. La forma con puntos se condensa tomando los
+                    // indices 0,2,3,5,6, que es exactamente lo que hace
+                    // CServerInfo::ReadStartupInfo.
+                    char v5[6] = { 0 };
+                    int  vlen  = (int)strlen(val);
+                    if (vlen >= 7 && val[1] == '.') {
+                        v5[0] = val[0]; v5[1] = val[2]; v5[2] = val[3];
+                        v5[3] = val[5]; v5[4] = val[6];
+                    } else if (vlen >= 5) {
+                        memcpy(v5, val, 5);
+                    }
+
+                    if (v5[0] != 0) {
+                        // El paquete lleva la version ofuscada: el cliente
+                        // guarda (v[i] + i + 1) y el receptor hace (b[i] - i - 1).
+                        for (int i = 0; i < 5; i++)
+                            DAT_0055961c[i] = (BYTE)(v5[i] + i + 1);
+
+                        char line[96];
+                        wsprintfA(line, "server.cfg: ClientVersion='%s'", v5);
+                        DbgLogPublic(line);
+                    }
                 }
 
                 continue;   // nunca es una dirección
