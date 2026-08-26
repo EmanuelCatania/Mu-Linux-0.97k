@@ -743,7 +743,12 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     }
 }
 
-static int  g_iKeyPadEnable = 0;
+// 2026-08-25: esto era un `static` propio del archivo, o sea una SEGUNDA copia
+// del flag. El global real es 0x7EAA144 (= DAT_07eaa144), que es el que lee el
+// hit-test de la creacion de guild en `FUN_004e4760`: el handler del 0x55
+// seteaba esta copia y el hit-test leia la otra, que nunca pasaba de 0.
+// Ver [[global-partido-en-dos]].
+#define g_iKeyPadEnable DAT_07eaa144
 static char g_GuildNotice[2][64] = {};
 
 // ProtocolCore 0x55: the server authorizes opening the guild-creation UI.

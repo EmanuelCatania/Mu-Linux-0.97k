@@ -141,6 +141,9 @@
 #include "functions.h"
 #include "Net/Net.h"
 
+// 2026-08-25: el rango de guild pide C1 plano (Encrypt=0).
+extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
+
 // Inventory pool bases — defined in src/Render/HUD_Pass3.cpp.
 // Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
 extern "C" BYTE OffsetInventoryItems[];
@@ -251,44 +254,63 @@ void __cdecl FUN_004e4760(void) {
             (int)DAT_083a4278 < originY + 0x173 &&
             IsClickPushed()) {
             DAT_083a4124 = '\0';
-            if (DAT_07eaa144 == 0) {
-                // Send auth packet (opcode 0xC1/0x01/0x54 keepalive-style, 4 bytes)
-                {
-                    BYTE pkt[4];
-                    // 2026-08-08: el size byte iba en 1 -> el server corta con
-                    // "Protocol size error" (size < 3). PMSG_GUILD_MASTER_OPEN_RECV
-                    // (Guild.h:212) = [C1][04][54][result], 4 bytes.
-                    pkt[0] = 0xC1; pkt[1] = 4; pkt[2] = 0x54; pkt[3] = 1;
-                    // XOR encode byte 3
-                    static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                                  0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                                  0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                                  0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-                    pkt[3] ^= key[3] ^ pkt[2];
-                    int off = 0; unsigned int rem = 4;
-                    if (DAT_055ca168 != 0xffffffff) {
-                        do {
-                            int r = send((SOCKET)DAT_055ca168, (char*)pkt+off, (int)(rem-off), 0);
-                            if (r == -1) {
-                                int e = WSAGetLastError();
-                                if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                                    memcpy(DAT_055ca16c + DAT_055cc16c, pkt, rem);
-                                    DAT_055cc16c += rem;
-                                } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                                break;
-                            }
-                            if (r == 0) break;
-                            if (DAT_055ce174 != 0) FUN_0043de60();
-                            rem -= r; off += r;
-                        } while ((int)rem > 0);
+            // 2026-08-25 PORT (no se podia crear un guild): este boton — el izquierdo,
+            // rect [+20,+90) x [+350,+371) — es el de CREAR, y mandaba el opcode
+            // equivocado. IDA `sub_4E4760` L210 manda aca el **0x55**
+            // (PMSG_GUILD_CREATE_RECV); el 0x54 es el del boton derecho, que ya esta
+            // bien abajo.
+            //
+            //   struct PMSG_GUILD_CREATE_RECV {   // Guild.h:218
+            //       PBMSG_HEAD header;   // C1 : 43 : 0x55
+            //       char GuildName[8];   // +3
+            //       BYTE Mark[32];       // +11
+            //   };
+            //
+            // Ademas el gate estaba INVERTIDO: IDA usa `if (g_iKeyPadEnable)` en los dos
+            // botones — o sea procede cuando el server AUTORIZO la creacion (responde
+            // 0x55) — y aca decia `== 0`. Funcionaba por accidente porque
+            // `DAT_07eaa144` (= g_iKeyPadEnable, 0x7EAA144) nunca se ponia en 1: el
+            // handler del 0x55 seteaba un `static` homonimo de HUD_Pass6.cpp en vez del
+            // global. Ver [[global-partido-en-dos]].
+            if (DAT_07eaa144) {
+                if (FUN_00513570()) {
+                    // nombre invalido / vacio
+                    FUN_005142d0(115);
+                } else {
+                    // Empaquetado de la marca, fiel a IDA L180-193: 64 celdas de la
+                    // grilla 8x8 -> 32 bytes, celda PAR en el nibble alto e IMPAR en el
+                    // bajo. `any` replica el flag `v71`: con la marca vacia el original
+                    // no manda nada y muestra el error 127.
+                    BYTE mark[32];
+                    bool any = false;
+                    for (int k = 0; k < 64; ++k) {
+                        const unsigned char v = (unsigned char)DAT_07ea51f5[k];
+                        if (k & 1) mark[k >> 1] = (BYTE)(mark[k >> 1] + v);
+                        else       mark[k >> 1] = (BYTE)(16 * v);
+                        if (v) any = true;
+                    }
+                    if (!any) {
+                        FUN_005142d0(127);
+                        FUN_00404bc0(25, 0, 0);
+                    } else {
+                        // IDA: strcpy(&dword_7EA51EC, InputText[0])
+                        memset(DAT_07ea51ec, 0, sizeof(DAT_07ea51ec));
+                        for (int c = 0; c < 8 && DAT_07db8710[0][c]; ++c)
+                            DAT_07ea51ec[c] = DAT_07db8710[0][c];
+            
+                        // El rango de guild entero es Encrypt=0 -> C1 plano, y
+                        // `Net_SendC1Packet` aplica el mismo chain-XOR sobre 3..len-1
+                        // que hace el original.
+                        BYTE pkt[43];
+                        memset(pkt, 0, sizeof(pkt));
+                        pkt[0] = 0xC1;
+                        pkt[1] = 43;
+                        pkt[2] = 0x55;
+                        memcpy(pkt + 3,  DAT_07ea51ec, 8);
+                        memcpy(pkt + 11, mark, 32);
+                        Net_SendC1Packet(pkt, 43);
                     }
                 }
-            } else {
-                // DAT_07eaa144 == 1: validate length
-                char errBuf[64];
-                FUN_005416bc(errBuf, "");
-                unsigned int uLen = FUN_00513570() ? 0x73 : 0x7b;
-                FUN_005142d0((int)uLen);
             }
             FUN_00404bc0(0x19, 0, 0);
         }
