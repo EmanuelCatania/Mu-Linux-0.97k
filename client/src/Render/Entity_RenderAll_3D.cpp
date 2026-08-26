@@ -43,7 +43,7 @@
 //
 //         DAT_07abf5d4 += 1;                            // contador visibles
 //         // Determina si es el jugador local (slot especial)
-//         uint is_local = (iVar2 == DAT_00559c50 || iVar2 == DAT_00559c4c) ? 1 : 0;
+//         uint is_local = (iVar2 == SelectedCharacter || iVar2 == SelectedNpc) ? 1 : 0;
 //         FUN_00456770(entity, entity, is_local);        // Entity_UpdateRender
 //       }
 //
@@ -69,8 +69,8 @@
 //   DAT_07abf5d8  — puntero a la entidad del jugador local (dentro del array)
 //   DAT_07abf5e8  — flag extra (reset a 0)
 //   DAT_005615c0  — g_GameState (5 = InGame)
-//   DAT_00559c50  — slot index A del jugador local (para identificación)
-//   DAT_00559c4c  — slot index B del jugador local
+//   SelectedCharacter  — slot index A del jugador local (para identificación)
+//   SelectedNpc  — slot index B del jugador local
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
@@ -116,8 +116,8 @@ void FUN_0045ab00(void)
                 "ERA slot=%d act=%d vis=%d type@2=%d cls=%d isLocal=%d "
                 "(slot==%d/559c50 || slot==%d/559c4c) hero@5d8=%p ptr=%p",
                 iVar2, e[0], e[0x160], *(short*)(e+2), e[0x1bc],
-                (iVar2 == DAT_00559c50) || (iVar2 == DAT_00559c4c),
-                DAT_00559c50, DAT_00559c4c, DAT_07abf5d8, e);
+                (iVar2 == SelectedCharacter) || (iVar2 == SelectedNpc),
+                SelectedCharacter, SelectedNpc, DAT_07abf5d8, e);
             DbgLogPublic(b);
         }
 
@@ -146,8 +146,8 @@ void FUN_0045ab00(void)
             FUN_00456770((undefined4 *)pcVar1, (undefined4 *)pcVar1, (undefined4 *)0);
         } else if ((*pcVar1 != '\0') && (pcVar1[0x160] != '\0')) {
             DAT_07abf5d4 = DAT_07abf5d4 + 1;
-            // is_local_player = (slot == DAT_00559c50 || slot == DAT_00559c4c)
-            puVar4 = ((iVar2 == DAT_00559c50) || (iVar2 == DAT_00559c4c))
+            // is_local_player = (slot == SelectedCharacter || slot == SelectedNpc)
+            puVar4 = ((iVar2 == SelectedCharacter) || (iVar2 == SelectedNpc))
                      ? (undefined4 *)0x1 : (undefined4 *)0x0;
             if (diag && iVar2 < 5) {
                 char b[120];

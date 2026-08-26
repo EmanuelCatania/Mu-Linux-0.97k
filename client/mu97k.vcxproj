@@ -240,7 +240,7 @@
     <ClCompile Include="src\Render\SMD_Parser.cpp" />
     <ClCompile Include="src\stubs_misc2.cpp" />
     <ClCompile Include="src\stubs_mouse_hover.cpp" />
-    <ClCompile Include="src\stubs_render_helpers.cpp" />
+    <ClCompile Include="src\Render\Render_WorldHelpers.cpp" />
     <ClCompile Include="src\Render\BMD_Load.cpp" />
     <ClCompile Include="src\globals.cpp" />
     <ClCompile Include="src\Model\Model_Items.cpp" />
@@ -261,6 +261,8 @@
     <ClCompile Include="src\Item\Item_Equip.cpp" />
     <ClCompile Include="src\Item\Item_Data.cpp" />
     <ClCompile Include="src\Item\Item_Inventory.cpp" />
+    <ClCompile Include="src\Item\Item_InventoryGrid.cpp" />
+    <ClCompile Include="src\Item\Item_InventoryRender.cpp" />
     <ClCompile Include="src\Item\Item_ClickHandler.cpp" />
     <ClCompile Include="src\Item\Skill_Data.cpp" />
     <ClCompile Include="src\Item\Gate_Data.cpp" />

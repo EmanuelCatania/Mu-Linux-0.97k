@@ -3410,7 +3410,7 @@ void __cdecl FUN_004cd3b0(void)
 //   against classType (= 1, the pushed ESI at call site in Chat_InputTick).
 //   On match, writes entity[0x391] = slot index (i).
 // Also: if DAT_00559c5c set and sub-state != 6 and current hotkey class is 0x06 or 0x0f:
-//   clears DAT_00559c50 / DAT_00559c58 to -1.
+//   clears SelectedCharacter / DAT_00559c58 to -1.
 // unaff_EBP = GetAsyncKeyState ptr (HashTable only), unaff_retaddr = 1 (classType).
 void __cdecl FUN_004b0e80(void)
 {
@@ -3432,7 +3432,7 @@ void __cdecl FUN_004b0e80(void)
             int slotIdx = (unsigned char)*(playerEnt + 0x391);
             char hotkeyCls = *(charData + 0x57 + slotIdx);
             if (hotkeyCls == '\x06' || hotkeyCls == '\x0f') {
-                DAT_00559c50 = 0xffffffff;
+                SelectedCharacter = 0xffffffff;
                 DAT_00559c58 = 0xffffffff;
             }
         }

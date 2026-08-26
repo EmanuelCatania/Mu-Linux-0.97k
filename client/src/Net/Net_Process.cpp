@@ -5624,10 +5624,10 @@ void Net_ProcessPacket(void)
                                  (float*)-1, nullptr, 0);
                     *(DWORD*)(hero + 0x168) = 0;
                     DAT_083a3ff0 = 0;                  // EnableEvent
-                    DAT_00559c48 = -1;                 // SelectedItem
-                    DAT_00559c4c = -1;                 // SelectedNpc
-                    DAT_00559c50 = -1;                 // SelectedCharacter
-                    DAT_00559c54 = -1;                 // SelectedOperate
+                    SelectedItem = -1;                 // SelectedItem
+                    SelectedNpc = -1;                 // SelectedNpc
+                    SelectedCharacter = -1;                 // SelectedCharacter
+                    SelectedOperate = -1;                 // SelectedOperate
                     DAT_00559c58 = -1;                 // Attacking
                     DAT_00559c6d = -1;
                     // IDA hace un store de DWORD en 07EAA134. En este port de C++

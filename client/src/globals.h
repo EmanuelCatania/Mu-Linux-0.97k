@@ -215,10 +215,12 @@ extern DWORD   DAT_005599e0;
 extern DWORD   DAT_00559bf0;
 extern int    _DAT_00559b9c;   // wind speed result (fsin * tick, *10)
 extern DWORD   DAT_00559bec;   // movement cooldown threshold
-extern int     DAT_00559c48;   // hover: item-on-ground index
-extern int     DAT_00559c4c;   // hover: NPC index
-extern int     DAT_00559c50;   // hover: entity (mob/player) index
-extern int     DAT_00559c54;   // hover: special object index
+// Hover/selection state.  Names follow the 5.2 reference only where the
+// 0.97k behaviour and lifetime match; the DAT address is kept for IDA work.
+extern int     SelectedItem;       // DAT_00559c48 — item on ground (-1 = none)
+extern int     SelectedNpc;        // DAT_00559c4c — NPC/shop entity (-1 = none)
+extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none)
+extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
 extern int     DAT_00559c58;   // hover: secondary target index
 extern char    DAT_00559c5c;   // hover enabled flag (0=disabled)
 extern int     DAT_00559c60;   // equipped weapon type (right hand)

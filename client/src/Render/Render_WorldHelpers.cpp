@@ -1,10 +1,12 @@
-// stubs_render_helpers.cpp
+// Render_WorldHelpers.cpp
 //
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 297-1179 (883 lines).
+// Formerly stubs_render_helpers.cpp.  This module owns the world-render
+// helpers called from Render_Scene3D and adjacent render passes.
 //
-// "FUN_ stubs (void returning)" + "In-game render helpers" sections:
-// helpers called from Render_Scene3D and friends. Many are wrappers for
-// other modules' implementations or no-op trampolines.
+// IDA provenance is intentionally retained at every entry point as
+// `FUN_XXXXXXXX @ 0xXXXXXXXX`.  Functions are not renamed until their
+// contracts are confirmed against the 0.97k binary; do not use 5.2 code to
+// infer behaviour.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -591,7 +593,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
     {
         extern void __cdecl RenderItemName_stub(int, DWORD, int, int, bool);
         BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
-        int hovered = (int)DAT_00559c48;   // SelectedItem (item bajo el cursor)
+        int hovered = (int)SelectedItem;   // SelectedItem (item bajo el cursor)
 
         // 1. Nombre del item hovereado (Sort=0, se dibuja sobre el item).
         if (hovered >= 0 && hovered < 1000) {
@@ -620,14 +622,14 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
         }
     }
 
-    if (DAT_00559c50 == -1 && DAT_00559c4c == -1) {
+    if (SelectedCharacter == -1 && SelectedNpc == -1) {
         return;
     }
 
-    if (DAT_00559c4c != -1) {
+    if (SelectedNpc != -1) {
         // NPC hovered — chat bubble per IDA CreateChat (FUN_00481ba0).
         char* base = (char*)(uintptr_t)DAT_07abf5d0;
-        char* ent  = base + (int)DAT_00559c4c * 0x394;
+        char* ent  = base + (int)SelectedNpc * 0x394;
         if (ent[0] != 0) {
             const char* name = (const char*)(ent + 0x1C1);
             if (name[0]) {
@@ -637,10 +639,10 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
         return;
     }
 
-    if (DAT_00559c50 == -1) return;
+    if (SelectedCharacter == -1) return;
 
     char* base = (char*)(uintptr_t)DAT_07abf5d0;
-    char* ent  = base + (int)DAT_00559c50 * 0x394;
+    char* ent  = base + (int)SelectedCharacter * 0x394;
     if (ent[0] == 0) return;
 
     BYTE kind = *(BYTE*)(ent + 0x84);  // 1=player, 2=monster, 4=npc

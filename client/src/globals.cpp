@@ -240,7 +240,7 @@ DWORD    DAT_0055987c  = 0;
 DWORD    DAT_005599b0  = 0;
 DWORD    DAT_005599e0  = 0;
 DWORD    DAT_00559bf0  = 0;
-// DAT_00559c4c/50 defined below in hover/targeting section
+// DAT_00559c4c/50 are defined below in the named hover/targeting section.
 DWORD    DAT_00559c78  = 0xffffffff;
 // 0x00559C7C — IDA `SetTextColor_0`: color del PREFIJO (nombre de guild) en la
 // composición de burbujas de chat (`sub_47F360`).  Lo escriben `RenderBoolean`
@@ -1394,14 +1394,14 @@ int      DAT_07e11d5c  = 0;
 // before priority-probing. En login/char-select Mouse_Hover no corre, así que
 // el valor inicial debe ser -1 para que RenderCursor (FUN_004bffa0) muestre
 // el cursor arrow por defecto en vez del item-cursor (bitmap 5 = mano abierta).
-int      DAT_00559c48  = -1;  // SelectedItem
-int      DAT_00559c4c  = -1;  // SelectedNpc
-int      DAT_00559c50  = -1;  // SelectedCharacter
-int      DAT_00559c54  = -1;  // SelectedOperate
+int      SelectedItem       = -1;  // DAT_00559c48
+int      SelectedNpc        = -1;  // DAT_00559c4c
+int      SelectedCharacter  = -1;  // DAT_00559c50
+int      SelectedOperate    = -1;  // DAT_00559c54
 int      DAT_00559c58  = -1;  // SelectedCharacter secondary
 // 2026-05-06 BUG-FIX: m_bAutoAttack default = 1 (enabled). Per IDA
 // Mouse_Hover (sub_4B0310:85), if !m_bAutoAttack the hover-target
-// (DAT_00559c50) is reset to -1 every frame BEFORE the click handler reads
+// (DAT_00559c50 / SelectedCharacter) is reset to -1 every frame BEFORE the click handler reads
 // it → click on mob fell through to ground-click handler. User reported
 // "no atacaba a la primera, me costo empezar a atacar" 2026-05-06.
 char     DAT_00559c5c  = 1;

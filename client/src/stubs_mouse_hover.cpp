@@ -497,7 +497,7 @@ int __cdecl FUN_004b0240(void)
 // FUN_004e5980 @ 0x004E5980 — Party_HPBar_HoverCheck(void)
 // Iterates the party HP bar array (DAT_07e11e9c, stride 0x24 = 9 uints) and checks
 // if the mouse cursor (DAT_083a427c, DAT_083a4278) is within any party member's
-// screen rect. Sets DAT_00559c50 (hover entity index) and returns 1 if hovering.
+// screen rect. Sets SelectedCharacter (hover entity index) and returns 1 if hovering.
 // SecondPassword UI state flags (DAT_07eaa115..130) control which X position band is used.
 // Anti-tamper HashTable blocks in the loop are skipped — only position comparison kept.
 char __cdecl FUN_004e5980(void)
@@ -559,7 +559,7 @@ char __cdecl FUN_004e5980(void)
 
             if (bTypeOk && bPosOk) {
                 result = 1;
-                DAT_00559c50 = *puVar5;
+                SelectedCharacter = *puVar5;
             }
         }
         local_24 += _DAT_005527d4;
@@ -613,22 +613,22 @@ void __cdecl FUN_004bffa0(void) {
     if (DAT_07eaa14c != 0 || DAT_083a7c24 != 0) { draw_arrow(); return; }
 
     // SelectedItem (hover sobre ítem en el piso)
-    if (DAT_00559c48 != -1) {
+    if (SelectedItem != -1) {
         FUN_005125a0(5, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
         return;
     }
     // SelectedNpc (hover sobre NPC) — UV animado 3×2
-    if (DAT_00559c4c != -1) {
+    if (SelectedNpc != -1) {
         FUN_005125a0(6, cx, cy, 24.0f, 24.0f,
                      *(float*)&u_bits, *(float*)&v_bits, 0.5f, 0.5f, '\x01', '\x01');
         return;
     }
     // SelectedOperate (hover sobre objeto interactivo del mundo)
-    if (DAT_00559c54 != -1) {
+    if (SelectedOperate != -1) {
         // Match per-World contra el type-code de la entidad; fallback bitmap 9.
         // DAT_0055a7ac aquí actúa como `World` en IDA; puede no coincidir 100%
         // con nuestra interpretación de sub-state pero no afecta el default.
-        short cls = *(short*)(((int*)&DAT_083a2378)[DAT_00559c54 * 3] + 2);
+        short cls = *(short*)(((int*)&DAT_083a2378)[SelectedOperate * 3] + 2);
         int world = DAT_0055a7ac;
         bool match = false;
         if      (world == 0) match = (cls == 133);
@@ -644,7 +644,7 @@ void __cdecl FUN_004bffa0(void) {
     // se saltea; el guard sólo protege contra misconfig.
     if (DAT_07abf5d8 != NULL &&
         *(char*)((char*)DAT_07abf5d8 + 0x34e) == '\0' &&
-        DAT_00559c50 != -1)
+        SelectedCharacter != -1)
     {
         if ((char)FUN_00483160() != '\0' && DAT_07d78094 == '\0') {
             FUN_005125a0(4, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');

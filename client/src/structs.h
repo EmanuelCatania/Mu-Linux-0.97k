@@ -391,7 +391,8 @@ struct SERVER_LIST_t
 #define Hero                DAT_07abf5d8     // DWORD — ptr to local player entity
 #define CharactersClient    DAT_07abf5d0     // DWORD — entity array base
 #define HeroIndex           DAT_05826ca0     // int (approx, not in our globals yet — add below)
-#define SelectedCharacter   DAT_00559c50     // int
+// SelectedCharacter is a named global declared in globals.h.
+// IDA provenance: DAT_00559c50.
 
 // Camera / OpenGL — underlying storage is DWORD but the binary treats the
 // bit pattern as float. Use lvalue-float reinterpretation so assignments like

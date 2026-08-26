@@ -438,7 +438,7 @@ void FUN_0045ab00(void)
     }
     else if ((*pcVar1 != '\0') && (pcVar1[0x160] != '\0')) {
       DAT_07abf5d4 = DAT_07abf5d4 + 1;
-      if ((iVar2 == DAT_00559c50) || (iVar2 == DAT_00559c4c)) {
+      if ((iVar2 == SelectedCharacter) || (iVar2 == SelectedNpc)) {
         puVar4 = (undefined4 *)0x1;
       }
       else {

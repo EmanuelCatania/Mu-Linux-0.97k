@@ -15,11 +15,11 @@
 //
 // ── Hover targets ─────────────────────────────────────────────────────────────
 // After cursor render, sets hover indices:
-//   DAT_00559c48 = item on ground (-1=none)
-//   DAT_00559c4c = NPC / shop entity (-1=none)
-//   DAT_00559c50 = mob or player entity (-1=none)
-//   DAT_00559c54 = special object (-1=none)
-//   DAT_00559c58 = secondary hover (cleared if DAT_00559c50 resets)
+//   SelectedItem = item on ground (-1=none)
+//   SelectedNpc = NPC / shop entity (-1=none)
+//   SelectedCharacter = mob or player entity (-1=none)
+//   SelectedOperate = special object (-1=none)
+//   DAT_00559c58 = secondary hover (cleared if SelectedCharacter resets)
 //
 // Priority with Alt held (VK_MENU):
 //   item-ground (FUN_004afa40) → NPC type 4 → mob type 0x22 → player type 1 → special
@@ -79,15 +79,15 @@ void FUN_004b0310(void)
     // ── 2. Reset hover targets ────────────────────────────────────────────────
 
     // 2026-05-06: añadido guard `c50 >= 0` para evitar OOB read cuando
-    // DAT_00559c50 == -1 (initial state). Antes se leía entity[+0x2fd] con
+    // SelectedCharacter == -1 (initial state). Antes se leía entity[+0x2fd] con
     // c50=-1 → puntero negativo → crash latente.
     if (DAT_00559c5c == '\0' || DAT_0055a7ac == 6) {
         // Cursor disabled or spectator state
-        DAT_00559c50 = -1;
+        SelectedCharacter = -1;
         DAT_00559c58 = -1;
-    } else if (DAT_00559c50 >= 0 &&
-               *(char *)(DAT_07abf5d0 + 0x2fd + DAT_00559c50 * 0x394) == '\0' &&
-               *(char *)(DAT_07abf5d0 + DAT_00559c50 * 0x394 + 0x84) == '\x02') {
+    } else if (SelectedCharacter >= 0 &&
+               *(char *)(DAT_07abf5d0 + 0x2fd + SelectedCharacter * 0x394) == '\0' &&
+               *(char *)(DAT_07abf5d0 + SelectedCharacter * 0x394 + 0x84) == '\x02') {
         // Current hover target is a valid alive monster.
         // 2026-05-06: REMOVED reset on IsClickPushed/DAT_083a42c4. La lógica
         // original IDA reseteaba aquí porque la detect que sigue inmediato
@@ -101,17 +101,17 @@ void FUN_004b0310(void)
             DAT_083a42ac != '\0' || DAT_083a42d0 != '\0' ||
             *(char *)(DAT_07abf5d8 + 0x2fd) != '\0')
         {
-            DAT_00559c50 = -1;
+            SelectedCharacter = -1;
         }
-    } else if (DAT_00559c50 >= 0) {
+    } else if (SelectedCharacter >= 0) {
         // Current target is no longer valid (died or kind changed).
         DAT_00559c58 = -1;
-        DAT_00559c50 = -1;
+        SelectedCharacter = -1;
     }
 
-    DAT_00559c48 = -1;
-    DAT_00559c4c = -1;
-    DAT_00559c54 = -1;
+    SelectedItem = -1;
+    SelectedNpc = -1;
+    SelectedOperate = -1;
 
     // ── 3. Hover target detection ─────────────────────────────────────────────
 
@@ -123,15 +123,15 @@ void FUN_004b0310(void)
         {
             // Alt held: item-on-ground first, then NPC, mob, player
             if (DAT_07e91388 == 0)
-                DAT_00559c48 = FUN_004afa40();
-            if (DAT_00559c48 == -1) {
-                DAT_00559c4c = FUN_004afdc0(4);
-                if (DAT_00559c4c == -1) {
-                    DAT_00559c50 = FUN_004afdc0(0x22);
-                    if (DAT_00559c50 != -1) goto done;
-                    DAT_00559c50 = FUN_004afdc0(1);
-                    if (DAT_00559c50 != -1) goto done;
-                    DAT_00559c54 = FUN_004b0240();
+                SelectedItem = FUN_004afa40();
+            if (SelectedItem == -1) {
+                SelectedNpc = FUN_004afdc0(4);
+                if (SelectedNpc == -1) {
+                    SelectedCharacter = FUN_004afdc0(0x22);
+                    if (SelectedCharacter != -1) goto done;
+                    SelectedCharacter = FUN_004afdc0(1);
+                    if (SelectedCharacter != -1) goto done;
+                    SelectedOperate = FUN_004b0240();
                 }
                 goto check_click;
             }
@@ -161,17 +161,17 @@ void FUN_004b0310(void)
             // esperado (confirmado por el usuario): el item bajo el cursor tiene
             // PRIORIDAD. Lo chequeamos primero; si hay item, es pickup.
             if (DAT_07e91388 == 0) {
-                DAT_00559c48 = FUN_004afa40();
-                if (DAT_00559c48 != -1) goto check_click;   // item bajo el cursor → pickup
+                SelectedItem = FUN_004afa40();
+                if (SelectedItem != -1) goto check_click;   // item bajo el cursor → pickup
             }
-            if (DAT_00559c50 == -1) {
-                DAT_00559c50 = FUN_004afdc0(0x22);  // mob type
-                if (DAT_00559c50 == -1) {
-                    DAT_00559c50 = FUN_004afdc0(1);  // player type
-                    if (DAT_00559c50 != -1) goto done;
-                    DAT_00559c4c = FUN_004afdc0(4);  // NPC type
-                    if (DAT_00559c4c == -1) {
-                        DAT_00559c54 = FUN_004b0240();
+            if (SelectedCharacter == -1) {
+                SelectedCharacter = FUN_004afdc0(0x22);  // mob type
+                if (SelectedCharacter == -1) {
+                    SelectedCharacter = FUN_004afdc0(1);  // player type
+                    if (SelectedCharacter != -1) goto done;
+                    SelectedNpc = FUN_004afdc0(4);  // NPC type
+                    if (SelectedNpc == -1) {
+                        SelectedOperate = FUN_004b0240();
                     }
                     goto check_click;
                 }
@@ -182,7 +182,7 @@ void FUN_004b0310(void)
     }
 
 check_click:
-    if (DAT_00559c50 == -1) {
+    if (SelectedCharacter == -1) {
         DAT_00559c58 = -1;
     }
     goto done;
@@ -191,7 +191,7 @@ process_click:
     FUN_004afb00();
 
 done:
-    if (DAT_00559c50 == -1)
+    if (SelectedCharacter == -1)
         DAT_00559c58 = -1;
 
 }

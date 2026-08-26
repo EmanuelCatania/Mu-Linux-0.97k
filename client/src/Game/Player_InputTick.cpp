@@ -443,9 +443,9 @@ static void HUD_HotkeyTick(void)
 //   5. Movement debounce (DAT_07e11d28 >= DAT_00559bec and !DAT_07e11dc0)
 //   6. Animation state exit: swimming, normal walk, cancel
 //   7. Click-on-character-select: slot copy + sends [0xC1][0x24] encrypted packet
-//   8. Click-on-mob/player (DAT_00559c50): pathfind + FUN_00491c40
-//   9. Click-on-NPC (DAT_00559c4c): alt pathfind
-//  10. Click-on-special-object (DAT_00559c54): pathfind + entity_type lookup
+//   8. Click-on-mob/player (SelectedCharacter): pathfind + FUN_00491c40
+//   9. Click-on-NPC (SelectedNpc): alt pathfind
+//  10. Click-on-special-object (SelectedOperate): pathfind + entity_type lookup
 //  11. Ground click (ray cast FUN_004f9ac0 + FUN_004f8480): terrain check + pathfind
 //  12. Entity state update FUN_0049cbf0
 //  13. Hover terrain attribute → DAT_07e118e8
@@ -464,10 +464,10 @@ static void HUD_HotkeyTick(void)
 //   DAT_00559bec          — movement debounce threshold
 //   DAT_07e11d28          — movement debounce counter
 //   DAT_07e11db8          — contador de pasos (tiene que ser > 0x27 para el facing)
-//   DAT_00559c50          — hover mob/player entity index
-//   DAT_00559c4c          — hover NPC entity index
-//   DAT_00559c54          — hover special-object index
-//   DAT_00559c48          — hover ground item index
+//   SelectedCharacter          — hover mob/player entity index
+//   SelectedNpc          — hover NPC entity index
+//   SelectedOperate          — hover special-object index
+//   SelectedItem          — hover ground item index
 //   DAT_083a2378          — special-object entity pointer table (stride 3*int)
 //
 // Packet formats (all XOR-encoded before send):
@@ -588,10 +588,10 @@ void __cdecl FUN_004acef0(void)
     //   después poner en cero y volver a copiar vía el buffer intermedio DAT_07e113e4.
     if (DAT_00559c84 != '\0'
         && *(char*)((int)DAT_07abf5d8 + 0x34e) != '\0'
-        && DAT_00559c50 != -1
+        && SelectedCharacter != -1
         && DAT_083a42d0 != '\0')
     {
-        unsigned char *hoverEntity = (unsigned char*)(DAT_07abf5d0 + DAT_00559c50 * 0x394);
+        unsigned char *hoverEntity = (unsigned char*)(DAT_07abf5d0 + SelectedCharacter * 0x394);
         unsigned char *nameSrc     = hoverEntity + 0x1c1;
 
         // Copy name into password buffer
@@ -601,7 +601,7 @@ void __cdecl FUN_004acef0(void)
         // IDA Player_InputTick L344-349:
         //     v11 = dword_559CC4;
         //     v12 = &byte_7E113E4[256 * v11];
-        // 2026-08-21: el port indexaba con DAT_00559c50 (SelectedCharacter, que
+        // 2026-08-21: el port indexaba con SelectedCharacter (SelectedCharacter, que
         // llega hasta 399) sobre una tabla de 5 entradas → escribía 0x40 bytes
         // hasta ~100 KB fuera del global cada vez que se hacía click derecho
         // sobre un jugador con el chat abierto.
@@ -879,7 +879,7 @@ void __cdecl FUN_004acef0(void)
             {
                 char dbg[200];
                 wsprintfA(dbg, "PIT SECONDARY TICK (1-shot): 2ed=%d c50=%d ce8=%d 4124=%d 42c4=%d 413c=%d bClickEdge=%d bClickHeld=%d",
-                    (int)ent[0x2ed], (int)DAT_00559c50, (int)DAT_00559ce8,
+                    (int)ent[0x2ed], (int)SelectedCharacter, (int)DAT_00559ce8,
                     (int)DAT_083a4124, (int)DAT_083a42c4, (int)DAT_083a413c,
                     0, 0);  // bClickEdge/bClickHeld read later — log raw flags
                 DbgLogPublic(dbg);
@@ -1041,10 +1041,10 @@ void __cdecl FUN_004acef0(void)
                     DAT_083a413c = '\0';
                     DAT_083a42c4 = 0;
                     // Limpia los objetivos de hover para evitar arrastre de estado del char-select.
-                    DAT_00559c50 = -1;
-                    DAT_00559c4c = -1;
-                    DAT_00559c48 = -1;
-                    DAT_00559c54 = -1;
+                    SelectedCharacter = -1;
+                    SelectedNpc = -1;
+                    SelectedItem = -1;
+                    SelectedOperate = -1;
                     DAT_00559c58 = -1;
                     DAT_00559c70 = -1;
                     DAT_00559ce8 = -1;
@@ -1125,7 +1125,7 @@ void __cdecl FUN_004acef0(void)
         // sobre un mob. User reportó: "si le paso el mouse por encima ataca,
         // no si le hago click" 2026-05-06.
         static int s_lastHoverMob = -1;
-        int curHoverMob = (int)DAT_00559c50;
+        int curHoverMob = (int)SelectedCharacter;
         if (curHoverMob != -1 && curHoverMob != s_lastHoverMob && bClickHeld) {
             // Cambió el objetivo bajo el mouse Y el mouse está efectivamente apretado → intención de arrastre.
             s_clickCycleConsumed = false;
@@ -1243,7 +1243,7 @@ void __cdecl FUN_004acef0(void)
         // caminaba al lugar de un NPC/monster cercano.
         //
         // 2026-05-05 (followup): TAMBIÉN consume DAT_083a42c4 y reset
-        // DAT_00559c50/4c/48 (hover targets) cuando hay click sobre window.
+        // SelectedCharacter/4c/48 (hover targets) cuando hay click sobre window.
         // Sin esto, un hover target stale (NPC bajo el cursor del frame
         // anterior) hacía que líneas 757/801/831 dispararan pathfind aunque
         // bHoverActive=false (vía bHoverOrClick que también incluye DAT_083a42c4).
@@ -1263,7 +1263,7 @@ void __cdecl FUN_004acef0(void)
                 "MOVEHOVER invOpen=%d push=%d held=%d latch=%d cycCons=%d startWin=%d mouseOnWin=%d hovActive=%d c50=%d c4c=%d c54=%d",
                 (int)DAT_07eaa117, (int)bMousePush, (int)bClickHeld, (int)bClickLatched,
                 (int)s_clickCycleConsumed, (int)s_clickStartedOnWindow, (int)g_MouseOnWindow,
-                (int)bHoverActive, (int)DAT_00559c50, (int)DAT_00559c4c, (int)DAT_00559c54);
+                (int)bHoverActive, (int)SelectedCharacter, (int)SelectedNpc, (int)SelectedOperate);
             DbgLogPublic(dh);
         }
 
@@ -1304,8 +1304,8 @@ void __cdecl FUN_004acef0(void)
                         (int)ent_dbg[0x305], (int)ent_dbg[0x2ec],
                         (int)ent_dbg[0x105], (int)ent_dbg[0x106],
                         wxi, wxf, wyi, wyf, wzi, wzf, fai, faf,
-                        (int)DAT_00559c50, (int)DAT_00559c4c,
-                        (int)DAT_00559c48, (int)DAT_00559c70);
+                        (int)SelectedCharacter, (int)SelectedNpc,
+                        (int)SelectedItem, (int)DAT_00559c70);
                     DbgLogPublic(dbg);
                 }
             }
@@ -1320,7 +1320,7 @@ void __cdecl FUN_004acef0(void)
         if (DAT_00559c5c != '\0'
             && DAT_0055a7ac != 6
             && DAT_00559c58 == 1
-            && DAT_00559c50 != -1)
+            && SelectedCharacter != -1)
         {
             bHoverOrClick = true;
         }
@@ -1395,14 +1395,14 @@ void __cdecl FUN_004acef0(void)
         if (*(char*)(ent + 0x34e) == '\0') {
             unsigned int canAct = FUN_00483160();
             // BUG-FIX 2026-04-28: FUN_00483160 (CheckAttack) retorna 0 cuando
-            // no hay entidad bajo el mouse (DAT_00559c50 == -1). El gate
+            // no hay entidad bajo el mouse (SelectedCharacter == -1). El gate
             // original solo dejaba pasar entity-hover-clicks → ground-click
             // (clic en el suelo sin hover de entidad) NUNCA disparaba el
             // pathfind → hero no se movía nunca.
             // El IDA original probablemente separaba ground-click fuera de
             // este gate; aquí relajamos: si bHoverActive (click real), pasar
             // aunque canAct=0. Los handlers internos siguen gateados por
-            // DAT_00559c50/4c/48/54 != -1, así que no disparan spurio.
+            // SelectedCharacter/4c/48/54 != -1, así que no disparan spurio.
             if ((char)canAct != '\0' || bHoverActive) {
                 if (*(char*)(ent + 0x2ec) != '\0'
                     && *(char*)(ent + 0x2ed) == '\0'
@@ -1432,7 +1432,7 @@ void __cdecl FUN_004acef0(void)
                     }
                 }
 
-                // ── Hover entity attack (DAT_00559c50 valid) ─────────────────
+                // ── Hover entity attack (SelectedCharacter valid) ─────────────────
                 // 2026-05-06 (final): GATEAR POR bClickEdge (rising edge del
                 // mouse press, capturado tanto desde bClickHeld como del
                 // latch DAT_083a413c). Match IDA Player_InputTick que usa
@@ -1451,18 +1451,18 @@ void __cdecl FUN_004acef0(void)
                 //
                 // Filtro adicional: mobs MUERTOS (entity[+0x34e]==1) no son
                 // targeteables.
-                if (DAT_00559c50 > -1 && bClickEdge) {
+                if (SelectedCharacter > -1 && bClickEdge) {
                     {
                         // 2026-05-07 diag — keep until hover bug resolved.
                         char dbg[200];
                         wsprintfA(dbg, "PIT MOB CLICK FIRED: c50=%d bMousePush=%d bClickHeld=%d bClickLatched=%d 4124=%d 42c4=%d 413c=%d",
-                            (int)DAT_00559c50, (int)bMousePush,
+                            (int)SelectedCharacter, (int)bMousePush,
                             (int)bClickHeld, (int)bClickLatched,
                             (int)DAT_083a4124, (int)DAT_083a42c4, (int)DAT_083a413c);
                         DbgLogPublic(dbg);
                     }
                     BYTE* hoverEnt = (BYTE*)(uintptr_t)DAT_07abf5d0
-                                   + (uintptr_t)DAT_00559c50 * 0x394;
+                                   + (uintptr_t)SelectedCharacter * 0x394;
                     // 2026-05-07: dead check usa SOLO 0x2FD per IDA ReceiveDie:18.
                     // El check viejo `0x2EC == 0` era WRONG: 0x2EC es un "state"
                     // flag que el server setea a 0 también en ReceiveAction y
@@ -1476,17 +1476,17 @@ void __cdecl FUN_004acef0(void)
                     if (hoverEnt[0x2FD] != 0) {
                         // Muerto — limpia el estado de hover para que el click siguiente no quede
                         // pegado al cadáver, y sale.
-                        DAT_00559c50 = -1;
-                        DAT_00559c54 = -1;
+                        SelectedCharacter = -1;
+                        SelectedOperate = -1;
                         DAT_00559c58 = 0;
                         DAT_00559c70 = -1;
                         goto end_tick_inc;
                     }
-                    int tgtEntityBase = (int)(DAT_07abf5d0 + DAT_00559c50 * 0x394);
+                    int tgtEntityBase = (int)(DAT_07abf5d0 + SelectedCharacter * 0x394);
                     int dstX = *(int*)(tgtEntityBase + 0x388);
                     int dstY = *(int*)(tgtEntityBase + 0x38c);
 
-                    DAT_00559ce8 = DAT_00559c50;
+                    DAT_00559ce8 = SelectedCharacter;
                     DAT_00559c58  = 1;
                     *(unsigned char*)(ent + 0x2ed) = 3;
                     // 2026-05-07 BUG-FIX: dst grid coords son del MOB target,
@@ -1500,7 +1500,7 @@ void __cdecl FUN_004acef0(void)
 
                     DAT_07db8708    = (int)*(short*)(tgtEntityBase + 2);
                     _DAT_07e118e4   = *(DWORD*)(tgtEntityBase + 0x24);
-                    DAT_00559c70    = DAT_00559c50;
+                    DAT_00559c70    = SelectedCharacter;
 
                     // Pathfind to hover target
                     int srcX = *(int*)(ent + 0x388);
@@ -1533,23 +1533,23 @@ void __cdecl FUN_004acef0(void)
             }
         }
 
-        // ── Alt-target: NPC/item (DAT_00559c4c != -1) ────────────────────────
-        if (DAT_00559c54 == -1
+        // ── Alt-target: NPC/item (SelectedNpc != -1) ────────────────────────
+        if (SelectedOperate == -1
             || ((*(short*)(ent + 0x2b8) == 0x332 || *(short*)(ent + 0x2b8) == 0x333)
                 && *(char*)(ent + 0x34e) == '\0'))
         {
-            if (DAT_00559c4c != -1 && bClickEdge) {
+            if (SelectedNpc != -1 && bClickEdge) {
                 // 2026-05-06: bClickEdge en vez de bHoverActive — mismo fix
                 // que el attack handler arriba para evitar disparos por
                 // bClickLatched stale + cambio de hover.
                 // Click sobre un NPC: setea el objetivo de movimiento y pathfindea (gateado por un click real)
                 if (DAT_07eaa118 == '\0' && DAT_07eaa119 == '\0') {
                     *(unsigned char*)(ent + 0x2ed) = 2;
-                    DAT_00559ce8 = DAT_00559c4c;
-                    int tgtBase = (int)(DAT_07abf5d0 + DAT_00559c4c * 0x394);
+                    DAT_00559ce8 = SelectedNpc;
+                    int tgtBase = (int)(DAT_07abf5d0 + SelectedNpc * 0x394);
                     DAT_07db8708  = (int)*(short*)(tgtBase + 2);
                     _DAT_07e118e4 = *(DWORD*)(tgtBase + 0x24);
-                    DAT_00559c70  = DAT_00559c4c;
+                    DAT_00559c70  = SelectedNpc;
 
                     // 2026-07-25 (#2 shops): si el NPC ya está en rango de talk
                     // (server exige ±5 tiles — CGNpcTalkRecv L261), mandar el
@@ -1587,18 +1587,18 @@ void __cdecl FUN_004acef0(void)
                 }
             }
 
-            // ── Tertiary target (DAT_00559c48) ───────────────────────────────
-            if (DAT_00559c48 != -1 && bClickEdge) {
+            // ── Tertiary target (SelectedItem) ───────────────────────────────
+            if (SelectedItem != -1 && bClickEdge) {
                 // 2026-05-06: bClickEdge en vez de bHoverActive (mismo fix).
                 *(unsigned char*)(ent + 0x2ed) = 1;
-                ItemKey = (DWORD)DAT_00559c48;   // latch, IDA L1281
-                // 2026-07-27 BUG-FIX: DAT_00559c48 es índice del pool de items
+                ItemKey = (DWORD)SelectedItem;   // latch, IDA L1281
+                // 2026-07-27 BUG-FIX: SelectedItem es índice del pool de items
                 // del suelo (DAT_07e12840, stride 0x204), NO del pool de
                 // personajes (DAT_07abf5d0, stride 0x394). El port anterior leía
                 // el destino del pool equivocado → coords basura → el héroe
                 // caminaba a cualquier lado. El tile del item = worldXY/100
                 // (world = base+16/20).
-                int itemSlotIdx = (int)DAT_00559c48;
+                int itemSlotIdx = (int)SelectedItem;
                 BYTE* itemEnt = (BYTE*)&DAT_07e12840[0]
                               + (uintptr_t)itemSlotIdx * 0x204;
                 // 2026-07-27 BUG-FIX: la posición world del item la escribe
@@ -1756,7 +1756,7 @@ void __cdecl FUN_004acef0(void)
                 }
             }
             { char d[64]; wsprintfA(d, "PIT GroundClick! 559c4c=%d c48=%d c54=%d",
-                (int)DAT_00559c4c, (int)DAT_00559c48, (int)DAT_00559c54);
+                (int)SelectedNpc, (int)SelectedItem, (int)SelectedOperate);
               DbgLogPublic(d); }
             {
                 SHORT shift = GetAsyncKeyState(0x10);
@@ -1859,14 +1859,14 @@ void __cdecl FUN_004acef0(void)
         } else if (bClickEdge) {
             // 2026-05-06: bClickEdge en vez de bHoverActive (mismo fix anti
             // spurious-from-stale-latch).
-            // ── Special object target (DAT_00559c54 != -1 and char-class conditions) ──
+            // ── Special object target (SelectedOperate != -1 and char-class conditions) ──
             // BUG-FIX 2026-04-28: gate por click real + coords del tile.
             DAT_07e016c0 = (DWORD)(int)*(float*)&DAT_080ab288;
             DAT_07e016c4 = (DWORD)(int)*(float*)&DAT_080ab28c;
 
             // FUN_004f6c30 devuelve el atributo de terreno en la grilla calculada
             int attrIdx = FUN_004f6c30((int)DAT_07e016c0, (int)DAT_07e016c4);
-            int iSrc = DAT_00559c54;
+            int iSrc = SelectedOperate;
 
             if (((unsigned char*)&DAT_0838bc70)[attrIdx] < 2
                 && *(char*)(ent + 0x2ec) == '\0')
