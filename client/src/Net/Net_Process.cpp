@@ -5293,46 +5293,59 @@ void Net_ProcessPacket(void)
                 break;
             }
 
-            case 0x90: {  // Guild create result
-                NetLog("NET:  → 0x90 Guild_CreateOk");
-                extern void Guild_CreateOk(BYTE* pkt);
-                Guild_CreateOk((BYTE*)Msg);
+            // ── 0x90-0x99 — EVENTOS, no guild ─────────────────────────────
+            // Hasta 2026-08-26 estos casos llamaban a handlers de guild
+            // (Guild_CreateOk, Guild_AddMemberResult, ...) que el port se
+            // invento. IDA y MuEmu coinciden en que son eventos: ver la tabla
+            // completa en la cabecera de `src/Net/Net_Events.cpp`.
+            // El guild de verdad esta en 0x50-0x56, mas arriba en este mismo
+            // switch, y no se toca.
+            case 0x90: {  // ReceiveMoveToDevilSquareResult @ 0x00436820
+                NetLog("NET:  -> 0x90 MoveToDevilSquareResult");
+                extern void Recv_MoveToDevilSquareResult(BYTE* Msg, int Size);
+                Recv_MoveToDevilSquareResult((BYTE*)Msg, Size);
                 break;
             }
-            case 0x91: {  // Guild add member result
-                NetLog("NET:  → 0x91 Guild_AddMemberResult");
-                extern void Guild_AddMemberResult(BYTE* pkt);
-                Guild_AddMemberResult((BYTE*)Msg);
+            case 0x91: {  // ReceiveEventZoneOpenTime @ 0x00436CB0
+                NetLog("NET:  -> 0x91 EventZoneOpenTime type=%u remain=%u",
+                       (unsigned)(Size > 3 ? Msg[3] : 0),
+                       (unsigned)(Size > 4 ? Msg[4] : 0));
+                extern void Recv_EventZoneOpenTime(BYTE* Msg, int Size);
+                Recv_EventZoneOpenTime((BYTE*)Msg, Size);
                 break;
             }
-            case 0x93: {  // Guild member list
-                NetLog("NET:  → 0x93 Guild_MemberList");
-                extern void Guild_MemberList(BYTE* pkt);
-                Guild_MemberList((BYTE*)Msg);
+            case 0x92: {  // StartMatchCountDown @ 0x0047EC00 — sin portar
+                NetLog("NET:  -> 0x92 StartMatchCountDown (sin portar)");
                 break;
             }
-            case 0x94: {  // Guild char-select result
-                NetLog("NET:  → 0x94 Guild_CharSelectResult");
-                extern void Guild_CharSelectResult(BYTE* pkt);
-                Guild_CharSelectResult((BYTE*)Msg);
+            case 0x93: {  // ReceiveDevilSquareRank @ 0x00436A80
+                NetLog("NET:  -> 0x93 DevilSquareRank");
+                extern void Recv_DevilSquareRank(BYTE* Msg, int Size);
+                Recv_DevilSquareRank((BYTE*)Msg, Size);
                 break;
             }
-            case 0x95: {  // Guild update pos
-                NetLog("NET:  → 0x95 Guild_UpdatePos");
-                extern void Guild_UpdatePos(BYTE* pkt);
-                Guild_UpdatePos((BYTE*)Msg);
+            case 0x94: {  // ReceiveEventChipInfomation @ 0x004372C0
+                NetLog("NET:  -> 0x94 EventChipInfomation");
+                extern void Recv_EventChipInfomation(BYTE* Msg, int Size);
+                Recv_EventChipInfomation((BYTE*)Msg, Size);
                 break;
             }
-            case 0x96: {  // Guild set target pos
-                NetLog("NET:  → 0x96 Guild_SetTargetPos");
-                extern void Guild_SetTargetPos(BYTE* pkt);
-                Guild_SetTargetPos((BYTE*)Msg);
+            case 0x95: {  // ReceiveEventChip @ 0x00437380
+                NetLog("NET:  -> 0x95 EventChip");
+                extern void Recv_EventChip(BYTE* Msg, int Size);
+                Recv_EventChip((BYTE*)Msg, Size);
                 break;
             }
-            case 0x99: {  // Guild join toggle
-                NetLog("NET:  → 0x99 Guild_JoinToggle");
-                extern void Guild_JoinToggle(BYTE* pkt);
-                Guild_JoinToggle((BYTE*)Msg);
+            case 0x96: {  // ReceiveMutoNumber @ 0x004373A0
+                NetLog("NET:  -> 0x96 MutoNumber");
+                extern void Recv_MutoNumber(BYTE* Msg, int Size);
+                Recv_MutoNumber((BYTE*)Msg, Size);
+                break;
+            }
+            case 0x99: {  // ReceiveServerImmigration @ 0x004373D0
+                NetLog("NET:  -> 0x99 ServerImmigration");
+                extern void Recv_ServerImmigration(BYTE* Msg, int Size);
+                Recv_ServerImmigration((BYTE*)Msg, Size);
                 break;
             }
 

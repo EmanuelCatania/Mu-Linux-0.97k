@@ -206,6 +206,8 @@
     <ClCompile Include="src\Net\Net_Connect.cpp" />
     <ClCompile Include="src\Net\Net_PacketSession.cpp" />
     <ClCompile Include="src\Net\MuEmu.cpp" />
+    <ClCompile Include="src\Net\PacketFrame.cpp" />
+    <ClCompile Include="src\Net\Net_Events.cpp" />
     <ClCompile Include="src\Net\HWID.cpp" />
     <ClCompile Include="src\Entity\Entity_Init.cpp" />
     <ClCompile Include="src\Entity\Entity_Spawn.cpp" />
