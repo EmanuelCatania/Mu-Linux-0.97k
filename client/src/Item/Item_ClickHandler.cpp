@@ -401,6 +401,20 @@ static void SendPacketBytes(const void* data, int size)
 // (de ahí el "me desconectó estando quieto" tras usar el diálogo de venta).
 // El bump lo hace Net_SendSmallPacket, que es quien realmente escribe el
 // serial en el frame.
+extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
+
+// SendC1Packet — envuelve un payload en frame C1 y lo manda.
+//
+// 2026-08-26: antes construia el frame a mano y lo pasaba a SendPacketBytes,
+// que llama a ::send directo — o sea SIN el chain-XOR. Pero el server aplica
+// `XorData` a TODO frame C1 (`ExtractPacket` -> `XorData(size-1, 2)`), asi que
+// des-XOR-eaba un paquete que nunca fue XOR-eado y veia basura de pkt[3] en
+// adelante. Solo se salvaban los de 3 bytes, donde el bucle del server no
+// itera. Los dos call sites que quedan (scrolls 467/434, opcode 0x49/0x91, 7
+// bytes) caian de lleno en el bug.
+//
+// Ahora delega en Net_SendC1Packet, que aplica el chain-XOR y ademas resuelve
+// el frame contra la tabla de HackPacketCheck.
 static void SendC1Packet(BYTE* payload, int payloadSize)
 {
     if (payloadSize <= 0 || payloadSize > 250) return;
@@ -409,7 +423,7 @@ static void SendC1Packet(BYTE* payload, int payloadSize)
     pkt[0] = 0xC1;
     pkt[1] = (BYTE)(payloadSize + 2);   // total size = header(2) + payload
     memcpy(pkt + 2, payload, payloadSize);
-    SendPacketBytes(pkt, payloadSize + 2);
+    Net_SendC1Packet(pkt, payloadSize + 2);
 }
 
 // 2026-07-27: envío C3 (CSimpleModulus + serial) para los opcodes de tienda
