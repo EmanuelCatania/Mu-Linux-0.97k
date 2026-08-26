@@ -28,6 +28,9 @@
 //   state 2,4,6,8   : Y eases to 0x93  (credentials panel)
 
 #include "stdafx.h"
+#include "Net/PacketFrame.h"
+
+extern "C" void DbgLogPublic(const char* msg);
 extern "C" { void DbgLogPublic(const char*); }
 #pragma warning(disable: 4554 4244 4018 4146)
 #include "Game/Game_SceneUpdate.h"
@@ -191,84 +194,131 @@ int Net_SendBuf(const char* buf, int len)
     return 0;
 }
 
-// Send a small packet: input is plaintext [0xC1][len][opcode][payload].
-// Encrypts pkt[1..totalLen-1] via CSimpleModulus (FUN_0053cc30) and wraps
-// with [0xC3][encLen+2] framing.  totalLen is plaintext size incl. C1 byte.
+// ─────────────────────────────────────────────────────────────────────────────
+// Emisores de paquetes al GameServer
+// ─────────────────────────────────────────────────────────────────────────────
+// `Net_SendFrameC1` y `Net_SendFrameC3` arman cada frame; `Net_SendSmallPacket`
+// y `Net_SendC1Packet` son las entradas publicas y **eligen el frame solas**
+// consultando PacketFrame_WantsEncrypt (tabla portada de HackPacketCheck.txt).
 //
-// IMPORTANT: the companion client's CProtocol::DataSend (Mu-linux-97K
-// Source/Client/Main/Protocol.cpp:977) overwrites the size byte with the
-// rolling serial counter (g_byPacketSerialSend / DAT_05826ceb) right before
-// encryption, so the first DECRYPTED byte on the server is the serial, not
-// the size.  The server (SocketManager.cpp:328-330) reads DecBuff[1] as
-// DecSerial and validates a monotonic 0,1,2,… sequence via CheckSerial
-// (SerialCheck.cpp:23).  Any mismatch → CloseClient in HackPacketCheck.cpp.
-// Do the stomp here so every caller gets it for free.
-void Net_SendSmallPacket(const BYTE* pkt, int totalLen)
-{
-    char buf[0x402];
-
-    // ── LoginKey chain XOR (CFB) — UNIVERSAL para TODOS los paquetes C3 ───
-    // El companion (Mu-linux-97K Source/Client/Main/Protocol.cpp:983) llama
-    // gPacketManager.ExtractPacket(EncBuff) DENTRO de DataSend antes del
-    // CSM encrypt — y ExtractPacket aplica XorData sobre todos los bytes
-    // del paquete. El server (Source/MuServer/GameServer/PacketManager.cpp:486
-    // XorData) lo reversa en sentido inverso.
-    //
-    // Sin este chain, el server reverse-XOR'a un paquete sin chain → ve
-    // basura (subh corrupto, etc.). Para F1/05 HWID en particular, el
-    // server veía subh=0x7D en vez de 0x05, jamás dispatchaba CGSetHwidRecv,
-    // y lpObj->HardwareID quedaba "" → CheckHardwareID() devolvía 1 →
-    // F1/01 LoginResult code=05 (HWID rechazado).
-    //
-    // Aplicar ANTES del serial-stomp (orden companion: ExtractPacket primero,
-    // serial después).  La fórmula es la misma usada por el companion en
-    // CPacketManager::XorData(): pkt[i] ^= pkt[i-1] ^ key[i % 32], i = 3..len.
-    {
-        BYTE* mp = (BYTE*)pkt;
-        for (int i = 3; i < totalLen; i++) {
-            mp[i] ^= mp[i - 1] ^ s_LoginKey[i & 0x1f];
-        }
-    }
-
-    ((BYTE*)pkt)[1] = DAT_05826ceb++;    // replace size byte with serial
-    int  bodyLen = totalLen - 1;
-    int  encLen  = FUN_0053cc30(0, (unsigned char*)(pkt + 1), bodyLen);
-    int  total   = encLen + 2;
-    buf[0] = (char)0xC3;
-    buf[1] = (char)total;
-    FUN_0053cc30((int)(buf + 2), (unsigned char*)(pkt + 1), bodyLen);
-    Net_SendBuf(buf, total);
-}
-
-// Net_SendC1Packet — envía un paquete que el server exige como C1 PLANO.
+// Antes cada call site elegia el frame a mano y equivocarse desconectaba sin
+// aviso ("Packet encryption error" -> CloseClient). Ahora el call site puede
+// llamar a cualquiera de las dos: si el server pide el otro frame, se corrige
+// y queda registrado en debug.log.
 //
-// `Data\Hack\HackPacketCheck.txt` define por opcode la columna `Encrypt`:
-//   0 = el frame DEBE ser C1/C2   ·   1 = DEBE ser C3/C4   ·   * = cualquiera
-// Si no coincide, `CHackPacketCheck::CheckPacketHack` corta la sesión con
-// "Packet encryption error" → `CloseClient`.
-//
-// Todo el rango de guild (0x50..0x63) pide Encrypt = 0, igual que 0x42 (party),
-// 0x29, 0x49, 0x71, 0x81, 0x86/0x87, 0x97. En cambio 0x0E (keep-alive), 0x34
-// (reparar) y 0x3C piden 1, y 0xF3 acepta cualquiera — por eso el char-list y el
-// ACK de teleport pueden ir por `Net_SendSmallPacket`.
+// Los dos trabajan sobre una COPIA del buffer del caller. Antes el chain-XOR y
+// el serial se escribian sobre el buffer original, lo que ademas de sorprender
+// al caller haria imposible re-enmarcar (el XOR quedaria aplicado dos veces).
+
+// Net_SendFrameC1 — frame plano.
 //
 // El chain-XOR se aplica igual que en los C3: el server hace `XorData` sobre
-// TODO frame C1 (`CPacketManager::ExtractPacket` → `XorData(size-1, 2)`), así que
-// hay que cifrar `pkt[3..len-1]`. Para paquetes de 3 bytes el bucle no itera
-// (no hay payload), que es justo el caso de los pedidos de lista.
+// TODO frame C1 (`CPacketManager::ExtractPacket` -> `XorData(size-1, 2)`), asi
+// que hay que cifrar `pkt[3..len-1]`. Para paquetes de 3 bytes el bucle no
+// itera (no hay payload), que es justo el caso de los pedidos de lista.
 //
-// A diferencia de `Net_SendSmallPacket`, acá NO se pisa `pkt[1]` con el serial:
-// los frames C1 no llevan serial y `CSerialCheck` no los valida.
-void Net_SendC1Packet(const BYTE* pkt, int totalLen)
+// A diferencia del C3, aca NO se pisa `pkt[1]` con el serial: los frames C1 no
+// lo llevan y `CSerialCheck` no los valida.
+static void Net_SendFrameC1(const BYTE* pkt, int totalLen)
 {
-    if (!pkt || totalLen <= 0 || totalLen > 0x400) return;
-
     BYTE buf[0x402];
     memcpy(buf, pkt, totalLen);
     for (int i = 3; i < totalLen; i++) {
         buf[i] ^= buf[i - 1] ^ s_LoginKey[i & 0x1f];
     }
     Net_SendBuf((char*)buf, totalLen);
+}
+
+// Net_SendFrameC3 — frame encriptado: chain-XOR + serial + CSimpleModulus.
+//
+// El companion (Mu-linux-97K Source/Client/Main/Protocol.cpp:983) llama
+// gPacketManager.ExtractPacket(EncBuff) DENTRO de DataSend antes del CSM
+// encrypt, y ExtractPacket aplica XorData sobre todos los bytes del paquete.
+// El server (GameServer/PacketManager.cpp XorData) lo reversa en sentido
+// inverso. Sin este chain el server ve basura (subh corrupto): para F1/05 HWID
+// veia subh=0x7D en vez de 0x05, nunca despachaba CGSetHwidRecv, y
+// lpObj->HardwareID quedaba "" -> F1/01 LoginResult code=05.
+//
+// El chain va ANTES del serial-stomp, en el mismo orden que el companion.
+//
+// Serial: CProtocol::DataSend pisa el byte de tamano con el contador rodante
+// (g_byPacketSerialSend / DAT_05826ceb) justo antes de encriptar, asi que el
+// primer byte DESENCRIPTADO del lado del server es el serial, no el tamano.
+// El server lo lee como DecSerial y exige la secuencia 0,1,2,... via
+// CheckSerial; cualquier salto -> CloseClient.
+static void Net_SendFrameC3(const BYTE* pkt, int totalLen)
+{
+    BYTE plain[0x402];
+    char buf[0x402];
+    memcpy(plain, pkt, totalLen);
+
+    for (int i = 3; i < totalLen; i++) {
+        plain[i] ^= plain[i - 1] ^ s_LoginKey[i & 0x1f];
+    }
+
+    plain[1] = DAT_05826ceb++;           // el byte de tamano pasa a ser el serial
+    int  bodyLen = totalLen - 1;
+    int  encLen  = FUN_0053cc30(0, plain + 1, bodyLen);
+    int  total   = encLen + 2;
+    buf[0] = (char)0xC3;
+    buf[1] = (char)total;
+    FUN_0053cc30((int)(buf + 2), plain + 1, bodyLen);
+    Net_SendBuf(buf, total);
+}
+
+// Elige el frame segun la tabla del server y avisa cuando corrige al caller.
+// `chosenC3` es lo que pidio el call site; se respeta salvo que el server exija
+// lo contrario.
+static void Net_SendResolved(const BYTE* pkt, int totalLen, bool chosenC3, const char* who)
+{
+    if (!pkt || totalLen < 3 || totalLen > 0x400) return;
+
+    const BYTE opcode = pkt[2];
+    const BYTE subop  = (totalLen > 3) ? pkt[3] : 0;
+    const int  want   = PacketFrame_WantsEncrypt(opcode, subop);
+
+    bool useC3 = chosenC3;
+
+    if (want == PACKETFRAME_PLAIN || want == PACKETFRAME_ENCRYPTED) {
+        const bool serverWantsC3 = (want == PACKETFRAME_ENCRYPTED);
+        if (serverWantsC3 != chosenC3) {
+            char line[192];
+            wsprintfA(line,
+                      "PacketFrame: %s mando 0x%02X/%02X como %s pero el server pide %s "
+                      "-> corregido (HackPacketCheck Encrypt=%d)",
+                      who, opcode, subop, chosenC3 ? "C3" : "C1",
+                      serverWantsC3 ? "C3" : "C1", want);
+            DbgLogPublic(line);
+            useC3 = serverWantsC3;
+        }
+    }
+    else if (want == PACKETFRAME_UNKNOWN) {
+        // El server no tiene fila para este par: responde "Packet unknown
+        // error" y cierra. Se manda igual (no queremos cambiar que un paquete
+        // salga o no), pero queda el aviso para no perder una hora buscando
+        // una desconexion sin causa aparente.
+        char line[160];
+        wsprintfA(line,
+                  "PacketFrame: 0x%02X/%02X no figura en HackPacketCheck.txt "
+                  "-> el server va a cerrar la conexion (%s)", opcode, subop, who);
+        DbgLogPublic(line);
+    }
+    // PACKETFRAME_ANY (0xF3): sirve cualquiera, se respeta lo que pidio el caller.
+
+    if (useC3) Net_SendFrameC3(pkt, totalLen);
+    else       Net_SendFrameC1(pkt, totalLen);
+}
+
+// Entrada publica para los call sites que esperan un frame ENCRIPTADO (C3).
+void Net_SendSmallPacket(const BYTE* pkt, int totalLen)
+{
+    Net_SendResolved(pkt, totalLen, true, "Net_SendSmallPacket");
+}
+
+// Entrada publica para los call sites que esperan un frame PLANO (C1).
+void Net_SendC1Packet(const BYTE* pkt, int totalLen)
+{
+    Net_SendResolved(pkt, totalLen, false, "Net_SendC1Packet");
 }
 
 // Send a large packet: input is plaintext [0xC1][len][opcode][payload].

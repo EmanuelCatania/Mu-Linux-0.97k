@@ -10,6 +10,8 @@
 
 #include "Net/MuEmu.h"
 #include "Net/Net.h"  // 2026-05-05: Net_SendSmallPacket (proper C3 wrap with serial)
+// 2026-08-25: los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
+extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)
@@ -464,9 +466,13 @@ void __cdecl FUN_00514310(void)
         if (DAT_07eaa108 == 2) {
             // PMSG_TRADE_MONEY_RECV (MuEmu Trade.h). The amount is little-
             // endian, matching the server's DWORD field.
+            // 2026-08-25 FIX (issue #12): iba por `Net_SendSmallPacket`, que
+            // emite C3 — pero HackPacketCheck.txt da Encrypt=0 para el indice
+            // 59 (0x3B), asi que el server lo rechaza con "Packet encryption
+            // error" y CIERRA la conexion. Va C1 plano.
             BYTE pkt[7] = { 0xC1, 0x07, 0x3B, 0, 0, 0, 0 };
             memcpy(pkt + 3, &gold, sizeof(DWORD));
-            Net_SendSmallPacket(pkt, sizeof(pkt));
+            Net_SendC1Packet(pkt, sizeof(pkt));
         } else if (gold > 0) {
             Net_SendWarehouseMoney((BYTE)(DAT_07eaa108 & 1), (DWORD)gold);
         }
@@ -595,36 +601,46 @@ void __cdecl FUN_00514310(void)
             return;
 
         DAT_083a4124 = 0;
+        // 2026-08-25 FIX (issue #12): mismo caso que el 0x3B — el indice 55
+        // (0x37) es Encrypt=0, o sea C1 plano. Con C3 el server cerraba la
+        // conexion al aceptar o rechazar un trade.
+        //
+        //   struct PMSG_TRADE_RESPONSE_RECV {   // Trade.h:18
+        //       PBMSG_HEAD header;   // C1 : 20 : 0x37
+        //       BYTE  response;      // +3
+        //       char  name[10];      // +4
+        //       WORD  level;         // +14
+        //       DWORD GuildNumber;   // +16
+        //   };
         BYTE pkt[20] = { 0xC1, 0x14, 0x37, (BYTE)(yes ? 1 : 0) };
         memcpy(pkt + 4, s_tradeRequestName, 10);
-        Net_SendSmallPacket(pkt, sizeof(pkt));
+        Net_SendC1Packet(pkt, sizeof(pkt));
         goto tail;
     }
 
-    // ── NPC shop item list — display / navigation ─────────────────────────
-    case 0x8b:
-    case 0x8c:
-    case 0x9a:
-    {
-        // Iterate shop item list (stride 5, up to DAT_083a4324 entries)
-        // Requires click (MouseLButtonPush) — not hover.
-        int *piVar10 = (int *)&DAT_083a42fc;
-        int  count   = (int)DAT_083a4324;
-        for (int i = 0; i < count; ++i)
-        {
-            // Hit-test each row
-            int rowY = 0x2c + i * 0x10;
-            if (mouseY >= rowY && mouseY < rowY + 0x10 &&
-                mouseX >= 0x6a  && mouseX <= 0x16a && IsClickPushed())
-            {
-                DAT_083a4124 = 0;
-                DAT_083a7c2c = (DWORD)i;
-                DAT_083a7c28 = 0x8f;
-                goto tail;
-            }
-        }
-        goto tail;
-    }
+    // ── 0x8b / 0x8c / 0x9a — REMOVIDO 2026-08-26 ─────────────────────────
+    // Acá había un case agrupado etiquetado "NPC shop item list" que terminaba
+    // en `goto tail` INCONDICIONAL. `tail` hace `ErrorMessage = NextErrorMessage`,
+    // o sea limpiaba el estado en el mismo frame, antes de que
+    // `RenderInformation -> FUN_0051af50` alcanzara a dibujarlo.
+    //
+    // Los tres estados son message boxes, no una lista de tienda:
+    //   0x8b (139) — CreateOkMessageBox      (0x0051D6F0)
+    //   0x8c (140) — FUN_0051d9e0            (ranking de Devil Square, lista)
+    //   0x9a (154) — FUN_0051da80            (ranking de Devil Square, 1 fila)
+    //
+    // Y el switch de IDA (raw 00514310) NO tiene case para ninguno: 139, 140,
+    // 141, 142 y 154 se agrupan en una rama propia (L1381) que sólo dismissea
+    // al clickear un botón. Sin case, caen al `default` de abajo, que ya
+    // persiste hasta el click en OK o Enter — que es el comportamiento fiel.
+    //
+    // Sintoma que tenia: el cartel del tiempo de los eventos (click derecho
+    // sobre "Devil's Invitation" / "Cloak of Invisibility") no aparecia nunca,
+    // aunque el paquete iba y el server respondia bien.
+    //
+    // La geometria que usaba tampoco salia de ningun lado: filas de 16 px desde
+    // y=0x2c entre x=0x6a y x=0x16a, contra las dos filas de 35 px en y=180/265
+    // (x 245-395) que el original usa para el estado 143.
 
     // ── State 141 (0x8d) — Yes/No dialog with paging arrows ──────────────
     // Per IDA L3867-3963. The 7-line message-box buffer (g_lpszMessageBoxCustom)
@@ -879,11 +895,18 @@ void __cdecl FUN_00514310(void)
         const WORD partyKey = (WORD)DAT_07eaa0e4;
         BYTE pkt[6] = { 0xC1, 0x06, 0x41, (BYTE)(accept ? 1 : 0),
                         (BYTE)(partyKey >> 8), (BYTE)partyKey };
-        if (accept) {
-            Net_SendSmallPacket(pkt, sizeof(pkt));
-        } else if (DAT_055ca168 != 0xFFFFFFFF) {
-            ::send(DAT_055ca168, (const char*)pkt, sizeof(pkt), 0);
-        }
+        // 2026-08-25 FIX: la rama de RECHAZO mandaba el paquete con `::send`
+        // crudo — C1 sin encriptar — cuando el 0x41 pide Encrypt=1
+        // (HackPacketCheck.txt indice 65). El server lo rechaza con "Packet
+        // encryption error" y CIERRA la conexion, o sea rechazar una invitacion
+        // de party desconectaba. Aceptar ya iba bien por C3.
+        //
+        //   struct PMSG_PARTY_REQUEST_RESULT_RECV {   // Party.h:19
+        //       PBMSG_HEAD header;   // C1 : 6 : 0x41
+        //       BYTE result;         // +3
+        //       BYTE index[2];       // +4, +5  (index[0] = byte ALTO)
+        //   };
+        Net_SendSmallPacket(pkt, sizeof(pkt));
 
         DAT_083a4124 = 0;
         DAT_083a7c24 = DAT_083a7c28;
@@ -940,6 +963,31 @@ void __cdecl FUN_00514310(void)
             bool enterHit = (DAT_055ca038 != '\0');
             bool okClick = (mouseX >= 284 && mouseX < 354 &&
                             mouseY >= 98 && mouseY < 119 && IsClickPushed());
+
+            // 2026-08-26: el rect fijo de arriba sirve para los carteles del
+            // login, pero no para los que arma `CreateOkMessageBox` (139) y
+            // compania: esos traen su propio descriptor de boton en
+            // DAT_083a42f8 (5 ints por entrada: bitmapId-240, x, y, w, h) y
+            // `FUN_0051af50` los dibuja en (x + _DAT_00552d40, y + _DAT_0055290c)
+            // = (x+213, y+60). Para el 139 el descriptor es {1, 71, 140, 70, 21},
+            // o sea el OK cae en (284..354, 200..221) — 100 px mas abajo que el
+            // rect fijo, asi que con el mouse no se podia cerrar (solo con Enter).
+            //
+            // Se aceptan los dos rects en vez de reemplazar uno por el otro: el
+            // original usa el descriptor, pero el rect fijo cubre los estados
+            // del login que hoy dependen de el.
+            if (!okClick && IsClickPushed()) {
+                const int* desc = (const int*)&DAT_083a42f8[0];
+                for (int b = 0; b < 2 && !okClick; ++b, desc += 5) {
+                    if (desc[0] <= 0) continue;          // entrada vacia
+                    const int bx = desc[1] + (int)_DAT_00552d40;
+                    const int by = desc[2] + (int)_DAT_0055290c;
+                    if (mouseX >= bx && mouseX < bx + desc[3] &&
+                        mouseY >= by && mouseY < by + desc[4])
+                        okClick = true;
+                }
+            }
+
             if (okClick || enterHit) {
                 DAT_083a4124 = 0;     // consume click
                 DAT_055ca038 = '\0';  // consume Enter
@@ -965,10 +1013,36 @@ void __cdecl FUN_00514310(void)
 
         case 0x77:
         {
+            // 2026-08-25 FIX (issue #12, el trade request lo rechazaba el
+            // server): este envio tenia CUATRO errores a la vez.
+            //
+            //   struct PMSG_TRADE_REQUEST_RECV {   // Trade.h:12
+            //       PBMSG_HEAD header;   // C1 : 5 : 0x36
+            //       BYTE index[2];       // +3, +4
+            //   };
+            //
+            //  1. Tamaño 6 con un byte 0x00 de mas: el struct son 5 bytes y el
+            //     index va en +3/+4, no en +4/+5.
+            //  2. Index en little-endian. El server lo lee con
+            //     `MAKE_NUMBERW(index[0], index[1])`, que es
+            //     `(index[1]) | (index[0] << 8)` — o sea index[0] es el byte
+            //     ALTO (ProtocolDefines.h:10).
+            //  3. Frame C1 cuando el opcode pide C3: HackPacketCheck.txt indice
+            //     54 -> Encrypt=1, y `CheckPacketHack` cierra la conexion si no
+            //     coincide.
+            //  4. `SendLoginPacket` aplica el XOR de la clave de LOGIN sobre un
+            //     paquete in-game. `Net_SendSmallPacket` es el camino correcto:
+            //     chain-XOR + serial + C3.
             BYTE hi = (BYTE)((DAT_07eaa0d8 >> 8) & 0xff);
             BYTE lo = (BYTE)(DAT_07eaa0d8 & 0xff);
-            BYTE pkt[6] = { 0xC1, 0x06, 0x36, 0x00, lo, hi };
-            SendLoginPacket(pkt, 6);
+            BYTE pkt[8];
+            memset(pkt, 0, sizeof(pkt));
+            pkt[0] = 0xC1;
+            pkt[1] = 5;          // lo pisa el serial
+            pkt[2] = 0x36;
+            pkt[3] = hi;         // index[0] = byte alto
+            pkt[4] = lo;         // index[1] = byte bajo
+            Net_SendSmallPacket(pkt, 5);
         }
         break;
 

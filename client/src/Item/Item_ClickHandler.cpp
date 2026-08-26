@@ -401,6 +401,20 @@ static void SendPacketBytes(const void* data, int size)
 // (de ahí el "me desconectó estando quieto" tras usar el diálogo de venta).
 // El bump lo hace Net_SendSmallPacket, que es quien realmente escribe el
 // serial en el frame.
+extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
+
+// SendC1Packet — envuelve un payload en frame C1 y lo manda.
+//
+// 2026-08-26: antes construia el frame a mano y lo pasaba a SendPacketBytes,
+// que llama a ::send directo — o sea SIN el chain-XOR. Pero el server aplica
+// `XorData` a TODO frame C1 (`ExtractPacket` -> `XorData(size-1, 2)`), asi que
+// des-XOR-eaba un paquete que nunca fue XOR-eado y veia basura de pkt[3] en
+// adelante. Solo se salvaban los de 3 bytes, donde el bucle del server no
+// itera. Los dos call sites que quedan (scrolls 467/434, opcode 0x49/0x91, 7
+// bytes) caian de lleno en el bug.
+//
+// Ahora delega en Net_SendC1Packet, que aplica el chain-XOR y ademas resuelve
+// el frame contra la tabla de HackPacketCheck.
 static void SendC1Packet(BYTE* payload, int payloadSize)
 {
     if (payloadSize <= 0 || payloadSize > 250) return;
@@ -409,7 +423,7 @@ static void SendC1Packet(BYTE* payload, int payloadSize)
     pkt[0] = 0xC1;
     pkt[1] = (BYTE)(payloadSize + 2);   // total size = header(2) + payload
     memcpy(pkt + 2, payload, payloadSize);
-    SendPacketBytes(pkt, payloadSize + 2);
+    Net_SendC1Packet(pkt, payloadSize + 2);
 }
 
 // 2026-07-27: envío C3 (CSimpleModulus + serial) para los opcodes de tienda
@@ -1002,29 +1016,37 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     continue;
                 }
 
-                // ── Item 467 (special open scroll, type 1) ────────────────
-                if (type == 467) {
+                // ── Items 467 / 434 — consulta de tiempo del evento ────────
+                // Click derecho sobre "Devil's Invitation" (467) o "Cloak of
+                // Invisibility" (434): NO entra al evento, pide cuanto falta
+                // para que abra. Entrar es aparte, desde el NPC del evento
+                // (0x90 Devil Square / 0x9A Blood Castle).
+                //
+                // Server: PMSG_EVENT_REMAIN_TIME_RECV (Protocol.h:63)
+                //     [C1][05][91][EventType][ItemLevel]
+                // EventType 1 = Devil Square, 2 = Blood Castle; el server hace
+                // `ItemLevel - 1` para indexar el nivel del evento.
+                // La respuesta (mismo opcode 0x91) la atiende
+                // `Recv_EventZoneOpenTime` en src/Net/Net_Events.cpp.
+                //
+                // 2026-08-26: el port anterior mandaba
+                //     [C1][07][49][91][subtype][slot][level]
+                // o sea con un opcode 0x49 inexistente, un byte de mas y el
+                // slot que el server no espera; el server lo ignoraba en
+                // silencio y por eso el click derecho no hacia nada. El 0x49
+                // salio de leer mal el decompile: en `sub_4D23B0` (raw
+                // L1032-1053) `v275 = 73` es el byte 12 de la CLAVE XOR (0x49),
+                // no un opcode — aparece 10 veces en la funcion porque la clave
+                // se re-arma antes de cada envio. El opcode real es
+                // `v301[4] = -111` = 0x91, y el EventType es `v302` (1 para el
+                // 467, 2 para el 434).
+                if (type == 467 || type == 434) {
                     int level = (((int*)rowSlot)[1] >> 3) & 0xF;
-                    BYTE pkt[6];
-                    pkt[0] = 0x49;
-                    pkt[1] = 0x91;
-                    pkt[2] = 0x01;        // sub-type 1
-                    pkt[3] = (BYTE)slotIdx;
-                    pkt[4] = (BYTE)level;
-                    SendC1Packet(pkt, 5);
-                    continue;
-                }
-
-                // ── Item 434 (special open scroll, type 2) ────────────────
-                if (type == 434) {
-                    int level = (((int*)rowSlot)[1] >> 3) & 0xF;
-                    BYTE pkt[6];
-                    pkt[0] = 0x49;
-                    pkt[1] = 0x91;
-                    pkt[2] = 0x02;        // sub-type 2
-                    pkt[3] = (BYTE)slotIdx;
-                    pkt[4] = (BYTE)level;
-                    SendC1Packet(pkt, 5);
+                    BYTE pkt[3];
+                    pkt[0] = 0x91;
+                    pkt[1] = (type == 467) ? 0x01 : 0x02;   // EventType
+                    pkt[2] = (BYTE)level;                   // ItemLevel
+                    SendC1Packet(pkt, 3);                   // -> [C1][05][91][..][..]
                     continue;
                 }
 

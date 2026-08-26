@@ -289,6 +289,26 @@ void Party_CharSync(BYTE* pkt, int pkt_len)
 }
 
 
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  CÓDIGO MUERTO — desde 2026-08-26 no tienen callers                      ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
+//
+// Las siete funciones `Guild_*` que siguen hasta el final del archivo estaban
+// enganchadas a los opcodes 0x90-0x99. Ese rango NO es guild: IDA y MuEmu
+// coinciden en que son eventos (Devil Square, Blood Castle, Golden Archer).
+// La tabla opcode -> función real está en la cabecera de
+// `src/Net/Net_Events.cpp`, que es quien los atiende ahora.
+//
+// El guild de verdad usa 0x50-0x56 y ya estaba bien atendido en Net_Process.cpp
+// (`ReceiveGuildResult`, `ReceiveGuildList`, `ReceiveCreateGuildResult`, ...);
+// esta tanda no lo tocó.
+//
+// No se borran todavía porque el cuerpo puede servir de referencia si alguna
+// vez se porta el protocolo de guild de otra versión. Ojo con reengancharlas:
+// `Guild_CreateOk` ENVÍA un `[C1][03][31]`, así que colgada del opcode
+// equivocado no sólo muestra un cartel de más, también le manda basura al
+// server.
+//
 // ============================================================
 // Guild_CreateOk  @ 0x00436820  (opcode 0x90)
 // Server ACKs guild creation; displays result message.

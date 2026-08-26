@@ -2915,7 +2915,11 @@ void __cdecl RenderGuildMark_stub(float p1, float p2, float p3, float p4, int p5
     int iVar3 = (int)p4;  // pixel height
 
     DWORD* pixelBuf = (DWORD*)Bitmaps[0x22].Buffer;
-    DWORD color = (&DAT_07e11f34)[p5];  // MarkColor[p5]
+    // 2026-08-25: `DAT_07e11f34` ahora es el array de 16 que realmente es, asi
+    // que se indexa directo (antes `(&DAT_07e11f34)[p5]` sobre un unico DWORD
+    // leia hasta 60 bytes del vecino).
+    if (p5 < 0 || p5 > 15) return;
+    DWORD color = DAT_07e11f34[p5];  // MarkColor[p5]
 
     if (p5 == 0) {
         // No guild — fill black, draw gray cross pattern

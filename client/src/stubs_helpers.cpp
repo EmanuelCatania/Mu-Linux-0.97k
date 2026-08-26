@@ -1083,7 +1083,9 @@ static bool ApplyInventoryExactPoseTail(int param_1, float* outPos)
         outPos[0] += 0.005f; outPos[1] -= 0.033f;
         _DAT_07ea952c = 270.0f; _DAT_07ea9530 = -20.0f; _DAT_07ea9534 = 0.0f; return true;
     }
-    if (param_1 >= MODEL_HELPER + 135 && param_1 <= MODEL_HELPER + 145) {
+    // 2026-08-26: acotado para no pisar el 958, que IDA define aparte
+    // (`case 958: Angle[0] = -90`). Este rango son los modelos 951..961.
+    if (param_1 >= MODEL_HELPER + 135 && param_1 <= MODEL_HELPER + 145 && param_1 != 958) {
         outPos[1] += 0.02f;
         _DAT_07ea952c = 270.0f; _DAT_07ea9530 = 0.0f; _DAT_07ea9534 = 0.0f; return true;
     }
@@ -1095,7 +1097,11 @@ static bool ApplyInventoryExactPoseTail(int param_1, float* outPos)
         else if (param_1 == MODEL_WING + 139) { outPos[1] -= 0.05f; _DAT_07ea9530 = 90.0f; }
         return true;
     }
-    if (param_1 >= MODEL_WING + 60 && param_1 <= MODEL_WING + 65) {
+    // 2026-08-26: acotado. `MODEL_WING + 60..65` son los modelos 844..849, que
+    // tampoco son alas. IDA cubre 828..847 (salvo 830/831) con `Angle[0] = 360`
+    // y este interceptor les ponia 10. Se dejan pasar los que IDA define y solo
+    // sobreviven 848/849, que caen fuera de ese rango.
+    if (param_1 >= 848 && param_1 <= MODEL_WING + 65) {
         _DAT_07ea952c = 10.0f; _DAT_07ea9530 = -10.0f; _DAT_07ea9534 = 10.0f; return true;
     }
     if (param_1 >= MODEL_WING + 70 && param_1 <= MODEL_WING + 74) {
@@ -1104,14 +1110,40 @@ static bool ApplyInventoryExactPoseTail(int param_1, float* outPos)
     if (param_1 >= MODEL_WING + 100 && param_1 <= MODEL_WING + 129) {
         _DAT_07ea952c = 0.0f; _DAT_07ea9530 = 0.0f; _DAT_07ea9534 = 0.0f; return true;
     }
-    if (param_1 == MODEL_WING + 49) {
+    // 2026-08-26: excluido el modelo 833. `MODEL_WING + 49` es 833, que no es
+    // un ala (MODEL_WING son 32 slots, 784..815): es el "Blood Bone" (item 433).
+    // IDA `RenderObjectScreen` lo cubre con `case 832: case 833: Angle[0]=270`,
+    // y este interceptor le ponia -90 mas un ajuste de posicion que IDA no
+    // tiene. Mismo error de aritmetica que tenia el +50 (Cloak of Invisibility).
+    if (false && param_1 == MODEL_WING + 49) {
         outPos[0] += 0.015f; outPos[1] += 0.01f;
         _DAT_07ea952c = -90.0f; _DAT_07ea9530 = 0.0f; _DAT_07ea9534 = 0.0f; return true;
     }
-    if (param_1 == MODEL_WING + 50) {
-        outPos[1] += 0.15f;
-        _DAT_07ea952c = 270.0f; _DAT_07ea9530 = -10.0f; _DAT_07ea9534 = 0.0f; return true;
-    }
+    // REMOVIDO 2026-08-26 — `MODEL_WING + 50` es 834, que NO es un ala.
+    //
+    // MODEL_WING vale 784 y el grupo de alas son 32 slots (784..815), asi que
+    // el +50 se pasa de su propia categoria y cae sobre el 834 = "Cloak of
+    // Invisibility" (item 434, la entrada del Blood Castle). El interceptor le
+    // hacia dos cosas, ninguna de las cuales esta en IDA:
+    //
+    //   outPos[1] += 0.15f;                          <- lo dibujaba mas arriba
+    //   Angle = (270, -10, 0);                       <- IDA dice (290, 0, 0)
+    //
+    // y encima cortaba con `return true`, tapando el `else if (param_1 ==
+    // 0x342)` de RenderObjectScreen que tiene los valores correctos. El
+    // decompile de 0x4E13A0 no tiene ningun `Position[1] +=` por tipo: el 834
+    // solo setea `Angle[0] = 290` y hace `goto LABEL_51`.
+    //
+    // Medido con la sonda OBJ3D antes del fix:
+    //     OBJ3D model=834 scale=1800/1e6 bodyH=0 ang=(270,-10,0)
+    // La escala (0.0018) y el BodyHeight (0) ya salian bien — el unico
+    // desvio era el angulo, y el desplazamiento de posicion que no se ve en
+    // ese volcado porque se aplica sobre outPos.
+    //
+    // OJO: quedan varios `MODEL_WING + N` con N > 31 en esta misma funcion
+    // (60-65, 70-74, 100-129, 135, 136-143) que por la misma aritmetica caen
+    // sobre modelos de otras categorias. No se tocan porque no hay reporte
+    // sobre ellos, pero son sospechosos del mismo error.
     if (param_1 == MODEL_WING + 135) {
         outPos[0] += 0.005f; outPos[1] += 0.05f; return true;
     }
@@ -1138,7 +1170,9 @@ static bool ApplyInventoryExactPoseTail(int param_1, float* outPos)
         outPos[0] += 0.03f; outPos[1] += 0.03f;
         _DAT_07ea952c = 270.0f; _DAT_07ea9530 = 0.0f; _DAT_07ea9534 = 0.0f; return true;
     }
-    if (param_1 == MODEL_POTION + 110) {
+    // 2026-08-26: excluido el modelo 958 — IDA tiene `case 958: Angle[0] = -90`
+    // (con dword_7EA9530/34 = -0.5) y este interceptor le ponia 270.
+    if (false && param_1 == MODEL_POTION + 110) {
         outPos[0] += 0.005f; outPos[1] -= 0.02f;
         _DAT_07ea952c = 270.0f; _DAT_07ea9530 = -10.0f; _DAT_07ea9534 = 0.0f; return true;
     }
@@ -1185,6 +1219,25 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     float outPos[3];
     float camPos[3] = { _DAT_083a4284, _DAT_083a4288, _DAT_083a428c };
     FUN_004f9ce0(camPos, param_7 ? 0.07f : 0.1f, direction, outPos);
+
+    // ── Posición fiel a IDA (2026-08-26) ────────────────────────────────────
+    // En `RenderObjectScreen` (0x4E13A0) la posición se calcula UNA sola vez,
+    // con este mismo VectorMA, y se lee al final sin tocarla: el decompile no
+    // tiene NI UN `Position[i] +=` por tipo (verificado sobre el raw entero).
+    //
+    // Este port, en cambio, acumula 193 ajustes `outPos[i] += 0.0xx` repartidos
+    // entre esta función y los dos helpers `ApplyInventoryExactPose*`. No salen
+    // de ningún decompile — el comentario de uno de ellos lo admite ("raw ids
+    // verified from asset table", o sea a ojo contra los assets). Son los que
+    // producían el sesgo reportado: los ítems con offset negativo (jewels,
+    // Devil's Invitation, Jewel of Life) se dibujaban más abajo y los que tenían
+    // offset positivo (el Cloak of Invisibility con +0.15) más arriba.
+    //
+    // Se guarda la posición limpia acá y se restaura justo antes de escribirla
+    // en el OBJECT, que es un único punto de control en vez de tocar 193 sitios.
+    // Poner el flag en 0 devuelve el comportamiento viejo para comparar A/B.
+    #define ITEM3D_FAITHFUL_POSITION 1
+    const float rayPos[3] = { outPos[0], outPos[1], outPos[2] };
 
     // Book01..Book16 have no position adjustment in the original renderer.
     // Keep its ray-projected location before the reconstructed generic table
@@ -1416,7 +1469,14 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
         _DAT_07ea9530 = 0.0f;
         _DAT_07ea9534 = 0.0f;
         exactPose = true;
-    } else if (param_1 == MODEL_HELPER + 12 || param_1 == MODEL_HELPER + 13) {
+    // 2026-08-26 — DESACTIVADO. `MODEL_HELPER + 12/13` son los modelos 828/829
+    // (Pendant of Lightning / of Fire). IDA los cubre con
+    // `Type >= 828 && Type < 848 && Type != 830 && Type != 831 -> Angle[0] = 360`,
+    // que en este archivo está más abajo (rama `0x33c..0x34f`) y es fiel; este
+    // interceptor corría antes, ponía 270 y marcaba `exactPose = true`, así que
+    // la rama buena nunca se alcanzaba. Medido con la sonda OBJ3D: `ang=(270,0,0)`
+    // donde IDA da 360.
+    } else if (false && (param_1 == MODEL_HELPER + 12 || param_1 == MODEL_HELPER + 13)) {
         outPos[0] += 0.002f;
         outPos[1] += 0.010f;
         _DAT_07ea952c = 270.0f;
@@ -2210,9 +2270,17 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     // inyección usa los mismos multiplicadores con su tabla de ajuste VACÍA:
     // era este orden.
     *(DWORD *)(ent + 0x0c) = local_3bc;
+#if ITEM3D_FAITHFUL_POSITION
+    // Descarta los ajustes por tipo que el port fue acumulando — ver la nota
+    // junto al VectorMA, arriba. IDA escribe acá la posición del rayo, sin más.
+    *(float *)(ent + 0x10) = rayPos[0];
+    *(float *)(ent + 0x14) = rayPos[1];
+    *(float *)(ent + 0x18) = rayPos[2];
+#else
     *(float *)(ent + 0x10) = outPos[0];
     *(float *)(ent + 0x14) = outPos[1];
     *(float *)(ent + 0x18) = outPos[2];
+#endif
     *(int   *)(ent + 0xdc) = 0;
     *(unsigned char *)(ent + 0x1bc) = 2;
 

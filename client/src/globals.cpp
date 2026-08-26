@@ -2047,7 +2047,14 @@ BYTE    DAT_07ea5b68[0x1FE0] = {0};   // see globals.h
 BYTE    DAT_07ea9880[0x0880] = {0};
 DWORD   DAT_07eaa0e8   = 0;
 BYTE    DAT_07ea7b88[0x880] = {0};
-DWORD   DAT_07e11f34   = 0;  // MarkColor[16] — guild mark color palette (uint ARGB)
+// 2026-08-25: el comentario decia "MarkColor[16]" y estaba declarado como UN
+// DWORD. `CreateGuildMark` (0x4F0100) escribe los 16 colores y
+// `RenderGuildMark` (0x4F02F0) indexa `MarkColor[p5]` con p5 en 0..15, o sea 60
+// bytes de desborde sobre el vecino en BSS. `MarkColor[1] = 0xFF000000` es
+// justamente el valor que aparecia en el crash del editor de marca
+// (0xC0000005 leyendo 0xFF000000 dentro del driver GL).
+// El hueco hasta DAT_07e11f78 es de 68 bytes, asi que los 16 entran.
+DWORD   DAT_07e11f34[16] = {0};  // MarkColor[16] — paleta de la marca (ARGB)
 BYTE    DAT_07e11f78[0x880] = {0};
 BYTE    DAT_07ea52d0[0x880] = {0};
 BYTE    DAT_07ea7bc0[0x880] = {0};
@@ -2390,9 +2397,17 @@ int     DAT_0055a3fc  = 0;   // auth mode param B
 // ── SecondPassword Screen5/6/7 additional globals ────────────────────────────
 DWORD   DAT_07eaa120  = 0;   // SecondPassword_Screen5 mode
 char    DAT_07eaa0dc  = 0;   // SecondPassword selected grid index
-char    DAT_07ea51ec  = 0;   // PIN entry char prefix buffer base
-DWORD   DAT_07ea51f0  = 0;   // PIN entry packed data
-char    DAT_07ea51f5  = 0;   // PIN grid selection buffer base
+// 2026-08-25: NO son "PIN entry" — esa etiqueta mentia. Son los buffers del
+// editor de creacion de GUILD, y estaban declarados como escalares de 1-4 bytes
+// mientras el codigo los recorre como arrays:
+//   RenderGuildCreation lee `mark[gx + gy*8]` con gx,gy en 0..7 -> 64 bytes
+//   sobre un `char`, o sea 63 bytes de desborde en CADA frame del editor.
+// Layout del binario (contiguo, verificado contra el vecino DAT_07ea5240 que
+// deja 75 bytes de espacio):
+//   0x7EA51EC  GuildName[8]   (IDA lo lee como 2 DWORDs: +0 y +4)
+//   0x7EA51F5  GuildMark[64]  (1 byte por celda de la grilla 8x8)
+char    DAT_07ea51ec[8]  = {0};   // GuildName
+char    DAT_07ea51f5[64] = {0};   // GuildMark (grilla 8x8)
 float  _DAT_00552c20  = 425.0f; // Screen5 button X upper bound
 float  _DAT_00552c1c  = 33.0f; // Screen5 button height
 float  _DAT_00552c28  = 210.0f; // Screen5 button Y base

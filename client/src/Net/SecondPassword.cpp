@@ -141,6 +141,9 @@
 #include "functions.h"
 #include "Net/Net.h"
 
+// 2026-08-25: el rango de guild pide C1 plano (Encrypt=0).
+extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
+
 // Inventory pool bases — defined in src/Render/HUD_Pass3.cpp.
 // Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
 extern "C" BYTE OffsetInventoryItems[];
@@ -251,7 +254,78 @@ void __cdecl FUN_004e4760(void) {
             (int)DAT_083a4278 < originY + 0x173 &&
             IsClickPushed()) {
             DAT_083a4124 = '\0';
-            if (DAT_07eaa144 == 0) {
+            // 2026-08-25 PORT (no se podia crear un guild): este boton — el izquierdo,
+            // rect [+20,+90) x [+350,+371) — es el de CREAR, y mandaba el opcode
+            // equivocado. IDA `sub_4E4760` L210 manda aca el **0x55**
+            // (PMSG_GUILD_CREATE_RECV); el 0x54 es el del boton derecho, que ya esta
+            // bien abajo.
+            //
+            //   struct PMSG_GUILD_CREATE_RECV {   // Guild.h:218
+            //       PBMSG_HEAD header;   // C1 : 43 : 0x55
+            //       char GuildName[8];   // +3
+            //       BYTE Mark[32];       // +11
+            //   };
+            //
+            // `g_iKeyPadEnable` (= DAT_07eaa144, 0x7EAA144) distingue DOS MODOS del
+            // mismo panel, no autoriza nada — `ProtocolCore` L1253-1258:
+            //     0x54 recibido -> GuildCreatorOpened=1, g_iKeyPadEnable=0
+            //                      (dialogo previo "¿crear guild?", OK/Cancel)
+            //     0x55 recibido -> GuildCreatorOpened=1, g_iKeyPadEnable=1
+            //                      (UI de creacion: nombre + marca)
+            // y cada boton cambia de opcode segun el modo (IDA sub_4E4760):
+            //     izquierdo: modo 0 -> 0x54 result=1   |  modo 1 -> 0x55 CREAR
+            //     derecho:   modo 0 -> 0x54            |  modo 1 -> 0x57 cancelar
+            //
+            // El `== 0` de este gate era correcto: es la rama del dialogo previo,
+            // que ya mandaba bien su 0x54. Lo que faltaba era la OTRA rama.
+            //
+            // Nota aparte: el flag estaba partido en dos — `HUD_Pass6.cpp` tenia un
+            // `static int g_iKeyPadEnable` homonimo que el handler del 0x55 seteaba
+            // mientras este hit-test leia el global. Unificados.
+            if (DAT_07eaa144) {
+                if (FUN_00513570()) {
+                    // nombre invalido / vacio
+                    FUN_005142d0(115);
+                } else {
+                    // Empaquetado de la marca, fiel a IDA L180-193: 64 celdas de la
+                    // grilla 8x8 -> 32 bytes, celda PAR en el nibble alto e IMPAR en el
+                    // bajo. `any` replica el flag `v71`: con la marca vacia el original
+                    // no manda nada y muestra el error 127.
+                    BYTE mark[32];
+                    bool any = false;
+                    for (int k = 0; k < 64; ++k) {
+                        const unsigned char v = (unsigned char)DAT_07ea51f5[k];
+                        if (k & 1) mark[k >> 1] = (BYTE)(mark[k >> 1] + v);
+                        else       mark[k >> 1] = (BYTE)(16 * v);
+                        if (v) any = true;
+                    }
+                    if (!any) {
+                        FUN_005142d0(127);
+                        FUN_00404bc0(25, 0, 0);
+                    } else {
+                        // IDA: strcpy(&dword_7EA51EC, InputText[0])
+                        memset(DAT_07ea51ec, 0, sizeof(DAT_07ea51ec));
+                        for (int c = 0; c < 8 && DAT_07db8710[0][c]; ++c)
+                            DAT_07ea51ec[c] = DAT_07db8710[0][c];
+            
+                        // El rango de guild entero es Encrypt=0 -> C1 plano, y
+                        // `Net_SendC1Packet` aplica el mismo chain-XOR sobre 3..len-1
+                        // que hace el original.
+                        BYTE pkt[43];
+                        memset(pkt, 0, sizeof(pkt));
+                        pkt[0] = 0xC1;
+                        pkt[1] = 43;
+                        pkt[2] = 0x55;
+                        memcpy(pkt + 3,  DAT_07ea51ec, 8);
+                        memcpy(pkt + 11, mark, 32);
+                        Net_SendC1Packet(pkt, 43);
+                    }
+                }
+            } else {
+                // Modo 0 = dialogo previo "¿crear guild?": el boton izquierdo
+                // responde 0x54 con result=1 (PMSG_GUILD_MASTER_OPEN_RECV). El
+                // server valida nivel y resets (Guild.cpp:37-45) y, si pasa,
+                // contesta el 0x55 que abre la UI de creacion.
                 // Send auth packet (opcode 0xC1/0x01/0x54 keepalive-style, 4 bytes)
                 {
                     BYTE pkt[4];
@@ -283,12 +357,6 @@ void __cdecl FUN_004e4760(void) {
                         } while ((int)rem > 0);
                     }
                 }
-            } else {
-                // DAT_07eaa144 == 1: validate length
-                char errBuf[64];
-                FUN_005416bc(errBuf, "");
-                unsigned int uLen = FUN_00513570() ? 0x73 : 0x7b;
-                FUN_005142d0((int)uLen);
             }
             FUN_00404bc0(0x19, 0, 0);
         }

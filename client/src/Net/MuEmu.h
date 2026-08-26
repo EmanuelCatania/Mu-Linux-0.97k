@@ -39,13 +39,48 @@
 
 namespace MuEmu {
 
-// Effective encryption key derived empirically from this server's handshake.
-// Bytes are 8-bit modular. K1 and K happen to be equal for this server since
-// EncDecKey2 ≡ 1 (mod 256 / EncDecKey1).
-//   EncDecKey1 = 0x42  (XOR mask)
-//   K          = 0x42  (add/sub offset)
-constexpr BYTE kEncKey1 = 0x42;
-constexpr BYTE kEncKeyAdd = 0x42;
+// -----------------------------------------------------------------------------
+// Clave efectiva, derivada en runtime (2026-08-26)
+// -----------------------------------------------------------------------------
+// Antes estas dos constantes estaban HARDCODEADAS en 0x42/0x42, que es lo que
+// da la formula del server para CustomerName="MuLinux" + ServerSerial=
+// "TbYehR2hFUPBKgZj". Contra cualquier otro CustomerName el cliente conectaba
+// pero desencriptaba basura y nunca reconocia el JoinServer (F1/00): se quedaba
+// en "conectando al GameServer" para siempre.
+//
+// Ahora `InitKeys` reproduce la derivacion del server y `server.cfg` puede
+// traer CustomerName/ServerSerial. Sin esas lineas quedan los valores de abajo,
+// asi que los server.cfg viejos siguen funcionando igual.
+//
+// Equivalencia util al comparar contra el binario: sumar 0x80 mod 256 es lo
+// mismo que XOR 0x80, asi que (K1,K)=(0x42,0x42) y (0xC2,0xC2) producen bytes
+// identicos. La formula da 0xC2; el valor historico de este archivo era 0x42.
+constexpr BYTE kEncKey1Default   = 0x42;   // EncDecKey1            (mascara XOR)
+constexpr BYTE kEncKeyAddDefault = 0x42;   // EncDecKey2*EncDecKey1 (offset +/-)
+
+// Clave en uso. La escribe InitKeys; arranca en los valores por defecto.
+extern BYTE g_EncKey1;
+extern BYTE g_EncKeyAdd;
+
+// Deriva la clave con la MISMA formula que el server
+// (GameServer/HackCheck.cpp::InitHackCheck, identica en el port Linux y en el
+// original de Windows):
+//
+//     WORD k = 0;
+//     for (n = 0; n < sizeof(CustomerName); n++) {          // 32 bytes
+//         k += (BYTE)(CustomerName[n] ^ ServerSerial[n % sizeof(ServerSerial)]);
+//         k ^= (BYTE)(CustomerName[n] - ServerSerial[n % sizeof(ServerSerial)]);
+//     }
+//     EncDecKey1 = 0xB0 + LOBYTE(k);
+//     EncDecKey2 = 0xF8 + HIBYTE(k);
+//
+// Los buffers del server son CustomerName[32] y ServerSerial[17], y el loop
+// recorre el ARRAY COMPLETO (relleno de ceros incluido), no strlen. `char` es
+// con signo en las dos plataformas, y de eso depende el resultado del `-`.
+//
+// customerName o serverSerial en NULL/vacio => se usa el valor por defecto
+// correspondiente ("MuLinux" / "TbYehR2hFUPBKgZj").
+void InitKeys(const char* customerName, const char* serverSerial);
 
 // Is the MuEmu encryption layer active for the current connection?  Defaults
 // to true for this fork since we always talk to the Linux MuEmu port.  A real

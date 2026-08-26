@@ -79,7 +79,7 @@ extern "C" void   __cdecl CreateGuildMark(int nMarkIndex, bool blend);
 extern "C" int    InputTextWidth;
 #define dword_7E91388 DAT_07e91388
 extern "C" DWORD DAT_07e91388;
-extern "C" char   DAT_07ea51f5;
+extern "C" char   DAT_07ea51f5[64];
 extern "C" char   DAT_07eaa0dc;
 // ShopOpened/WarehouseOpened/ChaosMixOpened/EventWindowOpened/PartyOpened/
 // GuildOpened/GuildCreatorOpened now #defined in globals.h to DAT_07eaa11x.
@@ -655,10 +655,25 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             RenderText(a1 + 20, a2 + dy, GlobalText[191 + i], 0, 0, 0);
         }
     } else {
-        DWORD* slot = (DWORD*)(Party + 24);
+        // 2026-08-25 FIX (el panel mostraba coords y HP en basura): la base
+        // estaba en `Party + 24`, o sea TODOS los campos corridos 24 bytes —
+        // se leia dentro del registro SIGUIENTE. IDA `RenderParty` (0x4EF160
+        // L435) usa `v4 = 36 * row + Party`, la base del registro:
+        //     +0        name[10]
+        //     +12       map      -> GlobalText[map + 30]
+        //     +13, +14  X, Y
+        //     +16, +20  CurLife, MaxLife (DWORD)
+        // El +24 SI es correcto para las barras del HUD de mas arriba (ahi el
+        // byte de paso de vida vive en +24, IDA L297 `v67 = &Party + 6`), pero
+        // no para este panel.
+        //
+        // Los offsets relativos ya estaban bien; lo unico que fallaba era la
+        // base — y el nombre lo compensaba a mano con `v4 - 24`.
+        DWORD* slot = (DWORD*)Party;
         for (int row = 0; row < PartyNumber; ++row) {
             BYTE* v4 = (BYTE*)(slot + row * 9);
-            // Class string (member byte at +12 = class id).
+            // +12 NO es la clase: es el MAPA (IDA lo resuelve con
+            // GlobalText[map + 30], y GlobalText[55]/[56] para fuera de rango).
             int classByte = v4[12];
             const char* className;
             if (classByte == 10) className = GlobalText[55];
@@ -680,7 +695,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             // Member name renders from v4-24 in IDA — that's the 24-byte
             // header containing sender ID.  Approximate with the slot ptr.
             CHAR Buffer[100];
-            wsprintfA(Buffer, "%s", (char*)(v4 - 24));
+            wsprintfA(Buffer, "%s", (char*)v4);   // name[10] en +0
             SelectObject(m_hFontDC, g_hFontBold);
             RenderText(a1 + 20, a2 + 52 + 35 * row, Buffer, 0, 0, 0);
             m_dwBackColor = 0;
@@ -743,7 +758,12 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     }
 }
 
-static int  g_iKeyPadEnable = 0;
+// 2026-08-25: esto era un `static` propio del archivo, o sea una SEGUNDA copia
+// del flag. El global real es 0x7EAA144 (= DAT_07eaa144), que es el que lee el
+// hit-test de la creacion de guild en `FUN_004e4760`: el handler del 0x55
+// seteaba esta copia y el hit-test leia la otra, que nunca pasaba de 0.
+// Ver [[global-partido-en-dos]].
+#define g_iKeyPadEnable DAT_07eaa144
 static char g_GuildNotice[2][64] = {};
 
 // ProtocolCore 0x55: the server authorizes opening the guild-creation UI.
@@ -758,6 +778,24 @@ extern "C" void GuildCreator_OpenFromServer(void)
     DAT_00559c88 = 0;
     if (Hero)
         *(short*)((BYTE*)Hero + 474) = 999;
+}
+
+// 2026-08-25: el dialogo previo "¿crear guild?" — modo 0 del mismo panel.
+// El server lo abre con `[C1][03][54]` (`GCGuildMasterQuestionSend`,
+// Protocol.cpp:1795) cuando hablas con el NPC Guild Master Y cumplis los
+// requisitos; si ya estas en un guild o te falta nivel/resets manda un chat o
+// un notice y no abre nada (NpcTalk.cpp:197-220).
+//
+// Per `ProtocolCore` L1245-1254: cierra las ventanas de NPC y abre el creador
+// con el keypad APAGADO — lo que hace que los dos botones manden 0x54 en vez de
+// 0x55/0x57 (ver el hit-test en FUN_004e4760).
+extern "C" void GuildCreator_OpenQuestionFromServer(void)
+{
+    ShopOpened      = 0;
+    WarehouseOpened = 0;
+    TradeOpened     = 0;
+    GuildCreatorOpened = 1;
+    g_iKeyPadEnable    = 0;
 }
 
 extern "C" void GuildCreator_CloseFromResult(void)

@@ -44,6 +44,9 @@
 
 #include "stdafx.h"
 #include "Config/Config.h"
+#include "Net/MuEmu.h"
+
+extern "C" void DbgLogPublic(const char* msg);
 
 // Globals set by Config_Load
 int   g_ScreenW    = 640;    // DAT_0056156c
@@ -280,6 +283,13 @@ static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
 //     127.0.0.1 44405
 //     127.0.0.1:44405
 //
+// Además acepta líneas `clave=valor` con la identidad del server, que es de
+// donde sale la clave de encriptación de MuEmu (2026-08-26):
+//     CustomerName=MuLinux
+//     ServerSerial=TbYehR2hFUPBKgZj
+// Tienen que coincidir con `GameServerInfo - StartUp.dat` del GameServer; si
+// faltan, se usan los valores por defecto de MuEmu.cpp. Ver MuEmu.h.
+//
 // Retorna 1 si encontró IP+puerto válidos (y los escribió en outIP/outPort),
 // 0 en caso contrario (el caller mantiene los valores por defecto —
 // s_connect_muonline_co_kr_005615b8 / DAT_005615bc).
@@ -300,12 +310,95 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
     char line[256];
     int  found  = 0;   // ¿leímos al menos la línea 1?
     int  nAddr  = 0;   // cuántas direcciones válidas leímos
+
+    // Identidad del server para derivar la clave de encriptación de MuEmu
+    // (líneas `clave=valor`). Ver MuEmu.h.
+    char cfgCustomerName[64] = "";
+    char cfgServerSerial[64] = "";
+
     while (fgets(line, sizeof(line), fp) != nullptr) {
         // Skip leading whitespace
         char* p = line;
         while (*p == ' ' || *p == '\t') p++;
         if (*p == '\0' || *p == '\n' || *p == '\r' || *p == '#' || *p == ';')
             continue;
+
+        // --- Líneas `clave=valor` (CustomerName / ServerSerial) --------------
+        // Se procesan antes que el parseo de IP porque no empiezan con dígito y
+        // el parser de abajo las descartaría en silencio.
+        {
+            char* eq = strchr(p, '=');
+            if (eq != nullptr) {
+                // Clave: recortar espacios de los dos lados.
+                char key[64];
+                int  keyLen = (int)(eq - p);
+                while (keyLen > 0 && (p[keyLen - 1] == ' ' || p[keyLen - 1] == '\t'))
+                    keyLen--;
+                if (keyLen > (int)sizeof(key) - 1) keyLen = (int)sizeof(key) - 1;
+                memcpy(key, p, keyLen);
+                key[keyLen] = 0;
+
+                // Valor: recortar espacios iniciales y el fin de línea.
+                char* val = eq + 1;
+                while (*val == ' ' || *val == '\t') val++;
+                int valLen = (int)strlen(val);
+                while (valLen > 0 && (val[valLen - 1] == '\n' || val[valLen - 1] == '\r' ||
+                                      val[valLen - 1] == ' '  || val[valLen - 1] == '\t'))
+                    valLen--;
+                val[valLen] = 0;
+
+                if (_stricmp(key, "CustomerName") == 0)
+                    lstrcpynA(cfgCustomerName, val, sizeof(cfgCustomerName));
+                else if (_stricmp(key, "ServerSerial") == 0) {
+                    lstrcpynA(cfgServerSerial, val, sizeof(cfgServerSerial));
+
+                    // El serial no sirve solo para derivar la clave: el server
+                    // TAMBIEN lo valida en el login F1/01
+                    // (Protocol.cpp:1193, memcmp contra m_ServerSerial ->
+                    // GCConnectAccountSend(6) si no coincide). Asi que el mismo
+                    // valor tiene que ir al buffer que se manda en el paquete,
+                    // o la clave saldria bien y el login fallaria igual.
+                    // Se rellena con ceros porque el server compara 16 bytes
+                    // contra su m_ServerSerial[17], que tambien viene en cero.
+                    memset(DAT_00559624, 0, sizeof(DAT_00559624));
+                    int serLen = (int)strlen(cfgServerSerial);
+                    if (serLen > (int)sizeof(DAT_00559624)) serLen = (int)sizeof(DAT_00559624);
+                    memcpy(DAT_00559624, cfgServerSerial, serLen);
+                }
+                else if (_stricmp(key, "ClientVersion") == 0) {
+                    // El server compara los 5 bytes contra su m_ServerVersion
+                    // (Protocol.cpp:1186) y devuelve el mismo error que el
+                    // serial si no coinciden.
+                    //
+                    // Se acepta tanto "0.97.11" (igual que ServerVersion en el
+                    // .dat del server, comodo para copiar y pegar) como "09711"
+                    // ya condensado. La forma con puntos se condensa tomando los
+                    // indices 0,2,3,5,6, que es exactamente lo que hace
+                    // CServerInfo::ReadStartupInfo.
+                    char v5[6] = { 0 };
+                    int  vlen  = (int)strlen(val);
+                    if (vlen >= 7 && val[1] == '.') {
+                        v5[0] = val[0]; v5[1] = val[2]; v5[2] = val[3];
+                        v5[3] = val[5]; v5[4] = val[6];
+                    } else if (vlen >= 5) {
+                        memcpy(v5, val, 5);
+                    }
+
+                    if (v5[0] != 0) {
+                        // El paquete lleva la version ofuscada: el cliente
+                        // guarda (v[i] + i + 1) y el receptor hace (b[i] - i - 1).
+                        for (int i = 0; i < 5; i++)
+                            DAT_0055961c[i] = (BYTE)(v5[i] + i + 1);
+
+                        char line[96];
+                        wsprintfA(line, "server.cfg: ClientVersion='%s'", v5);
+                        DbgLogPublic(line);
+                    }
+                }
+
+                continue;   // nunca es una dirección
+            }
+        }
 
         // Extract IP (digits + dots)
         char ipBuf[64];
@@ -330,15 +423,24 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
             memcpy(outIP, ipBuf, ipLen + 1);
             *outPort = (unsigned short)port;
             found = 1;
-        } else {
+            nAddr++;
+        } else if (nAddr == 1) {
             // Línea 2 → GameServer fallback + activa el flujo ConnectServer.
             memcpy(g_GameServerIP, ipBuf, ipLen + 1);
             g_GameServerPort  = (unsigned short)port;
             g_HasConnectServer = 1;
+            nAddr++;
         }
-        nAddr++;
-        if (nAddr >= 2) break;
+        // Sin `break`: las direcciones extra se ignoran, pero seguimos leyendo
+        // para no perder líneas `clave=valor` que vengan después de las IPs.
     }
     fclose(fp);
+
+    // Derivar la clave de MuEmu si server.cfg trajo la identidad del server.
+    // Sin esas líneas quedan los valores por defecto (CustomerName="MuLinux"),
+    // que es el comportamiento que tenía el cliente antes de esto.
+    if (cfgCustomerName[0] != 0 || cfgServerSerial[0] != 0)
+        MuEmu::InitKeys(cfgCustomerName, cfgServerSerial);
+
     return found;
 }

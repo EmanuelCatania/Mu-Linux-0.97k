@@ -56,7 +56,13 @@ extern "C" {
     int   InputFrame              = 0;
 
     // Guild mark colour palette (16 entries × DWORD ARGB).
-    DWORD MarkColor[16]           = {0};
+    // 2026-08-25: esto era una copia LOCAL del array. El global real es
+    // 0x7E11F34 (= DAT_07e11f34), que es el que lee `RenderGuildMark`
+    // (0x4F02F0, nuestro RenderGuildMark_stub): `CreateGuildMark` llenaba esta
+    // copia y el render leia el global, que quedaba en ceros — y encima estaba
+    // declarado como UN DWORD, asi que indexarlo 0..15 desbordaba.
+    // Ver [[global-partido-en-dos]].
+    #define MarkColor DAT_07e11f34
 
     // Per-mark 8×8 nibble palette source (16 marks × 80 bytes — matches IDA
     // stride 80 for byte_7E919C5).  Storage opened here; the engine's mark
@@ -266,8 +272,19 @@ void Render_QuickButtons_(void)
     const int panelStartX = 450;
 
     if (HUD_IsGuildCreationRuntime()) {
-        float btnX = (float)DAT_07ea5b1c + _DAT_005524fc;
-        float btnY = (float)DAT_07ea5b20 + _DAT_00552ca4;
+        // 2026-08-26 FIX "los botones OK/CANCEL salen abajo a la izquierda, fuera
+        // del panel": el origen era `DAT_07ea5b1c/20` (= Inventory[32].Level/Part),
+        // el scratch que el port ABANDONO el 2026-07-27 al mover el origen del
+        // creador a `g_GuildCreatorScratchX/Y` (Inventory[32] es el slot 0 del pool
+        // de la tienda y lo estaba pisando). Quedo en 0, asi que los botones se
+        // dibujaban en (0+20, 0+350) absoluto — abajo a la izquierda — mientras los
+        // DOS hit-tests (FUN_004e4760 para OK, GuildCreator_HandleMouse para CANCEL)
+        // ya usaban el origen bueno: se dibujaban en un lado y se clickeaban en otro.
+        // Los tres offsets coinciden con esos hit-tests: +20/+350 y +100 el segundo.
+        // Es el tercer hermano del fix del 2026-08-08 b (GuildList y CharacterInfo
+        // ya habian pasado a sus globals reales; este quedo sin actualizar).
+        float btnX = (float)g_GuildCreatorScratchX + _DAT_005524fc;
+        float btnY = (float)g_GuildCreatorScratchY + _DAT_00552ca4;
         glColor3f(1.0f, 1.0f, 1.0f);
         FUN_005125a0(0x118, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 2.1875f, 0.65625f, 1, 1);
         int tex = ((int)MouseX >= (int)btnX && (int)MouseX < (int)(btnX + 70.0f) &&
