@@ -4,14 +4,14 @@
 
 // ── FUN_0047b130 @ 0x0047B130 — Item_LoadData(path) ──────────────────────────
 // Reads a text-format item data file (Item.txt / local-language variant).
-// Parser loop uses FUN_0047a1f0 which returns record type:
+// Parser loop uses TextParser_GetToken which returns record type:
 //   0 = comment/section header (strcmp with "END" at DAT_00559088; break loop on match)
 //   1 = data record   (iVar4 = row, lVar16 = col)
 //   2 = EOF           (close file, return)
 //
 // Data structure: DAT_07d78068 + (row*0x20 + col)*0x40
 //   Each 0x40-byte slot stores:
-//     [0x00..0x1F] = name string (memcpy from DAT_07cf1ef0)
+//     [0x00..0x1F] = name string (memcpy from TextParserTokenString)
 //     [0x20] = item type group A
 //     [0x21] = item sub-type A
 //     [0x1F] = item level / flag
@@ -46,7 +46,7 @@ void __cdecl FUN_0047b130(const char *path)
 
 LAB_loop:
     {
-        int recType = FUN_0047a1f0();
+        int recType = TextParser_GetToken();
         if (recType == 2) {
             FUN_0054150f(DAT_07d7806c);
             return;
@@ -59,10 +59,10 @@ LAB_loop:
             // here we document the structure faithfully as a stub that calls
             // the real parser. The logic below mirrors the Ghidra decompilation.
 
-            // row = (int)__ftol result from first FUN_0047a1f0
-            // col = (int)__ftol result from second FUN_0047a1f0
+            // row = (int)__ftol result from first TextParser_GetToken
+            // col = (int)__ftol result from second TextParser_GetToken
             // slot = (row*0x20 + col) * 0x40
-            // The loop runs until iVar4==0 && strcmp(DAT_07cf1ef0, "END")==0
+            // The loop runs until iVar4==0 && strcmp(TextParserTokenString, "END")==0
         }
         goto LAB_loop;
     }

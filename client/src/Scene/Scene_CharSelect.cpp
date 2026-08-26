@@ -23,7 +23,7 @@
 //   // Setear color por slot:
 //   for (iVar7 = 0; iVar7 < 5; iVar7++) {
 //     entity = DAT_07abf5d0 + iVar7 * 0x394;
-//     if (iVar7 == DAT_005616ac || iVar7 == DAT_00559c50) {
+//     if (iVar7 == DAT_005616ac || iVar7 == SelectedCharacter) {
 //       color = (1.0, 1.0, 1.0);    // seleccionado/hover → full bright
 //     } else {
 //       color = (local_70 * 0.5f, local_70 * 0.5f, local_70 * 0.5f);
@@ -144,7 +144,7 @@
 //   DAT_05826e08   — frame time accumulator (usado en fsin para brillo)
 //   DAT_005616ac   — selected char index (-1=ninguno)
 //   DAT_005616b0   — hovered char index (-1=ninguno)
-//   DAT_00559c50   — slot local player index
+//   SelectedCharacter   — slot local player index
 //   DAT_083a021c   — puntero a entidad del char hovereado
 //   DAT_083a4110   — camera matrix output
 //   DAT_083a427c   — mouse X
@@ -243,7 +243,7 @@ int Scene_CharSelect(void)
 
         // Per-slot color: selected/hover → full bright; others → dimmed
         iVar4 = DAT_005616ac;
-        iVar9 = DAT_00559c50;
+        iVar9 = SelectedCharacter;
         iVar7 = 0;
         pfVar3 = (float *)(DAT_07abf5d0 + 0xec);
         _DAT_0055a7c0 = 0;

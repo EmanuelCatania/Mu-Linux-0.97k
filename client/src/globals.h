@@ -196,9 +196,9 @@ extern DWORD   DAT_00559070;
 extern DWORD   DAT_005590ac;
 // Layout de los 3 botones popup del ChatListBox — flt_5590B0/B4/B8 en IDA.
 // Leídos del binario: 295.0 / 417.0 / 18.0 (ver comentario en globals.cpp).
-extern float   DAT_005590b0;   // X del primer botón
-extern float   DAT_005590b4;   // Y de los tres
-extern float   DAT_005590b8;   // separación horizontal
+extern float   ChatListBox_TabButtonsX;       // DAT_005590b0 — X del primer botón
+extern float   ChatListBox_TabButtonsY;       // DAT_005590b4 — Y de los tres
+extern float   ChatListBox_TabButtonSpacing;  // DAT_005590b8 — separación horizontal
 extern BYTE    DAT_0055961c[5];    // Version — obfuscated as Version[i]-i-1 in login pkt
 extern BYTE    DAT_00559624[16];   // Serial — sent raw in login pkt
 extern DWORD   DAT_00559678;
@@ -215,10 +215,12 @@ extern DWORD   DAT_005599e0;
 extern DWORD   DAT_00559bf0;
 extern int    _DAT_00559b9c;   // wind speed result (fsin * tick, *10)
 extern DWORD   DAT_00559bec;   // movement cooldown threshold
-extern int     DAT_00559c48;   // hover: item-on-ground index
-extern int     DAT_00559c4c;   // hover: NPC index
-extern int     DAT_00559c50;   // hover: entity (mob/player) index
-extern int     DAT_00559c54;   // hover: special object index
+// Hover/selection state.  Names follow the 5.2 reference only where the
+// 0.97k behaviour and lifetime match; the DAT address is kept for IDA work.
+extern int     SelectedItem;       // DAT_00559c48 — item on ground (-1 = none)
+extern int     SelectedNpc;        // DAT_00559c4c — NPC/shop entity (-1 = none)
+extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none)
+extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
 extern int     DAT_00559c58;   // hover: secondary target index
 extern char    DAT_00559c5c;   // hover enabled flag (0=disabled)
 extern int     DAT_00559c60;   // equipped weapon type (right hand)
@@ -1723,9 +1725,9 @@ extern char    DAT_0055de10;
 extern FILE   *DAT_07d7806c;   // file handle (MonsterSetBase2 parser)
 extern char    DAT_005580ac[]; // "rb" fopen mode string
 extern char    DAT_00558090[3];   // bBuxCode — clave XOR de Quest.bmd (FC CF AB)
-extern char    DAT_07cf1ef0[256];   // TokenString (IDA @0x07CF1EF0) — salida de
+extern char    TextParserTokenString[256]; // DAT_07CF1EF0 — TokenString output of
                                    // GetToken (0x47A1F0).  NO confundir con
-                                   // DAT_083a3ff4, que es el buffer del OTRO
+                                   // ParserTokenString, que es el buffer del OTRO
                                    // tokenizer (Parse_NextToken, 0x50E2C0).
 extern char    DAT_00559088;   // sentinel "END" string base
 extern int     DAT_07d7807c;   // spawn slot index
@@ -2347,10 +2349,10 @@ extern char    DAT_00559b78[]; // MoveEffect byte lookup table A (7 entries)
 extern char    DAT_00559b7f[]; // MoveEffect byte lookup table B (7 entries)
 
 // ── Map_LoadObjectModels (0x0050c4d0) ─────────────────────────────────────────
-extern FILE*   DAT_083a40fc;          // file handle for custom-map object list
-extern char    DAT_083a3ff4[256];     // token read buffer (Parse_NextToken output)
-extern int     _DAT_083a40f4;         // Parse_NextToken: last token type code
-extern float   _DAT_083a40f8;         // Parse_NextToken: last numeric value
+extern FILE*   ParserFileHandle;       // DAT_083A40FC — file handle for custom-map object list
+extern char    ParserTokenString[256]; // DAT_083A3FF4 — ParseNextToken output buffer
+extern int     ParserCurrentToken;     // DAT_083A40F4 — last token type code
+extern float   ParserTokenNumber;      // DAT_083A40F8 — last numeric value
 extern char    DAT_083a4100;          // flag: Lorencia object models already loaded
 extern char    DAT_083a8ad8[32 * 0x38];  // Icarus water-tile name table (32 × 0x38)
 // DAT_0055e714 — format string for custom map object file path (zone index)

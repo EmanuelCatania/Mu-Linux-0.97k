@@ -720,7 +720,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         wsprintfA(trace,
             "SKILL RMB enter hero=%08X attr=%08X slot=%u selected=%d state=%u action=%u flags=%u dead=%u",
             (unsigned)(uintptr_t)Hero, (unsigned)(uintptr_t)DAT_07cf1ff4,
-            Hero ? (unsigned)*(BYTE*)(Hero + 913) : 0u, (int)DAT_00559c50,
+            Hero ? (unsigned)*(BYTE*)(Hero + 913) : 0u, (int)SelectedCharacter,
             (unsigned)DAT_07e11dc0, (unsigned)*(BYTE*)(entity + 261),
             (unsigned)(*(BYTE*)(entity + 444) & 7), (unsigned)*(BYTE*)(entity + 765));
         DbgLogPublic(trace);
@@ -755,7 +755,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         const bool autoAttackOK = (DAT_07e11e18 != 0)         // m_bAutoAttack
             && worldIndex != 6                                // not in dialog/loading
             && DAT_07e11984 == 2                              // Attacking
-            && DAT_00559c50 != -1;                            // SelectedCharacter
+            && SelectedCharacter != -1;                            // SelectedCharacter
         if (!autoAttackOK && !bSuccess) {
             // IDA resetea acá RButtonPressTime=0 y RButtonPopTime=WorldTime.
             // No tenemos esos globals mapeados (los DAT_07e11dc4/dc8 de nuestro
@@ -913,7 +913,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
             char targetMissTrace[176];
             _snprintf_s(targetMissTrace, _countof(targetMissTrace), _TRUNCATE,
                         "SKILL PICK MISS skill=%d selected=%d pickGrid=(%.1f,%.1f) target=(%.1f,%.1f)",
-                        iType, (int)DAT_00559c50,
+                        iType, (int)SelectedCharacter,
                         *(float*)&DAT_080ab288, *(float*)&DAT_080ab28c,
                         *(float*)(entity + 788), *(float*)(entity + 792));
             DbgLogPublic(targetMissTrace);
@@ -922,7 +922,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
     if (rightButtonPush && iType != 0 && iType != 9 && iType != 10 &&
         iType != 12 && iType != 14) {
         char targetTrace[192];
-        int selected = (int)DAT_00559c50;
+        int selected = (int)SelectedCharacter;
         unsigned type = 0;
         unsigned key = 0xFFFF;
         if (selected >= 0 && selected < 400 && CharactersClient) {
@@ -936,8 +936,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
                   Combat_GetSkillRange97k(iType));
         DbgLogPublic(targetTrace);
     }
-    if (DAT_00559c50 != -1) {
-        Combat_SeedRuntimeState97k(iType, (int)DAT_00559c50);
+    if (SelectedCharacter != -1) {
+        Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
     } else {
         DAT_05826d10 = (DWORD)iType;
     }
@@ -1012,16 +1012,16 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         // LABEL_240 path: skills 1..29 (DK basic skills, low-level magic).
         // Setea MovementSkillTarget = SelectedCharacter para que el pathfind lo siga.
         auto seedRuntimeTarget = [&](int skillId) {
-            if (DAT_00559c50 == -1) return;
+            if (SelectedCharacter == -1) return;
             DAT_07d78098 = 1;
             DAT_07d7809c = (Hero ? *(unsigned char*)(Hero + 913) : 0);
-            DAT_07d780a0 = (DWORD)DAT_00559c50;
+            DAT_07d780a0 = (DWORD)SelectedCharacter;
             DAT_05826d10 = (DWORD)skillId;
         };
-        if (DAT_00559c50 != -1) {
+        if (SelectedCharacter != -1) {
             DAT_07d78098 = 1;
             DAT_07d7809c = (Hero ? *(unsigned char*)(Hero + 913) : 0);
-            DAT_07d780a0 = (DWORD)DAT_00559c50;
+            DAT_07d780a0 = (DWORD)SelectedCharacter;
         }
 
         // SkillAttribute is a struct array stride 40. Field +0x26 (=38 bytes)
@@ -1036,7 +1036,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         float dy = *(float*)(entity + 20) - ty;
         float dist2 = dx * dx + dy * dy;
         float maxDist = (float)skillRange * 100.0f;
-        if (rightButtonPush && DAT_00559c50 != -1) {
+        if (rightButtonPush && SelectedCharacter != -1) {
             char rangeTrace[160];
             _snprintf_s(rangeTrace, _countof(rangeTrace), _TRUNCATE,
                         "SKILL RANGE skill=%d dist2=%.0f limit2=%.0f hero=(%.0f,%.0f) point=(%.0f,%.0f)",
@@ -1046,8 +1046,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         }
         if (dist2 > maxDist * maxDist) {
             // Fuera de alcance — pathfind hacia el objetivo.
-            if (DAT_00559c50 != -1
-                && *(unsigned char*)((unsigned char*)(CharactersClient + 916 * (int)DAT_00559c50) + 132) == 1) {
+            if (SelectedCharacter != -1
+                && *(unsigned char*)((unsigned char*)(CharactersClient + 916 * (int)SelectedCharacter) + 132) == 1) {
                 int gx = *(int*)(entity + 904);
                 int gy = *(int*)(entity + 908);
                 if (FUN_0043f3e0(gx, gy, (int)DAT_07e016c0, (int)DAT_07e016c4,
@@ -1059,8 +1059,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
             return;
         }
         // In range — execute attack.
-        if (DAT_00559c50 != -1) {
-            unsigned char ttype = *(unsigned char*)((unsigned char*)(CharactersClient + 916 * (int)DAT_00559c50) + 132);
+        if (SelectedCharacter != -1) {
+            unsigned char ttype = *(unsigned char*)((unsigned char*)(CharactersClient + 916 * (int)SelectedCharacter) + 132);
             if (ttype == 1 && iType >= 26 && iType <= 28) {
                 // Elf buff (Heal/Greater Defense/Greater Damage) — UseSkillElf
                 seedRuntimeTarget(iType);
@@ -1085,8 +1085,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
                 *(float*)(entity + 788), *(float*)(entity + 792));
 
             WORD targetKey = 0xFFFF;
-            if (DAT_00559c50 != -1 && FUN_00483160() != 0) {
-                targetKey = *(unsigned short*)(CharactersClient + 916 * (int)DAT_00559c50 + 476);
+            if (SelectedCharacter != -1 && FUN_00483160() != 0) {
+                targetKey = *(unsigned short*)(CharactersClient + 916 * (int)SelectedCharacter + 476);
             }
             const BYTE direction = (BYTE)((int)(*(float*)(entity + 36) * (256.0f / 360.0f)));
             if (iType == 5) {
@@ -1126,8 +1126,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         // hero grid, 256-step facing, and a CheckAttack-gated target key.
         if ((iType == 10 || iType == 14) && *(unsigned short*)(entity + 2) == 390) {
             WORD targetKey = 0xFFFF;
-            if (DAT_00559c50 != -1 && FUN_00483160() != 0) {
-                targetKey = *(unsigned short*)(CharactersClient + 916 * (int)DAT_00559c50 + 476);
+            if (SelectedCharacter != -1 && FUN_00483160() != 0) {
+                targetKey = *(unsigned short*)(CharactersClient + 916 * (int)SelectedCharacter + 476);
             }
             const BYTE direction = (BYTE)(int)(*(float*)(entity + 36) * (256.0f / 360.0f));
             Combat_SendDurationSkill97k(entity, iType, (iType == 10) ? 90 : 89,
@@ -1140,7 +1140,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
     }
 
     // 14) iType == 52 (Twister/Cyclone) — packet 0x1E ──────────────────────────────────────────────────────────────────────────
-    if (iType == 52 && DAT_00559c50 != -1 && bHasTarget) {
+    if (iType == 52 && SelectedCharacter != -1 && bHasTarget) {
         int tgtGX = (int)DAT_07e016c0;
         int tgtGY = (int)DAT_07e016c4;
         int heroGX = *(int*)(entity + 904);
@@ -1156,7 +1156,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
             // El case 52 en rango de 0049CBF0 escribe c+36 desde la posición de mundo
             // del objetivo chequeado, justo antes de emitir C3:1E.
             Combat_AimAtCheckedTarget97k(entity, true);
-            Combat_SeedRuntimeState97k(iType, (int)DAT_00559c50);
+            Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
             UseSkillWizard_stub((DWORD)entity, (DWORD)entity);
         } else if (FUN_0043f3e0(heroGX, heroGY, tgtGX, tgtGY,
                                 (unsigned char*)(entity + 852), (float)skillRange) != 0) {
@@ -1178,7 +1178,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
     // aplica cuando apuntas a alguien. Sin target el skill se castea sobre
     // uno mismo — confirmado contra el cliente original, y no es algo que
     // agregue el DLL.
-    if (iType == 16 && DAT_00559c50 == -1) {
+    if (iType == 16 && SelectedCharacter == -1) {
         // El target del self-cast es el propio heroe.
         //
         // DESVIACION documentada: IDA pone `MovementSkillTarget = 0` (L7138), pero
@@ -1199,8 +1199,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
     }
 
     // 15) iType == 16 (Mana Shield on a party member) — packet 0x19
-    if (iType == 16 && DAT_00559c50 != -1) {
-        char* partyTarget = (char*)(uintptr_t)CharactersClient + 916 * (int)DAT_00559c50;
+    if (iType == 16 && SelectedCharacter != -1) {
+        char* partyTarget = (char*)(uintptr_t)CharactersClient + 916 * (int)SelectedCharacter;
         if (*(unsigned char*)(partyTarget + 132) != 1 || PartyNumber <= 0) {
             return;
         }
@@ -1218,7 +1218,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         if (!isPartyMember) {
             return;
         }
-        *(unsigned short*)(entity + 784) = (unsigned short)DAT_00559c50;
+        *(unsigned short*)(entity + 784) = (unsigned short)SelectedCharacter;
         int tgtGX = (int)DAT_07e016c0;
         int tgtGY = (int)DAT_07e016c4;
         int heroGX = *(int*)(entity + 904);
@@ -1231,7 +1231,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         float dist2 = dx * dx + dy * dy;
         float maxDist = (float)skillRange * 100.0f;
         if (dist2 <= maxDist * maxDist) {
-            Combat_SeedRuntimeState97k(iType, (int)DAT_00559c50);
+            Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
             UseSkillWizard_stub((DWORD)entity, (DWORD)entity);
         } else if (FUN_0043f3e0(heroGX, heroGY, tgtGX, tgtGY,
                                 (unsigned char*)(entity + 852), (float)skillRange) != 0) {
@@ -1291,8 +1291,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         const BYTE direction = (BYTE)((int)(*(float*)(entity + 36) * (256.0f / 360.0f)));
 
         WORD targetKey = 0xFFFF;
-        if (DAT_00559c50 != -1 && FUN_00483160() != 0) {
-            targetKey = *(unsigned short*)(CharactersClient + 916 * (int)DAT_00559c50 + 476);
+        if (SelectedCharacter != -1 && FUN_00483160() != 0) {
+            targetKey = *(unsigned short*)(CharactersClient + 916 * (int)SelectedCharacter + 476);
         }
         Combat_SendDurationSkill97k(entity, iType, 61, direction, destination, 0, targetKey);
         return;
@@ -1330,8 +1330,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         const BYTE angle = (BYTE)((int)((facing + 180.0f) * (256.0f / 360.0f)));
 
         WORD targetKey = 0xFFFF;
-        if (DAT_00559c50 != -1 && FUN_00483160() != 0) {
-            targetKey = *(unsigned short*)(CharactersClient + 916 * (int)DAT_00559c50 + 476);
+        if (SelectedCharacter != -1 && FUN_00483160() != 0) {
+            targetKey = *(unsigned short*)(CharactersClient + 916 * (int)SelectedCharacter + 476);
         }
         Combat_SendDurationSkill97k(entity, iType, 81, direction, destination, angle, targetKey);
         return;
@@ -1339,8 +1339,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
 
     // Attack.c case 15 tail: Teleport Ally only accepts a visible party member.
     // Elige un tile libre en el 3x3 que rodea al héroe y manda C3:B0.
-    if (iType == 15 && DAT_00559c50 != -1 && bHasTarget) {
-        const int targetIdx = (int)DAT_00559c50;
+    if (iType == 15 && SelectedCharacter != -1 && bHasTarget) {
+        const int targetIdx = (int)SelectedCharacter;
         char* target = (char*)(uintptr_t)CharactersClient + 916 * targetIdx;
         if (PartyNumber <= 0 || DAT_07e91388 > 0) {
             return;
@@ -1393,7 +1393,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
 
     // 16b) iType == 47 (DK Death Stab) — gated by CheckAttack ────────────────────────────────────────────────
     if (iType == 47) {
-        if (DAT_00559c50 == -1 || !bHasTarget) return;
+        if (SelectedCharacter == -1 || !bHasTarget) return;
         if (FUN_00483160() == 0) return;  // CheckAttack failed — busy
         int tgtGX = (int)DAT_07e016c0;
         int tgtGY = (int)DAT_07e016c4;
@@ -1407,7 +1407,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         float dist2 = dx * dx + dy * dy;
         float maxDist = (float)skillRange * 1.2f * 100.0f;
         if (dist2 <= maxDist * maxDist) {
-            Combat_SeedRuntimeState97k(iType, (int)DAT_00559c50);
+            Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
             FUN_00485780((int)entity, (int)entity);
         } else if (FUN_0043f3e0(heroGX, heroGY, tgtGX, tgtGY,
                                 (unsigned char*)(entity + 852), (float)skillRange * 1.2f) != 0) {
@@ -1419,7 +1419,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
 
     // 17) Heal / buff de Defensa / de Ataque (51) — el mismo camino de helper que Action() ──
     if (iType == 51) {
-        if (DAT_00559c50 == -1 || !bHasTarget) return;
+        if (SelectedCharacter == -1 || !bHasTarget) return;
         int tgtGX = (int)DAT_07e016c0;
         int tgtGY = (int)DAT_07e016c4;
         int heroGX = *(int*)(entity + 904);
@@ -1432,7 +1432,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         float dist2 = dx * dx + dy * dy;
         float maxDist = (float)skillRange * 100.0f;
         if (dist2 <= maxDist * maxDist && FUN_004830b0(heroGX, heroGY, tgtGX, tgtGY)) {
-            Combat_SeedRuntimeState97k(iType, (int)DAT_00559c50);
+            Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
             FUN_0048a180((int)entity, (int)entity);
         } else if (FUN_0043f3e0(heroGX, heroGY, tgtGX, tgtGY,
                                 (unsigned char*)(entity + 852), (float)skillRange) != 0) {
@@ -1473,8 +1473,8 @@ void __cdecl FUN_0049cbf0(void *entity_v)
             *(float *)(entity + 788), *(float *)(entity + 792));
         const BYTE direction = (BYTE)((int)(*(float*)(entity + 36) * (256.0f / 360.0f)));
         WORD targetKey = 0xFFFF;
-        if (DAT_00559c50 != -1 && FUN_00483160() != 0) {
-            targetKey = *(unsigned short*)(CharactersClient + 916 * (int)DAT_00559c50 + 476);
+        if (SelectedCharacter != -1 && FUN_00483160() != 0) {
+            targetKey = *(unsigned short*)(CharactersClient + 916 * (int)SelectedCharacter + 476);
         }
         // IDA usa acá campos de destino/ángulo en cero. Sus colas son LABEL_497
         // (action 61) and LABEL_930 (action 62), respectively.
@@ -1493,7 +1493,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
     }
 
     // 18) Remaining high/runtime skills — wizard helper path.
-    Combat_SeedRuntimeState97k(iType, (int)DAT_00559c50);
+    Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
     UseSkillWizard_stub((DWORD)entity, (DWORD)entity);
 }
 
@@ -1962,12 +1962,12 @@ void __cdecl FUN_0048d640(DWORD c, DWORD o)
         //   };
         //
         // Wire: [C1][05][22][ItemKeyH][ItemKeyL] + chain XOR + MuEmu byte XOR.
-        // El target item key viene de DAT_00559c48 (set por click handler en
+        // El target item key viene de SelectedItem (set por click handler en
         // Player_InputTick cuando user click on ground item).
         FUN_004430c0((int)c);
         *(unsigned char*)(c + 748) = 0;
 
-        int itemSlotIdx = (int)DAT_00559c48;
+        int itemSlotIdx = (int)SelectedItem;
         if (itemSlotIdx >= 0 && itemSlotIdx < 1000) {
             // 2026-07-27 BUG-FIX: el port anterior leía el key del pool de
             // personajes (DAT_07abf5d0, stride 0x394) → basura. Los items del
@@ -2004,7 +2004,7 @@ void __cdecl FUN_0048d640(DWORD c, DWORD o)
         //
         // Wire: [C1][05][30][NpcH][NpcL]  + chain XOR + MuEmu byte XOR.
         // El target NPC viene de DAT_00559c70 (set por click handler en
-        // Player_InputTick cuando user click on NPC con DAT_00559c4c válido).
+        // Player_InputTick cuando user click on NPC con SelectedNpc válido).
         FUN_004430c0((int)c);                    // SetPlayerStop (local idle anim)
         *(unsigned char*)(c + 748) = 0;
 

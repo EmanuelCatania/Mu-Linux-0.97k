@@ -805,7 +805,7 @@ void __cdecl FUN_004797b0(const char *param_1)
     int iVar2;
     while ((iVar2 = GetToken()) != 2) {
         if (iVar2 == 1) {
-            long long lVar7 = (longlong)_DAT_083a40f8;   // IDA: (__int64)TokenNumber  (_DAT_083a40f8)
+            long long lVar7 = (longlong)ParserTokenNumber;   // IDA: (__int64)TokenNumber  (ParserTokenNumber)
             GetToken();
             // Copia TokenString a la entrada de SkillAttribute en el índice lVar7
             size_t uLen = strlen(TokenString) + 1;

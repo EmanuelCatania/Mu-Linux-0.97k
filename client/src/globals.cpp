@@ -201,9 +201,9 @@ DWORD    DAT_005590ac  = 1;
 // Valores LEÍDOS DEL BINARIO en 0x5590B0 (12 bytes: 00 80 93 43 | 00 80 d0 43 |
 // 00 00 90 41) → 295.0f, 417.0f, 18.0f.  Los usan sub_40E400 (hit-test, slot 26)
 // y sub_40DEF0 (render, slot 24 vía el thunk sub_40D600).
-float    DAT_005590b0  = 295.0f;   // X del primer botón
-float    DAT_005590b4  = 417.0f;   // Y de los tres
-float    DAT_005590b8  =  18.0f;   // separación horizontal entre botones
+float    ChatListBox_TabButtonsX  = 295.0f;   // DAT_005590b0 — X del primer botón
+float    ChatListBox_TabButtonsY  = 417.0f;   // DAT_005590b4 — Y de los tres
+float    ChatListBox_TabButtonSpacing  = 18.0f; // DAT_005590b8 — separación horizontal entre botones
 // Version (5 bytes) @ 0x0055961c: obfuscated as Version[i]-i-1 in login packet.
 //
 // HISTORICAL VALUE from original main.exe (MD5 eb95ac0785e40a7ad60c9ddb5d8bef34):
@@ -240,7 +240,7 @@ DWORD    DAT_0055987c  = 0;
 DWORD    DAT_005599b0  = 0;
 DWORD    DAT_005599e0  = 0;
 DWORD    DAT_00559bf0  = 0;
-// DAT_00559c4c/50 defined below in hover/targeting section
+// DAT_00559c4c/50 are defined below in the named hover/targeting section.
 DWORD    DAT_00559c78  = 0xffffffff;
 // 0x00559C7C — IDA `SetTextColor_0`: color del PREFIJO (nombre de guild) en la
 // composición de burbujas de chat (`sub_47F360`).  Lo escriben `RenderBoolean`
@@ -1394,14 +1394,14 @@ int      DAT_07e11d5c  = 0;
 // before priority-probing. En login/char-select Mouse_Hover no corre, así que
 // el valor inicial debe ser -1 para que RenderCursor (FUN_004bffa0) muestre
 // el cursor arrow por defecto en vez del item-cursor (bitmap 5 = mano abierta).
-int      DAT_00559c48  = -1;  // SelectedItem
-int      DAT_00559c4c  = -1;  // SelectedNpc
-int      DAT_00559c50  = -1;  // SelectedCharacter
-int      DAT_00559c54  = -1;  // SelectedOperate
+int      SelectedItem       = -1;  // DAT_00559c48
+int      SelectedNpc        = -1;  // DAT_00559c4c
+int      SelectedCharacter  = -1;  // DAT_00559c50
+int      SelectedOperate    = -1;  // DAT_00559c54
 int      DAT_00559c58  = -1;  // SelectedCharacter secondary
 // 2026-05-06 BUG-FIX: m_bAutoAttack default = 1 (enabled). Per IDA
 // Mouse_Hover (sub_4B0310:85), if !m_bAutoAttack the hover-target
-// (DAT_00559c50) is reset to -1 every frame BEFORE the click handler reads
+// (DAT_00559c50 / SelectedCharacter) is reset to -1 every frame BEFORE the click handler reads
 // it → click on mob fell through to ground-click handler. User reported
 // "no atacaba a la primera, me costo empezar a atacar" 2026-05-06.
 char     DAT_00559c5c  = 1;
@@ -1814,7 +1814,7 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
 // equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.
 char    DAT_00558090[3] = { (char)0xFC, (char)0xCF, (char)0xAB };
-char    DAT_07cf1ef0[256] = {};   // TokenString (IDA @0x07CF1EF0) — buffer de GetToken (0x47A1F0)
+char    TextParserTokenString[256] = {}; // DAT_07CF1EF0 — GetToken buffer (0x47A1F0)
 char    DAT_00559088 = 0;
 int     DAT_07d7807c = 0;
 char    s_Data_Monster__0055ddf8[] = "Data/Monster/";
@@ -2480,8 +2480,8 @@ char   DAT_00559b78[7] = {};   // MoveEffect byte lookup table A
 char   DAT_00559b7f[7] = {};   // MoveEffect byte lookup table B
 
 // ── Map_LoadObjectModels (0x0050c4d0) ─────────────────────────────────────────
-FILE*  DAT_083a40fc       = nullptr;      // file handle for custom-map object list
-char   DAT_083a3ff4[256]  = {};           // token read buffer
+FILE*  ParserFileHandle       = nullptr;  // DAT_083A40FC — file handle for custom-map object list
+char   ParserTokenString[256] = {};       // DAT_083A3FF4 — token read buffer
 char   DAT_083a4100       = 0;            // Lorencia models-loaded flag
 // Icarus water-tile name table — 32 entries × 0x38 bytes (= 0x700 bytes total).
 // Was 1 byte → Scene_Objects.cpp case 7 (Icarus map) wrote 32 filename strings
@@ -2518,8 +2518,8 @@ float  DAT_00862274       = 0.0f;         // normal Y channel base
 short  DAT_008b3f08       = 0;            // normal index table base
 
 // ── Parse_NextToken (0x0050e2c0) ─────────────────────────────────────────────
-int    _DAT_083a40f4      = 0;            // last token type code
-float  _DAT_083a40f8      = 0.0f;         // last numeric token value
+int    ParserCurrentToken = 0;             // DAT_083A40F4 — last token type code
+float  ParserTokenNumber  = 0.0f;          // DAT_083A40F8 — last numeric token value
 
 // ── RenderObjectScreen (0x004e13a0) ──────────────────────────────────────────
 float  _DAT_07ea952c      = 0.0f;         // item render: rotation X offset

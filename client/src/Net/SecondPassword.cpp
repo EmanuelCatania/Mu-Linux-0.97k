@@ -2855,10 +2855,10 @@ void __cdecl FUN_004ac140(void)
             }
 
             // Post-send: clear hover targets, set dialog-active, reset timer state
-            DAT_00559c48 = 0xffffffff;
-            DAT_00559c4c = 0xffffffff;
-            DAT_00559c50 = 0xffffffff;
-            DAT_00559c54 = 0xffffffff;
+            SelectedItem = 0xffffffff;
+            SelectedNpc = 0xffffffff;
+            SelectedCharacter = 0xffffffff;
+            SelectedOperate = 0xffffffff;
             DAT_00559c58 = 0xffffffff;
             DAT_07e11dc4 = 1;
             DAT_07e11db8 = 0;

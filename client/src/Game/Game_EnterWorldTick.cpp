@@ -215,7 +215,7 @@ void Game_EnterWorldTick(void)
         // En login/serverselect el usuario hace clicks rápidos para conectar;
         // si dos LBUTTONDOWNs caen <500ms aparte, Windows manda WM_LBUTTONDBLCLK
         // setteando DAT_083a4299=1.  Ese flag persiste hasta char-select y
-        // cuando Mouse_Hover marca DAT_00559c50=0 (slot 0 hovered) la rama
+        // cuando Mouse_Hover marca SelectedCharacter=0 (slot 0 hovered) la rama
         // DBLCLK del slot loop dispara → confirmed=true → state salta de 0x14
         // directo a 0x19 → entrada al mundo sin que el usuario haya clickeado
         // un slot.  Limpiamos también DAT_083a4124 por las dudas.
@@ -478,7 +478,7 @@ void Game_EnterWorldTick(void)
             int  pendingB  = DAT_083a7c28;
 
             for (int i = 0; i < 5; i++, slotY += 0x14) {
-                if (i == DAT_00559c50) {
+                if (i == SelectedCharacter) {
                     if (DAT_083a4299 != '\0') {
                         DAT_083a4299 = '\0';
                         DAT_083a7c28 = 0;
@@ -491,7 +491,7 @@ void Game_EnterWorldTick(void)
                             char dbg[160];
                             wsprintfA(dbg,
                                 "SLOT-DBLCLK i=%d c50=%d clk=%d mx=%d my=%d s=%X",
-                                i, (int)DAT_00559c50, (int)DAT_083a4124,
+                                i, (int)SelectedCharacter, (int)DAT_083a4124,
                                 (int)DAT_083a427c, (int)DAT_083a4278,
                                 (unsigned)DAT_083a7c14);
                             DbgLogPublic(dbg);
@@ -502,7 +502,7 @@ void Game_EnterWorldTick(void)
                             char dbg[160];
                             wsprintfA(dbg,
                                 "SLOT-CLICK FIRED i=%d c50=%d clk=%d mx=%d my=%d s=%X t=%u",
-                                i, (int)DAT_00559c50, (int)DAT_083a4124,
+                                i, (int)SelectedCharacter, (int)DAT_083a4124,
                                 (int)DAT_083a427c, (int)DAT_083a4278,
                                 (unsigned)DAT_083a7c14, GetTickCount());
                             DbgLogPublic(dbg);

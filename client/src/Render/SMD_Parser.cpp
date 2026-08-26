@@ -849,24 +849,24 @@ void __cdecl FUN_00509810(int param_1, int param_2, int param_3, int param_4, in
 void __cdecl FUN_00404bb0(void) { /* NOP — original returns 1 but callers ignore it */ }
 
 // FUN_00483160 @ 0x00483160 — Combat_GetTargetResult: resolves the current hovered entity result.
-// Returns: high=entity slot (DAT_00559c50), low=action type (0=none, 1=attack, 2=trade).
+// Returns: high=entity slot (SelectedCharacter), low=action type (0=none, 1=attack, 2=trade).
 // Also handles trade-mode comparisons (name vs local player name).
 unsigned int __cdecl FUN_00483160(void) {
-    unsigned int uVar6 = DAT_00559c50;
-    if (DAT_00559c50 == 0xffffffff)
+    unsigned int uVar6 = SelectedCharacter;
+    if (SelectedCharacter == 0xffffffff)
         return uVar6 & 0xffffff00u;
-    int iVar1 = DAT_07abf5d0 + DAT_00559c50 * 0x394;
-    char cVar2 = *(char*)(DAT_07abf5d0 + 0x84 + DAT_00559c50 * 0x394);
-    uVar6 = (DAT_00559c50 * 0xe5u >> 8u) << 8u | (unsigned char)cVar2;
+    int iVar1 = DAT_07abf5d0 + SelectedCharacter * 0x394;
+    char cVar2 = *(char*)(DAT_07abf5d0 + 0x84 + SelectedCharacter * 0x394);
+    uVar6 = (SelectedCharacter * 0xe5u >> 8u) << 8u | (unsigned char)cVar2;
     if (cVar2 == '\x02')
-        return ((DAT_00559c50 * 0xe5u >> 8u) << 8u) | 1u;
+        return ((SelectedCharacter * 0xe5u >> 8u) << 8u) | 1u;
     if (cVar2 == '\x01') {
         unsigned char bVar3 = *(unsigned char*)(iVar1 + 0x2ea);
-        unsigned int uVar8 = ((DAT_00559c50 * 0xe5u >> 8u) << 8u) | bVar3;
+        unsigned int uVar8 = ((SelectedCharacter * 0xe5u >> 8u) << 8u) | bVar3;
         if (DAT_05826d30 != '\0') {
             if (bVar3 > 5) {
                 short sVar4 = *(short*)(iVar1 + 0x1da);
-                uVar8 = (unsigned short)((DAT_00559c50 * 0xe5u) >> 0x10u) << 16u | (unsigned short)sVar4;
+                uVar8 = (unsigned short)((SelectedCharacter * 0xe5u) >> 0x10u) << 16u | (unsigned short)sVar4;
                 if (sVar4 != -1) {
                     unsigned char *pbVar10 = (unsigned char*)&DAT_07e919bc + sVar4 * 0x50;
                     unsigned char *pbVar7  = (unsigned char*)&DAT_07e919bc + *(short*)((char*)DAT_07abf5d8 + 0x1da) * 0x50;

@@ -140,8 +140,8 @@ static char* Chat_FindPlayerInteractionTarget(const char* argument)
                 break;
             }
         }
-    } else if (DAT_00559c50 >= 0 && DAT_00559c50 < 400 && DAT_07abf5d0) {
-        char* candidate = (char*)(uintptr_t)DAT_07abf5d0 + DAT_00559c50 * 916;
+    } else if (SelectedCharacter >= 0 && SelectedCharacter < 400 && DAT_07abf5d0) {
+        char* candidate = (char*)(uintptr_t)DAT_07abf5d0 + SelectedCharacter * 916;
         if (candidate[0] && *(short*)(candidate + 2) == 390 && candidate[132] == 1)
             entity = candidate;
     }

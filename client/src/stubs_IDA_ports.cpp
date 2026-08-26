@@ -5040,47 +5040,47 @@ LABEL_8:
     m_dwTextColor = -1;
     m_dwBackColor = -16777216;
     v4 = 0;
-    if ( FUN_0040c490((__int64)DAT_005590b0, (__int64)DAT_005590b4, 16, 16, 1) )
+    if ( FUN_0040c490((__int64)ChatListBox_TabButtonsX, (__int64)ChatListBox_TabButtonsY, 16, 16, 1) )
     {
       v4 = 1;
     }
-    else if ( FUN_0040c490((__int64)(DAT_005590b8 + DAT_005590b0), (__int64)DAT_005590b4, 16, 16, 1) )
+    else if ( FUN_0040c490((__int64)(ChatListBox_TabButtonSpacing + ChatListBox_TabButtonsX), (__int64)ChatListBox_TabButtonsY, 16, 16, 1) )
     {
       v4 = 2;
     }
-    else if ( FUN_0040c490((__int64)(DAT_005590b8 + DAT_005590b8 + DAT_005590b0), (__int64)DAT_005590b4, 16, 16, 1) )
+    else if ( FUN_0040c490((__int64)(ChatListBox_TabButtonSpacing + ChatListBox_TabButtonSpacing + ChatListBox_TabButtonsX), (__int64)ChatListBox_TabButtonsY, 16, 16, 1) )
     {
       v4 = 3;
     }
     if ( DAT_00559bf1 )
     {
-      FUN_0040dce0(1285, v4 == 1, DAT_005590b0, DAT_005590b4, 16.0, 16.0, *(GLfloat *)(_this + 196), 0.0);
+      FUN_0040dce0(1285, v4 == 1, ChatListBox_TabButtonsX, ChatListBox_TabButtonsY, 16.0, 16.0, *(GLfloat *)(_this + 196), 0.0);
     }
     else
     {
       glColor4f(0.69999999, 0.69999999, 0.69999999, *(GLfloat *)(_this + 196));
-      y = DAT_005590b4 + 1.0;
-      x = DAT_005590b0 + 1.0;
+      y = ChatListBox_TabButtonsY + 1.0;
+      x = ChatListBox_TabButtonsX + 1.0;
       RenderBitmap(1285, x, y, 16.0, 16.0, 0.0, 0.0, 0.9375, 0.9375, 1, 1);
       glColor4f(1.0, 1.0, 1.0, *(GLfloat *)(_this + 196));
     }
-    v9 = DAT_005590b8 + DAT_005590b0;
-    FUN_0040dce0(1286, v4 == 2, v9, DAT_005590b4, 16.0, 16.0, *(GLfloat *)(_this + 196), 0.0);
-    v10 = DAT_005590b8 + DAT_005590b8 + DAT_005590b0;
-    FUN_0040dce0(1287, v4 == 3, v10, DAT_005590b4, 16.0, 16.0, *(GLfloat *)(_this + 196), 0.0);
+    v9 = ChatListBox_TabButtonSpacing + ChatListBox_TabButtonsX;
+    FUN_0040dce0(1286, v4 == 2, v9, ChatListBox_TabButtonsY, 16.0, 16.0, *(GLfloat *)(_this + 196), 0.0);
+    v10 = ChatListBox_TabButtonSpacing + ChatListBox_TabButtonSpacing + ChatListBox_TabButtonsX;
+    FUN_0040dce0(1287, v4 == 3, v10, ChatListBox_TabButtonsY, 16.0, 16.0, *(GLfloat *)(_this + 196), 0.0);
     if ( v4 == 1 )
     {
       v12 = GlobalText[750];
-      v5 = DAT_005590b0;
-      v11 = (__int64)(DAT_005590b4 - 10.0);
+      v5 = ChatListBox_TabButtonsX;
+      v11 = (__int64)(ChatListBox_TabButtonsY - 10.0);
     }
     else
     {
       if ( v4 == 2 )
       {
         v12 = GlobalText[751];
-        v6 = DAT_005590b8;
-        v11 = (__int64)(DAT_005590b4 - 10.0);
+        v6 = ChatListBox_TabButtonSpacing;
+        v11 = (__int64)(ChatListBox_TabButtonsY - 10.0);
       }
       else
       {
@@ -5092,10 +5092,10 @@ LABEL_27:
           return;
         }
         v12 = GlobalText[752];
-        v11 = (__int64)(DAT_005590b4 - 10.0);
-        v6 = DAT_005590b8 + DAT_005590b8;
+        v11 = (__int64)(ChatListBox_TabButtonsY - 10.0);
+        v6 = ChatListBox_TabButtonSpacing + ChatListBox_TabButtonSpacing;
       }
-      v5 = v6 + DAT_005590b0;
+      v5 = v6 + ChatListBox_TabButtonsX;
     }
     RenderTipText((__int64)(v5 - 16.0), v11, v12);
     goto LABEL_27;
@@ -5125,7 +5125,7 @@ BOOL __cdecl FUN_0040e230(DWORD *_this)
     _this[48] = 0;
   }
   return FUN_0040c490(_this[13] + _this[11] - 30, _this[12] - 6, 33, _this[14] - 2, 2)
-      || _this[48] == 1 && FUN_0040c490((__int64)DAT_005590b0, (__int64)DAT_005590b4, (__int64)(DAT_005590b8 * 3.0), 16, 1);
+      || _this[48] == 1 && FUN_0040c490((__int64)ChatListBox_TabButtonsX, (__int64)ChatListBox_TabButtonsY, (__int64)(ChatListBox_TabButtonSpacing * 3.0), 16, 1);
 }
 #endif
 
@@ -5145,20 +5145,20 @@ int __cdecl FUN_0040e400(float *_this)
   }
   if ( *((DWORD *)_this + 48) && !InputEnable )
   {
-    if ( FUN_0040c490((__int64)DAT_005590b0, (__int64)DAT_005590b4, 16, 16, 1) )
+    if ( FUN_0040c490((__int64)ChatListBox_TabButtonsX, (__int64)ChatListBox_TabButtonsY, 16, 16, 1) )
     {
       DAT_00559bf1 = DAT_00559bf1 == 0;
       PlayBuffer(25, 0, 0);
       (*(void (__cdecl **)(float *, DWORD))(*(DWORD *)_this + 48))(_this, 0);
       MouseLButtonPush = 0;
     }
-    if ( FUN_0040c490((__int64)(DAT_005590b8 + DAT_005590b0), (__int64)DAT_005590b4, 16, 16, 1) )
+    if ( FUN_0040c490((__int64)(ChatListBox_TabButtonSpacing + ChatListBox_TabButtonsX), (__int64)ChatListBox_TabButtonsY, 16, 16, 1) )
     {
       FUN_0040e330(_this);
       PlayBuffer(25, 0, 0);
       MouseLButtonPush = 0;
     }
-    if ( FUN_0040c490((__int64)(DAT_005590b8 + DAT_005590b8 + DAT_005590b0), (__int64)DAT_005590b4, 16, 16, 1) )
+    if ( FUN_0040c490((__int64)(ChatListBox_TabButtonSpacing + ChatListBox_TabButtonSpacing + ChatListBox_TabButtonsX), (__int64)ChatListBox_TabButtonsY, 16, 16, 1) )
     {
       v2 = _this[47] + 0.2;
       _this[47] = v2;
@@ -25944,23 +25944,23 @@ void __cdecl FUN_0050c4d0()
     if ( !DAT_0055a7c4 )
     {
       sprintf(FileName, "Data2\\Object%d\\_ÆÄÀÏ.txt", v33);
-      DAT_083a40fc = fopen(FileName, "rb");
-      if ( DAT_083a40fc )
+      ParserFileHandle = fopen(FileName, "rb");
+      if ( ParserFileHandle )
       {
         while ( 1 )
         {
-          v34 = FUN_0050e2c0();
+          v34 = ParseNextToken();
           v35 = (__int64)DAT_083a40f8;
           if ( v34 == 2 )
           {
             break;
           }
-          FUN_0050e2c0();
-          strcpy(ModelFileName, (const char *)&DAT_083a3ff4);
-          FUN_0050e2c0();
-          strcpy(v43, (const char *)&DAT_083a3ff4);
-          FUN_0050e2c0();
-          strcpy(v44, (const char *)&DAT_083a3ff4);
+          ParseNextToken();
+          strcpy(ModelFileName, (const char *)&ParserTokenString);
+          ParseNextToken();
+          strcpy(v43, (const char *)&ParserTokenString);
+          ParseNextToken();
+          strcpy(v44, (const char *)&ParserTokenString);
           sprintf(FileName, aData2ObjectD, v33);
           if ( strlen(v43) )
           {
@@ -25978,7 +25978,7 @@ void __cdecl FUN_0050c4d0()
             OpenModel(v35, FileName, ModelFileName, "end");
           }
         }
-        fclose(DAT_083a40fc);
+        fclose(ParserFileHandle);
       }
     }
     sprintf(FileName, "Data\\Object%d\\", v33);

@@ -742,7 +742,7 @@ void  __cdecl FUN_0047d020(LPCSTR param_1);                     // Monster_Parse
 void  __cdecl FUN_00505bd0(int count);                          // MonsterTable_Init / Model_SetSlotIndex
 void  __cdecl FUN_00505e90(int id, const char* dir, const char* file); // Monster_RegisterBMD / Model_LoadSMD
 void  __cdecl FUN_005098c0(int monster_idx);                    // Monster_SetupSoundAnim
-int   __cdecl FUN_0047a1f0(void);                               // MonsterFile_ReadField (returns record type)
+int   __cdecl TextParser_GetToken(void);                         // FUN_0047A1F0 — text-data tokenizer (returns record type)
 void  __cdecl FUN_00479910(int buf, int len);                   // XOR-cipher buffer in-place (key: FC CF AB, 3-byte cycle)
 void  __cdecl FUN_0047ea70(void *dst, void *src);               // Skill_HashTable_SerializeEntry (encode + insert)
 void  __cdecl FUN_0047eaf0(void *entry, void *key);             // Skill_HashTable_FreeEntry (decode + remove)
@@ -915,7 +915,7 @@ void  __cdecl FUN_004c4080(void);          // CharData_RefreshSlots (refresh cha
 void  __cdecl FUN_004233e0(int, int);      // HashTable_Unlock (2-arg variant, release lock)
 
 // ── Map / Scene helpers ───────────────────────────────────────────────────────
-int   __cdecl FUN_0050e2c0(void);          // Parse_NextToken — reads next token from open file into DAT_083a3ff4; returns token type (2=EOF)
+int   __cdecl ParseNextToken(void);        // FUN_0050E2C0 — reads next token from ParserFileHandle into ParserTokenString; returns token type (2=EOF)
 
 // ── BMD skin helpers ─────────────────────────────────────────────────────────
 void  __cdecl FUN_004f9d60(float *vec);    // Vec3_Normalize — normalises a 3-float vector in-place
@@ -947,15 +947,15 @@ HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped);  // 0x00404b
 #define BuxConvert_0 FUN_00479910
 
 // ── Token parser aliases ──────────────────────────────────────────────────────
-// GetToken = FUN_0047a1f0 — lee el proximo token del archivo abierto y lo deja en
-// TokenString (= DAT_07cf1ef0, IDA @0x07CF1EF0).
+// GetToken = TextParser_GetToken — lee el proximo token del archivo abierto y lo deja en
+// TokenString (= TextParserTokenString, IDA @0x07CF1EF0).
 // OJO: hay DOS tokenizers con buffers DISTINTOS y el arbol los tenia mezclados
 // (corregido 2026-08-22):
 //   GetToken        0x0047A1F0 -> TokenString    0x07CF1EF0  (Item/Monster/Skill/
 //                                                             NPC/Gate/Filter.txt)
-//   Parse_NextToken 0x0050E2C0 -> DAT_083a3ff4   0x083A3FF4  (OpenWorldModels)
-#define GetToken    FUN_0047a1f0
-#define TokenString DAT_07cf1ef0   // char[256] — salida de GetToken (0x47A1F0)
+//   Parse_NextToken 0x0050E2C0 -> ParserTokenString   0x083A3FF4  (OpenWorldModels)
+#define GetToken    TextParser_GetToken
+#define TokenString TextParserTokenString // char[256] — GetToken output (DAT_07CF1EF0)
 
 // ── Character helpers ─────────────────────────────────────────────────────────
 void  __cdecl SetPlayerStop(void *ch);         // 0x004430c0 (CHARACTER* param)
