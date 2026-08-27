@@ -4,7 +4,7 @@
 // then applies type-specific overrides via a switch on entity type.
 // Returns an integer state value (type-dependent, usually 0).
 //
-// Called from: Particle_Spawn (FUN_00475220) when allocating a new slot.
+// Called from: Particle_Spawn (Particle_Spawn) when allocating a new slot.
 // param_1: pointer to the effect entity struct (stride 0x1bc in the effect pool).
 //
 // Field layout (relevant offsets):

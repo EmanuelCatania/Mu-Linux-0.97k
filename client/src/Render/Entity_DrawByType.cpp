@@ -227,7 +227,7 @@ LAB_substate4_done:
                          *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                          0xffffffff);
             glPopMatrix();
-            FUN_00511680('\x01');
+            GL_SetBlendSrcOver('\x01');
             glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
             float wx = *(float *)(param_1 + 0x10);
             float wy = *(float *)(param_1 + 0x14);

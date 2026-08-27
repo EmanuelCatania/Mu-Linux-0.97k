@@ -1,4 +1,4 @@
-// Model_LoadSkillEffects @ 0x0050eb80
+// IDA: FUN_0050eb80 @ 0x0050eb80 — UI_LoadInterfaceTextures
 // Loads UI interface textures (inventory slots, buttons, skill icons, money
 // icons, trading UI, guild badge, etc.) into texture slots 0x22 and 0x104-0x12a.
 // Despite the name, this loads inventory/UI interface textures, not skill
@@ -7,7 +7,8 @@
 #include "globals.h"
 #include "functions.h"
 
-void __cdecl FUN_0050eb80(void)
+// IDA: FUN_0050eb80
+void __cdecl UI_LoadInterfaceTextures(void)
 {
     FUN_00529740("Interface\\Skill.jpg",          0x12a, 0x2600, 0x2900, 0, '\x01');
     FUN_00529740("Interface\\Item_Back01.jpg",    0x104, 0x2600, 0x2900, 0, '\x01');

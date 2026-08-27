@@ -83,7 +83,7 @@ HRESULT __cdecl FUN_00404bc0(int Buffer, DWORD Object, BOOL bLooped)
 
 
 // ============================================================================
-// Sound_UpdatePositions / FUN_00404CD0  @ 0x00404CD0
+// Sound_UpdatePositions @ 0x00404CD0
 // ============================================================================
 // Builds a rotation matrix from the player's yaw, then for each active 3D
 // sound slot, computes the listener-space XZ offset from the bound entity,
@@ -94,10 +94,11 @@ HRESULT __cdecl FUN_00404bc0(int Buffer, DWORD Object, BOOL bLooped)
 // slot with Enable3DSound[i] && MaxBufferChannel[i] > 0 (i.e. a 3D sound is
 // loaded and playing).
 // ============================================================================
-// FUN_004f9db0 (EulerToMatrix3x4) and FUN_004fa0b0 (Vec3_TransformByMatrix)
+// Matrix_BuildFromEuler (EulerToMatrix3x4) and Vector_Rotate (Vec3_TransformByMatrix)
 // are declared in functions.h with the canonical signatures.
 
-void FUN_00404cd0(void)
+// IDA: FUN_00404CD0
+void Sound_Update3DPositions(void)
 {
     if (!g_EnableSound || !g_Enable3DSound) return;
 
@@ -106,7 +107,7 @@ void FUN_00404cd0(void)
     eulerAngles[0] = 0.0f;
     eulerAngles[1] = 0.0f;
     eulerAngles[2] = Ff(DAT_083a42c0);      // player yaw (CameraAngle[2] bits)
-    FUN_004f9db0(eulerAngles, rotMatrix);
+    Matrix_BuildFromEuler(eulerAngles, rotMatrix);
 
     const float unitScale = _DAT_005524bc;  // world→DS3D unit conversion
 
@@ -125,7 +126,7 @@ void FUN_00404cd0(void)
             offset[2] = *(float*)(DAT_07abf5d8 + 0x18) - *(float*)(entityPtr + 0x18);
 
             // Rotate into listener space.
-            FUN_004fa0b0(offset, rotMatrix, offset);
+            Vector_Rotate(offset, rotMatrix, offset);
             offset[0] *= unitScale;
             offset[1] *= unitScale;
             offset[2] *= unitScale;
@@ -148,11 +149,11 @@ static void __cdecl FUN_00404e60_impl(int param_1) {
     }
 }
 
-// ── FUN_00404c60 — movida desde stubs_render_helpers.cpp (refactor B3) ──
-// FUN_00404c60 / StopBuffer @ 0x00404C60 — stop a slot's currently-playing channel.
+// Sound_StopBuffer @ 0x00404C60 — stop a slot's currently-playing channel.
 // For non-zero Buffer, also rewind to position 0. Uses g_lpDSBuffer[Buffer][0]
 // (only channel 0 is populated in this binary's pipeline — FillBuffer is a no-op).
-void __cdecl FUN_00404c60(int Buffer) {
+// IDA: FUN_00404C60
+void __cdecl Sound_StopBuffer(int Buffer) {
     if (!g_EnableSound || Buffer < 0) return;
     LPDIRECTSOUNDBUFFER pBuf = g_lpDSBuffer[Buffer][0];
     if (pBuf) {

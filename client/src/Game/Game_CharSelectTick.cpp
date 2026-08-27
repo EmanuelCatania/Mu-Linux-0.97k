@@ -14,7 +14,7 @@
 //   DAT_083a7c4c  — one-time init guard
 //   DAT_083a7c10  — server ack flag (gates per-frame logic)
 //   DAT_05826cb0  — server response: 0x3c=sent, 0x3d=confirmed
-//   DAT_083a42e9  — special viewport mode flag
+//   CameraTopViewEnabled  — special viewport mode flag
 //   DAT_005590ac  — flag enabling anti-tamper block
 //   DAT_0055a7ac  — g_GameSubState
 //   DAT_07eaa11b  — anti-tamper sequence counter
@@ -142,14 +142,14 @@ void Game_CharSelectTick(void)
         #endif // 0 — DUPLICATE F3/03 send disabled
 
         // Init in-game subsystems
-        FUN_00511060();
+        Monster_LoadStartupData();
         // IDA 0x525384: mov [CameraAngle+8], 0xC2340000 (= float -45.0).
         // BUG-FIX 2026-06-28: DAT_083a42c0 es DWORD& → `= -45.0f` convertía el
         // float a ENTERO -45 (0xFFFFFFD3) que leído como float es NaN. El yaw
         // NaN propagaba a AngleMatrix→VectorIRotate→CameraPosition (escena negra).
         // Escribir el float directamente (bit-pattern 0xC2340000), igual a IDA.
         CameraAngle[2] = -45.0f;  // yaw = -45° (iso rotation around Z)
-        FUN_0047ec60(1);
+        Input_ClearState(1);
         DAT_00559c84 = 0;
         DAT_07e11d71 = 0;
         DAT_00559c8c = 0x100;
@@ -208,7 +208,7 @@ void Game_CharSelectTick(void)
     DAT_0055a3e4  = 0xffffffff;
     DAT_07d78094  = 0;
 
-    if (DAT_083a42e9 == '\0') {
+    if (CameraTopViewEnabled == '\0') {
         // Standard viewport mode
         DAT_07d78094 = (DAT_083a4278 > 0x1af) ? 1 : 0;
         DAT_055c9b80 = 0;
@@ -220,7 +220,7 @@ void Game_CharSelectTick(void)
             ((FnTick)vt[5])(obj, 0, 0);
         }
         Bisect_ChatMode("CST_post_chatLB");
-        FUN_004ecb00();
+        Scene_ProcessPacketUpdates();
         Bisect_ChatMode("CST_post_4ecb00");
         FUN_00402fd0((void*)(uintptr_t)DAT_00583d8c);
         Bisect_ChatMode("CST_post_402fd0");
@@ -297,7 +297,7 @@ void Game_CharSelectTick(void)
     if (DAT_083a7c24 != 0)
         DAT_07d78094 = 1;
 
-    if (DAT_083a42e9 == '\0')
+    if (CameraTopViewEnabled == '\0')
         FUN_00503760();
     Bisect_ChatMode("CST_post_503760");
 
@@ -311,15 +311,15 @@ void Game_CharSelectTick(void)
                DAT_0055a7ac == 9 || DAT_0055a7ac == 10) {
         doSkillFX = true;
     }
-    if (doSkillFX) FUN_0046cc80();
+    if (doSkillFX) WeatherParticles_Update();
     Bisect_ChatMode("CST_post_skillFX");
 
     // Full world pipeline
     FUN_00500e80();           Bisect_ChatMode("CST_post_500e80");
-    FUN_00502320();           Bisect_ChatMode("CST_post_502320");
+    AmbientParticles_Update(); Bisect_ChatMode("CST_post_502320");
     Object_MoveUpdate();      Bisect_ChatMode("CST_post_ObjMove");
-    FUN_004821a0();           Bisect_ChatMode("CST_post_4821a0");
-    FUN_004acef0();           Bisect_ChatMode("CST_post_PlayerInput");
+    UI_TickHoverBubbles();           Bisect_ChatMode("CST_post_4821a0");
+    Player_ProcessInput();    Bisect_ChatMode("CST_post_PlayerInput");
 
     // 2026-05-03: per-entity animation tick RE-ENABLED. La concern de stack
     // corruption original venía de NULL-deref en hash table (FUN_00404280
@@ -366,10 +366,10 @@ void Game_CharSelectTick(void)
     MoveBugs_stub();
 
     Character_UpdateAll();
-    FUN_00479380();
-    FUN_00475090();
-    FUN_0046b790();   // MoveEffects  (0x46b790)
-    FUN_004736e0();   // MoveJoints   (0x4736e0)
+    DamageNumbers_Tick();
+    Effect_TickFade();
+    Effect_TickAll();
+    Joint_TickAll();
     // ── BUG-FIX 2026-07-15: MoveParticles (0x477090) FALTABA en char-select ──
     // IDA Game_CharSelectTick (00524E30 L539) llama MoveParticles() acá. Es el
     // update que decrementa el lifetime de las partículas y las despawnea. Sin
@@ -381,7 +381,7 @@ void Game_CharSelectTick(void)
     extern void __stdcall MoveParticles_stub(void);
     MoveParticles_stub();   // MoveParticles (0x477090)
     Effect_UpdateAll();
-    FUN_004794a0();
+    Effect_TickFlare();
 
     // Anti-tamper ftol + frame counter checks
     if (DAT_0839bc86 != '\0' && DAT_07e11d30 == 0) {
@@ -391,5 +391,5 @@ void Game_CharSelectTick(void)
         FUN_00403a30();
     }
 
-    FUN_004c04a0();
+    Input_ProcessFunctionKeys();
 }

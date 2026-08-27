@@ -45,9 +45,9 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// FUN_0043f2d0 @ 0x0043F2D0 — Pathfinder_Reset: frees + re-initialises A* context at DAT_05826df4.
+// IDA: FUN_0043f2d0 @ 0x0043F2D0 — Pathfinder_Reset: frees + re-initialises A* context at DAT_05826df4.
 // Despite the "Font_Reset" comment in functions.h, this is clearly the A* grid init.
-void __cdecl FUN_0043f2d0(void) {
+void __cdecl PathFinder_ResetContext(void) {
     DWORD *puVar4 = (DWORD*)DAT_05826df4;
     if ((void*)puVar4[0xff]  != nullptr) { operator_delete((void*)puVar4[0xff]);  puVar4[0xff]  = 0; }
     if ((void*)puVar4[0x102] != nullptr) { operator_delete((void*)puVar4[0x102]); puVar4[0x102] = 0; }

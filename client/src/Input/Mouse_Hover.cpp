@@ -1,4 +1,4 @@
-// Mouse_Hover.cpp — FUN_004b0310 @ 0x004b0310
+// Mouse_Hover.cpp — IDA: FUN_004b0310 — Mouse_UpdateHoverTargets
 // Per-frame mouse cursor billboard render + hover target determination.
 //
 // Called every frame. Two responsibilities:
@@ -8,7 +8,7 @@
 // ── Cursor billboard ──────────────────────────────────────────────────────────
 // FUN_004f8480(DAT_080ab288, DAT_080ab28c, screenX, screenY, 1.0f, 1, 1):
 //   Returns nonzero if cursor is visible/active.
-// If visible, calls FUN_00511710() (hide char anim sprite for cursor area),
+// If visible, calls GL_SetBlendAdditive() (hide char anim sprite for cursor area),
 // then FUN_004f8bb0(type=8, x, y, sx, sy, color, 0, alpha) to draw the quad.
 //   - States 2/4/5 (login/charselect/ingame): fixed size based on DAT_07e11d5c
 //   - States 1/3 (intro/loading): animated size using DAT_07e11d5c oscillation
@@ -22,7 +22,7 @@
 //   DAT_00559c58 = secondary hover (cleared if SelectedCharacter resets)
 //
 // Priority with Alt held (VK_MENU):
-//   item-ground (FUN_004afa40) → NPC type 4 → mob type 0x22 → player type 1 → special
+//   item-ground (ItemOnGround_HoverTest, IDA: FUN_004afa40) → NPC type 4 → mob type 0x22 → player type 1 → special
 //
 // Priority without Alt + swim/idle:
 //   mob/player type 0x22 → type 1 → NPC type 4 → item-ground → special
@@ -45,20 +45,21 @@ extern "C" void DbgLogPublic(const char* msg);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-void FUN_004b0310(void)
+// IDA: FUN_004b0310
+void Mouse_UpdateHoverTargets(void)
 {
     // ── 1. Cursor billboard render ────────────────────────────────────────────
     // 2026-04-29 DISABLED: el cursor billboard 3D (sprite en el suelo del tile
     // hovered) requiere DAT_07eab24c (BackTerrainHeight) que no se inicializa
     // en nuestro port. Crash AV en FUN_004f8740 al acceder al buffer null.
-    // El cursor 2D (FUN_004bffa0) sigue funcionando normalmente.
+    // El cursor 2D (Cursor_Render) sigue funcionando normalmente.
     #if 0
     if (DAT_005615c0 == 2 || DAT_005615c0 == 4 || DAT_005615c0 == 5)
     {
         float color[3] = { 1.0f, 0.766f, 0.0f };
         char visible = FUN_004f8480(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
         if (visible != '\0') {
-            FUN_00511710();
+            GL_SetBlendAdditive();
             int frame = (DAT_005615c0 == 2) ? 1 : (DAT_07e11d5c + 1);
             float sz = (float)frame;
             FUN_004f8bb0(8, DAT_083a4130, DAT_083a4134, sz, sz, color, 0, 1.0f);
@@ -68,7 +69,7 @@ void FUN_004b0310(void)
         float color[3] = { 1.0f, 0.766f, 0.0f };
         char visible = FUN_004f8480(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
         if (visible != '\0') {
-            FUN_00511710();
+            GL_SetBlendAdditive();
             float base = (float)DAT_07e11d5c + (float)DAT_07e11d5c + _DAT_0055256c;
             float szX = ((int)base / 100) * 100 + _DAT_00552598;
             float szY = ((int)base / 100) * 100 + _DAT_00552598;
@@ -124,15 +125,15 @@ void FUN_004b0310(void)
         {
             // Alt held: item-on-ground first, then NPC, mob, player
             if (DAT_07e91388 == 0)
-                SelectedItem = FUN_004afa40();
+                SelectedItem = ItemOnGround_HoverTest();
             if (SelectedItem == -1) {
-                SelectedNpc = FUN_004afdc0(4);
+                SelectedNpc = Entity_SelectNearest(4);
                 if (SelectedNpc == -1) {
-                    SelectedCharacter = FUN_004afdc0(0x22);
+                    SelectedCharacter = Entity_SelectNearest(0x22);
                     if (SelectedCharacter != -1) goto done;
-                    SelectedCharacter = FUN_004afdc0(1);
+                    SelectedCharacter = Entity_SelectNearest(1);
                     if (SelectedCharacter != -1) goto done;
-                    SelectedOperate = FUN_004b0240();
+                    SelectedOperate = SpecialObject_HoverTest();
                 }
                 goto check_click;
             }
@@ -162,17 +163,17 @@ void FUN_004b0310(void)
             // esperado (confirmado por el usuario): el item bajo el cursor tiene
             // PRIORIDAD. Lo chequeamos primero; si hay item, es pickup.
             if (DAT_07e91388 == 0) {
-                SelectedItem = FUN_004afa40();
+                SelectedItem = ItemOnGround_HoverTest();
                 if (SelectedItem != -1) goto check_click;   // item bajo el cursor → pickup
             }
             if (SelectedCharacter == -1) {
-                SelectedCharacter = FUN_004afdc0(0x22);  // mob type
+                SelectedCharacter = Entity_SelectNearest(0x22);  // mob type
                 if (SelectedCharacter == -1) {
-                    SelectedCharacter = FUN_004afdc0(1);  // player type
+                    SelectedCharacter = Entity_SelectNearest(1);  // player type
                     if (SelectedCharacter != -1) goto done;
-                    SelectedNpc = FUN_004afdc0(4);  // NPC type
+                    SelectedNpc = Entity_SelectNearest(4);  // NPC type
                     if (SelectedNpc == -1) {
-                        SelectedOperate = FUN_004b0240();
+                        SelectedOperate = SpecialObject_HoverTest();
                     }
                     goto check_click;
                 }
@@ -189,7 +190,7 @@ check_click:
     goto done;
 
 process_click:
-    FUN_004afb00();
+    Party_MatchEntityNames();
 
 done:
     if (SelectedCharacter == -1)
@@ -235,7 +236,7 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
         DWORD now = GetTickCount();
         if (now - s_lastTilePick > 500) {
             s_lastTilePick = now;
-            float* eye = (float*)&DAT_083a4284_arr[0];
+            float* eye = (float*)&CameraRayOriginX_arr[0];
             float* tgt = (float*)&DAT_083a4110_arr[0];
             char d[256];
             wsprintfA(d, "TilePick(%d,%d) eye=(%d,%d,%d) tgt=(%d,%d,%d)",
@@ -246,7 +247,7 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
         }
     }
     if (DAT_07e11d30 != 5) {
-        FUN_00511590('\0');
+        GL_SetAlphaTest('\0');
         glColor3f(0.0f, 0.0f, 0.0f);
         glBegin(3);
         // BUG-FIX 2026-04-28: bound era 0x7feb288 (addr abs del binario original).
@@ -255,17 +256,17 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
             glVertex3fv(&g_TilePickBuf[i * 3]);
         }
         glEnd();
-        FUN_00511600();
+        GL_ResetState();
     }
     float local_c[3];
-    FUN_004fa4d0((float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270, local_c);
-    unsigned int uVar2 = FUN_00512d40((float*)&DAT_083a4284, (float*)&DAT_083a4110, 3,
+    Triangle_ComputeNormal((float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270, local_c);
+    unsigned int uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                                        (float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270,
                                        &_DAT_07feb27c, local_c, '\x01');
     cVar1 = (char)uVar2;
     if (cVar1 == '\0') {
-        FUN_004fa4d0((float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c, local_c);
-        uVar2 = FUN_00512d40((float*)&DAT_083a4284, (float*)&DAT_083a4110, 3,
+        Triangle_ComputeNormal((float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c, local_c);
+        uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                               (float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c,
                               &_DAT_07feb264, local_c, '\x01');
         cVar1 = (char)uVar2;
@@ -283,9 +284,9 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
             if (((unsigned char)DAT_0838bc70[DAT_07eab1ec] & 1) == 1) draw = true;
         }
         if (draw) {
-            FUN_005114f0();
-            FUN_00511680('\x01');
-            FUN_00511590('\0');
+            GL_DisableDepthTest();
+            GL_SetBlendSrcOver('\x01');
+            GL_SetAlphaTest('\0');
             glBegin(6);
             glColor4f(1.0f, 0.0f, 0.0f, 0.3f);
             // BUG-FIX 2026-05-03: was `while (puVar3 < 0x7feb288)` — absolute
@@ -295,7 +296,7 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
                 glVertex3fv(&g_TilePickBuf[i * 3]);
             }
             glEnd();
-            FUN_00511600();
+            GL_ResetState();
         }
     }
     (void)param_5;
@@ -312,11 +313,12 @@ void FUN_00512d30()
 }
 
 
-// FUN_004afdc0 @ 0x004AFDC0 — Entity_SelectNearest(mask)
+// Entity_SelectNearest @ 0x004AFDC0
 // Two-pass entity scan: (1) sets +0x58 visible-flag and +0x64..6f RGB tint per entity type;
 // (2) finds the nearest entity (matching mask bits at +0x84) to the camera and syncs
 // party HP bar ID arrays.  Returns the entity index of the nearest match, or -1.
-int __cdecl FUN_004afdc0(int param_1_int)
+// IDA: FUN_004afdc0
+int __cdecl Entity_SelectNearest(int param_1_int)
 {
     byte param_1 = (byte)param_1_int;
     bool bVar17 = (DAT_005615c0 == 4);  // g_GameState == CharSelect
@@ -403,7 +405,7 @@ int __cdecl FUN_004afdc0(int param_1_int)
             auStack_58[i] = *(undefined4 *)(ent + 0x130 + i * 4);
 
         // ── BUG-FIX 2026-04-26 (revisión 5): screen-space via gluProject.
-        //   El intento previo (revisión 4) usaba FUN_005113f0 (World_ToScreen),
+        //   El intento previo (revisión 4) usaba Camera_ProjectWorldToScreen (World_ToScreen),
         //   pero esa función llama a __ftol() que en stdafx.h está stubbed como
         //   GetTickCount() — devuelve basura, no proyección. Por eso TODOS los
         //   slots daban la misma "screen pos" y BK ganaba siempre por ser slot 0.
@@ -511,7 +513,7 @@ int __cdecl FUN_004afdc0(int param_1_int)
     return best_idx;
 }
 
-// FUN_004afa40 @ 0x004AFA40 — ItemOnGround_HoverTest(void)
+// ItemOnGround_HoverTest @ 0x004AFA40
 // ── BUG-FIX 2026-04-26: NEUTRALIZADO ─────────────────────────────────────
 // El binario original itera DAT_07e12840 con bounds absolutos (0x7e908bc /
 // 0x7e907df) que en mu97k-src no son válidos: aquí DAT_07e12840 está
@@ -524,7 +526,8 @@ int __cdecl FUN_004afdc0(int param_1_int)
 // equivalente al comportamiento esperado en esos estados. Cuando se necesite
 // el path real (InGame con items dropeados), hay que localizar el array
 // correcto en mu97k-src (probablemente NO se llama DAT_07e12840).
-int __cdecl FUN_004afa40(void)
+// IDA: FUN_004afa40
+int __cdecl ItemOnGround_HoverTest(void)
 {
     // 2026-07-27: hover de items en el suelo. El path FIEL (sub_4AFA40) usa un
     // point-in-quad screen-space (FUN_00513260, 12-arg) que depende de macros
@@ -574,13 +577,14 @@ int __cdecl FUN_004afa40(void)
     return best;
 }
 
-// FUN_004b0240 @ 0x004B0240 — SpecialObject_HoverTest(void)
+// SpecialObject_HoverTest @ 0x004B0240
 // ── BUG-FIX 2026-04-26: NEUTRALIZADO ─────────────────────────────────────
-// Mismo patrón que FUN_004afa40: el original itera con bound absoluto
+// Mismo patrón que ItemOnGround_HoverTest (IDA: FUN_004afa40): el original itera con bound absoluto
 // (0x83a2cd0) que no es válido en mu97k-src. Si bien aquí los WRITES están
 // gateados por flags, los READs aún escapan del array y pueden disparar AV.
 // Char-select/login no tienen special-objects, así que retornar -1 es seguro.
-int __cdecl FUN_004b0240(void)
+// IDA: FUN_004b0240
+int __cdecl SpecialObject_HoverTest(void)
 {
     return -1;
 #if 0
@@ -602,7 +606,7 @@ int __cdecl FUN_004b0240(void)
             undefined4 auStack_44[12];
             for (int i = 0; i < 12; i++)
                 auStack_44[i] = *(undefined4 *)(iVar1 + 0x130 + i * 4);
-            if ((char)FUN_00513260((float *)&DAT_083a4284, (float *)&DAT_083a4110)) {
+            if ((char)FUN_00513260((float *)&CameraRayOriginX, (float *)&DAT_083a4110)) {
                 *(DWORD *)(iVar1 + 0xe8) = 0x3fc00000; // 1.5f
                 *(DWORD *)(iVar1 + 0xec) = 0x3fc00000;
                 *(DWORD *)(iVar1 + 0xf0) = 0x3fc00000;

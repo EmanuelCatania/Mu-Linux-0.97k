@@ -57,7 +57,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // y heights → suelo render como mosaico de UI textures con quads de altura
 // infinity (causa el triángulo cyan gigante). Aplicar BuxConvert antes de parsear.
 void __cdecl FUN_004f6f90(const char *path) {
-    FUN_004f6c60();
+    Terrain_Clear(); // FUN_004f6c60 (IDA)
     FILE *f = FUN_0054173f(path, DAT_005580ac);
     if (!f) {
         char d[256]; wsprintfA(d, "TerrainMap LOAD FAIL: %s", path);
@@ -242,15 +242,15 @@ void __cdecl FUN_004ffe70(const char *path) {
 // que es el array real.
 void __cdecl FUN_004f7250(const char *path) {
     FUN_00529360((char*)path, (int)(uintptr_t)DAT_07eeb238);
-    FUN_004f70b0();
-    FUN_004f71c0();
+    CreateTerrainNormal(); // FUN_004f70b0 (IDA)
+    Terrain_FinalizeLighting(); // FUN_004f71c0 (IDA)
 }
 
 // FUN_004f7270 @ 0x004F7270 — Terrain_LoadHeight(path)
 // Sets flag, loads height bitmap, flushes.
 void __cdecl FUN_004f7270(const char *path) {
     DAT_0839bc84 = 1;
-    FUN_004f7290((char*)path);
+    OpenTerrainHeight((char*)path); // FUN_004f7290 (IDA)
     FUN_004f9c20();
 }
 

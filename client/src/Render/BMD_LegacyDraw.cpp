@@ -71,21 +71,21 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
 
     // GL state setup
     if ((bVar3 & 1) == 1) {
-        if ((bVar3 & 0x40) == 0x40)      FUN_00511710();
-        else if ((bVar3 & 0x80) == 0x80) FUN_00511790();
-        else                             FUN_00511600();
-        FUN_00511590('\0');
+        if ((bVar3 & 0x40) == 0x40)      GL_SetBlendAdditive();
+        else if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+        else                             GL_ResetState();
+        GL_SetAlphaTest('\0');
         glColor3fv((float *)((int)model + 0x48));
     } else if ((bVar3 & 2) == 2) {
-        FUN_00511480(texIdx);
-        if ((bVar3 & 0x40) == 0x40)      FUN_00511710();
-        else if ((bVar3 & 0x80) == 0x80) FUN_00511790();
-        else                             FUN_00511600();
+        GL_BindTextureSlot(texIdx);
+        if ((bVar3 & 0x40) == 0x40)      GL_SetBlendAdditive();
+        else if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+        else                             GL_ResetState();
     } else if ((bVar3 & 0x40) == 0x40) {
         if (texIdx == 4) return;  // (&DAT_083a7cc8)[local_24 * 0x38] == 4 early-out
-        FUN_00511710();
-        FUN_00511590('\0');
-        FUN_00511530();
+        GL_SetBlendAdditive();
+        GL_SetAlphaTest('\0');
+        GL_DisableDepthWrites();
     }
     // else param_6 = 2.8026e-45 — no extra state
 
@@ -649,12 +649,12 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
         }
     }
     float direction[3];
-    direction[0] = param_5[0] - _DAT_083a4284;
-    direction[1] = param_5[1] - _DAT_083a4288;
-    direction[2] = param_5[2] - _DAT_083a428c;
+    direction[0] = param_5[0] - _CameraRayOriginX;
+    direction[1] = param_5[1] - _CameraRayOriginY;
+    direction[2] = param_5[2] - _CameraRayOriginZ;
 
     float outPos[3];
-    float camPos[3] = { _DAT_083a4284, _DAT_083a4288, _DAT_083a428c };
+    float camPos[3] = { _CameraRayOriginX, _CameraRayOriginY, _CameraRayOriginZ };
     FUN_004f9ce0(camPos, param_7 ? 0.07f : 0.1f, direction, outPos);
 
     // ── Posición fiel a IDA (2026-08-26) ────────────────────────────────────
@@ -690,7 +690,7 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     // que re-proyectar a pantalla debe devolver las MISMAS coords que entraron.
     //   · Target y outPos deben proyectar al MISMO punto: el lerp va a lo largo
     //     del rayo de visión, así que sólo conserva la posición en pantalla si
-    //     `MousePosition` (DAT_083a4284) es de verdad el ojo de la cámara.
+    //     `MousePosition` (CameraRayOriginX) es de verdad el ojo de la cámara.
     //   · Si difieren, el corrimiento medido ES el bug y su magnitud dice cuánto.
     {
         static DWORD s_lastI = 0;
@@ -698,8 +698,8 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
         if (nowI - s_lastI > 1000) {
             s_lastI = nowI;
             int tx = 0, ty = 0, px = 0, py = 0;
-            FUN_005113f0(param_5, &tx, &ty);   // Target  → pantalla
-            FUN_005113f0(outPos,  &px, &py);   // Position→ pantalla
+            Camera_ProjectWorldToScreen(param_5, &tx, &ty);   // Target  → pantalla
+            Camera_ProjectWorldToScreen(outPos,  &px, &py);   // Position→ pantalla
             char ib[240];
             _snprintf_s(ib, sizeof(ib), _TRUNCATE,
                 "ITEM3D type=%d cam=(%.1f,%.1f,%.1f) tgt=(%.1f,%.1f,%.1f) "

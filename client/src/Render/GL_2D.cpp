@@ -17,10 +17,10 @@
 
 extern "C" { void DbgLogPublic(const char*); }
 
-// FUN_005123c0 — GL_Begin2D
+// FUN_005123C0 @ 0x005123C0 — GL_Begin2D
 // Sets up a 2D orthographic projection over the current viewport.
-// Calls FUN_005114f0 to configure GL state for 2D (disable depth, etc.).
-void FUN_005123c0(void)
+// Calls GL_DisableDepthTest to configure GL state for 2D (disable depth, etc.).
+void GL_Begin2D(void)
 {
   // BUG-FIX: DAT_00561554/4c/50 son DWORDs que ALMACENAN bits de float (FOV/near/far).
   // El decompile de Ghidra los castea como (double)DWORD (interpretando como int) →
@@ -53,14 +53,14 @@ void FUN_005123c0(void)
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
-  FUN_005114f0();
+  GL_DisableDepthTest();
   return;
 }
 
 
-// FUN_005124b0 — GL_End2D
+// FUN_005124B0 @ 0x005124B0 — GL_End2D
 // Pops both matrix stacks pushed by GL_Begin2D.
-void FUN_005124b0(void)
+void GL_End2D(void)
 {
   // BUG-FIX 2026-06-28 (5.2 source ZzzOpenglUtil.cpp:1136): el 0.97k original
   // hacía `glPopMatrix(); glPopMatrix();` SIN cambiar de modo → ambos pops caían
@@ -81,7 +81,7 @@ void FUN_005124b0(void)
 }
 
 
-// FUN_005124c0 — GL_DrawRect
+// FUN_005124C0 @ 0x005124C0 — GL_DrawRect
 // Draws a 2D filled rectangle (no texture) using GL_TRIANGLE_FAN (glBegin(6)).
 // Vertices TL, BL, BR, TR forman un abanico (fan) con v0=TL como pivote:
 //   tri1 = (TL, BL, BR), tri2 = (TL, BR, TR).
@@ -96,15 +96,15 @@ void FUN_005124b0(void)
 // degenerated → rect renders as a triangle (visible as the yellow EXP bar
 // and hover highlights showing as triangles instead of bars).
 // Fix: explicit contiguous float[8].
-void __cdecl FUN_005124c0(float param_1,float param_2,float param_3,float param_4)
+void __cdecl GL_DrawRect(float param_1,float param_2,float param_3,float param_4)
 {
   float verts[8];   // 4 vertices × 2 floats = 8
 
-  FUN_00511590('\0');
-  float x      = (float)FUN_00511950(param_1);
-  float y_off  = (float)FUN_00511980(param_2);
-  float w      = (float)FUN_00511950(param_3);
-  float h      = (float)FUN_00511980(param_4);
+  GL_SetAlphaTest('\0');
+  float x      = (float)Screen_ToGLX(param_1);
+  float y_off  = (float)Screen_ToGLY(param_2);
+  float w      = (float)Screen_ToGLX(param_3);
+  float h      = (float)Screen_ToGLY(param_4);
   float y_top    = (float)DAT_00561570 - y_off;
   float y_bottom = y_top - h;
 
@@ -121,8 +121,8 @@ void __cdecl FUN_005124c0(float param_1,float param_2,float param_3,float param_
 }
 
 
-// FUN_005125a0 — GL_DrawTexture
-// Draws a textured 2D quad (GL_TRIANGLE_FAN, glBegin(6)) using FUN_00511480 to bind texture.
+// FUN_005125A0 @ 0x005125A0 — GL_DrawTexture
+// Draws a textured 2D quad (GL_TRIANGLE_FAN, glBegin(6)) using GL_BindTextureSlot to bind texture.
 // Vertices: TL, BL, BR, TR — UVs (u0,v0), (u0,v0+dv), (u0+du,v0+dv), (u0+du,v0).
 // param_1:  texture slot index
 // param_2/3: x, y position (screen pixels)
@@ -132,7 +132,7 @@ void __cdecl FUN_005124c0(float param_1,float param_2,float param_3,float param_
 // param_10: if non-zero, scale x/y by screen mapping helpers
 // param_11: if non-zero, scale width/height by screen mapping helpers
 void __cdecl
-FUN_005125a0(int param_1,float param_2,float param_3,float param_4,float param_5,float param_6,
+GL_DrawTexture(int param_1,float param_2,float param_3,float param_4,float param_5,float param_6,
             float param_7,float param_8,float param_9,char param_10,char param_11)
 {
   int iVar1;
@@ -140,18 +140,18 @@ FUN_005125a0(int param_1,float param_2,float param_3,float param_4,float param_5
   float local_40 [16];
 
   if (param_11 != '\0') {
-    fVar2 = FUN_00511950(param_2);
+    fVar2 = Screen_ToGLX(param_2);
     param_2 = (float)fVar2;
-    fVar2 = FUN_00511980(param_3);
+    fVar2 = Screen_ToGLY(param_3);
     param_3 = (float)fVar2;
   }
   if (param_10 != '\0') {
-    fVar2 = FUN_00511950(param_4);
+    fVar2 = Screen_ToGLX(param_4);
     param_4 = (float)fVar2;
-    fVar2 = FUN_00511980(param_5);
+    fVar2 = Screen_ToGLY(param_5);
     param_5 = (float)fVar2;
   }
-  FUN_00511480(param_1);
+  GL_BindTextureSlot(param_1);
   // DIAG: log first 40 UI quad draws to see what 2D elements appear on screen
   {
       static int s_q = 0;
@@ -197,12 +197,12 @@ FUN_005125a0(int param_1,float param_2,float param_3,float param_4,float param_5
 }
 
 
-// FUN_00511c10 — GL_DrawBillboard
+// FUN_00511C10 @ 0x00511C10 — GL_DrawBillboard
 // Draws a world-space billboard quad of half-extents (param_1, param_2).
 // param_3: view matrix (float[12]) used to transform the 4 corner vertices
-//          via FUN_004fa170 (Vec3_TransformByMatrix_WithTranslate).
+//          via Vector_Transform (Vec3_TransformByMatrix_WithTranslate).
 // Emits GL_QUADS (glBegin(7)) with UV corners (0,1), (1,1), (1,0), (0,0).
-void __cdecl FUN_00511c10(float param_1,float param_2,float *param_3)
+void __cdecl GL_DrawBillboard(float param_1,float param_2,float *param_3)
 {
   // ── 2026-08-16: patron [[locales-contiguos-ghidra]] (5ta instancia) ────────
   // IDA `sub_511C10` recorre `in1[0..11]` y `v[0..11]` como 4 vec3 cada uno:
@@ -228,7 +228,7 @@ void __cdecl FUN_00511c10(float param_1,float param_2,float *param_3)
   in1[9] = nx;      in1[10] = nx;      in1[11] = param_2;
 
   for (int i = 0; i < 12; i += 3) {
-    FUN_004fa170(&in1[i], param_3, &out[i]);
+    Vector_Transform(&in1[i], param_3, &out[i]);
   }
 
   glBegin(GL_QUADS);

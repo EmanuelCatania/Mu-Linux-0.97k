@@ -584,11 +584,11 @@ void __cdecl RenderInventoryInterface_stub(int StartX, int StartY, int Flag) {
     float x = (float)StartX;
     float y = (float)StartY;
     // Top half of inventory panel
-    FUN_005125a0(0x104, x, y, 190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f, true, true);
+    GL_DrawTexture(0x104, x, y, 190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f, true, true);
     // Bottom half (y + 256.0f)
-    FUN_005125a0(0x105, x, y + 256.0f, 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, true, true);
+    GL_DrawTexture(0x105, x, y + 256.0f, 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, true, true);
     // Separator line when Flag is set (y + 225.0f)
     if (Flag != 0) {
-        FUN_005125a0(0x117, x, y + 225.0f, 190.0f, 10.0f, 0.0f, 0.0f, 0.7421875f, 0.625f, true, true);
+        GL_DrawTexture(0x117, x, y + 225.0f, 190.0f, 10.0f, 0.0f, 0.0f, 0.7421875f, 0.625f, true, true);
     }
 }

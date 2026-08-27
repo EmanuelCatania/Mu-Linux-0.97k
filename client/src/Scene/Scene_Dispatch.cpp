@@ -222,7 +222,7 @@ send_done:
                 for (unsigned i = 0; i < 4; i++) {
                     char* b = (char*)tmp + i;
                     *b = *b + 'G';
-                    *b = (char)(*b ^ DAT_00559050[i & 0xf]);
+                    *b = (char)(*b ^ PacketXorKey16[i & 0xf]);
                     *b = *b + '#';
                     if (i < 3)
                         *(BYTE*)b ^= *((BYTE*)tmp + i + 1);

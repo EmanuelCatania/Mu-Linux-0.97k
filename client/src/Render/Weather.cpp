@@ -93,8 +93,8 @@
 //   FUN_0043e820   — set particle animation
 //   FUN_00440aa0   — BMD_Animation tick
 //   FUN_004f76c0   — spawn ground ripple
-//   FUN_004f9db0   — Vec3_Normalize or direction update
-//   FUN_004fa0b0   — Vec3_Scale (multiply direction by speed)
+//   Matrix_BuildFromEuler   — Vec3_Normalize or direction update
+//   Vector_Rotate   — Vec3_Scale (multiply direction by speed)
 //   FUN_005098c0   — play thunder sound
 //   FUN_005129f0   — terrain height at angle
 
@@ -242,7 +242,7 @@ LAB_00501064:
             fStack_18 = *(float *)(DAT_07abf5d8 + 0x18) + _DAT_00552900;
             fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
             fStack_38 = 1.0f; fStack_34 = 1.0f; fStack_30 = 1.0f;
-            FUN_00460dc0(0xbf, &fStack_20, &fStack_2c, &fStack_38,
+            Effect_Create(0xbf, &fStack_20, &fStack_2c, &fStack_38,
                          (float *)0x3, (float *)0x0, (float *)0xffffffff, (float *)0x0, 0);
             FUN_00404bc0(0x2e, 0, 0);
         }
@@ -262,7 +262,7 @@ LAB_00501064:
         fStack_30 = *(float *)(DAT_07abf5d8 + 0x18) - _DAT_00552ab8;
         fStack_20 = 1.0f; fStack_1c = 1.0f; fStack_18 = 1.0f;
         fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
-        FUN_00460dc0(0x47e, &fStack_38, &fStack_2c, &fStack_20,
+        Effect_Create(0x47e, &fStack_38, &fStack_2c, &fStack_20,
                      (float *)0x0, (float *)0x0, (float *)0xffffffff, (float *)0x0, 0);
     }
 
@@ -407,11 +407,11 @@ LAB_00501064:
                 if (sVar5 == 0x10a) {
                     (&DAT_0839bcc8)[iVar14 * 0x6f] = *(unsigned int *)(uVar8 + 0x18);
                     if ((iVar12 < 0xb) || (0x10 < iVar12)) {
-                        uVar8 = (uint)(uintptr_t)FUN_0046d840(0x10a, pfVar1, pfVar1,
+                        uVar8 = (uint)(uintptr_t)Joint_Create(0x10a, pfVar1, pfVar1,
                                              (float *)(&DAT_0839bccc + iVar14 * 0x6f), 1,
                                              (int)pcVar3, 25.0f, -1, 0);
                     } else {
-                        uVar8 = (uint)(uintptr_t)FUN_0046d840(0x10a, pfVar1, pfVar1,
+                        uVar8 = (uint)(uintptr_t)Joint_Create(0x10a, pfVar1, pfVar1,
                                              (float *)(&DAT_0839bccc + iVar14 * 0x6f), 3,
                                              (int)pcVar3, 25.0f, -1, 0);
                     }
@@ -587,7 +587,7 @@ LAB_00501cb5:
                         // entrar al mundo (param0=0 read, param1=0x0839BCB0).
                         FUN_0043e680((int)pcVar3, iVar14, (int)(uintptr_t)&DAT_0839bcb0, 0x28);
                     }
-                    FUN_004f9db0((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
+                    Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
 
                     // Scale velocity by sub-state
                     if (DAT_0055a7ac == 7) {
@@ -619,7 +619,7 @@ LAB_00501cb5:
                         fStack_30 = *(float *)(&DAT_0839bd78 + iVar2);
                     }
                     fStack_34 = 0.0f;
-                    FUN_004fa0b0(&fStack_38, (float *)(&DAT_0839bd40 + iVar2), &fStack_2c);
+                    Vector_Rotate(&fStack_38, (float *)(&DAT_0839bd40 + iVar2), &fStack_2c);
                     fVar7  = fStack_2c + *pfVar1;
                     sVar5  = (&DAT_0839bcb2)[iVar14*0xde];
                     puStack_44 = (DWORD *)0x44bb8000;
@@ -697,10 +697,10 @@ LAB_00501cb5:
                              (float *)(&DAT_0839bdb8 + iVar2),
                              (float *)(&DAT_0839bdbc + iVar2),
                              &DAT_0839bdb6 + iVar2, fVar25);
-                FUN_004f9db0((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
+                Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
                 fStack_20 = (float)(&DAT_0839bcbc)[iVar14*0x6f] * _DAT_005528e4;
                 fStack_1c = 0.0f; fStack_18 = 0.0f;
-                FUN_004fa0b0(&fStack_20, (float *)(&DAT_0839bd40 + iVar2), &fStack_14);
+                Vector_Rotate(&fStack_20, (float *)(&DAT_0839bd40 + iVar2), &fStack_14);
                 (&DAT_0839bcc0)[iVar14*0x6f] = (unsigned int)(fStack_14 + (float)(&DAT_0839bcc0)[iVar14*0x6f]);
                 (&DAT_0839bcc4)[iVar14*0x6f] = (unsigned int)(fStack_10 + (float)(&DAT_0839bcc4)[iVar14*0x6f]);
                 (&DAT_0839bcc8)[iVar14*0x6f] = (unsigned int)(fStack_c  + (float)(&DAT_0839bcc8)[iVar14*0x6f]);

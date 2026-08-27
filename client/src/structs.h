@@ -445,7 +445,7 @@ extern char g_BitmapsRaw[];
 #define PrimaryTerrainLight  ((float(*)[3])&DAT_081cb608[0])  // float[256*256][3]
 // Functions (map companion-project names → FUN_ addresses from functions.h):
 #define SetAction(ent, act)  FUN_0043e820((int)(ent), (int)(act))
-#define VectorRotate         FUN_004fa110
+#define VectorRotate         Vector_InverseRotate
 // 2026-08-23 FIX (el fuego no iluminaba): esto aliaseaba `AddTerrainLight` a
 // `AddTerrainLightClip_stub`, que es OTRA funcion del binario.
 //   AddTerrainLight     0x004F76C0  sin clamp superior  · decenas de callers
@@ -464,10 +464,9 @@ inline void AddTerrainLight(float xf, float yf, float* Light, int Range, float* 
     FUN_004f76c0(xf, yf, (int)(uintptr_t)Light, Range, (int)(uintptr_t)Buffer);
 }
 #define AngleMatrix          AngleMatrix
-#define CreateEffect         FUN_00460dc0
-#define CreateBomb           FUN_004660f0
+#define CreateEffect         Effect_Create
+#define CreateBomb           Effect_SpawnSmokeBurst
 #define Alpha                FUN_0043e5c0   // Particle_CommitState / finalize alpha
-#define AddTerrainAttributeRange FUN_004f6f30
-#define AddTerrainAttribute      FUN_004f6ef0
-#define RenderBitmap         FUN_005125a0
-#define Particle_Spawn       FUN_00475220
+#define AddTerrainAttributeRange Terrain_UpdateTileAttributeRect
+#define AddTerrainAttribute      Terrain_SetTileAttributeBits
+#define RenderBitmap         GL_DrawTexture

@@ -92,8 +92,8 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
 
 // External helpers already implemented elsewhere in our build.  Linkage
 // coincide con las definiciones que ya existen en stubs.cpp (C++, no extern "C").
-int  __cdecl    FUN_0040c680(DWORD* self);                            // get focus state
-void __fastcall FUN_0040c580(int self);                               // dequeue front of base list
+int  __cdecl    ChatListBox_GetFocusState(DWORD* self);                // IDA: FUN_0040c680
+void __fastcall ChatListBox_DequeueFront(int self);                     // IDA: FUN_0040c580
 int  __cdecl    FUN_00411a20(DWORD* self);                            // key-handler (slot 9)
 int  __cdecl    FUN_004119a0(DWORD* self, int v);                     // scroll-up helper
 int  __cdecl    FUN_0040c930(int slot);                               // ++[slot+0x114]
@@ -475,7 +475,7 @@ static int __fastcall ChatLB_tick(DWORD* self, int, int v)
     void** vt = (void**)*self;
 
     while (self[3]) {
-        FUN_0040c580((int)self);
+        ChatListBox_DequeueFront((int)self);
         if (!((FnInt)vt[9])(self)) {
             ((FnVoid)vt[8])(self);
         }
@@ -493,7 +493,7 @@ static int __fastcall ChatLB_tick(DWORD* self, int, int v)
         }
         dword_55C9B80 = self[7];
     }
-    if (FUN_0040c680(self)) {
+    if (ChatListBox_GetFocusState(self)) {
         return ((FnInt)vt[7])(self);
     }
     DWORD vid = self[7];
@@ -592,7 +592,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
             g_ChatLB_WheelAccum = 0;
         }
 
-        if (!MouseLButtonPush || FUN_0040c680(self)) {
+        if (!MouseLButtonPush || ChatListBox_GetFocusState(self)) {
             // Mouse not pressed — clear ramp counters.
             *(float*)&self[42] = 0.0f;
             *(float*)&self[43] = 0.0f;
@@ -649,7 +649,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
         int thumbH = (int)fself[40];
         if (FUN_0040c490(trackX, thumbY, (int)fself[39], thumbH, 1)) {
             // Mouse adentro del pulgar — arranca el arrastre si no había uno ya.
-            if (!FUN_0040c680(self) && !dword_55C9B7C) {
+            if (!ChatListBox_GetFocusState(self) && !dword_55C9B7C) {
                 dword_55C9B7C = self[7];
                 ((FnVoidI)vt[1])(self, 0, 2);   // setState(2 = dragging)
                 fself[41] = (float)((double)MouseY - (double)fself[38]);
@@ -683,7 +683,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
         }
 LABEL_53:
         v17 = 1; MouseOnWindow = 1;
-    } else if (FUN_0040c680(self) == 1) {
+    } else if (ChatListBox_GetFocusState(self) == 1) {
         // El widget tenía el foco pero el mouse salió del rect — manejar la soltada del pulgar.
         if (MouseLButtonPush) {
             float* fself = (float*)self;
@@ -703,7 +703,7 @@ LABEL_53:
             ((FnVoidI)vt[1])(self, 0, 0);  // setState(0 = idle)
             if (dword_55C9B7C == self[7]) dword_55C9B7C = 0;
         }
-    } else if (FUN_0040c680(self) == 2) {
+    } else if (ChatListBox_GetFocusState(self) == 2) {
         // Currently dragging the thumb.
         if (!MouseLButtonPush) {
             ((FnVoidI)vt[1])(self, 0, 0);
@@ -1016,7 +1016,7 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
 //   * Fondo (1283) y pulgar (1282) del scrollbar vertical cuando el contenido
 //     excede la ventana visible — usa self[+0x90/+0x94/+0x98] para las
 //     coordenadas del pulgar, que setea el slot 18 (recalcScroll).
-//   * Active-channel tag header (CUIRenderText route → FUN_0047f7a0 in our
+//   * Active-channel tag header (CUIRenderText route → UI_DrawText in our
 //     build).
 // Incrementa self[46] (contador de frames) al final, para el parpadeo del cursor del slot 23.
 //
@@ -1061,27 +1061,27 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         // mismo campo que cicla el botón 3 del popup (0.2 … 0.9), así que a más
         // transparencia elegida, más se ve el mundo detrás.
         glColor4f(0.0f, 0.0f, 0.0f, 1.0f - *(float*)&self[47]);
-        FUN_005124c0(fx, (float)((int)self[12] - height), fw, (float)height + 12.0f);
+        GL_DrawRect(fx, (float)((int)self[12] - height), fw, (float)height + 12.0f);
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        FUN_00511600();                          // DisableAlphaBlend
+        GL_ResetState();                          // DisableAlphaBlend
 
         // Tapa superior (5 px).
-        FUN_005125a0(252, fx, (float)yTop, fw, 5.0f,
+        GL_DrawTexture(252, fx, (float)yTop, fw, 5.0f,
                      0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
 
         // Bordes verticales, en tramos de 40 px, a izquierda y derecha.
         yTop += 5;
         for (int s = 0; s < rows3; ++s) {
             const float fy = (float)yTop;
-            FUN_005125a0(1281, fx,                  fy, 5.0f, 40.0f, 0,0, 0.625f, 0.625f, 1, 1);
-            FUN_005125a0(1281, fx + fw - 5.0f,      fy, 5.0f, 40.0f, 0,0, 0.625f, 0.625f, 1, 1);
+            GL_DrawTexture(1281, fx,                  fy, 5.0f, 40.0f, 0,0, 0.625f, 0.625f, 1, 1);
+            GL_DrawTexture(1281, fx + fw - 5.0f,      fy, 5.0f, 40.0f, 0,0, 0.625f, 0.625f, 1, 1);
             yTop += 40;
         }
         // Tramo final, solapado 22 px hacia arriba (flt_55265C).
         {
             const float fy = (float)yTop - 22.0f;
-            FUN_005125a0(1281, fx,             fy, 5.0f, 40.0f, 0,0, 0.625f, 0.625f, 1, 1);
-            FUN_005125a0(1281, fx + fw - 5.0f, fy, 5.0f, 40.0f, 0,0, 0.625f, 0.625f, 1, 1);
+            GL_DrawTexture(1281, fx,             fy, 5.0f, 40.0f, 0,0, 0.625f, 0.625f, 1, 1);
+            GL_DrawTexture(1281, fx + fw - 5.0f, fy, 5.0f, 40.0f, 0,0, 0.625f, 0.625f, 1, 1);
         }
 
         // ── Hover: 1=flecha arriba, 2=flecha abajo, 3=thumb del scroll ──────
@@ -1105,13 +1105,13 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         const float arrowX = fx + fw - 21.0f;
         // Flecha arriba.  El sprite se apaga mientras se arrastra el thumb
         // (focus state 2).
-        int upOn = (hov == 1 && FUN_0040c680(self) != 2) ? 1 : 0;
+        int upOn = (hov == 1 && ChatListBox_GetFocusState(self) != 2) ? 1 : 0;
         ChatLB_DrawButton(1284, upOn, arrowX,
                           (float)((int)self[12] - (int)self[14]) + 8.0f,
                           13.0f, 13.0f, 0.6f, 0);
         // Flecha abajo — el último argumento es el ENTERO 1 (bits), que hace
         // que sub_40DCE0 espeje la textura en V.  No es 1.0f.
-        int dnOn = (hov == 2 && FUN_0040c680(self) != 2) ? 1 : 0;
+        int dnOn = (hov == 2 && ChatListBox_GetFocusState(self) != 2) ? 1 : 0;
         ChatLB_DrawButton(1284, dnOn, arrowX,
                           (float)(int)self[12] - 4.0f,
                           13.0f, 13.0f, 0.6f, 1);
@@ -1128,30 +1128,30 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         const float barX   = fx + fw - thumbW - 7.0f;
 
         // Riel.
-        FUN_005125a0(1283, railX, trackY, thumbW, trackH,
+        GL_DrawTexture(1283, railX, trackY, thumbW, trackH,
                      0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
 
         // Thumb.  Si el contenido ENTRA en la ventana, ocupa todo el riel.
         int total = ((FnIntSelf)vt[19])(self);   // vtable+76 = countVisible
         if (total < (int)self[35]) {
-            FUN_005125a0(1282, barX, trackY, thumbW - 2.0f, trackH,
+            GL_DrawTexture(1282, barX, trackY, thumbW - 2.0f, trackH,
                          0.0f, 0.0f, 0.6875f, 0.6875f, 1, 1);
             if (hov == 3) {
                 if (MouseLButton) glColor4f(0.0f, 0.0f, 0.0f, 0.1f);
                 else              glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
-                FUN_005124c0(barX, trackY, thumbW - 2.0f, trackH);
+                GL_DrawRect(barX, trackY, thumbW - 2.0f, trackH);
                 glEnable(GL_TEXTURE_2D);
                 glColor4f(1.0f, 1.0f, 1.0f, 0.6f);
             }
         } else {
             const float thumbY = *(float*)&self[38];
             const float thumbH = *(float*)&self[40];
-            FUN_005125a0(1282, barX, thumbY, thumbW - 2.0f, thumbH,
+            GL_DrawTexture(1282, barX, thumbY, thumbW - 2.0f, thumbH,
                          0.0f, 0.0f, 0.6875f, 0.6875f, 1, 1);
             if (hov == 3) {
-                if (FUN_0040c680(self) == 2) glColor4f(0.0f, 0.0f, 0.0f, 0.1f);
+                if (ChatListBox_GetFocusState(self) == 2) glColor4f(0.0f, 0.0f, 0.0f, 0.1f);
                 else                         glColor4f(1.0f, 1.0f, 1.0f, 0.2f);
-                FUN_005124c0(barX, thumbY, thumbW - 2.0f, thumbH);
+                GL_DrawRect(barX, thumbY, thumbW - 2.0f, thumbH);
                 glEnable(GL_TEXTURE_2D);
                 glColor4f(1.0f, 1.0f, 1.0f, 0.6f);
             }
@@ -1160,13 +1160,13 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         // Botón de redimensionar (22×12) arriba a la derecha.  Se agrisa
         // mientras se está arrastrando (focus state 1); el arrastre en sí lo
         // maneja el slot 7.
-        if (FUN_0040c680(self) == 1) glColor4f(0.7f, 0.7f, 0.7f, 1.0f);
+        if (ChatListBox_GetFocusState(self) == 1) glColor4f(0.7f, 0.7f, 0.7f, 1.0f);
         else                         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        FUN_005125a0(1280, fx + fw - 28.0f,
+        GL_DrawTexture(1280, fx + fw - 28.0f,
                      (float)((int)self[12] - (int)self[14]) - 8.0f + 4.0f,
                      22.0f, 12.0f, 0.0f, 0.0f, 0.6875f, 0.75f, 1, 1);
 
-        FUN_00511600();
+        GL_ResetState();
     }
 
     // BUG-FIX 2026-05-01: header SOLO renderea cuando hay whisper target
@@ -1195,8 +1195,8 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         m_dwTextColor = 0xFFC8C8FFu;
         m_dwBackColor = DAT_005590ac ? 0u : 0x96000000u;
         EnableAlphaTest(true);
-        FUN_0047f7a0((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0);
-        FUN_00511600();
+        UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0);
+        GL_ResetState();
         if (m_hFontDC) SelectObject(m_hFontDC, g_hFontBold);
     }
 
@@ -1210,7 +1210,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
 // composición de "[guild] nombre: texto". El decompile de IDA tiene dos ramas
 // (g_pRenderText[+8]==1 → font-bitmap path; else → CUIRenderText path).
 // En nuestro build no tenemos la vtable real del motor de g_pRenderText, así que
-// tomamos la segunda rama y ruteamos por FUN_0047f7a0.
+// tomamos la segunda rama y ruteamos por UI_DrawText.
 //
 // Paleta por tipo de mensaje (se lee de self[25]+276 — el DWORD de tipo adentro del
 // linked-list node payload):
@@ -1278,8 +1278,8 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
 
     int x = (int)self[11] + 10;
     int y = (int)self[12] - 13 * v5 - 16;
-    FUN_0047f7a0(x, y, Buffer, 0, 1, 0);
-    FUN_00511600();
+    UI_DrawText(x, y, Buffer, 0, 1, 0);
+    GL_ResetState();
     return 1;
 }
 
@@ -1329,7 +1329,7 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
             RenderBitmap(Texture, x, y, Width, hDrawn, 0.0f, 0.0f,
                          Width * 0.0625f, Height * 0.0625f, 1, 1);
             glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
-            FUN_005124c0(x, y, Width, hDrawn);     // RenderColor (FillRect)
+            GL_DrawRect(x, y, Width, hDrawn);     // RenderColor (FillRect)
             glEnable(GL_TEXTURE_2D);               // 0xDE1
             glColor4f(1.0f, 1.0f, 1.0f, alpha);
         }
@@ -1406,7 +1406,7 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
     }
 
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    FUN_00511600();                                // DisableAlphaBlend
+    GL_ResetState();                                // DisableAlphaBlend
 }
 
 // slot 25 — sub_40E810 — handler de hover por línea. Setea self[28] (puntero del
@@ -1459,7 +1459,7 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
 
     if (FUN_0040c490((int)self[11], (int)self[12] - (int)self[14],
                      (int)self[13], 8, 1)
-        && !FUN_0040c680(self)
+        && !ChatListBox_GetFocusState(self)
         && !dword_55C9B7C)
     {
         dword_55C9B7C = self[7];
@@ -1691,7 +1691,7 @@ extern "C" int g_ChatLB_MouseOnWindow = 0;
 
 extern "C" void  __cdecl CreateGuildMark(int markIndex, bool blend);
 extern "C" void  __cdecl RenderTipText(int sx, int sy, const char* Text);
-// FUN_0047f7a0 (RenderText) y FUN_0047ec60 (ClearInput) ya vienen de
+// UI_DrawText (RenderText) y Input_ClearState (ClearInput) ya vienen de
 // functions.h con vinculacion C++; no re-declararlos aca.
 // FUN_00404bc0 (PlayBuffer) tambien viene de functions.h (vinculacion C++).
 extern "C" float flt_83A7ACC[8];
@@ -1775,20 +1775,20 @@ static int __fastcall GuildLB_renderBg(DWORD* self)
     if (((FnInt)vt[19])(self) >= (int)self[35]) {
         float y = (float)((int)self[12] - (int)self[14]) + 8.0f;
         float x = (float)((int)self[13] + (int)self[11]) - 19.0f;
-        FUN_005125a0(1284, x, y, 13.0f, 13.0f, 0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
+        GL_DrawTexture(1284, x, y, 13.0f, 13.0f, 0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
         EnableAlphaTest(true);
         float ya = (float)(int)self[12] - 4.0f;
         float xa = (float)((int)self[13] + (int)self[11]) - 19.0f;
         // alto NEGATIVO = la misma flecha espejada en V (la de "abajo").
-        FUN_005125a0(1284, xa, ya, 13.0f, -13.0f, 0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
-        FUN_00511600();                           // DisableAlphaBlend
+        GL_DrawTexture(1284, xa, ya, 13.0f, -13.0f, 0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
+        GL_ResetState();                           // DisableAlphaBlend
         float top    = f[36];
         float height = f[37] - top;
         float xb = (float)((int)self[13] + (int)self[11]) - f[39] - 6.0f;
-        FUN_005125a0(1283, xb, top, f[39], height, 0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
+        GL_DrawTexture(1283, xb, top, f[39], height, 0.0f, 0.0f, 0.8125f, 0.8125f, 1, 1);
         float width = f[39] - 2.0f;
         float xc = (float)((int)self[13] + (int)self[11]) - f[39] - 5.0f;
-        FUN_005125a0(1282, xc, f[38], width, f[40], 0.0f, 0.0f, 0.6875f, 0.6875f, 1, 1);
+        GL_DrawTexture(1282, xc, f[38], width, f[40], 0.0f, 0.0f, 0.6875f, 0.6875f, 1, 1);
     }
     return 1;
 }
@@ -1830,7 +1830,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
         m_dwBackColor = 0xFF962828u;                        // -6936536
         m_dwTextColor = (party != 0xFF) ? 0xFFFFFFFFu : 0xC4C4C4FFu;
         CreateGuildMark(*(short*)((BYTE*)(uintptr_t)Hero + 474), true);
-        FUN_005125a0(34, (float)v22, (float)v5, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(34, (float)v22, (float)v5, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         v4 += 13;
     } else {
         m_dwBackColor = 0;
@@ -1841,13 +1841,13 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     memset(Buffer, 0, sizeof(Buffer));
     const char* name = (const char*)(self[25] + 8);
     _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "%s", name);
-    FUN_0047f7a0(v4, v5, Buffer, 0, 1, 0);
+    UI_DrawText(v4, v5, Buffer, 0, 1, 0);
 
     if (party != 0xFF) {
         m_dwBackColor = 0;
         m_dwTextColor = 0xFF00C4FFu;                        // -16726785
         _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, "(%d)", party + 1);
-        FUN_0047f7a0((int)self[13] + (int)self[11] - 60, v5, Buffer, 0, 1, 0);
+        UI_DrawText((int)self[13] + (int)self[11] - 60, v5, Buffer, 0, 1, 0);
     }
 
     // Boton de expulsar: solo lo ve el master (self[46]==1) o la propia fila.
@@ -1857,13 +1857,13 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
         // flt_55265C = 22.0 . flt_5527DC = 13.0 . flt_55256C = 1.0 . flt_5527D8 = 11.0
         float bx = (float)((int)self[13] + (int)self[11]) - 22.0f - 13.0f;
         float by = (float)v5 - 1.0f;
-        FUN_005125a0(280, bx, by, 13.0f, 11.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(280, bx, by, 13.0f, 11.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
 
         if ((float)(int)MouseX >= bx && (float)(int)MouseX < bx + 13.0f &&
             (float)(int)MouseY >= by && (float)(int)MouseY < by + 11.0f)
         {
             if (MouseLButton)
-                FUN_005125a0(281, bx, by, 13.0f, 11.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+                GL_DrawTexture(281, bx, by, 13.0f, 11.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
             m_dwTextColor = 0xFFFFFFFFu;
             m_dwBackColor = 0xFF000000u;
             const char* tip;
@@ -1877,7 +1877,7 @@ static int __fastcall GuildLB_renderLine(DWORD* self, int /*edx*/, int a2)
     }
 
     if (m_hFontDC) SelectObject(m_hFontDC, g_hFont);
-    FUN_00511600();                                             // DisableAlphaBlend
+    GL_ResetState();                                             // DisableAlphaBlend
     return 1;
 }
 
@@ -1924,7 +1924,7 @@ static int __fastcall GuildLB_perFrameInput(DWORD* self)
                         int v9 = ((FnInt)vt[19])(self) - (int)self[34];
                         DAT_083a7c24     = 126;   // ErrorMessage
                         dword_5615E4     = v9 - v3 - 1;
-                        FUN_0047ec60(0);                        // ClearInput(0)
+                        Input_ClearState(0);                        // ClearInput(0)
                         InputEnable      = 0;
                         DAT_00559c88     = 1;     // InputNumber
                         // IDA: `*(float *)InputTextMax = flt_83A7ACC[0];` —
@@ -2109,7 +2109,8 @@ void __fastcall FUN_0040c500(void* ecx, void* /*edx*/, int param_1, int param_2,
 
 // ── FUN_0040c580 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // FUN_0040c580 @ 0x0040C580 (71 bytes) — dequeue front from linked list + copy 3 fields
-void __fastcall FUN_0040c580(int param_1) {
+// IDA: FUN_0040c580
+void __fastcall ChatListBox_DequeueFront(int param_1) {
     if (*(int *)(param_1 + 0xc) != 0) {
         int iVar1 = **(int **)(param_1 + 8);
         *(int *)(param_1 + 0x10) = *(int *)(iVar1 + 8);
@@ -2121,6 +2122,13 @@ void __fastcall FUN_0040c580(int param_1) {
         operator_delete(lpMem);
         *(int *)(param_1 + 0xc) = *(int *)(param_1 + 0xc) - 1;
     }
+}
+
+// Compatibility entry point retained solely for stubs_IDA_ports.cpp.
+// IDA: FUN_0040c580
+void __fastcall FUN_0040c580(int param_1)
+{
+    ChatListBox_DequeueFront(param_1);
 }
 
 // ── FUN_0040c5d0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
@@ -2140,9 +2148,17 @@ void __fastcall FUN_0040c670(int ecx, int /*edx*/, int param_1) {
 
 // FUN_0040c680 @ 0x0040C680 (4 bytes) — getter thiscall: devuelve this->field_0x24
 // FUN_0040c680 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_0040c680(DWORD *_this)
+// IDA: FUN_0040c680
+int __cdecl ChatListBox_GetFocusState(DWORD *_this)
 {
   return _this[9];
+}
+
+// Compatibility entry point retained solely for stubs_IDA_ports.cpp.
+// IDA: FUN_0040c680
+int __cdecl FUN_0040c680(DWORD *_this)
+{
+  return ChatListBox_GetFocusState(_this);
 }
 
 // ── FUN_0040c6b0 — movida desde stubs_bulk_small.cpp (refactor B3) ──

@@ -2,14 +2,14 @@
 #include "functions.h"
 #include "globals.h"
 
-// ── FUN_0047a010 @ 0x0047A010 — Gate_LoadData(path) ─────────────────────────
+// IDA: FUN_0047A010
 // Reads text-format gate/warp data file (Data2/Gate.txt Korean locale).
 // Parser uses TextParser_GetToken (type 0=comment/END, 1=record, 2=EOF).
 // Gate data structure: DAT_07cf5600 + gate_id * 9 bytes (stride 9).
 //   Each 9-byte record stores: [0]=flag, [1]=mapid, [2]=x, [3]=y,
 //     [4]=dst_mapid, [5]=dst_x, [6]=dst_y, [7]=size, [8]=dir.
 // Total 100 entries (900 bytes, loop runs while off < 900).
-void __cdecl FUN_0047a010(const char *path)
+void __cdecl Gate_LoadTextData(const char *path)
 {
     DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
@@ -35,11 +35,11 @@ EOF_done:
     FUN_0054150f(DAT_07d7806c);
 }
 
-// ── FUN_0047a170 @ 0x0047A170 — Gate_SaveBMD(path) ──────────────────────────
+// IDA: FUN_0047A170
 // Writes gate data table to a binary .bmd file (no checksum).
 // Allocates 9-byte scratch buffer, iterates 100 entries (stride 9),
 // XOR-encrypts each 9-byte record via FUN_00479910, writes via FUN_005430f0.
-void __cdecl FUN_0047a170(const char *path)
+void __cdecl Gate_SaveBMD(const char *path)
 {
     FILE *fp  = (FILE *)FUN_0054173f(path, DAT_005597d4);  // "wb"
     char *buf = (char *)operator_new(9);
@@ -57,11 +57,11 @@ void __cdecl FUN_0047a170(const char *path)
     FUN_0054150f(fp);
 }
 
-// ── FUN_0047a4d0 @ 0x0047A4D0 — Gate_LoadBMD(path) ──────────────────────────
+// IDA: FUN_0047A4D0
 // Reads binary .bmd gate data (counterpart to FUN_0047a170).
 // Allocates 9-byte scratch buffer, reads 100 records sequentially,
 // XOR-decrypts each via FUN_00479910, copies into DAT_07cf5600 (stride 9).
-void __cdecl FUN_0047a4d0(const char *path)
+void __cdecl Gate_LoadBMD(const char *path)
 {
     CHAR msg[256];
     FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);

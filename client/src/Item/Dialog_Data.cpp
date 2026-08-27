@@ -2,7 +2,7 @@
 #include "functions.h"
 #include "globals.h"
 
-// ── FUN_0047b020 @ 0x0047B020 — Dialog_LoadBMD(path) ────────────────────────
+// IDA: FUN_0047B020
 // Reads binary .bmd dialog data file into DAT_07cf5608.
 // Allocates 0x400-byte scratch buffer, reads and decrypts records in blocks:
 //   - Each iteration: fread 0x400 bytes, XOR-decrypt via FUN_00479910,
@@ -10,7 +10,7 @@
 // Loop runs while the write pointer < 0x7d27608 (upper bound of dialog array).
 // Starting base: DAT_07cf5608 (dialog data array; 4 bytes per entry × 0x100
 //   entries per block, multiple blocks).
-void __cdecl FUN_0047b020(const char *path)
+void __cdecl Dialog_LoadBMD(const char *path)
 {
     CHAR msg[256];
     FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);

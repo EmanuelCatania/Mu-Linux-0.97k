@@ -47,10 +47,10 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // Particle / angle helpers
 
-// FUN_0043e430 @ 0x0043E430 — Angle_From2Points(x1,y1,x2,y2)
+// IDA: FUN_0043e430 @ 0x0043E430 — Math_GetAngleFromPoints(x1,y1,x2,y2)
 // Computes clockwise angle 0..359 from point (x1,y1) toward (x2,y2).
 // Uses x87 fpatan(dy/dx,1) then ftol; adds 180 if x2<x1; wraps negative.
-int __cdecl FUN_0043e430(float param_1, float param_2, float param_3, float param_4) {
+int __cdecl Math_GetAngleFromPoints(float param_1, float param_2, float param_3, float param_4) {
     double fVar2;
     if ((double)param_3 - (double)param_1 == 0.0) {
         fVar2 = 0.0;

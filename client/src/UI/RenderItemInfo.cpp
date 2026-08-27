@@ -1001,7 +1001,7 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
             addFmt(GlobalText[69], (int)ip->Durability, C_WHITE);
             success = true;
         } else if (bDurExist) {
-            unsigned int maxDurability = FUN_004c45c0(ip, attrBase, (int)level) & 0xFFFF;
+            unsigned int maxDurability = Item_CalculateMaxDurability(ip, attrBase, (int)level) & 0xFFFF;
             addFmt2(GlobalText[71], (int)ip->Durability, (int)maxDurability, C_WHITE);
             success = true;
         }
@@ -1552,7 +1552,7 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
     // comparando el puntero del item contra el rango del pool de la tienda;
     // el binario lo decide con `Sell` a secas.
     if (ShopOpened != 0 && DAT_07eaa154 < 28) {
-        int   price = FUN_0047c690((void*)param_3, param_4 ? 1 : 0);
+        int   price = Item_CalculateValue((void*)param_3, param_4 ? 1 : 0);
         char  priceStr[32];
         FormatThousands(priceStr, sizeof(priceStr), price);
         const char* gt = GlobalText[param_4 ? 62 : 63];
@@ -1832,19 +1832,19 @@ extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* para
     DAT_07eaa158++;
 
     // Durability
-    unsigned int maxDur = FUN_004c45c0(param_3, attrBase, (int)level) & 0xffff;
+    unsigned int maxDur = Item_CalculateMaxDurability(param_3, attrBase, (int)level) & 0xffff;
     unsigned int curDur = (unsigned int)*(unsigned char*)((char*)param_3 + 0x1a);
     if (curDur < maxDur) {
         // 2026-05-08: REMOVED self-perpetuating cursor flag. The original
         // IDA code wrote DAT_07eaa134 = 2 here, but that turns the mouse
-        // cursor into a repair sprite (per FUN_004bffa0), and since this
+        // cursor into a repair sprite (per Cursor_Render), and since this
         // function only runs when DAT_07eaa134 != 0, it self-locks the
         // cursor every frame. The actual repair NPC context sets
         // DAT_07eaa134 from elsewhere (Chat_InputTick B-key, NPC checkbox).
         // DAT_07eaa134 = 2;
         // BUG-FIX 2026-04-26 (audit #3): same ItemValue/ConvertRepairGold pair.
-        int gold = FUN_0047c690((void*)param_3, 2);
-        FUN_004c3ef0(gold, (int)curDur, (int)maxDur, (short)itemType, lpString_07e90798 + 64);
+        int gold = Item_CalculateValue((void*)param_3, 2);
+        Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, (short)itemType, lpString_07e90798 + 64);
     } else {
         // DAT_07eaa134 = 1;  // Same — REMOVED.
     }

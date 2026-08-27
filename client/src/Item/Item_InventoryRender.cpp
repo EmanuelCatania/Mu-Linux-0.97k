@@ -181,10 +181,10 @@ void __stdcall RenderEquipmentBox_stub(void) {
 
     // Helper/Pet slot 8.
     SetEquipmentSlotPlaceholderColorForIndex(8);
-    FUN_005125a0(0x113, colLeft, rowTop, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
+    GL_DrawTexture(0x113, colLeft, rowTop, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
 
     SetEquipmentSlotPlaceholderColorForIndex(7);
-    FUN_005125a0(0x112, colPendant, rowTop, 60.0f, 40.0f, 0.0f, 0.0f, 0.9375f, 0.625f, 1, 1);
+    GL_DrawTexture(0x112, colPendant, rowTop, 60.0f, 40.0f, 0.0f, 0.0f, 0.9375f, 0.625f, 1, 1);
 
     // 2026-08-08 FIX (el MG seguía mostrando la caja del casco): el gate leía
     // `*(short*)CharacterAttribute` — o sea un SHORT en el offset 0 — en vez del
@@ -194,7 +194,7 @@ void __stdcall RenderEquipmentBox_stub(void) {
     if (!CharacterAttribute ||
         ((*(BYTE*)((BYTE*)CharacterAttribute + 11)) & 7) != 3) {
         SetEquipmentSlotPlaceholderColorForIndex(2);
-        FUN_005125a0(0x107, colBody, rowTop, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
+        GL_DrawTexture(0x107, colBody, rowTop, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
     }
 
     // 2026-08-08 FIX (el recuadro de la armadura salía 10 px más arriba y las
@@ -206,31 +206,31 @@ void __stdcall RenderEquipmentBox_stub(void) {
     // O sea la caja va en +89 y el item se dibuja 10 px más arriba dentro de
     // ella (que es lo que hace RenderEquipmentPart3D_stub, y eso queda igual).
     SetEquipmentSlotPlaceholderColorForIndex(3);
-    FUN_005125a0(0x108, colBody, rowMid, 40.0f, 60.0f, 0.0f, 0.0f, 0.625f, 0.9375f, 1, 1);
+    GL_DrawTexture(0x108, colBody, rowMid, 40.0f, 60.0f, 0.0f, 0.0f, 0.625f, 0.9375f, 1, 1);
 
     SetEquipmentSlotPlaceholderColorForIndex(4);
-    FUN_005125a0(0x109, colBody, rowBottom, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
+    GL_DrawTexture(0x109, colBody, rowBottom, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
 
     SetEquipmentSlotPlaceholderColorForIndex(0);
-    FUN_005125a0(0x10A, colLeft, rowMid, 40.0f, 60.0f, 0.0f, 0.0f, 0.625f, 0.9375f, 1, 1);
+    GL_DrawTexture(0x10A, colLeft, rowMid, 40.0f, 60.0f, 0.0f, 0.0f, 0.625f, 0.9375f, 1, 1);
 
     SetEquipmentSlotPlaceholderColorForIndex(1);
-    FUN_005125a0(0x114, colRight, rowMid, 40.0f, 60.0f, 0.0f, 0.0f, 0.625f, 0.9375f, 1, 1);
+    GL_DrawTexture(0x114, colRight, rowMid, 40.0f, 60.0f, 0.0f, 0.0f, 0.625f, 0.9375f, 1, 1);
 
     SetEquipmentSlotPlaceholderColorForIndex(5);
-    FUN_005125a0(0x10B, colLeft, rowBottom, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
+    GL_DrawTexture(0x10B, colLeft, rowBottom, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
 
     SetEquipmentSlotPlaceholderColorForIndex(6);
-    FUN_005125a0(0x10C, colRight, rowBottom, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
+    GL_DrawTexture(0x10C, colRight, rowBottom, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
 
     SetEquipmentSlotPlaceholderColorForIndex(9);
-    FUN_005125a0(0x10D, colRing, rowMid, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
+    GL_DrawTexture(0x10D, colRing, rowMid, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
 
     SetEquipmentSlotPlaceholderColorForIndex(10);
-    FUN_005125a0(0x10E, colRing, rowBottom, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
+    GL_DrawTexture(0x10E, colRing, rowBottom, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
 
     SetEquipmentSlotPlaceholderColorForIndex(11);
-    FUN_005125a0(0x10E, colPendant, rowBottom, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
+    GL_DrawTexture(0x10E, colPendant, rowBottom, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
 
     glColor3f(1.0f, 1.0f, 1.0f);
 }
@@ -369,7 +369,7 @@ void __cdecl RenderItemsBoxes_stub(float fPosX, float fPosY, DWORD Inventory, in
                     uWidth = 0.625f;
                     Texture = 0x116;
                 }
-                FUN_005125a0(Texture, (float)pixelX + fPosX, (float)pixelY + fPosY,
+                GL_DrawTexture(Texture, (float)pixelX + fPosX, (float)pixelY + fPosY,
                              20.0f, 20.0f, 0.0f, 0.0f, uWidth, vHeight, '\x01', '\x01');
                 p = p + 1;
                 ++gridCol;
@@ -456,7 +456,7 @@ void __cdecl RenderItems3D_stub(float p1, float p2, short* p3, int p4, int p5, c
                             FUN_005126e0(0x4ce, fx, fy, sparkSize, sparkSize, mixRot);
                             FUN_005126e0(0x4cf, fx, fy, sparkSize * _DAT_00552540, sparkSize * _DAT_00552540, mixRot);
                             FUN_005126e0(0x47e, fx, fy, sparkSize * _DAT_005527d0, sparkSize * _DAT_005527d0, 0);
-                            FUN_00511600();  // DisableAlphaBlend
+                            GL_ResetState();  // DisableAlphaBlend
                         }
                     }
                     cellPtr += 0x22;  // stride 0x44 bytes
@@ -482,7 +482,7 @@ void __cdecl RenderItems3D_stub(float p1, float p2, short* p3, int p4, int p5, c
                 float sinVal = (float)sin((double)((float)DAT_05826e08 * _DAT_005529cc));
                 float glowY = (float)((unsigned int)cell->y * 0x14)
                               + (float)DAT_07ea528c + _DAT_00552938 + sinVal + _DAT_00552660;
-                FUN_005125a0(9, glowX, glowY, 24.0f, 24.0f, 0.0f, 0.4f, 1.0f, 1.0f, 1, 1);
+                GL_DrawTexture(9, glowX, glowY, 24.0f, 24.0f, 0.0f, 0.4f, 1.0f, 1.0f, 1, 1);
                 glColor3f(1.0f, 1.0f, 1.0f);
                 // Text rendering for new item label — simplified
                 // (original uses SelectObject, RenderText with bold font)

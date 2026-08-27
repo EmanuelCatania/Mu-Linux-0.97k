@@ -149,7 +149,7 @@ extern "C" int*  g_pRenderText = g_RenderTextStubObj;
 // Externs for globals defined in HUD_Pass2.cpp.
 // (UI flags are now #defined in globals.h to DAT_07eaa11x bytes.)
 extern "C" int  GetScreenWidth(void);
-void __cdecl FUN_0047f4c0(int a1, int a2, float Width, float Height, int a5, int a6, float a7, int a8);
+void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, int a5, int a6, float a7, int a8);
 
 // Forward decl for the helper defined in HUD_Pass2.cpp.
 extern "C" SIZE* __cdecl FUN_0047f6f0(int x, int y, const char* lpString,
@@ -350,7 +350,7 @@ void Render_HudPass_4BCD20_(void)
     float Heightb = (float)barHeight;
     float vHeight = Heightb * 0.015625f;
     float y = 473.0f - Heightb;
-    FUN_005125a0(257, 551.0f, y, 15.0f, Heightb, 0.0f, 0.0f, 0.9375f, vHeight, 1, 1);
+    GL_DrawTexture(257, 551.0f, y, 15.0f, Heightb, 0.0f, 0.0f, 0.9375f, vHeight, 1, 1);
 
     RenderNumber2D(571.0f, 467.0f, v3, 9.0f, 10.0f);
 
@@ -457,14 +457,14 @@ void Render_HudPass_4EB070_(void)
 
     int v20 = sub_4E9300();
     glColor3f(1.0f, 1.0f, 1.0f);
-    FUN_005125a0(252, 213.0f, 100.0f, 213.0f, 5.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
+    GL_DrawTexture(252, 213.0f, 100.0f, 213.0f, 5.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
 
     int Width = 105;
     for (int v1 = 4; v1; --v1) {
-        FUN_005125a0(251, 213.0f, (float)Width, 213.0f, 40.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
+        GL_DrawTexture(251, 213.0f, (float)Width, 213.0f, 40.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
         Width += 40;
     }
-    FUN_005125a0(252, 213.0f, (float)Width, 213.0f, 5.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
+    GL_DrawTexture(252, 213.0f, (float)Width, 213.0f, 5.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
 
     SelectObject(m_hFontDC, g_hFontBold);
     m_dwBackColor = 0;
@@ -504,7 +504,7 @@ void Render_HudPass_4EB070_(void)
     float Widtha = (v4 > 4) ? (float)((double)(v4 - 4) * 13.0 + 52.0) : 52.0f;
     float v21 = Widtha * 0.5f;
     float x = 320.0f - v21;
-    FUN_005125a0(253, x, 134.0f, Widtha, 16.0f, 0.0f, 0.0f, 0.625f, 0.5625f, 1, 1);
+    GL_DrawTexture(253, x, 134.0f, Widtha, 16.0f, 0.0f, 0.0f, 0.625f, 0.5625f, 1, 1);
     glColor3f(1.0f, 1.0f, 1.0f);
     SelectObject(m_hFontDC, g_hFont ? g_hFont : g_hFontBold);
     m_dwBackColor = 0;
@@ -539,14 +539,14 @@ void Render_HudPass_4EB070_(void)
         int v22 = 38 * (v7 / 5) + 154;
         float v24 = (float)v22;
         float v25_x = (float)(40 * (v7 % 5) + 223);
-        FUN_005125a0(277, v25_x, v24, 32.0f, 32.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(277, v25_x, v24, 32.0f, 32.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
 
         if (v7 == 10) {
             int v9 = (v20 == 10) ? ((v8 != 0) + 1) : 0;
-            FUN_005125a0(v9 + 254, v25_x, v24, 32.0f, 32.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+            GL_DrawTexture(v9 + 254, v25_x, v24, 32.0f, 32.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         } else {
             int v10 = (v20 == v7 && v8) ? 278 : 277;
-            FUN_005125a0(v10, v25_x, v24, 32.0f, 32.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+            GL_DrawTexture(v10, v25_x, v24, 32.0f, 32.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
             CHAR pszText[32];
             wsprintfA(pszText, "%d", word_7E91394[v7]);
             m_dwBackColor = 0;
@@ -560,7 +560,7 @@ void Render_HudPass_4EB070_(void)
     int v11 = 265;
     DWORD textures[2] = { 241, 243 };
     for (int v12 = 0; v12 < 2; ++v12) {
-        FUN_005125a0(textures[v12] + (v20 == v12 + 11 ? 1 : 0),
+        GL_DrawTexture(textures[v12] + (v20 == v12 + 11 ? 1 : 0),
                      (float)v11, 239.0f, 70.0f, 21.0f,
                      0.0f, 0.0f, 0.546875f, 0.65625f, 1, 1);
         v11 += 78;
@@ -578,7 +578,7 @@ void Render_HudPass_4EB070(void) { Render_HudPass_4EB070_(); }
 //
 // In our build g_pRenderText points to a stub object where [+8] = 0 — the
 // "else" branch wins.  We port that branch byte-for-byte EXCEPT the actual
-// text-glyph composition is delegated to RenderText_1 / FUN_0047f7a0
+// text-glyph composition is delegated to RenderText_1 / UI_DrawText
 // (which already drives the same downstream font pipeline our build has).
 //
 // Entry layout (offsets from `c`, in bytes):
@@ -671,26 +671,26 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     strcat(a4, (const char*)c);
 
     // Background quad first.
-    FUN_005124c0((float)x, (float)y,
+    GL_DrawRect((float)x, (float)y,
                  (float)rectW, (float)rectH);
 
     // Render the composed text via RenderText_1 (our font pipeline alias).
-    FUN_0047f7a0(x, y, a4, 0, 1, 0);
+    UI_DrawText(x, y, a4, 0, 1, 0);
 
     // Wrapped overflow text on the next line(s).
     int v20 = *(int*)(c + 560);
     if (v20 > 0) {
         m_dwTextColor = (v20 < 10) ? 0xFFFFFFA6u : 0xFFC8C8C8u;
-        FUN_0047f7a0(x, y + FontHeight + 1, (char*)(c + 300), 0, 1, 0);
+        UI_DrawText(x, y + FontHeight + 1, (char*)(c + 300), 0, 1, 0);
 
         int v22 = *(int*)(c + 556);
         m_dwTextColor = (v22 < 10) ? 0xFFFFFFA6u : 0xFFC8C8C8u;
-        FUN_0047f7a0(x, y + 2 * FontHeight + 1, (char*)(c + 44), 0, 1, 0);
+        UI_DrawText(x, y + 2 * FontHeight + 1, (char*)(c + 44), 0, 1, 0);
     } else {
         int v24 = *(int*)(c + 556);
         if (v24 > 0) {
             m_dwTextColor = (v24 < 10) ? 0xFFFFFFA6u : 0xFFC8C8C8u;
-            FUN_0047f7a0(x, y + FontHeight + 1, (char*)(c + 44), 0, 1, 0);
+            UI_DrawText(x, y + FontHeight + 1, (char*)(c + 44), 0, 1, 0);
         }
     }
 }
@@ -772,8 +772,8 @@ static void RenderBoolean_IDA(int x, int y, DWORD c)
         m_dwTextColor = bg;
     }
 
-    FUN_0047f360(TextSize.cx, FontHeight, (LPCSTR)c, texW, 0, 0, 0, 0, (LPCSTR)(c + 24));
-    FUN_0047f4c0(drawX, drawY, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
+    Font_RenderTextToBitmap(TextSize.cx, FontHeight, (LPCSTR)c, texW, 0, 0, 0, 0, (LPCSTR)(c + 24));
+    Font_RenderBitmapText(drawX, drawY, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
 
     // IDA L214-224: -1778372066=0x9600321E · -1778384846=0x96000032 ·
     //               -1775100406=0x96321E0A
@@ -789,21 +789,21 @@ static void RenderBoolean_IDA(int x, int y, DWORD c)
     if (fade2 > 0) {
         m_dwTextColor = (fade2 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
         ClearFontRows(FontHeight);
-        FUN_0047f360(TextSize.cx, FontHeight, (LPCSTR)(c + 300), texW, 0, 0, 0, 0, 0);
-        FUN_0047f4c0(drawX, drawY + FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
+        Font_RenderTextToBitmap(TextSize.cx, FontHeight, (LPCSTR)(c + 300), texW, 0, 0, 0, 0, 0);
+        Font_RenderBitmapText(drawX, drawY + FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
 
         int fade1 = *(int*)(c + 556);
         m_dwTextColor = (fade1 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
         ClearFontRows(FontHeight);
-        FUN_0047f360(TextSize.cx, FontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
-        FUN_0047f4c0(drawX, drawY + 2 * FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
+        Font_RenderTextToBitmap(TextSize.cx, FontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
+        Font_RenderBitmapText(drawX, drawY + 2 * FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
     } else {
         int fade1 = *(int*)(c + 556);
         if (fade1 > 0) {
             m_dwTextColor = (fade1 < 10) ? 0x80C8DCE6u : 0xFFC8DCE6u;
             ClearFontRows(FontHeight);
-            FUN_0047f360(TextSize.cx, FontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
-            FUN_0047f4c0(drawX, drawY + FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
+            Font_RenderTextToBitmap(TextSize.cx, FontHeight, (LPCSTR)(c + 44), texW, 0, 0, 0, 0, 0);
+            Font_RenderBitmapText(drawX, drawY + FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
         }
     }
 }

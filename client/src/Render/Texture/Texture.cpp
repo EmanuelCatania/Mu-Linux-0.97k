@@ -4,7 +4,7 @@
 // Entry points:
 //   Texture_Load      @ 0x00529740  (280 lines) — load OZJ/OZT → GPU
 //   Texture_Unload    @ 0x0052a050  ( 29 lines) — ref-counted free
-//   GL_BindTexture    @ 0x00511480  ( 15 lines) — cached glBindTexture
+//   GL_BindTextureSlot    @ 0x00511480  ( 15 lines) — cached glBindTexture
 //   Texture_Draw2D    @ 0x005125a0  ( 51 lines) — textured screen quad
 //   Texture_LoadFile  @ 0x00529130  (224 lines) — inner file-load worker
 //
@@ -72,7 +72,7 @@
 //   top_gl_y = screen_height - screen_y
 //   bot_gl_y = screen_height - screen_y - height
 //
-//   param_10 (scale_wh): if set, w and h are scaled via FUN_00511950 / FUN_00511980
+//   param_10 (scale_wh): if set, w and h are scaled via Screen_ToGLX / Screen_ToGLY
 //   param_11 (scale_xy): if set, x and y are scaled
 //   Scale factor: DAT_0056156c * DAT_0055283c  (set from ChangeDisplaySettings)
 //
@@ -132,22 +132,22 @@ extern float g_scale_y;           // DAT_0055283c  screen scale Y
 
 
 // ============================================================
-// GL_BindTexture  @ 0x00511480
+// Texture_BindLocalCached — module-local compatibility helper.
 // Wrapper around glBindTexture that avoids redundant state changes.
 //   id >= 0 : look up gl_handle from texture table slot [id]
 //   id <  0 : use -id directly as GL texture handle (raw GL object)
 // ============================================================
-void GL_BindTexture(int id)
+void Texture_BindLocalCached(int id)
 {
     // ⚠ ESTE **NO** ES EL BIND QUE USA EL RENDER.
     //
-    // El bind real del pipeline es `FUN_00511480` (0x00511480, en GL_State.cpp):
+    // El bind real del pipeline es `GL_BindTextureSlot` (0x00511480, en GL_State.cpp):
     // ése es el que llaman BMD_DrawMesh, los efectos, los sprites y el HUD.
     // Esta función es un equivalente funcional sin callers vivos — su único
     // caller es `Texture_Draw2D`, que a su vez tampoco tiene callers.
     //
     // Peor: mantiene su PROPIO cache (`g_bound_texture_id`) distinto del de
-    // FUN_00511480 (`DAT_00561574`). Si algún día se la vuelve a usar, los dos
+    // GL_BindTextureSlot (`DAT_00561574`). Si algún día se la vuelve a usar, los dos
     // caches se desincronizan y se omiten binds → textura equivocada.
     //
     // Se conserva porque forma parte del port de este módulo, pero NO
@@ -456,7 +456,7 @@ int Texture_Load(const char* path, int id,
 // Texture_Draw2D  @ 0x005125a0
 // Draw a textured screen-space quad.
 //
-//   id         — texture slot (passed to GL_BindTexture)
+//   id         — texture slot (passed to GL_BindTextureSlot)
 //   x, y       — screen position of top-left corner (pixels, Y from top)
 //   w, h       — width and height (pixels)
 //   u0, v0     — top-left UV  (normalized 0.0-1.0)
@@ -464,7 +464,7 @@ int Texture_Load(const char* path, int id,
 //   scale_wh   — if non-0: scale w,h via screen→GL coord transform
 //   scale_xy   — if non-0: scale x,y via screen→GL coord transform
 //
-// Coordinate transform (FUN_00511950 / FUN_00511980):
+// Coordinate transform (Screen_ToGLX / Screen_ToGLY):
 //   screen_x → gl_x:  x * g_scale_x * g_scale_y  (DAT_0056156c * DAT_0055283c)
 //   screen_y → gl_y:  y * (similar Y scale)
 //
@@ -487,8 +487,8 @@ void Texture_Draw2D(int id,
     // Scale coordinates if requested
     if (scale_xy)
     {
-        x = Screen_ToGLx(x);   // FUN_00511950
-        y = Screen_ToGLy(y);   // FUN_00511980
+        x = Screen_ToGLx(x);   // Screen_ToGLX
+        y = Screen_ToGLy(y);   // Screen_ToGLY
     }
     if (scale_wh)
     {
@@ -496,7 +496,7 @@ void Texture_Draw2D(int id,
         h = Screen_ToGLy(h);
     }
 
-    GL_BindTexture(id);
+    Texture_BindLocalCached(id);
 
     // Build vertex + UV array (16 floats: 4 pairs of [u,v] + 4 pairs of [x,y])
     float gl_top    = (float)g_screen_height - y;
@@ -858,7 +858,7 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
         // 8192 = 0x2000 = GL_NICEST, que NO es un valor válido para
         // GL_TEXTURE_ENV_MODE → setea glGetError = GL_INVALID_ENUM (0x500),
         // que el driver NVIDIA acumula y eventualmente convierte en AV en una
-        // llamada GL siguiente (visto en FUN_005114f0 → glDisable).
+        // llamada GL siguiente (visto en GL_DisableDepthTest → glDisable).
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, (float)GL_MODULATE); // 0x2100 = 8448.0f
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, uiFilter);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, uiFilter);

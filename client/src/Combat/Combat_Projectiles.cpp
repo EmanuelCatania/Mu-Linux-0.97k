@@ -5,7 +5,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// CreateArrow @ 0x00474370 (~658 lines) — creates single arrow/bolt projectile
+// IDA: FUN_00474370 @ 0x00474370 — CreateArrow (~658 lines), creates one arrow/bolt projectile.
 // Decompiled from Ghidra. Anti-tamper hash table ops skipped.
 // Phantom params (unaff_EBX/ESI/EDI/EBP/retaddr) are obfuscation artifacts.
 // Reads weapon type from character's equipment slots, determines projectile
@@ -70,55 +70,55 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
     //   10 = type 10 (legend bow)     -> effect 0xF2
     switch (weaponType0) {
     case 0:
-        FUN_00460dc0(0xD9, oPos, oAngle, oLight,
+        Effect_Create(0xD9, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 1:
-        FUN_00460dc0(0xD9, oPos, oAngle, oLight,
+        Effect_Create(0xD9, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 2:
-        FUN_00460dc0(0xDD, oPos, oAngle, oLight,
+        Effect_Create(0xDD, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 3:
-        FUN_00460dc0(0xDB, oPos, oAngle, oLight,
+        Effect_Create(0xDB, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 4:
-        FUN_00460dc0(0xDA, oPos, oAngle, oLight,
+        Effect_Create(0xDA, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 5:
-        FUN_00460dc0(0xE0, oPos, oAngle, oLight,
+        Effect_Create(0xE0, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 6:
-        FUN_00460dc0(0xDF, oPos, oAngle, oLight,
+        Effect_Create(0xDF, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 8:
-        FUN_00460dc0(0xF2, oPos, oAngle, oLight,
+        Effect_Create(0xF2, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 10:
-        FUN_00460dc0(0xF2, oPos, oAngle, oLight,
+        Effect_Create(0xF2, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
@@ -135,28 +135,28 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
     case 0x213:
     case 0x214:
     case 0x215:
-        FUN_00460dc0(0xD8, oPos, oAngle, oLight,
+        Effect_Create(0xD8, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         return;
 
     case 0x212:
-        FUN_00460dc0(0xDC, oPos, oAngle, oLight,
+        Effect_Create(0xDC, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         return;
 
     case 0x216:
-        FUN_00460dc0(0xDE, oPos, oAngle, oLight,
+        Effect_Create(0xDE, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         return;
 
     case 0x221:
-        FUN_00460dc0(0xF3, oPos, oAngle, oLight,
+        Effect_Create(0xF3, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
@@ -167,7 +167,7 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
     }
 }
 
-// CreateArrows @ 0x00474BD0 (~144 lines) — multi-arrow skill handler
+// IDA: FUN_00474BD0 @ 0x00474BD0 — CreateArrows (~144 lines), multi-arrow skill handler.
 // SKKey '3'/'4': single arrow + counter increment.
 // Skill 1: triple shot (center + 2 angle offsets).
 // Skill 2: five-way shot with 4 additional angle offsets.

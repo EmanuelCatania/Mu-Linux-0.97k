@@ -163,11 +163,11 @@
 //       ir = (x+1 & 0xFF) + (y+1 & 0xFF) * 0x100  // tile diagonal
 //
 //       Toma 3 alturas de esquinas vecinas (DAT_080cb2cc)
-//       FUN_004fa4d0(pos_a, pos_b, pos_c, out_normal)  — cross product/normalización
+//       Triangle_ComputeNormal(pos_a, pos_b, pos_c, out_normal)  — cross product/normalización
 //       → DAT_07feb288[i*3..i*3+2] = (nx, ny, nz)
 //
 //   DAT_07feb288 = array de normales, float[3] por tile
-//   FUN_004fa4d0 @ 0x004fa4d0 = Vec3_CrossProduct(a, b, c, out)
+//   Triangle_ComputeNormal @ 0x004fa4d0 = Vec3_CrossProduct(a, b, c, out)
 //
 // ── TERRAIN_COMPUTELIGHTING (0x004f71c0) ──────────────────────────────────────
 //
@@ -240,7 +240,7 @@
 //       Si las 4 alturas del tile <= DAT_00552580 (= bajo el agua):
 //         Si DAT_0814b2dc == 0 && no PvP sub-estado:
 //           texture_id = DAT_080bb2b4[tile_idx] + 0x32  // textura de agua
-//           GL_BindTexture(texture_id)
+//           GL_BindTextureSlot(texture_id)
 //           glTexCoord2f(uv_x, ...)
 //           // Agrega offset de ola (DAT_07eab200) a los vértices Y
 //           glVertex3fv(vertex + wave_y)
@@ -278,7 +278,7 @@
 // ── TERRAINTILE_DRAW (0x004f7a90) ─────────────────────────────────────────────
 //
 //   void TerrainTile_Draw(int texture_id):
-//     GL_BindTexture(texture_id + 0x23)   // FUN_00511480
+//     GL_BindTextureSlot(texture_id + 0x23)   // GL_BindTextureSlot
 //     if (!DAT_0839bc86):                 // no wireframe
 //       glBegin(GL_QUADS)
 //       for each corner (TL, TR, BR, BL):
@@ -320,7 +320,7 @@
 //     Itera 8×8 bloques de tiles (local_20 y local_24):
 //       Para cada bloque (tile_x=8, tile_y=8..):
 //         uVar3 = FUN_004f8ff0(tile_x, tile_y, -180.0)  // frustum cull
-//         Si visible || DAT_083a42e9:
+//         Si visible || CameraTopViewEnabled:
 //           Para objetos en lista de ese bloque:
 //             obj[+0x160] = FUN_004f8ff0(...)  // cull por objeto
 //             Si visible: TerrainTile_Render(...)
@@ -328,7 +328,7 @@
 //               // Render entity especial (NPC marker?) con CharData check
 //
 //   FUN_004f8ff0 @ 0x004f8ff0 = Frustum_TestSphere(x, y, z) → visible
-//   DAT_083a42e9 = force_render_all flag (debug)
+//   CameraTopViewEnabled = force_render_all flag (debug)
 //
 // ── PIPELINE DE CARGA COMPLETO ────────────────────────────────────────────────
 //
@@ -386,7 +386,7 @@
 //   Frustum_TestSphere     @ 0x004f8ff0
 //   Vec3_CrossProduct      @ 0x004fa4d0
 //   Terrain_Decompress     @ 0x00529130
-//   GL_BindTexture         @ 0x00511480
+//   GL_BindTextureSlot         @ 0x00511480
 //   Game_RenderTick        @ 0x00525A00  (llama Terrain_Render)
 
 #include "stdafx.h"
@@ -411,7 +411,8 @@
 //   DAT_080ab2b4[i] = 0xFF  (TileTex2 byte)
 //   DAT_0834b608[i] = 0.0f  (TerrainHeight)
 //   DAT_0810b2cc[i] = (rand() & 3) * scale  (TerrainNoise per-tile UV jitter)
-void __cdecl FUN_004f6c60(void) {
+// IDA: FUN_004F6C60
+void __cdecl Terrain_Clear(void) {
     for (int i = 0; i < 0x10000; ++i) {
         DAT_080bb2b4[i] = 0;
         DAT_080ab2b4[i] = 0xff;
@@ -429,13 +430,14 @@ void __cdecl FUN_004f6c60(void) {
 // BUG-FIX 2026-04-26: el Ghidra-decomp declaraba 9 locals separadas (local_c..
 // local_24) y las pasaba como `&local_c, &local_18, &local_24` asumiendo
 // contigüidad de stack — MSVC no garantiza ese layout. Reemplazado por arrays
-// vec3 reales. Mismo patrón que FUN_005112f0 / FUN_004fad60.
+// vec3 reales. Mismo patrón que Camera_BuildMouseRay / FUN_004fad60.
 //
 // BUG-FIX 2026-04-28: el bound original `pfVar5 < 0x80ab288` era una dirección
 // absoluta del binario (en IDA = &SelectXF, símbolo siguiente a TerrainNormal).
 // En nuestro proceso esa addr no aplica → loop corría fuera del array → AV.
 // Cambiado a un loop count-based (256 outer × 256 inner = 65536 vertices).
-void __cdecl FUN_004f70b0(void) {
+// IDA: FUN_004F70B0
+void __cdecl CreateTerrainNormal(void) {
     float *pfVar5 = DAT_07feb288;
     for (unsigned int yRow = 0; yRow < 256; ++yRow) {
         unsigned int yNext = yRow + 1;
@@ -456,7 +458,7 @@ void __cdecl FUN_004f70b0(void) {
             p3[0] = (float)(int)(xCol - 1) * _DAT_005524f0;
             p3[1] = fVar4;
             p3[2] = DAT_080cb2cc[((xCol - 1) & 0xffu) + iVar6];
-            FUN_004fa4d0(p1, p2, p3, pfVar5);
+            Triangle_ComputeNormal(p1, p2, p3, pfVar5);
             pfVar5 += 3;
         }
     }
@@ -464,7 +466,8 @@ void __cdecl FUN_004f70b0(void) {
 
 // FUN_004f71c0 @ 0x004F71C0 — Terrain_FinalizeLighting: multiplies normal buffer
 // by lightmap (DAT_07eeb238) and clamps into DAT_0828b608.
-void __cdecl FUN_004f71c0(void) {
+// IDA: FUN_004F71C0
+void __cdecl Terrain_FinalizeLighting(void) {
     int iVar4 = 0;
     do {
         int iVar6 = 0x100;
@@ -506,7 +509,8 @@ void __cdecl FUN_004f71c0(void) {
 // (DAT_0055a7a4/79c/98 son otros símbolos), así que fopen siempre fallaba.
 // Y el sprintf de error olvidaba pasar `FileName` como arg → MessageBox
 // mostraba bytes de stack ("é)] file not found"). Reescrito siguiendo IDA.
-uint __cdecl FUN_004f7290(char *filename)
+// IDA: FUN_004F7290
+uint __cdecl OpenTerrainHeight(char *filename)
 {
     char FileName[256];
     char Text[256];
@@ -762,8 +766,8 @@ void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     v32 = p2z + v29;
     v36 = (float)((double)(rand() % 100) * 0.0099999998);
     glColor3f(1.0f, 1.0f, 1.0f);
-    FUN_00511480(494);            // BindTexture(494)
-    FUN_00511790();                // EnableAlphaBlendMinus
+    GL_BindTextureSlot(494);            // BindTexture(494)
+    GL_SetBlendSrcAlpha();                // EnableAlphaBlendMinus
     {
         float d[3] = { v27, v28, v29 };
         float cross[3] = { v24, v25, v26 };
@@ -792,6 +796,4 @@ void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     glVertex3f(v24 + v33, v25 + v34, v26 + v35);
     glEnd();
 }
-
-
 

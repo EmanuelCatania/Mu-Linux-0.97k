@@ -38,7 +38,7 @@ int FUN_0051af50(void)
   CHAR local_64 [100];
 
   DAT_00559c8c = 0x100;
-  FUN_00511600();
+  GL_ResetState();
   glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
   SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
   DAT_00559c80 = 0;
@@ -57,40 +57,40 @@ int FUN_0051af50(void)
         do {
           fVar1 = (float)(int)local_dc;
           local_e4.cx = (LONG)fVar1;
-          FUN_005125a0(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+          GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
           if ((((0x103 < DAT_083a427c) && (DAT_083a427c < 0x17c)) && ((int)local_dc <= DAT_083a4278)
               ) && (DAT_083a4278 < (int)local_dc + 0x16)) {
             glColor3f(0.8f, 0.6f, 0.4f);  // BUG-FIX bits → float
-            FUN_00511710();
-            FUN_005125a0(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+            GL_SetBlendAdditive();
+            GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
             glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
-            FUN_00511600();
+            GL_ResetState();
           }
           local_dc = (int)local_dc + 0x1e;
           local_d8 = local_d8 + -1;
         } while (local_d8 != 0);
       }
-      FUN_00511680('\x01');
+      GL_SetBlendSrcOver('\x01');
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d45ba0);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ba0,iVar3,ptVar17);
-      FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,
                    (LPCSTR)lpString_07d45ba0,(LPSIZE)0x0,'\0',0);
       if (DAT_005615c0 == 5) {
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
-        FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,
                      (LPCSTR)lpString_07d45ccc,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45df8);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45df8,iVar3,ptVar17);
-        FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x7d,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x7d,
                      (LPCSTR)lpString_07d45df8,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
-        FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x9b,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x9b,
                      (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45f24);
@@ -101,12 +101,12 @@ int FUN_0051af50(void)
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
-        FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,
                      (LPCSTR)lpString_07d45ccc,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
-        FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x7d,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x7d,
                      (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45f24);
@@ -117,14 +117,14 @@ int FUN_0051af50(void)
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
-        FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,
                      (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45f24);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
         uVar10 = 0x7d;
       }
-      FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),uVar10,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),uVar10,
                    (LPCSTR)lpString_07d45f24,(LPSIZE)0x0,'\0',0);
     }
     else if (DAT_083a7c24 == 0x96) {
@@ -132,22 +132,22 @@ int FUN_0051af50(void)
       do {
         fVar1 = (float)(int)local_dc;
         local_e4.cx = (LONG)fVar1;
-        FUN_005125a0(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+        GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
         if (((0x103 < DAT_083a427c) && (DAT_083a427c < 0x17c)) &&
            (((int)local_dc <= DAT_083a4278 && (DAT_083a4278 < (int)local_dc + 0x16)))) {
           glColor3f(0.8f, 0.6f, 0.4f);  // BUG-FIX bits → float
-          FUN_00511710();
-          FUN_005125a0(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+          GL_SetBlendAdditive();
+          GL_DrawTexture(0xf0,260.0,fVar1,120.0,22.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
           glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
-          FUN_00511600();
+          GL_ResetState();
         }
         local_dc = (int)local_dc + 0x1e;
       } while ((int)local_dc < 0x96);
-      FUN_00511680('\x01');
+      GL_SetBlendSrcOver('\x01');
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
-      FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x23,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x23,
                    (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
       if (DAT_00559c5c == '\0') {
         pcVar14 = s__s_Off_00561854;
@@ -159,7 +159,7 @@ int FUN_0051af50(void)
       ptVar17 = &local_e4;
       iVar3 = lstrlenA(local_64);
       GetTextExtentPointA(DAT_055c9fec,local_64,iVar3,ptVar17);
-      FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,local_64,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,local_64,
                    (LPSIZE)0x0,'\0',0);
       if (DAT_07e11d80 == '\0') {
         pcVar14 = s__s_Off_00561864;
@@ -171,18 +171,18 @@ int FUN_0051af50(void)
       ptVar17 = &local_e4;
       iVar3 = lstrlenA(local_64);
       GetTextExtentPointA(DAT_055c9fec,local_64,iVar3,ptVar17);
-      FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,local_64,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,local_64,
                    (LPSIZE)0x0,'\0',0);
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d463d4);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d463d4,iVar3,ptVar17);
-      FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x7d,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x7d,
                    (LPCSTR)lpString_07d463d4,(LPSIZE)0x0,'\0',0);
     }
     else if ((((DAT_083a7c24 == 0x8b) || (DAT_083a7c24 == 0x8e)) || (DAT_083a7c24 == 0x8d)) ||
             ((DAT_083a7c24 == 0x8c || (DAT_083a7c24 == 0x9a)))) {
       local_d8 = 0x3c;
-      FUN_005125a0(0xfc,213.0,60.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
+      GL_DrawTexture(0xfc,213.0,60.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
       local_dc = 0x41;
       iVar3 = 7;
       switch(DAT_083a7c24) {
@@ -202,13 +202,13 @@ switchD_0051bea9_caseD_8b:
       }
       if (0 < iVar3) {
         do {
-          FUN_005125a0(0xfb,213.0,(float)(int)local_dc,213.0,40.0,0.0,0.0,0.83203125,0.625,'\x01',
+          GL_DrawTexture(0xfb,213.0,(float)(int)local_dc,213.0,40.0,0.0,0.0,0.83203125,0.625,'\x01',
                        '\x01');
           local_dc = (int)local_dc + 0x28;
           iVar3 = iVar3 + -1;
         } while (iVar3 != 0);
       }
-      FUN_005125a0(0xfc,213.0,(float)(int)local_dc,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01')
+      GL_DrawTexture(0xfc,213.0,(float)(int)local_dc,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01')
       ;
       // BUG-FIX 2026-05-03: was `(int)piVar7 < 0x83a432c` (literal end addr from
       // source binary). The real iteration count is 2 (button rects: stride 5
@@ -226,14 +226,14 @@ switchD_0051bea9_caseD_8b:
           // con la mezcla de estilos dentro de la misma expresion como pista.
           local_d4 = (float)piVar7[1];
           float local_dc_f = (float)*piVar7;
-          FUN_005125a0(piVar7[-3] + 0xf0,(float)piVar7[-2] + _DAT_00552d40,
+          GL_DrawTexture(piVar7[-3] + 0xf0,(float)piVar7[-2] + _DAT_00552d40,
                        (float)piVar7[-1] + _DAT_0055290c,local_dc_f,local_d4,0.0,0.0,
                        local_dc_f * _DAT_00552d44,local_d4 * _DAT_00552ae4,'\x01','\x01');
         }
         piVar7 = piVar7 + 5;
       }
       if (DAT_083a7c24 == 0x8d) {
-        FUN_00511680('\x01');
+        GL_SetBlendSrcOver('\x01');
         glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
         if (DAT_083a7c08 == '\0') {
           uVar16 = 0x3e4ccccd;
@@ -280,16 +280,16 @@ LAB_0051c13d:
     else if (DAT_083a7c24 == 0x8f) {
       glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
       local_d8 = 0x78;
-      FUN_005125a0(0xfc,213.0,120.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
+      GL_DrawTexture(0xfc,213.0,120.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
       local_dc = 0x7d;
       iVar3 = 5;
       do {
-        FUN_005125a0(0xfb,213.0,(float)(int)local_dc,213.0,40.0,0.0,0.0,0.83203125,0.625,'\x01',
+        GL_DrawTexture(0xfb,213.0,(float)(int)local_dc,213.0,40.0,0.0,0.0,0.83203125,0.625,'\x01',
                      '\x01');
         local_dc = (int)local_dc + 0x28;
         iVar3 = iVar3 + -1;
       } while (iVar3 != 0);
-      FUN_005125a0(0xfc,213.0,(float)(int)local_dc,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01')
+      GL_DrawTexture(0xfc,213.0,(float)(int)local_dc,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01')
       ;
       local_dc = 0x43340000u;
       iVar3 = 0;
@@ -307,7 +307,7 @@ LAB_0051c13d:
           uVar10 = 0x3f800000;
         }
         glColor3f(uVar10,uVar15,uVar16);
-        FUN_005125a0(0xf0,245.0,*(float*)&local_dc,150.0,35.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+        GL_DrawTexture(0xf0,245.0,*(float*)&local_dc,150.0,35.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
         SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
         DAT_00559c78 = 0xfffff0c8;
         ptVar17 = &local_e4;
@@ -318,38 +318,38 @@ LAB_0051c13d:
         cVar13 = '\0';
         ptVar12 = (LPSIZE)0x0;
         lVar8 = (longlong)(*(float*)&local_dc + 12.0f);   // IDA RenderErrorMessage case 143: (__int64)(Height + 12.0)
-        FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(int)lVar8,pCVar6,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(int)lVar8,pCVar6,
                      ptVar12,cVar13,uVar10);
         { float _fdc = *(float*)&local_dc + _DAT_00552854; local_dc = *(unsigned int*)&_fdc; }
         SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
         DAT_00559c78 = 0xffffffff;
         if (iVar3 == 0) {
-          FUN_0047f650(0xf8,0x96,&DAT_07d69b04,(LPSIZE)0x0,'\0',0);
+          UI_RenderText(0xf8,0x96,&DAT_07d69b04,(LPSIZE)0x0,'\0',0);
           pCVar6 = &DAT_07d69c30;
           uVar10 = 0xa0;
         }
         else {
-          FUN_0047f650(0xf8,0xf0,&DAT_07d698ac,(LPSIZE)0x0,'\0',0);
+          UI_RenderText(0xf8,0xf0,&DAT_07d698ac,(LPSIZE)0x0,'\0',0);
           pCVar6 = &DAT_07d699d8;
           uVar10 = 0xfa;
         }
-        FUN_0047f650(0xf8,uVar10,pCVar6,(LPSIZE)0x0,'\0',0);
+        UI_RenderText(0xf8,uVar10,pCVar6,(LPSIZE)0x0,'\0',0);
         iVar3 = iVar3 + 1;
       } while (iVar3 < 2);
       glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
     }
     else if ((DAT_083a7c24 == 0x97) || (DAT_083a7c24 == 0x99)) {
       local_d8 = 0x64;
-      FUN_005125a0(0xfc,213.0,100.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
+      GL_DrawTexture(0xfc,213.0,100.0,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01');
       local_dc = 0x69;
       iVar3 = 3;
       do {
-        FUN_005125a0(0xfb,213.0,(float)(int)local_dc,213.0,40.0,0.0,0.0,0.83203125,0.625,'\x01',
+        GL_DrawTexture(0xfb,213.0,(float)(int)local_dc,213.0,40.0,0.0,0.0,0.83203125,0.625,'\x01',
                      '\x01');
         local_dc = (int)local_dc + 0x28;
         iVar3 = iVar3 + -1;
       } while (iVar3 != 0);
-      FUN_005125a0(0xfc,213.0,(float)(int)local_dc,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01')
+      GL_DrawTexture(0xfc,213.0,(float)(int)local_dc,213.0,5.0,0.0,0.0,0.83203125,0.625,'\x01','\x01')
       ;
       // BUG-FIX 2026-05-03: same hardcoded address bound as line 213 — 2 button
       // rects (stride 5 ints, total 0x28 bytes / 0x14 stride = 2 entries).
@@ -359,7 +359,7 @@ LAB_0051c13d:
         if ((0 < iVar3) && (iVar3 < 5)) {
           { float _fdc = (float)piVar7[1]; local_dc = *(unsigned int*)&_fdc; }
           local_d4 = (float)*piVar7;
-          FUN_005125a0(iVar3 + 0xf0,(float)piVar7[-2] + _DAT_00552d40,
+          GL_DrawTexture(iVar3 + 0xf0,(float)piVar7[-2] + _DAT_00552d40,
                        (float)piVar7[-1] + _DAT_005524f0,local_d4,*(float*)&local_dc,0.0,0.0,
                        local_d4 * _DAT_00552d44,*(float*)&local_dc * _DAT_00552ae4,'\x01','\x01');
         }
@@ -368,15 +368,15 @@ LAB_0051c13d:
     }
     else {
       local_d8 = 0x3c;
-      FUN_005125a0(0xf0,213.0,60.0,213.0,64.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
+      GL_DrawTexture(0xf0,213.0,60.0,213.0,64.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
       if (DAT_083a7c24 == 0x74) {
         DAT_00559c8c = 100;
-        FUN_0047f0b0(0x116,0x62,0);
+        UI_RenderInputField(0x116,0x62,0);
         DAT_00559c8c = 0x100;
       }
       else if (((DAT_083a7c24 == 0x72) || (DAT_083a7c24 == 0x7e)) || (DAT_083a7c24 == 0x98)) {
         DAT_00559c8c = 100;
-        FUN_0047f0b0(0xf3,0x62,0);
+        UI_RenderInputField(0xf3,0x62,0);
         DAT_00559c8c = 0x100;
         if (((DAT_083a427c < 0x143) || (0x16a < DAT_083a427c)) ||
            ((DAT_083a4278 < 0x62 || (0x76 < DAT_083a4278)))) {
@@ -385,13 +385,13 @@ LAB_0051c13d:
         else {
           iVar3 = 0xf2;
         }
-        FUN_005125a0(iVar3,323.0,98.0,40.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
+        GL_DrawTexture(iVar3,323.0,98.0,40.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         if (((DAT_083a427c < 0x175) || (0x19c < DAT_083a427c)) ||
            ((DAT_083a4278 < 0x62 || (0x76 < DAT_083a4278)))) {
-          FUN_005125a0(0xf3,373.0,98.0,40.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
+          GL_DrawTexture(0xf3,373.0,98.0,40.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         }
         else {
-          FUN_005125a0(0xf4,373.0,98.0,40.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
+          GL_DrawTexture(0xf4,373.0,98.0,40.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         }
       }
       else if ((((DAT_083a7c24 == 0x80) || (DAT_083a7c24 == 0x77)) || (DAT_083a7c24 == 0x78)) ||
@@ -403,25 +403,25 @@ LAB_0051c13d:
         else {
           iVar3 = 0xf2;
         }
-        FUN_005125a0(iVar3,234.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
+        GL_DrawTexture(iVar3,234.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         if (((DAT_083a427c < 0x14e) || (0x193 < DAT_083a427c)) ||
            ((DAT_083a4278 < 0x62 || (0x76 < DAT_083a4278)))) {
-          FUN_005125a0(0xf3,334.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
+          GL_DrawTexture(0xf3,334.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         }
         else {
-          FUN_005125a0(0xf4,334.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
+          GL_DrawTexture(0xf4,334.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
         }
       }
       else if ((((DAT_083a427c < 0x11c) || (0x161 < DAT_083a427c)) || (DAT_083a4278 < 0x62)) ||
               (0x76 < DAT_083a4278)) {
-        FUN_005125a0(0xf1,284.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
+        GL_DrawTexture(0xf1,284.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
       }
       else {
-        FUN_005125a0(0xf2,284.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
+        GL_DrawTexture(0xf2,284.0,98.0,70.0,21.0,0.0,0.0,0.546875,0.65625,'\x01','\x01');
       }
     }
   }
-  FUN_00511680('\x01');
+  GL_SetBlendSrcOver('\x01');
   pCVar2 = (LPCSTR)(uintptr_t)local_d8;
   pCVar6 = (LPCSTR)(uintptr_t)(local_d8 + 0xf);
   switch(DAT_083a7c24) {
@@ -464,7 +464,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d477c0);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d477c0,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d477c0,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d478ec);
@@ -544,7 +544,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46adc);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46adc,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d46adc,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46c08);
@@ -602,7 +602,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46f8c);
@@ -614,7 +614,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46884);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46884,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d46884,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d469b0);
@@ -660,7 +660,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     crt_sprintf(local_c8,&DAT_07d493e0);
     ptVar17 = &local_e4;
@@ -683,7 +683,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     _snprintf_s(local_c8, sizeof(local_c8), _TRUNCATE,
                 (const char*)&DAT_07d48f30, inviterName);
@@ -700,7 +700,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 4),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 4),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
     crt_sprintf(local_c8,&DAT_07d48828);
@@ -727,7 +727,7 @@ LAB_0051c13d:
     DAT_00559c78 = 0xff0000ff;
     iVar3 = lstrlenA((LPCSTR)lpString_07d49188);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d49188,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d49188,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d492b4);
@@ -746,7 +746,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     if (DAT_05826d31 == '\0') {
       pbVar18 = (byte*)&DAT_07d49638;
@@ -766,7 +766,7 @@ LAB_0051c13d:
     DAT_00559c78 = 0xff0000ff;
     iVar3 = lstrlenA((LPCSTR)lpString_07d470b8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d470b8,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d470b8,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d471e4);
@@ -824,7 +824,7 @@ LAB_0051c13d:
         ptVar17 = &local_e4;
         iVar4 = lstrlenA(pCVar6);
         GetTextExtentPointA(DAT_055c9fec,pCVar6,iVar4,ptVar17);
-        FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),iVar3,pCVar6,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),iVar3,pCVar6,
                      (LPSIZE)0x0,'\0',0);
         iVar3 = iVar3 + 0x12;
         local_dc = local_dc + 1;
@@ -854,7 +854,7 @@ LAB_0051c13d:
           ptVar17 = &local_d0;
           iVar4 = lstrlenA(pCVar6);
           GetTextExtentPointA(DAT_055c9fec,pCVar6,iVar4,ptVar17);
-          FUN_0047f650(0x140 - ((uint)(local_d0.cx * 0x280) / DAT_0056156c >> 1),iVar3,pCVar6,
+          UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / DAT_0056156c >> 1),iVar3,pCVar6,
                        (LPSIZE)0x0,'\0',0);
           iVar3 = iVar3 + 0x12;
           local_e4.cx = local_e4.cx + 1;
@@ -920,7 +920,7 @@ LAB_0051d2dd:
     pCVar6 = &DAT_07d29d24 + iVar3 * 300;
     iVar3 = lstrlenA(pCVar6);
     GetTextExtentPointA(DAT_055c9fec,pCVar6,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_d0.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,
+    UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,
                  (LPSIZE)0x0,'\0',0);
     local_dc = (unsigned int)(uintptr_t)(pCVar2 + 0x3b);
     SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
@@ -951,7 +951,7 @@ LAB_0051d3cf:
       iVar4 = lstrlenA(pCVar6);
       GetTextExtentPointA(DAT_055c9fec,pCVar6,iVar4,ptVar17);
       pCVar2 = (LPCSTR)(uintptr_t)local_dc;
-      FUN_0047f650((int)local_d8 - ((uint)(local_d0.cx * 0x280) / DAT_0056156c >> 1),local_dc,pCVar6
+      UI_RenderText((int)local_d8 - ((uint)(local_d0.cx * 0x280) / DAT_0056156c >> 1),local_dc,pCVar6
                    ,(LPSIZE)0x0,'\0',0);
       local_dc = (unsigned int)(uintptr_t)(pCVar2 + 0x12);
       iVar3 = iVar3 + 1;
@@ -964,7 +964,7 @@ LAB_0051d3cf:
     DAT_00559c78 = 0xff0000ff;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a448);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d4a448,iVar3,ptVar17);
-    FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d4a448,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a574);
@@ -972,14 +972,14 @@ LAB_0051d3cf:
     pCVar6 = pCVar2 + 0x15;
     ppCVar11 = lpString_07d4a574;
 LAB_0051ca70:
-    uVar9 = FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)pCVar6,
+    uVar9 = UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)pCVar6,
                          (LPCSTR)ppCVar11,(LPSIZE)0x0,'\0',0);
     return (int)uVar9;
   case 0x9a:
     uVar9 = FUN_0051db00();
     return (int)uVar9;
   }
-  uVar9 = FUN_0047f650(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)pCVar6,
+  uVar9 = UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)pCVar6,
                        (LPCSTR)ppCVar11,(LPSIZE)0x0,'\0',0);
   return (int)uVar9;
 }

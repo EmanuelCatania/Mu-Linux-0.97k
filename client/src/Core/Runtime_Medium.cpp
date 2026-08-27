@@ -49,13 +49,13 @@ int __cdecl FUN_004c3dd0(int param_1) {
 void __cdecl RenderInformation(void) {
     FUN_0051af50(); // RenderErrorMessage / stats panel
     FUN_004f64d0(); // Scene_MapTick
-    FUN_0047fce0(); // RenderNotices
+    UI_RenderNotices(); // RenderNotices
     if ((DAT_005590ac == 1) || (DAT_005615c0 != 5)) {
-        FUN_00480980(); // SystemText / chat list
+        UI_RenderChatLogOverlay(); // SystemText / chat list
     }
-    FUN_004c14e0(); // RenderDebugWindow / FPS reset
+    UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     FUN_004c3530(); // RenderHelpWindow / item info
-    FUN_004bffa0(); // RenderCursor
+    Cursor_Render(); // RenderCursor
     FUN_0051e0c0(); // RenderInfomation3D
 }
 

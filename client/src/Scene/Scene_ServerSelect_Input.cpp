@@ -267,8 +267,8 @@ void FUN_0051e7e0(void)
                             // No hay ConnectServer: conectar directo al GameServer
                             // de server.cfg. La transición a state 1 (Connecting)
                             // arranca el progress bar + espera JoinServer.
-                            extern void FUN_00423920(const char *server, unsigned int port);
-                            FUN_00423920(PTR_s_connect_muonline_co_kr_005615b8,
+                            extern void Net_ConnectServer(const char *server, unsigned int port);
+                            Net_ConnectServer(PTR_s_connect_muonline_co_kr_005615b8,
                                          (unsigned int)DAT_005615bc);
                         }
                         DAT_083a7c14 = 1;   // state = Connecting

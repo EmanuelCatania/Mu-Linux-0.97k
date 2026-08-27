@@ -10,8 +10,10 @@ reescritura ni un "cliente inspirado en" — cada función es un port de su
 contraparte en el binario, y las desviaciones deliberadas están documentadas
 en un comentario junto al código.
 
-El código está en español. Los nombres de funciones, campos y direcciones se
-mantienen como en el binario / IDA.
+El código está en español. Los símbolos que ya pudieron identificarse se
+nombran por responsabilidad; su definición canónica conserva un comentario
+`IDA: FUN_xxxxxxxx` o `IDA: DAT_xxxxxxxx` para mantener la trazabilidad con el
+binario.
 
 ---
 
@@ -43,15 +45,25 @@ conocidos y bugs de port apareciendo a medida que se ejercitan caminos nuevos.
 | Combate | Parcial — `Attack` (0x49CBF0) está portada al ~4% |
 | Movimiento de NPCs / monstruos | Parcial |
 
-### Deuda técnica principal
+### Arquitectura y deuda técnica
 
-Los archivos `stubs_*.cpp` (~55.000 líneas, ~39% del proyecto) son un depósito
-histórico: funciones portadas que nunca se movieron a su módulo de dominio.
-Hay un refactor en curso para repartirlas.
+El código portado está distribuido por dominio (`Render/`, `Terrain/`, `UI/`,
+`Item/`, `Entity/`, `Combat/`, `Net/`, `Scene/`, etc.); ya no existe un depósito
+general de `stubs_*.cpp` pendiente de repartir. El árbol actual contiene 247
+archivos `.cpp` y 53 headers bajo `src/`.
 
-`stubs_IDA_ports.cpp` es distinto: es el almacén de volcados crudos de IDA,
-cada uno detrás de una macro `IDA_PORT_*`. **No mover ni reorganizar ese
-archivo** — se rompe el mecanismo de activación.
+`stubs_IDA_ports.cpp` es la excepción intencional: contiene 28.722 líneas de
+decompilados crudos de IDA, cada uno protegido por `IDA_PORT_*`. Se preserva
+como referencia canónica del decompile y como mecanismo de compatibilidad o
+activación selectiva mientras se valida un port. **No refactorizar, renombrar
+ni distribuir este archivo entre módulos.** Sus aliases o bridges ABI tampoco
+son deuda de nomenclatura: existen para que los puertos selectivos mantengan
+su contrato original.
+
+Los `FUN_*` y `DAT_*` que todavía aparecen fuera de ese archivo no son, por sí
+solos, deuda de renombrado. Algunos describen infraestructura, CRT, GameGuard,
+layouts binarios, pools o compatibilidad; otros requieren investigación o un
+port futuro antes de poder recibir un nombre semántico seguro.
 
 ---
 
@@ -164,24 +176,24 @@ mu97k-src/
 ├── lib/libjpeg/         libjpeg 6b (decodifica las texturas .ozj)
 └── src/
     ├── WinMain.cpp      punto de entrada + WndProc + loop de mensajes
-    ├── globals.{h,cpp}  todos los DAT_ globales del binario original
-    ├── functions.h      declaraciones de las funciones portadas (FUN_xxxxxxxx)
+    ├── globals.{h,cpp}  estado global; los DAT identificados conservan trazabilidad IDA
+    ├── functions.h      declaraciones compartidas y procedencia IDA de símbolos renombrados
     ├── structs.h        layouts de struct verificados contra IDA
     ├── ghidra_compat.h  macros que el decompile de Ghidra da por existentes
     │                    (qmemcpy, LODWORD, SLOBYTE, ...)
     │
-    ├── Combat/  Config/  Entity/  Game/  GameGuard/  Input/  Item/
-    ├── Local/   Math/    Model/   Monster/  Net/     Party/
-    ├── Render/  Scene/   Sound/   Terrain/  Trade/   UI/  Util/
+    ├── Combat/  Config/  Core/    Entity/  Game/     GameGuard/ Input/ Item/
+    ├── Local/   Math/    Model/   Monster/ Net/       Party/     Path/  Physics/
+    ├── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
     │
-    └── stubs_*.cpp      depósito histórico en proceso de refactor
-                         (stubs_IDA_ports.cpp: volcados crudos, no tocar)
+    └── stubs_IDA_ports.cpp
+                         decompilados crudos IDA detrás de IDA_PORT_*;
+                         infraestructura preservada, no refactorizar
 ```
 
-Los módulos agrupan por **dirección en el binario**, no por nombre: en el
-binario las funciones vecinas pertenecían a la misma unidad de compilación, así
-que la vecindad de direcciones es la mejor pista sobre a qué módulo pertenece
-una función.
+Los módulos agrupan por responsabilidad. La dirección en el binario sigue
+siendo una pista importante para verificar una función o resolver un símbolo,
+pero no determina la ubicación del código portado.
 
 ---
 
@@ -195,9 +207,10 @@ El orden de autoridad para resolver cualquier duda:
    probablemente el decompile tenga razón y nuestra intuición no.
 2. **El servidor MuEmu**, para todo lo que sea formato de paquetes.
 3. **El DLL de inyección**, como segunda referencia de comportamiento.
-4. **El source de Mu Online 5.2**, sólo como ayuda para identificar nombres y
-   tipos de retorno. Las structs core son estables entre versiones, pero las
-   features posteriores no existen en 0.97k.
+4. **El source de Mu Online 5.2**, sólo como apoyo semántico y de nomenclatura
+   cuando el contexto actual lo permite. No se copia implementación ni se
+   incorpora comportamiento de 5.2: la UI, las definiciones y las features
+   pueden diferir de 0.97k.
 
 Lo que no está en ninguna de esas fuentes no se inventa. Si hace falta una
 desviación (porque un camino del original es inalcanzable, o depende de algo

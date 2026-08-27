@@ -260,7 +260,7 @@ int NumPad_HitTest(void);
 //   0x00480620  Chat_Scroll       — scroll periódico del chat (no es input)
 
 
-// FUN_0047ec20 @ 0x0047ec20 — Input_GetKeyDown (Key_IsJustPressed)
+// Input_IsKeyJustPressed @ 0x0047ec20 — Input_GetKeyDown (Key_IsJustPressed)
 // Returns 1 on the first frame a key goes down (edge trigger), 0 otherwise.
 //
 // BUG-FIX CRÍTICO (ESC-flicker): la versión de Ghidra terminaba con
@@ -271,7 +271,8 @@ int NumPad_HitTest(void);
 // lo interpretaba como "tecla recién presionada" y el menú ESC flipeaba
 // ~16 veces/seg sin tocar nada. IDA (`PressKey`) siempre devuelve 0 en
 // cualquier path que no sea el edge-trigger.
-int __cdecl FUN_0047ec20(int param_1)
+// IDA: FUN_0047ec20
+int __cdecl Input_IsKeyJustPressed(int param_1)
 {
   SHORT SVar1 = GetAsyncKeyState(param_1);
   // &DAT_07e118ec + param_1*4: byte offset correcto para el slot DWORD
@@ -290,10 +291,11 @@ int __cdecl FUN_0047ec20(int param_1)
 }
 
 
-// FUN_0047ec60 @ 0x0047ec60 — Input_ClearAll
+// Input_ClearState @ 0x0047ec60 — Input_ClearAll
 // Resets global input state: clears active slot and key tables.
 // param_1 != 0: also clears slot 1 (password buffer); 0: preserves slot 1.
-void __cdecl FUN_0047ec60(int param_1)
+// IDA: FUN_0047ec60
+void __cdecl Input_ClearState(int param_1)
 {
   int iVar1;
   int iVar2;
@@ -319,9 +321,10 @@ void __cdecl FUN_0047ec60(int param_1)
 }
 
 
-// FUN_004c04a0 @ 0x004c04a0 — Input_ProcessFunctionKeys
+// Input_ProcessFunctionKeys @ 0x004c04a0 — Input_ProcessFunctionKeys
 // Handles F1(0x70)-F4(0x73) toggle keys each frame.
-void FUN_004c04a0(void)
+// IDA: FUN_004c04a0
+void Input_ProcessFunctionKeys(void)
 {
   byte bVar1;
   char cVar2;

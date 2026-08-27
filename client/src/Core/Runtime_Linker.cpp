@@ -92,7 +92,7 @@ void __cdecl FUN_00543c98(void *ptr) {
 
 // StopBuffer @ 0x00404C60 — real implementation at stubs.cpp:275 (forwards to FUN_00404c60).
 
-// StopMp3 @ 0x004127F0 — delega al port fiel (FUN_004127f0, src/Sound/Music.cpp).
+// StopMp3 @ 0x004127F0 — delega al port fiel (Music_StopTrack, src/Sound/Music.cpp).
 //
 // Esta era una SEGUNDA implementacion del mismo simbolo del binario, y es la que
 // usaba StopMusic. Estaba mal en tres cosas: ignoraba `cmd` (cerraba el
@@ -100,7 +100,7 @@ void __cdecl FUN_00543c98(void *ptr) {
 // WM_CLOSE, y no limpiaba Mp3FileName — asi que el siguiente PlayMp3 creia que
 // el track viejo seguia en curso. Ver [[simbolo-duplicado-patron]].
 void __cdecl StopMp3(char *cmd, int param) {
-    FUN_004127f0((DWORD)(uintptr_t)cmd, param);
+    Music_StopTrack((DWORD)(uintptr_t)cmd, param);
 }
 
 

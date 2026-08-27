@@ -5,11 +5,11 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_004041e0 @ 0x004041E0 (~74 lines) — HashTable::GetIndex — find slot for 4-byte key
+// IDA: FUN_004041e0 @ 0x004041E0 — HashTable::GetIndex — find slot for 4-byte key
 // __thiscall(this=hashTableObj, param_1=key). Linear probe hash table lookup.
 // Returns slot index or 0xFFFFFFFF if not found / table full.
 // Vtable call at this+0xc for hash function, entries at this+8.
-UINT __fastcall FUN_004041e0(void* ecx, void* /*edx*/, DWORD param_1) {
+UINT __fastcall HashTable_GetIndex(void* ecx, void* /*edx*/, DWORD param_1) {
     (void)ecx; (void)param_1;
     // hash = vtable[3](param_1) — compute initial slot
     // Linear probe: compare 4-byte key at (this+8)[slot*4]
@@ -31,7 +31,7 @@ UINT __fastcall FUN_004041e0(void* ecx, void* /*edx*/, DWORD param_1) {
 //   this+8   LPCSTR file path
 //   this+0x10c  XOR key state DWORD
 // Xor_ConvertBuffer is declared in functions.h
-char* __stdcall FUN_00405420(char* param_1);
+char* __stdcall CErrorReport_FindLogMarker(char* param_1);
 extern "C" void CErrorReport_RotateLog_impl(DWORD This) {
     static char Buffer[0x1FFFF + 1];
     DWORD numRead = 0;
@@ -40,7 +40,7 @@ extern "C" void CErrorReport_RotateLog_impl(DWORD This) {
     if (!ReadFile(hFile, Buffer, 0x1FFFF, &numRead, nullptr)) return;
     *(DWORD*)(This + 0x10C) = (DWORD)Xor_ConvertBuffer(Buffer, numRead, 0);
     Buffer[numRead] = '\0';
-    char* trimAt = FUN_00405420(Buffer);
+    char* trimAt = CErrorReport_FindLogMarker(Buffer);
     if (numRead < 0x7FFF && trimAt == Buffer) return;
     char* keepFrom = (trimAt == Buffer) ? Buffer : trimAt;
     DWORD keepLen = numRead - (DWORD)(keepFrom - Buffer);
@@ -57,11 +57,11 @@ extern "C" void CErrorReport_RotateLog_impl(DWORD This) {
     }
 }
 
-// FUN_00405420 @ 0x00405420 — CErrorReport_FindLogMarker (143 bytes IDA, port FIEL).
+// IDA: FUN_00405420 @ 0x00405420 — CErrorReport_FindLogMarker (143 bytes IDA, port FIEL).
 // Scans buffer for "###Log Begin###" markers, returns pointer to 4th-from-last marker
 // (so newer log can keep the last 4 entries), or original buffer if < 5 markers found.
 // Note: IDA shows __stdcall(char*, int) but a2 is a phantom param; only the buffer is used.
-char* __stdcall FUN_00405420(char* param_1) {
+char* __stdcall CErrorReport_FindLogMarker(char* param_1) {
     static const char kLogMarker[] = "###Log Begin###";
     if (!param_1) return param_1;
     char* markers[128];
@@ -101,13 +101,13 @@ void __cdecl GetOSVersion(DWORD si) {
     // stub: 461 lines of string copy + version detection
 }
 
-// FUN_00405e20 @ 0x00405E20 (284 bytes IDA) — Measure CPU speed via RDTSC + QueryPerformanceCounter
+// IDA: FUN_00405e20 @ 0x00405E20 — Measure CPU speed via RDTSC + QueryPerformanceCounter
 // Returns the number of TSC ticks per second of QPC time (= CPU MHz × 1e6 if TSC = clock).
 // Used by GetCPUInfo to format the "%d MHz" suffix on the CPU name string.
 //
 // Port faithful from IDA sub_405E20: cpuid(1) check TSC bit, QPF, boost priority to
 // realtime, pin to CPU 0, measure RDTSC across Sleep(ms), restore state, compute ratio.
-long long __cdecl FUN_00405e20(DWORD param_1) {
+long long __cdecl Cpu_MeasureClockRate(DWORD param_1) {
     // CPUID(1) — check TSC support (EDX bit 4)
     int regs[4] = {0,0,0,0};
     __cpuid(regs, 1);
@@ -182,13 +182,13 @@ DWORD __stdcall GetDXVersion_stub(void) {
     return 0x900;
 }
 
-// FUN_00406660 @ 0x00406660 — CErrorReport_DumpCallStack (port FIEL).
+// IDA: FUN_00406660 @ 0x00406660 — CErrorReport_DumpCallStack (port FIEL).
 // __thiscall(this). Dumps CPU registers (CONTEXT_FULL) and walks EBP chain to
 // log return addresses (up to 1024 frames) on crash. The function.h decl is
 // __stdcall(void); IDA shows it's __thiscall(this) — we accept the void
 // declaration since the call sites (vtable dispatch via CErrorReport) are not
 // active in our build.
-void __stdcall FUN_00406660(void) {
+void __stdcall CErrorReport_DumpCallStack(void) {
     // No-op: CErrorReport vtable not wired up in our build. The implementation
     // logic is preserved as CErrorReport_DumpCallStack_impl below for future use.
 }
@@ -215,11 +215,11 @@ extern "C" void CErrorReport_DumpCallStack_impl(DWORD This) {
     }
 }
 
-// FUN_00406bd0 @ 0x00406BD0 (~54 lines) — Packet cipher init (constructor)
+// IDA: FUN_00406bd0 @ 0x00406BD0 — Packet cipher init (constructor)
 // __fastcall(ecx=cipherObj). Sets vtable, calls FUN_00406d20 (key schedule),
 // allocates random-sized obfuscation buffer at obj+6, allocates encode/decode buffers
 // (0x400 entries * 4 bytes each), zeroes them, sets obj+8/+9 as read/write cursors.
-void __fastcall FUN_00406bd0(void* param_1) {
+void __fastcall PacketCipher_Initialize(void* param_1) {
     // *(int*)param_1 = &PTR_FUN_005524c8 (vtable)
     // FUN_00406d20(param_1) — key schedule init
     // delete old buffer at param_1[6], alloc rand()%0xCC7+0x159 obfuscation bytes
@@ -230,9 +230,9 @@ void __fastcall FUN_00406bd0(void* param_1) {
     (void)param_1;
 }
 
-// FUN_00406e90 @ 0x00406E90 (~20 lines) — Hash function A: hash 4-byte key with multiplier 0x83
+// IDA: FUN_00406e90 @ 0x00406E90 — Hash function A: hash 4-byte key with multiplier 0x83
 // __fastcall(ecx=hashObj). Hashes 4 stack bytes: h = h*0x83 + byte[i], returns h % capacity.
-UINT __fastcall FUN_00406e90(int param_1) {
+UINT __fastcall PacketCipher_HashKey83(int param_1) {
     (void)param_1;
     // uint h = 0;
     // for (i = 0; i < 4; i++) h = h * 0x83 + key_bytes[i];
@@ -240,9 +240,9 @@ UINT __fastcall FUN_00406e90(int param_1) {
     return 0;
 }
 
-// FUN_00406ef0 @ 0x00406EF0 (~20 lines) — Hash function B: hash 4-byte key with configurable multiplier
+// IDA: FUN_00406ef0 @ 0x00406EF0 — Hash function B: hash 4-byte key with configurable multiplier
 // __fastcall(ecx=hashObj). Like FUN_00406e90 but uses multiplier from obj+0x1c.
-UINT __fastcall FUN_00406ef0(int param_1) {
+UINT __fastcall PacketCipher_HashKeyConfigured(int param_1) {
     (void)param_1;
     // uint h = 0;
     // int mult = *(int*)(param_1 + 0x1c);

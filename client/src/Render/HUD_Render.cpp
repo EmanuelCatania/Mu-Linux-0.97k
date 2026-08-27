@@ -22,9 +22,9 @@
 //   {
 //     // g_GameSubState == 8: map-loading screen scrolling textures
 //     if (DAT_0055a7ac == 8) {
-//       FUN_00511680('\x01');
+//       GL_SetBlendSrcOver('\x01');
 //       glColor4f(1.0, 1.0, 1.0, 0.5);
-//       FUN_00511710();                 // Frame_UpdateTimer()
+//       GL_SetBlendAdditive();                 // Frame_UpdateTimer()
 //       glColor3f(0.3, 0.3, 0.25);
 //       // Scroll layer 1: tex 0x494 fullscreen, UV scrolled by ftol()%100000 * scale
 //       FUN_005128c0(0x494, 0.0, 0.0, 640.0, 435.0, (float)(ftol()%100000)*_DAT_00552b88, 0,2,3);
@@ -62,12 +62,12 @@
 //
 //   void Render_CharInfoPanel(void)
 //   {
-//     FUN_00511600();   // GL_ResetBlend()
+//     GL_ResetState();   // GL_ResetBlend()
 //     DAT_00559c80 = 0x80000000;
 //
 //     // BLOQUE 1: buff activo (DAT_05826d30 != '\0' && entity[0x1da] != -1)
 //     if (DAT_05826d30 != '\0' && *(short*)(DAT_07abf5d8+0x1da) != -1) {
-//       FUN_00511680('\x01');   // GL_SetMode(1)
+//       GL_SetBlendSrcOver('\x01');   // GL_SetMode(1)
 //       iVar3 = FUN_004cb520(); // Screen_GetWidth()
 //       fVar2 = (float)iVar3 * 0.5f - _DAT_005524fc;   // X centrado
 //       SelectObject(DC, font_small);
@@ -132,7 +132,7 @@
 //     for each entry (entity_idx != -1):
 //       pos = entity[entity_idx][+0x10..+0x18] (world pos)
 //       z_offset = entity[entity_idx][+300] + entity[entity_idx][+0x18] + _DAT_005524f0
-//       FUN_005113f0(&pos, &screenX, &screenY);  // World_ToScreen
+//       Camera_ProjectWorldToScreen(&pos, &screenX, &screenY);  // World_ToScreen
 //       screenX -= 0x13;
 //       // Tooltip si mouse sobre barra:
 //       if (screenX <= mouse_x < screenX+bar_w && screenY-2 <= mouse_y < screenY+6):
@@ -142,17 +142,17 @@
 //       // Dibuja barra:
 //       GL_SetMode(1);
 //       glColor4f(0,0,0,0.5);      // sombra
-//       FUN_005124c0(sx+1, sy+1, 42, 5);    // DrawRect background
-//       FUN_00511710();             // Frame_UpdateTimer()
+//       GL_DrawRect(sx+1, sy+1, 42, 5);    // DrawRect background
+//       GL_SetBlendAdditive();             // Frame_UpdateTimer()
 //       glColor3f(0.2,0,0);        // rojo oscuro (vacío)
-//       FUN_005124c0(sx, sy, 42, 5);
+//       GL_DrawRect(sx, sy, 42, 5);
 //       glColor3f(0.196,0.032,0);  // segmento oscuro
-//       FUN_005124c0(sx+2, sy+2, 38, 1);
+//       GL_DrawRect(sx+2, sy+2, 38, 1);
 //       // Segmentos HP: up to 10 segments de 3px × 2px
 //       hp_segs = min(entry[0], 10);
 //       glColor3f(0.992, 0.032, 0); // verde-amarillo
 //       for i in range(hp_segs):
-//         FUN_005124c0(sx+2+i*4, sy+2, 3, 2);
+//         GL_DrawRect(sx+2+i*4, sy+2, 3, 2);
 //       GL_ResetBlend();
 //
 //     GL_ResetBlend();
@@ -312,7 +312,7 @@
 //         else:
 //           pos.x = entity[+0x10]; pos.y = entity[+0x14];
 //           pos.z = entity[+300] + entity[+0x18] + _DAT_0055290c;
-//         FUN_005113f0(pfVar5, &screenX, &screenY);  // World_ToScreen
+//         Camera_ProjectWorldToScreen(pfVar5, &screenX, &screenY);  // World_ToScreen
 //         FUN_00480c60((LPCSTR)(piVar7-0x8d));       // MeasureText(str)
 //         piVar7[1] = screenX - (piVar7[3]*640/screen_w)/2;  // X centrado
 //         piVar7[2] = screenY - 0x24;                         // Y elevado
@@ -419,18 +419,18 @@
 //
 //   void Render_Scene3D(void)
 //   {
-//     FUN_005124b0();        // GL_End2D()
+//     GL_End2D();        // GL_End2D()
 //     glMatrixMode(GL_PROJECTION);
 //     glPushMatrix();
 //     glLoadIdentity();
-//     FUN_00511910(0, 0, DAT_0056156c, DAT_00561570);    // gluPerspective(fov, aspect, ...)
-//     FUN_00511220(1.0, DAT_0056156c/DAT_00561570, DAT_0056154c, DAT_00561550); // near/far
+//     GL_SetViewport(0, 0, DAT_0056156c, DAT_00561570);    // gluPerspective(fov, aspect, ...)
+//     GL_SetPerspective(1.0, DAT_0056156c/DAT_00561570, DAT_0056154c, DAT_00561550); // near/far
 //     glMatrixMode(GL_MODELVIEW);
 //     glPushMatrix();
 //     glLoadIdentity();
-//     FUN_005111d0(&DAT_083a4140);   // LoadCameraMatrix(mat_4x4)
-//     FUN_005114d0();                // EnableDepthTest()
-//     FUN_00511510();                // EnableDepthWrite()
+//     GL_GetModelViewMatrix(&DAT_083a4140);   // LoadCameraMatrix(mat_4x4)
+//     GL_EnableDepthTest();                // EnableDepthTest()
+//     GL_EnableDepthWrites();                // EnableDepthWrite()
 //     FUN_00403150(DAT_00583d8c, '\x01', '\0');  // ObjPool_SetFlag(pool, true, false)
 //
 //     // Según modo de vista (DAT_07eaa128):
@@ -453,11 +453,11 @@
 //     // Reset camera para 2D
 //     glLoadIdentity();
 //     glTranslatef(-_DAT_083a42d4, -_DAT_083a42d8, -_DAT_083a42dc);
-//     FUN_005111d0(&DAT_083a4140);
-//     FUN_005112f0(100, 100, local_c);   // Camera_SetupHUD(x,y,out)
+//     GL_GetModelViewMatrix(&DAT_083a4140);
+//     Camera_BuildMouseRay(100, 100, local_c);   // Camera_SetupHUD(x,y,out)
 //     glPopMatrix();
 //     glPopMatrix();
-//     FUN_005123c0();   // GL_SetupOrtho2D()
+//     GL_Begin2D();   // GL_SetupOrtho2D()
 //   }
 //
 //   Globals:
@@ -476,10 +476,10 @@
 //   FUN_004f5ce0   → Skill_RenderEffects()
 //   FUN_004f6420   → TeleportEffect_Render()
 //   FUN_00482be0   → GetHotbarItem(slot_idx) → item_idx
-//   FUN_005111d0   → LoadCameraMatrix(mat_ptr)
-//   FUN_005114d0   → EnableDepthTest()
-//   FUN_00511510   → EnableDepthWrite()
-//   FUN_005112f0   → Camera_SetupHUD(x,y,out)
+//   GL_GetModelViewMatrix   → LoadCameraMatrix(mat_ptr)
+//   GL_EnableDepthTest   → EnableDepthTest()
+//   GL_EnableDepthWrites   → EnableDepthWrite()
+//   Camera_BuildMouseRay   → Camera_SetupHUD(x,y,out)
 //
 // ══════════════════════════════════════════════════════════════════════════════
 // Render_CharPartyInfo @ 0x004BEC00  (278 líneas, COMPLETO)
@@ -501,7 +501,7 @@
 //       // [HashTable anti-tamper ~60 líneas — omitido]
 //
 //       byte bHP = *(byte*)(DAT_07cf1ffc + 0x452);   // HP% del líder (0..255)
-//       FUN_00511680('\x01');   // SetBlendMode(alpha)
+//       GL_SetBlendSrcOver('\x01');   // SetBlendMode(alpha)
 //
 //       // Icono/nombre del líder según sub-modo de party:
 //       int subMode = *(short*)(DAT_07abf5d8 + 0x2b8);
@@ -524,7 +524,7 @@
 //       int sw2     = FUN_004cb520();
 //       int bar_w   = DAT_05826d24 * 0x32;   // member_count × 50
 //       float base2 = ((float)sw2 - _DAT_00552598) - _DAT_0055297c;
-//       FUN_00511680('\x01');
+//       GL_SetBlendSrcOver('\x01');
 //       // FUN_0047f6f0(ftol()+0x32, 4, &DAT_07d43e54, 0, '\0', 0)  // label "Party"
 //       // FUN_004bbdd0(base2, 16.0, 50.0, 2.0, bar_w/100, 0, 1)    // barra HP party
 //     }
@@ -563,7 +563,7 @@
 //
 //       float hpOff  = (DAT_07eaa0e0 > 0) ? 50.0f : 0.0f;
 //       glColor3f(1.0, 1.0, 1.0);
-//       FUN_00511680('\x01');        // SetBlendMode(alpha)
+//       GL_SetBlendSrcOver('\x01');        // SetBlendMode(alpha)
 //       int sw      = FUN_004cb520();
 //       float rightX = (float)sw - hpOff - _DAT_00552488;  // límite X derecho
 //       float idx    = 0.0f;    // offset de byte en lista on-screen (stride 0x44)
@@ -642,8 +642,8 @@
 //
 //     if (DAT_07e11d88 != 0 && 10 < DAT_0055a7ac && DAT_0055a7ac < 0x11) {
 //
-//       FUN_00511600();            // GL_ResetBlend()
-//       FUN_00511680('\0');        // SetBlendMode(none)
+//       GL_ResetState();            // GL_ResetBlend()
+//       GL_SetBlendSrcOver('\0');        // SetBlendMode(none)
 //       glColor3f(1.0, 1.0, 1.0);
 //       DAT_00559c80 = 0;
 //       DAT_00559c78 = 0xff0096ff; // azul inicial
@@ -704,8 +704,8 @@
 //   s___2d_00559f44   — "%2d"   (segundos)
 //   s_____2d_00559f4c — ":%2d"  (segundos parpadeo)
 //   FUN_00514270   → DrawTextCenter(x, y, str)
-//   FUN_00511600   → GL_ResetBlend()
-//   FUN_00511680   → SetBlendMode(mode)
+//   GL_ResetState   → GL_ResetBlend()
+//   GL_SetBlendSrcOver   → SetBlendMode(mode)
 
 #include "stdafx.h"
 #include "Render/HUD_Render.h"

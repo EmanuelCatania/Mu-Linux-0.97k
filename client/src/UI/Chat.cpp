@@ -1,13 +1,13 @@
 // Chat.cpp
 // In-game chat log rendering and message management.
 //
-// FUN_0047f650 @ 0x0047f650 — Chat_DrawEntry
-// FUN_0047f0b0 @ 0x0047f0b0 — Chat_DrawField
-// FUN_0047fae0 @ 0x0047fae0 — Chat_AddMessage
-// FUN_0047fce0 @ 0x0047fce0 — Chat_DrawMessages
-// FUN_00480980 @ 0x00480980 — UI_DrawPlayerList
-// FUN_004821a0 @ 0x004821a0 — UI_TickTooltips
-// FUN_00513570 @ 0x00513570 — Chat_ValidateCommand
+// UI_RenderText @ 0x0047f650 — Chat_DrawEntry
+// UI_RenderInputField @ 0x0047f0b0 — Chat_DrawField
+// UI_AddNotice @ 0x0047fae0 — Chat_AddMessage
+// UI_RenderNotices @ 0x0047fce0 — Chat_DrawMessages
+// UI_RenderChatLogOverlay @ 0x00480980 — UI_DrawPlayerList
+// UI_TickHoverBubbles @ 0x004821a0 — UI_TickTooltips
+// Chat_ValidateInputCommand @ 0x00513570 — Chat_ValidateCommand
 //
 // Chat message ring buffer: DAT_07db80d8, 6 slots × 0x108 bytes each
 //   Slot layout: [0x100] char name[], [0x104] flags byte, [0x108] next slot
@@ -45,20 +45,22 @@ static void ScaleGlobalTextSize(void)
 }
 
 
-// FUN_0047f650 — Chat_DrawEntry
+// FUN_0047F650 @ 0x0047F650 (IDA)
+// UI_RenderText — Chat_DrawEntry
 // Draws one chat entry at screen (param_1, param_2) with text param_3.
 // param_4: max pixel width (truncates lpsz_07e113d0 if exceeded)
-// param_5: style (1=normal, 2=bold via FUN_0047f7a0 style param)
-// param_6: extra param forwarded to FUN_0047f7a0
+// param_5: style (1=normal, 2=bold via UI_DrawText style param)
+// param_6: extra param forwarded to UI_DrawText
 // Returns packed (width, height) in two halves of undefined8.
 undefined8 __cdecl
-FUN_0047f650(undefined4 param_1,undefined4 param_2,LPCSTR param_3,LPSIZE param_4,char param_5,
+// IDA: FUN_0047F650
+UI_RenderText(undefined4 param_1,undefined4 param_2,LPCSTR param_3,LPSIZE param_4,char param_5,
             undefined4 param_6)
 {
   int c;
   LPSIZE *lpsz;
 
-  FUN_0047f7a0(param_1,param_2,(char*)param_3,(int)param_4,(param_5 != '\0') + 1,param_6);
+  UI_DrawText(param_1,param_2,(char*)param_3,(int)param_4,(param_5 != '\0') + 1,param_6);
   lpsz = &lpsz_07e113d0;
   c = lstrlenA(param_3);
   GetTextExtentPointA(DAT_055c9fec,param_3,c,(LPSIZE)lpsz);
@@ -73,12 +75,14 @@ FUN_0047f650(undefined4 param_1,undefined4 param_2,LPCSTR param_3,LPSIZE param_4
 }
 
 
-// FUN_0047f0b0 — Chat_DrawField
+// FUN_0047F0B0 @ 0x0047F0B0 (IDA)
+// UI_RenderInputField — Chat_DrawField
 // Draws an input field character at (param_1, param_2) for field index param_3.
 // Masks characters with '*' if field type is password (DAT_07e113d8[param_3]==1).
 // Shows partial mask (first 7 chars visible) for type 2.
 // Also draws a caret '|' after the last character when cursor is on this field.
-void __cdecl FUN_0047f0b0(int param_1,undefined4 param_2,int param_3)
+// IDA: FUN_0047F0B0
+void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
 {
   char cVar1;
   LPSIZE ptVar2;
@@ -180,7 +184,7 @@ void __cdecl FUN_0047f0b0(int param_1,undefined4 param_2,int param_3)
       pcVar7 = pcVar7 + 1;
     }
   }
-  FUN_0047f7a0(param_1,param_2,(char *)&local_100,(int)DAT_00559c8c,1,0);
+  UI_DrawText(param_1,param_2,(char *)&local_100,(int)DAT_00559c8c,1,0);
   pptVar10 = &lpsz_07e113d0;
   iVar3 = lstrlenA((LPCSTR)&local_100);
   GetTextExtentPointA(DAT_055c9fec,(LPCSTR)&local_100,iVar3,(LPSIZE)pptVar10);
@@ -213,19 +217,19 @@ void __cdecl FUN_0047f0b0(int param_1,undefined4 param_2,int param_3)
         ppCVar8 = (LPCSTR *)((int)ppCVar8 + 1);
       } while (cVar1 != '\0');
       if (iVar3 == -2) {
-        FUN_0047f7a0((int)&lpsz_07e113d0->cx + param_1,param_2,(char *)&lpString_00559d40,0,1,0);
+        UI_DrawText((int)&lpsz_07e113d0->cx + param_1,param_2,(char *)&lpString_00559d40,0,1,0);
         pptVar10 = &lpsz_07e113d0;
         iVar3 = lstrlenA((LPCSTR)&lpString_00559d40);
         lpString = (LPCSTR*)&lpString_00559d40;
       }
       else if (DAT_07e113d8[param_3] == '\x01') {
-        FUN_0047f7a0((int)&lpsz_07e113d0->cx + param_1,param_2,(char *)&lpString_00559d3c,0,1,0);
+        UI_DrawText((int)&lpsz_07e113d0->cx + param_1,param_2,(char *)&lpString_00559d3c,0,1,0);
         pptVar10 = &lpsz_07e113d0;
         iVar3 = lstrlenA((LPCSTR)&lpString_00559d3c);
         lpString = (LPCSTR*)&lpString_00559d3c;
       }
       else {
-        FUN_0047f7a0((int)&lpsz_07e113d0->cx + param_1,param_2,(char *)lpString,0,1,0);
+        UI_DrawText((int)&lpsz_07e113d0->cx + param_1,param_2,(char *)lpString,0,1,0);
         pptVar10 = &lpsz_07e113d0;
         iVar3 = lstrlenA((LPCSTR)lpString);
       }
@@ -237,13 +241,15 @@ void __cdecl FUN_0047f0b0(int param_1,undefined4 param_2,int param_3)
 }
 
 
-// FUN_0047fae0 — Chat_AddMessage
+// FUN_0047FAE0 @ 0x0047FAE0 (IDA)
+// UI_AddNotice — Chat_AddMessage
 // Appends a chat message string param_1 (with flag param_2) to the ring buffer.
 // Ring buffer: DAT_07db80d8, 6 slots × 0x108 bytes.
 // If count > 5: shifts buffer down (oldest discarded). Handles long lines by
 // splitting via FUN_0047fe30 into first/overflow parts.
 // Resets scroll timer DAT_00559cdc to 300.
-void __cdecl FUN_0047fae0(char *param_1,unsigned char param_2)
+// IDA: FUN_0047FAE0
+void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
 {
     // 2026-05-04: AUTO-SKIP removed. DAT_07db80d8 ahora propiamente sized
     // (6 slots × 0x108). Reescribo el shift-buffer loop con count explícito
@@ -432,12 +438,14 @@ void __cdecl FUN_0047fae0(char *param_1,unsigned char param_2)
 }
 
 
-// FUN_0047fce0 — Chat_DrawMessages
+// FUN_0047FCE0 @ 0x0047FCE0 (IDA)
+// UI_RenderNotices — Chat_DrawMessages
 // Renders all system/global messages from DAT_07db80d8 in the 2D overlay.
 // Iterates up to 6 slots starting at y=300, spacing 13 pixels.
 // Colour: DAT_00559c78/80 set per-slot based on flag byte [0x104].
 // Also measures text extent for cursor/scroll calculations.
-void FUN_0047fce0(void)
+// IDA: FUN_0047FCE0
+void UI_RenderNotices(void)
 {
   // 2026-05-04: AUTO-SKIP removed. DAT_07db80d8 ahora propiamente sized
   // (6 slots × 0x108). Reemplazo el bound literal `< 0x7db8708` con count
@@ -450,7 +458,7 @@ void FUN_0047fce0(void)
   LPSIZE *lpsz_00;
   tagSIZE local_8;
 
-  FUN_00511680('\x01');
+  GL_SetBlendSrcOver('\x01');
   SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
   glColor3f(1.0f, 1.0f, 1.0f);
   iVar2 = 300;
@@ -470,7 +478,7 @@ void FUN_0047fce0(void)
     if (DAT_005590ac == 1) {
       iVar1 = iVar2 + -0x118;
     }
-    FUN_0047f7a0(0x140 - ((uint)(local_8.cx * 0x280) / DAT_0056156c >> 1),iVar1,(char*)lpString,0,1,0);
+    UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / DAT_0056156c >> 1),iVar1,(char*)lpString,0,1,0);
     lpsz_00 = &lpsz_07e113d0;
     iVar1 = lstrlenA(lpString);
     GetTextExtentPointA(DAT_055c9fec,lpString,iVar1,(LPSIZE)lpsz_00);
@@ -484,12 +492,14 @@ void FUN_0047fce0(void)
 }
 
 
-// FUN_00480980 — UI_DrawPlayerList
+// FUN_00480980 @ 0x00480980 (IDA)
+// UI_RenderChatLogOverlay — UI_DrawPlayerList
 // Draws the nearby-player list overlay (chat/notification area).
 // Each slot entry: player name, colour-coded by channel type (0-5).
 // Flashes the line if it matches the local player name + cursor mod.
 // Layout: 5 visible lines at y=0..0x4d, spacing 13 pixels.
-void FUN_00480980(void)
+// IDA: FUN_00480980
+void UI_RenderChatLogOverlay(void)
 {
   byte bVar1;
   undefined4 uVar2;
@@ -605,7 +615,7 @@ LAB_00480b8e:
           DAT_00559c78 = uVar2;
         }
       }
-      FUN_0047f7a0(0,iVar7,local_100,0,1,0);
+      UI_DrawText(0,iVar7,local_100,0,1,0);
       lpsz_00 = &lpsz_07e113d0;
       iVar5 = lstrlenA(local_100);
       GetTextExtentPointA(DAT_055c9fec,local_100,iVar5,(LPSIZE)lpsz_00);
@@ -621,14 +631,16 @@ LAB_00480b8e:
 }
 
 
-// FUN_004821a0 — UI_TickTooltips
+// FUN_004821A0 @ 0x004821A0 (IDA)
+// UI_TickHoverBubbles — UI_TickTooltips
 // Ticks floating tooltip/bubble widgets stored in the DAT_07e01720 ring.
 // Each entry: timers (3 ints), target entity ptr, screen XYWH (4 ints).
 // Decrements timers; clears timer if entity is dead/inactive.
 // On mouse-over (cursor inside widget XYWH + hover flag set + entity is local
 // player's target): copies entity name into DAT_07db8810, calls FUN_00404bc0
 // to trigger a UI sound.
-void FUN_004821a0(void)
+// IDA: FUN_004821A0
+void UI_TickHoverBubbles(void)
 {
   char cVar1;
   byte bVar2;
@@ -731,12 +743,14 @@ LAB_004822b6:
 }
 
 
-// FUN_00513570 — Chat_ValidateCommand
+// FUN_00513570 @ 0x00513570 (IDA)
+// Chat_ValidateInputCommand — Chat_ValidateCommand
 // Checks if the text in DAT_07db8710 is a known chat command or valid chat text.
 // Strips spaces, then looks up in two command tables (DAT_07d27610, DAT_07d73104).
 // Also rejects strings matching hard-coded blocked strings (webzen brand names).
 // Returns 1 (non-zero low byte) if the text should be blocked/consumed.
-char FUN_00513570(void)
+// IDA: FUN_00513570
+char Chat_ValidateInputCommand(void)
 {
   char cVar1;
   uint uVar2;

@@ -68,5 +68,5 @@ unsigned int  __cdecl FUN_0053d5a0(char *path)
 unsigned int  __cdecl FUN_0053d5c0(char *path)
 {
     if (DAT_083bbb14 == 0) return 0;
-    return FUN_0053ed00((void *)(ULONG_PTR)DAT_083bbb14, path);
+    return Pipe_SendQuery((void *)(ULONG_PTR)DAT_083bbb14, path);
 }

@@ -78,7 +78,7 @@ void FUN_004c3530(void)
     // ── Mode 1: build class-list A ────────────────────────────────────────────
     if (DAT_07e11d20 == 1)
     {
-        FUN_00511600();
+        GL_ResetState();
         DAT_07eaa154 = 0;
 
         // Slot 0: header line
@@ -116,7 +116,7 @@ void FUN_004c3530(void)
     // ── Mode 2: build class-list B ────────────────────────────────────────────
     if (DAT_07e11d20 == 2)
     {
-        FUN_00511600();
+        GL_ResetState();
         DAT_07eaa154 = 0;
 
         crt_sprintf(lpString_07e90798, s_ChMenu_HdrB);
@@ -150,7 +150,7 @@ void FUN_004c3530(void)
     // ── Mode 3: class stats detail ────────────────────────────────────────────
     if (DAT_07e11d20 != 3) return;
 
-    FUN_00511600();
+    GL_ResetState();
 
     // Layout parameters by screen resolution
     int col_w  = 0;    // column width (iVar4 / iVar7 in Ghidra)
@@ -244,7 +244,7 @@ void FUN_004c3530(void)
     crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_FtrC);
     DAT_07eaa154++;
     FUN_004c2420(1, 1, DAT_07eaa154, col_w2, 2, 1);
-    FUN_00511680('\x01');
+    GL_SetBlendSrcOver('\x01');
 
     // Stat rows
     DAT_07eaa154 = 0;
@@ -293,7 +293,7 @@ void FUN_004c3530(void)
         FUN_004c2c10(9, (unsigned char *)0x0055a4ac, &local_1c,
                      (const char *)0x0055a4a4, pad2, local_10);
     }
-    FUN_00511600();
+    GL_ResetState();
 }
 
 
@@ -441,13 +441,13 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
 
         // OJO — el glEnable(0xde1) CRUDO que DrawItemInfoBox hace despues del
         // recuadro (fiel al binario, 0x004C2698) deja DESINCRONIZADO el cache
-        // de estado de FUN_00511590/FUN_00511680: DAT_083a4125 (TextureEnable)
+        // de estado de GL_SetAlphaTest/GL_SetBlendSrcOver: DAT_083a4125 (TextureEnable)
         // sigue diciendo "apagada" mientras GL la tiene encendida.  Si entramos
-        // a FUN_005124c0 asi, FUN_00511590 se cree el cache, NO llama a
+        // a GL_DrawRect asi, GL_SetAlphaTest se cree el cache, NO llama a
         // glDisable(0xde1), y la franja se dibuja modulada por la textura que
         // hubiera bound en ese momento — que cambia frame a frame.  Eso es el
         // parpadeo.  Resincronizamos el cache con el estado real antes de
-        // dibujar; FUN_00511590 apaga la textura de verdad y ambos quedan
+        // dibujar; GL_SetAlphaTest apaga la textura de verdad y ambos quedan
         // coherentes.
         DAT_083a4125 = '\x01';
 
@@ -455,13 +455,13 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
                    (GLubyte)((m_dwBackColor >>  8) & 0xff),   // G
                    (GLubyte)((m_dwBackColor >> 16) & 0xff),   // B
                    (GLubyte)((m_dwBackColor >> 24) & 0xff));  // A
-        FUN_005124c0((float)iPos_x, (float)iPos_y,
+        GL_DrawRect((float)iPos_x, (float)iPos_y,
                      (float)iBoxWidth / fTexScaleX,
                      (float)local_8.cy / _DAT_055c9b74);
         glColor4fv(prevColor);
         // No volvemos a encender la textura: FUN_0040f610 la apaga por su
         // cuenta para los glifos, y dejarla apagada mantiene GL y cache de
-        // acuerdo.  El proximo tooltip la reenciende via FUN_00511680.
+        // acuerdo.  El proximo tooltip la reenciende via GL_SetBlendSrcOver.
     }
     {
         const DWORD dwSavedBack = m_dwBackColor;
@@ -530,7 +530,7 @@ void __cdecl FUN_004c2420(int param_1, int param_2, int param_3,
     param_3 = iVar1;
     Height = ((float)local_14 * (float)local_8.cy * 0.5f + (float)(local_10 * local_8.cy)) /
              (_DAT_055c9b74 * 0.9090909f);
-    FUN_00511680(1);                             // EnableAlphaTest
+    GL_SetBlendSrcOver(1);                             // EnableAlphaTest
     const float fTexScaleX = Text_GetOrthoScaleX();
     local_18 = local_18 / fTexScaleX;
     if (0 < param_4) {
@@ -548,12 +548,12 @@ void __cdecl FUN_004c2420(int param_1, int param_2, int param_3,
         glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
         y = (float)param_2 - 1.0f;
         x = (float)param_4 - 1.0f;
-        FUN_005124c0(x, y, local_18 + 1.0f, 1.0f);                  // borde superior
-        FUN_005124c0(x, y, 1.0f, Height + 1.0f);                    // borde izquierdo
-        FUN_005124c0(x + local_18 + 1.0f, y, 1.0f, Height + 1.0f);  // borde derecho
-        FUN_005124c0(x, y + Height + 1.0f, local_18 + 2.0f, 1.0f);  // borde inferior
+        GL_DrawRect(x, y, local_18 + 1.0f, 1.0f);                  // borde superior
+        GL_DrawRect(x, y, 1.0f, Height + 1.0f);                    // borde izquierdo
+        GL_DrawRect(x + local_18 + 1.0f, y, 1.0f, Height + 1.0f);  // borde derecho
+        GL_DrawRect(x, y + Height + 1.0f, local_18 + 2.0f, 1.0f);  // borde inferior
         glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
-        FUN_005124c0((float)param_4, (float)param_2, local_18, Height);
+        GL_DrawRect((float)param_4, (float)param_2, local_18, Height);
         glEnable(0xde1);
     }
     param_4 = param_4 + 1;
@@ -597,7 +597,7 @@ void __cdecl FUN_004c2420(int param_1, int param_2, int param_3,
         } while (iVar1 < param_3);
     }
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    FUN_00511600();                              // DisableAlphaBlend
+    GL_ResetState();                              // DisableAlphaBlend
     return;
 }
 
@@ -749,7 +749,7 @@ void __cdecl FUN_004c2e20(int param_1)
     }
 
     // HashTable XOR-obfuscation (ref-count at DAT_00559050+0x161)
-    unsigned char *pHT = (unsigned char*)&DAT_00559050;
+    unsigned char *pHT = (unsigned char*)&PacketXorKey16;
     int refCount = *(int*)(pHT + 0x161);
     // (no game-logic side-effects here; this is the compiler/obfuscation artifact)
     (void)refCount;

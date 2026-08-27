@@ -47,7 +47,7 @@ extern void __cdecl FUN_0054158c(void* ptr);
 #endif
 
 
-// FUN_004c45c0 @ 0x004C45C0 — CalcMaxDurability(ITEM*, ITEM_ATTRIBUTE*, Level) → WORD
+// IDA: FUN_004C45C0
 // Port FIEL del IDA decompile (raw 0x4C45C0):
 //   1. base = p->Durability  (BYTE @ +41 dentro de ITEM_ATTRIBUTE)
 //   2. Si type 160..191, base = p->MagicDurability (BYTE @ +42)
@@ -59,7 +59,7 @@ extern void __cdecl FUN_0054158c(void* ptr);
 // Name[8..11] del struct ITEM_ATTRIBUTE. Para "Light Saber", Name[8..11] = "ber"
 // = 0x00726562 = 25954 — exact valor visto en RenderBrokenItem ("0/25954").
 // Corregido a leer p->Durability (offset +41 = +0x29).
-unsigned int __cdecl FUN_004c45c0(void* item, int attrBase, int Level)
+unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int Level)
 {
     // 2026-05-08: bug-fix — antes solo chequeaba `attrBase == 0`, pero callers
     // pasan `Type * 0x40 + DAT_07d78068` y si DAT_07d78068 == 0 entonces
@@ -100,7 +100,7 @@ unsigned int __cdecl FUN_004c45c0(void* item, int attrBase, int Level)
     return result & 0xFFFF;
 }
 
-// FUN_0047c690 @ 0x0047C690 — ItemValue(ITEM* item, int sellMode) → int gold
+// IDA: FUN_0047C690
 //
 // IDA-ported 2026-04-26 (audit #3): el stub anterior devolvía "número de dígitos"
 // en vez del valor real. Calcula precio gold del item considerando type/level/
@@ -110,7 +110,7 @@ unsigned int __cdecl FUN_004c45c0(void* item, int attrBase, int Level)
 // Cases 461/462/464/470/430/431/419/432-434/465-467/469/457/468 = jewels y sets.
 // Constantes derivadas del binario original (`&unk_xxxxxx` en IDA = direcciones
 // usadas como valores enteros — comprobado: 0x895440 = 9_000_000, etc.).
-int __cdecl FUN_0047c690(void* item_v, int a2)
+int __cdecl Item_CalculateValue(void* item_v, int a2)
 {
     // 2026-05-08: defensive — same problem as CalcMaxDurability/RenderItemInfo:
     // si DAT_07d78068 está en 0 (table base no inicializada), el cómputo
@@ -378,7 +378,7 @@ LABEL_148:
         && (v25 < 430 || v25 > 435)
         && a2 == 1)
     {
-        unsigned int maxDur = FUN_004c45c0((void*)a1, (int)((unsigned short)v25) * 0x40 + (int)DAT_07d78068, Level) & 0xffff;
+        unsigned int maxDur = Item_CalculateMaxDurability((void*)a1, (int)((unsigned short)v25) * 0x40 + (int)DAT_07d78068, Level) & 0xffff;
         double penalty = (1.0 - (double)*(unsigned char*)(a1 + 26) / (double)maxDur)
                        * (double)v34 * -0.60000002;
         v5 += (int)(__int64)penalty;
@@ -388,13 +388,13 @@ LABEL_148:
     return v5;
 }
 
-// FUN_004c3ef0 @ 0x004C3EF0 — ConvertRepairGold(Gold, Durability, MaxDurability, Type, Text)
+// IDA: FUN_004C3EF0
 //
 // IDA-ported 2026-04-26 (audit #3): el stub anterior solo escribía "%u / %u"
 // pero el real calcula gold de reparación: sqrt(sqrt(Gold)) * sqrt(Gold) * 3 *
 // (1 - dur/maxDur) + 1, con bonus 1.4× si rota, +5% si RepairEnable, redondeo
 // a múltiplos de 100/10, y formato "1,234,567" en Text. Devuelve gold final.
-unsigned int __cdecl FUN_004c3ef0(int Gold, int Durability, int MaxDurability, short Type, char* Text)
+unsigned int __cdecl Item_CalculateRepairCost(int Gold, int Durability, int MaxDurability, short Type, char* Text)
 {
     (void)Type;
     if (!Text) {
@@ -448,11 +448,11 @@ unsigned int __cdecl FUN_004c3ef0(int Gold, int Durability, int MaxDurability, s
     return (unsigned int)v10;
 }
 
-// FUN_004c4080 @ 0x004C4080 — CharData_RecalcDurability
+// IDA: FUN_004C4080
 // Scans equipped items (+0x218, stride 0x44, 12 slots) and extra items (DAT_07ea8410, 8 slots).
 // For each occupied slot with curDur < maxDur, calls CalcMaxDurability + AppendDurabilityLine.
 // Accumulates repair-count into DAT_07eaa0f8.
-void __cdecl FUN_004c4080(void)
+void __cdecl Item_RecalculateRepairCost(void)
 {
     // (HashTable obfuscation unlock block skipped)
     DAT_07eaa0f8 = 0;
@@ -462,7 +462,7 @@ void __cdecl FUN_004c4080(void)
         short *psVar12 = (short *)((int)DAT_07cf1ffc + 0x218 + iVar7);
         short itemType = *psVar12;
         if (itemType != -1 && *(int *)((char *)psVar12 + 0x38) != 0) {
-            unsigned int maxDur = FUN_004c45c0(psVar12, (int)itemType * 0x40 + (int)DAT_07d78068,
+            unsigned int maxDur = Item_CalculateMaxDurability(psVar12, (int)itemType * 0x40 + (int)DAT_07d78068,
                                                (*(int *)(psVar12 + 2) >> 3) & 0xf);
             unsigned int curDur = (unsigned int)*(unsigned char *)((char *)psVar12 + 0x1a);
             unsigned int uVar8  = (unsigned int)itemType;
@@ -479,8 +479,8 @@ void __cdecl FUN_004c4080(void)
                 (itemType < 430 || itemType > 435) &&
                 curDur < maxDur) {
                 char local_68[104]; // buffer for text
-                int gold = FUN_0047c690((void*)psVar12, 2);
-                unsigned int repairGold = FUN_004c3ef0(gold, (int)curDur, (int)maxDur, itemType, local_68);
+                int gold = Item_CalculateValue((void*)psVar12, 2);
+                unsigned int repairGold = Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, itemType, local_68);
                 DAT_07eaa0f8 += (int)repairGold;
                 (void)uVar8;
             }
@@ -492,7 +492,7 @@ void __cdecl FUN_004c4080(void)
     for (int i = 0; i < 8; i++, psVar12 += 0x22) {
         if (*(int *)((char *)psVar12 + 0x38) != 0) {
             short itemType = *psVar12;
-            unsigned int maxDur = FUN_004c45c0(psVar12, (int)itemType * 0x40 + (int)DAT_07d78068,
+            unsigned int maxDur = Item_CalculateMaxDurability(psVar12, (int)itemType * 0x40 + (int)DAT_07d78068,
                                                (*(int *)(psVar12 + 2) >> 3) & 0xf);
             unsigned int curDur = (unsigned int)*(unsigned char *)((char *)psVar12 + 0x1a);
             unsigned int uVar8  = (unsigned int)itemType;
@@ -504,8 +504,8 @@ void __cdecl FUN_004c4080(void)
                 (itemType < 430 || itemType > 435) &&
                 curDur < maxDur) {
                 char local_68[104];
-                int gold = FUN_0047c690((void*)psVar12, 2);
-                unsigned int repairGold = FUN_004c3ef0(gold, (int)curDur, (int)maxDur, itemType, local_68);
+                int gold = Item_CalculateValue((void*)psVar12, 2);
+                unsigned int repairGold = Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, itemType, local_68);
                 DAT_07eaa0f8 += (int)repairGold;
                 (void)uVar8;
             }

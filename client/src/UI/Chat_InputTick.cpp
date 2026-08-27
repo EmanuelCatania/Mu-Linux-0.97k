@@ -936,7 +936,7 @@ void __cdecl FUN_004b14f0(void)
                                 BYTE b   = buf[i];
                                 DWORD ki = (DWORD)i & 0x8000000fu;
                                 if ((int)ki < 0) ki = (ki - 1 | 0xfffffff0u) + 1;
-                                b = (BYTE)(((BYTE *)&DAT_00559050)[ki] ^ b + 0x47) + 0x23;
+                                b = (BYTE)(((BYTE *)&PacketXorKey16)[ki] ^ b + 0x47) + 0x23;
                                 buf[i] = b;
                                 if (i < 0x583) buf[i] ^= buf[i + 1];
                             }
@@ -964,7 +964,7 @@ void __cdecl FUN_004b14f0(void)
                                 DWORD ki = i & 0x8000000fu;
                                 if ((int)ki < 0) ki = (ki - 1 | 0xfffffff0u) + 1;
                                 b = (BYTE)(b + 0x47);
-                                b = (BYTE)(((BYTE *)&DAT_00559050)[ki] ^ b) + 0x23;
+                                b = (BYTE)(((BYTE *)&PacketXorKey16)[ki] ^ b) + 0x23;
                                 buf[i] = b;
                                 if (i < 0x583) buf[i] ^= buf[i + 1];
                                 buf[i] ^= (BYTE)rand();
@@ -1048,7 +1048,7 @@ void __cdecl FUN_004b14f0(void)
     // ── 12-15. C/V/I/G/P key handlers — REMOVED ────────────────────────────
     // 2026-05-08 (b): These keys are already handled by Player_InputTick
     // (`HUD_HotkeyTick` in src/Game/Player_InputTick.cpp:251-287) using the
-    // edge-triggered helper FUN_0047ec20. Adding duplicate handlers here
+    // edge-triggered helper Input_IsKeyJustPressed. Adding duplicate handlers here
     // caused a DOUBLE-TOGGLE bug: pressing C played sound (Chat_InputTick set
     // CharacterOpened=1, played sound) but Player_InputTick toggled it back
     // to 0 in the same frame → net result = closed.

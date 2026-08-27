@@ -54,7 +54,7 @@ static void SendMuEmuEncryptedPacket(BYTE* pkt, int len)
 // (FUN_00403f80, FUN_004041e0, FUN_00404280, FUN_00404330, FUN_00404370,
 //  FUN_00404400) and XOR key init + dead forward/reverse loops — all skipped.
 //
-// Ghidra shows 63 phantom stack params (unaff_retaddr etc.) — anti-tamper obfuscation.
+// IDA: FUN_004889D0 @ 0x004889D0 — UseSkillWizard. Ghidra shows 63 phantom stack params (unaff_retaddr etc.) — anti-tamper obfuscation.
 // Real params: c = CHARACTER* (hero entity ptr), o = OBJECT* (hero object ptr).
 void __cdecl UseSkillWizard_stub(DWORD c, DWORD o) {
     // --- XOR encryption key (32 bytes, hardcoded — same as login packet key) ---
@@ -393,7 +393,7 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
 //     validates range, computes facing angle, builds C1 skill packet with
 //     XOR encryption, sends it, then calls SetPlayerAttack + CreateArrows
 //
-// ~60% of the original 1247 lines is anti-tamper hash table operations
+// IDA: FUN_0048A180 @ 0x0048A180 — SkillElf. ~60% of the original 1247 lines is anti-tamper hash table operations
 // (FUN_00403f80, FUN_004041e0, FUN_00404280, FUN_00404330, FUN_00404370,
 //  FUN_00404400) and XOR key init + dead forward/reverse loops — all skipped.
 bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
@@ -515,7 +515,7 @@ bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
         // Skill type check: 0x18 = ranged arrow skill
         if (skillId == 0x18) {
             // Check if arrows are equipped
-            char hasArrow = FUN_0048ba70();  // CheckArrow
+            char hasArrow = Combat_CheckArrowRequirement();  // CheckArrow
             if (hasArrow == '\0') continue;  // no arrows equipped
 
             BYTE* skillEntry = GetSkillRecordShadow_Local((int)skillId);
@@ -569,7 +569,7 @@ bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
             // 97k runtime uses the same move sender path before the actual
             // skill packet so target/facing/path state stay aligned with the
             // rest of combat helpers.
-            FUN_00491c40((int)heroEntity, (int)heroEntity);
+            Combat_SendMovePathPacket((int)heroEntity, (int)heroEntity);
 
             // MuEmu's 0.97k continuation patch for Triple Shot uses the
             // 256-step facing byte, the packed target delta, and an opposite
@@ -609,7 +609,7 @@ bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
         DAT_05826d10 = (DWORD)skillId;
 
         // Keep elf/support on the same pre-move runtime path as warrior/wizard.
-        FUN_00491c40((int)heroEntity, (int)heroEntity);
+        Combat_SendMovePathPacket((int)heroEntity, (int)heroEntity);
 
         // Heal (26), Greater Defense (27) and Greater Damage (28) are
         // targeted skills.  MuEmu receives them through C3:19; C3:1E is

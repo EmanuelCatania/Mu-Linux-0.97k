@@ -82,13 +82,13 @@ void __cdecl Particle_Update(void)
         if ((char)slot[-3] != '\0') {
             int mode = slot[-2];
             if (*(short *)(*slot + 0x1be) == 0 && mode < 3)
-                FUN_00511710();
+                GL_SetBlendAdditive();
             else
-                FUN_00511790();
+                GL_SetBlendSrcAlpha();
             if (mode > 2) mode -= 3;
             int seg = slot[1];
             if (seg > 1) {
-                FUN_00511480(mode + 0x48d);
+                GL_BindTextureSlot(mode + 0x48d);
                 int *vp = slot + 0x5f;
                 for (int i = 0; i < seg - 1; i++, vp += 3) {
                     glBegin(6);

@@ -74,7 +74,7 @@ float    _DAT_00552834 = 15.0f;
 DWORD    DAT_00552834  = 0;
 // _DAT_00552838 = 1/480 (Y scale), _DAT_0055283c = 1/640 (X scale) — compile-time constants.
 // ConvertX(x) = WindowWidth * x * _DAT_0055283c ; ConvertY(y) = WindowHeight * y * _DAT_00552838
-// Used by FUN_005125a0 (RenderBitmap), FUN_00511950/80 (ConvertX/Y), Camera_SetupFrustum, etc.
+// Used by GL_DrawTexture (RenderBitmap), Screen_ToGLX/80 (ConvertX/Y), Camera_SetupFrustum, etc.
 float    _DAT_00552838 = 1.0f / 480.0f;
 DWORD    DAT_00552838  = 0x3B088889;   // 1/480 as DWORD bits
 float    _DAT_0055283c = 1.0f / 640.0f;
@@ -164,7 +164,7 @@ DWORD    DAT_00552ca8  = 0;
 float    _DAT_00552cac = 245.0f;
 DWORD    DAT_00552cac  = 0;
 DWORD    DAT_00552cb0  = 0;
-float    _DAT_00552cc4 = 0.0087266462f;  // 0.5*PI/180 — verificado bit-pattern 0x3C0EFA33 en binario original. Se usa para tan(FOV/2) en gluPerspective2 (FUN_00511220) y frustum (Camera_SetupFrustum). Antes era PI/180 (full) → PerspX/Y 1.92× más grandes → proyecciones name-labels clusterizadas al centro.
+float    _DAT_00552cc4 = 0.0087266462f;  // 0.5*PI/180 — verificado bit-pattern 0x3C0EFA33 en binario original. Se usa para tan(FOV/2) en gluPerspective2 (GL_SetPerspective) y frustum (Camera_SetupFrustum). Antes era PI/180 (full) → PerspX/Y 1.92× más grandes → proyecciones name-labels clusterizadas al centro.
 DWORD    DAT_00552cc4  = 0;
 float    _DAT_00552d08 = 0.32f;
 DWORD    DAT_00552d08  = 0;
@@ -186,7 +186,8 @@ DWORD    DAT_005538a0  = 0;
 // ── Entity / render constants ─────────────────────────────────────────────────
 // 16-byte XOR key table — usado por Crypto.cpp/Effect_Create.cpp/Net_PacketSession etc.
 // Indexado como (&DAT_00559050)[i&0xf] o DAT_00559050[i%16].
-BYTE     DAT_00559050[16] = {0};
+BYTE     PacketXorKey16[16] = {0}; // DAT_00559050
+BYTE (&DAT_00559050)[16] = PacketXorKey16; // compatibility alias for stubs_IDA_ports.cpp
 float    _DAT_00559070 = 400.0f;  // Verlet physics damping/gravity scalar
 DWORD    DAT_00559070  = 0;
 // DAT_005590ac = g_bUseChatListBox. Default IDA = 1 (verificado: bytes en 0x5590ac
@@ -201,9 +202,12 @@ DWORD    DAT_005590ac  = 1;
 // Valores LEÍDOS DEL BINARIO en 0x5590B0 (12 bytes: 00 80 93 43 | 00 80 d0 43 |
 // 00 00 90 41) → 295.0f, 417.0f, 18.0f.  Los usan sub_40E400 (hit-test, slot 26)
 // y sub_40DEF0 (render, slot 24 vía el thunk sub_40D600).
-float    ChatListBox_TabButtonsX  = 295.0f;   // DAT_005590b0 — X del primer botón
-float    ChatListBox_TabButtonsY  = 417.0f;   // DAT_005590b4 — Y de los tres
-float    ChatListBox_TabButtonSpacing  = 18.0f; // DAT_005590b8 — separación horizontal entre botones
+// IDA: DAT_005590B0
+float    ChatListBox_TabButtonsX  = 295.0f;   // X del primer botón
+// IDA: DAT_005590B4
+float    ChatListBox_TabButtonsY  = 417.0f;   // Y de los tres
+// IDA: DAT_005590B8
+float    ChatListBox_TabButtonSpacing  = 18.0f; // separación horizontal entre botones
 // Version (5 bytes) @ 0x0055961c: obfuscated as Version[i]-i-1 in login packet.
 //
 // HISTORICAL VALUE from original main.exe (MD5 eb95ac0785e40a7ad60c9ddb5d8bef34):
@@ -228,7 +232,7 @@ BYTE     DAT_0055961c[5]  = { 0x31, 0x3B, 0x3A, 0x35, 0x36 };
 // agree on this 16-byte string verbatim.
 BYTE     DAT_00559624[16] = { 'T', 'b', 'Y', 'e', 'h', 'R', '2', 'h',
                               'F', 'U', 'P', 'B', 'K', 'g', 'Z', 'j' };
-DWORD    DAT_00559678  = 0;
+DWORD    PacketXorKey3  = 0; // DAT_00559678
 float    _DAT_00559680 = 0.0f;
 DWORD    DAT_00559680  = 0;
 DWORD    DAT_00559684  = 0;
@@ -306,8 +310,8 @@ DWORD    DAT_0055a7c0  = 0;
 DWORD    DAT_0056154c  = 0x41A00000;  // 20.0f    CameraViewNear
 DWORD    DAT_00561550  = 0x44FA0000;  // 2000.0f  CameraViewFar
 DWORD    DAT_00561554  = 0x425C0000;  // 55.0f    CameraFOV (MoveMainCamera lo reescribe a 35.0)
-float    DAT_005616b4  = 0.0f;        // CameraDistanceTarget (MoveMainCamera)
-float    DAT_083a45d0  = 0.0f;        // CameraDistance (MoveMainCamera)
+float    CameraDistanceTarget  = 0.0f;  // DAT_005616B4: MoveMainCamera target
+float    CameraDistance  = 0.0f;        // DAT_083A45D0: current MoveMainCamera distance
 DWORD    DAT_0056156c  = 640;   // WindowWidth default
 DWORD    DAT_00561570  = 480;   // WindowHeight default
 DWORD    DAT_00561574  = 0;
@@ -476,7 +480,7 @@ DWORD    DAT_055c9b70  = 0;
 DWORD    DAT_055c9b74  = 0;
 // _DAT_055c9b74 = g_fScreenRate_y (overlaps DAT_055c9b74 as float)
 DWORD    DAT_055c9b80  = 0;
-// DAT_055c9bac defined in Config_Load.cpp as char[12]
+// ConfigLoginVersion (IDA: DAT_055c9bac) defined in Config_Load.cpp as char[12]
 // HashTable obfuscation. Original binary has a real hash-table object at
 // 0x055c9bc8..0x055c9bd4 (contiguous). 40+ inlined callers deref the vtable
 // at offset +0xC, and insert/lookup helpers read capacity at offset +0xC from
@@ -643,12 +647,14 @@ char     DAT_05826d33  = 0;
 DWORD    DAT_05826d78  = 0;
 DWORD    DAT_05826dc8  = 0;
 DWORD    DAT_05826df4  = 0;
-DWORD    DAT_05826e04  = 0;
+// IDA: DAT_05826e04
+DWORD    FpsWindowStartTimeMs  = 0;
 int      DAT_05826e08  = 0;  // WorldTime / g_AnimTick
 float    g_AttackEffectMatrix_04D[3][4] = {};
 float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};
-DWORD    DAT_05826e0c  = 0;
+// IDA: DAT_05826e0c
+DWORD    FpsTimerInitialized  = 0;
 DWORD    DAT_05826e10  = 0;
 // BoneQuaternion @ 0x05826E18 — scratch de cuaterniones por hueso que llena
 // BMD_Animation (0x440060 L157-166: `(char *)&unk_5826E18 + 16 * boneIdx`).
@@ -737,7 +743,7 @@ DWORD    DAT_07abf5e8  = 0;
 // Particle pool — 3000 slots × 0x70 (112) bytes = 336000 bytes total.
 // Original binary: 0x07abf5f0..0x07b11670 = 0x52080 bytes. /0x70 = 47999 slots.
 // Pero MoveParticles_stub itera 3000 slots; usamos ese tamaño que ya existe en stubs.
-// Antes era 1 byte → CreateParticle (FUN_00475220) tenía un overflow guard que
+// Antes era 1 byte → CreateParticle (Particle_Spawn) tenía un overflow guard que
 // retornaba 0 inmediatamente → NUNCA spawneaba lightning ELS=10/11, fire/smoke
 // effects, weather particles, etc. — todo silenciado.
 char     DAT_07abf5f0[3000 * 0x70] = {0};   // particle pool base
@@ -1049,7 +1055,7 @@ DWORD    DAT_083a2e92  = 0;
 DWORD    DAT_083a3ff0  = 0;
 char     DAT_083a410c  = 0;
 // ── DAT_083a4110 — mouse-ray endpoint world pos (3 floats) ───────────────────
-// En el binario original Camera_MouseRay (FUN_005112f0) escribe out_ray[0..2]
+// En el binario original Camera_MouseRay (Camera_BuildMouseRay) escribe out_ray[0..2]
 // arrancando en 0x083a4110. Si se declara como UN único DWORD el linker no
 // reserva los 12 bytes y los writes a out_ray[1]/[2] caen en globals vecinos.
 DWORD    DAT_083a4110_arr[3] = {0};
@@ -1058,10 +1064,10 @@ DWORD    DAT_083a4124  = 0;
 DWORD    DAT_083a413c  = 0;
 // ─── View/camera 3x4 matrix (48 bytes = 12 DWORDs) ───────────────────────────
 // En el binario original 0x083a4140..0x083a416f es UN único buffer que
-// FUN_005111d0 (GL_GetModelViewMatrix) llena con 3 filas × 4 floats.
+// GL_GetModelViewMatrix (GL_GetModelViewMatrix) llena con 3 filas × 4 floats.
 // DAT_083a414c / DAT_083a415c / DAT_083a416c son los 4-th elementos de cada
 // fila (offsets 0x0c, 0x1c, 0x2c) — no globales independientes.
-// Si se declaran por separado el linker los reubica y FUN_005111d0
+// Si se declaran por separado el linker los reubica y GL_GetModelViewMatrix
 // desborda 48 bytes sobre globales vecinos (p.ej. DAT_083a7c49 Scene_Login
 // init flag → loop de re-init cada frame).
 DWORD    DAT_083a4140[12] = {0};
@@ -1075,18 +1081,18 @@ char     DAT_083a4174[0x104] = {0};
 DWORD    DAT_083a4278  = 0;  // MouseY
 DWORD    DAT_083a427c  = 0;  // MouseX
 DWORD    DAT_083a4280  = 0;  // viewport width
-// ── DAT_083a4284..428c — camera world position (3 floats) ────────────────────
-// Camera_MouseRay (FUN_005112f0) escribe via FUN_004fa110(... &DAT_083a4284) los
+// ── CameraRayOriginX..428c — camera world position (3 floats) ────────────────────
+// Camera_MouseRay (Camera_BuildMouseRay) escribe via Vector_InverseRotate(... &CameraRayOriginX) los
 // 3 floats consecutivos. DEBEN ser contiguos. Las definiciones en líneas 1318-
-// 1320 (_DAT_083a4284..428c) ahora son referencias a este array para que las
+// 1320 (_CameraRayOriginX..428c) ahora son referencias a este array para que las
 // lecturas via float (camPos, etc.) vean lo que Camera_MouseRay escribió.
-DWORD    DAT_083a4284_arr[3] = {0};
-DWORD&   DAT_083a4284 = DAT_083a4284_arr[0];
-DWORD&   DAT_083a4288 = DAT_083a4284_arr[1];
-DWORD&   DAT_083a428c = DAT_083a4284_arr[2];
+DWORD    CameraRayOriginX_arr[3] = {0};
+DWORD&   CameraRayOriginX = CameraRayOriginX_arr[0];  // DAT_083A4284
+DWORD&   CameraRayOriginY = CameraRayOriginX_arr[1];  // DAT_083A4288
+DWORD&   CameraRayOriginZ = CameraRayOriginX_arr[2];  // DAT_083A428C
 char     DAT_083a4299  = 0;
-DWORD    DAT_083a429c  = 0;
-DWORD    DAT_083a42a0  = 0;
+DWORD    ViewportCenterX  = 0;  // DAT_083A429C
+DWORD    ViewportCenterY  = 0;  // DAT_083A42A0
 DWORD    DAT_083a42a4  = 0;
 DWORD    DAT_083a42a8  = 0;
 DWORD    DAT_083a42ac  = 0;  // MouseRButton
@@ -1113,7 +1119,7 @@ float&  _DAT_083a42d8 = CameraPosition[1];
 DWORD&   DAT_083a42d8 = *(DWORD*)&CameraPosition[1];
 float&  _DAT_083a42dc = CameraPosition[2];
 DWORD&   DAT_083a42dc = *(DWORD*)&CameraPosition[2];
-char     DAT_083a42e9  = 0;
+char     CameraTopViewEnabled  = 0;  // DAT_083A42E9
 char     DAT_083a42ea  = 0;  // FogEnable
 char     DAT_083a42eb  = 0;  // auto-drop trigger flag (inventory)
 DWORD    DAT_083a42ec  = 0;
@@ -1172,7 +1178,8 @@ DWORD    DAT_083a7c44  = 0;
 char     DAT_083a7c48  = 0;
 char     DAT_083a7c49  = 0;
 char     DAT_083a7c4a  = 0;
-char     DAT_083a7c4b  = 0;
+// IDA: DAT_083a7c4b
+char     CharSelectSceneInitialized = 0;
 char     DAT_083a7c4c  = 0;
 char     DAT_083a7c4d  = 0;
 DWORD    DAT_083a7c50  = 0;
@@ -1383,16 +1390,16 @@ float   _DAT_00552a38  = 200000.0f;
 float   _DAT_00552a3c  = 3.2f;
 float   _DAT_00552a40  = 0.0005f;
 
-// Mouse hover tick (FUN_004b0310)
+// Mouse hover tick (Mouse_UpdateHoverTargets)
 DWORD    DAT_080ab288  = 0;
 DWORD    DAT_080ab28c  = 0;
 float    DAT_083a4130  = 0.0f;
 float    DAT_083a4134  = 0.0f;
 float    DAT_083a4138  = 0.0f;
 int      DAT_07e11d5c  = 0;
-// Hover targets: -1 = none. Mouse_Hover (FUN_004b0310) resets each frame to -1
+// Hover targets: -1 = none. Mouse_Hover (Mouse_UpdateHoverTargets) resets each frame to -1
 // before priority-probing. En login/char-select Mouse_Hover no corre, así que
-// el valor inicial debe ser -1 para que RenderCursor (FUN_004bffa0) muestre
+// el valor inicial debe ser -1 para que RenderCursor (Cursor_Render) muestre
 // el cursor arrow por defecto en vez del item-cursor (bitmap 5 = mano abierta).
 int      SelectedItem       = -1;  // DAT_00559c48
 int      SelectedNpc        = -1;  // DAT_00559c4c
@@ -1469,12 +1476,12 @@ DWORD    DAT_00559bf1  = 1;
 DWORD    DAT_00559ce0  = 0;
 char     DAT_05826adc[0x50] = {};
 
-// Chat ring buffer (FUN_00480980 renderer, UIChatLogWindow_AddText writer).
+// Chat ring buffer (UI_RenderChatLogOverlay renderer, UIChatLogWindow_AddText writer).
 // BUG-FIX (blue countdown / chat render): DAT_07df938b, DAT_07df948c y
 // DAT_07df9494 son ALIASES a offsets 0x0B / 0x10C / 0x114 del slot 0 dentro de
 // este mismo buffer en el binario original. Ghidra los recuperó como globales
 // independientes; con almacenamiento separado, UIChatLogWindow_AddText escribe
-// en DAT_07df9380 pero FUN_00480980 leía las variables sueltas (siempre 0) y
+// en DAT_07df9380 pero UI_RenderChatLogOverlay leía las variables sueltas (siempre 0) y
 // el guard `msg[0] != '\0'` fallaba → el texto jamás aparecía. Se convierten
 // a macros en globals.h que resuelven al byte/DWORD real del buffer.
 char     DAT_07df9380[0x77 * 0x118]  = {0};
@@ -1529,7 +1536,7 @@ char     DAT_07e11dd0[256] = {0};
 char     DAT_07e11dd8  = 0;
 char     DAT_07e11ddc  = 0;
 // Chat ring buffers
-// 2026-05-04: enlarge to actual slot pool size — IDA loop in FUN_0047fce0
+// 2026-05-04: enlarge to actual slot pool size — IDA loop in UI_RenderNotices
 // walks 6 slots × 0x108 stride. Antes era single byte → AUTO-SKIP.
 char     DAT_07db80d8[6 * 0x108]  = {0};   // system chat buffer (6 slots × 0x108)
 // DAT_07db81dc was the flag byte alias inside slot 0 (+0x104). Now resolves
@@ -1603,7 +1610,7 @@ char     param_2_07d69078  = 0;
 
 // ── Pre-compile missing globals (found by diff scan) ─────────────────────────
 float    _DAT_0055264c = 2.0f;
-float    _DAT_005528a0 = 0.0f;
+float    FloatZero = 0.0f;
 float    _DAT_005529fc = 18.0f;
 char     DAT_00558128[256]  = {};   // debug log format/data block
 char     DAT_0055a7c4  = 1;         // compressed-assets flag (alias: g_tex_ext_mode); 1=Data mode (plain Data\ folder, no pak)
@@ -1615,13 +1622,13 @@ char     DAT_083a1218[0x1158]  = {};  // Butterfles OBJECT array (10 entries × 
 float&   _DAT_083a414c = *reinterpret_cast<float*>(&DAT_083a4140[3]);
 float&   _DAT_083a415c = *reinterpret_cast<float*>(&DAT_083a4140[7]);
 float&   _DAT_083a416c = *reinterpret_cast<float*>(&DAT_083a4140[11]);
-// _DAT_083a4284..428c — float aliases sobre el mismo array DWORD que escribe
-// Camera_MouseRay (ver DAT_083a4284_arr arriba). Antes eran floats separados,
+// _CameraRayOriginX..428c — float aliases sobre el mismo array DWORD que escribe
+// Camera_MouseRay (ver CameraRayOriginX_arr arriba). Antes eran floats separados,
 // causando que las lecturas via _DAT_xxx vieran 0/basura mientras los writes
 // via DAT_xxx (DWORD) iban a otra memoria → mouse-ray rayO siempre incorrecto.
-float&   _DAT_083a4284 = *reinterpret_cast<float*>(&DAT_083a4284_arr[0]);
-float&   _DAT_083a4288 = *reinterpret_cast<float*>(&DAT_083a4284_arr[1]);
-float&   _DAT_083a428c = *reinterpret_cast<float*>(&DAT_083a4284_arr[2]);
+float&   _CameraRayOriginX = *reinterpret_cast<float*>(&CameraRayOriginX_arr[0]); // _DAT_083A4284
+float&   _CameraRayOriginY = *reinterpret_cast<float*>(&CameraRayOriginX_arr[1]); // _DAT_083A4288
+float&   _CameraRayOriginZ = *reinterpret_cast<float*>(&CameraRayOriginX_arr[2]); // _DAT_083A428C
 float    _DAT_083a42a4 = 0.0f;
 float    _DAT_083a42a8 = 0.0f;
 float    _DAT_083a4294 = 0.0f;  // projection center Y
@@ -1780,11 +1787,11 @@ int     DAT_083a42f0 = 0;
 float   _DAT_00552580 = 0.0f;
 float   _DAT_00552850 = 400.0f;
 float   _DAT_00552878 = 80.0f;
-float   _DAT_00552ce8 = 0.017453292f;  // π/180
+float   Math_DegreesToRadians = 0.017453292f;  // π/180
 float   _DAT_00552ce0 = 0.5f;          // half-angle factor for EulerToQuat (FUN_004fa1d0).
                                        // IDA sub_4FA1D0 shows literal `a1[k] * 0.5` — quaternion
                                        // half-angle. Input Euler angles are already in RADIANS
-                                       // (AngleMatrix path uses _DAT_00552ce8=π/180, different const).
+                                       // (AngleMatrix path uses Math_DegreesToRadians=π/180, different const).
                                        // Previously set to π/180 by mistake, which made every bone
                                        // rotation ≈ 0 → characters rendered with wrong orientation.
 float   _DAT_00552cf0 = 1.0f;          // 1.0 (quaternion normalization)
@@ -2003,13 +2010,15 @@ float   _DAT_005529ac  = -2.0f;
 
 // ── Timer globals ─────────────────────────────────────────────────────────────
 DWORD   DAT_05826e14   = 0;
-DWORD   DAT_05826df0   = 0;
+// IDA: DAT_05826df0
+DWORD   FrameTimeCurrentMs   = 0;
 float   _DAT_005528a8  = 0.001f;  // 1/1000 ms-to-s
 float   _DAT_00552898  = 5.0f;    // 5.0 second FPS window
 // _DAT_00552890 — defined above (float, line 80)
 DWORD   DAT_05826e00   = 0;
 float   _DAT_0055979c  = 0.0f;    // delta time per frame
-DWORD   DAT_05826dfc   = 0;
+// IDA: DAT_05826dfc
+DWORD   FrameTimePreviousMs   = 0;
 float   _DAT_05826df8  = 0.0f;    // smoothed FPS value
 
 // ── Music.cpp globals ─────────────────────────────────────────────────────────
@@ -2023,7 +2032,8 @@ DWORD   m_MusicOnOff                = 0;
 // Mp3FileName @ 0x055C9D04 — nombre del track en reproduccion. En el binario es
 // un buffer de string (PlayMp3 hace strcpy del path completo, ~25 chars); estaba
 // declarado como UN char, asi que la copia pisaba los globals de al lado.
-char    DAT_055c9d04[256]           = {};
+// IDA: DAT_055C9D04
+char    MusicCurrentTrack[256]      = {};
 char    s_MuPlayer_00559110[]       = "MuPlayer";
 char    s_MuPlayer_exe_00559154[]   = "MuPlayer.exe";
 char    s_MuPlayer_exe__s_00559130[] = "MuPlayer.exe %s";
@@ -2164,13 +2174,13 @@ char    s_fairy_smd_0055c438[]                   = "fairy.smd";
 // ── Additional misc globals ───────────────────────────────────────────────────
 // DAT_07e016f0 — same address as _DAT_07e016f0 above (line 997); alias defined in globals.h
 BYTE    DAT_0055984c[9] = {};  // bone index table for glitter effect
-// 2026-04-28: tooltip/bubble pool — UI_TickTooltips (FUN_004821a0) itera 26
+// 2026-04-28: tooltip/bubble pool — UI_TickTooltips (UI_TickHoverBubbles) itera 26
 // slots × 0x254 bytes (stride 0x95 DWORDs). Antes era DWORD simple → AV.
 // 2026-07-19: `DAT_07e01720` YA NO es un array propio — es el pool de burbujas
 // de chat proyectado a +40. Ver DAT_07e016f8 más abajo. La declaración vieja
 // (26 slots sueltos) convivía con `DAT_07e016f8` como char de 1 byte, y
 // CreateChat caminaba ESE char con stride 596 → AV.
-// Key-state table para FUN_0047ec20 (PressKey / Key_IsJustPressed).
+// Key-state table para Input_IsKeyJustPressed (PressKey / Key_IsJustPressed).
 // La función indexa como `*(DWORD*)((char*)&DAT_07e118ec + vkey*4)`, o sea
 // 256 entradas DWORD (1024 bytes) — una por código VK. En IDA es una tabla
 // al símbolo dword_7E118EC. Si se deja como DWORD single, cualquier tecla

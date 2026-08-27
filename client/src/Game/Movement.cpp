@@ -138,8 +138,8 @@ float Angle_Delta(float a, float b, char abs_flag);
 void Entity_UpdateFacing(float* pos, float* entity_angle, float* target, float step);
 
 // 0x0043e570  Entity_ApplyRotation(float* out, float* quat, float* vec)
-//   FUN_004f9db0(quat, mat4x3)  — quaternion → matriz rotación 4×3
-//   FUN_004fa0b0(vec, mat4x3, &local)  — matriz × vector → local
+//   Matrix_BuildFromEuler(quat, mat4x3)  — quaternion → matriz rotación 4×3
+//   Vector_Rotate(vec, mat4x3, &local)  — matriz × vector → local
 //   out[0..2] += local[0..2]  (aplica la rotación al offset out)
 void Entity_ApplyRotation(float* out, float* quat, float* vec);
 
@@ -301,7 +301,7 @@ void Entity_UpdateWalkAnim(int entity);
 //       Actualiza entity+0x388/38c, calcula ángulo, llama Entity_UpdateWalkAnim.
 //       entity+0x305 = 1 (trigger inmediato).
 //     Caso normal (entity+0x350 == 0):
-//       FUN_0043d3e0 / FUN_0043f3e0 → PacketQueue_Enqueue con coordenadas
+//       FUN_0043d3e0 / Path_FindRoute → PacketQueue_Enqueue con coordenadas
 //       Si cola disponible: entity+0x2ec = 1 (movimiento en cola)
 //       Else: entity+0x2ec = 0, FUN_004430c0 (ejecutar animación inmediata)
 void PacketHandler_0x10(int packet);
@@ -315,7 +315,7 @@ void PacketHandler_0x10(int packet);
 //     entity+0xC4 = (byte[5] - entity.x) * DAT_00552850  (velocidad X)
 //     entity+0xC0 = (entity.y - byte[6]) * DAT_00552850  (velocidad Y)
 //     FUN_00404bc0(0x1B, ...) — notificación UI
-//     FUN_004660f0(entity+0x10, 0) — aplicar fuerza/posición
+//     Effect_SpawnSmokeBurst(entity+0x10, 0) — aplicar fuerza/posición
 //   Caso general:
 //     entity+0x388 = byte[5]  (target X grid)
 //     entity+0x38c = byte[6]  (target Y grid)
@@ -327,7 +327,7 @@ void PacketHandler_0x11(int packet);
 // 0x00427a00  PacketHandler_0x0D(int packet)
 //   Paquete de chat/notificación del servidor (NO es movimiento).
 //   byte[3] sub-tipo:
-//     0: FUN_0047fae0(packet+4, 0)      — broadcast/aviso de sistema
+//     0: UI_AddNotice(packet+4, 0)      — broadcast/aviso de sistema
 //     1: FUN_00480620(..., packet+4, 1) — mensaje de GM
 //     2: Copia string de packet+4 a DAT_07e913a8 (max 14 chars)
 //                                        para banner de texto en pantalla
@@ -351,7 +351,7 @@ void PacketHandler_0x0D(int packet);
 //
 //   0x0043fd70  AnimTimer_Update(void)
 //     Inicia/actualiza timer global de animación con timeGetTime().
-//     DAT_05826e04 = timestamp base; DAT_05826e10 = delta por frame.
+//     FpsWindowStartTimeMs = timestamp base; DAT_05826e10 = delta por frame.
 //     Usado por Entity_AnimTick para avanzar frames.
 //
 //   0x004f6c40  GetTileType(uint x, uint y) → int

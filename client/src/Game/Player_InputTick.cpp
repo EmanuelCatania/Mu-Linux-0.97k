@@ -321,11 +321,11 @@ static void HUD_HotkeyTick(void)
 
     // Cada llamada a Key_IsJustPressed tiene efectos secundarios de detección por flanco, así que
     // capturamos los resultados antes de combinarlos (V o I invierten el inventario).
-    int kC = FUN_0047ec20(0x43); // 'C'  Character info
-    int kV = FUN_0047ec20(0x56); // 'V'  Inventory (alt)
-    int kI = FUN_0047ec20(0x49); // 'I'  Inventory
-    int kG = FUN_0047ec20(0x47); // 'G'  Guild
-    int kP = FUN_0047ec20(0x50); // 'P'  Party
+    int kC = Input_IsKeyJustPressed(0x43); // 'C'  Character info
+    int kV = Input_IsKeyJustPressed(0x56); // 'V'  Inventory (alt)
+    int kI = Input_IsKeyJustPressed(0x49); // 'I'  Inventory
+    int kG = Input_IsKeyJustPressed(0x47); // 'G'  Guild
+    int kP = Input_IsKeyJustPressed(0x50); // 'P'  Party
 
     // Toggle pattern matches IDA Chat_InputTick (sub_4B14F0):
     //   tecla C → si CharacterOpened: 0; si no: 1 (con el paquete de tab de clase).
@@ -432,7 +432,7 @@ static void HUD_HotkeyTick(void)
     }
 }
 
-// FUN_004acef0 — Player_InputTick (0x004acef0, 1688 lines)
+// IDA: FUN_004acef0 — Player_InputTick (0x004acef0, 1688 lines)
 //
 // Procesador de input del jugador por frame. Se llama desde el camino de render del HUD/UI en cada frame.
 // Responsibilities:
@@ -443,11 +443,11 @@ static void HUD_HotkeyTick(void)
 //   5. Movement debounce (DAT_07e11d28 >= DAT_00559bec and !DAT_07e11dc0)
 //   6. Animation state exit: swimming, normal walk, cancel
 //   7. Click-on-character-select: slot copy + sends [0xC1][0x24] encrypted packet
-//   8. Click-on-mob/player (SelectedCharacter): pathfind + FUN_00491c40
+//   8. Click-on-mob/player (SelectedCharacter): pathfind + Combat_SendMovePathPacket
 //   9. Click-on-NPC (SelectedNpc): alt pathfind
 //  10. Click-on-special-object (SelectedOperate): pathfind + entity_type lookup
 //  11. Ground click (ray cast FUN_004f9ac0 + FUN_004f8480): terrain check + pathfind
-//  12. Entity state update FUN_0049cbf0
+//  12. Entity state update Combat_DispatchHeroSkillAttack
 //  13. Hover terrain attribute → DAT_07e118e8
 //
 // Los bloques de ofuscación por HashTable repartidos por la función (~70 % del código) se omiten
@@ -554,7 +554,8 @@ static void SendNpcTalkRequest(WORD npcEntityId)
     DbgLogPublic(ab);
 }
 
-void __cdecl FUN_004acef0(void)
+// IDA: FUN_004acef0
+void __cdecl Player_ProcessInput(void)
 {
     // 2026-04-30: el procesamiento de hotkeys de UI va PRIMERO, para que los toggles funcionen incluso
     // cuando los gates de abajo saldrían temprano (p.ej. durante un cooldown).
@@ -675,7 +676,7 @@ void __cdecl FUN_004acef0(void)
 
     // ── WALKER (corre cada tick, INDEPENDIENTE de gates) ─────────────────────
     // BUG-FIX 2026-05-01: el walker estaba adentro del gate `bec <= d28`,
-    // pero `bec` se setea a `wpCount*3+4` cada vez que FUN_00491c40 envía un
+    // pero `bec` se setea a `wpCount*3+4` cada vez que Combat_SendMovePathPacket envía un
     // packet de movimiento. Para wpCount=5 → bec=19 ticks (760 ms). Eso
     // throttleaba el walker a 1.3 calls/sec — el hero "se movía por zonas".
     //
@@ -703,7 +704,7 @@ void __cdecl FUN_004acef0(void)
                 FUN_00443930((int)ent);
             }
             if (!isIdle) {
-                unsigned int moveOk = FUN_0043ea20(ent, '\x01');
+                unsigned int moveOk = Entity_AdvancePath(ent, '\x01');
                 if ((char)moveOk == '\0') {
                     FUN_00454ba0((int)ent);
                 } else {
@@ -752,14 +753,14 @@ void __cdecl FUN_004acef0(void)
                     }
                     // 2026-05-06: en lugar del mini-attack inline (que ignoraba
                     // weapon-range, animation gates, position cache, etc),
-                    // delegamos al port completo de Action() (FUN_0048d640
+                    // delegamos al port completo de Action() (Combat_ProcessQueuedAction
                     // case 2) SOLO para action=3 (attack). Otros valores de
                     // actionQueued (1=npc-talk, 2=pickup, 4=walk-final, 5=skill)
                     // dispararían cases 0,1,3,4 de Action() — esos NO están
                     // todavía completamente porteados y crashearon en runtime
                     // (user reportó AV addr=0x55D1D6 al moverse 2026-05-06).
                     if (actionQueued == 3) {
-                        FUN_0048d640((DWORD)ent, (DWORD)ent);
+                        Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                         // 2026-05-07: hard-clear queue post walker-arrival
                         // fire para que la SECONDARY TICK abajo no double-fire
                         // si Action() out-of-range no clean por sí sola.
@@ -884,7 +885,7 @@ void __cdecl FUN_004acef0(void)
                     0, 0);  // bClickEdge/bClickHeld read later — log raw flags
                 DbgLogPublic(dbg);
             }
-            FUN_0048d640((DWORD)ent, (DWORD)ent);
+            Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
             // Limpia la cola de una después de disparar — elimina el auto-fire mientras
             // mouse held. Si Action() in-range ya lo limpió, este write
             // es no-op idempotente.
@@ -1509,21 +1510,21 @@ void __cdecl FUN_004acef0(void)
                     // 2026-05-07: simplified — siempre pathfind. Si target ya
                     // está en range, pathfind devuelve path corto/vacío y el
                     // walker llega rápido. Si está lejos, walker walks. Antes
-                    // se gateaba por `pathOk = FUN_004830b0(...)`; si ese
+                    // se gateaba por `pathOk = Path_IsLineClear(...)`; si ese
                     // helper retornaba 0, nada se hacía Y el secondary tick
                     // disparaba Action() en place sin movimiento.
-                    unsigned int ok2 = FUN_0043f3e0(srcX, srcY,
+                    unsigned int ok2 = Path_FindRoute(srcX, srcY,
                                                      dstX, dstY,
                                                      ent + 0x354, 0.0f);
                     if ((char)ok2 != '\0') {
                         // Pathfind successful → start walker
-                        FUN_00491c40((int)ent, (int)ent);
+                        Combat_SendMovePathPacket((int)ent, (int)ent);
                     } else {
                         // Pathfind failed (target unreachable) → send move
                         // direct to current pos como fallback. Walker stays
                         // idle, secondary tick chequeará distance al firar
                         // Action() (case 2 con out-of-range branch).
-                        char chk = FUN_0048ba70();
+                        char chk = Combat_CheckArrowRequirement();
                         if (chk != '\0') {
                             Send_MovePacket_Player_legacy_stub();
                         }
@@ -1575,13 +1576,13 @@ void __cdecl FUN_004acef0(void)
                     DAT_07e016c0 = (DWORD)dstX;
                     DAT_07e016c4 = (DWORD)dstY;
 
-                    unsigned int ok = FUN_0043f3e0(srcX, srcY,
+                    unsigned int ok = Path_FindRoute(srcX, srcY,
                                                     dstX, dstY,
                                                     ent + 0x354, 0.0f);
                     if ((char)ok == '\0') {
                         Send_MovePacket_Player_legacy_stub();
                     } else {
-                        FUN_00491c40((int)ent, (int)ent);
+                        Combat_SendMovePathPacket((int)ent, (int)ent);
                     }
                     goto end_tick_inc;
                 }
@@ -1634,14 +1635,14 @@ void __cdecl FUN_004acef0(void)
                     }
                 }
 
-                unsigned int ok = FUN_0043f3e0(srcX, srcY,
+                unsigned int ok = Path_FindRoute(srcX, srcY,
                                                 dstX, dstY,
                                                 ent + 0x354, 0.0f);
                 if ((char)ok == '\0') {
                     Send_MovePacket_Player_legacy_stub();
                     *(unsigned char*)(ent + 0x2ed) = 0;
                 } else {
-                    FUN_00491c40((int)ent, (int)ent);
+                    Combat_SendMovePathPacket((int)ent, (int)ent);
                 }
                 goto end_tick_inc;
             }
@@ -1838,7 +1839,7 @@ void __cdecl FUN_004acef0(void)
                                 terrAttr, (int)DAT_07e11d64);
                               DbgLogPublic(d); }
 
-                            unsigned int ok = FUN_0043f3e0(srcX, srcY,
+                            unsigned int ok = Path_FindRoute(srcX, srcY,
                                                             DAT_07e016c0, DAT_07e016c4,
                                                             ent + 0x354, 0.0f);
                             { char d[80]; wsprintfA(d,
@@ -1847,8 +1848,8 @@ void __cdecl FUN_004acef0(void)
                               DbgLogPublic(d); }
                             if ((char)ok != '\0') {
                                 *(unsigned char*)(ent + 0x2ed) = 0;
-                                DbgLogPublic("PIT calling FUN_00491c40 (send move)");
-                                FUN_00491c40((int)ent, (int)ent);
+                                DbgLogPublic("PIT calling Combat_SendMovePathPacket (send move)");
+                                Combat_SendMovePathPacket((int)ent, (int)ent);
                                 goto end_tick_inc;
                             }
                         }
@@ -1882,13 +1883,13 @@ void __cdecl FUN_004acef0(void)
                 int srcX = *(int*)(ent + 0x388);
                 int srcY = *(int*)(ent + 0x38c);
 
-                unsigned int ok = FUN_0043f3e0(srcX, (int)(float)srcY,
+                unsigned int ok = Path_FindRoute(srcX, (int)(float)srcY,
                                                 DAT_07e016c0, DAT_07e016c4,
                                                 ent + 0x354, 0.0f);
                 if ((char)ok == '\0') {
                     Send_MovePacket_Player_legacy_stub();
                 } else {
-                    FUN_00491c40((int)ent, (int)ent);
+                    Combat_SendMovePathPacket((int)ent, (int)ent);
                 }
             }
         }
@@ -1903,7 +1904,7 @@ end_tick_inc:
 
 end_tick:
     // ── Per-frame entity state update ─────────────────────────────────────────
-    FUN_0049cbf0(DAT_07abf5d8);
+    Combat_DispatchHeroSkillAttack(DAT_07abf5d8);
 
     // ── HeroTile: atributo de terreno bajo el HÉROE ───────────────────────────
     // IDA Player_InputTick L570-582:

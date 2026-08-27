@@ -22,16 +22,16 @@
 //       0x38 (type 56 — portal/gate):
 //         local_24 = fVar14 * 0.804f, local_20 = fVar14 * 0.25f
 //         local_1c = fVar14 * 0.36f,  local_30 = fVar14 * 0.5f
-//         FUN_004409a0(model, &DAT_0697139c, offset, &local_18, '\0')  → Bone_GetTransform
+//         BMD_TransformPosition(model, &DAT_0697139c, offset, &local_18, '\0')  → Bone_GetTransform
 //         FUN_004795c0(0x47e, &local_18, 0.5f, &local_24, entity, 0, 0) → Particle_Spawn(0x47e=fire)
-//         FUN_004409a0(model, &DAT_0697154c, offset, &local_18, '\0')
+//         BMD_TransformPosition(model, &DAT_0697154c, offset, &local_18, '\0')
 //         FUN_004795c0(0x47e, ...)
 //
 //       0x69 (type 105 — NPC with random behavior):
 //         entity[+0x68] = 1.0f (scale)
 //         entity[+0x70] = -(ftol() % 1000) * scale  (Y offset cycling)
 //         if rand()&1 == 0:
-//           Two calls FUN_004409a0 + FUN_00475220(0x4c4, ...) — spawn smoke/dust effect
+//           Two calls BMD_TransformPosition + Particle_Spawn(0x4c4, ...) — spawn smoke/dust effect
 //           (offsets: local_c.y = -20.0 for low, -80.0 for high puff)
 //
 //       0x67 (type 103 — weapon spark check):
@@ -46,26 +46,26 @@
 //         local_24 = fVar14, local_20 = fVar14
 //         local_c = {0, 0, 150.0}
 //         local_30 = ftol() % 360 (random rotation angle)
-//         FUN_004409a0(model, &DAT_06970a9c, offset, &local_18, '\0')
+//         BMD_TransformPosition(model, &DAT_06970a9c, offset, &local_18, '\0')
 //         FUN_004795c0(0x4a7, &local_18, 3.04f, &local_24, entity, angle, 0)  → fire spark
 //         FUN_004795c0(0x4a7, &local_18, 3.04f, &local_24, entity, -angle, 0) → mirror spark
 //
 //   case 3 (char select):
 //     switch entity.type:
 //       1: 3 bone transforms + FUN_004795c0(0x47e, ..., 0.5f) ×3 — 3 fire jets (gate)
-//       9: FUN_004409a0 + fVar14=1.5 → single fire + Particle_Spawn
+//       9: BMD_TransformPosition + fVar14=1.5 → single fire + Particle_Spawn
 //       0x11: 4 bone transforms + FUN_004795c0(0x47e, ..., 1.0f) ×4 + fVar14=1.0
-//       0x23: FUN_004409a0 + FUN_004795c0(0x47e, ..., 1.5f) → 1 fire
+//       0x23: BMD_TransformPosition + FUN_004795c0(0x47e, ..., 1.5f) → 1 fire
 //       0x27 (type 39 — special portal with sparks):
 //         2× FUN_004795c0(0x4a7) rotating sparks
-//         Loop 4 bone nodes: FUN_004409a0 + FUN_004795c0(0x47e, ..., 1.0f)
-//         if rand()&7==0: FUN_00475220(0x4ce, ...) ×2  → spawn extra effects
-//         if rand()&7==0: 8 iterations of FUN_0046d840(0x4e9, ...) → particle burst
+//         Loop 4 bone nodes: BMD_TransformPosition + FUN_004795c0(0x47e, ..., 1.0f)
+//         if rand()&7==0: Particle_Spawn(0x4ce, ...) ×2  → spawn extra effects
+//         if rand()&7==0: 8 iterations of Joint_Create(0x4e9, ...) → particle burst
 //       ... (667 líneas totales, continúa con más tipos)
 //
 // ── FUNCIONES IDENTIFICADAS ───────────────────────────────────────────────────
 //
-//   FUN_004409a0  → Bone_GetWorldTransform(model, bone_ptr, offset_xyz, out_mat, flag)
+//   BMD_TransformPosition  → Bone_GetWorldTransform(model, bone_ptr, offset_xyz, out_mat, flag)
 //                   Obtiene la transformación en espacio mundo de un hueso del modelo.
 //                   bone_ptr = puntero a datos de hueso (en sección de datos 0x069xxxxx)
 //
@@ -73,10 +73,10 @@
 //                   Crea una partícula en la posición del hueso.
 //                   type: 0x47e=fuego/llama, 0x4a7=chispa lineal, 0x4ce=humo, 0x4e9=burst
 //
-//   FUN_00475220  → Effect_Spawn(type, bone_mat, pos_ptr, size_ptr, flag, alpha, mode)
+//   Particle_Spawn  → Effect_Spawn(type, bone_mat, pos_ptr, size_ptr, flag, alpha, mode)
 //                   Crea un efecto visual (no partícula) — humo, resplandor, etc.
 //
-//   FUN_0046d840  → Burst_Spawn(type, mat, mat2, angle_ptr, flag1, flag2, speed, dir, mode)
+//   Joint_Create  → Burst_Spawn(type, mat, mat2, angle_ptr, flag1, flag2, speed, dir, mode)
 //                   Explosión/burst de partículas en N direcciones.
 //
 //   FUN_0043e820  → Entity_SetWeaponEffect(entity, enable)
@@ -161,9 +161,9 @@ float * __cdecl FUN_004fc070(int param_1)
         // previa se puso a ciegas (flares invisibles por bug texcoords) y sumaba
         // la pos world de más → 1 flare desplazado al lado del barco. La bone
         // matrix ya está en world-space, translate=0 da la pos correcta.
-        FUN_004409a0(pModel, (float *)&DAT_06970c1c, local_c, &local_18, '\0');
+        BMD_TransformPosition(pModel, (float *)&DAT_06970c1c, local_c, &local_18, '\0');
         FUN_004795c0(0x47e, &local_18, 1.0f, local_light_rgb, param_1, 0, 0);
-        FUN_004409a0(pModel, (float *)&DAT_06970c4c, local_c, &local_18, '\0');
+        BMD_TransformPosition(pModel, (float *)&DAT_06970c4c, local_c, &local_18, '\0');
         FUN_004795c0(0x47e, &local_18, 1.0f, local_light_rgb, param_1, 0, 0);
     }
 
@@ -180,10 +180,10 @@ float * __cdecl FUN_004fc070(int param_1)
             local_24 = fVar14 * _DAT_00552534;
             local_20 = fVar14 * _DAT_005528b8;
             local_1c = fVar14 * _DAT_005524f4;
-            FUN_004409a0(pModel, (float *)&DAT_0697139c, &local_18, local_c, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_0697139c, &local_18, local_c, '\0');
             float fSave = local_30;
             FUN_004795c0(0x47e, local_c, local_30, &local_24, param_1, 0, 0);
-            FUN_004409a0(pModel, (float *)&DAT_0697154c, &local_18, local_c, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_0697154c, &local_18, local_c, '\0');
             pfVar3 = (float *)FUN_004795c0(0x47e, local_c, fSave, &local_24, param_1, 0, 0);
             return pfVar3;
         }
@@ -205,8 +205,8 @@ float * __cdecl FUN_004fc070(int param_1)
                 uVar4 = _rand() & 0x8000001f;
                 if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffffe0) + 1;
                 local_c[2] = (float)(int)(uVar4 - 0x10);
-                FUN_004409a0(pModel, (float *)&DAT_06970acc, local_c, &local_18, '\0');
-                FUN_00475220(0x4c4, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
+                BMD_TransformPosition(pModel, (float *)&DAT_06970acc, local_c, &local_18, '\0');
+                Particle_Spawn(0x4c4, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
                 // High puff: y=-80
                 uVar4 = _rand() & 0x8000001f;
                 if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffffe0) + 1;
@@ -215,8 +215,8 @@ float * __cdecl FUN_004fc070(int param_1)
                 uVar4 = _rand() & 0x8000001f;
                 if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffffe0) + 1;
                 local_c[2] = (float)(int)(uVar4 - 0x10);
-                FUN_004409a0(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
-                pfVar3 = (float *)FUN_00475220(0x4c4, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
+                BMD_TransformPosition(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
+                pfVar3 = (float *)Particle_Spawn(0x4c4, &local_18, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
                 return pfVar3;
             }
         }
@@ -232,7 +232,7 @@ float * __cdecl FUN_004fc070(int param_1)
             local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 150.0f;
             local_30 = (float)(int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20
                                                | uVar11 & 0xffffffff) % 0x168);
-            FUN_004409a0(pModel, (float *)&DAT_06970a9c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970a9c, local_c, &local_18, '\0');
             FUN_004795c0(0x4a7, &local_18, 2.5f,&local_24, param_1,  local_30, 0);
             pfVar3 = (float *)FUN_004795c0(0x4a7, &local_18, 2.5f,&local_24, param_1, -local_30, 0);
             return pfVar3;
@@ -260,31 +260,31 @@ float * __cdecl FUN_004fc070(int param_1)
             local_24 = fVar14 * _DAT_005528b4;
             local_20 = fVar14 * _DAT_00552928;
             local_1c = fVar14;
-            FUN_004409a0(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
             FUN_004795c0(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
-            FUN_004409a0(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
             FUN_004795c0(0x47e, &local_18, 0.5f,&local_24, param_1, 0, 0);
-            FUN_004409a0(pModel, (float *)&DAT_06970bbc, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970bbc, local_c, &local_18, '\0');
             fVar14 = 0.5f;
             break;
         case 9:
             local_24 = fVar14 * _DAT_005528b4;
             local_20 = fVar14 * _DAT_00552928;
             local_1c = fVar14;
-            FUN_004409a0(pModel, (float *)&DAT_06970acc, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970acc, local_c, &local_18, '\0');
             fVar14 = 1.5f;
             break;
         case 0x11:
             local_24 = fVar14 * _DAT_005528b4;
             local_20 = fVar14 * _DAT_00552928;
             local_1c = fVar14;
-            FUN_004409a0(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970b5c, local_c, &local_18, '\0');
             FUN_004795c0(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
-            FUN_004409a0(pModel, (float *)&DAT_06970bec, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970bec, local_c, &local_18, '\0');
             FUN_004795c0(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
-            FUN_004409a0(pModel, (float *)&DAT_06970c7c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970c7c, local_c, &local_18, '\0');
             FUN_004795c0(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
-            FUN_004409a0(pModel, (float *)&DAT_06970d0c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970d0c, local_c, &local_18, '\0');
             pfVar3 = &local_18;
             fVar14 = 1.0f;
             goto LAB_004fc55a;
@@ -292,7 +292,7 @@ float * __cdecl FUN_004fc070(int param_1)
             local_24 = fVar14 * _DAT_005528b4;
             local_20 = fVar14 * _DAT_00552928;
             local_1c = fVar14;
-            FUN_004409a0(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
             pfVar3 = (float *)FUN_004795c0(0x47e, &local_18, 1.5f,&local_24, param_1, 0, 0);
             return pfVar3;
         case 0x27:
@@ -303,7 +303,7 @@ float * __cdecl FUN_004fc070(int param_1)
             uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(__int64)(WorldTime*0.1) % 360
             local_30 = (float)(int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20
                                                | uVar11 & 0xffffffff) % 0x168);
-            FUN_004409a0(pModel, (float *)&DAT_0697154c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_0697154c, local_c, &local_18, '\0');
             FUN_004795c0(0x4a7, &local_18, 1.0f,&local_24, param_1,  local_30, 0);
             FUN_004795c0(0x4a7, &local_18, 1.0f,&local_24, param_1, -local_30, 0);
             local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
@@ -314,17 +314,17 @@ float * __cdecl FUN_004fc070(int param_1)
             // stride 0x30" per the file header).
             pfVar3 = (float *)&DAT_0697160c;
             for (int boneIdx = 0; boneIdx < 4; ++boneIdx, pfVar3 += 0xc) {
-                FUN_004409a0(pModel, pfVar3, local_c, &local_18, '\0');
+                BMD_TransformPosition(pModel, pfVar3, local_c, &local_18, '\0');
                 FUN_004795c0(0x47e, &local_18, 1.0f,&local_24, param_1, 0, 0);
                 uVar4 = _rand() & 0x8000001f;
                 bVar8 = (uVar4 == 0);
                 if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xffffffe0) == 0xffffffff);
                 if (bVar8) {
-                    FUN_00475220(0x4ce, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
-                    FUN_00475220(0x4ce, &local_18, (float *)(param_1 + 0x1c), &local_24, 1, 1.0f, 0);
+                    Particle_Spawn(0x4ce, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+                    Particle_Spawn(0x4ce, &local_18, (float *)(param_1 + 0x1c), &local_24, 1, 1.0f, 0);
                 }
             }
-            FUN_004409a0(pModel, (float *)&DAT_0697157c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_0697157c, local_c, &local_18, '\0');
             uVar4 = _rand() & 0x80000007;
             pfVar3 = (float *)(uVar4);
             if ((int)pfVar3 < 0) pfVar3 = (float *)(((int)pfVar3 - 1U | 0xfffffff8) + 1);
@@ -335,7 +335,7 @@ float * __cdecl FUN_004fc070(int param_1)
                     float fAngPhi = (float)(iVar7 % 0x3c + 0x3c);
                     iVar7 = _rand();
                     local_28 = (float)(iVar7 % 0x1e);
-                    pfVar3 = (float *)FUN_0046d840(0x4e9, &local_18, &local_18, &fAngPhi, 0, 0, 10.0f, -1, 0);
+                    pfVar3 = (float *)Joint_Create(0x4e9, &local_18, &local_18, &fAngPhi, 0, 0, 10.0f, -1, 0);
                     iVar2--;
                 } while (iVar2 != 0);
                 return pfVar3;
@@ -362,15 +362,15 @@ float * __cdecl FUN_004fc070(int param_1)
             uVar11 = (longlong)(DAT_05826e08 * 0.1f);   // IDA: (int)(__int64)(WorldTime*0.1) % 360
             local_30 = (float)(int)((longlong)((ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20
                                                | uVar11 & 0xffffffff) % 0x168);
-            FUN_004409a0(pModel, (float *)&DAT_06970d6c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970d6c, local_c, &local_18, '\0');
             float fAngle1 = local_30;
             float fAngleN = -local_30;
             FUN_004795c0(uVar5, &local_18, 0.3f,&local_24, param_1, local_30,  0);
             FUN_004795c0(uVar5, &local_18, 0.3f,&local_24, param_1, fAngleN,   0);
-            FUN_004409a0(pModel, (float *)&DAT_06970e2c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970e2c, local_c, &local_18, '\0');
             FUN_004795c0(uVar5, &local_18, 0.3f,&local_24, param_1, fAngle1,   0);
             FUN_004795c0(uVar5, &local_18, 0.3f,&local_24, param_1, fAngleN,   0);
-            FUN_004409a0(pModel, (float *)&DAT_06970e8c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970e8c, local_c, &local_18, '\0');
             FUN_004795c0(uVar5, &local_18, 1.5f,&local_24, param_1, fAngle1,   0);
             pfVar3 = (float *)FUN_004795c0(uVar5, &local_18, 1.5f,&local_24, param_1, fAngleN, 0);
         } else if (pfVar3 == (float *)0x28) {
@@ -391,7 +391,7 @@ float * __cdecl FUN_004fc070(int param_1)
             local_24 = fVar14 * _DAT_00552534;
             local_20 = fVar14 * _DAT_005528b8;
             local_1c = fVar14 * _DAT_005524f4;
-            FUN_004409a0(pModel, (float *)&DAT_06970acc, &local_18, local_c, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970acc, &local_18, local_c, '\0');
             fVar14 = fVar14 * _DAT_00552660;
             pfVar3 = local_c;
 LAB_004fc55a:
@@ -409,14 +409,14 @@ LAB_004fc55a:
             fVar9 = fVar9 * (float10)_DAT_005528b8 + (float10)_DAT_00552928;
             local_24 = (float)(fVar9 * (float10)_DAT_00552d0c);
             local_20 = (float)fVar9; local_1c = (float)fVar9;
-            FUN_004409a0(pModel, (float *)&DAT_06970bbc, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970bbc, local_c, &local_18, '\0');
             pfVar3 = (float *)FUN_004795c0(0x498, &local_18, (float)fVar9 * _DAT_00552660, &local_24, param_1, 0, 0);
             return pfVar3;
         case 0x3c:
             if (*(int *)(param_1 + 0x58) != -2) {
                 iVar2 = 0x14;
                 do {
-                    pfVar3 = (float *)FUN_00475220(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 6, *(float *)(param_1 + 0xc), 0);
+                    pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 6, *(float *)(param_1 + 0xc), 0);
                 } while (--iVar2 != 0);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
@@ -427,7 +427,7 @@ LAB_004fc55a:
             fVar9 = fVar9 * (float10)_DAT_005528b8 + (float10)_DAT_00552928;
             local_24 = (float)(fVar9 * (float10)_DAT_00552d0c);
             local_20 = (float)fVar9; local_1c = (float)fVar9;
-            FUN_004409a0(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
             pfVar3 = (float *)FUN_004795c0(0x597, &local_18, (float)fVar9 * _DAT_005528f0, &local_24, param_1, 0, 0);
             return pfVar3;
         case 0x40:
@@ -436,14 +436,14 @@ LAB_004fc55a:
             fVar14 = (float)(fVar9 * (float10)_DAT_005528b8 + (float10)_DAT_00552928);
             local_20 = fVar14 * _DAT_00552d08;
             local_24 = fVar14; local_1c = local_20;
-            FUN_004409a0(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970afc, local_c, &local_18, '\0');
             pfVar3 = (float *)FUN_004795c0(0x597, &local_18, fVar14 * _DAT_005528f0, &local_24, param_1, 0, 0);
             return pfVar3;
         case 0x46:
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             iVar2 = _rand();
             if (iVar2 % 5 == 0) {
-                pfVar3 = (float *)FUN_00475220(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 7, *(float *)(param_1 + 0xc), 0);
+                pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 7, *(float *)(param_1 + 0xc), 0);
                 return pfVar3;
             }
             break;
@@ -452,7 +452,7 @@ LAB_004fc55a:
             uVar11 = (longlong)DAT_05826e08;   // IDA: (__int64)WorldTime % 5000 > 4500
             uVar11 = (ulonglong)(uint)((int)uVar11 >> 0x1f) << 0x20 | uVar11 & 0xffffffff;
             if (0x1194 < (int)((longlong)uVar11 % 5000)) {
-                pfVar3 = (float *)FUN_00475220(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 4, *(float *)(param_1 + 0xc), 0);
+                pfVar3 = (float *)Particle_Spawn(0x4c4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 4, *(float *)(param_1 + 0xc), 0);
                 return pfVar3;
             }
             break;
@@ -467,7 +467,7 @@ LAB_004fc55a:
                 pfVar6  = (float *)(param_1 + 0x1c);
                 pfVar12 = (float *)(param_1 + 0x10);
                 local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
-                FUN_00475220(0x4c4, pfVar12, pfVar6, pfVar13, 8, *(float *)(param_1 + 0xc), 0);
+                Particle_Spawn(0x4c4, pfVar12, pfVar6, pfVar13, 8, *(float *)(param_1 + 0xc), 0);
                 iVar2 = _rand();
                 if (iVar2 % 3 == 0) {
                     uVar4 = _rand() & 0x8000007f;
@@ -477,13 +477,13 @@ LAB_004fc55a:
                     if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffff80) + 1;
                     local_10 = *(float *)(param_1 + 0x18);
                     local_14 = (float)(int)(uVar4 - 0x40) + *(float *)(param_1 + 0x14);
-                    FUN_00475220(0x4c4, &local_18, pfVar6, pfVar13, 4, *(float *)(param_1 + 0xc) * _DAT_00552504, 0);
+                    Particle_Spawn(0x4c4, &local_18, pfVar6, pfVar13, 4, *(float *)(param_1 + 0xc) * _DAT_00552504, 0);
                     bVar18 = 0;
                     pfVar17 = (float *)0x0; pfVar16 = (float *)0xffffffff;
                     pfVar15 = (float *)0x0; pfVar3  = (float *)0x0;
                     uVar4 = _rand() & 0x80000001;
                     if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xfffffffe) + 1;
-                    pfVar3 = (float*)FUN_00460dc0(uVar4 + 0xc5, pfVar12, pfVar6, pfVar13, pfVar3, pfVar15, pfVar16, pfVar17, bVar18);
+                    pfVar3 = (float*)Effect_Create(uVar4 + 0xc5, pfVar12, pfVar6, pfVar13, pfVar3, pfVar15, pfVar16, pfVar17, bVar18);
                     return pfVar3;
                 }
             }
@@ -501,19 +501,19 @@ LAB_004fc55a:
             bVar8 = (uVar4 == 0);
             if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xfffffffc) == 0xffffffff);
             if (bVar8) {
-                FUN_004409a0(pModel, (float *)&DAT_06970eec, local_c, &local_18, '\0');
-                FUN_00475220(0x68, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+                BMD_TransformPosition(pModel, (float *)&DAT_06970eec, local_c, &local_18, '\0');
+                Particle_Spawn(0x68, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
             }
             uVar4 = _rand() & 0x80000003;
             bVar8 = (uVar4 == 0);
             if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xfffffffc) == 0xffffffff);
             if (bVar8) {
-                FUN_004409a0(pModel, (float *)&DAT_0697106c, local_c, &local_18, '\0');
-                FUN_00475220(0x68, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+                BMD_TransformPosition(pModel, (float *)&DAT_0697106c, local_c, &local_18, '\0');
+                Particle_Spawn(0x68, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
             }
             local_c[0] = -15.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
-            FUN_004409a0(pModel, (float *)&DAT_06970eec, local_c, &local_18, '\0');
-            pfVar3 = (float *)FUN_00475220(0x68, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+            BMD_TransformPosition(pModel, (float *)&DAT_06970eec, local_c, &local_18, '\0');
+            pfVar3 = (float *)Particle_Spawn(0x68, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
             return pfVar3;
         }
         break;
@@ -526,7 +526,7 @@ LAB_004fc55a:
             if (*(int *)(param_1 + 0x58) != -2) {
                 float loc30 = 0.1f, loc2c = 0.1f, loc28 = 0.1f;
                 int nIter = 0x14;
-                do { pfVar3 = (float *)FUN_00475220(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
+                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             return pfVar3;
@@ -535,16 +535,16 @@ LAB_004fc55a:
             if (*(int *)(param_1 + 0x58) != -2) {
                 float loc30 = 0.1f, loc2c = 0.1f, loc28 = 0.1f;
                 int nIter = 10;
-                do { pfVar3 = (float *)FUN_00475220(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
+                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             return pfVar3;
         }
         case 0xa:
             local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
-            FUN_004409a0(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
             local_24 = 1.0f; local_20 = 1.0f; local_1c = 1.0f;
-            pfVar3 = (float *)FUN_00475220(0x47e, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+            pfVar3 = (float *)Particle_Spawn(0x47e, &local_18, (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
             return pfVar3;
         }
         break;
@@ -563,7 +563,7 @@ LAB_004fc55a:
             // local_30 area: embedded byte table {0,x,y,...} stride 1
             do {
                 local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 2.0f;
-                FUN_004409a0(pModel,
+                BMD_TransformPosition(pModel,
                     // byte-level indexing into g_BoneScratch: bone_idx * 0x30 bytes.
                     // (char*) cast is mandatory — without it DWORD* stride multiplies by 4.
                     (float *)((char *)&DAT_06970a9c + ((char *)(&local_30))[iVar7] * 0x30),
@@ -576,7 +576,7 @@ LAB_004fc55a:
             local_c[0] = 0.0f; local_c[1] = 0.0f; local_c[2] = 0.0f;
             fVar9 = fVar9 * (float10)_DAT_005528b8 + (float10)_DAT_00552928;
             local_24 = (float)fVar9; local_20 = (float)fVar9; local_1c = (float)fVar9;
-            FUN_004409a0(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
+            BMD_TransformPosition(pModel, (float *)&DAT_06970b2c, local_c, &local_18, '\0');
             pfVar3 = (float *)FUN_004795c0(0x4e1, &local_18, (float)fVar9 + _DAT_00552504, &local_24, param_1, 0, 0);
             return pfVar3;
         } else if ((iVar2 - 0x25) == 0) {
@@ -592,8 +592,8 @@ LAB_004fc55a:
                 if ((int)uVar4 < 0) bVar8 = ((uVar4 - 1 | 0xfffffffc) == 0xffffffff);
                 *(float *)(param_1 + 0x80) = *(float *)(param_1 + 0x80) + _DAT_0055256c;
                 if (bVar8) {
-                    FUN_00475220(0x566, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
-                    FUN_00475220(0x565, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+                    Particle_Spawn(0x566, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
+                    Particle_Spawn(0x565, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &local_24, 0, 1.0f, 0);
                 }
             }
             uVar4 = _rand() & 0x80000001;
@@ -611,10 +611,10 @@ LAB_004fc55a:
                 if (bVar8) {
                     pfVar3 = (float *)(param_1 + 0x1c);
                     pfVar6 = (float *)(param_1 + 0x10);
-                    FUN_00475220(0x4f4, pfVar6, pfVar3, &local_24, 6, 1.0f, 0);
-                    FUN_00475220(0x565, pfVar6, pfVar3, &local_24, 1, 1.0f, 0);
+                    Particle_Spawn(0x4f4, pfVar6, pfVar3, &local_24, 6, 1.0f, 0);
+                    Particle_Spawn(0x565, pfVar6, pfVar3, &local_24, 1, 1.0f, 0);
                     local_24 = 1.0f; local_20 = 0.8f; local_1c = 0.8f;
-                    pfVar3 = (float *)FUN_00475220(0x4e1, pfVar6, pfVar3, &local_24, 4, 0.19f, 0);
+                    pfVar3 = (float *)Particle_Spawn(0x4e1, pfVar6, pfVar3, &local_24, 4, 0.19f, 0);
                     return pfVar3;
                 }
             }

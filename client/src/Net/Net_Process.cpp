@@ -207,7 +207,7 @@
 //
 //   case 0x55:  Character list change (delete/create result):
 //               DAT_07eaa124=1; DAT_07eaa144=1; DAT_07e11d70=1
-//               DAT_00559c84=0; FUN_0047ec60(0)
+//               DAT_00559c84=0; Input_ClearState(0)
 //               _DAT_00559c94=8; DAT_00559c88=0
 //               *(DAT_07abf5d8+0x1da) = 999
 //
@@ -546,8 +546,8 @@
 //     dx=pos-target; distancia 3D; actualiza ángulo de elevación
 //
 //   0x0043e570  Entity_ApplyRotation(float* out, float* quat, float* vec)
-//     FUN_004f9db0(quat, mat4x3) — quaternion → matriz rotación
-//     FUN_004fa0b0(vec, mat4x3, &local) — matriz × vector
+//     Matrix_BuildFromEuler(quat, mat4x3) — quaternion → matriz rotación
+//     Vector_Rotate(vec, mat4x3, &local) — matriz × vector
 //     out[0..2] += local[0..2]  (aplica rotación al offset)
 //
 //   0x0043e5c0  Entity_SmoothAngle(int entity)
@@ -601,7 +601,7 @@
 //     → control de rango circular del buffer
 //
 //   0x0043fd70  AnimTimer_Update(void)
-//     Si DAT_05826e0c == 0: init (DAT_05826e04=timeGetTime(), DAT_05826e0c=1)
+//     Si FpsTimerInitialized == 0: init (FpsWindowStartTimeMs=timeGetTime(), FpsTimerInitialized=1)
 //     Si no: actualiza DAT_05826e10 (delta del timer de frame) vía timeGetTime()
 //     → timer global de animación, usado por Entity_AnimTick
 //
@@ -1224,7 +1224,7 @@ static void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
     if (state == 1) {
         if ((effect & 0x10) != 0) {
             DeleteEffect(1150, (DWORD)(uintptr_t)entity, 1);
-            FUN_00460dc0(1150, (float*)(entity + 16), (float*)(entity + 28),
+            Effect_Create(1150, (float*)(entity + 16), (float*)(entity + 28),
                          (float*)(entity + 232), (float*)1, (float*)entity,
                          (float*)-1, nullptr, 0);
         }
@@ -1232,23 +1232,23 @@ static void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
             DeleteEffect(190, (DWORD)(uintptr_t)entity, 1);
             float angle[3] = { *(float*)(entity + 28), *(float*)(entity + 32),
                                *(float*)(entity + 36) };
-            FUN_00460dc0(190, (float*)(entity + 16), angle, (float*)(entity + 232),
+            Effect_Create(190, (float*)(entity + 16), angle, (float*)(entity + 232),
                          (float*)1, (float*)entity, (float*)-1, nullptr, 0);
             angle[2] += 180.0f;
-            FUN_00460dc0(190, (float*)(entity + 16), angle, (float*)(entity + 232),
+            Effect_Create(190, (float*)(entity + 16), angle, (float*)(entity + 232),
                          (float*)2, (float*)entity, (float*)-1, nullptr, 0);
         }
         if ((effect & 0x40) != 0 && (physicalEffects & 0x40) == 0) {
             DeleteEffect(1274, (DWORD)(uintptr_t)entity, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
-            FUN_00460dc0(1274, (float*)(entity + 16), (float*)(entity + 28),
+            Effect_Create(1274, (float*)(entity + 16), (float*)(entity + 28),
                          light, nullptr, (float*)entity, (float*)-1, nullptr, 0);
             PlayBuffer(104, (DWORD)(uintptr_t)entity, 0);
         }
         if ((effect & 0x80) != 0 && (physicalEffects & 0x80) == 0) {
             DeleteEffect(1274, (DWORD)(uintptr_t)entity, 3);
             float light[3] = { 1.0f, 1.0f, 1.0f };
-            FUN_00460dc0(1274, (float*)(entity + 16), (float*)(entity + 28),
+            Effect_Create(1274, (float*)(entity + 16), (float*)(entity + 28),
                          light, (float*)3, (float*)entity, (float*)-1, nullptr, 0);
         }
         if ((effect & 0x100) != 0 && (physicalEffects & 0x100) == 0 &&
@@ -1256,7 +1256,7 @@ static void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
             PlayBuffer(103, 0, 0);
             DeleteJoint(266, (DWORD)(uintptr_t)entity, 0);
             for (int i = 0; i < 5; ++i) {
-                FUN_0046d840(266, (float*)(entity + 16), (float*)(entity + 16),
+                Joint_Create(266, (float*)(entity + 16), (float*)(entity + 16),
                               (float*)(entity + 28), 0,
                               (int)(uintptr_t)entity, 50.0f, -1, 0);
             }
@@ -1293,7 +1293,7 @@ static void CreateMagicShiny97k(BYTE* entity, int hand)
     float light[3] = { 1.0f, 0.5f, 0.2f };
     void* const model = (void*)(uintptr_t)(DAT_05828d58 + type * 0xBC);
 
-    FUN_004409a0(model, (float*)(uintptr_t)(bones + bone * 0x30),
+    BMD_TransformPosition(model, (float*)(uintptr_t)(bones + bone * 0x30),
                  offset, position, 1);
     // CreateSprite(1231, Position, 1.0, Light, Hand, 0.0, Character).
     // El quinto argumento es el owner y el último es el subtipo; esto
@@ -1835,7 +1835,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     FUN_0045adc0(heroPtr, 390, PosX, PosY, Rotation);
 
     // BUG-FIX 2026-04-28: FUN_0045adc0 setea cached_wp (+0x388/0x38c) pero NO
-    // target_grid (+0x306/0x307). El per-frame walker FUN_0043ea20 en
+    // target_grid (+0x306/0x307). El per-frame walker Entity_AdvancePath en
     // Player_InputTick lee target_grid → como inicialmente está en 0,0, el
     // hero camina automáticamente a la esquina del mapa.
     // Forzar target == position para que el walker quede idle hasta el primer click.
@@ -1887,7 +1887,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // (9) entity+459 = 0 (status flag) + teleport-in effect 1265.
     heroPtr[459] = 0;
     // CreateEffect(1265, Hero.Position, Hero.Angle, Hero+232, 0, Hero, -1, 0, 0)
-    // Effect_Spawn signature: see src/Render/Particle_Spawn.cpp / FUN_00475220.
+    // Effect_Spawn signature: see src/Render/Particle_Spawn.cpp / Particle_Spawn.
     // Wire-up TODO: nuestro Effect_Spawn aún no está parameterizado igual; la
     // entrada al mundo funciona sin el efecto visual.
 
@@ -2041,7 +2041,7 @@ static void Recv_Revival(const BYTE* Msg, int Size)
     //     de muerte; después el efecto visual de aparición.
     FUN_0045c130((int)(uintptr_t)heroPtr);             // SetCharacterClass
     FUN_004430c0((int)(uintptr_t)heroPtr);             // SetPlayerStop
-    FUN_00460dc0(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
+    Effect_Create(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
                  (float*)(heroPtr + 232), nullptr, (float*)heroPtr,
                  (float*)-1, nullptr, 0);              // CreateEffect(1265)
 
@@ -2184,11 +2184,11 @@ static void Recv_LevelUp(const BYTE* Msg, int Size)
     if (DAT_07abf5d8) {
         BYTE* hero = (BYTE*)DAT_07abf5d8;
         for (int i = 0; i < 15; ++i) {
-            FUN_0046d840(1249, (float*)(hero + 16), (float*)(hero + 16),
+            Joint_Create(1249, (float*)(hero + 16), (float*)(hero + 16),
                          (float*)(hero + 28), 0, (int)(uintptr_t)hero,
                          40.0f, 2, 0);
         }
-        FUN_00460dc0(1264, (float*)(hero + 16), (float*)(hero + 28),
+        Effect_Create(1264, (float*)(hero + 16), (float*)(hero + 28),
                      (float*)(hero + 232), nullptr, (float*)hero,
                      (float*)-1, nullptr, 0);
     }
@@ -2359,13 +2359,13 @@ static void Recv_LogOut(const BYTE* Msg)
         DAT_083a7c18 = 0;
         DAT_05826cb0 = 50;               // CurrentProtocolState
         // 2026-05-05: RESET scene-init guards. EnterWorldTick (state=4) and
-        // CharSelectTick (state=5) tienen una guarda DAT_083a7c4b/4c que
+        // CharSelectTick (state=5) tienen guardas de init (IDA: DAT_083a7c4b/4c) que
         // sólo permite re-inicializar la escena la PRIMERA vez. Sin reset,
         // post-JoinChar el substate DAT_083a7c14 quedaba en 0x1c (post-OK-
         // click) heredado del primer login → la siguiente tick disparaba
         // F3/03 select-char inmediato → server respondía con JoinMapServer
         // → cliente "recargaba el mapa" en vez de mostrar char-select.
-        DAT_083a7c4b = 0;                // EnterWorld scene init
+        CharSelectSceneInitialized = 0;
         DAT_083a7c4c = 0;                // CharSelect per-tick init
         DAT_083a7c4d = 0;                // Main scene warning
         DAT_083a4299 = 0;                // double-click flag
@@ -2407,14 +2407,14 @@ static void Recv_LogOut(const BYTE* Msg)
             ReleaseMainData();
         }
         FUN_0043dc90((int)(uintptr_t)DAT_055ca160);  // Net_Disconnect (close socket)
-        FUN_005102c0();                  // ReleaseCharacterSceneData
+        Scene_UnloadCharSelectResources(); // FUN_005102c0 (IDA) — ReleaseCharacterSceneData
         DAT_005615c0 = 2;                // g_GameState = Login
         DAT_083a7c14 = 0;                // sub-state = ServerSelect
         DAT_083a7c18 = 0;
         DAT_05826cb0 = 0;                // CurrentProtocolState
         DAT_083a7c48 = 0;                // ConnectionCheckEnable
         DAT_083a7c49 = 0;                // InitLogIn
-        DAT_083a7c4b = 0;                // InitCharacterScene → reload assets
+        CharSelectSceneInitialized = 0;
         DAT_083a7c4c = 0;                // InitMainScene
         DAT_083a7c4d = 0;                // EnableMainRender / warning flag
         InitGame();
@@ -2543,7 +2543,7 @@ static void Recv_Redirect(const BYTE* Msg)
     g_ConnectServerRequested = 0;
     MuEmu::SetActive(true);
     FUN_0043dc90((int)(uintptr_t)DAT_055ca160);   // Net_Disconnect
-    FUN_00423920(IpAddr, port);                   // Net_Connect
+    Net_ConnectServer(IpAddr, port);                   // Net_Connect
     DAT_05826cf0 = 1;                              // g_bGameServerConnected
 }
 
@@ -2931,7 +2931,7 @@ void Net_ProcessPacket(void)
                                 Position[0] = ((float)Msg[5] + 0.5f) * 100.0f;
                                 Position[1] = ((float)Msg[6] + 0.5f) * 100.0f;
                                 Position[2] = FUN_004f7500(Position[0], Position[1]);
-                                FUN_00460dc0(1248, Position, Angle, Light,
+                                Effect_Create(1248, Position, Angle, Light,
                                              nullptr, nullptr, (float*)-1, nullptr, 0);
                                 break;
                             }
@@ -3418,7 +3418,7 @@ void Net_ProcessPacket(void)
                         if (h[848] == 0) {
                             const int srcX = *(int*)(h + 0x388);
                             const int srcY = *(int*)(h + 0x38c);
-                            if (FUN_0043f3e0(srcX, srcY, gx, gy, h + 852, 0.0f)) {
+                            if (Path_FindRoute(srcX, srcY, gx, gy, h + 852, 0.0f)) {
                                 h[748] = 1;
                                 // 00427B90 invokes SetPlayerWalk immediately
                                 // para el tipo 322. Al resto de las entidades remotas las
@@ -3710,7 +3710,7 @@ void Net_ProcessPacket(void)
                             // CreateFlag branch in Combat_PacketDispatch:
                             // la posición llegue de forma autoritativa, y recién ahí emitir el
                             // standard player teleport-in effect (1265).
-                            FUN_00460dc0(1265, (float*)(slot + 16), (float*)(slot + 28),
+                            Effect_Create(1265, (float*)(slot + 16), (float*)(slot + 28),
                                          (float*)(slot + 232), nullptr, (float*)slot,
                                          (float*)-1, nullptr, 0);
                             *(DWORD*)(slot + 360) = 0;
@@ -3782,7 +3782,7 @@ void Net_ProcessPacket(void)
                     if ((e[0] & 0x80) != 0) {
                         // Rama CreateFlag: efecto de transformación 233 más su
                         // partícula 1191, exactamente como el handler original.
-                        FUN_00460dc0(233, (float*)(entity + 16), (float*)(entity + 28),
+                        Effect_Create(233, (float*)(entity + 16), (float*)(entity + 28),
                                      (float*)(entity + 232), nullptr, (float*)entity,
                                      (float*)-1, nullptr, 0);
                         FUN_004795c0(1191, (float*)(entity + 16), 1.0f,
@@ -5044,7 +5044,7 @@ void Net_ProcessPacket(void)
 
                 if (DAT_083a7c24 == 116) {
                     SetErrorMessage(0);
-                    FUN_0047ec60(0);
+                    Input_ClearState(0);
                     _InputTextMaxArr[0] = 42;
                     DAT_00559c88 = 2;
                     InputEnable = 0;
@@ -5619,7 +5619,7 @@ void Net_ProcessPacket(void)
                     DAT_07eaa14c = 0;
                     TradeOpened = 0;
                     EventWindowOpened = 0;
-                    FUN_00460dc0(1265, (float*)(hero + 16), (float*)(hero + 28),
+                    Effect_Create(1265, (float*)(hero + 16), (float*)(hero + 28),
                                  (float*)(hero + 232), nullptr, (float*)hero,
                                  (float*)-1, nullptr, 0);
                     *(DWORD*)(hero + 0x168) = 0;
@@ -6073,7 +6073,7 @@ void Net_ProcessPacket(void)
                 //   = [C1][size][0x0D][type][message null-terminated]
                 //
                 // type 0 → CreateNotice(msg, 0) — CENTERED blue/cyan banner con
-                //          blink (FUN_0047fae0). Eventos del servidor (Blood
+                //          blink (UI_AddNotice). Eventos del servidor (Blood
                 //          Castle, Happy Hour, server close, etc).
                 // type 1 → UIChatLogWindow_AddText — BLUE chat log local
                 //          (mensajes personales: login welcome, errors, etc).
@@ -6105,10 +6105,10 @@ void Net_ProcessPacket(void)
 
                 if (type == 0) {
                     // Centered banner (blink cyan). Color flag stored at
-                    // slot[0x104]; el renderer FUN_0047fce0 lo lee para cambiar
+                    // slot[0x104]; el renderer UI_RenderNotices lo lee para cambiar
                     // between blink-cyan (flag=0) and gold (flag=1).
-                    extern void __cdecl FUN_0047fae0(char*, unsigned char);
-                    FUN_0047fae0(text, 0);
+                    extern void __cdecl UI_AddNotice(char*, unsigned char);
+                    UI_AddNotice(text, 0);
                 } else if (type == 1) {
                     // Personal blue chat log entry.
                     extern void UIChatLogWindow_AddText(const char* strID,
@@ -6119,14 +6119,14 @@ void Net_ProcessPacket(void)
                 } else if (type == 2) {
                     // Guild notice — gold centered banner. Original IDA
                     // formats with GlobalText[483] ("Guild Notice: %s").
-                    extern void __cdecl FUN_0047fae0(char*, unsigned char);
+                    extern void __cdecl UI_AddNotice(char*, unsigned char);
                     char guildText[320] = {0};
                     SetGuildNoticeText(text);
                     if (GlobalText[483] && GlobalText[483][0] != 0) {
                         wsprintfA(guildText, GlobalText[483], text);
-                        FUN_0047fae0(guildText, 1);
+                        UI_AddNotice(guildText, 1);
                     } else {
-                        FUN_0047fae0(text, 1);
+                        UI_AddNotice(text, 1);
                     }
                 }
                 break;
@@ -6466,10 +6466,10 @@ void Net_ProcessPacket(void)
                     }
                     // 15 chispas + destello, sin rebuild del personaje
                     for (int n = 0; n < 15; ++n)
-                        FUN_0046d840(1249, (float*)(c + 16), (float*)(c + 16),
+                        Joint_Create(1249, (float*)(c + 16), (float*)(c + 16),
                                      (float*)(c + 28), 0, (int)(uintptr_t)c,
                                      40.0f, 2, 0);
-                    FUN_00460dc0(1264, (float*)(c + 16), (float*)(c + 28),
+                    Effect_Create(1264, (float*)(c + 16), (float*)(c + 28),
                                  (float*)(c + 232), nullptr, (float*)c,
                                  (float*)-1, nullptr, 0);
                     PlayBuffer(71, 0, 0);
@@ -6495,14 +6495,14 @@ void Net_ProcessPacket(void)
                     float up[3] = { *(float*)(c + 16), *(float*)(c + 20),
                                     *(float*)(c + 24) + 200.0f };
                     for (int n = 0; n < 15; ++n) {
-                        FUN_0046d840(1249, (float*)(c + 16), (float*)(c + 16),
+                        Joint_Create(1249, (float*)(c + 16), (float*)(c + 16),
                                      (float*)(c + 28), 0, (int)(uintptr_t)c,
                                      40.0f, 2, 0);
-                        FUN_0046d840(1249, up, up,
+                        Joint_Create(1249, up, up,
                                      (float*)(c + 28), 10, (int)(uintptr_t)c,
                                      40.0f, 2, 0);
                     }
-                    FUN_00460dc0(1264, (float*)(c + 16), (float*)(c + 28),
+                    Effect_Create(1264, (float*)(c + 16), (float*)(c + 28),
                                  (float*)(c + 232), nullptr, (float*)c,
                                  (float*)-1, nullptr, 0);
                     FUN_0045c720((int)(uintptr_t)c);   // rebuild de body-parts

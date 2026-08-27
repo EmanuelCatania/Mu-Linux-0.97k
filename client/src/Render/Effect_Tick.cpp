@@ -19,7 +19,8 @@ extern "C" void DbgLogPublic(const char* msg);   // OWNERDBG (temporal)
 // FUN_0046b790 — Effect_TickAll
 // Iterates the effect pool (base DAT_07b11670, stride 0x1bc, end 0x7b27150).
 // For each active slot (first byte != 0), calls FUN_00466ad0(slot, index).
-void FUN_0046b790(void)
+// IDA: FUN_0046b790
+void Effect_TickAll(void)
 {
   // BUG-FIX 2026-04-28: pool real DAT_07b11670[200 × 0x1bc] (2026-08-15: era 124).
   float *pfVar1 = (float *)DAT_07b11670;
@@ -64,7 +65,8 @@ void FUN_0046b790(void)
 // FUN_004736e0 — Joint_TickAll
 // Iterates the joint pool (base DAT_07b27150, stride 0x9d8, end 0x7c5ab30).
 // For each active slot (first byte != 0), calls FUN_00470030(slot, index).
-void FUN_004736e0(void)
+// IDA: FUN_004736e0
+void Joint_TickAll(void)
 {
   // BUG-FIX 2026-04-28: pool real DAT_07b27150[500 × 0x9d8] (2026-08-15: era 200).
   char *pcVar1 = DAT_07b27150;
@@ -83,7 +85,7 @@ void FUN_004736e0(void)
 // FUN_00473ea0 — Effect_DrawRing
 // Draws a cylindrical ring effect by emitting GL_QUADS segments along a helical
 // arc. Uses FUN_004f9e90 to build rotation matrix from Euler angles, and
-// FUN_004fa0b0 (EulerToMatrix3x4) to transform each ring-segment midpoint.
+// Vector_Rotate (EulerToMatrix3x4) to transform each ring-segment midpoint.
 // param_1: texture slot
 // param_2: center position float[3]
 // param_3/4/5: radii bit-patterns (float bits in undefined4) for inner/outer ring corners
@@ -93,13 +95,13 @@ void FUN_004736e0(void)
 //
 // BUG-FIX 2026-04-26: el Ghidra-decomp original tenía decenas de variables
 // `local_<N>` declaradas escalares pero usadas como vec3 contiguos pasados a
-// FUN_004fa0b0 (matrix×vector) y luego leídos en bloque por glVertex3fv con
+// Vector_Rotate (matrix×vector) y luego leídos en bloque por glVertex3fv con
 // `((int)&local_f0 + iVar5)` y stride de 12. MSVC no preserva ese layout →
 // las posiciones de los 4 vértices del quad eran basura → en char-select el
 // efecto rojo del char seleccionado se renderizaba como una línea horizontal
 // en el suelo (mile-of-vertices) en vez de un anillo vertical alrededor del
 // personaje. Reemplazado por arrays float[4][3] explícitos.
-// Mismo patrón que FUN_005112f0 (mouse-ray) y FUN_004f70b0 (terrain normals).
+// Mismo patrón que Camera_BuildMouseRay (mouse-ray) y FUN_004f70b0 (terrain normals).
 void __cdecl
 FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,undefined4 param_5,
             float param_6,undefined4 param_7,float param_8)
@@ -112,7 +114,7 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
   float angles[3];
   float input_vec[3];
 
-  FUN_00511480(param_1);
+  GL_BindTextureSlot(param_1);
 
   // Verts 0,1: white (1.0f bits = 0x3f800000); Verts 2,3: param_7 alpha bits.
   colors[0][0] = colors[0][1] = colors[0][2] = 0x3f800000;
@@ -145,7 +147,7 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
     input_vec[0] = 0.0f;
     *(unsigned int*)&input_vec[1] = (unsigned int)param_3;
     input_vec[2] = 0.0f;
-    FUN_004fa0b0(input_vec, matA, &verts[0][0]);
+    Vector_Rotate(input_vec, matA, &verts[0][0]);
     verts[0][0] += param_2[0];
     verts[0][1] += param_2[1];
     verts[0][2] += param_2[2];
@@ -154,7 +156,7 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
     input_vec[0] = 0.0f;
     *(unsigned int*)&input_vec[1] = (unsigned int)param_3;
     input_vec[2] = 0.0f;
-    FUN_004fa0b0(input_vec, matB, &verts[1][0]);
+    Vector_Rotate(input_vec, matB, &verts[1][0]);
     verts[1][0] += param_2[0];
     verts[1][1] += param_2[1];
     verts[1][2] += param_2[2];
@@ -163,7 +165,7 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
     input_vec[0] = 0.0f;
     *(unsigned int*)&input_vec[1] = (unsigned int)param_4;
     *(unsigned int*)&input_vec[2] = (unsigned int)param_5;
-    FUN_004fa0b0(input_vec, matB, &verts[2][0]);
+    Vector_Rotate(input_vec, matB, &verts[2][0]);
     verts[2][0] += param_2[0];
     verts[2][1] += param_2[1];
     verts[2][2] += param_2[2];
@@ -172,7 +174,7 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
     input_vec[0] = 0.0f;
     *(unsigned int*)&input_vec[1] = (unsigned int)param_4;
     *(unsigned int*)&input_vec[2] = (unsigned int)param_5;
-    FUN_004fa0b0(input_vec, matA, &verts[3][0]);
+    Vector_Rotate(input_vec, matA, &verts[3][0]);
     verts[3][0] += param_2[0];
     verts[3][1] += param_2[1];
     verts[3][2] += param_2[2];
@@ -193,7 +195,7 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
 // FUN_00474f90 — Effect_DrawQuad
 // Draws a world-space textured quad (GL_QUADS) at param_2 position,
 // rotated by param_4 around Z axis, with half-size param_3.
-// Uses FUN_00511710 to set blend mode.
+// Uses GL_SetBlendAdditive to set blend mode.
 void __cdecl FUN_00474f90(int param_1,undefined4 *param_2,float param_3,undefined4 param_4)
 {
   float local_30;
@@ -209,8 +211,8 @@ void __cdecl FUN_00474f90(int param_1,undefined4 *param_2,float param_3,undefine
   float local_8;
   undefined4 local_4;
 
-  FUN_00511480(param_1);
-  FUN_00511710();
+  GL_BindTextureSlot(param_1);
+  GL_SetBlendAdditive();
   glPushMatrix();
   glTranslatef(*(float*)&param_2[0],*(float*)&param_2[1],*(float*)&param_2[2]);
   // BUG-FIX: 0x3f800000 son los bits de 1.0f. Pasarlos como int → C
@@ -240,7 +242,7 @@ void __cdecl FUN_00474f90(int param_1,undefined4 *param_2,float param_3,undefine
   glVertex3fv(&local_24);
   glEnd();
   glPopMatrix();
-  FUN_00511600();
+  GL_ResetState();
   return;
 }
 
@@ -249,7 +251,8 @@ void __cdecl FUN_00474f90(int param_1,undefined4 *param_2,float param_3,undefine
 // Iterates the fade-effect pool (base DAT_07c74ec8, stride 0x6f*4=0x1bc,
 // end 0x7c7fc38). For active slots: decrements lifetime counter; if
 // counter < 10 fades colour toward black; subtracts counter from Z velocity.
-void FUN_00475090(void)
+// IDA: FUN_00475090
+void Effect_TickFade(void)
 {
   // BUG-FIX 2026-04-28: pool real DAT_07c74ec8[40 × 0x1bc].
   int *piVar3 = (int*)DAT_07c74ec8;
@@ -283,7 +286,8 @@ void FUN_00475090(void)
 // Iterates the flare-effect pool (base DAT_07c82cdc, stride 0x1c*4=0x70,
 // end 0x7c8589b). Per-tick: decrement life counter; handle sub-type state
 // machine for position and alpha.
-void FUN_004794a0(void)
+// IDA: FUN_004794a0
+void Effect_TickFlare(void)
 {
   float fVar1;
   float fVar2;
@@ -344,7 +348,8 @@ LAB_004794f9:
 // abordan desde offsets distintos del slot y usan índices relativos.
 // Al tocar otra memoria, el tick corría sobre un pool siempre vacío: los
 // números nacían y nadie los movía ni los expiraba.
-void FUN_00479380(void)
+// IDA: FUN_00479380
+void DamageNumbers_Tick(void)
 {
   // Mismo pool que CreatePoint/RenderPoints, desplazado +0x18 como en IDA.
   float *pfVar2 = (float *)((char *)&DAT_07c80110[0] + 0x18);

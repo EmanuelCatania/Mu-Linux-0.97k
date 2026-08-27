@@ -91,7 +91,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
 
     // ── RECEIVE INCOMING PACKETS ─────────────────────────────────────────────
-    FUN_0043fd70();
+    Timer_UpdateFrameTiming();
     CHK("ML/post_recv");
 
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────
@@ -154,11 +154,11 @@ void __cdecl Game_MainLoop(HDC param_1)
         // for (int i = 0; i < 5; i++) FUN_00409c40(0x83a4338);
 
         // Input update
-        FUN_0047fcb0();   CHK("ML/post_0047fcb0");
-        FUN_00480950();   CHK("ML/post_00480950");
+        Chat_TickNoticeTimer();   CHK("ML/post_0047fcb0");
+        Chat_TickMessageTimer();   CHK("ML/post_00480950");
 
         // F12 → toggle screenshot mode
-        if (FUN_0047ec20(0x2c) & 0xff)
+        if (Input_IsKeyJustPressed(0x2c) & 0xff)
             DAT_083a42ec ^= 1;
 
         // Decrement countdown counters
@@ -200,7 +200,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     if (DAT_055ca018 != '\0') return;
 
     // ── PRE-RENDER SETUP ──────────────────────────────────────────────────────
-    FUN_00404cd0();  // HashTable maintenance
+    Sound_Update3DPositions();
     {
         SYSTEMTIME st;
         GetLocalTime(&st);
@@ -252,25 +252,25 @@ void __cdecl Game_MainLoop(HDC param_1)
         // Original: clear color negro (la captura del binario real lo confirma).
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     }
-    FUN_005119b0(0, 0, 0x280, 0x1e0);   // BeginOpengl(0,0,640,480) → push PROJECTION+MODELVIEW
+    GL_BeginViewport(0, 0, 0x280, 0x1e0);   // BeginOpengl(0,0,640,480) → push PROJECTION+MODELVIEW
     CHK("ML/post_viewport");
     glClear(0x4100);  // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
     // IDA Game_MainLoop (0x525D40): BeginOpengl(0,0,640,480); glClear; EndOpengl();
     // BUG-FIX 2026-06-28: antes era GL_PopMatrixAll() (hack que popea 8×2=16 matrices)
     // sobre un stack con sólo 2 pushes → GL_STACK_UNDERFLOW (0x504) cada frame.
     // El balance correcto es EndOpengl (pop MODELVIEW + PROJECTION), igual a IDA.
-    FUN_00511bc0();   // EndOpengl → pop MODELVIEW + PROJECTION (balancea el BeginOpengl)
+    GL_EndOpenGL();   // EndOpengl → pop MODELVIEW + PROJECTION (balancea el BeginOpengl)
     CHK("ML/post_PopMatrix");
 
     // ── HARD GL STATE RESET (post-clear, pre-scene) ──────────────────────────
-    // Sincroniza ESTADO REAL + CACHES que usan FUN_00511680/710/790/600 y
-    // FUN_005119b0. Los setter de escena hacen `if (cache==X) skip glEnable(...)`,
+    // Sincroniza ESTADO REAL + CACHES que usan GL_SetBlendSrcOver/710/790/600 y
+    // GL_BeginViewport. Los setter de escena hacen `if (cache==X) skip glEnable(...)`,
     // así que si el cache quedó desincronizado por cualquier frame previo la
     // UI se dibuja con state incorrecto (blend off → quads opacos sobre negro,
     // textura off → rectángulos negros, etc). Aquí forzamos ambos en sync.
     //
-    // Defaults elegidos para coincidir con lo que FUN_005119b0 deja tras su
-    // primer push (Scene_Login llama FUN_005119b0 como primera acción).
+    // Defaults elegidos para coincidir con lo que GL_BeginViewport deja tras su
+    // primer push (Scene_Login llama GL_BeginViewport como primera acción).
     glDisable(GL_BLEND);       DAT_083a412c = 0;    // blend OFF (setters lo activarán)
     glEnable(GL_CULL_FACE);    DAT_083a411c = 1;
     glEnable(GL_TEXTURE_2D);   DAT_083a4125 = 1;
@@ -283,10 +283,10 @@ void __cdecl Game_MainLoop(HDC param_1)
     DAT_00561574 = 0xFFFFFFFFu;
 
     // NOTA: el workaround `glDisable(GL_CULL_FACE)` aquí era no-op: cada
-    // Scene_* llama FUN_005119b0 después y ese re-habilita GL_CULL_FACE
+    // Scene_* llama GL_BeginViewport después y ese re-habilita GL_CULL_FACE
     // (+ cache DAT_083a411c=1). Movido al inicio de cada scene render
     // (ver Scene_Login.cpp / Scene_CharSelect.cpp) donde sí surte efecto.
-    // Los blend-setters 2D (FUN_00511680/710/790) ya llaman FUN_00511570
+    // Los blend-setters 2D (GL_SetBlendSrcOver/710/790) ya llaman GL_DisableCullFace
     // (DisableCullFace) antes de dibujar sprites, pero la geometría 3D
     // de fondo (terrain/entidades) necesita el disable explícito hasta que
     // auditemos winding en los emitters.
@@ -310,8 +310,8 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     if (DAT_083a42ec != '\0') {
         if (DAT_083a410c != '\0')
-            FUN_0045fa20("Data2/MonsterSetBase2.txt");
-        FUN_00511140();
+            Monster_SaveSetBase("Data2/MonsterSetBase2.txt");
+        GL_CaptureScreenshot();
     }
 
     if (DAT_083a42ec != '\0' && shiftHeld == 0)
@@ -394,7 +394,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
     // Login BGM
     if (DAT_005615c0 == 2)
-        FUN_00412890(PTR_DAT_005615c8, 0);
+        Music_PlayTrack(PTR_DAT_005615c8, 0);
 
     if (DAT_005615c0 != 5) return;
 
@@ -402,7 +402,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     switch (DAT_0055a7ac) {
     case 0:  // Connecting
         if (DAT_07e118e8 == 4) {
-            FUN_00404c60(0); FUN_00404c60(1);
+            Sound_StopBuffer(0); Sound_StopBuffer(1);
         } else {
             FUN_00404bc0(0, 0, 1);
             if (DAT_07c74ae4 > 0)
@@ -414,7 +414,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         break;
     case 2:  // In-world
         if (DAT_07e118e8 == 3 || DAT_07e118e8 > 9)
-            FUN_00404c60(0);
+            Sound_StopBuffer(0);
         else
             FUN_00404bc0(0, 0, 1);
         break;
@@ -436,27 +436,27 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
 
     // Stop tracks not active in this sub-state
-    if (DAT_0055a7ac != 0 && DAT_0055a7ac != 2 && DAT_0055a7ac != 3) FUN_00404c60(0);
-    if (DAT_0055a7ac != 0 && DAT_0055a7ac != 9)                       FUN_00404c60(1);
-    if (DAT_0055a7ac != 1)                                             FUN_00404c60(3);
-    if (DAT_0055a7ac != 3)                                             FUN_00404c60(2);
-    if (DAT_0055a7ac != 4)                                             FUN_00404c60(5);
-    if (DAT_0055a7ac != 7)                                             FUN_00404c60(6);
-    if (DAT_0055a7ac != 8)                                             FUN_00404c60(7);
-    if (DAT_0055a7ac != 10)                                            FUN_00404c60(0x14);
+    if (DAT_0055a7ac != 0 && DAT_0055a7ac != 2 && DAT_0055a7ac != 3) Sound_StopBuffer(0);
+    if (DAT_0055a7ac != 0 && DAT_0055a7ac != 9)                       Sound_StopBuffer(1);
+    if (DAT_0055a7ac != 1)                                             Sound_StopBuffer(3);
+    if (DAT_0055a7ac != 3)                                             Sound_StopBuffer(2);
+    if (DAT_0055a7ac != 4)                                             Sound_StopBuffer(5);
+    if (DAT_0055a7ac != 7)                                             Sound_StopBuffer(6);
+    if (DAT_0055a7ac != 8)                                             Sound_StopBuffer(7);
+    if (DAT_0055a7ac != 10)                                            Sound_StopBuffer(0x14);
 
     // ── WINDOW TITLE (sub-state 0) ────────────────────────────────────────────
     if (DAT_0055a7ac == 0) {
         char dead = *(char*)(DAT_07abf5d8 + 0x34e);
         if (dead != '\0') {
             if (DAT_07e118e8 == 4)
-                FUN_00412890(PTR_DAT_005615c4, 0);
+                Music_PlayTrack(PTR_DAT_005615c4, 0);
             else
-                FUN_00412890(PTR_DAT_005615c8, 0);
+                Music_PlayTrack(PTR_DAT_005615c8, 0);
         }
     } else {
-        FUN_004127f0(PTR_DAT_005615c4, 0);
-        FUN_004127f0(PTR_DAT_005615c8, 0);
+        Music_StopTrack(PTR_DAT_005615c4, 0);
+        Music_StopTrack(PTR_DAT_005615c8, 0);
     }
 
     // ── SUB-STATE 2: IN-WORLD ANTI-TAMPER CHECK ───────────────────────────────
@@ -475,31 +475,31 @@ void __cdecl Game_MainLoop(HDC param_1)
                     if (val38c > 0xc) {
                         val38c = *(int*)(DAT_07abf5d8 + 0x38c); // re-read
                         if (val38c < 0x20) {
-                            FUN_00412890(PTR_DAT_005615cc, 0);
+                            Music_PlayTrack(PTR_DAT_005615cc, 0);
                             goto LAB_00527402;
                         }
                     }
                 }
             }
-            FUN_00412890(PTR_DAT_005615d0, 0);
+            Music_PlayTrack(PTR_DAT_005615d0, 0);
         }
     } else {
-        FUN_004127f0(PTR_DAT_005615cc, 0);
-        FUN_004127f0(PTR_DAT_005615d0, 0);
+        Music_StopTrack(PTR_DAT_005615cc, 0);
+        Music_StopTrack(PTR_DAT_005615d0, 0);
     }
 
 LAB_00527402:
     // Sub-state 3 window title
     if (DAT_0055a7ac == 3) {
         if (*(char*)(DAT_07abf5d8 + 0x34e) != '\0')
-            FUN_00412890(PTR_DAT_005615d4, 0);
+            Music_PlayTrack(PTR_DAT_005615d4, 0);
     } else {
-        FUN_004127f0(PTR_DAT_005615d4, 0);
+        Music_StopTrack(PTR_DAT_005615d4, 0);
     }
 
     // Sub-states 1/5 window title
     if (DAT_0055a7ac == 1 || DAT_0055a7ac == 5)
-        FUN_00412890(PTR_DAT_005615d8, 0);
+        Music_PlayTrack(PTR_DAT_005615d8, 0);
     else
-        FUN_004127f0(PTR_DAT_005615d8, 0);
+        Music_StopTrack(PTR_DAT_005615d8, 0);
 }

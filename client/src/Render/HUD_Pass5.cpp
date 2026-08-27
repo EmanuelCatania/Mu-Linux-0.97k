@@ -224,7 +224,7 @@ extern "C" void __cdecl sub_4BB940(float HeightArg, float xArg, float yArg,
     float u_uv = (float)((double)(a4 * ((v10 - 1) % 8)) * 0.00390625);
     float uW   = fw * 0.00390625f;
     float vH   = (fh - 1.0f) * 0.00390625f;
-    FUN_005125a0(298, fx, fy, fw, fh, u_uv, v_uv, uW, vH, 1, 1);
+    GL_DrawTexture(298, fx, fy, fw, fh, u_uv, v_uv, uW, vH, 1, 1);
 
     // Keybind digit per-hero.
     BYTE keybind = *(unsigned char*)(CA + (SelectedHero << 6) + slot + 215);
@@ -274,7 +274,7 @@ void __cdecl Render_HudPass_4BD650_(void)
     float HpHeight = 48.0f - va;
     float yHp = (float)(v19 + 432.0);
     bool poisoned = (Hero && (*(BYTE*)((BYTE*)(uintptr_t)Hero + 120) & 1) == 1);
-    FUN_005125a0(poisoned ? 247 : 234,
+    GL_DrawTexture(poisoned ? 247 : 234,
                  97.0f, yHp, 53.0f, HpHeight,
                  0.0f, va, 0.828125f, 0.75f, 1, 1);
 
@@ -291,7 +291,7 @@ void __cdecl Render_HudPass_4BD650_(void)
     float v94 = (float)(v22 * 0.015625);
     float MpHeight = 48.0f - v94;
     float yMp = (float)(v22 + 432.0);
-    FUN_005125a0(235, 489.0f, yMp, 53.0f, MpHeight,
+    GL_DrawTexture(235, 489.0f, yMp, 53.0f, MpHeight,
                  0.0f, v94, 0.828125f, 0.75f, 1, 1);
 
     if ((double)MouseX >= 489.0 && (double)MouseX < 542.0 &&
@@ -307,7 +307,7 @@ void __cdecl Render_HudPass_4BD650_(void)
         RenderTipText(348, 437, GlobalText[361]);
     }
     if (PartyOpened) {
-        FUN_005125a0(236, 348.0f, 452.0f, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(236, 348.0f, 452.0f, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     }
 
     // ── Action button: Character (379) ───────────────────────────────────────
@@ -316,7 +316,7 @@ void __cdecl Render_HudPass_4BD650_(void)
         RenderTipText(379, 437, GlobalText[362]);
     }
     if (CharacterOpened) {
-        FUN_005125a0(237, 379.0f, 452.0f, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(237, 379.0f, 452.0f, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     }
 
     // ── Action button: Inventory (410) ───────────────────────────────────────
@@ -325,7 +325,7 @@ void __cdecl Render_HudPass_4BD650_(void)
         RenderTipText(410, 437, GlobalText[363]);
     }
     if (InventoryOpened) {
-        FUN_005125a0(238, 410.0f, 452.0f, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(238, 410.0f, 452.0f, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     }
 
     // ── Action button: Guild (582) ───────────────────────────────────────────
@@ -334,7 +334,7 @@ void __cdecl Render_HudPass_4BD650_(void)
         RenderTipText(582, 444, GlobalText[364]);
     }
     if (GuildOpened) {
-        FUN_005125a0(250, 582.0f, 459.0f, 52.0f, 18.0f, 0.0f, 0.0f, 0.8125f, 0.5625f, 1, 1);
+        GL_DrawTexture(250, 582.0f, 459.0f, 52.0f, 18.0f, 0.0f, 0.0f, 0.8125f, 0.5625f, 1, 1);
     }
 
     // ── Skill bar (when CharacterAttribute+86 != 0) ──────────────────────────
@@ -407,7 +407,7 @@ void __cdecl Render_HudPass_4BD650_(void)
         }
     }
 
-    FUN_005124b0();   // EndBitmap
+    GL_End2D();   // EndBitmap
 }
 
 // AntiTamper_HashMaintain_C → sub_4BD650.

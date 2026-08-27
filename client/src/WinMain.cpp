@@ -582,7 +582,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // (crash 0xC0000005 con param1 = 0x1C848, que es el offset de la lista de
     // quests).  Los lectores viejos no reventaban porque estaban gateados con
     // `g_csQuest != 0`; los handlers de quest nuevos si.
-    FUN_00401010();
+    Quest_InitializeStaticState();
 
     // Todos los paths de datos del original son relativos (p.ej. Data\\Skill\\Fire01.bmd).
     // El binario reconstruido lo puede lanzar un debugger o una app con el
@@ -872,7 +872,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     HUD_InitInventoryPools();
     DAT_055c9ff8 = (DWORD)malloc(0xc);   memset((void*)DAT_055c9ff8, 0, 0xc);
 
-    // Fallback de la tabla de modelos: FUN_00506170 (Model_LoadItems) sólo corre
+    // Fallback de la tabla de modelos: Model_LoadPlayerAndItemMeshes
+    // (IDA: FUN_00506170) sólo corre
     // durante la carga del mapa (state=5). Los spawns de entidades de la escena de
     // login deferencian DAT_05828d58 + etype*0xbc + offset y crashean si es NULL.
     // Alocamos un fallback en cero, grande como para etype hasta ~0x300.
@@ -1092,7 +1093,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (evt & 0x10) { // FD_CONNECT
             DbgLog("NET: FD_CONNECT fired (socket ready for I/O)");
             extern void CS_SendPlain(const BYTE* data, int len);
-            extern void FUN_00423920(const char* server, unsigned int port);
+            extern void Net_ConnectServer(const char* server, unsigned int port);
             if (err == 0 && g_ConnectServerMode && !g_ConnectServerRequested) {
                 // Conectados al ConnectServer → pedir la lista de servers.
                 // C1 04 F4 02 (PMSG_SERVER_LIST_RECV) — plano, sin encriptar.
@@ -1111,7 +1112,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     closesocket((SOCKET)DAT_055ca168);
                     DAT_055ca168 = (DWORD)INVALID_SOCKET;
                 }
-                FUN_00423920(g_GameServerIP, g_GameServerPort);
+                Net_ConnectServer(g_GameServerIP, g_GameServerPort);
             }
         }
         if (evt & 0x20) { // FD_CLOSE
@@ -1124,7 +1125,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             // (Tras un redirect exitoso Recv_Redirect ya puso mode=0, así que
             // este FD_CLOSE del socket viejo NO dispara el fallback.)
             if (g_ConnectServerMode && g_HasConnectServer && g_GameServerPort != 0) {
-                extern void FUN_00423920(const char* server, unsigned int port);
+                extern void Net_ConnectServer(const char* server, unsigned int port);
                 DbgLog("NET: CS dropped before redirect → fallback to GameServer");
                 g_ConnectServerMode      = 0;
                 g_ConnectServerRequested = 0;
@@ -1133,7 +1134,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     closesocket((SOCKET)DAT_055ca168);
                     DAT_055ca168 = (DWORD)INVALID_SOCKET;
                 }
-                FUN_00423920(g_GameServerIP, g_GameServerPort);
+                Net_ConnectServer(g_GameServerIP, g_GameServerPort);
                 break;   // no mostrar "conexión cerrada"; estamos reconectando
             }
             // IDA WndProc @ 0x004149D0 case FD_CLOSE (original behaviour):

@@ -40,7 +40,7 @@ void FUN_004fd800(void)
             unsigned short vis = FUN_004f8ff0(chunk_yf, (float)chunk_x, -180.0f);
             *((char*)chunk_ptr + 8) = (char)vis;
 
-            if ((char)vis != '\0' || DAT_083a42e9 != '\0')
+            if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
             {
                 char *entity = (char*)*chunk_ptr;
                 __try {
@@ -70,7 +70,7 @@ void FUN_004fd800(void)
                         vis = FUN_004f8ff0(ex, ey, ez);
                         entity[0x160] = (char)vis;
 
-                        if ((char)vis != '\0' || DAT_083a42e9 != '\0')
+                        if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
                         {
                             // Terrain_Render in the original only prepares and draws.
                             // Per-frame object animation/update belongs to MoveObjects.

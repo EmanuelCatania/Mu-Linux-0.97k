@@ -116,7 +116,7 @@ void __cdecl FUN_004792c0(float* Position, int Value, float* Color, float scale)
 //
 // 2026-05-08: previously aliased as `Entity_WeaponHit` in CLAUDE.md and our
 // Combat.cpp comments, but IDA confirms this is the teleport-begin function.
-// FUN_00443e70 / FUN_0043e820 / FUN_00460dc0 / FUN_00404bc0 decls in functions.h.
+// FUN_00443e70 / FUN_0043e820 / Effect_Create / FUN_00404bc0 decls in functions.h.
 extern "C" void __cdecl CreateTeleportBegin(unsigned int o)
 {
     if (!o) return;
@@ -124,7 +124,7 @@ extern "C" void __cdecl CreateTeleportBegin(unsigned int o)
     (void)FUN_0043e820((int)o, 87);                  // SetAction(o, 87)
     *(unsigned int*)(o + 356) = 0;                   // alpha = 0 (fade-out)
     *(BYTE*)(o + 124) = 1;                           // state byte = 1 (begin)
-    (void)FUN_00460dc0(1176, (float*)(o + 16), (float*)(o + 28),
+    (void)Effect_Create(1176, (float*)(o + 16), (float*)(o + 28),
                        (float*)(o + 232), nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);
     FUN_00404bc0(88, 0, 0);                          // PlayBuffer(88) whoosh
@@ -142,10 +142,10 @@ extern "C" void __cdecl CreateTeleportEnd(unsigned int o)
     *(unsigned int*)(o + 264) = 0x40A00000u;        // anim_speed = 5.0f
     *(BYTE*)(o + 124) = 3;                           // state byte = 3 (end)
     *(unsigned int*)(o + 356) = 0x3F800000u;        // alpha = 1.0f (fade-in)
-    (void)FUN_00460dc0(1176, (float*)(o + 16), (float*)(o + 28),
+    (void)Effect_Create(1176, (float*)(o + 16), (float*)(o + 28),
                        (float*)(o + 232), nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);
     FUN_00404bc0(88, 0, 0);
 }
 
-// FUN_00485780 @ 0x00485780 — UseSkillWarrior(c=CHARACTER*, o=OBJECT*)
+// Combat_UseWarriorSkill @ 0x00485780 — UseSkillWarrior(c=CHARACTER*, o=OBJECT*)

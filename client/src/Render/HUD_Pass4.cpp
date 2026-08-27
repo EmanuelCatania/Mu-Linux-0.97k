@@ -149,7 +149,7 @@ int Render_MacroTimer_(void)
         float x = (640.0f - 50.0f) * 0.5f;
         int v8 = 50 * MacroTime / 100;
         EnableAlphaTest(true);
-        FUN_0047f7a0((int)x, 392, (char*)aMacroTime, 0, 1, 0);
+        UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0);
         int n = lstrlenA(aMacroTime);
         GetTextExtentPointA(m_hFontDC, aMacroTime, n, &TextSize);
         TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
@@ -164,7 +164,7 @@ int Render_MacroTimer_(void)
         DWORD TickCount = GetTickCount();
         DWORD elapsed   = TickCount - m_dwMatchCountDownStart;
         if (elapsed <= 0x7530) {   // 30s
-            FUN_00511600();          // DisableAlphaBlend
+            GL_ResetState();          // DisableAlphaBlend
             EnableAlphaTest(false);
             m_dwBackColor = 0x80000000u;
             DWORD secs = elapsed / 0x3E8;
@@ -175,7 +175,7 @@ int Render_MacroTimer_(void)
             const char* fmt = (idx >= 0 && idx < 1000) ? GlobalText[idx] : "%d";
             CHAR String[256];
             wsprintfA(String, fmt, 30 - (int)secs);
-            FUN_0047f7a0(10, 372, String, 0, 1, 0);
+            UI_DrawText(10, 372, String, 0, 1, 0);
         } else {
             m_iMatchCountDownType = 0;
         }
@@ -200,7 +200,7 @@ void Render_MapLoadText_(void)
     if (!m_byMatchType) return;
     if ((int)World < 11 || (int)World > 16) return;
 
-    FUN_00511600();
+    GL_ResetState();
     EnableAlphaTest(false);
     glColor3f(1.0f, 1.0f, 1.0f);
     float v1 = 345.0f;
@@ -257,7 +257,7 @@ extern "C" void __cdecl Render_QuickButtons_(void);
 void Render_QuickButtons_(void)
 {
     glColor3f(1.0f, 1.0f, 1.0f);
-    FUN_00511600();
+    GL_ResetState();
     m_dwTextColor = 0xFFFF8080u;
     // 2026-08-08 FIX "el panel de Character (C) se ve negro si se abre despues
     // del inventario": esto era `GetScreenWidth()`, que devuelve 260 cuando
@@ -286,24 +286,24 @@ void Render_QuickButtons_(void)
         float btnX = (float)g_GuildCreatorScratchX + _DAT_005524fc;
         float btnY = (float)g_GuildCreatorScratchY + _DAT_00552ca4;
         glColor3f(1.0f, 1.0f, 1.0f);
-        FUN_005125a0(0x118, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 2.1875f, 0.65625f, 1, 1);
+        GL_DrawTexture(0x118, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 2.1875f, 0.65625f, 1, 1);
         int tex = ((int)MouseX >= (int)btnX && (int)MouseX < (int)(btnX + 70.0f) &&
                    (int)MouseY >= (int)btnY && (int)MouseY < (int)(btnY + 21.0f)) ? 0xF2 : 0xF1;
-        FUN_005125a0(tex, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 0.546875f, 0.65625f, 1, 1);
+        GL_DrawTexture(tex, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 0.546875f, 0.65625f, 1, 1);
 
         btnX += _DAT_005524f0;
-        FUN_005125a0(0x118, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 2.1875f, 0.65625f, 1, 1);
+        GL_DrawTexture(0x118, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 2.1875f, 0.65625f, 1, 1);
         tex = ((int)MouseX >= (int)btnX && (int)MouseX < (int)(btnX + 70.0f) &&
                (int)MouseY >= (int)btnY && (int)MouseY < (int)(btnY + 21.0f)) ? 0xF4 : 0xF3;
-        FUN_005125a0(tex, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 0.546875f, 0.65625f, 1, 1);
+        GL_DrawTexture(tex, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 0.546875f, 0.65625f, 1, 1);
     }
 
     if (HUD_IsGuildListRuntime()) {
         float iconX = (float)DAT_07e91788 + _DAT_00552464;
         float iconY = (float)DAT_07e91784 + _DAT_0055246c;
         glColor3f(1.0f, 1.0f, 1.0f);
-        FUN_005125a0(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-        FUN_005125a0(RepairEnable_0 ? 287 : 286,
+        GL_DrawTexture(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(RepairEnable_0 ? 287 : 286,
                      iconX, iconY, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
@@ -319,8 +319,8 @@ void Render_QuickButtons_(void)
         float iconX = (float)DAT_07ea982c + 25.0f;
         float iconY = (float)DAT_07ea9830 + 395.0f;
         glColor3f(1.0f, 1.0f, 1.0f);
-        FUN_005125a0(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-        FUN_005125a0(280, iconX, iconY, 24.0f, 24.0f,
+        GL_DrawTexture(0x118, iconX, iconY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(280, iconX, iconY, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((int)MouseX >= (int)iconX && (int)MouseX < (int)(iconX + 24.0f) &&
             (int)MouseY >= (int)iconY && (int)MouseY < (int)(iconY + 24.0f)) {
@@ -447,7 +447,7 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                             sub_5126E0(1230, v28, sxb, v20, v20, seed);
                             sub_5126E0(1231, v28, sxb, v20 * 3.0f, v20 * 3.0f, seed);
                             sub_5126E0(1150, v28, sxb, v20 * 6.0f, v20 * 6.0f, 0);
-                            FUN_00511600();
+                            GL_ResetState();
                             v6_addr = v24;
                         }
                     }
@@ -477,7 +477,7 @@ check_quest_overlay:
                                     (double)(20 * v11->y) +
                                     (double)TradeInventoryStartY + 70.0);
                 float y_pos = v36 + 5.0f;
-                FUN_005125a0(9, xa, y_pos, 24.0f, 24.0f, 0.0f, 0.40000001f, 1.0f, 1.0f, 1, 1);
+                GL_DrawTexture(9, xa, y_pos, 24.0f, 24.0f, 0.0f, 0.40000001f, 1.0f, 1.0f, 1, 1);
                 glColor3f(1.0f, 1.0f, 1.0f);
                 SelectObject(m_hFontDC, g_hFontBold);
                 m_dwTextColor = 0xFFFFFFFFu;
@@ -526,7 +526,7 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     }
 
     int v7 = InputTextWidth;
-    FUN_0047f7a0(x, y, Text, InputTextWidth, 1, 0);
+    UI_DrawText(x, y, Text, InputTextWidth, 1, 0);
     int n = lstrlenA(Text);
     GetTextExtentPointA(m_hFontDC, Text, n, &TextSize);
     if (v7 > 0 && TextSize.cx > v7) TextSize.cx = v7;
@@ -536,7 +536,7 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     // ventana a ESPACIO-640, porque su `RenderText_1` delega en
     //   CUIRenderText::RenderText(..., iBoxWidth, 0, iSort, lpTextSize, 640)
     // y ese `640` hace que la clase reescale la x de espacio-640 a ventana.
-    // NUESTRO FUN_0047f7a0 llama a FUN_0040f610 directo, SIN ese reescalado:
+    // NUESTRO UI_DrawText llama a FUN_0040f610 directo, SIN ese reescalado:
     // nuestro stack de texto ya trabaja en píxeles de ventana. Copiar la
     // división tal cual encogía el offset por 1/g_fScreenRate_x (con 798 px de
     // ancho: 640/798 = 0.80, exactamente lo que se veía).
@@ -555,14 +555,14 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
             const char* ime = InputTextIME[Index];
             if (strlen(ime) != 0) {
                 if (InputTextHide[Index] == 1) {
-                    FUN_0047f7a0(x + caretOffsetPx, y, (char*)"**", 0, 1, 0);
+                    UI_DrawText(x + caretOffsetPx, y, (char*)"**", 0, 1, 0);
                     GetTextExtentPointA(m_hFontDC, "**", 2, &TextSize);
                 } else {
-                    FUN_0047f7a0(x + caretOffsetPx, y, (char*)ime, 0, 1, 0);
+                    UI_DrawText(x + caretOffsetPx, y, (char*)ime, 0, 1, 0);
                     GetTextExtentPointA(m_hFontDC, ime, lstrlenA(ime), &TextSize);
                 }
             } else {
-                FUN_0047f7a0(x + caretOffsetPx, y, (char*)"_", 0, 1, 0);
+                UI_DrawText(x + caretOffsetPx, y, (char*)"_", 0, 1, 0);
                 GetTextExtentPointA(m_hFontDC, "_", 1, &TextSize);
             }
             TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
@@ -578,7 +578,7 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
 // text via CUIRenderText.  Restores the previous AlphaBlendType at exit.
 //
 // We approximate the layout exactly but render the foreground text via
-// FUN_0047f7a0 (the CUIRenderText path doesn't run in our build).
+// UI_DrawText (the CUIRenderText path doesn't run in our build).
 // =============================================================================
 extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
 {
@@ -599,20 +599,20 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     float H    = (float)((double)sz.cy / _DAT_055c9b74 + 4.0);
 
     // 4 thin border strips (top, left, right, bottom).
-    FUN_005124c0(boxX, boxY, W, 1.0f);
-    FUN_005124c0(boxX, boxY, 1.0f, H);
-    FUN_005124c0(boxX + W - 1.0f, boxY, 1.0f, H);
-    FUN_005124c0(boxX, boxY + H - 1.0f, W, 1.0f);
+    GL_DrawRect(boxX, boxY, W, 1.0f);
+    GL_DrawRect(boxX, boxY, 1.0f, H);
+    GL_DrawRect(boxX + W - 1.0f, boxY, 1.0f, H);
+    GL_DrawRect(boxX, boxY + H - 1.0f, W, 1.0f);
 
     glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
     // Filled black panel inside the border.
-    FUN_005124c0(boxX + 1.0f, boxY + 1.0f, W - 2.0f, H - 2.0f);
+    GL_DrawRect(boxX + 1.0f, boxY + 1.0f, W - 2.0f, H - 2.0f);
 
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     glEnable(GL_TEXTURE_2D);
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
-    FUN_0047f7a0(sx, sy, (char*)Text, 0, 1, 0);
+    UI_DrawText(sx, sy, (char*)Text, 0, 1, 0);
 
     switch (prevBlend) {
         case 1: EnableLightMap();        break;
@@ -620,7 +620,7 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
         case 3: EnableAlphaBlend();      break;
         case 4: EnableAlphaBlendMinus(); break;
         case 5: EnableAlphaBlend2();     break;
-        default: FUN_00511600();         break;
+        default: GL_ResetState();         break;
     }
 }
 
@@ -787,6 +787,6 @@ extern "C" void __cdecl sub_47F4C0(int a1, int a2, float Width, float Height,
 
     float bw = (Width  + 0.01f) / Bitmaps[0].Width;
     float bh = (Height + 0.01f) / Bitmaps[0].Height;
-    FUN_005125a0(0, (float)x_pos, (float)y_pos, Width, Height,
+    GL_DrawTexture(0, (float)x_pos, (float)y_pos, Width, Height,
                  0.0f, 0.0f, bw, bh, 0, (char)(BYTE)a7);
 }

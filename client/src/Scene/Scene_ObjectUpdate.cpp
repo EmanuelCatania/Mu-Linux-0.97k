@@ -352,7 +352,7 @@ void __stdcall MoveObjects_stub(void) {
             // Signature confirmed from Ghidra:
             //   int CreateParticle(Type, float Position[3], float Angle[3], float Light[3],
             //                      int SubType, float Scale, DWORD Owner)
-            FUN_00475220(0x4E1, pos, angle, light, 3, 0.19f, 0);
+            Particle_Spawn(0x4E1, pos, angle, light, 3, 0.19f, 0);
         }
     }
 
@@ -438,11 +438,11 @@ void __stdcall MoveObjects_stub(void) {
                                 FUN_004795c0(1269, (float*)(pcVar6 + 16), 0.5f,
                                               light, (int)Hero, 0.0f, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
-                                FUN_0046d840(1254, (float*)(pcVar6 + 16),
+                                Joint_Create(1254, (float*)(pcVar6 + 16),
                                               (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
                                               6, (int)pcVar6, Scale, -1, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
-                                FUN_0046d840(1254, (float*)(pcVar6 + 16),
+                                Joint_Create(1254, (float*)(pcVar6 + 16),
                                               (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
                                               6, (int)pcVar6, Scale, -1, 0);
                                 // CreateSprite(0x4F5, ...) — lightning flash
@@ -533,7 +533,7 @@ void __stdcall MoveBugs_stub(void) {
                     v45[0] = v45[0] + *(float*)(e + 0x10);
                     v45[1] = v45[1] + *(float*)(e + 0x14);
                     v45[2] = (float)(v27 - 8) + *(float*)(e + 0x18);
-                    FUN_00475220(1175, v45, (float*)(e + 0x1c), v49, 1, 1.0f, 0);
+                    Particle_Spawn(1175, v45, (float*)(e + 0x1c), v49, 1, 1.0f, 0);
                 }
                 v36 = 150.0f;
             } else if (v25 == 1) {
@@ -581,8 +581,8 @@ void __stdcall MoveBugs_stub(void) {
                         Position[0] = (float)(rand() % 64 - 32) + *(float*)(e + 0x10);
                         Position[1] = (float)(rand() % 64 - 32) + *(float*)(e + 0x14);
                         Position[2] = (float)(rand() % 32 - 16) + *(float*)(e + 0x18);
-                        if (World == 2) FUN_00475220(1220, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
-                        else            FUN_00475220(1221, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
+                        if (World == 2) Particle_Spawn(1220, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
+                        else            Particle_Spawn(1221, Position, (float*)(e + 0x1c), Light, 0, 1.0f, 0);
                     }
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;        // animSpeed = 0.34f
                     *(BYTE*)e = *(BYTE*)(*v0);               // Live = owner.Live
@@ -615,7 +615,7 @@ void __stdcall MoveBugs_stub(void) {
                 v36 = 100.0f;
                 float Light[3] = { 0.40000001f, 0.60000002f, 1.0f };
                 if ((rand() & 1) == 0) {
-                    FUN_00475220(1220, (float*)(e + 0x10), (float*)(e + 0x1c), Light, 1, 1.0f, 0);
+                    Particle_Spawn(1220, (float*)(e + 0x10), (float*)(e + 0x1c), Light, 1, 1.0f, 0);
                 }
             }
             // else: v4 no es 175/195/267 → cae a LABEL_72 con v36=0
@@ -643,9 +643,9 @@ void __stdcall MoveBugs_stub(void) {
             // decompiló como `(float*)v1+9`=0x24 pero es un artefacto: el disasm real
             // es `lea ebx,[esi+90h]`. angleZ (0x24) queda intacto → TurnAngle acumula
             // el giro y el hada ORBITA al char (movimiento tangencial cuando está lejos).
-            FUN_004f9db0((float*)(e + 0x1c), (float*)(e + 0x90));   // AngleMatrix → scratch 0x90
+            Matrix_BuildFromEuler((float*)(e + 0x1c), (float*)(e + 0x90));   // AngleMatrix → scratch 0x90
             float out[3];
-            FUN_004fa0b0((float*)(e + 0xC0), (float*)(e + 0x90), out);   // VectorRotate(vel@0xC0, mat@0x90)
+            Vector_Rotate((float*)(e + 0xC0), (float*)(e + 0x90), out);   // VectorRotate(vel@0xC0, mat@0x90)
             *v28 = out[0] + *v28;
             *(float*)(e + 0x14) = out[1] + *(float*)(e + 0x14);
             *(float*)(e + 0x18) = out[2] + *(float*)(e + 0x18);

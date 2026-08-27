@@ -288,7 +288,7 @@ void __cdecl FUN_004fffd0(int param_1, void *param_2_v, void *param_3_v, int par
 }
 // FUN_00500970 — implemented in src/Render/Entity_Render.cpp
 // FUN_00500e80 — implemented in src/Render/Weather.cpp (Weather_Update)
-// FUN_00502320 — implemented in src/Render/Ambient_Particles.cpp (Ambient_ParticleUpdate)
+// AmbientParticles_Update (IDA: FUN_00502320) — implemented in src/Render/Ambient_Particles.cpp
 // FUN_00503760 — implemented in src/Util/Misc.cpp
 // FUN_00503830 — implemented in src/Render/Entity_Render.cpp
 // FUN_00504b50 — implemented in src/Render/Entity_DrawSetup.cpp (Entity_SetColorAndRender)

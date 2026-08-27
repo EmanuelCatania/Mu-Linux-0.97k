@@ -98,11 +98,11 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     // ── local storage ─────────────────────────────────────────────────────────
     // afStack_264 layout used for various vec3/matrix temps throughout:
     //   [0..2]  = Light color vec3
-    //   [3..5]  = Angle vec3  (input to FUN_004f9db0 / FUN_004409a0)
+    //   [3..5]  = Angle vec3  (input to Matrix_BuildFromEuler / BMD_TransformPosition)
     //   [6..8]  = Position vec3 (world pos scratch / BodyOrigin temp)
     //   [9..11] = extra (matches IDA `Position[3]` at ebp-240h)
-    // BUGFIX 2026-04-26: era float[7] pero los callees (FUN_004409a0,
-    // FUN_004795c0, FUN_0046d840) leen/escriben 3 floats desde
+    // BUGFIX 2026-04-26: era float[7] pero los callees (BMD_TransformPosition,
+    // FUN_004795c0, Joint_Create) leen/escriben 3 floats desde
     // `afStack_264 + 6` → [6][7][8] OOB. /GS canary check tripeaba al return.
     // local_248/local_244 eran las falsas vars que Ghidra emitió por las
     // posiciones [7] y [8].
@@ -123,7 +123,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     #define local_238_f local_240_buf[2]
 
     // BUGFIX 2026-04-26: era float[3] con local_21c/20c/1fc separadas; pero
-    // FUN_004f9db0 escribe 12 floats (matriz 3×4 [0..0xb]) → overflow masivo
+    // Matrix_BuildFromEuler escribe 12 floats (matriz 3×4 [0..0xb]) → overflow masivo
     // dentro del propio buffer. Ahora declarado como matriz completa y los
     // accesos legacy local_21c/20c/1fc redirigen vía macro.
     float local_228[12];     // AngleMatrix output: 3×4 matrix, row-major
@@ -251,7 +251,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 afStack_264[3] = _DAT_00552580;  // 0.0f
                 afStack_264[4] = 20.0f;
                 afStack_264[5] = 180.0f;
-                FUN_004f9db0(afStack_264 + 3, local_228);
+                Matrix_BuildFromEuler(afStack_264 + 3, local_228);
                 local_21c = -10.0f;
                 local_20c =   8.0f;
                 local_1fc =  40.0f;
@@ -262,7 +262,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 afStack_264[3] = 110.0f;
                 afStack_264[4] = 180.0f;
                 afStack_264[5] =  90.0f;
-                FUN_004f9db0(afStack_264 + 3, local_228);
+                Matrix_BuildFromEuler(afStack_264 + 3, local_228);
                 local_21c = -10.0f;
                 local_20c =   5.0f;
                 local_1fc = -10.0f;
@@ -273,7 +273,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 afStack_264[4] = _DAT_00552580;  // 0.0f
                 afStack_264[3] = 70.0f;
                 afStack_264[5] = 90.0f;
-                FUN_004f9db0(afStack_264 + 3, local_228);
+                Matrix_BuildFromEuler(afStack_264 + 3, local_228);
 
                 if ((param_6 >= 0x210 && param_6 <= 0x22f) || param_6 == 0x238)
                 {
@@ -297,7 +297,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
             afStack_264[4] = _DAT_00552580;  // 0.0f
             afStack_264[3] = 90.0f;
             afStack_264[5] = 90.0f;
-            FUN_004f9db0(afStack_264 + 3, local_228);
+            Matrix_BuildFromEuler(afStack_264 + 3, local_228);
             local_21c =   0.0f;
             local_20c =  80.0f;
             local_1fc = 120.0f;
@@ -307,7 +307,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
             afStack_264[4] = _DAT_00552580;
             afStack_264[5] = _DAT_00552580;
             afStack_264[3] = 10.0f;
-            FUN_004f9db0(afStack_264 + 3, local_228);
+            Matrix_BuildFromEuler(afStack_264 + 3, local_228);
             local_21c =   0.0f;
             local_20c = 110.0f;
             local_1fc =  80.0f;
@@ -512,7 +512,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                     unsigned char* pbVar4 = (unsigned char*)operator new(1);
                     unsigned char v = *pbVar12;
                     v = v - 0x23;
-                    v = (v ^ DAT_00559050[0]) + 0xb9;
+                    v = (v ^ PacketXorKey16[0]) + 0xb9;
                     *pbVar1 = v;
                     operator delete(pbVar4);
                 }
@@ -568,7 +568,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 {
                     unsigned char* pbVar4 = (unsigned char*)operator new(1);
                     unsigned char v = *pbVar1 + 0x47;
-                    v = (v ^ DAT_00559050[0]) + 0x23;
+                    v = (v ^ PacketXorKey16[0]) + 0x23;
                     int rval = rand();
                     *pbVar1 = (unsigned char)rval;
                     *pbVar12 = v;
@@ -680,7 +680,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
             afStack_264[0] = 0.4f;
             afStack_264[1] = 0.4f;
             afStack_264[2] = 0.4f;
-            FUN_004409a0(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
+            BMD_TransformPosition(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
             int r1 = rand() % 3;
             if (r1 == 0)
             {
@@ -699,8 +699,8 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
             afStack_264[4] = 0.0f;
             afStack_264[5] = 0.0f;
             rand();
-            FUN_004409a0(pModel2, (float*)&DAT_06970b2c, afStack_264 + 3, afStack_264, '\x01');
-            FUN_004409a0(pModel2, (float*)&DAT_06970afc, afStack_264 + 3, afStack_264 + 6, '\x01');
+            BMD_TransformPosition(pModel2, (float*)&DAT_06970b2c, afStack_264 + 3, afStack_264, '\x01');
+            BMD_TransformPosition(pModel2, (float*)&DAT_06970afc, afStack_264 + 3, afStack_264 + 6, '\x01');
             return;
         }
         break;
@@ -720,7 +720,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 afStack_264[3] = 0.0f;
                 afStack_264[4] = 0.0f;
                 afStack_264[5] = 0.0f;
-                FUN_004409a0(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
+                BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
                 int r1 = rand();
                 afStack_264[6] += (float)(r1 % 0x1e) - _DAT_00552834;
                 int r2 = rand();
@@ -732,8 +732,8 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                     afStack_264[1] = 0.0f;
                     afStack_264[2] = *(float*)(param_4 + 0x24);
                     afStack_264[0] = (float)(r3 % 0x3c + 0x96);
-                    FUN_0046d840(0x4e9, afStack_264 + 6, afStack_264 + 6, afStack_264, 0, 0, 10.0f, -1, 0);
-                    FUN_00475220(0x497, afStack_264 + 6, afStack_264, &pbStack_270_f, 0, 1.0f, 0);
+                    Joint_Create(0x4e9, afStack_264 + 6, afStack_264 + 6, afStack_264, 0, 0, 10.0f, -1, 0);
+                    Particle_Spawn(0x497, afStack_264 + 6, afStack_264, &pbStack_270_f, 0, 1.0f, 0);
                     iVar8--;
                 } while (iVar8 != 0);
             }
@@ -749,7 +749,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
         afStack_264[4] = 0.0f;
         afStack_264[5] = 0.0f;
         float pbStack_270_f = fLum;
-        FUN_004409a0(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
+        BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
         FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, &pbStack_270_f, param_4, 0, 0);
         pbStack_270_f = 0.5f;
         pbStack_26c_f = 0.5f;
@@ -769,7 +769,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
         float pbStack_26c_f = fLum * _DAT_005524f4;
         float fStack_268 = fLum * _DAT_00552530;
         do {
-            FUN_004409a0(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
+            BMD_TransformPosition(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
             FUN_004795c0(0x47e, afStack_264 + 6, 1.3f, &pbStack_270_f, param_4, 0, 0);
             pfVar10 += 0xc;
         } while ((int)pfVar10 < 0x6970c4c);
@@ -832,7 +832,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
             afStack_264[2] = 0.4f;
             afStack_264[4] = -40.0f;
             afStack_264[5] = 0.0f;
-            FUN_004409a0(pModel2, (float*)&DAT_06970a9c, afStack_264 + 3, afStack_264 + 6, '\x01');
+            BMD_TransformPosition(pModel2, (float*)&DAT_06970a9c, afStack_264 + 3, afStack_264 + 6, '\x01');
             int r1 = rand() % 3;
             if (r1 == 0)
             {
@@ -854,7 +854,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
         afStack_264[4] = -15.0f;
         afStack_264[5] = 0.0f;
         float pbStack_26c_f = pbStack_270_f;
-        FUN_004409a0(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
+        BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
         FUN_004795c0(0x4cf, afStack_264 + 6, 1.5f, &pbStack_270_f, param_4, 0, 0);
         FUN_004795c0(0x47e, afStack_264 + 6, fLum + _DAT_005528f0, &pbStack_270_f, param_4, 0, 0);
         return;

@@ -5,7 +5,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// LookAtTarget @ 0x0043E890 (~38 lines) — rotates entity head toward target character
+// IDA: FUN_0043E890 @ 0x0043E890 — LookAtTarget (~38 lines), rotates entity head toward target character.
 // Computes angle between entity and target, sets HeadTargetAngle if within threshold.
 void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
     // 0x0043E890 — Rotates entity head toward target character
@@ -33,7 +33,7 @@ void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
     float angle = ((CreateAngleFn)&FUN_0043e050)(oX, oY, tX, tY);
 
     // FarAngle(oFacing, angle, 1) — angular distance
-    double deltaAngle = (double)FUN_0043e370(oFacing, angle, '\x01');
+    double deltaAngle = (double)Angle_GetDifference(oFacing, angle, '\x01');
 
     float* headTarget = (float*)(o + 0x34);  // o->HeadTargetAngle[3]
 
@@ -55,7 +55,7 @@ void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
     }
 }
 
-// MoveHead @ 0x0043E940 (~56 lines) — random/tracked head movement for entities
+// IDA: FUN_0043E940 @ 0x0043E940 — MoveHead (~56 lines), random/tracked head movement for entities.
 void __cdecl MoveHead_stub(int param_1) {
     char anim = *(char*)(param_1 + 0x105);
     if (anim == '\x06') return; // dead — no head movement

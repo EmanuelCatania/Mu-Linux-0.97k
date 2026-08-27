@@ -136,7 +136,7 @@ void __cdecl FUN_004827a0(void) {}
 // Kept as no-op stub.
 void __cdecl FUN_00433830(void) {}
 
-// RenderText @ 0x0047F650 — same address as FUN_0047f650 (Chat_DrawEntry).
+// RenderText @ 0x0047F650 — same address as UI_RenderText (Chat_DrawEntry).
 // IDA's canonical name for that function IS "RenderText"; our codebase
 // labels it Chat_DrawEntry but it is the universal text-draw used everywhere
 // (HUD, error messages, inventory tooltips). Without this alias all the
@@ -144,7 +144,7 @@ void __cdecl FUN_00433830(void) {}
 // on stat panels, inventory headers, party UI, etc.
 void __cdecl RenderText(int x, int y, char *text, int p1, int p2, void *p3) {
     (void)p3;  // matches "extra" stack arg, unused by the underlying call
-    FUN_0047f650((undefined4)x, (undefined4)y, (LPCSTR)text,
+    UI_RenderText((undefined4)x, (undefined4)y, (LPCSTR)text,
                  (LPSIZE)(uintptr_t)p1, (char)p2, (undefined4)0);
 }
 

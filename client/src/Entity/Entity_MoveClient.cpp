@@ -5,7 +5,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// MoveCharactersClient @ 0x00455010 (~169 lines) — SUMMARY STUB
+// IDA: FUN_00455010 @ 0x00455010 — MoveCharactersClient (~169 lines), summary stub.
 // Per-frame entity update. Clears terrain walk flags, then for each alive character:
 // decrypt movement via hash table, tick movement, re-encrypt, update cached waypoints.
 void __stdcall MoveCharactersClient_stub(void) {

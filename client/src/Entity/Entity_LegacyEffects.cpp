@@ -112,17 +112,17 @@ lbl_z45:
     *(unsigned int*)(param_1 + 0x24) = 0x42340000; // 45.0f
 }
 
-// FUN_00503650 @ 0x00503650 — Entity_SparkleUpdate(entity_ptr)
+// FUN_00503650 @ 0x00503650 — Entity_UpdateSparkleEffect(entity_ptr)
 // Every 0x30 ticks spawns two Shiny01 particles (type 0x4ce) at random direction offset
 // from entity's facing matrix. Stack layout: {local_48[3], 0, local_34} = random XZ offsets.
-void __cdecl FUN_00503650(int param_1)
+void __cdecl Entity_UpdateSparkleEffect(int param_1)
 {
     int iVar2 = *(int *)(param_1 + 4);
     *(int *)(param_1 + 4) = iVar2 + 1;
     if (iVar2 % 0x30 == 0) {
         float *pfVar1 = (float *)(param_1 + 0x1c);
         float local_30[12];
-        FUN_004f9db0(pfVar1, local_30);
+        Matrix_BuildFromEuler(pfVar1, local_30);
 
         unsigned int uVar4 = (unsigned int)_rand() & 0x8000001f;
         if ((int)uVar4 < 0) uVar4 = (uVar4 - 1 | 0xffffffe0) + 1;
@@ -135,14 +135,14 @@ void __cdecl FUN_00503650(int param_1)
         // Original stack layout: {angX, 0.0f, angZ} passed as float[3] to Matrix_TransformPoint
         float inVec[3] = { angX, 0.0f, angZ };
         float outPos[3];
-        FUN_004fa0b0(inVec, local_30, outPos);
+        Vector_Rotate(inVec, local_30, outPos);
         outPos[0] += *(float *)(param_1 + 0x10);
         outPos[1] += *(float *)(param_1 + 0x14);
         outPos[2] += *(float *)(param_1 + 0x18);
 
         float size[4] = { 1.0f, 1.0f, 1.0f, angX };
-        FUN_00475220(0x4ce, outPos, pfVar1, size, 0, 1.0f, 0);
-        FUN_00475220(0x4ce, outPos, pfVar1, size, 1, 1.0f, 0);
+        Particle_Spawn(0x4ce, outPos, pfVar1, size, 0, 1.0f, 0);
+        Particle_Spawn(0x4ce, outPos, pfVar1, size, 1, 1.0f, 0);
     }
 }
 

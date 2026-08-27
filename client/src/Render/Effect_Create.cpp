@@ -1,5 +1,5 @@
 // Effect_Create.cpp
-// FUN_00460dc0 @ 0x00460dc0
+// Effect_Create @ 0x00460dc0
 //
 // CreateEffect -- spawns a visual effect by type ID.
 
@@ -11,8 +11,9 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
+// IDA: FUN_00460dc0
 float * __cdecl
-FUN_00460dc0(int param_1,float *param_2,float *param_3,float *param_4,float *param_5,float *param_6,
+Effect_Create(int param_1,float *param_2,float *param_3,float *param_4,float *param_5,float *param_6,
             float *param_7,float *param_8,byte param_9)
 
 {
@@ -55,12 +56,12 @@ FUN_00460dc0(int param_1,float *param_2,float *param_3,float *param_4,float *par
   // 2026-08-10 FIX (mismo patrón que MoveJoint): estos "locales" sueltos son en
   // realidad un bloque CONTIGUO del frame original (ebp-0x6C .. ebp), y el
   // código depende de esa contigüidad — MSVC no la garantiza:
-  //   FUN_004fa0b0(&local_6c, local_3c + 3, &local_60)
+  //   Vector_Rotate(&local_6c, local_3c + 3, &local_60)
   //     → entrada  = {local_6c, local_68, local_64}
   //     → salida   = {local_60, local_5c, local_58}
-  //   FUN_004fa0b0(&local_6c, local_3c + 3, &local_48)
+  //   Vector_Rotate(&local_6c, local_3c + 3, &local_48)
   //     → salida   = {local_48, local_44, local_40}
-  // Además `FUN_004f9db0(ang, local_3c + 3)` escribe una matriz 3x4 (12 floats)
+  // Además `Matrix_BuildFromEuler(ang, local_3c + 3)` escribe una matriz 3x4 (12 floats)
   // en local_3c[3..14], o sea un float FUERA del `float local_3c[14]` original.
   // Mapeo por offset de frame: -0x6C=[0] … -0x3C=[12]; a local_3c se le dan 16
   // slots para que la matriz entre completa.
@@ -208,10 +209,10 @@ LAB_00460dd8:
         pfVar12 = pfVar17 + 7;
         pfVar8 = pfVar17 + 4;
         bVar6 = (byte)param_5;
-        FUN_0046d840(0x4e2,pfVar8,pfVar8,pfVar12,0,(int)pfVar17,pfVar17[3],0x1e,bVar6);
-        FUN_0046d840(0x4e2,pfVar8,pfVar8,pfVar12,1,(int)pfVar17,pfVar17[3],0x1e,bVar6);
-        FUN_0046d840(0x4e2,pfVar8,pfVar8,pfVar12,2,(int)pfVar17,pfVar17[3],0x1e,bVar6);
-        FUN_0046d840(0x4e2,pfVar8,pfVar8,pfVar12,3,(int)pfVar17,pfVar17[3],0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,0,(int)pfVar17,pfVar17[3],0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,1,(int)pfVar17,pfVar17[3],0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,2,(int)pfVar17,pfVar17[3],0x1e,bVar6);
+        Joint_Create(0x4e2,pfVar8,pfVar8,pfVar12,3,(int)pfVar17,pfVar17[3],0x1e,bVar6);
         pfVar12 = (float *)FUN_00404bc0(0x5c,0,0);
         pfVar17[3] = 1.0;
         return pfVar12;
@@ -252,8 +253,8 @@ LAB_00460dd8:
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
         pfVar17[9] = (float)(int)param_8;
-        FUN_004f9db0(pfVar17 + 7,local_3c + 3);
-        FUN_004fa0b0(&local_6c,local_3c + 3,pfVar17 + 0x30);
+        Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+        Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 5 + 2);
         pfVar17[0x36] = (float)(int)param_8;
@@ -300,8 +301,8 @@ LAB_00460dd8:
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 0x168);
         pfVar17[9] = (float)(int)param_8;
-        FUN_004f9db0(pfVar17 + 7,local_3c + 3);
-        FUN_004fa0b0(&local_6c,local_3c + 3,pfVar17 + 0x30);
+        Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+        Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 5 + 2);
         pfVar17[0x36] = (float)(int)param_8;
@@ -395,8 +396,8 @@ LAB_004649e0:
           local_6c = 0.0;
           local_68 = -100.0;
           local_64 = 0.0;
-          FUN_004f9db0(pfVar17 + 7,local_3c + 3);
-          pfVar12 = (float *)FUN_004fa0b0(&local_6c,local_3c + 3,&local_60);
+          Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+          pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
           pfVar17[4] = local_60 + pfVar17[4];
           pfVar17[5] = local_5c + pfVar17[5];
           pfVar17[6] = local_58 + pfVar17[6] + _DAT_0055297c;
@@ -458,18 +459,18 @@ LAB_004649e0:
         pfVar17[0x30] = 0.0;
         pfVar17[0x31] = -30.0;
         pfVar17[0x32] = 0.0;
-        FUN_004f9db0(pfVar12,local_3c + 3);
+        Matrix_BuildFromEuler(pfVar12,local_3c + 3);
         local_6c = 0.0;
         local_68 = -20.0;
         local_64 = 50.0;
-        FUN_004fa0b0(&local_6c,local_3c + 3,&local_60);
+        Vector_Rotate(&local_6c,local_3c + 3,&local_60);
         pfVar17[4] = local_60 + pfVar17[4];
         local_6c = -20.0;
         local_68 = -20.0;
         local_64 = 60.0;
         pfVar17[5] = local_5c + pfVar17[5];
         pfVar17[6] = local_58 + pfVar17[6];
-        FUN_004fa0b0(&local_6c,local_3c + 3,&local_60);
+        Vector_Rotate(&local_6c,local_3c + 3,&local_60);
         local_48 = local_60 + *param_2;
         local_54 = *pfVar12;
         local_50 = pfVar17[8];
@@ -483,13 +484,13 @@ LAB_004649e0:
           _param_9 = (float *)(iVar9 % 0x14);
           local_54 = (float)(int)_param_9 + *pfVar12 + _DAT_00552660;
           local_50 = (float)(int)param_8 + local_50;
-          FUN_0046d840(0x4e9,&local_48,&local_48,&local_54,1,0,10.0,-1,0);
+          Joint_Create(0x4e9,&local_48,&local_48,&local_54,1,0,10.0,-1,0);
           param_8 = (float *)((int)pfVar8 + 0x12);
         } while ((int)param_8 < 0x168);
         local_3c[0] = 30.0;
         local_3c[1] = -20.0;
         local_3c[2] = 60.0;
-        FUN_004fa0b0(local_3c,local_3c + 3,&local_60);
+        Vector_Rotate(local_3c,local_3c + 3,&local_60);
         local_48 = local_60 + *param_2;
         local_54 = *pfVar12;
         local_50 = pfVar17[8];
@@ -503,7 +504,7 @@ LAB_004649e0:
           _param_9 = (float *)(iVar9 % 0x14);
           local_54 = (float)(int)_param_9 + *pfVar12 + _DAT_00552660;
           local_50 = (float)(int)param_8 + local_50;
-          pfVar17 = (float *)FUN_0046d840(0x4e9,&local_48,&local_48,&local_54,1,0,10.0,-1,0);
+          pfVar17 = (float *)Joint_Create(0x4e9,&local_48,&local_48,&local_54,1,0,10.0,-1,0);
           param_8 = (float *)((int)pfVar8 + 0x12);
         } while ((int)param_8 < 0x168);
         return pfVar17;
@@ -548,11 +549,11 @@ LAB_004658be:
         goto switchD_00464efe_caseD_4ab;
       case 0x4ac:
         pfVar17[0x18] = 1.4013e-44;
-        FUN_004f9db0(pfVar17 + 7,local_3c + 3);
+        Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
         local_6c = 0.0;
         local_68 = -60.0;
         local_64 = 0.0;
-        pfVar12 = (float *)FUN_004fa0b0(&local_6c,local_3c + 3,&local_60);
+        pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
         pfVar17[4] = local_60 + pfVar17[4];
         pfVar17[5] = local_5c + pfVar17[5];
         pfVar17[6] = local_58 + pfVar17[6] + _DAT_00552980;
@@ -694,7 +695,7 @@ switchD_00464efe_caseD_4ab:
       }
       param_8 = (float *)(uVar10 + 0x20);
       local_40 = (float)(int)param_8 + pfVar17[6];
-      FUN_00475220(0x4c4,&local_48,pfVar17 + 7,pfVar17 + 0x3a,0,1.0,0);
+      Particle_Spawn(0x4c4,&local_48,pfVar17 + 7,pfVar17 + 0x3a,0,1.0,0);
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
     fVar27 = pfVar17[4];
@@ -927,11 +928,11 @@ LAB_00463e3d:
   case 0xd1:
     pfVar17[0x18] = 1.4013e-44;
     pfVar17[6] = pfVar17[6] + _DAT_00552980;
-    FUN_004f9db0(pfVar17 + 7,local_3c + 3);
+    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
     local_6c = 0.0;
     local_68 = -60.0;
     local_64 = 0.0;
-    pfVar12 = (float *)FUN_004fa0b0(&local_6c,local_3c + 3,pfVar17 + 0x30);
+    pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
     return pfVar12;
   case 0xd2:
     pfVar17[6] = pfVar17[6] + _DAT_00552598;
@@ -1022,8 +1023,8 @@ switchD_00461001_caseD_c7:
     iVar9 = _rand();
     param_8 = (float *)(iVar9 % 0x168);
     pfVar17[9] = (float)(int)param_8;
-    FUN_004f9db0(pfVar17 + 7,local_3c + 3);
-    FUN_004fa0b0(&local_6c,local_3c + 3,pfVar17 + 0x30);
+    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+    Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
     uVar10 = _rand();
     uVar10 = uVar10 & 0x8000000f;
     if ((int)uVar10 < 0) {
@@ -1032,11 +1033,11 @@ switchD_00461001_caseD_c7:
     pfVar17[0x36] = (float)(int)(uVar10 + 8);
     return (float *)(uVar10 + 8);
   case 0xd4:
-    FUN_004f9db0(pfVar17 + 7,local_3c + 3);
+    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
     local_6c = 0.0;
     local_68 = -40.0;
     local_64 = 150.0;
-    pfVar12 = (float *)FUN_004fa0b0(&local_6c,local_3c + 3,&local_60);
+    pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
     pfVar17[4] = local_60 + pfVar17[4];
     pfVar17[5] = local_5c + pfVar17[5];
     pfVar17[6] = local_58 + pfVar17[6];
@@ -1085,8 +1086,8 @@ switchD_00461001_caseD_c7:
     }
     param_8 = (float *)(uVar10 + 200);
     local_64 = (float)(int)param_8;
-    FUN_004f9db0(pfVar17 + 7,local_3c + 3);
-    pfVar12 = (float *)FUN_004fa0b0(&local_6c,local_3c + 3,&local_60);
+    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+    pfVar12 = (float *)Vector_Rotate(&local_6c,local_3c + 3,&local_60);
     pfVar17[4] = local_60 + pfVar17[4];
     pfVar17[5] = local_5c + pfVar17[5];
     pfVar17[6] = local_58 + pfVar17[6];
@@ -1113,11 +1114,11 @@ switchD_00461001_caseD_c7:
     pfVar12 = pfVar17 + 7;
     pfVar17[0x33] = 1.0;
     pfVar17[0x18] = 4.2039e-44;
-    FUN_004f9db0(pfVar12,local_3c + 3);
+    Matrix_BuildFromEuler(pfVar12,local_3c + 3);
     local_6c = -10.0;
     local_68 = -60.0;
     local_64 = 135.0;
-    FUN_004fa0b0(&local_6c,local_3c + 3,&local_60);
+    Vector_Rotate(&local_6c,local_3c + 3,&local_60);
     pfVar17[4] = local_60 + pfVar17[4];
     pfVar17[5] = local_5c + pfVar17[5];
     pfVar17[6] = local_58 + pfVar17[6];
@@ -1138,7 +1139,7 @@ switchD_00461001_caseD_c7:
     }
     if (pfVar17[1] == 2.8026e-45) {
       if (param_1 != 0xdf) {
-        FUN_00460dc0(0xff,pfVar17 + 4,pfVar12,pfVar17 + 0x3a,(float *)0x0,pfVar17,
+        Effect_Create(0xff,pfVar17 + 4,pfVar12,pfVar17 + 0x3a,(float *)0x0,pfVar17,
                      (float *)0xffffffff,(float *)0x0,0);
       }
       pfVar17[0x3d] = 0.0;
@@ -1255,7 +1256,7 @@ switchD_00461001_caseD_c7:
     pfVar17[0x10] = *pfVar12;
     pfVar17[0x11] = pfVar17[5];
     pfVar17[0x12] = pfVar17[6];
-    FUN_0046d840(0x4ea,pfVar12,pfVar12,pfVar17 + 7,5,(int)pfVar17,100.0,-1,0);
+    Joint_Create(0x4ea,pfVar12,pfVar12,pfVar17 + 7,5,(int)pfVar17,100.0,-1,0);
     pfVar12 = (float*)DAT_07cf1ffc;
     param_5 = (float*)DAT_07cf1ffc;
     uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
@@ -1338,9 +1339,9 @@ switchD_00461001_caseD_c7:
     pfVar17[0x10] = *pfVar12;
     pfVar17[0x11] = pfVar17[5];
     pfVar17[0x12] = pfVar17[6];
-    FUN_0046d840(0x4ea,pfVar12,pfVar12,pfVar17 + 7,5,(int)pfVar17,100.0,-1,0);
+    Joint_Create(0x4ea,pfVar12,pfVar12,pfVar17 + 7,5,(int)pfVar17,100.0,-1,0);
     if (pfVar17[1] != 0.0) {
-      FUN_00460dc0(0xff,pfVar12,pfVar17 + 7,pfVar17 + 0x3a,(float *)0x0,pfVar17,(float *)0xffffffff,
+      Effect_Create(0xff,pfVar12,pfVar17 + 7,pfVar17 + 0x3a,(float *)0x0,pfVar17,(float *)0xffffffff,
                    (float *)0x0,0);
       pfVar17[0x3d] = 0.0;
       *(undefined1 *)(pfVar17 + 0x21) = 1;
@@ -1361,11 +1362,11 @@ switchD_00461001_caseD_c7:
     pfVar17[0x30] = 0.0;
     pfVar17[0x31] = -30.0;
     pfVar17[0x32] = 0.0;
-    FUN_004f9db0(pfVar17 + 7,local_3c + 3);
+    Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
     local_6c = -10.0;
     local_68 = -100.0;
     local_64 = 15.0;
-    FUN_004fa0b0(&local_6c,local_3c + 3,&local_60);
+    Vector_Rotate(&local_6c,local_3c + 3,&local_60);
     pfVar8 = pfVar17 + 0x5c;
     *pfVar8 = pfVar17[4];
     pfVar17[0x5d] = pfVar17[5];
@@ -1378,7 +1379,7 @@ switchD_00461001_caseD_c7:
     pfVar17[0x5e] = local_58 + pfVar17[0x5e];
     pfVar12[2] = pfVar17[9];
     do {
-      FUN_0046d840(0x4e1,pfVar8,pfVar8,pfVar12,0xb,(int)pfVar17,50.0,-1,iVar9 == 1);
+      Joint_Create(0x4e1,pfVar8,pfVar8,pfVar12,0xb,(int)pfVar17,50.0,-1,iVar9 == 1);
       pfVar14 = (float*)DAT_07cf1ffc;
       iVar9 = iVar9 + 1;
     } while (iVar9 < 4);
@@ -1476,11 +1477,11 @@ switchD_00460f25_caseD_100:
   pfVar12 = pfVar17 + 7;
   pfVar17[0x33] = 1.0;
   pfVar17[0x18] = 4.2039e-44;
-  FUN_004f9db0(pfVar12,local_3c + 3);
+  Matrix_BuildFromEuler(pfVar12,local_3c + 3);
   local_6c = -10.0;
   local_68 = -60.0;
   local_64 = 135.0;
-  FUN_004fa0b0(&local_6c,local_3c + 3,&local_60);
+  Vector_Rotate(&local_6c,local_3c + 3,&local_60);
   param_4 = _param_9;
   param_9 = 0;
   param_8 = (float *)((uint)param_8 & 0xffffff00);
@@ -1738,7 +1739,7 @@ LAB_0046520b:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)((int)puVar11 + uVar10) =
-           (DAT_00559050[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -1821,7 +1822,7 @@ LAB_0046546c:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -1913,7 +1914,7 @@ LAB_00462736:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)((int)puVar11 + uVar10) =
-           (DAT_00559050[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -2280,7 +2281,7 @@ LAB_004620e8:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)puVar11) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -2363,7 +2364,7 @@ LAB_00462338:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -2456,7 +2457,7 @@ LAB_004619cc:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)puVar11) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -2539,7 +2540,7 @@ LAB_00461c25:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {        *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
       }
@@ -2801,7 +2802,7 @@ LAB_00461354:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)puVar11) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -2884,7 +2885,7 @@ LAB_004615a4:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -3035,7 +3036,7 @@ LAB_004638bc:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)puVar11) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -3180,7 +3181,7 @@ LAB_00463a2e:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -3444,7 +3445,7 @@ LAB_00463377:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)pfVar17) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)pfVar17) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)pfVar17) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -3529,7 +3530,7 @@ LAB_004635a0:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar17) ^ bVar6;
@@ -3621,7 +3622,7 @@ LAB_00462d84:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)((int)puVar11 + uVar10) =
-           (DAT_00559050[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -3703,7 +3704,7 @@ LAB_00462fd4:
         if ((int)uVar16 < 0) {
           uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
         }
-        bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+        bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
         *pbVar13 = bVar6;
         if (uVar10 < 0x583) {
           *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -3755,8 +3756,8 @@ switchD_00465549_caseD_4ba:
   local_68 = -50.0;
   pfVar17[3] = 16.0;
 LAB_00465641:
-  FUN_004f9db0(pfVar17 + 7,local_3c + 3);
-  FUN_004fa0b0(&local_6c,local_3c + 3,pfVar17 + 0x30);
+  Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+  Vector_Rotate(&local_6c,local_3c + 3,pfVar17 + 0x30);
   if ((float*)(uintptr_t)*(int*)&pfVar17[0x3f] != (float*)DAT_07abf5d8) {
     return (float*)DAT_07abf5d8;
   }
@@ -3768,8 +3769,8 @@ LAB_00465641:
   local_6c = 0.0;
   local_68 = -150.0;
   local_64 = 0.0;
-  FUN_004f9db0(pfVar17 + 7,local_3c + 3);
-  FUN_004fa0b0(&local_6c,local_3c + 3,&local_48);
+  Matrix_BuildFromEuler(pfVar17 + 7,local_3c + 3);
+  Vector_Rotate(&local_6c,local_3c + 3,&local_48);
   iVar9 = 4;
   do {
     sVar28 = *(short *)((int)pfVar17 + 0x86);
@@ -3807,7 +3808,7 @@ LAB_004628a8:
     if ((int)uVar16 < 0) {
       uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
     }
-    bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+    bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
     *pbVar13 = bVar6;
     if (uVar10 < 0x583) {
       *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -4175,4 +4176,11 @@ LAB_00465388:
   param_6 = (float *)0x0;
   FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108); pfVar12 = NULL;
   return pfVar12;
+}
+
+// IDA compatibility bridge: stubs_IDA_ports.cpp intentionally retains this ABI name.
+float* __cdecl FUN_00460dc0(int type, float* p1, float* p2, float* p3, float* p4,
+                            float* p5, float* p6, float* p7, byte flag)
+{
+  return Effect_Create(type, p1, p2, p3, p4, p5, p6, p7, flag);
 }

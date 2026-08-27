@@ -21,7 +21,7 @@
 // Type table at DAT_083a7cc0, stride 0x38:
 //   +0x00  float  scale_x          — base world-X scale per type
 //   +0x04  float  scale_y          — base world-Y scale per type
-//   +0x08  char   hide_flag        — if == 3: call FUN_00511710() (hide anim sprite)
+//   +0x08  char   hide_flag        — if == 3: call GL_SetBlendAdditive() (hide anim sprite)
 //
 // Called from Scene_Login, Scene_CharSelect each frame to animate/draw background
 // billboards (item drops, decorative glows, spell sprites).
@@ -43,7 +43,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 void FUN_00478c00(void)
 {
     // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODO el render del particle
-    // pool DAT_07abf5f0 — particles spawneadas via CreateParticle (FUN_00475220)
+    // pool DAT_07abf5f0 — particles spawneadas via CreateParticle (Particle_Spawn)
     // (lightning ELS=10/11, waterfall +9 glow, fire/smoke, rain/snow) NUNCA se
     // dibujaban. Ahora itera por índice acotado a 3000 slots.
     uint  *puVar8  = (uint*)((char*)DAT_07abf5f0 + 0x44);  // +0x44 from slot 0 base
@@ -73,7 +73,7 @@ void FUN_00478c00(void)
 
             // hide or show the character anim sprite based on type record flag
             if (((char *)&DAT_083a7cc8)[iVar2] == '\x03')
-                FUN_00511710();          // EnableAlphaBlend
+                GL_SetBlendAdditive();          // EnableAlphaBlend
             else
                 // ── 2026-08-16: CAUSA DEL CUADRO BLANCO ───────────────────────
                 // IDA 00478C00 L66-72:
@@ -90,7 +90,7 @@ void FUN_00478c00(void)
                 // contaminaba lo que se dibujara despues.
                 // Mismo error que ya estaba en SkillEffect_Render; es la 4ta
                 // vez que esta familia muerde (ver la tabla en CLAUDE.md).
-                FUN_00511680('\0');      // EnableAlphaTest(0)
+                GL_SetBlendSrcOver('\0');      // EnableAlphaTest(0)
 
             uint  uVar3  = puVar8[-0x10];  // entity_type (passed to FUN_00511d00)
             uint  uVar6;
@@ -164,7 +164,7 @@ void FUN_00478c00(void)
             // ── 0x4c4: show anim on states 2/5, single-frame otherwise ────
             case 0x4c4:
                 if (puVar8[-0xf] == 2 || puVar8[-0xf] == 5)
-                    FUN_00511790();
+                    GL_SetBlendSrcAlpha();
                 fVar19 = 1.0f; fVar18 = 1.0f; fVar17 = 0.0f; fVar16 = 0.0f;
                 fVar15 = (puVar8[-0xf] == 6) ? 0.0f : *(float *)(puVar8 - 1);
                 uVar3  = puVar8[-0x10];

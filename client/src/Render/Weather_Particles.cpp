@@ -1,4 +1,4 @@
-// Weather_Particles.cpp — FUN_0046cc80 @ 0x0046cc80
+// Weather_Particles.cpp — IDA: FUN_0046cc80 @ 0x0046cc80 — WeatherParticles_Update
 // Per-frame weather particle pool tick.
 //
 // Iterates a particle pool at DAT_07c5ab5c (pointer to base), stride 0x70 bytes
@@ -28,8 +28,8 @@
 //   0  = ServerSelect — butterfly/bubble floating around origin, deactivated at max dist
 //   2  = rain (light)  — falling drops, 1/10 chance heavy (drop_weight=10)
 //   3,7 = InGame map    — butterfly/bubble (same as 0)
-//   9  = logout/loading — snow: rotated velocity via FUN_004f9db0/4fa0b0,
-//                          splash effect (FUN_00475220 type 0x67/0x68) on ground hit
+//   9  = logout/loading — snow: rotated velocity via Matrix_BuildFromEuler/4fa0b0,
+//                          splash effect (Particle_Spawn type 0x67/0x68) on ground hit
 //   10 = rain (dense)   — limited active count = (DAT_07c74ae4 * 200) / 100
 //
 // Wind/environment per frame:
@@ -51,7 +51,7 @@
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-void FUN_0046cc80(void)
+void WeatherParticles_Update(void)
 {
     int iVar7 = DAT_0055a7ac;   // g_GameSubState
 
@@ -118,8 +118,8 @@ void FUN_0046cc80(void)
 
                 float local_b4[3] = { 0.0f, 0.0f, -(float)(_rand() % 0x28 + _DAT_00559b9c) };
                 float mat[12], out[3];
-                FUN_004f9db0(pfVar10 - 4, mat);
-                FUN_004fa0b0(local_b4, mat, pfVar10 + 8);
+                Matrix_BuildFromEuler(pfVar10 - 4, mat);
+                Vector_Rotate(local_b4, mat, pfVar10 + 8);
             }
             else if (iVar7 == 0)
             {
@@ -162,8 +162,8 @@ void FUN_0046cc80(void)
                     pfVar10[-5] = (float)(_rand() % 200 + 200) + fz2;
                     float loc[3] = { 0.0f, 0.0f, -(float)(_rand() % 0x18 + 0x14) };
                     float mat[12];
-                    FUN_004f9db0(pfVar10 - 4, mat);
-                    FUN_004fa0b0(loc, mat, pfVar10 + 8);
+                    Matrix_BuildFromEuler(pfVar10 - 4, mat);
+                    Vector_Rotate(loc, mat, pfVar10 + 8);
                 }
             }
             else if (iVar7 == 2)
@@ -181,8 +181,8 @@ void FUN_0046cc80(void)
                 if ((int)ur < 0) ur = (ur - 1u | 0xfffffff0u) + 1u;
                 float loc[3] = { 0.0f, 0.0f, -(float)(int)(ur + 8) };
                 float mat[12];
-                FUN_004f9db0(pfVar10 - 4, mat);
-                FUN_004fa0b0(loc, mat, pfVar10 + 8);
+                Matrix_BuildFromEuler(pfVar10 - 4, mat);
+                Vector_Rotate(loc, mat, pfVar10 + 8);
             }
             else if (iVar7 == 3 || iVar7 == 7)
             {
@@ -221,9 +221,9 @@ void FUN_0046cc80(void)
                     unsigned int r = (unsigned int)_rand() & 0x80000003u;
                     if ((int)r < 0) r = (r - 1u | 0xfffffffcu) + 1u;
                     if (r == 0)
-                        FUN_00475220(0x67, pfVar10 - 7, pfVar10 - 4, pfVar10 - 1, 0, 1.0f, 0);
+                        Particle_Spawn(0x67, pfVar10 - 7, pfVar10 - 4, pfVar10 - 1, 0, 1.0f, 0);
                     else
-                        FUN_00475220(0x68, pfVar10 - 7, pfVar10 - 4, pfVar10 - 1, 0, 1.0f, 0);
+                        Particle_Spawn(0x68, pfVar10 - 7, pfVar10 - 4, pfVar10 - 1, 0, 1.0f, 0);
                 }
             }
 
@@ -240,7 +240,7 @@ void FUN_0046cc80(void)
                         *(char *)(pfVar10 - 0xb) = 0;
                         pfVar10[-5] = terZ + (float)_DAT_00552488;
                         if (iVar7 != 10)
-                            FUN_00475220(0x67, pfVar10 - 7, pfVar10 - 4, pfVar10 - 1, 0, 1.0f, 0);
+                            Particle_Spawn(0x67, pfVar10 - 7, pfVar10 - 4, pfVar10 - 1, 0, 1.0f, 0);
                     }
                 }
                 else

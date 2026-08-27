@@ -9,31 +9,31 @@
 //   bool __cdecl Scene_Login(HDC hDC)
 //
 // ── MAPEO FUN_XXXX → nombre real IDA ──────────────────────────────────────────
-//   FUN_005119b0 → BeginOpengl(x,y,w,h)          — setup 3D: push PROJ+MV, persp, rota cam
+//   GL_BeginViewport → BeginOpengl(x,y,w,h)          — setup 3D: push PROJ+MV, persp, rota cam
 //   FUN_004fd800 → Terrain_Render()
 //   FUN_0045ab00 → Entity_RenderAll_3D()
 //   FUN_00500970 → RenderBugs()                  — (no era Entity_Render_Sprites)
 //   FUN_0046c3e0 → Trail_RenderAll()             — (no era Particle_Render)
-//   FUN_00511cf0 → BeginSprite()                 — sólo push MV + loadIdentity
-//   FUN_00479730 → RenderSprites()               — (no era Portal_Render)
+//   GL_BeginSprite → BeginSprite()                 — sólo push MV + loadIdentity
+//   Render_DrawSpritePool → RenderSprites()               — (no era Portal_Render)
 //   FUN_00478c00 → RenderParticles()             — (no era ItemDrop_Render_2)
-//   FUN_005123c0 → BeginBitmap()                 — setup 2D ortho
-//   FUN_00511680 → EnableAlphaTest(flag)         — (no era GL_SetMode)
-//   FUN_005125a0 → RenderBitmap(id,x,y,w,h,u0,v0,u1,v1,fx,fy)
-//   FUN_0047f650 → RenderText
-//   FUN_0047f0b0 → RenderInputText
-//   FUN_00511710 → EnableAlphaBlend()            — (no era Frame_UpdateTimer)
-//   FUN_00511600 → DisableAlphaBlend()           — (no era GL_ResetBlend)
+//   GL_Begin2D → BeginBitmap()                 — setup 2D ortho
+//   GL_SetBlendSrcOver → EnableAlphaTest(flag)         — (no era GL_SetMode)
+//   GL_DrawTexture → RenderBitmap(id,x,y,w,h,u0,v0,u1,v1,fx,fy)
+//   UI_RenderText → RenderText
+//   UI_RenderInputField → RenderInputText
+//   GL_SetBlendAdditive → EnableAlphaBlend()            — (no era Frame_UpdateTimer)
+//   GL_ResetState → DisableAlphaBlend()           — (no era GL_ResetBlend)
 //   FUN_0051af50 → RenderErrorMessage()          — (no era Chat_Render)
 //   FUN_004f64d0 → Scene_MapTick()               — (no era UI_Render)
-//   FUN_0047fce0 → RenderNotices()               — (no era StatusBar_Render)
-//   FUN_00480980 → sub_480980 (chat log render)  — DAT_005590ac=g_bUseChatListBox
-//   FUN_004c14e0 → RenderDebugWindow()
+//   UI_RenderNotices → RenderNotices()               — (no era StatusBar_Render)
+//   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — DAT_005590ac=g_bUseChatListBox
+//   UI_UpdateFpsCounter → RenderDebugWindow()
 //   FUN_004c3530 → RenderHelpWindow()
-//   FUN_004bffa0 → RenderCursor()                — (no era Minimap_Render)
+//   Cursor_Render → RenderCursor()                — (no era Minimap_Render)
 //   FUN_0051e0c0 → RenderInfomation3D()          — (no era Cursor_Render)
-//   FUN_005124b0 → EndBitmap()                   — 2x glPopMatrix (balancea BeginBitmap+BeginSprite)
-//   FUN_00511bc0 → EndOpengl()                   — pop MV + pop PROJ (balancea BeginOpengl)
+//   GL_End2D → EndBitmap()                   — 2x glPopMatrix (balancea BeginBitmap+BeginSprite)
+//   GL_EndOpenGL → EndOpengl()                   — pop MV + pop PROJ (balancea BeginOpengl)
 //
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 //   DAT_083a7c49   — InitLogIn (guard)
@@ -79,22 +79,22 @@ uint Scene_Login(void)
     DAT_083a42ea = 0;
     DAT_07e11d6e = 0;
     glClearColor(0, 0, 0, 1.0f);
-    FUN_005119b0(0, 0x50, 0x280, 0x140);   // BeginOpengl(0, 80, 640, 320)
+    GL_BeginViewport(0, 0x50, 0x280, 0x140);   // BeginOpengl(0, 80, 640, 320)
 
     // ── 3D background render (orden exacto de IDA) ───────────────────────────
     FUN_004fd800();    // Terrain_Render
     FUN_0045ab00();    // Entity_RenderAll_3D
     FUN_00500970();    // RenderBugs
     FUN_0046c3e0();    // Trail_RenderAll
-    FUN_00511cf0();    // BeginSprite — push MV, loadIdentity
-    FUN_00479730();    // RenderSprites
+    GL_BeginSprite();    // BeginSprite — push MV, loadIdentity
+    Render_DrawSpritePool();    // RenderSprites
     FUN_00478c00();    // RenderParticles
     glPopMatrix();     // balancea BeginSprite
-    FUN_005123c0();    // BeginBitmap — setup 2D ortho
+    GL_Begin2D();    // BeginBitmap — setup 2D ortho
 
     // ── Font / color setup ────────────────────────────────────────────────────
     DAT_00559c8c = 0x77;                  // InputTextWidth = 119
-    FUN_00511680('\x01');                 // EnableAlphaTest(1)
+    GL_SetBlendSrcOver('\x01');                 // EnableAlphaTest(1)
     glColor3f(1.0f, 1.0f, 1.0f);
     DAT_00559c78 = 0xffd2e6ff;            // m_dwTextColor
     DAT_00559c80 = 0;                     // m_dwBackColor
@@ -104,14 +104,14 @@ uint Scene_Login(void)
     iVar3 = DAT_005616a4;
     if ((1 < DAT_083a7c14) && (DAT_083a7c14 < 4)) {
         tStack_74.cx = DAT_005616a4;
-        FUN_005125a0(0xc, 195.0f, (float)DAT_005616a4, 250.0f, 216.0f,
+        GL_DrawTexture(0xc, 195.0f, (float)DAT_005616a4, 250.0f, 216.0f,
                      0.0f, 0.0f, 0.9765625f, 0.84375f, '\x01', '\x01');
         // Username field
-        FUN_0047f650(0xe3, iVar3 + 0x32, (LPCSTR)DAT_07d4ac7c, (LPSIZE)0x0, '\0', 0);
-        FUN_0047f0b0(0x127, iVar3 + 0x32, 0);
+        UI_RenderText(0xe3, iVar3 + 0x32, (LPCSTR)DAT_07d4ac7c, (LPSIZE)0x0, '\0', 0);
+        UI_RenderInputField(0x127, iVar3 + 0x32, 0);
         // Password field
-        FUN_0047f650(0xe3, iVar3 + 0x48, (LPCSTR)DAT_07d4ada8, (LPSIZE)0x0, '\0', 0);
-        FUN_0047f0b0(0x127, iVar3 + 0x48, 1);
+        UI_RenderText(0xe3, iVar3 + 0x48, (LPCSTR)DAT_07d4ada8, (LPSIZE)0x0, '\0', 0);
+        UI_RenderInputField(0x127, iVar3 + 0x48, 1);
 
         // OK button hit-test
         tStack_74.cx = iVar3 + 0x5f;
@@ -119,13 +119,13 @@ uint Scene_Login(void)
             ((DAT_083a427c < 0x189) && (tStack_74.cx <= DAT_083a4278)) &&
             (DAT_083a4278 < iVar3 + 0x72))
         {
-            FUN_005125a0(0xd, 323.0f, (float)tStack_74.cx, 70.0f, 19.0f,
+            GL_DrawTexture(0xd, 323.0f, (float)tStack_74.cx, 70.0f, 19.0f,
                          0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
         }
         ptVar10 = &tStack_74;
         iVar2 = lstrlenA((LPCSTR)lpString_07d4aed4);
         GetTextExtentPointA(DAT_055c9fec, (LPCSTR)lpString_07d4aed4, iVar2, ptVar10);
-        FUN_0047f650(0x165 - ((uint)(tStack_74.cx * 0x280) / DAT_0056156c >> 1),
+        UI_RenderText(0x165 - ((uint)(tStack_74.cx * 0x280) / DAT_0056156c >> 1),
                      iVar3 + 100, (LPCSTR)lpString_07d4aed4, (LPSIZE)0x0, '\0', 0);
 
         // Exit/Cancel button hit-test
@@ -133,13 +133,13 @@ uint Scene_Login(void)
         if (((0x11c < DAT_083a427c) && (DAT_083a427c < 0x163)) &&
             ((tStack_74.cx <= DAT_083a4278) && (DAT_083a4278 < iVar3 + 200)))
         {
-            FUN_005125a0(0xe, 285.0f, (float)tStack_74.cx, 70.0f, 20.0f,
+            GL_DrawTexture(0xe, 285.0f, (float)tStack_74.cx, 70.0f, 20.0f,
                          0.0f, 0.0f, 0.546875f, 0.625f, '\x01', '\x01');
         }
         ptVar10 = &tStack_74;
         iVar2 = lstrlenA((LPCSTR)lpString_07d4b000);
         GetTextExtentPointA(DAT_055c9fec, (LPCSTR)lpString_07d4b000, iVar2, ptVar10);
-        FUN_0047f650(0x13f - ((uint)(tStack_74.cx * 0x280) / DAT_0056156c >> 1),
+        UI_RenderText(0x13f - ((uint)(tStack_74.cx * 0x280) / DAT_0056156c >> 1),
                      iVar3 + 0xb9, (LPCSTR)lpString_07d4b000, (LPSIZE)0x0, '\0', 0);
     }
 
@@ -173,7 +173,7 @@ uint Scene_Login(void)
     ptVar10 = &tStack_6c;
     iVar3   = lstrlenA(acStack_64);
     GetTextExtentPointA(DAT_055c9fec, acStack_64, iVar3, ptVar10);
-    FUN_0047f650(0x14f - (uint)(tStack_6c.cx * 0x280) / DAT_0056156c,
+    UI_RenderText(0x14f - (uint)(tStack_6c.cx * 0x280) / DAT_0056156c,
                  0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
                  acStack_64, (LPSIZE)0x0, '\0', 0);
 
@@ -201,7 +201,7 @@ uint Scene_Login(void)
     ptVar10 = &tStack_6c;
     iVar3   = lstrlenA(acStack_64);
     GetTextExtentPointA(DAT_055c9fec, acStack_64, iVar3, ptVar10);
-    FUN_0047f650(0, 0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
+    UI_RenderText(0, 0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
                  acStack_64, (LPSIZE)0x0, '\0', 0);
 
     // Footer center text (copyright)
@@ -209,7 +209,7 @@ uint Scene_Login(void)
     ptVar10 = &tStack_6c;
     iVar3   = lstrlenA(acStack_64);
     GetTextExtentPointA(DAT_055c9fec, acStack_64, iVar3, ptVar10);
-    FUN_0047f650(0x14f, 0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
+    UI_RenderText(0x14f, 0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
                  acStack_64, (LPSIZE)0x0, '\0', 0);
 
     // ── Sub-state dispatch ────────────────────────────────────────────────────
@@ -219,13 +219,13 @@ uint Scene_Login(void)
     if ((DAT_083a7c14 == 1) || (DAT_083a7c14 == 0xc)) {
         // Connecting / Timeout: progress bar + cancel button
         glColor3f(0.5f, 0.5f, 0.5f);
-        FUN_005125a0(0xf0, 213.0f, 228.0f, 213.0f, 64.0f,
+        GL_DrawTexture(0xf0, 213.0f, 228.0f, 213.0f, 64.0f,
                      0.0f, 0.0f, 0.83203125f, 1.0f, '\x01', '\x01');
         glColor3f(1.0f, 1.0f, 1.0f);
-        FUN_00511710();   // EnableAlphaBlend
+        GL_SetBlendAdditive();   // EnableAlphaBlend
 
         // Progress bar track
-        FUN_005125a0(0x13, 220.0f, 240.0f, 200.0f, 16.0f,
+        GL_DrawTexture(0x13, 220.0f, 240.0f, 200.0f, 16.0f,
                      0.0f, 0.0f, 0.78125f, 1.0f, '\x01', '\x01');
 
         // Progress bar fill
@@ -237,9 +237,9 @@ uint Scene_Login(void)
             iVar3 = 15000;
         }
         tStack_74.cx = (LONG)(float)(((uint)(iVar3 * 200) / 75000) * 5);
-        FUN_005125a0(0x14, 220.0f, 240.0f, (float)tStack_74.cx, 16.0f,
+        GL_DrawTexture(0x14, 220.0f, 240.0f, (float)tStack_74.cx, 16.0f,
                      0.0f, 0.0f, (float)tStack_74.cx * _DAT_00552b7c, 1.0f, '\x01', '\x01');
-        FUN_00511600();   // DisableAlphaBlend
+        GL_ResetState();   // DisableAlphaBlend
 
         // Cancel button (0xf3=normal, 0xf4=highlighted)
         if (((((DAT_083a427c < 0x11d) || (0x162 < DAT_083a427c)) ||
@@ -250,10 +250,10 @@ uint Scene_Login(void)
         } else {
             iVar3 = 0xf4;
         }
-        FUN_005125a0(iVar3, 285.0f, 262.0f, 70.0f, 20.0f,
+        GL_DrawTexture(iVar3, 285.0f, 262.0f, 70.0f, 20.0f,
                      0.0f, 0.0f, 0.546875f, 0.625f, '\x01', '\x01');
 
-        FUN_00511680('\x01');
+        GL_SetBlendSrcOver('\x01');
         ptVar10 = &tStack_74;
         DAT_00559c80 = 0x80000000;
         // IDA 0x00521630 L134-136: these reference GlobalText[471] (localized
@@ -261,7 +261,7 @@ uint Scene_Login(void)
         // lpString_07d4c518 that Ghidra emitted.
         iVar3 = lstrlenA((LPCSTR)GlobalText[471]);
         GetTextExtentPointA(DAT_055c9fec, (LPCSTR)GlobalText[471], iVar3, ptVar10);
-        FUN_0047f650(0x140 - ((uint)(tStack_74.cx * 0x280) / DAT_0056156c >> 1), 0xd0,
+        UI_RenderText(0x140 - ((uint)(tStack_74.cx * 0x280) / DAT_0056156c >> 1), 0xd0,
                      (LPCSTR)GlobalText[471], (LPSIZE)0x0, '\0', 0);
     }
 
@@ -280,16 +280,16 @@ uint Scene_Login(void)
     // ── Final subsystems (nombres corregidos desde IDA) ──────────────────────
     FUN_0051af50();    // RenderErrorMessage
     FUN_004f64d0();    // Scene_MapTick
-    FUN_0047fce0();    // RenderNotices
+    UI_RenderNotices();    // RenderNotices
     if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
-        FUN_00480980();   // sub_480980 — chat log render
-    FUN_004c14e0();    // RenderDebugWindow
+        UI_RenderChatLogOverlay();   // sub_480980 — chat log render
+    UI_UpdateFpsCounter();    // RenderDebugWindow
     FUN_004c3530();    // RenderHelpWindow
-    FUN_004bffa0();    // RenderCursor
+    Cursor_Render();    // RenderCursor
     FUN_0051e0c0();    // RenderInfomation3D
 
     // ── Teardown (port exacto de IDA: EndBitmap + EndOpengl) ─────────────────
-    FUN_005124b0();    // EndBitmap  — 2x glPopMatrix
-    FUN_00511bc0();    // EndOpengl  — pop MV + pop PROJ
+    GL_End2D();    // EndBitmap  — 2x glPopMatrix
+    GL_EndOpenGL();    // EndOpengl  — pop MV + pop PROJ
     return 1;
 }

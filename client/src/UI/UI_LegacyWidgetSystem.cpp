@@ -280,7 +280,7 @@ void __cdecl FUN_00408130(void *widget, float entity, int p3, float p4, float p5
 
     // compute bone rotation matrix from entity+0x1c
     // 2026-08-11 FIX (la capa salía con todos los vértices en (0,0,0)):
-    // `FUN_004f9db0` es EulerToMatrix3x4 — escribe una matriz 3x4 = **12
+    // `Matrix_BuildFromEuler` es EulerToMatrix3x4 — escribe una matriz 3x4 = **12
     // floats**. Estaba declarado `float local_3c[3]` → 36 bytes de desborde de
     // stack justo encima de los locales siguientes. El probe INITDBG lo mostró
     // sin lugar a dudas: después del loop de init, `nodes` había pasado a NULL,
@@ -290,7 +290,7 @@ void __cdecl FUN_00408130(void *widget, float entity, int p3, float p4, float p5
     // "Locales que Ghidra separó" en CLAUDE.md): el callee escribe más de lo
     // que declara el local.
     float local_3c[12];
-    FUN_004f9db0((float *)(*(int *)(thiz + 4) + 0x1c), local_3c);
+    Matrix_BuildFromEuler((float *)(*(int *)(thiz + 4) + 0x1c), local_3c);
 
     // init node positions
     int entity_ptr = *(int *)(thiz + 4);
@@ -326,7 +326,7 @@ void __cdecl FUN_00408130(void *widget, float entity, int p3, float p4, float p5
             } else {
                 float out_pos[3] = {lx, ly, lz};
                 float out_col[4] = {0};
-                FUN_004409a0((void *)(DAT_05828d58 + *(short *)(entity_ptr + 2) * 0xbc),
+                BMD_TransformPosition((void *)(DAT_05828d58 + *(short *)(entity_ptr + 2) * 0xbc),
                              local_3c, out_pos, out_col, '\x01');
                 // 2026-08-11 FIX: BMD__TransformPosition LEE del 3er arg (Pos)
                 // y ESCRIBE en el 4º (WorldPos). El port leía de vuelta

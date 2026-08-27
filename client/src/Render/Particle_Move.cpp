@@ -178,7 +178,7 @@ void __stdcall MoveParticles_stub(void)
                     localOff[1] = P_TGY(iVar9);
                     localOff[2] = P_TGZ(iVar9); // placeholder
                     float worldOff[3];
-                    FUN_004fa0b0(localOff, (float*)mat3x4, worldOff);
+                    Vector_Rotate(localOff, (float*)mat3x4, worldOff);
                     // Add to entity position
                     int entPtr = P_ENT(iVar9);
                     P_POSX(iVar9) = worldOff[0] + *(float*)(entPtr + 0x10);
@@ -835,7 +835,7 @@ void __stdcall MoveParticles_stub(void)
                             void* mdl = (void*)((char*)DAT_05828d58 + *(short*)(entPtr + 2) * 0xBC);
                             long long lFrame = (long long)(double)P_SCALE(iVar9); // __ftol analog
                             // BMD__TransformPosition(this, BoneMatrix, Pos, WorldPos, Translate)
-                            FUN_004409a0(mdl,
+                            BMD_TransformPosition(mdl,
                                 (float*)((int)lFrame * 0x30 + *(int*)(entPtr + 0x114)),
                                 localP, worldP, 0);
                         }

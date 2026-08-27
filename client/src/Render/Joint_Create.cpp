@@ -1,5 +1,5 @@
 // Joint_Create.cpp
-// FUN_0046d840 @ 0x0046d840
+// Joint_Create @ 0x0046d840
 //
 // CreateJoint - creates a lightning/beam visual joint by type.
 
@@ -11,8 +11,9 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
+// IDA: FUN_0046d840
 void * __cdecl
-FUN_0046d840(int param_1,float *param_2,float *param_3,float *param_4,undefined4 param_5,int param_6
+Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4 param_5,int param_6
             ,float param_7,short param_8,byte param_9)
 
 {
@@ -50,7 +51,7 @@ FUN_0046d840(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   // 2026-08-10 FIX (haces oscuros de las alas) — tercera instancia del patrón
   // "locales que Ghidra separó y el código asume contiguos". Acá el código hace:
   //     local_90 = Scale * -0.5f;  local_8c = 0;  local_88 = 0;
-  //     FUN_004fa0b0(&local_90, local_6c, &local_78);   // in y out son vec3
+  //     Vector_Rotate(&local_90, local_6c, &local_78);   // in y out son vec3
   //     *(float*)(slot+0x58) = local_78 + Position.x;   // out[0]
   //     *(float*)(slot+0x5c) = local_74 + Position.y;   // out[1]
   //     *(float*)(slot+0x60) = local_70 + Position.z;   // out[2]
@@ -77,7 +78,7 @@ FUN_0046d840(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   float *const local_6c = (float *)(__fr + 0x2c);   // 12 floats
   float *const local_3c = (float *)(__fr + 0x5c);   // 15 floats
   // 2026-08-10 — vistas FLOAT de los slots que Ghidra tipó como `byte*`.
-  // Ghidra los llamó punteros, pero cuando forman el vec3 de FUN_004fa0b0
+  // Ghidra los llamó punteros, pero cuando forman el vec3 de Vector_Rotate
   // guardan FLOATS. El port los leía con `local_8cf`, que
   // CONVIERTE el valor entero en vez de reinterpretar los bits: un 2.16
   // (bits 0x400B0000 = 1074413568) salía como 1074413568.0 ≈ 1.07e9 — la
@@ -148,32 +149,32 @@ FUN_0046d840(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   pcVar14[0x51] = '\0';
   pcVar14[0x52] = '\0';
   pcVar14[0x53] = '\0';
-  FUN_004f9db0(pfVar2,local_6c);
+  Matrix_BuildFromEuler(pfVar2,local_6c);
   local_90 = *(float *)(pcVar14 + 0xc) * _DAT_00552a14;
   local_8c = (byte*)0x0;
   local_88 = (byte*)0x0;
-  FUN_004fa0b0(&local_90,local_6c,&local_78);
+  Vector_Rotate(&local_90,local_6c,&local_78);
   *(float *)(pcVar14 + 0x58) = local_78 + *pfVar1;
   local_8c = (byte*)0x0;
   local_88 = (byte*)0x0;
   *(float *)(pcVar14 + 0x5c) = local_74 + *(float *)(pcVar14 + 0x14);
   *(float *)(pcVar14 + 0x60) = local_70 + *(float *)(pcVar14 + 0x18);
   local_90 = *(float *)(pcVar14 + 0xc) * _DAT_00552504;
-  FUN_004fa0b0(&local_90,local_6c,&local_78);
+  Vector_Rotate(&local_90,local_6c,&local_78);
   *(float *)(pcVar14 + 100) = local_78 + *pfVar1;
   local_90 = 0.0f;
   local_8c = (byte*)0x0;
   *(float *)(pcVar14 + 0x68) = local_74 + *(float *)(pcVar14 + 0x14);
   *(float *)(pcVar14 + 0x6c) = local_70 + *(float *)(pcVar14 + 0x18);
   local_88f = *(float *)(pcVar14 + 0xc) * _DAT_00552a14;
-  FUN_004fa0b0(&local_90,local_6c,&local_78);
+  Vector_Rotate(&local_90,local_6c,&local_78);
   *(float *)(pcVar14 + 0x70) = local_78 + *pfVar1;
   local_90 = 0.0f;
   local_8c = (byte*)0x0;
   *(float *)(pcVar14 + 0x74) = local_74 + *(float *)(pcVar14 + 0x14);
   *(float *)(pcVar14 + 0x78) = local_70 + *(float *)(pcVar14 + 0x18);
   local_88f = *(float *)(pcVar14 + 0xc) * _DAT_00552504;
-  FUN_004fa0b0(&local_90,local_6c,&local_78);
+  Vector_Rotate(&local_90,local_6c,&local_78);
   *(float *)(pcVar14 + 0x7c) = local_78 + *pfVar1;
   *(float *)(pcVar14 + 0x80) = local_74 + *(float *)(pcVar14 + 0x14);
   *(float *)(pcVar14 + 0x84) = local_70 + *(float *)(pcVar14 + 0x18);
@@ -478,7 +479,7 @@ switchD_0046db06_default:
         *(float *)(pcVar14 + 0x1c) = (*param_3 - *pfVar1) * _DAT_00552a00;
         *(float *)(pcVar14 + 0x20) = (param_3[1] - *(float *)(pcVar14 + 0x14)) * _DAT_00552a00;
         *(float *)(pcVar14 + 0x24) = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
-        FUN_004f9db0(pfVar2,local_6c);
+        Matrix_BuildFromEuler(pfVar2,local_6c);
         iVar6 = 0;
         if (0 < *(int *)(pcVar14 + 0x54)) {
           do {
@@ -727,7 +728,7 @@ LAB_0046e742:
         local_8c = *(byte **)(pcVar14 + 0x20);
         local_88f = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
         *(byte **)(pcVar14 + 0x24) = local_88;
-        FUN_004f9db0(pfVar2,local_6c);
+        Matrix_BuildFromEuler(pfVar2,local_6c);
         iVar6 = 0;
         if (*(int *)(pcVar14 + 0x54) != 1 && -1 < *(int *)(pcVar14 + 0x54) + -1) {
           do {
@@ -921,7 +922,7 @@ LAB_0046ec45:
       local_3c[2] = 0.0;
       // DAT_05828d58 + 0x11e68 = dirección absoluta 0x0583AB40 (artefacto Ghidra).
       // TransformPosition con base bogus; omitimos hasta resolver bone matrix real.
-      // FUN_004409a0((void *)(DAT_05828d58 + 0x11e68),
+      // BMD_TransformPosition((void *)(DAT_05828d58 + 0x11e68),
       //              (float *)(*(int *)(*(int *)(pcVar14 + 0x40) + 0x114) + 0x630),local_3c,
       //              (float *)(pcVar14 + 0x44),'\x01');
       break;
@@ -1084,7 +1085,7 @@ LAB_0046e043:
       local_8c = *(byte **)(pcVar14 + 0x20);
       local_88f = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
       *(byte **)(pcVar14 + 0x24) = local_88;
-      FUN_004f9db0(pfVar2,local_6c);
+      Matrix_BuildFromEuler(pfVar2,local_6c);
       iVar6 = 0;
       if (*(int *)(pcVar14 + 0x54) != 1 && -1 < *(int *)(pcVar14 + 0x54) + -1) {
         do {
@@ -1211,7 +1212,7 @@ LAB_0046e043:
       local_8c = *(byte **)(pcVar14 + 0x20);
       local_88f = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
       *(byte **)(pcVar14 + 0x24) = local_88;
-      FUN_004f9db0(pfVar2,local_6c);
+      Matrix_BuildFromEuler(pfVar2,local_6c);
       iVar6 = 0;
       if (*(int *)(pcVar14 + 0x54) != 1 && -1 < *(int *)(pcVar14 + 0x54) + -1) {
         do {
@@ -1615,8 +1616,8 @@ switchD_0046f0e4_caseD_4ed:
     local_70 = 0.0;
     *(float *)(pcVar14 + 0x9c4) = *pfVar2;
     *(undefined4 *)(pcVar14 + 0x9c8) = *(undefined4 *)(pcVar14 + 0x2c);
-    FUN_004f9db0(pfVar2,local_6c);
-    FUN_004fa0b0(&local_78,local_6c,(float *)&local_90);
+    Matrix_BuildFromEuler(pfVar2,local_6c);
+    Vector_Rotate(&local_78,local_6c,(float *)&local_90);
     *pfVar1 = (float)local_90 + *pfVar1;
     *(float *)(pcVar14 + 0x14) = *(float*)&local_8c + *(float *)(pcVar14 + 0x14);
     *(float *)(pcVar14 + 0x18) = *(float*)&local_88 + *(float *)(pcVar14 + 0x18);
@@ -1725,11 +1726,11 @@ LAB_0046f55a:
         pcVar14[0x31] = '\0';
         pcVar14[0x32] = -0x4c;
         pcVar14[0x33] = -0x3e;
-        FUN_004f9db0(pfVar2,local_3c + 3);
+        Matrix_BuildFromEuler(pfVar2,local_3c + 3);
         local_78 = 0.0;
         local_74 = 100.0;
         local_70 = 0.0;
-        FUN_004fa0b0(&local_78,local_3c + 3,(float *)&local_90);
+        Vector_Rotate(&local_78,local_3c + 3,(float *)&local_90);
         uVar25 = 0;
         *pfVar1 = (float)local_90 + *pfVar1;
         *(float *)(pcVar14 + 0x14) = *(float*)&local_8c + *(float *)(pcVar14 + 0x14);
@@ -1906,8 +1907,8 @@ LAB_0046f55a:
         *(undefined4 *)(pcVar14 + 0x24) = *(undefined4 *)(pcVar14 + 0x18);
         local_74 = -50.0;
         local_70 = 0.0;
-        FUN_004f9db0((float *)(pcVar14 + 0x44),local_6c);
-        FUN_004fa0b0(&local_78,local_6c,(float *)&local_90);
+        Matrix_BuildFromEuler((float *)(pcVar14 + 0x44),local_6c);
+        Vector_Rotate(&local_78,local_6c,(float *)&local_90);
         *pfVar1 = (float)local_90 + *(float *)(pcVar14 + 0x1c);
         *(float *)(pcVar14 + 0x14) = *(float*)&local_8c + *(float *)(pcVar14 + 0x20);
         *(float *)(pcVar14 + 0x18) = *(float*)&local_88 + *(float *)(pcVar14 + 0x24);
@@ -1943,7 +1944,7 @@ LAB_0046f55a:
         *(float *)(pcVar14 + 0x1c) = (*param_3 - *pfVar1) * _DAT_00552a00;
         *(float *)(pcVar14 + 0x20) = (param_3[1] - *(float *)(pcVar14 + 0x14)) * _DAT_00552a00;
         *(float *)(pcVar14 + 0x24) = (param_3[2] - *(float *)(pcVar14 + 0x18)) * _DAT_00552a00;
-        FUN_004f9db0(pfVar2,local_6c);
+        Matrix_BuildFromEuler(pfVar2,local_6c);
         iVar6 = 0;
         if (0 < *(int *)(pcVar14 + 0x54)) {
           do {
@@ -2120,7 +2121,7 @@ LAB_0046eb9e:
       if ((int)uVar12 < 0) {
         uVar12 = (uVar12 - 1 | 0xfffffff0) + 1;
       }
-      *(byte *)(uVar9 + (int)puVar7) = (DAT_00559050[uVar12] ^ bVar5) + 0xb9;
+      *(byte *)(uVar9 + (int)puVar7) = (PacketXorKey16[uVar12] ^ bVar5) + 0xb9;
       uVar9 = uVar9 - 1;
       iVar6 = iVar6 + -1;
     } while (iVar6 != 0);
@@ -2264,7 +2265,7 @@ LAB_0046edc4:
       if ((int)uVar12 < 0) {
         uVar12 = (uVar12 - 1 | 0xfffffff0) + 1;
       }
-      bVar5 = (DAT_00559050[uVar12] ^ bVar5 + 0x47) + 0x23;
+      bVar5 = (PacketXorKey16[uVar12] ^ bVar5 + 0x47) + 0x23;
       *pbVar10 = bVar5;
       if (uVar9 < 0x583) {
         *pbVar10 = pbVar8[uVar9 + 1] ^ bVar5;
@@ -2371,7 +2372,7 @@ LAB_0046e69b:
       if ((int)uVar12 < 0) {
         uVar12 = (uVar12 - 1 | 0xfffffff0) + 1;
       }
-      *(byte *)(uVar9 + (int)puVar7) = (DAT_00559050[uVar12] ^ bVar5) + 0xb9;
+      *(byte *)(uVar9 + (int)puVar7) = (PacketXorKey16[uVar12] ^ bVar5) + 0xb9;
       uVar9 = uVar9 - 1;
       iVar6 = iVar6 + -1;
     } while (iVar6 != 0);
@@ -2514,7 +2515,7 @@ LAB_0046e8c1:
       if ((int)uVar12 < 0) {
         uVar12 = (uVar12 - 1 | 0xfffffff0) + 1;
       }
-      bVar5 = (DAT_00559050[uVar12] ^ bVar5 + 0x47) + 0x23;
+      bVar5 = (PacketXorKey16[uVar12] ^ bVar5 + 0x47) + 0x23;
       *pbVar10 = bVar5;
       if (uVar9 < 0x583) {
         *pbVar10 = pbVar8[uVar9 + 1] ^ bVar5;
@@ -2547,4 +2548,11 @@ LAB_0046e970:
   pcVar14[0x56] = '\0';
   pcVar14[0x57] = '\0';
   goto switchD_0046dee7_default;
+}
+
+// IDA compatibility bridge: stubs_IDA_ports.cpp intentionally retains this ABI name.
+void* __cdecl FUN_0046d840(int type, float* p1, float* p2, float* p3, unsigned int subType,
+                            int owner, float scale, short link, unsigned char flag)
+{
+  return Joint_Create(type, p1, p2, p3, subType, owner, scale, link, flag);
 }

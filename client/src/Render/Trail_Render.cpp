@@ -17,18 +17,18 @@
 //   piVar2+0x5f-0x5a — trail point array: each element = 3 floats (x,y,z)
 //
 // Rendering:
-//   - Sets GL state via FUN_00511480(type + 0x48d)
+//   - Sets GL state via GL_BindTextureSlot(type + 0x48d)
 //   - For each segment pair: glBegin(GL_QUAD_STRIP=6)
 //       glColor3f with fade: alpha = (count-i)/count (or 1.0 if swimming)
 //       4 vertices per strip quad (two points × two sides of the trail)
 //     glEnd()
 //
-// Type lookup: if entity.is_swimming == 0 → type = piVar2[-2], else FUN_00511790
+// Type lookup: if entity.is_swimming == 0 → type = piVar2[-2], else GL_SetBlendSrcAlpha
 //
 // Sub-functions:
-//   FUN_00511710 — GL state A (no swimming)
-//   FUN_00511790 — GL state B (swimming)
-//   FUN_00511480 — SetTrailTexture(type)
+//   GL_SetBlendAdditive — GL state A (no swimming)
+//   GL_SetBlendSrcAlpha — GL state B (swimming)
+//   GL_BindTextureSlot — SetTrailTexture(type)
 
 #include "stdafx.h"
 
@@ -50,9 +50,9 @@ void __cdecl FUN_0046c3e0_DISABLED(void)
 
             // Select GL state based on entity swim status
             if ((*(short *)(*piVar2 + 0x1be) == 0) && (iVar3 < 3)) {
-                FUN_00511710();   // normal GL state
+                GL_SetBlendAdditive();   // normal GL state
             } else {
-                FUN_00511790();   // swimming GL state
+                GL_SetBlendSrcAlpha();   // swimming GL state
             }
 
             if (iVar3 > 2)
@@ -60,7 +60,7 @@ void __cdecl FUN_0046c3e0_DISABLED(void)
 
             // Render trail segments as quad strip
             if (piVar2[1] > 1) {
-                FUN_00511480(iVar3 + 0x48d);  // bind trail texture type
+                GL_BindTextureSlot(iVar3 + 0x48d);  // bind trail texture type
 
                 local_8 = 0;
                 if (piVar2[1] != 1 && piVar2[1] - 1 >= 0) {

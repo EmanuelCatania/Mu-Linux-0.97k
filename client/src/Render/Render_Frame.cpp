@@ -13,7 +13,7 @@
 //   DAT_083a7c10  — server-ack gate (return immediately if 0)
 //   DAT_07e11d1c  — frame render counter (HashTable ref; return if > 0x1e = 30)
 //   DAT_083a42ea  — cleared to 0 at frame start
-//   DAT_083a42e9  — special/debug view flag (affects viewport + skips some passes)
+//   CameraTopViewEnabled  — special/debug view flag (affects viewport + skips some passes)
 //   DAT_083a4110  — out: world-space mouse ray direction [3 floats]
 //   DAT_083a427c  — mouse X (screen coords)
 //   DAT_083a4278  — mouse Y
@@ -41,7 +41,7 @@
 // ── VIEWPORT + FRUSTUM ───────────────────────────────────────────────────────
 //
 //   iVar5 = FUN_004cb520()              → Screen_GetWidth()
-//   FUN_005119b0(0, 0, width, 0x30)     → GL_SetViewport(0, 0, w, 48)
+//   GL_BeginViewport(0, 0, width, 0x30)     → GL_SetViewport(0, 0, w, 48)
 //                                          (top 48-px strip — minimap area?)
 //   FUN_004f9050(width * scale, &cam_pos) → Camera_SetupFrustum(fov_w, pos)
 //   GL_PopMatrixAll()
@@ -55,15 +55,15 @@
 //
 // ── MAIN VIEWPORT + MOUSE RAY ────────────────────────────────────────────────
 //
-//   FUN_005119b0(0, 0, width, 0x1b0 or 0x180) → GL_SetViewport (main 3D area)
+//   GL_BeginViewport(0, 0, width, 0x1b0 or 0x180) → GL_SetViewport (main 3D area)
 //     (0x1b0 = 432 full height; 0x180 = 384 when in debug/special mode)
-//   FUN_005112f0(mouseX, mouseY, &DAT_083a4110) → Camera_MouseRay(x, y, out)
+//   Camera_BuildMouseRay(mouseX, mouseY, &DAT_083a4110) → Camera_MouseRay(x, y, out)
 //
 // ── 3D RENDER PASSES (in order) ──────────────────────────────────────────────
 //
 //   if g_GameSubState != 10: FUN_004f9ac0('\0') → GL_DepthTest(false)
 //   FUN_004fd800()    → Terrain_Render()          — tile grid terrain + objects
-//   FUN_0046be40()    → Particle_Render()          — particle system draw
+//   Particle_RenderAll() (IDA: FUN_0046be40)       — particle system draw
 //   FUN_00500aa0()    → Entity_UpdatePositions()   — avanza timers/pos de entidades
 //                         itera DAT_0839be18, campo -0x5a=active, -0x51=pos float
 //                         tipo != 0x10a (cofre): actualiza float pos
@@ -78,28 +78,28 @@
 //   FUN_0046cb70()    → SkillEffect_Render()       — proyectiles/efectos de habilidad
 //   FUN_00473710()    → ItemDrop_Render()           — items en el suelo
 //   FUN_0046bba0()    → MapEffect_RenderAll()      — efectos de mapa (pool DAT_07b11698)
-//                         itera stride variable; FUN_004f9590(pos, 400.0) = cull a 400u
+//                         itera stride variable; Frustum_TestSphere(pos, 400.0) = cull a 400u
 //                         tipos < 0x104 con sub-dispatch
 //   FUN_00475110()    → Player_Render()             — jugador local
 //   FUN_0046c3e0()    → SpellCircle_RenderAll()    — círculos/efectos mágicos en suelo
 //                         itera DAT_07c608b4; tipo 0: Frame_UpdateTimer, tipo>2: GL_SetBlend2
 //                         tex ID = sub_type + 0x48d
 //   FUN_00479790()    → Portal_Render()             — portales / warp pads
-//   FUN_00511cf0()    → Render_Flush()              — 1 instrucción, posiblemente glFlush
+//   GL_BeginSprite()    → Render_Flush()              — 1 instrucción, posiblemente glFlush
 //   if g_GameSubState == 2 && DAT_07e118e8 not in {3, >=10}:
 //     FUN_0046cb70()  → SkillEffect_Render() again  — segunda pasada en in-world state
-//   FUN_00479730()    → Sigil_RenderAll()           — círculos de invocación/sigils
+//   Render_DrawSpritePool()    → Sigil_RenderAll()           — círculos de invocación/sigils
 //                         itera DAT_07c85894 stride 0x1bc; tipos 0/1/2 → blend distinto
-//                         llama FUN_00479670 (Sigil_Draw) + resetea active flag
+//                         llama Render_DrawSprite (Sigil_Draw) + resetea active flag
 //   FUN_00478c00()    → Character_Animate()         — actualiza animaciones de personaje
 //                         función compleja con muchos floats; ~50 líneas
 //   FUN_00479330()    → Sign_RenderAll()            — billboards/letreros en mundo
 //                         itera DAT_07c80158 stride 0x70; SetBlendMode(alpha) + EnableAlpha
 //                         llama FUN_005120c0(pos, type, pos2, scale, alpha) = Sign_Draw
 //   glPopMatrix()
-//   FUN_004b0310()    → EntityInfo_Overlay()        — overlay de info de entidades
+//   Mouse_UpdateHoverTargets()    → EntityInfo_Overlay()        — overlay de info de entidades
 //                         usa HashTable + SHORT tipo + floats; función ~40 líneas
-//   FUN_005123c0()    → GL_SetupOrtho2D()           — establece proyección ortográfica 2D
+//   GL_Begin2D()    → GL_SetupOrtho2D()           — establece proyección ortográfica 2D
 //                         glPushMatrix + glMatrixMode + glLoadIdentity + glViewport(0,0,w,h)
 //   FUN_004cb6f0()    → Target_Render()             — info de entidad seleccionada
 //                         DAT_07e11d6e=1; entity lookup via DAT_07abf5d0+idx*0x394
@@ -111,21 +111,21 @@
 //   FUN_0051af50()    → CharInfo_TextRender()       — texto info personaje (stats panel)
 //                         múltiples LPCSTR, tagSIZE, texto centrado; ~40+ líneas
 //   FUN_004f64d0()    → TeleportUI_Update()         — update/click handler del teleport
-//                         FUN_00511600() + DAT_07e11d6e=0; hit-test mouse vs bounds
+//                         GL_ResetState() + DAT_07e11d6e=0; hit-test mouse vs bounds
 //                         (_DAT_00552cac, _DAT_00552c24, _DAT_00552c14, _DAT_00552ca8)
-//   FUN_0047fce0()    → PlayerName_Render()         — nombres de jugadores con parpadeo
+//   UI_RenderNotices()    → PlayerName_Render()         — nombres de jugadores con parpadeo
 //                         SetBlendMode + SelectObject(bold) + glColor3f(1,1,1)
 //                         itera DAT_07db80d8 stride 0x104; parpadeo via DAT_07e11da0 % 10
-//   if (DAT_005590ac == 1) || (g_GameState != 5): FUN_00480980()
+//   if (DAT_005590ac == 1) || (g_GameState != 5): UI_RenderChatLogOverlay()
 //                     → SystemText_Render()         — notificaciones del sistema
 //                         glColor3f(1,1,1) + SelectObject(normal_font)
 //                         CHAR buf[256]; renderiza mensajes del sistema
-//   FUN_004c14e0()    → FPS_TimerReset()            — tick por segundo
+//   UI_UpdateFpsCounter()    → FPS_TimerReset()            — tick por segundo
 //                         SelectObject(normal_font); timeGetTime() % 1000:
 //                         si > 999ms: resetea DAT_07e016f0 + DAT_07e11dcc=0 (frame counter)
 //   FUN_004c3530()    → CondText_Render()           — texto condicional (DAT_07e11d20==1)
-//                         FUN_00511600() + DAT_07eaa154=0; operaciones de string
-//   FUN_004bffa0()    → AnimUI_Render() × 2        — elemento UI animado (6 frames)
+//                         GL_ResetState() + DAT_07eaa154=0; operaciones de string
+//   Cursor_Render()    → AnimUI_Render() × 2        — elemento UI animado (6 frames)
 //                         SetBlendMode + glColor3f(1,1,1)
 //                         ftol()%6 → UV offset: {1,3,5}→local_4=0.5; {2,3,4}→local_8=0.5
 //   FUN_0051e0c0()    → SpecialMap_Render3D()       — pasada 3D para mapas especiales
@@ -133,7 +133,7 @@
 //                         glMatrixMode(GL_PROJECTION) + gluPerspective + LoadCameraMatrix
 //   Render watchdog: if (DAT_055c9ff8+8==1) && (++DAT_083a7c50 > 10):
 //     DAT_083a7c50 = 0; FUN_0040f670(DAT_055c9ff8) → Watchdog_Reset()
-//   FUN_005124b0()    → GL_PopMatrix2()             — glPopMatrix() × 2
+//   GL_End2D()    → GL_PopMatrix2()             — glPopMatrix() × 2
 //   GL_PopMatrixAll()
 //   return 1
 //
@@ -143,9 +143,9 @@
 //   Has 27 CALL instructions.
 //
 //   Key calls:
-//     004BBFC8: FUN_00511680  → GL_Begin2D / ortho setup
+//     004BBFC8: GL_SetBlendSrcOver  → GL_Begin2D / ortho setup
 //     004BBfe4: [0x005522C4]  → render callback function pointer
-//     004BBFEA: FUN_00511710  → — (counter/timer update)
+//     004BBFEA: GL_SetBlendAdditive  → — (counter/timer update)
 //     004BC044: FUN_005128C0  → SwapBuffers / Present
 //     004BC0A9: FUN_004BC220  → Render_CharInfoPanel()
 //     004BC0AE: FUN_004BCA20  → Render_HPBars()
@@ -169,11 +169,11 @@
 //
 //   FUN_00524cb0  → Camera_IsSpectator()          — '\0' si vista normal
 //   FUN_004cb520  → Screen_GetWidth()              — ancho viewport en pixels
-//   FUN_005119b0  → GL_SetViewport(x,y,w,h)       — glViewport wrapper
+//   GL_BeginViewport  → GL_SetViewport(x,y,w,h)       — glViewport wrapper
 //   FUN_004f9050  → Camera_SetupFrustum(fov_w, cam_pos)
 //   FUN_004f9ac0  → GL_DepthTest(enable)           — glEnable/Disable(GL_DEPTH_TEST)
 //   FUN_004fd800  → Terrain_Render()
-//   FUN_0046be40  → Particle_Render()
+//   Particle_RenderAll (IDA: FUN_0046be40) → particle system draw
 //   FUN_00500aa0  → Entity_UpdatePositions()       — timer/pos update pool DAT_0839be18
 //   FUN_0045ab00  → Entity_RenderAll_3D()
 //   FUN_005038e0  → Entity_Render_Sprites()        — billboards 2D-in-3D
@@ -185,24 +185,24 @@
 //   FUN_00475110  → Player_Render()
 //   FUN_0046c3e0  → SpellCircle_RenderAll()        — círculos mágicos pool DAT_07c608b4
 //   FUN_00479790  → Portal_Render()
-//   FUN_00511cf0  → Render_Flush()                 — 1 instrucción
-//   FUN_00479730  → Sigil_RenderAll()              — sigils pool DAT_07c85894 stride 0x1bc
+//   GL_BeginSprite  → Render_Flush()                 — 1 instrucción
+//   Render_DrawSpritePool  → Sigil_RenderAll()              — sigils pool DAT_07c85894 stride 0x1bc
 //   FUN_00478c00  → Character_Animate()            — animación de personaje (~50 líneas)
 //   FUN_00479330  → Sign_RenderAll()               — letreros pool DAT_07c80158 stride 0x70
-//   FUN_004b0310  → EntityInfo_Overlay()           — overlay info entidades (HashTable)
-//   FUN_005123c0  → GL_SetupOrtho2D()              — glPushMatrix+glMatrixMode+glViewport
+//   Mouse_UpdateHoverTargets  → EntityInfo_Overlay()           — overlay info entidades (HashTable)
+//   GL_Begin2D  → GL_SetupOrtho2D()              — glPushMatrix+glMatrixMode+glViewport
 //   FUN_004cb6f0  → Target_Render()               — info entidad seleccionada (entity lookup)
 //   FUN_0051af50  → CharInfo_TextRender()          — texto stats panel (~40+ líneas)
 //   FUN_004f64d0  → TeleportUI_Update()            — hit-test teleport UI + GL reset
-//   FUN_0047fce0  → PlayerName_Render()           — nombres jugadores con parpadeo
-//   FUN_00480980  → SystemText_Render()            — notificaciones sistema
-//   FUN_004c14e0  → FPS_TimerReset()              — tick/s: timeGetTime %1000 reset
+//   UI_RenderNotices  → PlayerName_Render()           — nombres jugadores con parpadeo
+//   UI_RenderChatLogOverlay  → SystemText_Render()            — notificaciones sistema
+//   UI_UpdateFpsCounter  → FPS_TimerReset()              — tick/s: timeGetTime %1000 reset
 //   FUN_004c3530  → CondText_Render()             — texto condicional DAT_07e11d20
-//   FUN_004bffa0  → AnimUI_Render()              — elemento UI 6-frame animado (×2)
+//   Cursor_Render  → AnimUI_Render()              — elemento UI 6-frame animado (×2)
 //   FUN_0051e0c0  → SpecialMap_Render3D()         — 3D pass mapas 0x97/0x99
 //   FUN_0040f670  → Watchdog_Reset(obj)
-//   FUN_005124b0  → GL_PopMatrix2()              — glPopMatrix() × 2
-//   FUN_005112f0  → Camera_MouseRay(mouseX, mouseY, out_ray[3])
+//   GL_End2D  → GL_PopMatrix2()              — glPopMatrix() × 2
+//   Camera_BuildMouseRay  → Camera_MouseRay(mouseX, mouseY, out_ray[3])
 //   FUN_004f8ff0  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
@@ -242,7 +242,7 @@ void Render_HudPass_4EB070(void);
 unsigned int Game_RenderTick(void)
 {
     // BUG-FIX 2026-05-04: drain residual GL errors antes del frame para que el
-    // diagnostic logging de FUN_005114f0 no spamee con 0x504 stale (de pops
+    // diagnostic logging de GL_DisableDepthTest no spamee con 0x504 stale (de pops
     // sin push del frame previo durante la transición login→in-game).
     while (glGetError() != GL_NO_ERROR) {}
 
@@ -322,7 +322,7 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
     const float h  = ConvertY_RF(Height);
     const float q  = vHeight * 0.25f;
 
-    FUN_00511480(Texture);          // BindTexture
+    GL_BindTextureSlot(Texture);          // BindTexture
 
     glBegin(GL_TRIANGLE_FAN);
       glTexCoord2f(u,          v + q);            glVertex2f(x0,     y0);
@@ -368,9 +368,9 @@ void Render_GameFrame(void)
     if (DAT_0055a7ac == 8) {
         // Tarkan: dos capas de arena a pantalla completa, blend aditivo.
         // IDA Render_GameFrame L14-21.
-        FUN_00511680('');                  // EnableAlphaTest(1)
+        GL_SetBlendSrcOver('');                  // EnableAlphaTest(1)
         glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
-        FUN_00511710();                        // EnableAlphaBlend (aditivo)
+        GL_SetBlendAdditive();                        // EnableAlphaBlend (aditivo)
         glColor3f(0.3f, 0.3f, 0.25f);
 
         const float scrollA = (float)((int)DAT_05826e08 % 100000) * _DAT_00552b88; // 0.0002
@@ -450,12 +450,12 @@ void Render_HPBars_OLD(void)
         worldPos[2] = *(float*)(slot + 0x18) + 200.0f;
 
         int sx = 0, sy = 0;
-        FUN_005113f0(worldPos, &sx, &sy);
+        Camera_ProjectWorldToScreen(worldPos, &sx, &sy);
         if (sx < 0 || sx > 640 || sy < 0 || sy > 480) continue;  // off-screen
 
         // Draw black shadow + red bar (HP placeholder = 50%)
         // For now: fixed 30×4 bar
-        FUN_00511680('\0');     // disable alpha blend (solid)
+        GL_SetBlendSrcOver('\0');     // disable alpha blend (solid)
         glColor4f(0.0f, 0.0f, 0.0f, 0.7f);
         // Black BG quad
         glBegin(GL_QUADS);
@@ -528,9 +528,9 @@ void Render_HPBars_OLD(void)
 // Helper functions used (ver functions.h):
 //   FUN_00524cb0  → MoveMainCamera (returns spectator flag)
 //   FUN_004cb520  → GetScreenWidth (returns viewport width)
-//   FUN_005119b0  → BeginOpengl (viewport setup + perspective)
+//   GL_BeginViewport  → BeginOpengl (viewport setup + perspective)
 //   FUN_004f9050  → Camera_SetupFrustum
-//   FUN_005112f0  → CreateScreenVector (mouse ray)
+//   Camera_BuildMouseRay  → CreateScreenVector (mouse ray)
 //   FUN_004fd800  → Terrain_Render
 //   FUN_00500aa0  → Entity_UpdatePositions / RenderObjects
 //   FUN_0045ab00  → Entity_RenderAll_3D / RenderCharactersClient
@@ -544,13 +544,13 @@ void Render_HPBars_OLD(void)
 //   FUN_0046cb70  → RenderPlanes / SkillEffect_Render
 //   FUN_0046c3e0  → RenderBlurs / Particle_Render
 //   FUN_00478c00  → RenderParticles (effect pool)
-//   FUN_00479730  → RenderSprites
-//   FUN_005123c0  → BeginBitmap (ortho2D)
-//   FUN_005124b0  → EndBitmap
-//   FUN_00511cf0  → BeginSprite (push+identity)
-//   FUN_005119b0  → BeginOpengl
+//   Render_DrawSpritePool  → RenderSprites
+//   GL_Begin2D  → BeginBitmap (ortho2D)
+//   GL_End2D  → EndBitmap
+//   GL_BeginSprite  → BeginSprite (push+identity)
+//   GL_BeginViewport  → BeginOpengl
 //   FUN_00404bc0  → BGM helper
-//   FUN_004b0310  → EntityInfo_Overlay / CharPreview
+//   Mouse_UpdateHoverTargets  → EntityInfo_Overlay / CharPreview
 // (Funciones helper ya declaradas en functions.h via stdafx.h)
 
 void Render_Scene3D(void)
@@ -606,9 +606,9 @@ void Render_Scene3D(void)
 
     // ── 3. Top strip viewport for frustum ─────────────────────────────────────
     int w = FUN_004cb520();
-    FUN_005119b0(0, 0, w, 0x30);
+    GL_BeginViewport(0, 0, w, 0x30);
     Camera_SetupFrustum((float)w * _DAT_0055283c, camPos);
-    FUN_00511bc0();
+    GL_EndOpenGL();
 
     // ── 4. Clear color por World ──────────────────────────────────────────────
     int worldId = (int)DAT_0055a7ac;  // g_GameSubState
@@ -623,12 +623,12 @@ void Render_Scene3D(void)
     glClearColor(cr, cg, cb, 1.0f);
 
     // ── 5. Main 3D viewport ──────────────────────────────────────────────────
-    bool topView = (DAT_083a42e9 != 0);
+    bool topView = (CameraTopViewEnabled != 0);
     // IDA Game_RenderTick: v10 = CameraTopViewEnable ? 480 : 432  (0x1e0 : 0x1b0).
     // El topview usa el viewport ALTO (480 = pantalla completa). Antes 0x180 (384).
     int vpHeight = topView ? 0x1e0 : 0x1b0;
-    FUN_005119b0(0, 0, w, vpHeight);
-    FUN_005112f0(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
+    GL_BeginViewport(0, 0, w, vpHeight);
+    Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
 
     // ── 6. 3D render passes ──────────────────────────────────────────────────
     // BUG-FIX 2026-04-28: faltaba la llamada a RenderTerrain (FUN_004f9ac0) que
@@ -641,7 +641,7 @@ void Render_Scene3D(void)
     // 2026-05-07: Particle_Render (FUN_0046BE40) — port FIEL desde IDA
     // Game_RenderTick:113. Itera el effect pool y renderiza partículas
     // (gate sparks, magic glow, etc). ANTES no estaba wireado.
-    FUN_0046be40();                              // Particle_Render
+    Particle_RenderAll();                         // particle system draw
     FUN_00500aa0();                              // RenderBoids (decoration animals)
     FUN_0045ab00();                              // Entity_RenderAll_3D
     if (DAT_07e11d30 != 0) {                     // if (EditFlag) RenderTerrain(1) — IDA: aquí, no tras Trail
@@ -654,18 +654,18 @@ void Render_Scene3D(void)
     // Game_RenderTick:124-125. Fauna decorativa (peces, mariposas).
     FUN_00502200(0, 0, 0, 0);                    // RenderFishs
     FUN_00500970();                              // RenderBugs
-    FUN_0046cb70();                              // SkillEffect_Render
+    SkillEffects_RenderAll();
     FUN_00473710();                              // ItemDrop_Render
-    FUN_0046bba0();                              // RenderEffects
+    EffectPool_RenderAll();
     Player_Render();                             // Player_Render
     FUN_0046c3e0();                              // Trail_RenderAll
     FUN_00479790();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
 
-    FUN_00511cf0();                              // BeginSprite (push + identity)
+    GL_BeginSprite();                              // BeginSprite (push + identity)
     if (worldId == 2 && HeroTile != 3 && HeroTile < 10) {
-        FUN_0046cb70();
+        SkillEffects_RenderAll();
     }
-    FUN_00479730();                              // RenderSprites
+    Render_DrawSpritePool();                              // RenderSprites
     FUN_00478c00();                              // RenderParticles (effect pool)
     // 2026-05-06: damage popup numbers (port FIEL desde IDA Game_RenderTick:139).
     // Llamado entre RenderParticles y glPopMatrix para que los números floten en
@@ -674,10 +674,10 @@ void Render_Scene3D(void)
     FUN_00479330(0, 0, 0, 0);                    // RenderPoints (damage)
     glPopMatrix();
 
-    FUN_004b0310();                              // EntityInfo / CharPreview overlay
+    Mouse_UpdateHoverTargets();                              // EntityInfo / CharPreview overlay
 
     // ── 7. 2D HUD ─────────────────────────────────────────────────────────────
-    FUN_005123c0();                              // BeginBitmap (Ortho2D)
+    GL_Begin2D();                              // BeginBitmap (Ortho2D)
 
     // 2026-05-07: sub_4CB6F0 (Target_Render) — port FIEL desde IDA
     // Game_RenderTick:143. Renderiza nombre del NPC/mob/player hovered.
@@ -699,6 +699,6 @@ void Render_Scene3D(void)
         DAT_083a7c50 = 0;
     }
 
-    FUN_005124b0();                              // EndBitmap
-    FUN_00511bc0();                              // EndOpengl
+    GL_End2D();                              // EndBitmap
+    GL_EndOpenGL();                              // EndOpengl
 }

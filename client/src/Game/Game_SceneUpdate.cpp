@@ -10,7 +10,7 @@
 //   2   CredentialInput — username/password dialog
 //   3   AwaitLoginResp  — packet sent; waiting for server response
 //   4   LoginFailed     — error dialog
-//   8   CharSelectInit  — FUN_0047ec60(1); char select setup
+//   8   CharSelectInit  — Input_ClearState(1); char select setup
 //  12   Error/Timeout   — retry path (up to 4 retries)
 //
 // ── SERVER RESPONSE CODE (DAT_05826cb0) ──────────────────────────────────────
@@ -395,12 +395,12 @@ int Game_SceneUpdate(void)
             // MuEmu del GameServer). Desactivamos la capa MuEmu mientras hablamos
             // con el CS; Recv_Redirect la reactiva al saltar al GameServer.
             MuEmu::SetActive(false);
-            extern void FUN_00423920(const char *server, unsigned int port);
-            FUN_00423920(PTR_s_connect_muonline_co_kr_005615b8, (unsigned)DAT_005615bc);
+            extern void Net_ConnectServer(const char *server, unsigned int port);
+            Net_ConnectServer(PTR_s_connect_muonline_co_kr_005615b8, (unsigned)DAT_005615bc);
         }
 
         // Load login-scene resources (sounds, textures)
-        FUN_0050fcf0();
+        Scene_LoadAccountResources(); // FUN_0050fcf0 (IDA)
 
         // Clear 8 entity slots at base entity array + 0x168 (stride 0x394)
         {
@@ -525,7 +525,7 @@ int Game_SceneUpdate(void)
         DAT_07e11d71 = 0;
         DAT_07e11d72 = 0;
         DAT_00559c84 = 1;
-        FUN_0047ec60(1);        // CharSelect_Init
+        Input_ClearState(1);        // CharSelect_Init
 
         // Copy version string → username buffer
         {
@@ -701,7 +701,7 @@ int Game_SceneUpdate(void)
                 DAT_083a7c44 = 0;
                 Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
                 DAT_05826cb0 = 0;
-                FUN_00423920(PTR_s_connect_muonline_co_kr_005615b8,
+                Net_ConnectServer(PTR_s_connect_muonline_co_kr_005615b8,
                              (unsigned)DAT_005615bc);
             }
         }
@@ -1063,7 +1063,7 @@ state_fail_common:
                     }
                 }
                 FUN_00406f50((CHAR*)DAT_05826cd4);
-                FUN_0050ff10();
+                Scene_UnloadAccountResources(); // FUN_0050ff10 (IDA)
                 return 0;
 
             // Login error codes 0x13-0x24: show error, back to CredentialInput
@@ -1091,7 +1091,7 @@ state_fail_common:
                 DAT_05826cb0 = 2;
                 DAT_083a7c14 = 8;
                 FUN_00404bc0(0x1b, 0, 0);
-                FUN_0047ec60(1);
+                Input_ClearState(1);
                 DAT_00559c88 = 2;
                 DAT_00559c90 = 1;
                 _DAT_00559c94 = 0x1e;
@@ -1117,7 +1117,7 @@ state_fail_common:
                 DAT_05826cb0 = 2;
                 DAT_083a7c14 = 2;
                 FUN_00404bc0(0x1b, 0, 0);
-                FUN_0047ec60(1);
+                Input_ClearState(1);
                 {
                     int vlen = (int)strlen((char*)lpData_055c9ba0);
                     memcpy(DAT_07db8710, lpData_055c9ba0, vlen + 1);

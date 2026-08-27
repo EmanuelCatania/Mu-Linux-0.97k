@@ -52,18 +52,18 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // color = z-depth as float bits.
 void __cdecl FUN_005126e0(int id, float x, float y, float w, float h, unsigned int color)
 {
-    float fSinX = (float)FUN_00511950(x);
-    float fCosX = (float)FUN_00511980(y);
-    float fSinW = (float)FUN_00511950(w);
-    float fCosW = (float)FUN_00511980(h);
-    FUN_00511480(id);
+    float fSinX = (float)Screen_ToGLX(x);
+    float fCosX = (float)Screen_ToGLY(y);
+    float fSinW = (float)Screen_ToGLX(w);
+    float fCosW = (float)Screen_ToGLY(h);
+    GL_BindTextureSlot(id);
     float sz = (float)DAT_00561570;
     float depth = *(float*)&color;
 
     // Build rotation matrix from direction vector pointing at (depth)
     float bvec[3] = { 0.0f, 0.0f, depth };
     float mat[12];
-    FUN_004f9db0(bvec, mat);
+    Matrix_BuildFromEuler(bvec, mat);
 
     // 4 corner UV + positions
     static float uvs[8] = { 0.0f, 1.0f,  1.0f, 1.0f,  1.0f, 0.0f,  0.0f, 0.0f };
@@ -77,7 +77,7 @@ void __cdecl FUN_005126e0(int id, float x, float y, float w, float h, unsigned i
     glBegin(GL_TRIANGLE_FAN);
     for (int i = 0; i < 4; i++) {
         float out[3];
-        FUN_004fa0b0(corners[i], mat, out);
+        Vector_Rotate(corners[i], mat, out);
         glTexCoord2f(uvs[i*2], uvs[i*2+1]);
         glVertex2f(fSinX + out[0], (sz - fCosX) + out[1]);
     }

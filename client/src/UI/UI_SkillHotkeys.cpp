@@ -87,7 +87,7 @@ void __cdecl RenderSkillIcon_stub(int iIndex, float x, float y, float width, flo
     const float atlasV = (float)((atlasIndex / 8) * (int)height);
 
     // RenderBitmap(298, x, y, width, height, u, v, uWidth, vHeight, 1, 1)
-    FUN_005125a0(0x12a, fX, fY, fWidth, fHeight,
+    GL_DrawTexture(0x12a, fX, fY, fWidth, fHeight,
                  atlasU * _DAT_00552b7c,
                  atlasV * _DAT_00552b7c,
                  fWidth * _DAT_00552b7c,

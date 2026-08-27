@@ -26,13 +26,13 @@ void FUN_004f64d0(void)
   undefined4 *puVar5;
   // (was: int iStack0000000c — phantom outgoing-stack arg slot; resolved into FUN_004c9730 3rd param)
 
-  FUN_00511600();
+  GL_ResetState();
   puVar5 = (undefined4*)DAT_07cf1ffc;
   DAT_07e11d6e = 0;
   // 2026-05-08: BUG-FIX — DAT_07eaa134 (B-key/repair-mode flag) se queda
   // pegada en != 0 (probablemente corrupción adicional similar a
   // DAT_07d78068). Eso dispara el dispatch a FUN_004c8d70 (RenderRepairInfo)
-  // en lugar de FUN_004c4650 (tooltip normal), y el cursor (FUN_004bffa0)
+  // en lugar de FUN_004c4650 (tooltip normal), y el cursor (Cursor_Render)
   // dibuja el sprite de reparación en vez de flecha.
   // Hasta encontrar el writer real, forzamos a 0 si no hay un repair NPC
   // efectivamente abierto (DAT_07eaa138 = RepairEnable counter).

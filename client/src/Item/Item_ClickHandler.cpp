@@ -139,9 +139,9 @@ void __cdecl DeleteBug(int Owner);
 // por un header. Los declaramos acá inline. Los dos tienen que ser `__cdecl` sin
 // mangling, igual que las implementaciones que ya existen.
 extern int  __cdecl PressKey(int vk);
-extern unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
-                                          int inv_base, int grid_w, int grid_h);
-#define sub_4D6020 FUN_004d6020
+extern unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
+                                                           int inv_base, int grid_w, int grid_h);
+#define sub_4D6020 ItemMove_SnapMouseToEmptySlot
 
 // Latches de MousePosition para el pickup con click derecho. En IDA los originales están en
 // 0x083a42e0 / 0x083a42e4, pero en nuestro build esas direcciones se superponen con CameraAngle
@@ -155,7 +155,7 @@ static DWORD g_PickupLatchY = 0;
 extern "C" BYTE OffsetWarehouseItems[];   // declared in HUD_Pass3.cpp
 extern "C" BYTE OffsetTradeItems[];
 
-// ── PressKey (FUN_0047ec20, 61 bytes) — port FIEL desde IDA ──────────────────
+// ── PressKey (Input_IsKeyJustPressed, 61 bytes) — port FIEL desde IDA ──────────────────
 // Chequeo de "tecla recién apretada" por flanco, usando DAT_07e118ec como tabla
 // de estado anterior. Devuelve true en el primer frame que la tecla está apretada,
 // y después false hasta que se suelte y se vuelva a apretar.
@@ -179,8 +179,9 @@ int __cdecl PressKey(int vk)
 // ese slot. Devuelve 1 si lo encontró, 0 si no.
 //
 // Args: (origin_x, origin_y, grid_base, grid_w, grid_h)
-unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
-                                   int grid_base, int grid_w, int grid_h)
+// IDA: FUN_004d6020
+unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
+                                                    int grid_base, int grid_w, int grid_h)
 {
     {
         unsigned int p = (unsigned int)DAT_07d78068;
@@ -231,6 +232,14 @@ unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
         }
     }
     return 0;
+}
+
+// Compatibility entry point retained solely for the preserved IDA port module.
+// IDA: FUN_004d6020
+unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
+                                   int grid_base, int grid_w, int grid_h)
+{
+    return ItemMove_SnapMouseToEmptySlot(origin_x, origin_y, grid_base, grid_w, grid_h);
 }
 
 // ── ShowCheckBox (FUN_0051E240, 506 bytes) — port FIEL desde IDA ────────────

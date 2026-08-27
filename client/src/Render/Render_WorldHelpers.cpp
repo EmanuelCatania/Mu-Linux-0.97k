@@ -56,8 +56,8 @@ extern void __cdecl FUN_0054158c(void* ptr);
 //   v0[-90..]               entity start
 //   v0[+0]                  scale
 //   v0[+48..50]             color RGB
-// Externs ya en functions.h: FUN_004f8ff0, FUN_004fc030, FUN_00475220,
-// FUN_004f7500, FUN_004409a0, FUN_00503cf0, FUN_00441f00
+// Externs ya en functions.h: FUN_004f8ff0, FUN_004fc030, Particle_Spawn,
+// FUN_004f7500, BMD_TransformPosition, FUN_00503cf0, FUN_00441f00
 
 void __cdecl FUN_00500aa0(void)
 {
@@ -99,7 +99,7 @@ void __cdecl FUN_00500aa0(void)
                 if (entType == 175) {
                     float scale = (float)((rand() % 32 + 64) * 0.01);
                     float color[3] = { scale * 0.2f, scale * 0.4f, scale * 0.4f };
-                    FUN_00475220(1150, nullptr, v0 - 86, color, (int)(uintptr_t)(v0 - 90), 1.0f, 0);
+                    Particle_Spawn(1150, nullptr, v0 - 86, color, (int)(uintptr_t)(v0 - 90), 1.0f, 0);
                 }
 
                 // Type 184: dual-side flame jets.
@@ -112,11 +112,11 @@ void __cdecl FUN_00500aa0(void)
                     float color[3] = { scale, scale * 0.2f, 0.0f };
 
                     // Left jet
-                    FUN_004409a0(model, nullptr, locOffsetL, Position, 1);
-                    FUN_00475220(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
+                    BMD_TransformPosition(model, nullptr, locOffsetL, Position, 1);
+                    Particle_Spawn(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
                     // Right jet
-                    FUN_004409a0(model, nullptr, locOffsetR, Position, 1);
-                    FUN_00475220(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
+                    BMD_TransformPosition(model, nullptr, locOffsetR, Position, 1);
+                    Particle_Spawn(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
                 }
 
                 // World != 10: render shadow on terrain.
@@ -146,7 +146,7 @@ void __cdecl FUN_00500aa0(void)
 
 // FUN_005038e0 @ 0x005038E0 — Entity_Render. Port FIEL del IDA.
 // Itera Items[] pool (DAT_07e12840, 1000 entries × 516 bytes), per-entry:
-//   1. Frustum-cull con sub_4F9590 (=FUN_004f9590) radio 400.
+//   1. Frustum-cull con sub_4F9590 (=Frustum_TestSphere) radio 400.
 //   2. Resolve model slot por type (special handling 624..783, 860).
 //   3. BMD_Animation (FUN_00440060) con bone matrix.
 //   4. RequestTerrainLight + offset by entity color.
@@ -171,7 +171,7 @@ void __cdecl FUN_005038e0(void)
         if (*v1) {
             // Frustum cull radio 400 alrededor de entity pos (v0-245 = pos vec3).
             float* v2 = (float*)(v0 - 245);
-            char vis = (char)FUN_004f9590(v2, 400.0f);
+            char vis = (char)Frustum_TestSphere(v2, 400.0f);
             v0[91] = vis;
             if (vis) {
                 short type = *(short*)(v0 - 259);
@@ -234,7 +234,7 @@ void __cdecl FUN_005038e0(void)
                         float in2[3][4];
                         AngleMatrix(angles_r, in2);
                         float out[3];
-                        FUN_004fa0b0(in1, (float*)in2, out);
+                        Vector_Rotate(in1, (float*)in2, out);
                         *(float*)(v0 - 245) = out[0] + sx_orig;
                         *(float*)(v0 - 241) = out[1] + sy_orig;
                         *(float*)(v0 - 237) = out[2] + sz_orig;
@@ -282,15 +282,15 @@ void __cdecl FUN_005038e0(void)
                 // L182-183). RenderItemName lee esa pos en o+0x5c/0x5e (= base+
                 // 164/166 = v1+92/94) para dibujar el nombre SOBRE el item. El
                 // port la zereaba en v1+184 (offset equivocado) → nombre en
-                // (0,0). FUN_005113f0 (World_ToScreen) sí está implementado.
+                // (0,0). Camera_ProjectWorldToScreen (World_ToScreen) sí está implementado.
                 {
                     float scr[3];
                     scr[0] = v20;                              // world X
                     scr[1] = v21;                              // world Y
                     scr[2] = v22 + _DAT_0055284c;              // world Z + name-tag offset
                     int sx = 0, sy = 0;
-                    extern void __cdecl FUN_005113f0(float*, int*, int*);
-                    FUN_005113f0(scr, &sx, &sy);
+                    extern void __cdecl Camera_ProjectWorldToScreen(float*, int*, int*);
+                    Camera_ProjectWorldToScreen(scr, &sx, &sy);
                     *(short*)(v1 + 92) = (short)sx;
                     *(short*)(v1 + 94) = (short)sy;
                 }
@@ -315,7 +315,7 @@ void __cdecl FUN_005038e0(void)
 //   - BindTexture(type), excepto type 266 (subtype lookup → 1253/1277/1278)
 //   - Loop por segment con UV scrolling animado por WorldTime
 //   - GL_QUADS por segment con interpolación entre vertices vecinos
-// FUN_00511680/790/600/480 — declared en functions.h, sin extern "C" duplicate.
+// GL_SetBlendSrcOver/790/600/480 — declared en functions.h, sin extern "C" duplicate.
 
 void __cdecl FUN_00473710(void)
 {
@@ -347,22 +347,22 @@ void __cdecl FUN_00473710(void)
         }
         // 2026-08-10 FIX (picos duros / líneas negras de los joints): el IDA
         // llama `EnableAlphaBlend()` en la rama else, que es **0x00511710 =
-        // GL_SetBlendAdditive** (blend tipo 3). El port llamaba `FUN_00511680`
+        // GL_SetBlendAdditive** (blend tipo 3). El port llamaba `GL_SetBlendSrcOver`
         // (GL_SetBlendSrcOver, alpha normal SRC_ALPHA/ONE_MINUS_SRC_ALPHA +
         // depth-mask ON). Con alpha normal los téxeles OSCUROS de la textura de
         // glow se pintan negros y opacos en vez de no sumar nada → el rayo
         // aparecía como una forma sólida de bordes duros (picos azules del MG)
         // y como líneas negras (mago). `EnableAlphaBlendMinus()` = 0x00511790,
         // que sí estaba bien.
-        if (useMinus) FUN_00511790(); else FUN_00511710();
+        if (useMinus) GL_SetBlendSrcAlpha(); else GL_SetBlendAdditive();
 
         // Texture bind per type.
         if (type == 266) {
             int sub = *(v0 - 620);
-            if (sub == 0 || sub == 4)      FUN_00511480(1277);
-            else if (sub == 1)             FUN_00511480(1253);
-            else if (sub == 2)             FUN_00511480(1278);
-            else if (sub == 3)             FUN_00511480(1253);
+            if (sub == 0 || sub == 4)      GL_BindTextureSlot(1277);
+            else if (sub == 1)             GL_BindTextureSlot(1253);
+            else if (sub == 2)             GL_BindTextureSlot(1278);
+            else if (sub == 3)             GL_BindTextureSlot(1253);
             // type-266 color modulation: clamp count, scale color
             int v30 = *v0;
             if (v30 > 20) v30 = 20;
@@ -373,7 +373,7 @@ void __cdecl FUN_00473710(void)
             glColor3f(r, g, b);
         } else {
             int texId = (type == 1255) ? 1254 : type;
-            FUN_00511480(texId);
+            GL_BindTextureSlot(texId);
             glColor3fv((const GLfloat*)v0 - 609);
         }
 
@@ -434,7 +434,7 @@ void __cdecl FUN_00473710(void)
         }
     }
 
-    FUN_00511600();   // DisableAlphaBlend after all
+    GL_ResetState();   // DisableAlphaBlend after all
 }
 
 
@@ -579,7 +579,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
 {
     DAT_07e11d6e = 1;
     glColor3f(1.0f, 1.0f, 1.0f);
-    FUN_00511600();  // DisableAlphaBlend
+    GL_ResetState();  // DisableAlphaBlend
 
     // 2026-05-07: solo activo in-world. CharSelect tiene su propio path con
     // entity pool poblado de chars; queremos que Target_Render solo procese
@@ -608,7 +608,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
         //    byte_7EAA15C; se muestran si el toggle está on O Alt está mantenido).
         //    Una pulsación de Alt alterna mostrar/ocultar todos los nombres.
         static int s_altNameToggle = 0;
-        if (FUN_0047ec20(VK_MENU))               // Alt recién pulsado (edge)
+        if (Input_IsKeyJustPressed(VK_MENU))               // Alt recién pulsado (edge)
             s_altNameToggle = !s_altNameToggle;
         if (s_altNameToggle || (GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
             for (int i = 0; i < 1000; ++i) {
@@ -711,7 +711,7 @@ void __cdecl FUN_00502200(int /*unused*/, int /*unused*/, int /*unused*/, int /*
                 short typeCode = *(short*)(slot + 2);
                 int World = (int)DAT_0055a7ac;
                 if (typeCode != 188 && typeCode != 189 && World != 10) {
-                    FUN_00511680('\x01');                  // EnableAlphaTest(1)
+                    GL_SetBlendSrcOver('\x01');                  // EnableAlphaTest(1)
                     glColor4f(0.0f, 0.0f, 0.0f, 0.2f);     // shadow color
                     float* modelData = (float*)(DAT_05828d58 + 188 * (int)typeCode);
                     if (modelData) {
@@ -747,7 +747,7 @@ void __cdecl FUN_00502200(int /*unused*/, int /*unused*/, int /*unused*/, int /*
 //   *((BYTE*)v0 + 222)       prev action
 //   v0[+16]                  scale
 //   *((int*)v0 + 14)         counter (timeout)
-// FUN_0046b980 ya está en functions.h.  (El comentario anterior decía que
+// ItemDrop_RenderGroundWeapon ya está en functions.h.  (El comentario anterior decía que
 // RenderWheelWeapon era 0x46B8C0: es **0x46B7C0**, y no estaba portada.)
 
 // ── RenderWheelWeapon @ 0x0046B7C0 ────────────────────────────────────────────
@@ -826,7 +826,8 @@ void __cdecl FUN_0046b7c0(DWORD o)
     *(int*)  (o + 36) = savedAng2;
 }
 
-void __cdecl FUN_0046bba0(void)
+// IDA: FUN_0046bba0
+void __cdecl EffectPool_RenderAll(void)
 {
     // BUG-FIX 2026-05-01: HeadAngle (0x07B11698) está en offset +40 dentro del
     // effect pool DAT_07b11670 (200 entries × 0x1bc bytes = 0x1bc stride = 444B).
@@ -844,7 +845,7 @@ void __cdecl FUN_0046bba0(void)
         if (!*((BYTE*)v0 - 40)) continue;
 
         // Frustum cull radio 400 con pos offset (v0-6 = world pos)
-        char vis = (char)FUN_004f9590((float*)(v0 - 6), 400.0f);
+        char vis = (char)Frustum_TestSphere((float*)(v0 - 6), 400.0f);
         *((BYTE*)v0 + 312) = vis;
         if (!vis) continue;
 
@@ -878,7 +879,7 @@ void __cdecl FUN_0046bba0(void)
             continue;
         }
         if (type == 244) {
-            FUN_0046b980((int)(uintptr_t)(v0 - 10));
+            ItemDrop_RenderGroundWeapon((int)(uintptr_t)(v0 - 10));
             continue;
         }
 
@@ -954,7 +955,7 @@ void __cdecl FUN_0046bba0(void)
 
         // Type 244: special handler.
         if (type == 244) {
-            FUN_0046b980((int)(uintptr_t)(v0 - 10));
+            ItemDrop_RenderGroundWeapon((int)(uintptr_t)(v0 - 10));
             continue;
         }
     }
@@ -964,7 +965,8 @@ void __cdecl FUN_0046bba0(void)
 //   Real implementation lives in src/Render/SkillEffect_Render.cpp::SkillEffect_Render.
 //   Wrapper here so functions.h declaration matches a definition.
 extern void SkillEffect_Render(void);
-void __cdecl FUN_0046cb70(void) { SkillEffect_Render(); }
+// IDA: FUN_0046cb70
+void __cdecl SkillEffects_RenderAll(void) { SkillEffect_Render(); }
 
 // FUN_00524cb0 @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA, 2026-06-27)
 // Setea los parámetros de cámara que consume Camera_SetupFrustum:
@@ -973,8 +975,8 @@ void __cdecl FUN_0046cb70(void) { SkillEffect_Render(); }
 //   CameraDistance = 1000 + smoothing (CameraDistanceTarget)
 //   CameraPosition vía AngleMatrix(CameraAngle)+VectorIRotate del offset (0,-1000,0)
 //   CameraAngle[0] = EarthQuake - 48.5  (pitch SET después de la posición)
-// Símbolos IDA: CameraTopViewEnable=DAT_083a42e9, CameraDistance=DAT_083a45d0,
-//   CameraDistanceTarget=DAT_005616b4. Retorna 0 (no-spectator) como IDA.
+// Símbolos IDA: CameraTopViewEnable=CameraTopViewEnabled, CameraDistance=CameraDistance,
+//   CameraDistanceTarget=CameraDistanceTarget. Retorna 0 (no-spectator) como IDA.
 // Sin force-yaw ni DIAG: el yaw lo preserva el estado de cámara, igual que IDA.
 bool __cdecl FUN_00524cb0(void) {
     float in1[3];
@@ -988,14 +990,14 @@ bool __cdecl FUN_00524cb0(void) {
         CameraAngle[0] = 0.0f;
         CameraAngle[1] = 0.0f;
     }
-    if (DAT_083a42e9) {                            // CameraTopViewEnable
+    if (CameraTopViewEnabled) {                            // CameraTopViewEnable
         CameraViewFar = 3200.0f;
         CameraPosition[2] = 3200.0f;
         CameraPosition[0] = *(float*)(Hero + 16);
         CameraPosition[1] = *(float*)(Hero + 20);
     } else {
         CameraViewFar = 2000.0f;
-        DAT_083a45d0 = 1000.0f;                    // CameraDistance
+        CameraDistance = 1000.0f;                    // CameraDistance
         in1[0] = 0.0f;
         in1[1] = -1000.0f;
         in1[2] = 0.0f;
@@ -1003,7 +1005,7 @@ bool __cdecl FUN_00524cb0(void) {
         VectorIRotate(in1, matrix, out);
         CameraPosition[0] = out[0] + *(float*)(Hero + 16);
         CameraPosition[1] = out[1] + *(float*)(Hero + 20);
-        CameraPosition[2] = *(float*)(Hero + 24) + DAT_083a45d0 - 150.0f;
+        CameraPosition[2] = *(float*)(Hero + 24) + CameraDistance - 150.0f;
         CameraAngle[0] = EarthQuake - 48.5f;       // pitch después de la posición
     }
     if (World == 5) {
@@ -1012,12 +1014,12 @@ bool __cdecl FUN_00524cb0(void) {
         CameraAngle[1] = (float)sin((double)WorldTime * 0.00079999998) * 2.5f + CameraAngle[1];
     }
     // Smoothing de CameraDistance hacia CameraDistanceTarget (IDA final).
-    DAT_083a45d0 = (DAT_005616b4 - DAT_083a45d0) * 0.33333334f + DAT_083a45d0;
+    CameraDistance = (CameraDistanceTarget - CameraDistance) * 0.33333334f + CameraDistance;
     return false;
 }
 
 
-void __cdecl StopBuffer(int Buffer, int /*Object*/) { FUN_00404c60(Buffer); }
+void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); }
 
 
 
@@ -1053,25 +1055,25 @@ void __cdecl FUN_00406f50(char* param_1) {
 // FUN_0045ab00 — implemented in src/Render/Entity_Render.cpp
 // FUN_0045adc0 — implemented in src/Entity/Entity_Spawn.cpp (Entity_Spawn, 797 lines)
 // FUN_0045f930 — implemented in src/Entity/Entity_Init.cpp
-// FUN_0045fa20 — implemented in src/Entity/Entity_Init.cpp
-// FUN_0046b790 — implemented in src/Render/Effect_Tick.cpp
+// FUN_0045fa20 (Monster_SaveSetBase) — implemented in src/Entity/Entity_Init.cpp
+// Effect_TickAll (IDA: FUN_0046b790) — implemented in src/Render/Effect_Tick.cpp
 // FUN_0046c3e0 — implemented in src/Render/Joint_Render.cpp
-// FUN_0046cc80 — implemented in src/Render/Weather_Particles.cpp (weather particle tick, 399 lines)
-// FUN_004736e0 — implemented in src/Render/Effect_Tick.cpp
+// WeatherParticles_Update (IDA: FUN_0046cc80) — implemented in src/Render/Weather_Particles.cpp
+// Joint_TickAll (IDA: FUN_004736e0) — implemented in src/Render/Effect_Tick.cpp
 // FUN_00473ea0 — implemented in src/Render/Effect_Tick.cpp
 // FUN_00474f90 — implemented in src/Render/Effect_Tick.cpp
-// FUN_00475090 — implemented in src/Render/Effect_Tick.cpp
+// Effect_TickFade (IDA: FUN_00475090) — implemented in src/Render/Effect_Tick.cpp
 // FUN_00478c00 — implemented in src/Render/ItemDrop_Render2.cpp (sprite pool render, 244 lines)
-// FUN_00479380 — implemented in src/Render/Effect_Tick.cpp
-// FUN_004794a0 — implemented in src/Render/Effect_Tick.cpp
-// FUN_00479730 — implemented in src/Sound/Sound_Queue.cpp (Sound_UpdateQueue)
-// FUN_0047ec60 — implemented in src/Input/Input.cpp
-// FUN_0047f0b0 — implemented in src/UI/Chat.cpp
-// FUN_0047f650 — implemented in src/UI/Chat.cpp
-// FUN_0047fcb0 — implemented in src/Sound/Sound_Queue.cpp
-// FUN_0047fce0 — implemented in src/UI/Chat.cpp
-// FUN_00480950 — implemented in src/Sound/Sound_Queue.cpp
-// FUN_00480980 — implemented in src/UI/Chat.cpp
-// FUN_004821a0 — implemented in src/UI/Chat.cpp
+// DamageNumbers_Tick (IDA: FUN_00479380) — implemented in src/Render/Effect_Tick.cpp
+// Effect_TickFlare (IDA: FUN_004794a0) — implemented in src/Render/Effect_Tick.cpp
+// Render_DrawSpritePool — implemented in src/Sound/Sound_Queue.cpp (Sound_UpdateQueue)
+// Input_ClearState — implemented in src/Input/Input.cpp
+// UI_RenderInputField — implemented in src/UI/Chat.cpp
+// UI_RenderText — implemented in src/UI/Chat.cpp
+// Chat_TickNoticeTimer — implemented in src/Sound/Sound_Queue.cpp
+// UI_RenderNotices — implemented in src/UI/Chat.cpp
+// Chat_TickMessageTimer — implemented in src/Sound/Sound_Queue.cpp
+// UI_RenderChatLogOverlay — implemented in src/UI/Chat.cpp
+// UI_TickHoverBubbles — implemented in src/UI/Chat.cpp
 // FUN_004acef0 — implemented in src/Game/Player_InputTick.cpp
-// FUN_004b0310 — implemented in src/Input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)
+// Mouse_UpdateHoverTargets — implemented in src/Input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)

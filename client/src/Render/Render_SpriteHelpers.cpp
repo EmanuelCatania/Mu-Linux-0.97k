@@ -20,8 +20,8 @@ void __stdcall EnableAlphaBlend2_stub(void) {
         glEnable(0x0BE2);              // GL_BLEND
         glBlendFunc(0x0301, 1);        // GL_ONE_MINUS_DST_COLOR, GL_ONE
     }
-    FUN_00511570();                    // DisableCullFace
-    FUN_00511530();                    // DisableDepthMask
+    GL_DisableCullFace();                    // DisableCullFace
+    GL_DisableDepthWrites();                    // DisableDepthMask
     if (DAT_083a411d) {                // AlphaTestEnable
         DAT_083a411d = 0;
         glDisable(0x0BC0);             // GL_ALPHA_TEST
@@ -51,7 +51,7 @@ void __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, fl
     // The actual binary passes per-vertex position/UV/color arrays after the initial params.
     // This implementation follows the Ghidra decompilation structure.
 
-    FUN_00511480(Texture);  // GL_BindTexture
+    GL_BindTextureSlot(Texture);  // GL_BindTextureSlot
 
     // VectorTransform: transform Position by CameraMatrix (4x3 matrix at DAT_083a4140)
     float transformed[3];
@@ -103,7 +103,7 @@ void __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, fl
 double __cdecl RenderNumber2D_stub(float x, float y, int Num, float Width, float Height) {
     // 0x005122F0 — renders integer as digit sprites using texture atlas
     // _DAT_00552504 = 0.5f, _DAT_00552928 = 0.7f (approx), _DAT_005526dc = 0.0625f
-    // RenderBitmap = FUN_005125a0, texture 1 = digit atlas
+    // RenderBitmap = GL_DrawTexture, texture 1 = digit atlas
     char buf[32];
     _itoa(Num, buf, 10);
     // strlen inline (Ghidra pattern: decrement 0xFFFFFFFF counter)
@@ -116,7 +116,7 @@ double __cdecl RenderNumber2D_stub(float x, float y, int Num, float Width, float
         do {
             // Each digit: sub-rect from atlas row, u = (digit * 0.0625f), v = 0, uW = 0.0625f, vH = 0.5f
             float u = (float)(buf[i] - '0') * _DAT_005526dc;  // 0.0625f
-            FUN_005125a0(1, x, y, Width, Height, u, 0.0f, 0.0625f, 0.5f, true, true);
+            GL_DrawTexture(1, x, y, Width, Height, u, 0.0f, 0.0625f, 0.5f, true, true);
             x = step + x;
             i++;
         } while (i < len);

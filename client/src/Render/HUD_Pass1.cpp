@@ -41,10 +41,10 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 }
 
 // Referencias externas a helpers que ya existen en nuestro build.
-// (FUN_005113f0 = Projection, FUN_005125a0 = RenderBitmap, FUN_005124c0 = RenderColor,
-//  FUN_0047f7a0 = RenderText_1, FUN_005112f0 = CreateScreenVector,
-//  FUN_004e1be0 = RenderItem3D, FUN_005123c0 = BeginBitmap, FUN_005124b0 = EndBitmap,
-//  FUN_00511600 = DisableAlphaBlend, EnableAlphaBlend / EnableAlphaTest exist.)
+// (Camera_ProjectWorldToScreen = Projection, GL_DrawTexture = RenderBitmap, GL_DrawRect = RenderColor,
+//  UI_DrawText = RenderText_1, Camera_BuildMouseRay = CreateScreenVector,
+//  FUN_004e1be0 = RenderItem3D, GL_Begin2D = BeginBitmap, GL_End2D = EndBitmap,
+//  GL_ResetState = DisableAlphaBlend, EnableAlphaBlend / EnableAlphaTest exist.)
 //
 // Helpers de hash-table — ya declarados en functions.h con linkage C++; acá no
 // los redeclaramos. RenderMainFrameWindow sólo los llama desde el bloque
@@ -68,9 +68,9 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // 0x00561558 es otra cosa (la escribe `BeginOpengl`, 0x5119B0).
 // Nadie usaba estos nombres todavía, así que el bug nunca se disparó — pero eran
 // cuatro trampas armadas para el próximo port que los usara, porque nuestro
-// `FUN_00511220` sí escribe en los DAT_083a42xx.
-#define ScreenCenterX        DAT_083a429c
-#define ScreenCenterY        DAT_083a42a0
+// `GL_SetPerspective` sí escribe en los DAT_083a42xx.
+#define ScreenCenterX        ViewportCenterX
+#define ScreenCenterY        ViewportCenterY
 #define PerspectiveX         _DAT_083a42a4
 #define PerspectiveY         _DAT_083a42a8
 
@@ -163,13 +163,13 @@ void __cdecl FUN_00480c60(int p1, int p2, int p3)
 //
 // 1:1 port preserves the layered draw: shadow quad + dark frame + dark mid
 // fila + (HP * 4) píxeles rojos — con tope de 10 segmentos — usando glColor y
-// FillRect (RenderColor / FUN_005124c0).
+// FillRect (RenderColor / GL_DrawRect).
 // =============================================================================
 // Projection (sub_5113F0 en IDA) está implementada en nuestro build como
-// FUN_005113f0 en src/Render/Camera.cpp — la envolvemos bajo el nombre de IDA para
+// Camera_ProjectWorldToScreen en src/Render/Camera.cpp — la envolvemos bajo el nombre de IDA para
 // que el cuerpo de abajo quede cerca del decompile.
 static inline void Projection(float* Position, int* sx, int* sy) {
-    FUN_005113f0(Position, sx, sy);
+    Camera_ProjectWorldToScreen(Position, sx, sy);
 }
 
 extern "C" void __cdecl RenderPartyHP_(void);
@@ -209,29 +209,29 @@ void RenderPartyHP_(void)
 
             EnableAlphaTest(true);
             glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
-            FUN_005124c0((float)(sx + 1), (float)(sy + 1), 42.0f, 5.0f);  // shadow
+            GL_DrawRect((float)(sx + 1), (float)(sy + 1), 42.0f, 5.0f);  // shadow
 
             EnableAlphaBlend();
             glColor3f(0.2f, 0.0f, 0.0f);
-            FUN_005124c0((float)sx, (float)sy, 42.0f, 5.0f);              // dark frame
+            GL_DrawRect((float)sx, (float)sy, 42.0f, 5.0f);              // dark frame
 
             glColor3f(0.19607843f, 0.039215688f, 0.0f);
-            FUN_005124c0((float)(sx + 2), (float)(sy + 2), 38.0f, 1.0f);  // mid row
+            GL_DrawRect((float)(sx + 2), (float)(sy + 2), 38.0f, 1.0f);  // mid row
 
             int v7 = (int)*(unsigned char*)v1;
             if (v7 > 10) v7 = 10;
 
             glColor3f(0.98039216f, 0.039215688f, 0.0f);
             for (int i = 0; i < v7; ++i) {
-                FUN_005124c0((float)(sx + 4 * i + 2), (float)(sy + 2), 3.0f, 2.0f);
+                GL_DrawRect((float)(sx + 4 * i + 2), (float)(sy + 2), 3.0f, 2.0f);
             }
-            FUN_00511600();   // DisableAlphaBlend
+            GL_ResetState();   // DisableAlphaBlend
         }
         v1 += 9;     // stride 36 bytes
         ++v19;
     } while (v19 < PartyNumber);
 
-    FUN_00511600();
+    GL_ResetState();
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
@@ -348,23 +348,23 @@ void RenderMainFrameWindow_(void)
     m_dwBackColor = 0xFF000000;
 
     // Two corner decorations (bitmap 0xE9 mirrored at x=532).
-    FUN_005125a0(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
-    FUN_005125a0(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
-    FUN_00511600();   // DisableAlphaBlend
+    GL_DrawTexture(0xE9,   0.0f, 387.0f, 108.0f, 45.0f, 0.0f, 0.0f,  0.84375f, 0.703125f, 1, 1);
+    GL_DrawTexture(0xE9, 532.0f, 387.0f, 108.0f, 45.0f, 0.84375f, 0.0f, -0.84375f, 0.703125f, 1, 1);
+    GL_ResetState();   // DisableAlphaBlend
 
     // Bottom tile #1 (left half).
-    FUN_005125a0(0xE6, 0.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
+    GL_DrawTexture(0xE6, 0.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
 
     // ── Anti-tamper #1: desencripta CharacterMachine en la primera referencia ──
     // Port 1:1 del bloque de hash-table intercalado de IDA. El bucket se encuentra
-    // vía FUN_004041e0 (HashTable::GetIndex); nuestra implementación en
+    // vía HashTable_GetIndex (IDA: FUN_004041e0); nuestra implementación en
     // stubs.cpp:16227 devuelve -1 porque la tabla está vacía por defecto —
     // lo que hace que todo este bloque degrade a "insertar una entrada nueva con
     // ref-count=1 y saltear el desencriptado XOR". Cuando el motor pueble
     // dword_55C9BC8 como corresponde, la estructura coincide byte a byte con IDA.
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v6 = FUN_004041e0(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
+        UINT  v6 = HashTable_GetIndex(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
         if (v6 != 0xFFFFFFFFu && DAT_055c9bd4) {
             // Encontrado: toma el puntero al valor del array de valores
             // (dword_55C9BCC[v6]) e incrementa su byte de ref-count [+1412].
@@ -386,7 +386,7 @@ void RenderMainFrameWindow_(void)
                     do {
                         if ((unsigned)v10 < 0x583u)
                             v9[v10] ^= v9[v10 + 1];
-                        v9[v10] = (BYTE)(((v9[v10] - 35) ^ DAT_00559050[v10 & 0xF]) - 71);
+                        v9[v10] = (BYTE)(((v9[v10] - 35) ^ PacketXorKey16[v10 & 0xF]) - 71);
                         --v10; --v11;
                     } while (v11);
                     memcpy(v0, v9, 0x584);
@@ -422,7 +422,7 @@ void RenderMainFrameWindow_(void)
     // this no-ops, matching IDA's "table full" error-report fallback.
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v12 = FUN_004041e0(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
+        UINT  v12 = HashTable_GetIndex(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
         if (v12 != 0xFFFFFFFFu && DAT_055c9bd4) {
             BYTE* v13 = *(BYTE**)((BYTE*)DAT_055c9bcc + 4 * v12);
             if (v13) {
@@ -437,9 +437,9 @@ void RenderMainFrameWindow_(void)
 
     // Bottom tile #2 (mid) and #3 (right half).
     glColor3f(1.0f, 1.0f, 1.0f);
-    FUN_005125a0(231, 256.0f, 432.0f, 128.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
-    FUN_005125a0(232, 384.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
-    FUN_00511600();
+    GL_DrawTexture(231, 256.0f, 432.0f, 128.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
+    GL_DrawTexture(232, 384.0f, 432.0f, 256.0f, 48.0f, 0.0f, 0.0f, 1.0f, 0.75f, 1, 1);
+    GL_ResetState();
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
@@ -458,15 +458,15 @@ void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
 // que no tenemos portado. El valor por defecto de 0 toma el camino normal.
 //
 // Deps:
-//   EndBitmap / BeginBitmap (FUN_005124b0 / FUN_005123c0)
+//   EndBitmap / BeginBitmap (GL_End2D / GL_Begin2D)
 //   sub_482BE0(slot)        — devuelve el índice de OffsetInventoryItems del slot de la barra
 //   OffsetInventoryItems    — array of {Type, Level, ...}
 //   RenderItem3D            — FUN_004e1be0
-//   CreateScreenVector      — FUN_005112f0
+//   CreateScreenVector      — Camera_BuildMouseRay
 //   CameraPosition[]        — float[3] world-space camera
 //   CameraMatrix[]          — 4x4 GL matrix (already in our globals)
 // =============================================================================
-// FUN_00482be0, FUN_004e1be0 y FUN_005112f0 ya están declaradas en
+// FUN_00482be0, FUN_004e1be0 y Camera_BuildMouseRay ya están declaradas en
 // functions.h (que entra vía stdafx.h). FUN_004f5ce0 / FUN_004f6420 están
 // declaradas pero sin implementar en nuestro build — acá dejamos stubs para que
 // enlacen los call sites del render de la barra. Son renderers de efectos de
@@ -500,24 +500,24 @@ void Render_HotbarItems3D_(void)
 {
     SeedQuickPotionTypesFromInventory();
 
-    FUN_005124b0();   // EndBitmap
+    GL_End2D();   // EndBitmap
 
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    FUN_00511910(0, 0, (int)WindowWidth, (int)WindowHeight);
+    GL_SetViewport(0, 0, (int)WindowWidth, (int)WindowHeight);
     float aspectF = (float)((double)(int)WindowWidth / (double)(int)WindowHeight);
     float fov1 = 1.0f;
     int   fovBits  = *(int*)&fov1;
     int   nearBits = *(int*)&CameraViewNear;
-    FUN_00511220(fovBits, aspectF, nearBits, CameraViewFar);
+    GL_SetPerspective(fovBits, aspectF, nearBits, CameraViewFar);
 
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    FUN_005111d0((unsigned int*)DAT_083a4140);
-    FUN_005114d0();
-    FUN_00511510();
+    GL_GetModelViewMatrix((unsigned int*)DAT_083a4140);
+    GL_EnableDepthTest();
+    GL_EnableDepthWrites();
     // En el original refresca g_csQuest antes del HUD 3D.
     // En este build no tenemos ese símbolo exportado; no afecta la hotbar visual.
 
@@ -550,17 +550,17 @@ void Render_HotbarItems3D_(void)
 
     glLoadIdentity();
     glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
-    FUN_005111d0((unsigned int*)DAT_083a4140);
+    GL_GetModelViewMatrix((unsigned int*)DAT_083a4140);
 
     float Target[3] = {0, 0, 0};
-    FUN_005112f0(100, 100, Target);
+    Camera_BuildMouseRay(100, 100, Target);
 
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
 
-    FUN_005123c0();   // BeginBitmap
+    GL_Begin2D();   // BeginBitmap
 }
 
 void Render_HotbarItems3D(void) { Render_HotbarItems3D_(); }

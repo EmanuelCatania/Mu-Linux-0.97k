@@ -18,35 +18,35 @@
 //     } while ((int)puVar3 < 0x83bba00);
 //
 //     FUN_0050f690();                          → World_Init()
-//     FUN_0047ec60(1);                         → CharList_Init(1)
+//     Input_ClearState(1);                         → CharList_Init(1)
 //
 //     FUN_00529740("Local/Webzenlogo.jpg", 0xc, 0x2600, 0x2900, 0, '\x01');
 //     FUN_00529740("Local/Everyone.jpg",   0xd, 0x2600, 0x2900, 0, '\x01');
 //
 //     DAT_083a42ea = 0;
-//     FUN_005119b0(0, 0, 0x280, 0x1e0);       // Viewport_Set(0,0,640,480)
+//     GL_BeginViewport(0, 0, 0x280, 0x1e0);       // Viewport_Set(0,0,640,480)
 //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//     FUN_005123c0();                           // GL_SetupOrtho2D()
+//     GL_Begin2D();                           // GL_SetupOrtho2D()
 //     glColor3f(1.0, 1.0);
 //
 //     // Logo Webzen centrado (usa DAT_0056156c = screen_width)
-//     FUN_005125a0(0xc,
+//     GL_DrawTexture(0xc,
 //       (float)DAT_0056156c * 0.5f - _DAT_005529bc,
 //       (float)DAT_0056156c * _DAT_00552d3c - _DAT_00552d38,
 //       256.0, 195.0, 0.0, 0.0, 1.0, 0.76171875, '\0', '\0');
 //
 //     // Badge "Everyone" (esquina derecha)
-//     FUN_005125a0(0xd,
+//     GL_DrawTexture(0xd,
 //       (float)DAT_0056156c - _DAT_00552908,
 //       0.0, 120.0, 60.0, 0.0, 0.0, 0.9375, 0.9375, '\0', '\0');
 //
 //     // Debug overlay (solo si bypass activo)
 //     if (DAT_083a410c != '\0') {
 //       SelectObject(DAT_055c9fec, DAT_055ca00c);
-//       FUN_0047f650(0, 0, &DAT_005617a0, NULL, '\0', 0);
+//       UI_RenderText(0, 0, &DAT_005617a0, NULL, '\0', 0);
 //     }
 //
-//     FUN_005124b0();   // GL_End2D()
+//     GL_End2D();   // GL_End2D()
 //     GL_PopMatrixAll();
 //     glFlush();
 //     SwapBuffers(param_1);
@@ -58,14 +58,14 @@
 //     if (DAT_083a410c == '\0') {
 //       FUN_00405540(&DAT_055c9bf0, "> Loading ok...");
 //       DAT_005615c0 = 2;   // g_GameState = Login
-//       FUN_00510320();
+//       Scene_LoadGameAssets() (IDA: FUN_00510320);
 //       return;
 //     }
 //
 //     // PATH BYPASS: ir directo a InGame
 //     DAT_005615c0 = 5;   // g_GameState = InGame
 //     DAT_083a7c10 = 1;   // render enable flag
-//     FUN_00510320();
+//     Scene_LoadGameAssets() (IDA: FUN_00510320);
 //     FUN_0050e5a0();      // World_Load()
 //     DAT_05826cac = 0;
 //
@@ -103,14 +103,14 @@
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
 //   FUN_0050f690  → World_Init()
-//   FUN_0047ec60  → CharList_Init(mode)
+//   Input_ClearState  → CharList_Init(mode)
 //   FUN_00529740  → Texture_Load(path, id, w, h, flag, mipmap)
-//   FUN_005119b0  → Viewport_Set(x, y, w, h)
-//   FUN_005123c0  → GL_SetupOrtho2D()
-//   FUN_005125a0  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
-//   FUN_005124b0  → GL_End2D()
+//   GL_BeginViewport  → Viewport_Set(x, y, w, h)
+//   GL_Begin2D  → GL_SetupOrtho2D()
+//   GL_DrawTexture  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
+//   GL_End2D  → GL_End2D()
 //   FUN_0052a050  → Texture_Unload(id)
-//   FUN_00510320  → OnStateChange()
+//   Scene_LoadGameAssets (IDA: FUN_00510320) → shared asset loader
 //   FUN_0050e5a0  → World_Load()
 //   FUN_0045f930  → Entity_Create(type, ?, ?, world_x, world_y)
 //   FUN_00405540  → Log(hashtable, msg)
@@ -159,7 +159,7 @@ void __cdecl Scene_Intro(HDC param_1)
     DBG("Scene_Intro: before Font_Init");
     FUN_0050f690();    // World_Init
     DBG("Scene_Intro: after Font_Init, before ClearInput");
-    FUN_0047ec60(1);   // CharList_Init(1)
+    Input_ClearState(1);   // CharList_Init(1)
     DBG("Scene_Intro: after ClearInput, before Texture_Load Webzenlogo");
 
     // Load splash textures
@@ -172,16 +172,16 @@ void __cdecl Scene_Intro(HDC param_1)
     // Nota: el iTitle.wav (id 4) lo dispara el original con PlayBuffer(4,...)
     // en Game_SceneUpdate al entrar a Login — ruteado via FUN_00404bc0 +
     // kUISounds mapping en Sound_DS3D.cpp. NO tocar aquí (sonaría 2x).
-    FUN_005119b0(0, 0, 0x280, 0x1e0);   // Viewport_Set(0,0,640,480)
+    GL_BeginViewport(0, 0, 0x280, 0x1e0);   // Viewport_Set(0,0,640,480)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    FUN_005123c0();                       // GL_SetupOrtho2D
+    GL_Begin2D();                       // GL_SetupOrtho2D
     glColor3f(1.0f, 1.0f, 1.0f);
     DBG("Scene_Intro: after GL_SetupOrtho2D");
 
     // Webzen logo — centered
     uStack_4 = 0;
     local_8 = (undefined1 *)DAT_0056156c;
-    FUN_005125a0(0xc,
+    GL_DrawTexture(0xc,
         (float)DAT_0056156c * _DAT_00552504 - _DAT_005529bc,
         (float)DAT_0056156c * _DAT_00552d3c - _DAT_00552d38,
         256.0f, 195.0f, 0.0f, 0.0f, 1.0f, 0.76171875f, '\0', '\0');
@@ -189,18 +189,18 @@ void __cdecl Scene_Intro(HDC param_1)
     // ESRB "Everyone" badge — top right
     uStack_4 = 0;
     local_8 = (undefined1 *)DAT_0056156c;
-    FUN_005125a0(0xd,
+    GL_DrawTexture(0xd,
         (float)DAT_0056156c - _DAT_00552908,
         0.0f, 120.0f, 60.0f, 0.0f, 0.0f, 0.9375f, 0.9375f, '\0', '\0');
 
     // Debug overlay (only in bypass mode)
     if (DAT_083a410c != '\0') {
         SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
-        FUN_0047f650(0, 0, (LPCSTR)&DAT_005617a0, (LPSIZE)0x0, '\0', 0);
+        UI_RenderText(0, 0, (LPCSTR)&DAT_005617a0, (LPSIZE)0x0, '\0', 0);
     }
 
     DBG("Scene_Intro: before swap");
-    FUN_005124b0();           // GL_End2D
+    GL_End2D();           // GL_End2D
     GL_PopMatrixAll();
     glFlush();
     SwapBuffers(param_1);
@@ -215,7 +215,7 @@ void __cdecl Scene_Intro(HDC param_1)
         DBG("Scene_Intro: entering normal path, calling OpenBasicData");
         FUN_00405540(&DAT_055c9bf0, "> Loading ok...");
         DAT_005615c0 = 2;   // g_GameState = Login
-        FUN_00510320();
+        Scene_LoadGameAssets();
         DBG("Scene_Intro: OpenBasicData returned");
         return;
     }
@@ -223,7 +223,7 @@ void __cdecl Scene_Intro(HDC param_1)
     // Bypass/debug path → skip login, go straight to InGame
     DAT_005615c0 = 5;    // g_GameState = InGame
     DAT_083a7c10 = 1;
-    FUN_00510320();
+    Scene_LoadGameAssets();
     FUN_0050e5a0();      // World_Load
     DAT_05826cac = 0;
 

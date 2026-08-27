@@ -9,7 +9,7 @@
 // Direcciones/buffers verificados por bytes de operando en IDA:
 //   FaceTexture        0x004F7DF0   RenderFace        0x004F7A90
 //   RenderFaceAlpha    0x004F7B80   RenderFaceBlend   0x004F7CE0
-//   RenderTerrainFace  0x004F7FB0   BindTexture       0x00511480 (FUN_00511480)
+//   RenderTerrainFace  0x004F7FB0   BindTexture       0x00511480 (GL_BindTextureSlot)
 //   Bitmaps base       0x083A7CA0 (stride 0x38, BITMAP_t: Width@0x20 Height@0x24)
 //   TerrainMappingAlpha  = DAT_0834b608 (float[256²])   (mislabel "TerrainHeight")
 //   TerrainMappingLayer1 = DAT_080bb2b4 (BYTE[256²])
@@ -80,8 +80,8 @@ void __cdecl FUN_004f7df0(int Texture, float xf, float yf, char Water, char Scal
 // ── RenderFace (FUN_004F7A90) — quad opaco (base) ────────────────────────────
 void __cdecl FUN_004f7a90(int Texture)
 {
-    FUN_00511600();                  // DisableAlphaBlend
-    FUN_00511480(Texture + 35);      // BindTexture
+    GL_ResetState();                  // DisableAlphaBlend
+    GL_BindTextureSlot(Texture + 35);      // BindTexture
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
@@ -97,8 +97,8 @@ void __cdecl FUN_004f7a90(int Texture)
 // ── RenderFaceAlpha (FUN_004F7B80) — overlay capa2 con alpha por vértice ──────
 void __cdecl FUN_004f7b80(int Texture)
 {
-    FUN_00511680('\x01');            // EnableAlphaTest(1)
-    FUN_00511480(Texture + 35);      // BindTexture
+    GL_SetBlendSrcOver('\x01');            // EnableAlphaTest(1)
+    GL_BindTextureSlot(Texture + 35);      // BindTexture
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
@@ -114,8 +114,8 @@ void __cdecl FUN_004f7b80(int Texture)
 // ── RenderFaceBlend (FUN_004F7CE0) — overlay de agua (modula por alpha gris) ──
 void __cdecl FUN_004f7ce0(int Texture)
 {
-    FUN_00511710();                  // EnableAlphaBlend
-    FUN_00511480(Texture + 35);      // BindTexture
+    GL_SetBlendAdditive();                  // EnableAlphaBlend
+    GL_BindTextureSlot(Texture + 35);      // BindTexture
     if (TER_NODRAW) return;
     float (*v)[3]  = TER_VERT;
     float (*tc)[2] = TER_TEX;
@@ -145,7 +145,7 @@ void __cdecl FUN_004f7fb0(float xf, float yf, int xi, int yi, float lodf)
             int slot = (int)(unsigned char)TER_L1[TER_IDX1] + 50;
             BITMAP_t* bmp = &Bitmaps[slot];
             if (bmp->Buffer) {
-                FUN_00511480(slot);                      // BindTexture
+                GL_BindTextureSlot(slot);                      // BindTexture
                 float yfa = bmp->Height + bmp->Height;
                 float u = xf * 0.25f + DAT_0810b2cc[(unsigned char)yi]; // TerrainGrassTexture[(yi&0xFF)+1]
                 float (*tc)[2] = TER_TEX;

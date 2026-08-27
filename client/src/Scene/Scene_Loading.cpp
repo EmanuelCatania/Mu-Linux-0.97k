@@ -15,14 +15,14 @@
 //       FUN_00529740("Local/Loading03.jpg", 0x20, 0x2600, 0x2900, 0, '\x01');
 //     }
 //     DAT_083a42ea = 0;
-//     FUN_005119b0(0, 0, 0x280, 0x1e0);
+//     GL_BeginViewport(0, 0, 0x280, 0x1e0);
 //     glClear(0x4100);
-//     FUN_005123c0();
+//     GL_Begin2D();
 //     glColor3f(1.0, 1.0, 1.0);
-//     FUN_005125a0(0x1e,   0.0, 100.0, 256.0, 256.0, 0.0, 0.0, 1.0, 1.0, '\x01', '\x01');
-//     FUN_005125a0(0x1f, 256.0, 100.0, 128.0, 256.0, 0.0, 0.0, 1.0, 1.0, '\x01', '\x01');
-//     FUN_005125a0(0x20, 384.0, 100.0, 256.0, 256.0, 0.0, 0.0, 1.0, 1.0, '\x01', '\x01');
-//     FUN_005124b0();
+//     GL_DrawTexture(0x1e,   0.0, 100.0, 256.0, 256.0, 0.0, 0.0, 1.0, 1.0, '\x01', '\x01');
+//     GL_DrawTexture(0x1f, 256.0, 100.0, 128.0, 256.0, 0.0, 0.0, 1.0, 1.0, '\x01', '\x01');
+//     GL_DrawTexture(0x20, 384.0, 100.0, 256.0, 256.0, 0.0, 0.0, 1.0, 1.0, '\x01', '\x01');
+//     GL_End2D();
 //     GL_PopMatrixAll();
 //     glFlush();
 //     SwapBuffers(param_1);
@@ -32,7 +32,7 @@
 //       FUN_0052a050(iVar1 + 0x1e);   // Texture_Unload(0x1e..0x20)
 //       iVar1++;
 //     } while (iVar1 < 3);
-//     FUN_0047ec60(1);
+//     Input_ClearState(1);
 //   }
 //
 // ── TEXTURAS ──────────────────────────────────────────────────────────────────
@@ -50,12 +50,12 @@
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
 //   FUN_00529740  → Texture_Load(path, id, w, h, flag, mipmap)
-//   FUN_005119b0  → Viewport_Set(x, y, w, h)
-//   FUN_005123c0  → GL_SetupOrtho2D()
-//   FUN_005125a0  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
-//   FUN_005124b0  → GL_End2D()
+//   GL_BeginViewport  → Viewport_Set(x, y, w, h)
+//   GL_Begin2D  → GL_SetupOrtho2D()
+//   GL_DrawTexture  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
+//   GL_End2D  → GL_End2D()
 //   FUN_0052a050  → Texture_Unload(id)
-//   FUN_0047ec60  → CharList_Init(mode)
+//   Input_ClearState  → CharList_Init(mode)
 
 #include "stdafx.h"
 #include "Scene/Scene_Loading.h"
@@ -75,17 +75,17 @@ void __cdecl Scene_Loading(HDC param_1)
     }
 
     DAT_083a42ea = 0;
-    FUN_005119b0(0, 0, 0x280, 0x1e0);   // Viewport_Set(0,0,640,480)
+    GL_BeginViewport(0, 0, 0x280, 0x1e0);   // Viewport_Set(0,0,640,480)
     glClear(0x4100);
-    FUN_005123c0();                       // GL_SetupOrtho2D
+    GL_Begin2D();                       // GL_SetupOrtho2D
     glColor3f(1.0f, 1.0f, 1.0f);
 
     // Draw 3 loading tiles: 256×256 + 128×256 + 256×256 at y=100
-    FUN_005125a0(0x1e,   0.0f, 100.0f, 256.0f, 256.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
-    FUN_005125a0(0x1f, 256.0f, 100.0f, 128.0f, 256.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
-    FUN_005125a0(0x20, 384.0f, 100.0f, 256.0f, 256.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+    GL_DrawTexture(0x1e,   0.0f, 100.0f, 256.0f, 256.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+    GL_DrawTexture(0x1f, 256.0f, 100.0f, 128.0f, 256.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+    GL_DrawTexture(0x20, 384.0f, 100.0f, 256.0f, 256.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
 
-    FUN_005124b0();    // GL_End2D
+    GL_End2D();    // GL_End2D
     GL_PopMatrixAll();
     glFlush();
     SwapBuffers(param_1);
@@ -100,5 +100,5 @@ void __cdecl Scene_Loading(HDC param_1)
         iVar1++;
     } while (iVar1 < 3);
 
-    FUN_0047ec60(1);   // CharList_Init(1)
+    Input_ClearState(1);   // CharList_Init(1)
 }

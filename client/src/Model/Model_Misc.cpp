@@ -1,4 +1,4 @@
-// Model_LoadMisc @ 0x0050b710
+// IDA: FUN_0050b710 @ 0x0050b710 — Model_LoadSkillEffectAssets
 // Loads skill effect geometry (SMD meshes for ice, fire, arrows, bone warriors,
 // dragon magic, etc.) and their BMD equivalents.  Also loads skill textures
 // and flower particle textures.  Covers model slots 0xbe-0x10d.
@@ -6,7 +6,8 @@
 #include "globals.h"
 #include "functions.h"
 
-void __cdecl FUN_0050b710(void)
+// IDA: FUN_0050b710
+void __cdecl Model_LoadSkillEffectAssets(void)
 {
     // ── Korean-locale SMD skill meshes ────────────────────────────────────────
     if (DAT_0055a7c4 == '\0') {

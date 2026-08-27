@@ -4,7 +4,7 @@
 
 // External math helpers are declared in functions.h (included via stdafx.h)
 
-// ── Camera_SetupFrustum @ 0x004F9050 ─────────────────────────────────────────
+// ── FUN_004F9050 @ 0x004F9050 — Camera_SetupFrustum ─────────────────────────
 // Computes view frustum from camera position + FOV, then derives tile-space
 // bounding boxes for the terrain chunk-cull loop, and 5 frustum half-planes.
 //
@@ -20,7 +20,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
 
     // Vec3_Transform output buffer.
     // BUG-FIX 2026-06-29: antes eran 3 locals SEPARADAS (`float local_78,
-    // local_74, local_70;`).  VectorIRotate (FUN_004fa110) escribe un float[3]
+    // local_74, local_70;`).  VectorIRotate (Vector_InverseRotate) escribe un float[3]
     // desde &local_78 asumiendo contigüidad (en el binario original están en
     // ebp-0x78/-0x74/-0x70, contiguas).  MSVC no garantiza ese layout con vars
     // sueltas → out[1]/out[2] caían en stack equivocado y wy/wz leían basura
@@ -29,7 +29,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     // CreateTerrainNormal.  Fix: array contiguo real.
     float out3[3];
 
-    // 5 frustum corners × 3 floats (contiguous, passed by pointer to FUN_004fa110)
+    // 5 frustum corners × 3 floats (contiguous, passed by pointer to Vector_InverseRotate)
     // Corner 0 = apex (at camera, origin in view space)
     // Corners 1–4 = near-plane corners: TL, TR, BR, BL
     float corners[15];
@@ -63,11 +63,11 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     corners[14] = near_dist;
 
     // Step 3 — Rotate to world space + track min/max ──────────────────────────
-    FUN_005111d0((unsigned int *)local_30);  // get current GL modelview rotation
+    GL_GetModelViewMatrix((unsigned int *)local_30);  // get current GL modelview rotation
 
     for (int i = 0; i < 5; i++)
     {
-        FUN_004fa110(&corners[i * 3], local_30, out3);
+        Vector_InverseRotate(&corners[i * 3], local_30, out3);
 
         // World corner = camera_pos + rotated_view_corner
         float wx = _DAT_083a42d4 + out3[0];
@@ -160,11 +160,11 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     // alejaba un poco caía del lado de afuera y se marcaba como no visible —
     // por eso desaparecían los nombres (y el modelo) de los items del suelo
     // sin estar realmente lejos.  Afecta a TODO lo que pasa por sub_4F9590.
-    FUN_004fa4d0(c0, c1, c2, plane0);
-    FUN_004fa4d0(c0, c2, c3, plane1);
-    FUN_004fa4d0(c0, c3, c4, plane2);
-    FUN_004fa4d0(c0, c4, c1, plane3);
-    FUN_004fa4d0(c3, c2, c1, plane4);
+    Triangle_ComputeNormal(c0, c1, c2, plane0);
+    Triangle_ComputeNormal(c0, c2, c3, plane1);
+    Triangle_ComputeNormal(c0, c3, c4, plane2);
+    Triangle_ComputeNormal(c0, c4, c1, plane3);
+    Triangle_ComputeNormal(c3, c2, c1, plane4);
 
     // Store plane normals to globals (read by Frustum_IsVisible)
     DAT_0838b7c4 = plane0[0]; DAT_0838b7c8 = plane0[1]; DAT_0838b7cc = plane0[2];
@@ -186,14 +186,14 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     FUN_004f8eb0(param_2);
 }
 
-// ── Camera_MouseRay @ 0x005112F0 ──────────────────────────────────────────────
+// ── FUN_005112F0 @ 0x005112F0 — Camera_MouseRay ─────────────────────────────
 // Converts screen-space mouse position to world-space ray direction.
 // out_ray[0..2] = world-space ray direction vector
 void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
 {
-    float view_x = (Ff(DAT_0056156c) * (float)mouseX / 0x280 - Ff(DAT_083a429c)) *
+    float view_x = (Ff(DAT_0056156c) * (float)mouseX / 0x280 - Ff(ViewportCenterX)) *
                    Ff(DAT_083a42a4) * Ff(DAT_00561550);
-    float view_y = -(Ff(DAT_00561570) * (float)mouseY / 0x1e0 - Ff(DAT_083a42a0)) *
+    float view_y = -(Ff(DAT_00561570) * (float)mouseY / 0x1e0 - Ff(ViewportCenterY)) *
                    Ff(DAT_083a42a8) * Ff(DAT_00561550);
     float view_z = -Ff(DAT_00561550);
 
@@ -206,18 +206,18 @@ void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
     float view_dir[3] = { view_x, view_y, view_z };
 
     // Transform to world space using stored view matrix
-    FUN_004fa110(cam_fwd_neg, (float*)&DAT_083a4140, (float*)&DAT_083a4284);
-    FUN_004fa110(view_dir,    (float*)&DAT_083a4140, out_ray);
+    Vector_InverseRotate(cam_fwd_neg, (float*)&DAT_083a4140, (float*)&CameraRayOriginX);
+    Vector_InverseRotate(view_dir,    (float*)&DAT_083a4140, out_ray);
 
-    out_ray[0] += Ff(DAT_083a4284);
-    out_ray[1] += Ff(DAT_083a4288);
-    out_ray[2] += Ff(DAT_083a428c);
+    out_ray[0] += Ff(CameraRayOriginX);
+    out_ray[1] += Ff(CameraRayOriginY);
+    out_ray[2] += Ff(CameraRayOriginZ);
 }
 
-// ── Camera_SetMatrix @ 0x004F8EB0 ────────────────────────────────────────────
+// ── Compatibility helper; no standalone IDA function ─────────────────────────
 // DEAD CODE 2026-05-04: esta función NO se llama. Es una decompilación errónea
 // que asume corners en DAT_07eab1bc..1e8 (que ya están en world coords post
-// Camera_SetupFrustum). La verdadera FUN_004f8eb0 (CreateFrustrum2D) vive en
+// Camera_SetupFrustum). La verdadera FUN_004F8EB0 (CreateFrustrum2D) vive en
 // stubs.cpp:9127 — usa 4 corners hardcoded escalados por GetScreenWidth(),
 // rotados Z=45°, trasladados por cam_pos. Mantenida por compatibilidad
 // histórica del header pero no debe llamarse.
@@ -226,7 +226,7 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
     float angles[3] = { 0.0f, 0.0f, 45.0f };  // fixed roll=45°
     float rot_mat[12];
 
-    FUN_004f9db0(angles, rot_mat);  // build rotation from euler
+    Matrix_BuildFromEuler(angles, rot_mat);  // build rotation from euler
 
     // Transform the 4 near corners (skipping apex at index 0)
     float corners_world[4][3];
@@ -240,7 +240,7 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
     for (int i = 0; i < 4; i++)
     {
         float out[3];
-        FUN_004fa0b0(near_corners[i], rot_mat, out);
+        Vector_Rotate(near_corners[i], rot_mat, out);
         corners_world[i][0] = out[0] + cam_pos[0];
         corners_world[i][1] = out[1] + cam_pos[1];
         corners_world[i][2] = out[2] + cam_pos[2];
@@ -263,7 +263,7 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
 }
 
 
-// FUN_004f9590 — Frustum_TestPoint
+// FUN_004F9590 @ 0x004F9590 — Frustum_TestSphere
 // Tests if a world-space point is inside the view frustum.
 // param_1: xyz position (float[3])
 // param_2: radius (frustum half-width extension)
@@ -276,7 +276,7 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
 // the linker may not place them contiguously, so the pointer walk would read
 // random memory between plane components. Camera_SetupFrustum (Camera.cpp:148)
 // writes all 5 planes; here we read them by name. Unrolled 5×.
-int __cdecl FUN_004f9590(float *param_1, float param_2)
+int __cdecl Frustum_TestSphere(float *param_1, float param_2)
 {
     float fVar1 = -param_2;
     byte  bVar3 = 0;
@@ -304,7 +304,7 @@ int __cdecl FUN_004f9590(float *param_1, float param_2)
 }
 
 
-// FUN_004fa5c0 — Camera_SetViewport
+// FUN_004FA5C0 @ 0x004FA5C0 — Camera_SetViewport
 // Stores viewport parameters into globals.
 // param_1: x offset,  param_2: y offset
 // param_3: width,     param_4: height (int → converted to float at _DAT_0055a7bc)
@@ -319,7 +319,7 @@ void __cdecl FUN_004fa5c0(int param_1,int param_2,int param_3,int param_4)
 }
 
 
-// FUN_005113f0 — World_ToScreen
+// FUN_005113F0 @ 0x005113F0 — Camera_ProjectWorldToScreen (World_ToScreen)
 // Projects a 3D world-space point to 2D screen pixel coordinates (640×480 logical).
 // param_1: world xyz (float[3])
 // param_2: output screen X (int*)
@@ -327,9 +327,9 @@ void __cdecl FUN_004fa5c0(int param_1,int param_2,int param_3,int param_4)
 //
 // ── BUG-FIX 2026-04-26 ────────────────────────────────────────────────────────
 // El decompile original tenía:
-//   FUN_004fa170(param_1, mat, local_c);
-//   lVar1 = __ftol();   *param_2 = DAT_083a429c - lVar1;
-//   lVar1 = __ftol();   *param_3 = lVar1 + DAT_083a42a0;
+//   Vector_Transform(param_1, mat, local_c);
+//   lVar1 = __ftol();   *param_2 = ViewportCenterX - lVar1;
+//   lVar1 = __ftol();   *param_3 = lVar1 + ViewportCenterY;
 // Ghidra perdió la aritmética FPU entre la transformación y __ftol — el código
 // original calculaba perspective divide (x_view*scale/z_view) antes de truncar.
 // Como `__ftol` aquí está stubbed a `GetTickCount()` (stdafx.h), el resultado
@@ -337,8 +337,8 @@ void __cdecl FUN_004fa5c0(int param_1,int param_2,int param_3,int param_4)
 // que dependa de proyección mundo→pantalla.
 // Solución: usar gluProject con el GL state actual. Más robusto que recrear
 // la perspective math; respeta cualquier viewport/projection set por
-// FUN_005119b0.
-void __cdecl FUN_005113f0(float *param_1,int *param_2,int *param_3)
+// GL_BeginViewport.
+void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_3)
 {
   // Port directo del IDA Projection (sub_5113F0). Usa la matriz de cámara
   // GUARDADA en DAT_083a4140[12] (poblada por GetOpenGLMatrix tras BeginOpengl)
@@ -347,13 +347,13 @@ void __cdecl FUN_005113f0(float *param_1,int *param_2,int *param_3)
   // 2D ortho (necesario para los name labels del char-select que se renderan
   // tras el `glPopMatrix` y `BeginBitmap`).
   float TPos[3];
-  FUN_004fa170(param_1, (float*)&DAT_083a4140, TPos);
+  Vector_Transform(param_1, (float*)&DAT_083a4140, TPos);
 
   // Perspective divide (eye-space → NDC → window pixels)
   if (TPos[2] == 0.0f) { *param_2 = -1000; *param_3 = -1000; return; }
   float invZ = 1.0f / TPos[2];
-  int sx = (int)DAT_083a429c - (int)(TPos[0] * invZ / _DAT_083a42a4);
-  int sy = (int)DAT_083a42a0 + (int)(TPos[1] * invZ / _DAT_083a42a8);
+  int sx = (int)ViewportCenterX - (int)(TPos[0] * invZ / _DAT_083a42a4);
+  int sy = (int)ViewportCenterY + (int)(TPos[1] * invZ / _DAT_083a42a8);
 
   // Scale from real-window pixels to logical 640×480
   // IDA: `*sx = 640 * *sx / (int)WindowWidth;` — aritmetica CON SIGNO (el cast
@@ -376,13 +376,13 @@ void __cdecl FUN_005113f0(float *param_1,int *param_2,int *param_3)
 }
 
 
-// FUN_005119b0 — GL_SetupView
+// FUN_005119B0 @ 0x005119B0 — GL_BeginViewport (GL_SetupView)
 // Configures the full 3D projection + modelview matrix for a sub-viewport.
 // param_1/2/3/4: logical tile coordinates mapped from the 640x480 grid.
 // Sets perspective, camera rotation (yaw/pitch/roll), translation, enables
 // depth test, blending, fog; saves modelview matrix to DAT_083a4140.
 extern "C" { void DbgLogPublic(const char* msg); }
-void __cdecl FUN_005119b0(int param_1,int param_2,int param_3,int param_4)
+void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
 {
   uint uVar1;
   uint uVar2;
@@ -396,19 +396,19 @@ void __cdecl FUN_005119b0(int param_1,int param_2,int param_3,int param_4)
   glMatrixMode(0x1701);
   glPushMatrix();
   glLoadIdentity();
-  FUN_00511910(uVar1 / 0x280,uVar2 / 0x1e0,uVar3,uVar4);
+  GL_SetViewport(uVar1 / 0x280,uVar2 / 0x1e0,uVar3,uVar4);
   // BUG-FIX: DAT_00561550 es DWORD (bit-pattern float). En original asm el FLD
   // lee como float. En C++ `DAT_00561550 * float` hace int→float (convierte el
   // bit-pattern 0x461c4000=10000.0f a 1.17e9), dando far plane astronómico.
   // Reinterpretar con Ff() antes de multiplicar.
   //
-  // NOTA (2026-04-21): FOV y Near pasan crudos como `int` — FUN_00511220 los
+  // NOTA (2026-04-21): FOV y Near pasan crudos como `int` — GL_SetPerspective los
   // recibe como `int fov, int near_clip` y hace `Ff()` internamente (ver
   // stubs.cpp:2386-2388). Pasarles Ff() aquí causaría DOBLE reinterpretación:
   // 55.0f→int 55→Ff(55)=7.7e-44 → FOV≈0 → pantalla negra.
   // Solo el far necesita Ff() en el caller porque lo multiplicamos por _DAT_00552d34
   // (1.4f) ANTES de pasarlo — la multiplicación es en float-space aquí.
-  FUN_00511220(DAT_00561554,(float)uVar3 / (float)uVar4,DAT_0056154c,Ff(DAT_00561550) * _DAT_00552d34);
+  GL_SetPerspective(DAT_00561554,(float)uVar3 / (float)uVar4,DAT_0056154c,Ff(DAT_00561550) * _DAT_00552d34);
   glMatrixMode(0x1700);
   glPushMatrix();
   glLoadIdentity();
@@ -420,7 +420,7 @@ void __cdecl FUN_005119b0(int param_1,int param_2,int param_3,int param_4)
   // int→float: con pitch=-40.0f (bitpattern 0xc2200000), el valor pasado era
   // 3.26e9° (equivalente a ruido aleatorio tras glu). Reinterpretar con Ff().
   glRotatef(Ff(DAT_083a42bc), 0.0f, 1.0f, 0.0f);
-  if (DAT_083a42e9 == '\0') {
+  if (CameraTopViewEnabled == '\0') {
     glRotatef(Ff(DAT_083a42b8), 1.0f, 0.0f, 0.0f);
   }
   glRotatef(Ff(DAT_083a42c0), 0.0f, 0.0f, 1.0f);
@@ -446,10 +446,10 @@ void __cdecl FUN_005119b0(int param_1,int param_2,int param_3,int param_4)
     glFogi(0xb65,0x801);
     glFogf(0xb62,DAT_00561558);
     glFogfv(0xb66,(const GLfloat*)&DAT_0056155c);
-    FUN_005111d0((unsigned int *)&DAT_083a4140);
+    GL_GetModelViewMatrix((unsigned int *)&DAT_083a4140);
     return;
   }
   glDisable(0xb60);
-  FUN_005111d0((unsigned int *)&DAT_083a4140);
+  GL_GetModelViewMatrix((unsigned int *)&DAT_083a4140);
   return;
 }

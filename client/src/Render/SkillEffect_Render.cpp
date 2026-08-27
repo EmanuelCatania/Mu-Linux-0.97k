@@ -27,9 +27,9 @@
 //   {
 //     // Modo: update timing vs GL state
 //     if (g_GameSubState == 2 || g_GameSubState == 7 || g_GameSubState == 10)
-//       FUN_00511710();           → Frame_UpdateTimer()
+//       GL_SetBlendAdditive();           → Frame_UpdateTimer()
 //     else
-//       FUN_00511680('\x01');     → GL_SetMode(1) — 2D ortho setup para otras escenas
+//       GL_SetBlendSrcOver('\x01');     → GL_SetMode(1) — 2D ortho setup para otras escenas
 //
 //     glColor3f(1.0, 1.0, 1.0);  // color blanco (textura sin tinte)
 //
@@ -48,13 +48,13 @@
 //           // Modo billboard: draw 3D con matriz de rotación
 //           glPushMatrix();
 //           glTranslatef(pfVar1[1], pfVar1[2], pfVar1[3]);  // trasladar a posición efecto
-//           FUN_004f9db0(pfVar1+4, local_30);               → Matrix_FromEuler(rot[3], mat)
+//           Matrix_BuildFromEuler(pfVar1+4, local_30);               → Matrix_FromEuler(rot[3], mat)
 //           if (pfVar1[-2] == 1.42932e-43) {    // tipo 1 (1 en float = tipo especial)
 //             fVar3 = 20.0; fVar2 = 1.0;        // billboard grande y delgado
 //           } else {
 //             fVar3 = 3.0; fVar2 = 3.0;         // billboard cuadrado estándar
 //           }
-//           FUN_00511c10(fVar2, fVar3, local_30); → SkillEffect_DrawBillboard(w, h, rot_mat)
+//           GL_DrawBillboard(fVar2, fVar3, local_30); → SkillEffect_DrawBillboard(w, h, rot_mat)
 //           glPopMatrix();
 //         }
 //       }
@@ -71,12 +71,12 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_00511710  → Frame_UpdateTimer()
-//   FUN_00511680  → GL_SetMode(mode)
-//   FUN_00511480  → Particle_SetTexture(type) — glBindTexture
+//   GL_SetBlendAdditive  → Frame_UpdateTimer()
+//   GL_SetBlendSrcOver  → GL_SetMode(mode)
+//   GL_BindTextureSlot  → Particle_SetTexture(type) — glBindTexture
 //   FUN_00511d00  → SkillEffect_Draw2D(type, pos, r, g, scale, ...)
-//   FUN_004f9db0  → Matrix_FromEuler(angles[3], out_mat[12])
-//   FUN_00511c10  → SkillEffect_DrawBillboard(width, height, rot_mat)
+//   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
+//   GL_DrawBillboard  → SkillEffect_DrawBillboard(width, height, rot_mat)
 
 #include "stdafx.h"
 #include "Render/SkillEffect_Render.h"
@@ -100,11 +100,11 @@ void SkillEffect_Render(void)
 {
     // IDA: World 2/7/10 → EnableAlphaBlend(); resto → EnableAlphaTest(1).
     if ((DAT_0055a7ac == 2) || (DAT_0055a7ac == 7) || (DAT_0055a7ac == 10))
-        FUN_00511710();       // EnableAlphaBlend (0x511710) — NO es un timer
+        GL_SetBlendAdditive();       // EnableAlphaBlend (0x511710) — NO es un timer
     else
         // ── 2026-08-16: CAUSA REAL DE LOS CUADROS BLANCOS ────────────────────
         // IDA llama `EnableAlphaTest(1)` = **0x00511680**. El port llamaba
-        // `FUN_00511590`, que es **DisableTexture(bool)** (0x00511590) y termina
+        // `GL_SetAlphaTest`, que es **DisableTexture(bool)** (0x00511590) y termina
         // con `glDisable(GL_TEXTURE_2D)` incondicional. Con el texturizado
         // apagado, cada quad se pinta con el `glColor3f(1,1,1)` de abajo = un
         // CUADRADO BLANCO. Y como el estado GL es global y queda "pegado",
@@ -115,7 +115,7 @@ void SkillEffect_Render(void)
         // Ojo con esta familia (3ra vez que muerde, ver CLAUDE.md 2026-08-10):
         //   0x00511590 DisableTexture   0x00511680 EnableAlphaTest
         //   0x00511710 EnableAlphaBlend 0x00511790 EnableAlphaBlendMinus
-        FUN_00511680('\x01');
+        GL_SetBlendSrcOver('\x01');
 
     glColor3f(1.0f, 1.0f, 1.0f);
 
@@ -137,7 +137,7 @@ void SkillEffect_Render(void)
         // Mismo primo del patrón `(float)(uintptr_t)` que corrompía los joints
         // (ver CLAUDE.md 2026-08-10).
         const int texId = *(int*)(pfVar1 - 2);
-        FUN_00511480(texId);             // BindTexture
+        GL_BindTextureSlot(texId);             // BindTexture
 
         if (DAT_0055a7ac == 2) {
             // In-world: flat 2D billboard
@@ -148,7 +148,7 @@ void SkillEffect_Render(void)
             float local_30[12];
             glPushMatrix();
             glTranslatef(pfVar1[1], pfVar1[2], pfVar1[3]);
-            FUN_004f9db0(pfVar1 + 4, local_30);   // Matrix_FromEuler(angles, mat)
+            Matrix_BuildFromEuler(pfVar1 + 4, local_30);   // Matrix_FromEuler(angles, mat)
 
             float fVar2, fVar3;
             if (*(int *)(pfVar1 - 2) == 102) {    // IDA: integer texture type 102
@@ -156,7 +156,7 @@ void SkillEffect_Render(void)
             } else {
                 fVar3 = 3.0f;  fVar2 = 3.0f;
             }
-            FUN_00511c10(fVar2, fVar3, local_30);
+            GL_DrawBillboard(fVar2, fVar3, local_30);
             glPopMatrix();
         }
     }

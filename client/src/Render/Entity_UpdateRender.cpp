@@ -117,7 +117,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
 
     // ── BUG-FIX 2026-04-27: declarar como arrays contiguos para que `&local_X`
     // pasado a funciones que leen/escriben 3 floats consecutivos (FUN_004795c0,
-    // FUN_004409a0, etc.) no caiga en stack slots aleatorios. Mismo patrón ya
+    // BMD_TransformPosition, etc.) no caiga en stack slots aleatorios. Mismo patrón ya
     // arreglado en Sprite/Math_3D/Scene_CharSelect.
     float local_60_buf[3] = { 1.0f, 1.0f, 1.0f }; // RGB color tint
     float local_48_buf[3] = { 0.0f, 0.0f, 0.0f }; // position offset
@@ -191,7 +191,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             // (FUN_00505a10 / FUN_004f8bb0 — see Entity_DrawAt.cpp)
             if ((DAT_0055a7ac > 10) && (DAT_0055a7ac < 17) && (fDist < *(float *)(puVar13 + 6)))
                 *(float *)(puVar13 + 6) = fDist;
-            FUN_00511710();
+            GL_SetBlendAdditive();
             // Billboard sparkle at bone 0x13 when entering/leaving range
         }
     }
@@ -220,7 +220,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // 9-bone glitter + 3 random-bone sparks
         BYTE *boneIdxTable = (BYTE *)&DAT_0055984c;
         for (int i = 0; i < 9; i++) {
-            FUN_004409a0(model,
+            BMD_TransformPosition(model,
                 (float *)(puVar13[0x45] + (int)(UINT)boneIdxTable[i] * 0x30),
                 &local_48, &local_54, '\x01');
             FUN_004795c0(0x47e, &local_54, 0.6f, &local_60, (int)puVar13, 0.0f, 0);
@@ -228,15 +228,15 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         int nBones = *(short *)((char *)model + 0x22);
         for (int i = 0; i < 3; i++) {
             int r = rand();
-            FUN_004409a0(model,
+            BMD_TransformPosition(model,
                 (float *)(puVar13[0x45] + (r % nBones) * 0x30),
                 &local_48, &local_54, '\x01');
-            FUN_00475220(0x498, &local_54, (float *)(puVar13 + 7),
+            Particle_Spawn(0x498, &local_54, (float *)(puVar13 + 7),
                          &local_60, 3, 1.0f, 0);
         }
     }
     else if (bVar7 == 0x46) {
-        FUN_004409a0(model, (float *)(puVar13[0x45] + 0x3c0),
+        BMD_TransformPosition(model, (float *)(puVar13[0x45] + 0x3c0),
                      &local_48, &local_54, '\x01');
         FUN_004795c0(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
     }
@@ -263,18 +263,18 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     else if (bVar7 == 0x49) {
         // Energy wing: two bone ranges [0x270..0x510] + [0x9c0..0xb10]
         for (int off = 0x270; off < 0x510; off += 0x30) {
-            FUN_004409a0(model, (float *)(puVar13[0x45] + off),
+            BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
                          &local_48, &local_54, '\x01');
             FUN_004795c0(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
             // Lightning joint between consecutive bones (selective ranges)
             if (off > 0x29f && off < 0x301) {
-                FUN_0046d840(0x4e6, &local_30, &local_54,
+                Joint_Create(0x4e6, &local_30, &local_54,
                              (float *)(puVar13 + 7), 7, 0, 20.0f, -1, 0);
             }
             local_30 = local_54; local_2c = local_50; local_28 = local_4c;
         }
         for (int off = 0x9c0; off < 0xb10; off += 0x30) {
-            FUN_004409a0(model, (float *)(puVar13[0x45] + off),
+            BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
                          &local_48, &local_54, '\x01');
             FUN_004795c0(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
         }
@@ -282,9 +282,9 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                      *(float *)(puVar13 + 0x5a), 0x344, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4b) {
-        FUN_004409a0(model, (float *)(puVar13[0x45] + 0x360),
+        BMD_TransformPosition(model, (float *)(puVar13[0x45] + 0x360),
                      &local_48, &local_54, '\x01');
-        FUN_00475220(0x4ab, &local_54, (float *)(puVar13 + 7),
+        Particle_Spawn(0x4ab, &local_54, (float *)(puVar13 + 7),
                      &local_60, 0, 0.3f, 0);
         FUN_00504960(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
@@ -676,7 +676,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             // Trail spawn at transformed bone position
             float fOff[3] = { 20.0f, 0.0f, 15.0f };
             float fWorldPos[3];
-            FUN_004409a0((void *)(DAT_05828d58 + (int)*(short *)((int)puVar13 + 2) * 0xbc),
+            BMD_TransformPosition((void *)(DAT_05828d58 + (int)*(short *)((int)puVar13 + 2) * 0xbc),
                          (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
                          fOff, fWorldPos, '\x01');
             float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };
@@ -878,7 +878,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     // pvVar23 / local_78 is resolved from the model object in the hash-table
     // section above (skipped).  In the port we use el model lookup directo
     // (DAT_05828d58 + entity_type * 0xbc) que ya teníamos calculado al inicio.
-    // Antes era `pvVar23 = local_78` (= NULL) → TODOS los FUN_004409a0 con
+    // Antes era `pvVar23 = local_78` (= NULL) → TODOS los BMD_TransformPosition con
     // pvVar23 dereferenciaban NULL y crasheaban en model+0x68.
     pvVar23 = model;
     local_78 = model;
@@ -912,7 +912,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             if ((*(char *)(*(int *)((int)pvVar23 + 0x2c) + 0x22 + iVar9) == '\0') &&
                 ((iVar9 < 0x834 || iVar9 > 0xaf0)) &&
                 ((iVar9 < 0xec4 || iVar9 > 0x1180))) {
-                FUN_004409a0(pvVar23, (float *)(puVar13[0x45] + iVar18 * 0x30),
+                BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + iVar18 * 0x30),
                              &local_48, &local_54, '\x01');
                 UINT uType = bAlt ? 0x4f0 : 0x4cf;
                 float fSc  = bAlt ? 1.3f : 2.5f;
@@ -920,7 +920,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 // Random 1/4 chance: add spark if walking
                 BYTE bAnimState = *(BYTE *)((int)puVar13 + 0x105);
                 if ((rand() & 3) == 0 && bAnimState >= 3 && bAnimState <= 4)
-                    FUN_00475220(0x49c, &local_54, (float *)(puVar13 + 7),
+                    Particle_Spawn(0x49c, &local_54, (float *)(puVar13 + 7),
                                  &local_60, 0, 1.0f, 0);
             }
             iVar9  += 0x8c;
@@ -974,7 +974,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         local_48 = 3.5f; local_44 = -12.0f; local_40 = 10.0f;
         float fCol = fSin * _DAT_0055294c + _DAT_00552948;
         local_60 = fCol; local_5c = fCol; local_58 = fCol;
-        FUN_004409a0(pvVar23, (float *)(puVar13[0x45] + 0x3c0),
+        BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x3c0),
                      &local_48, &local_54, '\x01');
         FUN_004795c0(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
                      (float)DAT_05826e08 * _DAT_00552944, 0);
@@ -985,7 +985,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             local_48 = (float)(rand() % 100) + local_54 - _DAT_00552598;
             local_44 = (float)(rand() % 100) + local_50 - _DAT_00552598;
             local_40 = (float)(rand() % 100) + local_4c - _DAT_00552598;
-            puVar13 = (int *)FUN_0046d840(0x4ea, &local_48, &local_54,
+            puVar13 = (int *)Joint_Create(0x4ea, &local_48, &local_54,
                                           (float *)(puVar13 + 7), 6, 0, 20.0f, -1, 0);
             return puVar13;
         }
@@ -1138,7 +1138,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             ((*(char *)((int)param_1 + 0x1bd) & (char)~7) == '\b')) {
             local_48 = -4.0f; local_44 = 11.0f; local_40 = 0.0f;
             local_60 = 1.0f; local_5c = 1.0f; local_58 = 1.0f;
-            FUN_004409a0(pvVar23, (float *)(puVar13[0x45] + 0x390),
+            BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x390),
                          &local_48, &local_54, '\x01');
             FUN_004795c0(0x498, &local_54, 0.6f, &local_60, 0, 0, 0);
             float fS = (float)(double)fsin((double)(DAT_05826e08 * _DAT_00552500));
@@ -1152,7 +1152,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         if (*(char *)((int)puVar13 + 0x105) == 'X') {
             BYTE bone = *(BYTE *)(param_1 + 0x9d);  // = (param_1+0x9d*4-1)? no: int-idx 0x9d * 4 = byte 0x274 = c+628 LinkBone[0]
             // Wait int-arithmetic: param_1 (int*) + 0x9d ints == byte+0x274 == c+628 ✓
-            FUN_004409a0(pvVar23,
+            BMD_TransformPosition(pvVar23,
                 (float *)(puVar13[0x45] + (UINT)bone * 0x30),
                 &local_48, &local_54, '\x01');
             float Scalep = *(float *)((int)puVar13 + 0x108) * 0.1f;  // anim frame * 0.1
@@ -1174,15 +1174,15 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 local_60 = (float)(iRnd % 0x1e + 0x46) * _DAT_005524f8;
                 local_5c = (float)local_60 * _DAT_005528b8;
                 local_58 = (float)local_60 * _DAT_005526e4;
-                FUN_004409a0(pvVar23,
+                BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + (UINT)*pbVar20 * 0x30),
                     &local_48, &local_54, '\x01');
                 FUN_004795c0(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
-                FUN_004409a0(pvVar23,
+                BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbVar20 - 6) * 0x30),
                     &local_48, &local_54, '\x01');
                 FUN_004795c0(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
-                FUN_004409a0(pvVar23,
+                BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbVar20 - 7) * 0x30),
                     &local_48, &local_54, '\x01');
                 FUN_004795c0(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
@@ -1210,15 +1210,15 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         {
             BYTE *pbV193 = (BYTE *)(param_1 + 0x9d);  // c+628 = LinkBone[Weapon0]
             for (int v194 = 2; v194 > 0; v194--, pbV193 += 0x18) {
-                FUN_004409a0(pvVar23,
+                BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + (UINT)*pbV193 * 0x30),
                     &local_48, &local_54, '\x01');
                 FUN_004795c0(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);  // CreateSprite 1150
-                FUN_004409a0(pvVar23,
+                BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbV193 - 6) * 0x30),
                     &local_48, &local_54, '\x01');
                 FUN_004795c0(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
-                FUN_004409a0(pvVar23,
+                BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbV193 - 7) * 0x30),
                     &local_48, &local_54, '\x01');
                 FUN_004795c0(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
@@ -1245,7 +1245,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
 
         if (EquipmentLevelSet == 10) {
             // Single lightning particle around the entity
-            FUN_00475220(0x4e1, (float *)(puVar13 + 4),
+            Particle_Spawn(0x4e1, (float *)(puVar13 + 4),
                          (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (int)puVar13);
         } else if (EquipmentLevelSet == 11) {
             // 1/8: lightning joint, 7/8: particle
@@ -1255,11 +1255,11 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 v197 = (((BYTE)v198 - 1) | 0xFFFFFFF8) == 0xFFu;
             }
             if (v197) {
-                FUN_0046d840(0x4e1, (float *)(puVar13 + 4),
+                Joint_Create(0x4e1, (float *)(puVar13 + 4),
                              (float *)(puVar13 + 4), (float *)(puVar13 + 7),
                              0, (int)puVar13, 10.0f, -1, 0);
             } else {
-                FUN_00475220(0x4e1, (float *)(puVar13 + 4),
+                Particle_Spawn(0x4e1, (float *)(puVar13 + 4),
                              (float *)(puVar13 + 7), pfVar14, 0, 0.19f, (int)puVar13);
             }
         }

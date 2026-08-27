@@ -1,5 +1,5 @@
 // Sound_Queue.cpp
-// FUN_00479730 @ 0x00479730
+// Render_DrawSpritePool @ 0x00479730
 //
 // Sound_UpdateQueue — processes the pending sound-play queue each frame.
 //
@@ -8,26 +8,26 @@
 // Each entry layout (relative to piVar2, which points at field +4):
 //   piVar2[-1]  (byte)   — active flag (non-zero = pending)
 //   piVar2[0]   (int)    — sound type:
-//                            0 = FUN_00511710 (play once)
-//                            1 = FUN_00511790 (play looped / 3D)
-//                            2 = FUN_00511680(1) (play with param)
-//   piVar2[...]          — remaining sound params (passed to FUN_00479670)
+//                            0 = GL_SetBlendAdditive (play once)
+//                            1 = GL_SetBlendSrcAlpha (play looped / 3D)
+//                            2 = GL_SetBlendSrcOver(1) (play with param)
+//   piVar2[...]          — remaining sound params (passed to Render_DrawSprite)
 //
-// After dispatching the play call, FUN_00479670 is invoked on the entry
+// After dispatching the play call, Render_DrawSprite is invoked on the entry
 // (likely to advance or clear the queue slot).
 //
 // Sub-functions:
-//   FUN_00511710 — Sound_Play (type 0: one-shot)
-//   FUN_00511790 — Sound_PlayLoop (type 1: looped/3D)
-//   FUN_00511680 — Sound_PlayParam (type 2: param variant)
-//   FUN_00479670 — Sound_Queue_Advance / clear slot
+//   GL_SetBlendAdditive — Sound_Play (type 0: one-shot)
+//   GL_SetBlendSrcAlpha — Sound_PlayLoop (type 1: looped/3D)
+//   GL_SetBlendSrcOver — Sound_PlayParam (type 2: param variant)
+//   Render_DrawSprite — Sound_Queue_Advance / clear slot
 
 #include "stdafx.h"
 
-// FUN_00479730 = RenderSprites (verificado vía Ghidra). Recorre el effect pool
+// Render_DrawSpritePool = RenderSprites (verificado vía Ghidra). Recorre el effect pool
 // y por cada slot activo:
-//   - dispatch GL state según blend mode en +4 (FUN_00511710/90/80)
-//   - llama FUN_00479670 (RenderSprite) para dibujar el quad
+//   - dispatch GL state según blend mode en +4 (GL_SetBlendAdditive/90/80)
+//   - llama Render_DrawSprite (RenderSprite) para dibujar el quad
 //   - clear active flag
 // Llamada desde Scene_CharSelect.cpp:325 (mal-comentada como "Portal_Render"),
 // Scene_Login.cpp:100. Es la función que dibuja TODOS los sprites/glows/sparkles
@@ -35,23 +35,24 @@
 // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODO el render — ahora itera
 // por índice acotado a 1002 slots.
 extern "C" void DbgLogPublic(const char*);
-void __cdecl FUN_00479730(void)
+// IDA: FUN_00479730
+void __cdecl Render_DrawSpritePool(void)
 {
     char *pcVar2 = DAT_07c85890;
     for (int i = 0; i < 1002; ++i, pcVar2 += 0x1bc) {
         if (*pcVar2 != '\0') {
             int blend = *(int*)(pcVar2 + 4);
-            if      (blend == 0) FUN_00511710();
-            else if (blend == 1) FUN_00511790();
-            else if (blend == 2) FUN_00511680('\x01');
-            FUN_00479670((int)pcVar2);
+            if      (blend == 0) GL_SetBlendAdditive();
+            else if (blend == 1) GL_SetBlendSrcAlpha();
+            else if (blend == 2) GL_SetBlendSrcOver('\x01');
+            Render_DrawSprite((int)pcVar2);
             *pcVar2 = 0;
         }
     }
 }
 
 
-// FUN_00479670 @ 0x00479670
+// Render_DrawSprite @ 0x00479670
 //
 // Sound_Queue_Advance — per-frame update for a sound queue slot.
 //
@@ -76,7 +77,8 @@ void __cdecl FUN_00479730(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl FUN_00479670(int param_1)
+// IDA: FUN_00479670
+void __cdecl Render_DrawSprite(int param_1)
 
 {
   float fVar1;
@@ -115,10 +117,11 @@ void __cdecl FUN_00479670(int param_1)
 }
 
 
-// FUN_0047fcb0 @ 0x0047fcb0 — Sound_Countdown1
+// Chat_TickNoticeTimer @ 0x0047fcb0 — Sound_Countdown1
 // Decrements counter DAT_00559cdc each frame.
-// When it underflows below 1, resets to 300 and calls FUN_0047fae0 (queue advance).
-void FUN_0047fcb0(void)
+// When it underflows below 1, resets to 300 and calls UI_AddNotice (queue advance).
+// IDA: FUN_0047fcb0
+void Chat_TickNoticeTimer(void)
 {
   bool bVar1;
 
@@ -126,16 +129,17 @@ void FUN_0047fcb0(void)
   DAT_00559cdc = DAT_00559cdc + -1;
   if (bVar1) {
     DAT_00559cdc = 300;
-    FUN_0047fae0((char*)DAT_07e11dd0, (unsigned char)0);   // ahora es char[256]
+    UI_AddNotice((char*)DAT_07e11dd0, (unsigned char)0);   // ahora es char[256]
   }
   return;
 }
 
 
-// FUN_00480950 @ 0x00480950 — Sound_Countdown2
+// Chat_TickMessageTimer @ 0x00480950 — Sound_Countdown2
 // Decrements counter DAT_00559ce4 each frame.
 // When it underflows below 1, resets to 0x96 (150) and calls FUN_00480620.
-void FUN_00480950(void)
+// IDA: FUN_00480950
+void Chat_TickMessageTimer(void)
 {
   bool bVar1;
 
@@ -152,7 +156,7 @@ void FUN_00480950(void)
     // buffers, así que contenían basura → cada 150 frames aparecía un mensaje
     // con un carácter no-ASCII suelto arriba a la izquierda (confirmado por el
     // diag: "CHATADD mode=0 ret=004E5E13 msg='?'" cada 6.4 s, ret =
-    // FUN_00480950+0x63). Sólo re-emitimos si el buffer tiene texto imprimible.
+    // Chat_TickMessageTimer+0x63). Sólo re-emitimos si el buffer tiene texto imprimible.
     const char* pMsg = (const char*)&DAT_07e11dd8;
     bool bValid = false;
     for (int i = 0; i < 32; ++i) {

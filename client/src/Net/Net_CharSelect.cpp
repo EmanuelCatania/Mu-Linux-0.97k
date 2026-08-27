@@ -13,7 +13,7 @@
 //           0x49,0x5d,0x39,0x5d,0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
 //           0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56}
 // After send: login sub-state → 0x18, secondary → 0x15, PlayBuffer(0x1b), ClearInput(1).
-void __cdecl FUN_00513c10(void)
+void __cdecl CharSelect_SendSelectPacket(void)
 {
     static const unsigned char xorKey[32] = {
         0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
@@ -118,7 +118,7 @@ void __cdecl FUN_00513c10(void)
     DAT_083a7c14 = 0x18;
     DAT_083a7c18 = 0x15;
     PlayBuffer(0x1b, 0, 0);
-    FUN_0047ec60(1);              // ClearInput(1)
+    Input_ClearState(1);              // ClearInput(1)
     DAT_00559c84 = 0;             // InputEnable = false
 }
 // FUN_0051af50 — implemented in src/UI/UI_StatsPanel.cpp (UI_StatsPanel_Render)

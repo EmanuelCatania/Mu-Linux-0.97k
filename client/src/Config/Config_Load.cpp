@@ -58,7 +58,7 @@ DWORD g_Resolution = 0;      // DAT_?? (default 0 = 640x480)
 DWORD g_TextOut    = 0;      // DAT_?? (default 0)
 float _DAT_055c9b70 = 1.0f;  // inverse screen width scale: g_ScreenW / 640.0  (UV normalization)
 float _DAT_055c9b74 = 1.0f;  // inverse screen height scale: g_ScreenH / 480.0 (g_fScreenRate_y)
-char  DAT_055c9bac[12] = {}; // config.ini [LOGIN] Version string (11 chars + null)
+char  ConfigLoginVersion[12] = {}; // IDA: DAT_055c9bac — config.ini [LOGIN] Version string
 
 // Forward declarations
 // Path_GetBasename  @ 0x00412BE0 — extracts filename from a full path/cmdline string
@@ -86,7 +86,7 @@ int Config_Load(void)
     // --- 2. Read [LOGIN] Version from config.ini ---
     //   GetPrivateProfileStringA("LOGIN", "Version", "", DAT_055c9bac, 11, configPath)
     //   Result: 10-char version string (e.g. "1.00h") at DAT_055c9bac
-    GetPrivateProfileStringA("LOGIN", "Version", "", DAT_055c9bac, 11, configPath);
+    GetPrivateProfileStringA("LOGIN", "Version", "", ConfigLoginVersion, 11, configPath);
 
     // --- 3. Extract exe name + read PE version ---
     //   Path_GetBasename(exeNameBuf, GetCommandLineA())

@@ -283,7 +283,7 @@ void __cdecl FUN_004e4760(void) {
             // `static int g_iKeyPadEnable` homonimo que el handler del 0x55 seteaba
             // mientras este hit-test leia el global. Unificados.
             if (DAT_07eaa144) {
-                if (FUN_00513570()) {
+                if (Chat_ValidateInputCommand()) {
                     // nombre invalido / vacio
                     FUN_005142d0(115);
                 } else {
@@ -1259,7 +1259,7 @@ LAB_004e8950_impl:
         FUN_004cba60();
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        FUN_0047ec60(0);
+        Input_ClearState(0);
         DAT_00559c84 = 0;
         DAT_07e11d72 = 0;
         DAT_07e11d74 = 0;
@@ -1443,7 +1443,7 @@ void __cdecl FUN_004e9050(void) {
 // Chequea 4 filas de botones en los offsets x {0x1a, 0x4c, 0x7e, 0xd7} (0x18 de ancho cada uno)
 // y los offsets y {0x186, 0x186, 0x186, 0x18b} relativos a DAT_07eaa0c8/0cc.
 // Al hacer click (DAT_083a4124 != '\0'), despacha por índice de fila:
-//   0 → new char: SetErrorMessage(0x74), FUN_0047ec60(0), set substate flags
+//   0 → new char: SetErrorMessage(0x74), Input_ClearState(0), set substate flags
 //   1 → borrar carácter: igual que 0 pero DAT_07eaa108=1
 //   2 → shuffle/new-PIN: shuffle DAT_07e91394 short[10] via Fisher-Yates (20 passes),
 //        reset _DAT_07ea9814=0, DAT_07ea9818=0, DAT_07eaa14c = 4 - DAT_00559f5f,
@@ -1475,7 +1475,7 @@ void __cdecl FUN_004eb5d0(void) {
     switch (iVar6) {
     case 0:
         SetErrorMessage(0x74);
-        FUN_0047ec60(0);
+        Input_ClearState(0);
         DAT_07e11d74 = 0;
         DAT_07eaa108 = 0;
         _DAT_00559c94 = 8;
@@ -1485,7 +1485,7 @@ void __cdecl FUN_004eb5d0(void) {
         break;
     case 1:
         SetErrorMessage(0x74);
-        FUN_0047ec60(0);
+        Input_ClearState(0);
         DAT_07e11d74 = 0;
         _DAT_00559c94 = 8;
         DAT_00559c88 = 1;
@@ -1553,7 +1553,7 @@ void __cdecl FUN_004eb7f0(void) {
         IsClickPushed()) {
         DAT_083a4124 = '\0';
         FUN_005142d0(0x74);
-        FUN_0047ec60(0);
+        Input_ClearState(0);
         _DAT_00559c94 = 8;
         DAT_00559c88 = 1;
         DAT_00559c84 = 0;
@@ -1741,7 +1741,7 @@ void __cdecl FUN_004ec330(void) {
                     }
                 }
 
-                FUN_004c4080();
+                Item_RecalculateRepairCost();
             }
         }
 
@@ -2543,10 +2543,10 @@ void __cdecl FUN_00454ba0(int param_1) {
     float vel[3] = { 0.0f, -(float)FUN_00454b00(param_1), 0.0f };
     // PORT FIX: el mismo artefacto de float[3] partido por Ghidra que en Terrain_Light FUN_004fa930.
     // local_3c/local_38/local_34 eran el buffer de salida contiguo de 3 floats que
-    // esperaba FUN_004fa0b0, pero MSVC no garantiza el layout de los locales.
+    // esperaba Vector_Rotate, pero MSVC no garantiza el layout de los locales.
     float out[3] = {0.0f, 0.0f, 0.0f};
-    FUN_004f9db0((float*)(param_1 + 0x1c), local_30);
-    FUN_004fa0b0(vel, local_30, out);
+    Matrix_BuildFromEuler((float*)(param_1 + 0x1c), local_30);
+    Vector_Rotate(vel, local_30, out);
     *(float*)(param_1 + 0x10) = out[0] + *(float*)(param_1 + 0x10);
     *(float*)(param_1 + 0x14) = out[1] + *(float*)(param_1 + 0x14);
     *(float*)(param_1 + 0x18) = out[2] + *(float*)(param_1 + 0x18);
@@ -2870,8 +2870,8 @@ next_entry:;
     }
 }
 
-// FUN_00491c40 (Send_MovePacket), FUN_0049cbf0 (Attack), FUN_0048ba70 (CheckArrow),
-// FUN_0048a180 (UseSkillElf), FUN_0048d640 (Action big switch),
+// Combat_SendMovePathPacket (Send_MovePacket), Combat_DispatchHeroSkillAttack (Attack), Combat_CheckArrowRequirement (CheckArrow),
+// Combat_UseElfSkill (UseSkillElf), Combat_ProcessQueuedAction (Action big switch),
 // + Send_MovePacket_Player_legacy_stub moved to src/Combat/Combat.cpp
 // (B3 refactor 2026-05-07, 1216 lines).
 
@@ -2916,7 +2916,7 @@ void __cdecl FUN_004f9ac0(char EditFlag) {
         DAT_07eab1fc = 0;                 // SelectFlag = 0
         FUN_00512d30();                   // Map_InitRayCast (sub_512D30)
     } else {
-        FUN_00511600();                   // DisableAlphaBlend
+        GL_ResetState();                   // DisableAlphaBlend
     }
 
     DAT_0838bc44 = 0;                     // TerrainFlag = 0
@@ -2930,16 +2930,16 @@ void __cdecl FUN_004f9ac0(char EditFlag) {
                          1.0f, 1, (int)(unsigned char)EditFlag);
         }
     } else {
-        FUN_00511680('\x01');             // EnableAlphaTest(1)
+        GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
         if (DAT_0055a76c && World != 7) { // overlay (inerte: unk_55A76C nunca seteado)
             DAT_0838bc44 = 2;             // TerrainFlag = 2
             RenderTerrainFrustrum_stub(false);
         }
         FUN_004f7060();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
-        FUN_005114f0();                   // DisableDepthTest
-        FUN_00511550();                   // EnableCullFace
+        GL_DisableDepthTest();                   // DisableDepthTest
+        GL_EnableCullFace();                   // EnableCullFace
         FUN_00479540();                   // RenderTerrainAlphaBitmaps (sub_479540)
-        FUN_005114d0();                   // EnableDepthTest
+        GL_EnableDepthTest();                   // EnableDepthTest
     }
 
     DAT_0839bc88 ^= 1u;                   // terrain-light double-buffer toggle
@@ -2989,12 +2989,12 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
     }
 
     // IDA RenderTerrain (0x004F9AC0) abre el path EditFlag=0 con DisableAlphaBlend().
-    // Usamos el wrapper 1:1 (FUN_00511600) en vez de glEnable/glDisable crudo para
+    // Usamos el wrapper 1:1 (GL_ResetState) en vez de glEnable/glDisable crudo para
     // mantener sincronizado el caché de estado GL (AlphaBlendType/AlphaTestEnable/
     // TextureEnable) que comparten todos los passes. Estado resultante: blend OFF,
     // cull ON, escritura de profundidad ON, alpha-test OFF, textura ON.
-    FUN_005114d0();                  // EnableDepthTest (la fallback dibuja con depth test)
-    FUN_00511600();                  // DisableAlphaBlend — estado opaco base
+    GL_EnableDepthTest();                  // EnableDepthTest (la fallback dibuja con depth test)
+    GL_ResetState();                  // DisableAlphaBlend — estado opaco base
 
     // Trackea la última textura bindeada para minimizar los binds.
     int lastTex = -1;
@@ -3025,7 +3025,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
             int tileTex = 0x23 + tileIdx;
             if (tileTex < 0x23 || tileTex > 0x30) tileTex = 0x23;   // fallback grass01
             if (tileTex != lastTex) {
-                FUN_00511480(tileTex);          // glBindTexture (texture system)
+                GL_BindTextureSlot(tileTex);          // glBindTexture (texture system)
                 lastTex = tileTex;
             }
 
@@ -3089,7 +3089,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
     // Entity_PrepareRender), que renderean vegetación/decals con alpha. Sin esto
     // GL_ALPHA_TEST quedaba OFF → las esquinas de los quads con alpha salían
     // opacas = los triángulos negros alrededor de vegetación/objetos.
-    FUN_00511680('\x01');            // EnableAlphaTest(1)
+    GL_SetBlendSrcOver('\x01');            // EnableAlphaTest(1)
 }
 #endif  // fallback flat-shaded obsoleta
 
@@ -3130,7 +3130,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //   FUN_0047dae0   Stats_CalcMagicDmgRange (sub_47DAE0)
 //   FUN_0047dd80   CHARACTER_MACHINE::CalculateAttackSpeed
 //   FUN_004f7500   RequestTerrainHeight
-//   FUN_00475220   Particle_Spawn
+//   Particle_Spawn   Particle_Spawn
 //   CharacterAnimation (alias of FUN_00448600)
 //   FUN_004430c0   SetPlayerStop
 //   FUN_0043e820   SetAction
@@ -3139,19 +3139,19 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //   FUN_00449840   DeleteCloth
 //   FUN_00448930   AttackStage (AttackStage_stub)
 //   FUN_00445230   AttackEffect (existing port at line 3083)
-//   FUN_00460dc0   CreateEffect
-//   FUN_0046d840   CreateJoint
-//   FUN_004660f0   CreateBomb
-//   FUN_004409a0   BMD::TransformPosition
+//   Effect_Create   CreateEffect
+//   Joint_Create   CreateJoint
+//   Effect_SpawnSmokeBurst   CreateBomb
+//   BMD_TransformPosition   BMD::TransformPosition
 //   FUN_00440060   BMD::Animation
 //   AngleMatrix    (no FUN_)
-//   VectorRotate   = FUN_004fa110
+//   VectorRotate   = Vector_InverseRotate
 //   FUN_004b1170   FindHotKey (FindHotKey_stub)
 //   FUN_00474bd0   CreateArrows (CreateArrows_stub)
 //   FUN_005129f0   fabs
 //   FUN_0046fe40   Joint_Find
 //   FUN_004451c0   AngleVectorOffset
-//   FUN_00466300   bomb-ring effect
+//   Effect_SpawnBombRing   bomb-ring effect
 //   FUN_0046c5a0   skill impact particles
 //   FUN_0046c7f0   directional blood
 //   FUN_0045fae0   lectura hash de 1 byte (lectura de la cola de skills)
@@ -3285,10 +3285,10 @@ void __cdecl FUN_00444d90(int c_in)
         }
         // Player special class 206-208: explosion
         *(BYTE*)c = 0;
-        FUN_00460dc0(210, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+        Effect_Create(210, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                      nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
         for (int i = 0; i < 10; ++i) {
-            FUN_00460dc0(211, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            Effect_Create(211, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
         }
         playFxBuf = true;
@@ -3298,19 +3298,19 @@ void __cdecl FUN_00444d90(int c_in)
             // Type 295: 8x (226+227)
             *(BYTE*)c = 0;
             for (int i = 0; i < 8; ++i) {
-                FUN_00460dc0(226, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+                Effect_Create(226, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                              nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
-                FUN_00460dc0(227, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+                Effect_Create(227, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                              nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             }
             playFxBuf = true;
         } else if (v13 == 5) {
             // Type 300: 1x 210 + 10x 211
             *(BYTE*)c = 0;
-            FUN_00460dc0(210, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            Effect_Create(210, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             for (int i = 0; i < 10; ++i) {
-                FUN_00460dc0(211, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+                Effect_Create(211, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                              nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             }
             playFxBuf = true;
@@ -3680,15 +3680,15 @@ void __cdecl FUN_00449900(int p1)
         for (int kk = 0; kk < *(short*)(This + 34); ++kk) {
             int v401 = *(short*)(*(int*)(This + 44) + 140 * kk + 32);
             if (v401 > -1 && v401 < 200) {
-                FUN_004409a0((void*)This, (float*)(48 * kk + *(int*)(o + 276)), p1f, Position, 1);
-                FUN_004409a0((void*)This, (float*)(48 * v401 + *(int*)(o + 276)), p1f, TargetPosition, 1);
+                BMD_TransformPosition((void*)This, (float*)(48 * kk + *(int*)(o + 276)), p1f, Position, 1);
+                BMD_TransformPosition((void*)This, (float*)(48 * v401 + *(int*)(o + 276)), p1f, TargetPosition, 1);
                 Position[0] += (float)(rand() % 41 - 20);
                 Position[1] += (float)(rand() % 41 - 20);
                 Position[2] += (float)(rand() % 41 - 20);
                 TargetPosition[0] += (float)(rand() % 41 - 20);
                 TargetPosition[1] += (float)(rand() % 41 - 20);
                 TargetPosition[2] += (float)(rand() % 41 - 20);
-                FUN_0046d840(1254, Position, TargetPosition, (float*)(o + 28), 7, 0, 20.0f, (short)-1, 0);
+                Joint_Create(1254, Position, TargetPosition, (float*)(o + 28), 7, 0, 20.0f, (short)-1, 0);
             }
         }
         --*(BYTE*)(o + 404);
@@ -3737,14 +3737,14 @@ void __cdecl FUN_00449900(int p1)
             WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
             WorldPosition[2] = FUN_004f7500(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey_stub(5);
-            FUN_00460dc0(1200, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(1200, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(91, 0, 0);
             break;
         }
         case 8: {  // Heal
             int hk = FindHotKey_stub(8);
-            FUN_00460dc0(204, (float*)(o + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(204, (float*)(o + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(86, 0, 0);
             break;
@@ -3756,18 +3756,18 @@ void __cdecl FUN_00449900(int p1)
             for (int kk = 0; kk < 4; ++kk) {
                 v394[0] = 0.0f; v394[1] = 0.0f; v394[2] = (float)kk * 90.0f;
                 int hk = FindHotKey_stub(9);
-                FUN_0046d840(1253, v399, (float*)(o + 16), v394, 0, (int)o, 80.0f,
+                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (int)o, 80.0f,
                              *(short*)(o + 134), (unsigned char)hk);
-                FUN_0046d840(1253, v399, (float*)(o + 16), v394, 0, (int)o, 20.0f, (short)-1, 0);
+                Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (int)o, 20.0f, (short)-1, 0);
             }
             PlayBuffer(87, 0, 0);
             break;
         }
         case 10: {  // Defense
             int hk = FindHotKey_stub(10);
-            FUN_00460dc0(200, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(200, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
-            FUN_00460dc0(201, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+            Effect_Create(201, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                          (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(89, 0, 0);
             break;
@@ -3775,7 +3775,7 @@ void __cdecl FUN_00449900(int p1)
         case 12: {  // FallingSlash
             mc_AngleVectorOffset((float*)o, -20.0f, -90.0f, 100.0f, WorldPosition);
             int hk = FindHotKey_stub(12);
-            FUN_00460dc0(1210, WorldPosition, (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(1210, WorldPosition, (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(92, 0, 0);
             break;
@@ -3785,28 +3785,28 @@ void __cdecl FUN_00449900(int p1)
             WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
             WorldPosition[2] = FUN_004f7500(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey_stub(13);
-            FUN_00460dc0(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
-            FUN_00460dc0(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)(hk & 0xFF), 0);
             break;
         }
         case 14: {  // Decay (bomb-ring)
-            FUN_00466300((float*)(o + 16));
+            Effect_SpawnBombRing((float*)(o + 16));
             int hk = FindHotKey_stub(14);
-            FUN_00460dc0(241, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(241, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             break;
         }
         case 30: case 31: case 32: case 33: case 34: case 35: case 36:  // Buff / Debuff
-            FUN_00460dc0(1264, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)3, (float*)o,
+            Effect_Create(1264, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)3, (float*)o,
                          (float*)(uintptr_t)-1, nullptr, 0);
             break;
         case 41: {  // Bow special 1
             *(BYTE*)(o + 136) = (BYTE)(*(short*)(c + 624) + 112);
             *(BYTE*)(o + 137) = *(BYTE*)(c + 626);
             int hk = FindHotKey_stub(41);
-            FUN_00460dc0(238, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(238, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(85, 0, 0);
             break;
@@ -3815,7 +3815,7 @@ void __cdecl FUN_00449900(int p1)
             *(BYTE*)(o + 136) = (BYTE)(*(short*)(c + 624) + 112);
             *(BYTE*)(o + 137) = *(BYTE*)(c + 626);
             int hk = FindHotKey_stub(42);
-            FUN_00460dc0(244, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(244, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(85, 0, 0);
             break;
@@ -3828,9 +3828,9 @@ void __cdecl FUN_00449900(int p1)
                 v396[0] = *(float*)(o + 16);
                 v396[1] = *(float*)(o + 20);
                 v396[2] = *(float*)(o + 24) + 100.0f;
-                FUN_0046d840(1253, v396, v396, Angle, 2, (int)o, 60.0f, 0, 0);
+                Joint_Create(1253, v396, v396, Angle, 2, (int)o, 60.0f, 0, 0);
                 if (!(kk % 20)) {
-                    FUN_00460dc0(1264, (float*)(o + 16), Angle, (float*)(o + 232), (float*)(uintptr_t)4, (float*)o,
+                    Effect_Create(1264, (float*)(o + 16), Angle, (float*)(o + 232), (float*)(uintptr_t)4, (float*)o,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                 }
             }
@@ -3843,7 +3843,7 @@ void __cdecl FUN_00449900(int p1)
         }
         case 49: {  // Magic — uses dword_5826D10 hotkey state
             int hk = (int)DAT_05826d10;
-            FUN_00460dc0(1382, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            Effect_Create(1382, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(84, 0, 0);
             break;
@@ -3925,7 +3925,7 @@ void __cdecl FUN_00449900(int p1)
                             WorldPosition[1] = *(float*)(Owner + 20);
                             float v45 = *(float*)(Owner + 24) + 50.0f;
                             WorldPosition[2] = (float)(rand() % 30) + v45;
-                            FUN_00460dc0(261, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                            Effect_Create(261, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                          (float*)(uintptr_t)-1, nullptr, 0);
                         }
                     }
@@ -3954,7 +3954,7 @@ void __cdecl FUN_00449900(int p1)
             {
             case 1:
                 if (*(short*)(o + 2) == 390)
-                    FUN_00460dc0(192, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    Effect_Create(192, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                 Light[0] = 0.40000001f; Light[1] = 0.60000002f; Light[2] = 1.0f;
                 for (int kk = 0; kk < 10; ++kk)
@@ -3963,20 +3963,20 @@ void __cdecl FUN_00449900(int p1)
                 PlayBuffer(34, 0, 0);
                 break;
             case 2:
-                FUN_00460dc0(191, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                Effect_Create(191, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 PlayBuffer(46, 0, 0);
                 break;
             case 4:
-                FUN_00460dc0(191, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)1, (float*)Owner,
+                Effect_Create(191, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)1, (float*)Owner,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 PlayBuffer(46, 0, 0);
                 break;
             case 7:
-                FUN_00460dc0(190, (float*)(Owner + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, nullptr,
+                Effect_Create(190, (float*)(Owner + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, nullptr,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 for (int kk = 0; kk < 5; ++kk)
-                    FUN_00460dc0(199, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    Effect_Create(199, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                 if (*(BYTE*)(c + 769) && (*(DWORD*)(Owner + 120) & 2) != 2)
                     *(DWORD*)(Owner + 120) |= 2u;
@@ -3985,14 +3985,14 @@ void __cdecl FUN_00449900(int p1)
             case 11:
                 if (*(short*)(o + 2) == 288) {
                     v389[2] += 10.0f;
-                    FUN_00460dc0(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    Effect_Create(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                     v389[2] -= 20.0f;
-                    FUN_00460dc0(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    Effect_Create(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                     v389[2] += 10.0f;
                 }
-                FUN_00460dc0(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                Effect_Create(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 PlayBuffer(88, 0, 0);
                 break;
@@ -4008,7 +4008,7 @@ void __cdecl FUN_00449900(int p1)
                     PlayBuffer(103, 0, 0);
                     mc_DeleteJoint(266, Owner, 0);
                     for (int i = 0; i < 5; ++i) {
-                        FUN_0046d840(266, (float*)(Owner + 16), (float*)(Owner + 16),
+                        Joint_Create(266, (float*)(Owner + 16), (float*)(Owner + 16),
                                      (float*)(Owner + 28), 0, (int)Owner, 20.0f, (short)-1, 0);
                     }
                 }
@@ -4023,10 +4023,10 @@ void __cdecl FUN_00449900(int p1)
                     skip766 = true; break;
                 default:
                     if (*(short*)(o + 2) == 282) {
-                        FUN_00460dc0(212, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
+                        Effect_Create(212, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
                                      (float*)(uintptr_t)-1, nullptr, 0);
                     } else {
-                        FUN_00460dc0(1180, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
+                        Effect_Create(1180, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
                                      (float*)(uintptr_t)-1, nullptr, 0);
                         PlayBuffer(88, 0, 0);
                     }
@@ -4040,17 +4040,17 @@ void __cdecl FUN_00449900(int p1)
                 goto LABEL_720;
             }
             case 26:
-                FUN_00460dc0(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)1, (float*)Owner,
+                Effect_Create(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)1, (float*)Owner,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 break;
             case 27:
                 if (*(BYTE*)(c + 769)) {
-                    FUN_00460dc0(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)2, (float*)Owner,
+                    Effect_Create(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)2, (float*)Owner,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                     if ((*(DWORD*)(Owner + 120) & 8) == 8) {
                         if (!mc_JointFind(266, Owner, 4)) {
                             for (int i = 0; i < 5; ++i) {
-                                FUN_0046d840(266, (float*)(Owner + 16), (float*)(Owner + 16),
+                                Joint_Create(266, (float*)(Owner + 16), (float*)(Owner + 16),
                                              (float*)(Owner + 28), 4, (int)Owner, 20.0f, (short)-1, 0);
                             }
                         }
@@ -4059,14 +4059,14 @@ void __cdecl FUN_00449900(int p1)
                         *((BYTE*)&v29 + 0) = (BYTE)(v29 | 8);
                         *(DWORD*)(Owner + 120) = v29;
                         for (int i = 0; i < 5; ++i) {
-                            FUN_0046d840(266, (float*)(Owner + 16), (float*)(Owner + 16),
+                            Joint_Create(266, (float*)(Owner + 16), (float*)(Owner + 16),
                                          (float*)(Owner + 28), 4, (int)Owner, 20.0f, (short)-1, 0);
                         }
                     }
                 }
                 break;
             case 28:
-                FUN_00460dc0(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)3, (float*)Owner,
+                Effect_Create(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)3, (float*)Owner,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 if (*(BYTE*)(c + 769)) *(DWORD*)(Owner + 120) |= 4u;
                 break;
@@ -4094,9 +4094,9 @@ void __cdecl FUN_00449900(int p1)
             Light[2] = 0.0f;
 
             if (*(BYTE*)(c + 756) == 2) {
-                FUN_0046d840(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
+                Joint_Create(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
                              0, (int)o, 20.0f, (short)-1, 0);
-                FUN_0046d840(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
+                Joint_Create(1258, (float*)(Owner + 16), (float*)(Owner + 16), (float*)(o + 28),
                              1, (int)o, 20.0f, (short)-1, 0);
             }
 
@@ -4147,46 +4147,46 @@ void __cdecl FUN_00449900(int p1)
         if (*(int*)(c + 816) == 1253) v383i = -1028390912;  // -8.0f
         // (v380/v381/v382 unused outside debug)
         memset(p1f, 0, sizeof(p1f));
-        FUN_004409a0((void*)v422, (float*)(*(int*)(o + 276) + 1584), p1f, WorldPosition, 1);
+        BMD_TransformPosition((void*)v422, (float*)(*(int*)(o + 276) + 1584), p1f, WorldPosition, 1);
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = *(float*)(o + 36) - 60.0f;
-        FUN_0046d840(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 50.0f, (short)-1, 0);
+        Joint_Create(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 50.0f, (short)-1, 0);
         if (*(int*)(c + 816) == 1254) {
-            FUN_0046d840(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
-            FUN_0046d840(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
+            Joint_Create(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
+            Joint_Create(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
         }
-        FUN_004409a0((void*)v422, (float*)(*(int*)(o + 276) + 2016), p1f, WorldPosition, 1);
+        BMD_TransformPosition((void*)v422, (float*)(*(int*)(o + 276) + 2016), p1f, WorldPosition, 1);
         *(int*)&v417[0] = v383i;
         v417[1] = 0.0f;
         v417[2] = *(float*)(o + 36) + 60.0f;
-        FUN_0046d840(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 50.0f, (short)-1, 0);
+        Joint_Create(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 50.0f, (short)-1, 0);
         if (*(int*)(c + 816) == 1254) {
-            FUN_0046d840(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
-            FUN_0046d840(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
+            Joint_Create(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
+            Joint_Create(*(int*)(c + 816), WorldPosition, (float*)(c + 788), v417, 0, (int)o, 10.0f, (short)-1, 0);
         }
     }
 
     // L2541-2572: Spear stab (1256) — trail at f >= 9.0
     if (*(int*)(c + 816) == 1256) {
         memset(p1f, 0, sizeof(p1f));
-        FUN_004409a0((void*)v422, (float*)(*(int*)(o + 276) + 1968), p1f, WorldPosition, 0);
+        BMD_TransformPosition((void*)v422, (float*)(*(int*)(o + 276) + 1968), p1f, WorldPosition, 0);
         memset(p1f, 0, sizeof(p1f));
-        FUN_004409a0((void*)v422, (float*)(*(int*)(o + 276) + 1536), p1f, WorldPosition, 0);
+        BMD_TransformPosition((void*)v422, (float*)(*(int*)(o + 276) + 1536), p1f, WorldPosition, 0);
         if (*(float*)(o + 264) >= 9.0f) {
             if (*(short*)(c + 624) == 560) {
                 WorldPosition[0] = 0.0f; WorldPosition[1] = -130.0f; WorldPosition[2] = 0.0f;
-                FUN_004409a0((void*)v422,
+                BMD_TransformPosition((void*)v422,
                              (float*)(48 * (*(BYTE*)(c + 628)) + *(int*)(o + 276)),
                              WorldPosition, p1f, 0);
             } else {
                 memset(WorldPosition, 0, sizeof(WorldPosition));
-                FUN_004409a0((void*)v422, (float*)(*(int*)(o + 276) + 1968), WorldPosition, p1f, 0);
+                BMD_TransformPosition((void*)v422, (float*)(*(int*)(o + 276) + 1968), WorldPosition, p1f, 0);
             }
             v379[0] = *(float*)(o + 28);
             v379[1] = *(float*)(o + 32);
             v379[2] = *(float*)(o + 36);
-            FUN_0046d840(*(int*)(c + 816), p1f, (float*)(c + 788), v379, 0, (int)o, 50.0f, (short)-1, 0);
+            Joint_Create(*(int*)(c + 816), p1f, (float*)(c + 788), v379, 0, (int)o, 50.0f, (short)-1, 0);
             *(int*)(c + 816) = -1;
         }
     }
@@ -4256,10 +4256,10 @@ void __cdecl FUN_00449900(int p1)
             }
 
             if (*(short*)(o + 2) != 390 || v378 == 403 || v378 == 406 || v378 == 409 || v378 == 411 || v378 == 500) {
-                FUN_004409a0((void*)v422,
+                BMD_TransformPosition((void*)v422,
                              (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + *(int*)(o + 276)),
                              v372, p1f, 1);
-                FUN_004409a0((void*)v422,
+                BMD_TransformPosition((void*)v422,
                              (float*)(48 * (*(BYTE*)(c + 24 * v377 + 628)) + *(int*)(o + 276)),
                              v371, p2f, 1);
                 mc_CreateBlur(c, p1f, p2f, v373, Type, 0);
@@ -4276,10 +4276,10 @@ void __cdecl FUN_00449900(int p1)
                                  *(unsigned int*)&PriorFrame,
                                  *(BYTE*)(o + 262), colorPack,
                                  (float*)(o + 40), 0, 1);
-                    FUN_004409a0((void*)v422,
+                    BMD_TransformPosition((void*)v422,
                                  (float*)BoneMatrix[3 * (*(BYTE*)(c + 24 * v377 + 628))],
                                  v372, p1f, 0);
-                    FUN_004409a0((void*)v422,
+                    BMD_TransformPosition((void*)v422,
                                  (float*)BoneMatrix[3 * (*(BYTE*)(c + 24 * v377 + 628))],
                                  v371, p2f, 0);
                     mc_CreateBlur(c, p1f, p2f, v373, Type, 1);
@@ -4391,7 +4391,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
         }
         for (int i = 0; i < 2; ++i) {
             float *headCurrent = (float *)(entity_ptr + 40 + i * sizeof(float));
-            const float delta = FUN_0043e370(*headCurrent, headCurrent[3], 1) * 0.2f;
+            const float delta = Angle_GetDifference(*headCurrent, headCurrent[3], 1) * 0.2f;
             *headCurrent = FUN_0043e1b0(*headCurrent, headCurrent[3], delta);
         }
         if (*(unsigned char *)(entity_ptr + 848)) {
@@ -4405,9 +4405,9 @@ void __cdecl FUN_004520c0(int entity_ptr)
                     (float)(rand() % 32 - 16) + *(float *)(entity_ptr + 24)
                 };
                 if (!(rand() % 10))
-                    FUN_00475220(1221, position, (float *)(entity_ptr + 28), light, 1, 1.0f, 0);
+                    Particle_Spawn(1221, position, (float *)(entity_ptr + 28), light, 1, 1.0f, 0);
                 if (!(rand() % 10))
-                    FUN_00460dc0(rand() % 2 + 197, (float *)(entity_ptr + 16),
+                    Effect_Create(rand() % 2 + 197, (float *)(entity_ptr + 16),
                                  (float *)(entity_ptr + 28), light, nullptr, nullptr,
                                  (float *)(uintptr_t)0xffffffff, nullptr, 0);
             }
@@ -4451,8 +4451,8 @@ void __cdecl FUN_004520c0(int entity_ptr)
                                     (animFrame >= 5.0f && animFrame <= 6.0f)));
             if (sparkWindow && !(rand() & 1)) {
                 float origin[3], local[3] = { 0.0f, -4.0f, 0.0f };
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 1152), local, origin, '\x01');
-                FUN_00475220(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1152), local, origin, '\x01');
+                Particle_Spawn(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
             }
             break;
         }
@@ -4461,8 +4461,8 @@ void __cdecl FUN_004520c0(int entity_ptr)
         case 0x110:
             if (*(unsigned char *)(entity_ptr + 261) == 3 && *(float *)(entity_ptr + 264) <= 4.0f) {
                 float p[3], local[3] = {0.0f, (float)(rand() % 32 + 32), 0.0f};
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 336), local, p, '\x01');
-                FUN_00475220(1195, p, (float *)(entity_ptr + 28), Light, 1, 1.0f, 0);
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 336), local, p, '\x01');
+                Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 1, 1.0f, 0);
             }
             // IDA fall-through to LABEL_253.
         case 0x111:
@@ -4470,7 +4470,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
         case 0x122:
             if (entType == 0x122) {
                 float p[3];
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 336), WorldPosition, p, '\x01');
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 336), WorldPosition, p, '\x01');
                 float spriteLight[3] = {Luminosity, Luminosity * 0.40000001f, Luminosity * 0.2f};
                 FUN_004795c0(1150, p, 1.0f, spriteLight, entity_ptr, 0.0f, 0);
             }
@@ -4478,14 +4478,14 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 float p[3] = {(float)(rand() % 64 - 32) + *(float *)(entity_ptr + 16),
                               (float)(rand() % 64 - 32) + *(float *)(entity_ptr + 20),
                               (float)(rand() % 32 - 16) + *(float *)(entity_ptr + 24)};
-                FUN_00475220(World == 2 ? 1220 : 1221, p, (float *)(entity_ptr + 28),
+                Particle_Spawn(World == 2 ? 1220 : 1221, p, (float *)(entity_ptr + 28),
                               World == 2 ? (float *)(entity_ptr + 232) : Light, 0, 1.0f, 0);
             }
             break;
 
         // 0x113 — IDA raw L848-850.
         case 0x113:
-            FUN_00451f30(entity_ptr);
+            Combat_SpawnDeathDustParticles(entity_ptr);
             break;
 
         // 0x119 — IDA raw L851-873. Usa el `Light` (1,1,1) del frame compartido.
@@ -4504,10 +4504,10 @@ void __cdecl FUN_004520c0(int entity_ptr)
                     float origin[3];
                     for (int i = 0; i < 10; ++i)
                     {
-                        FUN_004409a0(model,
+                        BMD_TransformPosition(model,
                                      (float *)(*(int *)(entity_ptr + 276) + 48 * (rand() % numBones)),
                                      WorldPosition, origin, '\x01');
-                        FUN_00475220(1195, origin, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                        Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                     }
                 }
                 float L2[3] = { Luminosity, Luminosity * 0.2f, 0.0f };
@@ -4522,8 +4522,8 @@ void __cdecl FUN_004520c0(int entity_ptr)
         case 0x11B:
             if (!(rand() & 3)) {
                 float local[3] = { 0.0f, 0.0f, 0.0f }, origin[3];
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 1056), local, origin, '\x01');
-                FUN_00475220(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1056), local, origin, '\x01');
+                Particle_Spawn(1220, origin, (float *)(entity_ptr + 28), (float *)(entity_ptr + 232), 0, 1.0f, 0);
             }
             break;
 
@@ -4538,8 +4538,8 @@ void __cdecl FUN_004520c0(int entity_ptr)
             *(float *)(entity_ptr + 112) = (float)(WorldTime % 1000) * -0.001f;
             if (!(rand() & 1)) {
                 float p[3];
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 96), WorldPosition, p, '\x01');
-                FUN_00475220(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 96), WorldPosition, p, '\x01');
+                Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             break;
 
@@ -4551,17 +4551,17 @@ void __cdecl FUN_004520c0(int entity_ptr)
             const unsigned char action = *(unsigned char *)(entity_ptr + 261);
             int bone = action == 3 ? 33 : action == 4 ? 20 : action == 8 ? 41 : action == 9 ? 49 : -1;
             if (bone >= 0) {
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * bone), local, origin, '\x01');
-                FUN_00475220(1180, origin, (float *)(entity_ptr + 28), light, 0, 1.0f, 0);
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * bone), local, origin, '\x01');
+                Particle_Spawn(1180, origin, (float *)(entity_ptr + 28), light, 0, 1.0f, 0);
                 float whitePink[3] = { 1.0f, 0.60000002f, 1.0f };
-                FUN_00475220(1195, origin, (float *)(entity_ptr + 28), whitePink, 0, 1.0f, 0);
+                Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), whitePink, 0, 1.0f, 0);
             }
             if (action == 6 && *(float *)(entity_ptr + 264) < 12.0f) {
                 float green[3] = { 0.1f, 0.80000001f, 0.60000002f };
                 for (int i = 0; i < 20; ++i) {
                     const int randomBone = rand() % *(short *)((int)model + 34);
-                    FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * randomBone), local, origin, '\x01');
-                    FUN_00475220(1195, origin, (float *)(entity_ptr + 28), green, 0, 1.0f, 0);
+                    BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * randomBone), local, origin, '\x01');
+                    Particle_Spawn(1195, origin, (float *)(entity_ptr + 28), green, 0, 1.0f, 0);
                 }
             }
             break;
@@ -4573,7 +4573,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 float p[3] = {(float)(rand() % 64 - 32) + *(float *)(entity_ptr + 16),
                               (float)(rand() % 64 - 32) + *(float *)(entity_ptr + 20),
                               (float)(rand() % 32 - 16) + *(float *)(entity_ptr + 24)};
-                FUN_00475220(1221, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                Particle_Spawn(1221, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             break;
 
@@ -4589,34 +4589,34 @@ void __cdecl FUN_004520c0(int entity_ptr)
         case 0x135:
         {
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 28), zero, (float *)(entity_ptr + 76), '\x01');
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 27), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 28), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 27), zero, (float *)(entity_ptr + 64), '\x01');
             break;
         }
         // 0x137 — IDA raw L1011-1015.
         case 0x137:
         {
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 8), zero, (float *)(entity_ptr + 76), '\x01');
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 9), zero, (float *)(entity_ptr + 64), '\x01');
-            FUN_00452030(entity_ptr); FUN_00451f30(entity_ptr);
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 8), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 9), zero, (float *)(entity_ptr + 64), '\x01');
+            Combat_SpawnIdleAmbientParticle(entity_ptr); Combat_SpawnDeathDustParticles(entity_ptr);
             break;
         }
         // 0x138 — IDA raw L1016-1034.
         case 0x138:
         {
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 24), zero, (float *)(entity_ptr + 76), '\x01');
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 25), zero, (float *)(entity_ptr + 64), '\x01');
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 24), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 25), zero, (float *)(entity_ptr + 64), '\x01');
             if (*(int *)(entity_ptr + 4) == 1) {
                 float p[3];
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 288), WorldPosition, p, '\x01');
-                FUN_00475220(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 624), WorldPosition, p, '\x01');
-                FUN_00475220(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 288), WorldPosition, p, '\x01');
+                Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 624), WorldPosition, p, '\x01');
+                Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 float darkness[3] = {-1.3f,-1.3f,-1.3f};
                 AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), darkness, 3, PrimaryTerrainLight[0]);
-            } else { FUN_00452030(entity_ptr); FUN_00451f30(entity_ptr); }
+            } else { Combat_SpawnIdleAmbientParticle(entity_ptr); Combat_SpawnDeathDustParticles(entity_ptr); }
             break;
         }
         // 0x139 / 0x13B — IDA raw L1035-1038 / L1114-1117.
@@ -4625,9 +4625,9 @@ void __cdecl FUN_004520c0(int entity_ptr)
         {
             const int a = entType == 0x139 ? 11 : 8, b = entType == 0x139 ? 12 : 9;
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * a), zero, (float *)(entity_ptr + 76), '\x01');
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * b), zero, (float *)(entity_ptr + 64), '\x01');
-            FUN_00452030(entity_ptr);
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * a), zero, (float *)(entity_ptr + 76), '\x01');
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * b), zero, (float *)(entity_ptr + 64), '\x01');
+            Combat_SpawnIdleAmbientParticle(entity_ptr);
             break;
         }
         // 0x13A — IDA raw L1039-1113.  Las tablas se leyeron de IDA en
@@ -4653,9 +4653,9 @@ void __cdecl FUN_004520c0(int entity_ptr)
             static const unsigned char linksD[8] = {26, 25, 25, 24, 32, 31, 31, 30};
 
             float zero[3] = {0.0f, 0.0f, 0.0f};
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 8), zero,
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 8), zero,
                           (float *)(entity_ptr + 76), '\x01');
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 9), zero,
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 9), zero,
                           (float *)(entity_ptr + 64), '\x01');
 
             if (*(unsigned char *)(entity_ptr + 747) == 63) {
@@ -4663,7 +4663,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 float bones[35][3] = {};
 
                 for (int bone = 0; bone < 35; ++bone) {
-                    FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * boneOrder[bone]),
+                    BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * boneOrder[bone]),
                                   zero, bones[bone], '\x01');
                 }
 
@@ -4671,11 +4671,11 @@ void __cdecl FUN_004520c0(int entity_ptr)
                     float particleLight[3];
                     FUN_0043e4a0(bones[linksA[link + 1]], targetPosition, bones[linksA[link]], 360.0f);
                     particleLight[0] = Luminosity; // IDA sólo escribe este componente (Position[0] = v63).
-                    FUN_00475220(1200, bones[linksA[link]], targetPosition, particleLight, 2,
+                    Particle_Spawn(1200, bones[linksA[link]], targetPosition, particleLight, 2,
                                   link < 22 ? 1.0f : 0.5f, 0);
                     FUN_0043e4a0(bones[linksB[link + 1]], targetPosition, bones[linksB[link]], 360.0f);
                     particleLight[0] = Luminosity;
-                    FUN_00475220(1200, bones[linksB[link]], targetPosition, particleLight, 2,
+                    Particle_Spawn(1200, bones[linksB[link]], targetPosition, particleLight, 2,
                                   link < 22 ? 1.0f : 0.5f, 0);
                 }
 
@@ -4683,18 +4683,18 @@ void __cdecl FUN_004520c0(int entity_ptr)
                     float particleLight[3];
                     FUN_0043e4a0(bones[linksC[link + 1]], targetPosition, bones[linksC[link]], 360.0f);
                     particleLight[0] = Luminosity;
-                    FUN_00475220(1200, bones[linksC[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
+                    Particle_Spawn(1200, bones[linksC[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
                     FUN_0043e4a0(bones[linksD[link + 1]], targetPosition, bones[linksD[link]], 360.0f);
                     particleLight[0] = Luminosity;
-                    FUN_00475220(1200, bones[linksD[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
+                    Particle_Spawn(1200, bones[linksD[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
                 }
 
                 if (!(WorldTime % 2)) {
                     float particleLight[3];
                     FUN_0043e4a0(bones[0], targetPosition, bones[30], 360.0f);
                     particleLight[0] = (float)WorldTime;
-                    FUN_00475220(1200, bones[30], targetPosition, particleLight, 2, 1.3f, 0);
-                    FUN_00475220(1200, bones[1], targetPosition, particleLight, 3, 0.5f, 0);
+                    Particle_Spawn(1200, bones[30], targetPosition, particleLight, 2, 1.3f, 0);
+                    Particle_Spawn(1200, bones[1], targetPosition, particleLight, 3, 0.5f, 0);
                 }
 
                 float darkness[3] = {-1.3f, -1.3f, -1.3f};
@@ -4706,17 +4706,17 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 float light[3] = {effectLight, effectLight * 0.5f, effectLight * 0.5f};
                 float source[3], destination[3];
 
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 2640), WorldPosition, source, '\x01');
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 2976), WorldPosition, destination, '\x01');
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 2640), WorldPosition, source, '\x01');
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 2976), WorldPosition, destination, '\x01');
                 FUN_0043e4a0(source, targetPosition, destination, 360.0f);
-                FUN_00475220(1200, destination, targetPosition, light, 1, 0.2f, 0);
+                Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
 
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 3360), WorldPosition, source, '\x01');
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 3696), WorldPosition, destination, '\x01');
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 3360), WorldPosition, source, '\x01');
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 3696), WorldPosition, destination, '\x01');
                 FUN_0043e4a0(source, targetPosition, destination, 360.0f);
-                FUN_00475220(1200, destination, targetPosition, light, 1, 0.2f, 0);
-                FUN_00452030(entity_ptr);
-                FUN_00451f30(entity_ptr);
+                Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
+                Combat_SpawnIdleAmbientParticle(entity_ptr);
+                Combat_SpawnDeathDustParticles(entity_ptr);
             }
             break;
         }
@@ -4735,15 +4735,15 @@ void __cdecl FUN_004520c0(int entity_ptr)
             float local[3] = { 0.0f, 0.0f, 0.0f }, a[3], b[3];
             const int boneBase = *(int *)(entity_ptr + 276);
             for (int offset = 96; offset < 240; offset += 48) {
-                FUN_004409a0(model, (float *)(boneBase + offset), local, a, '\x01');
-                FUN_004409a0(model, (float *)(boneBase + offset + 48), local, b, '\x01');
-                FUN_0046d840(1254, a, b, (float *)(entity_ptr + 28), 7, 0, 14.0f, -1, 0);
+                BMD_TransformPosition(model, (float *)(boneBase + offset), local, a, '\x01');
+                BMD_TransformPosition(model, (float *)(boneBase + offset + 48), local, b, '\x01');
+                Joint_Create(1254, a, b, (float *)(entity_ptr + 28), 7, 0, 14.0f, -1, 0);
             }
             const int pairs[][2] = {{2,9},{10,11},{9,18},{18,22},{22,23},{23,24},{24,25},{18,31},{31,32},{32,33},{33,34}};
             for (int i = 0; i < 11; ++i) {
-                FUN_004409a0(model, (float *)(boneBase + 48 * pairs[i][0]), local, a, '\x01');
-                FUN_004409a0(model, (float *)(boneBase + 48 * pairs[i][1]), local, b, '\x01');
-                FUN_0046d840(1254, a, b, (float *)(entity_ptr + 28), 7, 0, 14.0f, -1, 0);
+                BMD_TransformPosition(model, (float *)(boneBase + 48 * pairs[i][0]), local, a, '\x01');
+                BMD_TransformPosition(model, (float *)(boneBase + 48 * pairs[i][1]), local, b, '\x01');
+                Joint_Create(1254, a, b, (float *)(entity_ptr + 28), 7, 0, 14.0f, -1, 0);
             }
             break;
         }
@@ -4782,7 +4782,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
             if (curAction == 0 && animFrame >= 5.0f && animFrame <= 6.0f)
             {
                 float sparkOrigin[3];
-                FUN_004409a0(model,
+                BMD_TransformPosition(model,
                              (float *)(*(int *)(entity_ptr + 276) + 816),
                              WorldPosition, sparkOrigin, '\x01');
                 for (int i = 0; i < 4; ++i)
@@ -4791,8 +4791,8 @@ void __cdecl FUN_004520c0(int entity_ptr)
                     Angle[0] = (float)(rand() % 60 + 150);
                     Angle[1] = 0.0f;
                     Angle[2] = (float)(rand() % 30);
-                    FUN_0046d840(1257, sparkOrigin, sparkOrigin, Angle, 0, 0, 10.0f, -1, 0);
-                    FUN_00475220(1175, sparkOrigin, Angle, Light, 0, 1.0f, 0);
+                    Joint_Create(1257, sparkOrigin, sparkOrigin, Angle, 0, 0, 10.0f, -1, 0);
+                    Particle_Spawn(1175, sparkOrigin, Angle, Light, 0, 1.0f, 0);
                 }
             }
             break;
@@ -4813,12 +4813,12 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 float local[3] = { 0.0f, 5.0f, 10.0f }, origin[3];
                 float terrainLight[3] = { Luminosity * 0.5f, Luminosity * 0.30000001f, 0.0f };
                 AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), terrainLight, 3, PrimaryTerrainLight[0]);
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 1776), local, origin, '\x01');
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1776), local, origin, '\x01');
                 for (int i = 0; i < 4; ++i) {
                     float angle[3] = { (float)(rand() % 60 + 90), 0.0f, (float)(rand() % 30) };
-                    FUN_0046d840(1257, origin, origin, angle, 0, 0, 10.0f, -1, 0);
+                    Joint_Create(1257, origin, origin, angle, 0, 0, 10.0f, -1, 0);
                     if (rand() & 1)
-                        FUN_00475220(1175, origin, angle, white, 0, 1.0f, 0);
+                        Particle_Spawn(1175, origin, angle, white, 0, 1.0f, 0);
                 }
             }
             break;
@@ -4829,23 +4829,23 @@ void __cdecl FUN_004520c0(int entity_ptr)
             float p[3];
             if (g_GameState == 5 && World == 7 && WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
-                FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * *(int *)((int)model + 84)), local, p, '\x01');
-                FUN_00475220(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
+                BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * *(int *)((int)model + 84)), local, p, '\x01');
+                Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
             }
             float local[3] = {-15.0f,0.0f,0.0f};
             if (World == 9) {
-                if (!(rand() & 3)) { FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 1248), local, p, '\x01'); FUN_00475220(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
-                if (!(rand() & 3)) { FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 1680), local, p, '\x01'); FUN_00475220(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
+                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1248), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
+                if (!(rand() & 3)) { BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1680), local, p, '\x01'); Particle_Spawn(104,p,(float *)(entity_ptr+28),Light,0,1.0f,0); }
             }
             if (*(unsigned char *)(entity_ptr + 261) == 90) {
                 const short n = *(short *)((int)model + 34);
                 if (n > 0) for (int i = 0; i < 10; ++i) {
-                    FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * (rand() % n)), local, p, '\x01');
-                    FUN_00475220(1195,p,(float *)(entity_ptr+28),Light,0,1.0f,0);
+                    BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * (rand() % n)), local, p, '\x01');
+                    Particle_Spawn(1195,p,(float *)(entity_ptr+28),Light,0,1.0f,0);
                 }
             }
             float tail[3] = {0.0f,-30.0f,0.0f};
-            FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * *(unsigned char *)(entity_ptr + 628)), tail, p, '\x01');
+            BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * *(unsigned char *)(entity_ptr + 628)), tail, p, '\x01');
             break;
         }
 
@@ -4876,7 +4876,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
 
 // FUN_00454cd0 @ 0x00454CD0 — Entity_PathTick(entity, player_entity)
 // Tick de camino por frame: si +0x2fd (teleport) está seteado → saltea. Si +0x2ec (flag de movimiento) está seteado →
-//   avanza el waypoint (FUN_0043ea20), y al llegar limpia +0x2ec y cancela la acción.
+//   avanza el waypoint (Entity_AdvancePath), y al llegar limpia +0x2ec y cancela la acción.
 // Si no se está moviendo y la grilla objetivo difiere del cached_wp → llama a PathFinding2.
 // param_1 es el puntero a la entidad (Ghidra lo tipó float — castear a int).
 void __cdecl FUN_00454cd0(int param_1_i, int param_2)
@@ -4901,7 +4901,7 @@ void __cdecl FUN_00454cd0(int param_1_i, int param_2)
     if (*(char*)(entity + 0x2ec) != '\0') {
         // Entity is currently moving — advance one step
         FUN_00443930(entity);
-        unsigned int arrived = FUN_0043ea20((void*)entity, '\x01');
+        unsigned int arrived = Entity_AdvancePath((void*)entity, '\x01');
         if ((char)arrived != '\0') {
             // Arrived at waypoint — stop
             *(unsigned char*)(entity + 0x2ec) = 0;
@@ -4928,7 +4928,7 @@ void __cdecl FUN_00454cd0(int param_1_i, int param_2)
         return;
 
     // Pathfind desde cached_wp hasta target_grid
-    unsigned int found = FUN_0043f3e0(cachedX, (float)cachedY,
+    unsigned int found = Path_FindRoute(cachedX, (float)cachedY,
                                       (unsigned int)*(unsigned char*)(entity + 0x306),
                                       (unsigned int)*(unsigned char*)(entity + 0x307),
                                       (unsigned char*)(entity + 0x354), 0.0f);
@@ -4937,9 +4937,9 @@ void __cdecl FUN_00454cd0(int param_1_i, int param_2)
     }
 }
 
-// UI_OpenWindow alias (FUN_0047fae0)
+// UI_OpenWindow alias (UI_AddNotice)
 void __cdecl UI_OpenWindow(char* title, int mode) {
-    FUN_0047fae0(title, (unsigned char)mode);
+    UI_AddNotice(title, (unsigned char)mode);
 }
 
 // FUN_004f8eb0 @ 0x004f8eb0 — CreateFrustrum2D
@@ -4977,11 +4977,11 @@ void __cdecl FUN_004f8eb0(float *param_1)
     pts[9]  =  angle_cb8; pts[10] =  -672.0f; pts[11] = 0.0f;  // bot-right
     pts[12] = -angle_cb8; pts[13] =  -672.0f; pts[14] = 0.0f;  // bot-left
 
-    FUN_004f9db0(pts, rot);   // AngleMatrix (Euler→3x4)
+    Matrix_BuildFromEuler(pts, rot);   // AngleMatrix (Euler→3x4)
 
     for (int i = 0, j = 0; i < 0x30; j += 4, i += 0xc) {
         float *pfVar1 = (float*)((char*)out + i);
-        FUN_004fa0b0((float*)((char*)pts + i + 0xc), rot, pfVar1);  // VectorRotate
+        Vector_Rotate((float*)((char*)pts + i + 0xc), rot, pfVar1);  // VectorRotate
         pfVar1[0] += param_1[0];
         pfVar1[1] += param_1[1];
         pfVar1[2] += param_1[2];

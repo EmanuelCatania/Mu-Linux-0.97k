@@ -293,7 +293,7 @@ LAB_00504925:
 void __cdecl FUN_00440a30(void *model, float *bone_mat, float *pos_in, float *pos_out)
 {
   // 1. Rotate-only transform: pos_out = bone_rotation_3x3 * pos_in (no translation)
-  FUN_004fa0b0(pos_in, bone_mat, pos_out);
+  Vector_Rotate(pos_in, bone_mat, pos_out);
   // 2. Scale by model scale (model[+0x68])
   if (model) {
     float sc = *(float*)((char*)model + 0x68);
@@ -315,6 +315,6 @@ void __cdecl FUN_004553c0(void *model, int type, int bone_idx, float scale, floa
 {
   float world_pos[3];
   float world_col[3];
-  FUN_004409a0(model, (float *)((int)model + bone_idx * 0x30), world_pos, world_col, 1);
+  BMD_TransformPosition(model, (float *)((int)model + bone_idx * 0x30), world_pos, world_col, 1);
   FUN_004795c0((unsigned short)type, world_pos, scale, color, entity, 0.0f, 0);
 }

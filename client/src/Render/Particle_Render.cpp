@@ -24,7 +24,7 @@
 // ── PER-FRAME UPDATES (each active particle) ─────────────────────────────────
 //
 //   _rand()                — advance RNG state
-//   FUN_00511710()         — frame counter / timing update (used for 0x4f1 orbit angle)
+//   GL_SetBlendAdditive()         — frame counter / timing update (used for 0x4f1 orbit angle)
 //
 // ── PARTICLE TYPE SWITCH ──────────────────────────────────────────────────────
 //
@@ -56,7 +56,7 @@
 //     → FUN_004f8bb0(0x4f0, x, y, scale, scale, &local_c, z_neg, 1.0)
 //
 //   case 0x4f1  (Circular orbit / portal ring):
-//     FUN_00511710()   — get frame time
+//     GL_SetBlendAdditive()   — get frame time
 //     fVar6 = (frame_counter % 0xe10) * _DAT_00552a00  (rotation angle, 0-3600°)
 //     if piVar2[-0x17] == 2:
 //       if piVar2[0] < 0xb: size = 1.0 - (10-count)*1.0
@@ -82,7 +82,7 @@
 // ── FUNCTION CROSS-REFERENCE ─────────────────────────────────────────────────
 //
 //   FUN_004f8bb0  → Particle_Draw(type, x, y, w, h, color, z, alpha)
-//   FUN_00511710  → Frame_GetTime() or Frame_UpdateCounter()
+//   GL_SetBlendAdditive  → Frame_GetTime() or Frame_UpdateCounter()
 //   FUN_00473ea0  → Particle_SpawnOrbit(type, pos, r_min, r_mid, r_max, angle, flag, param)
 //   _rand         → MSVC rand()
 //   DAT_005526e4  → g_DeltaTime (float, seconds per frame)
@@ -97,7 +97,7 @@ extern "C" void DbgLogPublic(const char*);   // [DIAG TEMP #4]
 // =============================================================================
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 648-789 (142 lines)
 // =============================================================================
-// FUN_0046be40 @ 0x0046BE40 — Particle_Render
+// IDA: FUN_0046be40 @ 0x0046BE40 — Particle_RenderAll
 // 2026-05-07: port FIEL desde IDA mu97k-src-IDA/raw/0046BE40_Particle_Render.c.
 // Itera el effect pool DAT_07b11670 (200 slots × 0x1BC bytes). Para cada slot
 // activo y visible, despacha por type code (1191/1200/1264/1265) llamando a
@@ -119,7 +119,7 @@ extern "C" void DbgLogPublic(const char*);   // [DIAG TEMP #4]
 //   +96    lifetime counter (int at v1+0)
 //   +352   visible flag (byte at v1+256)
 // (RenderTerrainAlphaBitmap declared in functions.h; FUN_00473ea0 too)
-void __cdecl FUN_0046be40(void)
+void __cdecl Particle_RenderAll(void)
 {
     char* base = (char*)&DAT_07b11670[0];
     for (int i = 0; i < 200; ++i) {
@@ -139,7 +139,7 @@ void __cdecl FUN_0046be40(void)
         // IDA 0046BE40: EnableAlphaBlend().  00511790 is the separate
         // "minus" blend mode; using it here makes the normal particle pass
         // differ from the original blend equation.
-        FUN_00511710();
+        GL_SetBlendAdditive();
 
         switch (typeCode) {
         case 1191: {
@@ -203,7 +203,7 @@ void __cdecl FUN_0046be40(void)
         }
         case 1265: {
             // IDA repeats EnableAlphaBlend for type 1265.
-            FUN_00511710();
+            GL_SetBlendAdditive();
             float v24 = (float)(((__int64)WorldTime) % 3600) * 0.1f;
             float v5 = 1.0f;
             float v0val = 0.0f;
