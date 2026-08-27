@@ -96,14 +96,14 @@ extern float   _DAT_00552530;  // blend tex factor
 #define RENDER_MODE_METAL   8.96831e-44f
 
 // GL state helpers — aliases to the actual FUN_ addresses
-#define BindTexture(x)          FUN_00511480(x)
-#define EnableAlphaBlend()      FUN_00511710()
-#define EnableAlphaBlendMinus() FUN_00511790()
-#define EnableLightMap()        FUN_00511890()
-#define EnableAlphaTest(x)      FUN_00511680(x)
-#define DisableAlphaBlend()     FUN_00511600()
-#define DisableTexture(x)       FUN_00511590(x)
-#define DisableDepthMask()      FUN_00511530()
+#define BindTexture(x)          GL_BindTextureSlot(x)
+#define EnableAlphaBlend()      GL_SetBlendAdditive()
+#define EnableAlphaBlendMinus() GL_SetBlendSrcAlpha()
+#define EnableLightMap()        GL_EnableLightMap()
+#define EnableAlphaTest(x)      GL_SetBlendSrcOver(x)
+#define DisableAlphaBlend()     GL_ResetState()
+#define DisableTexture(x)       GL_SetAlphaTest(x)
+#define DisableDepthMask()      GL_DisableDepthWrites()
 
 extern "C" { void DbgLogPublic(const char*); }
 extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
@@ -682,5 +682,5 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
     // frontales, y cada mesh sucesivo blendea sobre el anterior). El binario
     // original hace EnableDepthMask en los setters de estado entre meshes,
     // pero en nuestra versión el cache DAT_083a42e8 quedaba desincronizado.
-    FUN_00511510();  // EnableDepthMask
+    GL_EnableDepthWrites();  // EnableDepthMask
 }

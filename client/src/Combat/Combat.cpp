@@ -67,7 +67,7 @@
 //     0x8B  horse attack #1 (DK)
 //     0x8C  horse attack #1 (DW)
 //
-// ─── ENTITY_MELEEATTACKSTART (0x00474310) ──────────────────────────────────────────────────────────────────────────
+// ─── ENTITY_MELEEATTACKSTART (legacy helper; no verified FUN mapping) ───────────────────────────────────────────────
 //
 //   void Entity_MeleeAttackStart(int entity_ptr):
 //     FUN_00443e70()                      — reset sonido/efecto global
@@ -420,7 +420,7 @@
 //   PacketHandler_0x22  @ 0x0042f360  — HP/MP update
 //   PacketHandler_0x23  @ 0x0042f690  — Equip/inventory result
 //   Entity_SetAnimation @ 0x0043e820  — set anim con bounds check
-//   Entity_MeleeAttackStart @ 0x00474310 — melee hit + particle + UI
+//   Entity_MeleeAttackStart — legacy helper; no verified FUN mapping.
 //   Entity_AttackEffect @ 0x004741e0  — weapon bone trail particles
 //   Entity_FindByIdAndType @ 0x0045bfa0
 //   Entity_FindOrSpawn  @ 0x0045ccf0
@@ -473,15 +473,15 @@ extern "C" BYTE OffsetInventoryItems[];
 
 // =============================================================================
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 6475-7690 (1216 lines)
-// FUN_00491c40 (Send_MovePacket), FUN_0049cbf0 (Attack), FUN_0048ba70 (CheckArrow),
-// FUN_0048a180 (UseSkillElf stub), FUN_0048d640 (Action big switch),
+// Combat_SendMovePathPacket (Send_MovePacket), Combat_DispatchHeroSkillAttack (Attack), Combat_CheckArrowRequirement (CheckArrow),
+// Combat_UseElfSkill (UseSkillElf stub), Combat_ProcessQueuedAction (Action big switch),
 // + Send_MovePacket_Player_legacy_stub, FUN_004f6c30 (Terrain_GetAttrDirect)
 // =============================================================================
-// FUN_00491c40 @ 0x00491C40 — Send_MovePacket(entity_ptr, player_entity_ptr)
+// IDA: FUN_00491c40 @ 0x00491C40 — Send_MovePacket(entity_ptr, player_entity_ptr)
 // Sends opcode 0x10 movement packet: C1 len 10 wp_count target_x target_y facing path[wp_count]
 // Codifica con XOR usando la clave hardcodeada de 32 bytes. Saltea si la entidad tiene el bit 0x20 en +0x78.
 // wp_count se limita a 0xe. Setea DAT_00559bec = pkt_size_code.
-void __cdecl FUN_00491c40(int param_1, int param_2)
+void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 {
     // Saltea si la entidad en param_2+0x78 tiene el flag 0x20 seteado (entidad ocupada/bloqueada)
     if ((*(unsigned char*)(param_2 + 0x78) & 0x20) == 0x20)
@@ -501,7 +501,7 @@ void __cdecl FUN_00491c40(int param_1, int param_2)
         wpCount = 0xe;
 
     // 2026-05-05 BUG-FIX: el packet de move tenía la nibble inversa y length
-    // fijo. Per IDA decompile FUN_00491c40 + server CGMoveRecv:
+    // fijo. Per IDA decompile Combat_SendMovePathPacket + server CGMoveRecv:
     //   path[0] = (dir0 << 4) | (wpCount - 1)
     //   path[1..] cada byte packs 2 dirs: high=dir[2k+1], low=dir[2k+2]
     //   total length = 5 + ((wpCount >> 1) + 1) bytes
@@ -512,7 +512,7 @@ void __cdecl FUN_00491c40(int param_1, int param_2)
     pkt[0] = 0xC1;
     // length set abajo
     pkt[2] = 0x10;        // PROTOCOL_CODE1 (move opcode)
-    // 2026-05-05 BUG-FIX: IDA decompile FUN_00491c40 muestra que pkt[3]/pkt[4]
+    // 2026-05-05 BUG-FIX: IDA decompile Combat_SendMovePathPacket muestra que pkt[3]/pkt[4]
     // son `entity[+0x357]` y `entity[+0x366]` = path_wp_x[0]/path_wp_y[0]
     // (= START de la path = current grid pos), NO entity[+0x306]/[+0x307]
     // (= target del último move server-confirmed). Server lee pkt[3]/[4] como
@@ -605,7 +605,7 @@ void __cdecl FUN_00491c40(int param_1, int param_2)
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// FUN_0049cbf0 @ 0x0049CBF0 — Attack(c)  [PORTED 2026-05-05]
+// IDA: FUN_0049cbf0 @ 0x0049CBF0 — Attack(c)  [PORTED 2026-05-05]
 //
 // Tamaño binario: 62649 bytes (la función más grande del cliente).
 // Decompile IDA: 10112 líneas con cientos de stack vars de obfuscation.
@@ -694,7 +694,7 @@ static DWORD g_dwLatestTeleportRequest_Attack = 0;
 
 extern "C" int g_MouseOnWindow;   // Game/Player_InputTick.cpp
 
-void __cdecl FUN_0049cbf0(void *entity_v)
+void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v)
 {
     char* entity = (char*)entity_v;
     if (!entity) return;
@@ -1064,13 +1064,13 @@ void __cdecl FUN_0049cbf0(void *entity_v)
             if (ttype == 1 && iType >= 26 && iType <= 28) {
                 // Elf buff (Heal/Greater Defense/Greater Damage) — UseSkillElf
                 seedRuntimeTarget(iType);
-                FUN_0048a180((int)entity, (int)entity);
+                Combat_UseElfSkill((int)entity, (int)entity);
                 return;
             }
         }
         if (iType == 0x18) {
             seedRuntimeTarget(iType);
-            FUN_0048a180((int)entity, (int)entity);
+            Combat_UseElfSkill((int)entity, (int)entity);
             return;
         }
         // Attack.c's later low-skill phase handles these through C3:1E.  It
@@ -1107,7 +1107,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         if (iType >= 26 && iType <= 28) {
             if (FUN_004830b0(heroGX, heroGY, (int)DAT_07e016c0, (int)DAT_07e016c4)) {
                 seedRuntimeTarget(iType);
-                FUN_0048a180((int)entity, (int)entity);
+                Combat_UseElfSkill((int)entity, (int)entity);
             } else if (FUN_0043f3e0(heroGX, heroGY, (int)DAT_07e016c0, (int)DAT_07e016c4,
                                     (unsigned char*)(entity + 852), (float)skillRange) != 0) {
                 entity[748] = 1;
@@ -1408,7 +1408,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         float maxDist = (float)skillRange * 1.2f * 100.0f;
         if (dist2 <= maxDist * maxDist) {
             Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
-            FUN_00485780((int)entity, (int)entity);
+            Combat_UseWarriorSkill((int)entity, (int)entity);
         } else if (FUN_0043f3e0(heroGX, heroGY, tgtGX, tgtGY,
                                 (unsigned char*)(entity + 852), (float)skillRange * 1.2f) != 0) {
             entity[748] = 1;
@@ -1433,7 +1433,7 @@ void __cdecl FUN_0049cbf0(void *entity_v)
         float maxDist = (float)skillRange * 100.0f;
         if (dist2 <= maxDist * maxDist && FUN_004830b0(heroGX, heroGY, tgtGX, tgtGY)) {
             Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
-            FUN_0048a180((int)entity, (int)entity);
+            Combat_UseElfSkill((int)entity, (int)entity);
         } else if (FUN_0043f3e0(heroGX, heroGY, tgtGX, tgtGY,
                                 (unsigned char*)(entity + 852), (float)skillRange) != 0) {
             entity[748] = 1;
@@ -1497,12 +1497,12 @@ void __cdecl FUN_0049cbf0(void *entity_v)
     UseSkillWizard_stub((DWORD)entity, (DWORD)entity);
 }
 
-// FUN_0048ba70 @ 0x0048BA70 — CheckArrow(void)
+// IDA: FUN_0048ba70 @ 0x0048BA70 — CheckArrow(void)
 // Chequea si el personaje del jugador es de clase elfo/arco, que necesita flechas.
 // Reads CharacterMachine (DAT_07cf1ffc) offsets [0x86] = class, [0x97] = sub-class (DWORD-indexed).
 // Devuelve 1 si la clase puede usar flechas y tiene el equipo correcto, 0 si no.
 // All anti-tamper hash table operations (MAIN_HASH_CLASS) skipped per project policy.
-char __cdecl FUN_0048ba70(void)
+char __cdecl Combat_CheckArrowRequirement(void)
 {
     // anti-tamper hash table — skipped
     DWORD* pMachine = (DWORD*)DAT_07cf1ffc;
@@ -1551,14 +1551,14 @@ char __cdecl FUN_0048ba70(void)
 // 0x0048D640 se llama "Action" (despachador de acciones — pickup/equip/attack/
 // skill — basado en `*(c+749)` queue), NO un sender de packet 0x10.
 //
-// Sin embargo, los call-sites existentes de FUN_0048d640() en nuestro codebase
+// Sin embargo, los call-sites existentes de Combat_ProcessQueuedAction() en nuestro codebase
 // (5 en Player_InputTick, 1 en stubs/UseSkillWarrior) fueron escritos contra
 // este stub y dependen de su comportamiento de "enviar packet 0x10 cuando el
-// pathfind falla / cancela". Cambiar FUN_0048d640 al Action real rompería
+// pathfind falla / cancela". Cambiar Combat_ProcessQueuedAction al Action real rompería
 // el envío de move-packets en runtime.
 //
 // Estrategia: este stub mantiene su comportamiento original (renombrado para
-// que callers apunten a él explícitamente). FUN_0048d640 abajo es ahora el
+// que callers apunten a él explícitamente). Combat_ProcessQueuedAction abajo es ahora el
 // Action real con signature (DWORD c, DWORD o) tomada de IDA.
 //
 // Comportamiento (sin cambios respecto del stub original):
@@ -1575,7 +1575,7 @@ void __cdecl Send_MovePacket_Player_legacy_stub(void)
 
     // Punto de entrada de compatibilidad: usa el emisor C1 verificado. La copia local
     // vieja ponía el opcode 0x10 en el byte 3 y después envolvía el paquete como C3.
-    FUN_00491c40((int)(intptr_t)entity, (int)(intptr_t)entity);
+    Combat_SendMovePathPacket((int)(intptr_t)entity, (int)(intptr_t)entity);
     return;
 
     unsigned char wpCount = *(unsigned char*)(entity + 0x356);
@@ -1590,7 +1590,7 @@ void __cdecl Send_MovePacket_Player_legacy_stub(void)
     else
         DAT_00559bec = (unsigned int)wpCount * 3 + 4;
 
-    // Clave XOR (la misma que FUN_00491c40 / el paquete de login)
+    // Clave XOR (la misma que Combat_SendMovePathPacket / el paquete de login)
     static const unsigned char xorKey[32] = {
         0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
         0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
@@ -1716,12 +1716,12 @@ static void Combat_SendDurationSkill97k(char* entity, int skillType, int action,
 }
 
 // C3:1D es la segunda mitad de un casteo multi-objetivo. El
-// FUN_00485780/0045FDB0 de IDA arma este paquete después de su pedido de duración: el
+// Combat_UseWarriorSkill/0045FDB0 de IDA arma este paquete después de su pedido de duración: el
 // cliente enumera su tabla de personajes visibles y aporta los IDs de objeto del
 // server. El server sigue siendo la autoridad sobre el radio real del skill y
 // target validity (CGMultiSkillAttackRecv -> CheckSkillRadio).
 //
-// Layout recovered from FUN_00485780:
+// Layout recovered from Combat_UseWarriorSkill:
 //   C1 size 1D skill x y serial count [target-id big-endian] * count
 // Conservamos a propósito los predicados originales de la tabla que hacen falta para los monstruos:
 // active (+0), drawable (+352), alive (!+765), category monster (+132 == 2).
@@ -1823,7 +1823,7 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// FUN_0048d640 @ 0x0048D640 — Action(DWORD c, DWORD o)
+// IDA: FUN_0048d640 @ 0x0048D640 — Action(DWORD c, DWORD o)
 //
 // IDA companion: raw/0048D640_Action.c — 2587 lines, 17558 bytes.
 //
@@ -1888,8 +1888,8 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 //   PathFinding2            FUN_0043f3e0 — pathfind helper (returns 0/1)
 //   Movement_Tick           FUN_0043e050 — atan2-based facing-toward (CreateAngle)
 //   CheckWall               FUN_004830b0 — line-of-sight tile check (PathRange_Check)
-//   UseSkillWarrior         FUN_00485780
-//   UseSkillElf             FUN_0048a180
+//   UseSkillWarrior         Combat_UseWarriorSkill
+//   UseSkillElf             Combat_UseElfSkill
 //   SetPlayerStop           FUN_004430c0 — sets idle anim
 //   PlayBuffer              FUN_00404bc0 — sound effect by id
 //   SetAction               FUN_0043e820 — set entity action
@@ -1901,7 +1901,8 @@ static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
 // 2026-06-17: dejar de rutear Elf→Warrior. El proyecto ya tiene
 // `SkillElf_stub` y ése es el helper correcto para los skills de soporte/elf
 // dentro de este branch de combate.
-void __cdecl FUN_0048a180(int c, int o) {
+// IDA: FUN_0048a180 @ 0x0048A180
+void __cdecl Combat_UseElfSkill(int c, int o) {
     (void)o;
     if (DAT_07cf1ff4 != 0) {
         if (SkillElf_stub((DWORD)c, (DWORD)DAT_07cf1ff4))
@@ -1914,7 +1915,7 @@ void __cdecl FUN_0048a180(int c, int o) {
 // functions.h con los mismos prototipos; los re-declaramos localmente para evitar
 // implicit-decl warnings if a particular helper hasn't been wired up yet.
 //
-// FUN_004889d0 (UseSkillWizard) está portada como UseSkillWizard_stub en
+// IDA: FUN_004889D0 is ported as UseSkillWizard_stub in
 // stubs_game.cpp y es el emisor de skill directo que usa Action en el case 4.
 
 // Aliases to match IDA companion variable names
@@ -1930,7 +1931,7 @@ void __cdecl FUN_0048a180(int c, int o) {
 #define ACTION_HERO          ((char*)DAT_07abf5d8)
 #endif
 
-void __cdecl FUN_0048d640(DWORD c, DWORD o)
+void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
 {
     if (c == 0 || o == 0) return;
 
@@ -2265,7 +2266,7 @@ void __cdecl FUN_0048d640(DWORD c, DWORD o)
         }
 
         // ── 4. Send move packet (always, unless cave returned above) ───────────────────────────
-        FUN_00491c40((int)c, (int)o);
+        Combat_SendMovePathPacket((int)c, (int)o);
         *(unsigned char*)(c + 854) = 0;
 
         // ── 5. v309 secondary packet (anim 139/140 + action 109) ───────────────────────────────────────
@@ -2394,7 +2395,7 @@ void __cdecl FUN_0048d640(DWORD c, DWORD o)
                 }
             } else {
                 seedRuntimeTarget();
-                FUN_00485780((int)c, (int)o);  // UseSkillWarrior
+                Combat_UseWarriorSkill((int)c, (int)o);  // UseSkillWarrior
             }
             break;
 
@@ -2404,7 +2405,7 @@ void __cdecl FUN_0048d640(DWORD c, DWORD o)
             if (inRange && !forceWalk) {
                 if (FUN_004830b0(heroGX, heroGY, tgtGX, tgtGY)) {
                     seedRuntimeTarget();
-                    FUN_0048a180((int)c, (int)o);  // UseSkillElf (AOE)
+                    Combat_UseElfSkill((int)c, (int)o);  // UseSkillElf (AOE)
                 } else if (FUN_0043f3e0(heroGX, heroGY, tgtGX, tgtGY,
                                         (unsigned char*)(c + 852), (float)skillRange)) {
                     *(unsigned char*)(c + 748) = 1;
@@ -2422,7 +2423,7 @@ void __cdecl FUN_0048d640(DWORD c, DWORD o)
             if (inRange && !forceWalk) {
                 if (FUN_004830b0(heroGX, heroGY, tgtGX, tgtGY)) {
                     seedRuntimeTarget();
-                    FUN_0048a180((int)c, (int)o);
+                    Combat_UseElfSkill((int)c, (int)o);
                 } else if (FUN_0043f3e0(heroGX, heroGY, tgtGX, tgtGY,
                                         (unsigned char*)(c + 852), (float)skillRange)) {
                     *(unsigned char*)(c + 748) = 1;

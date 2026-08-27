@@ -223,7 +223,7 @@ void Game_EnterWorldTick(void)
         DAT_083a4124 = 0;   // single-click flag
         Clk_Watch("scene-init");
 
-        FUN_0050ff50();
+        Scene_LoadCharSelectResources(); // FUN_0050ff50 (IDA)
         Clk_Watch("after-FUN_0050ff50");
 
         // Spawn background object 0xA4 at origin
@@ -248,7 +248,7 @@ void Game_EnterWorldTick(void)
             FUN_00404bc0(0x1b, 0, 0);
         }
 
-        FUN_004cbdf0();
+        Net_ProcessReceiveQueue();
 
         // Anti-tamper: register DAT_07cf1ffc in hash table
         {
@@ -391,8 +391,8 @@ void Game_EnterWorldTick(void)
 
     // ── CHARACTER SELECTION (no char selected yet) ────────────────────────────
     if (DAT_005616b0 == -1) {
-        FUN_00511600();  // render char list
-        CLK_WATCH("after-FUN_00511600");
+        GL_ResetState();  // render char list
+        CLK_WATCH("after-GL_ResetState");
 
         int dialogY = DAT_005616a4;
 
@@ -665,7 +665,7 @@ void Game_EnterWorldTick(void)
                 if (ulen < 4) {
                     if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x7a; else DAT_083a7c28 = 0x7a;
                 } else {
-                    if (FUN_00513570() == '\0' && FUN_00406b30((BYTE*)DAT_07db8710) == '\0') {
+                    if (Chat_ValidateInputCommand() == '\0' && FUN_00406b30((BYTE*)DAT_07db8710) == '\0') {
                         DAT_083a7c18 = 0x1c;
                         DAT_083a7c24 = DAT_083a7c28;
                         DAT_083a7c28 = 0;
@@ -831,8 +831,8 @@ void Game_EnterWorldTick(void)
 
                 DAT_005615c0  = 3;  // g_GameState = Loading
                 DAT_083a7c4a  = 0;  // reset Scene_Loading init guard
-                FUN_005102c0();     // world loading kickoff
-                FUN_00404c60(5);    // BGM_Stop(5)
+                Scene_UnloadCharSelectResources(); // FUN_005102c0 (IDA) — world loading kickoff
+                Sound_StopBuffer(5);
             }
         }
         break;

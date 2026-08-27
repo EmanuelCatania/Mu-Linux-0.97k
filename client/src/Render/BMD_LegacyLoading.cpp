@@ -45,8 +45,8 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 #endif
 
 
-// FUN_0050b510 — implemented in src/Monster/Monster_Data.cpp
-// FUN_0047d020 — implemented in src/Monster/Monster_Data.cpp
+// Monster_LoadScriptTable — implemented in src/Monster/Monster_Data.cpp
+// Monster_ParseSetBase2 — implemented in src/Monster/Monster_Data.cpp
 // FUN_00505bd0 @ 0x00505BD0 — Model_SetSlotIndex(index): sets active model slot index.
 void __cdecl FUN_00505bd0(int param_1) {
     DAT_083a4104 = 0;

@@ -99,7 +99,7 @@ void FUN_004736e0(void)
 // efecto rojo del char seleccionado se renderizaba como una línea horizontal
 // en el suelo (mile-of-vertices) en vez de un anillo vertical alrededor del
 // personaje. Reemplazado por arrays float[4][3] explícitos.
-// Mismo patrón que FUN_005112f0 (mouse-ray) y FUN_004f70b0 (terrain normals).
+// Mismo patrón que Camera_BuildMouseRay (mouse-ray) y FUN_004f70b0 (terrain normals).
 void __cdecl
 FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,undefined4 param_5,
             float param_6,undefined4 param_7,float param_8)
@@ -112,7 +112,7 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
   float angles[3];
   float input_vec[3];
 
-  FUN_00511480(param_1);
+  GL_BindTextureSlot(param_1);
 
   // Verts 0,1: white (1.0f bits = 0x3f800000); Verts 2,3: param_7 alpha bits.
   colors[0][0] = colors[0][1] = colors[0][2] = 0x3f800000;
@@ -193,7 +193,7 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
 // FUN_00474f90 — Effect_DrawQuad
 // Draws a world-space textured quad (GL_QUADS) at param_2 position,
 // rotated by param_4 around Z axis, with half-size param_3.
-// Uses FUN_00511710 to set blend mode.
+// Uses GL_SetBlendAdditive to set blend mode.
 void __cdecl FUN_00474f90(int param_1,undefined4 *param_2,float param_3,undefined4 param_4)
 {
   float local_30;
@@ -209,8 +209,8 @@ void __cdecl FUN_00474f90(int param_1,undefined4 *param_2,float param_3,undefine
   float local_8;
   undefined4 local_4;
 
-  FUN_00511480(param_1);
-  FUN_00511710();
+  GL_BindTextureSlot(param_1);
+  GL_SetBlendAdditive();
   glPushMatrix();
   glTranslatef(*(float*)&param_2[0],*(float*)&param_2[1],*(float*)&param_2[2]);
   // BUG-FIX: 0x3f800000 son los bits de 1.0f. Pasarlos como int → C
@@ -240,7 +240,7 @@ void __cdecl FUN_00474f90(int param_1,undefined4 *param_2,float param_3,undefine
   glVertex3fv(&local_24);
   glEnd();
   glPopMatrix();
-  FUN_00511600();
+  GL_ResetState();
   return;
 }
 

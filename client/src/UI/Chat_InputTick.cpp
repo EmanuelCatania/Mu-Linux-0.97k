@@ -936,7 +936,7 @@ void __cdecl FUN_004b14f0(void)
                                 BYTE b   = buf[i];
                                 DWORD ki = (DWORD)i & 0x8000000fu;
                                 if ((int)ki < 0) ki = (ki - 1 | 0xfffffff0u) + 1;
-                                b = (BYTE)(((BYTE *)&DAT_00559050)[ki] ^ b + 0x47) + 0x23;
+                                b = (BYTE)(((BYTE *)&PacketXorKey16)[ki] ^ b + 0x47) + 0x23;
                                 buf[i] = b;
                                 if (i < 0x583) buf[i] ^= buf[i + 1];
                             }
@@ -964,7 +964,7 @@ void __cdecl FUN_004b14f0(void)
                                 DWORD ki = i & 0x8000000fu;
                                 if ((int)ki < 0) ki = (ki - 1 | 0xfffffff0u) + 1;
                                 b = (BYTE)(b + 0x47);
-                                b = (BYTE)(((BYTE *)&DAT_00559050)[ki] ^ b) + 0x23;
+                                b = (BYTE)(((BYTE *)&PacketXorKey16)[ki] ^ b) + 0x23;
                                 buf[i] = b;
                                 if (i < 0x583) buf[i] ^= buf[i + 1];
                                 buf[i] ^= (BYTE)rand();

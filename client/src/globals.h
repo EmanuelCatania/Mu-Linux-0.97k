@@ -190,7 +190,10 @@ extern DWORD   DAT_00552d4c;
 extern DWORD   DAT_005538a0;
 
 // ── Entity / render constants (0x005590xx – 0x00559dxx) ───────────────────────
-extern BYTE    DAT_00559050[16];   // 16-byte XOR key table (Crypto/anti-tamper)
+extern BYTE    PacketXorKey16[16];   // DAT_00559050 — 16-byte XOR key table (Crypto/anti-tamper)
+// DAT_00559050 is retained only as a reference alias for stubs_IDA_ports.cpp,
+// which is intentionally preserved as IDA infrastructure.
+extern BYTE (&DAT_00559050)[16];
 extern float  _DAT_00559070;   // Verlet physics damping/gravity scalar
 extern DWORD   DAT_00559070;
 extern DWORD   DAT_005590ac;
@@ -201,7 +204,7 @@ extern float   ChatListBox_TabButtonsY;       // DAT_005590b4 — Y de los tres
 extern float   ChatListBox_TabButtonSpacing;  // DAT_005590b8 — separación horizontal
 extern BYTE    DAT_0055961c[5];    // Version — obfuscated as Version[i]-i-1 in login pkt
 extern BYTE    DAT_00559624[16];   // Serial — sent raw in login pkt
-extern DWORD   DAT_00559678;
+extern DWORD   PacketXorKey3; // DAT_00559678 — 3-byte packet XOR key
 extern float  _DAT_00559680;   // LOD factor
 extern DWORD   DAT_00559680;
 extern DWORD   DAT_00559684;
@@ -290,8 +293,8 @@ extern DWORD   DAT_0055a7c0;
 extern DWORD   DAT_0056154c;
 extern DWORD   DAT_00561550;
 extern DWORD   DAT_00561554;
-extern float   DAT_005616b4;   // CameraDistanceTarget (MoveMainCamera smoothing)
-extern float   DAT_083a45d0;   // CameraDistance (MoveMainCamera)
+extern float   CameraDistanceTarget;   // DAT_005616B4: MoveMainCamera smoothing target
+extern float   CameraDistance;         // DAT_083A45D0: current MoveMainCamera distance
 extern DWORD   DAT_0056156c;
 extern DWORD   DAT_00561570;
 extern DWORD   DAT_00561574;
@@ -963,7 +966,7 @@ extern float   DAT_083a4138;   // terrain pick Z result
 extern DWORD   DAT_083a413c;
 // DAT_083a4140 es un buffer de 48 bytes (matrix 3×4 floats) — ver globals.cpp.
 // DAT_083a414c / DAT_083a415c / DAT_083a416c son referencias a índices 3/7/11
-// del mismo array; comparten memoria para que FUN_005111d0 (que escribe 12
+// del mismo array; comparten memoria para que GL_GetModelViewMatrix (que escribe 12
 // DWORDs) no desborde sobre globales vecinos.
 extern DWORD   DAT_083a4140[12];
 extern DWORD&  DAT_083a414c;
@@ -973,16 +976,16 @@ extern char    DAT_083a4174[0x104];   // screenshot name buf (26 chars+)
 extern DWORD   DAT_083a4278;
 extern DWORD   DAT_083a427c;
 extern DWORD   DAT_083a4280;   // viewport width (pixels)
-// DAT_083a4284_arr — 3-DWORD storage para camera world position (escrito por
-// Camera_MouseRay vía FUN_004fa110(...&DAT_083a4284)). _DAT_083a4284..428c son
+// CameraRayOriginX_arr — 3-DWORD storage para camera world position (escrito por
+// Camera_MouseRay vía FUN_004fa110(...&CameraRayOriginX)). _CameraRayOriginX..428c son
 // aliases float al mismo storage.
-extern DWORD   DAT_083a4284_arr[3];
-extern DWORD&  DAT_083a4284;
-extern DWORD&  DAT_083a4288;
-extern DWORD&  DAT_083a428c;
+extern DWORD   CameraRayOriginX_arr[3];
+extern DWORD&  CameraRayOriginX;       // DAT_083A4284
+extern DWORD&  CameraRayOriginY;       // DAT_083A4288
+extern DWORD&  CameraRayOriginZ;       // DAT_083A428C
 extern char    DAT_083a4299;
-extern DWORD   DAT_083a429c;
-extern DWORD   DAT_083a42a0;
+extern DWORD   ViewportCenterX;        // DAT_083A429C
+extern DWORD   ViewportCenterY;        // DAT_083A42A0
 extern DWORD   DAT_083a42a4;
 extern DWORD   DAT_083a42a8;
 extern DWORD   DAT_083a42ac;   // UI flag: mouse button state
@@ -1001,7 +1004,7 @@ extern float&  _DAT_083a42d8;  // alias → CameraPosition[1]
 extern DWORD&  DAT_083a42d8;   // alias → CameraPosition[1] (DWORD view)
 extern float&  _DAT_083a42dc;  // alias → CameraPosition[2]
 extern DWORD&  DAT_083a42dc;   // alias → CameraPosition[2] (DWORD view)
-extern char    DAT_083a42e9;
+extern char    CameraTopViewEnabled;   // DAT_083A42E9: top-view / force-cull-bypass flag
 extern char    DAT_083a42ea;   // reset to 0 each frame in Scene_Loading
 extern char    DAT_083a42eb;   // auto-drop trigger flag (inventory)
 extern DWORD   DAT_083a42ec;
@@ -1312,7 +1315,7 @@ extern char    DAT_07d3b40c[];   // item level line format
 // ── Misc low-address globals ──────────────────────────────────────────────────
 // (07abf06, 07d29e5, 07eaa11 — byte flags or array references)
 
-// ── Chat ring buffer (FUN_00480980 renderer / UIChatLogWindow_AddText) ──────
+// ── Chat ring buffer (UI_RenderChatLogOverlay renderer / UIChatLogWindow_AddText) ──────
 // Único buffer real: 0x77 entries × 0x118 bytes stride.
 // Per-slot layout:
 //   +0x000..+0x00A  sender name (11 bytes)
@@ -1410,7 +1413,7 @@ extern char    DAT_07e11dd8;           // player-chat periodic refresh msg  (arg
 extern char    DAT_07e11ddc;           // player-chat periodic refresh label (arg1 of FUN_00480620)
 
 // ── Chat ring buffers ─────────────────────────────────────────────────────────
-// System message buffer (FUN_0047fae0 / Chat_DrawMessages)
+// System message buffer (UI_AddNotice / Chat_DrawMessages)
 extern char    DAT_07db80d8[6 * 0x108];   // system chat ring buffer (6 slots × 0x108 bytes)
 #define        DAT_07db81dc   (DAT_07db80d8[0x104])  // flag byte alias (slot 0 +0x104)
 
@@ -1546,9 +1549,9 @@ extern char    DAT_083a1218[0x1158];   // Butterfles OBJECT array (10 entries ×
 extern float& _DAT_083a414c;   // alias → DAT_083a4140[3]
 extern float& _DAT_083a415c;   // alias → DAT_083a4140[7]
 extern float& _DAT_083a416c;   // alias → DAT_083a4140[11]
-extern float& _DAT_083a4284;   // camera position X (alias → DAT_083a4284_arr[0])
-extern float& _DAT_083a4288;   // camera position Y (alias → DAT_083a4284_arr[1])
-extern float& _DAT_083a428c;   // camera position Z (alias → DAT_083a4284_arr[2])
+extern float& _CameraRayOriginX;   // _DAT_083A4284: camera position X alias
+extern float& _CameraRayOriginY;   // _DAT_083A4288: camera position Y alias
+extern float& _CameraRayOriginZ;   // _DAT_083A428C: camera position Z alias
 extern float  _DAT_083a42a4;   // projection scale X (float alias of DAT_083a42a4)
 extern float  _DAT_083a42a8;   // projection scale Y (float alias of DAT_083a42a8)
 extern float  _DAT_083a4294;   // projection center Y (float)
@@ -1696,7 +1699,7 @@ extern char    lpString_07d5f94c[300];     // dialog string 0x8f (guild membersh
 
 // ── GL_State cached state globals ────────────────────────────────────────────
 extern int     DAT_083a412c;   // current blend mode (0=off 2=SrcOver 3=Add 4=SrcAlpha)
-extern char    DAT_083a411d;   // **AlphaTestEnable** cache (glEnable/Disable 0xBC0). El comentario viejo decia 'fog' y es FALSO: ver FUN_00511590/680.
+extern char    DAT_083a411d;   // **AlphaTestEnable** cache (glEnable/Disable 0xBC0). El comentario viejo decia 'fog' y es FALSO: ver GL_SetAlphaTest/680.
 extern char    DAT_083a4125;   // **TextureEnable** cache (glEnable/Disable 0xDE1 = GL_TEXTURE_2D). El comentario viejo decia 'depth test' y es FALSO.
 extern int     DAT_083a42f4;   // screenshot active flag
 extern int     DAT_083a42f0;   // screenshot counter (mod 10000)
@@ -1964,7 +1967,8 @@ extern float   _DAT_05826df8;  // smoothed FPS value
 
 // ── Music.cpp globals ─────────────────────────────────────────────────────────
 extern DWORD   m_MusicOnOff;            // 0x055C9E3C — flag on/off de la musica (ver globals.cpp)
-extern char    DAT_055c9d04[256];       // 0x055C9D04 — Mp3FileName: track en reproduccion
+// IDA: DAT_055C9D04
+extern char    MusicCurrentTrack[256];  // track currently playing in MuPlayer
 extern char    s_MuPlayer_00559110[];   // "MuPlayer" string
 extern char    s_MuPlayer_exe_00559154[]; // "MuPlayer.exe" string
 extern char    s_MuPlayer_exe__s_00559130[]; // "MuPlayer.exe %s" format

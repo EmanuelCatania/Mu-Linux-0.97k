@@ -2,7 +2,7 @@
 #include "functions.h"
 #include "globals.h"
 
-// ── FUN_0047b130 @ 0x0047B130 — Item_LoadData(path) ──────────────────────────
+// IDA: FUN_0047B130
 // Reads a text-format item data file (Item.txt / local-language variant).
 // Parser loop uses TextParser_GetToken which returns record type:
 //   0 = comment/section header (strcmp with "END" at DAT_00559088; break loop on match)
@@ -39,7 +39,7 @@
 //   14    (Scroll): reads [32 1F] only
 //   15    (Wing): reads [1F 31 30]; sets [22]=[1F], [23]=[1F]+[1F]/2; then [38..3B]
 //   >13   (others/consumables): skips extra reads
-void __cdecl FUN_0047b130(const char *path)
+void __cdecl Item_LoadTextData(const char *path)
 {
     DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
@@ -68,13 +68,13 @@ LAB_loop:
     }
 }
 
-// ── FUN_0047b650 @ 0x0047B650 — Item_SaveBMD(path) ───────────────────────────
+// IDA: FUN_0047B650
 // Writes item data table to a binary .bmd file with checksum.
 // Allocates 0x8000-byte buffer, copies 0x200 item slots (stride 0x40) from
 // DAT_07d78068, XOR-encrypts each 0x40-byte block via FUN_00479910,
 // writes the buffer (fwrite via FUN_005430f0), then computes a rolling
 // checksum and appends 4 bytes (checksum seed: DAT_01c5e200 = 0x01c5e200).
-void __cdecl FUN_0047b650(const char *path)
+void __cdecl Item_SaveBMD(const char *path)
 {
     FILE *fp = (FILE *)FUN_0054173f(path, DAT_005597d4);  // "wb"
     char *buf = (char *)operator_new(0x8000);
@@ -104,13 +104,13 @@ void __cdecl FUN_0047b650(const char *path)
     FUN_0054150f(fp);
 }
 
-// ── FUN_0047b740 @ 0x0047B740 — Item_LoadBMD(path) ───────────────────────────
+// IDA: FUN_0047B740
 // Reads a binary .bmd item data file (counterpart to FUN_0047b650).
 // Allocates 0x8000-byte buffer, reads data + 4-byte checksum, validates
 // checksum (exits with MessageBox on mismatch), XOR-decrypts each 0x40-byte
 // block, copies decrypted records into DAT_07d78068 (raw table) and
 // DAT_07cf1ff0 (shadow table); shifts [+0x27] field left by 1 in shadow.
-void __cdecl FUN_0047b740(const char *path)
+void __cdecl Item_LoadBMD(const char *path)
 {
     CHAR msg[256];
     FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);  // "rb"

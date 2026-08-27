@@ -122,7 +122,7 @@ extern "C" void __cdecl SyncPickedItemVisualState(void)
 // ConvertX/Y map 640×480 game coords to actual screen pixels.
 static inline float ConvertX(float x) { return x * (float)((double)WindowWidth  / 640.0); }
 static inline float ConvertY(float y) { return y * (float)((double)WindowHeight / 480.0); }
-static inline void  BindTexture(int tex) { FUN_00511480(tex); }
+static inline void  BindTexture(int tex) { GL_BindTextureSlot(tex); }
 
 // =============================================================================
 // sub_4E9300 — pet panel slot hit-test.  Returns 0..10 for the 5×N grid
@@ -216,10 +216,10 @@ extern "C" void __cdecl RenderInventoryInterface(int StartX, int StartY, int Fla
 {
     float fX = (float)StartX;
     float fY = (float)StartY;
-    FUN_005125a0(260, fX, fY, 190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f, 1, 1);
-    FUN_005125a0(261, fX, fY + 256.0f, 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, 1, 1);
+    GL_DrawTexture(260, fX, fY, 190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f, 1, 1);
+    GL_DrawTexture(261, fX, fY + 256.0f, 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, 1, 1);
     if (Flag) {
-        FUN_005125a0(279, fX, fY + 225.0f, 190.0f, 10.0f, 0.0f, 0.0f, 0.7421875f, 0.625f, 1, 1);
+        GL_DrawTexture(279, fX, fY + 225.0f, 190.0f, 10.0f, 0.0f, 0.0f, 0.7421875f, 0.625f, 1, 1);
     }
 }
 
@@ -250,10 +250,10 @@ extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY,
                 // (ocupada) → grid uniforme. IDA usa `v7->Type == -1`.
                 if (v7->Type == -1) {
                     glColor3f(1.0f, 1.0f, 1.0f);
-                    FUN_005125a0(277, x, v8, 20.0f, 20.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+                    GL_DrawTexture(277, x, v8, 20.0f, 20.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
                 } else {
                     InventoryColor_stub(v7);
-                    FUN_005125a0(278, x, v8, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.66666669f, 1, 1);
+                    GL_DrawTexture(278, x, v8, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.66666669f, 1, 1);
                 }
                 ++v7;
             }
@@ -442,23 +442,23 @@ extern "C" void __cdecl RenderServerDivision(void)
     float xa = (float)((double)InventoryStartX + 25.0);
     if (DAT_07eaa131 != 0) {
         m_dwTextColor = 0xFFFF55FFu;   // -16738604
-        FUN_005125a0(291, xa, 240.0f, 16.0f, 16.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(291, xa, 240.0f, 16.0f, 16.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     } else {
         m_dwTextColor = 0xFF66CCDFu;   // -9977889
-        FUN_005125a0(290, xa, 240.0f, 16.0f, 16.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(290, xa, 240.0f, 16.0f, 16.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     }
     RenderText((int)(xa + 19.0f), 245, GlobalText[447], 0, 0, 0);
 
     SelectObject(m_hFontDC, g_hFont);
     m_dwTextColor = 0xFFD0D8FFu;       // -2955521
     float xc = (float)((double)InventoryStartX + 35.0);
-    FUN_005125a0(240, xc, 350.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+    GL_DrawTexture(240, xc, 350.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
     RenderCenteredText((int)(xc + 60.0f), 355, GlobalText[229]);
 
     float xb = (float)((double)InventoryStartX + 35.0);
     if (DAT_07eaa131 != 0) glColor3f(1.0f, 1.0f, 1.0f);
     else                          glColor3f(0.5f, 0.5f, 0.5f);
-    FUN_005125a0(240, xb, 320.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+    GL_DrawTexture(240, xb, 320.0f, 120.0f, 24.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
     RenderCenteredText((int)(xb + 60.0f), 325, GlobalText[228]);
 
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -501,7 +501,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
 
     float x = (float)((double)InventoryStartX + 50.0);
     float y = (float)((double)InventoryStartY + 367.7);
-    FUN_005125a0(271, x, y, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
+    GL_DrawTexture(271, x, y, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
 
     // Zen counter — read from CharacterMachine[+1352] (anti-tamper bypassed).
     int zen = CharacterMachine ? *(int*)((BYTE*)CharacterMachine + 1352) : 0;
@@ -530,7 +530,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     float xa = (float)((double)InventoryStartX + 25.0);
     float ya = (float)((double)InventoryStartY + 395.0);
     if (!TradeOpened) {
-        FUN_005125a0(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((double)MouseX >= xa && (double)MouseX < xa + 24.0 &&
             (double)MouseY >= ya && (double)MouseY < ya + 24.0)
         {
@@ -548,7 +548,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     {
         float xb = (float)((double)InventoryStartX + 60.0);
         float yb = (float)((double)InventoryStartY + 395.0);
-        FUN_005125a0(RepairEnable_0 ? 287 : 286, xb, yb, 24.0f, 24.0f,
+        GL_DrawTexture(RepairEnable_0 ? 287 : 286, xb, yb, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((double)MouseX >= xb && (double)MouseX < xb + 24.0 &&
             (double)MouseY >= yb && (double)MouseY < yb + 24.0)
@@ -593,14 +593,14 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
                               (double)MouseY >= v60 && (double)MouseY <= v60 + 19.0);
                 if (hover) glColor4f(0.5f, 0.5f, 0.5f, 0.8f);
                 else       glColor4f(0.1f, 0.1f, 0.1f, 0.7f);
-                FUN_005124c0(y, v60, 50.0f, 19.0f);
+                GL_DrawRect(y, v60, 50.0f, 19.0f);
             }
             glColor3f(0.196f, 0.039f, 0.0f);
-            FUN_005124c0(v64 - 2.0f, v60 + 12.0f, 43.0f, 4.0f);
+            GL_DrawRect(v64 - 2.0f, v60 + 12.0f, 43.0f, 4.0f);
             int hp10 = *v38 > 10 ? 10 : *v38;
             glColor3f(0.98f, 0.039f, 0.0f);
             for (int seg = 0; seg < hp10; ++seg) {
-                FUN_005124c0((float)(seg * 4) + v64, v60 + 13.0f, 3.0f, 2.0f);
+                GL_DrawRect((float)(seg * 4) + v64, v60 + 13.0f, 3.0f, 2.0f);
             }
             if (charIdx != -1) {
                 glColor3f(1.0f, 1.0f, 1.0f);
@@ -612,11 +612,11 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             v60 += 19.0f;
         }
         // Top + bottom cap pieces of the party list.
-        FUN_005125a0(252, v64 - 5.0f, 2.0f,    54.0f, 3.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
-        FUN_005125a0(252, v64 - 5.0f, v60,     54.0f, 3.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
+        GL_DrawTexture(252, v64 - 5.0f, 2.0f,    54.0f, 3.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
+        GL_DrawTexture(252, v64 - 5.0f, v60,     54.0f, 3.0f, 0.0f, 0.0f, 0.83203125f, 0.625f, 1, 1);
         glColor4f(0.722f, 0.592f, 0.380f, 0.5f);
-        FUN_005124c0(v64 - 4.0f, 5.0f, 1.0f, (float)(19 * PartyNumber));
-        FUN_005124c0(v64 + 47.0f, 5.0f, 1.0f, (float)(19 * PartyNumber));
+        GL_DrawRect(v64 - 4.0f, 5.0f, 1.0f, (float)(19 * PartyNumber));
+        GL_DrawRect(v64 + 47.0f, 5.0f, 1.0f, (float)(19 * PartyNumber));
         EnableAlphaTest(true);
         glColor3f(1.0f, 1.0f, 1.0f);
         return;
@@ -632,9 +632,9 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     g_PartyPanelScratchX = a1;
     g_PartyPanelScratchY = a2;
     glColor3f(1.0f, 1.0f, 1.0f);
-    FUN_00511600();
-    FUN_005125a0(260, (float)a1, (float)a2,        190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f, 1, 1);
-    FUN_005125a0(261, (float)a1, (float)(a2 + 256), 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, 1, 1);
+    GL_ResetState();
+    GL_DrawTexture(260, (float)a1, (float)a2,        190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f, 1, 1);
+    GL_DrawTexture(261, (float)a1, (float)(a2 + 256), 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, 1, 1);
     EnableAlphaTest(true);
 
     m_dwBackColor = 0xFF141414u;
@@ -708,9 +708,9 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
 
             // HP bar (red on darker red).
             glColor3f(0.2f, 0.0f, 0.0f);
-            FUN_005124c0((float)(a1 + 39), (float)(a2 + 69 + 35 * row), 92.0f, 5.0f);
+            GL_DrawRect((float)(a1 + 39), (float)(a2 + 69 + 35 * row), 92.0f, 5.0f);
             glColor3f(0.882f, 0.059f, 0.0f);
-            FUN_005124c0((float)(a1 + 40), (float)(a2 + 69 + 35 * row), (float)barW, 3.0f);
+            GL_DrawRect((float)(a1 + 40), (float)(a2 + 69 + 35 * row), (float)barW, 3.0f);
             EnableAlphaTest(true);
             glColor3f(1.0f, 1.0f, 1.0f);
             wsprintfA(Buffer, "( %d / %d )", level, maxLevel);
@@ -720,12 +720,12 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             {
                 float kickX = (float)((double)a1 + 140.0);
                 float kickY = (float)((double)(35 * row) + (double)a2 + 55.0);
-                FUN_005125a0(280, kickX, kickY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+                GL_DrawTexture(280, kickX, kickY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
                 if ((double)MouseX >= kickX && (double)MouseX < kickX + 24.0 &&
                     (double)MouseY >= kickY && (double)MouseY < kickY + 24.0)
                 {
                     if (MouseLButton) {
-                        FUN_005125a0(281, kickX, kickY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+                        GL_DrawTexture(281, kickX, kickY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
                     }
                     m_dwTextColor = 0xFFFFFFFFu;
                     m_dwBackColor = 0xFF000000u;
@@ -739,12 +739,12 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     glColor3f(1.0f, 1.0f, 1.0f);
     float v59 = (float)((double)a1 + 25.0);
     float v63 = (float)((double)a2 + 395.0);
-    FUN_005125a0(280, v59, v63, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    GL_DrawTexture(280, v59, v63, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if ((double)MouseX >= v59 && (double)MouseX < v59 + 24.0 &&
         (double)MouseY >= v63 && (double)MouseY < v63 + 24.0)
     {
         if (MouseLButton) {
-            FUN_005125a0(281, v59, v63, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+            GL_DrawTexture(281, v59, v63, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         }
         SelectObject(m_hFontDC, g_hFont);
         m_dwTextColor = 0xFFFFFFFFu;
@@ -913,11 +913,11 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     CharacterInfoStartX = iPosX;
     CharacterInfoStartY = iPosY;
     glColor3f(1.0f, 1.0f, 1.0f);
-    FUN_00511600();   // DisableAlphaBlend
+    GL_ResetState();   // DisableAlphaBlend
     float x = (float)iPosX;
     float y = (float)iPosY;
-    FUN_005125a0(260, x, y,            190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,         1, 1);
-    FUN_005125a0(261, x, y + 256.0f,   190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f,  1, 1);
+    GL_DrawTexture(260, x, y,            190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,         1, 1);
+    GL_DrawTexture(261, x, y + 256.0f,   190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f,  1, 1);
     EnableAlphaTest(true);
     SelectObject(m_hFontDC, g_hFontBold);
 
@@ -979,7 +979,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         float xb = (float)iPosX + 19.0f - 6.0f;
         float yb = (float)iPosY + 60.0f - 4.0f;
         for (int i = 0; i < 5; i++) {
-            FUN_005125a0(245, xb, yb + (float)(60 * i),
+            GL_DrawTexture(245, xb, yb + (float)(60 * i),
                          75.0f, 21.0f, 0.0f, 0.0f, 0.5859375f, 0.65625f, 1, 1);
         }
     }
@@ -1068,7 +1068,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         bool pressed = hover && (DAT_083a4124 != 0 || DAT_083a413c != 0);
         (void)statSlot;
         glColor3f(1.0f, 1.0f, 1.0f);
-        FUN_005125a0(pressed ? 0x121 : 0x120,
+        GL_DrawTexture(pressed ? 0x121 : 0x120,
                      btnX, btnY, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     };
@@ -1280,11 +1280,11 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
     GuildListStartX = StartX;
     GuildListStartY = StartY;
     glColor3f(1.0f, 1.0f, 1.0f);
-    FUN_00511600();
+    GL_ResetState();
     float x = (float)StartX;
     float y = (float)StartY;
-    FUN_005125a0(260, x, y,            190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,         1, 1);
-    FUN_005125a0(261, x, y + 256.0f,   190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f,  1, 1);
+    GL_DrawTexture(260, x, y,            190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,         1, 1);
+    GL_DrawTexture(261, x, y + 256.0f,   190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f,  1, 1);
     EnableAlphaTest(true);
 
     m_dwBackColor = 0xFF141414u;
@@ -1354,12 +1354,12 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
     g_GuildCreatorScratchY = iPosY;
     GuildCreator_HandleMouse(iPosX, iPosY);
     glColor3f(1.0f, 1.0f, 1.0f);
-    FUN_00511600();
+    GL_ResetState();
 
     float x = (float)iPosX;
     float y = (float)iPosY;
-    FUN_005125a0(260, x, y,            190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,         1, 1);
-    FUN_005125a0(261, x, y + 256.0f,   190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f,  1, 1);
+    GL_DrawTexture(260, x, y,            190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f,         1, 1);
+    GL_DrawTexture(261, x, y + 256.0f,   190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f,  1, 1);
     EnableAlphaTest(true);
 
     m_dwBackColor = 0xFF141414u;
@@ -1372,7 +1372,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
         // Name input field + virtual keypad (PIN-style).
         float v19 = x + 55.0f;
         float v17 = y + 60.0f;
-        FUN_005125a0(271, v19, v17, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
+        GL_DrawTexture(271, v19, v17, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
         m_dwBackColor = 0;
         m_dwTextColor = 0xFFE6E6E6u;
         SelectObject(m_hFontDC, g_hFontBold);
@@ -1469,7 +1469,7 @@ extern "C" void __cdecl RenderTrade(void)
     // Accept / cancel buttons.
     float xa = (float)((double)TradeInventoryStartX + 25.0);
     float ya = (float)((double)TradeInventoryStartY + 395.0);
-    FUN_005125a0(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
 }
 
 extern "C" void __cdecl RenderShopInterface(void)
@@ -1495,7 +1495,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     // Close button.
     float xa = (float)((double)dword_7EAA0C8 + 25.0);
     float ya = (float)((double)dword_7EAA0CC + 395.0);
-    FUN_005125a0(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
 }
 
 extern "C" void __cdecl RenderChaosMix(void)
@@ -1520,8 +1520,8 @@ extern "C" void __cdecl RenderChaosMix(void)
     // Mix / cancel buttons.
     float xa = (float)((double)dword_7EAA0C8 + 25.0);
     float ya = (float)((double)dword_7EAA0CC + 395.0);
-    FUN_005125a0(280, xa,         ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    FUN_005125a0(282, xa + 30.0f, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    GL_DrawTexture(280, xa,         ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    GL_DrawTexture(282, xa + 30.0f, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
 }
 
 // RenderWarehouse — sub_4F3170 @ 0x004F3170 (2776 bytes).
@@ -1568,7 +1568,7 @@ extern "C" void __cdecl RenderWarehouse(void)
     // ── Barra del zen guardado (bitmap 271 = 0x10F) ──────────────────────────
     float x = (float)((double)dword_7EAA0C8 + 50.0);
     float y = (float)((double)dword_7EAA0CC + 352.7);
-    FUN_005125a0(271, x, y, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
+    GL_DrawTexture(271, x, y, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
     SelectObject(m_hFontDC, g_hFontBold);
 
     // WarehouseMoney = CharacterMachine[+0x54C]; (el inventario usa +0x548).
@@ -1649,19 +1649,19 @@ extern "C" void __cdecl RenderWarehouse(void)
         if (i == 2 && lock) v = 3;
         float bx = (float)((double)kBtnX[i] + (double)dword_7EAA0C8);
         float by = (float)((double)dword_7EAA0CC + 390.0);
-        FUN_005125a0(kTexNormal[v], bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        GL_DrawTexture(kTexNormal[v], bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((double)MouseX >= bx && (double)MouseX < bx + 24.0 &&
             (double)MouseY >= by && (double)MouseY < by + 24.0)
         {
             if (MouseLButton) {
-                FUN_005125a0(kTexPressed[v], bx, by, 24.0f, 24.0f,
+                GL_DrawTexture(kTexPressed[v], bx, by, 24.0f, 24.0f,
                              0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
             }
             SelectObject(m_hFontDC, g_hFont);
             RenderTipText((int)bx, (int)by - 13, GlobalText[kBtnTip[i]]);
         }
         if (i == 2 && DAT_07eaa14c) {
-            FUN_005125a0(kTexPressed[v], bx, by, 24.0f, 24.0f,
+            GL_DrawTexture(kTexPressed[v], bx, by, 24.0f, 24.0f,
                          0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         }
     }
@@ -1690,7 +1690,7 @@ extern "C" void __cdecl RenderEventWindow(void)
 
     float xa = (float)((double)dword_7EAA0C8 + 25.0);
     float ya = (float)((double)dword_7EAA0CC + 395.0);
-    FUN_005125a0(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
 }
 
 extern "C" void __cdecl RenderGoldenArcherWindow(void)
@@ -1711,8 +1711,8 @@ extern "C" void __cdecl RenderGoldenArcherWindow(void)
     // Golden archer doesn't render a grid — just a 3-slot vertical strip.
     float xa = (float)((double)dword_7EAA0C8 + 25.0);
     float ya = (float)((double)dword_7EAA0CC + 395.0);
-    FUN_005125a0(280, xa,         ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    FUN_005125a0(282, xa + 30.0f, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    GL_DrawTexture(280, xa,         ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    GL_DrawTexture(282, xa + 30.0f, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
 
     // ── Botón de cerrar (el primero, bitmap 280) ─────────────────────────────
     // 2026-08-08: faltaba el hit-test — el panel se dibujaba pero la X no hacía

@@ -1092,7 +1092,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (evt & 0x10) { // FD_CONNECT
             DbgLog("NET: FD_CONNECT fired (socket ready for I/O)");
             extern void CS_SendPlain(const BYTE* data, int len);
-            extern void FUN_00423920(const char* server, unsigned int port);
+            extern void Net_ConnectServer(const char* server, unsigned int port);
             if (err == 0 && g_ConnectServerMode && !g_ConnectServerRequested) {
                 // Conectados al ConnectServer → pedir la lista de servers.
                 // C1 04 F4 02 (PMSG_SERVER_LIST_RECV) — plano, sin encriptar.
@@ -1111,7 +1111,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     closesocket((SOCKET)DAT_055ca168);
                     DAT_055ca168 = (DWORD)INVALID_SOCKET;
                 }
-                FUN_00423920(g_GameServerIP, g_GameServerPort);
+                Net_ConnectServer(g_GameServerIP, g_GameServerPort);
             }
         }
         if (evt & 0x20) { // FD_CLOSE
@@ -1124,7 +1124,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             // (Tras un redirect exitoso Recv_Redirect ya puso mode=0, así que
             // este FD_CLOSE del socket viejo NO dispara el fallback.)
             if (g_ConnectServerMode && g_HasConnectServer && g_GameServerPort != 0) {
-                extern void FUN_00423920(const char* server, unsigned int port);
+                extern void Net_ConnectServer(const char* server, unsigned int port);
                 DbgLog("NET: CS dropped before redirect → fallback to GameServer");
                 g_ConnectServerMode      = 0;
                 g_ConnectServerRequested = 0;
@@ -1133,7 +1133,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     closesocket((SOCKET)DAT_055ca168);
                     DAT_055ca168 = (DWORD)INVALID_SOCKET;
                 }
-                FUN_00423920(g_GameServerIP, g_GameServerPort);
+                Net_ConnectServer(g_GameServerIP, g_GameServerPort);
                 break;   // no mostrar "conexión cerrada"; estamos reconectando
             }
             // IDA WndProc @ 0x004149D0 case FD_CLOSE (original behaviour):

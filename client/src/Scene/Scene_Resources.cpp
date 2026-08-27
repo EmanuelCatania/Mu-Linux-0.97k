@@ -15,7 +15,8 @@ extern "C" { void DbgLogPublic(const char*); }
 // Textures: Logo_0Account_new.tga, On_Botton.jpg, etc. (slots 0xc–0x14).
 // Models: ship.smd (0x3c), logo objects (0xa0–0xa3).
 // Preloads model data and activates rendering for slots 0x2601.
-void FUN_0050fcf0(void)
+// IDA: FUN_0050FCF0
+void Scene_LoadAccountResources(void)
 {
   int iVar1;
   int iVar2;
@@ -64,7 +65,8 @@ void FUN_0050fcf0(void)
 // Textures: Logo_Interface01–04.tga, New_Character201.tga, etc. (slots 0xc–0x1d).
 // Models: main.smd (0xa4), warrior/fairy/dark/etc. (0xaa–0xad).
 // Also sets scale for character preview models (0xbc–0x2f0) from DAT_05828d58.
-void FUN_0050ff50(void)
+// IDA: FUN_0050FF50
+void Scene_LoadCharSelectResources(void)
 {
   int iVar1;
   int iVar2;
@@ -122,7 +124,8 @@ void FUN_0050ff50(void)
 // FUN_0050ff10 — Scene_UnloadAccountResources
 // Frees texture slots 0xc–0x14 and 0x56a–0x5a9 used by the account scene,
 // then calls FUN_004ffd50 (clear model cache) and FUN_0045abb0(-1) (reset entities).
-void FUN_0050ff10(void)
+// IDA: FUN_0050FF10
+void Scene_UnloadAccountResources(void)
 {
   int iVar1;
 
@@ -146,7 +149,8 @@ void FUN_0050ff10(void)
 // Frees texture slots 0xc–0x1d and 0x56a–0x5a9 used by the char-select scene,
 // clears model data for slots 0x7cd8–0x7fc8 (stride 0xbc),
 // then calls FUN_004ffd50 and FUN_0045abb0(-1).
-void FUN_005102c0(void)
+// IDA: FUN_005102C0
+void Scene_UnloadCharSelectResources(void)
 {
   int iVar1;
 

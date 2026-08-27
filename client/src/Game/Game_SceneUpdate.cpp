@@ -395,12 +395,12 @@ int Game_SceneUpdate(void)
             // MuEmu del GameServer). Desactivamos la capa MuEmu mientras hablamos
             // con el CS; Recv_Redirect la reactiva al saltar al GameServer.
             MuEmu::SetActive(false);
-            extern void FUN_00423920(const char *server, unsigned int port);
-            FUN_00423920(PTR_s_connect_muonline_co_kr_005615b8, (unsigned)DAT_005615bc);
+            extern void Net_ConnectServer(const char *server, unsigned int port);
+            Net_ConnectServer(PTR_s_connect_muonline_co_kr_005615b8, (unsigned)DAT_005615bc);
         }
 
         // Load login-scene resources (sounds, textures)
-        FUN_0050fcf0();
+        Scene_LoadAccountResources(); // FUN_0050fcf0 (IDA)
 
         // Clear 8 entity slots at base entity array + 0x168 (stride 0x394)
         {
@@ -701,7 +701,7 @@ int Game_SceneUpdate(void)
                 DAT_083a7c44 = 0;
                 Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
                 DAT_05826cb0 = 0;
-                FUN_00423920(PTR_s_connect_muonline_co_kr_005615b8,
+                Net_ConnectServer(PTR_s_connect_muonline_co_kr_005615b8,
                              (unsigned)DAT_005615bc);
             }
         }
@@ -1063,7 +1063,7 @@ state_fail_common:
                     }
                 }
                 FUN_00406f50((CHAR*)DAT_05826cd4);
-                FUN_0050ff10();
+                Scene_UnloadAccountResources(); // FUN_0050ff10 (IDA)
                 return 0;
 
             // Login error codes 0x13-0x24: show error, back to CredentialInput

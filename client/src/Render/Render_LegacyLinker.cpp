@@ -41,7 +41,7 @@ extern void FUN_004fa5a0(void);
 // 2026-06-29 BUG-FIX (depth-mask cache desync → estructuras opacas desaparecen):
 // esta copia llamaba glDepthMask(0) y glDisable(GL_CULL_FACE) DIRECTOS, sin tocar
 // los caches DAT_083a42e8 (depth mask) ni DAT_083a411c (cull). El render de meshes
-// usa la versión cacheada FUN_00511710 (GL_State.cpp); cuando algún caller pasaba
+// usa la versión cacheada GL_SetBlendAdditive (GL_State.cpp); cuando algún caller pasaba
 // por ESTA copia, el cache quedaba en "depth write ON" mientras el GL real estaba
 // en OFF → el EnableDepthMask cacheado de DisableAlphaBlend se volvía no-op → el
 // objeto opaco siguiente renderizaba con mask=0, no escribía depth, y geometría
@@ -49,7 +49,7 @@ extern void FUN_004fa5a0(void);
 // EnableAlphaBlend usa el DisableDepthMask CACHEADO, nunca glDepthMask directo.
 // Fix: delegar a la versión canónica cacheada (idéntico address 0x00511710).
 void __cdecl EnableAlphaBlend(void) {
-    FUN_00511710();
+    GL_SetBlendAdditive();
 }
 
 // EnableAlphaTest @ 0x00511680 — GL standard alpha blend + alpha test.
@@ -57,9 +57,9 @@ void __cdecl EnableAlphaBlend(void) {
 // llamaba glDepthMask(1)/glDisable(GL_CULL_FACE) DIRECTOS sin tocar los caches.
 // El source 5.2 (ZzzOpenglUtil.cpp:443) confirma que EnableAlphaTest(DepthMask)
 // usa el EnableDepthMask CACHEADO condicional. Fix: delegar a la versión canónica
-// cacheada FUN_00511680 (idéntico address 0x00511680; param = flag DepthMask).
+// cacheada GL_SetBlendSrcOver (idéntico address 0x00511680; param = flag DepthMask).
 void __cdecl EnableAlphaTest(bool enable) {
-    FUN_00511680(enable ? '\x01' : '\0');
+    GL_SetBlendSrcOver(enable ? '\x01' : '\0');
 }
 
 
@@ -131,9 +131,9 @@ void __cdecl OpenModel(int id, char* path, ...) {
     (void)id; (void)path;
 }
 
-// FUN_005112f0 (CreateScreenVector) ya implementada en stubs.cpp:1630.
+// Camera_BuildMouseRay (CreateScreenVector) ya implementada en stubs.cpp:1630.
 // FUN_004e13a0 (RenderObjectScreen) ya implementada en stubs.cpp:12999.
-extern void __cdecl FUN_005112f0(int sx, int sy, float* out);
+extern void __cdecl Camera_BuildMouseRay(int sx, int sy, float* out);
 extern void __cdecl FUN_004e13a0(int param_1, unsigned int param_2,
                                   unsigned char param_3, unsigned char param_4,
                                   float* param_5, int param_6, char param_7);
@@ -331,7 +331,7 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
     float _sy = sy + Height * ofsYmul;
 
     // Convert screen-space → world-space ray endpoint.
-    FUN_005112f0((int)_sx, (int)_sy, Position);
+    Camera_BuildMouseRay((int)_sx, (int)_sy, Position);
 
     // Per-type modelId override (jewels/wings/special).
     int modelId = Type + 400;

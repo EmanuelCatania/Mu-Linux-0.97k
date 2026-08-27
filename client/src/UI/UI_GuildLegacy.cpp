@@ -66,11 +66,11 @@ int __cdecl FUN_0051ddf0(void)
     xCols[1] = x_110; xCols[2] = x_10c; xCols[3] = x_108; xCols[4] = x_104;
 
     glColor3f(0.5f, 1.0f, 0.5f);
-    FUN_0047f650(0xe5, 0x46, &DAT_07d59358, (LPSIZE)0, '\0', 0);
+    UI_RenderText(0xe5, 0x46, &DAT_07d59358, (LPSIZE)0, '\0', 0);
 
     char buf[256];
     wsprintfA(buf, &param_2_07d59484, (char *)((int)DAT_07abf5d8 + 0x1c1));
-    FUN_0047f650(0xe5, 0x56, buf, (LPSIZE)0, '\0', 0);
+    UI_RenderText(0xe5, 0x56, buf, (LPSIZE)0, '\0', 0);
 
     glColor3f(0.5f, 0.5f, 1.0f);
     // Column headers: array at DAT_07d5ba04, stride 300 bytes, 5 entries to 0x7d5bfe0
@@ -80,7 +80,7 @@ int __cdecl FUN_0051ddf0(void)
     while ((int)pHdr < 0x7d5bfe0) {
         if (pHdr != &DAT_07d5bfe0) {
             int xOff = (iColIdx != 2) ? 0 : 10;
-            FUN_0047f650(*pXCol + xOff, 0x6e, pHdr, (LPSIZE)0, '\0', 0);
+            UI_RenderText(*pXCol + xOff, 0x6e, pHdr, (LPSIZE)0, '\0', 0);
         }
         pHdr += 300;
         iColIdx++;
@@ -97,7 +97,7 @@ int __cdecl FUN_0051ddf0(void)
         if (i == DAT_083a7c30 - 1) {
             // last entry: own rank highlighted
             glColor3f(0.4f, 0.4f, 0.0f);
-            FUN_0047f650(0xdb, 0x11e, &DAT_07d5bfe0, (LPSIZE)0, '\0', 0);
+            UI_RenderText(0xdb, 0x11e, &DAT_07d5bfe0, (LPSIZE)0, '\0', 0);
             iY = 0x12e;
             fmtRank = PTR_DAT_005618a0;
             iRank   = DAT_083a7c34;
@@ -107,7 +107,7 @@ int __cdecl FUN_0051ddf0(void)
         }
         wsprintfA(buf, fmtRank, iRank);
         DAT_00559c78 = 0xffffffff;
-        FUN_0047f650(0xdb, iY, buf, (LPSIZE)0, '\0', 0);
+        UI_RenderText(0xdb, iY, buf, (LPSIZE)0, '\0', 0);
 
         // member name (char[12] starting at DAT_083a7af8 + iMod*0x18)
         char namebuf[14] = {};
@@ -115,19 +115,19 @@ int __cdecl FUN_0051ddf0(void)
         *(DWORD *)(namebuf + 4) = *(DWORD *)((BYTE *)&DAT_083a7afc + iMod * 0x18);
         *(WORD  *)(namebuf + 8) = *(WORD  *)((BYTE *)&DAT_083a7b00 + iMod * 0x18);
         namebuf[13] = '\0';
-        FUN_0047f650(x_110, iY, namebuf, (LPSIZE)0, '\0', 0);
+        UI_RenderText(x_110, iY, namebuf, (LPSIZE)0, '\0', 0);
 
         DAT_00559c78 = 0xffffd2d2;
         wsprintfA(buf, &param_2_005618a8, *(DWORD *)((BYTE *)&DAT_083a7b04 + iMod * 0x18));
-        FUN_0047f650(x_10c, iY, buf, (LPSIZE)0, '\0', 0);
+        UI_RenderText(x_10c, iY, buf, (LPSIZE)0, '\0', 0);
 
         DAT_00559c78 = 0xffd2ffd2;
         wsprintfA(buf, &param_2_005618b0, *(DWORD *)((BYTE *)&DAT_083a7b08 + iMod * 0x18));
-        FUN_0047f650(x_108, iY, buf, (LPSIZE)0, '\0', 0);
+        UI_RenderText(x_108, iY, buf, (LPSIZE)0, '\0', 0);
 
         DAT_00559c78 = 0xffd2d2ff;
         wsprintfA(buf, &param_2_005618b4, *(DWORD *)((BYTE *)&DAT_083a7b0c + iMod * 0x18));
-        FUN_0047f650(x_104, iY, buf, (LPSIZE)0, '\0', 0);
+        UI_RenderText(x_104, iY, buf, (LPSIZE)0, '\0', 0);
 
         iY += 0x10;
     }
@@ -155,12 +155,12 @@ int __cdecl FUN_0051db00(void)
     int len = lstrlenA(title);
     GetTextExtentPointA(hdc, title, len, &sz);
     int cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
-    FUN_0047f650(0x140 - cx, 0x46, title, (LPSIZE)0, '\0', 0);
+    UI_RenderText(0x140 - cx, 0x46, title, (LPSIZE)0, '\0', 0);
 
     len = lstrlenA(subtitle);
     GetTextExtentPointA(hdc, subtitle, len, &sz);
     cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
-    FUN_0047f650(0x140 - cx, 0x56, subtitle, (LPSIZE)0, '\0', 0);
+    UI_RenderText(0x140 - cx, 0x56, subtitle, (LPSIZE)0, '\0', 0);
 
     glColor3f(1.0f, 1.0f, 1.0f);
     DAT_00559c78 = 0xffffffff;
@@ -173,7 +173,7 @@ int __cdecl FUN_0051db00(void)
     len = lstrlenA(buf);
     GetTextExtentPointA(hdc, buf, len, &sz);
     cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
-    FUN_0047f650(0x140 - cx, 0x6a, buf, (LPSIZE)0, '\0', 0);
+    UI_RenderText(0x140 - cx, 0x6a, buf, (LPSIZE)0, '\0', 0);
 
     int iY = 0x82;
     if (DAT_083a7c30 != 0) {
@@ -182,7 +182,7 @@ int __cdecl FUN_0051db00(void)
         len = lstrlenA(buf);
         GetTextExtentPointA(hdc, buf, len, &sz);
         cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
-        FUN_0047f650(0x140 - cx, 0x82, buf, (LPSIZE)0, '\0', 0);
+        UI_RenderText(0x140 - cx, 0x82, buf, (LPSIZE)0, '\0', 0);
         iY = 0x9a;
     }
     DAT_00559c78 = 0xffffd2d2;
@@ -190,7 +190,7 @@ int __cdecl FUN_0051db00(void)
     len = lstrlenA(buf);
     GetTextExtentPointA(hdc, buf, len, &sz);
     cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
-    return (int)FUN_0047f650(0x140 - cx, iY, buf, (LPSIZE)0, '\0', 0);
+    return (int)UI_RenderText(0x140 - cx, iY, buf, (LPSIZE)0, '\0', 0);
 }
 
 // CreateOkMessageBox @ 0x0051D6F0 — show an OK dialog by setting the UI state.

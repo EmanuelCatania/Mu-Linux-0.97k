@@ -638,7 +638,7 @@ long long __fastcall CalculateInventoryValue_stub(int p1, unsigned int p2, short
     // p4 = grid width (columns), p5 = grid height (rows, cast as int)
     //
     // Special currency items: 0x1cd=100k, 0x1ce=70k, 0x18f(399)=40k, 0x1d0/0x1d6=450k zen.
-    // For regular items, calls FUN_0047c690(item_ptr, 0) to get sell value.
+    // For regular items, calls Item_CalculateValue(item_ptr, 0) to get sell value.
     // Returns total value as long long. If item 0x18f (399) is present, returns value in EAX;
     // otherwise returns 0.
 
@@ -677,7 +677,7 @@ long long __fastcall CalculateInventoryValue_stub(int p1, unsigned int p2, short
                         } else {
                             // BUG-FIX 2026-04-26 (audit #3): ItemValue(item, sellMode=0).
                             // Antes el stub recibía (durability, 0, item, 0) → arg order roto.
-                            int itemVal = FUN_0047c690((void*)pCell, 0);
+                            int itemVal = Item_CalculateValue((void*)pCell, 0);
                             totalValue += itemVal;
                             (void)durability;
                         }

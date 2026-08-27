@@ -4,7 +4,7 @@
 // Draws a textured billboard quad (GL_QUADS) at a world position.
 //
 // Steps:
-//  1. Bind texture slot via FUN_00511480(param_1)
+//  1. Bind texture slot via GL_BindTextureSlot(param_1)
 //  2. Project the world position param_2 to screen via FUN_004fa170
 //     (stores result in local_ac / local_a8)
 //  3. Build 4 corner positions (local_60[0..11]):
@@ -24,7 +24,7 @@
 //  8. glEnd()
 //
 // Parameters:
-//   param_1  — texture/channel index (used for FUN_00511480 + glColor mode)
+//   param_1  — texture/channel index (used for GL_BindTextureSlot + glColor mode)
 //   param_2  — world position (float[3])
 //   param_3  — half-width in world units
 //   param_4  — half-height in world units
@@ -36,7 +36,7 @@
 //   param_10 — UV size V
 //
 // Sub-functions:
-//   FUN_00511480 — GL_BindTexture
+//   GL_BindTextureSlot — GL_BindTextureSlot
 //   FUN_004fa170 — World_ToScreen (projects param_2 using DAT_083a4140 matrix)
 //   FUN_004f9db0 — EulerToMatrix3x4
 //   FUN_004fa0b0 — Vec3_TransformByMatrix
@@ -99,7 +99,7 @@ FUN_00511d00(int param_1,float *param_2,float param_3,float param_4,float *param
   #define local_34 (*(undefined4*)&local_corners_buf[11])
   float local_30 [12];
 
-  FUN_00511480(param_1);
+  GL_BindTextureSlot(param_1);
   // ── BUG-FIX 2026-04-27: local_ac/_a8/_a4 son 3 variables locales separadas;
   // MSVC no garantiza layout contiguo. Pasar &local_ac a FUN_004fa170 (que
   // escribe 3 floats consecutivos) puede dejar TPos[1]/TPos[2] en memoria
@@ -194,7 +194,7 @@ FUN_00511d00(int param_1,float *param_2,float param_3,float param_4,float *param
       param_8               // TL v
   };
   // ── DEPTH TEST: dejar habilitado. Mu usa GL_LEQUAL + glDepthMask(GL_FALSE)
-  // (set por FUN_00511530 en blend setup), así sprites pueden ser ocluidos
+  // (set por GL_DisableDepthWrites en blend setup), así sprites pueden ser ocluidos
   // por geometría más cercana pero NO escriben profundidad. Esto da forma
   // correcta a glows sobre armas/armaduras (siguen el contorno), en vez de
   // cuadrados blanco-fluo cubriendo todo.

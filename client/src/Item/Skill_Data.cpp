@@ -2,7 +2,7 @@
 #include "functions.h"
 #include "globals.h"
 
-// ── FUN_0047a5b0 @ 0x0047A5B0 — Skill_LoadData(path) ────────────────────────
+// IDA: FUN_0047A5B0
 // Reads a text-format skill data file.
 // Parser uses TextParser_GetToken (record type 0/1/2):
 //   0 = section separator — strcmp with "END"; break inner loop
@@ -22,7 +22,7 @@
 // Hash table context: DAT_055c9bc8 (vtable), DAT_055c9bd0 (bucket array),
 //   DAT_055c9bcc (value array), DAT_055c9bd4 (bucket count).
 // Each skill entry is 0x29 bytes; [0x28] = 1 (alive flag).
-void __cdecl FUN_0047a5b0(const char *path)
+void __cdecl Skill_LoadTextData(const char *path)
 {
     DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
@@ -37,14 +37,14 @@ void __cdecl FUN_0047a5b0(const char *path)
     FUN_0054150f(DAT_07d7806c);
 }
 
-// ── FUN_0047a970 @ 0x0047A970 — Skill_SaveBMD(path) ─────────────────────────
+// IDA: FUN_0047A970
 // Writes skill data table to a binary .bmd file.
 // Allocates 0xa00-byte buffer (40 skill entries × 0x28 bytes each).
 // For each entry: copies from DAT_07d29d20, XOR-encrypts via FUN_00479910,
 // writes to file. After all entries, computes a rolling checksum
 // (seed: DAT_00b43000, constant 0x5a18) and appends 4 bytes.
 // Hash table operations (FUN_0047ea70 / FUN_0047eaf0) manage in-memory index.
-void __cdecl FUN_0047a970(const char *path)
+void __cdecl Skill_SaveBMD(const char *path)
 {
     FILE *fp   = (FILE *)FUN_0054173f(path, DAT_005597d4);  // "wb"
     char *buf  = (char *)operator_new(0xa00);
@@ -69,13 +69,13 @@ void __cdecl FUN_0047a970(const char *path)
     FUN_0054150f(fp);
 }
 
-// ── FUN_0047ac50 @ 0x0047AC50 — Skill_LoadBMD(path) ─────────────────────────
+// IDA: FUN_0047AC50
 // Reads binary .bmd skill data file (counterpart to FUN_0047a970).
 // Reads 0xa00 bytes + 4-byte checksum, validates, XOR-decrypts each 0x28-byte
 // record, and writes into DAT_07cf1ff8 (skill shadow table, stride 0x28).
 // Hash table entries are rebuilt via FUN_0047ea70 / FUN_0047eaf0.
 // [+0x26] field in shadow table is left-shifted by 1 after copy.
-void __cdecl FUN_0047ac50(const char *path)
+void __cdecl Skill_LoadBMD(const char *path)
 {
     CHAR msg[256];
     FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);

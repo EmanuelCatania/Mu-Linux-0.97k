@@ -71,8 +71,8 @@ void __cdecl FUN_00475170(int param_1) {
 // Renders a billboard quad at pos[], scaled by sc, rotated around Z by rot[0] angle,
 // using texture slot param_1.
 void __cdecl FUN_00474f90(int cls, float *pos, float *rot, float sc) {
-    FUN_00511480(cls);
-    FUN_00511710();
+    GL_BindTextureSlot(cls);
+    GL_SetBlendAdditive();
     glPushMatrix();
     glTranslatef(pos[0], pos[1], pos[2]);
     float angle = rot ? rot[0] : 0.0f;
@@ -91,7 +91,7 @@ void __cdecl FUN_00474f90(int cls, float *pos, float *rot, float sc) {
     glTexCoord2f(1.0f, 1.0f); glVertex3fv(q[3]);
     glEnd();
     glPopMatrix();
-    FUN_00511600();
+    GL_ResetState();
 }
 // FUN_00440aa0 (BMD::PlayAnimation / BMD_AnimTick) — moved to src/Render/BMD_Anim.cpp
 // CharacterAnimation @ 0x00448600       — moved to src/Render/BMD_Anim.cpp
@@ -323,7 +323,7 @@ void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float
     float rot_data[3] = { 0.0f, 0.0f, angle };
     float rot_mat[12];
     FUN_004f9db0(rot_data, rot_mat);
-    FUN_00511480(type);
+    GL_BindTextureSlot(type);
 
     float cx = x * _DAT_00552594;
     float cy = y * _DAT_00552594;

@@ -83,7 +83,7 @@ HRESULT __cdecl FUN_00404bc0(int Buffer, DWORD Object, BOOL bLooped)
 
 
 // ============================================================================
-// Sound_UpdatePositions / FUN_00404CD0  @ 0x00404CD0
+// Sound_UpdatePositions @ 0x00404CD0
 // ============================================================================
 // Builds a rotation matrix from the player's yaw, then for each active 3D
 // sound slot, computes the listener-space XZ offset from the bound entity,
@@ -97,7 +97,8 @@ HRESULT __cdecl FUN_00404bc0(int Buffer, DWORD Object, BOOL bLooped)
 // FUN_004f9db0 (EulerToMatrix3x4) and FUN_004fa0b0 (Vec3_TransformByMatrix)
 // are declared in functions.h with the canonical signatures.
 
-void FUN_00404cd0(void)
+// IDA: FUN_00404CD0
+void Sound_Update3DPositions(void)
 {
     if (!g_EnableSound || !g_Enable3DSound) return;
 
@@ -148,11 +149,11 @@ static void __cdecl FUN_00404e60_impl(int param_1) {
     }
 }
 
-// ── FUN_00404c60 — movida desde stubs_render_helpers.cpp (refactor B3) ──
-// FUN_00404c60 / StopBuffer @ 0x00404C60 — stop a slot's currently-playing channel.
+// Sound_StopBuffer @ 0x00404C60 — stop a slot's currently-playing channel.
 // For non-zero Buffer, also rewind to position 0. Uses g_lpDSBuffer[Buffer][0]
 // (only channel 0 is populated in this binary's pipeline — FillBuffer is a no-op).
-void __cdecl FUN_00404c60(int Buffer) {
+// IDA: FUN_00404C60
+void __cdecl Sound_StopBuffer(int Buffer) {
     if (!g_EnableSound || Buffer < 0) return;
     LPDIRECTSOUNDBUFFER pBuf = g_lpDSBuffer[Buffer][0];
     if (pBuf) {

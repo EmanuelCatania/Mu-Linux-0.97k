@@ -17,15 +17,19 @@
 //   +0x2F6  short target_id_pvp       — used during teleport
 //
 // Helper functions identified:
-//   FUN_004742b0  = Entity_WeaponHit    — weapon hit sparkle particle at bone[0]
+//   FUN_004742b0  = CreateTeleportBegin — canonical mapping; the port's `Entity_WeaponHit`
+//                   helper has no verified FUN mapping.
 //   FUN_0042bc00  = SetPlayerBow (nombre real en IDA; el alias
 //                   `Entity_ResetToWalk` es inventado del port).  Toma el
 //                   PUNTERO a la entidad, no el indice.
 //   FUN_00444a80  = Entity_SelectTarget_Player — set caster's attack target to player entity
-//   FUN_00444d90  = Entity_TeleportEnd  — completes teleport, snaps entity to final pos
-//   FUN_004792c0  = Entity_TeleportAnim — starts teleport animation at world pos
+//   FUN_00444d90  = SetPlayerDie (per Net/SecondPassword.cpp); the port's `Entity_TeleportEnd`
+//                   helper has no verified FUN mapping.
+//   FUN_004792c0  = CreatePoint (per Entity_LegacyTeleport.cpp); the port's `Entity_TeleportAnim`
+//                   helper has no verified FUN mapping.
 //   FUN_00480620  = UI_ShowExpGainOverlay — draws +EXP floating text on screen
-//   FUN_00474310  = Entity_MeleeAttackStart (see Combat.cpp)
+//   FUN_00474310  = CreateTeleportEnd (per Entity_LegacyTeleport.cpp); the port's
+//                   `Entity_MeleeAttackStart` helper has no verified FUN mapping.
 //
 // Skill type table (byte[3] in packet 0x19):
 //   0x01 / 0x11  Arrow / basic ranged  — UI 0x3C, reset walk if mid-attack, select target
@@ -58,10 +62,10 @@ extern "C" void DbgLogPublic(const char* msg);
 extern "C" void __cdecl CreateTeleportBegin(unsigned int entity); // 0x004742b0
 extern "C" void __cdecl CreateTeleportEnd(unsigned int entity);   // 0x00474310
 extern void Entity_ResetToWalk(int entity_ptr);             // 0x0042bc00 = SetPlayerBow — recibe PUNTERO
-extern void Entity_TeleportEnd(int entity_idx);             // 0x00444d90
-extern void Entity_TeleportAnim(float* world_pos, float, float, float); // 0x004792c0
+extern void Entity_TeleportEnd(int entity_idx);             // Legacy helper; no verified FUN mapping.
+extern void Entity_TeleportAnim(float* world_pos, float, float, float); // Legacy helper; no verified FUN mapping.
 extern void UI_ShowExpGainOverlay(int amount);              // 0x00480620
-extern void Entity_MeleeAttackStart(int entity_idx);        // 0x00474310 (Combat.cpp)
+extern void Entity_MeleeAttackStart(int entity_idx);        // Legacy helper; no verified FUN mapping.
 extern int  Entity_FindById(int id);                        // 0x0045ac80 (Monster.cpp)
 extern void Particle_Spawn(int type, float x, float y, float z, int flags); // particle system
 extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);

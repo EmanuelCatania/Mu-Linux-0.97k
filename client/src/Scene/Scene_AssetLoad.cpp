@@ -112,13 +112,13 @@ void __cdecl FUN_00510320(void) {
     // Data/BMD loaders (locale-sensitive)
     if (DAT_0055a7c4 == '\0') {
         crt_sprintf(local_64, "Data2/Local/item_%s.txt", (char*)DAT_0055a7a4);
-        FUN_0047b130(local_64);
-        FUN_0047b650("Data/Local/Item.bmd");
+        Item_LoadTextData(local_64);
+        Item_SaveBMD("Data/Local/Item.bmd");
         crt_sprintf(local_64, "Data2/Local/skill_%s.txt", (char*)DAT_0055a7a4);
-        FUN_0047a5b0(local_64);
-        FUN_0047a970("Data/Local/Skill.bmd");
-        FUN_0047a010("Data2/Gate.txt");
-        FUN_0047a170("Data/Gate.bmd");
+        Skill_LoadTextData(local_64);
+        Skill_SaveBMD("Data/Local/Skill.bmd");
+        Gate_LoadTextData("Data2/Gate.txt");
+        Gate_SaveBMD("Data/Gate.bmd");
         crt_sprintf(local_64, "Data2/Local/Filter_%s.txt", (char*)DAT_0055a7a4);
         FUN_004799d0(local_64);
         FUN_00479a50("Data/Local/Filter.bmd");
@@ -129,16 +129,16 @@ void __cdecl FUN_00510320(void) {
         FUN_00479cf0(local_64);
         FUN_00479d70("Data/Local/FilterName.bmd");
     } else {
-        FUN_0047b740("Data/Local/Item.bmd");
-        FUN_0047ac50("Data/Local/Skill.bmd");
-        FUN_0047a4d0("Data/Gate.bmd");
+        Item_LoadBMD("Data/Local/Item.bmd");
+        Skill_LoadBMD("Data/Local/Skill.bmd");
+        Gate_LoadBMD("Data/Gate.bmd");
         FUN_00479b30("Data/Local/Filter.bmd");
         FUN_00479e50("Data/Local/FilterName.bmd");
-        FUN_0047b020("Data/Local/Dialog_Spn.bmd");   // cliente traducido: solo Dialog_{Eng,Por,Spn}.bmd
+        Dialog_LoadBMD("Data/Local/Dialog_Spn.bmd");  // cliente traducido: solo Dialog_{Eng,Por,Spn}.bmd
         FUN_00401040((int)(uintptr_t)DAT_00583d8c, "Data/Local/Quest.bmd");
     }
     crt_sprintf(local_64, "Data/Local/NPCName.txt");   // cliente: archivo sin sufijo de locale
-    FUN_0047d120(local_64);
+    NPCName_LoadTextData(local_64);
     // Sound preloads (tail of OpenBasicData @ 0x00510F65-0x00510FC5).
     // IDs y filenames verificados contra IDA Hex-Rays 00510320_OpenBasicData.c
     // y los binary patches del companion project (Mu-linux-97K/Source/Client/
@@ -153,5 +153,5 @@ void __cdecl FUN_00510320(void) {
     FUN_00404a10(0x26, "Data\\Sound\\iWhisper.wav",      1, '\0');  // 38
 }
 // FUN_00511060 — implemented in src/Monster/Monster_Data.cpp
-// FUN_00511140 — implemented in src/Render/GL_State.cpp
-// FUN_005111d0 — implemented in src/Render/GL_State.cpp
+// GL_CaptureScreenshot — implemented in src/Render/GL_State.cpp
+// GL_GetModelViewMatrix — implemented in src/Render/GL_State.cpp

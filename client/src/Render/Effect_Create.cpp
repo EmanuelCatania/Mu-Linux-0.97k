@@ -1738,7 +1738,7 @@ LAB_0046520b:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)((int)puVar11 + uVar10) =
-           (DAT_00559050[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -1821,7 +1821,7 @@ LAB_0046546c:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -1913,7 +1913,7 @@ LAB_00462736:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)((int)puVar11 + uVar10) =
-           (DAT_00559050[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -2280,7 +2280,7 @@ LAB_004620e8:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)puVar11) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -2363,7 +2363,7 @@ LAB_00462338:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -2456,7 +2456,7 @@ LAB_004619cc:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)puVar11) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -2539,7 +2539,7 @@ LAB_00461c25:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {        *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
       }
@@ -2801,7 +2801,7 @@ LAB_00461354:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)puVar11) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -2884,7 +2884,7 @@ LAB_004615a4:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -3035,7 +3035,7 @@ LAB_004638bc:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)puVar11) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)puVar11) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -3180,7 +3180,7 @@ LAB_00463a2e:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -3444,7 +3444,7 @@ LAB_00463377:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)(uVar10 + (int)pfVar17) =
-           (DAT_00559050[uVar16] ^ *(char *)(uVar10 + (int)pfVar17) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)(uVar10 + (int)pfVar17) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -3529,7 +3529,7 @@ LAB_004635a0:
       if ((int)uVar16 < 0) {
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
-      bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+      bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
       *pbVar13 = bVar6;
       if (uVar10 < 0x583) {
         *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar17) ^ bVar6;
@@ -3621,7 +3621,7 @@ LAB_00462d84:
         uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
       }
       *(byte *)((int)puVar11 + uVar10) =
-           (DAT_00559050[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
+           (PacketXorKey16[uVar16] ^ *(char *)((int)puVar11 + uVar10) - 0x23U) + 0xb9;
       uVar10 = uVar10 - 1;
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
@@ -3703,7 +3703,7 @@ LAB_00462fd4:
         if ((int)uVar16 < 0) {
           uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
         }
-        bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+        bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
         *pbVar13 = bVar6;
         if (uVar10 < 0x583) {
           *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;
@@ -3807,7 +3807,7 @@ LAB_004628a8:
     if ((int)uVar16 < 0) {
       uVar16 = (uVar16 - 1 | 0xfffffff0) + 1;
     }
-    bVar6 = (DAT_00559050[uVar16] ^ *pbVar13 + 0x47) + 0x23;
+    bVar6 = (PacketXorKey16[uVar16] ^ *pbVar13 + 0x47) + 0x23;
     *pbVar13 = bVar6;
     if (uVar10 < 0x583) {
       *pbVar13 = *(byte *)(uVar10 + 1 + (int)pfVar14) ^ bVar6;

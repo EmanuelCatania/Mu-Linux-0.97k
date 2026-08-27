@@ -183,7 +183,7 @@ undefined4 __cdecl FUN_00402fd0(void *param_1)
 // 1000-slot ground-items pool DAT_07e12840, stride 0x204). Per active slot:
 // advances Z by velocity, decays velocity by _DAT_005527d0. Checks terrain
 // height via FUN_004f7500; if entity is above terrain + offset, adjusts Y or
-// Z velocity. Calls FUN_005030c0 and FUN_00503650.
+// Z velocity. Calls FUN_005030c0 and Entity_UpdateSparkleEffect (FUN_00503650).
 //
 // 2026-05-08: AUTO-SKIP removed. Walker now uses the properly-sized pool
 // `DAT_07e12840` (1000 × 0x204) with an explicit slot count instead of the
@@ -232,6 +232,6 @@ void FUN_00503760(void)
       *pZ = (float)fVar3;
       FUN_005030c0((int)(ip + 72));
     }
-    FUN_00503650((int)(ip + 72));
+    Entity_UpdateSparkleEffect((int)(ip + 72));
   }
 }

@@ -55,10 +55,10 @@ static BYTE* Warrior_GetSkillRecord97k(int skillType)
     return nullptr;
 }
 
-// FUN_00485780 @ 0x00485780 — UseSkillWarrior(c=CHARACTER*, o=OBJECT*)
+// IDA: FUN_00485780 @ 0x00485780 — UseSkillWarrior(c=CHARACTER*, o=OBJECT*)
 // Client-side handler for all Warrior skill activations (1989 lines in Ghidra).
 // 1. Resolves skill ID from DAT_07d78098/DAT_07d7809c (+ CharacterAttribute skill table).
-// 2. Sends opcode 0x10 position packet (XOR-encrypted — delegated to FUN_0048d640).
+// 2. Sends opcode 0x10 position packet (XOR-encrypted — delegated to Combat_ProcessQueuedAction).
 // 3. Sets attack animation based on model type (0x186=special warrior anims).
 // 4. Spawns caster sparkle effect 0x4D0, plays random sword sound.
 // 5. Computes facing angle toward target via CreateAngle.
@@ -66,7 +66,7 @@ static BYTE* Warrior_GetSkillRecord97k(int skillType)
 // 7. Sends opcode 0x19 skill packet for each specific skill type.
 // 8. Final: sends opcode 0x11 if tile is walkable.
 // Anti-tamper hash table ops and XOR encryption blocks are skipped per project policy.
-void __cdecl FUN_00485780(int c, int o)
+void __cdecl Combat_UseWarriorSkill(int c, int o)
 {
     if (!c || !o) return;
 
@@ -84,7 +84,7 @@ void __cdecl FUN_00485780(int c, int o)
 
     // Send opcode 0x10 position packet (movement before skill) using the
     // real 97k sender, not the old zero-arg legacy helper.
-    FUN_00491c40(c, o);
+    Combat_SendMovePathPacket(c, o);
 
     // Clear movement flag
     *(BYTE*)(c + 0x2EC) = 0;
@@ -207,7 +207,8 @@ void __cdecl FUN_00485780(int c, int o)
 
 // ── Entity action stubs (Skills.cpp / Combat.cpp externs) ────────────────────
 
-// Entity_WeaponHit @ 0x004742B0
+// Legacy helper only; no canonical FUN mapping retained here. Previous `FUN_004742B0`
+// label was incorrect: IDA FUN_004742B0 is documented as CreateTeleportBegin in Entity_LegacyTeleport.cpp.
 // Hit reaction: Entity_SetAnimation(0x57), clear +0x164, set +0x7C=1,
 // spawn effect 0x498 at entity pos, play sound 0x58.
 void __cdecl Entity_WeaponHit(int param_1) {
@@ -221,7 +222,8 @@ void __cdecl Entity_WeaponHit(int param_1) {
     FUN_00404bc0(0x58, 0, 0);
 }
 
-// Entity_ResetToWalk @ 0x0042BC00
+// IDA: FUN_0042BC00 is named SetPlayerBow in the reference notes; `Entity_ResetToWalk`
+// remains this port's descriptive legacy alias.
 // Reads anim at +0x288. If NOT in attack range (0x210-0x216 / 0x221):
 //   if prev anim (+0x270) was wind-up (0x218-0x21E or 0x220): set walk/swim-walk.
 // If currently in attack anim: immediately revert to walk (0x2E) or swim-walk (0x30).
@@ -239,7 +241,7 @@ void __cdecl Entity_ResetToWalk(int param_1) {
     FUN_0043e820(param_1, (swimming && has_water) ? 0x30 : 0x2e);
 }
 
-// Entity_SelectTarget_Player @ 0x00444A80
+// IDA: FUN_00444A80 @ 0x00444A80 — Entity_SelectTarget_Player.
 // entity_type 0x186 (special NPC): picks idle/stance anim from 0x52/0x53/0x56/0x5B.
 // Other types: increments combo_counter (+0x303) and alternates anim 3 / 4.
 void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
@@ -264,7 +266,8 @@ void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
     FUN_0043e820(param_1, uVar1 + 0x52); // 0x52 or 0x53 random idle
 }
 
-// Entity_TeleportEnd @ 0x00444D90
+// Legacy helper only; no canonical FUN mapping retained here. `FUN_00444D90` is
+// documented as SetPlayerDie in Net/SecondPassword.cpp, so the old address label was misleading.
 // Handles landing after a teleport:
 //   If local player (param_1 == DAT_07abf5d8): clears teleport-state flag at DAT_07cf1ff4+0x1c.
 //   Spawns landing visual effects per class:
@@ -333,7 +336,8 @@ LAB_00445110:
     }
 }
 
-// Entity_TeleportAnim @ 0x004792C0
+// Legacy helper only; no canonical FUN mapping retained here. `FUN_004792C0` is
+// documented as CreatePoint in Entity_LegacyTeleport.cpp, so the old address label was misleading.
 // Finds a free slot in the teleport-effect pool (DAT_07C80110, stride 0x70, ~12 entries).
 // Fills: active=1, entity_id, src_pos (world_pos + height_offset DAT_00552958), dst_pos.
 // Slots: [0x00]=active, [0x04]=entity_id, [0x10..0x18]=src_pos, [0x1C..0x24]=dst_pos,
@@ -364,7 +368,8 @@ void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_p
     }
 }
 
-// Entity_MeleeAttackStart @ 0x00474310
+// Legacy helper only; no canonical FUN mapping retained here. `FUN_00474310` is
+// documented as CreateTeleportEnd in Entity_LegacyTeleport.cpp, so the old address label was misleading.
 // Melee attack initiation: anim 0x57, set speed=5.0f (+0x108), mode=3 (+0x7C),
 // scale=1.0f (+0x164), spawn effect 0x498, play sound 0x58.
 void __cdecl Entity_MeleeAttackStart(int param_1) {

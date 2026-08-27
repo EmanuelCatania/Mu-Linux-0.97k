@@ -828,9 +828,9 @@ void __cdecl FUN_00441e00(void *model, int flags, float f1, float f2, float f3, 
     glPopMatrix();
 }
 
-// FUN_00509810 @ 0x00509810 — Model_SetAnimSlots(slot_idx, s0, s1, s2, s3, s4)
+// FUN_00509810 @ 0x00509810 — Model_SetAnimationSlots(slot_idx, s0, s1, s2, s3, s4)
 // Writes 5 shorts into model slot at DAT_05828d58 + slot_idx * 0xbc + 0xaa.
-void __cdecl FUN_00509810(int param_1, int param_2, int param_3, int param_4, int param_5, int param_6) {
+void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int param_4, int param_5, int param_6) {
     int base = param_1 * 0xbc + DAT_05828d58;
     *(short*)(base + 0xaa) = (short)param_2;
     *(short*)(base + 0xac) = (short)param_3;

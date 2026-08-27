@@ -8,7 +8,7 @@
 #include "Net/Net.h"
 #include "Render/Camera.h"
 
-// Login_CameraUpdate @ 0x004F8EB0 — SIGNATURE MISMATCH.
+// FUN_004F8EB0 @ 0x004F8EB0 — Login_CameraUpdate; wrapper signature differs.
 // Real: void Login_CameraUpdate(float *entity_pos). Builds login-screen orbit camera:
 // timer-driven rotation (FUN_004CB520 * DAT_0055283C * cos/sin constants),
 // applies rotation matrix (FUN_004F9DB0 + FUN_004FA0B0) and writes to

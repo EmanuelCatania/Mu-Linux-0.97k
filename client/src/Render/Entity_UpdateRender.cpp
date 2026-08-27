@@ -191,7 +191,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             // (FUN_00505a10 / FUN_004f8bb0 — see Entity_DrawAt.cpp)
             if ((DAT_0055a7ac > 10) && (DAT_0055a7ac < 17) && (fDist < *(float *)(puVar13 + 6)))
                 *(float *)(puVar13 + 6) = fDist;
-            FUN_00511710();
+            GL_SetBlendAdditive();
             // Billboard sparkle at bone 0x13 when entering/leaving range
         }
     }

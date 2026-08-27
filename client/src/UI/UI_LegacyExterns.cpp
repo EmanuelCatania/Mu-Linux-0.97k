@@ -112,12 +112,12 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
 
     EnableAlphaTest(true);
     glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
-    FUN_005124c0((float)(drawX - 1), (float)(drawY - 1), (float)(boxW + 2), 1.0f);
-    FUN_005124c0((float)(drawX - 1), (float)(drawY + boxH), (float)(boxW + 2), 1.0f);
-    FUN_005124c0((float)(drawX - 1), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
-    FUN_005124c0((float)(drawX + boxW), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
+    GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), (float)(boxW + 2), 1.0f);
+    GL_DrawRect((float)(drawX - 1), (float)(drawY + boxH), (float)(boxW + 2), 1.0f);
+    GL_DrawRect((float)(drawX - 1), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
+    GL_DrawRect((float)(drawX + boxW), (float)(drawY - 1), 1.0f, (float)(boxH + 2));
     glColor4f(0.0f, 0.0f, 0.0f, 0.82f);
-    FUN_005124c0((float)drawX, (float)drawY, (float)boxW, (float)boxH);
+    GL_DrawRect((float)drawX, (float)drawY, (float)boxW, (float)boxH);
 
     int lineY = drawY + padY;
     for (int i = 0; i < count; ++i) {
@@ -440,7 +440,8 @@ void __cdecl FUN_004c9730(float a1, int a2, int a3)
 
 extern "C" int Text_MeasureOrthoWidth(const char* text);   // definido más abajo
 
-// FUN_0047f7a0 @ 0x0047F7A0 — Text_Draw(x, y, text, maxw, iSort, extra)
+// FUN_0047F7A0 @ 0x0047F7A0 (IDA)
+// UI_DrawText — Text_Draw(x, y, text, maxw, iSort, extra)
 // Draws text via Font vtable dispatch (FUN_0040f610) if non-empty or maxw!=0.
 // Return type is void per functions.h declaration.
 //
@@ -452,7 +453,8 @@ extern "C" int Text_MeasureOrthoWidth(const char* text);   // definido más abaj
 // Master]", "Fuerza:1000" etc. pegados a la izquierda en lugar de centrados.
 // IDA original delega al `CUIRenderText::RenderText` que maneja iSort
 // internamente; lo replicamos inline acá.
-void __cdecl FUN_0047f7a0(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6) {
+// IDA: FUN_0047F7A0
+void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, int param_5, int param_6) {
     (void)param_6;
     if (param_3 == nullptr) return;
     // 2026-05-08: bug-fix — múltiples crashes en ucrtbase.dll's strlen/lstrlenA
@@ -555,8 +557,8 @@ void __cdecl FUN_0047fe30(void *param_1_v, int param_2, void *param_3_v, int par
 // correctos, que era lo que faltaba.
 //
 // Coordenadas: callers pasan Y con origen TOP-LEFT (convención game). La GL
-// ortho es `gluOrtho2D(0, vw, 0, vh)` Y-bottom (ver FUN_005123c0 en
-// Render/GL_2D.cpp). FUN_005125a0 Y-flipa via `vh - param_3`. Acá hacemos
+// ortho es `gluOrtho2D(0, vw, 0, vh)` Y-bottom (ver GL_Begin2D en
+// Render/GL_2D.cpp). GL_DrawTexture Y-flipa via `vh - param_3`. Acá hacemos
 // lo mismo para raster pos.
 //
 // Color: DAT_00559c78 es el COLORREF GDI (0x00BBGGRR). Se convierte a glColor.
@@ -576,7 +578,7 @@ void __cdecl FUN_0047fe30(void *param_1_v, int param_2, void *param_3_v, int par
 // que el recuadro cubra exactamente las letras.
 //
 // Deliberadamente NO usamos `g_fScreenRate_x` (_DAT_055c9b70) ni
-// `FUN_00511950` para esto: son dos fuentes de escala que en nuestro build
+// `Screen_ToGLX` para esto: son dos fuentes de escala que en nuestro build
 // están DESINCRONIZADAS.  `g_fScreenRate_x` sale de `g_ScreenW` (Config_Load),
 // mientras que el ortho y el viewport salen de `DAT_0056156c` — y son dos
 // variables separadas (globals.cpp:303 vs Config_Load.cpp:49), donde nada

@@ -56,7 +56,7 @@ void __cdecl FUN_00404330(void *param_1_v,void *param_2_v)
   *pbVar1 = bVar2;
   bVar2 = bVar2 - 0x23;
   *pbVar1 = bVar2;
-  bVar2 = (bVar2 ^ DAT_00559050[0]) + 0xb9;
+  bVar2 = (bVar2 ^ PacketXorKey16[0]) + 0xb9;
   *pbVar1 = bVar2;
   *param_1 = bVar2;
   operator_delete(pbVar1);
@@ -78,7 +78,7 @@ void __cdecl FUN_00423710(void *param_1_v,void *param_2_v)
   pbVar2 = (byte*)operator_new(1);
   cVar1 = *param_2;
   *pbVar2 = cVar1 + 0x47U;
-  *pbVar2 = (cVar1 + 0x47U ^ DAT_00559050[0]) + 0x23;
+  *pbVar2 = (cVar1 + 0x47U ^ PacketXorKey16[0]) + 0x23;
   iVar3 = _rand();
   *param_2 = (char)iVar3;
   *param_1 = *pbVar2;
@@ -113,7 +113,7 @@ void __cdecl FUN_00423760(void *param_1_v,void *param_2_v)
     if ((int)uVar4 < 0) {
       uVar4 = (uVar4 - 1 | 0xfffffff0) + 1;
     }
-    bVar1 = (DAT_00559050[uVar4] ^ bVar1 + 0x47) + 0x23;
+    bVar1 = (PacketXorKey16[uVar4] ^ bVar1 + 0x47) + 0x23;
     *pbVar5 = bVar1;
     if (uVar6 < 3) {
       *pbVar5 = pbVar2[uVar6 + 1] ^ bVar1;
@@ -138,7 +138,7 @@ void __cdecl FUN_00423c40(int param_1,int param_2)
   iVar1 = 0;
   if (0 < param_2) {
     do {
-      *(byte *)(iVar1 + param_1) = *(byte *)(iVar1 + param_1) ^ (&DAT_00559678)[iVar1 % 3];
+      *(byte *)(iVar1 + param_1) = *(byte *)(iVar1 + param_1) ^ (&PacketXorKey3)[iVar1 % 3];
       iVar1 = iVar1 + 1;
     } while (iVar1 < param_2);
   }
@@ -179,7 +179,7 @@ void __cdecl FUN_00404400(void *param_1_v,void *param_2_v)
     if ((int)uVar3 < 0) {
       uVar3 = (uVar3 - 1 | 0xfffffff0) + 1;
     }
-    bVar1 = (DAT_00559050[uVar3] ^ bVar1 + 0x47) + 0x23;
+    bVar1 = (PacketXorKey16[uVar3] ^ bVar1 + 0x47) + 0x23;
     *pbVar6 = bVar1;
     if (uVar7 < 0x583) {
       *pbVar6 = pbVar2[uVar7 + 1] ^ bVar1;
@@ -228,7 +228,7 @@ void __cdecl FUN_00409e20(void *param_1_v,void *param_2_v)
     if ((int)uVar4 < 0) {
       uVar4 = (uVar4 - 1 | 0xfffffff0) + 1;
     }
-    *(byte *)(uVar3 + (int)puVar2) = (DAT_00559050[uVar4] ^ bVar1) + 0xb9;
+    *(byte *)(uVar3 + (int)puVar2) = (PacketXorKey16[uVar4] ^ bVar1) + 0xb9;
     uVar3 = uVar3 - 1;
     iVar5 = iVar5 + -1;
   } while (iVar5 != 0);
@@ -756,7 +756,7 @@ void __cdecl FUN_00404370(void *vparam_1, void *vparam_2) {
         ((unsigned char*)puVar2)[uVar4] = bVar1;
         unsigned int uVar5 = uVar4 & 0x8000000fu;
         if ((int)uVar5 < 0) uVar5 = (uVar5 - 1 | 0xfffffff0u) + 1;
-        ((unsigned char*)puVar2)[uVar4] = (DAT_00559050[uVar5] ^ bVar1) + 0xb9;
+        ((unsigned char*)puVar2)[uVar4] = (PacketXorKey16[uVar5] ^ bVar1) + 0xb9;
         uVar4--;
         iVar3--;
     } while (iVar3 != 0);
@@ -884,7 +884,7 @@ void __fastcall FUN_00408ff0(void* param_1) {
             // ¿cae en pantalla? Projection (0x5113F0) devuelve coords 640x480.
             float ctr[3] = { (mn[0]+mx[0])*0.5f, (mn[1]+mx[1])*0.5f, (mn[2]+mx[2])*0.5f };
             int psx = -9999, psy = -9999;
-            FUN_005113f0(ctr, &psx, &psy);
+            Camera_ProjectWorldToScreen(ctr, &psx, &psy);
             char clb[300];
             _snprintf_s(clb, sizeof(clb), _TRUNCATE,
                 "CLOTHDBG v0=(%.1f,%.1f,%.1f) min=(%.1f,%.1f,%.1f) max=(%.1f,%.1f,%.1f) "
@@ -896,8 +896,8 @@ void __fastcall FUN_00408ff0(void* param_1) {
     }
 
     unsigned flags = (unsigned)thiz[5] & 0x3000u;                 // +0x14
-    if (flags == 0)          FUN_00511600();                      // DisableAlphaBlend
-    else if (flags == 0x1000) FUN_00511680('');               // EnableAlphaTest
+    if (flags == 0)          GL_ResetState();                      // DisableAlphaBlend
+    else if (flags == 0x1000) GL_SetBlendSrcOver('');               // EnableAlphaTest
 
     glColor3f(1.0f, 1.0f, 1.0f);
     float texFront, texBack;
@@ -924,7 +924,7 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
     int rows = thiz[11];   // +0x2c
     int texId; memcpy(&texId, &param_2, 4);
 
-    FUN_00511480(texId);
+    GL_BindTextureSlot(texId);
     glBegin(GL_QUADS);
     if (param_1) {
         // cara delantera: (c,r) (c+1,r) (c+1,r+1) (c,r+1)

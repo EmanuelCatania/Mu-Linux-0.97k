@@ -469,5 +469,5 @@ inline void AddTerrainLight(float xf, float yf, float* Light, int Range, float* 
 #define Alpha                FUN_0043e5c0   // Particle_CommitState / finalize alpha
 #define AddTerrainAttributeRange FUN_004f6f30
 #define AddTerrainAttribute      FUN_004f6ef0
-#define RenderBitmap         FUN_005125a0
+#define RenderBitmap         GL_DrawTexture
 #define Particle_Spawn       FUN_00475220

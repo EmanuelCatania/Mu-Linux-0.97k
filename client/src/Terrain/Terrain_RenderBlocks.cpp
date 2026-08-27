@@ -80,7 +80,7 @@ void __cdecl AddTerrainLightClip_stub(float xf, float yf, float Light[3], int Ra
 void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool EditFlag) {
     // 0x004F9720 — renders a 4x4 terrain tile block
     // _DAT_00552504 = 0.5f (half-tile center), _DAT_0055256c = 1.0f (tile stride)
-    // CameraTopViewEnable = DAT_083a42e9
+    // CameraTopViewEnable = CameraTopViewEnabled
     // RenderTerrainTile = FUN_004f8480 (declared with int params but actually takes floats via stack)
     // TestFrustrum2D = FUN_004f8ff0
     float startX = xf;
@@ -91,7 +91,7 @@ void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool Ed
         xf = startX;
         do {
             unsigned short visible = FUN_004f8ff0(xf + _DAT_00552504, centerY, 0.0f);
-            if (visible || DAT_083a42e9 != 0) {
+            if (visible || CameraTopViewEnabled != 0) {
                 // RenderTerrainTile(xf, yf, col+xi, row+yi, 1.0f, 1, EditFlag)
                 // functions.h declares first 2 params as int; reinterpret float bits
                 FUN_004f8480(*(int*)&xf, *(int*)&yf, col + xi, row + yi, 1.0f, 1, (int)EditFlag);
@@ -110,7 +110,7 @@ void __cdecl RenderTerrainFrustrum_stub(bool EditFlag) {
     // FrustrumBoundMinX_1 = DAT_0839bc90, FrustrumBoundMinY_1 = DAT_0839bc94
     // FrustrumBoundMaxX_1 = DAT_0055a774, FrustrumBoundMaxY_1 = DAT_0055a778
     // _DAT_0055264c = 2.0f (block center offset), _DAT_00552650 = 4.0f (block stride)
-    // TestFrustrum2D = FUN_004f8ff0, CameraTopViewEnable = DAT_083a42e9
+    // TestFrustrum2D = FUN_004f8ff0, CameraTopViewEnable = CameraTopViewEnabled
     int yi = (int)DAT_0839bc94;  // FrustrumBoundMinY_1
     if (yi <= (int)DAT_0055a778) {  // FrustrumBoundMaxY_1
         float blockY = (float)yi;
@@ -122,7 +122,7 @@ void __cdecl RenderTerrainFrustrum_stub(bool EditFlag) {
                 float blockX = (float)xi;
                 do {
                     unsigned short visible = FUN_004f8ff0(blockX + _DAT_0055264c, centerY, -40.0f);
-                    if (visible || DAT_083a42e9 != 0) {
+                    if (visible || CameraTopViewEnabled != 0) {
                         RenderTerrainBlock_stub(blockX, blockY, xi, yi, EditFlag);
                     }
                     blockX = blockX + _DAT_00552650;  // 4.0f

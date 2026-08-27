@@ -31,7 +31,7 @@
 //   FUN_004f9db0(&local_9c, local_30)
 //     → Matrix_FromEuler({0,0,Z}, out_mat[12])   (solo rotación en Z = spin angle)
 //
-//   FUN_00511480(param_1)
+//   GL_BindTextureSlot(param_1)
 //     → Particle_SetTexture(type)   — bind textura según tipo de partícula
 //
 // ── PROYECCIÓN MUNDO→PANTALLA ─────────────────────────────────────────────────
@@ -85,7 +85,7 @@
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
 //   FUN_004f9db0  → Matrix_FromEuler(angles[3], out_mat[12])
-//   FUN_00511480  → Particle_SetTexture(type)  — bind GL texture por tipo
+//   GL_BindTextureSlot  → Particle_SetTexture(type)  — bind GL texture por tipo
 //   FUN_004fa0b0  → Matrix_TransformPoint(pt, mat, out)
 //   FUN_004f8740  → Particle_DrawQuad(x, y, scale, flag, corners, solid, alpha)
 //                   Función que hace los calls glVertex3f / glTexCoord2f reales

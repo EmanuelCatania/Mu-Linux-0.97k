@@ -12,7 +12,7 @@
 // (matching FUN_00409e20 logic), then re-inserts into the session hash table.
 // Also resets queued item/skill/chat slots after dispatch.
 // Called once per frame from the main loop.
-void FUN_004cbdf0(void)
+void Net_ProcessReceiveQueue(void)
 {
     return;  // AUTO-SKIP: absolute end-bound loop (Ghidra artifact — pool not populated in our build).
   char cVar1;
@@ -108,7 +108,7 @@ void FUN_004cbdf0(void)
               uVar7 = (uVar7 - 1 | 0xfffffff0) + 1;
             }
             *(byte *)(uVar2 + (int)puVar4) =
-                 (DAT_00559050[uVar7] ^ *(char *)(uVar2 + (int)puVar4) - 0x23U) + 0xb9;
+                 (PacketXorKey16[uVar7] ^ *(char *)(uVar2 + (int)puVar4) - 0x23U) + 0xb9;
             uVar2 = uVar2 - 1;
             iStack0000000c = iStack0000000c + -1;
           } while (iStack0000000c != 0);
@@ -245,7 +245,7 @@ LAB_004cc05c:
 //   FUN_004e6550..FUN_004ec330 (if DAT_07eaa117 != 0 — extended scene)
 //   FUN_004df410 (if DAT_07eaa164 == 0 — not in special mode)
 //   FUN_004e7ac0, FUN_004e8b70 (always)
-void FUN_004ecb00(void)
+void Scene_ProcessPacketUpdates(void)
 {
   undefined4 uVar1;
   undefined4 extraout_ECX;

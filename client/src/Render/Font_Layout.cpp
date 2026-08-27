@@ -2,7 +2,7 @@
 #include "functions.h"
 #include "globals.h"
 
-// ── FUN_0050f5f0 @ 0x0050F5F0 — Font_BuildLayout(hdc) ───────────────────────
+// ── FUN_0050f5f0 @ 0x0050F5F0 — Font_CreateTextDib(hdc) ────────────────────
 // Creates a DIB section for font rendering.
 // Called from the model/resource loader init path with a DC handle.
 //
@@ -15,9 +15,9 @@
 // Creates a compatible memory DC (DAT_055c9fec), selects the bitmap into it,
 // sets background mode to TRANSPARENT (1).
 //
-// Called before FUN_0040f570 (Font_BuildCharMap) to set up the memory DC
+// Called before Font_CreateRenderer (FUN_0040f570) to set up the memory DC
 // used for GDI text rendering into the font texture.
-void __cdecl FUN_0050f5f0(int dc)
+void __cdecl Font_CreateTextDib(int dc)
 {
     BITMAPINFO *bmi = (BITMAPINFO *)operator_new(0x428);
     // BUG-FIX 2026-07-19: el "zero loop" de Ghidra escribía 10 veces sobre

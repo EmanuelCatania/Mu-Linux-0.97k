@@ -327,7 +327,7 @@ void PacketHandler_0x11(int packet);
 // 0x00427a00  PacketHandler_0x0D(int packet)
 //   Paquete de chat/notificación del servidor (NO es movimiento).
 //   byte[3] sub-tipo:
-//     0: FUN_0047fae0(packet+4, 0)      — broadcast/aviso de sistema
+//     0: UI_AddNotice(packet+4, 0)      — broadcast/aviso de sistema
 //     1: FUN_00480620(..., packet+4, 1) — mensaje de GM
 //     2: Copia string de packet+4 a DAT_07e913a8 (max 14 chars)
 //                                        para banner de texto en pantalla

@@ -50,8 +50,8 @@ void __cdecl FUN_00441f00(void *model, int param_1, int param_2)
 {
     char *this_ = (char*)model;
     if (*(short*)(this_ + 0x24) == 0) return;
-    FUN_00511590('\0');
-    FUN_00511530();
+    GL_SetAlphaTest('\0');
+    GL_DisableDepthWrites();
     FUN_00440d30();
     int meshCount = *(short*)(this_ + 0x24);
     int local_20 = 0;
@@ -78,5 +78,5 @@ void __cdecl FUN_00441f00(void *model, int param_1, int param_2)
         glEnd();
     }
     glPopMatrix();
-    FUN_00511510();
+    GL_EnableDepthWrites();
 }

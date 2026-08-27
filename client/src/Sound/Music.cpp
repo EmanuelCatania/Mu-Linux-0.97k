@@ -1,15 +1,15 @@
 // Music.cpp
 // BGM (mp3) via el proceso externo MuPlayer.exe.
 //
-// FUN_004127f0 @ 0x004127F0 — StopMp3
-// FUN_00412890 @ 0x00412890 — PlayMp3
+// IDA: FUN_004127F0 — StopMp3
+// IDA: FUN_00412890 — PlayMp3
 //
-// Las dos comparan el nombre recibido contra el track en curso (DAT_055c9d04).
+// Las dos comparan el nombre recibido contra el track en curso (MusicCurrentTrack).
 // StopMp3 manda WM_CLOSE a la ventana "MuPlayer"; PlayMp3 ademas la lanza con
 // WinExec si no existe.
 //
 // Globals:
-//   DAT_055c9d04  — Mp3FileName @ 0x055C9D04, track en reproduccion (buffer)
+//   MusicCurrentTrack — IDA: DAT_055C9D04, track en reproduccion (buffer)
 //   m_MusicOnOff  — @ 0x055C9E3C, flag on/off (registro "MusicOnOff", default 0)
 //   DAT_055ca018  — Destroy @ 0x055CA018, la app se esta cerrando (lo pone WndProc)
 //
@@ -31,29 +31,29 @@
 #endif
 
 
-// FUN_004127f0 — StopMp3 (0x004127F0)
+// IDA: FUN_004127F0
 // Detiene el BGM si `name` coincide con el track en reproduccion.
 // Port fiel del raw de IDA; el decompile de Ghidra traia el strcmp expandido
 // a mano byte a byte, que es la misma comparacion.
-void __cdecl FUN_004127f0(DWORD param_1_d, int bEnforce)
+void __cdecl Music_StopTrack(DWORD param_1_d, int bEnforce)
 {
     const char* Name = (const char*)(uintptr_t)param_1_d;
     if (Name == NULL) return;   // guard del port: nuestra tabla de nombres puede estar vacia
 
-    if ((m_MusicOnOff || bEnforce) && DAT_055c9d04[0] && strcmp(Name, DAT_055c9d04) == 0)
+    if ((m_MusicOnOff || bEnforce) && MusicCurrentTrack[0] && strcmp(Name, MusicCurrentTrack) == 0)
     {
         FUN_00405540(&DAT_055c9bf0, s_StopMp3_cmd_0055911c);
         HWND hWnd = FindWindowA(NULL, s_MuPlayer_00559110);
         if (hWnd)
         {
             SendMessageA(hWnd, WM_CLOSE, 0, 0);
-            DAT_055c9d04[0] = 0;
+            MusicCurrentTrack[0] = 0;
         }
     }
 }
 
 
-// FUN_00412890 — PlayMp3 (0x00412890)
+// IDA: FUN_00412890
 // Arranca `name` lanzando MuPlayer.exe como proceso externo.
 //   - mismo track ya sonando        -> no hace nada
 //   - otro track sonando            -> lo corta (WM_CLOSE) y sale
@@ -61,7 +61,7 @@ void __cdecl FUN_004127f0(DWORD param_1_d, int bEnforce)
 // Port fiel del raw de IDA. El decompile de Ghidra perdia el 2do argumento del
 // sprintf ("MuPlayer.exe %s" sin el nombre), asi que la linea de comandos salia
 // con basura.
-void __cdecl FUN_00412890(DWORD param_1_d, int bEnforce)
+void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
 {
     const char* Name = (const char*)(uintptr_t)param_1_d;
     if (Name == NULL) return;   // guard del port: nuestra tabla de nombres puede estar vacia
@@ -71,16 +71,16 @@ void __cdecl FUN_00412890(DWORD param_1_d, int bEnforce)
     if (DAT_055ca018 != 0 || (!m_MusicOnOff && !bEnforce))
         return;
 
-    if (DAT_055c9d04[0])
+    if (MusicCurrentTrack[0])
     {
-        if (strcmp(Name, DAT_055c9d04) == 0)
+        if (strcmp(Name, MusicCurrentTrack) == 0)
             return;
 
         HWND hWnd = FindWindowA(NULL, s_MuPlayer_00559110);
         if (hWnd)
         {
             SendMessageA(hWnd, WM_CLOSE, 0, 0);
-            DAT_055c9d04[0] = 0;
+            MusicCurrentTrack[0] = 0;
             return;
         }
     }
@@ -98,7 +98,7 @@ void __cdecl FUN_00412890(DWORD param_1_d, int bEnforce)
         FUN_00405540(&DAT_055c9bf0, s_PlayMp3_cmd_00559140);
         crt_sprintf(CmdLine, s_MuPlayer_exe__s_00559130, Name);
         WinExec(CmdLine, 0);
-        strcpy_s(DAT_055c9d04, sizeof(DAT_055c9d04), Name);
+        strcpy_s(MusicCurrentTrack, sizeof(MusicCurrentTrack), Name);
     }
 }
 

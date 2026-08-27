@@ -17,7 +17,7 @@ void __cdecl RenderGuildMark_stub(float p1, float p2, float p3, float p4, int p5
     float Height = p4;
 
     // Draw background box (texture 0x116) slightly larger
-    FUN_005125a0(0x116, p1 - _DAT_0055256c, p2 - _DAT_0055256c,
+    GL_DrawTexture(0x116, p1 - _DAT_0055256c, p2 - _DAT_0055256c,
                  Width + _DAT_0055264c, Height + _DAT_0055264c,
                  0.0f, 0.0f, Width * _DAT_00552ae4, Height * _DAT_00552a20,
                  '\x01', '\x01');
@@ -88,5 +88,5 @@ void __cdecl RenderGuildMark_stub(float p1, float p2, float p3, float p4, int p5
                  iVar2, iVar3, 0, 0x1908, 0x1401, (void*)Bitmaps[0x22].Buffer);  // GL_RGB, GL_UNSIGNED_BYTE
 
     // Draw the guild mark texture (texture slot 0x22)
-    FUN_005125a0(0x22, p1, p2, Width, Height, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+    GL_DrawTexture(0x22, p1, p2, Width, Height, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
 }

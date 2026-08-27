@@ -333,7 +333,7 @@ void __cdecl FUN_00514310(void)
                                 ReleaseMainData();
                             }
                             FUN_0043dc90((int)(uintptr_t)DAT_055ca160);  // Net_Disconnect
-                            FUN_005102c0();       // ReleaseCharacterSceneData — saca preview
+                            Scene_UnloadCharSelectResources(); // FUN_005102c0 (IDA) — saca preview
                             DAT_005615c0   = 2;   // g_GameState = Login
                             DAT_083a7c14  = 0;   // sub-state = ServerSelect
                             DAT_083a7c18  = 0;

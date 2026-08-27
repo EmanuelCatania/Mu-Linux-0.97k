@@ -155,11 +155,11 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
     // ─── Dead/dying entity (+0x8c != 0): black tint, special shadow draw ──────────────────
     if (*(char *)(param_1 + 0x8c) != '\0') {
         if (DAT_0055a7ac == 7) {
-            FUN_00511680('\x01');
+            GL_SetBlendSrcOver('\x01');
             glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
         }
         else {
-            FUN_00511600();
+            GL_ResetState();
             glColor3f(0.0f, 0.0f, 0.0f);
         }
         if (DAT_0055a7ac == 10) return;

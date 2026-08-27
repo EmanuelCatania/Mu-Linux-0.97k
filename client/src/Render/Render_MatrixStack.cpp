@@ -10,7 +10,7 @@
 
 // ── GL_PopMatrixAll ───────────────────────────────────────────────────────────
 // BUG-FIX CRÍTICO: antes hacía un solo glPopMatrix() asumiendo modo actual.
-// Pero FUN_005119b0 (GL_SetupView) pushea DOS matrices (PROJECTION + MODELVIEW),
+// Pero GL_BeginViewport (GL_SetupView) pushea DOS matrices (PROJECTION + MODELVIEW),
 // y Scene_Login sólo hace un glPopMatrix antes de Begin2D. Resultado: cada frame
 // quedaba un push acumulado en PROJECTION → stack overflow tras 2 frames →
 // matrices corruptas → UI 2D invisible. Aquí forzamos reset completo de ambos
@@ -21,7 +21,7 @@ unsigned int __cdecl GL_PopMatrixAll(void) {
     for (int i = 0; i < 8; ++i) glPopMatrix();
     // Drain ALL pending error flags (multiple underflows can stack).
     // Single glGetError() solo limpia uno; el resto persiste y aparece
-    // como 0x504 en cada FUN_005114f0 next frame.
+    // como 0x504 en cada GL_DisableDepthTest next frame.
     while (glGetError() != GL_NO_ERROR) {}
     glLoadIdentity();
     glMatrixMode(GL_MODELVIEW);

@@ -227,8 +227,8 @@
 //       0xB4..0xB6,0xBF..0xC2 = tipo 2 (Worm)
 //       ... (continúa para todos los 44 tipos)
 //
-//     // Configura índices de animación (FUN_00509810):
-//     FUN_00509810(entity_def_idx, anim0, anim1, anim2, anim3, anim4)
+//     // Configura índices de animación (Model_SetAnimationSlots):
+//     Model_SetAnimationSlots(entity_def_idx, anim0, anim1, anim2, anim3, anim4)
 //       → Asigna idle/walk/run/attack/hurt animation IDs al entity_def
 //
 //     // Establece max_anim_count en DAT_05828d58 + offset para ese tipo

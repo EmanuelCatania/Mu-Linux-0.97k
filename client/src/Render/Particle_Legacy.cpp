@@ -19,9 +19,9 @@ void __cdecl Character_UpdateAll(void) {
     for (int i = 0; i < 1002; ++i, pcVar2 += 0x1bc) {
         if (*pcVar2 != '\0') {
             int blend = *(int*)(pcVar2 + 4);
-            if      (blend == 0) FUN_00511710();
-            else if (blend == 1) FUN_00511790();
-            else if (blend == 2) FUN_00511680('\x01');
+            if      (blend == 0) GL_SetBlendAdditive();
+            else if (blend == 1) GL_SetBlendSrcAlpha();
+            else if (blend == 2) GL_SetBlendSrcOver('\x01');
             FUN_00479670((int)pcVar2);
             *pcVar2 = 0;
         }

@@ -14,7 +14,7 @@
 //   DAT_083a7c4c  — one-time init guard
 //   DAT_083a7c10  — server ack flag (gates per-frame logic)
 //   DAT_05826cb0  — server response: 0x3c=sent, 0x3d=confirmed
-//   DAT_083a42e9  — special viewport mode flag
+//   CameraTopViewEnabled  — special viewport mode flag
 //   DAT_005590ac  — flag enabling anti-tamper block
 //   DAT_0055a7ac  — g_GameSubState
 //   DAT_07eaa11b  — anti-tamper sequence counter
@@ -208,7 +208,7 @@ void Game_CharSelectTick(void)
     DAT_0055a3e4  = 0xffffffff;
     DAT_07d78094  = 0;
 
-    if (DAT_083a42e9 == '\0') {
+    if (CameraTopViewEnabled == '\0') {
         // Standard viewport mode
         DAT_07d78094 = (DAT_083a4278 > 0x1af) ? 1 : 0;
         DAT_055c9b80 = 0;
@@ -220,7 +220,7 @@ void Game_CharSelectTick(void)
             ((FnTick)vt[5])(obj, 0, 0);
         }
         Bisect_ChatMode("CST_post_chatLB");
-        FUN_004ecb00();
+        Scene_ProcessPacketUpdates();
         Bisect_ChatMode("CST_post_4ecb00");
         FUN_00402fd0((void*)(uintptr_t)DAT_00583d8c);
         Bisect_ChatMode("CST_post_402fd0");
@@ -297,7 +297,7 @@ void Game_CharSelectTick(void)
     if (DAT_083a7c24 != 0)
         DAT_07d78094 = 1;
 
-    if (DAT_083a42e9 == '\0')
+    if (CameraTopViewEnabled == '\0')
         FUN_00503760();
     Bisect_ChatMode("CST_post_503760");
 
@@ -318,7 +318,7 @@ void Game_CharSelectTick(void)
     FUN_00500e80();           Bisect_ChatMode("CST_post_500e80");
     FUN_00502320();           Bisect_ChatMode("CST_post_502320");
     Object_MoveUpdate();      Bisect_ChatMode("CST_post_ObjMove");
-    FUN_004821a0();           Bisect_ChatMode("CST_post_4821a0");
+    UI_TickHoverBubbles();           Bisect_ChatMode("CST_post_4821a0");
     FUN_004acef0();           Bisect_ChatMode("CST_post_PlayerInput");
 
     // 2026-05-03: per-entity animation tick RE-ENABLED. La concern de stack

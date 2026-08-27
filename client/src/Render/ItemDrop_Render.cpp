@@ -30,8 +30,8 @@
 //
 // ── SETUP GL POR TIPO ─────────────────────────────────────────────────────────
 //
-//   Items 0x4ec, 0x4ed, y 0x4e6 sub {7,10}: FUN_00511790() → GL_SetBlend2()
-//   Todos los demás: FUN_00511710() → Frame_UpdateTimer()
+//   Items 0x4ec, 0x4ed, y 0x4e6 sub {7,10}: GL_SetBlendSrcAlpha() → GL_SetBlend2()
+//   Todos los demás: GL_SetBlendAdditive() → Frame_UpdateTimer()
 //
 //   Type 0x10a (cofre/caja) — color faded por lifetime:
 //     sub 0, 4: tex 0x4fd, glColor3f(lifetime/20 * R, ...)
@@ -40,7 +40,7 @@
 //     sub 3:    tex 0x4e5, glColor3fv(full R,G,B)
 //
 //   Type 0x4e7 → tex 0x4e6 (alias); glColor3fv(R,G,B)
-//   Todos los otros: FUN_00511480(type); glColor3fv(R,G,B)
+//   Todos los otros: GL_BindTextureSlot(type); glColor3fv(R,G,B)
 //
 // ── LOOP DE PUNTOS (para items multi-punto: cadenas, proyectiles) ─────────────
 //
@@ -119,9 +119,9 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_00511790  → GL_SetBlend2() — blend mode especial para cadenas/transparentes
-//   FUN_00511710  → Frame_UpdateTimer()
-//   FUN_00511480  → Particle_SetTexture(type) — glBindTexture
+//   GL_SetBlendSrcAlpha  → GL_SetBlend2() — blend mode especial para cadenas/transparentes
+//   GL_SetBlendAdditive  → Frame_UpdateTimer()
+//   GL_BindTextureSlot  → Particle_SetTexture(type) — glBindTexture
 //   DAT_005526dc  → UV step constant
 //   DAT_00552500  → lifetime-to-UV scale (0.001f aprox)
 //   glBegin(7)    → GL_QUADS

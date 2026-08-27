@@ -1,6 +1,6 @@
 // GL_State.cpp
-// FUN_00511710 @ 0x00511710  — GL_SetBlendAdditive   (blend type 3)
-// FUN_00511790 @ 0x00511790  — GL_SetBlendSrcAlpha   (blend type 4)
+// FUN_00511710 @ 0x00511710  — GL_SetBlendAdditive (blend type 3)
+// FUN_00511790 @ 0x00511790  — GL_SetBlendSrcAlpha (blend type 4)
 //
 // These functions configure the OpenGL blending state for particle/effect
 // rendering. Each one is a no-op if the blend mode is already current
@@ -10,10 +10,10 @@
 // switch blend func, cull face, depth mask, alpha test, texture-2D, and fog.
 //
 // Sub-functions (per 5.2 source helpers EnableCullFace/DisableCullFace/DepthMask):
-//   FUN_00511510 — EnableDepthMask   (glDepthMask(GL_TRUE),  cache DAT_083a42e8)
-//   FUN_00511530 — DisableDepthMask  (glDepthMask(GL_FALSE))
-//   FUN_00511550 — EnableCullFace    (glEnable (GL_CULL_FACE=0xb44), cache DAT_083a411c)
-//   FUN_00511570 — DisableCullFace   (glDisable(GL_CULL_FACE))
+//   GL_EnableDepthWrites — EnableDepthMask   (glDepthMask(GL_TRUE),  cache DAT_083a42e8)
+//   GL_DisableDepthWrites — DisableDepthMask  (glDepthMask(GL_FALSE))
+//   GL_EnableCullFace — EnableCullFace    (glEnable (GL_CULL_FACE=0xb44), cache DAT_083a411c)
+//   GL_DisableCullFace — DisableCullFace   (glDisable(GL_CULL_FACE))
 // 2D blend setters (types 2/3/4) call Disable*; 3D/reset setters (type 1 / reset)
 // call Enable*, mirroring the Main 5.2 pattern where every blend-mode wrapper
 // also toggles cull-face + depth-mask for the surfaces it's meant for.
@@ -34,7 +34,7 @@
 #include "stdafx.h"
 extern "C" void DbgLogPublic(const char* msg);
 
-void FUN_00511710(void)
+void GL_SetBlendAdditive(void)
 
 {
   if (DAT_083a412c != 3) {
@@ -42,8 +42,8 @@ void FUN_00511710(void)
     glEnable(0xbe2);
     glBlendFunc(1,1);
   }
-  FUN_00511570();
-  FUN_00511530();
+  GL_DisableCullFace();
+  GL_DisableDepthWrites();
   if (DAT_083a411d != '\0') {
     DAT_083a411d = '\0';
     glDisable(0xbc0);
@@ -59,7 +59,7 @@ void FUN_00511710(void)
 }
 
 
-void FUN_00511790(void)
+void GL_SetBlendSrcAlpha(void)
 
 {
   if (DAT_083a412c != 4) {
@@ -67,8 +67,8 @@ void FUN_00511790(void)
     glEnable(0xbe2);
     glBlendFunc(0,0x301);
   }
-  FUN_00511570();
-  FUN_00511530();
+  GL_DisableCullFace();
+  GL_DisableDepthWrites();
   if (DAT_083a411d != '\0') {
     DAT_083a411d = '\0';
     glDisable(0xbc0);
@@ -84,11 +84,11 @@ void FUN_00511790(void)
 }
 
 
-// FUN_00511480 @ 0x00511480 — GL_BindTexture
+// FUN_00511480 @ 0x00511480 — GL_BindTextureSlot
 // Binds texture slot param_1 (index into DAT_083a7ccc table, stride 0xe).
 // Negative param_1: binds -param_1 directly as a GL texture handle.
 // Caches last-bound slot in DAT_00561574 to avoid redundant rebinds.
-void __cdecl FUN_00511480(int param_1)
+void __cdecl GL_BindTextureSlot(int param_1)
 {
   if (DAT_00561574 != param_1) {
     DAT_00561574 = param_1;
@@ -125,20 +125,20 @@ void __cdecl FUN_00511480(int param_1)
 }
 
 
-// FUN_00511680 @ 0x00511680 — GL_SetBlendSrcOver  (blend type 2)
+// FUN_00511680 @ 0x00511680 — GL_SetBlendSrcOver (blend type 2)
 // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 // Optionally enables depth writes, enables alpha test, enables texture-2D,
 // and restores fog when the scene says it is on.
-void __cdecl FUN_00511680(char param_1)
+void __cdecl GL_SetBlendSrcOver(char param_1)
 {
   if (DAT_083a412c != 2) {
     DAT_083a412c = 2;
     glEnable(0xbe2);
     glBlendFunc(0x302,0x303);
   }
-  FUN_00511570();
+  GL_DisableCullFace();
   if (param_1 != '\0') {
-    FUN_00511510();
+    GL_EnableDepthWrites();
   }
   if (DAT_083a411d == '\0') {
     DAT_083a411d = '\x01';
@@ -158,7 +158,7 @@ void __cdecl FUN_00511680(char param_1)
 // FUN_005111d0 @ 0x005111d0 — GL_GetModelViewMatrix
 // Reads GL_MODELVIEW_MATRIX (0xba6) via glGetFloatv and repackages the
 // first 3 columns (each 4 floats) row-by-row into param_1[0..11].
-void __cdecl FUN_005111d0(unsigned int *param_1)
+void __cdecl GL_GetModelViewMatrix(unsigned int *param_1)
 {
   unsigned int uVar1;
   unsigned int *puVar2;
@@ -187,9 +187,9 @@ void __cdecl FUN_005111d0(unsigned int *param_1)
 }
 
 
-// FUN_00511cf0 @ 0x00511cf0 — BeginSprite
+// FUN_00511cf0 @ 0x00511cf0 — GL_BeginSprite
 // Pushes current matrix and loads identity.
-void FUN_00511cf0(void)
+void GL_BeginSprite(void)
 {
   glPushMatrix();
   glLoadIdentity();
@@ -197,11 +197,11 @@ void FUN_00511cf0(void)
 }
 
 
-// FUN_00511bc0 @ 0x00511bc0 — EndOpengl
+// FUN_00511bc0 @ 0x00511bc0 — GL_EndOpenGL
 // Balances BeginOpengl (pushes on PROJ + MV).
 // Pops current mode (MODELVIEW after BeginBitmap teardown), then pops PROJECTION,
 // then restores MODELVIEW as current mode.
-void FUN_00511bc0(void)
+void GL_EndOpenGL(void)
 {
   glPopMatrix();
   glMatrixMode(0x1701u);   // GL_PROJECTION
@@ -211,7 +211,7 @@ void FUN_00511bc0(void)
 }
 
 
-// FUN_005142d0 @ 0x005142d0 — GL_SetFogHandle
+// FUN_005142D0 @ 0x005142D0 — GL_SetFogHandle (legacy export: SetErrorMessage)
 // Manages fog texture handle slots DAT_083a7c24/28.
 // param_1 == 0: pop current into 0x24, clear 0x28.
 // param_1 != 0 and 0x24 already set: write into 0x28.
@@ -238,14 +238,14 @@ void __cdecl SetErrorMessage(int param_1)
 // FUN_00511600 @ 0x00511600 — GL_ResetState
 // Resets blend to off, re-enables texture 2D, disables fog,
 // enables depth test, and re-enables alpha test if flag is set.
-void FUN_00511600(void)
+void GL_ResetState(void)
 {
   if (DAT_083a412c != 0) {
     DAT_083a412c = 0;
     glDisable(0xbe2);
   }
-  FUN_00511550();
-  FUN_00511510();
+  GL_EnableCullFace();
+  GL_EnableDepthWrites();
   if (DAT_083a411d != '\0') {
     DAT_083a411d = '\0';
     glDisable(0xbc0);
@@ -263,14 +263,14 @@ void FUN_00511600(void)
 
 // FUN_00511890 @ 0x00511890 — GL_EnableLightMap
 // Sets blend mode GL_ZERO/GL_SRC_COLOR for lightmap overlay rendering.
-void FUN_00511890(void) {
+void GL_EnableLightMap(void) {
     if (DAT_083a412c != 1) {
         DAT_083a412c = 1;
         glEnable(GL_BLEND);
         glBlendFunc(GL_ZERO, GL_SRC_COLOR);
     }
-    FUN_00511550();
-    FUN_00511510();
+    GL_EnableCullFace();
+    GL_EnableDepthWrites();
     if (DAT_083a411d != '\0') {
         DAT_083a411d = '\0';
         glDisable(GL_FOG);
@@ -285,11 +285,11 @@ void FUN_00511890(void) {
 }
 
 
-// FUN_00511140 @ 0x00511140 — GL_Screenshot
+// FUN_00511140 @ 0x00511140 — GL_CaptureScreenshot
 // Reads current framebuffer into a heap buffer via glReadPixels (GL_RGB/GL_UNSIGNED_BYTE),
 // encodes it to a JPEG via FUN_00529000, then increments a screenshot counter.
 // Returns 1 when counter wraps past 10000 (i.e. the Nth screenshot), else 0.
-int FUN_00511140(void)
+int GL_CaptureScreenshot(void)
 {
   int iVar1;
   undefined *puVar2;

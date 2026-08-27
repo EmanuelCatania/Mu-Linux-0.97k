@@ -283,7 +283,7 @@ void __cdecl FUN_004e4760(void) {
             // `static int g_iKeyPadEnable` homonimo que el handler del 0x55 seteaba
             // mientras este hit-test leia el global. Unificados.
             if (DAT_07eaa144) {
-                if (FUN_00513570()) {
+                if (Chat_ValidateInputCommand()) {
                     // nombre invalido / vacio
                     FUN_005142d0(115);
                 } else {
@@ -1741,7 +1741,7 @@ void __cdecl FUN_004ec330(void) {
                     }
                 }
 
-                FUN_004c4080();
+                Item_RecalculateRepairCost();
             }
         }
 
@@ -2870,8 +2870,8 @@ next_entry:;
     }
 }
 
-// FUN_00491c40 (Send_MovePacket), FUN_0049cbf0 (Attack), FUN_0048ba70 (CheckArrow),
-// FUN_0048a180 (UseSkillElf), FUN_0048d640 (Action big switch),
+// Combat_SendMovePathPacket (Send_MovePacket), Combat_DispatchHeroSkillAttack (Attack), Combat_CheckArrowRequirement (CheckArrow),
+// Combat_UseElfSkill (UseSkillElf), Combat_ProcessQueuedAction (Action big switch),
 // + Send_MovePacket_Player_legacy_stub moved to src/Combat/Combat.cpp
 // (B3 refactor 2026-05-07, 1216 lines).
 
@@ -2916,7 +2916,7 @@ void __cdecl FUN_004f9ac0(char EditFlag) {
         DAT_07eab1fc = 0;                 // SelectFlag = 0
         FUN_00512d30();                   // Map_InitRayCast (sub_512D30)
     } else {
-        FUN_00511600();                   // DisableAlphaBlend
+        GL_ResetState();                   // DisableAlphaBlend
     }
 
     DAT_0838bc44 = 0;                     // TerrainFlag = 0
@@ -2930,16 +2930,16 @@ void __cdecl FUN_004f9ac0(char EditFlag) {
                          1.0f, 1, (int)(unsigned char)EditFlag);
         }
     } else {
-        FUN_00511680('\x01');             // EnableAlphaTest(1)
+        GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
         if (DAT_0055a76c && World != 7) { // overlay (inerte: unk_55A76C nunca seteado)
             DAT_0838bc44 = 2;             // TerrainFlag = 2
             RenderTerrainFrustrum_stub(false);
         }
         FUN_004f7060();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
-        FUN_005114f0();                   // DisableDepthTest
-        FUN_00511550();                   // EnableCullFace
+        GL_DisableDepthTest();                   // DisableDepthTest
+        GL_EnableCullFace();                   // EnableCullFace
         FUN_00479540();                   // RenderTerrainAlphaBitmaps (sub_479540)
-        FUN_005114d0();                   // EnableDepthTest
+        GL_EnableDepthTest();                   // EnableDepthTest
     }
 
     DAT_0839bc88 ^= 1u;                   // terrain-light double-buffer toggle
@@ -2989,12 +2989,12 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
     }
 
     // IDA RenderTerrain (0x004F9AC0) abre el path EditFlag=0 con DisableAlphaBlend().
-    // Usamos el wrapper 1:1 (FUN_00511600) en vez de glEnable/glDisable crudo para
+    // Usamos el wrapper 1:1 (GL_ResetState) en vez de glEnable/glDisable crudo para
     // mantener sincronizado el caché de estado GL (AlphaBlendType/AlphaTestEnable/
     // TextureEnable) que comparten todos los passes. Estado resultante: blend OFF,
     // cull ON, escritura de profundidad ON, alpha-test OFF, textura ON.
-    FUN_005114d0();                  // EnableDepthTest (la fallback dibuja con depth test)
-    FUN_00511600();                  // DisableAlphaBlend — estado opaco base
+    GL_EnableDepthTest();                  // EnableDepthTest (la fallback dibuja con depth test)
+    GL_ResetState();                  // DisableAlphaBlend — estado opaco base
 
     // Trackea la última textura bindeada para minimizar los binds.
     int lastTex = -1;
@@ -3025,7 +3025,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
             int tileTex = 0x23 + tileIdx;
             if (tileTex < 0x23 || tileTex > 0x30) tileTex = 0x23;   // fallback grass01
             if (tileTex != lastTex) {
-                FUN_00511480(tileTex);          // glBindTexture (texture system)
+                GL_BindTextureSlot(tileTex);          // glBindTexture (texture system)
                 lastTex = tileTex;
             }
 
@@ -3089,7 +3089,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
     // Entity_PrepareRender), que renderean vegetación/decals con alpha. Sin esto
     // GL_ALPHA_TEST quedaba OFF → las esquinas de los quads con alpha salían
     // opacas = los triángulos negros alrededor de vegetación/objetos.
-    FUN_00511680('\x01');            // EnableAlphaTest(1)
+    GL_SetBlendSrcOver('\x01');            // EnableAlphaTest(1)
 }
 #endif  // fallback flat-shaded obsoleta
 
@@ -4485,7 +4485,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
 
         // 0x113 — IDA raw L848-850.
         case 0x113:
-            FUN_00451f30(entity_ptr);
+            Combat_SpawnDeathDustParticles(entity_ptr);
             break;
 
         // 0x119 — IDA raw L851-873. Usa el `Light` (1,1,1) del frame compartido.
@@ -4599,7 +4599,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
             float zero[3] = {0.0f, 0.0f, 0.0f};
             FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 8), zero, (float *)(entity_ptr + 76), '\x01');
             FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * 9), zero, (float *)(entity_ptr + 64), '\x01');
-            FUN_00452030(entity_ptr); FUN_00451f30(entity_ptr);
+            Combat_SpawnIdleAmbientParticle(entity_ptr); Combat_SpawnDeathDustParticles(entity_ptr);
             break;
         }
         // 0x138 — IDA raw L1016-1034.
@@ -4616,7 +4616,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 FUN_00475220(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 float darkness[3] = {-1.3f,-1.3f,-1.3f};
                 AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), darkness, 3, PrimaryTerrainLight[0]);
-            } else { FUN_00452030(entity_ptr); FUN_00451f30(entity_ptr); }
+            } else { Combat_SpawnIdleAmbientParticle(entity_ptr); Combat_SpawnDeathDustParticles(entity_ptr); }
             break;
         }
         // 0x139 / 0x13B — IDA raw L1035-1038 / L1114-1117.
@@ -4627,7 +4627,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
             float zero[3] = {0.0f, 0.0f, 0.0f};
             FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * a), zero, (float *)(entity_ptr + 76), '\x01');
             FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 48 * b), zero, (float *)(entity_ptr + 64), '\x01');
-            FUN_00452030(entity_ptr);
+            Combat_SpawnIdleAmbientParticle(entity_ptr);
             break;
         }
         // 0x13A — IDA raw L1039-1113.  Las tablas se leyeron de IDA en
@@ -4715,8 +4715,8 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 FUN_004409a0(model, (float *)(*(int *)(entity_ptr + 276) + 3696), WorldPosition, destination, '\x01');
                 FUN_0043e4a0(source, targetPosition, destination, 360.0f);
                 FUN_00475220(1200, destination, targetPosition, light, 1, 0.2f, 0);
-                FUN_00452030(entity_ptr);
-                FUN_00451f30(entity_ptr);
+                Combat_SpawnIdleAmbientParticle(entity_ptr);
+                Combat_SpawnDeathDustParticles(entity_ptr);
             }
             break;
         }
@@ -4937,9 +4937,9 @@ void __cdecl FUN_00454cd0(int param_1_i, int param_2)
     }
 }
 
-// UI_OpenWindow alias (FUN_0047fae0)
+// UI_OpenWindow alias (UI_AddNotice)
 void __cdecl UI_OpenWindow(char* title, int mode) {
-    FUN_0047fae0(title, (unsigned char)mode);
+    UI_AddNotice(title, (unsigned char)mode);
 }
 
 // FUN_004f8eb0 @ 0x004f8eb0 — CreateFrustrum2D

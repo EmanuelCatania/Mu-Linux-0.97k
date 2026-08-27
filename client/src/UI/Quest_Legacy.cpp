@@ -147,7 +147,7 @@ void __fastcall FUN_00403320(void* param_1) {
 
     char state = *(char*)(This + 116866);      // +0x1C882
     if (state == 1) {
-        FUN_005125a0(279, 450.0f, 325.0f, 190.0f, 10.0f,
+        GL_DrawTexture(279, 450.0f, 325.0f, 190.0f, 10.0f,
                      0.0f, 0.0f, 0.7421875f, 0.625f, 1, 1);
         if (FUN_00403150(param_1, 0, state, 1)) {
             m_dwTextColor = 0xFFD2E6FFu;
@@ -164,13 +164,13 @@ void __fastcall FUN_00403320(void* param_1) {
             }
         }
         SelectObject(m_hFontDC, (HGDIOBJ)(DWORD)DAT_055ca00c);
-        FUN_005125a0(240, 485.0f, 355.0f, 120.0f, 24.0f,
+        GL_DrawTexture(240, 485.0f, 355.0f, 120.0f, 24.0f,
                      0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
         RenderCenterText(545, 360, GlobalText[699]);
         glColor3f(1.0f, 1.0f, 1.0f);
     }
     else if (state == 3) {
-        FUN_005125a0(271, 500.0f, 367.7f, 113.0f, 18.0f,
+        GL_DrawTexture(271, 500.0f, 367.7f, 113.0f, 18.0f,
                      0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
         m_dwBackColor = 0xFF282828u;
         m_dwTextColor = 0xFF96DCFFu;
@@ -182,7 +182,7 @@ void __fastcall FUN_00403320(void* param_1) {
     }
 
     // Botón de cerrar + su tooltip
-    FUN_005125a0(280, 475.0f, 395.0f, 24.0f, 24.0f,
+    GL_DrawTexture(280, 475.0f, 395.0f, 24.0f, 24.0f,
                  0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
     if ((double)MouseX >= 475.0 && (double)MouseX < 499.0 &&
         (double)MouseY >= 395.0 && (double)MouseY < 419.0) {

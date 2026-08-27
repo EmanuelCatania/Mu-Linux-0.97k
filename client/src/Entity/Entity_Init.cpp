@@ -2,7 +2,7 @@
 // Entity slot initialisation and position persistence.
 //
 // FUN_0045f930 @ 0x0045f930 — Entity_InitSlot
-// FUN_0045fa20 @ 0x0045fa20 — Entity_SavePositions
+// FUN_0045fa20 @ 0x0045fa20 — Monster_SaveSetBase
 //
 // Entity pool base: DAT_07abf5d0
 // Stride: 0x394 bytes per slot
@@ -59,11 +59,11 @@ FUN_0045f930(int Index, int Class, int Skin, float x, float y, float Rotate)
 }
 
 
-// FUN_0045fa20 — Entity_SavePositions
+// FUN_0045fa20 — Monster_SaveSetBase
 // Writes entity positions to a file param_1 in a proprietary format.
 // Opens file, iterates active entities (stride 0x394, count up to 0x59740/0x394),
 // writes position with format string s__4d__4d_30__4d__4d__1_00559b58, closes file.
-void __cdecl FUN_0045fa20(LPCSTR param_1)
+void __cdecl Monster_SaveSetBase(LPCSTR param_1)
 {
   FILE *pFVar1;
   int iVar2;

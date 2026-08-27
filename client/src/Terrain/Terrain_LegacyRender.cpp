@@ -117,7 +117,7 @@ void __cdecl FUN_004f8980(int p1, int p2, int p3, float p4)
     float angles[3] = { 0.0f, 0.0f, p4 };
     float matrix[3][4];
     AngleMatrix(angles, matrix);
-    FUN_00511480(p1); // BindTexture
+    GL_BindTextureSlot(p1); // BindTexture
 
     // Bitmap dimensions
     float* bmpData = (float*)((char*)Bitmaps + p1 * 0xE * sizeof(float));

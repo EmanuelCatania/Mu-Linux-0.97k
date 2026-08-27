@@ -2407,7 +2407,7 @@ static void Recv_LogOut(const BYTE* Msg)
             ReleaseMainData();
         }
         FUN_0043dc90((int)(uintptr_t)DAT_055ca160);  // Net_Disconnect (close socket)
-        FUN_005102c0();                  // ReleaseCharacterSceneData
+        Scene_UnloadCharSelectResources(); // FUN_005102c0 (IDA) — ReleaseCharacterSceneData
         DAT_005615c0 = 2;                // g_GameState = Login
         DAT_083a7c14 = 0;                // sub-state = ServerSelect
         DAT_083a7c18 = 0;
@@ -2543,7 +2543,7 @@ static void Recv_Redirect(const BYTE* Msg)
     g_ConnectServerRequested = 0;
     MuEmu::SetActive(true);
     FUN_0043dc90((int)(uintptr_t)DAT_055ca160);   // Net_Disconnect
-    FUN_00423920(IpAddr, port);                   // Net_Connect
+    Net_ConnectServer(IpAddr, port);                   // Net_Connect
     DAT_05826cf0 = 1;                              // g_bGameServerConnected
 }
 
@@ -6073,7 +6073,7 @@ void Net_ProcessPacket(void)
                 //   = [C1][size][0x0D][type][message null-terminated]
                 //
                 // type 0 → CreateNotice(msg, 0) — CENTERED blue/cyan banner con
-                //          blink (FUN_0047fae0). Eventos del servidor (Blood
+                //          blink (UI_AddNotice). Eventos del servidor (Blood
                 //          Castle, Happy Hour, server close, etc).
                 // type 1 → UIChatLogWindow_AddText — BLUE chat log local
                 //          (mensajes personales: login welcome, errors, etc).
@@ -6105,10 +6105,10 @@ void Net_ProcessPacket(void)
 
                 if (type == 0) {
                     // Centered banner (blink cyan). Color flag stored at
-                    // slot[0x104]; el renderer FUN_0047fce0 lo lee para cambiar
+                    // slot[0x104]; el renderer UI_RenderNotices lo lee para cambiar
                     // between blink-cyan (flag=0) and gold (flag=1).
-                    extern void __cdecl FUN_0047fae0(char*, unsigned char);
-                    FUN_0047fae0(text, 0);
+                    extern void __cdecl UI_AddNotice(char*, unsigned char);
+                    UI_AddNotice(text, 0);
                 } else if (type == 1) {
                     // Personal blue chat log entry.
                     extern void UIChatLogWindow_AddText(const char* strID,
@@ -6119,14 +6119,14 @@ void Net_ProcessPacket(void)
                 } else if (type == 2) {
                     // Guild notice — gold centered banner. Original IDA
                     // formats with GlobalText[483] ("Guild Notice: %s").
-                    extern void __cdecl FUN_0047fae0(char*, unsigned char);
+                    extern void __cdecl UI_AddNotice(char*, unsigned char);
                     char guildText[320] = {0};
                     SetGuildNoticeText(text);
                     if (GlobalText[483] && GlobalText[483][0] != 0) {
                         wsprintfA(guildText, GlobalText[483], text);
-                        FUN_0047fae0(guildText, 1);
+                        UI_AddNotice(guildText, 1);
                     } else {
-                        FUN_0047fae0(text, 1);
+                        UI_AddNotice(text, 1);
                     }
                 }
                 break;

@@ -474,11 +474,10 @@ void __cdecl FUN_0047b910(int pItem, int Attribute1, int Attribute2) {
     ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
 }
 
-// 2026-05-08: ItemValue is the IDA-name alias for FUN_0047c690. Previously
+// 2026-05-08: ItemValue delegates to Item_CalculateValue. Previously
 // returned 0 unconditionally → all sell-price calculations in Item_Click
 // Handler / RenderItemInfo / shop UI yielded zero gold. Delegate to the real
 // impl in stubs_helpers.cpp.
-extern int __cdecl FUN_0047c690(void* item_v, int sellMode);
 int __cdecl ItemValue(ITEM* ip, unsigned int goldType) {
-    return FUN_0047c690((void*)ip, (int)goldType);
+    return Item_CalculateValue((void*)ip, (int)goldType);
 }

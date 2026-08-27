@@ -26,7 +26,7 @@ void FUN_004f64d0(void)
   undefined4 *puVar5;
   // (was: int iStack0000000c — phantom outgoing-stack arg slot; resolved into FUN_004c9730 3rd param)
 
-  FUN_00511600();
+  GL_ResetState();
   puVar5 = (undefined4*)DAT_07cf1ffc;
   DAT_07e11d6e = 0;
   // 2026-05-08: BUG-FIX — DAT_07eaa134 (B-key/repair-mode flag) se queda

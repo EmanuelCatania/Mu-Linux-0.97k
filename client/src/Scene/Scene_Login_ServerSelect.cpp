@@ -71,7 +71,7 @@
 //        Tex 0x12 quad at (0x96, y, 150, 16)   Non-PVP normal
 //        Tex 0x12 quad at (0x177, y, 150, 16)  PVP normal
 //        glColor3f(0.8, 0.8, 0.8)              — dimmed
-//      Text via FUN_0047f650: centered at column_x, y+2
+//      Text via UI_RenderText: centered at column_x, y+2
 //        Width from GetTextExtentPointA → used to center string
 //
 //  PASS 4 — draw channel sub-list (right panel, only if g_SelectedServer != -1):
@@ -88,7 +88,7 @@
 //      Selected channel: same colors but at full brightness (fVar3=1.0)
 //      Non-selected: fVar3=0.8 (dimmed)
 //      Tex 0x12 quad at (230, y, 134, 20)
-//      Text: FUN_0047f650(0x129 - textWidth/2, y+1, channelNameBuf)
+//      Text: UI_RenderText(0x129 - textWidth/2, y+1, channelNameBuf)
 //
 //    Load bar (for non-full servers, below channel text):
 //      Position: x = _DAT_00552d48, y = channel_y + _DAT_00552d4c
@@ -100,8 +100,8 @@
 //    Compares selected server name vs DAT_07d52c38 (currently connected server)
 //    If match:
 //      glColor3f(1.0, 0.3, 0.1)  — orange-red
-//      FUN_0047f650(0x96, y-0x2e, DAT_07d530e8)   — server IP line 1
-//      FUN_0047f650(0x96, y-0x1f, DAT_07d53214)   — server IP line 2
+//      UI_RenderText(0x96, y-0x2e, DAT_07d530e8)   — server IP line 1
+//      UI_RenderText(0x96, y-0x1f, DAT_07d53214)   — server IP line 2
 //
 // ─── HELPER FUNCTIONS ──────────────────────────────────────────────────────────
 //  FUN_00541c10 = __chkstk_probe (0x00541c10)
@@ -111,8 +111,8 @@
 //                  Loop: while(EAX > 0x1000) { probe page; EAX -= 0x1000; }
 //                  Renamed __chkstk_probe in Ghidra.
 //  crt_sprintf(buf,fmt) — sprintf-like into stack buffer
-//  FUN_005125a0(tex,x,y,w,h,u0,v0,u1,v1,f1,f2) — draw textured quad
-//  FUN_0047f650(x,y,str,sizeOut,center,shadow)   — draw text string
+//  GL_DrawTexture(tex,x,y,w,h,u0,v0,u1,v1,f1,f2) — draw textured quad
+//  UI_RenderText(x,y,str,sizeOut,center,shadow)   — draw text string
 //  FUN_00406b10(a,b)     — lookup/flag check (returns 0 or non-zero → PVP type)
 
 #include "stdafx.h"
@@ -311,12 +311,12 @@ LAB_0051f314:
                 }
             }
             glColor3f(uVar17, uVar17, uVar17);
-            FUN_005125a0(0x12, (float)iStack00000004, (float)iDrawY,
+            GL_DrawTexture(0x12, (float)iStack00000004, (float)iDrawY,
                          70.0f, 16.0f, 0.0f, 0.0f, 0.5234375f, 0.9375f, '\x01', '\x01');
             ptVar19 = &text_size;
             iVar5 = lstrlenA(lpString);
             GetTextExtentPointA(DAT_055c9fec, lpString, iVar5, ptVar19);
-            FUN_0047f650((iVar10 - ((uint)(text_size.cx * 0x280) / DAT_0056156c >> 1)) + 0x23,
+            UI_RenderText((iVar10 - ((uint)(text_size.cx * 0x280) / DAT_0056156c >> 1)) + 0x23,
                          iDrawY + 2, lpString, (LPSIZE)0x0, '\0', 0);
         }
         lpString = lpString + 0x21e;
@@ -432,7 +432,7 @@ LAB_0051f44c:
 
                 // Channel background quad
                 fVar18 = (float)iStack00000004;
-                FUN_005125a0(0x12, 230.0f, fVar18, 134.0f, 20.0f,
+                GL_DrawTexture(0x12, 230.0f, fVar18, 134.0f, 20.0f,
                              0.0f, 0.0f, 0.5234375f, 0.9375f, '\x01', '\x01');
 
                 // Channel name text
@@ -441,7 +441,7 @@ LAB_0051f44c:
                 GetTextExtentPointA(DAT_055c9fec,
                                     chan_buf + (iVar5 + DAT_00561694 * 0x14) * 100,
                                     iVar8, ptVar19);
-                FUN_0047f650(0x129 - ((uint)(text_size.cx * 0x280) / DAT_0056156c >> 1),
+                UI_RenderText(0x129 - ((uint)(text_size.cx * 0x280) / DAT_0056156c >> 1),
                              iStack00000004 + 1,
                              chan_buf + (iVar5 + DAT_00561694 * 0x14) * 100,
                              (LPSIZE)0x0, '\0', 0);
@@ -463,7 +463,7 @@ LAB_0051f44c:
                             fStack0000000c = (float)iStack00000020 * fVar3 * _DAT_005524f4;
                             glColor3f((float)(int)fStack00000008 * fVar3 * _DAT_005524f4,
                                       fStack0000000c, fStack0000000c);
-                            FUN_005125a0(0xf6, (float)iStack0000001c + _DAT_00552d48,
+                            GL_DrawTexture(0xf6, (float)iStack0000001c + _DAT_00552d48,
                                          fVar20, 3.0f, 3.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
                             fStack00000008 = (float)(iVar8 + 1);
                             iStack00000020--;
@@ -479,7 +479,7 @@ LAB_0051f44c:
                         fVar3  = (float)(uVar6 * 5);
                         fStack0000000c = fVar18;
                         do {
-                            FUN_005125a0(0xf6, (float)(int)fVar3 + _DAT_00552d48,
+                            GL_DrawTexture(0xf6, (float)(int)fVar3 + _DAT_00552d48,
                                          fVar18, 3.0f, 3.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
                             fVar3 = (float)((int)fVar3 + 5);
                         } while ((int)fVar3 < 100);
@@ -514,8 +514,8 @@ LAB_0051f44c:
 LAB_0051f8b4:
         if (iVar8 == 0) {
             // Currently connected to this server → show IP
-            FUN_0047f650(0x96, (int)puStack00000010 - 0x2e, (char*)&DAT_07d530e8, (LPSIZE)0x0, '\0', 0);
-            FUN_0047f650(0x96, (int)fVar4 - 0x1f, (char*)&DAT_07d53214, (LPSIZE)0x0, '\0', 0);
+            UI_RenderText(0x96, (int)puStack00000010 - 0x2e, (char*)&DAT_07d530e8, (LPSIZE)0x0, '\0', 0);
+            UI_RenderText(0x96, (int)fVar4 - 0x1f, (char*)&DAT_07d53214, (LPSIZE)0x0, '\0', 0);
             iVar8  = 0;
         }
     }

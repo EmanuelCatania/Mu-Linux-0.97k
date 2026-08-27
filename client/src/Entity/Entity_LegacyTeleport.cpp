@@ -148,4 +148,4 @@ extern "C" void __cdecl CreateTeleportEnd(unsigned int o)
     FUN_00404bc0(88, 0, 0);
 }
 
-// FUN_00485780 @ 0x00485780 — UseSkillWarrior(c=CHARACTER*, o=OBJECT*)
+// Combat_UseWarriorSkill @ 0x00485780 — UseSkillWarrior(c=CHARACTER*, o=OBJECT*)

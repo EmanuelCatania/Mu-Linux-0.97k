@@ -2,7 +2,7 @@
 #include "functions.h"
 #include "globals.h"
 
-// ── FUN_0047d120 @ 0x0047D120 — NPCName_Load(path) ───────────────────────────
+// IDA: FUN_0047D120
 // Reads a text-format NPC name data file.
 // Parser uses TextParser_GetToken (type 0=section/END, 1=record, 2=EOF).
 // For each non-section record:
@@ -26,7 +26,7 @@
 //   [1..32] Name   = 3er token (columna 3; el 2do se saltea)
 // Formato NPCName.txt: "<Type> <idx> \"<Name>\"" por linea, hasta "end"/EOF.
 // GetToken (TextParser_GetToken) saltea el header "//..." y las comillas.
-void __cdecl FUN_0047d120(const char *path)
+void __cdecl NPCName_LoadTextData(const char *path)
 {
     DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
     if (!DAT_07d7806c) return;

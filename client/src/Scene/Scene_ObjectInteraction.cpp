@@ -155,12 +155,12 @@ char* __stdcall PickObject_Mouse_stub(void) {
                     memcpy(obb, obj + 0x130, 48);
 
                     // Check ray intersection with bounding volume
-                    unsigned int hit = FUN_00513260((float*)&DAT_083a4284, (float*)&DAT_083a4110);
+                    unsigned int hit = FUN_00513260((float*)&CameraRayOriginX, (float*)&DAT_083a4110);
                     if ((char)hit != '\0') {
                         // CollisionDetectLineToMesh — precise line-mesh test
                         // Phantom regs in Ghidra; approximate call:
                         if (BMD__CollisionDetectLineToMesh_stub(
-                                (DWORD)model, (float*)&DAT_083a4284, (float*)&DAT_083a4110,
+                                (DWORD)model, (float*)&CameraRayOriginX, (float*)&DAT_083a4110,
                                 false, 0, 0)) {
                             result = obj;
                         }

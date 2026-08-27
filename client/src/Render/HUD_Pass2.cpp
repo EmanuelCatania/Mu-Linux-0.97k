@@ -120,7 +120,7 @@ static bool HUD_IsAnyRightPanelOpen(void)
 //
 // Uses g_pRenderText vtable (CUIRenderText::RenderText, slot ?? in our build);
 // our codebase doesn't expose g_pRenderText so we route through RenderText_1
-// (FUN_0047f7a0) which is the same engine path with default style flags.
+// (UI_DrawText) which is the same engine path with default style flags.
 extern "C" SIZE* __cdecl FUN_0047f6f0(int x, int y, const char* lpString,
                                       int boxWidth, char style, int extraSize);
 SIZE* __cdecl FUN_0047f6f0(int x, int y, const char* lpString,
@@ -132,7 +132,7 @@ SIZE* __cdecl FUN_0047f6f0(int x, int y, const char* lpString,
     // Forward to our existing RenderText_1.  The IDA original uses style
     // (0/1) + 1 to pick palette and box rendering; RenderText_1 does the
     // same with default style.  Keep the call signature compatible.
-    FUN_0047f7a0(x, y, (char*)lpString, boxWidth, style ? 2 : 1, extraSize);
+    UI_DrawText(x, y, (char*)lpString, boxWidth, style ? 2 : 1, extraSize);
 
     int n = lstrlenA(lpString);
     GetTextExtentPointA(m_hFontDC, lpString, n, &TextSize);
@@ -156,18 +156,18 @@ void __cdecl RenderBar(float x, float y, float Width, float Height,
     }
     EnableAlphaTest(true);
     glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
-    FUN_005124c0(x + 1.0f, y + 1.0f, Width + 4.0f, Height + 4.0f);
+    GL_DrawRect(x + 1.0f, y + 1.0f, Width + 4.0f, Height + 4.0f);
     EnableAlphaBlend();
     if (Disabled) glColor3f(0.2f, 0.0f, 0.0f);
     else          glColor3f(0.0f, 0.2f, 0.2f);
-    FUN_005124c0(x, y, Width + 4.0f, Height + 4.0f);
+    GL_DrawRect(x, y, Width + 4.0f, Height + 4.0f);
     if (Disabled) glColor3f(0.19607843f, 0.039215688f, 0.0f);
     else          glColor3f(0.0f, 0.19607843f, 0.19607843f);
-    FUN_005124c0(x + 2.0f, y + 2.0f, Width, Height);
+    GL_DrawRect(x + 2.0f, y + 2.0f, Width, Height);
     if (Disabled) glColor3f(0.78431374f, 0.19607843f, 0.0f);
     else          glColor3f(0.0f, 0.78431374f, 0.19607843f);
-    FUN_005124c0(x + 2.0f, y + 2.0f, Bar, Height);
-    FUN_00511600();   // DisableAlphaBlend
+    GL_DrawRect(x + 2.0f, y + 2.0f, Bar, Height);
+    GL_ResetState();   // DisableAlphaBlend
 }
 
 // RenderNumber2D — sub_5122F0.  Renders an integer using bitmap glyph 1
@@ -186,7 +186,7 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
     int i = 0;
     do {
         double u = (double)(Buffer[i] - '0') * 0.0625;
-        FUN_005125a0(1, xa, y, Width, Height, (float)u, 0.0f, 0.0625f, 0.5f, 1, 1);
+        GL_DrawTexture(1, xa, y, Width, Height, (float)u, 0.0f, 0.0625f, 0.5f, 1, 1);
         ++i;
         xa = Width * 0.69999999f + xa;
     } while (i < n);
@@ -232,9 +232,9 @@ void Render_ChatBox_(void)
 
     if (!(InputEnable || DAT_07e11d71)) return;
 
-    FUN_00511600();   // DisableAlphaBlend
-    FUN_005125a0(248, 186.0f, 415.0f, 134.0f, 29.0f, 0.0f, 0.0f, 0.51953125f, 0.90625f, 1, 1);
-    FUN_005125a0(249, 320.0f, 415.0f, 134.0f, 29.0f, 0.0f, 0.0f, 0.51953125f, 0.90625f, 1, 1);
+    GL_ResetState();   // DisableAlphaBlend
+    GL_DrawTexture(248, 186.0f, 415.0f, 134.0f, 29.0f, 0.0f, 0.0f, 0.51953125f, 0.90625f, 1, 1);
+    GL_DrawTexture(249, 320.0f, 415.0f, 134.0f, 29.0f, 0.0f, 0.0f, 0.51953125f, 0.90625f, 1, 1);
     EnableAlphaTest(true);
 
     InputTextWidth = 180 * (int)WindowWidth / 0x280;
@@ -255,7 +255,7 @@ void Render_ChatBox_(void)
     char* end = (char*)flt_7E118E4_PTR;
     while (v2 < end) {
         if (v1 != v0) {
-            FUN_0047f7a0(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0);
+            UI_DrawText(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0);
             int n = lstrlenA(v2);
             GetTextExtentPointA(m_hFontDC, v2, n, &TextSize);
             TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
@@ -267,7 +267,7 @@ void Render_ChatBox_(void)
     }
 
     if (DAT_00559bf0 != 0) {
-        FUN_005125a0(239, 432.0f, 420.0f, 15.0f, 16.0f, 0.0f, 0.0f, 0.9375f, 1.0f, 1, 1);
+        GL_DrawTexture(239, 432.0f, 420.0f, 15.0f, 16.0f, 0.0f, 0.0f, 0.9375f, 1.0f, 1, 1);
     }
 }
 
@@ -302,7 +302,7 @@ void Render_ChatBox(void) { Render_ChatBox_(); }
 extern "C" char __cdecl Render_CharInfoPanel_(void);
 char Render_CharInfoPanel_(void)
 {
-    FUN_00511600();   // DisableAlphaBlend
+    GL_ResetState();   // DisableAlphaBlend
     m_dwBackColor = 0x80000000u;
 
     char ret = 0;
@@ -316,18 +316,18 @@ char Render_CharInfoPanel_(void)
         int v20 = *(short*)((BYTE*)(uintptr_t)Hero + 474);
         m_dwTextColor = HeroSoccerTeam != 0 ? 0xFFFF5901 : 0xFF008000u;
         CreateGuildMark(v20, 1);
-        FUN_005125a0(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
 
         CHAR String[100];
         wsprintfA(String, "%d", GuildWarScore[0]);
         int iPos_x = (int)x + 13;
-        FUN_0047f7a0(iPos_x, 4, String, 0, 1, 0);
+        UI_DrawText(iPos_x, 4, String, 0, 1, 0);
         int n = lstrlenA(String);
         GetTextExtentPointA(m_hFontDC, String, n, &TextSize);
 
         const char* v1 = (char*)&DAT_07e919bc + 80 * v20;
         int v2 = (int)x + 30;
-        FUN_0047f7a0(v2, 4, (char*)v1, 0, 1, 0);
+        UI_DrawText(v2, 4, (char*)v1, 0, 1, 0);
 
         // Walk the name table to find the GuildWarName slot index.
         int v23 = 0;
@@ -343,10 +343,10 @@ char Render_CharInfoPanel_(void)
         v5 = v23;
 LABEL_7:
         CreateGuildMark(v5, 1);
-        FUN_005125a0(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         wsprintfA(String, "%d", GuildWarScore[1]);
-        FUN_0047f7a0(iPos_x, 19, String, 0, 1, 0);
-        FUN_0047f7a0(v2, 19, GuildWarName, 0, 1, 0);
+        UI_DrawText(iPos_x, 19, String, 0, 1, 0);
+        UI_DrawText(v2, 19, GuildWarName, 0, 1, 0);
     }
 
     if (DAT_07e11e14_alias) {  // SoccerObserver
@@ -356,22 +356,22 @@ LABEL_7:
         SelectObject(m_hFontDC, g_hFontBold);
         m_dwTextColor = 0xFF008000u;
         CreateGuildMark(0, 1);
-        FUN_005125a0(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(34, x, 4.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
 
         CHAR String[100];
         wsprintfA(String, "%d", GuildWarScore[0]);
         int v9 = (int)x;
         int v10 = v9 + 13;
-        FUN_0047f7a0(v10, 4, String, 0, 1, 0);
+        UI_DrawText(v10, 4, String, 0, 1, 0);
         int iPos_xa = v9 + 30;
-        FUN_0047f7a0(iPos_xa, 4, SoccerTeamName[0], 0, 1, 0);
+        UI_DrawText(iPos_xa, 4, SoccerTeamName[0], 0, 1, 0);
 
         m_dwTextColor = 0xFFFF9560;
         CreateGuildMark(0, 1);
-        FUN_005125a0(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
+        GL_DrawTexture(34, x, 19.0f, 8.0f, 8.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
         wsprintfA(String, "%d", GuildWarScore[1]);
-        FUN_0047f7a0(v10, 19, String, 0, 1, 0);
-        FUN_0047f7a0(iPos_xa, 19, SoccerTeamName[1], 0, 1, 0);
+        UI_DrawText(v10, 19, String, 0, 1, 0);
+        UI_DrawText(iPos_xa, 19, SoccerTeamName[1], 0, 1, 0);
     }
 
     if (DAT_07e11e10_alias > 0) {   // SoccerTime
@@ -381,8 +381,8 @@ LABEL_7:
         m_dwTextColor = 0xFF969500u;
         int v15 = (int)v24_y0;
         int v16 = (int)x + 100;
-        FUN_0047f7a0(v16, v15, (char*)aTime_0, 0, 1, 0);
-        FUN_0047f7a0(v16, v15 + 13, String, 0, 1, 0);
+        UI_DrawText(v16, v15, (char*)aTime_0, 0, 1, 0);
+        UI_DrawText(v16, v15 + 13, String, 0, 1, 0);
     }
 
     return ret;
@@ -558,7 +558,7 @@ void RenderBrokenItem_(int a1)
             // Skip excluded item types: 135, 143, 416..419
             if (v12 != 135 && v12 != 143 && (v12 < 416 || v12 > 419)) {
                 int level = (*(int*)(v13 + 4) >> 3) & 0xF;
-                int v30 = (int)FUN_004c45c0((void*)v13, (int)v19, level);
+                int v30 = (int)Item_CalculateMaxDurability((void*)v13, (int)v19, level);
                 if (*(WORD*)v13 == 426) v30 = 200;
                 BYTE v21 = *(BYTE*)(v13 + 26);
 
@@ -671,14 +671,14 @@ void RenderExperience_(void)
 
     glColor3f(0.92f, 0.80f, 0.34f);
     double width = (fExpBarNum - (double)iExp) * 198.0;
-    if (width >= 198.0) FUN_005124c0(221.0f, 439.0f, 198.0f, 4.0f);
-    else if (width >= 0.0) FUN_005124c0(221.0f, 439.0f, (float)width, 4.0f);
-    else FUN_005124c0(221.0f, 439.0f, 0.0f, 4.0f);
+    if (width >= 198.0) GL_DrawRect(221.0f, 439.0f, 198.0f, 4.0f);
+    else if (width >= 0.0) GL_DrawRect(221.0f, 439.0f, (float)width, 4.0f);
+    else GL_DrawRect(221.0f, 439.0f, 0.0f, 4.0f);
 
     EnableAlphaTest(true);
     glColor3f(0.91f, 0.81f, 0.60f);
     RenderNumber2D(425.0f, 434.0f, iExp, 9.0f, 10.0f);
-    FUN_00511600();
+    GL_ResetState();
     glColor3f(1.0f, 1.0f, 1.0f);
 
     // Hover tooltip when mouse is over the bar (219..421, 439..445).

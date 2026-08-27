@@ -68,7 +68,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 extern "C" double __cdecl RenderNumber2D(float x, float y, int Num,
                                           float Width, float Height);
 
-extern void __cdecl FUN_005113f0(float*, int*, int*);   // World_ToScreen
+extern void __cdecl Camera_ProjectWorldToScreen(float*, int*, int*);   // World_ToScreen
 extern "C" // ─────────────────────────────────────────────────────────────────────────────
 // RenderNumber  @ 0x005120C0  — dibuja un número de daño en el MUNDO.
 // RenderPoints  @ 0x00479330  — recorre el pool y llama al anterior.
@@ -78,7 +78,7 @@ extern "C" // ──────────────────────
 // Tres síntomas venían de ahí:
 //   · nada se veía — se proyectaba con la matriz MODELVIEW leída de GL, que en
 //     ese punto del frame es la IDENTIDAD (el call site corre después de
-//     `FUN_00511cf0`/BeginSprite);
+//     `GL_BeginSprite`/BeginSprite);
 //   · los dígitos salían invertidos — `RenderNumber2D` usa V de 0.0→0.5 y el
 //     original usa 0.5→0.0;
 //   · los MISS salían como barras blancas — el original tiene un sprite propio
@@ -88,7 +88,7 @@ extern "C" // ──────────────────────
 // con `RenderSpriteUV` (0x511FB0), que ya transforma por la CameraMatrix. Por
 // eso el call site está dentro del bloque 3D, entre BeginSprite y glPopMatrix.
 // ─────────────────────────────────────────────────────────────────────────────
-// (RenderSpriteUV_stub y FUN_005114f0 ya están declarados en functions.h)
+// (RenderSpriteUV_stub y GL_DisableDepthTest ya están declarados en functions.h)
 
 extern "C" void __cdecl RenderNumber(float Position[3], int Num,
                                      float Color[3], float Alpha, float Scale);
@@ -148,7 +148,7 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
 void __cdecl FUN_00479330(int, int, int, int)
 {
     EnableAlphaTest(true);
-    FUN_005114f0();                    // DisableDepthTest
+    GL_DisableDepthTest();                    // DisableDepthTest
 
     char* base = (char*)&DAT_07c80110[0];
     for (int i = 0; i < 100; ++i) {

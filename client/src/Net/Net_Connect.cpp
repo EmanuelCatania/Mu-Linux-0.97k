@@ -18,7 +18,7 @@ extern "C" void DbgLogPublic(const char* msg);
 // bytes at DAT_05826ceb/cec (encrypt + decrypt key registration via
 // FUN_00404330/FUN_00423710).
 // Returns unaff_EBP (register spill — result from lower-level connect call).
-void __cdecl FUN_00423920(const char *param_1,unsigned int param_2)
+void __cdecl Net_ConnectServer(const char *param_1,unsigned int param_2)
 {
   byte bVar1;
   int iVar2;
@@ -40,7 +40,7 @@ void __cdecl FUN_00423920(const char *param_1,unsigned int param_2)
   local_4[3] = 0;
   {
     char dbg[160];
-    wsprintfA(dbg, "NET: FUN_00423920 connect_req ip=%.64s port=%u",
+    wsprintfA(dbg, "NET: Net_ConnectServer connect_req ip=%.64s port=%u",
               param_1 ? param_1 : "(null)", (unsigned)(param_2 & 0xFFFF));
     DbgLogPublic(dbg);
   }
@@ -52,11 +52,11 @@ void __cdecl FUN_00423920(const char *param_1,unsigned int param_2)
   iVar2 = Net_Connect(&DAT_055ca160,(char*)param_1,(u_short)param_2,0x400);
   {
     char dbg[64];
-    wsprintfA(dbg, "NET: FUN_00423920 Net_Connect returned %d", iVar2);
+    wsprintfA(dbg, "NET: Net_ConnectServer Net_Connect returned %d", iVar2);
     DbgLogPublic(dbg);
   }
   if (iVar2 == 0) {
-    DbgLogPublic("NET: FUN_00423920 CONNECT FAILED → abort/SetErrorMessage(0x71)");
+    DbgLogPublic("NET: Net_ConnectServer CONNECT FAILED → abort/SetErrorMessage(0x71)");
     FUN_00405540(&DAT_055c9bf0,s_Failed_to_connect__00559688);
     FUN_004055a0(1);
     FUN_005142d0(0x71);

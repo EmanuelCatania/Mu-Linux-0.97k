@@ -91,7 +91,7 @@ void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mod
     DAT_07e11da4 = count + 1;
 
     // ── 4. Auto-advance scroll (follow-bottom) ─────────────────────────────────
-    // FUN_00480980 (chat renderer) reads slots DAT_00559CE0 + 0..5. In the
+    // UI_RenderChatLogOverlay (chat renderer) reads slots DAT_00559CE0 + 0..5. In the
     // original binary dword_559CE0 only advances when the user presses Enter
     // to send chat (WndProc LABEL_589, line 2508). But the login scene's
     // 120× FUN_00480620 init loop at Game_SceneUpdate fills the ring counter

@@ -25,16 +25,16 @@ void FUN_0051e0c0(void)
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
-  FUN_00511910(0, 0, DAT_0056156c, DAT_00561570);
+  GL_SetViewport(0, 0, DAT_0056156c, DAT_00561570);
   aspect = (float)((double)DAT_0056156c / (double)(int)DAT_00561570);
-  FUN_00511220(0x3f800000, aspect, (int)DAT_0056154c, DAT_00561550);
+  GL_SetPerspective(0x3f800000, aspect, (int)DAT_0056154c, DAT_00561550);
 
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
-  FUN_005111d0((unsigned int *)&DAT_083a4140);
-  FUN_005114d0();
-  FUN_00511510();
+  GL_GetModelViewMatrix((unsigned int *)&DAT_083a4140);
+  GL_EnableDepthTest();
+  GL_EnableDepthWrites();
 
   level = DAT_07e91354;
   itemType = *(short*)DAT_07e91350;
@@ -55,14 +55,14 @@ void FUN_0051e0c0(void)
 
 void FUN_005239a0(void)
 {
-  FUN_00511680('\x01');
+  GL_SetBlendSrcOver('\x01');
   glColor3f(1.0f, 1.0f, 1.0f);
-  FUN_005125a0(0xc,320.0,0.0,256.0,86.0,0.0,0.0,1.0,0.671875,'\x01','\x01');
-  FUN_005125a0(0xc,64.0,0.0,256.0,86.0,1.0,0.0,-1.0,0.671875,'\x01','\x01');
-  FUN_005125a0(0xd,576.0,0.0,64.0,256.0,0.0,0.0,1.0,1.0,'\x01','\x01');
-  FUN_005125a0(0xd,0.0,0.0,64.0,256.0,1.0,0.0,-1.0,1.0,'\x01','\x01');
-  FUN_005125a0(0xe,576.0,256.0,64.0,224.0,0.0,0.0,1.0,0.875,'\x01','\x01');
-  FUN_005125a0(0xe,0.0,256.0,64.0,224.0,1.0,0.0,-1.0,0.875,'\x01','\x01');
-  FUN_005125a0(0xf,320.0,448.0,256.0,32.0,0.0,0.0,1.0,1.0,'\x01','\x01');
-  FUN_005125a0(0xf,64.0,448.0,256.0,32.0,1.0,0.0,-1.0,1.0,'\x01','\x01');
+  GL_DrawTexture(0xc,320.0,0.0,256.0,86.0,0.0,0.0,1.0,0.671875,'\x01','\x01');
+  GL_DrawTexture(0xc,64.0,0.0,256.0,86.0,1.0,0.0,-1.0,0.671875,'\x01','\x01');
+  GL_DrawTexture(0xd,576.0,0.0,64.0,256.0,0.0,0.0,1.0,1.0,'\x01','\x01');
+  GL_DrawTexture(0xd,0.0,0.0,64.0,256.0,1.0,0.0,-1.0,1.0,'\x01','\x01');
+  GL_DrawTexture(0xe,576.0,256.0,64.0,224.0,0.0,0.0,1.0,0.875,'\x01','\x01');
+  GL_DrawTexture(0xe,0.0,256.0,64.0,224.0,1.0,0.0,-1.0,0.875,'\x01','\x01');
+  GL_DrawTexture(0xf,320.0,448.0,256.0,32.0,0.0,0.0,1.0,1.0,'\x01','\x01');
+  GL_DrawTexture(0xf,64.0,448.0,256.0,32.0,1.0,0.0,-1.0,1.0,'\x01','\x01');
 }

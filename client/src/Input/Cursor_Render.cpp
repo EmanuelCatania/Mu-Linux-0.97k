@@ -29,7 +29,7 @@
 // imposible porque SelectedCharacter=-1 en login y Hero siempre apuntaba a
 // una entidad válida in-game; acá Hero=NULL en login si aún no se asignó.
 void __cdecl FUN_004bffa0(void) {
-    FUN_00511680('\x01');  // EnableAlphaTest(1)
+    GL_SetBlendSrcOver('\x01');  // EnableAlphaTest(1)
     glColor3f(1.0f, 1.0f, 1.0f);
 
     int u_bits = 0, v_bits = 0;
@@ -43,7 +43,7 @@ void __cdecl FUN_004bffa0(void) {
 
     // ── LABEL_43: default arrow cursor ───────────────────────────────────────
     auto draw_arrow = [&](){
-        FUN_005125a0(2, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+        GL_DrawTexture(2, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
     };
 
     // Error message o diálogo bloqueante → arrow
@@ -51,12 +51,12 @@ void __cdecl FUN_004bffa0(void) {
 
     // SelectedItem (hover sobre ítem en el piso)
     if (SelectedItem != -1) {
-        FUN_005125a0(5, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+        GL_DrawTexture(5, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
         return;
     }
     // SelectedNpc (hover sobre NPC) — UV animado 3×2
     if (SelectedNpc != -1) {
-        FUN_005125a0(6, cx, cy, 24.0f, 24.0f,
+        GL_DrawTexture(6, cx, cy, 24.0f, 24.0f,
                      *(float*)&u_bits, *(float*)&v_bits, 0.5f, 0.5f, '\x01', '\x01');
         return;
     }
@@ -72,8 +72,8 @@ void __cdecl FUN_004bffa0(void) {
         else if (world == 1) match = (cls == 60);
         else if (world == 2) match = (cls == 91);
         else if (world == 3) match = (cls == 38);
-        if (match) FUN_005125a0(8, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
-        else       FUN_005125a0(9, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+        if (match) GL_DrawTexture(8, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+        else       GL_DrawTexture(9, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
         return;
     }
     // Hover sobre char vivo + SelectedCharacter → attack crosshair o arrow
@@ -84,7 +84,7 @@ void __cdecl FUN_004bffa0(void) {
         SelectedCharacter != -1)
     {
         if ((char)FUN_00483160() != '\0' && DAT_07d78094 == '\0') {
-            FUN_005125a0(4, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+            GL_DrawTexture(4, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
         } else {
             draw_arrow();
         }
@@ -92,7 +92,7 @@ void __cdecl FUN_004bffa0(void) {
     }
     // Repair active (modo taladro del smith)
     if (DAT_07eaa134 == 1) {
-        FUN_005125a0(7, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+        GL_DrawTexture(7, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f,
                      DAT_07eaa134, DAT_07eaa134);
         return;
     }
@@ -112,7 +112,7 @@ void __cdecl FUN_004bffa0(void) {
     // Sin LMB → arrow. Con LMB → move (3) / DontMove (10).
     if (DAT_083a42c4 == 0) { draw_arrow(); return; }
     if (DAT_07e11d64 != 0)
-        FUN_005125a0(10, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+        GL_DrawTexture(10, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
     else
-        FUN_005125a0(3,  cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
+        GL_DrawTexture(3,  cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
 }

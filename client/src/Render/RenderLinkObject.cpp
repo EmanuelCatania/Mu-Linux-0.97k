@@ -512,7 +512,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                     unsigned char* pbVar4 = (unsigned char*)operator new(1);
                     unsigned char v = *pbVar12;
                     v = v - 0x23;
-                    v = (v ^ DAT_00559050[0]) + 0xb9;
+                    v = (v ^ PacketXorKey16[0]) + 0xb9;
                     *pbVar1 = v;
                     operator delete(pbVar4);
                 }
@@ -568,7 +568,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 {
                     unsigned char* pbVar4 = (unsigned char*)operator new(1);
                     unsigned char v = *pbVar1 + 0x47;
-                    v = (v ^ DAT_00559050[0]) + 0x23;
+                    v = (v ^ PacketXorKey16[0]) + 0x23;
                     int rval = rand();
                     *pbVar1 = (unsigned char)rval;
                     *pbVar12 = v;

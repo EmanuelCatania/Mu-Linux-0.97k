@@ -8,7 +8,7 @@
 // ── Cursor billboard ──────────────────────────────────────────────────────────
 // FUN_004f8480(DAT_080ab288, DAT_080ab28c, screenX, screenY, 1.0f, 1, 1):
 //   Returns nonzero if cursor is visible/active.
-// If visible, calls FUN_00511710() (hide char anim sprite for cursor area),
+// If visible, calls GL_SetBlendAdditive() (hide char anim sprite for cursor area),
 // then FUN_004f8bb0(type=8, x, y, sx, sy, color, 0, alpha) to draw the quad.
 //   - States 2/4/5 (login/charselect/ingame): fixed size based on DAT_07e11d5c
 //   - States 1/3 (intro/loading): animated size using DAT_07e11d5c oscillation
@@ -58,7 +58,7 @@ void FUN_004b0310(void)
         float color[3] = { 1.0f, 0.766f, 0.0f };
         char visible = FUN_004f8480(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
         if (visible != '\0') {
-            FUN_00511710();
+            GL_SetBlendAdditive();
             int frame = (DAT_005615c0 == 2) ? 1 : (DAT_07e11d5c + 1);
             float sz = (float)frame;
             FUN_004f8bb0(8, DAT_083a4130, DAT_083a4134, sz, sz, color, 0, 1.0f);
@@ -68,7 +68,7 @@ void FUN_004b0310(void)
         float color[3] = { 1.0f, 0.766f, 0.0f };
         char visible = FUN_004f8480(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
         if (visible != '\0') {
-            FUN_00511710();
+            GL_SetBlendAdditive();
             float base = (float)DAT_07e11d5c + (float)DAT_07e11d5c + _DAT_0055256c;
             float szX = ((int)base / 100) * 100 + _DAT_00552598;
             float szY = ((int)base / 100) * 100 + _DAT_00552598;
@@ -235,7 +235,7 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
         DWORD now = GetTickCount();
         if (now - s_lastTilePick > 500) {
             s_lastTilePick = now;
-            float* eye = (float*)&DAT_083a4284_arr[0];
+            float* eye = (float*)&CameraRayOriginX_arr[0];
             float* tgt = (float*)&DAT_083a4110_arr[0];
             char d[256];
             wsprintfA(d, "TilePick(%d,%d) eye=(%d,%d,%d) tgt=(%d,%d,%d)",
@@ -246,7 +246,7 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
         }
     }
     if (DAT_07e11d30 != 5) {
-        FUN_00511590('\0');
+        GL_SetAlphaTest('\0');
         glColor3f(0.0f, 0.0f, 0.0f);
         glBegin(3);
         // BUG-FIX 2026-04-28: bound era 0x7feb288 (addr abs del binario original).
@@ -255,17 +255,17 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
             glVertex3fv(&g_TilePickBuf[i * 3]);
         }
         glEnd();
-        FUN_00511600();
+        GL_ResetState();
     }
     float local_c[3];
     FUN_004fa4d0((float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270, local_c);
-    unsigned int uVar2 = FUN_00512d40((float*)&DAT_083a4284, (float*)&DAT_083a4110, 3,
+    unsigned int uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                                        (float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270,
                                        &_DAT_07feb27c, local_c, '\x01');
     cVar1 = (char)uVar2;
     if (cVar1 == '\0') {
         FUN_004fa4d0((float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c, local_c);
-        uVar2 = FUN_00512d40((float*)&DAT_083a4284, (float*)&DAT_083a4110, 3,
+        uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                               (float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c,
                               &_DAT_07feb264, local_c, '\x01');
         cVar1 = (char)uVar2;
@@ -283,9 +283,9 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
             if (((unsigned char)DAT_0838bc70[DAT_07eab1ec] & 1) == 1) draw = true;
         }
         if (draw) {
-            FUN_005114f0();
-            FUN_00511680('\x01');
-            FUN_00511590('\0');
+            GL_DisableDepthTest();
+            GL_SetBlendSrcOver('\x01');
+            GL_SetAlphaTest('\0');
             glBegin(6);
             glColor4f(1.0f, 0.0f, 0.0f, 0.3f);
             // BUG-FIX 2026-05-03: was `while (puVar3 < 0x7feb288)` — absolute
@@ -295,7 +295,7 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
                 glVertex3fv(&g_TilePickBuf[i * 3]);
             }
             glEnd();
-            FUN_00511600();
+            GL_ResetState();
         }
     }
     (void)param_5;
@@ -403,7 +403,7 @@ int __cdecl FUN_004afdc0(int param_1_int)
             auStack_58[i] = *(undefined4 *)(ent + 0x130 + i * 4);
 
         // ── BUG-FIX 2026-04-26 (revisión 5): screen-space via gluProject.
-        //   El intento previo (revisión 4) usaba FUN_005113f0 (World_ToScreen),
+        //   El intento previo (revisión 4) usaba Camera_ProjectWorldToScreen (World_ToScreen),
         //   pero esa función llama a __ftol() que en stdafx.h está stubbed como
         //   GetTickCount() — devuelve basura, no proyección. Por eso TODOS los
         //   slots daban la misma "screen pos" y BK ganaba siempre por ser slot 0.
@@ -602,7 +602,7 @@ int __cdecl FUN_004b0240(void)
             undefined4 auStack_44[12];
             for (int i = 0; i < 12; i++)
                 auStack_44[i] = *(undefined4 *)(iVar1 + 0x130 + i * 4);
-            if ((char)FUN_00513260((float *)&DAT_083a4284, (float *)&DAT_083a4110)) {
+            if ((char)FUN_00513260((float *)&CameraRayOriginX, (float *)&DAT_083a4110)) {
                 *(DWORD *)(iVar1 + 0xe8) = 0x3fc00000; // 1.5f
                 *(DWORD *)(iVar1 + 0xec) = 0x3fc00000;
                 *(DWORD *)(iVar1 + 0xf0) = 0x3fc00000;

@@ -5,9 +5,9 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_0047f360 @ 0x0047F360 (~93 lines) — text render to bitmap with color mask
+// FUN_0047f360 @ 0x0047F360 — Font_RenderTextToBitmap (~93 lines)
 // TextOutA to m_hFontDC, then pixel-copy loop: nonzero->m_dwTextColor, zero->m_dwBackColor.
-void __cdecl FUN_0047f360(int p1, int p2, LPCSTR p3, int p4, int p5, int p6, int p7, int p8, LPCSTR p9) {
+void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, int p6, int p7, int p8, LPCSTR p9) {
     // 0x0047F360 — text render to bitmap with color mask
     // Renders text string to m_hFontDC, then copies pixels to Bitmaps[0] pixel buffer
     // applying color mask: nonzero pixels → m_dwTextColor (or prefix color), zero → m_dwBackColor
@@ -116,10 +116,10 @@ void __cdecl FUN_0047f360(int p1, int p2, LPCSTR p3, int p4, int p5, int p6, int
     }
 }
 
-// FUN_0047f4c0 @ 0x0047F4C0 (~64 lines) — upload text bitmap + render as sprite
+// FUN_0047f4c0 @ 0x0047F4C0 — Font_RenderBitmapText (~64 lines)
 // glTexImage2D uploads Bitmaps[0xd]. Clamps to screen bounds. RenderBitmap.
-// FUN_0047f4c0 (IDA-activated, was Ghidra stub)
-void __cdecl FUN_0047f4c0(int a1, int a2, float Width, float Height, int a5, int a6, float a7, int a8)
+// Font_RenderBitmapText (IDA-activated, was Ghidra stub)
+void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, int a5, int a6, float a7, int a8)
 {
   int v8; // ecx
   DWORD v9; // eax

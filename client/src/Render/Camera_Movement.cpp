@@ -8,7 +8,7 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-// MoveCamera @ 0x0051E4E0 (~162 lines) — intro/login camera walk animation
+// FUN_0051E4E0 @ 0x0051E4E0 — MoveCamera; intro/login camera walk animation
 // Drives camera walk paths using CameraWalk[] waypoints (6 floats each: pos+angle).
 // Two modes: lerp (type 0) or linear delta (type 1).
 // SceneFlag==2: random waypoint selection. Otherwise: fixed waypoint 5.

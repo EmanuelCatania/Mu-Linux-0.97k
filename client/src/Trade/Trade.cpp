@@ -15,7 +15,7 @@
 //   FUN_00434dc0  = Shop_RegisterItem   — add/update item in shop table
 //   FUN_00423ce0  = Entity_UpdateTradeFlag — update entity[+0x2e9] for one entity
 //   FUN_00423c80  = Shop_FindSlotByName — search shop table by name, return slot idx
-//   FUN_0047fae0  = UI_OpenWindow       — open/update a named UI window (title, mode)
+//   UI_AddNotice  = UI_OpenWindow       — open/update a named UI window (title, mode)
 //   FUN_00497870  = Entity_PlayMoveAnim — plays movement anim before sending packets
 //   FUN_005142d0  = ShowErrorDialog     — modal dialog by message ID
 //
@@ -110,7 +110,7 @@ extern DWORD g_LocalEntity;            // DAT_07abf5d8 (player entity ptr)
 
 
 // ============================================================
-// Shop_RegisterItem  @ 0x00434dc0
+// IDA: FUN_00434DC0
 // Adds or updates an item in the shop table.
 //   param_1 = entity_id   (dword — which entity sells this item)
 //   param_2 = name[2]     (2 dwords = 8-byte item name key)
@@ -206,7 +206,7 @@ void PacketHandler_0x5a(BYTE* pkt)
 
 
 // ============================================================
-// Shop_EntitySlots  @ 0x00435110  (opcode 0x5b)
+// IDA: FUN_00435110
 // For each entity in packet, assign entity[+0x1da] = shop_slot_index.
 // Also updates entity[+0x2e9] trade flag (0/1/2).
 //
@@ -296,7 +296,7 @@ void PacketHandler_0x5d(BYTE* pkt)
 
 
 // ============================================================
-// Entity_UpdateTradeFlag  @ 0x00423ce0
+// IDA: FUN_00423CE0
 // Updates entity[+0x2e9] for one entity:
 //   0 = entity not active (entity[+0x00] == 0)
 //   1 = entity[+0x1da] == local_player[+0x1da]  (same shop as player)
@@ -329,7 +329,7 @@ void Entity_UpdateTradeFlag(BYTE* entity)
 
 
 // ============================================================
-// Shop_FindSlotByName  @ 0x00423c80
+// IDA: FUN_00423C80
 // Linear search of shop item table by 4-byte name key.
 // Returns slot index, or -1 if not found.
 // ============================================================
@@ -351,7 +351,7 @@ int Shop_FindSlotByName(BYTE* name)
 
 
 // ============================================================
-// Trade_RequestResult  @ 0x004353e0  (opcode 0x60)
+// IDA: FUN_004353E0
 // Server sends result of a trade request attempt.
 // Packet: [C1][len][60][result_code]
 //   result_code 0-6: different outcome strings shown to player
@@ -411,7 +411,7 @@ void Trade_RequestResult(BYTE* pkt)
 
 
 // ============================================================
-// Trade_IncomingReq  @ 0x00435390  (opcode 0x61)
+// IDA: FUN_00435390
 // Another player requests a trade or duel with the local player.
 // Packet: [C1][len][61][name4 bytes][info4 bytes][?][duel_flag]
 //   bytes[3..6]  = requester name key → g_active_shop_name
@@ -434,7 +434,7 @@ void Trade_IncomingReq(BYTE* pkt)
 
 
 // ============================================================
-// Trade_Open  @ 0x004354f0  (opcode 0x62)
+// IDA: FUN_004354F0
 // Server confirms trade window should open. Client opens UI and sends ACK.
 // Packet: [C1][len][62][name4][info4][duel_flag][trade_param][...]
 //   bytes[3..6]  = shop name key → g_active_shop_name
@@ -474,7 +474,7 @@ void Trade_Open(BYTE* pkt)
         g_duel_mode = 1;
     }
 
-    UI_OpenWindow(window_title, 1);  // FUN_0047fae0 — open trade/duel UI
+    UI_OpenWindow(window_title, 1);  // UI_AddNotice — open trade/duel UI
 
     g_trade_param = pkt[0xc];
 
@@ -504,7 +504,7 @@ void Trade_Open(BYTE* pkt)
 
 
 // ============================================================
-// Trade_ItemUpdate  @ 0x00435aa0  (opcode 0x63)
+// IDA: FUN_00435AA0
 // Trade item placed / trade result. Closes trade state and shows result message.
 // Packet: [C1][len][63][result_code]
 //   result_code 0-6 → message string, see table above
@@ -540,7 +540,7 @@ void Trade_ItemUpdate(BYTE* pkt)
         ack_type = result_table[result].ack;
     }
 
-    UI_OpenWindow(msg_buf, 1);  // FUN_0047fae0 — show result in window
+    UI_OpenWindow(msg_buf, 1);  // UI_AddNotice — show result in window
 
     // Clear all trade state
     g_trade_active = 0;

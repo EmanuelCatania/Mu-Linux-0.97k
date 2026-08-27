@@ -317,11 +317,11 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
     return true;
 }
 
-// FUN_00451f30 @ 0x00451F30 (~52 lines) — death particle burst (20 dust particles)
+// IDA: FUN_00451f30 @ 0x00451F30 (~52 lines) — death particle burst (20 dust particles)
 // When entity is dead (anim==6) and animation frame is in range [_DAT_00552658, _DAT_00552830),
 // spawn 20 dust particles (type 0x4c5) at random offsets (-32..+31) from entity position.
 // Sets entity light to (1.0, 1.0, 1.0) before each particle spawn.
-// FUN_00451f30 (IDA-activated, was Ghidra stub)
+// Combat_SpawnDeathDustParticles (IDA-activated, was Ghidra stub)
 // 00448930 AttackStage — direct IDA switch (raw/00448930_AttackStage.c).
 // The older AttackStage_legacy_mismatched above is intentionally not called.
 bool __cdecl AttackStage_stub(DWORD c, DWORD o)
@@ -366,7 +366,7 @@ bool __cdecl AttackStage_stub(DWORD c, DWORD o)
     return true;
 }
 
-void __cdecl FUN_00451f30(int a1)
+void __cdecl Combat_SpawnDeathDustParticles(int a1)
 {
   int v1; // ebx
   float Position[3]; // [esp+4h] [ebp-Ch] BYREF
@@ -390,10 +390,10 @@ void __cdecl FUN_00451f30(int a1)
 }
 
 
-// FUN_00452030 @ 0x00452030 (~30 lines) — idle ambient particle (single spark)
+// IDA: FUN_00452030 @ 0x00452030 (~30 lines) — idle ambient particle (single spark)
 // When entity anim state == 2 (combat/active), spawn one particle (type 0x4c5)
 // at random offset (0..199) minus grid scale from entity X/Y position.
-void __cdecl FUN_00452030(int param_1) {
+void __cdecl Combat_SpawnIdleAmbientParticle(int param_1) {
     if (*(char*)(param_1 + 0x105) != '\x02') return;
 
     int r1 = rand();

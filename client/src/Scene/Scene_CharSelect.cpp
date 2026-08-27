@@ -35,7 +35,7 @@
 // ── PARTÍCULAS ÓRBITALES ──────────────────────────────────────────────────────
 //
 //   if (DAT_005616ac != -1 && entity[selected].active) {
-//     FUN_00511710();   → Frame_UpdateTimer()
+//     GL_SetBlendAdditive();   → Frame_UpdateTimer()
 //     local_6c = ftol() % 0xe10;   // modulo 3600
 //     local_70 = (float)local_6c * _DAT_00552a00;   // ángulo en radianes
 //     FUN_00473ea0(0x4f1, pos, 0x420c0000, 0x425c0000, 0x43160000, +local_70, 0, 0.0);
@@ -46,28 +46,28 @@
 // ── RENDER 3D ─────────────────────────────────────────────────────────────────
 //
 //   glClearColor(0,0,0,1.0);
-//   FUN_005119b0(0, 0, 0x280, 0x1e0);
-//   FUN_005112f0(DAT_083a427c, DAT_083a4278, &DAT_083a4110); → Camera_Update(mx,my,mat)
+//   GL_BeginViewport(0, 0, 0x280, 0x1e0);
+//   Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, &DAT_083a4110); → Camera_Update(mx,my,mat)
 //   FUN_004fd800();     → Terrain_Render()
 //   _DAT_07abf138 = 1.0; _DAT_07abf13c = 0.9; _DAT_07abf140 = 0.8;
 //   if (DAT_005616b0 == -1): FUN_004b0310(); → CharPreview_Render()
 //   FUN_0045ab00();     → Entity_RenderAll_3D()
 //   FUN_00500970();     → Entity_Render_Sprites()
 //   FUN_0046c3e0();     → Particle_Render()
-//   FUN_00511680('\x01'); GL_SetMode(1)
-//   FUN_00511480(0x15); glColor4f(1,1,1,0.8);
-//   FUN_00511cf0();     → SkillEffect_Render_2()
+//   GL_SetBlendSrcOver('\x01'); GL_SetMode(1)
+//   GL_BindTextureSlot(0x15); glColor4f(1,1,1,0.8);
+//   GL_BeginSprite();     → SkillEffect_Render_2()
 //   FUN_00479730();     → Portal_Render()
 //   FUN_00478c00();     → ItemDrop_Render_2()
 //   glPopMatrix();
-//   FUN_005123c0();     → GL_SetupOrtho2D()
+//   GL_Begin2D();     → GL_SetupOrtho2D()
 //
 // ── NAME LABELS (cuando DAT_005616b0 == -1: ninguno hovereado) ───────────────
 //
 //   for (iVar9 = 0; iVar9 < 0x11e4; iVar9 += 0x394):
 //     entity = DAT_07abf5d0 + iVar9
 //     if (entity[0] != '\0'):
-//       FUN_005113f0(&pos, &screenX, &screenY)   → World_ToScreen(pos, &x, &y)
+//       Camera_ProjectWorldToScreen(&pos, &screenX, &screenY)   → World_ToScreen(pos, &x, &y)
 //       flags = entity[0x1c0]
 //       if   flags & 1:  color = 0x8000ffff (cyan)     // Elf?
 //       elif flags & 0x12: color = 0x80ffff00 (yellow)  // GM?
@@ -109,7 +109,7 @@
 //   FUN_004fa110(&pos, mat, &screenPt); → Transform + project
 //   _DAT_083a42d4 = screenPt.x + _DAT_07abf060;
 //   _DAT_083a42d8 = screenPt.y + _DAT_07abf064;
-//   FUN_005119b0(0x11d, iVar9+0x5a, 0x4a, 0x4f);
+//   GL_BeginViewport(0x11d, iVar9+0x5a, 0x4a, 0x4f);
 //   FUN_00456770(&entity, &entity, NULL);   → Entity_UpdateRender()
 //   GL_PopMatrixAll();
 //
@@ -130,8 +130,8 @@
 //   FUN_005239a0()  → CharSelect_UpdateInput()
 //   FUN_0051af50()  → Chat_Render()
 //   FUN_004f64d0()  → UI_Render()
-//   FUN_0047fce0()  → StatusBar_Render()
-//   FUN_00480980()  → Mouse_Render()
+//   UI_RenderNotices()  → StatusBar_Render()
+//   UI_RenderChatLogOverlay()  → Mouse_Render()
 //   FUN_004c14e0/4c3530/4bffa0/0051e0c0/5124b0 → UI finalizadores
 //   GL_PopMatrixAll()
 //   return CONCAT31(..., 1)  → low byte 1 = SwapBuffers
@@ -166,16 +166,16 @@
 //   FUN_00500970   → Entity_Render_Sprites()
 //   FUN_0046c3e0   → Particle_Render()
 //   FUN_00473ea0   → Particle_Spawn(type, pos, r0, r1, r2, angle, ?, z)
-//   FUN_005112f0   → Camera_Update(mx, my, mat)
-//   FUN_005113f0   → World_ToScreen(pos, &x, &y)
+//   Camera_BuildMouseRay   → Camera_Update(mx, my, mat)
+//   Camera_ProjectWorldToScreen   → World_ToScreen(pos, &x, &y)
 //   FUN_004b0310   → CharPreview_Render()
 //   FUN_005239a0   → CharSelect_UpdateInput()
 //   FUN_00456770   → Entity_UpdateRender(entity, entity, is_local)
 //   FUN_004fa110   → Matrix_TransformVec(pos, mat, out)
 //   FUN_004f9db0   → Matrix_FromEuler(angles, out)
-//   FUN_00511480   → Particle_SetTexture(type)
-//   FUN_00511680   → GL_SetMode(mode)
-//   FUN_00511710   → Frame_UpdateTimer()
+//   GL_BindTextureSlot   → Particle_SetTexture(type)
+//   GL_SetBlendSrcOver   → GL_SetMode(mode)
+//   GL_SetBlendAdditive   → Frame_UpdateTimer()
 
 #include "stdafx.h"
 #include "Scene/Scene_CharSelect.h"
@@ -214,8 +214,8 @@ int Scene_CharSelect(void)
         DAT_07e11d6e = 0;
         // BUG-FIX: 0x3f800000 son los bits de 1.0f, no la magnitud.
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        FUN_005119b0(0, 0, 0x280, 0x1e0);
-        FUN_005112f0(DAT_083a427c, DAT_083a4278, (float *)&DAT_083a4110);
+        GL_BeginViewport(0, 0, 0x280, 0x1e0);
+        Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float *)&DAT_083a4110);
 
         // Oscillating brightness: fsin on frame timer → range ~0.3..1.0
         iVar9  = DAT_083a021c;
@@ -307,7 +307,7 @@ int Scene_CharSelect(void)
 
         // Orbital particles for selected char
         if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * 0x394] != '\0')) {
-            FUN_00511710();   // Frame_UpdateTimer
+            GL_SetBlendAdditive();   // Frame_UpdateTimer
             uVar12  = (unsigned int)(*(float*)&DAT_05826e08);
             local_6c = (int)((longlong)((ulonglong)(uint)((int)uVar12 >> 0x1f) << 0x20 | uVar12 & 0xffffffff) % 0xe10);
             local_70 = (float)local_6c * _DAT_00552a00;
@@ -319,17 +319,17 @@ int Scene_CharSelect(void)
 
         FUN_00500970();                    // Entity_Render_Sprites
         FUN_0046c3e0();                    // Particle_Render
-        FUN_00511680('\x01');              // GL_SetMode(1)
-        FUN_00511480(0x15);
+        GL_SetBlendSrcOver('\x01');              // GL_SetMode(1)
+        GL_BindTextureSlot(0x15);
         glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
-        FUN_00511cf0();                    // SkillEffect_Render_2
+        GL_BeginSprite();                    // SkillEffect_Render_2
         FUN_00479730();                    // Portal_Render
         FUN_00478c00();                    // ItemDrop_Render_2
         glPopMatrix();
-        FUN_005123c0();                    // GL_SetupOrtho2D
+        GL_Begin2D();                    // GL_SetupOrtho2D
         glColor3f(1.0f, 1.0f, 1.0f);
-        FUN_00511680('\x01');
-        FUN_00511600();
+        GL_SetBlendSrcOver('\x01');
+        GL_ResetState();
 
         // ── Name labels (no char hovered) ────────────────────────────────────
         {
@@ -346,7 +346,7 @@ int Scene_CharSelect(void)
             }
         }
         if (DAT_005616b0 == -1) {
-            FUN_00511680('\x01');
+            GL_SetBlendSrcOver('\x01');
             glColor3f(1.0f, 1.0f, 1.0f);
             iVar9 = 0;
             pcVar5 = (char*)DAT_07abf5d0;
@@ -354,7 +354,7 @@ int Scene_CharSelect(void)
                 if (pcVar5[iVar9] != '\0') {
                     // ── BUG-FIX: fStack_5c/uStack_58/fStack_54 son 3 variables LOCALES
                     // separadas. MSVC no garantiza que estén contiguas en stack, así que
-                    // pasar &fStack_5c a FUN_005113f0 (que lee [0]/[1]/[2]) producía
+                    // pasar &fStack_5c a Camera_ProjectWorldToScreen (que lee [0]/[1]/[2]) producía
                     // proyecciones erráticas (TPos[2] no matcheaba con M*input).
                     // Usamos un array contiguo posBuf[3] para garantizar layout.
                     float posBuf[3];
@@ -381,19 +381,19 @@ int Scene_CharSelect(void)
                                 fStack_5c, *(float*)&uStack_58, fStack_54,
                                 _DAT_00552974,
                                 M[0],M[1],M[2],M[3], M[4],M[5],M[6],M[7], M[8],M[9],M[10],M[11],
-                                (int)DAT_083a429c, (int)DAT_083a42a0,
+                                (int)ViewportCenterX, (int)ViewportCenterY,
                                 _DAT_083a42a4, _DAT_083a42a8,
                                 (int)DAT_0056156c, (int)DAT_00561570);
                             DbgLogPublic(b);
                         }
                     }
                     // ── BUG-FIX: local_70 está declarado float (línea 202) pero
-                    // FUN_005113f0 escribe un int en él vía cast pointer. La lectura
+                    // Camera_ProjectWorldToScreen escribe un int en él vía cast pointer. La lectura
                     // posterior `(int)local_70` hace conversión FPU float→int sobre
                     // el bit-pattern denormal, dando ~0 y poniendo los nombres en
                     // y=-15. Usamos un int local separado para la proyección.
                     int nameProjY = 0;
-                    FUN_005113f0(posBuf, &local_6c, &nameProjY);
+                    Camera_ProjectWorldToScreen(posBuf, &local_6c, &nameProjY);
                     {
                         static DWORD s_lastNO[5] = {0};
                         int slotIdx2 = iVar9 / 0x394;
@@ -422,7 +422,7 @@ int Scene_CharSelect(void)
                     }
                     iVar4 = lstrlenA(aCStack_50);
                     GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, aCStack_50, iVar4, &tStack_68);
-                    FUN_0047f650(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / DAT_0056156c,
+                    UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / DAT_0056156c,
                                  (nameProjY - tStack_68.cy) + -3,
                                  aCStack_50, (LPSIZE)0x0, '\0', 3);
                     // Class name + level (bottom, normal font) — IDA L202-209:
@@ -453,7 +453,7 @@ int Scene_CharSelect(void)
                     }
                     iVar4 = lstrlenA(aCStack_50);
                     GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, aCStack_50, iVar4, &tStack_68);
-                    FUN_0047f650(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / DAT_0056156c,
+                    UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / DAT_0056156c,
                                  nameProjY, aCStack_50, (LPSIZE)0x0, '\0', 0);
                     pcVar5 = (char*)DAT_07abf5d0;
                 }
@@ -467,11 +467,11 @@ int Scene_CharSelect(void)
             SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
             iVar9 = lstrlenA((LPCSTR)lpString_07d49c14);
             GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)lpString_07d49c14, iVar9, &tStack_68);
-            FUN_0047f650(0x140 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x14a,
+            UI_RenderText(0x140 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x14a,
                          (LPCSTR)lpString_07d49c14, (LPSIZE)0x0, '\0', 0);
             iVar9 = lstrlenA((LPCSTR)lpString_07d49d40);
             GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)lpString_07d49d40, iVar9, &tStack_68);
-            FUN_0047f650(0x140 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x15c,
+            UI_RenderText(0x140 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x15c,
                          (LPCSTR)lpString_07d49d40, (LPSIZE)0x0, '\0', 0);
         }
 
@@ -480,25 +480,25 @@ int Scene_CharSelect(void)
         SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a3c);
         GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a3c, iVar9, &tStack_68);
-        FUN_0047f650(0x1b8 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x186,
+        UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x186,
                      (LPCSTR)&lpString_00561a3c, (LPSIZE)0x0, '\0', 0);
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a58);
         GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a58, iVar9, &tStack_68);
-        FUN_0047f650(0x1b8 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x19a,
+        UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x19a,
                      (LPCSTR)&lpString_00561a58, (LPSIZE)0x0, '\0', 0);
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a68);
         GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a68, iVar9, &tStack_68);
-        FUN_0047f650(0x1b8 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x1ae,
+        UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x1ae,
                      (LPCSTR)&lpString_00561a68, (LPSIZE)0x0, '\0', 0);
 
-        FUN_005124b0();
+        GL_End2D();
         GL_PopMatrixAll();
 
         // ── Create character panel (states 0x1b..0x1c) ────────────────────────
         if ((0x1a < DAT_083a7c14) && (DAT_083a7c14 < 0x1d)) {
-            FUN_005119b0(0, 0, 0x280, 0x1e0);
-            FUN_005123c0();
-            FUN_00511680('\x01');
+            GL_BeginViewport(0, 0, 0x280, 0x1e0);
+            GL_Begin2D();
+            GL_SetBlendSrcOver('\x01');
             glColor3f(1.0f, 1.0f, 1.0f);
 
             iVar9 = DAT_005616a4;
@@ -512,9 +512,9 @@ int Scene_CharSelect(void)
             } while (--iVar4 != 0);
 
             local_6c = DAT_005616a4;
-            FUN_005125a0(0x16, 214.0f, (float)DAT_005616a4, 213.0f, 256.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, '\x01', '\x01');
+            GL_DrawTexture(0x16, 214.0f, (float)DAT_005616a4, 213.0f, 256.0f, 0.0f, 0.0f, 0.83203125f, 1.0f, '\x01', '\x01');
             local_6c = iVar9 + 0x100;
-            FUN_005125a0(0x17, 214.0f, (float)local_6c, 213.0f, 119.0f, 0.0f, 0.0f, 0.83203125f, 0.9296875f, '\x01', '\x01');
+            GL_DrawTexture(0x17, 214.0f, (float)local_6c, 213.0f, 119.0f, 0.0f, 0.0f, 0.83203125f, 0.9296875f, '\x01', '\x01');
 
             fVar1 = (float)(iVar9 + 0xc4);
             local_70 = fVar1;
@@ -522,19 +522,19 @@ int Scene_CharSelect(void)
             if ((((0x16a < DAT_083a427c) && (DAT_083a427c < 0x17f)) && ((int)fVar1 <= DAT_083a4278)) &&
                 ((DAT_083a4278 < iVar9 + 0xd7) && (DAT_083a42c4 != '\0')))
             {
-                FUN_005125a0(0x1a, 363.0f, (float)(int)fVar1, 20.0f, 19.0f, 0.0f, 0.0f, 0.625f, 0.59375f, '\x01', '\x01');
+                GL_DrawTexture(0x1a, 363.0f, (float)(int)fVar1, 20.0f, 19.0f, 0.0f, 0.0f, 0.625f, 0.59375f, '\x01', '\x01');
             }
             if ((char)DAT_07abf20c == '\0') {
                 // BUG-FIX: 0x3f4ccccd = 0.8f bits, pasado como int → 1062836429.0f.
                 glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
-                FUN_005124c0(364.0f, (float)(int)local_70, 20.0f, 19.0f);
+                GL_DrawRect(364.0f, (float)(int)local_70, 20.0f, 19.0f);
                 glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             }
             local_70 = fVar1;
             if (((0x17f < DAT_083a427c) && (DAT_083a427c < 0x194)) &&
                 (((int)fVar1 <= DAT_083a4278) && ((DAT_083a4278 < iVar9 + 0xd7) && (DAT_083a42c4 != '\0'))))
             {
-                FUN_005125a0(0x1b, 384.0f, (float)(int)fVar1, 20.0f, 19.0f, 0.0f, 0.0f, 0.625f, 0.59375f, '\x01', '\x01');
+                GL_DrawTexture(0x1b, 384.0f, (float)(int)fVar1, 20.0f, 19.0f, 0.0f, 0.0f, 0.625f, 0.59375f, '\x01', '\x01');
             }
             if (uVar8 <= (DAT_07abf20c & 0xff)) {
                 // BUG-FIX 2026-07-17: la Y del overlay de "flecha derecha bloqueada" era
@@ -542,24 +542,24 @@ int Scene_CharSelect(void)
                 // al llegar al máximo de clase disponible (ej: Fairy Elf sin poder ir a MG).
                 // IDA RenderColor(384, dialogY+196, ...) → usa la misma Y que la izquierda.
                 glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
-                FUN_005124c0(384.0f, (float)(int)local_70, 20.0f, 19.0f);
+                GL_DrawRect(384.0f, (float)(int)local_70, 20.0f, 19.0f);
                 glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             }
 
-            FUN_00511680('\x01');
+            GL_SetBlendSrcOver('\x01');
             fVar1 = (float)(iVar9 + 0xd7);
             // Arrow down (stat decrement): tex 0x1c or 0x1d
             if ((((0x16a < DAT_083a427c) && (DAT_083a427c < 0x17f)) && ((int)fVar1 <= DAT_083a4278)) &&
                 ((DAT_083a4278 < iVar9 + 0xe9) && (DAT_083a42c4 != '\0')))
             {
                 local_70 = fVar1;
-                FUN_005125a0(0x1c, 363.0f, (float)(int)fVar1, 20.0f, 18.0f, 0.0f, 0.0f, 0.625f, 0.5625f, '\x01', '\x01');
+                GL_DrawTexture(0x1c, 363.0f, (float)(int)fVar1, 20.0f, 18.0f, 0.0f, 0.0f, 0.625f, 0.5625f, '\x01', '\x01');
             }
             if (((0x17f < DAT_083a427c) && (DAT_083a427c < 0x194)) &&
                 (((int)fVar1 <= DAT_083a4278) && ((DAT_083a4278 < iVar9 + 0xe9) && (DAT_083a42c4 != '\0'))))
             {
                 local_70 = fVar1;
-                FUN_005125a0(0x1d, 384.0f, (float)(int)fVar1, 20.0f, 18.0f, 0.0f, 0.0f, 0.625f, 0.5625f, '\x01', '\x01');
+                GL_DrawTexture(0x1d, 384.0f, (float)(int)fVar1, 20.0f, 18.0f, 0.0f, 0.0f, 0.625f, 0.5625f, '\x01', '\x01');
             }
 
             // OK button (tex 0x18/0x19)
@@ -568,13 +568,13 @@ int Scene_CharSelect(void)
                 (DAT_083a4278 < iVar9 + 0x172))
             {
                 local_70 = fVar1;
-                FUN_005125a0(0x18, 235.0f, (float)(int)fVar1, 72.0f, 21.0f, 0.0f, 0.0f, 0.5625f, 0.65625f, '\x01', '\x01');
+                GL_DrawTexture(0x18, 235.0f, (float)(int)fVar1, 72.0f, 21.0f, 0.0f, 0.0f, 0.5625f, 0.65625f, '\x01', '\x01');
             }
             local_70 = fVar1;
             if (((0x14e < DAT_083a427c) && (DAT_083a427c < 0x197)) &&
                 (((int)fVar1 <= DAT_083a4278) && (DAT_083a4278 < iVar9 + 0x172)))
             {
-                FUN_005125a0(0x19, 335.0f, (float)(int)fVar1, 72.0f, 21.0f, 0.0f, 0.0f, 0.5625f, 0.65625f, '\x01', '\x01');
+                GL_DrawTexture(0x19, 335.0f, (float)(int)fVar1, 72.0f, 21.0f, 0.0f, 0.0f, 0.5625f, 0.65625f, '\x01', '\x01');
             }
 
             SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
@@ -583,10 +583,10 @@ int Scene_CharSelect(void)
             // convertía -1 a 0xFFFFFFFF → comparación SIEMPRE falsa → RenderInputText
             // (el campo del nombre) nunca se dibujaba. IDA: `if (dword_5616B0 >= 0)`.
             if ((int)DAT_005616b0 >= 0)
-                FUN_0047f0b0(0x11d, iVar9 + 0xb4, 0);
-            FUN_0047f650(0x11d, iVar9 + 200, DAT_07d2b494 + (DAT_07abf20c & 0xff) * 300, (LPSIZE)0x0, '\0', 0);
+                UI_RenderInputField(0x11d, iVar9 + 0xb4, 0);
+            UI_RenderText(0x11d, iVar9 + 200, DAT_07d2b494 + (DAT_07abf20c & 0xff) * 300, (LPSIZE)0x0, '\0', 0);
 
-            FUN_005124b0();
+            GL_End2D();
             GL_PopMatrixAll();
 
             // Character preview sub-render
@@ -615,7 +615,7 @@ int Scene_CharSelect(void)
                     _DAT_083a42d8 = camOut[1] + _DAT_07abf064;      // CameraPosition[1]
                     _DAT_083a42dc = camOut[2] + _DAT_07abf068;      // CameraPosition[2]
                 }
-                FUN_005119b0(0x11d, iVar9 + 0x5a, 0x4a, 0x4f);
+                GL_BeginViewport(0x11d, iVar9 + 0x5a, 0x4a, 0x4f);
                 // BUG-FIX 2026-04-20: _DAT_07abf0?? están tipados `float`;
                 // asignar 0x40a00000 / 0x3f800000 hace int→float (1e9), no 5.0f / 1.0f
                 _DAT_07abf06c = 0.0f; _DAT_07abf070 = 5.0f; _DAT_07abf05c = 1.0f;
@@ -627,16 +627,16 @@ int Scene_CharSelect(void)
         }
 
         // ── Bottom panels / buttons ───────────────────────────────────────────
-        FUN_005119b0(0, 0, 0x280, 0x1e0);
+        GL_BeginViewport(0, 0, 0x280, 0x1e0);
         // Reset entity[0] world pos
         DAT_07abf5d8 = (char*)DAT_07abf5d0;
         pcVar5 = (char*)DAT_07abf5d0;
         pcVar5[0x10] = '\0'; pcVar5[0x11] = '\0'; pcVar5[0x12] = '\0'; pcVar5[0x13] = '\0';
         pcVar5[0x14] = '\0'; pcVar5[0x15] = '\0'; pcVar5[0x16] = '\0'; pcVar5[0x17] = '\0';
-        FUN_005123c0();
+        GL_Begin2D();
 
         if (DAT_005616b0 == -1) {
-            FUN_00511680('\x01');
+            GL_SetBlendSrcOver('\x01');
             // Check if any slot is empty
             bVar10 = false;
             iVar9 = 5;
@@ -658,7 +658,7 @@ int Scene_CharSelect(void)
 
             iVar9 = DAT_005616a4;
             local_6c = DAT_005616a4;
-            FUN_005125a0(0x10, 221.0f, (float)DAT_005616a4, 199.0f, 109.0f, 0.0f, 0.0f, 0.77734375f, 0.8515625f, '\x01', '\x01');
+            GL_DrawTexture(0x10, 221.0f, (float)DAT_005616a4, 199.0f, 109.0f, 0.0f, 0.0f, 0.77734375f, 0.8515625f, '\x01', '\x01');
             local_70 = (float)(iVar9 + 0x4b);
             // BUG-FIX 2026-04-26: el hover-text "NEW CHARACTER" (sprite 0x11) se
             // mostraba aunque la cuenta tuviera los 5 slots ocupados. El brightness
@@ -668,7 +668,7 @@ int Scene_CharSelect(void)
             if (bVar10 && ((0x11d < DAT_083a427c) && (DAT_083a427c < 0x164)) &&
                 (((int)local_70 <= DAT_083a4278) && (DAT_083a4278 < iVar9 + 100)))
             {
-                FUN_005125a0(0x11, 286.0f, (float)(int)local_70, 70.0f, 25.0f, 0.0f, 0.0f, 0.546875f, 0.78125f, '\x01', '\x01');
+                GL_DrawTexture(0x11, 286.0f, (float)(int)local_70, 70.0f, 25.0f, 0.0f, 0.0f, 0.546875f, 0.78125f, '\x01', '\x01');
             }
 
             bVar10 = (DAT_005616ac == -1);
@@ -680,22 +680,22 @@ int Scene_CharSelect(void)
             // Left/right navigation arrows
             fVar1 = DAT_005616a8;
             local_70 = DAT_005616a8;
-            FUN_005125a0(0x12, (float)(int)DAT_005616a8, 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
+            GL_DrawTexture(0x12, (float)(int)DAT_005616a8, 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
             local_70 = (float)((int)fVar1 + 0x80);
             if ((((!bVar10) && ((int)local_70 <= DAT_083a427c)) && (DAT_083a427c < (int)fVar1 + 0xc6)) &&
                 ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7)))
             {
-                FUN_005125a0(0x13, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
+                GL_DrawTexture(0x13, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
             }
 
             iVar9 = -(int)DAT_005616a8;
             local_70 = (float)(iVar9 + 0x1b2);
-            FUN_005125a0(0x14, (float)(int)local_70, 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
+            GL_DrawTexture(0x14, (float)(int)local_70, 116.0f, 205.0f, 88.0f, 0.0f, 0.0f, 0.80078125f, 0.6875f, '\x01', '\x01');
             local_70 = (float)(iVar9 + 0x1b9);
             if (((!bVar10) && ((int)local_70 <= DAT_083a427c)) &&
                 ((DAT_083a427c < iVar9 + 0x1ff) && ((0x93 < DAT_083a4278) && (DAT_083a4278 < 0xa7))))
             {
-                FUN_005125a0(0x15, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
+                GL_DrawTexture(0x15, (float)(int)local_70, 148.0f, 70.0f, 19.0f, 0.0f, 0.0f, 0.546875f, 0.59375f, '\x01', '\x01');
             }
         }
 
@@ -703,14 +703,14 @@ int Scene_CharSelect(void)
         FUN_005239a0();   // CharSelect_UpdateInput
         FUN_0051af50();   // Chat_Render
         FUN_004f64d0();   // UI_Render
-        FUN_0047fce0();   // StatusBar_Render
+        UI_RenderNotices();   // StatusBar_Render
         if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
-            FUN_00480980();   // Mouse_Render
+            UI_RenderChatLogOverlay();   // Mouse_Render
         FUN_004c14e0();
         FUN_004c3530();
         FUN_004bffa0();
         FUN_0051e0c0();
-        FUN_005124b0();
+        GL_End2D();
         uVar13 = GL_PopMatrixAll();
         return ((uint)uVar13 & 0xFFFFFF00u) | 1u;
     }

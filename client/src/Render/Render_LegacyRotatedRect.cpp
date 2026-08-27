@@ -52,11 +52,11 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // color = z-depth as float bits.
 void __cdecl FUN_005126e0(int id, float x, float y, float w, float h, unsigned int color)
 {
-    float fSinX = (float)FUN_00511950(x);
-    float fCosX = (float)FUN_00511980(y);
-    float fSinW = (float)FUN_00511950(w);
-    float fCosW = (float)FUN_00511980(h);
-    FUN_00511480(id);
+    float fSinX = (float)Screen_ToGLX(x);
+    float fCosX = (float)Screen_ToGLY(y);
+    float fSinW = (float)Screen_ToGLX(w);
+    float fCosW = (float)Screen_ToGLY(h);
+    GL_BindTextureSlot(id);
     float sz = (float)DAT_00561570;
     float depth = *(float*)&color;
 

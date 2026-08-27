@@ -525,8 +525,8 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
 // CSimpleModulus crypto (FUN_0053cc30/cd20/cca0/ce30 + helpers) moved to
 // src/Net/Crypto.cpp (B3 refactor 2026-05-07, 282 lines).
 
-// FUN_00513570 — implemented in src/UI/Chat.cpp
-// FUN_005125a0 — implemented in src/Render/GL_2D.cpp
+// Chat_ValidateInputCommand — implemented in src/UI/Chat.cpp
+// GL_DrawTexture — implemented in src/Render/GL_2D.cpp
 // FUN_00511d00 — implemented in src/Render/Sprite.cpp (Sprite_DrawTexturedQuad)
 
 // FUN_005433b0 @ 0x005433b0 — GetTickCount-based time accumulator

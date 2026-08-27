@@ -6,9 +6,9 @@
 // Iterates the joint render pool starting at DAT_07c608b4 (stride 0x2f0
 // bytes = 0xbc int-words).  For each active slot (piVar2[-3] != 0):
 //   - Selects blend mode based on joint type and blink flag (+0x1be):
-//       type < 3 and !blink → FUN_00511710 (additive)
-//       otherwise           → FUN_00511790 (src-alpha)
-//   - Binds the texture via FUN_00511480(type + 0x48d)
+//       type < 3 and !blink → GL_SetBlendAdditive (additive)
+//       otherwise           → GL_SetBlendSrcAlpha (src-alpha)
+//   - Binds the texture via GL_BindTextureSlot(type + 0x48d)
 //   - Draws (segCount - 1) quad strips using GL_TRIANGLE_STRIP (glBegin 6):
 //       Each segment has 4 vertices (top/bottom of current and next node)
 //       with UV coords interpolated along the strip.
@@ -27,9 +27,9 @@
 //                       relative to piVar2+0x5f, each vertex 3 floats
 //
 // Sub-functions:
-//   FUN_00511710 — GL_SetBlendAdditive (blend type 3)
-//   FUN_00511790 — GL_SetBlendSrcAlpha (blend type 4)
-//   FUN_00511480 — GL_BindTexture (texture slot)
+//   GL_SetBlendAdditive — GL_SetBlendAdditive (blend type 3)
+//   GL_SetBlendSrcAlpha — GL_SetBlendSrcAlpha (blend type 4)
+//   GL_BindTextureSlot — GL_BindTextureSlot (texture slot)
 //
 // Globals:
 //   DAT_07c608b4 — joint render pool base (ends at 0x7c72e74)
@@ -68,16 +68,16 @@ void FUN_0046c3e0(void)
         DbgLogPublic(trailLog);
       }
       if ((*(short *)(*piVar2 + 0x1be) == 0) && (iVar3 < 3)) {
-        FUN_00511710();
+        GL_SetBlendAdditive();
       }
       else {
-        FUN_00511790();
+        GL_SetBlendSrcAlpha();
       }
       if (2 < iVar3) {
         iVar3 = iVar3 + -3;
       }
       if (1 < piVar2[1]) {
-        FUN_00511480(iVar3 + 0x48d);
+        GL_BindTextureSlot(iVar3 + 0x48d);
         local_8 = 0;
         if (piVar2[1] != 1 && -1 < piVar2[1] + -1) {
           piVar4 = piVar2 + 0x5f;
