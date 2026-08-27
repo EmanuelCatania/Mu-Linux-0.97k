@@ -2788,8 +2788,11 @@ extern char    DAT_00559d66;        // guild mark suffix trailing byte
 // Los valores por defecto en 0 hacen que todos esos caminos tomen sus ramas de
 // salida temprana, así que el juego corre igual con los ports incompletos.
 extern int     PartyNumber;          // 0x07EAA0E0 — count of valid party slots
+extern int     PartyKey;             // IDA: PartyKey — reiniciado por InitPartyList
 extern BYTE    Party[2048];          // 0x07E11E80 — Party struct array (stride 36, header 24)
 extern int     EnableGuildWar;       // GW active flag
+extern int     EnableSoccer;         // DAT_05826d2c — modo fútbol de guerra de guild
+extern int     GuildWarIndex;        // DAT_05826d34 — fila de tabla de marks de guild enemiga
 extern int     HeroSoccerTeam;       // 0/1 — hero's soccer team index
 extern int     GuildWarScore[2];     // [self, enemy]
 extern char    GuildWarName[80];     // enemy guild name

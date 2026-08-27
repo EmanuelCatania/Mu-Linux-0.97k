@@ -88,6 +88,9 @@ int  Net_SendBuf(const char* buf, int len);
 // Encrypts pkt[1..totalLen-1] via CSimpleModulus and wraps with C3 framing.
 void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
+// Envía una trama C1 sin cifrar según la política de tramas del protocolo.
+void Net_SendC1Packet(const BYTE* pkt, int totalLen);
+
 // Send a large packet: plaintext [0xC1][len][opcode][payload].
 // Encrypts pkt[1..totalLen-1] and wraps with [0xC4][hi][lo] framing.
 void Net_SendLargePacket(const BYTE* pkt, int totalLen);

@@ -1042,31 +1042,35 @@ extern "C" void GuildCreator_OpenFromServer(void);
 extern "C" void GuildCreator_OpenQuestionFromServer(void);
 extern "C" void GuildCreator_CloseFromResult(void);
 
-// 00434DC0 owns a 1000 × 80 guild-mark table (07E919BC..07EA51EC), separate
+// IDA: FUN_00434DC0. Mantiene una tabla de marcas de guild de 1000 × 80 (07E919BC..07EA51EC), separada
 // del buffer chico de lista de miembros que usa el panel G. Mantenerlos separados
 // es esencial: C2:52 refresca miembros mientras C2:5A/5C refrescan las marcas del viewport.
 static const int kGuildMarkRecordCount = 1000;
 static int  s_GuildRecordKey[kGuildMarkRecordCount] = { 0 };
-static BYTE s_GuildMarkRecord[kGuildMarkRecordCount][80] = {};
 
-static int Guild_UpsertRecord(int key, const BYTE* name8, const BYTE* mark32)
+static BYTE* GuildMark_Record(int row)
+{
+    return (BYTE*)DAT_07e919bc + row * 80;
+}
+
+static int GuildMark_UpsertRecord(int key, const BYTE* name8, const BYTE* mark32)
 {
     int row = -1;
     for (int i = 0; i < kGuildMarkRecordCount; ++i) {
-        if (s_GuildMarkRecord[i][0] != 0 &&
-            memcmp(s_GuildMarkRecord[i], name8, 8) == 0) {
+        if (GuildMark_Record(i)[0] != 0 &&
+            memcmp(GuildMark_Record(i), name8, 8) == 0) {
             row = i;
             break;
         }
     }
     if (row < 0) {
         for (int i = 0; i < kGuildMarkRecordCount; ++i) {
-            if (s_GuildMarkRecord[i][0] == 0) { row = i; break; }
+            if (GuildMark_Record(i)[0] == 0) { row = i; break; }
         }
     }
-    if (row < 0) row = 0; // same bounded-table fallback as 00434DC0.
+    if (row < 0) row = 0; // misma alternativa de tabla acotada que 00434DC0.
 
-    BYTE* dst = s_GuildMarkRecord[row];
+    BYTE* dst = GuildMark_Record(row);
     s_GuildRecordKey[row] = key;
     memset(dst, 0, 80);
     memcpy(dst, name8, 8);
@@ -1078,10 +1082,10 @@ static int Guild_UpsertRecord(int key, const BYTE* name8, const BYTE* mark32)
     return row;
 }
 
-static int Guild_FindRecordByKey(int key)
+static int GuildMark_FindRecordByKey(int key)
 {
     for (int i = 0; i < kGuildMarkRecordCount; ++i)
-        if (s_GuildMarkRecord[i][0] != 0 && s_GuildRecordKey[i] == key)
+        if (GuildMark_Record(i)[0] != 0 && s_GuildRecordKey[i] == key)
             return i;
     return -1;
 }
@@ -1089,7 +1093,7 @@ static int Guild_FindRecordByKey(int key)
 extern "C" const char* Guild_GetMarkName(int row)
 {
     return (row >= 0 && row < kGuildMarkRecordCount)
-        ? (const char*)s_GuildMarkRecord[row] : "";
+        ? (const char*)GuildMark_Record(row) : "";
 }
 
 // sub_434DC0 guarda las celdas 8x8 decodificadas de la marca de guild en record+9. Dejamos
@@ -1098,7 +1102,161 @@ extern "C" const char* Guild_GetMarkName(int row)
 extern "C" const BYTE* Guild_GetMarkPixels(int row)
 {
     return (row >= 0 && row < kGuildMarkRecordCount)
-        ? &s_GuildMarkRecord[row][9] : nullptr;
+        ? GuildMark_Record(row) + 9 : nullptr;
+}
+
+// ── Guerra de guild (IDA: FUN_00435390 / E0 / 4F0 / AA0) ────────────────────
+// Estos controladores cubren deliberadamente sólo el estado de paquetes y el ciclo
+// de relaciones demostrados. Las acciones de celebración y el resto de la UI
+// de guerra pertenecen a una unidad funcional posterior.
+static void GuildWar_CopyOpponentName(const BYTE* packet)
+{
+    memcpy(GuildWarName, packet + 3, 8);
+    GuildWarName[8] = '\0';
+}
+
+static int GuildMark_FindRecordByName(const char* name)
+{
+    for (int i = 0; i < kGuildMarkRecordCount; ++i)
+        if (GuildMark_Record(i)[0] != 0 && strcmp((const char*)GuildMark_Record(i), name) == 0)
+            return i;
+    return -1;
+}
+
+// IDA: FUN_00423CE0 — recalcula la relación local, aliada o enemiga de una entidad.
+void __cdecl FUN_00423ce0(int entityAddress, int, int, int)
+{
+    BYTE* entity = (BYTE*)(uintptr_t)entityAddress;
+    BYTE* hero = (BYTE*)(uintptr_t)Hero;
+    if (!entity || !entity[0] || !hero) return;
+
+    entity[745] = 0;
+    const short heroGuild = *(short*)(hero + 474);
+    if (heroGuild != -1 && *(short*)(entity + 474) == heroGuild)
+        entity[745] = 1;
+
+    if (!EnableGuildWar) return;
+    if (GuildWarIndex == -1) {
+        if (!GuildWarName[0]) return;
+        GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
+    }
+    if (GuildWarIndex >= 0 && *(short*)(entity + 474) == GuildWarIndex)
+        entity[745] = 2;
+}
+
+static void GuildWar_RefreshEntityRelations()
+{
+    BYTE* entities = (BYTE*)(uintptr_t)CharactersClient;
+    if (!entities) return;
+
+    for (int i = 0; i < 400; ++i) {
+        BYTE* entity = entities + i * 916;
+        FUN_00423ce0((int)(uintptr_t)entity, 0, 0, 0);
+    }
+}
+
+// Inserta la rama demostrada de IDA SetActionClass (FUN_00497870). El auxiliar
+// completo aún no tiene un port enlazado, pero Guerra de guild sólo usa este
+// contrato local fijo de acción/ACK.
+static void GuildWar_SetHeroAction(int action, BYTE actionType)
+{
+    BYTE* hero = (BYTE*)(uintptr_t)Hero;
+    if (!hero || hero[261] == 0 || hero[261] > 12) return;
+
+    int resolvedAction = action;
+    if ((hero[444] & 7) == 2 && (action < 123 || action > 128))
+        ++resolvedAction;
+    FUN_0043e820((int)(uintptr_t)hero, resolvedAction);
+
+    const BYTE ack[5] = {
+        0xC1, 0x05, 0x18,
+        (BYTE)((int)((*(float*)(hero + 36) + 22.5f) / 45.0f + 1.0f) & 7),
+        actionType
+    };
+    Net_SendC1Packet(ack, sizeof(ack));
+}
+
+static void ReceiveDeclareWar97k(const BYTE* packet, int size)
+{
+    if (size < 12) return;
+    GuildWar_CopyOpponentName(packet);
+    SetErrorMessage(128);
+    if (packet[11] == 1) EnableSoccer = 1;
+}
+
+static void ReceiveDeclareWarResult97k(const BYTE* packet, int size)
+{
+    if (size < 4) return;
+    static const int kText[] = { 519, 520, 521, 522, 523, 524, 525 };
+    const BYTE result = packet[3];
+    if (result < _countof(kText))
+        UIChatLogWindow_AddText(nullptr, GlobalText[kText[result]], 2);
+
+    // IDA limpia el estado de declaración pendiente sólo cuando la guerra no está activa.
+    if (result != 1 && !EnableGuildWar) {
+        GuildWarIndex = -1;
+        GuildWarName[0] = '\0';
+        GuildWar_RefreshEntityRelations();
+    }
+}
+
+static void ReceiveGuildBeginWar97k(const BYTE* packet, int size)
+{
+    if (size < 13) return;
+    EnableGuildWar = 1;
+    GuildWar_CopyOpponentName(packet);
+    EnableSoccer = packet[11] != 0;
+    HeroSoccerTeam = packet[12];
+    GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
+
+    char notice[300] = {};
+    _snprintf_s(notice, sizeof(notice), _TRUNCATE,
+                GlobalText[EnableSoccer ? 533 : 526], GuildWarName);
+    UI_AddNotice(notice, 1);
+    GuildWar_RefreshEntityRelations();
+
+    // IDA: SetActionClass(Hero, Hero, 128, 128).
+    GuildWar_SetHeroAction(128, 128);
+}
+
+static void ReceiveGuildEndWar97k(const BYTE* packet, int size)
+{
+    if (size < 4) return;
+    static const int kText[] = { 527, 528, 529, 530, 531, 532, 480 };
+    const BYTE result = packet[3];
+    if (result < _countof(kText)) {
+        char notice[300] = {};
+        _snprintf_s(notice, sizeof(notice), _TRUNCATE, "%s", GlobalText[kText[result]]);
+        UI_AddNotice(notice, 1);
+    }
+
+    EnableGuildWar = 0;
+    EnableSoccer = 0;
+    GuildWarIndex = -1;
+    GuildWarName[0] = '\0';
+    GuildWar_RefreshEntityRelations();
+
+    // IDA asigna los resultados 1, 2 y 4 al par de acción de victoria (113, 121);
+    // los demás resultados demostrados usan el par normal de cierre (107, 117).
+    const bool victoryAction = result == 1 || result == 2 || result == 4;
+    GuildWar_SetHeroAction(victoryAction ? 113 : 107, victoryAction ? 121 : 117);
+}
+
+// IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
+// no a Party: un 0x73 sin cifrar solicita la respuesta cifrada F1/03/00/F1,
+// mientras que un 0x73 cifrado lleva el puntero de recurso consumido por 53D5C0.
+static void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
+{
+    if (encrypted) {
+        if (size >= 8) {
+            char* resource = *(char**)(packet + 4);
+            if (resource) FUN_0053d5c0(resource);
+        }
+        return;
+    }
+
+    const BYTE reply[6] = { 0xC1, 0x06, 0xF1, 0x03, 0x00, 0xF1 };
+    Net_SendSmallPacket(reply, sizeof(reply));
 }
 
 // Declaración adelantada (la declaración real de DbgLogPublic está más abajo, cerca de la
@@ -2581,6 +2739,7 @@ void Net_ProcessPacket(void)
         // FUN_0053cca0(dst, src, srcLen, ?) escribe 8 bytes por cada 11 bytes encriptados.
         BYTE  scratch[0x800];
         if (hdr == 0xC3 || hdr == 0xC4) {
+            bEncrypted = true;
             int hdrSz = (hdr == 0xC3) ? 2 : 3;
             int wireLen = (hdr == 0xC3) ? Msg[1] : ((Msg[1] << 8) | Msg[2]);
             int encLen  = wireLen - hdrSz;
@@ -3310,7 +3469,7 @@ void Net_ProcessPacket(void)
                         const short row = *(short*)((BYTE*)Hero + 474);
                         if (row >= 0 && row < kGuildMarkRecordCount) {
                             s_GuildRecordKey[row] = -1;
-                            s_GuildMarkRecord[row][0] = 0;
+                            GuildMark_Record(row)[0] = 0;
                         }
                         *(short*)((BYTE*)Hero + 474) = -1;
                     }
@@ -5212,12 +5371,11 @@ void Net_ProcessPacket(void)
             }
 
             case 0x71: {
-                // 2026-05-07: Party keepalive — server pings, client ACKs [C1][03][71].
+                // IDA: FUN_00433900 ACK keepalive de Party por la ruta normal
+                // de trama C1 (incluida su política de envío en búfer).
                 NetLog("NET:  → 0x71 PartyKeepalive");
-                BYTE ack[3] = { 0xC1, 0x03, 0x71 };
-                if (DAT_055ca168 != 0xFFFFFFFF) {
-                    ::send(DAT_055ca168, (const char*)ack, 3, 0);
-                }
+                extern void Party_Keepalive(void);
+                Party_Keepalive();
                 break;
             }
 
@@ -5284,12 +5442,9 @@ void Net_ProcessPacket(void)
             }
 
             case 0x73: {
-                // 2026-05-07: Party char-sync or BGM notification.
-                // pkt_len == 0 → resend F1/01 char-sync (party join ACK)
-                // pkt_len != 0 → BGM track name in pkt+4 (4-byte string ptr)
-                NetLog("NET:  → 0x73 PartyCharSync size=%d", Size);
-                extern void Party_CharSync(BYTE* pkt, int pkt_len);
-                Party_CharSync((BYTE*)Msg, Size);
+                // IDA: FUN_00433A80 ReceiveGGAuth (no pertenece a Party).
+                NetLog("NET:  → 0x73 GGAuth size=%d encrypted=%d", Size, (int)bEncrypted);
+                ReceiveGGAuth97k(Msg, Size, bEncrypted);
                 break;
             }
 
@@ -5884,102 +6039,97 @@ void Net_ProcessPacket(void)
             }
 
             case 0x5A: {
-                if (Msg[0] == 0xC2 && Size >= 5) {
-                    const BYTE count = Msg[4];
-                    if (Size < 5 + (int)count * 42) break;
-                    for (int i = 0; i < count; ++i) {
-                        const BYTE* entry = Msg + 5 + i * 42;
-                        Guild_UpsertRecord((entry[0] << 8) | entry[1],
+                // IDA: ProtocolCore → FUN_00434DC0 una vez por registro. El
+                // contador es pkt[4]; cada registro de 42 bytes es [key:2][name:8][mark:32].
+                if (Size < 5) break;
+                const BYTE count = Msg[4];
+                if (Size < 5 + (int)count * 42) break;
+                for (int i = 0; i < count; ++i) {
+                    const BYTE* entry = Msg + 5 + i * 42;
+                    GuildMark_UpsertRecord((entry[0] << 8) | entry[1],
                                            entry + 2, entry + 10);
-                    }
-                    NetLog("NET: GuildViewport batch count=%u", (unsigned)count);
-                    break;
                 }
-                // 2026-05-07: Trade/Shop entity association (Shop_EntitySlots).
-                // PacketHandler_0x5a in Trade.cpp.
-                NetLog("NET:  → 0x5A Shop/Trade slots");
-                extern void PacketHandler_0x5a(BYTE* pkt);
-                PacketHandler_0x5a((BYTE*)Msg);
+                NetLog("NET: GuildMark batch count=%u", (unsigned)count);
                 break;
             }
             case 0x5C: {
-                if (Size >= 45) {
-                    const WORD entityKey = (WORD)((Msg[3] << 8) | Msg[4]);
-                    const int row = Guild_UpsertRecord(-1, Msg + 5, Msg + 13);
-                    const int entitySlot = FUN_0045ac80(entityKey);
-                    BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
-                    if (base && entitySlot >= 0 && entitySlot < 400)
-                        *(short*)(base + entitySlot * 916 + 474) = (short)row;
-                    NetLog("NET: GuildViewport entity=%u row=%d",
-                           (unsigned)entityKey, row);
-                    break;
+                // IDA: clave de entidad + registro independiente de nombre/marca;
+                // asocia la fila devuelta a Character+474 y luego recalcula la relación.
+                if (Size < 45) break;
+                const WORD entityKey = (WORD)((Msg[3] << 8) | Msg[4]);
+                const int row = GuildMark_UpsertRecord(-1, Msg + 5, Msg + 13);
+                const int entitySlot = FUN_0045ac80(entityKey);
+                BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
+                if (base && entitySlot >= 0 && entitySlot < 400) {
+                    BYTE* entity = base + entitySlot * 916;
+                    *(short*)(entity + 474) = (short)row;
+                    // IDA: FUN_00423CE0 recibe la entidad después de actualizar Character+474.
+                    FUN_00423ce0((int)(uintptr_t)entity, 0, 0, 0);
+                    GuildWar_RefreshEntityRelations();
                 }
-                // 2026-05-07: Trade clear (PacketHandler_0x5c in Trade.cpp).
-                NetLog("NET:  → 0x5C Trade clear");
-                extern void PacketHandler_0x5c(BYTE* pkt);
-                PacketHandler_0x5c((BYTE*)Msg);
+                NetLog("NET: GuildMark entity=%u row=%d", (unsigned)entityKey, row);
                 break;
             }
             case 0x5D: {
-                if (Size == 5) {
-                    const WORD entityKey = (WORD)((Msg[3] << 8) | Msg[4]);
-                    const int entitySlot = FUN_0045ac80(entityKey);
-                    BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
-                    if (base && entitySlot >= 0 && entitySlot < 400)
-                        *(short*)(base + entitySlot * 916 + 474) = -1;
-                    NetLog("NET: GuildViewportDelete entity=%u", (unsigned)entityKey);
-                    break;
-                }
-                // 2026-05-07: Trade/Shop item slot clear.
-                NetLog("NET:  → 0x5D Trade slot clear");
-                extern void PacketHandler_0x5d(BYTE* pkt);
-                PacketHandler_0x5d((BYTE*)Msg);
+                // IDA: limpia la fila de guild de esta entidad y cierra/reinicia
+                // el estado de la lista de miembros de Guild. No es un paquete Trade.
+                if (Size < 5) break;
+                const WORD entityKey = (WORD)((Msg[3] << 8) | Msg[4]);
+                const int entitySlot = FUN_0045ac80(entityKey);
+                BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
+                if (base && entitySlot >= 0 && entitySlot < 400)
+                    *(short*)(base + entitySlot * 916 + 474) = -1;
+                GuildOpened = 0;
+                g_nGuildMemberCount = -1;
+                NetLog("NET: GuildMark clear entity=%u", (unsigned)entityKey);
                 break;
             }
             case 0x60: {
-                // 2026-05-07: Trade request result.
-                NetLog("NET:  → 0x60 Trade_RequestResult");
-                extern void Trade_RequestResult(BYTE* pkt);
-                Trade_RequestResult((BYTE*)Msg);
+                // IDA: FUN_004353E0 ReceiveDeclareWarResult.
+                NetLog("NET: GuildWar 0x60 DeclareResult");
+                ReceiveDeclareWarResult97k(Msg, Size);
                 break;
             }
             case 0x61: {
-                // 2026-05-07: Incoming trade/duel request.
-                NetLog("NET:  → 0x61 Trade_IncomingReq");
-                extern void Trade_IncomingReq(BYTE* pkt);
-                Trade_IncomingReq((BYTE*)Msg);
+                // IDA: FUN_00435390 ReceiveDeclareWar.
+                NetLog("NET: GuildWar 0x61 Declare");
+                ReceiveDeclareWar97k(Msg, Size);
                 break;
             }
             case 0x62: {
-                // 2026-05-07: Trade window opened.
-                NetLog("NET:  → 0x62 Trade_Open");
-                extern void Trade_Open(BYTE* pkt);
-                Trade_Open((BYTE*)Msg);
+                // IDA: FUN_004354F0 ReceiveGuildBeginWar.
+                NetLog("NET: GuildWar 0x62 Begin");
+                ReceiveGuildBeginWar97k(Msg, Size);
                 break;
             }
             case 0x63: {
-                // 2026-05-07: Trade item update / result.
-                NetLog("NET:  → 0x63 Trade_ItemUpdate");
-                extern void Trade_ItemUpdate(BYTE* pkt);
-                Trade_ItemUpdate((BYTE*)Msg);
+                // IDA: FUN_00435AA0 ReceiveGuildEndWar.
+                NetLog("NET: GuildWar 0x63 End");
+                ReceiveGuildEndWar97k(Msg, Size);
+                break;
+            }
+
+            case 0x64: {
+                // IDA: ProtocolCore activa directamente el HUD de guerra y actualiza
+                // sus dos puntajes de un byte.
+                if (Size < 5) break;
+                EnableGuildWar = 1;
+                GuildWarScore[0] = Msg[3];
+                GuildWarScore[1] = Msg[4];
+                NetLog("NET: GuildWar 0x64 score=%d-%d",
+                       GuildWarScore[0], GuildWarScore[1]);
                 break;
             }
 
             case 0x5B: {
-                // EntityGuildList — el server reporta el índice de guild de cada entidad
-                // del viewport. Per IDA sub_435110 @ 0x00435110.
+                // GuildMark_AssociateEntities — el server reporta la clave de guild de cada
+                // entidad del viewport. IDA: sub_435110 @ 0x00435110.
                 //   [C1][size][0x5B][count][stride 4: id_hi id_lo guild_hi guild_lo]
                 //
                 // Por cada entidad:
-                //   guildId = busca Msg[+offset+0..1] (word BE) en la
-                //             name table (g_szGuildName[] / byte_7E919BC).
-                //   entity+474 = índice encontrado (o -1 si no está en la tabla).
-                //   if (entity == Hero o su guild coincide con la del Hero): setea el flag de aliado.
-                //
-                // No tenemos la tabla de búsqueda de nombres de guild (la setea el 0x65); por
-                // ahora copiamos el guild_idx directo del paquete (el server puede
-                // already pre-resolve indexes).  Either way, Hero+474 gets
-                // poblada → aparece la insignia de "en guild" en el panel C/G.
+                //   guildKey se busca en la tabla de GuildMark_UpsertRecord.
+                //   entity+474 recibe la fila encontrada (o -1 si no existe).
+                //   entity+745 queda en 0, 1 (misma guild) o 2 (guerra activa).
                 if (Size < 5) break;
                 BYTE count = Msg[4];
                 NetLog("NET:  → 0x5B EntityGuildList count=%d", count);
@@ -5989,35 +6139,32 @@ void Net_ProcessPacket(void)
                     const BYTE* e = Msg + 5 + i * 4;
                     WORD entityId = (WORD)((e[0] << 8) | e[1]) & 0x7FFF;
                     const int guildKey = (e[2] << 8) | e[3];
-                    // Find entity slot by id
-                    BYTE* slot = nullptr;
-                    if (entityId == g_HeroKey && DAT_07abf5d8) {
-                        slot = (BYTE*)DAT_07abf5d8;
-                    } else if (basePtr) {
-                        for (int s = 0; s < 400; ++s) {
-                            BYTE* sp = basePtr + s * 0x394;
-                            if (sp[0] && (*(WORD*)(sp + 0x1dc) & 0x7FFF) == entityId) {
-                                slot = sp; break;
-                            }
-                        }
-                    }
+                    const int entitySlot = FUN_0045ac80(entityId);
+                    BYTE* slot = (basePtr && entitySlot >= 0 && entitySlot < 400)
+                        ? basePtr + entitySlot * 916 : nullptr;
                     if (slot) {
-                        const int guildRow = Guild_FindRecordByKey(guildKey);
+                        const int guildRow = GuildMark_FindRecordByKey(guildKey);
+                        // IDA sub_435110 resuelve aquí la fila enemiga de forma diferida si
+                        // el paquete de declaración/inicio llegó antes que su marca.
+                        if (EnableGuildWar && GuildWarIndex == -1 && GuildWarName[0] != '\0')
+                            GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
                         // 00435110 limpia el flag de relación antes de calcular
-                        // ally/war state, so an old guild association cannot
-                        // survive a viewport update.
+                        // el estado de aliado/guerra, por lo que una asociación de guild antigua no
+                        // puede sobrevivir a una actualización del viewport.
                         slot[745] = 0;
                         // Una asociación 5B cuya clave no está en la 5A
-                        // registry must clear a previous guild association.
+                        // debe limpiar una asociación de guild anterior.
                         *(short*)(slot + 474) = (short)guildRow;
                         if (guildRow < 0) continue;
                         // Flag de aliado si es del mismo guild que el héroe
                         if (DAT_07abf5d8 && slot != (BYTE*)DAT_07abf5d8) {
                             short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
                             if (heroGuild != -1 && guildRow == heroGuild) {
-                                slot[745] = 1;  // ally
+                                slot[745] = 1;  // aliado
                             }
                         }
+                        if (EnableGuildWar && GuildWarIndex >= 0 && guildRow == GuildWarIndex)
+                            slot[745] = 2;  // guild enemiga en la guerra activa
                     }
                 }
                 break;

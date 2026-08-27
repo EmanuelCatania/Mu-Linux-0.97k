@@ -168,7 +168,7 @@ void  __cdecl FUN_004337f0(int, int, int);
 void  __cdecl FUN_00433900(int opcode, int data_ptr, int len); // PacketHandler_0x44 (party HP)
 void  __cdecl FUN_00433a80(int, int, int);
 
-// ── Trade / Shop ──────────────────────────────────────────────────────────────
+// ── Protocolo Trade / Shop / Guild ────────────────────────────────────────────
 void  __cdecl FUN_00434170(int, int, int);
 void  __cdecl FUN_00434400(int, int, int);
 void  __cdecl FUN_00434450(int, int, int);
@@ -176,9 +176,12 @@ void  __cdecl FUN_00434660(int, int, int);
 void  __cdecl FUN_00434780(int, int, int);
 void  __cdecl FUN_004348b0(int, int, int);
 void  __cdecl FUN_00434950(int, int, int);
-void  __cdecl FUN_00434dc0(int opcode, int data_ptr, int len); // Trade_PacketHandler
+// IDA: FUN_00434DC0 — GuildMark_UpsertRecord (nombre + tabla de mark 8x8); no pertenece a Trade.
+void  __cdecl FUN_00434dc0(int opcode, int data_ptr, int len);
 void  __cdecl FUN_00435110(int, int, int);
 void  __cdecl FUN_00435280(int, int, int);
+// Guerra de guild: ReceiveDeclareWar, ReceiveDeclareWarResult,
+// ReceiveGuildBeginWar y ReceiveGuildEndWar.
 void  __cdecl FUN_00435390(int, int, int);
 void  __cdecl FUN_004353e0(int, int, int);
 void  __cdecl FUN_004354f0(int, int, int);

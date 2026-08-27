@@ -1,11 +1,11 @@
 // Party.cpp
-// Party / group system — packet handlers and HP bar data
+// Sistema de Party/grupo — handlers de paquetes y datos de barras de HP
 //
-// Packet handlers (server→client):
+// Handlers de paquetes (server→client):
 //   0x44  Party_HPBars        — inline in Net_Process; party member HP bar update
 //   0x46  Terrain_TileUpdate  @ 0x00436d60 — terrain tile rect/point changes
 //   0x71  Party_Keepalive     @ 0x00433900 — server ping; client sends ACK [C1][03][71]
-//   0x73  Party_CharSync      @ 0x00433a80 — char-data sync or BGM notification
+//   0x73  ReceiveGGAuth       @ 0x00433a80 — pertenece a protocolo, no a Party
 //
 // ── PARTY HP BAR DATA (opcode 0x44) ──────────────────────────────────────────
 //
@@ -258,35 +258,9 @@ void Terrain_TileUpdate(BYTE* pkt)
 void Party_Keepalive(void)
 {
     BYTE pkt[3] = { 0xC1, 0x03, 0x71 };
-    // send(DAT_055ca168, pkt, 3, 0) with WSAEWOULDBLOCK retry...
-    // (boilerplate identical to all other small ACK sends)
-}
-
-
-// ============================================================
-// Party_CharSync  @ 0x00433a80  (opcode 0x73)
-// param_1 = packet ptr, param_2 = packet length
-//
-// param_2 == 0 → Party join ACK: re-sends char-data packet F1/01
-//   XOR encrypt → RC4 encode (FUN_0053cc30) → C3/C4 envelope → send()
-//   Effectively re-authenticates the local character for the party session.
-//
-// param_2 != 0 → BGM command from server:
-//   FUN_0053d5c0(string_in_packet) — play background music track
-// ============================================================
-void Party_CharSync(BYTE* pkt, int pkt_len)
-{
-    if (pkt_len == 0)
-    {
-        // Build [C1][5][F1][01][00][rand_byte], XOR+RC4 encode, send
-        // (identical to login F1/01 char-sync, see Net_Process / WinMain)
-    }
-    else
-    {
-        // Server BGM notification
-        char* track = *(char**)(pkt + 4);
-        FUN_0053d5c0(track);   // play BGM
-    }
+    // IDA: FUN_00433900 envía la trama C1 por la ruta normal de socket/cola.
+    // Este opcode no va cifrado según la política de tramas del cliente.
+    Net_SendC1Packet(pkt, sizeof(pkt));
 }
 
 

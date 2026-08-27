@@ -2835,8 +2835,11 @@ char   DAT_00559d66       = 0;  // guild mark suffix trailing
 
 // ── HUD render globals (Phase-2 port) ────────────────────────────────────────
 int    PartyNumber           = 0;
+int    PartyKey              = 0;
 BYTE   Party[2048]           = {0};
 int    EnableGuildWar        = 0;
+int    EnableSoccer          = 0;
+int    GuildWarIndex         = -1;
 int    HeroSoccerTeam        = 0;
 int    GuildWarScore[2]      = {0, 0};
 char   GuildWarName[80]      = {0};
