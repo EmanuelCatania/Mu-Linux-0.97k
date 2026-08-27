@@ -28,7 +28,7 @@
 // ── ROTACIÓN DE VISTA ─────────────────────────────────────────────────────────
 //
 //   local_9c = {0.0, 0.0}; local_94 = param_7 (Z como float)
-//   FUN_004f9db0(&local_9c, local_30)
+//   Matrix_BuildFromEuler(&local_9c, local_30)
 //     → Matrix_FromEuler({0,0,Z}, out_mat[12])   (solo rotación en Z = spin angle)
 //
 //   GL_BindTextureSlot(param_1)
@@ -67,7 +67,7 @@
 //       for iVar12 = 0 to 0x30 step 0xc:    (4 esquinas × 3 floats = 12 bytes)
 //         local_90[iVar12/4]   -= _DAT_00552504   (centrar UV)
 //         local_90[iVar12/4+1] -= _DAT_00552504
-//         FUN_004fa0b0(&local_90[iVar12/4], local_30, &local_60[iVar12/4])
+//         Vector_Rotate(&local_90[iVar12/4], local_30, &local_60[iVar12/4])
 //           → Matrix_TransformPoint(corner_uv, rotation_mat, out_corner)
 //         local_60[iVar12/4] = (param_4/param_5) * local_60[iVar12/4] + _DAT_00552504
 //         local_60[iVar12/4+1] += _DAT_00552504
@@ -84,9 +84,9 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_004f9db0  → Matrix_FromEuler(angles[3], out_mat[12])
+//   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
 //   GL_BindTextureSlot  → Particle_SetTexture(type)  — bind GL texture por tipo
-//   FUN_004fa0b0  → Matrix_TransformPoint(pt, mat, out)
+//   Vector_Rotate  → Matrix_TransformPoint(pt, mat, out)
 //   FUN_004f8740  → Particle_DrawQuad(x, y, scale, flag, corners, solid, alpha)
 //                   Función que hace los calls glVertex3f / glTexCoord2f reales
 //   glColor3fv    → OpenGL color sin alpha

@@ -1048,7 +1048,7 @@ void __cdecl FUN_004b14f0(void)
     // ── 12-15. C/V/I/G/P key handlers — REMOVED ────────────────────────────
     // 2026-05-08 (b): These keys are already handled by Player_InputTick
     // (`HUD_HotkeyTick` in src/Game/Player_InputTick.cpp:251-287) using the
-    // edge-triggered helper FUN_0047ec20. Adding duplicate handlers here
+    // edge-triggered helper Input_IsKeyJustPressed. Adding duplicate handlers here
     // caused a DOUBLE-TOGGLE bug: pressing C played sound (Chat_InputTick set
     // CharacterOpened=1, played sound) but Player_InputTick toggled it back
     // to 0 in the same frame → net result = closed.

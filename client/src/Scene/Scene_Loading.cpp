@@ -32,7 +32,7 @@
 //       FUN_0052a050(iVar1 + 0x1e);   // Texture_Unload(0x1e..0x20)
 //       iVar1++;
 //     } while (iVar1 < 3);
-//     FUN_0047ec60(1);
+//     Input_ClearState(1);
 //   }
 //
 // ── TEXTURAS ──────────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@
 //   GL_DrawTexture  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
 //   GL_End2D  → GL_End2D()
 //   FUN_0052a050  → Texture_Unload(id)
-//   FUN_0047ec60  → CharList_Init(mode)
+//   Input_ClearState  → CharList_Init(mode)
 
 #include "stdafx.h"
 #include "Scene/Scene_Loading.h"
@@ -100,5 +100,5 @@ void __cdecl Scene_Loading(HDC param_1)
         iVar1++;
     } while (iVar1 < 3);
 
-    FUN_0047ec60(1);   // CharList_Init(1)
+    Input_ClearState(1);   // CharList_Init(1)
 }

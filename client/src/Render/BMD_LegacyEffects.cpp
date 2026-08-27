@@ -29,15 +29,15 @@ void __cdecl FUN_00441be0(void *model, int param_1, int param_2)
                 float *vpos = (float*)((char*)(char*)&DAT_0584621c + (vertIdx + iVar3 * 15000) * 3 * 4);
                 if (param_2 == 0x104) {
                     if (_rand() % 2 == 0)
-                        FUN_00460dc0(0x105, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                        Effect_Create(0x105, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
                     if (_rand() % 10 == 0)
-                        FUN_00460dc0(0x104, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                        Effect_Create(0x104, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
                 } else if (param_2 == 0x106) {
                     scale[0] = scale[1] = scale[2] = 0.2f;
                     if (_rand() % 12 == 0)
-                        FUN_00460dc0(0x107, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                        Effect_Create(0x107, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
                     if (_rand() % 50 == 0)
-                        FUN_00460dc0(0x106, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                        Effect_Create(0x106, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
                 }
             }
         }

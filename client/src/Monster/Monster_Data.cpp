@@ -15,7 +15,8 @@
 
 #include "stdafx.h"
 
-void __cdecl FUN_00511060(void)
+// IDA: FUN_00511060
+void __cdecl Monster_LoadStartupData(void)
 {
     if (DAT_083a410c != '\0') {
         DAT_0055a7c4 = 0;

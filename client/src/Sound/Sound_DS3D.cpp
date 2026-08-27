@@ -94,7 +94,7 @@ HRESULT __cdecl FUN_00404bc0(int Buffer, DWORD Object, BOOL bLooped)
 // slot with Enable3DSound[i] && MaxBufferChannel[i] > 0 (i.e. a 3D sound is
 // loaded and playing).
 // ============================================================================
-// FUN_004f9db0 (EulerToMatrix3x4) and FUN_004fa0b0 (Vec3_TransformByMatrix)
+// Matrix_BuildFromEuler (EulerToMatrix3x4) and Vector_Rotate (Vec3_TransformByMatrix)
 // are declared in functions.h with the canonical signatures.
 
 // IDA: FUN_00404CD0
@@ -107,7 +107,7 @@ void Sound_Update3DPositions(void)
     eulerAngles[0] = 0.0f;
     eulerAngles[1] = 0.0f;
     eulerAngles[2] = Ff(DAT_083a42c0);      // player yaw (CameraAngle[2] bits)
-    FUN_004f9db0(eulerAngles, rotMatrix);
+    Matrix_BuildFromEuler(eulerAngles, rotMatrix);
 
     const float unitScale = _DAT_005524bc;  // world→DS3D unit conversion
 
@@ -126,7 +126,7 @@ void Sound_Update3DPositions(void)
             offset[2] = *(float*)(DAT_07abf5d8 + 0x18) - *(float*)(entityPtr + 0x18);
 
             // Rotate into listener space.
-            FUN_004fa0b0(offset, rotMatrix, offset);
+            Vector_Rotate(offset, rotMatrix, offset);
             offset[0] *= unitScale;
             offset[1] *= unitScale;
             offset[2] *= unitScale;

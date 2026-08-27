@@ -6,7 +6,7 @@
 #include "functions.h"
 
 // ── Bone / 3D sound helpers ───────────────────────────────────────────────────
-// FUN_004409a0 — implemented in src/Math/Math_3D.cpp (Bone_TransformPos)
+// BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformPos)
 float __fastcall FUN_00407b50(void *a, int b, float *c);
 void  __fastcall FUN_00407ac0(void *a, float x, float y, float z);
 void  __fastcall FUN_00407af0(void *a, float v);
@@ -57,7 +57,7 @@ void __cdecl FUN_00408780(int _this, float (*Matrix)[4])
     Position[1] = -Position[1];
 
     int v15 = *(int *)(_this + 4);        // entity
-    FUN_004409a0(
+    BMD_TransformPosition(
         (void *)(DAT_05828d58 + 0xbc * (int)*(short *)(v15 + 2)),
         (float *)Matrix,
         Position,

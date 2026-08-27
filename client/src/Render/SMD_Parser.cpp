@@ -297,10 +297,10 @@ void __cdecl FUN_0045abb0(int param_1) {
 
 // Effect/particle
 // FUN_00466ad0 @ 0x00466AD0 — MoveEffect: implemented in Render/MoveEffect.cpp
-// FUN_004660f0 @ 0x004660F0 — Effect_SmokeBurst: implemented in Render/MoveEffect_Helpers.cpp
-// FUN_004661f0 @ 0x004661F0 — Effect_SmokeExplosion: implemented in Render/MoveEffect_Helpers.cpp
-// FUN_00460c30 @ 0x00460C30 — Effect_LightningBurst: implemented in Render/MoveEffect_Helpers.cpp
-// FUN_00465e60 @ 0x00465E60 — Effect_OnHitProximity: implemented in Render/MoveEffect_Helpers.cpp
+// Effect_SpawnSmokeBurst @ 0x004660F0 — Effect_SmokeBurst: implemented in Render/MoveEffect_Helpers.cpp
+// Effect_SpawnSmokeExplosion @ 0x004661F0 — Effect_SmokeExplosion: implemented in Render/MoveEffect_Helpers.cpp
+// Effect_SpawnLightningBurst @ 0x00460C30 — Effect_LightningBurst: implemented in Render/MoveEffect_Helpers.cpp
+// Effect_SpawnProximityHit @ 0x00465E60 — Effect_OnHitProximity: implemented in Render/MoveEffect_Helpers.cpp
 // FUN_00473d90 @ 0x00473D90 — Ring_ComputeOrbit: implemented in Render/MoveEffect_Helpers.cpp
 // STUB: Effect_AutoAttack — proximity-check all entities against param_1, fire
 // attack effect (CreateBomb/CreateJoint 0x4E1) at nearby targets.
@@ -324,7 +324,7 @@ void __cdecl FUN_0045abb0(int param_1) {
 //
 // Entity types triggering bomb FX:
 //   223 (0xDF), 243 (0xF3) — produce CreateBomb on hit
-// FUN_004660f0 declared in functions.h as (float*, char). Using through normal
+// Effect_SpawnSmokeBurst declared in functions.h as (float*, char). Using through normal
 // linkage (no extern decl needed here).
 
 void __cdecl FUN_00466440(int Target) {
@@ -380,11 +380,11 @@ void __cdecl FUN_00466440(int Target) {
                         } else {
                             *(int*)(T + 244) = 2;
                         }
-                        FUN_0046d840(1249, posPtr, posPtr,
+                        Joint_Create(1249, posPtr, posPtr,
                                      (float*)(T + 28), 6, Target, 30.0f, -1, 0);
                     } else {
                         *T = 0;
-                        FUN_004660f0(posPtr, (char)1);
+                        Effect_SpawnSmokeBurst(posPtr, (char)1);
                     }
                     return;
                 }
@@ -394,7 +394,7 @@ void __cdecl FUN_00466440(int Target) {
                 PlayBuffer(rs % 7 + 50, (DWORD)Target, 0);
                 if (type != 223 && type != 243) return;
             }
-            FUN_004660f0(posPtr, (char)1);
+            Effect_SpawnSmokeBurst(posPtr, (char)1);
         }
     }
     else {
@@ -432,17 +432,17 @@ void __cdecl FUN_00466440(int Target) {
         float* posPtr = (float*)(T + 16);
         if (v39 != 51 && v39 == 52) {
             if (*(int*)(T + 4) == 2) {
-                FUN_0046d840(1249, posPtr, posPtr,
+                Joint_Create(1249, posPtr, posPtr,
                              (float*)(T + 28), 6, Target, 30.0f, -1, 0);
             } else {
                 *T = 0;
-                FUN_004660f0(posPtr, (char)1);
+                Effect_SpawnSmokeBurst(posPtr, (char)1);
             }
         } else {
             short type = *(short*)(T + 2);
             *T = 0;
             if (type == 223 || type == 243) {
-                FUN_004660f0(posPtr, (char)1);
+                Effect_SpawnSmokeBurst(posPtr, (char)1);
             }
         }
     }
@@ -467,7 +467,7 @@ void __cdecl FUN_00511bf0(float* param_1, float param_2, int param_3) {
 void __cdecl FUN_00465fe0(int param_1, int param_2) {
     // PORT FIX: Ghidra decompile split a contiguous float[3] output buffer into
     // three separate locals (local_3c/38/34). MSVC does not guarantee they're
-    // adjacent in memory, so FUN_004fa0b0 (which writes 3 contiguous floats)
+    // adjacent in memory, so Vector_Rotate (which writes 3 contiguous floats)
     // only landed in local_3c and the other two reads picked up uninitialised
     // stack. Use a proper array to guarantee contiguity. Same pattern as the
     // Terrain_Light.cpp FUN_004fa930 fix.
@@ -476,8 +476,8 @@ void __cdecl FUN_00465fe0(int param_1, int param_2) {
     if (param_2 != 0) {
         float local_48 = *(float*)(param_1 + 0x1c);
         // local_44 = *(float*)(param_1 + 0x20); local_40 = *(int*)(param_1 + 0x24);
-        FUN_004f9db0((float*)(param_1 + 0x1c), local_30);
-        FUN_004fa0b0((float*)(param_1 + 0xc0), local_30, out);
+        Matrix_BuildFromEuler((float*)(param_1 + 0x1c), local_30);
+        Vector_Rotate((float*)(param_1 + 0xc0), local_30, out);
         *(float*)(param_1 + 0x10) += out[0];
         *(float*)(param_1 + 0x14) += out[1];
         *(float*)(param_1 + 0x18) += out[2];
@@ -625,10 +625,10 @@ float* __cdecl FUN_0045fec0(unsigned int param_1, float* param_2, float param_3,
 // FUN_0046fe90 @ 0x0046FE90 — Joint_SegmentTick(joint_ptr, mat)
 // Pushes all existing vertex segments one position forward (scroll back),
 // then computes 4 new billboard vertices (at ±half-width perpendicular offsets)
-// using FUN_004fa0b0 and the weapon-scale constants _DAT_00552a14/_DAT_00552504.
+// using Vector_Rotate and the weapon-scale constants _DAT_00552a14/_DAT_00552504.
 void __cdecl FUN_0046fe90(int param_1, float *param_2) {
     // PORT FIX: Ghidra decompile produced `float local_18[4], local_8, local_4;`
-    // and wrote FUN_004fa0b0's 3-float output at `local_18 + 3`, expecting
+    // and wrote Vector_Rotate's 3-float output at `local_18 + 3`, expecting
     // local_18[4]==local_8 and local_18[5]==local_4. MSVC doesn't guarantee that
     // layout, so local_8/local_4 reads picked up uninitialised stack. Expanding
     // the array to 6 elements makes the 3 output slots genuinely contiguous.
@@ -670,27 +670,27 @@ void __cdecl FUN_0046fe90(int param_1, float *param_2) {
     // compute new tip vertices
     local_18[0] = *(float*)(param_1 + 0x0c) * _DAT_00552a14;
     local_18[1] = 0.0f; local_18[2] = 0.0f;
-    FUN_004fa0b0(local_18, param_2, local_18 + 3);
+    Vector_Rotate(local_18, param_2, local_18 + 3);
     local_18[1] = 0.0f; local_18[2] = 0.0f;
     *(float*)(param_1 + 0x58) = local_18[3] + *(float*)(param_1 + 0x10);
     *(float*)(param_1 + 0x5c) = local_8    + *(float*)(param_1 + 0x14);
     *(float*)(param_1 + 0x60) = local_4    + *(float*)(param_1 + 0x18);
     local_18[0] = *(float*)(param_1 + 0x0c) * _DAT_00552504;
-    FUN_004fa0b0(local_18, param_2, local_18 + 3);
+    Vector_Rotate(local_18, param_2, local_18 + 3);
     local_18[0] = 0.0f;
     *(float*)(param_1 + 100) = local_18[3] + *(float*)(param_1 + 0x10);
     local_18[1] = 0.0f;
     *(float*)(param_1 + 0x68) = local_8    + *(float*)(param_1 + 0x14);
     *(float*)(param_1 + 0x6c) = local_4    + *(float*)(param_1 + 0x18);
     local_18[2] = *(float*)(param_1 + 0x0c) * _DAT_00552a14;
-    FUN_004fa0b0(local_18, param_2, local_18 + 3);
+    Vector_Rotate(local_18, param_2, local_18 + 3);
     local_18[0] = 0.0f;
     *(float*)(param_1 + 0x70) = local_18[3] + *(float*)(param_1 + 0x10);
     local_18[1] = 0.0f;
     *(float*)(param_1 + 0x74) = local_8    + *(float*)(param_1 + 0x14);
     *(float*)(param_1 + 0x78) = local_4    + *(float*)(param_1 + 0x18);
     local_18[2] = *(float*)(param_1 + 0x0c) * _DAT_00552504;
-    FUN_004fa0b0(local_18, param_2, local_18 + 3);
+    Vector_Rotate(local_18, param_2, local_18 + 3);
     *(float*)(param_1 + 0x7c) = local_18[3] + *(float*)(param_1 + 0x10);
     *(float*)(param_1 + 0x80) = local_8    + *(float*)(param_1 + 0x14);
     *(float*)(param_1 + 0x84) = local_4    + *(float*)(param_1 + 0x18);

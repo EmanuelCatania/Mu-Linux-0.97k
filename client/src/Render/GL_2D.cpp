@@ -200,7 +200,7 @@ GL_DrawTexture(int param_1,float param_2,float param_3,float param_4,float param
 // FUN_00511C10 @ 0x00511C10 — GL_DrawBillboard
 // Draws a world-space billboard quad of half-extents (param_1, param_2).
 // param_3: view matrix (float[12]) used to transform the 4 corner vertices
-//          via FUN_004fa170 (Vec3_TransformByMatrix_WithTranslate).
+//          via Vector_Transform (Vec3_TransformByMatrix_WithTranslate).
 // Emits GL_QUADS (glBegin(7)) with UV corners (0,1), (1,1), (1,0), (0,0).
 void __cdecl GL_DrawBillboard(float param_1,float param_2,float *param_3)
 {
@@ -228,7 +228,7 @@ void __cdecl GL_DrawBillboard(float param_1,float param_2,float *param_3)
   in1[9] = nx;      in1[10] = nx;      in1[11] = param_2;
 
   for (int i = 0; i < 12; i += 3) {
-    FUN_004fa170(&in1[i], param_3, &out[i]);
+    Vector_Transform(&in1[i], param_3, &out[i]);
   }
 
   glBegin(GL_QUADS);

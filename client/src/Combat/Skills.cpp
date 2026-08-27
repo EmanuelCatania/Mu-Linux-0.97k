@@ -348,7 +348,7 @@ void PacketHandler_0x19(BYTE* pkt)
             // builds effect 1150; a refreshed one keeps the existing effect.
             if ((*(DWORD*)(target + 120) & 0x10) != 0x10) {
                 DeleteEffect(1150, (DWORD)(uintptr_t)target, 1);
-                FUN_00460dc0(1150, (float*)(target + 16),
+                Effect_Create(1150, (float*)(target + 16),
                              (float*)(target + 28), (float*)(target + 232),
                              (float*)1, (float*)target, (float*)-1, nullptr, 0);
             }
@@ -377,10 +377,10 @@ void PacketHandler_0x19(BYTE* pkt)
             float angle[3] = {
                 *(float*)(target + 28), *(float*)(target + 32), *(float*)(target + 36)
             };
-            FUN_00460dc0(190, (float*)(target + 16), angle, (float*)(target + 232),
+            Effect_Create(190, (float*)(target + 16), angle, (float*)(target + 232),
                          (float*)1, (float*)target, (float*)-1, nullptr, 0);
             angle[2] += 180.0f;
-            FUN_00460dc0(190, (float*)(target + 16), angle, (float*)(target + 232),
+            Effect_Create(190, (float*)(target + 16), angle, (float*)(target + 232),
                          (float*)2, (float*)target, (float*)-1, nullptr, 0);
             // Clear freeze offset (0x2BC byte at local +0xBB from struct base = 0xBB)
             target[748] = 0;
@@ -397,7 +397,7 @@ void PacketHandler_0x19(BYTE* pkt)
         {
             DeleteEffect(1274, (DWORD)(uintptr_t)target, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
-            FUN_00460dc0(1274, (float*)(target + 16), (float*)(target + 28), light,
+            Effect_Create(1274, (float*)(target + 16), (float*)(target + 28), light,
                          nullptr, (float*)target, (float*)-1, nullptr, 0);
             // Set lightning status bit
             PlayBuffer(104, (DWORD)(uintptr_t)target, 0);

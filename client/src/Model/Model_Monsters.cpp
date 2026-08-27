@@ -1,14 +1,15 @@
-// Model_LoadMonsters @ 0x00507610
+// IDA: FUN_00507610 @ 0x00507610 — Model_LoadPlayerEquipmentTextures
 // Loads player skin textures (slots 0x12d-0x133) and binds texture paths to
 // all class/tier equipment model slots using FUN_00505c80 (Model_LoadTextures).
 // Also loads robe textures at the end.
 // Note: despite the name, this loads textures for player gear, not monster models.
-// Monster models are handled by Monster_Data.cpp (FUN_00511060).
+// Monster models are handled by Monster_Data.cpp (Monster_LoadStartupData, IDA: FUN_00511060).
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
 
-void __cdecl FUN_00507610(void)
+// IDA: FUN_00507610
+void __cdecl Model_LoadPlayerEquipmentTextures(void)
 {
     // Initialise texture slot 0x12d (Barbarian skin)
     FUN_00505bd0(0x12d);

@@ -56,8 +56,8 @@ extern void __cdecl FUN_0054158c(void* ptr);
 //   v0[-90..]               entity start
 //   v0[+0]                  scale
 //   v0[+48..50]             color RGB
-// Externs ya en functions.h: FUN_004f8ff0, FUN_004fc030, FUN_00475220,
-// FUN_004f7500, FUN_004409a0, FUN_00503cf0, FUN_00441f00
+// Externs ya en functions.h: FUN_004f8ff0, FUN_004fc030, Particle_Spawn,
+// FUN_004f7500, BMD_TransformPosition, FUN_00503cf0, FUN_00441f00
 
 void __cdecl FUN_00500aa0(void)
 {
@@ -99,7 +99,7 @@ void __cdecl FUN_00500aa0(void)
                 if (entType == 175) {
                     float scale = (float)((rand() % 32 + 64) * 0.01);
                     float color[3] = { scale * 0.2f, scale * 0.4f, scale * 0.4f };
-                    FUN_00475220(1150, nullptr, v0 - 86, color, (int)(uintptr_t)(v0 - 90), 1.0f, 0);
+                    Particle_Spawn(1150, nullptr, v0 - 86, color, (int)(uintptr_t)(v0 - 90), 1.0f, 0);
                 }
 
                 // Type 184: dual-side flame jets.
@@ -112,11 +112,11 @@ void __cdecl FUN_00500aa0(void)
                     float color[3] = { scale, scale * 0.2f, 0.0f };
 
                     // Left jet
-                    FUN_004409a0(model, nullptr, locOffsetL, Position, 1);
-                    FUN_00475220(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
+                    BMD_TransformPosition(model, nullptr, locOffsetL, Position, 1);
+                    Particle_Spawn(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
                     // Right jet
-                    FUN_004409a0(model, nullptr, locOffsetR, Position, 1);
-                    FUN_00475220(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
+                    BMD_TransformPosition(model, nullptr, locOffsetR, Position, 1);
+                    Particle_Spawn(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
                 }
 
                 // World != 10: render shadow on terrain.
@@ -234,7 +234,7 @@ void __cdecl FUN_005038e0(void)
                         float in2[3][4];
                         AngleMatrix(angles_r, in2);
                         float out[3];
-                        FUN_004fa0b0(in1, (float*)in2, out);
+                        Vector_Rotate(in1, (float*)in2, out);
                         *(float*)(v0 - 245) = out[0] + sx_orig;
                         *(float*)(v0 - 241) = out[1] + sy_orig;
                         *(float*)(v0 - 237) = out[2] + sz_orig;
@@ -608,7 +608,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
         //    byte_7EAA15C; se muestran si el toggle está on O Alt está mantenido).
         //    Una pulsación de Alt alterna mostrar/ocultar todos los nombres.
         static int s_altNameToggle = 0;
-        if (FUN_0047ec20(VK_MENU))               // Alt recién pulsado (edge)
+        if (Input_IsKeyJustPressed(VK_MENU))               // Alt recién pulsado (edge)
             s_altNameToggle = !s_altNameToggle;
         if (s_altNameToggle || (GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
             for (int i = 0; i < 1000; ++i) {
@@ -747,7 +747,7 @@ void __cdecl FUN_00502200(int /*unused*/, int /*unused*/, int /*unused*/, int /*
 //   *((BYTE*)v0 + 222)       prev action
 //   v0[+16]                  scale
 //   *((int*)v0 + 14)         counter (timeout)
-// FUN_0046b980 ya está en functions.h.  (El comentario anterior decía que
+// ItemDrop_RenderGroundWeapon ya está en functions.h.  (El comentario anterior decía que
 // RenderWheelWeapon era 0x46B8C0: es **0x46B7C0**, y no estaba portada.)
 
 // ── RenderWheelWeapon @ 0x0046B7C0 ────────────────────────────────────────────
@@ -826,7 +826,8 @@ void __cdecl FUN_0046b7c0(DWORD o)
     *(int*)  (o + 36) = savedAng2;
 }
 
-void __cdecl FUN_0046bba0(void)
+// IDA: FUN_0046bba0
+void __cdecl EffectPool_RenderAll(void)
 {
     // BUG-FIX 2026-05-01: HeadAngle (0x07B11698) está en offset +40 dentro del
     // effect pool DAT_07b11670 (200 entries × 0x1bc bytes = 0x1bc stride = 444B).
@@ -878,7 +879,7 @@ void __cdecl FUN_0046bba0(void)
             continue;
         }
         if (type == 244) {
-            FUN_0046b980((int)(uintptr_t)(v0 - 10));
+            ItemDrop_RenderGroundWeapon((int)(uintptr_t)(v0 - 10));
             continue;
         }
 
@@ -954,7 +955,7 @@ void __cdecl FUN_0046bba0(void)
 
         // Type 244: special handler.
         if (type == 244) {
-            FUN_0046b980((int)(uintptr_t)(v0 - 10));
+            ItemDrop_RenderGroundWeapon((int)(uintptr_t)(v0 - 10));
             continue;
         }
     }
@@ -964,7 +965,8 @@ void __cdecl FUN_0046bba0(void)
 //   Real implementation lives in src/Render/SkillEffect_Render.cpp::SkillEffect_Render.
 //   Wrapper here so functions.h declaration matches a definition.
 extern void SkillEffect_Render(void);
-void __cdecl FUN_0046cb70(void) { SkillEffect_Render(); }
+// IDA: FUN_0046cb70
+void __cdecl SkillEffects_RenderAll(void) { SkillEffect_Render(); }
 
 // FUN_00524cb0 @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA, 2026-06-27)
 // Setea los parámetros de cámara que consume Camera_SetupFrustum:
@@ -1054,24 +1056,24 @@ void __cdecl FUN_00406f50(char* param_1) {
 // FUN_0045adc0 — implemented in src/Entity/Entity_Spawn.cpp (Entity_Spawn, 797 lines)
 // FUN_0045f930 — implemented in src/Entity/Entity_Init.cpp
 // FUN_0045fa20 (Monster_SaveSetBase) — implemented in src/Entity/Entity_Init.cpp
-// FUN_0046b790 — implemented in src/Render/Effect_Tick.cpp
+// Effect_TickAll (IDA: FUN_0046b790) — implemented in src/Render/Effect_Tick.cpp
 // FUN_0046c3e0 — implemented in src/Render/Joint_Render.cpp
-// FUN_0046cc80 — implemented in src/Render/Weather_Particles.cpp (weather particle tick, 399 lines)
-// FUN_004736e0 — implemented in src/Render/Effect_Tick.cpp
+// WeatherParticles_Update (IDA: FUN_0046cc80) — implemented in src/Render/Weather_Particles.cpp
+// Joint_TickAll (IDA: FUN_004736e0) — implemented in src/Render/Effect_Tick.cpp
 // FUN_00473ea0 — implemented in src/Render/Effect_Tick.cpp
 // FUN_00474f90 — implemented in src/Render/Effect_Tick.cpp
-// FUN_00475090 — implemented in src/Render/Effect_Tick.cpp
+// Effect_TickFade (IDA: FUN_00475090) — implemented in src/Render/Effect_Tick.cpp
 // FUN_00478c00 — implemented in src/Render/ItemDrop_Render2.cpp (sprite pool render, 244 lines)
-// FUN_00479380 — implemented in src/Render/Effect_Tick.cpp
-// FUN_004794a0 — implemented in src/Render/Effect_Tick.cpp
-// FUN_00479730 — implemented in src/Sound/Sound_Queue.cpp (Sound_UpdateQueue)
-// FUN_0047ec60 — implemented in src/Input/Input.cpp
+// DamageNumbers_Tick (IDA: FUN_00479380) — implemented in src/Render/Effect_Tick.cpp
+// Effect_TickFlare (IDA: FUN_004794a0) — implemented in src/Render/Effect_Tick.cpp
+// Render_DrawSpritePool — implemented in src/Sound/Sound_Queue.cpp (Sound_UpdateQueue)
+// Input_ClearState — implemented in src/Input/Input.cpp
 // UI_RenderInputField — implemented in src/UI/Chat.cpp
 // UI_RenderText — implemented in src/UI/Chat.cpp
-// FUN_0047fcb0 — implemented in src/Sound/Sound_Queue.cpp
+// Chat_TickNoticeTimer — implemented in src/Sound/Sound_Queue.cpp
 // UI_RenderNotices — implemented in src/UI/Chat.cpp
-// FUN_00480950 — implemented in src/Sound/Sound_Queue.cpp
+// Chat_TickMessageTimer — implemented in src/Sound/Sound_Queue.cpp
 // UI_RenderChatLogOverlay — implemented in src/UI/Chat.cpp
 // UI_TickHoverBubbles — implemented in src/UI/Chat.cpp
 // FUN_004acef0 — implemented in src/Game/Player_InputTick.cpp
-// FUN_004b0310 — implemented in src/Input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)
+// Mouse_UpdateHoverTargets — implemented in src/Input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)

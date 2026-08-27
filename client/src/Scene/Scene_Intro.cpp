@@ -18,7 +18,7 @@
 //     } while ((int)puVar3 < 0x83bba00);
 //
 //     FUN_0050f690();                          → World_Init()
-//     FUN_0047ec60(1);                         → CharList_Init(1)
+//     Input_ClearState(1);                         → CharList_Init(1)
 //
 //     FUN_00529740("Local/Webzenlogo.jpg", 0xc, 0x2600, 0x2900, 0, '\x01');
 //     FUN_00529740("Local/Everyone.jpg",   0xd, 0x2600, 0x2900, 0, '\x01');
@@ -58,14 +58,14 @@
 //     if (DAT_083a410c == '\0') {
 //       FUN_00405540(&DAT_055c9bf0, "> Loading ok...");
 //       DAT_005615c0 = 2;   // g_GameState = Login
-//       FUN_00510320();
+//       Scene_LoadGameAssets() (IDA: FUN_00510320);
 //       return;
 //     }
 //
 //     // PATH BYPASS: ir directo a InGame
 //     DAT_005615c0 = 5;   // g_GameState = InGame
 //     DAT_083a7c10 = 1;   // render enable flag
-//     FUN_00510320();
+//     Scene_LoadGameAssets() (IDA: FUN_00510320);
 //     FUN_0050e5a0();      // World_Load()
 //     DAT_05826cac = 0;
 //
@@ -103,14 +103,14 @@
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
 //   FUN_0050f690  → World_Init()
-//   FUN_0047ec60  → CharList_Init(mode)
+//   Input_ClearState  → CharList_Init(mode)
 //   FUN_00529740  → Texture_Load(path, id, w, h, flag, mipmap)
 //   GL_BeginViewport  → Viewport_Set(x, y, w, h)
 //   GL_Begin2D  → GL_SetupOrtho2D()
 //   GL_DrawTexture  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
 //   GL_End2D  → GL_End2D()
 //   FUN_0052a050  → Texture_Unload(id)
-//   FUN_00510320  → OnStateChange()
+//   Scene_LoadGameAssets (IDA: FUN_00510320) → shared asset loader
 //   FUN_0050e5a0  → World_Load()
 //   FUN_0045f930  → Entity_Create(type, ?, ?, world_x, world_y)
 //   FUN_00405540  → Log(hashtable, msg)
@@ -159,7 +159,7 @@ void __cdecl Scene_Intro(HDC param_1)
     DBG("Scene_Intro: before Font_Init");
     FUN_0050f690();    // World_Init
     DBG("Scene_Intro: after Font_Init, before ClearInput");
-    FUN_0047ec60(1);   // CharList_Init(1)
+    Input_ClearState(1);   // CharList_Init(1)
     DBG("Scene_Intro: after ClearInput, before Texture_Load Webzenlogo");
 
     // Load splash textures
@@ -215,7 +215,7 @@ void __cdecl Scene_Intro(HDC param_1)
         DBG("Scene_Intro: entering normal path, calling OpenBasicData");
         FUN_00405540(&DAT_055c9bf0, "> Loading ok...");
         DAT_005615c0 = 2;   // g_GameState = Login
-        FUN_00510320();
+        Scene_LoadGameAssets();
         DBG("Scene_Intro: OpenBasicData returned");
         return;
     }
@@ -223,7 +223,7 @@ void __cdecl Scene_Intro(HDC param_1)
     // Bypass/debug path → skip login, go straight to InGame
     DAT_005615c0 = 5;    // g_GameState = InGame
     DAT_083a7c10 = 1;
-    FUN_00510320();
+    Scene_LoadGameAssets();
     FUN_0050e5a0();      // World_Load
     DAT_05826cac = 0;
 

@@ -773,7 +773,7 @@ extern "C" void GuildCreator_OpenFromServer(void)
     GuildCreatorOpened = 1;
     g_iKeyPadEnable = 1;
     DAT_00559c84 = 1;
-    FUN_0047ec60(0);
+    Input_ClearState(0);
     _InputTextMaxArr[0] = 8;
     DAT_00559c88 = 0;
     if (Hero)
@@ -800,7 +800,7 @@ extern "C" void GuildCreator_OpenQuestionFromServer(void)
 
 extern "C" void GuildCreator_CloseFromResult(void)
 {
-    FUN_0047ec60(0);
+    Input_ClearState(0);
     _InputTextMaxArr[0] = 10;
     DAT_00559c84 = 0;
     GuildCreatorOpened = 0;
@@ -1731,7 +1731,7 @@ extern "C" void __cdecl RenderGoldenArcherWindow(void)
         CloseInventoryRelatedWindows();
         DAT_07e11d28 = 0;               // MouseUpdateTime
         DAT_00559bec = 6;               // MouseUpdateTimeMax
-        FUN_0047ec60(0);                // ClearInput(0)
+        Input_ClearState(0);                // ClearInput(0)
         DAT_00559c84 = 0;               // InputEnable
         DAT_07e11d72 = 0;               // GoldInputEnable
         DAT_07e11d74 = 0;               // InputGold

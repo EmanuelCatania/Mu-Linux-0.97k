@@ -10,7 +10,7 @@
 // Phantom params: unaff_EBX/ESI/EDI/EBP/retaddr are anti-tamper artifacts, not real args.
 // The function reads c->Skill (c+0x302), dispatches on its value to spawn
 // effects, joints, sounds per weapon/skill type. Each case creates visual FX
-// via FUN_00460dc0 (CreateEffect) or FUN_0046d840 (CreateJoint).
+// via Effect_Create (CreateEffect) or Joint_Create (CreateJoint).
 static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
     int Hand = GetHandOfWeapon((int)o);
 
@@ -58,7 +58,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
                 pos[1] += cosf(rad) * _DAT_00552904;
 
                 float* oAngle = (float*)(o + 0x1C);
-                FUN_0046d840(0x10a, pos, oAngle, (float*)(o + 0x1C),
+                Joint_Create(0x10a, pos, oAngle, (float*)(o + 0x1C),
                              (unsigned int)o, 0, 40.0f, (short)oType, 0);
             }
         }
@@ -150,9 +150,9 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
                 pos[2] = *(float*)(o + 0x18) + _DAT_005528fc;
                 float light[3] = {1.0f, 1.0f, 1.0f};
 
-                FUN_00460dc0(0x1F0, pos, (float*)(o + 0x1C), light,
+                Effect_Create(0x1F0, pos, (float*)(o + 0x1C), light,
                              NULL, (float*)o, NULL, NULL, 0);
-                FUN_00460dc0(0x1F0, pos, (float*)(o + 0x1C), light,
+                Effect_Create(0x1F0, pos, (float*)(o + 0x1C), light,
                              NULL, (float*)o, NULL, NULL, 0);
             }
         }
@@ -177,7 +177,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
                     pos[2] += (float)(rand() % 60 - 30);
                 }
 
-                FUN_00460dc0(0x10A, pos, (float*)(o + 0x1C), light,
+                Effect_Create(0x10A, pos, (float*)(o + 0x1C), light,
                              (float*)(intptr_t)weapType, (float*)o, NULL, NULL, 0);
             }
             return true;
@@ -225,7 +225,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         }
 
         if (*(BYTE*)(c + 0x2F5) == 0x03) {
-            FUN_00460dc0(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
+            Effect_Create(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
                          (float*)(o + 0xE8), NULL, (float*)o, NULL, NULL, 0);
             PlayBuffer(100, (DWORD)o, 0);
         }
@@ -249,7 +249,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
 
         // Spawn effect when attackTime in [1..2]
         if (attackTime != 0 && attackTime < 3) {
-            FUN_00460dc0(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
+            Effect_Create(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
                          (float*)(o + 0xE8), (float*)1, (float*)o, NULL, NULL, 0);
         }
 
@@ -264,7 +264,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         int hotKey = FindHotKey_stub(0x37);
         WORD pkKey = *(WORD*)(o + 0x86);
 
-        FUN_00460dc0(0x490, (float*)(o + 0x10), (float*)(o + 0x1C),
+        Effect_Create(0x490, (float*)(o + 0x10), (float*)(o + 0x1C),
                      (float*)(o + 0xE8), (float*)(intptr_t)hotKey, (float*)o,
                      (float*)(intptr_t)(int)pkKey, NULL, NULL);
 
@@ -290,19 +290,19 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
             float* oLight = (float*)(o + 0xE8);
 
             // 5x CreateEffect(0xCB) at different angle offsets
-            FUN_00460dc0(0xCB, oPos, angleDir, oLight,
+            Effect_Create(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            FUN_00460dc0(0xCB, oPos, angleDir, oLight,
+            Effect_Create(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            FUN_00460dc0(0xCB, oPos, angleDir, oLight,
+            Effect_Create(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            FUN_00460dc0(0xCB, oPos, angleDir, oLight,
+            Effect_Create(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            FUN_00460dc0(0xCB, oPos, angleDir, oLight,
+            Effect_Create(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
 
             PlayBuffer(0x54, 0, 0);
@@ -337,31 +337,31 @@ bool __cdecl AttackStage_stub(DWORD c, DWORD o)
             const float r = *(float*)(o + 36) * 0.017453292f;
             for (int i = 0; i < 3; ++i) {
                 float p[3] = {*(float*)(o+16)+(float)(rand()%601-300)-sinf(r)*1400.0f, *(float*)(o+20)+(float)(rand()%601-300)+cosf(r)*1400.0f, *(float*)(o+24)+120.0f+(float)(rand()%601-300)};
-                FUN_0046d840(266, p, p, (float*)(o+28), 2, (int)o, 40.0f, -1, 0);
+                Joint_Create(266, p, p, (float*)(o+28), 2, (int)o, 40.0f, -1, 0);
             }
         }
         if (stage <= 8) {
             float z[3] = {};
-            FUN_004409a0((void*)model, (float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)), z, (float*)(o+392), 1);
+            BMD_TransformPosition((void*)model, (float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)), z, (float*)(o+392), 1);
             const float r = *(float*)(o+36)*0.017453292f; *(float*)(o+392)+=sinf(r)*300.0f; *(float*)(o+396)-=cosf(r)*300.0f;
         }
         if (stage >= 6 && stage <= 12) {
             float z[3]={}, p[3], l[3]={1,1,1};
-            FUN_004409a0((void*)model, (float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)), z, p, 1);
+            BMD_TransformPosition((void*)model, (float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)), z, p, 1);
             const float r=*(float*)(o+36)*0.017453292f, d=(float)(stage-8)*10.0f+100.0f; p[0]+=sinf(r)*d; p[1]-=cosf(r)*d;
-            FUN_00460dc0(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0); FUN_00460dc0(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0);
+            Effect_Create(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0); Effect_Create(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0);
             const short target=*(short*)(c+784); if(target!=-1 && stage>=10) { BYTE* v=(BYTE*)(uintptr_t)CharactersClient+target*916; if(*v) v[404]=35; }
         }
     } else if (skill == 47) {
         if(stage==10) PlayBuffer(95,0,0);
-        else if(stage==4) { float z[3]={},p[3],l[3]={1,1,0.5f}; FUN_004409a0((void*)model,(float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)),z,p,1); FUN_00460dc0(497,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); }
-        else if(stage==8) { const float r=*(float*)(o+36)*0.017453292f; float p[3]={*(float*)(o+16)+sinf(r)*50.0f,*(float*)(o+20)-cosf(r)*50.0f,*(float*)(o+24)+110.0f},l[3]={1,1,1}; FUN_00460dc0(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); FUN_00460dc0(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); }
-        if(stage>=13 && stage<=14) { const float r=*(float*)(o+36)*0.017453292f; for(int i=0;i<3;++i) { float p[3]={*(float*)(o+16)+sinf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+20)-cosf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+24)+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; FUN_00460dc0(266,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
+        else if(stage==4) { float z[3]={},p[3],l[3]={1,1,0.5f}; BMD_TransformPosition((void*)model,(float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)),z,p,1); Effect_Create(497,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); }
+        else if(stage==8) { const float r=*(float*)(o+36)*0.017453292f; float p[3]={*(float*)(o+16)+sinf(r)*50.0f,*(float*)(o+20)-cosf(r)*50.0f,*(float*)(o+24)+110.0f},l[3]={1,1,1}; Effect_Create(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); Effect_Create(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); }
+        if(stage>=13 && stage<=14) { const float r=*(float*)(o+36)*0.017453292f; for(int i=0;i<3;++i) { float p[3]={*(float*)(o+16)+sinf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+20)-cosf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+24)+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; Effect_Create(266,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
     } else if(skill==48) { if(stage>9 && type==390 && *(BYTE*)(o+261)==63) *(BYTE*)(c+757)=15; }
     else if(skill==49) { if(*(float*)(o+264)>=5.0f && type==390 && (*(BYTE*)(o+261)==64 || *(BYTE*)(o+261)==65)) *(BYTE*)(c+757)=15; }
-    else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){FUN_00460dc0(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} DAT_00559858=5; }
-    else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) FUN_00460dc0(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); FUN_00460dc0(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey_stub(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
-    else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){FUN_00460dc0(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);*(BYTE*)(c+757)=15;} }
+    else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){Effect_Create(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} DAT_00559858=5; }
+    else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) Effect_Create(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); Effect_Create(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey_stub(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
+    else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){Effect_Create(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);*(BYTE*)(c+757)=15;} }
     else if((*(float*)(o+264)>=1.0f && type==390 && *(BYTE*)(o+261)==62) || (*(float*)(o+264)>=5.0f && ((type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91) || (type>=270 && type<335 && *(BYTE*)(o+261)>=3 && *(BYTE*)(o+261)<=4)))) *(BYTE*)(c+757)=15;
     return true;
 }
@@ -405,6 +405,6 @@ void __cdecl Combat_SpawnIdleAmbientParticle(int param_1) {
     float pos[3] = { fX, *(float*)(param_1 + 0x14), *(float*)(param_1 + 0x18) };
     float scale[3] = { 1.0f, 1.0f, 0.0f };
     float light[3] = { fX, fZ, 0.0f };
-    FUN_00475220(0x4c5, (float*)pos, (float*)scale, (float*)light,
+    Particle_Spawn(0x4c5, (float*)pos, (float*)scale, (float*)light,
                  *(int*)(param_1 + 0x18), 0.0f, r2 % 200);
 }

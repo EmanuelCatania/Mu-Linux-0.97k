@@ -15,7 +15,7 @@ void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
     // en stack (local_18/14/10 era un vec3, local_c/8/4 era otro). El port
     // Ghidra los declaró como floats separados — el compilador C++ los puede
     // reubicar en CUALQUIER orden o slot, así que `&local_18` NO apuntaba a
-    // un vec3 contiguo. FUN_004fa110 leía/escribía 3 floats secuenciales
+    // un vec3 contiguo. Vector_InverseRotate leía/escribía 3 floats secuenciales
     // desde esa dirección, leyendo basura y stompeando otros locals.
     // Síntoma: CameraRayOriginX (camera pos) y el endpoint del ray quedaban en
     // valores de miles de millones, hit-test contra entidades nunca pasaba.
@@ -34,10 +34,10 @@ void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
     };
 
     // Step 1: transform negated view-translation by view rotation → camera world pos
-    FUN_004fa110(cam_fwd_neg, (float*)&DAT_083a4140, (float*)&CameraRayOriginX);
+    Vector_InverseRotate(cam_fwd_neg, (float*)&DAT_083a4140, (float*)&CameraRayOriginX);
     // Step 2: transform view-space direction by view rotation → world-space direction
     float world_dir[3];
-    FUN_004fa110(view_dir,    (float*)&DAT_083a4140, world_dir);
+    Vector_InverseRotate(view_dir,    (float*)&DAT_083a4140, world_dir);
 
     // Endpoint = camera position + world-space direction
     param_3[0] = _CameraRayOriginX + world_dir[0];

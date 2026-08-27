@@ -22,7 +22,7 @@
 // pushed by the caller, making full reimplementation impossible without caller context.
 // The weapon swap logic below is the core behavior.
 void __stdcall FUN_0048b680(void) {
-    int weaponType = FUN_004824c0_stub();
+    int weaponType = Item_FindElfWeaponInventorySlot();
     if (weaponType == -1) return;
 
     // anti-tamper hash table — skipped (encrypt CharacterMachine)

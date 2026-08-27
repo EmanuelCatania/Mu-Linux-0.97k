@@ -98,7 +98,7 @@ void __cdecl FUN_00514310(void)
     // EquipmentItem es el ítem agarrado con el mouse; cuando hay uno, ESC no
     // abre el menú (se usa para soltar el ítem). En login EquipmentItem=NULL
     // siempre, así que podemos omitir ese guard.
-    int escHit = FUN_0047ec20(27);  // VK_ESCAPE (1 si fue just-pressed)
+    int escHit = Input_IsKeyJustPressed(27);  // VK_ESCAPE (1 si fue just-pressed)
     if (escHit) {
         bool didToggle = false;
         // 2026-07-27: válvula de escape para los diálogos Yes/No (151) y pet
@@ -342,7 +342,7 @@ void __cdecl FUN_00514310(void)
                             // a char-select, las funciones init re-cargan los assets.
                             DAT_083a7c48 = 0;   // ConnectionCheckEnable
                             DAT_083a7c49 = 0;   // InitLogIn  → fuerza Scene_Login init
-                            DAT_083a7c4b = 0;   // InitCharacterScene → fuerza OpenCharacterSceneData
+                            CharSelectSceneInitialized = 0; // IDA: DAT_083a7c4b; force character-scene reload
                             DAT_083a7c4c = 0;   // InitMainScene
                             DAT_083a7c4d = 0;   // EnableMainRender / warning flag
                             InitGame();           // reset estado de juego
@@ -420,7 +420,7 @@ void __cdecl FUN_00514310(void)
         // vez de sub_513C10 — divergencia estructural preexistente, fuera del
         // alcance de la pasada de audio.
         // Close NPC UI
-        FUN_0047ec60(0);
+        Input_ClearState(0);
         DAT_00559c94 = (DWORD)0x2a;
         DAT_00559c88 = 2;
         DAT_07e11d72 = 0;
@@ -452,7 +452,7 @@ void __cdecl FUN_00514310(void)
         if (gold > 50000000) {
             // NextErrorMessage = 118 ("cantidad demasiado grande") + reset input
             DAT_083a7c28 = 118;
-            FUN_0047ec60(0);            // ClearInput(0)
+            Input_ClearState(0);            // ClearInput(0)
             DAT_00559c94 = (DWORD)42;   // InputTextMax[0]
             DAT_00559c88 = 2;           // InputNumber
             DAT_07e11d72 = 0;           // GoldInputEnable
@@ -477,7 +477,7 @@ void __cdecl FUN_00514310(void)
             Net_SendWarehouseMoney((BYTE)(DAT_07eaa108 & 1), (DWORD)gold);
         }
 
-        FUN_0047ec60(0);                // ClearInput(0)
+        Input_ClearState(0);                // ClearInput(0)
         DAT_00559c94 = (DWORD)42;
         DAT_00559c88 = 2;
         DAT_07e11d72 = 0;               // GoldInputEnable = 0

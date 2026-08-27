@@ -5,12 +5,12 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_00466300 @ 0x00466300 (~166 lines) — bomb/explosion ring particle effect
+// Effect_SpawnBombRing @ 0x00466300 (~166 lines) — bomb/explosion ring particle effect
 // Creates ring of 8 particles evenly spaced around a circle via AngleMatrix + VectorRotate.
 // For each: CreateBomb at rotated position, then 2x CreateEffect (type 0xC5 or 0xC6, random).
 // param_1 = float[3] center position
-// FUN_00466300 (IDA-activated, was Ghidra stub)
-void __cdecl FUN_00466300(float *a1)
+// IDA: FUN_00466300
+void __cdecl Effect_SpawnBombRing(float *a1)
 {
   int v1; // edi
   int v2; // eax
@@ -128,11 +128,12 @@ void __cdecl RenderWheelWeapon_stub(DWORD o) {
     *(float*)(o + 0x24) = save_angZ;
 }
 
-// FUN_0046b980 @ 0x0046B980 (~82 lines) — renders grounded weapon model
+// ItemDrop_RenderGroundWeapon @ 0x0046B980 (~82 lines) — renders grounded weapon model
 // If object's height offset (o+0x60) > _DAT_00552488 threshold:
 // set up BMD model data, ItemObjectAttribute, RequestTerrainLight, RenderPartObject.
 // Similar to RenderWheelWeapon but without position save/restore (static ground item).
-void __cdecl FUN_0046b980(int param_1) {
+// IDA: FUN_0046b980
+void __cdecl ItemDrop_RenderGroundWeapon(int param_1) {
     // Only render if height above threshold
     if (_DAT_00552488 >= (float)*(int*)(param_1 + 0x60)) return;
 
@@ -184,6 +185,17 @@ void __cdecl FUN_0046b980(int param_1) {
     *(short*)(param_1 + 2) = (short)(int)origTypeF;
 }
 
+// IDA compatibility bridges: stubs_IDA_ports.cpp intentionally retains these ABI names.
+void __cdecl FUN_00466300(float* position)
+{
+    Effect_SpawnBombRing(position);
+}
+
+void __cdecl FUN_0046b980(int entity)
+{
+    ItemDrop_RenderGroundWeapon(entity);
+}
+
 // FUN_0046c5a0 @ 0x0046C5A0 (~117 lines) — skill impact particle burst
 // AngleMatrix from direction (param_4), VectorRotate to get offset.
 // Spawn one main particle (0x498) at param_3 position,
@@ -197,7 +209,7 @@ void __cdecl FUN_0046c5a0(int param_1, int param_2, float* param_3, float* param
     float angle[3] = { 1.0f, 0.0f, 0.0f };  // scale=1.0 in angle[0]
 
     // Spawn main impact particle (type 0x498) at param_3 position
-    FUN_00475220(0x498, param_3, angle, light, 0, 0.0f, 0);
+    Particle_Spawn(0x498, param_3, angle, light, 0, 0.0f, 0);
 
     // Build rotation matrix from direction angles
     float dirAngles[3] = { param_4[0], param_4[1], param_4[2] };
@@ -208,7 +220,7 @@ void __cdecl FUN_0046c5a0(int param_1, int param_2, float* param_3, float* param
 
     // Rotate offset vector by direction matrix
     float worldOffset[3];
-    FUN_004fa0b0(localOffset, (float*)matrix, worldOffset);
+    Vector_Rotate(localOffset, (float*)matrix, worldOffset);
 
     // Final trail spawn position = rotated offset + source position
     float trailPos[3];
@@ -220,7 +232,7 @@ void __cdecl FUN_0046c5a0(int param_1, int param_2, float* param_3, float* param
     for (int i = 0; i < 20; i++) {
         rand();  // random variation X
         rand();  // random variation Y
-        FUN_00475220(0x497, param_3, angle, light, 0, 0.0f, 0);
+        Particle_Spawn(0x497, param_3, angle, light, 0, 0.0f, 0);
     }
 }
 
@@ -246,7 +258,7 @@ void __cdecl CreateBlood_stub(DWORD o) {
             float pos[3] = { *(float*)(o + 0x10), *(float*)(o + 0x14), *(float*)(o + 0x18) };
             float ang[3] = { *(float*)(o + 0x1C), *(float*)(o + 0x20), *(float*)(o + 0x24) };
             float lit[3] = { *(float*)(o + 0xE8), *(float*)(o + 0xEC), *(float*)(o + 0xF0) };
-            FUN_00460dc0(199, pos, ang, lit, NULL, NULL, NULL, NULL, 0);
+            Effect_Create(199, pos, ang, lit, NULL, NULL, NULL, NULL, 0);
             count = count - 1;
         } while (count != 0);
         return;

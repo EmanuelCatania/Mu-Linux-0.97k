@@ -92,8 +92,8 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
 
 // External helpers already implemented elsewhere in our build.  Linkage
 // coincide con las definiciones que ya existen en stubs.cpp (C++, no extern "C").
-int  __cdecl    FUN_0040c680(DWORD* self);                            // get focus state
-void __fastcall FUN_0040c580(int self);                               // dequeue front of base list
+int  __cdecl    ChatListBox_GetFocusState(DWORD* self);                // IDA: FUN_0040c680
+void __fastcall ChatListBox_DequeueFront(int self);                     // IDA: FUN_0040c580
 int  __cdecl    FUN_00411a20(DWORD* self);                            // key-handler (slot 9)
 int  __cdecl    FUN_004119a0(DWORD* self, int v);                     // scroll-up helper
 int  __cdecl    FUN_0040c930(int slot);                               // ++[slot+0x114]
@@ -475,7 +475,7 @@ static int __fastcall ChatLB_tick(DWORD* self, int, int v)
     void** vt = (void**)*self;
 
     while (self[3]) {
-        FUN_0040c580((int)self);
+        ChatListBox_DequeueFront((int)self);
         if (!((FnInt)vt[9])(self)) {
             ((FnVoid)vt[8])(self);
         }
@@ -493,7 +493,7 @@ static int __fastcall ChatLB_tick(DWORD* self, int, int v)
         }
         dword_55C9B80 = self[7];
     }
-    if (FUN_0040c680(self)) {
+    if (ChatListBox_GetFocusState(self)) {
         return ((FnInt)vt[7])(self);
     }
     DWORD vid = self[7];
@@ -592,7 +592,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
             g_ChatLB_WheelAccum = 0;
         }
 
-        if (!MouseLButtonPush || FUN_0040c680(self)) {
+        if (!MouseLButtonPush || ChatListBox_GetFocusState(self)) {
             // Mouse not pressed — clear ramp counters.
             *(float*)&self[42] = 0.0f;
             *(float*)&self[43] = 0.0f;
@@ -649,7 +649,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
         int thumbH = (int)fself[40];
         if (FUN_0040c490(trackX, thumbY, (int)fself[39], thumbH, 1)) {
             // Mouse adentro del pulgar — arranca el arrastre si no había uno ya.
-            if (!FUN_0040c680(self) && !dword_55C9B7C) {
+            if (!ChatListBox_GetFocusState(self) && !dword_55C9B7C) {
                 dword_55C9B7C = self[7];
                 ((FnVoidI)vt[1])(self, 0, 2);   // setState(2 = dragging)
                 fself[41] = (float)((double)MouseY - (double)fself[38]);
@@ -683,7 +683,7 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
         }
 LABEL_53:
         v17 = 1; MouseOnWindow = 1;
-    } else if (FUN_0040c680(self) == 1) {
+    } else if (ChatListBox_GetFocusState(self) == 1) {
         // El widget tenía el foco pero el mouse salió del rect — manejar la soltada del pulgar.
         if (MouseLButtonPush) {
             float* fself = (float*)self;
@@ -703,7 +703,7 @@ LABEL_53:
             ((FnVoidI)vt[1])(self, 0, 0);  // setState(0 = idle)
             if (dword_55C9B7C == self[7]) dword_55C9B7C = 0;
         }
-    } else if (FUN_0040c680(self) == 2) {
+    } else if (ChatListBox_GetFocusState(self) == 2) {
         // Currently dragging the thumb.
         if (!MouseLButtonPush) {
             ((FnVoidI)vt[1])(self, 0, 0);
@@ -1105,13 +1105,13 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         const float arrowX = fx + fw - 21.0f;
         // Flecha arriba.  El sprite se apaga mientras se arrastra el thumb
         // (focus state 2).
-        int upOn = (hov == 1 && FUN_0040c680(self) != 2) ? 1 : 0;
+        int upOn = (hov == 1 && ChatListBox_GetFocusState(self) != 2) ? 1 : 0;
         ChatLB_DrawButton(1284, upOn, arrowX,
                           (float)((int)self[12] - (int)self[14]) + 8.0f,
                           13.0f, 13.0f, 0.6f, 0);
         // Flecha abajo — el último argumento es el ENTERO 1 (bits), que hace
         // que sub_40DCE0 espeje la textura en V.  No es 1.0f.
-        int dnOn = (hov == 2 && FUN_0040c680(self) != 2) ? 1 : 0;
+        int dnOn = (hov == 2 && ChatListBox_GetFocusState(self) != 2) ? 1 : 0;
         ChatLB_DrawButton(1284, dnOn, arrowX,
                           (float)(int)self[12] - 4.0f,
                           13.0f, 13.0f, 0.6f, 1);
@@ -1149,7 +1149,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
             GL_DrawTexture(1282, barX, thumbY, thumbW - 2.0f, thumbH,
                          0.0f, 0.0f, 0.6875f, 0.6875f, 1, 1);
             if (hov == 3) {
-                if (FUN_0040c680(self) == 2) glColor4f(0.0f, 0.0f, 0.0f, 0.1f);
+                if (ChatListBox_GetFocusState(self) == 2) glColor4f(0.0f, 0.0f, 0.0f, 0.1f);
                 else                         glColor4f(1.0f, 1.0f, 1.0f, 0.2f);
                 GL_DrawRect(barX, thumbY, thumbW - 2.0f, thumbH);
                 glEnable(GL_TEXTURE_2D);
@@ -1160,7 +1160,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         // Botón de redimensionar (22×12) arriba a la derecha.  Se agrisa
         // mientras se está arrastrando (focus state 1); el arrastre en sí lo
         // maneja el slot 7.
-        if (FUN_0040c680(self) == 1) glColor4f(0.7f, 0.7f, 0.7f, 1.0f);
+        if (ChatListBox_GetFocusState(self) == 1) glColor4f(0.7f, 0.7f, 0.7f, 1.0f);
         else                         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         GL_DrawTexture(1280, fx + fw - 28.0f,
                      (float)((int)self[12] - (int)self[14]) - 8.0f + 4.0f,
@@ -1459,7 +1459,7 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
 
     if (FUN_0040c490((int)self[11], (int)self[12] - (int)self[14],
                      (int)self[13], 8, 1)
-        && !FUN_0040c680(self)
+        && !ChatListBox_GetFocusState(self)
         && !dword_55C9B7C)
     {
         dword_55C9B7C = self[7];
@@ -1691,7 +1691,7 @@ extern "C" int g_ChatLB_MouseOnWindow = 0;
 
 extern "C" void  __cdecl CreateGuildMark(int markIndex, bool blend);
 extern "C" void  __cdecl RenderTipText(int sx, int sy, const char* Text);
-// UI_DrawText (RenderText) y FUN_0047ec60 (ClearInput) ya vienen de
+// UI_DrawText (RenderText) y Input_ClearState (ClearInput) ya vienen de
 // functions.h con vinculacion C++; no re-declararlos aca.
 // FUN_00404bc0 (PlayBuffer) tambien viene de functions.h (vinculacion C++).
 extern "C" float flt_83A7ACC[8];
@@ -1924,7 +1924,7 @@ static int __fastcall GuildLB_perFrameInput(DWORD* self)
                         int v9 = ((FnInt)vt[19])(self) - (int)self[34];
                         DAT_083a7c24     = 126;   // ErrorMessage
                         dword_5615E4     = v9 - v3 - 1;
-                        FUN_0047ec60(0);                        // ClearInput(0)
+                        Input_ClearState(0);                        // ClearInput(0)
                         InputEnable      = 0;
                         DAT_00559c88     = 1;     // InputNumber
                         // IDA: `*(float *)InputTextMax = flt_83A7ACC[0];` —
@@ -2109,7 +2109,8 @@ void __fastcall FUN_0040c500(void* ecx, void* /*edx*/, int param_1, int param_2,
 
 // ── FUN_0040c580 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // FUN_0040c580 @ 0x0040C580 (71 bytes) — dequeue front from linked list + copy 3 fields
-void __fastcall FUN_0040c580(int param_1) {
+// IDA: FUN_0040c580
+void __fastcall ChatListBox_DequeueFront(int param_1) {
     if (*(int *)(param_1 + 0xc) != 0) {
         int iVar1 = **(int **)(param_1 + 8);
         *(int *)(param_1 + 0x10) = *(int *)(iVar1 + 8);
@@ -2121,6 +2122,13 @@ void __fastcall FUN_0040c580(int param_1) {
         operator_delete(lpMem);
         *(int *)(param_1 + 0xc) = *(int *)(param_1 + 0xc) - 1;
     }
+}
+
+// Compatibility entry point retained solely for stubs_IDA_ports.cpp.
+// IDA: FUN_0040c580
+void __fastcall FUN_0040c580(int param_1)
+{
+    ChatListBox_DequeueFront(param_1);
 }
 
 // ── FUN_0040c5d0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
@@ -2140,9 +2148,17 @@ void __fastcall FUN_0040c670(int ecx, int /*edx*/, int param_1) {
 
 // FUN_0040c680 @ 0x0040C680 (4 bytes) — getter thiscall: devuelve this->field_0x24
 // FUN_0040c680 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_0040c680(DWORD *_this)
+// IDA: FUN_0040c680
+int __cdecl ChatListBox_GetFocusState(DWORD *_this)
 {
   return _this[9];
+}
+
+// Compatibility entry point retained solely for stubs_IDA_ports.cpp.
+// IDA: FUN_0040c680
+int __cdecl FUN_0040c680(DWORD *_this)
+{
+  return ChatListBox_GetFocusState(_this);
 }
 
 // ── FUN_0040c6b0 — movida desde stubs_bulk_small.cpp (refactor B3) ──

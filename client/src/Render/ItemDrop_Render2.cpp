@@ -43,7 +43,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 void FUN_00478c00(void)
 {
     // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODO el render del particle
-    // pool DAT_07abf5f0 — particles spawneadas via CreateParticle (FUN_00475220)
+    // pool DAT_07abf5f0 — particles spawneadas via CreateParticle (Particle_Spawn)
     // (lightning ELS=10/11, waterfall +9 glow, fire/smoke, rain/snow) NUNCA se
     // dibujaban. Ahora itera por índice acotado a 3000 slots.
     uint  *puVar8  = (uint*)((char*)DAT_07abf5f0 + 0x44);  // +0x44 from slot 0 base

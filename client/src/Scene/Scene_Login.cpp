@@ -15,7 +15,7 @@
 //   FUN_00500970 → RenderBugs()                  — (no era Entity_Render_Sprites)
 //   FUN_0046c3e0 → Trail_RenderAll()             — (no era Particle_Render)
 //   GL_BeginSprite → BeginSprite()                 — sólo push MV + loadIdentity
-//   FUN_00479730 → RenderSprites()               — (no era Portal_Render)
+//   Render_DrawSpritePool → RenderSprites()               — (no era Portal_Render)
 //   FUN_00478c00 → RenderParticles()             — (no era ItemDrop_Render_2)
 //   GL_Begin2D → BeginBitmap()                 — setup 2D ortho
 //   GL_SetBlendSrcOver → EnableAlphaTest(flag)         — (no era GL_SetMode)
@@ -28,9 +28,9 @@
 //   FUN_004f64d0 → Scene_MapTick()               — (no era UI_Render)
 //   UI_RenderNotices → RenderNotices()               — (no era StatusBar_Render)
 //   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — DAT_005590ac=g_bUseChatListBox
-//   FUN_004c14e0 → RenderDebugWindow()
+//   UI_UpdateFpsCounter → RenderDebugWindow()
 //   FUN_004c3530 → RenderHelpWindow()
-//   FUN_004bffa0 → RenderCursor()                — (no era Minimap_Render)
+//   Cursor_Render → RenderCursor()                — (no era Minimap_Render)
 //   FUN_0051e0c0 → RenderInfomation3D()          — (no era Cursor_Render)
 //   GL_End2D → EndBitmap()                   — 2x glPopMatrix (balancea BeginBitmap+BeginSprite)
 //   GL_EndOpenGL → EndOpengl()                   — pop MV + pop PROJ (balancea BeginOpengl)
@@ -87,7 +87,7 @@ uint Scene_Login(void)
     FUN_00500970();    // RenderBugs
     FUN_0046c3e0();    // Trail_RenderAll
     GL_BeginSprite();    // BeginSprite — push MV, loadIdentity
-    FUN_00479730();    // RenderSprites
+    Render_DrawSpritePool();    // RenderSprites
     FUN_00478c00();    // RenderParticles
     glPopMatrix();     // balancea BeginSprite
     GL_Begin2D();    // BeginBitmap — setup 2D ortho
@@ -283,9 +283,9 @@ uint Scene_Login(void)
     UI_RenderNotices();    // RenderNotices
     if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
         UI_RenderChatLogOverlay();   // sub_480980 — chat log render
-    FUN_004c14e0();    // RenderDebugWindow
+    UI_UpdateFpsCounter();    // RenderDebugWindow
     FUN_004c3530();    // RenderHelpWindow
-    FUN_004bffa0();    // RenderCursor
+    Cursor_Render();    // RenderCursor
     FUN_0051e0c0();    // RenderInfomation3D
 
     // ── Teardown (port exacto de IDA: EndBitmap + EndOpengl) ─────────────────

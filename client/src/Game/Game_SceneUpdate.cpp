@@ -10,7 +10,7 @@
 //   2   CredentialInput — username/password dialog
 //   3   AwaitLoginResp  — packet sent; waiting for server response
 //   4   LoginFailed     — error dialog
-//   8   CharSelectInit  — FUN_0047ec60(1); char select setup
+//   8   CharSelectInit  — Input_ClearState(1); char select setup
 //  12   Error/Timeout   — retry path (up to 4 retries)
 //
 // ── SERVER RESPONSE CODE (DAT_05826cb0) ──────────────────────────────────────
@@ -525,7 +525,7 @@ int Game_SceneUpdate(void)
         DAT_07e11d71 = 0;
         DAT_07e11d72 = 0;
         DAT_00559c84 = 1;
-        FUN_0047ec60(1);        // CharSelect_Init
+        Input_ClearState(1);        // CharSelect_Init
 
         // Copy version string → username buffer
         {
@@ -1091,7 +1091,7 @@ state_fail_common:
                 DAT_05826cb0 = 2;
                 DAT_083a7c14 = 8;
                 FUN_00404bc0(0x1b, 0, 0);
-                FUN_0047ec60(1);
+                Input_ClearState(1);
                 DAT_00559c88 = 2;
                 DAT_00559c90 = 1;
                 _DAT_00559c94 = 0x1e;
@@ -1117,7 +1117,7 @@ state_fail_common:
                 DAT_05826cb0 = 2;
                 DAT_083a7c14 = 2;
                 FUN_00404bc0(0x1b, 0, 0);
-                FUN_0047ec60(1);
+                Input_ClearState(1);
                 {
                     int vlen = (int)strlen((char*)lpData_055c9ba0);
                     memcpy(DAT_07db8710, lpData_055c9ba0, vlen + 1);

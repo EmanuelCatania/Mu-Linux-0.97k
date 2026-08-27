@@ -77,14 +77,14 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
     // 2026-08-10 FIX (haces oscuros): estos "locales" que produjo Ghidra son en
     // realidad UN bloque contiguo del frame original (ebp-0xD8 .. ebp), y el
     // código de abajo depende de esa contigüidad — MSVC no la garantiza:
-    //   L99  FUN_004fa0b0(&local_b4, local_30, local_d8 + 6)  → escribe el vec3
+    //   L99  Vector_Rotate(&local_b4, local_30, local_d8 + 6)  → escribe el vec3
     //        de salida en local_d8[6],[7],[8]; L102 lee out[2] como `local_b8`,
     //        o sea `local_d8[8] == local_b8` (¡y local_d8 estaba dimensionado a
     //        8, así que era además una escritura fuera de rango en el stack!).
-    //   L138 FUN_004fa0b0(local_d8 + 6, local_a8 + 6, &local_b4) → L140/L141
+    //   L138 Vector_Rotate(local_d8 + 6, local_a8 + 6, &local_b4) → L140/L141
     //        leen out[1] y out[2] como `local_b0` y `local_ac`, o sea
     //        `(&local_b4)[1] == local_b0` y `(&local_b4)[2] == local_ac`.
-    // Con locales sueltos, la entrada de FUN_004fa0b0 traía basura en y/z y la
+    // Con locales sueltos, la entrada de Vector_Rotate traía basura en y/z y la
     // salida se perdía → la Position del joint (+0x14/+0x18) quedaba con valores
     // de ~1e9 y el render dibujaba quads que cruzaban toda la pantalla.
     // Mapeo por offset de frame: -0xD8=[0] … -0xB8=[8] … -0xA8=[12] …
@@ -108,11 +108,11 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
     // Default movement: rotate velocity by euler matrix and apply to position.
     // Type 0x4ee overrides this entirely (has its own path below).
     if (*(int *)(param_1 + 4) != 0x4ee) {
-        FUN_004f9db0((float *)(param_1 + 0x28), local_30);
+        Matrix_BuildFromEuler((float *)(param_1 + 0x28), local_30);
         local_b0 = -*(float *)(param_1 + 0x9c0);
         local_b4 = 0.0f;
         local_ac = 0.0f;
-        FUN_004fa0b0(&local_b4, local_30, local_d8 + 6);
+        Vector_Rotate(&local_b4, local_30, local_d8 + 6);
         *pfVar15                        = local_d8[6] + *pfVar15;
         *(float *)(param_1 + 0x14)      = local_d8[7] + *(float *)(param_1 + 0x14);
         *(float *)(param_1 + 0x18)      = local_b8   + *(float *)(param_1 + 0x18);
@@ -136,7 +136,7 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
         const float dist_4e8 =
             FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), pfVar14, 0.0f);
         float matrix_4e8[12];
-        FUN_004f9db0((float *)(param_1 + 0x28), matrix_4e8);
+        Matrix_BuildFromEuler((float *)(param_1 + 0x28), matrix_4e8);
         FUN_0046fe90((int)param_1, matrix_4e8);
         if (dist_4e8 > *(float *)(param_1 + 0x9c0)) {
             const float brightness = (float)(rand() % 4 + 4) * 0.1f;
@@ -144,13 +144,13 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
             FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light_4e8, 4, (int)&DAT_081cb608[0]);
             float step_4e8[3] = { 0.0f, -*(float *)(param_1 + 0x9c0), 0.0f };
             float rotated_4e8[3];
-            FUN_004fa0b0(step_4e8, matrix_4e8, rotated_4e8);
+            Vector_Rotate(step_4e8, matrix_4e8, rotated_4e8);
             *pfVar15 += rotated_4e8[0];
             *(float *)(param_1 + 0x14) += rotated_4e8[1];
             *(float *)(param_1 + 0x18) += rotated_4e8[2];
         } else {
             *param_1 = 0;
-            FUN_00475220(1215, pfVar15, (float *)(param_1 + 0x28),
+            Particle_Spawn(1215, pfVar15, (float *)(param_1 + 0x28),
                          (float *)(param_1 + 0x34), 0, 1.0f, 0);
         }
 #if 0 // Former approximation, retained only as source history.
@@ -163,7 +163,7 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
         // The function signature is void in functions.h so we approximate the distance check
         // using *(float*)(param_1+0x9c0) vs the 3D distance already computed above.
         local_e4_f = sqrtf(local_dc_f * local_dc_f + local_e4_f * local_e4_f);
-        FUN_004f9db0(pfVar26, local_a8 + 6);
+        Matrix_BuildFromEuler(pfVar26, local_a8 + 6);
         FUN_0046fe90((int)param_1, local_a8 + 6);
         if (*(float *)(param_1 + 0x9c0) < local_e4_f) {
             uVar7 = _rand();
@@ -179,14 +179,14 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
             local_d8[7] = -*(float *)(param_1 + 0x9c0);
             local_d8[6] = 0.0f;
             local_b8    = 0.0f;
-            FUN_004fa0b0(local_d8 + 6, local_a8 + 6, &local_b4);
+            Vector_Rotate(local_d8 + 6, local_a8 + 6, &local_b4);
             *pfVar15                   = local_b4 + *pfVar15;
             *(float *)(param_1 + 0x14) = local_b0 + *(float *)(param_1 + 0x14);
             *(float *)(param_1 + 0x18) = local_ac + *(float *)(param_1 + 0x18);
         }
         else {
             *param_1 = 0;
-            FUN_00475220(0x4bf, pfVar15, pfVar26, (float *)(param_1 + 0x34), 0, 1.0f, 0);
+            Particle_Spawn(0x4bf, pfVar15, pfVar26, (float *)(param_1 + 0x34), 0, 1.0f, 0);
         }
 #endif
         goto switchD_caseD_4ef;
@@ -214,7 +214,7 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
             *(float *)(param_1 + 0x4c) = *(float *)(owner_4e2 + 0x178);
             float entityAngle_4e2[3] = { *(float *)(owner_4e2 + 0x28), *(float *)(owner_4e2 + 0x2c), *(float *)(owner_4e2 + 0x30) };
             float jointMatrix_4e2[12];
-            FUN_004f9db0((float *)(param_1 + 0x28), jointMatrix_4e2);
+            Matrix_BuildFromEuler((float *)(param_1 + 0x28), jointMatrix_4e2);
             delta_4e2[0] *= 1.0f / 3.0f;
             delta_4e2[1] *= 1.0f / 3.0f;
             delta_4e2[2] *= 1.0f / 3.0f;
@@ -225,8 +225,8 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
                 *(float *)(param_1 + 0x48) += delta_4e2[1];
                 *(float *)(param_1 + 0x4c) += delta_4e2[2];
                 float entityMatrix_4e2[12], rotated_4e2[3];
-                FUN_004f9db0(entityAngle_4e2, entityMatrix_4e2);
-                FUN_004fa0b0((float *)(param_1 + 0x9c4), entityMatrix_4e2, rotated_4e2);
+                Matrix_BuildFromEuler(entityAngle_4e2, entityMatrix_4e2);
+                Vector_Rotate((float *)(param_1 + 0x9c4), entityMatrix_4e2, rotated_4e2);
                 *pfVar15 = rotated_4e2[0] + *(float *)(param_1 + 0x44);
                 *(float *)(param_1 + 0x14) = rotated_4e2[1] + *(float *)(param_1 + 0x48);
                 *(float *)(param_1 + 0x18) = rotated_4e2[2] + *(float *)(param_1 + 0x4c);
@@ -260,7 +260,7 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
         local_a8[3] = *(float *)(pcVar11 + 0x28);
         local_a8[4] = *(float *)(pcVar11 + 0x2c);
         local_a8[5] = *(float *)(pcVar11 + 0x30);
-        FUN_004f9db0((float *)(param_1 + 0x28), local_60);
+        Matrix_BuildFromEuler((float *)(param_1 + 0x28), local_60);
         local_d8[0] *= _DAT_005529d4;
         iVar16       = 3;
         local_d8[1] *= _DAT_005529d4;
@@ -271,8 +271,8 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
             *(float *)(param_1 + 0x44) += local_d8[0];
             *(float *)(param_1 + 0x48) += local_d8[1];
             *(float *)(param_1 + 0x4c) += local_d8[2];
-            FUN_004f9db0(local_a8 + 3, local_a8 + 6);
-            FUN_004fa0b0((float *)(param_1 + 0x9c4), local_a8 + 6, local_a8);
+            Matrix_BuildFromEuler(local_a8 + 3, local_a8 + 6);
+            Vector_Rotate((float *)(param_1 + 0x9c4), local_a8 + 6, local_a8);
             *pfVar15                        = local_a8[0] + *(float *)(param_1 + 0x44);
             *(float *)(param_1 + 0x14)      = local_a8[1] + *(float *)(param_1 + 0x48);
             *(float *)(param_1 + 0x18)      = local_a8[2] + *(float *)(param_1 + 0x4c);
@@ -586,7 +586,7 @@ LAB_0047036e:
                         (float)(rand() % 200) + *(float *)(param_1 + 0x2c) - 100.0f,
                         *(float *)(param_1 + 0x30) - 200.0f
                     };
-                    FUN_0046d840(1249, position_4e5_2, position_4e5_2, rotation_4e5_2,
+                    Joint_Create(1249, position_4e5_2, position_4e5_2, rotation_4e5_2,
                                   2, 0, 40.0f, -1, 0);
                 }
             } else {
@@ -606,7 +606,7 @@ LAB_0047036e:
         }
         if (subtype_4e5 == 0 || subtype_4e5 == 5) {
             if (*(int *)(param_1 + 0x0c) == 1117782016) {
-                FUN_00460dc0(205, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34),
+                Effect_Create(205, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34),
                              (float *)(subtype_4e5 == 5 ? 3 : 0), 0, (float *)-1, 0, 0);
                 if ((*(int *)(param_1 + 0x9b8) % 15) == 0 && *(int *)(param_1 + 0x40) == (int)Hero) {
                     FUN_0045fec0(*(unsigned char *)(param_1 + 0x9d2), pfVar15, 150.0f,
@@ -694,9 +694,9 @@ LAB_0047036e:
                     *(float *)(param_1 + 0x30) + *(float *)(param_1 + 0x9cc)
                 };
                 float matrix_4e7[12], step_4e7[3] = { 0.0f, -speed_4e7, 0.0f }, rotated_4e7[3];
-                FUN_004f9db0(angle_4e7, matrix_4e7);
+                Matrix_BuildFromEuler(angle_4e7, matrix_4e7);
                 FUN_0046fe90((int)param_1, matrix_4e7);
-                FUN_004fa0b0(step_4e7, matrix_4e7, rotated_4e7);
+                Vector_Rotate(step_4e7, matrix_4e7, rotated_4e7);
                 *pfVar15 += rotated_4e7[0];
                 *(float *)(param_1 + 0x14) += rotated_4e7[1];
                 *(float *)(param_1 + 0x18) += rotated_4e7[2];
@@ -759,7 +759,7 @@ LAB_0047036e:
                         *(float *)(param_1 + 0x9c0) -= 10.0f;
                 } else {
                     *param_1 = 0;
-                    FUN_00475220(1191, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 1, 1.0f, 0);
+                    Particle_Spawn(1191, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 1, 1.0f, 0);
                     PlayBuffer(35, 0, 0);
                 }
             } else {
@@ -775,9 +775,9 @@ LAB_0047036e:
             float terrainLight_4ea[3] = { brightness_4ea * 0.4f, brightness_4ea, brightness_4ea * 0.8f };
             FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)terrainLight_4ea, 2, (int)&DAT_081cb608[0]);
             if (subtype_4ea == 6 || subtype_4ea == 9)
-                FUN_00475220(1191, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 3, 0.05f, 0);
+                Particle_Spawn(1191, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 3, 0.05f, 0);
             else
-                FUN_00475220(1191, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 0, 1.0f, 0);
+                Particle_Spawn(1191, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 0, 1.0f, 0);
             goto switchD_caseD_4ef;
         }
         if (subtype_4ea == 2 || subtype_4ea == 3 || subtype_4ea == 4 || subtype_4ea == 5 || subtype_4ea == 8) {
@@ -800,7 +800,7 @@ LAB_0047036e:
             if (subtype_4ea == 2 || subtype_4ea == 3) {
                 const float pulse_4ea = sinf((float)WorldTime * 0.002f) * 0.3f + 0.8f;
                 float light_4ea[3] = { pulse_4ea * 0.5f, pulse_4ea * 0.1f, pulse_4ea };
-                FUN_00475220(1191, pfVar15, (float *)(param_1 + 0x28), light_4ea, 0, 1.0f, 0);
+                Particle_Spawn(1191, pfVar15, (float *)(param_1 + 0x28), light_4ea, 0, 1.0f, 0);
             }
         }
         goto switchD_caseD_4ef;
@@ -923,13 +923,13 @@ LAB_0047036e:
                                *(float *)(param_1 + 0x2c) + *(float *)(param_1 + 0x9c8),
                                *(float *)(param_1 + 0x30) + *(float *)(param_1 + 0x9cc) };
             float matrix[12], rotated[3];
-            FUN_004f9db0(angle, matrix);
+            Matrix_BuildFromEuler(angle, matrix);
             FUN_0046fe90((int)param_1, matrix);
 
             if (*(float *)(param_1 + 0x9c0) * 2.0f >= targetDistance) {
                 if ((rand() & 1) == 0) {
                     (void)rand(); (void)rand(); (void)rand();
-                    FUN_00475220(1195, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 0, 1.0f, 0);
+                    Particle_Spawn(1195, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 0, 1.0f, 0);
                 }
                 break;
             }
@@ -953,7 +953,7 @@ LAB_0047036e:
             FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light, 2, (int)&DAT_081cb608[0]);
 
             float step[3] = { 0.0f, -*(float *)(param_1 + 0x9c0), 0.0f };
-            FUN_004fa0b0(step, matrix, rotated);
+            Vector_Rotate(step, matrix, rotated);
             *pfVar15 += rotated[0];
             *(float *)(param_1 + 0x14) += rotated[1];
             *(float *)(param_1 + 0x18) += rotated[2];
@@ -975,22 +975,22 @@ LAB_0047036e:
                 float matrix[12];
                 float rotated[3];
 
-                FUN_004f9db0((float *)(param_1 + 0x9c4), matrix);
-                FUN_004fa0b0(in1, matrix, rotated);
+                Matrix_BuildFromEuler((float *)(param_1 + 0x9c4), matrix);
+                Vector_Rotate(in1, matrix, rotated);
                 *(float *)(param_1 + 0x10) = rotated[0] + *(float *)(param_1 + 0x44);
                 *(float *)(param_1 + 0x14) = rotated[1] + *(float *)(param_1 + 0x48);
                 *(float *)(param_1 + 0x18) = rotated[2] + *(float *)(param_1 + 0x4c);
 
-                FUN_004f9db0((float *)(param_1 + 0x28), matrix);
+                Matrix_BuildFromEuler((float *)(param_1 + 0x28), matrix);
                 FUN_0046fe90((int)param_1, matrix);
                 *(float *)(param_1 + 0x9cc) -= 11.0f;
                 if ((rand() & 1) == 0) {
-                    FUN_00475220(1195, (float *)(param_1 + 0x10),
+                    Particle_Spawn(1195, (float *)(param_1 + 0x10),
                                  (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 0, 1.0f, 0);
                 }
-                FUN_0046d840(1254, previousPosition, (float *)(param_1 + 0x10),
+                Joint_Create(1254, previousPosition, (float *)(param_1 + 0x10),
                               (float *)(param_1 + 0x28), 3, 0, (float)(rand() % 10) + 5.0f, 5, 10);
-                FUN_0046d840(1254, previousPosition, (float *)(param_1 + 0x10),
+                Joint_Create(1254, previousPosition, (float *)(param_1 + 0x10),
                               (float *)(param_1 + 0x28), 3, 0, (float)(rand() % 8) + 4.0f, 5, 10);
             }
             if (*(int *)(param_1 + 0x40) == (int)Hero && *(int *)(param_1 + 0x9b8) > 18 && (i % 5) == 0) {
@@ -1156,18 +1156,18 @@ switchD_caseD_4fd:
             // by the raw +0x44 vector, anchor it at +0x1c, then advance +0x4c.
             float offset[3] = { 0.0f, -50.0f, 0.0f };
             float rotated[3];
-            FUN_004f9db0((float *)(param_1 + 0x44), local_30);
-            FUN_004fa0b0(offset, local_30, rotated);
+            Matrix_BuildFromEuler((float *)(param_1 + 0x44), local_30);
+            Vector_Rotate(offset, local_30, rotated);
             *jposX                     = rotated[0] + *(float *)(param_1 + 0x1c);
             *(float *)(param_1 + 0x14) = rotated[1] + *(float *)(param_1 + 0x20);
             *(float *)(param_1 + 0x18) = rotated[2] + *(float *)(param_1 + 0x24);
-            FUN_004f9db0((float *)(param_1 + 0x40), local_30);
+            Matrix_BuildFromEuler((float *)(param_1 + 0x40), local_30);
             *(float *)(param_1 + 0x4c) += 10.0f;
             goto switchD_caseD_4ef;
         }
         if (jsub == 9) {
             // 00470030 LABEL_301/case 9.
-            FUN_004f9db0((float *)(param_1 + 0x40), local_30);
+            Matrix_BuildFromEuler((float *)(param_1 + 0x40), local_30);
             const int segments = *(int *)(param_1 + 0x54);
             for (int i = 0; i < segments; ++i) {
                 *jposX                     += *(float *)(param_1 + 0x1c);

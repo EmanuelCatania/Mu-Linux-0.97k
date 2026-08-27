@@ -11,7 +11,7 @@
 //
 // ── GUARDS ────────────────────────────────────────────────────────────────────
 //
-//   if (DAT_083a7c4b == '\0') return 0;
+//   if (CharSelectSceneInitialized == '\0') return 0; // IDA: DAT_083a7c4b
 //   if (0x32 >= DAT_05826cb0) { ... }   // timer guard → solo setup parcial
 //
 // ── BRILLO OSCILANTE ──────────────────────────────────────────────────────────
@@ -50,14 +50,14 @@
 //   Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, &DAT_083a4110); → Camera_Update(mx,my,mat)
 //   FUN_004fd800();     → Terrain_Render()
 //   _DAT_07abf138 = 1.0; _DAT_07abf13c = 0.9; _DAT_07abf140 = 0.8;
-//   if (DAT_005616b0 == -1): FUN_004b0310(); → CharPreview_Render()
+//   if (DAT_005616b0 == -1): Mouse_UpdateHoverTargets(); → CharPreview_Render()
 //   FUN_0045ab00();     → Entity_RenderAll_3D()
 //   FUN_00500970();     → Entity_Render_Sprites()
 //   FUN_0046c3e0();     → Particle_Render()
 //   GL_SetBlendSrcOver('\x01'); GL_SetMode(1)
 //   GL_BindTextureSlot(0x15); glColor4f(1,1,1,0.8);
 //   GL_BeginSprite();     → SkillEffect_Render_2()
-//   FUN_00479730();     → Portal_Render()
+//   Render_DrawSpritePool();     → Portal_Render()
 //   FUN_00478c00();     → ItemDrop_Render_2()
 //   glPopMatrix();
 //   GL_Begin2D();     → GL_SetupOrtho2D()
@@ -105,8 +105,8 @@
 //   (oscila fsin → _DAT_07abf138..140 = brillo)
 //   fStack_5c = -8.0; uStack_58 = 0xc4480000; fStack_54 = 79.0;
 //   DAT_00561554 = 0x41200000;
-//   FUN_004f9db0(&angles, mat);   → Matrix_FromEuler()
-//   FUN_004fa110(&pos, mat, &screenPt); → Transform + project
+//   Matrix_BuildFromEuler(&angles, mat);   → Matrix_FromEuler()
+//   Vector_InverseRotate(&pos, mat, &screenPt); → Transform + project
 //   _DAT_083a42d4 = screenPt.x + _DAT_07abf060;
 //   _DAT_083a42d8 = screenPt.y + _DAT_07abf064;
 //   GL_BeginViewport(0x11d, iVar9+0x5a, 0x4a, 0x4f);
@@ -132,13 +132,13 @@
 //   FUN_004f64d0()  → UI_Render()
 //   UI_RenderNotices()  → StatusBar_Render()
 //   UI_RenderChatLogOverlay()  → Mouse_Render()
-//   FUN_004c14e0/4c3530/4bffa0/0051e0c0/5124b0 → UI finalizadores
+//   UI_UpdateFpsCounter/4c3530/4bffa0/0051e0c0/5124b0 → UI finalizadores
 //   GL_PopMatrixAll()
 //   return CONCAT31(..., 1)  → low byte 1 = SwapBuffers
 //
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 //
-//   DAT_083a7c4b   — init flag (guard)
+//   CharSelectSceneInitialized (IDA: DAT_083a7c4b) — init flag (guard)
 //   DAT_05826cb0   — timer guard (> 0x32 para renderizar)
 //   DAT_083a42ea   — frame counter reset
 //   DAT_05826e08   — frame time accumulator (usado en fsin para brillo)
@@ -168,11 +168,11 @@
 //   FUN_00473ea0   → Particle_Spawn(type, pos, r0, r1, r2, angle, ?, z)
 //   Camera_BuildMouseRay   → Camera_Update(mx, my, mat)
 //   Camera_ProjectWorldToScreen   → World_ToScreen(pos, &x, &y)
-//   FUN_004b0310   → CharPreview_Render()
+//   Mouse_UpdateHoverTargets   → CharPreview_Render()
 //   FUN_005239a0   → CharSelect_UpdateInput()
 //   FUN_00456770   → Entity_UpdateRender(entity, entity, is_local)
-//   FUN_004fa110   → Matrix_TransformVec(pos, mat, out)
-//   FUN_004f9db0   → Matrix_FromEuler(angles, out)
+//   Vector_InverseRotate   → Matrix_TransformVec(pos, mat, out)
+//   Matrix_BuildFromEuler   → Matrix_FromEuler(angles, out)
 //   GL_BindTextureSlot   → Particle_SetTexture(type)
 //   GL_SetBlendSrcOver   → GL_SetMode(mode)
 //   GL_SetBlendAdditive   → Frame_UpdateTimer()
@@ -206,7 +206,7 @@ int Scene_CharSelect(void)
     CHAR      aCStack_50[32];
     float     afStack_30[12];
 
-    if (DAT_083a7c4b == '\0')
+    if (CharSelectSceneInitialized == '\0')
         return (uint)uVar6 << 8;
 
     if (0x32 < DAT_05826cb0) {
@@ -239,7 +239,7 @@ int Scene_CharSelect(void)
         _DAT_07abf140 = 0.8f;
 
         if (DAT_005616b0 == -1)
-            FUN_004b0310();   // CharPreview_Render
+            Mouse_UpdateHoverTargets();   // CharPreview_Render
 
         // Per-slot color: selected/hover → full bright; others → dimmed
         iVar4 = DAT_005616ac;
@@ -323,7 +323,7 @@ int Scene_CharSelect(void)
         GL_BindTextureSlot(0x15);
         glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
         GL_BeginSprite();                    // SkillEffect_Render_2
-        FUN_00479730();                    // Portal_Render
+        Render_DrawSpritePool();                    // Portal_Render
         FUN_00478c00();                    // ItemDrop_Render_2
         glPopMatrix();
         GL_Begin2D();                    // GL_SetupOrtho2D
@@ -599,7 +599,7 @@ int Scene_CharSelect(void)
                 _DAT_07abf138 = (float)fVar11;
                 _DAT_07abf13c = (float)(fVar11 * (float10)_DAT_00552530);
                 _DAT_07abf140 = (float)(fVar11 * (float10)_DAT_00552504);
-                FUN_004f9db0((float *)&DAT_083a42b8, afStack_30);   // AngleMatrix(CameraAngle, matrix)
+                Matrix_BuildFromEuler((float *)&DAT_083a42b8, afStack_30);   // AngleMatrix(CameraAngle, matrix)
                 // BUG-FIX 2026-07-17: la entrada in1={-8,-800,79} y la salida de
                 // VectorIRotate estaban en locals SEPARADOS no contiguos (fStack_5c/
                 // uStack_58/fStack_54 y tStack_68.cx/cy + fStack_60), y la salida se leía
@@ -609,7 +609,7 @@ int Scene_CharSelect(void)
                 {
                     float camIn[3]  = { -8.0f, -800.0f, 79.0f };   // in1
                     float camOut[3];                                // VectorIRotate out
-                    FUN_004fa110(camIn, afStack_30, camOut);        // VectorIRotate(in1, matrix, out)
+                    Vector_InverseRotate(camIn, afStack_30, camOut);        // VectorIRotate(in1, matrix, out)
                     _DAT_083a42d4 = camOut[0] + _DAT_07abf060;      // CameraPosition[0]
                     DAT_083a42b8 = 0xc2b40000;                      // CameraAngle[0] = -90.0
                     _DAT_083a42d8 = camOut[1] + _DAT_07abf064;      // CameraPosition[1]
@@ -706,9 +706,9 @@ int Scene_CharSelect(void)
         UI_RenderNotices();   // StatusBar_Render
         if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
             UI_RenderChatLogOverlay();   // Mouse_Render
-        FUN_004c14e0();
+        UI_UpdateFpsCounter();
         FUN_004c3530();
-        FUN_004bffa0();
+        Cursor_Render();
         FUN_0051e0c0();
         GL_End2D();
         uVar13 = GL_PopMatrixAll();

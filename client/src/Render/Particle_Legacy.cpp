@@ -11,7 +11,7 @@
 // Character_UpdateAll @ 0x00479730 — Particle_RenderAll.
 // Iterates effect/particle pool (base DAT_07C85890, stride 0x1BC).
 // For each active slot: sets GL blend mode (0=normal,1=additive,2=alpha),
-// calls FUN_00479670 to draw it, then clears the active flag.
+// calls Render_DrawSprite to draw it, then clears the active flag.
 // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODOS los efectos (glow +9,
 // wing FX, etc.). Ahora itera por índice acotado (1002 slots).
 void __cdecl Character_UpdateAll(void) {
@@ -22,7 +22,7 @@ void __cdecl Character_UpdateAll(void) {
             if      (blend == 0) GL_SetBlendAdditive();
             else if (blend == 1) GL_SetBlendSrcAlpha();
             else if (blend == 2) GL_SetBlendSrcOver('\x01');
-            FUN_00479670((int)pcVar2);
+            Render_DrawSprite((int)pcVar2);
             *pcVar2 = 0;
         }
     }
@@ -39,7 +39,7 @@ void __cdecl Effect_UpdateAll(void) {
 }
 
 
-// Particle_Spawn (5-arg legacy alias) — delegates to FUN_00475220 (Effect_Spawn).
+// Particle_Spawn (5-arg legacy alias) — delegates to Particle_Spawn (Effect_Spawn).
 // Skills.cpp callers pass (type, x, y, z, flags). The real spawner takes
 // (type, bone_mat, pos, size, flag, alpha, mode) — we synthesize a position
 // vec3 from x/y/z and pass NULL for the optional bone_mat / size with default
@@ -47,6 +47,6 @@ void __cdecl Effect_UpdateAll(void) {
 void __cdecl Particle_Spawn(int type, float x, float y, float z, int flags) {
     float pos[3]   = { x, y, z };
     float color[3] = { 1.0f, 1.0f, 1.0f };
-    FUN_00475220(type, /*bone_mat*/nullptr, pos, color, flags, 1.0f, 0);
+    Particle_Spawn(type, /*bone_mat*/nullptr, pos, color, flags, 1.0f, 0);
 }
 

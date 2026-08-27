@@ -582,7 +582,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // (crash 0xC0000005 con param1 = 0x1C848, que es el offset de la lista de
     // quests).  Los lectores viejos no reventaban porque estaban gateados con
     // `g_csQuest != 0`; los handlers de quest nuevos si.
-    FUN_00401010();
+    Quest_InitializeStaticState();
 
     // Todos los paths de datos del original son relativos (p.ej. Data\\Skill\\Fire01.bmd).
     // El binario reconstruido lo puede lanzar un debugger o una app con el
@@ -872,7 +872,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     HUD_InitInventoryPools();
     DAT_055c9ff8 = (DWORD)malloc(0xc);   memset((void*)DAT_055c9ff8, 0, 0xc);
 
-    // Fallback de la tabla de modelos: FUN_00506170 (Model_LoadItems) sólo corre
+    // Fallback de la tabla de modelos: Model_LoadPlayerAndItemMeshes
+    // (IDA: FUN_00506170) sólo corre
     // durante la carga del mapa (state=5). Los spawns de entidades de la escena de
     // login deferencian DAT_05828d58 + etype*0xbc + offset y crashean si es NULL.
     // Alocamos un fallback en cero, grande como para etype hasta ~0x300.

@@ -1,4 +1,4 @@
-// Mouse_Hover.cpp — FUN_004b0310 @ 0x004b0310
+// Mouse_Hover.cpp — IDA: FUN_004b0310 — Mouse_UpdateHoverTargets
 // Per-frame mouse cursor billboard render + hover target determination.
 //
 // Called every frame. Two responsibilities:
@@ -22,7 +22,7 @@
 //   DAT_00559c58 = secondary hover (cleared if SelectedCharacter resets)
 //
 // Priority with Alt held (VK_MENU):
-//   item-ground (FUN_004afa40) → NPC type 4 → mob type 0x22 → player type 1 → special
+//   item-ground (ItemOnGround_HoverTest, IDA: FUN_004afa40) → NPC type 4 → mob type 0x22 → player type 1 → special
 //
 // Priority without Alt + swim/idle:
 //   mob/player type 0x22 → type 1 → NPC type 4 → item-ground → special
@@ -45,13 +45,14 @@ extern "C" void DbgLogPublic(const char* msg);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-void FUN_004b0310(void)
+// IDA: FUN_004b0310
+void Mouse_UpdateHoverTargets(void)
 {
     // ── 1. Cursor billboard render ────────────────────────────────────────────
     // 2026-04-29 DISABLED: el cursor billboard 3D (sprite en el suelo del tile
     // hovered) requiere DAT_07eab24c (BackTerrainHeight) que no se inicializa
     // en nuestro port. Crash AV en FUN_004f8740 al acceder al buffer null.
-    // El cursor 2D (FUN_004bffa0) sigue funcionando normalmente.
+    // El cursor 2D (Cursor_Render) sigue funcionando normalmente.
     #if 0
     if (DAT_005615c0 == 2 || DAT_005615c0 == 4 || DAT_005615c0 == 5)
     {
@@ -124,15 +125,15 @@ void FUN_004b0310(void)
         {
             // Alt held: item-on-ground first, then NPC, mob, player
             if (DAT_07e91388 == 0)
-                SelectedItem = FUN_004afa40();
+                SelectedItem = ItemOnGround_HoverTest();
             if (SelectedItem == -1) {
-                SelectedNpc = FUN_004afdc0(4);
+                SelectedNpc = Entity_SelectNearest(4);
                 if (SelectedNpc == -1) {
-                    SelectedCharacter = FUN_004afdc0(0x22);
+                    SelectedCharacter = Entity_SelectNearest(0x22);
                     if (SelectedCharacter != -1) goto done;
-                    SelectedCharacter = FUN_004afdc0(1);
+                    SelectedCharacter = Entity_SelectNearest(1);
                     if (SelectedCharacter != -1) goto done;
-                    SelectedOperate = FUN_004b0240();
+                    SelectedOperate = SpecialObject_HoverTest();
                 }
                 goto check_click;
             }
@@ -162,17 +163,17 @@ void FUN_004b0310(void)
             // esperado (confirmado por el usuario): el item bajo el cursor tiene
             // PRIORIDAD. Lo chequeamos primero; si hay item, es pickup.
             if (DAT_07e91388 == 0) {
-                SelectedItem = FUN_004afa40();
+                SelectedItem = ItemOnGround_HoverTest();
                 if (SelectedItem != -1) goto check_click;   // item bajo el cursor → pickup
             }
             if (SelectedCharacter == -1) {
-                SelectedCharacter = FUN_004afdc0(0x22);  // mob type
+                SelectedCharacter = Entity_SelectNearest(0x22);  // mob type
                 if (SelectedCharacter == -1) {
-                    SelectedCharacter = FUN_004afdc0(1);  // player type
+                    SelectedCharacter = Entity_SelectNearest(1);  // player type
                     if (SelectedCharacter != -1) goto done;
-                    SelectedNpc = FUN_004afdc0(4);  // NPC type
+                    SelectedNpc = Entity_SelectNearest(4);  // NPC type
                     if (SelectedNpc == -1) {
-                        SelectedOperate = FUN_004b0240();
+                        SelectedOperate = SpecialObject_HoverTest();
                     }
                     goto check_click;
                 }
@@ -189,7 +190,7 @@ check_click:
     goto done;
 
 process_click:
-    FUN_004afb00();
+    Party_MatchEntityNames();
 
 done:
     if (SelectedCharacter == -1)
@@ -258,13 +259,13 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
         GL_ResetState();
     }
     float local_c[3];
-    FUN_004fa4d0((float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270, local_c);
+    Triangle_ComputeNormal((float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270, local_c);
     unsigned int uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                                        (float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270,
                                        &_DAT_07feb27c, local_c, '\x01');
     cVar1 = (char)uVar2;
     if (cVar1 == '\0') {
-        FUN_004fa4d0((float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c, local_c);
+        Triangle_ComputeNormal((float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c, local_c);
         uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                               (float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c,
                               &_DAT_07feb264, local_c, '\x01');
@@ -312,11 +313,12 @@ void FUN_00512d30()
 }
 
 
-// FUN_004afdc0 @ 0x004AFDC0 — Entity_SelectNearest(mask)
+// Entity_SelectNearest @ 0x004AFDC0
 // Two-pass entity scan: (1) sets +0x58 visible-flag and +0x64..6f RGB tint per entity type;
 // (2) finds the nearest entity (matching mask bits at +0x84) to the camera and syncs
 // party HP bar ID arrays.  Returns the entity index of the nearest match, or -1.
-int __cdecl FUN_004afdc0(int param_1_int)
+// IDA: FUN_004afdc0
+int __cdecl Entity_SelectNearest(int param_1_int)
 {
     byte param_1 = (byte)param_1_int;
     bool bVar17 = (DAT_005615c0 == 4);  // g_GameState == CharSelect
@@ -511,7 +513,7 @@ int __cdecl FUN_004afdc0(int param_1_int)
     return best_idx;
 }
 
-// FUN_004afa40 @ 0x004AFA40 — ItemOnGround_HoverTest(void)
+// ItemOnGround_HoverTest @ 0x004AFA40
 // ── BUG-FIX 2026-04-26: NEUTRALIZADO ─────────────────────────────────────
 // El binario original itera DAT_07e12840 con bounds absolutos (0x7e908bc /
 // 0x7e907df) que en mu97k-src no son válidos: aquí DAT_07e12840 está
@@ -524,7 +526,8 @@ int __cdecl FUN_004afdc0(int param_1_int)
 // equivalente al comportamiento esperado en esos estados. Cuando se necesite
 // el path real (InGame con items dropeados), hay que localizar el array
 // correcto en mu97k-src (probablemente NO se llama DAT_07e12840).
-int __cdecl FUN_004afa40(void)
+// IDA: FUN_004afa40
+int __cdecl ItemOnGround_HoverTest(void)
 {
     // 2026-07-27: hover de items en el suelo. El path FIEL (sub_4AFA40) usa un
     // point-in-quad screen-space (FUN_00513260, 12-arg) que depende de macros
@@ -574,13 +577,14 @@ int __cdecl FUN_004afa40(void)
     return best;
 }
 
-// FUN_004b0240 @ 0x004B0240 — SpecialObject_HoverTest(void)
+// SpecialObject_HoverTest @ 0x004B0240
 // ── BUG-FIX 2026-04-26: NEUTRALIZADO ─────────────────────────────────────
-// Mismo patrón que FUN_004afa40: el original itera con bound absoluto
+// Mismo patrón que ItemOnGround_HoverTest (IDA: FUN_004afa40): el original itera con bound absoluto
 // (0x83a2cd0) que no es válido en mu97k-src. Si bien aquí los WRITES están
 // gateados por flags, los READs aún escapan del array y pueden disparar AV.
 // Char-select/login no tienen special-objects, así que retornar -1 es seguro.
-int __cdecl FUN_004b0240(void)
+// IDA: FUN_004b0240
+int __cdecl SpecialObject_HoverTest(void)
 {
     return -1;
 #if 0

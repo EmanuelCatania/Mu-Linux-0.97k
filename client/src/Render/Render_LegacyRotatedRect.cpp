@@ -63,7 +63,7 @@ void __cdecl FUN_005126e0(int id, float x, float y, float w, float h, unsigned i
     // Build rotation matrix from direction vector pointing at (depth)
     float bvec[3] = { 0.0f, 0.0f, depth };
     float mat[12];
-    FUN_004f9db0(bvec, mat);
+    Matrix_BuildFromEuler(bvec, mat);
 
     // 4 corner UV + positions
     static float uvs[8] = { 0.0f, 1.0f,  1.0f, 1.0f,  1.0f, 0.0f,  0.0f, 0.0f };
@@ -77,7 +77,7 @@ void __cdecl FUN_005126e0(int id, float x, float y, float w, float h, unsigned i
     glBegin(GL_TRIANGLE_FAN);
     for (int i = 0; i < 4; i++) {
         float out[3];
-        FUN_004fa0b0(corners[i], mat, out);
+        Vector_Rotate(corners[i], mat, out);
         glTexCoord2f(uvs[i*2], uvs[i*2+1]);
         glVertex2f(fSinX + out[0], (sz - fCosX) + out[1]);
     }

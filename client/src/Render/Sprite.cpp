@@ -5,14 +5,14 @@
 //
 // Steps:
 //  1. Bind texture slot via GL_BindTextureSlot(param_1)
-//  2. Project the world position param_2 to screen via FUN_004fa170
+//  2. Project the world position param_2 to screen via Vector_Transform
 //     (stores result in local_ac / local_a8)
 //  3. Build 4 corner positions (local_60[0..11]):
 //     - If param_6 == 0.0: axis-aligned rect:
 //         corners = center ± (param_3, param_4) in screen space
 //     - If param_6 != 0.0: rotated rect:
 //         local offsets at ±param_3/param_4, rotated by param_6 (degrees)
-//         via FUN_004f9db0 + FUN_004fa0b0
+//         via Matrix_BuildFromEuler + Vector_Rotate
 //  4. Build UV coords (local_9c[0..9]):
 //     u0=param_7, v0=param_8+param_10, u1=param_9+param_7, v1=param_8
 //     (arranged for 4 vertices of the quad)
@@ -37,9 +37,9 @@
 //
 // Sub-functions:
 //   GL_BindTextureSlot — GL_BindTextureSlot
-//   FUN_004fa170 — World_ToScreen (projects param_2 using DAT_083a4140 matrix)
-//   FUN_004f9db0 — EulerToMatrix3x4
-//   FUN_004fa0b0 — Vec3_TransformByMatrix
+//   Vector_Transform — World_ToScreen (projects param_2 using DAT_083a4140 matrix)
+//   Matrix_BuildFromEuler — EulerToMatrix3x4
+//   Vector_Rotate — Vec3_TransformByMatrix
 //
 // Globals:
 //   DAT_083a4140  — current view/projection matrix
@@ -101,12 +101,12 @@ FUN_00511d00(int param_1,float *param_2,float param_3,float param_4,float *param
 
   GL_BindTextureSlot(param_1);
   // ── BUG-FIX 2026-04-27: local_ac/_a8/_a4 son 3 variables locales separadas;
-  // MSVC no garantiza layout contiguo. Pasar &local_ac a FUN_004fa170 (que
+  // MSVC no garantiza layout contiguo. Pasar &local_ac a Vector_Transform (que
   // escribe 3 floats consecutivos) puede dejar TPos[1]/TPos[2] en memoria
   // unrelated → sprite quad corner depth basura → sprites invisibles o
   // mal-clipeados. Usamos un array TPos_buf[3] contiguo y copiamos a las vars.
   float TPos_buf[3];
-  FUN_004fa170(param_2,(float *)&DAT_083a4140, TPos_buf);
+  Vector_Transform(param_2,(float *)&DAT_083a4140, TPos_buf);
   local_ac = TPos_buf[0];
   local_a8 = TPos_buf[1];
   *(float*)&local_a4 = TPos_buf[2];
@@ -156,11 +156,11 @@ FUN_00511d00(int param_1,float *param_2,float param_3,float param_4,float *param
     local_6c[0] = 0.0f;
     local_6c[1] = 0.0f;
     local_6c[2] = param_6;
-    FUN_004f9db0(local_6c,local_30);
+    Matrix_BuildFromEuler(local_6c,local_30);
     iVar1 = 0;
     do {
       pfVar4 = (float *)((int)local_60 + iVar1);
-      FUN_004fa0b0((float *)((int)rotOffsets + iVar1),local_30,pfVar4);
+      Vector_Rotate((float *)((int)rotOffsets + iVar1),local_30,pfVar4);
       iVar2 = iVar1 + 0xc;
       *pfVar4 = local_ac + *pfVar4;                        // + centerX
       *(float *)((int)local_60 + iVar1 + 4) = local_a0 + *(float *)((int)local_60 + iVar1 + 4);  // + centerY

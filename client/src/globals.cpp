@@ -480,7 +480,7 @@ DWORD    DAT_055c9b70  = 0;
 DWORD    DAT_055c9b74  = 0;
 // _DAT_055c9b74 = g_fScreenRate_y (overlaps DAT_055c9b74 as float)
 DWORD    DAT_055c9b80  = 0;
-// DAT_055c9bac defined in Config_Load.cpp as char[12]
+// ConfigLoginVersion (IDA: DAT_055c9bac) defined in Config_Load.cpp as char[12]
 // HashTable obfuscation. Original binary has a real hash-table object at
 // 0x055c9bc8..0x055c9bd4 (contiguous). 40+ inlined callers deref the vtable
 // at offset +0xC, and insert/lookup helpers read capacity at offset +0xC from
@@ -647,12 +647,14 @@ char     DAT_05826d33  = 0;
 DWORD    DAT_05826d78  = 0;
 DWORD    DAT_05826dc8  = 0;
 DWORD    DAT_05826df4  = 0;
-DWORD    DAT_05826e04  = 0;
+// IDA: DAT_05826e04
+DWORD    FpsWindowStartTimeMs  = 0;
 int      DAT_05826e08  = 0;  // WorldTime / g_AnimTick
 float    g_AttackEffectMatrix_04D[3][4] = {};
 float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};
-DWORD    DAT_05826e0c  = 0;
+// IDA: DAT_05826e0c
+DWORD    FpsTimerInitialized  = 0;
 DWORD    DAT_05826e10  = 0;
 // BoneQuaternion @ 0x05826E18 — scratch de cuaterniones por hueso que llena
 // BMD_Animation (0x440060 L157-166: `(char *)&unk_5826E18 + 16 * boneIdx`).
@@ -741,7 +743,7 @@ DWORD    DAT_07abf5e8  = 0;
 // Particle pool — 3000 slots × 0x70 (112) bytes = 336000 bytes total.
 // Original binary: 0x07abf5f0..0x07b11670 = 0x52080 bytes. /0x70 = 47999 slots.
 // Pero MoveParticles_stub itera 3000 slots; usamos ese tamaño que ya existe en stubs.
-// Antes era 1 byte → CreateParticle (FUN_00475220) tenía un overflow guard que
+// Antes era 1 byte → CreateParticle (Particle_Spawn) tenía un overflow guard que
 // retornaba 0 inmediatamente → NUNCA spawneaba lightning ELS=10/11, fire/smoke
 // effects, weather particles, etc. — todo silenciado.
 char     DAT_07abf5f0[3000 * 0x70] = {0};   // particle pool base
@@ -1080,7 +1082,7 @@ DWORD    DAT_083a4278  = 0;  // MouseY
 DWORD    DAT_083a427c  = 0;  // MouseX
 DWORD    DAT_083a4280  = 0;  // viewport width
 // ── CameraRayOriginX..428c — camera world position (3 floats) ────────────────────
-// Camera_MouseRay (Camera_BuildMouseRay) escribe via FUN_004fa110(... &CameraRayOriginX) los
+// Camera_MouseRay (Camera_BuildMouseRay) escribe via Vector_InverseRotate(... &CameraRayOriginX) los
 // 3 floats consecutivos. DEBEN ser contiguos. Las definiciones en líneas 1318-
 // 1320 (_CameraRayOriginX..428c) ahora son referencias a este array para que las
 // lecturas via float (camPos, etc.) vean lo que Camera_MouseRay escribió.
@@ -1176,7 +1178,8 @@ DWORD    DAT_083a7c44  = 0;
 char     DAT_083a7c48  = 0;
 char     DAT_083a7c49  = 0;
 char     DAT_083a7c4a  = 0;
-char     DAT_083a7c4b  = 0;
+// IDA: DAT_083a7c4b
+char     CharSelectSceneInitialized = 0;
 char     DAT_083a7c4c  = 0;
 char     DAT_083a7c4d  = 0;
 DWORD    DAT_083a7c50  = 0;
@@ -1387,16 +1390,16 @@ float   _DAT_00552a38  = 200000.0f;
 float   _DAT_00552a3c  = 3.2f;
 float   _DAT_00552a40  = 0.0005f;
 
-// Mouse hover tick (FUN_004b0310)
+// Mouse hover tick (Mouse_UpdateHoverTargets)
 DWORD    DAT_080ab288  = 0;
 DWORD    DAT_080ab28c  = 0;
 float    DAT_083a4130  = 0.0f;
 float    DAT_083a4134  = 0.0f;
 float    DAT_083a4138  = 0.0f;
 int      DAT_07e11d5c  = 0;
-// Hover targets: -1 = none. Mouse_Hover (FUN_004b0310) resets each frame to -1
+// Hover targets: -1 = none. Mouse_Hover (Mouse_UpdateHoverTargets) resets each frame to -1
 // before priority-probing. En login/char-select Mouse_Hover no corre, así que
-// el valor inicial debe ser -1 para que RenderCursor (FUN_004bffa0) muestre
+// el valor inicial debe ser -1 para que RenderCursor (Cursor_Render) muestre
 // el cursor arrow por defecto en vez del item-cursor (bitmap 5 = mano abierta).
 int      SelectedItem       = -1;  // DAT_00559c48
 int      SelectedNpc        = -1;  // DAT_00559c4c
@@ -1607,7 +1610,7 @@ char     param_2_07d69078  = 0;
 
 // ── Pre-compile missing globals (found by diff scan) ─────────────────────────
 float    _DAT_0055264c = 2.0f;
-float    _DAT_005528a0 = 0.0f;
+float    FloatZero = 0.0f;
 float    _DAT_005529fc = 18.0f;
 char     DAT_00558128[256]  = {};   // debug log format/data block
 char     DAT_0055a7c4  = 1;         // compressed-assets flag (alias: g_tex_ext_mode); 1=Data mode (plain Data\ folder, no pak)
@@ -1784,11 +1787,11 @@ int     DAT_083a42f0 = 0;
 float   _DAT_00552580 = 0.0f;
 float   _DAT_00552850 = 400.0f;
 float   _DAT_00552878 = 80.0f;
-float   _DAT_00552ce8 = 0.017453292f;  // π/180
+float   Math_DegreesToRadians = 0.017453292f;  // π/180
 float   _DAT_00552ce0 = 0.5f;          // half-angle factor for EulerToQuat (FUN_004fa1d0).
                                        // IDA sub_4FA1D0 shows literal `a1[k] * 0.5` — quaternion
                                        // half-angle. Input Euler angles are already in RADIANS
-                                       // (AngleMatrix path uses _DAT_00552ce8=π/180, different const).
+                                       // (AngleMatrix path uses Math_DegreesToRadians=π/180, different const).
                                        // Previously set to π/180 by mistake, which made every bone
                                        // rotation ≈ 0 → characters rendered with wrong orientation.
 float   _DAT_00552cf0 = 1.0f;          // 1.0 (quaternion normalization)
@@ -2007,13 +2010,15 @@ float   _DAT_005529ac  = -2.0f;
 
 // ── Timer globals ─────────────────────────────────────────────────────────────
 DWORD   DAT_05826e14   = 0;
-DWORD   DAT_05826df0   = 0;
+// IDA: DAT_05826df0
+DWORD   FrameTimeCurrentMs   = 0;
 float   _DAT_005528a8  = 0.001f;  // 1/1000 ms-to-s
 float   _DAT_00552898  = 5.0f;    // 5.0 second FPS window
 // _DAT_00552890 — defined above (float, line 80)
 DWORD   DAT_05826e00   = 0;
 float   _DAT_0055979c  = 0.0f;    // delta time per frame
-DWORD   DAT_05826dfc   = 0;
+// IDA: DAT_05826dfc
+DWORD   FrameTimePreviousMs   = 0;
 float   _DAT_05826df8  = 0.0f;    // smoothed FPS value
 
 // ── Music.cpp globals ─────────────────────────────────────────────────────────
@@ -2175,7 +2180,7 @@ BYTE    DAT_0055984c[9] = {};  // bone index table for glitter effect
 // de chat proyectado a +40. Ver DAT_07e016f8 más abajo. La declaración vieja
 // (26 slots sueltos) convivía con `DAT_07e016f8` como char de 1 byte, y
 // CreateChat caminaba ESE char con stride 596 → AV.
-// Key-state table para FUN_0047ec20 (PressKey / Key_IsJustPressed).
+// Key-state table para Input_IsKeyJustPressed (PressKey / Key_IsJustPressed).
 // La función indexa como `*(DWORD*)((char*)&DAT_07e118ec + vkey*4)`, o sea
 // 256 entradas DWORD (1024 bytes) — una por código VK. En IDA es una tabla
 // al símbolo dword_7E118EC. Si se deja como DWORD single, cualquier tecla

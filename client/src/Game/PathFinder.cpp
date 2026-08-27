@@ -811,5 +811,5 @@ void __cdecl PathContext_Create(void)
 }
 
 // ZzzAI::InitPath (0x0043F2D0) NO va aca: ya estaba portada, y correctamente,
-// en stubs_externs.cpp (FUN_0043f2d0). La llama FUN_0050f690 (World_Init) desde
+// en stubs_externs.cpp (PathFinder_ResetContext). La llama FUN_0050f690 (World_Init) desde
 // Scene_Intro, igual que en el binario. Definirla de nuevo aca daba LNK2005.

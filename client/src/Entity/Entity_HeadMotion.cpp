@@ -33,7 +33,7 @@ void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
     float angle = ((CreateAngleFn)&FUN_0043e050)(oX, oY, tX, tY);
 
     // FarAngle(oFacing, angle, 1) — angular distance
-    double deltaAngle = (double)FUN_0043e370(oFacing, angle, '\x01');
+    double deltaAngle = (double)Angle_GetDifference(oFacing, angle, '\x01');
 
     float* headTarget = (float*)(o + 0x34);  // o->HeadTargetAngle[3]
 

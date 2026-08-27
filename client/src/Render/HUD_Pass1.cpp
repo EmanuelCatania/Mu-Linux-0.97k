@@ -357,14 +357,14 @@ void RenderMainFrameWindow_(void)
 
     // ── Anti-tamper #1: desencripta CharacterMachine en la primera referencia ──
     // Port 1:1 del bloque de hash-table intercalado de IDA. El bucket se encuentra
-    // vía FUN_004041e0 (HashTable::GetIndex); nuestra implementación en
+    // vía HashTable_GetIndex (IDA: FUN_004041e0); nuestra implementación en
     // stubs.cpp:16227 devuelve -1 porque la tabla está vacía por defecto —
     // lo que hace que todo este bloque degrade a "insertar una entrada nueva con
     // ref-count=1 y saltear el desencriptado XOR". Cuando el motor pueble
     // dword_55C9BC8 como corresponde, la estructura coincide byte a byte con IDA.
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v6 = FUN_004041e0(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
+        UINT  v6 = HashTable_GetIndex(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
         if (v6 != 0xFFFFFFFFu && DAT_055c9bd4) {
             // Encontrado: toma el puntero al valor del array de valores
             // (dword_55C9BCC[v6]) e incrementa su byte de ref-count [+1412].
@@ -422,7 +422,7 @@ void RenderMainFrameWindow_(void)
     // this no-ops, matching IDA's "table full" error-report fallback.
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v12 = FUN_004041e0(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
+        UINT  v12 = HashTable_GetIndex(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
         if (v12 != 0xFFFFFFFFu && DAT_055c9bd4) {
             BYTE* v13 = *(BYTE**)((BYTE*)DAT_055c9bcc + 4 * v12);
             if (v13) {

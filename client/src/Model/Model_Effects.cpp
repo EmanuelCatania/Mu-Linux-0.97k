@@ -1,4 +1,4 @@
-// Model_LoadEffects @ 0x00508d10
+// IDA: FUN_00508d10 @ 0x00508d10 — Model_AssignItemTexturePrefixes
 // Binds texture paths to item/skill model slots using FUN_00505c80
 // (Model_LoadTextures).  Covers all equipment slots (0x1a1-0x3bd range)
 // and skill slots (0x333).  Slot 500 is initialised as the texture-slot base.
@@ -8,7 +8,8 @@
 #include "globals.h"
 #include "functions.h"
 
-void __cdecl FUN_00508d10(void)
+// IDA: FUN_00508d10
+void __cdecl Model_AssignItemTexturePrefixes(void)
 {
     // Initialise texture base slot 500
     FUN_00505bd0(500);

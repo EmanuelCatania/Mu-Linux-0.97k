@@ -1,5 +1,5 @@
 // Party_NameMatch.cpp
-// FUN_004afb00 @ 0x004afb00
+// IDA: FUN_004afb00 @ 0x004afb00
 //
 // Party_MatchEntityNames — matches party slot names to live entity indices.
 //
@@ -13,7 +13,8 @@
 
 #include "stdafx.h"
 
-void __cdecl FUN_004afb00(void)
+// IDA: FUN_004afb00
+void __cdecl Party_MatchEntityNames(void)
 {
     // sub_4AFB00 scans the 400-entry CharactersClient array (0x394 bytes
     // per entry), not the address of the DAT_07abf5d0 pointer variable.

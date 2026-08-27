@@ -28,7 +28,7 @@ void BMD_SkinUpdate(void)
 
             if (*psVar16 == -1) {
                 // Root bone: apply global rotation only
-                FUN_004f9db0(&local_48, pfVar14 - 0xc);
+                Matrix_BuildFromEuler(&local_48, pfVar14 - 0xc);
                 FUN_004f9e90(&local_48, pfVar14);
                 // Copy pre-baked normal from source stream
                 float fVar2 = pfVar11[-600];
@@ -39,12 +39,12 @@ void BMD_SkinUpdate(void)
             } else {
                 // Child bone: build local matrix then combine with parent
                 int iBone = (int)*psVar16;
-                FUN_004f9db0(&local_48, local_30);
+                Matrix_BuildFromEuler(&local_48, local_30);
                 FUN_004f9f70((float *)(&DAT_055c4038 + iBone * 0x6c), local_30, pfVar14 - 0xc);
                 FUN_004f9e90(&local_48, local_30);
                 FUN_004f9f70(local_30, (float *)(&DAT_055c4068 + iBone * 0x6c), pfVar14);
                 // Transform normal by bone matrix, add bone world-space origin
-                FUN_004fa170(pfVar11 - 0x259, (float *)(&DAT_055c4038 + iBone * 0x6c), &local_3c);
+                Vector_Transform(pfVar11 - 0x259, (float *)(&DAT_055c4038 + iBone * 0x6c), &local_3c);
                 pfVar14[0xc] = local_3c + (&DAT_055c4098)[iBone * 0x1b];
                 pfVar14[0xd] = local_38  + (&DAT_055c409c)[iBone * 0x1b];
                 pfVar14[0xe] = local_34  + (&DAT_055c40a0)[iBone * 0x1b];
@@ -72,12 +72,12 @@ void BMD_SkinUpdate(void)
                 float local_44 = pfVar11[1] - (&DAT_055c409c)[iVar5 * 0x1b];
                 float local_40 = pfVar11[2] - (&DAT_055c40a0)[iVar5 * 0x1b];
                 // Transform position by bone rotation matrix
-                FUN_004fa170(&local_48, (float *)(&DAT_055c4068 + iVar5 * 0x6c), pfVar11);
+                Vector_Transform(&local_48, (float *)(&DAT_055c4068 + iVar5 * 0x6c), pfVar11);
                 // Transform normal (stored at +3..+5) by same bone rotation
                 local_48 = pfVar11[3];
                 local_44 = pfVar11[4];
                 local_40 = pfVar11[5];
-                FUN_004fa170(&local_48,
+                Vector_Transform(&local_48,
                              (float *)(&DAT_055c4068 + *(short *)((BYTE*)pfVar11 - 2) * 0x6c),
                              pfVar11 + 3);
                 // Normalize the output normal

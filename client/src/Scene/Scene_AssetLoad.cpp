@@ -5,10 +5,10 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_00510320 @ 0x00510320 — UI_LoadTextures (complete game asset loader)
+// IDA: FUN_00510320 @ 0x00510320 — Scene_LoadGameAssets
 // Loads: cursor TGAs (slots 2-10), interface JPGs (0xE6-0x101, 0x500-0x507),
 // effect JPGs/TGAs (0x47E-0x567), then invokes all model, data and sound preload routines.
-void __cdecl FUN_00510320(void) {
+void __cdecl Scene_LoadGameAssets(void) {
     CHAR local_64[100];
     // Cursor sprites
     FUN_00529bd0("Interface/Cursor.tga",          2,  0x2601, 0x2900, 0, '\x01');
@@ -107,8 +107,8 @@ void __cdecl FUN_00510320(void) {
     FUN_00529740("Effect/NSkill.jpg",     0x4fe, 0x2601, 0x2900, 0, '\x01');
     FUN_00529740("Effect/Flare02.jpg",    0x4e2, 0x2601, 0x2901, 0, '\x01');
     // Model loaders
-    FUN_00506170(); FUN_00507610(); FUN_005079d0();
-    FUN_00508d10(); FUN_0050b710(); FUN_0050eb80(); FUN_0050f030();
+    Model_LoadPlayerAndItemMeshes(); Model_LoadPlayerEquipmentTextures(); Model_LoadItemMeshes();
+    Model_AssignItemTexturePrefixes(); Model_LoadSkillEffectAssets(); UI_LoadInterfaceTextures(); Sound_LoadGameSamples();
     // Data/BMD loaders (locale-sensitive)
     if (DAT_0055a7c4 == '\0') {
         crt_sprintf(local_64, "Data2/Local/item_%s.txt", (char*)DAT_0055a7a4);
@@ -152,6 +152,6 @@ void __cdecl FUN_00510320(void) {
     FUN_00404a10(0x25, "Data\\Sound\\iRepair.wav",       1, '\0');  // 37
     FUN_00404a10(0x26, "Data\\Sound\\iWhisper.wav",      1, '\0');  // 38
 }
-// FUN_00511060 — implemented in src/Monster/Monster_Data.cpp
+// Monster_LoadStartupData (IDA: FUN_00511060) — implemented in src/Monster/Monster_Data.cpp
 // GL_CaptureScreenshot — implemented in src/Render/GL_State.cpp
 // GL_GetModelViewMatrix — implemented in src/Render/GL_State.cpp

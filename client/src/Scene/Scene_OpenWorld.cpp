@@ -120,13 +120,10 @@ void __cdecl FUN_0050e5a0(void) {
 // Resets font state, loads FontInput.tga (slot 0) and FontTest.tga (slot 1) as TGA,
 // then builds the font DIB (FUN_0050f5f0) and renderer (FUN_0040f570).
 void __cdecl FUN_0050f690(void) {
-    FUN_0043f2d0();
+    PathFinder_ResetContext();
     FUN_00529bd0("Interface/FontInput.tga", 0, 0x2600, 0x2900, 0, '\x01');
     FUN_00529bd0("Interface/FontTest.tga",  1, 0x2600, 0x2900, 0, '\x01');
     Font_CreateTextDib(DAT_055ca004);
     Font_CreateRenderer(DAT_055c9ff8, (int)lpData_055ca044, DAT_055ca004);
 }
-// FUN_0050fcf0 — implemented in src/Scene/Scene_Resources.cpp
-// FUN_0050ff10 — implemented in src/Scene/Scene_Resources.cpp
-// FUN_0050ff50 — implemented in src/Scene/Scene_Resources.cpp
-// FUN_005102c0 — implemented in src/Scene/Scene_Resources.cpp
+// Scene resource load/unload routines are implemented in src/Scene/Scene_Resources.cpp.

@@ -31,9 +31,9 @@
 //
 // API mapping IDA → nuestra:
 //   CreateSprite(type, pos, scale, color, owner, alpha, mode) → FUN_004795c0
-//   CreateJoint(type, p0, p1, color, flag, owner, scale, ?, mode) → FUN_0046d840
-//   Particle_Spawn(type, pos, size, color, flag, alpha, mode) → FUN_00475220
-//   TransformPosition(model, mat3x4, pos_in, pos_out, translate) → FUN_004409a0
+//   CreateJoint(type, p0, p1, color, flag, owner, scale, ?, mode) → Joint_Create
+//   Particle_Spawn(type, pos, size, color, flag, alpha, mode) → Particle_Spawn
+//   TransformPosition(model, mat3x4, pos_in, pos_out, translate) → BMD_TransformPosition
 //   sub_4553C0(model, type, bone, scale, color, owner) → FUN_004553c0
 //
 // Anti-tamper hash-table operations (líneas IDA 1290-1505) elididas — pure
@@ -155,9 +155,9 @@ static inline float GetPlayerActionPlaySpeed(int byteOffset) {
     return *(float*)((char*)actions + byteOffset);
 }
 
-// ── TransformPosition wrapper (IDA TransformPosition = nuestra FUN_004409a0) ─
+// ── TransformPosition wrapper (IDA TransformPosition = nuestra BMD_TransformPosition) ─
 static inline void TransformPos(void* model, float* boneMat, float* posIn, float* posOut) {
-    FUN_004409a0(model, boneMat, posIn, posOut, '\x01');
+    BMD_TransformPosition(model, boneMat, posIn, posOut, '\x01');
 }
 // IDA usa bone*48 (= 0x30) que es el stride normal. El indexado bone*16 (caso
 // 0x1D5 etc.) es matriz de 4 floats — distinto layout. Wrappers para ambos.
@@ -177,7 +177,7 @@ static inline float* BoneMat16(void* o, int bone) {
 static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
 {
     // 'model' = global BMD entry at DAT_05828d58 + 188*entity_type. Pasado a
-    // FUN_004409a0/TransformPos como ECX (this_) — usado para leer scale y
+    // BMD_TransformPosition/TransformPos como ECX (this_) — usado para leer scale y
     // calcular bbox. NO confundir con `entity_o` que tiene el bone buffer.
     void* model = (void*)(uintptr_t)((char*)(uintptr_t)DAT_05828d58
                                      + 188 * (int)*(short*)(o + 2));
@@ -241,13 +241,13 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             TransformPos(model, boneMat, WorldPosition, v248);
             WorldPosition[0] = 0.0f; WorldPosition[1] = -160.0f; WorldPosition[2] = -10.0f;
             TransformPos(model, boneMat, WorldPosition, TargetPosition);
-            FUN_0046d840(1250, v248, TargetPosition, (float*)((char*)o + 28), 4, o, Scalek, -1, 0);
+            Joint_Create(1250, v248, TargetPosition, (float*)((char*)o + 28), 4, o, Scalek, -1, 0);
             // Second joint: -10Y/28Z -> -145Y/18Z
             WorldPosition[0] = 0.0f; WorldPosition[1] = -10.0f; WorldPosition[2] = 28.0f;
             TransformPos(model, boneMat, WorldPosition, v248);
             WorldPosition[0] = 0.0f; WorldPosition[1] = -145.0f; WorldPosition[2] = 18.0f;
             TransformPos(model, boneMat, WorldPosition, TargetPosition);
-            FUN_0046d840(1250, v248, TargetPosition, (float*)((char*)o + 28), 4, o, Scalek, -1, 0);
+            Joint_Create(1250, v248, TargetPosition, (float*)((char*)o + 28), 4, o, Scalek, -1, 0);
             break;
         }
 
@@ -262,9 +262,9 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[0] = 0.0f; WorldPosition[1] = -133.0f; WorldPosition[2] = 7.0f;
             TransformPos(model, boneMat, WorldPosition, WorldPosition);
             float Scalem = Scalel * 20.0f + 20.0f;
-            FUN_0046d840(1254, v242, WorldPosition, (float*)((char*)o + 28), 10, 0, Scalem, -1, 0);
-            FUN_0046d840(1254, v242, WorldPosition, (float*)((char*)o + 28), 10, 0, Scalem, -1, 0);
-            FUN_0046d840(1254, v242, WorldPosition, (float*)((char*)o + 28), 10, 0, Scalem, -1, 0);
+            Joint_Create(1254, v242, WorldPosition, (float*)((char*)o + 28), 10, 0, Scalem, -1, 0);
+            Joint_Create(1254, v242, WorldPosition, (float*)((char*)o + 28), 10, 0, Scalem, -1, 0);
+            Joint_Create(1254, v242, WorldPosition, (float*)((char*)o + 28), 10, 0, Scalem, -1, 0);
             break;
         }
 
@@ -381,7 +381,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                 WorldPosition[1] = (float)(rand() % 20 - 10) - 90.0f;
                 WorldPosition[2] = (float)(rand() % 20 - 10);
                 TransformPos(model, boneMat, WorldPosition, v242);
-                FUN_00475220(1175, v242, (float*)((char*)o + 28), L2, 1, 1.0f, 0);
+                Particle_Spawn(1175, v242, (float*)((char*)o + 28), L2, 1, 1.0f, 0);
                 v160--;
             } while (v160);
             int v164 = 0;

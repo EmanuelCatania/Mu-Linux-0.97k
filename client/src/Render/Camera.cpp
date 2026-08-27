@@ -20,7 +20,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
 
     // Vec3_Transform output buffer.
     // BUG-FIX 2026-06-29: antes eran 3 locals SEPARADAS (`float local_78,
-    // local_74, local_70;`).  VectorIRotate (FUN_004fa110) escribe un float[3]
+    // local_74, local_70;`).  VectorIRotate (Vector_InverseRotate) escribe un float[3]
     // desde &local_78 asumiendo contigüidad (en el binario original están en
     // ebp-0x78/-0x74/-0x70, contiguas).  MSVC no garantiza ese layout con vars
     // sueltas → out[1]/out[2] caían en stack equivocado y wy/wz leían basura
@@ -29,7 +29,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     // CreateTerrainNormal.  Fix: array contiguo real.
     float out3[3];
 
-    // 5 frustum corners × 3 floats (contiguous, passed by pointer to FUN_004fa110)
+    // 5 frustum corners × 3 floats (contiguous, passed by pointer to Vector_InverseRotate)
     // Corner 0 = apex (at camera, origin in view space)
     // Corners 1–4 = near-plane corners: TL, TR, BR, BL
     float corners[15];
@@ -67,7 +67,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
 
     for (int i = 0; i < 5; i++)
     {
-        FUN_004fa110(&corners[i * 3], local_30, out3);
+        Vector_InverseRotate(&corners[i * 3], local_30, out3);
 
         // World corner = camera_pos + rotated_view_corner
         float wx = _DAT_083a42d4 + out3[0];
@@ -160,11 +160,11 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     // alejaba un poco caía del lado de afuera y se marcaba como no visible —
     // por eso desaparecían los nombres (y el modelo) de los items del suelo
     // sin estar realmente lejos.  Afecta a TODO lo que pasa por sub_4F9590.
-    FUN_004fa4d0(c0, c1, c2, plane0);
-    FUN_004fa4d0(c0, c2, c3, plane1);
-    FUN_004fa4d0(c0, c3, c4, plane2);
-    FUN_004fa4d0(c0, c4, c1, plane3);
-    FUN_004fa4d0(c3, c2, c1, plane4);
+    Triangle_ComputeNormal(c0, c1, c2, plane0);
+    Triangle_ComputeNormal(c0, c2, c3, plane1);
+    Triangle_ComputeNormal(c0, c3, c4, plane2);
+    Triangle_ComputeNormal(c0, c4, c1, plane3);
+    Triangle_ComputeNormal(c3, c2, c1, plane4);
 
     // Store plane normals to globals (read by Frustum_IsVisible)
     DAT_0838b7c4 = plane0[0]; DAT_0838b7c8 = plane0[1]; DAT_0838b7cc = plane0[2];
@@ -206,8 +206,8 @@ void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
     float view_dir[3] = { view_x, view_y, view_z };
 
     // Transform to world space using stored view matrix
-    FUN_004fa110(cam_fwd_neg, (float*)&DAT_083a4140, (float*)&CameraRayOriginX);
-    FUN_004fa110(view_dir,    (float*)&DAT_083a4140, out_ray);
+    Vector_InverseRotate(cam_fwd_neg, (float*)&DAT_083a4140, (float*)&CameraRayOriginX);
+    Vector_InverseRotate(view_dir,    (float*)&DAT_083a4140, out_ray);
 
     out_ray[0] += Ff(CameraRayOriginX);
     out_ray[1] += Ff(CameraRayOriginY);
@@ -226,7 +226,7 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
     float angles[3] = { 0.0f, 0.0f, 45.0f };  // fixed roll=45°
     float rot_mat[12];
 
-    FUN_004f9db0(angles, rot_mat);  // build rotation from euler
+    Matrix_BuildFromEuler(angles, rot_mat);  // build rotation from euler
 
     // Transform the 4 near corners (skipping apex at index 0)
     float corners_world[4][3];
@@ -240,7 +240,7 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
     for (int i = 0; i < 4; i++)
     {
         float out[3];
-        FUN_004fa0b0(near_corners[i], rot_mat, out);
+        Vector_Rotate(near_corners[i], rot_mat, out);
         corners_world[i][0] = out[0] + cam_pos[0];
         corners_world[i][1] = out[1] + cam_pos[1];
         corners_world[i][2] = out[2] + cam_pos[2];
@@ -327,7 +327,7 @@ void __cdecl FUN_004fa5c0(int param_1,int param_2,int param_3,int param_4)
 //
 // ── BUG-FIX 2026-04-26 ────────────────────────────────────────────────────────
 // El decompile original tenía:
-//   FUN_004fa170(param_1, mat, local_c);
+//   Vector_Transform(param_1, mat, local_c);
 //   lVar1 = __ftol();   *param_2 = ViewportCenterX - lVar1;
 //   lVar1 = __ftol();   *param_3 = lVar1 + ViewportCenterY;
 // Ghidra perdió la aritmética FPU entre la transformación y __ftol — el código
@@ -347,7 +347,7 @@ void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_
   // 2D ortho (necesario para los name labels del char-select que se renderan
   // tras el `glPopMatrix` y `BeginBitmap`).
   float TPos[3];
-  FUN_004fa170(param_1, (float*)&DAT_083a4140, TPos);
+  Vector_Transform(param_1, (float*)&DAT_083a4140, TPos);
 
   // Perspective divide (eye-space → NDC → window pixels)
   if (TPos[2] == 0.0f) { *param_2 = -1000; *param_3 = -1000; return; }

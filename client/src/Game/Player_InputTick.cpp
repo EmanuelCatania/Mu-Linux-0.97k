@@ -321,11 +321,11 @@ static void HUD_HotkeyTick(void)
 
     // Cada llamada a Key_IsJustPressed tiene efectos secundarios de detección por flanco, así que
     // capturamos los resultados antes de combinarlos (V o I invierten el inventario).
-    int kC = FUN_0047ec20(0x43); // 'C'  Character info
-    int kV = FUN_0047ec20(0x56); // 'V'  Inventory (alt)
-    int kI = FUN_0047ec20(0x49); // 'I'  Inventory
-    int kG = FUN_0047ec20(0x47); // 'G'  Guild
-    int kP = FUN_0047ec20(0x50); // 'P'  Party
+    int kC = Input_IsKeyJustPressed(0x43); // 'C'  Character info
+    int kV = Input_IsKeyJustPressed(0x56); // 'V'  Inventory (alt)
+    int kI = Input_IsKeyJustPressed(0x49); // 'I'  Inventory
+    int kG = Input_IsKeyJustPressed(0x47); // 'G'  Guild
+    int kP = Input_IsKeyJustPressed(0x50); // 'P'  Party
 
     // Toggle pattern matches IDA Chat_InputTick (sub_4B14F0):
     //   tecla C → si CharacterOpened: 0; si no: 1 (con el paquete de tab de clase).
@@ -432,7 +432,7 @@ static void HUD_HotkeyTick(void)
     }
 }
 
-// FUN_004acef0 — Player_InputTick (0x004acef0, 1688 lines)
+// IDA: FUN_004acef0 — Player_InputTick (0x004acef0, 1688 lines)
 //
 // Procesador de input del jugador por frame. Se llama desde el camino de render del HUD/UI en cada frame.
 // Responsibilities:
@@ -554,7 +554,8 @@ static void SendNpcTalkRequest(WORD npcEntityId)
     DbgLogPublic(ab);
 }
 
-void __cdecl FUN_004acef0(void)
+// IDA: FUN_004acef0
+void __cdecl Player_ProcessInput(void)
 {
     // 2026-04-30: el procesamiento de hotkeys de UI va PRIMERO, para que los toggles funcionen incluso
     // cuando los gates de abajo saldrían temprano (p.ej. durante un cooldown).
@@ -703,7 +704,7 @@ void __cdecl FUN_004acef0(void)
                 FUN_00443930((int)ent);
             }
             if (!isIdle) {
-                unsigned int moveOk = FUN_0043ea20(ent, '\x01');
+                unsigned int moveOk = Entity_AdvancePath(ent, '\x01');
                 if ((char)moveOk == '\0') {
                     FUN_00454ba0((int)ent);
                 } else {
@@ -1509,10 +1510,10 @@ void __cdecl FUN_004acef0(void)
                     // 2026-05-07: simplified — siempre pathfind. Si target ya
                     // está en range, pathfind devuelve path corto/vacío y el
                     // walker llega rápido. Si está lejos, walker walks. Antes
-                    // se gateaba por `pathOk = FUN_004830b0(...)`; si ese
+                    // se gateaba por `pathOk = Path_IsLineClear(...)`; si ese
                     // helper retornaba 0, nada se hacía Y el secondary tick
                     // disparaba Action() en place sin movimiento.
-                    unsigned int ok2 = FUN_0043f3e0(srcX, srcY,
+                    unsigned int ok2 = Path_FindRoute(srcX, srcY,
                                                      dstX, dstY,
                                                      ent + 0x354, 0.0f);
                     if ((char)ok2 != '\0') {
@@ -1575,7 +1576,7 @@ void __cdecl FUN_004acef0(void)
                     DAT_07e016c0 = (DWORD)dstX;
                     DAT_07e016c4 = (DWORD)dstY;
 
-                    unsigned int ok = FUN_0043f3e0(srcX, srcY,
+                    unsigned int ok = Path_FindRoute(srcX, srcY,
                                                     dstX, dstY,
                                                     ent + 0x354, 0.0f);
                     if ((char)ok == '\0') {
@@ -1634,7 +1635,7 @@ void __cdecl FUN_004acef0(void)
                     }
                 }
 
-                unsigned int ok = FUN_0043f3e0(srcX, srcY,
+                unsigned int ok = Path_FindRoute(srcX, srcY,
                                                 dstX, dstY,
                                                 ent + 0x354, 0.0f);
                 if ((char)ok == '\0') {
@@ -1838,7 +1839,7 @@ void __cdecl FUN_004acef0(void)
                                 terrAttr, (int)DAT_07e11d64);
                               DbgLogPublic(d); }
 
-                            unsigned int ok = FUN_0043f3e0(srcX, srcY,
+                            unsigned int ok = Path_FindRoute(srcX, srcY,
                                                             DAT_07e016c0, DAT_07e016c4,
                                                             ent + 0x354, 0.0f);
                             { char d[80]; wsprintfA(d,
@@ -1882,7 +1883,7 @@ void __cdecl FUN_004acef0(void)
                 int srcX = *(int*)(ent + 0x388);
                 int srcY = *(int*)(ent + 0x38c);
 
-                unsigned int ok = FUN_0043f3e0(srcX, (int)(float)srcY,
+                unsigned int ok = Path_FindRoute(srcX, (int)(float)srcY,
                                                 DAT_07e016c0, DAT_07e016c4,
                                                 ent + 0x354, 0.0f);
                 if ((char)ok == '\0') {

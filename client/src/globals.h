@@ -438,7 +438,7 @@ extern float  _DAT_055c9b70;
 extern DWORD   DAT_055c9b74;
 extern float  _DAT_055c9b74;   // g_fScreenRate_y
 extern DWORD   DAT_055c9b80;
-extern char    DAT_055c9bac[12]; // config.ini [LOGIN] Version string
+extern char    ConfigLoginVersion[12]; // IDA: DAT_055c9bac — config.ini [LOGIN] Version string
 // Contexto de la ofuscación por HashTable — buffer contiguo (el binario original tiene el
 // 4 fields physically contiguous at 0x055c9bc8..0x055c9bd4). Callers do
 // `&DAT_055c9bc8 + 0xC` esperando la capacidad; las macros superponen el buffer para que
@@ -541,9 +541,9 @@ extern char    DAT_05826d33;
 extern DWORD   DAT_05826d78;
 extern DWORD   DAT_05826dc8;
 extern DWORD   DAT_05826df4;
-extern DWORD   DAT_05826e04;
+extern DWORD   FpsWindowStartTimeMs; // IDA: DAT_05826e04
 // DAT_05826e08 se declara más abajo, con su comentario, en la sección "Entity / animation tick globals"
-extern DWORD   DAT_05826e0c;
+extern DWORD   FpsTimerInitialized;  // IDA: DAT_05826e0c
 extern DWORD   DAT_05826e10;
 extern char    DAT_05826e18[200 * 0x10];   // BoneQuaternion scratch (200 huesos x 16B)
 // DAT_05828d58 declared below in "Model data table" section
@@ -977,7 +977,7 @@ extern DWORD   DAT_083a4278;
 extern DWORD   DAT_083a427c;
 extern DWORD   DAT_083a4280;   // viewport width (pixels)
 // CameraRayOriginX_arr — 3-DWORD storage para camera world position (escrito por
-// Camera_MouseRay vía FUN_004fa110(...&CameraRayOriginX)). _CameraRayOriginX..428c son
+// Camera_MouseRay vía Vector_InverseRotate(...&CameraRayOriginX)). _CameraRayOriginX..428c son
 // aliases float al mismo storage.
 extern DWORD   CameraRayOriginX_arr[3];
 extern DWORD&  CameraRayOriginX;       // DAT_083A4284
@@ -1090,7 +1090,7 @@ extern DWORD   DAT_083a7c44;
 extern char    DAT_083a7c48;   // connection-check-enable flag (byte, NO DWORD)
 extern char    DAT_083a7c49;   // Scene_Login init flag
 extern char    DAT_083a7c4a;   // Scene_Loading init flag
-extern char    DAT_083a7c4b;
+extern char    CharSelectSceneInitialized; // IDA: DAT_083a7c4b
 extern char    DAT_083a7c4c;
 extern char    DAT_083a7c4d;
 extern DWORD   DAT_083a7c50;
@@ -1523,7 +1523,7 @@ extern char    param_2_07d69078;       // own kills format string ("%d")
 
 // Game math constants missing from 0x005524xx–0x00552dxx section:
 extern float  _DAT_0055264c;   // cursor offset constant (cursor draw X/Y subtract)
-extern float  _DAT_005528a0;   // float constant 0.0 (guard for division / degenerate-length check)
+extern float  FloatZero;   // float constant 0.0 (guard for division / degenerate-length check)
 extern float  _DAT_005529fc;   // cursor Y-effect offset (used in animated cursor draw)
 
 // Hash table / debug string (0x00558xxx):
@@ -1707,7 +1707,7 @@ extern int     DAT_083a42f0;   // screenshot counter (mod 10000)
 extern float   _DAT_00552580;  // 0.0f guard constant
 extern float   _DAT_00552850;  // particle proximity threshold (squared)
 extern float   _DAT_00552878;  // particle half-way distance
-extern float   _DAT_00552ce8;  // degrees-to-radians (π/180 = 0.017453f)
+extern float   Math_DegreesToRadians;  // degrees-to-radians (π/180 = 0.017453f)
 extern float   _DAT_00552ce0;  // half-angle factor 0.5 (used in FUN_004fa1d0 EulerToQuat; input already radians)
 extern float   _DAT_00552cf0;  // 1.0f (used in quaternion→matrix)
 extern float   _DAT_00552cf8;  // π/2 (used in SLERP degenerate case)
@@ -1956,13 +1956,13 @@ extern float   _DAT_005529ac;  // joint float constant
 
 // ── Timer globals ─────────────────────────────────────────────────────────────
 extern DWORD   DAT_05826e14;   // FPS counter B
-extern DWORD   DAT_05826df0;   // last frame timestamp
+extern DWORD   FrameTimeCurrentMs;   // IDA: DAT_05826df0
 extern float   _DAT_005528a8;  // 1/1000 ms-to-s scale
 extern float   _DAT_00552898;  // 5.0 second FPS window
 extern float   _DAT_00552890;  // delta-time scale
 extern DWORD   DAT_05826e00;   // FPS accumulator ring buffer
 extern float   _DAT_0055979c;  // delta time per frame
-extern DWORD   DAT_05826dfc;   // previous frame timestamp
+extern DWORD   FrameTimePreviousMs;  // IDA: DAT_05826dfc
 extern float   _DAT_05826df8;  // smoothed FPS value
 
 // ── Music.cpp globals ─────────────────────────────────────────────────────────

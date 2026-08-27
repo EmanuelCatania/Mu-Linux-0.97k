@@ -48,7 +48,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // FUN_00475170 @ 0x00475170 — ItemDrop_SetupRenderRef(slot_ptr)
 // Resolves the entity reference at slot+0x3c, copies its world position to the
 // model render slot, selects the target bone via equip-flags, then calls
-// FUN_004409a0 to animate/position it.
+// BMD_TransformPosition to animate/position it.
 void __cdecl FUN_00475170(int param_1) {
     int iVar1 = *(int*)(param_1 + 0x3c);
     float local_c[3] = {0.0f, 0.0f, 0.0f};
@@ -60,7 +60,7 @@ void __cdecl FUN_00475170(int param_1) {
     *(unsigned int*)((int)this_ + 0x74) = *(unsigned int*)(iVar1 + 0x18);
     uint uVar2 = *(uint*)(param_1 + 8) & 0x80000001;
     if ((int)uVar2 < 0) uVar2 = (uVar2 - 1 | 0xfffffffe) + 1;
-    FUN_004409a0(this_,
+    BMD_TransformPosition(this_,
         (float*)((unsigned int)(*(byte*)(DAT_07abf5d8 + 0x274 + uVar2 * 0x18)) * 0x30
                  + *(int*)(iVar1 + 0x114)),
         local_c,
@@ -311,7 +311,7 @@ void __cdecl FUN_00449840(int param_1, int param_2, int param_3)
 }
 // FUN_004f8bb0 @ 0x004F8BB0 — Particle_DrawBillboard: draws a tiled billboard quad in world space.
 // Loads texture (param_1), sets GL color, computes tile grid from scale/position,
-// transforms each tile corner via FUN_004fa0b0 (bone matrix), calls FUN_004f8740 per tile.
+// transforms each tile corner via Vector_Rotate (bone matrix), calls FUN_004f8740 per tile.
 // Uses __ftol for int grid coords from float positions.
 void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float *col, float angle, float alpha)
 {
@@ -322,7 +322,7 @@ void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float
 
     float rot_data[3] = { 0.0f, 0.0f, angle };
     float rot_mat[12];
-    FUN_004f9db0(rot_data, rot_mat);
+    Matrix_BuildFromEuler(rot_data, rot_mat);
     GL_BindTextureSlot(type);
 
     float cx = x * _DAT_00552594;
@@ -354,7 +354,7 @@ void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float
             };
             for (int k = 0; k < 4; k++) {
                 float out[3];
-                FUN_004fa0b0(inp[k], rot_mat, out);
+                Vector_Rotate(inp[k], rot_mat, out);
                 corners[k][0] = xScale * out[0] + _DAT_00552504;
                 corners[k][1] = out[1] + _DAT_00552504;
                 corners[k][2] = out[2];

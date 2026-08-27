@@ -49,12 +49,12 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Converts Euler angles (in game units × π/180) to 3×4 rotation matrix.
 // Row-major: out[0..2]=X-row, out[4..6]=Y-row, out[8..10]=Z-row; out[3,7,11]=0.
 void __cdecl FUN_004f9e90(float *param_1, float *param_2) {
-    float sz = sinf(param_1[2] * _DAT_00552ce8);
-    float cz = cosf(param_1[2] * _DAT_00552ce8);
-    float sy = sinf(param_1[1] * _DAT_00552ce8);
-    float cy = cosf(param_1[1] * _DAT_00552ce8);
-    float sx = sinf(param_1[0] * _DAT_00552ce8);
-    float cx = cosf(param_1[0] * _DAT_00552ce8);
+    float sz = sinf(param_1[2] * Math_DegreesToRadians);
+    float cz = cosf(param_1[2] * Math_DegreesToRadians);
+    float sy = sinf(param_1[1] * Math_DegreesToRadians);
+    float cy = cosf(param_1[1] * Math_DegreesToRadians);
+    float sx = sinf(param_1[0] * Math_DegreesToRadians);
+    float cx = cosf(param_1[0] * Math_DegreesToRadians);
     param_2[3]  = 0.0f;
     param_2[7]  = 0.0f;
     param_2[11] = 0.0f;
@@ -178,8 +178,8 @@ long double   __cdecl FUN_005129f0(float v)                                  { r
 // then adds the result to pos[0..2].
 void __cdecl FUN_0043e570(float *param_1, float *param_2, float *param_3) {
     float out[3], mat[12];
-    FUN_004f9db0(param_2, mat);
-    FUN_004fa0b0(param_3, mat, out);
+    Matrix_BuildFromEuler(param_2, mat);
+    Vector_Rotate(param_3, mat, out);
     param_1[0] += out[0];
     param_1[1] += out[1];
     param_1[2] += out[2];

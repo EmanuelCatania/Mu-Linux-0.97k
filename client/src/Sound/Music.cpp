@@ -162,7 +162,7 @@ void FUN_00412710(void) {}
 
 // ── FUN_00412780 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00412780 @ 0x00412780 (10 bytes) — cleanup hash class
-void FUN_00412780(void) { FUN_00406bd0((void *)0x055ca0a0); }
+void FUN_00412780(void) { PacketCipher_Initialize((void *)0x055ca0a0); }
 
 // ── FUN_00412790 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00412790 @ 0x00412790 (12 bytes)

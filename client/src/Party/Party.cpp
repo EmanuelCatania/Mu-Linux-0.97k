@@ -25,16 +25,17 @@
 //       FUN_004fa5c0(g_GameSubState, 0x24, 0, 1)  — map zone transition
 //     Loop byte[6] count, stride 4 from byte[8]:
 //       byte[-1] = x1, byte[0] = y1, byte[1] = x2, byte[2] = y2
-//       FUN_004f6f30(x1, y1, x2-x1+1, y2-y1+1, byte[4], !(byte[5]))
+//       Terrain_UpdateTileAttributeRect (IDA: FUN_004f6f30)
+//       (x1, y1, x2-x1+1, y2-y1+1, byte[4], !(byte[5]))
 //         — update terrain attrib in rect (floor_id=byte[4], door_open=!byte[5])
 //
 //   byte[3] == 0x01 → Single tile update:
 //     Loop byte[6] count, stride 2 from byte[7]:
 //       byte[0] = tile_x, byte[1] = tile_y
-//       if byte[5]==0: FUN_004f6ef0(tile_x, tile_y, byte[4]) — clear tile attrib
-//       else:          FUN_004f6f10(tile_x, tile_y, byte[4]) — set tile attrib
+//       if byte[5]==0: Terrain_SetTileAttributeBits (IDA: FUN_004f6ef0)
+//       else:          Terrain_ClearTileAttributeBits (IDA: FUN_004f6f10)
 //
-//   FUN_004f6ef0 / FUN_004f6f10 / FUN_004f6f30 — terrain attrib write functions (Terrain.cpp)
+//   Terrain tile-attribute writers (IDA: FUN_004f6ef0 / FUN_004f6f10 / FUN_004f6f30).
 //
 // ── PARTY KEEPALIVE (opcode 0x71, FUN_00433900) ──────────────────────────────
 //
@@ -99,7 +100,7 @@
 //        DAT_07eaa12c = packet[4..5] (short: guild ID or member count).
 //   When stage reaches 3 (packet[3]==2):
 //     Zeroes 64 bytes at DAT_07ea97c0 (guild entity pool).
-//     Calls FUN_0047ec60(0) to reset char-select.
+//     Calls Input_ClearState(0) to reset char-select.
 //     Sets _DAT_00559c94=0xC (login sub-state → CharSelectInit),
 //     clears DAT_00559c84/0x88, DAT_07e11d72/74, DAT_07eaa108.
 //     Sets DAT_07e11d73=1 (char-select flag D).
@@ -176,7 +177,7 @@ void ReceivePartyList97k(BYTE* pkt, int size)
         *(int*)(local + 32) = 0;              // cached entity status
     }
 
-    FUN_004afb00();
+    Party_MatchEntityNames();
 }
 
 
@@ -228,7 +229,7 @@ void Terrain_TileUpdate(BYTE* pkt)
             int x2 = entry[1],  y2 = entry[2];
             int w  = (x2 - x1) + 1;
             int h  = (y2 - y1) + 1;
-            FUN_004f6f30(x1, y1, w, h, pkt[4], !pkt[5]);
+            Terrain_UpdateTileAttributeRect(x1, y1, w, h, pkt[4], !pkt[5]);
         }
     }
     else if (pkt[3] == 0x01)
@@ -240,9 +241,9 @@ void Terrain_TileUpdate(BYTE* pkt)
         {
             int tile_x = entry[0], tile_y = entry[1];
             if (pkt[5] == 0)
-                FUN_004f6ef0(tile_x, tile_y, pkt[4]);  // clear
+                Terrain_SetTileAttributeBits(tile_x, tile_y, pkt[4]);  // set
             else
-                FUN_004f6f10(tile_x, tile_y, pkt[4]);  // set
+                Terrain_ClearTileAttributeBits(tile_x, tile_y, pkt[4]);  // clear
         }
     }
 }
@@ -439,7 +440,7 @@ void Guild_MemberList(BYTE* pkt)
 // DAT_07eaa12c = pkt[4..5] (short: guild ID or member count)
 //
 // Stage==3 (pkt[3]==2): reset char-select
-//   Zero DAT_07ea97c0[0..63], call FUN_0047ec60(0)
+//   Zero DAT_07ea97c0[0..63], call Input_ClearState(0)
 //   Set _DAT_00559c94=0xC (CharSelectInit), clear various flags
 //   Set DAT_07e11d73=1
 //
@@ -459,7 +460,7 @@ void Guild_CharSelectResult(BYTE* pkt)
     {
         // Zero guild entity pool
         memset(DAT_07ea97c0, 0, sizeof(DAT_07ea97c0));
-        FUN_0047ec60(0);                // reset char select
+        Input_ClearState(0);                // reset char select
         _DAT_00559c94 = 0xC;           // login sub-state → CharSelectInit
         DAT_00559c84  = 0;
         DAT_00559c88  = 1;

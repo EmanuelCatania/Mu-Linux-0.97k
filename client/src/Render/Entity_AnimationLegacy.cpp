@@ -243,7 +243,7 @@ void __cdecl FUN_00440060(void* this_, int param_1, float param_2, unsigned int 
                 float* parentMat;
                 if (parentIdx == -1) {
                     if (param_7 == '\0') {
-                        FUN_004f9db0((float*)((char*)this_ + 0x78), &DAT_06989c9c);
+                        Matrix_BuildFromEuler((float*)((char*)this_ + 0x78), &DAT_06989c9c);
                         if (param_8 != '\0') {
                             // BUG-FIX 2026-05-03 (cross-ref con 5.2 ZzzBMD.cpp:153-159):
                             // El IDA decompile mostraba solo 3 escalas de diagonales
@@ -293,13 +293,13 @@ void __cdecl FUN_00440060(void* this_, int param_1, float param_2, unsigned int 
 // param_2  = AABB min ptr (in), param_3 = AABB max ptr (in)
 // param_4  = AABB output ptr [12 floats: min.xyz, size.xyz, 3 zeros, size.w]
 // param_5  = if non-zero: also applies entity scale+offset (this+0x68/6c/70/74)
-// Uses _DAT_005597c8 scale flag: if != 1.0 → calls FUN_004fa0b0 (scaled transform).
+// Uses _DAT_005597c8 scale flag: if != 1.0 → calls Vector_Rotate (scaled transform).
 void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param_3,
                            float* param_4, char param_5) {
     // [0-2]=AABB min, [3-5]=AABB max / work dir, [6..8]=transformed dir.
     // In the Ghidra decompile local_54[7]/[8] appear as adjacent stack slots
     // local_38/local_34. A previous port declared those as separate floats, so
-    // FUN_004fa110 writing 3 floats at &local_54[6] overflowed past local_54's
+    // Vector_InverseRotate writing 3 floats at &local_54[6] overflowed past local_54's
     // 7-elem bound → /GS stack-cookie corruption. Keep them as one 9-elem array
     // and reference [7]/[8] directly where the Ghidra names appear.
     float local_54[9];
@@ -345,8 +345,8 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
         } else {
             local_54[3] = 1.3f; local_54[4] = 0.0f; local_54[5] = 2.0f;
         }
-        FUN_004f9db0((float*)((char*)this_ + 0x8c), local_30);
-        FUN_004fa110(local_54 + 3, local_30, local_54 + 6);
+        Matrix_BuildFromEuler((float*)((char*)this_ + 0x8c), local_30);
+        Vector_InverseRotate(local_54 + 3, local_30, local_54 + 6);
     }
     // init AABB for bounding-box mode
     if (DAT_07e11d30 == 2) {
@@ -412,13 +412,13 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
             short* vs = (short*)((char*)(vi * 0x10) + *(int*)(meshPtr + 0x10));
             float* pfDst = pfOut - 2;
             if (_DAT_005597c8 == _DAT_0055256c) {
-                FUN_004fa170((float*)(vs + 2), (float*)(*vs * 0x30 + param_1), pfDst);
+                Vector_Transform((float*)(vs + 2), (float*)(*vs * 0x30 + param_1), pfDst);
                 if (param_5 != '\0') {
                     float sc = *(float*)((char*)this_ + 0x68);
                     pfDst[0] *= sc; pfOut[-1] *= sc; *pfOut *= sc;
                 }
             } else {
-                FUN_004fa0b0((float*)(vs + 2), (float*)(*vs * 0x30 + param_1), pfDst);
+                Vector_Rotate((float*)(vs + 2), (float*)(*vs * 0x30 + param_1), pfDst);
                 pfDst[0]  = _DAT_005597c8 * pfDst[0]  + *(float*)(*vs * 0x30 + 0x0c + param_1);
                 pfOut[-1] = _DAT_005597c8 * pfOut[-1] + *(float*)(*vs * 0x30 + 0x1c + param_1);
                 *pfOut    = _DAT_005597c8 * *pfOut    + *(float*)(*vs * 0x30 + 0x2c + param_1);
@@ -461,7 +461,7 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
         for (int ni = 0; ni < normCount; ni++) {
             short* ns = (short*)(ni * 0x14 + *(int*)(meshPtr + 0x14));
             // VectorRotate(normal_src, boneMatrix, dst=normal buffer)
-            FUN_004fa0b0((float*)(ns + 2), (float*)(*ns * 0x30 + param_1), pfNrmBase);
+            Vector_Rotate((float*)(ns + 2), (float*)(*ns * 0x30 + param_1), pfNrmBase);
             if (*(char*)((char*)this_ + 0x44) != '\0') {
                 // dot(transformed_light_dir, transformed_normal):
                 // Ghidra local_38 == local_54[7] (Y), local_34 == local_54[8] (Z).
@@ -512,11 +512,11 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
     param_4[4]=param_4[5]=param_4[6]=0.0f;
     param_4[8]=param_4[9]=param_4[10]=0.0f;
 }
-// FUN_004409a0 — implemented in src/Math/Math_3D.cpp (Bone_TransformVertex)
-// FUN_004fa4d0 — implemented in src/Math/Math_3D.cpp
-// FUN_00475220 — implemented in src/Render/Particle_Spawn.cpp (Particle_Spawn)
+// BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformVertex)
+// Triangle_ComputeNormal — implemented in src/Math/Math_3D.cpp
+// Particle_Spawn — implemented in src/Render/Particle_Spawn.cpp (Particle_Spawn)
 // FUN_004795c0 — implemented in src/Render/Particle.cpp (Effect_Spawn, returns int)
-// FUN_0047ec20 — implemented in src/Input/Input.cpp
+// Input_IsKeyJustPressed — implemented in src/Input/Input.cpp
 // FUN_00480620 — UIChatLogWindow_AddText — implemented above as UIChatLogWindow_AddText
 // FUN_004f8ff0 — implemented in src/Terrain/Terrain_Utils.cpp
 // FUN_00529740 — implemented in src/Render/Texture/Texture.cpp (Texture_Load)

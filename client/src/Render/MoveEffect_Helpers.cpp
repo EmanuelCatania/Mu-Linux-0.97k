@@ -1,10 +1,10 @@
 // MoveEffect_Helpers.cpp
 // Helper functions called from FUN_00466AD0 (MoveEffect).
 //
-// FUN_004660f0 @ 0x004660F0  — Effect_SmokeBurst   (smoke + optional sparkle)
-// FUN_004661f0 @ 0x004661F0  — Effect_SmokeExplosion (int-coord variant)
-// FUN_00460c30 @ 0x00460C30  — Effect_LightningBurst (3 random lightning beams)
-// FUN_00465e60 @ 0x00465E60  — Effect_OnHitProximity (proximity hit fx by entity type)
+// Effect_SpawnSmokeBurst @ 0x004660F0  — Effect_SmokeBurst   (smoke + optional sparkle)
+// Effect_SpawnSmokeExplosion @ 0x004661F0  — Effect_SmokeExplosion (int-coord variant)
+// Effect_SpawnLightningBurst @ 0x00460C30  — Effect_LightningBurst (3 random lightning beams)
+// Effect_SpawnProximityHit @ 0x00465E60  — Effect_OnHitProximity (proximity hit fx by entity type)
 // FUN_00473d90 @ 0x00473D90  — Ring_ComputeOrbit    (Lissajous ring position calculator)
 //
 // NOTE: FUN_00466440 @ 0x00466440 — NOT implemented here.
@@ -15,13 +15,14 @@
 #include "stdafx.h"
 
 
-// FUN_004660f0 — Effect_SmokeBurst
+// Effect_SpawnSmokeBurst — Effect_SmokeBurst
 // Spawns 20 particles of type 0x497 (smoke/debris) at param_1 position,
 // offset upward by _DAT_00552878 in Z. If param_2 != 0, also spawns
 // a type 0x4bf (sparkle) particle at the same position.
 // param_1: world position float[3]
 // param_2: flag — non-zero = also emit sparkle
-void __cdecl FUN_004660f0(float *param_1, char param_2)
+// IDA: FUN_004660f0
+void __cdecl Effect_SpawnSmokeBurst(float *param_1, char param_2)
 {
   // 004660F0 (CreateBomb): preserve the original particle types, angles and
   // position offset. The older body below was a smoke approximation.
@@ -32,13 +33,13 @@ void __cdecl FUN_004660f0(float *param_1, char param_2)
     angle[0] = (float)(_rand() % 60 + 150);
     angle[1] = 0.0f;
     angle[2] = (float)(_rand() % 30);
-    FUN_00475220(1175, position, angle, light, 2, 1.0f, 0);
+    Particle_Spawn(1175, position, angle, light, 2, 1.0f, 0);
   }
   light[0] = 0.7f;
   light[1] = 0.7f;
   light[2] = 0.7f;
   if (param_2 != 0)
-    FUN_00475220(1215, position, angle, light, 0, 1.0f, 0);
+    Particle_Spawn(1215, position, angle, light, 0, 1.0f, 0);
   return;
 
 #if 0 // superseded approximation kept only as historical reference
@@ -64,7 +65,7 @@ void __cdecl FUN_004660f0(float *param_1, char param_2)
     local_24[3] = (float)(iVar1 % 0x3c + 0x96);  // size: 150-209
     iVar1 = _rand();
     local_10 = (float)(iVar1 % 0x1e);             // random float (0..29, unused by spawn)
-    FUN_00475220(0x497, &local_c, local_24 + 3, local_24, 2, 1.0f, 0);
+    Particle_Spawn(0x497, &local_c, local_24 + 3, local_24, 2, 1.0f, 0);
     iVar2 = iVar2 + -1;
   } while (iVar2 != 0);
 
@@ -72,20 +73,21 @@ void __cdecl FUN_004660f0(float *param_1, char param_2)
   local_24[1] = 0.7f;
   local_24[2] = 0.7f;
   if (param_2 != '\0') {
-    FUN_00475220(0x4bf, &local_c, local_24 + 3, local_24, 0, 1.0f, 0);
+    Particle_Spawn(0x4bf, &local_c, local_24 + 3, local_24, 0, 1.0f, 0);
   }
   return;
 #endif
 }
 
 
-// FUN_004661f0 — Effect_SmokeExplosion
+// Effect_SpawnSmokeExplosion — Effect_SmokeExplosion
 // Same as Effect_SmokeBurst but takes an integer-coordinate position array
 // (undefined4*) rather than float*. Spawns 20 type-0x497 particles.
 // If param_2 != 0, spawns a larger type-0x4c0 (white explosion) particle at scale 4.0.
 // param_1: world position int[3] (cast from float array by caller)
 // param_2: flag — non-zero = also emit white explosion
-void __cdecl FUN_004661f0(undefined4 *param_1, char param_2)
+// IDA: FUN_004661f0
+void __cdecl Effect_SpawnSmokeExplosion(undefined4 *param_1, char param_2)
 {
   // 004661F0: same bomb trail, with the 30-unit offset and 1216 explosion.
   float* input = (float*)param_1;
@@ -96,11 +98,11 @@ void __cdecl FUN_004661f0(undefined4 *param_1, char param_2)
     angle[0] = (float)(_rand() % 60 + 150);
     angle[1] = 0.0f;
     angle[2] = (float)(_rand() % 30);
-    FUN_00475220(1175, position, angle, light, 2, 1.0f, 0);
+    Particle_Spawn(1175, position, angle, light, 2, 1.0f, 0);
   }
   if (param_2 != 0) {
     angle[0] = angle[1] = angle[2] = 0.0f;
-    (void)FUN_00475220(1216, position, angle, light, 0, 4.0f, 0);
+    (void)Particle_Spawn(1216, position, angle, light, 0, 4.0f, 0);
   }
   return;
 
@@ -124,7 +126,7 @@ void __cdecl FUN_004661f0(undefined4 *param_1, char param_2)
     local_24[3] = (float)(iVar1 % 0x3c + 0x96);  // size: 150-209
     iVar1 = _rand();
     local_24[5] = (float)(iVar1 % 0x1e);
-    FUN_00475220(0x497, local_24 + 6, local_24 + 3, local_24, 2, 1.0f, 0);
+    Particle_Spawn(0x497, local_24 + 6, local_24 + 3, local_24, 2, 1.0f, 0);
     iVar2 = iVar2 + -1;
   } while (iVar2 != 0);
 
@@ -135,20 +137,21 @@ void __cdecl FUN_004661f0(undefined4 *param_1, char param_2)
   local_24[4] = 0.0f;
   local_24[5] = 0.0f;
   if (param_2 != '\0') {
-    FUN_00475220(0x4c0, local_24 + 6, local_24 + 3, local_24, 0, 4.0f, 0);
+    Particle_Spawn(0x4c0, local_24 + 6, local_24 + 3, local_24, 0, 4.0f, 0);
   }
   return;
 #endif
 }
 
 
-// FUN_00460c30 — Effect_LightningBurst
+// Effect_SpawnLightningBurst — Effect_LightningBurst
 // Spawns 3 lightning beam joints (type 0x4eb) from entity param_1 to random
 // directions. Each beam has a random horizontal angle (0-89 deg) and random
 // elevation (0-359 deg), transformed into world space via Matrix_FromEuler +
 // Matrix_TransformPoint. Used for electric/thunder death effects.
 // param_1: entity pointer (float* to entity struct at stride 0x394)
-void __cdecl FUN_00460c30(int param_1)
+// IDA: FUN_00460c30
+void __cdecl Effect_SpawnLightningBurst(int param_1)
 {
   int iVar1;
   int iVar2;
@@ -166,14 +169,14 @@ void __cdecl FUN_00460c30(int param_1)
     local_48[0] = (float)(iVar1 % 0x5a);   // horizontal angle 0-89 deg
     iVar1 = _rand();
     local_48[2] = (float)(iVar1 % 0x168);  // elevation 0-359 deg
-    FUN_004f9db0(local_48, local_3c + 3);  // build rotation matrix from Euler angles
-    FUN_004fa0b0(local_3c, local_3c + 3, position);  // transform beam endpoint to world
+    Matrix_BuildFromEuler(local_48, local_3c + 3);  // build rotation matrix from Euler angles
+    Vector_Rotate(local_3c, local_3c + 3, position);  // transform beam endpoint to world
     // Compute world endpoint relative to entity position
     position[0] = *(float *)(param_1 + 0x10) - position[0];
     position[1] = *(float *)(param_1 + 0x14) - position[1];
     position[2] = (*(float *)(param_1 + 0x18) - position[2]) + _DAT_00552908;
     // Spawn lightning joint: type=0x4eb, from entity pos, width 5.0, persistent
-    FUN_0046d840(0x4eb, position, (float *)(param_1 + 0x10), local_48,
+    Joint_Create(0x4eb, position, (float *)(param_1 + 0x10), local_48,
                  *(undefined4 *)(param_1 + 4),
                  *(int *)(param_1 + 0xfc), 5.0f, -1, 0);
     iVar2 = iVar2 + -1;
@@ -182,14 +185,15 @@ void __cdecl FUN_00460c30(int param_1)
 }
 
 
-// FUN_00465e60 — Effect_OnHitProximity
+// Effect_SpawnProximityHit — Effect_OnHitProximity
 // Checks if the entity's target (at +0xfc) is within _DAT_005524f0 distance.
 // If within range, spawns hit effects based on entity type (+0x02):
 //   0x00BF: spawns 2 random type 0xC5/0xC6 effects (physical hit variants)
 //   0x00D4: spawns 2 random type 0xD5/0xD6 effects + particle 0x4C4 + sound 0x30
 //   0x049C: spawns particle 0x498 at scale 6.0 (area-of-effect indicator)
 // param_1: entity pointer (int, base of entity struct)
-void __cdecl FUN_00465e60(int param_1)
+// IDA: FUN_00465e60
+void __cdecl Effect_SpawnProximityHit(int param_1)
 {
   float *pfVar1;
   short sVar2;
@@ -238,7 +242,7 @@ void __cdecl FUN_00465e60(int param_1)
             uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
           }
           // Random hit effect: type 0xC5 or 0xC6
-          FUN_00460dc0(uVar6 + 0xc5, pfVar8, pfVar9, pfVar10, pfVar11, pfVar12, pfVar13, pfVar14, bVar15);
+          Effect_Create(uVar6 + 0xc5, pfVar8, pfVar9, pfVar10, pfVar11, pfVar12, pfVar13, pfVar14, bVar15);
           iVar7 = iVar7 + -1;
         } while (iVar7 != 0);
       }
@@ -261,15 +265,15 @@ void __cdecl FUN_00465e60(int param_1)
             uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
           }
           // Random magic hit effect: type 0xD5 or 0xD6
-          FUN_00460dc0(uVar6 + 0xd5, pfVar8, pfVar9, pfVar10, pfVar11, pfVar12, pfVar13, pfVar14, bVar15);
-          FUN_00475220(0x4c4, pfVar1, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
+          Effect_Create(uVar6 + 0xd5, pfVar8, pfVar9, pfVar10, pfVar11, pfVar12, pfVar13, pfVar14, bVar15);
+          Particle_Spawn(0x4c4, pfVar1, (float *)(param_1 + 0x1c), (float *)(param_1 + 0xe8), 0, 1.0f, 0);
           iVar7 = iVar7 + -1;
         } while (iVar7 != 0);
         FUN_00404bc0(0x30, 0, 0);  // play sound 0x30 (magic hit sfx)
         return;
       }
       if (sVar2 == 0x49c) {  // entity type: area-of-effect skill
-        FUN_00475220(0x498, pfVar1, (float *)(param_1 + 0x1c), local_c, 1, 6.0f, 0);
+        Particle_Spawn(0x498, pfVar1, (float *)(param_1 + 0x1c), local_c, 1, 6.0f, 0);
         return;
       }
     }

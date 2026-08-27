@@ -91,7 +91,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
 
     // ── RECEIVE INCOMING PACKETS ─────────────────────────────────────────────
-    FUN_0043fd70();
+    Timer_UpdateFrameTiming();
     CHK("ML/post_recv");
 
     // ── MULTI-TICK FRAME LIMITER LOOP (25fps / 40ms per tick) ────────────────
@@ -154,11 +154,11 @@ void __cdecl Game_MainLoop(HDC param_1)
         // for (int i = 0; i < 5; i++) FUN_00409c40(0x83a4338);
 
         // Input update
-        FUN_0047fcb0();   CHK("ML/post_0047fcb0");
-        FUN_00480950();   CHK("ML/post_00480950");
+        Chat_TickNoticeTimer();   CHK("ML/post_0047fcb0");
+        Chat_TickMessageTimer();   CHK("ML/post_00480950");
 
         // F12 → toggle screenshot mode
-        if (FUN_0047ec20(0x2c) & 0xff)
+        if (Input_IsKeyJustPressed(0x2c) & 0xff)
             DAT_083a42ec ^= 1;
 
         // Decrement countdown counters

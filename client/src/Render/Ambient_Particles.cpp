@@ -1,5 +1,5 @@
 // Ambient_Particles.cpp
-// FUN_00502320 @ 0x00502320
+// IDA: FUN_00502320 @ 0x00502320 — AmbientParticles_Update
 //
 // Ambient_ParticleUpdate — per-frame ambient particle spawner/updater.
 //
@@ -77,7 +77,7 @@
 
 #include "stdafx.h"
 
-void __cdecl FUN_00502320(void)
+void __cdecl AmbientParticles_Update(void)
 {
     float       *pfVar1;
     void        *this_model;
@@ -231,7 +231,7 @@ LAB_0050245e:
                         puVar9[-0x29] = puVar9[-0x35]; // prev_pos_y = pos_y
                         puVar9[-0x28] = puVar9[-0x34]; // prev_pos_z = pos_z
                         puVar9[-7]    = (unsigned int)(*(int *)&fVar3);
-                        FUN_0046d840(0x4ea, pfVar1, pfVar1,
+                        Joint_Create(0x4ea, pfVar1, pfVar1,
                                      (float *)(puVar9 + -0x33), 4,
                                      (int)(puVar9 + -0x3a),
                                      30.0f, -1, 0);
@@ -279,7 +279,7 @@ switchD_caseD_2:
             } else {
                 FUN_0043e820((int)(puVar9 + -0x3a), (unsigned int)(sVar5 == 0xb2));
                 FUN_0043e680((int)(puVar9 + -0x3a), local_20, (int)(uintptr_t)DAT_083a2e90, 10);
-                FUN_004f9db0((float *)(puVar9 + -0x33), (float *)(puVar9 + -0x16));
+                Matrix_BuildFromEuler((float *)(puVar9 + -0x33), (float *)(puVar9 + -0x16));
 
                 uVar6 = _rand();
                 uVar6 &= 0x80000003;
@@ -287,7 +287,7 @@ switchD_caseD_2:
                 local_c[1] = 0.0f;
                 local_c[0] = (float)(int)(uVar6 + 6) * (float)puVar9[-7];
                 local_c[2] = 0.0f;
-                FUN_004fa0b0(local_c, (float *)(puVar9 + -0x16), &local_18);
+                Vector_Rotate(local_c, (float *)(puVar9 + -0x16), &local_18);
 
                 bVar10 = (DAT_0055a7ac != 7);
                 *pfVar1 = local_18 + *pfVar1;            // pos_x += vel_x

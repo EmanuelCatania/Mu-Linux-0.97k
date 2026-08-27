@@ -1052,7 +1052,7 @@ int __cdecl FUN_00408e30(DWORD *a1)
     Position[1] = -Position[1];
     Position[0] = Position[2];
     Position[2] = v6;
-    FUN_004409a0(
+    BMD_TransformPosition(
         (void *)(DAT_05828d58 + 0xbc * (int)*(short *)(a1[1] + 2)),
         (float *)(*(DWORD *)(a1[1] + 276) + 48 * v5[4]),
         Position,

@@ -1837,7 +1837,7 @@ extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* para
     if (curDur < maxDur) {
         // 2026-05-08: REMOVED self-perpetuating cursor flag. The original
         // IDA code wrote DAT_07eaa134 = 2 here, but that turns the mouse
-        // cursor into a repair sprite (per FUN_004bffa0), and since this
+        // cursor into a repair sprite (per Cursor_Render), and since this
         // function only runs when DAT_07eaa134 != 0, it self-locks the
         // cursor every frame. The actual repair NPC context sets
         // DAT_07eaa134 from elsewhere (Chat_InputTick B-key, NPC checkbox).

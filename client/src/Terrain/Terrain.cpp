@@ -163,11 +163,11 @@
 //       ir = (x+1 & 0xFF) + (y+1 & 0xFF) * 0x100  // tile diagonal
 //
 //       Toma 3 alturas de esquinas vecinas (DAT_080cb2cc)
-//       FUN_004fa4d0(pos_a, pos_b, pos_c, out_normal)  — cross product/normalización
+//       Triangle_ComputeNormal(pos_a, pos_b, pos_c, out_normal)  — cross product/normalización
 //       → DAT_07feb288[i*3..i*3+2] = (nx, ny, nz)
 //
 //   DAT_07feb288 = array de normales, float[3] por tile
-//   FUN_004fa4d0 @ 0x004fa4d0 = Vec3_CrossProduct(a, b, c, out)
+//   Triangle_ComputeNormal @ 0x004fa4d0 = Vec3_CrossProduct(a, b, c, out)
 //
 // ── TERRAIN_COMPUTELIGHTING (0x004f71c0) ──────────────────────────────────────
 //
@@ -458,7 +458,7 @@ void __cdecl CreateTerrainNormal(void) {
             p3[0] = (float)(int)(xCol - 1) * _DAT_005524f0;
             p3[1] = fVar4;
             p3[2] = DAT_080cb2cc[((xCol - 1) & 0xffu) + iVar6];
-            FUN_004fa4d0(p1, p2, p3, pfVar5);
+            Triangle_ComputeNormal(p1, p2, p3, pfVar5);
             pfVar5 += 3;
         }
     }

@@ -40,19 +40,19 @@
 //   [+0x106/byte]= anim state prev
 //
 // External functions:
-//   FUN_00475220 = Particle_Spawn(type, pos, dir, color, mode, size, entity_ptr)
-//   FUN_00460dc0 = CreateEffect(type, pos, dir, color, v1, v2, v3, v4, flag)
-//   FUN_0046d840 = CreateJoint(type, pos, target, dir, mode, entity, size, ...)
-//   FUN_004f9db0 = AngleMatrix(angles, matrix)
-//   FUN_004fa0b0 = EulerToMatrix3x4(v, matrix, out)
+//   Particle_Spawn = Particle_Spawn(type, pos, dir, color, mode, size, entity_ptr)
+//   Effect_Create = CreateEffect(type, pos, dir, color, v1, v2, v3, v4, flag)
+//   Joint_Create = CreateJoint(type, pos, target, dir, mode, entity, size, ...)
+//   Matrix_BuildFromEuler = AngleMatrix(angles, matrix)
+//   Vector_Rotate = EulerToMatrix3x4(v, matrix, out)
 //   FUN_004f7500 = RequestTerrainHeight(x, y)
 //   FUN_004f76c0 = RequestTerrainLight(x, y, light_ptr, mode, addr)
 //   FUN_004795c0 = FUN_004795c0 (Flare_Spawn?)
 //   FUN_00465fe0 = FUN_00465fe0 (effect color update)
-//   FUN_00465e60 = FUN_00465e60 (effect deactivate?)
+//   Effect_SpawnProximityHit = Effect_SpawnProximityHit (effect deactivate?)
 //   FUN_00466440 = FUN_00466440 (effect helper)
-//   FUN_004660f0 = FUN_004660f0 (effect helper2)
-//   FUN_004661f0 = FUN_004661f0 (effect helper3)
+//   Effect_SpawnSmokeBurst = Effect_SpawnSmokeBurst (effect helper2)
+//   Effect_SpawnSmokeExplosion = Effect_SpawnSmokeExplosion (effect helper3)
 //   FUN_0046c3e0 = Trail_RenderAll?
 //   FUN_00440aa0 = BMD_SetAnim?
 //   FUN_0045fec0 = Entity_SpawnImpact?
@@ -285,7 +285,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             if ((int)uVar8 < 0) {
               uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
             }
-            FUN_00460dc0(uVar8 + 0xc5,pfVar15,pfVar10,pfVar14,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
+            Effect_Create(uVar8 + 0xc5,pfVar15,pfVar10,pfVar14,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
           }
           pfVar10 = param_1 + 4;
           iVar9 = 6;
@@ -296,7 +296,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             local_34c = param_1[6];
             local_354 = local_354 + *pfVar10;
             local_350 = (float)(iVar12 % 0x32 + -0x19) + param_1[5];
-            FUN_00475220(0x4b0,&local_354,param_1 + 7,&local_368,0,1.0,0);
+            Particle_Spawn(0x4b0,&local_354,param_1 + 7,&local_368,0,1.0,0);
             iVar9 = iVar9 + -1;
           } while (iVar9 != 0);
           local_364 = local_36c * _DAT_005528b4;
@@ -325,7 +325,7 @@ void FUN_00466ad0(float *param_1, int param_2)
               else {
                 fVar13 = 6.0;
               }
-              FUN_00475220(0x498,&local_294,param_1 + 7,&local_368,1,fVar13,0);
+              Particle_Spawn(0x498,&local_294,param_1 + 7,&local_368,1,fVar13,0);
               iVar9 = iVar9 + 1;
             } while (iVar9 < 0x12);
           }
@@ -336,7 +336,7 @@ void FUN_00466ad0(float *param_1, int param_2)
                 param_1[5] = param_1[0x31] + param_1[5];
                 param_1[6] = param_1[0x32] + param_1[6];
                 param_1[0x32] = param_1[0x32] - _DAT_005524f8;
-                FUN_00475220(0x47e,param_1 + 4,param_1 + 7,param_1 + 0x3a,1,param_1[3],0);
+                Particle_Spawn(0x47e,param_1 + 4,param_1 + 7,param_1 + 0x3a,1,param_1[3],0);
                 if (param_1[0x32] < _DAT_005529ac) goto LAB_0046a366;
               }
               else if (param_1[1] == 1.4013e-45) {
@@ -352,9 +352,9 @@ void FUN_00466ad0(float *param_1, int param_2)
                 local_364 = 0.5;
                 local_360 = 0.1;
                 iVar9 = _rand();
-                FUN_00475220(0x47e,param_1 + 4,&local_334,&local_368,4,
+                Particle_Spawn(0x47e,param_1 + 4,&local_334,&local_368,4,
                              (float)(byte)(DAT_00559b78)[iVar9 % 7],*(int*)&param_1[0x3f]);
-                FUN_00475220(0x47e,param_1 + 4,&local_334,&local_368,4,
+                Particle_Spawn(0x47e,param_1 + 4,&local_334,&local_368,4,
                              (float)(byte)(DAT_00559b7f)[-(iVar9 % 7)],*(int*)&param_1[0x3f]);
               }
             }
@@ -369,12 +369,12 @@ void FUN_00466ad0(float *param_1, int param_2)
                 local_278 = (float)(iVar12 % 0x5a);
                 iVar12 = _rand();
                 local_270 = (float)(iVar12 % 0x168);
-                FUN_004f9db0(&local_278,local_fc);
-                FUN_004fa0b0(&local_254,local_fc,&local_2a0);
+                Matrix_BuildFromEuler(&local_278,local_fc);
+                Vector_Rotate(&local_254,local_fc,&local_2a0);
                 local_2a0 = param_1[4] - local_2a0;
                 local_29c = param_1[5] - local_29c;
                 local_298 = param_1[6] - local_298;
-                FUN_0046d840(0x4eb,&local_2a0,param_1 + 4,&local_278,6,0,5.0,-1,0);
+                Joint_Create(0x4eb,&local_2a0,param_1 + 4,&local_278,6,0,5.0,-1,0);
                 iVar9 = iVar9 + -1;
               } while (iVar9 != 0);
             }
@@ -385,7 +385,7 @@ void FUN_00466ad0(float *param_1, int param_2)
                 local_354 = *pfVar10;
                 local_350 = param_1[5];
                 local_34c = param_1[6] + _DAT_00552878;
-                FUN_00475220(0x4bf,&local_354,param_1 + 7,&local_368,0,1.0,0);
+                Particle_Spawn(0x4bf,&local_354,param_1 + 7,&local_368,0,1.0,0);
                 iVar9 = 6;
                 do {
                   bVar28 = 0;
@@ -401,7 +401,7 @@ void FUN_00466ad0(float *param_1, int param_2)
                   if ((int)uVar8 < 0) {
                     uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
                   }
-                  FUN_00460dc0(uVar8 + 0xc5,pfVar14,pfVar22,pfVar15,pfVar21,pfVar23,pfVar25,pfVar27,bVar28);
+                  Effect_Create(uVar8 + 0xc5,pfVar14,pfVar22,pfVar15,pfVar21,pfVar23,pfVar25,pfVar27,bVar28);
                   iVar9 = iVar9 + -1;
                 } while (iVar9 != 0);
                 *(undefined1 *)param_1 = 0;
@@ -416,7 +416,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             local_354 = param_1[4];
             local_350 = param_1[5];
             local_34c = param_1[6] + _DAT_005524f0;
-            FUN_0046d840(0x4ee,&local_354,&local_354,param_1 + 10,0,*(int*)&param_1[0x3f],150.0,
+            Joint_Create(0x4ee,&local_354,&local_354,param_1 + 10,0,*(int*)&param_1[0x3f],150.0,
                          *(short *)((int)param_1 + 0x86),*(byte *)((int)param_1 + 0x85));
           }
         }
@@ -441,13 +441,13 @@ void FUN_00466ad0(float *param_1, int param_2)
             local_364 = fVar5;
             local_368 = fVar4;
             pfVar10 = param_1 + 4;
-            FUN_00475220(0x49c,pfVar10,param_1 + 7,&local_368,0,1.0,0);
-            FUN_00475220(0x498,pfVar10,param_1 + 7,&local_368,0,4.0,0);
+            Particle_Spawn(0x49c,pfVar10,param_1 + 7,&local_368,0,1.0,0);
+            Particle_Spawn(0x498,pfVar10,param_1 + 7,&local_368,0,4.0,0);
             local_368 = fVar13 * _DAT_005526e4;
             local_364 = fVar13 * _DAT_005528b4;
             local_360 = fVar13;
             FUN_004f76c0(*pfVar10,param_1[5],(int)&local_368,2,(int)DAT_081cb608);
-            FUN_00465e60((int)param_1);
+            Effect_SpawnProximityHit((int)param_1);
             break;
           case 0x4a7:
             local_360 = (float)(int)fVar13 * _DAT_005526e4;
@@ -455,13 +455,13 @@ void FUN_00466ad0(float *param_1, int param_2)
             local_364 = local_360 * _DAT_00552504;
             goto LAB_004695b5;
           case 0x4ab:
-            FUN_00475220(0x4ab,param_1 + 4,param_1 + 7,&local_368,9,1.0,*(int*)&param_1[0x3f]);
+            Particle_Spawn(0x4ab,param_1 + 4,param_1 + 7,&local_368,9,1.0,*(int*)&param_1[0x3f]);
             break;
           case 0x4ac:
             local_368 = 1.0;
             local_364 = 1.0;
             local_360 = 1.0;
-            FUN_00475220(0x4ac,param_1 + 4,param_1 + 7,&local_368,1,1.0,0);
+            Particle_Spawn(0x4ac,param_1 + 4,param_1 + 7,&local_368,1,1.0,0);
             local_364 = local_36c * _DAT_00552534;
             local_368 = local_36c;
             local_360 = local_36c * _DAT_005528b8;
@@ -486,12 +486,12 @@ void FUN_00466ad0(float *param_1, int param_2)
             iVar12 = 0x50;
             local_364 = (float)(int)uVar8 * _DAT_005524f4;
             do {
-              FUN_00475220(0x4df,param_1 + 4,param_1 + 7,&local_368,iVar9 % 0x1e,1.0,0);
+              Particle_Spawn(0x4df,param_1 + 4,param_1 + 7,&local_368,iVar9 % 0x1e,1.0,0);
               iVar12 = iVar12 + -1;
             } while (iVar12 != 0);
             FUN_00404bc0(0x45,(unsigned int)(uintptr_t)param_1,0);
           }
-          FUN_00475220(0x4df,param_1 + 4,param_1 + 7,param_1 + 0x3a,-1,1.0,0);
+          Particle_Spawn(0x4df,param_1 + 4,param_1 + 7,param_1 + 0x3a,-1,1.0,0);
           local_368 = local_36c * _DAT_005528b4;
           local_364 = local_36c * _DAT_005528b8;
           local_360 = local_36c * _DAT_005526e4;
@@ -499,14 +499,14 @@ void FUN_00466ad0(float *param_1, int param_2)
           break;
         case 0x4e0:
           if (((int)fVar13 % 5 == 0) && (iVar9 = _rand(), iVar9 % 3 == 0)) {
-            FUN_00460dc0(0x4df,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)0x0,(float *)0x0,
+            Effect_Create(0x4df,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)0x0,(float *)0x0,
                          (float *)0xffffffff,(float *)0x0,0);
           }
           break;
         case 0x4f0:
         case 0x4f1:
           if ((0 < (int)param_1[1]) && (param_1[1] != 5.60519e-45)) {
-            FUN_00460c30((int)param_1);
+            Effect_SpawnLightningBurst((int)param_1);
           }
           break;
         case 0x4f3:
@@ -519,7 +519,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             *(float *)((int)pvVar1 + 0x6c) = param_1[0x5c];
             *(float *)((int)pvVar1 + 0x70) = param_1[0x5d];
             *(float *)((int)pvVar1 + 0x74) = param_1[0x5e];
-            FUN_004409a0(pvVar1,(float *)(iVar9 + 0x630),&local_31c,param_1 + 4,'\x01');
+            BMD_TransformPosition(pvVar1,(float *)(iVar9 + 0x630),&local_31c,param_1 + 4,'\x01');
           }
           pfVar10 = param_1 + 4;
           iVar9 = 3;
@@ -532,8 +532,8 @@ void FUN_00466ad0(float *param_1, int param_2)
             local_334 = (float)(iVar12 % 0x168);
             iVar12 = _rand();
             local_32c = (float)(iVar12 % 0x168);
-            FUN_004f9db0(&local_334,local_1a4 + 6);
-            FUN_004fa0b0(&local_31c,local_1a4 + 6,&local_354);
+            Matrix_BuildFromEuler(&local_334,local_1a4 + 6);
+            Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
             local_354 = local_354 + *pfVar10;
             local_350 = local_350 + param_1[5];
             local_34c = local_34c + param_1[6];
@@ -544,12 +544,12 @@ void FUN_00466ad0(float *param_1, int param_2)
                 bVar16 = (uVar8 - 1 | 0xfffffffe) == 0xffffffff;
               }
               if (bVar16) {
-                FUN_0046d840(0x4e6,&local_354,pfVar10,&local_334,3,0,10.0,10,10);
+                Joint_Create(0x4e6,&local_354,pfVar10,&local_334,3,0,10.0,10,10);
               }
               else {
                 pfVar15 = param_1;
                 iVar12 = _rand();
-                FUN_00475220(0x498,&local_354,&local_334,&local_368,2,
+                Particle_Spawn(0x498,&local_354,&local_334,&local_368,2,
                              (float)(iVar12 % 0x32 + 10) * _DAT_00552594,(int)pfVar15);
               }
               uVar29 = 0;
@@ -578,7 +578,7 @@ void FUN_00466ad0(float *param_1, int param_2)
               FUN_004795c0(0x4cf,pfVar10,(float)(int)(uVar8 + 8) * _DAT_005528b8,pfVar15,(int)pfVar14,fVar13,uVar29);
               pfVar15 = param_1;
               iVar12 = _rand();
-              FUN_00475220(0x498,&local_354,&local_334,&local_368,2,
+              Particle_Spawn(0x498,&local_354,&local_334,&local_368,2,
                            (float)(iVar12 % 0x32 + 10) * _DAT_00552594,(int)pfVar15);
             }
             iVar9 = iVar9 + -1;
@@ -596,7 +596,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             param_1[6] = param_1[6] + param_1[0x36];
             param_1[0x36] = param_1[0x36] - _DAT_0055264c;
             param_1[0x5c] = param_1[0x5c] - _DAT_00552488;
-            FUN_00475220(0x4ad,pfVar10,param_1 + 7,&local_368,7,1.0,0);
+            Particle_Spawn(0x4ad,pfVar10,param_1 + 7,&local_368,7,1.0,0);
             fVar13 = param_1[0x3a] + _DAT_005524f4;
             pfVar15 = param_1 + 0x3a;
             uVar29 = 0;
@@ -630,7 +630,7 @@ void FUN_00466ad0(float *param_1, int param_2)
               if ((int)uVar8 < 0) {
                 uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
               }
-              FUN_00475220(0x4c4,&local_354,param_1 + 7,&local_368,0xb,
+              Particle_Spawn(0x4c4,&local_354,param_1 + 7,&local_368,0xb,
                            (float)(int)(uVar8 + 0x50) * _DAT_005529cc,iVar9);
             }
           }
@@ -677,7 +677,7 @@ void FUN_00466ad0(float *param_1, int param_2)
               local_1a4[3] = 0.1f;
               local_1a4[4] = 1.0f;
               local_1a4[5] = 1.0f;
-              FUN_00475220(0x4b0,&local_260,param_1 + 7,local_1a4 + (uint)(fVar13 == 4.2039e-45f) * 3,
+              Particle_Spawn(0x4b0,&local_260,param_1 + 7,local_1a4 + (uint)(fVar13 == 4.2039e-45f) * 3,
                            5,0.4f,0);
               FUN_004795c0(0x4fa,&local_260,1.0f,&local_368,*(int*)&param_1[0x3f],0,0);
               local_35c = (float *)((int)pfVar10 + 1);
@@ -704,26 +704,26 @@ void FUN_00466ad0(float *param_1, int param_2)
           local_360 = 1.0;
           iVar9 = _rand();
           param_1[3] = (float)(0xf - (*(int*)&param_1[0x18])) * _DAT_00552a10 * (float)(iVar9 % 3 + 2);
-          FUN_004f9db0(&local_334,local_1a4 + 6);
+          Matrix_BuildFromEuler(&local_334,local_1a4 + 6);
           local_31c = 0.0;
           local_318 = 0x41a00000;
           local_314 = 0;
-          FUN_004fa0b0(&local_31c,local_1a4 + 6,&local_354);
+          Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
           pfVar15 = param_1 + 0x5c;
           *pfVar15 = local_354 + *pfVar10;
           param_1[0x5d] = local_350 + param_1[5];
           param_1[0x5e] = local_34c + param_1[6];
-          FUN_00475220(0x4ad,pfVar15,param_1 + 7,&local_368,10,param_1[3],0);
+          Particle_Spawn(0x4ad,pfVar15,param_1 + 7,&local_368,10,param_1[3],0);
           local_31c = 0.0;
           local_318 = 0xc1a00000;
           local_314 = 0;
-          FUN_004fa0b0(&local_31c,local_1a4 + 6,&local_354);
+          Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
           *pfVar15 = local_354 + *pfVar10;
           param_1[0x5d] = local_350 + param_1[5];
           param_1[0x5e] = local_34c + param_1[6];
-          FUN_00475220(0x4ad,pfVar15,param_1 + 7,&local_368,10,param_1[3],0);
+          Particle_Spawn(0x4ad,pfVar15,param_1 + 7,&local_368,10,param_1[3],0);
           if (param_1[0x18] == 1.4013e-45) {
-            FUN_004661f0((undefined4 *)pfVar10,'\x01');
+            Effect_SpawnSmokeExplosion((undefined4 *)pfVar10,'\x01');
           }
           break;
         case 0x596:
@@ -741,7 +741,7 @@ LAB_0046a366:
             param_1[4] = *(float *)(pcVar11 + 0x10);
             param_1[5] = *(float *)(pcVar11 + 0x14);
             param_1[6] = fVar4 + fVar5 + _DAT_00552878;
-            FUN_00475220(0x596,param_1 + 4,param_1 + 7,param_1 + 0x3a,(0x1e - (int)fVar13) / 2,1.0,0);
+            Particle_Spawn(0x596,param_1 + 4,param_1 + 7,param_1 + 0x3a,(0x1e - (int)fVar13) / 2,1.0,0);
           }
         }
       }
@@ -749,10 +749,10 @@ LAB_0046a366:
     }
     if (iVar9 == 0x1f0) {
       if (param_1[1] == 1.4013e-45) {
-        FUN_0046d840(0x4e1,param_1 + 4,param_1 + 4,param_1 + 7,0xc,(int)param_1,100.0,-1,0);
+        Joint_Create(0x4e1,param_1 + 4,param_1 + 4,param_1 + 7,0xc,(int)param_1,100.0,-1,0);
       }
       else if (param_1[1] == 0.0) {
-        FUN_0046d840(0x4e1,param_1 + 4,param_1 + 4,param_1 + 7,4,(int)param_1,50.0,-1,0);
+        Joint_Create(0x4e1,param_1 + 4,param_1 + 4,param_1 + 7,4,(int)param_1,50.0,-1,0);
       }
       goto switchD_00466b93_caseD_c1;
     }
@@ -788,7 +788,7 @@ LAB_0046a366:
               uVar8 = (uVar8 - 1 | 0xffffff80) + 1;
             }
             local_1c8 = (float)(int)(uVar8 + 0x20) + param_1[6];
-            FUN_00475220(0x4c4,&local_1d0,param_1 + 7,param_1 + 0x3a,0,1.0,0);
+            Particle_Spawn(0x4c4,&local_1d0,param_1 + 7,param_1 + 0x3a,0,1.0,0);
           }
           fVar13 = param_1[0x5a] - _DAT_00552874;
           param_1[0x5a] = fVar13;
@@ -842,8 +842,8 @@ LAB_00469366:
         local_314 = 0;
         fVar17 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005524f8);
         param_1[0x36] = (float)(fVar17 * (float10)_DAT_005524fc + (float10)_DAT_0055284c);
-        FUN_004f9db0(param_1 + 10,local_1a4 + 6);
-        FUN_004fa0b0(&local_31c,local_1a4 + 6,&local_354);
+        Matrix_BuildFromEuler(param_1 + 10,local_1a4 + 6);
+        Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
         __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
         local_354 = local_354 + *(float *)(__owner_fVar13 + 0x10);
         local_350 = local_350 + *(float *)(__owner_fVar13 + 0x14);
@@ -851,7 +851,7 @@ LAB_00469366:
         local_34c = local_34c + *(float *)(__owner_fVar13 + 0x18) + param_1[0x36];
         local_364 = 1.0;
         local_360 = 1.0;
-        FUN_00475220(0x4ad,&local_354,param_1 + 7,&local_368,10,2.0,0);
+        Particle_Spawn(0x4ad,&local_354,param_1 + 7,&local_368,10,2.0,0);
       }
       break;
     case 0xbf:
@@ -882,7 +882,7 @@ LAB_00469366:
             param_1[0x30] = 0.0;
             param_1[0x31] = 0.0;
             param_1[0x32] = 0.0;
-            FUN_00475220(0x4bf,&local_224,param_1 + 7,&local_368,0,1.0,0);
+            Particle_Spawn(0x4bf,&local_224,param_1 + 7,&local_368,0,1.0,0);
             iVar9 = 6;
             do {
               bVar28 = 0;
@@ -898,7 +898,7 @@ LAB_00469366:
               if ((int)uVar8 < 0) {
                 uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
               }
-              FUN_00460dc0(uVar8 + 0xc5,pfVar15,pfVar14,pfVar10,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
+              Effect_Create(uVar8 + 0xc5,pfVar15,pfVar14,pfVar10,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
               iVar9 = iVar9 + -1;
             } while (iVar9 != 0);
             *(undefined1 *)param_1 = 0;
@@ -966,7 +966,7 @@ LAB_004698ca:
         param_1[0x31] = 0.0;
         param_1[0x32] = 0.0;
         pfVar10 = param_1 + 7;
-        FUN_00475220(0x4bf,&local_2b8,pfVar10,&local_368,0,1.0,0);
+        Particle_Spawn(0x4bf,&local_2b8,pfVar10,&local_368,0,1.0,0);
         iVar9 = 6;
         do {
           bVar28 = 0;
@@ -982,7 +982,7 @@ LAB_004698ca:
           if ((int)uVar8 < 0) {
             uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
           }
-          FUN_00460dc0(uVar8 + 0xc5,pfVar22,pfVar21,pfVar14,pfVar23,pfVar25,pfVar27,pfVar26,bVar28);
+          Effect_Create(uVar8 + 0xc5,pfVar22,pfVar21,pfVar14,pfVar23,pfVar25,pfVar27,pfVar26,bVar28);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
         if (param_1[1] == 8.40779e-45) {
@@ -1002,7 +1002,7 @@ LAB_004698ca:
             if ((int)uVar8 < 0) {
               uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
             }
-            FUN_00475220(0x4c4,&local_2b8,pfVar10,&local_368,0xb,
+            Particle_Spawn(0x4c4,&local_2b8,pfVar10,&local_368,0xb,
                          (float)(int)(uVar8 + 0x50) * _DAT_005529cc,iVar24);
             iVar9 = iVar9 + -1;
           } while (iVar9 != 0);
@@ -1020,7 +1020,7 @@ LAB_00469a2f:
         FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
         iVar9 = _rand();
         if (iVar9 % 5 != 0) {
-          FUN_00475220(0x567,param_1 + 4,param_1 + 7,&local_368,0,1.0,0);
+          Particle_Spawn(0x567,param_1 + 4,param_1 + 7,&local_368,0,1.0,0);
         }
       }
       else {
@@ -1058,8 +1058,8 @@ LAB_00469ab9:
         local_360 = 0.0;
         FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
         if (param_1[1] == 8.40779e-45) {
-          FUN_00475220(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
-          FUN_00475220(0x4ab,pfVar10,param_1 + 7,&local_368,0,1.0,0);
+          Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
+          Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,0,1.0,0);
         }
         else if (param_1[1] == 4.2039e-45) {
           FUN_00473d90(param_2 * 0x14fb,&local_2f8,1.0);
@@ -1075,17 +1075,17 @@ LAB_00469ab9:
           local_2ec = *pfVar10 + local_2f8;
           local_2e8 = param_1[5] + local_2f4;
           local_2e4 = param_1[6] + local_2f0;
-          FUN_00475220(0x4ab,&local_2ec,&local_334,&local_368,8,param_1[3] * _DAT_00552950,0);
+          Particle_Spawn(0x4ab,&local_2ec,&local_334,&local_368,8,param_1[3] * _DAT_00552950,0);
           uVar29 = 0;
           iVar9 = _rand();
           FUN_004795c0(0x4cf,&local_2ec,param_1[3] * _DAT_00552540,&local_368,0,
                        (float)(iVar9 % 0x168),uVar29);
         }
         else {
-          FUN_00475220(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
+          Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
         }
         if (param_1[1] == 1.4013e-45) {
-          FUN_00465e60((int)param_1);
+          Effect_SpawnProximityHit((int)param_1);
         }
       }
       break;
@@ -1147,8 +1147,8 @@ LAB_00468772:
         local_1fc = (float)(iVar9 % 300);
         iVar9 = _rand();
         local_1e0 = (float)(iVar9 % 0x168);
-        FUN_004f9db0(&local_1e8,local_6c);
-        FUN_004fa0b0(&local_200,local_6c,&local_2d0);
+        Matrix_BuildFromEuler(&local_1e8,local_6c);
+        Vector_Rotate(&local_200,local_6c,&local_2d0);
         local_2d0 = local_2d0 + param_1[4];
         pfVar15 = param_1 + 0x3a;
         pfVar10 = param_1 + 7;
@@ -1165,7 +1165,7 @@ LAB_00468772:
         if ((int)uVar8 < 0) {
           uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
         }
-        FUN_00460dc0(uVar8 + 0xc5,pfVar14,pfVar10,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
+        Effect_Create(uVar8 + 0xc5,pfVar14,pfVar10,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
       }
       local_364 = local_36c * _DAT_00552530;
       iVar9 = 4;
@@ -1190,7 +1190,7 @@ LAB_00468772:
       param_1[0x1a] = (float)(int)fVar13 * _DAT_005524f4;
       param_1[0x1b] = (float)(int)fVar13 * _DAT_00552570;
       do {
-        FUN_00475220(0x4c4,pfVar15,pfVar10,param_1 + 0x3a,3,1.0,0);
+        Particle_Spawn(0x4c4,pfVar15,pfVar10,param_1 + 0x3a,3,1.0,0);
         iVar9 = iVar9 + -1;
       } while (iVar9 != 0);
       local_368 = local_36c * _DAT_005528b8;
@@ -1213,7 +1213,7 @@ LAB_00468772:
         if ((int)uVar8 < 0) {
           uVar8 = (uVar8 - 1 | 0xffffffe0) + 1;
         }
-        FUN_00475220(0x4c4,pfVar15,pfVar10,&local_368,0xb,(float)(int)(uVar8 + 0x50) * _DAT_005529cc,iVar12);
+        Particle_Spawn(0x4c4,pfVar15,pfVar10,&local_368,0xb,(float)(int)(uVar8 + 0x50) * _DAT_005529cc,iVar12);
         local_34c = local_34c + _DAT_00552598;
         local_26c = 0x3f800000;
         local_268 = 0x3f800000;
@@ -1235,7 +1235,7 @@ LAB_00468772:
       pfVar15 = param_1 + 4;
       param_1[0x1a] = (float)(int)fVar13 * _DAT_005524f4;
       param_1[0x1b] = (float)(int)fVar13 * _DAT_005529c8;
-      FUN_00475220(0x4c4,pfVar15,pfVar10,pfVar14,3,1.0,0);
+      Particle_Spawn(0x4c4,pfVar15,pfVar10,pfVar14,3,1.0,0);
       local_32c = param_1[9];
       local_334 = 90.0;
       local_330 = 0.0;
@@ -1249,7 +1249,7 @@ LAB_00468772:
         local_354 = *pfVar15 - _DAT_0055285c;
         local_350 = param_1[5];
         local_34c = param_1[6] + _DAT_005529c4;
-        FUN_0046d840(0x4e6,&local_354,pfVar15,&local_334,0,(int)param_1,10.0,-1,0);
+        Joint_Create(0x4e6,&local_354,pfVar15,&local_334,0,(int)param_1,10.0,-1,0);
       }
       uVar8 = _rand();
       uVar8 = uVar8 & 0x80000001;
@@ -1261,7 +1261,7 @@ LAB_00468772:
         local_354 = *pfVar15 + _DAT_0055285c;
         local_350 = param_1[5];
         local_34c = param_1[6] + _DAT_005529c4;
-        FUN_0046d840(0x4e6,&local_354,pfVar15,&local_334,0,(int)param_1,10.0,-1,0);
+        Joint_Create(0x4e6,&local_354,pfVar15,&local_334,0,(int)param_1,10.0,-1,0);
       }
       fVar17 = FUN_004f7500(param_1[4], param_1[5]);
       param_1[6] = (float)fVar17;
@@ -1283,7 +1283,7 @@ LAB_00468772:
         if ((int)uVar8 < 0) {
           uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
         }
-        FUN_00460dc0(uVar8 + 0xc5,pfVar22,pfVar10,pfVar14,pfVar21,pfVar23,pfVar25,pfVar27,bVar28);
+        Effect_Create(uVar8 + 0xc5,pfVar22,pfVar10,pfVar14,pfVar21,pfVar23,pfVar25,pfVar27,bVar28);
       }
       local_368 = local_36c * _DAT_00552990;
       local_364 = local_36c * _DAT_005529c0;
@@ -1319,8 +1319,8 @@ switchD_00466b93_caseD_c7:
         fVar13 = param_1[0x32];
       }
       else {
-        FUN_004f9db0(param_1 + 7,local_1a4 + 6);
-        FUN_004fa0b0(param_1 + 0x30,local_1a4 + 6,&local_354);
+        Matrix_BuildFromEuler(param_1 + 7,local_1a4 + 6);
+        Vector_Rotate(param_1 + 0x30,local_1a4 + 6,&local_354);
         param_1[4] = local_354 + param_1[4];
         param_1[5] = local_350 + param_1[5];
         fVar13 = local_34c;
@@ -1348,13 +1348,13 @@ switchD_00466b93_caseD_c7:
         if ((param_1[1] == 0.0) && (iVar9 = _rand(), iVar9 % 10 == 0)) {
           sVar3 = *(short *)((int)param_1 + 2);
           if ((sVar3 == 199) || ((sVar3 == 0xe7 || (sVar3 == 0xe8)))) {
-            FUN_00475220(0x4c4,param_1 + 4,pfVar10,param_1 + 0x3a,0,1.0,0);
+            Particle_Spawn(0x4c4,param_1 + 4,pfVar10,param_1 + 0x3a,0,1.0,0);
           }
           else if ((sVar3 == 0xc5) || (sVar3 == 0xc6)) {
             iVar12 = 0;
             fVar13 = 1.0;
             iVar9 = _rand();
-            FUN_00475220(0x4ab,param_1 + 4,pfVar10,param_1 + 0x3a,iVar9 % 3 + 1,fVar13,iVar12);
+            Particle_Spawn(0x4ab,param_1 + 4,pfVar10,param_1 + 0x3a,iVar9 % 3 + 1,fVar13,iVar12);
           }
         }
       }
@@ -1367,7 +1367,7 @@ switchD_00466b93_caseD_c7:
       break;
     case 0xd4:
       param_1[0x32] = param_1[0x32] - _DAT_00552950;
-      FUN_00465e60((int)param_1);
+      Effect_SpawnProximityHit((int)param_1);
       break;
     case 0xd7:
       param_1[6] = param_1[6] + param_1[0x36];
@@ -1387,7 +1387,7 @@ switchD_00466b93_caseD_c7:
       local_360 = local_36c * _DAT_005526e4;
       FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
       pfVar10 = param_1 + 7;
-      FUN_00475220(0x4ab,param_1 + 4,pfVar10,&local_368,0,1.0,0);
+      Particle_Spawn(0x4ab,param_1 + 4,pfVar10,&local_368,0,1.0,0);
       FUN_00466440((int)param_1);
       if (param_1[1] == 4.2039e-45) {
         fVar13 = *pfVar10 + _DAT_00552488;
@@ -1454,7 +1454,7 @@ switchD_00466b93_caseD_c7:
           local_34c = (float)(int)(uVar8 - 0x10) + param_1[6];
           pfVar21 = pfVar15;
           iVar12 = _rand();
-          FUN_00475220(iVar12 % 3 + 0x4da,pfVar22,pfVar14,pfVar21,iVar24,fVar13,iVar30);
+          Particle_Spawn(iVar12 % 3 + 0x4da,pfVar22,pfVar14,pfVar21,iVar24,fVar13,iVar30);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
         param_1[8] = param_1[8] + _DAT_0055284c;
@@ -1490,10 +1490,10 @@ switchD_00466b93_caseD_c7:
           local_354 = local_354 + *pfVar10;
           local_350 = local_350 + param_1[5];
           local_34c = (float)(int)(uVar8 - 8) + param_1[6];
-          FUN_00475220(0x4d9,&local_354,param_1 + 7,pfVar15,1,1.0,0);
+          Particle_Spawn(0x4d9,&local_354,param_1 + 7,pfVar15,1,1.0,0);
           local_35c = (float *)((int)local_35c + -1);
         } while (local_35c != (float *)0x0);
-        FUN_00475220(0x4c4,pfVar10,param_1 + 7,pfVar15,0,1.0,0);
+        Particle_Spawn(0x4c4,pfVar10,param_1 + 7,pfVar15,0,1.0,0);
       }
       else if (sVar3 == 0xdf) {
         local_368 = 1.0;
@@ -1528,7 +1528,7 @@ switchD_00466b93_caseD_c7:
           local_354 = local_354 + *pfVar10;
           local_350 = local_350 + param_1[5];
           local_34c = (float)(int)(uVar8 - 8) + param_1[6];
-          FUN_00475220(0x4d9,&local_354,param_1 + 7,param_1 + 0x3a,1,1.0,0);
+          Particle_Spawn(0x4d9,&local_354,param_1 + 7,param_1 + 0x3a,1,1.0,0);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
         param_1[6] = param_1[6] + param_1[0x36];
@@ -1540,7 +1540,7 @@ switchD_00466b93_caseD_c7:
           param_1[0x31] = param_1[0x31] * _DAT_005528b4;
         }
         if ((param_1[0x18] == 1.4013e-45) &&
-           (FUN_004660f0(pfVar10,'\x01'), (char *)*(int*)&param_1[0x3f] == DAT_07abf5d8)) {
+           (Effect_SpawnSmokeBurst(pfVar10,'\x01'), (char *)*(int*)&param_1[0x3f] == DAT_07abf5d8)) {
           FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),pfVar10,100.0,*(byte *)(param_1 + 0x22),
                        *(short *)((int)param_1 + 0x86));
         }
@@ -1598,7 +1598,7 @@ switchD_00466b93_caseD_c7:
           if ((int)uVar8 < 0) {
             uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
           }
-          FUN_00460dc0(uVar8 + 0xe7,pfVar14,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,pfVar27,bVar28);
+          Effect_Create(uVar8 + 0xe7,pfVar14,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,pfVar27,bVar28);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
       }
@@ -1607,7 +1607,7 @@ switchD_00466b93_caseD_c7:
       param_1[5] = param_1[0x31] + param_1[5];
       param_1[6] = param_1[0x32] + param_1[6];
       *pfVar15 = _DAT_00552488 / param_1[3] + *pfVar15;
-      FUN_00475220(0x4c4,pfVar10,pfVar15,param_1 + 0x3a,3,1.0,0);
+      Particle_Spawn(0x4c4,pfVar10,pfVar15,param_1 + 0x3a,3,1.0,0);
       return;
     case 0xe9:
       if (param_1[1] == 1.4013e-45) {
@@ -1631,7 +1631,7 @@ switchD_00466b93_caseD_c7:
       }
       break;
     case 0xee:
-      FUN_00460dc0(0xef,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)(4 - (int)fVar13),
+      Effect_Create(0xef,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)(4 - (int)fVar13),
                    (float *)*(int*)&param_1[0x3f],(float *)(uint)*(ushort *)((int)param_1 + 0x86),
                    (float *)CONCAT31((int3)(CONCAT22(extraout_var,sVar3) >> 8),
                                      *(undefined1 *)((int)param_1 + 0x85)),*(byte *)(param_1 + 0x21));
@@ -1660,15 +1660,15 @@ switchD_00466b93_caseD_c7:
       local_31c = 0.0;
       pfVar10 = param_1 + 7;
       local_314 = 0;
-      FUN_004f9db0(pfVar10,local_1a4 + 6);
-      FUN_004fa0b0(&local_31c,local_1a4 + 6,&local_354);
+      Matrix_BuildFromEuler(pfVar10,local_1a4 + 6);
+      Vector_Rotate(&local_31c,local_1a4 + 6,&local_354);
       __owner_fVar13 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
       pfVar15 = param_1 + 4;
       *pfVar15 = local_354 + *(float *)(__owner_fVar13 + 0x10);
       param_1[5] = local_350 + *(float *)(__owner_fVar13 + 0x14);
       param_1[6] = local_34c + *(float *)(__owner_fVar13 + 0x18);
       param_1[9] = param_1[9] - _DAT_005529fc;
-      FUN_00475220(0x4c4,pfVar15,pfVar10,param_1 + 0x3a,3,1.0,0);
+      Particle_Spawn(0x4c4,pfVar15,pfVar10,param_1 + 0x3a,3,1.0,0);
       local_368 = local_36c * _DAT_005528b8;
       local_364 = local_368;
       local_360 = local_368;
@@ -1696,9 +1696,9 @@ switchD_00466b93_caseD_c7:
         iVar12 = _rand();
         local_35c = (float *)(iVar12 % 0x14 + -10);
         local_350 = (float)(int)local_35c + local_350;
-        FUN_0046d840(0x4e9,&local_354,&local_354,&local_334,0,0,10.0,-1,0);
+        Joint_Create(0x4e9,&local_354,&local_354,&local_334,0,0,10.0,-1,0);
         if (iVar9 == 0) {
-          FUN_00475220(0x497,&local_354,&local_334,&local_368,0,1.0,0);
+          Particle_Spawn(0x497,&local_354,&local_334,&local_368,0,1.0,0);
         }
         iVar9 = iVar9 + 1;
       } while (iVar9 < 4);
@@ -1733,8 +1733,8 @@ switchD_00466b93_caseD_c7:
         param_1[0x30] = 0.0;
         param_1[0x31] = 0.0;
         param_1[0x32] = 0.0;
-        FUN_00475220(0x4bf,&local_284,pfVar15,&local_368,0,1.0,0);
-        FUN_00475220(0x4d2,&local_284,pfVar15,&local_368,0,1.0,0);
+        Particle_Spawn(0x4bf,&local_284,pfVar15,&local_368,0,1.0,0);
+        Particle_Spawn(0x4d2,&local_284,pfVar15,&local_368,0,1.0,0);
         iVar9 = 6;
         do {
           bVar28 = 0;
@@ -1750,7 +1750,7 @@ switchD_00466b93_caseD_c7:
           if ((int)uVar8 < 0) {
             uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
           }
-          FUN_00460dc0(uVar8 + 0xc5,pfVar22,pfVar21,pfVar14,pfVar23,pfVar25,pfVar27,pfVar26,bVar28);
+          Effect_Create(uVar8 + 0xc5,pfVar22,pfVar21,pfVar14,pfVar23,pfVar25,pfVar27,pfVar26,bVar28);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
         bVar16 = (char *)*(int*)&param_1[0x3f] == DAT_07abf5d8;
@@ -1824,7 +1824,7 @@ LAB_00466e5e:
       FUN_004f76c0(param_1[0x5c],param_1[0x5d],(int)&local_368,2,(int)DAT_081cb608);
       if (param_1[1] != 0.0) {
         if (param_1[0x18] == 1.82169e-44) {
-          FUN_00460dc0(0xff,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)0x0,param_1,
+          Effect_Create(0xff,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)0x0,param_1,
                        (float *)0xffffffff,(float *)0x0,0);
         }
         else if (param_1[0x18] == 4.2039e-44) {
@@ -1850,8 +1850,8 @@ LAB_00466e5e:
         local_310 = -25.0;
         local_30c = -80.0;
         local_308 = 0;
-        FUN_004f9db0((float *)(*(int*)&param_1[0x3f] + 0x1c),local_15c);
-        FUN_004fa0b0(&local_310,local_15c,&local_328);
+        Matrix_BuildFromEuler((float *)(*(int*)&param_1[0x3f] + 0x1c),local_15c);
+        Vector_Rotate(&local_310,local_15c,&local_328);
         local_348 = local_328 + param_1[4];
         pfVar10 = param_1 + 0x5c;
         *pfVar10 = local_348;
@@ -1860,7 +1860,7 @@ LAB_00466e5e:
         param_1[0x5e] = local_320 + param_1[6];
         fVar17 = FUN_004f7500(param_1[4], param_1[5]);
         param_1[0x5e] = (float)(fVar17 + (float10)_DAT_00552464);
-        FUN_00475220(0x4bf,pfVar10,&local_340,&local_20c,0,0.5,0);
+        Particle_Spawn(0x4bf,pfVar10,&local_340,&local_20c,0,0.5,0);
         iVar9 = 0;
         do {
           iVar12 = _rand();
@@ -1881,9 +1881,9 @@ LAB_00466e5e:
           iVar12 = _rand();
           local_35c = (float *)(iVar12 % 0x14 + -10);
           local_324 = (float)(int)local_35c + local_324;
-          FUN_0046d840(0x4e9,&local_328,&local_328,&local_340,0,0,10.0,-1,0);
+          Joint_Create(0x4e9,&local_328,&local_328,&local_340,0,0,10.0,-1,0);
           if (iVar9 == 0) {
-            FUN_00475220(0x497,&local_328,&local_340,&local_368,0,1.0,0);
+            Particle_Spawn(0x497,&local_328,&local_340,&local_368,0,1.0,0);
           }
           iVar9 = iVar9 + 1;
         } while (iVar9 < 8);
@@ -1891,11 +1891,11 @@ LAB_00466e5e:
         local_340 = 0.0;
         local_33c = 0.0;
         local_338 = 0.0;
-        FUN_00460dc0(0xfd,pfVar10,&local_340,pfVar15,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
+        Effect_Create(0xfd,pfVar10,&local_340,pfVar15,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
         param_1[0x5e] = param_1[0x5e] - _DAT_005524a8;
-        FUN_00460dc0(0xf7,pfVar10,&local_340,pfVar15,(float *)0x0,param_1,(float *)0x96,(float *)0x0,0);
-        FUN_00460dc0(0xf5,pfVar10,&local_340,pfVar15,(float *)0x0,param_1,(float *)0x96,(float *)0x0,0);
-        FUN_00460dc0(0xf6,pfVar10,&local_340,pfVar15,(float *)0x0,param_1,(float *)0x96,(float *)0x0,0);
+        Effect_Create(0xf7,pfVar10,&local_340,pfVar15,(float *)0x0,param_1,(float *)0x96,(float *)0x0,0);
+        Effect_Create(0xf5,pfVar10,&local_340,pfVar15,(float *)0x0,param_1,(float *)0x96,(float *)0x0,0);
+        Effect_Create(0xf6,pfVar10,&local_340,pfVar15,(float *)0x0,param_1,(float *)0x96,(float *)0x0,0);
         local_358 = 0.0;
         do {
           local_310 = 0.0;
@@ -1906,8 +1906,8 @@ LAB_00466e5e:
           local_35c = (float *)(iVar9 % 0x96 + 100);
           local_30c = (float)(int)local_35c;
           local_338 = (float)(int)local_358 * _DAT_005529f8 + (float)(int)param_1[1];
-          FUN_004f9db0(&local_340,local_15c);
-          FUN_004fa0b0(&local_310,local_15c,&local_328);
+          Matrix_BuildFromEuler(&local_340,local_15c);
+          Vector_Rotate(&local_310,local_15c,&local_328);
           local_328 = local_328 + *pfVar10;
           local_324 = local_324 + param_1[0x5d];
           local_320 = local_320 + param_1[0x5e] + _DAT_00552540;
@@ -1925,8 +1925,8 @@ LAB_00466e5e:
           if ((((bVar28 & 4) != 4) || ((bVar28 & 8) != 8)) || ((bVar28 & 0x10) != 0x10)) {
             fVar17 = FUN_004f7500(param_1[4], param_1[5]);
             local_320 = (float)(fVar17 + (float10)_DAT_00552540);
-            FUN_00460dc0(0xf8,&local_328,&local_340,pfVar15,(float *)0x0,param_1,pfVar14,(float *)0x0,0);
-            FUN_00460dc0(0xf9,&local_328,&local_340,pfVar15,(float *)0x0,param_1,pfVar14,(float *)0x0,0);
+            Effect_Create(0xf8,&local_328,&local_340,pfVar15,(float *)0x0,param_1,pfVar14,(float *)0x0,0);
+            Effect_Create(0xf9,&local_328,&local_340,pfVar15,(float *)0x0,param_1,pfVar14,(float *)0x0,0);
           }
           local_358 = (float)((int)local_358 + 1);
         } while ((int)local_358 < 5);
@@ -1979,8 +1979,8 @@ LAB_00466e5e:
             iVar9 = _rand();
             local_338 = (float)((iVar9 % 10 + 0x3e) * (int)local_344) +
                         (float)(int)local_36c + fVar13;
-            FUN_004f9db0(&local_340,local_15c);
-            FUN_004fa0b0(&local_310,local_15c,&local_328);
+            Matrix_BuildFromEuler(&local_340,local_15c);
+            Vector_Rotate(&local_310,local_15c,&local_328);
             pfVar14 = pfVar15 + -1;
             *pfVar14 = local_328 + pfVar15[-1];
             *pfVar15 = local_324 + *pfVar15;
@@ -1993,8 +1993,8 @@ LAB_00466e5e:
               fVar17 = FUN_004f7500(param_1[4], param_1[5]);
               pfVar15[1] = (float)(fVar17 + (float10)_DAT_00552540);
               local_338 = local_338 + _DAT_00552864;
-              FUN_00460dc0(0xfb,pfVar14,&local_340,param_1 + 0x3a,(float *)0x0,param_1,(float *)0x64,(float *)0x0,0);
-              FUN_00460dc0(0xfc,pfVar14,&local_340,param_1 + 0x3a,(float *)0x0,param_1,(float *)0x64,(float *)0x0,0);
+              Effect_Create(0xfb,pfVar14,&local_340,param_1 + 0x3a,(float *)0x0,param_1,(float *)0x64,(float *)0x0,0);
+              Effect_Create(0xfc,pfVar14,&local_340,param_1 + 0x3a,(float *)0x0,param_1,(float *)0x64,(float *)0x0,0);
               pfVar10 = local_35c;
             }
             pfVar10 = pfVar10 + 1;
@@ -2029,8 +2029,8 @@ LAB_00466e5e:
           local_310 = -25.0;
           local_30c = -40.0;
           local_308 = 0;
-          FUN_004f9db0((float *)(*(int*)&param_1[0x3f] + 0x1c),local_15c);
-          FUN_004fa0b0(&local_310,local_15c,&local_328);
+          Matrix_BuildFromEuler((float *)(*(int*)&param_1[0x3f] + 0x1c),local_15c);
+          Vector_Rotate(&local_310,local_15c,&local_328);
           local_304 = local_328 + param_1[4];
           local_35c = (float *)0x0;
           local_300 = local_324 + param_1[5];
@@ -2040,7 +2040,7 @@ LAB_00466e5e:
             local_2bc = local_2fc - (float)(int)local_35c;
             local_2c4 = local_304;
             local_2c0 = local_300;
-            FUN_00460dc0(0xfe,&local_2c4,&local_340,param_1 + 0x3a,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
+            Effect_Create(0xfe,&local_2c4,&local_340,param_1 + 0x3a,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
             local_35c = (float *)((int)pfVar10 + 0x32);
           } while ((int)local_35c < 200);
           iVar9 = _rand();
@@ -2053,7 +2053,7 @@ LAB_00466e5e:
             local_2bc = local_2fc - (float)(int)local_35c;
             local_2c4 = local_304;
             local_2c0 = local_300;
-            FUN_00460dc0(0xfe,&local_2c4,&local_340,param_1 + 0x3a,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
+            Effect_Create(0xfe,&local_2c4,&local_340,param_1 + 0x3a,(float *)0x0,(float *)0x0,(float *)0xffffffff,(float *)0x0,0);
             local_35c = (float *)((int)pfVar10 + 0x1e);
           } while ((int)local_35c < 0x78);
           FUN_00404bc0(0x59,(unsigned int)(uintptr_t)param_1,0);
@@ -2073,8 +2073,8 @@ LAB_00466e5e:
           fVar13 = param_1[0x36] - _DAT_00552658;
         }
         param_1[0x36] = fVar13;
-        FUN_004f9db0(param_1 + 10,local_15c);
-        FUN_004fa0b0(param_1 + 0x30,local_15c,&local_328);
+        Matrix_BuildFromEuler(param_1 + 10,local_15c);
+        Vector_Rotate(param_1 + 0x30,local_15c,&local_328);
         param_1[4] = local_328 + param_1[0x5c];
         param_1[5] = local_324 + param_1[0x5d];
         param_1[6] = local_320 + param_1[0x5e] + param_1[0x36] + _DAT_0055285c;
@@ -2115,8 +2115,8 @@ LAB_00466e5e:
             local_22c = (float)(iVar9 % 0x96);
             iVar9 = _rand();
             local_1d4 = (float)(iVar9 % 0x168);
-            FUN_004f9db0(&local_1dc,local_cc);
-            FUN_004fa0b0(&local_230,local_cc,&local_2ac);
+            Matrix_BuildFromEuler(&local_1dc,local_cc);
+            Vector_Rotate(&local_230,local_cc,&local_2ac);
             local_2ac = local_2ac + param_1[4];
             pfVar15 = param_1 + 0x3a;
             pfVar10 = param_1 + 7;
@@ -2133,7 +2133,7 @@ LAB_00466e5e:
             if ((int)uVar8 < 0) {
               uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
             }
-            FUN_00460dc0(uVar8 + 0xc5,pfVar14,pfVar10,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
+            Effect_Create(uVar8 + 0xc5,pfVar14,pfVar10,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
           }
         }
       }
@@ -2172,8 +2172,8 @@ LAB_00466e5e:
             local_214 = (float)(iVar9 % 0x96);
             iVar9 = _rand();
             local_1bc = (float)(iVar9 % 0x168);
-            FUN_004f9db0(&local_1c4,local_12c);
-            FUN_004fa0b0(&local_218,local_12c,&local_2dc);
+            Matrix_BuildFromEuler(&local_1c4,local_12c);
+            Vector_Rotate(&local_218,local_12c,&local_2dc);
             local_2dc = local_2dc + param_1[4];
             pfVar15 = param_1 + 0x3a;
             pfVar10 = param_1 + 7;
@@ -2190,7 +2190,7 @@ LAB_00466e5e:
             if ((int)uVar8 < 0) {
               uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
             }
-            FUN_00460dc0(uVar8 + 0xc5,pfVar14,pfVar10,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
+            Effect_Create(uVar8 + 0xc5,pfVar14,pfVar10,pfVar15,pfVar22,pfVar21,pfVar23,pfVar25,bVar28);
           }
         }
       }
@@ -2275,7 +2275,7 @@ LAB_004695c0:
           local_368 = 1.0;
           local_364 = 1.0;
           local_360 = 1.0;
-          FUN_0046d840(0x4e6,pfVar10,pfVar10,param_1 + 7,3,0,20.0,7,0);
+          Joint_Create(0x4e6,pfVar10,pfVar10,param_1 + 7,3,0,20.0,7,0);
           uVar29 = 0;
           iVar9 = _rand();
           pfVar15 = &local_368;
@@ -2299,11 +2299,11 @@ LAB_004695c0:
         bVar16 = (uVar8 - 1 | 0xfffffffe) == 0xffffffff;
       }
       if (bVar16) {
-        FUN_00475220(0x4c4,param_1 + 4,param_1 + 7,&local_368,0,1.0,0);
+        Particle_Spawn(0x4c4,param_1 + 4,param_1 + 7,&local_368,0,1.0,0);
       }
       pfVar10 = param_1 + 4;
-      FUN_00475220(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
-      FUN_00475220(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
+      Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
+      Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
       local_368 = local_36c * _DAT_00552534;
       local_364 = local_36c * _DAT_00552530;
       local_360 = local_364;
@@ -2367,7 +2367,7 @@ LAB_0046a02b:
       *pfVar10 = *pfVar10 - fVar13;
       iVar9 = _rand();
       if (iVar9 % 10 == 0) {
-        FUN_00475220(0x4c5,&local_354,pfVar10,&local_368,0,1.0,0);
+        Particle_Spawn(0x4c5,&local_354,pfVar10,&local_368,0,1.0,0);
       }
       break;
     case 0x109:
@@ -2399,7 +2399,7 @@ LAB_0046a02b:
             if ((int)uVar8 < 0) {
               uVar8 = (uVar8 - 1 | 0xfffffffe) + 1;
             }
-            FUN_00460dc0(uVar8 + 0xe2,pfVar10,pfVar15,pfVar14,pfVar21,pfVar22,pfVar23,pfVar25,bVar28);
+            Effect_Create(uVar8 + 0xe2,pfVar10,pfVar15,pfVar14,pfVar21,pfVar22,pfVar23,pfVar25,bVar28);
             iVar9 = iVar9 + -1;
           } while (iVar9 != 0);
         }
@@ -2431,8 +2431,8 @@ LAB_0046b3bf:
             local_248 = param_1[7];
             local_244 = param_1[8];
             local_240 = param_1[9];
-            FUN_004f9db0(&local_248,local_9c);
-            FUN_004fa0b0(param_1 + 0x30,local_9c,&local_23c);
+            Matrix_BuildFromEuler(&local_248,local_9c);
+            Vector_Rotate(param_1 + 0x30,local_9c,&local_23c);
             param_1[0x5c] = local_23c + param_1[0x5c];
             param_1[0x5d] = local_238 + param_1[0x5d];
             param_1[0x5e] = local_234 + param_1[0x5e];

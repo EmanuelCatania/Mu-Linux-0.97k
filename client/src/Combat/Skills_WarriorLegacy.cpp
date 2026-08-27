@@ -116,7 +116,7 @@ void __cdecl Combat_UseWarriorSkill(int c, int o)
     float* angle = (float*)(o + 0x1c);
     float* light = (float*)(o + 0xe8);
     float scale[3] = { 1.0f, 1.0f, 1.0f };
-    FUN_00460dc0(0x4D0, pos, angle, light, NULL, NULL, (float*)(uintptr_t)0xffffffff, NULL, 0);
+    Effect_Create(0x4D0, pos, angle, light, NULL, NULL, (float*)(uintptr_t)0xffffffff, NULL, 0);
 
     // Play random sword sound (0x28 or 0x29)
     PlayBuffer((_rand() & 1) + 0x28, 0, 0);
@@ -216,7 +216,7 @@ void __cdecl Entity_WeaponHit(int param_1) {
     FUN_0043e820(param_1, 0x57);
     *(DWORD *)(param_1 + 0x164) = 0;
     *(BYTE  *)(param_1 + 0x7c)  = 1;
-    FUN_00460dc0(0x498,
+    Effect_Create(0x498,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
         (float*)0, (float*)0, (float*)0xffffffff, (float*)0, 0);
     FUN_00404bc0(0x58, 0, 0);
@@ -292,25 +292,25 @@ void __cdecl Entity_TeleportEnd(int entity_idx) {
             goto LAB_00445110;
         }
         *puVar3 = 0;
-        FUN_00460dc0(0xd2, (float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+        Effect_Create(0xd2, (float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                      (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
         for (int i = 0; i < 10; i++)
-            FUN_00460dc0(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+            Effect_Create(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
     } else if (sVar2 == 0x127) {
         *puVar3 = 0;
         for (int i = 0; i < 8; i++) {
-            FUN_00460dc0(0xe2,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+            Effect_Create(0xe2,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
-            FUN_00460dc0(0xe3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+            Effect_Create(0xe3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
         }
     } else if (sVar2 == 300) {
         *puVar3 = 0;
-        FUN_00460dc0(0xd2,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+        Effect_Create(0xd2,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                      (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
         for (int i = 0; i < 10; i++)
-            FUN_00460dc0(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+            Effect_Create(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
     } else {
         FUN_0043e820(entity_idx, 6);
@@ -378,7 +378,7 @@ void __cdecl Entity_MeleeAttackStart(int param_1) {
     *(float*)(param_1 + 0x108) = 5.0f;   // 0x40A00000
     *(BYTE *)(param_1 + 0x7c)  = 3;      // melee attack mode
     *(float*)(param_1 + 0x164) = 1.0f;   // 0x3F800000
-    FUN_00460dc0(0x498,
+    Effect_Create(0x498,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
         (float*)0, (float*)0, (float*)0xffffffff, (float*)0, 0);
     FUN_00404bc0(0x58, 0, 0);

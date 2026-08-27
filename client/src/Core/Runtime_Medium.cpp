@@ -53,9 +53,9 @@ void __cdecl RenderInformation(void) {
     if ((DAT_005590ac == 1) || (DAT_005615c0 != 5)) {
         UI_RenderChatLogOverlay(); // SystemText / chat list
     }
-    FUN_004c14e0(); // RenderDebugWindow / FPS reset
+    UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     FUN_004c3530(); // RenderHelpWindow / item info
-    FUN_004bffa0(); // RenderCursor
+    Cursor_Render(); // RenderCursor
     FUN_0051e0c0(); // RenderInfomation3D
 }
 

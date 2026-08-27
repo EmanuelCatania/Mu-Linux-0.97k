@@ -1,4 +1,4 @@
-// Model_Gates.cpp  —  OpenSounds @ 0x0050F030
+// IDA: FUN_0050f030 @ 0x0050F030 — Sound_LoadGameSamples
 //
 // Precarga los sonidos globales del juego (ids 0..109) via FUN_00404a10
 // (LoadWaveFile).  El nombre del archivo viene del port anterior; a pesar de
@@ -30,7 +30,8 @@
 #include "globals.h"
 #include "functions.h"
 
-void __cdecl FUN_0050f030(void)
+// IDA: FUN_0050f030
+void __cdecl Sound_LoadGameSamples(void)
 {
     FUN_00404a10(0,    "Data\\Sound\\aWind.wav", 1, '\0');   // a바람.wav
     FUN_00404a10(1,    "Data\\Sound\\aRain.wav", 1, '\0');   // a비.wav

@@ -64,7 +64,7 @@ void* __cdecl FUN_00456590(int entity, int effectType, float scale, int bone, fl
     float outPos[3];
     void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * 0xbc);
     float *boneMat = (float *)(*(int *)(entity + 0x114) + bone * 0x30);
-    FUN_004409a0(modelPtr, boneMat, offset, outPos, '\x01');
+    BMD_TransformPosition(modelPtr, boneMat, offset, outPos, '\x01');
 
     // Pulsing light: sin(animTick * period) * amp + base
     float sinVal = (float)fsin((double)DAT_05826e08 * (double)_DAT_005528e0);
@@ -95,13 +95,13 @@ void* __cdecl FUN_00456650(int entity, int bone1, int bone2, float scale)
     // Bone1: offset {5, 0, 0} → spawn at world pos
     float vec1[4] = { 5.0f, 0.0f, 0.0f, 0.0f };
     float outPos1[4];
-    FUN_004409a0(modelPtr, (float *)(bone1 * 0x30 + *(int *)(entity + 0x114)), vec1, outPos1, '\x01');
+    BMD_TransformPosition(modelPtr, (float *)(bone1 * 0x30 + *(int *)(entity + 0x114)), vec1, outPos1, '\x01');
     FUN_004795c0(0x4d1, outPos1, scale, light, 0, 0.0f, 0);
 
     // Bone2: offset {-5, 0, 0} → spawn at world pos, write result to entity+0x40
     vec1[0] = -5.0f;
     float outPos2[4];
-    FUN_004409a0(modelPtr, (float *)(bone2 * 0x30 + *(int *)(entity + 0x114)), vec1, outPos2, '\x01');
+    BMD_TransformPosition(modelPtr, (float *)(bone2 * 0x30 + *(int *)(entity + 0x114)), vec1, outPos2, '\x01');
     FUN_004795c0(0x4d1, outPos2, scale, light, 0, 0.0f, 0);
 
     *(float *)(entity + 0x40) = outPos2[0];

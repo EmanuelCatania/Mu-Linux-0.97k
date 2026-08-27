@@ -512,7 +512,7 @@
 //   FUN_00449840 (DeleteCloth/Entity_ClearBoneLinks) — stubs.cpp
 //   FUN_0045c050 (SetCharacterScale) — alias macro
 //   FUN_0043e820 (SetAction)
-//   FUN_0046d840 (CreateJoint)
+//   Joint_Create (CreateJoint)
 //   FUN_004f7500 (RequestTerrainHeight)
 //   OpenNpc_stub (0x005091D0)
 extern "C++" {
@@ -921,8 +921,8 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned int*)(c + 12) = 1072064102;
         *(unsigned int*)(c + 100) = 2;
         *(unsigned int*)(c + 104) = 1065353216;
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 54:
     case 151:
@@ -940,8 +940,8 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
         c = CreateChar5(Key, 311, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1068708659;
         *(unsigned short*)(c + 624) = 542;
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 58:
     case 59:
@@ -957,15 +957,15 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
             *(unsigned int*)(c + 4) = 1;
             *(unsigned short*)(c + 624) = 568;
         }
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 60:
         FUN_005098c0(43);
         c = CreateChar5(Key, 313, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1074580685;
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 61:
     case 63:
@@ -978,15 +978,15 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
         } else {
             *(unsigned int*)(c + 12) = 1069547520;
         }
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 62:
         FUN_005098c0(45);
         c = CreateChar5(Key, 315, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1069547520;
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 64:
         FUN_005098c0(46);
@@ -1101,8 +1101,8 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned int*)(c + 12) = 1072064102;
         *(unsigned short*)(c + 624) = 416;
         *(unsigned char*)(c + 627) = 63;
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 83:
         FUN_005098c0(41);
@@ -1110,8 +1110,8 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned int*)(c + 12) = 1068708659;
         *(unsigned short*)(c + 624) = 542;
         *(unsigned char*)(c + 627) = 63;
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
-        FUN_0046d840(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
+        Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 84: case 90: case 96: case 113: case 119: case 125:
         FUN_005098c0(47);

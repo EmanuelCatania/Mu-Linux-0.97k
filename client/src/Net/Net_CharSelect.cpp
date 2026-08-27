@@ -118,7 +118,7 @@ void __cdecl CharSelect_SendSelectPacket(void)
     DAT_083a7c14 = 0x18;
     DAT_083a7c18 = 0x15;
     PlayBuffer(0x1b, 0, 0);
-    FUN_0047ec60(1);              // ClearInput(1)
+    Input_ClearState(1);              // ClearInput(1)
     DAT_00559c84 = 0;             // InputEnable = false
 }
 // FUN_0051af50 — implemented in src/UI/UI_StatsPanel.cpp (UI_StatsPanel_Render)

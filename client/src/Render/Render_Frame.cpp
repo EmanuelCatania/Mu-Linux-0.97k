@@ -63,7 +63,7 @@
 //
 //   if g_GameSubState != 10: FUN_004f9ac0('\0') → GL_DepthTest(false)
 //   FUN_004fd800()    → Terrain_Render()          — tile grid terrain + objects
-//   FUN_0046be40()    → Particle_Render()          — particle system draw
+//   Particle_RenderAll() (IDA: FUN_0046be40)       — particle system draw
 //   FUN_00500aa0()    → Entity_UpdatePositions()   — avanza timers/pos de entidades
 //                         itera DAT_0839be18, campo -0x5a=active, -0x51=pos float
 //                         tipo != 0x10a (cofre): actualiza float pos
@@ -88,16 +88,16 @@
 //   GL_BeginSprite()    → Render_Flush()              — 1 instrucción, posiblemente glFlush
 //   if g_GameSubState == 2 && DAT_07e118e8 not in {3, >=10}:
 //     FUN_0046cb70()  → SkillEffect_Render() again  — segunda pasada en in-world state
-//   FUN_00479730()    → Sigil_RenderAll()           — círculos de invocación/sigils
+//   Render_DrawSpritePool()    → Sigil_RenderAll()           — círculos de invocación/sigils
 //                         itera DAT_07c85894 stride 0x1bc; tipos 0/1/2 → blend distinto
-//                         llama FUN_00479670 (Sigil_Draw) + resetea active flag
+//                         llama Render_DrawSprite (Sigil_Draw) + resetea active flag
 //   FUN_00478c00()    → Character_Animate()         — actualiza animaciones de personaje
 //                         función compleja con muchos floats; ~50 líneas
 //   FUN_00479330()    → Sign_RenderAll()            — billboards/letreros en mundo
 //                         itera DAT_07c80158 stride 0x70; SetBlendMode(alpha) + EnableAlpha
 //                         llama FUN_005120c0(pos, type, pos2, scale, alpha) = Sign_Draw
 //   glPopMatrix()
-//   FUN_004b0310()    → EntityInfo_Overlay()        — overlay de info de entidades
+//   Mouse_UpdateHoverTargets()    → EntityInfo_Overlay()        — overlay de info de entidades
 //                         usa HashTable + SHORT tipo + floats; función ~40 líneas
 //   GL_Begin2D()    → GL_SetupOrtho2D()           — establece proyección ortográfica 2D
 //                         glPushMatrix + glMatrixMode + glLoadIdentity + glViewport(0,0,w,h)
@@ -120,12 +120,12 @@
 //                     → SystemText_Render()         — notificaciones del sistema
 //                         glColor3f(1,1,1) + SelectObject(normal_font)
 //                         CHAR buf[256]; renderiza mensajes del sistema
-//   FUN_004c14e0()    → FPS_TimerReset()            — tick por segundo
+//   UI_UpdateFpsCounter()    → FPS_TimerReset()            — tick por segundo
 //                         SelectObject(normal_font); timeGetTime() % 1000:
 //                         si > 999ms: resetea DAT_07e016f0 + DAT_07e11dcc=0 (frame counter)
 //   FUN_004c3530()    → CondText_Render()           — texto condicional (DAT_07e11d20==1)
 //                         GL_ResetState() + DAT_07eaa154=0; operaciones de string
-//   FUN_004bffa0()    → AnimUI_Render() × 2        — elemento UI animado (6 frames)
+//   Cursor_Render()    → AnimUI_Render() × 2        — elemento UI animado (6 frames)
 //                         SetBlendMode + glColor3f(1,1,1)
 //                         ftol()%6 → UV offset: {1,3,5}→local_4=0.5; {2,3,4}→local_8=0.5
 //   FUN_0051e0c0()    → SpecialMap_Render3D()       — pasada 3D para mapas especiales
@@ -173,7 +173,7 @@
 //   FUN_004f9050  → Camera_SetupFrustum(fov_w, cam_pos)
 //   FUN_004f9ac0  → GL_DepthTest(enable)           — glEnable/Disable(GL_DEPTH_TEST)
 //   FUN_004fd800  → Terrain_Render()
-//   FUN_0046be40  → Particle_Render()
+//   Particle_RenderAll (IDA: FUN_0046be40) → particle system draw
 //   FUN_00500aa0  → Entity_UpdatePositions()       — timer/pos update pool DAT_0839be18
 //   FUN_0045ab00  → Entity_RenderAll_3D()
 //   FUN_005038e0  → Entity_Render_Sprites()        — billboards 2D-in-3D
@@ -186,19 +186,19 @@
 //   FUN_0046c3e0  → SpellCircle_RenderAll()        — círculos mágicos pool DAT_07c608b4
 //   FUN_00479790  → Portal_Render()
 //   GL_BeginSprite  → Render_Flush()                 — 1 instrucción
-//   FUN_00479730  → Sigil_RenderAll()              — sigils pool DAT_07c85894 stride 0x1bc
+//   Render_DrawSpritePool  → Sigil_RenderAll()              — sigils pool DAT_07c85894 stride 0x1bc
 //   FUN_00478c00  → Character_Animate()            — animación de personaje (~50 líneas)
 //   FUN_00479330  → Sign_RenderAll()               — letreros pool DAT_07c80158 stride 0x70
-//   FUN_004b0310  → EntityInfo_Overlay()           — overlay info entidades (HashTable)
+//   Mouse_UpdateHoverTargets  → EntityInfo_Overlay()           — overlay info entidades (HashTable)
 //   GL_Begin2D  → GL_SetupOrtho2D()              — glPushMatrix+glMatrixMode+glViewport
 //   FUN_004cb6f0  → Target_Render()               — info entidad seleccionada (entity lookup)
 //   FUN_0051af50  → CharInfo_TextRender()          — texto stats panel (~40+ líneas)
 //   FUN_004f64d0  → TeleportUI_Update()            — hit-test teleport UI + GL reset
 //   UI_RenderNotices  → PlayerName_Render()           — nombres jugadores con parpadeo
 //   UI_RenderChatLogOverlay  → SystemText_Render()            — notificaciones sistema
-//   FUN_004c14e0  → FPS_TimerReset()              — tick/s: timeGetTime %1000 reset
+//   UI_UpdateFpsCounter  → FPS_TimerReset()              — tick/s: timeGetTime %1000 reset
 //   FUN_004c3530  → CondText_Render()             — texto condicional DAT_07e11d20
-//   FUN_004bffa0  → AnimUI_Render()              — elemento UI 6-frame animado (×2)
+//   Cursor_Render  → AnimUI_Render()              — elemento UI 6-frame animado (×2)
 //   FUN_0051e0c0  → SpecialMap_Render3D()         — 3D pass mapas 0x97/0x99
 //   FUN_0040f670  → Watchdog_Reset(obj)
 //   GL_End2D  → GL_PopMatrix2()              — glPopMatrix() × 2
@@ -544,13 +544,13 @@ void Render_HPBars_OLD(void)
 //   FUN_0046cb70  → RenderPlanes / SkillEffect_Render
 //   FUN_0046c3e0  → RenderBlurs / Particle_Render
 //   FUN_00478c00  → RenderParticles (effect pool)
-//   FUN_00479730  → RenderSprites
+//   Render_DrawSpritePool  → RenderSprites
 //   GL_Begin2D  → BeginBitmap (ortho2D)
 //   GL_End2D  → EndBitmap
 //   GL_BeginSprite  → BeginSprite (push+identity)
 //   GL_BeginViewport  → BeginOpengl
 //   FUN_00404bc0  → BGM helper
-//   FUN_004b0310  → EntityInfo_Overlay / CharPreview
+//   Mouse_UpdateHoverTargets  → EntityInfo_Overlay / CharPreview
 // (Funciones helper ya declaradas en functions.h via stdafx.h)
 
 void Render_Scene3D(void)
@@ -641,7 +641,7 @@ void Render_Scene3D(void)
     // 2026-05-07: Particle_Render (FUN_0046BE40) — port FIEL desde IDA
     // Game_RenderTick:113. Itera el effect pool y renderiza partículas
     // (gate sparks, magic glow, etc). ANTES no estaba wireado.
-    FUN_0046be40();                              // Particle_Render
+    Particle_RenderAll();                         // particle system draw
     FUN_00500aa0();                              // RenderBoids (decoration animals)
     FUN_0045ab00();                              // Entity_RenderAll_3D
     if (DAT_07e11d30 != 0) {                     // if (EditFlag) RenderTerrain(1) — IDA: aquí, no tras Trail
@@ -654,18 +654,18 @@ void Render_Scene3D(void)
     // Game_RenderTick:124-125. Fauna decorativa (peces, mariposas).
     FUN_00502200(0, 0, 0, 0);                    // RenderFishs
     FUN_00500970();                              // RenderBugs
-    FUN_0046cb70();                              // SkillEffect_Render
+    SkillEffects_RenderAll();
     FUN_00473710();                              // ItemDrop_Render
-    FUN_0046bba0();                              // RenderEffects
+    EffectPool_RenderAll();
     Player_Render();                             // Player_Render
     FUN_0046c3e0();                              // Trail_RenderAll
     FUN_00479790();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
 
     GL_BeginSprite();                              // BeginSprite (push + identity)
     if (worldId == 2 && HeroTile != 3 && HeroTile < 10) {
-        FUN_0046cb70();
+        SkillEffects_RenderAll();
     }
-    FUN_00479730();                              // RenderSprites
+    Render_DrawSpritePool();                              // RenderSprites
     FUN_00478c00();                              // RenderParticles (effect pool)
     // 2026-05-06: damage popup numbers (port FIEL desde IDA Game_RenderTick:139).
     // Llamado entre RenderParticles y glPopMatrix para que los números floten en
@@ -674,7 +674,7 @@ void Render_Scene3D(void)
     FUN_00479330(0, 0, 0, 0);                    // RenderPoints (damage)
     glPopMatrix();
 
-    FUN_004b0310();                              // EntityInfo / CharPreview overlay
+    Mouse_UpdateHoverTargets();                              // EntityInfo / CharPreview overlay
 
     // ── 7. 2D HUD ─────────────────────────────────────────────────────────────
     GL_Begin2D();                              // BeginBitmap (Ortho2D)

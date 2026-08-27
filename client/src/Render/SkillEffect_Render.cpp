@@ -48,7 +48,7 @@
 //           // Modo billboard: draw 3D con matriz de rotación
 //           glPushMatrix();
 //           glTranslatef(pfVar1[1], pfVar1[2], pfVar1[3]);  // trasladar a posición efecto
-//           FUN_004f9db0(pfVar1+4, local_30);               → Matrix_FromEuler(rot[3], mat)
+//           Matrix_BuildFromEuler(pfVar1+4, local_30);               → Matrix_FromEuler(rot[3], mat)
 //           if (pfVar1[-2] == 1.42932e-43) {    // tipo 1 (1 en float = tipo especial)
 //             fVar3 = 20.0; fVar2 = 1.0;        // billboard grande y delgado
 //           } else {
@@ -75,7 +75,7 @@
 //   GL_SetBlendSrcOver  → GL_SetMode(mode)
 //   GL_BindTextureSlot  → Particle_SetTexture(type) — glBindTexture
 //   FUN_00511d00  → SkillEffect_Draw2D(type, pos, r, g, scale, ...)
-//   FUN_004f9db0  → Matrix_FromEuler(angles[3], out_mat[12])
+//   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
 //   GL_DrawBillboard  → SkillEffect_DrawBillboard(width, height, rot_mat)
 
 #include "stdafx.h"
@@ -148,7 +148,7 @@ void SkillEffect_Render(void)
             float local_30[12];
             glPushMatrix();
             glTranslatef(pfVar1[1], pfVar1[2], pfVar1[3]);
-            FUN_004f9db0(pfVar1 + 4, local_30);   // Matrix_FromEuler(angles, mat)
+            Matrix_BuildFromEuler(pfVar1 + 4, local_30);   // Matrix_FromEuler(angles, mat)
 
             float fVar2, fVar3;
             if (*(int *)(pfVar1 - 2) == 102) {    // IDA: integer texture type 102

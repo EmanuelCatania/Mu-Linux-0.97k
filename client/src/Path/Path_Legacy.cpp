@@ -77,7 +77,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //
 // Se elimina de paso la búsqueda de "walkable más cercano en radio 3" que había
 // aquí: era invención del port. El original falla y deja que PathFinding2 reintente
-// con otro iWall, que es lo que se replica en FUN_0043f3e0.
+// con otro iWall, que es lo que se replica en Path_FindRoute.
 //
 // 2026-08-17 (b) — `fDistance` (el `radius` de PathFinding2) TAMPOCO se usaba.
 // En el binario ese parámetro llega a FindPath como `Value` y parte la función en
@@ -315,12 +315,12 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
     return 1;
 }
 
-// FUN_0043f3e0 @ 0x0043F3E0 — PathFinding2(sx, sy, tx, ty, path_buf, radius)
+// IDA: FUN_0043f3e0 @ 0x0043F3E0 — PathFinding2(sx, sy, tx, ty, path_buf, radius)
 // Calls A* solver (FUN_0043f500). On fail, checks terrain walk flags at src/dst
 // to decide filter mode (2 or 4) and retries. On success (path_len >= 2),
 // copies waypoints from DAT_05826df4 result buffer into path_buf.
 // path_buf layout: [0]=0, [1]=0, [2]=wp_count, [3..17]=wp_x, [0x12..0x20]=wp_y.
-unsigned int __cdecl FUN_0043f3e0(int sx, int sy, int tx, int ty,
+unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
                                    unsigned char* path, float radius)
 {
     int filterMode = 2;
@@ -336,7 +336,7 @@ unsigned int __cdecl FUN_0043f3e0(int sx, int sy, int tx, int ty,
     // dereferenciarlo — de ahí el `pfReady = false` forzado desde 2026-05-03.
     // Ahora PathContext_Create() (src/Game/PathFinder.cpp, llamada desde WinMain)
     // replica el ctor del binario: 0x0043F280..0x0043F2C7, reserva de 0x424 bytes
-    // -no 0x420- y vtable en +0x414. InitPath (FUN_0043f2d0, mas abajo en este
+    // -no 0x420- y vtable en +0x414. InitPath (PathFinder_ResetContext, mas abajo en este
     // mismo archivo) ya estaba portada y la llama FUN_0050f690 (World_Init), igual
     // que en el binario; corre despues del ctor, que es el orden correcto.
     //
@@ -446,7 +446,7 @@ success:
         return 1;
     }
 }
-// FUN_0043e370 @ 0x0043E370 — FarAngle(curAngle, tgtAngle, mode)
+// IDA: FUN_0043e370 @ 0x0043E370 — FarAngle(curAngle, tgtAngle, mode)
 // Returns signed angular difference between two angles, handling wrap-around at 360.
 // If mode==1, returns absolute value (unsigned distance).
 //
@@ -455,7 +455,7 @@ success:
 // `fcom a2, a1` (comparando a2 con a1) ANTES del `fsub` → v6 representa
 // `a2 > a1`, no el signo del result. Reescrito preservando exactamente las
 // asignaciones del decomp (`360 - a2 + a1` y `360 - a1 + a2`) en cada rama.
-float __cdecl FUN_0043e370(float a1, float a2, char a3)
+float __cdecl Angle_GetDifference(float a1, float a2, char a3)
 {
   if ( a1 < 0.0f ) a1 += 360.0f;
   if ( a2 < 0.0f ) a2 += 360.0f;
@@ -476,7 +476,7 @@ float __cdecl FUN_0043e370(float a1, float a2, char a3)
 
 
 
-// FUN_0043ea20 @ 0x0043EA20 — Entity_MovePath(entity, flag)
+// IDA: FUN_0043ea20 @ 0x0043EA20 — Entity_MovePath(entity, flag)
 // Advances entity along its Catmull-Rom waypoint path.
 // path_wp_x/y arrays at entity+0x357/0x366 (grid coords); path_substep 0-3 per segment.
 // Returns 1 when entity arrives at final waypoint; 0 otherwise.
@@ -521,7 +521,7 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
     if (sqrtf(dx*dx + dy*dy) > 20.0f || ++*(byte *)(ent + 853) <= 3) {
         if (turn) {
             const float angle = FUN_0043e050(*(float *)(ent + 16), *(float *)(ent + 20), targetX, targetY);
-            const float delta = FUN_0043e370(*(float *)(ent + 36), angle, 1);
+            const float delta = Angle_GetDifference(*(float *)(ent + 36), angle, 1);
             *(float *)(ent + 36) = (delta >= 45.0f) ? angle : FUN_0043e1b0(*(float *)(ent + 36), angle, delta * 0.5f);
         }
         return 0;
@@ -540,7 +540,7 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
     return 1;
 }
 
-unsigned int __cdecl FUN_0043ea20(void *entity, char flag)
+unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
 {
     char *ent = (char *)entity;
     return MovePath_IDA_0043EA20(ent, flag);
@@ -645,10 +645,10 @@ unsigned int __cdecl FUN_0043ea20(void *entity, char flag)
 #endif // obsolete non-IDA linear MovePath reconstruction
 }
 
-// FUN_004830b0 @ 0x004830B0 — PathRange_Check(sx,sy,tx,ty)
+// IDA: FUN_004830b0 @ 0x004830B0 — PathRange_Check(sx,sy,tx,ty)
 // Bresenham line from (sx,sy) to (tx,ty) testing terrain attr DAT_0838bc70.
 // Returns 1 if path is clear, 0 if blocked (attr>3 and not walkable).
-char __cdecl FUN_004830b0(int sx, int sy, int tx, int ty) {
+char __cdecl Path_IsLineClear(int sx, int sy, int tx, int ty) {
     int tile = FUN_004f6c40((unsigned int)sx, (unsigned int)sy);
     int err  = 0;
     unsigned int dx = (unsigned int)(tx - sx);

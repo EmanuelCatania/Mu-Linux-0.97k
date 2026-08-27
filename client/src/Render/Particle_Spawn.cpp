@@ -1,4 +1,4 @@
-// Particle_Spawn.cpp — FUN_00475220 @ 0x00475220
+// Particle_Spawn.cpp — IDA: FUN_00475220 @ 0x00475220
 // Allocates a free slot in the particle pool and initialises it.
 // The pool starts at DAT_07abf5f0; each slot is 0x70 bytes.
 // Overflow guard: if the slot pointer exceeds 0x7b1166f, returns 0.
@@ -29,7 +29,8 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
                          int mesh, int blend, float wx, float wy, float wz,
                          float r, float g, float b, float a);   // [DIAG FORGE]
 
-int __cdecl FUN_00475220(int param_1, float *param_2, float *param_3, float *param_4,
+// IDA: FUN_00475220
+int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *param_4,
                          int param_5, float param_6, int param_7)
 {
     // [DIAG FORGE] entry-point CreateParticle (mesh field = subtype param_5, a = scale)
@@ -319,7 +320,7 @@ int __cdecl FUN_00475220(int param_1, float *param_2, float *param_3, float *par
                     *(unsigned int *)(pcVar11 + 0x38) = uVar8 + 0x18;
                     iVar7 = _rand();
                     *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-                    FUN_004f9db0(pfVar2, local_30);
+                    Matrix_BuildFromEuler(pfVar2, local_30);
                     uVar8 = _rand();
                     uVar8 = uVar8 & 0x8000000f;
                     if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
@@ -333,7 +334,7 @@ int __cdecl FUN_00475220(int param_1, float *param_2, float *param_3, float *par
                         local_38 = local_38 * _DAT_00552540;
                     }
                     local_34 = 0.0f;
-                    FUN_004fa0b0(&local_3c, local_30, pfVar3);
+                    Vector_Rotate(&local_3c, local_30, pfVar3);
                     return iVar6;
                 }
                 if (0x47f < param_1) {
@@ -416,9 +417,9 @@ int __cdecl FUN_00475220(int param_1, float *param_2, float *param_3, float *par
                 iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x168);
                 iVar7 = _rand(); *(float *)(pcVar11 + 0x20) = (float)(iVar7 % 0x168);
                 iVar7 = _rand(); *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-                FUN_004f9db0(pfVar2, local_30);
+                Matrix_BuildFromEuler(pfVar2, local_30);
                 local_3c = 0.0f; local_38 = -50.0f; local_34 = 0.0f;
-                FUN_004fa0b0(&local_3c, local_30, pfVar3);
+                Vector_Rotate(&local_3c, local_30, pfVar3);
                 return iVar6;
             }
             if (param_5 == 3) {
@@ -477,14 +478,14 @@ switchD_4b5:
         if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
         *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 8) * _DAT_00552874;
         iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x168);
-        FUN_004f9db0(param_3, local_30);
+        Matrix_BuildFromEuler(param_3, local_30);
         local_3c = 0.0f;
         uVar8 = _rand();
         uVar8 = uVar8 & 0x8000000f;
         if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
         local_38 = -(float)(int)(uVar8 + 8);
         iVar7 = _rand(); local_34 = (float)(iVar7 % 6 + -3);
-        FUN_004fa0b0(&local_3c, local_30, pfVar3);
+        Vector_Rotate(&local_3c, local_30, pfVar3);
         if (*(int *)(pcVar11 + 4) == 0x4b6) {
             pcVar11[0x28] = (char)-0x33; pcVar11[0x29] = (char)-0x34; pcVar11[0x2a] = (char)-0x34; pcVar11[0x2b] = '=';
             pcVar11[0x2c] = '\0'; pcVar11[0x2d] = '\0'; pcVar11[0x2e] = '\0'; pcVar11[0x2f] = '\0';
@@ -678,16 +679,16 @@ switchD_4ab:
         if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
         *(float *)(pcVar11 + 0x14) = (float)(int)(uVar8 - 8) + *(float *)(pcVar11 + 0x14);
         if (param_5 == 0) {
-            FUN_004f9db0(param_3, local_30);
+            Matrix_BuildFromEuler(param_3, local_30);
             local_38 = 3.0f;
         } else {
             iVar7 = _rand();
             *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-            FUN_004f9db0(pfVar2, local_30);
+            Matrix_BuildFromEuler(pfVar2, local_30);
             local_38 = 15.0f;
         }
         local_3c = 0.0f; local_34 = 0.0f;
-        FUN_004fa0b0(&local_3c, local_30, pfVar3);
+        Vector_Rotate(&local_3c, local_30, pfVar3);
         iVar7 = _rand(); *pfVar2 = (float)(iVar7 % 0x168);
         return iVar6;
 
@@ -700,7 +701,7 @@ switchD_4ab:
         pcVar11[0x20] = '\0'; pcVar11[0x21] = '\0'; pcVar11[0x22] = '\0'; pcVar11[0x23] = '\0';
         *(float *)(pcVar11 + 0x0c) = (float)(int)(uVar8 + 0x40) * _DAT_005524f8;
         iVar7 = _rand(); *(float *)(pcVar11 + 0x24) = (float)(iVar7 % 0x168);
-        FUN_004f9db0(pfVar2, local_30);
+        Matrix_BuildFromEuler(pfVar2, local_30);
         local_3c = 0.0f;
         uVar8 = _rand();
         uVar8 = uVar8 & 0x8000003f;
@@ -710,7 +711,7 @@ switchD_4ab:
         uVar8 = uVar8 & 0x8000000f;
         if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
         local_34 = (float)(int)(uVar8 + 0x10);
-        FUN_004fa0b0(&local_3c, local_30, (float *)(pcVar11 + 100));
+        Vector_Rotate(&local_3c, local_30, (float *)(pcVar11 + 100));
         *pfVar2 = 0.0f;
         pcVar11[0x20] = '\0'; pcVar11[0x21] = '\0'; pcVar11[0x22] = '\0'; pcVar11[0x23] = '\0';
         pcVar11[0x24] = '\0'; pcVar11[0x25] = '\0'; pcVar11[0x26] = '\0'; pcVar11[0x27] = '\0';

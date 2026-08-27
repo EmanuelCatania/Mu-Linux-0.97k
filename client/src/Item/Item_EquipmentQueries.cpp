@@ -7,7 +7,8 @@
 
 // FUN_004824c0 @ 0x004824C0 (~266 lines) — get equipped weapon type (primary)
 // Decrypts CharacterMachine, checks class!=elf, returns weapon type index or -1.
-int __stdcall FUN_004824c0_stub(void) {
+// IDA: FUN_004824c0
+int __stdcall Item_FindElfWeaponInventorySlot(void) {
     // 0x004824C0 — Get equipped weapon type (primary hand)
     // anti-tamper hash table — skipped (encrypt/decrypt CharacterMachine)
 
@@ -64,7 +65,8 @@ int __stdcall FUN_004824c0_stub(void) {
 }
 
 // FUN_00482850 @ 0x00482850 (~260 lines) — get equipped weapon type (secondary/shield)
-int __stdcall FUN_00482850_stub(void) {
+// IDA: FUN_00482850
+int __stdcall Item_CountElfWeaponInventorySlots(void) {
     // 0x00482850 — Get equipped weapon type (secondary/shield)
     // anti-tamper hash table — skipped (encrypt/decrypt CharacterMachine)
 
@@ -118,8 +120,8 @@ int __stdcall FUN_00482850_stub(void) {
 // FUN_00482e40 @ 0x00482E40 (~109 lines) — count equipped items of weapon group
 // param_1: 0=right, 1=left, 2=crossbow. Reads DAT_00559c60/c64/c68.
 // Scans 8x4 inventory grid counting matching weapon types.
-// FUN_00482e40 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_00482e40(int a1)
+// IDA: FUN_00482e40
+int __cdecl Item_CountWeaponGroupItems(int a1)
 {
   char v1; // bl
   int v2; // ecx

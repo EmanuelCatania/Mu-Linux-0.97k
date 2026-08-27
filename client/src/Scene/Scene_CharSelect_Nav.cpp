@@ -1141,8 +1141,8 @@ int __cdecl FUN_005130f0(float *param_1, float *param_2, float *param_3,
 // ── FUN_00401010 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 10-byte: simple wrappers & field ops ────────────────────────────────────
 
-// FUN_00401010 @ 0x00401010 (10 bytes) — calls quest table init
-void FUN_00401010(void) { FUN_00403ea0((void *)&DAT_00567500); }
+// IDA: FUN_00401010 @ 0x00401010 — calls quest table init
+void Quest_InitializeStaticState(void) { FUN_00403ea0((void *)&DAT_00567500); }
 
 // ── FUN_00401020 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 12-byte: CRT atexit wrappers ────────────────────────────────────────────
@@ -1611,7 +1611,7 @@ float __cdecl FUN_0043e1b0(float a1, float a2, float a3)
 //   - Entity type (c+2): non-player (39/40/51/302/default) vs player (390)
 //   - Para el jugador: helper (c+696)=818/819 → a distancia, si no las armas izquierda/derecha
 //     (c+624 LH, c+648 RH) determine animation 34..89.
-// Calls: SetAction (FUN_0043e820), CreateEffect (FUN_00460dc0), PlayBuffer,
+// Calls: SetAction (FUN_0043e820), CreateEffect (Effect_Create), PlayBuffer,
 //   SetAttackSpeed (FUN_00443e70). All implemented.
 //
 // functions.h declara 4 argumentos pero IDA usa sólo 1 (DWORD c). Los extra se ignoran.
@@ -1624,7 +1624,7 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
         // Non-player entities
         switch (v1) {
         case 39:
-            FUN_00460dc0(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            Effect_Create(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(16, c, 0);
             break;
@@ -1633,7 +1633,7 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
             PlayBuffer(16, c, 0);
             break;
         case 51:
-            FUN_00460dc0(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            Effect_Create(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(91, 0, 0);
             break;
@@ -1930,7 +1930,7 @@ label_26:
                 pos[0] = (float)(v12 - 64) + *(float*)(c + 16);
                 pos[1] = *(float*)(c + 20);
                 pos[2] = (float)(rand() % 50) + *(float*)(c + 24) + 200.0f;
-                FUN_00475220(1221, pos, (float*)(c + 28), (float*)(c + 232), 0, 1.0f, 0);
+                Particle_Spawn(1221, pos, (float*)(c + 28), (float*)(c + 232), 0, 1.0f, 0);
             }
         }
         FUN_00404bc0(105, 0, 0);
@@ -2130,7 +2130,7 @@ void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4
 
     float in1[3] = { param_3, param_4, param_5 };
     float out[3];
-    FUN_004fa0b0(in1, (float *)in2, out);      // VectorRotate
+    Vector_Rotate(in1, (float *)in2, out);      // VectorRotate
 
     out[0] += a2[4];             // o+16 = Position[0]
     out[1] += a2[5];
@@ -2143,14 +2143,14 @@ void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4
         float v10 = (float)(rand() % 6 + 6) * 0.1f;
         float Light[3] = { v10, v10 * 0.60000002f, v10 * 0.40000001f };
         if ((rand() % 2) == 0)
-            FUN_00475220(1195, out, v5, Light, rand() % 4, 1.0f, 0);
+            Particle_Spawn(1195, out, v5, Light, rand() % 4, 1.0f, 0);
         AddTerrainLight(out[0], out[1], Light, 4, PrimaryTerrainLight[0]);
     } else if (param_1 == 1) {
         if ((rand() % 2) == 0)
-            FUN_00475220(1220, out, v5, a2 + 58, 0, 1.0f, 0);   // o+232 = Light
+            Particle_Spawn(1220, out, v5, a2 + 58, 0, 1.0f, 0);   // o+232 = Light
     } else if (param_1 == 2) {
         if ((rand() % 2) == 0)
-            FUN_00475220(1220, out, v5, a2 + 58, 2, 1.0f, 0);
+            Particle_Spawn(1220, out, v5, a2 + 58, 2, 1.0f, 0);
     }
 }
 

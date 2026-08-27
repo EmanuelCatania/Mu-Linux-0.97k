@@ -354,8 +354,8 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
             BMD__TransformPosition(this_,
                 (float (*)[4])(g_BoneScratch + toA[i]),
                 zeroPos, worldPos, true);
-            FUN_0046d840(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, param_1, targetScale, -1, 0);
-            FUN_0046d840(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, param_1, scale2, -1, 0);
+            Joint_Create(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, param_1, targetScale, -1, 0);
+            Joint_Create(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, param_1, scale2, -1, 0);
             FUN_004795c0(1277, targetPos, spriteScale, fxLight, param_1, 0.0f, 0);
         }
 
@@ -366,8 +366,8 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
             BMD__TransformPosition(this_,
                 (float (*)[4])(g_BoneScratch + toB[i]),
                 zeroPos, worldPos, true);
-            FUN_0046d840(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, param_1, targetScale, -1, 0);
-            FUN_0046d840(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, param_1, scale2, -1, 0);
+            Joint_Create(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, param_1, targetScale, -1, 0);
+            Joint_Create(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, param_1, scale2, -1, 0);
             FUN_004795c0(1277, targetPos, spriteScale, fxLight, param_1, 0.0f, 0);
         }
     }

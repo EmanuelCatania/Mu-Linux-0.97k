@@ -94,8 +94,8 @@
 //         // desplazamiento en círculo tomado de RandomTable (DAT_055c9e58)
 //         local_60 = {random_angle, 0, 0}
 //         local_3c = {random_radius, 0, 0}
-//         FUN_004f9db0(local_60, local_3c+3) → Matrix_FromEuler
-//         FUN_004fa0b0(local_3c, local_3c+3, &local_54) → Matrix_Transform
+//         Matrix_BuildFromEuler(local_60, local_3c+3) → Matrix_FromEuler
+//         Vector_Rotate(local_3c, local_3c+3, &local_54) → Matrix_Transform
 //         offset_pos = base_pos + local_54
 //         FUN_00505a10(entity, class, 0, &local_74, rot, state_flags, ...)
 //             → Entity_DrawAt(entity, class, 0, angle, rot, flags, ...) (trail node)
@@ -146,8 +146,8 @@
 //   FUN_00505a10  → Entity_DrawAt(entity, class, slot, angle_ptr, rot, state, byte, a, b, c, d, e)
 //   FUN_004f7960  → Terrain_GetAngle(world_x, world_y, out_angle_xyz)
 //   Camera_ProjectWorldToScreen  → World_ToScreen(pos[3], out_x, out_y)
-//   FUN_004f9db0  → Matrix_FromEuler(angles[3], out_mat[12])
-//   FUN_004fa0b0  → Matrix_TransformPoint(pt, mat, out)
+//   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
+//   Vector_Rotate  → Matrix_TransformPoint(pt, mat, out)
 //   DAT_055c9e58  → RandomTable (100 ints; reparte en círculo las monedas del Zen)
 //   DAT_05826e08  → frame oscillation counter (for Z bob in sub-state 10)
 //   DAT_0055284c  → Z bob amplitude constant
@@ -289,8 +289,8 @@ void Entity_Render(void)
                             local_60[2] = (float)(RandomTable[iVar7 % 100] % 0x168);
                             local_3c[0] = (float)(RandomTable[(iVar10 + local_94) % 100]
                                                   % (local_a0 + 0x14));
-                            FUN_004f9db0(local_60, local_3c + 3);         // Matrix_FromEuler
-                            FUN_004fa0b0(local_3c, local_3c + 3, local_xyz); // Matrix_TransformPoint
+                            Matrix_BuildFromEuler(local_60, local_3c + 3);         // Matrix_FromEuler
+                            Vector_Rotate(local_3c, local_3c + 3, local_xyz); // Matrix_TransformPoint
                             // Temporarily offset world pos for trail ghost
                             *(float *)(puVar9 + -0xf5) = local_54 + fVar2;
                             *(float *)(puVar9 + -0xf1) = local_50 + fVar3;

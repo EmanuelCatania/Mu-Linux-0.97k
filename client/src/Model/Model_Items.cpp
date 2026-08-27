@@ -1,4 +1,4 @@
-// Model_LoadItems @ 0x00506170
+// IDA: FUN_00506170 @ 0x00506170 — Model_LoadPlayerAndItemMeshes
 // Allocates the model data pool, zeroes it, then loads the player body mesh
 // (model slot 0x186) with all its animations (Korean-locale paths when
 // DAT_0055a7c4 == 0), plus all equipment piece slots (Helm/Armor/Pant/Glove/Boot
@@ -10,7 +10,8 @@
 
 // Model_LoadItems — loads player body + all equipment model slots.
 // Called once from FUN_0050e5a0 (Map_LoadResources) during startup.
-void __cdecl FUN_00506170(void)
+// IDA: FUN_00506170
+void __cdecl Model_LoadPlayerAndItemMeshes(void)
 {
     // Allocate raw model pool (0x5b334 bytes) and align the base pointer
     // with a random offset to frustrate memory-address fingerprinting.

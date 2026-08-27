@@ -60,12 +60,12 @@ void __cdecl MoveObject_Special_stub(int param_1) {
                     float posX = (float)(rand() % 300 - (int)_DAT_0055297c) + *(float*)(param_1 + 0x10);
                     float posZ = *(float*)(param_1 + 0x14) - (float)(rand() % 0x14 + (int)_DAT_00552ab4);
                     // CreateParticle — Ghidra shows phantom regs (unaff_EBX/EBP/ESI/EDI);
-                    // actual call signature: FUN_00475220(type, pos, light, size, flag, alpha, mode)
+                    // actual call signature: Particle_Spawn(type, pos, light, size, flag, alpha, mode)
                     // The particle spawn at height 80 with dust effect 0x4c5 is the key logic.
                     // Due to phantom stack params, exact arg mapping is approximate.
                     float pos[3] = { posX, *pHeight, *(float*)(param_1 + 0xe8) };
                     float light[3] = { 1.0f, 1.0f, 1.0f };
-                    FUN_00475220(0x4C5, pos, light, NULL, 0, posZ, 0);
+                    Particle_Spawn(0x4C5, pos, light, NULL, 0, posZ, 0);
                 }
             }
         }
@@ -75,7 +75,7 @@ void __cdecl MoveObject_Special_stub(int param_1) {
             *pHeight = 90.0f;
             FUN_004fa5a0();  // GuildMark_ResetTarget
             // AddTerrainAttributeRange(0xd, 0x46, 3, 6, 8, 0) — clear walkable zone
-            FUN_004f6f30(0x0d, 0x46, 3, 6, 0x08, 0x00);
+            Terrain_UpdateTileAttributeRect(0x0d, 0x46, 3, 6, 0x08, 0x00);
         }
 
         DAT_0055a7b8 = DAT_0055a7b8 - 1;
@@ -148,7 +148,7 @@ char* __stdcall PickObject_Mouse_stub(void) {
                     // BMD::Transform — compute world-space OBB
                     float bbMin[3], bbMax[3];
                     // obj+0x118 = BoundingBoxMin, obj+0x124 = mid, obj+0x130 = BoundingBoxMax
-                    FUN_004409a0(model, (float*)(obj + 0x118), (float*)(obj + 0x130), bbMin, 0);
+                    BMD_TransformPosition(model, (float*)(obj + 0x118), (float*)(obj + 0x130), bbMin, 0);
 
                     // Copy 48 bytes of OBB data from obj+0x130
                     float obb[12];
