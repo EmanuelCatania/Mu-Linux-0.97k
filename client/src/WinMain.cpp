@@ -776,7 +776,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         const DWORD kCharSet = DEFAULT_CHARSET;   // era 129 (HANGEUL_CHARSET)
         DAT_055ca00c = (DWORD)CreateFontA(fontSize, 0, 0, 0, 400, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
         DAT_055ca010 = (DWORD)CreateFontA(fontSize, 0, 0, 0, 700, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
-        DAT_055ca014 = (DWORD)CreateFontA(fontSize, 0, 0, 0, 700, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
+        // IDA: WinMain 0x41F151 — g_hFontBig mide el doble de la fuente
+        // base (FontHeight - 1), con peso bold. La usan el nombre del modal
+        // Trade y otros textos destacados; no es un segundo alias de bold.
+        const int bigFontHeight = 2 * (fontSize - 1);
+        DAT_055ca014 = (DWORD)CreateFontA(bigFontHeight, 0, 0, 0, 700, 0, 0, 0, kCharSet, 0, 0, 0, 0, "Arial");
     }
 
     // 16: WSAStartup — obligatorio antes de cualquier operación de socket

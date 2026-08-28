@@ -781,7 +781,7 @@ extern DWORD   DAT_07ea981c;
 extern short   DAT_07ea981e;   // second-password shuffle state (short, FUN_004e9250)
 extern DWORD   DAT_07ea982c;   // Screen3 panel origin X
 extern DWORD   DAT_07ea9830;   // Screen3 panel origin Y
-extern DWORD   DAT_07ea9834;
+extern char    DAT_07ea9834[11];    // IDA: nombre remoto de Trade (8+2 bytes del paquete, NUL)
 extern char    DAT_07ea983e;
 extern DWORD   DAT_07eaa0d0;
 extern DWORD   DAT_07eaa0d8;
@@ -792,6 +792,10 @@ extern DWORD   DAT_07eaa0f4;
 extern int     DAT_07eaa0f8;   // CharData_RecalcDurability accumulator (count of items needing repair)
 extern DWORD   DAT_07eaa0fc;
 extern char    DAT_07eaa0fd;
+extern int     TradeYourWait;       // IDA: m_nYourTradeWait
+extern int     TradeMyWait;         // IDA: m_nMyTradeWait
+extern DWORD   TradeRemoteGuildKey; // IDA: DAT_00559F54 durante Trade
+extern WORD    TradeRemoteLevel;    // IDA: DAT_07EAA0EC durante Trade
 extern DWORD   DAT_07eaa104;   // shop/item selection A
 extern DWORD   DAT_07eaa108;   // shop/item selection B
 extern char    DAT_07eaa114;

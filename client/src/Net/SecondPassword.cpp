@@ -1521,17 +1521,11 @@ void __cdecl FUN_004eb5d0(void) {
         break;
     }
 }
-// FUN_004eb7f0 @ 0x004EB7F0 — SecondPassword_Screen10 (514 lines)
-//   - Animated intro sequence for second-password UI: advances frame counter,
-//     dibuja el overlay de fade-in y transiciona a Screen5/6 al terminar.
-//   - SEH. Implemented in SecondPassword_UI.cpp.
+// IDA: FUN_004EB7F0 — entrada de Trade: Zen, confirmación y cancelación.
+//   - Usa TradeInventoryStartX/Y y TradeOpened como guard de la interfaz.
+//   - Los botones envían C3 C1:04:3C:01 y C3 C1:03:3D según corresponda.
 void __cdecl FUN_004eb7f0(void) {
-    // SecondPassword_Screen10 — animated intro sequence for second-password UI.
-    // Guard: DAT_07eaa11b tiene que ser distinto de cero (del chequeo de HashTable_Timer).
-    // Análisis del decompile: FUN_0043d8a0 lee DAT_07eaa11b; si es cero, retorna de inmediato.
-    // Si no es cero: el botón atrás/cancelar en [DAT_07ea5290+0x1a, +0x32) x [DAT_07ea528c+0x186, +0x19e)
-    // manda el opcode 0x19 de stop de BGM. También maneja el toggle de DAT_07eaa0e8 y arma/manda el paquete XOR.
-    // SEH frame stripped; HashTable noise stripped.
+    // IDA: el guard lee TradeOpened; se omite únicamente el ruido de HashTable.
 
     FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
     char cGuard = DAT_07eaa11b;
@@ -1545,7 +1539,7 @@ void __cdecl FUN_004eb7f0(void) {
     }
     if (cGuard == '\0') return;
 
-    // Back button check at [DAT_07ea5290+0x1a, +0x32) x [DAT_07ea528c+0x186, +0x19e)
+    // Botón Zen: [x+26,x+50) × [y+390,y+414).
     if ((int)(DAT_07ea5290 + 0x1a) <= (int)DAT_083a427c &&
         (int)DAT_083a427c < (int)(DAT_07ea5290 + 0x32) &&
         (int)(DAT_07ea528c + 0x186) <= (int)DAT_083a4278 &&
@@ -1563,10 +1557,13 @@ void __cdecl FUN_004eb7f0(void) {
         FUN_00404bc0(0x19, 0, 0);
     }
 
-    if (DAT_07eaa104 > 0) DAT_07eaa104 = DAT_07eaa104 - 1;
+    // IDA: FUN_004EB7F0 — m_nMyTradeWait se descuenta una vez por tick
+    // mientras Trade está abierto. No es DAT_07EAA104, que corresponde a otro
+    // estado de selección de interfaz.
+    if (TradeMyWait > 0) --TradeMyWait;
 
-    // Main button click at [DAT_07ea5290+0x61, +0x79) x [DAT_07ea528c+0x186, +0x19e)
-    if (DAT_07eaa104 == 0 && DAT_07e91388 == 0 &&
+    // Botón de confirmación: [x+97,x+121) × [y+390,y+414).
+    if (TradeMyWait == 0 && DAT_07e91388 == 0 &&
         (int)(DAT_07ea5290 + 0x61) <= (int)DAT_083a427c &&
         (int)DAT_083a427c < (int)(DAT_07ea5290 + 0x79) &&
         (int)(DAT_07ea528c + 0x186) <= (int)DAT_083a4278 &&
@@ -1592,13 +1589,13 @@ void __cdecl FUN_004eb7f0(void) {
         }
         DAT_07eaa0e8 = '\x01';
 
-        // PMSG_TRADE_OK_BUTTON_RECV: C1:3C, flag=1. The shared sender
-        // aporta el envoltorio C3, el chain-XOR y el serial rotativo correctamente.
+        // PMSG_TRADE_OK_BUTTON_RECV: C1:3C, flag=1. El emisor compartido
+        // aporta correctamente el envoltorio C3, chain-XOR y serial rotativo.
         BYTE pkt[4] = { 0xC1, 0x04, 0x3C, 0x01 };
         Net_SendSmallPacket(pkt, sizeof(pkt));
     }
 
-    // También chequea el botón de limpiar flag en [+0x89, +0xa1) x [+0x186, +0x19e)
+    // Botón de cancelación: [x+137,x+161) × [y+390,y+414).
     if ((int)(DAT_07ea5290 + 0x89) <= (int)DAT_083a427c &&
         (int)DAT_083a427c < (int)(DAT_07ea5290 + 0xa1) &&
         (int)(DAT_07ea528c + 0x186) <= (int)DAT_083a4278 &&
@@ -1765,25 +1762,23 @@ void __cdecl FUN_004ec330(void) {
 // moved from stubs.cpp lines 5297-7762 (2466 lines).
 // =============================================================================
 // ── SecondPassword UI helper stubs (bodies in original binary) ────────────────
-// FUN_0051e240 @ 0x0051E240 — UI_ShowNameList
-// param_1=count, param_2=base_index into DAT_07d29d24 table (stride 300),
-// param_3=mode (0x99=special item-type label, else copy names).
-// Copia los strings al buffer del panel DAT_083a44c4 (stride 0x26) y setea el descriptor.
+// FUN_0051e240 @ 0x0051E240 — ShowCheckBox
+// param_1=count, param_2=índice base de GlobalText (stride 300),
+// param_3=mensaje de destino (0x99 activa el rótulo especial de ítem).
+// Copia las líneas al buffer del panel DAT_083a44c4 (stride 0x26) y configura el descriptor.
 undefined4 __cdecl FUN_0051e240(int param_1, int param_2, int param_3)
 {
     int iVar3 = param_1;
     if (param_3 != 0x99) {
         if (0 < param_1) {
-            char *src = &DAT_07d29d24 + param_2 * 300;
             char *dst = (char *)&DAT_083a44c4;
-            int iVar6 = param_1;
-            do {
-                size_t len = strlen(src) + 1;
-                memcpy(dst, src, len);
-                src += 300;
+            for (int i = 0; i < param_1; ++i) {
+                // IDA: ShowCheckBox 0x51E240 copia desde
+                // GlobalText[index + i] (slots de 300 bytes). En Trade el
+                // caller FUN_004EB7F0 usa (4, 371, 151): GlobalText[371..374].
+                strncpy_s(dst, 0x26, GlobalText[param_2 + i], _TRUNCATE);
                 dst += 0x26;
-                iVar6--;
-            } while (iVar6 != 0);
+            }
         }
         goto LAB_0051e377;
     }

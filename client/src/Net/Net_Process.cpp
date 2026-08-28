@@ -649,11 +649,6 @@
 // de origen. La usa el rechazo de venta del handler 0x33.
 void RestorePickedItemToSource(void);
 
-// C1:36 PMSG_TRADE_REQUEST_SEND carries the requester name but no viewport
-// clave. MuEmu asocia el peer del lado del server; preservamos el nombre para el
-// faithful response layout.
-char s_tradeRequestName[11] = {};
-
 // 0x00474310. Queda acá porque el paquete 0x1C es el fin autoritativo de un
 // Teleport local, después de que el paquete de skill 0x19 arrancó su animación.
 extern "C" void __cdecl CreateTeleportEnd(unsigned int entity);
@@ -1082,7 +1077,8 @@ static int GuildMark_UpsertRecord(int key, const BYTE* name8, const BYTE* mark32
     return row;
 }
 
-static int GuildMark_FindRecordByKey(int key)
+// IDA: FUN_00434DC0/RenderTrade — búsqueda compartida por la clave de guild.
+extern "C" int GuildMark_FindRecordByKey(int key)
 {
     for (int i = 0; i < kGuildMarkRecordCount; ++i)
         if (GuildMark_Record(i)[0] != 0 && s_GuildRecordKey[i] == key)
@@ -5074,13 +5070,14 @@ void Net_ProcessPacket(void)
             }
 
             case 0x36: {
-                // PMSG_TRADE_REQUEST_SEND (MuEmu Trade.h): C1:36,name[10].
-                // La respuesta la manda el diálogo 128 como C1:37.
+                // IDA: ProtocolCore 0x43B32D — C1:36 copia el nombre de diez
+                // bytes en DAT_07EA9834 y abre ErrorMessage 121. MuEmu conserva
+                // ese nombre, aunque use C3 en la notificación al destinatario.
                 if (Size < 13) break;
-                memcpy(s_tradeRequestName, Msg + 3, 10);
-                s_tradeRequestName[10] = '\0';
-                SetErrorMessage(128);
-                NetLog("NET: -> 0x36 TradeRequest name=%s", s_tradeRequestName);
+                memcpy(DAT_07ea9834, Msg + 3, 10);
+                DAT_07ea9834[10] = '\0';
+                SetErrorMessage(121);
+                NetLog("NET: -> 0x36 TradeRequest name=%s", DAT_07ea9834);
                 break;
             }
 
@@ -5092,15 +5089,29 @@ void Net_ProcessPacket(void)
                 } else if (sub == 2) {
                     UIChatLogWindow_AddText(nullptr, GlobalText[493], 2);
                 } else if (sub == 1) {
+                    // IDA: FUN_004332E0 ReceiveTradeResult. La apertura limpia
+                    // paneles incompatibles y reinicia ambos lados del intercambio.
+                    PartyOpened = 0;
+                    CharacterOpened = 0;
+                    ShopOpened = 0;
+                    WarehouseOpened = 0;
                     DAT_07eaa11b = 1;
                     DAT_05826d30 = 1;
                     DAT_07eaa0e8 = 0;
+                    DAT_07eaa0f0 = 0;
+                    DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
+                    DAT_07eaa0fc = 0;
                     DAT_07eaa0fd = 0;
+                    TradeYourWait = 0;
+                    TradeMyWait = 0;
                     DAT_00559684 = 0xFFFFFFFF;
                     ItemMove_ClearPickedState();
-                    if (Size >= 14) {
-                        memset(lpString_05826bfc, 0, 0x50);
-                        memcpy(lpString_05826bfc, Msg + 4, 10);
+                    InventoryOpened = 1;
+                    if (Size >= 20) {
+                        memcpy(DAT_07ea9834, Msg + 4, 10);
+                        DAT_07ea9834[10] = '\0';
+                        TradeRemoteGuildKey = *(DWORD*)(Msg + 16);
+                        TradeRemoteLevel = *(WORD*)(Msg + 14);
                     }
                 }
                 break;
@@ -5133,22 +5144,26 @@ void Net_ProcessPacket(void)
             }
 
             case 0x3A: {
-                // 2026-05-19: documentado en las notas locales de IDA de este cliente.
+                // IDA: ProtocolCore 0x43B3D0 — ACK del importe propio. El
+                // servidor sólo devuelve un resultado; el valor está en el
+                // temporal DAT_05826C9C que UI_InGameMenu guardó antes del envío.
                 DAT_07eaa0f4 = (Msg[3] != 0) ? DAT_05826c9c : 0;
                 break;
             }
 
             case 0x3B: {
-                // PMSG_TRADE_MONEY_SEND: monto que ofrece la contraparte.
-                if (Size >= 7) {
-                    DAT_07eaa0f0 = *(DWORD*)(Msg + 3);
+                // IDA: ProtocolCore 0x43B40C lee *((DWORD*)ReceiveBuffer + 1),
+                // es decir dinero en +4. El byte +3 es el relleno de alineación
+                // de PMSG_TRADE_MONEY_SEND (PBMSG_HEAD + DWORD).
+                if (Size >= 8) {
+                    DAT_07eaa0f0 = *(DWORD*)(Msg + 4);
                 }
                 break;
             }
 
             case 0x3C: {
-                // PMSG_TRADE_OK_BUTTON_SEND. Estos son los dos confirm
-                // lamps, not second-password UI state.
+                // PMSG_TRADE_OK_BUTTON_SEND. Estas son las dos lámparas de
+                // confirmación, no estado de la segunda contraseña.
                 const BYTE sub = Msg[3];
                 if (sub == 0) {
                     DAT_07eaa0fc = 0;
@@ -5194,7 +5209,15 @@ void Net_ProcessPacket(void)
                 DAT_05826d30 = 0;
                 DAT_07e91388 = 0;
                 DAT_07eaa165 = 0;
+                DAT_07eaa0f0 = 0;
+                DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
+                DAT_07eaa0fc = 0;
                 DAT_07eaa0fd = 0;
+                TradeYourWait = 0;
+                TradeMyWait = 0;
+                TradeRemoteGuildKey = 0;
+                TradeRemoteLevel = 0;
+                DAT_07ea9834[0] = '\0';
                 EnableUse = 0;
                 g_ItemMoveSourcePool = 0;
                 g_ItemMoveTargetPool = 0;

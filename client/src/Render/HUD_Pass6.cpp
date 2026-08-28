@@ -85,6 +85,7 @@ extern "C" char   DAT_07eaa0dc;
 // GuildOpened/GuildCreatorOpened now #defined in globals.h to DAT_07eaa11x.
 extern "C" int    g_bServerDivisionEnable;
 extern "C" const char* Guild_GetMarkName(int row);
+extern "C" int GuildMark_FindRecordByKey(int key);
 // InventoryStartX/Y and TradeInventoryStartX/Y now #defined in globals.h
 // to DAT_07ea5288/5284 and DAT_07ea5290/528c respectively.
 extern "C" int    dword_7EAA0CC, dword_7EAA0C8;
@@ -1457,8 +1458,8 @@ extern "C" void __cdecl RenderTrade(void)
     RenderText(TradeInventoryStartX + 35, TradeInventoryStartY + 12,
                GlobalText[226], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
 
-    // IDA / C1:38-39 mapping: remote offer on top (Inventory), local offer
-    // on bottom (OffsetTradeItems). Only the latter accepts item movement.
+    // IDA / mapeo C1:38-39: oferta remota arriba (Inventory) y oferta local
+    // abajo (OffsetTradeItems). Sólo la última admite mover ítems.
     RenderItemsBoxes((float)((double)TradeInventoryStartX + 15.0),
                      (float)((double)TradeInventoryStartY + 70.0),
                      (DWORD)(uintptr_t)Inventory, 8, 4);
@@ -1466,10 +1467,84 @@ extern "C" void __cdecl RenderTrade(void)
                      (float)((double)TradeInventoryStartY + 270.0),
                      (DWORD)(uintptr_t)OffsetTradeItems, 8, 4);
 
-    // Accept / cancel buttons.
-    float xa = (float)((double)TradeInventoryStartX + 25.0);
-    float ya = (float)((double)TradeInventoryStartY + 395.0);
-    GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    // IDA: FUN_004F1270 — 290 es normal, 291 es confirmada/dorada; un wait
+    // activo no cambia el sprite sino que tiñe de rojo la lámpara correspondiente.
+    glColor3f(1.0f, TradeYourWait > 0 ? 0.0f : 1.0f,
+              TradeYourWait > 0 ? 0.0f : 1.0f);
+    GL_DrawTexture(DAT_07eaa0fc ? 291 : 290,
+                   (float)TradeInventoryStartX + 140.0f,
+                   (float)TradeInventoryStartY + 185.0f,
+                   24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
+    glColor3f(1, 1, 1);
+
+    // IDA: FUN_004F1270 — controles de Zen, confirmación y cancelación.
+    const float zenX = (float)TradeInventoryStartX + 26.0f;
+    const float confirmX = (float)TradeInventoryStartX + 97.0f;
+    const float cancelX = (float)TradeInventoryStartX + 137.0f;
+    const float buttonsY = (float)TradeInventoryStartY + 390.0f;
+    const bool overZen = MouseX >= zenX && MouseX < zenX + 24.0f &&
+                         MouseY >= buttonsY && MouseY < buttonsY + 24.0f;
+    GL_DrawTexture(overZen && MouseLButton ? 273 : 272, zenX, buttonsY,
+                   24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
+    glColor3f(1.0f, TradeMyWait > 0 ? 0.0f : 1.0f,
+              TradeMyWait > 0 ? 0.0f : 1.0f);
+    GL_DrawTexture(DAT_07eaa0fd ? 291 : 290, confirmX, buttonsY,
+                   24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
+    glColor3f(1, 1, 1);
+    GL_DrawTexture(280, cancelX, buttonsY, 24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
+
+    if (overZen) { SelectObject(m_hFontDC, g_hFont); RenderText((int)zenX, (int)buttonsY - 13, GlobalText[227], 0, 0, 0); }
+    if (MouseX >= confirmX && MouseX < confirmX + 24.0f && MouseY >= buttonsY && MouseY < buttonsY + 24.0f)
+        { SelectObject(m_hFontDC, g_hFont); RenderText((int)confirmX, (int)buttonsY - 13, GlobalText[228], 0, 0, 0); }
+    if (MouseX >= cancelX && MouseX < cancelX + 24.0f && MouseY >= buttonsY && MouseY < buttonsY + 24.0f)
+        { SelectObject(m_hFontDC, g_hFont); RenderText((int)cancelX, (int)buttonsY - 13, GlobalText[229], 0, 0, 0); }
+
+    // IDA: RenderTrade busca DAT_00559F54 en la misma tabla de 80 bytes que Guild.
+    const int remoteGuildRow = GuildMark_FindRecordByKey((int)TradeRemoteGuildKey);
+    if (remoteGuildRow >= 0) {
+        CreateGuildMark(remoteGuildRow, false);
+        GL_DrawTexture(34, (float)TradeInventoryStartX - 32.0f,
+                       (float)TradeInventoryStartY + 40.0f,
+                       32.0f, 32.0f, 0, 0, 1, 1, 1, 1);
+        RenderText(TradeInventoryStartX - 32, TradeInventoryStartY + 30,
+                   (char*)Guild_GetMarkName(remoteGuildRow), 0, 0, 0);
+    }
+
+    const DWORD gold[2] = { DAT_07eaa0f0, DAT_07eaa0f4 };
+    const int goldY[2] = { TradeInventoryStartY + 160, TradeInventoryStartY + 360 };
+    for (int i = 0; i < 2; ++i) {
+        const int x = TradeInventoryStartX + 50;
+        GL_DrawTexture(271, (float)x, (float)goldY[i], 113, 18, 0, 0, .8828125f, .5625f, 1, 1);
+        char amount[32];
+        if (gold[i] < 1000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u", (unsigned)gold[i]);
+        else if (gold[i] < 1000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u", (unsigned)(gold[i] / 1000), (unsigned)(gold[i] % 1000));
+        else if (gold[i] < 1000000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u", (unsigned)(gold[i] / 1000000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
+        else _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u,%03u", (unsigned)(gold[i] / 1000000000), (unsigned)((gold[i] / 1000000) % 1000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
+        SelectObject(m_hFontDC, g_hFontBold);
+        m_dwTextColor = 0xFF96DCFFu;
+        RenderText(x - 30, goldY[i] + 2, GlobalText[224], 0, 0, 0);
+        RenderText(x + 10, goldY[i] + 2, amount, 0, 0, 0);
+    }
+    // El port no expone g_hFontBig; g_hFontBold conserva el contrato de texto legible.
+    SelectObject(m_hFontDC, g_hFontBold);
+    m_dwTextColor = 0xFFFFFFD2u;
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 45, DAT_07ea9834, 0, 0, 0);
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 250,
+               Hero ? (const char*)((BYTE*)Hero + 449) : "", 0, 0, 0);
+    const int levelBand = TradeRemoteLevel < 50 ? 10 : TradeRemoteLevel < 100 ? 50 :
+                          TradeRemoteLevel < 200 ? 100 : TradeRemoteLevel < 300 ? 200 : 300;
+    char levelText[64];
+    _snprintf_s(levelText, sizeof(levelText), _TRUNCATE, GlobalText[369], levelBand);
+    m_dwTextColor = TradeRemoteLevel < 50 ? 0xFF0000FFu : TradeRemoteLevel < 100 ? 0xFF1FFFFFu :
+                    TradeRemoteLevel < 200 ? 0xFF18C900u : TradeRemoteLevel < 300 ? 0xFFFFFFD2u : 0xFFFF9900u;
+    RenderText(TradeInventoryStartX + 140, TradeInventoryStartY + 45, GlobalText[368], 0, 0, 0);
+    RenderText(TradeInventoryStartX + 140, TradeInventoryStartY + 55, levelText, 0, 0, 0);
+    m_dwTextColor = 0xFFFFFFD2u;
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 185, GlobalText[370], 0, 0, 0);
+    m_dwTextColor = 0xFF96DCFFu;
+    RenderText(TradeInventoryStartX + 45, TradeInventoryStartY + 185, GlobalText[365], 0, 0, 0);
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 200, GlobalText[366], 0, 0, 0);
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 215, GlobalText[367], 0, 0, 0);
 }
 
 extern "C" void __cdecl RenderShopInterface(void)
