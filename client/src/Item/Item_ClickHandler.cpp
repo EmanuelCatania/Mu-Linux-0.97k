@@ -1294,8 +1294,8 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
 
     if (DAT_07eaa165 != 0) return;   // EquipmentItem in-flight
 
-    // ── Drop-confirm / sell-confirm dialog responses ─────────────────────────
-    extern DWORD DAT_07eaa13c;       // dialog-active flag (1=sell, 2=drop)
+    // ── Respuestas de los diálogos de venta, suelo y confirmación de Trade ───
+    extern DWORD DAT_07eaa13c;       // estado activo (1=venta, 2=suelo, 3=Trade)
     extern char  DAT_00559f5e;       // dialog response (1=yes, 2=no)
     if (DAT_07eaa13c == 1) {
         if (DAT_00559f5e == 1) {
@@ -1334,6 +1334,25 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
         } else if (DAT_00559f5e == 2) {
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
             RestorePickedItemToSource();   // ver nota arriba
+        }
+        return;
+    }
+    if (DAT_07eaa13c == 3) {
+        // IDA: FUN_004DF410 case 3. FUN_004EB7F0 abre ShowCheckBox(4,371,151)
+        // cuando el latch byte_7EAA0E8 sigue activo y la confirmación local fue
+        // invalidada. OK rearma el estado alternando m_bMyConfirm y reenvía
+        // C1:04:3C:<estado>; Cancel sólo descarta el diálogo.
+        if (DAT_00559f5e == 1) {
+            DAT_07eaa13c = 0;
+            DAT_00559f5e = 0;
+            DAT_07eaa0fd = DAT_07eaa0fd ? 0 : 1;
+            DAT_07eaa0e8 = 1;
+
+            BYTE pkt[4] = { 0xC1, 0x04, 0x3C, (BYTE)DAT_07eaa0fd };
+            Net_SendSmallPacket(pkt, sizeof(pkt));
+        } else if (DAT_00559f5e == 2) {
+            DAT_07eaa13c = 0;
+            DAT_00559f5e = 0;
         }
         return;
     }

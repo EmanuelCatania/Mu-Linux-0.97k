@@ -12,13 +12,9 @@
 #include "Net/Net.h"  // 2026-05-05: Net_SendSmallPacket (proper C3 wrap with serial)
 // 2026-08-25: los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
-
-extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)
 extern "C" int  dword_5615E4;     // indice del miembro elegido para expulsar
 
-
-extern char s_tradeRequestName[11];
 
 extern "C" {
     void DbgLogPublic(const char* msg);
@@ -440,7 +436,7 @@ void __cdecl FUN_00514310(void)
     //   0 = guardar zen en el baúl     (sub_4EB5D0 case 0)
     //   1 = sacar zen del baúl         (sub_4EB5D0 case 1)
     //   2 = poner zen en el trade      (sub_4EB7F0)
-    // Warehouse: C1:81 [type][money:4]. Trade: C1:3B [money:4].
+    // Warehouse: C1:81 [type][money:4]. Trade: C1:3A [padding][money:4].
     case 0x74:
     {
         bool enterHit = (DAT_055ca038 != '\0');
@@ -450,7 +446,9 @@ void __cdecl FUN_00514310(void)
         int gold = (int)DAT_07e11d74;   // InputGold (lo llena WndProc con atoi)
 
         if (gold > 50000000) {
-            // NextErrorMessage = 118 ("cantidad demasiado grande") + reset input
+            // IDA: UI_InGameMenu 0x515BED/0x517379 — el error reemplaza al
+            // diálogo numérico después de ClearInput; no queda una segunda
+            // capa de entrada activa detrás del cartel 118.
             DAT_083a7c28 = 118;
             Input_ClearState(0);            // ClearInput(0)
             DAT_00559c94 = (DWORD)42;   // InputTextMax[0]
@@ -459,19 +457,31 @@ void __cdecl FUN_00514310(void)
             DAT_00559c84 = 0;           // InputEnable
             DAT_07e11d28 = 0;           // MouseUpdateTime
             DAT_00559bec = 6;           // MouseUpdateTimeMax
-            FUN_00404bc0(0x19, 0, 0);   // PlayBuffer(25)
-            return;
+            goto tail;
         }
 
         if (DAT_07eaa108 == 2) {
-            // PMSG_TRADE_MONEY_RECV (MuEmu Trade.h). The amount is little-
-            // endian, matching the server's DWORD field.
-            // 2026-08-25 FIX (issue #12): iba por `Net_SendSmallPacket`, que
-            // emite C3 — pero HackPacketCheck.txt da Encrypt=0 para el indice
-            // 59 (0x3B), asi que el server lo rechaza con "Packet encryption
-            // error" y CIERRA la conexion. Va C1 plano.
-            BYTE pkt[7] = { 0xC1, 0x07, 0x3B, 0, 0, 0, 0 };
-            memcpy(pkt + 3, &gold, sizeof(DWORD));
+            // IDA: UI_InGameMenu 0x515D64 — cambiar la oferta cancela la
+            // confirmación local mediante el mismo C3(C1:04:3C:00) que usa
+            // el binario antes de enviar el nuevo importe.
+            if (DAT_07eaa0fd != 0) {
+                const BYTE resetConfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
+                DAT_07eaa0fd = 0;
+                Net_SendSmallPacket(resetConfirm, sizeof(resetConfirm));
+            }
+
+            // IDA: UI_InGameMenu 0x51628F/0x5162A2 — el ACK 0x3A no trae el
+            // importe: confirma este temporal. Si ya había Zen local, activa
+            // durante 150 ticks el indicador rojo de oferta modificada.
+            if (DAT_07eaa0f4 != 0)
+                TradeMyWait = 150;
+            DAT_05826c9c = (DWORD)gold; // IDA: m_nTempMyTradeGold
+
+            // IDA: UI_InGameMenu 0x5162A2 — C1:08:3A:00:<DWORD LE>.
+            // El DWORD empieza en +4 por el relleno de PBMSG_HEAD antes de
+            // PMSG_TRADE_MONEY_RECV::money; Protocol.cpp de MuEmu despacha 0x3A.
+            BYTE pkt[8] = { 0xC1, 0x08, 0x3A, 0, 0, 0, 0, 0 };
+            memcpy(pkt + 4, &gold, sizeof(DWORD));
             Net_SendC1Packet(pkt, sizeof(pkt));
         } else if (gold > 0) {
             Net_SendWarehouseMoney((BYTE)(DAT_07eaa108 & 1), (DWORD)gold);
@@ -514,7 +524,11 @@ void __cdecl FUN_00514310(void)
         if (!yes && !no)
             return;
 
+        // IDA: el diálogo modal consume el ciclo completo del click; de otro
+        // modo el estado sostenido llega a MoveHero en el mismo frame.
         DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
         const WORD key = (WORD)DAT_07eaa0d8;
         // 0x51 pide Encrypt=0 (C1 plano). Acá el chain-XOR sí importa: el
         // paquete tiene payload, y el server lo descifra con XorData.
@@ -524,15 +538,33 @@ void __cdecl FUN_00514310(void)
         goto tail;
     }
 
-    // ── Send 4-byte packet ────────────────────────────────────────────────
+    // ── 121 — responder una solicitud de Trade ────────────────────────────
     case 0x79:
     {
-        BYTE pkt[4] = { 0xC1, 0x04, 0x30, 0x00 };
-        SendLoginPacket(pkt, 4);
+        // IDA: ProtocolCore 0x43B32D abre ErrorMessage 121 y RenderErrorMessage
+        // 0x51C940 usa DAT_07EA9834 para el texto visible. MuEmu conserva el
+        // diálogo original y extiende la respuesta C1:37 con nombre/nivel/guild.
+        const bool yes = mouseX >= 234 && mouseX < 304 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        const bool no  = mouseX >= 334 && mouseX < 404 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        if (!yes && !no)
+            return;
+
+        // IDA: el click del modal Trade se consume completo antes de MoveHero.
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
+        // PMSG_TRADE_RESPONSE_RECV de MuEmu usa C1 plano y conserva los
+        // campos de identidad desde +4; el binario original ya los guarda en
+        // DAT_07EA9834 al recibir 0x36.
+        BYTE pkt[20] = { 0xC1, 0x14, 0x37, (BYTE)(yes ? 1 : 0) };
+        memcpy(pkt + 4, DAT_07ea9834, 10);
+        Net_SendC1Packet(pkt, sizeof(pkt));
         goto tail;
     }
 
-    // ── 126 — confirmar EXPULSAR a un miembro del guild ───────────────────
+    // ── 126 — confirmar salida/expulsión/disolución de Guild ──────────────
     // 2026-08-15: acá había un bloque que limpiaba los buffers de usuario y
     // password (`DAT_07db8710`/`DAT_07db8810`).  Eso NO es lo que hace el
     // binario: IDA `UI_InGameMenu` L3343 `case 126:` arma y envía el paquete de
@@ -543,9 +575,10 @@ void __cdecl FUN_00514310(void)
     // PMSG_GUILD_DELETE_RECV (MuEmu Guild.h:205):
     //     [C1][0x17][0x53][name:10][PersonalCode:10]      sizeof = 23
     // `name` sale de la tabla de 13 bytes por miembro `byte_7E91790`, indexada
-    // por `dword_5615E4` (lo setea el click en el botón de expulsar, sub_40F320
-    // → nuestro GuildLB_perFrameInput).  `PersonalCode` es lo que el jugador
-    // tipeó en el diálogo (InputText[0] = DAT_07db8710).
+    // por `dword_5615E4` (lo fija el click de `sub_40F320`). Para un miembro
+    // normal esa fila sólo puede ser la propia; para el Master puede ser la de
+    // otro miembro o la propia. El servidor decide si corresponde expulsar,
+    // abandonar o disolver. `PersonalCode` es el valor de InputText[0].
     //
     // HackPacketCheck índice 83 → Encrypt = 0 ⇒ frame C1 + chain-XOR, SIN
     // serial (ver "Desconexiones: serial de packets y Encrypt=1" en CLAUDE.md).
@@ -564,15 +597,21 @@ void __cdecl FUN_00514310(void)
                          mouseY >= 98 && mouseY < 119 && IsClickPushed();
         if (!yes) {
             // El "No" lo atiende el SEGUNDO switch (su gate es el rect
-            // x ∈ [0x175, 0x185], que es el mismo botón derecho); ahí el
+            // x ∈ [373, 413), igual al botón derecho renderizado); ahí el
             // `case 0x7e` limpia el input y cae al `tail` (dismiss).  Salimos
             // con `break` para que ese switch lo vea.  Sin click en ninguno de
             // los dos, `return`: el cartel persiste.
-            const bool no = mouseX >= 0x175 && mouseX <= 0x185 && IsClickPushed();
+            const bool no = mouseX >= 373 && mouseX < 413 &&
+                            mouseY >= 98 && mouseY < 119 && IsClickPushed();
             if (no) break;
             return;
         }
+        // IDA: la rama de aceptación consume MouseLButtonPush antes de
+        // construir C1:53; consumimos también los latches del tick para que
+        // el mismo click modal no llegue al movimiento del mundo.
         DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
 
         int memberIdx = dword_5615E4;
         if (memberIdx < 0 || memberIdx >= 0x22C / 13) goto tail;
@@ -585,36 +624,6 @@ void __cdecl FUN_00514310(void)
         memcpy(pkt + 3,  &byte_7E91790[13 * memberIdx], 10);
         memcpy(pkt + 13, (const char*)DAT_07db8710, 10);
         Net_SendC1Packet(pkt, 23);
-        goto tail;
-    }
-
-    // ── Send 4-byte packet + flush ────────────────────────────────────────
-    case 0x80:
-    {
-        // PMSG_TRADE_RESPONSE_RECV (MuEmu Trade.h). Dialog 128 is the
-        // original trade-request Yes/No prompt, not a F1 session action.
-        const bool yes = mouseX >= 234 && mouseX < 304 &&
-                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
-        const bool no  = mouseX >= 334 && mouseX < 404 &&
-                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
-        if (!yes && !no)
-            return;
-
-        DAT_083a4124 = 0;
-        // 2026-08-25 FIX (issue #12): mismo caso que el 0x3B — el indice 55
-        // (0x37) es Encrypt=0, o sea C1 plano. Con C3 el server cerraba la
-        // conexion al aceptar o rechazar un trade.
-        //
-        //   struct PMSG_TRADE_RESPONSE_RECV {   // Trade.h:18
-        //       PBMSG_HEAD header;   // C1 : 20 : 0x37
-        //       BYTE  response;      // +3
-        //       char  name[10];      // +4
-        //       WORD  level;         // +14
-        //       DWORD GuildNumber;   // +16
-        //   };
-        BYTE pkt[20] = { 0xC1, 0x14, 0x37, (BYTE)(yes ? 1 : 0) };
-        memcpy(pkt + 4, s_tradeRequestName, 10);
-        Net_SendC1Packet(pkt, sizeof(pkt));
         goto tail;
     }
 
@@ -1058,6 +1067,11 @@ void __cdecl FUN_00514310(void)
             memset(DAT_07db8710, 0, 0x100);
             *(DWORD*)DAT_07d780a8 = 0;
             DAT_07d552e4  = 0;
+            // IDA consume MouseLButtonPush al cancelar. Estos dos latches son
+            // el equivalente del pump reconstruido y evitan propagar el click
+            // del modal al movimiento en el mismo frame.
+            DAT_083a42c4 = 0;
+            DAT_083a413c = 0;
             break;
 
         case 0x80:

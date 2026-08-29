@@ -6,17 +6,16 @@
 //   0x5b  Shop_EntitySlots     @ 0x00435110  — assign shop slots to nearby entities
 //   0x5c  Trade_EntityUpdate   — inline in Net_Process; entity[+0x1da]=slot, update flag
 //   0x5d  Trade_EntityClear    — inline in Net_Process; clear trade slot on entity
-//   0x60  Trade_RequestResult  @ 0x004353e0  — trade request result (7 outcome codes)
-//   0x61  Trade_IncomingReq    @ 0x00435390  — another player requests trade/duel
-//   0x62  Trade_Open           @ 0x004354f0  — trade window open + ACK send
-//   0x63  Trade_ItemUpdate     @ 0x00435aa0  — item placed/result + window close
+//   0x60–0x63 son Guerra de guild en este cliente 0.97K. Net_Process los
+//   despacha a los controladores de Guild; no son paquetes Trade.
 //
 // Helper functions:
-//   FUN_00434dc0  = Shop_RegisterItem   — add/update item in shop table
+//   FUN_00434dc0  = GuildMark_UpsertRecord — tabla de nombre/marca (implementada
+//                     en Net_Process hasta recuperar su módulo Guild dedicado)
 //   FUN_00423ce0  = Entity_UpdateTradeFlag — update entity[+0x2e9] for one entity
 //   FUN_00423c80  = Shop_FindSlotByName — search shop table by name, return slot idx
 //   UI_AddNotice  = UI_OpenWindow       — open/update a named UI window (title, mode)
-//   FUN_00497870  = Entity_PlayMoveAnim — plays movement anim before sending packets
+//   FUN_00497870  = SetActionClass — auxiliar de acción de entidad + paquete de dirección
 //   FUN_005142d0  = ShowErrorDialog     — modal dialog by message ID
 //
 // ── SHOP ITEM TABLE ──────────────────────────────────────────────────────────
@@ -39,7 +38,7 @@
 //   DAT_05826d31  byte  duel_mode        1 = duel (vs regular trade)
 //   DAT_05826d32  byte  trade_param      from packet byte[0xc] in Trade_Open
 //   DAT_05826c04  byte  trade_accepted   0 = not yet accepted
-//   DAT_05826c00  dword trade_requester  from Trade_IncomingReq packet bytes[7..10]
+//   DAT_05826c00  dword temporal de solicitud heredada (la atribución anterior a 0x61 era errónea)
 //   lpString_05826bfc  char[4]  active_shop_name  4-byte NPC name key
 //   DAT_00559684  int   cached_shop_slot_index
 //   DAT_07eaa0d0  dword  — set to 0xffffffff on trade entity clear (0x5d)
@@ -52,7 +51,8 @@
 //
 // ── MESSAGE STRINGS ───────────────────────────────────────────────────────────
 //
-//   Trade_RequestResult result codes (byte[3] in 0x60 packet):
+//   Tablas de texto históricas y aisladas de 0x60–0x63. No son paquetes Trade
+//   de 97K y el dispatcher no puede alcanzarlas intencionalmente.
 //     stride 0x12C between entries at DAT_07d4fd58:
 //     0 → DAT_07d4fd58   1 → DAT_07d4fe84   2 → DAT_07d4ffb0
 //     3 → DAT_07d500dc   4 → DAT_07d50208   5 → DAT_07d50334   6 → DAT_07d50460
@@ -351,8 +351,8 @@ int Shop_FindSlotByName(BYTE* name)
 
 
 // ============================================================
-// IDA: FUN_004353E0
-// Server sends result of a trade request attempt.
+// Clasificación histórica errónea, conservada sólo como datos de referencia no despachados.
+// No asociar este cuerpo con IDA: FUN_004353E0 (ReceiveDeclareWarResult).
 // Packet: [C1][len][60][result_code]
 //   result_code 0-6: different outcome strings shown to player
 //
@@ -364,7 +364,7 @@ int Shop_FindSlotByName(BYTE* name)
 //   2-6 = rejection reasons / errors
 // Label table at DAT_05826dc8, stride 4 (short UI label per result).
 // ============================================================
-void Trade_RequestResult(BYTE* pkt)
+static void LegacyMisclassified_TradeRequestResult(BYTE* pkt)
 {
     BYTE result = pkt[3];
 
@@ -411,8 +411,7 @@ void Trade_RequestResult(BYTE* pkt)
 
 
 // ============================================================
-// IDA: FUN_00435390
-// Another player requests a trade or duel with the local player.
+// Clasificación histórica errónea; no es IDA: FUN_00435390 (ReceiveDeclareWar).
 // Packet: [C1][len][61][name4 bytes][info4 bytes][?][duel_flag]
 //   bytes[3..6]  = requester name key → g_active_shop_name
 //   bytes[7..10] = requester info    → g_trade_requester
@@ -420,7 +419,7 @@ void Trade_RequestResult(BYTE* pkt)
 //
 // Opens modal dialog 0x80 ("X wants to trade/duel with you?").
 // ============================================================
-void Trade_IncomingReq(BYTE* pkt)
+static void LegacyMisclassified_TradeIncomingReq(BYTE* pkt)
 {
     *(DWORD*)g_active_shop_name = *(DWORD*)(pkt + 3);  // lpString_05826bfc
     g_trade_requester = *(DWORD*)(pkt + 7);             // DAT_05826c00
@@ -434,8 +433,7 @@ void Trade_IncomingReq(BYTE* pkt)
 
 
 // ============================================================
-// IDA: FUN_004354F0
-// Server confirms trade window should open. Client opens UI and sends ACK.
+// Clasificación histórica errónea; no es IDA: FUN_004354F0 (ReceiveGuildBeginWar).
 // Packet: [C1][len][62][name4][info4][duel_flag][trade_param][...]
 //   bytes[3..6]  = shop name key → g_active_shop_name
 //   bytes[7..10] = shop info     → g_trade_requester
@@ -449,7 +447,7 @@ void Trade_IncomingReq(BYTE* pkt)
 //
 // Sends ACK opcode 0x80 (XOR encrypted, standard send retry loop).
 // ============================================================
-void Trade_Open(BYTE* pkt)
+static void LegacyMisclassified_TradeOpen(BYTE* pkt)
 {
     // BUG-FIX 2026-05-03: function originally read format strings from absolute
     // source-binary addresses (`(char*)0x07d5058c`, `(char*)0x07d50dc0`) that are
@@ -504,8 +502,7 @@ void Trade_Open(BYTE* pkt)
 
 
 // ============================================================
-// IDA: FUN_00435AA0
-// Trade item placed / trade result. Closes trade state and shows result message.
+// Clasificación histórica errónea; no es IDA: FUN_00435AA0 (ReceiveGuildEndWar).
 // Packet: [C1][len][63][result_code]
 //   result_code 0-6 → message string, see table above
 //
@@ -515,7 +512,7 @@ void Trade_Open(BYTE* pkt)
 //   result 1, 2, 4 → send opcode 0x71 then 0x79
 //   result 6       → special (iVar8=1, no standard ACK)
 // ============================================================
-void Trade_ItemUpdate(BYTE* pkt)
+static void LegacyMisclassified_TradeItemUpdate(BYTE* pkt)
 {
     BYTE result = pkt[3];
     char msg_buf[132];

@@ -781,7 +781,7 @@ extern DWORD   DAT_07ea981c;
 extern short   DAT_07ea981e;   // second-password shuffle state (short, FUN_004e9250)
 extern DWORD   DAT_07ea982c;   // Screen3 panel origin X
 extern DWORD   DAT_07ea9830;   // Screen3 panel origin Y
-extern DWORD   DAT_07ea9834;
+extern char    DAT_07ea9834[11];    // IDA: nombre remoto de Trade (8+2 bytes del paquete, NUL)
 extern char    DAT_07ea983e;
 extern DWORD   DAT_07eaa0d0;
 extern DWORD   DAT_07eaa0d8;
@@ -792,6 +792,10 @@ extern DWORD   DAT_07eaa0f4;
 extern int     DAT_07eaa0f8;   // CharData_RecalcDurability accumulator (count of items needing repair)
 extern DWORD   DAT_07eaa0fc;
 extern char    DAT_07eaa0fd;
+extern int     TradeYourWait;       // IDA: m_nYourTradeWait
+extern int     TradeMyWait;         // IDA: m_nMyTradeWait
+extern DWORD   TradeRemoteGuildKey; // IDA: DAT_00559F54 durante Trade
+extern WORD    TradeRemoteLevel;    // IDA: DAT_07EAA0EC durante Trade
 extern DWORD   DAT_07eaa104;   // shop/item selection A
 extern DWORD   DAT_07eaa108;   // shop/item selection B
 extern char    DAT_07eaa114;
@@ -2788,8 +2792,11 @@ extern char    DAT_00559d66;        // guild mark suffix trailing byte
 // Los valores por defecto en 0 hacen que todos esos caminos tomen sus ramas de
 // salida temprana, así que el juego corre igual con los ports incompletos.
 extern int     PartyNumber;          // 0x07EAA0E0 — count of valid party slots
+extern int     PartyKey;             // IDA: PartyKey — reiniciado por InitPartyList
 extern BYTE    Party[2048];          // 0x07E11E80 — Party struct array (stride 36, header 24)
 extern int     EnableGuildWar;       // GW active flag
+extern int     EnableSoccer;         // DAT_05826d2c — modo fútbol de guerra de guild
+extern int     GuildWarIndex;        // DAT_05826d34 — fila de tabla de marks de guild enemiga
 extern int     HeroSoccerTeam;       // 0/1 — hero's soccer team index
 extern int     GuildWarScore[2];     // [self, enemy]
 extern char    GuildWarName[80];     // enemy guild name

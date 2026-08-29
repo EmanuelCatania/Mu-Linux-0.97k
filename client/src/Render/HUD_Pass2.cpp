@@ -71,10 +71,8 @@ extern "C" int DAT_07d78068;     // ItemAttribute base (ITEM_ATTRIBUTE*, stride 
 static const char aTime_0[] = "Time";
 
 // dword_7EA51EC — end-pointer sentinel for byte_7E919BC name table walk.
-// In our build the underlying array isn't sized; we approximate the walk
-// limit at base + 80*100 (= 8000 bytes, 100 names) which is more than the
-// game ever populates.
-#define DWORD_7EA51EC_LIMIT  ((char*)&DAT_07e919bc + 80 * 100)
+// El port reserva la tabla original completa: 1000 registros × 80 bytes.
+#define DWORD_7EA51EC_LIMIT  ((char*)&DAT_07e919bc + 80 * 1000)
 
 // RenderInputText / RenderTipText / CreateGuildMark are now ported in
 // src/Render/HUD_Pass4.cpp — forward-declare them here so call sites in

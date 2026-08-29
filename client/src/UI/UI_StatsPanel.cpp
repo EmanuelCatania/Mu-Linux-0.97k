@@ -695,7 +695,11 @@ LAB_0051c13d:
     goto LAB_0051ca70;
   }
   case 0x79:
-    crt_sprintf(local_c8,DAT_07d486fc);
+    // IDA: RenderErrorMessage 0x51C940 — solicitud entrante de Trade.
+    // ProtocolCore guarda el nombre exacto de diez bytes en DAT_07EA9834;
+    // GlobalText[418] aporta el formato localizado y GlobalText[419] la línea
+    // de confirmación. ErrorMessage 128 es guerra de guild, no Trade.
+    crt_sprintf(local_c8, (const char*)DAT_07d486fc, DAT_07ea9834);
     SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca014);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
@@ -703,7 +707,7 @@ LAB_0051c13d:
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 4),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
-    crt_sprintf(local_c8,&DAT_07d48828);
+    crt_sprintf(local_c8, GlobalText[419]);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
@@ -742,19 +746,14 @@ LAB_0051c13d:
     ppCVar11 = lpString_07d4905c;
     goto LAB_0051ca70;
   case 0x80:
-    crt_sprintf(local_c8,&DAT_07d4950c);
+    // IDA: RenderErrorMessage 0x51CE0D — invitación a guerra de guild.
+    crt_sprintf(local_c8, GlobalText[430], GuildWarName);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
     UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
-    if (DAT_05826d31 == '\0') {
-      pbVar18 = (byte*)&DAT_07d49638;
-    }
-    else {
-      pbVar18 = (byte*)&DAT_07d49764;
-    }
-    crt_sprintf(local_c8,(char*)pbVar18);
+    crt_sprintf(local_c8, GlobalText[EnableSoccer ? 432 : 431]);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);

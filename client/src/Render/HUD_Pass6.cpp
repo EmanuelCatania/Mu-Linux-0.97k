@@ -76,6 +76,7 @@ static float PointerBitsAsFloat_HudPass6(const void* pointer)
 extern "C" void   __cdecl RenderTipText(int sx, int sy, const char* Text);
 extern "C" void   __cdecl RenderInputText(int x, int y, int Index);
 extern "C" void   __cdecl CreateGuildMark(int nMarkIndex, bool blend);
+extern "C" void GuildMark_InitializePalette(bool blend);
 extern "C" int    InputTextWidth;
 #define dword_7E91388 DAT_07e91388
 extern "C" DWORD DAT_07e91388;
@@ -85,6 +86,7 @@ extern "C" char   DAT_07eaa0dc;
 // GuildOpened/GuildCreatorOpened now #defined in globals.h to DAT_07eaa11x.
 extern "C" int    g_bServerDivisionEnable;
 extern "C" const char* Guild_GetMarkName(int row);
+extern "C" int GuildMark_FindRecordByKey(int key);
 // InventoryStartX/Y and TradeInventoryStartX/Y now #defined in globals.h
 // to DAT_07ea5288/5284 and DAT_07ea5290/528c respectively.
 extern "C" int    dword_7EAA0CC, dword_7EAA0C8;
@@ -766,16 +768,21 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
 #define g_iKeyPadEnable DAT_07eaa144
 static char g_GuildNotice[2][64] = {};
 
-// ProtocolCore 0x55: the server authorizes opening the guild-creation UI.
-// Keep the UI-local keypad state here rather than exposing its storage.
+// IDA: ProtocolCore 0x55. El servidor autoriza abrir la interfaz de creación
+// de guild; el estado local del keypad permanece encapsulado en este módulo.
 extern "C" void GuildCreator_OpenFromServer(void)
 {
     GuildCreatorOpened = 1;
     g_iKeyPadEnable = 1;
-    DAT_00559c84 = 1;
+    // IDA: ProtocolCore 0x55 activa GuildInputEnable y mantiene InputEnable
+    // apagado. Ambos caminos escriben InputText[0], pero sólo el primero evita
+    // que Enter abra o envíe chat mientras el editor conserva el foco.
+    DAT_07e11d70 = 1;
+    DAT_00559c84 = 0;
     Input_ClearState(0);
     _InputTextMaxArr[0] = 8;
     DAT_00559c88 = 0;
+    GuildMark_InitializePalette(true);
     if (Hero)
         *(short*)((BYTE*)Hero + 474) = 999;
 }
@@ -786,11 +793,15 @@ extern "C" void GuildCreator_OpenFromServer(void)
 // requisitos; si ya estas en un guild o te falta nivel/resets manda un chat o
 // un notice y no abre nada (NpcTalk.cpp:197-220).
 //
-// Per `ProtocolCore` L1245-1254: cierra las ventanas de NPC y abre el creador
-// con el keypad APAGADO — lo que hace que los dos botones manden 0x54 en vez de
-// 0x55/0x57 (ver el hit-test en FUN_004e4760).
+// IDA: ProtocolCore 0x54. Cierra las ventanas de NPC y abre el creador con el
+// keypad APAGADO; así ambos botones responden con 0x54 en vez de 0x55/0x57
+// (ver el hit-test en FUN_004e4760).
 extern "C" void GuildCreator_OpenQuestionFromServer(void)
 {
+    GuildOpened     = 0;
+    PartyOpened     = 0;
+    CharacterOpened = 0;
+    InventoryOpened = 0;
     ShopOpened      = 0;
     WarehouseOpened = 0;
     TradeOpened     = 0;
@@ -802,60 +813,12 @@ extern "C" void GuildCreator_CloseFromResult(void)
 {
     Input_ClearState(0);
     _InputTextMaxArr[0] = 10;
+    DAT_07e11d70 = 0;
     DAT_00559c84 = 0;
     GuildCreatorOpened = 0;
     g_iKeyPadEnable = 0;
-}
-
-static void GuildCreator_HandleMouse(int iPosX, int iPosY)
-{
-    if (!GuildCreatorOpened || !g_iKeyPadEnable) return;
-
-    unsigned char* mark = (unsigned char*)&DAT_07ea51f5;
-
-    for (int gy = 0; gy < 8; ++gy) {
-        int sy = iPosY + 100 + gy * 15;
-        for (int gx = 0; gx < 8; ++gx) {
-            int sx = iPosX + 50 + gx * 15;
-            if ((int)MouseX >= sx + 1 && (int)MouseX < sx + 16 &&
-                (int)MouseY >= sy + 1 && (int)MouseY < sy + 16) {
-                DAT_07d78094 = 1;
-                if (MouseLButton) {
-                    mark[gx + gy * 8] = (unsigned char)DAT_07eaa0dc & 0x0F;
-                } else if (MouseRButton) {
-                    mark[gx + gy * 8] = 0;
-                }
-            }
-        }
-    }
-
-    for (int py = 0; py < 2; ++py) {
-        int sy = iPosY + 260 + py * 20;
-        for (int px = 0; px < 8; ++px) {
-            int sx = iPosX + 15 + px * 20;
-            if ((int)MouseX >= sx + 1 && (int)MouseX < sx + 19 &&
-                (int)MouseY >= sy + 1 && (int)MouseY < sy + 19 &&
-                IsClickPushed()) {
-                DAT_083a4124 = 0;
-                DAT_07eaa0dc = (char)(px + py * 8);
-                PlayBuffer(0x19, 0, 0);
-                return;
-            }
-        }
-    }
-
-    if ((int)MouseX >= iPosX + 100 && (int)MouseX < iPosX + 170 &&
-        (int)MouseY >= iPosY + 350 && (int)MouseY < iPosY + 371 &&
-        IsClickPushed()) {
-        DAT_083a4124 = 0;
-        // 004E4760 sends C1:03:57 before closing the local creator. The
-        // server uses it to release INTERFACE_GUILD_CREATE.
-        // 0x57 pide Encrypt=0 (C1 plano), igual que todo el rango de guild.
-        const BYTE cancelPkt[3] = { 0xC1, 0x03, 0x57 };
-        Net_SendC1Packet(cancelPkt, sizeof(cancelPkt));
-        GuildCreator_CloseFromResult();
-        PlayBuffer(0x19, 0, 0);
-    }
+    if (Hero)
+        *(short*)((BYTE*)Hero + 474) = -1;
 }
 
 extern "C" void SetGuildNoticeText(const char* text)
@@ -1338,7 +1301,14 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
         void** vt  = (void**)*obj;
         if (vt) {
             typedef void (__fastcall *FnRender)(DWORD*);
+            typedef int  (__fastcall *FnInput)(DWORD*);
             ((FnRender)vt[4])(obj);
+
+            // IDA: FUN_0040F320 — procesa por frame el botón de salida o
+            // expulsión de cada fila. La vtable original lo expone en +0x68;
+            // esta ruta faltaba en el dispatcher reconstruido, por lo que el
+            // icono se dibujaba y tenía hover pero nunca abría el modal 126.
+            ((FnInput)vt[26])(obj);
         }
     }
 }
@@ -1352,7 +1322,6 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
     // la tienda; usar storage propio en vez de pisarlo.
     g_GuildCreatorScratchX = iPosX;
     g_GuildCreatorScratchY = iPosY;
-    GuildCreator_HandleMouse(iPosX, iPosY);
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
 
@@ -1457,8 +1426,8 @@ extern "C" void __cdecl RenderTrade(void)
     RenderText(TradeInventoryStartX + 35, TradeInventoryStartY + 12,
                GlobalText[226], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
 
-    // IDA / C1:38-39 mapping: remote offer on top (Inventory), local offer
-    // on bottom (OffsetTradeItems). Only the latter accepts item movement.
+    // IDA / mapeo C1:38-39: oferta remota arriba (Inventory) y oferta local
+    // abajo (OffsetTradeItems). Sólo la última admite mover ítems.
     RenderItemsBoxes((float)((double)TradeInventoryStartX + 15.0),
                      (float)((double)TradeInventoryStartY + 70.0),
                      (DWORD)(uintptr_t)Inventory, 8, 4);
@@ -1466,10 +1435,84 @@ extern "C" void __cdecl RenderTrade(void)
                      (float)((double)TradeInventoryStartY + 270.0),
                      (DWORD)(uintptr_t)OffsetTradeItems, 8, 4);
 
-    // Accept / cancel buttons.
-    float xa = (float)((double)TradeInventoryStartX + 25.0);
-    float ya = (float)((double)TradeInventoryStartY + 395.0);
-    GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    // IDA: FUN_004F1270 — 290 es normal, 291 es confirmada/dorada; un wait
+    // activo no cambia el sprite sino que tiñe de rojo la lámpara correspondiente.
+    glColor3f(1.0f, TradeYourWait > 0 ? 0.0f : 1.0f,
+              TradeYourWait > 0 ? 0.0f : 1.0f);
+    GL_DrawTexture(DAT_07eaa0fc ? 291 : 290,
+                   (float)TradeInventoryStartX + 140.0f,
+                   (float)TradeInventoryStartY + 185.0f,
+                   24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
+    glColor3f(1, 1, 1);
+
+    // IDA: FUN_004F1270 — controles de Zen, confirmación y cancelación.
+    const float zenX = (float)TradeInventoryStartX + 26.0f;
+    const float confirmX = (float)TradeInventoryStartX + 97.0f;
+    const float cancelX = (float)TradeInventoryStartX + 137.0f;
+    const float buttonsY = (float)TradeInventoryStartY + 390.0f;
+    const bool overZen = MouseX >= zenX && MouseX < zenX + 24.0f &&
+                         MouseY >= buttonsY && MouseY < buttonsY + 24.0f;
+    GL_DrawTexture(overZen && MouseLButton ? 273 : 272, zenX, buttonsY,
+                   24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
+    glColor3f(1.0f, TradeMyWait > 0 ? 0.0f : 1.0f,
+              TradeMyWait > 0 ? 0.0f : 1.0f);
+    GL_DrawTexture(DAT_07eaa0fd ? 291 : 290, confirmX, buttonsY,
+                   24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
+    glColor3f(1, 1, 1);
+    GL_DrawTexture(280, cancelX, buttonsY, 24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
+
+    if (overZen) { SelectObject(m_hFontDC, g_hFont); RenderText((int)zenX, (int)buttonsY - 13, GlobalText[227], 0, 0, 0); }
+    if (MouseX >= confirmX && MouseX < confirmX + 24.0f && MouseY >= buttonsY && MouseY < buttonsY + 24.0f)
+        { SelectObject(m_hFontDC, g_hFont); RenderText((int)confirmX, (int)buttonsY - 13, GlobalText[228], 0, 0, 0); }
+    if (MouseX >= cancelX && MouseX < cancelX + 24.0f && MouseY >= buttonsY && MouseY < buttonsY + 24.0f)
+        { SelectObject(m_hFontDC, g_hFont); RenderText((int)cancelX, (int)buttonsY - 13, GlobalText[229], 0, 0, 0); }
+
+    // IDA: RenderTrade busca DAT_00559F54 en la misma tabla de 80 bytes que Guild.
+    const int remoteGuildRow = GuildMark_FindRecordByKey((int)TradeRemoteGuildKey);
+    if (remoteGuildRow >= 0) {
+        CreateGuildMark(remoteGuildRow, false);
+        GL_DrawTexture(34, (float)TradeInventoryStartX - 32.0f,
+                       (float)TradeInventoryStartY + 40.0f,
+                       32.0f, 32.0f, 0, 0, 1, 1, 1, 1);
+        RenderText(TradeInventoryStartX - 32, TradeInventoryStartY + 30,
+                   (char*)Guild_GetMarkName(remoteGuildRow), 0, 0, 0);
+    }
+
+    const DWORD gold[2] = { DAT_07eaa0f0, DAT_07eaa0f4 };
+    const int goldY[2] = { TradeInventoryStartY + 160, TradeInventoryStartY + 360 };
+    for (int i = 0; i < 2; ++i) {
+        const int x = TradeInventoryStartX + 50;
+        GL_DrawTexture(271, (float)x, (float)goldY[i], 113, 18, 0, 0, .8828125f, .5625f, 1, 1);
+        char amount[32];
+        if (gold[i] < 1000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u", (unsigned)gold[i]);
+        else if (gold[i] < 1000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u", (unsigned)(gold[i] / 1000), (unsigned)(gold[i] % 1000));
+        else if (gold[i] < 1000000000) _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u", (unsigned)(gold[i] / 1000000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
+        else _snprintf_s(amount, sizeof(amount), _TRUNCATE, "%u,%03u,%03u,%03u", (unsigned)(gold[i] / 1000000000), (unsigned)((gold[i] / 1000000) % 1000), (unsigned)((gold[i] / 1000) % 1000), (unsigned)(gold[i] % 1000));
+        SelectObject(m_hFontDC, g_hFontBold);
+        m_dwTextColor = 0xFF96DCFFu;
+        RenderText(x - 30, goldY[i] + 2, GlobalText[224], 0, 0, 0);
+        RenderText(x + 10, goldY[i] + 2, amount, 0, 0, 0);
+    }
+    // El port no expone g_hFontBig; g_hFontBold conserva el contrato de texto legible.
+    SelectObject(m_hFontDC, g_hFontBold);
+    m_dwTextColor = 0xFFFFFFD2u;
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 45, DAT_07ea9834, 0, 0, 0);
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 250,
+               Hero ? (const char*)((BYTE*)Hero + 449) : "", 0, 0, 0);
+    const int levelBand = TradeRemoteLevel < 50 ? 10 : TradeRemoteLevel < 100 ? 50 :
+                          TradeRemoteLevel < 200 ? 100 : TradeRemoteLevel < 300 ? 200 : 300;
+    char levelText[64];
+    _snprintf_s(levelText, sizeof(levelText), _TRUNCATE, GlobalText[369], levelBand);
+    m_dwTextColor = TradeRemoteLevel < 50 ? 0xFF0000FFu : TradeRemoteLevel < 100 ? 0xFF1FFFFFu :
+                    TradeRemoteLevel < 200 ? 0xFF18C900u : TradeRemoteLevel < 300 ? 0xFFFFFFD2u : 0xFFFF9900u;
+    RenderText(TradeInventoryStartX + 140, TradeInventoryStartY + 45, GlobalText[368], 0, 0, 0);
+    RenderText(TradeInventoryStartX + 140, TradeInventoryStartY + 55, levelText, 0, 0, 0);
+    m_dwTextColor = 0xFFFFFFD2u;
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 185, GlobalText[370], 0, 0, 0);
+    m_dwTextColor = 0xFF96DCFFu;
+    RenderText(TradeInventoryStartX + 45, TradeInventoryStartY + 185, GlobalText[365], 0, 0, 0);
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 200, GlobalText[366], 0, 0, 0);
+    RenderText(TradeInventoryStartX + 20, TradeInventoryStartY + 215, GlobalText[367], 0, 0, 0);
 }
 
 extern "C" void __cdecl RenderShopInterface(void)

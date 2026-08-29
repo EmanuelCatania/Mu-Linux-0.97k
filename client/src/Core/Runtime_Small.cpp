@@ -113,10 +113,12 @@ void __fastcall FUN_0040a6e0(void *This) {
 
 // ── 13-byte: named game functions ───────────────────────────────────────────
 
-// InitPartyList @ 0x004E54F0 (13 bytes) — reset party state
+// InitPartyList @ 0x004E54F0 (13 bytes) — reinicia el estado de party
 void __cdecl InitPartyList(void) {
-    DAT_07e11e50 = 0;  // _PartyNumber
-    DAT_07e11e54 = 0;  // _PartyKey
+    // IDA: FUN_004E54F0. Los globales de scripts NPC en 07E11E50/54 no están
+    // relacionados; se reinicia el estado activo de party usado por paquetes/UI/combate.
+    PartyNumber = 0;
+    PartyKey = 0;
 }
 
 // CenterMouseX @ 0x005110D0 (13 bytes)

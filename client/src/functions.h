@@ -168,7 +168,7 @@ void  __cdecl FUN_004337f0(int, int, int);
 void  __cdecl FUN_00433900(int opcode, int data_ptr, int len); // PacketHandler_0x44 (party HP)
 void  __cdecl FUN_00433a80(int, int, int);
 
-// ── Trade / Shop ──────────────────────────────────────────────────────────────
+// ── Protocolo Trade / Shop / Guild ────────────────────────────────────────────
 void  __cdecl FUN_00434170(int, int, int);
 void  __cdecl FUN_00434400(int, int, int);
 void  __cdecl FUN_00434450(int, int, int);
@@ -176,9 +176,12 @@ void  __cdecl FUN_00434660(int, int, int);
 void  __cdecl FUN_00434780(int, int, int);
 void  __cdecl FUN_004348b0(int, int, int);
 void  __cdecl FUN_00434950(int, int, int);
-void  __cdecl FUN_00434dc0(int opcode, int data_ptr, int len); // Trade_PacketHandler
+// IDA: FUN_00434DC0 — GuildMark_UpsertRecord (nombre + tabla de mark 8x8); no pertenece a Trade.
+void  __cdecl FUN_00434dc0(int opcode, int data_ptr, int len);
 void  __cdecl FUN_00435110(int, int, int);
 void  __cdecl FUN_00435280(int, int, int);
+// Guerra de guild: ReceiveDeclareWar, ReceiveDeclareWarResult,
+// ReceiveGuildBeginWar y ReceiveGuildEndWar.
 void  __cdecl FUN_00435390(int, int, int);
 void  __cdecl FUN_004353e0(int, int, int);
 void  __cdecl FUN_004354f0(int, int, int);
@@ -312,8 +315,10 @@ void  __cdecl FUN_004f7960(float grid_x, float grid_y, float *rgb_out); // Terra
 void  __cdecl FUN_004553c0(void *model, int type, int bone_idx, float scale, float *color, int entity); // Model_BoneParticle
 void  __cdecl FUN_00503cf0(int weapon_id, float scale, float half_scale, float *color, char flag); // Weapon_SetColor: fills color[3] from item type + scale factors
 void  __cdecl FUN_00503fe0(int weapon_id, float scale, float half_scale, float *color);           // Weapon_SetColorAlt: simpler version (no flag)
-void  __cdecl FUN_004552c0(int entity, int shield_id);               // Shield_Render
-void  __cdecl FUN_004f0100(int entity_id, char flag);                // NPC_SetFlag
+// IDA: FUN_004552C0 — compone la matriz del emblema de guild sobre un jugador visible.
+void  __cdecl FUN_004552c0(int entity, int shield_id);
+// IDA: FUN_004F0100 — CreateGuildMark, compone la textura 34 desde la tabla compartida de marks.
+extern "C" void __cdecl CreateGuildMark(int mark_index, bool blend);
 void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float *color, float angle, float alpha); // Particle_DrawBillboard
 
 // ── Skill/weapon widget system (UI overlay beams) ─────────────────────────────

@@ -6,8 +6,6 @@
 #include "functions.h"
 #include "Net/Net.h"
 
-extern "C" void DbgLogPublic(const char* msg);
-
 // SendRequestEquipmentItem @ 0x0043C250 — Equipment move / item drag
 //
 // 2026-05-08 BUG-FIX MAYÚSCULO (round 2): la versión anterior mandaba C1
@@ -97,17 +95,13 @@ void __cdecl SendRequestEquipmentItem_stub(int srcFlag, int iSrcIndex, ITEM* pIt
     pkt[9]  = (BYTE)dstFlag;
     pkt[10] = (BYTE)iDstIndex;
 
-    // Diagnostic — log every move attempt so we can see what the user is
-    // doing if disconnect persists.
-    {
-        char dbg[160];
-        wsprintfA(dbg,
-            "ITEM_MOVE C3 send: srcF=%d srcIdx=%d dstF=%d dstIdx=%d "
-            "item=[%02X %02X %02X %02X]",
-            srcFlag, iSrcIndex, dstFlag, iDstIndex,
-            itemBytes[0], itemBytes[1], itemBytes[2], itemBytes[3]);
-        DbgLogPublic(dbg);
-    }
-
     Net_SendSmallPacket(pkt, 11);
+
+    // IDA: sub_4CDC70 y FUN_004D6470 — toda modificación de la oferta local
+    // (inventario <-> Trade o Trade <-> Trade) bloquea la confirmación durante
+    // 150 ticks cuando todavía no estaba confirmada. FUN_004EB7F0 descuenta
+    // m_nMyTradeWait y RenderTrade tiñe la lámpara de rojo mientras dure.
+    if ((srcFlag == 1 || dstFlag == 1) && DAT_07eaa0fd == 0) {
+        TradeMyWait = 150;
+    }
 }

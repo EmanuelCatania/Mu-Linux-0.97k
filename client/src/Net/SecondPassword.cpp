@@ -143,6 +143,7 @@
 
 // 2026-08-25: el rango de guild pide C1 plano (Encrypt=0).
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
+extern "C" void GuildCreator_CloseFromResult(void);
 
 // Inventory pool bases — defined in src/Render/HUD_Pass3.cpp.
 // Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
@@ -209,37 +210,36 @@ void __cdecl FUN_004e4760(void) {
     }
 
     if (DAT_07eaa144 == 1) {
-        // Click-grid: 8 buttons per row, 5 rows, spaced 0x0F pixels
-        // Escribe DAT_07ea51f5 con el valor de DAT_07eaa0dc
-        // ... (full grid paint — inline per decompile)
-        *(DWORD*)(DAT_07abf5d8 + 0x24) = 0x42e10000; // facing angle = 112.5°
-        BYTE  curVal = DAT_07eaa0dc;
-        unsigned char* dst = (unsigned char*)&DAT_07ea51f5;
-        int baseY = originY + 100;
-        int ox    = originX;
-        for (int row = 0; row < 5; row++) {
-            int ry = baseY + row * 0xf;
-            int rx = ox + (row + 1) * 0x32;
-            for (int col = 0; col < 8; col++) {
-                if ((int)DAT_083a427c >= rx && (int)DAT_083a427c < rx + 0xf &&
-                    (int)DAT_083a4278 >= ry && (int)DAT_083a4278 < ry + 0xf) {
-                    if (DAT_083a42c4 != '\0') dst[row*8+col] = curVal;
-                    if (DAT_083a42ac != '\0') dst[row*8+col] = 0;
+        // IDA: FUN_004E4760. La grilla de edición tiene 8 filas de 8 celdas;
+        // cada celda conserva un índice de color completo en DAT_07ea51f5.
+        // La compresión a 32 bytes ocurre únicamente al enviar el paquete 0x55.
+        *(DWORD*)(DAT_07abf5d8 + 0x24) = 0x42e10000;
+        const BYTE selectedColor = (BYTE)DAT_07eaa0dc;
+        BYTE* const cells = (BYTE*)&DAT_07ea51f5;
+        for (int row = 0; row < 8; ++row) {
+            const int cellY = originY + 100 + row * 15;
+            for (int col = 0; col < 8; ++col) {
+                const int cellX = originX + 50 + col * 15;
+                if ((int)DAT_083a427c >= cellX && (int)DAT_083a427c < cellX + 15 &&
+                    (int)DAT_083a4278 >= cellY && (int)DAT_083a4278 < cellY + 15) {
+                    const int cellIndex = row * 8 + col;
+                    if (DAT_083a42c4 != '\0') cells[cellIndex] = selectedColor;
+                    if (DAT_083a42ac != '\0') cells[cellIndex] = 0;
                 }
-                rx += 0xf;
             }
         }
-        // Button click iteration (full from decompile)
-        for (int iy = 0x104, step = 0; iy < 300; iy += 0x14, step++) {
-            for (int ix2 = 0, sub = 0; ix2 < 0xa0; ix2 += 0x14, sub++) {
-                int bx = (int)(DAT_07ea5b1c + 0xf + ix2);
-                if ((int)DAT_083a427c >= bx && (int)DAT_083a427c < bx + 0x14 &&
-                    (int)DAT_083a4278 >= originY + iy &&
-                    (int)DAT_083a4278 <  originY + iy + 0x14 &&
+
+        // IDA: FUN_004E4760 — paleta 2×8, índice lineal fila*8+col.
+        for (int row = 0; row < 2; ++row) {
+            const int colorY = originY + 260 + row * 20;
+            for (int col = 0; col < 8; ++col) {
+                const int colorX = originX + 15 + col * 20;
+                if ((int)DAT_083a427c >= colorX && (int)DAT_083a427c < colorX + 20 &&
+                    (int)DAT_083a4278 >= colorY && (int)DAT_083a4278 < colorY + 20 &&
                     IsClickPushed()) {
                     DAT_083a4124 = '\0';
                     FUN_00404bc0(0x19, 0, 0);
-                    DAT_07eaa0dc = (char)(step * 8 + sub);
+                    DAT_07eaa0dc = (char)(row * 8 + col);
                 }
             }
         }
@@ -319,6 +319,14 @@ void __cdecl FUN_004e4760(void) {
                         memcpy(pkt + 3,  DAT_07ea51ec, 8);
                         memcpy(pkt + 11, mark, 32);
                         Net_SendC1Packet(pkt, 43);
+
+                        // IDA: FUN_004E4760 cae al cierre común inmediatamente
+                        // después de encolar 0x55: limpia el input, cierra el
+                        // editor y reinicia el intervalo de mouse 0/6.
+                        GuildCreator_CloseFromResult();
+                        PlayBuffer(28, 0, 0);
+                        DAT_07e11d28 = 0;
+                        DAT_00559bec = 6;
                     }
                 }
             } else {
@@ -326,36 +334,10 @@ void __cdecl FUN_004e4760(void) {
                 // responde 0x54 con result=1 (PMSG_GUILD_MASTER_OPEN_RECV). El
                 // server valida nivel y resets (Guild.cpp:37-45) y, si pasa,
                 // contesta el 0x55 que abre la UI de creacion.
-                // Send auth packet (opcode 0xC1/0x01/0x54 keepalive-style, 4 bytes)
+                // IDA: C1:04:54:01 confirma la pregunta previa al Guild Master.
                 {
-                    BYTE pkt[4];
-                    // 2026-08-08: el size byte iba en 1 -> el server corta con
-                    // "Protocol size error" (size < 3). PMSG_GUILD_MASTER_OPEN_RECV
-                    // (Guild.h:212) = [C1][04][54][result], 4 bytes.
-                    pkt[0] = 0xC1; pkt[1] = 4; pkt[2] = 0x54; pkt[3] = 1;
-                    // XOR encode byte 3
-                    static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                                  0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                                  0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                                  0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-                    pkt[3] ^= key[3] ^ pkt[2];
-                    int off = 0; unsigned int rem = 4;
-                    if (DAT_055ca168 != 0xffffffff) {
-                        do {
-                            int r = send((SOCKET)DAT_055ca168, (char*)pkt+off, (int)(rem-off), 0);
-                            if (r == -1) {
-                                int e = WSAGetLastError();
-                                if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                                    memcpy(DAT_055ca16c + DAT_055cc16c, pkt, rem);
-                                    DAT_055cc16c += rem;
-                                } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                                break;
-                            }
-                            if (r == 0) break;
-                            if (DAT_055ce174 != 0) FUN_0043de60();
-                            rem -= r; off += r;
-                        } while ((int)rem > 0);
-                    }
+                    const BYTE pkt[4] = { 0xC1, 0x04, 0x54, 0x01 };
+                    Net_SendC1Packet(pkt, sizeof(pkt));
                 }
             }
             FUN_00404bc0(0x19, 0, 0);
@@ -372,45 +354,13 @@ void __cdecl FUN_004e4760(void) {
             IsClickPushed()) {
             DAT_083a4124 = '\0';
             if (DAT_07eaa144 == 0) {
-                // Send C1/01/54/1 keep-alive packet
-                BYTE pkt2[4] = {0xC1, 4, 0x54, 1};   // size byte 1 -> 4 (ver arriba)
-                int off = 0; unsigned int rem = 4;
-                if (DAT_055ca168 != 0xffffffff) {
-                    do {
-                        int r = send((SOCKET)DAT_055ca168, (char*)pkt2+off, (int)(rem-off), 0);
-                        if (r == -1) {
-                            int e = WSAGetLastError();
-                            if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                                memcpy(DAT_055ca16c + DAT_055cc16c, pkt2, rem);
-                                DAT_055cc16c += rem;
-                            } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                            break;
-                        }
-                        if (r == 0) break;
-                        if (DAT_055ce174 != 0) FUN_0043de60();
-                        rem -= r; off += r;
-                    } while ((int)rem > 0);
-                }
+                // IDA: C1:04:54:00 cancela la pregunta previa al Guild Master.
+                const BYTE pkt2[4] = { 0xC1, 0x04, 0x54, 0x00 };
+                Net_SendC1Packet(pkt2, sizeof(pkt2));
             } else {
-                // mode 1: send small 3-byte cancel packet C1/01/57
-                BYTE pkt3[3] = {0xC1, 3, 0x57};
-                int off = 0; unsigned int rem = 3;
-                if (DAT_055ca168 != 0xffffffff) {
-                    do {
-                        int r = send((SOCKET)DAT_055ca168, (char*)pkt3+off, (int)(rem-off), 0);
-                        if (r == -1) {
-                            int e = WSAGetLastError();
-                            if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                                memcpy(DAT_055ca16c + DAT_055cc16c, pkt3, rem);
-                                DAT_055cc16c += rem;
-                            } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                            break;
-                        }
-                        if (r == 0) break;
-                        if (DAT_055ce174 != 0) FUN_0043de60();
-                        rem -= r; off += r;
-                    } while ((int)rem > 0);
-                }
+                // IDA: C1:03:57 cancela el editor y libera INTERFACE_GUILD_CREATE.
+                const BYTE pkt3[3] = { 0xC1, 0x03, 0x57 };
+                Net_SendC1Packet(pkt3, sizeof(pkt3));
                 *(short*)(DAT_07abf5d8 + 0x1da) = (short)0xffff;
             }
             FUN_00404bc0(0x19, 0, 0);
@@ -1521,17 +1471,11 @@ void __cdecl FUN_004eb5d0(void) {
         break;
     }
 }
-// FUN_004eb7f0 @ 0x004EB7F0 — SecondPassword_Screen10 (514 lines)
-//   - Animated intro sequence for second-password UI: advances frame counter,
-//     dibuja el overlay de fade-in y transiciona a Screen5/6 al terminar.
-//   - SEH. Implemented in SecondPassword_UI.cpp.
+// IDA: FUN_004EB7F0 — entrada de Trade: Zen, confirmación y cancelación.
+//   - Usa TradeInventoryStartX/Y y TradeOpened como guard de la interfaz.
+//   - Los botones envían C3 C1:04:3C:01 y C3 C1:03:3D según corresponda.
 void __cdecl FUN_004eb7f0(void) {
-    // SecondPassword_Screen10 — animated intro sequence for second-password UI.
-    // Guard: DAT_07eaa11b tiene que ser distinto de cero (del chequeo de HashTable_Timer).
-    // Análisis del decompile: FUN_0043d8a0 lee DAT_07eaa11b; si es cero, retorna de inmediato.
-    // Si no es cero: el botón atrás/cancelar en [DAT_07ea5290+0x1a, +0x32) x [DAT_07ea528c+0x186, +0x19e)
-    // manda el opcode 0x19 de stop de BGM. También maneja el toggle de DAT_07eaa0e8 y arma/manda el paquete XOR.
-    // SEH frame stripped; HashTable noise stripped.
+    // IDA: el guard lee TradeOpened; se omite únicamente el ruido de HashTable.
 
     FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
     char cGuard = DAT_07eaa11b;
@@ -1545,7 +1489,7 @@ void __cdecl FUN_004eb7f0(void) {
     }
     if (cGuard == '\0') return;
 
-    // Back button check at [DAT_07ea5290+0x1a, +0x32) x [DAT_07ea528c+0x186, +0x19e)
+    // Botón Zen: [x+26,x+50) × [y+390,y+414).
     if ((int)(DAT_07ea5290 + 0x1a) <= (int)DAT_083a427c &&
         (int)DAT_083a427c < (int)(DAT_07ea5290 + 0x32) &&
         (int)(DAT_07ea528c + 0x186) <= (int)DAT_083a4278 &&
@@ -1563,10 +1507,13 @@ void __cdecl FUN_004eb7f0(void) {
         FUN_00404bc0(0x19, 0, 0);
     }
 
-    if (DAT_07eaa104 > 0) DAT_07eaa104 = DAT_07eaa104 - 1;
+    // IDA: FUN_004EB7F0 — m_nMyTradeWait se descuenta una vez por tick
+    // mientras Trade está abierto. No es DAT_07EAA104, que corresponde a otro
+    // estado de selección de interfaz.
+    if (TradeMyWait > 0) --TradeMyWait;
 
-    // Main button click at [DAT_07ea5290+0x61, +0x79) x [DAT_07ea528c+0x186, +0x19e)
-    if (DAT_07eaa104 == 0 && DAT_07e91388 == 0 &&
+    // Botón de confirmación: [x+97,x+121) × [y+390,y+414).
+    if (TradeMyWait == 0 && DAT_07e91388 == 0 &&
         (int)(DAT_07ea5290 + 0x61) <= (int)DAT_083a427c &&
         (int)DAT_083a427c < (int)(DAT_07ea5290 + 0x79) &&
         (int)(DAT_07ea528c + 0x186) <= (int)DAT_083a4278 &&
@@ -1592,13 +1539,13 @@ void __cdecl FUN_004eb7f0(void) {
         }
         DAT_07eaa0e8 = '\x01';
 
-        // PMSG_TRADE_OK_BUTTON_RECV: C1:3C, flag=1. The shared sender
-        // aporta el envoltorio C3, el chain-XOR y el serial rotativo correctamente.
+        // PMSG_TRADE_OK_BUTTON_RECV: C1:3C, flag=1. El emisor compartido
+        // aporta correctamente el envoltorio C3, chain-XOR y serial rotativo.
         BYTE pkt[4] = { 0xC1, 0x04, 0x3C, 0x01 };
         Net_SendSmallPacket(pkt, sizeof(pkt));
     }
 
-    // También chequea el botón de limpiar flag en [+0x89, +0xa1) x [+0x186, +0x19e)
+    // Botón de cancelación: [x+137,x+161) × [y+390,y+414).
     if ((int)(DAT_07ea5290 + 0x89) <= (int)DAT_083a427c &&
         (int)DAT_083a427c < (int)(DAT_07ea5290 + 0xa1) &&
         (int)(DAT_07ea528c + 0x186) <= (int)DAT_083a4278 &&
@@ -1765,25 +1712,23 @@ void __cdecl FUN_004ec330(void) {
 // moved from stubs.cpp lines 5297-7762 (2466 lines).
 // =============================================================================
 // ── SecondPassword UI helper stubs (bodies in original binary) ────────────────
-// FUN_0051e240 @ 0x0051E240 — UI_ShowNameList
-// param_1=count, param_2=base_index into DAT_07d29d24 table (stride 300),
-// param_3=mode (0x99=special item-type label, else copy names).
-// Copia los strings al buffer del panel DAT_083a44c4 (stride 0x26) y setea el descriptor.
+// FUN_0051e240 @ 0x0051E240 — ShowCheckBox
+// param_1=count, param_2=índice base de GlobalText (stride 300),
+// param_3=mensaje de destino (0x99 activa el rótulo especial de ítem).
+// Copia las líneas al buffer del panel DAT_083a44c4 (stride 0x26) y configura el descriptor.
 undefined4 __cdecl FUN_0051e240(int param_1, int param_2, int param_3)
 {
     int iVar3 = param_1;
     if (param_3 != 0x99) {
         if (0 < param_1) {
-            char *src = &DAT_07d29d24 + param_2 * 300;
             char *dst = (char *)&DAT_083a44c4;
-            int iVar6 = param_1;
-            do {
-                size_t len = strlen(src) + 1;
-                memcpy(dst, src, len);
-                src += 300;
+            for (int i = 0; i < param_1; ++i) {
+                // IDA: ShowCheckBox 0x51E240 copia desde
+                // GlobalText[index + i] (slots de 300 bytes). En Trade el
+                // caller FUN_004EB7F0 usa (4, 371, 151): GlobalText[371..374].
+                strncpy_s(dst, 0x26, GlobalText[param_2 + i], _TRUNCATE);
                 dst += 0x26;
-                iVar6--;
-            } while (iVar6 != 0);
+            }
         }
         goto LAB_0051e377;
     }
