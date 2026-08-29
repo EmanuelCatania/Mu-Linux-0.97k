@@ -63,13 +63,25 @@ static void MouseOnWindow_Update(void)
 
     if (g_ChatLB_MouseOnWindow) { g_MouseOnWindow = 1; return; }
 
+    // IDA: RenderErrorMessage dibuja los modales 126/152 desde (213,60)
+    // hasta (426,124), incluidos el campo de Personal Code y sus botones.
+    // Ese diálogo es modal: su click no puede seguir al recorrido de mundo.
+    if ((DAT_083a7c24 == 126 || DAT_083a7c24 == 152) &&
+        mx >= 213 && mx < 426 && my >= 60 && my < 124) {
+        g_MouseOnWindow = 1;
+        return;
+    }
+
     // Bottom HUD (y >= 432) — per IDA Game_CharSelectTick:298.
     if (my >= 432) { g_MouseOnWindow = 1; return; }
 
     // Top quick buttons / small HUD icons rendered by Render_QuickButtons.
     if (HUD_IsGuildCreationRuntime()) {
-        int btnX = (int)((float)DAT_07ea5b1c + _DAT_005524fc);
-        int btnY = (int)((float)DAT_07ea5b20 + _DAT_00552ca4);
+        // IDA: estos rectángulos comparten el origen guardado por
+        // RenderGuildCreation. El port ya no usa Inventory[32] para ese
+        // scratch, porque dicho slot pertenece al pool de tienda.
+        int btnX = (int)((float)g_GuildCreatorScratchX + _DAT_005524fc);
+        int btnY = (int)((float)g_GuildCreatorScratchY + _DAT_00552ca4);
         if (mx >= btnX && mx < btnX + 70 && my >= btnY && my < btnY + 21) {
             g_MouseOnWindow = 1; return;
         }

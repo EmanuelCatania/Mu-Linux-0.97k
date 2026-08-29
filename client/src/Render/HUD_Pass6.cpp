@@ -76,6 +76,7 @@ static float PointerBitsAsFloat_HudPass6(const void* pointer)
 extern "C" void   __cdecl RenderTipText(int sx, int sy, const char* Text);
 extern "C" void   __cdecl RenderInputText(int x, int y, int Index);
 extern "C" void   __cdecl CreateGuildMark(int nMarkIndex, bool blend);
+extern "C" void GuildMark_InitializePalette(bool blend);
 extern "C" int    InputTextWidth;
 #define dword_7E91388 DAT_07e91388
 extern "C" DWORD DAT_07e91388;
@@ -767,16 +768,21 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
 #define g_iKeyPadEnable DAT_07eaa144
 static char g_GuildNotice[2][64] = {};
 
-// ProtocolCore 0x55: the server authorizes opening the guild-creation UI.
-// Keep the UI-local keypad state here rather than exposing its storage.
+// IDA: ProtocolCore 0x55. El servidor autoriza abrir la interfaz de creación
+// de guild; el estado local del keypad permanece encapsulado en este módulo.
 extern "C" void GuildCreator_OpenFromServer(void)
 {
     GuildCreatorOpened = 1;
     g_iKeyPadEnable = 1;
-    DAT_00559c84 = 1;
+    // IDA: ProtocolCore 0x55 activa GuildInputEnable y mantiene InputEnable
+    // apagado. Ambos caminos escriben InputText[0], pero sólo el primero evita
+    // que Enter abra o envíe chat mientras el editor conserva el foco.
+    DAT_07e11d70 = 1;
+    DAT_00559c84 = 0;
     Input_ClearState(0);
     _InputTextMaxArr[0] = 8;
     DAT_00559c88 = 0;
+    GuildMark_InitializePalette(true);
     if (Hero)
         *(short*)((BYTE*)Hero + 474) = 999;
 }
@@ -787,11 +793,15 @@ extern "C" void GuildCreator_OpenFromServer(void)
 // requisitos; si ya estas en un guild o te falta nivel/resets manda un chat o
 // un notice y no abre nada (NpcTalk.cpp:197-220).
 //
-// Per `ProtocolCore` L1245-1254: cierra las ventanas de NPC y abre el creador
-// con el keypad APAGADO — lo que hace que los dos botones manden 0x54 en vez de
-// 0x55/0x57 (ver el hit-test en FUN_004e4760).
+// IDA: ProtocolCore 0x54. Cierra las ventanas de NPC y abre el creador con el
+// keypad APAGADO; así ambos botones responden con 0x54 en vez de 0x55/0x57
+// (ver el hit-test en FUN_004e4760).
 extern "C" void GuildCreator_OpenQuestionFromServer(void)
 {
+    GuildOpened     = 0;
+    PartyOpened     = 0;
+    CharacterOpened = 0;
+    InventoryOpened = 0;
     ShopOpened      = 0;
     WarehouseOpened = 0;
     TradeOpened     = 0;
@@ -803,60 +813,12 @@ extern "C" void GuildCreator_CloseFromResult(void)
 {
     Input_ClearState(0);
     _InputTextMaxArr[0] = 10;
+    DAT_07e11d70 = 0;
     DAT_00559c84 = 0;
     GuildCreatorOpened = 0;
     g_iKeyPadEnable = 0;
-}
-
-static void GuildCreator_HandleMouse(int iPosX, int iPosY)
-{
-    if (!GuildCreatorOpened || !g_iKeyPadEnable) return;
-
-    unsigned char* mark = (unsigned char*)&DAT_07ea51f5;
-
-    for (int gy = 0; gy < 8; ++gy) {
-        int sy = iPosY + 100 + gy * 15;
-        for (int gx = 0; gx < 8; ++gx) {
-            int sx = iPosX + 50 + gx * 15;
-            if ((int)MouseX >= sx + 1 && (int)MouseX < sx + 16 &&
-                (int)MouseY >= sy + 1 && (int)MouseY < sy + 16) {
-                DAT_07d78094 = 1;
-                if (MouseLButton) {
-                    mark[gx + gy * 8] = (unsigned char)DAT_07eaa0dc & 0x0F;
-                } else if (MouseRButton) {
-                    mark[gx + gy * 8] = 0;
-                }
-            }
-        }
-    }
-
-    for (int py = 0; py < 2; ++py) {
-        int sy = iPosY + 260 + py * 20;
-        for (int px = 0; px < 8; ++px) {
-            int sx = iPosX + 15 + px * 20;
-            if ((int)MouseX >= sx + 1 && (int)MouseX < sx + 19 &&
-                (int)MouseY >= sy + 1 && (int)MouseY < sy + 19 &&
-                IsClickPushed()) {
-                DAT_083a4124 = 0;
-                DAT_07eaa0dc = (char)(px + py * 8);
-                PlayBuffer(0x19, 0, 0);
-                return;
-            }
-        }
-    }
-
-    if ((int)MouseX >= iPosX + 100 && (int)MouseX < iPosX + 170 &&
-        (int)MouseY >= iPosY + 350 && (int)MouseY < iPosY + 371 &&
-        IsClickPushed()) {
-        DAT_083a4124 = 0;
-        // 004E4760 sends C1:03:57 before closing the local creator. The
-        // server uses it to release INTERFACE_GUILD_CREATE.
-        // 0x57 pide Encrypt=0 (C1 plano), igual que todo el rango de guild.
-        const BYTE cancelPkt[3] = { 0xC1, 0x03, 0x57 };
-        Net_SendC1Packet(cancelPkt, sizeof(cancelPkt));
-        GuildCreator_CloseFromResult();
-        PlayBuffer(0x19, 0, 0);
-    }
+    if (Hero)
+        *(short*)((BYTE*)Hero + 474) = -1;
 }
 
 extern "C" void SetGuildNoticeText(const char* text)
@@ -1339,7 +1301,14 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
         void** vt  = (void**)*obj;
         if (vt) {
             typedef void (__fastcall *FnRender)(DWORD*);
+            typedef int  (__fastcall *FnInput)(DWORD*);
             ((FnRender)vt[4])(obj);
+
+            // IDA: FUN_0040F320 — procesa por frame el botón de salida o
+            // expulsión de cada fila. La vtable original lo expone en +0x68;
+            // esta ruta faltaba en el dispatcher reconstruido, por lo que el
+            // icono se dibujaba y tenía hover pero nunca abría el modal 126.
+            ((FnInput)vt[26])(obj);
         }
     }
 }
@@ -1353,7 +1322,6 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
     // la tienda; usar storage propio en vez de pisarlo.
     g_GuildCreatorScratchX = iPosX;
     g_GuildCreatorScratchY = iPosY;
-    GuildCreator_HandleMouse(iPosX, iPosY);
     glColor3f(1.0f, 1.0f, 1.0f);
     GL_ResetState();
 

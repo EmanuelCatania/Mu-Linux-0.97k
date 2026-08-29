@@ -315,8 +315,10 @@ void  __cdecl FUN_004f7960(float grid_x, float grid_y, float *rgb_out); // Terra
 void  __cdecl FUN_004553c0(void *model, int type, int bone_idx, float scale, float *color, int entity); // Model_BoneParticle
 void  __cdecl FUN_00503cf0(int weapon_id, float scale, float half_scale, float *color, char flag); // Weapon_SetColor: fills color[3] from item type + scale factors
 void  __cdecl FUN_00503fe0(int weapon_id, float scale, float half_scale, float *color);           // Weapon_SetColorAlt: simpler version (no flag)
-void  __cdecl FUN_004552c0(int entity, int shield_id);               // Shield_Render
-void  __cdecl FUN_004f0100(int entity_id, char flag);                // NPC_SetFlag
+// IDA: FUN_004552C0 — compone la matriz del emblema de guild sobre un jugador visible.
+void  __cdecl FUN_004552c0(int entity, int shield_id);
+// IDA: FUN_004F0100 — CreateGuildMark, compone la textura 34 desde la tabla compartida de marks.
+extern "C" void __cdecl CreateGuildMark(int mark_index, bool blend);
 void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float *color, float angle, float alpha); // Particle_DrawBillboard
 
 // ── Skill/weapon widget system (UI overlay beams) ─────────────────────────────

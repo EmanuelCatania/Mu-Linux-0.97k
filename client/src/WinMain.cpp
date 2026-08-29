@@ -39,6 +39,7 @@
 // handler de Enter en WndProc cuando InputEnable=1 y el buffer no está vacío.
 extern "C" void Chat_SendChatLine(const char* text);
 extern "C" DWORD g_ItemAttribute_Backup;   // src/globals.cpp — recovery pointer
+extern "C" BYTE InputTextHide[10];
 
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 
@@ -1351,9 +1352,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             //   - input vacío + InputEnable=1  → cierra el chat (InputEnable=0)
             //   - input con texto + InputEnable=1  → envía el chat y cierra
             //
-            // NOTA: el gateo por ErrorMessage (126/152/139/142/140) y los demás
-            // estados de diálogo no están portados del todo — lo relajamos al estado de gameplay.
-            if (DAT_005615c0 == 5) {
+            // IDA: WndProc reserva Enter cuando hay foco de Guild o cuando
+            // ErrorMessage 126/152 está capturando un Personal Code; en esos
+            // casos el input no puede abrir ni enviar chat.
+            const bool guildDeleteCodeDialog =
+                DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
+            if (DAT_005615c0 == 5 && DAT_07e11d70 == 0 && !guildDeleteCodeDialog) {
                 bool empty = (lens[slot] == 0);
                 if (empty) {
                     if (DAT_00559c84) {
@@ -1364,7 +1368,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                         // Per IDA Game.cpp:4326-4327: InputTextMax[0]=42, [1]=10.
                         _InputTextMaxArr[0] = 42;               // chat msg max
                         _InputTextMaxArr[1] = 10;               // whisper target name max
-                        // InputTextHide[0] = 0 — no modelado (sólo para contraseña)
+                        // IDA: WndProc restablece el modo visible al abrir
+                        // chat. El diálogo 126 deja este slot enmascarado
+                        // para el Personal Code.
+                        InputTextHide[0] = 0;
                         DAT_00559c88 = 2;                       // InputNumber = 2 (chat + whisper target)
                         // GoldInputEnable = 0 — ya está en 0 en el juego normal
                         DAT_00559c84 = 1;                       // InputEnable = 1
@@ -1394,15 +1401,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             break;
         }
         // Carácter imprimible — se agrega si hay algún modo de input activo.
-        // El gate de InputEnable cubre login + chat; los otros flags (Tab/Gold/Guild)
-        // son diálogos in-game que todavía no cableamos, pero alcanza para
-        // que la pantalla de login acepte tipeo.
+        // El gate de InputEnable cubre login + chat; GuildInputEnable y los
+        // modales 126/152 comparten el buffer, pero preservan un foco distinto
+        // y no deben abrir el chat.
         // 2026-08-08: el diálogo de zen del baúl abre con InputEnable=0 +
         // GoldInputEnable=1 (sub_4EB5D0), así que con el gate viejo (sólo
         // InputEnable) NO se podía tipear nada. Per IDA WndProc L1953-1963 el
         // gate es `InputEnable || GoldInputEnable || …` y con GoldInputEnable
         // sólo se aceptan dígitos '0'..'9'.
-        if (DAT_00559c84 || DAT_07e11d72) {
+        const bool guildDeleteCodeDialog =
+            DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
+        if (DAT_00559c84 || DAT_07e11d72 || DAT_07e11d70 || guildDeleteCodeDialog) {
             BYTE c = (BYTE)wParam;
             if (DAT_07e11d72 && (c < '0' || c > '9')) break;
             // RANGO ACEPTADO — DESVIACIÓN DELIBERADA, hermana del charset de

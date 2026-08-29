@@ -1465,6 +1465,15 @@ static void CreateMagicShiny97k(BYTE* entity, int hand)
 
 static unsigned short g_HeroKey = 0;
 
+// Compatibilidad de ciclo de vida: MuEmu puede entregar 0x5C mientras F3/03
+// todavía está dentro de OpenWorld. El binario procesa el viewport sobre un
+// héroe ya reconstruido; en nuestro pump reentrante la asociación podía caer
+// en el slot anterior y el reinicio del pool la borraba. Se conserva sólo la
+// fila ya creada por FUN_00434DC0 y se aplica al nuevo héroe al terminarlo.
+static bool s_IsRebuildingHero = false;
+static bool s_HasPendingHeroGuildMark = false;
+static short s_PendingHeroGuildMarkRow = -1;
+
 // ---------------------------------------------------------------------------
 // F1/00 — ReceiveJoinServer  (@ 0x00424010)
 // Server saluda tras conectar. Sub-byte Msg[4]: 1=OK, otro=fail.
@@ -1815,6 +1824,12 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // ejecutamos siempre el world-load path.
     (void)bEncrypted;
 
+    // Debe activarse antes de OpenWorld: ése es el tramo que permite que el
+    // socket procese 0x5C de forma reentrante mientras el pool aún contiene
+    // la entidad anterior del héroe.
+    s_IsRebuildingHero = true;
+    s_HasPendingHeroGuildMark = false;
+
     const BYTE PosX      = Msg[4];
     const BYTE PosY      = Msg[5];
     const BYTE world     = Msg[6];
@@ -2023,6 +2038,16 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     heroPtr[448] = Msg[45];      // magic bonus / second-pwd flag
     heroPtr[132] = 1;            // alive flag
     DAT_07abf5d8 = (char*)heroPtr;   // bind global Hero pointer
+
+    // Si C1:5C llegó durante OpenWorld, la tabla de marks ya contiene la
+    // marca real; falta únicamente restaurar su fila sobre el nuevo Character.
+    if (s_HasPendingHeroGuildMark) {
+        *(short*)(heroPtr + 474) = s_PendingHeroGuildMarkRow;
+        s_HasPendingHeroGuildMark = false;
+        s_PendingHeroGuildMarkRow = -1;
+        FUN_00423ce0((int)(uintptr_t)heroPtr, 0, 0, 0);
+    }
+    s_IsRebuildingHero = false;
     HeroEquipWatchdog((int)(uintptr_t)heroPtr);
     *(DWORD*)(heroPtr + 449) = *(DWORD*)(charAttr + 0);
     *(DWORD*)(heroPtr + 453) = *(DWORD*)(charAttr + 4);
@@ -5344,21 +5369,16 @@ void Net_ProcessPacket(void)
                 const int kHeaderSize = 16;
                 if (Size < kHeaderSize) break;
                 const BYTE count = Msg[5];
-                const int maxMembers = 16; // backing table: 16 rows × 80 bytes
+                // IDA: FUN_004348B0 avanza el staging DAT_07e91790 de a 13
+                // bytes. El espacio real hasta DAT_07e919bc es 0x22C: admite
+                // 42 registros, aunque MuEmu hoy envíe como máximo 40.
+                const int maxMembers = 42;
                 const int memberCount = (count < maxMembers) ? count : maxMembers;
                 if (Size < kHeaderSize + (int)count * 12) break;
 
                 g_nGuildMemberCount = memberCount;
                 GuildTotalScore = *(const int*)(Msg + 8);
                 if (GuildTotalScore < 0) GuildTotalScore = 0;
-                memset(byte_7E919BC, 0, maxMembers * 80);
-                for (int i = 0; i < memberCount; ++i) {
-                    const BYTE* src = Msg + kHeaderSize + i * 12;
-                    char* dst = &byte_7E919BC[i * 80];
-                    memcpy(dst, src, 12);
-                    dst[10] = 0; // name[10] is fixed-width on the wire.
-                }
-
                 // 2026-08-15: alimentar el WIDGET de lista (dword_55C9FF4), que
                 // es de donde `RenderGuildList` saca las filas.  Antes sólo se
                 // llenaba `byte_7E919BC` (que el render usa nada más que para el
@@ -5377,13 +5397,14 @@ void Net_ProcessPacket(void)
                     char* rec = &byte_7E91790[i * 13];
                     memcpy(rec, src, 10);
                     rec[10] = 0;
-                    // Wire: [name:10][number][connected].  IDA lee el byte
-                    // "connected" (src[11]) para el flag y el "number" (src[10])
-                    // para el party: si tiene el bit alto puesto, party =
-                    // number & 0x7F; si no, -1 (= 0xFF, "sin party").
-                    char connected = (char)src[11];
-                    char number    = (char)src[10];
-                    char party     = (number >= 0) ? (char)-1 : (char)(number & 0x7F);
+                    // IDA: FUN_004348B0 lee `number` en +10 y lo entrega al
+                    // widget como estado visual; el byte +11 determina el
+                    // número de party: negativo → byte & 0x7F, no negativo → -1.
+                    // MuEmu conserva ese orden en PMSG_GUILD_LIST.
+                    char connected = (char)src[10];
+                    char partyByte = (char)src[11];
+                    char party     = (partyByte >= 0) ? (char)-1
+                                                       : (char)(partyByte & 0x7F);
                     rec[11] = connected;
                     rec[12] = party;
                     GuildList_AddMember(rec, connected, party);
@@ -6081,6 +6102,15 @@ void Net_ProcessPacket(void)
                 if (Size < 45) break;
                 const WORD entityKey = (WORD)((Msg[3] << 8) | Msg[4]);
                 const int row = GuildMark_UpsertRecord(-1, Msg + 5, Msg + 13);
+                if (s_IsRebuildingHero && entityKey == g_HeroKey) {
+                    // Ver Recv_JoinMapServer: no asociar al slot viejo que va
+                    // a ser borrado; la marca queda pendiente para el héroe nuevo.
+                    s_PendingHeroGuildMarkRow = (short)row;
+                    s_HasPendingHeroGuildMark = true;
+                    NetLog("NET: GuildMark hero=%u row=%d diferido por F3/03",
+                           (unsigned)entityKey, row);
+                    break;
+                }
                 const int entitySlot = FUN_0045ac80(entityKey);
                 BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
                 if (base && entitySlot >= 0 && entitySlot < 400) {
@@ -6194,42 +6224,12 @@ void Net_ProcessPacket(void)
             }
 
             case 0x65: {
-                // ReceiveGuildList — Per IDA ReceiveGuildList @ 0x004348B0.
-                //   [C1][size][0x65][_][_][count][_]...
-                //   Msg[5] = member count
-                //   Msg[8..11] = guild total score (DWORD)
-                //   Msg[16..] = guild name (8 bytes?)
-                //   Msg[27..] = members (12 bytes per entry: name(10), level/role(2))
-                //
-                // Actualiza la lista global de miembros del guild + el score. La
-                // member row layout matches IDA — copies into byte_7E919BC
-                // (tabla de datos de miembro con stride de 13 bytes). Hero+474 lo setea
-                // aparte el 0x5B (arriba) cuando el server lo pre-resuelve,
-                // O acá por coincidencia de nombre cuando cargan los nombres de guild.
-                if (Size < 6) break;
-                // Clamp igual que el 0x52: el loop de copia se corta en 16 pero
-                // `g_nGuildMemberCount` es lo que consume el render, así que
-                // dejarlo sin acotar (Msg[5] llega hasta 255) hacía que el panel
-                // recorriera slots nunca escritos.
-                g_nGuildMemberCount = (Msg[5] < 16) ? Msg[5] : 16;
-                if (Size >= 12) {
-                    int score = *(const int*)(Msg + 8);
-                    GuildTotalScore = score < 0 ? 0 : score;
-                }
-                NetLog("NET:  → 0x65 GuildList members=%d score=%d",
-                       g_nGuildMemberCount, GuildTotalScore);
-                // Copia cada fila de miembro en byte_7E919BC[i*80] (per el layout de IDA)
-                // Entrada de miembro en Msg+27+i*12, destino en byte_7E919BC[i*80].
-                // Layout: [name 10B][level/role 2B] = 12 bytes per packet,
-                // expandido a 80 bytes por slot en la memoria del cliente.
-                if (g_nGuildMemberCount > 0 && Size >= 27 + g_nGuildMemberCount * 12) {
-                    for (int i = 0; i < g_nGuildMemberCount && i < 16; ++i) {
-                        const BYTE* src = Msg + 27 + i * 12;
-                        char* dst = &byte_7E919BC[i * 80];
-                        memcpy(dst, src, 12);
-                        dst[12] = 0;  // null-terminate name
-                    }
-                }
+                // IDA: ProtocolCore no deriva 0x65 a ReceiveGuildList; el
+                // listado nativo es exclusivamente C2:52 → FUN_004348B0.
+                // MuEmu tampoco emite 0x65 para Guild. Se conserva el caso
+                // aislado para no reinterpretar un paquete ajeno, pero no puede
+                // modificar ni el staging de miembros ni la tabla de marks.
+                NetLog("NET:  → 0x65 sin asociación a Guild, size=%d", Size);
                 break;
             }
 

@@ -143,6 +143,7 @@
 
 // 2026-08-25: el rango de guild pide C1 plano (Encrypt=0).
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
+extern "C" void GuildCreator_CloseFromResult(void);
 
 // Inventory pool bases — defined in src/Render/HUD_Pass3.cpp.
 // Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
@@ -209,37 +210,36 @@ void __cdecl FUN_004e4760(void) {
     }
 
     if (DAT_07eaa144 == 1) {
-        // Click-grid: 8 buttons per row, 5 rows, spaced 0x0F pixels
-        // Escribe DAT_07ea51f5 con el valor de DAT_07eaa0dc
-        // ... (full grid paint — inline per decompile)
-        *(DWORD*)(DAT_07abf5d8 + 0x24) = 0x42e10000; // facing angle = 112.5°
-        BYTE  curVal = DAT_07eaa0dc;
-        unsigned char* dst = (unsigned char*)&DAT_07ea51f5;
-        int baseY = originY + 100;
-        int ox    = originX;
-        for (int row = 0; row < 5; row++) {
-            int ry = baseY + row * 0xf;
-            int rx = ox + (row + 1) * 0x32;
-            for (int col = 0; col < 8; col++) {
-                if ((int)DAT_083a427c >= rx && (int)DAT_083a427c < rx + 0xf &&
-                    (int)DAT_083a4278 >= ry && (int)DAT_083a4278 < ry + 0xf) {
-                    if (DAT_083a42c4 != '\0') dst[row*8+col] = curVal;
-                    if (DAT_083a42ac != '\0') dst[row*8+col] = 0;
+        // IDA: FUN_004E4760. La grilla de edición tiene 8 filas de 8 celdas;
+        // cada celda conserva un índice de color completo en DAT_07ea51f5.
+        // La compresión a 32 bytes ocurre únicamente al enviar el paquete 0x55.
+        *(DWORD*)(DAT_07abf5d8 + 0x24) = 0x42e10000;
+        const BYTE selectedColor = (BYTE)DAT_07eaa0dc;
+        BYTE* const cells = (BYTE*)&DAT_07ea51f5;
+        for (int row = 0; row < 8; ++row) {
+            const int cellY = originY + 100 + row * 15;
+            for (int col = 0; col < 8; ++col) {
+                const int cellX = originX + 50 + col * 15;
+                if ((int)DAT_083a427c >= cellX && (int)DAT_083a427c < cellX + 15 &&
+                    (int)DAT_083a4278 >= cellY && (int)DAT_083a4278 < cellY + 15) {
+                    const int cellIndex = row * 8 + col;
+                    if (DAT_083a42c4 != '\0') cells[cellIndex] = selectedColor;
+                    if (DAT_083a42ac != '\0') cells[cellIndex] = 0;
                 }
-                rx += 0xf;
             }
         }
-        // Button click iteration (full from decompile)
-        for (int iy = 0x104, step = 0; iy < 300; iy += 0x14, step++) {
-            for (int ix2 = 0, sub = 0; ix2 < 0xa0; ix2 += 0x14, sub++) {
-                int bx = (int)(DAT_07ea5b1c + 0xf + ix2);
-                if ((int)DAT_083a427c >= bx && (int)DAT_083a427c < bx + 0x14 &&
-                    (int)DAT_083a4278 >= originY + iy &&
-                    (int)DAT_083a4278 <  originY + iy + 0x14 &&
+
+        // IDA: FUN_004E4760 — paleta 2×8, índice lineal fila*8+col.
+        for (int row = 0; row < 2; ++row) {
+            const int colorY = originY + 260 + row * 20;
+            for (int col = 0; col < 8; ++col) {
+                const int colorX = originX + 15 + col * 20;
+                if ((int)DAT_083a427c >= colorX && (int)DAT_083a427c < colorX + 20 &&
+                    (int)DAT_083a4278 >= colorY && (int)DAT_083a4278 < colorY + 20 &&
                     IsClickPushed()) {
                     DAT_083a4124 = '\0';
                     FUN_00404bc0(0x19, 0, 0);
-                    DAT_07eaa0dc = (char)(step * 8 + sub);
+                    DAT_07eaa0dc = (char)(row * 8 + col);
                 }
             }
         }
@@ -319,6 +319,14 @@ void __cdecl FUN_004e4760(void) {
                         memcpy(pkt + 3,  DAT_07ea51ec, 8);
                         memcpy(pkt + 11, mark, 32);
                         Net_SendC1Packet(pkt, 43);
+
+                        // IDA: FUN_004E4760 cae al cierre común inmediatamente
+                        // después de encolar 0x55: limpia el input, cierra el
+                        // editor y reinicia el intervalo de mouse 0/6.
+                        GuildCreator_CloseFromResult();
+                        PlayBuffer(28, 0, 0);
+                        DAT_07e11d28 = 0;
+                        DAT_00559bec = 6;
                     }
                 }
             } else {
@@ -326,36 +334,10 @@ void __cdecl FUN_004e4760(void) {
                 // responde 0x54 con result=1 (PMSG_GUILD_MASTER_OPEN_RECV). El
                 // server valida nivel y resets (Guild.cpp:37-45) y, si pasa,
                 // contesta el 0x55 que abre la UI de creacion.
-                // Send auth packet (opcode 0xC1/0x01/0x54 keepalive-style, 4 bytes)
+                // IDA: C1:04:54:01 confirma la pregunta previa al Guild Master.
                 {
-                    BYTE pkt[4];
-                    // 2026-08-08: el size byte iba en 1 -> el server corta con
-                    // "Protocol size error" (size < 3). PMSG_GUILD_MASTER_OPEN_RECV
-                    // (Guild.h:212) = [C1][04][54][result], 4 bytes.
-                    pkt[0] = 0xC1; pkt[1] = 4; pkt[2] = 0x54; pkt[3] = 1;
-                    // XOR encode byte 3
-                    static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                                  0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                                  0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                                  0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-                    pkt[3] ^= key[3] ^ pkt[2];
-                    int off = 0; unsigned int rem = 4;
-                    if (DAT_055ca168 != 0xffffffff) {
-                        do {
-                            int r = send((SOCKET)DAT_055ca168, (char*)pkt+off, (int)(rem-off), 0);
-                            if (r == -1) {
-                                int e = WSAGetLastError();
-                                if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                                    memcpy(DAT_055ca16c + DAT_055cc16c, pkt, rem);
-                                    DAT_055cc16c += rem;
-                                } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                                break;
-                            }
-                            if (r == 0) break;
-                            if (DAT_055ce174 != 0) FUN_0043de60();
-                            rem -= r; off += r;
-                        } while ((int)rem > 0);
-                    }
+                    const BYTE pkt[4] = { 0xC1, 0x04, 0x54, 0x01 };
+                    Net_SendC1Packet(pkt, sizeof(pkt));
                 }
             }
             FUN_00404bc0(0x19, 0, 0);
@@ -372,45 +354,13 @@ void __cdecl FUN_004e4760(void) {
             IsClickPushed()) {
             DAT_083a4124 = '\0';
             if (DAT_07eaa144 == 0) {
-                // Send C1/01/54/1 keep-alive packet
-                BYTE pkt2[4] = {0xC1, 4, 0x54, 1};   // size byte 1 -> 4 (ver arriba)
-                int off = 0; unsigned int rem = 4;
-                if (DAT_055ca168 != 0xffffffff) {
-                    do {
-                        int r = send((SOCKET)DAT_055ca168, (char*)pkt2+off, (int)(rem-off), 0);
-                        if (r == -1) {
-                            int e = WSAGetLastError();
-                            if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                                memcpy(DAT_055ca16c + DAT_055cc16c, pkt2, rem);
-                                DAT_055cc16c += rem;
-                            } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                            break;
-                        }
-                        if (r == 0) break;
-                        if (DAT_055ce174 != 0) FUN_0043de60();
-                        rem -= r; off += r;
-                    } while ((int)rem > 0);
-                }
+                // IDA: C1:04:54:00 cancela la pregunta previa al Guild Master.
+                const BYTE pkt2[4] = { 0xC1, 0x04, 0x54, 0x00 };
+                Net_SendC1Packet(pkt2, sizeof(pkt2));
             } else {
-                // mode 1: send small 3-byte cancel packet C1/01/57
-                BYTE pkt3[3] = {0xC1, 3, 0x57};
-                int off = 0; unsigned int rem = 3;
-                if (DAT_055ca168 != 0xffffffff) {
-                    do {
-                        int r = send((SOCKET)DAT_055ca168, (char*)pkt3+off, (int)(rem-off), 0);
-                        if (r == -1) {
-                            int e = WSAGetLastError();
-                            if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                                memcpy(DAT_055ca16c + DAT_055cc16c, pkt3, rem);
-                                DAT_055cc16c += rem;
-                            } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                            break;
-                        }
-                        if (r == 0) break;
-                        if (DAT_055ce174 != 0) FUN_0043de60();
-                        rem -= r; off += r;
-                    } while ((int)rem > 0);
-                }
+                // IDA: C1:03:57 cancela el editor y libera INTERFACE_GUILD_CREATE.
+                const BYTE pkt3[3] = { 0xC1, 0x03, 0x57 };
+                Net_SendC1Packet(pkt3, sizeof(pkt3));
                 *(short*)(DAT_07abf5d8 + 0x1da) = (short)0xffff;
             }
             FUN_00404bc0(0x19, 0, 0);

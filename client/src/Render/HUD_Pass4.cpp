@@ -78,6 +78,8 @@ extern "C" {
 // Decoded from C2:5A/C1:5C by the same guild-mark record table used by the
 // viewport entity mapping (Character+474).
 extern "C" const BYTE* Guild_GetMarkPixels(int row);
+extern "C" bool GuildMark_EnsureRenderTarget(void);
+extern "C" void GuildMark_InitializePalette(bool blend);
 
 // External symbols already defined elsewhere.
 // (UI flags are now #defined in globals.h to DAT_07eaa11x bytes.)
@@ -271,15 +273,25 @@ void Render_QuickButtons_(void)
     // (GetScreenWidth solo recorta el viewport 3D, no posiciona paneles.)
     const int panelStartX = 450;
 
+    // IDA: FUN_004F5820 compone el panel antes de sus botones compartidos. La
+    // textura inferior del panel alcanza y=433 y, si se dibuja después, cubre
+    // por completo los quads de OK/CANCEL aunque sus hit-tests continúen vivos.
+    if (HUD_IsGuildCreationRuntime())  RenderGuildCreation(panelStartX, 0);
+
     if (HUD_IsGuildCreationRuntime()) {
+        // IDA: RenderGuildCreation guarda el origen 450,0 antes de que el
+        // dispatcher pinte los botones compartidos. El port los dibujaba antes
+        // de inicializar su scratch y por eso quedaban fuera del panel.
+        g_GuildCreatorScratchX = panelStartX;
+        g_GuildCreatorScratchY = 0;
         // 2026-08-26 FIX "los botones OK/CANCEL salen abajo a la izquierda, fuera
         // del panel": el origen era `DAT_07ea5b1c/20` (= Inventory[32].Level/Part),
         // el scratch que el port ABANDONO el 2026-07-27 al mover el origen del
         // creador a `g_GuildCreatorScratchX/Y` (Inventory[32] es el slot 0 del pool
         // de la tienda y lo estaba pisando). Quedo en 0, asi que los botones se
         // dibujaban en (0+20, 0+350) absoluto — abajo a la izquierda — mientras los
-        // DOS hit-tests (FUN_004e4760 para OK, GuildCreator_HandleMouse para CANCEL)
-        // ya usaban el origen bueno: se dibujaban en un lado y se clickeaban en otro.
+        // El hit-test FUN_004e4760 ya usaba el origen bueno: se dibujaban en un
+        // lado y se clickeaban en otro.
         // Los tres offsets coinciden con esos hit-tests: +20/+350 y +100 el segundo.
         // Es el tercer hermano del fix del 2026-08-08 b (GuildList y CharacterInfo
         // ya habian pasado a sus globals reales; este quedo sin actualizar).
@@ -338,7 +350,6 @@ void Render_QuickButtons_(void)
     // 3D viewport (que es 450 wide cuando esos flags están on).
     if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(panelStartX, 0);
     if (HUD_IsGuildListRuntime())      RenderGuildList(panelStartX, 0);
-    if (HUD_IsGuildCreationRuntime())  RenderGuildCreation(panelStartX, 0);
 
     RenderParty(450, 0);
     RenderInventoryWindow();
@@ -635,29 +646,14 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
 // =============================================================================
 extern "C" void __cdecl CreateGuildMark(int nMarkIndex, bool blend)
 {
+    if (!GuildMark_EnsureRenderTarget()) return;
+
     int Width  = (int)Bitmaps[34].Width;
     int Height = (int)Bitmaps[34].Height;
     BYTE* Buffer = Bitmaps[34].Buffer;
     if (!Buffer || Width <= 0 || Height <= 0) return;
 
-    int alpha = blend ? 0 : 128;
-
-    MarkColor[0]  = (DWORD)(alpha << 24);
-    MarkColor[1]  = 0xFF000000u;
-    MarkColor[2]  = 0xFF808080u;
-    MarkColor[3]  = 0xFFFFFFFFu;
-    MarkColor[4]  = 0xFF0000FFu;
-    MarkColor[5]  = 0xFF0080FFu;
-    MarkColor[6]  = 0xFF00FFFFu;
-    MarkColor[7]  = 0xFF00FF80u;
-    MarkColor[8]  = 0xFF00FF00u;
-    MarkColor[9]  = 0xFF80FF00u;
-    MarkColor[10] = 0xFFFFFF00u;
-    MarkColor[11] = 0xFFFF8000u;
-    MarkColor[12] = 0xFFFF0000u;
-    MarkColor[13] = 0xFFFF0080u;
-    MarkColor[14] = 0xFFFF00FFu;
-    MarkColor[15] = 0xFF8000FFu;
+    GuildMark_InitializePalette(blend);
 
     if (nMarkIndex < 0) return;
     const BYTE* v5 = Guild_GetMarkPixels(nMarkIndex);

@@ -564,7 +564,7 @@ void __cdecl FUN_00514310(void)
         goto tail;
     }
 
-    // ── 126 — confirmar EXPULSAR a un miembro del guild ───────────────────
+    // ── 126 — confirmar salida/expulsión/disolución de Guild ──────────────
     // 2026-08-15: acá había un bloque que limpiaba los buffers de usuario y
     // password (`DAT_07db8710`/`DAT_07db8810`).  Eso NO es lo que hace el
     // binario: IDA `UI_InGameMenu` L3343 `case 126:` arma y envía el paquete de
@@ -575,9 +575,10 @@ void __cdecl FUN_00514310(void)
     // PMSG_GUILD_DELETE_RECV (MuEmu Guild.h:205):
     //     [C1][0x17][0x53][name:10][PersonalCode:10]      sizeof = 23
     // `name` sale de la tabla de 13 bytes por miembro `byte_7E91790`, indexada
-    // por `dword_5615E4` (lo setea el click en el botón de expulsar, sub_40F320
-    // → nuestro GuildLB_perFrameInput).  `PersonalCode` es lo que el jugador
-    // tipeó en el diálogo (InputText[0] = DAT_07db8710).
+    // por `dword_5615E4` (lo fija el click de `sub_40F320`). Para un miembro
+    // normal esa fila sólo puede ser la propia; para el Master puede ser la de
+    // otro miembro o la propia. El servidor decide si corresponde expulsar,
+    // abandonar o disolver. `PersonalCode` es el valor de InputText[0].
     //
     // HackPacketCheck índice 83 → Encrypt = 0 ⇒ frame C1 + chain-XOR, SIN
     // serial (ver "Desconexiones: serial de packets y Encrypt=1" en CLAUDE.md).
@@ -596,15 +597,21 @@ void __cdecl FUN_00514310(void)
                          mouseY >= 98 && mouseY < 119 && IsClickPushed();
         if (!yes) {
             // El "No" lo atiende el SEGUNDO switch (su gate es el rect
-            // x ∈ [0x175, 0x185], que es el mismo botón derecho); ahí el
+            // x ∈ [373, 413), igual al botón derecho renderizado); ahí el
             // `case 0x7e` limpia el input y cae al `tail` (dismiss).  Salimos
             // con `break` para que ese switch lo vea.  Sin click en ninguno de
             // los dos, `return`: el cartel persiste.
-            const bool no = mouseX >= 0x175 && mouseX <= 0x185 && IsClickPushed();
+            const bool no = mouseX >= 373 && mouseX < 413 &&
+                            mouseY >= 98 && mouseY < 119 && IsClickPushed();
             if (no) break;
             return;
         }
+        // IDA: la rama de aceptación consume MouseLButtonPush antes de
+        // construir C1:53; consumimos también los latches del tick para que
+        // el mismo click modal no llegue al movimiento del mundo.
         DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
 
         int memberIdx = dword_5615E4;
         if (memberIdx < 0 || memberIdx >= 0x22C / 13) goto tail;
@@ -1060,6 +1067,11 @@ void __cdecl FUN_00514310(void)
             memset(DAT_07db8710, 0, 0x100);
             *(DWORD*)DAT_07d780a8 = 0;
             DAT_07d552e4  = 0;
+            // IDA consume MouseLButtonPush al cancelar. Estos dos latches son
+            // el equivalente del pump reconstruido y evitan propagar el click
+            // del modal al movimiento en el mismo frame.
+            DAT_083a42c4 = 0;
+            DAT_083a413c = 0;
             break;
 
         case 0x80:

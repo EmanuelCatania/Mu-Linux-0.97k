@@ -73,7 +73,7 @@
 //       SelectObject(DC, font_small);
 //       // Color según DAT_05826d32:
 //       DAT_00559c78 = DAT_05826d32 ? 0x005901 : 0xffc301;   // verde o amarillo
-//       FUN_004f0100((int)*(short*)(DAT_07abf5d8+0x1da), '\x01'); // SetBuffIcon(id)
+//       CreateGuildMark((int)*(short*)(DAT_07abf5d8+0x1da), '\x01'); // compone el mark propio
 //       Texture_Draw2D(0x22, fVar2, 4.0, 8.0, 8.0, 0,0,1,1, '\x01', '\x01');
 //       crt_sprintf(local_64, &DAT_00559ef0);   // format buff name
 //       DrawText(ftol()+0xd, 4, local_64, 0, 1, 0);
@@ -84,7 +84,7 @@
 //       // Buscar icono del buff (search en tabla &DAT_07e919bc..0x7ea51ec stride 0x50)
 //       // comparando con &lpString_05826bfc
 //       // Color hover: 0xff00a6ff o 0x9600
-//       FUN_004f0100(found_idx, '\x01');   // SetBuffIcon(found_idx)
+//       CreateGuildMark(found_idx, '\x01');   // compone el mark encontrado
 //       Texture_Draw2D(0x22, fVar2, 19.0, 8.0, 8.0, ...);
 //       crt_sprintf(local_64, &DAT_00559ef4);   // segundo stat
 //       DrawText(ftol()+0xd, 0x13, local_64, 0, 1, 0);
