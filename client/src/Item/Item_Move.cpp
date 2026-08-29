@@ -6,8 +6,6 @@
 #include "functions.h"
 #include "Net/Net.h"
 
-extern "C" void DbgLogPublic(const char* msg);
-
 // SendRequestEquipmentItem @ 0x0043C250 — Equipment move / item drag
 //
 // 2026-05-08 BUG-FIX MAYÚSCULO (round 2): la versión anterior mandaba C1
@@ -96,18 +94,6 @@ void __cdecl SendRequestEquipmentItem_stub(int srcFlag, int iSrcIndex, ITEM* pIt
     pkt[8]  = itemBytes[3];   // type hi | excellent
     pkt[9]  = (BYTE)dstFlag;
     pkt[10] = (BYTE)iDstIndex;
-
-    // Diagnostic — log every move attempt so we can see what the user is
-    // doing if disconnect persists.
-    {
-        char dbg[160];
-        wsprintfA(dbg,
-            "ITEM_MOVE C3 send: srcF=%d srcIdx=%d dstF=%d dstIdx=%d "
-            "item=[%02X %02X %02X %02X]",
-            srcFlag, iSrcIndex, dstFlag, iDstIndex,
-            itemBytes[0], itemBytes[1], itemBytes[2], itemBytes[3]);
-        DbgLogPublic(dbg);
-    }
 
     Net_SendSmallPacket(pkt, 11);
 

@@ -454,13 +454,12 @@ static void HUD_HotkeyTick(void)
 //   4. Sub-tick via FUN_004ac140
 //   5. Movement debounce (DAT_07e11d28 >= DAT_00559bec and !DAT_07e11dc0)
 //   6. Animation state exit: swimming, normal walk, cancel
-//   7. Click-on-character-select: slot copy + sends [0xC1][0x24] encrypted packet
-//   8. Click-on-mob/player (SelectedCharacter): pathfind + Combat_SendMovePathPacket
-//   9. Click-on-NPC (SelectedNpc): alt pathfind
-//  10. Click-on-special-object (SelectedOperate): pathfind + entity_type lookup
-//  11. Ground click (ray cast FUN_004f9ac0 + FUN_004f8480): terrain check + pathfind
-//  12. Entity state update Combat_DispatchHeroSkillAttack
-//  13. Hover terrain attribute → DAT_07e118e8
+//   7. Click sobre mob/jugador (SelectedCharacter): pathfind + Combat_SendMovePathPacket
+//   8. Click sobre NPC (SelectedNpc): pathfind alternativo
+//   9. Click sobre objeto especial (SelectedOperate): pathfind + lookup de entity_type
+//  10. Click en suelo (ray cast FUN_004f9ac0 + FUN_004f8480): chequeo de terreno + pathfind
+//  11. Actualización de estado de entidad: Combat_DispatchHeroSkillAttack
+//  12. Atributo de terreno bajo el cursor → DAT_07e118e8
 //
 // Los bloques de ofuscación por HashTable repartidos por la función (~70 % del código) se omiten
 // per project policy (see CLAUDE.md §Anti-tamper).
@@ -485,7 +484,6 @@ static void HUD_HotkeyTick(void)
 // Packet formats (all XOR-encoded before send):
 //   Facing:       [0xC1][0x07][0x0F] + encoded direction byte
 //   Walk/swim:    [0xC1][0x11] + grid_x,grid_y
-//   Char-select:  [0xC1][0x24] + slot data from entity+0x97 (0x44 bytes)
 
 // Helper: manda el buffer por el socket, con fallback a la cola de WSAEWOULDBLOCK
 // BUG-FIX 2026-04-29: server log mostró `[SocketManager] Protocol header
@@ -1259,7 +1257,7 @@ void __cdecl Player_ProcessInput(void)
         // SelectedCharacter/4c/48 (hover targets) cuando hay click sobre window.
         // Sin esto, un hover target stale (NPC bajo el cursor del frame
         // anterior) hacía que líneas 757/801/831 dispararan pathfind aunque
-        // bHoverActive=false (vía bHoverOrClick que también incluye DAT_083a42c4).
+        // bHoverActive=false, aunque DAT_083a42c4 conserve el latch del click.
         if (g_MouseOnWindow || s_clickStartedOnWindow) {
             bHoverActive = false;
             // Consume los flags de click para que no se propaguen al tick
@@ -1282,14 +1280,11 @@ void __cdecl Player_ProcessInput(void)
 
         // 2026-05-05: si el user NO está clickeando activamente (no held, no
         // latched), forzar DAT_083a42c4=0 también. Sin esto, un click anterior
-        // que no se consumió bien puede dejar este flag en 1, haciendo que
-        // bHoverOrClick siga siendo true y ciertos paths (e.g. line 676
-        // char-select packet) se disparen al pasar el mouse.
+        // que no se consumió bien puede dejar este flag activo después de
+        // soltar el botón.
         if (!bClickHeld && !bClickLatched) {
             DAT_083a42c4 = 0;
         }
-        bool bHoverOrClick = (DAT_083a42c4 != '\0') || bHoverActive;
-
         // [DIAG 2026-04-28] Una vez por segundo: loguea todo lo que afecta al caminar
         {
             static DWORD s_lastDiag = 0;
@@ -1328,74 +1323,7 @@ void __cdecl Player_ProcessInput(void)
         // (Walker movido arriba del gate — ya corrió al inicio del tick.)
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
 
-        // ── Click on char-select entity ───────────────────────────────────────
-        // Conditions: hover match, secondary target active, sub-state not 6
-        if (DAT_00559c5c != '\0'
-            && DAT_0055a7ac != 6
-            && DAT_00559c58 == 1
-            && SelectedCharacter != -1)
-        {
-            bHoverOrClick = true;
-        }
-
         _DAT_07e11d50 = (DAT_05826e08 - _DAT_07e11d4c) * _DAT_00552890;
-
-        if (_DAT_07e11d50 < _DAT_00552b6c && bHoverOrClick) {
-            // Copia los datos del slot de char-select de entity+0x97 al buffer DAT_07e91350
-            // (0x11 DWORDs = 68 bytes = char name/slot)
-            if (!DAT_07eaa165) {
-                DAT_07eaa165 = '\x01';
-
-                unsigned char *slotSrc = (unsigned char*)DAT_07cf1ffc + 0x97;
-                memcpy((void*)DAT_07e91350, slotSrc, 0x44);
-
-                // Clear slot in entity
-                *(short*)((unsigned char*)DAT_07cf1ffc + 0x97)  = -1;
-                *(DWORD*)((unsigned char*)DAT_07cf1ffc + 0x98)   = 0;
-
-                // Resetea el estado de la entidad y setea los flags de entrada al mundo
-                FUN_0045c130((int)DAT_07abf5d8);
-                FUN_0045c720((int)DAT_07abf5d8);
-                DAT_07ea9800  = (DWORD)&DAT_07ea8410;
-                DAT_07ea5b18  = 1;
-                DAT_07e11e78  = 0;
-
-                // Build [0xC1][0x24] char-select packet with slot data
-                // (payload: slot index + name from DAT_07e91350 buffer, XOR-encoded)
-                // El original arma un payload de varios bytes hasta 0x400 y después lo codifica con FUN_0053cc30.
-                // Buffer layout: bytes 0,4,0x1a,0x1b are slot index fields.
-                unsigned char *slotBuf = (unsigned char*)DAT_07e91350;
-                unsigned char payload[8];
-                memset(payload, 0, sizeof(payload));
-                payload[0] = 0xC1;
-                payload[1] = 1;            // len placeholder
-                payload[2] = 0x24;
-                payload[3] = slotBuf[0];   // slot index LSB  (DAT_07e91350 byte 0)
-                payload[4] = slotBuf[4];   // field B          (DAT_07e91354)
-                payload[5] = slotBuf[0x1a];// field C          (DAT_07e9136a)
-                payload[6] = slotBuf[0x1b];// field D          (DAT_07e9136b)
-                payload[7] = 0;
-
-                // Aleatoriza el contador de secuencia y codifica vía FUN_0053cc30
-                int rnd = rand();
-                unsigned int rawLen = 7;
-                int encLen = FUN_0053cc30(0, payload + 1, rawLen);
-                if (encLen < 0x100) {
-                    char outbuf[256];
-                    outbuf[0] = (char)0xC3;
-                    outbuf[1] = (char)(encLen + 2);
-                    FUN_0053cc30((int)(outbuf + 2), payload + 1, rawLen);
-                    SendPacket(outbuf, encLen + 2);
-                } else {
-                    char outbuf[256];
-                    outbuf[0] = (char)0xC4;
-                    outbuf[1] = (char)((encLen + 3) >> 8);
-                    outbuf[2] = (char)(encLen + 3);
-                    FUN_0053cc30((int)(outbuf + 3), payload + 1, rawLen);
-                    SendPacket(outbuf, encLen + 3);
-                }
-            }
-        }
 
         // NO resetear MouseUpdateTime acá. En 004ACEF0 el reset va adentro de
         // las ramas de acción concretas (por ejemplo LABEL_190 / camino fallido),
