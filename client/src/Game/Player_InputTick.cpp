@@ -1393,6 +1393,15 @@ void __cdecl Player_ProcessInput(void)
                 // Filtro adicional: mobs MUERTOS (entity[+0x34e]==1) no son
                 // targeteables.
                 if (SelectedCharacter > -1 && bClickEdge) {
+                    // IDA Player.cpp (0x004ACEF0) gates the character-attack
+                    // path with CheckAttack before it reaches Action().  Action
+                    // itself intentionally sends 0x15 without rechecking it.
+                    // Keep the earlier bHoverActive relaxation only for ground
+                    // movement; applying it here allowed neutral players to be
+                    // queued as attack targets without Ctrl after Guild War.
+                    if ((char)canAct == '\0') {
+                        goto end_tick_inc;
+                    }
                     {
                         // 2026-05-07 diag — keep until hover bug resolved.
                         char dbg[200];

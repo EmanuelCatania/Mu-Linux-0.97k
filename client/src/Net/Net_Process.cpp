@@ -1151,6 +1151,18 @@ static void GuildWar_RefreshEntityRelations()
     }
 }
 
+// IDA: FUN_00423DB0.  The client keeps the normal guild relation (1) while
+// clearing the active-war relation (2) from every visible entity.  This is
+// intentionally separate from the legacy function with the same old label in
+// Crypto.cpp, which belongs to the already-validated Trade cleanup path.
+extern "C" void GuildWar_ResetClientState()
+{
+    EnableGuildWar = 0;
+    GuildWarIndex = -1;
+    GuildWarName[0] = '\0';
+    GuildWar_RefreshEntityRelations();
+}
+
 // Inserta la rama demostrada de IDA SetActionClass (FUN_00497870). El auxiliar
 // completo aún no tiene un port enlazado, pero Guerra de guild sólo usa este
 // contrato local fijo de acción/ACK.
@@ -1190,9 +1202,7 @@ static void ReceiveDeclareWarResult97k(const BYTE* packet, int size)
 
     // IDA limpia el estado de declaración pendiente sólo cuando la guerra no está activa.
     if (result != 1 && !EnableGuildWar) {
-        GuildWarIndex = -1;
-        GuildWarName[0] = '\0';
-        GuildWar_RefreshEntityRelations();
+        GuildWar_ResetClientState();
     }
 }
 
@@ -1226,11 +1236,8 @@ static void ReceiveGuildEndWar97k(const BYTE* packet, int size)
         UI_AddNotice(notice, 1);
     }
 
-    EnableGuildWar = 0;
     EnableSoccer = 0;
-    GuildWarIndex = -1;
-    GuildWarName[0] = '\0';
-    GuildWar_RefreshEntityRelations();
+    GuildWar_ResetClientState();
 
     // IDA asigna los resultados 1, 2 y 4 al par de acción de victoria (113, 121);
     // los demás resultados demostrados usan el par normal de cierre (107, 117).

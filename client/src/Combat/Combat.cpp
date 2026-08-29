@@ -902,40 +902,6 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v)
 
     // 12) CheckTarget — mira hacia el objetivo, setea entity[+908]/[+904] (gridY/gridX) ???
     bool bHasTarget = (CheckTarget_stub((DWORD)entity) != 0);
-    // Esto se limita a propósito a los picks de piso fallidos mientras el botón derecho está apretado.
-    // Las ramas del original conservan el facing anterior cuando CheckTarget falla;
-    // loguear este límite distingue un fallo del picker/frustum de un error en la matemática del ángulo.
-    if (rightButtonPush && !bHasTarget) {
-        static DWORD s_lastTargetMissTrace = 0;
-        const DWORD now = GetTickCount();
-        if (now - s_lastTargetMissTrace >= 250) {
-            s_lastTargetMissTrace = now;
-            char targetMissTrace[176];
-            _snprintf_s(targetMissTrace, _countof(targetMissTrace), _TRUNCATE,
-                        "SKILL PICK MISS skill=%d selected=%d pickGrid=(%.1f,%.1f) target=(%.1f,%.1f)",
-                        iType, (int)SelectedCharacter,
-                        *(float*)&DAT_080ab288, *(float*)&DAT_080ab28c,
-                        *(float*)(entity + 788), *(float*)(entity + 792));
-            DbgLogPublic(targetMissTrace);
-        }
-    }
-    if (rightButtonPush && iType != 0 && iType != 9 && iType != 10 &&
-        iType != 12 && iType != 14) {
-        char targetTrace[192];
-        int selected = (int)SelectedCharacter;
-        unsigned type = 0;
-        unsigned key = 0xFFFF;
-        if (selected >= 0 && selected < 400 && CharactersClient) {
-            const char* chosen = (const char*)CharactersClient + selected * 916;
-            type = (unsigned)(BYTE)chosen[132];
-            key = (unsigned)*(const WORD*)(chosen + 476);
-        }
-        wsprintfA(targetTrace,
-                  "SKILL TARGET skill=%d selected=%d check=%d type=%u key=%u range=%d",
-                  iType, selected, bHasTarget ? 1 : 0, type, key,
-                  Combat_GetSkillRange97k(iType));
-        DbgLogPublic(targetTrace);
-    }
     if (SelectedCharacter != -1) {
         Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
     } else {
@@ -1118,6 +1084,15 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v)
         if (iType == 1 || iType == 2 || iType == 3 || iType == 4 ||
             iType == 7 || iType == 0x0b || iType == 0x0d || iType == 0x10 || iType == 0x11 ||
             iType == 43 || iType == 49) {
+            // 0049CBF0 reaches its selected-target offensive path only through
+            // CheckAttack (the path at LABEL_1354 / LABEL_1585).  The old port
+            // seeded MovementSkillTarget and invoked the C3 skill sender even
+            // when that gate rejected a neutral player, bypassing the normal
+            // physical Ctrl/PK rule.  Do not apply this to the separate ground
+            // and self/support skill paths above.
+            if (SelectedCharacter == -1 || FUN_00483160() == 0) {
+                return;
+            }
             seedRuntimeTarget(iType);
             UseSkillWizard_stub((DWORD)entity, (DWORD)entity);
             return;
@@ -1141,6 +1116,9 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v)
 
     // 14) iType == 52 (Twister/Cyclone) — packet 0x1E ──────────────────────────────────────────────────────────────────────────
     if (iType == 52 && SelectedCharacter != -1 && bHasTarget) {
+        if (FUN_00483160() == 0) {
+            return;
+        }
         int tgtGX = (int)DAT_07e016c0;
         int tgtGY = (int)DAT_07e016c4;
         int heroGX = *(int*)(entity + 904);
@@ -1492,7 +1470,12 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v)
             *(float *)(entity + 788), *(float *)(entity + 792));
     }
 
-    // 18) Remaining high/runtime skills — wizard helper path.
+    // 18) Remaining high/runtime skills — wizard helper path.  This helper
+    // sends a selected entity key, so preserve the original CheckAttack gate
+    // before it can turn a neutral player into an offensive target.
+    if (SelectedCharacter == -1 || FUN_00483160() == 0) {
+        return;
+    }
     Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
     UseSkillWizard_stub((DWORD)entity, (DWORD)entity);
 }
@@ -1723,9 +1706,10 @@ static void Combat_SendDurationSkill97k(char* entity, int skillType, int action,
 //
 // Layout recovered from Combat_UseWarriorSkill:
 //   C1 size 1D skill x y serial count [target-id big-endian] * count
-// Conservamos a propósito los predicados originales de la tabla que hacen falta para los monstruos:
-// active (+0), drawable (+352), alive (!+765), category monster (+132 == 2).
-// Cinco objetivos como máximo es lo legal tanto en el builder nativo como en el server.
+// Conservamos los predicados de la tabla demostrados para candidatos visibles:
+// active (+0), drawable (+352), alive (!+765), y categoría monster (+132 == 2)
+// o jugador rival de la guerra (+132 == 1, relation +745 == 2). Cinco objetivos
+// como máximo es lo legal tanto en el builder nativo como en el server.
 static void Combat_SendAreaHits97k(char* entity, int skillType)
 {
     if (!entity || !CharactersClient)
@@ -1753,11 +1737,12 @@ static void Combat_SendAreaHits97k(char* entity, int skillType)
     for (int slot = 0; slot < 400 && count < 5; ++slot) {
         const char* candidate = table + 916 * slot;
 
-        // Rama exacta de monstruos de sub_45FDB0. Los candidatos jugador/PvP usan su
-        // cláusula aparte de misma-clave-de-objetivo y a propósito no son parte de
-        // these no-target monster casts.
-        if (!candidate[0] || !candidate[352] || candidate == entity ||
-            candidate[765] || (BYTE)candidate[132] != 2) {
+        if (!candidate[0] || !candidate[352] || candidate == entity || candidate[765]) {
+            continue;
+        }
+
+        const BYTE kind = (BYTE)candidate[132];
+        if (kind != 2 && !(kind == 1 && (BYTE)candidate[745] == 2)) {
             continue;
         }
 
@@ -1801,10 +1786,6 @@ static void Combat_SendAreaHits97k(char* entity, int skillType)
     }
     Net_SendSmallPacket(pkt, pkt[1]);
 
-    char trace[128];
-    wsprintfA(trace, "SKILL SEND C1:1D skill=%u targets=%d serial=%u",
-              (unsigned)(BYTE)skillType, count, (unsigned)serial);
-    DbgLogPublic(trace);
 }
 
 static void Combat_SendPlainPacket97k(BYTE* pkt, int len)
@@ -2321,12 +2302,10 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
 
         int skillTarget = (int)DAT_07d780a0;  // MovementSkillTarget
         if (skillTarget < 0) {
-            DbgLogPublic("SKILL TARGET: rejected: no MovementSkillTarget");
             return;
         }
         char* pTgt = ACTION_CHARS_CLIENT + 916 * skillTarget;
         if (*(unsigned char*)(pTgt + 765) != 0) {
-            DbgLogPublic("SKILL TARGET: rejected: target marked dead");
             return;
         }
 
@@ -2342,15 +2321,6 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
         float rng  = (float)skillRange * 100.0f;
         bool inRange = (dist <= rng * rng);
         bool forceWalk = (*(unsigned char*)(c + 846) != 0);
-
-        {
-            char trace[192];
-            wsprintfA(trace,
-                "SKILL TARGET: type=%d slot=%d key=%u range=%d inRange=%d safe=%d dist2=%.1f",
-                skillType, skillTarget, (unsigned)*(unsigned short*)(pTgt + 476),
-                skillRange, inRange ? 1 : 0, forceWalk ? 1 : 0, dist);
-            DbgLogPublic(trace);
-        }
 
         // Lee la posición de grilla del héroe (encriptada, pero en nuestro build es un DWORD plano)
         int heroGX = *(int*)(c + 904);

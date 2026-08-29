@@ -1055,22 +1055,13 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         //   Targetd = 0;
         //   if ((c[444] & 7) == 3 && o->Type == 390) Targetd = 1;   // clase 3 = MG
         //   if (c[747] == 55)                        Targetd = 1;   // evento
-        //   ... (ramas de guild/soccer, omitidas: dependen de EnableSoccer y del
-        //        nombre de guild, sin soporte en este build) ...
+        //   if (EnableSoccer && guild == hero-guild/rival-guild) Targetd = 1;
+        //   if (SoccerObserver && guild == either observer team) Targetd = 1;
         //   if (Targetd && !c->Cloth) { crear + anclar; }
         //   luego: si sub_408900(0.005,5) → tick por vtable+0xC, si no DeleteCloth
         //
         // Slot: `o + 384` = flag creada, `o + 388` = puntero al sistema de tela
         // (mismo par que usan los otros dos cloth ya portados en este archivo).
-        // 2026-08-11 — DESACTIVADA. El bloque de abajo es fiel a IDA, pero el
-        // sistema de TELA que necesita (`sub_407FE0`/`sub_408130`/`sub_409250`/
-        // `sub_4086E0`/`sub_408FF0`/`sub_4090B0`) está en este build como
-        // esqueleto de stubs, y ejecutarlo crashea en cadena al destruir el
-        // objeto (`DeleteCloth` → `FUN_004086e0` → vtable[0] de los nodos).
-        // Ver la entrada de CLAUDE.md 2026-08-11 para el estado exacto.
-        // Poner a 1 cuando el sistema de tela esté portado.
-#define MG_CAPE_CLOTH_ENABLED 1
-#if MG_CAPE_CLOTH_ENABLED
         {
             BYTE* cb = (BYTE*)param_1_;
             bool bCape = false;
@@ -1078,6 +1069,28 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 bCape = true;                    // Magic Gladiator
             if (cb[747] == 55)
                 bCape = true;
+
+            // IDA RenderCharacter: Soccer gives the standard cloth cape to
+            // both participating guilds.  The observer branch is also kept
+            // because it is part of the same original predicate, even though
+            // the current MuEmu build does not emit F3/23 observer state.
+            const short guildIndex = *(short*)(cb + 474);
+            if (guildIndex != -1) {
+                const char* guildName = DAT_07e919bc + 80 * guildIndex;
+                if (EnableSoccer && DAT_07abf5d8) {
+                    const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
+                    if (heroGuild != -1 &&
+                        (strcmp(DAT_07e919bc + 80 * heroGuild, guildName) == 0 ||
+                         strcmp(GuildWarName, guildName) == 0)) {
+                        bCape = true;
+                    }
+                }
+                if (DAT_05826d33 &&
+                    (strcmp(SoccerTeamName[0], guildName) == 0 ||
+                     strcmp(SoccerTeamName[1], guildName) == 0)) {
+                    bCape = true;
+                }
+            }
 
             if (bCape) {
                 if (param_1[0x61] == 0) {
@@ -1098,28 +1111,6 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                     }
                     param_1[0x61] = (int)cloth;
                     *(char *)(param_1 + 0x60) = 1;
-                }
-                // ── CAPEDBG (temporal) ──
-                {
-                    static DWORD s_lastCp = 0;
-                    DWORD nowCp = GetTickCount();
-                    if (nowCp - s_lastCp > 1000) {
-                        s_lastCp = nowCp;
-                        int *w = (int *)param_1[0x61];
-                        char cpb[220];
-                        if (w) {
-                            _snprintf_s(cpb, sizeof(cpb), _TRUNCATE,
-                                "CAPEDBG cls=%d obj=%d cloth=%p cols=%d rows=%d count=%d nodes=%p "
-                                "texF=%d texB=%d flags=0x%X",
-                                cb[444] & 7, (int)*(short*)((char*)puVar13 + 2), w,
-                                w[10], w[11], w[12], (void*)w[13], w[3], w[4], (unsigned)w[5]);
-                        } else {
-                            _snprintf_s(cpb, sizeof(cpb), _TRUNCATE,
-                                "CAPEDBG cls=%d obj=%d cloth=NULL", cb[444] & 7,
-                                (int)*(short*)((char*)puVar13 + 2));
-                        }
-                        DbgLogPublic(cpb);
-                    }
                 }
                 int *pCloth = (int *)param_1[0x61];
                 if (pCloth) {
@@ -1142,35 +1133,8 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 }
             }
         }
-#endif
-
         if (DAT_005615c0 == 2) {
             return puVar13;
-        }
-
-
-        // ── DIAG: log case 0x186 entry once per slot per second ─────────────
-        if (DAT_005615c0 == 4) {
-            int csSlot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
-            if (csSlot >= 0 && csSlot < 5) {
-                static DWORD s_last186[5] = {0,0,0,0,0};
-                DWORD now = GetTickCount();
-                if (now - s_last186[csSlot] > 1000) {
-                    s_last186[csSlot] = now;
-                    BYTE* be = (BYTE*)param_1_;
-                    char b[256];
-                    _snprintf_s(b, sizeof(b), _TRUNCATE,
-                        "C186 slot=%d v230=%d ELS=%d cls=%d/skin=0x%x boot=%d/lvl=%d "
-                        "parts=%d/%d/%d/%d/%d",
-                        csSlot, v230 ? 1 : 0, EquipmentLevelSet,
-                        be[0x1bc], be[0x1bd],
-                        *(short*)(be + 0x258), be[0x25a] & 0xF,
-                        *(short*)(be + 0x1f8), *(short*)(be + 0x210),
-                        *(short*)(be + 0x228), *(short*)(be + 0x240),
-                        *(short*)(be + 0x258));
-                    DbgLogPublic(b);
-                }
-            }
         }
 
         // ── 1. Glove sparkle: class byte (cls&7)==0 + (cls_skin&0xF8)==8 ───
