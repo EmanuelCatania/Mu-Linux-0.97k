@@ -15,6 +15,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
+#include "Party/Party.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl FUN_0054158c(void* ptr);
@@ -73,6 +74,11 @@ extern "C" void __cdecl DeleteCharacter(int Key)
     }
 
     FUN_00449840((int)v1, (int)v1, 0);
+
+    // The reconstructed Party table is separate storage, so re-arm the
+    // original runtime sentinels at the entity-destruction boundary instead
+    // of retaining a destroyed/reused CharactersClient index.
+    Party_RefreshViewportLinks();
 }
 void __cdecl FUN_0045ac20(int Key) { DeleteCharacter(Key); }
 

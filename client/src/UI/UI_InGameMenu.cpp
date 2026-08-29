@@ -925,8 +925,6 @@ void __cdecl FUN_00514310(void)
         DAT_083a7c24 = DAT_083a7c28;
         DAT_083a7c28 = 0;
         FUN_00404bc0(0x19, 0, 0);
-        DbgLogPublic(accept ? "PARTY: invitation accepted (0x41/C3)"
-                            : "PARTY: invitation rejected (0x41/C1)");
         return;
     }
 

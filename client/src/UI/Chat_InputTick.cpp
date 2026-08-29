@@ -116,13 +116,8 @@ static void SendRaw3(BYTE b0, BYTE b1, BYTE b2)
     } while (rem > 0);
 }
 
-// MuEmu does not implement party invitations as a chat command.  The original
-// client sends the target's viewport key through C1:40, so keep this as the
-// single native-command exception.  Every other slash command is deliberately
-// sent as C1:00 text below: CommandManager on the server owns that registry.
-// Resolves a player exactly as the viewport-driven interactions do: an explicit
-// name wins; without one, use the currently selected player.  The returned
-// pointer stays valid only for the immediate packet construction.
+// Resolves explicit target commands used by Trade and Guild.  Party has its own
+// original interaction below: it does not accept a target name.
 static char* Chat_FindPlayerInteractionTarget(const char* argument)
 {
     char* entity = nullptr;
@@ -177,9 +172,74 @@ static bool Chat_TrySendTargetRequest(const char* text, const char* command, BYT
     return true; // Native command: never forward it as an unknown text command.
 }
 
+// Original Party request path (Chat command parser, before its generic slash
+// command branch).  It accepts only the exact native command, requires the
+// local player to lead any existing party, and chooses either the selected
+// player or an adjacent, facing player.  The packet payload remains the
+// viewport key required by MuEmu's PMSG_PARTY_REQUEST_RECV.
 static bool Chat_TrySendPartyRequest(const char* text)
 {
-    return Chat_TrySendTargetRequest(text, "/party", 0x40, /*plainC1=*/false);
+    if (!text || _stricmp(text, "/party") != 0)
+        return false;
+
+    char* const hero = DAT_07abf5d8;
+    char* const entities = (char*)(uintptr_t)DAT_07abf5d0;
+    if (!hero || !entities)
+        return true;
+
+    // IDA: PartyNumber > 0 && strcmp(Party[0].name, Hero->name).
+    // Only the first listed member may initiate another invitation.
+    if (PartyNumber > 0 && strcmp((const char*)Party, hero + 449) != 0) {
+        UIChatLogWindow_AddText(nullptr, GlobalText[257], 1);
+        return true;
+    }
+
+    auto IsPlayerTarget = [hero](char* entity) {
+        return entity && entity != hero && entity[0] && entity[132] == 1 &&
+               (*(short*)(entity + 2) == 390 || entity[847] != 0);
+    };
+    auto IsAdjacent = [hero](const char* entity) {
+        return abs(*(const int*)(entity + 904) - *(const int*)(hero + 904)) <= 1 &&
+               abs(*(const int*)(entity + 908) - *(const int*)(hero + 908)) <= 1;
+    };
+
+    char* target = nullptr;
+    if (SelectedCharacter >= 0 && SelectedCharacter < 400) {
+        char* candidate = entities + SelectedCharacter * 916;
+        if (IsPlayerTarget(candidate) && IsAdjacent(candidate))
+            target = candidate;
+    } else {
+        const int heroDirection = ((int)((*(float*)(hero + 36) + 22.5f) *
+                                         0.022222223f + 1.0f)) & 7;
+        for (int i = 0; i < 400; ++i) {
+            char* candidate = entities + i * 916;
+            if (!IsPlayerTarget(candidate) || !IsAdjacent(candidate))
+                continue;
+
+            const int targetDirection = ((int)((*(float*)(candidate + 36) + 22.5f) *
+                                                 0.022222223f + 1.0f)) & 7;
+            if (abs(targetDirection - heroDirection) == 4) {
+                target = candidate;
+                break;
+            }
+        }
+    }
+
+    if (!target)
+        return true;
+
+    const WORD key = *(WORD*)(target + 476);
+    PartyKey = key;
+    const BYTE packet[5] = { 0xC1, 0x05, 0x40, (BYTE)(key >> 8), (BYTE)key };
+    Net_SendSmallPacket(packet, sizeof(packet));
+
+    const int targetIndex = FUN_0045ac80((int)(short)key);
+    if (targetIndex >= 0 && targetIndex < 400) {
+        char message[300] = {};
+        sprintf(message, GlobalText[476], entities + targetIndex * 916 + 449);
+        UIChatLogWindow_AddText(nullptr, message, 1);
+    }
+    return true;
 }
 
 static bool Chat_TrySendTradeRequest(const char* text)

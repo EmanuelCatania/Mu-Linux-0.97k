@@ -16,6 +16,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
+#include "Party/Party.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl FUN_0054158c(void* ptr);
@@ -293,6 +294,9 @@ void __cdecl FUN_0045abb0(int param_1) {
         }
         FUN_00449840((int)puVar1, (int)puVar1, 0);
     }
+
+    // Gate/map transition removes the viewport but not Party membership.
+    Party_RefreshViewportLinks();
 }
 
 // Effect/particle

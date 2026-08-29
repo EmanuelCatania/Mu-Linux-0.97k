@@ -4,7 +4,7 @@
 // Handlers de paquetes (server→client):
 //   0x44  Party_HPBars        — inline in Net_Process; party member HP bar update
 //   0x46  Terrain_TileUpdate  @ 0x00436d60 — terrain tile rect/point changes
-//   0x71  Party_Keepalive     @ 0x00433900 — server ping; client sends ACK [C1][03][71]
+//   0x71  Party_Keepalive     @ 0x00433900 — passive legacy reply [C1][03][71]
 //   0x73  ReceiveGGAuth       @ 0x00433a80 — pertenece a protocolo, no a Party
 //
 // ── PARTY HP BAR DATA (opcode 0x44) ──────────────────────────────────────────
@@ -39,9 +39,9 @@
 //
 // ── PARTY KEEPALIVE (opcode 0x71, FUN_00433900) ──────────────────────────────
 //
-//   Server sends opcode 0x71 periodically (party list refresh signal).
-//   Client immediately sends back a 3-byte C1 packet: [0xC1][0x03][0x71]
-//   Same send() retry / WSAEWOULDBLOCK queue pattern as all other send paths.
+//   Legacy response path: if an external server sends opcode 0x71, the client
+//   replies with [0xC1][0x03][0x71].  Current MuEmu has no 0x71 route, so this
+//   handler remains passive and never schedules or emits traffic on its own.
 //
 // ── PARTY CHAR SYNC (opcode 0x73, FUN_00433a80, 380 lines) ───────────────────
 //
@@ -131,6 +131,19 @@
 extern BYTE* g_PartyHPTable;           // DAT_07e11e98  stride 0x24
 
 #define PARTY_HP_STRIDE  0x24
+
+// sub_4AFDC0/sub_4E5980 re-arm these runtime fields with -2 whenever the
+// viewport may have changed. sub_4AFB00 resolves them strictly by name against
+// currently visible players; these fields never represent Party membership.
+void Party_RefreshViewportLinks(void)
+{
+    for (int i = 0; i < PartyNumber; ++i) {
+        BYTE* const slot = Party + i * 36;
+        *(int*)(slot + 28) = -2;
+        *(int*)(slot + 32) = 0;
+    }
+    Party_MatchEntityNames();
+}
 
 // ============================================================
 // ReceivePartyList97k  (ReceivePartyList @ 00434660, opcode 0x42)
@@ -251,13 +264,12 @@ void Terrain_TileUpdate(BYTE* pkt)
 
 // ============================================================
 // Party_Keepalive  @ 0x00433900  (opcode 0x71)
-// Server sends 0x71 to signal party state refresh.
-// Client ACKs with [0xC1][0x03][0x71] — no payload.
+// Passive legacy reply. MuEmu does not currently emit or receive this route.
 // Standard send() + WSAEWOULDBLOCK queue at DAT_055ca16c.
 // ============================================================
 void Party_Keepalive(void)
 {
-    BYTE pkt[3] = { 0xC1, 0x03, 0x71 };
+    const BYTE pkt[3] = { 0xC1, 0x03, 0x71 };
     // IDA: FUN_00433900 envía la trama C1 por la ruta normal de socket/cola.
     // Este opcode no va cifrado según la política de tramas del cliente.
     Net_SendC1Packet(pkt, sizeof(pkt));

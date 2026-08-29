@@ -148,6 +148,27 @@ static void MouseOnWindow_Update(void)
     }
 }
 
+// Render/Chat original: both the bottom HUD icon and P execute this same
+// Party toggle.  Opening discards only the displayed count and immediately
+// asks the server for an authoritative 0x42; it never clears Party rows or
+// changes membership locally.
+static void Party_ToggleAndRefresh(void)
+{
+    GuildOpened = 0;
+    GuildCreatorOpened = 0;
+    if (PartyOpened) {
+        PartyOpened = 0;
+        FUN_00404bc0(0x19, 0, 0);
+        FUN_00404bc0(0x1c, 0, 0);
+        return;
+    }
+
+    PartyNumber = 0;
+    const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
+    Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+    PartyOpened = 1;
+}
+
 static void HUD_BottomBar_HitTest(void)
 {
     if (DAT_005615c0 != 5) return;          // g_GameState: only in-game
@@ -170,13 +191,7 @@ static void HUD_BottomBar_HitTest(void)
 
     // Party (348..372, 452..476)
     if (mx >= 348 && mx < 372 && my >= 452 && my < 476) {
-        if (DAT_07eaa115) {
-            DAT_07eaa115 = 0;
-        } else {
-            DAT_07eaa115 = 1;
-            DAT_07eaa114 = 0; // guild list closes when party opens
-            DAT_07eaa124 = 0; // guild creator closes when party opens
-        }
+        Party_ToggleAndRefresh();
         consumed = true;
     }
     // Character (379..403, 452..476)
@@ -390,27 +405,8 @@ static void HUD_HotkeyTick(void)
         }
     }
     if (kP) {
-        if (DAT_07eaa115) DAT_07eaa115 = 0;
-        else {
-            CloseNpcWindowsIfAny(); DAT_07eaa115 = 1; DAT_07eaa114 = 0; DAT_07eaa124 = 0; /* close Guild */
-            // 2026-08-25 FIX (el panel de party se abria con los datos en 0):
-            // la tecla P solo hacia el toggle LOCAL — nunca se pedia la lista,
-            // asi que el 0x42 no llegaba y `Party[]`/`PartyNumber` quedaban con
-            // lo que hubiera (normalmente ceros).
-            //
-            // El envio existia en `Chat_InputTick` (seccion 13 de IDA), pero esa
-            // seccion se removio entera el 2026-05-08 al arreglar el
-            // doble-toggle de C/V — y el toggle que quedo aca nunca lo repuso.
-            // Al guild le paso lo mismo y se corrigio el 2026-08-15; el party
-            // quedo pendiente.
-            //
-            // Per IDA: limpiar PartyNumber y pedir la lista. El 0x42 pide
-            // Encrypt=0 (indice 66), o sea C1 plano — mandarlo como C3 haria que
-            // el server cierre la conexion, igual que pasaba con el guild.
-            PartyNumber = 0;
-            const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
-            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
-        }
+        if (!PartyOpened) CloseNpcWindowsIfAny();
+        Party_ToggleAndRefresh();
     }
     if (kV || kI) {
         // 2026-07-27 FIX: el gate era HUD_IsInventoryFamilyActive(), que incluye
