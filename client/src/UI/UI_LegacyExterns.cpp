@@ -603,16 +603,6 @@ void __cdecl FUN_0047fe30(void *param_1_v, int param_2, void *param_3_v, int par
 // copia una a la otra.  Preguntarle a OpenGL por su viewport es la única
 // fuente que no puede desincronizarse, y sigue siendo correcta si algún día
 // se unifican esos globals.
-static void Text_PixelToOrthoScale(float* outX, float* outY)
-{
-    *outX = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
-    *outY = (g_fScreenRate_y > 0.0f) ? g_fScreenRate_y : 1.0f;
-}
-
-// Ancho del texto EN UNIDADES DEL ORTHO (que es donde vive todo el layout).
-// Es el equivalente correcto, para nuestro pipeline, del `sz.cx /
-// g_fScreenRate_x` que hace IDA en RenderText (0x47F650) y RenderTipText
-// (0x47F7F0).
 // 2026-08-26: esto derivaba la escala del viewport de OpenGL
 // (`viewport / WindowWidth`) para esquivar a `g_fScreenRate_x`, que en ese
 // momento estaba desincronizado. Pero el viewport se setea con ESE MISMO global
@@ -624,6 +614,16 @@ static void Text_PixelToOrthoScale(float* outX, float* outY)
 // sitios (`TextSize.cx / g_fScreenRate_x`). Se mantiene el nombre y la firma
 // para no tocar los cuatro consumidores; lo que cambia es de donde sale el
 // factor.
+static void Text_PixelToOrthoScale(float* outX, float* outY)
+{
+    *outX = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
+    *outY = (g_fScreenRate_y > 0.0f) ? g_fScreenRate_y : 1.0f;
+}
+
+// Ancho del texto EN UNIDADES DEL ORTHO (que es donde vive todo el layout).
+// Es el equivalente correcto, para nuestro pipeline, del `sz.cx /
+// g_fScreenRate_x` que hace IDA en RenderText (0x47F650) y RenderTipText
+// (0x47F7F0).
 // Escala pixeles-de-framebuffer -> unidades del ortho en las que dibuja el
 // stack de texto (la misma que aplica FUN_0040f610 a los glifos).
 //
@@ -783,24 +783,6 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
 {
     if (text == NULL || *text == '\0') return;
 
-    // ── DIAG: log first call per second to see what text is being requested
-    {
-        static DWORD s_lastTxt = 0;
-        DWORD now = GetTickCount();
-        if (now - s_lastTxt > 1000) {
-            s_lastTxt = now;
-            char b[200];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "TEXT call x=%d y=%d str='%s' color=0x%08X",
-                x, y, text ? text : "(null)", (unsigned)DAT_00559c78);
-            DbgLogPublic(b);
-        }
-    }
-
-    // ── Marcadores de estilo "\x02<estilo>" (ver bloque de arriba) ───────────
-    // El guard `strlen <= 0xFF` es el de sub_40FCD0 (el original solo parsea
-    // strings que entran en su Destination[292]).
-    char             strippedBuf[0x100];
     // ── Espacio de coordenadas: logico 640x480 -> pixel fisico ──────────────
     //
     // Los callers pasan `x`/`y` en layout logico 640x480, igual que en el
@@ -833,6 +815,24 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
     // A partir de aca TODO el cuerpo trabaja en PIXELES: los extents de GDI,
     // el clamp contra WindowWidth/Height, glRasterPos2f y los quads de fondo.
 
+    // ── DIAG: log first call per second to see what text is being requested
+    {
+        static DWORD s_lastTxt = 0;
+        DWORD now = GetTickCount();
+        if (now - s_lastTxt > 1000) {
+            s_lastTxt = now;
+            char b[200];
+            _snprintf_s(b, sizeof(b), _TRUNCATE,
+                "TEXT call x=%d y=%d str='%s' color=0x%08X",
+                x, y, text ? text : "(null)", (unsigned)DAT_00559c78);
+            DbgLogPublic(b);
+        }
+    }
+
+    // ── Marcadores de estilo "\x02<estilo>" (ver bloque de arriba) ───────────
+    // El guard `strlen <= 0xFF` es el de sub_40FCD0 (el original solo parsea
+    // strings que entran en su Destination[292]).
+    char             strippedBuf[0x100];
     TextStyleMarker  markers[TEXT_STYLE_MAX_MARKERS];
     int              nMarkers = 0;
     const char      *drawText = text;
@@ -895,7 +895,36 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
         // hFont ya está seleccionada en el DC (de ahí la sacamos), así que no
         // hace falta SelectObject — el que había acá encima pisaba la elección
         // del caller y contaminaba las mediciones posteriores de otro código.
-        if (!wglUseFontBitmapsA(hFontDC, 0, 256, base)) {
+        // GL_UNPACK_ALIGNMENT = 1 antes de generar las listas.
+        //
+        // `wglUseFontBitmapsA` llama internamente a `glBitmap` con el mapa de
+        // bits de cada glifo, y `glBitmap` lee las filas usando el
+        // GL_UNPACK_ALIGNMENT ACTUAL, que es estado global de GL y por defecto
+        // vale 4. Todo glifo cuyo ancho en bytes no sea multiplo de 4 se lee
+        // entonces con las filas corridas: basura y lineas horizontales que
+        // cruzan la pantalla.
+        //
+        // El binario hace exactamente esto en su propio camino de texto
+        // (bake a textura): `glBindTexture(...); glPixelStorei(0xCF5, 1);
+        // glTexImage2D(...)`. Nuestro port usa wglUseFontBitmapsA en vez de esa
+        // textura — desviacion ya documentada — y se habia quedado sin el
+        // seteo del alignment.
+        //
+        // Por que dependia de la resolucion: el cuerpo de la fuente cambia con
+        // ella (12/13/14/15 segun WindowWidth, WinMain paso 15), y con el
+        // cuerpo cambian los anchos de los glifos; solo algunos caen en un
+        // ancho no alineado. Y por que "aparecia y desaparecia": estas listas
+        // se generan UNA vez por fuente y quedan cacheadas, asi que la
+        // corrupcion persiste hasta que el cache se regenera.
+        //
+        // Se restaura el valor previo para no alterar el estado global que
+        // espera el resto del render.
+        GLint prevAlign = 4;
+        glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        const BOOL fontOk = wglUseFontBitmapsA(hFontDC, 0, 256, base);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
+        if (!fontOk) {
             glDeleteLists(base, 256);
             return;
         }
