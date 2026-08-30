@@ -652,6 +652,29 @@ int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int fla
 
     // Allocate pixel buffer
     BYTE* pixels = (BYTE*)operator_new(pow2_h * pow2_w * 3);
+    // DESVIACION CONSCIENTE vs IDA: el original NO inicializa este buffer
+    // (OpenJPG 0x529740: `operator_new(3 * v14 * v15)` y despues solo rellena
+    // output_width x output_height). Como las dimensiones se redondean a
+    // potencia de 2, las columnas/filas de relleno quedan con memoria
+    // indeterminada.
+    //
+    // Eso es visible: los UV de la UI mapean EXACTO al borde de la imagen
+    // (p.ej. 0x12 = 0box.ozj, 134x30 -> 256x32, u1 = 0.5234375 -> 134.0), y a
+    // escala 1.25 (800x600) o 2.5 (1600x1200) un borde entero cae en N+0.5, o
+    // sea justo sobre el punto de muestreo del pixel N. GL_NEAREST resuelve
+    // floor(u1 * TexW) = ancho de imagen = PRIMER texel de relleno, y lo dibuja
+    // tal cual: una linea de 1 px con lo que hubiera en el heap.
+    //
+    // El comportamiento original se reprodujo y se confirmo contra el cliente
+    // de referencia (mismas lineas en esas dos resoluciones, intermitentes).
+    // Se inicializa a 0 para no leer memoria indeterminada y que el resultado
+    // sea estable: en Release el heap suele venir a cero y la linea pasa
+    // desapercibida, pero no siempre; en Debug el CRT rellena con 0xCD y sale
+    // gris casi blanca en todas las texturas con relleno.
+    //
+    // Solo se sanea el buffer. Dimensiones, redondeo a potencia de 2 y calculo
+    // de UV quedan intactos: la geometria no cambia.
+    memset(pixels, 0, (size_t)pow2_w * pow2_h * 3);
     slot->Buffer = pixels;
 
     // Track VRAM usage (DAT_083bb9d0)
@@ -824,6 +847,10 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
         texHeight[uiTextureIndex * 0xe] = (float)ph;
 
         BYTE* pixBuf = (BYTE*)operator_new(pw * ph * 4);
+        // DESVIACION CONSCIENTE vs IDA: idem OpenJPG (ver el bloque largo en
+        // FUN_00529740). El original (OpenTGA 0x529BD0) tampoco inicializa:
+        // `operator_new(4 * v21 * v22)` y luego rellena solo width x height.
+        memset(pixBuf, 0, (size_t)pw * ph * 4);
         texPix[uiTextureIndex * 0xe] = (UINT)(uintptr_t)pixBuf;
         *(int*)&DAT_083bb9d0 += 4 * pw * ph;
 
