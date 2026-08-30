@@ -596,6 +596,11 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
                 if (hover) glColor4f(0.5f, 0.5f, 0.5f, 0.8f);
                 else       glColor4f(0.1f, 0.1f, 0.1f, 0.7f);
                 GL_DrawRect(y, v60, 50.0f, 19.0f);
+            } else {
+                // RenderParty LABEL_120: an unmatched Party member stays in
+                // the compact list with the red offline/out-of-viewport row.
+                glColor4f(0.3f, 0.0f, 0.0f, 0.5f);
+                GL_DrawRect(v64 - 3.0f, v60, 50.0f, 19.0f);
             }
             glColor3f(0.196f, 0.039f, 0.0f);
             GL_DrawRect(v64 - 2.0f, v60 + 12.0f, 43.0f, 4.0f);
@@ -604,13 +609,15 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
             for (int seg = 0; seg < hp10; ++seg) {
                 GL_DrawRect((float)(seg * 4) + v64, v60 + 13.0f, 3.0f, 2.0f);
             }
-            if (charIdx != -1) {
-                glColor3f(1.0f, 1.0f, 1.0f);
-                EnableAlphaTest(true);
-                SelectObject(m_hFontDC, g_hFont);
-                // Name string is at v38 - 24 (from IDA: v43 = v67 - 24).
-                RenderText((int)v64, (int)v60 + 2, (char*)((BYTE*)slotBase + i * 36 - 24), 0, 0, 0);
-            }
+            // RenderParty's LABEL_121 is shared by both branches: an
+            // out-of-viewport member (-1) gets the red fallback background
+            // but retains its Party name. Only the entity-bound background
+            // branch above is conditional on a live CharactersClient index.
+            glColor3f(1.0f, 1.0f, 1.0f);
+            EnableAlphaTest(true);
+            SelectObject(m_hFontDC, g_hFont);
+            // Name string is at v38 - 24 (from IDA: v43 = v67 - 24).
+            RenderText((int)v64, (int)v60 + 2, (char*)((BYTE*)slotBase + i * 36 - 24), 0, 0, 0);
             v60 += 19.0f;
         }
         // Top + bottom cap pieces of the party list.

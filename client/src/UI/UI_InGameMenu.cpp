@@ -18,6 +18,10 @@ extern "C" int  dword_5615E4;     // indice del miembro elegido para expulsar
 
 extern "C" {
     void DbgLogPublic(const char* msg);
+    // IDA FUN_00423DB0: clear only Guild War state and restore the normal
+    // guild relation markers.  It is deliberately not the legacy Trade reset
+    // that still carries the same historical label elsewhere in the port.
+    void GuildWar_ResetClientState(void);
     // Char-list cache populated by Recv_CharList (Net_Process.cpp), replayed
     // here on JoinChar transition since server's F3/00 response post-JoinChar
     // is not consistently delivered.
@@ -921,9 +925,30 @@ void __cdecl FUN_00514310(void)
         DAT_083a7c24 = DAT_083a7c28;
         DAT_083a7c28 = 0;
         FUN_00404bc0(0x19, 0, 0);
-        DbgLogPublic(accept ? "PARTY: invitation accepted (0x41/C3)"
-                            : "PARTY: invitation rejected (0x41/C1)");
         return;
+    }
+
+    // Guild War declaration (ErrorMessage 128).  IDA sends exactly
+    // C1:04:61:01 or C1:04:61:00 and then clears the local pending-war state.
+    // MuEmu receives this as PMSG_GUILD_WAR_REQUEST_RESULT_RECV; its packet
+    // policy marks opcode 0x61 as Encrypt=0, so this must stay on the C1 path.
+    case 128:
+    {
+        const bool accept = mouseX >= 234 && mouseX < 304 &&
+                            mouseY >= 98  && mouseY < 119 && IsClickPushed();
+        const bool reject = escHit ||
+                            (mouseX >= 334 && mouseX < 404 &&
+                             mouseY >= 98  && mouseY < 119 && IsClickPushed());
+        if (!accept && !reject) return;
+
+        const BYTE pkt[4] = { 0xC1, 0x04, 0x61, (BYTE)(accept ? 1 : 0) };
+        Net_SendC1Packet(pkt, sizeof(pkt));
+        GuildWar_ResetClientState();
+
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
+        goto tail;
     }
 
     case 0x98:
@@ -1073,15 +1098,6 @@ void __cdecl FUN_00514310(void)
             DAT_083a42c4 = 0;
             DAT_083a413c = 0;
             break;
-
-        case 0x80:
-        {
-            BYTE pkt[4] = { 0xC1, 0x04, 0xF1, 0x03 };
-            SendLoginPacket(pkt, 4);
-            FUN_00423db0();
-            FUN_00423db0();
-        }
-        break;
 
         default:
             break;

@@ -411,28 +411,12 @@ LAB_FUN_004e4760_end:
         }
     }
 }
-// FUN_004e5500 @ 0x004E5500 — SecondPassword_Screen2 (252 lines)
-// Muestra la lista de personajes con click para seleccionar: itera los slots de entidad, busca el que
-// coincide con el nombre del jugador en DAT_07abf5d8+0x1c1, y al hacer click manda 4 bytes
-// C1/0x01/0x00/opcode packet (byte 3 XOR'd with key[3] ^ plain[4]).
-// Entry guard: DAT_07eaa115 must be non-zero.
-// Flag de hover del mouse: DAT_07d78094 = 1 si el mouse está en [DAT_07ea5b24, DAT_07ea5b24+0xbe) x [DAT_07ea5b28, DAT_07ea5b28+0x1b1).
-// Loop de la lista de entidades: para i en [0, DAT_07eaa0e0), compara &DAT_07e11e80[i*0x24] con entity[0x1c1].
-//   On match: compute row y = DAT_07ea5b28 + 0x37 + i*0x23; click-zone x = [DAT_07ea5b24+0x8c, DAT_07ea5b24+0xa4).
-//   Al hacer click: manda un paquete de 4 bytes {0xC1, 0x01, 0x00, opcode_xor} vía Net_Send con cola de WSAEWOULDBLOCK.
-//   Byte 3 del paquete = 0 ^ key[3] ^ 4 (del loop XOR: uVar4=3, key=XOR_KEY, siguiente byte plano en +4 = 4).
-// Back button [DAT_07ea5b24+0x19,+0x31) x [DAT_07ea5b28+0x18b,+0x1a3):
-//   → clear DAT_07eaa115, FUN_00404bc0(0x19/0x1c), DAT_07e11d28=0, DAT_00559bec=6.
+// FUN_004e5500 @ 0x004E5500 — Party panel input.
+// The Party row action is gated by leader/self name matching and emits the
+// server-owned delete request.  The close button only closes the panel.
 void __cdecl FUN_004e5500(void) {
-    // 2026-05-04: BUG-FIX phantom click. IDA sub_4E5500 = Party panel
-    // hit-test, usa Inventory[32].DamageMin/SuccessfulBlocking como base.
-    // Nuestro port usa DAT_07ea5b24/28 sin inicializar (=0) → hit-tests falsos en
-    // left side fire FUN_00404bc0 click sfx whenever Party is open. Skip
-    // hasta que se cableen los globals de origen correctos; el RenderParty de HUD_Pass6
-    // already handles the X close click.
     if (DAT_07eaa115 == '\0' || DAT_07ea5b24 == 0) return;
 
-    // Mouse hover zone
     if ((int)DAT_083a427c >= (int)DAT_07ea5b24 &&
         (int)DAT_083a427c <  (int)(DAT_07ea5b24 + 0xbe) &&
         (int)DAT_083a4278 >= (int)DAT_07ea5b28 &&
@@ -440,90 +424,28 @@ void __cdecl FUN_004e5500(void) {
         DAT_07d78094 = 1;
     }
 
-    int iRow = 0;
-    int iX   = DAT_083a427c;
-    // Clave XOR (la misma clave de 32 bytes que se usa en todo el protocolo de segunda contraseña)
-    static const BYTE key[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,
-        0x49,0x5d,0x39,0x5d,0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
-
-    if ((int)DAT_07eaa0e0 > 0) {
-        const char *pEntity = (const char *)&DAT_07e11e80;  // entity name table base
-        const char *pPlayer = (const char *)(DAT_07abf5d8 + 0x1c1); // active player name
-        int iAccum = 0;
-        for (int i = 0; i < (int)DAT_07eaa0e0; i++) {
-            // strcmp(&DAT_07e11e80[i * 0x24], pPlayer)
-            if (strcmp(pEntity, pPlayer) == 0) {
-                // Match — check row click zone
-                int rowY = iAccum + 0x37 + (int)DAT_07ea5b28;
-                if ((int)DAT_083a427c >= (int)(DAT_07ea5b24 + 0x8c) &&
-                    (int)DAT_083a427c <  (int)(DAT_07ea5b24 + 0xa4) &&
-                    (int)DAT_083a4278 >= rowY &&
-                    (int)DAT_083a4278 <  rowY + 0x18 &&
-                    IsClickPushed()) {
-
-                    DAT_083a4124 = '\0';
-                    FUN_00404bc0(0x19, 0, 0);
-
-                    // 2026-08-08 FIX (mismo bug que los botones + del panel
-                    // Character): esto armaba `[C1][01][00][0x8d]`, o sea size=1
-                    // y opcode 0x00 → el server corta con "Protocol size error"
-                    // y cierra el socket. La rama estaba muerta por el
-                    // early-return de `DAT_07ea5b24 == 0`; al cablear
-                    // PartyStartX quedó viva.
-                    // Per IDA sub_4E5500 L64-110 el paquete es
-                    //   [C1][04][43][number ^ 0x43 ^ key[3]]
-                    // = PMSG_PARTY_DEL_MEMBER_RECV (Party.h:26), expulsar al
-                    // miembro `number` del party. Va C1 plano (HackPacketCheck
-                    // índice 67 → Encrypt=0) con el chain-XOR sobre el byte 3.
-                    BYTE pkt[4];
-                    pkt[0] = 0xC1;
-                    pkt[1] = 0x04;                     // size
-                    pkt[2] = 0x43;                     // PARTY_DEL_MEMBER
-                    pkt[3] = (BYTE)iRow;               // number
-                    pkt[3] ^= pkt[2] ^ key[3];         // chain-XOR (i = 3)
-
-                    // Send with WSAEWOULDBLOCK queue
-                    UINT pktLen = 4;
-                    int  sent   = 0;
-                    if (DAT_055ca168 != (SOCKET)INVALID_SOCKET) {
-                        UINT remaining = pktLen;
-                        do {
-                            int r = send(DAT_055ca168, (const char*)pkt + sent, (int)(pktLen - sent), 0);
-                            if (r == -1) {
-                                int err = WSAGetLastError();
-                                if (err == 0x2733) {
-                                    if ((int)(DAT_055cc16c + pktLen) < 0x2001) {
-                                        memcpy((char*)DAT_055ca16c + DAT_055cc16c, pkt, pktLen);
-                                        DAT_055cc16c += pktLen;
-                                    } else {
-                                        Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                                    }
-                                } else {
-                                    Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                                }
-                                break;
-                            }
-                            if (r == 0) break;
-                            if (DAT_055ce174 != 0) FUN_0043de60();
-                            remaining -= (UINT)r;
-                            sent += r;
-                        } while ((int)remaining > 0);
-                    }
-                }
-            }
-            iRow++;
-            pEntity += 0x24;
-            iAccum  += 0x23;
+    const char* const heroName = DAT_07abf5d8 ? DAT_07abf5d8 + 449 : "";
+    const bool heroLeads = PartyNumber > 0 && strcmp((const char*)Party, heroName) == 0;
+    for (int row = 0; row < PartyNumber; ++row) {
+        BYTE* const member = Party + row * 36;
+        const bool mayRemove = heroLeads || strcmp((const char*)member, heroName) == 0;
+        const int rowY = (int)DAT_07ea5b28 + 55 + row * 35;
+        if (mayRemove && (int)DAT_083a427c >= (int)DAT_07ea5b24 + 140 &&
+            (int)DAT_083a427c < (int)DAT_07ea5b24 + 164 &&
+            (int)DAT_083a4278 >= rowY && (int)DAT_083a4278 < rowY + 24 &&
+            IsClickPushed()) {
+            DAT_083a4124 = '\0';
+            FUN_00404bc0(0x19, 0, 0);
+            // The original click gate uses the visual row.  MuEmu validates
+            // the wire party number, which is explicitly supplied by 0x42.
+            const BYTE pkt[4] = { 0xC1, 0x04, 0x43, member[11] };
+            Net_SendC1Packet(pkt, sizeof(pkt));
+            return;
         }
-        iX = DAT_083a427c;
     }
 
-    // Back button
-    if ((int)iX >= (int)(DAT_07ea5b24 + 0x19) &&
-        (int)iX <  (int)(DAT_07ea5b24 + 0x31) &&
+    if ((int)DAT_083a427c >= (int)(DAT_07ea5b24 + 0x19) &&
+        (int)DAT_083a427c <  (int)(DAT_07ea5b24 + 0x31) &&
         (int)DAT_083a4278 >= (int)(DAT_07ea5b28 + 0x18b) &&
         (int)DAT_083a4278 <  (int)(DAT_07ea5b28 + 0x1a3) &&
         IsClickPushed()) {

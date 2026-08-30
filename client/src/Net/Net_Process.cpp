@@ -644,6 +644,7 @@
 #include "Net/Net.h"
 #include "Net/HWID.h"
 #include "Net/MuEmu.h"
+#include "Party/Party.h"
 
 // Definida en Item/Item_ClickHandler.cpp — devuelve el item agarrado a su slot
 // de origen. La usa el rechazo de venta del handler 0x33.
@@ -1151,6 +1152,18 @@ static void GuildWar_RefreshEntityRelations()
     }
 }
 
+// IDA: FUN_00423DB0.  The client keeps the normal guild relation (1) while
+// clearing the active-war relation (2) from every visible entity.  This is
+// intentionally separate from the legacy function with the same old label in
+// Crypto.cpp, which belongs to the already-validated Trade cleanup path.
+extern "C" void GuildWar_ResetClientState()
+{
+    EnableGuildWar = 0;
+    GuildWarIndex = -1;
+    GuildWarName[0] = '\0';
+    GuildWar_RefreshEntityRelations();
+}
+
 // Inserta la rama demostrada de IDA SetActionClass (FUN_00497870). El auxiliar
 // completo aún no tiene un port enlazado, pero Guerra de guild sólo usa este
 // contrato local fijo de acción/ACK.
@@ -1190,9 +1203,7 @@ static void ReceiveDeclareWarResult97k(const BYTE* packet, int size)
 
     // IDA limpia el estado de declaración pendiente sólo cuando la guerra no está activa.
     if (result != 1 && !EnableGuildWar) {
-        GuildWarIndex = -1;
-        GuildWarName[0] = '\0';
-        GuildWar_RefreshEntityRelations();
+        GuildWar_ResetClientState();
     }
 }
 
@@ -1226,11 +1237,8 @@ static void ReceiveGuildEndWar97k(const BYTE* packet, int size)
         UI_AddNotice(notice, 1);
     }
 
-    EnableGuildWar = 0;
     EnableSoccer = 0;
-    GuildWarIndex = -1;
-    GuildWarName[0] = '\0';
-    GuildWar_RefreshEntityRelations();
+    GuildWar_ResetClientState();
 
     // IDA asigna los resultados 1, 2 y 4 al par de acción de victoria (113, 121);
     // los demás resultados demostrados usan el par normal de cierre (107, 117).
@@ -3905,6 +3913,10 @@ void Net_ProcessPacket(void)
                                spawnSlot, entityId, name, x, y);
                     }
                 }
+                // 0x42 can precede this viewport batch after a relog or map
+                // transition. Rebuild only Party's runtime name links now
+                // that entities exist; membership remains server-authoritative.
+                Party_RefreshViewportLinks();
                 break;
             }
 
@@ -5275,19 +5287,17 @@ void Net_ProcessPacket(void)
                 if (Size < 5) break;
                 DAT_07eaa0e4 = (DWORD)((Msg[3] << 8) | Msg[4]);
                 SetErrorMessage(120);
-                NetLog("NET: -> 0x40 PartyRequest inviter=%u",
-                       (unsigned)DAT_07eaa0e4);
                 break;
             }
 
             case 0x41: {
-                // ProtocolCore @ 004389A0 cierra el prompt de pedido de party con
-                // cada resultado del server. La elección del string de chat es puramente
-                // presentational; party membership itself is authoritative
-                // recién después de la lista 0x42 siguiente.
+                // ReceivePartyResult @ 004345F0: presentational result only.
+                // Membership remains authoritative in the following 0x42.
                 if (Size < 4) break;
+                static const int textIndex[] = { 497, 498, 499, 500, 501, 535 };
+                if (Msg[3] < _countof(textIndex))
+                    UIChatLogWindow_AddText(nullptr, GlobalText[textIndex[Msg[3]]], 2);
                 SetErrorMessage(0);
-                NetLog("NET: -> 0x41 PartyResult result=%u", (unsigned)Msg[3]);
                 break;
             }
 
@@ -5298,15 +5308,15 @@ void Net_ProcessPacket(void)
                 // Ally before emitting their MuEmu packets.
                 extern void ReceivePartyList97k(BYTE* pkt, int size);
                 ReceivePartyList97k((BYTE*)Msg, Size);
-                NetLog("NET: -> 0x42 PartyList count=%u", Size >= 5 ? (unsigned)Msg[4] : 0);
                 break;
             }
 
             case 0x43: {
-                // ProtocolCore @ 004389A0: party dissolved / local member
-                // removido. El original limpia el contador de inmediato.
+                // ReceivePartyDelete @ 00434640: only the server declares the
+                // local removal/dissolution.  Do not elect a leader or mutate
+                // rows here; remaining users receive a fresh authoritative 0x42.
                 PartyNumber = 0;
-                NetLog("NET: -> 0x43 PartyClear");
+                UIChatLogWindow_AddText(nullptr, GlobalText[502], 2);
                 break;
             }
 
@@ -5415,9 +5425,7 @@ void Net_ProcessPacket(void)
             }
 
             case 0x71: {
-                // IDA: FUN_00433900 ACK keepalive de Party por la ruta normal
-                // de trama C1 (incluida su política de envío en búfer).
-                NetLog("NET:  → 0x71 PartyKeepalive");
+                // Passive legacy Party reply; current MuEmu has no 0x71 route.
                 extern void Party_Keepalive(void);
                 Party_Keepalive();
                 break;

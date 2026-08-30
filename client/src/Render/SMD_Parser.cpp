@@ -16,6 +16,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "Net/Net.h"
+#include "Party/Party.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl FUN_0054158c(void* ptr);
@@ -293,6 +294,9 @@ void __cdecl FUN_0045abb0(int param_1) {
         }
         FUN_00449840((int)puVar1, (int)puVar1, 0);
     }
+
+    // Gate/map transition removes the viewport but not Party membership.
+    Party_RefreshViewportLinks();
 }
 
 // Effect/particle
@@ -848,57 +852,54 @@ void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int 
 // signature in functions.h: void (void) — no return used at call site, treat as void.
 void __cdecl FUN_00404bb0(void) { /* NOP — original returns 1 but callers ignore it */ }
 
-// FUN_00483160 @ 0x00483160 — Combat_GetTargetResult: resolves the current hovered entity result.
-// Returns: high=entity slot (SelectedCharacter), low=action type (0=none, 1=attack, 2=trade).
-// Also handles trade-mode comparisons (name vs local player name).
+// FUN_00483160 @ 0x00483160 — CheckAttack.
+//
+// This is deliberately a boolean predicate, despite the historical unsigned
+// return type in functions.h.  Every caller uses it as one: the combat paths
+// decide whether to retain a target key, and Cursor_Render selects the attack
+// cursor.  The guild-war branch is controlled by EnableGuildWar and the
+// entity's relation byte at +745 (2 = current war opponent), exactly as in
+// the original client.
 unsigned int __cdecl FUN_00483160(void) {
-    unsigned int uVar6 = SelectedCharacter;
-    if (SelectedCharacter == 0xffffffff)
-        return uVar6 & 0xffffff00u;
-    int iVar1 = DAT_07abf5d0 + SelectedCharacter * 0x394;
-    char cVar2 = *(char*)(DAT_07abf5d0 + 0x84 + SelectedCharacter * 0x394);
-    uVar6 = (SelectedCharacter * 0xe5u >> 8u) << 8u | (unsigned char)cVar2;
-    if (cVar2 == '\x02')
-        return ((SelectedCharacter * 0xe5u >> 8u) << 8u) | 1u;
-    if (cVar2 == '\x01') {
-        unsigned char bVar3 = *(unsigned char*)(iVar1 + 0x2ea);
-        unsigned int uVar8 = ((SelectedCharacter * 0xe5u >> 8u) << 8u) | bVar3;
-        if (DAT_05826d30 != '\0') {
-            if (bVar3 > 5) {
-                short sVar4 = *(short*)(iVar1 + 0x1da);
-                uVar8 = (unsigned short)((SelectedCharacter * 0xe5u) >> 0x10u) << 16u | (unsigned short)sVar4;
-                if (sVar4 != -1) {
-                    unsigned char *pbVar10 = (unsigned char*)&DAT_07e919bc + sVar4 * 0x50;
-                    unsigned char *pbVar7  = (unsigned char*)&DAT_07e919bc + *(short*)((char*)DAT_07abf5d8 + 0x1da) * 0x50;
-                    int cmp = 0;
-                    while (true) {
-                        unsigned char b1 = *pbVar7, b2 = *pbVar10;
-                        if (b1 != b2) { cmp = (b1 < b2) ? -1 : 1; break; }
-                        if (b1 == 0) { cmp = 0; break; }
-                        pbVar7++; pbVar10++;
-                    }
-                    uVar8 = (unsigned int)cmp;
-                    uVar6 = 0;
-                    if (cmp == 0) goto LAB_0048324d;
-                }
-            }
-            if (*(char*)(iVar1 + 0x2e9) != '\x02')
-                return uVar8;
-            if (iVar1 == (int)(uintptr_t)DAT_07abf5d8)
-                return uVar8;
-            return ((uVar8 >> 8u) << 8u) | 1u;
-        }
-        uVar6 = uVar8;
-        if (bVar3 < 6) {
-            SHORT SVar5 = GetAsyncKeyState(0x11);
-            uVar6 = (unsigned int)SVar5;
-            if (((char)(((unsigned short)SVar5) >> 8u) != (char)0x80) ||
-                (iVar1 == (int)(uintptr_t)DAT_07abf5d8)) goto LAB_0048324d;
-        }
-        return ((uVar6 >> 8u) << 8u) | 1u;
+    if (SelectedCharacter == -1) {
+        return 0;
     }
-LAB_0048324d:
-    return uVar6 & 0xffffff00u;
+
+    BYTE* target = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * SelectedCharacter;
+    const BYTE kind = target[132];
+    if (kind == 2) {
+        return 1;
+    }
+    if (kind != 1) {
+        return 0;
+    }
+
+    const BYTE targetPkLevel = target[746];
+    if (!EnableGuildWar) {
+        return targetPkLevel >= 6 ||
+               (((unsigned short)GetAsyncKeyState(VK_CONTROL) >> 8) == 0x80 &&
+                target != (BYTE*)(uintptr_t)DAT_07abf5d8);
+    }
+
+    // In a war, a PK target from our own guild remains protected before the
+    // opponent-relation test.  The original indexes the same 80-byte guild
+    // name table used by GuildMark_AssociateEntities.
+    if (targetPkLevel >= 6) {
+        const short targetGuild = *(short*)(target + 474);
+        if (targetGuild != -1) {
+            const short heroGuild = *(short*)((BYTE*)(uintptr_t)DAT_07abf5d8 + 474);
+            if (strcmp(DAT_07e919bc + 80 * heroGuild,
+                       DAT_07e919bc + 80 * targetGuild) == 0) {
+                return 0;
+            }
+        }
+    }
+
+    if (target[745] == 2 && target != (BYTE*)(uintptr_t)DAT_07abf5d8) {
+        return 1;
+    }
+
+    return targetPkLevel;
 }
 // FUN_004cb520 @ 0x004CB520 — `GetScreenWidth` per IDA companion (Offsets.h).
 // Returns the "logical width" of the 3D world viewport based on which UI
