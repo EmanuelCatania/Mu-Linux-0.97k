@@ -479,10 +479,28 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
     // píxeles de framebuffer.  Text_MeasureOrthoWidth hace la conversión (es el
     // equivalente correcto del `sz.cx / g_fScreenRate_x` de IDA para nuestro
     // pipeline).  Sin ella el texto quedaba descentrado hacia la izquierda.
+    // 2026-08-26 — MEZCLA DE ESPACIOS. `param_4` (iBoxWidth) llega en PIXELES:
+    // los callers lo calculan como `N * WindowWidth / 640`, que es lo que hace
+    // el original (p.ej. RenderCharacterInfoWindow 0x4ECC60 L279:
+    // `RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * WindowWidth / 0x280, ...)`).
+    // Ese hardcode es correcto y se conserva.
+    //
+    // Pero `param_1` es LOGICO y `Text_MeasureOrthoWidth` devuelve LOGICO, asi
+    // que el centrado mezclaba las dos unidades. A 640x480 no se notaba porque
+    // `N * 640 / 640 == N` y la escala vale 1.0; a 1024 el ancho de caja salia
+    // 1.6x mas grande que la medida del texto y el centrado se corria a la
+    // derecha — el sintoma de "textos corridos respecto de sus labels" en el
+    // menu de personaje (C).
+    //
+    //   param_4  -> pixel -> / g_fScreenRate_x -> logico
+    //   textW    -> logico (Text_MeasureOrthoWidth ya divide)
+    //   x        -> logico + logico = logico  -> lo convierte FUN_0040f610
     if (param_5 >= 2 && param_4 > 0 && DAT_055c9fec) {
+        const float rateX  = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
+        const int   boxLog = (int)((float)param_4 / rateX);
         int textW = Text_MeasureOrthoWidth(param_3);
-        if (textW > 0 && textW < param_4) {
-            x = param_1 + (param_4 - textW) / 2;
+        if (textW > 0 && textW < boxLog) {
+            x = param_1 + (boxLog - textW) / 2;
         }
     }
 
