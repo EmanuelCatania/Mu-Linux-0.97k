@@ -374,7 +374,14 @@ struct SERVER_LIST_t
 // Window / display
 #define WindowWidth         DAT_0056156c     // int
 #define WindowHeight        DAT_00561570     // int
+// Escalas de pixel -> layout logico 640x480. Las calcula Config_Load y son las
+// unicas dos fuentes de escala de texto del binario (IDA 0041E0A0:144-145):
+//     g_fScreenRate_x = WindowWidth  * 0.0015625     (= /640)
+//     g_fScreenRate_y = WindowHeight * 0.0020833334  (= /480)
+// El uso canonico es `TextSize.cx /= g_fScreenRate_x` tras GetTextExtentPointA,
+// que mide en pixeles reales de ventana.
 #define g_fScreenRate_x     _DAT_055c9b70    // float
+#define g_fScreenRate_y     _DAT_055c9b74    // float
 // g_hWnd, g_hDC already in stdafx.h
 
 // State
