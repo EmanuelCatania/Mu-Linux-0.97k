@@ -72,11 +72,11 @@ void __cdecl CloseInventoryRelatedWindows(void) {
     // Limpiar los pools de items de shop/trade/mix (slots a 0xFFFF, key 0).
     for (int i = 0; i < 32; ++i) {
         BYTE* c = Inventory + i * 0x44;
-        *(short*)c = (short)0xFFFF; *(DWORD*)(c + 4) = 0;
+        *(short*)c = (short)0xFFFF; *(DWORD*)(c + 0x38) = 0;
         BYTE* t = OffsetTradeItems + i * 0x44;
-        *(short*)t = (short)0xFFFF; *(DWORD*)(t + 4) = 0;
+        *(short*)t = (short)0xFFFF; *(DWORD*)(t + 0x38) = 0;
         BYTE* m = OffsetMixItems + i * 0x44;
-        *(short*)m = (short)0xFFFF; *(DWORD*)(m + 4) = 0;
+        *(short*)m = (short)0xFFFF; *(DWORD*)(m + 0x38) = 0;
     }
 
     PlayBuffer(25, 0, 0);   // sonido de cierre

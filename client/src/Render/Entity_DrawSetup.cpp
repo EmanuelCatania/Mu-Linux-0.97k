@@ -258,7 +258,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         wave = sinf((float)WorldTime * 0.002f) * 10.0f + 15.65f;
         *(float *)(param_1 + 104) = wave;
         *(float *)(param_1 + 0x168) = 2.0f;
-        *(float *)(param_1 + 0x70) = (float)(WorldTime % 2000) * 0.0005f;
+        *(float *)(param_1 + 0x70) = (float)((long long)WorldTime % 2000) * 0.0005f;
         *(float *)(param_1 + 0xe8) = wave * 0.2f;
         *(float *)(param_1 + 0xec) = wave * 0.2f;
         *(float *)(param_1 + 0xf0) = wave * 0.2f;

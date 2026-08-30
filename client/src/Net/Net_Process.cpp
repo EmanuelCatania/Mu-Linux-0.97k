@@ -727,7 +727,10 @@ extern "C" int  Level;
 extern "C" BYTE byte_7E9136B;
 extern void __cdecl FUN_004cc660(BYTE* Inv, int W, int H, int Index,
                                  BYTE* Item, int First);
+extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
+                                             int Index, BYTE* Item, int First);
 extern "C" int __cdecl ConvertItemType(BYTE* Item);
+extern "C" void ChaosBoxCloseAck(void);
 
 // ── ShopInsertItem (PORT FIEL de IDA sub_4CC0E0, 2026-07-25) ─────────────────
 // Inserta un item de tienda en el pool Inventory[32 + slot], llenando su
@@ -784,6 +787,7 @@ static void ShopInsertItem(int slot, const BYTE* Item)
             // mostraba el primer item sin importar cuál hovereabas.
             cell[62]               = (BYTE)(slot % 8);             // x
             cell[63]               = (BYTE)(slot / 8);             // y
+            FUN_0047b910((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
         }
     }
 }
@@ -4837,6 +4841,7 @@ void Net_ProcessPacket(void)
                         break;
                     case 3:  // Chaos Machine (mix)
                         ShopOpened = 0; WarehouseOpened = 0; TradeOpened = 0;
+                        ChaosBoxCloseAck();
                         ChaosMixOpened = 1;
                         DAT_07eaa140 = 0;     // MixState = 0
                         for (int i = 0; i < 4; i++)
@@ -4879,9 +4884,56 @@ void Net_ProcessPacket(void)
             }
 
             case 0x31: {
-                // 2026-05-19: bulk inventory list for storage/mix/shop.
-                // Por ahora cableamos los paneles útiles reales que ya tenemos localmente:
-                // storage and chaos mix.
+                // Listas de inventario de NPC.  MuEmu usa PWMSG_HEAD para
+                // ChaosBox::GCChaosBoxSend, por lo que el layout demostrado es:
+                //   [C2][sizeHi][sizeLo][31][type=3][count]
+                //   count x [slot][ItemInfo(4)]
+                // No comparte el framing C1 ni el stride 13 del snapshot de
+                // warehouse.  IDA ReceiveTradeInventory (0x427560) primero
+                // limpia exclusivamente OffsetMixItems y luego inserta cada
+                // registro en su slot 8x4.
+                if (Msg[0] == 0xC2 && Size >= 6 && Msg[4] == 3) {
+                    const BYTE count = Msg[5];
+                    // MuEmu sends this authoritative empty snapshot before its
+                    // 0x86 result=0 after a failed mix.  IDA ReceiveTradeInventory
+                    // renders the failure through this Chaos refresh (text 594,
+                    // sounds 67/48).  The server also uses type=3 for the initial
+                    // open snapshot, so preserve that case by requiring a mix
+                    // request already in flight.
+                    const bool mixFailedSnapshot = (DAT_07eaa140 == 1);
+
+                    for (int i = 0; i < 32; ++i) {
+                        BYTE* cell = OffsetMixItems + i * 0x44;
+                        *(short*)cell = (short)0xFFFF;
+                        *(DWORD*)(cell + 0x38) = 0;
+                    }
+
+                    const BYTE* record = Msg + 6;
+                    for (int i = 0; i < count && (6 + i * 5 + 5) <= Size;
+                         ++i, record += 5) {
+                        const BYTE slot = record[0];
+                        if (slot >= 32) {
+                            continue;
+                        }
+
+                        BYTE itemInfo[6] = { 0, 0, 0, 0, 0, 0 };
+                        memcpy(itemInfo, record + 1, 4);
+                        FUN_004cc660(OffsetMixItems, 8, 4, (int)slot,
+                                     itemInfo, 1);
+                    }
+
+                    if (mixFailedSnapshot) {
+                        DAT_07eaa140 = 2;
+                        UIChatLogWindow_AddText("", GlobalText[594], 2);
+                        PlayBuffer(67, 0, 0);
+                        PlayBuffer(48, 0, 0);
+                    }
+
+                    break;
+                }
+
+                // El resto de las ramas se conserva tal cual: el formato C1
+                // histórico usa offsets distintos de las listas C2 de shop.
                 if (Size < 5) break;
                 BYTE sub = Msg[3];
                 BYTE count = Msg[4];
@@ -5479,17 +5531,58 @@ void Net_ProcessPacket(void)
             }
 
             case 0x86: {
-                NetLog("NET:  -> 0x86 MixResult idx=%d size=%d", Size >= 4 ? Msg[3] : -1, Size);
-                if (DAT_07eaa11a != 0 && DAT_07eaa140 == 0) {
-                    DAT_07eaa140 = 1;
+                // IDA 004366C0 ReceiveMix. MuEmu envía C1:08:86:<result>:ItemInfo[4].
+                // La aceptación, consumo y resultado ya fueron decididos por el
+                // servidor; el cliente sólo refleja su respuesta autoritativa.
+                if (Size < 4) break;
+                const BYTE result = Msg[3];
+                switch (result) {
+                case 1:
+                    DAT_07eaa140 = 2;
+                    for (int slot = 0; slot < 32; ++slot) {
+                        BYTE* item = OffsetMixItems + slot * 0x44;
+                        *(short*)item = (short)0xFFFF;
+                        *(DWORD*)(item + 0x38) = 0;
+                    }
+                    if (Size >= 8)
+                        InsertInventoryItem(OffsetMixItems, 8, 4, 0, Msg + 4, 1);
+                    UIChatLogWindow_AddText("", GlobalText[595], 1);
+                    PlayBuffer(67, 0, 0);
+                    PlayBuffer(49, 0, 0);
+                    break;
+                case 2:
+                case 0x0B:
+                    DAT_07eaa140 = 0;
+                    UIChatLogWindow_AddText("", GlobalText[596], 2);
+                    break;
+                case 4:
+                    CreateOkMessageBox(GlobalText[649]);
+                    DAT_07eaa140 = 2;
+                    break;
+                case 9:
+                    CreateOkMessageBox(GlobalText[689]);
+                    DAT_07eaa140 = 2;
+                    break;
+                default:
+                    DAT_07eaa140 = 2;
+                    break;
                 }
                 break;
             }
 
             case 0x87: {
-                NetLog("NET:  -> 0x87 MixExit");
-                DAT_07eaa11a = 0;
-                DAT_07eaa140 = 0;
+                // IDA 004367D0 ReceiveMixExit: este ACK es el punto en que el
+                // cliente descarta sus vistas; MuEmu ya ejecutó ChaosBoxInit y
+                // gObjInventoryCommit antes de responderlo.
+                ChaosBoxCloseAck();
+                InventoryOpened = 0;
+                CloseInventoryRelatedWindows();
+                DAT_07e91388 = 0;
+                // The category selector is client-local (unlike the original
+                // box lifecycle), so dismiss it if a close ACK races it.
+                if (DAT_083a7c24 == 143) {
+                    SetErrorMessage(0);
+                }
                 break;
             }
 

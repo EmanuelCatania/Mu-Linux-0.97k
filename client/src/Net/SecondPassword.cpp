@@ -148,6 +148,7 @@ extern "C" void GuildCreator_CloseFromResult(void);
 // Inventory pool bases — defined in src/Render/HUD_Pass3.cpp.
 // Lo usan los llamadores de FUN_004d23b0 de abajo para recorrer los arrays de grilla correctos.
 extern "C" BYTE OffsetInventoryItems[];
+extern "C" BOOL ChaosBoxRequestClose(void);
 extern "C" BYTE Inventory[];
 extern "C" BYTE ShopItems[];   // pool dedicado de la tienda
 extern "C" BYTE OffsetTradeItems[];
@@ -1276,7 +1277,10 @@ void __cdecl FUN_004e9050(void) {
                 iVar3 = DAT_0055a3fc;
                 break;
             }
-            uint uVar2 = FUN_004e3db0(0x7ea8410, 8, 8, iVar1, iVar3);
+            // 004E3DB0 comprueba que exista espacio en el inventario normal
+            // para el resultado; en el binario el primer argumento era la
+            // dirección absoluta de ese pool, no un literal portable.
+            uint uVar2 = FUN_004e3db0((int)(uintptr_t)OffsetInventoryItems, 8, 8, iVar1, iVar3);
             if ((char)uVar2 == '\0') {
                 FUN_00480620(&DAT_07eaa198, &DAT_07d54600, 2);
             } else {
@@ -1792,7 +1796,9 @@ LABEL_16:
 // Otherwise sends a cancel packet (C1 03 87) over the socket.
 undefined4 __cdecl FUN_004f6850(void)
 {
-    return 0;  // AUTO-SKIP: absolute end-bound loop (Ghidra artifact — pool not populated in our build).
+    if (!ChaosMixOpened) return 0;
+    return ChaosBoxRequestClose() ? 1 : 0;
+#if 0
     bool bVar1 = true;
     short *psVar2 = (short *)&DAT_07ea9848;
     do {
@@ -1828,6 +1834,7 @@ undefined4 __cdecl FUN_004f6850(void)
         } while (0 < (int)uVar8);
     }
     return CONCAT31((int3)(DAT_055ca168 >> 8), 1);
+#endif
 }
 
 // FUN_004f6a70 @ 0x004F6A70 — Net_Disconnect_Clean
@@ -4395,14 +4402,14 @@ void __cdecl FUN_004520c0(int entity_ptr)
             break;
 
         // 0x11D / 0x128 / 0x129 — IDA raw L892-900.
-        case 0x11D: *(float *)(entity_ptr + 112) = (float)(WorldTime % 2000) * -0.00050000002f; break;
-        case 0x128: *(float *)(entity_ptr + 108) = (float)(WorldTime % 10000) * -0.000099999997f; break;
-        case 0x129: *(float *)(entity_ptr + 112) = (float)(WorldTime % 1000) * -0.001f; break;
+        case 0x11D: *(float *)(entity_ptr + 112) = (float)((long long)WorldTime % 2000) * -0.00050000002f; break;
+        case 0x128: *(float *)(entity_ptr + 108) = (float)((long long)WorldTime % 10000) * -0.000099999997f; break;
+        case 0x129: *(float *)(entity_ptr + 112) = (float)((long long)WorldTime % 1000) * -0.001f; break;
 
         // 0x12B — IDA raw L901-915.
         case 0x12B:
             *(int *)(entity_ptr + 100) = 3;
-            *(float *)(entity_ptr + 112) = (float)(WorldTime % 1000) * -0.001f;
+            *(float *)(entity_ptr + 112) = (float)((long long)WorldTime % 1000) * -0.001f;
             if (!(rand() & 1)) {
                 float p[3];
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 96), WorldPosition, p, '\x01');
@@ -4556,7 +4563,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
                     Particle_Spawn(1200, bones[linksD[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
                 }
 
-                if (!(WorldTime % 2)) {
+                if (!((long long)WorldTime % 2)) {
                     float particleLight[3];
                     FUN_0043e4a0(bones[0], targetPosition, bones[30], 360.0f);
                     particleLight[0] = (float)WorldTime;
@@ -4616,8 +4623,8 @@ void __cdecl FUN_004520c0(int entity_ptr)
         }
 
         // 0x142 / 0x145 — IDA raw L1179-1184.
-        case 0x142: *(float *)(entity_ptr + 108) = (float)(WorldTime % 10000) * -0.00039999999f; break;
-        case 0x145: *(float *)(entity_ptr + 112) = (float)(WorldTime % 10000) * 0.000099999997f; break;
+        case 0x142: *(float *)(entity_ptr + 108) = (float)((long long)WorldTime % 10000) * -0.00039999999f; break;
+        case 0x145: *(float *)(entity_ptr + 112) = (float)((long long)WorldTime % 10000) * 0.000099999997f; break;
 
         // 0x152 — MODEL_SMITH / herrero (OpenNpc case 338), IDA raw L1185-1221.
         case 0x152:
@@ -4694,7 +4701,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
         case 0x186:
         {
             float p[3];
-            if (g_GameState == 5 && World == 7 && WorldTime % 10000 < 1000) {
+            if (g_GameState == 5 && World == 7 && (long long)WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * *(int *)((int)model + 84)), local, p, '\x01');
                 Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);

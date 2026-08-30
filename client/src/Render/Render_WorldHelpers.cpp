@@ -544,11 +544,13 @@ extern "C" void Net_SendWarehousePassword(BYTE type, WORD password,
     SendNpcPacket(pkt, 0x0F);
 }
 
-// 0x86 PMSG_CHAOS_BOX_ITEM_PROC — chaos mix execute
-// Wire: [C1][03][86]
-extern "C" void Net_SendChaosBoxMix(void) {
-    BYTE pkt[4] = { 0xC1, 0x03, 0x86, 0 };
-    SendNpcPacket(pkt, 3);
+// 0x86 PMSG_CHAOS_BOX_ITEM_PROC — chaos mix execute.
+// El cliente original 97K enviaba C1:03:86 y el servidor infería la receta.
+// MuEmu conserva el opcode pero exige el tipo explícito: C1:04:86:<type>.
+// El llamador sólo llega aquí tras el reconocimiento local fiel de receta.
+extern "C" void Net_SendChaosBoxMix(BYTE type) {
+    BYTE pkt[4] = { 0xC1, 0x04, 0x86, type };
+    SendNpcPacket(pkt, 4);
 }
 
 // 0x87 PMSG_CHAOS_BOX_CLOSE — close chaos box
@@ -557,6 +559,50 @@ extern "C" void Net_SendChaosBoxClose(void) {
     BYTE pkt[4] = { 0xC1, 0x03, 0x87, 0 };
     SendNpcPacket(pkt, 3);
 }
+
+// 0x87 has no payload and MuEmu acknowledges it only after ChaosBoxInit and
+// InventoryCommit.  Keep the window/pools intact until that ACK and suppress
+// repeated Escape/X/outside-click sends while it is in flight.
+static BOOL s_ChaosBoxClosePending = FALSE;
+
+// IDA 004E3D60: el cliente original no permite cerrar una Chaos Box que aún
+// contiene items. Es obligatorio con MuEmu: CGChaosMixCloseRecv hace
+// ChaosBoxInit antes de InventoryCommit.
+extern "C" BOOL ChaosBoxIsEmptyForClose(void) {
+    for (int slot = 0; slot < 32; ++slot) {
+        BYTE* item = OffsetMixItems + slot * 0x44;
+        if (*(short*)item != (short)0xFFFF && *(DWORD*)(item + 56) > 0)
+            return FALSE;
+    }
+    return TRUE;
+}
+
+extern "C" BOOL ChaosBoxRequestClose(void) {
+    if (s_ChaosBoxClosePending) {
+        return TRUE;
+    }
+
+    if (!ChaosBoxIsEmptyForClose() || DAT_07e91388 > 0) {
+        UIChatLogWindow_AddText("", GlobalText[593], 2);
+        return FALSE;
+    }
+
+    // ErrorMessage=143 is the local Chaos category selector layered over the
+    // server-owned box.  It must not outlive a valid Chaos close request.
+    // SetErrorMessage(0) pops only this layer and preserves any queued dialog.
+    if (DAT_083a7c24 == 143) {
+        SetErrorMessage(0);
+    }
+
+    s_ChaosBoxClosePending = TRUE;
+    Net_SendChaosBoxClose();
+    return TRUE;
+}
+
+extern "C" void ChaosBoxCloseAck(void) {
+    s_ChaosBoxClosePending = FALSE;
+}
+
 
 // FUN_004CB6F0 @ 0x004CB6F0 — Target_Render (sub_4CB6F0)
 // 2026-05-07: port FIEL desde IDA mu97k-src-IDA/raw/004CB6F0_sub_4CB6F0.c.

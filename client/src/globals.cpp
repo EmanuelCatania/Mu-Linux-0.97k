@@ -649,7 +649,7 @@ DWORD    DAT_05826dc8  = 0;
 DWORD    DAT_05826df4  = 0;
 // IDA: DAT_05826e04
 DWORD    FpsWindowStartTimeMs  = 0;
-int      DAT_05826e08  = 0;  // WorldTime / g_AnimTick
+float    DAT_05826e08  = 0.0f;  // WorldTime — 0.97k stores (float)timeGetTime()
 float    g_AttackEffectMatrix_04D[3][4] = {};
 float    g_AttackEffectMatrix_04D_Alt[3][4] = {};
 float    g_AttackEffectMatrix_04D_Aux[3][4] = {};

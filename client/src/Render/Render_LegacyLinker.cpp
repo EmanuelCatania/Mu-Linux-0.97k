@@ -131,12 +131,12 @@ void __cdecl OpenModel(int id, char* path, ...) {
     (void)id; (void)path;
 }
 
-// Camera_BuildMouseRay (CreateScreenVector) ya implementada en stubs.cpp:1630.
-// FUN_004e13a0 (RenderObjectScreen) ya implementada en stubs.cpp:12999.
+// Camera_BuildMouseRay is CreateScreenVector.  RenderObjectScreen lives in
+// BMD_LegacyDraw.cpp and owns the native BMD animation/draw path.
 extern void __cdecl Camera_BuildMouseRay(int sx, int sy, float* out);
 extern void __cdecl FUN_004e13a0(int param_1, unsigned int param_2,
-                                  unsigned char param_3, unsigned char param_4,
-                                  float* param_5, int param_6, char param_7);
+                                   unsigned char param_3, unsigned char param_4,
+                                   float* param_5, int param_6, char param_7);
 
 // RenderItem3D @ 0x004E1BE0 — port FIEL del binario original.
 //
@@ -150,7 +150,7 @@ extern void __cdecl FUN_004e13a0(int param_1, unsigned int param_2,
 //
 // Esto reemplaza el placeholder que pintaba quads coloreados por grupo.
 void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
-                          int Type, int Level, int Option1, int ExtOption, bool PickUp)
+                           int Type, int Level, int Option1, int ExtOption, bool PickUp)
 {
     bool Success = false;
     float Position[3];
@@ -346,8 +346,6 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
             else if (lvl3 == 5) modelId = MODEL_EVENT + 8;
             else if (lvl3 == 6) modelId = MODEL_EVENT + 9;
             else if (lvl3 >= 8 && lvl3 <= 12) modelId = MODEL_EVENT + 10;
-            else if (lvl3 == 13) modelId = MODEL_EVENT + 6;
-            else if (lvl3 == 14 || lvl3 == 15) modelId = MODEL_EVENT + 5;
             break;
         }
         case 457: { // ITEM_POTION+9
@@ -365,21 +363,6 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
             else if (lvl3 == 2) { modelId = MODEL_BOW + 18;   levelArg = -1; }
             break;
         }
-        case 428:
-            modelId = MODEL_HELPER + 12;
-            break;
-        case 429:
-            modelId = MODEL_HELPER + 13;
-            break;
-        case 461:
-            modelId = MODEL_POTION + 13;
-            break;
-        case 462:
-            modelId = MODEL_POTION + 14;
-            break;
-        case 548:
-            modelId = MODEL_POTION + 100;
-            break;
         }
 
     // Guard contra modelo no cargado o pointer corrupto. RenderObjectScreen

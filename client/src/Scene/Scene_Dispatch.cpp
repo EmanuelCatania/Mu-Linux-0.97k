@@ -44,8 +44,11 @@ void __cdecl Scene_Dispatch(HDC param_1)
     // Original stored DAT_05826e08 * _DAT_005524bc into local_41c (unused after);
     // omitted here — same effect, no observable side effect.
     {
-        float10 t = (float10)FUN_005433b0();
-        DAT_083a45d4 = (float)(t * (float10)_DAT_00552934 + (float10)_DAT_00552534);
+        // 0.97k @ 005274A8: the item-level glow pulse is driven directly from
+        // WorldTime.  The former intermediary is an unported stub returning 0,
+        // which froze DAT_083a45d4 and therefore all +3..+6 item glow colours.
+        const float phase = (float)DAT_05826e08 * 0.0040000002f;
+        DAT_083a45d4 = sinf(phase) * 0.15000001f + 0.60000002f;
     }
 
     // ── SCENE DISPATCH ────────────────────────────────────────────────────────
