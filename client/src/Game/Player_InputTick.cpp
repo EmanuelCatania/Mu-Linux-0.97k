@@ -96,7 +96,9 @@ static void MouseOnWindow_Update(void)
         if (mx >= btnX && mx < btnX + 70 && my >= btnY && my < btnY + 21) {
             g_MouseOnWindow = 1; return;
         }
-        btnX += (int)_DAT_005524f0;
+        // 2026-08-26: mismo fix que el render — IDA `sub_4E4760` L446 pone el
+        // segundo boton en [origin+100, origin+170), no en +20+100.
+        btnX = (int)((float)g_GuildCreatorScratchX + 100.0f);
         if (mx >= btnX && mx < btnX + 70 && my >= btnY && my < btnY + 21) {
             g_MouseOnWindow = 1; return;
         }

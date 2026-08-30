@@ -52,8 +52,21 @@ extern "C" {
     // saw no characters appearing. Now both use the same storage.
     BYTE  InputTextHide[10]       = {0};
     char  InputTextIME[10][256]   = {{0}};
-    int   InputIndex              = 0;
-    int   InputFrame              = 0;
+    // 2026-08-26 — mismo bug que el de arriba, que quedo a medias en 2026-05-04:
+    // `InputIndex` e `InputFrame` eran copias LOCALES de dos globals reales, asi
+    // que este archivo nunca veia lo que escribia el resto del cliente.
+    //
+    //   InputIndex = DAT_07e11d78 — indice del campo de input activo. Lo rota el
+    //     Tab en WndProc (`DAT_07e11d78 = (DAT_07e11d78 + 1) % DAT_00559c88`) y
+    //     lo lee `RenderInputText` (Chat.cpp) para saber en que campo va el
+    //     caret. Con la copia local clavada en 0, el `_` se dibujaba SIEMPRE en
+    //     el campo de chat aunque se estuviera escribiendo en el de whisper.
+    //
+    //   InputFrame = DAT_07e11d2c — contador del parpadeo del caret; Chat.cpp
+    //     usa el mismo `% 2` sobre el global. Con dos contadores separados los
+    //     dos caret parpadeaban desfasados.
+    #define InputIndex   DAT_07e11d78
+    #define InputFrame   DAT_07e11d2c
 
     // Guild mark colour palette (16 entries × DWORD ARGB).
     // 2026-08-25: esto era una copia LOCAL del array. El global real es
@@ -303,7 +316,18 @@ void Render_QuickButtons_(void)
                    (int)MouseY >= (int)btnY && (int)MouseY < (int)(btnY + 21.0f)) ? 0xF2 : 0xF1;
         GL_DrawTexture(tex, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 0.546875f, 0.65625f, 1, 1);
 
-        btnX += _DAT_005524f0;
+        // 2026-08-26 FIX (CANCEL sobresalia del panel): el segundo boton
+        // arranca en +100 desde el origen del panel, NO en +20+100.
+        // IDA `sub_4E4760` L446-447 da los dos rects:
+        //     boton 1 (crear):  [origin+20 , origin+90 )   ancho 70
+        //     boton 2 (cancel): [origin+100, origin+170)   ancho 70
+        // El port partia del primero (+20) y le sumaba `_DAT_005524f0` (que
+        // ademas es TERRAIN_SCALE, no un offset de UI: valia 100 de casualidad),
+        // dejando el boton en +120..+190. Como el panel mide 190 de ancho, ese
+        // rect terminaba exactamente en el borde y se veia sobresalir; el
+        // desalineado contra el hit-test crecia con la resolucion.
+        // No es mezcla de espacios: los dos estaban en logico. Es el offset.
+        btnX = (float)g_GuildCreatorScratchX + 100.0f;
         GL_DrawTexture(0x118, btnX, btnY, 70.0f, 21.0f, 0.0f, 0.0f, 2.1875f, 0.65625f, 1, 1);
         tex = ((int)MouseX >= (int)btnX && (int)MouseX < (int)(btnX + 70.0f) &&
                (int)MouseY >= (int)btnY && (int)MouseY < (int)(btnY + 21.0f)) ? 0xF4 : 0xF3;
@@ -542,20 +566,20 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     GetTextExtentPointA(m_hFontDC, Text, n, &TextSize);
     if (v7 > 0 && TextSize.cx > v7) TextSize.cx = v7;
 
-    // BUG-FIX 2026-07-19 (el caret `_` quedaba corto, ~80% del largo real):
-    // IDA divide TextSize.cx por g_fScreenRate_x para pasar de píxeles de
-    // ventana a ESPACIO-640, porque su `RenderText_1` delega en
-    //   CUIRenderText::RenderText(..., iBoxWidth, 0, iSort, lpTextSize, 640)
-    // y ese `640` hace que la clase reescale la x de espacio-640 a ventana.
-    // NUESTRO UI_DrawText llama a FUN_0040f610 directo, SIN ese reescalado:
-    // nuestro stack de texto ya trabaja en píxeles de ventana. Copiar la
-    // división tal cual encogía el offset por 1/g_fScreenRate_x (con 798 px de
-    // ancho: 640/798 = 0.80, exactamente lo que se veía).
-    // Guardamos el offset SIN dividir para posicionar el caret, y dejamos la
-    // división intacta en TextSize (que otros consumidores leen esperando el
-    // valor de IDA).
-    const LONG caretOffsetPx = TextSize.cx;   // píxeles de ventana
-
+    // 2026-08-26: acá había un workaround. En 2026-07-19 se detectó que el
+    // caret quedaba corto (~80% del largo) y se lo compensó guardando el ancho
+    // SIN dividir, porque en ese momento `UI_DrawText` -> `FUN_0040f610`
+    // dibujaba en píxeles crudos: la mitad "lógico -> físico" del pipeline no
+    // existía, así que un offset en espacio-640 se dibujaba como si fuera píxel.
+    //
+    // Esa mitad ya está implementada (FUN_0040f610 convierte con
+    // g_fScreenRate_x/y, igual que `sub_410AF0` en el binario), así que el
+    // workaround quedó obsoleto y ahora es él quien descoloca el caret: sumaba
+    // un ancho en PÍXELES a una `x` en LÓGICO.
+    //
+    // IDA (RenderInputText 0x47F0B0) posiciona el caret con el TextSize ya
+    // dividido, o sea en espacio lógico, que es lo que se restaura acá.
+    //   ancho medido -> píxel -> / g_fScreenRate_x -> lógico -> + x (lógico)
     TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
     TextSize.cy = (LONG)((double)TextSize.cy / _DAT_055c9b74);
 
@@ -566,14 +590,14 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
             const char* ime = InputTextIME[Index];
             if (strlen(ime) != 0) {
                 if (InputTextHide[Index] == 1) {
-                    UI_DrawText(x + caretOffsetPx, y, (char*)"**", 0, 1, 0);
+                    UI_DrawText(x + TextSize.cx, y, (char*)"**", 0, 1, 0);
                     GetTextExtentPointA(m_hFontDC, "**", 2, &TextSize);
                 } else {
-                    UI_DrawText(x + caretOffsetPx, y, (char*)ime, 0, 1, 0);
+                    UI_DrawText(x + TextSize.cx, y, (char*)ime, 0, 1, 0);
                     GetTextExtentPointA(m_hFontDC, ime, lstrlenA(ime), &TextSize);
                 }
             } else {
-                UI_DrawText(x + caretOffsetPx, y, (char*)"_", 0, 1, 0);
+                UI_DrawText(x + TextSize.cx, y, (char*)"_", 0, 1, 0);
                 GetTextExtentPointA(m_hFontDC, "_", 1, &TextSize);
             }
             TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);

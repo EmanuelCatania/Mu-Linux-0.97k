@@ -24,8 +24,10 @@ int  Config_Load(void);
 int  Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned short* outPort);
 
 // Known globals (set by Config_Load):
-extern int   g_ScreenW;   // DAT_0056156c
-extern int   g_ScreenH;   // DAT_00561570
+// g_ScreenW / g_ScreenH REMOVIDAS (2026-08-26). Eran variables propias de
+// Config_Load.cpp que duplicaban WindowWidth / WindowHeight (DAT_0056156c/70,
+// declaradas en globals.h) sin ninguna sincronizacion: el render usaba las
+// segundas y nada copiaba un par al otro. Usar WindowWidth / WindowHeight.
 extern DWORD g_SoundOn;    // lpData_055c9fe8  (1 = sound on)
 // g_MusicOn es un ALIAS del unico global del binario, m_MusicOnOff @ 0x055C9E3C
 // (definido en globals.cpp). No declarar una variable propia aca: hasta 2026-08-17

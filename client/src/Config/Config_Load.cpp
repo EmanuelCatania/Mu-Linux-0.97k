@@ -17,7 +17,7 @@
 //    Version=XXXXXXXX
 //
 // Resolution map (switch at end of Config_Load):
-//   0 -> 640x480   (g_ScreenW=0x280, g_ScreenH=0x1e0)
+//   0 -> 640x480   (WindowWidth=0x280, WindowHeight=0x1e0)
 //   1 -> 800x600
 //   2 -> 1024x768  (0x400 x 0x300)
 //   3 -> 1280x1024 (0x500 x 0x400)
@@ -49,15 +49,21 @@
 extern "C" void DbgLogPublic(const char* msg);
 
 // Globals set by Config_Load
-int   g_ScreenW    = 640;    // DAT_0056156c
-int   g_ScreenH    = 480;    // DAT_00561570
+//
+// g_ScreenW / g_ScreenH ELIMINADAS (2026-08-26): eran variables propias que
+// duplicaban WindowWidth / WindowHeight (DAT_0056156c/70) sin sincronizarse con
+// ellas. Ver la nota en el switch de resolucion, mas abajo. Config_Load ahora
+// escribe los globals reales, igual que el binario.
 DWORD g_SoundOn    = 1;      // DAT_?? (default 1 = sound on)
 // g_MusicOn NO se define aca: es un macro-alias de m_MusicOnOff (0x055C9E3C),
 // que vive en globals.cpp. Ver la nota en Config.h.
 DWORD g_Resolution = 0;      // DAT_?? (default 0 = 640x480)
 DWORD g_TextOut    = 0;      // DAT_?? (default 0)
-float _DAT_055c9b70 = 1.0f;  // inverse screen width scale: g_ScreenW / 640.0  (UV normalization)
-float _DAT_055c9b74 = 1.0f;  // inverse screen height scale: g_ScreenH / 480.0 (g_fScreenRate_y)
+// g_fScreenRate_x / _y — escala pixel -> layout 640x480. Las calcula
+// Config_Load desde WindowWidth/WindowHeight; el 1.0f es solo el valor
+// previo a esa llamada (y el correcto para 640x480).
+float _DAT_055c9b70 = 1.0f;  // g_fScreenRate_x
+float _DAT_055c9b74 = 1.0f;  // g_fScreenRate_y
 char  ConfigLoginVersion[12] = {}; // IDA: DAT_055c9bac — config.ini [LOGIN] Version string
 
 // Forward declarations
@@ -134,20 +140,47 @@ int Config_Load(void)
     }
 
     // --- 5. Resolution -> screen dimensions ---
+    //
+    // 2026-08-26: esto escribia `g_ScreenW`/`g_ScreenH`, que eran DOS VARIABLES
+    // PROPIAS de este archivo (el comentario decia "DAT_0056156c/70" y no lo
+    // eran). El render entero — ventana, viewport, ortho, proyeccion, mouse —
+    // lee `WindowWidth`/`WindowHeight` (DAT_0056156c/70), con 169 y 50
+    // lecturas respectivamente, y nada copiaba un par al otro: `g_ScreenH` no
+    // tenia ni un solo lector y `g_ScreenW` solo alimentaba la escala de abajo.
+    // O sea el valor del registro se calculaba y se tiraba, y cambiar
+    // `Resolution` no tenia ningun efecto.
+    //
+    // IDA escribe WindowWidth/WindowHeight aca mismo (0041E0A0 L121-138), asi
+    // que esto no es una unificacion inventada: es restaurar el original.
     switch (g_Resolution)
     {
     default:
-    case 0: g_ScreenW = 640;  g_ScreenH = 480;  break;  // DAT_0056156c/70
-    case 1: g_ScreenW = 800;  g_ScreenH = 600;  break;
-    case 2: g_ScreenW = 1024; g_ScreenH = 768;  break;
-    case 3: g_ScreenW = 1280; g_ScreenH = 1024; break;
-    case 4: g_ScreenW = 1600; g_ScreenH = 1200; break;
+    case 0: WindowWidth = 640;  WindowHeight = 480;  break;
+    case 1: WindowWidth = 800;  WindowHeight = 600;  break;
+    case 2: WindowWidth = 1024; WindowHeight = 768;  break;
+    case 3: WindowWidth = 1280; WindowHeight = 1024; break;
+    case 4: WindowWidth = 1600; WindowHeight = 1200; break;
     }
 
-    // --- 6. UV normalization scalar (used throughout renderer for 640x480-relative coords) ---
-    //   _DAT_055c9b70 = (float)g_ScreenW * (1.0f / 640.0f)
-    //   e.g. 640→1.0, 800→1.25, 1024→1.6, etc.
-    _DAT_055c9b70 = (float)g_ScreenW * (1.0f / 640.0f);
+    // --- 6. Escalas de pixel -> layout logico 640x480 ---
+    //
+    // IDA (0041E0A0 L144-145):
+    //     g_fScreenRate_x = (double)WindowWidth  * 0.0015625;      // = /640
+    //     g_fScreenRate_y = (double)WindowHeight * 0.0020833334;   // = /480
+    //
+    // El port solo tenia la X, y calculada desde `g_ScreenW` (la variable
+    // muerta). La Y no se calculaba en ningun lado: quedaba en su valor de
+    // inicializacion, 1.0f, con 18 lectores dividiendo por ella. A 640x480 no
+    // se notaba porque la escala real ES 1.0; a cualquier otra resolucion el
+    // texto se mezclaba con el layout 640x480 sin corregir y el error crecia
+    // en proporcion.
+    //
+    // Lifecycle: se calculan UNA vez, aca. Es lo que hace el binario — el
+    // unico escritor de estas dos variables en todo el decompile es esta
+    // funcion. No se agrega recalculo por resize: la ventana es WS_POPUP y el
+    // WndProc no maneja WM_SIZE / WM_SIZING / WM_DISPLAYCHANGE.
+    g_fScreenRate_x = (float)((double)(int)WindowWidth  * 0.0015625);
+    g_fScreenRate_y = (float)((double)(int)WindowHeight * 0.0020833334);
 
     return 1;
 }

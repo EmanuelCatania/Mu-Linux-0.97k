@@ -1255,7 +1255,9 @@ char     DAT_07e113e4[5 * 256] = {};
 
 DWORD    DAT_07d78094  = 0;
 BYTE     DAT_07d780a8[40]  = {0};
-DWORD    DAT_07d780ac  = 0;
+// DAT_07d780ac ELIMINADO (2026-08-26): en el binario es `InputLength[1]`, o sea
+// los bytes +4..+7 de DAT_07d780a8, no una variable aparte. Ahora es un macro
+// en globals.h que proyecta dentro del array. Ver la nota alli.
 // Multi-slot input buffer (IDA: InputText[10][256] @ 0x07db8710).
 // Slot 0 = chat / username, slot 1 = whisper-target / password.
 // DAT_07db8810 is a #define alias for slot 1 in globals.h.

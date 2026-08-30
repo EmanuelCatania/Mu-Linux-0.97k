@@ -479,10 +479,28 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
     // píxeles de framebuffer.  Text_MeasureOrthoWidth hace la conversión (es el
     // equivalente correcto del `sz.cx / g_fScreenRate_x` de IDA para nuestro
     // pipeline).  Sin ella el texto quedaba descentrado hacia la izquierda.
+    // 2026-08-26 — MEZCLA DE ESPACIOS. `param_4` (iBoxWidth) llega en PIXELES:
+    // los callers lo calculan como `N * WindowWidth / 640`, que es lo que hace
+    // el original (p.ej. RenderCharacterInfoWindow 0x4ECC60 L279:
+    // `RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * WindowWidth / 0x280, ...)`).
+    // Ese hardcode es correcto y se conserva.
+    //
+    // Pero `param_1` es LOGICO y `Text_MeasureOrthoWidth` devuelve LOGICO, asi
+    // que el centrado mezclaba las dos unidades. A 640x480 no se notaba porque
+    // `N * 640 / 640 == N` y la escala vale 1.0; a 1024 el ancho de caja salia
+    // 1.6x mas grande que la medida del texto y el centrado se corria a la
+    // derecha — el sintoma de "textos corridos respecto de sus labels" en el
+    // menu de personaje (C).
+    //
+    //   param_4  -> pixel -> / g_fScreenRate_x -> logico
+    //   textW    -> logico (Text_MeasureOrthoWidth ya divide)
+    //   x        -> logico + logico = logico  -> lo convierte FUN_0040f610
     if (param_5 >= 2 && param_4 > 0 && DAT_055c9fec) {
+        const float rateX  = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
+        const int   boxLog = (int)((float)param_4 / rateX);
         int textW = Text_MeasureOrthoWidth(param_3);
-        if (textW > 0 && textW < param_4) {
-            x = param_1 + (param_4 - textW) / 2;
+        if (textW > 0 && textW < boxLog) {
+            x = param_1 + (boxLog - textW) / 2;
         }
     }
 
@@ -585,18 +603,21 @@ void __cdecl FUN_0047fe30(void *param_1_v, int param_2, void *param_3_v, int par
 // copia una a la otra.  Preguntarle a OpenGL por su viewport es la única
 // fuente que no puede desincronizarse, y sigue siendo correcta si algún día
 // se unifican esos globals.
+// 2026-08-26: esto derivaba la escala del viewport de OpenGL
+// (`viewport / WindowWidth`) para esquivar a `g_fScreenRate_x`, que en ese
+// momento estaba desincronizado. Pero el viewport se setea con ESE MISMO global
+// (`GL_Begin2D`: `glViewport(0,0,vw,vh)` con `vw = WindowWidth`), asi que la
+// division daba 1.0 por construccion: no compensaba nada.
+//
+// Con las escalas globales ya correctas, la conversion pixel -> logico es
+// exactamente `g_fScreenRate_x/y`, que es lo que usa el binario en sus seis
+// sitios (`TextSize.cx / g_fScreenRate_x`). Se mantiene el nombre y la firma
+// para no tocar los cuatro consumidores; lo que cambia es de donde sale el
+// factor.
 static void Text_PixelToOrthoScale(float* outX, float* outY)
 {
-    *outX = 1.0f;
-    *outY = 1.0f;
-    GLint vp[4] = {0, 0, 0, 0};
-    glGetIntegerv(GL_VIEWPORT, vp);
-    DWORD ow = DAT_0056156c ? DAT_0056156c : 640;
-    DWORD oh = DAT_00561570 ? DAT_00561570 : 480;
-    if (vp[2] > 0 && ow > 0) *outX = (float)vp[2] / (float)ow;
-    if (vp[3] > 0 && oh > 0) *outY = (float)vp[3] / (float)oh;
-    if (*outX <= 0.0f) *outX = 1.0f;
-    if (*outY <= 0.0f) *outY = 1.0f;
+    *outX = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
+    *outY = (g_fScreenRate_y > 0.0f) ? g_fScreenRate_y : 1.0f;
 }
 
 // Ancho del texto EN UNIDADES DEL ORTHO (que es donde vive todo el layout).
@@ -762,6 +783,38 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
 {
     if (text == NULL || *text == '\0') return;
 
+    // ── Espacio de coordenadas: logico 640x480 -> pixel fisico ──────────────
+    //
+    // Los callers pasan `x`/`y` en layout logico 640x480, igual que en el
+    // binario: `RenderText_1` (0x47F7A0) llama
+    //     CUIRenderText::RenderText(g_pRenderText, iPos_x, iPos_y, ..., 640)
+    // y ese 640 es el ancho del espacio de referencia. Quien convierte a pixel
+    // es el subclass, `sub_410AF0` (L101-103):
+    //     sub_47F4C0((__int64)(v22 * g_fScreenRate_x + (v15 << 8)),
+    //                (__int64)(v24 * g_fScreenRate_y), Width, Height, ...);
+    // o sea logico * escala = pixel. `sub_47F4C0` ya recibe TODO en pixeles y
+    // por eso compara contra WindowWidth directamente.
+    //
+    // Nuestro pipeline no tenia esta conversion: dibujaba con glRasterPos2f en
+    // coordenadas de layout dentro de un ortho `0..WindowWidth`. A 640x480
+    // coincide (ortho 0..640 == layout) y por eso nunca se noto; a cualquier
+    // otra resolucion el texto quedaba comprimido hacia arriba-izquierda
+    // mientras los sprites (que si pasan por Screen_ToGLX) escalaban bien.
+    //
+    // Nota: `Screen_ToGLX(v)` es `WindowWidth * v / 640`, identico a
+    // `v * g_fScreenRate_x`. Se usa la escala directamente para dejar a la
+    // vista que es la misma relacion logico<->fisico que la de los sprites.
+    //
+    // La conversion NO asume las 5 resoluciones del original: sale de
+    // WindowWidth/WindowHeight, asi que cualquier tamano fisico de ventana
+    // funciona.
+    const float kRateX = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
+    const float kRateY = (g_fScreenRate_y > 0.0f) ? g_fScreenRate_y : 1.0f;
+    x = (int)((float)x * kRateX);
+    y = (int)((float)y * kRateY);
+    // A partir de aca TODO el cuerpo trabaja en PIXELES: los extents de GDI,
+    // el clamp contra WindowWidth/Height, glRasterPos2f y los quads de fondo.
+
     // ── DIAG: log first call per second to see what text is being requested
     {
         static DWORD s_lastTxt = 0;
@@ -842,7 +895,36 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
         // hFont ya está seleccionada en el DC (de ahí la sacamos), así que no
         // hace falta SelectObject — el que había acá encima pisaba la elección
         // del caller y contaminaba las mediciones posteriores de otro código.
-        if (!wglUseFontBitmapsA(hFontDC, 0, 256, base)) {
+        // GL_UNPACK_ALIGNMENT = 1 antes de generar las listas.
+        //
+        // `wglUseFontBitmapsA` llama internamente a `glBitmap` con el mapa de
+        // bits de cada glifo, y `glBitmap` lee las filas usando el
+        // GL_UNPACK_ALIGNMENT ACTUAL, que es estado global de GL y por defecto
+        // vale 4. Todo glifo cuyo ancho en bytes no sea multiplo de 4 se lee
+        // entonces con las filas corridas: basura y lineas horizontales que
+        // cruzan la pantalla.
+        //
+        // El binario hace exactamente esto en su propio camino de texto
+        // (bake a textura): `glBindTexture(...); glPixelStorei(0xCF5, 1);
+        // glTexImage2D(...)`. Nuestro port usa wglUseFontBitmapsA en vez de esa
+        // textura — desviacion ya documentada — y se habia quedado sin el
+        // seteo del alignment.
+        //
+        // Por que dependia de la resolucion: el cuerpo de la fuente cambia con
+        // ella (12/13/14/15 segun WindowWidth, WinMain paso 15), y con el
+        // cuerpo cambian los anchos de los glifos; solo algunos caen en un
+        // ancho no alineado. Y por que "aparecia y desaparecia": estas listas
+        // se generan UNA vez por fuente y quedan cacheadas, asi que la
+        // corrupcion persiste hasta que el cache se regenera.
+        //
+        // Se restaura el valor previo para no alterar el estado global que
+        // espera el resto del render.
+        GLint prevAlign = 4;
+        glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlign);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        const BOOL fontOk = wglUseFontBitmapsA(hFontDC, 0, 256, base);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlign);
+        if (!fontOk) {
             glDeleteLists(base, 256);
             return;
         }
@@ -880,12 +962,16 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
     DWORD vh = DAT_00561570 ? DAT_00561570 : 480;
     DWORD vw = DAT_0056156c ? DAT_0056156c : 640;
     {
-        float csx, csy;
-        Text_PixelToOrthoScale(&csx, &csy);
+        // `x`/`y` ya vienen convertidos a pixel (ver arriba) y el extent de
+        // GDI tambien es pixel, asi que el clamp es homogeneo y se compara
+        // contra WindowWidth/Height directamente — igual que `sub_47F4C0` con
+        // a7 = 0:  `else if (Width + x > WindowWidth) x = WindowWidth - Width;`
+        // Antes se dividia por Text_PixelToOrthoScale, que valia 1.0 por
+        // construccion; a 640x480 el resultado numerico no cambia.
         SIZE tot = {0, 0};
         GetTextExtentPointA(hFontDC, drawText, (int)strlen(drawText), &tot);
-        float wOrtho = (float)tot.cx / csx;
-        float hOrtho = (float)tot.cy / csy;
+        float wOrtho = (float)tot.cx;
+        float hOrtho = (float)tot.cy;
         if (x < 0) x = 0;
         if ((float)x + wOrtho > (float)vw) x = (int)((float)vw - wOrtho);
         if (DAT_07e11d6e) {
@@ -948,9 +1034,10 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
     // del tramo; por eso los mensajes del chat salían sin su recuadro.
     // Formato 0xAABBGGRR igual que el color de texto.  Alpha 0 = sin fondo.
     {
-        float sx, sy;
-        Text_PixelToOrthoScale(&sx, &sy);
-
+        // Los offsets de tramo (`markers[].pixelStart`) y los extents salen de
+        // GetTextExtentPointA, o sea PIXELES, igual que `x`/`y` a esta altura.
+        // No hay conversion que aplicar: mezclarlos con una escala seria
+        // corregir dos veces.
         const int drawLen = (int)strlen(drawText);
         const int nRuns   = nMarkers + 1;
 
@@ -967,7 +1054,7 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
             DWORD fg    = (run == 0) ? DAT_00559c78 : markers[run - 1].fg;
             DWORD bc    = (run == 0) ? DAT_00559c80 : markers[run - 1].bg;
             int   runPx = (run == 0) ? 0            : markers[run - 1].pixelStart;
-            float runX  = (float)x + (float)runPx / sx;
+            float runX  = (float)x + (float)runPx;   // pixel + pixel
 
             SIZE bsz = {0, 0};
             BOOL haveExtent = GetTextExtentPointA(hFontDC, drawText + startChar,
@@ -992,9 +1079,9 @@ void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DW
                 // blitea glBitmap); el quad se emite en unidades del ortho y la
                 // GPU lo estira.  Sin esta división el fondo salía más ancho
                 // que las letras exactamente por la relación viewport/ortho.
-                float wOrtho    = (float)bsz.cx  / sx;
-                float ascOrtho  = (float)s_ascent / sy;
-                float descOrtho = (float)descent  / sy;
+                float wOrtho    = (float)bsz.cx;
+                float ascOrtho  = (float)s_ascent;
+                float descOrtho = (float)descent;
                 float x0 = runX - 1.0f;
                 float x1 = runX + wOrtho + 1.0f;
                 float y0 = (float)rasterY - descOrtho;
