@@ -676,7 +676,7 @@ extern char    DAT_07e11d70;   // char-select init flag
 extern char    DAT_07e11d71;   // char-select flag B
 extern char    DAT_07e11d72;   // char-select flag C
 extern int     DAT_07e11d74;   // gold / currency (checked vs 0x2faf081)
-extern DWORD   DAT_07e11d78;   // login field active flag
+extern DWORD   DAT_07e11d78;   // InputIndex — indice del campo de input activo (lo rota el Tab)
 extern DWORD   DAT_07e11d7c;   // countdown counter B
 extern DWORD   DAT_07e11d1c;   // per-frame cooldown tick counter
 extern DWORD   DAT_07e11d28;   // movement debounce step counter
@@ -711,7 +711,24 @@ extern char    DAT_07e11d6e;            // flag reset each login frame
 extern DWORD   DAT_07d552e4;            // UI inventory/item selection state
 extern DWORD   DAT_07d78094;            // UI click/selection flag
 extern BYTE    DAT_07d780a8[40];         // username field length (memset writes 40 bytes)
-extern DWORD   DAT_07d780ac;            // password field length
+// InputLength[1] — el largo del campo 1 (destino del susurro).
+//
+// 2026-08-26: esto era un `DWORD` SEPARADO mientras que `WM_CHAR` lee el largo
+// como `((DWORD*)DAT_07d780a8)[slot]`, o sea los bytes +4..+7 del array. En el
+// binario las dos cosas son la misma memoria (0x07D780A8 es InputLength[10] y
+// 0x07D780AC es su elemento 1); en el port eran dos, y los SEIS sitios que
+// escriben el largo del susurro (historial de flechas, tab-complete, click
+// derecho sobre un jugador, cierre del menu) le escribian a la copia huerfana
+// — nadie la leia nunca.
+//
+// Sintoma: al usar las flechas del historial, el buffer se limpiaba pero el
+// largo quedaba con el valor viejo, asi que lo que se tipeaba despues entraba
+// detras de N bytes vacios y a los 10 caracteres se bloqueaba. Cerrar y
+// reabrir el chat lo destrababa porque ese camino si resetea el array.
+//
+// El buffer companero (DAT_07db8810) ya se habia unificado como alias del slot
+// 1; esto es la mitad que habia quedado afuera.
+#define DAT_07d780ac   (*(DWORD*)&DAT_07d780a8[4])
 // IDA: InputText[10][256] @ 0x07db8710. Slot 0 = username/chat, slot 1 =
 // contraseña/destino-del-susurro. DAT_07db8810 es el alias +0x100 del slot 1 que usan
 // los caminos de login/susurro; el mismo storage respalda a RenderInputText.

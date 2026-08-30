@@ -52,8 +52,21 @@ extern "C" {
     // saw no characters appearing. Now both use the same storage.
     BYTE  InputTextHide[10]       = {0};
     char  InputTextIME[10][256]   = {{0}};
-    int   InputIndex              = 0;
-    int   InputFrame              = 0;
+    // 2026-08-26 — mismo bug que el de arriba, que quedo a medias en 2026-05-04:
+    // `InputIndex` e `InputFrame` eran copias LOCALES de dos globals reales, asi
+    // que este archivo nunca veia lo que escribia el resto del cliente.
+    //
+    //   InputIndex = DAT_07e11d78 — indice del campo de input activo. Lo rota el
+    //     Tab en WndProc (`DAT_07e11d78 = (DAT_07e11d78 + 1) % DAT_00559c88`) y
+    //     lo lee `RenderInputText` (Chat.cpp) para saber en que campo va el
+    //     caret. Con la copia local clavada en 0, el `_` se dibujaba SIEMPRE en
+    //     el campo de chat aunque se estuviera escribiendo en el de whisper.
+    //
+    //   InputFrame = DAT_07e11d2c — contador del parpadeo del caret; Chat.cpp
+    //     usa el mismo `% 2` sobre el global. Con dos contadores separados los
+    //     dos caret parpadeaban desfasados.
+    #define InputIndex   DAT_07e11d78
+    #define InputFrame   DAT_07e11d2c
 
     // Guild mark colour palette (16 entries × DWORD ARGB).
     // 2026-08-25: esto era una copia LOCAL del array. El global real es
