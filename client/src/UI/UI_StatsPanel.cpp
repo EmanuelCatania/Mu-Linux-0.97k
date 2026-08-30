@@ -306,12 +306,18 @@ LAB_0051c13d:
           uVar15 = 0x3f800000;
           uVar10 = 0x3f800000;
         }
-        glColor3f(uVar10,uVar15,uVar16);
+			// IDA stores the hover tint as float bit patterns (0.7f/1.0f).
+			// Preserve that representation when forwarding it to OpenGL.
+			glColor3f(*(float*)&uVar10,*(float*)&uVar15,*(float*)&uVar16);
         GL_DrawTexture(0xf0,245.0,*(float*)&local_dc,150.0,35.0,0.0,0.0,0.83203125,1.0,'\x01','\x01');
         SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
         DAT_00559c78 = 0xfffff0c8;
         ptVar17 = &local_e4;
-        pCVar6 = &DAT_07d5fa78 + iVar3 * 300;
+        // IDA RenderErrorMessage (0x51AF50) indexes the text table directly:
+        // button 0 = GlobalText[735], button 1 = GlobalText[736].  These were
+        // mistakenly routed through unpopulated legacy buffers, so the selector
+        // frame rendered but its labels were blank.
+        pCVar6 = GlobalText[735 + iVar3];
         iVar4 = lstrlenA(pCVar6);
         GetTextExtentPointA(DAT_055c9fec,pCVar6,iVar4,ptVar17);
         uVar10 = 0;
@@ -324,13 +330,15 @@ LAB_0051c13d:
         SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
         DAT_00559c78 = 0xffffffff;
         if (iVar3 == 0) {
-          UI_RenderText(0xf8,0x96,&DAT_07d69b04,(LPSIZE)0x0,'\0',0);
-          pCVar6 = &DAT_07d69c30;
+          // General: the two explanatory lines immediately above button 0.
+          UI_RenderText(0xf8,0x96,GlobalText[872],(LPSIZE)0x0,'\0',0);
+          pCVar6 = GlobalText[873];
           uVar10 = 0xa0;
         }
         else {
-          UI_RenderText(0xf8,0xf0,&DAT_07d698ac,(LPSIZE)0x0,'\0',0);
-          pCVar6 = &DAT_07d699d8;
+          // Chaos Weapon: the two explanatory lines immediately above button 1.
+          UI_RenderText(0xf8,0xf0,GlobalText[870],(LPSIZE)0x0,'\0',0);
+          pCVar6 = GlobalText[871];
           uVar10 = 0xfa;
         }
         UI_RenderText(0xf8,uVar10,pCVar6,(LPSIZE)0x0,'\0',0);

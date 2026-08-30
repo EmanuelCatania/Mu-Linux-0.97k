@@ -1548,30 +1548,126 @@ extern "C" void __cdecl RenderShopInterface(void)
     GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
 }
 
+static int ChaosMixLegacyValue()
+{
+    int value = 0;
+    bool hasChaos = false;
+    for (int slot = 0; slot < 32; ++slot) {
+        BYTE* item = OffsetMixItems + slot * 0x44;
+        if (*(short*)item == (short)0xFFFF || *(DWORD*)(item + 56) <= 0)
+            continue;
+        switch (*(short*)item) {
+        case 461: value += 100000; break;
+        case 462: value += 70000; break;
+        case 399: value += 40000; hasChaos = true; break;
+        case 464:
+        case 470: value += 450000; break;
+        default: value += ItemValue((ITEM*)item, 0); break;
+        }
+    }
+    return hasChaos ? value : 0;
+}
+
+static void ChaosMixFormatZen(char* out, size_t outSize, int value)
+{
+    if (value < 1000) _snprintf_s(out, outSize, _TRUNCATE, "%d", value);
+    else if (value < 1000000) _snprintf_s(out, outSize, _TRUNCATE, "%d,%03d", value / 1000, value % 1000);
+    else if (value < 1000000000) _snprintf_s(out, outSize, _TRUNCATE, "%d,%03d,%03d", value / 1000000, (value / 1000) % 1000, value % 1000);
+    else _snprintf_s(out, outSize, _TRUNCATE, "%d,%03d,%03d,%03d", value / 1000000000, (value / 1000000) % 1000, (value / 1000) % 1000, value % 1000);
+}
+
 extern "C" void __cdecl RenderChaosMix(void)
 {
     if (!ChaosMixOpened) return;
+
     glColor3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
     dword_7EAA0C8 = 260;
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
+    RenderItemsBoxes((float)dword_7EAA0C8 + 15.0f, (float)dword_7EAA0CC + 110.0f,
+                     (DWORD)(uintptr_t)OffsetMixItems, 8, 4);
 
     SelectObject(m_hFontDC, g_hFontBold);
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
-               GlobalText[232], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+    // IDA 004F27F0: la elección local del modal 143 cambia el encabezado y
+    // el texto de ayuda, sin cambiar todavía la receta que valida el servidor.
+    const int chaosCategory = (int)DAT_083a7c2c;
+    const int chaosTitle = chaosCategory == 1 ? 736 : (chaosCategory ? 583 : 735);
+    RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12, GlobalText[chaosTitle],
+               120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
 
-    RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
-                     (float)((double)dword_7EAA0CC + 110.0),
-                     (DWORD)(uintptr_t)OffsetMixItems, 8, 4);
+    if (DAT_07eaa140 >= 2) return; // el resultado/animación ocupa sólo la grilla
 
-    // Mix / cancel buttons.
-    float xa = (float)((double)dword_7EAA0C8 + 25.0);
-    float ya = (float)((double)dword_7EAA0CC + 395.0);
-    GL_DrawTexture(280, xa,         ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    GL_DrawTexture(282, xa + 30.0f, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    const int mixType = (int)DAT_07eaa16c;
+    int rate = ChaosMixLegacyValue() / 20000;
+    if (rate > 100) rate = 100;
+    int money = rate * 10000;
+    if (mixType == -8 || mixType == -2 || mixType == 0) {
+        rate = 0; money = 0;
+    } else if (mixType == 2 && DAT_07eaa168 > 0) {
+        static const int devilMoney[] = { 10000, 10000, 20000, 40000, 70000 };
+        const int i = min((int)DAT_07eaa168 - 1, 4);
+        rate = (DAT_07eaa168 == 1) ? 60 : rate;
+        money = devilMoney[i];
+    } else if (mixType == 3) {
+        rate = DAT_07eaa178 ? 75 : 50; money = 2000000;
+    } else if (mixType == 4) {
+        rate = DAT_07eaa178 ? 70 : 45; money = 4000000;
+    } else if (mixType == 5) {
+        rate = 70; money = 500000;
+    } else if (mixType == 6) {
+        rate = 90; money = 3000000;
+    } else if (mixType == 7) {
+        rate = DAT_07eaa174; money = 5000000;
+    } else if (mixType == 8 && DAT_07eaa168 > 0) {
+        static const int bloodMoney[] = { 50000, 8000, 20000, 40000, 80000, 120000, 160000 };
+        rate = 80; money = bloodMoney[min((int)DAT_07eaa168 - 1, 6)];
+    }
+
+    char text[100], moneyText[32];
+    ChaosMixFormatZen(moneyText, sizeof(moneyText), money);
+    const int recipeText = mixType == 11 ? 7 : (mixType < 0 ? 0 : mixType);
+    m_dwTextColor = recipeText ? 0xFF30F0FFu : 0xFF2FF0FFu;
+    m_dwBackColor = 0x80303030u;
+    _snprintf_s(text, sizeof(text), _TRUNCATE, "%s", GlobalText[recipeText > 4 ? recipeText + 607 : recipeText + 601]);
+    RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 50, text, 0, 0, 0);
+    m_dwTextColor = 0xFFFFFFD2u;
+    _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[584], rate);
+    RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 70, text, 0, 0, 0);
+    _snprintf_s(text, sizeof(text), _TRUNCATE, GlobalText[585], moneyText);
+    RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 90, text, 0, 0, 0);
+
+    m_dwTextColor = 0xFF1414FFu;
+    RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 210, GlobalText[586], 0, 0, 0);
+    RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 225, GlobalText[587], 0, 0, 0);
+    if (mixType == 3 || mixType == 4) {
+        RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 240, GlobalText[606], 0, 0, 0);
+        RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 255, GlobalText[607], 0, 0, 0);
+        RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 270, GlobalText[608], 0, 0, 0);
+    } else if (mixType == 5 || mixType == 6) {
+        RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 240, GlobalText[610], 0, 0, 0);
+        RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 255, GlobalText[611], 0, 0, 0);
+    } else if (chaosCategory == 1) {
+        // IDA 004F27F0 default: aviso específico de Chaos Weapon mientras la
+        // grilla aún no identifica otra receta más concreta.
+        RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 240, GlobalText[588], 0, 0, 0);
+        RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 255, GlobalText[589], 0, 0, 0);
+        RenderText(dword_7EAA0C8 + 20, dword_7EAA0CC + 270, GlobalText[590], 0, 0, 0);
+    }
+
+    const float x = (float)dword_7EAA0C8 + 75.0f;
+    const float y = (float)dword_7EAA0CC + 300.0f;
+    const bool hover = MouseX >= x && MouseX < x + 44.0f && MouseY >= y && MouseY < y + 32.0f;
+    GL_DrawTexture((hover && MouseLButton) ? 293 : 292, x, y, 44.0f, 32.0f,
+                   0.0f, 0.0f, 0.6875f, 1.0f, 1, 1);
+    if (hover) {
+        SelectObject(m_hFontDC, g_hFont);
+        m_dwTextColor = 0xFFFFFFFFu;
+        m_dwBackColor = 0x80303030u;
+        RenderTipText((int)x, (int)y - 13, GlobalText[591]);
+    }
 }
 
 // RenderWarehouse — sub_4F3170 @ 0x004F3170 (2776 bytes).

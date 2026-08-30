@@ -50,7 +50,7 @@ static void LoginScene_ApplySafeObjectAnim()
     if (!(DAT_005615c0 == 2 || DAT_005615c0 == 4))
         return;
 
-    extern int DAT_05826e08;  // WorldTime
+    extern float DAT_05826e08;  // WorldTime
     extern void __cdecl FUN_004fa5f0(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
     extern int __cdecl FUN_004faa70(int param_1, char param_2, int param_3);  // Calc_RenderObject
     extern float* __cdecl FUN_004fc070(int param_1);  // Entity_SpawnEffects / login ship fire
@@ -79,7 +79,7 @@ static void LoginScene_ApplySafeObjectAnim()
         }
 
         if (type == 160 || type == 161) {
-            float v = (float)(DAT_05826e08 % 4000);
+            float v = (float)((long long)DAT_05826e08 % 4000);
             *(float*)(obj + 112) = -(v * 0.00025f);
             continue;
         }

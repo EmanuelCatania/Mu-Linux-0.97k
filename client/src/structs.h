@@ -428,7 +428,7 @@ extern char g_BitmapsRaw[];
 
 // ── Companion-project aliases (IDA decompile compatibility) ──────────────────
 // Globals:
-#define WorldTime            DAT_05826e08          // int — g_AnimTick
+#define WorldTime            DAT_05826e08          // float — absolute animation time
 #define InputEnable          DAT_00559c84          // DWORD
 // 2026-08-23 FIX: esto apuntaba a `DAT_07eab250`, que es un DWORD de 4 bytes.
 // El propio `globals.h:837` ya documentaba el mislabel ("NO es

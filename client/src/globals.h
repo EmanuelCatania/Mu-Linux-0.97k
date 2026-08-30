@@ -1086,7 +1086,9 @@ extern DWORD   DAT_083a7c1c;
 extern DWORD   DAT_083a7c20;
 extern DWORD   DAT_083a7c24;   // secondary in-game UI state machine
 extern DWORD   DAT_083a7c28;   // queued next UI state (applied at end of tick)
-extern DWORD   DAT_083a7c2c;   // selected item column (set by state 0x8f click)
+// Chaos Machine category selected by the local ErrorMessage=143 modal:
+// 0 = general, 1 = Chaos Weapon.  It is not a server recipe/type byte.
+extern DWORD   DAT_083a7c2c;
 extern DWORD   DAT_083a7c38;
 extern DWORD   DAT_083a7c3c;
 extern DWORD   DAT_083a7c40;
@@ -1179,7 +1181,7 @@ extern byte    DAT_005618c4;       // item class name format ptr D
 extern char    s____s___005618c8[];// list entry format string (" %s " etc.)
 
 // ── Entity / animation tick globals ───────────────────────────────────────────
-extern int     DAT_05826e08;   // g_AnimTick — global frame/animation counter
+extern float   DAT_05826e08;   // WorldTime — absolute milliseconds, per 0.97k CalcFPS
 // DAT_05826d31 — declared above (line 416)
 extern char    DAT_05826d33;   // SoccerObserver (IDA @0x05826D33) - lo escriben
                                // InitGame y el F3/23, y lo lee RenderCharacter.

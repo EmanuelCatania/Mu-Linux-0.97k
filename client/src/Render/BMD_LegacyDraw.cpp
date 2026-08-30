@@ -401,6 +401,7 @@ static bool ApplyInventoryExactPoseLate(int param_1, int level, float* outPos)
 }
 
 #if 0
+#if 0 // Superseded by the literal 0.97k RenderObjectScreen port below.
 void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param_3, unsigned char param_4, float *param_5, int param_6, char param_7)
 {
     // 2026-05-08: per-call recovery. Esta función se llama MUCHAS veces por
@@ -1735,4 +1736,145 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
 
     FUN_00505a10((int)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);
     (void)param_6;
+}
+#endif
+
+// FUN_004e13a0 @ 0x004E13A0 — RenderObjectScreen.
+// Literal control-flow port of the 0.97k IDA routine.  This is the common 3D
+// item path for inventory, equipment, shop, warehouse, trade and Chaos grids.
+void __cdecl FUN_004e13a0(int Type, unsigned int ItemLevel, unsigned char Option1,
+                          unsigned char ExtOption, float* Target, int Select, char PickUp)
+{
+    // This recovery is infrastructure-only: the original dereferences
+    // ItemAttribute below, while this client has a known external pointer
+    // watchdog.  It does not alter any item rendering state.
+    unsigned int attrAddress = (unsigned int)DAT_07d78068;
+    if (attrAddress < 0x100000u || attrAddress >= 0x80000000u) {
+        if (g_ItemAttribute_Backup < 0x100000u || g_ItemAttribute_Backup >= 0x80000000u)
+            return;
+        DAT_07d78068 = (int)g_ItemAttribute_Backup;
+    }
+
+    float camera[3] = { _CameraRayOriginX, _CameraRayOriginY, _CameraRayOriginZ };
+    float direction[3] = {
+        Target[0] - camera[0], Target[1] - camera[1], Target[2] - camera[2]
+    };
+    float position[3];
+    FUN_004f9ce0(camera, PickUp ? 0.07f : 0.1f, direction, position);
+
+    const int level = ((int)ItemLevel >> 3) & 0x0F;
+    float angle[3];
+
+    if (Type == 535 || Type == 543) {
+        angle[0] = 0.0f; angle[1] = 270.0f; angle[2] = 15.0f;
+    } else if (Type == 545) {
+        angle[0] = 0.0f; angle[1] = 90.0f; angle[2] = 15.0f;
+    } else if (Type >= 536 && Type < 560) {
+        angle[0] = 90.0f; angle[1] = 180.0f; angle[2] = 20.0f;
+    } else if (Type == 506) {
+        angle[0] = 180.0f; angle[1] = 270.0f; angle[2] = 20.0f;
+    } else if (Type >= 400 && Type < 592) {
+        angle[0] = 180.0f;
+        angle[1] = 270.0f;
+        angle[2] = *(BYTE*)((BYTE*)(uintptr_t)DAT_07d78068 + (Type - 399) * 0x40 - 34) ? 25.0f : 15.0f;
+    } else if (Type >= 592 && Type < 624) {
+        angle[0] = 270.0f; angle[1] = 270.0f; angle[2] = 0.0f;
+    } else if (Type == 819) {
+        angle[0] = -90.0f; angle[1] = -20.0f; angle[2] = 0.0f;
+    } else if (Type == 832 || Type == 833) {
+        angle[0] = 270.0f; angle[1] = -10.0f; angle[2] = 0.0f;
+    } else if (Type == 834) {
+        angle[0] = 290.0f; angle[1] = 0.0f; angle[2] = 0.0f;
+    } else if (Type == 958) {
+        angle[0] = -90.0f; angle[1] = -20.0f; angle[2] = -20.0f;
+    } else if (Type >= 828 && Type < 848 && Type != 830 && Type != 831) {
+        angle[0] = 360.0f; angle[1] = 0.0f; angle[2] = 0.0f;
+    } else if (Type == 860) {
+        if (level == 0)      { angle[0] = 180.0f; angle[1] = 0.0f;  angle[2] = 0.0f; }
+        else if (level == 1) { angle[0] = 270.0f; angle[1] = 90.0f; angle[2] = 0.0f; }
+        else                 { angle[0] = 90.0f;  angle[1] = 0.0f;  angle[2] = 0.0f; }
+    } else if (Type == 952 || Type == 954) {
+        angle[0] = 270.0f; angle[1] = 0.0f; angle[2] = 0.0f;
+    } else if (Type == 953) {
+        angle[0] = 270.0f; angle[1] = 90.0f; angle[2] = 0.0f;
+    } else if (Type == 868) {
+        angle[0] = 270.0f; angle[1] = 0.0f; angle[2] = 0.0f;
+    } else {
+        angle[0] = 270.0f; angle[1] = -10.0f; angle[2] = 0.0f;
+    }
+
+    if (Select == 1)
+        angle[1] = (float)DAT_05826e08 * 0.45f;
+
+    // IDA stores the pose in these shared angle slots before BMD_Animation;
+    // later item passes also observe that state.
+    _DAT_07ea952c = angle[0];
+    _DAT_07ea9530 = angle[1];
+    _DAT_07ea9534 = angle[2];
+
+    short modelType = (short)Type;
+    if (modelType >= 624 && modelType < 784) {
+        modelType = 390;
+    } else if (modelType == 860) {
+        if (level == 0) modelType = 947;
+        else if (level == 2) modelType = 948;
+    }
+    _DAT_07ea9512 = modelType;
+
+    void* model = (void*)(DAT_05828d58 + (int)modelType * 0xBC);
+    *(BYTE*)((BYTE*)model + 0xA0) = 0;
+    if (Type >= 624 && Type < 656)      *(float*)((BYTE*)model + 0x84) = -156.0f;
+    else if (Type >= 656 && Type < 688) *(float*)((BYTE*)model + 0x84) = -96.0f;
+    else if (Type >= 688 && Type < 720) *(float*)((BYTE*)model + 0x84) = -48.0f;
+    else if (Type >= 720 && Type < 752) *(float*)((BYTE*)model + 0x84) = -72.0f;
+    else                                 *(float*)((BYTE*)model + 0x84) = 0.0f;
+
+    float scale = 0.0025f;
+    if (Type >= 624 && Type < 784) {
+        if (Type < 688) scale = 0.0039f;
+        else if (Type < 720) scale = 0.0038f;
+        else if (Type < 752) scale = 0.0032f;
+        else scale = 0.0033f;
+    } else if (Type == 790 || Type == 958) scale = 0.0015f;
+    else if ((Type >= 784 && Type < 816) || Type == 869 || Type == 832) scale = 0.0020f;
+    else if (Type == 833 || Type == 834 || (Type >= 496 && Type < 528)) scale = 0.0018f;
+    else if (Type == 419) scale = (int)ItemLevel >= 0 ? 0.0025f : 0.0010f;
+    else if (Type == 570) scale = (int)ItemLevel >= 0 ? 0.0019f : 0.0010f;
+    else if (Type == 546) scale = (int)ItemLevel < 0 ? 0.0015f : 0.0025f;
+    else if (Type >= 870 && Type < 873) scale = 0.0025f;
+    else if (Type >= 873 && Type < 875) scale = 0.0028f;
+    else if (Type == 830 || Type == 831) scale = 0.0030f;
+    else if (Type >= 848 && Type < 880) scale = 0.0035f;
+    else if (Type >= 560 && Type < 592) scale = 0.0022f;
+    else if (Type == 543) scale = 0.0011f;
+    else if (Type == 535) scale = 0.0012f;
+    else if (Type == 953) scale = 0.0039f;
+    else if (Type == 955) scale = 0.0015f;
+    else if (Type == 956) scale = 0.0019f;
+    else if (Type == 957) scale = 0.0010f;
+
+    _DAT_07ea9618 = 0;
+    _DAT_07ea961c = 0;
+    DAT_07ea9616 = 0;
+    float renderAngle[3] = { _DAT_07ea952c, _DAT_07ea9530, _DAT_07ea9534 };
+    float headAngle[3] = { _DAT_07ea9538, 0.0f, 0.0f };
+    FUN_00440060(model, (int)&DAT_06970a9c, 0.0f, 0, 0,
+                 (unsigned int*)renderAngle, headAngle, '\0', '\0');
+
+    char object[0x200] = {};
+    *(short*)(object + 2) = (short)Type;
+    FUN_00502ba0((int)object);
+    *(float*)(object + 0x0C) = scale;
+    *(float*)(object + 0x10) = position[0];
+    *(float*)(object + 0x14) = position[1];
+    *(float*)(object + 0x18) = position[2];
+    *(BYTE*)(object + 0x3D) = ExtOption;
+    *(int*)(object + 0xDC) = 0;
+    *(BYTE*)(object + 0x1BC) = 2;
+
+    float light[3] = { 1.0f, 1.0f, 1.0f };
+    // Entity_DrawAt's visibility argument is 1.0 in the native UI path used
+    // by this client; all OpenGL state setup/teardown stays inside that renderer.
+    FUN_00505a10((int)object, Type, 0, light, 1.0f, ItemLevel, Option1,
+                 '\x01', 1, '\x01', 0, 2);
 }

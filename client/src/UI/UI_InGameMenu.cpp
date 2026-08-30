@@ -14,6 +14,8 @@
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)
 extern "C" int  dword_5615E4;     // indice del miembro elegido para expulsar
+extern "C" void Net_SendNpcTalkClose(void);
+extern "C" BOOL ChaosBoxRequestClose(void);
 
 
 extern "C" {
@@ -145,24 +147,16 @@ void __cdecl FUN_00514310(void)
             PartyOpened     = '\0';
             GuildOpened     = '\0';
             if (hadNpcWindow) {
+                const bool wasChaos = (ChaosMixOpened != 0);
+                if (wasChaos) {
+                    // The 0x87 ACK owns cleanup; keep the Chaos UI alive here.
+                    ChaosBoxRequestClose();
+                    return;
+                }
                 // Limpia ShopOpened/Warehouse/ChaosMix/Trade/Event + pools.
                 CloseInventoryRelatedWindows();
-                // Avisar al server que cerramos el diálogo del NPC
-                // (CGNpcTalkCloseRecv, head 0x31).
-                // FIX 2026-07-25: el talk 0x30 requiere C3, pero el close 0x31
-                // enviado en C3 desconectaba → 0x31 requiere C1.  Lo mandamos
-                // como C1 plano por el send() hookeado (MuEmu byte-encrypt), igual
-                // que los moves 0x10.  Sin body no hace falta chain-XOR.
-                BYTE closePkt[4] = { 0xC1, 0x03, 0x31, 0 };
-                {
-                    char cb[96];
-                    wsprintfA(cb, "ESC CLOSE-NPC: sock=%08X npcActive=%d sending 0x31 close",
-                              (unsigned)DAT_055ca168, g_NpcTalkActive);
-                    DbgLogPublic(cb);
-                }
                 g_NpcTalkActive = 0;
-                if (DAT_055ca168 != 0xFFFFFFFF)
-                    send((SOCKET)DAT_055ca168, (const char*)closePkt, 3, 0);
+                Net_SendNpcTalkClose();
             }
             didToggle = true;
         }
@@ -799,17 +793,33 @@ void __cdecl FUN_00514310(void)
         goto tail;
     }
 
-    // ── Item column click ─────────────────────────────────────────────────
+    // ── Chaos Machine: selector de tipo local (ErrorMessage 143 / 0x8f) ──
+    //
+    // IDA UI.cpp 0x00514310, tail exclusivo de ErrorMessage==143:
+    // dos botones de 150x35, en Y=180 y Y=265.  El click NO emite ningún
+    // paquete ni decide una receta; sólo guarda la categoría elegida en
+    // DAT_083a7c2c (0=general, 1=arma chaos) y cierra el modal.  La receta
+    // efectiva se sigue derivando de la Chaos Box en FUN_004df410.
     case 0x8f:
-        // Range test for column X position — requires click.
-        if (mouseX >= 0x6a && mouseX <= 0x16a && IsClickPushed())
-        {
-            DAT_083a4124 = 0;
-            int col = (mouseX - 0x6a) / 0x28;
-            DAT_083a7c2c = (DWORD)col;
-            FUN_0051d840((int)DAT_083a7c2c);
+    {
+        if (!IsClickPushed()) return;
+
+        int choice = -1;
+        if (mouseX >= 245 && mouseX <= 395) {
+            if (mouseY >= 180 && mouseY <= 215) choice = 0;
+            else if (mouseY >= 265 && mouseY <= 300) choice = 1;
         }
-        goto tail;
+        if (choice < 0) return; // el modal no se cierra al click exterior
+
+        DAT_083a4124 = 0;
+        DAT_083a7c2c = (DWORD)choice;
+        DAT_083a7c24 = DAT_083a7c28;
+        DAT_083a7c28 = 0;
+        DAT_07e11d28 = 0;
+        DAT_00559bec = 6;
+        FUN_00404bc0(0x19, 0, 0);
+        return;
+    }
 
     // ── Options submenu (0x96) — 4 buttons ────────────────────────────────
     // IDA 0x00514310 case 150 (L1336-1377):

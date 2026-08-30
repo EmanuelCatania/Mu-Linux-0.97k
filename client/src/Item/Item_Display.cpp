@@ -394,13 +394,18 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     }
 
     bool cursorInsideGrid = (mouseGridX < gridWidth && mouseGridY < gridHeight);
+    bool footprintInsideGrid = cursorInsideGrid &&
+        mouseGridX + itemWidth <= gridWidth && mouseGridY + itemHeight <= gridHeight;
 
     // (Pool aliases declared at file scope above.)
     // --- Check if target is MixItems with MixState active ---
     bool spaceFree = false;
     if ((BYTE*)invBase == &OffsetMixItems[0] && DAT_07eaa140 != 0) {
-        // Mix placement: space is always considered free when mix state active
-        spaceFree = true;
+        // El estado de mix habilita la validación local diferida, pero nunca
+        // convierte en válido un slot/fingerprint fuera de 8x4.  La versión
+        // genérica anterior emitía 0x24 para ese caso y dejaba que el servidor
+        // lo rechazara; el hit-test original no llega a construir ese move.
+        spaceFree = footprintInsideGrid;
     } else {
         // Call CheckInventorySpace to validate placement.
         // 2026-05-09 BUG-FIX: ANTES pasábamos `mouseGridX, mouseGridY` (= grid

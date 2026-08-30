@@ -498,7 +498,6 @@ void RestorePickedItemToSource(void)
     dword_7EA9800 = 0;
     DAT_07ea5b18  = 0xFFFFFFFFu;
     DAT_07eaa165  = 0;
-    DbgLogPublic("DROP-CANCEL: item devuelto a su slot de origen");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1270,6 +1269,7 @@ extern "C" void __cdecl Inventory_RenderAndClick(char* origin_x, int origin_y,
 extern unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                                                     BYTE* invBase, int gridW,
                                                     int gridH, int slotType);
+extern "C" void Net_SendChaosBoxMix(BYTE type);
 
 static unsigned int CallDropItem(int /*a1*/, int origin_x, int origin_y,
                                   void* invBase, int gridW, int gridH,
@@ -1287,9 +1287,12 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
     extern char DAT_07eaa11a;        // ChaosMixOpened
     extern DWORD DAT_07eaa140;       // MixState
     if (DAT_07eaa11a != 0) {
-        // sub_4DF330(invBase, 8, 4) + sub_4E40F0(invBase, 8, 4):
-        // chaos-mix-validity helpers. Stubbed elsewhere; safe to skip.
-        // La actualización de MixType (DAT_07eaa16c) le corresponde a UI_InGameMenu.
+        // IDA 004DF410: la receta se deriva de la Chaos Box en cada tick. En
+        // el cliente original el tipo 1 podía quedar reservado a variantes de
+        // evento recibidas en el talk packet; MuEmu no expone esa variante y
+        // usa el enum normal, por lo que conservamos el resultado exacto del
+        // reconocedor para el adaptador 0x86.
+        DAT_07eaa16c = (DWORD)CheckMixRecipe_stub((short*)OffsetMixItems, 8, 4);
     }
 
     if (DAT_07eaa165 != 0) return;   // EquipmentItem in-flight
@@ -1320,10 +1323,20 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
     }
     if (DAT_07eaa13c == 2) {
         if (DAT_00559f5e == 1) {
-            // User confirmed drop-on-ground. Server: [C1][05][23][x][y][slot],
-            // C3 (PMSG_ITEM_DROP_RECV, Encrypt=1). Formato ya era correcto; sólo
-            // faltaba enviarlo C3.
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
+            // IDA 004DF410 case 2: el mismo diálogo de confirmación se usa
+            // para ejecutar Chaos. El original emitía C1:03:86; sólo para
+            // MuEmu se añade el tipo de receta ya reconocido localmente.
+            const int mixType = (int)DAT_07eaa16c;
+            if (DAT_07eaa11a != 0 &&
+                (mixType == 1 || (mixType >= 2 && mixType <= 8) || mixType == 11)) {
+                DAT_07eaa140 = 1;
+                Net_SendChaosBoxMix((BYTE)mixType);
+                return;
+            }
+
+            // User confirmed drop-on-ground. Server: [C1][05][23][x][y][slot],
+            // C3 (PMSG_ITEM_DROP_RECV, Encrypt=1).
             BYTE dx, dy; GetHeroDropTile(&dx, &dy);
             BYTE pkt[4];
             pkt[0] = 0x23;
@@ -1360,30 +1373,12 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
     // ── Dispatcher principal de drop: sólo cuando se está cargando un item ──────
     if (dword_7E91388 == 0) return;
 
-    // DIAG: loguea la entrada al dispatcher de drop con el estado del click.
-    if (DAT_083a4124 != 0 || DAT_083a42d0 != 0) {
-        char db[160];
-        wsprintfA(db,
-            "FUN_004df410 ENTRY: picked=%d Lpush=%d Rpush=%d invStart=(%d,%d) mouse=(%d,%d) WH=%d Trade=%d Mix=%d",
-            (int)dword_7E91388, (int)DAT_083a4124, (int)DAT_083a42d0,
-            (int)InventoryStartX, (int)InventoryStartY,
-            (int)DAT_083a427c, (int)DAT_083a4278,
-            (int)DAT_07eaa119, (int)DAT_07eaa11b, (int)DAT_07eaa11a);
-        DbgLogPublic(db);
-    }
-
     // Try drop on main inventory grid (8x8, origin = InventoryStart + 15,200)
     unsigned int dropMain = CallDropItem(
         (int)a1,
         (int)(InventoryStartX + 15),
         (int)(InventoryStartY + 200),
         &OffsetInventoryItems[0], 8, 8, 0);
-    if (DAT_083a4124 != 0 || DAT_083a42d0 != 0 || dropMain != 0) {
-        char db[120];
-        wsprintfA(db, "FUN_004df410 dropMain=%u Lpush_after=%d", dropMain, (int)DAT_083a4124);
-        DbgLogPublic(db);
-    }
-
     // Trade grid (8x4, origin = TradeStart + 15,270) if trade open
     unsigned int dropTrade = 0;
     if (DAT_07eaa11b != 0) {
@@ -1416,7 +1411,36 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
     }
 
     // ── Mouse-up → drop didn't land in any inventory: shop sell or ground ──
+    // A successful grid drop leaves the mouse edge set until the next input
+    // update.  The fallback must therefore be gated by the return values, not
+    // merely by DAT_083a4124: otherwise the Chaos panel cancel path restores
+    // the source after it has already sent its authoritative 0x24 request.
+    const bool gridDropSent = (dropMain || dropTrade || dropWH || dropMix);
+    if (gridDropSent) {
+        DAT_083a4124 = 0;
+        return;
+    }
     if (DAT_083a4124) {
+        // El panel Chaos real consume el click en toda su superficie antes de
+        // que el dispatcher llegue al fallback de soltar al suelo. Mientras se
+        // conserva el render genérico, esa capa de hit-test no existe y un
+        // drop apenas fuera de la grilla 8x4 podía caer en 0x23 o, en el borde
+        // derecho, filtrarse a EquipmentHitTest.  El rectángulo es el panel
+        // izquierdo de Chaos (origen dword_7EAA0C8/CC, ancho 190) más su borde
+        // de 5 px, que coincide con la franja observada x=451.
+        if (DAT_07eaa11a != 0 &&
+            (int)DAT_083a427c >= (int)DAT_07eaa0c8 &&
+            (int)DAT_083a427c <  (int)DAT_07eaa0c8 + 195 &&
+            (int)DAT_083a4278 >= (int)DAT_07eaa0cc &&
+            (int)DAT_083a4278 <  (int)DAT_07eaa0cc + 450)
+        {
+            DAT_083a4124 = 0;
+            DAT_07e11d28 = 0;
+            DAT_00559bec = 6;
+            RestorePickedItemToSource();
+            return;
+        }
+
         // 2026-08-08 FIX ("No tienes permitido tirar este item costoso" al
         // mover un item EQUIPADO): soltar sobre una casilla de equipo caía en
         // la rama de tirar-al-suelo.

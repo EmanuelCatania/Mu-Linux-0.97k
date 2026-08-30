@@ -10,6 +10,8 @@ extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 extern "C" void DbgLogPublic(const char*);
 extern "C" int __cdecl GetScreenWidth(void);
+extern "C" void Net_SendNpcTalkClose(void);
+extern "C" BOOL ChaosBoxRequestClose(void);
 
 static bool HUD_IsQuestPanelOpenRuntime(void);
 static bool HUD_IsGoldenArcherPanelRuntime(void);
@@ -62,6 +64,15 @@ static void MouseOnWindow_Update(void)
     int my = (int)DAT_083a4278;
 
     if (g_ChatLB_MouseOnWindow) { g_MouseOnWindow = 1; return; }
+
+    // El selector local de Chaos (ErrorMessage 143) es un modal de 213x210;
+    // el original bloquea el click de mundo mientras está presente.  Sin este
+    // gate, sus botones pueden atravesar hacia los paneles o el mapa.
+    if (DAT_083a7c24 == 143 &&
+        mx >= 213 && mx < 426 && my >= 120 && my < 330) {
+        g_MouseOnWindow = 1;
+        return;
+    }
 
     // IDA: RenderErrorMessage dibuja los modales 126/152 desde (213,60)
     // hasta (426,124), incluidos el campo de Personal Code y sus botones.
@@ -371,21 +382,27 @@ static void HUD_HotkeyTick(void)
     // En MU los paneles izquierdos (Character / Shop / Warehouse) son mutuamente
     // excluyentes: abrir C/G/P cierra la ventana del NPC (y avisa al server con
     // el close 0x31, como ya hacen I/V y Escape).
-    auto CloseNpcWindowsIfAny = [&]() {
+    auto CloseNpcWindowsIfAny = [&]() -> bool {
         if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
+            const bool wasChaos = (DAT_07eaa11a != 0);
+            if (wasChaos) {
+                // 0x87 ACK performs the close; never expose another NPC panel
+                // while the Chaos interface remains server-active.
+                ChaosBoxRequestClose();
+                return false;
+            }
             extern void __cdecl CloseInventoryRelatedWindows(void);
             CloseInventoryRelatedWindows();
-            BYTE closePkt[4] = { 0xC1, 0x03, 0x31, 0 };
             g_NpcTalkActive = 0;
-            if (DAT_055ca168 != 0xFFFFFFFF)
-                send((SOCKET)DAT_055ca168, (const char*)closePkt, 3, 0);
+            Net_SendNpcTalkClose();
             DbgLogPublic("HKT CLOSE-NPC (C/G/P panel)");
         }
+        return true;
     };
 
     if (kC) {
         if (DAT_07eaa116) DAT_07eaa116 = 0;
-        else { CloseNpcWindowsIfAny(); DAT_07eaa116 = 1; }
+        else if (CloseNpcWindowsIfAny()) { DAT_07eaa116 = 1; }
     }
     if (kG) {
         if (DAT_07eaa114 || DAT_07eaa124) {
@@ -393,7 +410,7 @@ static void HUD_HotkeyTick(void)
             DAT_07eaa124 = 0;
         }
         else {
-            CloseNpcWindowsIfAny();
+            if (!CloseNpcWindowsIfAny()) return;
             DAT_07eaa114 = 1;
             DAT_07eaa115 = 0; // close Party
             // 2026-08-15 BUG-FIX (abrir el panel de guild con G desconectaba):
@@ -405,7 +422,7 @@ static void HUD_HotkeyTick(void)
         }
     }
     if (kP) {
-        if (!PartyOpened) CloseNpcWindowsIfAny();
+        if (!PartyOpened && !CloseNpcWindowsIfAny()) return;
         Party_ToggleAndRefresh();
     }
     if (kV || kI) {
@@ -423,16 +440,19 @@ static void HUD_HotkeyTick(void)
             // igual que Escape / click-para-mover.
             bool hadNpcWindow = (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a ||
                                  DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive);
+            const bool wasChaos = (DAT_07eaa11a != 0);
+            if (wasChaos) {
+                ChaosBoxRequestClose();
+                return;
+            }
             extern void __cdecl CloseInventoryRelatedWindows(void);
             CloseInventoryRelatedWindows();     // limpia Shop/Warehouse/Mix/Trade + pools
             DAT_07eaa117 = 0;                    // InventoryOpened
             // (NO tocar CharacterOpened: I/V sólo maneja el inventario y las
             //  ventanas de NPC; el panel de Character lo togglea la tecla C.)
             if (hadNpcWindow) {
-                BYTE closePkt[4] = { 0xC1, 0x03, 0x31, 0 };
                 g_NpcTalkActive = 0;
-                if (DAT_055ca168 != 0xFFFFFFFF)
-                    send((SOCKET)DAT_055ca168, (const char*)closePkt, 3, 0);
+                Net_SendNpcTalkClose();
             }
         } else {
             DAT_07eaa117 = 1;
@@ -1664,19 +1684,16 @@ void __cdecl Player_ProcessInput(void)
                 // abriera no es "el usuario clickeo afuera". Sin edge no cerramos, y
                 // tampoco movemos (que es lo que este bloque venia a evitar).
                 if (!bClickEdge) goto end_tick_inc;
+                const bool wasChaos = (DAT_07eaa11a != 0);
+                if (wasChaos) {
+                    ChaosBoxRequestClose();
+                    goto end_tick_inc;
+                }
                 extern void __cdecl CloseInventoryRelatedWindows(void);
                 CloseInventoryRelatedWindows();          // limpia Shop/Warehouse/Mix/Trade + pools
                 DAT_07eaa117 = 0;                         // InventoryOpened
-                BYTE closePkt[4] = { 0xC1, 0x03, 0x31, 0 };
-                {
-                    char cb[96];
-                    wsprintfA(cb, "PIT CLOSE-NPC (move): sock=%08X npcActive=%d sending 0x31 close",
-                              (unsigned)DAT_055ca168, g_NpcTalkActive);
-                    DbgLogPublic(cb);
-                }
                 g_NpcTalkActive = 0;
-                if (DAT_055ca168 != 0xFFFFFFFF)
-                    send((SOCKET)DAT_055ca168, (const char*)closePkt, 3, 0);
+                Net_SendNpcTalkClose();
                 goto end_tick_inc;                        // este click sólo cierra; no mueve
             }
             // 2026-05-05: También bloquear si el click se inició sobre window
