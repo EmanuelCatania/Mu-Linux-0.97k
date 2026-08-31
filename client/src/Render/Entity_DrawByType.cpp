@@ -415,7 +415,7 @@ LAB_substate4_done:
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  1.4013e-45f, 0xffffffff);
         FUN_00440d50(model, 1.4013e-45f, 0x402,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     0.5f, *(float *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(unsigned int *)(param_1 + 0x58));
         FUN_00440d50(model, 1.4013e-45f, 0x402,
