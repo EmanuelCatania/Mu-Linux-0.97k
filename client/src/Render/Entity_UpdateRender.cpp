@@ -597,6 +597,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         }
     }
 
+    bool bSkipWeaponLoop = false;
     if (sVar2 == 0x186) {
         // ── BACK weapon render (IDA 1166-1239: gated por Bind=1) ────────────
         // Renderiza arma en la espalda cuando es bow/crossbow + Bind activo.
@@ -726,13 +727,14 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // 47) y se SALTA Render_PlayerWeaponLoop. Caso típico: safe-zone.
         int bBindBack = RenderCharacterBackItem((int)param_1, (int)puVar13);
 
-        if (!bBindBack) {
-            // ── Main weapon loop (IDA `if (!Bind) { do v234=0..1; ... }`) ──
-            // Renders Weapon[0] (c+0x270) and Weapon[1] (c+0x288) via RenderLinkObject,
-            // plus 30+ weapon-specific particle FX (sword glow, staff halo, bow trace, etc.)
-            Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
-        }
+        bSkipWeaponLoop = bBindBack != 0;
     }
+
+    // IDA LABEL_330 is reached by every entity. Only the back-item/wing/helper
+    // block above is player-specific; ordinary monster weapons continue through
+    // the shared two-slot renderer.
+    if (!bSkipWeaponLoop)
+        Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
 
     // ── 7b. Body-part render loop (Ghidra FUN_00456770 lines 1622-1700) ──────
     // Missing in previous port — this is what actually draws player geometry.
