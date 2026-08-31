@@ -207,8 +207,9 @@ int __cdecl FUN_00408900(int *widget, unsigned int hash, int flags) {
     return 0;
 }
 // FUN_00408130 @ 0x00408130 — GridSpring_Create: builds cols×rows cloth spring system.
-// Params: widget=system, entity=scale_factor, p3=cols(W), p4=uRange, p5=vRange,
-//         p6=rows(H), p7=entity_ptr, p8=uOrigin, p9=vOrigin, ta=bone_idx, tb=bone_data_idx, flags=flag_mask.
+// Params: widget=system, entity=owner, p3=source bone index, p4/uRange,
+//         p5/vRange, p6=grid columns, p7=grid rows, p8/uRange2,
+//         p9/vOrigin, ta/type, tb=bone-data index, flags=flag_mask.
 // Layout mirrors FUN_004093e0: +4..+44 store params, +30=node_count, +34=node_array*, +38=spring_count, +3c=spring_array*.
 // Nodes initialized from bone transform if entity+0x114 != 0, else from grid coords.
 // Springs: vertical edges (col-to-col+W), horizontal (col-to-col+1), and diagonal shear springs.
@@ -225,8 +226,7 @@ void __cdecl FUN_00408130(void *widget, float entity, int p3, float p4, float p5
     //     this[8] (+0x20) = a8        ← ponía p5
     //     this[9] (+0x24) = a9        ← ok
     // El de +0x20 es el ANCHO de la grilla: con p5 (0.0 en la llamada de la
-    // capa) todos los nodos quedaban en la misma columna → los 100 vértices
-    // salían en (0,0,0) (medido con el probe CLOTHDBG).
+    // capa) todos los nodos quedaban en la misma columna.
     *(float *)(thiz + 0x18) = *(float*)&p4;   // a4
     *(float *)(thiz + 0x1c) = *(float*)&p5;   // a5
     // 2026-08-11 FIX: IDA `sub_408130` L80-90 guarda
@@ -278,22 +278,22 @@ void __cdecl FUN_00408130(void *widget, float entity, int p3, float p4, float p5
     *(float *)(thiz + 0x40) = cellU;
     *(float *)(thiz + 0x44) = cellV;
 
-    // compute bone rotation matrix from entity+0x1c
-    // 2026-08-11 FIX (la capa salía con todos los vértices en (0,0,0)):
-    // `Matrix_BuildFromEuler` es EulerToMatrix3x4 — escribe una matriz 3x4 = **12
-    // floats**. Estaba declarado `float local_3c[3]` → 36 bytes de desborde de
-    // stack justo encima de los locales siguientes. El probe INITDBG lo mostró
-    // sin lugar a dudas: después del loop de init, `nodes` había pasado a NULL,
-    // `W` a 0 y `H` a 1063105495 (= bits de 0.85f, o sea un elemento de la
-    // matriz). Con `W`/`H` pisados el loop no escribía ningún nodo.
-    // Mismo patrón que el `local_3c[14]` de Effect_Create (ver la nota de
-    // "Locales que Ghidra separó" en CLAUDE.md): el callee escribe más de lo
-    // que declara el local.
-    float local_3c[12];
-    Matrix_BuildFromEuler((float *)(*(int *)(thiz + 4) + 0x1c), local_3c);
+    // IDA `sub_408130` first builds the orientation from the owner's angles,
+    // then replaces only matrix[3], matrix[7] and matrix[11] with the source
+    // bone translation.  Copying the full bone matrix changes the grid's
+    // rotation basis and makes broad cloth surfaces shear/stretch.
+    float local_3c[12] = {};
+    const int entity_ptr = *(int *)(thiz + 4);
+    AngleMatrix((float *)(entity_ptr + 28), (float (*)[4])local_3c);
+    const int boneBase = *(int *)(entity_ptr + 0x114);
+    if (boneBase) {
+        const float *bone = (const float *)(boneBase + p3 * 0x30);
+        local_3c[3]  = bone[3];
+        local_3c[7]  = bone[7];
+        local_3c[11] = bone[11];
+    }
 
     // init node positions
-    int entity_ptr = *(int *)(thiz + 4);
     int has_bone = *(int *)(entity_ptr + 0x114);
 
     for (int row = 0; row < H; row++) {
@@ -331,9 +331,8 @@ void __cdecl FUN_00408130(void *widget, float entity, int p3, float p4, float p5
                 // 2026-08-11 FIX: BMD__TransformPosition LEE del 3er arg (Pos)
                 // y ESCRIBE en el 4º (WorldPos). El port leía de vuelta
                 // `out_pos` — la ENTRADA sin transformar — y descartaba el
-                // resultado, así que la malla quedaba en espacio LOCAL
-                // (bbox -37.5..37.5 x 0..-120, medido con CLOTHDBG) en lugar de
-                // en la posición del personaje.
+                // resultado, así que la malla quedaba en espacio local en vez
+                // de en la posición del personaje.
                 nx = out_col[0]; ny = out_col[1]; nz = out_col[2];
             }
 
@@ -343,31 +342,6 @@ void __cdecl FUN_00408130(void *widget, float entity, int p3, float p4, float p5
             int ni = W * row + col;
             FUN_004079b0((char*)nodes + ni * 0x3c, nx, ny, nz, 0);
         }
-    }
-
-    // ── INITDBG (temporal): ¿el loop de init escribió las posiciones?
-    // Lee de vuelta el nodo 0 y el 50 en +0x1c, que es donde FUN_004079b0
-    // escribe y FUN_00407b30 lee. Si acá salen no-cero pero CLOTHDBG ve (0,0,0),
-    // el problema está en la lectura/puntero; si acá ya salen cero, en la
-    // escritura.
-    {
-        char ib[240];
-        if (nodes && node_count > 0) {
-            const float *n0 = (const float *)((char *)nodes + 0x1c);
-            int last = (node_count > 1) ? (node_count - 1) : 0;
-            const float *nL = (const float *)((char *)nodes + (size_t)last * 0x3c + 0x1c);
-            _snprintf_s(ib, sizeof(ib), _TRUNCATE,
-                "INITDBG nodes=%p cnt=%d W=%d H=%d uRange=%.1f vRange=%.1f hasBone=%d "
-                "n0=(%.1f,%.1f,%.1f) nLast=(%.1f,%.1f,%.1f)",
-                (void *)nodes, node_count, W, H,
-                *(float *)(thiz + 0x20), *(float *)(thiz + 0x24), has_bone,
-                n0[0], n0[1], n0[2], nL[0], nL[1], nL[2]);
-        } else {
-            _snprintf_s(ib, sizeof(ib), _TRUNCATE,
-                "INITDBG nodes=%p cnt=%d W=%d H=%d  (SIN ARRAY)",
-                (void *)nodes, node_count, W, H);
-        }
-        DbgLogPublic(ib);
     }
 
     // build spring edges
@@ -425,7 +399,9 @@ void __cdecl FUN_00408130(void *widget, float entity, int p3, float p4, float p5
         }
     }
     *(int *)(thiz + 0x38) = sp;
-    // vtable call: (*vtable[1])(local_3c) — skipped in re-impl
+    // IDA invokes vtable slot 1 here to pin the top row immediately to the
+    // source bone.  The same callback is used by the simulation on later ticks.
+    FUN_00408780((int)(uintptr_t)widget, (float (*)[4])local_3c);
 }
 
 // Skills / teleport
