@@ -72,8 +72,28 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
     // que es un int). -1 = ninguna; Queen Rainer usa -2.
     int blendMeshInt; memcpy(&blendMeshInt, &f4, sizeof(blendMeshInt));
 
+    // v58 de IDA: LightEnable del modelo; algunas ramas lo apagan.
+    int lightEnable = *(unsigned char *)((int)model + 0x44);
+    {
+        int v14 = *(signed char *)((int)model + 0x88);
+        if ((int)frame == v14) {
+            glColor3fv((const float *)((int)model + 0x48));
+            lightEnable = 0;
+        }
+    }
+
+    // a7 de IDA: el MODO que fija el bloque de estado de abajo y que despues
+    // gatea la emision de texcoords. NO es `flags`.
+    //
+    // El port gateaba con `flags == 2` / `flags == 4`, pero a esta funcion solo
+    // se entra con (flags & 0x400) puesto, asi que esas comparaciones NUNCA eran
+    // ciertas: no se emitia glTexCoord2f y toda malla dibujada por aca salia de
+    // color plano. En IDA el default del bloque de estado es `a7 = 2`.
+    int mode = 2;
+
     // GL state setup
     if ((bVar3 & 1) == 1) {
+        mode = 1;
         if ((bVar3 & 0x40) == 0x40)      GL_SetBlendAdditive();
         else if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();
         else                             GL_ResetState();
@@ -103,13 +123,17 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
             const float *bodyLight = (const float *)((int)model + 0x48);
             glColor3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
         }
+        mode = 2;
+        lightEnable = 0;          // IDA: v58 = 0 en esta rama
     } else if ((bVar3 & 2) == 2) {
+        mode = 2;
         GL_BindTextureSlot(texIdx);
         if ((bVar3 & 0x40) == 0x40)      GL_SetBlendAdditive();
         else if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();
         else                             GL_ResetState();
     } else if ((bVar3 & 0x40) == 0x40) {
         if (texIdx == 4) return;  // (&DAT_083a7cc8)[local_24 * 0x38] == 4 early-out
+        mode = 64;
         GL_SetBlendAdditive();
         GL_SetAlphaTest('\0');
         GL_DisableDepthWrites();
@@ -130,7 +154,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
             for (int vi = 0; vi < (int)*pcVar10; vi++, psVar15++) {
                 int iVar7 = (int)psVar15[-4];
 
-                if ((int)flags == 2) {
+                if (mode == 2) {
                     // Textured: UV from UV array
                     float *uvPtr = (float *)(*(int *)(meshEntry + 0x18) + (int)psVar15[4] * 8);
                     float uCoord, vCoord;
@@ -142,7 +166,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
                         vCoord = f6 + uvPtr[1];
                     }
                     glTexCoord2f(uCoord, vCoord);
-                    if (a != '\0') {
+                    if (lightEnable) {
                         int iVar13 = ((int)*psVar15 + (int)frame * 15000) * 0xc;
                         if (f3 < _DAT_00552544) {
                             glColor4f(*(float *)(&DAT_060db65c + iVar13),
@@ -152,7 +176,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
                             glColor3fv((float *)(&DAT_060db65c + iVar13));
                         }
                     }
-                } else if ((int)flags == 4) {
+                } else if (mode == 4) {
                     // Chrome UV
                     if (f3 < _DAT_00552544) {
                         glColor4f(*(float *)((int)model + 0x48), *(float *)((int)model + 0x4c),
