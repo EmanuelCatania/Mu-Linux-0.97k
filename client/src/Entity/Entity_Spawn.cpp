@@ -340,9 +340,37 @@ void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
     *(int   *)(param_1 + 100)   = -1;
     *(float *)(param_1 + 0x68)  = 1.0f;
 
-    // Default equip data for slots (matches IDA L744-857 default case for type=390)
-    param_1[0x274] = 0x21;   // 33 (helmet anim ID default)
-    param_1[0x28c] = 0x2a;   // 42 (armor anim ID default)
+    // Weapon attachment bones. IDA 0045ADC0 L744-857 selects these from the
+    // parent model; RenderLinkObject then uses Weapon[n].LinkBone.
+    switch ((int)entity_type) {
+        case 270: case 300: param_1[0x274] = 42; param_1[0x28c] = 33; break;
+        case 271:           param_1[0x274] = 19; param_1[0x28c] = 14; break;
+        case 273:           param_1[0x274] = 26; param_1[0x28c] = 36; break;
+        case 274: case 275: case 280: param_1[0x274] = 41; param_1[0x28c] = 32; break;
+        case 278:           param_1[0x274] = 29; param_1[0x28c] = 38; break;
+        case 281: case 286: case 299: case 304: case 305: case 323: case 327:
+                            param_1[0x274] = 30; param_1[0x28c] = 39; break;
+        case 288:           param_1[0x274] = 26; param_1[0x28c] = 35; break;
+        case 289:           param_1[0x274] = 31; param_1[0x28c] = 22; break;
+        case 291:           param_1[0x274] = 24; param_1[0x28c] = 19; break;
+        case 292:           param_1[0x274] = 25; param_1[0x28c] = 16; break;
+        case 294:           param_1[0x274] = 39; param_1[0x28c] = 30; break;
+        case 296:           param_1[0x274] = 16; param_1[0x28c] = 25; break;
+        case 297:           param_1[0x274] = 17; param_1[0x28c] = 28; break;
+        case 306:           param_1[0x274] = 52; param_1[0x28c] = 65; break;
+        case 310:           param_1[0x274] = 20; param_1[0x28c] = 33; break;
+        case 311:           param_1[0x274] = 23; break;
+        case 312:           param_1[0x274] = 43; break;
+        case 314:           param_1[0x274] = 55; param_1[0x28c] = 70; break;
+        case 316:           param_1[0x274] = 39; param_1[0x28c] = 39; break;
+        case 317:           param_1[0x274] = 27; param_1[0x28c] = 38; break;
+        case 318:           param_1[0x274] = 32; param_1[0x28c] = 43; break;
+        case 322:           param_1[0x274] = 36; param_1[0x28c] = 45; break;
+        case 325:           param_1[0x274] = 27; param_1[0x28c] = 18; break;
+        case 329:           param_1[0x274] = 33; param_1[0x28c] = 20; break;
+        case 330:           param_1[0x274] = 1;  param_1[0x28c] = 1;  break;
+        default:             param_1[0x274] = 33; param_1[0x28c] = 42; break;
+    }
     // NOTE: IDA writes Rotation to entity+0x24 (Angle[2]) via the type-switch
     // block earlier in this function — do NOT write to +0x28 (that's the
     // BoneAngle / AngleVel slot and writing Rotation there breaks facing).
