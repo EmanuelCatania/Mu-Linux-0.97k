@@ -2432,7 +2432,13 @@ void __cdecl FUN_00454ba0(int param_1) {
             terrainH += _DAT_0055284c;
     }
     *(float*)(param_1 + 0x18) = terrainH;
-    // Wyvern swim bob (+0x80 sine offset) omitted (type 0x110 case)
+    // IDA 00454BA0: model 272 (Bull Fighter family) bobs above terrain.
+    // Keep this model gate and phase ordering identical to the original.
+    if (*(short*)(param_1 + 2) == 272) {
+        const float bob = (float)sin(*(float*)(param_1 + 0x80));
+        (void)FUN_005129f0(bob); // IDA calls sub_5129F0 (fabs); result is unused.
+        *(float*)(param_1 + 0x18) = *(float*)(param_1 + 0x18) - bob * 70.0f + 70.0f;
+    }
     *(float*)(param_1 + 0x80) = *(float*)(param_1 + 0x80) + _DAT_00552934;
 }
 
