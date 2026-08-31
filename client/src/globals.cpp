@@ -2179,7 +2179,12 @@ char    s_fairy_smd_0055c438[]                   = "fairy.smd";
 
 // ── Additional misc globals ───────────────────────────────────────────────────
 // DAT_07e016f0 — same address as _DAT_07e016f0 above (line 997); alias defined in globals.h
-BYTE    DAT_0055984c[9] = {};  // bone index table for glitter effect
+// Tabla de huesos del brillo de Alquamos (MonsterID 69, RenderCharacter case 'E').
+// Leida del binario original en 0x0055984C: 0a 12 25 26 33 34 3a 3b 42.
+// Estaba en ceros y nadie la poblaba, asi que las 9 chispas nacian todas
+// sobre el hueso 0 en vez de repartirse por el cuerpo.
+// Unico consumidor: RenderCharacter (0x456B86).
+BYTE    DAT_0055984c[9] = { 10, 18, 37, 38, 51, 52, 58, 59, 66 };
 // 2026-04-28: tooltip/bubble pool — UI_TickTooltips (UI_TickHoverBubbles) itera 26
 // slots × 0x254 bytes (stride 0x95 DWORDs). Antes era DWORD simple → AV.
 // 2026-07-19: `DAT_07e01720` YA NO es un array propio — es el pool de burbujas
@@ -2492,8 +2497,15 @@ float  _DAT_00552aa4  = 0.025f;  // MoveJoint HP-bar scale factor
 float  _DAT_00552a9c  = 0.0613f;  // FUN_00473d90 ring trig scale X
 float  _DAT_00552aa0  = 0.048f;  // FUN_00473d90 ring trig scale Y
 float  _DAT_00552aa8  = 0.1113f;  // FUN_00473d90 ring trig scale Z
-char   DAT_00559b78[7] = {};   // MoveEffect byte lookup table A
-char   DAT_00559b7f[7] = {};   // MoveEffect byte lookup table B
+// Tabla de escalas de MoveEffect: dato del binario que el port dejo en ceros.
+// Leida de 0x00559B78: 19 1a 1b 14 22 23 24 00.
+// Unico consumidor: MoveEffect (0x0046A3D1), que la lee en las DOS direcciones:
+// hacia adelante desde 0x559B78 y hacia ATRAS desde 0x559B7F
+//   IDA: Scalex = *((unsigned __int8 *)&unk_559B7F - v227);
+// Por eso DAT_00559b7f no es un array aparte sino un alias al offset 7 de esta
+// misma tabla (mismo patron que DAT_081cb60c). Con dos arrays sueltos el indice
+// negativo leia fuera de rango.
+char   DAT_00559b78[8] = { 25, 26, 27, 20, 34, 35, 36, 0 };
 
 // ── Map_LoadObjectModels (0x0050c4d0) ─────────────────────────────────────────
 FILE*  ParserFileHandle       = nullptr;  // DAT_083A40FC — file handle for custom-map object list

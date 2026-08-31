@@ -2372,8 +2372,8 @@ extern float   _DAT_00552aa4;  // MoveJoint HP-bar scale factor
 extern float   _DAT_00552a9c;  // FUN_00473d90 ring trig scale X
 extern float   _DAT_00552aa0;  // FUN_00473d90 ring trig scale Y
 extern float   _DAT_00552aa8;  // FUN_00473d90 ring trig scale Z
-extern char    DAT_00559b78[]; // MoveEffect byte lookup table A (7 entries)
-extern char    DAT_00559b7f[]; // MoveEffect byte lookup table B (7 entries)
+extern char    DAT_00559b78[8];
+#define DAT_00559b7f (DAT_00559b78 + 7)   // alias: mismo buffer, offset 7
 
 // ── Map_LoadObjectModels (0x0050c4d0) ─────────────────────────────────────────
 extern FILE*   ParserFileHandle;       // DAT_083A40FC — file handle for custom-map object list
