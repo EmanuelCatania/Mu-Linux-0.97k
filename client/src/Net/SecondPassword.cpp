@@ -4619,7 +4619,11 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 BMD_TransformPosition(model, (float *)(boneBase + offset + 48), local, b, '\x01');
                 Joint_Create(1254, a, b, (float *)(entity_ptr + 28), 7, 0, 14.0f, -1, 0);
             }
-            const int pairs[][2] = {{2,9},{10,11},{9,18},{18,22},{22,23},{23,24},{24,25},{18,31},{31,32},{32,33},{33,34}};
+            // IDA's j=9 special case reuses bone 2 (+96) and targets
+            // 16*(3*j+3) = +480, i.e. bone 10.  Using bone 9 joined the
+            // lightning chain back into the wrong segment and made it appear
+            // to bounce/reverse at the first branch.
+            const int pairs[][2] = {{2,10},{10,11},{2,18},{18,22},{22,23},{23,24},{24,25},{18,31},{31,32},{32,33},{33,34}};
             for (int i = 0; i < 11; ++i) {
                 BMD_TransformPosition(model, (float *)(boneBase + 48 * pairs[i][0]), local, a, '\x01');
                 BMD_TransformPosition(model, (float *)(boneBase + 48 * pairs[i][1]), local, b, '\x01');
