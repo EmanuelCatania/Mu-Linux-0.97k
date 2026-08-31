@@ -1278,6 +1278,26 @@ _post_attack_check:;
     }
 
 #endif
+    // IDA 00470030 LABEL_182 (comun a TODOS los tipos, justo antes del
+    // decremento de vida): los joints de SubType 7 re-anclan su Position a la
+    // TargetPosition guardada en o+68/72/76.
+    //
+    //     if ( *(_DWORD *)(o + 8) == 7 ) {
+    //         v109 = *(_DWORD *)(o + 72);  v110 = *(_DWORD *)(o + 76);
+    //         *v2 = *(float *)(o + 68);            // v2 = (float *)(o + 16)
+    //         *(_DWORD *)(o + 20) = v109;  *(_DWORD *)(o + 24) = v110;
+    //     }
+    //
+    // Faltaba entero. La cadena de 13 joints 1254 de Queen Rainer
+    // (MoveCharacterVisual case 0x141) se crea con SubType 7, asi que sus
+    // segmentos nacian y despues no seguian al hueso: las lineas quedaban
+    // sueltas en el aire en vez de acompanar al monstruo.
+    if (*(int *)(param_1 + 8) == 7) {
+        *(float *)(param_1 + 0x10) = *(float *)(param_1 + 0x44);
+        *(float *)(param_1 + 0x14) = *(float *)(param_1 + 0x48);
+        *(float *)(param_1 + 0x18) = *(float *)(param_1 + 0x4c);
+    }
+
     // Decrement lifetime counter
     const int remainingLife = *(int *)(param_1 + 0x9b8) - 1;
     *(int *)(param_1 + 0x9b8) = remainingLife;
