@@ -68,6 +68,9 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
     if (rgba != 0xffffffff) texIdx = rgba;
 
     int bVar3 = (int)(unsigned char)((unsigned int)flags & 0xFF);
+    // BlendMesh viaja en los BITS del float (los callers pasan *(float*)(o+100),
+    // que es un int). -1 = ninguna; Queen Rainer usa -2.
+    int blendMeshInt; memcpy(&blendMeshInt, &f4, sizeof(blendMeshInt));
 
     // GL state setup
     if ((bVar3 & 1) == 1) {
@@ -76,6 +79,30 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
         else                             GL_ResetState();
         GL_SetAlphaTest('\0');
         glColor3fv((float *)((int)model + 0x48));
+    } else if (blendMeshInt <= -2 || *(short *)(meshEntry + 2) == blendMeshInt) {
+        // IDA sub_4414D0: rama que faltaba entera, y va ANTES de la de (flags & 2).
+        //
+        //   else if ( a7 <= -2 || *(__int16 *)(v13 + 2) == a7 ) {
+        //       a7 = 2;
+        //       BindTexture(tex);
+        //       (v21 & 0x80) ? EnableAlphaBlendMinus() : EnableAlphaBlend();
+        //       glColor3f(a8 * this[72], a8 * this[76], a8 * this[80]);
+        //   }
+        //
+        // a7 = BlendMesh (entero, llega en los BITS del float) y a8 =
+        // BlendMeshLight. Sin esta rama la malla caia en la de (flags & 2), que
+        // usa blending NORMAL y no setea color: quedaba una silueta oscura.
+        // Aca va ADITIVO y con color = BlendMeshLight * BodyLight.
+        //
+        // Queen Rainer (ModelID 321) tiene BlendMesh = -2 (CreateMonster case 70),
+        // asi que su malla 1 — el vestido — entra por aca.
+        GL_BindTextureSlot(texIdx);
+        if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();   // EnableAlphaBlendMinus (0x511790)
+        else                        GL_SetBlendAdditive();   // EnableAlphaBlend    (0x511710)
+        {
+            const float *bodyLight = (const float *)((int)model + 0x48);
+            glColor3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
+        }
     } else if ((bVar3 & 2) == 2) {
         GL_BindTextureSlot(texIdx);
         if ((bVar3 & 0x40) == 0x40)      GL_SetBlendAdditive();
@@ -167,7 +194,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
     }
 
     glEnd();
-    (void)f4; (void)f7;
+    // f4 = BlendMesh y f7 = BlendMeshLight: ya se consumen en la rama de estado.
 }
 
 // FUN_004e13a0 @ 0x004E13A0 — RenderObjectScreen
