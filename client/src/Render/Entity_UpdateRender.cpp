@@ -295,13 +295,24 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         }
     }
     else if (bVar7 == 0x49) {
-        // Energy wing: two bone ranges [0x270..0x510] + [0x9c0..0xb10]
+        // Drakan (MonsterID 73). IDA 00456770 `case 'I'` con 747 == 73.
+        // Sprites 1150 sobre dos tramos de huesos, mas una cadena de joints
+        // 1254 entre huesos consecutivos.
+        //
+        // IDA fija el color ANTES de la cadena: Light = (0.1, 0.1, 1.0), o sea
+        // AZUL. El port no lo hacia y heredaba el (1,1,1) que queda seteado
+        // antes del switch (raw L290-292), asi que la cadena salia blanca.
+        local_60 = 0.1f;   // Light[0]
+        local_5c = 0.1f;   // Light[1]
+        local_58 = 1.0f;   // Light[2]
         for (int off = 0x270; off < 0x510; off += 0x30) {
             BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
                          &local_48, &local_54, '\x01');
             FUN_004795c0(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
-            // Lightning joint between consecutive bones (selective ranges)
-            if (off > 0x29f && off < 0x301) {
+            // IDA: `if (v29 >= 672 && v29 <= 768 || v29 == 1104)`.
+            // Al port le faltaba el `|| off == 0x450` (hueso 23), o sea un
+            // tramo de la cadena no se dibujaba.
+            if ((off >= 0x2a0 && off <= 0x300) || off == 0x450) {
                 Joint_Create(0x4e6, &local_30, &local_54,
                              (float *)(puVar13 + 7), 7, 0, 20.0f, -1, 0);
             }
