@@ -402,6 +402,15 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         --*(short *)((BYTE *)puVar13 + 2);
     }
 
+    // Taikan (53) y Soldier (54). IDA 00456770 L616-627: un pase de cuerpo
+    // EXTRA, despues del switch por MonsterID, con flags 72 (0x48) y — a
+    // diferencia del resto — una textura FIJA (1231) en vez de -1.
+    // Faltaba entero en el port.
+    if (bVar7 == 53 || bVar7 == 54) {
+        FUN_00504960(model, (int)puVar13, entity_type,
+                     *(float *)(puVar13 + 0x5a), 0x48, 1.0f, 1231);
+    }
+
     // ── 5. Dual-wield / shield-glow weapon cases ─────────────────────────────
     if (bVar7 == 0x2a) {
         // Dual-axe: right weapon at Z=-40, left at Y=-40 angle=45
