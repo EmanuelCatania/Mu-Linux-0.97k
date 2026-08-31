@@ -45,38 +45,79 @@ void __cdecl FUN_00441be0(void *model, int param_1, int param_2)
 }
 
 // FUN_00441f00 @ 0x00441F00 — Model_RenderShadow
-// Renders shadow triangles for all mesh bones except bone param_2 (using anim param_1).
+// Proyecta la silueta del modelo sobre el terreno como sombra.
+//
+// Port fiel de sub_441F00 (398 B). Por cada mesh (salvo dos que se saltean) emite
+// sus triangulos con los vertices ya transformados del pool BoneVertex, pero
+// aplastados contra el suelo:
+//
+//   lx = X - ox;  ly = Y - oy;  lz = Z - oz;          (ox/oy/oz = origen, this+0x6c/70/74)
+//   vx = lx + (lx + 2000.0) * lz / (lz - 4000.0) + ox;   <- proyeccion: sesga X con la altura
+//   vy = ly + oy;                                        <- identidad: queda la Y del vertice
+//   vz = oz + 5.0;                                       <- plano, 5 unidades sobre el origen
+//
+// En IDA los tres resultados son locales CONTIGUOS ([ebp-0Ch/-8/-4]) que se emiten
+// con un unico glVertex3fv(&v); aca se arma un float[3] explicito para no depender
+// del layout que elija MSVC (mismo patron que ya mordio en otros ports).
+//
+// `vy` es algebraicamente solo Y: se conserva la resta y la suma para que la
+// correspondencia con el decompile quede a la vista.
+//
+// El signo del divisor no se acota: si lz == 4000 el original tambien divide por
+// cero. Se deja fiel.
+//
+// param_1 (a2): se saltea el mesh cuyo campo +2 coincide  -> los callers pasan BlendMesh.
+// param_2 (a3): se saltea el mesh cuyo INDICE coincide     -> los callers pasan HiddenMesh.
+// Ojo que no son el mismo criterio: uno compara un campo y el otro el indice.
 void __cdecl FUN_00441f00(void *model, int param_1, int param_2)
 {
     char *this_ = (char*)model;
     if (*(short*)(this_ + 0x24) == 0) return;
+
+    // IDA: DisableTexture(0). Ese es 0x511590, que en el arbol se llama
+    // GL_SetAlphaTest (nombre enganoso: termina en glDisable(GL_TEXTURE_2D)).
+    // NO confundir con 0x511680 EnableAlphaTest.
     GL_SetAlphaTest('\0');
-    GL_DisableDepthWrites();
-    FUN_00440d30();
-    int meshCount = *(short*)(this_ + 0x24);
-    int local_20 = 0;
-    for (int local_14 = 0; local_14 < meshCount; local_14++, local_20 += 15000) {
-        int iVar5 = *(int*)(this_ + 0x28) + local_14 * 0x28;
-        if (*(short*)(iVar5 + 10) <= 0) { continue; }
-        if (*(short*)(iVar5 + 2) == (short)param_1) { continue; }
-        if (local_14 == param_2) { continue; }
+    GL_DisableDepthWrites();       // 0x511530
+    FUN_00440d30();                // thunk -> glPushMatrix()
+
+    const float ox = *(float*)(this_ + 0x6c);
+    const float oy = *(float*)(this_ + 0x70);
+    const float oz = *(float*)(this_ + 0x74);
+
+    const int meshCount = *(short*)(this_ + 0x24);
+    int vertBase = 0;                                  // v15: 15000 por mesh
+    for (int meshIdx = 0; meshIdx < meshCount; meshIdx++, vertBase += 15000) {
+        if (meshIdx == param_2) continue;              // v5 != a3
+
+        char *mesh = (char*)(*(int*)(this_ + 0x28) + meshIdx * 0x28);
+        const int polyCount = *(short*)(mesh + 10);
+        if (polyCount <= 0) continue;
+        if ((int)*(short*)(mesh + 2) == param_1) continue;   // *(WORD*)(v6+2) != a2
+
         glBegin(GL_TRIANGLES);
-        int polyCount = *(short*)(iVar5 + 10);
-        for (int local_1c = 0; local_1c < polyCount; local_1c++) {
-            short *psVar1 = (short*)(local_1c * 0x24 + *(int*)(iVar5 + 0x1c));
-            for (int iVar7 = 0; iVar7 < (char)*psVar1; iVar7++) {
-                int vertIdx = (int)psVar1[iVar7 + 1] + local_20;
-                float *vp = (float*)((char*)(char*)&DAT_0584621c + vertIdx * 3 * 4);
-                float lc = vp[0] - *(float*)(this_ + 0x6c);
-                float lz = vp[2] - *(float*)(this_ + 0x74);
-                float shadow_x = lc + *(float*)(this_ + 0x6c);
-                float shadow_y = *(float*)(this_ + 0x70);
-                float shadow_z = *(float*)(this_ + 0x74);
-                glVertex3f(shadow_x, shadow_y, shadow_z);
+        for (int polyIdx = 0; polyIdx < polyCount; polyIdx++) {
+            char *poly = (char*)(*(int*)(mesh + 0x1c) + polyIdx * 0x24);
+            const int numVerts = (int)*(signed char*)poly;   // char en +0
+            const short *idx = (const short*)(poly + 2);     // indices en +2
+            for (int k = 0; k < numVerts; k++) {
+                const float *vp =
+                    (const float*)((char*)&DAT_0584621c + (vertBase + idx[k]) * 3 * 4);
+
+                const float lx = vp[0] - ox;
+                const float ly = vp[1] - oy;
+                const float lz = vp[2] - oz;
+
+                float v[3];
+                v[0] = lx + (lx + 2000.0f) * lz / (lz - 4000.0f) + ox;
+                v[1] = ly + oy;
+                v[2] = oz + 5.0f;
+                glVertex3fv(v);
             }
         }
         glEnd();
     }
+
     glPopMatrix();
-    GL_EnableDepthWrites();
+    GL_EnableDepthWrites();        // 0x511510
 }
