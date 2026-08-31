@@ -202,7 +202,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             if (iVar9 == 0)
                 FUN_00449840((int)param_1, (int)puVar13, 0);
             else
-                (*(void (__cdecl **)(int))(*piVar16 + 0xc))(0);
+                FUN_00408ff0((void *)piVar16);
         }
         if ((BYTE)uVar11 != 0)
             FUN_004fae00(puVar13, 1, (int)param_3, '\0');
@@ -431,6 +431,14 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     LAB_004582b2:
         *(float *)(param_1 + 0xc9) = 0.1f;
         *(float *)(param_1 + 0xca) = 0.1f;
+    }
+
+    // IDA RenderCharacter: ModelID 325 (Phoenix of Darkness) overrides the
+    // final terrain-derived BodyLight before the body and attachment passes.
+    if (sVar2 == 325) {
+        *(float *)(param_1 + 200) = 0.6f;
+        *(float *)(param_1 + 0xc9) = 0.3f;
+        *(float *)(param_1 + 0xca) = 0.3f;
     }
 
     // ── 7. Entity type 0x186 weapon-slot arm render ──────────────────────────
