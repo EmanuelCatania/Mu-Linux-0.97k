@@ -289,8 +289,12 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         if (param_1[0x61] == 0) {
             int iType = (bVar7 == 0x47) ? 0x1ed : 0x1ef;
             void *puVar8 = ClothNew();
+            // IDA L493: sub_408130(v33, c, 19, 10.0, 0, 5, 15, 30.0, 300.0, tex, tex, 0x1100)
+            // El port tenia 240.0 / 500.0 — mal decodificados de los enteros del
+            // decompile (1106247680 = 0x41F00000 = 30.0, no 240; 1133903872 =
+            // 0x43960000 = 300.0, no 500). La capa salia 8x mas ancha.
             FUN_00408130(puVar8, PtrAsFloatBits(param_1), 0x13, 10.0f, 0.0f,
-                         5, 0xf, 240.0f, 500.0f, iType, iType, 0x1100);
+                         5, 0xf, 30.0f, 300.0f, iType, iType, 0x1100);
             param_1[0x61] = (int)puVar8;
             *(char *)(param_1 + 0x60) = 1;
         }
@@ -381,8 +385,10 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
 
         if (param_1[0x61] == 0) {
             void *puVar8 = ClothNew();
+            // IDA L598: sub_408130(v27, o, 10, -10.0, 0, 5, 12, 15.0, 240.0, 1275, 1275, 0x1100)
+            // El ancho era 60.0; 1097859072 = 0x41700000 = 15.0.
             FUN_00408130(puVar8, PtrAsFloatBits(puVar13), 10, -10.0f, 0.0f,
-                         5, 0xc, 60.0f, 240.0f, 0x4fb, 0x4fb, 0x1100);
+                         5, 0xc, 15.0f, 240.0f, 0x4fb, 0x4fb, 0x1100);
             FUN_00409250(puVar8, 0.0f, 0.0f, 40.0f, 30.0f, 10);
             param_1[0x61] = (int)puVar8;
             *(char *)(param_1 + 0x60) = 1;
