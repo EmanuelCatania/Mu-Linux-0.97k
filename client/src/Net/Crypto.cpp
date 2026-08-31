@@ -862,39 +862,6 @@ void __fastcall FUN_00408ff0(void* param_1) {
             FUN_00407b30((void *)(nodes + 60 * (c + r * cols)),   // stride 0x3C
                          &verts[3 * (c + r * cols)]);
 
-    // ── CLOTHDBG (temporal): bbox de los vértices ya transformados + handles
-    // GL de las dos texturas. Si el bbox está lejos del pj o es degenerado, el
-    // problema son las posiciones de los nodos (física / init); si está bien,
-    // es textura o blend.
-    {
-        static DWORD s_lastCl = 0;
-        DWORD nowCl = GetTickCount();
-        if (nowCl - s_lastCl > 1000) {
-            s_lastCl = nowCl;
-            float mn[3] = { 1e30f, 1e30f, 1e30f }, mx[3] = { -1e30f, -1e30f, -1e30f };
-            for (int k = 0; k < count; ++k)
-                for (int a = 0; a < 3; ++a) {
-                    float v = verts[3 * k + a];
-                    if (v < mn[a]) mn[a] = v;
-                    if (v > mx[a]) mx[a] = v;
-                }
-            int tf, tb; memcpy(&tf, &thiz[3], 4); memcpy(&tb, &thiz[4], 4);
-            unsigned glF = (tf >= 0 && tf < 2048) ? (unsigned)(&DAT_083a7ccc)[tf * 0xe] : 0xFFFFFFFFu;
-            unsigned glB = (tb >= 0 && tb < 2048) ? (unsigned)(&DAT_083a7ccc)[tb * 0xe] : 0xFFFFFFFFu;
-            // ¿cae en pantalla? Projection (0x5113F0) devuelve coords 640x480.
-            float ctr[3] = { (mn[0]+mx[0])*0.5f, (mn[1]+mx[1])*0.5f, (mn[2]+mx[2])*0.5f };
-            int psx = -9999, psy = -9999;
-            Camera_ProjectWorldToScreen(ctr, &psx, &psy);
-            char clb[300];
-            _snprintf_s(clb, sizeof(clb), _TRUNCATE,
-                "CLOTHDBG v0=(%.1f,%.1f,%.1f) min=(%.1f,%.1f,%.1f) max=(%.1f,%.1f,%.1f) "
-                "proj=(%d,%d) flags=0x%X texF=%d(gl=%u) texB=%d(gl=%u)",
-                verts[0], verts[1], verts[2], mn[0], mn[1], mn[2], mx[0], mx[1], mx[2],
-                psx, psy, (unsigned)thiz[5], tf, glF, tb, glB);
-            DbgLogPublic(clb);
-        }
-    }
-
     unsigned flags = (unsigned)thiz[5] & 0x3000u;                 // +0x14
     if (flags == 0)          GL_ResetState();                      // DisableAlphaBlend
     else if (flags == 0x1000) GL_SetBlendSrcOver('');               // EnableAlphaTest

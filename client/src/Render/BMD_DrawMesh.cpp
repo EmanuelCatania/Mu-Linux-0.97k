@@ -142,7 +142,6 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
     unsigned int local_10;
     int meshIndex = DecodeMeshIndex(meshIdx);
     int blendMeshIndex = DecodeMeshIndex(blendMesh);
-
     uVar6 = flags;
 
     // [DIAG FORGE] entry-point RenderMesh — world pos del modelo en +0x6c/0x70/0x74
