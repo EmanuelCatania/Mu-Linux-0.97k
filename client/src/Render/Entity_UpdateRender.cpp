@@ -233,25 +233,26 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
     BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
 
-    if ((bVar7 == 0x26) || (bVar7 == 0x34) || (bVar7 == 0x43)) {
+    // IDA 00456770 groups these MonsterIDs before the individual Icarus
+    // branches.  43 and 78..83 need the first 0x48 pass; 67 uses 0x144 for
+    // its second pass; 59 is the only half-bright member of the group.
+    if (bVar7 == 38 || bVar7 == 43 || bVar7 == 52 || bVar7 == 59 ||
+        bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83)) {
+        const float bodyBright = (bVar7 == 59) ? 0.5f : 1.0f;
+        if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83)) {
+            FUN_00504960(model, (int)puVar13, entity_type,
+                         *(float *)(puVar13 + 0x5a), 0x48, bodyBright, 0xffffffff);
+        }
+        const int secondFlags = (bVar7 == 67) ? 0x144 : 0x44;
         FUN_00504960(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
-    }
-    else if (bVar7 == 0x2b) {
-        FUN_00504960(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x44,
-                     *(float *)((char *)puVar13 + 8), 0xffffffff);
-    }
-    else if (bVar7 == 0x3b) {
-        FUN_00504960(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x48, 0.5f, 0xffffffff);
-    }
-    else if ((bVar7 >= 0x4e) && (bVar7 < 0x54)) {
-        FUN_00504960(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
+                     *(float *)(puVar13 + 0x5a), secondFlags, bodyBright, 0xffffffff);
     }
     else if (bVar7 == 0x45) {
         // 9-bone glitter + 3 random-bone sparks
+        const float sparkle = (float)(rand() % 30 + 70) * 0.01f;
+        local_60 = sparkle * 0.8f;
+        local_5c = sparkle * 0.9f;
+        local_58 = sparkle;
         BYTE *boneIdxTable = (BYTE *)&DAT_0055984c;
         for (int i = 0; i < 9; i++) {
             BMD_TransformPosition(model,
@@ -259,8 +260,17 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 &local_48, &local_54, '\x01');
             FUN_004795c0(0x47e, &local_54, 0.6f, &local_60, (int)puVar13, 0.0f, 0);
         }
+        // IDA changes only the random-particle tint after the nine sprites.
+        local_60 = sparkle * 0.6f;
+        local_5c = sparkle * 0.7f;
+        local_58 = sparkle * 0.8f;
         int nBones = *(short *)((char *)model + 0x22);
         for (int i = 0; i < 3; i++) {
+            // IDA: v242[0..2] = rand() % 20 - 10 antes de cada particula.
+            // Sin esto las tres chispas nacen clavadas en el hueso.
+            local_48 = (float)(rand() % 20 - 10);
+            local_44 = (float)(rand() % 20 - 10);
+            local_40 = (float)(rand() % 20 - 10);
             int r = rand();
             BMD_TransformPosition(model,
                 (float *)(puVar13[0x45] + (r % nBones) * 0x30),
@@ -323,35 +333,52 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                          &local_48, &local_54, '\x01');
             FUN_004795c0(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
         }
+        // Drakan (73): IDA emite DOS pases distintos, no un 0x344 combinado.
+        // El segundo es RenderPartObjectBodyColorAlt (sub_504AC0, flags 592).
         FUN_00504960(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x344, 1.0f, 0xffffffff);
+                     *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
+        FUN_00504ac0(model, (int)puVar13, entity_type,
+                     *(float *)(puVar13 + 0x5a), 0x250, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4b) {
         BMD_TransformPosition(model, (float *)(puVar13[0x45] + 0x360),
                      &local_48, &local_54, '\x01');
         Particle_Spawn(0x4ab, &local_54, (float *)(puVar13 + 7),
                      &local_60, 0, 0.3f, 0);
+        // Giant Drakan (75): a diferencia de Drakan (73), IDA hace UN solo
+        // pase con flags (0x100 | 0x44) = 0x144 y sin sub_504AC0.
         FUN_00504960(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
-        FUN_00504ac0(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x250, 1.0f, 0xffffffff);
+                     *(float *)(puVar13 + 0x5a), 0x144, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4d) {
-        // Scale-flicker + morph widget (Teleport skill)
+        // Phoenix of Darkness (MonsterID 77): IDA 00456770 case 'M'.
+        // Its body pass pulses and then prepares three pose variants before
+        // caching the attack-effect bones and ticking the cloth widget.
+        const float targetLight = (sinf(fmodf(DAT_05826e08, 10000.0f) * 0.001f) + 1.0f) * 0.5f;
+        const float bodyBright = targetLight * 0.7f + 0.3f;
         FUN_00504960(model, (int)puVar13, entity_type,
-                     *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
-        // 00456770 copies these three matrices immediately after preparing the
-        // 0x4D model.  AttackEffect later uses them for the skill-17/skill-3
-        // branches of the same action; keeping a hand-bone substitute here
-        // changes both the source point and the visual direction.
+                     *(float *)(puVar13 + 0x5a), 0x44, bodyBright, 0xffffffff);
+
+        // IDA temporarily changes the render pose components, prepares slots
+        // 2 and 3, restores X, increments ModelID for the Select pose, then
+        // restores it after the cloth/effect pass.
+        *(int *)((BYTE *)puVar13 + 100) = 0;
+        *(float *)((BYTE *)puVar13 + 104) = (2.0f - targetLight) * 0.3f;
+        FUN_004fc030((unsigned char *)puVar13, 1, 2, 0);
+        FUN_004fc030((unsigned char *)puVar13, 1, 3, 0);
+
         const DWORD actionBones = *(DWORD*)((BYTE*)puVar13 + 276);
         if (actionBones) {
             memcpy(g_AttackEffectMatrix_04D,     (const void*)(actionBones + 1152), sizeof(g_AttackEffectMatrix_04D));
+        }
+        *(int *)((BYTE *)puVar13 + 100) = -1;
+        ++*(short *)((BYTE *)puVar13 + 2);
+        FUN_004fc030((unsigned char *)puVar13, 1, (int)param_3, 0);
+        if (actionBones) {
             memcpy(g_AttackEffectMatrix_04D_Alt, (const void*)(actionBones + 1104), sizeof(g_AttackEffectMatrix_04D_Alt));
             memcpy(g_AttackEffectMatrix_04D_Aux, (const void*)(actionBones + 672),  sizeof(g_AttackEffectMatrix_04D_Aux));
         }
-        // Copy three bone matrix blocks to global scratch buffers
-        // (DAT_07abf444 / 3e4 / 414 — morph target cache)
+
         if (param_1[0x61] == 0) {
             void *puVar8 = ClothNew();
             FUN_00408130(puVar8, PtrAsFloatBits(puVar13), 10, -10.0f, 0.0f,
@@ -364,8 +391,15 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         if (piVar16) {
             int iVar9 = (int)(size_t)FUN_00408900(piVar16, 0x3ba3d70a, 5);
             if (iVar9 == 0) FUN_00449840((int)param_1, (int)puVar13, 0);
-            else (*(void (__cdecl **)(int))(*piVar16 + 0xc))(0);
+            else {
+                // IDA invokes vtable slot 3 as `this->Render(0)`.  The port
+                // was invoking the function pointer as cdecl with literal 0,
+                // so ECX no longer contained the cloth object.  00408FF0
+                // consumes the object in ECX and ignores its second argument.
+                FUN_00408ff0((void *)piVar16);
+            }
         }
+        --*(short *)((BYTE *)puVar13 + 2);
     }
 
     // ── 5. Dual-wield / shield-glow weapon cases ─────────────────────────────
