@@ -91,7 +91,12 @@ void __cdecl AmbientParticles_Update(void)
     float10      fVar11;
     long long    lVar12;
     int          local_20;     // slot index
-    float        local_18, local_14, local_10;
+    // Salida de Vector_Rotate (vec3 contiguo): se pasa &local_18 y despues se
+    // leen los TRES. Como escalares sueltos MSVC no garantiza contiguidad y los
+    // componentes 1 y 2 salian de otro lado. Mismo patron que las nubes de
+    // Icarus en Weather_Update.
+    float        __rot[3] = { 0.0f, 0.0f, 0.0f };
+    float       &local_18 = __rot[0], &local_14 = __rot[1], &local_10 = __rot[2];
     float        local_c[3];
 
     local_20 = 0;
@@ -193,7 +198,7 @@ LAB_0050245e:
                         uVar6 &= 0x80000001;
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
                         puVar9[0x1f] = (unsigned int)((float)(int)(uVar6 + 2) * _DAT_005524f4);
-                        puVar9[-7]   = (unsigned int)(_DAT_00552534 / (float)puVar9[-0x37]);
+                        *(float*)&puVar9[-7] = _DAT_00552534 / *(float*)&puVar9[-0x37];
                         iVar8 = DAT_0055a7ac;
                         break;
                     case 1:
@@ -261,16 +266,16 @@ switchD_caseD_2:
                          (float *)(puVar9 + 8),
                          (float *)(puVar9 + 9),
                          (unsigned char *)((int)puVar9 + 0x1e),
-                         (float)puVar9[-7] * _DAT_00552504);
+                         *(float*)&puVar9[-7] * _DAT_00552504);
 
             sVar5 = *(short *)((int)puVar9 + -0xe6);
 
             // Wave ring: animate scale with sine
             if ((sVar5 == 0xbc) || (sVar5 == 0xbd)) {
-                fVar11 = (float10)fsin((float10)(float)puVar9[-0x1a]);
+                fVar11 = (float10)fsin((float10)*(float*)&puVar9[-0x1a]);
                 puVar9[-0x20] = (unsigned int)(float)(fVar11 * (float10)_DAT_005528b4
                                                       + (float10)_DAT_00552504);
-                puVar9[-0x1a] = (unsigned int)((float)puVar9[-0x1a] + _DAT_005524f4);
+                *(float*)&puVar9[-0x1a] = *(float*)&puVar9[-0x1a] + _DAT_005524f4;
             }
 
             // Despawn if out-of-type or expired
@@ -285,14 +290,14 @@ switchD_caseD_2:
                 uVar6 &= 0x80000003;
                 if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
                 local_c[1] = 0.0f;
-                local_c[0] = (float)(int)(uVar6 + 6) * (float)puVar9[-7];
+                local_c[0] = (float)(int)(uVar6 + 6) * *(float*)&puVar9[-7];
                 local_c[2] = 0.0f;
                 Vector_Rotate(local_c, (float *)(puVar9 + -0x16), &local_18);
 
                 bVar10 = (DAT_0055a7ac != 7);
                 *pfVar1 = local_18 + *pfVar1;            // pos_x += vel_x
-                puVar9[-0x35] = (unsigned int)(local_14 + (float)puVar9[-0x35]); // pos_y
-                puVar9[-0x34] = (unsigned int)(local_10 + (float)puVar9[-0x34]); // pos_z
+                *(float*)&puVar9[-0x35] = local_14 + *(float*)&puVar9[-0x35]; // pos_y
+                *(float*)&puVar9[-0x34] = local_10 + *(float*)&puVar9[-0x34]; // pos_z
 
                 if (bVar10) {
                     // BUG-FIX 2026-04-28: pass explicit (xf, yf) — pos at pfVar1[0/1]
@@ -302,7 +307,7 @@ switchD_caseD_2:
                 }
 
                 // Compute head position (leading edge offset)
-                puVar9[-10] = (unsigned int)(local_18 * _DAT_00552540 + *pfVar1);
+                *(float*)&puVar9[-10] = local_18 * _DAT_00552540 + *pfVar1;
                 puVar9[-9]  = (unsigned int)(local_14 * _DAT_00552540 + (float)puVar9[-0x35]);
 
                 // Terrain type check for special effects
