@@ -145,7 +145,10 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
                 float afStack_14[3];
                 if (deformFlag) {
                     // Sin-wave deformation
-                    int iVar13 = iVar7 * 0x3a3 + (int)frame;
+                    // IDA: v56 = (__int64)WorldTime + 931 * v33;  (v33 = indice
+                    // de vertice). El port ponia `frame` — el indice de MALLA —
+                    // donde va WorldTime, asi que la onda quedaba congelada.
+                    int iVar13 = (int)DAT_05826e08 + 0x3a3 * iVar7;
                     float sinVal = (float)fsin((double)iVar13 * (double)_DAT_005528c4);
                     float *pfVar12 = (float *)((char*)&DAT_0584621c + ((int)frame * 15000 + iVar7) * 3 * 4);
                     int normBase = ((int)*psVar15 + (int)frame * 15000) * 0xc;
