@@ -218,7 +218,7 @@ void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
             color[0] = 1.0f; color[1] = 0.1f; color[2] = 0.1f;
         }
         FUN_00441e00(model, (uint)flags, scale,
-                     *(float*)(entity+100), *(float*)(entity+0x68),
+                     *(int *)(entity+100), *(float*)(entity+0x68),
                      *(float*)(entity+0x6c), *(float*)(entity+0x70), kHiddenMeshAll, (uint)rgba);
         return nullptr;
     } else {
@@ -228,18 +228,18 @@ void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
         *(int *)(entity + 0x58) = 2;
     } else if (etype == 0x235) {
         FUN_00441e00(model, (uint)flags, scale,
-                     *(float*)(entity+100), *(float*)(entity+0x68),
+                     *(int *)(entity+100), *(float*)(entity+0x68),
                      *(float*)(entity+0x6c), *(float*)(entity+0x70), 1.4013e-45f, (uint)rgba);
         return nullptr;
     } else if (etype != 0x1af && etype != 0x1fa && etype != 0x260) {
         FUN_00441e00(model, (uint)flags, scale,
-                     *(float*)(entity+100), *(float*)(entity+0x68),
+                     *(int *)(entity+100), *(float*)(entity+0x68),
                      *(float*)(entity+0x6c), *(float*)(entity+0x70), kHiddenMeshAll, (uint)rgba);
         return nullptr;
     }
     float fVar1 = *(float*)(entity + 0x58);
     FUN_00441e00(model, (uint)flags, scale,
-                 *(float*)(entity+100), *(float*)(entity+0x68),
+                 *(int *)(entity+100), *(float*)(entity+0x68),
                  *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
     if (etype == 0x1d7) {
         *(int *)(entity + 0x58) = -1;
@@ -262,7 +262,7 @@ void* __cdecl FUN_00504ac0(void *model, int entity, int etype, float scale,
     }
     float fVar1 = (etype == 0x235) ? 1.4013e-45f : kHiddenMeshAll;
     FUN_00441e00(model, (uint)flags, scale,
-                 *(float*)(entity+100), *(float*)(entity+0x68),
+                 *(int *)(entity+100), *(float*)(entity+0x68),
                  *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
     return nullptr;
 }

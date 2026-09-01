@@ -785,7 +785,7 @@ void __cdecl FUN_004e1be0(float param_1, float param_2, float param_3, float par
 // BUG-FIX 2026-04-28: lógica del branch NULL estaba INVERTIDA (skipping cuando
 // debería render). IDA: `if (NULL && i != HiddenMesh) goto render;`. Y la
 // comparación `i != HiddenMesh` debe ser INT, no float (NaN para -1, etc.).
-void __cdecl FUN_00441e00(void *model, int flags, float f1, float f2, float f3, float f4, float f5, float f6, int rgba) {
+void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, float f6, int rgba) {
     // BUG-FIX 2026-04-29: validar model + meshBase antes de iterar. Crash AV en
     // glPopMatrix con stack KernelBase+opengl32 venía de un FUN_00440d50 que
     // dereferenciaba un mesh pointer wild (VBO inválido).
@@ -809,19 +809,16 @@ void __cdecl FUN_00441e00(void *model, int flags, float f1, float f2, float f3, 
     int numMesh = (int)*(short*)((char*)model+0x24);
     for (int i = 0; i < numMesh; i++) {
         char* pcVar1 = *(char**)(meshBase + i * 0x28 + 0x24);
-        float fVar3 = f2;  // BlendMesh (kept as float bit-pattern)
+        int fVar3 = f2;  // BlendMesh (entero, como el a4 de IDA)
         bool render = false;
         if (pcVar1 == nullptr) {
             // IDA: NULL && i != HiddenMesh → render
             if (i != HiddenMesh) render = true;
         }
         else if ((pcVar1[1] == '\0') && (i != HiddenMesh)) {
-            // IDA passes the override mesh index as a raw INT argument to sub_440D50.
-            // Passing 1.0f/2.0f here breaks the later int-style blend comparison path.
-            if (*pcVar1 != '\0') {
-                unsigned int meshOverrideBits = (unsigned int)i;
-                memcpy(&fVar3, &meshOverrideBits, sizeof(fVar3));
-            }
+            // IDA sub_441E00: `if (*v12) v11 = v10;` -- el indice de malla
+            // pisa el BlendMesh recibido.
+            if (*pcVar1 != 0) fVar3 = i;
             render = true;
         }
         // else: skip (mesh marked hidden or has [1]!='\0')

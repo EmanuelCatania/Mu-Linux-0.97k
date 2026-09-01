@@ -103,7 +103,7 @@ int __cdecl FUN_004faa70(int param_1, char param_2, int param_3) {
         FUN_004404e0(this_, (int)puVar3, (float*)(param_1+0x118),
                      (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
         FUN_00441e00(this_, 0x40,
-                     *(float*)(param_1+0x168), *(float*)(param_1+100),
+                     *(float*)(param_1+0x168), *(int *)(param_1+100),
                      *(float*)(param_1+0x68),  *(float*)(param_1+0x6c),
                      *(float*)(param_1+0x70),  *(float*)(param_1+0x58), 0xffffffff);
         FUN_004fa930(param_1, (int)this_);

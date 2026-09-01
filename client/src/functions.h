@@ -243,10 +243,10 @@ void  __cdecl Timer_UpdateFrameTiming(void); // IDA: FUN_0043fd70
 // Called on model context pointer (this = DAT_05828d58 + type*0xbc).
 void  __cdecl FUN_00440d30(void);                                  // Model_PushMatrix (glPushMatrix-like setup)
 // Model_RenderLayer(model, layer, anim_id, scale, height, x, y, z, color)
-void  __cdecl FUN_00440d50(void *model, float layer, int anim_id, float scale, float height,
+void  __cdecl FUN_00440d50(void *model, float layer, int anim_id, float scale, int height,
                             float x, float y, float z, unsigned int color);
 // Model_Render(model, param2, param3, anim_mode, flags, extra)  — 6-arg form used in Entity_DrawSetup
-void  __cdecl FUN_00441e00(void *model, int flags, float f1, float f2, float f3, float f4, float f5, float f6, int rgba);
+void  __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, float f6, int rgba);
 void  __cdecl FUN_00441be0(void *model, int a, int b);             // Model_KillAnim(model, 0, anim_slot)
 void  __cdecl FUN_00441f00(void *model, int height_int, int anim); // Model_RenderShadow(model, height, anim)
 void  __cdecl FUN_00442090(int model_ptr);                         // Model_Unload (free BMD model data)
@@ -955,7 +955,7 @@ void  __cdecl FUN_00423760(void*, void*);  // HashTable_Release2 (2-arg ref-coun
 
 // ── BMD bone-draw helper ──────────────────────────────────────────────────────
 void  __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
-                            float f3, float f4, float f5, float f6, float f7, unsigned int rgba);
+                            float f3, int f4, float f5, float f6, float f7, unsigned int rgba);
                             // BMD_DrawBoneSlot_Anim (animated variant, 11 args)
 
 // ── Character animation/attack helpers (Kayito names, called from large stubs) ──

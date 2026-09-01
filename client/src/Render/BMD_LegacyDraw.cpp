@@ -51,7 +51,7 @@ extern void __cdecl FUN_0054158c(void* ptr);
 // Renders polygons for a mesh slot using bone-animated vertex positions.
 // unaff_EBX in original = mesh entry = model.Actions[frame], same as iVar7 computed below.
 void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
-                           float f3, float f4, float f5, float f6, float f7, unsigned int rgba)
+                           float f3, int f4, float f5, float f6, float f7, unsigned int rgba)
 {
     if (!model) return;
 
@@ -70,7 +70,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
     int bVar3 = (int)(unsigned char)((unsigned int)flags & 0xFF);
     // BlendMesh viaja en los BITS del float (los callers pasan *(float*)(o+100),
     // que es un int). -1 = ninguna; Queen Rainer usa -2.
-    int blendMeshInt; memcpy(&blendMeshInt, &f4, sizeof(blendMeshInt));
+    int blendMeshInt = f4;   // IDA a5: entero (indice de malla o -1)
 
     // v58 de IDA: LightEnable del modelo; algunas ramas lo apagan.
     int lightEnable = *(unsigned char *)((int)model + 0x44);

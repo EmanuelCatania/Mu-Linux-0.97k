@@ -92,7 +92,7 @@ LAB_render_dispatch:
     // Render mode 0x80: special full render + return
     if (param_1[0x74] == (unsigned char)0x80) {
         FUN_00441e00(model, 0x82,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0xffffffff);
@@ -110,7 +110,7 @@ LAB_render_dispatch:
         *(float *)((int)model + 0x50) = 1.0f;
         *(unsigned char *)((int)model + 0x88) = 0;
         FUN_00441e00(model, 2,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0x492);
@@ -132,16 +132,16 @@ LAB_render_dispatch:
             // denormal floats, collapsing mesh selection and blend args.
             FUN_00440d30();
             FUN_00440d50(model, 0.0f, 2,
-                         *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                         *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 104), 0.0f, 0.0f, 0xffffffff);
             FUN_00440d50(model, 1.0f, 2,
-                         *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                         *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 104), 0.0f, 0.0f, 0xffffffff);
             FUN_00440d50(model, 2.0f, 2,
-                         *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                         *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 104), 0.0f, 0.0f, 0xffffffff);
             FUN_00440d50(model, 3.0f, 2,
-                         *(float *)(param_1 + 0x168), 3.0f,
+                         *(float *)(param_1 + 0x168), 3,
                          *(float *)(param_1 + 104), *(float *)(param_1 + 108),
                          *(float *)(param_1 + 0x70),  0xffffffff);
             glPopMatrix();
@@ -166,7 +166,7 @@ LAB_render_dispatch:
                 *(float *)((int)model + 0x50) = 0.1f;   // 0x3dcccccd
                 *(unsigned char *)((int)model + 0x88) = 2;
                 FUN_00441e00(model, 2,
-                             *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                             *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                              *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                              *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                              0x492);
@@ -185,7 +185,7 @@ LAB_render_dispatch:
                 *(float *)((int)model + 0x50) = 0.1f;
                 *(unsigned char *)((int)model + 0x88) = 1;
                 FUN_00441e00(model, 2,
-                             *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                             *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                              *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                              *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                              0x492);
@@ -196,7 +196,7 @@ LAB_render_dispatch:
             }
 LAB_substate4_done:
             FUN_00441e00(model, 2,
-                         *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                         *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                          0xffffffff);
@@ -207,11 +207,11 @@ LAB_substate4_done:
             // Map transition portal
             FUN_00440d30();
             FUN_00440d50(model, 0.0f,  2,
-                         *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                         *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  0xffffffff);
             FUN_00440d50(model, 0.0f,  0x44,
-                         *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                         *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  0x492);
             glPopMatrix();
@@ -222,7 +222,7 @@ LAB_substate4_done:
             // Map-load transition: render + shadow drop
             FUN_00440d30();
             FUN_00441e00(model, 2,
-                         *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                         *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                          0xffffffff);
@@ -299,16 +299,16 @@ LAB_substate4_done:
         float wave = (float)(fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0)
                      * (long double)_DAT_005524f8 + (long double)_DAT_0055256c);
         FUN_00440d50(model, 0.0f,        0x42,
-                     *(float *)(param_1 + 0x168), 0.0f, wave,
+                     *(float *)(param_1 + 0x168), 0, wave,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0x56c);
         FUN_00440d50(model, 1.4013e-45f, 0x42,
-                     *(float *)(param_1 + 0x168), 1.4013e-45f, wave,
+                     *(float *)(param_1 + 0x168), 1, wave,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0x56b);
         FUN_00440d50(model, 2.8026e-45f, 0x42,
-                     *(float *)(param_1 + 0x168), 1.4013e-45f, wave,
+                     *(float *)(param_1 + 0x168), 1, wave,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0xffffffff);
         FUN_00440d50(model, 2.8026e-45f, 0x42,
-                     *(float *)(param_1 + 0x168), 1.4013e-45f, wave,
+                     *(float *)(param_1 + 0x168), 1, wave,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0xffffffff);
         glPopMatrix();
         goto LAB_postprocess;
@@ -317,12 +317,12 @@ LAB_substate4_done:
     if (sType == 0x14c) {
         // Double render (main + overlay at scale 1.0)
         FUN_00441e00(model, 2,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0xffffffff);
         FUN_00440d50(model, 2.8026e-45f, 2,
-                     *(float *)(param_1 + 0x168), 2.8026e-45f, 1.0f,
+                     *(float *)(param_1 + 0x168), 2, 1.0f,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0xffffffff);
         goto LAB_postprocess;
     }
@@ -331,7 +331,7 @@ LAB_substate4_done:
         // Portal/gate object: render + VTable dispatch
         FUN_00440d30();
         FUN_00440d50(model, 0.0f, 2,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  0xffffffff);
         glPopMatrix();
@@ -355,14 +355,14 @@ LAB_substate4_done:
             *(float *)((int)model + 0x4c) = 0.1f;
             *(float *)((int)model + 0x50) = 0.1f;
             FUN_00441e00(model, 2,
-                         *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                         *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  1.4013e-45f, 0xffffffff);
             *(float *)((int)model + 0x48) = 1.0f;
             *(float *)((int)model + 0x4c) = 0.1f;
             *(float *)((int)model + 0x50) = 0.1f;
             FUN_00440d50(model, 1.4013e-45f, 2,
-                         *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                         *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  0xffffffff);
             goto LAB_postprocess;
@@ -377,7 +377,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x4c) = 0.3f;   // 0x3e99999a
         *(float *)((int)model + 0x50) = 0.5f;   // 0x3f000000
         FUN_00441e00(model, 2,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0x4f6);
@@ -399,7 +399,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x4c) = 0.8f;   // 0x3f4ccccd
         *(float *)((int)model + 0x50) = 1.0f;
         FUN_00441e00(model, 4,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0x493);
@@ -411,15 +411,15 @@ LAB_substate4_done:
 
     if (sType == 0x141) {
         FUN_00441e00(model, 2,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  1.4013e-45f, 0xffffffff);
         FUN_00440d50(model, 1.4013e-45f, 0x402,
-                     0.5f, *(float *)(param_1 + 100),
+                     0.5f, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(unsigned int *)(param_1 + 0x58));
         FUN_00440d50(model, 1.4013e-45f, 0x402,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(unsigned int *)(param_1 + 0x58));
         goto LAB_postprocess;
@@ -432,7 +432,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x4c) = 1.0f;
         *(float *)((int)model + 0x50) = 1.0f;
         FUN_00441e00(model, 0x42,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0x492);
@@ -446,7 +446,7 @@ LAB_substate4_done:
     if (sType == 0x10c) {
         // Direct render at facing=0
         FUN_00441e00(model, 0x402,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  1.4013e-45f, 0xffffffff);
         goto LAB_postprocess;
@@ -472,7 +472,7 @@ LAB_substate4_done:
         }
 
         FUN_00441e00(model, 2,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0xffffffff);
@@ -480,7 +480,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x4c) = 1.0f;
         *(float *)((int)model + 0x50) = 1.0f;
         FUN_00441e00(model, 0x44,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      1170);
@@ -488,7 +488,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x4c) = 0.3f;
         *(float *)((int)model + 0x50) = 1.0f;
         FUN_00441e00(model, 0x48,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      1170);
@@ -514,7 +514,7 @@ LAB_substate4_done:
             } else {
                 // Full triple-layer render
                 FUN_00441e00(model, 2,
-                             *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                             *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                              *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                              *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                              0xffffffff);
@@ -522,7 +522,7 @@ LAB_substate4_done:
                 *(float *)((int)model + 0x4c) = 1.0f;
                 *(float *)((int)model + 0x50) = 1.0f;
                 FUN_00441e00(model, 0x44,
-                             *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                             *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                              *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                              *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                              0x492);
@@ -530,7 +530,7 @@ LAB_substate4_done:
                 *(float *)((int)model + 0x48) = 0.3f;
                 *(float *)((int)model + 0x4c) = 0.3f;
                 FUN_00441e00(model, 0x48,
-                             *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                             *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                              *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                              *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                              0x492);
@@ -543,7 +543,7 @@ LAB_substate4_done:
     if (sType == 0x104 || sType == 0x105) {
         // Multi-layer entity: base + armor + weapon
         FUN_00441e00(model, 2,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0xffffffff);
@@ -551,7 +551,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x4c) = 1.0f;
         *(float *)((int)model + 0x50) = 1.0f;
         FUN_00441e00(model, 0x44,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0x492);
@@ -559,7 +559,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x48) = 0.3f;
         *(float *)((int)model + 0x4c) = 0.3f;
         FUN_00441e00(model, 0x48,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                      0x492);
@@ -568,7 +568,7 @@ LAB_substate4_done:
 
 LAB_standard_render:
     FUN_00441e00(model, 2,
-                 *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                 *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                  *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                  *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                  0xffffffff);
@@ -576,7 +576,7 @@ LAB_standard_render:
 
 LAB_simple_render:
     FUN_00441e00(model, 2,
-                 *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                 *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                  *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                  *(float *)(param_1 + 0x70),  *(float *)(param_1 + 0x58),
                  0xffffffff);
@@ -585,7 +585,7 @@ LAB_postprocess:
     // ── Post-render: PvP outline ───────────────────────────────────────────────
     if (((unsigned char)*(unsigned int *)(param_1 + 0x78) & 2) == 2) {
         FUN_00441e00(model, 2,
-                     *(float *)(param_1 + 0x168), -1.0f /*NaN*/, 1.0f,
+                     *(float *)(param_1 + 0x168), -1, 1.0f,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70),
                      *(float *)(param_1 + 0x58),  0xffffffff);
     }
@@ -597,14 +597,14 @@ LAB_postprocess:
                       * (long double)_DAT_005528b8 + (long double)_DAT_00552504);
         int texFrame = (int)(*(unsigned int *)((int)*(int *)((int)model + 0x38) + 0xc));
         FUN_00440d50(model, 0.0f, 2,
-                     *(float *)(param_1 + 0x168), 0.0f, wave2,
+                     *(float *)(param_1 + 0x168), 0, wave2,
                      *(float *)(param_1 + 0x6c), *(float *)(param_1 + 0x70),
                      texFrame);
         // Modulo-100 periodic shadow offset (based on frame counter)
         int framemod = (int)((long long)DAT_05826e08 % 100);
         float modFrac = -(float)(framemod * _DAT_005524f8);
         FUN_00440d50(model, 4.2039e-45f, 0x44,
-                     *(float *)(param_1 + 0x168), 4.2039e-45f, wave2,
+                     *(float *)(param_1 + 0x168), 3, wave2,
                      *(float *)(param_1 + 0x6c), modFrac, 0xffffffff);
         glPopMatrix();
     }
@@ -612,7 +612,7 @@ LAB_postprocess:
     // ── Types 0x178/0x177: extra zero-position render ─────────────────────────
     if (*(short *)(param_1 + 2) == 0x178 || *(short *)(param_1 + 2) == 0x177) {
         FUN_00440d50(model, 0.0f, 0x42,
-                     *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  0.0f, 0.0f, 0xffffffff);
     }
 }

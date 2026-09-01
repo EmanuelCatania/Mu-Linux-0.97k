@@ -50,7 +50,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
       *(undefined4 *)((int)param_1 + 0x48) = 0x3f59999a;   // R≈0.85
       *(undefined4 *)((int)param_1 + 0x4c) = 0x3f59999a;   // G≈0.85
       *(undefined4 *)((int)param_1 + 0x50) = 0x3f99999a;   // B≈1.2
-      FUN_00441e00(param_1, 6, *(float *)(param_2 + 0x168), *(float *)(param_2 + 100),
+      FUN_00441e00(param_1, 6, *(float *)(param_2 + 0x168), *(int *)(param_2 + 100),
                    *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                    *(float *)(param_2 + 0x70), *(float *)(param_2 + 0x58), 0x493);
       goto LAB_00504925;
@@ -60,13 +60,13 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-        FUN_00440d50(param_1, 0.0f, 10, param_4, 0.0f,
+        FUN_00440d50(param_1, 0.0f, 10, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 0.0f, 0x12, param_4, 0.0f,
+        FUN_00440d50(param_1, 0.0f, 0x12, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_00552868, 0x492);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, param_4, 0.0f,
+        FUN_00440d50(param_1, 1.4013e-45f, 2, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         return;
@@ -75,13 +75,13 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-        FUN_00440d50(param_1, 0.0f, 10, param_4, 0.0f,
+        FUN_00440d50(param_1, 0.0f, 10, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 0.0f, 0x12, 1.0f, 0.0f,
+        FUN_00440d50(param_1, 0.0f, 0x12, 1.0f, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_00552920, 0x492);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, param_4, -1.0f,
+        FUN_00440d50(param_1, 1.4013e-45f, 2, param_4, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         return;
@@ -90,13 +90,13 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-        FUN_00440d50(param_1, 0.0f, 10, param_4, 0.0f,
+        FUN_00440d50(param_1, 0.0f, 10, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 0.0f, 0x12, 1.0f, 0.0f,
+        FUN_00440d50(param_1, 0.0f, 0x12, 1.0f, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_00552920, 0x492);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, param_4, -1.0f,
+        FUN_00440d50(param_1, 1.4013e-45f, 2, param_4, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         return;
@@ -109,17 +109,17 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         // BUG-FIX: glColor3f espera float; *(undefined4*) lee bits y los pasa como int → C castea int→float = basura.
         glColor3f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                   *(float *)((int)param_1 + 0x50));
-        FUN_00440d50(param_1, 4.2039e-45f, 2, 1.0f, -1.0f,
+        FUN_00440d50(param_1, 4.2039e-45f, 2, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, -1.0f,
+        FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         fVar2 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005524f8);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, (float)fVar2, 1.4013e-45f,
+        FUN_00440d50(param_1, 1.4013e-45f, 2, (float)fVar2, 1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 0.0f, 6, 1.0f, 0.0f,
+        FUN_00440d50(param_1, 0.0f, 6, 1.0f, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_00552500, 0x492);
         fVar2 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552500);
@@ -136,10 +136,10 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
           *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
           *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
           *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-          FUN_00441e00(param_1, param_5, param_4, *(float *)(param_2 + 100),
+          FUN_00441e00(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                        *(float *)(param_2 + 0x70), *(float *)(param_2 + 0x58), 0xffffffff);
-          FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, 1.4013e-45f,
+          FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, 1,
                        *(float *)(param_2 + 0x68),
                        DAT_05826e08 * _DAT_00552868, DAT_05826e08 * _DAT_00552a40, 0xffffffff);
           return;
@@ -148,7 +148,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
           *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
           *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
           *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-          FUN_00441e00(param_1, param_5, param_4, *(float *)(param_2 + 100),
+          FUN_00441e00(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                        *(float *)(param_2 + 0x70), *(float *)(param_2 + 0x58), 0xffffffff);
           fVar3 = (float10)DAT_05826e08;
@@ -158,7 +158,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
           *(float *)((int)param_1 + 0x48) = (float)fVar4;
           *(float *)((int)param_1 + 0x4c) = (float)fVar4;
           *(float *)((int)param_1 + 0x50) = (float)fVar4;
-          FUN_00440d50(param_1, 2.8026e-45f, 2, 1.0f, 2.8026e-45f,
+          FUN_00440d50(param_1, 2.8026e-45f, 2, 1.0f, 2,
                        *(float *)(param_2 + 0x68),
                        (float)(fVar3 * fVar2), DAT_05826e08 * _DAT_0055291c, 0xffffffff);
           return;
@@ -172,33 +172,33 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
             // BUG-FIX: leer como float, no como undefined4 (int). Alpha 0x3f4ccccd=0.8f, 0x3f000000=0.5f.
             glColor4f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50), 0.8f);
-            FUN_00440d50(param_1, 1.4013e-45f, 2, 0.8f, -1.0f,
+            FUN_00440d50(param_1, 1.4013e-45f, 2, 0.8f, -1,
                          *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                          *(float *)(param_2 + 0x70), 0xffffffff);
             glColor4f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50), 0.5f);
-            FUN_00440d50(param_1, 4.2039e-45f, 2, 0.5f, -1.0f,
+            FUN_00440d50(param_1, 4.2039e-45f, 2, 0.5f, -1,
                          *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                          *(float *)(param_2 + 0x70), 0xffffffff);
             glColor3f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50));
-            FUN_00440d50(param_1, 0.0f, 2, 1.0f, -1.0f,
+            FUN_00440d50(param_1, 0.0f, 2, 1.0f, -1,
                          *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                          *(float *)(param_2 + 0x70), 0xffffffff);
-            FUN_00440d50(param_1, 2.8026e-45f, 2, 1.0f, 2.8026e-45f,
+            FUN_00440d50(param_1, 2.8026e-45f, 2, 1.0f, 2,
                          *(float *)(param_2 + 0x68),
                          DAT_05826e08 * _DAT_00552a40, *(float *)(param_2 + 0x70), 0xffffffff);
             uVar5 = 0xffffffff;
             iVar1 = _rand();
             fVar9 = (float)(iVar1 % 10) * _DAT_005524f4;
             iVar1 = _rand();
-            FUN_00440d50(param_1, 4.2039e-45f, 2, 1.0f, 4.2039e-45f,
+            FUN_00440d50(param_1, 4.2039e-45f, 2, 1.0f, 3,
                          *(float *)(param_2 + 0x68),
                          (float)(iVar1 % 10) * _DAT_005524f4, fVar9, uVar5);
             glPopMatrix();
             return;
           }
-          FUN_00441e00(param_1, param_5, param_4, *(float *)(param_2 + 100),
+          FUN_00441e00(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                        *(float *)(param_2 + 0x70), -1.0f, 0xffffffff);
           return;
@@ -210,7 +210,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x50) = 0x3e99999a;
         // BUG-FIX: 0x3e99999a = bits de 0.3f (≈ gris oscuro)
         glColor3f(0.3f, 0.3f, 0.3f);
-        FUN_00440d50(param_1, 2.8026e-45f, 1, 1.0f, -1.0f,
+        FUN_00440d50(param_1, 2.8026e-45f, 1, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
@@ -218,17 +218,17 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
         // BUG-FIX: 0x3f800000 = bits de 1.0f (blanco)
         glColor3f(1.0f, 1.0f, 1.0f);
-        FUN_00440d50(param_1, 2.8026e-45f, 0x44, 1.0f, 2.8026e-45f,
+        FUN_00440d50(param_1, 2.8026e-45f, 0x44, 1.0f, 2,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_005524f8, 0x492);
-        FUN_00440d50(param_1, 0.0f, 2, 1.0f, -1.0f,
+        FUN_00440d50(param_1, 0.0f, 2, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         uVar5 = 0xffffffff;
         iVar1 = _rand();
         fVar9 = (float)(iVar1 % 10) * _DAT_005524f4;
         iVar1 = _rand();
-        FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, 1.4013e-45f,
+        FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, 1,
                      *(float *)(param_2 + 0x68),
                      (float)(iVar1 % 10) * _DAT_005524f4, fVar9, uVar5);
         fVar2 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552500);
@@ -242,7 +242,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         fVar9  = *(float *)(param_2 + 0x68);
         fVar10 = DAT_05826e08 * _DAT_00552868;
       }
-      FUN_00440d50(param_1, 2.8026e-45f, 0x42, 1.0f, 2.8026e-45f, fVar9, fVar10, fVar11, 0xffffffff);
+      FUN_00440d50(param_1, 2.8026e-45f, 0x42, 1.0f, 2, fVar9, fVar10, fVar11, 0xffffffff);
       glPopMatrix();
       return;
     }
@@ -263,7 +263,7 @@ LAB_00504925:
   *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
   *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
   *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-  FUN_00441e00(param_1, 2, *(float *)(param_2 + 0x168), *(float *)(param_2 + 100),
+  FUN_00441e00(param_1, 2, *(float *)(param_2 + 0x168), *(int *)(param_2 + 100),
                *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                *(float *)(param_2 + 0x70), *(float *)(param_2 + 0x58), 0xffffffff);
   return;
