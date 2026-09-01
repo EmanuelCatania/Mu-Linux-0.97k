@@ -122,7 +122,7 @@ static int DecodeMeshIndex(float meshIdx)
 }
 
 void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
-                           float alpha, float blendMesh, float blendLight,
+                           float alpha, int blendMesh, float blendLight,
                            float uvU, float uvV, unsigned int texOverride)
 {
     char *pcVar1;
@@ -141,7 +141,15 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
     short *psVar14;
     unsigned int local_10;
     int meshIndex = DecodeMeshIndex(meshIdx);
-    int blendMeshIndex = DecodeMeshIndex(blendMesh);
+    // IDA sub_440D50: a5 (BlendMesh) es un ENTERO -- indice de malla o -1.
+    // El port lo habia tipado float y convivian dos codificaciones incompatibles
+    // (bit-pattern desde o+100 vs valor numerico en los literales -1.0f), asi que
+    // `-1.0f` caia en `a5 <= -2` y disparaba blend aditivo donde el binario
+    // texturaba normal.  Ahora es int, como en el binario.
+    int blendMeshIndex = blendMesh;
+    // v47 del decompile: modo de emision de coordenadas/color del bucle de vertices.
+    enum { MODE_NONE = 0, MODE_COLOR = 1, MODE_TEXTURE = 2, MODE_CHROME = 4, MODE_METAL = 64 };
+    int renderMode = MODE_NONE;
     uVar6 = flags;
 
     // [DIAG FORGE] entry-point RenderMesh — world pos del modelo en +0x6c/0x70/0x74
@@ -327,7 +335,7 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
 
     if ((bVar4 & 1) == 1) {
         // RENDER_COLOR: flat color, disable texture
-        blendMesh = RENDER_MODE_COLOR;
+        renderMode = MODE_COLOR;
         if ((bVar4 & 0x40) == 0x40)
             EnableAlphaBlend();
         else if ((bVar4 & 0x80) == 0x80)
@@ -355,7 +363,7 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
                 return;
             }
 
-            blendMesh = RENDER_MODE_CHROME;
+            renderMode = MODE_CHROME;
 
             // Recompute WorldTime-based phase for OIL (misma corrección: usar
             // WorldTime explícito, no ST0 basura). IDA: `(__int64)WorldTime % 5000`.
@@ -447,15 +455,10 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
             //     real que los callers usan es 0xffffffff (ver Entity_DrawByType.cpp).
             // MUGAME type 0xa2: obj+100 = DWORD 1 → como int == mesh.Texture=1 (backdrop)
             //   → cond2 TRUE → EnableAlphaBlend (aditivo) sobre backdrop naranja.
-            ([&]{
-                int bm_as_int;
-                memcpy(&bm_as_int, &blendMesh, 4);
-                int meshTex = (int)*(short *)(pcVar1 + 2);
-                return bm_as_int <= -2 || meshTex == bm_as_int;
-            })()
+            blendMesh <= -2 || (int)*(short *)(pcVar1 + 2) == blendMesh
         ) {
             // Blend mesh / animated UV variant.
-            blendMesh = RENDER_MODE_TEXTURE;
+            renderMode = MODE_TEXTURE;
             BindTexture(local_10);
             if ((bVar4 & 0x80) == 0x80)
                 EnableAlphaBlendMinus();
@@ -468,7 +471,7 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
 
         } else if ((bVar4 & 2) == 2) {
             // RENDER_TEXTURE: explicit bind with blend
-            blendMesh = RENDER_MODE_TEXTURE;
+            renderMode = MODE_TEXTURE;
             BindTexture(local_10);
             if ((bVar4 & 0x40) == 0x40)
                 EnableAlphaBlend();
@@ -484,13 +487,13 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
             if ((&DAT_083a7cc8)[local_10 * 0x38] == '\x04') {
                 return;
             }
-            blendMesh = RENDER_MODE_METAL;
+            renderMode = MODE_METAL;
             EnableAlphaBlend();
             DisableTexture('\0');
             DisableDepthMask();
 
         } else {
-            blendMesh = RENDER_MODE_TEXTURE;
+            renderMode = MODE_TEXTURE;
         }
     }
 
@@ -508,10 +511,7 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
         if ((unsigned int)bmd_obj >= DAT_05828d58) {
             modelId = ((int)bmd_obj - DAT_05828d58) / 0xbc;
         }
-        int modeTag = (int)(blendMesh == RENDER_MODE_TEXTURE ? 1 :
-                           (blendMesh == RENDER_MODE_CHROME  ? 2 :
-                           (blendMesh == RENDER_MODE_COLOR   ? 3 :
-                           (blendMesh == RENDER_MODE_METAL   ? 4 : 0))));
+        int modeTag = renderMode;
         _snprintf_s(b, sizeof(b), _TRUNCATE,
             "BMD_Draw #%d  model=0x%x meshIdx=%d flags=0x%03x tex=0x%03x mode=%d alpha=%.2f bodyLight=(%.2f,%.2f,%.2f) lightEnable=%d texSlot=%d triCount=%d%s",
             dm_diag, modelId, meshIndex, flags, local_10, modeTag, alpha, bL0, bL1, bL2,
@@ -602,7 +602,7 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
                 do {
                     sVar3 = psVar14[-4];  // bone/position index
 
-                    if (blendMesh == RENDER_MODE_TEXTURE) {
+                    if (renderMode == MODE_TEXTURE) {
                         // Standard UV from texcoord table
                         pfVar8 = (float *)(*(int *)(pcVar1 + 0x18) + psVar14[4] * 8);
                         if (bVar5) {
@@ -621,7 +621,7 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
                                 glColor3fv((const GLfloat *)(&DAT_060db65c + iVar2 * 12));
                             }
                         }
-                    } else if (blendMesh == RENDER_MODE_CHROME) {
+                    } else if (renderMode == MODE_CHROME) {
                         // Chrome UV from precomputed chrome table
                         if (alpha < _DAT_00552544) {
                             glColor4f(*(float *)((int)bmd_obj + 0x48),

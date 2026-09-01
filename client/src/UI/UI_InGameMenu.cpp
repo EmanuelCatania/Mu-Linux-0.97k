@@ -10,6 +10,10 @@
 
 #include "Net/MuEmu.h"
 #include "Net/Net.h"  // 2026-05-05: Net_SendSmallPacket (proper C3 wrap with serial)
+
+// byte_7EA5249: slot de inventario del item que abrio ShowCheckBox.  Vive
+// dentro del buffer DAT_07ea5240 (0x44 bytes) que copia el click derecho.
+#define DAT_07ea5249_byte  (DAT_07ea5240[9])
 // 2026-08-25: los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)
@@ -968,25 +972,67 @@ void __cdecl FUN_00514310(void)
         DAT_07d780ac  = 0;
         goto tail;
 
-    // ── Multi-select item list (2-slot result) ────────────────────────────
+    // Confirmacion Si/No de ShowCheckBox (usar fruta / renombrar mascota).
+    // IDA 0x514310 L1798-1824 (hit-test) + L1862-2135 (accion).
+    //
+    // ANTES: este case estaba portado como "multi-select item list" y terminaba
+    // en un `goto tail` INCONDICIONAL.  `tail` hace ErrorMessage =
+    // NextErrorMessage, asi que el cartel se cerraba al frame siguiente de
+    // abrirse y la fruta nunca se podia usar.  Mismo patron que el case
+    // 0x8b/0x8c/0x9a que se removio el 2026-08-26.
+    //
+    // Lo abre `FUN_004d23b0` con ShowCheckBox(1, 376, 153) al hacer click
+    // derecho sobre el item 431 (Fruit) con Level >= 10.
     case 0x99:
     {
-        // Requires click — not hover.
-        int *piVar = (int *)&DAT_083a42fc;
-        int  count = (int)DAT_083a4324;
-        for (int i = 0; i < count; ++i)
-        {
-            int rowY = 0x2c + i * 0x10;
-            if (mouseY >= rowY && mouseY < rowY + 0x10 &&
-                mouseX >= 0x6a  && mouseX <= 0x16a && IsClickPushed())
-            {
-                DAT_083a4124 = 0;
-                DAT_00559f5e = (char)i;
-                DAT_00559f5f = (char)DAT_083a7c2c;
-                goto tail;
+        // Los descriptores de los botones viven en DAT_083a42f8: 2 entradas de
+        // 5 ints ([0]=bitmapId [1]=x [2]=y [3]=w [4]=h) que ShowCheckBox llena
+        // con Si=(21,90,70,21) id 1 y No=(120,90,70,21) id 3.  El hit-test los
+        // desplaza a (x+213, y+100).
+        int clickResult[2] = { -1, -1 };
+        int* rect = (int*)&DAT_083a42f8;
+        for (int bi = 0; bi < 2; ++bi) {
+            int id = bi * 2 + 1;             // 1 (Si), 3 (No)
+            rect[0] = id;
+            int bx = rect[1], by = rect[2], bw = rect[3], bh = rect[4];
+            if (bx + 213 <= mouseX && by + 100 <= mouseY &&
+                mouseX <= bx + bw + 213 && mouseY <= by + bh + 100) {
+                if (IsClickPushed()) clickResult[bi] = bi;
+                rect[0] = id + 1;            // bitmap "pressed"
             }
+            rect += 5;
         }
-        goto tail;
+        DAT_083a4124 = 0;                    // consume MouseLButtonPush
+
+        if (clickResult[0] == 0) {
+            // ── SI: usar el item ────────────────────────────────────────────
+            const BYTE slot = DAT_07ea5249_byte;
+            if (DAT_07eaa119 != 0 || DAT_07eaa11b != 0) {
+                // Baul o trade abiertos: no se puede usar.
+                UIChatLogWindow_AddText("", GlobalText[474], 2);
+            } else if ((int)EnableUse <= 0) {
+                EnableUse = 10;
+                // PMSG_ITEM_USE_RECV: [C1][05][26][SourceSlot][TargetSlot].
+                // El slot de inventario va +12 (los 12 wear slots van primero).
+                BYTE pkt[5];
+                pkt[0] = 0xC1;
+                pkt[1] = 5;
+                pkt[2] = 0x26;
+                pkt[3] = (BYTE)(slot + 12);
+                pkt[4] = 0;
+                Net_SendSmallPacket(pkt, 5);
+
+                // Sonido por tipo de item, igual que el resto de los usos.
+                short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slot];
+                if (t == 448)                  FUN_00404bc0(33, 0, 0);
+                else if (t >= 449 && t <= 457) FUN_00404bc0(32, 0, 0);
+            }
+            goto tail;                       // IDA cae a LABEL_488: cierra + sonido 25
+        }
+        if (clickResult[1] == 1) {
+            goto tail;                       // NO: cierra + sonido 25
+        }
+        return;                              // sin click: el cartel PERSISTE
     }
 
     default:

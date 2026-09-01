@@ -172,9 +172,9 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x4c) = 0.5f;
         *(float *)((int)this_ + 0x50) = 1.5f;
         *(char *)((int)this_ + 0x88) = 0;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70), *(float *)(param_1 + 0x58), 1170);
+                     *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1170);
         *(char *)((int)this_ + 0x88) = -1;
     }
     else if (effectType == 831) {
@@ -198,24 +198,24 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
             *(float *)((int)this_ + 0x4c) = 0.8f;
             *(float *)((int)this_ + 0x50) = 0.4f;
         }
-        FUN_00441e00(this_, 8, *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+        FUN_00441e00(this_, 8, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70), *(float *)(param_1 + 0x58), 1171);
-        FUN_00441e00(this_, 0x44, *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1171);
+        FUN_00441e00(this_, 0x44, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70), *(float *)(param_1 + 0x58), 1171);
+                     *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1171);
         return;
     }
     else if (effectType == 958) {
         *(float *)((int)this_ + 0x48) = 1.0f;
         *(float *)((int)this_ + 0x4c) = 1.0f;
         *(float *)((int)this_ + 0x50) = 1.0f;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70), -1.0f, -1);
-        FUN_00441e00(this_, 0x44, 0.5f, *(float *)(param_1 + 100),
+                     *(float *)(param_1 + 0x70), -1, -1);
+        FUN_00441e00(this_, 0x44, 0.5f, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70), -1.0f, 1171);
+                     *(float *)(param_1 + 0x70), -1, 1171);
         return;
     }
 
@@ -229,16 +229,16 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         *(float *)(param_1 + 0x6c) = rotU;
         *(float *)(param_1 + 0x70) = (float)WorldTime * -0.0005f;
         *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = 0;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70), *(float *)(param_1 + 0x58), 1170);
+                     *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1170);
         *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = -1;
         *(float *)((int)this_ + 0x48) = 1.0f;
         *(float *)((int)this_ + 0x4c) = 1.0f;
         *(float *)((int)this_ + 0x50) = 1.0f;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(float *)(param_1 + 100),
+        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70), *(float *)(param_1 + 0x58), -1);
+                     *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), -1);
         return;
     }
     else if (effectType == 834) {
@@ -247,9 +247,9 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x4c) = 0.8f;
         *(float *)((int)this_ + 0x50) = 0.8f;
         pulse = sinf((float)WorldTime * 0.002f) * 0.3f + 0.7f;
-        FUN_00441e00(this_, 0x42, 1.0f, 0.0f, pulse,
+        FUN_00441e00(this_, 0x42, 1.0f, 0, pulse,
                      *(float *)(param_1 + 0x6c), *(float *)(param_1 + 0x70),
-                     *(float *)(param_1 + 0x58), -1);
+                     *(int *)(param_1 + 0x58), -1);
         return;
     }
     else if (effectType == 865) {
@@ -507,10 +507,10 @@ LAB_after_render: ;
 
         // flags=0x42 (int flags, NOT a pointer!), f1=1.0, then anim data
         FUN_00441e00(this_, 0x42, 1.0f,
-                     *(float*)(param_1 + 100),
+                     *(int *)(param_1 + 100),
                      *(float*)(param_1 + 0x68),
                      *(float*)(param_1 + 0x6c),
                      *(float*)(param_1 + 0x70),
-                     -1.0f, 0xffffffff);
+                     -1, 0xffffffff);
     }
 }

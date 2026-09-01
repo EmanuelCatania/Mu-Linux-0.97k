@@ -856,39 +856,6 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
 
     if (!bSubTypeNpcRendered && *(char *)((int)param_1 + 0x34f) == '\0') {
         int *piVar16 = param_1 + 0x7d;   // int*-index: byte offset +0x1f4
-        // ── DIAG: dump body-part slots + positions for char-select entities
-        if (DAT_005615c0 == 4) {
-            int csSlot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
-            if (csSlot >= 0 && csSlot < 5) {
-                static DWORD s_lastBP[5] = {0,0,0,0,0};
-                DWORD now = GetTickCount();
-                if (now - s_lastBP[csSlot] > 1000) {
-                    s_lastBP[csSlot] = now;
-                    BYTE* be = (BYTE*)param_1_;
-                    float wx = *(float*)(be + 0x10);
-                    float wy = *(float*)(be + 0x14);
-                    float wz = *(float*)(be + 0x18);
-                    float fAng = *(float*)(be + 0x24);
-                    float fScl = *(float*)(be + 0x0c);   // anim scale used by Entity_DrawAt
-                    BYTE  cls  = be[0x1bc];
-                    BYTE  anim = be[0x105];
-                    char  hide = *(char*)(be + 0x34f);
-                    char b[256];
-                    _snprintf_s(b, sizeof(b), _TRUNCATE,
-                        "BP slot=%d cls=0x%02x pos=(%.1f,%.1f,%.1f) ang=%.2f scl@0c=%.4f "
-                        "anim=%d hide@34f=%d parts=%d/%d/%d/%d/%d/%d wing=%d "
-                        "wpn0@270=%d wpn1@288=%d helper@2b8=%d",
-                        csSlot, cls, wx, wy, wz, fAng, fScl, anim, hide,
-                        *(short*)(be + 0x1e0), *(short*)(be + 0x1f8),
-                        *(short*)(be + 0x210), *(short*)(be + 0x228),
-                        *(short*)(be + 0x240), *(short*)(be + 0x258),
-                        *(short*)(be + 0x2a0),
-                        *(short*)(be + 0x270), *(short*)(be + 0x288),
-                        *(short*)(be + 0x2b8));
-                    DbgLogPublic(b);
-                }
-            }
-        }
         for (int nSlot = 6; nSlot > 0; nSlot--) {
             short sSlot = (short)piVar16[-5];   // slot model_idx at -20 bytes
             if (sSlot != (short)-1) {
@@ -931,21 +898,6 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                     // encoda para que RenderPartObjectEffect lo decodifique con
                     // (val>>3)&0xF. FIEL a IDA (8 * *(BYTE*)(v76-18)).
                     UINT shiftedLvl = (UINT)rawLvl << 3;
-                    if (DAT_005615c0 == 4) {
-                        int csSlot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
-                        if (csSlot >= 0 && csSlot < 5 && iVar9 >= 624 && iVar9 < 1000) {
-                            static DWORD s_lastBPL[5] = {0};
-                            DWORD now = GetTickCount();
-                            if (now - s_lastBPL[csSlot] > 1000) {
-                                s_lastBPL[csSlot] = now;
-                                char b[160];
-                                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                                    "BPLVL slot=%d part=%d rawLvl=%d rawOpt=%d shifted=0x%x piVar16=%p",
-                                    csSlot, iVar9, (int)rawLvl, (int)rawOpt, shiftedLvl, piVar16);
-                                DbgLogPublic(b);
-                            }
-                        }
-                    }
                     FUN_00505a10((int)param_1,
                                  iVar9,
                                  (int)(piVar16 - 5),
