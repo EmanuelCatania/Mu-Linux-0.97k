@@ -301,17 +301,27 @@ void Game_CharSelectTick(void)
         FUN_00503760();
     Bisect_ChatMode("CST_post_503760");
 
-    // Conditional skill effects
-    bool doSkillFX = false;
-    if (DAT_0055a7ac == 0) {
-        if (DAT_07e118e8 == 4) doSkillFX = true;
-    } else if (DAT_0055a7ac == 2) {
-        if (DAT_07e118e8 == 3 || DAT_07e118e8 > 9) doSkillFX = true;
-    } else if (DAT_0055a7ac == 3 || DAT_0055a7ac == 7 ||
-               DAT_0055a7ac == 9 || DAT_0055a7ac == 10) {
-        doSkillFX = true;
-    }
-    if (doSkillFX) WeatherParticles_Update();
+    // Gate de MoveLeaves (hojas / lluvia / niebla). IDA 00524E30 L508-527:
+    //
+    //   if ( World ) {
+    //       if ( World == 2 ) { if ( HeroTile == 3 || HeroTile >= 10 ) goto LABEL_108; }
+    //       else if ( World != 3 && World != 7 && World != 9 && World != 10 ) goto LABEL_108;
+    //   }
+    //   else if ( HeroTile == 4 ) goto LABEL_108;
+    //   MoveLeaves();
+    //
+    // O sea LABEL_108 es SALTEAR. El port tenia las condiciones de World 0 y
+    // World 2 INVERTIDAS: corria solo en los casos en que IDA saltea, asi que
+    // las hojas de Lorencia y Devias estaban al reves.
+    bool doLeaves;
+    if (DAT_0055a7ac == 0)
+        doLeaves = (DAT_07e118e8 != 4);
+    else if (DAT_0055a7ac == 2)
+        doLeaves = !(DAT_07e118e8 == 3 || DAT_07e118e8 >= 10);
+    else
+        doLeaves = (DAT_0055a7ac == 3 || DAT_0055a7ac == 7 ||
+                    DAT_0055a7ac == 9 || DAT_0055a7ac == 10);
+    if (doLeaves) WeatherParticles_Update();
     Bisect_ChatMode("CST_post_skillFX");
 
     // Full world pipeline
