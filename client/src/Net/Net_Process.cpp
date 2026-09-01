@@ -3951,7 +3951,6 @@ void Net_ProcessPacket(void)
                     const WORD entityId = (WORD)(((e[0] & 0x7F) << 8) | e[1]);
                     const BYTE skin = e[4];
                     const WORD viewSkillState = (WORD)(e[6] | (e[7] << 8));
-                    if (skin == 0) continue;
 
                     BYTE* const entity = (BYTE*)FUN_0045ccf0(skin, e[2], e[3], entityId, 0);
                     if (!entity) continue;
@@ -4035,10 +4034,6 @@ void Net_ProcessPacket(void)
                     // PosX/PosY reales.
                     WORD entityId = ((WORD)(e[0] & 0x7F) << 8) | e[1];
                     BYTE type = e[2];
-                    if (type == 0) {
-                        NetLog("NET:    0x13 skip (type=0 unsupported)");
-                        continue;
-                    }
                     BYTE x = e[6], y = e[7];
                     BYTE tx = e[8], ty = e[9];
                     BYTE dirpk = e[10];
@@ -4514,8 +4509,6 @@ void Net_ProcessPacket(void)
                     const BYTE x = e[6], y = e[7];
                     const BYTE tx = e[8], ty = e[9];
                     const BYTE dirPk = e[10];
-                    if (type == 0) continue;
-
                     BYTE* summon = (BYTE*)FUN_0045ccf0(type, x, y, key, 0);
                     if (!summon) {
                         NetLog("NET:    0x1F SKIP - CreateMonster NULL type=%d", type);

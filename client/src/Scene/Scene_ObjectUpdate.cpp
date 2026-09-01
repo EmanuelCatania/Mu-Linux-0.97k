@@ -251,75 +251,111 @@ float* __cdecl MoveObject_PerWorld_stub(float param_1) {
 // Lightning storm for World 10 (Icarus). Random bolts via CreateEffect(0xb6).
 // Adds terrain light flash, returns nonzero when strike occurs.
 int __stdcall MoveHeavenThunder_stub(void) {
-    // 0x004FED90 — Lightning storm for World 10 (Icarus), 472 lines decompiled.
-    // Creates random lightning bolt effects near the hero.
-    // Returns nonzero (iVar5) when a strike occurs, 0 otherwise.
+    // Port fiel de IDA MoveHeavenThunder (0x004FED90).
     //
-    // Flow:
-    //   1. rand() % 50 != 0 → return 0 (2% chance per frame)
-    //   2. Calculate random position near hero
-    //   3. Add terrain light flash
-    //   4. CreateEffect(0xb6, ...) — lightning bolt visual
-    //   5. rand() % 5 != 0 → return (only 20% get the second phase)
-    //   6. AngleMatrix setup, switch(rand()%4) for 4 bolt directions:
-    //      case 0: offset (-400,-1000,0), angle 240
-    //      case 1: offset (-300,-400,0), angle 210
-    //      case 2: offset (-200,-400,0), angle 235
-    //      case 3: offset (-200,400,0), angle 200
-    //   7. VectorRotate to transform direction
-    //   8. CreateJoint(0x4e7, ...) x2 — forked lightning joints
+    // Antes era un ESQUELETO: calculaba la probabilidad y devolvia 1/0, pero las
+    // dos llamadas que hacen el trabajo estaban solo como comentario
+    // ("In original: complex phantom-register-based call"). La que faltaba y se
+    // nota es `CreateEffect(182, ...)`: el tipo 182 es el modelo `cloud`
+    // (`OpenWorldModels` case 10 hace `AccessModel(182, "Data\Object11", "cloud", -1)`
+    // + `OpenJPG("Effect\clouds.jpg", 1268)`), y `RenderEffects` lo dibuja por su
+    // `case 182:`. O sea ESTE es el generador de las nubes de Icarus.
     //
-    // NOTE: Heavy phantom register usage (unaff_ESI/EBX/EBP/EDI) for
-    //       CreateEffect/CreateJoint/VectorRotate/AngleMatrix args.
-    //       These carry matrix/angle context from the caller.
-    //       Implementing the core logic; cosmetic joint details approximate.
+    // Devuelve `objectCount` — un indice de objeto al azar que MoveObjects usa
+    // para elegir a cual colgarle el rayo. El esqueleto devolvia 1 fijo.
+    int objectCount = 0;
 
-    int result = 0;
+    if (rand() % 50) return 0;
 
-    // 2% chance per frame
-    if (rand() % 0x32 != 0) return 0;
+    float Position[3], Light[3], Angle[3];
 
-    // Random position near hero — Object.Position at offset 0x10 in CHARACTER
-    float heroX = *(float*)(Hero + 0x10);
-    float heroY = *(float*)(Hero + 0x14);
-    float posX = (float)(rand() % 300) + heroX - _DAT_0055297c;
-    float posY = heroY;  // Y stays at hero's Y in original (rand result unused for Y)
+    // Flash de luz sobre el terreno.
+    Position[0] = (float)(rand() % 300) + *(float *)(Hero + 16) - 150.0f;
+    Position[1] = *(float *)(Hero + 20);
+    Position[2] = 0.0f;
+    rand();                                    // IDA descarta este rand()
+    {
+        const float lum = (float)(rand() % 4 + 4) * 0.050000001f;
+        Light[0] = lum * 0.30000001f;
+        Light[1] = Light[0];
+        Light[2] = lum * 0.081f;
+    }
+    AddTerrainLight(Position[0], Position[1], Light, 2, PrimaryTerrainLight[0]);
 
-    // Random bolt count (4..7)
-    int boltCount = (rand() & 3) + 4;
-    float fVar21 = (float)boltCount * _DAT_00552874 * _DAT_005528b8;
+    // La NUBE: efecto 182 en la posicion del heroe (no en Position).
+    memset(Angle, 0, sizeof(Angle));
+    Effect_Create(182, (float *)(Hero + 16), Angle, Light,
+                  (float *)0, (float *)0, (float *)0xffffffff, (float *)0, 0);
 
-    // Add terrain light flash at strike position
-    float light[3] = { 0.0f, 0.0f, 0.0f };
-    // In original: AddTerrainLight(posX, posY, light, ...) with phantom register args
-    // The light array + position create a bright flash
+    if (DAT_083a3fec) objectCount = rand() % (int)DAT_083a3fec;
 
-    // CreateEffect(0xb6, ...) — main lightning bolt
-    // In original: complex phantom-register-based call
-    // Effect 0xb6 = lightning strike visual at (posX, posY)
+    // Segunda fase (20%): rayo bifurcado.
+    if (rand() % 5) return objectCount;
 
-    result = 1;  // strike occurred
+    float angle[3] = { 0.0f, 0.0f, -45.0f };
+    float Matrix1[12], Matrix2[12];
+    float position[3], pos[3];
+    Matrix_BuildFromEuler(angle, Matrix1);
 
-    // Second phase: 20% chance for forked lightning
-    if (rand() % 5 != 0) return result;
+    switch (rand() % 4) {
+    case 0:
+        position[0] = -400.0f; position[1] = -1000.0f; position[2] = 0.0f;
+        Vector_Rotate(position, Matrix1, position);
+        pos[0] = position[0] + *(float *)(Hero + 16);
+        pos[1] = position[1] + *(float *)(Hero + 20);
+        pos[2] = position[2] + *(float *)(Hero + 24);
+        angle[0] = 0.0f; angle[1] = 0.0f; angle[2] = 240.0f;
+        Matrix_BuildFromEuler(angle, Matrix2);
+        position[0] = -200.0f; position[1] = -1000.0f;
+        break;
+    case 1:
+        position[0] = -300.0f; position[1] = -400.0f; position[2] = 0.0f;
+        Vector_Rotate(position, Matrix1, position);
+        // OJO: este caso RESTA (los otros tres suman). Es asi en IDA.
+        pos[0] = *(float *)(Hero + 16) - position[0];
+        pos[1] = *(float *)(Hero + 20) - position[1];
+        pos[2] = *(float *)(Hero + 24) - position[2];
+        angle[0] = 0.0f; angle[1] = 0.0f; angle[2] = 210.0f;
+        Matrix_BuildFromEuler(angle, Matrix2);
+        position[0] = -500.0f; position[1] = -1000.0f;
+        break;
+    case 2:
+        position[0] = -200.0f; position[1] = -400.0f; position[2] = 0.0f;
+        Vector_Rotate(position, Matrix1, position);
+        pos[0] = position[0] + *(float *)(Hero + 16);
+        pos[1] = position[1] + *(float *)(Hero + 20);
+        pos[2] = position[2] + *(float *)(Hero + 24);
+        angle[0] = 0.0f; angle[1] = 0.0f; angle[2] = 235.0f;
+        Matrix_BuildFromEuler(angle, Matrix2);
+        position[0] = -1000.0f; position[1] = -1500.0f;
+        break;
+    default:
+        position[0] = -200.0f; position[1] = 400.0f; position[2] = 0.0f;
+        Vector_Rotate(position, Matrix1, position);
+        pos[0] = position[0] + *(float *)(Hero + 16);
+        pos[1] = position[1] + *(float *)(Hero + 20);
+        pos[2] = position[2] + *(float *)(Hero + 24);
+        angle[0] = 0.0f; angle[1] = 0.0f; angle[2] = 200.0f;
+        Matrix_BuildFromEuler(angle, Matrix2);
+        position[0] = -600.0f; position[1] = -1200.0f;
+        break;
+    }
+    position[2] = 0.0f;
 
-    // AngleMatrix for bolt direction (random rotation)
-    // The original builds a 3x4 matrix from angles (0, 0, -45) then
-    // switches on rand()%4 for 4 different bolt offsets/angles.
-    // Each case:
-    //   - Sets fVar14,fVar15,fVar16 as direction offset
-    //   - VectorRotate to get world-space bolt direction
-    //   - Calculates strike endpoint from hero position + offset
-    //   - AngleMatrix for bolt visual angle
-    //   - Sets bolt length parameters
-    //
-    // After the switch: final VectorRotate + 2x CreateJoint(0x4e7)
+    Vector_Rotate(position, Matrix2, position);
+    angle[2] = 0.0f;
+    Position[0] = pos[0] - position[0];
+    Position[1] = pos[1] - position[1];
+    Position[2] = pos[2] - position[2] - 300.0f;
+    position[0] = pos[0] + position[0];
+    position[1] = pos[1] + position[1];
+    position[2] = pos[2] + position[2] - 300.0f;
 
-    // Approximate the lightning joint spawn (cosmetic only)
-    // In original: CreateJoint(0x4e7, pos, targetPos, angle, x, y, z, ...)
-    // The joints create forked lightning visual from sky to ground
-
-    return result;
+    for (int n = 0; n < 2; ++n) {
+        const float scale = (float)(rand() % 10) + 40.0f;
+        Joint_Create(1255, position, Position, angle, 9, 0, scale, -1, 0);
+    }
+    return objectCount;
 }
 
 // MoveObjects @ 0x004FF260 (~169 lines) — per-frame object update dispatcher

@@ -77,11 +77,16 @@ void WeatherParticles_Update(void)
 
     // ── Compute active particle count ─────────────────────────────────────────
     // sub-state 9 (snow/logout): 200; others: 0x88 (136) unless sub-state is 9
-    int iVar9 = (iVar7 != 9) ? 0x88 : 200;
+    // IDA: iMaxLeaves = World != 9 ? 80 : 200;  (el port tenia 0x88 = 136)
+    int iVar9 = (iVar7 != 9) ? 80 : 200;
     if (iVar9 < 1) return;
 
     // ── Main particle loop ────────────────────────────────────────────────────
-    float *pfVar10 = (float *)&DAT_07c5ab5c + (0x44 / 4);  // first entry midpoint
+    // IDA: for ( i = (float *)&unk_7C5AB5C; ; i += 28 )
+    // El port sumaba 0x44 bytes de mas sobre un alias que ya estaba corrido 12,
+    // asi que escribia el flag de activo 56 bytes fuera de donde lo lee
+    // SkillEffect_Render: el pool quedaba siempre vacio (medido: active=0).
+    float *pfVar10 = (float *)&DAT_07c5ab5c;
     int local_d4 = 0;
 
     do {

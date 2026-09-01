@@ -127,10 +127,21 @@ uint __cdecl FUN_00500e80(void)
     DWORD *puStack_44;
     DWORD *local_40;
     int     iStack_3c;
-    float   fStack_38, fStack_34, fStack_30;
-    float   fStack_2c, fStack_28, fStack_24;
-    float   fStack_20, fStack_1c, fStack_18;
-    float   fStack_14, fStack_10, fStack_c;
+    // Los doce fStack_* son slots CONSECUTIVOS del frame original
+    // (ebp-0x38 .. ebp-0x0c, de 4 en 4) y el codigo los pasa por direccion como
+    // vectores de 3 floats: `&fStack_38`, `&fStack_2c`, `&fStack_20`.
+    // Declarados como escalares sueltos MSVC no garantiza que queden contiguos
+    // ni en ese orden, asi que el callee leia los componentes 1 y 2 de otro lado.
+    //
+    // Medido: las nubes de Icarus (Weather_Update -> CreateEffect 1150) nacian en
+    // pos=(6936, 0, 0) — X bien, Y y Z en cero — o sea fuera del mapa y por eso
+    // no se veian. Mismo patron que ya mordio en MoveJoint, CreateJoint,
+    // Effect_Create y los texcoords de los sprites.
+    float   __fr[12] = { 0.0f };
+    float  &fStack_38 = __fr[0],  &fStack_34 = __fr[1],  &fStack_30 = __fr[2];
+    float  &fStack_2c = __fr[3],  &fStack_28 = __fr[4],  &fStack_24 = __fr[5];
+    float  &fStack_20 = __fr[6],  &fStack_1c = __fr[7],  &fStack_18 = __fr[8];
+    float  &fStack_14 = __fr[9],  &fStack_10 = __fr[10], &fStack_c  = __fr[11];
 
     // ── Anti-tamper: HashTable reference-count increment for DAT_083a7c00 ─────
     local_40 = &DAT_083a7c00;

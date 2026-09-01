@@ -630,7 +630,12 @@ extern unsigned char DAT_07c5ab3c[200 * 0x70];   // SkillEffect pool: 200 slots 
 // El unk_7C5AB5C de IDA no es una segunda alocación: es el +0x20 dentro del
 // pool de efectos 0x7C5AB3C. Weather_Update lo recorre con stride de 0x70 bytes.
 // Mantenerlo como global separado desplaza ese recorrido al pool de blur.
-#define DAT_07c5ab5c (*(DWORD*)(DAT_07c5ab3c + 0x20))
+// IDA MoveLeaves arranca en 0x7C5AB5C y SkillEffect_Render en 0x7C5AB3C, ambos
+// sobre el MISMO pool cuyo slot base es 0x7C5AB30. Como DAT_07c5ab3c[0] es el
+// slot base en este arbol, el alias correcto es +0x2C (no +0x20): la diferencia
+// 0x7C5AB5C - 0x7C5AB30 = 0x2C. Verificado con dos campos independientes —
+// el tipo (i-40 == v0-8) y la posicion (i-28 == v0+4) caen en el mismo lugar.
+#define DAT_07c5ab5c (*(DWORD*)(DAT_07c5ab3c + 0x2c))
 // RenderCharacter (00456770) captures these bone transforms for action kind
 // 0x4D; AttackEffect (00445230) consume los dos primeros en un tick posterior.
 extern float   g_AttackEffectMatrix_04D[3][4];
@@ -2372,8 +2377,8 @@ extern float   _DAT_00552aa4;  // MoveJoint HP-bar scale factor
 extern float   _DAT_00552a9c;  // FUN_00473d90 ring trig scale X
 extern float   _DAT_00552aa0;  // FUN_00473d90 ring trig scale Y
 extern float   _DAT_00552aa8;  // FUN_00473d90 ring trig scale Z
-extern char    DAT_00559b78[]; // MoveEffect byte lookup table A (7 entries)
-extern char    DAT_00559b7f[]; // MoveEffect byte lookup table B (7 entries)
+extern char    DAT_00559b78[8];
+#define DAT_00559b7f (DAT_00559b78 + 7)   // alias: mismo buffer, offset 7
 
 // ── Map_LoadObjectModels (0x0050c4d0) ─────────────────────────────────────────
 extern FILE*   ParserFileHandle;       // DAT_083A40FC — file handle for custom-map object list

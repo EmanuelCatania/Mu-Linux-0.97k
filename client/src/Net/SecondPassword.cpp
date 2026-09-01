@@ -2432,7 +2432,13 @@ void __cdecl FUN_00454ba0(int param_1) {
             terrainH += _DAT_0055284c;
     }
     *(float*)(param_1 + 0x18) = terrainH;
-    // Wyvern swim bob (+0x80 sine offset) omitted (type 0x110 case)
+    // IDA 00454BA0: model 272 (Bull Fighter family) bobs above terrain.
+    // Keep this model gate and phase ordering identical to the original.
+    if (*(short*)(param_1 + 2) == 272) {
+        const float bob = (float)sin(*(float*)(param_1 + 0x80));
+        (void)FUN_005129f0(bob); // IDA calls sub_5129F0 (fabs); result is unused.
+        *(float*)(param_1 + 0x18) = *(float*)(param_1 + 0x18) - bob * 70.0f + 70.0f;
+    }
     *(float*)(param_1 + 0x80) = *(float*)(param_1 + 0x80) + _DAT_00552934;
 }
 
@@ -4613,7 +4619,11 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 BMD_TransformPosition(model, (float *)(boneBase + offset + 48), local, b, '\x01');
                 Joint_Create(1254, a, b, (float *)(entity_ptr + 28), 7, 0, 14.0f, -1, 0);
             }
-            const int pairs[][2] = {{2,9},{10,11},{9,18},{18,22},{22,23},{23,24},{24,25},{18,31},{31,32},{32,33},{33,34}};
+            // IDA's j=9 special case reuses bone 2 (+96) and targets
+            // 16*(3*j+3) = +480, i.e. bone 10.  Using bone 9 joined the
+            // lightning chain back into the wrong segment and made it appear
+            // to bounce/reverse at the first branch.
+            const int pairs[][2] = {{2,10},{10,11},{2,18},{18,22},{22,23},{23,24},{24,25},{18,31},{31,32},{32,33},{33,34}};
             for (int i = 0; i < 11; ++i) {
                 BMD_TransformPosition(model, (float *)(boneBase + 48 * pairs[i][0]), local, a, '\x01');
                 BMD_TransformPosition(model, (float *)(boneBase + 48 * pairs[i][1]), local, b, '\x01');

@@ -68,21 +68,72 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
     if (rgba != 0xffffffff) texIdx = rgba;
 
     int bVar3 = (int)(unsigned char)((unsigned int)flags & 0xFF);
+    // BlendMesh viaja en los BITS del float (los callers pasan *(float*)(o+100),
+    // que es un int). -1 = ninguna; Queen Rainer usa -2.
+    int blendMeshInt; memcpy(&blendMeshInt, &f4, sizeof(blendMeshInt));
+
+    // v58 de IDA: LightEnable del modelo; algunas ramas lo apagan.
+    int lightEnable = *(unsigned char *)((int)model + 0x44);
+    {
+        int v14 = *(signed char *)((int)model + 0x88);
+        if ((int)frame == v14) {
+            glColor3fv((const float *)((int)model + 0x48));
+            lightEnable = 0;
+        }
+    }
+
+    // a7 de IDA: el MODO que fija el bloque de estado de abajo y que despues
+    // gatea la emision de texcoords. NO es `flags`.
+    //
+    // El port gateaba con `flags == 2` / `flags == 4`, pero a esta funcion solo
+    // se entra con (flags & 0x400) puesto, asi que esas comparaciones NUNCA eran
+    // ciertas: no se emitia glTexCoord2f y toda malla dibujada por aca salia de
+    // color plano. En IDA el default del bloque de estado es `a7 = 2`.
+    int mode = 2;
 
     // GL state setup
     if ((bVar3 & 1) == 1) {
+        mode = 1;
         if ((bVar3 & 0x40) == 0x40)      GL_SetBlendAdditive();
         else if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();
         else                             GL_ResetState();
         GL_SetAlphaTest('\0');
         glColor3fv((float *)((int)model + 0x48));
+    } else if (blendMeshInt <= -2 || *(short *)(meshEntry + 2) == blendMeshInt) {
+        // IDA sub_4414D0: rama que faltaba entera, y va ANTES de la de (flags & 2).
+        //
+        //   else if ( a7 <= -2 || *(__int16 *)(v13 + 2) == a7 ) {
+        //       a7 = 2;
+        //       BindTexture(tex);
+        //       (v21 & 0x80) ? EnableAlphaBlendMinus() : EnableAlphaBlend();
+        //       glColor3f(a8 * this[72], a8 * this[76], a8 * this[80]);
+        //   }
+        //
+        // a7 = BlendMesh (entero, llega en los BITS del float) y a8 =
+        // BlendMeshLight. Sin esta rama la malla caia en la de (flags & 2), que
+        // usa blending NORMAL y no setea color: quedaba una silueta oscura.
+        // Aca va ADITIVO y con color = BlendMeshLight * BodyLight.
+        //
+        // Queen Rainer (ModelID 321) tiene BlendMesh = -2 (CreateMonster case 70),
+        // asi que su malla 1 — el vestido — entra por aca.
+        GL_BindTextureSlot(texIdx);
+        if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();   // EnableAlphaBlendMinus (0x511790)
+        else                        GL_SetBlendAdditive();   // EnableAlphaBlend    (0x511710)
+        {
+            const float *bodyLight = (const float *)((int)model + 0x48);
+            glColor3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
+        }
+        mode = 2;
+        lightEnable = 0;          // IDA: v58 = 0 en esta rama
     } else if ((bVar3 & 2) == 2) {
+        mode = 2;
         GL_BindTextureSlot(texIdx);
         if ((bVar3 & 0x40) == 0x40)      GL_SetBlendAdditive();
         else if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();
         else                             GL_ResetState();
     } else if ((bVar3 & 0x40) == 0x40) {
         if (texIdx == 4) return;  // (&DAT_083a7cc8)[local_24 * 0x38] == 4 early-out
+        mode = 64;
         GL_SetBlendAdditive();
         GL_SetAlphaTest('\0');
         GL_DisableDepthWrites();
@@ -103,7 +154,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
             for (int vi = 0; vi < (int)*pcVar10; vi++, psVar15++) {
                 int iVar7 = (int)psVar15[-4];
 
-                if ((int)flags == 2) {
+                if (mode == 2) {
                     // Textured: UV from UV array
                     float *uvPtr = (float *)(*(int *)(meshEntry + 0x18) + (int)psVar15[4] * 8);
                     float uCoord, vCoord;
@@ -115,7 +166,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
                         vCoord = f6 + uvPtr[1];
                     }
                     glTexCoord2f(uCoord, vCoord);
-                    if (a != '\0') {
+                    if (lightEnable) {
                         int iVar13 = ((int)*psVar15 + (int)frame * 15000) * 0xc;
                         if (f3 < _DAT_00552544) {
                             glColor4f(*(float *)(&DAT_060db65c + iVar13),
@@ -125,7 +176,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
                             glColor3fv((float *)(&DAT_060db65c + iVar13));
                         }
                     }
-                } else if ((int)flags == 4) {
+                } else if (mode == 4) {
                     // Chrome UV
                     if (f3 < _DAT_00552544) {
                         glColor4f(*(float *)((int)model + 0x48), *(float *)((int)model + 0x4c),
@@ -145,7 +196,10 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
                 float afStack_14[3];
                 if (deformFlag) {
                     // Sin-wave deformation
-                    int iVar13 = iVar7 * 0x3a3 + (int)frame;
+                    // IDA: v56 = (__int64)WorldTime + 931 * v33;  (v33 = indice
+                    // de vertice). El port ponia `frame` — el indice de MALLA —
+                    // donde va WorldTime, asi que la onda quedaba congelada.
+                    int iVar13 = (int)DAT_05826e08 + 0x3a3 * iVar7;
                     float sinVal = (float)fsin((double)iVar13 * (double)_DAT_005528c4);
                     float *pfVar12 = (float *)((char*)&DAT_0584621c + ((int)frame * 15000 + iVar7) * 3 * 4);
                     int normBase = ((int)*psVar15 + (int)frame * 15000) * 0xc;
@@ -164,7 +218,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
     }
 
     glEnd();
-    (void)f4; (void)f7;
+    // f4 = BlendMesh y f7 = BlendMeshLight: ya se consumen en la rama de estado.
 }
 
 // FUN_004e13a0 @ 0x004E13A0 — RenderObjectScreen

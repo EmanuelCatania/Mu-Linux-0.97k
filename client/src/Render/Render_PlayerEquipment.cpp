@@ -816,10 +816,9 @@ extern "C" void Render_PlayerHelper(int c, int o)
 //   - Switch por tipo de arma → particle FX (CreateSprite/Joint/Spawn)
 extern "C" void Render_PlayerWeaponLoop(int c, int o)
 {
-    // Guard: solo procesar si entity activo y type == 0x186 (player)
+    // IDA reaches this loop from LABEL_330 for players and monsters alike.
     if (c == 0 || o == 0) return;
     if (*(unsigned char*)c == 0) return;       // active flag
-    if (*(short*)(c + 2) != 0x186) return;     // not a player
 
     float Targetj = (float)((rand() % 30 + 70) * 0.0099999998);
     unsigned char v118 = *(unsigned char*)(o + 261);   // CurrentAction
