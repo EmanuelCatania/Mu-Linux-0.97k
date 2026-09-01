@@ -188,7 +188,11 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
     float TargetPosition[3];
     int   bone = *(unsigned char*)(v121 + 4);
     float* boneMat = BoneMat48(entity_o, bone);
-    float WorldTime = (float)DAT_05826e08;
+    // BUGFIX 2026-09-01: aca habia `float WorldTime = (float)DAT_05826e08;`, pero
+    // `WorldTime` es un MACRO a DAT_05826e08 (structs.h:438), asi que declaraba un
+    // local que se sombreaba a si mismo y quedaba con basura (C4700): los cases que
+    // animan con sin(WorldTime * ...) usaban tiempo random.  Removido: los usos de
+    // abajo ya resuelven al global por el macro.
     short Type = *(short*)v121;
 
     switch (Type) {
@@ -438,30 +442,8 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
 }
 
 
-// ── IsBackItem helper (port directo WeaponView.cpp:265) ──────────────────────
-// Returns true si el item iType es weapon/shield (clases 0..6, IDs 400..623).
-// Items que se attachan a la espalda cuando bBindBack=true.
-static bool IsBackItem(int iType) {
-    // GET_ITEM_MODEL(N, 0) = N * 32 + 400. Class 7 starts at 624.
-    return (iType >= 400 && iType < 624);
-}
 
 
-// ── RenderCharacterBackItem (port directo WeaponView.cpp:49) ─────────────────
-// Decide si las armas/wings/helper van en la ESPALDA (LinkBone 47) o se renderean
-// como hand-held en Render_PlayerWeaponLoop. Returns bBindBack.
-//
-// Conditions (DLL source faithful):
-//   - c+0x34E (SafeZone flag, set by Entity_Spawn from terrain bit 0): TRUE
-//   - o+0x105 (anim) in [93..124] (greeting): TRUE
-//   - World == 7 (Atlans) AND anim ∈ {21, 29} (swim): TRUE
-//   - World ∈ [11..16] (Blood Castle): FALSE override
-//
-// Per weapon slot (LH=i=0, RH=i=1):
-//   - Skip si Type < 0
-//   - Lorencia skeleton NPC (World 0, Kind 4, SubType 206..208, i=0): force back staff
-//   - IsBackItem(Type) || (arrows 463 / bolts 471): bBack=true
-//   - Si bBack && Type != -1 → render @ LinkBone=47 (back).
 // 2026-05-04: hero equipment stash — populado por F3/03 (Recv_JoinMapServer)
 // y re-aplicado por HeroEquipWatchdog cada frame. Mitiga un bug todavía no
 // localizado donde algo resetea entity+0x2a0/0x270/0x288/0x2b8 a -1 después
@@ -677,104 +659,107 @@ extern "C" void HeroEquipWatchdog(int c)
 
 extern "C" int RenderCharacterBackItem(int c, int o)
 {
-    int bBindBack = 0;
+    // ── Bind (IDA RenderCharacter 0x456770, LABEL_265 .. LABEL_308) ──────────
+    // REESCRITA 2026-09-01.  La version anterior era un port del DLL de
+    // inyeccion (`WeaponView.cpp`) y divergia del binario en lo esencial: hacia
+    // un LOOP sobre LOS DOS slots de arma y mandaba AMBOS a la espalda.  El
+    // 0.97k manda UNO SOLO, elegido por `Hand`.  Con espada + escudo el vanilla
+    // cuelga la ESPADA y no dibuja el escudo; nosotros dibujabamos tambien el
+    // escudo, que con la traslacion (-20, 5, 40) del hueso 47 queda flotando
+    // por encima de la cabeza.  (Regla del proyecto: IDA manda sobre el DLL.)
+    int Bind = 0;
 
-    // 2026-05-04: gate por state=5 (in-game). El DLL source instala su hook
-    // (SetCompleteHook 0x004582C9 → CheckRenderBackItem) que sólo aplica al
-    // render del PLAYER en mundo. En char-select (state=4) y otros contextos
-    // los weapons se renderean en mano via Render_PlayerWeaponLoop normal.
-    // Sin este gate, char-select muestra el arma DOS VECES (mano + espalda).
+    // DESVIACION DEL PORT (2026-05-04, conservada): gate por state=5 (in-game).
+    // IDA no lo tiene.  Sin el, char-select dibujaba el arma dos veces.
     if (DAT_005615c0 != 5)
         return 0;
 
-    // 2026-08-10 — REMOVIDA la relectura del terrain por frame que había acá.
-    // Era una invención del port (y encima indexaba `DAT_0838bc70[gy*256+gx]`
-    // en crudo, saltándose `Terrain_Load`). El writer real de +0x34E (SafeZone)
-    // está en IDA en `MoveCharacterVisual` (0x4520C0 L614) y en
-    // `CreateCharacterPointer` (0x45ADC0) — ambos ya portados. Acá sólo se LEE.
-    if (*(unsigned char*)(c + 0x34E) != 0)
-        bBindBack = 1;
+    // `World` es macro a DAT_0055a7ac (structs.h:389): usar otro nombre o el
+    // local se sombrearia a si mismo.
+    const int iWorld = (int)DAT_0055a7ac;
+    const unsigned char anim = *(unsigned char*)(o + 0x105);
 
-    unsigned char anim = *(unsigned char*)(o + 0x105);
-    if (anim >= 93 && anim <= 124)
-        bBindBack = 1;
+    // Bind = SafeZone || saludo (93..124) || (Atlans && nadando (21|29)).
+    if (*(unsigned char*)(c + 0x34E) != 0)          // c->SafeZone
+        Bind = 1;
+    else if (anim >= 93 && anim <= 124)             // PLAYER_GREETING1..SALUTE1
+        Bind = 1;
+    else if (World == 7 && (anim == 21 || anim == 29))
+        Bind = 1;
 
-    int World = (int)DAT_0055a7ac;
-    if (World == 7 && (anim == 21 || anim == 29))
-        bBindBack = 1;
+    if (World >= 11 && World <= 16)                 // InBloodCastle()
+        Bind = 0;
 
-    // Blood Castle override (force hand-held in BC events).
-    if (World >= 11 && World <= 16)
-        bBindBack = 0;
+    // IDA LABEL_275: los no-jugadores saltan a LABEL_330 (loop de manos), que
+    // el caller resuelve con el valor de retorno.
+    if (*(short*)(o + 2) != 390)                    // o->Type != MODEL_PLAYER
+        return Bind;
 
-    // Player only path. NPCs/monsters skip back render.
-    if (*(short*)(o + 2) != 390)
-        return bBindBack;
+    // ── Que item va a la espalda, y de que mano ──────────────────────────────
+    // Weapon[0] = c+624 (0x270), Weapon[1] = c+648 (0x288).
+    int Hand = 0;
+    int Back = 0;
+    const int w0 = *(short*)(c + 624);
+    const int w1 = *(short*)(c + 648);
 
-    // Loop both weapon slots (LH at +0x270 i=0, RH at +0x288 i=1).
-    for (int i = 0; i < 2; ++i) {
-        int slotOff = 24 * i + 0x270;
-        int  iType    = *(short*)(c + slotOff);
-        int  iLevel   = *(unsigned char*)(c + slotOff + 2);
-        int  iOption1 = *(unsigned char*)(c + slotOff + 3);
-
-        if (iType < 0)
-            continue;
-
-        bool bBack = false;
-
-        // Lorencia skeleton NPC special (World 0, Kind 4, SubType 206..208).
-        // Renders staff once on i=0.
-        unsigned char Kind = *(unsigned char*)(o + 0x84);
-        int SubType = *(int*)(o + 4);
-        if (Kind == 4 && World == 0 && SubType >= 206 && SubType <= 208) {
-            if (i == 0) {
-                bBack = true;
-                iType = 5 * 32 + 9 + 400;   // staff (class 5, sub 9) = 569
-                iLevel = 8;
-            }
+    if (Bind) {
+        Back = 1;
+        if ((w1 >= 528 && w1 < 535) || w1 == 545) {         // Bow
+            Hand = 1;
+        } else if ((w0 >= 536 && w0 < 543) || w0 == 544 || w0 == 546) {  // Crossbow
+            Hand = 0;
+        } else if (w1 == 535) {                             // Bolts
+            Hand = 1;
         }
-
-        // Generic back-item check.
-        if (IsBackItem(iType))
-            bBack = true;
-
-        // Arrows / Bolts (class 4 sub 7 = 535, class 4 sub 15 = 543) — DLL
-        // source WeaponView.cpp:117-128: si es arrow → bBack=true SIEMPRE.
-        // Else (no arrow): si bBindBack==false → bBack=false (override).
-        // O sea: arrows quedan en espalda siempre; otros items SOLO si
-        // bBindBack está activo (safe-zone, greeting, swim).
-        if (iType == (4 * 32 + 7  + 400) ||  // 535 = arrows
-            iType == (4 * 32 + 15 + 400)) {  // 543 = bolts
-            bBack = true;
-        } else {
-            if (!bBindBack)
-                bBack = false;
-        }
-
-        if (bBack && iType != -1) {
-            float fAnimBackup = *(float*)(c + 0x2A8);   // wing.AnimationFrame backup
-            *(unsigned char*)(c + 0x2A4) = 47;          // wing.LinkBone = 47 (back)
-
-            // PlaySpeed
-            if (anim == 30 || anim == 31)
-                *(float*)(c + 0x2B0) = 1.0f;
-            else
-                *(float*)(c + 0x2B0) = 0.25f;
-
-            // Render at wing slot (c + 0x2A0) but with weapon Type.
-            // DLL source pasa Link=true (último arg = 1) para back-weapon.
-            // Nuestro FUN_00455430 9-arg: param_9 = link flag. 1 = linked
-            // (transform via bone matrix, no extra rotation). 0 = not-linked
-            // (= wing render path con extra rotation que pone el sword horizontal).
-            FUN_00455430(0.0f, 0.0f, 15.0f, c, c + 0x2A0,
-                         iType, (char)iLevel, (unsigned int)iOption1, '\x01', '\x01', 0);
-
-            *(float*)(c + 0x2A8) = fAnimBackup;
-        }
+    } else if (w1 == 535) {                                 // Bolts
+        Back = 1;
+        Hand = 1;
+    } else if (w0 == 543) {                                 // Arrows
+        Back = 1;
     }
 
-    return bBindBack;
+    const int partBase = c + 24 * Hand;                     // 624 / 648
+    int Type    = *(short*)(c + 8 * (3 * Hand + 78));
+    int Level   = *(unsigned char*)(partBase + 0x272);
+    int Option1 = *(unsigned char*)(partBase + 0x273);
+
+    // Esqueleto NPC de Lorencia (Kind 4, World 0, SubType 206..208): baculo fijo.
+    const unsigned char Kind = *(unsigned char*)(o + 0x84);
+    const int SubType = *(int*)(o + 4);
+    if (Kind != 4 || World != 0 || SubType < 206 || SubType > 208) {
+        if (!Back || Type == -1)
+            return Bind;                                    // IDA: goto LABEL_308
+    } else {
+        Type  = 537;                                        // GET_ITEM_MODEL(4, 9)
+        Level = 8;
+    }
+
+    // ── Render en el hueso 47 (espalda), reusando el PART del ala ────────────
+    const unsigned int fAnimationFrameBackUp = *(unsigned int*)(c + 0x2A8);
+    *(unsigned char*)(c + 0x2A4) = 47;                      // w->LinkBone
+    if (anim == 30 || anim == 31)                           // PLAYER_FLY / FLY_CROSSBOW
+        *(float*)(c + 0x2B0) = 1.0f;
+    else
+        *(float*)(c + 0x2B0) = 0.25f;
+
+    // Hex-Rays llama `Scale` a esta local, pero el 9no parametro de
+    // RenderLinkObject es `Link`.  Para armas/escudos (400..623) va 1.
+    char Link = '\0';
+    if (Type >= 400 && Type < 624) {
+        Link = '\x01';
+        // PlaySpeed = Models[MODEL_PLAYER].Actions[1].PlaySpeed
+        //   Models + 0x11E98 = Models + 390*0xBC + 0x30  (puntero a Actions)
+        int actions = *(int*)(DAT_05828d58 + 390 * 0xbc + 0x30);
+        if (actions != 0)
+            *(unsigned int*)(c + 0x2B0) = *(unsigned int*)(actions + 20);
+    }
+
+    FUN_00455430(0.0f, 0.0f, 15.0f, c, c + 0x2A0,
+                 Type, (char)Level, (unsigned int)Option1,
+                 Link, '\x01', 0);
+
+    *(unsigned int*)(c + 0x2A8) = fAnimationFrameBackUp;
+    return Bind;
 }
 
 
