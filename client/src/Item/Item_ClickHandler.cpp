@@ -110,12 +110,9 @@ extern DWORD DAT_07eaa160;                     // IDA `CheckInventory`
 // `int` in globals.h.
 // (Indexamos DAT_00559c60 como un array de 3 int para guardar los hotkeys.)
 
-// DAT_07ea5240 (buffer del slot del diálogo del huevo de mascota, 0x44 bytes) está declarado como DWORD
-// en globals.h — acá lo tratamos como un buffer de bytes contiguo para el memcpy.
-// DAT_07ea5249 es el primer byte del campo de índice de slot, que en el layout
-// de IDA viene inmediatamente después de DAT_07ea5240. Como no lo tenemos como
-// símbolo separado en nuestro build, lo proyectamos con aritmética de offsets.
-#define DAT_07ea5249_byte  (*((BYTE*)&DAT_07ea5240 + 9))
+// byte_7EA5249: slot de inventario del item que abrio el dialogo (campo +9
+// del ITEM copiado en DAT_07ea5240).
+#define DAT_07ea5249_byte  (DAT_07ea5240[9])
 
 // Posiciones del overlay del baúl (se usan en la rama del click derecho por defecto).
 // DAT_07eaa0c8/cc están declarados en globals.h.
@@ -262,7 +259,6 @@ unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
 // CreateOkMessageBox. Maneja la máquina de estados del diálogo en la que
 // FUN_004df410 se apoya para los flujos de confirmación de venta/drop/renombrar mascota.
 extern char DAT_083a44c4[7 * 0x26];      // g_lpszMessageBoxCustom (266 bytes)
-extern DWORD DAT_07ea5244;               // pet egg item Level field
 // DAT_083a42f8 (2 entradas × 5 ints) y su alias DAT_083a430c (= entrada 1)
 // vienen de globals.h — NO redeclarar aca: DAT_083a430c es un macro que
 // proyecta dentro de DAT_083a42f8, y declararlo como array independiente
@@ -284,7 +280,7 @@ void __cdecl ShowCheckBox(int num, int index, int message)
         // the egg's "level" → pet kind (Demon/Spirit/Drake/etc.).
         char Buffer[52];
         memset(Buffer, 0, 50);
-        if (*(short*)&DAT_07ea5240 == 431) {
+        if (*(short*)DAT_07ea5240 == 431) {
             int eggKind = (((int)DAT_07ea5244) >> 3) & 0xF;
             const char* kindName = nullptr;
             switch (eggKind) {
@@ -1132,7 +1128,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                         CreateOkMessageBox(GlobalText[749]);
                     } else {
                         // Copy item data + open the "really name your pet?" box
-                        memcpy(&DAT_07ea5240,
+                        memcpy(DAT_07ea5240,
                                (BYTE*)(uintptr_t)&OffsetInventoryItems[0] + 68 * slotIdx,
                                0x44);
                         DAT_07ea5249_byte = (BYTE)slotIdx;

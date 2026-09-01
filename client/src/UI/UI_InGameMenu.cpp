@@ -13,7 +13,7 @@
 
 // byte_7EA5249: slot de inventario del item que abrio ShowCheckBox.  Vive
 // dentro del buffer DAT_07ea5240 (0x44 bytes) que copia el click derecho.
-#define DAT_07ea5249_byte  (*((BYTE*)&DAT_07ea5240 + 9))
+#define DAT_07ea5249_byte  (DAT_07ea5240[9])
 // 2026-08-25: los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)

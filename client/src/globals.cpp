@@ -2088,9 +2088,14 @@ char    s__4d__4d_30__4d__4d__1_00559b58[] = "%4d/%4d[0] %4d/%4d[1]";
 DWORD   DAT_07e91354   = 0;
 char    DAT_07e9136a   = 0;  // picked item durability/option byte
 char    DAT_07e9136b   = 0;
-DWORD   DAT_07ea5244   = 0;
-DWORD   DAT_07ea5240   = 0;
-char    DAT_07ea525b   = 0;
+// Buffer del item que abrio el dialogo de ShowCheckBox(153) -- el click derecho
+// sobre el item 431 (Fruit) le hace memcpy de un ITEM entero (0x44 bytes).
+// Estaba declarado como UN DWORD, asi que el memcpy desbordaba 64 bytes sobre
+// el BSS vecino y los campos que el dialogo lee (+4 Level, +9 slot, +0x1b
+// Option1) caian en globals distintos: DAT_07ea5244 quedaba siempre en 0 y el
+// cartel decia "Ene" para cualquier fruta.  Rango del binario:
+// 0x07EA5240..0x07EA5283 (0x44), justo hasta DAT_07ea5284.
+BYTE    DAT_07ea5240[0x44] = { 0 };
 
 // ── Effect_Tick globals ───────────────────────────────────────────────────────
 float   _DAT_00552aac  = 0.0833333358f;

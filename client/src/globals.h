@@ -2040,9 +2040,13 @@ extern char    s__4d__4d_30__4d__4d__1_00559b58[]; // format string
 extern DWORD   DAT_07e91354;
 extern char    DAT_07e9136a;   // picked item durability/option byte
 extern char    DAT_07e9136b;
-extern DWORD   DAT_07ea5244;
-extern DWORD   DAT_07ea5240;
-extern char    DAT_07ea525b;
+// Buffer del item del dialogo ShowCheckBox(153) -- 0x44 bytes, 0x07EA5240.
+// DAT_07ea5244 (Level) y DAT_07ea525b (Option1) son campos DENTRO de el, no
+// globals aparte: declararlos sueltos hacia que el memcpy del click derecho no
+// los alcanzara nunca.  Mismo patron que DAT_081cb60c / DAT_083a42fc.
+extern BYTE    DAT_07ea5240[0x44];
+#define DAT_07ea5244   (*(DWORD*)(DAT_07ea5240 + 4))
+#define DAT_07ea525b   (*(char*) (DAT_07ea5240 + 0x1b))
 
 // ── Effect_Tick globals ───────────────────────────────────────────────────────
 extern float   _DAT_00552aac;  // effect tick float constant

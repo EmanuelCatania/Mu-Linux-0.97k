@@ -1661,7 +1661,7 @@ undefined4 __cdecl FUN_0051e240(int param_1, int param_2, int param_3)
     // mode 0x99: build item class label for current item (DAT_07ea5240)
     {
         char local_34[0x34] = {};
-        if ((short)DAT_07ea5240 == 0x1af) {
+        if (*(short*)DAT_07ea5240 == 0x1af) {
             byte *pbVar13 = nullptr;
             switch (DAT_07ea5244 >> 3 & 0xf) {
             case 0: pbVar13 = &DAT_005618b8; break;

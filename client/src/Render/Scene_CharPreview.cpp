@@ -41,7 +41,7 @@ void FUN_0051e0c0(void)
   option1 = DAT_07e9136b;
   if (DAT_083a7c24 == 0x99) {
     level = DAT_07ea5244;
-    itemType = (short)DAT_07ea5240;
+    itemType = *(short*)DAT_07ea5240;
     option1 = DAT_07ea525b;
   }
 
