@@ -4807,6 +4807,75 @@ void Net_ProcessPacket(void)
                 break;
             }
 
+            case 0x2C: {
+                // ── ReceiveUseStateItem (IDA 0x437F10) — resultado de la fruta ──
+                // El case faltaba: sin el, usar una fruta mandaba el 0x26 pero el
+                // resultado se descartaba en silencio y el panel de stats (tecla C)
+                // no se enteraba de nada.
+                //
+                // Server: CFruit::UseFruit (Fruit.cpp) -> PMSG_FRUIT_RESULT_SEND,
+                // header C1:2C.  Layout con GAMESERVER_EXTRA=1 (sizeof 28):
+                //   +3   BYTE  result
+                //   +4   DWORD ViewValue       (puntos sumados)
+                //   +8   DWORD ViewPoint       (LevelUpPoint)
+                //   +12  DWORD ViewStrength
+                //   +16  DWORD ViewDexterity
+                //   +20  DWORD ViewVitality
+                //   +24  DWORD ViewEnergy
+                //
+                // `result` empaqueta tres campos:
+                //   bits 0-3  = cantidad de puntos
+                //   bits 4-5  = stat (0 Ene, 1 Vit, 2 Agi, 3 Fue)
+                //   bits 6-7  = 0 exito(+) · 1 fallo · 2 exito(-) · 3 no permitido
+                const int amount  = Msg[3] & 0x0F;
+                const int statIdx = (Msg[3] >> 4) & 0x03;
+                const int outcome = Msg[3] >> 6;
+
+                // Indice del nombre del stat en GlobalText, per IDA L88-100.
+                static const int kStatText[4] = { 168, 169, 167, 166 };
+                // CharacterAttribute: +20 Fuerza, +22 Agilidad, +24 Vitalidad,
+                // +26 Energia (mismos offsets que el F3/03 y el F3/06).
+                static const int kStatOff[4]  = { 26, 24, 22, 20 };
+
+                BYTE* CA = (BYTE*)(uintptr_t)DAT_07cf1ffc;
+                NetLog("NET:  -> 0x2C Fruit result=%02X outcome=%d stat=%d amount=%d size=%d",
+                       Msg[3], outcome, statIdx, amount, Size);
+
+                if (outcome == 1) {
+                    CreateOkMessageBox(GlobalText[378]);        // "fallo"
+                } else if (outcome == 3) {
+                    CreateOkMessageBox(GlobalText[446]);        // "no se puede"
+                } else if (CA) {
+                    // outcome 0 = suma, 2 = resta.
+                    const int sign = (outcome == 0) ? 1 : -1;
+                    *(WORD*)(CA + kStatOff[statIdx]) =
+                        (WORD)(*(WORD*)(CA + kStatOff[statIdx]) + sign * amount);
+                    *(WORD*)(CA + 46) = (WORD)(*(WORD*)(CA + 46) + sign * amount); // FruitAddPoint
+
+                    // Con GAMESERVER_EXTRA el server manda el estado completo y
+                    // autoritativo; mandan esos valores sobre la aritmetica de arriba
+                    // (misma regla que el F3/05 y el F3/06).
+                    if (Size >= 28) {
+                        *(WORD*)(CA + 20) = ClampToWord(*(const DWORD*)(Msg + 12));  // Fuerza
+                        *(WORD*)(CA + 22) = ClampToWord(*(const DWORD*)(Msg + 16));  // Agilidad
+                        *(WORD*)(CA + 24) = ClampToWord(*(const DWORD*)(Msg + 20));  // Vitalidad
+                        *(WORD*)(CA + 26) = ClampToWord(*(const DWORD*)(Msg + 24));  // Energia
+                        *(WORD*)(CA + 84) = ClampToWord(*(const DWORD*)(Msg + 8));   // LevelUpPoint
+                    }
+
+                    // Recalcula damage/defense/velocidades con los stats nuevos.
+                    FUN_0047e3c0((int)(uintptr_t)CA, 0, 0);
+
+                    char buf[300];
+                    // GlobalText[377] = texto de suma, [379] = texto de resta.
+                    wsprintfA(buf, GlobalText[outcome == 0 ? 377 : 379],
+                              GlobalText[kStatText[statIdx]], amount);
+                    CreateOkMessageBox(buf);
+                }
+                EnableUse = 0;
+                break;
+            }
+
             case 0x30: {
                 // ── ReceiveTalk (IDA 0x4301B0, server→client) ────────────────
                 // 2026-07-25 (#2 shops): el server ordena abrir la ventana de un
