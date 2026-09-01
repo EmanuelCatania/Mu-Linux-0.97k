@@ -432,8 +432,20 @@ void __cdecl FUN_0050c4d0(void) {
         FUN_00505c80(0xb3, "Object9/", 0x2600, '\x01');
         break;
     case 10:
+        // IDA 0050C4D0 L209-214 (segundo switch, el que corre siempre):
+        //     OpenJPG("Effect\clouds.jpg",     0x4F4u, ...);
+        //     AccessModel(182, "Data\Object11", "cloud", -1);
+        //     OpenTexture(182, "Object11\\", 9728, 1);
+        //     OpenJPG("Effect\cloudLight.jpg", 0x4F5u, ...);
+        //
+        // Al port le faltaban las DOS texturas: solo las cargaba el PRIMER
+        // switch, gateado por `DAT_0055a7c4 == 0`, que ya no corre cuando se
+        // llega a Icarus. La textura 1268 quedaba sin handle GL y las ~6800
+        // nubes por frame se dibujaban invisibles.
+        FUN_00529740("Effect/clouds.jpg",     0x4f4, 0x2601, 0x2900, 0, '\x01');
         FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
         FUN_00505c80(0xb6, "Object11/", 0x2600, '\x01');
+        FUN_00529740("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
     case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
         FUN_005060b0(0xb8, "Data/Object12/", "Angel", 1);
