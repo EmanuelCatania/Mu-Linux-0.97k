@@ -135,7 +135,14 @@ float * __cdecl FUN_004fc070(int param_1)
     longlong  lVar10;
     ulonglong uVar11;
     byte      bVar18;
-    float     local_30, local_2c_f, local_28, local_24, local_20, local_1c;
+    float     local_30, local_2c_f, local_28;
+    // local_24/20/1c son slots CONSECUTIVOS del frame original y varios sitios
+    // pasan `&local_24` como el vec3 de Light a CreateSprite / Particle_Spawn.
+    // Como escalares sueltos MSVC no garantiza contiguidad y los canales G y B
+    // salian de basura (mismo patron que las nubes de Icarus, y que ya mordio en
+    // Weather_Update, MoveJoint y CreateJoint).
+    float     __lt[3] = { 0.0f, 0.0f, 0.0f };
+    float    &local_24 = __lt[0], &local_20 = __lt[1], &local_1c = __lt[2];
     // BUG-FIX: many paths pass &local_18 as if it were a contiguous float[3]
     // to TransformPosition / CreateSprite / Particle_Spawn. Keep the original
     // names as aliases over a real 3-float buffer so world positions are stable.
@@ -524,18 +531,26 @@ LAB_004fc55a:
         switch ((int)pfVar3) {
         case 0: case 1: case 2: {
             if (*(int *)(param_1 + 0x58) != -2) {
-                float loc30 = 0.1f, loc2c = 0.1f, loc28 = 0.1f;
+                // IDA pasa `Angle` (reusado como Light) = (0.1, 0.1, 0.1) a
+                // Particle_Spawn. Estaban como tres escalares sueltos y se pasaba
+                // &loc30 como vec3: sin contiguidad garantizada los canales G y B
+                // salian de basura — las nubes de Icarus se veian verdes y magenta.
+                float loc30[3] = { 0.1f, 0.1f, 0.1f };
                 int nIter = 0x14;
-                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
+                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             return pfVar3;
         }
         case 3: case 4: case 5: {
             if (*(int *)(param_1 + 0x58) != -2) {
-                float loc30 = 0.1f, loc2c = 0.1f, loc28 = 0.1f;
+                // IDA pasa `Angle` (reusado como Light) = (0.1, 0.1, 0.1) a
+                // Particle_Spawn. Estaban como tres escalares sueltos y se pasaba
+                // &loc30 como vec3: sin contiguidad garantizada los canales G y B
+                // salian de basura — las nubes de Icarus se veian verdes y magenta.
+                float loc30[3] = { 0.1f, 0.1f, 0.1f };
                 int nIter = 10;
-                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), &loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
+                do { pfVar3 = (float *)Particle_Spawn(0x4f4, (float *)(param_1 + 0x10), (float *)(param_1 + 0x1c), loc30, (int)*(short *)(param_1 + 2), *(float *)(param_1 + 0xc), param_1); } while (--nIter);
             }
             *(undefined4 *)(param_1 + 0x58) = 0xfffffffe;
             return pfVar3;
