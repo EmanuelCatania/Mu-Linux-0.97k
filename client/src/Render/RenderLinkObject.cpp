@@ -82,6 +82,7 @@
 #include <math.h>   // fsin
 
 extern "C" void DbgLogPublic(const char*);
+extern "C" int g_BackItemHand;   // 0/1: mano del item colgado en la espalda
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -251,13 +252,72 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                     local_20c =   5.0f;
                     local_1fc =  10.0f;
                 }
-                else
+            else
+            {
+                // ── Tabla de poses de escudo / segundo item ─────────────────
+                // PORT DEL DLL (CWeaponView::SecondWeaponViewFix), 2026-09-01.
+                // El DLL engancha en 0x0045568B (la rama generica de abajo, que
+                // vanilla resuelve con trans (-20, 5, 40)) y salta de vuelta a
+                // 0x004556AA.  Constantes decodificadas de su bloque _asm:
+                //   0xC20C0000=-35  0x41200000=10   0x41F00000=30  0xC1200000=-10
+                //   0x43070000=135  0x42B40000=90   0xC1A00000=-20 0x42480000=50
+                //   0xC1E00000=-28  0xC1C80000=-25  0xC2DC0000=-110 0x43340000=180
+                //   0x41A00000=20   0x41700000=15   0x42200000=40  0x40A00000=5
+                // Sin esto un escudo cae en la pose generica de arma
+                // (Angle 70,0,90 / trans -20,5,40) y queda flotando por encima
+                // de la cabeza.
+                bool poseSet = false;
+
+                if (param_6 >= 592 && param_6 < 624)     // GET_ITEM_MODEL(6,0)..(7,0)
                 {
-                    // Other weapons (swords, staffs, etc.)
+                    poseSet = true;
+                    if (param_6 == 598) {                // Skull Shield
+                        // sin AngleMatrix: conserva el angulo generico (70,0,90)
+                        local_21c = -35.0f; local_20c = 10.0f; local_1fc = 0.0f;
+                    }
+                    else if (param_6 == 605) {           // Dragon Shield
+                        afStack_264[3] =  30.0f;
+                        afStack_264[4] = -10.0f;
+                        afStack_264[5] = 135.0f;
+                        Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                        local_21c = -10.0f; local_20c = 10.0f; local_1fc = 0.0f;
+                    }
+                    else if (param_6 == 608) {           // Elemental Shield
+                        afStack_264[3] = 30.0f;
+                        afStack_264[4] =  0.0f;
+                        afStack_264[5] = 90.0f;
+                        Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                        local_21c = -20.0f; local_20c = 0.0f; local_1fc = -20.0f;
+                    }
+                    else if (param_6 == 607 || param_6 == 606) {  // Grand Soul / Legendary
+                        afStack_264[3] = 50.0f;
+                        afStack_264[4] =  0.0f;
+                        afStack_264[5] = 90.0f;
+                        Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                        local_21c = -28.0f; local_20c = 10.0f; local_1fc = -25.0f;
+                    }
+                    else {                               // resto de escudos
+                        local_21c = -10.0f; local_20c = 10.0f; local_1fc = 0.0f;
+                    }
+                }
+                else if (g_BackItemHand != 0)            // = SecondWeaponFixVal
+                {
+                    poseSet = true;
+                    afStack_264[3] = -110.0f;
+                    afStack_264[4] =  180.0f;
+                    afStack_264[5] =   90.0f;
+                    Matrix_BuildFromEuler(afStack_264 + 3, local_228);
+                    local_21c = 20.0f; local_20c = 15.0f; local_1fc = 40.0f;
+                }
+
+                if (!poseSet)
+                {
+                    // Vanilla (0x0045568B): arma en la mano 0.
                     local_21c = -20.0f;
                     local_20c =   5.0f;
                     local_1fc =  40.0f;
                 }
+            }
             }
         }
         else if ((param_6 == 0x23a) || (param_6 == 0x1a3))

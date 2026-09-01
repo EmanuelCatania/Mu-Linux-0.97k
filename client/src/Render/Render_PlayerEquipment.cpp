@@ -657,16 +657,26 @@ extern "C" void HeroEquipWatchdog(int c)
     (void)kBodyOff;
 }
 
+// IsBackItem (port del DLL, WeaponView.cpp:265)
+// Clases 0..6 (espadas, hachas, mazas, lanzas, arcos, baculos, escudos) =
+// modelos 400..623.  Los items de esas clases se cuelgan de la espalda.
+static bool IsBackItem(int iType)
+{
+    return (iType >= 400 && iType < 624);
+}
+
+// Mano cuyo item se esta colgando (0 = Weapon[0], 1 = Weapon[1]).  La lee la
+// tabla de poses de FUN_00455430; equivale al `SecondWeaponFixVal` del DLL.
+extern "C" int g_BackItemHand = 0;
+
 extern "C" int RenderCharacterBackItem(int c, int o)
 {
-    // ── Bind (IDA RenderCharacter 0x456770, LABEL_265 .. LABEL_308) ──────────
-    // REESCRITA 2026-09-01.  La version anterior era un port del DLL de
-    // inyeccion (`WeaponView.cpp`) y divergia del binario en lo esencial: hacia
-    // un LOOP sobre LOS DOS slots de arma y mandaba AMBOS a la espalda.  El
-    // 0.97k manda UNO SOLO, elegido por `Hand`.  Con espada + escudo el vanilla
-    // cuelga la ESPADA y no dibuja el escudo; nosotros dibujabamos tambien el
-    // escudo, que con la traslacion (-20, 5, 40) del hueso 47 queda flotando
-    // por encima de la cabeza.  (Regla del proyecto: IDA manda sobre el DLL.)
+    // Bind -- IDA RenderCharacter 0x456770, LABEL_265 .. LABEL_308.
+    // Decide si las armas se cuelgan de la espalda (hueso 47) en vez de ir en
+    // la mano.  Esta parte es 1:1 con el binario; lo que SI se tomo del DLL es
+    // el bucle de los dos slots de abajo (ver el comentario ahi).
+    // El caller usa el valor de retorno para saltear Render_PlayerWeaponLoop,
+    // igual que el `if (!Bind)` de LABEL_330.
     int Bind = 0;
 
     // DESVIACION DEL PORT (2026-05-04, conservada): gate por state=5 (in-game).
@@ -684,10 +694,10 @@ extern "C" int RenderCharacterBackItem(int c, int o)
         Bind = 1;
     else if (anim >= 93 && anim <= 124)             // PLAYER_GREETING1..SALUTE1
         Bind = 1;
-    else if (World == 7 && (anim == 21 || anim == 29))
+    else if (iWorld == 7 && (anim == 21 || anim == 29))
         Bind = 1;
 
-    if (World >= 11 && World <= 16)                 // InBloodCastle()
+    if (iWorld >= 11 && iWorld <= 16)               // InBloodCastle()
         Bind = 0;
 
     // IDA LABEL_275: los no-jugadores saltan a LABEL_330 (loop de manos), que
@@ -695,70 +705,90 @@ extern "C" int RenderCharacterBackItem(int c, int o)
     if (*(short*)(o + 2) != 390)                    // o->Type != MODEL_PLAYER
         return Bind;
 
-    // ── Que item va a la espalda, y de que mano ──────────────────────────────
+    // ── Que items van a la espalda ──────────────────────────────────────────
+    // PORT DEL DLL (CWeaponView::RenderCharacterBackItem, WeaponView.cpp:49),
+    // 2026-09-01.  Este main.exe cuelga UN SOLO item: verificado instruccion por
+    // instruccion en 0x458370-0x4584C0 --
+    //     004583bb  LEA   ECX, [EAX+EAX*2+0x4E]      ; 3*Hand + 78
+    //     004583c7  MOVSX EBX, word ptr [EDI+ECX*8]  ; un unico Type
+    //     0045849f  CALL  0x00455430                 ; una unica llamada
+    //     004584c0  ...                              ; cae a LABEL_308, sin salto atras
+    // -- y elegia la mano con un `Hand` que solo pasa a 1 con arco (528..534,
+    // 545) o flechas (535), asi que el escudo no se dibujaba nunca.
+    //
+    // El cliente de referencia SI muestra los dos, y la funcion que lo hace esta
+    // en el DLL de inyeccion: itera los dos slots (igual que MU 5.2, cuyo
+    // RenderLinkObject ademas tiene un parametro `bRightHandItem` que el de
+    // 0.97k no tiene) y parchea 0x0045568B con una tabla de poses por tipo de
+    // escudo mas un offset para el segundo item.  Portado: el bucle aca, la
+    // tabla en FUN_00455430.
+    //
     // Weapon[0] = c+624 (0x270), Weapon[1] = c+648 (0x288).
-    int Hand = 0;
-    int Back = 0;
-    const int w0 = *(short*)(c + 624);
-    const int w1 = *(short*)(c + 648);
+    bool bBack = false;
 
-    if (Bind) {
-        Back = 1;
-        if ((w1 >= 528 && w1 < 535) || w1 == 545) {         // Bow
-            Hand = 1;
-        } else if ((w0 >= 536 && w0 < 543) || w0 == 544 || w0 == 546) {  // Crossbow
-            Hand = 0;
-        } else if (w1 == 535) {                             // Bolts
-            Hand = 1;
+    for (int i = 0; i < 2; ++i) {
+        const int partBase = c + 24 * i;
+        int iType    = *(short*)(partBase + 0x270);
+        int iLevel   = *(unsigned char*)(partBase + 0x272);
+        int iOption1 = *(unsigned char*)(partBase + 0x273);
+
+        if (iType < 0)
+            continue;
+
+        // Esqueleto NPC de Lorencia (Kind 4, World 0, SubType 206..208): baculo
+        // fijo, una sola vez.  Vanilla usa 537 = GET_ITEM_MODEL(4, 9).
+        const unsigned char Kind = *(unsigned char*)(o + 0x84);
+        const int SubType = *(int*)(o + 4);
+        if (Kind == 4 && iWorld == 0 && SubType >= 206 && SubType <= 208) {
+            if (i == 0) {
+                bBack  = true;
+                iType  = 537;
+                iLevel = 8;
+            }
         }
-    } else if (w1 == 535) {                                 // Bolts
-        Back = 1;
-        Hand = 1;
-    } else if (w0 == 543) {                                 // Arrows
-        Back = 1;
+
+        if (IsBackItem(iType))
+            bBack = true;
+
+        // Flechas (535) y bolts (543) quedan en la espalda SIEMPRE; el resto
+        // solo con Bind (zona segura / saludo / nadando en Atlans).
+        if (iType == 535 || iType == 543)
+            bBack = true;
+        else if (!Bind)
+            bBack = false;
+
+        if (!bBack || iType == -1)
+            continue;
+
+        // ── Render en el hueso 47 (espalda), reusando el PART del ala ────────
+        const unsigned int fAnimationFrameBackUp = *(unsigned int*)(c + 0x2A8);
+        *(unsigned char*)(c + 0x2A4) = 47;                  // w->LinkBone
+        if (anim == 30 || anim == 31)                       // PLAYER_FLY / FLY_CROSSBOW
+            *(float*)(c + 0x2B0) = 1.0f;
+        else
+            *(float*)(c + 0x2B0) = 0.25f;
+
+        // Hex-Rays llama `Scale` a esta local, pero el 9no parametro de
+        // RenderLinkObject es `Link`.  Para armas/escudos (400..623) va 1.
+        char Link = '\0';
+        if (iType >= 400 && iType < 624) {
+            Link = '\x01';
+            // PlaySpeed = Models[MODEL_PLAYER].Actions[1].PlaySpeed
+            //   Models + 0x11E98 = Models + 390*0xBC + 0x30  (puntero a Actions)
+            int actions = *(int*)(DAT_05828d58 + 390 * 0xbc + 0x30);
+            if (actions != 0)
+                *(unsigned int*)(c + 0x2B0) = *(unsigned int*)(actions + 20);
+        }
+
+        g_BackItemHand = i;      // lo lee la tabla de poses de FUN_00455430
+        FUN_00455430(0.0f, 0.0f, 15.0f, c, c + 0x2A0,
+                     iType, (char)iLevel, (unsigned int)iOption1,
+                     Link, '\x01', 0);
+        g_BackItemHand = 0;
+
+        *(unsigned int*)(c + 0x2A8) = fAnimationFrameBackUp;
     }
 
-    const int partBase = c + 24 * Hand;                     // 624 / 648
-    int Type    = *(short*)(c + 8 * (3 * Hand + 78));
-    int Level   = *(unsigned char*)(partBase + 0x272);
-    int Option1 = *(unsigned char*)(partBase + 0x273);
-
-    // Esqueleto NPC de Lorencia (Kind 4, World 0, SubType 206..208): baculo fijo.
-    const unsigned char Kind = *(unsigned char*)(o + 0x84);
-    const int SubType = *(int*)(o + 4);
-    if (Kind != 4 || World != 0 || SubType < 206 || SubType > 208) {
-        if (!Back || Type == -1)
-            return Bind;                                    // IDA: goto LABEL_308
-    } else {
-        Type  = 537;                                        // GET_ITEM_MODEL(4, 9)
-        Level = 8;
-    }
-
-    // ── Render en el hueso 47 (espalda), reusando el PART del ala ────────────
-    const unsigned int fAnimationFrameBackUp = *(unsigned int*)(c + 0x2A8);
-    *(unsigned char*)(c + 0x2A4) = 47;                      // w->LinkBone
-    if (anim == 30 || anim == 31)                           // PLAYER_FLY / FLY_CROSSBOW
-        *(float*)(c + 0x2B0) = 1.0f;
-    else
-        *(float*)(c + 0x2B0) = 0.25f;
-
-    // Hex-Rays llama `Scale` a esta local, pero el 9no parametro de
-    // RenderLinkObject es `Link`.  Para armas/escudos (400..623) va 1.
-    char Link = '\0';
-    if (Type >= 400 && Type < 624) {
-        Link = '\x01';
-        // PlaySpeed = Models[MODEL_PLAYER].Actions[1].PlaySpeed
-        //   Models + 0x11E98 = Models + 390*0xBC + 0x30  (puntero a Actions)
-        int actions = *(int*)(DAT_05828d58 + 390 * 0xbc + 0x30);
-        if (actions != 0)
-            *(unsigned int*)(c + 0x2B0) = *(unsigned int*)(actions + 20);
-    }
-
-    FUN_00455430(0.0f, 0.0f, 15.0f, c, c + 0x2A0,
-                 Type, (char)Level, (unsigned int)Option1,
-                 Link, '\x01', 0);
-
-    *(unsigned int*)(c + 0x2A8) = fAnimationFrameBackUp;
     return Bind;
 }
 
