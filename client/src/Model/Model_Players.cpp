@@ -290,7 +290,14 @@ void __cdecl Model_LoadItemMeshes(void)
         FUN_00505e90((int)0x33f, "Data2\\Item\\ETC\\", "\xBD\xBA\xC5\xC0.smd");
     }
     FUN_005060b0(0x366, "Data\\Item\\", "jewel", 0x16);
-    for (int i = 0x33e; i-0x33d < 2; i++)
+    // BUGFIX 2026-09-01: el bound era `i-0x33d < 2` (base 829) -> UNA sola
+    // vuelta, asi que el modelo 0x33f (831 = Fruit, Quest05.bmd) nunca se
+    // cargaba: la fruta quedaba invisible en el grid del inventario y por eso
+    // no habia nada que hoverear para que saliera su tooltip.
+    // IDA 0x5079D0 L203-209:
+    //   v30 = 830; do { AccessModel(v30, ..., "Quest", v30 - 826); ++v30; }
+    //   while (v30 - 830 < 2);      // -> 830 (Quest04) y 831 (Quest05)
+    for (int i = 0x33e; i-0x33e < 2; i++)
         FUN_005060b0(i, "Data\\Item\\", "Quest", i - 0x33a);
 
     // Wings BMD (0x310-0x312)
