@@ -202,37 +202,6 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
         *(float*)(iVar7 + 0x70) = local_23c_f         + *(float*)(param_4 + 0x14);
         *(float*)(iVar7 + 0x74) = local_238_f         + *(float*)(param_4 + 0x18);
 
-        // ── DIAG: log wing/weapon BodyOrigin + parent bone matrix per call ──
-        if (param_6 >= 0x310 && param_6 <= 0x316) {
-            static int s_wgLogN = 0;
-            if (s_wgLogN < 16) {
-                s_wgLogN++;
-                short numMesh = *(short*)((char*)iVar7 + 0x24);
-                short numBone = *(short*)((char*)iVar7 + 0x26);
-                BYTE  bone    = *(unsigned char*)(param_5 + 4);
-                float bx = *(float*)(iVar7 + 0x6c);
-                float by = *(float*)(iVar7 + 0x70);
-                float bz = *(float*)(iVar7 + 0x74);
-                float pos0 = *(float*)&local_240;
-                // Parent (player) info
-                short parentType = *(short*)(param_4 + 2);
-                short parentNumBone = *(short*)((char*)DAT_05828d58 + parentType * 0xbc + 0x26);
-                int  *boneBuf = *(int**)(param_4 + 0x114);
-                float* bm = (float*)((char*)boneBuf + bone * 0x30);
-                char b[400];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "WG.in #%d wing=0x%X bone=%d numMesh=%d numBone=%d "
-                    "parentType=0x%X parentNumBone=%d boneBuf=%p "
-                    "boneOff=(%.2f,%.2f,%.2f) BO=(%.1f,%.1f,%.1f) "
-                    "M[0]=(%.3f,%.3f,%.3f,%.3f) M[1]=(%.3f,%.3f,%.3f,%.3f) "
-                    "M[2]=(%.3f,%.3f,%.3f,%.3f)",
-                    s_wgLogN, (int)param_6, bone, (int)numMesh, (int)numBone,
-                    (int)parentType, (int)parentNumBone, boneBuf,
-                    pos0, local_23c_f, local_238_f, bx, by, bz,
-                    bm[0],bm[1],bm[2],bm[3], bm[4],bm[5],bm[6],bm[7], bm[8],bm[9],bm[10],bm[11]);
-                DbgLogPublic(b);
-            }
-        }
     }
     else
     {
@@ -661,6 +630,14 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     void* pModel2 = (void*)iVar7;
     // Luminosity = (float)(rand()%30 + 70) * _DAT_00552940
     float fLum = (float)(iVar_rand % 0x1e + 0x46) * _DAT_00552940;
+    // BUGFIX 2026-09-01: locales no contiguos que Ghidra separo.  Los 9 cases
+    // del switch de abajo construian el `Light[3]` de IDA como TRES escalares
+    // sueltos (ebp-270h / -26Ch / -268h) y pasaban `&pbStack_270_f` como vec3.
+    // MSVC no garantiza ese layout, asi que CreateSprite leia G y B de basura:
+    // el brillo de cada arma/escudo salia con color arbitrario.  El Grand Soul
+    // Shield (tipo 607) deberia tirar a azul (Light[2] = fLum*2, ~3x el R/G) y
+    // se veia blanco.
+    float Light[3] = { 0.0f, 0.0f, 0.0f };
 
     // The switch is on param_6 (Type), Ghidra mis-typed as float; actual int cases:
     // 0x1a3=419, 0x1af=431, 0x1d7=471, 0x1fa=506,
@@ -669,13 +646,13 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     {
     case 0x1a3:  // MODEL_STAFF+10 equivalent — fire particles on bones 0..9
     {
-        float pbStack_26c_f = fLum * _DAT_005528b8;
+        Light[1] = fLum * _DAT_005528b8;
         afStack_264[3] = 0.0f;
         afStack_264[4] = 0.0f;
         afStack_264[5] = 0.0f;
-        float fStack_268 = fLum * _DAT_005524f4;
+        Light[2] = fLum * _DAT_005524f4;
         float* pfVar10 = (float*)&DAT_06970afc;
-        float pbStack_270_f = fLum;
+        Light[0] = fLum;
         do {
             afStack_264[0] = 0.4f;
             afStack_264[1] = 0.4f;
@@ -688,7 +665,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 FUN_004795c0(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
                              (float)(r2 % 0x168), r1);
             }
-            FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, &pbStack_270_f, param_4, 0, 0);
+            FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
             pfVar10 += 0xc;
         } while ((int)pfVar10 < 0x6970c4c);
 
@@ -716,7 +693,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 bEven = ((uv - 1) | 0xfffffffeu) == 0xffffffffu;
             if (bEven)
             {
-                float pbStack_270_f = 1.0f, pbStack_26c_f = 1.0f, fStack_268 = 1.0f;
+                Light[0] = 1.0f; Light[1] = 1.0f; Light[2] = 1.0f;
                 afStack_264[3] = 0.0f;
                 afStack_264[4] = 0.0f;
                 afStack_264[5] = 0.0f;
@@ -733,7 +710,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                     afStack_264[2] = *(float*)(param_4 + 0x24);
                     afStack_264[0] = (float)(r3 % 0x3c + 0x96);
                     Joint_Create(0x4e9, afStack_264 + 6, afStack_264 + 6, afStack_264, 0, 0, 10.0f, -1, 0);
-                    Particle_Spawn(0x497, afStack_264 + 6, afStack_264, &pbStack_270_f, 0, 1.0f, 0);
+                    Particle_Spawn(0x497, afStack_264 + 6, afStack_264, Light, 0, 1.0f, 0);
                     iVar8--;
                 } while (iVar8 != 0);
             }
@@ -743,34 +720,34 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
 
     case 0x1d7:  // blue light pulse on bone
     {
-        float pbStack_26c_f = fLum * _DAT_005526e8;
-        float fStack_268 = 0.0f;
+        Light[1] = fLum * _DAT_005526e8;
+        Light[2] = 0.0f;
         afStack_264[3] = 0.0f;
         afStack_264[4] = 0.0f;
         afStack_264[5] = 0.0f;
-        float pbStack_270_f = fLum;
+        Light[0] = fLum;
         BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
-        FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, &pbStack_270_f, param_4, 0, 0);
-        pbStack_270_f = 0.5f;
-        pbStack_26c_f = 0.5f;
+        FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+        Light[0] = 0.5f;
+        Light[1] = 0.5f;
         float fVar15 = (float)sin((double)((float)DAT_05826e08 * _DAT_005528e0));
-        fStack_268 = 0.5f;
-        FUN_004795c0(0x47e, afStack_264 + 6, fVar15 + _DAT_00552504, &pbStack_270_f, param_4, 0, 0);
+        Light[2] = 0.5f;
+        FUN_004795c0(0x47e, afStack_264 + 6, fVar15 + _DAT_00552504, Light, param_4, 0, 0);
         return;
     }
 
     case 0x1fa:  // orbit sprite loop
     {
-        float pbStack_270_f = fLum * _DAT_005526e4;
+        Light[0] = fLum * _DAT_005526e4;
         afStack_264[3] = 0.0f;
         afStack_264[4] = 0.0f;
         afStack_264[5] = 0.0f;
         float* pfVar10 = (float*)&DAT_06970acc;
-        float pbStack_26c_f = fLum * _DAT_005524f4;
-        float fStack_268 = fLum * _DAT_00552530;
+        Light[1] = fLum * _DAT_005524f4;
+        Light[2] = fLum * _DAT_00552530;
         do {
             BMD_TransformPosition(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
-            FUN_004795c0(0x47e, afStack_264 + 6, 1.3f, &pbStack_270_f, param_4, 0, 0);
+            FUN_004795c0(0x47e, afStack_264 + 6, 1.3f, Light, param_4, 0, 0);
             pfVar10 += 0xc;
         } while ((int)pfVar10 < 0x6970c4c);
         return;
@@ -783,48 +760,48 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     {
         if (param_6 == 0x216)
         {
-            float pbStack_270_f = fLum * _DAT_00552534;
+            Light[0] = fLum * _DAT_00552534;
             int iVar8 = 0x0d;
-            float fStack_268 = fLum * _DAT_00552530;
-            float pbStack_26c_f = fLum;
+            Light[2] = fLum * _DAT_00552530;
+            Light[1] = fLum;
             do {
-                FUN_004553c0(pModel2, 0x4cf, iVar8, 1.0f, &pbStack_270_f, param_4);
+                FUN_004553c0(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
                 iVar8++;
             } while (iVar8 < 0x13);
             return;
         }
         if (param_6 == 0x221)
         {
-            float pbStack_270_f = fLum * _DAT_00552504;
+            Light[0] = fLum * _DAT_00552504;
             int iVar8 = 0x0d;
-            float fStack_268 = fLum * _DAT_00552530;
-            float pbStack_26c_f = pbStack_270_f;
+            Light[2] = fLum * _DAT_00552530;
+            Light[1] = Light[0];
             do {
-                FUN_004553c0(pModel2, 0x4cf, iVar8, 1.0f, &pbStack_270_f, param_4);
+                FUN_004553c0(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
                 iVar8++;
             } while (iVar8 < 0x13);
             iVar8 = 5;
             do {
-                FUN_004553c0(pModel2, 0x4cf, iVar8, 1.0f, &pbStack_270_f, param_4);
+                FUN_004553c0(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
                 iVar8++;
             } while (iVar8 < 9);
             return;
         }
         // cases 0x214 and 0x215
-        float pbStack_26c_f = fLum * _DAT_00552534;
-        float fStack_268 = fLum * _DAT_005526e4;
-        float pbStack_270_f = fLum;
-        FUN_004553c0(pModel2, 0x4cf, 2, 1.0f, &pbStack_270_f, param_4);
-        FUN_004553c0(pModel2, 0x4cf, 6, 1.0f, &pbStack_270_f, param_4);
+        Light[1] = fLum * _DAT_00552534;
+        Light[2] = fLum * _DAT_005526e4;
+        Light[0] = fLum;
+        FUN_004553c0(pModel2, 0x4cf, 2, 1.0f, Light, param_4);
+        FUN_004553c0(pModel2, 0x4cf, 6, 1.0f, Light, param_4);
         return;
     }
 
     case 0x23a:  // MODEL_STAFF+10 alternate — orbit loop on DAT_06970a9c
     {
-        float pbStack_26c_f = fLum * _DAT_005528b8;
+        Light[1] = fLum * _DAT_005528b8;
         int iVar7_loc = 0;
-        float fStack_268 = fLum * _DAT_005524f4;
-        float pbStack_270_f = fLum;
+        Light[2] = fLum * _DAT_005524f4;
+        Light[0] = fLum;
         do {
             afStack_264[0] = 0.4f;
             afStack_264[3] = (float)iVar7_loc * _DAT_0055284c - _DAT_005524ec;
@@ -840,7 +817,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 FUN_004795c0(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
                              (float)(r2 % 0x168), r1);
             }
-            FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, &pbStack_270_f, param_4, 0, 0);
+            FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
             iVar7_loc++;
         } while (iVar7_loc < 10);
         return;
@@ -848,15 +825,15 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
 
     case 0x25f:  // electric charge effect
     {
-        float pbStack_270_f = fLum * _DAT_00552534;
-        float fStack_268 = fLum + fLum;
+        Light[0] = fLum * _DAT_00552534;
+        Light[2] = fLum + fLum;
         afStack_264[3] = 15.0f;
         afStack_264[4] = -15.0f;
         afStack_264[5] = 0.0f;
-        float pbStack_26c_f = pbStack_270_f;
+        Light[1] = Light[0];
         BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
-        FUN_004795c0(0x4cf, afStack_264 + 6, 1.5f, &pbStack_270_f, param_4, 0, 0);
-        FUN_004795c0(0x47e, afStack_264 + 6, fLum + _DAT_005528f0, &pbStack_270_f, param_4, 0, 0);
+        FUN_004795c0(0x4cf, afStack_264 + 6, 1.5f, Light, param_4, 0, 0);
+        FUN_004795c0(0x47e, afStack_264 + 6, fLum + _DAT_005528f0, Light, param_4, 0, 0);
         return;
     }
 
