@@ -785,7 +785,7 @@ void __cdecl FUN_004e1be0(float param_1, float param_2, float param_3, float par
 // BUG-FIX 2026-04-28: lógica del branch NULL estaba INVERTIDA (skipping cuando
 // debería render). IDA: `if (NULL && i != HiddenMesh) goto render;`. Y la
 // comparación `i != HiddenMesh` debe ser INT, no float (NaN para -1, etc.).
-void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, float f6, int rgba) {
+void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba) {
     // BUG-FIX 2026-04-29: validar model + meshBase antes de iterar. Crash AV en
     // glPopMatrix con stack KernelBase+opengl32 venía de un FUN_00440d50 que
     // dereferenciaba un mesh pointer wild (VBO inválido).
@@ -803,8 +803,8 @@ void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, fl
         if (f1 < _DAT_00552544) glColor4f(*(float*)((char*)model+0x48),*(float*)((char*)model+0x4c),*(float*)((char*)model+0x50),f1);
         else glColor3fv((GLfloat*)((char*)model + 0x48));
     }
-    // Reinterpret f6 bits as int for HiddenMesh comparison (IDA reads as int).
-    int HiddenMesh = *(int*)&f6;
+    // HiddenMesh: entero (indice de malla a ocultar, o -1), como el a8 de IDA.
+    int HiddenMesh = f6;
     int meshBase = *(int*)((char*)model + 0x28);
     int numMesh = (int)*(short*)((char*)model+0x24);
     for (int i = 0; i < numMesh; i++) {

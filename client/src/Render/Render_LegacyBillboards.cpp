@@ -205,8 +205,6 @@ void __cdecl FUN_00503fe0(int param_1, float param_2, float param_3, float *para
 void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
                             int flags, float alpha, int rgba)
 {
-    static const int kHiddenMeshAllBits = -1;
-    static const float kHiddenMeshAll = *(const float*)&kHiddenMeshAllBits;
     float *color = (float *)((char*)model + 0x48);
     if ((flags & 0x10) == 0x10) {
         color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f;
@@ -219,7 +217,7 @@ void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
         }
         FUN_00441e00(model, (uint)flags, scale,
                      *(int *)(entity+100), *(float*)(entity+0x68),
-                     *(float*)(entity+0x6c), *(float*)(entity+0x70), kHiddenMeshAll, (uint)rgba);
+                     *(float*)(entity+0x6c), *(float*)(entity+0x70), -1, (uint)rgba);
         return nullptr;
     } else {
         FUN_00503cf0(etype, scale, alpha, color, (char)((flags >> 8) & 1));
@@ -229,15 +227,15 @@ void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
     } else if (etype == 0x235) {
         FUN_00441e00(model, (uint)flags, scale,
                      *(int *)(entity+100), *(float*)(entity+0x68),
-                     *(float*)(entity+0x6c), *(float*)(entity+0x70), 1.4013e-45f, (uint)rgba);
+                     *(float*)(entity+0x6c), *(float*)(entity+0x70), 1, (uint)rgba);
         return nullptr;
     } else if (etype != 0x1af && etype != 0x1fa && etype != 0x260) {
         FUN_00441e00(model, (uint)flags, scale,
                      *(int *)(entity+100), *(float*)(entity+0x68),
-                     *(float*)(entity+0x6c), *(float*)(entity+0x70), kHiddenMeshAll, (uint)rgba);
+                     *(float*)(entity+0x6c), *(float*)(entity+0x70), -1, (uint)rgba);
         return nullptr;
     }
-    float fVar1 = *(float*)(entity + 0x58);
+    int fVar1 = *(int*)(entity + 0x58);
     FUN_00441e00(model, (uint)flags, scale,
                  *(int *)(entity+100), *(float*)(entity+0x68),
                  *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
@@ -252,15 +250,13 @@ void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
 void* __cdecl FUN_00504ac0(void *model, int entity, int etype, float scale,
                              int flags, float alpha, int rgba)
 {
-    static const int kHiddenMeshAllBits = -1;
-    static const float kHiddenMeshAll = *(const float*)&kHiddenMeshAllBits;
     float *color = (float *)((char*)model + 0x48);
     if ((flags & 0x10) == 0x10) {
         color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f;
     } else {
         FUN_00503fe0(etype, scale, alpha, color);
     }
-    float fVar1 = (etype == 0x235) ? 1.4013e-45f : kHiddenMeshAll;
+    int fVar1 = (etype == 0x235) ? 1 : -1;   // HiddenMesh: malla 1 / ninguna
     FUN_00441e00(model, (uint)flags, scale,
                  *(int *)(entity+100), *(float*)(entity+0x68),
                  *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);

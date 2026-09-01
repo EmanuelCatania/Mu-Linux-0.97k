@@ -246,7 +246,7 @@ void  __cdecl FUN_00440d30(void);                                  // Model_Push
 void  __cdecl FUN_00440d50(void *model, float layer, int anim_id, float scale, int height,
                             float x, float y, float z, unsigned int color);
 // Model_Render(model, param2, param3, anim_mode, flags, extra)  — 6-arg form used in Entity_DrawSetup
-void  __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, float f6, int rgba);
+void  __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba);
 void  __cdecl FUN_00441be0(void *model, int a, int b);             // Model_KillAnim(model, 0, anim_slot)
 void  __cdecl FUN_00441f00(void *model, int height_int, int anim); // Model_RenderShadow(model, height, anim)
 void  __cdecl FUN_00442090(int model_ptr);                         // Model_Unload (free BMD model data)

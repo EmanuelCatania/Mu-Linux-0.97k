@@ -596,7 +596,7 @@ void __cdecl FUN_00505970(void *param_1,void *param_2_v,int param_3,char param_4
                (float *)(param_2 + 0x130),param_4);
   FUN_00441e00(param_1,(uint)param_3,*(float *)(param_2 + 0x168),*(int *)(param_2 + 100),
                *(float *)(param_2 + 0x68),*(float *)(param_2 + 0x6c),*(float *)(param_2 + 0x70),
-               *(float *)(param_2 + 0x58),0xffffffff);
+               *(int *)(param_2 + 0x58),0xffffffff);
   _DAT_005597c8 = 1.0f;   // reset LOD scale
   return;
 }

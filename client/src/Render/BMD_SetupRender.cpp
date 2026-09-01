@@ -52,7 +52,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
       *(undefined4 *)((int)param_1 + 0x50) = 0x3f99999a;   // B≈1.2
       FUN_00441e00(param_1, 6, *(float *)(param_2 + 0x168), *(int *)(param_2 + 100),
                    *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-                   *(float *)(param_2 + 0x70), *(float *)(param_2 + 0x58), 0x493);
+                   *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0x493);
       goto LAB_00504925;
     }
     if (param_3 != 0x316) {
@@ -138,7 +138,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
           *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
           FUN_00441e00(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-                       *(float *)(param_2 + 0x70), *(float *)(param_2 + 0x58), 0xffffffff);
+                       *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0xffffffff);
           FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, 1,
                        *(float *)(param_2 + 0x68),
                        DAT_05826e08 * _DAT_00552868, DAT_05826e08 * _DAT_00552a40, 0xffffffff);
@@ -150,7 +150,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
           *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
           FUN_00441e00(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-                       *(float *)(param_2 + 0x70), *(float *)(param_2 + 0x58), 0xffffffff);
+                       *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0xffffffff);
           fVar3 = (float10)DAT_05826e08;
           fVar2 = (float10)_DAT_00552500;
           fVar4 = (float10)fsin(fVar3 * fVar2);
@@ -200,7 +200,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
           }
           FUN_00441e00(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-                       *(float *)(param_2 + 0x70), -1.0f, 0xffffffff);
+                       *(float *)(param_2 + 0x70), -1, 0xffffffff);
           return;
         }
         // param_3 == 0x25f
@@ -258,14 +258,18 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
     fVar8  = 0.5f;
     uVar5  = 0x44;
   }
-  FUN_00441e00(param_1, uVar5, fVar6, fVar7, fVar8, fVar10, fVar11, fVar9, 0x493);
+  // fVar9 es reuso de registro de Hex-Rays: en los dos caminos que llegan aca
+  // vale `*(float *)(param_2 + 0x58)` (HiddenMesh, bit-pattern).  Se pasa el
+  // entero directo para no depender de esa reinterpretacion.
+  FUN_00441e00(param_1, uVar5, fVar6, fVar7, fVar8, fVar10, fVar11,
+               *(int *)(param_2 + 0x58), 0x493);
 LAB_00504925:
   *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
   *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
   *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
   FUN_00441e00(param_1, 2, *(float *)(param_2 + 0x168), *(int *)(param_2 + 100),
                *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
-               *(float *)(param_2 + 0x70), *(float *)(param_2 + 0x58), 0xffffffff);
+               *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0xffffffff);
   return;
 }
 
