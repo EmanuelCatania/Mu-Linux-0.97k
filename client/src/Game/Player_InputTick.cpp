@@ -1589,6 +1589,77 @@ void __cdecl Player_ProcessInput(void)
         }
 
         // ── Alt-target: NPC/item (SelectedNpc != -1) ────────────────────────
+        // 2026-09-04 (b): este bloque estaba DENTRO del guard
+        //     if (SelectedOperate == -1 || (montado && !SafeZone)) { ... }
+        // que envuelve las ramas de NPC / item / click al suelo.  O sea cuando SI
+        // habia objeto seleccionado, el guard saltaba todo el bloque -- incluido el
+        // propio manejo del operate.  Medido en debug.log: en el frame del click
+        // `MOVEHOVER ... c54=23` no lo seguia ni `PIT GroundClick!` ni la sonda.
+        // En IDA los dos son `if` HERMANOS y el de SelectedOperate va primero:
+        //     if ( SelectedOperate != -1 ) { ... }
+        //     if ( SelectedNpc != -1 )     { ... }
+        // Objeto interactuable bajo el cursor (sillas, bancos, barandas,
+        // orbes de Noria).  IDA 0x4ACEF0 L1133-1195.
+        //
+        // 2026-09-04 FIX: este bloque estaba como `else if (bClickEdge)`
+        // del `if (!shiftHeld)` de abajo, o sea SOLO corria con Shift
+        // apretado.  En IDA la cadena es secuencial y SelectedOperate se
+        // chequea ANTES del ramo de movimiento por terreno:
+        //     if ( SelectedOperate != -1 ) { ... goto LABEL_340/LABEL_312; }
+        //     ...
+        //     if ( GetAsyncKeyState(16) >> 8 != 0x80 ) { RenderTerrain(1); ... }
+        // y las dos salidas del bloque saltan al final del tick, o sea
+        // tienen PRECEDENCIA sobre el click al suelo.
+        if (SelectedOperate != -1 && bClickEdge) {
+            // Gate de montura (IDA L1135): solo se opera si NO se va
+            // montado, o si se esta en zona segura.
+            const unsigned short helper = *(unsigned short*)(ent + 0x2b8);
+            const bool mountOk = ((helper != 818 && helper != 819)
+                                  || *(unsigned char*)(ent + 0x34e) != 0);
+            const int iSrc = SelectedOperate;
+            // Bound check (no esta en IDA): SelectedOperate viene del
+            // picker del frame anterior.
+            const int nOper = (int)(sizeof(DAT_083a2370) / 0xc);
+            const int tgtEntityPtr = (iSrc >= 0 && iSrc < nOper)
+                                   ? ((int*)&DAT_083a2378)[iSrc * 3] : 0;
+
+            if (mountOk && tgtEntityPtr != 0) {
+                // 2026-09-04 FIX: TargetX/TargetY salen de la POSICION
+                // DEL OBJETO, no del tile bajo el cursor.  IDA L1138:
+                //     TargetX = (__int64)(o->Position[0] * 0.01);
+                //     TargetY = (__int64)(o->Position[1] * 0.01);
+                DAT_07e016c0 = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x10) * 0.01f);
+                DAT_07e016c4 = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x14) * 0.01f);
+
+                const int attrIdx = FUN_004f6c30((int)DAT_07e016c0, (int)DAT_07e016c4);
+                if (((unsigned char*)&DAT_0838bc70)[attrIdx] < 2
+                    && *(char*)(ent + 0x2ec) == 0)
+                {
+                    *(unsigned char*)(ent + 0x2ed) = 4;   // MOVEMENT_OPERATE
+                    DAT_07db8708  = (int)*(short*)(tgtEntityPtr + 2);
+                    _DAT_07e118e4 = *(DWORD*)(tgtEntityPtr + 0x24);
+
+                    const int srcX = *(int*)(ent + 0x388);
+                    const int srcY = *(int*)(ent + 0x38c);
+                    unsigned int ok = Path_FindRoute(srcX, srcY,
+                                                     DAT_07e016c0, DAT_07e016c4,
+                                                     ent + 0x354, 0.0f);
+                    if ((char)ok == 0) {
+                        // LABEL_312: sin camino (ya estamos al lado) ->
+                        // ejecutar la accion ahora.  El port mandaba otro
+                        // paquete de movimiento y NUNCA llamaba a Action,
+                        // asi que sentarse no se disparaba nunca.
+                        Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
+                        *(unsigned char*)(ent + 0x2ed) = 0;
+                    } else {
+                        // LABEL_340: hay camino -> caminar hasta el objeto.
+                        Combat_SendMovePathPacket((int)ent, (int)ent);
+                    }
+                    goto end_tick_inc;
+                }
+            }
+        }
+
         if (SelectedOperate == -1
             || ((*(short*)(ent + 0x2b8) == 0x332 || *(short*)(ent + 0x2b8) == 0x333)
                 && *(char*)(ent + 0x34e) == '\0'))
@@ -1836,68 +1907,6 @@ void __cdecl Player_ProcessInput(void)
             {
                 SHORT shift = GetAsyncKeyState(0x10);
                 bool shiftHeld = ((char)((unsigned short)shift >> 8) == -0x80);
-                // Objeto interactuable bajo el cursor (sillas, bancos, barandas,
-                // orbes de Noria).  IDA 0x4ACEF0 L1133-1195.
-                //
-                // 2026-09-04 FIX: este bloque estaba como `else if (bClickEdge)`
-                // del `if (!shiftHeld)` de abajo, o sea SOLO corria con Shift
-                // apretado.  En IDA la cadena es secuencial y SelectedOperate se
-                // chequea ANTES del ramo de movimiento por terreno:
-                //     if ( SelectedOperate != -1 ) { ... goto LABEL_340/LABEL_312; }
-                //     ...
-                //     if ( GetAsyncKeyState(16) >> 8 != 0x80 ) { RenderTerrain(1); ... }
-                // y las dos salidas del bloque saltan al final del tick, o sea
-                // tienen PRECEDENCIA sobre el click al suelo.
-                if (SelectedOperate != -1 && bClickEdge) {
-                    // Gate de montura (IDA L1135): solo se opera si NO se va
-                    // montado, o si se esta en zona segura.
-                    const unsigned short helper = *(unsigned short*)(ent + 0x2b8);
-                    const bool mountOk = ((helper != 818 && helper != 819)
-                                          || *(unsigned char*)(ent + 0x34e) != 0);
-                    const int iSrc = SelectedOperate;
-                    // Bound check (no esta en IDA): SelectedOperate viene del
-                    // picker del frame anterior.
-                    const int nOper = (int)(sizeof(DAT_083a2370) / 0xc);
-                    const int tgtEntityPtr = (iSrc >= 0 && iSrc < nOper)
-                                           ? ((int*)&DAT_083a2378)[iSrc * 3] : 0;
-
-                    if (mountOk && tgtEntityPtr != 0) {
-                        // 2026-09-04 FIX: TargetX/TargetY salen de la POSICION
-                        // DEL OBJETO, no del tile bajo el cursor.  IDA L1138:
-                        //     TargetX = (__int64)(o->Position[0] * 0.01);
-                        //     TargetY = (__int64)(o->Position[1] * 0.01);
-                        DAT_07e016c0 = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x10) * 0.01f);
-                        DAT_07e016c4 = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x14) * 0.01f);
-
-                        const int attrIdx = FUN_004f6c30((int)DAT_07e016c0, (int)DAT_07e016c4);
-                        if (((unsigned char*)&DAT_0838bc70)[attrIdx] < 2
-                            && *(char*)(ent + 0x2ec) == 0)
-                        {
-                            *(unsigned char*)(ent + 0x2ed) = 4;   // MOVEMENT_OPERATE
-                            DAT_07db8708  = (int)*(short*)(tgtEntityPtr + 2);
-                            _DAT_07e118e4 = *(DWORD*)(tgtEntityPtr + 0x24);
-
-                            const int srcX = *(int*)(ent + 0x388);
-                            const int srcY = *(int*)(ent + 0x38c);
-                            unsigned int ok = Path_FindRoute(srcX, srcY,
-                                                             DAT_07e016c0, DAT_07e016c4,
-                                                             ent + 0x354, 0.0f);
-                            if ((char)ok == 0) {
-                                // LABEL_312: sin camino (ya estamos al lado) ->
-                                // ejecutar la accion ahora.  El port mandaba otro
-                                // paquete de movimiento y NUNCA llamaba a Action,
-                                // asi que sentarse no se disparaba nunca.
-                                Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-                                *(unsigned char*)(ent + 0x2ed) = 0;
-                            } else {
-                                // LABEL_340: hay camino -> caminar hasta el objeto.
-                                Combat_SendMovePathPacket((int)ent, (int)ent);
-                            }
-                            goto end_tick_inc;
-                        }
-                    }
-                }
-
                 if (!shiftHeld) {
                     // BUG-FIX 2026-04-29: reset closest-hit sentinel ANTES de
                     // cada scan. Sin esto, FUN_00512d40 rechaza todos los hits
