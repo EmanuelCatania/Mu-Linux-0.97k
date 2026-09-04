@@ -1463,6 +1463,129 @@ switchD_caseD_4fd:
         if (jsub == 3) {
             goto switchD_caseD_4ef;   // IDA: case 3 → LABEL_447 (sin movimiento)
         }
+
+        // 2026-09-04 -- PORTADO: subtipos 7 y 11 (IDA 0x00470030 L1302-1682).
+        //
+        // Estos dos NO caen en la helice generica de mas abajo.  Rehice la traza
+        // de anidamiento de LABEL_301 contando llaves: `if (v168 != 7)` cierra en
+        // L1301 y la ejecucion sigue en L1302, dentro del bloque de
+        // `if (v168 != 12)`, que llega hasta L1683 y termina en `goto LABEL_447`.
+        // Solo los subtipos 4 y 12 alcanzan la helice.
+        //
+        // Es un PROYECTIL que converge sobre el owner:
+        //   - la posicion sale de una espiral alrededor de TargetPosition, con
+        //     radio que crece de 0 a 150 a medida que baja la vida;
+        //   - un bucle de tres pasos (x, y, z) interpola esa posicion hacia el
+        //     owner con peso `w`, que decrece con la vida -> se va pegando al
+        //     objetivo;
+        //   - y emite tres CreateSprite por tick (1231 + dos 1150), que es lo
+        //     unico visible del efecto.
+        //
+        // Es el disparo del ataque de Alquamos: AttackEffect case 0x45 crea ocho
+        // 1249/sub7 con el heroe como owner.  Nuestro port los mandaba a la
+        // helice, que ni converge ni emite sprites -- de ahi que primero se
+        // vieran lineas hacia cualquier lado y, una vez limpia la velocidad
+        // heredada del slot, no se viera nada.
+        if (jsub == 7 || jsub == 11) {
+            const int iIndex = (int)param_2;                 // indice de slot
+            const int msf    = (int)DAT_083a7c00;            // MoveSceneFrame
+            const int v203   = (iIndex % 2) ? msf : -msf;
+            float a1 = 0.061299998f, a2 = 0.1113f, v204 = 0.048f;
+            if (jsub == 11) { v204 = 0.071999997f; a1 = 0.091949999f; a2 = 0.16695f; }
+            const int    v205 = iIndex + v203 + 53730 * iIndex;
+            const double v207 = (double)v204 * (double)(v205 + 55555);
+            const int    life = *(int *)(param_1 + 0x9b8);
+            const double v209 = fsin(v207);
+            const double v210 = (double)v205 * (double)a1;
+            const float  out0 = (float)(fcos(v210) * v209);
+            const float  out1 = (float)(fsin(v210) * v209);
+            const double v211 = fcos(v207);
+            const double v212 = (double)(v205 + 11111) * (double)a2;
+            const double s212 = fsin(v212), c212 = fcos(v212);
+            const float  A1 = (float)(c212 * v211 + s212 * (double)out1);
+            const float  A0 = (float)(c212 * (double)out1 - s212 * v211);
+
+            const double v295 = (double)life * 1.3333334;
+            // IDA elige aca entre dos formulas segun un flag que Hex-Rays
+            // perdio (v216/v219 quedan sin definir: son el resultado de una
+            // comparacion x87 que el decompilador no reconstruyo):
+            //     sub 11:  v217 = v215 * 4.0   ...o...  v215 + 60.0
+            //     resto:   v217 = v215 * 7.0   ...o...  v215 + 60.0
+            // El umbral se deduce de que las dos ramas tienen que empalmar sin
+            // salto: `v215*7 == v215+60` en v215 == 10, y `v215*4 == v215+60`
+            // en v215 == 20.  O sea es una funcion continua a trozos y la
+            // condicion perdida es `v215 < 10` (resp. `< 20`).
+            //
+            // Importa para el gameplay: `v217` define el peso `w` con el que la
+            // posicion se interpola hacia el owner, y con solo la rama `+60` el
+            // peso nunca baja de ~47, asi que el proyectil se quedaba en ~97%
+            // del camino y reventaba justo antes de tocar al jugador.  Con la
+            // rama corta, en los ultimos ~7 ticks el peso cae a ~9 y el disparo
+            // termina de cerrar sobre el objetivo.
+            const double v217 = (jsub == 11)
+                              ? ((v295 < 20.0) ? (v295 * 4.0) : (v295 + 60.0))
+                              : ((v295 < 10.0) ? (v295 * 7.0) : (v295 + 60.0));
+            const int    v294 = *(int *)(param_1 + 0x9d4) + 30;
+            const float  w    = (float)(v217 / (double)v294 * 30.0);
+            if (life == 30) PlayBuffer(46, 0, 0);
+
+            float v222;
+            if (jsub == 11) {
+                double v220 = v295 - 10.0;
+                const double v221 = (v220 >= 0.0) ? v220 : 0.0;
+                if (v221 * 5.0 < 150.0) { if (v220 < 0.0) v220 = 0.0; v222 = (float)(v220 * 5.0); }
+                else                    { v222 = 150.0f; }
+            } else {
+                double v223 = 40.0 - v295;
+                const double v224 = (v223 >= 0.0) ? v223 : 0.0;
+                if (v224 * 15.0 < 150.0) { if (v223 < 0.0) v223 = 0.0; v222 = (float)(v223 * 15.0); }
+                else                     { v222 = 150.0f; }
+            }
+            *(float *)(param_1 + 0x10) = v222 * A0   + *(float *)(param_1 + 0x44);
+            *(float *)(param_1 + 0x14) = v222 * A1   + *(float *)(param_1 + 0x48);
+            *(float *)(param_1 + 0x18) = v222 * out0 + *(float *)(param_1 + 0x4c);
+
+            const int jowner = *(int *)(param_1 + 0x40);
+            if (jowner) {
+                int v226 = 0;
+                for (int v228 = 16; v228 < 28; v228 += 4) {
+                    const int    k    = iIndex + v226 + 51230 * iIndex + msf / 10;
+                    const double v229 = fcos((double)k * 0.0099999998) * 25.0
+                                      + (double)*(float *)(jowner + v228);
+                    float *dst = (float *)(param_1 + v228);
+                    *dst = (float)(((double)w * (double)*dst
+                                    + v229 * (100.0 - (double)w)) * 0.0099999998);
+                    v226 += 3711;
+                }
+            }
+            if (jsub != 11) *(float *)(param_1 + 0x18) += 100.0f;
+
+            float jangles[3] = { 0.5f, 0.5f, 1.0f };
+            if (jsub == 11) {
+                jangles[0] = 0.30000001f; jangles[1] = 0.30000001f; jangles[2] = 0.5f;
+                if (*(unsigned char *)(param_1 + 0x9d2) == 1 && jowner) {
+                    *(int *)(jowner + 16) = *(int *)(param_1 + 0x10);
+                    *(int *)(jowner + 20) = *(int *)(param_1 + 0x14);
+                    *(int *)(jowner + 24) = *(int *)(param_1 + 0x18);
+                    FUN_00466440(jowner);
+                }
+            }
+            {
+                float *ppos = (float *)(param_1 + 0x10);
+                FUN_004795c0(1231, ppos, (float)(_rand() % 2 + 8) * 0.1f,
+                             jangles, jowner, (float)(_rand() % 360), 0);
+                FUN_004795c0(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
+                             jangles, jowner, (float)(_rand() % 360), 0);
+                FUN_004795c0(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
+                             jangles, jowner, (float)(_rand() % 360), 0);
+                if (jsub != 11 && *(int *)(param_1 + 0x9b8) == 1) {
+                    float jzero[3]  = { 0.0f, 0.0f, 0.0f };
+                    float jwhite[3] = { 1.0f, 1.0f, 1.0f };
+                    Particle_Spawn(1215, ppos, jzero, jwhite, 1, 0.60000002f, 0);
+                }
+            }
+            goto _skipLabel182;   // IDA: LABEL_447 -> LABEL_487, saltea LABEL_182
+        }
     }
 
     // 2026-09-01 — PORTADA la cola real de LABEL_301 (IDA L1706-1724 ->
@@ -1587,6 +1710,7 @@ _post_attack_check:;
         *(float *)(param_1 + 0x14) = *(float *)(param_1 + 0x48);
         *(float *)(param_1 + 0x18) = *(float *)(param_1 + 0x4c);
     }
+_skipLabel182:;
 
     // Decrement lifetime counter
     const int remainingLife = *(int *)(param_1 + 0x9b8) - 1;

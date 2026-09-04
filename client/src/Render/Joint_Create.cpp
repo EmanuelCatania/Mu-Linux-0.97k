@@ -110,6 +110,19 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
   pcVar14[0x9c1] = '\0';
   pcVar14[0x9c2] = '\0';
   pcVar14[0x9c3] = '\0';
+  // 2026-09-04 -- DESVIACION DOCUMENTADA (no esta en IDA 0x46D840).
+  // +0x9C8 y +0x9CC son el avance por tick de la TargetPosition que aplica
+  // LABEL_439 de MoveJoint (`TargetPos.x += o+2504`, `TargetPos.y += o+2508`),
+  // o sea la velocidad del joint.  El binario limpia +0x9C0 aca pero NO estos
+  // dos, asi que un subtipo que no los escriba en su propio case hereda los
+  // del joint anterior que ocupo el slot.  El 1249/sub7 -- los disparos del
+  // ataque de Alquamos (AttackEffect case 0x45) -- es justamente uno de esos:
+  // su case en CreateJoint fija vida, escala, segMax y fase, y nada mas.  Si
+  // el slot venia de un 1249/sub14, que pone +0x9C8 en `rand()%500 - 250`, el
+  // disparo arranca con hasta 250 unidades de deriva por tick y se va de lado.
+  // Limpiarlos deja a cada joint con la velocidad que define su propio case.
+  *(int *)(pcVar14 + 0x9c8) = 0;
+  *(int *)(pcVar14 + 0x9cc) = 0;
   pcVar14[0x40] = '\0';
   pcVar14[0x41] = '\0';
   pcVar14[0x42] = '\0';
