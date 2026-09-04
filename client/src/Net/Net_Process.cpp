@@ -4835,8 +4835,54 @@ void Net_ProcessPacket(void)
                 // despacha SetPlayerDie en el frame terminal nativo.
                 entity[765] = 1;
                 entity[748] = 0;
+
+                // Blood Castle: caer del puente al morir (IDA 0x42F030 L18-56).
+                // 2026-09-04: este bloque faltaba entero, junto con el
+                // clearMatchInfo() del heroe.
+                //   c+405 = m_bActionStart (lo consume MoveCharacter L572 y
+                //           RenderCharacter L361/L757)
+                //   c+192/196 Gravity/Velocity . c+200 spin . c+204/216 caida
+                //   c+408..416 m_vDownAngle   . c+420..428 m_vDeadPosition
+                // El tile tiene que tener el bit 0x20 (TW_ACTION); la direccion
+                // de la caida sale de si el tile de al lado (indice +1 o -1)
+                // tiene 0x08 (TW_NOGROUND).
+                entity[405] = 0;
+                if ((int)World >= 11 && (int)World <= 16) {
+                    const int gx = (int)(*(float*)(entity + 16) * 0.01f);
+                    const int gy = (int)(*(float*)(entity + 20) * 0.01f);
+                    const int wallIndex = ((gy & 0xFF) << 8) | (gx & 0xFF);
+                    if ((TerrainWall[wallIndex] & 0x20) == 0x20) {
+                        entity[772] = 0;
+                        entity[405] = 1;
+                        *(float*)(entity + 216) = (float)(rand() % 10) + 10.0f;
+                        *(float*)(entity + 204) = (float)(rand() % 20) + 20.0f;
+                        const float angle = (float)(rand() % 10) + 85.0f;
+                        if ((TerrainWall[(wallIndex + 1) & 0xFFFF] & 8) == 8) {
+                            *(float*)(entity + 416) = -angle;
+                            *(int*)(entity + 408) = 0;
+                            *(int*)(entity + 412) = 0;
+                        } else if ((TerrainWall[(wallIndex - 1) & 0xFFFF] & 8) == 8) {
+                            *(float*)(entity + 416) = angle;
+                            *(int*)(entity + 408) = 0;
+                            *(int*)(entity + 412) = 0;
+                        }
+                        *(int*)(entity + 36)  = *(int*)(entity + 416);
+                        *(float*)(entity + 192) = (float)(rand() % 6) + 8.0f;
+                        *(float*)(entity + 196) = (float)(-(rand() % 2)) + 13.0f;
+                        const int spin = rand();
+                        *(int*)(entity + 424) = *(int*)(entity + 20);
+                        *(int*)(entity + 428) = *(int*)(entity + 24);
+                        *(int*)(entity + 420) = *(int*)(entity + 16);
+                        *(float*)(entity + 200) = (float)(spin % 45);
+                    }
+                    if (DAT_07abf5d8 && entity == (BYTE*)DAT_07abf5d8) {
+                        FUN_0047eb80();   // clearMatchInfo
+                    }
+                }
+
                 const int entitySlot = basePtr ? (int)((entity - basePtr) / 0x394) : -1;
-                NetLog("NET:  → 0x17 Die id=%d slot=%d", entityId, entitySlot);
+                NetLog("NET:  → 0x17 Die id=%d slot=%d fall=%d",
+                       entityId, entitySlot, entity[405]);
                 break;
             }
 

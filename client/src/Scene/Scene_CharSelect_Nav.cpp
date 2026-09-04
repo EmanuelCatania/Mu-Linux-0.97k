@@ -283,9 +283,11 @@ void __cdecl FUN_004f9d20(float *param_1, float *param_2, float *param_3)
 // GuildMark helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004fa5a0 @ 0x004FA5A0 — GuildMark_ResetTarget
-// Limpia los tres slots de destino de marca de guild (todos → 0xffffffff) y resetea el
-// float distance register to -1.0 (0xbf800000).
+// FUN_004fa5a0 @ 0x004FA5A0 - ClearActionObject (NO es "GuildMark_ResetTarget",
+// esa etiqueta era un mismap del port).  Deja los tres parametros de
+// SetActionObject en -1 y el acumulador de velocidad en -1.0f, o sea desarma la
+// animacion de derrumbe de la puerta del evento.  La llama MoveObject_Special
+// (0x4FA5F0) cuando el contador llega a 0.
 void FUN_004fa5a0(void)
 {
     _DAT_0055a7bc = -1.0f;  // 0xbf800000 in IEEE 754

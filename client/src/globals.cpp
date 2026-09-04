@@ -2001,10 +2001,18 @@ float   _DAT_00552d24 = 1500.0f;
 float   _DAT_00552d28 = 0.0003f;
 
 // ── Camera / viewport globals ─────────────────────────────────────────────────
-DWORD   DAT_0055a7b0   = 0;
-DWORD   DAT_0055a7b4   = 0;
-DWORD   DAT_0055a7b8   = 0;
-float   _DAT_0055a7bc  = 0.0f;
+// SetActionObject (0x4FA5C0) / MoveObject_Special (0x4FA5F0): animacion de
+// derrumbe de la puerta del evento.  En el binario los cuatro arrancan en -1
+// (bytes .data en 0x0055A7B0: FF FF FF FF x3 + 00 00 80 BF) y los guards de
+// MoveObject_Special son comparaciones CON SIGNO (`unk_55A7B4 < 0`).
+// 2026-09-04: estaban como DWORD inicializados en 0, o sea (a) los `< 0` nunca
+// se cumplian y (b) en el primer frame de Lorencia (World == 0 == DAT_0055a7b4)
+// cualquier objeto de tipo 0 entraba al bloque de derrumbe: se ocultaba, se
+// giraba a 90 grados y se disparaba AddTerrainAttributeRange(13,70,3,6,8,0).
+int     DAT_0055a7b0   = -1;   // tipo de objeto que se derrumba
+int     DAT_0055a7b4   = -1;   // World en el que aplica
+int     DAT_0055a7b8   = -1;   // contador de frames (20 = arranca)
+float   _DAT_0055a7bc  = -1.0f;// acumulador de velocidad angular
 
 // ── GL_State cache ────────────────────────────────────────────────────────────
 char    DAT_083a411c   = 0;

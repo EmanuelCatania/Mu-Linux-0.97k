@@ -1971,9 +1971,9 @@ extern float   _DAT_00552d24;  // weather float constant
 extern float   _DAT_00552d28;  // weather float constant
 
 // ── Camera / viewport globals ─────────────────────────────────────────────────
-extern DWORD   DAT_0055a7b0;   // viewport param 2 (y offset)
-extern DWORD   DAT_0055a7b4;   // viewport param 1 (x offset)
-extern DWORD   DAT_0055a7b8;   // viewport param 3 (width)
+extern int     DAT_0055a7b0;   // SetActionObject: tipo de objeto que se derrumba
+extern int     DAT_0055a7b4;   // SetActionObject: World en el que aplica
+extern int     DAT_0055a7b8;   // SetActionObject: contador de frames (20 = arranca)
 extern float   _DAT_0055a7bc;  // viewport height (float)
 
 // ── GL_State cache ────────────────────────────────────────────────────────────
