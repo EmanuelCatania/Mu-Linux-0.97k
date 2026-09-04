@@ -263,6 +263,16 @@ void __cdecl FUN_004ffd50(void) {
             //     también es absoluto.
             // Estas pools están vacías (no se llenan en login/char-select) así que
             // saltearlas es seguro hasta que migremos cada uno a símbolos con tamaño.
+            //
+            // 2026-09-04: la de `Operates` (DAT_083a2370) SI hay que limpiarla.
+            // IDA la borra aca (`v12 = &unk_83A2370; do { *v12 = 0; v12 += 12; }`)
+            // y es la lista de objetos interactuables que arma `sub_4FF580` desde
+            // CreateObject.  Sin el clear, al cambiar de mapa quedan punteros a
+            // objetos ya liberados y el picker (sub_4B0240) los deferencia; ademas
+            // la lista se llena y los objetos del mapa nuevo no entran.
+            // El array es real y esta dimensionado, asi que se acota con sizeof en
+            // vez del bound absoluto del binario.
+            memset(DAT_083a2370, 0, sizeof(DAT_083a2370));
             return;
         }
     } while (true);

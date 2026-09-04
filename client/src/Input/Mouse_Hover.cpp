@@ -600,46 +600,56 @@ int __cdecl ItemOnGround_HoverTest(void)
     return best;
 }
 
-// SpecialObject_HoverTest @ 0x004B0240
-// ── BUG-FIX 2026-04-26: NEUTRALIZADO ─────────────────────────────────────
-// Mismo patrón que ItemOnGround_HoverTest (IDA: FUN_004afa40): el original itera con bound absoluto
-// (0x83a2cd0) que no es válido en mu97k-src. Si bien aquí los WRITES están
-// gateados por flags, los READs aún escapan del array y pueden disparar AV.
-// Char-select/login no tienen special-objects, así que retornar -1 es seguro.
-// IDA: FUN_004b0240
+// SpecialObject_HoverTest @ 0x004B0240 (sub_4B0240)
+// Pick de los objetos "operables" del mundo -- sillas, bancos, barandas y los
+// orbes de Noria.  La lista la arma `sub_4FF580` desde `CreateObject` (200
+// entradas de 12 bytes en DAT_083A2370: [0] activo, [2] puntero al objeto) y el
+// indice que devuelve esta funcion va a `SelectedOperate`, que leen
+// `RenderCursor` (para cambiar el cursor) y `Player_InputTick` (para encolar
+// MOVEMENT_OPERATE = sentarse / apoyarse / flotar).
+//
+// Pasada 1: baja la luz de todos los operables visibles a 0.2.
+// Pasada 2: el primero cuya OBB (objeto+0x130, la que deja Calc_RenderObject)
+//           corte el rayo del mouse se ilumina a 1.5 y se devuelve su indice.
+//
+// 2026-09-04: estaba NEUTRALIZADO (`return -1`) desde 2026-04-26 porque el port
+// original iteraba con el bound absoluto 0x83A2CD0 del binario fuente.  El array
+// ya esta bien dimensionado en globals.cpp (0x960 = 200 x 12), asi que se acota
+// con `sizeof`.  Mientras estuvo neutralizado NADA del mundo era interactuable.
 int __cdecl SpecialObject_HoverTest(void)
 {
-    return -1;
-#if 0
-    char *pcVar3;
-    // Pass 1: reset light to 0.2f
-    for (pcVar3 = DAT_083a2370; (int)pcVar3 < 0x83a2cd0; pcVar3 += 0xc) {
-        int iVar1 = *(int *)(pcVar3 + 8);
-        if ((*pcVar3 != '\0') && (*(char *)(iVar1 + 0x160) != '\0')) {
-            *(DWORD *)(iVar1 + 0xe8) = 0x3e4ccccd; // 0.2f
-            *(DWORD *)(iVar1 + 0xec) = 0x3e4ccccd;
-            *(DWORD *)(iVar1 + 0xf0) = 0x3e4ccccd;
+    const int stride = 0xc;
+    const int slots  = (int)(sizeof(DAT_083a2370) / stride);
+
+    // Pasada 1 - apagar el resalte de todos.
+    for (int i = 0; i < slots; ++i) {
+        char *e   = &DAT_083a2370[i * stride];
+        int   obj = *(int *)(e + 8);
+        if (e[0] == 0 || obj == 0) continue;
+        if (*(char *)(obj + 0x160) == 0) continue;   // no visible este frame
+        *(DWORD *)(obj + 0xe8) = 0x3e4ccccd;             // 0.2f
+        *(DWORD *)(obj + 0xec) = 0x3e4ccccd;
+        *(DWORD *)(obj + 0xf0) = 0x3e4ccccd;
+    }
+
+    // Pasada 2 - el primero que corte el rayo del mouse.
+    for (int i = 0; i < slots; ++i) {
+        char *e   = &DAT_083a2370[i * stride];
+        int   obj = *(int *)(e + 8);
+        if (e[0] == 0 || obj == 0) continue;
+        if (*(char *)(obj + 0x160) == 0) continue;
+
+        float box[12];
+        memcpy(box, (const void *)(obj + 0x130), sizeof(box));
+
+        if (FUN_00513260((float *)&CameraRayOriginX, (float *)&DAT_083a4110, box)) {
+            *(DWORD *)(obj + 0xe8) = 0x3fc00000;         // 1.5f -- resalte
+            *(DWORD *)(obj + 0xec) = 0x3fc00000;
+            *(DWORD *)(obj + 0xf0) = 0x3fc00000;
+            return i;
         }
     }
-    // Pass 2: find hovered object
-    int local_4 = 0;
-    for (pcVar3 = DAT_083a2370; (int)pcVar3 < 0x83a2cd0; pcVar3 += 0xc, local_4++) {
-        int iVar1 = *(int *)(pcVar3 + 8);
-        if ((*pcVar3 != '\0') && (*(char *)(iVar1 + 0x160) != '\0')) {
-            undefined4 auStack_44[12];
-            for (int i = 0; i < 12; i++)
-                auStack_44[i] = *(undefined4 *)(iVar1 + 0x130 + i * 4);
-            if ((char)FUN_00513260((float *)&CameraRayOriginX, (float *)&DAT_083a4110)) {
-                *(DWORD *)(iVar1 + 0xe8) = 0x3fc00000; // 1.5f
-                *(DWORD *)(iVar1 + 0xec) = 0x3fc00000;
-                *(DWORD *)(iVar1 + 0xf0) = 0x3fc00000;
-                return local_4;
-            }
-        }
-        if (0x83a2ccf < (int)(pcVar3 + 0xc)) return -1;
-    }
     return -1;
-#endif
 }
 // FUN_004afb00 — implemented in src/Game/Party_NameMatch.cpp (Party_MatchEntityNames)
 // FUN_004e5980 @ 0x004E5980 — Party_HPBar_HoverCheck(void)

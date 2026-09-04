@@ -2574,4 +2574,42 @@ void __cdecl FUN_004f9d60(float *vec) {
 // FUN_00513260 @ 0x00513260 — Entity_ViewportCheck(viewport, projection)
 // Testea si la entidad descrita por 12 dwords (que el llamador copió de entity+0x130) está dentro
 // del viewport actual, usando los punteros de matriz dados. Devuelve 1 si es visible, 0 si se descarta.
-unsigned int __cdecl FUN_00513260(float *viewport, float *projection) { return 1; } // STUB: frustum cull
+// FUN_00513260 @ 0x00513260 - test de interseccion SEGMENTO vs OBB por ejes
+// separadores (SAT).  El "OBB" son los 12 floats que `Calc_RenderObject` deja en
+// `objeto + 0x130` via `sub_4404E0`: centro (box[0..2]) y tres semi-ejes
+// (box[3..5], box[6..8], box[9..11]).
+//
+// IDA prueba SEIS ejes y exige que TODOS solapen:
+//     cross(dir, eje0), cross(dir, eje1), cross(dir, eje2), eje0, eje1, eje2
+// con `dir = rayTarget - rayOrigin`.  La proyeccion de cada uno la hace
+// `sub_5130F0` (FUN_005130f0), que ya estaba portada fiel mas arriba.
+//
+// 2026-09-04: antes era `return 1` con el comentario "STUB: frustum cull" -- o
+// sea CUALQUIER objeto daba hit, y como el unico consumidor real
+// (SpecialObject_HoverTest) estaba neutralizado, no se notaba.
+bool __cdecl FUN_00513260(float *rayOrigin, float *rayTarget, const float *box)
+{
+    if (!rayOrigin || !rayTarget || !box) return false;
+
+    float dir[3] = { rayTarget[0] - rayOrigin[0],
+                     rayTarget[1] - rayOrigin[1],
+                     rayTarget[2] - rayOrigin[2] };
+
+    float n0[3], n1[3], n2[3];
+    FUN_004f9d20(dir, (float *)(box + 3), n0);
+    FUN_004f9d20(dir, (float *)(box + 6), n1);
+    FUN_004f9d20(dir, (float *)(box + 9), n2);
+
+    float *axes[6] = { n0, n1, n2,
+                       (float *)(box + 3), (float *)(box + 6), (float *)(box + 9) };
+
+    for (int i = 0; i < 6; ++i) {
+        if (!FUN_005130f0(axes[i], rayOrigin, rayTarget,
+                          box[0], box[1], box[2],
+                          box[3], box[4], box[5],
+                          box[6], box[7], box[8],
+                          box[9], box[10], box[11]))
+            return false;
+    }
+    return true;
+}

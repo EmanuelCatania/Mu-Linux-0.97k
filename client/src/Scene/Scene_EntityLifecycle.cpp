@@ -197,7 +197,14 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
             puVar3[0x16]=0xfffffffe; return puVar3;
         case 100: puVar3[0x16]=0xfffffffe; return puVar3;
         }
-        [[fallthrough]];
+        // 2026-09-04 FIX: aca habia un `[[fallthrough]]`.  IDA cierra el case 2
+        // con `break` (0x4FF5A0 L292), y esa salida del switch exterior es la que
+        // llega al `sub_4FF580` del final -- el LABEL_43 del decompile, o sea el
+        // REGISTRO del objeto en la lista `Operates`.  Con el fallthrough los
+        // tipos 22/25/40/45/55/73 de Devias caian en el `default: goto
+        // lbl_skip_init` del case 3 y nunca se registraban, asi que no eran
+        // clickeables (no hay silla donde sentarse).
+        break;
     case 3:
         switch (param_1) {
         default: goto lbl_skip_init;
@@ -208,7 +215,9 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
         case 0x12: puVar3[0x19]=2; return puVar3;
         case 0x26: FUN_004ff580(puVar3); puVar3[0x16]=0xfffffffe; return puVar3;
         }
-        [[fallthrough]];
+        // 2026-09-04 FIX: idem, IDA cierra el case 3 con `break` (L292).  Con el
+        // fallthrough el tipo 8 de Noria (sentarse) no llegaba al registro.
+        break;
     default:
         goto lbl_skip_init;
     case 7:

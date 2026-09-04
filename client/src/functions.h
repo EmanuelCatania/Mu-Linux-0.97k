@@ -633,7 +633,7 @@ void  __cdecl GL_BindTextureSlot(int texture_type);                      // Part
 void  __cdecl GL_EnableDepthTest(void);  // GL_Setup2D (no args)
 void  __cdecl GL_EnableDepthWrites(void);
 void  __cdecl GL_ResetState(void);
-unsigned int __cdecl FUN_00513260(float *viewport, float *projection); // Entity_ViewportCheck(vp, proj) → 1=visible
+bool __cdecl FUN_00513260(float *rayOrigin, float *rayTarget, const float *box12); // 0x513260 SAT segmento-vs-OBB (box = objeto+0x130)
 void  __cdecl GL_SetBlendSrcOver(char mode);                             // GL_SetMode(1=blend)
 void  __cdecl GL_SetBlendAdditive(void);                                  // Frame_UpdateTimer
 void  __cdecl GL_SetBlendSrcAlpha(void);
