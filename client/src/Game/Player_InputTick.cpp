@@ -915,7 +915,11 @@ void __cdecl Player_ProcessInput(void)
     // safety guard no necesite ejecutar (que skipea cuando bClickHeld=1).
     {
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
-        if (ent && ent[0x2ed] == 3 && ent[0x356] == 0) {
+        // 2026-09-04: se agrega la cola 4 (MOVEMENT_OPERATE).  Antes solo cubria
+        // la 3, asi que al clickear una silla LEJOS el heroe caminaba hasta ella
+        // y al llegar no disparaba nunca la accion.  Con la silla al lado si
+        // funcionaba, porque ese camino llama a Action directo.
+        if (ent && (ent[0x2ed] == 3 || ent[0x2ed] == 4) && ent[0x356] == 0) {
             {
                 char dbg[200];
                 wsprintfA(dbg, "PIT SECONDARY TICK (1-shot): 2ed=%d c50=%d ce8=%d 4124=%d 42c4=%d 413c=%d bClickEdge=%d bClickHeld=%d",

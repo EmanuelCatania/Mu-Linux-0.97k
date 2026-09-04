@@ -2300,11 +2300,21 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
         // ── 1. Distance gate ──────────────────────────────────────────────────────────────────────────
         int heroGX = *(int*)(c + 904);
         int heroGY = *(int*)(c + 908);
-        // En nuestro build TargetX/Y no son globals — el destino se guarda en
-        // la entidad del jugador en +0x306/0x307 (target_grid_x/y, lo setea el click
-        // handler in Player_InputTick).
-        int TargetX_v = (int)*(unsigned char*)(o + 0x306);
-        int TargetY_v = (int)*(unsigned char*)(o + 0x307);
+        // 2026-09-04 FIX: el comentario anterior decia "en nuestro build TargetX/Y
+        // no son globals" y leia `o + 0x306/0x307`.  Es FALSO: TargetX/TargetY son
+        // 0x07E016C0 / 0x07E016C4 (= DAT_07e016c0/c4), los mismos que escriben
+        // `CheckTarget` y el bloque de SelectedOperate de Player_InputTick.
+        // El +0x306/0x307 lo setea SOLO el click al suelo, asi que para una accion
+        // sobre mobiliario tenia valores viejos y el gate cortaba con `return`:
+        // el cursor cambiaba, el paquete de movimiento salia, pero la accion
+        // (sentarse / apoyarse / flotar) no se ejecutaba nunca.
+        //
+        // IDA elige el eje de MAYOR delta y gatea sobre ese:
+        //   if ( abs(heroX - TargetX) <= abs(heroY - TargetY) ) { v = heroY; t = TargetY; }
+        //   else                                               { v = heroX; t = TargetX; }
+        //   if ( abs(v - t) > 1 ) return;
+        int TargetX_v = (int)DAT_07e016c0;
+        int TargetY_v = (int)DAT_07e016c4;
         int dxAbs = (heroGX - TargetX_v); if (dxAbs < 0) dxAbs = -dxAbs;
         int dyAbs = (heroGY - TargetY_v); if (dyAbs < 0) dyAbs = -dyAbs;
         int diffAbs = (dxAbs > dyAbs) ? dxAbs : dyAbs;
