@@ -729,22 +729,26 @@ void __cdecl FUN_004b14f0(void)
                 }
             }
 
-            // ── 6. Numpad / number 1-9 hotkey trigger ────────────────────────
-            // Only when not in a chat UI mode (DAT_00559c84==0, DAT_07e11d71==0)
-            // and number-key VK_NUMPAD0 (0x60) not held.
-            if ((DAT_00559c84 == '\0') && (DAT_07e11d71 == '\0'))
+            // ── 6. Numeros 1-9 / 0: elegir la skill asignada ─────────────────
+            // IDA Chat_InputTick L2611-2627:
+            //   if (!InputEnable && !TabInputEnable &&
+            //       (unsigned __int16)GetAsyncKeyState(18) >> 8 != 0x80) {
+            //       for (n = 1; n <= 9; n++)
+            //           if (GetAsyncKeyState(n + 48) >> 8) sub_4B0E80(n);
+            //       if (GetAsyncKeyState(48) >> 8)         sub_4B0E80(0);
+            //   }
+            // 2026-09-04 BUG-FIX: el gate miraba VK_NUMPAD0 (0x60) en vez de
+            // VK_MENU (18 = ALT), y las llamadas no pasaban el numero.
+            if ((DAT_00559c84 == 0) && (DAT_07e11d71 == 0))
             {
-                SHORT sv0 = GetAsyncKeyState(0x60); // VK_NUMPAD0
-                if ((char)((unsigned short)sv0 >> 8) != (char)(-0x80))
+                if (((unsigned short)GetAsyncKeyState(VK_MENU) >> 8) != 0x80)
                 {
-                    for (int i = 1; i <= 9; ++i) {
-                        SHORT sv2 = GetAsyncKeyState(0x30 + i); // '1'..'9'
-                        if ((char)((unsigned short)sv2 >> 8) != '\0')
-                            FUN_004b0e80();
+                    for (int n = 1; n <= 9; ++n) {
+                        if (((unsigned short)GetAsyncKeyState(0x30 + n) >> 8) != 0)
+                            FUN_004b0e80(n);
                     }
-                    SHORT sv2 = GetAsyncKeyState(0x30); // '0'
-                    if ((char)((unsigned short)sv2 >> 8) != '\0')
-                        FUN_004b0e80();
+                    if (((unsigned short)GetAsyncKeyState(0x30) >> 8) != 0)
+                        FUN_004b0e80(0);
                 }
             }
 

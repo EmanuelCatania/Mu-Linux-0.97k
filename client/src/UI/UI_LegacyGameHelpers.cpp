@@ -180,37 +180,56 @@ void __cdecl FUN_004cd3b0(void)
     // (HashTable obfuscation blocks skipped — anti-tamper)
 }
 
-// FUN_004b0e80 @ 0x004B0E80 — Hotkey_ClassSync(void)
-// Iterates hotkey table (DAT_07cf1ff4 +0x57+i, 0x14 entries):
-//   compares entry's class byte at (classType*0x40 + DAT_07cf1ff4 + 0xd7 + i)
-//   against classType (= 1, the pushed ESI at call site in Chat_InputTick).
-//   On match, writes entity[0x391] = slot index (i).
-// Also: if DAT_00559c5c set and sub-state != 6 and current hotkey class is 0x06 or 0x0f:
-//   clears SelectedCharacter / DAT_00559c58 to -1.
-// unaff_EBP = GetAsyncKeyState ptr (HashTable only), unaff_retaddr = 1 (classType).
-void __cdecl FUN_004b0e80(void)
+// FUN_004b0e80 @ 0x004B0E80 — SelectSkillByHotkey(int number)
+//
+// Elige la skill activa a partir del numero de hotkey que el jugador acaba de
+// apretar.  Recorre las 20 ranuras de skill y, para la que tenga asignado ese
+// numero, escribe su indice en `Hero + 913` (la skill en uso).
+//
+//   for (i = 0; i < 20; i++) {
+//       if (CharacterAttribute[i + 87] &&
+//           CharacterAttribute[(SelectedHero << 6) + i + 215] == a1) {
+//           Hero[913] = i;  found = 1;
+//       }
+//       if (m_bAutoAttack && World != 6) {
+//           v9 = CharacterAttribute[Hero[913] + 87];
+//           if (v9 == 6 || v9 == 15) { SelectedCharacter = -1; Attacking = -1; }
+//       }
+//   }
+//
+// 2026-09-04 -- BUG-FIX ("asigno el skill con Ctrl+N pero al apretar el numero
+// no cambia").  El port tenia la firma `void FUN_004b0e80(void)`: Ghidra perdio
+// el argumento (viaja en registro) y quien lo porteo comparo la tabla de
+// asignaciones contra la CONSTANTE 1 en vez de contra el numero apretado.  O sea
+// solo podia seleccionar la skill asignada al 1 -- y como los dos call sites
+// llamaban sin argumento, cualquier tecla 0..9 hacia lo mismo.
+//
+// Los globals si estaban bien mapeados (verificado con ida_get_function):
+// SelectedHero = 0x5616AC, m_bAutoAttack = 0x559C5C, Attacking = 0x559C58,
+// CharacterAttribute = 0x7CF1FF4;  +87 = tipo de skill, +215 = numero de hotkey
+// (la tabla es por personaje: SelectedHero << 6).
+char __cdecl FUN_004b0e80(int a1)
 {
-    // classType = 1 (the pushed ESI value from Chat_InputTick)
-    int classType = (int)DAT_005616ac;  // slot class index (confirmed: DAT_005616ac used as iVar7)
-    char* charData = (char*)DAT_07cf1ff4; // CharData sub-pointer
-    char* playerEnt = DAT_07abf5d8;      // player entity
+    char found = 0;
+    char* CA = (char*)CharacterAttribute;
+    char* playerEnt = (char*)DAT_07abf5d8;
+    if (!CA || !playerEnt) return 0;
 
-    for (int i = 0; i < 0x14; i++) {
-        // Check if slot is active and matches class
-        if (*(charData + 0x57 + i) != '\0' &&
-            (unsigned char)*(charData + classType * 0x40 + 0xd7 + i) == (unsigned char)1) {
-            // Set entity hotkey slot index
-            *(playerEnt + 0x391) = (char)i;
+    const int hero = (int)DAT_005616ac;   // SelectedHero
+    for (int i = 0; i < 20; i++) {
+        if (CA[i + 87] != 0 &&
+            (unsigned char)CA[(hero << 6) + i + 215] == (unsigned char)a1) {
+            playerEnt[913] = (char)i;
+            found = 1;
         }
-
-        // If hover enabled, sub-state != 6, and current hotkey class is mage/elf
-        if (DAT_00559c5c != '\0' && DAT_0055a7ac != 6) {
-            int slotIdx = (unsigned char)*(playerEnt + 0x391);
-            char hotkeyCls = *(charData + 0x57 + slotIdx);
-            if (hotkeyCls == '\x06' || hotkeyCls == '\x0f') {
+        if (DAT_00559c5c != 0 && DAT_0055a7ac != 6) {
+            const char skillType = CA[(unsigned char)playerEnt[913] + 87];
+            if (skillType == 6 || skillType == 15) {
                 SelectedCharacter = 0xffffffff;
-                DAT_00559c58 = 0xffffffff;
+                DAT_00559c58      = 0xffffffff;   // Attacking = -1
             }
         }
     }
+    return found;
 }
+

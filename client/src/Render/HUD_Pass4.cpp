@@ -376,10 +376,21 @@ void Render_QuickButtons_(void)
     // RenderGuildCreation cuando los flags correspondientes están seteados.
     // Sin ellos, los menús C/G renderizan como rectángulo negro afuera del
     // 3D viewport (que es 450 wide cuando esos flags están on).
-    if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(panelStartX, 0);
+    // 2026-09-04: el ORDEN importa -- los tres paneles se dibujan en el mismo
+    // x=450 y el ultimo tapa a los anteriores.  IDA sub_4F5820:
+    //     if (GuildCreatorOpened) RenderGuildCreation(450, 0);
+    //     else if (GuildOpened)   RenderGuildList(450, 0);
+    //     RenderParty(450, 0);
+    //     if (CharacterOpened)    RenderCharacterInfoWindow(450, 0);
+    // El port lo tenia al reves (personaje primero, guild despues), asi que con
+    // GuildOpened en 1 el panel de guild pintaba ENCIMA del de personaje y del
+    // de party: de ahi "los botones de party y character abren el panel de
+    // guild".
     if (HUD_IsGuildListRuntime())      RenderGuildList(panelStartX, 0);
 
     RenderParty(450, 0);
+
+    if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(panelStartX, 0);
     RenderInventoryWindow();
     RenderTrade();
     RenderShopInterface();

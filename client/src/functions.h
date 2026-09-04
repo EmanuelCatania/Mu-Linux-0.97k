@@ -456,7 +456,7 @@ void  __cdecl Send_MovePacket_Player_legacy_stub(void);
 unsigned int __cdecl FUN_00483160(void);                             // Entity_CanAct (returns 0 if locked)
 void  __cdecl Player_ProcessInput(void); // IDA: FUN_004acef0
 void  __cdecl Mouse_UpdateHoverTargets(void);                                    // IDA: FUN_004b0310
-void  __cdecl FUN_004b0e80(void);                                    // Hotkey_Trigger — executes hotkey slot action
+char  __cdecl FUN_004b0e80(int number);                              // SelectSkillByHotkey (0x4B0E80)
 void  __cdecl FUN_004b14f0(void);
 void  __cdecl FUN_004bbdd0(int, int, int, int);
 void  __cdecl Cursor_Render(void);                                               // IDA: FUN_004bffa0
