@@ -16,6 +16,8 @@ extern "C" BOOL ChaosBoxRequestClose(void);
 static bool HUD_IsQuestPanelOpenRuntime(void);
 static bool HUD_IsGoldenArcherPanelRuntime(void);
 static bool HUD_IsInventoryFamilyActive(void);
+static bool HUD_CloseNpcWindowsIfAny(void);
+extern "C" int g_nGuildMemberCount;
 static bool HUD_IsAnyRightPanelOpen(void);
 static bool HUD_IsGuildCreationRuntime(void);
 static bool HUD_IsGuildListRuntime(void);
@@ -186,55 +188,142 @@ static void Party_ToggleAndRefresh(void)
     PartyOpened = 1;
 }
 
+static bool HUD_CloseNpcWindowsIfAny(void)
+{
+    if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
+        const bool wasChaos = (DAT_07eaa11a != 0);
+        if (wasChaos) {
+            // 0x87 ACK performs the close; never expose another NPC panel
+            // while the Chaos interface remains server-active.
+            ChaosBoxRequestClose();
+            return false;
+        }
+        extern void __cdecl CloseInventoryRelatedWindows(void);
+        CloseInventoryRelatedWindows();
+        g_NpcTalkActive = 0;
+        Net_SendNpcTalkClose();
+        DbgLogPublic("HKT CLOSE-NPC (C/G/P panel)");
+    }
+    return true;
+}
+
+
+// Cierra la familia de ventanas de inventario/NPC.  Es la rama de cierre que
+// comparten la tecla I/V y el boton de la barra inferior (IDA Chat_InputTick
+// 0x4B14F0 L2078-2260: TradeOpened -> cancelar trade; WarehouseOpened -> close
+// 0x82; ChaosMixOpened -> close 0x87; si no, InventoryOpened = 0).
+static void HUD_CloseInventoryFamilyFromUI(void)
+{
+    if (DAT_07eaa11a) {              // ChaosMixOpened: el ACK del 0x87 cierra
+        ChaosBoxRequestClose();
+        return;
+    }
+    const bool hadNpcWindow = (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11b ||
+                               DAT_07eaa128 || g_NpcTalkActive);
+    extern void __cdecl CloseInventoryRelatedWindows(void);
+    CloseInventoryRelatedWindows();
+    DAT_07eaa117 = 0;                // InventoryOpened
+    if (hadNpcWindow) {
+        g_NpcTalkActive = 0;
+        Net_SendNpcTalkClose();
+    }
+}
+
+// Botones de la barra inferior.  En el binario esto vive dentro de
+// `Chat_InputTick` (0x4B14F0); aca corre desde Player_InputTick, que se ejecuta
+// antes de la logica de click al mundo.
+//
+// 2026-09-04 -- reescrito contra IDA.  La version anterior era una
+// reimplementacion ("clean reimplementation ... covers the same observable
+// behavior") con tres desviaciones:
+//   * el boton de inventario gateaba con `HUD_IsInventoryFamilyActive()`, que
+//     incluye CharacterOpened -> con el panel de personaje abierto, clickear
+//     inventario lo CERRABA en vez de abrirlo.  En el original los dos paneles
+//     conviven (por eso GetScreenWidth devuelve 260 justo para esa combinacion).
+//   * usaba `DAT_083a413c` (latch de click soltado) con deteccion de flanco
+//     propia; IDA usa `MouseLButtonPush` (DAT_083a4124) y lo CONSUME poniendolo
+//     en 0, que es lo que evita el auto-repeat.
+//   * le faltaban los sonidos 25/28 al cerrar, el `PartyOpened = 0` del boton de
+//     guild, el `GuildOpened = 0; PartyOpened = 0` al abrir inventario, y el
+//     gate de entrada que apaga toda la fila mientras hay un modal abierto.
+//
+// Rects (IDA L1130, L1455, L1775, L2078):
+//   guild      (582..634, 459..477)
+//   party      (348..372, 452..476)
+//   personaje  (379..403, 452..476)
+//   inventario (410..434, 452..476)
 static void HUD_BottomBar_HitTest(void)
 {
     if (DAT_005615c0 != 5) return;          // g_GameState: only in-game
+    if (!IsClickPushed()) return;
 
-    // 2026-04-30: detecta el click por flanco. DAT_083a413c se mantiene en 1 durante
-    // multiple frames until some other handler consumes it. Without
-    // edge-detection my toggle fires every frame while 413c==1, flipping
-    // the panel back and forth and netting to no visible change.
-    static DWORD s_prev413c = 0;
-    DWORD curr413c = DAT_083a413c;
-    bool risingEdge = (s_prev413c == 0) && (curr413c != 0);
-    s_prev413c = curr413c;
+    // Gate de IDA L1116-1128: con un modal o el creador de guild abiertos, la
+    // fila entera de botones no responde.  (`GuildInputEnable` del original no
+    // existe en este arbol; GuildCreatorOpened cubre el mismo estado.)
+    if (DAT_07eaa11b ||                      // TradeOpened
+        DAT_07eaa124 ||                      // GuildCreatorOpened
+        DAT_083a7c24 == 126 ||               // ErrorMessage: expulsar del guild
+        DAT_083a7c24 == 152 ||
+        _g_bEventChipDialogEnable ||
+        DAT_07eaa130 ||                      // g_bServerDivisionEnable
+        HUD_IsQuestPanelOpenRuntime())
+        return;
 
-    if (!risingEdge) return;
+    const int mx = (int)DAT_083a427c;       // 640-space mouse X
+    const int my = (int)DAT_083a4278;       // 480-space mouse Y
 
-    int mx = (int)DAT_083a427c;             // 640-space mouse X
-    int my = (int)DAT_083a4278;             // 480-space mouse Y
-
-    bool consumed = false;
-
-    // Party (348..372, 452..476)
-    if (mx >= 348 && mx < 372 && my >= 452 && my < 476) {
-        Party_ToggleAndRefresh();
-        consumed = true;
-    }
-    // Character (379..403, 452..476)
-    else if (mx >= 379 && mx < 403 && my >= 452 && my < 476) {
-        DAT_07eaa116 = (DAT_07eaa116 == 0) ? (char)1 : (char)0;
-        consumed = true;
-    }
-    // Inventory (410..434, 452..476)
-    else if (mx >= 410 && mx < 434 && my >= 452 && my < 476) {
-        DAT_07eaa117 = HUD_IsInventoryFamilyActive() ? (char)0 : (char)1;
-        consumed = true;
-    }
-    // Guild (582..634, 459..477)
-    else if (mx >= 582 && mx < 634 && my >= 459 && my < 477) {
-        if (DAT_07eaa114 || DAT_07eaa124) {
+    // ── Guild ────────────────────────────────────────────────────────────────
+    if (mx >= 582 && mx < 634 && my >= 459 && my < 477) {
+        DAT_083a4124 = 0;                    // MouseLButtonPush = 0
+        DAT_07eaa115 = 0;                    // PartyOpened = 0
+        if (DAT_07eaa114) {                  // GuildOpened
             DAT_07eaa114 = 0;
-            DAT_07eaa124 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
         } else {
+            if (!HUD_CloseNpcWindowsIfAny()) return;
+            // 0x52 pide Encrypt=0 en HackPacketCheck.txt -> frame C1 plano.
+            const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
+            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
-            DAT_07eaa115 = 0; // party list closes when guild opens
         }
-        consumed = true;
+        return;
     }
 
-    if (consumed) {
-        DAT_083a413c = '\0';                // consume the click
+    // ── Party ────────────────────────────────────────────────────────────────
+    if (mx >= 348 && mx < 372 && my >= 452 && my < 476) {
+        DAT_083a4124 = 0;
+        if (!DAT_07eaa115 && !HUD_CloseNpcWindowsIfAny()) return;
+        Party_ToggleAndRefresh();            // ya hace GuildOpened=0 + sonidos
+        return;
+    }
+
+    // ── Personaje ────────────────────────────────────────────────────────────
+    // IDA no toca ningun otro flag aca: Character convive con Inventory.
+    if (mx >= 379 && mx < 403 && my >= 452 && my < 476) {
+        DAT_083a4124 = 0;
+        if (DAT_07eaa116) {                  // CharacterOpened
+            DAT_07eaa116 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        } else if (HUD_CloseNpcWindowsIfAny()) {
+            DAT_07eaa116 = 1;
+        }
+        return;
+    }
+
+    // ── Inventario ───────────────────────────────────────────────────────────
+    if (mx >= 410 && mx < 434 && my >= 452 && my < 476) {
+        DAT_083a4124 = 0;
+        if (!DAT_07eaa117) {                 // InventoryOpened
+            DAT_07eaa117 = 1;
+            DAT_07eaa114 = 0;                // GuildOpened = 0
+            DAT_07eaa115 = 0;                // PartyOpened = 0
+        } else {
+            HUD_CloseInventoryFamilyFromUI();
+        }
+        return;
     }
 }
 
@@ -388,27 +477,9 @@ static void HUD_HotkeyTick(void)
     // En MU los paneles izquierdos (Character / Shop / Warehouse) son mutuamente
     // excluyentes: abrir C/G/P cierra la ventana del NPC (y avisa al server con
     // el close 0x31, como ya hacen I/V y Escape).
-    auto CloseNpcWindowsIfAny = [&]() -> bool {
-        if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
-            const bool wasChaos = (DAT_07eaa11a != 0);
-            if (wasChaos) {
-                // 0x87 ACK performs the close; never expose another NPC panel
-                // while the Chaos interface remains server-active.
-                ChaosBoxRequestClose();
-                return false;
-            }
-            extern void __cdecl CloseInventoryRelatedWindows(void);
-            CloseInventoryRelatedWindows();
-            g_NpcTalkActive = 0;
-            Net_SendNpcTalkClose();
-            DbgLogPublic("HKT CLOSE-NPC (C/G/P panel)");
-        }
-        return true;
-    };
-
     if (kC) {
         if (DAT_07eaa116) DAT_07eaa116 = 0;
-        else if (CloseNpcWindowsIfAny()) { DAT_07eaa116 = 1; }
+        else if (HUD_CloseNpcWindowsIfAny()) { DAT_07eaa116 = 1; }
     }
     if (kG) {
         if (DAT_07eaa114 || DAT_07eaa124) {
@@ -416,7 +487,7 @@ static void HUD_HotkeyTick(void)
             DAT_07eaa124 = 0;
         }
         else {
-            if (!CloseNpcWindowsIfAny()) return;
+            if (!HUD_CloseNpcWindowsIfAny()) return;
             DAT_07eaa114 = 1;
             DAT_07eaa115 = 0; // close Party
             // 2026-08-15 BUG-FIX (abrir el panel de guild con G desconectaba):
@@ -428,7 +499,7 @@ static void HUD_HotkeyTick(void)
         }
     }
     if (kP) {
-        if (!PartyOpened && !CloseNpcWindowsIfAny()) return;
+        if (!PartyOpened && !HUD_CloseNpcWindowsIfAny()) return;
         Party_ToggleAndRefresh();
     }
     if (kV || kI) {
@@ -444,22 +515,9 @@ static void HUD_HotkeyTick(void)
             // Interface.use=1 → no dejaba abrir otra). Ahora cierra toda la
             // familia de ventanas de NPC y avisa al server con el close 0x31,
             // igual que Escape / click-para-mover.
-            bool hadNpcWindow = (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a ||
-                                 DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive);
-            const bool wasChaos = (DAT_07eaa11a != 0);
-            if (wasChaos) {
-                ChaosBoxRequestClose();
-                return;
-            }
-            extern void __cdecl CloseInventoryRelatedWindows(void);
-            CloseInventoryRelatedWindows();     // limpia Shop/Warehouse/Mix/Trade + pools
-            DAT_07eaa117 = 0;                    // InventoryOpened
             // (NO tocar CharacterOpened: I/V sólo maneja el inventario y las
             //  ventanas de NPC; el panel de Character lo togglea la tecla C.)
-            if (hadNpcWindow) {
-                g_NpcTalkActive = 0;
-                Net_SendNpcTalkClose();
-            }
+            HUD_CloseInventoryFamilyFromUI();
         } else {
             DAT_07eaa117 = 1;
         }
