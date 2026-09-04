@@ -1997,7 +1997,22 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         }
     }
 
+    // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
+    // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
+    // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+    // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
+    // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
+    // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
+    // spawn del slot 0 cae entre Object01.bmd y Object42.bmd).  De ahi que
+    // salieran mal y que alejarse y volver -- que los re-crea con el modelo ya
+    // cargado -- los arreglara.
+    //
+    // `g_WorldLoading` deja que el pump siga DRENANDO el socket (que es lo que
+    // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
+    // cola y se procesan al terminar la carga.
+    ++g_WorldLoading;
     FUN_0050e5a0();              // OpenWorld(World) — BMD load (~2s)
+    --g_WorldLoading;
 
     // Pump messages POST-load para drenar lo que llegó durante el bloqueo.
     {
@@ -2084,7 +2099,11 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 
     // (10) Avanzar state machine.
     DAT_05826cb0 = 61;           // CurrentProtocolState → enter-world fade
-    // LockInputStatus = 0; CheckIME_Status(1, 0) — TODO
+    // IDA ReceiveJoinMapServer L380: LockInputStatus = 0 (0x07E11D6F, el gate
+    // del IME que WndProc pone en 1 al abrir el chat).  CheckIME_Status(1, 0)
+    // queda pendiente: nuestro CheckIME_Status_stub no reproduce todavia el
+    // guardado/restaurado del estado de conversion.
+    DAT_07e11d6f = 0;            // LockInputStatus
 
     // BUG-FIX 2026-04-29: enviar F3/12 CharacterMoveViewportEnable + 0E LiveClient
     // inmediatamente. El server MuEmu (Protocol.cpp:1439 CGCharacterMoveViewportEnableRecv)
@@ -2252,7 +2271,22 @@ static void Recv_Revival(const BYTE* Msg, int Size)
     }
 
     DAT_0055a7ac = map;
+    // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
+    // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
+    // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+    // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
+    // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
+    // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
+    // spawn del slot 0 cae entre Object01.bmd y Object42.bmd).  De ahi que
+    // salieran mal y que alejarse y volver -- que los re-crea con el modelo ya
+    // cargado -- los arreglara.
+    //
+    // `g_WorldLoading` deja que el pump siga DRENANDO el socket (que es lo que
+    // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
+    // cola y se procesan al terminar la carga.
+    ++g_WorldLoading;
     FUN_0050e5a0();                                    // OpenWorld(World)
+    --g_WorldLoading;
 
     float z;
     if ((int)DAT_0055a7ac == -1 ||
@@ -2759,6 +2793,34 @@ void Net_ProcessPacket(void)
         int HeadCode, Size;
         BYTE hdr = Msg[0];
         bool bEncrypted = false;
+
+        // 2026-09-03 -- COPIA DEL PAQUETE ANTES DE PROCESARLO.
+        //
+        // `FUN_0043e010` (GetReadMsg) devuelve un puntero DENTRO del buffer de
+        // recepcion del socket, que es compartido.  Handlers que tardan --
+        // sobre todo los de viewport, porque `CreateMonster` carga el BMD del
+        // monstruo -- dejan que se bombee la cola de mensajes en el medio, entra
+        // un `Net_Recv` y el buffer se sobreescribe MIENTRAS el handler todavia
+        // esta recorriendo sus entradas.
+        //
+        // Medido (sonda MONDBG, 2026-09-03): un `0x13 ViewportMonster count=22`
+        // parseo bien su entrada 0 (`id=89 type=253 pos=(207,75)`) y a partir de
+        // la 1 empezo a leer el payload de un `F3/E2` que habia llegado en el
+        // medio -- de ahi monstruos con ids de ~25700 en pos (0,2), (3,2), (7,2),
+        // entre ellos el "Giant" (type 7) inmatable en un mapa sin spawn.
+        //
+        // Los C3/C4 ya eran inmunes porque se desencriptan a `scratch`; los C1/C2
+        // se usaban directo.  Ahora todos se copian.
+        BYTE __pktCopy[0x2100];
+        {
+            const int __wire = (hdr == 0xC1 || hdr == 0xC3)
+                             ? (int)Msg[1]
+                             : (((int)Msg[1] << 8) | (int)Msg[2]);
+            if (__wire > 0 && __wire <= (int)sizeof(__pktCopy)) {
+                memcpy(__pktCopy, Msg, (size_t)__wire);
+                Msg = __pktCopy;
+            }
+        }
 
         // ── C3/C4 in-place decrypt ────────────────────────────────────────
         // Paquetes encriptados server→cliente. Los bytes del cuerpo (después del
@@ -3823,6 +3885,25 @@ void Net_ProcessPacket(void)
                                 FUN_0045c130((int)(uintptr_t)hero);   // SetCharacterClass
                                 NetLog("NET:    0x12 heroe restaurado de transformacion");
                             }
+
+                            // Combat_PacketDispatch (IDA 00429690) no excluye
+                            // la fila del jugador local: CreateCharacterPointer
+                            // reinicia Character+120, ChangeCharacterExt aplica
+                            // CharSet[1..10] y luego InsertBuffPhysicalEffect
+                            // consume ViewSkillState. Nuestro atajo para evitar
+                            // un clon conservaba la posición, pero omitía esas
+                            // tres consecuencias. OpenWorld borra los pools de
+                            // bugs/effects/joints, por lo que el resultado era
+                            // exactamente un Angel/Imp o Mana Shield ausente al
+                            // cruzar de mapa.
+                            //
+                            // No recreamos el slot completo: el héroe local
+                            // conserva estado que no pertenece al viewport. Sí
+                            // reproducimos los dos resets visuales que necesita
+                            // esta fila del protocolo.
+                            *(DWORD*)(hero + 120) = 0;       // CreateCharacterPointer
+                            FUN_0045c8c0((int)DAT_05826ca0, (BYTE*)e + 5);
+                            ApplyPersistentSkillEffect97k(hero, viewSkillState, 1);
                         }
                         NetLog("NET:    0x12 own HeroKey=%u synchronized, no viewport clone",
                                (unsigned)entityId);
@@ -4017,8 +4098,17 @@ void Net_ProcessPacket(void)
                     break;
                 }
                 int entryStart = 4 + hdrOff;
-                int entryStride = (Size - entryStart) / (count > 0 ? count : 1);
-                if (entryStride < 10 || entryStride > 16) entryStride = 10;
+                // 2026-09-03 -- el stride es FIJO 12, no derivado del tamano.
+                // IDA `ReceiveCreateMonsterViewport` (0x0042A230): `Data2 =
+                // ReceiveBuffer + 7;` y al final del cuerpo del do-while
+                // `Data2 += 12;`.  El port lo calculaba como
+                // `(Size - entryStart) / count` con un fallback a 10, asi que
+                // cualquier desajuste de `Size` desalinea TODAS las entradas
+                // desde la segunda: el `type` sale de un byte que no es el suyo
+                // y se crean monstruos fantasma (de ahi el "Giant" en un mapa
+                // sin spawn, con un id que el server no conoce y por eso
+                // inmatable).  Ahora es literal.
+                const int entryStride = 12;
                 BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
                 for (int i = 0; i < count && (entryStart + i*entryStride + 11) <= Size; ++i) {
                     const BYTE* e = Msg + entryStart + i*entryStride;
@@ -4646,37 +4736,67 @@ void Net_ProcessPacket(void)
             }
 
             case 0x16: {
-                // 2026-05-06: NOTA — opcode 0x16 NO lo envía el server para
-                // monster die. El server usa:
-                //   - 0x9C (C3 encrypted) con PMSG_REWARD_EXPERIENCE_SEND para
-                //     EXP/damage al killer (GCMonsterDieSend en Protocol.cpp:1811)
-                //   - 0x15 (C1) con PMSG_DAMAGE_SEND y kill_flag=1 a viewers
-                //     (GCDamageSend en Protocol.cpp:1595)
+                // ReceiveDieExp @ 0x0042DB60 — port FIEL.  Es la variante CHICA
+                // del 0x9C: mismo cuerpo, pero con la experiencia en un WORD en
+                // vez de los campos View* de 32 bits.
                 //
-                // 2026-05-07: delega en PacketHandler_0x16 de Skills.cpp, que
-                // handles the kill confirm + teleport begin/end + EXP gain.
-                // (El fallback inline — sólo el flag de muerto — queda después.)
-                if (Size < 7) break;
-                NetLog("NET:  → 0x16 MonsterDie/Teleport size=%d", Size);
-                extern void PacketHandler_0x16(BYTE* pkt);
-                PacketHandler_0x16((BYTE*)Msg);
-
-                // Respaldo: asegura que la anim de muerte quede seteada en el objetivo por id (la
-                // versión de Skills.cpp setea dead_flag pero no despacha el
-                // SetPlayerDie correcto, que necesitamos para la anim 131/6 según la clase).
+                // IDA L105-207:
+                //   Key    = Rb[4] + (Rb[3] << 8);
+                //   Exp    = Rb[6] + (Rb[5] << 8);
+                //   Damage = Rb[8] + (Rb[7] << 8);
+                //   Index  = FindCharacterIndex(Key & 0x7FFF);
+                //   c      = CharactersClient + 916 * Index;
+                //   Color  = { 1.0, 0.6, 0.0 };
+                //   if ( Key & 0xFFFF8000 ) { SetPlayerDie(c); CreatePoint(...); }
+                //   else { Hero+756 = 2; Hero+758 = Damage; Hero+784 = Index;
+                //          CreatePoint(...); }
+                //   c+765 = 1;  c+748 = 0;
+                //   CharacterAttribute+16 += Exp;
+                //   if ( Exp > 0 ) { sprintf(Buffer, GlobalText[486], Exp);
+                //                    UIChatLogWindow_AddText(...); }
+                //
+                // MuEmu NO manda este opcode (usa el 0x9C, GCMonsterDieSend →
+                // PMSG_REWARD_EXPERIENCE_SEND con header.setE(0x9C)), asi que en
+                // la practica no corre.  Se porta igual porque lo que habia antes
+                // era una rama inventada ("teleport begin/end + kill confirm") que
+                // escribia el dead_flag `target[0x2FD] = 1` sobre un indice sin
+                // validar — y +765 es justo el filtro de "vivo" del barrido de
+                // sub_45FEC0, o sea marcaba entidades como muertas y las volvia
+                // invisibles para el reporte de blancos del 0x1D.
+                if (Size < 9) { NetLog("NET:  → 0x16 DieExp size=%d (corto)", Size); break; }
                 {
-                    WORD mobId = ((Msg[3] & 0x7F) << 8) | Msg[4];
-                    BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
-                    for (int s = 0; s < 400; ++s) {
-                        BYTE* sp = basePtr + s * 0x394;
-                        if (sp[0] && *(WORD*)(sp + 0x1dc) == mobId) {
-                            sp[0x2FD] = 1;
-                            sp[0x2EC] = 0;
-                            // (2026-08-10: sin 0x34e — es SafeZone, no dead)
-                            extern void __cdecl FUN_00444d90(int c_in);
-                            FUN_00444d90((int)sp);
-                            break;
+                    const int   key   = Msg[4] + (Msg[3] << 8);
+                    const DWORD exp   = (DWORD)(Msg[6] + (Msg[5] << 8));
+                    const int   dmg   = Msg[8] + (Msg[7] << 8);
+                    const int   index = FUN_0045ac80(key & 0x7FFF);
+
+                    NetLog("NET:  → 0x16 DieExp key=%04X idx=%d exp=%u dmg=%d",
+                           key & 0x7FFF, index, exp, dmg);
+
+                    float color[3] = { 1.0f, 0.6f, 0.0f };   // naranja
+                    if (index >= 0 && index < 400 && DAT_07abf5d0) {
+                        BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
+                        if (key & 0xFFFF8000) {
+                            extern void __cdecl FUN_00444d90(int c_in);   // SetPlayerDie
+                            FUN_00444d90((int)(intptr_t)c);
+                        } else if (DAT_07abf5d8) {
+                            BYTE* hero = (BYTE*)DAT_07abf5d8;
+                            *(BYTE*) (hero + 756) = 2;        // gate de las esferas de EXP
+                            *(WORD*) (hero + 758) = (WORD)dmg;
+                            *(WORD*) (hero + 784) = (WORD)index;
                         }
+                        CreatePoint((float*)(c + 16), dmg, color, 15.0f);
+                        *(BYTE*)(c + 765) = 1;   // dead_flag (+0x2FD)
+                        *(BYTE*)(c + 748) = 0;
+                    }
+
+                    if (CharacterAttribute)
+                        *(DWORD*)((BYTE*)(uintptr_t)CharacterAttribute + 16) += exp;
+
+                    if ((int)exp > 0) {
+                        char Buffer[100];
+                        sprintf(Buffer, GlobalText[486], exp);
+                        UIChatLogWindow_AddText(nullptr, Buffer, 1);
                     }
                 }
                 break;
@@ -5655,13 +5775,23 @@ void Net_ProcessPacket(void)
                 break;
             }
 
-            // ── 0x90-0x99 — EVENTOS, no guild ─────────────────────────────
+            // ── 0x8E-0x99 — EVENTOS, no guild ─────────────────────────────
             // Hasta 2026-08-26 estos casos llamaban a handlers de guild
             // (Guild_CreateOk, Guild_AddMemberResult, ...) que el port se
             // invento. IDA y MuEmu coinciden en que son eventos: ver la tabla
             // completa en la cabecera de `src/Net/Net_Events.cpp`.
             // El guild de verdad esta en 0x50-0x56, mas arriba en este mismo
             // switch, y no se toca.
+            case 0x8E: { // Devil Square admission levels (GameServer extension)
+                extern void Recv_DevilSquareRequiredLevels(BYTE* Msg, int Size);
+                Recv_DevilSquareRequiredLevels((BYTE*)Msg, Size);
+                break;
+            }
+            case 0x8F: { // Blood Castle admission levels (GameServer extension)
+                extern void Recv_BloodCastleRequiredLevels(BYTE* Msg, int Size);
+                Recv_BloodCastleRequiredLevels((BYTE*)Msg, Size);
+                break;
+            }
             case 0x90: {  // ReceiveMoveToDevilSquareResult @ 0x00436820
                 NetLog("NET:  -> 0x90 MoveToDevilSquareResult");
                 extern void Recv_MoveToDevilSquareResult(BYTE* Msg, int Size);
@@ -5708,6 +5838,11 @@ void Net_ProcessPacket(void)
                 NetLog("NET:  -> 0x99 ServerImmigration");
                 extern void Recv_ServerImmigration(BYTE* Msg, int Size);
                 Recv_ServerImmigration((BYTE*)Msg, Size);
+                break;
+            }
+            case 0x9A: {  // ReceiveMoveToEventMatchResult @ 0x00436AC0
+                extern void Recv_MoveToBloodCastleResult(BYTE* Msg, int Size);
+                Recv_MoveToBloodCastleResult((BYTE*)Msg, Size);
                 break;
             }
 
@@ -5913,7 +6048,22 @@ void Net_ProcessPacket(void)
 
                     if (map != (BYTE)World) {
                         World = map;
+                        // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
+                        // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
+                        // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+                        // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
+                        // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
+                        // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
+                        // spawn del slot 0 cae entre Object01.bmd y Object42.bmd).  De ahi que
+                        // salieran mal y que alejarse y volver -- que los re-crea con el modelo ya
+                        // cargado -- los arreglara.
+                        //
+                        // `g_WorldLoading` deja que el pump siga DRENANDO el socket (que es lo que
+                        // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
+                        // cola y se procesan al terminar la carga.
+                        ++g_WorldLoading;
                         FUN_0050e5a0();
+                        --g_WorldLoading;
 
                         // OpenWorld replaces terrain data, so IDA evaluates
                         // la altura de aterrizaje una segunda vez contra el mapa nuevo.

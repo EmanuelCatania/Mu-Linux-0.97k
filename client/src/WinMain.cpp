@@ -1079,7 +1079,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (evt & 0x01) { // FD_READ
             FUN_0043de70((void*)(uintptr_t)DAT_055ca160);
             CsmWatchdog("after-Recv");        // catches any future trample regression
-            Net_ProcessPacket();
+            // 2026-09-02: durante OpenWorld el pump de FUN_005060b0 reentra aca.
+            // Se drena el socket (arriba) para que el server no cierre por
+            // backpressure, pero NO se despachan los paquetes: quedan en la cola
+            // y los procesa el frame siguiente, ya con los modelos cargados.
+            // Sin esto, el 0x13 ViewportMonster creaba monstruos a medio cargar.
+            if (!g_WorldLoading)
+                Net_ProcessPacket();
         }
         if (evt & 0x02) { // FD_WRITE
             FUN_0043ddd0((int)(uintptr_t)DAT_055ca160);

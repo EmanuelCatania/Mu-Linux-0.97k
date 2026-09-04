@@ -79,14 +79,25 @@ void __stdcall InitGame(void)
     // --- Phase 1: Reset game state globals ---
     EnableUse = 0;
     DAT_07e11998 = -1;    // SendGetItem
-    DAT_07e11d28 = 0;     // SummonLife (DWORD)
+    // IDA InitGame L31 es `SummonLife = 0`, y SummonLife vive en 0x05826D24
+    // (verificado con ida_xrefs_to: lo escriben InitGame, ReceiveRevival x3 y
+    // ProtocolCore, y lo lee RenderEquipedHelperLife).  El port escribia
+    // DAT_07E11D28, que es **MouseUpdateTime** -- el contador del debounce de
+    // movimiento de Player_InputTick.  Dos efectos: SummonLife nunca se
+    // limpiaba al salir de la sesion, y ponerlo en 0 aca hacia que al volver
+    // al mundo el primer click quedara bloqueado hasta contar de nuevo hasta
+    // MouseUpdateTimeMax (que InitGame no toca y puede venir en ~28-49 del
+    // ultimo camino recorrido) = hasta ~2 s sin poder caminar.
+    DAT_05826d24 = 0;     // SummonLife
     DAT_05826c08 = 0;     // SoccerTime    (IDA InitGame @0x4244B4)
     DAT_05826d33 = 0;     // SoccerObserver (IDA InitGame @0x4244BA)
     DAT_07e11994 = -1;    // SelectedNpc
     DAT_07e11990 = -1;    // SelectedOperate
     DAT_07e1198c = -1;    // SelectedCharacter
     DAT_07e11988 = -1;    // SelectedItem
-    DAT_07e11984 = -1;    // Attacking
+    DAT_00559c58 = -1;    // Attacking (IDA InitGame L38, global 0x00559C58).
+                          // Antes escribia DAT_07e11984, que es el debounce de
+                          // la flecha arriba del chat.
     DAT_07e11e18 = 1;     // m_bAutoAttack = true
     DAT_07e11d24 = 0;     // _CheckInventory
     // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (DAT_0055a7ac).
@@ -94,7 +105,11 @@ void __stdcall InitGame(void)
     // la taberna — asi que cada InitGame lo dejaba en -1 y PlayMp3 recibia (char*)-1.
     DAT_0055a7ac = -1;   // World
     // CSQuest__ClearQuest(g_csQuest);
-    DAT_07e11d1c = 0;     // LockInputStatus
+    // IDA InitGame L43 es `LockInputStatus = 0`, y LockInputStatus vive en
+    // 0x07E11D6F (xrefs: WndProc x4, InitGame, ReceiveJoinMapServer,
+    // RenderIME_Status).  El port escribia DAT_07E11D1C, que es **LoadingWorld**
+    // -- el contador que gatea el frame de render (`if (LoadingWorld > 30) return`).
+    DAT_07e11d6f = 0;     // LockInputStatus
     DAT_07e11d18 = 0;     // RepairEnable variants
     DAT_07e11d14 = 0;
     DAT_00559c6d = 0xff;
