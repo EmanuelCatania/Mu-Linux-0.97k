@@ -97,30 +97,6 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     // ── 1. Setup ─────────────────────────────────────────────────────────────
     short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
 
-    // [SONDA TEMP BCZ] Blood Castle: una linea por segundo con la Z real de la
-    // entidad contra la altura del terreno bajo ella.  Sirve para confirmar el
-    // fix de la seccion 3 (que clavaba Z = alpha).  dz ~ 0 = correcto.
-    if ((int)DAT_0055a7ac >= 11 && (int)DAT_0055a7ac <= 16) {
-        static DWORD bcz_next_ = 0;
-        static int   bcz_armed_ = 0;
-        const DWORD  bcz_now_ = GetTickCount();
-        if (!bcz_armed_) { bcz_armed_ = 1; bcz_next_ = bcz_now_; }
-        if ((int)(bcz_now_ - bcz_next_) >= 0) {
-            bcz_next_ = bcz_now_ + 1000;
-            const float bz  = *(float *)((char *)puVar13 + 0x18);
-            const float bx  = *(float *)((char *)puVar13 + 0x10);
-            const float by  = *(float *)((char *)puVar13 + 0x14);
-            const float bth = FUN_004f7500(bx, by);
-            char bmsg[192];
-            wsprintfA(bmsg, "BCZ type=%d mon=%d pos=(%d,%d,%d) terrainZ=%d dz=%d alpha=%d/100",
-                      (int)*(short *)((int)puVar13 + 2),
-                      (int)*(BYTE *)((int)param_1 + 0x2eb),
-                      (int)bx, (int)by, (int)bz, (int)bth, (int)(bz - bth),
-                      (int)(*(float *)((char *)puVar13 + 0x168) * 100.0f));
-            DbgLogPublic(bmsg);
-        }
-    }
-
     int  entity_type = (int)sVar2;
     void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
 
