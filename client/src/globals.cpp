@@ -1429,7 +1429,13 @@ int      DAT_00559ce8  = 0;
 DWORD    DAT_00559bec  = 0;
 // DAT_083a42ac already defined at line ~652
 DWORD    DAT_083a42d0  = 0;
-char     DAT_083a2370[0x960]  = {};   // render-state pool (0x960 bytes, stride 0xc, 128 slots)
+// Lista `Operates` (0x083A2370): objetos interactuables del mundo -- sillas,
+// bancos, barandas y los orbes de Noria.  200 entradas de 12 bytes:
+//   [0] activo (byte)   [2] puntero al objeto (DWORD)
+// La llena `sub_4FF580` desde CreateObject y la lee el picker `sub_4B0240`.
+// `Operates` de IDA (0x083A2378) es el campo [2] de la entrada 0 -- ver el
+// alias en globals.h.
+char     DAT_083a2370[0x960]  = {};   // 200 x 0xc (0x083A2370..0x083A2CD0)
 // 2026-04-28: pool de boids (fish/butterfly/bird flocking).
 // FUN_0043e680 itera 10 entries × stride 0x1bc = 0x1180 bytes. Antes era una
 // dirección absoluta del binario original (0x083a2e90); declarada como array
