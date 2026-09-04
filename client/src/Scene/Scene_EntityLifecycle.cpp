@@ -167,11 +167,25 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
         default: goto lbl_skip_init;
         case 0x13: case 0x5c: case 0x5d: puVar3[0x19]=0; return puVar3;
         case 0x14: case 0x41: case 0x56: case 0x58:
-            // copy current pos to previous, compute facing angle mod 360
+            // Puertas de Devias (20/65/86/88).  Guarda el estado de REPOSO que
+            // usa la animacion de apertura de `sub_4FDC00` case World 2:
+            //   HeadAngle[0..2]       (+40,+44,+48) = Angle[0..2]
+            //   HeadTargetAngle[0..2] (+52,+56,+60) = Position[0..2]
+            // y normaliza el giro:  Angle[2] = HeadAngle[2] = (int)Angle[2] % 360.
+            //
+            // 2026-09-04 FIX: el `% 360` se hacia sobre los BITS del float, no
+            // sobre su valor -- IDA es `(__int64)*((float *)v6 + 9) % 360`, o sea
+            // truncar el float a entero y despues el modulo.  Leyendo los bits,
+            // 90.0f (0x42B40000 = 1119092736) daba 336, 180.0f daba 224 y 270.0f
+            // daba 112.  Consecuencia doble: la puerta quedaba girada un angulo
+            // arbitrario (de ahi que se vieran mal puestas) y ademas los tests
+            // `HeadAngle[2] == 90/270/0/180` del tick nunca matcheaban, asi que no
+            // se abria.  Las unicas que funcionaban eran las de angulo 0, porque
+            // los bits de 0.0f tambien son 0.
             puVar3[0xb]=puVar3[8]; puVar3[0xf]=puVar3[6]; puVar3[0xd]=puVar3[4];
             puVar3[0xa]=puVar3[7]; puVar3[0xe]=puVar3[5];
-            { UINT ua = puVar3[9];
-              float fa = (float)((int)((long long)(unsigned long long)ua % 0x168));
+            { float angZ = *(float*)&puVar3[9];
+              float fa = (float)(long long)(((long long)angZ) % 360);
               puVar3[9]=*(UINT*)&fa; puVar3[0xc]=*(UINT*)&fa; }
             return puVar3;
         case 0x16: case 0x19: case 0x28: case 0x2d: case 0x37: case 0x49: break;
