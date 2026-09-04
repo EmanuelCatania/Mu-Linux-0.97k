@@ -96,6 +96,31 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
 
     // ── 1. Setup ─────────────────────────────────────────────────────────────
     short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
+
+    // [SONDA TEMP BCZ] Blood Castle: una linea por segundo con la Z real de la
+    // entidad contra la altura del terreno bajo ella.  Sirve para confirmar el
+    // fix de la seccion 3 (que clavaba Z = alpha).  dz ~ 0 = correcto.
+    if ((int)DAT_0055a7ac >= 11 && (int)DAT_0055a7ac <= 16) {
+        static DWORD bcz_next_ = 0;
+        static int   bcz_armed_ = 0;
+        const DWORD  bcz_now_ = GetTickCount();
+        if (!bcz_armed_) { bcz_armed_ = 1; bcz_next_ = bcz_now_; }
+        if ((int)(bcz_now_ - bcz_next_) >= 0) {
+            bcz_next_ = bcz_now_ + 1000;
+            const float bz  = *(float *)((char *)puVar13 + 0x18);
+            const float bx  = *(float *)((char *)puVar13 + 0x10);
+            const float by  = *(float *)((char *)puVar13 + 0x14);
+            const float bth = FUN_004f7500(bx, by);
+            char bmsg[192];
+            wsprintfA(bmsg, "BCZ type=%d mon=%d pos=(%d,%d,%d) terrainZ=%d dz=%d alpha=%d/100",
+                      (int)*(short *)((int)puVar13 + 2),
+                      (int)*(BYTE *)((int)param_1 + 0x2eb),
+                      (int)bx, (int)by, (int)bz, (int)bth, (int)(bz - bth),
+                      (int)(*(float *)((char *)puVar13 + 0x168) * 100.0f));
+            DbgLogPublic(bmsg);
+        }
+    }
+
     int  entity_type = (int)sVar2;
     void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
 
@@ -188,12 +213,32 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // Skill channel active — beam/barrier widget path
         unsigned int uVar11 = (unsigned int)(size_t)FUN_004faa70((int)puVar13, '\x01', (int)param_3);
         if (param_1[0x61] == 0) {
+            // 2026-09-04 FIX (crash 0xC0000005 param1=0xCDCDCDD5 al romper la
+            // puerta de Blood Castle).  IDA 0x456770 L308-323:
+            //     v9 = (float *)(block + 4);
+            //     *(_DWORD *)block = 1;                  // prefijo de count
+            //     eh_vector_ctor(block + 4, 0x60, 1, sub_4093A0, sub_4093C0);
+            //     sub_4093E0(v9, ...); sub_409250(v9, ...); sub_409250(v9, ...);
+            //     *(_DWORD *)(c + 388) = v9;             // guarda el OBJETO
+            //
+            // El port construia en `block + 4` (bien) pero guardaba `block` en
+            // c+388.  El tick de la tela (`sub_408CB0`) arranca con una llamada
+            // por vtable -- `(*(void(**)(_DWORD*))(*a1 + 8))(a1)` -- asi que leia
+            // el prefijo de count como si fuera la vtable.  Sin inicializar, el
+            // CRT debug lo deja en 0xCDCDCDCD y `*(0xCDCDCDCD + 8)` da
+            // 0xCDCDCDD5, que es exactamente el param1 del crash.
+            //
+            // Los tipos de monstruo de este case (+0x2EB: 89, 95, 112, 118, 124,
+            // 130, 136) incluyen el 130 = "Magic Skeleton", que es el que aparece
+            // al caer la puerta del evento.
             void *puVar8 = operator_new(100);
-            FUN_00541ec1((char *)puVar8 + 4, 0x60, 1, (void *)FUN_004093a0);
-            FUN_004093e0((char *)puVar8 + 4, (int)param_1, (short *)2, 0x12, 0x400, -1);
-            FUN_00409250((char *)puVar8 + 4, 0.0f,   0.0f, 0.0f, 50.0f, 18);
-            FUN_00409250((char *)puVar8 + 4, 0.0f, -20.0f, 0.0f, 30.0f, 18);
-            param_1[0x61] = (int)puVar8;
+            *(int *)puVar8 = 1;                    // count del eh vector ctor
+            void *clothObj = (char *)puVar8 + 4;   // el objeto vive en +4
+            FUN_00541ec1(clothObj, 0x60, 1, (void *)FUN_004093a0);
+            FUN_004093e0(clothObj, (int)param_1, (short *)2, 0x12, 0x400, -1);
+            FUN_00409250(clothObj, 0.0f,   0.0f, 0.0f, 50.0f, 18);
+            FUN_00409250(clothObj, 0.0f, -20.0f, 0.0f, 30.0f, 18);
+            param_1[0x61] = (int)clothObj;
             *(char *)(param_1 + 0x60) = 1;
         }
         int *piVar16 = (int *)param_1[0x61];
