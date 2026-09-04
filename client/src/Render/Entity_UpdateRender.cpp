@@ -683,8 +683,10 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         //          !c+0x34E && !(c+747 in special-skill ranges)
         bool Bind = false;
         if (DAT_005615c0 == 5) {  // in-game
-            int World = (int)DAT_0055a7ac;
-            if (World >= 10 && World <= 16) {
+            const int __world = (int)DAT_0055a7ac;   // `World` es macro de DAT_0055a7ac: nombrar
+                                                    // la local `World` la volvia una
+                                                    // auto-inicializacion con basura.
+            if (__world >= 10 && __world <= 16) {
                 BYTE anim = *(BYTE*)((int)puVar13 + 0x105);
                 if ((anim < 93 || anim > 124) && *(char*)((int)param_1 + 0x34E) == 0) {
                     Bind = 1;

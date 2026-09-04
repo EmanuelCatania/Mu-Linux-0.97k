@@ -73,7 +73,21 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     FUN_005060b0(199,   "Data\\Skill\\", "Ice",   2);
     FUN_005060b0(0xbf,  "Data\\Skill\\", "Fire",  1);
     FUN_005060b0(0xc0,  "Data\\Skill\\", "Poison",1);
-    for (int i = 0xc5; i-0xc4 < 2; i++)
+    // 2026-09-02 (Inferno sin fuego / "solo un pedazo del circulo"): estos
+    // bucles venian con la BASE de la condicion tomada del argumento en vez del
+    // valor inicial.  IDA los escribe asi (OpenSkills 0x0050B710 L91-97):
+    //     v1 = 206;
+    //     do { AccessModel(v1, ..., v1 - 205); ++v1; } while ( v1 - 206 < 3 );
+    // o sea la condicion usa el INICIO (206) y el argumento otra base (205).
+    // El port usaba la del argumento en los dos lados, asi que cada bucle
+    // cargaba (N - (inicio - base)) modelos en vez de N.
+    //
+    // Efecto medido con la sonda INFERNO: `mdl197=1 mdl198=0`, o sea Stone02
+    // nunca se abria.  Effect_SpawnBombRing elige `rand()%2 + 197` en cada una
+    // de las 8 posiciones del anillo, asi que ~la mitad de los efectos apuntaba
+    // a un modelo vacio: de ahi "solo carga un pedazo del circulo".
+    // Habia 17 bucles con el mismo error (ver Model_Players.cpp).
+    for (int i = 0xc5; i-0xc5 < 2; i++)
         FUN_005060b0(i, "Data\\Skill\\", "Stone", i - 0xc4);
     FUN_005060b0(200,   "Data\\Skill\\", "Circle",1);
     FUN_005060b0(0xc9,  "Data\\Skill\\", "Circle",2);
@@ -81,12 +95,12 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     FUN_005060b0(0xcb,  "Data\\Skill\\", "Magic", 2);
     FUN_005060b0(0xcc,  "Data\\Skill\\", "Storm", 1);
     FUN_005060b0(0xcd,  "Data\\Skill\\", "Laser", 1);
-    for (int i = 0xce; i-0xcd < 3; i++)
+    for (int i = 0xce; i-0xce < 3; i++)
         FUN_005060b0(i, "Data\\Skill\\", "Skeleton", i - 0xcd);
     FUN_005060b0(0xd1,  "Data\\Skill\\", "Saw",   1);
-    for (int i = 0xd2; i-0xd1 < 2; i++)
+    for (int i = 0xd2; i-0xd2 < 2; i++)
         FUN_005060b0(i, "Data\\Skill\\", "Bone",  i - 0xd1);
-    for (int i = 0xd4; i-0xd3 < 3; i++)
+    for (int i = 0xd4; i-0xd4 < 3; i++)
         FUN_005060b0(i, "Data\\Skill\\", "Snow",  i - 0xd3);
     FUN_005060b0(0xc3,  "Data\\Skill\\", "Rider", 1);
 
@@ -109,7 +123,7 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     FUN_00505c80(0x10a, "Skill\\", 0x2600, '\x01');
     FUN_005060b0(0x10a, "Data\\Skill\\", "RidingSpear", 1);
     FUN_005060b0(0xe1,  "Data\\Skill\\", "Protect",     1);
-    for (int i = 0xe2; i-0xe1 < 2; i++)
+    for (int i = 0xe2; i-0xe2 < 2; i++)
         FUN_005060b0(i, "Data\\Skill\\", "BigStone", i - 0xe1);
     FUN_005060b0(0xe9,  "Data\\Skill\\", "MagicCircle", 1);
     FUN_005060b0(0xe0,  "Data\\Skill\\", "ArrowWing",   1);

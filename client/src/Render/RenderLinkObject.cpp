@@ -699,6 +699,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     // se veia blanco.
     float Light[3] = { 0.0f, 0.0f, 0.0f };
 
+
     // The switch is on param_6 (Type), Ghidra mis-typed as float; actual int cases:
     // 0x1a3=419, 0x1af=431, 0x1d7=471, 0x1fa=506,
     // 0x214=532, 0x215=533, 0x216=534, 0x221=545, 0x23a=570, 0x25f=607

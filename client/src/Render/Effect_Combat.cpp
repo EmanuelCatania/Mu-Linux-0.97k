@@ -42,9 +42,9 @@ void __cdecl Effect_SpawnBombRing(float *a1)
     out[2] = out[2] + a1[2];
     CreateBomb(out, 1);
     v2 = rand() % 2;
-    CreateEffect(v2 + 197, out, Angle, Light, (float*)1, (float*)0, (float*)-1, (float*)0, 0);
+    void *r197 = Effect_Create(v2 + 197, out, Angle, Light, (float*)1, (float*)0, (float*)-1, (float*)0, 0);
     v3 = rand() % 2;
-    CreateEffect(v3 + 197, out, Angle, Light, (float*)0, (float*)0, (float*)-1, (float*)0, 0);
+    void *r198 = Effect_Create(v3 + 197, out, Angle, Light, (float*)0, (float*)0, (float*)-1, (float*)0, 0);
     v4 = ++v1;
   }
   while ( v1 < 8 );
