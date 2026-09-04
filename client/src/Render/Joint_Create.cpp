@@ -2045,6 +2045,38 @@ switchD_0046dee7_default:
     pcVar14[0x56] = '\0';
     pcVar14[0x57] = '\0';
   }
+  {
+    // 2026-09-03 -- DESVIACION DOCUMENTADA (no esta en IDA 0x46D840).
+    //
+    // El binario inicializa UNICAMENTE la fila 0 del anillo de segmentos
+    // (`v11+22..v11+33` = 0x58..0x87, los 4 vertices) y deja el resto como
+    // estaba.  En el juego original eso no se nota porque el pool de joints se
+    // recicla sin parar: las filas altas conservan las coordenadas del joint
+    // anterior, que son valores de mundo plausibles, asi que los quads de mas
+    // salen diminutos o degenerados.
+    //
+    // En nuestro build el pool es un global en BSS: la PRIMERA vez que se usa
+    // un slot esas filas valen 0, y el renderer (0x00473710) dibuja un quad
+    // entre la ultima fila con datos y una fila en el origen -- la banda que
+    // cruza la pantalla desde el personaje.  La muestran justo los tres joints
+    // reportados: aura del Soul Barrier (266), efecto de subir de nivel y halo
+    // del set +11 (1249).  Medido con la sonda JROWS: el vertice lejano salia
+    // en (1046, 0, 295) con el cercano en (1112, 1489, 381).  Y verificado por
+    // contraste: cuando el slot venia RECICLADO (con datos del joint anterior)
+    // el anillo se comportaba perfecto durante 200 muestras seguidas.
+    //
+    // Replicar la fila 0 en todo el anillo reproduce la condicion que el
+    // original obtiene gratis por reciclaje: los quads sobrantes quedan
+    // degenerados sobre la propia posicion del joint en vez de barrer el mapa.
+    // Solo toca filas que en un slot fresco valen 0, asi que no puede alterar
+    // ningun joint que ya se estuviera dibujando bien.
+    const int __rowBytes = 0x30;
+    const int __maxRows  = (0x9d8 - 0x58) / __rowBytes;
+    int __n = *(int *)(pcVar14 + 0x54);
+    if (__n > __maxRows) __n = __maxRows;
+    for (int __r = 1; __r < __n; ++__r)
+        memcpy(pcVar14 + 0x58 + __r * __rowBytes, pcVar14 + 0x58, __rowBytes);
+  }
   return (void*)pcVar14;
   while( true ) {
     uVar9 = (uVar9 + 1) % (uint)DAT_055c9bd4;
@@ -2292,7 +2324,14 @@ LAB_0046ee73:
   pcVar14[0x9b9] = '\0';
   pcVar14[0x9ba] = '\0';
   pcVar14[0x9bb] = '\0';
-  *(float **)(pcVar14 + 0xc) = param_4;
+    // 2026-09-02: Ghidra tipo este slot como `float**` y le asigno `param_4`,
+    // que es el PUNTERO al vec3 de angulos -- una direccion de pila.  El campo
+    // es la **Scale** del joint (+0x0C).  Confirmado con MU 5.2 CreateJoint,
+    // case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70; LifeTime = 49;
+    // Scale = Scale; MaxTails = 6  -- los otros tres valores de este mismo
+    // bloque coinciden exacto.  Medido con la sonda ESPIRIT JOINT:
+    // `scaleBits=001AF32C` (una direccion de stack) en vez de 42A00000 (80.0f).
+    *(float *)(pcVar14 + 0xc) = param_7;
   pcVar14[0x54] = '\f';
   pcVar14[0x55] = '\0';
   pcVar14[0x56] = '\0';
@@ -2542,7 +2581,14 @@ LAB_0046e970:
   pcVar14[0x9b9] = '\0';
   pcVar14[0x9ba] = '\0';
   pcVar14[0x9bb] = '\0';
-  *(float **)(pcVar14 + 0xc) = param_4;
+    // 2026-09-02: Ghidra tipo este slot como `float**` y le asigno `param_4`,
+    // que es el PUNTERO al vec3 de angulos -- una direccion de pila.  El campo
+    // es la **Scale** del joint (+0x0C).  Confirmado con MU 5.2 CreateJoint,
+    // case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70; LifeTime = 49;
+    // Scale = Scale; MaxTails = 6  -- los otros tres valores de este mismo
+    // bloque coinciden exacto.  Medido con la sonda ESPIRIT JOINT:
+    // `scaleBits=001AF32C` (una direccion de stack) en vez de 42A00000 (80.0f).
+    *(float *)(pcVar14 + 0xc) = param_7;
   pcVar14[0x54] = '\x06';
   pcVar14[0x55] = '\0';
   pcVar14[0x56] = '\0';

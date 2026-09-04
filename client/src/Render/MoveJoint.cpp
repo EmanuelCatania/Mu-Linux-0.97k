@@ -53,6 +53,232 @@ static inline float int_as_float(int i) {
     return f;
 }
 
+
+// -----------------------------------------------------------------------------
+// 2026-09-03 - COLA GENERICA de MoveJoint (IDA 0x00470030 L1922-2217)
+//
+// En el binario, todo joint cuyo TIPO no matchea ningun bloque del dispatch cae
+// en esta cola.  Es la que CONSTRUYE la estela: recorre `segMax` pasos y en cada
+// uno mueve el joint con `MoveHumming` hacia su objetivo y empuja un segmento
+// con `sub_46FE90` -- o sea el rayo entero se dibuja en UN tick.
+//
+// El port no la tenia, y por eso faltaban tres cosas que parecian no
+// relacionadas: el rayo del Lightning (1254 sub 0), los rayos del Twister
+// (1253 sub 0, ocho joints) y los rayos de fondo de Icarus (1254 sub 6, que
+// ademas es el unico subtipo que el epilogo LABEL_487 excluye del tick de
+// segmentos justamente porque los construye aca).
+//
+// Offsets: +8 SubType - +12 Scale - +16 Position - +40 Angle - +52 Light
+//          +64 Owner - +68 TargetPosition - +84 segMax - +2488 lifetime
+//          +2496 Velocity - +2500/2504/2508 jitter de angulo
+static void MoveJoint_GenericTail(unsigned char *o)
+{
+    float *const pos = (float *)(o + 16);
+    float *const tgt = (float *)(o + 68);
+    float Position[3], Angle[3], Light[3], in1[3], angles[3];
+    float v304[12], v305[12];
+
+    Position[0] = Position[1] = Position[2] = 0.0f;
+
+    const int sub0 = *(int *)(o + 8);
+
+    // -- IDA L1922-1996: ajuste previo por subtipo ----------------------------
+    if ((sub0 != 6 || *(int *)(o + 2488) <= 4) && sub0 != 8) {
+        bool toLabel126 = false;
+        if (sub0 == 4 || sub0 == 5) {
+            const float tx = tgt[0], ty = tgt[1], tz = tgt[2];
+            pos[0] = tx; pos[1] = ty; pos[2] = tz;
+            Position[0] = tx; Position[1] = ty; Position[2] = tz + 30.0f;
+            const float rot = (float)(rand() % 360);
+            const float sc  = (float)(rand() % 8 + 8) * 0.2f;
+            FUN_004795c0(1231, Position, sc, (float *)(o + 52), 0, rot, 0);
+            const int life = *(int *)(o + 2488);
+            if (life > 10) {
+                Light[0] = 0.5f; Light[1] = 0.5f; Light[2] = 0.5f;
+                if ((life & 1) == 0) {
+                    Angle[0] = (float)(rand() % 60 - 30) + *(float *)(o + 40);
+                    Angle[1] = 0.0f                      + *(float *)(o + 44);
+                    Angle[2] = (float)(rand() % 30 + 90) + *(float *)(o + 48);
+                    Joint_Create(1254, Position, Position, (float *)(o + 40), 3, 0, 10.0f, 10, 0xA);
+                    Joint_Create(1254, Position, Position, Angle,              8, 0, 10.0f, -1, 0);
+                }
+                in1[0] = 0.0f; in1[1] = 120.0f; in1[2] = 0.0f;
+                angles[0] = (float)(rand() % 360);
+                angles[1] = 0.0f;
+                angles[2] = (float)(rand() % 360);
+                Matrix_BuildFromEuler(angles, v304);
+                Vector_Rotate(in1, v304, Position);
+                Position[0] += pos[0]; Position[1] += pos[1]; Position[2] += pos[2];
+                Joint_Create(1254, Position, pos, angles, 7, 0, 10.0f, 10, 0);
+            }
+        } else if (sub0 == 6 || sub0 == 7) {
+            toLabel126 = true;
+        } else if (sub0 == 9) {
+            Position[0] = (float)(rand() % 200) + tgt[0] - 100.0f;
+            Position[1] = (float)(rand() % 200) + tgt[1] - 100.0f;
+            Position[2] = tgt[2];
+            toLabel126 = true;
+        }
+        if (toLabel126) {   // IDA LABEL_126
+            pos[0] = *(float *)(o + 28);
+            pos[1] = *(float *)(o + 32);
+            pos[2] = *(float *)(o + 36);
+        }
+    }
+
+    // -- IDA L1996-2210: el bucle que construye la estela ---------------------
+    const int segMax = *(int *)(o + 84);
+    if (segMax <= 0) return;
+
+    float v295 = 0.0f;          // distancia devuelta por MoveHumming
+    int   step = 0;
+    for (;;) {
+        const int sub = *(int *)(o + 8);
+
+        switch (sub) {
+        case 0: case 1: case 2: {
+            const int owner = *(int *)(o + 64);
+            if (owner) {
+                tgt[0] = *(float *)(owner + 16);
+                tgt[1] = *(float *)(owner + 20);
+                tgt[2] = *(float *)(owner + 24) + 80.0f;
+            }
+            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, 25.0f);   // LABEL_131
+            break;
+        }
+        case 3:
+            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, 50.0f);
+            break;
+        case 4: case 5: {
+            Position[0] = tgt[0]; Position[1] = tgt[1]; Position[2] = tgt[2] - 300.0f;
+            v295 = FUN_0043e4a0(pos, (float *)(o + 40), Position, -10.0f);
+            break;
+        }
+        case 6: {
+            const int owner = *(int *)(o + 64);
+            if (owner) {
+                tgt[0] = *(float *)(owner + 16);
+                tgt[1] = *(float *)(owner + 20);
+                tgt[2] = *(float *)(owner + 24);
+            }
+            tgt[0] += (float)(rand() % 200) + 2050.0f;
+            tgt[1] += (float)(rand() % 200) + 2050.0f;
+            tgt[2] -= 10000.0f;
+            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
+            break;
+        }
+        case 7:
+            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
+            break;
+        case 9:
+            v295 = FUN_0043e4a0(pos, (float *)(o + 40), Position, (float)(rand() % 80 + 60));
+            break;
+        case 0xC: {
+            // IDA entra directo a LABEL_133: no recalcula la distancia.
+            const int owner = *(int *)(o + 64);
+            if (owner) {
+                const short mdl = *(short *)(owner + 2);
+                float out[3] = { 0.0f, -100.0f, 0.0f };
+                BMD_TransformPosition((void *)((uintptr_t)DAT_05828d58 + 188 * mdl),
+                                      (float *)&DAT_07abf474, out, pos, '\x01');
+            }
+            break;
+        }
+        default:
+            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, 25.0f);    // LABEL_131
+            break;
+        }
+
+        // -- LABEL_133: jitter del angulo por subtipo -------------------------
+        const int sub2 = *(int *)(o + 8);
+        bool toLabel151 = false;
+        float v92 = 0.0f;
+        if (sub2 == 1) {
+            *(float *)(o + 2500) = (float)(rand() % 256 - 128);
+            v92 = (float)(rand() % 256 - 128);
+        } else if (sub2 == 4) {
+            *(float *)(o + 2500) = (float)(rand() % 64 - 32);
+            toLabel151 = true;
+        } else if (sub2 == 6 || sub2 == 7) {
+            *(float *)(o + 2500) = (float)(rand() % 100 + 20);
+            v92 = (float)(rand() % 100 + 20);
+        } else if (sub2 == 11) {
+            const float sc = *(float *)(o + 12);
+            *(float *)(o + 2500) = (float)((double)(rand() % 1024 - 512) * 0.69999999) / sc;
+            v92 = (float)((double)(rand() % 1024 - 512) * 0.69999999) / sc;
+        } else {
+            const float sc = *(float *)(o + 12);
+            *(float *)(o + 2500) = (float)(rand() % 1024 - 512) / sc;
+            v92 = (float)(rand() % 1024 - 512) / sc;
+        }
+        if (!toLabel151) *(float *)(o + 2508) = v92;
+
+        // -- LABEL_151: empujar un segmento -----------------------------------
+        Angle[0] = *(float *)(o + 40) + *(float *)(o + 2500);
+        Angle[1] = *(float *)(o + 44) + *(float *)(o + 2504);
+        Angle[2] = *(float *)(o + 48) + *(float *)(o + 2508);
+        Matrix_BuildFromEuler(Angle, v305);
+        FUN_0046fe90((int)(uintptr_t)o, v305);
+
+        const int sub3 = *(int *)(o + 8);
+        if (sub3 == 3) {
+            if (v295 > 150.0f) *(int *)(o + 2488) = 0;
+        } else if (*(float *)(o + 2496) * 1.5f > v295 &&
+                   sub3 != 6 && sub3 != 9 && sub3 != 7) {
+            if (*(int *)(o + 12) == 1112014848) {           // Scale == 50.0f
+                Particle_Spawn(1180, pos, (float *)(o + 40), (float *)(o + 52), 0, 1.0f, 0);
+                if ((rand() % 8) == 0) {
+                    angles[0] = (float)(rand() % 64 - 32) + tgt[0];
+                    angles[1] = (float)(rand() % 64 - 32) + tgt[1];
+                    angles[2] = (float)(rand() % 64 - 32) + tgt[2];
+                    Particle_Spawn(1220, pos, (float *)(o + 40), (float *)(o + 52), 0, 1.0f, 0);
+                }
+                if (*(int *)(o + 8) == 0 && ((long long)DAT_05826e08) % 1000 < 500) {
+                    if ((rand() % 16) == 0) {
+                        angles[0] = (float)(rand() % 100 - 50) + tgt[0];
+                        angles[1] = (float)(rand() % 100 - 50) + tgt[1];
+                        angles[2] = (float)(rand() % 120 - 60) + tgt[2];
+                        Joint_Create(1254, angles, tgt, (float *)(o + 40), 1,
+                                     *(int *)(o + 64), (float)(rand() % 8) + 6.0f, -1, 0);
+                    }
+                }
+            }
+            break;                                          // IDA: goto LABEL_182
+        }
+
+        if (*(float *)(o + 12) >= 50.0f && sub3 != 4 && sub3 != 7 &&
+            (sub3 == 0 || sub3 == 11 || sub3 == 2)) {
+            const float v99 = (float)(rand() % 4 + 4) * 0.079999998f;
+            float v100;
+            if (sub3 == 0 || sub3 == 11) {
+                Light[0] = v99 * 0.1f;
+                Light[1] = Light[0];
+                v100 = v99 * 0.5f;
+            } else {
+                Light[0] = v99 * 0.40000001f;
+                v100 = v99 * 0.1f;
+                Light[1] = v100;
+            }
+            Light[2] = v100;
+            AddTerrainLight(pos[0], pos[1], Light, 2, PrimaryTerrainLight[0]);
+        }
+
+        Position[0] = 0.0f;
+        Position[1] = -*(float *)(o + 2496);
+        Position[2] = 0.0f;
+        Vector_Rotate(Position, v305, in1);
+        pos[0] += in1[0];
+        pos[1] += in1[1];
+        pos[2] += in1[2];
+        if (++step >= segMax) break;
+    }
+
+    // -- LABEL_182 ------------------------------------------------------------
+    if (*(int *)(o + 8) == 7) {
+        pos[0] = tgt[0]; pos[1] = tgt[1]; pos[2] = tgt[2];
+    }
+}
+
 char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
 {
     float   fVar2;
@@ -415,11 +641,35 @@ LAB_0047036e:
             *(undefined4 *)(param_1 + 0x9b8) = 100;
         }
 
+        // 2026-09-03 -- DESVIACION DOCUMENTADA, no encontrada en IDA.
+        // Estos dos bucles des-trasladan y vuelven a trasladar TODA la historia
+        // de segmentos por el delta del ancla, de modo que la estela acompana al
+        // owner cuando se mueve.  Busque su origen en el binario y NO esta:
+        //   - cuerpo del tipo 266 de MoveJoint (0x00470030 L890-1240): los unicos
+        //     bucles son el `for (j<3)` del subtipo 2 y el del subtipo 9;
+        //   - MoveJoints (0x004736E0) es solo el walker del pool;
+        //   - el renderer (0x00473710) emite los vertices crudos, sin sumar ancla.
+        // Pero SIN ellos el aura se deshace en tiras sueltas al caminar, y en el
+        // cliente original el anillo queda pegado al personaje.  O sea el binario
+        // re-ancla en algun punto que todavia no ubique.  Se conservan hasta
+        // encontrarlo; si aparece el sitio real, esto se reemplaza por el port fiel.
         if ((iVar16 == 0) || (iVar16 == 4)) {
             // Subtract anchor from segment positions (un-translate)
-            int seg_count = *(int *)(param_1 + 0x50);
-            if (-1 < seg_count + -1) {
-                float *pfVar26 = (float *)(param_1 + (seg_count + -1) * 0x30 + 0x5c);
+            // 2026-09-03 FIX (la banda de Icarus): el bucle cubria las filas
+            // 0..segCount-1, pero el renderer (0x00473710) dibuja segCount
+            // quads leyendo las filas segIdx y segIdx+1, o sea llega hasta la
+            // fila **segCount**; y `sub_46FE90` tambien escribe esa fila.  La
+            // fila de mas quedaba fuera del par restar/sumar y derivaba: la
+            // sonda JSPAN la cazo con un quad de 1572 unidades entre
+            // (1648,1571,299) y (1638,0,285) -- una raya cruzando el mapa.
+            // Ahora se cubren segCount+1 filas, acotado a segMax.
+            int seg_rows = *(int *)(param_1 + 0x50) + 1;
+            {
+                const int seg_max = *(int *)(param_1 + 0x54);
+                if (seg_rows > seg_max) seg_rows = seg_max;
+            }
+            if (seg_rows > 0) {
+                float *pfVar26 = (float *)(param_1 + (seg_rows + -1) * 0x30 + 0x5c);
                 do {
                     iVar13 = 4;
                     float *pf = pfVar26;
@@ -431,8 +681,8 @@ LAB_0047036e:
                         pf += 3;
                     } while (iVar13 != 0);
                     pfVar26  += -0xc;
-                    seg_count--;
-                } while (seg_count != 0);
+                    seg_rows--;
+                } while (seg_rows != 0);
             }
         }
 
@@ -443,11 +693,24 @@ LAB_0047036e:
         *(float *)(param_1 + 0x4c)      = *(float *)(iVar16 + 0x18) + _DAT_00552488;
 
         iVar16 = *(int *)(param_1 + 8);
+
         if ((iVar16 == 0) || (iVar16 == 4)) {
             // Add anchor back to segment positions (re-translate)
-            int seg_count = *(int *)(param_1 + 0x50);
-            if (-1 < seg_count + -1) {
-                float *pfVar26 = (float *)(param_1 + (seg_count + -1) * 0x30 + 0x5c);
+            // 2026-09-03 FIX (la banda de Icarus): el bucle cubria las filas
+            // 0..segCount-1, pero el renderer (0x00473710) dibuja segCount
+            // quads leyendo las filas segIdx y segIdx+1, o sea llega hasta la
+            // fila **segCount**; y `sub_46FE90` tambien escribe esa fila.  La
+            // fila de mas quedaba fuera del par restar/sumar y derivaba: la
+            // sonda JSPAN la cazo con un quad de 1572 unidades entre
+            // (1648,1571,299) y (1638,0,285) -- una raya cruzando el mapa.
+            // Ahora se cubren segCount+1 filas, acotado a segMax.
+            int seg_rows = *(int *)(param_1 + 0x50) + 1;
+            {
+                const int seg_max = *(int *)(param_1 + 0x54);
+                if (seg_rows > seg_max) seg_rows = seg_max;
+            }
+            if (seg_rows > 0) {
+                float *pfVar26 = (float *)(param_1 + (seg_rows + -1) * 0x30 + 0x5c);
                 do {
                     iVar13 = 4;
                     float *pf = pfVar26;
@@ -459,8 +722,8 @@ LAB_0047036e:
                         pf += 3;
                     } while (iVar13 != 0);
                     pfVar26  += -0xc;
-                    seg_count--;
-                } while (seg_count != 0);
+                    seg_rows--;
+                } while (seg_rows != 0);
             }
         }
 
@@ -656,18 +919,19 @@ LAB_0047036e:
         goto switchD_caseD_4ef;
     }
 
-    // ── Type 0x4e6: Dragon fire / lightning ──────────────────────────
+    // 2026-09-02 (Lightning sin rayo): el tipo 1254 NO tiene bloque propio en
+    // IDA MoveJoint (0x00470030) -- su unica mencion en toda la funcion es la
+    // exclusion del epilogo (L2226).  El bloque que habia aca era invencion del
+    // port y hacia DOS cosas daninas:
+    //   1. Llamaba `sub_46FE90` una segunda vez por frame (el epilogo ya la
+    //      llama), o sea DOBLE scroll de la historia de segmentos: la estela
+    //      perdia la mitad de su largo y duplicaba la cabeza.
+    //   2. Aplicaba el fade `if (lifetime < 5) color *= 0.76923078`, que en
+    //      IDA pertenece al tipo **1176** (L785-791), no al 1254.
+    // Con lifetime 2 (CreateJoint case 1254 sub 0 -> LABEL_57), las dos cosas
+    // juntas dejaban el rayo del Lightning practicamente invisible.
     if (iVar16 == 0x4e6) {
-        iVar16 = *(int *)(param_1 + 8);
-        // Sub-mode 6 skips the segment tick (handled differently)
-        if (iVar16 != 6) {
-            FUN_0046fe90((int)param_1, local_30);
-        }
-        if (*(int *)(param_1 + 0x9b8) < 5) {
-            *(float *)(param_1 + 0x34) *= _DAT_00552a90;
-            *(float *)(param_1 + 0x38) *= _DAT_00552a90;
-            *(float *)(param_1 + 0x3c) *= _DAT_00552a90;
-        }
+        MoveJoint_GenericTail(param_1);   // IDA: 1254 no tiene case -> cae en la cola generica
         goto switchD_caseD_4ef;
     }
 
@@ -679,9 +943,20 @@ LAB_0047036e:
                 (float)(rand() % 100) + *(float *)(param_1 + 0x48) - 50.0f,
                 *(float *)(param_1 + 0x4c)
             };
-            *pfVar15 = *(float *)(param_1 + 0x28);
-            *(float *)(param_1 + 0x14) = *(float *)(param_1 + 0x2c);
-            *(float *)(param_1 + 0x18) = *(float *)(param_1 + 0x30);
+            // 2026-09-03 (haz que cruzaba Icarus): IDA (0x00470030 L1880-1886)
+            //     *v2 = *(float *)(o + 28);
+            //     *(_DWORD *)(o + 20) = *(_DWORD *)(o + 32);
+            //     *(_DWORD *)(o + 24) = *(_DWORD *)(o + 36);
+            // Esos 28/32/36 son DECIMALES = 0x1C/0x20/0x24, donde `CreateJoint`
+            // guarda el ORIGEN del rayo (LABEL_61: `*((float *)v11 + 7) = *v12`).
+            // El port los leyo como HEX y reseteaba desde 0x28/0x2c/0x30, que es
+            // el vector Angle (~0,0,0 para estos joints): el rayo renacia en la
+            // esquina del mapa en cada rebuild y la estela lo unia con el cielo
+            // -- el haz azul que cruzaba Icarus.  Medido con la sonda JBEAM:
+            // `type=1255 sub=9 P=(3167,928,58) v0=(1251,54,139)`.
+            *pfVar15                   = *(float *)(param_1 + 0x1c);
+            *(float *)(param_1 + 0x14) = *(float *)(param_1 + 0x20);
+            *(float *)(param_1 + 0x18) = *(float *)(param_1 + 0x24);
             const int segmentLimit_4e7 = *(int *)(param_1 + 0x54);
             for (int segment_4e7 = 0; segment_4e7 < segmentLimit_4e7; ++segment_4e7) {
                 const float speed_4e7 = (float)(rand() % 80) + 60.0f;
@@ -1151,29 +1426,37 @@ switchD_caseD_4fd:
             *(float *)(param_1 + 0x18) = vertical + *(float *)(param_1 + 0x4c);
             goto switchD_caseD_4ef;
         }
+        // 2026-09-01 FIX — los subtipos 8 y 9 PISABAN `local_30`, que es el
+        // `in2` de IDA: la matriz que arma el prologo con
+        // `AngleMatrix((float *)(o + 40), in2)` (L319) y que el epilogo
+        // LABEL_487 (L2228) le pasa a `sub_46FE90` para construir las 4
+        // esquinas del segmento nuevo.  IDA usa una matriz APARTE (`v304`,
+        // declarada en L307) en estos dos cases; reusar `in2` dejaba el
+        // scroll de segmentos del epilogo con la matriz equivocada.
+        float jointMatrix_v304[12];               // IDA: v304[3][4]
         if (jsub == 8) {
             // 00470030 LABEL_301/case 8: rotate the fixed vertical offset
             // by the raw +0x44 vector, anchor it at +0x1c, then advance +0x4c.
-            float offset[3] = { 0.0f, -50.0f, 0.0f };
-            float rotated[3];
-            Matrix_BuildFromEuler((float *)(param_1 + 0x44), local_30);
-            Vector_Rotate(offset, local_30, rotated);
+            float offset[3] = { 0.0f, -50.0f, 0.0f };   // IDA: in1
+            float rotated[3];                           // IDA: Position
+            Matrix_BuildFromEuler((float *)(param_1 + 0x44), jointMatrix_v304);
+            Vector_Rotate(offset, jointMatrix_v304, rotated);
             *jposX                     = rotated[0] + *(float *)(param_1 + 0x1c);
             *(float *)(param_1 + 0x14) = rotated[1] + *(float *)(param_1 + 0x20);
             *(float *)(param_1 + 0x18) = rotated[2] + *(float *)(param_1 + 0x24);
-            Matrix_BuildFromEuler((float *)(param_1 + 0x40), local_30);
+            Matrix_BuildFromEuler((float *)(param_1 + 0x40), jointMatrix_v304);
             *(float *)(param_1 + 0x4c) += 10.0f;
             goto switchD_caseD_4ef;
         }
         if (jsub == 9) {
             // 00470030 LABEL_301/case 9.
-            Matrix_BuildFromEuler((float *)(param_1 + 0x40), local_30);
-            const int segments = *(int *)(param_1 + 0x54);
-            for (int i = 0; i < segments; ++i) {
+            Matrix_BuildFromEuler((float *)(param_1 + 0x40), jointMatrix_v304);
+            const int segments = *(int *)(param_1 + 0x54);   // IDA: *(int *)(o + 84)
+            for (int i = 0; i < segments; ++i) {             // IDA: v180 / iIndex
                 *jposX                     += *(float *)(param_1 + 0x1c);
                 *(float *)(param_1 + 0x14) += *(float *)(param_1 + 0x20);
                 *(float *)(param_1 + 0x18) += *(float *)(param_1 + 0x24);
-                FUN_0046fe90((int)param_1, local_30);
+                FUN_0046fe90((int)param_1, jointMatrix_v304);
             }
             goto switchD_caseD_4ef;
         }
@@ -1182,33 +1465,40 @@ switchD_caseD_4fd:
         }
     }
 
-    // Órbita pseudo-aleatoria — cuerpo NO portado de IDA; sólo lo alcanzan ahora
-    // los subtipos 4/6/7/8/9/11/12 (ver nota arriba).
+    // 2026-09-01 — PORTADA la cola real de LABEL_301 (IDA L1706-1724 ->
+    // LABEL_438 -> LABEL_439).  Aca habia una "orbita pseudo-aleatoria"
+    // INVENTADA (sembrada con el indice de slot y unos globals de ruido) que
+    // ademas llamaba `FUN_0046fe90` de mas: el epilogo LABEL_487 ya lo llama,
+    // asi que se scrolleaba la historia de segmentos DOS veces por tick — el
+    // anillo avanzaba al doble y quedaban segmentos duplicados/entrelazados.
+    //
+    // Lo que hace el binario para los subtipos que no matchean ningun case
+    // (4, 7, 11 y el resto) es la MISMA helice que 6 y 12, con otra formula de
+    // radio:
+    //     v237 = *(_DWORD *)(o + 2488);                       // life
+    //     v238 = ((double)v237 + *(float *)(o + 2500)) * 0.1;  // angulo
+    //     v240 = v237 + 40;  v296 = (v240 <= 10) ? 10 : v240;  // radio
+    //     v234 = -(cos(v238) * (v296 * 0.64999998));
+    //     v236 =   v296 * 0.64999998;  v235 = sin(v238);
+    //   LABEL_438: v239 = v235 * v236;
+    //   LABEL_439: <ancla + heading + escritura de Pos>
     {
-        local_a8[2] = 0.1113f;
-        float fFreq2  = _DAT_00552a9c;
-        float fScale2 = _DAT_00552aa0;
-        int   seed_i  = (int)param_2 + float_as_int(local_dc_f) + 0x2b67;
-        float ang_0   = (float)(int)param_2 * fFreq2;
-        fVar24 = (double)fScale2 * (double)((int)param_2 + 0xd903);
-        fVar22 = fsin(fVar24);
-        fVar23 = fcos((double)ang_0);
-        local_a8[3] = (float)(fVar23 * fVar22);
-        fVar23 = fsin((double)ang_0);
-        local_a8[4] = (float)(fVar23 * fVar22);
-        fVar24 = fcos(fVar24);
-        fVar22 = fsin((double)seed_i * (double)local_a8[2]);
-        float sin_s  = (float)fVar22;
-        fVar22 = fcos((double)seed_i * (double)local_a8[2]);
-        local_a8[1] = (float)(sin_s * (double)local_a8[4] + fVar22 * fVar24);
-        fVar24 = fVar22 * (double)local_a8[4] - (double)sin_s * fVar24;
-        *(float *)(param_1 + 0x10) =
-            (float)(fVar24 * (double)_DAT_00552878 + (double)*pfVar14);
-        *(float *)(param_1 + 0x14) =
-            local_a8[1] * _DAT_00552878 + *(float *)(param_1 + 0x48);
-        *(float *)(param_1 + 0x18) =
-            local_a8[3] * _DAT_00552908 + *(float *)(param_1 + 0x4c) + _DAT_005528fc;
-        FUN_0046fe90((int)param_1, local_30);
+        const int life = *(int *)(param_1 + 0x9b8);              // IDA: v237
+        const float phase = *(float *)(param_1 + 0x9c4);         // IDA: o + 2500
+        const double a = ((double)life + (double)phase) * 0.1;   // IDA: v238
+        int radius = life + 40;                                  // IDA: v240
+        if (radius <= 10) radius = 10;                           // IDA: v296 = 10
+        const double r65 = (double)radius * 0.64999998;
+        const float lateral  = (float)(-(fcos(a) * r65));        // IDA: v234
+        const float vertical = (float)(fsin(a) * r65);           // IDA: v239 = v235 * v236
+
+        // IDA LABEL_439 (compartido con los subtipos 6 y 12).
+        *(float *)(param_1 + 0x44) += *(float *)(param_1 + 0x9c8);
+        *(float *)(param_1 + 0x48) += *(float *)(param_1 + 0x9cc);
+        const float heading = (90.0f - *(float *)(param_1 + 0x30)) * 0.017453292f;
+        *(float *)(param_1 + 0x10) = fsin(heading) * lateral + *(float *)(param_1 + 0x44);
+        *(float *)(param_1 + 0x14) = fcos(heading) * lateral + *(float *)(param_1 + 0x48);
+        *(float *)(param_1 + 0x18) = vertical + *(float *)(param_1 + 0x4c);
         goto switchD_caseD_4ef;
     }
 

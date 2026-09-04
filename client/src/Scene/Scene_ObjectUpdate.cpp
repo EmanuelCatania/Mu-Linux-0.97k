@@ -12,7 +12,7 @@ extern void __cdecl FUN_0046ca00(DWORD Object);
 // Per-world object animation. Per-frame for each visible scene object.
 // World 9: random terrain lights. World 0: toggle objects by HeroTile.
 // Then: Alpha(), BMD setup, animate, render via RenderPartObject.
-float* __cdecl MoveObject_PerWorld_stub(float param_1) {
+float* __cdecl MoveObject_PerWorld(float param_1) {
     // 0x004FDC00 — Per-world object animation (608 lines decompiled).
     // param_1 is actually the OBJECT pointer cast to float (Ghidra artifact).
     // Per-frame update for visible scene objects: toggle visibility by HeroTile,
@@ -30,10 +30,17 @@ float* __cdecl MoveObject_PerWorld_stub(float param_1) {
 
     // ── World 9: random terrain lights ──
     if (World == 9) {
-        // Spawn random terrain light near hero (1/100 chance when time < 1000 of 4000-tick cycle)
-        // In original: uses __ftol() on WorldTime % 4000
-        // Simplified: cosmetic ambient effect
-        PlayBuffer(1, 0, 1);  // ambient thunder sound
+        // IDA 0x004FDC00: the storm flash is independent from the object type.
+        // It happens during the first quarter of the 4-second cycle, one time
+        // in 100, around the local player.  The former port kept only sound.
+        if (((__int64)WorldTime % 4000) < 1000 && !(rand() % 100) && Hero) {
+            const float intensity = (float)(rand() % 12 + 4) * 0.1f;
+            float light[3] = { intensity * 0.2f, intensity * 0.3f, intensity * 0.5f };
+            const float x = (float)(rand() % 1200) + *(float*)(Hero + 16) - 600.0f;
+            const float y = (float)(rand() % 1200) + *(float*)(Hero + 20) - 600.0f;
+            AddTerrainLight(x, y, light, 12, PrimaryTerrainLight[0]);
+        }
+        PlayBuffer(1, 0, 1);
     }
 
     // ── World 0: toggle torch/fire objects by HeroTile ──
@@ -198,33 +205,215 @@ float* __cdecl MoveObject_PerWorld_stub(float param_1) {
 
     case 1:
         switch (objType) {
+        case 0x16:
+        case 0x17:
+        case 0x18:
+            // IDA writes the model loop flag (+136) and scrolls texture V.
+            model[136] = 1;
+            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            break;
+        case 0x27:
+        case 0x28:
+        case 0x33:
+            *(int*)(objPtr + 88) = -2;
+            break;
         case 0x29: FUN_0046c7f0(0, objPtr, 0.0f, -30.0f, 240.0f); return (float*)0;     // 0xc1f00000, 0x43700000
         case 0x2a: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 190.0f); return (float*)0;       // 0x433e0000
+        case 0x34:
+            if (!(rand() % 3)) {
+                Effect_Create(215, (float*)(objPtr + 16), (float*)(objPtr + 28),
+                              (float*)(objPtr + 232), 0, 0,
+                              (float*)(uintptr_t)0xffffffffu, 0, 0);
+                *(int*)(objPtr + 88) = -2;
+            }
+            break;
         }
         break;
 
     case 2:
         switch (objType) {
+        case 20:
+        case 65:
+        case 86:
+        case 88:
+            // IDA's moving gate/bridge objects chase their target coordinate
+            // until they are close enough, then select the correct turn arc.
+            // This is visual state only; it must not synthesize a gate packet.
+            if (!DAT_07e11d30 && Hero) {
+                const float dx = *(float*)(Hero + 16) - *(float*)(objPtr + 52);
+                const float dy = *(float*)(Hero + 20) - *(float*)(objPtr + 56);
+                const float distance = sqrtf(dx * dx + dy * dy);
+                if (distance >= 200.0f) {
+                    *(float*)(objPtr + 36) = FUN_0043e1b0(*(float*)(objPtr + 36), *(float*)(objPtr + 48), 10.0f);
+                    *(float*)(objPtr + 16) += (*(float*)(objPtr + 52) - *(float*)(objPtr + 16)) * 0.2f;
+                    *(float*)(objPtr + 20) += (*(float*)(objPtr + 56) - *(float*)(objPtr + 20)) * 0.2f;
+                } else if (objType == 86) {
+                    const float heading = *(float*)(objPtr + 36);
+                    if (heading == 90.0f)  *(float*)(objPtr + 20) = *(float*)(objPtr + 56) + 2.0f * (200.0f - distance);
+                    if (heading == 270.0f) *(float*)(objPtr + 20) = *(float*)(objPtr + 56) - 2.0f * (200.0f - distance);
+                    if (heading == 0.0f)   *(float*)(objPtr + 16) = *(float*)(objPtr + 52) + 2.0f * (200.0f - distance);
+                    if (heading == 180.0f) *(float*)(objPtr + 16) = *(float*)(objPtr + 52) - 2.0f * (200.0f - distance);
+                    PlayBuffer(18, 0, 0);
+                } else {
+                    const float targetHeading = *(float*)(objPtr + 48);
+                    if (targetHeading == 90.0f)  *(float*)(objPtr + 36) = 30.0f - (200.0f - distance) * 0.5f;
+                    if (targetHeading == 270.0f) *(float*)(objPtr + 36) = 330.0f + (200.0f - distance) * 0.5f;
+                    if (targetHeading == 0.0f)   *(float*)(objPtr + 36) = 300.0f - (200.0f - distance) * 0.5f;
+                    if (targetHeading == 180.0f) *(float*)(objPtr + 36) = 240.0f + (200.0f - distance) * 0.5f;
+                    PlayBuffer(17, 0, 0);
+                }
+            }
+            break;
         case 0x1e:
         case 0x42: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 50.0f); return (float*)0;        // 0x42480000
         }
         break;
 
+    case 3:
+        switch (objType) {
+        case 0x12:
+            *(float*)(objPtr + 112) = (float)((__int64)WorldTime % 1000) * 0.001f;
+            break;
+        case 0x27:
+            *(int*)(objPtr + 100) = 1;
+            break;
+        case 0x29:
+            *(int*)(objPtr + 100) = 0;
+            *(float*)(objPtr + 112) = (float)((__int64)WorldTime % 2000) * 0.0005f;
+            break;
+        case 0x2a:
+            model[136] = 0;
+            *(float*)(objPtr + 108) = (float)((__int64)WorldTime % 500) * -0.002f;
+            break;
+        case 0x2b:
+            model[136] = 0;
+            *(float*)(objPtr + 108) = (float)((__int64)WorldTime % 500) * 0.002f;
+            break;
+        }
+        break;
+
     case 4:
         switch (objType) {
+        case 3:
+        case 4:
+            *(float*)(objPtr + 108) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            break;
+        case 0x12:
+        case 0x17:
+            *(int*)(objPtr + 100) = 1;
+            break;
+        case 0x13:
+        case 0x14:
+            *(int*)(objPtr + 100) = 4;
+            *(float*)(objPtr + 108) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            break;
+        case 0x18:
+            *(int*)(objPtr + 88) = -2;
+            if (!(rand() % 64))
+                Effect_Create(1200, (float*)(objPtr + 16), (float*)(objPtr + 28),
+                              (float*)(objPtr + 232), 0, 0,
+                              (float*)(uintptr_t)0xffffffffu, 0, 0);
+            break;
+        case 0x19:
+            *(int*)(objPtr + 88) = -2;
+            break;
         case 0x26:
         case 0x27: FUN_0046ca00(objPtr); return (float*)0;
         }
         break;
 
+    case 5:
+        if (objType == 2) {
+            *(int*)(objPtr + 100) = 0;
+        } else if (objType == 3) {
+            *(int*)(objPtr + 100) = 0;
+            *(float*)(objPtr + 104) = (float)(rand() % 4 + 6) * 0.1f;
+        }
+        break;
+
     case 6:
-        if (objType == 0x26) {
+        if (objType == 0x15) {
+            *(int*)(objPtr + 100) = 3;
+            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+        } else if (objType == 0x26) {
             *(int*)(objPtr + 0x58) = -2;  // SubType = -2
         }
         break;
 
+    case 7:
+        switch (objType) {
+        case 0x16:
+            *(float*)(objPtr + 128) += 0.1f;
+            *(int*)(objPtr + 88) = -2;
+            if (*(float*)(objPtr + 128) > 10.0f) *(float*)(objPtr + 128) = 0.0f;
+            if (*(float*)(objPtr + 128) > 5.0f)
+                Particle_Spawn(1241, (float*)(objPtr + 16), (float*)(objPtr + 28),
+                               (float*)(objPtr + 232), 0, 1.0f, 0);
+            break;
+        case 0x17:
+            *(int*)(objPtr + 100) = 0;
+            *(float*)(objPtr + 104) = sinf((float)WorldTime * 0.002f) * 0.3f + 0.5f;
+            break;
+        case 0x20:
+        case 0x22:
+            *(int*)(objPtr + 100) = 1;
+            *(float*)(objPtr + 104) = (sinf((float)WorldTime * 0.004f) + 1.0f) * 0.5f;
+            break;
+        case 0x26:
+            *(int*)(objPtr + 100) = 0;
+            break;
+        case 0x28:
+            *(int*)(objPtr + 100) = 0;
+            *(float*)(objPtr + 204) = 0.03f;
+            *(float*)(objPtr + 104) = sinf((float)WorldTime * 0.004f) * 0.3f + 0.5f;
+            break;
+        }
+        break;
+
     case 8:
-        if (objType == 0x52) {
+        if (objType == 2) {
+            *(int*)(objPtr + 100) = 0;
+            *(float*)(objPtr + 108) = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            return (float*)0;
+        }
+        if (objType == 4) {
+            const float wave = sinf((float)WorldTime * 0.002f) * 0.35f + 0.65f;
+            *(int*)(objPtr + 100) = 0;
+            *(float*)(objPtr + 104) = wave;
+            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0001f;
+        } else if (objType == 7) {
+            const float wave = sinf((*(float*)(objPtr + 36) * 100.0f + (float)WorldTime) * 0.002f) * 0.35f + 0.65f;
+            float light[3] = { wave, wave * 0.6f, wave * 0.2f };
+            *(int*)(objPtr + 100) = 0;
+            *(float*)(objPtr + 104) = wave;
+            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), light, 3, PrimaryTerrainLight[0]);
+            return (float*)0;
+        } else if (objType == 0x0b) {
+            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            return (float*)0;
+        } else if (objType == 0x0c) {
+            const float scroll = -(float)((__int64)WorldTime % 50000) * 0.00005f;
+            *(float*)(objPtr + 108) = scroll;
+            *(float*)(objPtr + 112) = scroll;
+            return (float*)0;
+        } else if (objType == 0x0d) {
+            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+            return (float*)0;
+        } else if (objType == 0x3d || objType == 0x41 || objType == 0x42) {
+            const float scroll = -(float)((__int64)WorldTime % 1000) * 0.001f;
+            const float wave = sinf((float)WorldTime * 0.002f) * 0.35f + 0.65f;
+            float light[3] = { wave, wave * 0.6f, wave * 0.2f };
+            *(int*)(objPtr + 100) = 1;
+            *(float*)(objPtr + 112) = scroll;
+            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), light, 2, PrimaryTerrainLight[0]);
+        } else if (objType == 0x3f || objType == 0x40) {
+            *(int*)(objPtr + 88) = -2;
+        } else if (objType == 0x48) {
+            *(int*)(objPtr + 100) = 0;
+            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+        } else if (objType == 0x49 || objType == 0x4b || objType == 0x4f) {
+            *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
+        } else if (objType == 0x52) {
             *(DWORD*)(objPtr + 100) = 0;
             *(DWORD*)(objPtr + 0xe8) = 0x3f800000;  // light R = 1.0
             *(DWORD*)(objPtr + 0xec) = 0x3f800000;  // light G = 1.0
@@ -460,31 +649,49 @@ void __stdcall MoveObjects_stub(void) {
                         }
                         DAT_083a3fec++;
 
+                        // 2026-09-03 -- RESTAURADO.  Otro agente removio este
+                        // bloque concluyendo que "IDA 0x004FDC00 no tiene rama
+                        // para World 10".  Eso es cierto para `sub_4FDC00` (el
+                        // tick por objeto) pero el bloque NO vive ahi: vive en
+                        // **MoveObjects (0x004FF260)**, la funcion que contiene
+                        // este mismo loop, y ahi si esta, literal:
+                        //
+                        //   if ( World == 10 && objCount ) {
+                        //     if ( rand() % 10 || (v5 = *(_WORD *)(v4 + 2), v5 < 0) || v5 > 5 )
+                        //       --unk_83A3FEC;
+                        //     else {
+                        //       Light[i] = (double)(rand() % 10) * 0.02;
+                        //       CreateSprite(1269, (float *)(v4 + 16), 0.5, Light, Hero, 0.0, 0);
+                        //       Scale  = (double)(rand() % 20) + 10.0;
+                        //       CreateJoint(1254, v4+16, v4+16, v4+28, 6, v4, Scale,  -1, 0);
+                        //       Scalea = (double)(rand() % 20) + 10.0;
+                        //       CreateJoint(1254, v4+16, v4+16, v4+28, 6, v4, Scalea, -1, 0);
+                        //     }
+                        //   }
+                        //
+                        // Son los rayos de tormenta que caen sobre los objetos
+                        // del mapa en Icarus; el usuario confirmo en runtime que
+                        // funcionaban ("ahi probe los truenos y aparecieron").
                         if (World == 10 && Scale != 0.0f) {
                             int r2 = rand();
                             if (r2 % 10 == 0 &&
                                 *(short*)(pcVar6 + 2) >= 0 &&
                                 *(short*)(pcVar6 + 2) < 6)
                             {
-                                // Spawn lightning sprite + 2 joints on this object
                                 float light[3];
                                 light[0] = (float)(rand() % 10) * 0.02f;
                                 light[1] = (float)(rand() % 10) * 0.02f;
                                 light[2] = (float)(rand() % 10) * 0.02f;
                                 FUN_004795c0(1269, (float*)(pcVar6 + 16), 0.5f,
-                                              light, (int)Hero, 0.0f, 0);
+                                             light, (int)Hero, 0.0f, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
                                 Joint_Create(1254, (float*)(pcVar6 + 16),
-                                              (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
-                                              6, (int)pcVar6, Scale, -1, 0);
+                                             (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
+                                             6, (int)pcVar6, Scale, -1, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
                                 Joint_Create(1254, (float*)(pcVar6 + 16),
-                                              (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
-                                              6, (int)pcVar6, Scale, -1, 0);
-                                // CreateSprite(0x4F5, ...) — lightning flash
-                                // CreateJoint(0x4E6, ...) x2 — lightning bolts
-                                // Phantom register args (unaff_EBX/EBP/ESI/EDI) prevent exact call.
-                                // Effect is cosmetic (thunder lightning on objects in World 10).
+                                             (float*)(pcVar6 + 16), (float*)(pcVar6 + 28),
+                                             6, (int)pcVar6, Scale, -1, 0);
                             }
                             else {
                                 DAT_083a3fec--;

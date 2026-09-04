@@ -541,88 +541,106 @@ float* __cdecl FUN_0045fec0(unsigned int param_1, float* param_2, float param_3,
     // 1. Read character stat byte for this slot
     BYTE uVar19 = *(BYTE*)((char*)DAT_07cf1ff4 + 0x57 + param_1);
 
-    // 2. Scan entity array for nearby entities (max 400, collect up to 5)
+    // IDA sub_45FEC0 L157-195.  El bucle ancla en `v16 = CharactersClient + 747`
+    // y todos los campos salen relativos a ese puntero:
+    //     *(v16 - 747)          -> ent + 0     (activo)
+    //     *(float *)(v16 - 731) -> ent + 16    (x)
+    //     *(float *)(v16 - 727) -> ent + 20    (y)
+    //     *(v16 - 395)          -> ent + 352   (visible, 0x160)
+    //     v16 - 747 != Hero
+    //     v16[18]               -> ent + 765   (0x2FD, dead_flag)
+    //     *(v16 - 615)          -> ent + 132   (Kind: 2 = monstruo, 1 = jugador)
+    //     *(_WORD *)(v16 - 271) -> ent + 476   (Key)
+    //     *v16                  -> ent + 747   (tipo de monstruo)
+    //     v16[25]               -> ent + 772
+    //
+    // El port habia tomado `v16[18]` como offset 18 desde la BASE de la entidad
+    // en vez de desde `v16` (= base + 747), o sea leia `ent + 18`, que cae en
+    // medio del float Position[0].  Para cualquier X de mundo realista ese byte
+    // es != 0, asi que el `continue` descartaba TODAS las entidades y el barrido
+    // devolvia count = 0 siempre — por eso el 0x1D no salia nunca y ningun skill
+    // multi-objetivo hacia dano.  Mismo error en el bloque 8/9, que leia
+    // `ent + 0x105` (CurrentAction) donde IDA lee `*v16` = ent + 747.
     int count = 0;
     short nearbyIds[5] = {};
     char *pcEnt = (char *)DAT_07abf5d0;
     for (int i = 0; i < 400 && count < 5; i++, pcEnt += 0x394) {
-        // Must be valid (byte[0] != 0) and visible (byte[0x160] != 0)
-        if (pcEnt[0] == '\0') continue;
-        if (pcEnt[0x160] == '\0') continue;
-        // Must not be local player entity
-        if (pcEnt == DAT_07abf5d8) continue;
-        // Must have no active targeting lock (byte[0x12] == 0)
-        if (pcEnt[0x12] != '\0') continue;
+        if (pcEnt[0] == '\0') continue;                    // IDA: *(v16 - 747)
+        if (pcEnt[0x160] == '\0') continue;                // IDA: *(v16 - 395)
+        if (pcEnt == DAT_07abf5d8) continue;               // IDA: v16 - 747 != Hero
+        if (pcEnt[765] != '\0') continue;                   // IDA: v16[18] = ent + 765
 
-        // Distance check
+        // IDA L160-163: v17 = a2[1] - ent.y ; v19 = a2[0] - ent.x ; sqrt <= a3
         float dx = param_2[0] - *(float*)(pcEnt + 0x10);
         float dy = param_2[1] - *(float*)(pcEnt + 0x14);
-        float dist = SQRT(dx*dx + dy*dy);
-        if (dist >= param_3) continue;
+        if (SQRT(dx*dx + dy*dy) > param_3) continue;
 
-        // Type filter: byte[0x84] == 2 (NPC/monster, always include)
-        //              byte[0x84] == 1 (player, include only if team matches)
-        char cType = pcEnt[0x84];
-        short sTeam = *(short*)(pcEnt + 0x1dc);
-        if (cType != '\x02' && !(cType == '\x01' && sTeam == param_5))
+        // IDA L170-171: Kind == 2 (monstruo) o Kind == 1 (jugador) con Key == a5
+        char cType = pcEnt[0x84];                          // IDA: *(v16 - 615)
+        short sKey  = *(short*)(pcEnt + 0x1dc);            // IDA: *(_WORD *)(v16 - 271)
+        if (cType != '\x02' && !(cType == '\x01' && sKey == param_5))
             continue;
 
-        // Zone 8/9: mark entity for special AoE targeting
+        // IDA L173-180: marca de AOE para los grupos de skill 8 y 9.
         if ((uVar19 == 8) || (uVar19 == 9)) {
-            char anim = pcEnt[0x105];
-            if (anim != 'M' && anim != 'K' && anim != 'I' &&
-                anim != (char)-0x7d && anim != (char)-0x7c &&
-                anim != (char)-0x7b && anim != (char)-0x7a)
-                pcEnt[0x304] = '\n';
+            char monsterType = pcEnt[747];                 // IDA: *v16
+            if (monsterType != 77 && monsterType != 75 && monsterType != 73 &&
+                monsterType != (char)-125 && monsterType != (char)-124 &&
+                monsterType != (char)-123 && monsterType != (char)-122)
+                pcEnt[772] = '\n';                         // IDA: v16[25] = 10
         }
 
-        nearbyIds[count++] = *(short*)(pcEnt + 0x1dc);
+        nearbyIds[count++] = sKey;                         // IDA L181
     }
 
     if (count < 1)
         return (float*)(uintptr_t)0;
 
-    // 3. Build XOR-encrypted packet [0xC1][len][0x1d][rand][seq][flags][count][ids...]
-    BYTE pktBuf[32] = {};
-    int pos = 0;
-    auto xorAppend = [&](BYTE b) {
-        if (pos < (int)sizeof(pktBuf)) {
-            pktBuf[pos] = b ^ xorKey[pos & 0x1f] ^ (pos > 0 ? pktBuf[pos-1] : 0);
-            pos++;
-        }
-    };
-    pktBuf[0] = 0xC1;  pos = 1;  // header (plain)
-    pktBuf[1] = 0;     pos = 2;  // length placeholder (plain)
-    pktBuf[2] = 0x1d;  pos = 3;  // opcode (plain)
-    xorAppend((BYTE)rand());           // rand byte
-    xorAppend(DAT_05826ceb++);        // sequence counter
-    xorAppend((BYTE)param_4);         // zone/flags
-    xorAppend((BYTE)count);           // entity count
-    for (int i = 0; i < count; i++)
-        xorAppend((BYTE)(nearbyIds[i] >> 8));  // entity ID high byte
-
-    pktBuf[1] = (BYTE)pos;  // fill length
-
-    // 4. Encode and send
-    BYTE sendBuf[64] = {};
-    int encLen = FUN_0053cc30(0, pktBuf + 3, pos - 3);  // encode payload
-    if (encLen < 0x100) {
-        sendBuf[0] = 0xC3;
-        sendBuf[1] = (BYTE)(encLen + 2);
-        FUN_0053cc30((int)(sendBuf + 2), (BYTE*)(pktBuf + 3), pos - 3);
-        int total = encLen + 2;
-        if (DAT_055ca168 != INVALID_SOCKET) {
-            int sent = send(DAT_055ca168, (char*)sendBuf, total, 0);
-            if (sent == -1) {
-                int err = WSAGetLastError();
-                if (err != WSAEWOULDBLOCK) { Net_Disconnect(((int)(uintptr_t)DAT_055ca160)); return (float*)(uintptr_t)1; }
-                if ((int)(total + DAT_055cc16c) > 0x2000) { Net_Disconnect(((int)(uintptr_t)DAT_055ca160)); return (float*)(uintptr_t)1; }
-                memcpy(DAT_055ca16c + DAT_055cc16c, sendBuf, total);
-                DAT_055cc16c += total;
-            }
-        }
+    // 3. Paquete C1:1D — PMSG_MULTI_SKILL_ATTACK_RECV.
+    //
+    // IDA sub_45FEC0 anexa, en este orden (L228, 277, 326, 374, 427 y el bucle
+    // de L476/L525):
+    //     [0x1D]
+    //     v111 = *(BYTE *)(CharacterAttribute + a1 + 87)   // skill
+    //     v29  = (int)(a2[0] * 0.01)                       // x  (grilla)
+    //     v32  = (int)(a2[1] * 0.01)                       // y
+    //     a4                                               // serial
+    //     LOBYTE(v109) = count
+    //     por entidad:  [id >> 8][(BYTE)id]                // index[2] big-endian
+    //
+    // Coincide 1:1 con el server (GameServer/SkillManager.h:67):
+    //     struct PMSG_MULTI_SKILL_ATTACK_RECV { PBMSG_HEAD header; BYTE skill;
+    //                                           BYTE x; BYTE y; BYTE serial; BYTE count; };
+    //     struct PMSG_MULTI_SKILL_ATTACK      { BYTE index[2]; };
+    //
+    // El port anterior mandaba [rand][serial++][a4][count][id>>8 ...]: los cinco
+    // campos corridos y UN solo byte por entidad en vez de dos.  El server leia
+    // `skill` = rand() -> `GetSkill()` devolvia 0 y salia por
+    // CGMultiSkillAttackRecv sin aplicar dano.  Este es el paquete que cierra
+    // los skills multi-objetivo (Penetration, Twisting Slash, Rageful Blow,
+    // Death Stab, Hell Fire, Twister, Evil Spirit, Aqua Beam, Blast, Inferno,
+    // Flame, Fire Slash): el C3:1E solo arma `MultiSkillIndex` y es el 0x1D el
+    // que trae la lista de blancos y dispara gAttack.Attack().
+    BYTE pkt[3 + 5 + 5 * 2];
+    int len = 0;
+    pkt[len++] = 0xC1;
+    pkt[len++] = 0;                                   // tamanio, se rellena abajo
+    pkt[len++] = 0x1D;
+    pkt[len++] = uVar19;                              // IDA: v111 (skill del slot)
+    pkt[len++] = (BYTE)(int)(param_2[0] * 0.01f);     // IDA: v29
+    pkt[len++] = (BYTE)(int)(param_2[1] * 0.01f);     // IDA: v32
+    pkt[len++] = (BYTE)param_4;                       // IDA: a4 (serial)
+    pkt[len++] = (BYTE)count;                         // IDA: LOBYTE(v109)
+    for (int i = 0; i < count; i++) {
+        pkt[len++] = (BYTE)((nearbyIds[i] >> 8) & 0xFF);   // IDA: v42
+        pkt[len++] = (BYTE)(nearbyIds[i] & 0xFF);          // IDA: v45
     }
-    if (DAT_055ce174 != 0) FUN_0043de60();
+    pkt[1] = (BYTE)len;
+
+    // El original arma la trama a mano (chain-XOR + serial + CSimpleModulus).
+    // Net_SendSmallPacket hace exactamente eso y ademas corrige el frame contra
+    // HackPacketCheck.txt, que es el camino que ya usan todos los demas opcodes.
+    Net_SendSmallPacket(pkt, len);
     return (float*)(uintptr_t)1;
 }
 
