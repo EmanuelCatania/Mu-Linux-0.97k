@@ -2733,7 +2733,7 @@ DWORD  DAT_0055339c       = 0;
 // (globals.h) que apuntan al global real. Ver [[charselect-deferred-issues]].
 // g_lpszMessageBoxCustom es un alias de DAT_083a44c4 (ver globals.h).
 // m_hFontDC ahora es macro sobre DAT_055c9fec (ver globals.h)
-HFONT  g_hFontBold        = NULL;
+// g_hFontBold es ahora un alias de DAT_055ca0xx (ver globals.h).
 
 // Batch 18 — InitGame / ReceiveChat globals
 DWORD  EnableUse          = 0;
@@ -2908,7 +2908,7 @@ char   SoccerTeamName[2][80] = {{0}, {0}};
 // CreateChat escribia en DAT_07e016f8 y RenderBooleans leia aca -> nunca se
 // dibujaba nada. Ahora es una macro sobre el pool unico (ver globals.h).
 
-HFONT  g_hFont               = NULL;
+// g_hFont es ahora un alias de DAT_055ca0xx (ver globals.h).
 int    FontHeight            = 14;
 SIZE   TextSize              = {0, 0};
 

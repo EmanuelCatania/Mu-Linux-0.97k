@@ -158,7 +158,9 @@ extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
 extern "C" void   __cdecl RenderTipText(int, int, const char*);
 
 // g_hFontBig fallback alias.
-#define g_hFontBig  (g_hFontBold ? g_hFontBold : g_hFont)
+// g_hFontBig lo publica globals.h como alias de DAT_055ca014 (la fuente
+// de doble altura que crea WinMain).  Antes este alias local lo mandaba
+// a la bold, por eso los textos "grandes" salian del tamano normal.
 
 // Aliases.  ItemAttribute already defined in HUD_Pass2 via a #define on
 // DAT_07d78068 — but #defines don't propagate across TUs.  Re-establish here.

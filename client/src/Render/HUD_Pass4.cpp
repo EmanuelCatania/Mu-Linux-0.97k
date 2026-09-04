@@ -254,8 +254,10 @@ void Render_MapLoadText_(void)
             wsprintfA(v3, ": %.2d", (int)((__int64)WorldTime % 60));
             strcat(String, v3);
         }
-        // SelectObject g_hFontBig — we don't have a separate big font.
-        SelectObject(m_hFontDC, g_hFontBold);
+        // IDA usa g_hFontBig (0x055CA014) para el reloj: es la bold al DOBLE de
+        // altura.  El port ponia bold porque `g_hFontBig` era un alias local que
+        // apuntaba justamente a la bold; ahora sale de globals.h.
+        SelectObject(m_hFontDC, g_hFontBig);
         RenderCenteredText(570, (int)v2, String);
     }
 }

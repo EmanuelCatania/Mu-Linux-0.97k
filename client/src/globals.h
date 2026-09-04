@@ -2687,7 +2687,14 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 // memory DC, declarado en stdafx.h). Tenerlos separados dejaba m_hFontDC en NULL
 // para siempre (125 usos, 0 asignaciones) -> GetTextExtentPoint32A fallaba.
 #define m_hFontDC  DAT_055c9fec
-extern HFONT   g_hFontBold;        // Bold font handle
+// 2026-09-04 FIX -- las tres fuentes estaban PARTIDAS EN DOS.  WinMain crea los
+// handles en DAT_055ca00c / 010 / 014 (normal / bold / big, esta ultima al doble
+// de altura), pero `g_hFont` y `g_hFontBold` estaban declaradas como HFONT
+// APARTE que nadie asignaba -- quedaban en NULL, asi que los ~80
+// `SelectObject(m_hFontDC, g_hFontBold)` del arbol no cambiaban de fuente.
+// IDA: g_hFont = 0x055CA00C, g_hFontBold = 0x055CA010, g_hFontBig = 0x055CA014.
+#define g_hFontBold  ((HFONT)(uintptr_t)DAT_055ca010)
+#define g_hFontBig   ((HFONT)(uintptr_t)DAT_055ca014)
 
 // Batch 18 — InitGame / ReceiveChat globals
 extern DWORD   EnableUse;          // item use enabled flag
@@ -2881,7 +2888,7 @@ extern char    SoccerTeamName[2][80];// team names
 
 // Globals de fuente / medición de texto que consumen sub_480C60 y el HUD
 // renderers (HFONT object handles + DC + computed dimensions).
-extern HFONT   g_hFont;              // primary plain font handle
+#define g_hFont      ((HFONT)(uintptr_t)DAT_055ca00c)              // primary plain font handle
 extern int     FontHeight;           // pixel height of g_hFont
 extern SIZE    TextSize;             // shared scratch SIZE for text extent
 
