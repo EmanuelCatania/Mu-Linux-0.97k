@@ -1548,10 +1548,25 @@ switchD_caseD_4fd:
             const int jowner = *(int *)(param_1 + 0x40);
             if (jowner) {
                 int v226 = 0;
+                // 2026-09-04 FIX (la flecha del arco colapsaba en un destello):
+                // el subtipo 11 NO converge hacia `owner + 16/20/24` sino hacia
+                // `owner + 368/372/376`.  IDA lo escribe ofuscado --
+                // `LODWORD(v295) = 352 - o;` y luego
+                // `*(float *)(LODWORD(v295) + *(_DWORD *)(o + 64) + v228)` --
+                // pero 352 + {16,20,24} = {368,372,376}, que es la posicion
+                // DERIVADA del efecto de la flecha: la que fija CreateEffect
+                // case 243 (`i+92..94`) 100 unidades por delante y la que usa su
+                // propio AddTerrainLight.
+                //
+                // Con `owner + 16` la cosa se realimenta: el joint con
+                // SkillIndex==1 escribe su posicion EN `owner + 16`, asi que
+                // convergia hacia si mismo y los cuatro joints se apelotonaban
+                // en el punto de salida -- el destello sin estela.
+                const int srcBase = (jsub == 11) ? 352 : 0;
                 for (int v228 = 16; v228 < 28; v228 += 4) {
                     const int    k    = iIndex + v226 + 51230 * iIndex + msf / 10;
                     const double v229 = fcos((double)k * 0.0099999998) * 25.0
-                                      + (double)*(float *)(jowner + v228);
+                                      + (double)*(float *)(jowner + srcBase + v228);
                     float *dst = (float *)(param_1 + v228);
                     *dst = (float)(((double)w * (double)*dst
                                     + v229 * (100.0 - (double)w)) * 0.0099999998);
@@ -1631,66 +1646,6 @@ switchD_caseD_4fd:
 
 switchD_caseD_4ef:
     // Segment tick — excluded for types 0x4e6+submode6, 0x4ee, 0x4e7(lifetime>=10)
-    iVar16 = *(int *)(param_1 + 4);
-    if (((iVar16 != 0x4e6) || (*(int *)(param_1 + 8) != 6)) &&
-        ((iVar16 != 0x4ee) &&
-         ((iVar16 != 0x4e7) || (10 < *(int *)(param_1 + 0x9b8)))))
-    {
-        FUN_0046fe90((int)param_1, local_30);
-    }
-
-#if 0 // Not present in IDA's LABEL_487 epilogue.
-    // Fade color components when modes 5,7,0xb are inactive and lifetime < 10
-    iVar16 = *(int *)(param_1 + 8);
-    if ((((iVar16 != 5) && (iVar16 != 7)) && (iVar16 != 0xb)) &&
-        (*(int *)(param_1 + 0x9b8) < 10))
-    {
-        *(float *)(param_1 + 0x34) *= _DAT_00552a90;
-        *(float *)(param_1 + 0x38) *= _DAT_00552a90;
-        *(float *)(param_1 + 0x3c) *= _DAT_00552a90;
-    }
-
-    // Trigger mode→1 transition when entity enters attack/skill animation
-    if ((((iVar16 == 0) || (iVar16 == 10)) || (iVar16 == 0xe)) &&
-        (*(float *)(param_1 + 0x0c) < _DAT_005528e4))
-    {
-        iVar13 = *(int *)(param_1 + 0x40);
-        // BUG-FIX 2026-04-28: validar que iVar13 esté dentro del entity pool
-        // antes de leer +0x105. Sin esto, un joint slot con +0x40 garbage
-        // (e.g. 0x469CD8F7 — float bits = 20212.97f) crashea aquí.
-        // Entity pool: DAT_07abf5d0 .. DAT_07abf5d0 + 400 * 0x394.
-        const uintptr_t entBase = (uintptr_t)DAT_07abf5d0;
-        const uintptr_t entEnd  = entBase + 400u * 0x394u;
-        if ((unsigned)iVar13 < entBase || (unsigned)iVar13 >= entEnd) {
-            // Wild pointer — skip the attack-range branch entirely
-            goto _post_attack_check;
-        }
-        unsigned char bVar4 = *(unsigned char *)(iVar13 + 0x105);
-        if (((bVar4 < 0xd) || (0x21 < bVar4)) && ((bVar4 < 0x38) || (0x3c < bVar4))) {
-            // Anim state is NOT in attack range — check for mode 0xe special case
-            if (iVar16 == 0xe) {
-                if ((iVar13 == 0) ||
-                    (*(float *)(param_1 + 0x24) != *(float *)(iVar13 + 0x24)))
-                {
-                    int lt = *(int *)(param_1 + 0x9b8);
-                    *(undefined4 *)(param_1 + 8) = 1;
-                    if (10 < lt) lt = 10;
-                    *(int *)(param_1 + 0x9b8) = lt;
-                }
-                *(undefined4 *)(param_1 + 0x24) = *(undefined4 *)(iVar13 + 0x24);
-            }
-        }
-        else {
-            // Anim state IS in attack range — cap lifetime to 10 and switch to mode 1
-            int lt = *(int *)(param_1 + 0x9b8);
-            *(undefined4 *)(param_1 + 8) = 1;
-            if (10 < lt) lt = 10;
-            *(int *)(param_1 + 0x9b8) = lt;
-        }
-_post_attack_check:;
-    }
-
-#endif
     // IDA 00470030 LABEL_182 (comun a TODOS los tipos, justo antes del
     // decremento de vida): los joints de SubType 7 re-anclan su Position a la
     // TargetPosition guardada en o+68/72/76.
@@ -1711,6 +1666,22 @@ _post_attack_check:;
         *(float *)(param_1 + 0x18) = *(float *)(param_1 + 0x4c);
     }
 _skipLabel182:;
+
+    // 2026-09-04 -- ORDEN CORREGIDO.  En IDA el epilogo es
+    //     LABEL_182 (re-ancla SubType 7)  ->  LABEL_487 (scroll de segmentos)
+    // y aca estaban al reves.  Con el orden invertido, el `goto _skipLabel182`
+    // que usa el bloque de los subtipos 7/11 -- que en IDA salta LABEL_182 pero
+    // SI pasa por LABEL_487 -- terminaba salteando tambien el scroll, asi que
+    // esos joints nunca acumulaban segmentos y su cinta no se dibujaba.  Es la
+    // estela de la flecha del arco (cuatro 1249/sub11 que crea CreateEffect
+    // case 243) y la cadena de Queen Rainer.
+    iVar16 = *(int *)(param_1 + 4);
+    if (((iVar16 != 0x4e6) || (*(int *)(param_1 + 8) != 6)) &&
+        ((iVar16 != 0x4ee) &&
+         ((iVar16 != 0x4e7) || (10 < *(int *)(param_1 + 0x9b8)))))
+    {
+        FUN_0046fe90((int)param_1, local_30);
+    }
 
     // Decrement lifetime counter
     const int remainingLife = *(int *)(param_1 + 0x9b8) - 1;
