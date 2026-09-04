@@ -2279,19 +2279,23 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
         //
         // 1) Gate de distancia: toma el eje mayor de abs(heroGrid - target). Si
         //    es > 1 tile, el héroe todavía no llegó — retorna y espera.
-        // 2) World+tile-id (dword_7DB8708) dispatch — sets v307/v309 flags
-        //    y opcionalmente pisa el facing del héroe con flt_7E118E4 antes
-        //    sending the move packet.
-        // 3) Special-case cave entrance (World 8, tile 38): different packet
-        //    (acción 110) y SetAction(137/138). Retorna temprano.
+        // 2) World+tile-id (dword_7DB8708) dispatch - marca v307/v309 y,
+        //    opcionalmente, pisa el facing del heroe con flt_7E118E4 antes de
+        //    mandar el paquete de movimiento.  Esto NO son teleports: son las
+        //    acciones sobre el mobiliario del mundo (sillas, bancos, barandas).
+        //    v307 = SIT (sentarse) . v309 = POSE (apoyarse en la pared).
+        // 3) Caso especial Noria (World 3, tile 38): HEALING -- la pose de
+        //    flotar sobre los orbes.  Paquete propio (accion 110) y
+        //    SetAction(137/138).  Retorna temprano.
         // 4) Default: send move packet [0xC1][len][0x10][TgtX][TgtY][heading]
         //    [wpCount][wpX[]][wpY[]] via legacy helper.
-        // 5) After move packet:
-        //    - If v309: send anim packet [0xC1][0x06][0x18][0x01][heading][109]
-        //      with SetAction(139/140) — short-distance teleport (Devias hidden
-        //      plaza, Atlans portal, etc.)
-        //    - If v307: send anim packet [0xC1][0x06][0x18][0x01][heading][108]
-        //      with SetAction(133/135) — gate teleport (Lorencia→Dungeon, etc.)
+        // 5) Despues del paquete de movimiento:
+        //    - Si v309: paquete [0xC1][0x06][0x18][0x01][heading][109] con
+        //      SetAction(139/140) - POSE.
+        //    - Si v307: paquete [0xC1][0x06][0x18][0x01][heading][108] con
+        //      SetAction(133/135) - SIT.
+        //    En los tres casos el payload lleva el octante del facing:
+        //      dir = (int)((Angle[2] + 22.5) * (8/360) + 1) & 7
 
         // ── 1. Distance gate ──────────────────────────────────────────────────────────────────────────
         int heroGX = *(int*)(c + 904);
@@ -2335,33 +2339,24 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
             case 91:                        overrideFacing=true; v309 = true; break;
             }
             break;
-        case 3:  // Noria — no special tiles
-            break;
-        case 7:  // Atlans
-            if (TileSub == 39) {            overrideFacing=true; v309 = true; }
-            break;
-        // AMBIGUEDAD SIN RESOLVER (2026-09-02).  El decompile de IDA cierra
-        // asi el bloque de mundos:
-        //     if (World != 3) {
-        //         if (World == 7) { ... goto LABEL_367; }
-        //         if (World != 8 || tile != 78) { LABEL_367: ...; return;
-        //                                         LABEL_392: v307 = 1; goto LABEL_367; }
-        //     }
-        //     if (tile == 8)  goto LABEL_392;
-        //     if (tile != 38) goto LABEL_367;
-        //     <cueva: SetAction 137/138 + accion 110>
-        // Leido al pie de la letra, a los tests de 8 y 38 se llega con
-        // **World == 3** (Noria) o con (World == 8 && tile == 78) -- y en ese
-        // segundo caso ninguno matchea, o sea la clausula del 78 seria un
-        // no-op.  Eso huele a plegado de Hex-Rays sobre un `case 3: case 8:`
-        // compartido.  Este port mantiene la lectura historica (World 8 =
-        // Tarkan, tiles 8/78 -> v307 y 38 -> cueva), que es la que se venia
-        // usando y la que reporto el usuario como funcionando.  Para cerrarlo
-        // hace falta el disassembly del test (esta entre 0x490893 y 0x490CD5).
-        case 8:  // Tarkan / Lost Tower entry
-            if (TileSub == 8 || TileSub == 78) {                v307 = true; }
+        case 3:  // Noria
+            // AMBIGUEDAD RESUELTA (2026-09-04).  El decompile cierra el bloque
+            // de mundos con
+            //     if (World != 3) { if (World == 7) {...}
+            //                       if (World != 8 || tile != 78) { LABEL_367: ... } }
+            //     if (tile == 8)  goto LABEL_392;   // v307
+            //     if (tile != 38) goto LABEL_367;
+            //     <SetAction 137/138 + accion 110>
+            // o sea la cola compartida se alcanza con World == 3.  El port
+            // anterior la habia colgado de World 8 llamandola "entrada a la
+            // cueva de Lost Tower"; no lo es.  El source de MU 5.2 lo confirma
+            // termino por termino (ZzzInterface.cpp, MOVEMENT_OPERATE):
+            //     WD_3NORIA:  case 8: Sit;  case 38: Healing + facing
+            // y el "Healing" del 0.97k es la pose de flotar sobre los orbes de
+            // Noria.
+            if (TileSub == 8) {                                 v307 = true; }
             else if (TileSub == 38) {
-                // ── 3. Cave entrance (Lost Tower) — special early return ??????
+                // Orbe de Noria: flotar (PLAYER_HEALING1 / _FEMALE1).
                 *(float*)(o + 36) = *(float*)&_DAT_07e118e4;
                 int act = ((*(unsigned char*)(c + 444) & 7) == 2) ? 138 : 137;
                 FUN_0043e820((int)o, act);
@@ -2375,6 +2370,21 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
                 *(unsigned char*)(c + 749) = 0;
                 return;
             }
+            break;
+        case 7:  // Atlans
+            if (TileSub == 39) {            overrideFacing=true; v309 = true; }
+            break;
+        case 8:  // Tarkan
+            // El tile 8 que este case tenia es de Noria (ver el case 3): la cola
+            // compartida no es alcanzable con World == 8 salvo por el tile 78, y
+            // ahi `tile == 8` es falso.  Queda solo el 78.
+            //
+            // DESVIACION DOCUMENTADA: para World 8 / tile 78 el decompile termina
+            // cayendo igual en LABEL_367 (la cola prueba 8 y 38, y 78 no es
+            // ninguno), o sea seria un no-op y el `if (World != 8 || tile != 78)`
+            // quedaria sin proposito -- huele a plegado de Hex-Rays.  MU 5.2 tiene
+            // `WD_8TARKAN: case 78: Sit`, asi que se mantiene el Sit.
+            if (TileSub == 78) {                                v307 = true; }
             break;
         }
 
