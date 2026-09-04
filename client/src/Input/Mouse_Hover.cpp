@@ -537,18 +537,27 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 }
 
 // ItemOnGround_HoverTest @ 0x004AFA40
-// ── BUG-FIX 2026-04-26: NEUTRALIZADO ─────────────────────────────────────
-// El binario original itera DAT_07e12840 con bounds absolutos (0x7e908bc /
-// 0x7e907df) que en mu97k-src no son válidos: aquí DAT_07e12840 está
-// declarado en globals.cpp como un único DWORD (no un array), así que
-// iterar 234 × 0x204 bytes pisaba ~192 KB de globals adyacentes → corrupción
-// silenciosa en chunk-lists, UI menus, etc. El intento de "fixear" con
-// count=234 escribió valores 0x3fc00000 (=1.5f) en globals adyacentes que
-// luego se leían como punteros (= AV).
-// Como char-select/login no tienen items en el suelo, retornar -1 es
-// equivalente al comportamiento esperado en esos estados. Cuando se necesite
-// el path real (InGame con items dropeados), hay que localizar el array
-// correcto en mu97k-src (probablemente NO se llama DAT_07e12840).
+// 2026-09-04: el encabezado decia "NEUTRALIZADO (2026-04-26)", pero eso quedo
+// viejo -- la funcion se reimplemento el 2026-07-27 y anda (pickup confirmado en
+// runtime).  Se conserva la nota historica porque explica la DESVIACION que sigue
+// vigente:
+//
+//   El path fiel (sub_4AFA40) hace un test de rayo contra la OBB del item con
+//   `sub_513260`; aca se usa proximidad world-space -- se compara el tile del item
+//   con el tile del terreno bajo el mouse (el mismo picker del click-to-move,
+//   FUN_004f9ac0 -> DAT_080ab288/28c).
+//
+//   El motivo que se anotaba para no portarlo ("FUN_00513260 depende de macros
+//   Hex-Rays sin portar") YA NO APLICA: ese test quedo portado el 2026-09-04 al
+//   arreglar el pick de objetos interactuables.  Si algun dia el hover de items se
+//   comporta distinto al original, ese es el cambio a hacer -- pero hoy funciona y
+//   tocarlo es riesgo sin beneficio reportado.
+//
+// El pool DAT_07e12840 es 1000x0x204; layout por slot (base = pool + i*0x204):
+//   base+72   active flag
+//   base+424  visible flag (lo setea el render)
+//   base+16/20  world X/Y del item
+//   base+304/308/312  light color (0.2 normal, 1.5 al hover)
 // IDA: FUN_004afa40
 int __cdecl ItemOnGround_HoverTest(void)
 {
