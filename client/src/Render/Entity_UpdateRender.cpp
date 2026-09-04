@@ -214,21 +214,27 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         FUN_004fc030((unsigned char *)puVar13, 1, (int)param_3, cVar6);
         break;
     }
-
-    // ── 3. LOD / sparkle (distance check) ───────────────────────────────────
-    // entity_type != 0x186, not channel state, DAT_0055a7ac != 10,
-    // distance (puVar13[0x5a]) >= _DAT_005528b8
-    {
-        float fDist = *(float *)(puVar13 + 0x5a);
-        if ((entity_type != 0x186) && (DAT_0055a7ac != 10) && (fDist >= _DAT_005528b8)) {
-            // LOD distance update + distant sparkle
-            // (FUN_00505a10 / FUN_004f8bb0 — see Entity_DrawAt.cpp)
-            if ((DAT_0055a7ac > 10) && (DAT_0055a7ac < 17) && (fDist < *(float *)(puVar13 + 6)))
-                *(float *)(puVar13 + 6) = fDist;
-            GL_SetBlendAdditive();
-            // Billboard sparkle at bone 0x13 when entering/leaving range
-        }
-    }
+    // -- 3. (bloque removido 2026-09-04) --------------------------------------
+    // Aca habia una "LOD / sparkle (distance check)" que NO existe en IDA: era
+    // una copia mal leida del gate del render de cuerpo (RenderCharacter
+    // L346-380), que ya esta portado completo mas abajo en la seccion 7a.
+    // Confundia dos campos del objeto:
+    //     puVar13 + 0x5a  = +360 -> NO es "distancia en pantalla", es el ALPHA
+    //                       (por eso el umbral era _DAT_005528b8 = 0.3, que es
+    //                       el `alpha >= 0.3` de IDA)
+    //     puVar13 + 6     = +24  -> Position.Z
+    // y hacia `if (World 11..16 && alpha < Z) Z = alpha;`, o sea clavaba la Z de
+    // TODA entidad no-jugador de Blood Castle en ~1.0 -- los monstruos y el
+    // Archangel quedaban por debajo del piso.  El heroe no, porque el gate
+    // `entity_type != 390` lo excluye: de ahi que se viera al pj sobre el puente
+    // y a todo lo demas hundido.
+    // Lo que IDA hace en ese punto es
+    //     if (World 11..16 && o->m_bActionStart && c->Dead) {
+    //         th = RequestTerrainHeight(o->Position[0], o->Position[1]);
+    //         if (th < o->Position[2]) o->Position[2] = th;
+    //     }
+    // que es exactamente lo que ya hace la seccion 7a.  Ademas llamaba
+    // `GL_SetBlendAdditive()` suelto para cada entidad, ensuciando el estado GL.
 
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
     BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
