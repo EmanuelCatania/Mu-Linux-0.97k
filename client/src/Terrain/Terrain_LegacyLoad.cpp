@@ -478,6 +478,15 @@ void __cdecl FUN_0050c4d0(void) {
             FUN_00505c80(m + 0x104, "Monster/", 0x2600, '\x01');
         FUN_005060b0(0xb9, "Data/Object12/", "Shine", 1);
         FUN_00505c80(0xb9, "Object12/", 0x2600, '\x01');
+        // 2026-09-04 FIX: estas dos estaban en el PRIMER switch, que va dentro de
+        // `if (DAT_0055a7c4 == 0)` -- el gate de "primera carga de mundo".  Como
+        // cualquier mapa anterior ya deja ese flag en 1, en Blood Castle no corrian.
+        // IDA las tiene en ESTE switch, fuera del `if (!unk_55A7C4)` interno
+        // (0x50C4D0 L243-245), o sea se ejecutan en cada entrada al mapa.
+        // Sin el LoadWaveFile el `PlayBuffer(110, 0, 1)` del estado 0 del 0x9B no
+        // tenia nada que reproducir: por eso no sonaba la musica del evento.
+        FUN_00529740("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, 1);
+        FUN_00404a10(0x6e, "Data/Sound/iBloodCastle.wav", 1, 0);
         break;
     }
 
