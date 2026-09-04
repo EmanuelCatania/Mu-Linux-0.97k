@@ -1902,30 +1902,31 @@ uint __cdecl FUN_004f6a70(void)
 // skipped per project policy.
 //
 // Slot layout (per IDA decompile):
-//   slot 8  @ (15, 46, 40x40)   Helmet
-//   slot 7  @ (115, 46, 60x40)  Wings/Cape
-//   slot 2  @ (75, 46, 40x40)   Pendant (skip if class & 7 == 3 = SM)
-//   slot 3  @ (75, 89, 40x60)   Body Armor
-//   slot 4  @ (75, 152, 40x40)  Boots
-//   slot 0  @ (15, 89, 40x60)   Weapon Left
-//   slot 1  @ (134, 89, 40x60)  Weapon Right / Shield
-//   slot 5  @ (15, 152, 40x40)  Pants
-//   slot 6  @ (134, 152, 40x40) Gloves
-//   slot 9  @ (55, 89, 20x20)   Ring
-//   slot 10 @ (55, 152, 20x20)  Ring 2
-//   slot 11 @ (115, 152, 20x20) Necklace
+//   slot  0 @ ( 15,  89) 40x60  Weapon LEFT     (CharacterMachine + 536)
+//   slot  1 @ (134,  89) 40x60  Weapon RIGHT    (+ 604)
+//   slot  2 @ ( 75,  46) 40x40  Helmet          (+ 672)  — se saltea si clase == 3 (MG)
+//   slot  3 @ ( 75,  89) 40x60  Armor           (+ 740)
+//   slot  4 @ ( 75, 152) 40x40  Pants           (+ 808)
+//   slot  5 @ ( 15, 152) 40x40  Gloves          (+ 876)
+//   slot  6 @ (134, 152) 40x40  Boots           (+ 944)
+//   slot  7 @ (115,  46) 60x40  Wings           (+1012)
+//   slot  8 @ ( 15,  46) 40x40  Helper / Pet    (+1080)
+//   slot  9 @ ( 55,  89) 20x20  Ring 1          (+1148)
+//   slot 10 @ ( 55, 152) 20x20  Ring 2          (+1216)
+//   slot 11 @ (115, 152) 20x20  Pendant         (+1284)
+//
 // FUN_004cdc70 @ 0x004CDC70 — RenderEquipmentSlot(sx, sy, w, h, slotIdx)
-// Port simplificado: el IDA decompile son 3396 líneas, ~65% es HashTable
-// obfuscation (anti-tamper). El render real:
-//   1. Leer item desde CharacterMachine + slotOffset (stride 68B = sizeof(ITEM)).
+// Port simplificado: el IDA decompile son 3396 lineas, ~65% es HashTable
+// obfuscation (anti-tamper).  El render real:
+//   1. Leer item desde CharacterMachine + 536 + 68*slotIdx (stride = sizeof(ITEM)).
 //   2. Si Type != -1, llamar RenderItem3D para dibujar el modelo.
 //   3. Anti-tamper STRUCT_DECRYPT/ENCRYPT — skipped per project policy.
 //
-// Slot → offset mapping (from RenderEquipment3D en IDA):
-//   slot 0  = WeaponL (536),  slot 1 = WeaponR (604),  slot 2  = Pendant (672)
-//   slot 3  = Armor   (740),  slot 4 = Boots   (808),  slot 5  = Pants   (876)
-//   slot 6  = Gloves  (944),  slot 7 = Wings  (1012),  slot 8  = Helmet (1080)
-//   slot 9  = Ring1  (1148), slot 10 = Ring2  (1216),  slot 11 = Necklace(1284)
+// 2026-09-02: la tabla de arriba estaba MAL en el comentario (decia 2=Pendant,
+// 4=Boots, 5=Pants, 6=Gloves, 8=Helmet).  El codigo siempre uso la identidad
+// 536 + 68*slot, que es la correcta segun RenderEquipment3D (0x4E3100); lo que
+// mentia eran las etiquetas.  Corregidas contra esa tabla y contra las
+// posiciones que usa FUN_004d1fc0 aca abajo.
 extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx)
 {
     if (!CharacterMachine || slotIdx < 0 || slotIdx >= 12) return;
@@ -2631,122 +2632,106 @@ int __cdecl FUN_0047e3c0(int characterMachine, int /*p2*/, int /*p3*/) {
     *(unsigned char*)(this_ + 1407) = ((v7 % 100) < *(unsigned short*)(this_ + 1404)) ? 1 : 0;
     return v7 / 100;
 }
-// FUN_004ac140 @ 0x004AC140 — NPC_Script_Tick(void)
-// Scans NPC script table (DAT_07cf5600, stride 8, 100 entries).
-// Entry layout: [0]=active(1), [1]=required_substate, [2]=min_x, [3]=min_y, [4]=max_x, [5]=max_y, [8]=speed
-// Si se cumplen las condiciones y pasaron 3000ms: manda el keepalive C1/01/1C y actualiza el estado.
-// Además: si DAT_07e11d1c no es nulo o entity+0x305 está seteado → muestra texto de UI vía FUN_00480620.
-// Las llamadas a HashTable (FUN_0043d3e0 / FUN_004233e0) sobre las lecturas de cached_wp son ruido anti-tamper.
+// CheckGate @ 0x004AC140.
+// IDA 0.97K: GateAttribute contains exactly 100 records of 9 bytes:
+// active, source map, min X, min Y, max X, max Y, target gate, direction,
+// minimum level.  The client detects the source rectangle and asks the server
+// to resolve the target gate with C3:06:1C:<source gate>:00:00.
 void __cdecl FUN_004ac140(void)
 {
-    static const unsigned char xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
+    if (!DAT_07cf5600 || !Hero || !CharacterAttribute)
+        return;
 
-    for (int entry = 0; entry < 100; entry++) {
-        // Entry address in script table (stride 8)
-        // DAT_07cf5600 es un puntero DWORD a un buffer alocado con malloc
-        char* scriptBase = (char*)DAT_07cf5600;
-        char* eptr  = scriptBase + entry * 8;
+    const BYTE* const gates = (const BYTE*)(uintptr_t)DAT_07cf5600;
+    BYTE* const hero = (BYTE*)Hero;
+    const int heroX = *(const int*)(hero + 904);
+    const int heroY = *(const int*)(hero + 908);
 
-        // Tiene que estar activo y coincidir con el sub-estado actual
-        if (eptr[0] != '\x01') goto next_entry;
-        if ((unsigned char)eptr[1] != (unsigned char)DAT_0055a7ac) goto next_entry;
+    for (int gateIndex = 0; gateIndex < 100; ++gateIndex) {
+        const BYTE* const gate = gates + gateIndex * 9; // IDA: GateAttribute + 9*i
+        if (gate[0] != 1 || gate[1] != (BYTE)World)
+            continue;
+        if (heroX < gate[2] || heroY < gate[3] || heroX > gate[4] || heroY > gate[5])
+            continue;
+        if (DAT_07e11d1c != 0 || hero[773] != 0)
+            return;
 
-        {
-            char* playerEntity = DAT_07abf5d8;
-            int cachedX = *(int*)(playerEntity + 0x388);
-            int cachedY = *(int*)(playerEntity + 0x38c);
+        unsigned int requiredLevel = gate[8];
+        if ((hero[444] & 7) == 3) // Magic Gladiator: IDA uses two thirds.
+            requiredLevel = (requiredLevel * 2) / 3;
 
-            // Bounding box check
-            if ((int)(unsigned char)eptr[2] > cachedX) goto next_entry;
-            if ((int)(unsigned char)eptr[3] > cachedY) goto next_entry;
-            if (cachedX > (int)(unsigned char)eptr[4]) goto next_entry;
-            if (cachedY > (int)(unsigned char)eptr[5]) goto next_entry;
+        // Gate 28 is the one exceptional level branch in IDA: it simply does
+        // not enter the common gate path when the character is below minimum.
+        if (gateIndex == 28 &&
+            *(const WORD*)((const BYTE*)CharacterAttribute + 14) < requiredLevel)
+            return;
 
-            // Check dialog state and player busy flag
-            if (DAT_07e11d1c != 0 || *(char*)(playerEntity + 0x305) != '\0') {
-                // Dialog active or busy — show UI messages but don't send
-                // (las llamadas a FUN_00480620 se omiten — son sólo UI)
-                goto next_entry;
+        // IDA CheckGate blocks travel to the Atlans/Tarkan pairs while an
+        // Uniria/Dinorant is equipped or being dragged by the cursor.
+        if ((gateIndex >= 45 && gateIndex <= 49) ||
+            (gateIndex >= 55 && gateIndex <= 56)) {
+            const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
+            const WORD picked = *(const WORD*)DAT_07e91350;
+            if ((helper >= 418 && helper <= 419) ||
+                (DAT_07e91388 > 0 && picked >= 418 && picked <= 419)) {
+                UIChatLogWindow_AddText("ERROR", GlobalText[261], 2);
+                return;
             }
-
-            // Speed threshold for running entities
-            unsigned int speedReq = (unsigned int)(unsigned char)eptr[8];
-            if ((*(unsigned char*)(playerEntity + 0x1bc) & 7) == 3)
-                speedReq = (speedReq << 1) / 3;
-
-            // Chequeo especial para la entrada 0x1c: compara el nivel con el de CharData
-            if (entry == 0x1c) {
-                unsigned short charLevel = *(unsigned short*)((char*)DAT_07cf1ff4 + 0xe);
-                if (charLevel < speedReq) goto acec0;
-            }
-
-            // Timer check: 3000ms keepalive
-            DWORD now = GetTickCount();
-            if (now - DAT_07e11dc8 <= 2999) {
-                DAT_07e11dc4 = 0;
-                DAT_07e11d1c = 0;
-                goto next_entry;
-            }
-
-            // Hora de enviar: marca la primera entrada
-            if (entry == 0) {
-                DAT_05826d14 = '\x01';
-            }
-
-            // Build C1/01/1C keepalive packet
-            // Payload: C1 04 00 1C (4 bytes before XOR)
-            unsigned char pktBuf[8];
-            pktBuf[0] = 0xC1;
-            pktBuf[1] = 4;
-            pktBuf[2] = 0x00;
-            pktBuf[3] = 0x1C;
-
-            // Codifica con XOR el byte 3 (opcode) — sólo hay 1 byte de datos después del header
-            pktBuf[3] ^= xorKey[3 & 0x1f] ^ pktBuf[2];
-
-            // Send
-            if (DAT_055ca168 != 0xFFFFFFFF) {
-                int offset = 0, remaining = 4;
-                unsigned int pktLen = 4;
-                while (remaining > 0) {
-                    int sent = send((SOCKET)DAT_055ca168, (const char*)pktBuf + offset, remaining, 0);
-                    if (sent == -1) {
-                        int err = WSAGetLastError();
-                        if (err == 0x2733) {
-                            if ((int)(DAT_055cc16c + pktLen) < 0x2001) {
-                                memcpy((char*)DAT_055ca16c + DAT_055cc16c, pktBuf, pktLen);
-                                DAT_055cc16c += pktLen;
-                            } else {
-                                Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                            }
-                        } else {
-                            Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                        }
-                        break;
-                    }
-                    if (sent == 0) break;
-                    remaining -= sent;
-                    offset += sent;
-                    if (DAT_055ce174 != 0) FUN_0043de60();
-                }
-            }
-
-            // Post-send: clear hover targets, set dialog-active, reset timer state
-            SelectedItem = 0xffffffff;
-            SelectedNpc = 0xffffffff;
-            SelectedCharacter = 0xffffffff;
-            SelectedOperate = 0xffffffff;
-            DAT_00559c58 = 0xffffffff;
-            DAT_07e11dc4 = 1;
-            DAT_07e11db8 = 0;
-            goto next_entry;
         }
 
-acec0:;
-next_entry:;
+        // IDA CheckGate has the Icarus-only branch for gate records 62..65:
+        // wings (384..390) or a Dinorant (419) are mandatory in both
+        // directions; an Uniria (418) is specifically rejected.
+        if (gateIndex >= 62 && gateIndex <= 65) {
+            const WORD wings = *(const WORD*)((const BYTE*)CharacterMachine + 1012);
+            const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
+            if ((wings < 384 || wings > 390) && helper != 419) {
+                UIChatLogWindow_AddText("ERROR", GlobalText[263], 2);
+                if (*(const WORD*)((const BYTE*)CharacterAttribute + 14) < requiredLevel) {
+                    char levelMessage[128];
+                    sprintf_s(levelMessage, GlobalText[350], requiredLevel);
+                    UIChatLogWindow_AddText("ERROR", levelMessage, 2);
+                }
+                return;
+            }
+            if (helper == 418) {
+                UIChatLogWindow_AddText("ERROR", GlobalText[569], 2);
+                return;
+            }
+        }
+
+        if (*(const WORD*)((const BYTE*)CharacterAttribute + 14) < requiredLevel) {
+            // CheckGate @ 0x004AC140 formats GlobalText[350] with the required
+            // level before leaving the gate untouched.  This is especially
+            // relevant to Icarus gate 64, whose minimum is 50.
+            char message[128];
+            sprintf_s(message, GlobalText[350], requiredLevel);
+            UIChatLogWindow_AddText("ERROR", message, 2);
+            return;
+        }
+
+        const DWORD now = GetTickCount();
+        if (DAT_05826d14 || DAT_07e11dc4 || now - DAT_07e11dc8 < 3000) {
+            DAT_07e11dc4 = 0;
+            return;
+        }
+
+        if (gateIndex == 0)
+            DAT_05826d14 = 1;
+
+        // Original's encrypted packet becomes this plaintext before the shared
+        // C3 serializer: C1:06:1C:gate:00:00 (PMSG_TELEPORT_RECV).
+        const BYTE packet[6] = { 0xC1, 0x06, 0x1C, (BYTE)gateIndex, 0, 0 };
+        Net_SendSmallPacket(packet, sizeof(packet));
+
+        SelectedItem = -1;
+        SelectedNpc = -1;
+        SelectedCharacter = -1;
+        SelectedOperate = -1;
+        DAT_00559c58 = -1;
+        DAT_07e11dc4 = 1;
+        DAT_07e11db8 = 0;
+        return;
     }
 }
 
@@ -2773,8 +2758,10 @@ int  __cdecl FUN_004f6c30(int param_1, int param_2) { return param_2 * 0x100 + p
 //   TerrainFlag=0x0838bc44, toggle=0x0839bc88, unk_55A76C=0x0055a76c.
 //   - WorldTime: en el binario es float ((float)timeGetTime() en CalcFPS 0x43FD70);
 //     en nuestro codebase es int g_AnimTick y todos sus readers lo usan como int.
-//     Se lee (int)WorldTime % N (equivalente; cambiar el tipo rippléaría a decenas
-//     de funciones fuera de esta cadena). DEPENDENCIA reportada, no modificada.
+//     2026-09-03: se lee `(long long)WorldTime % N`, NO `(int)`.  `timeGetTime()`
+//     pasa de 2^31 ms a las ~24.8 dias de uptime y ahi el cast a int satura, con
+//     lo que la animacion de agua queda congelada.  IDA usa `(__int64)WorldTime`
+//     en todos sus sitios justamente por eso.
 //   - unk_55A76C: único xref es el read de abajo (sin writer en el binario) → el
 //     2º pass overlay (TerrainFlag=2) es inerte también en el original.
 //   - Callees aún fallback (a portar en esta cadena): RenderTerrainFrustrum_stub
@@ -2788,9 +2775,9 @@ void __cdecl FUN_004f9ac0(char EditFlag) {
         (int)DAT_0839bc88);
 
     if (World == 8)
-        DAT_07eeb214 = (float)((int)WorldTime % 40000) * 0.000024999999f;  // WaterMove (Tarkan)
+        DAT_07eeb214 = (float)((long long)WorldTime % 40000) * 0.000024999999f;  // WaterMove (Tarkan)
     else
-        DAT_07eeb214 = (float)((int)WorldTime % 20000) * 0.000049999999f;  // WaterMove
+        DAT_07eeb214 = (float)((long long)WorldTime % 20000) * 0.000049999999f;  // WaterMove
 
     if (EditFlag) {
         DAT_07eab1fc = 0;                 // SelectFlag = 0
@@ -3232,7 +3219,16 @@ static inline void mc_SetPlayerDie(DWORD c)
 {
     if (!c) return;
     FUN_00444d90((int)c);
-    *(char*)(c + 0x2FD) = 1;          // ragdoll counter
+    // 2026-09-02: REMOVIDA la escritura `*(char*)(c + 0x2FD) = 1;`.  Era una
+    // invencion del port: SetPlayerDie (0x00444D90, 1057 bytes) no toca +765 en
+    // ninguna de sus lineas — el unico writer del dead_flag es ReceiveDie.
+    // El bloque que llama aca (LABEL_195, IDA L796-806) usa +765 como CONTADOR:
+    //     if ( *(_BYTE *)(c + 765) )
+    //         if ( (unsigned __int8)++*(_BYTE *)(c + 765) >= 0xFu )  SetPlayerDie(c);
+    // Al re-escribir 1 desde el wrapper, el contador nunca podia pasar de 15 y
+    // el flag quedaba clavado en != 0 para siempre.  Eso importa porque +765 es
+    // el filtro de "vivo" del barrido de sub_45FEC0 (IDA L168 `!v16[18]`), que es
+    // quien reporta los blancos al server con el 0x1D.
     // 2026-07-27 FIX (alas rojas "PK"): NO setear dead_flag (0x34e) aquí. El
     // IDA SetPlayerDie NO lo toca — sólo ReceiveDie (el packet de muerte real)
     // lo setea. Este mc_SetPlayerDie lo llama el ragdoll-aging (c+765 counter);
@@ -4238,10 +4234,19 @@ void __cdecl FUN_004520c0(int entity_ptr)
         }
     }
 
-    // ── switch por tipo de entidad (IDA MoveCharacterVisual L764) ──────────
-    // El binario tiene acá un switch enorme con los efectos ambientales de cada
-    // NPC/monstruo. Sólo está portado el case del HERRERO; el resto sigue
-    // pendiente (cada uno necesita su propia verificación contra IDA).
+    // -- switch por tipo de entidad (IDA MoveCharacterVisual L764) --------
+    // Efectos ambientales por NPC/monstruo.  2026-09-02: los **31** cases del
+    // binario estan portados (0x10E 0x110 0x111 0x113 0x114 0x119 0x11A 0x11B
+    // 0x11D 0x122 0x128 0x129 0x12B 0x12E 0x12F 0x133 0x135 0x137 0x138 0x139
+    // 0x13A 0x13B 0x13E 0x141 0x142 0x145 0x152 0x157 0x15C 0x179 0x186).  El
+    // comentario viejo decia que solo estaba el del herrero y quedo obsoleto.
+    //
+    // Lo unico del cuerpo que NO se porto es el bloque `if (c[836] > 0)` de
+    // IDA L713-754 (los tipos de aura 1251 y 1252): **es codigo muerto en el
+    // binario**.  Las dos ramas calculan una posicion (`v162` en la 1251, y el
+    // `WorldPosition` de TransformPosition en la 1252) y despues no la usan --
+    // no hay ningun Particle_Spawn ni CreateEffect detras, y L759 hace memset
+    // de WorldPosition acto seguido.  Portarlo seria copiar un no-op.
     //
     // Luminosidad con flicker, común a todo el switch (IDA L761-763):
     //     v63 = (rand() % 8 + 2) * 0.1     → 0.2 .. 0.9

@@ -8,35 +8,22 @@
 #include "functions.h"
 #include "Net/Net.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
 extern "C" BYTE Inventory[];
 static BYTE ResolveQueuedSkillId97k()
 {
-    if (DAT_07d78098 != '\0') {
-        BYTE* charAttr = (BYTE*)DAT_07cf1ff4;
-        if (charAttr) {
-            return charAttr[DAT_07d7809c + 87];
-        }
+    // UseSkillWizard @ 488A53 always dereferences the selected slot in
+    // CharacterAttribute; its result is not conditional on the queued-action
+    // flag.  The flag only controls how Attack/Action seed the slot.
+    BYTE* charAttr = (BYTE*)DAT_07cf1ff4;
+    if (charAttr) {
+        return charAttr[DAT_07d7809c + 87];
     }
     return (BYTE)DAT_07d7809c;
 }
 
-static BYTE* GetSkillRecordShadow_Local(int iType);
-static BYTE* GetSkillRecordBase_Local(int iType);
 static void SendSkillPacket19_Local(BYTE skillId, WORD targetKey);
 static void SendSkillPacket1E_Local(BYTE skillId, BYTE gridX, BYTE gridY, BYTE dir, BYTE dist, BYTE angle, WORD targetKey);
-
-static BYTE PackDurationDestination_Local(int x, int y, int targetX, int targetY)
-{
-    int deltaX = targetX - x;
-    int deltaY = targetY - y;
-    if (deltaX < -8) deltaX = -8;
-    if (deltaX > 7) deltaX = 7;
-    if (deltaY < -8) deltaY = -8;
-    if (deltaY > 7) deltaY = 7;
-    return (BYTE)(((deltaX + 8) << 4) | ((deltaY + 8) & 0x0F));
-}
 
 static void SendMuEmuEncryptedPacket(BYTE* pkt, int len)
 {
@@ -47,59 +34,50 @@ static void SendMuEmuEncryptedPacket(BYTE* pkt, int len)
 // UseSkillWizard @ 0x004889D0 (~1227 lines)
 // Wizard skill execution. Reads skill ID from CharacterAttribute skill table,
 // builds XOR-encrypted C1 packets for different wizard skill types, sends via socket.
-// Special handling for Energy Ball (0x2b), Hellfire (0x2f), ground-target (0x0f),
-// direct-target skills (1-4,7,0xb,0x11), and Decay/area skill (0xd).
+// Special handling for skills 43/47, ground-target skill 13, and the direct
+// target set recovered from the switch at 0x489006: 1,2,3,4,7,11,17.
 //
 // ~70% of original 1227 lines is anti-tamper hash table operations
 // (FUN_00403f80, FUN_004041e0, FUN_00404280, FUN_00404330, FUN_00404370,
 //  FUN_00404400) and XOR key init + dead forward/reverse loops — all skipped.
 //
-// IDA: FUN_004889D0 @ 0x004889D0 — UseSkillWizard. Ghidra shows 63 phantom stack params (unaff_retaddr etc.) — anti-tamper obfuscation.
+// IDA: UseSkillWizard @ 0x004889D0. Ghidra shows 63 phantom stack params
+// (unaff_retaddr etc.) — anti-tamper obfuscation.
 // Real params: c = CHARACTER* (hero entity ptr), o = OBJECT* (hero object ptr).
-void __cdecl UseSkillWizard_stub(DWORD c, DWORD o) {
-    // --- XOR encryption key (32 bytes, hardcoded — same as login packet key) ---
-    static const BYTE xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89, 0xbc,0xb2,0x9f,0x73,
-        0x23,0xa8,0xfe,0xb6, 0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d, 0xea,0x7d,0x2b,0x5f,
-        0xc3,0xb1,0xe9,0x83, 0x29,0x51,0xe8,0x56
-    };
-
-    char* charAttrBase = (char*)DAT_07cf1ff4;
+// Correspondencia: skillId = el byte de CharacterAttribute[dword_7D7809C + 87];
+//   targetIdx = MovementSkillTarget (0x07D780A0); angle = retorno de CreateAngle
+//   (0x0043E050, que el decompile llama `Movement_Tick`); targetKey = entidad+476.
+void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
+    // IDA: sub_4889D0 @ 0x004889D0.  `c` is the queued caster CHARACTER
+    // (IDA: c); `o` is its OBJECT (IDA: a2).  The skill selector itself is
+    // deliberately global in the original, not a member of either parameter.
     // 004889D0 resolves the selected skill from the CharacterAttribute slot
     // when dword_7D78098 is active.  Do not replace it with the local runtime
     // cache: that cache survives target/mouse transitions and can dispatch a
     // previously selected spell after the user has changed slot.
     UINT skillId = (UINT)ResolveQueuedSkillId97k();
-    {
-        char trace[160];
-        wsprintfA(trace, "WIZ ENTER skill=%u runtime=%u target=%d active=%u",
-                  (unsigned)skillId, (unsigned)DAT_05826d10,
-                  (int)DAT_07d780a0, (unsigned)DAT_07d78098);
-        DbgLogPublic(trace);
-    }
 
-    // ── Energy Ball (0x2b) / Hellfire (0x2f): skip packet, just set magic anim ──
+    // 004889E6: these warrior-only IDs exit the wizard helper before the
+    // movement packet, target snapshot, or animation.  Attack routes them
+    // through Item_Equip/UseSkillWarrior instead.
     if (skillId == 0x2b || skillId == 0x2f) {
-        // SetPlayerMagic(c) — sets attack/cast animation on hero
-        FUN_00444a80((int)c);
         return;
     }
 
-    // 004889D0 has a C1:05:10 preamble for every skill except 0x0F, but it
-    // is written through the original inline socket/XOR path.  The current
-    // Net_SendSmallPacket wrapper is not equivalent for that particular
-    // movement-format packet (it diverts the local input flow before Attack).
-    // Do not substitute it with FUN_00491C40 either: that is click-to-move.
-    // Keep the preamble disabled until that sender is ported byte-for-byte;
-    // the direct skill packets below remain on their verified C3 paths.
+    // 0x488A90: compact facing packet, present for every non-15 spell.  It
+    // shares the native C1 sender used by the warrior helper; it is not the
+    // path-list sender at 0x491C40.
+    if (skillId != 15) {
+        BYTE movement[6] = { 0xC1, 6, 0x10,
+            *(BYTE*)((BYTE*)(uintptr_t)Hero + 904), *(BYTE*)((BYTE*)(uintptr_t)Hero + 908),
+            (BYTE)(16 * (((int)((*(float*)((BYTE*)(uintptr_t)Hero + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
+        Net_SendC1Packet(movement, sizeof(movement));
+        *(BYTE*)((BYTE*)(uintptr_t)c + 748) = 0;
+    }
 
     // ── Set target position from CharactersClient[MovementSkillTarget] ──
     char* heroEntity = (char*)(DWORD)c;
     int targetIdx = (int)DAT_07d780a0;  // MovementSkillTarget
-    if (targetIdx < 0 || targetIdx >= 400) {
-        return;
-    }
     DWORD entityBase = DAT_07abf5d0;    // CharactersClient array base
 
     // Target entity position: entityBase + targetIdx * 0x394 + offset
@@ -119,22 +97,18 @@ void __cdecl UseSkillWizard_stub(DWORD c, DWORD o) {
     float heroY = *(float*)((char*)(DWORD)o + 0x14);
     typedef float (__cdecl *CreateAngleFn)(float, float, float, float);
     float angle = ((CreateAngleFn)&FUN_0043e050)(heroX, heroY, targetPosX, targetPosY);
-    *(float*)((char*)(DWORD)o + 0x24) = angle;
+    *(float*)((char*)(DWORD)o + 36) = angle;
 
     // ── Switch on skill ID ──
     switch (skillId) {
     case 1: case 2: case 3: case 4:
-    case 7: case 0xb: case 0x10: case 0x11:
-    case 19: case 20: case 21: case 22: case 23:
-    case 43: case 49: case 56:
+    case 7: case 0xb: case 0x11:
     {
         // GM name check: compare Hero->ID with "webzen" (DAT_00559d94)
         // Hero->ID at entity offset +0x1C1
         // In original: strlen-based strstr scan. If hero name contains "webzen", skip.
         // This is an anti-impersonation check — GM accounts get special treatment.
-        char* heroName = (char*)(entityBase + 0x08 + 0x1C1);  // Hero->ID approximation
-        // (Actual Hero ptr is DAT_07abf5d8; for safety just use entity c directly)
-        heroName = (char*)((DWORD)c + 0x1C1);
+        char* heroName = Hero ? (char*)(Hero + 449) : (char*)((DWORD)c + 449);
         {
             // Simple strstr check for "webzen" in hero name
             const char* gmStr = DAT_00559d94;
@@ -180,18 +154,7 @@ void __cdecl UseSkillWizard_stub(DWORD c, DWORD o) {
         // The entity index IS the key in some sense, but Ghidra shows .Key as a field.
         // Looking at Combat.cpp and other code: entity key is used as network ID.
         // From DAT_07abf5d0 + idx * 0x394 — the Key field in Ghidra is likely at offset 0x00.
-        WORD targetKey = *(WORD*)(entityBase + targetIdx * 0x394 + 476);
-        if (targetKey == 0xFFFF) {
-            DbgLogPublic("WIZ EXIT invalid-target-key");
-            break;
-        }
-
-        {
-            char trace[96];
-            wsprintfA(trace, "WIZ SEND19 skill=%u key=%u", (unsigned)skillId,
-                      (unsigned)targetKey);
-            DbgLogPublic(trace);
-        }
+        WORD targetKey = *(WORD*)(entityBase + targetIdx * 0x394 + 476); // IDA: *v38
 
         // Real server recv:
         //   PMSG_SKILL_ATTACK_RECV { PBMSG_HEAD // C3:19, BYTE skill, BYTE index[2] }
@@ -200,10 +163,9 @@ void __cdecl UseSkillWizard_stub(DWORD c, DWORD o) {
     }
 
     case 0xd:
-    case 0x34:
     {
         // GM name check: compare Hero->ID with "webzen" (DAT_00559d9c)
-        char* heroName = (char*)((DWORD)c + 0x1C1);
+        char* heroName = Hero ? (char*)(Hero + 449) : (char*)((DWORD)c + 449);
         {
             const char* gmStr = DAT_00559d9c;
             int gmLen = (int)strlen(gmStr);
@@ -223,35 +185,25 @@ void __cdecl UseSkillWizard_stub(DWORD c, DWORD o) {
         // Set CurrentSkill
         DAT_05826d10 = skillId;  // CurrentSkill
 
-        // Blast (13) targets the cached world point set from MovementSkillTarget
-        // at the beginning of sub_4889D0. Penetration (52) remains centered on
-        // the hero's grid square.
-        BYTE gridX;
-        BYTE gridY;
-        if (skillId == 0x0d) {
-            gridX = (BYTE)(int)(*(float*)(heroEntity + 788) * 0.01f);
-            gridY = (BYTE)(int)(*(float*)(heroEntity + 792) * 0.01f);
-        } else {
-            gridX = (BYTE)*(DWORD*)(heroEntity + 0x388);
-            gridY = (BYTE)*(DWORD*)(heroEntity + 0x38C);
-        }
+        // The sole duration case in this helper is skill 13.  It uses the
+        // cached target world point established immediately above.
+        BYTE gridX = (BYTE)(int)(*(float*)(heroEntity + 788) * 0.01f);
+        BYTE gridY = (BYTE)(int)(*(float*)(heroEntity + 792) * 0.01f);
 
-        WORD targetKey = *(WORD*)(entityBase + targetIdx * 0x394 + 476);
-        if (targetKey == 0xFFFF) {
-            break;
-        }
         // PMSG_DURATION_SKILL_ATTACK uses a 0..255 facing byte. The 97k
         // Blast sender leaves distance and angle at zero.
-        BYTE dir = (BYTE)(int)(angle * (256.0f / 360.0f));
-
-        // Real server recv:
-        //   PMSG_DURATION_SKILL_ATTACK_RECV { C3:1E, skill, x, y, dir, dis, angle, index[2] }
-        SendSkillPacket1E_Local((BYTE)skillId, gridX, gridY, dir, 0, 0, targetKey);
+        // 0x4889D0 writes three literal zero bytes after x/y; it does not
+        // append the target key nor the current facing angle in this client.
+        // DLL SendContinueBlast (Patchs.cpp:1385): (dir, 0, 0, index) con
+        // index = -1 cuando CheckAttack() falla.  0 es un slot de objeto VALIDO,
+        // asi que mandar 0 haria que el server aplique el skill sobre gObj[0].
+        SendSkillPacket1E_Local((BYTE)skillId, gridX, gridY, 0, 0, 0, 0xFFFF);
         break;
     }
 
     default:
-        // Skills 5,6,8,9,0xa,0xc,0xe,0x10, etc.: no packet sent, fall through
+        // Skills 5,6,8-10,12,14-16 and every other non-listed id leave through
+        // the default arm of the original jump table without a packet.
         // Ghidra: goto switchD_00489006_caseD_5 (exit without packet)
         return;
     }
@@ -263,25 +215,7 @@ void __cdecl UseSkillWizard_stub(DWORD c, DWORD o) {
     FUN_00444a80((int)c);
 }
 
-// ── Stubs needed by SkillElf ──────────────────────────────────────────────────
-
-static BYTE* GetSkillRecordShadow_Local(int iType)
-{
-    if (iType < 0 || iType >= 64)
-        return nullptr;
-    if (DAT_07cf1ff8 != 0)
-        return (BYTE*)(uintptr_t)DAT_07cf1ff8 + iType * 0x28;
-    return nullptr;
-}
-
-static BYTE* GetSkillRecordBase_Local(int iType)
-{
-    if (iType < 0 || iType >= 64)
-        return nullptr;
-    if (DAT_07d29d20 != 0)
-        return (BYTE*)(uintptr_t)DAT_07d29d20 + iType * 0x28;
-    return nullptr;
-}
+// ── SkillElf support ──────────────────────────────────────────────────────────
 
 static void SendSkillPacket19_Local(BYTE skillId, WORD targetKey)
 {
@@ -292,17 +226,39 @@ static void SendSkillPacket19_Local(BYTE skillId, WORD targetKey)
     pktBuf[3] = skillId;
     pktBuf[4] = (BYTE)(targetKey >> 8);
     pktBuf[5] = (BYTE)(targetKey & 0xFF);
-    {
-        char trace[96];
-        wsprintfA(trace, "SKILL SEND C1:19 skill=%u targetKey=%u",
-                  (unsigned)skillId, (unsigned)targetKey);
-        DbgLogPublic(trace);
-    }
     SendMuEmuEncryptedPacket(pktBuf, 6);
+}
+
+// GetDestValue - DLL Source/Client/Main/Util.cpp:323 (identico al helper del
+// cliente 5.2 en source/wsclientinline.h:615): nibble alto = delta X, nibble
+// bajo = delta Y, ambos clampeados a [-8, 7].
+//
+// 2026-09-02: NO se unifico con Combat_GetDestValue97k (Combat.cpp), que si se
+// paso a la forma del binario.  Motivo: de este sitio no hay expresion que
+// comparar -- el decompile de SkillElf (0x0048BD70 LABEL_68) llega plegado
+// (`if...`) y no muestra los appends del payload.  Lo unico seguro es que el
+// hook que reemplaza este sitio, CPatchs::SendContinueTripleShot
+// (Patchs.cpp:1394-1444), pasa `dest = GetDestValue(x, y, TargetX, TargetY)`.
+// Da igual funcionalmente: MuEmu no lee `dis` (SkillManager.cpp:2047 solo
+// propaga x, y, dir, angle e index[]).  Se deja como esta hasta poder leer los
+// appends en el disassembly.
+static BYTE Combat_GetDestValue97kExt(int xPos, int yPos, int xDst, int yDst)
+{
+    int dx = xDst - xPos;
+    int dy = yDst - yPos;
+    if (dx < -8) dx = -8;
+    if (dx >  7) dx =  7;
+    if (dy < -8) dy = -8;
+    if (dy >  7) dy =  7;
+    return (BYTE)((((BYTE)(dx + 8)) << 4) | (((BYTE)(dy + 8)) & 0x0F));
 }
 
 static void SendSkillPacket1E_Local(BYTE skillId, BYTE gridX, BYTE gridY, BYTE dir, BYTE dist, BYTE angle, WORD targetKey)
 {
+    // DESVIACION DE PROTOCOLO (servidor MuEmu) — ver la nota extensa en
+    // Combat_SendDuration1E_97k (src/Combat/Combat.cpp).  El 0.97k vanilla manda
+    // 9 bytes; PMSG_DURATION_SKILL_ATTACK_RECV son 11 y el server lee `index[]`
+    // siempre, asi que sin esos dos bytes le pega a una entidad al azar.
     BYTE pktBuf[11];
     pktBuf[0] = 0xC1;
     pktBuf[1] = 11;
@@ -310,72 +266,49 @@ static void SendSkillPacket1E_Local(BYTE skillId, BYTE gridX, BYTE gridY, BYTE d
     pktBuf[3] = skillId;
     pktBuf[4] = gridX;
     pktBuf[5] = gridY;
-    pktBuf[6] = dir;
-    pktBuf[7] = dist;
-    pktBuf[8] = angle;
-    pktBuf[9] = (BYTE)(targetKey >> 8);
-    pktBuf[10] = (BYTE)(targetKey & 0xFF);
-    {
-        char trace[128];
-        wsprintfA(trace,
-                  "SKILL SEND C1:1E skill=%u xy=(%u,%u) dir=%u dis=%u angle=%u targetKey=%u",
-                  (unsigned)skillId, (unsigned)gridX, (unsigned)gridY,
-                  (unsigned)dir, (unsigned)dist, (unsigned)angle,
-                  (unsigned)targetKey);
-        DbgLogPublic(trace);
-    }
-    SendMuEmuEncryptedPacket(pktBuf, 11);
+    pktBuf[6] = dir;                                   // DLL: dir
+    pktBuf[7] = dist;                                  // DLL: dis
+    pktBuf[8] = angle;                                 // DLL: angle
+    pktBuf[9]  = (BYTE)((targetKey >> 8) & 0xFF);      // DLL: HIBYTE(target)
+    pktBuf[10] = (BYTE)(targetKey & 0xFF);             // DLL: LOBYTE(target)
+    SendMuEmuEncryptedPacket(pktBuf, sizeof(pktBuf));
 }
 
 // GetSkillInformation @ 0x0047E7A0 — reads skill table entry for given type/level.
 // Outputs mana cost, distance, and AG (SkillMana) cost via out-pointers.
-// Real implementation uses the compact 0x28-byte skill record table.
+// 0047E7A0 uses the clear SkillAttribute table, with 0x28-byte entries.
 void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piMana, int* piDistance, int* piSkillMana) {
     (void)iLevel;
-    BYTE* baseEntry = GetSkillRecordBase_Local(iType);
-    BYTE* statEntry = GetSkillRecordShadow_Local(iType);
-    if (statEntry == nullptr)
-        statEntry = baseEntry;
-    if (baseEntry == nullptr && statEntry == nullptr) {
+    if (iType < 0 || iType >= 64) {
         if (lpszName) lpszName[0] = '\0';
         if (piMana) *piMana = 0;
         if (piDistance) *piDistance = 0;
         if (piSkillMana) *piSkillMana = 0;
         return;
     }
+    // DAT_07cf1ff8 is the encrypted/shadow counterpart.  The loader mutates
+    // its +0x26 field, so it must not drive combat costs/ranges.
+    BYTE* const entry = (BYTE*)SkillAttribute.Raw + iType * 0x28;
 
     if (lpszName != NULL) {
-        const char* srcName = nullptr;
-        if (baseEntry && ((const char*)baseEntry)[0] != '\0')
-            srcName = (const char*)baseEntry;
-        else if (statEntry && ((const char*)statEntry)[0] != '\0')
-            srcName = (const char*)statEntry;
-        else
-            srcName = "";
-        strncpy_s(lpszName, 256, srcName, 31);
+        strncpy_s(lpszName, 256, (const char*)entry, 31);
         lpszName[31] = '\0';
-        for (char* p = lpszName; *p; ++p) {
-            unsigned char ch = (unsigned char)*p;
-            if (ch < 32)
-                *p = ' ';
-        }
     }
     if (piMana != NULL) {
-        int v = (int)*(WORD*)(statEntry + 0x22);
-        *piMana = (v >= 0 && v <= 5000) ? v : 0;
+        *piMana = (int)*(WORD*)(entry + 0x22);
     }
     if (piDistance != NULL) {
-        int v = (int)*(BYTE*)(statEntry + 0x27);
-        *piDistance = (v >= 0 && v <= 50) ? v : 0;
+        // 0047E7A0: SkillAttribute[40*iType + 38], not byte 39.
+        *piDistance = (int)*(BYTE*)(entry + 0x26);
     }
     if (piSkillMana != NULL) {
-        int v = (int)*(BYTE*)(statEntry + 0x26);
-        *piSkillMana = (v >= 0 && v <= 255) ? v : 0;
+        // 0047E7A0 reads the unsigned WORD at +36 (the 18th WORD).
+        *piSkillMana = (int)*(WORD*)(entry + 0x24);
     }
 }
 
 
-// SkillElf @ 0x0048BD70 (~1247 lines)
+// IDA: SkillElf @ 0x0048BD70 (6351 bytes) — bool __cdecl SkillElf(DWORD c, DWORD pItem)
 // Elf class skill execution. Handles heal, buff, arrow skills.
 // Validates target, builds skill packet, handles multi-arrow, spawns VFX.
 //
@@ -393,10 +326,26 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
 //     validates range, computes facing angle, builds C1 skill packet with
 //     XOR encryption, sends it, then calls SetPlayerAttack + CreateArrows
 //
-// IDA: FUN_0048A180 @ 0x0048A180 — SkillElf. ~60% of the original 1247 lines is anti-tamper hash table operations
+// CORRECCION DE TRAZABILIDAD (2026-09-01): este bloque decia
+// "IDA: FUN_0048A180 @ 0x0048A180 — SkillElf", y 0x0048A180 es **UseSkillElf**
+// (portada como Combat_UseElfSkill en Combat.cpp).  La funcion que se reconstruye
+// aca es **SkillElf @ 0x0048BD70**, que es la que Attack llama como
+// `SkillElf(c, i + CharacterMachine + 536)` en L1464.  functions.h ya la declaraba
+// con la direccion correcta.
+// Correspondencia con el decompile de 0x0048BD70:
+//   charAttr / pItem   = pItem        (ITEM* equipado)
+//   skillCount         = *(BYTE *)(pItem + 36)     = ITEM::SpecialNum
+//   skillId            = *(BYTE *)(pItem + i + 37) = ITEM::Special[i]
+//   i                  = i           (L119, la variable de bucle del binario)
+//   result             = v110        (el valor de retorno)
+//   gridX / gridY      = v44 / v113  (*(_DWORD *)(c + 904) / (c + 908))
+//   angle              = v37         (Movement_Tick = CreateAngle @0x0043E050)
+//   dir                = v52         (angulo * 0.71111113)
+//   skillDistance      = v112        (SkillAttribute[40*skill + 38])
+// ~60% of the original decompile is anti-tamper hash table operations
 // (FUN_00403f80, FUN_004041e0, FUN_00404280, FUN_00404330, FUN_00404370,
 //  FUN_00404400) and XOR key init + dead forward/reverse loops — all skipped.
-bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
+bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
     // c = CHARACTER* (hero entity), pItem = CHARACTER_ATTRIBUTE* (char attributes)
     // Cast to usable pointers
     char* hero    = (char*)(DWORD)c;      // CHARACTER* — entity struct
@@ -416,32 +365,38 @@ bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
         return false;
     }
 
-    BYTE skillCount = *(BYTE*)(charAttrBase + 86);
+    // Attack calls SkillElf(c, CharacterAttribute + 0x218).  This is the
+    // equipped item record: its skill-list metadata is at +0x24/+0x25.
+    // The previous port incorrectly interpreted CharacterAttribute+0x56 as
+    // this list and consequently dispatched arbitrary character bytes.
+    BYTE skillCount = *(BYTE*)(charAttr + 0x24);
     if (skillCount == 0) {
         return false;
     }
-    BYTE selectedSkillId = ResolveQueuedSkillId97k();
     if ((int)DAT_07d780a0 < 0 || (int)DAT_07d780a0 >= 400) {
         return false;
     }
 
-    // CharacterAttribute->Mana at offset 0x1D (WORD) — Ghidra reads high byte via +1
-    // Actually Ghidra: *(ushort *)((int)&CharacterAttribute->Mana + 1) — reads misaligned
-    // CharacterAttribute->Mana is at 0x1D, so +1 = 0x1E. This reads bytes [0x1E..0x1F]
-    // as a ushort — which is MaxLife low byte + MaxLife high byte. But more likely
-    // the Ghidra struct layout: Mana at 0x1D (WORD), so &Mana+1 = 0x1E.
-    // This is actually reading Mana as big-endian or the full Mana value.
-    // Let's just read the WORD at offset 0x1D for current Mana.
-    WORD currentMana = *(WORD*)(charAttrBase + 0x1D);
-    // CharacterAttribute->SkillMana at offset 0x23 (WORD)
-    // Ghidra: *(ushort *)((int)&CharacterAttribute->SkillMana + 1) => offset 0x24
-    WORD currentAG = *(WORD*)(charAttrBase + 0x23);
+    // The same offsets are used by Attack at 49D278: current mana +0x1e
+    // and current AG +0x24.
+    WORD currentMana = *(WORD*)(charAttrBase + 0x1E);
+    WORD currentAG = *(WORD*)(charAttrBase + 0x24);
+    const BYTE selectedSkill = charAttrBase[(BYTE)*(BYTE*)(Hero + 913) + 87];
 
-    for (int i = 0; i < (int)skillCount; i++) {
-        BYTE skillId = *(BYTE*)(charAttrBase + 87 + i);
+    for (int i = 0; i < (int)skillCount && i < 20; i++) {
+        BYTE skillId = *(BYTE*)(charAttr + 0x25 + i);
 
-        // Only process the skill that matches the hero's currently selected skill
-        if (selectedSkillId != skillId) continue;
+        // 0048BE70 compares every equipped entry with the active slot before
+        // inspecting costs or emitting anything.  Iterating the entire list
+        // used to cast every skill carried by the item in one attack tick.
+        if (skillId != selectedSkill)
+            continue;
+
+        // This helper is the native Triple-Shot path only.  The other elf
+        // entries leave through LABEL_155; Heal/Greater buffs are dispatched
+        // by Attack's separate paths.
+        if (skillId != 24)
+            continue;
 
         // Get skill information: mana cost and AG cost
         int manaCost = 0;
@@ -509,33 +464,30 @@ bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
         if (targetKey == 0xFFFF) {
             continue;
         }
-        BYTE gridX = (BYTE)*(DWORD*)(heroEntity + 0x388);
-        BYTE gridY = (BYTE)*(DWORD*)(heroEntity + 0x38C);
+        // 0x48BD70 reads the two encrypted grid values at c+904/c+908.
+        BYTE gridX = (BYTE)*(DWORD*)(hero + 904);
+        BYTE gridY = (BYTE)*(DWORD*)(hero + 908);
 
-        // Skill type check: 0x18 = ranged arrow skill
-        if (skillId == 0x18) {
+        // Skill type 0x18 = Triple Shot ranged-arrow path.
+        {
             // Check if arrows are equipped
             char hasArrow = Combat_CheckArrowRequirement();  // CheckArrow
             if (hasArrow == '\0') continue;  // no arrows equipped
 
-            BYTE* skillEntry = GetSkillRecordShadow_Local((int)skillId);
-            if (skillEntry == nullptr)
-                skillEntry = GetSkillRecordBase_Local((int)skillId);
-            if (skillEntry == nullptr)
-                continue;
-
-            // anti-tamper hash table — skipped (encrypt skill entry)
-
-            // Compact 97k record: distance is stored at +0x27.
-            BYTE skillDistance = *(BYTE*)(skillEntry + 0x27);
+            // Attack and GetSkillInformation both read the clear 40-byte
+            // SkillAttribute record.  +38 is the range field; +39 belongs to
+            // the following metadata byte and was the source of an off-by-one
+            // range error in the elf arrow path.
+            BYTE skillDistance = SkillAttribute.Raw[(size_t)skillId * 0x28 + 0x26];
 
             // Get hero position
             float heroPosX = *(float*)(heroEntity + 0x10);  // Object.Position[0]
             float heroPosY = *(float*)(heroEntity + 0x14);  // Object.Position[1]
 
-            // Use the current runtime target entity position, not the stale
-            // global ground-target coords. This keeps ranged-elf range checks
-            // aligned with the same target slot used by the packet send.
+            // DESVIACION DELIBERADA respecto de IDA L197-199, que compara contra
+            // los globales `TargetX`/`TargetY` (los que deja CheckTarget).  Aca se
+            // usa la posicion de mundo de la entidad objetivo para que el chequeo
+            // de rango y el destinatario del paquete usen el MISMO slot.
             float targetWorldX = *(float*)((char*)(uintptr_t)DAT_07abf5d0 + (int)DAT_07d780a0 * 0x394 + 0x10);
             float targetWorldY = *(float*)((char*)(uintptr_t)DAT_07abf5d0 + (int)DAT_07d780a0 * 0x394 + 0x14);
 
@@ -566,25 +518,25 @@ bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
             // Set CurrentSkill global to this skill ID
             DAT_05826d10 = (DWORD)skillId;  // CurrentSkill
 
-            // 97k runtime uses the same move sender path before the actual
-            // skill packet so target/facing/path state stay aligned with the
-            // rest of combat helpers.
-            Combat_SendMovePathPacket((int)heroEntity, (int)heroEntity);
-
-            // MuEmu's 0.97k continuation patch for Triple Shot uses the
-            // 256-step facing byte, the packed target delta, and an opposite
-            // angle.  The original routine at 0048BD70 computes the same
-            // facing value with angle * 0.71111113.
+            // 0x48BD70 emite el C3:1E directo; el campo de direccion es
+            // `Object.Direction * 0.71111113`.
             BYTE dir = (BYTE)(int)(angle * (256.0f / 360.0f));
-            BYTE destination = PackDurationDestination_Local(
-                gridX, gridY,
-                (int)*(unsigned char*)(heroEntity + 0x306),
-                (int)*(unsigned char*)(heroEntity + 0x307));
-            BYTE oppositeAngle = (BYTE)(int)((angle + 180.0f) * (256.0f / 360.0f));
-
-            // Align to the same server recv struct family used by the wizard path:
-            //   PMSG_DURATION_SKILL_ATTACK_RECV { C3:1E, skill, x, y, dir, dis, angle, index[2] }
-            SendSkillPacket1E_Local(skillId, gridX, gridY, dir, destination, oppositeAngle, targetKey);
+            // DLL SendContinueTripleShot (Patchs.cpp:1394-1444) — es el UNICO
+            // hook que manda los tres campos:
+            //     dir   = facing / 360 * 256
+            //     dest  = GetDestValue(x, y, TargetX, TargetY)
+            //     angle = (facing + 180) / 360 * 256
+            // El server usa `angle` (no `dir`) para el frustum de Triple Shot:
+            //     SkillTripleShot(aIndex, bIndex, lpSkill, angle)
+            //       -> GetSkillFrustrum(..., angle, X, Y, Radio, Range)
+            // (GameServer/SkillManager.cpp:1185-1198).  Con angle = 0 el cono
+            // apuntaba siempre al mismo rumbo: de ahi que Triple Shot pegara
+            // "a veces".
+            const BYTE dest = Combat_GetDestValue97kExt(
+                                  (int)gridX, (int)gridY,
+                                  (int)DAT_07e016c0, (int)DAT_07e016c4);
+            const BYTE angleByte = (BYTE)(int)((angle + 180.0f) * (256.0f / 360.0f));
+            SendSkillPacket1E_Local(skillId, gridX, gridY, dir, dest, angleByte, targetKey);
 
             // Set player attack animation
             // SetPlayerAttack(hero) — Ghidra shows 1-arg; use 4-arg decl with dummies
@@ -593,10 +545,18 @@ bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
             // If object type is not 0x186 (special entity), create arrow projectiles
             WORD objType = *(WORD*)(heroEntity + 0x02);  // Object.Type at offset +0x02
             if (objType != 0x186) {
-                // We are already iterating the real runtime skill list and matched
-                // the selected skill above, so the arrow effect should use the same
-                // runtime slot instead of rescanning a stale/corrupted skill block.
-                int skillIndex = i;
+                // DESVIACION respecto de IDA L223-226, que recorre
+                // `CharacterAttribute + 87` hasta encontrar el skill y pasa ESE
+                // indice (v87/v91) a CreateArrows.  Aca se usa el indice del bucle
+                // sobre la lista del item.  Solo afecta a entidades que no son el
+                // jugador (la rama esta bajo `objType != 0x186`).
+                int skillIndex = i;                 // IDA: v87
+                // El 6o argumento (SKKey) SI esta demostrado aca: el call site de
+                // SkillElf (0x0048D488) lo empuja como literal
+                //   6A 00  push 0   ; SKKey
+                //   6A 01  push 1   ; Skill = 1 -> abanico de 3 flechas
+                // (bytes verificados con ida_get_bytes en 0x0048D470).  A diferencia
+                // del case 52 de Attack, que manda el byte de skill encolado c+770.
 
                 // Spawn arrow visual effect
                 CreateArrows_stub((DWORD)heroEntity, (DWORD)(heroEntity),
@@ -605,19 +565,6 @@ bool __stdcall SkillElf_stub(DWORD c, DWORD pItem) {
             result = true;
             continue;
         }
-
-        DAT_05826d10 = (DWORD)skillId;
-
-        // Keep elf/support on the same pre-move runtime path as warrior/wizard.
-        Combat_SendMovePathPacket((int)heroEntity, (int)heroEntity);
-
-        // Heal (26), Greater Defense (27) and Greater Damage (28) are
-        // targeted skills.  MuEmu receives them through C3:19; C3:1E is
-        // reserved for duration/area attacks and rejects their normal path.
-        SendSkillPacket19_Local(skillId, targetKey);
-
-        FUN_00444a80((int)(DWORD)heroEntity);
-        result = true;
     }
 
     // anti-tamper hash table — skipped (decrypt CharacterMachine after access)
