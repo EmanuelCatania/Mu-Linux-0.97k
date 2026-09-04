@@ -254,9 +254,10 @@ extern DWORD&  DAT_00559c98;
 extern DWORD   DAT_00559bf1;   // chat/entity flag (allows type 3 show)
 extern DWORD   DAT_00559cc4;   // chat history index (0..4)
 extern DWORD   DAT_00559ce0;   // entity table iteration offset
-extern DWORD   DAT_00559ccc;
-extern DWORD   DAT_00559cd0;
-extern DWORD   DAT_00559cd4;
+// Alias de los tres globals del panel de evento (ver m_iMatchTime mas abajo).
+#define DAT_00559ccc  (*(DWORD*)&m_iMatchTime)
+#define DAT_00559cd0  (*(DWORD*)&m_iMaxKillMonster)
+#define DAT_00559cd4  (*(DWORD*)&m_iKillMonster)
 extern DWORD   DAT_00559cd8;
 extern int     DAT_00559ce8;   // hover target index copy (char-select slot or NPC)
 extern DWORD   DAT_00559d74;
@@ -2570,6 +2571,7 @@ extern DWORD   g_csQuest;         // Quest system state (0=inactive)
 // Match/DevilSquare info
 extern BYTE    m_byMatchType;
 extern int     m_iMatchTimeMax;
+extern int     m_iMatchTime;      // 0x00559CCC (writers: SetMatchInfo / clearMatchInfo)
 extern int     m_iMaxKillMonster;
 extern int     m_iKillMonster;
 

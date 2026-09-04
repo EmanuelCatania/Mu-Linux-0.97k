@@ -401,7 +401,6 @@ int   __cdecl    FUN_0047e2e0(short* characterMachine_words);       // Stats_Cal
 int   __cdecl    FUN_0047e310(int characterMachine);                // Stats_CalcExtraOption2
 int   __cdecl    FUN_0047e3c0(int characterMachine, int, int);      // CharData_RecalcStats
 void  __cdecl FUN_0047e7a0(int, int, int);
-void  __cdecl FUN_0047eb80(int, int, int);
 void  __cdecl FUN_0047ec00(int, int, int);
 int   __cdecl Input_IsKeyJustPressed(int);          // IDA: FUN_0047ec20
 void  __cdecl Input_ClearState(int mode);           // IDA: FUN_0047ec60
@@ -1341,7 +1340,10 @@ void  __cdecl AppearMonster(DWORD c);                                    // 0x00
 void  __stdcall FUN_00422074(void);                                      // 0x00422074 — SEH __finally handler (DestroyWindow)
 void  __cdecl FUN_0051d740(void);                                        // 0x0051D740 — ClearNotice
 void  __cdecl FUN_00482350(void);                                        // 0x00482350 — ClearWhisperID
-void  __cdecl FUN_004827a0(void);                                        // 0x004827A0 — clearMatchInfo
+void  __cdecl FUN_004827a0(void);                                        // 0x004827A0 (mismap: NO es clearMatchInfo, esa direccion cae dentro de sub_4824C0)
+void  __cdecl FUN_0047eb80(void);                                        // 0x0047EB80 clearMatchInfo
+int   __cdecl FUN_0045acc0(int key);                                     // 0x0045ACC0 FindCharacterIndex + limpia el flag +744 de todas
+void  __cdecl FUN_0045ad10(int Action);                                  // 0x0045AD10 SetAction sobre todos los jugadores visibles
 void  __cdecl FUN_00433830(void);                                        // 0x00433830 — InitPartyList
 void  __stdcall SendCheck(void);                                         // 0x004220A0 — anti-tamper checksum packet
 

@@ -40,7 +40,9 @@ extern "C" {
     int   MacroTime               = 0;
     int   m_iMatchCountDownType   = 0;
     DWORD m_dwMatchCountDownStart = 0;
-    int   m_iMatchTime            = 0;
+    // m_iMatchTime vive en globals.cpp (0x00559CCC): lo escribe SetMatchInfo
+    // desde el handler 0x9B.  Tenerlo aca como local dejaba al renderer
+    // leyendo una copia que nadie escribia (2026-09-04).
     int   MixState                = 0;
     int   AlphaBlendType          = 0;
 

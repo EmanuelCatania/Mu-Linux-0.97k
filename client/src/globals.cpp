@@ -275,9 +275,9 @@ DWORD&   DAT_00559c94  = reinterpret_cast<DWORD&>(_InputTextMaxArr[0]);
 int&     _DAT_00559c98 = _InputTextMaxArr[1];
 DWORD&   DAT_00559c98  = reinterpret_cast<DWORD&>(_InputTextMaxArr[1]);
 DWORD    DAT_00559cc4  = 0;
-DWORD    DAT_00559ccc  = 0;
-DWORD    DAT_00559cd0  = 0;
-DWORD    DAT_00559cd4  = 0;
+// 0x00559CCC/CD0/CD4 son m_iMatchTime / m_iMaxKillMonster / m_iKillMonster.
+// Estaban declarados DOS veces (aca como DAT_ y mas abajo con su nombre), o
+// sea eran memorias distintas.  Ahora los DAT_ son alias (globals.h).
 DWORD    DAT_00559cd8  = 0;
 DWORD    DAT_00559d74  = 0;
 DWORD    DAT_00559ef0  = 0;
@@ -2665,6 +2665,7 @@ DWORD  g_csQuest          = 0;
 
 BYTE   m_byMatchType      = 0;
 int    m_iMatchTimeMax    = 0;
+int    m_iMatchTime       = 0;   // 0x00559CCC  tiempo restante del evento
 int    m_iMaxKillMonster  = 0;
 int    m_iKillMonster     = 0;
 

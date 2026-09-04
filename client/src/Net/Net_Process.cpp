@@ -5846,6 +5846,76 @@ void Net_ProcessPacket(void)
                 break;
             }
 
+            case 0x9B: {
+                // ReceiveMatchGameCommand @ 0x00436E40 -- estado del evento
+                // (Blood Castle / Devil Square).  Es lo que alimenta el cartel
+                // lateral con el tiempo restante y el contador de monstruos.
+                //
+                // MuEmu: CBloodCastle::GCBloodCastleStateSend,
+                //        PMSG_BLOOD_CASTLE_STATE_SEND (BloodCastle.h:65)
+                //   +3     BYTE state
+                //   +4,+5  WORD time
+                //   +6,+7  WORD MaxMonster
+                //   +8,+9  WORD CurMonster
+                //   +10,11 WORD EventItemOwner
+                //   +12    BYTE EventItemLevel
+                // El struct no lleva padding (state en +3 y el primer WORD en
+                // +4, que ya esta alineado), asi que coincide exacto con los
+                // indices de palabra del decompile.
+                //
+                // 2026-09-04: este case NO EXISTIA en el dispatcher, o sea el
+                // panel del evento nunca recibia datos.
+                if (Size < 13) { NetLog("NET:  -> 0x9B MatchState size=%d (corto)", Size); break; }
+                {
+                    const BYTE state     = Msg[3];
+                    const WORD tRemain   = *(WORD*)(Msg + 4);
+                    const WORD maxMon    = *(WORD*)(Msg + 6);
+                    const WORD curMon    = *(WORD*)(Msg + 8);
+                    const short itemOwner= *(short*)(Msg + 10);
+                    const BYTE itemLevel = Msg[12];
+
+                    NetLog("NET:  -> 0x9B MatchState state=%u t=%u mon=%u/%u owner=%d lvl=%u",
+                           state, tRemain, curMon, maxMon, itemOwner, itemLevel);
+
+                    switch (state) {
+                    case 0:
+                        // Arranca el evento: todos los jugadores a la anim 128
+                        // y BGM del castillo en loop.
+                        FUN_0045ad10(128);
+                        PlayBuffer(110, 0, 1);
+                        // fallthrough  (IDA: `goto LABEL_3`)
+                    case 1:
+                    case 4: {
+                        SetMatchInfo((BYTE)(state + 1), 900, tRemain, maxMon, curMon);
+                        // Marca quien lleva el arma del evento.  sub_45ACC0 ademas
+                        // LIMPIA el flag +744 en todas las entidades antes de
+                        // devolver el indice, o sea el portador es unico.
+                        if (itemOwner != -1 && itemLevel != 0xFF && itemLevel != 0) {
+                            const int idx = FUN_0045acc0(itemOwner & 0x7FFF);
+                            if (DAT_07abf5d0 && idx >= 0 && idx < 400) {
+                                BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * idx;
+                                *(BYTE*)(c + 744) = itemLevel;
+                            }
+                        }
+                        break;
+                    }
+                    case 2:
+                        FUN_0047eb80();          // clearMatchInfo
+                        StopBuffer(110, 1);
+                        break;
+                    case 3:
+                        // Puerta destruida: dispara la animacion de derrumbe
+                        // sobre el objeto tipo 36 del mapa actual
+                        // (la consume MoveObject_Special / sub_4FA5F0).
+                        FUN_004fa5c0((int)World, 36, 20, 1);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+                break;
+            }
+
             case 0x9C: {
                 // ReceiveDieExpLarge @ 0x42E5C0 — el paquete que MuEmu manda de
                 // verdad al morir un mob: GCMonsterDieSend (Protocol.cpp:1811)
