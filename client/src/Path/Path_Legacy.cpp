@@ -645,37 +645,49 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
 #endif // obsolete non-IDA linear MovePath reconstruction
 }
 
-// IDA: FUN_004830b0 @ 0x004830B0 — PathRange_Check(sx,sy,tx,ty)
-// Bresenham line from (sx,sy) to (tx,ty) testing terrain attr DAT_0838bc70.
-// Returns 1 if path is clear, 0 if blocked (attr>3 and not walkable).
-char __cdecl Path_IsLineClear(int sx, int sy, int tx, int ty) {
-    int tile = FUN_004f6c40((unsigned int)sx, (unsigned int)sy);
-    int err  = 0;
-    unsigned int dx = (unsigned int)(tx - sx);
-    unsigned int dy = (unsigned int)(ty - sy);
-    int step_major, step_minor;
-    if ((int)dx < 0) { dx = (unsigned int)(-(int)dx); step_major = -1; }
-    else { step_major = 1; }
-    if ((int)dy < 0) { dy = (unsigned int)(-(int)dy); step_minor = -0x100; }
-    else { step_minor = 0x100; }
-    int inc_a = step_major, inc_b = step_minor;
-    unsigned int major = dx, minor_steps = dy;
-    if ((int)dy < (int)dx) {
-        // swap so major >= minor
-        inc_a    = step_minor;
-        major    = dy;
-        inc_b    = step_major;
-        minor_steps = dx;
+// IDA: CheckWall @ 0x004830B0 — bool __cdecl CheckWall(int sx1, int sy1, int sx2, int sy2)
+// Bresenham desde (sx1,sy1) hasta (sx2,sy2) sobre TerrainWall (DAT_0838bc70);
+// devuelve 1 si la linea esta despejada, 0 si topa con un tile bloqueante.
+// Nombres: tile = v4 · err = v5 · dx = v6 · dy = v7 · xStep = v8 · yStep = v9
+//          major = v10 · minorDelta = y · minorInc = v11 · steps = x
+//
+// 2026-09-01 FIX: el port tenia `major` y `minorDelta` INTERCAMBIADOS respecto
+// de IDA en las dos ramas del if (los dos incrementos si estaban bien).  El
+// efecto era brutal en lineas casi axiales: con dy == 0 quedaba major == 0, o
+// sea el bucle probaba UN solo tile en vez de |dx|+1 y la funcion devolvia 1
+// casi siempre.  La usan Attack (3 sitios, uno de ellos el gate del bucle de
+// manos), Action (2) y Player_InputTick (1).
+char __cdecl Path_IsLineClear(int sx1, int sy1, int sx2, int sy2) {
+    int tile = FUN_004f6c40((unsigned int)sx1, (unsigned int)sy1);   // IDA: v4
+    int err  = 0;                                                    // IDA: v5
+    int dx = sx2 - sx1;                                              // IDA: v6
+    int dy = sy2 - sy1;                                              // IDA: v7
+    int xStep, yStep;                                                // IDA: v8 / v9
+    if (dx >= 0) { xStep = 1; }    else { dx = sx1 - sx2; xStep = -1; }
+    if (dy >= 0) { yStep = 0x100; } else { dy = sy1 - sy2; yStep = -0x100; }
+
+    int major, minorDelta, majorInc, minorInc;
+    if (dx <= dy) {          // IDA L39: eje mayor = Y
+        major      = dy;     // IDA: v10 = v7
+        minorInc   = xStep;  // IDA: v11 = v8
+        minorDelta = dx;     // IDA: y   = v6
+        majorInc   = yStep;  // IDA: v8  = v9
+    } else {                 // IDA L45: eje mayor = X
+        minorDelta = dy;     // IDA: y   = v7
+        major      = dx;     // IDA: v10 = v6
+        minorInc   = yStep;  // IDA: v11 = v9
+        majorInc   = xStep;  // IDA: v8 sin tocar
     }
-    unsigned int steps = 0;
+
+    int steps = 0;                                                   // IDA: x
     do {
-        byte attr = ((byte*)&DAT_0838bc70)[tile];
-        if (attr > 3 && (attr & 0x20) != 0x20) return 0; // blocked
-        err += minor_steps;
-        if ((int)major / 2 < err) { tile += inc_a; err -= major; }
-        tile += inc_b;
-        steps++;
-    } while ((int)steps <= (int)major);
+        const byte attr = ((byte*)&DAT_0838bc70)[tile];              // IDA: v12
+        if (attr >= 4 && (attr & 0x20) != 0x20) return 0;            // IDA L58
+        err += minorDelta;
+        if (err > major / 2) { tile += minorInc; err -= major; }
+        tile += majorInc;
+        ++steps;
+    } while (steps <= major);
     return 1;
 }
 

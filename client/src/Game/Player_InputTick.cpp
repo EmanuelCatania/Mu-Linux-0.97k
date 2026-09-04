@@ -45,7 +45,11 @@ extern "C" int g_MouseOnWindow = 0;
 // Lo resetean a -1 InitGame, ReceiveTeleport, CheckGate y varios paths de
 // Attack. Con -1 (el default) el head-tracking hacia el mouse queda ACTIVO,
 // que es el comportamiento normal fuera de combate.
-extern "C" int g_Attacking = -1;
+// IDA `Attacking` vive en 0x00559C58 = DAT_00559c58 (lo escriben InitGame,
+// Player_InputTick L942 y Attack 0x49CBF0).  `g_Attacking` era una copia
+// paralela que nadie escribia; se deja como alias de lectura para no romper
+// declaraciones externas.
+#define g_Attacking DAT_00559c58
 
 // 2026-07-20: el ChatListBox publica su propio hit-test acá (definido en
 // src/UI/ChatListBox.cpp).  Su tick (slot 5 → slot 7) corre ANTES que esta
@@ -605,9 +609,16 @@ void __cdecl Player_ProcessInput(void)
     if (*(char*)((int)DAT_07abf5d8 + 0x2fd) != '\0')
         return;
 
-    // ── Cooldown counter (HashTable obfuscation omitted) ─────────────────────
-    // Original: HashTable manipulates DAT_07e11d1c; effective result is a decrement
-    // then a range check.
+    // ── LoadingWorld cooldown ────────────────────────────────────────────────
+    // IDA 0.97K Player_InputTick @ 0x004ACF9B..0x004AD04D: once per input
+    // tick, LoadingWorld is decremented while positive, then the resulting
+    // value is compared with 30. CheckGate @ 0x004AC140 subsequently requires
+    // this same global to be exactly zero.  Omitting the decrement left the
+    // value written by ReceiveTeleport (30) permanently nonzero, preventing
+    // every subsequent automatic map gate from ever sending C3:06:1C.
+    if (DAT_07e11d1c > 0)
+        --DAT_07e11d1c;
+
     if (DAT_07e11d1c > 0x1e)
         return;
 
@@ -1005,7 +1016,7 @@ void __cdecl Player_ProcessInput(void)
     bool walkerIdle = (((unsigned char*)DAT_07abf5d8)[0x356] == 0);
     // [DIAG TEMP #2c] inputs del gate de debounce (736) en frame con click. REMOVER al cerrar #2.
     if (DAT_083a4124 || DAT_083a42c4 || DAT_083a413c) {
-        bool gatePass = (walkerIdle || DAT_00559bec <= DAT_07e11d28) && DAT_07e11dc0 == '\0';
+        bool gatePass = DAT_00559bec <= DAT_07e11d28 && DAT_07e11dc0 == '\0';
         char dg[200]; wsprintfA(dg,
             "MOVEDEB invOpen=%d walkerIdle=%d 559bec=%d 11d28=%d 11dc0=%d wpcnt=%d -> %s",
             (int)DAT_07eaa117, (int)walkerIdle, (int)DAT_00559bec, (int)DAT_07e11d28,
@@ -1022,7 +1033,7 @@ void __cdecl Player_ProcessInput(void)
     // lock real) y/o encontrar el corruptor. Sin esto, el héroe no caminaba con el
     // inventario cerrado en Devias.
     DAT_07e11dc0 = 0;
-    if ((walkerIdle || DAT_00559bec <= DAT_07e11d28) && DAT_07e11dc0 == '\0') {
+    if ((DAT_00559bec <= DAT_07e11d28) && DAT_07e11dc0 == '\0') {
 
         // BUG-FIX 2026-04-30 (v2): un click = un GroundClick.
         //
@@ -1343,11 +1354,27 @@ void __cdecl Player_ProcessInput(void)
 
         _DAT_07e11d50 = (DAT_05826e08 - _DAT_07e11d4c) * _DAT_00552890;
 
-        // NO resetear MouseUpdateTime acá. En 004ACEF0 el reset va adentro de
-        // las ramas de acción concretas (por ejemplo LABEL_190 / camino fallido),
-        // después de que un click fue aceptado. Resetearlo incondicionalmente en
-        // este punto impedía que el contador de debounce llegara nunca al
-        // umbral de SendMove mientras hubiera una ruta vieja presente.
+        // IDA 0x004ACEF0 LABEL_190 (raw L716-718):
+        //     LABEL_190: v86 = *(_BYTE *)(v34 + 846);   // SafeZone
+        //                MouseUpdateTime = 0;
+        //                if ( !v86 && CheckAttack() ) ...
+        // El reset es INCONDICIONAL y es el punto de merge de todo el bloque de
+        // accion del click (ataque a mob, ground click, operate).  Junto con el
+        // gate `MouseUpdateTimeMax <= MouseUpdateTime` de mas arriba es el
+        // debounce real del original: SendMove (0x00491C40 L128-146) deja
+        // MouseUpdateTimeMax = 0 si la ruta tiene <= 2 waypoints (click corto,
+        // sin throttle) y 3*wp+4 si es mas larga, asi que mientras se camina una
+        // ruta larga no se acepta otro click.
+        //
+        // La nota anterior decia "NO resetear aca"; era incorrecta.  Sin este
+        // reset el contador crecia sin techo, el gate quedaba abierto en todos
+        // los frames y con el boton mantenido el bloque corria dos veces por
+        // tick: el primer paso armaba el ataque (ent[0x2ed]=3 + ruta al mob) y
+        // el segundo caia en el ground click, repathfindeaba al tile del cursor
+        // y pisaba la ruta.  Como el heroe quedaba siempre caminando,
+        // `ent[0x2ed]==3 && ent[0x356]==0` nunca se cumplia, Action nunca corria
+        // y el cursor parpadeaba entre ataque y movimiento.
+        DAT_07e11d28 = 0;
 
         // ── Movement/attack packet for swimming anim ─────────────────────────
         // Si la entidad está viva y CanAct y en movimiento de nado:
@@ -1474,30 +1501,86 @@ void __cdecl Player_ProcessInput(void)
                     int srcX = *(int*)(ent + 0x388);
                     int srcY = *(int*)(ent + 0x38c);
 
-                    // 2026-05-07: simplified — siempre pathfind. Si target ya
-                    // está en range, pathfind devuelve path corto/vacío y el
-                    // walker llega rápido. Si está lejos, walker walks. Antes
-                    // se gateaba por `pathOk = Path_IsLineClear(...)`; si ese
-                    // helper retornaba 0, nada se hacía Y el secondary tick
-                    // disparaba Action() en place sin movimiento.
+                    // IDA 0x004ACEF0 L1027-1131 — tres salidas, no dos:
+                    //
+                    //   if ( !PathFinding2(hx, hy, TargetX, TargetY, c + 852, 0.0) )
+                    //   {                                   // ya adyacente / sin ruta
+                    //       if ( !CheckArrow() ) return;
+                    //       Action(c, c);  goto LABEL_390;
+                    //   }
+                    //   ...
+                    //   if ( v265 >= 136 && v265 < 143 || v265 >= 144 && v265 < 160
+                    //     || v264 >= 128 && v264 < 135 || v264 == 145 )
+                    //       v148 = c;                       // ARMA A DISTANCIA
+                    //   else
+                    //   {
+                    //       v148 = c;
+                    //       if ( *(_BYTE *)(c + 747) != 9 )
+                    //       {
+                    //           SendMove(c, c);             // MELEE: caminar
+                    //           goto LABEL_390;
+                    //       }
+                    //   }
+                    //   if ( !CheckArrow() ) return;
+                    //   Action(v148, v148);                 // dispara desde donde esta
+                    //   goto LABEL_390;
+                    //
+                    // v265/v264 son los mismos tipos de item que lee Action para
+                    // elegir Range (CharacterMachine + 536 / + 604), y los mismos
+                    // del gate de L762.  O sea: con arco o ballesta el original NO
+                    // manda el paquete de movimiento aunque exista ruta -- llama
+                    // Action directo y ahi el gate de distancia usa Range = 6.0.
+                    //
+                    // El port mandaba SIEMPRE a caminar cuando habia ruta, y en la
+                    // rama sin ruta mandaba un move en vez de Action: de ahi que la
+                    // elfa se acercara al cuerpo a cuerpo para poder pegar.
                     unsigned int ok2 = Path_FindRoute(srcX, srcY,
                                                      dstX, dstY,
                                                      ent + 0x354, 0.0f);
-                    if ((char)ok2 != '\0') {
-                        // Pathfind successful → start walker
-                        Combat_SendMovePathPacket((int)ent, (int)ent);
-                    } else {
-                        // Pathfind failed (target unreachable) → send move
-                        // direct to current pos como fallback. Walker stays
-                        // idle, secondary tick chequeará distance al firar
-                        // Action() (case 2 con out-of-range branch).
-                        char chk = Combat_CheckArrowRequirement();
-                        if (chk != '\0') {
-                            Send_MovePacket_Player_legacy_stub();
+                    if ((char)ok2 == 0) {
+                        // Sin ruta (ya esta al lado, o inalcanzable) -> atacar.
+                        if (Combat_CheckArrowRequirement() == 0)
+                            goto end_tick;              // IDA: return (sin ++MouseUpdateTime)
+                        Combat_ProcessQueuedAction((DWORD)(uintptr_t)ent,
+                                                   (DWORD)(uintptr_t)ent);
+                        goto end_tick_inc;
+                    }
+                    {
+                        const char* const CM = (const char*)(uintptr_t)DAT_07cf1ffc;
+                        const int lh = CM ? *(const short*)(CM + 536) : -1;  // IDA: v265
+                        const int rh = CM ? *(const short*)(CM + 604) : -1;  // IDA: v264
+                        const bool bRanged = (lh >= 136 && lh < 143)
+                                          || (lh >= 144 && lh < 160)
+                                          || (rh >= 128 && rh < 135)
+                                          || (rh == 145);
+                        if (!bRanged && *(unsigned char*)(ent + 747) != 9) {
+                            Combat_SendMovePathPacket((int)ent, (int)ent);   // IDA: SendMove
+                            goto end_tick_inc;
                         }
                     }
+                    if (Combat_CheckArrowRequirement() == 0)
+                        goto end_tick;                  // IDA: return
+                    Combat_ProcessQueuedAction((DWORD)(uintptr_t)ent,
+                                               (DWORD)(uintptr_t)ent);
                     goto end_tick_inc;
                 }
+
+                // IDA 0x004ACEF0 L719-1132: el bloque `if (!SafeZone && CheckAttack())`
+                // es EXCLUYENTE — todas sus salidas hacen `goto LABEL_390`; nunca cae al
+                // click de NPC / item / suelo que viene despues.
+                //
+                // Nuestro port le agrego `&& bClickEdge` al gate de la rama del mob, asi
+                // que con el boton MANTENIDO esa rama no se tomaba y la ejecucion seguia
+                // hasta el ground click, que repathfindeaba al tile del cursor y mandaba
+                // un move: por eso el heroe caminaba hasta donde estaba el monstruo
+                // despues de matarlo.
+                //
+                // El `|| bHoverActive` de mas arriba es una relajacion del port para que
+                // el ground click funcione cuando CheckAttack() da 0 (sin objetivo), asi
+                // que la exclusividad se aplica SOLO con canAct != 0, que es el gate real
+                // del binario.
+                if ((char)canAct != 0)
+                    goto end_tick_inc;
             }
         }
 
@@ -1692,6 +1775,29 @@ void __cdecl Player_ProcessInput(void)
                     goto end_tick_inc;
                 }
                 extern void __cdecl CloseInventoryRelatedWindows(void);
+                // 2026-09-02 (sonido de "abre UI" al hablarle al guardia):
+                // `g_NpcTalkActive` es una invencion del port -- lo prende
+                // SendNpcTalkRequest para CUALQUIER NPC, incluidos los que no
+                // abren ninguna ventana (guardia, quest, Golden Archer).  Con
+                // el guardia el server contesta solo un `0x01 ChatTarget`
+                // (NpcTalk.cpp:223 NpcGuard) y ningun 0x30, asi que no queda
+                // nada abierto; el click siguiente entraba igual a este bloque
+                // y llamaba CloseInventoryRelatedWindows, que termina en
+                // `PlayBuffer(25); PlayBuffer(28);` (eso SI es fiel: IDA
+                // 0x4CBA60 los tiene al final).  O sea sonaba el cierre de una
+                // ventana que nunca se abrio.
+                //
+                // Si ninguna ventana real esta abierta, se libera el
+                // `Interface.use` del server con el 0x31 y se sale, sin tocar
+                // los pools ni reproducir el sonido.
+                const bool anyWindowOpen = (DAT_07eaa118 || DAT_07eaa119 ||
+                                            DAT_07eaa11a || DAT_07eaa11b ||
+                                            DAT_07eaa128);
+                if (!anyWindowOpen) {
+                    g_NpcTalkActive = 0;
+                    Net_SendNpcTalkClose();
+                    goto end_tick_inc;
+                }
                 CloseInventoryRelatedWindows();          // limpia Shop/Warehouse/Mix/Trade + pools
                 DAT_07eaa117 = 0;                         // InventoryOpened
                 g_NpcTalkActive = 0;
@@ -1857,11 +1963,22 @@ void __cdecl Player_ProcessInput(void)
                 }
             }
         }
-    } else {
-        // Cooldown not ready: clear hover flags
-        DAT_083a4124 = '\0';
-        DAT_083a42c4 = '\0';
     }
+    // 2026-09-02 FIX (hay que clickear varias veces para caminar): aca habia
+    // un `else` que, cuando el gate de debounce bloqueaba, hacia
+    //     MouseLButtonPush = 0; MouseLButton = 0;
+    //
+    // IDA Player_InputTick (0x4ACEF0 L586-588) NO borra nada en ese camino:
+    //     if ( MouseUpdateTime < MouseUpdateTimeMax || byte_7E11DC0 )
+    //         goto LABEL_390;            // == ++MouseUpdateTime; salir
+    // Los dos flags solo se limpian en el anti-AFK de L607-611 (boton
+    // sostenido 3600 s). O sea el click PENDIENTE sobrevive al bloqueo y lo
+    // procesa el primer tick que pase el gate.
+    //
+    // Al borrarlos se perdia el click: con el boton sostenido, el primer tick
+    // bloqueado mataba MouseLButton y el caminar continuo se cortaba; con un
+    // click corto se perdia el pulso entero y habia que volver a clickear.
+    // Medido en debug.log: 161 WM_LBUTTONDOWN -> solo 57 GroundClick.
 
 end_tick_inc:
     DAT_07e11d28 = DAT_07e11d28 + 1;

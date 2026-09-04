@@ -440,72 +440,18 @@ common_tail:
 //   g_CharData[+0x10] += exp_gained
 //   FUN_00480620(exp_gained)  → floating "+EXP" overlay
 // ============================================================
-void PacketHandler_0x16(BYTE* pkt)
-{
-    // --- XOR ACK block (lines 0-480) omitted ---
-
-    int caster_raw = (pkt[3] << 8) | pkt[4];
-    int target_raw = (pkt[5] << 8) | pkt[6];
-
-    int caster_id  = caster_raw & 0x7FFF;
-    int target_id  = target_raw & 0x7FFF;
-    int teleport_start = !(pkt[3] & 0x80);  // 0=TeleportEnd, 1=TeleportStart
-
-    int caster_idx = Entity_FindById(caster_id);
-    int target_idx = Entity_FindById(target_id);
-
-    if (caster_idx >= 400)
-        return;
-
-    BYTE* caster = ENTITY(caster_idx);
-
-    // Orange color constant used for kill flash: {1.0f, 0.6f, 0.0f}
-    // (stored in FPU literals inside the function, referenced for color override)
-
-    if (teleport_start)
-    {
-        // Begin teleport animation
-        // entity[+0x2F4] = 2 → teleporting state
-        *(BYTE*)(caster + 0x2F4) = 2;
-        *(short*)(caster + 0x2F6) = (short)target_id;
-        *(short*)(caster + 0x310) = (short)target_idx;
-
-        if (target_idx < 400)
-        {
-            BYTE* target_ent = ENTITY(target_idx);
-            float* target_pos = (float*)(target_ent + 0x10);
-            // FUN_004792c0(target_pos, ?, ?, ?) — TeleportAnimation at target world pos
-            Entity_TeleportAnim(target_pos, 0.0f, 0.0f, 0.0f);
-        }
-    }
-    else
-    {
-        // Teleport end — snap entity to destination
-        Entity_TeleportEnd(caster_idx);
-    }
-
-    // Mark target as dead (kill confirm)
-    if (target_idx < 400)
-    {
-        BYTE* target = ENTITY(target_idx);
-        *(BYTE*)(target + 0x2FD) = 1;  // is_dead = 1
-        *(BYTE*)(target + 0x2EC) = 0;  // clear some state
-    }
-
-    // -------------------------------------------------------
-    // EXP gain decode (for local player kill confirm)
-    // g_CharData XOR-decoding block produces iStack_d94 = exp_gained
-    // -------------------------------------------------------
-    // The function re-encodes g_CharData with the same 32-byte XOR key (see WinMain.cpp)
-    // then adds the decoded EXP:
-    //
-    //   int exp_gained = <decoded from pkt[7..10]>;
-    //   *(int*)(g_CharData + 0x10) += exp_gained;    // total EXP counter
-    //
-    // If exp_gained > 0, show floating text overlay:
-    //   if (local_d90 > 0)
-    //       UI_ShowExpGainOverlay(exp_gained);        // FUN_00480620
-
-    // (Exact XOR decode of pkt[7..10] uses the same 32-byte key as login packet —
-    //  see WinMain.cpp Net_Connect for key bytes {0xe7,0x6d,0x3a,...,0xe8,0x56})
-}
+// CODIGO MUERTO desde 2026-09-02 — sin callers.
+//
+// Esta funcion NO era un port de 0x0042DB60.  Interpretaba el 0x16 como
+// "teleport begin/end + kill confirm", que no existe en el binario: el raw
+// `0042DB60_ReceiveDieExp.c` es la variante chica del 0x9C (Key/Exp/Damage en
+// +3..+8, SetPlayerDie o esferas de EXP, y el aviso GlobalText[486]).
+//
+// Era ademas una landmine: al final hacia `*(BYTE*)(target + 0x2FD) = 1` sobre
+// un indice sin validar por abajo, y +0x2FD es el dead_flag — el mismo campo
+// que usa como filtro de "vivo" el barrido de sub_45FEC0 (IDA L168 `!v16[18]`),
+// o sea marcaba entidades vivas como muertas y las volvia invisibles para el
+// reporte de blancos del 0x1D.
+//
+// El port fiel vive ahora inline en `Net_Process.cpp`, case 0x16.
+// (MuEmu no manda este opcode: usa el 0x9C / PMSG_REWARD_EXPERIENCE_SEND.)

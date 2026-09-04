@@ -5,7 +5,8 @@
 #include "globals.h"
 #include "functions.h"
 
-// IDA: FUN_00474370 @ 0x00474370 — CreateArrow (~658 lines), creates one arrow/bolt projectile.
+// IDA: CreateArrow @ 0x00474370 (2050 bytes) — crea un proyectil flecha/virote.
+// El nombre lo trae el propio binario (no es un alias del port).
 // Decompiled from Ghidra. Anti-tamper hash table ops skipped.
 // Phantom params (unaff_EBX/ESI/EDI/EBP/retaddr) are obfuscation artifacts.
 // Reads weapon type from character's equipment slots, determines projectile
@@ -23,6 +24,8 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
         // anti-tamper hash table — skipped (CharacterMachine encrypt/decrypt/lookup)
         // Read weapon types from CharacterMachine instead
         DWORD cm = (DWORD)DAT_07cf1ffc;
+        // The projectile switch uses CharacterMachine+536; its companion
+        // trail switch uses +604.
         weaponType0 = (int)*(short*)(cm + 0x218);
         weaponType1 = (int)*(short*)(cm + 0x25C);
     }
@@ -57,7 +60,7 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
     float* oLight = (float*)(o + 0xE8);
     WORD   oPKKey = *(WORD*)(o + 0x86);
 
-    // First switch: by raw weapon type — select projectile effect
+    // First switch: IDA switches on the model-adjusted weapon type.
     // weaponType0 - 0x218 offset means actual item type values:
     //   0 = type 0 (sword-class bow)  -> effect 0xD9
     //   1 = type 1 (crossbow)         -> effect 0xD9
@@ -68,56 +71,56 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
     //   6 = type 6 (crystal bow)      -> effect 0xDF
     //   8 = type 8 (divine bow)       -> effect 0xF2
     //   10 = type 10 (legend bow)     -> effect 0xF2
-    switch (weaponType0) {
-    case 0:
+    switch (adjType0) {
+    case 0x218:
         Effect_Create(0xD9, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
-    case 1:
+    case 0x219:
         Effect_Create(0xD9, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
-    case 2:
+    case 0x21A:
         Effect_Create(0xDD, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
-    case 3:
+    case 0x21B:
         Effect_Create(0xDB, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
-    case 4:
+    case 0x21C:
         Effect_Create(0xDA, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
-    case 5:
+    case 0x21D:
         Effect_Create(0xE0, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
-    case 6:
+    case 0x21E:
         Effect_Create(0xDF, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
-    case 8:
+    case 0x220:
         Effect_Create(0xF2, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
-    case 10:
+    case 0x222:
         Effect_Create(0xF2, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
@@ -178,23 +181,20 @@ void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD
     // Skill 2: five-way shot with 4 additional angle offsets via _DAT_00552ab0 / _DAT_00552584.
     // Anti-tamper hash table operations surround the arrow counter increment — skipped.
 
-    // o->Angle[2] is at offset +0x1C in OBJECT struct (Angle[0]=+0x14, Angle[1]=+0x18, Angle[2]=+0x1C)
-    // Actually from Ghidra: o->Angle[2] direct field access. OBJECT is opaque DWORD here.
-    // Angle[2] offset in OBJECT: from struct layout, Angle starts at +0x14 (3 floats after Position[3] at +0x08)
-    // But in Ghidra the struct has Position[0..2] at +0x08 and Angle[0..2] at +0x14.
-    // o->Angle[2] = *(float*)(o + 0x1C)
-
-    float* pAngleZ = (float*)(o + 0x1C);  // o->Angle[2]
+    // CreateArrows @ 0x474BD0 adjusts Object.Direction at +36 around the
+    // fan, then restores it before returning.  +0x1C is Object.Angle[0] and
+    // was the source of skewed multi-arrow trajectories in the old port.
+    float* pAngleZ = (float*)(o + 36);
 
     if ((char)SKKey == '4' || (char)SKKey == '3') {
         // Single arrow + counter increment
         CreateArrow_stub(c, o, to, SkillIndex, Skill, SKKey);
 
         // anti-tamper hash table — skipped (encrypt CharacterMachine)
-        // Increment arrow counter at CharacterMachine + 0x160
+        // Increment the native projectile serial at CharacterMachine +1408.
         // CharacterMachine = DAT_07cf1ffc
         char* cm = (char*)(DWORD)DAT_07cf1ffc;
-        cm[0x160] = cm[0x160] + 1;
+        cm[1408] = cm[1408] + 1;
         // anti-tamper hash table — skipped (decrypt CharacterMachine)
     }
     else {
@@ -211,7 +211,7 @@ void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD
 
             // anti-tamper hash table — skipped (encrypt CharacterMachine)
             char* cm = (char*)(DWORD)DAT_07cf1ffc;
-            cm[0x160] = cm[0x160] + 1;
+            cm[1408] = cm[1408] + 1;
             // anti-tamper hash table — skipped (decrypt CharacterMachine)
         }
         else if ((char)Skill == 2) {
@@ -228,7 +228,7 @@ void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD
 
             // anti-tamper hash table — skipped (encrypt CharacterMachine)
             char* cm = (char*)(DWORD)DAT_07cf1ffc;
-            cm[0x160] = cm[0x160] + 1;
+            cm[1408] = cm[1408] + 1;
             // anti-tamper hash table — skipped (decrypt CharacterMachine)
         }
     }

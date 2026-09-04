@@ -79,6 +79,13 @@ void __cdecl CloseInventoryRelatedWindows(void) {
         *(short*)m = (short)0xFFFF; *(DWORD*)(m + 0x38) = 0;
     }
 
+    // IDA 0x4CBA60, ultima linea antes de los dos PlayBuffer: MouseUpdateTime = 0.
+    // Sin esto, cerrar una ventana dejaba el debounce de movimiento a mitad de
+    // cuenta y el primer click al mundo se perdia.
+    DAT_07e11d28 = 0;                 // MouseUpdateTime
+    // NOTA: IDA hace ademas `*(_DWORD *)&RepairEnable_0 = 0` (0x07EAA134, cuatro
+    // bytes).  Aca se limpia DAT_07e11d14, que es OTRO global; queda anotado
+    // como divergencia hasta confirmar el ancho real de esos campos.
     PlayBuffer(25, 0, 0);   // sonido de cierre
     PlayBuffer(28, 0, 0);
 }
