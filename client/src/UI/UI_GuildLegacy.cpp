@@ -91,7 +91,9 @@ int __cdecl FUN_0051ddf0(void)
     glColor3f(1.0f, 1.0f, 1.0f);
     for (int i = 0; i < DAT_083a7c30; i++) {
         int iNext = i + 1;
-        int iMod  = iNext % DAT_083a7c30;
+        int iMod  = (DAT_083a7c30 > 0) ? (iNext % DAT_083a7c30) : 0;
+        if (iMod >= GUILD_MEMBER_TABLE_BYTES / GUILD_MEMBER_STRIDE)
+            iMod = GUILD_MEMBER_TABLE_BYTES / GUILD_MEMBER_STRIDE - 1;
         const char *fmtRank;
         int iRank;
         if (i == DAT_083a7c30 - 1) {
@@ -111,7 +113,7 @@ int __cdecl FUN_0051ddf0(void)
 
         // member name (char[12] starting at DAT_083a7af8 + iMod*0x18)
         char namebuf[14] = {};
-        *(DWORD *)namebuf       = *(DWORD *)((BYTE *)&DAT_083a7af8 + iMod * 0x18);
+        *(DWORD *)namebuf       = *(DWORD *)((BYTE *)&DAT_083a7af8[0] + iMod * 0x18);
         *(DWORD *)(namebuf + 4) = *(DWORD *)((BYTE *)&DAT_083a7afc + iMod * 0x18);
         *(WORD  *)(namebuf + 8) = *(WORD  *)((BYTE *)&DAT_083a7b00 + iMod * 0x18);
         namebuf[13] = '\0';
@@ -225,9 +227,16 @@ void __cdecl FUN_0051d9e0(int count, int p2, void *data)
     DWORD desc[5] = { 1, 0x47, 0x104, 0x46, 0x15 };
     for (int i = 0; i < 5; i++) DAT_083a42f8[i] = desc[i];
     // Copy member list data: count * 0x18 bytes into DAT_083a7af8
-    unsigned int dwords = (unsigned int)(count * 0x18) >> 2;
+    // 2026-09-03: la tabla tiene 11 registros (0x108 bytes, ver globals.h).
+    // IDA no acota `count` porque alli el hueco es exactamente ese; aca el
+    // clamp evita que un `count` grande escriba sobre los globals vecinos.
+    int nMembers = count;
+    if (nMembers < 0) nMembers = 0;
+    if (nMembers > GUILD_MEMBER_TABLE_BYTES / GUILD_MEMBER_STRIDE)
+        nMembers = GUILD_MEMBER_TABLE_BYTES / GUILD_MEMBER_STRIDE;
+    unsigned int dwords = (unsigned int)(nMembers * GUILD_MEMBER_STRIDE) >> 2;
     unsigned int *src = (unsigned int*)data;
-    unsigned int *dst = (unsigned int*)&DAT_083a7af8;
+    unsigned int *dst = (unsigned int*)&DAT_083a7af8[0];
     for (unsigned int i = 0; i < dwords; i++) *dst++ = *src++;
 }
 
@@ -241,7 +250,7 @@ void __cdecl FUN_0051da80(int p1, void *data)
     DWORD desc[5] = { 1, 0x47, 0x82, 0x46, 0x15 };
     for (int i = 0; i < 5; i++) DAT_083a42f8[i] = desc[i];
     DWORD *src = (DWORD*)data;
-    DWORD *dst = (DWORD*)&DAT_083a7af8;
+    DWORD *dst = (DWORD*)&DAT_083a7af8[0];   // un registro = 6 DWORDs
     for (int i = 0; i < 6; i++) *dst++ = *src++;
 }
 

@@ -271,6 +271,14 @@ extern "C" void Chat_SendChatLine(const char* text)
     if (Chat_TrySendTradeRequest(text)) return;
     if (Chat_TrySendGuildRequest(text)) return;
 
+    // General chat is exactly SendChat @ 0x004C1B90.  Keep the whisper
+    // builder below as a separate branch: IDA places it inline in this UI
+    // tick and it uses the recipient name in the C1:02 header.
+    if (((const char*)&DAT_07db8810)[0] == '\0') {
+        SendChat((char*)text);
+        return;
+    }
+
     // This is intentionally not a client-side command whitelist.  MuEmu's
     // CommandManager parses slash commands from CGChatRecv, which keeps this
     // client compatible with every command enabled in Command.txt (including
@@ -433,12 +441,23 @@ void __cdecl FUN_004b14f0(void)
         char *base = (char *)&DAT_07abf5d8;   // local player entity ptr (as char*)
         for (int slot = 0; slot < 0x4e; ++slot)
         {
-            // BUG-FIX: con los nuevos aliases DAT_07df938b/948c/9494 apuntando al
-            // buffer real, &DAT_07df948c es int* y &DAT_07df9494 es int*; forzamos
-            // pointer-arith en bytes casteando a char* antes de sumar el stride.
-            const char *tableName = DAT_07df9380 + slot * 0x46;
-            const char *activePtr = (const char *)&DAT_07df938b + slot * 0x46;
-            const char *typePtr   = (const char *)&DAT_07df948c + slot * 0x46;
+            // Con los aliases DAT_07df938b/948c/9494 apuntando al buffer real,
+            // &DAT_07df948c y &DAT_07df9494 son int*, asi que la aritmetica se
+            // hace casteando a char* antes de sumar el stride en bytes.
+            //
+            // 2026-09-03 FIX: tres de los cuatro punteros usaban `slot * 0x46`
+            // sobre char*, o sea un paso de 0x46 BYTES.  El stride real de la
+            // tabla es **0x118** -- lo dice su propia declaracion
+            // (`char DAT_07df9380[0x77 * 0x118]`) y lo usan todos los accesos de
+            // Chat.cpp.  El 0x46 viene de los sitios donde el indice se aplica a
+            // un `int*` (`(&DAT_07df948c)[i * 0x46]`, y 0x46*4 == 0x118): al
+            // copiar el multiplicador a un contexto de bytes el paso quedaba 4x
+            // corto y el bucle releia las primeras ~20 filas en vez de recorrer
+            // las 78.  Misma familia que el bug del pool de clima, pero sin
+            // salirse del buffer: no corrompe, devuelve la fila equivocada.
+            const char *tableName = DAT_07df9380 + slot * 0x118;
+            const char *activePtr = (const char *)&DAT_07df938b + slot * 0x118;
+            const char *typePtr   = (const char *)&DAT_07df948c + slot * 0x118;
             const int  *posXPtr   = (const int *)((const char *)&DAT_07df9494 + slot * 0x118);
             int         posX_scaled = (int)((unsigned int)(*posXPtr * 0x280) / DAT_0056156c);
 

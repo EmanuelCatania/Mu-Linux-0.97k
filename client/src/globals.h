@@ -1219,6 +1219,7 @@ extern char    lpString_05826cc9[0x50]; // player guild name C
 
 // ── Buffers temporales de posición de huesos (usados en el traspaso de animación) ──
 extern DWORD   DAT_07abf444[12]; // temp bone matrix buffer A
+extern DWORD   DAT_07abf474[12]; // IDA flt_7ABF474 (usado por MoveJoint subtipo 0xC)
 extern DWORD   DAT_07abf3e4[12]; // temp bone matrix buffer B
 extern DWORD   DAT_07abf414[12]; // temp bone matrix buffer C
 
@@ -1461,7 +1462,7 @@ extern int     DAT_07e11da4;           // player chat entry count (max 0x77 = 11
 extern LPSIZE  lpsz_07e113d0;          // last GetTextExtentPointA result (cx)
 extern int    _DAT_07e113d4;           // last GetTextExtentPointA result (cy)
 extern DWORD   DAT_07e11d2c;           // char-index/step counter (draw-field loop)
-extern char    DAT_07e11cec;           // text field char-buffer base (stride 4)
+extern char    DAT_07e11cec[10 * 4];   // 10 slots x 4 bytes; WinMain escribe con slot*4 (slot 0..9)
 
 // ── Chat string constants (displayed on login/cursor events) ──────────────────
 extern char    lpString_00559d3c;      // cursor/input prompt string A
@@ -1520,14 +1521,32 @@ extern DWORD   DAT_083a42f8[10];       // UI panel descriptor array (set by guil
 // DAT_083a7c28  — declared above as DWORD (line 781)
 extern int     DAT_083a7c30;           // guild member count for UI
 extern int     DAT_083a7c34;           // guild UI auxiliary param
-extern DWORD   DAT_083a7af8;           // guild member list array base (stride 0x18/member)
 
+
+// ── Declaraciones perdidas al restaurar globals.h desde git (2026-09-03) ──────
+// Estos globals ya existian en globals.cpp; sus `extern` estaban entre los
+// cambios sin commitear del header.
+extern char    DAT_07e11d6f;              // LockInputStatus (gate del IME)
+extern DWORD   DAT_07e11d84;              // UseSkillWarrior 43: tick de activacion
+extern char    DAT_07e11dec;
+extern char    DAT_07e11df0;
+extern int     g_WorldLoading;            // >0 mientras corre OpenWorld (ver WinMain WM_USER)
+extern int     m_iDevilSquareLimitLevel[4][2];
+extern int     m_iBloodCastleLimitLevel[12][2];
+
+// Tabla de miembros de guild: 11 registros de 0x18 bytes (0x083A7AF8..0x083A7C00).
+// 2026-09-03: eran SEIS escalares sueltos (24 bytes = una sola entrada) mientras
+// `GuildMemberList_Set` copia `count * 0x18` bytes y el render lee
+// `base + iMod*0x18`; con mas de un miembro se escribia sobre los globals vecinos.
+#define GUILD_MEMBER_TABLE_BYTES  0x108
+#define GUILD_MEMBER_STRIDE       0x18
+extern BYTE    DAT_083a7af8[GUILD_MEMBER_TABLE_BYTES];
+#define DAT_083a7afc  (*(DWORD*)&DAT_083a7af8[0x04])
+#define DAT_083a7b00  (*(WORD *)&DAT_083a7af8[0x08])
+#define DAT_083a7b04  (*(DWORD*)&DAT_083a7af8[0x0C])
+#define DAT_083a7b08  (*(DWORD*)&DAT_083a7af8[0x10])
+#define DAT_083a7b0c  (*(DWORD*)&DAT_083a7af8[0x14])
 // Columnas de datos de miembro de guild (parte del mismo array de stride 0x18 que arranca en DAT_083a7af8):
-extern DWORD   DAT_083a7afc;           // guild member name continuation (bytes 4-7)
-extern WORD    DAT_083a7b00;           // guild member class/level (bytes 8-9)
-extern DWORD   DAT_083a7b04;           // guild member kills
-extern DWORD   DAT_083a7b08;           // guild member deaths
-extern DWORD   DAT_083a7b0c;           // guild member score
 
 // Guild leaderboard UI strings (FUN_0051ddf0 / FUN_0051db00):
 extern char    DAT_07d59358;           // guild panel title string ("Guild War Score" etc.)
@@ -1630,7 +1649,6 @@ extern DWORD   DAT_00559c78;   // current text color ABGR (0xffffffff = white)
 extern char    DAT_00559c5c;   // sound-effect toggle (0=off, non-zero=on)
 extern char    DAT_07e11d80;   // music toggle (0=off, non-zero=on)
 // Entity/level data
-extern char    DAT_07d29d24;   // class name table base (stride 300)
 // Format strings for numeric dialogs
 extern char    DAT_07d46e60;   // login account name format
 extern char    DAT_07d486fc[300]; // party/trade request status format
@@ -2188,6 +2206,12 @@ int  __cdecl LoadTextData_Bin(const char *FileName);
 // BUG-FIX 2026-07-17: DAT_07d4b4b0/5dc son GlobalText[457]/[458] (name-filter blocked
 // words, cargados de Text.bmd). Estaban como chars sueltos =0 (string vacío) → FindText
 // devolvía 1 → nombres rechazados. `&DAT_07d4b4b0` ahora = GlobalText[457].
+// DAT_07d29d24: base de la tabla de nombres de clase, recorrida con
+// `&DAT_07d29d24 + i * 300`.  Es una fila de GlobalText -- sus dos lectores
+// (UI_StatsPanel y SecondPassword) usan indices ~601-607, que en Text.bmd son
+// los nombres de clase.  Estaba declarada como un `char` suelto, asi que esas
+// lecturas se iban ~180 KB fuera del global y terminaban en lstrlenA.
+#define DAT_07d29d24 (GlobalText[0][0])
 #define DAT_07d4b4b0 (GlobalText[457][0])
 #define DAT_07d4b5dc (GlobalText[458][0])
 extern DWORD   DAT_07db8070;         // chat buffer extended

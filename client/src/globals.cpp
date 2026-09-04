@@ -810,6 +810,8 @@ DWORD    DAT_07e11e78  = 0;
 DWORD    DAT_07e11e98  = 0;
 char     DAT_07e11e9c  = 0;
 char     DAT_07e11d6e           = 0;
+char     DAT_07e11d6f           = 0;   // LockInputStatus
+int      g_WorldLoading         = 0;   // >0 mientras corre OpenWorld (ver WinMain WM_USER)
 char     DAT_07d4ac7c[256]      = {};
 char     DAT_07d4ada8[256]      = {};
 // Scene_Login credential dialog + version footer. La tabla de strings del
@@ -1305,6 +1307,7 @@ char     lpString_05826cc9[0x50] = {0};
 DWORD    DAT_07abf444[12] = {0};
 DWORD    DAT_07abf3e4[12] = {0};
 DWORD    DAT_07abf414[12] = {0};
+DWORD    DAT_07abf474[12] = {0};
 
 // Animation distance / frequency constants
 float   _DAT_00552650  = 4.0f;
@@ -1541,6 +1544,11 @@ int      DAT_00559ce4  = 0x96;
 char     DAT_07e11dd0[256] = {0};
 char     DAT_07e11dd8  = 0;
 char     DAT_07e11ddc  = 0;
+// Event NPC admission limits.  Populated by the server's C1:8E / C1:8F
+// packets; the arrays mirror the original client layout used by
+// RenderEventWindow (0x004F3C50).
+int      m_iDevilSquareLimitLevel[4][2] = {};
+int      m_iBloodCastleLimitLevel[12][2] = {};
 // Chat ring buffers
 // 2026-05-04: enlarge to actual slot pool size — IDA loop in UI_RenderNotices
 // walks 6 slots × 0x108 stride. Antes era single byte → AUTO-SKIP.
@@ -1553,7 +1561,10 @@ int      DAT_07e11da4  = 0;
 LPSIZE   lpsz_07e113d0 = NULL;
 int     _DAT_07e113d4  = 0;
 DWORD    DAT_07e11d2c  = 0;
-char     DAT_07e11cec  = 0;
+// 2026-09-03: tabla de 10 punteros del buffer de composicion del IME.
+// Era un `char` suelto y WinMain lo escribia con `slot * 4` (slot clampeado a
+// 0..9), o sea 36 bytes fuera; Chat.cpp lo lee como `LPCSTR*`.
+char     DAT_07e11cec[10 * 4] = {0};
 // String constants
 char     lpString_00559d3c = 0;
 char     lpString_00559d40 = 0;
@@ -1591,12 +1602,15 @@ DWORD    DAT_083a42f8[10] = {};
 // DAT_083a7c28  — defined above (DWORD, line 690)
 int      DAT_083a7c30  = 0;
 int      DAT_083a7c34  = 0;
-DWORD    DAT_083a7af8  = 0;
-DWORD    DAT_083a7afc  = 0;
-WORD     DAT_083a7b00  = 0;
-DWORD    DAT_083a7b04  = 0;
-DWORD    DAT_083a7b08  = 0;
-DWORD    DAT_083a7b0c  = 0;
+// 2026-09-03 FIX -- tabla de miembros de guild (UI_GuildLegacy).
+// Eran SEIS escalares sueltos (24 bytes en total = una sola entrada), pero el
+// binario los trata como un array de registros de 0x18 bytes:
+//   +0x00 name[10]  (DWORD+DWORD+WORD)   +0x0C, +0x10, +0x14  DWORDs
+// `GuildMemberList_Set` copia `count * 0x18` bytes desde el paquete y el render
+// lee `base + iMod*0x18`, asi que con mas de un miembro se escribia/leia sobre
+// los globals vecinos.  El hueco real en el binario va de 0x083A7AF8 al
+// siguiente global conocido (0x083A7C00) = 0x108 bytes = 11 entradas.
+BYTE     DAT_083a7af8[GUILD_MEMBER_TABLE_BYTES] = {0};
 char     DAT_07d59358  = 0;
 char     param_2_07d59484  = 0;
 char     DAT_07d5ba04  = 0;
@@ -1680,7 +1694,10 @@ float   _DAT_00552d44 = 0.0078125f;
 // DAT_00559c8c — defined above (DWORD, line 182)
 // DAT_00559c5c — defined above (char, line 858)
 char     DAT_07e11d80  = 0;
-char     DAT_07d29d24  = 0;
+// 2026-09-03: DAT_07d29d24 pasa a ser un alias de GlobalText (ver globals.h).
+// Era un `char` suelto recorrido con `&DAT_07d29d24 + i * 300`, y sus dos
+// lectores usan indices ~601-607 (nombres de clase): leian ~180 KB fuera del
+// global y le pasaban el resultado a lstrlenA / crt_sprintf.
 char     DAT_07d46e60  = 0;
 char     DAT_07d486fc[300] = {};
 char     DAT_07d48828  = 0;
@@ -2757,6 +2774,7 @@ void*  g_LoginSceneObjects[9] = {0}; // sky, ship1, wave1, ship2, wave2, ship3, 
 // de PlayBuffer(rand()%7+50) = el ruido de golpes (eBlow/eShortBlow).
 int    DAT_00559858       = 15;    // g_iLimitAttackTime
 DWORD  DAT_05826d10       = 0;     // CurrentSkill (current skill ID for arrow/projectile)
+DWORD  DAT_07e11d84       = 0;     // UseSkillWarrior 43 activation tick
 float  _DAT_00552904      = 1400.0f;  // sin/cos offset multiplier (sword trail radius)
 float  _DAT_005528f8      = 145.0f;  // sin/cos offset multiplier (slash projectile)
 float  _DAT_005528f4      = 0.54f;  // combo animation offset constant
@@ -2837,6 +2855,8 @@ float  _DAT_00552cb4      = 64.0f;      // terrain tile size
 // CheckArrow chat string globals (runtime-initialized by resource loader)
 char   DAT_07e11df4       = 0;
 char   DAT_07e11df8       = 0;
+char   DAT_07e11dec       = 0;
+char   DAT_07e11df0       = 0;
 char   DAT_07d3c348       = 0;
 
 // Skill selection
