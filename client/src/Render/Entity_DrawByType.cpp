@@ -463,37 +463,11 @@ LAB_substate4_done:
         goto LAB_standard_render;
     }
 
-    if (sType == 0x14a && DAT_005615c0 == 2) {
-        if (param_1[0x105] == '\x06') {
-            *param_1 = 0;
-            FUN_00404bc0(0x6a, 0, 0);
-            FUN_00441be0(model, 0, 0x104);
-            goto LAB_postprocess;
-        }
-
-        FUN_00441e00(model, 2,
-                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
-                     *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
-                     0xffffffff);
-        *(float *)((int)model + 0x48) = 1.0f;
-        *(float *)((int)model + 0x4c) = 1.0f;
-        *(float *)((int)model + 0x50) = 1.0f;
-        FUN_00441e00(model, 0x44,
-                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
-                     *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
-                     1170);
-        *(float *)((int)model + 0x48) = 0.3f;
-        *(float *)((int)model + 0x4c) = 0.3f;
-        *(float *)((int)model + 0x50) = 1.0f;
-        FUN_00441e00(model, 0x48,
-                     *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
-                     *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
-                     *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
-                     1170);
-        goto LAB_postprocess;
-    }
+    // 2026-09-04: aca habia un segundo bloque para sType 0x14a gateado por
+    // `DAT_005615c0 == 2` (login).  Draw_RenderObject (0x4FAE00) NO consulta
+    // g_GameState en ninguna parte -- su switch tiene UN solo `case 330`.  Era
+    // una copia del bloque de abajo sin el chequeo de frames, o sea el patron
+    // [[bloque-duplicado-dentro-de-una-funcion]].  Removido.
 
     if (sType == 0x14a) {
         if (param_1[0x105] != '\x06') {
@@ -502,10 +476,22 @@ LAB_substate4_done:
             // Omitted per project policy (hash table operations are not game logic).
             // ────────────────────────────────────────────────────────────────────
 
-            // Post-hash logic: check entity level vs base level
-            int curLevel = param_3;  // iStack_24 from Ghidra — caller-passed level
-            if ((int)curLevel - *(int *)(param_1 + 0x17c) < 0x19) {
-                // Level too low / dying
+            // 2026-09-04 -- BUG-FIX: el bloque de hash-table que este port
+            // omite (por politica anti-tamper) es justamente el que descifra
+            // `MoveSceneFrame`.  IDA (0x4FAE00 L720):
+            //     if ( (int)MoveSceneFrame - *(_DWORD *)(o + 380) >= 25 )
+            // `o + 380` lo siembra CreateCharacterPointer con el MoveSceneFrame
+            // del spawn, o sea la estatua se dibuja "rompiendose" (mesh 260 +
+            // sonido 106) durante sus primeros 25 frames de vida y despues pasa
+            // al render normal de 3 capas.
+            //
+            // El port ponia `param_3` (un argumento del caller, sin relacion con
+            // el contador de frames) en lugar de MoveSceneFrame: la resta daba
+            // siempre < 25 y la estatua quedaba con la animacion de romperse EN
+            // LOOP, ademas de disparar PlayBuffer(106) en cada frame.
+            const int msf = (int)DAT_083a7c00;               // MoveSceneFrame
+            if (msf - *(int *)(param_1 + 0x17c) < 0x19) {
+                // Primeros 25 frames desde el spawn: render de fragmentos.
                 if (param_1[0x105] == '\x06') {
                     *param_1 = 0;
                 }
