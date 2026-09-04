@@ -338,6 +338,24 @@ void Render_HudPass_4BCD20_(void)
 {
     if (!CharacterMachine || !CharacterAttribute) return;
 
+    // 2026-09-04 -- DESVIACION NECESARIA (barra de AG invisible).
+    // `sub_4BCD20` dibuja con RenderBitmap / RenderNumber2D / RenderTipText, que
+    // no arman matrices propias: dependen de la ortho de `BeginBitmap`.  Y el
+    // pase anterior (`sub_4BD650`) TERMINA con `EndBitmap`.
+    //
+    // En el binario eso funciona por accidente: `EndBitmap` (0x5124B0) hace dos
+    // `glPopMatrix` seguidos SIN cambiar de modo, o sea los dos caen sobre
+    // MODELVIEW y la PROJECTION ortho que empujo `BeginBitmap` queda activa (a
+    // costa de desbordar esa pila, que es el GL_STACK_OVERFLOW 0x503 conocido).
+    // Nuestro `GL_End2D` esta balanceado a proposito (fix 2026-06-28), asi que
+    // al salir de sub_4BD650 la proyeccion vuelve a la perspectiva 3D y todo lo
+    // que dibuja esta funcion cae fuera de pantalla.
+    //
+    // Sonda AGBAR (2026-09-04): confirmaba `x=551 y=437 h=36 blend=1 tex=1
+    // texsz=(16,64) gl257=47 glerr=0`, o sea el draw se emitia perfecto y no se
+    // veia -- ni la barra, ni el numero, ni el tooltip.
+    GL_Begin2D();
+
     // Anti-tamper #1 — skipped.
 
     int v3 = *(unsigned short*)((BYTE*)CharacterAttribute + 36);
@@ -362,6 +380,8 @@ void Render_HudPass_4BCD20_(void)
         wsprintfA(Buffer, GlobalText[214], v3, v23);
         RenderTipText(546, 419, Buffer);
     }
+
+    GL_End2D();
 }
 
 // AntiTamper_HashMaintain_D → sub_4BCD20.
