@@ -10,7 +10,12 @@
 //                   los unicos writers son CreateCharacterPointer (= -1, o sea 0xFF
 //                   para el heroe) y CreateMonster (= Type).  El `!= 77` de mas
 //                   abajo compara contra un TIPO, no contra la letra 'M'.
-//   +0x301  byte  is_pvp              — target_id >> 15
+//   +0x301  byte  SkillSuccess        — bit 15 del target del paquete.  NO es
+//                   'is_pvp': el server lo pone con `target[0] |= type * 0x80`
+//                   donde `type` es el flag de EXITO del skill
+//                   (CSkillManager::GCSkillAttackSend).  IDA 0x42BCA0 hace
+//                   `Success = TargetKey >> 15; sc->SkillSuccess = Success != 0`
+//                   y MU 5.2 (WSclient.cpp L3642) lo escribe igual.
 //   +0x303  byte  combo_counter       — incremented on skill_type 0x17
 //   +0x2F4  byte  teleport_state      — 2 = teleporting
 //   +0x2F5  byte  is_skill_active     — set to 1 on most skill hits (common tail)
@@ -131,7 +136,8 @@ void PacketHandler_0x19(BYTE* pkt)
 
     int caster_id   = caster_raw & 0x7FFF;
     int target_id   = target_raw & 0x7FFF;
-    int is_pvp      = (target_raw >> 15) & 1;
+    // Bit 15 del target = flag de EXITO del skill (ver la nota de +0x301 arriba).
+    int skill_ok    = (target_raw >> 15) & 1;
 
     int caster_idx  = Entity_FindById(caster_id);
     int target_idx  = Entity_FindById(target_id);
@@ -140,7 +146,7 @@ void PacketHandler_0x19(BYTE* pkt)
     if (skill_type == 3 || skill_type == 7) {
         char trace[160];
         wsprintfA(trace, "SKILL19 RX skill=%d casterKey=%d caster=%d targetKey=%d target=%d pvp=%d",
-                  skill_type, caster_id, caster_idx, target_id, target_idx, is_pvp);
+                  skill_type, caster_id, caster_idx, target_id, target_idx, skill_ok);
         DbgLogPublic(trace);
     }
 
@@ -157,10 +163,16 @@ void PacketHandler_0x19(BYTE* pkt)
     // effect.
     *(BYTE*) (caster + 770) = (BYTE)skill_type;
 
-    // 0042BCA0 writes caster+769 as the inverse of the target PvP bit.
-    // Cases 0x33/0x37 use this as their normal/PvE-target gate.
     *(short*)(caster + 0x310) = (short)target_idx;
-    *(BYTE*) (caster + 0x301) = (BYTE)(is_pvp == 0);
+    // 2026-09-04 FIX: aca habia `(BYTE)(is_pvp == 0)`, o sea el valor INVERTIDO.
+    // IDA 0x42BCA0 escribe `sc->SkillSuccess = (TargetKey >> 15) != 0`, y el
+    // server MuEmu pone ese bit justamente cuando el skill tuvo exito
+    // (`pMsg.target[0] = SET_NUMBERHB(idx) | (type * 0x80)`).
+    // Consecuencia: los tres consumidores del flag quedaban al reves --
+    // el aura de Greater Defense (MoveCharacter case 27 -> 5x joint 266/sub4)
+    // no se creaba nunca, ni el buff de Greater Damage (case 28), ni el
+    // congelamiento del Ice Arrow (case 0x33) ni el de Lightning (0x37).
+    *(BYTE*) (caster + 0x301) = (BYTE)(skill_ok != 0);
 
     if (skill_type == 3 || skill_type == 7) {
         char trace[128];

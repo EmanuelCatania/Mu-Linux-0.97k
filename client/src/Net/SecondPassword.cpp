@@ -3118,9 +3118,29 @@ static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
 
 static inline char mc_JointFind(int Type, DWORD Owner, int flag)
 {
-    // sub_46FE40 (FUN_0046fe40) — search joint pool for matching slot.
-    // El pool no está alocado; siempre devuelve 0 (no encontrado).
-    (void)Type; (void)Owner; (void)flag;
+    // sub_46FE40 (SearchJoint) - port fiel.  IDA ancla en `&Joints` = pool+0x40
+    // (el campo Owner) y lee los otros campos con indices negativos:
+    //     *(v3 - 64 bytes) = +0x00 activo
+    //     *(v3 - 15)       = +0x04 Type
+    //     *v3              = +0x40 Owner
+    //     *(v3 - 14)       = +0x08 SubType   (se ignora si flag == -1)
+    // El paso es 630 DWORDs = 0x9D8, el stride del slot.
+    //
+    // 2026-09-04: antes era un stub `return 0` con el comentario "el pool no
+    // esta alocado".  Eso quedo viejo -- DAT_07b27150 esta dimensionado desde
+    // 2026-05-08.  Con el stub, MoveCharacter case 27 (Greater Defense) creaba
+    // 5 joints nuevos cada vez que le re-aplicaban el buff en vez de reusar los
+    // que ya estaban girando.
+    const int stride = 0x9d8;
+    const int slots  = (int)(sizeof(DAT_07b27150) / stride);
+    for (int i = 0; i < slots; ++i) {
+        const char* slot = &DAT_07b27150[i * stride];
+        if (slot[0] == 0) continue;
+        if (*(const int*)(slot + 0x04) != Type)         continue;
+        if (*(const DWORD*)(slot + 0x40) != Owner)      continue;
+        if (flag != -1 && *(const int*)(slot + 0x08) != flag) continue;
+        return 1;
+    }
     return 0;
 }
 
