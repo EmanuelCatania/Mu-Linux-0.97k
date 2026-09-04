@@ -22,7 +22,7 @@
 //   pcVar3[0]      — active flag (char)
 //   iVar2          = iVar14 * 0x1bc                — byte offset
 //   (&DAT_0839bcb2)[iVar14*0xde] — type (short, stride=0xde*2=0x1bc/1)
-//   (&DAT_0839bcb4)[iVar14*0x6f] — mode flag (char)
+//   WSLOT_DW(0x004) — mode flag (char)
 //   (&DAT_0839bcbc)[iVar14*0x6f] — angular speed (float)
 //   (&DAT_0839bcc0)[iVar14*0x6f] — pos_x (float)
 //   (&DAT_0839bcc4)[iVar14*0x6f] — pos_y (float)
@@ -102,6 +102,37 @@
 // Decompilation artifacts: suppress truncation/conversion/uninitialized warnings
 #pragma warning(disable: 4244 4305 4309 4700)
 
+
+// 2026-09-03 FIX (la banda que cruzaba la pantalla desde el personaje).
+//
+// Dos campos DWORD del slot de clima se accedian con el indice mal escalado --
+// el patron `&DAT_x + i*stride` sobre puntero tipado que ya mordio antes en
+// este proyecto:
+//
+//   (&DAT_0839bd8c)[iVar2]          -- DAT_0839bd8c es `unsigned int`, o sea el
+//     compilador multiplica el indice POR 4.  Pero `iVar2` ya es el offset en
+//     BYTES (`iVar14 * 0x1bc`), asi que el paso real era 0x6f0 en vez de 0x1bc.
+//     A partir del slot 10 escribe FUERA del pool: en Icarus el bucle llega
+//     hasta el slot 12 (`if (0xc < iVar14) return`), mientras que en los demas
+//     mapas corta en 4 -- por eso el sintoma salia solo ahi.
+//     Medido: g_WeatherSlotPool = 016DC520..016E0A80 y el pool de joints
+//     arranca en 016E0AA0, o sea 32 bytes despues.  Con iVar14 = 10 la
+//     escritura cae en 0xdc + 0x6f0*10 = 0x463C = **joint slot 0 + 0xBC**, que
+//     es la Y del vertice 0 de la fila 2 del anillo de segmentos.  Escribe `1`,
+//     y `1` leido como float es el denormal 1.4e-45: el vertice se iba al
+//     origen del mapa y el quad entre esa fila y la anterior barria la pantalla.
+//     De ahi que lo mostraran el aura del Soul Barrier, el efecto de subir de
+//     nivel y el halo del set +11 -- los joints que ocupan los primeros slots.
+//
+//   (&DAT_0839bcb4)[iVar14*0x6f]    -- el caso simetrico: DAT_0839bcb4 esta
+//     declarado `char`, asi que el indice NO se escala y el paso quedaba en
+//     0x6f en vez de 0x1bc.  No sale del pool, pero pisa los slots vecinos.
+//     Que el campo es un DWORD lo confirma su propio uso mas abajo:
+//     `(int)... + 1` y `if (1 < (int)...)` -- es un contador.
+//
+// Los dos pasan por este accesor, que fija el paso en 0x1bc bytes y el ancho
+// en 4, que es lo que el binario hace (`0x6f * 4 == 0x1bc`).
+#define WSLOT_DW(off) (*(unsigned int *)&g_WeatherSlotPool[(off) + iVar14 * 0x1bc])
 uint __cdecl FUN_00500e80(void)
 {
     float  *pfVar1;
@@ -313,9 +344,9 @@ LAB_00501064:
                     (*(unsigned int*)&g_WeatherSlotPool[0x168 + iVar14 * 0x1bc]) = 0x3f800000;
                     (&DAT_0839be14)[iVar14 * 0x6f] = 0x3f800000;
                     (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x3f000000;
-                    (&DAT_0839bd8c)[iVar2] = 1;
+                    WSLOT_DW(0x0dc) = 1;
                     (&DAT_0839be11)[iVar2] = 0;
-                    (&DAT_0839bcb4)[iVar14 * 0x6f] = 0;
+                    WSLOT_DW(0x004) = 0;
                     (&DAT_0839bd08)[iVar14 * 0x6f] = 0xffffffff;
                     (&DAT_0839bd14)[iVar14 * 0x6f] = 0xffffffff;
                     (&DAT_0839bcbc)[iVar14 * 0x6f] = (float)(iVar12 % 3 + 6) * _DAT_005524f4;
@@ -329,7 +360,7 @@ LAB_00501064:
                     (&DAT_0839bcd4)[iVar14 * 0x6f] = 0xc2b40000;
                     (&DAT_0839bd30)[iVar14 * 0x6f] = (float)(iVar11 % 10) * _DAT_005524f4;
                     if (iVar12 == 3)
-                        (&DAT_0839bcb4)[iVar14 * 0x6f] = 1;
+                        WSLOT_DW(0x004) = 1;
                     iVar12 = _rand();
                     (&DAT_0839bcc0)[iVar14 * 0x6f] = (float)(iVar12 % 600 + -100) + *(float *)(DAT_07abf5d8 + 0x10);
                     iVar11 = _rand();
@@ -341,9 +372,31 @@ LAB_00501064:
                 goto LAB_0050172b;
             }
 
-            // Non-storm: spawn by game state
-            if (((iVar12 == 0) || (iVar12 == 1)) || (iVar12 == 3) ||
-                (iVar12 == 4) || (iVar12 == 10))
+            // Non-storm: spawn by game state.
+            //
+            // 2026-09-03 -- IDA (0x00500E80 L690-706) manda los TRES caminos al
+            // MISMO spawn (los tres hacen `break` del while y caen en el
+            // `memset(v17, 0, 0x1BC)` + init del slot):
+            //     if ( !v15 || v15 == 1 || v15 == 3 || v15 == 4 || v15 == 10 ) break;
+            //     if ( v15 == 7 ) { v24 = TerrainWall[v113];
+            //                       if (!v24 || v24 == 2) break; }
+            //     else if ( v15 >= 11 && v15 <= 16 ) break;
+            // El port tenia los dos ultimos como `else if` con el cuerpo VACIO y
+            // un comentario ("Same as state 0..4 spawn"), asi que Atlans (7) y
+            // los mundos 11-16 no spawneaban nada.
+            //
+            // Nota: el DLL de inyeccion NOPea justo estos dos tests en 0x00501292
+            // ("Fix Atlans and Icarus Goldens Overflow"), o sea el binario SI los
+            // usa -- lo que el DLL hace es desactivarlos.
+            bool __spawn = (iVar12 == 0) || (iVar12 == 1) || (iVar12 == 3) ||
+                           (iVar12 == 4) || (iVar12 == 10);
+            if (!__spawn && iVar12 == 7) {
+                const unsigned char __attr = (unsigned char)DAT_0838bc70[uStack_48];
+                __spawn = (__attr == 0) || (__attr == 2);
+            } else if (!__spawn && iVar12 >= 11 && iVar12 <= 16) {
+                __spawn = true;
+            }
+            if (__spawn)
             {
                 // Clear all 0x1bc bytes of slot, then initialize
                 char *pcVar19b = pcVar3;
@@ -354,9 +407,9 @@ LAB_00501064:
                 }
                 *pcVar3 = '\x01';
                 (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x3f800000;   // scale = 1.0
-                (&DAT_0839bd8c)[iVar2] = 1;
+                WSLOT_DW(0x0dc) = 1;
                 (&DAT_0839bd10)[iVar14 * 0x6f] = 0;
-                (&DAT_0839bcb4)[iVar14 * 0x6f] = 0;
+                WSLOT_DW(0x004) = 0;
                 *(unsigned int *)(&DAT_0839bd98 + iVar2) = 0x3f000000;
                 *(unsigned int *)(&DAT_0839bd9c + iVar2) = 0x3f000000;
                 *(unsigned int *)(&DAT_0839bda0 + iVar2) = 0x3f000000;
@@ -374,7 +427,7 @@ LAB_00501064:
                 } else if (iVar12 == 3) {
                     (&DAT_0839bcb2)[iVar14 * 0xde] = 0xaf;   // snow
                     (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x3e99999a;
-                    (&DAT_0839bd8c)[iVar2] = 0;
+                    WSLOT_DW(0x0dc) = 0;
                 } else if (iVar12 == 10) {
                     if (iVar14 < 3) {
                         // Lightning slots 0-2 in loading state
@@ -386,7 +439,7 @@ LAB_00501064:
                     }
                     (&DAT_0839bcb2)[iVar14 * 0xde] = 0x10a;  // firefly
                     (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x400ccccd;
-                    (&DAT_0839bd8c)[iVar2] = 0;
+                    WSLOT_DW(0x0dc) = 0;
                     (&DAT_0839bd10)[iVar14 * 0x6f] = 0x2580;
                     (&DAT_0839bdb4)[iVar2] = 2;
                 }
@@ -439,14 +492,6 @@ LAB_00501064:
                     iVar12 = _rand();
                     (&DAT_0839bcd4)[iVar14 * 0x6f] = (float)(iVar12 % 0x168);
                 }
-            } else if (iVar12 == 7) {
-                // Snow: check terrain
-                unsigned char cVar4b = (unsigned char)DAT_0838bc70[uStack_48];
-                if ((cVar4b == '\0') || (cVar4b == '\x02')) {
-                    // Same as state 0..4 spawn
-                }
-            } else if ((10 < iVar12) && (iVar12 < 0x11)) {
-                // Map loading states: use same generic spawn
             }
         }
 
@@ -668,9 +713,9 @@ LAB_00501cb5:
                     (&DAT_0839bcd4)[iVar14*0x6f] = (unsigned int)(*(int *)&fVar25);
                     if (bVar20) (&DAT_0839bcd4)[iVar14*0x6f] = (unsigned int)(fVar25 - _DAT_0055286c);
                     (&DAT_0839bd10)[iVar14*0x6f] = 10;
-                    (&DAT_0839bcb4)[iVar14*0x6f] = (int)(&DAT_0839bcb4)[iVar14*0x6f] + 1;
+                    WSLOT_DW(0x004) = (int)WSLOT_DW(0x004) + 1;
                 }
-                if (1 < (int)(&DAT_0839bcb4)[iVar14*0x6f]) *pcVar3 = '\0';
+                if (1 < (int)WSLOT_DW(0x004)) *pcVar3 = '\0';
                 (&DAT_0839bd10)[iVar14*0x6f] = (int)(&DAT_0839bd10)[iVar14*0x6f] - 1;
 
                 // Proximity effects (cloud type: chance to play sound/effect)
