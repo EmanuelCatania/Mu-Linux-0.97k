@@ -373,9 +373,12 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
     if (skillCount == 0) {
         return false;
     }
-    if ((int)DAT_07d780a0 < 0 || (int)DAT_07d780a0 >= 400) {
-        return false;
-    }
+    // 2026-09-04 FIX (Triple Shot solo se podia lanzar despues de targetear):
+    // aca habia un `if (MovementSkillTarget < 0 || >= 400) return false;`.
+    // `MovementSkillTarget` (DAT_07D780A0) es el indice de la entidad apuntada:
+    // sin blanco vale -1 y el skill no salia; despues de targetear quedaba
+    // pegado y por eso funcionaba "un rato" hasta que el indice envejecia.
+    // IDA (SkillElf 0x48BD70) no consulta ese global en ningun momento.
 
     // The same offsets are used by Attack at 49D278: current mana +0x1e
     // and current AG +0x24.
@@ -484,12 +487,17 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             float heroPosX = *(float*)(heroEntity + 0x10);  // Object.Position[0]
             float heroPosY = *(float*)(heroEntity + 0x14);  // Object.Position[1]
 
-            // DESVIACION DELIBERADA respecto de IDA L197-199, que compara contra
-            // los globales `TargetX`/`TargetY` (los que deja CheckTarget).  Aca se
-            // usa la posicion de mundo de la entidad objetivo para que el chequeo
-            // de rango y el destinatario del paquete usen el MISMO slot.
-            float targetWorldX = *(float*)((char*)(uintptr_t)DAT_07abf5d0 + (int)DAT_07d780a0 * 0x394 + 0x10);
-            float targetWorldY = *(float*)((char*)(uintptr_t)DAT_07abf5d0 + (int)DAT_07d780a0 * 0x394 + 0x14);
+            // 2026-09-04: se restaura el chequeo de IDA L197-199, que compara
+            // contra los globales `TargetX`/`TargetY` -- las coordenadas de
+            // GRILLA que deja `CheckTarget` (0x49CAE0).  Ese helper funciona con
+            // o sin blanco seleccionado: si `SelectedCharacter == -1` cae al pick
+            // de terreno bajo el cursor.  La version anterior tomaba la posicion
+            // de la entidad apuntada, que sin blanco no existe.
+            //     v35 = c.y - (TargetY * 100.0 + 50.0);
+            //     v36 = c.x - (TargetX * 100.0 + 50.0);
+            //     if (sqrt(v35*v35 + v36*v36) > Distance * 100.0) -> no dispara
+            float targetWorldX = (float)((int)DAT_07e016c0) * _DAT_005524f0 + 50.0f;
+            float targetWorldY = (float)((int)DAT_07e016c4) * _DAT_005524f0 + 50.0f;
 
             // Check range: distance from hero to target must be within skill range
             float dx = heroPosX - targetWorldX;
