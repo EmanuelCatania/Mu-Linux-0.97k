@@ -483,13 +483,15 @@ void __cdecl FUN_0050c4d0(void) {
             FUN_00505e90((int)0x17, "Data2/Object1/", "grass_04.smd");
             FUN_00505e90((int)0x18, "Data2/Object1/", "grass_05.smd");
             FUN_00505e90((int)0x19, "Data2/Object1/", "grass_06.smd");
-            FUN_00505e90((int)0x1e, "Data2/Object1/", "mushroom_01.smd");
-            FUN_00505e90((int)0x1f, "Data2/Object1/", "mushroom_02.smd");
-            FUN_00505e90((int)0x20, "Data2/Object1/", "Ston_01.smd");
-            FUN_00505e90((int)0x21, "Data2/Object1/", "Ston_02.smd");
-            FUN_00505e90((int)0x22, "Data2/Object1/", "Ston_03.smd");
-            FUN_00505e90((int)0x23, "Data2/Object1/", "Ston_04.smd");
-            FUN_00505e90((int)0x24, "Data2/Object1/", "Ston_05.smd");
+            // IDA 0x0050C4D0: mushrooms are 26..27; stones are 30..34.
+            // These IDs are consumed directly as Models[Object.Type].
+            FUN_00505e90((int)0x1a, "Data2/Object1/", "mushroom_01.smd");
+            FUN_00505e90((int)0x1b, "Data2/Object1/", "mushroom_02.smd");
+            FUN_00505e90((int)0x1e, "Data2/Object1/", "Ston_01.smd");
+            FUN_00505e90((int)0x1f, "Data2/Object1/", "Ston_02.smd");
+            FUN_00505e90((int)0x20, "Data2/Object1/", "Ston_03.smd");
+            FUN_00505e90((int)0x21, "Data2/Object1/", "Ston_04.smd");
+            FUN_00505e90((int)0x22, "Data2/Object1/", "Ston_05.smd");
             FUN_00505e90((int)0x28, "Data2/Object1/", "stone_statue01.smd");
             FUN_00505e90((int)0x29, "Data2/Object1/", "stone_statue02.smd");
             FUN_00505e90((int)0x2a, "Data2/Object1/", "Angel_Stone.smd");
@@ -597,9 +599,11 @@ void __cdecl FUN_0050c4d0(void) {
             { 0x14, "Grass01" }, { 0x15, "Grass02" }, { 0x16, "Grass03" },
             { 0x17, "Grass04" }, { 0x18, "Grass05" }, { 0x19, "Grass06" },
             // Mushrooms not distributed as BMDs (only OZJ texture)
-            // Stones
-            { 0x20, "Stone01" }, { 0x21, "Stone02" }, { 0x22, "Stone03" },
-            { 0x23, "Stone04" }, { 0x24, "Stone05" },
+            // Stones — IDA 0x0050C4D0: object/model IDs 30..34 (0x1e..0x22).
+            // The .obj record type is used directly as the Models[] index by
+            // Draw_RenderObject (0x004FAE00); these are not file ordinals.
+            { 0x1e, "Stone01" }, { 0x1f, "Stone02" }, { 0x20, "Stone03" },
+            { 0x21, "Stone04" }, { 0x22, "Stone05" },
             // Statues / Tomb
             { 0x28, "StoneStatue01" }, { 0x29, "StoneStatue02" },
             { 0x2a, "StoneStatue03" },
