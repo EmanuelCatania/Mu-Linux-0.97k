@@ -448,12 +448,34 @@ void __cdecl FUN_0050c4d0(void) {
         FUN_00529740("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
     case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
-        FUN_005060b0(0xb8, "Data/Object12/", "Angel", 1);
+        // Blood Castle.  Port 1:1 de IDA 0x50C4D0 L228-242:
+        //     AccessModel(184, "Data\\Object12\\", "Crow", 1);
+        //     OpenTexture(184, "Object12\\", 9728, 1);
+        //     AccessModel(262/263, "Data\\Object12\\", "Gate", 1/2);
+        //     AccessModel(260/261, "Data\\Object12\\", "StoneCoffin", 1/2);
+        //     for (k=0;k<2;k++) OpenTexture(k+262, "Monster\\", 9728, 1);
+        //     for (m=0;m<2;m++) OpenTexture(m+260, "Monster\\", 9728, 1);
+        //     AccessModel(185, "Data\\Object12\\", "Shine", 1);
+        //     OpenTexture(185, "Object12\\", 9728, 1);
+        //
+        // 2026-09-04 FIX, tres cosas:
+        //  a) el slot 184 pedia "Angel01.bmd", que no existe; es "Crow01.bmd".
+        //  b) los slots 262/263 (LA PUERTA del evento) pedian
+        //     "gate_entrance01/02.bmd", que tampoco existen: son "Gate01/02.bmd".
+        //     Con el BMD sin cargar el modelo queda con 0 mallas, y romper la
+        //     puerta terminaba trabajando sobre esa entrada vacia.
+        //  c) faltaban las cuatro OpenTexture de la puerta y los sarcofagos,
+        //     que salen de "Monster/" y no de "Object12/".
+        FUN_005060b0(0xb8, "Data/Object12/", "Crow", 1);
         FUN_00505c80(0xb8, "Object12/", 0x2600, '\x01');
-        FUN_005060b0(0x106, "Data/Object12/", "gate_entrance", 1);
-        FUN_005060b0(0x107, "Data/Object12/", "gate_entrance", 2);
+        FUN_005060b0(0x106, "Data/Object12/", "Gate", 1);
+        FUN_005060b0(0x107, "Data/Object12/", "Gate", 2);
         FUN_005060b0(0x104, "Data/Object12/", "StoneCoffin", 1);
         FUN_005060b0(0x105, "Data/Object12/", "StoneCoffin", 2);
+        for (int k = 0; k < 2; ++k)
+            FUN_00505c80(k + 0x106, "Monster/", 0x2600, '\x01');
+        for (int m = 0; m < 2; ++m)
+            FUN_00505c80(m + 0x104, "Monster/", 0x2600, '\x01');
         FUN_005060b0(0xb9, "Data/Object12/", "Shine", 1);
         FUN_00505c80(0xb9, "Object12/", 0x2600, '\x01');
         break;
@@ -686,10 +708,22 @@ void __cdecl FUN_0050c4d0(void) {
         for (int i = 0; i < 0xa0; i++)
             FUN_00505c80(i, "Object1/", 0x2600, '\x01');
     } else {
+        // Numero de carpeta de objetos.  IDA 0x50C4D0:
+        //     v33 = World + 1;
+        //     if ( World >= 11 && World <= 16 ) v33 = 12;
+        // 2026-09-04 FIX: faltaba el override.  Los seis niveles de Blood Castle
+        // (World 11..16) COMPARTEN Data/Object12; con `World + 1` los niveles 2 a 7
+        // buscaban Object13..Object17, que no existen -- de ahi que el mapa
+        // apareciera pelado, sin paredes ni props.  El nivel 1 (World 11 -> 12)
+        // acertaba de casualidad.
+        int objFolder = DAT_0055a7ac + 1;
+        if (DAT_0055a7ac >= 11 && DAT_0055a7ac <= 16)
+            objFolder = 12;
+
         // Dynamic map: load from per-map object file
         if (DAT_0055a7c4 == '\0') {
             char local_384[32];
-            crt_sprintf(local_384, "Data2/Object%d/", DAT_0055a7ac + 1);
+            crt_sprintf(local_384, "Data2/Object%d/", objFolder);
             ParserFileHandle = fopen(local_384, "rt");
             if (ParserFileHandle != nullptr) {
                 char local_300[256], local_200[256], local_100[256];
@@ -699,7 +733,7 @@ void __cdecl FUN_0050c4d0(void) {
                     ParseNextToken(); strncpy(local_200, ParserTokenString, 255);
                     ParseNextToken(); strncpy(local_100, ParserTokenString, 255);
                     char pathBuf[32];
-                    crt_sprintf(pathBuf, "Data2/Object%d/", DAT_0055a7ac + 1);
+                    crt_sprintf(pathBuf, "Data2/Object%d/", objFolder);
                     FUN_00505e90(objIdx, pathBuf, local_300);
                 }
                 fclose(ParserFileHandle);
@@ -707,11 +741,11 @@ void __cdecl FUN_0050c4d0(void) {
         }
         // Register data paths for all 0xa0 object slots
         char local_384[32];
-        crt_sprintf(local_384, "Data/Object%d/", DAT_0055a7ac + 1);
+        crt_sprintf(local_384, "Data/Object%d/", objFolder);
         for (int i = 0; i < 0xa0; i++)
             FUN_005060b0(i, local_384, "Object", i + 1);
         FUN_00505bd0(0x2ee);
-        crt_sprintf(local_384, "Object%d/", DAT_0055a7ac + 1);
+        crt_sprintf(local_384, "Object%d/", objFolder);
         for (int i = 0; i < 0xa0; i++)
             FUN_00505c80(i, local_384, 0x2600, '\x01');
         // Map-specific post-load fixups
