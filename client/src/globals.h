@@ -956,7 +956,17 @@ extern DWORD   DAT_0839be18;
 extern char    DAT_083a2370[0x960];   // Entity render-state pool (stride 0xc, 128 slots, 0x960 bytes)
 #define DAT_083a2cd0 DAT_083a2370[0x960-1]  // end-marker alias
 extern char    DAT_083a2e90[10 * 0x1bc];   // Boids pool: 10 entries × 0x1bc bytes
-extern DWORD   DAT_083a2378;   // hover special-object entity table (stride 3*int, ~24 entries)
+// `Operates` de IDA = 0x083A2378 = DAT_083a2370 + 8, o sea el campo [2] (puntero
+// al objeto) de la ENTRADA 0 de la lista de objetos interactuables.  Los
+// consumidores lo indexan `Operates[3 * SelectedOperate]`, que salta de entrada
+// en entrada (3 DWORDs = los 12 bytes de stride).
+//
+// 2026-09-04 FIX: estaba declarado como un DWORD SUELTO inicializado en 0 -- otra
+// memoria distinta de la lista.  `((int*)&DAT_083a2378)[i*3]` leia entonces ese
+// global y lo que le siguiera; para SelectedOperate == 0 devolvia 0 y
+// `*(short*)(0 + 2)` crasheaba leyendo la direccion 2 (visto: CRASH addr=...
+// param1=0x00000002 al pasar el mouse por una silla).
+#define DAT_083a2378  (*(DWORD*)&DAT_083a2370[8])
 extern float  _DAT_083a0210;
 extern DWORD   DAT_083a0210;
 // Object-bucket grid (see globals.cpp). 16×16 cells × 16 B = 0x1000.

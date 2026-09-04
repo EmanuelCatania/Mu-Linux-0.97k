@@ -73,7 +73,17 @@ void __cdecl Cursor_Render(void) {
         // Match per-World contra el type-code de la entidad; fallback bitmap 9.
         // DAT_0055a7ac aquí actúa como `World` en IDA; puede no coincidir 100%
         // con nuestra interpretación de sub-state pero no afecta el default.
-        short cls = *(short*)(((int*)&DAT_083a2378)[SelectedOperate * 3] + 2);
+        // Guard (no esta en IDA): SelectedOperate lo deja el picker del frame
+        // anterior; si el objeto se libero en el medio el puntero queda colgado.
+        const int nOperates = (int)(sizeof(DAT_083a2370) / 0xc);
+        const int operObj   = ((int)SelectedOperate >= 0 && (int)SelectedOperate < nOperates)
+                            ? ((int*)&DAT_083a2378)[SelectedOperate * 3] : 0;
+        if (operObj == 0) {
+            // LABEL_43 de IDA: flecha por defecto.
+            GL_DrawTexture(2, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '', '');
+            return;
+        }
+        short cls = *(short*)(operObj + 2);
         int world = DAT_0055a7ac;
         bool match = false;
         if      (world == 0) match = (cls == 133);

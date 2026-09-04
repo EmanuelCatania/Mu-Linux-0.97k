@@ -1435,7 +1435,7 @@ char     DAT_083a2370[0x960]  = {};   // render-state pool (0x960 bytes, stride 
 // dirección absoluta del binario original (0x083a2e90); declarada como array
 // real para que el flocking algoritmo funcione 1:1 con el original.
 char     DAT_083a2e90[10 * 0x1bc] = {};
-DWORD    DAT_083a2378  = 0;
+// DAT_083a2378 es ahora un alias dentro de DAT_083a2370 (ver globals.h).
 
 // Server select + char menu new globals
 char     DAT_083a7c64[64] = {};

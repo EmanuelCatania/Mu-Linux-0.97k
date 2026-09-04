@@ -1851,7 +1851,11 @@ void __cdecl Player_ProcessInput(void)
                     const bool mountOk = ((helper != 818 && helper != 819)
                                           || *(unsigned char*)(ent + 0x34e) != 0);
                     const int iSrc = SelectedOperate;
-                    const int tgtEntityPtr = ((int*)&DAT_083a2378)[iSrc * 3];
+                    // Bound check (no esta en IDA): SelectedOperate viene del
+                    // picker del frame anterior.
+                    const int nOper = (int)(sizeof(DAT_083a2370) / 0xc);
+                    const int tgtEntityPtr = (iSrc >= 0 && iSrc < nOper)
+                                           ? ((int*)&DAT_083a2378)[iSrc * 3] : 0;
 
                     if (mountOk && tgtEntityPtr != 0) {
                         // 2026-09-04 FIX: TargetX/TargetY salen de la POSICION
