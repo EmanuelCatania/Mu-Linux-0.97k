@@ -441,7 +441,11 @@ int __cdecl FindEmptySlot_stub(int param_1, int param_2, int param_3, int param_
                             BYTE* pCol = pRow;
                             if (itemW != 0) {
                                 do {
-                                    if (*(short*)pCol != -1 && *(int*)(pCol + 0x38) > 0) {
+                            // IDA 0x004D5F20 only tests the item sentinel.  The
+                            // former +0x38 condition belongs to a different UI
+                            // occupancy convention and made Action's pickup gate
+                            // accept partially occupied inventory rectangles.
+                            if (*(short*)pCol != -1) {
                                         fits = false;
                                         goto next_cell;
                                     }

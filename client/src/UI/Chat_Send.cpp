@@ -6,7 +6,7 @@
 #include "functions.h"
 #include "Net/Net.h"
 
-// SendChat @ 0x004C1B90 (~454 lines) — SUMMARY STUB
+// SendChat @ 0x004C1B90
 // Sends a chat message packet to server.
 // Flow:
 //   1. Rate-limit: if ChatTime > 0x32, return
@@ -15,7 +15,7 @@
 //   4. Check if Hero->ID contains "webzen" substring (GM detection)
 //   5. Build C1 packet with XOR encryption using 32-byte key
 //   6. Net_Send the encrypted chat packet
-void __cdecl SendChat_stub(char* Text) {
+void __cdecl SendChat(char* Text) {
     // 0x004C1B90 — Sends chat message packet to server (454 lines decompiled).
     // ~60% of original is anti-tamper XOR key init + dead forward/reverse loops.
     // Real logic:

@@ -1814,6 +1814,38 @@ extern "C" void __cdecl RenderWarehouse(void)
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
+// The 0.97K event dialog is not an item grid.  It is a selector of four Devil
+// Square or six Blood Castle levels (IDA RenderEventWindow @ 0x004F3C50).
+// Keeping it as a generic InventoryInterface skeleton was why these NPCs looked
+// like a shop even when ReceiveTalk had correctly selected EventWindowOpened.
+static bool EventWindowHit(float x, float y, float w, float h)
+{
+    return MouseX >= x && MouseX < x + w && MouseY >= y && MouseY < y + h;
+}
+
+static void SendEventEntry(bool bloodCastle, int level)
+{
+    // The server validates both the selected level and the inventory position.
+    // GetItemSlot returns the 8x8 client inventory index; the protocol uses the
+    // absolute inventory slot, which starts after the 12 equipment positions.
+    // `GetItemSlot` compares the client's ITEM.Type, whose group stride is
+    // 32 (not the GameServer's GET_ITEM stride of 512).  IDA's event click
+    // paths use 0x1B2 for the Cloak (13*32+18) and 0x1D3 for the Invitation
+    // (14*32+19).  Passing the server IDs 6674/7187 never found the ticket,
+    // so the old port submitted inventory slot 0 and received result 1.
+    const int standardTicket = bloodCastle ? (13 * 32 + 18) : (14 * 32 + 19);
+    int slot = GetItemSlot(standardTicket, level + 1);
+    if (slot < 0) {
+        // The server also accepts the non-levelled event tickets.
+        slot = GetItemSlot(bloodCastle ? (13 * 32 + 47) : (13 * 32 + 46), -1);
+    }
+
+    BYTE packet[5] = { 0xC1, 0x05, bloodCastle ? 0x9A : 0x90, 0, 0 };
+    packet[3] = (BYTE)(bloodCastle ? level + 1 : level);
+    packet[4] = (BYTE)(slot < 0 ? 0 : slot + 12);
+    Net_SendC1Packet(packet, sizeof(packet));
+}
+
 extern "C" void __cdecl RenderEventWindow(void)
 {
     if (!EventWindowOpened) return;
@@ -1823,20 +1855,62 @@ extern "C" void __cdecl RenderEventWindow(void)
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
+    const bool bloodCastle = EventType == 1;
+    const int count = bloodCastle ? 6 : 4;
+    const float x = (float)dword_7EAA0C8 + 25.0f;
+    const float firstY = bloodCastle ? 170.0f : 210.0f;
+    const float stride = bloodCastle ? 40.0f : 45.0f;
+    const float height = bloodCastle ? 33.0f : 35.0f;
+    const WORD characterLevel = CharacterAttribute ? *(WORD*)((BYTE*)CharacterAttribute + 14) : 0;
+    // IDA RenderEventWindow @ 0x004F3C50 uses the second six-row bank for a
+    // Magic Gladiator: v46 = level + ((Hero[444] & 7) == 3 ? 6 : 0).
+    const bool magicGladiator = Hero && ((((const BYTE*)Hero)[444] & 7) == 3);
+
     SelectObject(m_hFontDC, g_hFontBold);
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
-    char* eventTitle = g_bEventChipDialogEnable ? GlobalText[846] : GlobalText[39];
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
-               eventTitle, 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               GlobalText[bloodCastle ? 846 : 39], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
 
-    RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
-                     (float)((double)dword_7EAA0CC + 50.0),
-                     (DWORD)(uintptr_t)OffsetMixItems, 8, 4);
+    for (int level = 0; level < count; ++level) {
+        const float y = firstY + level * stride;
+        const int limitRow = bloodCastle ? level + (magicGladiator ? 6 : 0) : level;
+        const int minLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][0]
+                                         : m_iDevilSquareLimitLevel[level][0];
+        const int maxLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][1]
+                                         : m_iDevilSquareLimitLevel[level][1];
+        const bool permitted = !bloodCastle || (characterLevel >= minLevel && characterLevel <= maxLevel);
+        const bool hover = permitted && EventWindowHit(x, y, 140.0f, height) && !DAT_07e91388;
+        glColor3f(permitted ? (hover ? 1.0f : 0.8f) : 0.4f,
+                  permitted ? (hover ? 1.0f : 0.8f) : 0.4f,
+                  permitted ? (hover ? 1.0f : 0.9f) : 0.5f);
+        GL_DrawTexture(240, x, y, 140.0f, height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
 
-    float xa = (float)((double)dword_7EAA0C8 + 25.0);
-    float ya = (float)((double)dword_7EAA0CC + 395.0);
-    GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        char label[96];
+        const int withMax = maxLevel <= 10000;
+        sprintf_s(label, bloodCastle ? (withMax ? GlobalText[847] : GlobalText[848])
+                                     : (withMax ? GlobalText[645] : GlobalText[646]),
+                  level + 1, minLevel, maxLevel);
+        RenderText((int)x + (bloodCastle ? 10 : 12), (int)y + 12, label,
+                   (bloodCastle ? 120 : 116) * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+
+        if (permitted && hover && DAT_083a4124 != 0) {
+            DAT_083a4124 = 0;
+            SendEventEntry(bloodCastle, level);
+        }
+    }
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+    // Same close affordance as the original inventory-style frame.
+    const float closeX = (float)dword_7EAA0C8 + 25.0f;
+    const float closeY = (float)dword_7EAA0CC + 395.0f;
+    GL_DrawTexture(280, closeX, closeY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    if (EventWindowHit(closeX, closeY, 24.0f, 24.0f) && DAT_083a4124 != 0) {
+        DAT_083a4124 = 0;
+        Net_SendEventWindowClose();
+        InventoryOpened = 0;
+        CloseInventoryRelatedWindows();
+    }
 }
 
 extern "C" void __cdecl RenderGoldenArcherWindow(void)

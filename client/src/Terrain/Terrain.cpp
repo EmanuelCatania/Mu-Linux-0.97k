@@ -770,7 +770,9 @@ void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     GL_SetBlendSrcAlpha();                // EnableAlphaBlendMinus
     {
         float d[3] = { v27, v28, v29 };
-        float cross[3] = { v24, v25, v26 };
+        float cross[3] = { 0.0f, 0.0f, 0.0f };   // FUN_004f9d20 lo escribe (out param);
+                                                 // inicializarlo saca el C4700 que tapaba
+                                                 // los avisos reales.
         FUN_004f9d20((float *)(this_ + 12), d, cross);
         v24 = cross[0]; v25 = cross[1]; v26 = cross[2];
         float nrm[3] = { v24, v25, v26 };

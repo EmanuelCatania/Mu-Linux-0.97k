@@ -11605,21 +11605,6 @@ LABEL_75:
           v246[0] = -60.0;
           v246[1] = 0.0;
           v246[2] = v229;
-          {   // probe LIGHTNING (temporal): las dos puntas del rayo del skill 3.
-              // src = hueso Owner+628 transformado; dst = posicion del target.
-              // Si src sale (0,0,0) o ~1e9, el joint nace fuera de pantalla.
-              static int s_lg = 0;
-              if ( s_lg < 60 )
-              { ++s_lg; char tl[224];
-                wsprintfA(tl, "LIGHTNING src=(%d,%d,%d) dst=(%d,%d,%d) bone=%u "
-                              "owner=(%d,%d,%d) tgtSlot=%d",
-                    (int)TargetPosition[0], (int)TargetPosition[1], (int)TargetPosition[2],
-                    (int)*(float *)(v203 + 16), (int)*(float *)(v203 + 20), (int)*(float *)(v203 + 24),
-                    (unsigned)*(BYTE *)(Owner + 628),
-                    (int)*(float *)(Owner + 16), (int)*(float *)(Owner + 20), (int)*(float *)(Owner + 24),
-                    (int)v202);
-                DbgLogPublic(tl); }
-          }
           CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 50.0, -1, 0);
           CreateJoint(1254, TargetPosition, (float *)(v203 + 16), v246, 0, v203, 10.0, -1, 0);
           Particle_Spawn(1180, TargetPosition, (float *)(Owner + 28), Light, 0, 1.0, 0);

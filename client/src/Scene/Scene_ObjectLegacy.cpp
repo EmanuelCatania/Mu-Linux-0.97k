@@ -42,7 +42,7 @@ extern void FUN_004fa5a0(void);
 //
 // 2026-08-11 — UNIFICACIÓN. Existían DOS ports de esta función:
 //   · éste, mínimo, que sólo hacía Alpha + el banner MUGAME del login, y
-//   · `MoveObject_PerWorld_stub` (stubs_game.cpp), con el toggle por HeroTile,
+//   · `MoveObject_PerWorld` (stubs_game.cpp), con el toggle por HeroTile,
 //     PlayAnimation y el switch por World COMPLETO.
 // El que se llamaba desde el loop de MoveObjects era éste, así que el switch
 // por World nunca corría: **ningún objeto del mundo generaba sus efectos**.
@@ -57,6 +57,6 @@ extern void FUN_004fa5a0(void);
 //   bloque de login (160/161/162) → switch por World.
 void __cdecl FUN_004fdc00(float pObj) {
     if (LODWORD(pObj) == 0) return;
-    MoveObject_PerWorld_stub(pObj);
+    MoveObject_PerWorld(pObj);
 }
 #endif  // IDA_PORT_004FDC00 (minimal disabled)

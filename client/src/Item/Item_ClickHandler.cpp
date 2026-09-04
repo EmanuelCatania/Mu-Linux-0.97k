@@ -1288,7 +1288,7 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
         // evento recibidas en el talk packet; MuEmu no expone esa variante y
         // usa el enum normal, por lo que conservamos el resultado exacto del
         // reconocedor para el adaptador 0x86.
-        DAT_07eaa16c = (DWORD)CheckMixRecipe_stub((short*)OffsetMixItems, 8, 4);
+        DAT_07eaa16c = (DWORD)CheckMixRecipe((short*)OffsetMixItems, 8, 4);
     }
 
     if (DAT_07eaa165 != 0) return;   // EquipmentItem in-flight

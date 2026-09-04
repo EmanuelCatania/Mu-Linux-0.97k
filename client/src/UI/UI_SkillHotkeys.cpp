@@ -11,29 +11,45 @@
 // Original wraps access in anti-tamper encrypt/decrypt; we skip that.
 // Ghidra: CharacterAttribute->Skill[iVar5+4] == unaff_retaddr (phantom param = Skill)
 // Real access: *(BYTE*)(DAT_07cf1ff4 + 0x57 + iVar5) == Skill
+// IDA: FindHotKey @ 0x004B1170 — int __cdecl FindHotKey(int Skill)
+//   v17 = 0;                                        // <- valor por defecto
+//   v4  = 0;
+//   while ( *(unsigned __int8 *)(CharacterAttribute + v4 + 87) != Skill )
+//     if ( ++v4 >= 20 ) goto LABEL_22;
+//   v17 = v4;
+// LABEL_22:
+//   return v17;
+//
+// 2026-09-01 FIX — devolvia **-1** cuando el skill no esta en los 20 slots;
+// IDA devuelve **0** (el inicializador de v17, que el camino de no-encontrado
+// nunca pisa).  Consecuencia real medida en el path de flechas:
+//   MoveCharacter (6 sitios) -> CreateArrows(c, o, 0, FindHotKey(skill), ...)
+//   -> CreateArrow -> CreateEffect(..., SkillIndex, Skill)
+//   -> CreateEffect prologo: `i[133] = (BYTE)SkillIndex`  (= 0xFF con -1)
+//   -> sub_466440 (0x00466440, llamado por MoveEffect en cada tick del
+//      proyectil) hace `CharacterAttribute[ i[133] + 87 ]`, o sea
+//      CharacterAttribute[342] — FUERA del array de 20 skills (87..106).
+// Ese byte basura se compara contra 51/52 y, cuando cae en 52, dispara
+// `CreateJoint(1249, ..., SubType 6, ...)` (la espiral de Penetration) en CADA
+// flecha, de cualquier skill de Elf.  Tambien envenena
+// `sub_45FEC0(i[133], ...)`.  Con 0 el indice vuelve a caer dentro del array.
+// Ningun caller del arbol distingue -1 (verificado): nadie compara el retorno
+// contra -1 ni contra < 0.
 int __stdcall FindHotKey_stub(int Skill) {
     // anti-tamper hash table — skipped (encrypt CharacterMachine before read)
 
-    char* charAttr = (char*)DAT_07cf1ff4;  // CharacterAttribute
+    char* charAttr = (char*)DAT_07cf1ff4;  // IDA: CharacterAttribute
+    if (!charAttr)
+        return 0;
 
-    // Scan 20 hotkey slots (indices 0..19)
-    int iVar5 = 0;
-    do {
-        if ((unsigned char)*(charAttr + 0x57 + iVar5) == (unsigned int)Skill) break;
-        iVar5++;
-    } while (iVar5 < 0x14);
+    int slot = 0;                          // IDA: v4
+    while ((unsigned char)charAttr[0x57 + slot] != (unsigned int)Skill) {
+        if (++slot >= 0x14)
+            return 0;                      // IDA: goto LABEL_22 con v17 = 0
+    }
 
     // anti-tamper hash table — skipped (decrypt CharacterMachine after read)
-
-    // If iVar5 < 0x14, we found a match; otherwise not found
-    if (iVar5 >= 0x14) {
-        // Not found — check WhisperRegistID table for the skill name
-        // Ghidra: iterates WhisperRegistID (stride 10, up to 0x7db9373)
-        // and calls AddText if no match found. This path is rarely hit.
-        // For now, return -1 (not found).
-        return -1;
-    }
-    return iVar5;
+    return slot;                           // IDA: v17 = v4
 }
 
 // RenderSkillIcon @ 0x004BB940 (~250 lines) — SUMMARY STUB

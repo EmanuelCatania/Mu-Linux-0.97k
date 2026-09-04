@@ -99,7 +99,30 @@ void Mouse_UpdateHoverTargets(void)
         // Keep the original transient hover state.  Leaving this selected
         // after the cursor moves away turns later ground clicks into a basic
         // attack against the stale mob.
+        // IDA sub_4B0310 L85-106 — el bloque de reset completo:
+        //   if ( !m_bAutoAttack || World == 6 )      { SelectedCharacter = -1; Attacking = -1; }
+        //   else if ( !target->Dead && target->Kind == 2 )
+        //   {
+        //       if ( Attacking == -1 || MouseLButton || MouseLButtonPush
+        //         || MouseRButton || MouseRButtonPush || Hero->Dead )
+        //           SelectedCharacter = -1;
+        //   }
+        //   else { Attacking = -1; SelectedCharacter = -1; }
+        //
+        // El clear NO es destructivo: el detect que viene justo despues
+        // (`if (SelectedCharacter == -1) SelectedCharacter = sub_4AFDC0(...)`,
+        // L326) lo vuelve a poblar con lo que haya bajo el cursor.  Por eso el
+        // objetivo sigue al mouse en el original.
+        //
+        // El port tenia SOLO los dos flags del boton DERECHO
+        // (DAT_083a42ac / DAT_083a42d0), asi que clickeando con el IZQUIERDO el
+        // target nunca se limpiaba: quedaba pegado el primer mob que hubiera
+        // pasado por debajo del cursor.  Direcciones confirmadas con
+        // ida_xrefs_to:  MouseLButton = 0x083A42C4 · MouseLButtonPush = 0x083A4124
+        //                MouseRButton = 0x083A42AC · MouseRButtonPush = 0x083A42D0
+        //                m_bAutoAttack = 0x00559C5C · Attacking = 0x00559C58
         if (DAT_00559c58 == -1 ||
+            DAT_083a42c4 != '\0' || DAT_083a4124 != 0 ||
             DAT_083a42ac != '\0' || DAT_083a42d0 != '\0' ||
             *(char *)(DAT_07abf5d8 + 0x2fd) != '\0')
         {

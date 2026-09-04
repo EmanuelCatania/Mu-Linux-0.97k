@@ -298,8 +298,14 @@ void FUN_004fa5a0(void)
 // Entity / Character helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00444b30 @ 0x00444B30 — Entity_SetIdleAction
-// Setea la animación de idle de una entidad: DK (tipo 0x186) → acción 0x57, el resto → 5.
+// FUN_00444b30 @ 0x00444B30 - SetPlayerTeleport (nombre confirmado contra el
+// source de MU 5.2, ZzzCharacter.cpp:1243; alli toma CHARACTER* y usa &c->Object,
+// que en el 0.97k es el mismo puntero).
+// Anima el casteo de teleport: jugador (tipo 0x186 = MODEL_PLAYER) -> accion 0x57
+// (PLAYER_SKILL_TELEPORT), cualquier otra entidad -> 5 (MONSTER01_SHOCK).
+// Su unico caller en el binario es Attack (0x0049CBF0), en las colas de los
+// skills 6 (teleport propio) y 15 (recall de party).
+// El nombre viejo ("Entity_SetIdleAction", "DK") era una suposicion del port.
 void __cdecl FUN_00444b30(int param_1)
 {
     if (*(short *)(param_1 + 2) == 0x186) {
