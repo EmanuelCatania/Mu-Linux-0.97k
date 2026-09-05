@@ -252,7 +252,8 @@ static void HUD_CloseInventoryFamilyFromUI(void)
 //   party      (348..372, 452..476)
 //   personaje  (379..403, 452..476)
 //   inventario (410..434, 452..476)
-static void HUD_BottomBar_HitTest(void)
+extern "C" void HUD_BottomBarButtons_HitTest(void);
+void HUD_BottomBarButtons_HitTest(void)
 {
     if (DAT_005615c0 != 5) return;          // g_GameState: only in-game
     if (!IsClickPushed()) return;
@@ -661,7 +662,8 @@ void __cdecl Player_ProcessInput(void)
     if (DAT_005615c0 == 5) {
         DAT_07d78094 = (g_MouseOnWindow != 0) ? 1 : 0;
     }
-    HUD_BottomBar_HitTest();
+    // 2026-09-04: los botones de la barra inferior se atienden desde
+    // `Chat_InputTick` (0x4B14F0), que es donde los tiene el binario.
 
     // ── Guard: entity visibility / renderable flag ─────────────────────────────
     if (*(char*)((int)DAT_07abf5d8 + 0x2fd) != '\0')

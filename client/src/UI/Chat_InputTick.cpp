@@ -94,6 +94,8 @@ static void Chat_SendPacket(BYTE *pkt, int len, int hdr_skip = 0)
 
 // Send a raw 3-byte packet (no XOR, no encode — these class-select packets are
 // pre-encoded in the original code via FUN_0053cc30 before this call site).
+extern "C" void HUD_BottomBarButtons_HitTest(void);
+
 static void SendRaw3(BYTE b0, BYTE b1, BYTE b2)
 {
     BYTE pkt[3] = { b0, b1, b2 };
@@ -376,51 +378,6 @@ extern "C" void Chat_SendChatLine(const char* text)
 // pkt0/pkt1/pkt2 = first 3-byte packet bytes.
 // pkt_b0/b1/b2 = second 3-byte packet (FUN_004e3d60 branch).
 // pkt_c0/c1/c2 = second 3-byte packet (DAT_07eaa165 branch).
-static void ClassTab_HandleClick(BYTE p0, BYTE p1, BYTE p2,
-                                 BYTE q0, BYTE q1, BYTE q2,
-                                 BYTE r0, BYTE r1, BYTE r2)
-{
-    SendRaw3(p0, p1, p2);
-
-    DAT_07eaa0d0 = 0xffffffff;
-    DAT_07eaa114 = '\x01';
-
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
-    char bVar4 = DAT_07eaa11b;
-    FUN_00404040(&DAT_055c9bc8, (char *)&DAT_07eaa11b);
-
-    if (bVar4 == 0) {
-        if (DAT_07eaa119 == '\0') {
-            if (DAT_07eaa11a == '\0') {
-                DAT_07eaa117 = '\0';
-                DAT_07eaa116 = '\0';
-                FUN_004cba60();
-            } else {
-                char cVar3 = FUN_004e3d60(&DAT_07ea9848, 8, 4);
-                if ((cVar3 == '\0') || (0 < (int)DAT_07e91388)) {
-                    FUN_00480620((const char*)&lpDefault_00583d88,&DAT_07d55410, 2);
-                } else {
-                    SendRaw3(q0, q1, q2);
-                }
-            }
-        } else if (DAT_07eaa165 == '\0') {
-            DAT_07eaa117 = '\0';
-            FUN_004cba60();
-            if (0 < (int)DAT_07e91388)
-                FUN_004cd3b0();
-            SendRaw3(r0, r1, r2);
-        }
-    } else {
-        // Hash-table encode path (obfuscation) + encoded packet send
-        rand();
-        FUN_00422df0(&DAT_055c9bc8, &DAT_05826ceb);
-        DAT_05826ceb++;
-        FUN_00404040(&DAT_055c9bc8, &DAT_05826ceb);
-        // Variable-length encode+send path (obfuscation noise — exact packet bytes
-        // come from FUN_0053cc30 internal state; not recoverable without full trace)
-        (void)FUN_0053cc30(0, (BYTE *)&DAT_05826ceb, 0);
-    }
-}
 
 // ---------------------------------------------------------------------------
 // FUN_004b14f0 — Chat_InputTick
@@ -593,62 +550,26 @@ void __cdecl FUN_004b14f0(void)
             (*(char *)((uintptr_t)DAT_00583d8c + 0x1c87f) == '\0') &&
             (DAT_07eaa130 == '\0'))
         {
-            // Tab 0 — X=[0x246..0x279], Y=[0x1cb..0x1dc]: select first class group
-            if ((0x245 < mouseX) && (mouseX < 0x27a) &&
-                (0x1ca < mouseY) && (mouseY < 0x1dd) &&
-                IsClickPushed())
-            {
-                DAT_083a4124 = '\0';
-                DAT_07eaa115 = '\0';
-                if (DAT_07eaa114 == '\0') {
-                    // Packet: class-select tab 0 (3 bytes, pre-encoded)
-                    ClassTab_HandleClick(
-                        0xC1, 0x03, 0xF3,  // send pkt 0 (class-select tab 0)
-                        0xC1, 0x03, 0xF4,  // second pkt branch A
-                        0xC1, 0x03, 0xF5); // second pkt branch B
-                } else {
-                    DAT_07eaa114 = '\0';
-                }
-                FUN_00404bc0(0x19, 0, 0);
-                FUN_00404bc0(0x1c, 0, 0);
-            }
-
-            // Tab 1 — X=[0x15c..0x173], Y=[0x1c3..0x1db]
-            if ((0x15b < mouseX) && (mouseX < 0x174) &&
-                (0x1c3 < mouseY) && (mouseY < 0x1dc) &&
-                IsClickPushed())
-            {
-                DAT_083a4124 = '\0';
-                DAT_07eaa114 = '\0';
-                if (DAT_07eaa115 == '\0') {
-                    DAT_07eaa0e0 = 0;
-                    ClassTab_HandleClick(
-                        0xC1, 0x03, 0xF6,
-                        0xC1, 0x03, 0xF7,
-                        0xC1, 0x03, 0xF8);
-                } else {
-                    DAT_07eaa115 = '\0';
-                }
-                FUN_00404bc0(0x19, 0, 0);
-                FUN_00404bc0(0x1c, 0, 0);
-            }
-
-            // Tab 2 — X=[0x17b..0x192], Y=[0x1c3..0x1db]
-            if ((0x17a < mouseX) && (mouseX < 0x193) &&
-                (0x1c3 < mouseY) && (mouseY < 0x1dc) &&
-                IsClickPushed())
-            {
-                DAT_083a4124 = '\0';
-                if (DAT_07eaa116 == '\0') {
-                    DAT_07eaa116 = '\x01';
-                    ClassTab_HandleClick(
-                        0xC1, 0x03, 0xF9,
-                        0xC1, 0x03, 0xFA,
-                        0xC1, 0x03, 0xFB);
-                }
-                FUN_00404bc0(0x19, 0, 0);
-                FUN_00404bc0(0x1c, 0, 0);
-            }
+            // ── Botones de la barra inferior (guild / party / personaje /
+            //    inventario) ────────────────────────────────────────────────
+            // IDA los tiene aca mismo: L1130 (guild, 582..634 x 459..477),
+            // L1455 (party, 348..372 x 452..476), L1775 (personaje,
+            // 379..403 x 452..476) y L2078 (inventario, 410..434 x 452..476).
+            //
+            // 2026-09-04 -- estaban portados como "class-tab buttons" con los
+            // rects correctos pero el cuerpo mal: los tres compartian el helper
+            // `ClassTab_HandleClick`, que hacia `GuildOpened = 1` y
+            // `g_nGuildMemberCount = -1` SIEMPRE (son del boton de guild, IDA
+            // L1196-1199) y mandaba paquetes inventados 0xF3..0xFB en vez de los
+            // reales (0x52 guild, 0x42 party, 0x82/0x87 para cerrar
+            // warehouse/chaos).  De ahi que party y personaje abrieran el panel
+            // de guild.  Ademas consumian el click (`MouseLButtonPush = 0`)
+            // antes de que llegara el hit-test bueno.
+            //
+            // El cuerpo fiel vive en `HUD_BottomBarButtons_HitTest`
+            // (src/Game/Player_InputTick.cpp), que ya trae los cuatro botones
+            // con sus sonidos, paquetes y efectos sobre los otros flags.
+            HUD_BottomBarButtons_HitTest();
 
             // ── 5. Hotkey assignment grid ────────────────────────────────────
             // chardata+0x56 != 0: item grid is visible.
