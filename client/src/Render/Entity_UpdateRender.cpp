@@ -719,6 +719,13 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                     Bind = 1;
                 }
             }
+            // IDA L1162-1165 (LABEL_272): en Blood Castle el arma NUNCA va a la
+            // espalda -- `if (World >= 11 && World <= 16) Bind = 0;`.  Faltaba, y
+            // por eso el arma del evento (EtcPart) quedaba atrapada dentro de la
+            // rama de "arma en la espalda" en vez de renderizarse.
+            if (__world >= 11 && __world <= 16) {
+                Bind = 0;
+            }
         }
 
         if (Bind) {
@@ -771,18 +778,33 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 param_1[0xaa] = (int)local_68;
             }
 
-            // Secondary weapon override (param_1[0xba] = secondary item type, Blood Castle)
-            if ((DAT_0055a7ac > 10) && (DAT_0055a7ac < 0x11) &&
-                (*(char *)(param_1 + 0xba) != '\0')) {
-                *(BYTE *)(param_1 + 0xa9) = 0x2f;
-                BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-                param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-                char cType = *(char *)(param_1 + 0xba);
-                int iSecType = (cType == '\x01') ? 0x23a :
-                               (cType == '\x02') ? 0x1a3 :
-                               (cType == '\x03') ? 0x222 : 0;
+        }
+
+        // -- Arma del evento de Blood Castle sobre la espalda (EtcPart) -------
+        // IDA LABEL_308: `if (World >= 11 && World <= 16 && c->EtcPart)`, con
+        //     EtcPart 1 -> 570 (Staff)   2 -> 419 (Sword)   3 -> 546 (Bow)
+        // y LinkBone 47.  `c->EtcPart` es el byte +0x2E8 (= param_1[0xba] con
+        // param_1 como int*), que escribe el handler del 0x9B con el
+        // EventItemLevel que manda el server.
+        //
+        // 2026-09-07: estaba DENTRO de `if (Bind)`, o sea sujeto a la rama de
+        // "arma en la espalda".  En IDA vive en la rama contraria (`!Back ||
+        // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
+        // siempre se alcanza.  Sintoma: el arco de la estatua no se dibujaba en
+        // la espalda al levantarlo.  Verificado en el log del cliente: el server
+        // manda `0x9B ... owner=9001 lvl=3` (3 = Bow) durante 80 paquetes.
+        if ((DAT_0055a7ac >= 11) && (DAT_0055a7ac <= 16) &&
+            (*(char *)(param_1 + 0xba) != 0)) {
+            *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
+            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            char cType = *(char *)(param_1 + 0xba);
+            int iSecType = (cType == 1) ? 0x23a :   // 570 Staff
+                           (cType == 2) ? 0x1a3 :   // 419 Sword
+                           (cType == 3) ? 0x222 : 0; // 546 Bow
+            if (iSecType != 0) {
                 FUN_00455430(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                             iSecType, '\0', 0, '\x01', '\x01', 0);
+                             iSecType, 0, 0, 1, 1, 0);
             }
         }
 
