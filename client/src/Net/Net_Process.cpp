@@ -5942,6 +5942,17 @@ void Net_ProcessPacket(void)
                                 BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * idx;
                                 *(BYTE*)(c + 744) = itemLevel;
                             }
+                        } else if (itemOwner == -1 || itemLevel == 0) {
+                            // DESVIACION DEL PORT.  El gate de arriba es fiel a IDA
+                            // (`if (owner != -1) if (lvl != 0xFF) if (lvl)`), pero con
+                            // ese gate NADIE limpia +744 cuando se devuelve el arma:
+                            // MuEmu manda `owner=-1 lvl=0` y acto seguido
+                            // `owner=0 lvl=255`, y los dos caen fuera del if.  El arma
+                            // quedaba colgada de la espalda hasta cambiar de mapa.
+                            // `sub_45ACC0` limpia el flag en TODAS las entidades antes
+                            // de buscar, asi que llamarla con una key imposible es
+                            // exactamente "que no lo lleve nadie".
+                            FUN_0045acc0(0xFFFF);
                         }
                         break;
                     }
