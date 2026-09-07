@@ -470,6 +470,36 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                      (int)*psVar1, '\0', 0, '\x01', '\x01', 0);
     }
 
+    // ── 5-bis. Sombra del jugador (RenderPartObject con el modelo 391) ───────
+    // IDA RenderCharacter L750-772.  Faltaba entera: los jugadores se dibujaban
+    // sin sombra.  El gate salteando la sombra cuando se va montado en Uniria
+    // (818) o Dinorant (819) fuera de zona segura es del binario, no una
+    // simplificacion nuestra.
+    {
+        char *o = (char *)puVar13;
+        if (*(float *)(o + 360) >= 0.5f && DAT_0055a7ac != 10 &&
+            *(short *)(o + 2) == 390)
+        {
+            const unsigned short helper = *(unsigned short *)((char *)param_1 + 696);
+            if (helper < 818 || helper > 819 || *((char *)param_1 + 846) != 0) {
+                // Blood Castle (11..16): si esta muerto sobre el puente, la
+                // sombra se pega al terreno en vez de quedar flotando.
+                if (DAT_0055a7ac >= 11 && DAT_0055a7ac <= 16 &&
+                    *(BYTE *)(o + 405) != 0 && *((BYTE *)param_1 + 765) != 0)
+                {
+                    float th = FUN_004f7500(*(float *)(o + 16), *(float *)(o + 20));
+                    if (th < *(float *)(o + 24)) *(float *)(o + 24) = th;
+                }
+                const float shadowAlpha = *(float *)(o + 360);
+                *(BYTE *)(o + 140) = 1;              // EnableShadow
+                FUN_00505a10((int)param_1, 391, 0,
+                             (float *)((char *)param_1 + 800), shadowAlpha,
+                             0, 0, '\0', 0, '\x01', 0, 2);
+                *(BYTE *)(o + 140) = 0;
+            }
+        }
+    }
+
     // ── 6. Scale / color from zone param + entity sub-state ──────────────────
     float fVar32 = (float)(int)param_3 * _DAT_005524f8;
 
