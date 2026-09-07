@@ -734,7 +734,7 @@ void __cdecl FUN_004e6550(void) {
                      (short*)OffsetTradeItems, 8, 4, '\0');
     }
     // FIX 2026-07-25: el render de shop/warehouse/chaos (RenderShopInterface
-    // HUD_Pass6:1358) usa dword_7EAA0C8=260 / dword_7EAA0CC=0 (símbolo separado
+    // HUD_Pass6:1358) usa DAT_07eaa0c8=260 / DAT_07eaa0cc=0 (símbolo separado
     // del global DAT_07eaa0c8 en el port). El hover de abajo usa DAT_07eaa0c8,
     // que valía 0 → el tooltip caía en top-left (sx=35) en vez de sobre el item.
     // Sincronizamos el global con los valores del render para que coincidan.
@@ -770,177 +770,110 @@ void __cdecl FUN_004e6550(void) {
 //     (appends digit to DAT_07ea9814 buffer), Enter → sends packet, ESC → cancel.
 //   - SEH. Implemented in SecondPassword_UI.cpp.
 void __cdecl FUN_004e6c40(void) {
-    // SecondPassword_Screen5 — Main numeric PIN keypad
-    // Guard: DAT_07eaa11c must be non-zero
-    if (DAT_07eaa11c == '\0') return;
+    // Click del selector de nivel del evento.  El binario NO tiene aca ningun
+    // teclado de PIN: son 4 filas (Devil Square) o 6 (Blood Castle) alineadas
+    // con las que dibuja `RenderEventWindow` (0x4F3C50).
+    //
+    // 2026-09-07: reescrita contra IDA.  Lo que estaba antes eran rects
+    // aproximados con globals que no correspondian, y los dos paquetes de
+    // entrada armados con la CLAVE XOR anti-tamper que Hex-Rays emite inline
+    // (`v59 = -25; v60 = 109; ...` = E7 6D 3A 89 ...) tomada por bytes del
+    // paquete -> el slot terminaba valiendo siempre key[4] = 0xBC.  Ademas el
+    // chequeo de nivel leia `(&DAT_00559f60)[i*2]`, un int suelto partido en dos
+    // respecto de `m_iDevilSquareLimitLevel` (ver globals.h), asi que rechazaba
+    // por nivel aun con la entrada correcta.
+    if (!EventWindowOpened) return;
 
-    if (DAT_07eaa120 != 0) {
-        if (DAT_07eaa120 != 1) return;
-        // mode==1: resetea el origen a (0x104, 0) y vuelve a chequear
-        DAT_07eaa0c8 = 0x104;
+    // ── Blood Castle ────────────────────────────────────────────────────────
+    if (EventType == 1) {
+        DAT_07eaa0c8 = 260;
         DAT_07eaa0cc = 0;
-        if (!IsClickPushed()) { DAT_07eaa0c8 = 0x104; DAT_07eaa0cc = 0; return; }
-        // Itera hasta 6 botones de dígito (el stride varía según move_type), busca el clickeado
-        float fBase = 170.0f;
-        for (int iStep = 0; iStep < 6; iStep++) {
-            int moveType = (int)(*(BYTE*)(DAT_07abf5d8 + 0x1bc) & 7);
-            int local_418 = (moveType != 3 ? 6 : 6) + iStep; // simplified
-            // Check button position (approximation from decompile)
-            float fY = fBase + (float)iStep * _DAT_005528e4;
-            bool inX = (_DAT_00552c24 <= (float)DAT_083a427c && (float)DAT_083a427c < _DAT_00552c20);
-            bool inY = (fY <= (float)DAT_083a4278 && (float)DAT_083a4278 < fY + _DAT_00552c1c);
-            if (inX && inY) {
-                DAT_083a4124 = 0;
-                if (DAT_07e91388 != 0) { DAT_07eaa0c8 = 0x104; DAT_07eaa0cc = 0; DAT_083a4124 = 0; return; }
-                int iSlot = FUN_00482d70(0x1b2, iStep + 1);
-                if (iSlot == -1) { FUN_0051d6f0((char*)&DAT_07d685ec); return; }
-                // Build and send digit packet (opcode 0x9A, 5 bytes)
-                {
-                    static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                                  0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                                  0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                                  0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-                    BYTE pkt[5];
-                    pkt[0] = 0xC1; pkt[1] = 1; pkt[2] = 0x9A; pkt[3] = 1;
-                    // XOR encode
-                    for (uint ui = 3; ui < 4; ui++) {
-                        uint uk = ui & 0x1f;
-                        pkt[ui] ^= key[uk] ^ pkt[ui+1];
-                    }
-                    pkt[4] = (char)iSlot + 0x0c;
-                    // XOR encode byte 4
-                    { uint uk = 4 & 0x1f; pkt[4] ^= key[uk] ^ pkt[5 > 4 ? 4 : 4]; }
-                    // Send 5 bytes
-                    int off = 0; unsigned int rem = 5;
-                    if (DAT_055ca168 != 0xffffffff) {
-                        do {
-                            int r = send((SOCKET)DAT_055ca168, (char*)pkt+off, (int)(rem-off), 0);
-                            if (r == -1) {
-                                int e = WSAGetLastError();
-                                if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                                    memcpy(DAT_055ca16c + DAT_055cc16c, pkt, rem);
-                                    DAT_055cc16c += rem;
-                                } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                                break;
-                            }
-                            if (r == 0) break;
-                            if (DAT_055ce174) FUN_0043de60();
-                            rem -= r; off += r;
-                        } while ((int)rem > 0);
-                    }
-                }
-                return;
-            }
-            fBase += _DAT_00552844;
-            if (iStep > 4) return;
+        if (!MouseLButtonPush) return;
+
+        const WORD charLevel = *(WORD*)((BYTE*)CharacterAttribute + 14);
+        const int mgOffset = ((((const BYTE*)Hero)[444] & 7) == 3) ? 6 : 0;
+
+        float rowY = 170.0f;
+        int row = 0;
+        for (; row < 6; ++row, rowY += 40.0f) {
+            const int limitRow = row + mgOffset;
+            // Fila fuera del rango de nivel: no es clickeable (y RenderEventWindow
+            // la dibuja grisada).  Esto lo tiene Blood Castle y no Devil Square.
+            if (charLevel > (unsigned)m_iBloodCastleLimitLevel[limitRow][1] ||
+                charLevel < (unsigned)m_iBloodCastleLimitLevel[limitRow][0])
+                continue;
+            if ((float)MouseX >= 285.0f && (float)MouseX < 425.0f &&
+                (float)MouseY >= rowY  && (float)MouseY < rowY + 33.0f)
+                break;
         }
-        DAT_07eaa0c8 = 0x104; DAT_07eaa0cc = 0; return;
+        if (row >= 6) return;
+
+        MouseLButtonPush = 0;
+        if (DAT_07e91388) return;
+
+        const int itemSlot = GetItemSlot(434, row + 1);
+        if (itemSlot == -1) { CreateOkMessageBox(GlobalText[854]); return; }
+
+        // MuEmu PMSG_BLOOD_CASTLE_ENTER_RECV: el server hace `level -= 1` y
+        // `slot -= INVENTORY_WEAR_SIZE`.
+        const BYTE pkt[5] = { 0xC1, 0x05, 0x9A, (BYTE)(row + 1), (BYTE)(itemSlot + 12) };
+        Net_SendC1Packet(pkt, 5);
+        return;
     }
 
-    // mode==0: setea el origen y procesa los clicks en los botones de dígito del PIN
-    DAT_07eaa0c8 = 0x104;
+    if (EventType != 0) return;
+
+    // ── Devil Square ────────────────────────────────────────────────────────
+    DAT_07eaa0c8 = 260;
     DAT_07eaa0cc = 0;
-    if (!IsClickPushed()) { DAT_07eaa0c8 = 0x104; DAT_07eaa0cc = 0; return; }
+    if (!MouseLButtonPush) return;
 
-    int iStep2 = 0;
-    float fY2 = _DAT_00552c28;
-    while (!(_DAT_00552c24 <= (float)DAT_083a427c && (float)DAT_083a427c < _DAT_00552c20 &&
-             fY2 <= (float)DAT_083a4278 && (float)DAT_083a4278 < fY2 + _DAT_00552a2c)) {
-        fY2 += _DAT_00552844;
-        iStep2++;
-        if (iStep2 > 3) { DAT_07eaa0c8 = 0x104; DAT_07eaa0cc = 0; return; }
+    float rowY = 210.0f;
+    int row = 0;
+    for (; row < 4; ++row, rowY += 45.0f) {
+        if ((float)MouseX >= 285.0f && (float)MouseX < 425.0f &&
+            (float)MouseY >= rowY  && (float)MouseY < rowY + 35.0f)
+            break;
     }
-    DAT_083a4124 = 0;
-    if (DAT_07e91388 != 0) { DAT_07eaa0c8 = 0x104; DAT_07eaa0cc = 0; DAT_083a4124 = 0; return; }
+    if (row >= 4) return;
 
-    // Determina el nivel de equipo y lo compara contra el umbral
-    uint uVar5 = (uint)*(ushort*)((int)DAT_07cf1ff4 + 0xe);
-    if ((*(BYTE*)((int)DAT_07cf1ff4 + 0xb) & 7) == 3) uVar5 = ((uVar5 + 1) / 2) * 3;
+    MouseLButtonPush = 0;
+    if (DAT_07e91388) return;
 
-    if ((int)(&DAT_00559f64)[iStep2 * 2] < (int)uVar5) {
-        // Level too low — send cancel (C1/03/31) and show "level too low" message
-        DAT_07eaa117 = 0;
-        FUN_004cba60();
-        BYTE pkt[3] = {0xC1, 3, 0x31};
-        int off = 0; unsigned int rem = 3;
-        if (DAT_055ca168 != 0xffffffff) {
-            do {
-                int r = send((SOCKET)DAT_055ca168, (char*)pkt+off, (int)(rem-off), 0);
-                if (r == -1) {
-                    int e = WSAGetLastError();
-                    if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                        memcpy(DAT_055ca16c + DAT_055cc16c, pkt, rem);
-                        DAT_055cc16c += rem;
-                    } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                    break;
-                }
-                if (r == 0) break;
-                if (DAT_055ce174) FUN_0043de60();
-                rem -= r; off += r;
-            } while ((int)rem > 0);
-        }
+    int playerLevel = *(WORD*)((BYTE*)CharacterAttribute + 14);
+    if ((*((BYTE*)CharacterAttribute + 11) & 7) == 3)   // Magic Gladiator
+        playerLevel = 3 * ((playerLevel + 1) / 2);
+
+    if (playerLevel > m_iDevilSquareLimitLevel[row][1]) {
+        // Nivel demasiado alto: cierra el inventario, manda el cancel y avisa.
+        InventoryOpened = 0;
+        CloseInventoryRelatedWindows();
+        const BYTE cancel[3] = { 0xC1, 0x03, 0x31 };
+        Net_SendC1Packet(cancel, 3);
         FUN_004cd3b0();
-        FUN_0051d6f0((char*)&DAT_07d5c10c);
-    } else if ((int)uVar5 < (int)(&DAT_00559f60)[iStep2 * 2]) {
-        // Level too high — send cancel and show "level too high" message
-        DAT_07eaa117 = 0;
-        FUN_004cba60();
-        BYTE pkt[3] = {0xC1, 3, 0x31};
-        int off = 0; unsigned int rem = 3;
-        if (DAT_055ca168 != 0xffffffff) {
-            do {
-                int r = send((SOCKET)DAT_055ca168, (char*)pkt+off, (int)(rem-off), 0);
-                if (r == -1) {
-                    int e = WSAGetLastError();
-                    if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                        memcpy(DAT_055ca16c + DAT_055cc16c, pkt, rem);
-                        DAT_055cc16c += rem;
-                    } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                    break;
-                }
-                if (r == 0) break;
-                if (DAT_055ce174) FUN_0043de60();
-                rem -= r; off += r;
-            } while ((int)rem > 0);
-        }
-        FUN_004cd3b0();
-        FUN_0051d6f0((char*)&DAT_07d5c238);
-    } else {
-        // Nivel dentro del rango — intenta encontrar el slot de dígito y manda el paquete opcode 0x90
-        int iSlot = FUN_00482d70(0x1d3, 0);
-        if (iSlot == -1) iSlot = FUN_00482d70(0x1d3, iStep2 + 1);
-        if (iSlot == -1) {
-            FUN_0051d6f0((char*)&DAT_07d5b680);
-        } else {
-            static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                          0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                          0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                          0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-            BYTE pkt[5];
-            pkt[0] = 0xC1; pkt[1] = 1; pkt[2] = 0x90; pkt[3] = 1;
-            for (uint ui = 3; ui < 4; ui++) { uint uk = ui & 0x1f; pkt[ui] ^= key[uk] ^ pkt[ui+1]; }
-            pkt[4] = (char)iSlot + 0x18;
-            { uint uk = 4 & 0x1f; pkt[4] ^= key[uk] ^ pkt[4]; }
-            int off = 0; unsigned int rem = 5;
-            if (DAT_055ca168 != 0xffffffff) {
-                do {
-                    int r = send((SOCKET)DAT_055ca168, (char*)pkt+off, (int)(rem-off), 0);
-                    if (r == -1) {
-                        int e = WSAGetLastError();
-                        if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                            memcpy(DAT_055ca16c + DAT_055cc16c, pkt, rem);
-                            DAT_055cc16c += rem;
-                        } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                        break;
-                    }
-                    if (r == 0) break;
-                    if (DAT_055ce174) FUN_0043de60();
-                    rem -= r; off += r;
-                } while ((int)rem > 0);
-            }
-        }
+        CreateOkMessageBox(GlobalText[686]);
+        return;
     }
+    if (playerLevel < m_iDevilSquareLimitLevel[row][0]) {
+        InventoryOpened = 0;
+        CloseInventoryRelatedWindows();
+        const BYTE cancel[3] = { 0xC1, 0x03, 0x31 };
+        Net_SendC1Packet(cancel, 3);
+        FUN_004cd3b0();
+        CreateOkMessageBox(GlobalText[687]);
+        return;
+    }
+
+    int itemSlot = GetItemSlot(467, 0);
+    if (itemSlot == -1) itemSlot = GetItemSlot(467, row + 1);
+    if (itemSlot == -1) { CreateOkMessageBox(GlobalText[677]); return; }
+
+    // MuEmu PMSG_DEVIL_SQUARE_ENTER_RECV.  Ojo: Devil Square suma **24** al
+    // slot, no 12 como Blood Castle (IDA: `buf[size+2] = v20 + 24`).
+    const BYTE pkt[5] = { 0xC1, 0x05, 0x90, (BYTE)row, (BYTE)(itemSlot + 24) };
+    Net_SendC1Packet(pkt, 5);
 }
+
 // FUN_004e7ac0 @ 0x004E7AC0 — SecondPassword_Screen6 (854 lines)
 //   - Segunda contraseña del char-select: parecido a Screen5 pero para el flujo de selección de personaje.
 //     Checks DAT_07eaa14c mode (2=new PIN, 3=confirm PIN, 6=set-mode).

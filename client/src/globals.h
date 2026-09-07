@@ -2353,8 +2353,14 @@ extern float  _DAT_00552c28;   // Screen5 button Y base
 extern short   DAT_00559f5a;   // second-password level check B (short)
 extern int     DAT_00559f80;   // level threshold array base (index by slot)
 extern int     DAT_00559f84;   // level threshold array upper (index by slot)
-extern int     DAT_00559f60;   // level range lower array (index by slot)
-extern int     DAT_00559f64;   // level range upper array (index by slot)
+// 2026-09-07: DAT_00559f60 / DAT_00559f64 SON m_iDevilSquareLimitLevel.
+// Verificado con ida_get_function: m_iDevilSquareLimitLevel = 0x00559F60 y
+// m_iBloodCastleLimitLevel = 0x00559F80 (32 bytes despues = 4 niveles x 2 int).
+// Estaban partidos en dos: el handler del 0x8E llenaba el array C y
+// `FUN_004e6c40` leia `(&DAT_00559f60)[i*2]`, un int suelto -> el chequeo de
+// nivel del Devil Square comparaba contra basura de los globals vecinos.
+#define DAT_00559f60   (m_iDevilSquareLimitLevel[0][0])
+#define DAT_00559f64   (m_iDevilSquareLimitLevel[0][1])
 // DAT_07ea7b88 — declared above as DWORD (line 1474)
 extern char    DAT_07ea5b30;   // second-password char-slot list base
 

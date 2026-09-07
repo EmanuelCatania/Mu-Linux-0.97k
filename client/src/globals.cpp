@@ -2521,8 +2521,9 @@ float  _DAT_00552c28  = 210.0f; // Screen5 button Y base
 short   DAT_00559f5a  = 0;   // second-password level check B
 int     DAT_00559f80  = 0;   // level threshold array base
 int     DAT_00559f84  = 0;   // level threshold array upper
-int     DAT_00559f60  = 0;   // level range lower array
-int     DAT_00559f64  = 0;   // level range upper array
+// DAT_00559f60 / DAT_00559f64 -> macros sobre m_iDevilSquareLimitLevel (globals.h)
+// int     DAT_00559f60  = 0;   // level range lower array
+// int     DAT_00559f64  = 0;   // level range upper array
 // DAT_07ea7b88 — declared above as DWORD (line 1404)
 char    DAT_07ea5b30  = 0;   // second-password char-slot list base
 

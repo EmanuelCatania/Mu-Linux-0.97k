@@ -1818,98 +1818,126 @@ extern "C" void __cdecl RenderWarehouse(void)
 // Square or six Blood Castle levels (IDA RenderEventWindow @ 0x004F3C50).
 // Keeping it as a generic InventoryInterface skeleton was why these NPCs looked
 // like a shop even when ReceiveTalk had correctly selected EventWindowOpened.
-static bool EventWindowHit(float x, float y, float w, float h)
-{
-    return MouseX >= x && MouseX < x + w && MouseY >= y && MouseY < y + h;
-}
-
-static void SendEventEntry(bool bloodCastle, int level)
-{
-    // The server validates both the selected level and the inventory position.
-    // GetItemSlot returns the 8x8 client inventory index; the protocol uses the
-    // absolute inventory slot, which starts after the 12 equipment positions.
-    // `GetItemSlot` compares the client's ITEM.Type, whose group stride is
-    // 32 (not the GameServer's GET_ITEM stride of 512).  IDA's event click
-    // paths use 0x1B2 for the Cloak (13*32+18) and 0x1D3 for the Invitation
-    // (14*32+19).  Passing the server IDs 6674/7187 never found the ticket,
-    // so the old port submitted inventory slot 0 and received result 1.
-    const int standardTicket = bloodCastle ? (13 * 32 + 18) : (14 * 32 + 19);
-    int slot = GetItemSlot(standardTicket, level + 1);
-    if (slot < 0) {
-        // The server also accepts the non-levelled event tickets.
-        slot = GetItemSlot(bloodCastle ? (13 * 32 + 47) : (13 * 32 + 46), -1);
-    }
-
-    BYTE packet[5] = { 0xC1, 0x05, bloodCastle ? 0x9A : 0x90, 0, 0 };
-    packet[3] = (BYTE)(bloodCastle ? level + 1 : level);
-    packet[4] = (BYTE)(slot < 0 ? 0 : slot + 12);
-    Net_SendC1Packet(packet, sizeof(packet));
-}
-
+// ── RenderEventWindow (0x004F3C50) ───────────────────────────────────────────
+// Selector de nivel del evento: 4 filas para Devil Square, 6 para Blood Castle.
+//
+// 2026-09-07: el port anterior manejaba el CLICK y mandaba el paquete de entrada
+// desde aca (`SendEventEntry`).  En el binario esta funcion **solo dibuja**: el
+// click lo atiende `sub_4E6C40`, que es donde viven el chequeo de nivel, los dos
+// carteles de "nivel muy bajo/alto" y el envio.  Tener las dos cosas hacia que el
+// click se consumiera aca (`MouseLButtonPush = 0`) antes de llegar al handler
+// bueno, y que se enviara un paquete con el slot mal calculado (usaba +12 para
+// los dos eventos, cuando Devil Square usa +24).
+//
+// Diferencia real entre los dos paneles, y por que Devil Square muestra las
+// cuatro filas habilitadas: **solo Blood Castle** grisa las filas fuera de rango
+// (`iPos_x = 0` -> glColor 0.4/0.4/0.5).  Devil Square las dibuja todas iguales y
+// deja que `sub_4E6C40` conteste con el cartel.  Es asi en el binario.
 extern "C" void __cdecl RenderEventWindow(void)
 {
     if (!EventWindowOpened) return;
-    glColor3f(1.0f, 1.0f, 1.0f);
-    EnableAlphaTest(true);
+    if (EventType != 0 && EventType != 1) return;
+
+    const bool bloodCastle = (EventType == 1);
+
     dword_7EAA0C8 = 260;
     dword_7EAA0CC = 0;
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
 
-    const bool bloodCastle = EventType == 1;
-    const int count = bloodCastle ? 6 : 4;
+    m_dwTextColor = bloodCastle ? 0xDCFFDCBEu : 0xC41432FFu;
+    m_dwBackColor = 0x00101000u;
+
     const float x = (float)dword_7EAA0C8 + 25.0f;
-    const float firstY = bloodCastle ? 170.0f : 210.0f;
+    float y = (float)dword_7EAA0CC + (bloodCastle ? 170.0f : 210.0f);
     const float stride = bloodCastle ? 40.0f : 45.0f;
     const float height = bloodCastle ? 33.0f : 35.0f;
-    const WORD characterLevel = CharacterAttribute ? *(WORD*)((BYTE*)CharacterAttribute + 14) : 0;
-    // IDA RenderEventWindow @ 0x004F3C50 uses the second six-row bank for a
-    // Magic Gladiator: v46 = level + ((Hero[444] & 7) == 3 ? 6 : 0).
-    const bool magicGladiator = Hero && ((((const BYTE*)Hero)[444] & 7) == 3);
+    const int   count  = bloodCastle ? 6 : 4;
 
     SelectObject(m_hFontDC, g_hFontBold);
+
+    const WORD charLevel = CharacterAttribute ? *(WORD*)((BYTE*)CharacterAttribute + 14) : 0;
+    // v46 = fila + ((Hero[444] & 7) == 3 ? 6 : 0): el Magic Gladiator usa el
+    // segundo banco de 6 filas de m_iBloodCastleLimitLevel.
+    const int mgOffset = (Hero && ((((const BYTE*)Hero)[444] & 7) == 3)) ? 6 : 0;
+
+    for (int row = 0; row < count; ++row) {
+        const int limitRow = bloodCastle ? row + mgOffset : row;
+        const int minLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][0]
+                                         : m_iDevilSquareLimitLevel[row][0];
+        const int maxLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][1]
+                                         : m_iDevilSquareLimitLevel[row][1];
+
+        const bool inRect = ((float)MouseX >= x && (float)MouseX < x + 140.0f &&
+                             (float)MouseY >= y && (float)MouseY < y + height &&
+                             DAT_07e91388 == 0);
+
+        if (bloodCastle) {
+            const bool permitted = (charLevel <= (unsigned)maxLevel && charLevel >= (unsigned)minLevel);
+            if (!permitted)     glColor3f(0.4f, 0.4f, 0.5f);
+            else if (inRect)    glColor3f(1.0f, 1.0f, 1.0f);
+            else                glColor3f(0.7f, 0.7f, 0.9f);
+        } else {
+            if (inRect)         glColor3f(1.0f, 1.0f, 1.0f);
+            else                glColor3f(0.9f, 0.8f, 0.7f);
+        }
+        GL_DrawTexture(240, x, y, 140.0f, height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+
+        char label[96];
+        const bool withMax = (maxLevel <= 10000);
+        if (withMax) sprintf_s(label, bloodCastle ? GlobalText[847] : GlobalText[645],
+                               row + 1, minLevel, maxLevel);
+        else         sprintf_s(label, bloodCastle ? GlobalText[848] : GlobalText[646],
+                               row + 1, minLevel);
+        RenderText((int)x + (bloodCastle ? 10 : 12), (int)y + 12, label,
+                   (bloodCastle ? 120 : 116) * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+
+        y += stride;
+    }
+
+    glColor3f(1.0f, 1.0f, 1.0f);
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
                GlobalText[bloodCastle ? 846 : 39], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
 
-    for (int level = 0; level < count; ++level) {
-        const float y = firstY + level * stride;
-        const int limitRow = bloodCastle ? level + (magicGladiator ? 6 : 0) : level;
-        const int minLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][0]
-                                         : m_iDevilSquareLimitLevel[level][0];
-        const int maxLevel = bloodCastle ? m_iBloodCastleLimitLevel[limitRow][1]
-                                         : m_iDevilSquareLimitLevel[level][1];
-        const bool permitted = !bloodCastle || (characterLevel >= minLevel && characterLevel <= maxLevel);
-        const bool hover = permitted && EventWindowHit(x, y, 140.0f, height) && !DAT_07e91388;
-        glColor3f(permitted ? (hover ? 1.0f : 0.8f) : 0.4f,
-                  permitted ? (hover ? 1.0f : 0.8f) : 0.4f,
-                  permitted ? (hover ? 1.0f : 0.9f) : 0.5f);
-        GL_DrawTexture(240, x, y, 140.0f, height, 0.0f, 0.0f, 0.83203125f, 1.0f, 1, 1);
+    SelectObject(m_hFontDC, g_hFont);
+    m_dwBackColor = 0;
+    m_dwTextColor = 0xFFFFFFFFu;
+    EnableAlphaTest(1);
 
-        char label[96];
-        const int withMax = maxLevel <= 10000;
-        sprintf_s(label, bloodCastle ? (withMax ? GlobalText[847] : GlobalText[848])
-                                     : (withMax ? GlobalText[645] : GlobalText[646]),
-                  level + 1, minLevel, maxLevel);
-        RenderText((int)x + (bloodCastle ? 10 : 12), (int)y + 12, label,
-                   (bloodCastle ? 120 : 116) * (int)WindowWidth / 0x280, 1, (SIZE*)3);
-
-        if (permitted && hover && DAT_083a4124 != 0) {
-            DAT_083a4124 = 0;
-            SendEventEntry(bloodCastle, level);
-        }
+    if (bloodCastle) {
+        // GlobalText[832] partido en hasta 7 lineas de 26 caracteres.
+        char lines[7 * 26 + 8];
+        memset(lines, 0, sizeof(lines));
+        const int n = SeparateTextIntoLines(GlobalText[832], lines, 7, 26);
+        for (int i = 0, dy = 0; i < n; ++i, dy += 20)
+            RenderText(dword_7EAA0C8 + 30, dy + dword_7EAA0CC + 64, lines + i * 26,
+                       130 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+    } else {
+        // Seis filas consecutivas de GlobalText a partir de la 670.
+        for (int dy = 80, i = 0; dy < 200; dy += 20, ++i)
+            RenderText(dword_7EAA0C8 + 30, dy + dword_7EAA0CC, GlobalText[670 + i],
+                       130 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    GL_ResetState();   // = DisableAlphaBlend
 
-    // Same close affordance as the original inventory-style frame.
-    const float closeX = (float)dword_7EAA0C8 + 25.0f;
-    const float closeY = (float)dword_7EAA0CC + 395.0f;
-    GL_DrawTexture(280, closeX, closeY, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    if (EventWindowHit(closeX, closeY, 24.0f, 24.0f) && DAT_083a4124 != 0) {
-        DAT_083a4124 = 0;
-        Net_SendEventWindowClose();
-        InventoryOpened = 0;
-        CloseInventoryRelatedWindows();
+    // DESVIACION DEL PORT: en el binario el boton de cerrar lo dibuja
+    // `RenderInventoryInterface` y lo atiende `sub_4E6550` con el rect del
+    // INVENTARIO (`InventoryStartX + 25`).  Con el panel de evento abierto ese
+    // origen no coincide con el nuestro (260,0), asi que se mantiene un hit-test
+    // propio para no dejar la ventana sin forma de cerrarse.
+    {
+        const float closeX = (float)dword_7EAA0C8 + 25.0f;
+        const float closeY = (float)dword_7EAA0CC + 395.0f;
+        if ((float)MouseX >= closeX && (float)MouseX < closeX + 24.0f &&
+            (float)MouseY >= closeY && (float)MouseY < closeY + 24.0f &&
+            DAT_083a4124 != 0)
+        {
+            DAT_083a4124 = 0;
+            Net_SendEventWindowClose();
+            InventoryOpened = 0;
+            CloseInventoryRelatedWindows();
+        }
     }
 }
 
