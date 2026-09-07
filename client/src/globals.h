@@ -740,20 +740,20 @@ extern BYTE    DAT_07d780a8[40];         // username field length (memset writes
 // los caminos de login/susurro; el mismo storage respalda a RenderInputText.
 extern char    DAT_07db8710[10][256];    // input slot table (10 × 256 bytes)
 #define DAT_07db8810   (DAT_07db8710[1]) // alias: +0x100 = slot 1
-extern char    DAT_07d4c3ec[256];       // connecting status string buffer
-extern char    DAT_07d4c644[256];       // char name send buffer
-extern char    DAT_07d4c770[256];       // char name confirm buffer
+// extern char    DAT_07d4c3ec[256];       // connecting status string buffer   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d4c644[256];       // char name send buffer   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d4c770[256];       // char name confirm buffer   // -> alias a GlobalText, ver el final del archivo
 extern DWORD   DAT_07d52c38;            // server select render flag
-extern char    DAT_07d530e8[256];       // server group name buffer
-extern char    DAT_07d53214[256];       // server channel name buffer
-extern char    DAT_07d4ac7c[256];       // username display buffer
-extern char    DAT_07d4ada8[256];       // password display buffer
+// extern char    DAT_07d530e8[256];       // server group name buffer   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d53214[256];       // server channel name buffer   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d4ac7c[256];       // username display buffer   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d4ada8[256];       // password display buffer   // -> alias a GlobalText, ver el final del archivo
 extern char    lpString_07d4aed4[128];  // OK button text
 extern char    lpString_07d4b000[128];  // Exit/Cancel button text
-extern char    DAT_07d4b708[128];       // char name format string
-extern char    DAT_07d4b12c[128];       // version string 1
-extern char    DAT_07d4b258[128];       // version string 2
-extern char    DAT_07d4b384[128];       // version string 3 format
+// extern char    DAT_07d4b708[128];       // char name format string   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d4b12c[128];       // version string 1   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d4b258[128];       // version string 2   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d4b384[128];       // version string 3 format   // -> alias a GlobalText, ver el final del archivo
 extern char    lpString_07d4c518[128];  // "Connecting..." string
 extern DWORD   DAT_07e127f8;
 extern unsigned char DAT_07e12840[1000 * 0x204];   // GroundItem pool: 1000 × 0x204 bytes
@@ -1279,11 +1279,11 @@ extern int     DAT_07e11d24;        // character class/subtype ID (range 0..0x1F
 extern char    lpString_07e90798[]; // string list buffer (100 bytes per entry, ~30 slots)
 extern int     DAT_07e91708[30];    // TextListColor @0x07E91708 - color por linea
 extern int     DAT_07ea7b10[30];    // TextBold      @0x07EA7B10 - negrita por linea
-extern char    DAT_07d329c4;        // class name table A (first entry base)
-extern char    DAT_07d32af0;        // class info list A (stride 300, limit 0x7d34134)
-extern char    DAT_07d34134;        // class name table B (first entry base)
-extern char    DAT_07d34260;        // class info list B (stride 300, limit 0x7d358a4)
-extern char    DAT_07d358a4;        // class name / info buffer C
+// extern char    DAT_07d329c4;        // class name table A (first entry base)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d32af0;        // class info list A (stride 300, limit 0x7d34134)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d34134;        // class name table B (first entry base)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d34260;        // class info list B (stride 300, limit 0x7d358a4)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d358a4;        // class name / info buffer C   // -> alias a GlobalText, ver el final del archivo
 extern int     DAT_07d78068;        // character data base (indexed by class_id * 0x40)
 // ── Posición del item que se está arrastrando ───────────────────────────────
 // 2026-07-20.  En IDA esto vive en `Inventory[32].Type` (el pool de shop/trade-in,
@@ -1350,7 +1350,7 @@ extern char    DAT_0055a5fc[];   // salto de linea — separador de media altura
 extern char    DAT_0055a640[];   // salto de linea — separador de media altura
 extern char    DAT_0055a608[];   // s__s__s format
 extern char    DAT_0055a630[];   // secondary stats line
-extern char    DAT_07d3b40c[];   // item level line format
+// extern char    DAT_07d3b40c[];   // item level line format   // -> alias a GlobalText, ver el final del archivo
 
 // ── Misc low-address globals ──────────────────────────────────────────────────
 // (07abf06, 07d29e5, 07eaa11 — byte flags or array references)
@@ -1409,18 +1409,18 @@ extern DWORD   DAT_005592d4;           // name utility ptr B
 
 // Text input / command buffers
 extern char    DAT_07d5391c;           // current in-game text input buffer (char array)
-extern char    DAT_07d3d284;           // "/whisper" command string
-extern char    DAT_07d3d3b0;           // "/pvp" command string
-extern char    DAT_07d3cdd4;           // GM command string
+// extern char    DAT_07d3d284;           // "/whisper" command string   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d3d3b0;           // "/pvp" command string   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d3cdd4;           // GM command string   // -> alias a GlobalText, ver el final del archivo
 // Chat command parser name buffers (FUN_004942e0)
-extern char    DAT_07d3cb7c;           // player name buffer 1 (chat cmd parser)
-extern char    DAT_07d3cca8;           // player name buffer 2 (chat cmd parser)
-extern char    DAT_07d3c924;           // player name buffer 3 (chat cmd parser)
-extern char    DAT_07d3c6cc;           // player name buffer 4 (chat cmd parser)
-extern char    DAT_07d3bfc4;           // player name buffer 5 (chat cmd parser)
-extern char    DAT_07d3c0f0;           // player name buffer 6 (chat cmd parser)
-extern char    DAT_07d3d608;           // whisper target display buffer
-extern char    DAT_07d3d734;           // pvp-toggle result message buffer
+// extern char    DAT_07d3cb7c;           // player name buffer 1 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d3cca8;           // player name buffer 2 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d3c924;           // player name buffer 3 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d3c6cc;           // player name buffer 4 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d3bfc4;           // player name buffer 5 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d3c0f0;           // player name buffer 6 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d3d608;           // whisper target display buffer   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d3d734;           // pvp-toggle result message buffer   // -> alias a GlobalText, ver el final del archivo
 extern DWORD   DAT_07e11dac;           // command-result flag (1=whisper, 0=pvp-off)
 
 // B-key toggle guards
@@ -1437,7 +1437,7 @@ extern char    DAT_07eaa134;           // RepairEnable_0
 
 // Screenshot / error dialog context
 extern DWORD   lpDefault_00583d88;     // default context for FUN_00480620
-extern char    DAT_07d55410;           // error/info message for FUN_00480620
+// extern char    DAT_07d55410;           // error/info message for FUN_00480620   // -> alias a GlobalText, ver el final del archivo
 
 // Connection-check context
 extern DWORD   DAT_07ea9848;           // connection context for FUN_004e3d60
@@ -1491,14 +1491,14 @@ extern int     DAT_07eaa12c;           // guild member ID / count
 extern BYTE    DAT_07ea97c0[64];       // guild entity pool (zeroed on stage 3, 0x40 bytes)
 extern char    DAT_07e11d73;           // char-select flag D (set 1 when guild stage==3)
 // Guild message string buffers (shown via ShowGuildMessage / FUN_0051d6f0):
-extern BYTE    DAT_07d5b680;           // guild create result msg 1
-extern BYTE    DAT_07d5b7ac;           // guild create result msg 2
-extern BYTE    DAT_07d5c10c;           // guild create result msg 3
-extern BYTE    DAT_07d5c238;           // guild create result msg 4
-extern BYTE    DAT_07d5b8d8;           // guild create result msg 5
-extern BYTE    DAT_07d6813c;           // guild join OK message
+// extern BYTE    DAT_07d5b680;           // guild create result msg 1   // -> alias a GlobalText, ver el final del archivo
+// extern BYTE    DAT_07d5b7ac;           // guild create result msg 2   // -> alias a GlobalText, ver el final del archivo
+// extern BYTE    DAT_07d5c10c;           // guild create result msg 3   // -> alias a GlobalText, ver el final del archivo
+// extern BYTE    DAT_07d5c238;           // guild create result msg 4   // -> alias a GlobalText, ver el final del archivo
+// extern BYTE    DAT_07d5b8d8;           // guild create result msg 5   // -> alias a GlobalText, ver el final del archivo
+// extern BYTE    DAT_07d6813c;           // guild join OK message   // -> alias a GlobalText, ver el final del archivo
 extern char    param_2_07d68268;       // guild join error format string (wsprintfA %d)
-extern BYTE    DAT_07d58ea8;           // guild request OK message
+// extern BYTE    DAT_07d58ea8;           // guild request OK message   // -> alias a GlobalText, ver el final del archivo
 extern char    param_2_07d58fd4;       // guild request error format string (wsprintfA %d)
 // Posición objetivo del guild (la setean los opcodes 0x94 / 0x96):
 extern DWORD   _DAT_00559f58;          // guild target tile X (4-byte, overlapping)
@@ -1560,10 +1560,10 @@ extern BYTE    DAT_083a7af8[GUILD_MEMBER_TABLE_BYTES];
 // Columnas de datos de miembro de guild (parte del mismo array de stride 0x18 que arranca en DAT_083a7af8):
 
 // Guild leaderboard UI strings (FUN_0051ddf0 / FUN_0051db00):
-extern char    DAT_07d59358;           // guild panel title string ("Guild War Score" etc.)
+// extern char    DAT_07d59358;           // guild panel title string ("Guild War Score" etc.)   // -> alias a GlobalText, ver el final del archivo
 extern char    param_2_07d59484;       // format string for current player name ("%s")
-extern char    DAT_07d5ba04;           // column headers array (stride 300, ~5 entries, ends at 0x7d5bfe0)
-extern char    DAT_07d5bfe0;           // last column header entry
+// extern char    DAT_07d5ba04;           // column headers array (stride 300, ~5 entries, ends at 0x7d5bfe0)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d5bfe0;           // last column header entry   // -> alias a GlobalText, ver el final del archivo
 extern char *  PTR_DAT_005618a0;       // pointer to rank format string (e.g. "You: %d")
 extern char    param_2_005618a4;       // rank number format string ("%d.")
 extern char    param_2_005618a8;       // kills column format string ("%d")
@@ -1642,7 +1642,7 @@ extern char    DAT_0055a404[];         // skill-req format string B (not met)
 // DAT_07e91528[10*i + c].
 extern int     DAT_07e91528[12 * 10];
 #define DAT_07e9152c   (DAT_07e91528[1])
-extern char    DAT_07d359d0;           // skill description string table base (slot 0, stride ~0x138)
+// extern char    DAT_07d359d0;           // skill description string table base (slot 0, stride ~0x138)   // -> alias a GlobalText, ver el final del archivo
 extern int     DAT_00559fe0;           // class-data cache guard (last built class_id)
 
 // ── UI_StatsPanel (FUN_0051af50) globals ─────────────────────────────────────
@@ -1661,11 +1661,11 @@ extern char    DAT_00559c5c;   // sound-effect toggle (0=off, non-zero=on)
 extern char    DAT_07e11d80;   // music toggle (0=off, non-zero=on)
 // Entity/level data
 // Format strings for numeric dialogs
-extern char    DAT_07d46e60;   // login account name format
+// extern char    DAT_07d46e60;   // login account name format   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07d486fc[300]; // party/trade request status format
 extern char    DAT_07d48828;   // second-password error format
 extern char    DAT_07d48f30[300]; // party/trade request secondary format
-extern char    DAT_07d493e0;   // duel offer sub-text format
+// extern char    DAT_07d493e0;   // duel offer sub-text format   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07d4950c;   // trade/duel request line 1
 extern char    DAT_07d49638;   // trade accept text
 extern char    DAT_07d49764;   // duel accept text
@@ -2294,7 +2294,7 @@ static_assert(offsetof(DIALOG_SCRIPT, m_lpszAnswer)        == 0x180, "DIALOG_SCR
 #define DAT_07cf5738   (g_DialogScript[0].m_iLinkForAnswer[0])
 #define DAT_07cf5760   (g_DialogScript[0].m_iReturnForAnswer[0])
 #define DAT_07cf5788   (g_DialogScript[0].m_lpszAnswer[0][0])
-extern char    DAT_07d566d0;       // fallback char name string (no-char placeholder)
+// extern char    DAT_07d566d0;       // fallback char name string (no-char placeholder)   // -> alias a GlobalText, ver el final del archivo
 extern char    s__d___s_005580b0[];// "%d %s" format string for char-select display
 extern int     DAT_07d78078;       // NPC name count
 // DAT_07cf2000 / DAT_07cf2001: alias a MonsterScript (misma tabla 0x07CF2000).
@@ -2326,11 +2326,11 @@ extern DWORD   DAT_07eaa138;   // RepairEnable (low byte cleared on teleport)
 extern DWORD   DAT_07ea5290;   // SecondPassword alt-panel origin X
 extern DWORD   DAT_07ea528c;   // SecondPassword alt-panel origin Y
 // Entradas de la tabla de strings que usa el switch de FUN_004e9050:
-extern char    DAT_07d544d4;   // error string for case 0 (second password wrong)
+// extern char    DAT_07d544d4;   // error string for case 0 (second password wrong)   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa1a0;   // UI message label A (FUN_00480620 arg1)
-extern char    DAT_07d54600;   // error string for auth-fail case
+// extern char    DAT_07d54600;   // error string for auth-fail case   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa198;   // UI message label B
-extern char    DAT_07d55c44;   // error string for case 0xfffffff8/0xfffffffe
+// extern char    DAT_07d55c44;   // error string for case 0xfffffff8/0xfffffffe   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa19c;   // UI message label C
 // DAT_0055a3f8 / DAT_0055a3fc — iVar1/iVar3 defaults for FUN_004e3db0 non-1/7/0xb/8 cases
 extern int     DAT_0055a3f8;   // auth mode param A
@@ -2348,8 +2348,8 @@ extern char    DAT_07ea51f5[64];   // GuildMark (grilla 8x8, 1 byte por celda)
 extern float  _DAT_00552c20;   // Screen5 button X upper bound
 extern float  _DAT_00552c1c;   // Screen5 button height
 extern float  _DAT_00552c28;   // Screen5 button Y base
-extern char    DAT_07d6b724;   // Error message: "no item in slot"
-extern char    DAT_07d685ec;   // Error message: "invalid slot" (FUN_004e6c40)
+// extern char    DAT_07d6b724;   // Error message: "no item in slot"   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d685ec;   // Error message: "invalid slot" (FUN_004e6c40)   // -> alias a GlobalText, ver el final del archivo
 extern short   DAT_00559f5a;   // second-password level check B (short)
 extern int     DAT_00559f80;   // level threshold array base (index by slot)
 extern int     DAT_00559f84;   // level threshold array upper (index by slot)
@@ -2765,7 +2765,7 @@ extern char    DAT_00559d9c[8];    // GM name string "webzen" (anti-impersonatio
 // ── SkillElf dependencies ────────────────────────────────────────────────────
 extern char    DAT_00559db4;       // GM name check string (part of "webzen" pattern)
 extern char    DAT_07e11dfc;       // chat log widget ID string (for AddText)
-extern char    DAT_07d4c89c;       // "Not enough mana" message string
+// extern char    DAT_07d4c89c;       // "Not enough mana" message string   // -> alias a GlobalText, ver el final del archivo
 
 // ── MoveParticles camera shake globals (0x07c800f8..0x07c8010c) ─────────────
 extern float   DAT_07c800f8;       // camera shake accumulator X
@@ -2903,3 +2903,66 @@ extern void   *CharacterMachine;     // pointer to encrypted CHARACTER struct
 
 // DAT_07e11d6e (flag de UI sucia) ya está declarado en la línea 620 como `char`.
 
+
+// ─── Filas de GlobalText que el port habia partido en globals sueltos ────────
+// 2026-09-07.  El pool de textos vive en `GlobalText[1000][300]` con base
+// 0x07D29D24 (verificado: 0x07D4B4B0 == GlobalText[457]).  Estos simbolos caen
+// EXACTAMENTE en multiplos de 300 desde esa base, o sea son filas del pool, no
+// buffers propios.  Estaban declarados como `char`/`BYTE` sueltos (1 byte) y
+// nadie los llenaba, asi que todo texto que pasara por ellos salia VACIO.
+//
+// Sintoma que lo destapo: el cartel del Devil Square salia sin texto.  La sonda
+// OKBOX mostro `CreateOkMessageBox` recibiendo "" desde sub_4E6C40, que en IDA
+// llama con GlobalText[677] / [686] / [687] / [854].
+//
+// Mismo patron que DAT_081cb60c: un macro que proyecta dentro del array real,
+// asi `&DAT_x` sigue siendo un `char*` a la fila.
+#define DAT_07d329c4       (GlobalText[120][0])
+#define DAT_07d32af0       (GlobalText[121][0])
+#define DAT_07d34134       (GlobalText[140][0])
+#define DAT_07d34260       (GlobalText[141][0])
+#define DAT_07d358a4       (GlobalText[160][0])
+#define DAT_07d359d0       (GlobalText[161][0])
+#define DAT_07d3b40c       (GlobalText[238][0])
+#define DAT_07d3bfc4       (GlobalText[248][0])
+#define DAT_07d3c0f0       (GlobalText[249][0])
+#define DAT_07d3c6cc       (GlobalText[254][0])
+#define DAT_07d3c924       (GlobalText[256][0])
+#define DAT_07d3cb7c       (GlobalText[258][0])
+#define DAT_07d3cca8       (GlobalText[259][0])
+#define DAT_07d3cdd4       (GlobalText[260][0])
+#define DAT_07d3d284       (GlobalText[264][0])
+#define DAT_07d3d3b0       (GlobalText[265][0])
+#define DAT_07d3d608       (GlobalText[267][0])
+#define DAT_07d3d734       (GlobalText[268][0])
+#define DAT_07d46e60       (GlobalText[397][0])
+#define DAT_07d493e0       (GlobalText[429][0])
+#define DAT_07d4ac7c       (GlobalText[450][0])
+#define DAT_07d4ada8       (GlobalText[451][0])
+#define DAT_07d4b12c       (GlobalText[454][0])
+#define DAT_07d4b258       (GlobalText[455][0])
+#define DAT_07d4b384       (GlobalText[456][0])
+#define DAT_07d4b708       (GlobalText[459][0])
+#define DAT_07d4c3ec       (GlobalText[470][0])
+#define DAT_07d4c644       (GlobalText[472][0])
+#define DAT_07d4c770       (GlobalText[473][0])
+#define DAT_07d4c89c       (GlobalText[474][0])
+#define DAT_07d530e8       (GlobalText[563][0])
+#define DAT_07d53214       (GlobalText[564][0])
+#define DAT_07d544d4       (GlobalText[580][0])
+#define DAT_07d54600       (GlobalText[581][0])
+#define DAT_07d55410       (GlobalText[593][0])
+#define DAT_07d55c44       (GlobalText[600][0])
+#define DAT_07d566d0       (GlobalText[609][0])
+#define DAT_07d58ea8       (GlobalText[643][0])
+#define DAT_07d59358       (GlobalText[647][0])
+#define DAT_07d5b680       (GlobalText[677][0])
+#define DAT_07d5b7ac       (GlobalText[678][0])
+#define DAT_07d5b8d8       (GlobalText[679][0])
+#define DAT_07d5ba04       (GlobalText[680][0])
+#define DAT_07d5bfe0       (GlobalText[685][0])
+#define DAT_07d5c10c       (GlobalText[686][0])
+#define DAT_07d5c238       (GlobalText[687][0])
+#define DAT_07d6813c       (GlobalText[850][0])
+#define DAT_07d685ec       (GlobalText[854][0])
+#define DAT_07d6b724       (GlobalText[896][0])

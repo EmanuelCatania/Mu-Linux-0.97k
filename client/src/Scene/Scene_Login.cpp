@@ -150,7 +150,7 @@ uint Scene_Login(void)
     DAT_00559c78 = 0xffffffff;
 
     // Version string 1 (memcpy loop generado por MSVC)
-    pcVar8 = DAT_07d4b12c;
+    pcVar8 = &DAT_07d4b12c;
     do {
         pcVar9 = pcVar8;
         if (uVar6 == 0) break;
@@ -179,7 +179,7 @@ uint Scene_Login(void)
 
     // Version string 2
     uVar6  = 0xffffffff;
-    pcVar8 = DAT_07d4b258;
+    pcVar8 = &DAT_07d4b258;
     do {
         pcVar9 = pcVar8;
         if (uVar6 == 0) break;
@@ -205,7 +205,7 @@ uint Scene_Login(void)
                  acStack_64, (LPSIZE)0x0, '\0', 0);
 
     // Footer center text (copyright)
-    crt_sprintf(acStack_64, DAT_07d4b384);
+    crt_sprintf(acStack_64, &DAT_07d4b384);
     ptVar10 = &tStack_6c;
     iVar3   = lstrlenA(acStack_64);
     GetTextExtentPointA(DAT_055c9fec, acStack_64, iVar3, ptVar10);
