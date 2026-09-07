@@ -408,8 +408,35 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
         }
         local_74 = -((int)(char*)&DAT_0584621c + local_64);
         float* pfOut = (float*)((char*)&DAT_05846224 + local_64);
+        // GUARD 2026-09-07: el indice de hueso del vertice (`*vs`) indexa
+        // `BoneTransform` con stride 0x30, y ese bloque lo aloca
+        // CreateCharacterPointer como `operator_new(48 * numBones)`.  Un vertice
+        // que referencie un hueso fuera de rango lee cientos de KB despues del
+        // bloque -> AV dentro de Vector_Transform (crash reportado al romper la
+        // puerta de Blood Castle: addr 0x00505B72 = Vector_Transform+0x112,
+        // param1=0x02B71000, page-aligned = tipico de salirse de una alocacion).
+        //
+        // El original no acota; aca se saltea el vertice y se loguea UNA vez con
+        // el tipo de entidad, el modelo y los dos numeros, para poder atacar la
+        // causa (que el modelo y el BoneTransform no correspondan) con datos.
+        const int nBonesGuard = (int)(short)*(short*)((char*)this_ + 0x22);
         for (int vi = 0; vi < vertCount; vi++) {
             short* vs = (short*)((char*)(vi * 0x10) + *(int*)(meshPtr + 0x10));
+            const int boneIdx = (int)*vs;
+            if (boneIdx < 0 || (nBonesGuard > 0 && boneIdx >= nBonesGuard) || boneIdx >= 200) {
+                static bool s_loggedBadBone = false;
+                if (!s_loggedBadBone) {
+                    s_loggedBadBone = true;
+                    char _bb[180];
+                    _snprintf_s(_bb, sizeof(_bb), _TRUNCATE,
+                        "XFORM_BAD_BONE etype=%d mesh=%d/%d vert=%d/%d bone=%d nBones=%d bt=%p",
+                        (int)*(short*)((char*)this_ + 2), local_58, meshCount,
+                        vi, vertCount, boneIdx, nBonesGuard, (void*)param_1);
+                    DbgLogPublic(_bb);
+                }
+                pfOut += 3;
+                continue;
+            }
             float* pfDst = pfOut - 2;
             if (_DAT_005597c8 == _DAT_0055256c) {
                 Vector_Transform((float*)(vs + 2), (float*)(*vs * 0x30 + param_1), pfDst);
