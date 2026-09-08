@@ -4238,8 +4238,15 @@ void Net_ProcessPacket(void)
                     NetLog("NET:  → 0x15 Damage size=%d (too small, skip)", Size);
                     break;
                 }
-                // Wire format: index[0] high bit = kill flag; bits 0-6 + index[1] = id.
-                BYTE  killFlag  = (Msg[3] >> 7) & 0x01;
+                // Wire format: index[0] bits 0-6 + index[1] = id; el BIT ALTO es el
+                // flag de ATURDIMIENTO, no un "kill flag" (la etiqueta vieja mentia).
+                // Server (Protocol.cpp GCDamageSend):
+                //     index[0] = (SET_NUMBERHB(bIndex) & 0x7F) | ((flag & 1) << 7)
+                // y `flag` sale de la tirada de stun de Attack.cpp L441:
+                //     if (rand() % 100 < m_DamageStuckRate[targetClass]) flag = 1;
+                // cancelada si el objetivo va montado en Uniria/Dinorant y la config
+                // lo prohibe.  Es lo que hace retroceder al que recibe el Lightning.
+                BYTE  stunFlag  = (Msg[3] >> 7) & 0x01;
                 WORD  targetId  = ((WORD)(Msg[3] & 0x7F) << 8) | Msg[4];
                 // Damage: lower 12 bits across damage[0..1]; upper 4 bits of damage[0]
                 // are damage-type flags.
@@ -4272,7 +4279,7 @@ void Net_ProcessPacket(void)
                 bool  bExcellent = (typeBits & 4) != 0;  // cyan
                 bool  bCritical  = (typeBits & 8) != 0;  // blue
                 NetLog("NET:  → 0x15 Damage tgt=%d dmg=%d flags=I%d/R%d/E%d/C%d kill=%d",
-                       targetId, damage, bIgnore, bReflect, bExcellent, bCritical, killFlag);
+                       targetId, damage, bIgnore, bReflect, bExcellent, bCritical, stunFlag);
 
                 // Find target entity slot by entity_id (+0x1dc)
                 BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
@@ -4289,6 +4296,39 @@ void Net_ProcessPacket(void)
                 }
                 if (!tgtSlot) {
                     NetLog("NET:    0x15 SKIP - target id=%d not found", targetId);
+                    break;
+                }
+
+                // ── Golpe con ATURDIMIENTO (bit alto del index) ──────────────
+                // IDA ReceiveAttackDamage: TODO el cuerpo de abajo vive dentro de
+                // `if (!(Key >> 15))`, y cuando el bit SI esta puesto la funcion
+                // toma una rama corta y propia (L263-271):
+                //     SetPlayerShock(c, Damage);          // sin rand y sin filtrar
+                //     CreatePoint(c+16, Damage, rojo, 15.0);
+                //     if (Key == HeroKey) { CharacterAttribute+28 -= Damage;
+                //                           c+760 = Damage; }
+                //
+                // Ese SetPlayerShock es OTRO call site (0x42AD66) que el DLL de
+                // inyeccion NO hookea -- solo suprime el de 0x42B33D, el de la
+                // tirada 50/50 de mas abajo.  O sea aca el heroe SI se aturde, y
+                // por eso en el cliente de referencia el Lightning te frena.
+                //
+                // El port tenia la cobertura INVERTIDA: gateaba la unica llamada a
+                // SetPlayerShock con `!stunFlag`, o sea no hacia nada justo cuando
+                // el original aturde incondicionalmente.
+                if (stunFlag) {
+                    extern void __cdecl FUN_00444b60(int c, int Hit);
+                    FUN_00444b60((int)tgtSlot, (int)damage);
+                    float pos[3] = { *(float*)(tgtSlot + 0x10),
+                                     *(float*)(tgtSlot + 0x14),
+                                     *(float*)(tgtSlot + 0x18) };
+                    float color[3] = { 1.0f, 0.0f, 0.0f };
+                    CreatePoint(pos, (int)damage, color, 15.0f);
+                    if (targetId == g_HeroKey && DAT_07cf1ff4) {
+                        WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
+                        if (damage < *pHP) *pHP -= damage; else *pHP = 0;
+                        *(WORD*)(tgtSlot + 760) = (WORD)damage;
+                    }
                     break;
                 }
 
@@ -4343,7 +4383,7 @@ void Net_ProcessPacket(void)
                 // call site para saltearlo cuando la entidad es el jugador (tipo 390).
                 // Reproducimos el mismo comportamiento acá: los monstruos reciben
                 // su anim de shock + el quejido; el jugador NO.
-                if (damage > 0 && !killFlag &&
+                if (damage > 0 && !stunFlag &&
                     *(WORD*)(tgtSlot + 2) != 390)
                 {
                     // 50/50 random roll matching IDA `rand() & 0x80000001`.
