@@ -205,24 +205,30 @@ LAB_004cbf65:
   }
   FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_004cc05c:
+  // 2026-09-08: bound absoluto del binario fuente (0x7ea9548 = fin de DAT_07ea8448,
+  // que mide 0x1100 = 64 slots de 0x44).  Acotado por contador.
   puVar5 = (undefined4*)&DAT_07ea8448;
-  do {
+  for (int nSlot = 0; nSlot < 64; ++nSlot) {
     *(undefined2 *)(puVar5 + -0xe) = 0xffff;
     *puVar5 = 0;
     puVar5 = puVar5 + 0x11;
-  } while ((int)puVar5 < 0x7ea9548);
+  }
+  // 2026-09-08: bound absoluto del binario fuente (0x7ea7b48 = fin de DAT_07ea5b68,
+  // que mide 0x1FE0 = 120 slots de 0x44).  Acotado por contador.
   puVar5 = (undefined4*)&DAT_07ea5b68;
-  do {
+  for (int nSlot = 0; nSlot < 120; ++nSlot) {
     *(undefined2 *)(puVar5 + -0xe) = 0xffff;
     *puVar5 = 0;
     puVar5 = puVar5 + 0x11;
-  } while ((int)puVar5 < 0x7ea7b48);
+  }
+  // 2026-09-08: bound absoluto del binario fuente (0x7eaa100 = fin de DAT_07ea9880,
+  // que mide 0x0880 = 32 slots de 0x44).  Acotado por contador.
   puVar5 = (undefined4*)&DAT_07ea9880;
-  do {
+  for (int nSlot = 0; nSlot < 32; ++nSlot) {
     *(undefined2 *)(puVar5 + -0xe) = 0xffff;
     *puVar5 = 0;
     puVar5 = puVar5 + 0x11;
-  } while ((int)puVar5 < 0x7eaa100);
+  }
   DAT_07eaa0e8 = 0;
   iStack0000000c = 0;
   do {

@@ -65,7 +65,8 @@ void __cdecl FUN_0046c3e0_DISABLED(void)
                 local_8 = 0;
                 if (piVar2[1] != 1 && piVar2[1] - 1 >= 0) {
                     piVar4 = piVar2 + 0x5f;   // head of trail point array
-                    do {
+                    int nSlotTR = 0;
+    do {
                         glBegin(6);  // GL_QUAD_STRIP
 
                         // Compute per-segment fade alpha
@@ -109,7 +110,12 @@ void __cdecl FUN_0046c3e0_DISABLED(void)
             }
         }
         piVar2 = piVar2 + 0xbc;  // stride: 0x2f0 = 752 bytes
-    } while ((int)piVar2 < 0x7c72e74);
+        // 2026-09-08: el bound era `< 0x7c72e74`, direccion absoluta del binario
+        // (IDA: `while ((int)v0 < (int)&unk_7C72E74)`).  Base unk_7C608B4 =
+        // g_RenderPool_07c608a8 + 0x0C; (0x7C72E74 - 0x7C608B4) / 0x2F0 = 100,
+        // que es el tamano real del pool.
+        if (++nSlotTR >= 100) break;
+    } while (true);
 
     return;
 }

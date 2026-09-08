@@ -1733,15 +1733,19 @@ undefined4 __cdecl FUN_004f6850(void)
     return ChaosBoxRequestClose() ? 1 : 0;
 #if 0
     bool bVar1 = true;
+    // 2026-09-08: el bound `< 0x7eaa0c8` es una direccion absoluta del binario
+    // fuente.  Es el mismo pool de 32 slots de 0x44 que resetea Net_PacketSession
+    // (DAT_07ea9880), abordado 0x38 antes: (0x7EAA0C8 - 0x7EA9848) / 0x44 = 32,
+    // o sea 4 vueltas del bucle externo por 8 del interno.
     short *psVar2 = (short *)&DAT_07ea9848;
-    do {
+    for (int nRow = 0; nRow < 4; ++nRow) {
         int iVar6 = 8;
         do {
             if ((*psVar2 != -1) && (0 < *(int *)((char*)psVar2 + 0x1c * 2))) bVar1 = false;
             psVar2 += 0x22;
             iVar6--;
         } while (iVar6 != 0);
-    } while ((int)psVar2 < 0x7eaa0c8);
+    }
     if ((!bVar1) || (0 < (int)DAT_07e91388)) {
         FUN_00480620((const char*)&lpDefault_00583d88, (const char*)&DAT_07d55410, 2);
         return 0;

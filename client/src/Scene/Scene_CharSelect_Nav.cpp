@@ -848,6 +848,7 @@ void __cdecl FUN_00479950(const char *param_1)
     BYTE *Buffer = (BYTE *)operator_new(300);
 
     char *pcVar3 = (char *)((int)&SkillAttribute + 4);
+    int nRowGT = 0;
     do {
         BYTE *pBuf = Buffer;
         char *pcVar4 = pcVar3;
@@ -856,7 +857,12 @@ void __cdecl FUN_00479950(const char *param_1)
         BuxConvert_0((int)Buffer, 300);
         FUN_005430f0((char *)Buffer, 300, 1, (int *)pFile);
         pcVar3 += 300;
-    } while ((int)pcVar3 < 0x7d73104);
+        // 2026-09-08: el bound era `< 0x7d73104`, direccion absoluta del binario.
+        // La base es `&SkillAttribute + 4` = 0x07D29D24 = GlobalText[0], y
+        // (0x7D73104 - 0x7D29D24) / 300 = 1000 -- las 1000 filas de GlobalText.
+        // (Confirma que esta funcion escribe GlobalText, no SkillAttribute.)
+        if (++nRowGT >= 1000) break;
+    } while (true);
 
     operator_delete(Buffer);
     fclose(pFile);
