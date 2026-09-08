@@ -155,6 +155,11 @@ void PacketHandler_0x19(BYTE* pkt)
 
     BYTE* caster = ENTITY(caster_idx);
 
+    // IDA 0x42BCA0 L115: `AttackPlayer = Index` (el slot del CASTER), justo
+    // tras resolver el target.  Lo lee ReceiveAttackDamage para orientar el
+    // destello de bloqueo.
+    AttackPlayer = caster_idx;
+
     // 0042BCA0 LABEL_81: before its per-skill animation switch, the original
     // records the received skill in the character's visual-effect queue.  The
     // per-frame MoveCharacter dispatcher consumes exactly c+770 once c+757

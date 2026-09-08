@@ -4300,6 +4300,29 @@ void Net_ProcessPacket(void)
                     else *pHP = 0;
                 }
 
+                // ── Destello de bloqueo (efecto 259) ────────────────────────
+                // IDA ReceiveAttackDamage L171-182, dentro de la rama
+                // `Key == HeroKey`.  Sale solo con el buff 0x100 activo
+                // (`c+120`, el bitfield que llena InsertBuffPhysicalEffect) y
+                // solo si el heroe esta MIRANDO al atacante: el angulo hacia el
+                // agresor tiene que estar a menos de 10 grados del facing.
+                if (targetId == g_HeroKey &&
+                    (*(DWORD*)(tgtSlot + 120) & 0x100) == 0x100 &&
+                    basePtr && AttackPlayer >= 0 && AttackPlayer < 400)
+                {
+                    const float* cm = (const float*)(basePtr + 916 * AttackPlayer);
+                    const float fAngle = FUN_0043e050(cm[4], cm[5],
+                                                      *(float*)(tgtSlot + 16),
+                                                      *(float*)(tgtSlot + 20));
+                    if (fabsf(fAngle - cm[9]) < 10.0f) {
+                        float ang[3] = { 0.0f, 0.0f, fAngle + 180.0f };
+                        FUN_00460dc0(259, (float*)(tgtSlot + 16), ang,
+                                     (float*)(tgtSlot + 232),
+                                     (float*)0, (float*)tgtSlot,
+                                     (float*)(intptr_t)-1, (float*)0, 0);
+                    }
+                }
+
                 // ReceiveAttackDamage (IDA 0042ACC0) no transiciona una
                 // entidad a muerta y nunca llama a SetPlayerDie. El bit alto
                 // identifica el golpe terminal para presentar el daño, pero
@@ -4473,6 +4496,7 @@ void Net_ProcessPacket(void)
                     // weapon equipped. FUN_00444410 is SetPlayerAttack.
                     extern void __cdecl FUN_00444410(int, int, int, int);
                     FUN_00444410((int)slot, 0, 0, 0);
+                    AttackPlayer = slotIdx;      // IDA: AttackPlayer = Index
                     slot[0x2F5] = 1;             // c+757=1 attack pending
                     *(int*)(slot + 0x108) = 0;   // reset frame
                     *(WORD*)(slot + 0x310) = 0xFFFF;  // c+784 = -1 (no skill target)

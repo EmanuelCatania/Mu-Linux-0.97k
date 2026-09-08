@@ -640,6 +640,7 @@ DWORD    DAT_05826d18  = 0;   // cooldown de COMPRA en tienda (IDA dword_5826D18
 DWORD    DAT_05826d1c  = 0;   // cooldown de equipar/usar item (EnableUse)
 DWORD    DAT_05826d20  = 0;
 DWORD    DAT_05826d24  = 0;   // SummonLife (IDA @0x05826D24) — HP % de la mascota invocada
+int      AttackPlayer  = 0;   // 0x05826D28 — indice de slot del ultimo atacante
 DWORD    DAT_05826d30  = 0;
 char     DAT_05826d31  = 0;
 char     DAT_05826d32  = 0;

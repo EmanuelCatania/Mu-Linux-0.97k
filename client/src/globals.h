@@ -534,6 +534,11 @@ extern DWORD   DAT_05826d18;   // cooldown de COMPRA en tienda (IDA dword_5826D1
 extern DWORD   DAT_05826d1c;   // cooldown de equipar/usar item (EnableUse)
 extern DWORD   DAT_05826d20;
 extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la mascota
+// AttackPlayer (IDA @0x05826D28): indice de slot del ULTIMO atacante.  Lo
+// escriben ReceiveAction (act 100/101), Skills_PacketHandler y
+// ReceiveMagicPosition; lo lee ReceiveAttackDamage para el destello de
+// bloqueo (efecto 259).
+extern int     AttackPlayer;
                                // invocada; lo alias-ea HUD_Pass2.cpp.
 extern DWORD   DAT_05826d30;
 extern char    DAT_05826d31;
