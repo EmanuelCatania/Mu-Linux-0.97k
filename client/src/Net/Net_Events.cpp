@@ -141,21 +141,17 @@ void Recv_EventZoneOpenTime(BYTE* Msg, int Size)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 0x92 — StartMatchCountDown (0x0047EC00)  — SIN PORTAR
-//
-// El cuerpo del original son dos lineas:
-//     m_iMatchCountDownType  = iType;          // = ReceiveBuffer[3] + 1
-//     m_dwMatchCountDownStart = GetTickCount();
-//
-// No se porta todavia porque esas dos variables viven como estaticas dentro de
-// `Render/HUD_Pass4.cpp` (lineas 41-42) y exponerlas es un cambio de ese
-// modulo, no de este. `FUN_0047ec00` tampoco sirve: no tiene definicion en
-// ningun .cpp y en functions.h esta declarada `(int,int,int)` con la etiqueta
-// "CharSelect_SetSlotCount", que es otra misidentificacion de la misma familia.
-//
-// Efecto de que falte: no se dibuja la cuenta regresiva al empezar un evento.
-// El resto del evento funciona.
+// 0x92 — StartMatchCountDown (0x0047EC00)
+// Arranca la cuenta regresiva de 30 s que dibuja `sub_4BF090` abajo a la
+// izquierda ("Infiltracion al Blood Castle (en %d segundos)" y equivalentes de
+// Devil Square).  El tipo llega en Msg[3] y el original le suma 1.
 // ─────────────────────────────────────────────────────────────────────────────
+void Recv_StartMatchCountDown(BYTE* Msg, int Size)
+{
+    if (Size < 4) return;
+    m_iMatchCountDownType   = (int)Msg[3] + 1;
+    m_dwMatchCountDownStart = GetTickCount();
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 0x93 — ReceiveDevilSquareRank (0x00436A80)

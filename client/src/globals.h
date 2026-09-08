@@ -539,6 +539,9 @@ extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la ma
 // ReceiveMagicPosition; lo lee ReceiveAttackDamage para el destello de
 // bloqueo (efecto 259).
 extern int     AttackPlayer;
+// Cuenta regresiva de evento (0x07E11D8C / 0x07E11D90).  Definidos en
+// Render/HUD_Pass4.cpp; los escribe StartMatchCountDown (opcode 0x92).
+extern "C" { extern int m_iMatchCountDownType; extern DWORD m_dwMatchCountDownStart; }
                                // invocada; lo alias-ea HUD_Pass2.cpp.
 extern DWORD   DAT_05826d30;
 extern char    DAT_05826d31;

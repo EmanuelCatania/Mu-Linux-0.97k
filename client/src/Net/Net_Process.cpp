@@ -5876,8 +5876,10 @@ void Net_ProcessPacket(void)
                 Recv_EventZoneOpenTime((BYTE*)Msg, Size);
                 break;
             }
-            case 0x92: {  // StartMatchCountDown @ 0x0047EC00 — sin portar
-                NetLog("NET:  -> 0x92 StartMatchCountDown (sin portar)");
+            case 0x92: {  // StartMatchCountDown @ 0x0047EC00
+                NetLog("NET:  -> 0x92 StartMatchCountDown type=%d", Size >= 4 ? Msg[3] + 1 : -1);
+                extern void Recv_StartMatchCountDown(BYTE* Msg, int Size);
+                Recv_StartMatchCountDown((BYTE*)Msg, Size);
                 break;
             }
             case 0x93: {  // ReceiveDevilSquareRank @ 0x00436A80
