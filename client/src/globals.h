@@ -539,6 +539,10 @@ extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la ma
 // ReceiveMagicPosition; lo lee ReceiveAttackDamage para el destello de
 // bloqueo (efecto 259).
 extern int     AttackPlayer;
+// MixState (0x07EAA140): 0 = inactivo, 1 = mezclando (esperando al server),
+// 2..50 = animacion de la caja de Chaos, que `RenderItemsBoxes` avanza un paso
+// por frame hasta 51.  Ver la nota de HUD_Pass4.cpp.
+#define MixState   DAT_07eaa140
 // Cuenta regresiva de evento (0x07E11D8C / 0x07E11D90).  Definidos en
 // Render/HUD_Pass4.cpp; los escribe StartMatchCountDown (opcode 0x92).
 extern "C" { extern int m_iMatchCountDownType; extern DWORD m_dwMatchCountDownStart; }
@@ -2328,7 +2332,10 @@ extern DWORD   DAT_07ea5b28;   // Screen2 panel origin Y
 // ── SecondPassword UI sub-handler globals (FUN_004e8b70 / 004e9050 / 004eb5d0 / 004e6550) ──
 extern DWORD   DAT_07eaa0c8;   // SecondPassword dialog origin X (pixel)
 extern DWORD   DAT_07eaa0cc;   // SecondPassword dialog origin Y (pixel)
-extern DWORD   DAT_07eaa140;   // SecondPassword timeout/retry counter (0 = no timeout)
+extern DWORD   DAT_07eaa140;   // MixState (ver el alias mas arriba). La etiqueta
+                               // vieja ("SecondPassword timeout") era falsa: IDA lo
+                               // llama MixState y sus writers son ReceiveMix (0x4366C0),
+                               // el envio del mix y ReceiveTalk.
 extern DWORD   DAT_07eaa131;   // SecondPassword checkbox/toggle state
 extern DWORD   DAT_07eaa138;   // RepairEnable (low byte cleared on teleport)
 extern DWORD   DAT_07ea5290;   // SecondPassword alt-panel origin X

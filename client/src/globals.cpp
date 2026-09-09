@@ -2481,7 +2481,7 @@ DWORD   DAT_07ea5b28  = 0;   // Screen2 panel origin Y
 // ── SecondPassword UI sub-handler globals ─────────────────────────────────────
 DWORD   DAT_07eaa0c8  = 0;   // SecondPassword dialog origin X (pixel)
 DWORD   DAT_07eaa0cc  = 0;   // SecondPassword dialog origin Y (pixel)
-DWORD   DAT_07eaa140  = 0;   // SecondPassword timeout/retry counter
+DWORD   DAT_07eaa140  = 0;   // MixState (0x07EAA140)
 DWORD   DAT_07eaa131  = 0;   // SecondPassword checkbox/toggle state
 DWORD   DAT_07eaa138  = 0;   // RepairEnable (low byte)
 DWORD   DAT_07ea5290  = 0;   // SecondPassword alt-panel origin X

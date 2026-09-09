@@ -46,7 +46,12 @@ extern "C" {
     // m_iMatchTime vive en globals.cpp (0x00559CCC): lo escribe SetMatchInfo
     // desde el handler 0x9B.  Tenerlo aca como local dejaba al renderer
     // leyendo una copia que nadie escribia (2026-09-04).
-    int   MixState                = 0;
+    // MixState vive en globals.h como alias de DAT_07eaa140 (0x07EAA140).
+    // Estaba partido en dos: los ESCRITORES (Item_ClickHandler al mandar el mix
+    // = 1, y el handler del 0x86 con 0 o 2) usan DAT_07eaa140, y los LECTORES
+    // -- la animacion de la caja de Chaos de abajo y el `++MixState` que la hace
+    // avanzar -- leian este `int` propio, que nadie escribia.  Efecto: la
+    // maquina de Chaos nunca mostraba su animacion al mezclar.
     int   AlphaBlendType          = 0;
 
     // Input fields — IDA exposes 10 slots (chat + whisper-target + ...).
