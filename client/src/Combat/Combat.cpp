@@ -720,7 +720,7 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 static float g_RightButtonPressSeconds_Attack = 0.0f;
 static float g_RightButtonReleaseTime_Attack = 0.0f;
 
-extern "C" int g_MouseOnWindow;   // Game/Player_InputTick.cpp
+#define g_MouseOnWindow DAT_07d78094   // 0x07D78094, ver Player_InputTick.cpp
 
 // Correspondencia con el decompile de IDA (0049CBF0), para que los nombres
 // semanticos de abajo sigan siendo rastreables:

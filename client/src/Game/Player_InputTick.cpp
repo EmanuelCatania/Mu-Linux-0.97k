@@ -40,7 +40,13 @@ static bool HUD_IsCharacterInfoRuntime(void);
 // flag que se setea en cada frame si el mouse está sobre algún panel de UI abierto. Se usa para gatear
 // el GroundClick / walker de movimiento, así clickear adentro de un panel no hace
 // que el jugador camine hacia esa posición de pantalla.
-extern "C" int g_MouseOnWindow = 0;
+// 2026-09-09: `MouseOnWindow` es UN SOLO global del binario, 0x07D78094 (=
+// DAT_07d78094).  Estaba partido en dos: el port fiel de `sub_4E6550`
+// (CheckInventory) escribia DAT_07d78094 con los seis rects de panel
+// -- inventario, tienda, baul, ChaosMix, trade y ventana de evento -- y el gate
+// de `Attack` (IDA L1330) leia este `g_MouseOnWindow`, una reimplementacion
+// propia que NO cubre ninguno de esos seis.  Ahora es un alias del global real.
+#define g_MouseOnWindow DAT_07d78094
 
 // IDA `Attacking` — estado del auto-ataque: -1 = ninguno, 1 = ataque iniciado
 // desde Player_InputTick (L942), 2 = desde Attack (0x49CBF0 L1323).
@@ -64,7 +70,10 @@ extern "C" int g_ChatLB_MouseOnWindow;
 // Resetea y puebla MouseOnWindow al inicio del frame. La llama FUN_004acef0.
 static void MouseOnWindow_Update(void)
 {
-    g_MouseOnWindow = 0;
+    // Sin reset: el valor del frame lo fija `Game_CharSelectTick` (IDA L298,
+    // `MouseOnWindow = MouseY > 431`) y a partir de ahi los productores solo
+    // SUMAN -- este, `sub_4E6550` y el widget de chat.  El reset que habia aca
+    // borraba el aporte de los paneles si corria despues de CheckInventory.
 
     int mx = (int)DAT_083a427c;
     int my = (int)DAT_083a4278;
@@ -659,9 +668,12 @@ void __cdecl Player_ProcessInput(void)
     // DAT_07d78094 directo y lo puede dejar pegado, lo que bloquea el movimiento
     // even when the mouse is no longer over a panel. For world input, only
     // sólo debería importar la captura de UI del frame actual.
-    if (DAT_005615c0 == 5) {
-        DAT_07d78094 = (g_MouseOnWindow != 0) ? 1 : 0;
-    }
+    // 2026-09-09: aca habia `DAT_07d78094 = (g_MouseOnWindow != 0) ? 1 : 0;`,
+    // que in-game PISABA el flag que ya habia puesto CheckInventory por los
+    // paneles.  Sintoma: con la Chaos Machine abierta, mover items disparaba el
+    // camino de ataque -> sin mana -> busca pocion -> cartel GlobalText[474]
+    // ("Los items no pueden ser utilizados mientras usas el baul o durante
+    // trade").  Ahora los dos nombres son la misma memoria y no hay que copiar.
     // 2026-09-04: los botones de la barra inferior se atienden desde
     // `Chat_InputTick` (0x4B14F0), que es donde los tiene el binario.
 
