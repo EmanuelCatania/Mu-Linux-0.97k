@@ -251,7 +251,14 @@ extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY,
                 // falso → toda celda vacía caía al else y dibujaba la textura 278
                 // (ocupada) → grid uniforme. IDA usa `v7->Type == -1`.
                 if (v7->Type == -1) {
-                    glColor3f(1.0f, 1.0f, 1.0f);
+                    // 2026-09-09: aca habia un `glColor3f(1,1,1)` fijo.  IDA
+                    // (0x4E37B0) llama `InventoryColor(v7)` en las DOS ramas, y
+                    // esa es justamente la que muestra la SILUETA del item que
+                    // se esta arrastrando: el hit-test escribe ITEM.Color = 2
+                    // (no entra) / 3 (entra) / 4 (moneda) sobre las celdas
+                    // VACIAS bajo el cursor, y con el color fijo ese marcado no
+                    // se veia nunca.
+                    InventoryColor_stub(v7);
                     GL_DrawTexture(277, x, v8, 20.0f, 20.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
                 } else {
                     InventoryColor_stub(v7);
