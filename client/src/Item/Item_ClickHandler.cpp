@@ -454,13 +454,40 @@ static void SendC3Packet(BYTE* payload, int payloadSize)
 // gMap.ItemDrop rechazaba → result=0 → el item nunca se dropeaba. Usamos el
 // tile actual del héroe (ent+0x306/0x307 = target_grid_x/y), siempre válido y
 // pegado al player.
+// 2026-09-09: devolvia `hero[0x306]/[0x307]`, que NO es la posicion del heroe
+// sino su GRILLA DESTINO (a donde esta caminando).  El item caia en cualquier
+// lado -- ni donde estaba el jugador ni donde soltaba el mouse.
+//
+// IDA (sub_4DF410) manda `(int)(xf * 0.0099999998)` y `(int)(yf * ...)`, donde
+// xf/yf son CollisionPosition, el punto del terreno bajo el CURSOR:
+//     DAT_083a4130 / DAT_083a4134, los mismos que ya usa el click-to-move
+//     (Combat_Targeting.cpp) con la formula identica `* 0.01f`.
+// MU 5.2 lo confirma (NewUIMyInventory.cpp L512-515):
+//     RenderTerrain(true);
+//     if (RenderTerrainTile(SelectXF, SelectYF, (int)SelectXF, (int)SelectYF, ...))
+//         SendRequestDropItem(slot, (int)(CollisionPosition[0] / TERRAIN_SCALE),
+//                                   (int)(CollisionPosition[1] / TERRAIN_SCALE));
+// o sea el pick de terreno se valida ANTES de mandar.
 static void GetHeroDropTile(BYTE* outX, BYTE* outY)
 {
     *outX = 0; *outY = 0;
+
+    // Pick del terreno bajo el cursor (mismo patron que Combat_Targeting).
+    FUN_004f9ac0('');                       // RenderTerrain(true): arma el rayo
+    const int gridX = (int)*(float*)&DAT_080ab288;   // SelectXF
+    const int gridY = (int)*(float*)&DAT_080ab28c;   // SelectYF
+    if (FUN_004f8480(*(int*)&DAT_080ab288, *(int*)&DAT_080ab28c,
+                     gridX, gridY, 1.0f, 1, 1)) {
+        *outX = (BYTE)(int)(DAT_083a4130 * 0.01f);   // CollisionPosition[0]
+        *outY = (BYTE)(int)(DAT_083a4134 * 0.01f);   // CollisionPosition[1]
+        return;
+    }
+
+    // Sin pick valido (cursor fuera del terreno): cae a la celda del heroe.
     BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
     if (!hero) return;
-    *outX = hero[0x306];
-    *outY = hero[0x307];
+    *outX = (BYTE)(int)(*(float*)(hero + 16) * 0.01f);
+    *outY = (BYTE)(int)(*(float*)(hero + 20) * 0.01f);
 }
 
 extern "C" void __cdecl SyncPickedItemVisualState(void);
