@@ -1573,6 +1573,26 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
                 return;
             }
 
+            // 2026-09-09: el guard de arriba solo cubre el panel del INVENTARIO.
+            // Soltar sobre el panel del BAUL o el de la CHAOS MACHINE (que van a
+            // la izquierda, en dword_7EAA0C8) pero fuera de sus celdas caia al
+            // fallback de "tirar al suelo": de ahi salia "No tienes permitido
+            // tirar este item costoso" al querer guardar un item Excellent.
+            //
+            // En IDA no hace falta porque el drop sobre esos paneles lo consume
+            // `sub_4D6470` entero (36 KB, maneja los cuatro grids Y sus zonas
+            // muertas).  Nuestro port partio esa responsabilidad entre
+            // `Inventory_DropItemEx` (solo las celdas) y este dispatcher, asi
+            // que el hueco hay que taparlo aca -- mismo criterio y misma
+            // desviacion que el guard de las casillas de equipo (2026-09-04).
+            if ((DAT_07eaa119 != 0 || DAT_07eaa11a != 0)) {
+                const int px = (int)DAT_083a427c, py = (int)DAT_083a4278;
+                const int ox = (int)DAT_07eaa0c8, oy = (int)DAT_07eaa0cc;
+                if (px >= ox && px < ox + 190 && py >= oy && py < oy + 433) {
+                    return;   // dentro del panel: el item queda agarrado
+                }
+            }
+
             // Plain ground drop — [C1][05][23][tileX][tileY][slot], C3.
             BYTE dx, dy; GetHeroDropTile(&dx, &dy);
             BYTE pkt[4];
