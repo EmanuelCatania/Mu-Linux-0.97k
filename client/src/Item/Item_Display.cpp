@@ -621,7 +621,15 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         } else {
             // Different types: if same slot, call inventory reset
             if (!isDifferentSlot) {
-                FUN_004cd3b0();  // Inventory_Reset / CharPreview_Refresh
+                // IDA sub_4D6470 L688-692: misma celda -> sub_4CD3B0 (vuelve
+                // el item a su lugar) y LABEL_808 con `return v487`, que vale 1
+                // porque habia lugar.  El port devolvia 0: el dispatcher lo
+                // tomaba como "no cayo en ninguna grilla" y seguia a la rama de
+                // tirar al suelo.  Por eso no se podia devolver un item a su
+                // mismo lugar (con las joyas "funcionaba" solo porque son
+                // costosas y esa rama las restauraba con el cartel 269).
+                FUN_004cd3b0();
+                actionTaken = true;
                 goto drop_done;
             }
         }
