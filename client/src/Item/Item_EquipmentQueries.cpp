@@ -12,30 +12,42 @@ int __stdcall Item_FindElfWeaponInventorySlot(void) {
     // 0x004824C0 — Get equipped weapon type (primary hand)
     // anti-tamper hash table — skipped (encrypt/decrypt CharacterMachine)
 
-    DWORD* cm = (DWORD*)DAT_07cf1ffc;  // CharacterMachine
-    DWORD* ca = (DWORD*)DAT_07cf1ff4;  // CharacterAttribute
-
-    // If class != elf (2), return -1
-    if ((*(BYTE*)((DWORD)ca + 0x00) & 7) != 2) {
-        // anti-tamper hash table — skipped
+    // IDA sub_4824C0 L41-88.  Los tres accesos estaban mal:
+    //
+    //   IDA                                        port anterior
+    //   CharacterAttribute + 11                    ca + 0x00
+    //   v6  = *(__int16 *)(CharacterMachine + 536) cm + 0x86*2 = +268
+    //   v28 = *(__int16 *)(CharacterMachine + 604) cm + 0x97*2 = +302
+    //
+    // 268 y 302 son los INDICES de short (536/2 y 604/2) usados como offset de
+    // BYTE: los dos accesos leian a la mitad de la direccion correcta, asi que
+    // el tipo de arma salia basura, el scan no encontraba nada y la funcion
+    // devolvia -1 siempre — por eso la municion no se auto-equipaba.
+    //
+    // Reparto de slots (confirmado por sub_4824C0 y por CreateArrow 0x474370):
+    //   CharacterMachine + 536 (slot 0) -> BALLESTA (136-142, 144, 146)
+    //   CharacterMachine + 604 (slot 1) -> ARCO     (128-134, 145)
+    // y la municion va al slot que queda libre: Arrows (143) con arco, Bolts
+    // (135) con ballesta.
+    const char* const cmBytes = (const char*)(uintptr_t)DAT_07cf1ffc;
+    const char* const caBytes = (const char*)(uintptr_t)DAT_07cf1ff4;
+    if (!cmBytes || !caBytes)
         return -1;
-    }
 
-    // Elf path: read equipped item type from CharacterMachine
-    int itemType = (int)*(short*)((DWORD)cm + 0x97 * 2);   // slot 0x97 (weapon type short)
-    int weaponClass = (int)*(short*)((DWORD)cm + 0x86 * 2); // slot 0x86 (weapon class short)
+    if ((caBytes[11] & 7) != 2)                       // IDA: CharacterAttribute + 11
+        return -1;
 
-    // anti-tamper hash table — skipped
+    const short slot0 = *(const short*)(cmBytes + 536);   // IDA: v6
+    const short slot1 = *(const short*)(cmBytes + 604);   // IDA: v28
 
-    // Classify weapon type into weapon group
-    int weaponGroup;
-    if ((weaponClass >= 0x80 && weaponClass <= 0x86) || weaponClass == 0x91) {
-        weaponGroup = 0x8f;
-    } else if ((weaponClass > 0x87 && weaponClass < 0x8f) || (weaponClass > 0x8f && weaponClass < 0xa0)) {
-        weaponGroup = 0x87;
-    } else {
-        weaponGroup = weaponClass;
-    }
+    int weaponGroup;                                       // IDA: v12
+    if ((slot1 >= 128 && slot1 < 135) || slot1 == 145)
+        weaponGroup = 143;                                 // arco  -> Arrows
+    else if ((slot0 < 136 || slot0 >= 143) && (slot0 < 144 || slot0 >= 160))
+        weaponGroup = slot1;                               // ni arco ni ballesta
+    else
+        weaponGroup = 135;                                 // ballesta -> Bolts
+
 
     // Scan equipment table from DAT_07ea9504 downward (stride 0x11 dwords = 0x44 bytes per slot)
     // 8 rows x 8 columns, looking for first slot matching weaponGroup with durability > 0
@@ -64,57 +76,21 @@ int __stdcall Item_FindElfWeaponInventorySlot(void) {
     return -1;
 }
 
-// FUN_00482850 @ 0x00482850 (~260 lines) — get equipped weapon type (secondary/shield)
+// FUN_00482850 @ 0x00482850 - sub_482850: cuenta la municion del inventario
 // IDA: FUN_00482850
+// La copia VIVA de sub_482850 es `FUN_00482850_` (src/Render/HUD_Pass3.cpp),
+// que es la que llama RenderNumArrow -- el unico caller que tiene la funcion en
+// el binario (dos veces, 0x4BF77D y 0x4BF821).  Esta entrada existia como una
+// segunda implementacion del mismo simbolo y estaba mal en tres accesos
+// (`ca + 0` por `ca + 11`, y los dos slots de mano leidos como indices de short
+// en vez de offsets de byte), ademas de cruzar las dos manos en el arbol de
+// decision y devolver -1 donde el binario devuelve 0.  Como no tenia callers,
+// nadie lo notaba: era exactamente el patron de simbolo duplicado que ya mordio
+// con OpenSMDFile, RenderText y SetPlayerStop.  Ahora delega, asi las dos no
+// pueden volver a divergir.
+extern "C" int __cdecl FUN_00482850_(void);
 int __stdcall Item_CountElfWeaponInventorySlots(void) {
-    // 0x00482850 — Get equipped weapon type (secondary/shield)
-    // anti-tamper hash table — skipped (encrypt/decrypt CharacterMachine)
-
-    DWORD* cm = (DWORD*)DAT_07cf1ffc;  // CharacterMachine
-    DWORD* ca = (DWORD*)DAT_07cf1ff4;  // CharacterAttribute
-
-    // If class != elf (2), count matching items and return count
-    if ((*(BYTE*)((DWORD)ca + 0x00) & 7) != 2) {
-        // anti-tamper hash table — skipped
-        // Ghidra returns unaff_EBP here (uninitialized/phantom) — return -1 for non-elf
-        return -1;
-    }
-
-    // Elf path: read equipped item type from CharacterMachine
-    int itemType = (int)*(short*)((DWORD)cm + 0x97 * 2);   // slot 0x97
-    int weaponClass = (int)*(short*)((DWORD)cm + 0x86 * 2); // slot 0x86
-
-    // anti-tamper hash table — skipped
-
-    // Classify weapon type into weapon group
-    int weaponGroup;
-    if ((weaponClass >= 0x80 && weaponClass <= 0x86) || weaponClass == 0x91) {
-        weaponGroup = 0x8f;
-    } else if ((weaponClass > 0x87 && weaponClass < 0x8f) || (weaponClass > 0x8f && weaponClass < 0xa0)) {
-        weaponGroup = 0x87;
-    } else {
-        weaponGroup = weaponClass;
-    }
-
-    // Recorre la grilla desde DAT_07ea9504 hacia atras contando coincidencias.
-    // 2026-08-22: el bound seguia siendo el literal del binario fuente
-    // (`while ((int)piRow > 0x7ea9327)`).  En nuestro build piRow es una
-    // direccion de BSS mucho mas baja que 0x7EA9327, asi que la condicion daba
-    // falsa en la primera vuelta y el do-while contaba UNA sola columna de las
-    // 8.  Contador explicito, igual que los otros dos walkers de esta grilla.
-    int count = 0;
-    int* piRow = &DAT_07ea9504;
-    for (int outer = 0; outer < 8; ++outer) {
-        int* piSlot = piRow;
-        for (int row = 8; row != 0; --row) {
-            if ((short)*(piSlot - 0x0E) == (short)weaponGroup && *piSlot > 0) {
-                count++;
-            }
-            piSlot -= 0x88;
-        }
-        piRow -= 0x11;
-    }
-    return count;
+    return FUN_00482850_();
 }
 
 // FUN_00482e40 @ 0x00482E40 (~109 lines) — count equipped items of weapon group

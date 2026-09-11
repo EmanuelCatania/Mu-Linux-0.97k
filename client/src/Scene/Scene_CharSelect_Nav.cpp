@@ -283,9 +283,11 @@ void __cdecl FUN_004f9d20(float *param_1, float *param_2, float *param_3)
 // GuildMark helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004fa5a0 @ 0x004FA5A0 — GuildMark_ResetTarget
-// Limpia los tres slots de destino de marca de guild (todos → 0xffffffff) y resetea el
-// float distance register to -1.0 (0xbf800000).
+// FUN_004fa5a0 @ 0x004FA5A0 - ClearActionObject (NO es "GuildMark_ResetTarget",
+// esa etiqueta era un mismap del port).  Deja los tres parametros de
+// SetActionObject en -1 y el acumulador de velocidad en -1.0f, o sea desarma la
+// animacion de derrumbe de la puerta del evento.  La llama MoveObject_Special
+// (0x4FA5F0) cuando el contador llega a 0.
 void FUN_004fa5a0(void)
 {
     _DAT_0055a7bc = -1.0f;  // 0xbf800000 in IEEE 754
@@ -298,8 +300,14 @@ void FUN_004fa5a0(void)
 // Entity / Character helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00444b30 @ 0x00444B30 — Entity_SetIdleAction
-// Setea la animación de idle de una entidad: DK (tipo 0x186) → acción 0x57, el resto → 5.
+// FUN_00444b30 @ 0x00444B30 - SetPlayerTeleport (nombre confirmado contra el
+// source de MU 5.2, ZzzCharacter.cpp:1243; alli toma CHARACTER* y usa &c->Object,
+// que en el 0.97k es el mismo puntero).
+// Anima el casteo de teleport: jugador (tipo 0x186 = MODEL_PLAYER) -> accion 0x57
+// (PLAYER_SKILL_TELEPORT), cualquier otra entidad -> 5 (MONSTER01_SHOCK).
+// Su unico caller en el binario es Attack (0x0049CBF0), en las colas de los
+// skills 6 (teleport propio) y 15 (recall de party).
+// El nombre viejo ("Entity_SetIdleAction", "DK") era una suposicion del port.
 void __cdecl FUN_00444b30(int param_1)
 {
     if (*(short *)(param_1 + 2) == 0x186) {
@@ -840,6 +848,7 @@ void __cdecl FUN_00479950(const char *param_1)
     BYTE *Buffer = (BYTE *)operator_new(300);
 
     char *pcVar3 = (char *)((int)&SkillAttribute + 4);
+    int nRowGT = 0;
     do {
         BYTE *pBuf = Buffer;
         char *pcVar4 = pcVar3;
@@ -848,7 +857,12 @@ void __cdecl FUN_00479950(const char *param_1)
         BuxConvert_0((int)Buffer, 300);
         FUN_005430f0((char *)Buffer, 300, 1, (int *)pFile);
         pcVar3 += 300;
-    } while ((int)pcVar3 < 0x7d73104);
+        // 2026-09-08: el bound era `< 0x7d73104`, direccion absoluta del binario.
+        // La base es `&SkillAttribute + 4` = 0x07D29D24 = GlobalText[0], y
+        // (0x7D73104 - 0x7D29D24) / 300 = 1000 -- las 1000 filas de GlobalText.
+        // (Confirma que esta funcion escribe GlobalText, no SkillAttribute.)
+        if (++nRowGT >= 1000) break;
+    } while (true);
 
     operator_delete(Buffer);
     fclose(pFile);
@@ -2566,4 +2580,42 @@ void __cdecl FUN_004f9d60(float *vec) {
 // FUN_00513260 @ 0x00513260 — Entity_ViewportCheck(viewport, projection)
 // Testea si la entidad descrita por 12 dwords (que el llamador copió de entity+0x130) está dentro
 // del viewport actual, usando los punteros de matriz dados. Devuelve 1 si es visible, 0 si se descarta.
-unsigned int __cdecl FUN_00513260(float *viewport, float *projection) { return 1; } // STUB: frustum cull
+// FUN_00513260 @ 0x00513260 - test de interseccion SEGMENTO vs OBB por ejes
+// separadores (SAT).  El "OBB" son los 12 floats que `Calc_RenderObject` deja en
+// `objeto + 0x130` via `sub_4404E0`: centro (box[0..2]) y tres semi-ejes
+// (box[3..5], box[6..8], box[9..11]).
+//
+// IDA prueba SEIS ejes y exige que TODOS solapen:
+//     cross(dir, eje0), cross(dir, eje1), cross(dir, eje2), eje0, eje1, eje2
+// con `dir = rayTarget - rayOrigin`.  La proyeccion de cada uno la hace
+// `sub_5130F0` (FUN_005130f0), que ya estaba portada fiel mas arriba.
+//
+// 2026-09-04: antes era `return 1` con el comentario "STUB: frustum cull" -- o
+// sea CUALQUIER objeto daba hit, y como el unico consumidor real
+// (SpecialObject_HoverTest) estaba neutralizado, no se notaba.
+bool __cdecl FUN_00513260(float *rayOrigin, float *rayTarget, const float *box)
+{
+    if (!rayOrigin || !rayTarget || !box) return false;
+
+    float dir[3] = { rayTarget[0] - rayOrigin[0],
+                     rayTarget[1] - rayOrigin[1],
+                     rayTarget[2] - rayOrigin[2] };
+
+    float n0[3], n1[3], n2[3];
+    FUN_004f9d20(dir, (float *)(box + 3), n0);
+    FUN_004f9d20(dir, (float *)(box + 6), n1);
+    FUN_004f9d20(dir, (float *)(box + 9), n2);
+
+    float *axes[6] = { n0, n1, n2,
+                       (float *)(box + 3), (float *)(box + 6), (float *)(box + 9) };
+
+    for (int i = 0; i < 6; ++i) {
+        if (!FUN_005130f0(axes[i], rayOrigin, rayTarget,
+                          box[0], box[1], box[2],
+                          box[3], box[4], box[5],
+                          box[6], box[7], box[8],
+                          box[9], box[10], box[11]))
+            return false;
+    }
+    return true;
+}

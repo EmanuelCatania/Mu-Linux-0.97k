@@ -40,6 +40,34 @@
 #include "globals.h"
 #include "functions.h"
 
+// 2026-09-03 -- GUARDA DE RANGO (no esta en IDA).
+// `DAT_07eaa154` es el numero de linea del panel y se usa como indice de TRES
+// arrays de 30 entradas: `lpString_07e90798` (30 x 100 bytes), `DAT_07e91708`
+// (color) y `DAT_07ea7b10` (negrita).  Aca se incrementa dentro de bucles cuya
+// cantidad depende de los datos (skills del personaje, filas de stats), sin
+// ningun tope, asi que un personaje con muchas entradas escribia mas alla de
+// los 3000 bytes del buffer y sobre los globals vecinos.
+// `RenderItemInfo` -- que llena las mismas tablas -- ya corta en 28; se replica
+// ese criterio: al llegar al tope las lineas extra se pisan sobre la ultima en
+// vez de desbordar.  El original no lo necesita porque alli el hueco de memoria
+// que sigue al buffer es de relleno.
+#define CHARMENU_ROW_MAX 28
+static inline int CharMenu_Row(void)
+{
+    int r = DAT_07eaa154;
+    if (r < 0) r = 0;
+    if (r > CHARMENU_ROW_MAX) r = CHARMENU_ROW_MAX;
+    return r;
+}
+static inline void CharMenu_RowAdvance(int n)
+{
+    int r = DAT_07eaa154 + n;
+    if (r < 0) r = 0;
+    if (r > CHARMENU_ROW_MAX) r = CHARMENU_ROW_MAX;
+    DAT_07eaa154 = r;
+}
+
+
 // String table aliases for readability
 #define s_ChMenu_HdrA  DAT_0055a408
 #define s_ChMenu_SubA  DAT_0055a40c
@@ -87,27 +115,27 @@ void FUN_004c3530(void)
         DAT_07e91708[iVar4] = 1;
         DAT_07ea7b10[iVar4] = 1;
         slot_strcpy(iVar4, &DAT_07d329c4);
-        DAT_07eaa154 = iVar4 + 1;   // +2
+        DAT_07eaa154 = iVar4 + 1; if (DAT_07eaa154 > CHARMENU_ROW_MAX) DAT_07eaa154 = CHARMENU_ROW_MAX;   // +2
 
         // Slot 2 (iVar4): subheader
-        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_SubA);
-        DAT_07eaa154++;
+        crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubA);
+        CharMenu_RowAdvance(1);
 
         // Class entries from list A (stride 300, limit 0x7d34134)
         char *pcVar5 = &DAT_07d32af0;
-        char *local_c = lpString_07e90798 + DAT_07eaa154 * 100;
+        char *local_c = lpString_07e90798 + CharMenu_Row() * 100;
         while (pcVar5 != nullptr && (int)pcVar5 < 0x7d34134) {
-            DAT_07e91708[DAT_07eaa154] = 0;
-            DAT_07ea7b10[DAT_07eaa154] = 0;
-            slot_strcpy(DAT_07eaa154, pcVar5);
-            DAT_07eaa154++;
+            DAT_07e91708[CharMenu_Row()] = 0;
+            DAT_07ea7b10[CharMenu_Row()] = 0;
+            slot_strcpy(CharMenu_Row(), pcVar5);
+            CharMenu_RowAdvance(1);
             pcVar5 += 300;
             local_c += 100;
         }
 
         // Footer
-        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_FtrA);
-        DAT_07eaa154++;
+        crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_FtrA);
+        CharMenu_RowAdvance(1);
         DAT_07e11d6e = 1;
         FUN_004c2420(1, 1, DAT_07eaa154, 0, 2, 1);
         return;
@@ -124,24 +152,24 @@ void FUN_004c3530(void)
         DAT_07e91708[iVar4] = 1;
         DAT_07ea7b10[iVar4] = 1;
         slot_strcpy(iVar4, &DAT_07d34134);
-        DAT_07eaa154 = iVar4 + 1;   // +2
+        DAT_07eaa154 = iVar4 + 1; if (DAT_07eaa154 > CHARMENU_ROW_MAX) DAT_07eaa154 = CHARMENU_ROW_MAX;   // +2
 
-        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_SubB);
-        DAT_07eaa154++;
+        crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubB);
+        CharMenu_RowAdvance(1);
 
         char *pcVar5 = &DAT_07d34260;
-        char *local_c = lpString_07e90798 + DAT_07eaa154 * 100;
+        char *local_c = lpString_07e90798 + CharMenu_Row() * 100;
         while (pcVar5 != nullptr && (int)pcVar5 < 0x7d358a4) {
-            DAT_07e91708[DAT_07eaa154] = 0;
-            DAT_07ea7b10[DAT_07eaa154] = 0;
-            slot_strcpy(DAT_07eaa154, pcVar5);
-            DAT_07eaa154++;
+            DAT_07e91708[CharMenu_Row()] = 0;
+            DAT_07ea7b10[CharMenu_Row()] = 0;
+            slot_strcpy(CharMenu_Row(), pcVar5);
+            CharMenu_RowAdvance(1);
             pcVar5 += 300;
             local_c += 100;
         }
 
-        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_FtrB);
-        DAT_07eaa154++;
+        crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_FtrB);
+        CharMenu_RowAdvance(1);
         DAT_07e11d6e = 1;
         FUN_004c2420(1, 1, DAT_07eaa154, 0, 2, 1);
         return;
@@ -199,15 +227,15 @@ void FUN_004c3530(void)
     DAT_07ea7b10[iVar7b] = 1;
 
     crt_sprintf(lpString_07e90798 + iVar7b * 100, s_ChMenu_SubC1);
-    DAT_07e91708[DAT_07eaa154] = 0;
-    DAT_07ea7b10[DAT_07eaa154] = 1;
-    DAT_07eaa154 = iVar7b + 1;
+    DAT_07e91708[CharMenu_Row()] = 0;
+    DAT_07ea7b10[CharMenu_Row()] = 1;
+    DAT_07eaa154 = iVar7b + 1; if (DAT_07eaa154 > CHARMENU_ROW_MAX) DAT_07eaa154 = CHARMENU_ROW_MAX;
 
-    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_SubC2);
-    DAT_07eaa154++;
-    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_SubC3);
-    DAT_07eaa154++;
-    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_SubC4);
+    crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubC2);
+    CharMenu_RowAdvance(1);
+    crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubC3);
+    CharMenu_RowAdvance(1);
+    crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubC4);
     int iVar7c = DAT_07eaa154 + 1;
     DAT_07e11d6e = 1;
 
@@ -219,21 +247,21 @@ void FUN_004c3530(void)
     DAT_07e91708[iVar7c] = 0;
     for (unsigned u = uVar3 & 3; u; u--) *(unsigned char *)pu++ = 0x20;
     DAT_07ea7b10[iVar7c] = 0;
-    DAT_07eaa154 += 2;
+    CharMenu_RowAdvance(2);
     pPad[uVar3] = 0;
 
     // Extra blank rows for type ≠ 5
     if (local_8 > 0) {
         unsigned char *pu10 = (unsigned char *)(DAT_07ea7b10 + DAT_07eaa154);
         for (char *p2 = (char *)local_8; p2; p2--) { *pu10 = 0; pu10 += 4; }
-        char *pb = &lpString_07e90798[0] + DAT_07eaa154 * 100 + 1;
+        char *pb = &lpString_07e90798[0] + CharMenu_Row() * 100 + 1;
         while (local_8 > 0) {
             pb[-1] = 0x20;
             pb[0]  = 0;
-            DAT_07eaa154++;
+            CharMenu_RowAdvance(1);
             pb += 100;
             local_8--;
-            DAT_07e91708[DAT_07eaa154] = 0;
+            DAT_07e91708[CharMenu_Row()] = 0;
         }
     }
 
@@ -241,8 +269,8 @@ void FUN_004c3530(void)
     FUN_004c2880(iVar4);
 
     // Footer
-    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, s_ChMenu_FtrC);
-    DAT_07eaa154++;
+    crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_FtrC);
+    CharMenu_RowAdvance(1);
     FUN_004c2420(1, 1, DAT_07eaa154, col_w2, 2, 1);
     GL_SetBlendSrcOver('\x01');
 
@@ -626,15 +654,15 @@ void __cdecl FUN_004c2880(int param_1)
         if (required != 0 && heroClass != required) {
             // Use "not met" format
             crt_sprintf(buf, DAT_0055a404, slot >> 8, required);
-            DAT_07e91708[DAT_07eaa154] = 3;  // red
+            DAT_07e91708[CharMenu_Row()] = 3;  // red
         } else {
             crt_sprintf(buf, DAT_0055a400, slot >> 8);
-            DAT_07e91708[DAT_07eaa154] = 2;  // green
+            DAT_07e91708[CharMenu_Row()] = 2;  // green
         }
 
-        DAT_07ea7b10[DAT_07eaa154] = 0;
-        slot_strcpy(DAT_07eaa154, buf);
-        DAT_07eaa154++;
+        DAT_07ea7b10[CharMenu_Row()] = 0;
+        slot_strcpy(CharMenu_Row(), buf);
+        CharMenu_RowAdvance(1);
         DAT_07eaa158++;
     }
 }
@@ -667,10 +695,10 @@ void __cdecl FUN_004c2c10(int row, unsigned char *color, int *value,
         crt_sprintf(buf, label, val);
         GetTextExtentPointA(hdc, buf, (int)strlen(buf), &sz);
 
-        DAT_07e91708[DAT_07eaa154] = (color ? color[i] : 0);
-        DAT_07ea7b10[DAT_07eaa154] = 0;
-        slot_strcpy(DAT_07eaa154, buf);
-        DAT_07eaa154++;
+        DAT_07e91708[CharMenu_Row()] = (color ? color[i] : 0);
+        DAT_07ea7b10[CharMenu_Row()] = 0;
+        slot_strcpy(CharMenu_Row(), buf);
+        CharMenu_RowAdvance(1);
     }
 
     FUN_004c2420(row, x, DAT_07eaa154, *value, 2, 1);

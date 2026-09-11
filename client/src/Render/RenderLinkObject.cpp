@@ -699,6 +699,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     // se veia blanco.
     float Light[3] = { 0.0f, 0.0f, 0.0f };
 
+
     // The switch is on param_6 (Type), Ghidra mis-typed as float; actual int cases:
     // 0x1a3=419, 0x1af=431, 0x1d7=471, 0x1fa=506,
     // 0x214=532, 0x215=533, 0x216=534, 0x221=545, 0x23a=570, 0x25f=607
@@ -711,9 +712,21 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
         afStack_264[4] = 0.0f;
         afStack_264[5] = 0.0f;
         Light[2] = fLum * _DAT_005524f4;
+        // 2026-09-08: el bound era `< 0x6970c4c`, una direccion ABSOLUTA del
+        // binario fuente (IDA: `while ((int)v43 < (int)flt_6970C4C)`).  En este
+        // build g_BoneScratch vive muy por debajo de esa direccion, asi que el
+        // bucle recorria ~100 MB de memoria transformando basura y spawneando
+        // sprites en posiciones arbitrarias -- los "circulitos volando" -- hasta
+        // pegar en una pagina no mapeada.  Ese era el crash de Blood Castle:
+        // `Vector_Transform <- BMD_TransformPosition <- RenderLinkObject`.
+        // Solo se disparaba con la ESPADA del evento (Type 419), por eso con el
+        // arco el evento terminaba bien.
+        //   base = flt_6970AFC = g_BoneScratch + 0x60 = hueso 2
+        //   fin  = flt_6970C4C                        = hueso 9
+        //   (0xC4C - 0xAFC) / 0x30 = 7 iteraciones -> huesos 2..8
         float* pfVar10 = (float*)&DAT_06970afc;
         Light[0] = fLum;
-        do {
+        for (int nBone = 0; nBone < 7; ++nBone) {
             afStack_264[0] = 0.4f;
             afStack_264[1] = 0.4f;
             afStack_264[2] = 0.4f;
@@ -727,7 +740,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
             }
             FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
             pfVar10 += 0xc;
-        } while ((int)pfVar10 < 0x6970c4c);
+        }
 
         unsigned char bVar6 = *(unsigned char*)(param_4 + 0x105);
         if (((bVar6 < 0x0d) || (bVar6 > 0x21)) && ((bVar6 < 0x38) || (bVar6 > 0x3c)))
@@ -802,14 +815,16 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
         afStack_264[3] = 0.0f;
         afStack_264[4] = 0.0f;
         afStack_264[5] = 0.0f;
+        // Mismo bound absoluto que arriba, aca desde flt_6970ACC:
+        //   (0xC4C - 0xACC) / 0x30 = 8 iteraciones -> huesos 1..8
         float* pfVar10 = (float*)&DAT_06970acc;
         Light[1] = fLum * _DAT_005524f4;
         Light[2] = fLum * _DAT_00552530;
-        do {
+        for (int nBone = 0; nBone < 8; ++nBone) {
             BMD_TransformPosition(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
             FUN_004795c0(0x47e, afStack_264 + 6, 1.3f, Light, param_4, 0, 0);
             pfVar10 += 0xc;
-        } while ((int)pfVar10 < 0x6970c4c);
+        }
         return;
     }
 

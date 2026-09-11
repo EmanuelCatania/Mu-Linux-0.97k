@@ -8,12 +8,12 @@
 #include "functions.h"
 
 extern "C" DWORD g_ItemAttribute_Backup;   // DAT_07d78068 recovery pointer
-// CheckMixRecipe @ 0x004E40F0 (~312 lines) — SUMMARY STUB
+// CheckMixRecipe @ 0x004E40F0
 // Validates chaos/mix recipe ingredients in the mix inventory grid.
 // Scans all items, counts by category (wings, jewels, excellent items, +level items).
 // Sets DAT_0055a3fc (max height), DAT_0055a3f8 (max width).
 #if 0
-int __cdecl CheckMixRecipe_stub(short* param_1, int param_2, int param_3) {
+int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
     // 0x004E40F0 — Validates chaos/mix recipe ingredients in the mix inventory grid.
     // param_1 = inventory array base (short*, stride 0x22 words = 0x44 bytes)
     // param_2 = grid width, param_3 = grid height
@@ -335,7 +335,7 @@ check_final:
 // if (Flag) RenderBitmap(0x117, x, y+offset2, 190, 10, ...); // separator line
 #endif
 
-int __cdecl CheckMixRecipe_stub(short* param_1, int param_2, int param_3) {
+int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
     char counts[77];
     memset(counts + 1, 0, 0x4C);
 

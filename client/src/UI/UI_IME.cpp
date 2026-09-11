@@ -95,7 +95,7 @@ void __stdcall RenderIME_Status_stub(void) {
     GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);
 
     // Line 4: Lock input status
-    sprintf(local_64, "LockInputStatus %d", DAT_00559cd8);
+    sprintf(local_64, "LockInputStatus %d", (int)DAT_07e11d6f);
     RenderText(100, 0x82, local_64, 0, 1, NULL);
     iVar1 = lstrlenA(local_64);
     GetTextExtentPointA(m_hFontDC, local_64, iVar1, &sz);

@@ -55,10 +55,108 @@ static BYTE* Warrior_GetSkillRecord97k(int skillType)
     return nullptr;
 }
 
-// IDA: FUN_00485780 @ 0x00485780 — UseSkillWarrior(c=CHARACTER*, o=OBJECT*)
+static void Warrior_SendSkill19(BYTE skill, WORD targetKey)
+{
+    BYTE packet[6] = { 0xC1, 6, 0x19, skill,
+                       (BYTE)(targetKey >> 8), (BYTE)targetKey };
+    Net_SendSmallPacket(packet, sizeof(packet));
+}
+
+// IDA: UseSkillWarrior 0x485780, L682-908 -- el sitio que el DLL de inyeccion
+// hookea como `SendContinueDeathStab` (Patchs.cpp, 0x00486136).
+// `packedOffset` es IDA v316.
+//
+// 2026-09-03 -- DESVIACION DE PROTOCOLO (servidor MuEmu), la misma que ya
+// aplican `Combat_SendDuration1E_97k` y `SendSkillPacket1E_Local`:
+// el 0.97k vanilla arma 9 bytes y NO manda la key del objetivo, pero
+// PMSG_DURATION_SKILL_ATTACK_RECV (GameServer/SkillManager.h:96) son 11 y el
+// server lee `index[]` SIEMPRE:
+//     short bIndex = MAKE_NUMBERW(lpMsg->index[0], lpMsg->index[1]);
+//     this->UseDurationSkillAttack(..., bIndex, ...);   // SkillManager.cpp:2045
+// Con 9 bytes lee esos dos bytes FUERA del paquete: `bIndex` sale basura y
+// `MultiSkillAttack -> BasicSkillAttack(aIndex, bIndex, ...)` le pega a otra
+// entidad o a ninguna.  Este era el UNICO de los tres emisores de C3:1E que
+// habia quedado en la forma vanilla -- descartaba `targetKey` con un
+// `(void)targetKey` explicito.
+static void Warrior_SendSkill1E(BYTE skill, BYTE x, BYTE y, BYTE direction,
+                                BYTE packedOffset, BYTE angle, WORD targetKey)
+{
+    BYTE packet[11] = { 0xC1, 11, 0x1E, skill, x, y, direction, packedOffset, angle,
+                        (BYTE)((targetKey >> 8) & 0xFF), (BYTE)(targetKey & 0xFF) };
+    Net_SendSmallPacket(packet, sizeof(packet));
+}
+
+// IDA: sub_45FDB0 @ 0x45FDB0.  The warrior's 43 branch starts with the
+// selected target and appends nearby monsters or allied player objects,
+// without duplicate keys.  `centre` corresponds to IDA a1; `relationKey` is
+// IDA a3; `keys`/`count` are IDA a4/a5.  The native key list has *DWORD*
+// stride (despite every entry holding only a signed 16-bit object key).
+static void Warrior_CollectMultiTargets(const float* centre, float radius,
+                                        WORD relationKey, int* keys, int* count, int maximum)
+{
+    if (!centre || !keys || !count || *count >= maximum || DAT_07abf5d0 == 0)
+        return;
+
+    const float radiusSquared = radius * radius;
+    BYTE* characters = (BYTE*)(uintptr_t)DAT_07abf5d0;
+    for (int index = 0; index < 400 && *count < maximum; ++index) {
+        BYTE* candidate = characters + index * 0x394;
+        if (!candidate[0] || !candidate[0x160] || candidate == (BYTE*)(uintptr_t)DAT_07abf5d8 || candidate[0x2FD])
+            continue;
+
+        const int key = *(short*)(candidate + 0x1DC); // IDA: *(__int16 *)(v9 + 456)
+        const BYTE type = candidate[0x84]; // IDA: v10 = *(_BYTE *)(v9 + 112)
+        if (type != 2 && (type != 1 || key != relationKey))
+            continue;
+
+        const float dx = *(float*)(candidate + 0x10) - centre[0];
+        const float dy = *(float*)(candidate + 0x14) - centre[1];
+        // IDA v16/v17 use the X/Y plane only; Z is intentionally ignored.
+        if (dx * dx + dy * dy > radiusSquared)
+            continue;
+
+        bool duplicate = false;
+        for (int item = 0; item < *count; ++item) {
+            if (keys[item] == key) { duplicate = true; break; }
+        }
+        if (!duplicate)
+            keys[(*count)++] = key;
+    }
+}
+
+static void Warrior_SendMultiSkill(BYTE skill, const float* centre, BYTE serial,
+                                   const int* keys, int count)
+{
+    if (!centre || !keys || count <= 0) return;
+    if (count > 6) count = 6;
+    BYTE packet[5 + 2 + 2 + 1 + 1 + 12] = {};
+    const BYTE tileX = (BYTE)(int)(centre[0] * 0.01f);
+    const BYTE tileY = (BYTE)(int)(centre[1] * 0.01f);
+    const int length = 8 + count * 2;
+    packet[0] = 0xC1; packet[1] = (BYTE)length; packet[2] = 0x1D;
+    packet[3] = skill; packet[4] = tileX; packet[5] = tileY;
+    packet[6] = serial; packet[7] = (BYTE)count;
+    for (int item = 0; item < count; ++item) {
+        packet[8 + item * 2] = (BYTE)(keys[item] >> 8);
+        packet[9 + item * 2] = (BYTE)keys[item];
+    }
+    Net_SendSmallPacket(packet, length);
+}
+
+// IDA: UseSkillWarrior @ 0x00485780 (2225 lineas de decompile)
+//   void __cdecl UseSkillWarrior(int c, int o)   — c = CHARACTER*, o = OBJECT*
+// Correspondencia de nombres con el decompile:
+//   skillType    = v317   (id de skill resuelto en L366-373)
+//   selectedSlot = dword_7D7809C (0x07D7809C, el slot que siembra Attack)
+//   targetIdx    = MovementSkillTarget (0x07D780A0)
+//   targetEntity = CharactersClient + 916 * MovementSkillTarget
+//   targetKey    = v285   (*(__int16 *)(targetEntity + 476))
+//   centre       = Angle[3] (L624-642, el centro desplazado 120u del multiataque)
+//   keys/count   = &v285 / SkillIndex (el par que llena sub_45FDB0)
+//   serial       = *(BYTE *)(CharacterMachine + 1408)  ->  o+136
 // Client-side handler for all Warrior skill activations (1989 lines in Ghidra).
 // 1. Resolves skill ID from DAT_07d78098/DAT_07d7809c (+ CharacterAttribute skill table).
-// 2. Sends opcode 0x10 position packet (XOR-encrypted — delegated to Combat_ProcessQueuedAction).
+// 2. Sends the compact C1:06:10 facing packet built locally at 0x485815.
 // 3. Sets attack animation based on model type (0x186=special warrior anims).
 // 4. Spawns caster sparkle effect 0x4D0, plays random sword sound.
 // 5. Computes facing angle toward target via CreateAngle.
@@ -66,143 +164,151 @@ static BYTE* Warrior_GetSkillRecord97k(int skillType)
 // 7. Sends opcode 0x19 skill packet for each specific skill type.
 // 8. Final: sends opcode 0x11 if tile is walkable.
 // Anti-tamper hash table ops and XOR encryption blocks are skipped per project policy.
-void __cdecl Combat_UseWarriorSkill(int c, int o)
+void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 {
     if (!c || !o) return;
+    BYTE* character = (BYTE*)(uintptr_t)c; // IDA: c / CHARACTER state buffer
+    BYTE* object = (BYTE*)(uintptr_t)o;    // IDA: o / visual OBJECT
+    BYTE* attributes = (BYTE*)(uintptr_t)DAT_07cf1ff4; // IDA: CharacterAttribute @ 0x07CF1FF4
+    const BYTE selectedSlot = (BYTE)DAT_07d7809c; // IDA: dword_7D7809C
+    const BYTE skillType = (DAT_07d78098 && attributes) // IDA: v317
+        ? attributes[selectedSlot + 87] : selectedSlot;
 
-    // anti-tamper hash table — skipped (CharacterMachine encrypt/decrypt around skill read)
-
-    DWORD skillType = DAT_07d7809c;
-    if (DAT_07d78098 != '\0') {
-        BYTE* charAttr = (BYTE*)DAT_07cf1ff4;
-        if (charAttr) {
-            skillType = (DWORD)charAttr[DAT_07d7809c + 87];
-        }
-    }
-
-    // anti-tamper hash table — skipped
-
-    // Send opcode 0x10 position packet (movement before skill) using the
-    // real 97k sender, not the old zero-arg legacy helper.
-    Combat_SendMovePathPacket(c, o);
-
-    // Clear movement flag
+    // 0x485815: this is a compact facing packet, not Send_MovePacket.
+    BYTE movePacket[6] = { 0xC1, 6, 0x10,
+        *(BYTE*)(character + 904), *(BYTE*)(character + 908),
+        (BYTE)(16 * (((int)((*(float*)(object + 36) + 22.5f) * 0.022222223f + 1.0f)) & 7)) };
+    Net_SendC1Packet(movePacket, sizeof(movePacket));
     *(BYTE*)(c + 0x2EC) = 0;
 
-    // Set attack animation based on object model type
-    short modelType = *(short*)(o + 2); // OBJECT.Type
-    if (modelType == 0x186) {
-        // Special warrior model: per-skill animation
+    if (*(short*)(o + 2) == 390) {
         FUN_00443e70(); // SetAttackSpeed
-        if (skillType == 0x2B) {
-            FUN_0043e820(o, 0x43); // TeleportSlash anim
-        } else if (skillType == 0x2F) {
-            FUN_0043e820(o, 0x42); // DownStab anim
-        } else if (skillType == 0x31) {
+        if (skillType == 43) {
+            FUN_0043e820(o, 67);
+        } else if (skillType == 47) {
+            FUN_0043e820(o, 66);
+        } else if (skillType == 49) {
             if (g_GameSubState == 8 || g_GameSubState == 10) {
-                FUN_0043e820(o, 0x41); // Whirlwind alt
+                FUN_0043e820(o, 65);
             } else {
-                FUN_0043e820(o, 0x40); // Whirlwind normal
+                FUN_0043e820(o, 64);
             }
         } else {
-            FUN_0043e820(o, (int)(skillType + 0x25)); // Generic skill anim
+            // IDA intentionally uses the selected slot here, not v317.
+            FUN_0043e820(o, selectedSlot + 37);
         }
     } else {
-        FUN_00444410(c, 0, 0, 0); // SetPlayerAttack — generic attack anim
+        FUN_00444410(c, 0, 0, 0);
     }
 
-    // Spawn caster sparkle effect (always)
-    float* pos   = (float*)(o + 0x10);
-    float* angle = (float*)(o + 0x1c);
-    float* light = (float*)(o + 0xe8);
-    float scale[3] = { 1.0f, 1.0f, 1.0f };
-    Effect_Create(0x4D0, pos, angle, light, NULL, NULL, (float*)(uintptr_t)0xffffffff, NULL, 0);
+    // IDA L597-601:
+    //   Light[0] = Light[1] = Light[2] = 1.0;
+    //   Particle_Spawn(1232, (float *)(o + 16), (float *)(o + 28), Light, 0, 0.0, o);
+    // El port llamaba `Effect_Create(0x4D0, ...)` (= CreateEffect @0x00460DC0),
+    // que es OTRA funcion, y ademas pasaba `o+0xE8` como luz en vez del {1,1,1}
+    // local.  1232 = 0x4D0 es un tipo de PARTICULA, no de efecto.
+    float Light[3] = { 1.0f, 1.0f, 1.0f };            // IDA: Light[3]
+    Particle_Spawn(1232, (float*)(o + 16), (float*)(o + 28), Light, 0, 0.0f, o);
 
     // Play random sword sound (0x28 or 0x29)
     PlayBuffer((_rand() & 1) + 0x28, 0, 0);
 
-    // Set target position from CharactersClient[MovementSkillTarget]
-    int targetIdx = (int)DAT_07d780a0;
-    if (targetIdx < 0 || targetIdx >= 400) {
-        return;
-    }
-    char* targetEntity = (char*)(uintptr_t)DAT_07abf5d0 + targetIdx * 0x394;
+    int targetIdx = (int)DAT_07d780a0; // IDA: MovementSkillTarget @ 0x07D780A0
+    // Native code indexes CharactersClient directly at 0x4859A9.  Attack and
+    // Action establish this index before entering this helper; adding a local
+    // rejection here changes the original tail (state + C1:11 confirmation).
+    char* targetEntity = (char*)(uintptr_t)DAT_07abf5d0 + targetIdx * 0x394; // IDA: v285 source
     *(float*)(c + 0x314) = *(float*)(targetEntity + 0x10); // TargetPosition.x
     *(float*)(c + 0x318) = *(float*)(targetEntity + 0x14); // TargetPosition.y
     *(float*)(c + 0x31C) = *(float*)(targetEntity + 0x18); // TargetPosition.z
 
-    // Compute facing angle toward target
-    float facingAngle = FUN_0043e050(
+    *(float*)(o + 36) = FUN_0043e050(
         *(float*)(o + 0x10), *(float*)(o + 0x14),
         *(float*)(c + 0x314), *(float*)(c + 0x318));
-    *(float*)(o + 0x24) = facingAngle;
+    const WORD targetKey = *(WORD*)(targetEntity + 476); // IDA: v285
+    // There is deliberately no key-validity early return here.  The native
+    // CFG at 0x485A2B continues through every family and serializes v285 as
+    // read, including the sentinel value when the selected slot is stale.
+    if (skillType == 43) {
+            DAT_07e11d84 = GetTickCount();
+            float step[3] = { *(float*)(c + 788) - *(float*)(o + 16),
+                              *(float*)(c + 792) - *(float*)(o + 20),
+                              *(float*)(c + 796) - *(float*)(o + 24) }; // IDA: v320/v321/v322
+            float length = sqrtf(step[0] * step[0] + step[1] * step[1] + step[2] * step[2]);
+            if (length < 1.0f) length = 1.0f;
+            step[0] *= 120.0f / length;
+            step[1] *= 120.0f / length;
+            step[2] *= 120.0f / length;
+            float centre[3] = { *(float*)(o + 16) + step[0],
+                                *(float*)(o + 20) + step[1],
+                                *(float*)(o + 24) + step[2] }; // IDA: Angle after first loop pass
+            DAT_05826d10 = 43;                        // IDA L680: dword_5826D10 = 0x2B
+            // IDA L687-690 / L738 / L780: los dos bytes de grilla salen de
+            // `c + 904` y `c + 908` (la grilla del HEROE), no de la posicion de
+            // mundo del objetivo (c+788/792) que usaba el port.
+            const BYTE tileX = (BYTE)*(DWORD*)(c + 904);   // IDA: *(_DWORD *)v39
+            const BYTE tileY = (BYTE)*(DWORD*)(c + 908);   // IDA: LOBYTE(x2), v38
+            // IDA L818: v50 = (__int64)(*(float *)(o + 36) * 0.71111113) — el mismo
+            // paso de 256/360 que usan el resto de los constructores C3:1E del port.
+            // El port aplicaba aca el empaquetado de 8 direcciones (16*(a&7)), que
+            // en el binario solo se usa para el paquete de movimiento 0x10.
+            const BYTE direction = (BYTE)(int)(*(float*)(o + 36) * (256.0f / 360.0f));
+            // Exact odd-looking native packing at 0x48608B..0x4860A6:
+            // both nibbles derive from targetX - heroGridX (IDA: v316).
+            const BYTE targetTileX = (BYTE)(int)(*(float*)(c + 788) * 0.01f); // IDA: LOBYTE(x2)
+            const BYTE deltaX = (BYTE)(targetTileX - tileX);
+            const BYTE packedOffset = (BYTE)(((deltaX + 8) << 4) | ((deltaX - 8) & 0x0F));
+            Warrior_SendSkill1E(skillType, tileX, tileY, direction, packedOffset, 0, targetKey);
 
-    // Per-skill dispatch
-    if (skillType == 0x2B) {
-        // TeleportSlash: compute direction vector, send opcode 0x1E
-        DAT_05826d10 = 0x2B; // CurrentSkill
-    } else if (skillType == 0x38) {
-        // Whirlwind: send opcode 0x19 with skill 0x38
-        DAT_05826d10 = 0x38;
-    } else {
-        // Generic warrior skill: send opcode 0x19
-        DAT_05826d10 = skillType;
+            int keys[6] = { (short)targetKey }; // IDA: int v285, DWORD stride
+            int count = 1;
+            Warrior_CollectMultiTargets(centre, 100.0f, *(WORD*)(o + 134), keys, &count, 6);
+            // UseSkillWarrior executes this loop twice (IDA 0x486C17): the
+            // second probe is another 120 units forward, and that final
+            // Angle is also the position serialized into C1:1D.
+            centre[0] += step[0];
+            centre[1] += step[1];
+            centre[2] += step[2];
+            Warrior_CollectMultiTargets(centre, 100.0f, *(WORD*)(o + 134), keys, &count, 6);
+            const BYTE serial = *(BYTE*)(character + 1408);
+            *(BYTE*)(character + 1408) = serial + 1;
+            *(BYTE*)(o + 136) = serial;
+            Warrior_SendMultiSkill(attributes ? attributes[*(BYTE*)(character + 913) + 87] : skillType,
+                                   centre, *(BYTE*)(o + 136), keys, count);
+    } else if (skillType == 56) {
+            float angle[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) - 40.0f };
+            int skillIndex = 0;
+            if (attributes) for (; skillIndex < 20 && attributes[skillIndex + 87] != 56; ++skillIndex) {}
+            for (int part = 0; part < 5; ++part) {
+                Effect_Create(203, (float*)(o + 16), angle, (float*)(o + 232),
+                              (float*)(intptr_t)2, (float*)o,
+                              (float*)(intptr_t)*(WORD*)(o + 134),
+                              (float*)(intptr_t)skillIndex, 0);
+                angle[2] += 20.0f;
+            }
+    } else if ((DWORD)(GetTickCount() - DAT_05826cf4) > 300) {
+            DAT_05826cf4 = GetTickCount();
+            Warrior_SendSkill19(skillType, targetKey);
     }
 
-    // Mark skill as active
-    *(BYTE*)(c + 0x2F5) = 1;
-
-    // 2026-05-06: send packet 0x19 PMSG_SKILL_ATTACK_RECV per server source
-    // Mu-linux-97K/Source/MuServer/GameServer/SkillManager.h:82.
-    // Wire format: [C1][06][19][skillID][TgtH][TgtL] + chain XOR + MuEmu byte XOR.
-    //
-    // ANTES: comment "anti-tamper + XOR packet build for opcode 0x19 — skipped"
-    // significaba que el packet NO se enviaba — skill effects nunca llegaban
-    // al server. User reportaba "no puedo usar skills".
-    {
-        WORD targetEntityId = *(WORD*)(targetEntity + 476);
-        if (targetEntityId == 0xFFFF) {
-            return;
+    *(BYTE*)(c + 757) = 1;
+    if ((*(DWORD*)(o + 120) & 0x20) == 0) {
+        int tileX = (int)(*(float*)(c + 788) * 0.01f);
+        int tileY = (int)(*(float*)(c + 792) * 0.01f);
+        if (World >= 11 && World <= 16) {
+            switch (abs((int)(*(float*)(o + 36) * 0.022222223f)) & 7) {
+            case 0: ++tileY; break; case 1: --tileX; ++tileY; break;
+            case 2: --tileX; break; case 3: --tileX; --tileY; break;
+            case 4: --tileY; break; case 5: ++tileX; --tileY; break;
+            case 6: ++tileX; break; case 7: ++tileX; ++tileY; break;
+            }
         }
-        if (skillType == 0x2B) {
-            BYTE skillDist = 0;
-            if (BYTE* rec = Warrior_GetSkillRecord97k((int)skillType))
-                skillDist = rec[0x27];
-            BYTE dir = (BYTE)(((int)(facingAngle / 45.0f)) & 0xFF);
-            BYTE gridXb = (BYTE)*(DWORD*)(c + 0x388);
-            BYTE gridYb = (BYTE)*(DWORD*)(c + 0x38C);
-
-            BYTE pkt[11];
-            pkt[0] = 0xC1;
-            pkt[1] = 0x0B;
-            pkt[2] = 0x1E;
-            pkt[3] = (BYTE)skillType;
-            pkt[4] = gridXb;
-            pkt[5] = gridYb;
-            pkt[6] = dir;
-            pkt[7] = skillDist;
-            pkt[8] = dir;
-            pkt[9] = (BYTE)((targetEntityId >> 8) & 0xFF);
-            pkt[10] = (BYTE)(targetEntityId & 0xFF);
-            Net_SendSmallPacket(pkt, 11);
-        } else {
-            BYTE pkt[6];
-            pkt[0] = 0xC1;
-            pkt[1] = 0x06;
-            pkt[2] = 0x19;
-            pkt[3] = (BYTE)skillType;
-            pkt[4] = (BYTE)((targetEntityId >> 8) & 0xFF);
-            pkt[5] = (BYTE)(targetEntityId & 0xFF);
-            Net_SendSmallPacket(pkt, 6);
+        const BYTE terrain = TerrainWall[((tileY & 0xFF) << 8) | (tileX & 0xFF)];
+        if ((terrain & 0x0C) == 0 && skillType != 47 && skillType != 43 && skillType != 49) {
+            BYTE confirm[5] = { 0xC1, 5, 0x11, (BYTE)tileX, (BYTE)tileY };
+            Net_SendC1Packet(confirm, sizeof(confirm));
         }
     }
-
-    // Send opcode 0x11 position confirmation if tile is walkable
-    // (checks DAT_0838bc70 terrain wall at current grid position)
-    int gridX = *(int*)(c + 0x388);
-    int gridY = *(int*)(c + 0x38C);
-    int tileIdx = FUN_004f6c40((unsigned int)gridX, (unsigned int)gridY);
-    (void)tileIdx;
 }
 
 // ── Entity action stubs (Skills.cpp / Combat.cpp externs) ────────────────────
@@ -241,7 +347,8 @@ void __cdecl Entity_ResetToWalk(int param_1) {
     FUN_0043e820(param_1, (swimming && has_water) ? 0x30 : 0x2e);
 }
 
-// IDA: FUN_00444A80 @ 0x00444A80 — Entity_SelectTarget_Player.
+// IDA: SetPlayerMagic @ 0x00444A80 (el nombre real del binario; el alias
+// `Entity_SelectTarget_Player` es solo del port y se conserva por los callers).
 // entity_type 0x186 (special NPC): picks idle/stance anim from 0x52/0x53/0x56/0x5B.
 // Other types: increments combo_counter (+0x303) and alternates anim 3 / 4.
 void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {

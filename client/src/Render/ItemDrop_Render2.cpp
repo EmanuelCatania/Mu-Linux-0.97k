@@ -40,6 +40,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+
 void FUN_00478c00(void)
 {
     // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODO el render del particle

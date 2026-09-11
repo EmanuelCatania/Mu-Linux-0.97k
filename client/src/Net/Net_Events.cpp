@@ -40,6 +40,43 @@
 
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
+// C1:8E / C1:8F are extensions emitted by the in-tree GameServer before its
+// normal C3:30 event-NPC result.  Their destination arrays are exactly the
+// ones read by the original 0.97K RenderEventWindow @ 0x004F3C50.
+void Recv_DevilSquareRequiredLevels(BYTE* Msg, int Size)
+{
+    // The in-tree GameServer declares PBMSG_HEAD (3 bytes) immediately before
+    // an int array without #pragma pack(1).  MSVC therefore inserts one byte
+    // of alignment padding and sends 36 bytes, with the first int at +4.
+    // A packed sender (the wire layout expected by a stock client) is 35
+    // bytes and starts at +3.  Accept both forms; reading the padded packet at
+    // +3 turned a level 15 with padding 0x06 into 0x00000F06 = 3846.
+    const int valueBytes = 4 * 2 * (int)sizeof(int);
+    const int payload = (Size >= 4 + valueBytes) ? 4 : 3;
+    if (Size < payload + valueBytes) return;
+    for (int level = 0; level < 4; ++level) {
+        m_iDevilSquareLimitLevel[level][0] = *(const int*)(Msg + payload + (level * 2 + 0) * 4);
+        m_iDevilSquareLimitLevel[level][1] = *(const int*)(Msg + payload + (level * 2 + 1) * 4);
+    }
+}
+
+void Recv_BloodCastleRequiredLevels(BYTE* Msg, int Size)
+{
+    // Same ABI padding as C1:8E above.  The active server emits 100 bytes
+    // (header 3 + padding 1 + 6*4 ints), whereas a packed implementation is
+    // 99 bytes.  Keep compatibility with both on the client boundary.
+    const int valueBytes = 6 * 4 * (int)sizeof(int);
+    const int payload = (Size >= 4 + valueBytes) ? 4 : 3;
+    if (Size < payload + valueBytes) return;
+    for (int level = 0; level < 6; ++level) {
+        const int* source = (const int*)(Msg + payload + level * 4 * sizeof(int));
+        m_iBloodCastleLimitLevel[level][0]     = source[0];
+        m_iBloodCastleLimitLevel[level][1]     = source[1];
+        m_iBloodCastleLimitLevel[level + 6][0] = source[2];
+        m_iBloodCastleLimitLevel[level + 6][1] = source[3];
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 0x90 — ReceiveMoveToDevilSquareResult (0x00436820)
 // Resultado del intento de entrar a Devil Square desde el NPC.
@@ -60,6 +97,22 @@ void Recv_MoveToDevilSquareResult(BYTE* Msg, int Size)
     const int idx = (int)Msg[3] - 1;
     if (idx >= 0 && idx < 5)
         CreateOkMessageBox(GlobalText[kText[idx]]);
+}
+
+// 0x9A — ReceiveMoveToEventMatchResult @ 0x00436AC0 (Blood Castle).
+void Recv_MoveToBloodCastleResult(BYTE* Msg, int Size)
+{
+    InventoryOpened = 0;
+    CloseInventoryRelatedWindows();
+
+    const BYTE ack[3] = { 0xC1, 0x03, 0x31 };
+    Net_SendC1Packet(ack, 3);
+    if (Size < 4) return;
+
+    static const int kText[5] = { 854, 852, 686, 687, 853 };
+    const int index = (int)Msg[3] - 1;
+    if (index >= 0 && index < 5)
+        CreateOkMessageBox(GlobalText[kText[index]]);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,21 +141,17 @@ void Recv_EventZoneOpenTime(BYTE* Msg, int Size)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 0x92 — StartMatchCountDown (0x0047EC00)  — SIN PORTAR
-//
-// El cuerpo del original son dos lineas:
-//     m_iMatchCountDownType  = iType;          // = ReceiveBuffer[3] + 1
-//     m_dwMatchCountDownStart = GetTickCount();
-//
-// No se porta todavia porque esas dos variables viven como estaticas dentro de
-// `Render/HUD_Pass4.cpp` (lineas 41-42) y exponerlas es un cambio de ese
-// modulo, no de este. `FUN_0047ec00` tampoco sirve: no tiene definicion en
-// ningun .cpp y en functions.h esta declarada `(int,int,int)` con la etiqueta
-// "CharSelect_SetSlotCount", que es otra misidentificacion de la misma familia.
-//
-// Efecto de que falte: no se dibuja la cuenta regresiva al empezar un evento.
-// El resto del evento funciona.
+// 0x92 — StartMatchCountDown (0x0047EC00)
+// Arranca la cuenta regresiva de 30 s que dibuja `sub_4BF090` abajo a la
+// izquierda ("Infiltracion al Blood Castle (en %d segundos)" y equivalentes de
+// Devil Square).  El tipo llega en Msg[3] y el original le suma 1.
 // ─────────────────────────────────────────────────────────────────────────────
+void Recv_StartMatchCountDown(BYTE* Msg, int Size)
+{
+    if (Size < 4) return;
+    m_iMatchCountDownType   = (int)Msg[3] + 1;
+    m_dwMatchCountDownStart = GetTickCount();
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 0x93 — ReceiveDevilSquareRank (0x00436A80)

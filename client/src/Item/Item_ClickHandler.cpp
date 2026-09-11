@@ -143,8 +143,11 @@ extern unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int orig
 // Latches de MousePosition para el pickup con click derecho. En IDA los originales están en
 // 0x083a42e0 / 0x083a42e4, pero en nuestro build esas direcciones se superponen con CameraAngle
 // — usamos statics locales al archivo para no pisar el estado de la cámara.
-static DWORD g_PickupLatchX = 0;
-static DWORD g_PickupLatchY = 0;
+// IDA dword_83A42E0 / dword_83A42E4: el mouse al momento del click derecho.
+// Los lee LABEL_808 de sub_4D6470 (Inventory_DropItemEx) para devolver el
+// cursor despues del quick-move al baul.
+DWORD g_PickupLatchX = 0;
+DWORD g_PickupLatchY = 0;
 
 // Trade item array (declared in HUD_Pass3.cpp). Some translation units
 // ya lo exponen con linkage C; si nuestra referencia no enlaza, la
@@ -211,7 +214,12 @@ unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
                 for (int dy = 0; dy < itemH; ++dy) {
                     BYTE* cell = (BYTE*)(uintptr_t)(grid_base + 68 *
                                  ((y + dy) * grid_w + (x + dx)));
-                    if (*(short*)cell == (short)0xFFFF || *(int*)(cell + 0x38) <= 0) {
+                    // IDA sub_4D6020: libre = Type == 0xFFFF, nada mas.  Key
+                    // vale 0 en las celdas NO primarias de un item multi-celda,
+                    // asi que el `|| Key <= 0` que habia aca daba por libres
+                    // celdas ocupadas y el quick-move soltaba encima de otro
+                    // item (ver [[celda-ocupada-se-decide-por-type]]).
+                    if (*(short*)cell == (short)0xFFFF) {
                         ++empty;
                     }
                 }
@@ -454,13 +462,40 @@ static void SendC3Packet(BYTE* payload, int payloadSize)
 // gMap.ItemDrop rechazaba → result=0 → el item nunca se dropeaba. Usamos el
 // tile actual del héroe (ent+0x306/0x307 = target_grid_x/y), siempre válido y
 // pegado al player.
+// 2026-09-09: devolvia `hero[0x306]/[0x307]`, que NO es la posicion del heroe
+// sino su GRILLA DESTINO (a donde esta caminando).  El item caia en cualquier
+// lado -- ni donde estaba el jugador ni donde soltaba el mouse.
+//
+// IDA (sub_4DF410) manda `(int)(xf * 0.0099999998)` y `(int)(yf * ...)`, donde
+// xf/yf son CollisionPosition, el punto del terreno bajo el CURSOR:
+//     DAT_083a4130 / DAT_083a4134, los mismos que ya usa el click-to-move
+//     (Combat_Targeting.cpp) con la formula identica `* 0.01f`.
+// MU 5.2 lo confirma (NewUIMyInventory.cpp L512-515):
+//     RenderTerrain(true);
+//     if (RenderTerrainTile(SelectXF, SelectYF, (int)SelectXF, (int)SelectYF, ...))
+//         SendRequestDropItem(slot, (int)(CollisionPosition[0] / TERRAIN_SCALE),
+//                                   (int)(CollisionPosition[1] / TERRAIN_SCALE));
+// o sea el pick de terreno se valida ANTES de mandar.
 static void GetHeroDropTile(BYTE* outX, BYTE* outY)
 {
     *outX = 0; *outY = 0;
+
+    // Pick del terreno bajo el cursor (mismo patron que Combat_Targeting).
+    FUN_004f9ac0('');                       // RenderTerrain(true): arma el rayo
+    const int gridX = (int)*(float*)&DAT_080ab288;   // SelectXF
+    const int gridY = (int)*(float*)&DAT_080ab28c;   // SelectYF
+    if (FUN_004f8480(*(int*)&DAT_080ab288, *(int*)&DAT_080ab28c,
+                     gridX, gridY, 1.0f, 1, 1)) {
+        *outX = (BYTE)(int)(DAT_083a4130 * 0.01f);   // CollisionPosition[0]
+        *outY = (BYTE)(int)(DAT_083a4134 * 0.01f);   // CollisionPosition[1]
+        return;
+    }
+
+    // Sin pick valido (cursor fuera del terreno): cae a la celda del heroe.
     BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
     if (!hero) return;
-    *outX = hero[0x306];
-    *outY = hero[0x307];
+    *outX = (BYTE)(int)(*(float*)(hero + 16) * 0.01f);
+    *outY = (BYTE)(int)(*(float*)(hero + 20) * 0.01f);
 }
 
 extern "C" void __cdecl SyncPickedItemVisualState(void);
@@ -668,21 +703,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
     if (grid_h <= 0)                { if (wasClick) DbgLogPublic("FUN_004d23b0 EXIT: gh<=0"); return; }
 
-    // ── Pre-pasada: limpia todos los resaltados de hover de este pool (slot[64] = 0) ──
-    // 2026-05-08: el IDA original NO resetea entre frames y depende de que el
-    // caller (FUN_004ecb00 chain en state=4) lo limpie en otro path. En state=5
-    // nuestro hook desde RenderInventoryWindow llama esta función directamente,
-    // y sin reset todos los items quedan permanentemente azulados (slot[64]=2)
-    // tras pasar el mouse. Recreamos aquí el "limpiar antes de re-marcar":
-    // dejamos en 0 todas las celdas con `Color != 99` (=99 es la marca dorada
-    // de currency/zen blink y debe persistir).
-    for (int r = 0; r < grid_h; ++r) {
-        for (int c = 0; c < grid_w; ++c) {
-            int idx = r * grid_w + c;
-            BYTE* p = (BYTE*)(inv_base + 34 * idx) + 64;
-            if (*p != 99) *p = 0;
-        }
-    }
+    // (2026-09-11: aca habia una pre-pasada que ponia Color = 0 en todo el
+    //  pool.  El reset lo hace sub_4E6550 una vez por frame, antes de esta
+    //  funcion y de sub_4DF410 — ver el port en SecondPassword.cpp.  Esta
+    //  funcion tambien se llama desde el RENDER, despues del marcado del drop,
+    //  y la pre-pasada borraba esas marcas: por eso no se veia la silueta.)
 
     if ((int)EnableUse > 0)         { if (wasClick) DbgLogPublic("FUN_004d23b0 EXIT: EnableUse>0"); return; }
     // 2026-07-27 FIX (baúl: no se puede meter ni sacar nada): DAT_07eaa165 es el
@@ -1288,7 +1313,7 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
         // evento recibidas en el talk packet; MuEmu no expone esa variante y
         // usa el enum normal, por lo que conservamos el resultado exacto del
         // reconocedor para el adaptador 0x86.
-        DAT_07eaa16c = (DWORD)CheckMixRecipe_stub((short*)OffsetMixItems, 8, 4);
+        DAT_07eaa16c = (DWORD)CheckMixRecipe((short*)OffsetMixItems, 8, 4);
     }
 
     if (DAT_07eaa165 != 0) return;   // EquipmentItem in-flight
@@ -1541,9 +1566,38 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
             //   v144 = 1; if (InventoryOpened && MouseX >= InventoryStartX) v144 = 0;
             // Con el inventario abierto, un click sobre su panel NUNCA tira el
             // item al suelo (la zona de abajo del grid son la barra de zen y los
-            // botones). El item queda agarrado, como en el original.
+            // botones).
+            //
+            // 2026-09-11: el item NO queda agarrado.  En IDA, con v144 = 0 el
+            // bloque del suelo no corre y la ejecucion cae en LABEL_301:
+            // `sub_4CD3B0(1, 0)`, que devuelve el item a su celda.  (Confirmado
+            // contra el cliente original: soltar un item sobre otro lo devuelve.)
             if (InventoryOpened != 0 && (int)DAT_083a427c >= (int)InventoryStartX) {
+                FUN_004cd3b0();
                 return;
+            }
+
+            // 2026-09-09: el guard de arriba solo cubre el panel del INVENTARIO.
+            // Soltar sobre el panel del BAUL o el de la CHAOS MACHINE (que van a
+            // la izquierda, en dword_7EAA0C8) pero fuera de sus celdas caia al
+            // fallback de "tirar al suelo": de ahi salia "No tienes permitido
+            // tirar este item costoso" al querer guardar un item Excellent.
+            //
+            // En IDA no hace falta porque el drop sobre esos paneles lo consume
+            // `sub_4D6470` entero (36 KB, maneja los cuatro grids Y sus zonas
+            // muertas).  Nuestro port partio esa responsabilidad entre
+            // `Inventory_DropItemEx` (solo las celdas) y este dispatcher, asi
+            // que el hueco hay que taparlo aca -- mismo criterio y misma
+            // desviacion que el guard de las casillas de equipo (2026-09-04).
+            if ((DAT_07eaa119 != 0 || DAT_07eaa11a != 0)) {
+                const int px = (int)DAT_083a427c, py = (int)DAT_083a4278;
+                const int ox = (int)DAT_07eaa0c8, oy = (int)DAT_07eaa0cc;
+                if (px >= ox && px < ox + 190 && py >= oy && py < oy + 433) {
+                    // IDA L1004-1010 (baul/chaos && MouseX >= dword_7EAA0C8 ->
+                    // v144 = 0) -> LABEL_301: el item vuelve a su celda.
+                    FUN_004cd3b0();
+                    return;
+                }
             }
 
             // Plain ground drop — [C1][05][23][tileX][tileY][slot], C3.

@@ -275,9 +275,9 @@ DWORD&   DAT_00559c94  = reinterpret_cast<DWORD&>(_InputTextMaxArr[0]);
 int&     _DAT_00559c98 = _InputTextMaxArr[1];
 DWORD&   DAT_00559c98  = reinterpret_cast<DWORD&>(_InputTextMaxArr[1]);
 DWORD    DAT_00559cc4  = 0;
-DWORD    DAT_00559ccc  = 0;
-DWORD    DAT_00559cd0  = 0;
-DWORD    DAT_00559cd4  = 0;
+// 0x00559CCC/CD0/CD4 son m_iMatchTime / m_iMaxKillMonster / m_iKillMonster.
+// Estaban declarados DOS veces (aca como DAT_ y mas abajo con su nombre), o
+// sea eran memorias distintas.  Ahora los DAT_ son alias (globals.h).
 DWORD    DAT_00559cd8  = 0;
 DWORD    DAT_00559d74  = 0;
 DWORD    DAT_00559ef0  = 0;
@@ -640,6 +640,7 @@ DWORD    DAT_05826d18  = 0;   // cooldown de COMPRA en tienda (IDA dword_5826D18
 DWORD    DAT_05826d1c  = 0;   // cooldown de equipar/usar item (EnableUse)
 DWORD    DAT_05826d20  = 0;
 DWORD    DAT_05826d24  = 0;   // SummonLife (IDA @0x05826D24) — HP % de la mascota invocada
+int      AttackPlayer  = 0;   // 0x05826D28 — indice de slot del ultimo atacante
 DWORD    DAT_05826d30  = 0;
 char     DAT_05826d31  = 0;
 char     DAT_05826d32  = 0;
@@ -810,18 +811,26 @@ DWORD    DAT_07e11e78  = 0;
 DWORD    DAT_07e11e98  = 0;
 char     DAT_07e11e9c  = 0;
 char     DAT_07e11d6e           = 0;
-char     DAT_07d4ac7c[256]      = {};
-char     DAT_07d4ada8[256]      = {};
+char     DAT_07e11d6f           = 0;   // LockInputStatus
+int      g_WorldLoading         = 0;   // >0 mientras corre OpenWorld (ver WinMain WM_USER)
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[450]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d4ac7c[256]      = {};
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[451]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d4ada8[256]      = {};
 // Scene_Login credential dialog + version footer. La tabla de strings del
 // 0.97k está stripped: get_xrefs_to en Ghidra confirma que NADA escribe estos
 // buffers en el binario (se renderizan vacíos). Rellenamos con defaults
 // sensatos para que el panel muestre botones/texto legible.
 char     lpString_07d4aed4[128] = "OK";          // botón OK del panel de credenciales
 char     lpString_07d4b000[128] = "Exit";        // botón Exit/Cancel del panel
-char     DAT_07d4b708[128]      = {};            // char name format string
-char     DAT_07d4b12c[128]      = "Mu Online";                       // línea de versión 1 (centrada)
-char     DAT_07d4b258[128]      = "Ver 0.97k";                       // línea de versión 2 (derecha)
-char     DAT_07d4b384[128]      = "Copyright (C) 2003 Webzen Inc.";  // sprintf format sin args (izquierda)
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[459]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d4b708[128]      = {};            // char name format string
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[454]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d4b12c[128]      = "Mu Online";                       // línea de versión 1 (centrada)
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[455]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d4b258[128]      = "Ver 0.97k";                       // línea de versión 2 (derecha)
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[456]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d4b384[128]      = "Copyright (C) 2003 Webzen Inc.";  // sprintf format sin args (izquierda)
 char     lpString_07d4c518[128] = "Connecting...";
 DWORD    DAT_07e127f8  = 0;
 // El pool de items en el suelo es de 1000 entradas × 0x204 bytes (≈504 KB).
@@ -1278,12 +1287,17 @@ void    *DAT_07cf1ff4  = NULL;
 
 char     lpData_055c9ba0[12] = {0};
 
-char     DAT_07d4c3ec[256] = {0};
-char     DAT_07d4c644[256] = {0};
-char     DAT_07d4c770[256] = {0};
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[470]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d4c3ec[256] = {0};
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[472]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d4c644[256] = {0};
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[473]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d4c770[256] = {0};
 DWORD    DAT_07d52c38  = 0;
-char     DAT_07d530e8[256] = {0};
-char     DAT_07d53214[256] = {0};
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[563]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d530e8[256] = {0};
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[564]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d53214[256] = {0};
 
 // Model data table base + entity vtable
 // (DAT_05828d58 and DAT_05826e08 are defined above in their original sections)
@@ -1305,6 +1319,7 @@ char     lpString_05826cc9[0x50] = {0};
 DWORD    DAT_07abf444[12] = {0};
 DWORD    DAT_07abf3e4[12] = {0};
 DWORD    DAT_07abf414[12] = {0};
+DWORD    DAT_07abf474[12] = {0};
 
 // Animation distance / frequency constants
 float   _DAT_00552650  = 4.0f;
@@ -1341,11 +1356,16 @@ int      DAT_07e11d24 = 0;
 char     lpString_07e90798[3000] = {};  // 30 slots * 100 bytes
 int      DAT_07e91708[30] = {};  // TextListColor - 30 slots, igual que lpString
 int      DAT_07ea7b10[30] = {};  // TextBold      - 30 slots, igual que lpString
-char     DAT_07d329c4 = 0;
-char     DAT_07d32af0 = 0;
-char     DAT_07d34134 = 0;
-char     DAT_07d34260 = 0;
-char     DAT_07d358a4 = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[120]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d329c4 = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[121]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d32af0 = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[140]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d34134 = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[141]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d34260 = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[160]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d358a4 = 0;
 int      DAT_07d78068 = 0;
 // 2026-05-08: backup MOVED to Render_Frame.cpp — adjacent placement next to
 // DAT_07d78068 caused the corruption writer (2 consecutive int writes
@@ -1381,7 +1401,8 @@ char     DAT_0055a5fc[] = "\n";  // 0x0055A5FC — separador de media altura (Re
 char     DAT_0055a640[] = "\n";  // 0x0055A640 — separador de media altura (RenderRepairInfo, final)
 char     DAT_0055a608[] = "";    // s__s__s format
 char     DAT_0055a630[] = "";    // secondary stats line
-char     DAT_07d3b40c[] = "";    // item level line format
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[238]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3b40c[] = "";    // item level line format
 
 // Weather particle system (FUN_0046cc80): DAT_07c5ab5c is the +0x20 alias
 // of DAT_07c5ab3c, declared in globals.h; it has no standalone storage.
@@ -1426,13 +1447,19 @@ int      DAT_00559ce8  = 0;
 DWORD    DAT_00559bec  = 0;
 // DAT_083a42ac already defined at line ~652
 DWORD    DAT_083a42d0  = 0;
-char     DAT_083a2370[0x960]  = {};   // render-state pool (0x960 bytes, stride 0xc, 128 slots)
+// Lista `Operates` (0x083A2370): objetos interactuables del mundo -- sillas,
+// bancos, barandas y los orbes de Noria.  200 entradas de 12 bytes:
+//   [0] activo (byte)   [2] puntero al objeto (DWORD)
+// La llena `sub_4FF580` desde CreateObject y la lee el picker `sub_4B0240`.
+// `Operates` de IDA (0x083A2378) es el campo [2] de la entrada 0 -- ver el
+// alias en globals.h.
+char     DAT_083a2370[0x960]  = {};   // 200 x 0xc (0x083A2370..0x083A2CD0)
 // 2026-04-28: pool de boids (fish/butterfly/bird flocking).
 // FUN_0043e680 itera 10 entries × stride 0x1bc = 0x1180 bytes. Antes era una
 // dirección absoluta del binario original (0x083a2e90); declarada como array
 // real para que el flocking algoritmo funcione 1:1 con el original.
 char     DAT_083a2e90[10 * 0x1bc] = {};
-DWORD    DAT_083a2378  = 0;
+// DAT_083a2378 es ahora un alias dentro de DAT_083a2370 (ver globals.h).
 
 // Server select + char menu new globals
 char     DAT_083a7c64[64] = {};
@@ -1458,7 +1485,8 @@ DWORD    DAT_083a7c2c  = 0;
 DWORD    DAT_083a4324  = 0;
 // see comment near DAT_083a44ea — sized as 7×0x26 message-box-custom buffer.
 char     DAT_083a44c4[7 * 0x26] = {0};
-char     DAT_07d566d0  = 0;   // fallback char name string
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[609]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d566d0  = 0;   // fallback char name string
 char     s__d___s_005580b0[] = "%d %s";
 DWORD    DAT_005615dc  = 0;
 int      DAT_07e11d74  = 0;
@@ -1507,22 +1535,34 @@ char     DAT_005592dc  = 0;
 DWORD    DAT_005592d8  = 0;
 DWORD    DAT_005592d4  = 0;
 char     DAT_07d5391c  = 0;
-char     DAT_07d3d284  = 0;
-char     DAT_07d3d3b0  = 0;
-char     DAT_07d3cdd4  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[264]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3d284  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[265]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3d3b0  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[260]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3cdd4  = 0;
 // Chat command parser name buffers (FUN_004942e0)
-char     DAT_07d3cb7c  = 0;
-char     DAT_07d3cca8  = 0;
-char     DAT_07d3c924  = 0;
-char     DAT_07d3c6cc  = 0;
-char     DAT_07d3bfc4  = 0;
-char     DAT_07d3c0f0  = 0;
-char     DAT_07d3d608  = 0;
-char     DAT_07d3d734  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[258]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3cb7c  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[259]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3cca8  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[256]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3c924  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[254]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3c6cc  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[248]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3bfc4  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[249]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3c0f0  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[267]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3d608  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[268]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d3d734  = 0;
 DWORD    DAT_07e11dac  = 0;
 char     DAT_07eaa132  = 0;
 DWORD    lpDefault_00583d88 = 0;
-char     DAT_07d55410  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[593]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d55410  = 0;
 DWORD    DAT_07ea9848  = 0;
 char     DAT_07eaa134  = 0;   // RepairEnable_0
 
@@ -1541,6 +1581,11 @@ int      DAT_00559ce4  = 0x96;
 char     DAT_07e11dd0[256] = {0};
 char     DAT_07e11dd8  = 0;
 char     DAT_07e11ddc  = 0;
+// Event NPC admission limits.  Populated by the server's C1:8E / C1:8F
+// packets; the arrays mirror the original client layout used by
+// RenderEventWindow (0x004F3C50).
+int      m_iDevilSquareLimitLevel[4][2] = {};
+int      m_iBloodCastleLimitLevel[12][2] = {};
 // Chat ring buffers
 // 2026-05-04: enlarge to actual slot pool size — IDA loop in UI_RenderNotices
 // walks 6 slots × 0x108 stride. Antes era single byte → AUTO-SKIP.
@@ -1553,7 +1598,10 @@ int      DAT_07e11da4  = 0;
 LPSIZE   lpsz_07e113d0 = NULL;
 int     _DAT_07e113d4  = 0;
 DWORD    DAT_07e11d2c  = 0;
-char     DAT_07e11cec  = 0;
+// 2026-09-03: tabla de 10 punteros del buffer de composicion del IME.
+// Era un `char` suelto y WinMain lo escribia con `slot * 4` (slot clampeado a
+// 0..9), o sea 36 bytes fuera; Chat.cpp lo lee como `LPCSTR*`.
+char     DAT_07e11cec[10 * 4] = {0};
 // String constants
 char     lpString_00559d3c = 0;
 char     lpString_00559d40 = 0;
@@ -1569,14 +1617,21 @@ int      DAT_07eaa12c  = 0;
 // DAT_07eaa108 — defined above (DWORD, line 894)
 BYTE     DAT_07ea97c0[64] = {};
 char     DAT_07e11d73  = 0;
-BYTE     DAT_07d5b680  = 0;
-BYTE     DAT_07d5b7ac  = 0;
-BYTE     DAT_07d5c10c  = 0;
-BYTE     DAT_07d5c238  = 0;
-BYTE     DAT_07d5b8d8  = 0;
-BYTE     DAT_07d6813c  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[677]. Ver el bloque de alias al final de globals.h.
+// BYTE     DAT_07d5b680  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[678]. Ver el bloque de alias al final de globals.h.
+// BYTE     DAT_07d5b7ac  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[686]. Ver el bloque de alias al final de globals.h.
+// BYTE     DAT_07d5c10c  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[687]. Ver el bloque de alias al final de globals.h.
+// BYTE     DAT_07d5c238  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[679]. Ver el bloque de alias al final de globals.h.
+// BYTE     DAT_07d5b8d8  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[850]. Ver el bloque de alias al final de globals.h.
+// BYTE     DAT_07d6813c  = 0;
 char     param_2_07d68268 = 0;
-BYTE     DAT_07d58ea8  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[643]. Ver el bloque de alias al final de globals.h.
+// BYTE     DAT_07d58ea8  = 0;
 char     param_2_07d58fd4 = 0;
 DWORD    _DAT_00559f58 = 0;
 WORD     DAT_00559f5c  = 0;
@@ -1591,16 +1646,22 @@ DWORD    DAT_083a42f8[10] = {};
 // DAT_083a7c28  — defined above (DWORD, line 690)
 int      DAT_083a7c30  = 0;
 int      DAT_083a7c34  = 0;
-DWORD    DAT_083a7af8  = 0;
-DWORD    DAT_083a7afc  = 0;
-WORD     DAT_083a7b00  = 0;
-DWORD    DAT_083a7b04  = 0;
-DWORD    DAT_083a7b08  = 0;
-DWORD    DAT_083a7b0c  = 0;
-char     DAT_07d59358  = 0;
+// 2026-09-03 FIX -- tabla de miembros de guild (UI_GuildLegacy).
+// Eran SEIS escalares sueltos (24 bytes en total = una sola entrada), pero el
+// binario los trata como un array de registros de 0x18 bytes:
+//   +0x00 name[10]  (DWORD+DWORD+WORD)   +0x0C, +0x10, +0x14  DWORDs
+// `GuildMemberList_Set` copia `count * 0x18` bytes desde el paquete y el render
+// lee `base + iMod*0x18`, asi que con mas de un miembro se escribia/leia sobre
+// los globals vecinos.  El hueco real en el binario va de 0x083A7AF8 al
+// siguiente global conocido (0x083A7C00) = 0x108 bytes = 11 entradas.
+BYTE     DAT_083a7af8[GUILD_MEMBER_TABLE_BYTES] = {0};
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[647]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d59358  = 0;
 char     param_2_07d59484  = 0;
-char     DAT_07d5ba04  = 0;
-char     DAT_07d5bfe0  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[680]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d5ba04  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[685]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d5bfe0  = 0;
 char *   PTR_DAT_005618a0  = nullptr;
 char     param_2_005618a4  = 0;
 char     param_2_005618a8  = 0;
@@ -1666,7 +1727,8 @@ char     DAT_0055a404[64] = {};
 // escritura fuera de rango de ~176 bytes cada vez que se arma el menu de
 // personaje.  Mismo patron que BoneQuaternion.
 int      DAT_07e91528[12 * 10] = {};
-char     DAT_07d359d0  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[161]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d359d0  = 0;
 int      DAT_00559fe0  = -1;
 
 // UI_StatsPanel (FUN_0051af50) globals
@@ -1680,12 +1742,17 @@ float   _DAT_00552d44 = 0.0078125f;
 // DAT_00559c8c — defined above (DWORD, line 182)
 // DAT_00559c5c — defined above (char, line 858)
 char     DAT_07e11d80  = 0;
-char     DAT_07d29d24  = 0;
-char     DAT_07d46e60  = 0;
+// 2026-09-03: DAT_07d29d24 pasa a ser un alias de GlobalText (ver globals.h).
+// Era un `char` suelto recorrido con `&DAT_07d29d24 + i * 300`, y sus dos
+// lectores usan indices ~601-607 (nombres de clase): leian ~180 KB fuera del
+// global y le pasaban el resultado a lstrlenA / crt_sprintf.
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[397]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d46e60  = 0;
 char     DAT_07d486fc[300] = {};
 char     DAT_07d48828  = 0;
 char     DAT_07d48f30[300] = {};
-char     DAT_07d493e0  = 0;
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[429]. Ver el bloque de alias al final de globals.h.
+// char     DAT_07d493e0  = 0;
 char     DAT_07d4950c  = 0;
 char     DAT_07d49638  = 0;
 char     DAT_07d49764  = 0;
@@ -1984,10 +2051,18 @@ float   _DAT_00552d24 = 1500.0f;
 float   _DAT_00552d28 = 0.0003f;
 
 // ── Camera / viewport globals ─────────────────────────────────────────────────
-DWORD   DAT_0055a7b0   = 0;
-DWORD   DAT_0055a7b4   = 0;
-DWORD   DAT_0055a7b8   = 0;
-float   _DAT_0055a7bc  = 0.0f;
+// SetActionObject (0x4FA5C0) / MoveObject_Special (0x4FA5F0): animacion de
+// derrumbe de la puerta del evento.  En el binario los cuatro arrancan en -1
+// (bytes .data en 0x0055A7B0: FF FF FF FF x3 + 00 00 80 BF) y los guards de
+// MoveObject_Special son comparaciones CON SIGNO (`unk_55A7B4 < 0`).
+// 2026-09-04: estaban como DWORD inicializados en 0, o sea (a) los `< 0` nunca
+// se cumplian y (b) en el primer frame de Lorencia (World == 0 == DAT_0055a7b4)
+// cualquier objeto de tipo 0 entraba al bloque de derrumbe: se ocultaba, se
+// giraba a 90 grados y se disparaba AddTerrainAttributeRange(13,70,3,6,8,0).
+int     DAT_0055a7b0   = -1;   // tipo de objeto que se derrumba
+int     DAT_0055a7b4   = -1;   // World en el que aplica
+int     DAT_0055a7b8   = -1;   // contador de frames (20 = arranca)
+float   _DAT_0055a7bc  = -1.0f;// acumulador de velocidad angular
 
 // ── GL_State cache ────────────────────────────────────────────────────────────
 char    DAT_083a411c   = 0;
@@ -2406,16 +2481,19 @@ DWORD   DAT_07ea5b28  = 0;   // Screen2 panel origin Y
 // ── SecondPassword UI sub-handler globals ─────────────────────────────────────
 DWORD   DAT_07eaa0c8  = 0;   // SecondPassword dialog origin X (pixel)
 DWORD   DAT_07eaa0cc  = 0;   // SecondPassword dialog origin Y (pixel)
-DWORD   DAT_07eaa140  = 0;   // SecondPassword timeout/retry counter
+DWORD   DAT_07eaa140  = 0;   // MixState (0x07EAA140)
 DWORD   DAT_07eaa131  = 0;   // SecondPassword checkbox/toggle state
 DWORD   DAT_07eaa138  = 0;   // RepairEnable (low byte)
 DWORD   DAT_07ea5290  = 0;   // SecondPassword alt-panel origin X
 DWORD   DAT_07ea528c  = 0;   // SecondPassword alt-panel origin Y
-char    DAT_07d544d4  = 0;   // error string – case 0 wrong PIN
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[580]. Ver el bloque de alias al final de globals.h.
+// char    DAT_07d544d4  = 0;   // error string – case 0 wrong PIN
 char    DAT_07eaa1a0  = 0;   // UI message label A
-char    DAT_07d54600  = 0;   // error string – auth fail
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[581]. Ver el bloque de alias al final de globals.h.
+// char    DAT_07d54600  = 0;   // error string – auth fail
 char    DAT_07eaa198  = 0;   // UI message label B
-char    DAT_07d55c44  = 0;   // error string – case 0xfffffff8/0xfffffffe
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[600]. Ver el bloque de alias al final de globals.h.
+// char    DAT_07d55c44  = 0;   // error string – case 0xfffffff8/0xfffffffe
 char    DAT_07eaa19c  = 0;   // UI message label C
 int     DAT_0055a3f8  = 0;   // auth mode param A
 int     DAT_0055a3fc  = 0;   // auth mode param B
@@ -2437,13 +2515,16 @@ char    DAT_07ea51f5[64] = {0};   // GuildMark (grilla 8x8)
 float  _DAT_00552c20  = 425.0f; // Screen5 button X upper bound
 float  _DAT_00552c1c  = 33.0f; // Screen5 button height
 float  _DAT_00552c28  = 210.0f; // Screen5 button Y base
-char    DAT_07d6b724  = 0;   // Error message: "no item in slot"
-char    DAT_07d685ec  = 0;   // Error message: "invalid slot"
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[896]. Ver el bloque de alias al final de globals.h.
+// char    DAT_07d6b724  = 0;   // Error message: "no item in slot"
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[854]. Ver el bloque de alias al final de globals.h.
+// char    DAT_07d685ec  = 0;   // Error message: "invalid slot"
 short   DAT_00559f5a  = 0;   // second-password level check B
 int     DAT_00559f80  = 0;   // level threshold array base
 int     DAT_00559f84  = 0;   // level threshold array upper
-int     DAT_00559f60  = 0;   // level range lower array
-int     DAT_00559f64  = 0;   // level range upper array
+// DAT_00559f60 / DAT_00559f64 -> macros sobre m_iDevilSquareLimitLevel (globals.h)
+// int     DAT_00559f60  = 0;   // level range lower array
+// int     DAT_00559f64  = 0;   // level range upper array
 // DAT_07ea7b88 — declared above as DWORD (line 1404)
 char    DAT_07ea5b30  = 0;   // second-password char-slot list base
 
@@ -2648,6 +2729,7 @@ DWORD  g_csQuest          = 0;
 
 BYTE   m_byMatchType      = 0;
 int    m_iMatchTimeMax    = 0;
+int    m_iMatchTime       = 0;   // 0x00559CCC  tiempo restante del evento
 int    m_iMaxKillMonster  = 0;
 int    m_iKillMonster     = 0;
 
@@ -2701,7 +2783,7 @@ DWORD  DAT_0055339c       = 0;
 // (globals.h) que apuntan al global real. Ver [[charselect-deferred-issues]].
 // g_lpszMessageBoxCustom es un alias de DAT_083a44c4 (ver globals.h).
 // m_hFontDC ahora es macro sobre DAT_055c9fec (ver globals.h)
-HFONT  g_hFontBold        = NULL;
+// g_hFontBold es ahora un alias de DAT_055ca0xx (ver globals.h).
 
 // Batch 18 — InitGame / ReceiveChat globals
 DWORD  EnableUse          = 0;
@@ -2757,6 +2839,7 @@ void*  g_LoginSceneObjects[9] = {0}; // sky, ship1, wave1, ship2, wave2, ship3, 
 // de PlayBuffer(rand()%7+50) = el ruido de golpes (eBlow/eShortBlow).
 int    DAT_00559858       = 15;    // g_iLimitAttackTime
 DWORD  DAT_05826d10       = 0;     // CurrentSkill (current skill ID for arrow/projectile)
+DWORD  DAT_07e11d84       = 0;     // UseSkillWarrior 43 activation tick
 float  _DAT_00552904      = 1400.0f;  // sin/cos offset multiplier (sword trail radius)
 float  _DAT_005528f8      = 145.0f;  // sin/cos offset multiplier (slash projectile)
 float  _DAT_005528f4      = 0.54f;  // combo animation offset constant
@@ -2780,7 +2863,8 @@ char   DAT_00559d9c[8]    = "webzen";  // GM name string (anti-impersonation che
 // ── SkillElf dependencies ────────────────────────────────────────────────────
 char   DAT_00559db4       = 0;     // GM name check string (part of "webzen" pattern)
 char   DAT_07e11dfc       = 0;     // chat log widget ID string (for AddText)
-char   DAT_07d4c89c       = 0;     // "Not enough mana" message string
+// 2026-09-07: era un buffer aparte; en realidad es GlobalText[474]. Ver el bloque de alias al final de globals.h.
+// char   DAT_07d4c89c       = 0;     // "Not enough mana" message string
 
 // ── MoveParticles camera shake globals ──────────────────────────────────────
 float  DAT_07c800f8       = 0.0f;  // camera shake accumulator X
@@ -2837,6 +2921,8 @@ float  _DAT_00552cb4      = 64.0f;      // terrain tile size
 // CheckArrow chat string globals (runtime-initialized by resource loader)
 char   DAT_07e11df4       = 0;
 char   DAT_07e11df8       = 0;
+char   DAT_07e11dec       = 0;
+char   DAT_07e11df0       = 0;
 char   DAT_07d3c348       = 0;
 
 // Skill selection
@@ -2873,7 +2959,7 @@ char   SoccerTeamName[2][80] = {{0}, {0}};
 // CreateChat escribia en DAT_07e016f8 y RenderBooleans leia aca -> nunca se
 // dibujaba nada. Ahora es una macro sobre el pool unico (ver globals.h).
 
-HFONT  g_hFont               = NULL;
+// g_hFont es ahora un alias de DAT_055ca0xx (ver globals.h).
 int    FontHeight            = 14;
 SIZE   TextSize              = {0, 0};
 

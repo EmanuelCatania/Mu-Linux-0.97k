@@ -788,13 +788,35 @@ void __cdecl MoveBlurs(void) {
 
 // ── 49-byte ─────────────────────────────────────────────────────────────────
 
-// SetMatchInfo @ 0x0047EBA0 (49 bytes) — set DevilSquare match parameters
+// SetMatchInfo @ 0x0047EBA0 (49 bytes) - parametros del panel de evento
+// (Devil Square / Blood Castle).  Los lee `sub_4BF2D0` (Render_MapLoadText).
+//
+// 2026-09-04 FIX: la segunda linea escribia `m_iMatchTimeMax` otra vez, con el
+// comentario "double-assign (original code bug)".  No hay tal bug -- IDA dice
+//     m_byMatchType = byType; m_iMatchTimeMax = iMaxTime;
+//     m_iMatchTime  = iTime;  m_iMaxKillMonster = iMaxMonster;
+//     m_iKillMonster = iKillMonster;
+// `m_iMatchTime` es un global aparte (0x00559CCC).  Como nadie lo escribia, el
+// gate `m_iMatchTime > 0` del renderer era siempre falso y el cartel del evento
+// (tiempo + contador de monstruos) no se dibujaba nunca.
 void __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster, int iKillMonster_p) {
     m_byMatchType = byType;
     m_iMatchTimeMax = iMaxTime;
-    m_iMatchTimeMax = iTime;  // NOTE: Ghidra shows double-assign (original code bug)
+    m_iMatchTime = iTime;
     m_iMaxKillMonster = iMaxMonster;
     m_iKillMonster = iKillMonster_p;
+}
+
+// clearMatchInfo @ 0x0047EB80 (31 bytes).
+// OJO: `functions.h` tenia esto mapeado a FUN_004827a0, que es una direccion
+// EN MEDIO de sub_4824C0 (el scan de flechas del inventario) -- por eso el stub
+// vacio.  La direccion real es 0x0047EB80.
+void __cdecl FUN_0047eb80(void) {
+    m_byMatchType     = 0;
+    m_iMatchTimeMax   = -1;
+    m_iMatchTime      = -1;
+    m_iMaxKillMonster = -1;
+    m_iKillMonster    = -1;
 }
 
 // ── 50-byte ─────────────────────────────────────────────────────────────────

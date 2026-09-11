@@ -53,9 +53,25 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
     long double fVar12;
     long double fVar13;
     unsigned long long uVar14;
-    float local_3c;
-    float local_38;
-    float local_34;
+    // 2026-09-02 -- patron [[locales-contiguos-ghidra]] (otra instancia).
+    // IDA Particle_Spawn (0x00475220) declara `float in1[3]` en [ebp-3Ch] y lo
+    // pasa entero a VectorRotate.  Ghidra lo emitio como TRES escalares
+    // sueltos (local_3c/38/34 = ebp-0x3C/-0x38/-0x34) y los seis call sites de
+    // esta funcion hacen `Vector_Rotate(&local_3c, ...)`, o sea leen 3 floats
+    // contiguos desde el primero.  MSVC no garantiza ese layout: las
+    // componentes Y/Z salian de pila basura.
+    //
+    // Sintoma (sonda FXQUAD, 2026-09-02): la particula de SANGRE (tipo 1206,
+    // Effect/blood.tga) se dibujaba con la posicion en NaN -- el log mostraba
+    // `pos=(-2147483648,...)`, que es `(int)NaN`.  La velocidad basura entra
+    // en el slot (+19) y `MoveParticles` case 0x4B6 la suma a la posicion en
+    // cada frame.  Con vertices NaN el quad se estira sin limite; en los mundos
+    // 2, 7 y 10 `SkillEffect_Render` usa blending ADITIVO, asi que se ve como
+    // un haz brillante (de ahi el reporte en Icarus).
+    float in1_3c[3];
+    float &local_3c = in1_3c[0];
+    float &local_38 = in1_3c[1];
+    float &local_34 = in1_3c[2];
     float local_30[12];
 
     // ── scan pool for free slot ────────────────────────────────────────────────

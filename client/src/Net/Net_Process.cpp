@@ -1997,7 +1997,22 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         }
     }
 
+    // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
+    // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
+    // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+    // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
+    // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
+    // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
+    // spawn del slot 0 cae entre Object01.bmd y Object42.bmd).  De ahi que
+    // salieran mal y que alejarse y volver -- que los re-crea con el modelo ya
+    // cargado -- los arreglara.
+    //
+    // `g_WorldLoading` deja que el pump siga DRENANDO el socket (que es lo que
+    // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
+    // cola y se procesan al terminar la carga.
+    ++g_WorldLoading;
     FUN_0050e5a0();              // OpenWorld(World) — BMD load (~2s)
+    --g_WorldLoading;
 
     // Pump messages POST-load para drenar lo que llegó durante el bloqueo.
     {
@@ -2084,7 +2099,11 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 
     // (10) Avanzar state machine.
     DAT_05826cb0 = 61;           // CurrentProtocolState → enter-world fade
-    // LockInputStatus = 0; CheckIME_Status(1, 0) — TODO
+    // IDA ReceiveJoinMapServer L380: LockInputStatus = 0 (0x07E11D6F, el gate
+    // del IME que WndProc pone en 1 al abrir el chat).  CheckIME_Status(1, 0)
+    // queda pendiente: nuestro CheckIME_Status_stub no reproduce todavia el
+    // guardado/restaurado del estado de conversion.
+    DAT_07e11d6f = 0;            // LockInputStatus
 
     // BUG-FIX 2026-04-29: enviar F3/12 CharacterMoveViewportEnable + 0E LiveClient
     // inmediatamente. El server MuEmu (Protocol.cpp:1439 CGCharacterMoveViewportEnableRecv)
@@ -2252,7 +2271,22 @@ static void Recv_Revival(const BYTE* Msg, int Size)
     }
 
     DAT_0055a7ac = map;
+    // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
+    // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
+    // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+    // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
+    // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
+    // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
+    // spawn del slot 0 cae entre Object01.bmd y Object42.bmd).  De ahi que
+    // salieran mal y que alejarse y volver -- que los re-crea con el modelo ya
+    // cargado -- los arreglara.
+    //
+    // `g_WorldLoading` deja que el pump siga DRENANDO el socket (que es lo que
+    // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
+    // cola y se procesan al terminar la carga.
+    ++g_WorldLoading;
     FUN_0050e5a0();                                    // OpenWorld(World)
+    --g_WorldLoading;
 
     float z;
     if ((int)DAT_0055a7ac == -1 ||
@@ -2759,6 +2793,34 @@ void Net_ProcessPacket(void)
         int HeadCode, Size;
         BYTE hdr = Msg[0];
         bool bEncrypted = false;
+
+        // 2026-09-03 -- COPIA DEL PAQUETE ANTES DE PROCESARLO.
+        //
+        // `FUN_0043e010` (GetReadMsg) devuelve un puntero DENTRO del buffer de
+        // recepcion del socket, que es compartido.  Handlers que tardan --
+        // sobre todo los de viewport, porque `CreateMonster` carga el BMD del
+        // monstruo -- dejan que se bombee la cola de mensajes en el medio, entra
+        // un `Net_Recv` y el buffer se sobreescribe MIENTRAS el handler todavia
+        // esta recorriendo sus entradas.
+        //
+        // Medido (sonda MONDBG, 2026-09-03): un `0x13 ViewportMonster count=22`
+        // parseo bien su entrada 0 (`id=89 type=253 pos=(207,75)`) y a partir de
+        // la 1 empezo a leer el payload de un `F3/E2` que habia llegado en el
+        // medio -- de ahi monstruos con ids de ~25700 en pos (0,2), (3,2), (7,2),
+        // entre ellos el "Giant" (type 7) inmatable en un mapa sin spawn.
+        //
+        // Los C3/C4 ya eran inmunes porque se desencriptan a `scratch`; los C1/C2
+        // se usaban directo.  Ahora todos se copian.
+        BYTE __pktCopy[0x2100];
+        {
+            const int __wire = (hdr == 0xC1 || hdr == 0xC3)
+                             ? (int)Msg[1]
+                             : (((int)Msg[1] << 8) | (int)Msg[2]);
+            if (__wire > 0 && __wire <= (int)sizeof(__pktCopy)) {
+                memcpy(__pktCopy, Msg, (size_t)__wire);
+                Msg = __pktCopy;
+            }
+        }
 
         // ── C3/C4 in-place decrypt ────────────────────────────────────────
         // Paquetes encriptados server→cliente. Los bytes del cuerpo (después del
@@ -3823,6 +3885,25 @@ void Net_ProcessPacket(void)
                                 FUN_0045c130((int)(uintptr_t)hero);   // SetCharacterClass
                                 NetLog("NET:    0x12 heroe restaurado de transformacion");
                             }
+
+                            // Combat_PacketDispatch (IDA 00429690) no excluye
+                            // la fila del jugador local: CreateCharacterPointer
+                            // reinicia Character+120, ChangeCharacterExt aplica
+                            // CharSet[1..10] y luego InsertBuffPhysicalEffect
+                            // consume ViewSkillState. Nuestro atajo para evitar
+                            // un clon conservaba la posición, pero omitía esas
+                            // tres consecuencias. OpenWorld borra los pools de
+                            // bugs/effects/joints, por lo que el resultado era
+                            // exactamente un Angel/Imp o Mana Shield ausente al
+                            // cruzar de mapa.
+                            //
+                            // No recreamos el slot completo: el héroe local
+                            // conserva estado que no pertenece al viewport. Sí
+                            // reproducimos los dos resets visuales que necesita
+                            // esta fila del protocolo.
+                            *(DWORD*)(hero + 120) = 0;       // CreateCharacterPointer
+                            FUN_0045c8c0((int)DAT_05826ca0, (BYTE*)e + 5);
+                            ApplyPersistentSkillEffect97k(hero, viewSkillState, 1);
                         }
                         NetLog("NET:    0x12 own HeroKey=%u synchronized, no viewport clone",
                                (unsigned)entityId);
@@ -4017,8 +4098,17 @@ void Net_ProcessPacket(void)
                     break;
                 }
                 int entryStart = 4 + hdrOff;
-                int entryStride = (Size - entryStart) / (count > 0 ? count : 1);
-                if (entryStride < 10 || entryStride > 16) entryStride = 10;
+                // 2026-09-03 -- el stride es FIJO 12, no derivado del tamano.
+                // IDA `ReceiveCreateMonsterViewport` (0x0042A230): `Data2 =
+                // ReceiveBuffer + 7;` y al final del cuerpo del do-while
+                // `Data2 += 12;`.  El port lo calculaba como
+                // `(Size - entryStart) / count` con un fallback a 10, asi que
+                // cualquier desajuste de `Size` desalinea TODAS las entradas
+                // desde la segunda: el `type` sale de un byte que no es el suyo
+                // y se crean monstruos fantasma (de ahi el "Giant" en un mapa
+                // sin spawn, con un id que el server no conoce y por eso
+                // inmatable).  Ahora es literal.
+                const int entryStride = 12;
                 BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
                 for (int i = 0; i < count && (entryStart + i*entryStride + 11) <= Size; ++i) {
                     const BYTE* e = Msg + entryStart + i*entryStride;
@@ -4148,8 +4238,15 @@ void Net_ProcessPacket(void)
                     NetLog("NET:  → 0x15 Damage size=%d (too small, skip)", Size);
                     break;
                 }
-                // Wire format: index[0] high bit = kill flag; bits 0-6 + index[1] = id.
-                BYTE  killFlag  = (Msg[3] >> 7) & 0x01;
+                // Wire format: index[0] bits 0-6 + index[1] = id; el BIT ALTO es el
+                // flag de ATURDIMIENTO, no un "kill flag" (la etiqueta vieja mentia).
+                // Server (Protocol.cpp GCDamageSend):
+                //     index[0] = (SET_NUMBERHB(bIndex) & 0x7F) | ((flag & 1) << 7)
+                // y `flag` sale de la tirada de stun de Attack.cpp L441:
+                //     if (rand() % 100 < m_DamageStuckRate[targetClass]) flag = 1;
+                // cancelada si el objetivo va montado en Uniria/Dinorant y la config
+                // lo prohibe.  Es lo que hace retroceder al que recibe el Lightning.
+                BYTE  stunFlag  = (Msg[3] >> 7) & 0x01;
                 WORD  targetId  = ((WORD)(Msg[3] & 0x7F) << 8) | Msg[4];
                 // Damage: lower 12 bits across damage[0..1]; upper 4 bits of damage[0]
                 // are damage-type flags.
@@ -4182,7 +4279,7 @@ void Net_ProcessPacket(void)
                 bool  bExcellent = (typeBits & 4) != 0;  // cyan
                 bool  bCritical  = (typeBits & 8) != 0;  // blue
                 NetLog("NET:  → 0x15 Damage tgt=%d dmg=%d flags=I%d/R%d/E%d/C%d kill=%d",
-                       targetId, damage, bIgnore, bReflect, bExcellent, bCritical, killFlag);
+                       targetId, damage, bIgnore, bReflect, bExcellent, bCritical, stunFlag);
 
                 // Find target entity slot by entity_id (+0x1dc)
                 BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
@@ -4202,12 +4299,68 @@ void Net_ProcessPacket(void)
                     break;
                 }
 
+                // ── Golpe con ATURDIMIENTO (bit alto del index) ──────────────
+                // IDA ReceiveAttackDamage: TODO el cuerpo de abajo vive dentro de
+                // `if (!(Key >> 15))`, y cuando el bit SI esta puesto la funcion
+                // toma una rama corta y propia (L263-271):
+                //     SetPlayerShock(c, Damage);          // sin rand y sin filtrar
+                //     CreatePoint(c+16, Damage, rojo, 15.0);
+                //     if (Key == HeroKey) { CharacterAttribute+28 -= Damage;
+                //                           c+760 = Damage; }
+                //
+                // Ese SetPlayerShock es OTRO call site (0x42AD66) que el DLL de
+                // inyeccion NO hookea -- solo suprime el de 0x42B33D, el de la
+                // tirada 50/50 de mas abajo.  O sea aca el heroe SI se aturde, y
+                // por eso en el cliente de referencia el Lightning te frena.
+                //
+                // El port tenia la cobertura INVERTIDA: gateaba la unica llamada a
+                // SetPlayerShock con `!stunFlag`, o sea no hacia nada justo cuando
+                // el original aturde incondicionalmente.
+                if (stunFlag) {
+                    extern void __cdecl FUN_00444b60(int c, int Hit);
+                    FUN_00444b60((int)tgtSlot, (int)damage);
+                    float pos[3] = { *(float*)(tgtSlot + 0x10),
+                                     *(float*)(tgtSlot + 0x14),
+                                     *(float*)(tgtSlot + 0x18) };
+                    float color[3] = { 1.0f, 0.0f, 0.0f };
+                    CreatePoint(pos, (int)damage, color, 15.0f);
+                    if (targetId == g_HeroKey && DAT_07cf1ff4) {
+                        WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
+                        if (damage < *pHP) *pHP -= damage; else *pHP = 0;
+                        *(WORD*)(tgtSlot + 760) = (WORD)damage;
+                    }
+                    break;
+                }
+
                 // ── Hero HP decrement ────────────────────────────────────────
                 // CharacterAttribute del héroe en DAT_07cf1ff4; HP en el offset 28 (WORD).
                 if (targetId == g_HeroKey && DAT_07cf1ff4) {
                     WORD* pHP = (WORD*)((BYTE*)(uintptr_t)DAT_07cf1ff4 + 28);
                     if (damage < *pHP) *pHP -= damage;
                     else *pHP = 0;
+                }
+
+                // ── Destello de bloqueo (efecto 259) ────────────────────────
+                // IDA ReceiveAttackDamage L171-182, dentro de la rama
+                // `Key == HeroKey`.  Sale solo con el buff 0x100 activo
+                // (`c+120`, el bitfield que llena InsertBuffPhysicalEffect) y
+                // solo si el heroe esta MIRANDO al atacante: el angulo hacia el
+                // agresor tiene que estar a menos de 10 grados del facing.
+                if (targetId == g_HeroKey &&
+                    (*(DWORD*)(tgtSlot + 120) & 0x100) == 0x100 &&
+                    basePtr && AttackPlayer >= 0 && AttackPlayer < 400)
+                {
+                    const float* cm = (const float*)(basePtr + 916 * AttackPlayer);
+                    const float fAngle = FUN_0043e050(cm[4], cm[5],
+                                                      *(float*)(tgtSlot + 16),
+                                                      *(float*)(tgtSlot + 20));
+                    if (fabsf(fAngle - cm[9]) < 10.0f) {
+                        float ang[3] = { 0.0f, 0.0f, fAngle + 180.0f };
+                        FUN_00460dc0(259, (float*)(tgtSlot + 16), ang,
+                                     (float*)(tgtSlot + 232),
+                                     (float*)0, (float*)tgtSlot,
+                                     (float*)(intptr_t)-1, (float*)0, 0);
+                    }
                 }
 
                 // ReceiveAttackDamage (IDA 0042ACC0) no transiciona una
@@ -4230,7 +4383,7 @@ void Net_ProcessPacket(void)
                 // call site para saltearlo cuando la entidad es el jugador (tipo 390).
                 // Reproducimos el mismo comportamiento acá: los monstruos reciben
                 // su anim de shock + el quejido; el jugador NO.
-                if (damage > 0 && !killFlag &&
+                if (damage > 0 && !stunFlag &&
                     *(WORD*)(tgtSlot + 2) != 390)
                 {
                     // 50/50 random roll matching IDA `rand() & 0x80000001`.
@@ -4383,6 +4536,7 @@ void Net_ProcessPacket(void)
                     // weapon equipped. FUN_00444410 is SetPlayerAttack.
                     extern void __cdecl FUN_00444410(int, int, int, int);
                     FUN_00444410((int)slot, 0, 0, 0);
+                    AttackPlayer = slotIdx;      // IDA: AttackPlayer = Index
                     slot[0x2F5] = 1;             // c+757=1 attack pending
                     *(int*)(slot + 0x108) = 0;   // reset frame
                     *(WORD*)(slot + 0x310) = 0xFFFF;  // c+784 = -1 (no skill target)
@@ -4646,37 +4800,67 @@ void Net_ProcessPacket(void)
             }
 
             case 0x16: {
-                // 2026-05-06: NOTA — opcode 0x16 NO lo envía el server para
-                // monster die. El server usa:
-                //   - 0x9C (C3 encrypted) con PMSG_REWARD_EXPERIENCE_SEND para
-                //     EXP/damage al killer (GCMonsterDieSend en Protocol.cpp:1811)
-                //   - 0x15 (C1) con PMSG_DAMAGE_SEND y kill_flag=1 a viewers
-                //     (GCDamageSend en Protocol.cpp:1595)
+                // ReceiveDieExp @ 0x0042DB60 — port FIEL.  Es la variante CHICA
+                // del 0x9C: mismo cuerpo, pero con la experiencia en un WORD en
+                // vez de los campos View* de 32 bits.
                 //
-                // 2026-05-07: delega en PacketHandler_0x16 de Skills.cpp, que
-                // handles the kill confirm + teleport begin/end + EXP gain.
-                // (El fallback inline — sólo el flag de muerto — queda después.)
-                if (Size < 7) break;
-                NetLog("NET:  → 0x16 MonsterDie/Teleport size=%d", Size);
-                extern void PacketHandler_0x16(BYTE* pkt);
-                PacketHandler_0x16((BYTE*)Msg);
-
-                // Respaldo: asegura que la anim de muerte quede seteada en el objetivo por id (la
-                // versión de Skills.cpp setea dead_flag pero no despacha el
-                // SetPlayerDie correcto, que necesitamos para la anim 131/6 según la clase).
+                // IDA L105-207:
+                //   Key    = Rb[4] + (Rb[3] << 8);
+                //   Exp    = Rb[6] + (Rb[5] << 8);
+                //   Damage = Rb[8] + (Rb[7] << 8);
+                //   Index  = FindCharacterIndex(Key & 0x7FFF);
+                //   c      = CharactersClient + 916 * Index;
+                //   Color  = { 1.0, 0.6, 0.0 };
+                //   if ( Key & 0xFFFF8000 ) { SetPlayerDie(c); CreatePoint(...); }
+                //   else { Hero+756 = 2; Hero+758 = Damage; Hero+784 = Index;
+                //          CreatePoint(...); }
+                //   c+765 = 1;  c+748 = 0;
+                //   CharacterAttribute+16 += Exp;
+                //   if ( Exp > 0 ) { sprintf(Buffer, GlobalText[486], Exp);
+                //                    UIChatLogWindow_AddText(...); }
+                //
+                // MuEmu NO manda este opcode (usa el 0x9C, GCMonsterDieSend →
+                // PMSG_REWARD_EXPERIENCE_SEND con header.setE(0x9C)), asi que en
+                // la practica no corre.  Se porta igual porque lo que habia antes
+                // era una rama inventada ("teleport begin/end + kill confirm") que
+                // escribia el dead_flag `target[0x2FD] = 1` sobre un indice sin
+                // validar — y +765 es justo el filtro de "vivo" del barrido de
+                // sub_45FEC0, o sea marcaba entidades como muertas y las volvia
+                // invisibles para el reporte de blancos del 0x1D.
+                if (Size < 9) { NetLog("NET:  → 0x16 DieExp size=%d (corto)", Size); break; }
                 {
-                    WORD mobId = ((Msg[3] & 0x7F) << 8) | Msg[4];
-                    BYTE* basePtr = (BYTE*)(uintptr_t)DAT_07abf5d0;
-                    for (int s = 0; s < 400; ++s) {
-                        BYTE* sp = basePtr + s * 0x394;
-                        if (sp[0] && *(WORD*)(sp + 0x1dc) == mobId) {
-                            sp[0x2FD] = 1;
-                            sp[0x2EC] = 0;
-                            // (2026-08-10: sin 0x34e — es SafeZone, no dead)
-                            extern void __cdecl FUN_00444d90(int c_in);
-                            FUN_00444d90((int)sp);
-                            break;
+                    const int   key   = Msg[4] + (Msg[3] << 8);
+                    const DWORD exp   = (DWORD)(Msg[6] + (Msg[5] << 8));
+                    const int   dmg   = Msg[8] + (Msg[7] << 8);
+                    const int   index = FUN_0045ac80(key & 0x7FFF);
+
+                    NetLog("NET:  → 0x16 DieExp key=%04X idx=%d exp=%u dmg=%d",
+                           key & 0x7FFF, index, exp, dmg);
+
+                    float color[3] = { 1.0f, 0.6f, 0.0f };   // naranja
+                    if (index >= 0 && index < 400 && DAT_07abf5d0) {
+                        BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
+                        if (key & 0xFFFF8000) {
+                            extern void __cdecl FUN_00444d90(int c_in);   // SetPlayerDie
+                            FUN_00444d90((int)(intptr_t)c);
+                        } else if (DAT_07abf5d8) {
+                            BYTE* hero = (BYTE*)DAT_07abf5d8;
+                            *(BYTE*) (hero + 756) = 2;        // gate de las esferas de EXP
+                            *(WORD*) (hero + 758) = (WORD)dmg;
+                            *(WORD*) (hero + 784) = (WORD)index;
                         }
+                        CreatePoint((float*)(c + 16), dmg, color, 15.0f);
+                        *(BYTE*)(c + 765) = 1;   // dead_flag (+0x2FD)
+                        *(BYTE*)(c + 748) = 0;
+                    }
+
+                    if (CharacterAttribute)
+                        *(DWORD*)((BYTE*)(uintptr_t)CharacterAttribute + 16) += exp;
+
+                    if ((int)exp > 0) {
+                        char Buffer[100];
+                        sprintf(Buffer, GlobalText[486], exp);
+                        UIChatLogWindow_AddText(nullptr, Buffer, 1);
                     }
                 }
                 break;
@@ -4715,8 +4899,54 @@ void Net_ProcessPacket(void)
                 // despacha SetPlayerDie en el frame terminal nativo.
                 entity[765] = 1;
                 entity[748] = 0;
+
+                // Blood Castle: caer del puente al morir (IDA 0x42F030 L18-56).
+                // 2026-09-04: este bloque faltaba entero, junto con el
+                // clearMatchInfo() del heroe.
+                //   c+405 = m_bActionStart (lo consume MoveCharacter L572 y
+                //           RenderCharacter L361/L757)
+                //   c+192/196 Gravity/Velocity . c+200 spin . c+204/216 caida
+                //   c+408..416 m_vDownAngle   . c+420..428 m_vDeadPosition
+                // El tile tiene que tener el bit 0x20 (TW_ACTION); la direccion
+                // de la caida sale de si el tile de al lado (indice +1 o -1)
+                // tiene 0x08 (TW_NOGROUND).
+                entity[405] = 0;
+                if ((int)World >= 11 && (int)World <= 16) {
+                    const int gx = (int)(*(float*)(entity + 16) * 0.01f);
+                    const int gy = (int)(*(float*)(entity + 20) * 0.01f);
+                    const int wallIndex = ((gy & 0xFF) << 8) | (gx & 0xFF);
+                    if ((TerrainWall[wallIndex] & 0x20) == 0x20) {
+                        entity[772] = 0;
+                        entity[405] = 1;
+                        *(float*)(entity + 216) = (float)(rand() % 10) + 10.0f;
+                        *(float*)(entity + 204) = (float)(rand() % 20) + 20.0f;
+                        const float angle = (float)(rand() % 10) + 85.0f;
+                        if ((TerrainWall[(wallIndex + 1) & 0xFFFF] & 8) == 8) {
+                            *(float*)(entity + 416) = -angle;
+                            *(int*)(entity + 408) = 0;
+                            *(int*)(entity + 412) = 0;
+                        } else if ((TerrainWall[(wallIndex - 1) & 0xFFFF] & 8) == 8) {
+                            *(float*)(entity + 416) = angle;
+                            *(int*)(entity + 408) = 0;
+                            *(int*)(entity + 412) = 0;
+                        }
+                        *(int*)(entity + 36)  = *(int*)(entity + 416);
+                        *(float*)(entity + 192) = (float)(rand() % 6) + 8.0f;
+                        *(float*)(entity + 196) = (float)(-(rand() % 2)) + 13.0f;
+                        const int spin = rand();
+                        *(int*)(entity + 424) = *(int*)(entity + 20);
+                        *(int*)(entity + 428) = *(int*)(entity + 24);
+                        *(int*)(entity + 420) = *(int*)(entity + 16);
+                        *(float*)(entity + 200) = (float)(spin % 45);
+                    }
+                    if (DAT_07abf5d8 && entity == (BYTE*)DAT_07abf5d8) {
+                        FUN_0047eb80();   // clearMatchInfo
+                    }
+                }
+
                 const int entitySlot = basePtr ? (int)((entity - basePtr) / 0x394) : -1;
-                NetLog("NET:  → 0x17 Die id=%d slot=%d", entityId, entitySlot);
+                NetLog("NET:  → 0x17 Die id=%d slot=%d fall=%d",
+                       entityId, entitySlot, entity[405]);
                 break;
             }
 
@@ -5655,13 +5885,23 @@ void Net_ProcessPacket(void)
                 break;
             }
 
-            // ── 0x90-0x99 — EVENTOS, no guild ─────────────────────────────
+            // ── 0x8E-0x99 — EVENTOS, no guild ─────────────────────────────
             // Hasta 2026-08-26 estos casos llamaban a handlers de guild
             // (Guild_CreateOk, Guild_AddMemberResult, ...) que el port se
             // invento. IDA y MuEmu coinciden en que son eventos: ver la tabla
             // completa en la cabecera de `src/Net/Net_Events.cpp`.
             // El guild de verdad esta en 0x50-0x56, mas arriba en este mismo
             // switch, y no se toca.
+            case 0x8E: { // Devil Square admission levels (GameServer extension)
+                extern void Recv_DevilSquareRequiredLevels(BYTE* Msg, int Size);
+                Recv_DevilSquareRequiredLevels((BYTE*)Msg, Size);
+                break;
+            }
+            case 0x8F: { // Blood Castle admission levels (GameServer extension)
+                extern void Recv_BloodCastleRequiredLevels(BYTE* Msg, int Size);
+                Recv_BloodCastleRequiredLevels((BYTE*)Msg, Size);
+                break;
+            }
             case 0x90: {  // ReceiveMoveToDevilSquareResult @ 0x00436820
                 NetLog("NET:  -> 0x90 MoveToDevilSquareResult");
                 extern void Recv_MoveToDevilSquareResult(BYTE* Msg, int Size);
@@ -5676,8 +5916,10 @@ void Net_ProcessPacket(void)
                 Recv_EventZoneOpenTime((BYTE*)Msg, Size);
                 break;
             }
-            case 0x92: {  // StartMatchCountDown @ 0x0047EC00 — sin portar
-                NetLog("NET:  -> 0x92 StartMatchCountDown (sin portar)");
+            case 0x92: {  // StartMatchCountDown @ 0x0047EC00
+                NetLog("NET:  -> 0x92 StartMatchCountDown type=%d", Size >= 4 ? Msg[3] + 1 : -1);
+                extern void Recv_StartMatchCountDown(BYTE* Msg, int Size);
+                Recv_StartMatchCountDown((BYTE*)Msg, Size);
                 break;
             }
             case 0x93: {  // ReceiveDevilSquareRank @ 0x00436A80
@@ -5708,6 +5950,92 @@ void Net_ProcessPacket(void)
                 NetLog("NET:  -> 0x99 ServerImmigration");
                 extern void Recv_ServerImmigration(BYTE* Msg, int Size);
                 Recv_ServerImmigration((BYTE*)Msg, Size);
+                break;
+            }
+            case 0x9A: {  // ReceiveMoveToEventMatchResult @ 0x00436AC0
+                extern void Recv_MoveToBloodCastleResult(BYTE* Msg, int Size);
+                Recv_MoveToBloodCastleResult((BYTE*)Msg, Size);
+                break;
+            }
+
+            case 0x9B: {
+                // ReceiveMatchGameCommand @ 0x00436E40 -- estado del evento
+                // (Blood Castle / Devil Square).  Es lo que alimenta el cartel
+                // lateral con el tiempo restante y el contador de monstruos.
+                //
+                // MuEmu: CBloodCastle::GCBloodCastleStateSend,
+                //        PMSG_BLOOD_CASTLE_STATE_SEND (BloodCastle.h:65)
+                //   +3     BYTE state
+                //   +4,+5  WORD time
+                //   +6,+7  WORD MaxMonster
+                //   +8,+9  WORD CurMonster
+                //   +10,11 WORD EventItemOwner
+                //   +12    BYTE EventItemLevel
+                // El struct no lleva padding (state en +3 y el primer WORD en
+                // +4, que ya esta alineado), asi que coincide exacto con los
+                // indices de palabra del decompile.
+                //
+                // 2026-09-04: este case NO EXISTIA en el dispatcher, o sea el
+                // panel del evento nunca recibia datos.
+                if (Size < 13) { NetLog("NET:  -> 0x9B MatchState size=%d (corto)", Size); break; }
+                {
+                    const BYTE state     = Msg[3];
+                    const WORD tRemain   = *(WORD*)(Msg + 4);
+                    const WORD maxMon    = *(WORD*)(Msg + 6);
+                    const WORD curMon    = *(WORD*)(Msg + 8);
+                    const short itemOwner= *(short*)(Msg + 10);
+                    const BYTE itemLevel = Msg[12];
+
+                    NetLog("NET:  -> 0x9B MatchState state=%u t=%u mon=%u/%u owner=%d lvl=%u",
+                           state, tRemain, curMon, maxMon, itemOwner, itemLevel);
+
+                    switch (state) {
+                    case 0:
+                        // Arranca el evento: todos los jugadores a la anim 128
+                        // y BGM del castillo en loop.
+                        FUN_0045ad10(128);
+                        PlayBuffer(110, 0, 1);
+                        // fallthrough  (IDA: `goto LABEL_3`)
+                    case 1:
+                    case 4: {
+                        SetMatchInfo((BYTE)(state + 1), 900, tRemain, maxMon, curMon);
+                        // Marca quien lleva el arma del evento.  sub_45ACC0 ademas
+                        // LIMPIA el flag +744 en todas las entidades antes de
+                        // devolver el indice, o sea el portador es unico.
+                        if (itemOwner != -1 && itemLevel != 0xFF && itemLevel != 0) {
+                            const int idx = FUN_0045acc0(itemOwner & 0x7FFF);
+                            if (DAT_07abf5d0 && idx >= 0 && idx < 400) {
+                                BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * idx;
+                                *(BYTE*)(c + 744) = itemLevel;
+                            }
+                        } else if (itemOwner == -1 || itemLevel == 0) {
+                            // DESVIACION DEL PORT.  El gate de arriba es fiel a IDA
+                            // (`if (owner != -1) if (lvl != 0xFF) if (lvl)`), pero con
+                            // ese gate NADIE limpia +744 cuando se devuelve el arma:
+                            // MuEmu manda `owner=-1 lvl=0` y acto seguido
+                            // `owner=0 lvl=255`, y los dos caen fuera del if.  El arma
+                            // quedaba colgada de la espalda hasta cambiar de mapa.
+                            // `sub_45ACC0` limpia el flag en TODAS las entidades antes
+                            // de buscar, asi que llamarla con una key imposible es
+                            // exactamente "que no lo lleve nadie".
+                            FUN_0045acc0(0xFFFF);
+                        }
+                        break;
+                    }
+                    case 2:
+                        FUN_0047eb80();          // clearMatchInfo
+                        StopBuffer(110, 1);
+                        break;
+                    case 3:
+                        // Puerta destruida: dispara la animacion de derrumbe
+                        // sobre el objeto tipo 36 del mapa actual
+                        // (la consume MoveObject_Special / sub_4FA5F0).
+                        FUN_004fa5c0((int)World, 36, 20, 1);
+                        break;
+                    default:
+                        break;
+                    }
+                }
                 break;
             }
 
@@ -5913,7 +6241,22 @@ void Net_ProcessPacket(void)
 
                     if (map != (BYTE)World) {
                         World = map;
+                        // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
+                        // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
+                        // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+                        // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
+                        // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
+                        // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
+                        // spawn del slot 0 cae entre Object01.bmd y Object42.bmd).  De ahi que
+                        // salieran mal y que alejarse y volver -- que los re-crea con el modelo ya
+                        // cargado -- los arreglara.
+                        //
+                        // `g_WorldLoading` deja que el pump siga DRENANDO el socket (que es lo que
+                        // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
+                        // cola y se procesan al terminar la carga.
+                        ++g_WorldLoading;
                         FUN_0050e5a0();
+                        --g_WorldLoading;
 
                         // OpenWorld replaces terrain data, so IDA evaluates
                         // la altura de aterrizaje una segunda vez contra el mapa nuevo.

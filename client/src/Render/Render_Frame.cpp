@@ -373,8 +373,8 @@ void Render_GameFrame(void)
         GL_SetBlendAdditive();                        // EnableAlphaBlend (aditivo)
         glColor3f(0.3f, 0.3f, 0.25f);
 
-        const float scrollA = (float)((int)DAT_05826e08 % 100000) * _DAT_00552b88; // 0.0002
-        const float scrollB = (float)((int)DAT_05826e08 % 100000) * _DAT_00552500; // 0.001
+        const float scrollA = (float)((long long)DAT_05826e08 % 100000) * _DAT_00552b88; // 0.0002
+        const float scrollB = (float)((long long)DAT_05826e08 % 100000) * _DAT_00552500; // 0.001
 
         // 2026-08-23: antes esto llamaba a `RenderBitmap` (0x5125A0) con
         // (u0,v0,u1,v1), que mapea un RECTANGULO — la textura se leia como un

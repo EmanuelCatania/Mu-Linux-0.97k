@@ -284,6 +284,7 @@ void  __cdecl FUN_0045c720(int entity);        // Character_UpdateEquipSlotAnima
 void  __cdecl FUN_00443e70(void);              // Entity_LockAnim (no args per decompile)
 void  __cdecl FUN_00444410(int, int, int, int);
 void  __cdecl FUN_00444a80(int param_1);       // SetPlayerMagic — cast magic anim
+void  __cdecl FUN_00444b30(int param_1);       // SetPlayerTeleport - anim de casteo de teleport (accion 87 / 5)
 void  __cdecl FUN_00444b60(int c, int Hit);    // SetPlayerShock — knockback/grunt
 void  __cdecl FUN_00444d90(int entity_idx);    // SetPlayerDie — death anim/FX (was mismapped as Entity_TeleportEnd)
 // ── Character/Effect update pool (0x004796xx) ────────────────────────────────
@@ -400,7 +401,6 @@ int   __cdecl    FUN_0047e2e0(short* characterMachine_words);       // Stats_Cal
 int   __cdecl    FUN_0047e310(int characterMachine);                // Stats_CalcExtraOption2
 int   __cdecl    FUN_0047e3c0(int characterMachine, int, int);      // CharData_RecalcStats
 void  __cdecl FUN_0047e7a0(int, int, int);
-void  __cdecl FUN_0047eb80(int, int, int);
 void  __cdecl FUN_0047ec00(int, int, int);
 int   __cdecl Input_IsKeyJustPressed(int);          // IDA: FUN_0047ec20
 void  __cdecl Input_ClearState(int mode);           // IDA: FUN_0047ec60
@@ -430,7 +430,7 @@ void  __cdecl FUN_00481ba0(char* ID, char* Text, DWORD entity, int Flag, int Set
 void  __cdecl UI_TickHoverBubbles(void);
 int   __cdecl FUN_00482be0(int category);  // GetItemSlot — returns inventory slot index or -1
 void  __cdecl FUN_00483780(int, int, int);
-void  __cdecl FUN_00483b30(int entity, int slot, int flags);       // Item_Equip
+char  __cdecl Item_Equip(DWORD character, DWORD object);            // 0x00483B30, Attack selected-skill executor
 
 // ── UI / HUD ──────────────────────────────────────────────────────────────────
 uint  __cdecl FUN_004977f0(char* src, void* key, char flags);  // String_CompareKey (returns non-zero if match)
@@ -456,7 +456,7 @@ void  __cdecl Send_MovePacket_Player_legacy_stub(void);
 unsigned int __cdecl FUN_00483160(void);                             // Entity_CanAct (returns 0 if locked)
 void  __cdecl Player_ProcessInput(void); // IDA: FUN_004acef0
 void  __cdecl Mouse_UpdateHoverTargets(void);                                    // IDA: FUN_004b0310
-void  __cdecl FUN_004b0e80(void);                                    // Hotkey_Trigger — executes hotkey slot action
+char  __cdecl FUN_004b0e80(int number);                              // SelectSkillByHotkey (0x4B0E80)
 void  __cdecl FUN_004b14f0(void);
 void  __cdecl FUN_004bbdd0(int, int, int, int);
 void  __cdecl Cursor_Render(void);                                               // IDA: FUN_004bffa0
@@ -633,7 +633,7 @@ void  __cdecl GL_BindTextureSlot(int texture_type);                      // Part
 void  __cdecl GL_EnableDepthTest(void);  // GL_Setup2D (no args)
 void  __cdecl GL_EnableDepthWrites(void);
 void  __cdecl GL_ResetState(void);
-unsigned int __cdecl FUN_00513260(float *viewport, float *projection); // Entity_ViewportCheck(vp, proj) → 1=visible
+bool __cdecl FUN_00513260(float *rayOrigin, float *rayTarget, const float *box12); // 0x513260 SAT segmento-vs-OBB (box = objeto+0x130)
 void  __cdecl GL_SetBlendSrcOver(char mode);                             // GL_SetMode(1=blend)
 void  __cdecl GL_SetBlendAdditive(void);                                  // Frame_UpdateTimer
 void  __cdecl GL_SetBlendSrcAlpha(void);
@@ -966,7 +966,7 @@ void  __cdecl FUN_00448600(int entity, int index);           // CharacterAnimati
 // IDA: FUN_00485780
 void  __cdecl Combat_UseWarriorSkill(int entity, int skillType);
 // IDA: FUN_0048a180
-void  __cdecl Combat_UseElfSkill(int entity, int skillType);
+void  __cdecl Combat_UseElfSkill(int entity, int object);
 int   __cdecl FUN_0047e4f0(int machinePtr, int skillType, int level); // CHARACTER_MACHINE::GetMagicSkillDamage
 
 // ── Sound: PlayBuffer ─────────────────────────────────────────────────────────
@@ -1244,7 +1244,7 @@ void  Game_DestroyWindow(void);                                          // Full
 void  __cdecl SendRequestEquipmentItem_stub(int iSrcType, int iSrcIndex, ITEM *pItem, int iDstType, int iDstIndex); // 0x0043C250
 int   __stdcall FindHotKey_stub(int Skill);                              // 0x004B1170
 void  __cdecl RenderSkillIcon_stub(int iIndex, float x, float y, float width, float height); // 0x004BB940
-void  __cdecl SendChat_stub(char *Text);                                 // 0x004C1B90
+void  __cdecl SendChat(char *Text);                                      // 0x004C1B90
 int   __cdecl ConvertGold64_stub(int Zen, char *Buffer);                 // 0x004C3E10
 void  __cdecl RenderItemName_stub(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort); // 0x004C9E70
 void  __cdecl InsertWarehouseItem_stub(unsigned int param_1, unsigned char *param_2); // 0x004CC0E0
@@ -1262,7 +1262,7 @@ void  __cdecl RenderEquipmentPart3D_stub(int Index, float sx, float sy, float Wi
 void  __stdcall RenderEquipment3D_stub(void);                            // 0x004E3100
 void  __cdecl RenderItemsBoxes_stub(float fPosX, float fPosY, DWORD Inventory, int iMaxWidth, int iMaxHeight); // 0x004E37B0
 void  __cdecl RenderItems3D_stub(float p1, float p2, short *p3, int p4, int p5, char p6); // 0x004E38B0
-int   __cdecl CheckMixRecipe_stub(short *p1, int p2, int p3);           // 0x004E40F0
+int   __cdecl CheckMixRecipe(short *p1, int p2, int p3);                // 0x004E40F0
 void  __cdecl RenderInventoryInterface_stub(int StartX, int StartY, int Flag); // 0x004ECBA0
 void  __cdecl RenderGuildMark_stub(float p1, float p2, float p3, float p4, int p5); // 0x004F02F0
 void  __cdecl AddTerrainLightClip_stub(float xf, float yf, float Light[3], int Range, float Buffer[3]); // 0x004F7800
@@ -1270,7 +1270,7 @@ void  __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool E
 void  __cdecl RenderTerrainFrustrum_stub(bool EditFlag);                 // 0x004F97E0
 void  __cdecl MoveObject_Special_stub(int param_1); // legacy alias of FUN_004fa5f0 (0x004FA5F0)
 char* __stdcall PickObject_Mouse_stub(void);                             // 0x004FA7C0
-float* __cdecl MoveObject_PerWorld_stub(float param_1);                  // 0x004FDC00
+float* __cdecl MoveObject_PerWorld(float param_1);                       // 0x004FDC00
 int   __stdcall MoveHeavenThunder_stub(void);                            // 0x004FED90
 void  __stdcall MoveObjects_stub(void);                                  // 0x004FF260
 void  __stdcall MoveBugs_stub(void);                                     // 0x005001F0
@@ -1279,8 +1279,8 @@ void  __stdcall EnableAlphaBlend2_stub(void);                            // 0x00
 void  __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha); // 0x00511FB0
 double __cdecl RenderNumber2D_stub(float x, float y, int Num, float Width, float Height); // 0x005122F0
 void  __stdcall MoveCamera_stub(void);                                   // 0x0051E4E0
-void  __cdecl UseSkillWizard_stub(DWORD c, DWORD o);                    // 0x004889D0
-bool  __stdcall SkillElf_stub(DWORD c, DWORD pItem);                    // 0x0048BD70
+void  __cdecl Combat_UseWizardSkill(DWORD c, DWORD o);                  // 0x004889D0
+bool  __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem);           // 0x0048BD70
 
 // Batch 17 — Entity, combat, rendering, IME, chat, particles
 void  __cdecl FUN_0043ce50(unsigned char param_1, int param_2);          // action request packet (0x0043CE50)
@@ -1323,7 +1323,7 @@ void  __cdecl AssignChat_stub(char *ID, char *Text, int Flag);          // 0x004
 int   __stdcall Item_FindElfWeaponInventorySlot(void);                   // IDA: FUN_004824C0
 int   __stdcall Item_CountElfWeaponInventorySlots(void);                 // IDA: FUN_00482850
 int   __cdecl Item_CountWeaponGroupItems(int param_1);                   // IDA: FUN_00482e40
-void  __stdcall FUN_0048b680(void);                                      // elf skill validation (0x0048B680)
+void  __cdecl FUN_0048b680(int weaponType);                              // elf weapon validation/swap (0x0048B680)
 unsigned int __cdecl FUN_004942e0(int param_1);                          // chat command parser (0x004942E0)
 bool  __cdecl CheckTarget_stub(DWORD c);                                 // 0x0049CAE0
 
@@ -1340,7 +1340,10 @@ void  __cdecl AppearMonster(DWORD c);                                    // 0x00
 void  __stdcall FUN_00422074(void);                                      // 0x00422074 — SEH __finally handler (DestroyWindow)
 void  __cdecl FUN_0051d740(void);                                        // 0x0051D740 — ClearNotice
 void  __cdecl FUN_00482350(void);                                        // 0x00482350 — ClearWhisperID
-void  __cdecl FUN_004827a0(void);                                        // 0x004827A0 — clearMatchInfo
+void  __cdecl FUN_004827a0(void);                                        // 0x004827A0 (mismap: NO es clearMatchInfo, esa direccion cae dentro de sub_4824C0)
+void  __cdecl FUN_0047eb80(void);                                        // 0x0047EB80 clearMatchInfo
+int   __cdecl FUN_0045acc0(int key);                                     // 0x0045ACC0 FindCharacterIndex + limpia el flag +744 de todas
+void  __cdecl FUN_0045ad10(int Action);                                  // 0x0045AD10 SetAction sobre todos los jugadores visibles
 void  __cdecl FUN_00433830(void);                                        // 0x00433830 — InitPartyList
 void  __stdcall SendCheck(void);                                         // 0x004220A0 — anti-tamper checksum packet
 

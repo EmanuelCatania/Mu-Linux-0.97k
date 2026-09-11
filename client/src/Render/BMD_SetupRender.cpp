@@ -317,8 +317,29 @@ void __cdecl FUN_00440a30(void *model, float *bone_mat, float *pos_in, float *po
 // scale: particle scale, color: float[3] RGB, entity: entity index
 void __cdecl FUN_004553c0(void *model, int type, int bone_idx, float scale, float *color, int entity)
 {
+  // 2026-09-04 FIX -- dos errores, y esta funcion la usan nueve sitios (el
+  // brillo de arcos y bastones de RenderLinkObject, el equipo del jugador y
+  // AttackEffect), asi que el radio es amplio.  IDA 0x004553C0:
+  //
+  //   memset(v7, 0, sizeof(v7));
+  //   TransformPosition(This, (float (*)[4])BoneMatrix[3 * a3], v7, Position, 1);
+  //   return CreateSprite(Type, Position, Scale, Light, Owner, 0.0, 0);
+  //
+  // 1) La matriz salia de `model + bone_idx*0x30`, o sea del principio del
+  //    struct del BMD, cuando el original indexa el buffer global de huesos
+  //    (`BoneMatrix` = 0x06970A9C, confirmado por xrefs).  `BoneMatrix[3*a3]`
+  //    con filas de float[4] son 48 bytes por hueso = bone_idx * 0x30.
+  // 2) Los argumentos 3 y 4 de TransformPosition son ENTRADA y SALIDA.  El port
+  //    pasaba `world_pos` (sin inicializar) como entrada, recogia el resultado
+  //    en `world_col` y despues emitia el sprite con `world_pos` -- o sea con
+  //    la entrada basura, nunca con la posicion transformada.
+  //
+  // Se notaba sobre todo en el Celestial Bow (Type 545), que es el unico case
+  // que llama diez veces a esta funcion (huesos 13-18 y 5-8).
+  float in[3]  = { 0.0f, 0.0f, 0.0f };
   float world_pos[3];
-  float world_col[3];
-  BMD_TransformPosition(model, (float *)((int)model + bone_idx * 0x30), world_pos, world_col, 1);
+  BMD_TransformPosition(model,
+                        (float *)((char *)&DAT_06970a9c + bone_idx * 0x30),
+                        in, world_pos, 1);
   FUN_004795c0((unsigned short)type, world_pos, scale, color, entity, 0.0f, 0);
 }

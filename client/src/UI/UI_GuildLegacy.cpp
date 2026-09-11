@@ -45,93 +45,81 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// Guild / party UI
-
-// FUN_0051ddf0 @ 0x0051DDF0 — GuildMemberList_Render()
-// Renders guild member list (name, level, class, kills, deaths) using
-// FUN_0051ddf0 @ 0x0051DDF0 — GuildLeaderboard_Render
-// Draws guild war score leaderboard: title, current player name, column headers,
-// then one row per member (rank, name, kills, deaths, score).
-// Member array base: DAT_083a7af8, stride 0x18 per entry.
-// DAT_083a7c30 = member count; DAT_083a7c34 = own rank.
+// ── sub_51DDF0 (0x0051DDF0) — tabla de puestos del evento ────────────────────
+// NO es una lista de guild: es el ranking que sale al terminar Devil Square /
+// Blood Castle.  Lo dispara `RenderErrorMessage` con `case 140: sub_51DDF0()`,
+// tras `sub_51D9E0` (opcode 0x93) que deja ErrorMessage = 140 y copia las
+// entradas a DAT_083a7af8.
+//
+// 2026-09-07: estaba neutralizada con un `return 0` al entrar ("AUTO-SKIP:
+// absolute end-bound loop"), asi que el cartel salia con el marco y el boton OK
+// pero VACIO.  Reescrita contra IDA con los bucles acotados por contador.
+//
+// Registro (24 bytes, = PMSG_DEVIL_SQUARE_SCORE del server, con el padding del
+// DWORD): +0 name[10] · +12 score · +16 RewardExperience · +20 RewardMoney.
 int __cdecl FUN_0051ddf0(void)
 {
-    return 0;  // AUTO-SKIP: absolute end-bound loop (Ghidra artifact — pool not populated in our build).
-    int xCols[5];
-    xCols[0] = 0xdb; // col 0 X (rank)
-    int x_110 = 0xeb; // col 1 X (name)
-    int x_10c = 0x11f; // col 2 X (kills)
-    int x_108 = 0x159; // col 3 X (deaths)
-    int x_104 = 0x17f; // col 4 X (score)
-    xCols[1] = x_110; xCols[2] = x_10c; xCols[3] = x_108; xCols[4] = x_104;
+    // Columnas: puesto, personaje, puntos, experiencia, recompensa.
+    static const int kCol[5] = { 219, 235, 287, 345, 383 };
+    char buf[64];
 
     glColor3f(0.5f, 1.0f, 0.5f);
-    UI_RenderText(0xe5, 0x46, &DAT_07d59358, (LPSIZE)0, '\0', 0);
+    UI_RenderText(229, 70, GlobalText[647], (LPSIZE)0, '\0', 0);
+    wsprintfA(buf, GlobalText[648], (const char *)((int)DAT_07abf5d8 + 0x1c1));
+    UI_RenderText(229, 86, buf, (LPSIZE)0, '\0', 0);
 
-    char buf[256];
-    wsprintfA(buf, &param_2_07d59484, (char *)((int)DAT_07abf5d8 + 0x1c1));
-    UI_RenderText(0xe5, 0x56, buf, (LPSIZE)0, '\0', 0);
-
+    // Encabezados 680..684.  El original SALTEA el 681 ("Personaje") y le suma
+    // 10 px al indice 2; es asi en el binario.
     glColor3f(0.5f, 0.5f, 1.0f);
-    // Column headers: array at DAT_07d5ba04, stride 300 bytes, 5 entries to 0x7d5bfe0
-    int *pXCol = xCols;
-    int iColIdx = 0;
-    const char *pHdr = &DAT_07d5ba04;
-    while ((int)pHdr < 0x7d5bfe0) {
-        if (pHdr != &DAT_07d5bfe0) {
-            int xOff = (iColIdx != 2) ? 0 : 10;
-            UI_RenderText(*pXCol + xOff, 0x6e, pHdr, (LPSIZE)0, '\0', 0);
-        }
-        pHdr += 300;
-        iColIdx++;
-        pXCol++;
+    for (int i = 0; i < 5; ++i) {
+        if (i == 1) continue;
+        UI_RenderText(kCol[i] + (i == 2 ? 10 : 0), 110, GlobalText[680 + i],
+                      (LPSIZE)0, '\0', 0);
     }
 
-    int iY = 0x7e;
+    int count = DAT_083a7c30;
+    const int kMaxRows = GUILD_MEMBER_TABLE_BYTES / GUILD_MEMBER_STRIDE;
+    if (count > kMaxRows) count = kMaxRows;
+    if (count <= 0) return DAT_083a7c30;
+
+    int y = 126;
     glColor3f(1.0f, 1.0f, 1.0f);
-    for (int i = 0; i < DAT_083a7c30; i++) {
-        int iNext = i + 1;
-        int iMod  = iNext % DAT_083a7c30;
-        const char *fmtRank;
-        int iRank;
-        if (i == DAT_083a7c30 - 1) {
-            // last entry: own rank highlighted
-            glColor3f(0.4f, 0.4f, 0.0f);
-            UI_RenderText(0xdb, 0x11e, &DAT_07d5bfe0, (LPSIZE)0, '\0', 0);
-            iY = 0x12e;
-            fmtRank = PTR_DAT_005618a0;
-            iRank   = DAT_083a7c34;
+    for (int i = 0; i < count; ++i) {
+        // El registro 0 del buffer es el del propio jugador y va ULTIMO: por eso
+        // el original indexa con (i+1) % count.
+        const BYTE *e = &DAT_083a7af8[GUILD_MEMBER_STRIDE * ((i + 1) % count)];
+
+        if (i == count - 1) {
+            glColor3f(0.9f, 0.9f, 0.0f);
+            UI_RenderText(219, 286, GlobalText[685], (LPSIZE)0, '\0', 0);
+            y = 302;
+            wsprintfA(buf, "%2d", DAT_083a7c34);
         } else {
-            fmtRank = &param_2_005618a4;
-            iRank   = iNext;
+            wsprintfA(buf, "%2d", i + 1);
         }
-        wsprintfA(buf, fmtRank, iRank);
-        DAT_00559c78 = 0xffffffff;
-        UI_RenderText(0xdb, iY, buf, (LPSIZE)0, '\0', 0);
+        m_dwTextColor = 0xFFFFFFFFu;
+        UI_RenderText(kCol[0], y, buf, (LPSIZE)0, '\0', 0);
 
-        // member name (char[12] starting at DAT_083a7af8 + iMod*0x18)
-        char namebuf[14] = {};
-        *(DWORD *)namebuf       = *(DWORD *)((BYTE *)&DAT_083a7af8 + iMod * 0x18);
-        *(DWORD *)(namebuf + 4) = *(DWORD *)((BYTE *)&DAT_083a7afc + iMod * 0x18);
-        *(WORD  *)(namebuf + 8) = *(WORD  *)((BYTE *)&DAT_083a7b00 + iMod * 0x18);
-        namebuf[13] = '\0';
-        UI_RenderText(x_110, iY, namebuf, (LPSIZE)0, '\0', 0);
+        char name[11];
+        memcpy(name, e, 10);
+        name[10] = '\0';
+        UI_RenderText(kCol[1], y, name, (LPSIZE)0, '\0', 0);
 
-        DAT_00559c78 = 0xffffd2d2;
-        wsprintfA(buf, &param_2_005618a8, *(DWORD *)((BYTE *)&DAT_083a7b04 + iMod * 0x18));
-        UI_RenderText(x_10c, iY, buf, (LPSIZE)0, '\0', 0);
+        m_dwTextColor = 0xFFFFD2D2u;
+        wsprintfA(buf, "%10d", *(const int *)(e + 12));
+        UI_RenderText(kCol[2], y, buf, (LPSIZE)0, '\0', 0);
 
-        DAT_00559c78 = 0xffd2ffd2;
-        wsprintfA(buf, &param_2_005618b0, *(DWORD *)((BYTE *)&DAT_083a7b08 + iMod * 0x18));
-        UI_RenderText(x_108, iY, buf, (LPSIZE)0, '\0', 0);
+        m_dwTextColor = 0xFFD2FFD2u;
+        wsprintfA(buf, "%6d", *(const int *)(e + 16));
+        UI_RenderText(kCol[3], y, buf, (LPSIZE)0, '\0', 0);
 
-        DAT_00559c78 = 0xffd2d2ff;
-        wsprintfA(buf, &param_2_005618b4, *(DWORD *)((BYTE *)&DAT_083a7b0c + iMod * 0x18));
-        UI_RenderText(x_104, iY, buf, (LPSIZE)0, '\0', 0);
+        m_dwTextColor = 0xFFD2D2FFu;
+        wsprintfA(buf, "%6d", *(const int *)(e + 20));
+        UI_RenderText(kCol[4], y, buf, (LPSIZE)0, '\0', 0);
 
-        iY += 0x10;
+        y += 16;
     }
-    return 0;
+    return DAT_083a7c30;
 }
 
 // FUN_0051db00 @ 0x0051DB00 — GuildOverview_Render
@@ -213,6 +201,7 @@ void __cdecl CreateOkMessageBox(char *msg)
     else
         DAT_083a7c24 = 0x8b;
 }
+
 // FUN_0051d9e0 @ 0x0051D9E0 — GuildMemberList_Update
 // Sets UI state 0x8c, stores count/param2, copies menu descriptor and member list data.
 void __cdecl FUN_0051d9e0(int count, int p2, void *data)
@@ -225,9 +214,16 @@ void __cdecl FUN_0051d9e0(int count, int p2, void *data)
     DWORD desc[5] = { 1, 0x47, 0x104, 0x46, 0x15 };
     for (int i = 0; i < 5; i++) DAT_083a42f8[i] = desc[i];
     // Copy member list data: count * 0x18 bytes into DAT_083a7af8
-    unsigned int dwords = (unsigned int)(count * 0x18) >> 2;
+    // 2026-09-03: la tabla tiene 11 registros (0x108 bytes, ver globals.h).
+    // IDA no acota `count` porque alli el hueco es exactamente ese; aca el
+    // clamp evita que un `count` grande escriba sobre los globals vecinos.
+    int nMembers = count;
+    if (nMembers < 0) nMembers = 0;
+    if (nMembers > GUILD_MEMBER_TABLE_BYTES / GUILD_MEMBER_STRIDE)
+        nMembers = GUILD_MEMBER_TABLE_BYTES / GUILD_MEMBER_STRIDE;
+    unsigned int dwords = (unsigned int)(nMembers * GUILD_MEMBER_STRIDE) >> 2;
     unsigned int *src = (unsigned int*)data;
-    unsigned int *dst = (unsigned int*)&DAT_083a7af8;
+    unsigned int *dst = (unsigned int*)&DAT_083a7af8[0];
     for (unsigned int i = 0; i < dwords; i++) *dst++ = *src++;
 }
 
@@ -241,7 +237,7 @@ void __cdecl FUN_0051da80(int p1, void *data)
     DWORD desc[5] = { 1, 0x47, 0x82, 0x46, 0x15 };
     for (int i = 0; i < 5; i++) DAT_083a42f8[i] = desc[i];
     DWORD *src = (DWORD*)data;
-    DWORD *dst = (DWORD*)&DAT_083a7af8;
+    DWORD *dst = (DWORD*)&DAT_083a7af8[0];   // un registro = 6 DWORDs
     for (int i = 0; i < 6; i++) *dst++ = *src++;
 }
 

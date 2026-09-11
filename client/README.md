@@ -23,9 +23,9 @@ binario.
 al mundo y se juega. Terreno, personajes, inventario, equipo, chat, party,
 guild, tienda, baúl, combate básico y efectos están operativos.
 
-No es un cliente terminado. Quedan funciones portadas a medias (las tres
-grandes: `Attack`, `Action`, `MoveCharacterVisual`), subsistemas con huecos
-conocidos y bugs de port apareciendo a medida que se ejercitan caminos nuevos.
+No es un cliente terminado: quedan subsistemas con huecos conocidos y bugs de
+port apareciendo a medida que se ejercitan caminos nuevos. Lo mas parcial hoy es
+el movimiento de NPCs y monstruos.
 
 ### Por subsistema
 
@@ -42,7 +42,7 @@ conocidos y bugs de port apareciendo a medida que se ejercitan caminos nuevos.
 | Chat, party, guild | Funcional |
 | Sonido (DirectSound) | Funcional |
 | Música (BGM) | el original lanza `MuPlayer.exe` |
-| Combate | Parcial — `Attack` (0x49CBF0) está portada al ~4% |
+| Combate | `Attack`, `Action` y `MoveCharacterVisual` auditadas 1:1 contra IDA, con sus cadenas de ejecutores |
 | Movimiento de NPCs / monstruos | Parcial |
 
 ### Arquitectura y deuda técnica
@@ -267,6 +267,31 @@ es la familia de estado de OpenGL: `EnableAlphaTest` (0x511680),
 `EnableAlphaBlend` (0x511710, aditivo) y `DisableTexture` (0x511590, que apaga
 el texturizado). Confundirlas pinta cuadrados blancos sobre medio frame,
 porque el estado de GL queda pegado y contamina todo lo que se dibuje después.
+
+**7. Cotas y limpiezas inventadas.** Guards que el binario no tiene y que en vez
+de recortar **descartan la entrada entera**. Apareció de los dos lados: en los
+handlers de red (`count > 30` tiraba los 41 monstruos de un viewport; el síntoma
+se leía como bug de spawn, con una cascada de `key not found` en el log) y en el
+input tick (un `else` que al bloquear el debounce hacía
+`MouseLButtonPush = 0; MouseLButton = 0;`, o sea perdía el click: había que
+clickear varias veces para caminar). Regla: cualquier `= 0` o `clear` que el port
+agregue en el camino de *«todavía no se puede»* es sospechoso — el binario casi
+siempre deja el estado pendiente para el próximo tick.
+
+### Desviaciones de protocolo
+
+Están documentadas en el código, pero conviene saberlas si se apunta a otro
+servidor:
+
+- **`C3:1E` (duration skill) se manda con 11 bytes, no 9.** El 0.97k vanilla no
+  incluye `index[]`, pero `CGDurationSkillAttackRecv` de MuEmu lo lee siempre
+  (`SkillManager.cpp:2047`): con 9 bytes el server toma esos dos bytes de fuera
+  del paquete y el skill le pega a otra entidad. El DLL de inyección hace lo
+  mismo (`CPatchs::SendRequestMagicContinue`).
+- **Triple Shot manda el byte `angle`.** El server arma el cono con `angle`, no
+  con `dir` (`SkillManager.cpp:1185`).
+- **F3/12 al entrar al mundo.** Sin ese ACK el server deja `RegenOk` en 1 y
+  rechaza todo `/move` posterior además de no mandar las entidades del mapa.
 
 ---
 

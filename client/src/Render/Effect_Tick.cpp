@@ -298,33 +298,42 @@ void Effect_TickFlare(void)
   const uintptr_t poolEnd = (uintptr_t)DAT_07c82cdc + sizeof(DAT_07c82cdc);
   do {
     if (*(char *)(pfVar3 + -3) != '\0') {
-      fVar2 = (float)((int)pfVar3[0xb] + -1);
-      pfVar3[0xb] = fVar2;
+      // 2026-09-02: IDA MovePointers (0x004794A0) L20-21 -> `v1 = v0[11] - 1;
+      // v0[11] = v1;` con `v0` = _DWORD*: el contador y el TIPO del slot son
+      // ENTEROS, no floats.  El port los leia con `(int)float`, o sea convertia
+      // numericamente un bit-pattern -> casi siempre 0: el contador nunca bajaba,
+      // el efecto no moria nunca y el ramp de alpha (+40) quedaba clavado en 0.
+      // La mezcla dentro de la misma funcion delata el bug: dos lineas mas abajo
+      // el MISMO campo se lee bien con `*(int*)&fVar1 == 7` / `== 1205`.
+      const int __pcnt = *(int*)&pfVar3[0xb] - 1;
+      *(int*)&pfVar3[0xb] = __pcnt;
+      fVar2 = pfVar3[0xb];
       fVar1 = pfVar3[-2];
-      if ((int)fVar1 < 0x4b7) {
-        if ((int)fVar1 < 0x4b5) {
-          if ((fVar1 == 9.80909e-45) &&
+      const int __ptype = *(int*)&fVar1;
+      if (__ptype < 0x4b7) {
+        if (__ptype < 0x4b5) {
+          if ((__ptype == 7) &&
              (fVar1 = *pfVar3 - _DAT_00552874, *pfVar3 = fVar1, fVar1 < _DAT_005524f4)) {
             *(undefined1 *)(pfVar3 + -3) = 0;
           }
         }
         else {
 LAB_004794f9:
-          if (fVar1 == 1.68856e-42) {
+          if (__ptype == 1205) {
             *pfVar3 = *pfVar3 + _DAT_005524bc;
           }
           pfVar3[7] = 0.1;
           pfVar3[8] = 0.0;
           pfVar3[9] = 0.0;
-          if ((int)fVar2 < 1) {
+          if (__pcnt < 1) {
             *(undefined1 *)(pfVar3 + -3) = 0;
           }
-          if ((int)fVar2 < 0x32) {
-            pfVar3[10] = (float)(int)fVar2 * _DAT_00552914;
+          if (__pcnt < 0x32) {
+            pfVar3[10] = (float)__pcnt * _DAT_00552914;
           }
         }
       }
-      else if (fVar1 == 1.73761e-42) goto LAB_004794f9;
+      else if (__ptype == 1240) goto LAB_004794f9;
     }
     pfVar3 = pfVar3 + 0x1c;
     if ((uintptr_t)pfVar3 >= poolEnd) {

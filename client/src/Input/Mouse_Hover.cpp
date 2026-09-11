@@ -99,7 +99,30 @@ void Mouse_UpdateHoverTargets(void)
         // Keep the original transient hover state.  Leaving this selected
         // after the cursor moves away turns later ground clicks into a basic
         // attack against the stale mob.
+        // IDA sub_4B0310 L85-106 — el bloque de reset completo:
+        //   if ( !m_bAutoAttack || World == 6 )      { SelectedCharacter = -1; Attacking = -1; }
+        //   else if ( !target->Dead && target->Kind == 2 )
+        //   {
+        //       if ( Attacking == -1 || MouseLButton || MouseLButtonPush
+        //         || MouseRButton || MouseRButtonPush || Hero->Dead )
+        //           SelectedCharacter = -1;
+        //   }
+        //   else { Attacking = -1; SelectedCharacter = -1; }
+        //
+        // El clear NO es destructivo: el detect que viene justo despues
+        // (`if (SelectedCharacter == -1) SelectedCharacter = sub_4AFDC0(...)`,
+        // L326) lo vuelve a poblar con lo que haya bajo el cursor.  Por eso el
+        // objetivo sigue al mouse en el original.
+        //
+        // El port tenia SOLO los dos flags del boton DERECHO
+        // (DAT_083a42ac / DAT_083a42d0), asi que clickeando con el IZQUIERDO el
+        // target nunca se limpiaba: quedaba pegado el primer mob que hubiera
+        // pasado por debajo del cursor.  Direcciones confirmadas con
+        // ida_xrefs_to:  MouseLButton = 0x083A42C4 · MouseLButtonPush = 0x083A4124
+        //                MouseRButton = 0x083A42AC · MouseRButtonPush = 0x083A42D0
+        //                m_bAutoAttack = 0x00559C5C · Attacking = 0x00559C58
         if (DAT_00559c58 == -1 ||
+            DAT_083a42c4 != '\0' || DAT_083a4124 != 0 ||
             DAT_083a42ac != '\0' || DAT_083a42d0 != '\0' ||
             *(char *)(DAT_07abf5d8 + 0x2fd) != '\0')
         {
@@ -514,18 +537,27 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 }
 
 // ItemOnGround_HoverTest @ 0x004AFA40
-// ── BUG-FIX 2026-04-26: NEUTRALIZADO ─────────────────────────────────────
-// El binario original itera DAT_07e12840 con bounds absolutos (0x7e908bc /
-// 0x7e907df) que en mu97k-src no son válidos: aquí DAT_07e12840 está
-// declarado en globals.cpp como un único DWORD (no un array), así que
-// iterar 234 × 0x204 bytes pisaba ~192 KB de globals adyacentes → corrupción
-// silenciosa en chunk-lists, UI menus, etc. El intento de "fixear" con
-// count=234 escribió valores 0x3fc00000 (=1.5f) en globals adyacentes que
-// luego se leían como punteros (= AV).
-// Como char-select/login no tienen items en el suelo, retornar -1 es
-// equivalente al comportamiento esperado en esos estados. Cuando se necesite
-// el path real (InGame con items dropeados), hay que localizar el array
-// correcto en mu97k-src (probablemente NO se llama DAT_07e12840).
+// 2026-09-04: el encabezado decia "NEUTRALIZADO (2026-04-26)", pero eso quedo
+// viejo -- la funcion se reimplemento el 2026-07-27 y anda (pickup confirmado en
+// runtime).  Se conserva la nota historica porque explica la DESVIACION que sigue
+// vigente:
+//
+//   El path fiel (sub_4AFA40) hace un test de rayo contra la OBB del item con
+//   `sub_513260`; aca se usa proximidad world-space -- se compara el tile del item
+//   con el tile del terreno bajo el mouse (el mismo picker del click-to-move,
+//   FUN_004f9ac0 -> DAT_080ab288/28c).
+//
+//   El motivo que se anotaba para no portarlo ("FUN_00513260 depende de macros
+//   Hex-Rays sin portar") YA NO APLICA: ese test quedo portado el 2026-09-04 al
+//   arreglar el pick de objetos interactuables.  Si algun dia el hover de items se
+//   comporta distinto al original, ese es el cambio a hacer -- pero hoy funciona y
+//   tocarlo es riesgo sin beneficio reportado.
+//
+// El pool DAT_07e12840 es 1000x0x204; layout por slot (base = pool + i*0x204):
+//   base+72   active flag
+//   base+424  visible flag (lo setea el render)
+//   base+16/20  world X/Y del item
+//   base+304/308/312  light color (0.2 normal, 1.5 al hover)
 // IDA: FUN_004afa40
 int __cdecl ItemOnGround_HoverTest(void)
 {
@@ -577,46 +609,56 @@ int __cdecl ItemOnGround_HoverTest(void)
     return best;
 }
 
-// SpecialObject_HoverTest @ 0x004B0240
-// ── BUG-FIX 2026-04-26: NEUTRALIZADO ─────────────────────────────────────
-// Mismo patrón que ItemOnGround_HoverTest (IDA: FUN_004afa40): el original itera con bound absoluto
-// (0x83a2cd0) que no es válido en mu97k-src. Si bien aquí los WRITES están
-// gateados por flags, los READs aún escapan del array y pueden disparar AV.
-// Char-select/login no tienen special-objects, así que retornar -1 es seguro.
-// IDA: FUN_004b0240
+// SpecialObject_HoverTest @ 0x004B0240 (sub_4B0240)
+// Pick de los objetos "operables" del mundo -- sillas, bancos, barandas y los
+// orbes de Noria.  La lista la arma `sub_4FF580` desde `CreateObject` (200
+// entradas de 12 bytes en DAT_083A2370: [0] activo, [2] puntero al objeto) y el
+// indice que devuelve esta funcion va a `SelectedOperate`, que leen
+// `RenderCursor` (para cambiar el cursor) y `Player_InputTick` (para encolar
+// MOVEMENT_OPERATE = sentarse / apoyarse / flotar).
+//
+// Pasada 1: baja la luz de todos los operables visibles a 0.2.
+// Pasada 2: el primero cuya OBB (objeto+0x130, la que deja Calc_RenderObject)
+//           corte el rayo del mouse se ilumina a 1.5 y se devuelve su indice.
+//
+// 2026-09-04: estaba NEUTRALIZADO (`return -1`) desde 2026-04-26 porque el port
+// original iteraba con el bound absoluto 0x83A2CD0 del binario fuente.  El array
+// ya esta bien dimensionado en globals.cpp (0x960 = 200 x 12), asi que se acota
+// con `sizeof`.  Mientras estuvo neutralizado NADA del mundo era interactuable.
 int __cdecl SpecialObject_HoverTest(void)
 {
-    return -1;
-#if 0
-    char *pcVar3;
-    // Pass 1: reset light to 0.2f
-    for (pcVar3 = DAT_083a2370; (int)pcVar3 < 0x83a2cd0; pcVar3 += 0xc) {
-        int iVar1 = *(int *)(pcVar3 + 8);
-        if ((*pcVar3 != '\0') && (*(char *)(iVar1 + 0x160) != '\0')) {
-            *(DWORD *)(iVar1 + 0xe8) = 0x3e4ccccd; // 0.2f
-            *(DWORD *)(iVar1 + 0xec) = 0x3e4ccccd;
-            *(DWORD *)(iVar1 + 0xf0) = 0x3e4ccccd;
+    const int stride = 0xc;
+    const int slots  = (int)(sizeof(DAT_083a2370) / stride);
+
+    // Pasada 1 - apagar el resalte de todos.
+    for (int i = 0; i < slots; ++i) {
+        char *e   = &DAT_083a2370[i * stride];
+        int   obj = *(int *)(e + 8);
+        if (e[0] == 0 || obj == 0) continue;
+        if (*(char *)(obj + 0x160) == 0) continue;   // no visible este frame
+        *(DWORD *)(obj + 0xe8) = 0x3e4ccccd;             // 0.2f
+        *(DWORD *)(obj + 0xec) = 0x3e4ccccd;
+        *(DWORD *)(obj + 0xf0) = 0x3e4ccccd;
+    }
+
+    // Pasada 2 - el primero que corte el rayo del mouse.
+    for (int i = 0; i < slots; ++i) {
+        char *e   = &DAT_083a2370[i * stride];
+        int   obj = *(int *)(e + 8);
+        if (e[0] == 0 || obj == 0) continue;
+        if (*(char *)(obj + 0x160) == 0) continue;
+
+        float box[12];
+        memcpy(box, (const void *)(obj + 0x130), sizeof(box));
+
+        if (FUN_00513260((float *)&CameraRayOriginX, (float *)&DAT_083a4110, box)) {
+            *(DWORD *)(obj + 0xe8) = 0x3fc00000;         // 1.5f -- resalte
+            *(DWORD *)(obj + 0xec) = 0x3fc00000;
+            *(DWORD *)(obj + 0xf0) = 0x3fc00000;
+            return i;
         }
     }
-    // Pass 2: find hovered object
-    int local_4 = 0;
-    for (pcVar3 = DAT_083a2370; (int)pcVar3 < 0x83a2cd0; pcVar3 += 0xc, local_4++) {
-        int iVar1 = *(int *)(pcVar3 + 8);
-        if ((*pcVar3 != '\0') && (*(char *)(iVar1 + 0x160) != '\0')) {
-            undefined4 auStack_44[12];
-            for (int i = 0; i < 12; i++)
-                auStack_44[i] = *(undefined4 *)(iVar1 + 0x130 + i * 4);
-            if ((char)FUN_00513260((float *)&CameraRayOriginX, (float *)&DAT_083a4110)) {
-                *(DWORD *)(iVar1 + 0xe8) = 0x3fc00000; // 1.5f
-                *(DWORD *)(iVar1 + 0xec) = 0x3fc00000;
-                *(DWORD *)(iVar1 + 0xf0) = 0x3fc00000;
-                return local_4;
-            }
-        }
-        if (0x83a2ccf < (int)(pcVar3 + 0xc)) return -1;
-    }
     return -1;
-#endif
 }
 // FUN_004afb00 — implemented in src/Game/Party_NameMatch.cpp (Party_MatchEntityNames)
 // FUN_004e5980 @ 0x004E5980 — Party_HPBar_HoverCheck(void)

@@ -16,6 +16,8 @@ extern "C" BOOL ChaosBoxRequestClose(void);
 static bool HUD_IsQuestPanelOpenRuntime(void);
 static bool HUD_IsGoldenArcherPanelRuntime(void);
 static bool HUD_IsInventoryFamilyActive(void);
+static bool HUD_CloseNpcWindowsIfAny(void);
+extern "C" int g_nGuildMemberCount;
 static bool HUD_IsAnyRightPanelOpen(void);
 static bool HUD_IsGuildCreationRuntime(void);
 static bool HUD_IsGuildListRuntime(void);
@@ -38,14 +40,24 @@ static bool HUD_IsCharacterInfoRuntime(void);
 // flag que se setea en cada frame si el mouse está sobre algún panel de UI abierto. Se usa para gatear
 // el GroundClick / walker de movimiento, así clickear adentro de un panel no hace
 // que el jugador camine hacia esa posición de pantalla.
-extern "C" int g_MouseOnWindow = 0;
+// 2026-09-09: `MouseOnWindow` es UN SOLO global del binario, 0x07D78094 (=
+// DAT_07d78094).  Estaba partido en dos: el port fiel de `sub_4E6550`
+// (CheckInventory) escribia DAT_07d78094 con los seis rects de panel
+// -- inventario, tienda, baul, ChaosMix, trade y ventana de evento -- y el gate
+// de `Attack` (IDA L1330) leia este `g_MouseOnWindow`, una reimplementacion
+// propia que NO cubre ninguno de esos seis.  Ahora es un alias del global real.
+#define g_MouseOnWindow DAT_07d78094
 
 // IDA `Attacking` — estado del auto-ataque: -1 = ninguno, 1 = ataque iniciado
 // desde Player_InputTick (L942), 2 = desde Attack (0x49CBF0 L1323).
 // Lo resetean a -1 InitGame, ReceiveTeleport, CheckGate y varios paths de
 // Attack. Con -1 (el default) el head-tracking hacia el mouse queda ACTIVO,
 // que es el comportamiento normal fuera de combate.
-extern "C" int g_Attacking = -1;
+// IDA `Attacking` vive en 0x00559C58 = DAT_00559c58 (lo escriben InitGame,
+// Player_InputTick L942 y Attack 0x49CBF0).  `g_Attacking` era una copia
+// paralela que nadie escribia; se deja como alias de lectura para no romper
+// declaraciones externas.
+#define g_Attacking DAT_00559c58
 
 // 2026-07-20: el ChatListBox publica su propio hit-test acá (definido en
 // src/UI/ChatListBox.cpp).  Su tick (slot 5 → slot 7) corre ANTES que esta
@@ -58,7 +70,10 @@ extern "C" int g_ChatLB_MouseOnWindow;
 // Resetea y puebla MouseOnWindow al inicio del frame. La llama FUN_004acef0.
 static void MouseOnWindow_Update(void)
 {
-    g_MouseOnWindow = 0;
+    // Sin reset: el valor del frame lo fija `Game_CharSelectTick` (IDA L298,
+    // `MouseOnWindow = MouseY > 431`) y a partir de ahi los productores solo
+    // SUMAN -- este, `sub_4E6550` y el widget de chat.  El reset que habia aca
+    // borraba el aporte de los paneles si corria despues de CheckInventory.
 
     int mx = (int)DAT_083a427c;
     int my = (int)DAT_083a4278;
@@ -182,55 +197,143 @@ static void Party_ToggleAndRefresh(void)
     PartyOpened = 1;
 }
 
-static void HUD_BottomBar_HitTest(void)
+static bool HUD_CloseNpcWindowsIfAny(void)
+{
+    if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
+        const bool wasChaos = (DAT_07eaa11a != 0);
+        if (wasChaos) {
+            // 0x87 ACK performs the close; never expose another NPC panel
+            // while the Chaos interface remains server-active.
+            ChaosBoxRequestClose();
+            return false;
+        }
+        extern void __cdecl CloseInventoryRelatedWindows(void);
+        CloseInventoryRelatedWindows();
+        g_NpcTalkActive = 0;
+        Net_SendNpcTalkClose();
+        DbgLogPublic("HKT CLOSE-NPC (C/G/P panel)");
+    }
+    return true;
+}
+
+
+// Cierra la familia de ventanas de inventario/NPC.  Es la rama de cierre que
+// comparten la tecla I/V y el boton de la barra inferior (IDA Chat_InputTick
+// 0x4B14F0 L2078-2260: TradeOpened -> cancelar trade; WarehouseOpened -> close
+// 0x82; ChaosMixOpened -> close 0x87; si no, InventoryOpened = 0).
+static void HUD_CloseInventoryFamilyFromUI(void)
+{
+    if (DAT_07eaa11a) {              // ChaosMixOpened: el ACK del 0x87 cierra
+        ChaosBoxRequestClose();
+        return;
+    }
+    const bool hadNpcWindow = (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11b ||
+                               DAT_07eaa128 || g_NpcTalkActive);
+    extern void __cdecl CloseInventoryRelatedWindows(void);
+    CloseInventoryRelatedWindows();
+    DAT_07eaa117 = 0;                // InventoryOpened
+    if (hadNpcWindow) {
+        g_NpcTalkActive = 0;
+        Net_SendNpcTalkClose();
+    }
+}
+
+// Botones de la barra inferior.  En el binario esto vive dentro de
+// `Chat_InputTick` (0x4B14F0); aca corre desde Player_InputTick, que se ejecuta
+// antes de la logica de click al mundo.
+//
+// 2026-09-04 -- reescrito contra IDA.  La version anterior era una
+// reimplementacion ("clean reimplementation ... covers the same observable
+// behavior") con tres desviaciones:
+//   * el boton de inventario gateaba con `HUD_IsInventoryFamilyActive()`, que
+//     incluye CharacterOpened -> con el panel de personaje abierto, clickear
+//     inventario lo CERRABA en vez de abrirlo.  En el original los dos paneles
+//     conviven (por eso GetScreenWidth devuelve 260 justo para esa combinacion).
+//   * usaba `DAT_083a413c` (latch de click soltado) con deteccion de flanco
+//     propia; IDA usa `MouseLButtonPush` (DAT_083a4124) y lo CONSUME poniendolo
+//     en 0, que es lo que evita el auto-repeat.
+//   * le faltaban los sonidos 25/28 al cerrar, el `PartyOpened = 0` del boton de
+//     guild, el `GuildOpened = 0; PartyOpened = 0` al abrir inventario, y el
+//     gate de entrada que apaga toda la fila mientras hay un modal abierto.
+//
+// Rects (IDA L1130, L1455, L1775, L2078):
+//   guild      (582..634, 459..477)
+//   party      (348..372, 452..476)
+//   personaje  (379..403, 452..476)
+//   inventario (410..434, 452..476)
+extern "C" void HUD_BottomBarButtons_HitTest(void);
+void HUD_BottomBarButtons_HitTest(void)
 {
     if (DAT_005615c0 != 5) return;          // g_GameState: only in-game
+    if (!IsClickPushed()) return;
 
-    // 2026-04-30: detecta el click por flanco. DAT_083a413c se mantiene en 1 durante
-    // multiple frames until some other handler consumes it. Without
-    // edge-detection my toggle fires every frame while 413c==1, flipping
-    // the panel back and forth and netting to no visible change.
-    static DWORD s_prev413c = 0;
-    DWORD curr413c = DAT_083a413c;
-    bool risingEdge = (s_prev413c == 0) && (curr413c != 0);
-    s_prev413c = curr413c;
+    // Gate de IDA L1116-1128: con un modal o el creador de guild abiertos, la
+    // fila entera de botones no responde.  (`GuildInputEnable` del original no
+    // existe en este arbol; GuildCreatorOpened cubre el mismo estado.)
+    if (DAT_07eaa11b ||                      // TradeOpened
+        DAT_07eaa124 ||                      // GuildCreatorOpened
+        DAT_083a7c24 == 126 ||               // ErrorMessage: expulsar del guild
+        DAT_083a7c24 == 152 ||
+        _g_bEventChipDialogEnable ||
+        DAT_07eaa130 ||                      // g_bServerDivisionEnable
+        HUD_IsQuestPanelOpenRuntime())
+        return;
 
-    if (!risingEdge) return;
+    const int mx = (int)DAT_083a427c;       // 640-space mouse X
+    const int my = (int)DAT_083a4278;       // 480-space mouse Y
 
-    int mx = (int)DAT_083a427c;             // 640-space mouse X
-    int my = (int)DAT_083a4278;             // 480-space mouse Y
-
-    bool consumed = false;
-
-    // Party (348..372, 452..476)
-    if (mx >= 348 && mx < 372 && my >= 452 && my < 476) {
-        Party_ToggleAndRefresh();
-        consumed = true;
-    }
-    // Character (379..403, 452..476)
-    else if (mx >= 379 && mx < 403 && my >= 452 && my < 476) {
-        DAT_07eaa116 = (DAT_07eaa116 == 0) ? (char)1 : (char)0;
-        consumed = true;
-    }
-    // Inventory (410..434, 452..476)
-    else if (mx >= 410 && mx < 434 && my >= 452 && my < 476) {
-        DAT_07eaa117 = HUD_IsInventoryFamilyActive() ? (char)0 : (char)1;
-        consumed = true;
-    }
-    // Guild (582..634, 459..477)
-    else if (mx >= 582 && mx < 634 && my >= 459 && my < 477) {
-        if (DAT_07eaa114 || DAT_07eaa124) {
+    // ── Guild ────────────────────────────────────────────────────────────────
+    if (mx >= 582 && mx < 634 && my >= 459 && my < 477) {
+        DAT_083a4124 = 0;                    // MouseLButtonPush = 0
+        DAT_07eaa115 = 0;                    // PartyOpened = 0
+        if (DAT_07eaa114) {                  // GuildOpened
             DAT_07eaa114 = 0;
-            DAT_07eaa124 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
         } else {
+            if (!HUD_CloseNpcWindowsIfAny()) return;
+            // 0x52 pide Encrypt=0 en HackPacketCheck.txt -> frame C1 plano.
+            const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
+            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
-            DAT_07eaa115 = 0; // party list closes when guild opens
         }
-        consumed = true;
+        return;
     }
 
-    if (consumed) {
-        DAT_083a413c = '\0';                // consume the click
+    // ── Party ────────────────────────────────────────────────────────────────
+    if (mx >= 348 && mx < 372 && my >= 452 && my < 476) {
+        DAT_083a4124 = 0;
+        if (!DAT_07eaa115 && !HUD_CloseNpcWindowsIfAny()) return;
+        Party_ToggleAndRefresh();            // ya hace GuildOpened=0 + sonidos
+        return;
+    }
+
+    // ── Personaje ────────────────────────────────────────────────────────────
+    // IDA no toca ningun otro flag aca: Character convive con Inventory.
+    if (mx >= 379 && mx < 403 && my >= 452 && my < 476) {
+        DAT_083a4124 = 0;
+        if (DAT_07eaa116) {                  // CharacterOpened
+            DAT_07eaa116 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        } else if (HUD_CloseNpcWindowsIfAny()) {
+            DAT_07eaa116 = 1;
+        }
+        return;
+    }
+
+    // ── Inventario ───────────────────────────────────────────────────────────
+    if (mx >= 410 && mx < 434 && my >= 452 && my < 476) {
+        DAT_083a4124 = 0;
+        if (!DAT_07eaa117) {                 // InventoryOpened
+            DAT_07eaa117 = 1;
+            DAT_07eaa114 = 0;                // GuildOpened = 0
+            DAT_07eaa115 = 0;                // PartyOpened = 0
+        } else {
+            HUD_CloseInventoryFamilyFromUI();
+        }
+        return;
     }
 }
 
@@ -384,27 +487,9 @@ static void HUD_HotkeyTick(void)
     // En MU los paneles izquierdos (Character / Shop / Warehouse) son mutuamente
     // excluyentes: abrir C/G/P cierra la ventana del NPC (y avisa al server con
     // el close 0x31, como ya hacen I/V y Escape).
-    auto CloseNpcWindowsIfAny = [&]() -> bool {
-        if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
-            const bool wasChaos = (DAT_07eaa11a != 0);
-            if (wasChaos) {
-                // 0x87 ACK performs the close; never expose another NPC panel
-                // while the Chaos interface remains server-active.
-                ChaosBoxRequestClose();
-                return false;
-            }
-            extern void __cdecl CloseInventoryRelatedWindows(void);
-            CloseInventoryRelatedWindows();
-            g_NpcTalkActive = 0;
-            Net_SendNpcTalkClose();
-            DbgLogPublic("HKT CLOSE-NPC (C/G/P panel)");
-        }
-        return true;
-    };
-
     if (kC) {
         if (DAT_07eaa116) DAT_07eaa116 = 0;
-        else if (CloseNpcWindowsIfAny()) { DAT_07eaa116 = 1; }
+        else if (HUD_CloseNpcWindowsIfAny()) { DAT_07eaa116 = 1; }
     }
     if (kG) {
         if (DAT_07eaa114 || DAT_07eaa124) {
@@ -412,7 +497,7 @@ static void HUD_HotkeyTick(void)
             DAT_07eaa124 = 0;
         }
         else {
-            if (!CloseNpcWindowsIfAny()) return;
+            if (!HUD_CloseNpcWindowsIfAny()) return;
             DAT_07eaa114 = 1;
             DAT_07eaa115 = 0; // close Party
             // 2026-08-15 BUG-FIX (abrir el panel de guild con G desconectaba):
@@ -424,7 +509,7 @@ static void HUD_HotkeyTick(void)
         }
     }
     if (kP) {
-        if (!PartyOpened && !CloseNpcWindowsIfAny()) return;
+        if (!PartyOpened && !HUD_CloseNpcWindowsIfAny()) return;
         Party_ToggleAndRefresh();
     }
     if (kV || kI) {
@@ -440,22 +525,9 @@ static void HUD_HotkeyTick(void)
             // Interface.use=1 → no dejaba abrir otra). Ahora cierra toda la
             // familia de ventanas de NPC y avisa al server con el close 0x31,
             // igual que Escape / click-para-mover.
-            bool hadNpcWindow = (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a ||
-                                 DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive);
-            const bool wasChaos = (DAT_07eaa11a != 0);
-            if (wasChaos) {
-                ChaosBoxRequestClose();
-                return;
-            }
-            extern void __cdecl CloseInventoryRelatedWindows(void);
-            CloseInventoryRelatedWindows();     // limpia Shop/Warehouse/Mix/Trade + pools
-            DAT_07eaa117 = 0;                    // InventoryOpened
             // (NO tocar CharacterOpened: I/V sólo maneja el inventario y las
             //  ventanas de NPC; el panel de Character lo togglea la tecla C.)
-            if (hadNpcWindow) {
-                g_NpcTalkActive = 0;
-                Net_SendNpcTalkClose();
-            }
+            HUD_CloseInventoryFamilyFromUI();
         } else {
             DAT_07eaa117 = 1;
         }
@@ -596,18 +668,29 @@ void __cdecl Player_ProcessInput(void)
     // DAT_07d78094 directo y lo puede dejar pegado, lo que bloquea el movimiento
     // even when the mouse is no longer over a panel. For world input, only
     // sólo debería importar la captura de UI del frame actual.
-    if (DAT_005615c0 == 5) {
-        DAT_07d78094 = (g_MouseOnWindow != 0) ? 1 : 0;
-    }
-    HUD_BottomBar_HitTest();
+    // 2026-09-09: aca habia `DAT_07d78094 = (g_MouseOnWindow != 0) ? 1 : 0;`,
+    // que in-game PISABA el flag que ya habia puesto CheckInventory por los
+    // paneles.  Sintoma: con la Chaos Machine abierta, mover items disparaba el
+    // camino de ataque -> sin mana -> busca pocion -> cartel GlobalText[474]
+    // ("Los items no pueden ser utilizados mientras usas el baul o durante
+    // trade").  Ahora los dos nombres son la misma memoria y no hay que copiar.
+    // 2026-09-04: los botones de la barra inferior se atienden desde
+    // `Chat_InputTick` (0x4B14F0), que es donde los tiene el binario.
 
     // ── Guard: entity visibility / renderable flag ─────────────────────────────
     if (*(char*)((int)DAT_07abf5d8 + 0x2fd) != '\0')
         return;
 
-    // ── Cooldown counter (HashTable obfuscation omitted) ─────────────────────
-    // Original: HashTable manipulates DAT_07e11d1c; effective result is a decrement
-    // then a range check.
+    // ── LoadingWorld cooldown ────────────────────────────────────────────────
+    // IDA 0.97K Player_InputTick @ 0x004ACF9B..0x004AD04D: once per input
+    // tick, LoadingWorld is decremented while positive, then the resulting
+    // value is compared with 30. CheckGate @ 0x004AC140 subsequently requires
+    // this same global to be exactly zero.  Omitting the decrement left the
+    // value written by ReceiveTeleport (30) permanently nonzero, preventing
+    // every subsequent automatic map gate from ever sending C3:06:1C.
+    if (DAT_07e11d1c > 0)
+        --DAT_07e11d1c;
+
     if (DAT_07e11d1c > 0x1e)
         return;
 
@@ -815,18 +898,19 @@ void __cdecl Player_ProcessInput(void)
                         // hace que, con varios items juntos, se levante el que
                         // este bajo el cursor AL LLEGAR y no el que se clickeo:
                         // el nombre flotante decia uno y entraba otro.
+                        //
+                        // 2026-09-11: aca se mandaba el 0x22 directo.  IDA llama
+                        // a Action (0x48D640) cuando el camino termina, y es
+                        // Action la que primero mira si hay lugar: sin lugar
+                        // muestra GlobalText[375] y hace rebotar el item en el
+                        // suelo, sin mandar nada.  Mandandolo directo el server
+                        // contestaba "inventario lleno" y el rebote no salia.
                         int itemSlotIdx = (int)ItemKey;
                         if (itemSlotIdx >= 0 && itemSlotIdx < 1000) {
                             BYTE* itemEnt = (BYTE*)&DAT_07e12840[0]
                                           + (uintptr_t)itemSlotIdx * 0x204;
-                            if (itemEnt[72]) {   // active
-                                unsigned short itemKey = (unsigned short)itemSlotIdx;
-                                BYTE gp[6];
-                                gp[0] = 0xC1; gp[1] = 0x05; gp[2] = 0x22;
-                                gp[3] = (BYTE)((itemKey >> 8) & 0xFF);
-                                gp[4] = (BYTE)(itemKey & 0xFF);
-                                Net_SendSmallPacket(gp, 5);
-                            }
+                            if (itemEnt[72])     // active
+                                Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                         }
                         *(unsigned char*)(ent + 0x2ed) = 0;
                     }
@@ -904,7 +988,11 @@ void __cdecl Player_ProcessInput(void)
     // safety guard no necesite ejecutar (que skipea cuando bClickHeld=1).
     {
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
-        if (ent && ent[0x2ed] == 3 && ent[0x356] == 0) {
+        // 2026-09-04: se agrega la cola 4 (MOVEMENT_OPERATE).  Antes solo cubria
+        // la 3, asi que al clickear una silla LEJOS el heroe caminaba hasta ella
+        // y al llegar no disparaba nunca la accion.  Con la silla al lado si
+        // funcionaba, porque ese camino llama a Action directo.
+        if (ent && (ent[0x2ed] == 3 || ent[0x2ed] == 4) && ent[0x356] == 0) {
             {
                 char dbg[200];
                 wsprintfA(dbg, "PIT SECONDARY TICK (1-shot): 2ed=%d c50=%d ce8=%d 4124=%d 42c4=%d 413c=%d bClickEdge=%d bClickHeld=%d",
@@ -1005,7 +1093,7 @@ void __cdecl Player_ProcessInput(void)
     bool walkerIdle = (((unsigned char*)DAT_07abf5d8)[0x356] == 0);
     // [DIAG TEMP #2c] inputs del gate de debounce (736) en frame con click. REMOVER al cerrar #2.
     if (DAT_083a4124 || DAT_083a42c4 || DAT_083a413c) {
-        bool gatePass = (walkerIdle || DAT_00559bec <= DAT_07e11d28) && DAT_07e11dc0 == '\0';
+        bool gatePass = DAT_00559bec <= DAT_07e11d28 && DAT_07e11dc0 == '\0';
         char dg[200]; wsprintfA(dg,
             "MOVEDEB invOpen=%d walkerIdle=%d 559bec=%d 11d28=%d 11dc0=%d wpcnt=%d -> %s",
             (int)DAT_07eaa117, (int)walkerIdle, (int)DAT_00559bec, (int)DAT_07e11d28,
@@ -1022,7 +1110,7 @@ void __cdecl Player_ProcessInput(void)
     // lock real) y/o encontrar el corruptor. Sin esto, el héroe no caminaba con el
     // inventario cerrado en Devias.
     DAT_07e11dc0 = 0;
-    if ((walkerIdle || DAT_00559bec <= DAT_07e11d28) && DAT_07e11dc0 == '\0') {
+    if ((DAT_00559bec <= DAT_07e11d28) && DAT_07e11dc0 == '\0') {
 
         // BUG-FIX 2026-04-30 (v2): un click = un GroundClick.
         //
@@ -1343,11 +1431,27 @@ void __cdecl Player_ProcessInput(void)
 
         _DAT_07e11d50 = (DAT_05826e08 - _DAT_07e11d4c) * _DAT_00552890;
 
-        // NO resetear MouseUpdateTime acá. En 004ACEF0 el reset va adentro de
-        // las ramas de acción concretas (por ejemplo LABEL_190 / camino fallido),
-        // después de que un click fue aceptado. Resetearlo incondicionalmente en
-        // este punto impedía que el contador de debounce llegara nunca al
-        // umbral de SendMove mientras hubiera una ruta vieja presente.
+        // IDA 0x004ACEF0 LABEL_190 (raw L716-718):
+        //     LABEL_190: v86 = *(_BYTE *)(v34 + 846);   // SafeZone
+        //                MouseUpdateTime = 0;
+        //                if ( !v86 && CheckAttack() ) ...
+        // El reset es INCONDICIONAL y es el punto de merge de todo el bloque de
+        // accion del click (ataque a mob, ground click, operate).  Junto con el
+        // gate `MouseUpdateTimeMax <= MouseUpdateTime` de mas arriba es el
+        // debounce real del original: SendMove (0x00491C40 L128-146) deja
+        // MouseUpdateTimeMax = 0 si la ruta tiene <= 2 waypoints (click corto,
+        // sin throttle) y 3*wp+4 si es mas larga, asi que mientras se camina una
+        // ruta larga no se acepta otro click.
+        //
+        // La nota anterior decia "NO resetear aca"; era incorrecta.  Sin este
+        // reset el contador crecia sin techo, el gate quedaba abierto en todos
+        // los frames y con el boton mantenido el bloque corria dos veces por
+        // tick: el primer paso armaba el ataque (ent[0x2ed]=3 + ruta al mob) y
+        // el segundo caia en el ground click, repathfindeaba al tile del cursor
+        // y pisaba la ruta.  Como el heroe quedaba siempre caminando,
+        // `ent[0x2ed]==3 && ent[0x356]==0` nunca se cumplia, Action nunca corria
+        // y el cursor parpadeaba entre ataque y movimiento.
+        DAT_07e11d28 = 0;
 
         // ── Movement/attack packet for swimming anim ─────────────────────────
         // Si la entidad está viva y CanAct y en movimiento de nado:
@@ -1474,34 +1578,161 @@ void __cdecl Player_ProcessInput(void)
                     int srcX = *(int*)(ent + 0x388);
                     int srcY = *(int*)(ent + 0x38c);
 
-                    // 2026-05-07: simplified — siempre pathfind. Si target ya
-                    // está en range, pathfind devuelve path corto/vacío y el
-                    // walker llega rápido. Si está lejos, walker walks. Antes
-                    // se gateaba por `pathOk = Path_IsLineClear(...)`; si ese
-                    // helper retornaba 0, nada se hacía Y el secondary tick
-                    // disparaba Action() en place sin movimiento.
+                    // IDA 0x004ACEF0 L1027-1131 — tres salidas, no dos:
+                    //
+                    //   if ( !PathFinding2(hx, hy, TargetX, TargetY, c + 852, 0.0) )
+                    //   {                                   // ya adyacente / sin ruta
+                    //       if ( !CheckArrow() ) return;
+                    //       Action(c, c);  goto LABEL_390;
+                    //   }
+                    //   ...
+                    //   if ( v265 >= 136 && v265 < 143 || v265 >= 144 && v265 < 160
+                    //     || v264 >= 128 && v264 < 135 || v264 == 145 )
+                    //       v148 = c;                       // ARMA A DISTANCIA
+                    //   else
+                    //   {
+                    //       v148 = c;
+                    //       if ( *(_BYTE *)(c + 747) != 9 )
+                    //       {
+                    //           SendMove(c, c);             // MELEE: caminar
+                    //           goto LABEL_390;
+                    //       }
+                    //   }
+                    //   if ( !CheckArrow() ) return;
+                    //   Action(v148, v148);                 // dispara desde donde esta
+                    //   goto LABEL_390;
+                    //
+                    // v265/v264 son los mismos tipos de item que lee Action para
+                    // elegir Range (CharacterMachine + 536 / + 604), y los mismos
+                    // del gate de L762.  O sea: con arco o ballesta el original NO
+                    // manda el paquete de movimiento aunque exista ruta -- llama
+                    // Action directo y ahi el gate de distancia usa Range = 6.0.
+                    //
+                    // El port mandaba SIEMPRE a caminar cuando habia ruta, y en la
+                    // rama sin ruta mandaba un move en vez de Action: de ahi que la
+                    // elfa se acercara al cuerpo a cuerpo para poder pegar.
                     unsigned int ok2 = Path_FindRoute(srcX, srcY,
                                                      dstX, dstY,
                                                      ent + 0x354, 0.0f);
-                    if ((char)ok2 != '\0') {
-                        // Pathfind successful → start walker
-                        Combat_SendMovePathPacket((int)ent, (int)ent);
-                    } else {
-                        // Pathfind failed (target unreachable) → send move
-                        // direct to current pos como fallback. Walker stays
-                        // idle, secondary tick chequeará distance al firar
-                        // Action() (case 2 con out-of-range branch).
-                        char chk = Combat_CheckArrowRequirement();
-                        if (chk != '\0') {
-                            Send_MovePacket_Player_legacy_stub();
+                    if ((char)ok2 == 0) {
+                        // Sin ruta (ya esta al lado, o inalcanzable) -> atacar.
+                        if (Combat_CheckArrowRequirement() == 0)
+                            goto end_tick;              // IDA: return (sin ++MouseUpdateTime)
+                        Combat_ProcessQueuedAction((DWORD)(uintptr_t)ent,
+                                                   (DWORD)(uintptr_t)ent);
+                        goto end_tick_inc;
+                    }
+                    {
+                        const char* const CM = (const char*)(uintptr_t)DAT_07cf1ffc;
+                        const int lh = CM ? *(const short*)(CM + 536) : -1;  // IDA: v265
+                        const int rh = CM ? *(const short*)(CM + 604) : -1;  // IDA: v264
+                        const bool bRanged = (lh >= 136 && lh < 143)
+                                          || (lh >= 144 && lh < 160)
+                                          || (rh >= 128 && rh < 135)
+                                          || (rh == 145);
+                        if (!bRanged && *(unsigned char*)(ent + 747) != 9) {
+                            Combat_SendMovePathPacket((int)ent, (int)ent);   // IDA: SendMove
+                            goto end_tick_inc;
                         }
+                    }
+                    if (Combat_CheckArrowRequirement() == 0)
+                        goto end_tick;                  // IDA: return
+                    Combat_ProcessQueuedAction((DWORD)(uintptr_t)ent,
+                                               (DWORD)(uintptr_t)ent);
+                    goto end_tick_inc;
+                }
+
+                // IDA 0x004ACEF0 L719-1132: el bloque `if (!SafeZone && CheckAttack())`
+                // es EXCLUYENTE — todas sus salidas hacen `goto LABEL_390`; nunca cae al
+                // click de NPC / item / suelo que viene despues.
+                //
+                // Nuestro port le agrego `&& bClickEdge` al gate de la rama del mob, asi
+                // que con el boton MANTENIDO esa rama no se tomaba y la ejecucion seguia
+                // hasta el ground click, que repathfindeaba al tile del cursor y mandaba
+                // un move: por eso el heroe caminaba hasta donde estaba el monstruo
+                // despues de matarlo.
+                //
+                // El `|| bHoverActive` de mas arriba es una relajacion del port para que
+                // el ground click funcione cuando CheckAttack() da 0 (sin objetivo), asi
+                // que la exclusividad se aplica SOLO con canAct != 0, que es el gate real
+                // del binario.
+                if ((char)canAct != 0)
+                    goto end_tick_inc;
+            }
+        }
+
+        // ── Alt-target: NPC/item (SelectedNpc != -1) ────────────────────────
+        // 2026-09-04 (b): este bloque estaba DENTRO del guard
+        //     if (SelectedOperate == -1 || (montado && !SafeZone)) { ... }
+        // que envuelve las ramas de NPC / item / click al suelo.  O sea cuando SI
+        // habia objeto seleccionado, el guard saltaba todo el bloque -- incluido el
+        // propio manejo del operate.  Medido en debug.log: en el frame del click
+        // `MOVEHOVER ... c54=23` no lo seguia ni `PIT GroundClick!` ni la sonda.
+        // En IDA los dos son `if` HERMANOS y el de SelectedOperate va primero:
+        //     if ( SelectedOperate != -1 ) { ... }
+        //     if ( SelectedNpc != -1 )     { ... }
+        // Objeto interactuable bajo el cursor (sillas, bancos, barandas,
+        // orbes de Noria).  IDA 0x4ACEF0 L1133-1195.
+        //
+        // 2026-09-04 FIX: este bloque estaba como `else if (bClickEdge)`
+        // del `if (!shiftHeld)` de abajo, o sea SOLO corria con Shift
+        // apretado.  En IDA la cadena es secuencial y SelectedOperate se
+        // chequea ANTES del ramo de movimiento por terreno:
+        //     if ( SelectedOperate != -1 ) { ... goto LABEL_340/LABEL_312; }
+        //     ...
+        //     if ( GetAsyncKeyState(16) >> 8 != 0x80 ) { RenderTerrain(1); ... }
+        // y las dos salidas del bloque saltan al final del tick, o sea
+        // tienen PRECEDENCIA sobre el click al suelo.
+        if (SelectedOperate != -1 && bClickEdge) {
+            // Gate de montura (IDA L1135): solo se opera si NO se va
+            // montado, o si se esta en zona segura.
+            const unsigned short helper = *(unsigned short*)(ent + 0x2b8);
+            const bool mountOk = ((helper != 818 && helper != 819)
+                                  || *(unsigned char*)(ent + 0x34e) != 0);
+            const int iSrc = SelectedOperate;
+            // Bound check (no esta en IDA): SelectedOperate viene del
+            // picker del frame anterior.
+            const int nOper = (int)(sizeof(DAT_083a2370) / 0xc);
+            const int tgtEntityPtr = (iSrc >= 0 && iSrc < nOper)
+                                   ? ((int*)&DAT_083a2378)[iSrc * 3] : 0;
+
+            if (mountOk && tgtEntityPtr != 0) {
+                // 2026-09-04 FIX: TargetX/TargetY salen de la POSICION
+                // DEL OBJETO, no del tile bajo el cursor.  IDA L1138:
+                //     TargetX = (__int64)(o->Position[0] * 0.01);
+                //     TargetY = (__int64)(o->Position[1] * 0.01);
+                DAT_07e016c0 = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x10) * 0.01f);
+                DAT_07e016c4 = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x14) * 0.01f);
+
+                const int attrIdx = FUN_004f6c30((int)DAT_07e016c0, (int)DAT_07e016c4);
+                if (((unsigned char*)&DAT_0838bc70)[attrIdx] < 2
+                    && *(char*)(ent + 0x2ec) == 0)
+                {
+                    *(unsigned char*)(ent + 0x2ed) = 4;   // MOVEMENT_OPERATE
+                    DAT_07db8708  = (int)*(short*)(tgtEntityPtr + 2);
+                    _DAT_07e118e4 = *(DWORD*)(tgtEntityPtr + 0x24);
+
+                    const int srcX = *(int*)(ent + 0x388);
+                    const int srcY = *(int*)(ent + 0x38c);
+                    unsigned int ok = Path_FindRoute(srcX, srcY,
+                                                     DAT_07e016c0, DAT_07e016c4,
+                                                     ent + 0x354, 0.0f);
+                    if ((char)ok == 0) {
+                        // LABEL_312: sin camino (ya estamos al lado) ->
+                        // ejecutar la accion ahora.  El port mandaba otro
+                        // paquete de movimiento y NUNCA llamaba a Action,
+                        // asi que sentarse no se disparaba nunca.
+                        Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
+                        *(unsigned char*)(ent + 0x2ed) = 0;
+                    } else {
+                        // LABEL_340: hay camino -> caminar hasta el objeto.
+                        Combat_SendMovePathPacket((int)ent, (int)ent);
                     }
                     goto end_tick_inc;
                 }
             }
         }
 
-        // ── Alt-target: NPC/item (SelectedNpc != -1) ────────────────────────
         if (SelectedOperate == -1
             || ((*(short*)(ent + 0x2b8) == 0x332 || *(short*)(ent + 0x2b8) == 0x333)
                 && *(char*)(ent + 0x34e) == '\0'))
@@ -1589,14 +1820,11 @@ void __cdecl Player_ProcessInput(void)
                     int adx = srcX - dstX; if (adx < 0) adx = -adx;
                     int ady = srcY - dstY; if (ady < 0) ady = -ady;
                     if (adx <= 1 && ady <= 1) {
-                        if (itemEnt[72]) {   // active
-                            unsigned short itemKey = (unsigned short)itemSlotIdx;
-                            BYTE gp[6];
-                            gp[0] = 0xC1; gp[1] = 0x05; gp[2] = 0x22;
-                            gp[3] = (BYTE)((itemKey >> 8) & 0xFF);
-                            gp[4] = (BYTE)(itemKey & 0xFF);
-                            Net_SendSmallPacket(gp, 5);
-                        }
+                        // Igual que al llegar caminando: el pickup lo resuelve
+                        // Action (IDA LABEL_312 cuando PathFinding no devuelve
+                        // camino), que es quien chequea el inventario lleno.
+                        if (itemEnt[72])     // active
+                            Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                         *(unsigned char*)(ent + 0x2ed) = 0;
                         goto end_tick_inc;
                     }
@@ -1692,6 +1920,29 @@ void __cdecl Player_ProcessInput(void)
                     goto end_tick_inc;
                 }
                 extern void __cdecl CloseInventoryRelatedWindows(void);
+                // 2026-09-02 (sonido de "abre UI" al hablarle al guardia):
+                // `g_NpcTalkActive` es una invencion del port -- lo prende
+                // SendNpcTalkRequest para CUALQUIER NPC, incluidos los que no
+                // abren ninguna ventana (guardia, quest, Golden Archer).  Con
+                // el guardia el server contesta solo un `0x01 ChatTarget`
+                // (NpcTalk.cpp:223 NpcGuard) y ningun 0x30, asi que no queda
+                // nada abierto; el click siguiente entraba igual a este bloque
+                // y llamaba CloseInventoryRelatedWindows, que termina en
+                // `PlayBuffer(25); PlayBuffer(28);` (eso SI es fiel: IDA
+                // 0x4CBA60 los tiene al final).  O sea sonaba el cierre de una
+                // ventana que nunca se abrio.
+                //
+                // Si ninguna ventana real esta abierta, se libera el
+                // `Interface.use` del server con el 0x31 y se sale, sin tocar
+                // los pools ni reproducir el sonido.
+                const bool anyWindowOpen = (DAT_07eaa118 || DAT_07eaa119 ||
+                                            DAT_07eaa11a || DAT_07eaa11b ||
+                                            DAT_07eaa128);
+                if (!anyWindowOpen) {
+                    g_NpcTalkActive = 0;
+                    Net_SendNpcTalkClose();
+                    goto end_tick_inc;
+                }
                 CloseInventoryRelatedWindows();          // limpia Shop/Warehouse/Mix/Trade + pools
                 DAT_07eaa117 = 0;                         // InventoryOpened
                 g_NpcTalkActive = 0;
@@ -1821,47 +2072,23 @@ void __cdecl Player_ProcessInput(void)
                     }
                 }
             }
-        } else if (bClickEdge) {
-            // 2026-05-06: bClickEdge en vez de bHoverActive (mismo fix anti
-            // spurious-from-stale-latch).
-            // ── Special object target (SelectedOperate != -1 and char-class conditions) ──
-            // BUG-FIX 2026-04-28: gate por click real + coords del tile.
-            DAT_07e016c0 = (DWORD)(int)*(float*)&DAT_080ab288;
-            DAT_07e016c4 = (DWORD)(int)*(float*)&DAT_080ab28c;
-
-            // FUN_004f6c30 devuelve el atributo de terreno en la grilla calculada
-            int attrIdx = FUN_004f6c30((int)DAT_07e016c0, (int)DAT_07e016c4);
-            int iSrc = SelectedOperate;
-
-            if (((unsigned char*)&DAT_0838bc70)[attrIdx] < 2
-                && *(char*)(ent + 0x2ec) == '\0')
-            {
-                *(unsigned char*)(ent + 0x2ed) = 4;
-
-                // Busca el tipo de entidad y el facing en la tabla de objetos especiales
-                // Stride de la tabla: 3 int por entrada, en DAT_083a2378
-                int tgtEntityPtr = ((int*)&DAT_083a2378)[iSrc * 3];
-                DAT_07db8708  = (int)*(short*)(tgtEntityPtr + 2);
-                _DAT_07e118e4 = *(DWORD*)(tgtEntityPtr + 0x24);
-
-                int srcX = *(int*)(ent + 0x388);
-                int srcY = *(int*)(ent + 0x38c);
-
-                unsigned int ok = Path_FindRoute(srcX, (int)(float)srcY,
-                                                DAT_07e016c0, DAT_07e016c4,
-                                                ent + 0x354, 0.0f);
-                if ((char)ok == '\0') {
-                    Send_MovePacket_Player_legacy_stub();
-                } else {
-                    Combat_SendMovePathPacket((int)ent, (int)ent);
                 }
-            }
-        }
-    } else {
-        // Cooldown not ready: clear hover flags
-        DAT_083a4124 = '\0';
-        DAT_083a42c4 = '\0';
     }
+    // 2026-09-02 FIX (hay que clickear varias veces para caminar): aca habia
+    // un `else` que, cuando el gate de debounce bloqueaba, hacia
+    //     MouseLButtonPush = 0; MouseLButton = 0;
+    //
+    // IDA Player_InputTick (0x4ACEF0 L586-588) NO borra nada en ese camino:
+    //     if ( MouseUpdateTime < MouseUpdateTimeMax || byte_7E11DC0 )
+    //         goto LABEL_390;            // == ++MouseUpdateTime; salir
+    // Los dos flags solo se limpian en el anti-AFK de L607-611 (boton
+    // sostenido 3600 s). O sea el click PENDIENTE sobrevive al bloqueo y lo
+    // procesa el primer tick que pase el gate.
+    //
+    // Al borrarlos se perdia el click: con el boton sostenido, el primer tick
+    // bloqueado mataba MouseLButton y el caminar continuo se cortaba; con un
+    // click corto se perdia el pulso entero y habia que volver a clickear.
+    // Medido en debug.log: 161 WM_LBUTTONDOWN -> solo 57 GroundClick.
 
 end_tick_inc:
     DAT_07e11d28 = DAT_07e11d28 + 1;

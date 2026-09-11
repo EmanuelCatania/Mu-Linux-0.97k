@@ -12,33 +12,41 @@ void __cdecl FUN_00440d30(void) { glPushMatrix(); }
 // Iterates bone meshes; for each vertex in bone 'b', spawns kill/death particle effects.
 void __cdecl FUN_00441be0(void *model, int param_1, int param_2)
 {
+    // 2026-09-04 -- BUG-FIX: el port recorria TODAS las mallas del modelo.
+    // IDA (sub_441BE0) trabaja sobre UNA sola, la de indice `a2`:
+    //     result = this[10] + 40 * a2;        // this + 0x28 = array de mallas
+    //     if ( *(__int16 *)(result + 10) > 0 ) ...
+    // y el mismo `a2` es el que elige el bloque de 15000 vertices del pool
+    // BoneVertex.  Los dos call sites pasan a2 = 0.  Con el bucle sobre todas
+    // las mallas se spawneaban varias veces mas efectos de los que corresponde.
     char *this_ = (char*)model;
-    if (*(short*)(this_ + 0x24) == 0) return;
-    float scale[6] = { 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f };
-    int meshCount = *(short*)(this_ + 0x24);
-    int iVar3 = param_1;
-    for (int local_14 = 0; local_14 < meshCount; local_14++) {
-        int iVar1 = *(int*)(this_ + 0x28) + local_14 * 0x28;
-        int meshVerts = *(short*)(iVar1 + 10);
-        if (meshVerts <= 0) continue;
-        for (int local_20 = 0; local_20 < meshVerts; local_20++) {
-            short *psVar6 = (short*)(local_20 * 0x24 + *(int*)(iVar1 + 0x1c));
-            if ((char)*psVar6 <= 0) continue;
-            for (int iVar7 = 0; iVar7 < (char)*psVar6; iVar7++) {
-                int vertIdx = psVar6[iVar7 + 1];
-                float *vpos = (float*)((char*)(char*)&DAT_0584621c + (vertIdx + iVar3 * 15000) * 3 * 4);
-                if (param_2 == 0x104) {
-                    if (_rand() % 2 == 0)
-                        Effect_Create(0x105, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
-                    if (_rand() % 10 == 0)
-                        Effect_Create(0x104, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
-                } else if (param_2 == 0x106) {
-                    scale[0] = scale[1] = scale[2] = 0.2f;
-                    if (_rand() % 12 == 0)
-                        Effect_Create(0x107, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
-                    if (_rand() % 50 == 0)
-                        Effect_Create(0x106, vpos, scale+3, scale, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
-                }
+    const int meshIdx = param_1;
+    if (meshIdx < 0 || meshIdx >= *(short*)(this_ + 0x24)) return;
+
+    char *mesh = (char*)(*(int*)(this_ + 0x28) + meshIdx * 0x28);
+    const int triCount = *(short*)(mesh + 10);
+    if (triCount <= 0) return;
+
+    float Angle[3] = { 0.0f, 0.0f, 0.0f };
+    float Light[3] = { 1.0f, 1.0f, 1.0f };
+
+    for (int tri = 0; tri < triCount; tri++) {
+        short *psVar6 = (short*)(*(int*)(mesh + 0x1c) + tri * 36);
+        const int nIdx = (int)(char)*psVar6;
+        for (int k = 0; k < nIdx; k++) {
+            const int vertIdx = psVar6[k + 1];
+            float *vpos = (float*)(g_BoneVertexBuf + 12 * (vertIdx + 15000 * meshIdx));
+            if (param_2 == 260) {
+                if (_rand() % 2 == 0)
+                    Effect_Create(261, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                if (_rand() % 10 == 0)
+                    Effect_Create(260, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+            } else if (param_2 == 262) {
+                Light[0] = Light[1] = Light[2] = 0.2f;
+                if (_rand() % 12 == 0)
+                    Effect_Create(263, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                if (_rand() % 50 == 0)
+                    Effect_Create(262, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
             }
         }
     }

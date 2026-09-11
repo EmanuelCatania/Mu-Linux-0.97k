@@ -10,7 +10,12 @@
 //                   los unicos writers son CreateCharacterPointer (= -1, o sea 0xFF
 //                   para el heroe) y CreateMonster (= Type).  El `!= 77` de mas
 //                   abajo compara contra un TIPO, no contra la letra 'M'.
-//   +0x301  byte  is_pvp              — target_id >> 15
+//   +0x301  byte  SkillSuccess        — bit 15 del target del paquete.  NO es
+//                   'is_pvp': el server lo pone con `target[0] |= type * 0x80`
+//                   donde `type` es el flag de EXITO del skill
+//                   (CSkillManager::GCSkillAttackSend).  IDA 0x42BCA0 hace
+//                   `Success = TargetKey >> 15; sc->SkillSuccess = Success != 0`
+//                   y MU 5.2 (WSclient.cpp L3642) lo escribe igual.
 //   +0x303  byte  combo_counter       — incremented on skill_type 0x17
 //   +0x2F4  byte  teleport_state      — 2 = teleporting
 //   +0x2F5  byte  is_skill_active     — set to 1 on most skill hits (common tail)
@@ -131,7 +136,8 @@ void PacketHandler_0x19(BYTE* pkt)
 
     int caster_id   = caster_raw & 0x7FFF;
     int target_id   = target_raw & 0x7FFF;
-    int is_pvp      = (target_raw >> 15) & 1;
+    // Bit 15 del target = flag de EXITO del skill (ver la nota de +0x301 arriba).
+    int skill_ok    = (target_raw >> 15) & 1;
 
     int caster_idx  = Entity_FindById(caster_id);
     int target_idx  = Entity_FindById(target_id);
@@ -140,7 +146,7 @@ void PacketHandler_0x19(BYTE* pkt)
     if (skill_type == 3 || skill_type == 7) {
         char trace[160];
         wsprintfA(trace, "SKILL19 RX skill=%d casterKey=%d caster=%d targetKey=%d target=%d pvp=%d",
-                  skill_type, caster_id, caster_idx, target_id, target_idx, is_pvp);
+                  skill_type, caster_id, caster_idx, target_id, target_idx, skill_ok);
         DbgLogPublic(trace);
     }
 
@@ -148,6 +154,11 @@ void PacketHandler_0x19(BYTE* pkt)
         return; // 0042BCA0 only enters its state/animation path with a resolved target.
 
     BYTE* caster = ENTITY(caster_idx);
+
+    // IDA 0x42BCA0 L115: `AttackPlayer = Index` (el slot del CASTER), justo
+    // tras resolver el target.  Lo lee ReceiveAttackDamage para orientar el
+    // destello de bloqueo.
+    AttackPlayer = caster_idx;
 
     // 0042BCA0 LABEL_81: before its per-skill animation switch, the original
     // records the received skill in the character's visual-effect queue.  The
@@ -157,10 +168,16 @@ void PacketHandler_0x19(BYTE* pkt)
     // effect.
     *(BYTE*) (caster + 770) = (BYTE)skill_type;
 
-    // 0042BCA0 writes caster+769 as the inverse of the target PvP bit.
-    // Cases 0x33/0x37 use this as their normal/PvE-target gate.
     *(short*)(caster + 0x310) = (short)target_idx;
-    *(BYTE*) (caster + 0x301) = (BYTE)(is_pvp == 0);
+    // 2026-09-04 FIX: aca habia `(BYTE)(is_pvp == 0)`, o sea el valor INVERTIDO.
+    // IDA 0x42BCA0 escribe `sc->SkillSuccess = (TargetKey >> 15) != 0`, y el
+    // server MuEmu pone ese bit justamente cuando el skill tuvo exito
+    // (`pMsg.target[0] = SET_NUMBERHB(idx) | (type * 0x80)`).
+    // Consecuencia: los tres consumidores del flag quedaban al reves --
+    // el aura de Greater Defense (MoveCharacter case 27 -> 5x joint 266/sub4)
+    // no se creaba nunca, ni el buff de Greater Damage (case 28), ni el
+    // congelamiento del Ice Arrow (case 0x33) ni el de Lightning (0x37).
+    *(BYTE*) (caster + 0x301) = (BYTE)(skill_ok != 0);
 
     if (skill_type == 3 || skill_type == 7) {
         char trace[128];
@@ -440,72 +457,18 @@ common_tail:
 //   g_CharData[+0x10] += exp_gained
 //   FUN_00480620(exp_gained)  → floating "+EXP" overlay
 // ============================================================
-void PacketHandler_0x16(BYTE* pkt)
-{
-    // --- XOR ACK block (lines 0-480) omitted ---
-
-    int caster_raw = (pkt[3] << 8) | pkt[4];
-    int target_raw = (pkt[5] << 8) | pkt[6];
-
-    int caster_id  = caster_raw & 0x7FFF;
-    int target_id  = target_raw & 0x7FFF;
-    int teleport_start = !(pkt[3] & 0x80);  // 0=TeleportEnd, 1=TeleportStart
-
-    int caster_idx = Entity_FindById(caster_id);
-    int target_idx = Entity_FindById(target_id);
-
-    if (caster_idx >= 400)
-        return;
-
-    BYTE* caster = ENTITY(caster_idx);
-
-    // Orange color constant used for kill flash: {1.0f, 0.6f, 0.0f}
-    // (stored in FPU literals inside the function, referenced for color override)
-
-    if (teleport_start)
-    {
-        // Begin teleport animation
-        // entity[+0x2F4] = 2 → teleporting state
-        *(BYTE*)(caster + 0x2F4) = 2;
-        *(short*)(caster + 0x2F6) = (short)target_id;
-        *(short*)(caster + 0x310) = (short)target_idx;
-
-        if (target_idx < 400)
-        {
-            BYTE* target_ent = ENTITY(target_idx);
-            float* target_pos = (float*)(target_ent + 0x10);
-            // FUN_004792c0(target_pos, ?, ?, ?) — TeleportAnimation at target world pos
-            Entity_TeleportAnim(target_pos, 0.0f, 0.0f, 0.0f);
-        }
-    }
-    else
-    {
-        // Teleport end — snap entity to destination
-        Entity_TeleportEnd(caster_idx);
-    }
-
-    // Mark target as dead (kill confirm)
-    if (target_idx < 400)
-    {
-        BYTE* target = ENTITY(target_idx);
-        *(BYTE*)(target + 0x2FD) = 1;  // is_dead = 1
-        *(BYTE*)(target + 0x2EC) = 0;  // clear some state
-    }
-
-    // -------------------------------------------------------
-    // EXP gain decode (for local player kill confirm)
-    // g_CharData XOR-decoding block produces iStack_d94 = exp_gained
-    // -------------------------------------------------------
-    // The function re-encodes g_CharData with the same 32-byte XOR key (see WinMain.cpp)
-    // then adds the decoded EXP:
-    //
-    //   int exp_gained = <decoded from pkt[7..10]>;
-    //   *(int*)(g_CharData + 0x10) += exp_gained;    // total EXP counter
-    //
-    // If exp_gained > 0, show floating text overlay:
-    //   if (local_d90 > 0)
-    //       UI_ShowExpGainOverlay(exp_gained);        // FUN_00480620
-
-    // (Exact XOR decode of pkt[7..10] uses the same 32-byte key as login packet —
-    //  see WinMain.cpp Net_Connect for key bytes {0xe7,0x6d,0x3a,...,0xe8,0x56})
-}
+// CODIGO MUERTO desde 2026-09-02 — sin callers.
+//
+// Esta funcion NO era un port de 0x0042DB60.  Interpretaba el 0x16 como
+// "teleport begin/end + kill confirm", que no existe en el binario: el raw
+// `0042DB60_ReceiveDieExp.c` es la variante chica del 0x9C (Key/Exp/Damage en
+// +3..+8, SetPlayerDie o esferas de EXP, y el aviso GlobalText[486]).
+//
+// Era ademas una landmine: al final hacia `*(BYTE*)(target + 0x2FD) = 1` sobre
+// un indice sin validar por abajo, y +0x2FD es el dead_flag — el mismo campo
+// que usa como filtro de "vivo" el barrido de sub_45FEC0 (IDA L168 `!v16[18]`),
+// o sea marcaba entidades vivas como muertas y las volvia invisibles para el
+// reporte de blancos del 0x1D.
+//
+// El port fiel vive ahora inline en `Net_Process.cpp`, case 0x16.
+// (MuEmu no manda este opcode: usa el 0x9C / PMSG_REWARD_EXPERIENCE_SEND.)

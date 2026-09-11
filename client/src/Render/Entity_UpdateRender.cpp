@@ -96,6 +96,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
 
     // ── 1. Setup ─────────────────────────────────────────────────────────────
     short sVar2    = *(short *)((int)puVar13 + 2);        // entity_type
+
     int  entity_type = (int)sVar2;
     void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
 
@@ -188,12 +189,32 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // Skill channel active — beam/barrier widget path
         unsigned int uVar11 = (unsigned int)(size_t)FUN_004faa70((int)puVar13, '\x01', (int)param_3);
         if (param_1[0x61] == 0) {
+            // 2026-09-04 FIX (crash 0xC0000005 param1=0xCDCDCDD5 al romper la
+            // puerta de Blood Castle).  IDA 0x456770 L308-323:
+            //     v9 = (float *)(block + 4);
+            //     *(_DWORD *)block = 1;                  // prefijo de count
+            //     eh_vector_ctor(block + 4, 0x60, 1, sub_4093A0, sub_4093C0);
+            //     sub_4093E0(v9, ...); sub_409250(v9, ...); sub_409250(v9, ...);
+            //     *(_DWORD *)(c + 388) = v9;             // guarda el OBJETO
+            //
+            // El port construia en `block + 4` (bien) pero guardaba `block` en
+            // c+388.  El tick de la tela (`sub_408CB0`) arranca con una llamada
+            // por vtable -- `(*(void(**)(_DWORD*))(*a1 + 8))(a1)` -- asi que leia
+            // el prefijo de count como si fuera la vtable.  Sin inicializar, el
+            // CRT debug lo deja en 0xCDCDCDCD y `*(0xCDCDCDCD + 8)` da
+            // 0xCDCDCDD5, que es exactamente el param1 del crash.
+            //
+            // Los tipos de monstruo de este case (+0x2EB: 89, 95, 112, 118, 124,
+            // 130, 136) incluyen el 130 = "Magic Skeleton", que es el que aparece
+            // al caer la puerta del evento.
             void *puVar8 = operator_new(100);
-            FUN_00541ec1((char *)puVar8 + 4, 0x60, 1, (void *)FUN_004093a0);
-            FUN_004093e0((char *)puVar8 + 4, (int)param_1, (short *)2, 0x12, 0x400, -1);
-            FUN_00409250((char *)puVar8 + 4, 0.0f,   0.0f, 0.0f, 50.0f, 18);
-            FUN_00409250((char *)puVar8 + 4, 0.0f, -20.0f, 0.0f, 30.0f, 18);
-            param_1[0x61] = (int)puVar8;
+            *(int *)puVar8 = 1;                    // count del eh vector ctor
+            void *clothObj = (char *)puVar8 + 4;   // el objeto vive en +4
+            FUN_00541ec1(clothObj, 0x60, 1, (void *)FUN_004093a0);
+            FUN_004093e0(clothObj, (int)param_1, (short *)2, 0x12, 0x400, -1);
+            FUN_00409250(clothObj, 0.0f,   0.0f, 0.0f, 50.0f, 18);
+            FUN_00409250(clothObj, 0.0f, -20.0f, 0.0f, 30.0f, 18);
+            param_1[0x61] = (int)clothObj;
             *(char *)(param_1 + 0x60) = 1;
         }
         int *piVar16 = (int *)param_1[0x61];
@@ -214,21 +235,27 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         FUN_004fc030((unsigned char *)puVar13, 1, (int)param_3, cVar6);
         break;
     }
-
-    // ── 3. LOD / sparkle (distance check) ───────────────────────────────────
-    // entity_type != 0x186, not channel state, DAT_0055a7ac != 10,
-    // distance (puVar13[0x5a]) >= _DAT_005528b8
-    {
-        float fDist = *(float *)(puVar13 + 0x5a);
-        if ((entity_type != 0x186) && (DAT_0055a7ac != 10) && (fDist >= _DAT_005528b8)) {
-            // LOD distance update + distant sparkle
-            // (FUN_00505a10 / FUN_004f8bb0 — see Entity_DrawAt.cpp)
-            if ((DAT_0055a7ac > 10) && (DAT_0055a7ac < 17) && (fDist < *(float *)(puVar13 + 6)))
-                *(float *)(puVar13 + 6) = fDist;
-            GL_SetBlendAdditive();
-            // Billboard sparkle at bone 0x13 when entering/leaving range
-        }
-    }
+    // -- 3. (bloque removido 2026-09-04) --------------------------------------
+    // Aca habia una "LOD / sparkle (distance check)" que NO existe en IDA: era
+    // una copia mal leida del gate del render de cuerpo (RenderCharacter
+    // L346-380), que ya esta portado completo mas abajo en la seccion 7a.
+    // Confundia dos campos del objeto:
+    //     puVar13 + 0x5a  = +360 -> NO es "distancia en pantalla", es el ALPHA
+    //                       (por eso el umbral era _DAT_005528b8 = 0.3, que es
+    //                       el `alpha >= 0.3` de IDA)
+    //     puVar13 + 6     = +24  -> Position.Z
+    // y hacia `if (World 11..16 && alpha < Z) Z = alpha;`, o sea clavaba la Z de
+    // TODA entidad no-jugador de Blood Castle en ~1.0 -- los monstruos y el
+    // Archangel quedaban por debajo del piso.  El heroe no, porque el gate
+    // `entity_type != 390` lo excluye: de ahi que se viera al pj sobre el puente
+    // y a todo lo demas hundido.
+    // Lo que IDA hace en ese punto es
+    //     if (World 11..16 && o->m_bActionStart && c->Dead) {
+    //         th = RequestTerrainHeight(o->Position[0], o->Position[1]);
+    //         if (th < o->Position[2]) o->Position[2] = th;
+    //     }
+    // que es exactamente lo que ya hace la seccion 7a.  Ademas llamaba
+    // `GL_SetBlendAdditive()` suelto para cada entidad, ensuciando el estado GL.
 
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
     BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
@@ -441,6 +468,36 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
         FUN_00455430(0.0f, 0.0f, 0.0f, (int)param_1, (int)psVar1,
                      (int)*psVar1, '\0', 0, '\x01', '\x01', 0);
+    }
+
+    // ── 5-bis. Sombra del jugador (RenderPartObject con el modelo 391) ───────
+    // IDA RenderCharacter L750-772.  Faltaba entera: los jugadores se dibujaban
+    // sin sombra.  El gate salteando la sombra cuando se va montado en Uniria
+    // (818) o Dinorant (819) fuera de zona segura es del binario, no una
+    // simplificacion nuestra.
+    {
+        char *o = (char *)puVar13;
+        if (*(float *)(o + 360) >= 0.5f && DAT_0055a7ac != 10 &&
+            *(short *)(o + 2) == 390)
+        {
+            const unsigned short helper = *(unsigned short *)((char *)param_1 + 696);
+            if (helper < 818 || helper > 819 || *((char *)param_1 + 846) != 0) {
+                // Blood Castle (11..16): si esta muerto sobre el puente, la
+                // sombra se pega al terreno en vez de quedar flotando.
+                if (DAT_0055a7ac >= 11 && DAT_0055a7ac <= 16 &&
+                    *(BYTE *)(o + 405) != 0 && *((BYTE *)param_1 + 765) != 0)
+                {
+                    float th = FUN_004f7500(*(float *)(o + 16), *(float *)(o + 20));
+                    if (th < *(float *)(o + 24)) *(float *)(o + 24) = th;
+                }
+                const float shadowAlpha = *(float *)(o + 360);
+                *(BYTE *)(o + 140) = 1;              // EnableShadow
+                FUN_00505a10((int)param_1, 391, 0,
+                             (float *)((char *)param_1 + 800), shadowAlpha,
+                             0, 0, '\0', 0, '\x01', 0, 2);
+                *(BYTE *)(o + 140) = 0;
+            }
+        }
     }
 
     // ── 6. Scale / color from zone param + entity sub-state ──────────────────
@@ -683,12 +740,21 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         //          !c+0x34E && !(c+747 in special-skill ranges)
         bool Bind = false;
         if (DAT_005615c0 == 5) {  // in-game
-            int World = (int)DAT_0055a7ac;
-            if (World >= 10 && World <= 16) {
+            const int __world = (int)DAT_0055a7ac;   // `World` es macro de DAT_0055a7ac: nombrar
+                                                    // la local `World` la volvia una
+                                                    // auto-inicializacion con basura.
+            if (__world >= 10 && __world <= 16) {
                 BYTE anim = *(BYTE*)((int)puVar13 + 0x105);
                 if ((anim < 93 || anim > 124) && *(char*)((int)param_1 + 0x34E) == 0) {
                     Bind = 1;
                 }
+            }
+            // IDA L1162-1165 (LABEL_272): en Blood Castle el arma NUNCA va a la
+            // espalda -- `if (World >= 11 && World <= 16) Bind = 0;`.  Faltaba, y
+            // por eso el arma del evento (EtcPart) quedaba atrapada dentro de la
+            // rama de "arma en la espalda" en vez de renderizarse.
+            if (__world >= 11 && __world <= 16) {
+                Bind = 0;
             }
         }
 
@@ -742,18 +808,33 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 param_1[0xaa] = (int)local_68;
             }
 
-            // Secondary weapon override (param_1[0xba] = secondary item type, Blood Castle)
-            if ((DAT_0055a7ac > 10) && (DAT_0055a7ac < 0x11) &&
-                (*(char *)(param_1 + 0xba) != '\0')) {
-                *(BYTE *)(param_1 + 0xa9) = 0x2f;
-                BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-                param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-                char cType = *(char *)(param_1 + 0xba);
-                int iSecType = (cType == '\x01') ? 0x23a :
-                               (cType == '\x02') ? 0x1a3 :
-                               (cType == '\x03') ? 0x222 : 0;
+        }
+
+        // -- Arma del evento de Blood Castle sobre la espalda (EtcPart) -------
+        // IDA LABEL_308: `if (World >= 11 && World <= 16 && c->EtcPart)`, con
+        //     EtcPart 1 -> 570 (Staff)   2 -> 419 (Sword)   3 -> 546 (Bow)
+        // y LinkBone 47.  `c->EtcPart` es el byte +0x2E8 (= param_1[0xba] con
+        // param_1 como int*), que escribe el handler del 0x9B con el
+        // EventItemLevel que manda el server.
+        //
+        // 2026-09-07: estaba DENTRO de `if (Bind)`, o sea sujeto a la rama de
+        // "arma en la espalda".  En IDA vive en la rama contraria (`!Back ||
+        // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
+        // siempre se alcanza.  Sintoma: el arco de la estatua no se dibujaba en
+        // la espalda al levantarlo.  Verificado en el log del cliente: el server
+        // manda `0x9B ... owner=9001 lvl=3` (3 = Bow) durante 80 paquetes.
+        if ((DAT_0055a7ac >= 11) && (DAT_0055a7ac <= 16) &&
+            (*(char *)(param_1 + 0xba) != 0)) {
+            *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
+            BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
+            param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
+            char cType = *(char *)(param_1 + 0xba);
+            int iSecType = (cType == 1) ? 0x23a :   // 570 Staff
+                           (cType == 2) ? 0x1a3 :   // 419 Sword
+                           (cType == 3) ? 0x222 : 0; // 546 Bow
+            if (iSecType != 0) {
                 FUN_00455430(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                             iSecType, '\0', 0, '\x01', '\x01', 0);
+                             iSecType, 0, 0, 1, 1, 0);
             }
         }
 

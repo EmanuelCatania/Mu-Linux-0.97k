@@ -14,15 +14,15 @@ void __cdecl Model_LoadItemMeshes(void)
     // ── Korean SMD item models ────────────────────────────────────────────────
     if (DAT_0055a7c4 == '\0') {
         // Swords (slots 0x190-0x1a0, numbered prefix)
-        for (int i = 0x190; i-0x18e < 3; i++)
+        for (int i = 0x190; i-0x190 < 3; i++)
             FUN_00506050((int)i, "Data2\\Item\\Sword\\Sword", i - 0x18e);
         FUN_00505e90((int)0x193, "Data2\\Item\\Sword\\", "sword05.smd");
-        for (int i = 0x194; i-0x18e < 0x10; i++)
+        for (int i = 0x194; i-0x194 < 0x10; i++)
             FUN_00506050((int)i, "Data2\\Item\\Sword\\Sword", i - 0x18e);
         FUN_00505e90((int)0x1a0, "Data2\\Item\\", "\xB5\xE6\xB0\xFC.smd"); // µæ°ü.smd
 
         // Axes (0x1b0-0x1b9)
-        for (int i = 0x1b0; i-0x1af < 9; i++)
+        for (int i = 0x1b0; i-0x1b0 < 9; i++)
             FUN_00506050((int)i, "Data2\\Item\\Axe\\axe", i - 0x1ae);
 
         // Maces (0x1d0-0x1d6)
@@ -35,19 +35,19 @@ void __cdecl Model_LoadItemMeshes(void)
         FUN_00505e90((int)0x1d6, "Data2\\Item\\",      "\xB5\xE6\xB0\xFC\xB5\xBF.smd");  // µæ°üµ¿
 
         // Spears (0x1f0-0x1f9)
-        for (int i = 0x1f0; i-0x1ef < 5; i++)
+        for (int i = 0x1f0; i-0x1f0 < 5; i++)
             FUN_00506050((int)i, "Data2\\Item\\Spear\\Spear", i - 0x1ef);
-        for (int i = 0x1f5; i-0x7d < 4; i++)
+        for (int i = 0x1f5; i-0x1f5 < 4; i++)
             FUN_00506050((int)i, "Data2\\Item\\Spear\\Polearms", i - 499);
         FUN_00505e90((int)0x1f9, "Data2\\Item\\Spear\\", "\xC3\xA3\xC0\xDC.smd"); // ÃãÀÜ
 
         // Shields (0x250-0x25e)
-        for (int i = 0x250; i-0x24f < 0xe; i++)
+        for (int i = 0x250; i-0x250 < 0xe; i++)
             FUN_00506050((int)i, "Data2\\Item\\Shield\\Shield", i - 0x24f);
         FUN_00505e90((int)0x25e, "Data2\\Item\\Shield\\", "\xBD\xBA\xC5\xC0\xBD\xBA.smd"); // ½ºÅÀ½º
 
         // Staffs/Wands (0x230-0x238)
-        for (int i = 0x230; i-0x22f < 5; i++)
+        for (int i = 0x230; i-0x230 < 5; i++)
             FUN_00506050((int)i, "Data2\\Item\\Staff\\wand", i - 0x22e);
         FUN_00505e90((int)0x235, "Data2\\Item\\staff\\", "\xBD\xBA\xC5\xC0\xBD\xBA.smd");
         FUN_00505e90((int)0x236, "Data2\\Item\\staff\\", "\xBD\xBA\xC5\xC0\xBD\xBA.smd");
@@ -79,18 +79,18 @@ void __cdecl Model_LoadItemMeshes(void)
         FUN_00505e90((int)0x332, "Data2\\Item\\Helper\\", "\xBD\xBA\xC5\xC0.smd");
 
         // Rings (0x338-0x339)
-        for (int i = 0x338; i-0x337 < 2; i++)
+        for (int i = 0x338; i-0x338 < 2; i++)
             FUN_00506050((int)i, "Data2\\Item\\Helper\\Ring", i - 0x337);
 
         // Necklaces (0x33c-0x33d)
-        for (int i = 0x33c; i-0x33b < 2; i++)
+        for (int i = 0x33c; i-0x33c < 2; i++)
             FUN_00506050((int)i, "Data2\\Item\\Helper\\Necklace", i - 0x33b);
 
         // Potions / consumables (0x350-0x360+)
         FUN_00505e90((int)0x350, "Data2\\Item\\Etc\\", "Apple.smd");
         for (int i = 0x351; (int)(i-0xd4) < 3; i++)
             FUN_00506050((int)i, "Data2\\Item\\Etc\\Red_", (int)(i-0xd4));
-        for (int i = 0x354; i-0x353 < 3; i++)
+        for (int i = 0x354; i-0x354 < 3; i++)
             FUN_00506050((int)i, "Data2\\Item\\Etc\\Blue_", i-0x353);
         FUN_00505e90((int)0x358, "Data2\\Item\\Etc\\", "Green_01.smd");
         FUN_00505e90((int)0x359, "Data2\\Item\\Etc\\", "Bottle.smd");
@@ -122,7 +122,7 @@ void __cdecl Model_LoadItemMeshes(void)
         FUN_00505e90((int)0x313, "Data2\\Item\\Wing\\", "elfin_wing2.smd");
 
         // Gem / pearls (0x317-0x323, excluding 0x31f)
-        for (int i = 0x317; i-0x316 < 0xd; i++) {
+        for (int i = 0x317; i-0x317 < 0xd; i++) {
             if (i != 0x31f)
                 FUN_00506050((int)i, "Data2\\Item\\Etc\\pearl", 1);
         }
@@ -237,7 +237,7 @@ void __cdecl Model_LoadItemMeshes(void)
     FUN_005060b0(0x35c, "Data\\Item\\", "Event",    1);
 
     // Jewels (0x35d-0x35e)
-    for (int i = 0x35d; i-0x35c < 2; i++)
+    for (int i = 0x35d; i-0x35d < 2; i++)
         FUN_005060b0(i, "Data\\Item\\", "Jewel", i - 0x35c);
 
     AccessModel(MODEL_POTION + 13, (char*)"Data\\Item\\", (char*)"Jewel", 1);

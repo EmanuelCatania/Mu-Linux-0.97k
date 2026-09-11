@@ -83,7 +83,7 @@ extern "C" void __cdecl DeleteCharacter(int Key)
 void __cdecl FUN_0045ac20(int Key) { DeleteCharacter(Key); }
 
 // FUN_00460d20 @ 0x00460D20 — DeleteEffect(int Type, DWORD Owner, int iSubType)
-// (69 bytes) — walks Effects pool DAT_07b11670 (124 × 0x1BC), zeroes any slot
+// (69 bytes) — walks Effects pool DAT_07b11670 (200 × 0x1BC), zeroes any slot
 // whose Type/Owner/SubType match. Active flag at slot+0; Type at slot+2 (short);
 // SubType at slot+4 (dword); Owner at slot+248 (= dword[62]).
 //
@@ -92,7 +92,11 @@ void __cdecl FUN_0045ac20(int Key) { DeleteCharacter(Key); }
 extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
 {
     DWORD* o = (DWORD*)((char*)&DAT_07b11670[0] + 4);
-    DWORD* end = (DWORD*)((char*)&DAT_07b11670[0] + 124 * 0x1BC + 4);
+    // 2026-09-04: el bound era 124 slots.  El pool de efectos tiene 200
+    // (IDA acota con `&unk_7B27154`: (0x07B27154 - 0x07B11674) / 0x1BC = 200) y
+    // ya se habia redimensionado en 2026-08-15; esta funcion quedo con el valor
+    // viejo, asi que los efectos de los slots 124..199 no se borraban nunca.
+    DWORD* end = (DWORD*)((char*)&DAT_07b11670[0] + sizeof(DAT_07b11670) + 4);
     while (o < end) {
         if (*((BYTE*)o - 4) != 0 &&
             *((short*)o - 1) == (short)Type &&

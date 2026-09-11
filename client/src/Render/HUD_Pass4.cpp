@@ -38,10 +38,20 @@ extern "C" {
 // ── Local globals (kept here to avoid widening globals.h further) ───────────
 extern "C" {
     int   MacroTime               = 0;
+    // 0x07E11D8C / 0x07E11D90.  Los escribe StartMatchCountDown (0x47EC00),
+    // que atiende el opcode 0x92; declarados en globals.h para que el handler
+    // los vea (antes eran estaticos de este .cpp y nadie los seteaba).
     int   m_iMatchCountDownType   = 0;
     DWORD m_dwMatchCountDownStart = 0;
-    int   m_iMatchTime            = 0;
-    int   MixState                = 0;
+    // m_iMatchTime vive en globals.cpp (0x00559CCC): lo escribe SetMatchInfo
+    // desde el handler 0x9B.  Tenerlo aca como local dejaba al renderer
+    // leyendo una copia que nadie escribia (2026-09-04).
+    // MixState vive en globals.h como alias de DAT_07eaa140 (0x07EAA140).
+    // Estaba partido en dos: los ESCRITORES (Item_ClickHandler al mandar el mix
+    // = 1, y el handler del 0x86 con 0 o 2) usan DAT_07eaa140, y los LECTORES
+    // -- la animacion de la caja de Chaos de abajo y el `++MixState` que la hace
+    // avanzar -- leian este `int` propio, que nadie escribia.  Efecto: la
+    // maquina de Chaos nunca mostraba su animacion al mezclar.
     int   AlphaBlendType          = 0;
 
     // Input fields — IDA exposes 10 slots (chat + whisper-target + ...).
@@ -161,7 +171,7 @@ extern "C" int __cdecl Render_MacroTimer_(void);
 int Render_MacroTimer_(void)
 {
     if (MacroTime > 0) {
-        float x = (640.0f - 50.0f) * 0.5f;
+        float x = (float)(((double)GetScreenWidth() - 50.0) * 0.5);
         int v8 = 50 * MacroTime / 100;
         EnableAlphaTest(true);
         UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0);
@@ -185,8 +195,13 @@ int Render_MacroTimer_(void)
             DWORD secs = elapsed / 0x3E8;
             m_dwTextColor = 0xFFFF8080u;   // -32640
 
-            // GlobalText[431 + type] (300-byte stride ≈ "131435000 + 300*type").
-            int idx = (v1 < 4 || v1 > 7) ? (431 + v1) : (612 + v1);
+            // Las dos tablas del original son `300*type + 131435000` y
+            // `300*type + 131489300`.  Con GlobalText en 0x07D29D24 y stride 300
+            // eso da GlobalText[639 + type] y GlobalText[820 + type] -- el port
+            // tenia 431/612, que apuntan a textos de otra cosa.  Para Blood
+            // Castle el tipo 5 es GlobalText[825] = "Infiltracion al Blood
+            // Castle (en %d segundos)".
+            int idx = (v1 < 4 || v1 > 7) ? (639 + v1) : (820 + v1);
             const char* fmt = (idx >= 0 && idx < 1000) ? GlobalText[idx] : "%d";
             CHAR String[256];
             wsprintfA(String, fmt, 30 - (int)secs);
@@ -252,8 +267,10 @@ void Render_MapLoadText_(void)
             wsprintfA(v3, ": %.2d", (int)((__int64)WorldTime % 60));
             strcat(String, v3);
         }
-        // SelectObject g_hFontBig — we don't have a separate big font.
-        SelectObject(m_hFontDC, g_hFontBold);
+        // IDA usa g_hFontBig (0x055CA014) para el reloj: es la bold al DOBLE de
+        // altura.  El port ponia bold porque `g_hFontBig` era un alias local que
+        // apuntaba justamente a la bold; ahora sale de globals.h.
+        SelectObject(m_hFontDC, g_hFontBig);
         RenderCenteredText(570, (int)v2, String);
     }
 }
@@ -372,10 +389,21 @@ void Render_QuickButtons_(void)
     // RenderGuildCreation cuando los flags correspondientes están seteados.
     // Sin ellos, los menús C/G renderizan como rectángulo negro afuera del
     // 3D viewport (que es 450 wide cuando esos flags están on).
-    if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(panelStartX, 0);
+    // 2026-09-04: el ORDEN importa -- los tres paneles se dibujan en el mismo
+    // x=450 y el ultimo tapa a los anteriores.  IDA sub_4F5820:
+    //     if (GuildCreatorOpened) RenderGuildCreation(450, 0);
+    //     else if (GuildOpened)   RenderGuildList(450, 0);
+    //     RenderParty(450, 0);
+    //     if (CharacterOpened)    RenderCharacterInfoWindow(450, 0);
+    // El port lo tenia al reves (personaje primero, guild despues), asi que con
+    // GuildOpened en 1 el panel de guild pintaba ENCIMA del de personaje y del
+    // de party: de ahi "los botones de party y character abren el panel de
+    // guild".
     if (HUD_IsGuildListRuntime())      RenderGuildList(panelStartX, 0);
 
     RenderParty(450, 0);
+
+    if (HUD_IsCharacterInfoRuntime())  RenderCharacterInfoWindow(panelStartX, 0);
     RenderInventoryWindow();
     RenderTrade();
     RenderShopInterface();

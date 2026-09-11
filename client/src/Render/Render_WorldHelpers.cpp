@@ -61,12 +61,25 @@ extern void __cdecl FUN_0054158c(void* ptr);
 
 void __cdecl FUN_00500aa0(void)
 {
-    if (!DAT_0839be18 || !DAT_05828d58) return;
+    // 2026-09-03 -- BOIDS QUE NUNCA SE DIBUJABAN.
+    // IDA RenderBoids (0x00500AA0) arranca con `v0 = (float *)dword_839BE18` y
+    // recorre `v0 += 111` hasta `&unk_83A0378`, o sea 40 slots de 444 bytes
+    // anclados en +0x168 del slot: `v0 - 90` floats = la base del slot,
+    // `*((BYTE*)v0 - 360)` = el flag de activo y `*((WORD*)v0 - 179)` = el tipo.
+    // Ese 0x0839BE18 NO es un puntero suelto: es el campo +0x168 del slot 0 del
+    // mismo pool que ya vive en `g_WeatherSlotPool` (base 0x0839BCB0, y
+    // 0x839BE18 - 0x839BCB0 = 0x168).  El port lo habia dejado como un DWORD
+    // aparte inicializado en 0, asi que este `return` se tomaba SIEMPRE y las
+    // criaturas voladoras del mapa no se dibujaban nunca -- se nota sobre todo
+    // en Atlans e Icarus, que son los dos mundos donde `Weather_Update` las
+    // spawnea (tanto que el DLL de inyeccion NOPea esas dos ramas en 0x00501292
+    // con el comentario "Fix Atlans and Icarus Goldens Overflow").
+    if (!DAT_05828d58) return;
 
-    float* v0 = (float*)((uintptr_t)DAT_0839be18);
-    float* poolEnd = (float*)((uintptr_t)DAT_0839be18 + (40 * 444));
-
-    while (v0 < poolEnd) {
+    // El bound de IDA es `< &unk_83A0378` = 40 slots; lo expresamos como un
+    // contador para no construir un puntero fuera del array.
+    float* v0 = (float*)&g_WeatherSlotPool[0x168];
+    for (int __slot = 0; __slot < 40; ++__slot) {
         WORD entType = *((WORD*)v0 - 179);
         // Pre-tick: angle adjust (+90° rotation per frame for non-266)
         if (entType != 266) {
@@ -335,7 +348,12 @@ void __cdecl FUN_00473710(void)
         if (!*((BYTE*)v0 - 2488)) continue;
 
         int type = *(v0 - 621);    // type code at offset -621*4 = -2484
-
+        // Sonda temporal, estrictamente acotada: el artefacto de Icarus se
+        // manifiesta al activar aura; el log demostró que el candidato visible
+        // en esa zona es el joint de alas 1254/subtipo 14. Antes de
+        // tocar la inicializacion de esos slots, capturamos la geometria que
+        // el renderer recibe realmente, no la que un creador supone haber
+        // escrito.
         // Decide blend mode per type/subtype.
         bool useMinus = (type == 1253 || type == 1250);
         if (type == 1253) {
@@ -415,7 +433,7 @@ void __cdecl FUN_00473710(void)
             }
 
             // WorldTime modulation for types 1254/1255.
-            float v29 = (float)((DWORD)DAT_05826e08 % 1000) * 0.001f;
+            float v29 = (float)((long long)DAT_05826e08 % 1000) * 0.001f;
             if (type == 1254 || type == 1255) {
                 s   += s   - v29;
                 v28 += v28 - v29;
@@ -755,8 +773,10 @@ void __cdecl FUN_00502200(int /*unused*/, int /*unused*/, int /*unused*/, int /*
             if (vis) {
                 FUN_004fc030((unsigned char*)slot, 0u, 0, 0);
                 short typeCode = *(short*)(slot + 2);
-                int World = (int)DAT_0055a7ac;
-                if (typeCode != 188 && typeCode != 189 && World != 10) {
+                const int __world = (int)DAT_0055a7ac;   // `World` es macro de DAT_0055a7ac: nombrar
+                                                        // la local `World` la volvia una
+                                                        // auto-inicializacion con basura.
+                if (typeCode != 188 && typeCode != 189 && __world != 10) {
                     GL_SetBlendSrcOver('\x01');                  // EnableAlphaTest(1)
                     glColor4f(0.0f, 0.0f, 0.0f, 0.2f);     // shadow color
                     float* modelData = (float*)(DAT_05828d58 + 188 * (int)typeCode);

@@ -123,6 +123,8 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
 
     // FUN_00440aa0(model, &frame, &priorFrame, &priorAction, speed) — advances frame.
     // (IDA passes 7 args incl. Pos=o+16, HeadAngle=o+28; our 5-arg variant ignores them.)
-    return FUN_00440aa0((void*)model, (float*)(o + 264), (float*)(o + 268),
+    bool bPlaying = FUN_00440aa0((void*)model, (float*)(o + 264), (float*)(o + 268),
                         (void*)(o + 262), speed);
+
+    return bPlaying;
 }

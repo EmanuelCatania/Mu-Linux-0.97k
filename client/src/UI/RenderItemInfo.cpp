@@ -1855,7 +1855,7 @@ extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* para
         ITEM_ATTRIBUTE* p = (ITEM_ATTRIBUTE*)(uintptr_t)attrBase;
         char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
         if (!BuildInventorySpecialNameLine(it, p, level, dst, 100)) {
-            crt_sprintf(dst, DAT_07d3b40c);
+            crt_sprintf(dst, &DAT_07d3b40c);
         }
     }
     {

@@ -35,7 +35,14 @@ void __cdecl Cursor_Render(void) {
 
     int u_bits = 0, v_bits = 0;
     // Frame = (int64)(WorldTime * 0.01) % 6  — IDA lo emite con __int64 cast explícito.
-    int frame = (int)((long long)((double)(int)DAT_05826e08 * 0.0099999998)) % 6;
+    // 2026-09-03 -- ANIMACION DEL CURSOR CONGELADA (y de todo lo que depende
+    // de WorldTime).  IDA: `Frame = (int)(__int64)(WorldTime * 0.0099999998) % 6;`
+    // -- multiplica el FLOAT y recien despues convierte a __int64.  El port
+    // castea a `int` ANTES, y WorldTime = timeGetTime() pasa de 2^31 ms a las
+    // ~24.8 dias de uptime de la maquina: el cast satura y el frame queda
+    // clavado.  Por eso el cursor sobre NPC se ve estatico en una maquina con
+    // mucho uptime y normal en una recien reiniciada.  Habia 9 sitios iguales.
+    int frame = (int)(long long)((double)DAT_05826e08 * 0.0099999998) % 6;
     if (frame == 1 || frame == 3 || frame == 5) u_bits = 0x3F000000;  // 0.5f
     if (frame == 2 || frame == 3 || frame == 4) v_bits = 0x3F000000;  // 0.5f
 
@@ -66,7 +73,17 @@ void __cdecl Cursor_Render(void) {
         // Match per-World contra el type-code de la entidad; fallback bitmap 9.
         // DAT_0055a7ac aquí actúa como `World` en IDA; puede no coincidir 100%
         // con nuestra interpretación de sub-state pero no afecta el default.
-        short cls = *(short*)(((int*)&DAT_083a2378)[SelectedOperate * 3] + 2);
+        // Guard (no esta en IDA): SelectedOperate lo deja el picker del frame
+        // anterior; si el objeto se libero en el medio el puntero queda colgado.
+        const int nOperates = (int)(sizeof(DAT_083a2370) / 0xc);
+        const int operObj   = ((int)SelectedOperate >= 0 && (int)SelectedOperate < nOperates)
+                            ? ((int*)&DAT_083a2378)[SelectedOperate * 3] : 0;
+        if (operObj == 0) {
+            // LABEL_43 de IDA: flecha por defecto.
+            GL_DrawTexture(2, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '', '');
+            return;
+        }
+        short cls = *(short*)(operObj + 2);
         int world = DAT_0055a7ac;
         bool match = false;
         if      (world == 0) match = (cls == 133);
@@ -98,7 +115,7 @@ void __cdecl Cursor_Render(void) {
         return;
     }
     if (DAT_07eaa134 == 2) {
-        float10 fv = fsin((float10)(int)DAT_05826e08 * (float10)_DAT_00552914);
+        float10 fv = fsin((float10)(long long)DAT_05826e08 * (float10)_DAT_00552914);
         if (fv <= (float10)FloatZero) {
             FUN_005126e0(7, (float)(int)DAT_083a427c + _DAT_00552660,
                             (float)(int)DAT_083a4278 + _DAT_005529fc,

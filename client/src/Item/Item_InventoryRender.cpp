@@ -22,7 +22,9 @@ void __cdecl InventoryColor_stub(ITEM* p) {
     case 7:  glColor4f(0.8f, 0.3f, 0.3f, 1.0f); return;   // pink
     case 8:  glColor4f(1.0f, 0.0f, 0.0f, 1.0f); return;   // bright red
     }
-    glColor3f(1.0f, 1.0f, 1.0f);
+    // IDA 0x4E2420: el `default` sale sin tocar el color.  Aca habia un
+    // glColor3f(1,1,1) que, ademas, pisaba el rojo del case 3/99 (que hace
+    // `break`): por eso la silueta roja de "no entra" no se veia nunca.
 }
 
 static int GetEquipmentSlotOffsetBytes(int index)

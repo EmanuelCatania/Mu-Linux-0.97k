@@ -386,6 +386,15 @@ void __cdecl Render_HudPass_4BD650_(void)
     }
 
     // ── Coin / kill counters at (24,462) and (48,462) ────────────────────────
+    // 2026-09-04 BUG-FIX ("los numeros de la barra tienen fondo negro"): faltaba
+    // el `EnableAlphaTest(1)` que IDA (sub_4BD650) hace justo antes del
+    // `glColor3f(0.6, 0.6, 0.6)`.  Los digitos salen del TGA `FontTest` (bitmap
+    // 1) y necesitan SRC_ALPHA/ONE_MINUS_SRC_ALPHA; sin la llamada heredaban el
+    // estado que dejo el pase anterior (blend apagado) y los texeles
+    // transparentes se pintaban NEGROS Y OPACOS = el recuadro detras de cada
+    // numero.  0x511680 -> GL_SetBlendSrcOver en este arbol.
+    GL_SetBlendSrcOver(1);
+
     int v53 = *(int*)((BYTE*)(uintptr_t)Hero + 904);
     glColor3f(0.6f, 0.6f, 0.6f);
     RenderNumber2D(24.0f, 462.0f, v53, 8.0f, 9.0f);

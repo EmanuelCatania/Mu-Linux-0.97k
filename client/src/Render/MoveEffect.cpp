@@ -313,7 +313,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             local_294 = param_1[4];
             local_290 = param_1[5];
             local_28c = param_1[6];
-            local_368 = (float)(int)fVar13 * _DAT_005524f4;
+            local_368 = (float)__cnt * _DAT_005524f4;
             iVar9 = 0;
             local_364 = local_368;
             local_360 = local_368;
@@ -339,7 +339,7 @@ void FUN_00466ad0(float *param_1, int param_2)
                 Particle_Spawn(0x47e,param_1 + 4,param_1 + 7,param_1 + 0x3a,1,param_1[3],0);
                 if (param_1[0x32] < _DAT_005529ac) goto LAB_0046a366;
               }
-              else if (param_1[1] == 1.4013e-45) {
+              else if (*(int*)&param_1[1] == 1) {
                 pcVar11 = (char *)*(int*)&param_1[0x3f];
                 if (((pcVar11 == (char *)0x0) || (*pcVar11 != '\x01')) ||
                    (((byte)*(undefined4 *)(pcVar11 + 0x78) & 0x10) != 0x10)) {
@@ -412,7 +412,7 @@ void FUN_00466ad0(float *param_1, int param_2)
               FUN_004f76c0(*pfVar10,param_1[5],(int)&local_368,2,(int)DAT_081cb608);
             }
           }
-          else if ((iVar9 == 0x490) && (fVar13 == 4.2039e-44)) {
+          else if ((iVar9 == 0x490) && (*(int*)&fVar13 == 30)) {
             local_354 = param_1[4];
             local_350 = param_1[5];
             local_34c = param_1[6] + _DAT_005524f0;
@@ -423,12 +423,12 @@ void FUN_00466ad0(float *param_1, int param_2)
         else {
           switch(iVar9) {
           case 0x49c:
-            fVar13 = (float)(int)fVar13 * _DAT_005526e4;
+            fVar13 = (float)__cnt * _DAT_005526e4;
             fVar4 = fVar13;
             fVar5 = fVar13;
             fVar6 = fVar13;
             if ((param_1[1] != 0.0) &&
-               (fVar4 = local_368, fVar5 = local_364, fVar6 = local_360, param_1[1] == 1.4013e-45))
+               (fVar4 = local_368, fVar5 = local_364, fVar6 = local_360, *(int*)&param_1[1] == 1))
             {
               local_368 = 1.0;
               local_364 = 0.8;
@@ -450,7 +450,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             Effect_SpawnProximityHit((int)param_1);
             break;
           case 0x4a7:
-            local_360 = (float)(int)fVar13 * _DAT_005526e4;
+            local_360 = (float)__cnt * _DAT_005526e4;
             local_368 = local_360 * _DAT_005526e4;
             local_364 = local_360 * _DAT_00552504;
             goto LAB_004695b5;
@@ -473,7 +473,7 @@ void FUN_00466ad0(float *param_1, int param_2)
       else {
         switch(iVar9) {
         case 0x4df:
-          if (fVar13 == 1.4013e-45) {
+          if (*(int*)&fVar13 == 1) {
             iVar9 = _rand();
             iVar12 = _rand();
             local_368 = (float)(iVar12 % 3) * _DAT_005528b8 + _DAT_005528b4;
@@ -498,19 +498,19 @@ void FUN_00466ad0(float *param_1, int param_2)
           FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,1,(int)DAT_081cb608);
           break;
         case 0x4e0:
-          if (((int)fVar13 % 5 == 0) && (iVar9 = _rand(), iVar9 % 3 == 0)) {
+          if ((__cnt % 5 == 0) && (iVar9 = _rand(), iVar9 % 3 == 0)) {
             Effect_Create(0x4df,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)0x0,(float *)0x0,
                          (float *)0xffffffff,(float *)0x0,0);
           }
           break;
         case 0x4f0:
         case 0x4f1:
-          if ((0 < (int)param_1[1]) && (param_1[1] != 5.60519e-45)) {
+          if ((0 < *(int*)&param_1[1]) && (*(int*)&param_1[1] != 4)) {
             Effect_SpawnLightningBurst((int)param_1);
           }
           break;
         case 0x4f3:
-          if (param_1[1] == 1.4013e-45) {
+          if (*(int*)&param_1[1] == 1) {
             local_31c = 0.0;
             local_318 = 0;
             local_314 = 0x41200000;
@@ -537,7 +537,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             local_354 = local_354 + *pfVar10;
             local_350 = local_350 + param_1[5];
             local_34c = local_34c + param_1[6];
-            if (param_1[1] == 1.4013e-45) {
+            if (*(int*)&param_1[1] == 1) {
               uVar8 = (*(uint*)&param_1[0x18]) & 0x80000001;
               bVar16 = uVar8 == 0;
               if ((int)uVar8 < 0) {
@@ -585,7 +585,7 @@ void FUN_00466ad0(float *param_1, int param_2)
           } while (iVar9 != 0);
           break;
         case 0x4f7:
-          if ((int)fVar13 < 0x10) {
+          if (__cnt < 0x10) {
             iVar9 = _rand();
             pfVar10 = param_1 + 4;
             fVar17 = (float10)fsin((float10)(iVar9 % 1000) * (float10)_DAT_005524f8);
@@ -616,7 +616,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             uVar29 = 0;
             iVar9 = _rand();
             FUN_004795c0(0x47e,pfVar10,1.0f,pfVar15,(int)param_1,(float)(iVar9 % 0x168),uVar29);
-            if ((param_1[1] == 1.4013e-45) &&
+            if ((*(int*)&param_1[1] == 1) &&
                (fVar17 = FUN_004f7500(param_1[4], param_1[5]), (float10)param_1[6] < fVar17)) {
               local_354 = *pfVar10;
               local_350 = param_1[5];
@@ -684,7 +684,7 @@ void FUN_00466ad0(float *param_1, int param_2)
             } while ((int)local_35c < 3);
             break;
           case 2:   // 2.8026e-45f
-            local_1f4 = (float)(int)fVar13 * _DAT_005524f4;
+            local_1f4 = (float)__cnt * _DAT_005524f4;
             local_1f0 = local_1f4;
             local_1ec = local_1f4;
             FUN_004795c0(0x4fa,param_1 + 4,1.5f,&local_1f4,*(int*)&param_1[0x3f],0,0);
@@ -722,7 +722,7 @@ void FUN_00466ad0(float *param_1, int param_2)
           param_1[0x5d] = local_350 + param_1[5];
           param_1[0x5e] = local_34c + param_1[6];
           Particle_Spawn(0x4ad,pfVar15,param_1 + 7,&local_368,10,param_1[3],0);
-          if (param_1[0x18] == 1.4013e-45) {
+          if (*(int*)&param_1[0x18] == 1) {
             Effect_SpawnSmokeExplosion((undefined4 *)pfVar10,'\x01');
           }
           break;
@@ -732,7 +732,7 @@ void FUN_00466ad0(float *param_1, int param_2)
 LAB_0046a366:
             param_1[0x18] = 0.0;
           }
-          else if ((int)fVar13 < 0x14) {
+          else if (__cnt < 0x14) {
             param_1[0x18] = 4.2039e-44;
           }
           else {
@@ -741,14 +741,14 @@ LAB_0046a366:
             param_1[4] = *(float *)(pcVar11 + 0x10);
             param_1[5] = *(float *)(pcVar11 + 0x14);
             param_1[6] = fVar4 + fVar5 + _DAT_00552878;
-            Particle_Spawn(0x596,param_1 + 4,param_1 + 7,param_1 + 0x3a,(0x1e - (int)fVar13) / 2,1.0,0);
+            Particle_Spawn(0x596,param_1 + 4,param_1 + 7,param_1 + 0x3a,(0x1e - __cnt) / 2,1.0,0);
           }
         }
       }
       goto switchD_00466b93_caseD_c1;
     }
     if (iVar9 == 0x1f0) {
-      if (param_1[1] == 1.4013e-45) {
+      if (*(int*)&param_1[1] == 1) {
         Joint_Create(0x4e1,param_1 + 4,param_1 + 4,param_1 + 7,0xc,(int)param_1,100.0,-1,0);
       }
       else if (param_1[1] == 0.0) {
@@ -801,7 +801,7 @@ LAB_0046a366:
         local_360 = local_36c * _DAT_00552570;
         goto LAB_004695b5;
       }
-      if (((int)fVar13 < 1) || (2 < (int)fVar13)) break;
+      if (((*(int*)&fVar13) < 1) || (2 < (*(int*)&fVar13))) break;
       pcVar11 = (char *)*(int*)&param_1[0x3f];
       if (pcVar11 == (char *)0x0) goto LAB_0046a85e;
       if ((*pcVar11 == '\0') || (((byte)*(undefined4 *)(pcVar11 + 0x78) & 0x20) != 0x20)) {
@@ -835,7 +835,7 @@ LAB_00469366:
         }
         param_1[0x18] = 1.4013e-44;
       }
-      if (fVar13 == 1.4013e-45) {
+      if (*(int*)&fVar13 == 1) {
         local_31c = 60.0;
         local_318 = 0;
         param_1[0xc] = param_1[0xc] + _DAT_005524fc;
@@ -856,10 +856,10 @@ LAB_00469366:
       break;
     case 0xbf:
       fVar13 = param_1[1];
-      if ((fVar13 != 0.0) && (fVar13 != 2.8026e-45)) {
-        if (fVar13 == 5.60519e-45) goto LAB_00469772;
-        if (fVar13 == 8.40779e-45) goto LAB_00469769;
-        if (fVar13 == 7.00649e-45) {
+      if ((fVar13 != 0.0) && (*(int*)&fVar13 != 2)) {
+        if (*(int*)&fVar13 == 4) goto LAB_00469772;
+        if (*(int*)&fVar13 == 6) goto LAB_00469769;
+        if (*(int*)&fVar13 == 5) {
           param_1[6] = param_1[6] + param_1[0x36];
           param_1[0x36] = param_1[0x36] - _DAT_0055264c;
           fVar17 = FUN_004f7500(param_1[4], param_1[5]);
@@ -874,7 +874,7 @@ LAB_00469366:
           lVar19 = (longlong)(param_1[4] * 0.0099999998f);   // IDA Terrain_Load((__int64)(x*0.01),...)
           lVar20 = (longlong)(param_1[5] * 0.0099999998f);   // IDA Terrain_Load(...,(__int64)(y*0.01))
           iVar9 = FUN_004f6c40((uint)lVar19,(uint)lVar20);
-          if ((param_1[0x18] == 1.4013e-45) || (((DAT_0838bc70)[iVar9] & 8) == 8)) {
+          if ((*(int*)&param_1[0x18] == 1) || (((DAT_0838bc70)[iVar9] & 8) == 8)) {
             local_224 = param_1[4];
             local_21c = local_348 + _DAT_00552878;
             param_1[6] = local_348;
@@ -907,7 +907,7 @@ LAB_00469366:
         goto LAB_00469a2f;
       }
 LAB_00469769:
-      if (fVar13 == 5.60519e-45) {
+      if (*(int*)&fVar13 == 4) {
 LAB_00469772:
         lVar19 = (longlong)(param_1[4] * 0.0099999998f);   // IDA Terrain_Load((__int64)(x*0.01),...)
         lVar20 = (longlong)(param_1[5] * 0.0099999998f);   // IDA Terrain_Load(...,(__int64)(y*0.01))
@@ -985,7 +985,7 @@ LAB_004698ca:
           Effect_Create(uVar8 + 0xc5,pfVar22,pfVar21,pfVar14,pfVar23,pfVar25,pfVar27,pfVar26,bVar28);
           iVar9 = iVar9 + -1;
         } while (iVar9 != 0);
-        if (param_1[1] == 8.40779e-45) {
+        if (*(int*)&param_1[1] == 6) {
           iVar9 = 0x1e;
           do {
             iVar12 = _rand();
@@ -1011,7 +1011,7 @@ LAB_004698ca:
       }
 LAB_00469a2f:
       fVar13 = param_1[1];
-      if (fVar13 == 7.00649e-45) {
+      if (*(int*)&fVar13 == 5) {
         local_364 = local_36c * _DAT_005524f4;
         local_368 = local_36c;
         param_1[0x16] = 0.0;
@@ -1024,7 +1024,7 @@ LAB_00469a2f:
         }
       }
       else {
-        if (fVar13 == 4.2039e-45) {
+        if (*(int*)&fVar13 == 3) {
           param_1[0x16] = 0.0;
 LAB_00469ab9:
           param_1[0x1a] = 0.0;
@@ -1038,7 +1038,7 @@ LAB_00469ab9:
           param_1[0x1a] = (float)(int)(uVar8 + 4) * _DAT_005524f4;
         }
         else {
-          if (fVar13 != 8.40779e-45) goto LAB_00469ab9;
+          if (*(int*)&fVar13 != 6) goto LAB_00469ab9;
           uVar8 = _rand();
           uVar8 = uVar8 & 0x80000003;
           if ((int)uVar8 < 0) {
@@ -1046,7 +1046,7 @@ LAB_00469ab9:
           }
           param_1[0x1a] = (float)(int)(uVar8 + 4) * _DAT_005524f4;
         }
-        if (param_1[1] == 8.40779e-45) {
+        if (*(int*)&param_1[1] == 6) {
           local_368 = local_36c * _DAT_005524f4;
           local_364 = local_36c;
         }
@@ -1057,11 +1057,11 @@ LAB_00469ab9:
         pfVar10 = param_1 + 4;
         local_360 = 0.0;
         FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
-        if (param_1[1] == 8.40779e-45) {
+        if (*(int*)&param_1[1] == 6) {
           Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
           Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,0,1.0,0);
         }
-        else if (param_1[1] == 4.2039e-45) {
+        else if (*(int*)&param_1[1] == 3) {
           FUN_00473d90(param_2 * 0x14fb,&local_2f8,1.0);
           local_2f8 = local_2f8 * _DAT_00552598;
           local_2f4 = local_2f4 * _DAT_00552598;
@@ -1084,14 +1084,14 @@ LAB_00469ab9:
         else {
           Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
         }
-        if (param_1[1] == 1.4013e-45) {
+        if (*(int*)&param_1[1] == 1) {
           Effect_SpawnProximityHit((int)param_1);
         }
       }
       break;
     case 0xc0:
       local_364 = local_36c;
-      fVar13 = (float)(int)fVar13 * _DAT_005524f4;
+      fVar13 = (float)__cnt * _DAT_005524f4;
       param_1[0x1a] = fVar13;
       param_1[0x5a] = fVar13;
       local_368 = local_36c * _DAT_005528b8;
@@ -1112,7 +1112,7 @@ LAB_004695b5:
     case 0xc6:
     case 0xd5:
     case 0xd6:
-      if (param_1[1] != 7.00649e-45) goto switchD_00466b93_caseD_c7;
+      if (*(int*)&param_1[1] != 5) goto switchD_00466b93_caseD_c7;
       pcVar11 = (char *)*(int*)&param_1[0x3f];
 LAB_00468772:
       param_1[4] = *(float *)(pcVar11 + 0x10) + param_1[0x5c];
@@ -1187,8 +1187,8 @@ LAB_00468772:
       pfVar10 = param_1 + 7;
       pfVar15 = param_1 + 4;
       iVar9 = 4;
-      param_1[0x1a] = (float)(int)fVar13 * _DAT_005524f4;
-      param_1[0x1b] = (float)(int)fVar13 * _DAT_00552570;
+      param_1[0x1a] = (float)__cnt * _DAT_005524f4;
+      param_1[0x1b] = (float)__cnt * _DAT_00552570;
       do {
         Particle_Spawn(0x4c4,pfVar15,pfVar10,param_1 + 0x3a,3,1.0,0);
         iVar9 = iVar9 + -1;
@@ -1197,7 +1197,7 @@ LAB_00468772:
       local_360 = local_36c;
       local_364 = local_36c * _DAT_00552534;
       FUN_004f76c0(*pfVar15,param_1[5],(int)&local_368,3,(int)DAT_081cb608);
-      if (param_1[1] == 2.8026e-45) {
+      if (*(int*)&param_1[1] == 2) {
         local_334 = *pfVar10;
         local_330 = param_1[8];
         local_32c = param_1[9];
@@ -1233,8 +1233,8 @@ LAB_00468772:
       pfVar14 = param_1 + 0x3a;
       pfVar10 = param_1 + 7;
       pfVar15 = param_1 + 4;
-      param_1[0x1a] = (float)(int)fVar13 * _DAT_005524f4;
-      param_1[0x1b] = (float)(int)fVar13 * _DAT_005529c8;
+      param_1[0x1a] = (float)__cnt * _DAT_005524f4;
+      param_1[0x1b] = (float)__cnt * _DAT_005529c8;
       Particle_Spawn(0x4c4,pfVar15,pfVar10,pfVar14,3,1.0,0);
       local_32c = param_1[9];
       local_334 = 90.0;
@@ -1301,7 +1301,7 @@ LAB_00468772:
     case 0xd3:
     case 0xe2:
     case 0xe3:
-      if (param_1[1] == 7.00649e-45) {
+      if (*(int*)&param_1[1] == 5) {
         pcVar11 = (char *)*(int*)&param_1[0x3f];
         if (*pcVar11 == '\0') {
           *(undefined1 *)param_1 = 0;
@@ -1359,7 +1359,7 @@ switchD_00466b93_caseD_c7:
         }
       }
       else {
-        if (param_1[1] != 1.4013e-45) {
+        if (*(int*)&param_1[1] != 1) {
           param_1[9] = param_1[9] + _DAT_005524fc;
         }
         param_1[0x36] = param_1[0x36] + _DAT_00552504;
@@ -1389,7 +1389,7 @@ switchD_00466b93_caseD_c7:
       pfVar10 = param_1 + 7;
       Particle_Spawn(0x4ab,param_1 + 4,pfVar10,&local_368,0,1.0,0);
       FUN_00466440((int)param_1);
-      if (param_1[1] == 4.2039e-45) {
+      if (*(int*)&param_1[1] == 3) {
         fVar13 = *pfVar10 + _DAT_00552488;
         *pfVar10 = fVar13;
         if (_DAT_00552844 < fVar13) {
@@ -1539,7 +1539,7 @@ switchD_00466b93_caseD_c7:
           param_1[0x36] = param_1[0x36] * _DAT_00552990;
           param_1[0x31] = param_1[0x31] * _DAT_005528b4;
         }
-        if ((param_1[0x18] == 1.4013e-45) &&
+        if ((*(int*)&param_1[0x18] == 1) &&
            (Effect_SpawnSmokeBurst(pfVar10,'\x01'), (char *)*(int*)&param_1[0x3f] == DAT_07abf5d8)) {
           FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),pfVar10,100.0,*(byte *)(param_1 + 0x22),
                        *(short *)((int)param_1 + 0x86));
@@ -1610,7 +1610,7 @@ switchD_00466b93_caseD_c7:
       Particle_Spawn(0x4c4,pfVar10,pfVar15,param_1 + 0x3a,3,1.0,0);
       return;
     case 0xe9:
-      if (param_1[1] == 1.4013e-45) {
+      if (*(int*)&param_1[1] == 1) {
         local_368 = local_36c;
         param_1[3] = param_1[3] + _DAT_005524f8;
         local_364 = 0.0;
@@ -1631,7 +1631,7 @@ switchD_00466b93_caseD_c7:
       }
       break;
     case 0xee:
-      Effect_Create(0xef,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)(4 - (int)fVar13),
+      Effect_Create(0xef,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)(4 - __cnt),
                    (float *)*(int*)&param_1[0x3f],(float *)(uint)*(ushort *)((int)param_1 + 0x86),
                    (float *)CONCAT31((int3)(CONCAT22(extraout_var,sVar3) >> 8),
                                      *(undefined1 *)((int)param_1 + 0x85)),*(byte *)(param_1 + 0x21));
@@ -1772,13 +1772,13 @@ switchD_00466b93_caseD_c7:
       break;
     case 0xf1:
       fVar4 = param_1[1];
-      if (fVar4 == 2.8026e-45) {
+      if (*(int*)&fVar4 == 2) {
         param_1[3] = param_1[3] + _DAT_00552a0c;
 LAB_00466e5e:
-        if (fVar4 == 5.60519e-45) break;
+        if (*(int*)&fVar4 == 4) break;
       }
       else {
-        if (fVar4 == 4.2039e-45) {
+        if (*(int*)&fVar4 == 3) {
           __owner_fVar5 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
           param_1[5] = *(float *)(__owner_fVar5 + 0x14);
           iVar9 = *(int *)(__owner_fVar5 + 0xfc);
@@ -1786,7 +1786,7 @@ LAB_00466e5e:
           param_1[4] = *(float *)(iVar9 + 0x10) + _DAT_0055297c;
           goto LAB_00466e5e;
         }
-        if (fVar4 == 5.60519e-45) {
+        if (*(int*)&fVar4 == 4) {
           fVar7 = param_1[3] + _DAT_00552a08;
           __owner_fVar5 = *(int*)&param_1[0x3f];   // ver nota de __owner_* arriba
           fVar6 = *(float *)(__owner_fVar5 + 0x10);
@@ -1800,7 +1800,7 @@ LAB_00466e5e:
           goto LAB_00466e5e;
         }
       }
-      param_1[0x1a] = (float)(int)fVar13 * _DAT_00552a10;
+      param_1[0x1a] = (float)__cnt * _DAT_00552a10;
       goto LAB_00466d90;
     case 0xf2:
       fVar13 = param_1[8] + _DAT_0055284c;
@@ -1823,11 +1823,11 @@ LAB_00466e5e:
       local_364 = local_36c * _DAT_005528b4;
       FUN_004f76c0(param_1[0x5c],param_1[0x5d],(int)&local_368,2,(int)DAT_081cb608);
       if (param_1[1] != 0.0) {
-        if (param_1[0x18] == 1.82169e-44) {
+        if (*(int*)&param_1[0x18] == 13) {
           Effect_Create(0xff,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)0x0,param_1,
                        (float *)0xffffffff,(float *)0x0,0);
         }
-        else if (param_1[0x18] == 4.2039e-44) {
+        else if (*(int*)&param_1[0x18] == 30) {
           param_1[0x3d] = 0.0;
           *(undefined1 *)(param_1 + 0x21) = 1;
         }
@@ -1840,7 +1840,7 @@ LAB_00466e5e:
       local_310 = 0.0;
       local_30c = 0.0;
       local_308 = 0;
-      if (fVar13 == 4.2039e-45) {
+      if (*(int*)&fVar13 == 3) {
         local_20c = 1.0;
         local_208 = 0x3f800000;
         local_204 = 0x3f800000;
@@ -1905,7 +1905,9 @@ LAB_00466e5e:
           local_33c = 0.0;
           local_35c = (float *)(iVar9 % 0x96 + 100);
           local_30c = (float)(int)local_35c;
-          local_338 = (float)(int)local_358 * _DAT_005529f8 + (float)(int)param_1[1];
+          // IDA L2095: `(double)SLODWORD(v356) * 72.0 + (double)*(int *)(o + 4)`
+          // — el SubType es un DWORD; convertirlo como float daba siempre 0.
+          local_338 = (float)(int)local_358 * _DAT_005529f8 + (float)*(int*)&param_1[1];
           Matrix_BuildFromEuler(&local_340,local_15c);
           Vector_Rotate(&local_310,local_15c,&local_328);
           local_328 = local_328 + *pfVar10;
@@ -1931,7 +1933,7 @@ LAB_00466e5e:
           local_358 = (float)((int)local_358 + 1);
         } while ((int)local_358 < 5);
       }
-      else if (fVar13 == 2.8026e-45) {
+      else if (*(int*)&fVar13 == 2) {
         pfVar10 = local_38;
         local_1b8 = 0.0;
         local_1b4 = 0;
@@ -2013,16 +2015,16 @@ LAB_00466e5e:
         }
       }
       else {
-        local_358 = (float)(int)fVar13;
+        local_358 = (float)__cnt;
         local_2e0 = 15.0;
-        if ((9 < (int)fVar13) && ((int)fVar13 < 0x10)) {
+        if ((9 < __cnt) && (__cnt < 0x10)) {
           local_358 = 12.5;
           local_2e0 = 18.0;
-          if (fVar13 == 2.10195e-44) {
+          if (*(int*)&fVar13 == 15) {
             param_1[0x36] = param_1[0x36] * _DAT_005526d8;
           }
         }
-        if (fVar13 == 1.82169e-44) {
+        if (*(int*)&fVar13 == 13) {
           local_340 = 0.0;
           local_33c = 0.0;
           local_338 = 0.0;
@@ -2081,11 +2083,11 @@ LAB_00466e5e:
       }
       break;
     case 0xf5:
-      param_1[0x1a] = (float)(int)fVar13 * _DAT_005524f4 * _DAT_005529d4;
-      if ((int)fVar13 < 10) {
+      param_1[0x1a] = (float)__cnt * _DAT_005524f4 * _DAT_005529d4;
+      if (__cnt < 10) {
         param_1[6] = param_1[6] - _DAT_00552504;
       }
-      if ((0xf < (int)fVar13) && ((int)fVar13 % 3 == 0)) {
+      if ((0xf < __cnt) && (__cnt % 3 == 0)) {
         uVar8 = _rand();
         uVar8 = uVar8 & 0x80000007;
         if ((int)uVar8 < 0) {
@@ -2143,25 +2145,25 @@ LAB_00466e5e:
       goto LAB_00467f78;
     case 0xf7:
     case 0xfa:
-      param_1[0x1a] = (float)(int)fVar13 * _DAT_005524f4 * _DAT_00552a00;
-      if ((int)fVar13 < 0xd) {
+      param_1[0x1a] = (float)__cnt * _DAT_005524f4 * _DAT_00552a00;
+      if (__cnt < 0xd) {
         param_1[6] = param_1[6] - _DAT_00552504;
       }
       break;
     case 0xf8:
     case 0xfb:
-      param_1[0x1a] = (float)(int)fVar13 * _DAT_005524f4 * _DAT_005529d4;
-      if ((int)fVar13 < 10) {
+      param_1[0x1a] = (float)__cnt * _DAT_005524f4 * _DAT_005529d4;
+      if (__cnt < 10) {
         param_1[6] = param_1[6] - _DAT_00552504;
       }
       break;
     case 0xf9:
-      if ((int)fVar13 < 0x1e) {
-        if ((int)fVar13 < 0xf) {
+      if (__cnt < 0x1e) {
+        if (__cnt < 0xf) {
           param_1[6] = param_1[6] - _DAT_00552504;
         }
-        param_1[0x1a] = (float)(int)fVar13 * _DAT_005524f4;
-        if (4 < (int)fVar13) {
+        param_1[0x1a] = (float)__cnt * _DAT_005524f4;
+        if (4 < __cnt) {
           iVar9 = _rand();
           if ((float)(iVar9 % 0xf) == 0.0) {
             local_218 = (float)(iVar9 % 0xf);
@@ -2195,7 +2197,7 @@ LAB_00466e5e:
         }
       }
       else {
-        param_1[0x1a] = (float)(0x28 - (int)fVar13) * _DAT_005524f4;
+        param_1[0x1a] = (float)(0x28 - __cnt) * _DAT_005524f4;
       }
 LAB_00467f78:
       local_364 = 0.0;
@@ -2208,14 +2210,14 @@ LAB_00468736:
       break;
     case 0xfc:
       fVar4 = fVar13;
-      if (0x1d < (int)fVar13) {
-        fVar4 = (float)(0x28 - (int)fVar13);
+      if (0x1d < __cnt) {
+        fVar4 = (float)(0x28 - __cnt);
       }
       param_1[0x1a] = (float)(int)fVar4 * _DAT_005524f4;
-      if ((int)fVar13 < 0xf) {
+      if (__cnt < 0xf) {
         param_1[6] = param_1[6] - _DAT_00552504;
       }
-      if (0xc < (int)fVar13) {
+      if (0xc < __cnt) {
         _rand();
       }
       local_368 = local_36c;
@@ -2234,7 +2236,7 @@ LAB_00468736:
         param_1[3] = param_1[3] + _DAT_005524f4;
         param_1[4] = param_1[4] - _DAT_0055256c;
         param_1[6] = param_1[6] - _DAT_005528f0;
-        param_1[0x1a] = (float)(int)fVar13 * _DAT_00552a20;
+        param_1[0x1a] = (float)__cnt * _DAT_00552a20;
       }
 LAB_00466d90:
       local_368 = local_36c * _DAT_00552a14;
@@ -2247,7 +2249,7 @@ LAB_004695c0:
     case 0xfe:
       param_1[6] = param_1[6] - param_1[0x36];
       param_1[0x36] = param_1[0x36] + _DAT_0055290c;
-      param_1[0x1a] = (float)(int)fVar13 * _DAT_00552a10;
+      param_1[0x1a] = (float)__cnt * _DAT_00552a10;
       break;
     case 0xff:
       pcVar11 = (char *)*(int*)&param_1[0x3f];
@@ -2271,7 +2273,7 @@ LAB_004695c0:
         param_1[5] = *(float *)(pcVar11 + 0x14);
         param_1[0x36] = fVar4;
         param_1[6] = fVar13;
-        if (param_1[1] == 1.4013e-45) {
+        if (*(int*)&param_1[1] == 1) {
           local_368 = 1.0;
           local_364 = 1.0;
           local_360 = 1.0;
@@ -2321,7 +2323,7 @@ LAB_004695c0:
       local_344 = param_1[0x32] * _DAT_005526e8;
       param_1[0x32] = local_344;
       param_1[6] = param_1[6] + param_1[0x36];
-      if (param_1[1] == 1.4013e-45) {
+      if (*(int*)&param_1[1] == 1) {
         param_1[0x30] = fVar13 * _DAT_005529b4;
         param_1[0x31] = local_348 * _DAT_005529b4;
         param_1[0x32] = local_344 * _DAT_005529b4;
@@ -2348,7 +2350,7 @@ LAB_0046a01d:
       local_344 = param_1[0x32] * _DAT_005526e8;
       param_1[0x32] = local_344;
       param_1[6] = param_1[6] + param_1[0x36];
-      if (param_1[1] == 1.4013e-45) {
+      if (*(int*)&param_1[1] == 1) {
         param_1[0x30] = fVar13 * _DAT_005529b4;
         param_1[0x31] = local_348 * _DAT_005529b4;
         param_1[0x32] = local_344 * _DAT_005529b4;
@@ -2373,7 +2375,7 @@ LAB_0046a02b:
     case 0x109:
       if ((((byte)*(undefined4 *)((char *)*(int*)&param_1[0x3f] + 0x78) & 0x20) == 0x20) &&
          (*(char *)*(int*)&param_1[0x3f] != '\0')) {
-        if (0x32 < (int)fVar13) {
+        if (0x32 < __cnt) {
           iVar9 = 3;
           do {
             iVar12 = _rand();
@@ -2413,7 +2415,7 @@ LAB_0046a85e:
 switchD_00466b93_caseD_c1:
     sVar3 = *(short *)((int)param_1 + 2);
     if ((((sVar3 != 0xee) && (sVar3 != 0xef)) && (sVar3 != 0xf4)) &&
-       (((sVar3 != 0xc5 && (sVar3 != 0xc6)) || (param_1[1] != 7.00649e-45)))) {
+       (((sVar3 != 0xc5 && (sVar3 != 0xc6)) || (*(int*)&param_1[1] != 5)))) {
       if ((0xad < sVar3) && (sVar3 < 0x10d)) {
         pvVar1 = (void *)(DAT_05828d58 + sVar3 * 0xbc);
         fVar13 = param_1[0x33];
@@ -2455,7 +2457,7 @@ LAB_0046b3ca:
       return;
     }
     if (*(short *)((int)param_1 + 2) == 0xbf) {
-      if (param_1[1] != 4.2039e-45) {
+      if (*(int*)&param_1[1] != 3) {
         return;
       }
     }

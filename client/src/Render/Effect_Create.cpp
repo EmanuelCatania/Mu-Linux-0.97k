@@ -103,8 +103,8 @@ LAB_00460dd8:
   // preserving the original bit pattern.
   *(DWORD *)(pfVar17 + 1) = (DWORD)(uintptr_t)param_5;
   *(undefined1 *)(pfVar17 + 0x37) = 1;
-  pfVar17[0x16] = -NAN;
-  pfVar17[0x19] = -NAN;
+  *(int*)&pfVar17[0x16] = -1;
+  *(int*)&pfVar17[0x19] = -1;
   pfVar17[0x1a] = 1.0;
   pfVar17[0x1b] = 0.0;
   pfVar17[0x1c] = 0.0;
@@ -180,7 +180,7 @@ LAB_00460dd8:
         pfVar17[6] = pfVar17[6] - _DAT_00552834;
         goto LAB_004658be;
       case 0xfe:
-        pfVar17[0x19] = -NAN;
+        *(int*)&pfVar17[0x19] = -2;
         pfVar17[0x18] = 8.40779e-45;
         pfVar17[3] = 1.0;
         pfVar17[0x36] = 80.0;
@@ -403,7 +403,7 @@ LAB_004649e0:
           pfVar17[6] = local_58 + pfVar17[6] + _DAT_0055297c;
           return pfVar12;
         }
-        if (pfVar17[1] != 1.4013e-45) {
+        if (*(int*)&pfVar17[1] != 1) {
           return (float *)0x0;
         }
         pfVar12 = (float*)(uintptr_t)(int)param_2[1];
@@ -535,7 +535,7 @@ LAB_004658be:
         pfVar17[0x31] = -60.0;
         pfVar17[0x32] = 0.0;
         pfVar17[6] = pfVar17[6] + _DAT_005524f0;
-        if (pfVar17[1] != 1.4013e-45) {
+        if (*(int*)&pfVar17[1] != 1) {
           return (float *)0x0;
         }
         pfVar17[3] = 1.5;
@@ -584,7 +584,7 @@ LAB_00464ed8:
           pfVar17[0x18] = 5.60519e-43;
           return (float *)(iVar9 / 5);
         }
-        if (pfVar17[1] != 1.4013e-45) {
+        if (*(int*)&pfVar17[1] != 1) {
           return (float *)0x0;
         }
 switchD_00464efe_caseD_4ab:
@@ -602,7 +602,7 @@ switchD_00464efe_caseD_4ab:
         return (float *)0x0;
       }
       pfVar17[0x18] = 4.2039e-44;
-      pfVar17[0x19] = -NAN;
+      *(int*)&pfVar17[0x19] = -2;
       pfVar17[3] = 1.0;
       pfVar17[6] = pfVar17[6] + _DAT_00552970;
       pfVar17[7] = pfVar17[7] + _DAT_005524fc;
@@ -727,7 +727,7 @@ LAB_00463e3d:
       }
     }
     else {
-      if (fVar27 == 2.8026e-45) {
+      if (*(int*)&fVar27 == 2) {
         pfVar17[0x18] = 5.60519e-44;
         uVar10 = _rand();
         uVar10 = uVar10 & 0x80000007;
@@ -740,7 +740,7 @@ LAB_00463e3d:
         pfVar17[0x32] = -50.0;
         return (float *)0x0;
       }
-      if (fVar27 == 4.2039e-45) {
+      if (*(int*)&fVar27 == 3) {
         pfVar17[0x18] = 1.12104e-43;
         pfVar17[3] = 0.3;
         pfVar17[0x30] = 0.0;
@@ -748,7 +748,7 @@ LAB_00463e3d:
         pfVar17[0x32] = 0.0;
         return pfVar8;
       }
-      if (fVar27 == 5.60519e-45) {
+      if (*(int*)&fVar27 == 4) {
         pfVar17[0x18] = 5.60519e-44;
         iVar9 = _rand();
         param_8 = (float *)(iVar9 % 10 + 0xf);
@@ -771,7 +771,7 @@ LAB_00463e3d:
         pfVar17[9] = 0.0;
         return (float *)(iVar9 / 10);
       }
-      if (fVar27 == 7.00649e-45) {
+      if (*(int*)&fVar27 == 5) {
         pfVar17[0x18] = 5.60519e-44;
         pfVar17[0x36] = 5.0;
         pfVar17[0x30] = 0.0;
@@ -779,7 +779,7 @@ LAB_00463e3d:
         pfVar17[0x32] = 0.0;
         return pfVar8;
       }
-      if (fVar27 != 8.40779e-45) {
+      if (*(int*)&fVar27 != 6) {
         pfVar17[0x18] = 8.40779e-44;
         uVar10 = _rand();
         uVar10 = uVar10 & 0x80000003;
@@ -825,13 +825,13 @@ LAB_00463e3d:
     pfVar17[0x18] = 7.00649e-44;
     pfVar17[3] = 0.7;
     if (param_5 != (float *)0x0) {
-      pfVar17[0x19] = -NAN;
+      *(int*)&pfVar17[0x19] = -4;
       pfVar17[7] = 0.0;
       pfVar17[8] = 0.0;
       pfVar17[9] = 45.0;
       return pfVar8;
     }
-    pfVar17[0x19] = -NAN;
+    *(int*)&pfVar17[0x19] = -3;
     pfVar17[7] = 0.0;
     pfVar17[8] = 0.0;
     pfVar17[9] = 45.0;
@@ -844,7 +844,7 @@ LAB_00463e3d:
   case 0xc6:
   case 0xd5:
   case 0xd6:
-    if (pfVar17[1] == 7.00649e-45) {
+    if (*(int*)&pfVar17[1] == 5) {
       pfVar17[0x18] = 8.40779e-44;
       uVar10 = _rand();
       uVar10 = uVar10 & 0x80000003;
@@ -907,7 +907,7 @@ LAB_00463e3d:
     pfVar17[6] = (float)fVar24;
     break;
   case 0xcd:
-    if ((pfVar17[1] == 0.0) || (pfVar17[1] == 4.2039e-45)) {
+    if ((pfVar17[1] == 0.0) || (*(int*)&pfVar17[1] == 3)) {
       pfVar17[0x18] = 1.4013e-45;
     }
     else {
@@ -939,7 +939,7 @@ LAB_00463e3d:
   case 0xd3:
     pfVar17[6] = pfVar17[6] + _DAT_005524f0;
 switchD_00461001_caseD_e2:
-    if (pfVar17[1] == 7.00649e-45) {
+    if (*(int*)&pfVar17[1] == 5) {
       pfVar17[0x18] = 8.40779e-44;
       uVar10 = _rand();
       uVar10 = uVar10 & 0x80000003;
@@ -993,7 +993,7 @@ switchD_00461001_caseD_c7:
     }
     else {
       local_6c = 0.0;
-      if (pfVar17[1] == 1.4013e-45) {
+      if (*(int*)&pfVar17[1] == 1) {
         local_68 = 0.0;
       }
       else {
@@ -1105,7 +1105,7 @@ switchD_00461001_caseD_c7:
       pfVar17[0x19] = 1.4013e-45;
     }
     else if (param_1 == 0xde) {
-      pfVar17[0x19] = -NAN;
+      *(int*)&pfVar17[0x19] = -2;
     }
     else if ((((param_1 == 0xda) || (param_1 == 0xdb)) || (param_1 == 0xdc)) ||
             ((param_1 == 0xe0 || (param_1 == 0xdf)))) {
@@ -1137,7 +1137,20 @@ switchD_00461001_caseD_c7:
       pfVar17[3] = 0.8;
       pfVar17[0x31] = -70.0;
     }
-    if (pfVar17[1] == 2.8026e-45) {
+    // IDA CreateEffect L685-693 (cases 216-224):
+    //     if ( *((_DWORD *)i + 1) == 2 )        // SubType == 2 (flecha de Penetration)
+    //     {
+    //         if ( Type != 223 ) CreateEffect(255, ...);
+    //         *((_DWORD *)i + 61) = 0;
+     //        i[132] = 1;
+    //     }
+    // Este es el bloque que hace que la flecha de Penetration entre por el path A
+    // de sub_466440 (que exige `Target + 132 != 0`) y por lo tanto reporte sus
+    // blancos al server con el 0x1D.  El original compara el campo como DWORD;
+    // el port lo hacia contra el denormal 2.8026e-45, o sea leyendo el slot como
+    // float.  Se lee por BITS, igual que ya se hace en la linea 386 de este mismo
+    // archivo (`*(int*)&pfVar17[1] != 4`).
+    if (*(int*)&pfVar17[1] == 2) {
       if (param_1 != 0xdf) {
         Effect_Create(0xff,pfVar17 + 4,pfVar12,pfVar17 + 0x3a,(float *)0x0,pfVar17,
                      (float *)0xffffffff,(float *)0x0,0);
@@ -1146,7 +1159,7 @@ switchD_00461001_caseD_c7:
       *(undefined1 *)(pfVar17 + 0x21) = 1;
     }
     pfVar8 = (float*)DAT_07abf5d8;
-    if ((param_1 == 0xd8) && (pfVar17[1] == 4.2039e-45)) {
+    if ((param_1 == 0xd8) && (*(int*)&pfVar17[1] == 3)) {
       pfVar17[0x18] = 5.60519e-44;
       fVar27 = pfVar8[5];
       pfVar17[0x5c] = pfVar8[4];
@@ -1190,8 +1203,8 @@ switchD_00461001_caseD_c7:
   case 0xe9:
     pfVar17[0x18] = 4.2039e-44;
     pfVar17[3] = 0.7;
-    pfVar17[0x19] = -NAN;
-    if (pfVar17[1] != 1.4013e-45) {
+    *(int*)&pfVar17[0x19] = -2;
+    if (*(int*)&pfVar17[1] != 1) {
       pfVar17[0x33] = 0.1;
       return pfVar8;
     }
@@ -1265,10 +1278,11 @@ switchD_00461001_caseD_c7:
     if (DAT_055c9bd4 == 0) goto LAB_004611cb;
     goto LAB_0046115a;
   case 0xf1:
-    pfVar17[0x19] = -NAN;
+    *(int*)&pfVar17[0x19] = -2;
     pfVar17[3] = 0.9;
     pfVar17[0x33] = 0.5;
-    switch((int)(uintptr_t)pfVar17[1]) {
+    // SubType es un DWORD: leer los BITS, no convertir el float (daba 0 siempre).
+    switch(*(int*)&pfVar17[1]) {
     case 0:
       pfVar17[0x3a] = 0.8;
       pfVar17[0x3b] = 0.8;
@@ -1329,7 +1343,7 @@ switchD_00461001_caseD_c7:
     goto LAB_004617d3;
   case 0xf2:
     pfVar17[0x18] = 4.2039e-44;
-    pfVar17[0x19] = -NAN;
+    *(int*)&pfVar17[0x19] = -2;
     pfVar17[3] = 1.0;
     pfVar12 = pfVar17 + 4;
     pfVar17[6] = pfVar17[6] + _DAT_00552980;
@@ -1355,7 +1369,7 @@ switchD_00461001_caseD_c7:
     goto LAB_00461eee;
   case 0xf3:
     pfVar17[0x18] = 4.2039e-44;
-    pfVar17[0x19] = -NAN;
+    *(int*)&pfVar17[0x19] = -2;
     pfVar17[3] = 1.0;
     iVar9 = 0;
     pfVar17[6] = pfVar17[6] + _DAT_00552980;
@@ -3728,6 +3742,14 @@ switchD_00460f25_caseD_101:
   }
   goto LAB_00462f4a;
 switchD_00465549_caseD_4ba:
+  // 2026-09-03 (Aqua Beam desplazado): el vector de avance de la estela de los
+  // tipos 1210/1211/1212 sale de `VectorRotate(in1, in2, (float *)i + 48)` con
+  // IDA poniendo `in1 = (0, -50, 0)` (o `(0, -15, 0)` para el 1212).  El port
+  // escribia `local_6c = fVar27; local_64 = fVar27;` -- o sea X y Z tomaban un
+  // valor sobrante de otra rama de la funcion en vez de 0.  El campo +0xC0 es
+  // el paso que `RenderEffects` usa para los 30 sprites 1176 de la estela, asi
+  // que la estela avanzaba en una direccion arbitraria: el Aqua Beam nacia bien
+  // pero se dibujaba corrido.
   pfVar17[0x18] = 2.8026e-44;
   if (param_1 == 0x4ba) {
     pfVar17[0x3a] = 0.5;
@@ -3737,8 +3759,8 @@ switchD_00465549_caseD_4ba:
   else {
     if (param_1 != 0x4bb) {
       if (param_1 == 0x4bc) {
-        local_6c = fVar27;
-        local_64 = fVar27;
+        local_6c = 0.0f;   // IDA: in1[0] = 0.0
+        local_64 = 0.0f;   // IDA: in1[2] = 0.0
         pfVar17[0x3a] = 1.0;
         pfVar17[0x3b] = 0.4;
         pfVar17[0x3c] = 0.2;
@@ -3751,8 +3773,8 @@ switchD_00465549_caseD_4ba:
     pfVar17[0x3b] = 0.4;
     pfVar17[0x3c] = 0.2;
   }
-  local_6c = fVar27;
-  local_64 = fVar27;
+  local_6c = 0.0f;   // IDA: in1[0] = 0.0
+  local_64 = 0.0f;   // IDA: in1[2] = 0.0
   local_68 = -50.0;
   pfVar17[3] = 16.0;
 LAB_00465641:
