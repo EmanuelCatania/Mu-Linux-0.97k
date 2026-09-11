@@ -898,18 +898,19 @@ void __cdecl Player_ProcessInput(void)
                         // hace que, con varios items juntos, se levante el que
                         // este bajo el cursor AL LLEGAR y no el que se clickeo:
                         // el nombre flotante decia uno y entraba otro.
+                        //
+                        // 2026-09-11: aca se mandaba el 0x22 directo.  IDA llama
+                        // a Action (0x48D640) cuando el camino termina, y es
+                        // Action la que primero mira si hay lugar: sin lugar
+                        // muestra GlobalText[375] y hace rebotar el item en el
+                        // suelo, sin mandar nada.  Mandandolo directo el server
+                        // contestaba "inventario lleno" y el rebote no salia.
                         int itemSlotIdx = (int)ItemKey;
                         if (itemSlotIdx >= 0 && itemSlotIdx < 1000) {
                             BYTE* itemEnt = (BYTE*)&DAT_07e12840[0]
                                           + (uintptr_t)itemSlotIdx * 0x204;
-                            if (itemEnt[72]) {   // active
-                                unsigned short itemKey = (unsigned short)itemSlotIdx;
-                                BYTE gp[6];
-                                gp[0] = 0xC1; gp[1] = 0x05; gp[2] = 0x22;
-                                gp[3] = (BYTE)((itemKey >> 8) & 0xFF);
-                                gp[4] = (BYTE)(itemKey & 0xFF);
-                                Net_SendSmallPacket(gp, 5);
-                            }
+                            if (itemEnt[72])     // active
+                                Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                         }
                         *(unsigned char*)(ent + 0x2ed) = 0;
                     }
@@ -1819,14 +1820,11 @@ void __cdecl Player_ProcessInput(void)
                     int adx = srcX - dstX; if (adx < 0) adx = -adx;
                     int ady = srcY - dstY; if (ady < 0) ady = -ady;
                     if (adx <= 1 && ady <= 1) {
-                        if (itemEnt[72]) {   // active
-                            unsigned short itemKey = (unsigned short)itemSlotIdx;
-                            BYTE gp[6];
-                            gp[0] = 0xC1; gp[1] = 0x05; gp[2] = 0x22;
-                            gp[3] = (BYTE)((itemKey >> 8) & 0xFF);
-                            gp[4] = (BYTE)(itemKey & 0xFF);
-                            Net_SendSmallPacket(gp, 5);
-                        }
+                        // Igual que al llegar caminando: el pickup lo resuelve
+                        // Action (IDA LABEL_312 cuando PathFinding no devuelve
+                        // camino), que es quien chequea el inventario lleno.
+                        if (itemEnt[72])     // active
+                            Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                         *(unsigned char*)(ent + 0x2ed) = 0;
                         goto end_tick_inc;
                     }
