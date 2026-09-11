@@ -10,6 +10,7 @@ extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetMixItems[];
 extern "C" BYTE OffsetWarehouseItems[];
 extern "C" BYTE Inventory[];
+extern DWORD g_PickupLatchX, g_PickupLatchY;   // Item_ClickHandler.cpp (IDA dword_83A42E0/E4)
 extern "C" int dword_7EAA0C8;
 extern "C" int dword_7EAA0CC;
 
@@ -706,5 +707,15 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     }
 
 drop_done:
+    // IDA sub_4D6470 LABEL_808: el quick-move del click derecho (sub_4D23B0
+    // L1401-1438) mueve el mouse a un hueco libre del baul y prende
+    // byte_83A42EB para que este drop se haga solo.  Al terminar, el original
+    // devuelve el cursor a donde estaba y apaga el flag.  Sin esto el flag
+    // quedaba prendido y los drops siguientes se disparaban solos.
+    if (DAT_083a42eb) {
+        DAT_083a427c = g_PickupLatchX;
+        DAT_083a4278 = g_PickupLatchY;
+    }
+    DAT_083a42eb = 0;
     return actionTaken ? 1u : 0u;
 }

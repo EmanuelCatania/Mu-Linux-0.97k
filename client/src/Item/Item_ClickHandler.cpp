@@ -143,8 +143,11 @@ extern unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int orig
 // Latches de MousePosition para el pickup con click derecho. En IDA los originales están en
 // 0x083a42e0 / 0x083a42e4, pero en nuestro build esas direcciones se superponen con CameraAngle
 // — usamos statics locales al archivo para no pisar el estado de la cámara.
-static DWORD g_PickupLatchX = 0;
-static DWORD g_PickupLatchY = 0;
+// IDA dword_83A42E0 / dword_83A42E4: el mouse al momento del click derecho.
+// Los lee LABEL_808 de sub_4D6470 (Inventory_DropItemEx) para devolver el
+// cursor despues del quick-move al baul.
+DWORD g_PickupLatchX = 0;
+DWORD g_PickupLatchY = 0;
 
 // Trade item array (declared in HUD_Pass3.cpp). Some translation units
 // ya lo exponen con linkage C; si nuestra referencia no enlaza, la
@@ -211,7 +214,12 @@ unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
                 for (int dy = 0; dy < itemH; ++dy) {
                     BYTE* cell = (BYTE*)(uintptr_t)(grid_base + 68 *
                                  ((y + dy) * grid_w + (x + dx)));
-                    if (*(short*)cell == (short)0xFFFF || *(int*)(cell + 0x38) <= 0) {
+                    // IDA sub_4D6020: libre = Type == 0xFFFF, nada mas.  Key
+                    // vale 0 en las celdas NO primarias de un item multi-celda,
+                    // asi que el `|| Key <= 0` que habia aca daba por libres
+                    // celdas ocupadas y el quick-move soltaba encima de otro
+                    // item (ver [[celda-ocupada-se-decide-por-type]]).
+                    if (*(short*)cell == (short)0xFFFF) {
                         ++empty;
                     }
                 }
