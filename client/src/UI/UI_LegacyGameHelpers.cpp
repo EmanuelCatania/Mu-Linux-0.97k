@@ -120,66 +120,61 @@ void __cdecl FUN_004cba60(void) {
 // FUN_004cd3b0 @ 0x004CD3B0 — UI_ItemGrid_Fill
 // Fills 2D grid buffers with current item slot data (DAT_07e91350) for equipment display.
 // Dispatches by DAT_07ea9800; each grid entry = 0x11 dwords, selection flag at offset 0x38.
+//
+// 2026-09-11: reescrita contra IDA.  La version anterior escribia en bases
+// DAT_ corridas 0x38 que en este build son OTRA memoria (no los Offset*Items),
+// borraba con memset un buffer de 64 celdas que el original no toca, tomaba la
+// posicion de ItemPickedPos y no soltaba el item de la mano: el item "levantado
+// y devuelto" nunca volvia a su celda.
+//
+// IDA sub_4CD3B0:
+//   pos = Inventory[32].Type (= DAT_07ea5b18, slot de origen)
+//   pool de origen (dword_7EA9800): trade / baul / mix -> celda = pos
+//                                   inventario        -> celda = pos - 12
+//                                   pos < 12          -> slot de equipo
+//   cada celda del footprint = pPickedItem, Key = 1 solo en la primaria
+//   (byte_7E9138E/F = columna/fila de la primaria)
+//   al final: dword_7E91388 = 0; SetCharacterClass(Hero); PlayBuffer(29)
 void __cdecl FUN_004cd3b0(void)
 {
     if ((int)DAT_07e91388 < 1) return;
 
-    // IDA: `&ItemAttribute[(__int16)pPickedItem]`.  Leerlo como int metia en el
-    // indice los dos bytes siguientes del ITEM.
-    int   iVar8 = (int)*(short*)DAT_07e91350;
-    int   iVar3 = iVar8 * 0x40 + (int)DAT_07d78068;
-    unsigned int uVar5 = (unsigned int)*(unsigned char *)(iVar3 + 0x20); // item width
-    unsigned int uVar9 = (unsigned int)*(unsigned char *)(iVar3 + 0x21); // item height
-    unsigned int selCol = (unsigned int)DAT_07e9138e;
-    unsigned int selRow = (unsigned int)DAT_07e9138f;
+    const int type = (int)*(short*)DAT_07e91350;           // (__int16)pPickedItem
+    const BYTE* attr = (const BYTE*)(uintptr_t)DAT_07d78068 + type * 0x40;
+    const int w = attr[0x20];
+    const int h = attr[0x21];
+    const int selCol = (int)(BYTE)DAT_07e9138e;
+    const int selRow = (int)(BYTE)DAT_07e9138f;
+    const int pos    = (int)DAT_07ea5b18;
+    BYTE* const src  = (BYTE*)(uintptr_t)DAT_07ea9800;
 
-    // Position packed as col (bits 0-2) + row (bits 3+).
-    // IDA usa Inventory[32].Type acá.  El comentario anterior decía que
-    // DAT_07ea9844 era "our mirror" de eso, pero NO lo es: en el binario esa
-    // direccion es un byte-flag aparte (bSell).  Ahora usamos el campo real.
-    int posVal  = ItemPickedPos;
-    if ((void*)DAT_07ea9800 == (void*)&OffsetInventoryItems[0] && posVal >= 12) {
-        posVal -= 12;
-    }
-    int colBits = posVal & 7;
-    int rowBits = posVal >> 3;
+    auto fill = [&](BYTE* pool, int cell0) {
+        const int col0 = cell0 % 8, row0 = cell0 / 8;
+        for (int row = row0; row < row0 + h; ++row)
+            for (int col = col0; col < col0 + w; ++col) {
+                BYTE* cell = pool + (col + row * 8) * 0x44;
+                memcpy(cell, DAT_07e91350, 0x44);
+                *(int*)(cell + 0x38) = (row == selRow && col == selCol) ? 1 : 0;
+            }
+    };
 
-    // Helper lambda-style inline: fill grid block at gridBase (stride 8 cols)
-    #define FILL_GRID(gridBase) do { \
-        int *_gb = (int *)(gridBase); \
-        for (unsigned int row = (unsigned int)rowBits; row < (unsigned int)rowBits + uVar9; row++) { \
-            for (unsigned int col = (unsigned int)colBits; col < (unsigned int)colBits + uVar5; col++) { \
-                int *cell = _gb + (col + row * 8) * 0x11; \
-                int *src  = (int *)DAT_07e91350; \
-                for (int k = 0; k < 0x11; k++) cell[k] = src[k]; \
-                cell[0xe] = (row == selRow && col == selCol) ? 1 : 0; \
-            } \
-        } \
-    } while(0)
-
-    if ((void *)DAT_07ea9800 == (void *)&DAT_07ea7b88) { FILL_GRID(&DAT_07ea7bc0); return; }
-    if ((void *)DAT_07ea9800 == (void *)&DAT_07ea5b30) { FILL_GRID(&DAT_07ea5b68); return; }
-    if ((void *)DAT_07ea9800 == (void *)&DAT_07ea9848) { FILL_GRID(&DAT_07ea9880); return; }
-
-    {
-        BYTE* base = DAT_07ea8448;
-        BYTE* end  = base + sizeof(DAT_07ea8448);
-        while (base < end) {
-            memset(base, 0, 0x44);
-            *(short*)base = (short)0xFFFF;
-            base += 0x44;
+    if (src == &OffsetTradeItems[0])          fill(OffsetTradeItems, pos);
+    else if (src == &OffsetWarehouseItems[0]) fill(OffsetWarehouseItems, pos);
+    else if (src == &OffsetMixItems[0])       fill(OffsetMixItems, pos);
+    else if (pos >= 12)                       fill(OffsetInventoryItems, pos - 12);
+    else if (pos >= 0 && CharacterMachine) {
+        if (pos == 8 && DAT_07abf5d8) {
+            int bug = (type == 416) ? 816 : (type == 418) ? 195 : (type == 419) ? 267 : 0;
+            if (bug)
+                FUN_004fffd0(bug, (void*)(DAT_07abf5d8 + 0x10), (void*)DAT_07abf5d8, 0);
         }
+        memcpy((BYTE*)CharacterMachine + 68 * pos + 536, DAT_07e91350, 0x44);
     }
 
-    if (posVal > 0xb) {
-        FILL_GRID(&DAT_07ea8448);
-        if (iVar8 == 0x1a0 || iVar8 == 0x1a2 || iVar8 == 0x1a3) {
-            int spawnType = (iVar8 == 0x1a0) ? 0x330 : (iVar8 == 0x1a2) ? 0xc3 : 0x10b;
-            FUN_004fffd0(spawnType, (void *)(DAT_07abf5d8 + 0x10), (void *)DAT_07abf5d8, 0);
-        }
-    }
-    #undef FILL_GRID
-    // (HashTable obfuscation blocks skipped — anti-tamper)
+    DAT_07e91388 = 0;
+    if (DAT_07abf5d8) FUN_0045c130((int)DAT_07abf5d8);      // SetCharacterClass(Hero)
+    FUN_00404bc0(29, 0, 0);                                  // PlayBuffer(29)
+    // (bloques de hash-table anti-tamper omitidos)
 }
 
 // FUN_004b0e80 @ 0x004B0E80 — SelectSkillByHotkey(int number)
