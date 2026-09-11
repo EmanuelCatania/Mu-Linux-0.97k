@@ -1566,8 +1566,14 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
             //   v144 = 1; if (InventoryOpened && MouseX >= InventoryStartX) v144 = 0;
             // Con el inventario abierto, un click sobre su panel NUNCA tira el
             // item al suelo (la zona de abajo del grid son la barra de zen y los
-            // botones). El item queda agarrado, como en el original.
+            // botones).
+            //
+            // 2026-09-11: el item NO queda agarrado.  En IDA, con v144 = 0 el
+            // bloque del suelo no corre y la ejecucion cae en LABEL_301:
+            // `sub_4CD3B0(1, 0)`, que devuelve el item a su celda.  (Confirmado
+            // contra el cliente original: soltar un item sobre otro lo devuelve.)
             if (InventoryOpened != 0 && (int)DAT_083a427c >= (int)InventoryStartX) {
+                FUN_004cd3b0();
                 return;
             }
 
@@ -1587,7 +1593,10 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
                 const int px = (int)DAT_083a427c, py = (int)DAT_083a4278;
                 const int ox = (int)DAT_07eaa0c8, oy = (int)DAT_07eaa0cc;
                 if (px >= ox && px < ox + 190 && py >= oy && py < oy + 433) {
-                    return;   // dentro del panel: el item queda agarrado
+                    // IDA L1004-1010 (baul/chaos && MouseX >= dword_7EAA0C8 ->
+                    // v144 = 0) -> LABEL_301: el item vuelve a su celda.
+                    FUN_004cd3b0();
+                    return;
                 }
             }
 
