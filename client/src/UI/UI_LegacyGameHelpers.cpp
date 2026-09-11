@@ -124,7 +124,9 @@ void __cdecl FUN_004cd3b0(void)
 {
     if ((int)DAT_07e91388 < 1) return;
 
-    int   iVar8 = *(int*)DAT_07e91350;
+    // IDA: `&ItemAttribute[(__int16)pPickedItem]`.  Leerlo como int metia en el
+    // indice los dos bytes siguientes del ITEM.
+    int   iVar8 = (int)*(short*)DAT_07e91350;
     int   iVar3 = iVar8 * 0x40 + (int)DAT_07d78068;
     unsigned int uVar5 = (unsigned int)*(unsigned char *)(iVar3 + 0x20); // item width
     unsigned int uVar9 = (unsigned int)*(unsigned char *)(iVar3 + 0x21); // item height
