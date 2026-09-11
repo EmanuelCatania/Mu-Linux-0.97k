@@ -401,11 +401,12 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     // --- Check if target is MixItems with MixState active ---
     bool spaceFree = false;
     if ((BYTE*)invBase == &OffsetMixItems[0] && DAT_07eaa140 != 0) {
-        // El estado de mix habilita la validación local diferida, pero nunca
-        // convierte en válido un slot/fingerprint fuera de 8x4.  La versión
-        // genérica anterior emitía 0x24 para ese caso y dejaba que el servidor
-        // lo rechazara; el hit-test original no llega a construir ese move.
-        spaceFree = footprintInsideGrid;
+        // IDA sub_4D6470 L601-604: con MixState != 0 la grilla del Chaos se
+        // trata como SIN lugar (`v487 = 0`).  Despues de un mix MixState queda
+        // en >= 2 (ReceiveMix) hasta reabrir la maquina.  El port la daba por
+        // libre, y eso ademas disparaba el aviso de la rama "no libre" de abajo
+        // en cada drop.
+        spaceFree = false;
     } else {
         // Call CheckInventorySpace to validate placement.
         // 2026-05-09 BUG-FIX: ANTES pasábamos `mouseGridX, mouseGridY` (= grid
@@ -432,16 +433,16 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
             if (gx >= 0 && gy >= 0 && gx < gridWidth && gy < gridHeight) {
                 int cellIdx = gy * gridWidth + gx;
                 BYTE* cellBase = (BYTE*)(invBase + cellIdx * 0x44);  // stride 0x22 words = 0x44 bytes
-                if (!spaceFree) {
-                    // Overlap: mark red
-                    cellBase[0x40] = 2;  // +0x20 in short units = +0x40 bytes: colorState
+                // IDA sub_4D6470 L630-642.  El port tenia las ramas cruzadas:
+                //   entra                     -> 2 (azul, InventoryColor)
+                //   no entra, jewel 461/462/464 -> 4 (verde: se aplica al item)
+                //   no entra                  -> 3 (rojo)
+                if (spaceFree) {
+                    cellBase[0x40] = 2;
+                } else if (pickedType == 0x1cd || pickedType == 0x1ce || pickedType == 0x1d0) {
+                    cellBase[0x40] = 4;
                 } else {
-                    // Check if currency item (Jewel of Bless/Soul/Life)
-                    if (pickedType == 0x1cd || pickedType == 0x1ce || pickedType == 0x1d0) {
-                        cellBase[0x40] = 4;  // currency highlight
-                    } else {
-                        cellBase[0x40] = 3;  // normal placement ok
-                    }
+                    cellBase[0x40] = 3;
                 }
             }
         }
@@ -497,7 +498,13 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                 // jewel: IDA salta a LABEL_807, que muestra el mensaje. Por eso
                 // `canStack` queda en false en esos dos casos (antes se ponia
                 // en true al final incondicionalmente y el aviso no salia).
-                if (DAT_07eaa119 == '\0' && DAT_07eaa11b == '\0') {
+                if (DAT_07eaa119 != '\0' || DAT_07eaa11b != '\0') {
+                    // IDA LABEL_807: jewel sobre un item con el baul o el trade
+                    // abiertos.  Es el UNICO sitio de sub_4D6470 que muestra
+                    // GlobalText[474]; el resto de la rama "no libre" sale en
+                    // silencio (LABEL_808).
+                    UIChatLogWindow_AddText((const char*)&DAT_07eaa190, GlobalText[474], 2);
+                } else {
                     // 2026-08-24 FIX (issue #15, "las jewels no se consumen"):
                     // aca se mandaba `SendRequestEquipmentItem_stub`, o sea
                     // 0x24 PMSG_ITEM_MOVE_RECV (11 bytes). El server trata eso
@@ -545,10 +552,10 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                 }
             }
         }
-        if (!canStack) {
-            // Show "can't place here" message
-            UIChatLogWindow_AddText((const char*)&DAT_07eaa190, (const char*)&DAT_07d4c89c, 2);
-        }
+        // (Aca se imprimia GlobalText[474] para CUALQUIER drop sin lugar, en
+        //  todos los grids que llama el dispatcher en el mismo click.  IDA
+        //  sale en silencio: ver LABEL_807 arriba.)
+        (void)canStack;
         goto drop_done;
     }
 
