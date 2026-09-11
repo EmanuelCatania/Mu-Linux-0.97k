@@ -911,87 +911,26 @@ void __cdecl FUN_004b14f0(void)
         }
     }
 
-    // ── 10. 'R' key — chardata re-encode / refresh ──────────────────────────
-    // Decodes, transforms, re-encodes 0x584-byte chardata block.
-    // Transform: buf[i] = (DAT_00559050[i&0xf] ^ (buf[i]+0x47)) + 0x23, XOR next
-    // Inverse:   buf[i] = (buf[i]+0x47 XOR ...) + 0x23 reversed
-    // This implements the XOR-encoded chardata refresh / view toggle.
+    // ── 10. 'R' key ─────────────────────────────────────────────────────────
     {
         SHORT sv = GetAsyncKeyState(0x52); // 'R'
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e11a34 == 0) {
                 DAT_07e11a34 = 1;
 
-                // Look up chardata in hash table — if found, decode + transform + re-encode
-                if (DAT_07cf1ffc != nullptr) {
-                    // Get hash-table entry for chardata
-                    unsigned int idx = HashTable_GetIndex(&DAT_055c9bc8, DAT_07cf1ffc);
-                    if (idx != 0xffffffff) {
-                        void **ppEntry = (void **)(DAT_055c9bcc + idx * 4);
-                        char *entry = (char *)*ppEntry;
-                        char ref = *(entry + 0x161 * 4);
-                        *(entry + 0x161 * 4) = ref + 1;
-                        if ((BYTE)(ref + 1) < 2) {
-                            // Allocate copy, decode (reverse XOR transform), write back
-                            BYTE *buf = (BYTE *)operator_new(0x584);
-                            memcpy(buf, DAT_07cf1ffc, 0x584);
-                            // Reverse decode loop (0x583 downto 0)
-                            for (int i = 0x583; i >= 0; --i) {
-                                BYTE b   = buf[i];
-                                DWORD ki = (DWORD)i & 0x8000000fu;
-                                if ((int)ki < 0) ki = (ki - 1 | 0xfffffff0u) + 1;
-                                b = (BYTE)(((BYTE *)&PacketXorKey16)[ki] ^ b + 0x47) + 0x23;
-                                buf[i] = b;
-                                if (i < 0x583) buf[i] ^= buf[i + 1];
-                            }
-                            // Write back to chardata
-                            memcpy(DAT_07cf1ffc, buf, 0x584);
-                            operator_delete(buf);
-                        }
-                    }
-                }
+                if (DAT_07eaa117 != 0 && DAT_07cf1ff4 != nullptr) {
+                    unsigned short level =
+                        *(unsigned short*)((char*)DAT_07cf1ff4 + 0x0e);
 
-                // Locate current DAT_07cf1ffc in hash and re-encode
-                if (DAT_07cf1ffc != nullptr) {
-                    unsigned int idx = HashTable_GetIndex(&DAT_055c9bc8, DAT_07cf1ffc);
-                    if (idx != 0xffffffff) {
-                        void **ppEntry = (void **)(DAT_055c9bcc + idx * 4);
-                        char *entry = (char *)*ppEntry;
-                        char ref = *(entry + 0x161 * 4);
-                        *(entry + 0x161 * 4) = ref - 1;
-                        if (*(entry + 0x161 * 4) == '\0') {
-                            // Re-encode loop (0 to 0x583)
-                            BYTE *buf = (BYTE *)operator_new(0x584);
-                            memcpy(buf, DAT_07cf1ffc, 0x584);
-                            for (DWORD i = 0; i < 0x584; ++i) {
-                                BYTE b   = buf[i];
-                                DWORD ki = i & 0x8000000fu;
-                                if ((int)ki < 0) ki = (ki - 1 | 0xfffffff0u) + 1;
-                                b = (BYTE)(b + 0x47);
-                                b = (BYTE)(((BYTE *)&PacketXorKey16)[ki] ^ b) + 0x23;
-                                buf[i] = b;
-                                if (i < 0x583) buf[i] ^= buf[i + 1];
-                                buf[i] ^= (BYTE)rand();
-                            }
-                            memcpy(DAT_07cf1ffc, buf, 0x584);
-                            operator_delete(buf);
-                        }
-                    }
-                }
-
-                // Toggle DAT_07eaa118 (B-key correlation)
-                {
-                    char old118 = DAT_07eaa118;
-                    if (((BYTE)old118 == 0) || (DAT_07eaa132 == '\0') || (DAT_07e91388 != 0)) {
-                        // no toggle
-                    } else {
-                        if (DAT_07eaa150 == 0) {
-                            DAT_07eaa134 = 1;
-                            DAT_07eaa150 = 2;
-                        } else {
-                            DAT_07eaa134 = 0;
-                            DAT_07eaa150 = 0;
-                        }
+                    if (level >= 0x50 &&
+                        DAT_07eaa119 == 0 &&
+                        DAT_07eaa11a == 0 &&
+                        DAT_07eaa11c == 0 &&
+                        DAT_07eaa128 == 0)
+                    {
+                        DAT_07eaa134 = (DAT_07eaa134 == 0) ? 1 : 0;
+                        ((BYTE*)&DAT_07eaa150)[2] =
+                            (DAT_07eaa134 != 0) ? 2 : 0;
                     }
                 }
             }

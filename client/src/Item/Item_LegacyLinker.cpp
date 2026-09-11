@@ -52,6 +52,7 @@ void __cdecl CloseInventoryRelatedWindows(void) {
     ShopOpened                 = 0;   // DAT_07eaa118  ← EL fix del cierre
     DAT_07eaa132               = 0;   // byte_7EAA132
     DAT_07e11d14               = 0;   // RepairEnable
+    DAT_07eaa134               = 0;
     WarehouseOpened            = 0;   // DAT_07eaa119
     DAT_00559f5f               = 0;   // byte_559F5F
     DAT_07eaa14c               = 0;   // dword_7EAA14C

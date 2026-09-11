@@ -401,6 +401,29 @@ static void InventoryEquipmentHitTest(void)
         DAT_07ea840c = (DWORD)(x0 + s.w / 2);
         DAT_07ea8408 = (DWORD)y0;
 
+        if (DAT_07eaa134 != 0) {
+            bool nonRepairable =
+                (type >= 416 && type <= 419) ||
+                (type == 426) ||
+                (type == 135) ||
+                (type == 143) ||
+                (type >= 448) ||
+                (type >= 391 && type <= 403) ||
+                (type >= 430 && type <= 435);
+
+            if (!nonRepairable && DAT_083a4124 != 0) {
+                DAT_083a4124 = 0;
+                BYTE pkt[5];
+                pkt[0] = 0xC1;
+                pkt[1] = 5;
+                pkt[2] = 0x34;
+                pkt[3] = (BYTE)s.slotIdx;
+                pkt[4] = (BYTE)DAT_07eaa138;
+                Net_SendSmallPacket(pkt, 5);
+            }
+            return;
+        }
+
         if (DAT_083a4124 != 0) {
             DAT_083a4124 = 0;
             DAT_07ea9800 = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
@@ -557,7 +580,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     {
         float xb = (float)((double)InventoryStartX + 60.0);
         float yb = (float)((double)InventoryStartY + 395.0);
-        GL_DrawTexture(RepairEnable_0 ? 287 : 286, xb, yb, 24.0f, 24.0f,
+        GL_DrawTexture(DAT_07eaa134 ? 287 : 286, xb, yb, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((double)MouseX >= xb && (double)MouseX < xb + 24.0 &&
             (double)MouseY >= yb && (double)MouseY < yb + 24.0)
