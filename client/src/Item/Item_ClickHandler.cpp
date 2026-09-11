@@ -695,21 +695,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
     if (grid_h <= 0)                { if (wasClick) DbgLogPublic("FUN_004d23b0 EXIT: gh<=0"); return; }
 
-    // ── Pre-pasada: limpia todos los resaltados de hover de este pool (slot[64] = 0) ──
-    // 2026-05-08: el IDA original NO resetea entre frames y depende de que el
-    // caller (FUN_004ecb00 chain en state=4) lo limpie en otro path. En state=5
-    // nuestro hook desde RenderInventoryWindow llama esta función directamente,
-    // y sin reset todos los items quedan permanentemente azulados (slot[64]=2)
-    // tras pasar el mouse. Recreamos aquí el "limpiar antes de re-marcar":
-    // dejamos en 0 todas las celdas con `Color != 99` (=99 es la marca dorada
-    // de currency/zen blink y debe persistir).
-    for (int r = 0; r < grid_h; ++r) {
-        for (int c = 0; c < grid_w; ++c) {
-            int idx = r * grid_w + c;
-            BYTE* p = (BYTE*)(inv_base + 34 * idx) + 64;
-            if (*p != 99) *p = 0;
-        }
-    }
+    // (2026-09-11: aca habia una pre-pasada que ponia Color = 0 en todo el
+    //  pool.  El reset lo hace sub_4E6550 una vez por frame, antes de esta
+    //  funcion y de sub_4DF410 — ver el port en SecondPassword.cpp.  Esta
+    //  funcion tambien se llama desde el RENDER, despues del marcado del drop,
+    //  y la pre-pasada borraba esas marcas: por eso no se veia la silueta.)
 
     if ((int)EnableUse > 0)         { if (wasClick) DbgLogPublic("FUN_004d23b0 EXIT: EnableUse>0"); return; }
     // 2026-07-27 FIX (baúl: no se puede meter ni sacar nada): DAT_07eaa165 es el

@@ -663,6 +663,27 @@ void __cdecl FUN_004e6550(void) {
         }
     }
 
+    // IDA sub_4E6550 L160-231: reset por frame del byte ITEM.Color (+0x40) de
+    // todas las grillas, ANTES del hover (sub_4D23B0) y del marcado del drop
+    // (sub_4DF410), que corren despues en UpdateWindowsMouse.  Celda ocupada
+    // = 1, vacia = 0; en el pool de la tienda la marca 99 se conserva.
+    {
+        struct { BYTE* pool; int cells; } grids[] = {
+            { OffsetInventoryItems, 64 }, { OffsetTradeItems, 32 },
+            { OffsetWarehouseItems, 120 }, { OffsetMixItems, 32 },
+        };
+        for (auto& g : grids)
+            for (int i = 0; i < g.cells; ++i) {
+                BYTE* cell = g.pool + i * 0x44;
+                cell[0x40] = (*(short*)cell != -1) ? 1 : 0;
+            }
+        for (int i = 0; i < 32; ++i) {
+            BYTE* cell = Inventory + i * 0x44;
+            if (*(short*)cell == -1)       cell[0x40] = 0;
+            else if (cell[0x40] != 99)     cell[0x40] = 1;
+        }
+    }
+
     // Render de la grilla: si Y >= __ftol() (aprox. DAT_07ea5284), renderiza la grilla completa; si no, vacía
     DAT_07eaa164 = 0;
     int lVal = (int)DAT_07ea5284;
