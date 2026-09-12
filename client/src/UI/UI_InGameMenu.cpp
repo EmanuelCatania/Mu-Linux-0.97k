@@ -1082,6 +1082,10 @@ void __cdecl UI_InGameMenu(void)
             if (okClick || enterHit) {
                 DAT_083a4124 = 0;     // consume click
                 DAT_055ca038 = '\0';  // consume Enter
+                // IDA L1786 `case 144`: igual que el default, mas sub_4E9250(6)
+                // (re-baraja el teclado del segundo password, modo 6).
+                if (state == 0x90)
+                    FUN_004e9250(6);
                 goto tail;            // dismiss: shift ErrorMessage + PlayBuffer(25)
             }
         }
