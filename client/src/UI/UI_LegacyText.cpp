@@ -85,27 +85,14 @@ int __cdecl SeparateTextIntoLines(const char *text, char *out, int maxLines, int
 
 
 
+// IDA: FindText (0x004977F0).  `FindText` es una macro de la API de Windows que se
+// expande a FindTextA, por eso el cuerpo tiene este nombre.  2026-09-12: habia dos
+// ports de la misma funcion (este y FUN_004977f0, UI_LegacyExterns.cpp); este delega
+// en aquel, que ademas trae el fix del patron vacio.
+extern unsigned int __cdecl FUN_004977f0(char *param_1, void *param_2, char param_3);
 bool __cdecl FindTextA(char *haystack, char *needle, bool caseSensitive) {
     if (!haystack || !needle) return false;
-    int tokenLen = lstrlenA(needle);
-    int textLen = lstrlenA(haystack);
-    if (tokenLen == 0) return false;
-    int maxPos = caseSensitive ? 0 : (textLen - tokenLen);
-    if (maxPos < 0) return false;
-
-    int pos = 0;
-    while (pos <= maxPos) {
-        // Compare needle against haystack+pos
-        bool match = true;
-        for (int i = 0; i < tokenLen; i++) {
-            if (haystack[pos + i] != needle[i]) { match = false; break; }
-        }
-        if (match) return true;
-        // MBCS advance: skip 2 bytes for DBCS lead byte, else 1
-        if (IsDBCSLeadByte((BYTE)haystack[pos])) pos += 2;
-        else pos += 1;
-    }
-    return false;
+    return FUN_004977f0(haystack, needle, caseSensitive ? 1 : 0) != 0;
 }
 
 

@@ -1107,7 +1107,7 @@ void  __cdecl ParseTriangles(bool Flip);                             // SMD tria
 void  __cdecl ParseSkeleton(void);                                   // SMD skeleton parser
 
 // Text filter
-bool  __cdecl FindText(char *src, char *pattern, bool caseSensitive);// 0x0040e690
+bool  __cdecl FindText(char *src, char *pattern, bool caseSensitive);// IDA: FindText (0x004977F0), delega en FUN_004977f0
 
 // Camera / math
 void  __cdecl AngleMatrix(float angles[3], float matrix[3][4]);      // 0x00440c80
