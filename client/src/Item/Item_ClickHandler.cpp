@@ -95,7 +95,7 @@ static BYTE* const g_InventoryPoolForClickGuard = Inventory;
 // sub_494520 IME/text input). El símbolo correcto es `DAT_07eaa160` —
 // confirmado por Ghidra-decompiled Scene_MapTick línea 35/89 que lee
 // `DAT_07eaa160` como el item pointer y línea 89 lo pasa como 3er arg
-// a `FUN_004c4650` (RenderItemInfo).
+// a `RenderItemInfo` (RenderItemInfo).
 //
 // Sin este fix:
 //   * Hover loop seteaba DAT_07e11d24 (wrong global) → Scene_MapTick leía
@@ -1574,7 +1574,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             // `sub_4CD3B0(1, 0)`, que devuelve el item a su celda.  (Confirmado
             // contra el cliente original: soltar un item sobre otro lo devuelve.)
             if (InventoryOpened != 0 && (int)DAT_083a427c >= (int)InventoryStartX) {
-                FUN_004cd3b0();
+                Item_ReturnPickedItem();
                 return;
             }
 
@@ -1596,7 +1596,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
                 if (px >= ox && px < ox + 190 && py >= oy && py < oy + 433) {
                     // IDA L1004-1010 (baul/chaos && MouseX >= dword_7EAA0C8 ->
                     // v144 = 0) -> LABEL_301: el item vuelve a su celda.
-                    FUN_004cd3b0();
+                    Item_ReturnPickedItem();
                     return;
                 }
             }

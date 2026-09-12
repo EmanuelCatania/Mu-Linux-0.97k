@@ -871,7 +871,7 @@ void __cdecl FUN_004e6c40(void) {
         CloseInventoryRelatedWindows();
         const BYTE cancel[3] = { 0xC1, 0x03, 0x31 };
         Net_SendC1Packet(cancel, 3);
-        FUN_004cd3b0();
+        Item_ReturnPickedItem();
         CreateOkMessageBox(GlobalText[686]);
         return;
     }
@@ -880,7 +880,7 @@ void __cdecl FUN_004e6c40(void) {
         CloseInventoryRelatedWindows();
         const BYTE cancel[3] = { 0xC1, 0x03, 0x31 };
         Net_SendC1Packet(cancel, 3);
-        FUN_004cd3b0();
+        Item_ReturnPickedItem();
         CreateOkMessageBox(GlobalText[687]);
         return;
     }
@@ -1059,7 +1059,7 @@ void __cdecl FUN_004e7ac0(void) {
             (0xc9 < (int)DAT_083a4278) && ((int)DAT_083a4278 < 0xca + iBY9) &&
             DAT_083a413c != '\0') {
             DAT_083a413c = '\0';
-            FUN_0051d780(0x2c9, 5);
+            CreateDialogInterface(0x2c9, 5);
         }
     }
 
@@ -1802,7 +1802,7 @@ uint __cdecl FUN_004f6a70(void)
     if (DAT_07eaa165 != '\0') return 0;
     DAT_07eaa117 = 0;
     FUN_004cba60();
-    if (0 < (int)DAT_07e91388) FUN_004cd3b0();
+    if (0 < (int)DAT_07e91388) Item_ReturnPickedItem();
     char pkt[3]; pkt[0] = (char)0xC1; pkt[1] = 3; pkt[2] = (char)0x82;
     unsigned int uVar4 = 3;
     int iVar6 = 0;
@@ -2959,7 +2959,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //   CharacterAnimation (alias of FUN_00448600)
 //   FUN_004430c0   SetPlayerStop
 //   FUN_0043e820   SetAction
-//   FUN_00481ba0   CreateChat
+//   CreateChat   CreateChat
 //   FUN_0046c680   CreateBlood (CreateBlood_stub)
 //   FUN_00449840   DeleteCloth
 //   FUN_00448930   AttackStage (AttackStage_stub)
@@ -2971,7 +2971,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //   FUN_00440060   BMD::Animation
 //   AngleMatrix    (no FUN_)
 //   VectorRotate   = Vector_InverseRotate
-//   FUN_004b1170   FindHotKey (FindHotKey_stub)
+//   FUN_004b1170   FindHotKey (FindHotKey)
 //   FUN_00474bd0   CreateArrows (CreateArrows_stub)
 //   FUN_005129f0   fabs
 //   FUN_0046fe40   Joint_Find
@@ -2993,7 +2993,7 @@ extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl FUN_00449840(int c, int o, int flag);   // DeleteCloth
 extern bool __cdecl AttackStage_stub(DWORD c, DWORD o);
 extern void __cdecl CreateBlood_stub(DWORD o);
-extern int  __stdcall FindHotKey_stub(int Skill);
+extern int  __stdcall FindHotKey(int Skill);
 extern void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
 extern unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* p);
 
@@ -3439,25 +3439,25 @@ void __cdecl FUN_00449900(int p1)
                                     if (action < 100) {
                                         TextIndex = (World == 2) ? 905 : 0;
                                         if (!(rand() % 3) && TextIndex)
-                                            FUN_00481ba0((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
+                                            CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                                         FUN_0043e820((int)c, 105);
                                     }
                                 } else {
                                     TextIndex = (World == 2) ? 905 : 0;
                                     if (!(rand() % 3) && TextIndex)
-                                        FUN_00481ba0((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
+                                        CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                                     FUN_0043e820((int)c, 111);
                                 }
                             } else {
                                 TextIndex = (World == 2) ? 904 : 823;
                                 if (!(rand() % 2) && TextIndex)
-                                    FUN_00481ba0((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
+                                    CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                                 FUN_0043e820((int)c, 99);
                             }
                         } else {
                             TextIndex = (World == 2) ? 904 : 0;
                             if (!(rand() % 2) && TextIndex)
-                                FUN_00481ba0((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
+                                CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
                             FUN_0043e820((int)c, 97);
                         }
                         skipIdleSelect = true;
@@ -3465,7 +3465,7 @@ void __cdecl FUN_00449900(int p1)
                     if (!skipIdleSelect) {
                         TextIndex = (World == 2) ? 904 : 0;
                         if (!(rand() % 2) && TextIndex)
-                            FUN_00481ba0((char*)(c + 0x1C1), GlobalText[TextIndex], c, 0, -1);
+                            CreateChat((char*)(c + 0x1C1), GlobalText[TextIndex], c, 0, -1);
                     }
                 }
                 if (!skipIdleSelect) FUN_0043e820((int)c, 1);
@@ -3590,14 +3590,14 @@ void __cdecl FUN_00449900(int p1)
             WorldPosition[0] = ((float)*(BYTE*)(c + 776) + 0.5f) * 100.0f;
             WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
             WorldPosition[2] = FUN_004f7500(WorldPosition[0], WorldPosition[1]);
-            int hk = FindHotKey_stub(5);
+            int hk = FindHotKey(5);
             Effect_Create(1200, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(91, 0, 0);
             break;
         }
         case 8: {  // Heal
-            int hk = FindHotKey_stub(8);
+            int hk = FindHotKey(8);
             Effect_Create(204, (float*)(o + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(86, 0, 0);
@@ -3609,7 +3609,7 @@ void __cdecl FUN_00449900(int p1)
             v399[2] = *(float*)(o + 24) + 100.0f;
             for (int kk = 0; kk < 4; ++kk) {
                 v394[0] = 0.0f; v394[1] = 0.0f; v394[2] = (float)kk * 90.0f;
-                int hk = FindHotKey_stub(9);
+                int hk = FindHotKey(9);
                 Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (int)o, 80.0f,
                              *(short*)(o + 134), (unsigned char)hk);
                 Joint_Create(1253, v399, (float*)(o + 16), v394, 0, (int)o, 20.0f, (short)-1, 0);
@@ -3618,7 +3618,7 @@ void __cdecl FUN_00449900(int p1)
             break;
         }
         case 10: {  // Defense
-            int hk = FindHotKey_stub(10);
+            int hk = FindHotKey(10);
             Effect_Create(200, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             Effect_Create(201, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
@@ -3628,7 +3628,7 @@ void __cdecl FUN_00449900(int p1)
         }
         case 12: {  // FallingSlash
             mc_AngleVectorOffset((float*)o, -20.0f, -90.0f, 100.0f, WorldPosition);
-            int hk = FindHotKey_stub(12);
+            int hk = FindHotKey(12);
             Effect_Create(1210, WorldPosition, (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(92, 0, 0);
@@ -3638,7 +3638,7 @@ void __cdecl FUN_00449900(int p1)
             WorldPosition[0] = ((float)*(BYTE*)(c + 776) + 0.5f) * 100.0f;
             WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
             WorldPosition[2] = FUN_004f7500(WorldPosition[0], WorldPosition[1]);
-            int hk = FindHotKey_stub(13);
+            int hk = FindHotKey(13);
             Effect_Create(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             Effect_Create(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
@@ -3647,7 +3647,7 @@ void __cdecl FUN_00449900(int p1)
         }
         case 14: {  // Decay (bomb-ring)
             Effect_SpawnBombRing((float*)(o + 16));
-            int hk = FindHotKey_stub(14);
+            int hk = FindHotKey(14);
             Effect_Create(241, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             break;
@@ -3659,7 +3659,7 @@ void __cdecl FUN_00449900(int p1)
         case 41: {  // Bow special 1
             *(BYTE*)(o + 136) = (BYTE)(*(short*)(c + 624) + 112);
             *(BYTE*)(o + 137) = *(BYTE*)(c + 626);
-            int hk = FindHotKey_stub(41);
+            int hk = FindHotKey(41);
             Effect_Create(238, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(85, 0, 0);
@@ -3668,7 +3668,7 @@ void __cdecl FUN_00449900(int p1)
         case 42: {  // Bow special 2
             *(BYTE*)(o + 136) = (BYTE)(*(short*)(c + 624) + 112);
             *(BYTE*)(o + 137) = *(BYTE*)(c + 626);
-            int hk = FindHotKey_stub(42);
+            int hk = FindHotKey(42);
             Effect_Create(244, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(85, 0, 0);
@@ -3725,7 +3725,7 @@ void __cdecl FUN_00449900(int p1)
                 && (act == 46 || act == 47 || act == 48 || act == 49 || act == 54 || act == 55))
             {
                 unsigned char arrowSkill = *(BYTE*)(c + 770);  // direct read (anti-tamper stripped)
-                int hk = FindHotKey_stub(arrowSkill);
+                int hk = FindHotKey(arrowSkill);
                 CreateArrows_stub(c, o, 0, (WORD)hk, (WORD)v393, (WORD)*(BYTE*)(c + 770));
             }
             // L2098-2101: ranged-monster auto-arrows
@@ -3755,7 +3755,7 @@ void __cdecl FUN_00449900(int p1)
                 && (act == 46 || act == 47 || act == 48 || act == 49 || act == 54 || act == 55))
             {
                 unsigned char arrowSkill = *(BYTE*)(c + 770);
-                int hk = FindHotKey_stub(arrowSkill);
+                int hk = FindHotKey(arrowSkill);
                 CreateArrows_stub(c, o, Owner, (WORD)hk, 0, (WORD)*(BYTE*)(c + 770));
             }
             // L2198-2201: ranged-monster
@@ -3889,7 +3889,7 @@ void __cdecl FUN_00449900(int p1)
                 break;
             }
             case 24: {
-                int hk = FindHotKey_stub(skillId);
+                int hk = FindHotKey(skillId);
                 CreateArrows_stub(c, o, 0, (WORD)hk, 1, 0);
                 goto LABEL_720;
             }
@@ -3929,7 +3929,7 @@ void __cdecl FUN_00449900(int p1)
             LABEL_720:
                 {
                     unsigned char skill2 = *(BYTE*)(c + 770);
-                    int hk = FindHotKey_stub(skill2);
+                    int hk = FindHotKey(skill2);
                     CreateArrows_stub(c, o, 0, (WORD)hk, 0, (WORD)skill2);
                 }
                 break;

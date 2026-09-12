@@ -35,7 +35,8 @@
 // `sub_45FEC0(i[133], ...)`.  Con 0 el indice vuelve a caer dentro del array.
 // Ningun caller del arbol distingue -1 (verificado): nadie compara el retorno
 // contra -1 ni contra < 0.
-int __stdcall FindHotKey_stub(int Skill) {
+// IDA: FindHotKey (0x004B1170)
+int __stdcall FindHotKey(int Skill) {
     // anti-tamper hash table — skipped (encrypt CharacterMachine before read)
 
     char* charAttr = (char*)DAT_07cf1ff4;  // IDA: CharacterAttribute
@@ -56,7 +57,8 @@ int __stdcall FindHotKey_stub(int Skill) {
 // Renders a skill icon bitmap at (x,y) with given dimensions.
 // Reads CharacterAttribute->Skill[iIndex] via encrypted hash table access.
 // If skill ID is 0, renders empty slot. Otherwise renders skill texture.
-void __cdecl RenderSkillIcon_stub(int iIndex, float x, float y, float width, float height) {
+// IDA: sub_4BB940 (0x004BB940)
+void __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float height) {
     // 0x004BB940 — Renders a skill icon bitmap at (x,y) with given dimensions.
     // ~80% of Ghidra output is anti-tamper hash table operations wrapping reads to
     // CharacterAttribute->Skill and ->HotKey arrays. Only real logic implemented.

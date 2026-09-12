@@ -10,8 +10,8 @@
 // internos que pueden seguir tropezando con punteros corruptos. SEH
 // silencia cualquier AV interno en lugar de matar el proceso — la
 // tooltip simplemente no aparece esa frame.
-extern "C" void __cdecl FUN_004c4650_impl(void*, void*, void*, int);
-extern "C" void __cdecl FUN_004c8d70_impl(void*, int, void*);
+extern "C" void __cdecl RenderItemInfo_impl(void*, void*, void*, int);
+extern "C" void __cdecl RenderRepairInfo_impl(void*, int, void*);
 extern "C" void DbgLogPublic(const char* msg);
 char* __cdecl GetMapName(int iMap);
 
@@ -1433,10 +1433,11 @@ static void AppendInventoryRequireClassLines(ITEM_ATTRIBUTE* pItem)
     }
 }
 
-void __cdecl FUN_004c4650(void* param_1, void* param_2, void* param_3_v, int param_4)
+// IDA: RenderItemInfo (0x004C4650)
+void __cdecl RenderItemInfo(void* param_1, void* param_2, void* param_3_v, int param_4)
 {
     __try {
-        FUN_004c4650_impl(param_1, param_2, param_3_v, param_4);
+        RenderItemInfo_impl(param_1, param_2, param_3_v, param_4);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         DbgLogPublic("RIP CRASHED inside _impl — caught by SEH");
         extern DWORD DAT_07eaa160;
@@ -1444,10 +1445,11 @@ void __cdecl FUN_004c4650(void* param_1, void* param_2, void* param_3_v, int par
     }
 }
 
-void __cdecl FUN_004c8d70(void* param_1, int param_2, void* param_3_v)
+// IDA: RenderRepairInfo (0x004C8D70)
+void __cdecl RenderRepairInfo(void* param_1, int param_2, void* param_3_v)
 {
     __try {
-        FUN_004c8d70_impl(param_1, param_2, param_3_v);
+        RenderRepairInfo_impl(param_1, param_2, param_3_v);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         DbgLogPublic("RRI CRASHED inside _impl — caught by SEH");
         extern DWORD DAT_07eaa160;
@@ -1455,10 +1457,11 @@ void __cdecl FUN_004c8d70(void* param_1, int param_2, void* param_3_v)
     }
 }
 
-// FUN_004c4650 @ 0x004C4650 — RenderItemInfo(int sx, int sy, ITEM* ip, bool bSell)
+// RenderItemInfo @ 0x004C4650 — RenderItemInfo(int sx, int sy, ITEM* ip, bool bSell)
 // param_3 = ITEM* (ushort array: [0]=type, [0x24]=options, [0x1b]=option flags, etc.)
 // unaff_EBP and unaff_ESI are self-assigned locally — anti-tamper noise.
-extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* param_3_v, int param_4)
+// IDA: RenderItemInfo (0x004C4650)
+extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* param_3_v, int param_4)
 {
     // 2026-05-08: defensive — si nos llaman antes de que WinMain initialice
     // el ItemAttribute table (DAT_07d78068), o si DAT_07d78068 fue clobbered
@@ -1771,11 +1774,11 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
     }
 }
 
-// FUN_004c8d70 @ 0x004C8D70 — RenderRepairInfo(param_1, param_2, ITEM* ip)    [Kayito: RenderRepairInfo]
+// RenderRepairInfo @ 0x004C8D70 — RenderRepairInfo(param_1, param_2, ITEM* ip)    [Kayito: RenderRepairInfo]
 // Shows item tooltip in the repair NPC context. unaff_EBX=DAT_07cf1ffc, unaff_ESI=1 (anti-tamper).
-extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* param_3_v) // RenderRepairInfo
+extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* param_3_v) // RenderRepairInfo
 {
-    // 2026-05-08: same defensive guards as FUN_004c4650 (sibling function).
+    // 2026-05-08: same defensive guards as RenderItemInfo (sibling function).
     // Use the backup-aware accessor to recover DAT_07d78068 if clobbered.
     unsigned int attrBaseOK_ = ItemAttribute_Base();
     if (attrBaseOK_ == 0) return;

@@ -261,7 +261,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         PlayBuffer(0x54, 0, 0);
 
         // FindHotKey(0x37) — find hotkey slot for skill '7'
-        int hotKey = FindHotKey_stub(0x37);
+        int hotKey = FindHotKey(0x37);
         WORD pkKey = *(WORD*)(o + 0x86);
 
         Effect_Create(0x490, (float*)(o + 0x10), (float*)(o + 0x1C),
@@ -360,7 +360,7 @@ bool __cdecl AttackStage_stub(DWORD c, DWORD o)
     } else if(skill==48) { if(stage>9 && type==390 && *(BYTE*)(o+261)==63) *(BYTE*)(c+757)=15; }
     else if(skill==49) { if(*(float*)(o+264)>=5.0f && type==390 && (*(BYTE*)(o+261)==64 || *(BYTE*)(o+261)==65)) *(BYTE*)(c+757)=15; }
     else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){Effect_Create(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} DAT_00559858=5; }
-    else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) Effect_Create(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); Effect_Create(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey_stub(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
+    else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) Effect_Create(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); Effect_Create(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
     else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){Effect_Create(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);*(BYTE*)(c+757)=15;} }
     // -- PENDIENTE: grupo de skills de magia del DLL (mejora, NO esta en IDA) --
     //

@@ -734,4 +734,4 @@ char __cdecl FUN_004e5980(void)
     }
     return result;
 }
-// FUN_004b14f0 — implemented in src/UI/Chat_InputTick.cpp
+// Chat_InputTick — implemented in src/UI/Chat_InputTick.cpp

@@ -45,9 +45,9 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// FUN_004c4650 and FUN_004c8d70 — implemented in src/UI/RenderItemInfo.cpp
+// RenderItemInfo and RenderRepairInfo — implemented in src/UI/RenderItemInfo.cpp
 
-// FUN_004c9730 @ 0x004C9730 — UI_CommandPanel_BuildEntry(chardata, slot)
+// RenderSkillTooltip @ 0x004C9730 — UI_CommandPanel_BuildEntry(chardata, slot)
 // Real logic: calls FUN_0047e4f0 (GetMagicSkillDamage) and GetSkillInformation for the
 // skill in CharacterAttribute->Skill[param_2+4], then sprintf's skill name, damage, mana cost,
 // distance, and class-specific descriptions into the Items[999] text buffer (stride 100 bytes).
@@ -57,7 +57,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Finally calls FUN_004c2420 (CharMenu_RenderTextList) with unaff_retaddr as Y position.
 // STUB: unaff_retaddr carries screen Y position from caller — cannot resolve without
 // call-site disassembly. Also uses CharacterAttribute (undeclared typed struct).
-// FUN_004c9730 @ 0x004C9730 — Skill_RenderTooltip(float a1, int a2, int hoveredSkillIdx)
+// RenderSkillTooltip @ 0x004C9730 — Skill_RenderTooltip(float a1, int a2, int hoveredSkillIdx)
 // Ported from IDA `sub_4C9730` decompile (1844 bytes).
 //
 // Builds a tooltip text-list for the hovered skill (TextList[0..n]) describing
@@ -123,7 +123,7 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     for (int i = 0; i < count; ++i) {
         DAT_00559c78 = (i == 0) ? 0xFFFFFF00 : 0xFFFFFFFF;
         m_dwBackColor = 0;
-        FUN_0040f610((HDC)(uintptr_t)DAT_055c9ff8, drawX + padX, lineY, lines[i], 0);
+        CUIRenderText_RenderText((HDC)(uintptr_t)DAT_055c9ff8, drawX + padX, lineY, lines[i], 0);
         lineY += lineH;
     }
 }
@@ -285,7 +285,8 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
 #endif
 }
 
-void __cdecl FUN_004c9730(float a1, int a2, int a3)
+// IDA: sub_4C9730 (0x004C9730)
+void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
 {
     int skillTipX = *(int*)&a1;
     if (a3 < 0 || a3 >= 60 || !CharacterAttribute || !Hero) return;
@@ -442,7 +443,7 @@ extern "C" int Text_MeasureOrthoWidth(const char* text);   // definido más abaj
 
 // FUN_0047F7A0 @ 0x0047F7A0 (IDA)
 // UI_DrawText — Text_Draw(x, y, text, maxw, iSort, extra)
-// Draws text via Font vtable dispatch (FUN_0040f610) if non-empty or maxw!=0.
+// Draws text via Font vtable dispatch (CUIRenderText_RenderText) if non-empty or maxw!=0.
 // Return type is void per functions.h declaration.
 //
 // 2026-05-04: BUG-FIX — el flag `param_5` (iSort) determinaba alineación:
@@ -494,7 +495,7 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
     //
     //   param_4  -> pixel -> / g_fScreenRate_x -> logico
     //   textW    -> logico (Text_MeasureOrthoWidth ya divide)
-    //   x        -> logico + logico = logico  -> lo convierte FUN_0040f610
+    //   x        -> logico + logico = logico  -> lo convierte CUIRenderText_RenderText
     if (param_5 >= 2 && param_4 > 0 && DAT_055c9fec) {
         const float rateX  = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
         const int   boxLog = (int)((float)param_4 / rateX);
@@ -504,7 +505,7 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
         }
     }
 
-    FUN_0040f610((HDC)(uintptr_t)DAT_055c9ff8, x, param_2,
+    CUIRenderText_RenderText((HDC)(uintptr_t)DAT_055c9ff8, x, param_2,
                  (const char*)param_3, (DWORD)param_4);
 }
 
@@ -536,10 +537,11 @@ unsigned int __cdecl FUN_004977f0(char *param_1, void *param_2, char param_3) {
     return 0;
 }
 
-// FUN_0047fe30 @ 0x0047FE30 — Text_SplitAtMiddle(src, dstB_ptr, dstA, len)
+// CutText @ 0x0047FE30 — Text_SplitAtMiddle(src, dstB_ptr, dstA, len)
 // Splits src at middle: first half → dstA (param_3), second half → *(char*)param_2.
 // Split point: first space near len/2, or forced at len/2+2.
-void __cdecl FUN_0047fe30(void *param_1_v, int param_2, void *param_3_v, int param_4) {
+// IDA: CutText (0x0047FE30)
+void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4) {
     char *param_1 = (char*)param_1_v;
     char *param_3 = (char*)param_3_v;
     unsigned int uVar4 = 0, uVar3 = 0;
@@ -560,7 +562,7 @@ void __cdecl FUN_0047fe30(void *param_1_v, int param_2, void *param_3_v, int par
     ((char*)param_2)[param_4 - uVar3] = '\0';
 }
 
-// FUN_0040f610 @ 0x0040F610 — CUIRenderText::RenderText (vtable dispatcher)
+// CUIRenderText_RenderText @ 0x0040F610 — CUIRenderText::RenderText (vtable dispatcher)
 // Original IDA: `(*(vtable[0]+4))(this, x, y, text, ...)` — thiscall through
 // CUIRenderText->pSubclass->vtable[1]. El subclass se instancia en OpenFont
 // (0x0050f690) vía sub_40F570 y puede ser tipo-0 (simple, TGA font) o tipo-1
@@ -625,7 +627,7 @@ static void Text_PixelToOrthoScale(float* outX, float* outY)
 // g_fScreenRate_x` que hace IDA en RenderText (0x47F650) y RenderTipText
 // (0x47F7F0).
 // Escala pixeles-de-framebuffer -> unidades del ortho en las que dibuja el
-// stack de texto (la misma que aplica FUN_0040f610 a los glifos).
+// stack de texto (la misma que aplica CUIRenderText_RenderText a los glifos).
 //
 // OJO, NO es lo mismo que g_fScreenRate_x: ese es el factor del BINARIO, que
 // pasa a espacio-640 porque su CUIRenderText reescala internamente. En nuestro
@@ -671,7 +673,7 @@ extern "C" int Text_MeasureOrthoWidth(const char* text)
 //                 marcadores) → sub_4105F0 (pinta cada columna con el color del
 //                 tramo activo), con caché de texturas por string.
 //
-// DESVIACIÓN CONSCIENTE: nuestro FUN_0040f610 es una reimplementación propia
+// DESVIACIÓN CONSCIENTE: nuestro CUIRenderText_RenderText es una reimplementación propia
 // basada en glifos (wglUseFontBitmapsA), sin la partición type-0/type-1 del
 // original ni su caché de texturas.  Aplicamos siempre el comportamiento del
 // type-1, porque el alternativo es dibujar los bytes de control como glifos
@@ -779,7 +781,8 @@ static int Text_ParseStyleMarkers(const char *src, char *dst, size_t dstCap,
     return n;
 }
 
-void __cdecl FUN_0040f610(HDC /*hdc_unused*/, int x, int y, const char *text, DWORD /*color_unused*/)
+// IDA: CUIRenderText::RenderText (0x0040F610)
+void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const char *text, DWORD /*color_unused*/)
 {
     if (text == NULL || *text == '\0') return;
 

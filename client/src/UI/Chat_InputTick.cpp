@@ -1,4 +1,4 @@
-// Chat_InputTick.cpp — FUN_004b14f0 @ 0x004b14f0
+// Chat_InputTick.cpp — Chat_InputTick @ 0x004b14f0
 // Per-frame chat input + hotkey + character-preview tick.
 // Called from Game_MainLoop every frame.
 //
@@ -7,7 +7,7 @@
 //   2. Chat history navigation (PageUp/Down vtable scroll; Up/Down arrow ring buffer)
 //   3. Class-tab buttons (4 tabs) — char preview select + 3-byte packet send
 //   4. Hotkey assignment grid (chardata+0xd7, 20 slots, keys 1-9)
-//   5. Hotkey trigger via numpad/number 1-9 keys → FUN_004b0e80()
+//   5. Hotkey trigger via numpad/number 1-9 keys → SelectSkillByHotkey()
 //   6. Chat input for 9 channels (FUN_00494520 IME → validate → XOR-encode → send)
 //   7. Whisper-target channel (DAT_07e108c8) — same pipeline as above
 //   8. 'B' key toggle (DAT_07eaa134 / DAT_07eaa150 byte 2)
@@ -380,9 +380,10 @@ extern "C" void Chat_SendChatLine(const char* text)
 // pkt_c0/c1/c2 = second 3-byte packet (DAT_07eaa165 branch).
 
 // ---------------------------------------------------------------------------
-// FUN_004b14f0 — Chat_InputTick
+// Chat_InputTick — Chat_InputTick
 // ---------------------------------------------------------------------------
-void __cdecl FUN_004b14f0(void)
+// IDA: Chat_InputTick (0x004B14F0)
+void __cdecl Chat_InputTick(void)
 {
     int mouseX = (int)DAT_083a427c;
     int mouseY = (int)DAT_083a4278;
@@ -666,10 +667,10 @@ void __cdecl FUN_004b14f0(void)
                 {
                     for (int n = 1; n <= 9; ++n) {
                         if (((unsigned short)GetAsyncKeyState(0x30 + n) >> 8) != 0)
-                            FUN_004b0e80(n);
+                            SelectSkillByHotkey(n);
                     }
                     if (((unsigned short)GetAsyncKeyState(0x30) >> 8) != 0)
-                        FUN_004b0e80(0);
+                        SelectSkillByHotkey(0);
                 }
             }
 

@@ -141,7 +141,7 @@ void __cdecl Game_MainLoop(HDC param_1)
             operator_delete(old_bec);
         }
 
-        FUN_00514310();
+        UI_InGameMenu();
 
         CHK("ML/pre_tick");
         // Dispatch per-state game logic

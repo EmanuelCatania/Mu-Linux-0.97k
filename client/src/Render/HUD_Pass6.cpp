@@ -940,7 +940,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
 
     // Class banner — cross-fade IDA-faithful entre clase y server-name.
     // Fórmula original (IDA + 4 DLL sources): pulse=sin(t)+1, α_class=2-pulse,
-    // α_zone=pulse. Funciona correctamente ahora que FUN_0040f610 respeta
+    // α_zone=pulse. Funciona correctamente ahora que CUIRenderText_RenderText respeta
     // el alpha del caller (antes lo pisaba siempre a 1.0 → ambos textos
     // visibles simultáneo → "(Sou Maetee)" garbled).
     float pulse = (float)sin((double)WorldTime * 0.001) + 1.0f;

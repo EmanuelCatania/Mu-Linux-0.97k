@@ -1,4 +1,4 @@
-// UI_InGameMenu.cpp — FUN_00514310 @ 0x00514310
+// UI_InGameMenu.cpp — UI_InGameMenu @ 0x00514310
 // Secondary in-game UI state machine (DAT_083a7c24).
 // Handles: escape menu, NPC shop, buy confirmation, item lists, server/char transitions.
 // Called every frame from Game_MainLoop.
@@ -82,9 +82,10 @@ static void SendLoginPacket(BYTE *payload, int payloadLen)
 }
 
 // ---------------------------------------------------------------------------
-// FUN_00514310 — UI_InGameMenu
+// UI_InGameMenu — UI_InGameMenu
 // ---------------------------------------------------------------------------
-void __cdecl FUN_00514310(void)
+// IDA: UI_InGameMenu (0x00514310)
+void __cdecl UI_InGameMenu(void)
 {
     // Mouse coordinates (updated by input layer)
     int mouseX = (int)DAT_083a427c;
@@ -239,7 +240,7 @@ void __cdecl FUN_00514310(void)
     // ── Escape / in-game menu ────────────────────────────────────────────
     // N buttons (3/4/5 según g_GameState) en X=[0x103..0x17b], Y=(3*i+6)*10.
     //
-    // Render order (UI_StatsPanel FUN_0051af50):
+    // Render order (UI_StatsPanel RenderErrorMessage):
     //   Login (state 2, 3 btns):     Salir • Opciones • Cancelar
     //   CharSelect (state 4, 4 btns): Salir • IrOtroSrv • Opciones • Cancelar
     //   Ingame (state 5, 5 btns):     Salir • IrOtroSrv • IrOtroChar • Opciones • Cancelar
@@ -327,7 +328,7 @@ void __cdecl FUN_00514310(void)
                             if (DAT_005615c0 == 5) {
                                 StopMusic();
                                 AllStopSound();
-                                FUN_004cd3b0();
+                                Item_ReturnPickedItem();
                                 ReleaseMainData();
                             }
                             FUN_0043dc90((int)(uintptr_t)DAT_055ca160);  // Net_Disconnect
@@ -633,7 +634,7 @@ void __cdecl FUN_00514310(void)
     // Acá había un case agrupado etiquetado "NPC shop item list" que terminaba
     // en `goto tail` INCONDICIONAL. `tail` hace `ErrorMessage = NextErrorMessage`,
     // o sea limpiaba el estado en el mismo frame, antes de que
-    // `RenderInformation -> FUN_0051af50` alcanzara a dibujarlo.
+    // `RenderInformation -> RenderErrorMessage` alcanzara a dibujarlo.
     //
     // Los tres estados son message boxes, no una lista de tienda:
     //   0x8b (139) — CreateOkMessageBox      (0x0051D6F0)
@@ -1043,7 +1044,7 @@ void __cdecl FUN_00514310(void)
         // PlayBuffer(25) — antes corría incondicionalmente → el cartel de error
         // del login se borraba 1 frame después de aparecer (con el "sonido de
         // click" que reportó el usuario). El dismiss debe pasar SOLO al click en
-        // el botón OK, que RenderErrorMessage (FUN_0051af50 default box path)
+        // el botón OK, que RenderErrorMessage (RenderErrorMessage default box path)
         // dibuja en (284,98)-(354,119). Con click → tail (dismiss). Sin click →
         // el cartel persiste, fiel al original.
         {
@@ -1058,7 +1059,7 @@ void __cdecl FUN_00514310(void)
             // login, pero no para los que arma `CreateOkMessageBox` (139) y
             // compania: esos traen su propio descriptor de boton en
             // DAT_083a42f8 (5 ints por entrada: bitmapId-240, x, y, w, h) y
-            // `FUN_0051af50` los dibuja en (x + _DAT_00552d40, y + _DAT_0055290c)
+            // `RenderErrorMessage` los dibuja en (x + _DAT_00552d40, y + _DAT_0055290c)
             // = (x+213, y+60). Para el 139 el descriptor es {1, 71, 140, 70, 21},
             // o sea el OK cae en (284..354, 200..221) — 100 px mas abajo que el
             // rect fijo, asi que con el mouse no se podia cerrar (solo con Enter).

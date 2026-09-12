@@ -772,8 +772,8 @@ extern unsigned char DAT_07e12840[1000 * 0x204];   // GroundItem pool: 1000 × 0
 extern DWORD   DAT_07e12945;   // sprite render loop base (stride 0x204)
 extern char    DAT_07e91350[0x44];      // pPickedItem — sizeof(ITEM) = 0x44
 extern DWORD   DAT_07e91388;
-extern byte    DAT_07e9138e;   // UI grid selected column (byte, FUN_004cd3b0)
-extern byte    DAT_07e9138f;   // UI grid selected row (byte, FUN_004cd3b0)
+extern byte    DAT_07e9138e;   // UI grid selected column (byte, Item_ReturnPickedItem)
+extern byte    DAT_07e9138f;   // UI grid selected row (byte, Item_ReturnPickedItem)
 extern DWORD   DAT_07e91394;
 extern DWORD   DAT_07e913a8;
 extern DWORD   DAT_07e91428;
@@ -1285,7 +1285,7 @@ extern float  _DAT_00552914;       // anim speed scale constant B
 // ── Server select input (FUN_0051e7e0) ───────────────────────────────────────
 extern DWORD   DAT_0056169c;        // selected channel (port % 0x14 + 1)
 
-// ── Char menu UI builder (FUN_004c3530) ───────────────────────────────────────
+// ── Char menu UI builder (RenderHelpWindow) ───────────────────────────────────────
 extern int     DAT_07e11d20;        // UI mode: 1=class-list-A, 2=class-list-B, 3=stats
 extern int     DAT_07e11d24;        // character class/subtype ID (range 0..0x1FF)
 extern char    lpString_07e90798[]; // string list buffer (100 bytes per entry, ~30 slots)
@@ -1657,7 +1657,7 @@ extern int     DAT_07e91528[12 * 10];
 // extern char    DAT_07d359d0;           // skill description string table base (slot 0, stride ~0x138)   // -> alias a GlobalText, ver el final del archivo
 extern int     DAT_00559fe0;           // class-data cache guard (last built class_id)
 
-// ── UI_StatsPanel (FUN_0051af50) globals ─────────────────────────────────────
+// ── UI_StatsPanel (RenderErrorMessage) globals ─────────────────────────────────────
 // Float step/scale constants (0x00552xxx)
 extern float  _DAT_00552854;   // row height / step in entity loop
 extern float  _DAT_00552a2c;   // button width for entity panel
@@ -2689,7 +2689,7 @@ extern DWORD   DAT_07c82cf4[0xAF0];       // terrain alpha bitmap pool (0x2BC0 b
 extern DWORD   DAT_0055339c;       // JPEG natural order table
 // m_dwTextColor / m_dwBackColor SON DAT_00559c78 / DAT_00559c80 (mismo global en IDA:
 // 0x559c78 / 0x559c80, verificado por disasm de sub_40D610 y sub_480980). El render de
-// texto (FUN_0040f610) lee DAT_00559c78; sin esta unificación los seteos de m_dwTextColor
+// texto (CUIRenderText_RenderText) lee DAT_00559c78; sin esta unificación los seteos de m_dwTextColor
 // (HUD passes + ChatListBox) se perdían → texto blanco. DAT_00559c78/80 declarados arriba.
 #define m_dwTextColor  DAT_00559c78
 #define m_dwBackColor  DAT_00559c80

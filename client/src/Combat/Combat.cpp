@@ -352,10 +352,10 @@
 // ─── OPCODE 0x23 — EQUIP RESPONSE / ITEM RESULT ──────────────────────────────────────────────────────────────────────────
 //
 //   void PacketHandler_0x23(void* pkt)  [FUN_0042f690]:
-//     byte[3] == 0: FUN_004cd3b0() + _DAT_00559680 = -1  — inventory reset
+//     byte[3] == 0: Item_ReturnPickedItem() + _DAT_00559680 = -1  — inventory reset
 //     byte[4] < 0x0C: decode g_CharData — equipment slot update
 //
-//   FUN_004cd3b0 @ 0x004cd3b0 = Inventory_Reset (limpia estado del inventario UI)
+//   Item_ReturnPickedItem @ 0x004cd3b0 = Inventory_Reset (limpia estado del inventario UI)
 //
 // ─── PACKET DE ATAQUE CLIENTE→SERVIDOR ──────────────────────────────────────────────────────────────────────────
 //

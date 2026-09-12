@@ -42,7 +42,7 @@
 //   case 0x00:  Net_SendPacket(puVar8)         — re-queue/echo packet
 //
 //   case 0x01:  entity = FUN_0045ac80(byte[3]*256 + byte[2])
-//               FUN_00481ba0(entity+0x1c1, puVar8+5, entity, 0, -1)
+//               CreateChat(entity+0x1c1, puVar8+5, entity, 0, -1)
 //               → entity name/class update (entity stride 0x394 at DAT_07abf5d0)
 //
 //   case 0x02:  World-enter / spawn position:
@@ -358,7 +358,7 @@
 //
 // ── DEFAULT ───────────────────────────────────────────────────────────────────
 //
-//   Unrecognized opcode → FUN_004cd3b0() (log/discard)
+//   Unrecognized opcode → Item_ReturnPickedItem() (log/discard)
 //
 // ── C2 / ENCRYPTED PACKET PATH ───────────────────────────────────────────────
 //
@@ -377,7 +377,7 @@
 //   FUN_0043E010  → Net_GetFreeBuffer(pool)
 //   FUN_0045ac80  → Entity_GetIndex(entityId)  — returns 0-based entity slot
 //   FUN_0045ac20  → Entity_Spawn(entityId)     — create or update entity slot
-//   FUN_00481ba0  → Entity_UpdateNameData(name, data, entity, 0, -1)
+//   CreateChat  → Entity_UpdateNameData(name, data, entity, 0, -1)
 //   FUN_004801c0  → World_StateInit()          — inicializa el estado in-world después del 0x02
 //   FUN_00412de0  → Auth_ProcessChallenge(byte) — handshake response for opcode 0x03
 //   FUN_0043bde0  → Entity_SetFlag(flag, entity)
@@ -475,14 +475,14 @@
 //   FUN_00404bc0  → UI_SetScene(id, 0, 0)
 //   FUN_00480620  → Widget_Draw(element, textureData, flag)
 //   FUN_005142d0  → ShowErrorDialog(id)
-//   FUN_004cd3b0  → Packet_Unknown_Log()
+//   Item_ReturnPickedItem  → Packet_Unknown_Log()
 //   FUN_00422df0  → HashTable_GetOrInsert
 //   FUN_00404040  → HashTable_Decrement
 //   FUN_00403f80  → HashTable_Insert
 //   FUN_00404330  → HashTable_Remove
 //   FUN_00404280  → HashTable_Get
 //   FUN_00423710  → HashTable_Free(entry, key)
-//   HashTable_GetIndex → FUN_004cd3b0 area (addr in binary)
+//   HashTable_GetIndex → Item_ReturnPickedItem area (addr in binary)
 //   FUN_0043de60  → Net_Throttle()
 //   Net_Disconnect at 0043dc90
 //   operator_new  → MSVC heap alloc
@@ -2576,7 +2576,7 @@ static void Recv_LogOut(const BYTE* Msg)
         if (DAT_005615c0 == 5) {
             StopMusic();
             AllStopSound();
-            FUN_004cd3b0();              // CharPreview_Refresh
+            Item_ReturnPickedItem();              // CharPreview_Refresh
             ReleaseMainData();
         }
         DAT_005615c0 = 4;                // g_GameState = CharSelect
@@ -2628,7 +2628,7 @@ static void Recv_LogOut(const BYTE* Msg)
         if (DAT_005615c0 == 5) {
             StopMusic();
             AllStopSound();
-            FUN_004cd3b0();
+            Item_ReturnPickedItem();
             ReleaseMainData();
         }
         FUN_0043dc90((int)(uintptr_t)DAT_055ca160);  // Net_Disconnect (close socket)
@@ -3511,7 +3511,7 @@ void Net_ProcessPacket(void)
                     if (ent[0] != 0) {
                         // CreateChat(nombre, texto, entidad, 0, -1) — igual que el
                         // path de NPC hover (FUN_004cb6f0).
-                        FUN_00481ba0((char*)(ent + 0x1C1), cmsg, (DWORD)(uintptr_t)ent, 0, -1);
+                        CreateChat((char*)(ent + 0x1C1), cmsg, (DWORD)(uintptr_t)ent, 0, -1);
                     }
                 }
                 break;

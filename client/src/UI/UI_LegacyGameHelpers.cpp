@@ -117,7 +117,7 @@ void __cdecl FUN_004cba60(void) {
     FUN_00404bc0(0x1c, 0, 0);
 }
 
-// FUN_004cd3b0 @ 0x004CD3B0 — UI_ItemGrid_Fill
+// Item_ReturnPickedItem @ 0x004CD3B0 — UI_ItemGrid_Fill
 // Fills 2D grid buffers with current item slot data (DAT_07e91350) for equipment display.
 // Dispatches by DAT_07ea9800; each grid entry = 0x11 dwords, selection flag at offset 0x38.
 //
@@ -135,7 +135,8 @@ void __cdecl FUN_004cba60(void) {
 //   cada celda del footprint = pPickedItem, Key = 1 solo en la primaria
 //   (byte_7E9138E/F = columna/fila de la primaria)
 //   al final: dword_7E91388 = 0; SetCharacterClass(Hero); PlayBuffer(29)
-void __cdecl FUN_004cd3b0(void)
+// IDA: sub_4CD3B0 (0x004CD3B0)
+void __cdecl Item_ReturnPickedItem(void)
 {
     if ((int)DAT_07e91388 < 1) return;
 
@@ -177,7 +178,7 @@ void __cdecl FUN_004cd3b0(void)
     // (bloques de hash-table anti-tamper omitidos)
 }
 
-// FUN_004b0e80 @ 0x004B0E80 — SelectSkillByHotkey(int number)
+// SelectSkillByHotkey @ 0x004B0E80 — SelectSkillByHotkey(int number)
 //
 // Elige la skill activa a partir del numero de hotkey que el jugador acaba de
 // apretar.  Recorre las 20 ranuras de skill y, para la que tenga asignado ese
@@ -195,7 +196,7 @@ void __cdecl FUN_004cd3b0(void)
 //   }
 //
 // 2026-09-04 -- BUG-FIX ("asigno el skill con Ctrl+N pero al apretar el numero
-// no cambia").  El port tenia la firma `void FUN_004b0e80(void)`: Ghidra perdio
+// no cambia").  El port tenia la firma `void SelectSkillByHotkey(void)`: Ghidra perdio
 // el argumento (viaja en registro) y quien lo porteo comparo la tabla de
 // asignaciones contra la CONSTANTE 1 en vez de contra el numero apretado.  O sea
 // solo podia seleccionar la skill asignada al 1 -- y como los dos call sites
@@ -205,7 +206,8 @@ void __cdecl FUN_004cd3b0(void)
 // SelectedHero = 0x5616AC, m_bAutoAttack = 0x559C5C, Attacking = 0x559C58,
 // CharacterAttribute = 0x7CF1FF4;  +87 = tipo de skill, +215 = numero de hotkey
 // (la tabla es por personaje: SelectedHero << 6).
-char __cdecl FUN_004b0e80(int a1)
+// IDA: sub_4B0E80 (0x004B0E80)
+char __cdecl SelectSkillByHotkey(int a1)
 {
     char found = 0;
     char* CA = (char*)CharacterAttribute;

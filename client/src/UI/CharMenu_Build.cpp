@@ -1,4 +1,4 @@
-// CharMenu_Build.cpp — FUN_004c3530 @ 0x004c3530
+// CharMenu_Build.cpp — RenderHelpWindow @ 0x004c3530
 // Character info / stats menu builder.  Dispatches on DAT_07e11d20 (mode 1/2/3).
 //
 // Populates a string list buffer (lpString_07e90798, 100 bytes/entry, ~30 slots)
@@ -30,7 +30,7 @@
 //   Computes local_1c = max_xp / col_width (horizontal scale for progress bar).
 //   Calls FUN_004c2e20(class_id) to prepare class data.
 //   Builds string slots: class name, subtype header, padding rows, then calls
-//   FUN_004c2880(class_data_ptr) for the detail block.
+//   ItemHelp_RequireClass(class_data_ptr) for the detail block.
 //   Draws stat rows via FUN_004c2d50 / FUN_004c2c10 conditionally on stat flags
 //   (DAT_07e91530/534/53c/540) and class-id range.
 //
@@ -101,7 +101,8 @@ static void slot_strcpy(int slot, const char *src)
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-void FUN_004c3530(void)
+// IDA: RenderHelpWindow (0x004C3530)
+void RenderHelpWindow(void)
 {
     // ── Mode 1: build class-list A ────────────────────────────────────────────
     if (DAT_07e11d20 == 1)
@@ -266,7 +267,7 @@ void FUN_004c3530(void)
     }
 
     // Class detail block
-    FUN_004c2880(iVar4);
+    ItemHelp_RequireClass(iVar4);
 
     // Footer
     crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_FtrC);
@@ -370,7 +371,7 @@ static const float DrawItemInfoBox_glColor[7][3] = {
 
 // DESVIACIÓN CONSCIENTE: en el binario el color de texto llega por glColor3f
 // porque el subclass de CUIRenderText sube el glifo como textura y la MODULA
-// con el color actual de GL.  Nuestro FUN_0040f610 pinta glifos con
+// con el color actual de GL.  Nuestro CUIRenderText_RenderText pinta glifos con
 // wglUseFontBitmaps y toma el color de m_dwTextColor (0x00559C78, formato ABGR
 // 0xAABBGGRR — ver la nota de CUIRenderText_BakeTextTexture @0x0040FCD0).
 // Emitimos los dos: el glColor3f fiel y el ABGR equivalente.
@@ -405,7 +406,7 @@ static const DWORD DrawItemInfoBox_TextColor[7] = {
 // Este archivo convertia anchos de texto con g_fScreenRate_x, copiando la
 // formula de IDA. En el binario eso es correcto porque su CUIRenderText recibe
 // un ancho de referencia (640) y reescala la x internamente. NUESTRO stack de
-// texto no hace eso: FUN_0040f610 dibuja los glifos en unidades del ortho,
+// texto no hace eso: CUIRenderText_RenderText dibuja los glifos en unidades del ortho,
 // convirtiendo con viewport/ortho (Text_PixelToOrthoScale).
 //
 // Al mezclar los dos factores, la CAJA quedaba dimensionada con un divisor y el
@@ -459,7 +460,7 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
     // con m_dwBackColor todo pixel que no sea glifo.  Por eso la franja del
     // color 5 (clase requerida) va de punta a punta de la caja.
     //
-    // DESVIACIÓN: nuestro FUN_0040f610 pinta el fondo solo detras del texto, y
+    // DESVIACIÓN: nuestro CUIRenderText_RenderText pinta el fondo solo detras del texto, y
     // no recibe el ancho del box.  Emitimos la franja aca con el ancho
     // correcto y le sacamos el fondo al render de glifos para no pintarlo dos
     // veces.
@@ -487,14 +488,14 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
                      (float)iBoxWidth / fTexScaleX,
                      (float)local_8.cy / _DAT_055c9b74);
         glColor4fv(prevColor);
-        // No volvemos a encender la textura: FUN_0040f610 la apaga por su
+        // No volvemos a encender la textura: CUIRenderText_RenderText la apaga por su
         // cuenta para los glifos, y dejarla apagada mantiene GL y cache de
         // acuerdo.  El proximo tooltip la reenciende via GL_SetBlendSrcOver.
     }
     {
         const DWORD dwSavedBack = m_dwBackColor;
         m_dwBackColor = 0;
-        FUN_0040f610((HDC)(uintptr_t)DAT_055c9ff8,
+        CUIRenderText_RenderText((HDC)(uintptr_t)DAT_055c9ff8,
                      iPos_x + (int)(fVar4 / fTexScaleX), iPos_y, pszText, 0);
         m_dwBackColor = dwSavedBack;
     }
@@ -631,7 +632,7 @@ void __cdecl FUN_004c2420(int param_1, int param_2, int param_3,
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004c2880 @ 0x004c2880 — CharMenu_AppendSkillReq
+// ItemHelp_RequireClass @ 0x004c2880 — CharMenu_AppendSkillReq
 //
 // Reads weapon skill slots at param_1+0x38 (4 slots, each 4 bytes).
 // Checks hero's class (DAT_07abf5d8+0x1bc) vs required class per slot.
@@ -639,7 +640,8 @@ void __cdecl FUN_004c2420(int param_1, int param_2, int param_3,
 // strings from DAT_0055a400/DAT_0055a404.
 // Increments DAT_07eaa154 per entry.
 
-void __cdecl FUN_004c2880(int param_1)
+// IDA: RequireClass (0x004C2880)
+void __cdecl ItemHelp_RequireClass(int param_1)
 {
     int  iVar1;
     char buf[256];

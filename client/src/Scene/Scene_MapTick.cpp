@@ -5,7 +5,7 @@
 //
 // Manages the map-tile hash table for the current player position.
 // Uses HashTable at DAT_055c9bc8 and player position at DAT_07cf1ffc.
-// Dispatches to FUN_004c4650 (walk map) or FUN_004c8d70 (alt map)
+// Dispatches to RenderItemInfo (walk map) or RenderRepairInfo (alt map)
 // based on boundary conditions.
 
 #include "stdafx.h"
@@ -15,7 +15,7 @@
 // Updates the tile hash table entry for the local player's tile position.
 // If the player has moved outside the current map tile bounds, reloads the map:
 //   - Checks bounds: x in [DAT_07ea5284..0x27f], y in [DAT_07ea5288..0x1df]
-//   - Calls FUN_004c4650 or FUN_004c8d70 to reload walk/alt map
+//   - Calls RenderItemInfo or RenderRepairInfo to reload walk/alt map
 // Also handles DAT_0055a3e4 as a pending map-change request.
 void FUN_004f64d0(void)
 {
@@ -24,15 +24,15 @@ void FUN_004f64d0(void)
   void *pvVar3;
   undefined4 *puVar4;
   undefined4 *puVar5;
-  // (was: int iStack0000000c — phantom outgoing-stack arg slot; resolved into FUN_004c9730 3rd param)
+  // (was: int iStack0000000c — phantom outgoing-stack arg slot; resolved into RenderSkillTooltip 3rd param)
 
   GL_ResetState();
   puVar5 = (undefined4*)DAT_07cf1ffc;
   DAT_07e11d6e = 0;
   // 2026-05-08: BUG-FIX — DAT_07eaa134 (B-key/repair-mode flag) se queda
   // pegada en != 0 (probablemente corrupción adicional similar a
-  // DAT_07d78068). Eso dispara el dispatch a FUN_004c8d70 (RenderRepairInfo)
-  // en lugar de FUN_004c4650 (tooltip normal), y el cursor (Cursor_Render)
+  // DAT_07d78068). Eso dispara el dispatch a RenderRepairInfo (RenderRepairInfo)
+  // en lugar de RenderItemInfo (tooltip normal), y el cursor (Cursor_Render)
   // dibuja el sprite de reparación en vez de flecha.
   // Hasta encontrar el writer real, forzamos a 0 si no hay un repair NPC
   // efectivamente abierto (DAT_07eaa138 = RepairEnable counter).
@@ -59,7 +59,7 @@ void FUN_004f64d0(void)
           FUN_00404370(puVar5,puVar4);
         }
       }
-      FUN_004c4650((void*)0x109,(void*)0x78,DAT_07e91350,'\0');
+      RenderItemInfo((void*)0x109,(void*)0x78,DAT_07e91350,'\0');
       puVar5 = (undefined4*)DAT_07cf1ffc;
       uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
       if (uVar2 != 0xffffffff) {
@@ -95,7 +95,7 @@ void FUN_004f64d0(void)
         FUN_00404370(puVar5,puVar4);
       }
     }
-    FUN_004c4650((void*)(uintptr_t)DAT_07ea840c,(void*)(uintptr_t)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160,(int)DAT_07ea9844);
+    RenderItemInfo((void*)(uintptr_t)DAT_07ea840c,(void*)(uintptr_t)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160,(int)DAT_07ea9844);
     puVar5 = (undefined4*)DAT_07cf1ffc;
     uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) goto LAB_004f6824;
@@ -124,7 +124,7 @@ void FUN_004f64d0(void)
         FUN_00404370(puVar5,puVar4);
       }
     }
-    FUN_004c8d70((void*)(uintptr_t)DAT_07ea840c,(int)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160);
+    RenderRepairInfo((void*)(uintptr_t)DAT_07ea840c,(int)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160);
     puVar5 = (undefined4*)DAT_07cf1ffc;
     uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) goto LAB_004f6824;
@@ -149,7 +149,7 @@ LAB_004f6824:
   if ((int)DAT_0055a3e4 >= 0 && (int)DAT_0055a3e4 < 20) {
     // Skill tooltip render. Args resolved from IDA: (float Y, int X, int hoveredSkillIdx).
     // Ghidra mis-decoded the 3rd arg as a stack write; it is the real 3rd param.
-    FUN_004c9730(*(float*)&DAT_07ea840c, (int)DAT_07ea8408, (int)DAT_0055a3e4);
+    RenderSkillTooltip(*(float*)&DAT_07ea840c, (int)DAT_07ea8408, (int)DAT_0055a3e4);
   }
   return;
 }

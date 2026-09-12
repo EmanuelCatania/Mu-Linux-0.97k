@@ -11,8 +11,8 @@ typedef long double float10;
 //   FUN_0043e820 = SetAction        Entity_AdvancePath = MovePath        FUN_00449900 = MoveCharacter
 //   FUN_00456770 = RenderCharacter  FUN_0045ab00 = RenderCharactersClient
 //   Combat_ProcessQueuedAction = Action           Combat_SendMovePathPacket = SendMove        FUN_004ac140 = CheckGate
-//   Player_ProcessInput (IDA: FUN_004acef0) = MoveHero         FUN_004b14f0 = MoveInterface   FUN_004c4650 = RenderItemInfo
-//   FUN_004c8d70 = RenderRepairInfo FUN_0045ccf0 = CreateMonster   FUN_0045f930 = CreateHero
+//   Player_ProcessInput (IDA: FUN_004acef0) = MoveHero         Chat_InputTick = MoveInterface   RenderItemInfo = RenderItemInfo
+//   RenderRepairInfo = RenderRepairInfo FUN_0045ccf0 = CreateMonster   FUN_0045f930 = CreateHero
 //   Path_FindRoute = PathFinding2     Timer_UpdateFrameTiming (IDA: FUN_0043fd70) = CalcFPS         FUN_00440060 = BMD::Animation
 //   BMD_TransformPosition = BMD::TransformPosition        FUN_00442090 = BMD::Release
 //   FUN_004423e0 = BMD::Open        FUN_00442a60 = BMD::Save       FUN_004430c0 = SetPlayerStop
@@ -101,7 +101,7 @@ void  __cdecl FUN_0040c7d0(int, int);
 void  __cdecl FUN_0040e590(int);
 void  __cdecl FUN_0040e990(int, int, int);
 void  __cdecl FUN_0040f500(void);
-void  __cdecl FUN_0040f610(HDC hdc, int x, int y, const char *text, DWORD color); // Text_DrawColored
+void  __cdecl CUIRenderText_RenderText(HDC hdc, int x, int y, const char *text, DWORD color); // Text_DrawColored
 void  __cdecl FUN_0040f670(int, int, int);
 
 // ── Input ─────────────────────────────────────────────────────────────────────
@@ -425,7 +425,7 @@ void  __cdecl Chat_TickMessageTimer(void);               // IDA: FUN_00480950
 void  __cdecl UI_RenderChatLogOverlay(void);
 void  __cdecl FUN_00480c60(int, int, int);
 void  __cdecl FUN_00480e00(int, int, int);
-void  __cdecl FUN_00481ba0(char* ID, char* Text, DWORD entity, int Flag, int SetColor); // CreateChat
+void  __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetColor); // CreateChat
 // FUN_004821A0 @ 0x004821A0
 void  __cdecl UI_TickHoverBubbles(void);
 int   __cdecl Item_FindQuickSlotByCategory(int category);  // GetItemSlot — returns inventory slot index or -1
@@ -434,7 +434,7 @@ char  __cdecl Item_Equip(DWORD character, DWORD object);            // 0x00483B3
 
 // ── UI / HUD ──────────────────────────────────────────────────────────────────
 uint  __cdecl FUN_004977f0(char* src, void* key, char flags);  // String_CompareKey (returns non-zero if match)
-void  __cdecl FUN_0047fe30(void*, int, void*, int);            // Chat_SplitLine
+void  __cdecl CutText(void*, int, void*, int);            // Chat_SplitLine
 void  __cdecl FUN_00497870(int, int, int, int);
 void  __cdecl FUN_004ac140(void);                                    // Player_ActionSubTick
 char  __cdecl Path_IsLineClear(int src_x, int src_y, int tgt_x, int tgt_y); // IDA: FUN_004830b0
@@ -456,13 +456,13 @@ void  __cdecl Send_MovePacket_Player_legacy_stub(void);
 unsigned int __cdecl FUN_00483160(void);                             // Entity_CanAct (returns 0 if locked)
 void  __cdecl Player_ProcessInput(void); // IDA: FUN_004acef0
 void  __cdecl Mouse_UpdateHoverTargets(void);                                    // IDA: FUN_004b0310
-char  __cdecl FUN_004b0e80(int number);                              // SelectSkillByHotkey (0x4B0E80)
-void  __cdecl FUN_004b14f0(void);
+char  __cdecl SelectSkillByHotkey(int number);                              // SelectSkillByHotkey (0x4B0E80)
+void  __cdecl Chat_InputTick(void);
 void  __cdecl FUN_004bbdd0(int, int, int, int);
 void  __cdecl Cursor_Render(void);                                               // IDA: FUN_004bffa0
 void  __cdecl Input_ProcessFunctionKeys(void);      // IDA: FUN_004c04a0
 void  __cdecl UI_UpdateFpsCounter(void);                                         // IDA: FUN_004c14e0
-void  __cdecl FUN_004c3530(void);
+void  __cdecl RenderHelpWindow(void);
 unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int level); // IDA: FUN_004C45C0
 int          __cdecl Item_CalculateValue(void* item, int sellMode);                    // IDA: FUN_0047C690
 unsigned int __cdecl Item_CalculateRepairCost(int Gold, int Durability, int MaxDurability, short Type, char* Text); // IDA: FUN_004C3EF0
@@ -478,7 +478,7 @@ void  __cdecl FUN_004cc530(int, int, int, int);
 void  __cdecl FUN_004cc660(BYTE* Inv, int Width, int Height,
                            int Index, BYTE* Item, int First);   // InsertInventoryItem
 void  __cdecl FUN_004cce00(int, int, int, int);                    // UI_Main
-void  __cdecl FUN_004cd3b0(void);  // CharPreview_Refresh (no args per call-site)
+void  __cdecl Item_ReturnPickedItem(void);  // CharPreview_Refresh (no args per call-site)
 
 // ── 3D / terrain / world ──────────────────────────────────────────────────────
 void  __cdecl FUN_004e1be0(float x, float y, float w, float h, int entity_slot, uint type, byte class_id, char flag);  // Draw char preview
@@ -677,8 +677,8 @@ void  __cdecl CharSelect_SendSelectPacket(void);                  // FUN_00513c1
 void  __cdecl FUN_00514270(int, int, int, int);
 void  __cdecl SetErrorMessage(int message); // 0x005142D0 — SetErrorMessage (Offsets.h canonical name)
 #define FUN_005142d0  SetErrorMessage
-void  __cdecl FUN_00514310(void);          // UI_InGameMenu state machine
-int   __cdecl FUN_0051af50(void);  // UI_StatsPanel_Render
+void  __cdecl UI_InGameMenu(void);          // UI_InGameMenu state machine
+int   __cdecl RenderErrorMessage(void);  // UI_StatsPanel_Render
 int   __cdecl SeparateTextIntoLines(const char *lpszText, char *lpszSeparated, int iMaxLine, int iLineSize); // 0x0051D600
 #define FUN_0051d600  SeparateTextIntoLines
 int   __cdecl FUN_0051d840(int slot);                                     // ItemList_Select
@@ -744,9 +744,9 @@ int   __cdecl SpecialObject_HoverTest(void);  // IDA: FUN_004b0240
 void  __cdecl Party_MatchEntityNames(void); // IDA: FUN_004afb00
 char  __cdecl FUN_004e5980(void);        // SecondPassword_IsActive
 
-// ── Char menu builder helpers (FUN_004c3530) ──────────────────────────────────
+// ── Char menu builder helpers (RenderHelpWindow) ──────────────────────────────────
 void  __cdecl FUN_004c2420(int, int, int, int, int, int);  // DrawItemInfoBox(x, y, count, fixedWidth, iSort, drawBox)
-void  __cdecl FUN_004c2880(int class_data_ptr);            // build class info block
+void  __cdecl ItemHelp_RequireClass(int class_data_ptr);            // build class info block
 void  __cdecl FUN_004c2c10(int row, unsigned char *color, int *value, const char *label, int x, int flags); // draw stat row
 void  __cdecl FUN_004c2d50(int row, int value, int col_width); // draw value column
 void  __cdecl FUN_004c2e20(int class_id);                  // prepare class data
@@ -850,9 +850,9 @@ void  __cdecl FUN_004d23b0(char *origin_x, int origin_y, short *inv_base,
                             int grid_w, int grid_h, char mode_flag);
 
 // ── Scene_MapTick helpers ─────────────────────────────────────────────────────
-void  __cdecl FUN_004c4650(void*, void*, void*, int);  // RenderItemInfo(sx, sy, ITEM*, bSell)
-void  __cdecl FUN_004c8d70(void*, int,   void*);        // RenderItemInfo_Shop(sx, sy, ITEM*)
-void  __cdecl FUN_004c9730(float a1, int a2, int a3);   // Skill_RenderTooltip @ 0x004C9730
+void  __cdecl RenderItemInfo(void*, void*, void*, int);  // RenderItemInfo(sx, sy, ITEM*, bSell)
+void  __cdecl RenderRepairInfo(void*, int,   void*);        // RenderItemInfo_Shop(sx, sy, ITEM*)
+void  __cdecl RenderSkillTooltip(float a1, int a2, int a3);   // Skill_RenderTooltip @ 0x004C9730
 
 // ── Texture helpers ───────────────────────────────────────────────────────────
 void  __cdecl FUN_0053cd20(void *ctx, undefined4 *src, ushort *dst, byte n);
@@ -938,7 +938,7 @@ int   __cdecl GetItemCount(int siType, int iLevel);  // 0x00482FF0
 int   __cdecl GetItemSlot(int siType, int iLevel);   // 0x00482D70
 
 // ── SecondPassword Screen6/7 helpers ─────────────────────────────────────────
-void  __cdecl FUN_0051d780(int a, int b);  // UI_ShowBitmapMsg (bitmap message overlay, 2 args)
+void  __cdecl CreateDialogInterface(int a, int b);  // UI_ShowBitmapMsg (bitmap message overlay, 2 args)
 void  __cdecl Item_RecalculateRepairCost(void); // IDA: FUN_004C4080
 void  __cdecl FUN_004233e0(int, int);      // HashTable_Unlock (2-arg variant, release lock)
 
@@ -1242,8 +1242,8 @@ void  Game_DestroyWindow(void);                                          // Full
 
 // Batch 16 — Inventory, equipment, item management, skills, chat, terrain, NPC, GL
 void  __cdecl SendRequestEquipmentItem_stub(int iSrcType, int iSrcIndex, ITEM *pItem, int iDstType, int iDstIndex); // 0x0043C250
-int   __stdcall FindHotKey_stub(int Skill);                              // 0x004B1170
-void  __cdecl RenderSkillIcon_stub(int iIndex, float x, float y, float width, float height); // 0x004BB940
+int   __stdcall FindHotKey(int Skill);                              // 0x004B1170
+void  __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float height); // 0x004BB940
 void  __cdecl SendChat(char *Text);                                      // 0x004C1B90
 int   __cdecl ConvertGold64_stub(int Zen, char *Buffer);                 // 0x004C3E10
 void  __cdecl RenderItemName_stub(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort); // 0x004C9E70

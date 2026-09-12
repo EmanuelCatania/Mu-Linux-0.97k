@@ -628,7 +628,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                 // tirar al suelo.  Por eso no se podia devolver un item a su
                 // mismo lugar (con las joyas "funcionaba" solo porque son
                 // costosas y esa rama las restauraba con el cartel 269).
-                FUN_004cd3b0();
+                Item_ReturnPickedItem();
                 actionTaken = true;
                 goto drop_done;
             }
