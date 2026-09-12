@@ -487,9 +487,14 @@ void __cdecl Item_RecalculateRepairCost(void)
         }
     }
 
-    // Iterate 8 extra item slots (DAT_07ea8410, stride 0x44, short* step = 0x22)
-    short *psVar12 = (short *)&DAT_07ea8410;
-    for (int i = 0; i < 8; i++, psVar12 += 0x22) {
+    // IDA sub_4C4080: segundo bucle sobre el grid del inventario,
+    // OffsetInventoryItems .. 0x7EA9510 = 64 celdas de 0x44 (8x8), filtrando
+    // por Key.  2026-09-12: el port recorria 8 "items" desde &DAT_07ea8410, que
+    // en este build es un DWORD suelto: leia los globals vecinos (entre ellos
+    // DAT_07ea840c/8408, las coordenadas del tooltip) y el costo de "reparar
+    // todo" cambiaba segun el item bajo el mouse.
+    short *psVar12 = (short *)OffsetInventoryItems;
+    for (int i = 0; i < 64; i++, psVar12 += 0x22) {
         if (*(int *)((char *)psVar12 + 0x38) != 0) {
             short itemType = *psVar12;
             unsigned int maxDur = Item_CalculateMaxDurability(psVar12, (int)itemType * 0x40 + (int)DAT_07d78068,
