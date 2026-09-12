@@ -487,9 +487,9 @@ void __cdecl Item_RecalculateRepairCost(void)
         }
     }
 
-    // Iterate 8 extra item slots (DAT_07ea8410, stride 0x44, short* step = 0x22)
-    short *psVar12 = (short *)&DAT_07ea8410;
-    for (int i = 0; i < 8; i++, psVar12 += 0x22) {
+    // Iterate 64 inventory item slots (OffsetInventoryItems, 8x8 grid, stride 0x44)
+    short *psVar12 = (short *)OffsetInventoryItems;
+    for (int i = 0; i < 64; i++, psVar12 += 0x22) {
         if (*(int *)((char *)psVar12 + 0x38) != 0) {
             short itemType = *psVar12;
             unsigned int maxDur = Item_CalculateMaxDurability(psVar12, (int)itemType * 0x40 + (int)DAT_07d78068,
