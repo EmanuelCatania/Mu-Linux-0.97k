@@ -2081,13 +2081,18 @@ switchD_0046dee7_default:
     // Replicar la fila 0 en todo el anillo reproduce la condicion que el
     // original obtiene gratis por reciclaje: los quads sobrantes quedan
     // degenerados sobre la propia posicion del joint en vez de barrer el mapa.
-    // Solo toca filas que en un slot fresco valen 0, asi que no puede alterar
-    // ningun joint que ya se estuviera dibujando bien.
+    // 2026-09-12: arranca DESPUES de las filas que la creacion ya construyo
+    // (0..segCount).  Antes empezaba en la 1 y pisaba los segmentos armados por
+    // los bucles de creacion (1254 sub 14 / 1253 sub 4 de las alas del MG, y
+    // cualquier subtipo que llame a sub_46FE90 dentro de CreateJoint): la estela
+    // quedaba colapsada en un punto (sonda JOINTWING, largo 0.0) y la luz del
+    // ala no recorria las plumas.
     const int __rowBytes = 0x30;
     const int __maxRows  = (0x9d8 - 0x58) / __rowBytes;
     int __n = *(int *)(pcVar14 + 0x54);
     if (__n > __maxRows) __n = __maxRows;
-    for (int __r = 1; __r < __n; ++__r)
+    const int __built = *(int *)(pcVar14 + 0x50);
+    for (int __r = __built + 1; __r < __n; ++__r)
         memcpy(pcVar14 + 0x58 + __r * __rowBytes, pcVar14 + 0x58, __rowBytes);
   }
   return (void*)pcVar14;
