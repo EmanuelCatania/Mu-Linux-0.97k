@@ -1493,82 +1493,20 @@ void __cdecl FUN_004ec330(void) {
                 ((BYTE*)&DAT_07eaa150)[2] = -(DAT_07eaa134 != 0) & 2;
             }
 
-            // "OK" button: [+0x73, +0x8b) x [+0x16d, +0x185)
+            // IDA sub_4EC330: boton "reparar todo" (x+115, y+365).  Manda
+            // C1:05:34:FF:00 (slot 0xFF = todo, 0 = reparacion en NPC).  Si no
+            // se clickea, LABEL_71 recalcula el costo (sub_4C4080) cada frame.
+            // 2026-09-12: estaba portado como un "paquete de PIN" con header de
+            // largo 1 que el server no podia interpretar.
             int iX3 = (int)DAT_07eaa0c8 + 0x73;
             if (iX3 <= (int)DAT_083a427c && (int)DAT_083a427c < iX3 + 0x18 &&
                 iY1 <= (int)DAT_083a4278 && (int)DAT_083a4278 < iY1 + 0x18 &&
                 IsClickPushed()) {
-                // Build full XOR-encoded PIN packet and send
-                // Packet header: C1 / len / 34 (opcode) / payload ...
-                static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                              0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                              0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                              0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-                BYTE hdr[3]; hdr[0]=0xC1; hdr[1]=1; hdr[2]=0x34;
-                for (uint ui=3;ui!=4;ui++){uint uk=ui&0x1f;hdr[ui-3]^=key[uk]^hdr[ui-2];}
-
-                BYTE rawbuf[1024];
-                uint rawLen = (uint)(hdr[1] & 0xffff);
-                if (rawLen + 1 < 0x401) {
-                    BYTE pktBuf[1028];
-                    // random tail byte
-                    rawbuf[rawLen] = (BYTE)rand();
-                    // counter byte
-                    uint uCtr = (uint)(rawbuf[0] != 0xC1);
-                    {
-                        uint uVar7 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_05826ceb);
-                        if (uVar7 == 0xffffffff) {
-                            void* pv2 = operator_new(2);
-                            *(unsigned char*)((int)pv2 + 1) = 1;
-                            FUN_00403f80(&DAT_055c9bc8, pv2, &DAT_05826ceb);
-                        } else {
-                            BYTE* pb2 = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_05826ceb);
-                            BYTE b2 = pb2[1]; pb2[1] = b2 + 1;
-                            if ((BYTE)(b2+1) < 2) FUN_00404330(&DAT_05826ceb, pb2);
-                        }
-                    }
-                    rawbuf[uCtr + 1] = DAT_05826ceb;
-                    DAT_05826ceb = DAT_05826ceb + 1;
-                    {
-                        uint uVar7 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_05826ceb);
-                        if (uVar7 != 0xffffffff) {
-                            BYTE* pb2 = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_05826ceb);
-                            BYTE b2 = pb2[1]; pb2[1] = b2 - 1;
-                            if ((BYTE)(b2-1) == 0) FUN_00423710(pb2, (char*)&DAT_05826ceb);
-                        }
-                    }
-                    int iPayLen = (int)rawLen - (int)(uCtr + 1);
-                    BYTE* pbPay = rawbuf + uCtr + 1;
-                    int encLen = FUN_0053cc30(0, pbPay, iPayLen);
-                    if (encLen < 0x100) {
-                        uint uSz = (uint)(encLen + 2);
-                        pktBuf[0] = (BYTE)0xC3; pktBuf[1] = (BYTE)uSz;
-                        FUN_0053cc30((int)(pktBuf+2), pbPay, iPayLen);
-                        int off2=0; unsigned int rem2=uSz;
-                        if (DAT_055ca168 != 0xffffffff) {
-                            do {
-                                int r2=send((SOCKET)DAT_055ca168,(char*)pktBuf+off2,(int)(rem2-off2),0);
-                                if(r2==-1){int e2=WSAGetLastError();if(e2==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem2)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pktBuf,rem2);DAT_055cc16c+=rem2;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                                if(r2==0)break;if(DAT_055ce174)FUN_0043de60();rem2-=r2;off2+=r2;
-                            } while((int)rem2>0);
-                        }
-                    } else {
-                        uint uSz2 = (uint)(encLen + 3);
-                        pktBuf[0] = (BYTE)0xC4; pktBuf[2] = (BYTE)uSz2;
-                        pktBuf[1] = (BYTE)((uSz2 + ((int)uSz2 >> 0x1f & 0xff)) >> 8);
-                        FUN_0053cc30((int)(pktBuf+3), pbPay, iPayLen);
-                        int off2=0; unsigned int rem2=uSz2;
-                        if (DAT_055ca168 != 0xffffffff) {
-                            do {
-                                int r2=send((SOCKET)DAT_055ca168,(char*)pktBuf+off2,(int)(rem2-off2),0);
-                                if(r2==-1){int e2=WSAGetLastError();if(e2==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem2)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pktBuf,rem2);DAT_055cc16c+=rem2;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                                if(r2==0)break;if(DAT_055ce174)FUN_0043de60();rem2-=r2;off2+=r2;
-                            } while((int)rem2>0);
-                        }
-                    }
-                }
-
-                Item_RecalculateRepairCost();
+                DAT_083a4124 = '\0';
+                BYTE pkt[5] = { 0xC1, 0x05, 0x34, 0xFF, 0x00 };
+                Net_SendSmallPacket(pkt, sizeof(pkt));
+            } else {
+                Item_RecalculateRepairCost();   // sub_4C4080
             }
         }
 

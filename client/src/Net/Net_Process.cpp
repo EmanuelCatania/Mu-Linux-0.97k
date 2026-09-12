@@ -5439,11 +5439,16 @@ void Net_ProcessPacket(void)
 
             case 0x34: {
                 NetLog("NET:  -> 0x34 Repair size=%d", Size);
-                if (Size >= 7 && DAT_07cf1ffc != 0) {
-                    DWORD gold = *(DWORD*)(Msg + 3);
+                // IDA ProtocolCore case 0x34: `*((_DWORD *)ReceiveBuffer + 1)`.
+                // PMSG_ITEM_REPAIR_SEND es PBMSG_HEAD (3 bytes) + DWORD money
+                // alineado a 4, o sea el zen esta en +4.  Leerlo en +3 metia el
+                // byte de padding y el zen quedaba en basura (ej. -835).
+                if (Size >= 8 && DAT_07cf1ffc != 0) {
+                    DWORD gold = *(DWORD*)(Msg + 4);
                     if (gold != 0) {
                         *(DWORD*)((BYTE*)DAT_07cf1ffc + 1352) = gold;
-                        PlayBuffer(0x25, 0, 0);
+                        FUN_0047e3c0((int)(uintptr_t)DAT_07cf1ffc, 0, 0);   // sub_47E3C0
+                        PlayBuffer(37, 0, 0);
                     }
                 }
                 DAT_05826d1c = 0;
