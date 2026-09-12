@@ -6748,6 +6748,17 @@ void Net_ProcessPacket(void)
                 break;
             }
 
+            case 0x0C: {
+                // IDA ProtocolCore case 0xC: PMSG_SERVER_MSG_SEND (C1:0C, MsgNumber).
+                // MsgNumber 0 = el destinatario del susurro no esta conectado
+                // (MuEmu: DGGlobalWhisperRecv -> GCServerMsgSend(index, 0)).
+                //     if (!ReceiveBuffer[3]) UIChatLogWindow_AddText(ChatWhisperID, GlobalText[482], 2);
+                // 2026-09-12: el opcode no tenia handler.
+                if (Size >= 4 && Msg[3] == 0)
+                    UIChatLogWindow_AddText(DAT_05826cb4, GlobalText[482], 2);
+                break;
+            }
+
             case 0x0D: {
                 // 2026-05-06 BUG-FIX MAYÚSCULO (port FIEL desde IDA
                 // mu97k-src-IDA/raw/00427A00_ReceiveNotice.c):

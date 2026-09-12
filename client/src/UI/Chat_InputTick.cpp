@@ -331,6 +331,11 @@ extern "C" void Chat_SendChatLine(const char* text)
     if (whisperTarget[0] != '\0') {
         pkt[2] = 0x02;                        // headcode = whisper
         memcpy(pkt + 3, whisperTarget, 10);   // name[10] = DESTINATARIO
+        // IDA WndProc (0x41D954, tras el send del susurro): ChatWhisperID =
+        // InputText[1][0..9], con '\0' en [10].  Lo usa el aviso del 0x0C
+        // ("no esta conectado") como remitente.  2026-09-12.
+        memcpy(DAT_05826cb4, whisperTarget, 10);
+        DAT_05826cb4[10] = '\0';
     } else {
         pkt[2] = 0x00;                        // headcode = chat normal
         // BUG-FIX 2026-07-19 (nuestros mensajes no llegaban): el campo name[10]

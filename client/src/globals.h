@@ -512,7 +512,7 @@ extern DWORD   DAT_05826ca4;
 extern DWORD   DAT_05826ca8;
 extern DWORD   DAT_05826cac;
 extern DWORD   DAT_05826cb0;   // server response code (0x0b=LoginOK, 0x14=char-list)
-extern DWORD   DAT_05826cb4;
+extern char    DAT_05826cb4[12];   // IDA: ChatWhisperID (0x05826CB4) — ultimo destinatario de susurro
 extern DWORD   DAT_05826cc0;
 extern DWORD   DAT_05826cc8;
 extern char    DAT_05826cc9;
