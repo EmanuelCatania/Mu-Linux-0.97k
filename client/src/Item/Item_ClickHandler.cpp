@@ -1020,8 +1020,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
                 // ── Item 458 (Teleport scroll) — handled by Teleport check ─
                 if (type == 458) {
-                    extern int DAT_05826d04;   // Teleport global flag
-                    (void)DAT_05826d04;
+                    (void)DAT_05826d14;        // Teleport (IDA 0x05826D14)
                     if ((int)DAT_07e11d18 != 0) return;   // mid-action
                     if (DAT_07eaa119 != 0 || DAT_07eaa11b != 0) {
                         UIChatLogWindow_AddText("", GlobalText[474], 2);

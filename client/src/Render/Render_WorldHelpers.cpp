@@ -374,21 +374,26 @@ void __cdecl FUN_00473710(void)
         // que sí estaba bien.
         if (useMinus) GL_SetBlendSrcAlpha(); else GL_SetBlendAdditive();
 
-        // Texture bind per type.
+        // Textura y color por tipo (IDA L60-113).  Para el 266 los subtipos
+        // 0/1/2 escalan el color por la vida (clamp 20); el 3 no escala; el
+        // resto no bindea ni setea color.
         if (type == 266) {
             int sub = *(v0 - 620);
-            if (sub == 0 || sub == 4)      GL_BindTextureSlot(1277);
-            else if (sub == 1)             GL_BindTextureSlot(1253);
-            else if (sub == 2)             GL_BindTextureSlot(1278);
-            else if (sub == 3)             GL_BindTextureSlot(1253);
-            // type-266 color modulation: clamp count, scale color
-            int v30 = *v0;
-            if (v30 > 20) v30 = 20;
-            float scale = (float)v30 * 0.05f;
-            float r = scale * *((float*)v0 - 609);
-            float g = scale * *((float*)v0 - 608);
-            float b = scale * *((float*)v0 - 607);
-            glColor3f(r, g, b);
+            int texId = 0;
+            if (sub == 0 || sub == 4)      texId = 1277;
+            else if (sub == 1 || sub == 3) texId = 1253;
+            else if (sub == 2)             texId = 1278;
+            if (texId) GL_BindTextureSlot(texId);
+            if (sub >= 0 && sub <= 4 && sub != 3) {
+                int life = *v0;
+                if (life >= 20) life = 20;
+                float scale = (float)((double)life * 0.050000001);
+                glColor3f(scale * *((float*)v0 - 609),
+                          scale * *((float*)v0 - 608),
+                          scale * *((float*)v0 - 607));
+            } else if (sub == 3) {
+                glColor3f(*((float*)v0 - 609), *((float*)v0 - 608), *((float*)v0 - 607));
+            }
         } else {
             int texId = (type == 1255) ? 1254 : type;
             GL_BindTextureSlot(texId);
@@ -417,30 +422,94 @@ void __cdecl FUN_00473710(void)
             if (segCount <= 0) continue;
         }
 
+        // Loop de segmentos, fiel a IDA L114-273.  Cada fila son 4 vec3:
+        // v6-1 / v6+2 / v6+5 / v6+8, y la siguiente fila +12.  Por segmento se
+        // dibujan DOS quads cruzados (vert2/vert3 y vert0/vert1); el 1262 solo
+        // el segundo, y el 1253 subtipo 2 omite el primero.
+        const int sub = *(v0 - 620);
+        const float* light = (const float*)v0 - 609;
         for (int segIdx = 0; segIdx < segCount; ++segIdx) {
             float s, v28;
             bool stepPow2 = (type == 1260 || type == 1261 ||
-                             (type == 1254 && (*(v0 - 620) == 7 || *(v0 - 620) == 10)));
+                             (type == 1254 && (sub == 7 || sub == 10)));
+            int rem = segCount - segIdx;
             if (stepPow2) {
-                s   = (float)(segCount - (segIdx == 0 ? 0 : segIdx - 1)) * 0.0625f;
-                v28 = (float)((segCount - (segIdx == 0 ? 0 : segIdx - 1)) - 1) * 0.0625f;
-            } else if (segMax > 1) {
-                float denom = (float)(segMax - 1);
-                s   = (float)(segCount - segIdx) / denom;
-                v28 = (float)((segCount - segIdx) - 1) / denom;
+                s   = (float)((double)rem * 0.0625);
+                v28 = (float)((double)(rem - 1) * 0.0625);
             } else {
-                s = 1.0f; v28 = 0.0f;
+                double denom = (double)(segMax - 1);
+                s   = (float)((double)rem / denom);
+                v28 = (float)((double)(rem - 1) / denom);
             }
 
-            // WorldTime modulation for types 1254/1255.
-            float v29 = (float)((long long)DAT_05826e08 % 1000) * 0.001f;
+            float v29 = (float)((double)((long long)DAT_05826e08 % 1000) * 0.001);
             if (type == 1254 || type == 1255) {
-                s   += s   - v29;
-                v28 += v28 - v29;
+                s   = s + s - v29;
+                v28 = v28 + v28 - v29;
+            }
+            if (stepPow2) {
+                v29 = v29 + v29;
+                s   = s + s - v29;
+                v28 = v28 + v28 - v29;
             }
 
-            // Render quad: 4 vertices forming a strip segment.
-            // (v6 + offsets de vertices del segmento previo y actual)
+            if (type == 1262) {
+                int maxSeg = segMax;
+                float g = (float)(((double)(maxSeg - segIdx) / (double)maxSeg
+                                 + (double)(maxSeg - segIdx) / (double)maxSeg) * light[0]);
+                glColor3f(g, g, g);
+            } else {
+                if (type == 266 && (sub == 0 || sub == 4)) {
+                    // Fade por altura: lo que sube por encima de ownerZ+50 se
+                    // oscurece (por eso el aura nunca pasa de la cabeza).
+                    float c[3] = { light[0], light[1], light[2] };
+                    int owner = *(v0 - 606);
+                    if (owner) {
+                        double d = ((double)*((const float*)v6 + 1)
+                                  - ((double)*(const float*)(owner + 24) + 50.0)) * 0.0099999998;
+                        if (d > 0.0) {
+                            c[0] = (float)(light[0] - d);
+                            c[1] = (float)(light[1] - d);
+                            c[2] = (float)(light[2] - d);
+                        }
+                        glColor3fv(c);
+                    } else {
+                        glColor3f(1.0f, 1.0f, 1.0f);
+                    }
+                    if (segIdx == segCount / 2) {
+                        // Sprite 1277 en el centro de la fila del medio.
+                        const float* p = (const float*)v6;
+                        float pos[3] = { 0.0f, 0.0f, 0.0f };
+                        for (int k = 0; k < 4; ++k, p += 3) {
+                            pos[0] += p[-1]; pos[1] += p[0]; pos[2] += p[1];
+                        }
+                        pos[0] *= 0.25f; pos[1] *= 0.25f; pos[2] *= 0.25f;
+                        FUN_004795c0(1277, pos, 0.69999999f, c, 0, 0.0f, 0);
+                    }
+                } else if (type == 1255) {
+                    float lz = light[2];
+                    int ilz = (int)(long long)lz;
+                    float rgb;
+                    if (ilz == segIdx)      rgb = (float)(lz - (double)segIdx);
+                    else if (ilz >= segIdx) rgb = 0.7f;
+                    else                    rgb = 0.0f;
+                    glColor3f(rgb, rgb, rgb);
+                }
+                if (type != 1253 || sub != 2) {
+                    glBegin(GL_QUADS);
+                    glTexCoord2f(s,   1.0f); glVertex3fv((const GLfloat*)(v6 + 5));
+                    glTexCoord2f(s,   0.0f); glVertex3fv((const GLfloat*)(v6 + 8));
+                    glTexCoord2f(v28, 0.0f); glVertex3fv((const GLfloat*)(v6 + 20));
+                    glTexCoord2f(v28, 1.0f); glVertex3fv((const GLfloat*)(v6 + 17));
+                    glEnd();
+                }
+                if (type == 1254 || type == 1255) {
+                    float t = v29 + v29;
+                    s   = t + s;
+                    v28 = t + v28;
+                }
+            }
+
             glBegin(GL_QUADS);
             glTexCoord2f(s,   0.0f); glVertex3fv((const GLfloat*)(v6 - 1));
             glTexCoord2f(s,   1.0f); glVertex3fv((const GLfloat*)(v6 + 2));
@@ -448,7 +517,7 @@ void __cdecl FUN_00473710(void)
             glTexCoord2f(v28, 0.0f); glVertex3fv((const GLfloat*)(v6 + 11));
             glEnd();
 
-            v6 += 12;   // advance to next segment (12 ints per segment data)
+            v6 += 12;
         }
     }
 
