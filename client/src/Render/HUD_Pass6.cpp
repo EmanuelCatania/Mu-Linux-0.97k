@@ -1637,11 +1637,10 @@ extern "C" void __cdecl RenderShopInterface(void)
             RenderText((int)bx + 10, ty, Buffer, 0, 0, 0);
         }
     }
-
-    // Close button.
-    float xa = (float)((double)dword_7EAA0C8 + 25.0);
-    float ya = (float)((double)dword_7EAA0CC + 395.0);
-    GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    // 2026-09-12: aca el port dibujaba una X de cierre (bitmap 280) en
+    // (+25, +395).  RenderShopInterface (0x4F1F50) no la tiene: la tienda se
+    // cierra con la X del inventario (sub_4EC330, InventoryStartX + 25).  Esa
+    // X inventada tapaba la etiqueta de "reparar todo".
 }
 
 static int ChaosMixLegacyValue()
