@@ -401,6 +401,26 @@ static void InventoryEquipmentHitTest(void)
         DAT_07ea840c = (DWORD)(x0 + s.w / 2);
         DAT_07ea8408 = (DWORD)y0;
 
+        // IDA sub_4CDC70 L384-400: con el boton apretado, antes del pickup.
+        //   if (Teleport) salir;
+        //   if (RepairEnable_0) { tipo no reparable -> salir;
+        //                         si no, C1:05:34:<slot>:<RepairEnable> }
+        // 2026-09-12: faltaba entero; la reparacion con el martillo andaba en
+        // el grid del inventario pero en las casillas de equipo levantaba el item.
+        if (DAT_083a4124 != 0 && DAT_05826d14 != 0) return;
+        if (DAT_083a4124 != 0 && DAT_07eaa134 != 0) {
+            const bool notRepairable =
+                (type >= 416 && type <= 419) || type == 426 || type == 135 ||
+                type == 143 || type >= 448 || (type >= 391 && type <= 403) ||
+                (type >= 430 && type <= 435);
+            if (notRepairable) return;
+            DAT_083a4124 = 0;
+            extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
+            BYTE pkt[5] = { 0xC1, 0x05, 0x34, (BYTE)s.slotIdx, (BYTE)DAT_07eaa138 };
+            Net_SendSmallPacket(pkt, sizeof(pkt));
+            return;
+        }
+
         if (DAT_083a4124 != 0) {
             DAT_083a4124 = 0;
             DAT_07ea9800 = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
