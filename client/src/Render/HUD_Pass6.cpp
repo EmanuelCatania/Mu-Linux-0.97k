@@ -1548,6 +1548,75 @@ extern "C" void __cdecl RenderShopInterface(void)
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
                      (float)((double)dword_7EAA0CC + 50.0),
                      (DWORD)(uintptr_t)ShopItems, 8, 15);
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+    // IDA RenderShopInterface (0x4F1F50) L130-265: fila de botones en y+365.
+    // El hit-test lo hace FUN_004ec330 (sub_4EC330).  Hasta 2026-09-12 no se
+    // dibujaba ninguno: el herrero no mostraba los de reparacion.
+    {
+        const BYTE shopMode = ((BYTE*)&DAT_07eaa150)[2];     // BYTE2(dword_7EAA150)
+        auto over = [](float bx, float by) {
+            return (double)MouseX >= bx && (double)MouseX < bx + 24.0 &&
+                   (double)MouseY >= by && (double)MouseY < by + 24.0;
+        };
+        auto tip = [](float bx, float by, int text) {
+            SelectObject(m_hFontDC, g_hFont);
+            RenderTipText((int)bx, (int)by - 12, GlobalText[text]);
+        };
+        float bx = (float)((double)dword_7EAA0C8 + 25.0);
+        float by = (float)((double)dword_7EAA0CC + 365.0);
+        GL_DrawTexture(shopMode ? 282 : 283, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        if (over(bx, by)) tip(bx, by, 231);
+
+        bx = (float)((double)dword_7EAA0C8 + 55.0);
+        GL_DrawTexture(shopMode == 1 ? 285 : 284, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        if (over(bx, by)) tip(bx, by, 232);
+
+        if (DAT_07eaa132) {                                  // byte_7EAA132: herrero
+            bx = (float)((double)dword_7EAA0C8 + 85.0);
+            GL_DrawTexture(RepairEnable_0 ? 287 : 286, bx, by, 24.0f, 24.0f,
+                           0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+            if (over(bx, by)) tip(bx, by, 233);
+
+            // "Reparar todo": icono 286 tenido de azul, 287 mientras se aprieta.
+            // (IDA ademas pone MouseLButtonPush = 0 aca; no se replica porque
+            // el click lo consume FUN_004ec330.)
+            bx = (float)((double)dword_7EAA0C8 + 115.0);
+            glColor3f(0.5f, 0.69999999f, 1.0f);
+            GL_DrawTexture(286, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+            if (over(bx, by)) {
+                if (DAT_083a4124)
+                    GL_DrawTexture(287, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+                tip(bx, by, 237);
+            }
+            glColor3f(1.0f, 1.0f, 1.0f);
+
+            // Caja con el costo de reparar todo (dword_7EAA0F8, lo calcula sub_4C4080).
+            bx -= 60.0f;
+            by += 30.0f;
+            GL_DrawTexture(271, bx, by, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
+            m_dwBackColor = 0xFF282828u;      // -14145496
+            m_dwTextColor = 0xFF96DCFFu;      // -6890241
+            const int cost = (int)DAT_07eaa0f8;
+            CHAR Buffer[64];
+            if      (cost < 1000)       wsprintfA(Buffer, "%d", cost % 1000);
+            else if (cost < 1000000)    wsprintfA(Buffer, "%d,%03d", cost % 1000000 / 1000, cost % 1000);
+            else if (cost < 1000000000) wsprintfA(Buffer, "%d,%03d,%03d", cost % 1000000000 / 1000000,
+                                                  cost % 1000000 / 1000, cost % 1000);
+            else                        wsprintfA(Buffer, "%d,%03d,%03d,%03d", cost / 1000000000,
+                                                  cost % 1000000000 / 1000000, cost % 1000000 / 1000,
+                                                  cost % 1000);
+            SelectObject(m_hFontDC, g_hFontBold);
+            const int ty = (int)by + 3;
+            RenderText((int)bx - 35, ty, GlobalText[239], 0, 0, 0);
+            if (cost < 10000000)
+                m_dwTextColor = (cost < 1000000) ? ((cost < 100000) ? 0xFF96DCFFu : 0xFF18C900u)
+                                                 : 0xFF0096FFu;   // -16738561
+            else
+                m_dwTextColor = 0xFF0000FFu;                      // -16776961
+            RenderText((int)bx + 10, ty, Buffer, 0, 0, 0);
+        }
+    }
 
     // Close button.
     float xa = (float)((double)dword_7EAA0C8 + 25.0);

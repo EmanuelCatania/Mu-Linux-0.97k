@@ -671,6 +671,9 @@ void __cdecl FUN_004e6550(void) {
         struct { BYTE* pool; int cells; } grids[] = {
             { OffsetInventoryItems, 64 }, { OffsetTradeItems, 32 },
             { OffsetWarehouseItems, 120 }, { OffsetMixItems, 32 },
+            // IDA recorre tambien las 120 celdas de la tienda (L200-208);
+            // sin esto las marcas de hover (Color 2, azul) nunca se borraban.
+            { ShopItems, 120 },
         };
         for (auto& g : grids)
             for (int i = 0; i < g.cells; ++i) {
