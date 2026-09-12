@@ -670,7 +670,8 @@ void __cdecl FUN_004e6550(void) {
     {
         struct { BYTE* pool; int cells; } grids[] = {
             { OffsetInventoryItems, 64 }, { OffsetTradeItems, 32 },
-            { OffsetWarehouseItems, 120 }, { OffsetMixItems, 32 },
+            { OffsetWarehouseItems, 120 }, { ShopItems, 120 },
+            { OffsetMixItems, 32 },
         };
         for (auto& g : grids)
             for (int i = 0; i < g.cells; ++i) {
@@ -1443,16 +1444,13 @@ void __cdecl FUN_004eb7f0(void) {
         }
     }
 }
-// FUN_004ec330 @ 0x004EC330 — SecondPassword_Screen11 (389 lines)
-//   - Cleanup / resource release: resets all DAT_07eaa1xx buffers, clears PIN state,
-//     calls FUN_004cba60, resets DAT_07eaa14c=0, DAT_07eaa108=0.
-//   - SEH. Implemented in SecondPassword_UI.cpp.
-void __cdecl FUN_004ec330(void) {
-    // SecondPassword_Screen11 — main checkbox/toggle panel + auth packet builder.
-    // Handles: B-key area toggle (DAT_07eaa150), optional second checkbox (DAT_07eaa134),
-    // Click del botón "OK" que arma y manda el paquete XOR completo del PIN (opcode 0x34/F1 de auth),
-    // and "Cancel" / "Back" button. SEH frame stripped; HashTable noise stripped.
+extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
+// FUN_004ec330 @ 0x004EC330 — Shop controls and inventory close hit-test (389 lines)
+//   - Handles shop bottom buttons (Buy, Repair, Repair All) when DAT_07eaa132 != 0
+//   - Updates repair cost per-frame via Item_RecalculateRepairCost()
+//   - Handles inventory close button click
+void __cdecl FUN_004ec330(void) {
     uint uVar3 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa118);
     if (uVar3 == 0xffffffff) {
         void* pv = operator_new(2);
@@ -1468,7 +1466,7 @@ void __cdecl FUN_004ec330(void) {
 
     if (cGuard != '\0') {
         if (DAT_07eaa132 != '\0') {
-            // Checkbox 1 area: [DAT_07eaa0c8+0x19, +0x31) x [DAT_07eaa0cc+0x16d, +0x185)
+            // Button 1 (Buy): [panelX + 25, panelX + 49) x [panelY + 365, panelY + 389)
             int iX1 = (int)DAT_07eaa0c8 + 0x19;
             int iY1 = (int)DAT_07eaa0cc + 0x16d;
             if (iX1 <= (int)DAT_083a427c && (int)DAT_083a427c < iX1 + 0x18 &&
@@ -1483,93 +1481,30 @@ void __cdecl FUN_004ec330(void) {
                     DAT_07eaa134 = 0;
                 }
             }
-            // Checkbox 2 area: [+0x55, +0x6d) x same Y
+
+            // Button 3 (Repair): [panelX + 85, panelX + 109) x [panelY + 365, panelY + 389)
             int iX2 = (int)DAT_07eaa0c8 + 0x55;
             if (iX2 <= (int)DAT_083a427c && (int)DAT_083a427c < iX2 + 0x18 &&
                 iY1 <= (int)DAT_083a4278 && (int)DAT_083a4278 < iY1 + 0x18 &&
                 IsClickPushed()) {
                 DAT_07eaa134 ^= 1;
                 DAT_083a4124 = '\0';
-                ((BYTE*)&DAT_07eaa150)[2] = -(DAT_07eaa134 != 0) & 2;
+                ((BYTE*)&DAT_07eaa150)[2] = DAT_07eaa134 ? 2 : 0;
             }
 
-            // "OK" button: [+0x73, +0x8b) x [+0x16d, +0x185)
+            // Button 4 (Repair All): [panelX + 115, panelX + 139) x [panelY + 365, panelY + 389)
             int iX3 = (int)DAT_07eaa0c8 + 0x73;
             if (iX3 <= (int)DAT_083a427c && (int)DAT_083a427c < iX3 + 0x18 &&
                 iY1 <= (int)DAT_083a4278 && (int)DAT_083a4278 < iY1 + 0x18 &&
                 IsClickPushed()) {
-                // Build full XOR-encoded PIN packet and send
-                // Packet header: C1 / len / 34 (opcode) / payload ...
-                static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                              0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                              0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                              0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-                BYTE hdr[3]; hdr[0]=0xC1; hdr[1]=1; hdr[2]=0x34;
-                for (uint ui=3;ui!=4;ui++){uint uk=ui&0x1f;hdr[ui-3]^=key[uk]^hdr[ui-2];}
-
-                BYTE rawbuf[1024];
-                uint rawLen = (uint)(hdr[1] & 0xffff);
-                if (rawLen + 1 < 0x401) {
-                    BYTE pktBuf[1028];
-                    // random tail byte
-                    rawbuf[rawLen] = (BYTE)rand();
-                    // counter byte
-                    uint uCtr = (uint)(rawbuf[0] != 0xC1);
-                    {
-                        uint uVar7 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_05826ceb);
-                        if (uVar7 == 0xffffffff) {
-                            void* pv2 = operator_new(2);
-                            *(unsigned char*)((int)pv2 + 1) = 1;
-                            FUN_00403f80(&DAT_055c9bc8, pv2, &DAT_05826ceb);
-                        } else {
-                            BYTE* pb2 = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_05826ceb);
-                            BYTE b2 = pb2[1]; pb2[1] = b2 + 1;
-                            if ((BYTE)(b2+1) < 2) FUN_00404330(&DAT_05826ceb, pb2);
-                        }
-                    }
-                    rawbuf[uCtr + 1] = DAT_05826ceb;
-                    DAT_05826ceb = DAT_05826ceb + 1;
-                    {
-                        uint uVar7 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_05826ceb);
-                        if (uVar7 != 0xffffffff) {
-                            BYTE* pb2 = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_05826ceb);
-                            BYTE b2 = pb2[1]; pb2[1] = b2 - 1;
-                            if ((BYTE)(b2-1) == 0) FUN_00423710(pb2, (char*)&DAT_05826ceb);
-                        }
-                    }
-                    int iPayLen = (int)rawLen - (int)(uCtr + 1);
-                    BYTE* pbPay = rawbuf + uCtr + 1;
-                    int encLen = FUN_0053cc30(0, pbPay, iPayLen);
-                    if (encLen < 0x100) {
-                        uint uSz = (uint)(encLen + 2);
-                        pktBuf[0] = (BYTE)0xC3; pktBuf[1] = (BYTE)uSz;
-                        FUN_0053cc30((int)(pktBuf+2), pbPay, iPayLen);
-                        int off2=0; unsigned int rem2=uSz;
-                        if (DAT_055ca168 != 0xffffffff) {
-                            do {
-                                int r2=send((SOCKET)DAT_055ca168,(char*)pktBuf+off2,(int)(rem2-off2),0);
-                                if(r2==-1){int e2=WSAGetLastError();if(e2==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem2)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pktBuf,rem2);DAT_055cc16c+=rem2;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                                if(r2==0)break;if(DAT_055ce174)FUN_0043de60();rem2-=r2;off2+=r2;
-                            } while((int)rem2>0);
-                        }
-                    } else {
-                        uint uSz2 = (uint)(encLen + 3);
-                        pktBuf[0] = (BYTE)0xC4; pktBuf[2] = (BYTE)uSz2;
-                        pktBuf[1] = (BYTE)((uSz2 + ((int)uSz2 >> 0x1f & 0xff)) >> 8);
-                        FUN_0053cc30((int)(pktBuf+3), pbPay, iPayLen);
-                        int off2=0; unsigned int rem2=uSz2;
-                        if (DAT_055ca168 != 0xffffffff) {
-                            do {
-                                int r2=send((SOCKET)DAT_055ca168,(char*)pktBuf+off2,(int)(rem2-off2),0);
-                                if(r2==-1){int e2=WSAGetLastError();if(e2==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem2)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pktBuf,rem2);DAT_055cc16c+=rem2;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                                if(r2==0)break;if(DAT_055ce174)FUN_0043de60();rem2-=r2;off2+=r2;
-                            } while((int)rem2>0);
-                        }
-                    }
-                }
-
-                Item_RecalculateRepairCost();
+                DAT_083a4124 = '\0';
+                // Logical packet: opcode = 0x34 (repair), slot = 0xFF (all), type = 0x00 (NPC)
+                BYTE pkt[5] = { 0xC1, 0x05, 0x34, 0xFF, 0x00 };
+                Net_SendSmallPacket(pkt, sizeof(pkt));
             }
+
+            // main.exe FUN_004ec330:004eca7c calls FUN_004c4080 per-frame when DAT_07eaa132 != 0
+            Item_RecalculateRepairCost();
         }
 
         // Back/cancel button at [DAT_07ea5288+0x19, +0x31) x [DAT_07ea5284+0x18b, +0x1a3)

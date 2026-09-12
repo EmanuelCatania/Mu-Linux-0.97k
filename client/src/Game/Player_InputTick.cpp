@@ -628,8 +628,19 @@ static void SendPacket(const char *buf, unsigned int len)
 // Mismo pipeline de encriptación que el attack in-range 0x15 (chain-XOR
 // s_LoginKey + MuEmu::EncryptSend + send raw) que ya funciona end-to-end.
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
-static void SendNpcTalkRequest(WORD npcEntityId)
+static void SendNpcTalkRequest(const BYTE* npc)
 {
+    if (!npc) return;
+
+    // IDA FUN_0048d640:0048fbfa..0048fc2d: side effects antes de enviar 0x30.
+    // Offset +0x2EB (747) = npcType.
+    // 243 = Craftsman, 246 = Weapon Merchant, 251 = Blacksmith: activan repair.
+    const BYTE npcType = *(const BYTE*)(npc + 0x2eb);
+    DAT_07eaa132 = (npcType == 243 || npcType == 246 || npcType == 251) ? 1 : 0;
+    DAT_07eaa134 = 0;
+
+    const WORD npcEntityId = *(const WORD*)(npc + 0x1dc);
+
     unsigned char pkt[8];
     pkt[0] = 0xC1;
     pkt[1] = 0x05;
@@ -884,7 +895,7 @@ void __cdecl Player_ProcessInput(void)
                         if (npcIdx >= 0 && npcIdx < 400) {
                             BYTE* npc = (BYTE*)(uintptr_t)DAT_07abf5d0 + npcIdx * 0x394;
                             if (npc[0] != 0)
-                                SendNpcTalkRequest(*(WORD*)(npc + 0x1dc));
+                                SendNpcTalkRequest(npc);
                         }
                         *(unsigned char*)(ent + 0x2ed) = 0;
                     }
@@ -1760,7 +1771,7 @@ void __cdecl Player_ProcessInput(void)
                         int ddx = (hgx - ngx < 0) ? (ngx - hgx) : (hgx - ngx);
                         int ddy = (hgy - ngy < 0) ? (ngy - hgy) : (hgy - ngy);
                         if (((ddx > ddy) ? ddx : ddy) <= 4) {
-                            SendNpcTalkRequest(*(WORD*)(tgtBase + 0x1dc));
+                            SendNpcTalkRequest((const BYTE*)tgtBase);
                             *(unsigned char*)(ent + 0x2ed) = 0;  // no encolar walk
                             goto end_tick_inc;
                         }

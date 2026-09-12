@@ -1549,10 +1549,105 @@ extern "C" void __cdecl RenderShopInterface(void)
                      (float)((double)dword_7EAA0CC + 50.0),
                      (DWORD)(uintptr_t)ShopItems, 8, 15);
 
-    // Close button.
-    float xa = (float)((double)dword_7EAA0C8 + 25.0);
-    float ya = (float)((double)dword_7EAA0CC + 395.0);
-    GL_DrawTexture(280, xa, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    // Original main.exe FUN_004f1f50: bottom shop controls at Y = panelY + 365.0f
+    float btn1_x = (float)dword_7EAA0C8 + 25.0f;
+    float btn_y  = (float)dword_7EAA0CC + 365.0f;
+
+    // Button 1 (Buy): texture 283 (buy_02) if DAT_07eaa152 == 0, else 282 (buy_01)
+    BYTE state152 = ((BYTE*)&DAT_07eaa150)[2];
+    int btn1_tex = (state152 == 0) ? 283 : 282;
+    GL_DrawTexture(btn1_tex, btn1_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    if ((double)MouseX >= btn1_x && (double)MouseX < btn1_x + 24.0 &&
+        (double)MouseY >= btn_y  && (double)MouseY < btn_y  + 24.0)
+    {
+        SelectObject(m_hFontDC, g_hFont);
+        m_dwTextColor = 0xFFFFFFFFu;
+        m_dwBackColor = 0xFF000000u;
+        RenderTipText((int)btn1_x, (int)btn_y - 12, GlobalText[231]);
+    }
+
+    // Button 2 (Sell): texture 285 (sell_02) if DAT_07eaa152 == 1, else 284 (sell_01)
+    float btn2_x = (float)dword_7EAA0C8 + 55.0f;
+    int btn2_tex = (state152 == 1) ? 285 : 284;
+    GL_DrawTexture(btn2_tex, btn2_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+    if ((double)MouseX >= btn2_x && (double)MouseX < btn2_x + 24.0 &&
+        (double)MouseY >= btn_y  && (double)MouseY < btn_y  + 24.0)
+    {
+        SelectObject(m_hFontDC, g_hFont);
+        m_dwTextColor = 0xFFFFFFFFu;
+        m_dwBackColor = 0xFF000000u;
+        RenderTipText((int)btn2_x, (int)btn_y - 12, GlobalText[232]);
+    }
+
+    // Repair controls: original main.exe enables them for NPC type values 243, 246 and 251 (DAT_07eaa132 != 0)
+    if (DAT_07eaa132 != '\0')
+    {
+        // Button 3 (Repair): texture 287 (repair_02) if DAT_07eaa134 != 0, else 286 (repair_01)
+        float btn3_x = (float)dword_7EAA0C8 + 85.0f;
+        int btn3_tex = (DAT_07eaa134 != 0) ? 287 : 286;
+        GL_DrawTexture(btn3_tex, btn3_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        if ((double)MouseX >= btn3_x && (double)MouseX < btn3_x + 24.0 &&
+            (double)MouseY >= btn_y  && (double)MouseY < btn_y  + 24.0)
+        {
+            SelectObject(m_hFontDC, g_hFont);
+            m_dwTextColor = 0xFFFFFFFFu;
+            m_dwBackColor = 0xFF000000u;
+            RenderTipText((int)btn3_x, (int)btn_y - 12, GlobalText[233]);
+        }
+
+        // Button 4 (Repair All): reuses texture 286 (and 287 on click) with glColor3f(0.5f, 0.7f, 1.0f)
+        float btn4_x = (float)dword_7EAA0C8 + 115.0f;
+        glColor3f(0.5f, 0.7f, 1.0f);
+        GL_DrawTexture(286, btn4_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        if ((double)MouseX >= btn4_x && (double)MouseX < btn4_x + 24.0 &&
+            (double)MouseY >= btn_y  && (double)MouseY < btn_y  + 24.0)
+        {
+            if (DAT_083a4124 != 0) {
+                DAT_083a4124 = 0;
+                GL_DrawTexture(287, btn4_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+            }
+            SelectObject(m_hFontDC, g_hFont);
+            m_dwTextColor = 0xFFFFFFFFu;
+            m_dwBackColor = 0xFF000000u;
+            RenderTipText((int)btn4_x, (int)btn_y - 12, GlobalText[237]);
+        }
+
+        glColor3f(1.0f, 1.0f, 1.0f);
+
+        // Repair cost box: texture 271 (Item_Money.jpg) at [panelX + 55.0f, panelY + 395.0f], 113x18
+        float box_x = btn4_x - 60.0f;
+        float box_y = btn_y + 30.0f;
+        GL_DrawTexture(271, box_x, box_y, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
+
+        // Thousands formatting of DAT_07eaa0f8
+        char textBuf[64];
+        int cost = DAT_07eaa0f8;
+        if (cost < 1000) {
+            wsprintfA(textBuf, "%d", cost);
+        } else if (cost < 1000000) {
+            wsprintfA(textBuf, "%d,%03d", cost / 1000, cost % 1000);
+        } else if (cost < 1000000000) {
+            wsprintfA(textBuf, "%d,%03d,%03d", cost / 1000000, (cost % 1000000) / 1000, cost % 1000);
+        } else {
+            wsprintfA(textBuf, "%d,%03d,%03d,%03d", cost / 1000000000, (cost % 1000000000) / 1000000, (cost % 1000000) / 1000, cost % 1000);
+        }
+
+        SelectObject(m_hFontDC, g_hFontBold);
+        m_dwBackColor = 0xFF282828u;
+        m_dwTextColor = 0xFF96DCFFu;
+        RenderText((int)box_x - 35, (int)box_y + 3, GlobalText[239], 0, 0, (SIZE*)0);
+
+        if (cost < 10000000) {
+            if (cost < 1000000) {
+                m_dwTextColor = (cost < 100000) ? 0xFF96DCFFu : 0xFF18C800u;
+            } else {
+                m_dwTextColor = 0xFF0096FFu;
+            }
+        } else {
+            m_dwTextColor = 0xFF0000FFu;
+        }
+        RenderText((int)box_x + 10, (int)box_y + 3, textBuf, 0, 0, (SIZE*)0);
+    }
 }
 
 static int ChaosMixLegacyValue()
