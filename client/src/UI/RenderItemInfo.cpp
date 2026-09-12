@@ -1554,8 +1554,13 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
     // port usaba `param_4` (bSell) como gate y ademas deducia compra-vs-venta
     // comparando el puntero del item contra el rango del pool de la tienda;
     // el binario lo decide con `Sell` a secas.
+    // 2026-09-12: el modo de ItemValue estaba invertido.  IDA L522-557:
+    //   if (Sell) { ItemValue(ip, 0) ... GlobalText[62] }
+    //   else      { ItemValue(ip, 1) ... GlobalText[63] }
+    // El segundo argumento NO es `Sell`: 0 = precio completo (el mismo que se
+    // cobra al comprar, sub_4D23B0 L416), 1 = precio de venta.
     if (ShopOpened != 0 && DAT_07eaa154 < 28) {
-        int   price = Item_CalculateValue((void*)param_3, param_4 ? 1 : 0);
+        int   price = Item_CalculateValue((void*)param_3, param_4 ? 0 : 1);
         char  priceStr[32];
         FormatThousands(priceStr, sizeof(priceStr), price);
         const char* gt = GlobalText[param_4 ? 62 : 63];
