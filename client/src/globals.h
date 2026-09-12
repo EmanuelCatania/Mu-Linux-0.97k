@@ -524,7 +524,11 @@ extern float  _DAT_05826cf4;
 extern DWORD   DAT_05826cf4;
 extern DWORD   DAT_05826cf8;
 extern DWORD   DAT_05826d08;   // chat rate-limit counter (max 0x46 = 70 ticks)
-extern int     DAT_05826d04;   // teleport / consumable use flag (runtime global)
+// Teleport es 0x05826D14 (ida_xrefs_to: ReceiveTeleport, Attack, CheckGate,
+// Skills_PacketHandler, sub_482BE0, sub_4D23B0...).  Hasta 2026-09-12 Attack
+// escribia un global aparte (DAT_05826d04) y el resto leia DAT_05826d14: el
+// gate del Town Portal no se enteraba del teleport en curso.
+#define DAT_05826d04 DAT_05826d14
 extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit compare)
 extern char    DAT_05826d14;   // Teleport (IDA `Teleport` @0x05826D14) — 0=normal,
                                // 1=gate/teleport en curso.  La etiqueta vieja

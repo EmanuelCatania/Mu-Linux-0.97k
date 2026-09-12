@@ -258,6 +258,9 @@ void PacketHandler_0x19(BYTE* pkt)
         if (target != nullptr)
             CreateTeleportBegin((unsigned int)(uintptr_t)target);
         CreateTeleportEnd((unsigned int)(uintptr_t)caster);
+        // IDA Skills_PacketHandler case 0xF (0x42C969): `if (sc == Hero) Teleport = 0;`
+        if ((uintptr_t)caster == (uintptr_t)DAT_07abf5d8)
+            DAT_05826d14 = 0;
         // FUN_00413900(0x66, caster_idx) — UI event 0x66 = dual hit
         PlayBuffer(102, (DWORD)(uintptr_t)caster, 0);
         return;

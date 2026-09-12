@@ -182,6 +182,10 @@ int __cdecl Item_FindQuickSlotByCategory(int a1) {
         }
     }
 
+    // IDA sub_482BE0 L98: con el teleport en curso no se usa el Town Portal.
+    if (DAT_05826d14 && v1 == 458 && v2 == 458) {
+        return -1;
+    }
     if (v1 < v2) {
         return -1;
     }
