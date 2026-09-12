@@ -1674,7 +1674,7 @@ extern DWORD   DAT_00559c78;   // current text color ABGR (0xffffffff = white)
 // DAT_00559c8c — declared above as DWORD (line 200)
 // Toggle flags
 extern char    DAT_00559c5c;   // sound-effect toggle (0=off, non-zero=on)
-extern char    DAT_07e11d80;   // music toggle (0=off, non-zero=on)
+extern char    DAT_07e11d80;   // IDA: m_bWhisperSound (0x07E11D80) — aviso sonoro de susurros
 // Entity/level data
 // Format strings for numeric dialogs
 // extern char    DAT_07d46e60;   // login account name format   // -> alias a GlobalText, ver el final del archivo
