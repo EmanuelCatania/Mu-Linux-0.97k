@@ -1842,28 +1842,23 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
     // lo vuelve a 1 cada frame.  Estas escrituras se habian quitado el
     // 2026-05-08 porque el "fix" de Scene_MapTick de entonces las trababa;
     // desde que Scene_MapTick normaliza como IDA (2026-09-12) no hace falta.
+    // IDA L133-150: la linea del costo es sprintf(GlobalText[238], Buffer), con
+    // Buffer = ConvertRepairGold(...) si el item esta danado y "0" (0x55A5F8)
+    // si esta sano; color = tier (v12), en negrita.
+    // 2026-09-12: el port formateaba GlobalText[238] ("Costo de reparacion: %s",
+    // alias DAT_07d3b40c) SIN argumento -- de ahi el "%s" en basura -- y
+    // escribia el precio en lpString+64, en medio de la linea anterior.
+    char repairGold[64] = "0";
     if (curDur < maxDur) {
         DAT_07eaa134 = 2;
         // BUG-FIX 2026-04-26 (audit #3): same ItemValue/ConvertRepairGold pair.
         int gold = Item_CalculateValue((void*)param_3, 2);
-        Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, (short)itemType, lpString_07e90798 + 64);
+        Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, (short)itemType, repairGold);
     } else {
         DAT_07eaa134 = 1;
     }
-
-    // Slot 1: level string
-    {
-        ITEM* it = (ITEM*)param_3;
-        ITEM_ATTRIBUTE* p = (ITEM_ATTRIBUTE*)(uintptr_t)attrBase;
-        char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
-        if (!BuildInventorySpecialNameLine(it, p, level, dst, 100)) {
-            crt_sprintf(dst, &DAT_07d3b40c);
-        }
-    }
-    {
-        int specialNameColor = GetInventorySpecialNameColor((ITEM*)param_3);
-        DAT_07e91708[DAT_07eaa154] = specialNameColor;
-    }
+    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, GlobalText[238], repairGold);
+    DAT_07e91708[DAT_07eaa154] = (int)tier;   // TextListColor = v12
     DAT_07ea7b10[DAT_07eaa154] = 1;
     DAT_07eaa154++;
 
