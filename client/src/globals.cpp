@@ -2762,7 +2762,6 @@ char   WhisperRegistID[28][4] = {};
 void  *DAT_055c9b98       = NULL;   // RB-tree sentinel (NIL)
 float  CameraAngle[3]     = {0};
 float  CameraPosition[3]  = {0};
-int    _g_bEventChipDialogEnable = 0;
 // InventoryOpened/CharacterOpened/etc. are now #define aliases for
 // DAT_07eaa117/116/etc. — see globals.h. Storage is the byte-sized DAT_
 // globals defined above (lines ~745-753).
@@ -2802,7 +2801,6 @@ int    DAT_07e11e18       = 1;
 int    DAT_07e11d18       = 0;
 int    DAT_07e11d14       = 0;
 BYTE   DAT_00559c6d       = 0xFF;
-short  DAT_07e11e1c       = 0;
 short  DAT_07e11e20       = -1;
 short  DAT_07e11e22       = -1;
 short  DAT_07e11e24       = -1;

@@ -1498,7 +1498,7 @@ extern char    DAT_00559d5c;           // player-list alternate format string
 // DAT_07eaa117 — declared above as char (line 613)
 // DAT_07eaa116 — declared above as char (line 612)
 // DAT_07eaa128 — declared above as DWORD (line 620)
-extern int     DAT_07eaa12c;           // guild member ID / count
+extern int     DAT_07eaa12c;           // g_shEventChipCount (IDA 0x07EAA12C)
 // DAT_07eaa108 — guild UI flag — declared above as DWORD (line 609)
 extern BYTE    DAT_07ea97c0[64];       // guild entity pool (zeroed on stage 3, 0x40 bytes)
 extern char    DAT_07e11d73;           // char-select flag D (set 1 when guild stage==3)
@@ -2647,7 +2647,10 @@ extern float   CameraAngle[3];     // DAT_083a42e0 (3 floats)
 extern float   CameraPosition[3];  // DAT_083a42d4 (3 floats)
 
 // Quest/NPC window
-extern int     _g_bEventChipDialogEnable; // DAT_07e5ba80
+// g_bEventChipDialogEnable es 0x07EAA128 (DAT_07eaa128).  Hasta 2026-09-11 era
+// un global aparte: el 0x94 lo escribia y el panel del Golden Archer leia
+// DAT_07eaa128, asi que nunca se enteraba.
+#define _g_bEventChipDialogEnable (*(int*)&DAT_07eaa128)
 
 // 2026-04-30: los flags de los paneles de UI ahora aliasan los bytes reales DAT_07eaa11x (per
 // el Offsets.h del proyecto companion de IDA, líneas 59-69). Las direcciones de la época de
@@ -2734,7 +2737,8 @@ extern int     DAT_07e11d24;       // _CheckInventory
 extern int     DAT_07e11d18;       // RepairEnable_0
 extern int     DAT_07e11d14;       // RepairEnable
 extern BYTE    DAT_00559c6d;       // UI alpha/state byte
-extern short   DAT_07e11e1c;       // _g_shEventChipCount
+// g_shEventChipCount es 0x07EAA12C (DAT_07eaa12c); mismo caso que el de arriba.
+#define DAT_07e11e1c (*(short*)&DAT_07eaa12c)
 extern short   DAT_07e11e20;       // g_shMutoNumber[0]
 extern short   DAT_07e11e22;       // g_shMutoNumber[1]
 extern short   DAT_07e11e24;       // g_shMutoNumber[2]
