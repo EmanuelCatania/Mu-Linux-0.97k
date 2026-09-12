@@ -1837,19 +1837,18 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
     // Durability
     unsigned int maxDur = Item_CalculateMaxDurability(param_3, attrBase, (int)level) & 0xffff;
     unsigned int curDur = (unsigned int)*(unsigned char*)((char*)param_3 + 0x1a);
+    // IDA RenderRepairInfo: RepairEnable_0 = 1 con el item sano y = 2 con el
+    // item dañado; el 2 es el martillo animado de RenderCursor, y Scene_MapTick
+    // lo vuelve a 1 cada frame.  Estas escrituras se habian quitado el
+    // 2026-05-08 porque el "fix" de Scene_MapTick de entonces las trababa;
+    // desde que Scene_MapTick normaliza como IDA (2026-09-12) no hace falta.
     if (curDur < maxDur) {
-        // 2026-05-08: REMOVED self-perpetuating cursor flag. The original
-        // IDA code wrote DAT_07eaa134 = 2 here, but that turns the mouse
-        // cursor into a repair sprite (per Cursor_Render), and since this
-        // function only runs when DAT_07eaa134 != 0, it self-locks the
-        // cursor every frame. The actual repair NPC context sets
-        // DAT_07eaa134 from elsewhere (Chat_InputTick B-key, NPC checkbox).
-        // DAT_07eaa134 = 2;
+        DAT_07eaa134 = 2;
         // BUG-FIX 2026-04-26 (audit #3): same ItemValue/ConvertRepairGold pair.
         int gold = Item_CalculateValue((void*)param_3, 2);
         Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, (short)itemType, lpString_07e90798 + 64);
     } else {
-        // DAT_07eaa134 = 1;  // Same — REMOVED.
+        DAT_07eaa134 = 1;
     }
 
     // Slot 1: level string
