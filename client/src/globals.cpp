@@ -2801,7 +2801,6 @@ BYTE   DAT_00559c6d       = 0xFF;
 short  DAT_07e11e20       = -1;
 short  DAT_07e11e22       = -1;
 short  DAT_07e11e24       = -1;
-BYTE   DAT_07e11e26       = 0;
 int    DAT_07e11980       = 0;
 
 // Batch 19 — SendCheck globals

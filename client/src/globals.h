@@ -2744,7 +2744,6 @@ extern BYTE    DAT_00559c6d;       // UI alpha/state byte
 extern short   DAT_07e11e20;       // g_shMutoNumber[0]
 extern short   DAT_07e11e22;       // g_shMutoNumber[1]
 extern short   DAT_07e11e24;       // g_shMutoNumber[2]
-extern BYTE    DAT_07e11e26;       // m_bWhisperSound
 extern int     DAT_07e11980;       // SceneFlag
 
 // Batch 19 — SendCheck globals

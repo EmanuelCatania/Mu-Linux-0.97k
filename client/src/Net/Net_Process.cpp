@@ -3375,7 +3375,7 @@ void Net_ProcessPacket(void)
 
                         // 2) Opciones de juego.
                         DAT_07e11e18 = ((p[10] & 1) == 1);          // m_bAutoAttack
-                        DAT_07e11e26 = (BYTE)((p[10] & 4) == 4);    // m_bWhisperSound
+                        DAT_07e11d80 = (char)((p[10] & 4) == 4);    // m_bWhisperSound (0x07E11D80); antes un DAT_07e11e26 sin xrefs en IDA
                         DAT_00559c60 = p[11] + 448;                 // QKey  (item type)
                         DAT_00559c64 = p[12] + 448;                 // WKey
                         DAT_00559c68 = p[13] + 448;                 // EKey
@@ -3546,7 +3546,11 @@ void Net_ProcessPacket(void)
                     int wlen = Size - 13;
                     if (wlen > 60) wlen = 60;
                     memcpy(wmsg, Msg + 13, wlen);
-                    PlayBuffer(0x26, 0, 0);
+                    // IDA ProtocolCore case 2: RegistWhisperID(10, strID) (anti-spam
+                    // de personajes de nivel < 10, sin portar) y el sonido SOLO con
+                    // m_bWhisperSound (0x07E11D80).  2026-09-12: sonaba siempre.
+                    if (DAT_07e11d80)
+                        PlayBuffer(0x26, 0, 0);
                     UIChatLogWindow_AddText(wname, wmsg, 0);
                 }
                 break;
