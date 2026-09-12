@@ -5439,10 +5439,11 @@ void Net_ProcessPacket(void)
 
             case 0x34: {
                 NetLog("NET:  -> 0x34 Repair size=%d", Size);
-                if (Size >= 7 && DAT_07cf1ffc != 0) {
-                    DWORD gold = *(DWORD*)(Msg + 3);
+                if (Size >= 8 && DAT_07cf1ffc != 0) {
+                    DWORD gold = *(DWORD*)(Msg + 4);
                     if (gold != 0) {
                         *(DWORD*)((BYTE*)DAT_07cf1ffc + 1352) = gold;
+                        FUN_0047e3c0((int)(uintptr_t)DAT_07cf1ffc, 0, 0);
                         PlayBuffer(0x25, 0, 0);
                     }
                 }

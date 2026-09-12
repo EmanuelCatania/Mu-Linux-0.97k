@@ -66,12 +66,12 @@ void __cdecl FUN_005126e0(int id, float x, float y, float w, float h, unsigned i
     Matrix_BuildFromEuler(bvec, mat);
 
     // 4 corner UV + positions
-    static float uvs[8] = { 0.0f, 1.0f,  1.0f, 1.0f,  1.0f, 0.0f,  0.0f, 0.0f };
+    static float uvs[8] = { 0.0f, 0.0f,  0.0f, 1.0f,  1.0f, 1.0f,  1.0f, 0.0f };
     float corners[4][3] = {
         { fSinW * _DAT_00552a14,  fCosW * _DAT_00552504, 0.0f },
         { fSinW * _DAT_00552a14, -fCosW * _DAT_00552504, 0.0f },
-        {-fSinW * _DAT_00552a14,  fCosW * _DAT_00552504, 0.0f },
-        {-fSinW * _DAT_00552a14, -fCosW * _DAT_00552504, 0.0f }
+        {-fSinW * _DAT_00552a14, -fCosW * _DAT_00552504, 0.0f },
+        {-fSinW * _DAT_00552a14,  fCosW * _DAT_00552504, 0.0f }
     };
 
     glBegin(GL_TRIANGLE_FAN);

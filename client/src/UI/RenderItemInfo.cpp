@@ -1773,6 +1773,8 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
 
 // FUN_004c8d70 @ 0x004C8D70 — RenderRepairInfo(param_1, param_2, ITEM* ip)    [Kayito: RenderRepairInfo]
 // Shows item tooltip in the repair NPC context. unaff_EBX=DAT_07cf1ffc, unaff_ESI=1 (anti-tamper).
+static const char DAT_0055a63c[] = "\n";
+
 extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* param_3_v) // RenderRepairInfo
 {
     // 2026-05-08: same defensive guards as FUN_004c4650 (sibling function).
@@ -1831,51 +1833,72 @@ extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* para
     DAT_07eaa154++;
     DAT_07eaa158++;
 
-    // Durability
+    // Slot 1: Costo de reparacion
     unsigned int maxDur = Item_CalculateMaxDurability(param_3, attrBase, (int)level) & 0xffff;
     unsigned int curDur = (unsigned int)*(unsigned char*)((char*)param_3 + 0x1a);
+    char costText[100] = { 0 };
     if (curDur < maxDur) {
-        // 2026-05-08: REMOVED self-perpetuating cursor flag. The original
-        // IDA code wrote DAT_07eaa134 = 2 here, but that turns the mouse
-        // cursor into a repair sprite (per Cursor_Render), and since this
-        // function only runs when DAT_07eaa134 != 0, it self-locks the
-        // cursor every frame. The actual repair NPC context sets
-        // DAT_07eaa134 from elsewhere (Chat_InputTick B-key, NPC checkbox).
-        // DAT_07eaa134 = 2;
-        // BUG-FIX 2026-04-26 (audit #3): same ItemValue/ConvertRepairGold pair.
+        DAT_07eaa134 = 2;
         int gold = Item_CalculateValue((void*)param_3, 2);
-        Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, (short)itemType, lpString_07e90798 + 64);
+        Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, (short)itemType, costText);
+        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, GlobalText[238], costText);
     } else {
-        // DAT_07eaa134 = 1;  // Same — REMOVED.
+        DAT_07eaa134 = 1;
+        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, GlobalText[238], "0");
     }
-
-    // Slot 1: level string
-    {
-        ITEM* it = (ITEM*)param_3;
-        ITEM_ATTRIBUTE* p = (ITEM_ATTRIBUTE*)(uintptr_t)attrBase;
-        char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
-        if (!BuildInventorySpecialNameLine(it, p, level, dst, 100)) {
-            crt_sprintf(dst, &DAT_07d3b40c);
-        }
-    }
-    {
-        int specialNameColor = GetInventorySpecialNameColor((ITEM*)param_3);
-        DAT_07e91708[DAT_07eaa154] = specialNameColor;
-    }
+    DAT_07e91708[DAT_07eaa154] = tier;
     DAT_07ea7b10[DAT_07eaa154] = 1;
     DAT_07eaa154++;
 
-    // Slot 2: class/subtype
+    // Slot 2: separador
     crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, DAT_0055a5fc);
     DAT_07eaa154++;
     DAT_07eaa158++;
 
-    AppendInventorySpecialTooltipLines((ITEM*)param_3);
-    AppendInventoryDurabilityTooltipLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase, level, attrBase);
-    AppendInventoryRequirementTooltipLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase);
-    AppendInventoryRequireClassLines((ITEM_ATTRIBUTE*)(uintptr_t)attrBase);   // ver nota de orden arriba
-    AppendInventoryLateBonusTooltipLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase);
-    AppendInventorySpecialOptionLines((ITEM*)param_3, (ITEM_ATTRIBUTE*)(uintptr_t)attrBase);
+    // Slot 3: nombre del item
+    {
+        char* dst = lpString_07e90798 + DAT_07eaa154 * 100;
+        const char* itemName = ((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)->Name;
+        unsigned char optFlags = *(unsigned char*)((char*)param_3 + 0x1b) & 0x3f;
+
+        if (itemType >= 0x183 && itemType <= 0x186) {
+            if (level == 0) {
+                crt_sprintf(dst, "%s", itemName);
+            } else {
+                crt_sprintf(dst, "%s +%d", itemName, level);
+            }
+        } else {
+            if (optFlags == 0) {
+                if (level == 0) {
+                    crt_sprintf(dst, "%s", itemName);
+                } else {
+                    crt_sprintf(dst, "%s +%d", itemName, level);
+                }
+            } else {
+                if (level == 0) {
+                    crt_sprintf(dst, "%s %s", GlobalText[620], itemName);
+                } else {
+                    crt_sprintf(dst, "%s %s +%d", GlobalText[620], itemName, level);
+                }
+            }
+        }
+    }
+    DAT_07ea7b10[DAT_07eaa154] = 1;
+    DAT_07e91708[DAT_07eaa154] = tier;
+    DAT_07eaa154++;
+
+    // Slot 4: separador
+    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, DAT_0055a63c);
+    DAT_07eaa154++;
+    DAT_07eaa158++;
+
+    // Slot 5: durabilidad (solo si itemType < 0x1c0)
+    if (itemType < 0x1c0) {
+        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, GlobalText[71], (int)curDur, (int)maxDur);
+        DAT_07e91708[DAT_07eaa154] = 0;
+        DAT_07ea7b10[DAT_07eaa154] = 0;
+        DAT_07eaa154++;
+    }
 
     // Epilogo fiel a 0x004c9664..0x004c971b.  Igual que RenderItemInfo salvo
     // que la conversion vertical es entera: (h * 15 * 32) / WindowHeight, que

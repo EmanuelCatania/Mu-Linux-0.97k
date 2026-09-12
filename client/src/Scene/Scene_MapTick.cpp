@@ -29,16 +29,7 @@ void FUN_004f64d0(void)
   GL_ResetState();
   puVar5 = (undefined4*)DAT_07cf1ffc;
   DAT_07e11d6e = 0;
-  // 2026-05-08: BUG-FIX — DAT_07eaa134 (B-key/repair-mode flag) se queda
-  // pegada en != 0 (probablemente corrupción adicional similar a
-  // DAT_07d78068). Eso dispara el dispatch a FUN_004c8d70 (RenderRepairInfo)
-  // en lugar de FUN_004c4650 (tooltip normal), y el cursor (Cursor_Render)
-  // dibuja el sprite de reparación en vez de flecha.
-  // Hasta encontrar el writer real, forzamos a 0 si no hay un repair NPC
-  // efectivamente abierto (DAT_07eaa138 = RepairEnable counter).
-  if (DAT_07eaa134 != 0 && DAT_07eaa138 == 0) {
-    DAT_07eaa134 = 0;
-  } else if (DAT_07eaa134 != 0) {
+  if (DAT_07eaa134 != 0) {
     DAT_07eaa134 = 1;
   }
   if (DAT_07eaa160 == 0) {
