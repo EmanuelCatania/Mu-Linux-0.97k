@@ -476,26 +476,23 @@ static void SendC3Packet(BYTE* payload, int payloadSize)
 //         SendRequestDropItem(slot, (int)(CollisionPosition[0] / TERRAIN_SCALE),
 //                                   (int)(CollisionPosition[1] / TERRAIN_SCALE));
 // o sea el pick de terreno se valida ANTES de mandar.
-static void GetHeroDropTile(BYTE* outX, BYTE* outY)
+// Devuelve false si el cursor no esta sobre terreno: IDA hace `return` en ese
+// caso (sub_4DF410 L1070-1073) y el item queda en la mano.  Antes caia a la
+// celda del heroe, que no es lo que hace el original.
+static bool GetHeroDropTile(BYTE* outX, BYTE* outY)
 {
     *outX = 0; *outY = 0;
 
     // Pick del terreno bajo el cursor (mismo patron que Combat_Targeting).
-    FUN_004f9ac0('');                       // RenderTerrain(true): arma el rayo
+    FUN_004f9ac0('\x01');                    // RenderTerrain(true): arma el rayo
     const int gridX = (int)*(float*)&DAT_080ab288;   // SelectXF
     const int gridY = (int)*(float*)&DAT_080ab28c;   // SelectYF
-    if (FUN_004f8480(*(int*)&DAT_080ab288, *(int*)&DAT_080ab28c,
-                     gridX, gridY, 1.0f, 1, 1)) {
-        *outX = (BYTE)(int)(DAT_083a4130 * 0.01f);   // CollisionPosition[0]
-        *outY = (BYTE)(int)(DAT_083a4134 * 0.01f);   // CollisionPosition[1]
-        return;
-    }
-
-    // Sin pick valido (cursor fuera del terreno): cae a la celda del heroe.
-    BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
-    if (!hero) return;
-    *outX = (BYTE)(int)(*(float*)(hero + 16) * 0.01f);
-    *outY = (BYTE)(int)(*(float*)(hero + 20) * 0.01f);
+    if (!FUN_004f8480(*(int*)&DAT_080ab288, *(int*)&DAT_080ab28c,
+                      gridX, gridY, 1.0f, 1, 1))
+        return false;
+    *outX = (BYTE)(int)(DAT_083a4130 * 0.01f);   // CollisionPosition[0]
+    *outY = (BYTE)(int)(DAT_083a4134 * 0.01f);   // CollisionPosition[1]
+    return true;
 }
 
 extern "C" void __cdecl SyncPickedItemVisualState(void);
@@ -1348,26 +1345,16 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
     if (DAT_07eaa13c == 2) {
         if (DAT_00559f5e == 1) {
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
-            // IDA 004DF410 case 2: el mismo diálogo de confirmación se usa
-            // para ejecutar Chaos. El original emitía C1:03:86; sólo para
-            // MuEmu se añade el tipo de receta ya reconocido localmente.
-            const int mixType = (int)DAT_07eaa16c;
-            if (DAT_07eaa11a != 0 &&
-                (mixType == 1 || (mixType >= 2 && mixType <= 8) || mixType == 11)) {
-                DAT_07eaa140 = 1;
-                Net_SendChaosBoxMix((BYTE)mixType);
-                return;
-            }
-
-            // User confirmed drop-on-ground. Server: [C1][05][23][x][y][slot],
-            // C3 (PMSG_ITEM_DROP_RECV, Encrypt=1).
-            BYTE dx, dy; GetHeroDropTile(&dx, &dy);
-            BYTE pkt[4];
-            pkt[0] = 0x23;
-            pkt[1] = dx;   // tile X del héroe (no pixels de mouse)
-            pkt[2] = dy;   // tile Y del héroe
-            pkt[3] = (BYTE)DAT_07ea5b18;
-            SendC3Packet(pkt, 4);
+            // IDA 004DF410 case 2 (L402-431): este dialogo es SOLO la
+            // confirmacion del Chaos Mix -- lo abre el boton OK de la Chaos
+            // Machine (FUN_004e9050, unico writer de dword_7EAA13C = 2).  El
+            // original pone MixState = 1 y manda C1:03:86 sin mas; para MuEmu
+            // se agrega el tipo de receta reconocido localmente.
+            // 2026-09-11: se quito una rama que, con una receta no
+            // reconocida, TIRABA AL SUELO el item de la mano (0x23): el
+            // original no tiene confirmacion de drop al suelo.
+            DAT_07eaa140 = 1;
+            Net_SendChaosBoxMix((BYTE)DAT_07eaa16c);
         } else if (DAT_00559f5e == 2) {
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
             RestorePickedItemToSource();   // ver nota arriba
@@ -1604,11 +1591,12 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             }
 
             // Plain ground drop — [C1][05][23][tileX][tileY][slot], C3.
-            BYTE dx, dy; GetHeroDropTile(&dx, &dy);
+            BYTE dx, dy;
+            if (!GetHeroDropTile(&dx, &dy)) return;   // sin terreno: sigue en la mano
             BYTE pkt[4];
             pkt[0] = 0x23;
-            pkt[1] = dx;   // tile X del héroe (no pixels de mouse)
-            pkt[2] = dy;   // tile Y del héroe
+            pkt[1] = dx;   // celda bajo el cursor
+            pkt[2] = dy;
             pkt[3] = (BYTE)DAT_07ea5b18;
             SendC3Packet(pkt, 4);
         }
