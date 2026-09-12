@@ -110,8 +110,8 @@ void __stdcall InitGame(void)
     // RenderIME_Status).  El port escribia DAT_07E11D1C, que es **LoadingWorld**
     // -- el contador que gatea el frame de render (`if (LoadingWorld > 30) return`).
     DAT_07e11d6f = 0;     // LockInputStatus
-    DAT_07e11d18 = 0;     // RepairEnable variants
-    DAT_07e11d14 = 0;
+    DAT_07eaa134 = 0;     // RepairEnable_0 (IDA InitGame 0x4244FC)
+    DAT_07eaa138 = 0;     // RepairEnable   (IDA InitGame 0x424502)
     DAT_00559c6d = 0xff;
     DAT_0055a3e4 = 0xffffffff;
     FUN_0051d740();       // ClearNotice

@@ -2734,8 +2734,6 @@ extern int     DAT_07e11988;       // SelectedItem
 extern int     DAT_07e11e18;       // m_bAutoAttack
 extern int     DAT_07e11d24;       // _CheckInventory
 // DAT_07e11d1c already declared above (line ~553) as DWORD
-extern int     DAT_07e11d18;       // RepairEnable_0
-extern int     DAT_07e11d14;       // RepairEnable
 extern BYTE    DAT_00559c6d;       // UI alpha/state byte
 // g_shEventChipCount es 0x07EAA12C (DAT_07eaa12c); mismo caso que el de arriba.
 #define DAT_07e11e1c (*(short*)&DAT_07eaa12c)

@@ -911,10 +911,10 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 char db[200];
                 wsprintfA(db,
                     "FUN_004d23b0 DISPATCH type=%d slotXY=(%d,%d) Lpush=%d Rpush=%d "
-                    "DAT_07e11d18=%d DAT_07eaa134=%d mode=%d",
+                    "RepairEnable_0=%d mode=%d",
                     (int)typeRaw, (int)slotX, (int)slotY,
                     (int)DAT_083a4124, (int)DAT_083a42d0,
-                    (int)DAT_07e11d18, (int)DAT_07eaa134, (int)mode_flag);
+                    (int)DAT_07eaa134, (int)mode_flag);
                 DbgLogPublic(db);
             }
 
@@ -928,7 +928,9 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             // pickup dispare. Si DAT_07eaa134 está pegado en 1 (porque
             // Scene_MapTick lo mantiene en 1 cuando DAT_07eaa138 != 0), nunca
             // hay pickup. Usar el OR para detectar el bug.
-            if (DAT_07e11d18 != 0 || DAT_07eaa134 != 0) {
+            // IDA: RepairEnable_0 (0x07EAA134).  `DAT_07e11d18` era un global
+            // sin xrefs en IDA; se quito el 2026-09-11.
+            if (DAT_07eaa134 != 0) {
                 // Tipos de item que SE PUEDEN reparar (= armas/armaduras con
                 // durability), excluding stackables like potions/jewels.
                 // Per IDA lines 579-586.
@@ -1020,9 +1022,9 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
                 // ── Item 458 (Teleport scroll) — handled by Teleport check ─
                 if (type == 458) {
-                    extern int DAT_05826d04;   // Teleport global flag
-                    (void)DAT_05826d04;
-                    if ((int)DAT_07e11d18 != 0) return;   // mid-action
+                    // IDA sub_4D23B0 L1440: `if ( Teleport ) return;`
+                    // Teleport = 0x05826D14 (DAT_05826d14).
+                    if (DAT_05826d14 != 0) return;
                     if (DAT_07eaa119 != 0 || DAT_07eaa11b != 0) {
                         UIChatLogWindow_AddText("", GlobalText[474], 2);
                         continue;

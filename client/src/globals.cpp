@@ -2798,8 +2798,6 @@ int    DAT_07e11988       = -1;
 int    DAT_07e11e18       = 1;
 // DAT_07e11d24 already defined above (line ~873)
 // DAT_07e11d1c already defined above (line ~804)
-int    DAT_07e11d18       = 0;
-int    DAT_07e11d14       = 0;
 BYTE   DAT_00559c6d       = 0xFF;
 short  DAT_07e11e20       = -1;
 short  DAT_07e11e22       = -1;
