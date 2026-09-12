@@ -535,10 +535,11 @@ LAB_004658be:
         pfVar17[0x31] = -60.0;
         pfVar17[0x32] = 0.0;
         pfVar17[6] = pfVar17[6] + _DAT_005524f0;
-        if (*(int*)&pfVar17[1] != 1) {
-          return (float *)0x0;
-        }
-        pfVar17[3] = 1.5;
+        // IDA 0x460DC0 L2881-2885: `if (SubType == 1) Scale = 1.5; break;`.
+        // El port devolvia NULL para cualquier otro subtipo; Energy Ball lo crea
+        // con subtipo 0 (MoveCharacter, skill 17).
+        if (*(int*)&pfVar17[1] == 1)
+          pfVar17[3] = 1.5;
         return pfVar8;
       default:
         return (float *)0x0;
