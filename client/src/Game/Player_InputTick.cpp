@@ -628,6 +628,19 @@ static void SendPacket(const char *buf, unsigned int len)
 // Mismo pipeline de encriptación que el attack in-range 0x15 (chain-XOR
 // s_LoginKey + MuEmu::EncryptSend + send raw) que ya funciona end-to-end.
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
+
+// IDA Action (0x48D640) L827-830: al hablar con un NPC, byte_7EAA132 = 1 sólo
+// para los que reparan (243 Craftsman, 246 Weapon Merchant, 251 Blacksmith;
+// el tipo de Monster.txt vive en +747).  Es el gate de los botones de
+// reparación de RenderShopInterface y de sub_4EC330.  El port habla con los
+// NPC por SendNpcTalkRequest y no por Action, así que el flag nunca se
+// prendía (2026-09-12).
+static void SetRepairNpcFlag(const BYTE* npc)
+{
+    const BYTE npcType = npc ? npc[747] : 0;
+    DAT_07eaa132 = (npcType == 243 || npcType == 246 || npcType == 251) ? 1 : 0;
+}
+
 static void SendNpcTalkRequest(WORD npcEntityId)
 {
     unsigned char pkt[8];
@@ -883,8 +896,10 @@ void __cdecl Player_ProcessInput(void)
                         int npcIdx = (int)DAT_00559c70;
                         if (npcIdx >= 0 && npcIdx < 400) {
                             BYTE* npc = (BYTE*)(uintptr_t)DAT_07abf5d0 + npcIdx * 0x394;
-                            if (npc[0] != 0)
+                            if (npc[0] != 0) {
+                                SetRepairNpcFlag(npc);
                                 SendNpcTalkRequest(*(WORD*)(npc + 0x1dc));
+                            }
                         }
                         *(unsigned char*)(ent + 0x2ed) = 0;
                     }
@@ -1760,6 +1775,7 @@ void __cdecl Player_ProcessInput(void)
                         int ddx = (hgx - ngx < 0) ? (ngx - hgx) : (hgx - ngx);
                         int ddy = (hgy - ngy < 0) ? (ngy - hgy) : (hgy - ngy);
                         if (((ddx > ddy) ? ddx : ddy) <= 4) {
+                            SetRepairNpcFlag((const BYTE*)(uintptr_t)tgtBase);
                             SendNpcTalkRequest(*(WORD*)(tgtBase + 0x1dc));
                             *(unsigned char*)(ent + 0x2ed) = 0;  // no encolar walk
                             goto end_tick_inc;
