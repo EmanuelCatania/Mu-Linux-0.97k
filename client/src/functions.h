@@ -385,7 +385,7 @@ void  __cdecl DamageNumbers_Tick(void); // IDA: FUN_00479380
 void  __cdecl Effect_TickFlare(void); // IDA: FUN_004794a0
 int   __cdecl FUN_004795c0(unsigned short, float *, float, float *, int, float, int); // Particle_Spawn7
 // Render_DrawSprite / Render_DrawSpritePool / FUN_00479790 — implemented in src/stubs.cpp (Character/Effect pool)
-void  __cdecl FUN_0047b910(int, int, int);
+void  __cdecl ItemConvert(int, int, int);
 void  __cdecl FUN_0047cef0(int, int, int);
 int   __cdecl FUN_0047cf40(short* a1, int a2, int a3, unsigned short a4);  // Stats_ApplyBonus2
 void  __cdecl FUN_0047d330(int, int, int);
@@ -428,7 +428,7 @@ void  __cdecl FUN_00480e00(int, int, int);
 void  __cdecl FUN_00481ba0(char* ID, char* Text, DWORD entity, int Flag, int SetColor); // CreateChat
 // FUN_004821A0 @ 0x004821A0
 void  __cdecl UI_TickHoverBubbles(void);
-int   __cdecl FUN_00482be0(int category);  // GetItemSlot — returns inventory slot index or -1
+int   __cdecl Item_FindQuickSlotByCategory(int category);  // GetItemSlot — returns inventory slot index or -1
 void  __cdecl FUN_00483780(int, int, int);
 char  __cdecl Item_Equip(DWORD character, DWORD object);            // 0x00483B30, Attack selected-skill executor
 
@@ -601,14 +601,14 @@ void  __cdecl Skill_LoadBMD(const char *path);                     // IDA: FUN_0
 void  __cdecl Gate_LoadTextData(const char *path);                 // IDA: FUN_0047A010
 void  __cdecl Gate_SaveBMD(const char *path);                      // IDA: FUN_0047A170
 void  __cdecl Gate_LoadBMD(const char *path);                      // IDA: FUN_0047A4D0
-void  __cdecl FUN_004799d0(const char *path);                      // Filter_LoadData
+void  __cdecl Filter_LoadTextFile(const char *path);                      // Filter_LoadData
 void  __cdecl FUN_00479a50(const char *path);                      // Filter_LoadBMD
 void  __cdecl FUN_00479b30(const char *path);                      // Filter_LoadBMD_Alt
 void  __cdecl FUN_00479cf0(const char *path);                      // FilterName_LoadData
 void  __cdecl FUN_00479d70(const char *path);                      // FilterName_LoadBMD
 void  __cdecl FUN_00479e50(const char *path);                      // FilterName_LoadBMD_Alt
 void  __cdecl Dialog_LoadBMD(const char *path);                    // IDA: FUN_0047B020
-uint  __cdecl FUN_00401040(int handle, const char *path);          // Quest_LoadBMD
+uint  __cdecl CSQuest_OpenQuestScript(int handle, const char *path);          // Quest_LoadBMD
 void  __cdecl NPCName_LoadTextData(const char *path);              // IDA: FUN_0047D120
 // FUN_00404a10 — declared above as Sound_LoadAndPlay(int type, int flags)
 void  __cdecl FUN_0050e5a0(void);              // World_Load
@@ -826,7 +826,7 @@ void  __cdecl FUN_00543274(void*, void*);  // fprintf-like helper
 void  __cdecl FUN_00404bb0(void);  // Sound_BufferUnlock helper
 
 // ── Net_PacketSession helpers ─────────────────────────────────────────────────
-void  __cdecl FUN_004df410(undefined4, uint);  // packet handler with ECX/EDX args
+void  __cdecl Inventory_DropDispatch(undefined4, uint);  // packet handler with ECX/EDX args
 void  __cdecl FUN_004e4760(void);
 void  __cdecl FUN_004e5500(void);
 void  __cdecl FUN_004e5de0(void);
@@ -1308,7 +1308,7 @@ void  __cdecl FUN_0046c7f0(int p1, int p2, float p3, float p4, float p5); // dir
 void  __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
 void  __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
 void  __stdcall MoveParticles_stub(void);                                // 0x00477090
-unsigned int __cdecl FUN_0047cfb0(DWORD ecx, short *param_1);            // item special option (0x0047CFB0)
+unsigned int __cdecl Item_GetDefenseWithSpecial(DWORD ecx, short *param_1);            // item special option (0x0047CFB0)
 void  __stdcall SetPositionIME_Wnd_stub(float x, float y);              // 0x0047ECAF
 bool  __cdecl CheckIME_Status_stub(bool change, int mode);              // 0x0047EDC0
 void  __stdcall RenderIME_Status_stub(void);                             // 0x0047EE52
@@ -1323,7 +1323,7 @@ void  __cdecl AssignChat_stub(char *ID, char *Text, int Flag);          // 0x004
 int   __stdcall Item_FindElfWeaponInventorySlot(void);                   // IDA: FUN_004824C0
 int   __stdcall Item_CountElfWeaponInventorySlots(void);                 // IDA: FUN_00482850
 int   __cdecl Item_CountWeaponGroupItems(int param_1);                   // IDA: FUN_00482e40
-void  __cdecl FUN_0048b680(int weaponType);                              // elf weapon validation/swap (0x0048B680)
+void  __cdecl Item_AutoEquipAmmo(int weaponType);                              // elf weapon validation/swap (0x0048B680)
 unsigned int __cdecl FUN_004942e0(int param_1);                          // chat command parser (0x004942E0)
 bool  __cdecl CheckTarget_stub(DWORD c);                                 // 0x0049CAE0
 

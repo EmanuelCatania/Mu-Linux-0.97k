@@ -1020,7 +1020,7 @@ void __cdecl FUN_004b14f0(void)
             if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
                 if (s_qweEdge[i] == 0) {
                     s_qweEdge[i] = 1;
-                    int slot = (int)FUN_00482be0(qwe[i].slotIdx);
+                    int slot = (int)Item_FindQuickSlotByCategory(qwe[i].slotIdx);
                     if (slot != -1 &&
                         WarehouseOpened == '\0' &&
                         DAT_07eaa11b == '\0')   // !TradeOpened

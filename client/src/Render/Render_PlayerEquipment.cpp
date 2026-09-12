@@ -501,7 +501,7 @@ static void HeroEquipWatchdog_SeedCharacterMachineFromStash(BYTE* cm)
         *(DWORD*)(slot + 56) = dur ? (DWORD)dur : 1u; // gate used by panel/world render
         *(BYTE*)(slot + 60) = opt2;        // byteHi / extra flags when available
         *(BYTE*)(slot + 61) = opt3;        // ext byte / color state when available
-        FUN_0047b910((int)(uintptr_t)slot, (int)opt1, (int)opt2);
+        ItemConvert((int)(uintptr_t)slot, (int)opt1, (int)opt2);
         ITEM* equip = (ITEM*)slot;
         equip->Level = (int)opt1;
         equip->Key = (*(DWORD*)(slot + 56) > 0) ? 1 : 0;

@@ -43,7 +43,7 @@ extern "C" int __cdecl sub_4E9300_(void);
 
 // Public init helper called from WinMain.  Sets every ITEM slot's Type
 // field (offset 0, WORD) to 0xFFFF so empty inventory cells aren't
-// misinterpreted as type-0 matches by FUN_00482be0 and similar scanners.
+// misinterpreted as type-0 matches by Item_FindQuickSlotByCategory and similar scanners.
 extern "C" BYTE  Inventory[];
 extern "C" void  DbgLogPublic(const char*);
 extern "C" BYTE  OffsetInventoryItems[];
@@ -400,7 +400,7 @@ void AntiTamper_HashMaintain_D(void) { Render_HudPass_4BCD20_(); }
 // Without sub_4E38B0 ported the panels won't show inventory items, but the
 // rest of the HUD is unaffected.
 // =============================================================================
-// 2026-05-08 NOTE: previously had FUN_004d23b0/FUN_004df410 hook here.
+// 2026-05-08 NOTE: previously had FUN_004d23b0/Inventory_DropDispatch hook here.
 // That was wrong — sub_4F6050 (this fn) is NOT called in-world. The actual
 // per-frame in-world inventory render is RenderInventoryWindow (sub_4F0A50)
 // invoked from Render_QuickButtons_ (sub_4F5820), HUD_Pass4.cpp:246. The

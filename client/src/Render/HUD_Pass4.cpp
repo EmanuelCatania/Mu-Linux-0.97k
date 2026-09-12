@@ -424,7 +424,7 @@ void Render_QuickButtons_(void)
     // an item picked up via FUN_004d23b0 inside RenderInventoryWindow). This
     // is the function that builds and SENDS the 0x24 PMSG_ITEM_MOVE_RECV
     // packet via SendRequestEquipmentItem_stub → Net_SendSmallPacket (C3).
-    FUN_004df410(0, 0);
+    Inventory_DropDispatch(0, 0);
 
     RenderServerDivision();
 }

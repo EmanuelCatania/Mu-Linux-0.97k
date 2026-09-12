@@ -44,7 +44,7 @@
 //
 // 2026-05-08: port completo desde IDA (sustituye al stub no-op anterior en
 // SecondPassword.cpp:2027). Habilita la cadena entera:
-//   FUN_004d23b0 → pPickedItem set → FUN_004df410 (drop dispatcher,
+//   FUN_004d23b0 → pPickedItem set → Inventory_DropDispatch (drop dispatcher,
 //   también stub — port pendiente) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
@@ -265,7 +265,7 @@ unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
 //
 // 2026-05-08: port completo, reemplaza al placeholder que llamaba a
 // CreateOkMessageBox. Maneja la máquina de estados del diálogo en la que
-// FUN_004df410 se apoya para los flujos de confirmación de venta/drop/renombrar mascota.
+// Inventory_DropDispatch se apoya para los flujos de confirmación de venta/drop/renombrar mascota.
 extern char DAT_083a44c4[7 * 0x26];      // g_lpszMessageBoxCustom (266 bytes)
 // DAT_083a42f8 (2 entradas × 5 ints) y su alias DAT_083a430c (= entrada 1)
 // vienen de globals.h — NO redeclarar aca: DAT_083a430c es un macro que
@@ -1259,7 +1259,7 @@ extern "C" void __cdecl Inventory_RenderAndClick(char* origin_x, int origin_y,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004df410 — port FIEL desde IDA `004DF410_sub_4DF410.c` (8067 bytes).
+// Inventory_DropDispatch — port FIEL desde IDA `004DF410_sub_4DF410.c` (8067 bytes).
 //
 // Dispatcher de drop del inventario: punto de entrada por frame que llama el tick
 // PacketUpdate de la escena (Net_PacketSession.cpp:284). Cuando el jugador tiene
@@ -1300,7 +1300,8 @@ static unsigned int CallDropItem(int /*a1*/, int origin_x, int origin_y,
                                 gridW, gridH, slotType);
 }
 
-void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
+// IDA: sub_4DF410 (0x004DF410)
+void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
 {
     // ── Header: ChaosMix state machine ───────────────────────────────────────
     // (IDA L200-217). Con ChaosMixOpened, refresca MixType según el contenido de la grilla.

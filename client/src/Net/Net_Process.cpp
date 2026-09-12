@@ -787,7 +787,7 @@ static void ShopInsertItem(int slot, const BYTE* Item)
             // mostraba el primer item sin importar cuál hovereabas.
             cell[62]               = (BYTE)(slot % 8);             // x
             cell[63]               = (BYTE)(slot / 8);             // y
-            FUN_0047b910((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
+            ItemConvert((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
         }
     }
 }

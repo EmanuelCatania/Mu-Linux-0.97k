@@ -2,14 +2,15 @@
 #include "functions.h"
 #include "globals.h"
 
-// ── FUN_004799d0 @ 0x004799D0 — Filter_LoadData(path) ───────────────────────
+// ── Filter_LoadTextFile @ 0x004799D0 — Filter_LoadData(path) ───────────────────────
 // Reads a text-format filter/word-list data file (used for chat filtering).
 // Parser uses TextParser_GetToken (type 2=EOF).
 // For each token read, copies the string from TextParserTokenString into
 // DAT_07d73104 + DAT_07d78070 * 0x14 (stride 0x14, each entry 20 bytes),
 // then increments DAT_07d78070 (filter entry count).
 // Loop ends when TextParser_GetToken returns 2 (EOF).
-void __cdecl FUN_004799d0(const char *path)
+// IDA: sub_4799D0 (0x004799D0)
+void __cdecl Filter_LoadTextFile(const char *path)
 {
     DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
     if (!DAT_07d7806c) return;

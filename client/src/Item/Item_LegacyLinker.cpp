@@ -104,7 +104,8 @@ void __cdecl CloseInventoryRelatedWindows(void) {
 // slot matches. NOTE: `Teleport` global is not declared in this translation unit
 // — treated as 0 (never active); this keeps the fast path identical to IDA.
 extern "C" BYTE OffsetInventoryItems[];
-int __cdecl FUN_00482be0(int a1) {
+// IDA: sub_482BE0 (0x00482BE0)
+int __cdecl Item_FindQuickSlotByCategory(int a1) {
     int v1;
     int v2;
 
@@ -178,7 +179,8 @@ int __cdecl FUN_00482be0(int a1) {
 
 // ItemConvert @ 0x0047B910 — inventory/equipment item stat + option expansion.
 // Ported directly from IDA structure/logic instead of the old minimal stub.
-void __cdecl FUN_0047b910(int pItem, int Attribute1, int Attribute2) {
+// IDA: ItemConvert (0x0047B910)
+void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     ITEM* ip = (ITEM*)pItem;
     if (!ip) return;
 

@@ -803,7 +803,7 @@ void __cdecl FUN_00514310(void)
     // dos botones de 150x35, en Y=180 y Y=265.  El click NO emite ningún
     // paquete ni decide una receta; sólo guarda la categoría elegida en
     // DAT_083a7c2c (0=general, 1=arma chaos) y cierra el modal.  La receta
-    // efectiva se sigue derivando de la Chaos Box en FUN_004df410.
+    // efectiva se sigue derivando de la Chaos Box en Inventory_DropDispatch.
     case 0x8f:
     {
         if (!IsClickPushed()) return;
@@ -879,7 +879,7 @@ void __cdecl FUN_00514310(void)
     // UI_InGameMenu L1798-1856: hit-test de los 2 botones (DAT_083a42f8, stride
     // 5 ints [id][x][y][w][h]; Yes=btn0 id1, No=btn1 id3, render en +213/+100) y
     // seteo de DAT_00559f5e = 1 (Yes) / 2 (No), que el drop-dispatcher
-    // (FUN_004df410) consume para enviar/cancelar el sell.
+    // (Inventory_DropDispatch) consume para enviar/cancelar el sell.
     case 0x97:
     {
         int clickResult[2] = { -1, -1 };

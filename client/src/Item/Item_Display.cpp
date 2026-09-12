@@ -297,7 +297,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     //     FUN_00404330, FUN_00404400) interspersed around every packet send — anti-tamper
     //     hash table, skipped.
     //
-    // The caller (FUN_004df410 @ 0x004DF410) calls this up to 4 times per frame,
+    // The caller (Inventory_DropDispatch @ 0x004DF410) calls this up to 4 times per frame,
     // once for each open inventory context:
     //   1. Main inventory (OffsetInventoryItems, grid 8x8, slotType=0)
     //   2. Trade window    (TradeOpened, same grid)

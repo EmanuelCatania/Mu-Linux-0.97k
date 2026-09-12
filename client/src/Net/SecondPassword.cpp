@@ -163,7 +163,7 @@ extern "C" BYTE OffsetMixItems[];
 // y despacha a los sub-handlers según el opcode. SEH completo + ofuscación por HashTable.
 // STUB: returns 0 (no PIN required). Full impl pending.
 unsigned int __cdecl FUN_004e93a0(void) { return 0; }
-// FUN_004df410 @ 0x004DF410 — Inventory drop dispatcher.
+// Inventory_DropDispatch @ 0x004DF410 — Inventory drop dispatcher.
 // 2026-05-08: port FIEL completo movido a `Item/Item_ClickHandler.cpp`
 // (~150 líneas). Antes era stub vacío bloqueando toda la cadena drag-drop.
 // Misnamed previously as "SecondPassword_NetTick" — IDA confirma que es

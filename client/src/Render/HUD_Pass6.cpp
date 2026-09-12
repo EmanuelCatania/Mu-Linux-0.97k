@@ -491,7 +491,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     // ── In-world click handler hook (2026-05-08) ────────────────────────────
     // FUN_004d23b0 = grid hit-test + pickup + right-click use dispatcher.
     // Must run BEFORE RenderItemsBoxes so highlight bytes are set when the
-    // item bitmaps are painted. Drop dispatcher (FUN_004df410) is invoked
+    // item bitmaps are painted. Drop dispatcher (Inventory_DropDispatch) is invoked
     // once after all the panel-specific hit-tests in Render_QuickButtons_.
     FUN_004d23b0((char*)(uintptr_t)(InventoryStartX + 15),
                  (int)(InventoryStartY + 200),

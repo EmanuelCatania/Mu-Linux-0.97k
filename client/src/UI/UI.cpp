@@ -153,12 +153,12 @@
 //     //      slot_ptr[0x3f] = row_fraction
 //     //      Si (row==0 && col==0): slot_ptr[0x1c]=1, slot_ptr[0x1d]=0  ← root slot
 //     //      Else: slot_ptr[0x1c]=0, slot_ptr[0x1d]=0
-//     //      Llama FUN_0047b910(slot_ptr, item_raw[1], ...) → valida/encripta
+//     //      Llama ItemConvert(slot_ptr, item_raw[1], ...) → valida/encripta
 //
 //   Stride de la tabla: 0x22 por celda (inventario bodega)
 //   Stride inventario principal: 0x44 (= 2 × 0x22)
 //
-//   FUN_0047b910 (Item_ValidateSlot, @ aprox 0x0047b910):
+//   ItemConvert (Item_ValidateSlot, @ aprox 0x0047b910):
 //     Valida flags/encriptación del slot; llamada para cada celda ocupada.
 //
 // ── ENTITY_UPDATEEQUIP (0x0045c130) ───────────────────────────────────────────
@@ -293,7 +293,7 @@
 //     void ClearInventorySlot(int slot_idx, int table_base):
 //       Pone -1 en item_id, 0 en flags/level/option del slot.
 //
-//   FUN_0047b910 (Item_ValidateSlot, @ 0x0047b910):
+//   ItemConvert (Item_ValidateSlot, @ 0x0047b910):
 //     void Item_ValidateSlot(short* slot_ptr, byte level, ...):
 //       Valida integridad del slot; posible anti-cheat check.
 //
