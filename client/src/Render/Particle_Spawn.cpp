@@ -366,8 +366,13 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
                     return iVar6;
                 }
                 if (param_1 == 0x47f) {
-                    // handled below with 0x4ab
-                    goto switchD_4ab;
+                    // IDA 0x475220 L810-814: `if (Type == 1151) { life =
+                    // rand() % 8 + 20; return; }`.  El port lo mandaba con un
+                    // goto al codigo de 0x4ab (vida 24), y el cuerpo real de
+                    // 1151 habia quedado suelto mas abajo (ver la nota del
+                    // bloque `< 0x4a7`).
+                    *(int *)(pcVar11 + 0x38) = _rand() % 8 + 20;
+                    return iVar6;
                 }
                 // 0x67/0x68 range
                 if (param_1 < 0x67) return iVar6;
@@ -419,12 +424,14 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
                     ((float)(iVar7 % 0x32) + _DAT_00552598) * param_6 * _DAT_00552594;
                 return iVar6;
             }
-            // 0x47f fallthrough → treated as 0x4ab
-            uVar8 = _rand();
-            uVar8 = uVar8 & 0x80000007;
-            if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff8) + 1;
-            *(unsigned int *)(pcVar11 + 0x38) = uVar8 + 0x14;
-            return iVar6;
+            // 2026-09-12: aca estaba el cuerpo de 0x47f (vida rand%8+20) SUELTO,
+            // sin condicion: atrapaba todos los tipos entre 0x498 y 0x4a5 y los
+            // devolvia con vida 20-27 antes de llegar a sus case de abajo.  Con
+            // eso 0x498 (1176, Teleport) nunca sorteaba angulos ni recibia
+            // velocidad -- la columna del teleport quedaba recta -- y las
+            // particulas del Energy Ball (1180/1176) vivian 20-27 ticks en vez
+            // de 2.  IDA: esos tipos van a su case o salen por el default con
+            // la vida por defecto.
         }
 
         if (param_1 == 0x498) {
