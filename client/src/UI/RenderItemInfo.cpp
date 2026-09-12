@@ -1479,6 +1479,17 @@ static void RII_Gold(char* buf, int v)       // mismo formato que el binario
 #define RII_ADD(color, bold, ...) \
     do { sprintf(RII_Line(DAT_07eaa154), __VA_ARGS__); \
          RII_Style(DAT_07eaa154, (color), (bold)); ++DAT_07eaa154; } while (0)
+// Texto sin argumentos: el binario lo pasa como FORMATO (sprintf(l, GlobalText[N]));
+// CopyCollapsingPercent hace lo mismo (%% -> %) sin leer la pila si el texto trae %d.
+#define RII_TXT(color, bold, idx) \
+    do { CopyCollapsingPercent(RII_Line(DAT_07eaa154), 100, GlobalText[idx]); \
+         RII_Style(DAT_07eaa154, (color), (bold)); ++DAT_07eaa154; } while (0)
+// Opcion con valor fijo (622..635): el Text.bmd del 0.97k traia el numero en el
+// texto; el que usamos trae %d, asi que se pasa el valor que tiene la opcion
+// (GetInventorySpecialOptionText, opcion = texto - 556).  Desviacion forzada.
+#define RII_OPT(color, bold, idx) \
+    do { GetInventorySpecialOptionText(type, (BYTE)((idx) - 556), 0, 0, RII_Line(DAT_07eaa154), 100); \
+         RII_Style(DAT_07eaa154, (color), (bold)); ++DAT_07eaa154; } while (0)
 // Separador de media altura: "\n" + SkipNum.
 #define RII_GAP() do { sprintf(RII_Line(DAT_07eaa154), "\n"); ++DAT_07eaa154; ++DAT_07eaa158; } while (0)
 
@@ -1634,8 +1645,8 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
 
     // ── Tipo 435 (L840-1015) ────────────────────────────────────────────────
     if (type == 435) {
-        RII_ADD(0, 0, "%s", GlobalText[730]);
-        RII_ADD(5, 0, "%s", GlobalText[815]);
+        RII_TXT(0, 0, 730);
+        RII_TXT(5, 0, 815);
         // "\n" sin SkipNum: IDA sólo pone TextBold = 0 y avanza.
         sprintf(RII_Line(DAT_07eaa154), "\n"); if (DAT_07eaa154 < 30) DAT_07ea7b10[DAT_07eaa154] = 0; ++DAT_07eaa154;
         int atkSpeed = 0, reqStr = 0, reqDex = 0;          // v79 / v78 / v80
@@ -1647,42 +1658,42 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
         RII_ADD(0, 0, GlobalText[73], reqStr);
         RII_ADD(0, 0, GlobalText[75], reqDex);
         sprintf(RII_Line(DAT_07eaa154), "\n"); if (DAT_07eaa154 < 30) DAT_07ea7b10[DAT_07eaa154] = 0; ++DAT_07eaa154;
-        RII_ADD(1, 0, "%s", GlobalText[87]);
+        RII_TXT(1, 0, 87);
         RII_ADD(1, 0, GlobalText[94], 20);
         int mana = 0;
         if (Level == 0) {
             RII_ADD(1, 1, GlobalText[79], 53);
-            RII_ADD(1, 0, "%s", GlobalText[631]);
-            RII_ADD(1, 0, "%s", GlobalText[632]);
+            RII_OPT(1, 0, 631);
+            RII_OPT(1, 0, 632);
         } else if (Level == 1) {
             GetSkillInformation(22, 1, 0, &mana, 0, 0);
             RII_ADD(1, 0, GlobalText[84], mana);
-            RII_ADD(1, 0, "%s", GlobalText[629]);
-            RII_ADD(1, 0, "%s", GlobalText[630]);
+            RII_OPT(1, 0, 629);
+            RII_OPT(1, 0, 630);
         } else if (Level == 2) {
             GetSkillInformation(24, 1, 0, &mana, 0, 0);
             RII_ADD(1, 0, GlobalText[86], mana);
-            RII_ADD(1, 0, "%s", GlobalText[629]);
-            RII_ADD(1, 0, "%s", GlobalText[630]);
+            RII_OPT(1, 0, 629);
+            RII_OPT(1, 0, 630);
         }
-        RII_ADD(1, 0, "%s", GlobalText[628]);               // LABEL_214
+        RII_OPT(1, 0, 628);               // LABEL_214
         RII_ADD(1, 0, GlobalText[633], 7);
-        RII_ADD(1, 0, "%s", GlobalText[634]);
-        RII_ADD(1, 0, "%s", GlobalText[635]);
+        RII_OPT(1, 0, 634);
+        RII_OPT(1, 0, 635);
     }
 
     // ── Huevos 471-474 / 460 / 467 (L1016-1070) ─────────────────────────────
     if (type >= 471 && type <= 474) {
-        RII_ADD(0, 0, "%s", GlobalText[730]);
-        RII_ADD(2, 0, "%s", GlobalText[731]);
-        RII_ADD(2, 0, "%s", GlobalText[732]);
-        RII_ADD(2, 0, "%s", GlobalText[733]);
+        RII_TXT(0, 0, 730);
+        RII_TXT(2, 0, 731);
+        RII_TXT(2, 0, 732);
+        RII_TXT(2, 0, 733);
     } else if (type == 460 && Level <= 1) {
-        RII_ADD(0, 0, "%s", GlobalText[119]);
+        RII_TXT(0, 0, 119);
     }
     if (type == 467) {
-        RII_ADD(0, 0, "%s", GlobalText[638]);
-        RII_ADD(0, 0, "%s", GlobalText[639]);
+        RII_TXT(0, 0, 638);
+        RII_TXT(0, 0, 639);
     }
 
     // ── Daño / defensas / velocidades ───────────────────────────────────────
@@ -1712,33 +1723,33 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     // ── Lineas por tipo (L1150-1250) ────────────────────────────────────────
     if (type == 459) {
         if (Level == 7) {
-            RII_ADD(0, 0, "%s", GlobalText[112]);
-            RII_ADD(0, 0, "%s", GlobalText[113]);
-            RII_ADD(0, 0, "%s", GlobalText[114]);
+            RII_TXT(0, 0, 112);
+            RII_TXT(0, 0, 113);
+            RII_TXT(0, 0, 114);
         } else {
-            RII_ADD(0, 0, "%s", GlobalText[571]);
+            RII_TXT(0, 0, 571);
         }
     }
-    if (type == 461)                RII_ADD(0, 0, "%s", GlobalText[572]);
-    if (type == 462)                RII_ADD(0, 0, "%s", GlobalText[573]);
-    if (type == 464)                RII_ADD(0, 0, "%s", GlobalText[621]);
-    if (type == 465 || type == 466) RII_ADD(0, 0, "%s", GlobalText[637]);
-    if (type == 399)                RII_ADD(0, 0, "%s", GlobalText[574]);
-    if (type == 470)                RII_ADD(0, 0, "%s", GlobalText[619]);
+    if (type == 461)                RII_TXT(0, 0, 572);
+    if (type == 462)                RII_TXT(0, 0, 573);
+    if (type == 464)                RII_TXT(0, 0, 621);
+    if (type == 465 || type == 466) RII_TXT(0, 0, 637);
+    if (type == 399)                RII_TXT(0, 0, 574);
+    if (type == 470)                RII_TXT(0, 0, 619);
     if (type == 416) {
         RII_ADD(0, 0, GlobalText[578], 20);
         RII_ADD(0, 0, GlobalText[739], 50);
     }
-    if (type == 417)                RII_ADD(0, 0, "%s", GlobalText[576]);
+    if (type == 417)                RII_TXT(0, 0, 576);
 
     if (type >= 384 && type <= 386) {                      // alas de primera
         RII_ADD(0, 0, GlobalText[577], 2 * Level + 12);
         RII_ADD(0, 0, GlobalText[578], 2 * Level + 12);
-        RII_ADD(0, 0, "%s", GlobalText[579]);
+        RII_TXT(0, 0, 579);
     } else if (type >= 387 && type <= 390) {               // alas de segunda
         RII_ADD(0, 0, GlobalText[577], Level + 32);
         RII_ADD(0, 0, GlobalText[578], Level + 25);
-        RII_ADD(0, 0, "%s", GlobalText[579]);
+        RII_TXT(0, 0, 579);
     } else {
         switch (type) {
         case 419:
@@ -1769,8 +1780,8 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
             ++DAT_07eaa154;
             sprintf(RII_Line(DAT_07eaa154), "\n");
             ++DAT_07eaa154;
-            RII_ADD(0, 0, "%s", GlobalText[638]);
-            RII_ADD(0, 0, "%s", GlobalText[639]);
+            RII_TXT(0, 0, 638);
+            RII_TXT(0, 0, 639);
             break;
         case 469:
             RII_Color(DAT_07eaa154, 0);
@@ -1830,11 +1841,11 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     // ── Lineas de botas / guantes / bastones ────────────────────────────────
     if (type >= 352 && type < 384 && Level >= 5) {
         RII_GAP();
-        RII_ADD(1, 1, "%s", GlobalText[78]);
+        RII_TXT(1, 1, 78);
     }
     if (type >= 320 && type < 352 && Level >= 5) {
         RII_GAP();
-        RII_ADD(1, 1, "%s", GlobalText[93]);
+        RII_TXT(1, 1, 93);
     }
     if ((type >= 160 && type < 192) || type == 31) {
         RII_GAP();
@@ -1846,39 +1857,18 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     for (int i = 0; i < ip->SpecialNum && i < 9; ++i) {
         const int s   = ip->Special[i];
         const int val = ip->SpecialValue[i];
-        char* dst = RII_Line(DAT_07eaa154);
+        // Texto de la opcion: mismo switch que IDA (L2064-2175), via el helper
+        // que ya pasa los valores fijos de 66..79 y colapsa el %% de [87].  Para
+        // opciones sin texto (default, y 65 en 430..434) deja la linea vacia, que
+        // es lo que hace el original al saltar a LABEL_660.
         int mana = 0;
-        switch (s) {
-        case 18: case 19: case 20: case 21: case 22: case 23: case 24: case 49: case 56: {
-            static const int kSkillText[7] = { 80, 81, 82, 83, 84, 85, 86 };
+        if ((s >= 18 && s <= 24) || s == 49 || s == 56)
             GetSkillInformation(s, 1, 0, &mana, 0, 0);
-            const int t = (s == 49) ? 745 : (s == 56) ? 98 : kSkillText[s - 18];
-            sprintf(dst, GlobalText[t], mana);
-            break;
-        }
-        case 60: sprintf(dst, GlobalText[88], val); break;
-        case 61: sprintf(dst, GlobalText[89], val); break;
-        case 62: sprintf(dst, GlobalText[90], val); break;
-        case 63: sprintf(dst, GlobalText[91], val); break;
-        case 64: sprintf(dst, "%s", GlobalText[87]); break;
-        case 65:
-            if (!(type >= 430 && type <= 434)) sprintf(dst, GlobalText[92], val);
-            break;
-        case 66: case 67: case 68: case 69: case 70: case 71:
-        case 72: case 73: case 74: case 75: case 76:
-            sprintf(dst, "%s", GlobalText[622 + (s - 66)]); break;
-        case 77: sprintf(dst, GlobalText[633], val); break;
-        case 78: sprintf(dst, "%s", GlobalText[634]); break;
-        case 79: sprintf(dst, "%s", GlobalText[635]); break;
-        case 80: case 81: case 82: case 83: case 84:
-            sprintf(dst, GlobalText[740 + (s - 80)], val); break;
-        case 90: sprintf(dst, "%s", GlobalText[746]); break;
-        default: break;              // LABEL_660: linea vacia de color 1
-        }
+        GetInventorySpecialOptionText(type, (BYTE)s, (BYTE)val, mana, RII_Line(DAT_07eaa154), 100);
         RII_Style(DAT_07eaa154, 1, 0);
         ++DAT_07eaa154;
         if (s == 64)                     RII_ADD(1, 0, GlobalText[94], val);
-        else if (s == 49)                RII_ADD(5, 0, "%s", GlobalText[179]);
+        else if (s == 49)                RII_TXT(5, 0, 179);
         else if (type == 31 && s == 60)  RII_ADD(1, 0, GlobalText[89], val);
     }
     RII_GAP();
@@ -1892,6 +1882,8 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     FUN_004c2420(sx, y, DAT_07eaa154 < 30 ? DAT_07eaa154 : 30, 0, 2, 1);
 }
 #undef RII_ADD
+#undef RII_TXT
+#undef RII_OPT
 #undef RII_GAP
 
 void __cdecl RenderItemInfo(void* param_1, void* param_2, void* param_3_v, int param_4)
