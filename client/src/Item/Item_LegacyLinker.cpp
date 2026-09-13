@@ -38,56 +38,76 @@ extern void FUN_004fa5a0(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// CloseInventoryRelatedWindows @ 0x004CBA60 (218 lines) — Close all trade/shop/inventory windows
-// Sets all shop/warehouse/trade/chaos/event flags to 0, clears item slots.
+// IDA: CloseInventoryRelatedWindows (0x004CBA60)
+// Cierra tienda / baul / chaos / trade / eventos y vacia sus pools.
+//
+// 2026-09-11: unica implementacion de 0x4CBA60.  Habia dos ports vivos y
+// distintos: esta y `FUN_004cba60` (UI_LegacyGameHelpers.cpp, que ahora delega
+// aca).  La lista de flags es la del disassembly (0x4CBB46..0x4CBD2F):
+//   ShopOpened, byte_7EAA132, RepairEnable_0 (DWORD en 0x07EAA134),
+//   WarehouseOpened, byte_559F5F, dword_7EAA14C, ChaosMixOpened, TradeOpened,
+//   EventWindowOpened, g_bEventChipDialogEnable (0x07EAA128),
+//   g_shEventChipCount (0x07EAA12C), g_bServerDivisionEnable/Accept.
+// Esta version limpiaba antes DAT_07e11d14 como "RepairEnable" y dos alias del
+// panel del Golden Archer (DAT_07e5ba80 / DAT_07e11e1c): ninguno de los tres
+// tiene xrefs en IDA.  La anterior "desviacion" DAT_07eaa128 = 0 era en
+// realidad g_bEventChipDialogEnable, o sea parte del original.
+//
+// Pools (0x4CBD36..0x4CBD9C), Type = -1 y Key (+0x38) = 0:
+//   120 registros de la tienda, 32 de la Chaos Machine, 32 de `Inventory` y
+//   32 de OffsetTradeItems; y si byte_7EAA0E8 == 1, tambien los 32 del trade
+//   del otro jugador (word_7E11F78 / dword_7E11FB0).
+// En el arbol varios de esos pools estan declarados DOS veces (ShopItems y
+// DAT_07ea5b68; OffsetMixItems y DAT_07ea9880; OffsetTradeItems y
+// DAT_07ea7b88/7bc0; Inventory y DAT_07ea5298/52d0).  Hasta unificarlos se
+// limpian las dos copias, asi ningun consumidor queda con datos viejos.
 extern "C" BYTE Inventory[];
 extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetMixItems[];
+extern "C" BYTE ShopItems[];
 void __cdecl CloseInventoryRelatedWindows(void) {
-    // PORT FIEL de IDA 0x004CBA60 (2026-07-25). BUG previo: limpiaba
-    // DAT_07e11e98 (global EQUIVOCADO) "comentado como ShopOpened", pero
-    // ShopOpened real es DAT_07eaa118 → la tienda quedaba abierta al cerrarla.
-    // Anti-tamper hash-table (que envuelve el set de ShopOpened/TradeOpened en
-    // IDA) omitido per policy — el efecto neto son estos clears.
-    ShopOpened                 = 0;   // DAT_07eaa118  ← EL fix del cierre
-    DAT_07eaa132               = 0;   // byte_7EAA132
-    DAT_07e11d14               = 0;   // RepairEnable
-    DAT_07eaa134               = 0;
-    WarehouseOpened            = 0;   // DAT_07eaa119
-    DAT_00559f5f               = 0;   // byte_559F5F
-    DAT_07eaa14c               = 0;   // dword_7EAA14C
-    ChaosMixOpened             = 0;   // DAT_07eaa11a
-    TradeOpened                = 0;
-    EventWindowOpened          = 0;   // DAT_07eaa11c
-    _g_bEventChipDialogEnable  = 0;   // DAT_07e5ba80
-    DAT_07e11e1c               = 0;   // g_shEventChipCount
-    g_bServerDivisionEnable    = 0;
-    g_bServerDivisionAccept    = 0;
-    // 2026-07-27 FIX (Golden Archer bloqueaba la UI): su panel se gatea con
-    // DAT_07eaa128 (!=0 && !=3). Tiene un close propio con hit-test de su X,
-    // pero si ese rect no pega el panel quedaba abierto para siempre y no se
-    // podía cerrar de ninguna forma. Lo sumamos al cierre genérico, que ya usan
-    // Escape / I / V / C / G / P / click-al-mundo.
-    DAT_07eaa128               = 0;   // Golden Archer panel
+    ShopOpened              = 0;   // 0x07EAA118
+    DAT_07eaa132            = 0;   // byte_7EAA132
+    DAT_07eaa134            = 0;   // RepairEnable_0
+    WarehouseOpened         = 0;   // 0x07EAA119
+    DAT_00559f5f            = 0;   // byte_559F5F
+    DAT_07eaa14c            = 0;   // dword_7EAA14C
+    ChaosMixOpened          = 0;   // 0x07EAA11A
+    TradeOpened             = 0;   // 0x07EAA11B
+    EventWindowOpened       = 0;   // 0x07EAA11C
+    DAT_07eaa128            = 0;   // g_bEventChipDialogEnable
+    DAT_07eaa12c            = 0;   // g_shEventChipCount
+    g_bServerDivisionEnable = 0;   // 0x07EAA130
+    g_bServerDivisionAccept = 0;   // 0x07EAA131
 
-    // Limpiar los pools de items de shop/trade/mix (slots a 0xFFFF, key 0).
-    for (int i = 0; i < 32; ++i) {
-        BYTE* c = Inventory + i * 0x44;
-        *(short*)c = (short)0xFFFF; *(DWORD*)(c + 0x38) = 0;
-        BYTE* t = OffsetTradeItems + i * 0x44;
-        *(short*)t = (short)0xFFFF; *(DWORD*)(t + 0x38) = 0;
-        BYTE* m = OffsetMixItems + i * 0x44;
-        *(short*)m = (short)0xFFFF; *(DWORD*)(m + 0x38) = 0;
+    auto clearItem = [](BYTE* rec) {
+        *(short*)rec = (short)0xFFFF;
+        *(DWORD*)(rec + 0x38) = 0;
+    };
+    for (int i = 0; i < 120; ++i) {                     // tienda
+        clearItem(ShopItems + i * 0x44);
+        clearItem(DAT_07ea5b68 + i * 0x44);             // copia paralela
+    }
+    for (int i = 0; i < 32; ++i) {                      // Chaos Machine
+        clearItem(OffsetMixItems + i * 0x44);
+        clearItem(DAT_07ea9880 + i * 0x44);             // copia paralela
+    }
+    const bool yourTradeLatched = ((BYTE)DAT_07eaa0e8 == 1);   // byte_7EAA0E8
+    for (int off = 0; off < 0x880; off += 0x44) {
+        clearItem(OffsetTradeItems + off);
+        clearItem(Inventory + off);
+        *(unsigned short*)(DAT_07ea7b88 + off) = 0xFFFF;  // copias paralelas
+        *(DWORD*)(DAT_07ea7bc0 + off)          = 0;
+        *(unsigned short*)(DAT_07ea5298 + off) = 0xFFFF;
+        *(DWORD*)(DAT_07ea52d0 + off)          = 0;
+        if (yourTradeLatched) {
+            *(unsigned short*)(DAT_07e11f78 + off) = 0xFFFF;
+            *(DWORD*)(DAT_07e11fb0 + off)          = 0;
+        }
     }
 
-    // IDA 0x4CBA60, ultima linea antes de los dos PlayBuffer: MouseUpdateTime = 0.
-    // Sin esto, cerrar una ventana dejaba el debounce de movimiento a mitad de
-    // cuenta y el primer click al mundo se perdia.
-    DAT_07e11d28 = 0;                 // MouseUpdateTime
-    // NOTA: IDA hace ademas `*(_DWORD *)&RepairEnable_0 = 0` (0x07EAA134, cuatro
-    // bytes).  Aca se limpia DAT_07e11d14, que es OTRO global; queda anotado
-    // como divergencia hasta confirmar el ancho real de esos campos.
-    PlayBuffer(25, 0, 0);   // sonido de cierre
+    DAT_07e11d28 = 0;          // MouseUpdateTime
+    PlayBuffer(25, 0, 0);
     PlayBuffer(28, 0, 0);
 }
 
@@ -105,7 +125,8 @@ void __cdecl CloseInventoryRelatedWindows(void) {
 // slot matches. NOTE: `Teleport` global is not declared in this translation unit
 // — treated as 0 (never active); this keeps the fast path identical to IDA.
 extern "C" BYTE OffsetInventoryItems[];
-int __cdecl FUN_00482be0(int a1) {
+// IDA: sub_482BE0 (0x00482BE0)
+int __cdecl Item_FindQuickSlotByCategory(int a1) {
     int v1;
     int v2;
 
@@ -161,6 +182,10 @@ int __cdecl FUN_00482be0(int a1) {
         }
     }
 
+    // IDA sub_482BE0 L98: con el teleport en curso no se usa el Town Portal.
+    if (DAT_05826d14 && v1 == 458 && v2 == 458) {
+        return -1;
+    }
     if (v1 < v2) {
         return -1;
     }
@@ -179,7 +204,8 @@ int __cdecl FUN_00482be0(int a1) {
 
 // ItemConvert @ 0x0047B910 — inventory/equipment item stat + option expansion.
 // Ported directly from IDA structure/logic instead of the old minimal stub.
-void __cdecl FUN_0047b910(int pItem, int Attribute1, int Attribute2) {
+// IDA: ItemConvert (0x0047B910)
+void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     ITEM* ip = (ITEM*)pItem;
     if (!ip) return;
 

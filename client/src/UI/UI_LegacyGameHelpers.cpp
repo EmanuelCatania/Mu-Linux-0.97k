@@ -46,78 +46,16 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 
 
 // UI/game helpers
-// FUN_004cba60 @ 0x004CBA60 — CharPreview_Reset
-// Resets the char-select / second-password UI state:
-//   - Clears DAT_07eaa118 (2nd-pass hover flag), DAT_07eaa132, DAT_07eaa134
-//   - Clears DAT_07eaa119, DAT_00559f5f, DAT_07eaa14c, DAT_07eaa11a
-//   - Resets two entity-slot arrays (stride 0x44, reset id/select fields to 0xffff/0)
-//   - Clears DAT_07e11d28, calls FUN_00404bc0(0x19,0,0) and FUN_00404bc0(0x1c,0,0)
+// IDA: CloseInventoryRelatedWindows (0x004CBA60)
+// 2026-09-11: segunda implementacion de 0x4CBA60, etiquetada "CharPreview_Reset"
+// (falso).  Tenia la lista de flags correcta pero los pools corridos 0x38
+// (DAT_07ea5b68 / DAT_07ea9880 abordados como base).  Ahora delega en la unica
+// implementacion, CloseInventoryRelatedWindows (Item/Item_LegacyLinker.cpp).
 void __cdecl FUN_004cba60(void) {
-    // Reset second-password hover/state flags
-    DAT_07eaa118 = 0;
-    DAT_07eaa132 = 0;
-    DAT_07eaa134 = 0;
-    DAT_07eaa119 = 0;
-    DAT_00559f5f  = 0;
-    DAT_07eaa14c  = 0;
-    DAT_07eaa11a  = 0;
-    DAT_07eaa11b  = 0;
-    DAT_07eaa11c  = 0;
-    DAT_07eaa128  = 0;
-    DAT_07eaa12c  = 0;
-    DAT_07eaa130  = 0;
-    *((char*)&DAT_07eaa130 + 1) = 0; // DAT_07eaa131 (adjacent byte, not separately declared)
-
-    // Reset char-slot entry arrays.
-    // 2026-04-30 BUG-FIX: bound by array size not hardcoded original-binary
-    // address.  Previously loops compared `(int)p < 0x7EA7B48` against our
-    // build's globals which sit at OS-allocated addresses (~0x01F90000).
-    // The condition was always true → walk overran into random memory →
-    // write-AV at arbitrary address (we observed p=0x1F9E040 crashing).
-    //
-    // IDA original walks pointer +0x44 each step.  IDA decomp `p + 0x11`
-    // is `p + 17 dwords = +68 bytes = +0x44`, but it accesses `p - 0x38`
-    // (= -56 bytes from p).  In IDA the array layout is interpreted as
-    // (record-base + 0x38) = `p`, so `p - 0x38` is the record base id field.
-    {
-        BYTE* base = DAT_07ea5b68;
-        BYTE* end  = base + sizeof(DAT_07ea5b68);   // 0x1FE0 = 8160 bytes
-        UINT* p    = (UINT*)(base + 0x38);          // start at offset 0x38 within first record
-        while ((BYTE*)p < end) {
-            *(unsigned short*)((char*)p - 0x38) = 0xffff;
-            *p = 0;
-            p = (UINT*)((BYTE*)p + 0x44);
-        }
-    }
-    {
-        BYTE* base = DAT_07ea9880;
-        BYTE* end  = base + sizeof(DAT_07ea9880);   // 0x880 = 2176 bytes
-        UINT* p    = (UINT*)(base + 0x38);
-        while ((BYTE*)p < end) {
-            *(unsigned short*)((char*)p - 0x38) = 0xffff;
-            *p = 0;
-            p = (UINT*)((BYTE*)p + 0x44);
-        }
-    }
-    // Reset char-name index arrays
-    int i = 0;
-    while (i < 0x880) {
-        *(unsigned short*)((int)&DAT_07ea7b88 + i) = 0xffff;
-        *(unsigned short*)((int)&DAT_07ea5298 + i) = 0xffff;
-        *(UINT*)((int)&DAT_07ea7bc0 + i) = 0;
-        *(UINT*)((int)&DAT_07ea52d0 + i) = 0;
-        if (DAT_07eaa0e8 == '\x01') {
-            *(unsigned short*)((int)&DAT_07e11f78 + i) = 0xffff;
-            *(UINT*)((int)&DAT_07e11fb0 + i) = 0;
-        }
-        i += 0x44;
-    }
-    DAT_07e11d28 = 0;
-    FUN_00404bc0(0x19, 0, 0);
-    FUN_00404bc0(0x1c, 0, 0);
+    CloseInventoryRelatedWindows();
 }
 
-// FUN_004cd3b0 @ 0x004CD3B0 — UI_ItemGrid_Fill
+// Item_ReturnPickedItem @ 0x004CD3B0 — UI_ItemGrid_Fill
 // Fills 2D grid buffers with current item slot data (DAT_07e91350) for equipment display.
 // Dispatches by DAT_07ea9800; each grid entry = 0x11 dwords, selection flag at offset 0x38.
 //
@@ -135,7 +73,8 @@ void __cdecl FUN_004cba60(void) {
 //   cada celda del footprint = pPickedItem, Key = 1 solo en la primaria
 //   (byte_7E9138E/F = columna/fila de la primaria)
 //   al final: dword_7E91388 = 0; SetCharacterClass(Hero); PlayBuffer(29)
-void __cdecl FUN_004cd3b0(void)
+// IDA: sub_4CD3B0 (0x004CD3B0)
+void __cdecl Item_ReturnPickedItem(void)
 {
     if ((int)DAT_07e91388 < 1) return;
 
@@ -177,7 +116,7 @@ void __cdecl FUN_004cd3b0(void)
     // (bloques de hash-table anti-tamper omitidos)
 }
 
-// FUN_004b0e80 @ 0x004B0E80 — SelectSkillByHotkey(int number)
+// SelectSkillByHotkey @ 0x004B0E80 — SelectSkillByHotkey(int number)
 //
 // Elige la skill activa a partir del numero de hotkey que el jugador acaba de
 // apretar.  Recorre las 20 ranuras de skill y, para la que tenga asignado ese
@@ -195,7 +134,7 @@ void __cdecl FUN_004cd3b0(void)
 //   }
 //
 // 2026-09-04 -- BUG-FIX ("asigno el skill con Ctrl+N pero al apretar el numero
-// no cambia").  El port tenia la firma `void FUN_004b0e80(void)`: Ghidra perdio
+// no cambia").  El port tenia la firma `void SelectSkillByHotkey(void)`: Ghidra perdio
 // el argumento (viaja en registro) y quien lo porteo comparo la tabla de
 // asignaciones contra la CONSTANTE 1 en vez de contra el numero apretado.  O sea
 // solo podia seleccionar la skill asignada al 1 -- y como los dos call sites
@@ -205,7 +144,8 @@ void __cdecl FUN_004cd3b0(void)
 // SelectedHero = 0x5616AC, m_bAutoAttack = 0x559C5C, Attacking = 0x559C58,
 // CharacterAttribute = 0x7CF1FF4;  +87 = tipo de skill, +215 = numero de hotkey
 // (la tabla es por personaje: SelectedHero << 6).
-char __cdecl FUN_004b0e80(int a1)
+// IDA: sub_4B0E80 (0x004B0E80)
+char __cdecl SelectSkillByHotkey(int a1)
 {
     char found = 0;
     char* CA = (char*)CharacterAttribute;

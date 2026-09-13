@@ -123,7 +123,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
         int manaCost = 0;
         GetSkillInformation((int)skill, 1, 0, &manaCost, 0, 0);
         if ((int)*(unsigned short*)(attributes + 30) < manaCost) {
-            ItemEquip_UseManaScroll97k(FUN_00482be0(3)); // IDA L909-1161
+            ItemEquip_UseManaScroll97k(Item_FindQuickSlotByCategory(3)); // IDA L909-1161
             continue;
         }
 
@@ -219,7 +219,7 @@ char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */
         if (!attributes)
             return 0;
         if ((int)*(unsigned short*)(attributes + 30) < piMana) {
-            ItemEquip_UseManaScroll97k(FUN_00482be0(3)); // IDA L285-505
+            ItemEquip_UseManaScroll97k(Item_FindQuickSlotByCategory(3)); // IDA L285-505
             return 0;
         }
         if (piSkillMana > (int)*(unsigned short*)(attributes + 36))

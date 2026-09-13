@@ -352,10 +352,10 @@
 // ─── OPCODE 0x23 — EQUIP RESPONSE / ITEM RESULT ──────────────────────────────────────────────────────────────────────────
 //
 //   void PacketHandler_0x23(void* pkt)  [FUN_0042f690]:
-//     byte[3] == 0: FUN_004cd3b0() + _DAT_00559680 = -1  — inventory reset
+//     byte[3] == 0: Item_ReturnPickedItem() + _DAT_00559680 = -1  — inventory reset
 //     byte[4] < 0x0C: decode g_CharData — equipment slot update
 //
-//   FUN_004cd3b0 @ 0x004cd3b0 = Inventory_Reset (limpia estado del inventario UI)
+//   Item_ReturnPickedItem @ 0x004cd3b0 = Inventory_Reset (limpia estado del inventario UI)
 //
 // ─── PACKET DE ATAQUE CLIENTE→SERVIDOR ──────────────────────────────────────────────────────────────────────────
 //
@@ -774,7 +774,7 @@ static bool Attack_OutOfRange97k(const char* entity, int range)
 // inventario y SIEMPRE aborta el skill.
 static void Attack_UseManaScroll97k()
 {
-    const int scrollSlot = (int)FUN_00482be0(3);   // IDA: LODWORD(y1) = sub_482BE0(3)
+    const int scrollSlot = (int)Item_FindQuickSlotByCategory(3);   // IDA: LODWORD(y1) = sub_482BE0(3)
     if (scrollSlot == -1)
         return;
     if (WarehouseOpened || TradeOpened) {
@@ -1608,13 +1608,13 @@ char __cdecl Combat_CheckArrowRequirement(void)
     if ((leftType >= 136 && leftType < 143) || leftType == 144 || leftType == 146) {
         if (rightType == 135 && pMachine[630]) return 1;
         UIChatLogWindow_AddText((const char*)&DAT_07e11df4, GlobalText[251], 2);
-        FUN_0048b680(rightType);
+        Item_AutoEquipAmmo(rightType);
         return 0;
     }
     if ((rightType < 128 || rightType >= 135) && rightType != 145) return 1;
     if (leftType == 143 && pMachine[562]) return 1;
     UIChatLogWindow_AddText((const char*)&DAT_07e11df8, GlobalText[251], 2);
-    FUN_0048b680(rightType);
+    Item_AutoEquipAmmo(rightType);
     return 0;
 }
 

@@ -219,7 +219,7 @@ void Game_CharSelectTick(void)
         }
         Bisect_ChatMode("CST_post_chatLB");        Scene_ProcessPacketUpdates();
         Bisect_ChatMode("CST_post_4ecb00");        FUN_00402fd0((void*)(uintptr_t)DAT_00583d8c);
-        Bisect_ChatMode("CST_post_402fd0");        FUN_004b14f0();
+        Bisect_ChatMode("CST_post_402fd0");        Chat_InputTick();
         Bisect_ChatMode("CST_post_4b14f0_ChatInputTick");
         // ── Reposición per-frame del ChatListBox ────────────────────────────
         // FIX 2026-07-20: faltaba el `else` del `DAT_005590ac == 1`, y el caso

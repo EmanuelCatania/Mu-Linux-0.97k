@@ -120,7 +120,7 @@ void __cdecl Scene_LoadGameAssets(void) {
         Gate_LoadTextData("Data2/Gate.txt");
         Gate_SaveBMD("Data/Gate.bmd");
         crt_sprintf(local_64, "Data2/Local/Filter_%s.txt", (char*)DAT_0055a7a4);
-        FUN_004799d0(local_64);
+        Filter_LoadTextFile(local_64);
         FUN_00479a50("Data/Local/Filter.bmd");
         crt_sprintf(local_64, "Data2/Local/FilterName_%s.txt", (char*)DAT_0055a7a4);
         FUN_00479cf0(local_64);
@@ -135,7 +135,7 @@ void __cdecl Scene_LoadGameAssets(void) {
         FUN_00479b30("Data/Local/Filter.bmd");
         FUN_00479e50("Data/Local/FilterName.bmd");
         Dialog_LoadBMD("Data/Local/Dialog_Spn.bmd");  // cliente traducido: solo Dialog_{Eng,Por,Spn}.bmd
-        FUN_00401040((int)(uintptr_t)DAT_00583d8c, "Data/Local/Quest.bmd");
+        CSQuest_OpenQuestScript((int)(uintptr_t)DAT_00583d8c, "Data/Local/Quest.bmd");
     }
     crt_sprintf(local_64, "Data/Local/NPCName.txt");   // cliente: archivo sin sufijo de locale
     NPCName_LoadTextData(local_64);

@@ -35,7 +35,8 @@
 // `sub_45FEC0(i[133], ...)`.  Con 0 el indice vuelve a caer dentro del array.
 // Ningun caller del arbol distingue -1 (verificado): nadie compara el retorno
 // contra -1 ni contra < 0.
-int __stdcall FindHotKey_stub(int Skill) {
+// IDA: FindHotKey (0x004B1170)
+int __stdcall FindHotKey(int Skill) {
     // anti-tamper hash table — skipped (encrypt CharacterMachine before read)
 
     char* charAttr = (char*)DAT_07cf1ff4;  // IDA: CharacterAttribute
@@ -56,7 +57,8 @@ int __stdcall FindHotKey_stub(int Skill) {
 // Renders a skill icon bitmap at (x,y) with given dimensions.
 // Reads CharacterAttribute->Skill[iIndex] via encrypted hash table access.
 // If skill ID is 0, renders empty slot. Otherwise renders skill texture.
-void __cdecl RenderSkillIcon_stub(int iIndex, float x, float y, float width, float height) {
+// IDA: sub_4BB940 (0x004BB940)
+void __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float height) {
     // 0x004BB940 — Renders a skill icon bitmap at (x,y) with given dimensions.
     // ~80% of Ghidra output is anti-tamper hash table operations wrapping reads to
     // CharacterAttribute->Skill and ->HotKey arrays. Only real logic implemented.
@@ -81,13 +83,14 @@ void __cdecl RenderSkillIcon_stub(int iIndex, float x, float y, float width, flo
 
     // If skill is 0x2f (Helper summon) and helper type is not Dark Horse (0x332) or Dark Spirit (0x333),
     // tint the icon reddish
+    // IDA sub_4BB940 L91-97: el skill 47 (se usa montado) sale rojizo si el
+    // heroe no tiene Uniria (818) ni Dinorant (819) en el slot de helper
+    // (Hero + 696 = c+0x2B8).  2026-09-12: estaba comentado como "cosmetico".
     if (skillId == 0x2f) {
-        // Hero->Helper.Type is at entity struct offset — approximate via DAT_07abf5d8
-        // (Hero->Object).Position is at +0x10; Helper.Type offset approximated from Ghidra
-        // In Ghidra: (Hero->Helper).Type  — skipping exact struct access, use raw offset
-        // short helperType = *(short*)((char*)(DWORD)Hero + helperTypeOffset);
-        // For now, skip the helper type check — the tint is cosmetic only
-        // glColor3f(1.0f, 0.5f, 0.5f);
+        const BYTE* hero = (const BYTE*)(uintptr_t)DAT_07abf5d8;
+        const short helperType = hero ? *(const short*)(hero + 696) : -1;
+        if (helperType != 818 && helperType != 819)
+            glColor3f(1.0f, 0.5f, 0.5f);
     }
 
     float fWidth = (float)(int)width;

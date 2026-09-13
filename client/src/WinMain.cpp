@@ -871,7 +871,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     DAT_055c9ff4 = (DWORD)ChatListBox_ConstructWhisper();
 
     // 2026-04-30: los slots vacíos del inventario tienen que tener Type=0xFFFF, no 0.
-    // Los scanners de grilla del motor (FUN_00482be0/sub_482850/sub_482E40) toman el 0
+    // Los scanners de grilla del motor (Item_FindQuickSlotByCategory/sub_482850/sub_482E40) toman el 0
     // como un tipo de arma válido y matchean celdas vacías por error, lo que hace
     // que RenderItem3D se invoque sobre basura → el bug de render del triángulo cyan.
     HUD_InitInventoryPools();

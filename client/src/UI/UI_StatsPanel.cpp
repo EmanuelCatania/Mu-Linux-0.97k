@@ -1,10 +1,10 @@
 // UI_StatsPanel.cpp
-// FUN_0051af50 @ 0x0051af50 — UI_StatsPanel_Render
+// RenderErrorMessage @ 0x0051af50 — UI_StatsPanel_Render
 #include "stdafx.h"
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-int FUN_0051af50(void)
+int RenderErrorMessage(void)
 
 {
   // NOTE: quitado el `return 0` auto-skip de Ghidra. Sin él, el menú ESC

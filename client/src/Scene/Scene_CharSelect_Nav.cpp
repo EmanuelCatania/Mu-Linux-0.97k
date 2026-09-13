@@ -6,7 +6,7 @@
 //   FUN_004011d0 (CharSlot_FindFirstActive)
 //   FUN_00401650 (CharSlot navigation)
 //   FUN_004017e0 (slot-list scroll)
-//   FUN_00401960 (slot-list navigation forward)
+//   CSQuest_clearQuest (slot-list navigation forward)
 //   FUN_00401af0 (slot-list navigation back)
 //   ... and related slot scroll/select helpers.
 //
@@ -1244,9 +1244,9 @@ void __fastcall FUN_004017e0(int param_1)
     SetErrorMessage(0);
 }
 
-// ── FUN_00401960 — movida desde stubs_externs.cpp (refactor B3) ──
+// ── CSQuest_clearQuest — movida desde stubs_externs.cpp (refactor B3) ──
 // Declaraciones adelantadas de los helpers definidos más abajo en este archivo
-void __fastcall FUN_00401960(int);
+void __fastcall CSQuest_clearQuest(int);
 void __fastcall FUN_00401af0(void*);
 void __fastcall FUN_00408cb0(int*, float);
 
@@ -1265,7 +1265,7 @@ unsigned int __cdecl FUN_00402f40(void *param_1) {
         DAT_083a4124 = '\0';
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        FUN_00401960((int)param_1);
+        CSQuest_clearQuest((int)param_1);
     }
     return 1;
 }
@@ -1369,7 +1369,7 @@ void __fastcall FUN_00401af0(void *param_1)
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        FUN_00401960((int)param_1);
+        CSQuest_clearQuest((int)param_1);
     } else if (slotType == 3) {
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
@@ -2448,7 +2448,7 @@ int __cdecl FUN_0047e160(int param_1) {
     for (int i = 1; i <= 7; ++i) {
         int slotPtr = param_1 + 68 * i;
         if (*(unsigned char*)(slotPtr + 562)) {  // slot's [+26] = 0x22A; 8*68+0x22 hmm let me recalc
-            unsigned int v7 = FUN_0047cfb0((DWORD)slotPtr, (short*)(slotPtr + 536));
+            unsigned int v7 = Item_GetDefenseWithSpecial((DWORD)slotPtr, (short*)(slotPtr + 536));
             ITEM_ATTRIBUTE* v8 = &((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[*(short*)(slotPtr + 536)];
             float durP;
             if (i == 7) {

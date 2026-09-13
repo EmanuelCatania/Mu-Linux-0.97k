@@ -110,8 +110,8 @@ void __stdcall InitGame(void)
     // RenderIME_Status).  El port escribia DAT_07E11D1C, que es **LoadingWorld**
     // -- el contador que gatea el frame de render (`if (LoadingWorld > 30) return`).
     DAT_07e11d6f = 0;     // LockInputStatus
-    DAT_07e11d18 = 0;     // RepairEnable variants
-    DAT_07e11d14 = 0;
+    DAT_07eaa134 = 0;     // RepairEnable_0 (IDA InitGame 0x4244FC)
+    DAT_07eaa138 = 0;     // RepairEnable   (IDA InitGame 0x424502)
     DAT_00559c6d = 0xff;
     DAT_0055a3e4 = 0xffffffff;
     FUN_0051d740();       // ClearNotice
@@ -137,7 +137,7 @@ void __stdcall InitGame(void)
     DAT_07e11e20 = -1;    // g_shMutoNumber[0]
     DAT_07e11e22 = -1;    // g_shMutoNumber[1]
     DAT_07e11e24 = -1;    // g_shMutoNumber[2]
-    DAT_07e11e26 = 0;     // m_bWhisperSound
+    DAT_07e11d80 = 0;     // m_bWhisperSound (IDA InitGame L167, 0x07E11D80)
     FUN_00482350();       // ClearWhisperID
     FUN_0047eb80();       // clearMatchInfo (0x0047EB80; antes se llamaba a
                           // FUN_004827a0, un stub vacio con la direccion mal)

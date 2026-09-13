@@ -65,13 +65,17 @@ void __cdecl FUN_005126e0(int id, float x, float y, float w, float h, unsigned i
     float mat[12];
     Matrix_BuildFromEuler(bvec, mat);
 
-    // 4 corner UV + positions
-    static float uvs[8] = { 0.0f, 0.0f,  0.0f, 1.0f,  1.0f, 1.0f,  1.0f, 0.0f };
+    // IDA sub_5126E0: esquinas (-w/2, h/2), (-w/2, -h/2), (w/2, -h/2),
+    // (w/2, h/2) con UV (0,0), (0,1), (1,1), (1,0).  2026-09-12: el port las
+    // tenia en orden cruzado (+,+ / +,- / -,+ / -,-), asi que el TRIANGLE_FAN
+    // salia como un mono y el martillo animado del cursor se veia roto.
+    static const float uvs[8] = { 0.0f, 0.0f,  0.0f, 1.0f,  1.0f, 1.0f,  1.0f, 0.0f };
+    const float hw = fSinW * 0.5f, hh = fCosW * 0.5f;
     float corners[4][3] = {
-        { fSinW * _DAT_00552a14,  fCosW * _DAT_00552504, 0.0f },
-        { fSinW * _DAT_00552a14, -fCosW * _DAT_00552504, 0.0f },
-        {-fSinW * _DAT_00552a14, -fCosW * _DAT_00552504, 0.0f },
-        {-fSinW * _DAT_00552a14,  fCosW * _DAT_00552504, 0.0f }
+        { -hw,  hh, 0.0f },
+        { -hw, -hh, 0.0f },
+        {  hw, -hh, 0.0f },
+        {  hw,  hh, 0.0f }
     };
 
     glBegin(GL_TRIANGLE_FAN);

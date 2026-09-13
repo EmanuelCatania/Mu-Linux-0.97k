@@ -466,7 +466,7 @@ void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
 //   CameraPosition[]        — float[3] world-space camera
 //   CameraMatrix[]          — 4x4 GL matrix (already in our globals)
 // =============================================================================
-// FUN_00482be0, FUN_004e1be0 y Camera_BuildMouseRay ya están declaradas en
+// Item_FindQuickSlotByCategory, FUN_004e1be0 y Camera_BuildMouseRay ya están declaradas en
 // functions.h (que entra vía stdafx.h). FUN_004f5ce0 / FUN_004f6420 están
 // declaradas pero sin implementar en nuestro build — acá dejamos stubs para que
 // enlacen los call sites del render de la barra. Son renderers de efectos de
@@ -529,7 +529,7 @@ void Render_HotbarItems3D_(void)
 
         int slot_x = 208;
         for (int slot_idx = 0; slot_x < 301; ++slot_idx) {
-            int v2 = FUN_00482be0(slot_idx);
+            int v2 = Item_FindQuickSlotByCategory(slot_idx);
             if (v2 != -1) {
                 // IDA passes the raw hotbar slot fields:
                 //   Type  = *(short*)(base + slot*0x44 + 0)

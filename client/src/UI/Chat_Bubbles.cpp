@@ -72,7 +72,7 @@ void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
 
     if (Length > 0x13) {
         // Long text (>19 chars): split into 2 lines
-        FUN_0047fe30(param_2, param_1 + 0x2c, (void*)(param_1 + 300), Length);
+        CutText(param_2, param_1 + 0x2c, (void*)(param_1 + 300), Length);
         *(char**)(param_1 + 0x22c) = displayEnd;
         *(char**)(param_1 + 0x230) = displayEnd;
         return;
@@ -88,7 +88,8 @@ void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
 // Each slot has: ID (+0x00), guild (+0x18), color (+0x24), team (+0x25),
 //   timer1 (+0x28), text1 (+0x2c), text2 (+0x12c), disp1 (+0x22c), disp2 (+0x230), owner (+0x234).
 // Two paths: (1) find existing slot for same owner and update, (2) find empty slot and create.
-void __cdecl FUN_00481ba0(char* ID, char* Text, DWORD entity, int Flag, int SetColor) {
+// IDA: CreateChat (0x00481BA0)
+void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetColor) {
     // Guard: entity must be alive and visible
     // BUG-FIX 2026-07-19: offsets de entidad equivocados (mismo problema que
     // AssignChat). IDA CreateChat @0x481BA0:
@@ -106,7 +107,7 @@ void __cdecl FUN_00481ba0(char* ID, char* Text, DWORD entity, int Flag, int SetC
         }
     }
 
-    // BUG-FIX 2026-07-19 (CRASH 0xC0000005 en FUN_00481ba0+0x86): el bound era
+    // BUG-FIX 2026-07-19 (CRASH 0xC0000005 en CreateChat+0x86): el bound era
     // la dirección LITERAL del binario original (`POOL_END = 0x7e0ffc8`) y la
     // base era `&DAT_07e016f8`, que estaba declarado como un char de 1 BYTE.
     // El walk se paseaba por memoria ajena hasta reventar en
@@ -235,7 +236,7 @@ void __cdecl AssignChat_stub(char* ID, char* Text, int Flag) {
         DWORD c = base + i * 0x394;
         if (*(BYTE*)c != 0 && *(BYTE*)(c + 132) == 1) {
             if (strcmp((char*)(c + 0x1C1), ID) == 0) {
-                FUN_00481ba0(ID, Text, c, Flag, -1);
+                CreateChat(ID, Text, c, Flag, -1);
                 return;
             }
         }
@@ -247,7 +248,7 @@ void __cdecl AssignChat_stub(char* ID, char* Text, int Flag) {
     for (int i = 0; i < 400; i++) {
         DWORD c = base + i * 0x394;
         if (*(BYTE*)c != 0 && *(BYTE*)(c + 132) == 2) {
-            FUN_00481ba0(ID, Text, c, Flag, -1);
+            CreateChat(ID, Text, c, Flag, -1);
             return;
         }
     }

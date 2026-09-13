@@ -1,4 +1,4 @@
-// CharMenu_Build.cpp — FUN_004c3530 @ 0x004c3530
+// CharMenu_Build.cpp — RenderHelpWindow @ 0x004c3530
 // Character info / stats menu builder.  Dispatches on DAT_07e11d20 (mode 1/2/3).
 //
 // Populates a string list buffer (lpString_07e90798, 100 bytes/entry, ~30 slots)
@@ -30,7 +30,7 @@
 //   Computes local_1c = max_xp / col_width (horizontal scale for progress bar).
 //   Calls FUN_004c2e20(class_id) to prepare class data.
 //   Builds string slots: class name, subtype header, padding rows, then calls
-//   FUN_004c2880(class_data_ptr) for the detail block.
+//   ItemHelp_RequireClass(class_data_ptr) for the detail block.
 //   Draws stat rows via FUN_004c2d50 / FUN_004c2c10 conditionally on stat flags
 //   (DAT_07e91530/534/53c/540) and class-id range.
 //
@@ -101,7 +101,8 @@ static void slot_strcpy(int slot, const char *src)
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-void FUN_004c3530(void)
+// IDA: RenderHelpWindow (0x004C3530)
+void RenderHelpWindow(void)
 {
     // ── Mode 1: build class-list A ────────────────────────────────────────────
     if (DAT_07e11d20 == 1)
@@ -266,7 +267,7 @@ void FUN_004c3530(void)
     }
 
     // Class detail block
-    FUN_004c2880(iVar4);
+    ItemHelp_RequireClass(iVar4);
 
     // Footer
     crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_FtrC);
@@ -370,7 +371,7 @@ static const float DrawItemInfoBox_glColor[7][3] = {
 
 // DESVIACIÓN CONSCIENTE: en el binario el color de texto llega por glColor3f
 // porque el subclass de CUIRenderText sube el glifo como textura y la MODULA
-// con el color actual de GL.  Nuestro FUN_0040f610 pinta glifos con
+// con el color actual de GL.  Nuestro CUIRenderText_RenderText pinta glifos con
 // wglUseFontBitmaps y toma el color de m_dwTextColor (0x00559C78, formato ABGR
 // 0xAABBGGRR — ver la nota de CUIRenderText_BakeTextTexture @0x0040FCD0).
 // Emitimos los dos: el glColor3f fiel y el ABGR equivalente.
@@ -405,7 +406,7 @@ static const DWORD DrawItemInfoBox_TextColor[7] = {
 // Este archivo convertia anchos de texto con g_fScreenRate_x, copiando la
 // formula de IDA. En el binario eso es correcto porque su CUIRenderText recibe
 // un ancho de referencia (640) y reescala la x internamente. NUESTRO stack de
-// texto no hace eso: FUN_0040f610 dibuja los glifos en unidades del ortho,
+// texto no hace eso: CUIRenderText_RenderText dibuja los glifos en unidades del ortho,
 // convirtiendo con viewport/ortho (Text_PixelToOrthoScale).
 //
 // Al mezclar los dos factores, la CAJA quedaba dimensionada con un divisor y el
@@ -459,7 +460,7 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
     // con m_dwBackColor todo pixel que no sea glifo.  Por eso la franja del
     // color 5 (clase requerida) va de punta a punta de la caja.
     //
-    // DESVIACIÓN: nuestro FUN_0040f610 pinta el fondo solo detras del texto, y
+    // DESVIACIÓN: nuestro CUIRenderText_RenderText pinta el fondo solo detras del texto, y
     // no recibe el ancho del box.  Emitimos la franja aca con el ancho
     // correcto y le sacamos el fondo al render de glifos para no pintarlo dos
     // veces.
@@ -487,14 +488,14 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
                      (float)iBoxWidth / fTexScaleX,
                      (float)local_8.cy / _DAT_055c9b74);
         glColor4fv(prevColor);
-        // No volvemos a encender la textura: FUN_0040f610 la apaga por su
+        // No volvemos a encender la textura: CUIRenderText_RenderText la apaga por su
         // cuenta para los glifos, y dejarla apagada mantiene GL y cache de
         // acuerdo.  El proximo tooltip la reenciende via GL_SetBlendSrcOver.
     }
     {
         const DWORD dwSavedBack = m_dwBackColor;
         m_dwBackColor = 0;
-        FUN_0040f610((HDC)(uintptr_t)DAT_055c9ff8,
+        CUIRenderText_RenderText((HDC)(uintptr_t)DAT_055c9ff8,
                      iPos_x + (int)(fVar4 / fTexScaleX), iPos_y, pszText, 0);
         m_dwBackColor = dwSavedBack;
     }
@@ -631,7 +632,7 @@ void __cdecl FUN_004c2420(int param_1, int param_2, int param_3,
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004c2880 @ 0x004c2880 — CharMenu_AppendSkillReq
+// ItemHelp_RequireClass @ 0x004c2880 — CharMenu_AppendSkillReq
 //
 // Reads weapon skill slots at param_1+0x38 (4 slots, each 4 bytes).
 // Checks hero's class (DAT_07abf5d8+0x1bc) vs required class per slot.
@@ -639,32 +640,84 @@ void __cdecl FUN_004c2420(int param_1, int param_2, int param_3,
 // strings from DAT_0055a400/DAT_0055a404.
 // Increments DAT_07eaa154 per entry.
 
-void __cdecl FUN_004c2880(int param_1)
+// IDA: RequireClass (0x004C2880)
+// 2026-09-12: reescrita contra IDA.  La version anterior era inventada: leia
+// `*(int*)(&DAT_07abf5d8 + 0x1bc)` (la direccion del PUNTERO al heroe + 0x1BC,
+// no el heroe), trataba +0x38 como 4 "slots" de int y formateaba con
+// DAT_0055a400/404, que estan vacios.
+//
+// pItem es la fila de ItemAttribute; +56..+59 = RequireClass[DW, DK, Elf, MG]
+// (0 = no la usa, 1 = clase base, 2 = segunda clase).  El nombre de clase es
+// GlobalText[4*r + 16 + c]: 20..23 = clases base, 24..26 = segundas clases.
+void __cdecl ItemHelp_RequireClass(int param_1)
 {
-    int  iVar1;
-    char buf[256];
-    int  heroClass = *(int*)(&DAT_07abf5d8 + 0x1bc);
+    const BYTE* pItem = (const BYTE*)(uintptr_t)param_1;
+    const BYTE* hero  = (const BYTE*)(uintptr_t)DAT_07abf5d8;
+    if (!pItem || !hero) return;
+    if (DAT_07eaa154 > CHARMENU_ROW_MAX - 4) return;   // guard del buffer de 30 lineas
 
-    for (int s = 0; s < 4; s++) {
-        int slot = *(int*)(param_1 + 0x38 + s * 4);
-        if (slot == 0) continue;
+    const BYTE heroSkin  = hero[0x1BC];
+    const int  heroClass = heroSkin & 7;
+    const int  heroStep  = heroSkin >> 3;
+    auto className = [](int cls, int req) { return GlobalText[4 * req + 16 + cls]; };
+    auto line      = [](int i) { return lpString_07e90798 + i * 100; };
 
-        // Check class requirement
-        int required = slot & 0xff;
-        if (required != 0 && heroClass != required) {
-            // Use "not met" format
-            crt_sprintf(buf, DAT_0055a404, slot >> 8, required);
-            DAT_07e91708[CharMenu_Row()] = 3;  // red
-        } else {
-            crt_sprintf(buf, DAT_0055a400, slot >> 8);
-            DAT_07e91708[CharMenu_Row()] = 2;  // green
-        }
+    // v6: 2 si la clase del heroe figura en la tabla, 5 si no.
+    const int notMetColor = pItem[56 + heroClass] ? 2 : 5;
 
-        DAT_07ea7b10[CharMenu_Row()] = 0;
-        slot_strcpy(CharMenu_Row(), buf);
-        CharMenu_RowAdvance(1);
-        DAT_07eaa158++;
+    int count = 0, cls[4], step[4];
+    for (int c = 0; c < 4; ++c) {
+        if (pItem[56 + c]) { cls[count] = c; step[count] = pItem[56 + c] - 1; ++count; }
     }
+    DAT_07e91708[DAT_07eaa154 + 3] = 0;
+    DAT_07e91708[DAT_07eaa154 + 2] = 0;
+    if (count < 1) return;
+
+    if (heroClass == 3) {                                // Magic Gladiator
+        crt_sprintf(line(DAT_07eaa154), "\n");
+        ++DAT_07eaa154; ++DAT_07eaa158;
+        const BYTE mgReq = pItem[59];
+        if (mgReq && heroStep >= mgReq - 1) {
+            crt_sprintf(line(DAT_07eaa154), GlobalText[61], GlobalText[23]);
+            DAT_07e91708[DAT_07eaa154] = 0;
+            DAT_07ea7b10[DAT_07eaa154] = 0;
+            ++DAT_07eaa154;
+            return;
+        }
+        crt_sprintf(line(DAT_07eaa154), GlobalText[60], GlobalText[23]);
+        DAT_07e91708[DAT_07eaa154] = notMetColor;
+        DAT_07ea7b10[DAT_07eaa154] = 0;
+        ++DAT_07eaa154;
+        return;
+    }
+    if (count > 3) return;
+
+    crt_sprintf(line(DAT_07eaa154), "\n");
+    ++DAT_07eaa154; ++DAT_07eaa158;
+    const bool okA = (heroClass == cls[0] && heroStep >= step[0]);
+    if (count == 1) {
+        DAT_07e91708[DAT_07eaa154] = okA ? 0 : notMetColor;
+        crt_sprintf(line(DAT_07eaa154), GlobalText[61], className(cls[0], pItem[56 + cls[0]]));
+    } else if (count == 2) {
+        const bool ok = okA || (heroClass == cls[1] && heroStep >= step[1]);
+        DAT_07e91708[DAT_07eaa154] = ok ? 0 : notMetColor;
+        crt_sprintf(line(DAT_07eaa154), GlobalText[61], className(cls[0], pItem[56 + cls[0]]));
+        DAT_07ea7b10[DAT_07eaa154] = 0;
+        ++DAT_07eaa154;
+        DAT_07e91708[DAT_07eaa154] = ok ? 0 : notMetColor;
+        crt_sprintf(line(DAT_07eaa154), GlobalText[61], className(cls[1], pItem[56 + cls[1]]));
+    } else {
+        // Tres clases: "no puede ser equipado por <la que falta>".  El decompile
+        // pasa `300 * v25 + 131249300`; se toma como el nombre de clase base de
+        // v25 (GlobalText[20 + v25]) -- inferencia, la constante no cierra
+        // contra la direccion de GlobalText que da IDA.
+        int missing = 0;
+        while (pItem[56 + missing]) { if (++missing >= 4) return; }
+        DAT_07e91708[DAT_07eaa154] = notMetColor;
+        crt_sprintf(line(DAT_07eaa154), GlobalText[60], GlobalText[20 + missing]);
+    }
+    DAT_07ea7b10[DAT_07eaa154] = 0;
+    ++DAT_07eaa154;
 }
 
 
@@ -711,14 +764,30 @@ void __cdecl FUN_004c2c10(int row, unsigned char *color, int *value,
 // Switches on param_1 (0-9) to select description string from
 // DAT_07d359d0...DAT_07d36204. Formats into text buffer, calls FUN_004c2420.
 
+// IDA: sub_4C2D50 (0x004C2D50)
+// 2026-09-12: era un no-op (la tabla vieja tenia direcciones literales del
+// binario).  IDA usa GlobalText directamente: una linea por tipo, color 1, la
+// dibuja con sub_4C2420(x, y, n, 0, 3, 0) y vuelve TextNum a 0.
 void __cdecl FUN_004c2d50(int param_1, int param_2, int param_3)
 {
-    // BUG-FIX 2026-05-03: original `descTable` held literal source-binary addresses
-    // (0x07d359d0 onwards) that map to text-pool data in the source binary but are
-    // unmapped memory in our build. Reading `(const char*)descTable[param_1]`
-    // would AV on `if (!*desc)`. Until the description text-pool is parsed
-    // (Data\Local\Text.bmd handler chain), this function is a no-op.
-    (void)param_1; (void)param_2; (void)param_3;
+    const char* text = "";
+    switch (param_1) {
+    case 0:           text = GlobalText[161]; break;
+    case 2: case 3:   text = GlobalText[162]; break;
+    case 4:           text = GlobalText[163]; break;
+    case 5:           text = GlobalText[164]; break;
+    case 6:           text = GlobalText[165]; break;
+    case 7:           text = GlobalText[166]; break;
+    case 8:           text = GlobalText[167]; break;
+    case 9:           text = GlobalText[168]; break;
+    default:          break;   // IDA: sprintf(..., NULL); ningun caller pasa otro valor
+    }
+    if (DAT_07eaa154 > CHARMENU_ROW_MAX - 1) DAT_07eaa154 = CHARMENU_ROW_MAX - 1;
+    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, "%s", text);
+    DAT_07e91708[DAT_07eaa154] = 1;
+    ++DAT_07eaa154;
+    FUN_004c2420(param_2, param_3, DAT_07eaa154, 0, 3, 0);
+    DAT_07eaa154 = 0;
 }
 
 

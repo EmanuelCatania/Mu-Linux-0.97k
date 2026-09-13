@@ -249,7 +249,7 @@ LAB_004cc05c:
 // Guards against map 0x6e. Calls sub-scene packet handlers in sequence:
 //   FUN_004e4760, FUN_004e5500, FUN_004e5de0 (always)
 //   FUN_004e6550..FUN_004ec330 (if DAT_07eaa117 != 0 — extended scene)
-//   FUN_004df410 (if DAT_07eaa164 == 0 — not in special mode)
+//   Inventory_DropDispatch (if DAT_07eaa164 == 0 — not in special mode)
 //   FUN_004e7ac0, FUN_004e8b70 (always)
 void Scene_ProcessPacketUpdates(void)
 {
@@ -287,7 +287,7 @@ void Scene_ProcessPacketUpdates(void)
     uVar2 = extraout_EDX_00;
   }
   if (DAT_07eaa164 == '\0') {
-    FUN_004df410(uVar1,uVar2);
+    Inventory_DropDispatch(uVar1,uVar2);
   }
   FUN_004e7ac0();
   FUN_004e8b70();

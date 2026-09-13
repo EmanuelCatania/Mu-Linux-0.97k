@@ -200,5 +200,5 @@ void __cdecl FUN_00479e50(const char* path)
     operator_delete(Buffer);
 }
 // FUN_0047b020 — implemented in src/Item/Dialog_Data.cpp  (Dialog_LoadBMD)
-// FUN_00401040 — implemented in src/Item/Quest_Data.cpp   (Quest_LoadBMD)
+// CSQuest_OpenQuestScript — implemented in src/Item/Quest_Data.cpp   (Quest_LoadBMD)
 // FUN_0047d120 — implemented in src/Item/NPC_Data.cpp     (NPCName_Load)

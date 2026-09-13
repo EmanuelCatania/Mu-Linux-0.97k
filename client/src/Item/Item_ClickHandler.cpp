@@ -44,7 +44,7 @@
 //
 // 2026-05-08: port completo desde IDA (sustituye al stub no-op anterior en
 // SecondPassword.cpp:2027). Habilita la cadena entera:
-//   FUN_004d23b0 → pPickedItem set → FUN_004df410 (drop dispatcher,
+//   FUN_004d23b0 → pPickedItem set → Inventory_DropDispatch (drop dispatcher,
 //   también stub — port pendiente) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
@@ -95,7 +95,7 @@ static BYTE* const g_InventoryPoolForClickGuard = Inventory;
 // sub_494520 IME/text input). El símbolo correcto es `DAT_07eaa160` —
 // confirmado por Ghidra-decompiled Scene_MapTick línea 35/89 que lee
 // `DAT_07eaa160` como el item pointer y línea 89 lo pasa como 3er arg
-// a `FUN_004c4650` (RenderItemInfo).
+// a `RenderItemInfo` (RenderItemInfo).
 //
 // Sin este fix:
 //   * Hover loop seteaba DAT_07e11d24 (wrong global) → Scene_MapTick leía
@@ -265,7 +265,7 @@ unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
 //
 // 2026-05-08: port completo, reemplaza al placeholder que llamaba a
 // CreateOkMessageBox. Maneja la máquina de estados del diálogo en la que
-// FUN_004df410 se apoya para los flujos de confirmación de venta/drop/renombrar mascota.
+// Inventory_DropDispatch se apoya para los flujos de confirmación de venta/drop/renombrar mascota.
 extern char DAT_083a44c4[7 * 0x26];      // g_lpszMessageBoxCustom (266 bytes)
 // DAT_083a42f8 (2 entradas × 5 ints) y su alias DAT_083a430c (= entrada 1)
 // vienen de globals.h — NO redeclarar aca: DAT_083a430c es un macro que
@@ -476,26 +476,23 @@ static void SendC3Packet(BYTE* payload, int payloadSize)
 //         SendRequestDropItem(slot, (int)(CollisionPosition[0] / TERRAIN_SCALE),
 //                                   (int)(CollisionPosition[1] / TERRAIN_SCALE));
 // o sea el pick de terreno se valida ANTES de mandar.
-static void GetHeroDropTile(BYTE* outX, BYTE* outY)
+// Devuelve false si el cursor no esta sobre terreno: IDA hace `return` en ese
+// caso (sub_4DF410 L1070-1073) y el item queda en la mano.  Antes caia a la
+// celda del heroe, que no es lo que hace el original.
+static bool GetHeroDropTile(BYTE* outX, BYTE* outY)
 {
     *outX = 0; *outY = 0;
 
     // Pick del terreno bajo el cursor (mismo patron que Combat_Targeting).
-    FUN_004f9ac0('');                       // RenderTerrain(true): arma el rayo
+    FUN_004f9ac0('\x01');                    // RenderTerrain(true): arma el rayo
     const int gridX = (int)*(float*)&DAT_080ab288;   // SelectXF
     const int gridY = (int)*(float*)&DAT_080ab28c;   // SelectYF
-    if (FUN_004f8480(*(int*)&DAT_080ab288, *(int*)&DAT_080ab28c,
-                     gridX, gridY, 1.0f, 1, 1)) {
-        *outX = (BYTE)(int)(DAT_083a4130 * 0.01f);   // CollisionPosition[0]
-        *outY = (BYTE)(int)(DAT_083a4134 * 0.01f);   // CollisionPosition[1]
-        return;
-    }
-
-    // Sin pick valido (cursor fuera del terreno): cae a la celda del heroe.
-    BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
-    if (!hero) return;
-    *outX = (BYTE)(int)(*(float*)(hero + 16) * 0.01f);
-    *outY = (BYTE)(int)(*(float*)(hero + 20) * 0.01f);
+    if (!FUN_004f8480(*(int*)&DAT_080ab288, *(int*)&DAT_080ab28c,
+                      gridX, gridY, 1.0f, 1, 1))
+        return false;
+    *outX = (BYTE)(int)(DAT_083a4130 * 0.01f);   // CollisionPosition[0]
+    *outY = (BYTE)(int)(DAT_083a4134 * 0.01f);   // CollisionPosition[1]
+    return true;
 }
 
 extern "C" void __cdecl SyncPickedItemVisualState(void);
@@ -911,10 +908,10 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 char db[200];
                 wsprintfA(db,
                     "FUN_004d23b0 DISPATCH type=%d slotXY=(%d,%d) Lpush=%d Rpush=%d "
-                    "DAT_07e11d18=%d DAT_07eaa134=%d mode=%d",
+                    "RepairEnable_0=%d mode=%d",
                     (int)typeRaw, (int)slotX, (int)slotY,
                     (int)DAT_083a4124, (int)DAT_083a42d0,
-                    (int)DAT_07e11d18, (int)DAT_07eaa134, (int)mode_flag);
+                    (int)DAT_07eaa134, (int)mode_flag);
                 DbgLogPublic(db);
             }
 
@@ -928,7 +925,9 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             // pickup dispare. Si DAT_07eaa134 está pegado en 1 (porque
             // Scene_MapTick lo mantiene en 1 cuando DAT_07eaa138 != 0), nunca
             // hay pickup. Usar el OR para detectar el bug.
-            if (DAT_07e11d18 != 0 || DAT_07eaa134 != 0) {
+            // IDA: RepairEnable_0 (0x07EAA134).  `DAT_07e11d18` era un global
+            // sin xrefs en IDA; se quito el 2026-09-11.
+            if (DAT_07eaa134 != 0) {
                 // Tipos de item que SE PUEDEN reparar (= armas/armaduras con
                 // durability), excluding stackables like potions/jewels.
                 // Per IDA lines 579-586.
@@ -1020,8 +1019,9 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
                 // ── Item 458 (Teleport scroll) — handled by Teleport check ─
                 if (type == 458) {
-                    (void)DAT_05826d14;        // Teleport (IDA 0x05826D14)
-                    if ((int)DAT_07e11d18 != 0) return;   // mid-action
+                    // IDA sub_4D23B0 L1440: `if ( Teleport ) return;`
+                    // Teleport = 0x05826D14 (DAT_05826d14).
+                    if (DAT_05826d14 != 0) return;
                     if (DAT_07eaa119 != 0 || DAT_07eaa11b != 0) {
                         UIChatLogWindow_AddText("", GlobalText[474], 2);
                         continue;
@@ -1258,7 +1258,7 @@ extern "C" void __cdecl Inventory_RenderAndClick(char* origin_x, int origin_y,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004df410 — port FIEL desde IDA `004DF410_sub_4DF410.c` (8067 bytes).
+// Inventory_DropDispatch — port FIEL desde IDA `004DF410_sub_4DF410.c` (8067 bytes).
 //
 // Dispatcher de drop del inventario: punto de entrada por frame que llama el tick
 // PacketUpdate de la escena (Net_PacketSession.cpp:284). Cuando el jugador tiene
@@ -1299,7 +1299,8 @@ static unsigned int CallDropItem(int /*a1*/, int origin_x, int origin_y,
                                 gridW, gridH, slotType);
 }
 
-void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
+// IDA: sub_4DF410 (0x004DF410)
+void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
 {
     // ── Header: ChaosMix state machine ───────────────────────────────────────
     // (IDA L200-217). Con ChaosMixOpened, refresca MixType según el contenido de la grilla.
@@ -1344,26 +1345,16 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
     if (DAT_07eaa13c == 2) {
         if (DAT_00559f5e == 1) {
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
-            // IDA 004DF410 case 2: el mismo diálogo de confirmación se usa
-            // para ejecutar Chaos. El original emitía C1:03:86; sólo para
-            // MuEmu se añade el tipo de receta ya reconocido localmente.
-            const int mixType = (int)DAT_07eaa16c;
-            if (DAT_07eaa11a != 0 &&
-                (mixType == 1 || (mixType >= 2 && mixType <= 8) || mixType == 11)) {
-                DAT_07eaa140 = 1;
-                Net_SendChaosBoxMix((BYTE)mixType);
-                return;
-            }
-
-            // User confirmed drop-on-ground. Server: [C1][05][23][x][y][slot],
-            // C3 (PMSG_ITEM_DROP_RECV, Encrypt=1).
-            BYTE dx, dy; GetHeroDropTile(&dx, &dy);
-            BYTE pkt[4];
-            pkt[0] = 0x23;
-            pkt[1] = dx;   // tile X del héroe (no pixels de mouse)
-            pkt[2] = dy;   // tile Y del héroe
-            pkt[3] = (BYTE)DAT_07ea5b18;
-            SendC3Packet(pkt, 4);
+            // IDA 004DF410 case 2 (L402-431): este dialogo es SOLO la
+            // confirmacion del Chaos Mix -- lo abre el boton OK de la Chaos
+            // Machine (FUN_004e9050, unico writer de dword_7EAA13C = 2).  El
+            // original pone MixState = 1 y manda C1:03:86 sin mas; para MuEmu
+            // se agrega el tipo de receta reconocido localmente.
+            // 2026-09-11: se quito una rama que, con una receta no
+            // reconocida, TIRABA AL SUELO el item de la mano (0x23): el
+            // original no tiene confirmacion de drop al suelo.
+            DAT_07eaa140 = 1;
+            Net_SendChaosBoxMix((BYTE)DAT_07eaa16c);
         } else if (DAT_00559f5e == 2) {
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
             RestorePickedItemToSource();   // ver nota arriba
@@ -1572,7 +1563,7 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
             // `sub_4CD3B0(1, 0)`, que devuelve el item a su celda.  (Confirmado
             // contra el cliente original: soltar un item sobre otro lo devuelve.)
             if (InventoryOpened != 0 && (int)DAT_083a427c >= (int)InventoryStartX) {
-                FUN_004cd3b0();
+                Item_ReturnPickedItem();
                 return;
             }
 
@@ -1594,17 +1585,18 @@ void __cdecl FUN_004df410(unsigned int a1, unsigned int /*a2*/)
                 if (px >= ox && px < ox + 190 && py >= oy && py < oy + 433) {
                     // IDA L1004-1010 (baul/chaos && MouseX >= dword_7EAA0C8 ->
                     // v144 = 0) -> LABEL_301: el item vuelve a su celda.
-                    FUN_004cd3b0();
+                    Item_ReturnPickedItem();
                     return;
                 }
             }
 
             // Plain ground drop — [C1][05][23][tileX][tileY][slot], C3.
-            BYTE dx, dy; GetHeroDropTile(&dx, &dy);
+            BYTE dx, dy;
+            if (!GetHeroDropTile(&dx, &dy)) return;   // sin terreno: sigue en la mano
             BYTE pkt[4];
             pkt[0] = 0x23;
-            pkt[1] = dx;   // tile X del héroe (no pixels de mouse)
-            pkt[2] = dy;   // tile Y del héroe
+            pkt[1] = dx;   // celda bajo el cursor
+            pkt[2] = dy;
             pkt[3] = (BYTE)DAT_07ea5b18;
             SendC3Packet(pkt, 4);
         }

@@ -2,7 +2,7 @@
 #include "functions.h"
 #include "globals.h"
 
-// ── FUN_00401040 @ 0x00401040 — Quest_LoadBMD(this, path) ────────────────────
+// ── CSQuest_OpenQuestScript @ 0x00401040 — Quest_LoadBMD(this, path) ────────────────────
 // __thiscall: reads binary .bmd quest data into a quest manager object.
 // Parameters:
 //   this  = pointer to quest manager object
@@ -15,7 +15,8 @@
 //   File contains 200 records × 0x248 bytes each.
 //   Each record is XOR-decrypted by FUN_00401120(buf, 0x248) before copy.
 //   Copy: 0x92 DWORDs (0x248 bytes) per record into this+8 (sequential).
-uint __cdecl FUN_00401040(int handle, const char *path)
+// IDA: CSQuest::OpenQuestScript (0x00401040)
+uint __cdecl CSQuest_OpenQuestScript(int handle, const char *path)
 {
     CHAR msg[256];
     FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);

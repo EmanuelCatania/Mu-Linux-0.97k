@@ -246,7 +246,7 @@ void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
 // Appends a chat message string param_1 (with flag param_2) to the ring buffer.
 // Ring buffer: DAT_07db80d8, 6 slots × 0x108 bytes.
 // If count > 5: shifts buffer down (oldest discarded). Handles long lines by
-// splitting via FUN_0047fe30 into first/overflow parts.
+// splitting via CutText into first/overflow parts.
 // Resets scroll timer DAT_00559cdc to 300.
 // IDA: FUN_0047FAE0
 void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
@@ -279,7 +279,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
     if (idx > 5) idx = 5;
     char *dst = base + idx * 0x108;
 
-    // Truncate if too wide (256 px) — IDA splits via FUN_0047fe30; keep simple.
+    // Truncate if too wide (256 px) — IDA splits via CutText; keep simple.
     lstrcpynA(dst, param_1, 0x100);
     dst[0x104] = (char)param_2;
 
@@ -349,7 +349,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
       cVar1 = *pcVar6;
       pcVar6 = pcVar6 + 1;
     } while (cVar1 != '\0');
-    FUN_0047fe30((undefined4 *)param_1,(int)local_100,(undefined4 *)local_200,~uVar4 - 1);
+    CutText((undefined4 *)param_1,(int)local_100,(undefined4 *)local_200,~uVar4 - 1);
     uVar4 = 0xffffffff;
     iVar2 = DAT_07e11d9c + 1;
     pcVar6 = local_200;

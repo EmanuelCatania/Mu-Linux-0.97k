@@ -47,7 +47,7 @@ extern void __cdecl FUN_0054158c(void* ptr);
 #endif
 
 
-// FUN_0051d780 @ 0x0051D780 — CreateDialogInterface(textId, flag)
+// CreateDialogInterface @ 0x0051D780 — CreateDialogInterface(textId, flag)
 // Ported from IDA: builds a custom MessageBox-style dialog from GlobalText[textId].
 //   - Wraps text into up to 7 lines × 38 chars via SeparateTextIntoLines
 //   - Stores a 0x14-byte (5-int) button rect descriptor at DAT_083a42f8
@@ -60,7 +60,8 @@ extern void __cdecl FUN_0054158c(void* ptr);
 //   DAT_083a7c08 = state (cleared to 0)
 //   ErrorMessage  = DAT_083a7c24 (via SetErrorMessage helper)
 //   NextErrorMessage = DAT_083a7c28
-void __cdecl FUN_0051d780(int a1, int a2)
+// IDA: CreateDialogInterface (0x0051D780)
+void __cdecl CreateDialogInterface(int a1, int a2)
 {
     DAT_083a7c04 = (DWORD)a1;
     DAT_083a7c09 = (char)a2;

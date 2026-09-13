@@ -424,7 +424,7 @@ void Render_QuickButtons_(void)
     // an item picked up via FUN_004d23b0 inside RenderInventoryWindow). This
     // is the function that builds and SENDS the 0x24 PMSG_ITEM_MOVE_RECV
     // packet via SendRequestEquipmentItem_stub → Net_SendSmallPacket (C3).
-    FUN_004df410(0, 0);
+    Inventory_DropDispatch(0, 0);
 
     RenderServerDivision();
 }
@@ -596,11 +596,11 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
 
     // 2026-08-26: acá había un workaround. En 2026-07-19 se detectó que el
     // caret quedaba corto (~80% del largo) y se lo compensó guardando el ancho
-    // SIN dividir, porque en ese momento `UI_DrawText` -> `FUN_0040f610`
+    // SIN dividir, porque en ese momento `UI_DrawText` -> `CUIRenderText_RenderText`
     // dibujaba en píxeles crudos: la mitad "lógico -> físico" del pipeline no
     // existía, así que un offset en espacio-640 se dibujaba como si fuera píxel.
     //
-    // Esa mitad ya está implementada (FUN_0040f610 convierte con
+    // Esa mitad ya está implementada (CUIRenderText_RenderText convierte con
     // g_fScreenRate_x/y, igual que `sub_410AF0` en el binario), así que el
     // workaround quedó obsoleto y ahora es él quien descoloca el caret: sumaba
     // un ancho en PÍXELES a una `x` en LÓGICO.

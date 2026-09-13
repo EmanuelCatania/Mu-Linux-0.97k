@@ -512,7 +512,7 @@ extern DWORD   DAT_05826ca4;
 extern DWORD   DAT_05826ca8;
 extern DWORD   DAT_05826cac;
 extern DWORD   DAT_05826cb0;   // server response code (0x0b=LoginOK, 0x14=char-list)
-extern DWORD   DAT_05826cb4;
+extern char    DAT_05826cb4[12];   // IDA: ChatWhisperID (0x05826CB4) — ultimo destinatario de susurro
 extern DWORD   DAT_05826cc0;
 extern DWORD   DAT_05826cc8;
 extern char    DAT_05826cc9;
@@ -524,7 +524,11 @@ extern float  _DAT_05826cf4;
 extern DWORD   DAT_05826cf4;
 extern DWORD   DAT_05826cf8;
 extern DWORD   DAT_05826d08;   // chat rate-limit counter (max 0x46 = 70 ticks)
-extern int     DAT_05826d04;   // teleport / consumable use flag (runtime global)
+// Teleport es 0x05826D14 (ida_xrefs_to: ReceiveTeleport, Attack, CheckGate,
+// Skills_PacketHandler, sub_482BE0, sub_4D23B0...).  Hasta 2026-09-12 Attack
+// escribia un global aparte (DAT_05826d04) y el resto leia DAT_05826d14: el
+// gate del Town Portal no se enteraba del teleport en curso.
+#define DAT_05826d04 DAT_05826d14
 extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit compare)
 extern char    DAT_05826d14;   // Teleport (IDA `Teleport` @0x05826D14) — 0=normal,
                                // 1=gate/teleport en curso.  La etiqueta vieja
@@ -772,8 +776,8 @@ extern unsigned char DAT_07e12840[1000 * 0x204];   // GroundItem pool: 1000 × 0
 extern DWORD   DAT_07e12945;   // sprite render loop base (stride 0x204)
 extern char    DAT_07e91350[0x44];      // pPickedItem — sizeof(ITEM) = 0x44
 extern DWORD   DAT_07e91388;
-extern byte    DAT_07e9138e;   // UI grid selected column (byte, FUN_004cd3b0)
-extern byte    DAT_07e9138f;   // UI grid selected row (byte, FUN_004cd3b0)
+extern byte    DAT_07e9138e;   // UI grid selected column (byte, Item_ReturnPickedItem)
+extern byte    DAT_07e9138f;   // UI grid selected row (byte, Item_ReturnPickedItem)
 extern DWORD   DAT_07e91394;
 extern DWORD   DAT_07e913a8;
 extern DWORD   DAT_07e91428;
@@ -1285,7 +1289,7 @@ extern float  _DAT_00552914;       // anim speed scale constant B
 // ── Server select input (FUN_0051e7e0) ───────────────────────────────────────
 extern DWORD   DAT_0056169c;        // selected channel (port % 0x14 + 1)
 
-// ── Char menu UI builder (FUN_004c3530) ───────────────────────────────────────
+// ── Char menu UI builder (RenderHelpWindow) ───────────────────────────────────────
 extern int     DAT_07e11d20;        // UI mode: 1=class-list-A, 2=class-list-B, 3=stats
 extern int     DAT_07e11d24;        // character class/subtype ID (range 0..0x1FF)
 extern char    lpString_07e90798[]; // string list buffer (100 bytes per entry, ~30 slots)
@@ -1498,7 +1502,7 @@ extern char    DAT_00559d5c;           // player-list alternate format string
 // DAT_07eaa117 — declared above as char (line 613)
 // DAT_07eaa116 — declared above as char (line 612)
 // DAT_07eaa128 — declared above as DWORD (line 620)
-extern int     DAT_07eaa12c;           // guild member ID / count
+extern int     DAT_07eaa12c;           // g_shEventChipCount (IDA 0x07EAA12C)
 // DAT_07eaa108 — guild UI flag — declared above as DWORD (line 609)
 extern BYTE    DAT_07ea97c0[64];       // guild entity pool (zeroed on stage 3, 0x40 bytes)
 extern char    DAT_07e11d73;           // char-select flag D (set 1 when guild stage==3)
@@ -1657,7 +1661,7 @@ extern int     DAT_07e91528[12 * 10];
 // extern char    DAT_07d359d0;           // skill description string table base (slot 0, stride ~0x138)   // -> alias a GlobalText, ver el final del archivo
 extern int     DAT_00559fe0;           // class-data cache guard (last built class_id)
 
-// ── UI_StatsPanel (FUN_0051af50) globals ─────────────────────────────────────
+// ── UI_StatsPanel (RenderErrorMessage) globals ─────────────────────────────────────
 // Float step/scale constants (0x00552xxx)
 extern float  _DAT_00552854;   // row height / step in entity loop
 extern float  _DAT_00552a2c;   // button width for entity panel
@@ -1670,7 +1674,7 @@ extern DWORD   DAT_00559c78;   // current text color ABGR (0xffffffff = white)
 // DAT_00559c8c — declared above as DWORD (line 200)
 // Toggle flags
 extern char    DAT_00559c5c;   // sound-effect toggle (0=off, non-zero=on)
-extern char    DAT_07e11d80;   // music toggle (0=off, non-zero=on)
+extern char    DAT_07e11d80;   // IDA: m_bWhisperSound (0x07E11D80) — aviso sonoro de susurros
 // Entity/level data
 // Format strings for numeric dialogs
 // extern char    DAT_07d46e60;   // login account name format   // -> alias a GlobalText, ver el final del archivo
@@ -2647,7 +2651,10 @@ extern float   CameraAngle[3];     // DAT_083a42e0 (3 floats)
 extern float   CameraPosition[3];  // DAT_083a42d4 (3 floats)
 
 // Quest/NPC window
-extern int     _g_bEventChipDialogEnable; // DAT_07e5ba80
+// g_bEventChipDialogEnable es 0x07EAA128 (DAT_07eaa128).  Hasta 2026-09-11 era
+// un global aparte: el 0x94 lo escribia y el panel del Golden Archer leia
+// DAT_07eaa128, asi que nunca se enteraba.
+#define _g_bEventChipDialogEnable (*(int*)&DAT_07eaa128)
 
 // 2026-04-30: los flags de los paneles de UI ahora aliasan los bytes reales DAT_07eaa11x (per
 // el Offsets.h del proyecto companion de IDA, líneas 59-69). Las direcciones de la época de
@@ -2689,7 +2696,7 @@ extern DWORD   DAT_07c82cf4[0xAF0];       // terrain alpha bitmap pool (0x2BC0 b
 extern DWORD   DAT_0055339c;       // JPEG natural order table
 // m_dwTextColor / m_dwBackColor SON DAT_00559c78 / DAT_00559c80 (mismo global en IDA:
 // 0x559c78 / 0x559c80, verificado por disasm de sub_40D610 y sub_480980). El render de
-// texto (FUN_0040f610) lee DAT_00559c78; sin esta unificación los seteos de m_dwTextColor
+// texto (CUIRenderText_RenderText) lee DAT_00559c78; sin esta unificación los seteos de m_dwTextColor
 // (HUD passes + ChatListBox) se perdían → texto blanco. DAT_00559c78/80 declarados arriba.
 #define m_dwTextColor  DAT_00559c78
 #define m_dwBackColor  DAT_00559c80
@@ -2731,14 +2738,12 @@ extern int     DAT_07e11988;       // SelectedItem
 extern int     DAT_07e11e18;       // m_bAutoAttack
 extern int     DAT_07e11d24;       // _CheckInventory
 // DAT_07e11d1c already declared above (line ~553) as DWORD
-extern int     DAT_07e11d18;       // RepairEnable_0
-extern int     DAT_07e11d14;       // RepairEnable
 extern BYTE    DAT_00559c6d;       // UI alpha/state byte
-extern short   DAT_07e11e1c;       // _g_shEventChipCount
+// g_shEventChipCount es 0x07EAA12C (DAT_07eaa12c); mismo caso que el de arriba.
+#define DAT_07e11e1c (*(short*)&DAT_07eaa12c)
 extern short   DAT_07e11e20;       // g_shMutoNumber[0]
 extern short   DAT_07e11e22;       // g_shMutoNumber[1]
 extern short   DAT_07e11e24;       // g_shMutoNumber[2]
-extern BYTE    DAT_07e11e26;       // m_bWhisperSound
 extern int     DAT_07e11980;       // SceneFlag
 
 // Batch 19 — SendCheck globals

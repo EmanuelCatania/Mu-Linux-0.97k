@@ -1,4 +1,4 @@
-// Chat_InputTick.cpp — FUN_004b14f0 @ 0x004b14f0
+// Chat_InputTick.cpp — Chat_InputTick @ 0x004b14f0
 // Per-frame chat input + hotkey + character-preview tick.
 // Called from Game_MainLoop every frame.
 //
@@ -7,7 +7,7 @@
 //   2. Chat history navigation (PageUp/Down vtable scroll; Up/Down arrow ring buffer)
 //   3. Class-tab buttons (4 tabs) — char preview select + 3-byte packet send
 //   4. Hotkey assignment grid (chardata+0xd7, 20 slots, keys 1-9)
-//   5. Hotkey trigger via numpad/number 1-9 keys → FUN_004b0e80()
+//   5. Hotkey trigger via numpad/number 1-9 keys → SelectSkillByHotkey()
 //   6. Chat input for 9 channels (FUN_00494520 IME → validate → XOR-encode → send)
 //   7. Whisper-target channel (DAT_07e108c8) — same pipeline as above
 //   8. 'B' key toggle (DAT_07eaa134 / DAT_07eaa150 byte 2)
@@ -331,6 +331,11 @@ extern "C" void Chat_SendChatLine(const char* text)
     if (whisperTarget[0] != '\0') {
         pkt[2] = 0x02;                        // headcode = whisper
         memcpy(pkt + 3, whisperTarget, 10);   // name[10] = DESTINATARIO
+        // IDA WndProc (0x41D954, tras el send del susurro): ChatWhisperID =
+        // InputText[1][0..9], con '\0' en [10].  Lo usa el aviso del 0x0C
+        // ("no esta conectado") como remitente.  2026-09-12.
+        memcpy(DAT_05826cb4, whisperTarget, 10);
+        DAT_05826cb4[10] = '\0';
     } else {
         pkt[2] = 0x00;                        // headcode = chat normal
         // BUG-FIX 2026-07-19 (nuestros mensajes no llegaban): el campo name[10]
@@ -380,9 +385,10 @@ extern "C" void Chat_SendChatLine(const char* text)
 // pkt_c0/c1/c2 = second 3-byte packet (DAT_07eaa165 branch).
 
 // ---------------------------------------------------------------------------
-// FUN_004b14f0 — Chat_InputTick
+// Chat_InputTick — Chat_InputTick
 // ---------------------------------------------------------------------------
-void __cdecl FUN_004b14f0(void)
+// IDA: Chat_InputTick (0x004B14F0)
+void __cdecl Chat_InputTick(void)
 {
     int mouseX = (int)DAT_083a427c;
     int mouseY = (int)DAT_083a4278;
@@ -666,10 +672,10 @@ void __cdecl FUN_004b14f0(void)
                 {
                     for (int n = 1; n <= 9; ++n) {
                         if (((unsigned short)GetAsyncKeyState(0x30 + n) >> 8) != 0)
-                            FUN_004b0e80(n);
+                            SelectSkillByHotkey(n);
                     }
                     if (((unsigned short)GetAsyncKeyState(0x30) >> 8) != 0)
-                        FUN_004b0e80(0);
+                        SelectSkillByHotkey(0);
                 }
             }
 
@@ -959,7 +965,7 @@ void __cdecl FUN_004b14f0(void)
             if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
                 if (s_qweEdge[i] == 0) {
                     s_qweEdge[i] = 1;
-                    int slot = (int)FUN_00482be0(qwe[i].slotIdx);
+                    int slot = (int)Item_FindQuickSlotByCategory(qwe[i].slotIdx);
                     if (slot != -1 &&
                         WarehouseOpened == '\0' &&
                         DAT_07eaa11b == '\0')   // !TradeOpened

@@ -1545,10 +1545,16 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
 
     if (DAT_00559bf1) {
         if (kind == 3) {
-            // sub_40E730 — whisper-target match — soft-skipped; treat as
-            // siempre permitido. Sin eso el texto de susurro se le muestra a todos,
-            // lo cual es un cambio benigno respecto del original.
-            // PlayBuffer(38,0,0) on whisper-sound flag — soft-skipped.
+            // IDA sub_40C940: con el filtro de susurros activo solo pasan los que
+            // coinciden (por remitente o por texto) con la lista del widget
+            // (this+200, hasta 5 entradas de 256).  sub_40E730 devuelve 1 si la
+            // lista esta vacia.  Con lista y m_bWhisperSound (0x07E11D80) suena
+            // el aviso 38.  2026-09-12: estaba salteado ("soft-skipped").
+            extern int __fastcall FUN_0040e730(void* This, int edx, char* param_1);
+            if (!FUN_0040e730(self, 0, src) && !FUN_0040e730(self, 0, msg))
+                return;
+            if (*((BYTE*)self + 200) && DAT_07e11d80)
+                PlayBuffer(38, 0, 0);
         }
     } else if (kind == 3) {
         return;

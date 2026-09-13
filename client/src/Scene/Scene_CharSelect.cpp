@@ -128,7 +128,7 @@
 // ── SUBSISTEMAS FINALES ───────────────────────────────────────────────────────
 //
 //   FUN_005239a0()  → CharSelect_UpdateInput()
-//   FUN_0051af50()  → Chat_Render()
+//   RenderErrorMessage()  → Chat_Render()
 //   FUN_004f64d0()  → UI_Render()
 //   UI_RenderNotices()  → StatusBar_Render()
 //   UI_RenderChatLogOverlay()  → Mouse_Render()
@@ -706,13 +706,13 @@ int Scene_CharSelect(void)
 
         // ── Final subsystems ──────────────────────────────────────────────────
         FUN_005239a0();   // CharSelect_UpdateInput
-        FUN_0051af50();   // Chat_Render
+        RenderErrorMessage();   // Chat_Render
         FUN_004f64d0();   // UI_Render
         UI_RenderNotices();   // StatusBar_Render
         if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
             UI_RenderChatLogOverlay();   // Mouse_Render
         UI_UpdateFpsCounter();
-        FUN_004c3530();
+        RenderHelpWindow();
         Cursor_Render();
         FUN_0051e0c0();
         GL_End2D();

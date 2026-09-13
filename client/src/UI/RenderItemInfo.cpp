@@ -10,8 +10,8 @@
 // internos que pueden seguir tropezando con punteros corruptos. SEH
 // silencia cualquier AV interno en lugar de matar el proceso — la
 // tooltip simplemente no aparece esa frame.
-extern "C" void __cdecl FUN_004c4650_impl(void*, void*, void*, int);
-extern "C" void __cdecl FUN_004c8d70_impl(void*, int, void*);
+extern "C" void __cdecl RenderItemInfo_impl(void*, void*, void*, int);
+extern "C" void __cdecl RenderRepairInfo_impl(void*, int, void*);
 extern "C" void DbgLogPublic(const char* msg);
 char* __cdecl GetMapName(int iMap);
 
@@ -1433,10 +1433,468 @@ static void AppendInventoryRequireClassLines(ITEM_ATTRIBUTE* pItem)
     }
 }
 
-void __cdecl FUN_004c4650(void* param_1, void* param_2, void* param_3_v, int param_4)
+// IDA: RenderItemInfo (0x004C4650)
+// ═════════════════════════════════════════════════════════════════════════════
+// RenderItemInfo — port fiel de IDA (0x004C4650), 2026-09-12.
+//
+// Reescrita en el orden exacto del decompile (raw 004C4650, ~2800 lineas de
+// las que ~60 % es hash-table anti-tamper).  La version anterior
+// (RenderItemInfo_impl, mas arriba) esta armada por helpers y mezcla ramas del
+// 5.2 con las del 0.97k; se conserva detras de RENDERITEMINFO_FIEL para poder
+// comparar las dos en el juego.
+//
+// Contrato de la lista de texto (igual que en el binario):
+//   TextList      = lpString_07e90798 (30 x 100)   TextNum = DAT_07eaa154
+//   TextListColor = DAT_07e91708                   TextBold = DAT_07ea7b10
+//   SkipNum (dword_7EAA158) = DAT_07eaa158 (lineas de media altura)
+// Unica desviacion: RII_Line devuelve un scratch si el indice se pasa de 30,
+// para no escribir fuera del buffer (el original no tiene tope).
+// ═════════════════════════════════════════════════════════════════════════════
+#define RENDERITEMINFO_FIEL 1
+
+void __cdecl ItemHelp_RequireClass(int param_1);   // RequireClass (0x4C2880), CharMenu_Build.cpp
+
+static char* RII_Line(int i)
+{
+    static char scratch[100];
+    return (i >= 0 && i < 30) ? lpString_07e90798 + i * 100 : scratch;
+}
+static void RII_Style(int i, int color, int bold)
+{
+    if (i < 0 || i >= 30) return;
+    DAT_07e91708[i] = color;
+    DAT_07ea7b10[i] = bold;
+}
+static void RII_Color(int i, int color) { if (i >= 0 && i < 30) DAT_07e91708[i] = color; }
+static void RII_Gold(char* buf, int v)       // mismo formato que el binario
+{
+    if      (v < 1000)       sprintf(buf, "%d", v % 1000);
+    else if (v < 1000000)    sprintf(buf, "%d,%03d", v % 1000000 / 1000, v % 1000);
+    else if (v < 1000000000) sprintf(buf, "%d,%03d,%03d", v % 1000000000 / 1000000,
+                                     v % 1000000 / 1000, v % 1000);
+    else                     sprintf(buf, "%d,%03d,%03d,%03d", v / 1000000000,
+                                     v % 1000000000 / 1000000, v % 1000000 / 1000, v % 1000);
+}
+// Linea simple: texto + color + negrita, y avanza TextNum.
+#define RII_ADD(color, bold, ...) \
+    do { sprintf(RII_Line(DAT_07eaa154), __VA_ARGS__); \
+         RII_Style(DAT_07eaa154, (color), (bold)); ++DAT_07eaa154; } while (0)
+// Texto sin argumentos: el binario lo pasa como FORMATO (sprintf(l, GlobalText[N]));
+// CopyCollapsingPercent hace lo mismo (%% -> %) sin leer la pila si el texto trae %d.
+#define RII_TXT(color, bold, idx) \
+    do { CopyCollapsingPercent(RII_Line(DAT_07eaa154), 100, GlobalText[idx]); \
+         RII_Style(DAT_07eaa154, (color), (bold)); ++DAT_07eaa154; } while (0)
+// Opcion con valor fijo (622..635): el Text.bmd del 0.97k traia el numero en el
+// texto; el que usamos trae %d, asi que se pasa el valor que tiene la opcion
+// (GetInventorySpecialOptionText, opcion = texto - 556).  Desviacion forzada.
+#define RII_OPT(color, bold, idx) \
+    do { GetInventorySpecialOptionText(type, (BYTE)((idx) - 556), 0, 0, RII_Line(DAT_07eaa154), 100); \
+         RII_Style(DAT_07eaa154, (color), (bold)); ++DAT_07eaa154; } while (0)
+// Separador de media altura: "\n" + SkipNum.
+#define RII_GAP() do { sprintf(RII_Line(DAT_07eaa154), "\n"); ++DAT_07eaa154; ++DAT_07eaa158; } while (0)
+
+// SommonTable (0x00559FE4) y ChaosEventName (0x00559FFC, 10 x 100 bytes).
+static const int kRII_SommonTable[6] = { 2, 7, 14, 8, 9, 41 };
+static const char* const kRII_ChaosEventName[10] = {   // bytes EUC-KR leidos de 0x00559FFC
+    "\310\367\265\371\305\251\040\260\355\307\342\040\277\251\307\340\261\307",
+    "\306\346\306\274\276\366\064\040\304\304\307\273\305\315",
+    "\265\360\301\366\305\273\304\253\270\336\266\363",
+    "\267\316\301\366\305\330\040\271\253\274\261\040\270\266\277\354\275\272\053\305\260\272\270\265\345\040\274\274\306\256",
+    "\062\065\066\115\040\267\245",
+    "\066\260\263\277\371\040\300\342\301\366\040\261\270\265\266\261\307",
+    "\271\256\310\255\273\363\307\260\261\307\050\270\270\277\370\051",
+    "\271\302\040\270\323\261\327\304\305",
+    "\271\302\040\124\274\305\303\367",
+    "\271\302\040\061\060\275\303\260\243\040\271\253\267\341\300\314\277\353\261\307"
+};
+
+static void RII_RequireLine(int textIdx, int required, int have)
+{
+    // IDA: linea del requisito en color 0 si se cumple; si no, color 2 y una
+    // linea extra GlobalText[74] con lo que falta, tambien en color 2.
+    RII_ADD(0, 0, GlobalText[textIdx], required);
+    if (have < required) {
+        RII_Color(DAT_07eaa154 - 1, 2);
+        RII_ADD(2, 0, GlobalText[74], required - have);
+    }
+}
+
+// IDA: RenderItemInfo (0x004C4650)
+static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
+{
+    const unsigned int attrBase = ItemAttribute_Base();
+    if (!attrBase || !ip || (uintptr_t)ip < 0x100000) return;
+    const short type = ip->Type;
+    if (type < 0 || type >= 1024) return;
+    ITEM_ATTRIBUTE* p = &((ITEM_ATTRIBUTE*)(uintptr_t)attrBase)[type];
+    const BYTE* CA = (const BYTE*)CharacterAttribute;
+    if (!CA) return;
+
+    DAT_07eaa154 = 0;
+    DAT_07eaa158 = 0;
+    for (int i = 0; i < 20; ++i) DAT_07e91708[i] = 0;    // memset(TextListColor, 0, 0x50)
+    memset(lpString_07e90798, 0, 30 * 100);             // TextList .. &pPickedItem
+    RII_GAP();
+
+    const int Level = (ip->Level >> 3) & 0xF;
+    const bool exc = (ip->Option1 & 0x3F) != 0;
+
+    // ── Color del nombre (v316) ─────────────────────────────────────────────
+    int color;
+    switch (type) {
+    case 461: case 462: case 399: case 464: case 470:
+    case 465: case 466: case 467: case 432: case 433:
+        color = 3; break;
+    case 170: case 19: case 146:
+        color = 6; break;
+    default:
+        if (ip->SpecialNum && exc) color = 4;
+        else                       color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
+        break;
+    }
+    if (type >= 387 && type <= 390)
+        color = (Level < 7) ? (ip->SpecialNum != 0) : 3;
+
+    // ── Precio (solo con la tienda abierta) ─────────────────────────────────
+    if (type != 460 && (type < 471 || type > 474) && ShopOpened) {
+        char buf[32];
+        RII_Gold(buf, Item_CalculateValue((void*)ip, Sell ? 0 : 1));
+        RII_ADD(color, 1, GlobalText[Sell ? 62 : 63], buf);
+        RII_GAP();
+    }
+
+    // ── Nombre ──────────────────────────────────────────────────────────────
+    const int nameIdx = DAT_07eaa154;
+    char* name = RII_Line(nameIdx);
+    if (type >= 471 && type <= 474) {
+        sprintf(name, "%s", p->Name);
+        color = 3;
+    } else switch (type) {
+    case 460:
+        if      (Level == 0) sprintf(name, "%s", GlobalText[100]);
+        else if (Level == 1) sprintf(name, "%s", GlobalText[101]);
+        else if (Level == 2 && ip->Durability < 10) sprintf(name, "%s", kRII_ChaosEventName[ip->Durability]);
+        break;
+    case 459:
+        switch (Level) {
+        case 0: sprintf(name, "%s", p->Name); break;
+        case 1: sprintf(name, "%s", GlobalText[105]); break;
+        case 2: sprintf(name, "%s", GlobalText[106]); break;
+        case 3: sprintf(name, "%s", GlobalText[107]); break;
+        case 5: sprintf(name, "%s", GlobalText[109]); break;
+        case 6: sprintf(name, "%s", GlobalText[110]); break;
+        case 7: sprintf(name, "%s", GlobalText[111]); break;
+        case 8: case 9: case 10: case 11: case 12:
+            sprintf(name, "%s +%d", GlobalText[115], Level - 7); break;
+        default: break;
+        }
+        break;
+    case 431: {
+        color = 3;
+        static const int kText[4] = { 168, 169, 167, 166 };
+        if (Level < 4) sprintf(name, "%s %s", GlobalText[kText[Level]], p->Name);
+        break;
+    }
+    case 430:
+        color = 3;
+        sprintf(name, "%s", p->Name);
+        break;
+    case 469:
+        color = 3;
+        if      (Level == 0) sprintf(name, "%s", p->Name);
+        else if (Level == 1) sprintf(name, "%s", GlobalText[810]);
+        break;
+    case 435:
+        color = 3;
+        if      (Level == 0) sprintf(name, "%s", GlobalText[811]);
+        else if (Level == 1) sprintf(name, "%s", GlobalText[812]);
+        else if (Level == 2) sprintf(name, "%s", GlobalText[817]);
+        break;
+    case 457:
+        if      (Level == 0) sprintf(name, "%s", p->Name);
+        else if (Level == 1) sprintf(name, "%s", GlobalText[108]);
+        break;
+    case 395:
+        // Entrada 30 + Level de SkillAttribute (40 bytes, nombre en +0).
+        sprintf(name, "%s %s", (const char*)&SkillAttribute + 8 * (5 * Level + 150), GlobalText[102]);
+        break;
+    case 426:
+        if (Level < 6) {       // el original lee SommonTable sin tope
+            const MONSTER_SCRIPT* monsters = (const MONSTER_SCRIPT*)&MonsterScript;
+            for (int i = 0; i < MAX_MONSTER; ++i) {
+                if (monsters[i].Type == kRII_SommonTable[Level]) {
+                    sprintf(name, "%s %s", monsters[i].Name, GlobalText[103]);
+                    break;
+                }
+            }
+        }
+        break;
+    default:
+        if ((type < 387 || type > 390) && type != 19 && type != 146 && type != 170 && exc) {
+            if (Level) sprintf(name, "%s %s +%d", GlobalText[620], p->Name, Level);
+            else       sprintf(name, "%s %s", GlobalText[620], p->Name);
+        } else {
+            if (Level) sprintf(name, "%s +%d", p->Name, Level);
+            else       sprintf(name, "%s", p->Name);
+        }
+        break;
+    }
+    RII_Style(nameIdx, color, 1);
+    DAT_07eaa154 = nameIdx + 1;
+    RII_GAP();
+
+    // ── Tipo 435 (L840-1015) ────────────────────────────────────────────────
+    if (type == 435) {
+        RII_TXT(0, 0, 730);
+        RII_TXT(5, 0, 815);
+        // "\n" sin SkipNum: IDA sólo pone TextBold = 0 y avanza.
+        sprintf(RII_Line(DAT_07eaa154), "\n"); if (DAT_07eaa154 < 30) DAT_07ea7b10[DAT_07eaa154] = 0; ++DAT_07eaa154;
+        int atkSpeed = 0, reqStr = 0, reqDex = 0;          // v79 / v78 / v80
+        if (Level == 0)      { RII_ADD(0, 0, "%s: %d ~ %d", GlobalText[42], 107, 110); atkSpeed = 20; reqStr = 132; reqDex = 32; }
+        else if (Level == 1) { RII_ADD(0, 0, "%s: %d ~ %d", GlobalText[40], 110, 120); atkSpeed = 35; reqStr = 381; reqDex = 149; }
+        else if (Level == 2) { RII_ADD(0, 0, "%s: %d ~ %d", GlobalText[41], 120, 140); atkSpeed = 35; reqStr = 140; reqDex = 350; }
+        // Level >= 3: el original usa un local sin inicializar (v323); queda en 0.
+        RII_ADD(0, 0, GlobalText[64], atkSpeed);
+        RII_ADD(0, 0, GlobalText[73], reqStr);
+        RII_ADD(0, 0, GlobalText[75], reqDex);
+        sprintf(RII_Line(DAT_07eaa154), "\n"); if (DAT_07eaa154 < 30) DAT_07ea7b10[DAT_07eaa154] = 0; ++DAT_07eaa154;
+        RII_TXT(1, 0, 87);
+        RII_ADD(1, 0, GlobalText[94], 20);
+        int mana = 0;
+        if (Level == 0) {
+            RII_ADD(1, 1, GlobalText[79], 53);
+            RII_OPT(1, 0, 631);
+            RII_OPT(1, 0, 632);
+        } else if (Level == 1) {
+            GetSkillInformation(22, 1, 0, &mana, 0, 0);
+            RII_ADD(1, 0, GlobalText[84], mana);
+            RII_OPT(1, 0, 629);
+            RII_OPT(1, 0, 630);
+        } else if (Level == 2) {
+            GetSkillInformation(24, 1, 0, &mana, 0, 0);
+            RII_ADD(1, 0, GlobalText[86], mana);
+            RII_OPT(1, 0, 629);
+            RII_OPT(1, 0, 630);
+        }
+        RII_OPT(1, 0, 628);               // LABEL_214
+        RII_ADD(1, 0, GlobalText[633], 7);
+        RII_OPT(1, 0, 634);
+        RII_OPT(1, 0, 635);
+    }
+
+    // ── Huevos 471-474 / 460 / 467 (L1016-1070) ─────────────────────────────
+    if (type >= 471 && type <= 474) {
+        RII_TXT(0, 0, 730);
+        RII_TXT(2, 0, 731);
+        RII_TXT(2, 0, 732);
+        RII_TXT(2, 0, 733);
+    } else if (type == 460 && Level <= 1) {
+        RII_TXT(0, 0, 119);
+    }
+    if (type == 467) {
+        RII_TXT(0, 0, 638);
+        RII_TXT(0, 0, 639);
+    }
+
+    // ── Daño / defensas / velocidades ───────────────────────────────────────
+    if (ip->DamageMin) {
+        if ((type & 0xFFF0) == 240) {
+            RII_ADD(exc, 0, "%s: %d ~ %d", GlobalText[42], ip->DamageMin, ip->DamageMax);
+        } else if (type == 485 || type == 494 || type == 495) {
+            // El original no escribe linea: recolorea la ANTERIOR (v113 = v69 - 1).
+            RII_Style(DAT_07eaa154 - 1, exc, 0);
+        } else {
+            int dmin = ip->DamageMin, dmax = ip->DamageMax;
+            if (type >= 160 && type <= 192) { dmin /= 2; dmax /= 2; }
+            RII_ADD(exc, 0, "%s: %d ~ %d", GlobalText[p->TwoHand + 40], dmin, dmax);
+        }
+    }
+    if (ip->Defense)
+        RII_ADD((type >= 224 && type < 384 && exc) ? 1 : 0, 0, GlobalText[65], ip->Defense);
+    if (ip->MagicDefense)
+        RII_ADD(0, 0, GlobalText[66], ip->MagicDefense);
+    if (p->DefenseRate)
+        RII_ADD(exc, 0, GlobalText[67], ip->SuccessfulBlocking);
+    if (p->AttackSpeed)
+        RII_ADD(0, 0, GlobalText[64], p->AttackSpeed);
+    if (p->WalkSpeed)
+        RII_ADD(0, 0, GlobalText[68], p->WalkSpeed);
+
+    // ── Lineas por tipo (L1150-1250) ────────────────────────────────────────
+    if (type == 459) {
+        if (Level == 7) {
+            RII_TXT(0, 0, 112);
+            RII_TXT(0, 0, 113);
+            RII_TXT(0, 0, 114);
+        } else {
+            RII_TXT(0, 0, 571);
+        }
+    }
+    if (type == 461)                RII_TXT(0, 0, 572);
+    if (type == 462)                RII_TXT(0, 0, 573);
+    if (type == 464)                RII_TXT(0, 0, 621);
+    if (type == 465 || type == 466) RII_TXT(0, 0, 637);
+    if (type == 399)                RII_TXT(0, 0, 574);
+    if (type == 470)                RII_TXT(0, 0, 619);
+    if (type == 416) {
+        RII_ADD(0, 0, GlobalText[578], 20);
+        RII_ADD(0, 0, GlobalText[739], 50);
+    }
+    if (type == 417)                RII_TXT(0, 0, 576);
+
+    if (type >= 384 && type <= 386) {                      // alas de primera
+        RII_ADD(0, 0, GlobalText[577], 2 * Level + 12);
+        RII_ADD(0, 0, GlobalText[578], 2 * Level + 12);
+        RII_TXT(0, 0, 579);
+    } else if (type >= 387 && type <= 390) {               // alas de segunda
+        RII_ADD(0, 0, GlobalText[577], Level + 32);
+        RII_ADD(0, 0, GlobalText[578], Level + 25);
+        RII_TXT(0, 0, 579);
+    } else {
+        switch (type) {
+        case 419:
+            RII_ADD(0, 0, GlobalText[577], 15);
+            RII_ADD(0, 0, GlobalText[578], 10);
+            break;
+        case 430:
+            RII_Color(DAT_07eaa154, 0);
+            sprintf(RII_Line(DAT_07eaa154), "%s", GlobalText[748]);
+            ++DAT_07eaa154;
+            break;
+        case 431: {
+            RII_Color(DAT_07eaa154, 5);
+            static const int kText[4] = { 168, 169, 167, 166 };
+            if (Level < 4)
+                sprintf(RII_Line(DAT_07eaa154), "%s %s", GlobalText[kText[Level]], GlobalText[636]);
+            ++DAT_07eaa154;                                // aun con Level >= 4 (linea vacia)
+            break;
+        }
+        case 432: case 433:
+            RII_Color(DAT_07eaa154, 0);
+            sprintf(RII_Line(DAT_07eaa154), "%s", GlobalText[816]);
+            ++DAT_07eaa154;
+            break;
+        case 434:
+            RII_Color(DAT_07eaa154, 0);
+            sprintf(RII_Line(DAT_07eaa154), "%s", GlobalText[814]);
+            ++DAT_07eaa154;
+            sprintf(RII_Line(DAT_07eaa154), "\n");
+            ++DAT_07eaa154;
+            RII_TXT(0, 0, 638);
+            RII_TXT(0, 0, 639);
+            break;
+        case 469:
+            RII_Color(DAT_07eaa154, 0);
+            ++DAT_07eaa154;                                // linea vacia, como el original
+            break;
+        default:
+            break;
+        }
+    }
+
+    // ── Durabilidad (LABEL_307..331) ────────────────────────────────────────
+    {
+        const bool hasDur =
+            ((p->Durability || p->MagicDurability) && (type < 384 || type >= 416) && type < 448) ||
+            (type >= 384 && type <= 390);
+        if (!hasDur && !ip->Durability) {
+            if (type == 426) RII_ADD(0, 0, GlobalText[95], ip->Durability);
+        } else if (type >= 430 && type <= 435) {
+            // LABEL_318: sin linea salvo el 426 (que no cae en este rango)
+        } else if ((type >= 448 && type <= 456) || type == 135 || type == 143) {
+            RII_ADD(0, 0, GlobalText[69], ip->Durability);
+        } else if (type >= 416 && type <= 423) {
+            RII_ADD(0, 0, GlobalText[70], ip->Durability);
+        } else if (type == 426) {
+            RII_ADD(0, 0, GlobalText[95], ip->Durability);
+        } else if (hasDur) {
+            const unsigned int maxDur =
+                Item_CalculateMaxDurability((void*)ip, (int)(uintptr_t)p, Level) & 0xFFFF;
+            RII_ADD(0, 0, GlobalText[71], ip->Durability, (int)maxDur);
+        }
+    }
+    if ((type == 135 || type == 143) && Level >= 1) {       // flechas / bolts
+        RII_ADD(1, 0, GlobalText[577], 2 * Level + 1);
+        RII_ADD(1, 0, GlobalText[88], 1);
+    }
+
+    // ── Resistencias (GlobalText[48..51]) ───────────────────────────────────
+    for (int r = 0; r < 4; ++r)
+        if (p->Resistance[r])
+            RII_ADD(0, 0, GlobalText[72], GlobalText[48 + r], Level + 1);
+
+    // ── Requisitos ──────────────────────────────────────────────────────────
+    if (ip->RequireStrength)
+        RII_RequireLine(73, ip->RequireStrength, *(const WORD*)(CA + 20));
+    if (ip->RequireDexterity)
+        RII_RequireLine(75, ip->RequireDexterity, *(const WORD*)(CA + 22));
+    if (ip->RequireLevel && type != 430)
+        RII_RequireLine(76, ip->RequireLevel, *(const WORD*)(CA + 14));
+    // Tipo 395: el original compara contra un local (v322) que el decompile no
+    // deja ver; se usa RequireEnergy, que es lo que imprime la linea.
+    if (type == 395 || ip->RequireEnergy)
+        RII_RequireLine(77, ip->RequireEnergy, *(const WORD*)(CA + 26));
+
+    if (type != 435)
+        ItemHelp_RequireClass((int)(uintptr_t)p);
+
+    // ── Lineas de botas / guantes / bastones ────────────────────────────────
+    if (type >= 352 && type < 384 && Level >= 5) {
+        RII_GAP();
+        RII_TXT(1, 1, 78);
+    }
+    if (type >= 320 && type < 352 && Level >= 5) {
+        RII_GAP();
+        RII_TXT(1, 1, 93);
+    }
+    if ((type >= 160 && type < 192) || type == 31) {
+        RII_GAP();
+        RII_ADD(1, 1, GlobalText[79], (ip->DamageMin >> 1) + 2 * Level);
+    }
+
+    // ── Opciones especiales (L2045-2200) ────────────────────────────────────
+    if (ip->SpecialNum) RII_GAP();
+    for (int i = 0; i < ip->SpecialNum && i < 9; ++i) {
+        const int s   = ip->Special[i];
+        const int val = ip->SpecialValue[i];
+        // Texto de la opcion: mismo switch que IDA (L2064-2175), via el helper
+        // que ya pasa los valores fijos de 66..79 y colapsa el %% de [87].  Para
+        // opciones sin texto (default, y 65 en 430..434) deja la linea vacia, que
+        // es lo que hace el original al saltar a LABEL_660.
+        int mana = 0;
+        if ((s >= 18 && s <= 24) || s == 49 || s == 56)
+            GetSkillInformation(s, 1, 0, &mana, 0, 0);
+        GetInventorySpecialOptionText(type, (BYTE)s, (BYTE)val, mana, RII_Line(DAT_07eaa154), 100);
+        RII_Style(DAT_07eaa154, 1, 0);
+        ++DAT_07eaa154;
+        if (s == 64)                     RII_ADD(1, 0, GlobalText[94], val);
+        else if (s == 49)                RII_TXT(5, 0, 179);
+        else if (type == 31 && s == 60)  RII_ADD(1, 0, GlobalText[89], val);
+    }
+    RII_GAP();
+
+    // ── Epilogo: alto del recuadro y dibujo (identico al port anterior) ─────
+    SIZE sz = { 0, 0 };
+    GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
+    const int h = sz.cy * DAT_07eaa158 / 2 + sz.cy * (DAT_07eaa154 - DAT_07eaa158);
+    int y = sy - (int)((float)h / g_fScreenRate_y);
+    if (y < 0) y = sy + 20 * p->Height;
+    FUN_004c2420(sx, y, DAT_07eaa154 < 30 ? DAT_07eaa154 : 30, 0, 2, 1);
+}
+#undef RII_ADD
+#undef RII_TXT
+#undef RII_OPT
+#undef RII_GAP
+
+void __cdecl RenderItemInfo(void* param_1, void* param_2, void* param_3_v, int param_4)
 {
     __try {
-        FUN_004c4650_impl(param_1, param_2, param_3_v, param_4);
+#if RENDERITEMINFO_FIEL
+        RenderItemInfo_IDA((int)(uintptr_t)param_1, (int)(uintptr_t)param_2,
+                           (ITEM*)param_3_v, param_4 != 0);
+#else
+        RenderItemInfo_impl(param_1, param_2, param_3_v, param_4);
+#endif
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         DbgLogPublic("RIP CRASHED inside _impl — caught by SEH");
         extern DWORD DAT_07eaa160;
@@ -1444,10 +1902,11 @@ void __cdecl FUN_004c4650(void* param_1, void* param_2, void* param_3_v, int par
     }
 }
 
-void __cdecl FUN_004c8d70(void* param_1, int param_2, void* param_3_v)
+// IDA: RenderRepairInfo (0x004C8D70)
+void __cdecl RenderRepairInfo(void* param_1, int param_2, void* param_3_v)
 {
     __try {
-        FUN_004c8d70_impl(param_1, param_2, param_3_v);
+        RenderRepairInfo_impl(param_1, param_2, param_3_v);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         DbgLogPublic("RRI CRASHED inside _impl — caught by SEH");
         extern DWORD DAT_07eaa160;
@@ -1455,10 +1914,11 @@ void __cdecl FUN_004c8d70(void* param_1, int param_2, void* param_3_v)
     }
 }
 
-// FUN_004c4650 @ 0x004C4650 — RenderItemInfo(int sx, int sy, ITEM* ip, bool bSell)
+// RenderItemInfo @ 0x004C4650 — RenderItemInfo(int sx, int sy, ITEM* ip, bool bSell)
 // param_3 = ITEM* (ushort array: [0]=type, [0x24]=options, [0x1b]=option flags, etc.)
 // unaff_EBP and unaff_ESI are self-assigned locally — anti-tamper noise.
-extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* param_3_v, int param_4)
+// IDA: RenderItemInfo (0x004C4650)
+extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* param_3_v, int param_4)
 {
     // 2026-05-08: defensive — si nos llaman antes de que WinMain initialice
     // el ItemAttribute table (DAT_07d78068), o si DAT_07d78068 fue clobbered
@@ -1551,8 +2011,13 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
     // port usaba `param_4` (bSell) como gate y ademas deducia compra-vs-venta
     // comparando el puntero del item contra el rango del pool de la tienda;
     // el binario lo decide con `Sell` a secas.
+    // 2026-09-12: el modo de ItemValue estaba invertido.  IDA L522-557:
+    //   if (Sell) { ItemValue(ip, 0) ... GlobalText[62] }
+    //   else      { ItemValue(ip, 1) ... GlobalText[63] }
+    // El segundo argumento NO es `Sell`: 0 = precio completo (el mismo que se
+    // cobra al comprar, sub_4D23B0 L416), 1 = precio de venta.
     if (ShopOpened != 0 && DAT_07eaa154 < 28) {
-        int   price = Item_CalculateValue((void*)param_3, param_4 ? 1 : 0);
+        int   price = Item_CalculateValue((void*)param_3, param_4 ? 0 : 1);
         char  priceStr[32];
         FormatThousands(priceStr, sizeof(priceStr), price);
         const char* gt = GlobalText[param_4 ? 62 : 63];
@@ -1771,13 +2236,14 @@ extern "C" void __cdecl FUN_004c4650_impl(void* param_1, void* param_2, void* pa
     }
 }
 
-// FUN_004c8d70 @ 0x004C8D70 — RenderRepairInfo(param_1, param_2, ITEM* ip)    [Kayito: RenderRepairInfo]
+// RenderRepairInfo @ 0x004C8D70 — RenderRepairInfo(param_1, param_2, ITEM* ip)    [Kayito: RenderRepairInfo]
 // Shows item tooltip in the repair NPC context. unaff_EBX=DAT_07cf1ffc, unaff_ESI=1 (anti-tamper).
+// 0x0055A63C: separador de media altura de RenderRepairInfo (lo agrego main, PR #35).
 static const char DAT_0055a63c[] = "\n";
 
-extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* param_3_v) // RenderRepairInfo
+extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* param_3_v) // RenderRepairInfo
 {
-    // 2026-05-08: same defensive guards as FUN_004c4650 (sibling function).
+    // 2026-05-08: same defensive guards as RenderItemInfo (sibling function).
     // Use the backup-aware accessor to recover DAT_07d78068 if clobbered.
     unsigned int attrBaseOK_ = ItemAttribute_Base();
     if (attrBaseOK_ == 0) return;
@@ -1836,17 +2302,28 @@ extern "C" void __cdecl FUN_004c8d70_impl(void* param_1, int param_2, void* para
     // Slot 1: Costo de reparacion
     unsigned int maxDur = Item_CalculateMaxDurability(param_3, attrBase, (int)level) & 0xffff;
     unsigned int curDur = (unsigned int)*(unsigned char*)((char*)param_3 + 0x1a);
-    char costText[100] = { 0 };
+    // IDA RenderRepairInfo: RepairEnable_0 = 1 con el item sano y = 2 con el
+    // item dañado; el 2 es el martillo animado de RenderCursor, y Scene_MapTick
+    // lo vuelve a 1 cada frame.  Estas escrituras se habian quitado el
+    // 2026-05-08 porque el "fix" de Scene_MapTick de entonces las trababa;
+    // desde que Scene_MapTick normaliza como IDA (2026-09-12) no hace falta.
+    // IDA L133-150: la linea del costo es sprintf(GlobalText[238], Buffer), con
+    // Buffer = ConvertRepairGold(...) si el item esta danado y "0" (0x55A5F8)
+    // si esta sano; color = tier (v12), en negrita.
+    // 2026-09-12: el port formateaba GlobalText[238] ("Costo de reparacion: %s",
+    // alias DAT_07d3b40c) SIN argumento -- de ahi el "%s" en basura -- y
+    // escribia el precio en lpString+64, en medio de la linea anterior.
+    char repairGold[64] = "0";
     if (curDur < maxDur) {
         DAT_07eaa134 = 2;
+        // BUG-FIX 2026-04-26 (audit #3): same ItemValue/ConvertRepairGold pair.
         int gold = Item_CalculateValue((void*)param_3, 2);
-        Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, (short)itemType, costText);
-        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, GlobalText[238], costText);
+        Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, (short)itemType, repairGold);
     } else {
         DAT_07eaa134 = 1;
-        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, GlobalText[238], "0");
     }
-    DAT_07e91708[DAT_07eaa154] = tier;
+    crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, GlobalText[238], repairGold);
+    DAT_07e91708[DAT_07eaa154] = (int)tier;   // TextListColor = v12
     DAT_07ea7b10[DAT_07eaa154] = 1;
     DAT_07eaa154++;
 

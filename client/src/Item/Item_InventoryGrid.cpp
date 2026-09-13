@@ -57,7 +57,7 @@ void __cdecl InsertWarehouseItem_stub(unsigned int param_1, unsigned char* param
                     }
 
                     // ItemConvert — applies level/option to the ITEM slot (minimal stub body).
-                    FUN_0047b910((int)(warehouseBase + iVar1), (int)param_2[1], (int)attr2);
+                    ItemConvert((int)(warehouseBase + iVar1), (int)param_2[1], (int)attr2);
 
                     iVar6 = iVar6 + 1;
                 } while (iVar6 < (int)(unsigned int)pAttr[iVar3].Width);

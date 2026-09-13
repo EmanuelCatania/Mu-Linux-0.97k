@@ -24,12 +24,12 @@
 //   UI_RenderInputField → RenderInputText
 //   GL_SetBlendAdditive → EnableAlphaBlend()            — (no era Frame_UpdateTimer)
 //   GL_ResetState → DisableAlphaBlend()           — (no era GL_ResetBlend)
-//   FUN_0051af50 → RenderErrorMessage()          — (no era Chat_Render)
+//   RenderErrorMessage → RenderErrorMessage()          — (no era Chat_Render)
 //   FUN_004f64d0 → Scene_MapTick()               — (no era UI_Render)
 //   UI_RenderNotices → RenderNotices()               — (no era StatusBar_Render)
 //   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — DAT_005590ac=g_bUseChatListBox
 //   UI_UpdateFpsCounter → RenderDebugWindow()
-//   FUN_004c3530 → RenderHelpWindow()
+//   RenderHelpWindow → RenderHelpWindow()
 //   Cursor_Render → RenderCursor()                — (no era Minimap_Render)
 //   FUN_0051e0c0 → RenderInfomation3D()          — (no era Cursor_Render)
 //   GL_End2D → EndBitmap()                   — 2x glPopMatrix (balancea BeginBitmap+BeginSprite)
@@ -278,13 +278,13 @@ uint Scene_Login(void)
     }
 
     // ── Final subsystems (nombres corregidos desde IDA) ──────────────────────
-    FUN_0051af50();    // RenderErrorMessage
+    RenderErrorMessage();    // RenderErrorMessage
     FUN_004f64d0();    // Scene_MapTick
     UI_RenderNotices();    // RenderNotices
     if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
         UI_RenderChatLogOverlay();   // sub_480980 — chat log render
     UI_UpdateFpsCounter();    // RenderDebugWindow
-    FUN_004c3530();    // RenderHelpWindow
+    RenderHelpWindow();    // RenderHelpWindow
     Cursor_Render();    // RenderCursor
     FUN_0051e0c0();    // RenderInfomation3D
 

@@ -8,7 +8,7 @@
 extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int gridW);
 
 // IDA: sub_48B680 @ 0x0048B680 (1006 bytes) — sin nombre en el binario;
-// `FUN_0048b680` es el alias del port.  Auto-swap de arma de Elf.
+// `Item_AutoEquipAmmo` es el alias del port.  Auto-swap de arma de Elf.
 // 1. Calls FUN_004824c0() to get equipped weapon type index.
 // 2. If weapon == -1, returns immediately (no weapon equipped).
 // 3. anti-tamper hash table — skipped (encrypt CharacterMachine)
@@ -25,7 +25,8 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
 // FUN_004824C0, then uses that slot for the local drag state and the 0x24 item
 // move request.  The encrypted CharacterMachine bookkeeping surrounding this
 // logic is intentionally not reproduced here.
-void __cdecl FUN_0048b680(int /*unused*/) {
+// IDA: sub_48B680 (0x0048B680)
+void __cdecl Item_AutoEquipAmmo(int /*unused*/) {
     const int inventorySlot = Item_FindElfWeaponInventorySlot();
     if (inventorySlot < 0 || inventorySlot >= 64)
         return;

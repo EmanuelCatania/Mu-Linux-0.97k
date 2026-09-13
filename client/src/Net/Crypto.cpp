@@ -30,7 +30,7 @@ extern void __cdecl FUN_0054158c(void* ptr);
 // -- Declaraciones de funciones que viven en otros modulos --------------
 // Agregadas por el refactor B3: se declaraban localmente en el archivo del
 // que se movieron estas funciones. Migrar a functions.h mas adelante.
-void __fastcall FUN_00401960(int param_1);
+void __fastcall CSQuest_clearQuest(int param_1);
 void __fastcall FUN_004079b0(void *node, float x, float y, float z, int pinned);
 void __fastcall FUN_00407b30(void *node, float *out);
 float __fastcall FUN_00407b50(void *a, int b, float *c);
@@ -824,7 +824,7 @@ int __cdecl FUN_00402850(void *param_1) {
         DAT_083a4124 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        FUN_00401960((int)param_1);
+        CSQuest_clearQuest((int)param_1);
     }
     if (DAT_083a413c != 0) DAT_083a413c = 0;
     return 1;

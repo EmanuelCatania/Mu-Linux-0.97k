@@ -121,7 +121,7 @@ void __cdecl CharSelect_SendSelectPacket(void)
     Input_ClearState(1);              // ClearInput(1)
     DAT_00559c84 = 0;             // InputEnable = false
 }
-// FUN_0051af50 — implemented in src/UI/UI_StatsPanel.cpp (UI_StatsPanel_Render)
+// RenderErrorMessage — implemented in src/UI/UI_StatsPanel.cpp (UI_StatsPanel_Render)
 // FUN_0051e0c0 — implemented in src/Render/Scene_CharPreview.cpp
 // FUN_0051e7e0 — implemented in src/Scene/Scene_ServerSelect_Input.cpp (server select hit-test, 337 lines)
 // FUN_005239a0 — implemented in src/Render/Scene_CharPreview.cpp

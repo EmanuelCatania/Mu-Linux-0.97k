@@ -74,7 +74,7 @@ void __cdecl RenderTipText_stub(int sx, int sy, char* Text) {
 
     // Render text (original uses 8-param thiscall via DAT_055c9ff8; using 5-param stub)
     // Full call: CUIRenderText__RenderText(this=DAT_055c9ff8, sx, sy, Text, 0, 0, 1, NULL, 0x280)
-    FUN_0040f610((HDC)(uintptr_t)DAT_055c9ff8, sx, sy, Text, 0);
+    CUIRenderText_RenderText((HDC)(uintptr_t)DAT_055c9ff8, sx, sy, Text, 0);
 
     // Restore prior blend mode via switch
     switch (savedBlendType) {

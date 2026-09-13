@@ -47,14 +47,14 @@ int __cdecl FUN_004c3dd0(int param_1) {
 
 // RenderInformation @ 0x0051E200 (58 bytes) — render all HUD info layers
 void __cdecl RenderInformation(void) {
-    FUN_0051af50(); // RenderErrorMessage / stats panel
+    RenderErrorMessage(); // RenderErrorMessage / stats panel
     FUN_004f64d0(); // Scene_MapTick
     UI_RenderNotices(); // RenderNotices
     if ((DAT_005590ac == 1) || (DAT_005615c0 != 5)) {
         UI_RenderChatLogOverlay(); // SystemText / chat list
     }
     UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
-    FUN_004c3530(); // RenderHelpWindow / item info
+    RenderHelpWindow(); // RenderHelpWindow / item info
     Cursor_Render(); // RenderCursor
     FUN_0051e0c0(); // RenderInfomation3D
 }

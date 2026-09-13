@@ -359,14 +359,14 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
     // prefijo "Excelente" en el nombre.
     // Las opciones excellent SI se veian porque salen de Special[]/SpecialValue[],
     // que ItemConvert llena aparte — y a esa funcion los argumentos le llegaban
-    // bien (ver la llamada FUN_0047b910(slot, optByte, byteHi) mas abajo).
+    // bien (ver la llamada ItemConvert(slot, optByte, byteHi) mas abajo).
     *(BYTE*)(slot + 27)  = byteHi;
     *(DWORD*)(slot + 56) = durability ? (DWORD)durability : 1u;
     *(BYTE*)(slot + 60)  = byteHi;
     *(BYTE*)(slot + 61)  = extByte;
     ItemData_FillStats((ITEM*)slot, level);
     ((ITEM*)slot)->Level = (int)optByte;
-    FUN_0047b910((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
+    ItemConvert((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
     // Slot ocupado real del equipo. En la base más nueva esto vive en Number;
     // en nuestra estructura 97k lo espejamos en Key.
     ITEM* equip = (ITEM*)slot;
@@ -433,7 +433,7 @@ extern "C" void __cdecl AddItemToGrid(BYTE* gridBase, int gridW, int gridH,
 
             ItemData_FillStats(slot, level);
             slot->Level      = (int)optByte;
-            FUN_0047b910((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
+            ItemConvert((int)(uintptr_t)slot, (int)optByte, (int)byteHi);
 
             // 2026-05-08: BUG-FIX item +N glow.
             // sub_4E38B0 pasa `*(int*)(slot+4)` (= slot->Level int) como param_6

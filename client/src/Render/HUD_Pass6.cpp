@@ -401,26 +401,23 @@ static void InventoryEquipmentHitTest(void)
         DAT_07ea840c = (DWORD)(x0 + s.w / 2);
         DAT_07ea8408 = (DWORD)y0;
 
-        if (DAT_07eaa134 != 0) {
-            bool nonRepairable =
-                (type >= 416 && type <= 419) ||
-                (type == 426) ||
-                (type == 135) ||
-                (type == 143) ||
-                (type >= 448) ||
-                (type >= 391 && type <= 403) ||
+        // IDA sub_4CDC70 L384-400: con el boton apretado, antes del pickup.
+        //   if (Teleport) salir;
+        //   if (RepairEnable_0) { tipo no reparable -> salir;
+        //                         si no, C1:05:34:<slot>:<RepairEnable> }
+        // 2026-09-12: faltaba entero; la reparacion con el martillo andaba en
+        // el grid del inventario pero en las casillas de equipo levantaba el item.
+        if (DAT_083a4124 != 0 && DAT_05826d14 != 0) return;
+        if (DAT_083a4124 != 0 && DAT_07eaa134 != 0) {
+            const bool notRepairable =
+                (type >= 416 && type <= 419) || type == 426 || type == 135 ||
+                type == 143 || type >= 448 || (type >= 391 && type <= 403) ||
                 (type >= 430 && type <= 435);
-
-            if (!nonRepairable && DAT_083a4124 != 0) {
-                DAT_083a4124 = 0;
-                BYTE pkt[5];
-                pkt[0] = 0xC1;
-                pkt[1] = 5;
-                pkt[2] = 0x34;
-                pkt[3] = (BYTE)s.slotIdx;
-                pkt[4] = (BYTE)DAT_07eaa138;
-                Net_SendSmallPacket(pkt, 5);
-            }
+            if (notRepairable) return;
+            DAT_083a4124 = 0;
+            extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
+            BYTE pkt[5] = { 0xC1, 0x05, 0x34, (BYTE)s.slotIdx, (BYTE)DAT_07eaa138 };
+            Net_SendSmallPacket(pkt, sizeof(pkt));
             return;
         }
 
@@ -514,7 +511,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     // ── In-world click handler hook (2026-05-08) ────────────────────────────
     // FUN_004d23b0 = grid hit-test + pickup + right-click use dispatcher.
     // Must run BEFORE RenderItemsBoxes so highlight bytes are set when the
-    // item bitmaps are painted. Drop dispatcher (FUN_004df410) is invoked
+    // item bitmaps are painted. Drop dispatcher (Inventory_DropDispatch) is invoked
     // once after all the panel-specific hit-tests in Render_QuickButtons_.
     FUN_004d23b0((char*)(uintptr_t)(InventoryStartX + 15),
                  (int)(InventoryStartY + 200),
@@ -963,7 +960,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
 
     // Class banner — cross-fade IDA-faithful entre clase y server-name.
     // Fórmula original (IDA + 4 DLL sources): pulse=sin(t)+1, α_class=2-pulse,
-    // α_zone=pulse. Funciona correctamente ahora que FUN_0040f610 respeta
+    // α_zone=pulse. Funciona correctamente ahora que CUIRenderText_RenderText respeta
     // el alpha del caller (antes lo pisaba siempre a 1.0 → ambos textos
     // visibles simultáneo → "(Sou Maetee)" garbled).
     float pulse = (float)sin((double)WorldTime * 0.001) + 1.0f;
@@ -1571,106 +1568,79 @@ extern "C" void __cdecl RenderShopInterface(void)
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
                      (float)((double)dword_7EAA0CC + 50.0),
                      (DWORD)(uintptr_t)ShopItems, 8, 15);
+    glColor3f(1.0f, 1.0f, 1.0f);
 
-    // Original main.exe FUN_004f1f50: bottom shop controls at Y = panelY + 365.0f
-    float btn1_x = (float)dword_7EAA0C8 + 25.0f;
-    float btn_y  = (float)dword_7EAA0CC + 365.0f;
-
-    // Button 1 (Buy): texture 283 (buy_02) if DAT_07eaa152 == 0, else 282 (buy_01)
-    BYTE state152 = ((BYTE*)&DAT_07eaa150)[2];
-    int btn1_tex = (state152 == 0) ? 283 : 282;
-    GL_DrawTexture(btn1_tex, btn1_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    if ((double)MouseX >= btn1_x && (double)MouseX < btn1_x + 24.0 &&
-        (double)MouseY >= btn_y  && (double)MouseY < btn_y  + 24.0)
+    // IDA RenderShopInterface (0x4F1F50) L130-265: fila de botones en y+365.
+    // El hit-test lo hace FUN_004ec330 (sub_4EC330).  Hasta 2026-09-12 no se
+    // dibujaba ninguno: el herrero no mostraba los de reparacion.
     {
-        SelectObject(m_hFontDC, g_hFont);
-        m_dwTextColor = 0xFFFFFFFFu;
-        m_dwBackColor = 0xFF000000u;
-        RenderTipText((int)btn1_x, (int)btn_y - 12, GlobalText[231]);
-    }
-
-    // Button 2 (Sell): texture 285 (sell_02) if DAT_07eaa152 == 1, else 284 (sell_01)
-    float btn2_x = (float)dword_7EAA0C8 + 55.0f;
-    int btn2_tex = (state152 == 1) ? 285 : 284;
-    GL_DrawTexture(btn2_tex, btn2_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    if ((double)MouseX >= btn2_x && (double)MouseX < btn2_x + 24.0 &&
-        (double)MouseY >= btn_y  && (double)MouseY < btn_y  + 24.0)
-    {
-        SelectObject(m_hFontDC, g_hFont);
-        m_dwTextColor = 0xFFFFFFFFu;
-        m_dwBackColor = 0xFF000000u;
-        RenderTipText((int)btn2_x, (int)btn_y - 12, GlobalText[232]);
-    }
-
-    // Repair controls: original main.exe enables them for NPC type values 243, 246 and 251 (DAT_07eaa132 != 0)
-    if (DAT_07eaa132 != '\0')
-    {
-        // Button 3 (Repair): texture 287 (repair_02) if DAT_07eaa134 != 0, else 286 (repair_01)
-        float btn3_x = (float)dword_7EAA0C8 + 85.0f;
-        int btn3_tex = (DAT_07eaa134 != 0) ? 287 : 286;
-        GL_DrawTexture(btn3_tex, btn3_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-        if ((double)MouseX >= btn3_x && (double)MouseX < btn3_x + 24.0 &&
-            (double)MouseY >= btn_y  && (double)MouseY < btn_y  + 24.0)
-        {
+        const BYTE shopMode = ((BYTE*)&DAT_07eaa150)[2];     // BYTE2(dword_7EAA150)
+        auto over = [](float bx, float by) {
+            return (double)MouseX >= bx && (double)MouseX < bx + 24.0 &&
+                   (double)MouseY >= by && (double)MouseY < by + 24.0;
+        };
+        auto tip = [](float bx, float by, int text) {
             SelectObject(m_hFontDC, g_hFont);
-            m_dwTextColor = 0xFFFFFFFFu;
-            m_dwBackColor = 0xFF000000u;
-            RenderTipText((int)btn3_x, (int)btn_y - 12, GlobalText[233]);
-        }
+            RenderTipText((int)bx, (int)by - 12, GlobalText[text]);
+        };
+        float bx = (float)((double)dword_7EAA0C8 + 25.0);
+        float by = (float)((double)dword_7EAA0CC + 365.0);
+        GL_DrawTexture(shopMode ? 282 : 283, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        if (over(bx, by)) tip(bx, by, 231);
 
-        // Button 4 (Repair All): reuses texture 286 (and 287 on click) with glColor3f(0.5f, 0.7f, 1.0f)
-        float btn4_x = (float)dword_7EAA0C8 + 115.0f;
-        glColor3f(0.5f, 0.7f, 1.0f);
-        GL_DrawTexture(286, btn4_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-        if ((double)MouseX >= btn4_x && (double)MouseX < btn4_x + 24.0 &&
-            (double)MouseY >= btn_y  && (double)MouseY < btn_y  + 24.0)
-        {
-            if (DAT_083a4124 != 0) {
-                DAT_083a4124 = 0;
-                GL_DrawTexture(287, btn4_x, btn_y, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        bx = (float)((double)dword_7EAA0C8 + 55.0);
+        GL_DrawTexture(shopMode == 1 ? 285 : 284, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+        if (over(bx, by)) tip(bx, by, 232);
+
+        if (DAT_07eaa132) {                                  // byte_7EAA132: herrero
+            bx = (float)((double)dword_7EAA0C8 + 85.0);
+            GL_DrawTexture(RepairEnable_0 ? 287 : 286, bx, by, 24.0f, 24.0f,
+                           0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+            if (over(bx, by)) tip(bx, by, 233);
+
+            // "Reparar todo": icono 286 tenido de azul, 287 mientras se aprieta.
+            // (IDA ademas pone MouseLButtonPush = 0 aca; no se replica porque
+            // el click lo consume FUN_004ec330.)
+            bx = (float)((double)dword_7EAA0C8 + 115.0);
+            glColor3f(0.5f, 0.69999999f, 1.0f);
+            GL_DrawTexture(286, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+            if (over(bx, by)) {
+                if (DAT_083a4124)
+                    GL_DrawTexture(287, bx, by, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
+                tip(bx, by, 237);
             }
-            SelectObject(m_hFontDC, g_hFont);
-            m_dwTextColor = 0xFFFFFFFFu;
-            m_dwBackColor = 0xFF000000u;
-            RenderTipText((int)btn4_x, (int)btn_y - 12, GlobalText[237]);
+            glColor3f(1.0f, 1.0f, 1.0f);
+
+            // Caja con el costo de reparar todo (dword_7EAA0F8, lo calcula sub_4C4080).
+            bx -= 60.0f;
+            by += 30.0f;
+            GL_DrawTexture(271, bx, by, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
+            m_dwBackColor = 0xFF282828u;      // -14145496
+            m_dwTextColor = 0xFF96DCFFu;      // -6890241
+            const int cost = (int)DAT_07eaa0f8;
+            CHAR Buffer[64];
+            if      (cost < 1000)       wsprintfA(Buffer, "%d", cost % 1000);
+            else if (cost < 1000000)    wsprintfA(Buffer, "%d,%03d", cost % 1000000 / 1000, cost % 1000);
+            else if (cost < 1000000000) wsprintfA(Buffer, "%d,%03d,%03d", cost % 1000000000 / 1000000,
+                                                  cost % 1000000 / 1000, cost % 1000);
+            else                        wsprintfA(Buffer, "%d,%03d,%03d,%03d", cost / 1000000000,
+                                                  cost % 1000000000 / 1000000, cost % 1000000 / 1000,
+                                                  cost % 1000);
+            SelectObject(m_hFontDC, g_hFontBold);
+            const int ty = (int)by + 3;
+            RenderText((int)bx - 35, ty, GlobalText[239], 0, 0, 0);
+            if (cost < 10000000)
+                m_dwTextColor = (cost < 1000000) ? ((cost < 100000) ? 0xFF96DCFFu : 0xFF18C900u)
+                                                 : 0xFF0096FFu;   // -16738561
+            else
+                m_dwTextColor = 0xFF0000FFu;                      // -16776961
+            RenderText((int)bx + 10, ty, Buffer, 0, 0, 0);
         }
-
-        glColor3f(1.0f, 1.0f, 1.0f);
-
-        // Repair cost box: texture 271 (Item_Money.jpg) at [panelX + 55.0f, panelY + 395.0f], 113x18
-        float box_x = btn4_x - 60.0f;
-        float box_y = btn_y + 30.0f;
-        GL_DrawTexture(271, box_x, box_y, 113.0f, 18.0f, 0.0f, 0.0f, 0.8828125f, 0.5625f, 1, 1);
-
-        // Thousands formatting of DAT_07eaa0f8
-        char textBuf[64];
-        int cost = DAT_07eaa0f8;
-        if (cost < 1000) {
-            wsprintfA(textBuf, "%d", cost);
-        } else if (cost < 1000000) {
-            wsprintfA(textBuf, "%d,%03d", cost / 1000, cost % 1000);
-        } else if (cost < 1000000000) {
-            wsprintfA(textBuf, "%d,%03d,%03d", cost / 1000000, (cost % 1000000) / 1000, cost % 1000);
-        } else {
-            wsprintfA(textBuf, "%d,%03d,%03d,%03d", cost / 1000000000, (cost % 1000000000) / 1000000, (cost % 1000000) / 1000, cost % 1000);
-        }
-
-        SelectObject(m_hFontDC, g_hFontBold);
-        m_dwBackColor = 0xFF282828u;
-        m_dwTextColor = 0xFF96DCFFu;
-        RenderText((int)box_x - 35, (int)box_y + 3, GlobalText[239], 0, 0, (SIZE*)0);
-
-        if (cost < 10000000) {
-            if (cost < 1000000) {
-                m_dwTextColor = (cost < 100000) ? 0xFF96DCFFu : 0xFF18C800u;
-            } else {
-                m_dwTextColor = 0xFF0096FFu;
-            }
-        } else {
-            m_dwTextColor = 0xFF0000FFu;
-        }
-        RenderText((int)box_x + 10, (int)box_y + 3, textBuf, 0, 0, (SIZE*)0);
     }
+    // 2026-09-12: aca el port dibujaba una X de cierre (bitmap 280) en
+    // (+25, +395).  RenderShopInterface (0x4F1F50) no la tiene: la tienda se
+    // cierra con la X del inventario (sub_4EC330, InventoryStartX + 25).  Esa
+    // X inventada tapaba la etiqueta de "reparar todo".
 }
 
 static int ChaosMixLegacyValue()

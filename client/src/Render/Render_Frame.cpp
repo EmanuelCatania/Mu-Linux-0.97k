@@ -108,7 +108,7 @@
 // ── 2D OVERLAY PASS ──────────────────────────────────────────────────────────
 //
 //   if !debug_view: Render_GameFrame()  → 2D HUD overlay (HUD_Render.cpp)
-//   FUN_0051af50()    → CharInfo_TextRender()       — texto info personaje (stats panel)
+//   RenderErrorMessage()    → CharInfo_TextRender()       — texto info personaje (stats panel)
 //                         múltiples LPCSTR, tagSIZE, texto centrado; ~40+ líneas
 //   FUN_004f64d0()    → TeleportUI_Update()         — update/click handler del teleport
 //                         GL_ResetState() + DAT_07e11d6e=0; hit-test mouse vs bounds
@@ -123,7 +123,7 @@
 //   UI_UpdateFpsCounter()    → FPS_TimerReset()            — tick por segundo
 //                         SelectObject(normal_font); timeGetTime() % 1000:
 //                         si > 999ms: resetea DAT_07e016f0 + DAT_07e11dcc=0 (frame counter)
-//   FUN_004c3530()    → CondText_Render()           — texto condicional (DAT_07e11d20==1)
+//   RenderHelpWindow()    → CondText_Render()           — texto condicional (DAT_07e11d20==1)
 //                         GL_ResetState() + DAT_07eaa154=0; operaciones de string
 //   Cursor_Render()    → AnimUI_Render() × 2        — elemento UI animado (6 frames)
 //                         SetBlendMode + glColor3f(1,1,1)
@@ -192,12 +192,12 @@
 //   Mouse_UpdateHoverTargets  → EntityInfo_Overlay()           — overlay info entidades (HashTable)
 //   GL_Begin2D  → GL_SetupOrtho2D()              — glPushMatrix+glMatrixMode+glViewport
 //   FUN_004cb6f0  → Target_Render()               — info entidad seleccionada (entity lookup)
-//   FUN_0051af50  → CharInfo_TextRender()          — texto stats panel (~40+ líneas)
+//   RenderErrorMessage  → CharInfo_TextRender()          — texto stats panel (~40+ líneas)
 //   FUN_004f64d0  → TeleportUI_Update()            — hit-test teleport UI + GL reset
 //   UI_RenderNotices  → PlayerName_Render()           — nombres jugadores con parpadeo
 //   UI_RenderChatLogOverlay  → SystemText_Render()            — notificaciones sistema
 //   UI_UpdateFpsCounter  → FPS_TimerReset()              — tick/s: timeGetTime %1000 reset
-//   FUN_004c3530  → CondText_Render()             — texto condicional DAT_07e11d20
+//   RenderHelpWindow  → CondText_Render()             — texto condicional DAT_07e11d20
 //   Cursor_Render  → AnimUI_Render()              — elemento UI 6-frame animado (×2)
 //   FUN_0051e0c0  → SpecialMap_Render3D()         — 3D pass mapas 0x97/0x99
 //   FUN_0040f670  → Watchdog_Reset(obj)

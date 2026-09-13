@@ -440,7 +440,7 @@
 //         FUN_004f6420();  // TeleportEffect_Render()
 //       // Renderizar skill hotbar (items con cooldown):
 //       for i in 0..N:
-//         iVar1 = FUN_00482be0(i);   // GetHotbarItem(i)
+//         iVar1 = Item_FindQuickSlotByCategory(i);   // GetHotbarItem(i)
 //         if iVar1 != -1:
 //           FUN_004e1be0((float)local_14, 454.0, 20.0, 20.0,
 //                        (&DAT_07ea8410)[iVar1*0x22], (&DAT_07ea8414)[iVar1*0x11], 0, '\0');
@@ -475,7 +475,7 @@
 //   FUN_004e1be0   → DrawItemIcon(x,y,w,h,item_id,count,?,shadow)
 //   FUN_004f5ce0   → Skill_RenderEffects()
 //   FUN_004f6420   → TeleportEffect_Render()
-//   FUN_00482be0   → GetHotbarItem(slot_idx) → item_idx
+//   Item_FindQuickSlotByCategory   → GetHotbarItem(slot_idx) → item_idx
 //   GL_GetModelViewMatrix   → LoadCameraMatrix(mat_ptr)
 //   GL_EnableDepthTest   → EnableDepthTest()
 //   GL_EnableDepthWrites   → EnableDepthWrite()

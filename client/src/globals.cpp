@@ -622,7 +622,7 @@ DWORD    DAT_05826ca4  = 0;
 DWORD    DAT_05826ca8  = 0;
 DWORD    DAT_05826cac  = 0;
 DWORD    DAT_05826cb0  = 0;
-DWORD    DAT_05826cb4  = 0;
+char     DAT_05826cb4[12] = {0};   // IDA: ChatWhisperID (0x05826CB4); era un DWORD suelto sin uso
 DWORD    DAT_05826cc0  = 0;
 DWORD    DAT_05826cc8  = 0;
 char     DAT_05826cc9  = 0;
@@ -634,7 +634,6 @@ DWORD    DAT_05826cf4  = 0;
 DWORD    DAT_05826cf8  = 0;
 DWORD    DAT_05826cf0  = 0;  // g_bGameServerConnected
 DWORD    DAT_05826d08  = 0;
-int      DAT_05826d04  = 0;
 char     DAT_05826d14  = 0;   // Teleport (IDA @0x05826D14) — flag de gate/teleport en curso
 DWORD    DAT_05826d18  = 0;   // cooldown de COMPRA en tienda (IDA dword_5826D18)
 DWORD    DAT_05826d1c  = 0;   // cooldown de equipar/usar item (EnableUse)
@@ -1350,7 +1349,7 @@ float   _DAT_00552cbc = 1190.0f;
 // Server select input
 DWORD    DAT_0056169c = 0;
 
-// Char menu UI builder (FUN_004c3530)
+// Char menu UI builder (RenderHelpWindow)
 int      DAT_07e11d20 = 0;
 int      DAT_07e11d24 = 0;
 char     lpString_07e90798[3000] = {};  // 30 slots * 100 bytes
@@ -1475,7 +1474,7 @@ float   _DAT_0055294c = 0.35f;   // Entity_UpdateRender sin amplitude
 float   _DAT_00552acc = -0.02f;
 float   _DAT_00552914 = 0.02f;
 
-// UI_InGameMenu state machine (FUN_00514310)
+// UI_InGameMenu state machine (UI_InGameMenu)
 DWORD    DAT_083a7c04  = 0;
 DWORD    DAT_083a7c08  = 0;
 char     DAT_083a7c09  = 0;
@@ -1499,7 +1498,7 @@ DWORD    DAT_07eaa104  = 0;
 DWORD    DAT_07eaa108  = 0;
 DWORD    DAT_07eaa148  = 0;
 
-// Chat globals added to globals.h in prior session (from FUN_004b14f0 analysis)
+// Chat globals added to globals.h in prior session (from Chat_InputTick analysis)
 // DAT_00559bf1 = byte_559BF1 = toggle "Ver chat on/off" (tecla F2).
 // FIX 2026-07-19: default IDA = 1 (verificado: byte en 0x559BF1 = 0x01), estaba en 0.
 // Con 0, el chat normal (canal 3) se descartaba en DOS lugares:
@@ -1731,7 +1730,7 @@ int      DAT_07e91528[12 * 10] = {};
 // char     DAT_07d359d0  = 0;
 int      DAT_00559fe0  = -1;
 
-// UI_StatsPanel (FUN_0051af50) globals
+// UI_StatsPanel (RenderErrorMessage) globals
 float   _DAT_00552854 = 85.0f;
 float   _DAT_00552a2c = 35.0f;
 float   _DAT_00552ae4 = 0.03125f;
@@ -1768,7 +1767,7 @@ char     DAT_083a4348[10][1][38] = {};   // g_lpszDialogAnswer (10 x 38 = 380)
 // DAT_083a7c0c — defined above (DWORD, line 880)
 // DAT_083a4124 — defined above (DWORD, line 634)
 // _DAT_00552cac — defined above (float, line 141)
-// Options submenu (0x96) toggle labels — rendered by UI_StatsPanel FUN_0051af50
+// Options submenu (0x96) toggle labels — rendered by UI_StatsPanel RenderErrorMessage
 // L152-175. El render llama crt_sprintf(buf, s__s_On_...) sin argumentos, por
 // lo que el string debe ser literal (sin %s). Los 4 slots corresponden a los
 // toggles m_bAutoAttack (DAT_00559c5c) y m_bWhisperSound (DAT_07e11d80), NO
@@ -1786,7 +1785,7 @@ char     lpString_0056186c[32] = {};
 // con GlobalText[381..385,388] al arrancar (ver src/Local/Text_Data.cpp).
 // Layout: stride 300 (0x12c).
 //
-// Orden real verificado en UI_StatsPanel.cpp FUN_0051af50 state 0x6e:
+// Orden real verificado en UI_StatsPanel.cpp RenderErrorMessage state 0x6e:
 //   07d45ba0 → SIEMPRE button 0 (Y=0x41 center)           = "Salir del juego"
 //   07d45ccc → button 1 en charselect/ingame (Y=0x5f)     = "Ir a otro servidor"
 //   07d45df8 → button 2 en ingame (Y=0x7d)                = "Ir a otro personaje"
@@ -2762,7 +2761,6 @@ char   WhisperRegistID[28][4] = {};
 void  *DAT_055c9b98       = NULL;   // RB-tree sentinel (NIL)
 float  CameraAngle[3]     = {0};
 float  CameraPosition[3]  = {0};
-int    _g_bEventChipDialogEnable = 0;
 // InventoryOpened/CharacterOpened/etc. are now #define aliases for
 // DAT_07eaa117/116/etc. — see globals.h. Storage is the byte-sized DAT_
 // globals defined above (lines ~745-753).
@@ -2778,7 +2776,7 @@ DWORD  DAT_0055339c       = 0;
 // 0x559c78 / 0x559c80 (= DAT_00559c78 / DAT_00559c80). Verificado por disasm
 // (sub_40D610 @0x40D734: `mov [0x559c78], 0xffff9664`, y sub_480980 idéntico).
 // Estaban declarados aparte → todo el código que setea m_dwTextColor (HUD_Pass1/2/3,
-// ChatListBox render) escribía a un global que el render de texto (FUN_0040f610, lee
+// ChatListBox render) escribía a un global que el render de texto (CUIRenderText_RenderText, lee
 // DAT_00559c78) NUNCA leía → colores perdidos = texto blanco. Ahora son macros
 // (globals.h) que apuntan al global real. Ver [[charselect-deferred-issues]].
 // g_lpszMessageBoxCustom es un alias de DAT_083a44c4 (ver globals.h).
@@ -2799,14 +2797,10 @@ int    DAT_07e11988       = -1;
 int    DAT_07e11e18       = 1;
 // DAT_07e11d24 already defined above (line ~873)
 // DAT_07e11d1c already defined above (line ~804)
-int    DAT_07e11d18       = 0;
-int    DAT_07e11d14       = 0;
 BYTE   DAT_00559c6d       = 0xFF;
-short  DAT_07e11e1c       = 0;
 short  DAT_07e11e20       = -1;
 short  DAT_07e11e22       = -1;
 short  DAT_07e11e24       = -1;
-BYTE   DAT_07e11e26       = 0;
 int    DAT_07e11980       = 0;
 
 // Batch 19 — SendCheck globals

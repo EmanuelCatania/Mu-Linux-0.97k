@@ -42,7 +42,7 @@
 //   case 0x00:  Net_SendPacket(puVar8)         — re-queue/echo packet
 //
 //   case 0x01:  entity = FUN_0045ac80(byte[3]*256 + byte[2])
-//               FUN_00481ba0(entity+0x1c1, puVar8+5, entity, 0, -1)
+//               CreateChat(entity+0x1c1, puVar8+5, entity, 0, -1)
 //               → entity name/class update (entity stride 0x394 at DAT_07abf5d0)
 //
 //   case 0x02:  World-enter / spawn position:
@@ -358,7 +358,7 @@
 //
 // ── DEFAULT ───────────────────────────────────────────────────────────────────
 //
-//   Unrecognized opcode → FUN_004cd3b0() (log/discard)
+//   Unrecognized opcode → Item_ReturnPickedItem() (log/discard)
 //
 // ── C2 / ENCRYPTED PACKET PATH ───────────────────────────────────────────────
 //
@@ -377,7 +377,7 @@
 //   FUN_0043E010  → Net_GetFreeBuffer(pool)
 //   FUN_0045ac80  → Entity_GetIndex(entityId)  — returns 0-based entity slot
 //   FUN_0045ac20  → Entity_Spawn(entityId)     — create or update entity slot
-//   FUN_00481ba0  → Entity_UpdateNameData(name, data, entity, 0, -1)
+//   CreateChat  → Entity_UpdateNameData(name, data, entity, 0, -1)
 //   FUN_004801c0  → World_StateInit()          — inicializa el estado in-world después del 0x02
 //   FUN_00412de0  → Auth_ProcessChallenge(byte) — handshake response for opcode 0x03
 //   FUN_0043bde0  → Entity_SetFlag(flag, entity)
@@ -475,14 +475,14 @@
 //   FUN_00404bc0  → UI_SetScene(id, 0, 0)
 //   FUN_00480620  → Widget_Draw(element, textureData, flag)
 //   FUN_005142d0  → ShowErrorDialog(id)
-//   FUN_004cd3b0  → Packet_Unknown_Log()
+//   Item_ReturnPickedItem  → Packet_Unknown_Log()
 //   FUN_00422df0  → HashTable_GetOrInsert
 //   FUN_00404040  → HashTable_Decrement
 //   FUN_00403f80  → HashTable_Insert
 //   FUN_00404330  → HashTable_Remove
 //   FUN_00404280  → HashTable_Get
 //   FUN_00423710  → HashTable_Free(entry, key)
-//   HashTable_GetIndex → FUN_004cd3b0 area (addr in binary)
+//   HashTable_GetIndex → Item_ReturnPickedItem area (addr in binary)
 //   FUN_0043de60  → Net_Throttle()
 //   Net_Disconnect at 0043dc90
 //   operator_new  → MSVC heap alloc
@@ -787,7 +787,7 @@ static void ShopInsertItem(int slot, const BYTE* Item)
             // mostraba el primer item sin importar cuál hovereabas.
             cell[62]               = (BYTE)(slot % 8);             // x
             cell[63]               = (BYTE)(slot / 8);             // y
-            FUN_0047b910((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
+            ItemConvert((int)(uintptr_t)cell, (int)Item[1], (int)Item[3]);
         }
     }
 }
@@ -2576,7 +2576,7 @@ static void Recv_LogOut(const BYTE* Msg)
         if (DAT_005615c0 == 5) {
             StopMusic();
             AllStopSound();
-            FUN_004cd3b0();              // CharPreview_Refresh
+            Item_ReturnPickedItem();              // CharPreview_Refresh
             ReleaseMainData();
         }
         DAT_005615c0 = 4;                // g_GameState = CharSelect
@@ -2628,7 +2628,7 @@ static void Recv_LogOut(const BYTE* Msg)
         if (DAT_005615c0 == 5) {
             StopMusic();
             AllStopSound();
-            FUN_004cd3b0();
+            Item_ReturnPickedItem();
             ReleaseMainData();
         }
         FUN_0043dc90((int)(uintptr_t)DAT_055ca160);  // Net_Disconnect (close socket)
@@ -3375,7 +3375,7 @@ void Net_ProcessPacket(void)
 
                         // 2) Opciones de juego.
                         DAT_07e11e18 = ((p[10] & 1) == 1);          // m_bAutoAttack
-                        DAT_07e11e26 = (BYTE)((p[10] & 4) == 4);    // m_bWhisperSound
+                        DAT_07e11d80 = (char)((p[10] & 4) == 4);    // m_bWhisperSound (0x07E11D80); antes un DAT_07e11e26 sin xrefs en IDA
                         DAT_00559c60 = p[11] + 448;                 // QKey  (item type)
                         DAT_00559c64 = p[12] + 448;                 // WKey
                         DAT_00559c68 = p[13] + 448;                 // EKey
@@ -3511,7 +3511,7 @@ void Net_ProcessPacket(void)
                     if (ent[0] != 0) {
                         // CreateChat(nombre, texto, entidad, 0, -1) — igual que el
                         // path de NPC hover (FUN_004cb6f0).
-                        FUN_00481ba0((char*)(ent + 0x1C1), cmsg, (DWORD)(uintptr_t)ent, 0, -1);
+                        CreateChat((char*)(ent + 0x1C1), cmsg, (DWORD)(uintptr_t)ent, 0, -1);
                     }
                 }
                 break;
@@ -3546,7 +3546,11 @@ void Net_ProcessPacket(void)
                     int wlen = Size - 13;
                     if (wlen > 60) wlen = 60;
                     memcpy(wmsg, Msg + 13, wlen);
-                    PlayBuffer(0x26, 0, 0);
+                    // IDA ProtocolCore case 2: RegistWhisperID(10, strID) (anti-spam
+                    // de personajes de nivel < 10, sin portar) y el sonido SOLO con
+                    // m_bWhisperSound (0x07E11D80).  2026-09-12: sonaba siempre.
+                    if (DAT_07e11d80)
+                        PlayBuffer(0x26, 0, 0);
                     UIChatLogWindow_AddText(wname, wmsg, 0);
                 }
                 break;
@@ -5439,12 +5443,16 @@ void Net_ProcessPacket(void)
 
             case 0x34: {
                 NetLog("NET:  -> 0x34 Repair size=%d", Size);
+                // IDA ProtocolCore case 0x34: `*((_DWORD *)ReceiveBuffer + 1)`.
+                // PMSG_ITEM_REPAIR_SEND es PBMSG_HEAD (3 bytes) + DWORD money
+                // alineado a 4, o sea el zen esta en +4.  Leerlo en +3 metia el
+                // byte de padding y el zen quedaba en basura (ej. -835).
                 if (Size >= 8 && DAT_07cf1ffc != 0) {
                     DWORD gold = *(DWORD*)(Msg + 4);
                     if (gold != 0) {
                         *(DWORD*)((BYTE*)DAT_07cf1ffc + 1352) = gold;
-                        FUN_0047e3c0((int)(uintptr_t)DAT_07cf1ffc, 0, 0);
-                        PlayBuffer(0x25, 0, 0);
+                        FUN_0047e3c0((int)(uintptr_t)DAT_07cf1ffc, 0, 0);   // sub_47E3C0
+                        PlayBuffer(37, 0, 0);
                     }
                 }
                 DAT_05826d1c = 0;
@@ -6738,6 +6746,17 @@ void Net_ProcessPacket(void)
                 // aislado para no reinterpretar un paquete ajeno, pero no puede
                 // modificar ni el staging de miembros ni la tabla de marks.
                 NetLog("NET:  → 0x65 sin asociación a Guild, size=%d", Size);
+                break;
+            }
+
+            case 0x0C: {
+                // IDA ProtocolCore case 0xC: PMSG_SERVER_MSG_SEND (C1:0C, MsgNumber).
+                // MsgNumber 0 = el destinatario del susurro no esta conectado
+                // (MuEmu: DGGlobalWhisperRecv -> GCServerMsgSend(index, 0)).
+                //     if (!ReceiveBuffer[3]) UIChatLogWindow_AddText(ChatWhisperID, GlobalText[482], 2);
+                // 2026-09-12: el opcode no tenia handler.
+                if (Size >= 4 && Msg[3] == 0)
+                    UIChatLogWindow_AddText(DAT_05826cb4, GlobalText[482], 2);
                 break;
             }
 

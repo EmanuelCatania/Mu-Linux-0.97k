@@ -409,9 +409,9 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
         // Check mana: if current mana < mana cost
         if ((int)(WORD)currentMana < manaCost) {
             // Not enough mana — try to use a potion from inventory slot 3 (potions/arrows)
-            // FUN_00482be0 = GetItemSlot(int category) → int slot index, or -1 if none.
-            // Declaration in functions.h fixed to: int __cdecl FUN_00482be0(int).
-            int slot = FUN_00482be0(3);
+            // Item_FindQuickSlotByCategory = GetItemSlot(int category) → int slot index, or -1 if none.
+            // Declaration in functions.h fixed to: int __cdecl Item_FindQuickSlotByCategory(int).
+            int slot = Item_FindQuickSlotByCategory(3);
             if (slot == -1) continue;  // no potion found
 
             // Check warehouse and trade are closed

@@ -760,13 +760,13 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
     }
 
     if (SelectedNpc != -1) {
-        // NPC hovered — chat bubble per IDA CreateChat (FUN_00481ba0).
+        // NPC hovered — chat bubble per IDA CreateChat (CreateChat).
         char* base = (char*)(uintptr_t)DAT_07abf5d0;
         char* ent  = base + (int)SelectedNpc * 0x394;
         if (ent[0] != 0) {
             const char* name = (const char*)(ent + 0x1C1);
             if (name[0]) {
-                FUN_00481ba0((char*)name, (char*)"", (DWORD)ent, 0, -1);
+                CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
             }
         }
         return;
@@ -800,7 +800,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
         RenderCenteredText(GetScreenWidth() / 2, 10, name);
     } else if (kind == 1) {
         // Player: chat bubble per IDA (NOT chat log).
-        FUN_00481ba0((char*)name, (char*)"", (DWORD)ent, 0, -1);
+        CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
     }
 }
 
