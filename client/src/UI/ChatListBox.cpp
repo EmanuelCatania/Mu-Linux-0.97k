@@ -80,6 +80,7 @@
 // =============================================================================
 
 #include "stdafx.h"
+#include <mbstring.h>
 #include "globals.h"
 #include "structs.h"
 #include <new>
@@ -1587,26 +1588,37 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
         memcpy(node + 2, &byte_55C95F8, 0x118);
         ++self[24];
     } else {
-        // Mensaje largo — se parte con sub_40C2A0 en dos pedazos. No tenemos
-        // sub_40C2A0 ported; collapse to single insert (truncate).
-        char buf[256] = {0};
-        strncpy(buf, msg, 0xFF);
-        strncpy((char*)&byte_55C9603, buf, 0x100);
+        // IDA sub_40C940 L96-150: mensaje largo.  sub_40C2A0 lo parte en hasta
+        // dos lineas de 180 px (buffers de 0x100); la primera va con el
+        // remitente y la segunda con el nombre vacio.  Antes se truncaba a una.
+        extern int __cdecl FUN_0040c2a0(LPCSTR, int, int, int, size_t, UINT, int);
+        char lines[2][0x100];
+        memset(lines, 0, sizeof(lines));
+        FUN_0040c2a0(msg, (int)(uintptr_t)lines, 180, 2, 0x100, 0, 0);
+        for (int ln = 0; ln < 2; ln++) {
+            if (!lines[ln][0]) {
+                if (ln == 0) continue;     // IDA: `if (v24[0])` salta solo el alta
+                break;                     // IDA: `if (!v27[0]) goto LABEL_42`
+            }
+            if (ln == 1)
+                *(char*)&byte_55C95F8 = 0;
+            strncpy((char*)&byte_55C9603, lines[ln], 0x100);
 
-        DWORD list_addr = self[23];
-        DWORD* head = (DWORD*)list_addr;
-        DWORD* fwd  = (DWORD*)*head;
-        DWORD* back = (DWORD*)*((DWORD*)*head + 1);
+            DWORD list_addr = self[23];
+            DWORD* head = (DWORD*)list_addr;
+            DWORD* fwd  = (DWORD*)*head;
+            DWORD* back = (DWORD*)*((DWORD*)*head + 1);
 
-        DWORD* node = (DWORD*)malloc(0x120);
-        if (!node) return;
-        memset(node, 0, 0x120);
-        node[0] = (DWORD)(fwd ? fwd : node);
-        node[1] = (DWORD)(back ? back : node);
-        if (fwd) fwd[1] = (DWORD)node;
-        *(DWORD*)node[1] = (DWORD)node;
-        memcpy(node + 2, &byte_55C95F8, 0x118);
-        ++self[24];
+            DWORD* node = (DWORD*)malloc(0x120);
+            if (!node) return;
+            memset(node, 0, 0x120);
+            node[0] = (DWORD)(fwd ? fwd : node);
+            node[1] = (DWORD)(back ? back : node);
+            if (fwd) fwd[1] = (DWORD)node;
+            *(DWORD*)node[1] = (DWORD)node;
+            memcpy(node + 2, &byte_55C95F8, 0x118);
+            ++self[24];
+        }
     }
 
     // Descarta el más viejo si desbordamos.
@@ -2091,12 +2103,65 @@ char __fastcall FUN_0040c190(void* ecx, void* /*edx*/, DWORD* param_1) {
 }
 
 // ── FUN_0040c2a0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_0040c2a0 @ 0x0040C2A0 (~86 lines) — Word-wrap text into multi-line buffer
-int __cdecl FUN_0040c2a0(LPCSTR param_1, int param_2, int param_3, int param_4,
-                         size_t param_5, UINT param_6, int param_7) {
-    (void)param_1; (void)param_2; (void)param_3; (void)param_4;
-    (void)param_5; (void)param_6; (void)param_7;
-    return 0;
+// IDA: sub_40C2A0 (0x0040C2A0) — parte un texto en hasta `maxLines` lineas de
+// `width` px (espacio 640).  Cada linea va a `dst + n*lineSize` (con
+// `reverse == 1` se llenan de la ultima a la primera).  `firstIndent` le resta
+// ancho solo a la primera.  Busca el corte por biseccion sobre la cantidad de
+// caracteres y lo alinea a caracter multibyte con _mbclen.  Devuelve la
+// cantidad de lineas escritas.  Antes era un stub `return 0`.
+int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
+                         size_t lineSize, UINT firstIndent, int reverse) {
+    const char* cur = text;                        // IDA: v7
+    int lines = 0;                                 // IDA: v8
+    if (!text) return 0;
+    size_t fwdOff = 0;                             // IDA: lpStringa
+    size_t revOff = lineSize * (maxLines - 1);     // IDA: i
+    size_t off = revOff;                           // IDA: v10
+    for (;; revOff -= lineSize) {
+        int next = lines + 1;                      // IDA: v21
+        if (next > maxLines) break;
+        if (reverse != 1) off = fwdOff;
+        char* line = (char*)(dst + off);
+        SIZE sz;
+        GetTextExtentPointA(m_hFontDC, cur, lstrlenA(cur), &sz);
+        int textW = (int)((double)sz.cx / _DAT_055c9b70);   // g_fScreenRate_x
+        if (!sz.cx) return lines;
+        int avail = width - (lines == 0 ? (int)firstIndent : 0);
+        if (textW <= avail) {
+            strncpy(line, cur, lineSize);
+            return lines + 1;
+        }
+        // Desviacion defensiva: con un ancho medio por caracter < 1 px el
+        // binario divide por cero; aca se toma 1.
+        int perChar = textW / lstrlenA(cur);
+        if (perChar <= 0) perChar = 1;
+        int cut = avail / perChar;                 // IDA: v14
+        int step = (int)(((double)cut + 1.0) * 0.5);
+        int half = step;
+        while (step) {
+            step = (int)(((double)half + 1.0) * 0.5);
+            half = step;
+            GetTextExtentPointA(m_hFontDC, cur, cut, &sz);
+            double cutW = (double)sz.cx / _DAT_055c9b70;
+            if (cutW <= (double)(avail + 4)) {
+                if (cutW >= (double)(avail - 4)) break;
+                cut += step;
+            } else {
+                cut -= step;
+                if (step == 1) break;
+            }
+        }
+        int j;
+        for (j = 0; j < cut; j += (int)_mbclen((const unsigned char*)&cur[j]))
+            ;
+        strncpy(line, cur, j);
+        fwdOff += lineSize;
+        cur += j;
+        off = revOff - lineSize;
+        line[j] = 0;
+        lines = next;
+    }
+    return lines + 1;
 }
 
 // ── FUN_0040c480 — movida desde stubs_bulk_small.cpp (refactor B3) ──
