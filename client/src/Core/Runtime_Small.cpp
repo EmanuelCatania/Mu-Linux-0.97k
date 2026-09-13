@@ -463,7 +463,7 @@ skip_wings: ;
 
 
 
-// ClearWhisperID @ 0x004804D0 (19 bytes) — zero 28 entries × 4 bytes = 0x6e bytes + 2
+// ClearWhisperID @ 0x004804D0 (19 bytes) — rep stosd 0x1B + stosw = 0x6E bytes del anillo
 void __cdecl ClearWhisperID(void) { memset(WhisperRegistID, 0, 0x6e); }
 
 // FUN_0040f650 @ 0x0040F650 (20 bytes) — thiscall: call vtable method on sub-object

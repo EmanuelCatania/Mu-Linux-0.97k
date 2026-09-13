@@ -3546,9 +3546,11 @@ void Net_ProcessPacket(void)
                     int wlen = Size - 13;
                     if (wlen > 60) wlen = 60;
                     memcpy(wmsg, Msg + 13, wlen);
-                    // IDA ProtocolCore case 2: RegistWhisperID(10, strID) (anti-spam
-                    // de personajes de nivel < 10, sin portar) y el sonido SOLO con
-                    // m_bWhisperSound (0x07E11D80).  2026-09-12: sonaba siempre.
+                    // IDA ProtocolCore case 2: RegistWhisperID(10, strID) — con el
+                    // heroe de nivel < 10 anota al remitente para que despues se le
+                    // pueda contestar (ver FUN_0047fed0) — y el sonido SOLO con
+                    // m_bWhisperSound (0x07E11D80).
+                    RegistWhisperID(10, wname);
                     if (DAT_07e11d80)
                         PlayBuffer(0x26, 0, 0);
                     UIChatLogWindow_AddText(wname, wmsg, 0);

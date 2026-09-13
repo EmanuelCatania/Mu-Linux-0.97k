@@ -138,7 +138,8 @@ void __stdcall InitGame(void)
     DAT_07e11e22 = -1;    // g_shMutoNumber[1]
     DAT_07e11e24 = -1;    // g_shMutoNumber[2]
     DAT_07e11d80 = 0;     // m_bWhisperSound (IDA InitGame L167, 0x07E11D80)
-    FUN_00482350();       // ClearWhisperID
+    ClearWhisperID();     // IDA: ClearWhisperID (0x004804D0).  Antes llamaba a
+                          // FUN_00482350, que no es una funcion (cae dentro de sub_4824C0).
     FUN_0047eb80();       // clearMatchInfo (0x0047EB80; antes se llamaba a
                           // FUN_004827a0, un stub vacio con la direccion mal)
     FUN_00433830();       // InitPartyList

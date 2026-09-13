@@ -2750,7 +2750,8 @@ DWORD                  Object3DSound[420][4]  = {};
 
 // Tabla de nombres NPC/mob: 512 entradas × 0x36 bytes (ver nota en 0x07CF2000).
 BYTE   MonsterScript[512 * 0x36] = {};
-char   WhisperRegistID[28][4] = {};
+char   WhisperRegistID[11][10] = {};   // IDA: WhisperRegistID (0x07DB9310)
+int    WhisperID_Num = 0;              // IDA: WhisperID_Num (0x07E11DB0)
 
 // DAT_07c608b8 — see globals.h. Defined as macro into g_RenderPool_07c608a8.
 // (The standalone declaration was a single int that backed nothing — MoveBlurs

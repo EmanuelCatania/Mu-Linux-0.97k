@@ -2633,7 +2633,8 @@ extern DWORD   Object3DSound[420][4];                 // payload (entity id boun
 
 // Entity data
 extern BYTE    MonsterScript[512 * 0x36];  // NPC/mob name table (stride 0x36; Type[0], Name[1..32])
-extern char    WhisperRegistID[][4]; // whisper ID array (stride 4, 0x1b*4+2 = 0x6e bytes)
+extern char    WhisperRegistID[11][10]; // IDA: WhisperRegistID (0x07DB9310) — anillo de 10 nombres de 10 bytes (0x6E con el sobrante)
+extern int     WhisperID_Num;           // IDA: WhisperID_Num (0x07E11DB0) — proxima fila del anillo
 
 // Blur/trail system
 // DAT_07c608b8 — campo int en el +16 del slot[0] de g_RenderPool_07c608a8 (ver arriba).

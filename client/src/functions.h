@@ -1317,7 +1317,8 @@ void  __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5,
 // FUN_0047f4c0 @ 0x0047F4C0 (IDA)
 void  __cdecl Font_RenderBitmapText(int p1, int p2, float p3, float p4, int p5, int p6, float p7, int p8);
 void  __cdecl RenderTipText_stub(int sx, int sy, char *Text);           // 0x0047F7F0
-int   __stdcall FUN_0047fed0(void);                                      // hotbar skill data (0x0047FED0)
+int   __cdecl FUN_0047fed0(int lvl, const char* name);                 // IDA: sub_47FED0 (0x0047FED0) — gate de envio de susurro
+void  __cdecl RegistWhisperID(int lvl, const char* text);              // IDA: RegistWhisperID (0x004801C0)
 void  __cdecl FUN_00481a40(int param_1, char *param_2, int param_3);    // assign chat text (0x00481A40)
 void  __cdecl AssignChat_stub(char *ID, char *Text, int Flag);          // 0x00482090
 int   __stdcall Item_FindElfWeaponInventorySlot(void);                   // IDA: FUN_004824C0
