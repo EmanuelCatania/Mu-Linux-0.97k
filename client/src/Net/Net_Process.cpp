@@ -1011,18 +1011,9 @@ static void ItemMove_ClearPickedState()
     Level = 0;
     byte_7E9136B = 0;
 
-    auto ClearItemRefGrid = [](BYTE* grid, size_t size) {
-        for (size_t off = 0; off < size; off += 0x44) {
-            memset(grid + off, 0, 0x44);
-            *(short*)(grid + off) = (short)0xFFFF;
-        }
-    };
-
-    ClearItemRefGrid(DAT_07ea8448, sizeof(DAT_07ea8448));
-    ClearItemRefGrid(DAT_07ea5b68, sizeof(DAT_07ea5b68));
-    ClearItemRefGrid(DAT_07ea9880, sizeof(DAT_07ea9880));
-    ClearItemRefGrid(DAT_07ea7bc0, sizeof(DAT_07ea7bc0));
-    ClearItemRefGrid(DAT_07e11fb0, sizeof(DAT_07e11fb0));
+    // (Aca se borraban registros enteros de DAT_07ea8448/5b68/9880/7bc0 y
+    //  DAT_07e11fb0, que eran copias sueltas sin lectores.  Ahora son alias de
+    //  campo de los pools reales y ese memset los pisaria corrido 0x38.)
 
     ItemMove_ClearPoolPreview(OffsetInventoryItems, 64);
     ItemMove_ClearPoolPreview(OffsetTradeItems, 32);

@@ -855,7 +855,7 @@ DWORD    DAT_07e919b8  = 0;
 // como `&DAT_07e919bc + N*80` — o sea leían fuera de rango. Ver la nota en
 // globals.h.
 char     DAT_07e919bc[0x13C30] = {};
-BYTE     DAT_07ea5298[0x880] = {0};   // see globals.h
+// DAT_07ea5298: alias de Inventory (globals.h)
 DWORD    DAT_07ea5b18  = 0;
 DWORD    DAT_07ea5b1c  = 0;
 DWORD    DAT_07ea5b20  = 0;
@@ -2132,11 +2132,11 @@ char    s_Failed_to_connect__00559688[] = "Failed to connect.";
 // Net_PacketSession reset loop both write 0x1100 bytes into it (= 64 slots ×
 // 0x44 stride matching the IDA bound 0x7ea9548 - 0x7ea8448 = 0x1100). Sized
 // properly to avoid heap corruption when in-game inventory grids fill.
-BYTE    DAT_07ea8448[0x1100] = {0};
-BYTE    DAT_07ea5b68[0x1FE0] = {0};   // see globals.h
-BYTE    DAT_07ea9880[0x0880] = {0};
+// DAT_07ea8448: alias de OffsetInventoryItems.Key (globals.h)
+// DAT_07ea5b68: alias del Key del pool del baul (globals.h)
+// DAT_07ea9880: alias de OffsetMixItems.Key (globals.h)
 DWORD   DAT_07eaa0e8   = 0;
-BYTE    DAT_07ea7b88[0x880] = {0};
+// DAT_07ea7b88: alias de OffsetTradeItems (globals.h)
 // 2026-08-25: el comentario decia "MarkColor[16]" y estaba declarado como UN
 // DWORD. `CreateGuildMark` (0x4F0100) escribe los 16 colores y
 // `RenderGuildMark` (0x4F02F0) indexa `MarkColor[p5]` con p5 en 0..15, o sea 60
@@ -2146,9 +2146,9 @@ BYTE    DAT_07ea7b88[0x880] = {0};
 // El hueco hasta DAT_07e11f78 es de 68 bytes, asi que los 16 entran.
 DWORD   DAT_07e11f34[16] = {0};  // MarkColor[16] — paleta de la marca (ARGB)
 BYTE    DAT_07e11f78[0x880] = {0};
-BYTE    DAT_07ea52d0[0x880] = {0};
-BYTE    DAT_07ea7bc0[0x880] = {0};
-BYTE    DAT_07e11fb0[0x880] = {0};
+// DAT_07ea52d0: alias de Inventory.Key (globals.h)
+// DAT_07ea7bc0: alias de OffsetTradeItems.Key (globals.h)
+// DAT_07e11fb0: alias de DAT_07e11f78.Key (globals.h)
 DWORD   DAT_055c9b7c   = 0;
 DWORD   DAT_07eaa164   = 0;
 

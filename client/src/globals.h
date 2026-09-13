@@ -790,7 +790,7 @@ extern DWORD   DAT_07e919b8;
 extern char    DAT_07e919bc[0x13C30];
 // Pools de índices de nombres de personaje — cada uno es un buffer de 0x880 bytes (32 entradas × 0x44).
 // Lo recorre FUN_004cba60 (CharPreview_Reset) con stride 0x44.
-extern BYTE    DAT_07ea5298[0x880];
+// DAT_07ea5298: alias de Inventory (ver el bloque de alias de pools mas abajo).
 extern DWORD   DAT_07ea5b18;
 extern DWORD   DAT_07ea5b1c;
 extern DWORD   DAT_07ea5b20;
@@ -2056,22 +2056,35 @@ extern DWORD   DAT_055ca15c;   // net connect state dword
 extern char    s_Failed_to_connect__00559688[]; // error string
 
 // ── Net_PacketSession globals ─────────────────────────────────────────────────
-extern BYTE    DAT_07ea8448[0x1100];   // 64-slot × 0x44 inventory ref grid (sized properly)
 // Char-select entry pools — IDA layout:
 //   DAT_07ea5b68 .. 0x07ea7b48 (= 8160 bytes = 116 slots × 0x44 stride)
 //   DAT_07ea9880 .. 0x07eaa100 (= 2176 bytes =  32 slots × 0x44 stride)
 // Cada slot es el registro del panel de char-select. En nuestro build estaban
 // declarados como DWORDs sueltos, lo que hacía que FUN_004cba60 (CharPreview_Reset)
 // recorriera mucho más allá del final, en memoria random → AV.
-extern BYTE    DAT_07ea5b68[0x1FE0];   // 8160 bytes
-extern BYTE    DAT_07ea9880[0x0880];   // 2176 bytes
 extern DWORD   DAT_07eaa0e8;
-extern BYTE    DAT_07ea7b88[0x880];     // see DAT_07ea5298 above
 extern DWORD   DAT_07e11f34[16];   // MarkColor[16] — paleta de la marca de guild (ARGB)
 extern BYTE    DAT_07e11f78[0x880];
-extern BYTE    DAT_07ea52d0[0x880];
-extern BYTE    DAT_07ea7bc0[0x880];
-extern BYTE    DAT_07e11fb0[0x880];
+// Alias de CAMPO sobre los pools de items (verificado en el desensamblado de
+// CloseInventoryRelatedWindows 0x4CBD36-0x4CBD9C y los errores de
+// ida_get_function): en el binario no son copias sino el mismo pool abordado
+// desde otro campo.  Los bucles originales escriben Type en `ptr - 0x38` y
+// Key en `ptr`, o sea DAT_x + 0x38 = Key del slot 0.  Antes eran arrays
+// propios: todo lo que se escribia ahi no llegaba a los pools reales.
+//   0x07EA5298 Inventory              0x07EA52D0 Inventory.Key
+//   0x07EA7B88 OffsetTradeItems       0x07EA7BC0 OffsetTradeItems.Key
+//   0x07EA9880 OffsetMixItems.Key     0x07EA8448 OffsetInventoryItems.Key
+//   0x07EA5B68 Key del pool de 0x07EA5B30 (baul; en IDA tambien la tienda)
+//   0x07E11FB0 Key de word_7E11F78 (trade del otro jugador)
+// Son lvalues de array: `&`, la aritmetica y el decay a BYTE* funcionan igual.
+#define DAT_07ea5298   (*(BYTE(*)[0x880])(Inventory))
+#define DAT_07ea52d0   (*(BYTE(*)[0x880])(Inventory + 0x38))
+#define DAT_07ea7b88   (*(BYTE(*)[0x880])(OffsetTradeItems))
+#define DAT_07ea7bc0   (*(BYTE(*)[0x880])(OffsetTradeItems + 0x38))
+#define DAT_07ea9880   (*(BYTE(*)[0x880])(OffsetMixItems + 0x38))
+#define DAT_07ea8448   (*(BYTE(*)[0x1100])(OffsetInventoryItems + 0x38))
+#define DAT_07ea5b68   (*(BYTE(*)[0x1FE0])(OffsetWarehouseItems + 0x38))
+#define DAT_07e11fb0   (*(BYTE(*)[0x880])(DAT_07e11f78 + 0x38))
 extern DWORD   DAT_055c9b7c;
 extern DWORD   DAT_07eaa164;
 
