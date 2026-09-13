@@ -344,6 +344,12 @@ void Game_EnterWorldTick(void)
     // particles spawneados (lightning ELS=11, fire/smoke, etc.) se acumulan
     // forever → whiteout. Per IDA/5.2 RenderBlurs_RenderCharacterScene este
     // call se hace per-frame en MoveCharactersClient/MoveCharacterScene path.
+    // MEJORA DEL DLL (no esta en IDA): el binario solo llama MoveParticles en
+    // 0x005223EE; el DLL (Patchs.cpp MoveParticles_MoveCharacterScene) agrega
+    // MoveEffects + MoveJoints para que el efecto de las alas se vea en
+    // char-select.  Sin el tick de joints los de vida 0 no morian nunca aca.
+    Effect_TickAll();            // MoveEffects (0x0046B790)
+    Joint_TickAll();             // MoveJoints  (0x004736E0)
     MoveParticles_stub();        CLK_WATCH("after-MoveParticles");
     Character_UpdateAll();       CLK_WATCH("after-Character_UpdateAll");
     FUN_00454fc0((float*)&DAT_07abf050); CLK_WATCH("after-FUN_00454fc0");
@@ -550,10 +556,15 @@ void Game_EnterWorldTick(void)
                     }
                 }
 
-                // Click center "Select" button (line 556 IDA)
-                if (mouseX >= DAT_005616a8 + (int)0xffffff41 + 0x1b9 &&
-                    mouseX < DAT_005616a8 + (int)0xffffff01 + 0x1ff &&
-                    DAT_083a4278 > 0x94 && DAT_083a4278 < 0xa6 &&
+                // Boton OK / entrar al juego (IDA 0x521D80 L556):
+                //   MouseX >= 441 - dword_5616A8 && MouseX < 441 - dword_5616A8 + 70
+                //   && MouseY >= 148 && MouseY < 167
+                // 2026-09-12: el port sumaba el desplazamiento del panel en vez de
+                // restarlo y dejaba el rect en 6 px de ancho -> el OK no respondia
+                // (el Enter si, porque va por el otro camino).
+                if (mouseX >= 441 - (int)DAT_005616a8 &&
+                    mouseX < 441 - (int)DAT_005616a8 + 70 &&
+                    DAT_083a4278 >= 148 && DAT_083a4278 < 167 &&
                     IsClickPushed())
                 {
                     DAT_083a4124 = '\0';

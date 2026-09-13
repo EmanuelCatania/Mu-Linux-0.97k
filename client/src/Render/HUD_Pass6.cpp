@@ -577,7 +577,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     {
         float xb = (float)((double)InventoryStartX + 60.0);
         float yb = (float)((double)InventoryStartY + 395.0);
-        GL_DrawTexture(RepairEnable_0 ? 287 : 286, xb, yb, 24.0f, 24.0f,
+        GL_DrawTexture(DAT_07eaa134 ? 287 : 286, xb, yb, 24.0f, 24.0f,
                      0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
         if ((double)MouseX >= xb && (double)MouseX < xb + 24.0 &&
             (double)MouseY >= yb && (double)MouseY < yb + 24.0)

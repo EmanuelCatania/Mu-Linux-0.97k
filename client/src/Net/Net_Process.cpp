@@ -6323,7 +6323,8 @@ void Net_ProcessPacket(void)
                     // el estado de selección recién después de abrir el mundo nuevo. Las
                     // direcciones de abajo son los globals originales, no los
                     // similarly named 07E119xx input-state variables.
-                    DAT_05826d04 = 0;
+                    // (Aca habia un `DAT_05826d04 = 0` sin contraparte: la rama
+                    //  de gate de IDA, L476-503, no toca Teleport ni 0x5826D04.)
                     DAT_07e11d28 = 0;                 // MouseUpdateTime
                     DAT_00559bec = 6;                 // MouseUpdateTimeMax
                     InventoryOpened = 0;
@@ -6353,7 +6354,7 @@ void Net_ProcessPacket(void)
                     // El server usa gate=0 para el teleport de skill. IDA
                     // completa ese efecto visual y limpia Teleport acá.
                     CreateTeleportEnd((unsigned int)(uintptr_t)hero);
-                    DAT_05826d04 = 0;
+                    DAT_05826d14 = 0;                 // IDA L508: Teleport = 0 (0x05826D14)
                 }
 
                 // Este store es común a las dos ramas en el original.

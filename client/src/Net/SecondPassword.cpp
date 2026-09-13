@@ -1446,16 +1446,13 @@ void __cdecl FUN_004eb7f0(void) {
         }
     }
 }
-// FUN_004ec330 @ 0x004EC330 — SecondPassword_Screen11 (389 lines)
-//   - Cleanup / resource release: resets all DAT_07eaa1xx buffers, clears PIN state,
-//     calls FUN_004cba60, resets DAT_07eaa14c=0, DAT_07eaa108=0.
-//   - SEH. Implemented in SecondPassword_UI.cpp.
-void __cdecl FUN_004ec330(void) {
-    // SecondPassword_Screen11 — main checkbox/toggle panel + auth packet builder.
-    // Handles: B-key area toggle (DAT_07eaa150), optional second checkbox (DAT_07eaa134),
-    // Click del botón "OK" que arma y manda el paquete XOR completo del PIN (opcode 0x34/F1 de auth),
-    // and "Cancel" / "Back" button. SEH frame stripped; HashTable noise stripped.
+extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
+// FUN_004ec330 @ 0x004EC330 — Shop controls and inventory close hit-test (389 lines)
+//   - Handles shop bottom buttons (Buy, Repair, Repair All) when DAT_07eaa132 != 0
+//   - Updates repair cost per-frame via Item_RecalculateRepairCost()
+//   - Handles inventory close button click
+void __cdecl FUN_004ec330(void) {
     uint uVar3 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa118);
     if (uVar3 == 0xffffffff) {
         void* pv = operator_new(2);
@@ -1471,7 +1468,7 @@ void __cdecl FUN_004ec330(void) {
 
     if (cGuard != '\0') {
         if (DAT_07eaa132 != '\0') {
-            // Checkbox 1 area: [DAT_07eaa0c8+0x19, +0x31) x [DAT_07eaa0cc+0x16d, +0x185)
+            // Button 1 (Buy): [panelX + 25, panelX + 49) x [panelY + 365, panelY + 389)
             int iX1 = (int)DAT_07eaa0c8 + 0x19;
             int iY1 = (int)DAT_07eaa0cc + 0x16d;
             if (iX1 <= (int)DAT_083a427c && (int)DAT_083a427c < iX1 + 0x18 &&
@@ -1486,14 +1483,15 @@ void __cdecl FUN_004ec330(void) {
                     DAT_07eaa134 = 0;
                 }
             }
-            // Checkbox 2 area: [+0x55, +0x6d) x same Y
+
+            // Button 3 (Repair): [panelX + 85, panelX + 109) x [panelY + 365, panelY + 389)
             int iX2 = (int)DAT_07eaa0c8 + 0x55;
             if (iX2 <= (int)DAT_083a427c && (int)DAT_083a427c < iX2 + 0x18 &&
                 iY1 <= (int)DAT_083a4278 && (int)DAT_083a4278 < iY1 + 0x18 &&
                 IsClickPushed()) {
                 DAT_07eaa134 ^= 1;
                 DAT_083a4124 = '\0';
-                ((BYTE*)&DAT_07eaa150)[2] = -(DAT_07eaa134 != 0) & 2;
+                ((BYTE*)&DAT_07eaa150)[2] = DAT_07eaa134 ? 2 : 0;
             }
 
             // IDA sub_4EC330: boton "reparar todo" (x+115, y+365).  Manda
@@ -1511,6 +1509,9 @@ void __cdecl FUN_004ec330(void) {
             } else {
                 Item_RecalculateRepairCost();   // sub_4C4080
             }
+
+            // main.exe FUN_004ec330:004eca7c calls FUN_004c4080 per-frame when DAT_07eaa132 != 0
+            Item_RecalculateRepairCost();
         }
 
         // Back/cancel button at [DAT_07ea5288+0x19, +0x31) x [DAT_07ea5284+0x18b, +0x1a3)

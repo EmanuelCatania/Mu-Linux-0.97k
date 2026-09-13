@@ -641,18 +641,11 @@ LAB_0047036e:
             *(undefined4 *)(param_1 + 0x9b8) = 100;
         }
 
-        // 2026-09-03 -- DESVIACION DOCUMENTADA, no encontrada en IDA.
-        // Estos dos bucles des-trasladan y vuelven a trasladar TODA la historia
-        // de segmentos por el delta del ancla, de modo que la estela acompana al
-        // owner cuando se mueve.  Busque su origen en el binario y NO esta:
-        //   - cuerpo del tipo 266 de MoveJoint (0x00470030 L890-1240): los unicos
-        //     bucles son el `for (j<3)` del subtipo 2 y el del subtipo 9;
-        //   - MoveJoints (0x004736E0) es solo el walker del pool;
-        //   - el renderer (0x00473710) emite los vertices crudos, sin sumar ancla.
-        // Pero SIN ellos el aura se deshace en tiras sueltas al caminar, y en el
-        // cliente original el anillo queda pegado al personaje.  O sea el binario
-        // re-ancla en algun punto que todavia no ubique.  Se conservan hasta
-        // encontrarlo; si aparece el sitio real, esto se reemplaza por el port fiel.
+        // Re-anclaje de la historia de segmentos por el delta del ancla: la
+        // estela acompana al owner cuando se mueve.  ESTA en el binario (el
+        // decompile lo pliega dentro de un `if`): resta en 0x004703A6 y suma en
+        // 0x0047040C, verificado con el disassembly.  Sin estos bucles el aura
+        // se deshace en tiras sueltas al caminar.
         if ((iVar16 == 0) || (iVar16 == 4)) {
             // Subtract anchor from segment positions (un-translate)
             // 2026-09-03 FIX (la banda de Icarus): el bucle cubria las filas

@@ -318,7 +318,12 @@ int Scene_CharSelect(void)
         }
 
         FUN_00500970();                    // Entity_Render_Sprites
-        FUN_0046c3e0();                    // Particle_Render
+        // MEJORA DEL DLL (no esta en IDA): el binario solo llama RenderBlurs en
+        // 0x00523D80; el DLL (Patchs.cpp RenderBlurs_RenderCharacterScene)
+        // agrega RenderJoints + RenderEffects para dibujar el efecto de las alas.
+        FUN_00473710();                    // RenderJoints  (0x00473710)
+        EffectPool_RenderAll();            // RenderEffects (0x0046BBA0)
+        FUN_0046c3e0();                    // RenderBlurs (Trail_RenderAll)
         GL_SetBlendSrcOver('\x01');              // GL_SetMode(1)
         GL_BindTextureSlot(0x15);
         glColor4f(1.0f, 1.0f, 1.0f, 0.8f);

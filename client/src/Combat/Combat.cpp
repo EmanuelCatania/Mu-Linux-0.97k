@@ -1258,9 +1258,13 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         // Los tres globals existen en nuestro arbol y ya los escribe el handler
         // 0x1C de Net_Process (ReceiveTeleport), asi que el cooldown queda
         // compartido igual que en el binario.
-        if (DAT_05826d04 || DAT_07e11dc4 || (GetTickCount() - DAT_07e11dc8) < 3000)
+        // `Teleport` de IDA es 0x05826D14 (DAT_05826d14), el mismo flag que
+        // limpian ReceiveTeleport, el 0x19/0x0F, ReceiveRevival y CheckGate.
+        // El port usaba DAT_05826d04, otro global (lo usan ReceiveLogOut y
+        // UI_InGameMenu): el flag del skill nunca se limpiaba donde debia.
+        if (DAT_05826d14 || DAT_07e11dc4 || (GetTickCount() - DAT_07e11dc8) < 3000)
             return;
-        DAT_05826d04 = 1;                                     // IDA L9307: Teleport = 1
+        DAT_05826d14 = 1;                                     // IDA L9307: Teleport = 1
         // IDA Attack @0x49CBF0 arma el buffer con longitud inicial 3 y luego
         // anexa gate=0, TargetX y TargetY: [C1][06][1C][00][TargetX][TargetY].
         // El `05` que aparecia en una lectura anterior era el valor intermedio
@@ -1318,11 +1322,11 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             *(float*)(target + 36) = FUN_0043e050(              // IDA L9798
                 *(float*)(target + 16), *(float*)(target + 20),
                 *(float*)(target + 788), *(float*)(target + 792));
-            if (DAT_05826d04) {                                 // IDA L9802: if (Teleport)
-                DAT_05826d04 = 0;
+            if (DAT_05826d14) {                                 // IDA L9802: if (Teleport)
+                DAT_05826d14 = 0;
                 return;
             }
-            DAT_05826d04 = 1;                                   // IDA L9807: Teleport = 1
+            DAT_05826d14 = 1;                                   // IDA L9807: Teleport = 1
             Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
             Combat_SendPartyRecall97k(entity, (int)SelectedCharacter, (BYTE)x, (BYTE)y);
             // IDA L10084 LABEL_1670 -> LABEL_1763: sub_444B30 = SetPlayerTeleport.

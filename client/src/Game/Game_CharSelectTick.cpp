@@ -362,7 +362,11 @@ void Game_CharSelectTick(void)
     extern void __stdcall MoveBugs_stub(void);
     MoveBugs_stub();
 
-    Character_UpdateAll();
+    // (2026-09-12: aca habia un `Character_UpdateAll()` = 0x479730, que es
+    //  RenderSprites -- dibuja el pool de sprites y LES LIMPIA el flag.  En IDA
+    //  solo lo llaman Game_RenderTick, Scene_Login y Scene_CharSelect; el tick
+    //  del mundo (0x524E30) no.  Llamado aca dibujaba fuera del pase 3D y
+    //  borraba los sprites antes del render real.  Game_RenderTick ya lo llama.)
     DamageNumbers_Tick();
     Effect_TickFade();
     Effect_TickAll();
@@ -377,7 +381,8 @@ void Game_CharSelectTick(void)
     // (Game_EnterWorldTick L310) sí lo llama; el de char-select no lo tenía.
     extern void __stdcall MoveParticles_stub(void);
     MoveParticles_stub();   // MoveParticles (0x477090)
-    Effect_UpdateAll();
+    // (Tambien habia un `Effect_UpdateAll()` = 0x479790 = CheckSprites; su unico
+    //  caller en IDA es Game_RenderTick, que ya lo llama antes de RenderSprites.)
     Effect_TickFlare();
 
     // Anti-tamper ftol + frame counter checks
