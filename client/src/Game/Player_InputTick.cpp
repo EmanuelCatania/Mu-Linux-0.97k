@@ -487,14 +487,24 @@ static void HUD_HotkeyTick(void)
     // En MU los paneles izquierdos (Character / Shop / Warehouse) son mutuamente
     // excluyentes: abrir C/G/P cierra la ventana del NPC (y avisa al server con
     // el close 0x31, como ya hacen I/V y Escape).
+    // IDA Chat_InputTick L4921-5826: al CERRAR con G/P/C suenan 25 y 28 (P ya
+    // los tiene en Party_ToggleAndRefresh); G apaga el party antes de mirar
+    // su propio flag.  2026-09-14: faltaban los sonidos y el PartyOpened = 0.
     if (kC) {
-        if (DAT_07eaa116) DAT_07eaa116 = 0;
+        if (DAT_07eaa116) {
+            DAT_07eaa116 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        }
         else if (HUD_CloseNpcWindowsIfAny()) { DAT_07eaa116 = 1; }
     }
     if (kG) {
+        DAT_07eaa115 = 0;   // PartyOpened (IDA L4928)
         if (DAT_07eaa114 || DAT_07eaa124) {
             DAT_07eaa114 = 0;
             DAT_07eaa124 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
         }
         else {
             if (!HUD_CloseNpcWindowsIfAny()) return;
@@ -529,7 +539,12 @@ static void HUD_HotkeyTick(void)
             //  ventanas de NPC; el panel de Character lo togglea la tecla C.)
             HUD_CloseInventoryFamilyFromUI();
         } else {
+            // IDA L6323-6327: al abrir apaga guild y party y suenan 25 y 28.
             DAT_07eaa117 = 1;
+            DAT_07eaa114 = 0;   // GuildOpened
+            DAT_07eaa115 = 0;   // PartyOpened
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
         }
     }
 }
