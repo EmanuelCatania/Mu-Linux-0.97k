@@ -5567,7 +5567,7 @@ void Net_ProcessPacket(void)
                 BYTE state = Msg[3];
 
                 if (state == 0) {
-                    UIChatLogWindow_AddText(nullptr, GlobalText[492], 2);
+                    UIChatLogWindow_AddText(nullptr, GlobalText[494], 2);   // IDA: 494
                     DAT_07eaa0e8 = 0;
 
                     for (int slot = 0; slot < 32; ++slot) {
@@ -5605,6 +5605,7 @@ void Net_ProcessPacket(void)
                 g_ItemMoveSourcePool = 0;
                 g_ItemMoveTargetPool = 0;
                 FUN_00423db0();
+                DAT_07eaa117 = 0;   // InventoryOpened (IDA ReceiveTradeExit: cierra el inventario)
                 CloseInventoryRelatedWindows();
 
                 if (DAT_083a7c24 == 116) {
@@ -5813,7 +5814,24 @@ void Net_ProcessPacket(void)
                         DAT_00559f5f = 1;
                         DAT_07eaa148 = 0;
                         break;
+                    case 10: SetErrorMessage(134); break;   // PIN incorrecto
+                    case 11: SetErrorMessage(135); break;   // ya tenia candado
+                    case 13: SetErrorMessage(138); break;   // codigo personal invalido
                     case 12:
+                        // IDA ReceiveStorageStatus (0x434450): PIN aceptado.  Si
+                        // habia una accion esperando el PIN (la arma el drop o el
+                        // retiro de zen), se completa ahora.
+                        if (DAT_00559f5f && !DAT_07eaa148) {
+                            if ((int)DAT_07ea9804 == -1) {
+                                FUN_0043ce50((unsigned char)DAT_07ea9808, (int)DAT_07ea980c);
+                            } else {
+                                DAT_07eaa165 = 1;   // EquipmentItem
+                                g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetWarehouseItems[0];
+                                g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                                SendRequestEquipmentItem_stub((int)DAT_07ea9804, (int)DAT_07ea9808,
+                                    (ITEM*)DAT_07e91350, (int)DAT_07ea980c, (int)DAT_07ea9810);
+                            }
+                        }
                         DAT_00559f5f = 1;
                         DAT_07eaa148 = 1;
                         break;

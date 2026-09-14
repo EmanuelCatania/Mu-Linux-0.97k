@@ -192,6 +192,9 @@ static void Party_ToggleAndRefresh(void)
     }
 
     PartyNumber = 0;
+    // IDA Chat_InputTick L5639-5807: abrir el party cierra inventario y personaje.
+    DAT_07eaa117 = 0;   // InventoryOpened
+    DAT_07eaa116 = 0;   // CharacterOpened
     const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
     Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
     PartyOpened = 1;
@@ -510,6 +513,10 @@ static void HUD_HotkeyTick(void)
             if (!HUD_CloseNpcWindowsIfAny()) return;
             DAT_07eaa114 = 1;
             DAT_07eaa115 = 0; // close Party
+            // IDA Chat_InputTick L5275-5277: abrir el guild cierra inventario y
+            // personaje (se dibujan en la misma franja x=450).
+            DAT_07eaa117 = 0; // InventoryOpened
+            DAT_07eaa116 = 0; // CharacterOpened
             // 2026-08-15 BUG-FIX (abrir el panel de guild con G desconectaba):
             // el opcode 0x52 pide Encrypt=0 en HackPacketCheck.txt, o sea frame
             // C1 plano. Enviarlo como C3 (Net_SendSmallPacket) hace que el

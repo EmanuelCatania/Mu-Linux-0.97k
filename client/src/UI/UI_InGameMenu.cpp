@@ -410,14 +410,14 @@ void __cdecl UI_InGameMenu(void)
     // ── 114 — confirmar BORRAR PERSONAJE (char-select) ─────────────────────
     // Lo abre Game_EnterWorldTick (IDA 0x521D80 L479-483) para personajes de
     // nivel < 40, con InputText[0] capturando el codigo personal.
-    // IDA UI_InGameMenu: Si = rect estandar [234,304) (L2142-2148) ->
-    // sub_513C10; No = [373,413) o Esc (L2150-2158) -> L2183.
+    // IDA UI_InGameMenu L1383: el 114 comparte el gate de 126/152 (LABEL_494),
+    // Si = [323,363) -> sub_513C10; No = [373,413) o Esc -> L2183.
     // Antes este case corria SIN gate de click: el cartel se cerraba solo en
     // el frame siguiente y nunca se mandaba el borrado (no habia ningun envio
     // de F3/02 en el arbol).
     case 0x72:
     {
-        const bool yes = mouseX >= 234 && mouseX < 304 &&
+        const bool yes = mouseX >= 323 && mouseX < 363 &&
                          mouseY >= 98 && mouseY < 119 && IsClickPushed();
         const bool no  = escHit ||
                          (mouseX >= 373 && mouseX < 413 &&
