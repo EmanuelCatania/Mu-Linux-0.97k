@@ -38,42 +38,19 @@ extern void FUN_004fa5a0(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// DeleteObjects @ 0x004FFD50 (90 lines) — Release all world objects
-// Frees BMD models, unloads textures, clears entity/effect/particle arrays.
-void __cdecl DeleteObjects(void) {
-    // Original releases BMD models in [0, 0x7580) stride 0xBC,
-    // walks linked-list object blocks freeing nodes,
-    // unloads textures in range [0x23, 0x68),
-    // zeros live flags for: Sprites, Boids, Fishs, Leaves,
-    // Particles, Points, Joints, Operates, Effects.
-    // Simplified: clear effect/particle arrays via memset
-    // Full cleanup requires BMD__Release and UnloadImage which
-    // are already stubbed elsewhere.
-}
-
-// DeleteNpcs @ 0x00509190 (20 lines) — Release NPC models and sound buffers
-// Frees BMD models in NPC range, releases sound buffers 0x78-0xAA.
-void __cdecl DeleteNpcs(void) {
-    // Release NPC sound buffers (slots 0x78 to 0xA9)
-    // Original: BMD__Release for model indices ~213-255 (offsets 0xF604..0x11710 stride 0xBC)
-    // then ReleaseBuffer for sound slots 0x78..0xA9
-    // Simplified — sound/model release handled at shutdown
-}
-
-// DeleteMonsters @ 0x00509880 (20 lines) — Release monster models and sound buffers
-// Frees BMD models in monster range, releases sound buffers 0xAA-0x1A4.
-void __cdecl DeleteMonsters(void) {
-    // Original: BMD__Release for model indices ~170-213 (offsets 0xC648..0xF604 stride 0xBC)
-    // then ReleaseBuffer for sound slots 0xAA..0x1A3
-    // Simplified — sound/model release handled at shutdown
-}
-
-// ClearItems @ 0x00502B80 (17 lines) — Clear all ground item live flags
-void __cdecl ClearItems(void) {
-    // Original loops through Items array zeroing the Key/live byte of each entry
-    // Items base is DAT_07e907e0 area, each item has a live flag at offset 0
-    // For now, no-op — items cleared at map transition
-}
+// DeleteObjects / DeleteNpcs / DeleteMonsters / ClearItems — delegan en los
+// ports reales de las mismas direcciones (los que usa OpenWorld al cambiar de
+// mapa).
+//
+// 2026-09-16: los cuatro eran cuerpos VACIOS ("Simplified — handled at
+// shutdown").  Su unico caller es ReleaseMainData (0x5110A0), que llama
+// ReceiveLogOut al volver al char-select o al login: el mundo quedaba cargado
+// entero (modelos, texturas, objetos, sonidos, items del suelo) y el
+// char-select andaba lento.  Mismo patron de simbolo duplicado de siempre.
+void __cdecl DeleteObjects(void)  { FUN_004ffd50(); }   // IDA: DeleteObjects  (0x004FFD50)
+void __cdecl DeleteNpcs(void)     { FUN_00509190(); }   // IDA: DeleteNpcs     (0x00509190)
+void __cdecl DeleteMonsters(void) { FUN_00509880(); }   // IDA: DeleteMonsters (0x00509880)
+void __cdecl ClearItems(void)     { FUN_00502b80(); }   // IDA: ClearItems     (0x00502B80)
 
 // ClearCharacters @ 0x0045ABB0 — DUPLICADO de FUN_0045abb0 (misma direccion).
 // 2026-07-24: antes esta version leia el Key del offset EQUIVOCADO (+4 en vez
