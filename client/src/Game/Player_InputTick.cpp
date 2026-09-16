@@ -1464,6 +1464,23 @@ void __cdecl Player_ProcessInput(void)
 
         _DAT_07e11d50 = (DAT_05826e08 - _DAT_07e11d4c) * _DAT_00552890;
 
+        // IDA 0x004ACEF0 L613-625: ANTES de procesar el click, el original lo
+        // descarta mientras el heroe no puede actuar:
+        //   accion 130 (golpeado), c+124 == 1 o 2, alpha (c+360) < 0.7, o una
+        //   animacion de ataque/skill (34..91) — salvo las 78..80.
+        // Faltaba: spameando clicks durante el golpe se re-disparaba Action y
+        // el ataque se reiniciaba (doble golpe en la misma animacion).
+        if (ent) {
+            const unsigned char act = ent[261];
+            const unsigned char st  = ent[124];
+            if (act == 0x82 || st == 1 || st == 2 ||
+                *(float*)(ent + 360) < 0.69999999f ||
+                (act >= 0x22 && act <= 0x5B)) {
+                if (act < 0x4E || act > 0x50)
+                    goto end_tick_inc;                 // IDA: goto LABEL_390
+            }
+        }
+
         // IDA 0x004ACEF0 LABEL_190 (raw L716-718):
         //     LABEL_190: v86 = *(_BYTE *)(v34 + 846);   // SafeZone
         //                MouseUpdateTime = 0;
