@@ -201,7 +201,12 @@ unsigned int __cdecl FUN_004e93a0(void)
                 wsprintfA(digit, "%d", (int)DAT_07e91394[btn]);
                 strcat(DAT_07ea9814, digit);
             }
-        } else if (len == maxLen) {            // aceptar
+        } else if (len == maxLen || (maxLen != 4 && len > 0)) {   // aceptar
+            // DESVIACION: IDA exige `len == v2`, pero v2 sale de
+            // LODWORD(flt_83A7ACC[0]) — el arreglo de la camara — asi que no hay
+            // un largo fiel que copiar.  Para el codigo personal aceptamos lo
+            // que se haya tipeado (el server compara 7 caracteres, y con
+            // PersonalCodeCheck=0 ni los mira).  El PIN sigue pidiendo 4.
             // IDA L211-217: un PIN de 4 digitos todos iguales no se acepta.
             if (maxLen == 4 && DAT_07ea9814[0] == DAT_07ea9814[1]
                             && DAT_07ea9814[1] == DAT_07ea9814[2]
