@@ -759,7 +759,7 @@ void Game_EnterWorldTick(void)
         }
         break;
 
-    case 0x19:  // Slide off; on reach: send enter-world packet
+    case 0x19:  // Slide off; on reach: copiar datos del personaje y pasar a Loading
         DAT_005616a8 -= (DAT_005616a8 + 0xca) / 2;
         if (DAT_005616a8 < -200) {
             int code = DAT_05826cb0;
@@ -777,44 +777,9 @@ void Game_EnterWorldTick(void)
                     ((char*)DAT_07cf1ff4)[0xb] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bc];
                     ((char*)DAT_07cf1ff4)[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bd];
                 }
-                // BUG-FIX 2026-04-28: bug doble.
-                //
-                // (1) DIRECCIÓN del XOR — server MuEmu (PacketManager.cpp:486
-                //     CPacketManager::XorData) descifra con prev-byte chain:
-                //         m_buff[n] ^= m_buff[n - 1] ^ key[n % 32]   (n--)
-                //     pero nuestro port de Ghidra usaba pkt[i+1] (byte
-                //     siguiente).  Server al descifrar producía garbage en
-                //     el sub-opcode → switch(lpMsg[3]) no matcheaba 0x03 →
-                //     silently drop → no F3/03 response → pantalla negra.
-                //     La login (Game_SceneUpdate.cpp:135) ya usa la fórmula
-                //     correcta con pkt[i-1].
-                //
-                // (2) NAME source — el server MuEmu hace lookup por CHAR
-                //     name (Protocol.h:122 PMSG_CHARACTER_INFO_RECV.name);
-                //     el original 0.97K mandaba InputText[0]=ACCOUNT name
-                //     que MuEmu no usa.  Mandamos el char name del slot.
-                //
-                // (3) Sub-opcode 0x03 explícito — el original lo "creaba"
-                //     vía la cadena XOR; aquí lo metemos plano y dejamos
-                //     que la cadena XOR forward lo cifre.
-                BYTE pkt[32];
-                memset(pkt, 0, sizeof(pkt));
-                pkt[0] = 0xC1;
-                pkt[1] = 0x0E;       // length = 14
-                pkt[2] = 0xF3;        // opcode
-                pkt[3] = 0x03;        // sub-opcode: CharacterInfoRecv
-
-                char* charName = (char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
-                int   nameLen = (int)strlen(charName);
-                if (nameLen > 10) nameLen = 10;
-                memcpy(pkt + 4, charName, nameLen);
-                int pos = 14;
-                // XOR-encode body i=3..size-1 with prev-byte chain (matches
-                // server's XorData inverse).
-                for (int i = 3; i < pos; i++) {
-                    pkt[i] ^= pkt[i - 1] ^ s_Key[i & 0x1f];
-                }
-                Pkt_Send(pkt, pos);
+                // El F3/03 NO sale de aca: IDA 0x521D80 case 25 solo copia los
+                // datos del personaje y pasa a Loading. Lo manda el init de
+                // Game_CharSelectTick (IDA 0x524E30 L80-219).
 
                 // Handle specific response codes
                 if (code == 0x36 || code == 0x37) {
