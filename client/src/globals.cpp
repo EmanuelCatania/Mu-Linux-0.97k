@@ -843,7 +843,8 @@ char     DAT_07e91350[0x44]  = {0};
 DWORD    DAT_07e91388  = 0;
 byte     DAT_07e9138e  = 0;   // UI grid selected column
 byte     DAT_07e9138f  = 0;   // UI grid selected row
-DWORD    DAT_07e91394  = 0;
+short    DAT_07e91394[10] = {0};   // digitos barajados del teclado del PIN
+char     DAT_07eaa1a4  = 0;        // IDA: byte_7EAA1A4 (prefijo del campo enmascarado)
 DWORD    DAT_07e913a8  = 0;
 DWORD    DAT_07e91428  = 0;
 DWORD    DAT_07e91784  = 0;
@@ -888,14 +889,11 @@ DWORD    DAT_07ea9800  = 0;
 DWORD    g_ItemMoveSourcePool = 0;
 DWORD    g_ItemMoveTargetPool = 0;
 DWORD    DAT_07ea9810  = 0;
-DWORD    DAT_07ea9814  = 0;
-float    _DAT_07ea9814 = 0.0f;
-char     DAT_07ea9815  = 0;
-char     DAT_07ea9816  = 0;
-char     DAT_07ea9817  = 0;
-unsigned int DAT_07ea9818  = 0;  // SecondPassword PIN bytes [4-7] (audit #8)
-DWORD    DAT_07ea981c  = 0;
-short    DAT_07ea981e  = 0;
+// Buffer de texto del teclado del PIN (0x07EA9814): hasta 10 digitos + NUL, y
+// atras la copia del PIN de la primera pasada (dword_7EA981F).  Estaba partido
+// en escalares sueltos, asi que lo que se tipeaba no llegaba a los lectores.
+char     DAT_07ea9814[16] = {0};
+// DAT_07ea9818 / 981c / 981e / 981f: alias dentro de DAT_07ea9814 (globals.h)
 DWORD    DAT_07ea982c  = 0;   // Screen3 panel origin X
 DWORD    DAT_07ea9830  = 0;   // Screen3 panel origin Y
 char     DAT_07ea9834[11] = {};

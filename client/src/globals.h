@@ -778,7 +778,8 @@ extern char    DAT_07e91350[0x44];      // pPickedItem — sizeof(ITEM) = 0x44
 extern DWORD   DAT_07e91388;
 extern byte    DAT_07e9138e;   // UI grid selected column (byte, Item_ReturnPickedItem)
 extern byte    DAT_07e9138f;   // UI grid selected row (byte, Item_ReturnPickedItem)
-extern DWORD   DAT_07e91394;
+extern short   DAT_07e91394[10];   // IDA: word_7E91394
+extern char    DAT_07eaa1a4;       // IDA: byte_7EAA1A4
 extern DWORD   DAT_07e913a8;
 extern DWORD   DAT_07e91428;
 extern DWORD   DAT_07e91784;
@@ -810,14 +811,16 @@ extern DWORD   DAT_07ea9804;   // NPC shop context A
 extern DWORD   DAT_07ea9808;   // NPC shop context B
 extern DWORD   DAT_07ea980c;   // NPC shop context C
 extern DWORD   DAT_07ea9810;
-extern DWORD   DAT_07ea9814;
-extern float  _DAT_07ea9814;
+extern char    DAT_07ea9814[16];   // IDA: dword_7EA9814 — texto tipeado en el teclado del PIN
+// Alias dentro de ese buffer (el binario los aborda como globales sueltos):
+#define DAT_07ea9818   (*(unsigned int*)&DAT_07ea9814[4])
+#define DAT_07ea981c   (*(unsigned short*)&DAT_07ea9814[8])
+#define DAT_07ea981e   (DAT_07ea9814[10])
+#define DAT_07ea981f   (*(unsigned int*)&DAT_07ea9814[11])   // copia del PIN de la 1ra pasada
 extern char    DAT_07ea9815;
 extern char    DAT_07ea9816;
 extern char    DAT_07ea9817;
-extern unsigned int DAT_07ea9818;  // SecondPassword PIN bytes [4-7] — widened from char (audit #8)
-extern DWORD   DAT_07ea981c;
-extern short   DAT_07ea981e;   // second-password shuffle state (short, FUN_004e9250)
+
 extern DWORD   DAT_07ea982c;   // Screen3 panel origin X
 extern DWORD   DAT_07ea9830;   // Screen3 panel origin Y
 extern char    DAT_07ea9834[11];    // IDA: nombre remoto de Trade (8+2 bytes del paquete, NUL)

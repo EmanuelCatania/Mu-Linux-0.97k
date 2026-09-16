@@ -621,7 +621,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                     }
                 }
                 DAT_07eaa14c = 1;
-                DAT_07ea9814 = 0;
+                memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
                 DAT_07ea9818 = 0;
                 DAT_07ea981c = 0;
                 DAT_07ea981e = 0;
