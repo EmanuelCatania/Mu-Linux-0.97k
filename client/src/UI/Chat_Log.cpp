@@ -26,17 +26,13 @@
 //
 // Called from Trade.cpp (mode=2), Sound_Countdown2 (mode=0), GM messages, etc.
 void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mode) {
-    // 2026-07-27 DIAG (mensajes "whisper" fantasma con una letra suelta): este es
-    // el punto ÚNICO por donde pasan todos los mensajes del chat log. Logueamos
-    // label/msg/mode para identificar la fuente del mensaje espurio.
-    // 2026-07-27 FIX (mensajes "whisper" fantasma con un carácter suelto):
-    // descartar entradas con mensaje vacío/NULL. Game_SceneUpdate mete ~120
-    // AddText con msg="" en cada carga de escena (GlobalText[470..473] vienen
-    // vacíos); esas entradas SÍ entran al ring buffer de popups (el gate del
-    // original sólo mira strID), y un slot del ring con bytes stale se renderiza
-    // como un carácter basura en (0,65) — el "whisper" fantasma que se veía cada
-    // tanto. Una línea de chat vacía nunca es legítima, así que la ignoramos.
-    if (!msg || msg[0] == '\0') return;
+    // IDA 0x480620 no descarta los mensajes vacíos: las 120 llamadas con texto
+    // vacío que hacen Game_SceneUpdate y Game_CharSelectTick al cambiar de
+    // escena son justamente el flush del ring. Sin ellas, los avisos del juego
+    // (en azul) quedaban en el ring y aparecían en el login/select server.
+    // Los slots vacíos no se dibujan: sub_480980 salta los que tienen el
+    // mensaje en 0, y acá el slot se limpia con memset antes de copiar.
+    if (!msg) msg = "";
 
     // BUG-FIX 2026-08-17: el dispatch de abajo estaba gateado con `&& label`, y
     // el handler del notice 0x0D type=1 (Net_Process) llama con label = nullptr.
