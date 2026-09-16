@@ -430,7 +430,12 @@ void Render_QuickButtons_(void)
     // 1 y el widget en foco no coincide).  Sin este gate el preview azul del
     // drop seguia al mouse con el teclado abierto.  Se deja el llamado (quitarlo
     // requiere probar el drop) pero con el mismo corte que el original.
-    if (DAT_07eaa14c == 0)
+    // Condicion de corte de UpdateWindowsMouse: teclado del PIN activo, un
+    // cartel abierto (ErrorMessage) o un widget con foco.  El caso del cartel
+    // aparecia con el quick-move del click derecho: tras un PIN incorrecto el
+    // item queda en la mano con el cartel "Contrasena incorrecta" encima.
+    if (DAT_07eaa14c == 0 && DAT_083a7c24 == 0 &&
+        DAT_055c9b7c == 0 && DAT_055c9b80 == 0)
         Inventory_DropDispatch(0, 0);
 
     RenderServerDivision();
