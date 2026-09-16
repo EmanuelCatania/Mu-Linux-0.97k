@@ -314,37 +314,25 @@ void __cdecl UI_InGameMenu(void)
                     case 1:
                     {
                         if (DAT_005615c0 == 4 || DAT_005615c0 == 5) {
-                            // JoinSrv → F1/02/02
-                            BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x02, 0x00, 0x00, 0x00 };
-                            SendLoginPacket(pkt, 5);
-                            // Transición local — emula ReceiveLogOut sub=2 (IDA 0x004247D0):
-                            //   if (gs==5) { StopMusic; AllStopSound; sub_4CD3B0; ReleaseMainData; }
-                            //   CWsctlc::Close
-                            //   ReleaseCharacterSceneData()  ← libera modelos/texturas char-select
-                            //   g_GameState = 2
-                            //   InitLogIn=0; InitCharacterScene=0; InitMainScene=0;
-                            //   EnableMainRender=0; CurrentProtocolState=0;
-                            //   InitGame()                  ← reset estado de sesión
-                            if (DAT_005615c0 == 5) {
-                                StopMusic();
-                                AllStopSound();
-                                Item_ReturnPickedItem();
-                                ReleaseMainData();
+                            // IDA 00514310 L843-1074 (menu "seleccionar servidor"):
+                            // con la Chaos Machine abierta avisa GlobalText[592];
+                            // si no, LogOut = 1 y manda F1/02/02 y cierra el menu.
+                            // NO hay transicion local: el server hace la cuenta
+                            // regresiva (avisos de 5 s) y contesta F1/02/02, y es
+                            // ReceiveLogOut (Recv_LogOut sub 2) quien libera el
+                            // mundo, cierra el socket y vuelve al login.
+                            //
+                            // 2026-09-16: el port hacia toda la transicion aca en
+                            // el acto (el comentario decia que MuEmu no contesta
+                            // F1/02/02, y es falso: User.cpp:2347
+                            // GCCloseClientSend(2) tras CloseCount).  Por eso no
+                            // habia cuenta regresiva.
+                            if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
+                                UIChatLogWindow_AddText("", GlobalText[592], 2);
+                            } else {
+                                BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x02 };
+                                Net_SendSmallPacket(pkt, 5);
                             }
-                            FUN_0043dc90((int)(uintptr_t)DAT_055ca160);  // Net_Disconnect
-                            Scene_UnloadCharSelectResources(); // FUN_005102c0 (IDA) — saca preview
-                            DAT_005615c0   = 2;   // g_GameState = Login
-                            DAT_083a7c14  = 0;   // sub-state = ServerSelect
-                            DAT_083a7c18  = 0;
-                            DAT_05826cb0 = 0;   // CurrentProtocolState
-                            // Reset init guards: cuando el usuario re-loguee y vuelva
-                            // a char-select, las funciones init re-cargan los assets.
-                            DAT_083a7c48 = 0;   // ConnectionCheckEnable
-                            DAT_083a7c49 = 0;   // InitLogIn  → fuerza Scene_Login init
-                            CharSelectSceneInitialized = 0; // IDA: DAT_083a7c4b; force character-scene reload
-                            DAT_083a7c4c = 0;   // InitMainScene
-                            DAT_083a7c4d = 0;   // EnableMainRender / warning flag
-                            InitGame();           // reset estado de juego
                         } else if (DAT_005615c0 == 2) {
                             // Login: case 1 = Options
                             DAT_083a7c28 = 0x96;

@@ -114,7 +114,9 @@ void __stdcall InitGame(void)
     DAT_07eaa138 = 0;     // RepairEnable   (IDA InitGame 0x424502)
     DAT_00559c6d = 0xff;
     DAT_0055a3e4 = 0xffffffff;
-    FUN_0051d740();       // ClearNotice
+    ClearNotice();        // IDA: ClearNotice (0x0047FAC0).  Antes llamaba a FUN_0051d740,
+                          // que no es una funcion (cuerpo vacio): los notices del juego
+                          // seguian en pantalla al volver al login o al char-select.
 
     // --- Phase 2: Hash table lookup for CharacterMachine ---
     // Looks up CharacterMachine key in MAIN_HASH_CLASS (anti-tamper obfuscation).

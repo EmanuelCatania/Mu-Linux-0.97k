@@ -140,7 +140,9 @@ void __fastcall CErrorReport__AddSeparator(DWORD This) {
 
 
 // ClearNotice @ 0x0047FAC0 (17 bytes) — zero-fill notice text array
-void __cdecl ClearNotice(void) { memset(DAT_083a2370 + 0x10, 0, 0x630); }
+// 2026-09-16: borraba DAT_083a2370 + 0x10, que es la lista de objetos
+// interactuables (Operates).  Notice vive en 0x07DB80D8 (= DAT_07db80d8, 6 x 0x108).
+void __cdecl ClearNotice(void) { memset(DAT_07db80d8, 0, 0x630); }
 
 // ── 18-byte ─────────────────────────────────────────────────────────────────
 
