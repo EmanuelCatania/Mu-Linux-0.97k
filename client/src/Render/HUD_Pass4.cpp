@@ -424,7 +424,14 @@ void Render_QuickButtons_(void)
     // an item picked up via FUN_004d23b0 inside RenderInventoryWindow). This
     // is the function that builds and SENDS the 0x24 PMSG_ITEM_MOVE_RECV
     // packet via SendRequestEquipmentItem_stub → Net_SendSmallPacket (C3).
-    Inventory_DropDispatch(0, 0);
+    // 2026-09-16: este llamado es un DUPLICADO del port — en IDA el dispatcher
+    // (sub_4DF410) solo lo llama UpdateWindowsMouse (0x4ECB00), que corta antes
+    // mientras el teclado del PIN esta abierto (SecondPassword_Handler devuelve
+    // 1 y el widget en foco no coincide).  Sin este gate el preview azul del
+    // drop seguia al mouse con el teclado abierto.  Se deja el llamado (quitarlo
+    // requiere probar el drop) pero con el mismo corte que el original.
+    if (DAT_07eaa14c == 0)
+        Inventory_DropDispatch(0, 0);
 
     RenderServerDivision();
 }
