@@ -992,7 +992,7 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
     // Arm async notifications BEFORE connect so FD_CONNECT is delivered.
     HWND hWnd = *(HWND*)ctx;
     if (hWnd != nullptr) {
-        WSAAsyncSelect(s, hWnd, wMsg, FD_READ | FD_WRITE | FD_CONNECT | FD_CLOSE);
+        WSAAsyncSelect(s, hWnd, wMsg, FD_READ | FD_WRITE | FD_CLOSE);   // IDA 0x43DCD0: mascara 35 (0x23), sin FD_CONNECT
     }
 
     int r = connect(s, (sockaddr*)&sa, sizeof(sa));
