@@ -1611,6 +1611,15 @@ void __cdecl Player_ProcessInput(void)
                     int srcX = *(int*)(ent + 0x388);
                     int srcY = *(int*)(ent + 0x38c);
 
+                    // IDA 0x004ACEF0 L986-988: `if (!CheckWall(hx, hy, TargetX,
+                    // TargetY)) goto LABEL_390;` — con una pared entre el heroe y
+                    // el objetivo no se camina ni se ataca (el objetivo y la cola
+                    // ya quedaron fijados arriba, igual que en el original).
+                    // Faltaba: el heroe salia a caminar o pegaba a traves de la
+                    // pared y el server descartaba el golpe.
+                    if (!Path_IsLineClear(srcX, srcY, dstX, dstY))
+                        goto end_tick_inc;
+
                     // IDA 0x004ACEF0 L1027-1131 — tres salidas, no dos:
                     //
                     //   if ( !PathFinding2(hx, hy, TargetX, TargetY, c + 852, 0.0) )
