@@ -225,7 +225,7 @@ extern int     SelectedNpc;        // DAT_00559c4c — NPC/shop entity (-1 = non
 extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none)
 extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
 extern int     DAT_00559c58;   // hover: secondary target index
-extern char    DAT_00559c5c;   // hover enabled flag (0=disabled)
+extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
 extern int     DAT_00559c60;   // equipped weapon type (right hand)
 extern int     DAT_00559c64;   // equipped weapon type (left hand)
 extern int     DAT_00559c68;   // equipped weapon type (crossbow/secondary)
@@ -1676,7 +1676,7 @@ extern DWORD   DAT_00559c78;   // current text color ABGR (0xffffffff = white)
 // DAT_00559c80 — declared above as DWORD (line 197)
 // DAT_00559c8c — declared above as DWORD (line 200)
 // Toggle flags
-extern char    DAT_00559c5c;   // sound-effect toggle (0=off, non-zero=on)
+extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
 extern char    DAT_07e11d80;   // IDA: m_bWhisperSound (0x07E11D80) — aviso sonoro de susurros
 // Entity/level data
 // Format strings for numeric dialogs
@@ -2752,7 +2752,10 @@ extern int     DAT_07e11990;       // SelectedOperate
 // DAT_07e1198c already declared above (line ~1003) as DWORD
 extern int     DAT_07e11988;       // SelectedItem
 // DAT_07e11984 already declared above (line ~1002) as DWORD
-extern int     DAT_07e11e18;       // m_bAutoAttack
+// m_bAutoAttack vive en 0x00559C5C (DAT_00559c5c, IDA InitGame L39).  El port
+// tenia ademas DAT_07e11e18: el toggle del menu y el hover escribian uno y el
+// combate / F3/30 leian el otro.  Ahora es un alias.
+#define DAT_07e11e18   DAT_00559c5c
 extern int     DAT_07e11d24;       // _CheckInventory
 // DAT_07e11d1c already declared above (line ~553) as DWORD
 extern BYTE    DAT_00559c6d;       // UI alpha/state byte

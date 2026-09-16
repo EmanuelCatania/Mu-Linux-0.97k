@@ -2793,7 +2793,7 @@ int    DAT_07e11990       = -1;
 // DAT_07e1198c already defined above (line ~994)
 int    DAT_07e11988       = -1;
 // DAT_07e11984 already defined above (line ~993)
-int    DAT_07e11e18       = 1;
+// DAT_07e11e18: alias de DAT_00559c5c (m_bAutoAttack), ver globals.h
 // DAT_07e11d24 already defined above (line ~873)
 // DAT_07e11d1c already defined above (line ~804)
 BYTE   DAT_00559c6d       = 0xFF;

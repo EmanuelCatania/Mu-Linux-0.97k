@@ -1564,7 +1564,19 @@ void __cdecl Player_ProcessInput(void)
                 //
                 // Filtro adicional: mobs MUERTOS (entity[+0x34e]==1) no son
                 // targeteables.
-                if (SelectedCharacter > -1 && bClickEdge) {
+                // 2026-09-16: IDA 0x004ACEF0 L590-603 no exige el flanco:
+                //   v32 = MouseLButtonPush || MouseLButton;
+                //   if ((!m_bAutoAttack || World == 6 || Attacking != 1 ||
+                //        SelectedCharacter == -1) && !v32) goto LABEL_390;
+                // O sea con el boton MANTENIDO se sigue atacando (el gate de
+                // animacion de mas arriba marca el ritmo), y con m_bAutoAttack
+                // el ataque continua al soltar mientras el objetivo siga
+                // vivo (sub_4B0310 lo mantiene fijo).  Antes solo pegaba en el
+                // frame del click.
+                const bool bAutoAttackGoOn = DAT_00559c5c != 0          // m_bAutoAttack
+                                          && DAT_0055a7ac != 6           // World
+                                          && (int)DAT_00559c58 == 1;     // Attacking
+                if (SelectedCharacter > -1 && (bClickEdge || bClickHeld || bAutoAttackGoOn)) {
                     // IDA Player.cpp (0x004ACEF0) gates the character-attack
                     // path with CheckAttack before it reaches Action().  Action
                     // itself intentionally sends 0x15 without rechecking it.

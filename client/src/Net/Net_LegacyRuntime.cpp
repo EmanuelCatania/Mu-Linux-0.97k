@@ -98,7 +98,7 @@ void __stdcall InitGame(void)
     DAT_00559c58 = -1;    // Attacking (IDA InitGame L38, global 0x00559C58).
                           // Antes escribia DAT_07e11984, que es el debounce de
                           // la flecha arriba del chat.
-    DAT_07e11e18 = 1;     // m_bAutoAttack = true
+    DAT_00559c5c = 1;     // m_bAutoAttack (IDA InitGame L39, 0x00559C5C)
     DAT_07e11d24 = 0;     // _CheckInventory
     // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (DAT_0055a7ac).
     // El port escribia DAT_005615c4, que es g_lpszMp3[0] — el puntero al mp3 de
