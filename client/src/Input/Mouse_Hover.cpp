@@ -422,97 +422,49 @@ int __cdecl Entity_SelectNearest(int param_1_int)
         if ((!bVar17) && (ent == (char *)DAT_07abf5d8)) continue;
         if ((ent[0x84] & param_1) != ent[0x84]) continue;
 
-        // Copy entity bounding data (entity+0x130, 12 dwords) to stack for viewport test
-        undefined4 auStack_58[12];
-        for (int i = 0; i < 12; i++)
-            auStack_58[i] = *(undefined4 *)(ent + 0x130 + i * 4);
-
-        // ── BUG-FIX 2026-04-26 (revisión 5): screen-space via gluProject.
-        //   El intento previo (revisión 4) usaba Camera_ProjectWorldToScreen (World_ToScreen),
-        //   pero esa función llama a __ftol() que en stdafx.h está stubbed como
-        //   GetTickCount() — devuelve basura, no proyección. Por eso TODOS los
-        //   slots daban la misma "screen pos" y BK ganaba siempre por ser slot 0.
-        //   Solución: usar gluProject directamente con el GL state actual.
-        //   Esto da píxeles ventana exactos y respeta perspectiva.
+        // IDA sub_4AFDC0 L38-52: test del RAYO del mouse contra la OBB de la
+        // entidad (o+0x130, 12 floats que llena Calc_RenderObject) con
+        // sub_513260, y gana la MAS CERCANA A LA CAMARA.
+        //
+        // 2026-09-16: aca habia una reimplementacion en pantalla (gluProject de
+        // tres puntos a 10/40/70 de altura sobre los pies y un radio fijo de 32
+        // px).  Apuntando a la parte alta del cuerpo, o con el mob inclinado en
+        // su animacion, el cursor quedaba fuera de esos circulos y el click caia
+        // al suelo (SelectedCharacter = -1): los "clicks que no atacan".  El
+        // motivo por el que se habia reemplazado (FUN_00513260 era un stub que
+        // devolvia 1) ya no aplica: quedo portado el 2026-09-04.
         {
-            float feetX = *(float*)(ent + 0x10);
-            float feetY = *(float*)(ent + 0x14);
-            float feetZ = *(float*)(ent + 0x18);
+            float box[12];
+            memcpy(box, (const void*)(ent + 0x130), sizeof(box));
+            if (!FUN_00513260((float*)&CameraRayOriginX, (float*)&DAT_083a4110, box))
+                continue;
 
-            GLdouble model[16], proj[16];
-            GLint viewport[4];
-            glGetDoublev(GL_MODELVIEW_MATRIX, model);
-            glGetDoublev(GL_PROJECTION_MATRIX, proj);
-            glGetIntegerv(GL_VIEWPORT, viewport);
+            const float dy = *(float*)(ent + 0x14) - _DAT_083a42d8;   // CameraPosition[1]
+            const float dz = *(float*)(ent + 0x18) - _DAT_083a42dc;   // CameraPosition[2]
+            const float dx = *(float*)(ent + 0x10) - _DAT_083a42d4;   // CameraPosition[0]
+            const float d2 = dz * dz + dy * dy + dx * dx;
+            if (!(d2 < best_perp)) continue;
 
-            // Probar 3 puntos verticales y quedarnos con la mínima distancia.
-            float bodyHeights[3] = { 10.0f, 40.0f, 70.0f };
-            int  mx = (int)DAT_083a427c;
-            int  my = (int)DAT_083a4278;
-            int  bestPx2 = 0x7fffffff;
-            int  bestSx = -1, bestSy = -1;
-            int  successCount = 0;
-            for (int probe = 0; probe < 3; probe++) {
-                GLdouble wx, wy, wz;
-                int gluOk = gluProject(
-                    (GLdouble)feetX, (GLdouble)feetY, (GLdouble)(feetZ + bodyHeights[probe]),
-                    model, proj, viewport, &wx, &wy, &wz);
-                if (!gluOk || wz < 0.0 || wz > 1.0) continue;  // detrás de la cámara o fuera de clip
-                successCount++;
-                // gluProject Y crece hacia arriba; la pantalla del juego Y
-                // crece hacia abajo. Y mouse está en 640×480 lógico, viewport
-                // está en píxeles físicos.
-                int sxLogical = (int)((wx * 640.0) / (double)viewport[2]);
-                int syLogical = (int)(((double)viewport[3] - wy) * 480.0 / (double)viewport[3]);
-                int dx = sxLogical - mx, dy = syLogical - my;
-                int d2 = dx*dx + dy*dy;
-                if (d2 < bestPx2) { bestPx2 = d2; bestSx = sxLogical; bestSy = syLogical; }
+            // Filtro de techos (IDA L~115-131): en Lorencia (World 0) una entidad
+            // sobre un tile 4, y en Devias (World 2) sobre un tile 3, solo se
+            // puede elegir si el heroe esta en ese mismo tipo de tile.
+            // `DAT_0055a7ac` es el indice de mapa (el macro `World` que lo
+            // nombraba g_GameSubState mentia; la nota vieja que deshabilito este
+            // filtro partia de esa etiqueta).
+            const int map = (int)DAT_0055a7ac;
+            if (map == 0 || map == 2) {
+                int tx = (int)*(float*)(ent + 0x10) / 100;
+                int ty = (int)*(float*)(ent + 0x14) / 100;
+                if (tx < 0) tx = 0; if (tx > 255) tx = 255;
+                if (ty < 0) ty = 0; if (ty > 255) ty = 255;
+                const unsigned char tile = DAT_080bb2b4[tx + (ty << 8)];   // TerrainMappingLayer1
+                const unsigned char roof = (map == 0) ? 4 : 3;
+                if (tile == roof && (DWORD)tile != DAT_07e118e8)           // HeroTile
+                    continue;
             }
-            // DIAG once per slot per second
-            if (DAT_005615c0 == 4) {
-                static DWORD s_lastHT[5] = {0,0,0,0,0};
-                int slotN = (int)(((uintptr_t)ent - (uintptr_t)DAT_07abf5d0) / 0x394);
-                if (slotN >= 0 && slotN < 5) {
-                    DWORD now = GetTickCount();
-                    if (now - s_lastHT[slotN] > 1000) {
-                        s_lastHT[slotN] = now;
-                        char b[300];
-                        _snprintf_s(b, sizeof(b), _TRUNCATE,
-                            "HT slot=%d entPos=(%.1f,%.1f,%.1f) sxy=(%d,%d) px=%d mxy=(%d,%d) ok=%d vp=(%d,%d,%d,%d)",
-                            slotN, feetX, feetY, feetZ,
-                            bestSx, bestSy,
-                            (bestPx2 < 0x7fffffff) ? (int)sqrtf((float)bestPx2) : -1,
-                            mx, my, successCount,
-                            viewport[0], viewport[1], viewport[2], viewport[3]);
-                        DbgLogPublic(b);
-                    }
-                }
-            }
-            if (successCount == 0) continue;
-            // Threshold ~32 px ancho del cuerpo en pantalla.
-            const int R_PX = 32;
-            if (bestPx2 > R_PX * R_PX) continue;
-            if (!((float)bestPx2 < best_perp)) continue;
-            best_perp = (float)bestPx2;
+            best_perp = d2;
         }
 
-        // 2026-05-06 BUG-FIX MAYÚSCULO: terrain filter DESHABILITADO.
-        // El IDA original gateaba esta sección por `World` (current map number,
-        // 0=Lorencia, 2=Devias). Pero en globals.h:2139 nuestro build tiene
-        //   #define World    g_GameSubState
-        // que es semánticamente DIFERENTE — g_GameSubState = 0/connecting,
-        // 2/in-world, 9/logout, etc. Cuando el user está in-world, subst=2
-        // SIEMPRE → entramos al else "Devias" branch y leemos
-        // TerrainMappingLayer1 con coords mal interpretadas → rejecta mobs
-        // incluso en Lorencia.
-        //
-        // User reportó "no atacaba a la primera, me costo empezar a atacar":
-        // hover detect rechazaba mobs por este filter de terrain corrupto.
-        //
-        // El filter es una optimization (no permite hover sobre mobs en
-        // tiles "blocked"). Sin él, mobs en safe-zones técnicamente serían
-        // hoverable pero el server rechaza el attack de todos modos. Net
-        // negative removerlo es 0.
         best_idx  = ent_idx;
     }
 
