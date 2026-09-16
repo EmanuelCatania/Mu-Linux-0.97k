@@ -740,7 +740,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     //   Canales stride 0x1a a partir de +0x1c:
     //     +0x2c  ushort  channel_id     (display index = id%20+1)
     //     +0x2e  byte    load           (<100=LOW verde, 0x80+=FULL rojo, si no NORMAL)
-    {
+    // Solo en modo directo (server.cfg de 1 linea). Con ConnectServer la lista
+    // la trae el F4/02 como en el original: si el CS no responde, queda vacia.
+    if (!g_HasConnectServer) {
         char* srv0 = DAT_083a45d8;                           // entry index 0
         memset(srv0, 0, 0x21e);
         lstrcpynA(srv0, "MuServer", 20);                     // +0x00 name
@@ -1112,42 +1114,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 CS_SendPlain(req, 4);
                 g_ConnectServerRequested = 1;
                 DbgLog("NET: CS mode → sent C1 04 F4 02 (server-list request)");
-            } else if (err != 0 && g_ConnectServerMode &&
-                       g_HasConnectServer && g_GameServerPort != 0) {
-                // El ConnectServer no respondió → fallback: GameServer directo.
-                DbgLog("NET: ConnectServer unreachable → fallback to GameServer");
-                g_ConnectServerMode      = 0;
-                g_ConnectServerRequested = 0;
-                MuEmu::SetActive(true);   // GameServer sí usa la encriptación MuEmu
-                if (DAT_055ca168 != 0xffffffff) {
-                    closesocket((SOCKET)DAT_055ca168);
-                    DAT_055ca168 = (DWORD)INVALID_SOCKET;
-                }
-                Net_ConnectServer(g_GameServerIP, g_GameServerPort);
             }
         }
         if (evt & 0x20) { // FD_CLOSE
             DbgLog("NET: FD_CLOSE fired (remote closed socket)");
-            // Fallback ConnectServer: si seguimos en modo CS cuando llega el
-            // FD_CLOSE, la conexión al ConnectServer se cayó ANTES del redirect
-            // (connection refused, CS caído, o cierre inesperado). Con el mask
-            // 0x23 (sin FD_CONNECT) un "refused" llega por acá. Reconectamos al
-            // GameServer directo para no dejar al usuario sin poder loguear.
-            // (Tras un redirect exitoso Recv_Redirect ya puso mode=0, así que
-            // este FD_CLOSE del socket viejo NO dispara el fallback.)
-            if (g_ConnectServerMode && g_HasConnectServer && g_GameServerPort != 0) {
-                extern void Net_ConnectServer(const char* server, unsigned int port);
-                DbgLog("NET: CS dropped before redirect → fallback to GameServer");
-                g_ConnectServerMode      = 0;
-                g_ConnectServerRequested = 0;
-                MuEmu::SetActive(true);   // GameServer sí usa la encriptación MuEmu
-                if (DAT_055ca168 != 0xffffffff) {
-                    closesocket((SOCKET)DAT_055ca168);
-                    DAT_055ca168 = (DWORD)INVALID_SOCKET;
-                }
-                Net_ConnectServer(g_GameServerIP, g_GameServerPort);
-                break;   // no mostrar "conexión cerrada"; estamos reconectando
-            }
             // IDA WndProc @ 0x004149D0 case FD_CLOSE (original behaviour):
             //   UIChatLogWindow_AddText(strID, GlobalText[3], 1);
             //   CWsctlc::Close(&SocketClient);
