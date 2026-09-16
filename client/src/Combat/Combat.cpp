@@ -2240,9 +2240,37 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
                     0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
                 };
                 int targetEntityId = *(short*)(pCharsClient + 476); // entity Id
-                // Direction byte: 8-direction code derived from facing angle
-                int dirCode = ((int)((*(float*)(o + 36) + 22.5f) *
-                                     (1.0f / 45.0f))) & 7;
+                // IDA 0x48DF85-0x48DFB0: sx1 = (__int64)((facing + 22.5)
+                // * 0.022222223 + 1.0) & 7.  Al port le faltaba el `+ 1.0`, o
+                // sea el server recibia la direccion corrida un octante.
+                const float heroFacing = *(float*)((char*)(uintptr_t)ACTION_HERO + 36);
+                int dirCode = ((int)((heroFacing + 22.5f) * 0.022222223f + 1.0f)) & 7;
+
+                // IDA 0x48DA26-0x48DF0F: ANTES del ataque el original manda su
+                // posicion — PMSG_MOVE sin pasos:
+                //   [C1][06][10][Hero+904 (X)][Hero+908 (Y)][dir << 4]
+                // El server mide la distancia atacante-objetivo con la posicion
+                // que tiene guardada; si el heroe venia caminando esa posicion
+                // puede estar atrasada y el golpe se descarta.  Faltaba entero.
+                {
+                    const char* hero = (const char*)(uintptr_t)ACTION_HERO;
+                    BYTE pos[6];
+                    pos[0] = 0xC1;
+                    pos[1] = 0x06;
+                    pos[2] = 0x10;
+                    pos[3] = (BYTE)*(int*)(hero + 904);
+                    pos[4] = (BYTE)*(int*)(hero + 908);
+                    pos[5] = (BYTE)(dirCode << 4);   // nibble bajo = 0 pasos
+                    static const BYTE s_PosKey[32] = {
+                        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
+                        0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
+                        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
+                        0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
+                    };
+                    for (int i = 3; i < 6; ++i)
+                        pos[i] ^= pos[i - 1] ^ s_PosKey[i & 0x1F];
+                    Net_SendBuf((const char*)pos, 6);
+                }
                 BYTE pkt[8];
                 pkt[0] = 0xC1;
                 pkt[1] = 0x07;
@@ -2255,8 +2283,8 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
                     pkt[i] ^= pkt[i - 1] ^ s_AttackKey[i & 0x1F];
                 }
                 Net_SendBuf((const char*)pkt, 7);
-
-                PlayBuffer(30, (DWORD)ACTION_HERO, FALSE);
+                // (Aca sonaba PlayBuffer(30) — pasos.  IDA no reproduce nada en
+                //  este punto: el sonido del golpe lo pone SetPlayerAttack.)
             }
             else if ((*(unsigned char*)(c + 444) & 7) == 2) {
                 // Fuera de alcance, con el flag de modo-caminar seteado: pathfind hacia el objetivo
