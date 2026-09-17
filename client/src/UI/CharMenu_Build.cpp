@@ -636,52 +636,70 @@ void __cdecl FUN_004c2d50(int param_1, int param_2, int param_3)
 
 void __cdecl FUN_004c2e20(int param_1)
 {
-    int   iVar1;
-    int   iVar2;
-    int   iVar3;
-    int  *piDst;
-
-    // Already computed?
+    // IDA: sub_4C2E20 (0x004C2E20), tabla de la ventana F1 para el item
+    // dword_7E11D24: 12 filas (+0..+11) x 10 columnas.  Fórmulas tomadas del
+    // desensamblado (el decompile mezcla las variables del chequeo de stats).
+    // El port anterior era una aproximacion con campos inventados.
+    //   [0] nivel   [1] cumple Fue/Agi/Ene   [2] dano min   [3] dano max
+    //   [4] (tipos 160..191) dano min/2 + 2*nivel          [5] defensa
+    //   [6] tasa de defensa   [7] Fue req   [8] Agi req   [9] Ene req
     if (DAT_00559fe0 == param_1) return;
     DAT_00559fe0 = param_1;
 
-    // Base class data pointer
-    int classBase = DAT_07d78068 + param_1 * 0x40;
+    const int type = (int)DAT_07e11d24;
+    const BYTE* attr = (BYTE*)(uintptr_t)(DAT_07d78068 + type * 0x40);
+    const BYTE* ca = (BYTE*)(uintptr_t)CharacterAttribute;
+    int col4 = 0;   // [esp+var_8]: solo se escribe para 160..191 y se arrastra
 
-    // Limpiar la tabla entera (12 filas x 10 columnas).
-    // 2026-08-21: antes limpiaba solo 12 ints (= la fila 0 y un poco), porque el
-    // global estaba declarado como int[12] en vez de la tabla completa.
-    piDst = DAT_07e91528;
-    for (int i = 0; i < 12 * 10; i++) piDst[i] = 0;
+    auto grow = [](int base, int i) {
+        const int v = i <= 9 ? i : 9;
+        int r = base + 3 * v;
+        for (int k = 0; k < i - 9; ++k) r += (k == 0) ? 4 : 5;
+        return r;
+    };
 
-    // Build per-level scaled requirements
-    for (int i = 0; i <= 11; i++) {
-        int base_att  = *(int*)(classBase + 0x00);
-        int base_def  = *(int*)(classBase + 0x04);
-        int base_mana = *(int*)(classBase + 0x08);
-        int level_req = *(int*)(classBase + 0x0c + i * 4);
+    for (int i = 0; i <= 11; ++i) {
+        int damageMin   = attr[0x22];
+        int damageMax   = attr[0x23];
+        int defenseRate = attr[0x24];
+        int defense     = attr[0x25];
+        const int level = attr[0x1F];
 
-        if (level_req <= 0) continue;
+        if (damageMin > 0) {
+            damageMin = grow(damageMin, i);
+            if (type >= 160 && type <= 192) damageMin /= 2;
+        }
+        if (damageMax > 0) {
+            damageMax = grow(damageMax, i);
+            if (type >= 160 && type <= 192) damageMax /= 2;
+        }
+        if (defense > 0) {
+            if (type >= 192 && type < 224) defense += i;
+            else                           defense = grow(defense, i);
+        }
+        if (defenseRate > 0) defenseRate += 3 * i;
 
-        // Scale by level
-        iVar1 = base_att  + (level_req * *(int*)(classBase + 0x30));
-        iVar2 = base_def  + (level_req * *(int*)(classBase + 0x34));
-        iVar3 = base_mana + (level_req * *(int*)(classBase + 0x38));
+        const WORD rs = *(const WORD*)(attr + 0x2C);
+        const WORD rd = *(const WORD*)(attr + 0x2E);
+        const BYTE re = attr[0x30];
+        const int reqStr = rs ? 3 * rs * (level + 3 * i) / 100 + 20 : 0;
+        const int reqDex = rd ? 3 * rd * (level + 3 * i) / 100 + 20 : 0;
+        const int reqEne = re ? 4 * re * (level + 3 * i) / 100 + 20 : 0;
 
-        // Fila i, columnas 0 / 2 / 5.  IDA sub_4C2E20 L220-228: `v23 = 10 * i;`
-        // y despues `dword_7E91528[v23]`, `dword_7E91530[v23]`, `dword_7E9153C[v23]`
-        // — o sea paso de fila de 10 ints.
-        // 2026-08-21: el port hacia `&DAT_07e91530 + i * 4` sobre un int*, que
-        // avanza 64 bytes por vuelta sobre un global de 4 bytes → escribia hasta
-        // 176 bytes fuera, encima de lo que el linker pusiera al lado.
-        DAT_07e91528[10 * i + 0] = iVar1;
-        DAT_07e91528[10 * i + 2] = iVar2;
-        DAT_07e91528[10 * i + 5] = iVar3;
+        if (type >= 160 && type < 192) col4 = damageMin / 2 + 2 * i;
+
+        int* row = &DAT_07e91528[10 * i];
+        row[0] = i;
+        row[2] = damageMin;
+        row[3] = damageMax;
+        row[4] = col4;
+        row[5] = defense;
+        row[6] = defenseRate;
+        row[7] = reqStr;
+        row[8] = reqDex;
+        row[9] = reqEne;
+        row[1] = (ca && reqStr <= *(const WORD*)(ca + 0x14)
+                     && reqDex <= *(const WORD*)(ca + 0x16)
+                     && reqEne <= *(const WORD*)(ca + 0x1A)) ? 1 : 0;
     }
-
-    // HashTable XOR-obfuscation (ref-count at DAT_00559050+0x161)
-    unsigned char *pHT = (unsigned char*)&PacketXorKey16;
-    int refCount = *(int*)(pHT + 0x161);
-    // (no game-logic side-effects here; this is the compiler/obfuscation artifact)
-    (void)refCount;
 }
