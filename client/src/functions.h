@@ -477,7 +477,7 @@ void  __cdecl CheckChatText(char* text);                             // IDA: sub
 void  __cdecl SetActionClass(int c, int o, int action, int actionType); // IDA: SetActionClass (0x00497870)
 void  __cdecl SendRequestAction(BYTE actionType); // [C1][05][18][dir][tipo], inline en IDA
 char* __cdecl GetMapName(int iMap); // IDA: GetMapName (0x004EF120)
-void  __cdecl Net_ProcessReceiveQueue(void); // FUN_004cbdf0
+void  __cdecl Net_ProcessReceiveQueue(void); // IDA: ClearInventory (0x004CBDF0)
 extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool);  // IDA: sub_4CC530 (0x004CC530)
 void  __cdecl FUN_004cc660(BYTE* Inv, int Width, int Height,
                            int Index, BYTE* Item, int First);   // InsertInventoryItem
