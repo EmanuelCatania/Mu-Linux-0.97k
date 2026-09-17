@@ -444,106 +444,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
 
 
 
-// 2026-05-04: hero equipment stash — populado por F3/03 (Recv_JoinMapServer)
-// y re-aplicado por HeroEquipWatchdog cada frame. Mitiga un bug todavía no
-// localizado donde algo resetea entity+0x2a0/0x270/0x288/0x2b8 a -1 después
-// de F3/03.
-extern "C" {
-short g_HeroEquipStash_LH = -1, g_HeroEquipStash_RH = -1;
-short g_HeroEquipStash_Wing = -1, g_HeroEquipStash_Helper = -1, g_HeroEquipStash_Pendant = -1;
-short g_HeroEquipStash_RingR = -1, g_HeroEquipStash_RingL = -1;
-short g_HeroEquipStash_Body[6] = { -1, -1, -1, -1, -1, -1 };
-unsigned char g_HeroEquipStash_LHLvl = 0, g_HeroEquipStash_RHLvl = 0;
-unsigned char g_HeroEquipStash_WingLvl = 0, g_HeroEquipStash_HelperLvl = 0, g_HeroEquipStash_PendantLvl = 0;
-unsigned char g_HeroEquipStash_RingRLvl = 0, g_HeroEquipStash_RingLLvl = 0;
-unsigned char g_HeroEquipStash_LHDur = 0, g_HeroEquipStash_RHDur = 0;
-unsigned char g_HeroEquipStash_WingDur = 0, g_HeroEquipStash_HelperDur = 0, g_HeroEquipStash_PendantDur = 0;
-unsigned char g_HeroEquipStash_RingRDur = 0, g_HeroEquipStash_RingLDur = 0;
-unsigned char g_HeroEquipStash_BodyDur[6] = {};
-unsigned char g_HeroEquipStash_BodyLvl[6] = {};
-unsigned char g_HeroEquipStash_BodyOpt1[6] = {};
-unsigned char g_HeroEquipStash_BodyOpt2[6] = {};
-unsigned char g_HeroEquipStash_BodyOpt3[6] = {};
-unsigned char g_HeroEquipStash_LHOpt = 0, g_HeroEquipStash_RHOpt = 0;
-unsigned char g_HeroEquipStash_WingOpt = 0, g_HeroEquipStash_HelperOpt = 0, g_HeroEquipStash_PendantOpt = 0;
-unsigned char g_HeroEquipStash_RingROpt = 0, g_HeroEquipStash_RingLOpt = 0;
-unsigned char g_HeroEquipStash_LHOpt2 = 0, g_HeroEquipStash_RHOpt2 = 0;
-unsigned char g_HeroEquipStash_WingOpt2 = 0, g_HeroEquipStash_HelperOpt2 = 0, g_HeroEquipStash_PendantOpt2 = 0;
-unsigned char g_HeroEquipStash_RingROpt2 = 0, g_HeroEquipStash_RingLOpt2 = 0;
-unsigned char g_HeroEquipStash_LHOpt3 = 0, g_HeroEquipStash_RHOpt3 = 0;
-unsigned char g_HeroEquipStash_WingOpt3 = 0, g_HeroEquipStash_HelperOpt3 = 0, g_HeroEquipStash_PendantOpt3 = 0;
-unsigned char g_HeroEquipStash_RingROpt3 = 0, g_HeroEquipStash_RingLOpt3 = 0;
-int g_HeroEquipStash_Valid = 0;
-}
-
 extern "C" BYTE OffsetInventoryItems[];
-
-static void HeroEquipWatchdog_SeedCharacterMachineFromStash(BYTE* cm)
-{
-    if (!cm) return;
-
-      auto seedSlot = [&](int slotIdx, short type, BYTE lvl, BYTE dur, BYTE opt1, BYTE opt2, BYTE opt3) {
-          BYTE* slot = cm + 536 + 68 * slotIdx;
-          if (type == -1)
-              return;
-          short curType = *(short*)slot;
-          // 2026-06-21: watchdog sólo debe RESTAURAR slots faltantes.
-          // Si CharacterMachine ya trae un type válido, lo dejamos vivir como
-          // fuente de verdad y no lo sobreescribimos con stash viejo.
-          if (curType != -1)
-              return;
-
-        memset(slot, 0, sizeof(ITEM));
-        *(short*)(slot + 0) = type;
-        *(int*)(slot + 4) = (int)opt1;     // packed option byte (level<<3, luck/exc bits path)
-        *(BYTE*)(slot + 26) = dur;
-        *(BYTE*)(slot + 27) = opt1;        // Option1 raw packed byte
-        *(DWORD*)(slot + 56) = dur ? (DWORD)dur : 1u; // gate used by panel/world render
-        *(BYTE*)(slot + 60) = opt2;        // byteHi / extra flags when available
-        *(BYTE*)(slot + 61) = opt3;        // ext byte / color state when available
-        ItemConvert((int)(uintptr_t)slot, (int)opt1, (int)opt2);
-        ITEM* equip = (ITEM*)slot;
-        equip->Level = (int)opt1;
-        equip->Key = (*(DWORD*)(slot + 56) > 0) ? 1 : 0;
-        equip->x = (BYTE)slotIdx;
-        equip->y = 0;
-        equip->Color = 0;
-      };
-
-    // 2026-08-08: acá había un `seedSlotFromInventory(0..11)` — SEGUNDA copia del
-    // mismo bug que se removió en HeroEquipWatchdog: leía
-    // `((ITEM*)OffsetInventoryItems) + slotIdx`, o sea las CELDAS 0..11 del grid
-    // 8×8 (el índice de celda real es `slotIdx - 12`, ver AddItemToGrid:396), y
-    // las copiaba a los slots de EQUIPO de CharacterMachine.
-    // Por eso seguían apareciendo la poción en la caja de los pants y un casco
-    // en las cajas de los anillos: son las celdas 0..11 del inventario visible.
-    // Removido. Sólo queda el re-seed desde el stash real (abajo).
-
-    seedSlot(0, g_HeroEquipStash_LH, g_HeroEquipStash_LHLvl, g_HeroEquipStash_LHDur,
-             g_HeroEquipStash_LHOpt, g_HeroEquipStash_LHOpt2, g_HeroEquipStash_LHOpt3);
-    seedSlot(1, g_HeroEquipStash_RH, g_HeroEquipStash_RHLvl, g_HeroEquipStash_RHDur,
-             g_HeroEquipStash_RHOpt, g_HeroEquipStash_RHOpt2, g_HeroEquipStash_RHOpt3);
-    seedSlot(2, g_HeroEquipStash_Body[0], g_HeroEquipStash_BodyLvl[0], g_HeroEquipStash_BodyDur[0],
-             g_HeroEquipStash_BodyOpt1[0], g_HeroEquipStash_BodyOpt2[0], g_HeroEquipStash_BodyOpt3[0]);
-    seedSlot(3, g_HeroEquipStash_Body[1], g_HeroEquipStash_BodyLvl[1], g_HeroEquipStash_BodyDur[1],
-             g_HeroEquipStash_BodyOpt1[1], g_HeroEquipStash_BodyOpt2[1], g_HeroEquipStash_BodyOpt3[1]);
-    seedSlot(4, g_HeroEquipStash_Body[2], g_HeroEquipStash_BodyLvl[2], g_HeroEquipStash_BodyDur[2],
-             g_HeroEquipStash_BodyOpt1[2], g_HeroEquipStash_BodyOpt2[2], g_HeroEquipStash_BodyOpt3[2]);
-    seedSlot(5, g_HeroEquipStash_Body[3], g_HeroEquipStash_BodyLvl[3], g_HeroEquipStash_BodyDur[3],
-             g_HeroEquipStash_BodyOpt1[3], g_HeroEquipStash_BodyOpt2[3], g_HeroEquipStash_BodyOpt3[3]);
-    seedSlot(6, g_HeroEquipStash_Body[4], g_HeroEquipStash_BodyLvl[4], g_HeroEquipStash_BodyDur[4],
-             g_HeroEquipStash_BodyOpt1[4], g_HeroEquipStash_BodyOpt2[4], g_HeroEquipStash_BodyOpt3[4]);
-    seedSlot(7, g_HeroEquipStash_Wing, g_HeroEquipStash_WingLvl, g_HeroEquipStash_WingDur,
-             g_HeroEquipStash_WingOpt, g_HeroEquipStash_WingOpt2, g_HeroEquipStash_WingOpt3);
-    seedSlot(8, g_HeroEquipStash_Helper, g_HeroEquipStash_HelperLvl, g_HeroEquipStash_HelperDur,
-             g_HeroEquipStash_HelperOpt, g_HeroEquipStash_HelperOpt2, g_HeroEquipStash_HelperOpt3);
-    seedSlot(9, g_HeroEquipStash_Pendant, g_HeroEquipStash_PendantLvl, g_HeroEquipStash_PendantDur,
-             g_HeroEquipStash_PendantOpt, g_HeroEquipStash_PendantOpt2, g_HeroEquipStash_PendantOpt3);
-    seedSlot(10, g_HeroEquipStash_RingR, g_HeroEquipStash_RingRLvl, g_HeroEquipStash_RingRDur,
-             g_HeroEquipStash_RingROpt, g_HeroEquipStash_RingROpt2, g_HeroEquipStash_RingROpt3);
-    seedSlot(11, g_HeroEquipStash_RingL, g_HeroEquipStash_RingLLvl, g_HeroEquipStash_RingLDur,
-             g_HeroEquipStash_RingLOpt, g_HeroEquipStash_RingLOpt2, g_HeroEquipStash_RingLOpt3);
-}
 
 // Llamada por Entity_UpdateRender al inicio del render del hero in-game.
 // Restaura equipment slots si fueron borrados.
@@ -603,9 +504,7 @@ extern "C" void HeroEquipWatchdog(int c)
         //    este loop lo volvía a llenar al frame siguiente con lo que hubiera
         //    en la celda del grid — de ahí el "a veces sale otro item".
         //
-        // El re-seed desde `g_HeroEquipStash_*` (arriba) se mantiene por ahora:
-        // es el que tapa el reseteo de equipo tras el F3/03. Sacarlo y arreglar
-        // ese bug de raíz queda pendiente.
+        // (El stash `g_HeroEquipStash_*` se borro el 2026-09-18: no tenia lectores.)
         // IDA/source base path: let SetCharacterClass rebuild the world hero
         // from CharacterMachine, instead of keeping a partial local mirror.
         //

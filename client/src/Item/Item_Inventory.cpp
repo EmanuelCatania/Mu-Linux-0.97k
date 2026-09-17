@@ -123,111 +123,7 @@ void __cdecl SeedQuickPotionTypesFromInventory()
     if (auxType != -1) DAT_00559c68 = auxType;
 }
 
-extern "C" {
-    extern short g_HeroEquipStash_LH, g_HeroEquipStash_RH;
-    extern short g_HeroEquipStash_Wing, g_HeroEquipStash_Helper, g_HeroEquipStash_Pendant;
-    extern short g_HeroEquipStash_RingR, g_HeroEquipStash_RingL;
-    extern short g_HeroEquipStash_Body[6];
-    extern unsigned char g_HeroEquipStash_LHLvl, g_HeroEquipStash_RHLvl;
-    extern unsigned char g_HeroEquipStash_WingLvl, g_HeroEquipStash_HelperLvl, g_HeroEquipStash_PendantLvl;
-    extern unsigned char g_HeroEquipStash_RingRLvl, g_HeroEquipStash_RingLLvl;
-    extern unsigned char g_HeroEquipStash_LHDur, g_HeroEquipStash_RHDur;
-    extern unsigned char g_HeroEquipStash_WingDur, g_HeroEquipStash_HelperDur, g_HeroEquipStash_PendantDur;
-    extern unsigned char g_HeroEquipStash_RingRDur, g_HeroEquipStash_RingLDur;
-    extern unsigned char g_HeroEquipStash_BodyDur[6];
-    extern unsigned char g_HeroEquipStash_BodyLvl[6];
-    extern unsigned char g_HeroEquipStash_BodyOpt1[6];
-    extern unsigned char g_HeroEquipStash_BodyOpt2[6];
-    extern unsigned char g_HeroEquipStash_BodyOpt3[6];
-    extern unsigned char g_HeroEquipStash_LHOpt, g_HeroEquipStash_RHOpt;
-    extern unsigned char g_HeroEquipStash_WingOpt, g_HeroEquipStash_HelperOpt, g_HeroEquipStash_PendantOpt;
-    extern unsigned char g_HeroEquipStash_RingROpt, g_HeroEquipStash_RingLOpt;
-    extern unsigned char g_HeroEquipStash_LHOpt2, g_HeroEquipStash_RHOpt2;
-    extern unsigned char g_HeroEquipStash_WingOpt2, g_HeroEquipStash_HelperOpt2, g_HeroEquipStash_PendantOpt2;
-    extern unsigned char g_HeroEquipStash_RingROpt2, g_HeroEquipStash_RingLOpt2;
-    extern unsigned char g_HeroEquipStash_LHOpt3, g_HeroEquipStash_RHOpt3;
-    extern unsigned char g_HeroEquipStash_WingOpt3, g_HeroEquipStash_HelperOpt3, g_HeroEquipStash_PendantOpt3;
-    extern unsigned char g_HeroEquipStash_RingROpt3, g_HeroEquipStash_RingLOpt3;
-    extern int g_HeroEquipStash_Valid;
-}
 
-static void SyncHeroEquipStashFromEquipmentSlot(int slotIdx, int type, BYTE optByte, BYTE durability, BYTE byteHi, BYTE extByte)
-{
-    switch (slotIdx) {
-    case 0:
-        g_HeroEquipStash_LH = (short)type;
-        g_HeroEquipStash_LHLvl = optByte;
-        g_HeroEquipStash_LHDur = durability;
-        g_HeroEquipStash_LHOpt = optByte;
-        g_HeroEquipStash_LHOpt2 = byteHi;
-        g_HeroEquipStash_LHOpt3 = extByte;
-        break;
-    case 1:
-        g_HeroEquipStash_RH = (short)type;
-        g_HeroEquipStash_RHLvl = optByte;
-        g_HeroEquipStash_RHDur = durability;
-        g_HeroEquipStash_RHOpt = optByte;
-        g_HeroEquipStash_RHOpt2 = byteHi;
-        g_HeroEquipStash_RHOpt3 = extByte;
-        break;
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6: {
-        int bodyIdx = slotIdx - 2; // 0..4 => helm..boots
-        g_HeroEquipStash_Body[bodyIdx] = (short)type;
-        g_HeroEquipStash_BodyLvl[bodyIdx] = optByte;
-        g_HeroEquipStash_BodyDur[bodyIdx] = durability;
-        g_HeroEquipStash_BodyOpt1[bodyIdx] = optByte;
-        g_HeroEquipStash_BodyOpt2[bodyIdx] = byteHi;
-        g_HeroEquipStash_BodyOpt3[bodyIdx] = extByte;
-        break;
-    }
-    case 7:
-        g_HeroEquipStash_Wing = (short)type;
-        g_HeroEquipStash_WingLvl = optByte;
-        g_HeroEquipStash_WingDur = durability;
-        g_HeroEquipStash_WingOpt = optByte;
-        g_HeroEquipStash_WingOpt2 = byteHi;
-        g_HeroEquipStash_WingOpt3 = extByte;
-        break;
-    case 8:
-        g_HeroEquipStash_Helper = (short)type;
-        g_HeroEquipStash_HelperLvl = optByte;
-        g_HeroEquipStash_HelperDur = durability;
-        g_HeroEquipStash_HelperOpt = optByte;
-        g_HeroEquipStash_HelperOpt2 = byteHi;
-        g_HeroEquipStash_HelperOpt3 = extByte;
-        break;
-    case 9:
-        g_HeroEquipStash_Pendant = (short)type;
-        g_HeroEquipStash_PendantLvl = optByte;
-        g_HeroEquipStash_PendantDur = durability;
-        g_HeroEquipStash_PendantOpt = optByte;
-        g_HeroEquipStash_PendantOpt2 = byteHi;
-        g_HeroEquipStash_PendantOpt3 = extByte;
-        break;
-    case 10:
-        g_HeroEquipStash_RingR = (short)type;
-        g_HeroEquipStash_RingRLvl = optByte;
-        g_HeroEquipStash_RingRDur = durability;
-        g_HeroEquipStash_RingROpt = optByte;
-        g_HeroEquipStash_RingROpt2 = byteHi;
-        g_HeroEquipStash_RingROpt3 = extByte;
-        break;
-    case 11:
-        g_HeroEquipStash_RingL = (short)type;
-        g_HeroEquipStash_RingLLvl = optByte;
-        g_HeroEquipStash_RingLDur = durability;
-        g_HeroEquipStash_RingLOpt = optByte;
-        g_HeroEquipStash_RingLOpt2 = byteHi;
-        g_HeroEquipStash_RingLOpt3 = extByte;
-        break;
-    default:
-        break;
-    }
-}
 
 static inline int Item_GetWidth(int type)
 {
@@ -332,7 +228,6 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
         memset(slot, 0, sizeof(ITEM));
         *(short*)(slot + 0)  = -1;
         *(DWORD*)(slot + 56) = 0;
-        SyncHeroEquipStashFromEquipmentSlot(slotIdx, -1, 0, 0, 0, 0);
         if (DAT_005615c0 == 5 && DAT_07abf5d8) {
             HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
         }
@@ -374,8 +269,6 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
     equip->x = (BYTE)slotIdx;
     equip->y = 0;
     equip->Color = 0;
-    SyncHeroEquipStashFromEquipmentSlot(slotIdx, type, optByte, durability, byteHi, extByte);
-    g_HeroEquipStash_Valid = 1;
     if (DAT_005615c0 == 5 && DAT_07abf5d8) {
         HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
     }

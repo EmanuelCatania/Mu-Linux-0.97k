@@ -659,24 +659,6 @@ extern "C" void __cdecl CreatePoint(float Position[3], int Value,
 
 // 2026-05-04: Hero equipment stash (definidos en Render_PlayerEquipment.cpp).
 // F3/03 los popula; HeroEquipWatchdog los re-aplica per-frame.
-extern "C" {
-    extern short g_HeroEquipStash_LH, g_HeroEquipStash_RH;
-    extern short g_HeroEquipStash_Wing, g_HeroEquipStash_Pendant;
-    extern short g_HeroEquipStash_Body[6];
-    extern unsigned char g_HeroEquipStash_LHLvl, g_HeroEquipStash_RHLvl;
-    extern unsigned char g_HeroEquipStash_WingLvl, g_HeroEquipStash_PendantLvl;
-    extern unsigned char g_HeroEquipStash_BodyLvl[6];
-    extern unsigned char g_HeroEquipStash_BodyOpt1[6];
-    extern unsigned char g_HeroEquipStash_BodyOpt2[6];
-    extern unsigned char g_HeroEquipStash_BodyOpt3[6];
-    extern unsigned char g_HeroEquipStash_LHOpt, g_HeroEquipStash_RHOpt;
-    extern unsigned char g_HeroEquipStash_WingOpt, g_HeroEquipStash_PendantOpt;
-    extern unsigned char g_HeroEquipStash_LHOpt2, g_HeroEquipStash_RHOpt2;
-    extern unsigned char g_HeroEquipStash_WingOpt2, g_HeroEquipStash_PendantOpt2;
-    extern unsigned char g_HeroEquipStash_LHOpt3, g_HeroEquipStash_RHOpt3;
-    extern unsigned char g_HeroEquipStash_WingOpt3, g_HeroEquipStash_PendantOpt3;
-    extern int g_HeroEquipStash_Valid;
-}
 
 // ============================================================================
 // Net_ProcessPacket @ 0x004389A0 — server→client opcode dispatcher
