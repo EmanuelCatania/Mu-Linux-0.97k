@@ -6809,6 +6809,22 @@ void Net_ProcessPacket(void)
                 break;
             }
 
+            case 0x0B: {
+                // IDA ProtocolCore case 0xB (inline).  MuEmu: GCEventStateSend,
+                // PMSG_EVENT_STATE_SEND [C1][05][0B][state][event].
+                //   event 1 -> EnableEvent = (state != 0)
+                //   event 3 -> EnableEvent = state ? 3 : 0
+                // y en todos los casos DeleteBoids() (0x500A80): apaga los 40
+                // slots de Boids (= g_WeatherSlotPool).  La cola DebugText que
+                // IDA llena antes no tiene lectores en el binario; se omite.
+                if (Size < 5) break;
+                if (Msg[4] == 1)      DAT_083a3ff0 = (Msg[3] != 0) ? 1 : 0;   // EnableEvent
+                else if (Msg[4] == 3) DAT_083a3ff0 = (Msg[3] != 0) ? 3 : 0;
+                for (int i = 0; i < 40; ++i)
+                    g_WeatherSlotPool[i * 0x1bc] = 0;
+                break;
+            }
+
             case 0x0C: {
                 // IDA ProtocolCore case 0xC: PMSG_SERVER_MSG_SEND (C1:0C, MsgNumber).
                 // MsgNumber 0 = el destinatario del susurro no esta conectado
