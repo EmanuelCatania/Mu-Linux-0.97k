@@ -468,8 +468,8 @@ void __cdecl Chat_InputTick(void)
                 if (obj && *(int*)obj) {
                     void** vt = (void**)*obj;
                     typedef int (__fastcall *FnScroll)(DWORD*, int, int);
-                    int rows = (int)obj[35];     // visible row count
-                    if (rows <= 0) rows = 6;
+                    typedef int (__fastcall *FnRows)(DWORD*, int);
+                    int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
                     ((FnScroll)vt[12])(obj, 0, -rows);
                 }
             }
@@ -486,8 +486,8 @@ void __cdecl Chat_InputTick(void)
                 if (obj && *(int*)obj) {
                     void** vt = (void**)*obj;
                     typedef int (__fastcall *FnScroll)(DWORD*, int, int);
-                    int rows = (int)obj[35];
-                    if (rows <= 0) rows = 6;
+                    typedef int (__fastcall *FnRows)(DWORD*, int);
+                    int rows = ((FnRows)vt[13])(obj, 0);   // IDA: vtable +52
                     ((FnScroll)vt[12])(obj, 0, rows);
                 }
             }
@@ -497,50 +497,30 @@ void __cdecl Chat_InputTick(void)
     }
 
     // ── 3. Up/Down arrows — chat history ring buffer ────────────────────────
-    // Ring buffer: 5 slots × 0x100 bytes each at DAT_07e113e4.
-    // Index in DAT_00559cc4 (0..4). Up = older entry (decrement), Down = newer (increment).
-    {
-        SHORT sv = GetAsyncKeyState(0x26); // VK_UP
-        if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
-            if (DAT_07e11984 == 0 && 0 < (int)DAT_00559cc4) {
-                DAT_07e11984 = 1;
-                // Save current input to history[current_index]
-                char *histSlot = (char *)&DAT_07e113e4 + DAT_00559cc4 * 0x100;
-                size_t curLen = strlen((const char *)DAT_07db8810);
-                memcpy(histSlot, DAT_07db8810, curLen + 1);
-                DAT_00559cc4--;
-                // Load history[new_index] into input buffer
-                const char *newHist = (const char *)&DAT_07e113e4 + DAT_00559cc4 * 0x100;
-                size_t newLen = strlen(newHist);
-                memset(DAT_07db8810, 0, 0x100);
-                memcpy(DAT_07db8810, newHist, newLen + 1);
-                DAT_07d780ac = (DWORD)strlen((const char *)DAT_07db8810);
-                FUN_00404bc0(0x19, 0, 0);
-            }
-        } else {
-            DAT_07e11984 = 0;
+    // IDA L1049-1113: 5 slots x 0x100 en DAT_07e113e4, indice DAT_00559cc4
+    // (0..4). El flag de flanco (KeyState[VK_UP/VK_DOWN]) se marca al apretar
+    // aunque el indice ya este en el tope.
+    for (int dir = 0; dir < 2; ++dir) {
+        int    vk   = dir == 0 ? 0x26 : 0x28;             // VK_UP / VK_DOWN
+        DWORD& edge = dir == 0 ? DAT_07e11984 : DAT_07e1198c;
+        SHORT sv = GetAsyncKeyState(vk);
+        if ((char)((unsigned short)sv >> 8) != (char)(-0x80)) {
+            edge = 0;
+            continue;
         }
-
-        sv = GetAsyncKeyState(0x28); // VK_DOWN
-        if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
-            if (DAT_07e1198c == 0 && (int)DAT_00559cc4 < 4) {
-                DAT_07e1198c = 1;
-                // Save current input to history[current_index]
-                char *histSlot = (char *)&DAT_07e113e4 + DAT_00559cc4 * 0x100;
-                size_t curLen = strlen((const char *)DAT_07db8810);
-                memcpy(histSlot, DAT_07db8810, curLen + 1);
-                DAT_00559cc4++;
-                // Load history[new_index] into input buffer
-                const char *newHist = (const char *)&DAT_07e113e4 + DAT_00559cc4 * 0x100;
-                size_t newLen = strlen(newHist);
-                memset(DAT_07db8810, 0, 0x100);
-                memcpy(DAT_07db8810, newHist, newLen + 1);
-                DAT_07d780ac = (DWORD)strlen((const char *)DAT_07db8810);
-                FUN_00404bc0(0x19, 0, 0);
-            }
-        } else {
-            DAT_07e1198c = 0;
-        }
+        if (edge != 0) continue;
+        edge = 1;
+        int idx = (int)DAT_00559cc4;
+        if (dir == 0 ? idx <= 0 : idx >= 4) continue;
+        // Guardar lo tipeado en history[idx] y cargar history[idx -/+ 1].
+        char *histSlot = (char *)&DAT_07e113e4 + idx * 0x100;
+        memcpy(histSlot, DAT_07db8810, strlen((const char *)DAT_07db8810) + 1);
+        memset(DAT_07db8810, 0, 0x100);
+        DAT_00559cc4 = idx + (dir == 0 ? -1 : 1);
+        const char *newHist = (const char *)&DAT_07e113e4 + DAT_00559cc4 * 0x100;
+        memcpy(DAT_07db8810, newHist, strlen(newHist) + 1);
+        DAT_07d780ac = (DWORD)strlen((const char *)DAT_07db8810);
+        FUN_00404bc0(0x19, 0, 0);
     }
 
     // ── 4. Class-tab buttons + hot gate ─────────────────────────────────────
@@ -632,14 +612,16 @@ void __cdecl Chat_InputTick(void)
                                     DAT_07e11d28 = 0;
                                     DAT_00559bec = 6;
                                 }
-                                // Hotkey assignment: keys 1-9 via GetAsyncKeyState
-                                // extraout_AH from GetAsyncKeyState indicates key was pressed this frame
-                                for (int key = 1; key <= 9; ++key)
+                                // IDA L2406-2589: con Ctrl apretado, las teclas
+                                // 1..9 y 0 asignan ese numero a la skill bajo el
+                                // cursor (y lo sacan de la que lo tenia).
+                                if (((unsigned short)GetAsyncKeyState(VK_CONTROL) >> 8) != 0)
                                 {
-                                    SHORT sv2 = GetAsyncKeyState(0x30 + key); // VK '1'..'9'
-                                    if ((char)((unsigned short)sv2 >> 8) != '\0')
+                                    for (int k = 1; k <= 10; ++k)
                                     {
-                                        // Assign hotkey slot: clear previous mapping, set new
+                                        int key = k % 10;          // 1..9, despues 0
+                                        if (((unsigned short)GetAsyncKeyState(0x30 + key) >> 8) == 0)
+                                            continue;
                                         FUN_00423040(&DAT_055c9bc8, DAT_07cf1ffc);
                                         int charRow = (int)DAT_005616ac;
                                         for (int j = 0; j < 0x14; ++j) {
