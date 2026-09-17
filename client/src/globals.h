@@ -535,7 +535,9 @@ extern char    DAT_05826d14;   // Teleport (IDA `Teleport` @0x05826D14) — 0=no
                                // ("NPC script keepalive") era falsa.
 extern DWORD   DAT_05826d18;   // cooldown de COMPRA en tienda (IDA dword_5826D18 @0x05826D18):
                                // lo escribe ProtocolCore y lo lee sub_4D23B0.
-extern DWORD   DAT_05826d1c;   // cooldown de equipar/usar item (EnableUse)
+extern DWORD   EnableUse;      // IDA: EnableUse (0x05826D1C) — cooldown de equipar/usar item;
+                               // lo ponen en 10 los usos y lo resetean las respuestas del server
+#define DAT_05826d1c   EnableUse   // 2026-09-17: eran dos globals; los usos escribian uno y los handlers el otro
 extern DWORD   DAT_05826d20;
 extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la mascota
 // AttackPlayer (IDA @0x05826D28): indice de slot del ULTIMO atacante.  Lo
@@ -2742,7 +2744,7 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 #define g_hFontBig   ((HFONT)(uintptr_t)DAT_055ca014)
 
 // Batch 18 — InitGame / ReceiveChat globals
-extern DWORD   EnableUse;          // item use enabled flag
+// EnableUse declarado arriba junto a DAT_05826d1c.
 extern int     DAT_07e11998;       // SendGetItem
 // DAT_07e11d28 already declared above (line ~554) as DWORD
 extern int     DAT_07e11e10;       // SoccerTime
