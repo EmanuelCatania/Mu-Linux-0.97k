@@ -468,7 +468,7 @@ extern "C" BYTE OffsetInventoryItems[];
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 6475-7690 (1216 lines)
 // Combat_SendMovePathPacket (Send_MovePacket), Combat_DispatchHeroSkillAttack (Attack), Combat_CheckArrowRequirement (CheckArrow),
 // Combat_UseElfSkill (UseSkillElf stub), Combat_ProcessQueuedAction (Action big switch),
-// + Send_MovePacket_Player_legacy_stub, FUN_004f6c30 (Terrain_GetAttrDirect)
+// FUN_004f6c30 (Terrain_GetAttrDirect)
 // =============================================================================
 // IDA: FUN_00491c40 @ 0x00491C40 — Send_MovePacket(entity_ptr, player_entity_ptr)
 // Sends opcode 0x10 movement packet: C1 len 10 wp_count target_x target_y facing path[wp_count]
@@ -572,10 +572,9 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
         DAT_00559bec = (unsigned int)wpCount * 3 + 4;
 
     // IDA sigue aunque no haya camino (activa la ruta y cierra ventanas), pero
-    // ahi solo se llama tras un PathFinding exitoso. El port ademas la llama
-    // cuando el pathfinding falla (Send_MovePacket_Player_legacy_stub): sin
-    // este return se reactivaba la ruta vieja y el heroe seguia caminando,
-    // atravesando paredes.
+    // ahi solo se llama tras un PathFinding exitoso. Se conserva como resguardo:
+    // un llamado sin camino reactivaba la ruta vieja y el heroe atravesaba
+    // paredes (2026-09-17).
     if (wpCount == 0)
         return;
     {
@@ -1710,88 +1709,6 @@ char __cdecl Combat_CheckArrowRequirement(void)
     return 0;
 }
 
-// ──────────────────────────────────────────────────────────────────────────
-// LEGACY STUB — Send_MovePacket_Player_legacy_stub(void)
-//
-// Originalmente este stub vivía en la dirección 0x0048D640 con el nombre
-// "Send_MovePacket_Player". El IDA companion confirma que la función real en
-// 0x0048D640 se llama "Action" (despachador de acciones — pickup/equip/attack/
-// skill — basado en `*(c+749)` queue), NO un sender de packet 0x10.
-//
-// Sin embargo, los call-sites existentes de Combat_ProcessQueuedAction() en nuestro codebase
-// (5 en Player_InputTick, 1 en stubs/UseSkillWarrior) fueron escritos contra
-// este stub y dependen de su comportamiento de "enviar packet 0x10 cuando el
-// pathfind falla / cancela". Cambiar Combat_ProcessQueuedAction al Action real rompería
-// el envío de move-packets en runtime.
-//
-// Estrategia: este stub mantiene su comportamiento original (renombrado para
-// que callers apunten a él explícitamente). Combat_ProcessQueuedAction abajo es ahora el
-// Action real con signature (DWORD c, DWORD o) tomada de IDA.
-//
-// Comportamiento (sin cambios respecto del stub original):
-//  - Lee waypoints/facing/target_grid del player entity (DAT_07abf5d8).
-//  - Construye [0xC1][len][0x10][...] con XOR-encoded payload (key login).
-//  - Manda directo via send() con WSAEWOULDBLOCK queue fallback.
-//  - Phantom stack params anti-tamper skipped.
-// ──────────────────────────────────────────────────────────────────────────
-void __cdecl Send_MovePacket_Player_legacy_stub(void)
-{
-    // Delega en el emisor de paquetes de movimiento a nivel entidad, usando la entidad del jugador
-    char* entity = DAT_07abf5d8; // player entity base
-    if (entity == nullptr) return;
-
-    // Punto de entrada de compatibilidad: usa el emisor C1 verificado. La copia local
-    // vieja ponía el opcode 0x10 en el byte 3 y después envolvía el paquete como C3.
-    Combat_SendMovePathPacket((int)(intptr_t)entity, (int)(intptr_t)entity);
-    return;
-
-    unsigned char wpCount = *(unsigned char*)(entity + 0x356);
-    if (wpCount == 0) return;
-    if (wpCount > 0xe) wpCount = 0xe;
-
-    // DAT_00559bec = packet length code
-    if (wpCount < 3)
-        DAT_00559bec = 0;
-    else if (wpCount == 3)
-        DAT_00559bec = 5;
-    else
-        DAT_00559bec = (unsigned int)wpCount * 3 + 4;
-
-    // Clave XOR (la misma que Combat_SendMovePathPacket / el paquete de login)
-    static const unsigned char xorKey[32] = {
-        0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-        0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56
-    };
-
-    unsigned char pkt[64];
-    memset(pkt, 0, sizeof(pkt));
-    pkt[0] = 0xC1;
-    pkt[2] = 0x00;
-    pkt[3] = 0x10; // move opcode
-
-    pkt[4] = *(unsigned char*)(entity + 0x306); // target_x
-    pkt[5] = *(unsigned char*)(entity + 0x307); // target_y
-
-    float facing = *(float*)(entity + 0x24);
-    pkt[6] = (unsigned char)((int)(facing / 360.0f * 256.0f) & 0xFF);
-    pkt[7] = wpCount;
-
-    for (int i = 0; i < wpCount; i++)
-        pkt[8 + i]          = *(unsigned char*)(entity + 0x357 + i);
-    for (int i = 0; i < wpCount; i++)
-        pkt[8 + wpCount + i] = *(unsigned char*)(entity + 0x366 + i);
-
-    unsigned int pktLen = 8 + wpCount * 2;
-    pkt[1] = (unsigned char)pktLen;
-
-    // XOR-encode from byte index 3 onward
-    for (unsigned int i = 3; i < pktLen; i++) {
-        unsigned int ki = i & 0x1f;
-        pkt[i] ^= xorKey[ki] ^ pkt[i - 1];
-    }
-
-    Net_SendSmallPacket(pkt, (int)pktLen);
-}
 
 static BYTE Combat_ResolveQueuedSkillId97k()
 {

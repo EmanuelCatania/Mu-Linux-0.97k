@@ -2888,7 +2888,7 @@ void __cdecl FUN_004ac140(void)
 
 // Combat_SendMovePathPacket (Send_MovePacket), Combat_DispatchHeroSkillAttack (Attack), Combat_CheckArrowRequirement (CheckArrow),
 // Combat_UseElfSkill (UseSkillElf), Combat_ProcessQueuedAction (Action big switch),
-// + Send_MovePacket_Player_legacy_stub moved to src/Combat/Combat.cpp
+// movidos a src/Combat/Combat.cpp
 // (B3 refactor 2026-05-07, 1216 lines).
 
 // FUN_004f6c30 @ 0x004F6C30 — Terrain_GetAttrDirect(grid_x, grid_y) → grid_y * 0x100 + grid_x

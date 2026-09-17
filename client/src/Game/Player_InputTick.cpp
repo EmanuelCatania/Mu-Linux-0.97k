@@ -793,7 +793,6 @@ void __cdecl Player_ProcessInput(void)
                     // que después lee la rotación por octante.
                     DAT_07e11dbc = (int)*(float*)(ent + 36);
                     DAT_07e11db8 = 0;
-                    Send_MovePacket_Player_legacy_stub();
                     // IDA L397-403: al terminar el camino, Action(c, c) con
                     // la cola que haya (0 = nada).  El port despachaba por
                     // tipo de cola con atajos propios (talk directo, pickup,

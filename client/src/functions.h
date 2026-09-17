@@ -450,10 +450,6 @@ char  __cdecl Combat_CheckArrowRequirement(void);                               
 // `*(c+749)` queue. Implementación en stubs.cpp.
 // IDA: FUN_0048d640
 void  __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o);
-// Send_MovePacket_Player_legacy_stub — el viejo stub zero-arg que vivía en
-// Combat_ProcessQueuedAction. Sigue mandando packet 0x10 movement. Los call-sites
-// existentes que esperaban el comportamiento viejo siguen llamando a éste.
-void  __cdecl Send_MovePacket_Player_legacy_stub(void);
 unsigned int __cdecl FUN_00483160(void);                             // Entity_CanAct (returns 0 if locked)
 void  __cdecl Player_ProcessInput(void); // IDA: FUN_004acef0
 void  __cdecl Mouse_UpdateHoverTargets(void);                                    // IDA: FUN_004b0310
