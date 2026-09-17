@@ -38,6 +38,7 @@
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 extern "C" void Net_SendEventWindowClose(void);
+extern "C" void Net_SendNpcTalkClose(void);
 
 // Origen (esquina superior izquierda) de los paneles Character / Guild.
 //
@@ -2068,7 +2069,10 @@ extern "C" void __cdecl RenderGoldenArcherWindow(void)
         DAT_083a4124 != 0)
     {
         DAT_083a4124 = 0;
-        Net_SendEventWindowClose();
+        // IDA manda [C1][03][97]; MuEmu marca Interface.use para el Golden
+        // Archer y ese 0x97 sin subopcode no lo libera. El DLL reemplaza esta
+        // funcion (hook en 0x4E7AC0) y cierra con el 0x31.
+        Net_SendNpcTalkClose();
         g_bEventChipDialogEnable = 0;
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
