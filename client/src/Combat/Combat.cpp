@@ -559,9 +559,14 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
     else
         DAT_00559bec = (unsigned int)wpCount * 3 + 4;
 
-    // IDA: sin camino no se manda el 0x10, pero igual se activa la ruta y se
-    // cierran las ventanas (SendMove_CloseWindows97k).
-    if (wpCount != 0) {
+    // IDA sigue aunque no haya camino (activa la ruta y cierra ventanas), pero
+    // ahi solo se llama tras un PathFinding exitoso. El port ademas la llama
+    // cuando el pathfinding falla (Send_MovePacket_Player_legacy_stub): sin
+    // este return se reactivaba la ruta vieja y el heroe seguia caminando,
+    // atravesando paredes.
+    if (wpCount == 0)
+        return;
+    {
     if (wpCount > 0xe)
         wpCount = 0xe;
 
