@@ -874,79 +874,11 @@ void __cdecl Player_ProcessInput(void)
                     DAT_07e11dbc = (int)*(float*)(ent + 36);
                     DAT_07e11db8 = 0;
                     Send_MovePacket_Player_legacy_stub();
-                    // 2026-05-06: si hay action queued en c+0x2ed (set por
-                    // click on mob/NPC con value 3=attack, 1=npc-talk, etc.),
-                    // disparar Action(c, o) para procesar y mandar packet
-                    // attack 0x15 / skill 0x19 / talk 0x30 al server.
-                    //
-                    // En IDA Action(c, o), tanto `c` como `o` son ENTITY ptr —
-                    // c lee fields como c+0x2ED (action_queue), c+0x2F5 (attack
-                    // pending), c+0x310 (target_idx). Para hero player, c y o
-                    // son el mismo entity (DAT_07abf5d8). Anti-crash: validar
-                    // que action queued sea uno de los cases válidos (1..5).
-                    BYTE actionQueued = ent[0x2ed];
-                    {
-                        char wb[160];
-                        wsprintfA(wb,
-                            "PIT WALKER ARRIVE: 2ed=%d 559c70=%d 559ce8=%d hero=(%d,%d) anim=0x%02x",
-                            (int)actionQueued, (int)DAT_00559c70,
-                            (int)DAT_00559ce8,
-                            (int)*(int*)(ent + 0x388), (int)*(int*)(ent + 0x38c),
-                            (int)ent[0x105]);
-                        DbgLogPublic(wb);
-                    }
-                    // 2026-05-06: en lugar del mini-attack inline (que ignoraba
-                    // weapon-range, animation gates, position cache, etc),
-                    // delegamos al port completo de Action() (Combat_ProcessQueuedAction
-                    // case 2) SOLO para action=3 (attack). Otros valores de
-                    // actionQueued (1=npc-talk, 2=pickup, 4=walk-final, 5=skill)
-                    // dispararían cases 0,1,3,4 de Action() — esos NO están
-                    // todavía completamente porteados y crashearon en runtime
-                    // (user reportó AV addr=0x55D1D6 al moverse 2026-05-06).
-                    if (actionQueued == 3) {
-                        Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-                        // 2026-05-07: hard-clear queue post walker-arrival
-                        // fire para que la SECONDARY TICK abajo no double-fire
-                        // si Action() out-of-range no clean por sí sola.
-                        *(unsigned char*)(ent + 0x2ed) = 0;
-                    }
-                    // 2026-07-25 (#2 shops): llegada a NPC (2ed==2) → mandar el
-                    // request de talk 0x30. DAT_00559c70 = índice del NPC clickeado.
-                    else if (actionQueued == 2) {
-                        int npcIdx = (int)DAT_00559c70;
-                        if (npcIdx >= 0 && npcIdx < 400) {
-                            BYTE* npc = (BYTE*)(uintptr_t)DAT_07abf5d0 + npcIdx * 0x394;
-                            if (npc[0] != 0)
-                                SendNpcTalkRequest(npc);
-                        }
-                        *(unsigned char*)(ent + 0x2ed) = 0;
-                    }
-                    // 2026-07-27: llegada al item (2ed==1) → mandar pickup 0x22.
-                    else if (actionQueued == 1) {
-                        // 2026-08-22: aca se releia SelectedItem EN VIVO al
-                        // llegar.  IDA latchea el indice al hacer click
-                        // (Player_InputTick L1278-1283: `ItemKey = v181;` junto
-                        // con `c[749] = 1`) y `Action` (0x48D640) arma el pickup
-                        // con ItemKey, no con SelectedItem.  Releerlo en vivo
-                        // hace que, con varios items juntos, se levante el que
-                        // este bajo el cursor AL LLEGAR y no el que se clickeo:
-                        // el nombre flotante decia uno y entraba otro.
-                        //
-                        // 2026-09-11: aca se mandaba el 0x22 directo.  IDA llama
-                        // a Action (0x48D640) cuando el camino termina, y es
-                        // Action la que primero mira si hay lugar: sin lugar
-                        // muestra GlobalText[375] y hace rebotar el item en el
-                        // suelo, sin mandar nada.  Mandandolo directo el server
-                        // contestaba "inventario lleno" y el rebote no salia.
-                        int itemSlotIdx = (int)ItemKey;
-                        if (itemSlotIdx >= 0 && itemSlotIdx < 1000) {
-                            BYTE* itemEnt = (BYTE*)&DAT_07e12840[0]
-                                          + (uintptr_t)itemSlotIdx * 0x204;
-                            if (itemEnt[72])     // active
-                                Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-                        }
-                        *(unsigned char*)(ent + 0x2ed) = 0;
-                    }
+                    // IDA L397-403: al terminar el camino, Action(c, c) con
+                    // la cola que haya (0 = nada).  El port despachaba por
+                    // tipo de cola con atajos propios (talk directo, pickup,
+                    // solo ataque) y dejaba la cola 4 a un tick secundario.
+                    Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                 }
             }
             else
@@ -1000,47 +932,6 @@ void __cdecl Player_ProcessInput(void)
         }
     }
 
-    // 2026-05-06: SECONDARY attack tick — si user click on mob already in
-    // range, walker no se ejecuta (no path needed) y mi wireup arriba (que
-    // está dentro del walker arrival branch) no dispara. Aquí check cada
-    // tick si ent[+0x2ed]=3 y walker idle, dispara Action() completa.
-    //
-    // 2026-05-07 (v3) — FIRE-ONCE-PER-CLICK. Antes el SECONDARY TICK
-    // disparaba Action() cada 200ms mientras 0x2ed==3 + walker idle. Esto
-    // creaba auto-attack: usuario clickea mob → 0x2ed=3 → mientras user
-    // sostenía el botón izq, safety guard skipea (bClickHeld=true), queue
-    // queda armado, SECONDARY fires every 200ms → "ataca solo con hover".
-    //
-    // Fix: cada vez que ent[0x2ed] entra al value 3 (click nuevo o walker
-    // arrival que lo dejó armado), permitir UN solo fire del Action() y
-    // luego HARD-CLEAR el queue. La próxima fire requiere que el queue
-    // caiga a 0 primero (que ahora pasa siempre tras el hard-clear) y
-    // vuelva a 3 por un nuevo click.
-    //
-    // Crítico: hard-clear ent[0x2ed]=0 después del fire para que el
-    // safety guard no necesite ejecutar (que skipea cuando bClickHeld=1).
-    {
-        unsigned char *ent = (unsigned char*)DAT_07abf5d8;
-        // 2026-09-04: se agrega la cola 4 (MOVEMENT_OPERATE).  Antes solo cubria
-        // la 3, asi que al clickear una silla LEJOS el heroe caminaba hasta ella
-        // y al llegar no disparaba nunca la accion.  Con la silla al lado si
-        // funcionaba, porque ese camino llama a Action directo.
-        if (ent && (ent[0x2ed] == 3 || ent[0x2ed] == 4) && ent[0x356] == 0) {
-            {
-                char dbg[200];
-                wsprintfA(dbg, "PIT SECONDARY TICK (1-shot): 2ed=%d c50=%d ce8=%d 4124=%d 42c4=%d 413c=%d bClickEdge=%d bClickHeld=%d",
-                    (int)ent[0x2ed], (int)SelectedCharacter, (int)DAT_00559ce8,
-                    (int)DAT_083a4124, (int)DAT_083a42c4, (int)DAT_083a413c,
-                    0, 0);  // bClickEdge/bClickHeld read later — log raw flags
-                DbgLogPublic(dbg);
-            }
-            Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-            // Limpia la cola de una después de disparar — elimina el auto-fire mientras
-            // mouse held. Si Action() in-range ya lo limpió, este write
-            // es no-op idempotente.
-            ent[0x2ed] = 0;
-        }
-    }
     // ── obsolete inline mini-attack disabled below ──────────────────────────
     #if 0
     {
@@ -1353,23 +1244,6 @@ void __cdecl Player_ProcessInput(void)
         // && SelectedCharacter!=-1` AND v32 (current click) para continuar combat.
         // Sin alguna de esas, bail (= no attack/action).
         //
-        // Bug previo: ent[0x2ed] (3=attack/2=pickup/1=npc/4=walk-final/5=skill)
-        // quedaba armado entre frames. Si user clickea entity → action set →
-        // walker walks → Action() falla → no clear → secondary tick fires
-        // Action() cada frame. User mueve mouse a otro entity → Action() puede
-        // dispararse contra NUEVO target sin nuevo click. User reportó:
-        // "ataca con hover incluso con NPCs" 2026-05-07.
-        //
-        // Clear cualquier valor del queue (no solo ==3) para cubrir todos los
-        // action types. Walker activo (ent[0x356]>0) significa que el user
-        // tiene movimiento en progreso → preservar queue para el walker-arrival.
-        if (DAT_07abf5d8 && !bClickEdge && !bClickHeld) {
-            BYTE* hero = (BYTE*)DAT_07abf5d8;
-            if (hero[0x356] == 0 && hero[0x2ed] != 0) {
-                hero[0x2ed] = 0;   // disarm stale action queue when idle + no click
-            }
-        }
-
         bool bHoverActive = false;
         if ((bClickHeld || bClickLatched) && !s_clickCycleConsumed) {
             bHoverActive = true;
@@ -1794,7 +1668,6 @@ void __cdecl Player_ProcessInput(void)
                         // paquete de movimiento y NUNCA llamaba a Action,
                         // asi que sentarse no se disparaba nunca.
                         Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-                        *(unsigned char*)(ent + 0x2ed) = 0;
                     } else {
                         // LABEL_340: hay camino -> caminar hasta el objeto.
                         Combat_SendMovePathPacket((int)ent, (int)ent);
@@ -1821,22 +1694,6 @@ void __cdecl Player_ProcessInput(void)
                     _DAT_07e118e4 = *(DWORD*)(tgtBase + 0x24);
                     DAT_00559c70  = SelectedNpc;
 
-                    // 2026-07-25 (#2 shops): si el NPC ya está en rango de talk
-                    // (server exige ±5 tiles — CGNpcTalkRecv L261), mandar el
-                    // request 0x30 YA. Si está lejos, se encola (2ed=2) y el
-                    // walker-arrival lo dispara al llegar.
-                    {
-                        int hgx = *(int*)(ent + 0x388), hgy = *(int*)(ent + 0x38c);
-                        int ngx = *(int*)(tgtBase + 0x388), ngy = *(int*)(tgtBase + 0x38c);
-                        int ddx = (hgx - ngx < 0) ? (ngx - hgx) : (hgx - ngx);
-                        int ddy = (hgy - ngy < 0) ? (ngy - hgy) : (hgy - ngy);
-                        if (((ddx > ddy) ? ddx : ddy) <= 4) {
-                            SendNpcTalkRequest((const BYTE*)tgtBase);
-                            *(unsigned char*)(ent + 0x2ed) = 0;  // no encolar walk
-                            goto end_tick_inc;
-                        }
-                    }
-
                     int srcX = *(int*)(ent + 0x388);
                     int srcY = *(int*)(ent + 0x38c);
                     int dstX = *(int*)(tgtBase + 0x388);
@@ -1849,7 +1706,8 @@ void __cdecl Player_ProcessInput(void)
                                                     dstX, dstY,
                                                     ent + 0x354, 0.0f);
                     if ((char)ok == '\0') {
-                        Send_MovePacket_Player_legacy_stub();
+                        // IDA L1210: sin camino -> LABEL_312 (Action manda el 0x30).
+                        Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                     } else {
                         Combat_SendMovePathPacket((int)ent, (int)ent);
                     }
@@ -1883,29 +1741,12 @@ void __cdecl Player_ProcessInput(void)
                 int srcX = *(int*)(ent + 0x388);
                 int srcY = *(int*)(ent + 0x38c);
 
-                // 2026-07-27: si el héroe ya está sobre/al lado del item, mandar
-                // el pickup 0x22 AHORA (no hay walk → el arrival no dispara).
-                // CGItemGetRecv: [C1][05][22][idxH][idxL], C3. El índice del pool
-                // ES el map item index (el 0x20 handler guarda en pool[key*0x204]).
-                {
-                    int adx = srcX - dstX; if (adx < 0) adx = -adx;
-                    int ady = srcY - dstY; if (ady < 0) ady = -ady;
-                    if (adx <= 1 && ady <= 1) {
-                        // Igual que al llegar caminando: el pickup lo resuelve
-                        // Action (IDA LABEL_312 cuando PathFinding no devuelve
-                        // camino), que es quien chequea el inventario lleno.
-                        if (itemEnt[72])     // active
-                            Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-                        *(unsigned char*)(ent + 0x2ed) = 0;
-                        goto end_tick_inc;
-                    }
-                }
-
                 unsigned int ok = Path_FindRoute(srcX, srcY,
                                                 dstX, dstY,
                                                 ent + 0x354, 0.0f);
                 if ((char)ok == '\0') {
-                    Send_MovePacket_Player_legacy_stub();
+                    // IDA L1318: sin camino -> Action y cola en 0.
+                    Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                     *(unsigned char*)(ent + 0x2ed) = 0;
                 } else {
                     Combat_SendMovePathPacket((int)ent, (int)ent);

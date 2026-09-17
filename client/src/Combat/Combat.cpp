@@ -2075,17 +2075,9 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
 #define ACTION_HERO          ((char*)DAT_07abf5d8)
 #endif
 
-// DESVIACION GLOBAL DE ESTA FUNCION (documentada 2026-09-02): los cinco
-// `*(BYTE*)(c + 749) = 0` que hay repartidos por los cases NO estan en IDA --
-// en el binario Action (0x0048D640) solo LEE ese byte, en L376.  Alli la cola
-// la reescribe Player_InputTick en cada click (=1 item, =2 NPC, =3 ataque,
-// =4 caminar, =5 skill) y Action corre unicamente cuando MovePath termina
-// (0x4ACEF0 L403), asi que no se repite sola.
-//
-// Nuestro Player_InputTick tiene ademas un "SECONDARY TICK" propio (L910) que
-// re-dispara Action cuando `ent[0x2ED] == 3` y el walker esta quieto; sin los
-// clears eso se convierte en auto-fire mientras se mantiene el boton.  Los dos
-// -- el tick secundario y los clears -- se sacan juntos o no se sacan.
+// Como en IDA (0x0048D640), Action solo LEE la cola c+749; la reescribe
+// Player_InputTick en cada click.  (2026-09-18: se sacaron los cinco clears y
+// el tick secundario que los obligaba.)
 void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
 {
     if (c == 0 || o == 0) return;
@@ -2203,12 +2195,6 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
                         (BYTE)((npcKey >> 8) & 0xFF), (BYTE)(npcKey & 0xFF) };
         Net_SendSmallPacket(pkt, sizeof(pkt));
 
-        // DESVIACION: IDA no limpia la cola aca (el unico write de c+749 en
-        // Action es la LECTURA de L376).  En el binario la cola la reescribe
-        // Player_InputTick en cada click y Action solo corre cuando MovePath
-        // termina, asi que no se repite.  Nuestro tick secundario si puede
-        // volver a entrar, de ahi el clear.
-        *(unsigned char*)(c + 749) = 0;
         return;
     }
 
@@ -2229,10 +2215,7 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
     //     a) PathFinding2(...) — si ok, c+748=1 (start walk)
     // ──────────────────────────────────────────────────────────────────────────
     case 2: {
-        if (targetIdx < 0) {
-            *(unsigned char*)(c + 749) = 0;
-            return;
-        }
+        if (targetIdx < 0) return;
 
         // IDA Action 0x0048D640 L1194-1212 — alcance segun el arma equipada.
         //   v11 = *(__int16 *)(CharacterMachine + 536);   // wear slot 0 (mano izq)
@@ -2314,7 +2297,6 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
 
                 // Mark action consumed and target locked
                 *(unsigned char*)(c + 748) = 0;
-                *(unsigned char*)(c + 749) = 0;  // clear queue (else loops)
                 *(unsigned short*)(c + 784) = (unsigned short)targetIdx;
 
                 // ─── Send packet 0x15 ATTACK ──────────────────────────────────────────────────────────────────────────
@@ -2508,7 +2490,6 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
                 pkt[3] = 0x01; pkt[4] = heading; pkt[5] = 110;
                 Combat_SendPlainPacket97k(pkt, 6);
                 *(unsigned char*)(c + 854) = 0;
-                *(unsigned char*)(c + 749) = 0;
                 return;
             }
             break;
@@ -2563,7 +2544,6 @@ void __cdecl Combat_ProcessQueuedAction(DWORD c, DWORD o)
 
         // PlayBuffer 30 (sonido de paso) al final, per IDA L2065
         FUN_00404bc0(30, (int)(uintptr_t)DAT_07abf5d8, 0);
-        *(unsigned char*)(c + 749) = 0;
         return;
     }
 
