@@ -5227,9 +5227,9 @@ void Net_ProcessPacket(void)
                 PartyOpened     = 0;
                 PlayBuffer(25, 0, 0);
                 PlayBuffer(28, 0, 0);
-                // IDA además reposiciona el cursor del OS (SetCursorPos) a la zona
-                // de la ventana; lo omitimos (mover el cursor del sistema es
-                // intrusivo y no afecta la lógica del juego).
+                // IDA termina con SetCursorPos(260*MouseX/640 escalado, MouseY).
+                // Omitido a propósito: el DLL lo anula ("Fix move cursor NPC",
+                // Patchs.cpp: NOP en 0x00430B9F y 0x00430BBD).
                 break;
             }
 
