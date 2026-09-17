@@ -16,7 +16,6 @@ extern "C" BOOL ChaosBoxRequestClose(void);
 static bool HUD_IsQuestPanelOpenRuntime(void);
 static bool HUD_IsGoldenArcherPanelRuntime(void);
 static bool HUD_IsInventoryFamilyActive(void);
-static bool HUD_CloseNpcWindowsIfAny(void);
 extern "C" int g_nGuildMemberCount;
 static bool HUD_IsAnyRightPanelOpen(void);
 static bool HUD_IsGuildCreationRuntime(void);
@@ -176,67 +175,49 @@ static void MouseOnWindow_Update(void)
     }
 }
 
-// Render/Chat original: both the bottom HUD icon and P execute this same
-// Party toggle.  Opening discards only the displayed count and immediately
-// asks the server for an authoritative 0x42; it never clears Party rows or
-// changes membership locally.
-static void Party_ToggleAndRefresh(void)
+// Cola comun de Chat_InputTick (0x4B14F0) al abrir guild/party/personaje y al
+// cerrar el inventario, en sus dos versiones (teclas G/P/C/I/V L4921-6414 y
+// botones de la barra L1116-2214):
+//   TradeOpened      -> cancelar el trade (C3 0x3D)
+//   WarehouseOpened  -> con EquipmentItem pendiente no se puede; si no, cerrar
+//                       ventanas, devolver el item agarrado y mandar 0x82
+//   ChaosMixOpened   -> 0x87 si la caja esta vacia y no hay item agarrado; si
+//                       no, aviso 593
+//   si no            -> apagar los paneles que no conviven y cerrar ventanas
+//                       (CloseInventoryRelatedWindows ya manda el 0x31 de la
+//                       tienda, fix del DLL)
+// Devuelve false cuando la ventana del NPC no se pudo cerrar (la tecla apaga
+// entonces el panel que acababa de abrir).  2026-09-18: reemplaza a
+// HUD_CloseNpcWindowsIfAny / HUD_CloseInventoryFamilyFromUI, que mandaban 0x31
+// para todo e impedian abrir el panel.
+enum HudPanelTail { TAIL_GUILD, TAIL_PARTY, TAIL_CHARACTER, TAIL_INVENTORY_CLOSE };
+static bool HUD_PanelTail97k(HudPanelTail kind)
 {
-    GuildOpened = 0;
-    GuildCreatorOpened = 0;
-    if (PartyOpened) {
-        PartyOpened = 0;
-        FUN_00404bc0(0x19, 0, 0);
-        FUN_00404bc0(0x1c, 0, 0);
-        return;
-    }
-
-    PartyNumber = 0;
-    // IDA Chat_InputTick L5639-5807: abrir el party cierra inventario y personaje.
-    DAT_07eaa117 = 0;   // InventoryOpened
-    DAT_07eaa116 = 0;   // CharacterOpened
-    const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
-    Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
-    PartyOpened = 1;
-}
-
-static bool HUD_CloseNpcWindowsIfAny(void)
-{
-    if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128) {
-        const bool wasChaos = (DAT_07eaa11a != 0);
-        if (wasChaos) {
-            // 0x87 ACK performs the close; never expose another NPC panel
-            // while the Chaos interface remains server-active.
-            ChaosBoxRequestClose();
-            return false;
-        }
-        extern void __cdecl CloseInventoryRelatedWindows(void);
-        CloseInventoryRelatedWindows();
-        Net_SendNpcTalkClose();
-        DbgLogPublic("HKT CLOSE-NPC (C/G/P panel)");
-    }
-    return true;
-}
-
-
-// Cierra la familia de ventanas de inventario/NPC.  Es la rama de cierre que
-// comparten la tecla I/V y el boton de la barra inferior (IDA Chat_InputTick
-// 0x4B14F0 L2078-2260: TradeOpened -> cancelar trade; WarehouseOpened -> close
-// 0x82; ChaosMixOpened -> close 0x87; si no, InventoryOpened = 0).
-static void HUD_CloseInventoryFamilyFromUI(void)
-{
-    if (DAT_07eaa11a) {              // ChaosMixOpened: el ACK del 0x87 cierra
-        ChaosBoxRequestClose();
-        return;
-    }
-    const bool hadNpcWindow = (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11b ||
-                               DAT_07eaa128);
     extern void __cdecl CloseInventoryRelatedWindows(void);
-    CloseInventoryRelatedWindows();
-    DAT_07eaa117 = 0;                // InventoryOpened
-    if (hadNpcWindow) {
-        Net_SendNpcTalkClose();
+    if (DAT_07eaa11b) {                                     // TradeOpened
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };
+        Net_SendSmallPacket(pkt, sizeof(pkt));
+        return true;
     }
+    if (DAT_07eaa119) {                                     // WarehouseOpened
+        if (DAT_07eaa165) return false;                     // EquipmentItem
+        DAT_07eaa117 = 0;                                   // InventoryOpened
+        CloseInventoryRelatedWindows();
+        if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x82 };
+        Net_SendC1Packet(pkt, sizeof(pkt));
+        return true;
+    }
+    if (DAT_07eaa11a)                                       // ChaosMixOpened
+        return ChaosBoxRequestClose() != FALSE;             // aviso 593 incluido
+    switch (kind) {
+    case TAIL_GUILD:     DAT_07eaa117 = 0; DAT_07eaa116 = 0; break;
+    case TAIL_PARTY:     DAT_07eaa117 = 0; DAT_07eaa11b = 0; DAT_07eaa116 = 0; break;
+    case TAIL_CHARACTER: DAT_07eaa114 = 0; DAT_07eaa115 = 0; break;
+    case TAIL_INVENTORY_CLOSE: DAT_07eaa117 = 0; break;
+    }
+    CloseInventoryRelatedWindows();
+    return true;
 }
 
 // Botones de la barra inferior.  En el binario esto vive dentro de
@@ -283,48 +264,58 @@ void HUD_BottomBarButtons_HitTest(void)
     const int mx = (int)DAT_083a427c;       // 640-space mouse X
     const int my = (int)DAT_083a4278;       // 480-space mouse Y
 
-    // ── Guild ────────────────────────────────────────────────────────────────
+    // -- Guild --
     if (mx >= 582 && mx < 634 && my >= 459 && my < 477) {
         DAT_083a4124 = 0;                    // MouseLButtonPush = 0
         DAT_07eaa115 = 0;                    // PartyOpened = 0
         if (DAT_07eaa114) {                  // GuildOpened
             DAT_07eaa114 = 0;
-            FUN_00404bc0(0x19, 0, 0);
-            FUN_00404bc0(0x1c, 0, 0);
         } else {
-            if (!HUD_CloseNpcWindowsIfAny()) return;
             // 0x52 pide Encrypt=0 en HackPacketCheck.txt -> frame C1 plano.
             const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
             Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
             g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
+            HUD_PanelTail97k(TAIL_GUILD);
+        }
+        FUN_00404bc0(0x19, 0, 0);            // IDA LABEL_123: en las dos ramas
+        FUN_00404bc0(0x1c, 0, 0);
+        return;
+    }
+
+    // -- Party --
+    if (mx >= 348 && mx < 372 && my >= 452 && my < 476) {
+        DAT_083a4124 = 0;
+        DAT_07eaa114 = 0;                    // GuildOpened
+        if (PartyOpened) {
+            PartyOpened = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            PartyNumber = 0;
+            const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
+            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            PartyOpened = 1;
+            HUD_PanelTail97k(TAIL_PARTY);
         }
         return;
     }
 
-    // ── Party ────────────────────────────────────────────────────────────────
-    if (mx >= 348 && mx < 372 && my >= 452 && my < 476) {
-        DAT_083a4124 = 0;
-        if (!DAT_07eaa115 && !HUD_CloseNpcWindowsIfAny()) return;
-        Party_ToggleAndRefresh();            // ya hace GuildOpened=0 + sonidos
-        return;
-    }
-
-    // ── Personaje ────────────────────────────────────────────────────────────
-    // IDA no toca ningun otro flag aca: Character convive con Inventory.
+    // -- Personaje --
     if (mx >= 379 && mx < 403 && my >= 452 && my < 476) {
         DAT_083a4124 = 0;
         if (DAT_07eaa116) {                  // CharacterOpened
             DAT_07eaa116 = 0;
             FUN_00404bc0(0x19, 0, 0);
             FUN_00404bc0(0x1c, 0, 0);
-        } else if (HUD_CloseNpcWindowsIfAny()) {
+        } else {
             DAT_07eaa116 = 1;
+            HUD_PanelTail97k(TAIL_CHARACTER);
         }
         return;
     }
 
-    // ── Inventario ───────────────────────────────────────────────────────────
+    // -- Inventario --
     if (mx >= 410 && mx < 434 && my >= 452 && my < 476) {
         DAT_083a4124 = 0;
         if (!DAT_07eaa117) {                 // InventoryOpened
@@ -332,7 +323,7 @@ void HUD_BottomBarButtons_HitTest(void)
             DAT_07eaa114 = 0;                // GuildOpened = 0
             DAT_07eaa115 = 0;                // PartyOpened = 0
         } else {
-            HUD_CloseInventoryFamilyFromUI();
+            HUD_PanelTail97k(TAIL_INVENTORY_CLOSE);
         }
         return;
     }
@@ -471,85 +462,59 @@ static void HUD_HotkeyTick(void)
     int kG = Input_IsKeyJustPressed(0x47); // 'G'  Guild
     int kP = Input_IsKeyJustPressed(0x50); // 'P'  Party
 
-    // Toggle pattern matches IDA Chat_InputTick (sub_4B14F0):
-    //   tecla C → si CharacterOpened: 0; si no: 1 (con el paquete de tab de clase).
-    //   tecla G → si GuildOpened: 0; si no: 1 (con limpieza de party + paquete).
-    //   tecla P → si PartyOpened: 0; si no: 1 (con limpieza de guild + paquete).
-    //   kV/kI    → if InventoryOpened: 0 (close inventory + clear shop/etc);
-    //              else: 1 (open inventory).
-    // Abrir G también pide la lista autoritativa de miembros del guild. MuEmu
-    // maneja C1:03:52 en CGGuildListRecv; el resultado es el frame C2:52
-    // decoded by Net_Process.
-    // 2026-07-27 FIX (tienda "vacía" al abrir Character/Party/Guild): el panel
-    // de inventario se mueve a x=260 cuando CharacterOpened||PartyOpened
-    // (HUD_Pass6:440), que es EXACTAMENTE donde se dibuja el panel de la tienda
-    // (dword_7EAA0C8=260) → el inventario quedaba encima de la tienda y parecía
-    // vacía (en realidad los datos estaban intactos: diag SHOPREND occ=56).
-    // En MU los paneles izquierdos (Character / Shop / Warehouse) son mutuamente
-    // excluyentes: abrir C/G/P cierra la ventana del NPC (y avisa al server con
-    // el close 0x31, como ya hacen I/V y Escape).
-    // IDA Chat_InputTick L4921-5826: al CERRAR con G/P/C suenan 25 y 28 (P ya
-    // los tiene en Party_ToggleAndRefresh); G apaga el party antes de mirar
-    // su propio flag.  2026-09-14: faltaban los sonidos y el PartyOpened = 0.
+    // IDA Chat_InputTick L4921-6414.  Al abrir con tecla, si la ventana del
+    // NPC no se pudo cerrar (baul con EquipmentItem, Chaos con items) el panel
+    // queda cerrado.  Los sonidos 25/28 salen al cerrar y al abrir el
+    // inventario.
+    if (kG) {
+        DAT_07eaa115 = 0;                    // PartyOpened
+        if (DAT_07eaa114) {
+            DAT_07eaa114 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            // 0x52: Encrypt=0 en HackPacketCheck.txt -> C1 plano.
+            const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
+            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            g_nGuildMemberCount = -1;
+            DAT_07eaa114 = 1;
+            if (!HUD_PanelTail97k(TAIL_GUILD)) DAT_07eaa114 = 0;
+        }
+    }
+    if (kP) {
+        DAT_07eaa114 = 0;                    // GuildOpened
+        if (PartyOpened) {
+            PartyOpened = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            PartyNumber = 0;
+            const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
+            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            PartyOpened = 1;
+            if (!HUD_PanelTail97k(TAIL_PARTY)) PartyOpened = 0;
+        }
+    }
     if (kC) {
         if (DAT_07eaa116) {
             DAT_07eaa116 = 0;
             FUN_00404bc0(0x19, 0, 0);
             FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            DAT_07eaa116 = 1;
+            if (!HUD_PanelTail97k(TAIL_CHARACTER)) DAT_07eaa116 = 0;
         }
-        else if (HUD_CloseNpcWindowsIfAny()) { DAT_07eaa116 = 1; }
-    }
-    if (kG) {
-        DAT_07eaa115 = 0;   // PartyOpened (IDA L4928)
-        if (DAT_07eaa114 || DAT_07eaa124) {
-            DAT_07eaa114 = 0;
-            DAT_07eaa124 = 0;
-            FUN_00404bc0(0x19, 0, 0);
-            FUN_00404bc0(0x1c, 0, 0);
-        }
-        else {
-            if (!HUD_CloseNpcWindowsIfAny()) return;
-            DAT_07eaa114 = 1;
-            DAT_07eaa115 = 0; // close Party
-            // IDA Chat_InputTick L5275-5277: abrir el guild cierra inventario y
-            // personaje (se dibujan en la misma franja x=450).
-            DAT_07eaa117 = 0; // InventoryOpened
-            DAT_07eaa116 = 0; // CharacterOpened
-            // 2026-08-15 BUG-FIX (abrir el panel de guild con G desconectaba):
-            // el opcode 0x52 pide Encrypt=0 en HackPacketCheck.txt, o sea frame
-            // C1 plano. Enviarlo como C3 (Net_SendSmallPacket) hace que el
-            // server responda "Packet encryption error" y cierre la sesión.
-            const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
-            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
-        }
-    }
-    if (kP) {
-        if (!PartyOpened && !HUD_CloseNpcWindowsIfAny()) return;
-        Party_ToggleAndRefresh();
     }
     if (kV || kI) {
-        // 2026-07-27 FIX: el gate era HUD_IsInventoryFamilyActive(), que incluye
-        // CharacterOpened/Party/Guild → con el panel de Character abierto, tocar V
-        // caía en la rama "cerrar todo" y cerraba TODOS los menús en vez de
-        // togglear el inventario. Per IDA (Chat_InputTick sección 15) la tecla
-        // I/V togglea InventoryOpened; al cerrar arrastra las ventanas de NPC.
-        if (DAT_07eaa117 || DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a ||
-            DAT_07eaa11b || DAT_07eaa128) {
-            // 2026-07-27 FIX: con la tienda abierta, apretar I/V cerraba solo
-            // InventoryOpened y dejaba la tienda abierta (y el server con
-            // Interface.use=1 → no dejaba abrir otra). Ahora cierra toda la
-            // familia de ventanas de NPC y avisa al server con el close 0x31,
-            // igual que Escape / click-para-mover.
-            // (NO tocar CharacterOpened: I/V sólo maneja el inventario y las
-            //  ventanas de NPC; el panel de Character lo togglea la tecla C.)
-            HUD_CloseInventoryFamilyFromUI();
-        } else {
-            // IDA L6323-6327: al abrir apaga guild y party y suenan 25 y 28.
+        if (!DAT_07eaa117) {                 // InventoryOpened
+            DAT_07eaa11b = 0;                // IDA: TradeOpened = 0 al abrir
             DAT_07eaa117 = 1;
-            DAT_07eaa114 = 0;   // GuildOpened
-            DAT_07eaa115 = 0;   // PartyOpened
+            DAT_07eaa114 = 0;                // GuildOpened
+            DAT_07eaa115 = 0;                // PartyOpened
             FUN_00404bc0(0x19, 0, 0);
             FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            HUD_PanelTail97k(TAIL_INVENTORY_CLOSE);
         }
     }
 }
