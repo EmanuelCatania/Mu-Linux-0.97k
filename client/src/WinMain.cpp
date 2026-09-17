@@ -1362,6 +1362,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     // loop de canales de Chat_InputTick; el envío crudo anda
                     // bien para el caso del chat normal).
                     char* line = (char*)DAT_07db8710 + slot * 0x100;
+                    // IDA WndProc L2265-2268: antes del SendChat (no en el
+                    // susurro) revisa los gestos, salvo montado fuera de zona segura.
+                    if (((const char*)&DAT_07db8810)[0] == '\0') {
+                        WORD helper = *(WORD*)(DAT_07abf5d8 + 0x2b8);
+                        if ((helper != 818 && helper != 819) || *(char*)(DAT_07abf5d8 + 0x34e))
+                            CheckChatText(line);
+                    }
                     Chat_SendChatLine(line);
 
                     // Limpia el slot de input y su longitud.

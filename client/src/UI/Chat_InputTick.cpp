@@ -697,7 +697,7 @@ void __cdecl Chat_InputTick(void)
                         if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
                              (*(short *)(DAT_07abf5d8 + 0x2b8) != 0x333)) ||
                              (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
-                            FUN_00497c70();
+                            CheckChatText((char *)chBuf);   // IDA: sub_497C70
 
                         if ((char)FUN_00513440((char *)chBuf) != '\0')
                             continue;  // invalid text
@@ -784,7 +784,7 @@ void __cdecl Chat_InputTick(void)
                         if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
                              (*(short *)(DAT_07abf5d8 + 0x2b8) != 0x333)) ||
                              (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
-                            FUN_00497c70();
+                            CheckChatText(&DAT_07e108c8);   // IDA: sub_497C70
 
                         if ((char)FUN_00513440(&DAT_07e108c8) == '\0') {
                             if (DAT_05826d08 < 0x33) {
