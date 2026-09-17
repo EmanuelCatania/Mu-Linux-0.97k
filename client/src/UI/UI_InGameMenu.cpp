@@ -96,76 +96,24 @@ void __cdecl UI_InGameMenu(void)
     //     PlayBuffer(25);
     // }
     // DAT_083a7c24 ≡ ErrorMessage, estado 0x6e (110) = menu abierto.
-    // EquipmentItem es el ítem agarrado con el mouse; cuando hay uno, ESC no
-    // abre el menú (se usa para soltar el ítem). En login EquipmentItem=NULL
-    // siempre, así que podemos omitir ese guard.
-    int escHit = Input_IsKeyJustPressed(27);  // VK_ESCAPE (1 si fue just-pressed)
-    if (escHit) {
-        bool didToggle = false;
-        // 2026-07-27: válvula de escape para los diálogos Yes/No (151) y pet
-        // rename (153). Si el hit-test de sus botones no pega, el cartel dejaba
-        // el juego trabado sin forma de cerrarlo. Escape = cancelar (No).
-        if (state == 0x97 || state == 0x99) {
-            extern char DAT_00559f5e;
-            DAT_00559f5e = 2;                 // respuesta = No / cancelar
-            DAT_083a7c24 = DAT_083a7c28;      // ErrorMessage = NextErrorMessage
-            DAT_083a7c28 = 0;
-            FUN_00404bc0(0x19, 0, 0);
-            DbgLogPublic("ESC: cartel Yes/No cancelado");
-            return;
-        }
-        if (state == 0x6e || state == 0x96) {
-            // Cerrar menú: volver al estado anterior (NextErrorMessage).
-            DAT_083a7c24 = DAT_083a7c28;
-            DAT_083a7c28 = 0;
-            state = DAT_083a7c24;
-            didToggle = true;
-        }
-        // 2026-05-08: BUG-FIX UX — si hay paneles abiertos (inventario,
-        // character, party, etc), ESC los cierra PRIMERO sin abrir el
-        // menú in-game. Esto evita que ESC accidentalmente abra el menú
-        // (cuyo botón "Salir" tiene hit-test overlapando con la zona
-        // de equipos del inventario → user clickea equip → logout).
-        // Comportamiento convencional Mu Online.
-        else if (DAT_005615c0 == 5 &&
-                 (InventoryOpened || CharacterOpened ||
-                  PartyOpened || GuildOpened ||
-                  WarehouseOpened || ChaosMixOpened ||
-                  TradeOpened || ShopOpened || DAT_07eaa128))
-        {
-            // 2026-07-25 (#2 shops): ANTES sólo cerraba inventory/character/
-            // party/guild y "diferia" shop/warehouse/trade → la tienda quedaba
-            // abierta al apretar Escape. Ahora también las cierra.
-            bool hadNpcWindow = (ShopOpened || WarehouseOpened ||
-                                 ChaosMixOpened || TradeOpened || DAT_07eaa128);
-            InventoryOpened = '\0';
-            CharacterOpened = '\0';
-            PartyOpened     = '\0';
-            GuildOpened     = '\0';
-            if (hadNpcWindow) {
-                const bool wasChaos = (ChaosMixOpened != 0);
-                if (wasChaos) {
-                    // The 0x87 ACK owns cleanup; keep the Chaos UI alive here.
-                    ChaosBoxRequestClose();
-                    return;
-                }
-                // Limpia ShopOpened/Warehouse/ChaosMix/Trade/Event + pools.
-                CloseInventoryRelatedWindows();
-                Net_SendNpcTalkClose();
+    // EquipmentItem (0x07EAA165) = movimiento de equipo pendiente con el server.
+    // IDA UI_InGameMenu (0x514310) L534-572.  2026-09-18: fiel.  El port
+    // cerraba primero los paneles abiertos (y mandaba 0x31), cancelaba los
+    // carteles Si/No 151/153 y abria el menu sobre los carteles de desconexion;
+    // nada de eso esta en el binario.
+    int escHit = Input_IsKeyJustPressed(27);  // PressKey(27)
+    if (escHit && !DAT_07eaa165) {            // EquipmentItem
+        if (DAT_083a7c24) {                   // ErrorMessage
+            if (DAT_083a7c24 == 110 || DAT_083a7c24 == 150) {
+                DAT_083a7c24 = DAT_083a7c28;  // ErrorMessage = NextErrorMessage
+                DAT_083a7c28 = 0;
             }
-            didToggle = true;
+        } else {
+            DAT_083a7c24 = 110;
+            if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
         }
-        else if (state == 0 || state == 0x71 || state == 0x70 ||
-                   state == 0x1a || state == 0x1c) {
-            // BUG-FIX 2026-04-28: estados 0x71/0x70 son "Connection lost" / quit
-            // que se setean en bg cuando el server desconecta — antes anulaban
-            // el menú ESC. Permitir abrirlo igual sobre estos estados.
-            DAT_083a7c24 = 0x6e;
-            state = 0x6e;
-            didToggle = true;
-        }
-        // IDA L571: PlayBuffer(25) tras el toggle (incluye cerrar y abrir).
-        if (didToggle) FUN_00404bc0(0x19, 0, 0);
+        state = DAT_083a7c24;
+        FUN_00404bc0(0x19, 0, 0);             // PlayBuffer(25), siempre
     }
 
     // ── Exit-countdown (IDA 00514310 L536-550) ──────────────────────────────
