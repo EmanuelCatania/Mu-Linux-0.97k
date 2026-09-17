@@ -5463,8 +5463,8 @@ void Net_ProcessPacket(void)
                     //
                     // Desviacion consciente: en vez de dejarlo pegado al cursor lo
                     // devolvemos a su slot de origen. El efecto observable es el mismo
-                    // (no se pierde) y ademas libera `EquipmentItem` (DAT_07eaa165), un
-                    // guard propio del port que IDA no tiene y que si queda seteado
+                    // (no se pierde) y ademas libera `EquipmentItem` (DAT_07eaa165,
+                    // el mismo global de IDA 0x07EAA165), que si queda seteado
                     // bloquea los drops siguientes.
                     RestorePickedItemToSource();
                     DAT_05826d1c = 0;
