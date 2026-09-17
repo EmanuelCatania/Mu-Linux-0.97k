@@ -5908,20 +5908,30 @@ void Net_ProcessPacket(void)
             }
             case 0x94: {  // ReceiveEventChipInfomation @ 0x004372C0
                 NetLog("NET:  -> 0x94 EventChipInfomation");
-                extern void Recv_EventChipInfomation(BYTE* Msg, int Size);
-                Recv_EventChipInfomation((BYTE*)Msg, Size);
+                extern void GoldenArcher_Recv94(BYTE* Msg, int Size);
+                GoldenArcher_Recv94((BYTE*)Msg, Size);
                 break;
             }
             case 0x95: {  // ReceiveEventChip @ 0x00437380
                 NetLog("NET:  -> 0x95 EventChip");
-                extern void Recv_EventChip(BYTE* Msg, int Size);
-                Recv_EventChip((BYTE*)Msg, Size);
+                extern void GoldenArcher_Recv95(BYTE* Msg, int Size);
+                GoldenArcher_Recv95((BYTE*)Msg, Size);
                 break;
             }
             case 0x96: {  // ReceiveMutoNumber @ 0x004373A0
                 NetLog("NET:  -> 0x96 MutoNumber");
-                extern void Recv_MutoNumber(BYTE* Msg, int Size);
-                Recv_MutoNumber((BYTE*)Msg, Size);
+                extern void GoldenArcher_Recv96(BYTE* Msg, int Size);
+                GoldenArcher_Recv96((BYTE*)Msg, Size);
+                break;
+            }
+            case 0x97: {  // Golden Archer del evento propio (C1:97:00..04)
+                extern void GoldenArcher_Recv97(BYTE* Msg, int Size);
+                GoldenArcher_Recv97((BYTE*)Msg, Size);
+                break;
+            }
+            case 0x9D: {  // ReceiveScratchResult @ 0x00437400 / resultado del evento propio
+                extern void GoldenArcher_Recv9D(BYTE* Msg, int Size);
+                GoldenArcher_Recv9D((BYTE*)Msg, Size);
                 break;
             }
             case 0x99: {  // ReceiveServerImmigration @ 0x004373D0

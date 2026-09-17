@@ -398,6 +398,7 @@
     <ClCompile Include="src\UI\UI_TextBitmap.cpp" />
     <ClCompile Include="src\UI\UI_Tooltip.cpp" />
     <ClCompile Include="src\UI\Chat_Gestures.cpp" />
+    <ClCompile Include="src\UI\GoldenArcher.cpp" />
     <ClCompile Include="src\UI\Chat_InputTick.cpp" />
     <ClCompile Include="src\UI\Chat_Send.cpp" />
     <ClCompile Include="src\UI\UI_SkillHotkeys.cpp" />

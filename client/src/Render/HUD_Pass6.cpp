@@ -100,10 +100,6 @@ extern "C" DWORD  DAT_07eaa131;
 #define g_bEventChipDialogEnable _g_bEventChipDialogEnable
 #define ItemAttribute            ((ITEM_ATTRIBUTE*)DAT_07d78068)
 
-static bool HUD_IsGoldenArcherPanelRuntime(void)
-{
-    return (DAT_07eaa128 != 0 && DAT_07eaa128 != 3);
-}
 
 // pPickedItem global (item being dragged).  Stored as int (cast to short
 // in IDA).  Level / byte_7E9136B accompany it.
@@ -1917,51 +1913,4 @@ extern "C" void __cdecl RenderEventWindow(void)
     }
 }
 
-extern "C" void __cdecl RenderGoldenArcherWindow(void)
-{
-    if (!HUD_IsGoldenArcherPanelRuntime()) return;
-    glColor3f(1.0f, 1.0f, 1.0f);
-    EnableAlphaTest(true);
-    dword_7EAA0C8 = 450;
-    dword_7EAA0CC = 0;
-    RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
-
-    SelectObject(m_hFontDC, g_hFontBold);
-    m_dwBackColor = 0x00000000u;
-    m_dwTextColor = 0xFFF0FF96u;
-    RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
-               getMonsterName(236), 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
-
-    // Golden archer doesn't render a grid — just a 3-slot vertical strip.
-    float xa = (float)((double)dword_7EAA0C8 + 25.0);
-    float ya = (float)((double)dword_7EAA0CC + 395.0);
-    GL_DrawTexture(280, xa,         ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-    GL_DrawTexture(282, xa + 30.0f, ya, 24.0f, 24.0f, 0.0f, 0.0f, 0.75f, 0.75f, 1, 1);
-
-    // ── Botón de cerrar (el primero, bitmap 280) ─────────────────────────────
-    // 2026-08-08: faltaba el hit-test — el panel se dibujaba pero la X no hacía
-    // nada. Port de CheckGoldenArcherWindow (0x4E7AC0 LABEL_133): rect
-    // (StartX+25, StartY+395) 24×24, gate MouseLButtonPush, manda
-    // `[C1][03][0x97]` (Protocol.cpp case 0x97 = cerrar ventana de evento) y
-    // resetea el estado de la UI + los campos de input.
-    if ((int)MouseX >= (int)xa && (int)MouseX < (int)xa + 24 &&
-        (int)MouseY >= (int)ya && (int)MouseY < (int)ya + 24 &&
-        DAT_083a4124 != 0)
-    {
-        DAT_083a4124 = 0;
-        // IDA manda [C1][03][97]; MuEmu marca Interface.use para el Golden
-        // Archer y ese 0x97 sin subopcode no lo libera. El DLL reemplaza esta
-        // funcion (hook en 0x4E7AC0) y cierra con el 0x31.
-        Net_SendNpcTalkClose();
-        g_bEventChipDialogEnable = 0;
-        InventoryOpened = 0;
-        CloseInventoryRelatedWindows();
-        DAT_07e11d28 = 0;               // MouseUpdateTime
-        DAT_00559bec = 6;               // MouseUpdateTimeMax
-        Input_ClearState(0);                // ClearInput(0)
-        DAT_00559c84 = 0;               // InputEnable
-        DAT_07e11d72 = 0;               // GoldInputEnable
-        DAT_07e11d74 = 0;               // InputGold
-        DAT_07eaa108 = 0;               // StorageGoldFlag
-    }
-}
+// RenderGoldenArcherWindow (0x4F46A0) vive en UI/GoldenArcher.cpp.
