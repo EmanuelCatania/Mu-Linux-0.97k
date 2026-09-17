@@ -6578,6 +6578,31 @@ void Net_ProcessPacket(void)
                 break;
             }
 
+            case 0x29: {
+                // IDA: ReceiveHelperItem (0x004321F0) — efecto con tiempo de una
+                // pocion especial.  MuEmu: PMSG_ITEM_SPECIAL_TIME_SEND
+                // [C3][06][29][number][pad][WORD time] (GCItemUseSpecialTimeSend).
+                //   CharacterAttribute + 42 + 2*number = 24 * time
+                //   number 0 -> +40 |= 1 y recalcula la velocidad de ataque
+                //   number 1 -> +40 |= 2 y recalcula el dano (fisico y magico)
+                // La rama sin encriptar de IDA es la respuesta anti-hack; MuEmu
+                // lo manda siempre encriptado.
+                if (Size < 6 || !CharacterAttribute) break;
+                const BYTE number = Msg[3];
+                BYTE* ca = (BYTE*)(uintptr_t)CharacterAttribute;
+                *(WORD*)(ca + 42 + 2 * number) = (WORD)(24 * *(const WORD*)(Msg + 4));
+                if (number == 0) {
+                    ca[40] |= 1;
+                    FUN_0047dd80((int)(uintptr_t)CharacterMachine);   // CalculateAttackSpeed
+                } else if (number == 1) {
+                    ca[40] |= 2;
+                    FUN_0047d410((int)(uintptr_t)CharacterMachine);   // Stats_CalcBase
+                    FUN_0047dae0((int)(uintptr_t)CharacterMachine);   // Stats_CalcMagicDmgRange
+                }
+                EnableUse = 0;
+                break;
+            }
+
             case 0x2A: {
                 // 2026-06-02: actualización de durabilidad/cantidad del lado del server. La usa
                 // stackable potions/jewels after partial merge.
