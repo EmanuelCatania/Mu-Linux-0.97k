@@ -66,7 +66,12 @@ extern "C" BYTE Inventory[];
 extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetMixItems[];
 extern "C" BYTE ShopItems[];
+extern "C" void Net_SendNpcTalkClose(void);
 void __cdecl CloseInventoryRelatedWindows(void) {
+    // DLL FixShopNpcClose (hook en 0x4CBB15): con la tienda abierta avisa al
+    // server con el 0x31; el original no lo manda y MuEmu deja Interface.use
+    // en 1, con lo que el siguiente NPC no responde.
+    if (ShopOpened) Net_SendNpcTalkClose();
     ShopOpened              = 0;   // 0x07EAA118
     DAT_07eaa132            = 0;   // byte_7EAA132
     DAT_07eaa134            = 0;   // RepairEnable_0

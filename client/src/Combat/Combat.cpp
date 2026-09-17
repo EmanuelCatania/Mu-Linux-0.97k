@@ -474,6 +474,77 @@ extern "C" BYTE OffsetInventoryItems[];
 // Sends opcode 0x10 movement packet: C1 len 10 wp_count target_x target_y facing path[wp_count]
 // Codifica con XOR usando la clave hardcodeada de 32 bytes. Saltea si la entidad tiene el bit 0x20 en +0x78.
 // wp_count se limita a 0xe. Setea DAT_00559bec = pkt_size_code.
+// IDA: SendMove (0x00491C40) L436-788 — moverse con una ventana de NPC abierta
+// la cierra (el personaje igual camina: MuEmu no chequea la interfaz en
+// CGMoveRecv). Cada ventana avisa al server con su propio paquete.
+// Desviaciones del DLL aplicadas: sin el SetCursorPos de LABEL_168 (NOP en
+// 0x492EBD/0x492EDB, "Fix move cursor") y el 0x31 de la tienda lo manda
+// CloseInventoryRelatedWindows (FixShopNpcClose, hook en 0x4CBB15).
+extern "C" int g_bServerDivisionEnable;
+extern "C" int g_bServerDivisionAccept;
+void __fastcall CSQuest_clearQuest(int param_1);
+static void SendMove_CloseWindows97k(void)
+{
+    const bool questPanel = g_csQuest &&
+        *(char*)((uintptr_t)g_csQuest + 0x1c87f) != 0;       // g_csQuest + 116863
+    if (!ShopOpened && !WarehouseOpened && !TradeOpened && !ChaosMixOpened &&
+        !EventWindowOpened && !DAT_07eaa128 && !questPanel && !g_bServerDivisionEnable)
+        return;
+
+    if (TradeOpened) {
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };            // cancelar trade (C3)
+        Net_SendSmallPacket(pkt, sizeof(pkt));
+    } else if (WarehouseOpened) {
+        if (!DAT_07eaa165) {                                 // EquipmentItem
+            InventoryOpened = 0;
+            CloseInventoryRelatedWindows();
+            if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
+            const BYTE pkt[3] = { 0xC1, 0x03, 0x82 };        // cerrar baul
+            Net_SendC1Packet(pkt, sizeof(pkt));
+        }
+    } else if (ChaosMixOpened) {
+        if (!FUN_004e3d60(OffsetMixItems, 8, 4) || (int)DAT_07e91388 > 0) {
+            UIChatLogWindow_AddText("", GlobalText[593], 2);
+        } else {
+            const BYTE pkt[3] = { 0xC1, 0x03, 0x87 };        // cerrar Chaos Machine
+            Net_SendC1Packet(pkt, sizeof(pkt));
+        }
+    } else if (DAT_07eaa128) {                               // g_bEventChipDialogEnable
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x97 };
+        Net_SendC1Packet(pkt, sizeof(pkt));
+        if (DAT_07eaa128 == 3) {
+            Input_ClearState(0);
+            DAT_00559c84 = 0;                                // InputEnable
+            DAT_07e11d72 = 0;                                // GoldInputEnable
+            DAT_07e11d74 = 0;                                // InputGold
+            DAT_07eaa108 = 0;                                // StorageGoldFlag
+            DAT_07e11d73 = 0;                                // g_bScratchTicket
+        }
+        DAT_07eaa128 = 0;
+        InventoryOpened = 0;
+    } else if (ShopOpened && !EventWindowOpened) {
+        CloseInventoryRelatedWindows();
+        InventoryOpened = 0;
+    } else if (!ShopOpened && !EventWindowOpened) {
+        if (questPanel)
+            CSQuest_clearQuest((int)(uintptr_t)g_csQuest);
+        else if (g_bServerDivisionEnable) {
+            CloseInventoryRelatedWindows();
+            g_bServerDivisionEnable = 0;
+            g_bServerDivisionAccept = 0;
+        }
+    } else {                                                 // ventana de eventos
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
+        Net_SendC1Packet(pkt, sizeof(pkt));
+        CloseInventoryRelatedWindows();
+        InventoryOpened = 0;
+    }
+
+    // LABEL_168 (sin el SetCursorPos, ver arriba).
+    DAT_00559bec = 6;                                        // MouseUpdateTimeMax
+    MouseLButton = 0;
+}
+
 void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 {
     // Saltea si la entidad en param_2+0x78 tiene el flag 0x20 seteado (entidad ocupada/bloqueada)
@@ -488,8 +559,9 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
     else
         DAT_00559bec = (unsigned int)wpCount * 3 + 4;
 
-    if (wpCount == 0)
-        return;
+    // IDA: sin camino no se manda el 0x10, pero igual se activa la ruta y se
+    // cierran las ventanas (SendMove_CloseWindows97k).
+    if (wpCount != 0) {
     if (wpCount > 0xe)
         wpCount = 0xe;
 
@@ -589,12 +661,15 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
     }
 
     Net_SendBuf((const char*)pkt, (int)payloadLen);
+    }
 
     // IDA 00491C40, justo después del camino de envío por la red:
     // acá se activa la ruta generada localmente. Player_InputTick sólo la
     // avanza/interpola mientras este byte esté seteado.
     if (DAT_083a7c24 != 113)
         *(unsigned char*)(param_1 + 748) = 1;
+
+    SendMove_CloseWindows97k();
 }
 
 // ──────────────────────────────────────────────────────────────────────────
