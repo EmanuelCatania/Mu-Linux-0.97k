@@ -483,13 +483,22 @@ extern "C" BYTE OffsetInventoryItems[];
 extern "C" int g_bServerDivisionEnable;
 extern "C" int g_bServerDivisionAccept;
 void __fastcall CSQuest_clearQuest(int param_1);
+extern "C" void Net_SendNpcTalkClose(void);
 static void SendMove_CloseWindows97k(void)
 {
     const bool questPanel = g_csQuest &&
         *(char*)((uintptr_t)g_csQuest + 0x1c87f) != 0;       // g_csQuest + 116863
     if (!ShopOpened && !WarehouseOpened && !TradeOpened && !ChaosMixOpened &&
-        !EventWindowOpened && !DAT_07eaa128 && !questPanel && !g_bServerDivisionEnable)
+        !EventWindowOpened && !DAT_07eaa128 && !questPanel && !g_bServerDivisionEnable) {
+        // Port: NPCs que solo muestran un cartel (Charon del Devil Square, etc.)
+        // no prenden ninguna ventana local pero dejan g_NpcTalkActive en 1;
+        // moverse cierra esa charla. Sin esto I/V no vuelve a abrir el inventario.
+        if (g_NpcTalkActive) {
+            g_NpcTalkActive = 0;
+            Net_SendNpcTalkClose();
+        }
         return;
+    }
 
     if (TradeOpened) {
         const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };            // cancelar trade (C3)
@@ -510,8 +519,12 @@ static void SendMove_CloseWindows97k(void)
             Net_SendC1Packet(pkt, sizeof(pkt));
         }
     } else if (DAT_07eaa128) {                               // g_bEventChipDialogEnable
-        const BYTE pkt[3] = { 0xC1, 0x03, 0x97 };
-        Net_SendC1Packet(pkt, sizeof(pkt));
+        // IDA manda [C1][03][97]; MuEmu marca Interface.use para el Golden Archer
+        // y ese 0x97 sin subopcode no lo libera. Fix del DLL
+        // (SendMove_GoldenArcherFixClose, hook en 0x492AD2): cerrar ventanas y
+        // mandar el 0x31.
+        CloseInventoryRelatedWindows();
+        Net_SendNpcTalkClose();
         if (DAT_07eaa128 == 3) {
             Input_ClearState(0);
             DAT_00559c84 = 0;                                // InputEnable
