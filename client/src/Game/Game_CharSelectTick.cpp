@@ -43,103 +43,22 @@ void Game_CharSelectTick(void)
         FUN_00405540(&DAT_055c9bf0, "> Character selected <%d> %s");
         DAT_083a7c4c = 1;
 
-        // 2026-05-05: BUG-FIX FINAL del FD_CLOSE post-F3/03. Este send es
-        // un DUPLICADO del que manda Send_CharSelectPacket en
-        // Game_EnterWorldTick.cpp:621 cuando el user clickea OK. Aunque el
-        // server CGCharacterInfoRecv early-returns por OBJECT_ONLINE, el
-        // packet duplicado dispara el kick. Mensaje confirmado contra DLL
-        // companion: el binario original NO tiene este send extra en
-        // Game_CharSelectTick init — solo en Send_CharSelectPacket.
-        // SKIPEAR COMPLETAMENTE.
-        #if 0
-        if (DAT_083a410c == '\0' && DAT_005615c0 != 5) {
-            // Build and send 0xC1/0xF3 char-name packet
-            DAT_05826cb0 = 0x3c;
-
-            // Get character name from entity array.
-            // Guardrails: DAT_005616ac == -1 means "no char selected" → would
-            // dereference -0x1d3 offset and feed strlen 0xCD heap-fill bytes,
-            // returning a huge nameLen → padLen negative → memset wild AV.
-            // Treat unset/invalid as slot 0; cap nameLen at 10.
-            int slotIdx = (int)DAT_005616ac;
-            if (slotIdx < 0 || slotIdx >= 5) slotIdx = 0;
-            char  safeName[16] = {0};
-            if (DAT_07abf5d0) {
-                char* charNameSrc = (char*)(DAT_07abf5d0 + 0x1c1 + slotIdx * 0x394);
-                for (int k = 0; k < 10; ++k) safeName[k] = charNameSrc[k];
-            }
-            safeName[10] = 0;
-            char* charName = safeName;
-            int   nameLen  = (int)strlen(safeName);
+        // IDA 0x524E30 L80-219: el F3/03 (pedir entrar con el personaje) sale
+        // ACA, antes del flush del chat y del clear del listbox. Asi la
+        // respuesta (JoinMapServer + avisos de bienvenida) llega DESPUES del
+        // clear y queda visible in-game.
+        // Desviacion: IDA copia strlen(nombre) bytes sin padding; mandamos los
+        // 10 bytes de name[] completos con relleno en cero (el server hace
+        // memcpy de 10 bytes y sin padding leeria basura del buffer).
+        if (DAT_083a410c == 0) {
+            DAT_05826cb0 = 0x3c;   // CurrentProtocolState = 60
+            BYTE pkt[14] = { 0xC1, 0x0E, 0xF3, 0x03 };
+            const char* charName = (const char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
+            int nameLen = (int)strlen(charName);
             if (nameLen > 10) nameLen = 10;
-            int   padLen   = 10 - nameLen;
-            // Use safeName as the source for the encrypted copy below.
-            charName = safeName;
-
-            // BUG-FIX 2026-04-28: el server MuEmu (PacketManager.cpp:486
-            // CPacketManager::XorData) descifra el body con la fórmula
-            //     m_buff[n] ^= m_buff[n - 1] ^ m_XorFilter[n % 32]   (n--)
-            // o sea usando el byte PREVIO.  Nuestro port de Ghidra usaba
-            // pkt[i+1] (byte siguiente) → encoding inverso → el server al
-            // descifrar producía garbage en el sub-opcode → switch(lpMsg[3])
-            // no matcheaba 0x03 → silently drop → no F3/03 response.
-            //
-            // Misma fórmula que la login en Game_SceneUpdate.cpp:135 (que sí
-            // funciona).  Encoding: pkt[i] ^= pkt[i-1] ^ key[i % 32].
-            //
-            // El packet wire format es:
-            //   [C1] [0x0E] [encrypted 0xF3] [encrypted 0x03] [encrypted name 10B]
-            //   ↑                                                           ↑
-            //   header preserved (no XOR)                              charName
-            //
-            // El server descifra el body desde size-1 hacia atrás (por byte
-            // previo), recupera [F3] [03] [name], dispatch a CGCharacterInfoRecv.
-            BYTE pkt[32];
-            memset(pkt, 0, sizeof(pkt));
-            pkt[0] = 0xC1;
-            pkt[1] = 0x0E;          // length = 14
-            pkt[2] = 0xF3;           // opcode
-            pkt[3] = 0x03;           // sub-opcode: CharacterInfoRecv
-            memcpy(pkt + 4, charName, nameLen);   // padding bytes already zero
-            int pos = 14;
-            // XOR-encode body with key[i % 32] using prev-byte chain (i = 3..pos-1).
-            // i=2 (header head) is INCLUDED so server's switch(lpMsg[3])
-            // post-XorData sees the descrambled sub-opcode.  XorData range is
-            // (size-1, end) with end=2 for C1, decoding back from size-1 to 3
-            // — so the client must encode forward i=3..size-1 using the SAME
-            // chain rule.
-            for (int i = 3; i < pos; i++) {
-                pkt[i] ^= pkt[i - 1] ^ s_Key[i & 0x1f];
-            }
-
-            // MuEmu compat: cifrar el buffer ANTES de send().  El cliente
-            // 0.97 original mandaba este F3 plain; MuEmu (HackCheck.cpp)
-            // hace `(byte^0x42)-0x42` en recv → necesitamos el inverso aquí.
-            MuEmu::EncryptSend(pkt, pos);
-
-            // Send via socket with WSAEWOULDBLOCK fallback
-            int len = pos;
-            int sent = 0, rem = len;
-            if (DAT_055ca168 != 0xffffffff) {
-                do {
-                    int n = send(DAT_055ca168, (char*)pkt + sent, rem - sent, 0);
-                    if (n == -1) {
-                        int err = WSAGetLastError();
-                        if (err == WSAEWOULDBLOCK && (int)(DAT_055cc16c + len) < 0x2001) {
-                            memcpy(DAT_055ca16c + DAT_055cc16c, pkt, len);
-                            DAT_055cc16c += len;
-                        } else {
-                            Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                        }
-                        break;
-                    }
-                    if (n == 0) break;
-                    if (DAT_055ce174) FUN_0043de60();
-                    sent += n; rem -= n;
-                } while (rem > 0);
-            }
+            memcpy(pkt + 4, charName, nameLen);
+            Net_SendC1Packet(pkt, sizeof(pkt));
         }
-        #endif // 0 — DUPLICATE F3/03 send disabled
 
         // Init in-game subsystems
         Monster_LoadStartupData();
@@ -178,7 +97,7 @@ void Game_CharSelectTick(void)
             FUN_0040e590((int)DAT_055c9ff0);
         }
         FUN_00405540(&DAT_055c9bf0, "> Main Scene init success");
-        FUN_004055a0(1);
+        CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
     }
 
     // ── WAIT FOR SERVER ACK ───────────────────────────────────────────────────

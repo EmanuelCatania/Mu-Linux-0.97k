@@ -151,7 +151,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
         // Hash table ticks (anti-tamper, ×5) — comentado: dirección absoluta
         // hardcodeada 0x83a4338 no existe como símbolo en nuestro build.
-        // for (int i = 0; i < 5; i++) FUN_00409c40(0x83a4338);
+        // for (int i = 0; i < 5; i++) CPhysicsManager_Move((void*)0x83a4338); // IDA: FUN_00409C40
 
         // Input update
         Chat_TickNoticeTimer();   CHK("ML/post_0047fcb0");
@@ -303,7 +303,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     //  bool correctamente ahora que el init-loop no se repite por frame y el
     //  buffer de bones no desborda. Forzarlo causaba SwapBuffers prematuro.)
 
-    // FUN_00409cf0(0x83a4338);  // post-render hash tick — hardcoded abs-addr
+    // CPhysicsManager_Render((void*)0x83a4338); // IDA: FUN_00409CF0; hardcoded abs-addr
     // artifact de Ghidra: 0x83a4338 no es un símbolo real en nuestro build.
     // Es cleanup de lista enlazada de canales de audio (Net_StopAllChannels),
     // no-op sin la estructura construida.
@@ -352,7 +352,7 @@ void __cdecl Game_MainLoop(HDC param_1)
             if (DAT_083a7c58 == 0) {
                 DAT_083a7c58 = 1;
                 FUN_00405540(&DAT_055c9bf0, "> Connection closed...");
-                FUN_004055a0(1);
+                CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
             }
             FUN_005142d0(0x71);
         }

@@ -3,9 +3,9 @@
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 13751-14826 (1076 lines).
 //
 // Char-select slot navigation helpers:
-//   FUN_004011d0 (CharSlot_FindFirstActive)
-//   FUN_00401650 (CharSlot navigation)
-//   FUN_004017e0 (slot-list scroll)
+//   CSQuest_FindQuestContext (IDA: FUN_004011D0)
+//   CSQuest_CheckActCondition (IDA: FUN_00401650)
+//   CSQuest_ShowDialogText (IDA: FUN_004017E0)
 //   CSQuest_clearQuest (slot-list navigation forward)
 //   FUN_00401af0 (slot-list navigation back)
 //   ... and related slot scroll/select helpers.
@@ -59,10 +59,8 @@ extern void __cdecl FUN_0054158c(void* ptr);
 
 // ── Char-select slot navigation helpers ────────────────────────────────────────
 
-// FUN_004011d0 @ 0x004011d0 — CharSlot_FindFirstActive(this, slot_list, dir)
-// Escanea slot_list buscando la primera entrada distinta de cero en la dirección dir.
-// Devuelve el handle del slot, o decrementa el índice de vista y llama a FUN_00401730.
-short __fastcall FUN_004011d0(void *pThis, short *param_1, int param_2)
+// CSQuest::FindQuestContext @ 0x004011D0 (IDA: FUN_004011D0).
+short __fastcall CSQuest_FindQuestContext(void *pThis, short *param_1, int param_2)
 {
     int iVar1 = 0;
     char *pcVar2 = (char *)(*(BYTE *)((int)pThis + 4) + 0x2c + (int)param_1);
@@ -76,13 +74,12 @@ short __fastcall FUN_004011d0(void *pThis, short *param_1, int param_2)
         } while (iVar1 < *param_1);
     }
     *(char *)((int)pThis + 0x1c87a) = *(char *)((int)pThis + 0x1c87a) - 1;
-    FUN_00401730(pThis, -1);
+    CSQuest_CheckQuestState(pThis, -1);
     return *(short *)((int)pThis + 0x1c880);
 }
 
-// FUN_004016e0 @ 0x004016e0 — CharSlot_DecodePrevState(this, dir)
-// Decodifica el estado de selección anterior desde el campo de bits empaquetado en +0x1c848.
-void __fastcall FUN_004016e0(void *pThis, int param_1)
+// CSQuest::getQuestState @ 0x004016E0 (IDA: FUN_004016E0).
+void __fastcall CSQuest_GetQuestState(void *pThis, int param_1)
 {
     uint uVar2;
     if (param_1 == -1) {
@@ -102,9 +99,8 @@ void __fastcall FUN_004016e0(void *pThis, int param_1)
     }
 }
 
-// FUN_00401650 @ 0x00401650 — CharSlot_FindEquipped(this, slot_list)
-// Busca el primer slot de personaje equipado y dispara la navegación de FUN_004011d0.
-uint __fastcall FUN_00401650(void *pThis, short *param_1)
+// CSQuest::CheckActCondition @ 0x00401650 (IDA: FUN_00401650).
+uint __fastcall CSQuest_CheckActCondition(void *pThis, short *param_1)
 {
     BYTE *in_EAX = 0;
     int iVar3 = 0;
@@ -118,7 +114,7 @@ uint __fastcall FUN_00401650(void *pThis, short *param_1)
                     (uint)pbVar4[1] + (uint)*pbVar4 * 0x20,
                     (uint)pbVar4[2], 0xffffffff);
                 if (iVar2 != 0) {
-                    short sVar1 = FUN_004011d0(pThis, param_1, 1);
+                    short sVar1 = CSQuest_FindQuestContext(pThis, param_1, 1);
                     *(short *)((int)pThis + 0x1c880) = sVar1;
                     return (uint)((unsigned int)(ULONG_PTR)pThis & 0xffffff00);
                 }
@@ -131,42 +127,37 @@ uint __fastcall FUN_00401650(void *pThis, short *param_1)
     return ((uint)(ULONG_PTR)in_EAX >> 8) << 8 | 1;
 }
 
-// FUN_00401730 @ 0x00401730 — CharSlot_Navigate(this, dir)
-// Máquina de estados de navegación de la pantalla de selección de personaje.
-void __fastcall FUN_00401730(void *pThis, char param_1)
+// CSQuest::CheckQuestState @ 0x00401730 (IDA: FUN_00401730).
+void __fastcall CSQuest_CheckQuestState(void *pThis, char param_1)
 {
     short *psVar1 = (short *)((int)pThis + (uint)*(BYTE *)((int)pThis + 0x1c87a) * 0x248 + 8);
     if (param_1 == -1) {
-        FUN_004016e0(pThis, -1);
+        CSQuest_GetQuestState(pThis, -1);
     } else {
         *(char *)((int)pThis + 0x1c882) = param_1;
     }
     char cVar2 = *(char *)((int)pThis + 0x1c882);
     if (cVar2 == '\x01') {
-        uint uVar5 = FUN_00401650(pThis, psVar1);
+        uint uVar5 = CSQuest_CheckActCondition(pThis, psVar1);
         if ((char)uVar5 != '\0') {
-            short sVar3 = FUN_004011d0(pThis, psVar1, 2);
+            short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 2);
             *(short *)((int)pThis + 0x1c880) = sVar3;
             *(BYTE *)((int)pThis + 0x1c882) = 1;
         }
     } else if (cVar2 == '\x02') {
-        short sVar3 = FUN_004011d0(pThis, psVar1, 3);
+        short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 3);
         *(short *)((int)pThis + 0x1c880) = sVar3;
     } else if (cVar2 == '\x03') {
-        uint uVar4 = FUN_00401230(pThis, psVar1, '\0');
+        uint uVar4 = CSQuest_CheckRequestCondition(pThis, psVar1, '\0');
         if ((char)uVar4 != '\0') {
-            short sVar3 = FUN_004011d0(pThis, psVar1, 0);
+            short sVar3 = CSQuest_FindQuestContext(pThis, psVar1, 0);
             *(short *)((int)pThis + 0x1c880) = sVar3;
         }
     }
 }
 
-// FUN_00401230 @ 0x00401230 — CharSlot_Verify(this, slot_list, flag)
-// Escanea la lista de slots de personaje buscando uno equipado que coincida, y actualiza
-// this+0x1c880 (handle seleccionado) y this+0x1c882 (state=5 si lo encontró).
-// Heavy HashTable obfuscation stripped — core logic preserved.
-// Devuelve 0 (byte bajo) si encontró y seleccionó, 1 si no lo encontró.
-uint __fastcall FUN_00401230(void *pThis, short *param_1, char param_2)
+// CSQuest::CheckRequestCondition @ 0x00401230 (IDA: FUN_00401230).
+uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char param_2)
 {
     int iVar8 = 0;
     int local_8 = 0;
@@ -1168,20 +1159,17 @@ void Quest_InitializeStaticState(void) { FUN_00403ea0((void *)&DAT_00567500); }
 // FUN_00401020 @ 0x00401020 (12 bytes)
 void FUN_00401020(void) {}
 
-// ── FUN_00401120 — movida desde stubs_misc2.cpp (refactor B3) ──
-// FUN_00401120 @ 0x00401120 — Quest_DecryptBuf: XOR-decrypt quest record buffer.
+// BuxConvert @ 0x00401120 (IDA: FUN_00401120; name from 5.2).
 // 3-byte repeating XOR key at DAT_00558090.
-void __cdecl FUN_00401120(int buf, int size) {
+void __cdecl BuxConvert(void* buffer, int size) {
+    const int buf = (int)(uintptr_t)buffer;
     for (int i = 0; i < size; i++)
         *(byte *)(buf + i) ^= (byte)DAT_00558090[i % 3];
 }
 
-// ── FUN_004017e0 — movida desde stubs_helpers.cpp (refactor B3) ──
-// FUN_004017e0 @ 0x004017e0 — CharSelect_SetServer
-// Setea el server activo (DAT_005615dc = param_1), formatea el nombre del server
-// en el buffer de la línea de display (DAT_083a4348) y arma la lista de nombres de personaje.
-// Usa SeparateTextIntoLines para cortar por palabras el string de nivel+nombre de cada slot.
-void __fastcall FUN_004017e0(int param_1)
+// ── CSQuest_ShowDialogText — movida desde stubs_helpers.cpp (refactor B3) ──
+// CSQuest::ShowDialogText @ 0x004017E0 (IDA: FUN_004017E0).
+void __fastcall CSQuest_ShowDialogText(int param_1)
 {
     char local_48[72];
 
@@ -1354,14 +1342,14 @@ void __fastcall FUN_00401af0(void *param_1)
     if (slotType == 1) {
         short *slotData = (short *)((int)param_1
                           + (uint)*(BYTE *)((int)param_1 + 0x1c87a) * 0x248 + 8);
-        uint ok = FUN_00401230(param_1, slotData, '\x01');
+        uint ok = CSQuest_CheckRequestCondition(param_1, slotData, '\x01');
         if ((char)ok == '\0') {
             local_d29 = '\x01';
             // IDA L145: `v65 = *(__int16 *)(v1 + 116864);` — es un SHORT.
             // Leerlo como int se lleva ademas el byte de estado (0x1c882),
             // que CheckRequestCondition acaba de poner en 5, asi que el
             // indice salia con 5<<16 y el dialogo de fallo nunca se mostraba.
-            FUN_004017e0(*(short *)((int)param_1 + 0x1c880));
+            CSQuest_ShowDialogText(*(short *)((int)param_1 + 0x1c880));
             goto done;
         }
         Quest_SendState(param_1);
@@ -1386,7 +1374,7 @@ done:
         int cur = g_iCurrentDialogScript;
         if (cur >= 0 && cur < DIALOG_SCRIPT_COUNT && slot >= 0 && slot < 10) {
             int link = g_DialogScript[cur].m_iLinkForAnswer[slot];
-            if (link > 0 && local_d29 == '\0') FUN_004017e0(link);
+            if (link > 0 && local_d29 == '\0') CSQuest_ShowDialogText(link);
         }
     }
 }

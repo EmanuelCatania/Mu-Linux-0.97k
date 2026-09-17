@@ -51,7 +51,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // DBCS lead-byte check using CRT _pctype table at DAT_083bc1a0.
 // Bit 2 of table[*str+1] set → double-byte (return 2), else single-byte (return 1).
 // Implemented via Win32 IsDBCSLeadByteEx(949) to avoid needing the 256-byte table.
-int __cdecl FUN_00541eab(byte *param_1) {
+int __cdecl FUN_00541eab(const byte *param_1) {
     return IsDBCSLeadByteEx(949, *param_1) ? 2 : 1;
 }
 // FUN_0053d5a0 @ 0x0053D5A0 — Resource_Load(filename)

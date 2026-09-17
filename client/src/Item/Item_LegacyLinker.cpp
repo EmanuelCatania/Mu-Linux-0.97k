@@ -57,10 +57,11 @@ extern void FUN_004fa5a0(void);
 //   120 registros de la tienda, 32 de la Chaos Machine, 32 de `Inventory` y
 //   32 de OffsetTradeItems; y si byte_7EAA0E8 == 1, tambien los 32 del trade
 //   del otro jugador (word_7E11F78 / dword_7E11FB0).
-// En el arbol varios de esos pools estan declarados DOS veces (ShopItems y
-// DAT_07ea5b68; OffsetMixItems y DAT_07ea9880; OffsetTradeItems y
-// DAT_07ea7b88/7bc0; Inventory y DAT_07ea5298/52d0).  Hasta unificarlos se
-// limpian las dos copias, asi ningun consumidor queda con datos viejos.
+// Los DAT_ de esos bucles son alias de campo de los pools (globals.h).  El de
+// 120 es el pool de 0x07EA5B30, que en el arbol es OffsetWarehouseItems; la
+// tienda del port usa ademas su propio ShopItems (en IDA es el mismo pool),
+// asi que se limpian los dos.
+extern "C" BYTE OffsetWarehouseItems[];
 extern "C" BYTE Inventory[];
 extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetMixItems[];
@@ -86,20 +87,15 @@ void __cdecl CloseInventoryRelatedWindows(void) {
     };
     for (int i = 0; i < 120; ++i) {                     // tienda
         clearItem(ShopItems + i * 0x44);
-        clearItem(DAT_07ea5b68 + i * 0x44);             // copia paralela
+        clearItem(OffsetWarehouseItems + i * 0x44);     // pool de 0x07EA5B30
     }
     for (int i = 0; i < 32; ++i) {                      // Chaos Machine
         clearItem(OffsetMixItems + i * 0x44);
-        clearItem(DAT_07ea9880 + i * 0x44);             // copia paralela
     }
     const bool yourTradeLatched = ((BYTE)DAT_07eaa0e8 == 1);   // byte_7EAA0E8
     for (int off = 0; off < 0x880; off += 0x44) {
         clearItem(OffsetTradeItems + off);
         clearItem(Inventory + off);
-        *(unsigned short*)(DAT_07ea7b88 + off) = 0xFFFF;  // copias paralelas
-        *(DWORD*)(DAT_07ea7bc0 + off)          = 0;
-        *(unsigned short*)(DAT_07ea5298 + off) = 0xFFFF;
-        *(DWORD*)(DAT_07ea52d0 + off)          = 0;
         if (yourTradeLatched) {
             *(unsigned short*)(DAT_07e11f78 + off) = 0xFFFF;
             *(DWORD*)(DAT_07e11fb0 + off)          = 0;

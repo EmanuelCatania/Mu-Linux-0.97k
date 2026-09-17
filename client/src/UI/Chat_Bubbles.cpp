@@ -7,34 +7,49 @@
 
 extern "C" const char* Guild_GetMarkName(int row);
 
-// FUN_0047fed0 @ 0x0047FED0 (~230 lines) — whisper name validator
-// Encrypts CharacterMachine via MAIN_HASH_CLASS, reads CharacterAttribute->Level,
-// then decrypts. Compares a phantom param (unaff_retaddr = whisper target name)
-// against the WhisperRegistID table (28 entries, stride 10).
-// Returns 1 if name is already registered or level check passes; 0 + AddText if not found.
-//
-// ~80% of the Ghidra output is anti-tamper hash table encrypt/decrypt — skipped.
-// Phantom stack param (unaff_retaddr) carries the whisper target name string.
-// Since we can't access unaff_retaddr in C, this stub checks the WhisperRegistID table
-// using the __stdcall convention (no real params visible).
-int __stdcall FUN_0047fed0(void) {
-    // anti-tamper hash table — skipped (encrypt CharacterMachine)
+// Anti-spam de susurros para personajes de nivel bajo.  Las dos funciones leen
+// el nivel del heroe de CharacterAttribute + 14 (WORD) y recorren el anillo
+// WhisperRegistID (0x07DB9310): 10 filas de 10 bytes.  El cifrado de
+// CharacterMachine con la hash-table que las envuelve es anti-tamper y se omite.
 
-    // Read CharacterAttribute->Level (byte at offset +1 from Level field)
-    // Ghidra: local_8 = (uint)*(ushort *)((int)&CharacterAttribute->Level + 1)
-    // This is the character level used for the comparison iStack_4 <= iStack_c.
-    // Since we skip anti-tamper, the level comparison is unreliable without
-    // the phantom param. Default to "pass" (return 1).
+// Nivel del heroe tal cual lo leen sub_47FED0 y RegistWhisperID.
+static int Whisper_HeroLevel() {
+    const BYTE* ca = (const BYTE*)(uintptr_t)DAT_07cf1ff4;   // IDA: CharacterAttribute
+    return ca ? *(const unsigned short*)(ca + 14) : 0;
+}
 
-    // anti-tamper hash table — skipped (decrypt CharacterMachine)
-
-    // The original then checks if the whisper target (phantom param) is in
-    // WhisperRegistID[0..27] (stride 10 bytes each). If found, returns 1.
-    // If not found, calls AddText(&DAT_07e11dd4, &DAT_07d4ce78, 1) and returns 0.
-    //
-    // Without the phantom param we cannot implement the name lookup.
-    // Return 1 (always pass) to match normal runtime behavior.
+// IDA: sub_47FED0 (0x0047FED0) — gate de ENVIO del susurro.  Lo llama WndProc
+// (L2079) con lvl 6: con el heroe por debajo de ese nivel solo se le puede
+// escribir a alguien que ya te susurro (quedo anotado por RegistWhisperID); si
+// no, avisa con GlobalText[479] y devuelve 0.
+// Antes era un stub `return 1` sin parametros y sin callers.
+int __cdecl FUN_0047fed0(int lvl, const char* name) {
+    if (Whisper_HeroLevel() < lvl) {
+        for (int row = 0; row < 10; row++) {
+            if (!strcmp(name, WhisperRegistID[row]))
+                return 1;
+        }
+        UIChatLogWindow_AddText("", GlobalText[479], 1);   // IDA: byte_7E11DD4
+        return 0;
+    }
     return 1;
+}
+
+// IDA: RegistWhisperID (0x004801C0) — lo llama ProtocolCore case 2 (susurro
+// recibido) con lvl 10: con el heroe de nivel < 10 anota al remitente en la
+// siguiente fila del anillo, salvo que ya este.
+// Fiel al binario: strcpy de hasta 11 bytes sobre filas de 10, o sea un nombre
+// de 10 caracteres pisa el primer byte de la fila siguiente (el anillo tiene
+// una fila de sobra para que la ultima no se salga).
+void __cdecl RegistWhisperID(int lvl, const char* text) {
+    if (!text || Whisper_HeroLevel() >= lvl) return;
+    for (int row = 0; row < 10; row++) {
+        if (!strcmp(text, WhisperRegistID[row]))
+            return;
+    }
+    strcpy(WhisperRegistID[WhisperID_Num], text);
+    if (++WhisperID_Num >= 10)
+        WhisperID_Num = 0;
 }
 
 // FUN_00481a40 @ 0x00481A40 (~64 lines) — assign chat text to chat entry struct

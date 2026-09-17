@@ -108,12 +108,23 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
         return (int)a < iWall;
     };
     // Métrica de cercanía al destino del original (para el mejor esfuerzo).
+    // IDA sub_43F500 (L~226-236 del raw):
+    //   v56 = |x - tx|; v57 = |y - ty|;
+    //   if (v56 == 1 && v57 == 1) { v57 = 0; v58 = v57; }   // diagonal pegada
+    //   else v58 = min(v56, v57);
+    //   costo = (15 * |v56 - v57| + 21 * v58 + 3) / 4;
+    // El `v57 = 0` se hace ANTES de |v56 - v57|, asi que una celda pegada en
+    // diagonal cuesta 4, igual que una pegada en recto.  El port calculaba la
+    // diferencia con el dy original (0) y le daba costo 0: con el mob pegado en
+    // linea recta una celda en diagonal le ganaba al origen, se armaba un paso
+    // y el heroe caminaba en vez de atacar.
     auto origCost = [&](int x, int y) -> int {
         int dx = x > tx ? x - tx : tx - x;
         int dy = y > ty ? y - ty : ty - y;
-        int m  = (dx == 1 && dy == 1) ? 0 : (dx < dy ? dx : dy);
+        if (dx == 1 && dy == 1) dy = 0;
+        int m  = dx < dy ? dx : dy;
         int d  = dx > dy ? dx - dy : dy - dx;
-        return (d * 0xf + 3 + m * 0x15) >> 2;
+        return (d * 15 + 21 * m + 3) / 4;
     };
 
     // Meta: con fDistance == 0 es la casilla exacta; con fDistance > 0, cualquier

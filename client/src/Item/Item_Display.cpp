@@ -283,6 +283,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                                             BYTE* invBase, int gridW,
                                             int gridH, int slotType) {
     bool actionTaken = false;
+    bool retVal = false;   // IDA: v487
     // 0x004D6470 — Giant item drag-and-drop handler (~3011 lines decompiled).
     // Called when player releases mouse on inventory/equipment grid.
     //
@@ -451,8 +452,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
 
     // --- Check for mouse click to confirm drop ---
     if (DAT_083a42eb == '\0' && DAT_083a4124 == 0) {
-        // Neither auto-drop trigger nor mouse button pressed: just return (grid preview only)
-        return 0;
+        // Sin click ni auto-drop: solo la vista previa.  IDA L661: return v487.
+        return spaceFree ? 1u : 0u;
     }
 
     // === MOUSE BUTTON PRESSED OR AUTO-DROP: Execute the drop ===
@@ -475,6 +476,11 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
             if (targetType == 0x87 || targetType == 0x8f) {
                 validTarget = false;
             }
+            // IDA L5836-5848: desde aca `v487 = v400`, o sea la funcion devuelve
+            // si el item destino admite la jewel, AUNQUE despues no se mande
+            // nada (tope de nivel, cooldown, baul/trade abiertos).  Con 1 el
+            // dispatcher no sigue a la rama de tirar al suelo.
+            retVal = validTarget;
 
             // Level cap per currency type
             if (pickedType == 0x1cd && targetLevel > 5) {
@@ -560,159 +566,100 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         goto drop_done;
     }
 
-    // === Space is free: handle the actual item placement ===
+    // === Hay lugar: IDA sub_4D6470 L663-2673 + L2675-5345 ===
+    // La funcion devuelve v487 (= hay lugar) en LABEL_808 aunque no se mande
+    // nada: guard de EquipmentItem, InventoryOpened en 0 o tipos 471..474.
+    // Con 0 el dispatcher sub_4DF410 seguia a la rama de tirar al suelo.
+    retVal = true;
 
-    if (slotType != 0) {
-        // --- Equipment slot drop (slotType == 2 or 3) ---
-        DAT_07e11e78 = (DWORD)(mouseGridY * gridWidth + mouseGridX);
+    if (slotType == 0 && InventoryOpened != 0) {
+        // Destino = inventario principal.  IDA ramifica por el pool de ORIGEN
+        // (dword_7EA9800), no por el destino: el port ramificaba por invBase,
+        // que con slotType 0 siempre es OffsetInventoryItems, asi que la rama
+        // del password del baul estaba muerta y las comprobaciones de celda
+        // propia/apilado corrian tambien para items que venian del baul.
+        DAT_07e11e78 = (DWORD)(mouseGridY * gridWidth + 0xc + mouseGridX);
 
-        if (DAT_07eaa165 != '\0') goto drop_done;  // equipment move already in progress
-
-        // 2026-07-27 PORT FALTANTE (no se podian meter items al baul): este
-        // camino (slotType != 0 = baul/trade/mix) SOLO tenia implementado el
-        // destino "inventario principal"; para el resto habia un comentario
-        // "follow same pattern" y NADA de codigo -> nunca se mandaba el 0x24,
-        // actionTaken quedaba en false -> el dispatcher veia dropWH=0 y trataba
-        // el drop como "tirar al suelo" (mensaje rojo), y el item quedaba en un
-        // estado inconsistente (desaparecia al recargar). El envio es identico
-        // para todos los destinos: solo cambia targetMoveFlag (0=inv, 1=trade,
-        // 2=warehouse, 3=chaos), que ya viene calculado arriba.
-        if (DAT_07eaa165 == 0) {
-            DAT_07eaa165 = 1;
-            InventoryMove_SetPendingPools(sourceInvBase, invBase);
-            SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
-                (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
-            actionTaken = true;
-        }
-        goto drop_done;
-    }
-
-    // --- slotType == 0: inventory-to-inventory placement ---
-    if (InventoryOpened == 0) goto drop_done;
-
-    // Calculate target slot in inventory grid (offset by 0xc for equipment slots 0-11)
-    DAT_07e11e78 = (DWORD)(mouseGridY * gridWidth + 0xc + mouseGridX);
-
-    if (invBase == &OffsetInventoryItems[0]) {
-        // --- Target is main inventory (OffsetInventoryItems) ---
-        bool isDifferentSlot = (DAT_07ea5b18 != DAT_07e11e78);
-        int targetOffset = ((int)DAT_07e11e78 - 0xc) * 0x44;
-        short targetType = *(short*)((char*)OffsetInventoryItems + targetOffset);
-
-        // Check for stackable items (same type swap)
-        if (pickedType == targetType) {
-            // Arrows: types 0x1c0..0x1c8 can stack together
-            if (pickedType > 0x1bf && pickedType < 0x1c9
-                && targetType > 0x1bf && targetType < 0x1c9)
-            {
-                isDifferentSlot = true;  // force swap even if same slot
+        if (sourceInvBase == &OffsetInventoryItems[0]) {
+            // IDA L669-692
+            bool isDifferentSlot = (DAT_07ea5b18 != DAT_07e11e78);          // v21
+            int targetOffset = ((int)DAT_07e11e78 - 0xc) * 0x44;
+            short targetType = *(short*)((char*)OffsetInventoryItems + targetOffset);   // v24
+            bool sendIt = false;
+            if (pickedType == targetType) {
+                if (pickedType >= 448 && pickedType <= 456 && targetType >= 448 && targetType <= 456)
+                    isDifferentSlot = true;
+                // Pociones 135/143 del mismo nivel (Level entero, sin shift):
+                // se mandan aunque sea la misma celda.
+                if ((pickedType == 135 || pickedType == 143)
+                    && (targetType == 135 || targetType == 143)
+                    && (int)DAT_07e91354 == *(int*)((char*)OffsetInventoryItems + targetOffset + 4))
+                    sendIt = true;
             }
-            // Potions 0x87/0x8f: can stack only if same level
-            if ((pickedType == 0x87 || pickedType == 0x8f)
-                && (targetType == 0x87 || targetType == 0x8f))
-            {
-                int pickedLevel = ((int)DAT_07e91354 >> 3) & 0xf;
-                int targetLevel = (*(int*)((char*)OffsetInventoryItems + targetOffset + 4) >> 3) & 0xf;
-                if (pickedLevel != targetLevel) {
-                    isDifferentSlot = true;  // different level = treat as different
-                }
-                // same level same type same slot = no-op, fall through
-            }
-        } else {
-            // Different types: if same slot, call inventory reset
-            if (!isDifferentSlot) {
-                // IDA sub_4D6470 L688-692: misma celda -> sub_4CD3B0 (vuelve
-                // el item a su lugar) y LABEL_808 con `return v487`, que vale 1
-                // porque habia lugar.  El port devolvia 0: el dispatcher lo
-                // tomaba como "no cayo en ninguna grilla" y seguia a la rama de
-                // tirar al suelo.  Por eso no se podia devolver un item a su
-                // mismo lugar (con las joyas "funcionaba" solo porque son
-                // costosas y esa rama las restauraba con el cartel 269).
+            if (!sendIt && !isDifferentSlot) {
+                // LABEL_42: misma celda -> sub_4CD3B0 devuelve el item.
                 Item_ReturnPickedItem();
-                actionTaken = true;
+                goto drop_done;
+            }
+        } else if (sourceInvBase == &OffsetWarehouseItems[0]) {
+            // IDA L1186-1220: sacar del baul con el candado puesto pide el PIN.
+            if (DAT_00559f5f != '\0' && DAT_07eaa148 == '\0') {
+                DAT_07ea9810 = DAT_07e11e78;
+                DAT_07ea9808 = DAT_07ea5b18;
+                DAT_07ea9804 = 2;
+                DAT_07ea980c = 0;
+                short* shuffleArr = (short*)&DAT_07e91394;
+                for (short i = 0; i < 10; i++)
+                    shuffleArr[i] = i;
+                for (int n = 0; n < 20; n++) {
+                    int a = rand() % 10;
+                    int b = rand() % 10;
+                    if (a != b) {
+                        shuffleArr[a] ^= shuffleArr[b];
+                        shuffleArr[b] ^= shuffleArr[a];
+                        shuffleArr[a] ^= shuffleArr[b];
+                    }
+                }
+                DAT_07eaa14c = 1;
+                memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
+                DAT_07ea9818 = 0;
+                DAT_07ea981c = 0;
+                DAT_07ea981e = 0;
                 goto drop_done;
             }
         }
-
-        // Guard: only one equipment move at a time
+        // Origen inventario / baul / Chaos / trade: mismo 0x24 con destino 0.
+        // (El m_nMyTradeWait = 150 de LABEL_288 lo aplica el helper de envio.)
         if (DAT_07eaa165 != '\0') goto drop_done;
         DAT_07eaa165 = '\x01';
-
-        // anti-tamper hash table — skipped (XOR packet build + serial insertion)
-        // Send the equipment swap request
         InventoryMove_SetPendingPools(sourceInvBase, invBase);
         SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
             (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
         actionTaken = true;
+        goto drop_done;
     }
-    else if (invBase == &OffsetMixItems[0]) {
-        // --- Target is Chaos Mix inventory (OffsetMixItems) ---
-        if (DAT_07eaa165 != '\0') goto drop_done;
-        DAT_07eaa165 = '\x01';
 
-        // anti-tamper hash table — skipped
-        InventoryMove_SetPendingPools(sourceInvBase, invBase);
-        SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
-            (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
-        actionTaken = true;
+    // IDA L2671: los tipos 471..474 no se sueltan fuera del inventario.
+    if (pickedType >= 471 && pickedType <= 474) goto drop_done;
+
+    // Destinos trade (1), baul (2) y Chaos (3): la celda es sin el +12.
+    if (slotType != 1 && slotType != 2 && slotType != 3) goto drop_done;
+    DAT_07e11e78 = (DWORD)(mouseGridY * gridWidth + mouseGridX);
+
+    if (slotType == 1 && sourceInvBase == &OffsetInventoryItems[0]) {
+        // IDA L5158-5163: del inventario al trade primero se retira la
+        // confirmacion propia (0x3C con 0), ANTES del guard de EquipmentItem.
+        DAT_07eaa0fd = 0;                               // m_bMyConfirm
+        BYTE unconfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
+        Net_SendSmallPacket(unconfirm, 4);
     }
-    else if (invBase == &OffsetWarehouseItems[0]) {
-        // --- Target is Warehouse (OffsetWarehouseItems) ---
-        // Check warehouse password verification state
-        if (DAT_00559f5f == '\0' || DAT_07eaa148 != '\0') {
-            if (DAT_07eaa165 != '\0') goto drop_done;
-            DAT_07eaa165 = '\x01';
 
-            // anti-tamper hash table — skipped
-            InventoryMove_SetPendingPools(sourceInvBase, invBase);
-            SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
-                (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
-            actionTaken = true;
-        }
-        else {
-            // Warehouse needs password: set up second-password state machine
-            DAT_07ea9808 = DAT_07ea5b18;
-            DAT_07ea9804 = 2;
-            DAT_07ea980c = 0;
-            DAT_07ea9810 = DAT_07e11e78;
-
-            // Initialize shuffle array for second-password input (10 digits, shuffled)
-            short* shuffleArr = (short*)&DAT_07e91394;
-            for (short i = 0; i < 10; i++) {
-                shuffleArr[i] = i;
-            }
-            // Fisher-Yates shuffle (20 iterations)
-            for (int n = 0; n < 20; n++) {
-                int a = rand() % 10;
-                int b = rand() % 10;
-                if (a != b) {
-                    // XOR swap
-                    shuffleArr[a] ^= shuffleArr[b];
-                    shuffleArr[b] ^= shuffleArr[a];
-                    shuffleArr[a] ^= shuffleArr[b];
-                }
-            }
-            DAT_07eaa14c = 1;
-            DAT_07ea9814 = 0;
-            DAT_07ea9818 = 0;
-            DAT_07ea981c = 0;
-            DAT_07ea981e = 0;
-            actionTaken = true;
-        }
-    }
-    else {
-        // --- Other target context (Trade items, etc.) ---
-        if (DAT_07eaa165 != '\0') goto drop_done;
-        DAT_07eaa165 = '\x01';
-
-        // anti-tamper hash table — skipped
-        // Build generic equipment move packet:
-        // Packet fields: [C1][len][0x24][01][srcSlot][pPickedItem][Level][durOption][durExtra][slotType=3][dstSlot]
-        InventoryMove_SetPendingPools(sourceInvBase, invBase);
-        SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
-            (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
-        actionTaken = true;
-    }
+    if (DAT_07eaa165 != '\0') goto drop_done;
+    DAT_07eaa165 = '\x01';
+    InventoryMove_SetPendingPools(sourceInvBase, invBase);
+    SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
+        (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
+    actionTaken = true;
 
 drop_done:
     // IDA sub_4D6470 LABEL_808: el quick-move del click derecho (sub_4D23B0
@@ -725,5 +672,6 @@ drop_done:
         DAT_083a4278 = g_PickupLatchY;
     }
     DAT_083a42eb = 0;
-    return actionTaken ? 1u : 0u;
+    (void)actionTaken;
+    return retVal ? 1u : 0u;
 }

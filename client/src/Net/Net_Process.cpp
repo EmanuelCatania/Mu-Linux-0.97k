@@ -1011,18 +1011,9 @@ static void ItemMove_ClearPickedState()
     Level = 0;
     byte_7E9136B = 0;
 
-    auto ClearItemRefGrid = [](BYTE* grid, size_t size) {
-        for (size_t off = 0; off < size; off += 0x44) {
-            memset(grid + off, 0, 0x44);
-            *(short*)(grid + off) = (short)0xFFFF;
-        }
-    };
-
-    ClearItemRefGrid(DAT_07ea8448, sizeof(DAT_07ea8448));
-    ClearItemRefGrid(DAT_07ea5b68, sizeof(DAT_07ea5b68));
-    ClearItemRefGrid(DAT_07ea9880, sizeof(DAT_07ea9880));
-    ClearItemRefGrid(DAT_07ea7bc0, sizeof(DAT_07ea7bc0));
-    ClearItemRefGrid(DAT_07e11fb0, sizeof(DAT_07e11fb0));
+    // (Aca se borraban registros enteros de DAT_07ea8448/5b68/9880/7bc0 y
+    //  DAT_07e11fb0, que eran copias sueltas sin lectores.  Ahora son alias de
+    //  campo de los pools reales y ese memset los pisaria corrido 0x38.)
 
     ItemMove_ClearPoolPreview(OffsetInventoryItems, 64);
     ItemMove_ClearPoolPreview(OffsetTradeItems, 32);
@@ -3546,9 +3537,11 @@ void Net_ProcessPacket(void)
                     int wlen = Size - 13;
                     if (wlen > 60) wlen = 60;
                     memcpy(wmsg, Msg + 13, wlen);
-                    // IDA ProtocolCore case 2: RegistWhisperID(10, strID) (anti-spam
-                    // de personajes de nivel < 10, sin portar) y el sonido SOLO con
-                    // m_bWhisperSound (0x07E11D80).  2026-09-12: sonaba siempre.
+                    // IDA ProtocolCore case 2: RegistWhisperID(10, strID) — con el
+                    // heroe de nivel < 10 anota al remitente para que despues se le
+                    // pueda contestar (ver FUN_0047fed0) — y el sonido SOLO con
+                    // m_bWhisperSound (0x07E11D80).
+                    RegistWhisperID(10, wname);
                     if (DAT_07e11d80)
                         PlayBuffer(0x26, 0, 0);
                     UIChatLogWindow_AddText(wname, wmsg, 0);
@@ -5574,7 +5567,7 @@ void Net_ProcessPacket(void)
                 BYTE state = Msg[3];
 
                 if (state == 0) {
-                    UIChatLogWindow_AddText(nullptr, GlobalText[492], 2);
+                    UIChatLogWindow_AddText(nullptr, GlobalText[494], 2);   // IDA: 494
                     DAT_07eaa0e8 = 0;
 
                     for (int slot = 0; slot < 32; ++slot) {
@@ -5612,6 +5605,7 @@ void Net_ProcessPacket(void)
                 g_ItemMoveSourcePool = 0;
                 g_ItemMoveTargetPool = 0;
                 FUN_00423db0();
+                DAT_07eaa117 = 0;   // InventoryOpened (IDA ReceiveTradeExit: cierra el inventario)
                 CloseInventoryRelatedWindows();
 
                 if (DAT_083a7c24 == 116) {
@@ -5820,7 +5814,24 @@ void Net_ProcessPacket(void)
                         DAT_00559f5f = 1;
                         DAT_07eaa148 = 0;
                         break;
+                    case 10: SetErrorMessage(134); break;   // PIN incorrecto
+                    case 11: SetErrorMessage(135); break;   // ya tenia candado
+                    case 13: SetErrorMessage(138); break;   // codigo personal invalido
                     case 12:
+                        // IDA ReceiveStorageStatus (0x434450): PIN aceptado.  Si
+                        // habia una accion esperando el PIN (la arma el drop o el
+                        // retiro de zen), se completa ahora.
+                        if (DAT_00559f5f && !DAT_07eaa148) {
+                            if ((int)DAT_07ea9804 == -1) {
+                                FUN_0043ce50((unsigned char)DAT_07ea9808, (int)DAT_07ea980c);
+                            } else {
+                                DAT_07eaa165 = 1;   // EquipmentItem
+                                g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetWarehouseItems[0];
+                                g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+                                SendRequestEquipmentItem_stub((int)DAT_07ea9804, (int)DAT_07ea9808,
+                                    (ITEM*)DAT_07e91350, (int)DAT_07ea980c, (int)DAT_07ea9810);
+                            }
+                        }
                         DAT_00559f5f = 1;
                         DAT_07eaa148 = 1;
                         break;

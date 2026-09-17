@@ -225,7 +225,7 @@ extern int     SelectedNpc;        // DAT_00559c4c — NPC/shop entity (-1 = non
 extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none)
 extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
 extern int     DAT_00559c58;   // hover: secondary target index
-extern char    DAT_00559c5c;   // hover enabled flag (0=disabled)
+extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
 extern int     DAT_00559c60;   // equipped weapon type (right hand)
 extern int     DAT_00559c64;   // equipped weapon type (left hand)
 extern int     DAT_00559c68;   // equipped weapon type (crossbow/secondary)
@@ -778,7 +778,8 @@ extern char    DAT_07e91350[0x44];      // pPickedItem — sizeof(ITEM) = 0x44
 extern DWORD   DAT_07e91388;
 extern byte    DAT_07e9138e;   // UI grid selected column (byte, Item_ReturnPickedItem)
 extern byte    DAT_07e9138f;   // UI grid selected row (byte, Item_ReturnPickedItem)
-extern DWORD   DAT_07e91394;
+extern short   DAT_07e91394[10];   // IDA: word_7E91394
+extern char    DAT_07eaa1a4;       // IDA: byte_7EAA1A4
 extern DWORD   DAT_07e913a8;
 extern DWORD   DAT_07e91428;
 extern DWORD   DAT_07e91784;
@@ -790,7 +791,7 @@ extern DWORD   DAT_07e919b8;
 extern char    DAT_07e919bc[0x13C30];
 // Pools de índices de nombres de personaje — cada uno es un buffer de 0x880 bytes (32 entradas × 0x44).
 // Lo recorre FUN_004cba60 (CharPreview_Reset) con stride 0x44.
-extern BYTE    DAT_07ea5298[0x880];
+// DAT_07ea5298: alias de Inventory (ver el bloque de alias de pools mas abajo).
 extern DWORD   DAT_07ea5b18;
 extern DWORD   DAT_07ea5b1c;
 extern DWORD   DAT_07ea5b20;
@@ -810,14 +811,16 @@ extern DWORD   DAT_07ea9804;   // NPC shop context A
 extern DWORD   DAT_07ea9808;   // NPC shop context B
 extern DWORD   DAT_07ea980c;   // NPC shop context C
 extern DWORD   DAT_07ea9810;
-extern DWORD   DAT_07ea9814;
-extern float  _DAT_07ea9814;
+extern char    DAT_07ea9814[16];   // IDA: dword_7EA9814 — texto tipeado en el teclado del PIN
+// Alias dentro de ese buffer (el binario los aborda como globales sueltos):
+#define DAT_07ea9818   (*(unsigned int*)&DAT_07ea9814[4])
+#define DAT_07ea981c   (*(unsigned short*)&DAT_07ea9814[8])
+#define DAT_07ea981e   (DAT_07ea9814[10])
+#define DAT_07ea981f   (*(unsigned int*)&DAT_07ea9814[11])   // copia del PIN de la 1ra pasada
 extern char    DAT_07ea9815;
 extern char    DAT_07ea9816;
 extern char    DAT_07ea9817;
-extern unsigned int DAT_07ea9818;  // SecondPassword PIN bytes [4-7] — widened from char (audit #8)
-extern DWORD   DAT_07ea981c;
-extern short   DAT_07ea981e;   // second-password shuffle state (short, FUN_004e9250)
+
 extern DWORD   DAT_07ea982c;   // Screen3 panel origin X
 extern DWORD   DAT_07ea9830;   // Screen3 panel origin Y
 extern char    DAT_07ea9834[11];    // IDA: nombre remoto de Trade (8+2 bytes del paquete, NUL)
@@ -1673,7 +1676,7 @@ extern DWORD   DAT_00559c78;   // current text color ABGR (0xffffffff = white)
 // DAT_00559c80 — declared above as DWORD (line 197)
 // DAT_00559c8c — declared above as DWORD (line 200)
 // Toggle flags
-extern char    DAT_00559c5c;   // sound-effect toggle (0=off, non-zero=on)
+extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
 extern char    DAT_07e11d80;   // IDA: m_bWhisperSound (0x07E11D80) — aviso sonoro de susurros
 // Entity/level data
 // Format strings for numeric dialogs
@@ -2056,22 +2059,35 @@ extern DWORD   DAT_055ca15c;   // net connect state dword
 extern char    s_Failed_to_connect__00559688[]; // error string
 
 // ── Net_PacketSession globals ─────────────────────────────────────────────────
-extern BYTE    DAT_07ea8448[0x1100];   // 64-slot × 0x44 inventory ref grid (sized properly)
 // Char-select entry pools — IDA layout:
 //   DAT_07ea5b68 .. 0x07ea7b48 (= 8160 bytes = 116 slots × 0x44 stride)
 //   DAT_07ea9880 .. 0x07eaa100 (= 2176 bytes =  32 slots × 0x44 stride)
 // Cada slot es el registro del panel de char-select. En nuestro build estaban
 // declarados como DWORDs sueltos, lo que hacía que FUN_004cba60 (CharPreview_Reset)
 // recorriera mucho más allá del final, en memoria random → AV.
-extern BYTE    DAT_07ea5b68[0x1FE0];   // 8160 bytes
-extern BYTE    DAT_07ea9880[0x0880];   // 2176 bytes
 extern DWORD   DAT_07eaa0e8;
-extern BYTE    DAT_07ea7b88[0x880];     // see DAT_07ea5298 above
 extern DWORD   DAT_07e11f34[16];   // MarkColor[16] — paleta de la marca de guild (ARGB)
 extern BYTE    DAT_07e11f78[0x880];
-extern BYTE    DAT_07ea52d0[0x880];
-extern BYTE    DAT_07ea7bc0[0x880];
-extern BYTE    DAT_07e11fb0[0x880];
+// Alias de CAMPO sobre los pools de items (verificado en el desensamblado de
+// CloseInventoryRelatedWindows 0x4CBD36-0x4CBD9C y los errores de
+// ida_get_function): en el binario no son copias sino el mismo pool abordado
+// desde otro campo.  Los bucles originales escriben Type en `ptr - 0x38` y
+// Key en `ptr`, o sea DAT_x + 0x38 = Key del slot 0.  Antes eran arrays
+// propios: todo lo que se escribia ahi no llegaba a los pools reales.
+//   0x07EA5298 Inventory              0x07EA52D0 Inventory.Key
+//   0x07EA7B88 OffsetTradeItems       0x07EA7BC0 OffsetTradeItems.Key
+//   0x07EA9880 OffsetMixItems.Key     0x07EA8448 OffsetInventoryItems.Key
+//   0x07EA5B68 Key del pool de 0x07EA5B30 (baul; en IDA tambien la tienda)
+//   0x07E11FB0 Key de word_7E11F78 (trade del otro jugador)
+// Son lvalues de array: `&`, la aritmetica y el decay a BYTE* funcionan igual.
+#define DAT_07ea5298   (*(BYTE(*)[0x880])(Inventory))
+#define DAT_07ea52d0   (*(BYTE(*)[0x880])(Inventory + 0x38))
+#define DAT_07ea7b88   (*(BYTE(*)[0x880])(OffsetTradeItems))
+#define DAT_07ea7bc0   (*(BYTE(*)[0x880])(OffsetTradeItems + 0x38))
+#define DAT_07ea9880   (*(BYTE(*)[0x880])(OffsetMixItems + 0x38))
+#define DAT_07ea8448   (*(BYTE(*)[0x1100])(OffsetInventoryItems + 0x38))
+#define DAT_07ea5b68   (*(BYTE(*)[0x1FE0])(OffsetWarehouseItems + 0x38))
+#define DAT_07e11fb0   (*(BYTE(*)[0x880])(DAT_07e11f78 + 0x38))
 extern DWORD   DAT_055c9b7c;
 extern DWORD   DAT_07eaa164;
 
@@ -2633,7 +2649,8 @@ extern DWORD   Object3DSound[420][4];                 // payload (entity id boun
 
 // Entity data
 extern BYTE    MonsterScript[512 * 0x36];  // NPC/mob name table (stride 0x36; Type[0], Name[1..32])
-extern char    WhisperRegistID[][4]; // whisper ID array (stride 4, 0x1b*4+2 = 0x6e bytes)
+extern char    WhisperRegistID[11][10]; // IDA: WhisperRegistID (0x07DB9310) — anillo de 10 nombres de 10 bytes (0x6E con el sobrante)
+extern int     WhisperID_Num;           // IDA: WhisperID_Num (0x07E11DB0) — proxima fila del anillo
 
 // Blur/trail system
 // DAT_07c608b8 — campo int en el +16 del slot[0] de g_RenderPool_07c608a8 (ver arriba).
@@ -2735,7 +2752,10 @@ extern int     DAT_07e11990;       // SelectedOperate
 // DAT_07e1198c already declared above (line ~1003) as DWORD
 extern int     DAT_07e11988;       // SelectedItem
 // DAT_07e11984 already declared above (line ~1002) as DWORD
-extern int     DAT_07e11e18;       // m_bAutoAttack
+// m_bAutoAttack vive en 0x00559C5C (DAT_00559c5c, IDA InitGame L39).  El port
+// tenia ademas DAT_07e11e18: el toggle del menu y el hover escribian uno y el
+// combate / F3/30 leian el otro.  Ahora es un alias.
+#define DAT_07e11e18   DAT_00559c5c
 extern int     DAT_07e11d24;       // _CheckInventory
 // DAT_07e11d1c already declared above (line ~553) as DWORD
 extern BYTE    DAT_00559c6d;       // UI alpha/state byte

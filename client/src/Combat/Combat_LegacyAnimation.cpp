@@ -139,9 +139,14 @@ void __cdecl FUN_00443e70(void) {
     // FIST
     *(float*)(P + 548) = v33 + 0.6f;
 
-    // SWORD/RIDE attacks: P+i-12 for i ∈ {560,576,592,...,880}
+    // SWORD/RIDE attacks.  IDA L189-191:
+    //   for (i = 560; i <= 880; *(P + i - 12) = v24) i += 16;
+    // El cuerpo (i += 16) corre ANTES de la asignacion, asi que los offsets son
+    // 564..884 = acciones 35 (SWORD_RIGHT1) .. 55 (RIDE_CROSSBOW).  El port
+    // asignaba 548..868: pisaba FIST (34) y dejaba la 55 sin velocidad.
     float swordSpeed = v33 + 0.25f;
-    for (int i = 560; i <= 880; i += 16) {
+    for (int i = 560; i <= 880; ) {
+        i += 16;
         *(float*)(P + i - 12) = swordSpeed;
     }
 
@@ -171,16 +176,22 @@ void __cdecl FUN_00443e70(void) {
         *(float*)(P + v28 - 12) = v35;
     } while (v28 <= 784);
 
-    // RIDE BOW: P+j-12 for j ∈ {864, 880}
-    for (int j = 864; j <= 880; j += 16) {
+    // RIDE BOW (IDA L216-218, mismo patron): offsets 868, 884 = acciones 54, 55.
+    for (int j = 864; j <= 880; ) {
+        j += 16;
         *(float*)(P + j - 12) = v35;
     }
 
     // Skills
     *(float*)(P + 1380) = v38 + 0.25f;        // ELF1
     float magicSkill = v34 + 0.29f;
-    for (int k = 1312; k <= 1360; k += 16) {
-        *(float*)(P + k - 12) = magicSkill;   // HAND1..WEAPON2
+    // HAND1..WEAPON2 (IDA L222-224, mismo patron): offsets 1316..1364 =
+    // acciones 82..85.  El port asignaba 81..84: pisaba TWO_HAND_SWORD_TWO (81)
+    // y dejaba la 85 con la velocidad del archivo — el mago quedaba congelado
+    // en esa animacion despues de atacar.
+    for (int k = 1312; k <= 1360; ) {
+        k += 16;
+        *(float*)(P + k - 12) = magicSkill;
     }
 
     float teleportSpeed = v34 + 0.3f;

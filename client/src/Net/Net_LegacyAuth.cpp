@@ -120,7 +120,7 @@ int __cdecl FUN_004e9250(int mode) {
             arr[a] ^= arr[b];
         }
     }
-    _DAT_07ea9814 = 0.0f;
+    memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
     DAT_07ea9818  = 0;
     DAT_07eaa14c  = (DWORD)mode;
     DAT_07ea981c  = 0;

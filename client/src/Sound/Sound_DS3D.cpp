@@ -197,31 +197,29 @@ void __stdcall FUN_00405340(void) {
     // No-op — CErrorReport vtable not yet active.
 }
 
-// ── FUN_00405500 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── CErrorReport_WriteDebugInfoStr — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 52-byte ─────────────────────────────────────────────────────────────────
 
-// FUN_00405500 @ 0x00405500 — CErrorReport::WriteDebugInfoStr (52 bytes)
+// CErrorReport::WriteDebugInfoStr @ 0x00405500 (IDA: FUN_00405500).
 // (declared in Ghidra as CErrorReport::WriteDebugInfoStr — writes debug string)
 // This is a thin wrapper that calls CErrorReport__Write; implementation is in the
 // vtable dispatch. We stub it as a pass-through.
-void __cdecl FUN_00405500(DWORD This, char *fmt) {
+void __cdecl CErrorReport_WriteDebugInfoStr(DWORD This, char *fmt) {
     CErrorReport__Write(This, fmt);
 }
 
 // ── FUN_00405540 — movida desde stubs_render_helpers.cpp (refactor B3) ──
 void __cdecl FUN_00405540(void*,const char*,...)            {} // debug log — kept as stub
 
-// ── FUN_00405590 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// FUN_00405590 @ 0x00405590 (15 bytes) — log begin marker
-void __fastcall FUN_00405590(DWORD This) {
+// CErrorReport::WriteLogBegin @ 0x00405590 (IDA: FUN_00405590).
+void __fastcall CErrorReport_WriteLogBegin(DWORD This) {
     CErrorReport__Write(This, (char *)"========Log Begin========");
 }
 
-// ── FUN_004055a0 — movida desde stubs_render_helpers.cpp (refactor B3) ──
-// FUN_004055a0 @ 0x004055A0 — Log_Timestamp(verbose).
+// CErrorReport::WriteCurrentTime @ 0x004055A0 (IDA: FUN_004055A0).
 // Logs current local date/time via FUN_00405540 (debug log sink at DAT_055C9BF0).
 // If param_1 != 0, logs an additional data block from DAT_00558128.
-void FUN_004055a0(int param_1) {
+void CErrorReport_WriteCurrentTime(int param_1) {
     _SYSTEMTIME local_10;
     GetLocalTime(&local_10);
     FUN_00405540(&DAT_055c9bf0, "%4d %02d %02d %02d %02d"); // date+time format
@@ -230,11 +228,10 @@ void FUN_004055a0(int param_1) {
     }
 }
 
-// ── FUN_00405620 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_00405620 @ 0x00405620 — CErrorReport::WriteSystemInfo (137 bytes IDA, port FIEL).
+// CErrorReport::WriteSystemInfo @ 0x00405620 (IDA: FUN_00405620).
 // Logs OS name, CPU name, RAM (MB), DirectX version to error report.
 // si points to 264-byte SystemInfo struct: si[0..127]=CPU, si[128..255]=OS, si[256..259]=RAMbytes, si[260..]=DirectX.
-void __fastcall FUN_00405620(void* This_v, void* /*edx*/, void* si_v) {
+void __fastcall CErrorReport_WriteSystemInfo(void* This_v, void* /*edx*/, void* si_v) {
     DWORD This = (DWORD)(uintptr_t)This_v;
     DWORD si   = (DWORD)(uintptr_t)si_v;
     CErrorReport__Write(This, (char*)"<System information>\r\n");
@@ -245,10 +242,9 @@ void __fastcall FUN_00405620(void* This_v, void* /*edx*/, void* si_v) {
     CErrorReport__Write(This, (char*)"Direct-X \t\t: %s\r\n", (const char*)(si + 260));
 }
 
-// ── FUN_004056b0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_004056b0 @ 0x004056B0 — CErrorReport::WriteOpenGLInfo (173 bytes IDA, port FIEL).
+// CErrorReport::WriteOpenGLInfo @ 0x004056B0 (IDA: FUN_004056B0).
 // Logs GL vendor/renderer/version + max texture size + max viewport.
-void __fastcall FUN_004056b0(void* This_v) {
+void __fastcall CErrorReport_WriteOpenGLInfo(void* This_v) {
     DWORD This = (DWORD)(uintptr_t)This_v;
     GLint maxTex = 0;
     GLint maxView[2] = {0, 0};
@@ -266,10 +262,9 @@ void __fastcall FUN_004056b0(void* This_v) {
     CErrorReport__Write(This, (char*)"Max viewport \t\t: %d x %d\r\n", maxView[0], maxView[1]);
 }
 
-// ── FUN_00405760 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_00405760 @ 0x00405760 — CErrorReport::WriteImeInfo (175 bytes IDA, port FIEL).
+// CErrorReport::WriteImeInfo @ 0x00405760 (IDA: FUN_00405760).
 // Logs IME description, IME file, keyboard layout name.
-void __fastcall FUN_00405760(void* This_v, void* /*edx*/, HWND hWnd) {
+void __fastcall CErrorReport_WriteImeInfo(void* This_v, void* /*edx*/, HWND hWnd) {
     DWORD This = (DWORD)(uintptr_t)This_v;
     char lpszTemp[256];
     CErrorReport__Write(This, (char*)"<IME information>\r\n");

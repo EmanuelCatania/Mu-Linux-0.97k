@@ -33,6 +33,13 @@ static float PointerBitsAsFloat(const void* pointer)
 }
 extern "C" int __cdecl sub_4E9300_(void);
 #define sub_4E9300 sub_4E9300_
+// Alias a los globales reales (IDA): el teclado del PIN los comparte con
+// FUN_004eb5d0 (boton del candado), el drop del baul y el manejador 0x4E93A0.
+#define dword_7EAA14C  DAT_07eaa14c
+#define byte_7EAA1A4   DAT_07eaa1a4
+#define byte_7EAA179   DAT_07eaa179
+#define dword_7EA9814  DAT_07ea9814
+#define word_7E91394   DAT_07e91394
 
 // ── Globals required by these renderers ─────────────────────────────────────
 
@@ -84,13 +91,15 @@ extern "C" void HUD_InitInventoryPools(void)
 extern "C" {
     int   m_Resolution           = 4;
 
-    // Pet panel state (sub_4EB070).
-    int   dword_7EAA14C          = 0;
-    BYTE  byte_7EAA1A4           = 0;
-    BYTE  byte_7EAA179           = 0;
-    char  dword_7EA9814[64]      = {0};
-    short word_7E91394[16]       = {0};
-    short unk_55A6FC             = 0x002A;
+    // (Aca se definian dword_7EAA14C, byte_7EAA1A4, byte_7EAA179, dword_7EA9814
+    //  y word_7E91394 como variables PROPIAS de este archivo — memorias aparte
+    //  de los globales reales.  El modo del teclado del PIN se leia siempre 0,
+    //  asi que el panel del candado del baul nunca se dibujaba.  Ahora son
+    //  alias; ver el bloque de abajo.)
+    short unk_55A6FC             = 0x002A;   // IDA: unk_55A6FC = '*'
+    // IDA: flt_83A7ACC es el arreglo de la CAMARA (lo escribe MoveCamera).
+    // Lo consume ChatListBox copiando sus bits a InputTextMax, que es la
+    // rareza del binario documentada ahi.
     float flt_83A7ACC[8]         = {0,0,0,0,0,0,0,0};
 
     // Floating-numbers / chat bubble per-entry runtime state.
@@ -502,7 +511,9 @@ void Render_HudPass_4EB070_(void)
     // Calling with the literal addresses would crash; route through GlobalText
     // assuming the indices exist; otherwise emit empty strings.
     {
-        int idx = 438 + v2;
+        // IDA: 300 * v2 + 131450300, y GlobalText esta en 131243300 (0x07D29D24)
+        // -> (131450300 - 131243300) / 300 = 690.  Antes decia 438.
+        int idx = 690 + v2;
         const char* hdr = (idx >= 0 && idx < 1000) ? GlobalText[idx] : "";
         RenderCenteredText(320, 110, hdr);
     }
@@ -513,15 +524,21 @@ void Render_HudPass_4EB070_(void)
         default:                v3 = 695; break;
     }
     {
-        int idx = 421 + (v3 - 695);   // 695..697 → 421..423
+        // IDA: 300 * v3 + 131243300 -> GlobalText[v3] directo.  Antes restaba 274.
+        int idx = v3;
         const char* sub = (idx >= 0 && idx < 1000) ? GlobalText[idx] : "";
         RenderCenteredText(320, 122, sub);
     }
 
     glColor3f(0.30000001f, 0.30000001f, 0.30000001f);
+    // Largo del campo: 4 para el PIN, 7 para el codigo personal.
+    // DESVIACION: el binario lee LODWORD(flt_83A7ACC[0]), que es el arreglo de
+    // la CAMARA (lo escribe MoveCamera como floats) — o sea toma los bits de un
+    // float como largo.  Usamos el largo real que valida el server
+    // (gObjCheckPersonalCode compara 7 caracteres).
     int v4 = 4;
     if (dword_7EAA14C == 3 || dword_7EAA14C == 2 || dword_7EAA14C == 6) {
-        v4 = (int)flt_83A7ACC[0];
+        v4 = 7;
     }
     float Widtha = (v4 > 4) ? (float)((double)(v4 - 4) * 13.0 + 52.0) : 52.0f;
     float v21 = Widtha * 0.5f;

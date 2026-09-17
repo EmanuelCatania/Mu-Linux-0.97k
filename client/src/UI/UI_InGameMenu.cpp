@@ -314,37 +314,25 @@ void __cdecl UI_InGameMenu(void)
                     case 1:
                     {
                         if (DAT_005615c0 == 4 || DAT_005615c0 == 5) {
-                            // JoinSrv → F1/02/02
-                            BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x02, 0x00, 0x00, 0x00 };
-                            SendLoginPacket(pkt, 5);
-                            // Transición local — emula ReceiveLogOut sub=2 (IDA 0x004247D0):
-                            //   if (gs==5) { StopMusic; AllStopSound; sub_4CD3B0; ReleaseMainData; }
-                            //   CWsctlc::Close
-                            //   ReleaseCharacterSceneData()  ← libera modelos/texturas char-select
-                            //   g_GameState = 2
-                            //   InitLogIn=0; InitCharacterScene=0; InitMainScene=0;
-                            //   EnableMainRender=0; CurrentProtocolState=0;
-                            //   InitGame()                  ← reset estado de sesión
-                            if (DAT_005615c0 == 5) {
-                                StopMusic();
-                                AllStopSound();
-                                Item_ReturnPickedItem();
-                                ReleaseMainData();
+                            // IDA 00514310 L843-1074 (menu "seleccionar servidor"):
+                            // con la Chaos Machine abierta avisa GlobalText[592];
+                            // si no, LogOut = 1 y manda F1/02/02 y cierra el menu.
+                            // NO hay transicion local: el server hace la cuenta
+                            // regresiva (avisos de 5 s) y contesta F1/02/02, y es
+                            // ReceiveLogOut (Recv_LogOut sub 2) quien libera el
+                            // mundo, cierra el socket y vuelve al login.
+                            //
+                            // 2026-09-16: el port hacia toda la transicion aca en
+                            // el acto (el comentario decia que MuEmu no contesta
+                            // F1/02/02, y es falso: User.cpp:2347
+                            // GCCloseClientSend(2) tras CloseCount).  Por eso no
+                            // habia cuenta regresiva.
+                            if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
+                                UIChatLogWindow_AddText("", GlobalText[592], 2);
+                            } else {
+                                BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x02 };
+                                Net_SendSmallPacket(pkt, 5);
                             }
-                            FUN_0043dc90((int)(uintptr_t)DAT_055ca160);  // Net_Disconnect
-                            Scene_UnloadCharSelectResources(); // FUN_005102c0 (IDA) — saca preview
-                            DAT_005615c0   = 2;   // g_GameState = Login
-                            DAT_083a7c14  = 0;   // sub-state = ServerSelect
-                            DAT_083a7c18  = 0;
-                            DAT_05826cb0 = 0;   // CurrentProtocolState
-                            // Reset init guards: cuando el usuario re-loguee y vuelva
-                            // a char-select, las funciones init re-cargan los assets.
-                            DAT_083a7c48 = 0;   // ConnectionCheckEnable
-                            DAT_083a7c49 = 0;   // InitLogIn  → fuerza Scene_Login init
-                            CharSelectSceneInitialized = 0; // IDA: DAT_083a7c4b; force character-scene reload
-                            DAT_083a7c4c = 0;   // InitMainScene
-                            DAT_083a7c4d = 0;   // EnableMainRender / warning flag
-                            InitGame();           // reset estado de juego
                         } else if (DAT_005615c0 == 2) {
                             // Login: case 1 = Options
                             DAT_083a7c28 = 0x96;
@@ -407,24 +395,56 @@ void __cdecl UI_InGameMenu(void)
         return;
     }
 
-    // ── Return to char select ────────────────────────────────────────────
+    // ── 114 — confirmar BORRAR PERSONAJE (char-select) ─────────────────────
+    // Lo abre Game_EnterWorldTick (IDA 0x521D80 L479-483) para personajes de
+    // nivel < 40, con InputText[0] capturando el codigo personal.
+    // IDA UI_InGameMenu L1383: el 114 comparte el gate de 126/152 (LABEL_494),
+    // Si = [323,363) -> sub_513C10; No = [373,413) o Esc -> L2183.
+    // Antes este case corria SIN gate de click: el cartel se cerraba solo en
+    // el frame siguiente y nunca se mandaba el borrado (no habia ningun envio
+    // de F3/02 en el arbol).
     case 0x72:
+    {
+        const bool yes = mouseX >= 323 && mouseX < 363 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        const bool no  = escHit ||
+                         (mouseX >= 373 && mouseX < 413 &&
+                          mouseY >= 98 && mouseY < 119 && IsClickPushed());
+        if (!yes && !no) return;
+        DAT_083a4124 = 0;
+
+        if (yes) {
+            // IDA: sub_513C10 (0x00513C10).  PMSG_CHARACTER_DELETE_RECV =
+            // [C1][24][F3][02][name:10][PersonalCode:10]; el nombre sale del
+            // personaje elegido, rellenado con ceros a 10.
+            const int hero = (int)DAT_005616ac;          // SelectedHero
+            DAT_005616ac = (DWORD)-1;
+            DAT_005615e0 = (DWORD)hero;                  // dword_5615E0
+            DAT_05826cb0 = 56;                           // CurrentProtocolState
+            BYTE pkt[24];
+            memset(pkt, 0, sizeof(pkt));
+            pkt[0] = 0xC1;
+            pkt[1] = 24;
+            pkt[2] = 0xF3;
+            pkt[3] = 0x02;
+            if (hero >= 0 && DAT_07abf5d0) {
+                const char* name = (const char*)(DAT_07abf5d0 + hero * 0x394 + 0x1c1);
+                size_t n = strlen(name);
+                memcpy(pkt + 4, name, n > 10 ? 10 : n);
+            }
+            memcpy(pkt + 14, (const char*)DAT_07db8710, 10);   // InputText[0]
+            Net_SendSmallPacket(pkt, sizeof(pkt));
+        }
+        // Las dos ramas terminan igual (sub_513C10 LABEL_32 / L2183-2187).
         DAT_083a7c14 = 0x18;
         DAT_083a7c18 = 0x15;
-        // SIN PlayBuffer aca: IDA tiene DOS `case 114`, y solo el del switch del
-        // boton de cerrar (L2183, nuestro segundo switch) reproduce el 27. El de
-        // este switch principal (L2811) llama sub_513C10 y no suena. Tenerlo en
-        // los dos hacia sonar el clic dos veces al volver a char-select.
-        // TODO(port): este case ademas ejecuta el cuerpo del segundo switch en
-        // vez de sub_513C10 — divergencia estructural preexistente, fuera del
-        // alcance de la pasada de audio.
-        // Close NPC UI
-        Input_ClearState(0);
-        DAT_00559c94 = (DWORD)0x2a;
-        DAT_00559c88 = 2;
-        DAT_07e11d72 = 0;
-        DAT_00559c84 = 0;
+        FUN_00404bc0(0x1b, 0, 0);                        // PlayBuffer(27)
+        if (yes) {
+            Input_ClearState(1);                         // ClearInput(1)
+            DAT_00559c84 = 0;                            // InputEnable
+        }
         goto tail;
+    }
 
     // ── Zen input dialog (ErrorMessage 116) — baúl / trade ─────────────────
     // 2026-08-08 PORT (antes: rama inventada que llamaba FUN_004e9250, o sea el
@@ -499,21 +519,9 @@ void __cdecl UI_InGameMenu(void)
         goto tail;
     }
 
-    // ── Level-up reward ───────────────────────────────────────────────────
-    case 0x75:
-    {
-        // Check reward flag at CharData+0x152
-        BYTE *charData = (BYTE *)DAT_07cf1ffc;
-        if (charData && charData[0x152] != 0)
-        {
-            // Send variable packet with reward ACK
-            BYTE pkt[6] = { 0xC1, 0x06, 0xF3, 0x10,
-                            (BYTE)(DAT_07eaa0d8 & 0xff),
-                            (BYTE)((DAT_07eaa0d8 >> 8) & 0xff) };
-            SendLoginPacket(pkt, 6);
-        }
-        goto tail;
-    }
+    // (Aca habia un `case 0x75` que mandaba un F3/10 inventado.  En IDA el 117
+    //  es el aviso "no alcanza el zen" que abre el 116 y no tiene case propio:
+    //  cae al default y se cierra con OK o Enter.)
 
     // Guild invitation (ProtocolCore 0x50 -> ErrorMessage 119). The source
     // client emits PMSG_GUILD_RESULT_RECV C1:51 with the original inviter key.
@@ -966,12 +974,42 @@ void __cdecl UI_InGameMenu(void)
         goto tail;
     }
 
+    // ── 152 — codigo personal del candado del baul ──────────────────────────
+    // IDA UI_InGameMenu L3582-3784: Si = [323,363) -> PMSG_WAREHOUSE_PASSWORD_RECV
+    // [C1][16][83][type=1][WORD password][PersonalCode:10] (MuEmu Warehouse.h:19)
+    // con password = atoi(dword_7EA9814); despues limpia InputText[0].
+    // No = [373,413) o Esc -> solo limpia el input (L2706).
+    // Antes corria sin gate: el cartel se cerraba solo y nunca se mandaba nada.
     case 0x98:
-        memset(DAT_07db8710, 0, 0x100);
-        *(DWORD*)DAT_07d780a8 = 0;
-        DAT_07d552e4  = 0;
-        DAT_07d780ac  = 0;
+    {
+        const bool yes = mouseX >= 323 && mouseX < 363 &&
+                         mouseY >= 98 && mouseY < 119 && IsClickPushed();
+        const bool no  = escHit ||
+                         (mouseX >= 373 && mouseX < 413 &&
+                          mouseY >= 98 && mouseY < 119 && IsClickPushed());
+        if (!yes && !no) return;
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        DAT_083a413c = 0;
+        if (yes) {
+            char pinText[11];
+            memcpy(pinText, (const char*)&DAT_07ea9814, 10);   // dword_7EA9814
+            pinText[10] = '\0';
+            const WORD pin = (WORD)atoi(pinText);
+            BYTE pkt[16];
+            memset(pkt, 0, sizeof(pkt));
+            pkt[0] = 0xC1;
+            pkt[1] = 16;
+            pkt[2] = 0x83;
+            pkt[3] = 1;
+            memcpy(pkt + 4, &pin, 2);
+            memcpy(pkt + 6, (const char*)DAT_07db8710, 10);    // InputText[0]
+            Net_SendC1Packet(pkt, sizeof(pkt));
+        }
+        memset(DAT_07db8710, 0, 10);                           // InputText[0][0..9]
+        *(DWORD*)DAT_07d780a8 = 0;                             // InputLength[0]
         goto tail;
+    }
 
     // Confirmacion Si/No de ShowCheckBox (usar fruta / renombrar mascota).
     // IDA 0x514310 L1798-1824 (hit-test) + L1862-2135 (accion).
@@ -1100,56 +1138,11 @@ void __cdecl UI_InGameMenu(void)
         DAT_083a4124 = 0;
         switch (state)
         {
-        case 0x72:
-            DAT_083a7c14 = 0x18;
-            DAT_083a7c18 = 0x15;
-            FUN_00404bc0(0x1b, 0, 0);
-            break;
-
-        case 0x77:
-        {
-            // 2026-08-25 FIX (issue #12, el trade request lo rechazaba el
-            // server): este envio tenia CUATRO errores a la vez.
-            //
-            //   struct PMSG_TRADE_REQUEST_RECV {   // Trade.h:12
-            //       PBMSG_HEAD header;   // C1 : 5 : 0x36
-            //       BYTE index[2];       // +3, +4
-            //   };
-            //
-            //  1. Tamaño 6 con un byte 0x00 de mas: el struct son 5 bytes y el
-            //     index va en +3/+4, no en +4/+5.
-            //  2. Index en little-endian. El server lo lee con
-            //     `MAKE_NUMBERW(index[0], index[1])`, que es
-            //     `(index[1]) | (index[0] << 8)` — o sea index[0] es el byte
-            //     ALTO (ProtocolDefines.h:10).
-            //  3. Frame C1 cuando el opcode pide C3: HackPacketCheck.txt indice
-            //     54 -> Encrypt=1, y `CheckPacketHack` cierra la conexion si no
-            //     coincide.
-            //  4. `SendLoginPacket` aplica el XOR de la clave de LOGIN sobre un
-            //     paquete in-game. `Net_SendSmallPacket` es el camino correcto:
-            //     chain-XOR + serial + C3.
-            BYTE hi = (BYTE)((DAT_07eaa0d8 >> 8) & 0xff);
-            BYTE lo = (BYTE)(DAT_07eaa0d8 & 0xff);
-            BYTE pkt[8];
-            memset(pkt, 0, sizeof(pkt));
-            pkt[0] = 0xC1;
-            pkt[1] = 5;          // lo pisa el serial
-            pkt[2] = 0x36;
-            pkt[3] = hi;         // index[0] = byte alto
-            pkt[4] = lo;         // index[1] = byte bajo
-            Net_SendSmallPacket(pkt, 5);
-        }
-        break;
-
-        case 0x79:
-        {
-            BYTE pkt[4] = { 0xC1, 0x04, 0x30, 0x00 };
-            SendLoginPacket(pkt, 4);
-        }
-        break;
+        // (Los cases 0x72/0x77/0x79 que habia aca no se alcanzaban: el primer
+        //  switch los resuelve y sale por `tail`.  Ademas mandaban paquetes que
+        //  no son los del binario: 0x36 para el 119 y 0x30 para el 121.)
 
         case 0x7e:
-        case 0x98:
             memset(DAT_07db8710, 0, 0x100);
             *(DWORD*)DAT_07d780a8 = 0;
             DAT_07d552e4  = 0;

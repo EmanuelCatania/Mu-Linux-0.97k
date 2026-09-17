@@ -192,6 +192,9 @@ static void Party_ToggleAndRefresh(void)
     }
 
     PartyNumber = 0;
+    // IDA Chat_InputTick L5639-5807: abrir el party cierra inventario y personaje.
+    DAT_07eaa117 = 0;   // InventoryOpened
+    DAT_07eaa116 = 0;   // CharacterOpened
     const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
     Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
     PartyOpened = 1;
@@ -487,19 +490,33 @@ static void HUD_HotkeyTick(void)
     // En MU los paneles izquierdos (Character / Shop / Warehouse) son mutuamente
     // excluyentes: abrir C/G/P cierra la ventana del NPC (y avisa al server con
     // el close 0x31, como ya hacen I/V y Escape).
+    // IDA Chat_InputTick L4921-5826: al CERRAR con G/P/C suenan 25 y 28 (P ya
+    // los tiene en Party_ToggleAndRefresh); G apaga el party antes de mirar
+    // su propio flag.  2026-09-14: faltaban los sonidos y el PartyOpened = 0.
     if (kC) {
-        if (DAT_07eaa116) DAT_07eaa116 = 0;
+        if (DAT_07eaa116) {
+            DAT_07eaa116 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        }
         else if (HUD_CloseNpcWindowsIfAny()) { DAT_07eaa116 = 1; }
     }
     if (kG) {
+        DAT_07eaa115 = 0;   // PartyOpened (IDA L4928)
         if (DAT_07eaa114 || DAT_07eaa124) {
             DAT_07eaa114 = 0;
             DAT_07eaa124 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
         }
         else {
             if (!HUD_CloseNpcWindowsIfAny()) return;
             DAT_07eaa114 = 1;
             DAT_07eaa115 = 0; // close Party
+            // IDA Chat_InputTick L5275-5277: abrir el guild cierra inventario y
+            // personaje (se dibujan en la misma franja x=450).
+            DAT_07eaa117 = 0; // InventoryOpened
+            DAT_07eaa116 = 0; // CharacterOpened
             // 2026-08-15 BUG-FIX (abrir el panel de guild con G desconectaba):
             // el opcode 0x52 pide Encrypt=0 en HackPacketCheck.txt, o sea frame
             // C1 plano. Enviarlo como C3 (Net_SendSmallPacket) hace que el
@@ -529,7 +546,12 @@ static void HUD_HotkeyTick(void)
             //  ventanas de NPC; el panel de Character lo togglea la tecla C.)
             HUD_CloseInventoryFamilyFromUI();
         } else {
+            // IDA L6323-6327: al abrir apaga guild y party y suenan 25 y 28.
             DAT_07eaa117 = 1;
+            DAT_07eaa114 = 0;   // GuildOpened
+            DAT_07eaa115 = 0;   // PartyOpened
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
         }
     }
 }
@@ -1442,6 +1464,23 @@ void __cdecl Player_ProcessInput(void)
 
         _DAT_07e11d50 = (DAT_05826e08 - _DAT_07e11d4c) * _DAT_00552890;
 
+        // IDA 0x004ACEF0 L613-625: ANTES de procesar el click, el original lo
+        // descarta mientras el heroe no puede actuar:
+        //   accion 130 (golpeado), c+124 == 1 o 2, alpha (c+360) < 0.7, o una
+        //   animacion de ataque/skill (34..91) — salvo las 78..80.
+        // Faltaba: spameando clicks durante el golpe se re-disparaba Action y
+        // el ataque se reiniciaba (doble golpe en la misma animacion).
+        if (ent) {
+            const unsigned char act = ent[261];
+            const unsigned char st  = ent[124];
+            if (act == 0x82 || st == 1 || st == 2 ||
+                *(float*)(ent + 360) < 0.69999999f ||
+                (act >= 0x22 && act <= 0x5B)) {
+                if (act < 0x4E || act > 0x50)
+                    goto end_tick_inc;                 // IDA: goto LABEL_390
+            }
+        }
+
         // IDA 0x004ACEF0 LABEL_190 (raw L716-718):
         //     LABEL_190: v86 = *(_BYTE *)(v34 + 846);   // SafeZone
         //                MouseUpdateTime = 0;
@@ -1525,7 +1564,19 @@ void __cdecl Player_ProcessInput(void)
                 //
                 // Filtro adicional: mobs MUERTOS (entity[+0x34e]==1) no son
                 // targeteables.
-                if (SelectedCharacter > -1 && bClickEdge) {
+                // 2026-09-16: IDA 0x004ACEF0 L590-603 no exige el flanco:
+                //   v32 = MouseLButtonPush || MouseLButton;
+                //   if ((!m_bAutoAttack || World == 6 || Attacking != 1 ||
+                //        SelectedCharacter == -1) && !v32) goto LABEL_390;
+                // O sea con el boton MANTENIDO se sigue atacando (el gate de
+                // animacion de mas arriba marca el ritmo), y con m_bAutoAttack
+                // el ataque continua al soltar mientras el objetivo siga
+                // vivo (sub_4B0310 lo mantiene fijo).  Antes solo pegaba en el
+                // frame del click.
+                const bool bAutoAttackGoOn = DAT_00559c5c != 0          // m_bAutoAttack
+                                          && DAT_0055a7ac != 6           // World
+                                          && (int)DAT_00559c58 == 1;     // Attacking
+                if (SelectedCharacter > -1 && (bClickEdge || bClickHeld || bAutoAttackGoOn)) {
                     // IDA Player.cpp (0x004ACEF0) gates the character-attack
                     // path with CheckAttack before it reaches Action().  Action
                     // itself intentionally sends 0x15 without rechecking it.
@@ -1588,6 +1639,15 @@ void __cdecl Player_ProcessInput(void)
                     // Pathfind to hover target
                     int srcX = *(int*)(ent + 0x388);
                     int srcY = *(int*)(ent + 0x38c);
+
+                    // IDA 0x004ACEF0 L986-988: `if (!CheckWall(hx, hy, TargetX,
+                    // TargetY)) goto LABEL_390;` — con una pared entre el heroe y
+                    // el objetivo no se camina ni se ataca (el objetivo y la cola
+                    // ya quedaron fijados arriba, igual que en el original).
+                    // Faltaba: el heroe salia a caminar o pegaba a traves de la
+                    // pared y el server descartaba el golpe.
+                    if (!Path_IsLineClear(srcX, srcY, dstX, dstY))
+                        goto end_tick_inc;
 
                     // IDA 0x004ACEF0 L1027-1131 — tres salidas, no dos:
                     //

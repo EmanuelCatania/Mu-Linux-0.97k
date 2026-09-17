@@ -98,7 +98,7 @@ void __stdcall InitGame(void)
     DAT_00559c58 = -1;    // Attacking (IDA InitGame L38, global 0x00559C58).
                           // Antes escribia DAT_07e11984, que es el debounce de
                           // la flecha arriba del chat.
-    DAT_07e11e18 = 1;     // m_bAutoAttack = true
+    DAT_00559c5c = 1;     // m_bAutoAttack (IDA InitGame L39, 0x00559C5C)
     DAT_07e11d24 = 0;     // _CheckInventory
     // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (DAT_0055a7ac).
     // El port escribia DAT_005615c4, que es g_lpszMp3[0] — el puntero al mp3 de
@@ -114,7 +114,9 @@ void __stdcall InitGame(void)
     DAT_07eaa138 = 0;     // RepairEnable   (IDA InitGame 0x424502)
     DAT_00559c6d = 0xff;
     DAT_0055a3e4 = 0xffffffff;
-    FUN_0051d740();       // ClearNotice
+    ClearNotice();        // IDA: ClearNotice (0x0047FAC0).  Antes llamaba a FUN_0051d740,
+                          // que no es una funcion (cuerpo vacio): los notices del juego
+                          // seguian en pantalla al volver al login o al char-select.
 
     // --- Phase 2: Hash table lookup for CharacterMachine ---
     // Looks up CharacterMachine key in MAIN_HASH_CLASS (anti-tamper obfuscation).
@@ -138,7 +140,8 @@ void __stdcall InitGame(void)
     DAT_07e11e22 = -1;    // g_shMutoNumber[1]
     DAT_07e11e24 = -1;    // g_shMutoNumber[2]
     DAT_07e11d80 = 0;     // m_bWhisperSound (IDA InitGame L167, 0x07E11D80)
-    FUN_00482350();       // ClearWhisperID
+    ClearWhisperID();     // IDA: ClearWhisperID (0x004804D0).  Antes llamaba a
+                          // FUN_00482350, que no es una funcion (cae dentro de sub_4824C0).
     FUN_0047eb80();       // clearMatchInfo (0x0047EB80; antes se llamaba a
                           // FUN_004827a0, un stub vacio con la direccion mal)
     FUN_00433830();       // InitPartyList

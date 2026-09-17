@@ -64,15 +64,16 @@ inline unsigned int HashTable_GetIndex(void* /*ctx_ptr*/, void* /*key*/) {
 }
 
 // ── Sound (0x00404xxx) ────────────────────────────────────────────────────────
-void  __cdecl FUN_00404a10(int, const char*, int, char);      // Sound_LoadAndPlay(id, filename, type, loop)
+void  __cdecl FUN_00404a10(int, const char*, int, char); // IDA: FUN_00404A10; wrapper to LoadWaveFile
 // FUN_00404bc0 = PlayBuffer alias (callers use FUN_ name directly).
 HRESULT __cdecl FUN_00404bc0(int Buffer, DWORD Object, BOOL bLooped);
-uint  __fastcall FUN_00401230(void *param_1, short *slot_data, char flag); // CharSlot_Verify
-void  __fastcall FUN_004017e0(int char_handle);  // CharSlot_SetServer
-short __fastcall FUN_004011d0(void *pThis, short *param_1, int param_2); // CharSlot_FindFirstActive
-void  __fastcall FUN_004016e0(void *pThis, int param_1);                 // CharSlot_DecodePrevState
-uint  __fastcall FUN_00401650(void *pThis, short *param_1);              // CharSlot_FindEquipped
-void  __fastcall FUN_00401730(void *pThis, char param_1);               // CharSlot_Navigate
+// CSQuest navigation/state helpers.  Names are from 5.2; retain IDA addresses.
+uint  __fastcall CSQuest_CheckRequestCondition(void *pThis, short *quest, char last_check); // IDA: FUN_00401230
+void  __fastcall CSQuest_ShowDialogText(int dialog_index);                                  // IDA: FUN_004017E0
+short __fastcall CSQuest_FindQuestContext(void *pThis, short *quest, int context_column);   // IDA: FUN_004011D0
+void  __fastcall CSQuest_GetQuestState(void *pThis, int quest_index);                       // IDA: FUN_004016E0
+uint  __fastcall CSQuest_CheckActCondition(void *pThis, short *quest);                      // IDA: FUN_00401650
+void  __fastcall CSQuest_CheckQuestState(void *pThis, char state);                          // IDA: FUN_00401730
 int   __cdecl    FUN_00482dd0(int a, int b, uint c);                    // ItemSlot_Check
 void  __cdecl Sound_StopBuffer(int);        // IDA: FUN_00404C60
 void  __cdecl Sound_Update3DPositions(void);// IDA: FUN_00404CD0
@@ -81,20 +82,20 @@ void  __cdecl Sound_Update3DPositions(void);// IDA: FUN_00404CD0
 undefined4 __cdecl FUN_00402fd0(void *);
 char  __fastcall FUN_00403150(void *pThis, int edx, char a2, char a3);   // lista de items de la quest (0x403150)
 void  __cdecl FUN_00405540(void* ht, const char* msg, ...);
-void  __cdecl FUN_004055a0(int);
+void  __cdecl CErrorReport_WriteCurrentTime(int verbose); // IDA: FUN_004055A0
 void  __cdecl FUN_004058b0(void);
-void  __cdecl FUN_004065f0(int, int, int, int);
+void  __cdecl Client_GetSystemInfo(int, int, int, int); // IDA: FUN_004065F0; avoid WinAPI GetSystemInfo collision
 void  __cdecl FUN_00406af0(int, int, int, int);
 int   __cdecl FUN_00406b10(int server_idx, int channel);      // PVP flag query
-int   __cdecl FUN_00406b30(BYTE* username); // ValidateUsername — returns '\0' if valid
+bool  __cdecl CheckSpecialText(const BYTE* text); // IDA: FUN_00406B30; 5.2: CheckSpecialText
 void  __cdecl FUN_00406f50(char *);
 void  __cdecl FUN_00406fd0(int, int, int, int);
 
 // ── Network ───────────────────────────────────────────────────────────────────
 void  __cdecl FUN_004080f0(int);           // Widget_BaseRelease — releases core widget struct
 void  __cdecl FUN_004086e0(int, int, int); // Widget_Release — releases linked list + widget base
-void  __cdecl FUN_00409c40(int);           // HashTable tick (1 arg)
-void  __cdecl FUN_00409cf0(int);           // post-render hash tick (1 arg)
+void  __cdecl CPhysicsManager_Move(void* physics_manager);   // IDA: FUN_00409C40
+void  __cdecl CPhysicsManager_Render(void* physics_manager); // IDA: FUN_00409CF0
 // FUN_00409e20 signature — canonical (void*,void*) at line 25 above
 void  __cdecl FUN_0040c690(void*, undefined4, undefined4);  // Object_SetRectFields
 void  __cdecl FUN_0040c7d0(int, int);
@@ -717,7 +718,7 @@ void  __cdecl FUN_00541c10(int frame_size);                       // __chkstk_pr
 inline void* operator_new(size_t n) { return ::operator new(n); }
 #endif
 FILE* __cdecl FUN_0054173f(LPCSTR, const void*);    // fopen-wrapper
-int   __cdecl FUN_00541eab(byte *str);   // IsLeadByte — DBCS lead-byte check
+int   __cdecl FUN_00541eab(const byte *str);   // IsLeadByte — DBCS lead-byte check
 void  __cdecl FUN_00542457(int, int, int, int);
 void  __cdecl FUN_00542762(int, int, int, int);
 void  __cdecl FUN_0054283e(int, int, int, int);
@@ -775,7 +776,7 @@ int   __cdecl TextParser_GetToken(void);                         // FUN_0047A1F0
 void  __cdecl FUN_00479910(int buf, int len);                   // XOR-cipher buffer in-place (key: FC CF AB, 3-byte cycle)
 void  __cdecl FUN_0047ea70(void *dst, void *src);               // Skill_HashTable_SerializeEntry (encode + insert)
 void  __cdecl FUN_0047eaf0(void *entry, void *key);             // Skill_HashTable_FreeEntry (decode + remove)
-void  __cdecl FUN_00401120(int buf, int size);                  // Quest_DecryptBuf (quest record XOR)
+void  __cdecl BuxConvert(void* buffer, int size);               // IDA: FUN_00401120; 5.2: BuxConvert
 uint  __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp); // fwrite-wrapper (locked)
 void  __cdecl FUN_00543264(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
 void  __cdecl FUN_0054150f(FILE* fp);                           // fclose-wrapper
@@ -877,13 +878,13 @@ int   __cdecl FUN_00408940(int *, float);   // cloth: paso de simulación (0x408
 void  __cdecl FUN_004ffcc0(void *node, int cell_ptr);  // Entity_GridUnlink — unlinks node from its doubly-linked list
 
 // ── Sound slot helpers ────────────────────────────────────────────────────────
-HRESULT __cdecl FUN_00404ad0(int channel);  // Sound_FreeChannel — releases DirectSound buffers for channel
+HRESULT __cdecl Sound_ReleaseBuffer(int buffer); // IDA: FUN_00404AD0; 5.2: ReleaseBuffer
 
 // ── File I/O CRT helpers ──────────────────────────────────────────────────────
 void  __cdecl FUN_00543037(int *fp, int offset, int whence);  // CRT fseek wrapper
 int   __cdecl FUN_00542eb4(char *fp);                         // CRT ftell wrapper
 int   __cdecl FUN_00541597(void *dst, int size, int count, int *fp); // CRT fread wrapper
-int   __cdecl FUN_00541eab(unsigned char *str);               // IsLeadByte — already in stubs.cpp
+int   __cdecl FUN_00541eab(const unsigned char *str);         // IsLeadByte — already in stubs.cpp
 
 // ── Terrain helpers ───────────────────────────────────────────────────────────
 void  __cdecl Terrain_Clear(void);  // FUN_004f6c60 (IDA) — resets terrain tile buffers
@@ -1160,9 +1161,9 @@ HRESULT __cdecl CreateStaticBuffer(int Buffer, const char* strFileName, int MaxC
 void    __cdecl LoadWaveFile(int Buffer, const char* strFileName, int MaxChannel, bool Enable);       // 0x00404a10
 void  __stdcall FUN_00405340(void);                                  // CErrorReport: rotate log
 char* __stdcall CErrorReport_FindLogMarker(char* param_1);           // IDA: FUN_00405420
-void  __fastcall FUN_00405620(void* param_1);                        // CErrorReport: system info
-void  __fastcall FUN_004056b0(void* param_1);                        // CErrorReport: OpenGL info
-void  __fastcall FUN_00405760(void* ecx, void* edx, HWND param_1);  // CErrorReport: IME info
+void  __fastcall CErrorReport_WriteSystemInfo(void* report);           // IDA: FUN_00405620
+void  __fastcall CErrorReport_WriteOpenGLInfo(void* report);           // IDA: FUN_004056B0
+void  __fastcall CErrorReport_WriteImeInfo(void* report, void* edx, HWND hwnd); // IDA: FUN_00405760
 void  __cdecl GetOSVersion(DWORD si);                                // detect Windows version
 long long __cdecl Cpu_MeasureClockRate(DWORD param_1);               // IDA: FUN_00405e20
 void  __cdecl GetCPUInfo(DWORD si);                                  // detect CPU vendor+model
@@ -1317,7 +1318,8 @@ void  __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5,
 // FUN_0047f4c0 @ 0x0047F4C0 (IDA)
 void  __cdecl Font_RenderBitmapText(int p1, int p2, float p3, float p4, int p5, int p6, float p7, int p8);
 void  __cdecl RenderTipText_stub(int sx, int sy, char *Text);           // 0x0047F7F0
-int   __stdcall FUN_0047fed0(void);                                      // hotbar skill data (0x0047FED0)
+int   __cdecl FUN_0047fed0(int lvl, const char* name);                 // IDA: sub_47FED0 (0x0047FED0) — gate de envio de susurro
+void  __cdecl RegistWhisperID(int lvl, const char* text);              // IDA: RegistWhisperID (0x004801C0)
 void  __cdecl FUN_00481a40(int param_1, char *param_2, int param_3);    // assign chat text (0x00481A40)
 void  __cdecl AssignChat_stub(char *ID, char *Text, int Flag);          // 0x00482090
 int   __stdcall Item_FindElfWeaponInventorySlot(void);                   // IDA: FUN_004824C0

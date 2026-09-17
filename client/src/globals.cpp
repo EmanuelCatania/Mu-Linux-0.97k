@@ -843,7 +843,8 @@ char     DAT_07e91350[0x44]  = {0};
 DWORD    DAT_07e91388  = 0;
 byte     DAT_07e9138e  = 0;   // UI grid selected column
 byte     DAT_07e9138f  = 0;   // UI grid selected row
-DWORD    DAT_07e91394  = 0;
+short    DAT_07e91394[10] = {0};   // digitos barajados del teclado del PIN
+char     DAT_07eaa1a4  = 0;        // IDA: byte_7EAA1A4 (prefijo del campo enmascarado)
 DWORD    DAT_07e913a8  = 0;
 DWORD    DAT_07e91428  = 0;
 DWORD    DAT_07e91784  = 0;
@@ -855,7 +856,7 @@ DWORD    DAT_07e919b8  = 0;
 // como `&DAT_07e919bc + N*80` — o sea leían fuera de rango. Ver la nota en
 // globals.h.
 char     DAT_07e919bc[0x13C30] = {};
-BYTE     DAT_07ea5298[0x880] = {0};   // see globals.h
+// DAT_07ea5298: alias de Inventory (globals.h)
 DWORD    DAT_07ea5b18  = 0;
 DWORD    DAT_07ea5b1c  = 0;
 DWORD    DAT_07ea5b20  = 0;
@@ -888,14 +889,11 @@ DWORD    DAT_07ea9800  = 0;
 DWORD    g_ItemMoveSourcePool = 0;
 DWORD    g_ItemMoveTargetPool = 0;
 DWORD    DAT_07ea9810  = 0;
-DWORD    DAT_07ea9814  = 0;
-float    _DAT_07ea9814 = 0.0f;
-char     DAT_07ea9815  = 0;
-char     DAT_07ea9816  = 0;
-char     DAT_07ea9817  = 0;
-unsigned int DAT_07ea9818  = 0;  // SecondPassword PIN bytes [4-7] (audit #8)
-DWORD    DAT_07ea981c  = 0;
-short    DAT_07ea981e  = 0;
+// Buffer de texto del teclado del PIN (0x07EA9814): hasta 10 digitos + NUL, y
+// atras la copia del PIN de la primera pasada (dword_7EA981F).  Estaba partido
+// en escalares sueltos, asi que lo que se tipeaba no llegaba a los lectores.
+char     DAT_07ea9814[16] = {0};
+// DAT_07ea9818 / 981c / 981e / 981f: alias dentro de DAT_07ea9814 (globals.h)
 DWORD    DAT_07ea982c  = 0;   // Screen3 panel origin X
 DWORD    DAT_07ea9830  = 0;   // Screen3 panel origin Y
 char     DAT_07ea9834[11] = {};
@@ -1888,7 +1886,8 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // bBuxCode @ 0x00558090 — la clave XOR de 3 bytes de BuxConvert_1 (0x401120),
 // la que descifra Quest.bmd.  Leida del binario: FC CF AB — la misma que usa
 // BuxConvert_0 (DAT_00559bb4), pero es otra copia en otra direccion.
-// 2026-08-21: estaba declarada como UN char = 0, asi que FUN_00401120 hacia
+// 2026-08-21: estaba declarada como UN char = 0, asi que BuxConvert
+// (IDA: FUN_00401120) hacia
 // `(&DAT_00558090)[i % 3]` sobre un cero y dos bytes de globals vecinos: el
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
 // equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.
@@ -2132,11 +2131,11 @@ char    s_Failed_to_connect__00559688[] = "Failed to connect.";
 // Net_PacketSession reset loop both write 0x1100 bytes into it (= 64 slots ×
 // 0x44 stride matching the IDA bound 0x7ea9548 - 0x7ea8448 = 0x1100). Sized
 // properly to avoid heap corruption when in-game inventory grids fill.
-BYTE    DAT_07ea8448[0x1100] = {0};
-BYTE    DAT_07ea5b68[0x1FE0] = {0};   // see globals.h
-BYTE    DAT_07ea9880[0x0880] = {0};
+// DAT_07ea8448: alias de OffsetInventoryItems.Key (globals.h)
+// DAT_07ea5b68: alias del Key del pool del baul (globals.h)
+// DAT_07ea9880: alias de OffsetMixItems.Key (globals.h)
 DWORD   DAT_07eaa0e8   = 0;
-BYTE    DAT_07ea7b88[0x880] = {0};
+// DAT_07ea7b88: alias de OffsetTradeItems (globals.h)
 // 2026-08-25: el comentario decia "MarkColor[16]" y estaba declarado como UN
 // DWORD. `CreateGuildMark` (0x4F0100) escribe los 16 colores y
 // `RenderGuildMark` (0x4F02F0) indexa `MarkColor[p5]` con p5 en 0..15, o sea 60
@@ -2146,9 +2145,9 @@ BYTE    DAT_07ea7b88[0x880] = {0};
 // El hueco hasta DAT_07e11f78 es de 68 bytes, asi que los 16 entran.
 DWORD   DAT_07e11f34[16] = {0};  // MarkColor[16] — paleta de la marca (ARGB)
 BYTE    DAT_07e11f78[0x880] = {0};
-BYTE    DAT_07ea52d0[0x880] = {0};
-BYTE    DAT_07ea7bc0[0x880] = {0};
-BYTE    DAT_07e11fb0[0x880] = {0};
+// DAT_07ea52d0: alias de Inventory.Key (globals.h)
+// DAT_07ea7bc0: alias de OffsetTradeItems.Key (globals.h)
+// DAT_07e11fb0: alias de DAT_07e11f78.Key (globals.h)
 DWORD   DAT_055c9b7c   = 0;
 DWORD   DAT_07eaa164   = 0;
 
@@ -2750,7 +2749,8 @@ DWORD                  Object3DSound[420][4]  = {};
 
 // Tabla de nombres NPC/mob: 512 entradas × 0x36 bytes (ver nota en 0x07CF2000).
 BYTE   MonsterScript[512 * 0x36] = {};
-char   WhisperRegistID[28][4] = {};
+char   WhisperRegistID[11][10] = {};   // IDA: WhisperRegistID (0x07DB9310)
+int    WhisperID_Num = 0;              // IDA: WhisperID_Num (0x07E11DB0)
 
 // DAT_07c608b8 — see globals.h. Defined as macro into g_RenderPool_07c608a8.
 // (The standalone declaration was a single int that backed nothing — MoveBlurs
@@ -2794,7 +2794,7 @@ int    DAT_07e11990       = -1;
 // DAT_07e1198c already defined above (line ~994)
 int    DAT_07e11988       = -1;
 // DAT_07e11984 already defined above (line ~993)
-int    DAT_07e11e18       = 1;
+// DAT_07e11e18: alias de DAT_00559c5c (m_bAutoAttack), ver globals.h
 // DAT_07e11d24 already defined above (line ~873)
 // DAT_07e11d1c already defined above (line ~804)
 BYTE   DAT_00559c6d       = 0xFF;

@@ -1456,12 +1456,12 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         // mover un item EQUIPADO): soltar sobre una casilla de equipo caía en
         // la rama de tirar-al-suelo.
         //
-        // En el binario el drop sobre las casillas de equipo lo consume
-        // `sub_4D6470` (36 KB; maneja el grid 8×8 **y** los 12 recuadros de
-        // equipo), así que `v177 != 0` y nunca se llega acá. Nuestro
-        // `Inventory_DropItemEx` sólo cubre el grid 8×8 y devuelve 0 apenas la
-        // celda calculada da negativa — que es justo lo que pasa arriba del
-        // grid (mouseY < InventoryStartY+200), o sea toda la zona de equipo.
+        // CORRECCION 2026-09-13: `sub_4D6470` NO maneja las casillas de equipo
+        // (su raw sólo llama a sub_4D5D70 y sub_4CD3B0; cubre las 4 grillas).
+        // Devuelve 0 apenas la celda calculada da negativa — que es justo lo
+        // que pasa arriba del grid (mouseY < InventoryStartY+200), o sea toda
+        // la zona de equipo. En el binario ese click lo atiende el hit-test de
+        // equipo del render antes de este dispatcher.
         // Esa región la maneja `InventoryEquipmentHitTest` (HUD_Pass6) durante
         // el render, así que acá salimos SIN consumir el click para que le
         // llegue. Sin esto: mensaje rojo + `RestorePickedItemToSource`, y el

@@ -66,7 +66,7 @@ void __cdecl FUN_004ffcc0(void *param_1_v, int param_2) {
     operator_delete(param_1);
 }
 
-// FUN_00404ad0 @ 0x00404AD0 — Sound_FreeChannel(Buffer)
+// Sound_ReleaseBuffer @ 0x00404AD0 (IDA: FUN_00404AD0; 5.2: ReleaseBuffer).
 // Releases DirectSound buffers for the given slot (all loaded channels),
 // resets slot count and 3D-anchor table.
 //
@@ -82,7 +82,7 @@ void __cdecl FUN_004ffcc0(void *param_1_v, int param_2) {
 //   2. Clamp MaxBufferChannel a [0, 4] — array tiene exactamente 4 canales.
 //   3. Bounds-check Buffer < 420.
 //   4. Enable3DSound check usa el slot Buffer, no v2 (era bug del IDA).
-HRESULT __cdecl FUN_00404ad0(int Buffer)
+HRESULT __cdecl Sound_ReleaseBuffer(int Buffer)
 {
   if (!g_EnableSound) return 0;
   if (Buffer < 0 || Buffer >= 420) return 0;

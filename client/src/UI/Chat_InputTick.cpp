@@ -329,6 +329,11 @@ extern "C" void Chat_SendChatLine(const char* text)
     // vacío ⇒ whisper), que es coherente con la semántica de InputText[1].
     const char* whisperTarget = (const char*)&DAT_07db8810;
     if (whisperTarget[0] != '\0') {
+        // IDA WndProc L2079: `if (sub_47FED0(6, InputText[1]) == 1)`; si falla
+        // salta a LABEL_589 sin mandar nada (tampoco como chat normal).  Con
+        // nivel < 6 solo se le contesta a quien ya te susurro.
+        if (FUN_0047fed0(6, whisperTarget) != 1)
+            return;
         pkt[2] = 0x02;                        // headcode = whisper
         memcpy(pkt + 3, whisperTarget, 10);   // name[10] = DESTINATARIO
         // IDA WndProc (0x41D954, tras el send del susurro): ChatWhisperID =
@@ -903,13 +908,17 @@ void __cdecl Chat_InputTick(void)
                 if (DAT_07e91388 != 0) {
                     return;
                 }
-                if (DAT_07eaa150 == 0) {
+                // IDA L6671-6682: se alterna el BYTE 2 de dword_7EAA150 (el
+                // mismo que lee la tecla R), no el DWORD entero.  El port
+                // escribia `= 2` en el byte 0.
+                BYTE* repairFlag = &((BYTE*)&DAT_07eaa150)[2];
+                if (*repairFlag) {
+                    *repairFlag = 0;
+                    DAT_07eaa134 = 0;       // RepairEnable_0
+                } else {
+                    *repairFlag = 2;
                     DAT_07eaa134 = 1;
-                    DAT_07eaa150 = 2;   // byte 2 of the DWORD
-                    return;
                 }
-                DAT_07eaa134 = 0;
-                DAT_07eaa150 = 0;
                 return;
             }
         } else {
@@ -924,7 +933,15 @@ void __cdecl Chat_InputTick(void)
             if (DAT_07e11a34 == 0) {
                 DAT_07e11a34 = 1;
 
-                if (DAT_07eaa117 != 0 && DAT_07cf1ff4 != nullptr) {
+                // IDA L6902-7068: con la tienda del herrero abierta
+                // (ShopOpened && byte_7EAA132) y sin item en la mano alterna la
+                // reparacion directamente (LABEL_1507); si no, pide tienda
+                // cerrada, inventario abierto y nivel >= 80.  Al port le
+                // faltaban la primera rama y el `!ShopOpened` de la segunda.
+                if (DAT_07eaa118 != 0 && DAT_07eaa132 != 0 && DAT_07e91388 == 0) {
+                    DAT_07eaa134 = (DAT_07eaa134 == 0) ? 1 : 0;
+                    ((BYTE*)&DAT_07eaa150)[2] = (DAT_07eaa134 != 0) ? 2 : 0;
+                } else if (DAT_07eaa118 == 0 && DAT_07eaa117 != 0 && DAT_07cf1ff4 != nullptr) {
                     unsigned short level =
                         *(unsigned short*)((char*)DAT_07cf1ff4 + 0x0e);
 

@@ -158,11 +158,120 @@ extern "C" BYTE OffsetMixItems[];
 // 2026-05-07: B3 refactor — SecondPassword screens (FUN_004e4760 .. FUN_004ec330)
 // moved from stubs.cpp lines 6961-8495 (1535 lines). Full implementation below.
 
-// FUN_004e93a0 @ 0x004E93A0 — SecondPassword_NetHandler(void)
-// Handler de red principal de la segunda contraseña: lee los paquetes entrantes del socket
-// y despacha a los sub-handlers según el opcode. SEH completo + ofuscación por HashTable.
-// STUB: returns 0 (no PIN required). Full impl pending.
-unsigned int __cdecl FUN_004e93a0(void) { return 0; }
+// FUN_004e93a0 @ 0x004E93A0 — SecondPassword_Handler(void)
+// Teclado numerico del PIN del baul.  Lo llama UpdateWindowsMouse (0x4ECB00)
+// antes que el resto de los hit-tests, y lo dibuja sub_4EB070.  El modo lo fija
+// dword_7EAA14C (nuestro DAT_07eaa14c):
+//   1 = abrir el candado para sacar un item (lo arma el drop del baul)
+//   2 = escribir el codigo personal para PONER el candado
+//   3 = escribir el codigo personal para SACAR el candado
+//   4 = escribir el PIN nuevo   ->   5 = repetirlo
+//   6 = cerrar la ventana del NPC
+// Los modos 1, 2 y 3 mandan PMSG_WAREHOUSE_PASSWORD_RECV con type = modo - 1
+// (0 abrir, 1 poner, 2 sacar), igual que IDA (case 2, case 3 y el default).
+//
+// 2026-09-16: era `return 0`, o sea el teclado no respondia a nada; y el render
+// leia variables propias de HUD_Pass3 en vez de estos globales, asi que tampoco
+// se dibujaba.  Por eso el boton del candado no hacia nada.
+//
+// Ruido anti-tamper omitido por policy (la clave XOR y la hash-table que
+// envuelven cada envio).
+extern "C" int __cdecl sub_4E9300_(void);   // hit-test del teclado (0x004E9300)
+
+unsigned int __cdecl FUN_004e93a0(void)
+{
+    if (!DAT_07eaa14c) return 0;
+
+    const int btn = sub_4E9300_();
+    if (IsClickPushed() && btn >= 0) {
+        // Largo del campo: 4 para el PIN, 7 para el codigo personal.  (IDA lee
+        // LODWORD(flt_83A7ACC[0]), que es el arreglo de la camara; ver la misma
+        // desviacion en el render, HUD_Pass3.)
+        const int maxLen = (DAT_07eaa14c == 2 || DAT_07eaa14c == 3 || DAT_07eaa14c == 6) ? 7 : 4;
+        PlayBuffer(25, 0, 0);
+
+        const int len = (int)strlen(DAT_07ea9814);
+        if (btn == 10) {                       // borrar
+            if (len > 0) DAT_07ea9814[len - 1] = '\0';
+        } else if (btn != 11) {
+            if (btn == 12) {                   // cancelar
+                DAT_07eaa14c = 0;
+            } else if (len < maxLen) {         // digito (el teclado esta barajado)
+                char digit[8];
+                wsprintfA(digit, "%d", (int)DAT_07e91394[btn]);
+                strcat(DAT_07ea9814, digit);
+            }
+        } else if (len == maxLen || (maxLen != 4 && len > 0)) {   // aceptar
+            // DESVIACION: IDA exige `len == v2`, pero v2 sale de
+            // LODWORD(flt_83A7ACC[0]) — el arreglo de la camara — asi que no hay
+            // un largo fiel que copiar.  Para el codigo personal aceptamos lo
+            // que se haya tipeado (el server compara 7 caracteres, y con
+            // PersonalCodeCheck=0 ni los mira).  El PIN sigue pidiendo 4.
+            // IDA L211-217: un PIN de 4 digitos todos iguales no se acepta.
+            if (maxLen == 4 && DAT_07ea9814[0] == DAT_07ea9814[1]
+                            && DAT_07ea9814[1] == DAT_07ea9814[2]
+                            && DAT_07ea9814[2] == DAT_07ea9814[3]) {
+                memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
+                SetErrorMessage(136);
+            } else {
+                const int mode = (int)DAT_07eaa14c;
+                DAT_07eaa14c = 0;
+
+                if (mode == 4) {
+                    // Guarda el PIN y pide repetirlo con el teclado rebarajado.
+                    const unsigned int typed = *(unsigned int*)&DAT_07ea9814[0];
+                    FUN_004e9250(5);                  // baraja + DAT_07eaa14c = 5
+                    memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
+                    DAT_07ea981f = typed;
+                } else if (mode == 5) {
+                    if (*(unsigned int*)&DAT_07ea9814[0] == DAT_07ea981f) {
+                        const unsigned short pw = (unsigned short)atoi(DAT_07ea9814);
+                        memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
+                        *(unsigned short*)&DAT_07eaa150 = pw;   // conserva el BYTE 2 (reparar)
+                        DAT_07eaa14c = 2;                       // ahora el codigo personal
+                    } else {
+                        SetErrorMessage(137);                   // no coinciden
+                    }
+                } else if (mode == 6) {
+                    const BYTE closePkt[3] = { 0xC1, 0x03, 0x31 };
+                    Net_SendC1Packet(closePkt, sizeof(closePkt));
+                } else {
+                    // Modos 1, 2 y 3: PMSG_WAREHOUSE_PASSWORD_RECV
+                    // [C1][10][83][type][WORD password][PersonalCode:10]
+                    BYTE pkt[16];
+                    memset(pkt, 0, sizeof(pkt));
+                    pkt[0] = 0xC1;
+                    pkt[1] = 16;
+                    pkt[2] = 0x83;
+                    pkt[3] = (BYTE)(mode - 1);
+                    unsigned short pw = 0;
+                    if (mode == 1) {
+                        // Abrir: el PIN se acaba de tipear y el codigo personal
+                        // sale del campo de texto.
+                        pw = (unsigned short)atoi(DAT_07ea9814);
+                        memcpy(pkt + 6, (const char*)DAT_07db8710, 10);
+                    } else {
+                        // Poner (2): la contrasena la dejo el modo 5.
+                        // Sacar (3): el server no la mira.
+                        if (mode == 2) pw = *(unsigned short*)&DAT_07eaa150;
+                        memcpy(pkt + 6, DAT_07ea9814, 10);
+                    }
+                    memcpy(pkt + 4, &pw, 2);
+                    Net_SendC1Packet(pkt, sizeof(pkt));
+                    memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
+                }
+            }
+        }
+    }
+
+    // IDA LABEL_203: byte_7EAA179 marca el boton apretado (para el bitmap
+    // "pressed" del render) y el click se consume aca.
+    if (IsClickPushed()) DAT_07eaa179 = 1;
+    if (DAT_083a413c)    DAT_07eaa179 = 0;
+    DAT_083a4124 = 0;
+    DAT_083a42c4 = 0;
+    return 1;
+}
 // Inventory_DropDispatch @ 0x004DF410 — Inventory drop dispatcher.
 // 2026-05-08: port FIEL completo movido a `Item/Item_ClickHandler.cpp`
 // (~150 líneas). Antes era stub vacío bloqueando toda la cadena drag-drop.
@@ -1340,11 +1449,8 @@ void __cdecl FUN_004eb5d0(void) {
                 pArr[i] = (short)(pArr[i] ^ pArr[j]);
             }
         }
-        _DAT_07ea9814 = 0.0f;
-        *(DWORD*)&DAT_07ea9818 = 0;  // clear 4 bytes from DAT_07ea9818
-        DAT_07eaa14c = 4u - (DAT_00559f5f != '\0' ? 1u : 0u);
-        DAT_07ea981c = 0;
-        DAT_07ea981e = 0;
+        memset(DAT_07ea9814, 0, 11);   // el texto tipeado (10 + NUL)
+        DAT_07eaa14c = 4u - (DAT_00559f5f != 0 ? 1u : 0u);
         break;
     }
     case 3:
