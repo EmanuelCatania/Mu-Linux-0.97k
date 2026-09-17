@@ -1568,34 +1568,11 @@ static void Recv_LoginResult(const BYTE* Msg)
 //   4. (TODO) ChangeCharacterExt(slot, &CharSet[1]) — visualiza equipment
 //   5. DAT_05826cb0 = 51 (entra a estado char-select activo)
 // ---------------------------------------------------------------------------
-// 2026-05-05: cache F3/00 packet para replay desde JoinChar (MuEmu no
-// re-envía char-list cuando recibe F1/02/01 — cierra socket directamente).
-extern "C" {
-    BYTE g_CharListCache[256] = {0};
-    int  g_CharListCacheLen   = 0;
-}
-
 static void Recv_CharList(const BYTE* Msg, int Size)
 {
     const int CHAR_STRIDE  = 0x394;
     const int CHAR_SLOT_AT = 0x2D2;       // entity+0x2D2 = "selected" flag
     const int MAX_PREVIEW  = 5;            // slots renderizados en char-select
-
-    // 2026-05-05: cache para replay en JoinChar
-    {
-        // 2026-08-25 (issue #13): esto releia `Msg[1]`, el byte de tamaño del
-        // frame — que para un paquete re-enmarcado desde C3/C4 de mas de 255
-        // bytes esta truncado. Ahora usa el `Size` real que calcula el
-        // dispatcher. El clamp es contra el tamaño del cache, no contra 255.
-        if (Size > 0 && Size <= (int)sizeof(g_CharListCache)) {
-            memcpy(g_CharListCache, Msg, Size);
-            g_CharListCacheLen = Size;
-        } else if (Size > (int)sizeof(g_CharListCache)) {
-            NetLog("NET: F3/00 char-list %d bytes > cache %d — no se cachea",
-                   Size, (int)sizeof(g_CharListCache));
-            g_CharListCacheLen = 0;
-        }
-    }
 
     // 1) Limpiar flags de los 5 slots previos
     for (int i = 0; i < MAX_PREVIEW; ++i) {
@@ -1666,17 +1643,6 @@ static void Recv_CharList(const BYTE* Msg, int Size)
     DAT_05826cb0 = 51;
 }
 
-// 2026-05-05: wrapper público para que UI_InGameMenu lo llame al volver
-// desde JoinChar (replay de la char-list desde el cache).
-extern "C" void Recv_CharListReplay(const BYTE* Msg)
-{
-    // El replay viene del cache, cuyo largo real guardamos aparte (el byte
-    // `Msg[1]` puede estar truncado — ver el fix del issue #13).
-    const int len = (Msg == g_CharListCache && g_CharListCacheLen > 0)
-                        ? g_CharListCacheLen
-                        : (int)Msg[1];
-    Recv_CharList(Msg, len);
-}
 
 // ---------------------------------------------------------------------------
 // F3/01 — ReceiveCreateCharacter  (@ 0x00424390)

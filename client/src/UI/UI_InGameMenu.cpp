@@ -28,12 +28,6 @@ extern "C" {
     // guild relation markers.  It is deliberately not the legacy Trade reset
     // that still carries the same historical label elsewhere in the port.
     void GuildWar_ResetClientState(void);
-    // Char-list cache populated by Recv_CharList (Net_Process.cpp), replayed
-    // here on JoinChar transition since server's F3/00 response post-JoinChar
-    // is not consistently delivered.
-    extern BYTE g_CharListCache[256];
-    extern int  g_CharListCacheLen;
-    void Recv_CharListReplay(const BYTE* Msg);
     // 0x81 PMSG_WAREHOUSE_MONEY_RECV (stubs_render_helpers.cpp)
     void Net_SendWarehouseMoney(BYTE type, DWORD money);
 }
