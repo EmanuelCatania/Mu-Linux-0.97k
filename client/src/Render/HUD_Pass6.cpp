@@ -321,127 +321,6 @@ char __cdecl sub_4F5CE0_(void)
 // HUD_Pass1's stub took (int,int,int,int) — we redirect from there.
 extern "C" void FUN_004f5ce0_realbody(void) { sub_4F5CE0_(); }
 
-static BYTE InventoryPoolToMoveFlag_UI(const BYTE* poolBase)
-{
-    if (poolBase == &OffsetTradeItems[0] || poolBase == &Inventory[0]) {
-        return 1;
-    }
-    if (poolBase == &OffsetWarehouseItems[0]) {
-        return 2;
-    }
-    if (poolBase == &OffsetMixItems[0]) {
-        return 3;
-    }
-    return 0;
-}
-
-static void InventoryEquipmentHitTest(void)
-{
-    if (!InventoryOpened || !CharacterMachine) return;
-    if ((int)EnableUse > 0) return;
-    if (DAT_07eaa165 != 0) return;
-
-    struct EquipSlotRect {
-        int slotIdx;
-        int byteOff;
-        int relX, relY, w, h;
-        bool skipDL;
-    };
-
-    static const EquipSlotRect kSlots[] = {
-        {8, 1080,  15,  46, 40, 40, false},
-        {7, 1012, 115,  46, 60, 40, false},
-        {2,  672,  75,  46, 40, 40, true },
-        {3,  740,  75,  89, 40, 60, false},
-        {4,  808,  75, 152, 40, 40, false},
-        {0,  536,  15,  89, 40, 60, false},
-        {1,  604, 134,  89, 40, 60, false},
-        {5,  876,  15, 152, 40, 40, false},
-        {6,  944, 134, 152, 40, 40, false},
-        {9, 1148,  55,  89, 20, 20, false},
-        {10,1216,  55, 152, 20, 20, false},
-        {11,1284, 115, 152, 20, 20, false},
-    };
-
-    BYTE* cm = (BYTE*)CharacterMachine;
-    int cls = CharacterAttribute ? ((int)(unsigned char)*(BYTE*)((BYTE*)CharacterAttribute + 11) & 7) : 0;
-
-    for (const auto& s : kSlots) {
-        if (s.skipDL && cls == 3) continue;
-
-        int x0 = InventoryStartX + s.relX;
-        int y0 = InventoryStartY + s.relY;
-        if ((int)MouseX < x0 || (int)MouseX >= x0 + s.w ||
-            (int)MouseY < y0 || (int)MouseY >= y0 + s.h) {
-            continue;
-        }
-
-        ITEM* slot = (ITEM*)(cm + s.byteOff);
-        short type = slot->Type;
-        if (dword_7E91388 > 0) {
-            if (DAT_083a4124 == 0 && DAT_083a42eb == 0) return;
-            DAT_083a4124 = 0;
-            DAT_083a42eb = 0;
-            DAT_07e11e78 = (DWORD)s.slotIdx;
-            g_ItemMoveSourcePool = DAT_07ea9800 ? DAT_07ea9800 : (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-            g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-            DAT_07eaa165 = 1;
-            SendRequestEquipmentItem_stub(
-                InventoryPoolToMoveFlag_UI((const BYTE*)(uintptr_t)DAT_07ea9800),
-                (int)DAT_07ea5b18,
-                (ITEM*)DAT_07e91350,
-                0,
-                s.slotIdx);
-            return;
-        }
-
-        if (type == -1) return;
-
-        DAT_07eaa160 = (DWORD)(uintptr_t)slot;
-        DAT_07ea9844 = 0;
-        DAT_07ea840c = (DWORD)(x0 + s.w / 2);
-        DAT_07ea8408 = (DWORD)y0;
-
-        // IDA sub_4CDC70 L384-400: con el boton apretado, antes del pickup.
-        //   if (Teleport) salir;
-        //   if (RepairEnable_0) { tipo no reparable -> salir;
-        //                         si no, C1:05:34:<slot>:<RepairEnable> }
-        // 2026-09-12: faltaba entero; la reparacion con el martillo andaba en
-        // el grid del inventario pero en las casillas de equipo levantaba el item.
-        if (DAT_083a4124 != 0 && DAT_05826d14 != 0) return;
-        if (DAT_083a4124 != 0 && DAT_07eaa134 != 0) {
-            const bool notRepairable =
-                (type >= 416 && type <= 419) || type == 426 || type == 135 ||
-                type == 143 || type >= 448 || (type >= 391 && type <= 403) ||
-                (type >= 430 && type <= 435);
-            if (notRepairable) return;
-            DAT_083a4124 = 0;
-            extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
-            BYTE pkt[5] = { 0xC1, 0x05, 0x34, (BYTE)s.slotIdx, (BYTE)DAT_07eaa138 };
-            Net_SendSmallPacket(pkt, sizeof(pkt));
-            return;
-        }
-
-        if (DAT_083a4124 != 0) {
-            DAT_083a4124 = 0;
-            DAT_07ea9800 = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-            memcpy(DAT_07e91350, slot, sizeof(ITEM));
-            DAT_07ea5b18 = (DWORD)s.slotIdx;
-            ItemPickedPos = (int)s.slotIdx;   // era DAT_07ea9844 (= bSell) — ver globals.h
-            pPickedItem = (int)(short)slot->Type;
-            Level = *(int*)((BYTE*)slot + 4);
-            byte_7E9136B = *(BYTE*)((BYTE*)slot + 27);
-            g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-            g_ItemMoveTargetPool = 0;
-            UI_Main(s.slotIdx, (short*)OffsetInventoryItems, 8u);
-            dword_7E91388 = 1;
-            DAT_07eaa160 = 0;
-            FUN_00404bc0(29, 0, 0);
-        }
-        return;
-    }
-}
-
 // =============================================================================
 // RenderServerDivision — sub_4F5570.  Server-division dialog: title text +
 // accept checkbox + 2 buttons (cancel / confirm).
@@ -507,7 +386,8 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     InventoryStartY = 0;
     RenderInventoryInterface(sx, 0, 0);
     RenderEquipmentBox_stub();
-    InventoryEquipmentHitTest();
+    // Los casilleros de equipo los procesa sub_4CDC70 (FUN_004cdc70) desde
+    // sub_4E6550, en el tick; no aca en el render.
 
     // ── In-world click handler hook (2026-05-08) ────────────────────────────
     // FUN_004d23b0 = grid hit-test + pickup + right-click use dispatcher.

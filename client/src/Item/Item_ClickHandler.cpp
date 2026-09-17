@@ -1462,8 +1462,8 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         // que pasa arriba del grid (mouseY < InventoryStartY+200), o sea toda
         // la zona de equipo. En el binario ese click lo atiende el hit-test de
         // equipo del render antes de este dispatcher.
-        // Esa región la maneja `InventoryEquipmentHitTest` (HUD_Pass6) durante
-        // el render, así que acá salimos SIN consumir el click para que le
+        // Esa región la maneja sub_4CDC70 (FUN_004cdc70, desde sub_4E6550),
+        // así que acá salimos SIN consumir el click para que le
         // llegue. Sin esto: mensaje rojo + `RestorePickedItemToSource`, y el
         // item nunca se equipaba/desequipaba.
         if (!dropMain && !dropTrade && !dropWH && !dropMix &&
