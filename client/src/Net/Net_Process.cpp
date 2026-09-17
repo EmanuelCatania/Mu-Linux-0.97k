@@ -2772,6 +2772,77 @@ static void Recv_BackToConnecting(void)
     DAT_083a7c14 = 1;
 }
 
+// IDA: ReceiveTradeExit (0x004337F0), handler 0x3D.
+// Si llega con un movimiento de equipo pendiente (EquipmentItem) se guardan
+// los primeros 4 bytes y lo reaplica ReceiveEquipmentItem (0x42F9A0) al
+// recibir la respuesta del 0x24.
+extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool);
+static bool s_bPacketAfterEquipmentItem = false;   // g_bPacketAfter_EquipmentItem
+static BYTE s_byPacketAfterEquipmentItem[4];        // g_byPacketAfter_EquipmentItem
+static void ReceiveTradeExit97k(const BYTE* Msg, int Size)
+{
+    if (DAT_07eaa165) {                              // EquipmentItem
+        if (!s_bPacketAfterEquipmentItem) {
+            s_bPacketAfterEquipmentItem = true;
+            memcpy(s_byPacketAfterEquipmentItem, Msg, 4);
+        }
+        return;
+    }
+    NetLog("NET:  -> 0x3D TradeExit state=%d size=%d", Msg[3], Size);
+    BYTE state = Msg[3];
+
+    if (state == 0) {
+        UIChatLogWindow_AddText(nullptr, GlobalText[494], 2);   // IDA: 494
+        DAT_07eaa0e8 = 0;
+
+        // IDA L29-35: cada item del trade del otro jugador (Type y Key en +0x38)
+        // pasa por sub_4CC530, que recuerda los valiosos.  El port llamaba UI_Main
+        // y leia la Key en +4 (Level).
+        for (int slot = 0; slot < 32; ++slot) {
+            BYTE* item = Inventory + slot * 0x44;
+            if (*(short*)item != (short)0xFFFF && *(DWORD*)(item + 0x38) != 0)
+                Item_TradeHistoryAdd(slot, Inventory);
+        }
+    } else if (state == 2) {
+        UIChatLogWindow_AddText(nullptr, GlobalText[495], 2);
+    } else if (state == 3) {
+        UIChatLogWindow_AddText(nullptr, GlobalText[496], 2);
+        SetErrorMessage(0);
+    }
+    // AUDITORIA 2026-07-20: aca habia un `else if (state == 4)` con
+    // GlobalText[2108] — indice FUERA del Text.bmd del 0.97k (1000
+    // filas).  ReceiveTradeExit (IDA 0x4337F0) solo maneja los
+    // estados 0, 2 y 3; el 4 es un graft de version posterior.
+
+    DAT_07eaa11b = 0;
+    DAT_05826d30 = 0;
+    DAT_07e91388 = 0;
+    DAT_07eaa165 = 0;
+    DAT_07eaa0f0 = 0;
+    DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
+    DAT_07eaa0fc = 0;
+    DAT_07eaa0fd = 0;
+    TradeYourWait = 0;
+    TradeMyWait = 0;
+    TradeRemoteGuildKey = 0;
+    TradeRemoteLevel = 0;
+    DAT_07ea9834[0] = '\0';
+    EnableUse = 0;
+    g_ItemMoveSourcePool = 0;
+    g_ItemMoveTargetPool = 0;
+    FUN_00423db0();
+    DAT_07eaa117 = 0;   // InventoryOpened (IDA ReceiveTradeExit: cierra el inventario)
+    CloseInventoryRelatedWindows();
+
+    if (DAT_083a7c24 == 116) {
+        SetErrorMessage(0);
+        Input_ClearState(0);
+        _InputTextMaxArr[0] = 42;
+        DAT_00559c88 = 2;
+        InputEnable = 0;
+    }
+}
+
 // ============================================================================
 // Dispatcher principal
 // ============================================================================
@@ -5030,6 +5101,11 @@ void Net_ProcessPacket(void)
                     ItemMove_ClearPickedState();
                     PlayBuffer(29, 0, 0);
                 }
+                // IDA ReceiveEquipmentItem L110-114: reaplicar el 0x3D postergado.
+                if (s_bPacketAfterEquipmentItem) {
+                    ReceiveTradeExit97k(s_byPacketAfterEquipmentItem, 4);
+                    s_bPacketAfterEquipmentItem = false;
+                }
                 SeedQuickPotionTypesFromInventory();
                 break;
             }
@@ -5562,61 +5638,9 @@ void Net_ProcessPacket(void)
                 break;
             }
 
-            case 0x3D: {
-                NetLog("NET:  -> 0x3D TradeExit state=%d size=%d", Msg[3], Size);
-                BYTE state = Msg[3];
-
-                if (state == 0) {
-                    UIChatLogWindow_AddText(nullptr, GlobalText[494], 2);   // IDA: 494
-                    DAT_07eaa0e8 = 0;
-
-                    for (int slot = 0; slot < 32; ++slot) {
-                        BYTE* item = Inventory + slot * 0x44;
-                        DWORD key = *(DWORD*)(item + 4);
-                        if (*(short*)item != (short)0xFFFF && key != 0) {
-                            UI_Main(slot, (short*)Inventory, 8u);
-                        }
-                    }
-                } else if (state == 2) {
-                    UIChatLogWindow_AddText(nullptr, GlobalText[495], 2);
-                } else if (state == 3) {
-                    UIChatLogWindow_AddText(nullptr, GlobalText[496], 2);
-                    SetErrorMessage(0);
-                }
-                // AUDITORIA 2026-07-20: aca habia un `else if (state == 4)` con
-                // GlobalText[2108] — indice FUERA del Text.bmd del 0.97k (1000
-                // filas).  ReceiveTradeExit (IDA 0x4337F0) solo maneja los
-                // estados 0, 2 y 3; el 4 es un graft de version posterior.
-
-                DAT_07eaa11b = 0;
-                DAT_05826d30 = 0;
-                DAT_07e91388 = 0;
-                DAT_07eaa165 = 0;
-                DAT_07eaa0f0 = 0;
-                DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
-                DAT_07eaa0fc = 0;
-                DAT_07eaa0fd = 0;
-                TradeYourWait = 0;
-                TradeMyWait = 0;
-                TradeRemoteGuildKey = 0;
-                TradeRemoteLevel = 0;
-                DAT_07ea9834[0] = '\0';
-                EnableUse = 0;
-                g_ItemMoveSourcePool = 0;
-                g_ItemMoveTargetPool = 0;
-                FUN_00423db0();
-                DAT_07eaa117 = 0;   // InventoryOpened (IDA ReceiveTradeExit: cierra el inventario)
-                CloseInventoryRelatedWindows();
-
-                if (DAT_083a7c24 == 116) {
-                    SetErrorMessage(0);
-                    Input_ClearState(0);
-                    _InputTextMaxArr[0] = 42;
-                    DAT_00559c88 = 2;
-                    InputEnable = 0;
-                }
+            case 0x3D:
+                ReceiveTradeExit97k(Msg, Size);
                 break;
-            }
 
             case 0x44: {
                 // Party HP bars (ProtocolCore @ 004389A0): entries start at
