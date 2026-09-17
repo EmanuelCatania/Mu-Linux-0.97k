@@ -1159,27 +1159,6 @@ extern "C" void GuildWar_ResetClientState()
     GuildWar_RefreshEntityRelations();
 }
 
-// Inserta la rama demostrada de IDA SetActionClass (FUN_00497870). El auxiliar
-// completo aún no tiene un port enlazado, pero Guerra de guild sólo usa este
-// contrato local fijo de acción/ACK.
-static void GuildWar_SetHeroAction(int action, BYTE actionType)
-{
-    BYTE* hero = (BYTE*)(uintptr_t)Hero;
-    if (!hero || hero[261] == 0 || hero[261] > 12) return;
-
-    int resolvedAction = action;
-    if ((hero[444] & 7) == 2 && (action < 123 || action > 128))
-        ++resolvedAction;
-    FUN_0043e820((int)(uintptr_t)hero, resolvedAction);
-
-    const BYTE ack[5] = {
-        0xC1, 0x05, 0x18,
-        (BYTE)((int)((*(float*)(hero + 36) + 22.5f) / 45.0f + 1.0f) & 7),
-        actionType
-    };
-    Net_SendC1Packet(ack, sizeof(ack));
-}
-
 static void ReceiveDeclareWar97k(const BYTE* packet, int size)
 {
     if (size < 12) return;
@@ -1207,18 +1186,21 @@ static void ReceiveGuildBeginWar97k(const BYTE* packet, int size)
     if (size < 13) return;
     EnableGuildWar = 1;
     GuildWar_CopyOpponentName(packet);
-    EnableSoccer = packet[11] != 0;
+    const bool soccer = packet[11] != 0;
+    if (soccer) EnableSoccer = 1;   // IDA no lo apaga en la otra rama
     HeroSoccerTeam = packet[12];
     GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
 
     char notice[300] = {};
     _snprintf_s(notice, sizeof(notice), _TRUNCATE,
-                GlobalText[EnableSoccer ? 533 : 526], GuildWarName);
+                GlobalText[soccer ? 533 : 526], GuildWarName);
     UI_AddNotice(notice, 1);
     GuildWar_RefreshEntityRelations();
 
-    // IDA: SetActionClass(Hero, Hero, 128, 128).
-    GuildWar_SetHeroAction(128, 128);
+    // IDA: SetActionClass(Hero, Hero, 128, 128) y además manda el 0x18 por su
+    // cuenta (doble envío, igual que el binario).
+    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, 128, 128);
+    SendRequestAction(128);
 }
 
 static void ReceiveGuildEndWar97k(const BYTE* packet, int size)
@@ -1235,10 +1217,13 @@ static void ReceiveGuildEndWar97k(const BYTE* packet, int size)
     EnableSoccer = 0;
     GuildWar_ResetClientState();
 
-    // IDA asigna los resultados 1, 2 y 4 al par de acción de victoria (113, 121);
-    // los demás resultados demostrados usan el par normal de cierre (107, 117).
+    // IDA: resultados 1, 2 y 4 -> Win = 2 -> (113, 121); 0, 3 y 5 -> Win = 0 ->
+    // (107, 117); el 6 (Win = 1) no anima ni manda nada. Cada rama llama a
+    // SetActionClass y ademas manda el 0x18 por su cuenta (doble envio fiel).
+    if (result == 6) return;
     const bool victoryAction = result == 1 || result == 2 || result == 4;
-    GuildWar_SetHeroAction(victoryAction ? 113 : 107, victoryAction ? 121 : 117);
+    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, victoryAction ? 113 : 107, victoryAction ? 121 : 117);
+    SendRequestAction(victoryAction ? 121 : 117);
 }
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
