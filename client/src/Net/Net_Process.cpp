@@ -3327,7 +3327,17 @@ void Net_ProcessPacket(void)
                         Recv_NewCharacterCalc(Msg);
                         break;
                     }
-                    case 0xE2: case 0xE3: case 0xE4: case 0xE5: {
+                    case 0xE3: {  // lista de apilado (DLL CItemStack)
+                        extern void Recv_ItemStackList(const BYTE* Msg, int Size);
+                        Recv_ItemStackList((const BYTE*)Msg, Size);
+                        break;
+                    }
+                    case 0xE4: {  // precios fijos (DLL CItemValue)
+                        extern void Recv_ItemValueList(const BYTE* Msg, int Size);
+                        Recv_ItemValueList((const BYTE*)Msg, Size);
+                        break;
+                    }
+                    case 0xE2: case 0xE5: {
                         // F3/E3 (126B) quest, F3/E4 (854B) skills, F3/E5 (1111B) master tree.
                         // Pendientes — dump-only por ahora (estructuras Protocol.h aún no porteadas).
                         char b[400];

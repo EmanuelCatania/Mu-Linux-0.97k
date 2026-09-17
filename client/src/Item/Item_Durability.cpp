@@ -110,7 +110,17 @@ unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int L
 // Cases 461/462/464/470/430/431/419/432-434/465-467/469/457/468 = jewels y sets.
 // Constantes derivadas del binario original (`&unk_xxxxxx` en IDA = direcciones
 // usadas como valores enteros — comprobado: 0x895440 = 9_000_000, etc.).
+int __cdecl ItemValue_MuEmu(void* item, int goldType);
+unsigned int __cdecl ConvertRepairGold_MuEmu(int Gold, int Durability, int MaxDurability, short Type, char* Text);
+
+// Con el server MuEmu los precios salen de su formula (ver Item/Item_ServerValue.cpp).
 int __cdecl Item_CalculateValue(void* item_v, int a2)
+{
+    return ItemValue_MuEmu(item_v, a2);
+}
+
+// Port de IDA, sin uso mientras el server sea MuEmu.
+int __cdecl ItemValue_Vanilla(void* item_v, int a2)
 {
     // 2026-05-08: defensive — same problem as CalcMaxDurability/RenderItemInfo:
     // si DAT_07d78068 está en 0 (table base no inicializada), el cómputo
@@ -244,8 +254,16 @@ int __cdecl Item_CalculateValue(void* item_v, int a2)
             goto LABEL_94;
         }
 
-        // Otherwise fall through to shield/armor pricing — but Ghidra's IDA
-        // has nothing else here. Default to LABEL_148 (final scale).
+        // IDA L437-452: anillos, colgantes, alas >390 y los grupos 13/15.
+        v5 = v11 * v11 * v11 + 100;
+        v34 = v5;
+        if (v26) {
+            for (int v24 = 0; v24 < v26; v24++) {
+                if (*(unsigned char*)(a1 + v24 + 37) == 65)
+                    v5 *= *(unsigned char*)(v24 + a1 + 45) + 1;
+            }
+            goto LABEL_147;
+        }
         goto LABEL_148;
 
 LABEL_94:
@@ -395,6 +413,12 @@ LABEL_148:
 // (1 - dur/maxDur) + 1, con bonus 1.4× si rota, +5% si RepairEnable, redondeo
 // a múltiplos de 100/10, y formato "1,234,567" en Text. Devuelve gold final.
 unsigned int __cdecl Item_CalculateRepairCost(int Gold, int Durability, int MaxDurability, short Type, char* Text)
+{
+    return ConvertRepairGold_MuEmu(Gold, Durability, MaxDurability, Type, Text);
+}
+
+// Port de IDA, sin uso mientras el server sea MuEmu.
+unsigned int __cdecl ConvertRepairGold_Vanilla(int Gold, int Durability, int MaxDurability, short Type, char* Text)
 {
     (void)Type;
     if (!Text) {
