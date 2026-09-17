@@ -100,7 +100,10 @@ void WeatherParticles_Update(void)
             {
                 // Snow: rotated falling velocity via euler matrix
                 pfVar10[-10] = 1.42932e-43f;
-                if ((int)pfVar10 < 0x7c62e9c) {
+                // IDA: `if ((int)i >= (int)&unk_7C62E9C)` = slot 300 del pool
+                // (0x7C62E9C - 0x7C5AB5C = 300 * 0x70).  Con 200 hojas nunca se
+                // llega, pero la direccion absoluta comparaba contra otra memoria.
+                if (((char*)pfVar10 - (char*)&DAT_07c5ab5c) / 0x70 < 300) {
                     pfVar10[-7] = (float)(_rand() % 0x640 - 800) + *(float *)(DAT_07abf5d8 + 0x10);
                     pfVar10[-6] = (float)(_rand() % 0x578 - 500) + *(float *)(DAT_07abf5d8 + 0x14);
                 } else {
