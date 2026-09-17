@@ -97,7 +97,7 @@ void Game_CharSelectTick(void)
             FUN_0040e590((int)DAT_055c9ff0);
         }
         FUN_00405540(&DAT_055c9bf0, "> Main Scene init success");
-        FUN_004055a0(1);
+        CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
     }
 
     // ── WAIT FOR SERVER ACK ───────────────────────────────────────────────────

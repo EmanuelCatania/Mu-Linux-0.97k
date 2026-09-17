@@ -13,7 +13,7 @@ extern "C" void DbgLogPublic(const char* msg);
 
 // FUN_00423920 — Net_Connect_Server
 // Connects to server at param_1 (IP string) on port param_2.
-// On failure: logs error, calls FUN_004055a0(1) to abort, plays music 0x71.
+// On failure: logs error, calls CErrorReport_WriteCurrentTime(1) (IDA: FUN_004055A0), plays music 0x71.
 // On success: bootstraps the send/recv hash table entries for the session key
 // bytes at DAT_05826ceb/cec (encrypt + decrypt key registration via
 // FUN_00404330/FUN_00423710).
@@ -58,7 +58,7 @@ void __cdecl Net_ConnectServer(const char *param_1,unsigned int param_2)
   if (iVar2 == 0) {
     DbgLogPublic("NET: Net_ConnectServer CONNECT FAILED → abort/SetErrorMessage(0x71)");
     FUN_00405540(&DAT_055c9bf0,s_Failed_to_connect__00559688);
-    FUN_004055a0(1);
+    CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
     FUN_005142d0(0x71);
     // Original-client behaviour: the server can't be reached (no listener,
     // wrong IP/port, firewall) → pop a modal dialog and terminate.  Previous

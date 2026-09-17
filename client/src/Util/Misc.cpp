@@ -2,9 +2,9 @@
 // Miscellaneous utility and validation functions.
 //
 // FUN_00406b10 @ 0x00406b10 — Packet_IsValidSockType
-// FUN_00406b30 @ 0x00406b30 — String_HasInvalidChar
-// FUN_00409c40 @ 0x00409c40 — Net_RandomizeKey
-// FUN_00409cf0 @ 0x00409cf0 — Net_StopAllChannels
+// CheckSpecialText @ 0x00406B30 (IDA: FUN_00406B30; name from 5.2).
+// CPhysicsManager::Move @ 0x00409C40 (IDA: FUN_00409C40).
+// CPhysicsManager::Render @ 0x00409CF0 (IDA: FUN_00409CF0).
 // FUN_0040c690 @ 0x0040c690 — Object_SetRectFields
 // FUN_0040e590 @ 0x0040e590 — Object_ClearMembers
 // FUN_00402fd0 @ 0x00402fd0 — Packet_ParseReceived
@@ -25,21 +25,19 @@ int __cdecl FUN_00406b10(int param_1,int param_2)
 }
 
 
-// FUN_00406b30 — String_HasInvalidChar
+// CheckSpecialText — returns true when the text contains a disallowed character.
 // Scans string param_1 for characters invalid in player names/chat.
 // Returns 1 (non-zero low byte) if an invalid character is found,
 // 0 (in the high byte return) if all characters are valid.
 // Also handles DBCS (double-byte) character sequences.
-int __cdecl FUN_00406b30(byte *param_1)
+bool __cdecl CheckSpecialText(const byte *param_1)
 {
   byte bVar1;
   byte bVar2;
   int  cVar3;
-  byte *pbVar5;
   int iVar4;
 
   bVar1 = *param_1;
-  pbVar5 = param_1;
   do {
     if (bVar1 == 0) {
       return 0; // valid: no invalid chars found
@@ -68,19 +66,19 @@ LAB_00406bbe:
       param_1 = param_1 + 1;
     }
     bVar1 = param_1[1];
-    pbVar5 = (byte *)((uint)iVar4 & 0xffffff00 | bVar1);
     param_1 = param_1 + 1;
   } while( true );
 }
 
 
-// FUN_00409c40 — Net_RandomizeKey
+// CPhysicsManager::Move — advances every registered physics object.
 // Updates the floating-point random key _DAT_00590af0 with a random delta
 // in ±0.1 range, clamped to [-0.2, 1.0].
 // Then iterates a linked list from *(param_1+8)+8, calling FUN_00408940
 // on each node until sentinel *(param_1+0xc) is reached.
-void __cdecl FUN_00409c40(int param_1)
+void __cdecl CPhysicsManager_Move(void* physics_manager)
 {
+  const int param_1 = (int)(uintptr_t)physics_manager;
   undefined4 *puVar1;
   int iVar2;
 
@@ -106,11 +104,10 @@ void __cdecl FUN_00409c40(int param_1)
 }
 
 
-// FUN_00409cf0 — Net_StopAllChannels
-// Iterates the same linked list structure as FUN_00409c40, calling
-// vtable[3] (Stop/Reset, offset +0xc) with param 0 on each node.
-void __cdecl FUN_00409cf0(int param_1)
+// CPhysicsManager::Render — renders every registered physics object.
+void __cdecl CPhysicsManager_Render(void* physics_manager)
 {
+  const int param_1 = (int)(uintptr_t)physics_manager;
   undefined4 *puVar1;
 
   puVar1 = *(undefined4 **)(*(int *)(param_1 + 8) + 8);

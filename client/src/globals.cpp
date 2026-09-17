@@ -1886,7 +1886,8 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // bBuxCode @ 0x00558090 — la clave XOR de 3 bytes de BuxConvert_1 (0x401120),
 // la que descifra Quest.bmd.  Leida del binario: FC CF AB — la misma que usa
 // BuxConvert_0 (DAT_00559bb4), pero es otra copia en otra direccion.
-// 2026-08-21: estaba declarada como UN char = 0, asi que FUN_00401120 hacia
+// 2026-08-21: estaba declarada como UN char = 0, asi que BuxConvert
+// (IDA: FUN_00401120) hacia
 // `(&DAT_00558090)[i % 3]` sobre un cero y dos bytes de globals vecinos: el
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
 // equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.

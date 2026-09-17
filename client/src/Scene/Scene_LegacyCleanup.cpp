@@ -63,24 +63,24 @@ void __cdecl ClearCharacters(int Key) { FUN_0045abb0(Key); }
 // 2026-08-21: acá había un resumen inventado ("State machine dispatch
 // (simplified)") que sólo escribía el byte de estado y descartaba el resto,
 // mientras el port fiel de la misma dirección vive en Scene_CharSelect_Nav.cpp
-// como FUN_00401730 (despacha por estado 1/2/3 a CheckActCondition /
+// como CSQuest_CheckQuestState (IDA: FUN_00401730; despacha por estado 1/2/3 a CheckActCondition /
 // FindQuestContext / CheckRequestCondition).  Ahora delega.
-void __fastcall FUN_00401730(void *pThis, char param_1);
+void __fastcall CSQuest_CheckQuestState(void *pThis, char param_1); // IDA: FUN_00401730
 void __fastcall CSQuest__CheckQuestState(void *This, int state) {
     if (!This) return;
-    FUN_00401730(This, (char)state);
+    CSQuest_CheckQuestState(This, (char)state);
 }
 
 // CSQuest__ShowDialogText @ 0x004017E0
 // 2026-08-21: acá había una SEGUNDA implementación inventada (armaba el cuadro
 // con una sola respuesta fija y no tocaba la tabla de diálogos), mientras el
 // port fiel de la misma dirección vivía en Scene_CharSelect_Nav.cpp como
-// FUN_004017e0.  Dos implementaciones del mismo address escribiendo globals
+// CSQuest_ShowDialogText (IDA: FUN_004017E0). Dos implementaciones del mismo address escribiendo globals
 // distintos — el patrón de siempre.  Ahora delega.
 // El 2do parámetro no existe en IDA (`CSQuest::ShowDialogText(This, iDialogIndex)`
 // es thiscall; el índice es el único dato que se usa).
-void __fastcall FUN_004017e0(int param_1);
+void __fastcall CSQuest_ShowDialogText(int param_1); // IDA: FUN_004017E0
 void __cdecl CSQuest__ShowDialogText(int param_1, int param_2) {
     (void)param_2;
-    FUN_004017e0(param_1);
+    CSQuest_ShowDialogText(param_1);
 }

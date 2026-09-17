@@ -277,7 +277,7 @@ void __cdecl FUN_00502b80(void) {
 void __cdecl FUN_00509190(void) {
     for (int i = 0xf604; i < 0x11710; i += 0xbc)
         FUN_00442090(i + DAT_05828d58);
-    for (int i = 0x78; i < 0xaa; i++) FUN_00404ad0(i);
+    for (int i = 0x78; i < 0xaa; i++) Sound_ReleaseBuffer(i); // IDA: FUN_00404AD0
 }
 
 // FUN_00509880 @ 0x00509880 — Terrain_InitWater
@@ -285,7 +285,7 @@ void __cdecl FUN_00509190(void) {
 void __cdecl FUN_00509880(void) {
     for (int i = 0xc648; i < 0xf604; i += 0xbc)
         FUN_00442090(i + DAT_05828d58);
-    for (int i = 0xaa; i < 0x1a4; i++) FUN_00404ad0(i);
+    for (int i = 0xaa; i < 0x1a4; i++) Sound_ReleaseBuffer(i); // IDA: FUN_00404AD0
 }
 
 // FUN_0050c4d0 @ 0x0050C4D0 — Map_LoadObjectModels

@@ -287,7 +287,7 @@ static void GameGuard_TickCheck(void)
 //   3.  FUN_00510fe0()                          — world pre-init
 //   4.  MuExe_IntegrityCheck()                  — verifica integridad del .exe
 //       FileVersion_Get() → formatea string de versión
-//   5.  FUN_004065f0(local_3d4)                 — anti-tamper continued
+//   5.  Client_GetSystemInfo(local_3d4)          — IDA: FUN_004065F0
 //   6.  Config_ReadServerAddr(this, cmdLine, &DAT_055c9e04, &port)
 //         → PTR_s_connect_muonline_co_kr_005615b8 = &DAT_055c9e04
 //         → DAT_005615bc = port
@@ -636,7 +636,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // FUN_00406af0();
     // FUN_00510fe0();
     // MuExe_IntegrityCheck();
-    // FUN_004065f0(local_3d4);
+    // Client_GetSystemInfo(local_3d4); // IDA: FUN_004065F0
 
     // 6: Config_ReadServerAddr — lee server.cfg ("IP PORT" o "IP:PORT") y
     // sobreescribe el buffer al que apunta PTR_s_connect_muonline_co_kr_005615b8.

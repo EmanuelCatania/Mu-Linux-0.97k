@@ -676,7 +676,7 @@ void Game_EnterWorldTick(void)
                 if (ulen < 4) {
                     if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x7a; else DAT_083a7c28 = 0x7a;
                 } else {
-                    if (Chat_ValidateInputCommand() == '\0' && FUN_00406b30((BYTE*)DAT_07db8710) == '\0') {
+                    if (Chat_ValidateInputCommand() == '\0' && !CheckSpecialText((const BYTE*)DAT_07db8710)) { // IDA: FUN_00406B30
                         DAT_083a7c18 = 0x1c;
                         DAT_083a7c24 = DAT_083a7c28;
                         DAT_083a7c28 = 0;
