@@ -1210,93 +1210,64 @@ LAB_004e8950_impl:
 
     if (DAT_083a413c != '\0') DAT_083a413c = '\0';
 }
-// FUN_004e8b70 @ 0x004E8B70 — SecondPassword_Screen7 (183 lines)
-//   - Contiene dos llamadas a __ftol() (FPU ST0 → long) para calcular el límite X del
-//     checkbox y del botón OK. El float en ST0 lo setea un callee anterior y Ghidra no lo trackea.
-//     La lógica del botón "atrás" y las llamadas a send() están limpias, pero los dos hit-tests
-//     que dependen de __ftol() no se pueden expresar sin el valor de la FPU.
-//   STUB: two __ftol() button boundaries unresolvable — keep as empty body.
+// FUN_004e8b70 @ 0x004E8B70 -- IDA: sub_4E8B70, clicks de la ventana de
+// transferencia de server (la etiqueta vieja "SecondPassword_Screen7" era falsa).
+// Los dos `__ftol()` que el port no habia resuelto son `InventoryStartX + 35.0`:
+// el hit-test de Aceptar y Cancelar estaba 35 px a la izquierda del boton.
 void __cdecl FUN_004e8b70(void) {
-    // SecondPassword_Screen7 — timeout / retry handler
-    // Guard: DAT_07eaa130 must be non-zero
-    // Llamadas a __ftol() → aproximadas como (int)DAT_07ea5288 (origen X de pantalla)
-    int iVar5 = DAT_083a427c;
-    int iVar9 = DAT_083a4278;
-    if (DAT_07eaa130 == '\0') return;
+    if (!g_bServerDivisionEnable) return;
 
-    // Mouse hover check 0x1c2-0x280 x 0-0x1b1
-    if ((0x1c1 < iVar5) && (iVar5 < 0x280) && (-1 < iVar9) && (iVar9 < 0x1b1))
-        DAT_07d78094 = 1;
+    int mx = (int)DAT_083a427c;   // MouseX
+    int my = (int)DAT_083a4278;   // MouseY
+    if (mx >= 450 && mx < 640 && my >= 0 && my < 433)
+        DAT_07d78094 = 1;         // MouseOnWindow
 
-    // Checkbox click: DAT_07ea5288+0x19 to +0x29, 0xef-0x100
-    if ((int)(DAT_07ea5288 + 0x19) <= iVar5 && iVar5 < (int)(DAT_07ea5288 + 0x29) &&
-        (0xef < iVar9) && (iVar9 < 0x100) && IsClickPushed()) {
-        DAT_083a4124 = '\0';
-        DAT_07eaa131 ^= 1;
+    const int startX = (int)DAT_07ea5288;   // InventoryStartX
+    const int startY = (int)DAT_07ea5284;   // InventoryStartY
+
+    // Casilla "acepto".
+    if (mx >= startX + 25 && mx < startX + 41 && my >= 240 && my < 256 && DAT_083a4124) {
+        DAT_083a4124 = 0;
         DAT_083a42c4 = 0;
+        g_bServerDivisionAccept ^= 1;
     }
 
-    if (DAT_07eaa131 != 0) {
-        // OK button: __ftol() X boundary → (int)DAT_07ea5288, Y 0x13f-0x158
-        int lX = (int)DAT_07ea5288;
-        if ((lX <= iVar5) && (iVar5 < lX + 0x78) &&
-            (0x13f < iVar9) && (iVar9 < 0x158) && IsClickPushed()) {
-            DAT_083a4124 = '\0';
+    const int buttonX = (int)((double)startX + 35.0);
+    if (g_bServerDivisionAccept) {
+        // Aceptar: confirmacion con ShowCheckBox.
+        if (mx >= buttonX && mx < buttonX + 120 && my >= 320 && my < 344 && DAT_083a4124) {
+            DAT_083a4124 = 0;
             DAT_083a42c4 = 0;
             DAT_07eaa13c = 4;
             DAT_00559f5e = (char)0xff;
-            FUN_0051e240(1, 0x1c0, 0x97);
-            iVar5 = DAT_083a427c;
-            iVar9 = DAT_083a4278;
+            FUN_0051e240(1, 448, 151);
+            mx = (int)DAT_083a427c;
+            my = (int)DAT_083a4278;
         }
     }
 
-    // Cancel button: __ftol() X → (int)DAT_07ea5288, Y 0x15d-0x176
-    {
-        int lX2 = (int)DAT_07ea5288;
-        if ((lX2 <= iVar5) && (iVar5 < lX2 + 0x78) &&
-            (0x15d < iVar9) && (iVar9 < 0x176) && IsClickPushed()) {
-            DAT_083a4124 = '\0';
-            DAT_083a42c4 = 0;
-            DAT_07eaa117 = 0;
-            FUN_004cba60();
-            // Send C1/03/31 cancel packet
-            BYTE pkt[3] = {0xC1, 3, 0x31};
-            int off=0; unsigned int rem=3;
-            if (DAT_055ca168 != 0xffffffff) {
-                do {
-                    int r=send((SOCKET)DAT_055ca168,(char*)pkt+off,(int)(rem-off),0);
-                    if(r==-1){int e=WSAGetLastError();if(e==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pkt,rem);DAT_055cc16c+=rem;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                    if(r==0)break;if(DAT_055ce174)FUN_0043de60();rem-=r;off+=r;
-                } while((int)rem>0);
-            }
-            DAT_07e11d28 = 0;
-            DAT_00559bec = 6;
-            iVar5 = DAT_083a427c;
-            iVar9 = DAT_083a4278;
-        }
+    // Cancelar.
+    if (mx >= buttonX && mx < buttonX + 120 && my >= 350 && my < 374 && DAT_083a4124) {
+        DAT_083a4124 = 0;
+        DAT_083a42c4 = 0;
+        InventoryOpened = 0;
+        CloseInventoryRelatedWindows();
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
+        Net_SendC1Packet(pkt, sizeof(pkt));
+        DAT_07e11d28 = 0;         // MouseUpdateTime
+        DAT_00559bec = 6;         // MouseUpdateTimeMax
+        mx = (int)DAT_083a427c;
+        my = (int)DAT_083a4278;
     }
 
-    // Botón atrás (el principal): DAT_07ea5288+0x19 a +0x31 x DAT_07ea5284+0x18b a +0x1a3
-    if ((int)(DAT_07ea5288 + 0x19) <= iVar5 &&
-        iVar5 < (int)(DAT_07ea5288 + 0x31) &&
-        (int)(DAT_07ea5284 + 0x18b) <= iVar9 &&
-        iVar9 < (int)(DAT_07ea5284 + 0x1a3) &&
-        IsClickPushed()) {
-        DAT_083a4124 = '\0';
-        // Send C1/01/31 keepalive-style packet
-        BYTE pkt2[3] = {0xC1, 3, 0x31};
-        int off=0; unsigned int rem=3;
-        if (DAT_055ca168 != 0xffffffff) {
-            do {
-                int r=send((SOCKET)DAT_055ca168,(char*)pkt2+off,(int)(rem-off),0);
-                if(r==-1){int e=WSAGetLastError();if(e==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pkt2,rem);DAT_055cc16c+=rem;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                if(r==0)break;if(DAT_055ce174)FUN_0043de60();rem-=r;off+=r;
-            } while((int)rem>0);
-        }
-        DAT_07eaa128 = 0;
-        DAT_07eaa117 = 0;
-        FUN_004cba60();
+    // X de cerrar.
+    if (mx >= startX + 25 && mx < startX + 49 && my >= startY + 395 && my < startY + 419 && DAT_083a4124) {
+        DAT_083a4124 = 0;
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
+        Net_SendC1Packet(pkt, sizeof(pkt));
+        DAT_07eaa128 = 0;         // g_bEventChipDialogEnable
+        InventoryOpened = 0;
+        CloseInventoryRelatedWindows();
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
     }
