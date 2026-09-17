@@ -476,6 +476,7 @@ char  __cdecl FUN_00513440(char *buf);                               // Chat_Val
 void  __cdecl CheckChatText(char* text);                             // IDA: sub_497C70 (0x00497C70) gestos por texto del chat
 void  __cdecl SetActionClass(int c, int o, int action, int actionType); // IDA: SetActionClass (0x00497870)
 void  __cdecl SendRequestAction(BYTE actionType); // [C1][05][18][dir][tipo], inline en IDA
+char* __cdecl GetMapName(int iMap); // IDA: GetMapName (0x004EF120)
 void  __cdecl Net_ProcessReceiveQueue(void); // FUN_004cbdf0
 extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool);  // IDA: sub_4CC530 (0x004CC530)
 void  __cdecl FUN_004cc660(BYTE* Inv, int Width, int Height,
