@@ -241,6 +241,10 @@ void Render_HudPass_4EB070(void);
 
 unsigned int Game_RenderTick(void)
 {
+    // IDA 0x525A00: if (!EnableMainRender) return 0; sin swap se mantiene el
+    // ultimo frame (la pantalla de carga) hasta que llega JoinMapServer.
+    if (DAT_083a7c10 == 0) return 0;
+
     // BUG-FIX 2026-05-04: drain residual GL errors antes del frame para que el
     // diagnostic logging de GL_DisableDepthTest no spamee con 0x504 stale (de pops
     // sin push del frame previo durante la transición login→in-game).
