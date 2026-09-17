@@ -5179,19 +5179,15 @@ void Net_ProcessPacket(void)
                 InventoryOpened = 1;
                 switch (Msg[3]) {
                     case 2:  // Warehouse
-                        // 2026-07-27 FIX: los paneles de NPC son mutuamente
-                        // excluyentes. Si quedaba ShopOpened=1 de una tienda
-                        // anterior, el baúl se titulaba "Comprar (B)" y los drops
-                        // caían en la rama de VENDER (cartel "item caro") en vez
-                        // de guardarse en el baúl.
-                        ShopOpened = 0; ChaosMixOpened = 0; TradeOpened = 0;
+                        // (Se saco la exclusion mutua de paneles del 2026-07-27: no
+                        //  esta en IDA y el click al NPC ya exige ShopOpened == 0 y
+                        //  WarehouseOpened == 0.)
                         WarehouseOpened = 1;
                         DAT_00559f5f = 0;     // byte_559F5F
                         DAT_07eaa14c = 0;     // dword_7EAA14C
                         break;
                     case 3:  // Chaos Machine (mix)
-                        ShopOpened = 0; WarehouseOpened = 0; TradeOpened = 0;
-                        ChaosBoxCloseAck();
+                        ChaosBoxCloseAck();   // mecanismo de cierre de MuEmu (catalogo A)
                         ChaosMixOpened = 1;
                         DAT_07eaa140 = 0;     // MixState = 0
                         for (int i = 0; i < 4; i++)
@@ -5217,7 +5213,6 @@ void Net_ProcessPacket(void)
                         InventoryOpened = 1;
                         break;
                     default:  // Shop (buy/sell)
-                        WarehouseOpened = 0; ChaosMixOpened = 0; TradeOpened = 0;
                         ShopOpened = 1;
                         *((BYTE*)&DAT_07eaa150 + 2) = 0;   // BYTE2(dword_7EAA150)=0
                         break;
