@@ -3009,6 +3009,7 @@ void Net_ProcessPacket(void)
                             *(WORD*)(CA + 0x1A) = ClampToWord(ViewEne);
                             *(WORD*)(CA + 0x20) = ClampToWord(ViewMaxHP);
                             *(WORD*)(CA + 0x22) = ClampToWord(ViewMaxMP);
+                            *(WORD*)(CA + 0x26) = ClampToWord(*(DWORD*)(Msg + 24));   // MaxBP
                             NetLog("NET:  → F3/06 AddPoint OK slot=%d pts=%u str=%u agi=%u vit=%u ene=%u",
                                    slot, ViewPoint, ViewStr, ViewDex, ViewVit, ViewEne);
                         } else {
@@ -3022,9 +3023,14 @@ void Net_ProcessPacket(void)
                             case 2: (*(WORD*)(CA + 0x18))++; *(WORD*)(CA + 0x20) = maxLifeMana; break;
                             case 3: (*(WORD*)(CA + 0x1A))++; *(WORD*)(CA + 0x22) = maxLifeMana; break;
                             }
+                            *(WORD*)(CA + 0x26) = *(WORD*)(Msg + 8);                 // IDA v4[19] = MaxBP
                             NetLog("NET:  → F3/06 AddPoint OK (no-extra) slot=%d maxLifeMana=%u",
                                    slot, maxLifeMana);
                         }
+                        // IDA ReceiveAddPoint (0x431480) termina con sub_47E3C0
+                        // (CharData_RecalcStats).  Sin esto dano, defensa y
+                        // velocidad quedaban viejos hasta cambiar el equipo.
+                        FUN_0047e3c0((int)(uintptr_t)CharacterMachine, 0, 0);
                         break;
                     }
 
