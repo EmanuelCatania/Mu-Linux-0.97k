@@ -542,6 +542,12 @@ static void SendMove_CloseWindows97k(void)
         if (questPanel)
             CSQuest_clearQuest((int)(uintptr_t)g_csQuest);
         else if (g_bServerDivisionEnable) {
+            // DESVIACION (compatibilidad MuEmu): IDA solo cierra del lado del
+            // cliente, pero NpcServerTransfer deja Interface.use = 1 y solo el
+            // 0x31 lo libera (los botones de la ventana ya lo mandan).  Mismo
+            // criterio que el Golden Archer.
+            const BYTE closePkt[3] = { 0xC1, 0x03, 0x31 };
+            Net_SendC1Packet(closePkt, sizeof(closePkt));
             CloseInventoryRelatedWindows();
             g_bServerDivisionEnable = 0;
             g_bServerDivisionAccept = 0;
