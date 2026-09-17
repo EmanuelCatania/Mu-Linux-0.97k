@@ -1253,7 +1253,6 @@ int   __cdecl CompareItems_stub(short param_1, int param_2, int param_3); // 0x0
 void  __cdecl SortInventory_stub(short *param_1);                        // 0x004CC3C0
 unsigned long long __cdecl CheckInventorySpace_stub(int p1, int p2, unsigned short *p3, int p4, int p5); // 0x004D5D70
 int   __cdecl FindEmptySlot_stub(int p1, int p2, int p3, int p4);       // 0x004D5F20
-unsigned int __cdecl FindEmptySlotNearMouse_stub(int p1, int p2, int p3, int p4, int p5); // 0x004D6020
 unsigned int __stdcall Inventory_DropItem_stub(void);                    // 0x004D6470
 long long __fastcall CalculateInventoryValue_stub(int p1, unsigned int p2, short *p3, int p4, short *p5); // 0x004DF330
 void  __cdecl InventoryColor_stub(ITEM *p);                              // 0x004E2420
