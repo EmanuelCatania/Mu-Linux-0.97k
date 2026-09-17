@@ -251,40 +251,55 @@ void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
 // IDA: FUN_0047FAE0
 void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
 {
-    // 2026-05-04: AUTO-SKIP removed. DAT_07db80d8 ahora propiamente sized
-    // (6 slots × 0x108). Reescribo el shift-buffer loop con count explícito
-    // en vez del bound literal `< 0x7db8600`.
+    // IDA: CreateNotice (0x0047FAE0).  Aviso azul del centro: 6 slots de 264
+    // bytes (texto en +0, color en +260).  Si el texto mide 256 px o mas se
+    // parte con CutText: la primera mitad va al slot actual y la segunda al
+    // siguiente, los dos con el mismo color.  (Antes se truncaba a 255 bytes
+    // sin partir.)
     if (!param_1) return;
-    char *base = (char *)&DAT_07db80d8[0];
-    SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
-    SIZE local_208 = {0,0};
-    GetTextExtentPointA(DAT_055c9fec, param_1, lstrlenA(param_1), &local_208);
+    char *notice = (char *)&DAT_07db80d8[0];
 
-    // Si el buffer está lleno (>= 6 slots), shift down 1 slot (oldest discarded).
-    if (DAT_07e11d9c > 5) {
-        DAT_07e11d9c = 5;
+    SelectObject(m_hFontDC, g_hFontBold);
+    SIZE sz = {0, 0};
+    GetTextExtentPointA(m_hFontDC, param_1, lstrlenA(param_1), &sz);
+
+    auto shiftUp = [notice]() {
         for (int s = 0; s < 5; ++s) {
-            char *dst = base + s * 0x108;
-            char *src = base + (s + 1) * 0x108;
-            // Copy flag byte (offset 0x104).
-            dst[0x104] = src[0x104];
-            // Copy 0x100-byte string (NUL-terminated).
-            lstrcpynA(dst, src, 0x100);
+            char *dst = notice + s * 264;
+            dst[260] = dst[524];
+            strcpy(dst, dst + 264);
         }
+    };
+
+    int cur = DAT_07e11d9c;
+    if (cur > 5) {
+        DAT_07e11d9c = 5;
+        shiftUp();
+        cur = DAT_07e11d9c;
     }
+    notice[264 * cur + 260] = (char)param_2;
 
-    // Append at slot DAT_07e11d9c.
-    int idx = (int)DAT_07e11d9c;
-    if (idx < 0) idx = 0;
-    if (idx > 5) idx = 5;
-    char *dst = base + idx * 0x108;
-
-    // Truncate if too wide (256 px) — IDA splits via CutText; keep simple.
-    lstrcpynA(dst, param_1, 0x100);
-    dst[0x104] = (char)param_2;
-
-    DAT_07e11d9c = idx + 1;
-    DAT_00559cdc = 300;          // reset scroll timer
+    const char *text = param_1;
+    char *dst;
+    char text1[256], text2[256];
+    if (sz.cx >= 256) {
+        CutText(param_1, (int)(uintptr_t)text1, text2, (int)strlen(param_1));
+        int next = DAT_07e11d9c + 1;
+        strcpy(notice + 264 * DAT_07e11d9c, text2);
+        if (next > 5) {
+            next = 5;
+            shiftUp();
+        }
+        notice[264 * next + 260] = (char)param_2;
+        dst = notice + 264 * next;
+        DAT_07e11d9c = next + 1;
+        text = text1;
+    } else {
+        dst = notice + 264 * cur;
+        DAT_07e11d9c = cur + 1;
+    }
+    DAT_00559cdc = 300;          // NoticeTime
+    strcpy(dst, text);
     return;
 #if 0
     // Original Ghidra body kept disabled for reference:
