@@ -6235,6 +6235,10 @@ void Net_ProcessPacket(void)
                        (unsigned)gate, (unsigned)map, (unsigned)gridX,
                        (unsigned)gridY, (unsigned)direction);
 
+                // IDA: lo primero es sub_4CD3B0 = devolver el item que se tenga
+                // agarrado a su celda (en las dos ramas).
+                Item_ReturnPickedItem();
+
                 BYTE* hero = (BYTE*)(uintptr_t)Hero;
                 const float worldX = ((float)gridX + 0.5f) * 100.0f;
                 const float worldY = ((float)gridY + 0.5f) * 100.0f;
@@ -6249,6 +6253,9 @@ void Net_ProcessPacket(void)
                 if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
                     worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
                 *(float*)(hero + 24) = worldZ;
+                // Los stores de +788/+792, +0x388/+0x38C y +0x306/+0x307 no estan
+                // en IDA (que solo escribe +904/+908): son del port, para que el
+                // walker no retome el camino viejo despues del salto.
                 *(float*)(hero + 788) = worldX;
                 *(float*)(hero + 792) = worldY;
                 *(DWORD*)(hero + 0x388) = gridX;
@@ -6257,7 +6264,7 @@ void Net_ProcessPacket(void)
                 *(DWORD*)(hero + 908) = gridY;
                 hero[0x306] = gridX;
                 hero[0x307] = gridY;
-                *(float*)(hero + 36) = ((float)(direction & 0x0F) - 1.0f) * 45.0f;
+                *(float*)(hero + 36) = ((float)direction - 1.0f) * 45.0f;
 
                 if (gate != 0) {
                     // ReceiveTeleport's gate branch clears the old viewport
@@ -6293,6 +6300,11 @@ void Net_ProcessPacket(void)
                         if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
                             worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
                         *(float*)(hero + 24) = worldZ;
+
+                        // IDA L275-277: aviso "<mapa> ..." en el chat.
+                        char mapNotice[256];
+                        sprintf_s(mapNotice, "%s%s", GetMapName(World), GlobalText[484]);
+                        UIChatLogWindow_AddText("", mapNotice, 1);
                     }
 
                     // ── ACK de fin de carga: C1 04 F3 12 ──────────────────
@@ -6352,7 +6364,6 @@ void Net_ProcessPacket(void)
                     WarehouseOpened = 0;
                     DAT_00559f5f = 0;
                     DAT_07eaa14c = 0;
-                    TradeOpened = 0;
                     EventWindowOpened = 0;
                     Effect_Create(1265, (float*)(hero + 16), (float*)(hero + 28),
                                  (float*)(hero + 232), nullptr, (float*)hero,
