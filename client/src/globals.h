@@ -268,7 +268,6 @@ extern char    DAT_00559f5e;   // multi-select item result slot A
 extern char    DAT_00559f5f;
 extern DWORD   DAT_0055a3e8[4];   // chaos-mix info (ReceiveTalk sub 3)
 extern int     EventType;         // EventWindow type (ReceiveTalk sub 4/6)
-extern int     g_NpcTalkActive;
 extern int     g_PartyPanelScratchX, g_PartyPanelScratchY;
 extern int     g_GuildCreatorScratchX, g_GuildCreatorScratchY;   // 1 = talk 0x30 enviado, server puede tener Interface.use=1
 extern "C" { extern int g_bServerDivisionEnable; extern int g_bServerDivisionAccept; }  // ReceiveTalk sub 5

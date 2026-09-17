@@ -137,16 +137,13 @@ void __cdecl UI_InGameMenu(void)
                  (InventoryOpened || CharacterOpened ||
                   PartyOpened || GuildOpened ||
                   WarehouseOpened || ChaosMixOpened ||
-                  TradeOpened || ShopOpened || DAT_07eaa128 || g_NpcTalkActive))
+                  TradeOpened || ShopOpened || DAT_07eaa128))
         {
             // 2026-07-25 (#2 shops): ANTES sólo cerraba inventory/character/
             // party/guild y "diferia" shop/warehouse/trade → la tienda quedaba
             // abierta al apretar Escape. Ahora también las cierra.
-            // 2026-07-27: g_NpcTalkActive cubre NPCs que no setean flag local
-            // (Golden Archer, quest, etc.) — el server igual tiene Interface.use=1
-            // y hay que mandarle el close 0x31 o no deja abrir otra tienda.
             bool hadNpcWindow = (ShopOpened || WarehouseOpened ||
-                                 ChaosMixOpened || TradeOpened || DAT_07eaa128 || g_NpcTalkActive);
+                                 ChaosMixOpened || TradeOpened || DAT_07eaa128);
             InventoryOpened = '\0';
             CharacterOpened = '\0';
             PartyOpened     = '\0';
@@ -160,7 +157,6 @@ void __cdecl UI_InGameMenu(void)
                 }
                 // Limpia ShopOpened/Warehouse/ChaosMix/Trade/Event + pools.
                 CloseInventoryRelatedWindows();
-                g_NpcTalkActive = 0;
                 Net_SendNpcTalkClose();
             }
             didToggle = true;

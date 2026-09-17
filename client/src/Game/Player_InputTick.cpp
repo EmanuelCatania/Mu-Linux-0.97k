@@ -202,7 +202,7 @@ static void Party_ToggleAndRefresh(void)
 
 static bool HUD_CloseNpcWindowsIfAny(void)
 {
-    if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
+    if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128) {
         const bool wasChaos = (DAT_07eaa11a != 0);
         if (wasChaos) {
             // 0x87 ACK performs the close; never expose another NPC panel
@@ -212,7 +212,6 @@ static bool HUD_CloseNpcWindowsIfAny(void)
         }
         extern void __cdecl CloseInventoryRelatedWindows(void);
         CloseInventoryRelatedWindows();
-        g_NpcTalkActive = 0;
         Net_SendNpcTalkClose();
         DbgLogPublic("HKT CLOSE-NPC (C/G/P panel)");
     }
@@ -231,12 +230,11 @@ static void HUD_CloseInventoryFamilyFromUI(void)
         return;
     }
     const bool hadNpcWindow = (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11b ||
-                               DAT_07eaa128 || g_NpcTalkActive);
+                               DAT_07eaa128);
     extern void __cdecl CloseInventoryRelatedWindows(void);
     CloseInventoryRelatedWindows();
     DAT_07eaa117 = 0;                // InventoryOpened
     if (hadNpcWindow) {
-        g_NpcTalkActive = 0;
         Net_SendNpcTalkClose();
     }
 }
@@ -392,9 +390,9 @@ static void ClampChatModeIME(const char* tag)
             if (s_onLogs < 12) {
                 s_onLogs++;
                 char b[160];
-                wsprintfA(b, "CHATMODE ON [%s]  ime=%02X shop=%d inv=%d npcActive=%d",
+                wsprintfA(b, "CHATMODE ON [%s]  ime=%02X shop=%d inv=%d",
                           tag, (BYTE)DAT_07e11d71, (int)DAT_07eaa118,
-                          (int)DAT_07eaa117, g_NpcTalkActive);
+                          (int)DAT_07eaa117);
                 DbgLogPublic(b);
             }
         }
@@ -536,7 +534,7 @@ static void HUD_HotkeyTick(void)
         // togglear el inventario. Per IDA (Chat_InputTick sección 15) la tecla
         // I/V togglea InventoryOpened; al cerrar arrastra las ventanas de NPC.
         if (DAT_07eaa117 || DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a ||
-            DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
+            DAT_07eaa11b || DAT_07eaa128) {
             // 2026-07-27 FIX: con la tienda abierta, apretar I/V cerraba solo
             // InventoryOpened y dejaba la tienda abierta (y el server con
             // Interface.use=1 → no dejaba abrir otra). Ahora cierra toda la
@@ -642,49 +640,6 @@ static void SendPacket(const char *buf, unsigned int len)
         sent += r;
         remaining -= r;
     }
-}
-
-// 2026-07-25 (#2 shops): envía el request "hablar con NPC" (client→server 0x30,
-// PMSG_NPC_TALK_RECV: [C1][05][30][idxHi][idxLo]). El server (CGNpcTalkRecv)
-// responde con 0x30 ReceiveTalk (abre shop/baúl/chaos) + 0x31 lista de items.
-// Mismo pipeline de encriptación que el attack in-range 0x15 (chain-XOR
-// s_LoginKey + MuEmu::EncryptSend + send raw) que ya funciona end-to-end.
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
-static void SendNpcTalkRequest(const BYTE* npc)
-{
-    if (!npc) return;
-
-    // IDA FUN_0048d640:0048fbfa..0048fc2d: side effects antes de enviar 0x30.
-    // Offset +0x2EB (747) = npcType.
-    // 243 = Craftsman, 246 = Weapon Merchant, 251 = Blacksmith: activan repair.
-    const BYTE npcType = *(const BYTE*)(npc + 0x2eb);
-    DAT_07eaa132 = (npcType == 243 || npcType == 246 || npcType == 251) ? 1 : 0;
-    DAT_07eaa134 = 0;
-
-    const WORD npcEntityId = *(const WORD*)(npc + 0x1dc);
-
-    unsigned char pkt[8];
-    pkt[0] = 0xC1;
-    pkt[1] = 0x05;
-    pkt[2] = 0x30;
-    pkt[3] = (unsigned char)((npcEntityId >> 8) & 0xFF);
-    pkt[4] = (unsigned char)(npcEntityId & 0xFF);
-    // FIX 2026-07-25: 0x30 (NPC talk) requiere C3 (encriptado + serial), no C1.
-    // El server (HackPacketCheck.cpp:143 CheckPacketHack) cierra la conexión si
-    // `lpInfo->Encrypt != encrypt` — cada opcode define su encriptación esperada.
-    // Los moves (0x10) van C1, pero 0x30 exige C3 como el login. Net_SendSmallPacket
-    // hace chain-XOR + serial-stomp + wrap C3 (mismo camino que el login F1).
-    // NO pre-XORear: Net_SendSmallPacket ya aplica el chain-XOR internamente.
-    Net_SendSmallPacket(pkt, 5);
-    // 2026-07-27: marcar que hay un diálogo de NPC potencialmente abierto en el
-    // server (Interface.use=1). Cubre shop/warehouse/chaos PERO también NPCs que
-    // no setean flag local (Golden Archer, quest, etc.) — sin esto, cerrar esos
-    // diálogos no mandaba el 0x31 y el server quedaba con Interface.use=1,
-    // bloqueando abrir cualquier otra tienda.
-    g_NpcTalkActive = 1;
-    char ab[80];
-    wsprintfA(ab, "PIT NPC-TALK send (C3): npcId=%d", (int)npcEntityId);
-    DbgLogPublic(ab);
 }
 
 // IDA: FUN_004acef0

@@ -490,13 +490,6 @@ static void SendMove_CloseWindows97k(void)
         *(char*)((uintptr_t)g_csQuest + 0x1c87f) != 0;       // g_csQuest + 116863
     if (!ShopOpened && !WarehouseOpened && !TradeOpened && !ChaosMixOpened &&
         !EventWindowOpened && !DAT_07eaa128 && !questPanel && !g_bServerDivisionEnable) {
-        // Port: NPCs que solo muestran un cartel (Charon del Devil Square, etc.)
-        // no prenden ninguna ventana local pero dejan g_NpcTalkActive en 1;
-        // moverse cierra esa charla. Sin esto I/V no vuelve a abrir el inventario.
-        if (g_NpcTalkActive) {
-            g_NpcTalkActive = 0;
-            Net_SendNpcTalkClose();
-        }
         return;
     }
 
