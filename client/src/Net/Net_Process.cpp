@@ -6202,17 +6202,10 @@ void Net_ProcessPacket(void)
                 if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
                     worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
                 *(float*)(hero + 24) = worldZ;
-                // Los stores de +788/+792, +0x388/+0x38C y +0x306/+0x307 no estan
-                // en IDA (que solo escribe +904/+908): son del port, para que el
-                // walker no retome el camino viejo despues del salto.
-                *(float*)(hero + 788) = worldX;
-                *(float*)(hero + 792) = worldY;
-                *(DWORD*)(hero + 0x388) = gridX;
-                *(DWORD*)(hero + 0x38c) = gridY;
+                // IDA L141-160: solo +904/+908 (la grilla).  El camino viejo no se
+                // retoma porque el final del handler hace c+748 = 0 y SetPlayerStop.
                 *(DWORD*)(hero + 904) = gridX;
                 *(DWORD*)(hero + 908) = gridY;
-                hero[0x306] = gridX;
-                hero[0x307] = gridY;
                 *(float*)(hero + 36) = ((float)direction - 1.0f) * 45.0f;
 
                 if (gate != 0) {
