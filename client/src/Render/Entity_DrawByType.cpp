@@ -36,6 +36,7 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
+#include "structs.h"
 #include <windows.h>
 #include <GL/gl.h>
 #include <math.h>
@@ -48,6 +49,116 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 // fsin is an x87 FPU intrinsic declared in math.h — no separate extern needed
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Silueta de Molt — clase de vtable off_552588 (IDA sub_40A660).
+//
+// Vtable: [0] 0x40A6C0 dtor, [1] 0x40A6F0 armar, [2] 0x40A830 liberar.  Layout
+// (0x20 bytes): +0 vtable, +4 short, +8 buffer, +12..+20 direccion de la luz,
+// +24 cantidad de aristas, +28 aristas (10 bytes c/u: v0, v1, malla, uv0, uv1).
+//
+// Desviacion: el binario hace `operator_new(0x20)` en CADA frame y nunca libera
+// el objeto (el metodo [2] solo libera sus buffers), y llama a los metodos por
+// la vtable.  Aca el objeto vive en el stack y los metodos se llaman directo:
+// mismo resultado, sin la fuga.  2026-09-18: antes el port llamaba por una
+// vtable que nunca se instalaba (FUN_0040a660 la saltea) y sin `this`.
+// ─────────────────────────────────────────────────────────────────────────────
+struct MoltSilhouette {
+    void          *vtable;
+    short          f4;
+    void          *buf8;
+    float          dir[3];     // +12
+    int            count;      // +24
+    unsigned char *edges;      // +28
+};
+
+extern void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2);   // sub_40A8F0
+
+// IDA sub_40A110 (0x40A110): agrega la arista `edge` del triangulo `triIdx` si
+// es de borde (sin vecino, o el vecino no mira a la luz).
+static void MoltSilhouette_AddEdge(MoltSilhouette *s, short a, short b, short mesh,
+                                   int triIdx, int edge, unsigned char *tris)
+{
+    unsigned char *tri = tris + 36 * triIdx;
+    const short adj = *(short *)(tri + 2 * edge + 26);
+    if (adj != -1 && tris[36 * adj + 34] != 0) return;
+    unsigned char *out = s->edges + 10 * s->count;
+    *(short *)(out + 0) = a;
+    *(short *)(out + 2) = b;
+    *(short *)(out + 4) = mesh;
+    *(short *)(out + 6) = *(short *)(tri + 2 * edge + 10);
+    *(short *)(out + 8) = *(short *)(tri + 2 * ((edge + 1) % 3) + 10);
+    s->count++;
+}
+
+// IDA sub_40A1C0 (0x40A1C0): marca cada triangulo segun mire o no a la luz
+// (byte +34) y junta las aristas de silueta de los que miran.
+static void MoltSilhouette_BuildMesh(MoltSilhouette *s, short mesh, unsigned char *verts,
+                                     short numTri, unsigned char *tris)
+{
+    const int base = 15000 * mesh;
+    for (int i = 0; i < numTri; ++i) {
+        unsigned char *tri = tris + 36 * i;
+        float normal[3] = { 0.0f, 0.0f, 0.0f };
+        FaceNormalize((float *)(verts + 12 * (base + *(short *)(tri + 2))),
+                      (float *)(verts + 12 * (base + *(short *)(tri + 4))),
+                      (float *)(verts + 12 * (base + *(short *)(tri + 6))), normal);
+        tri[34] = (normal[2] * s->dir[2] + normal[1] * s->dir[1] + normal[0] * s->dir[0] <= 0.0f);
+    }
+    for (int i = 0; i < numTri; ++i) {
+        unsigned char *tri = tris + 36 * i;
+        if (!tri[34]) continue;
+        MoltSilhouette_AddEdge(s, *(short *)(tri + 2), *(short *)(tri + 4), mesh, i, 0, tris);
+        MoltSilhouette_AddEdge(s, *(short *)(tri + 4), *(short *)(tri + 6), mesh, i, 1, tris);
+        MoltSilhouette_AddEdge(s, *(short *)(tri + 6), *(short *)(tri + 2), mesh, i, 2, tris);
+    }
+}
+
+// IDA sub_40A6F0 (0x40A6F0), con a5 = 1.  La "luz" es la direccion camara ->
+// heroe; solo se procesa la malla 1.
+static void MoltSilhouette_Build(MoltSilhouette *s, unsigned char *verts,
+                                 unsigned char *model, unsigned char *o)
+{
+    unsigned char *hero = (unsigned char *)DAT_07abf5d8;
+    s->dir[0] = *(float *)(hero + 16) - _DAT_083a42d4;   // CameraPosition
+    s->dir[1] = *(float *)(hero + 20) - _DAT_083a42d8;
+    s->dir[2] = *(float *)(hero + 24) - _DAT_083a42dc;
+    FUN_004f9d60(s->dir);
+    if (!(*(float *)(o + 360) >= 0.0099999998f)) return;
+    const short hidden = *(short *)(o + 88);
+    const short blend  = *(short *)(o + 100);
+    if (hidden == -2 || blend == -2) return;
+
+    unsigned char *meshes = *(unsigned char **)(model + 40);
+    const short texIdx = *(short *)(*(unsigned char **)(model + 56) + 2);
+    const bool  alphaTex = (Bitmaps[texIdx].Components == 4);
+    int numTri = 0;
+    if (hidden != 1 && blend != 1 && !alphaTex)
+        numTri = *(short *)(meshes + 50);
+    s->count = 0;
+    s->edges = (unsigned char *)operator new(30 * numTri);
+    if (hidden != 1 && blend != 1 && !alphaTex)
+        MoltSilhouette_BuildMesh(s, 1, verts, *(short *)(meshes + 50),
+                                 *(unsigned char **)(meshes + 68));
+}
+
+static void MoltSilhouette_Render(unsigned char *model, unsigned char *o)
+{
+    MoltSilhouette s = {};
+    unsigned char *verts = (unsigned char *)&DAT_0584621c;   // v2 = 0x0584621C
+    MoltSilhouette_Build(&s, verts, model, o);
+    // IDA sub_40A860 (0x40A860): un quad por arista.  El 4o/5o argumento
+    // (el buffer 0x060DB65C) no lo usa sub_40A8F0.
+    for (int i = 0; i < s.count; ++i) {
+        const short *e = (const short *)(s.edges + 10 * i);
+        const int base = 15000 * e[2];
+        FUN_0040a8f0(&s, (float *)(verts + 12 * (base + e[0])),
+                         (float *)(verts + 12 * (base + e[1])));
+    }
+    // IDA sub_40A830 (0x40A830).
+    operator delete(s.edges);
+    if (s.buf8) operator delete(s.buf8);
+}
 
 void __cdecl FUN_004fae00(void *param_1_v, int param_2, int param_3, char param_4)
 {
@@ -328,23 +439,16 @@ LAB_substate4_done:
     }
 
     if (sType == 0x13f) {
-        // Portal/gate object: render + VTable dispatch
+        // Molt (monstruo 68, modelo 319).  IDA Draw_RenderObject case 319:
+        // dibuja la malla 0 y encima las aristas de silueta de la malla 1, con
+        // la clase de vtable off_552588 (sub_40A660).  Ver MoltSilhouette_*.
         FUN_00440d30();
         FUN_00440d50(model, 0.0f, 2,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  0xffffffff);
         glPopMatrix();
-        // VTable-dispatch secondary effect
-        void *vObj = operator_new(0x20);
-        if (vObj) {
-            int *vThis = (int *)FUN_0040a660(vObj);
-            typedef void (__cdecl *VFn4)(DWORD*, void*, unsigned char*, int);
-            typedef void (__cdecl *VFn0)(void);
-            ((*(VFn4*)(*vThis + 4)))(&DAT_0584621c, model, param_1, 1);
-            FUN_0040a860(vThis, 0x584621c);
-            ((*(VFn0*)(*vThis + 8)))();
-        }
+        MoltSilhouette_Render((unsigned char *)model, param_1);
         goto LAB_postprocess;
     }
 

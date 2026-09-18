@@ -100,10 +100,24 @@ void __fastcall BMD__TransformPosition(void *This, float (*BoneMatrix)[4], float
 }
 
 
-void __cdecl FaceNormalize(float v[3], float out[3], float v2[3], float normal[3]) {
-    // 0x00440A60 approx — Compute face normal from 3 vertices
-    // normal = normalize(cross(v1-v0, v2-v0))
-    (void)v; (void)out; (void)v2; (void)normal;
+// IDA: FaceNormalize (0x004FA4D0).  Normal de la cara (v1,v2,v3), normalizada.
+// Si el largo es 0 no toca Normal.  2026-09-18: era un stub vacio.
+void __cdecl FaceNormalize(float v1[3], float v2[3], float v3[3], float Normal[3]) {
+    const double ay = v2[1] - v1[1];
+    const double bz = v3[2] - v1[2];
+    const double az = v2[2] - v1[2];
+    const float  by = v3[1] - v1[1];
+    const float  nx = (float)(bz * ay - by * az);
+    const float  bx = v3[0] - v1[0];
+    const float  ax = v2[0] - v1[0];
+    const float  ny = (float)(bx * az - ax * bz);
+    const double nz = ax * by - bx * ay;
+    const double len = sqrt(nz * nz + ny * ny + nx * nx);
+    if (len != 0.0) {
+        Normal[0] = (float)(nx / len);
+        Normal[1] = (float)(ny / len);
+        Normal[2] = (float)(nz / len);
+    }
 }
 
 bool __cdecl CollisionDetectLineToFace(float pos[3], float target[3], int normalIdx,
