@@ -543,7 +543,7 @@ void RestorePickedItemToSource(void)
 // Devuelve 2 si el tipo es distinto, 0 si no se distinguen, -1 si `n` es mejor
 // que `p` y 1 si es peor.  IDA recibe los dos ITEM por valor (17 y 12 DWORD);
 // los offsets de abajo son los del struct en memoria.
-static int Item_CompareForTradeHistory(const BYTE* p, const BYTE* n)
+extern "C" int __cdecl Item_CompareForTradeHistory(const BYTE* p, const BYTE* n)
 {
     if (*(short*)p != *(short*)n) return 2;
     if (p[9] != n[9]) return 0;

@@ -186,99 +186,56 @@ int __cdecl CompareItems_stub(short param_1, int param_2, int param_3) {
     return 1;
 }
 
-// SortInventory @ 0x004CC3C0 (~99 lines) — sort inventory slots by item quality
-// Iterates 0x20 inventory slots, compares against DAT_07e11f78 reference array (stride 0x22 words).
-// Uses CompareItems for ordering. Calls SetItemGridFlag to update grid flags.
+// IDA: sub_4CC3C0 (0x004CC3C0).  No ordena nada: marca los items de un pool
+// del trade (32 celdas) contra el historial de items valiosos (word_7E11F78,
+// 32 entradas).  Si un item es PEOR que uno del historial del mismo tipo, su
+// footprint queda en 99 (color de advertencia) y byte_7EAA0E8 = 1; si es igual
+// o mejor, en 1.  Los tipos que empataron (resultado 0) vuelven a 1 en todas
+// sus celdas al final.
+// (El port anterior llamaba a CompareItems_stub con tipo/nivel/durabilidad en
+// vez de los dos registros, asi que la comparacion era basura.)
+extern "C" int __cdecl Item_CompareForTradeHistory(const BYTE* p, const BYTE* n);
 void __cdecl SortInventory_stub(short* param_1) {
-    // 0x004CC3C0 — Sort inventory slots by item quality
-    // Iterates 0x20 inventory slots, compares each against DAT_07e11f78 reference array
-    // (stride 0x22 words = 0x44 bytes). Uses CompareItems_stub for ordering.
-    // Calls SetItemGridFlag_stub to mark cells as occupied (1) or sorted (99).
-    // DAT_07eaa0e8 = sort-dirty flag.
+    BYTE* const pool = (BYTE*)param_1;
+    DAT_07eaa0e8 = 0;                                   // byte_7EAA0E8
+    for (int i = 0; i < 32; ++i)
+        pool[i * 68 + 64] = 1;
 
-    int matchCount = 0;
-    DAT_07eaa0e8 = 0;
+    int tied[10];                                       // char v19[40]
+    int tiedCount = 0;
+    const BYTE* const history = (const BYTE*)&DAT_07e11f78[0];
 
-    // Reset the "sorted" byte at offset +0x40 (= short offset +0x20) for each of 0x20 slots
-    short* pReset = param_1 + 0x20;  // offset +0x40 bytes = +0x20 shorts
-    for (int i = 0x20; i != 0; i--) {
-        *(unsigned char*)pReset = 1;
-        pReset += 0x22;  // stride 0x44 bytes = 0x22 shorts
+    for (int slot = 0; slot < 32; ++slot) {
+        const BYTE* item = pool + slot * 68;
+        if (*(const short*)item == -1 || *(const DWORD*)(item + 56) == 0)
+            continue;
+        for (int h = 0; h < 32; ++h) {
+            const BYTE* entry = history + h * 68;
+            if (*(const short*)entry == -1 || *(const short*)entry != *(const short*)item)
+                continue;
+            const int r = Item_CompareForTradeHistory(entry, item);
+            if (r == 1) {                               // peor que el historial
+                DAT_07eaa0e8 = 1;
+                SetItemGridFlag_stub(slot, (int)(uintptr_t)pool, 99);
+                continue;
+            }
+            if (r == 0 && tiedCount < 10)               // el original no acota
+                tied[tiedCount++] = *(const short*)entry;
+            SetItemGridFlag_stub(slot, (int)(uintptr_t)pool, 1);
+            break;
+        }
     }
 
-    int matchedTypes[10];
-    int* pMatchList = matchedTypes;
-    int slotIdx = 0;
-    short* pSlot = param_1;
-
-    do {
-        if ((*pSlot != -1) && (*(int*)(pSlot + 0x1c) != 0)) {
-            // Slot is occupied and has durability > 0
-            int refIdx = 0;
-            short* pRef = (short*)&DAT_07e11f78;
-
-            do {
-                if ((*pRef != -1) && (*pRef == *pSlot)) {
-                    // Found a matching reference item — compare quality
-                    // Copy both item records to stack for CompareItems_stub
-                    // (CompareItems reads 0x44 bytes from &param_1 and &param_1+0x44)
-                    unsigned char itemBuf[0x88];  // two 0x44-byte records
-                    memcpy(itemBuf, pSlot, 0x44);
-                    memcpy(itemBuf + 0x44, pRef, 0x44);
-
-                    int cmpResult = CompareItems_stub(
-                        *(short*)itemBuf,
-                        *(int*)(itemBuf + 4),
-                        *(int*)(itemBuf + 8));
-
-                    if (cmpResult == 1) {
-                        // Current slot item is better than reference → mark as "excellent" (99)
-                        DAT_07eaa0e8 = 1;
-                        SetItemGridFlag_stub(slotIdx, (int)param_1, 99);
-                        // Continue to next reference
-                    } else {
-                        if (cmpResult == 0) {
-                            // Equal — record the matching type
-                            *pMatchList = (int)(short)((short*)&DAT_07e11f78)[refIdx * 0x22];
-                            matchCount++;
-                            pMatchList++;
-                        }
-                        SetItemGridFlag_stub(slotIdx, (int)param_1, 1);
-                        break;
-                    }
-                }
-                pRef += 0x22;
-                refIdx++;
-                // BUG-FIX 2026-05-03: was `(int)pRef < 0x7e127f8` (absolute
-                // source-binary bound). DAT_07e11f78 is 0x880 bytes / 32 entries
-                // × 0x44-byte stride; cap with explicit count.
-            } while (refIdx < 32);
-        }
-        pSlot += 0x22;
-        slotIdx++;
-
-        if (slotIdx > 0x1f) {
-            // After processing all slots, re-mark slots matching recorded types
-            if (matchCount > 0) {
-                DAT_07eaa0e8 = 0;
-                int* pType = matchedTypes;
-                do {
-                    int scanIdx = 0;
-                    short* pScan = param_1;
-                    do {
-                        if ((*pScan != -1) && ((int)*pScan == *pType) && (*(int*)(pScan + 0x1c) != 0)) {
-                            SetItemGridFlag_stub(scanIdx, (int)param_1, 1);
-                        }
-                        scanIdx++;
-                        pScan += 0x22;
-                    } while (scanIdx < 0x20);
-                    pType++;
-                    matchCount--;
-                } while (matchCount != 0);
+    if (tiedCount > 0) {
+        DAT_07eaa0e8 = 0;
+        for (int t = 0; t < tiedCount; ++t)
+            for (int i = 0; i < 32; ++i) {
+                const BYTE* item = pool + i * 68;
+                if (*(const short*)item != -1 && *(const short*)item == tied[t] &&
+                    *(const DWORD*)(item + 56) != 0)
+                    SetItemGridFlag_stub(i, (int)(uintptr_t)pool, 1);
             }
-            return;
-        }
-    } while (true);
+    }
 }
 
 // CheckInventorySpace @ 0x004D5D70 (~66 lines) — check if picked item fits at position
@@ -474,163 +431,6 @@ next_cell:
 // FindEmptySlotNearMouse @ 0x004D6020 (~69 lines) — search outward from cursor position
 // Spirals outward from mouse grid pos, checking W*H blocks of empty cells.
 // Updates MouseX/MouseY globals on success.
-#if 0
-unsigned int __cdecl FindEmptySlotNearMouse_stub(int p1, int p2, int p3, int p4, int p5) {
-    // 0x004D6020 — Search outward from cursor position for empty W*H block
-    // p1 = screen offset X (unused in grid scan), p2 = screen offset Y (unused in grid scan)
-    // p3 = inventory base pointer, p4 = grid width, p5 = grid height
-    // Uses DAT_07e91350 (pPickedItem type) for Width/Height from ItemAttribute.
-    // Updates MouseX/MouseY globals on success.
-    // Returns low byte=1 if found, 0 otherwise.
-
-    short pickedType = *(short*)DAT_07e91350;
-    int attrBase = (int)pickedType * 0x40 + DAT_07d78068;
-    unsigned int itemH = (unsigned int)*(unsigned char*)(attrBase + 0x21);  // Height
-    unsigned int itemW = (unsigned int)*(unsigned char*)(attrBase + 0x20);  // Width
-
-    int maxGX = p4 - (int)itemW;    // max valid grid X
-    int maxGY = p5 - (int)itemH;    // max valid grid Y
-
-    if (maxGX < 0) return 0;
-
-    // Scan from bottom-right, sweeping inward
-    int gx = maxGX;
-    do {
-        int gy = maxGY;
-        if (gy >= 0) {
-            int rowBase = gy * p4;
-            do {
-                int emptyCount = 0;
-                // Only check if within valid bounds
-                if (gx >= 0 && gy >= 0 && gx <= maxGX && gy <= maxGY) {
-                    // Count empty cells in W*H block starting at (gx, gy)
-                    for (int cx = 0; cx < (int)itemW; cx++) {
-                        if (itemH != 0) {
-                            short* pCell = (short*)(p3 + (rowBase + cx + gx) * 0x44);
-                            unsigned int ry = itemH;
-                            do {
-                                if (*pCell == -1) {
-                                    emptyCount++;
-                                }
-                                pCell += p4 * 0x22;  // next row (stride 0x44 bytes per cell)
-                                ry--;
-                            } while (ry != 0);
-                        }
-                    }
-
-                    if (emptyCount == (int)(itemH * itemW)) {
-                        // Found! Convert grid coords back to screen coords and set MouseX/MouseY
-                        MouseX = (int)((float)itemW * _DAT_00552504 + (float)gx - _DAT_00552504) * _DAT_005524fc + p1;
-                        MouseY = (int)((float)itemH * _DAT_00552504 + (float)gy - _DAT_00552504) * _DAT_005524fc + p2;
-                        return 1;
-                    }
-                }
-                gy--;
-                rowBase -= p4;
-            } while (gy >= 0);
-        }
-        gx--;
-    } while (gx >= 0);
-
-    return 0;  // no space found
-}
-
-// Inventory_DropItem @ 0x004D6470 (sub_4D6470, 36536 bytes / 6236 lines IDA)
-// Item drag-and-drop dispatcher per inventory grid.
-//
-// 2026-05-08: SIGNATURE FIX — original was `void Inventory_DropItem_stub(void)`
-// reading globals; per IDA `bool sub_4D6470(int a1@<edi>, int a2 origin_x,
-// int a3 origin_y, DWORD* a4 invBase, int a5 gridW, int a6 gridH, int a7
-// slotType)`. The mouse-to-grid conversion absolutely requires the screen
-// origin (a2/a3) — without it `mouseGridX = mouseX - 0` always exceeds the
-// 8-cell grid bounds → no drop ever lands.
-//
-// Wrapper preserved for back-compat (legacy callers that read globals).
-// Real entry is `Inventory_DropItemEx` (with explicit args).
-#endif
-
-unsigned int __cdecl FindEmptySlotNearMouse_stub(int p1, int p2, int p3, int p4, int p5) {
-    {
-        unsigned int p = (unsigned int)DAT_07d78068;
-        if ((p < 0x100000u || p >= 0x80000000u)
-            && g_ItemAttribute_Backup >= 0x100000u
-            && g_ItemAttribute_Backup < 0x80000000u)
-        {
-            DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        }
-    }
-
-    short pickedType = *(short*)DAT_07e91350;
-    int attrBase = DAT_07d78068 + pickedType * 0x40;
-    int itemH = *(unsigned char*)(attrBase + 0x21);
-    int itemW = *(unsigned char*)(attrBase + 0x20);
-    if (itemW <= 0 || itemW > 8 || itemH <= 0 || itemH > 8) {
-        return 0;
-    }
-    int gx = p4 - itemW;
-    int maxGX = gx;
-
-    if (gx < 0) {
-        return 0;
-    }
-
-    int maxGY = p5 - itemH;
-    int gy = maxGY;
-
-    while (true) {
-        int scanY = gy;
-        if (scanY < 0) {
-            gx = --maxGX;
-            if (gx < 0) {
-                return 0;
-            }
-            gy = maxGY;
-            continue;
-        }
-
-        int rowBase = p4 * scanY;
-        while (true) {
-            int emptyCount = 0;
-            if (gx >= 0 && gx <= maxGX && scanY <= maxGY) {
-                for (int i = 0; i < itemW; ++i) {
-                    if (itemH > 0) {
-                        short* cell = (short*)(p3 + 68 * (gx + rowBase + i));
-                        int leftH = itemH;
-                        do {
-                            // Mismo fix que en CheckInventorySpace_stub: IDA sub_4D6020 L71 es
-                            // `if ( *v14 == 0xFFFF )`, sin mirar Key. Con el chequeo de Key este
-                            // scanner daba por libres las celdas no primarias de un item multi-celda
-                            // y elegia como hueco un lugar ya ocupado.
-                            if (*cell == (short)0xFFFF) {
-                                ++emptyCount;
-                            }
-                            cell += 34 * p4;
-                            --leftH;
-                        } while (leftH);
-                    }
-                }
-
-                if (emptyCount == itemW * itemH) {
-                    MouseX = (int)(((double)itemW * 0.5 + (double)gx - 0.5) * 20.0 + (double)p1);
-                    MouseY = (int)(((double)itemH * 0.5 + (double)scanY - 0.5) * 20.0 + (double)p2);
-                    return 1;
-                }
-            }
-
-            --scanY;
-            rowBase -= p4;
-            if (scanY < 0) {
-                break;
-            }
-        }
-
-        gx = --maxGX;
-        if (gx < 0) {
-            return 0;
-        }
-        gy = maxGY;
-    }
-}
 
 // CalculateInventoryValue @ 0x004DF330 (~65 lines) — sum item values in inventory grid
 // Iterates grid rows*cols, calls ItemValue for each non-empty slot.

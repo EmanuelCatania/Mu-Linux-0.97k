@@ -287,7 +287,6 @@ char     DAT_00559f5f  = 0;
 DWORD    DAT_0055a3e4  = 0xffffffff;  // hovered-skill index (-1 = none); IDA inits to -1
 DWORD    DAT_0055a3e8[4] = {0};       // chaos-mix info (ReceiveTalk sub 3 copia 4 bytes acá; 0x55A3E8..0x55A3F4)
 int      EventType     = 0;           // 0/1 tipo de EventWindow (ReceiveTalk sub 4/6)
-int      g_NpcTalkActive = 0;         // 1 = mandamos un talk 0x30 y el server puede tener Interface.use=1 (shop/GoldenArcher/etc). Se limpia al mandar el close 0x31.
 extern "C" { int g_bServerDivisionEnable = 0; int g_bServerDivisionAccept = 0; }  // ReceiveTalk sub 5
 DWORD    DAT_0055a774  = 0;
 DWORD    DAT_0055a778  = 0;

@@ -659,24 +659,6 @@ extern "C" void __cdecl CreatePoint(float Position[3], int Value,
 
 // 2026-05-04: Hero equipment stash (definidos en Render_PlayerEquipment.cpp).
 // F3/03 los popula; HeroEquipWatchdog los re-aplica per-frame.
-extern "C" {
-    extern short g_HeroEquipStash_LH, g_HeroEquipStash_RH;
-    extern short g_HeroEquipStash_Wing, g_HeroEquipStash_Pendant;
-    extern short g_HeroEquipStash_Body[6];
-    extern unsigned char g_HeroEquipStash_LHLvl, g_HeroEquipStash_RHLvl;
-    extern unsigned char g_HeroEquipStash_WingLvl, g_HeroEquipStash_PendantLvl;
-    extern unsigned char g_HeroEquipStash_BodyLvl[6];
-    extern unsigned char g_HeroEquipStash_BodyOpt1[6];
-    extern unsigned char g_HeroEquipStash_BodyOpt2[6];
-    extern unsigned char g_HeroEquipStash_BodyOpt3[6];
-    extern unsigned char g_HeroEquipStash_LHOpt, g_HeroEquipStash_RHOpt;
-    extern unsigned char g_HeroEquipStash_WingOpt, g_HeroEquipStash_PendantOpt;
-    extern unsigned char g_HeroEquipStash_LHOpt2, g_HeroEquipStash_RHOpt2;
-    extern unsigned char g_HeroEquipStash_WingOpt2, g_HeroEquipStash_PendantOpt2;
-    extern unsigned char g_HeroEquipStash_LHOpt3, g_HeroEquipStash_RHOpt3;
-    extern unsigned char g_HeroEquipStash_WingOpt3, g_HeroEquipStash_PendantOpt3;
-    extern int g_HeroEquipStash_Valid;
-}
 
 // ============================================================================
 // Net_ProcessPacket @ 0x004389A0 — server→client opcode dispatcher
@@ -1586,34 +1568,11 @@ static void Recv_LoginResult(const BYTE* Msg)
 //   4. (TODO) ChangeCharacterExt(slot, &CharSet[1]) — visualiza equipment
 //   5. DAT_05826cb0 = 51 (entra a estado char-select activo)
 // ---------------------------------------------------------------------------
-// 2026-05-05: cache F3/00 packet para replay desde JoinChar (MuEmu no
-// re-envía char-list cuando recibe F1/02/01 — cierra socket directamente).
-extern "C" {
-    BYTE g_CharListCache[256] = {0};
-    int  g_CharListCacheLen   = 0;
-}
-
 static void Recv_CharList(const BYTE* Msg, int Size)
 {
     const int CHAR_STRIDE  = 0x394;
     const int CHAR_SLOT_AT = 0x2D2;       // entity+0x2D2 = "selected" flag
     const int MAX_PREVIEW  = 5;            // slots renderizados en char-select
-
-    // 2026-05-05: cache para replay en JoinChar
-    {
-        // 2026-08-25 (issue #13): esto releia `Msg[1]`, el byte de tamaño del
-        // frame — que para un paquete re-enmarcado desde C3/C4 de mas de 255
-        // bytes esta truncado. Ahora usa el `Size` real que calcula el
-        // dispatcher. El clamp es contra el tamaño del cache, no contra 255.
-        if (Size > 0 && Size <= (int)sizeof(g_CharListCache)) {
-            memcpy(g_CharListCache, Msg, Size);
-            g_CharListCacheLen = Size;
-        } else if (Size > (int)sizeof(g_CharListCache)) {
-            NetLog("NET: F3/00 char-list %d bytes > cache %d — no se cachea",
-                   Size, (int)sizeof(g_CharListCache));
-            g_CharListCacheLen = 0;
-        }
-    }
 
     // 1) Limpiar flags de los 5 slots previos
     for (int i = 0; i < MAX_PREVIEW; ++i) {
@@ -1684,17 +1643,6 @@ static void Recv_CharList(const BYTE* Msg, int Size)
     DAT_05826cb0 = 51;
 }
 
-// 2026-05-05: wrapper público para que UI_InGameMenu lo llame al volver
-// desde JoinChar (replay de la char-list desde el cache).
-extern "C" void Recv_CharListReplay(const BYTE* Msg)
-{
-    // El replay viene del cache, cuyo largo real guardamos aparte (el byte
-    // `Msg[1]` puede estar truncado — ver el fix del issue #13).
-    const int len = (Msg == g_CharListCache && g_CharListCacheLen > 0)
-                        ? g_CharListCacheLen
-                        : (int)Msg[1];
-    Recv_CharList(Msg, len);
-}
 
 // ---------------------------------------------------------------------------
 // F3/01 — ReceiveCreateCharacter  (@ 0x00424390)
@@ -5179,19 +5127,15 @@ void Net_ProcessPacket(void)
                 InventoryOpened = 1;
                 switch (Msg[3]) {
                     case 2:  // Warehouse
-                        // 2026-07-27 FIX: los paneles de NPC son mutuamente
-                        // excluyentes. Si quedaba ShopOpened=1 de una tienda
-                        // anterior, el baúl se titulaba "Comprar (B)" y los drops
-                        // caían en la rama de VENDER (cartel "item caro") en vez
-                        // de guardarse en el baúl.
-                        ShopOpened = 0; ChaosMixOpened = 0; TradeOpened = 0;
+                        // (Se saco la exclusion mutua de paneles del 2026-07-27: no
+                        //  esta en IDA y el click al NPC ya exige ShopOpened == 0 y
+                        //  WarehouseOpened == 0.)
                         WarehouseOpened = 1;
                         DAT_00559f5f = 0;     // byte_559F5F
                         DAT_07eaa14c = 0;     // dword_7EAA14C
                         break;
                     case 3:  // Chaos Machine (mix)
-                        ShopOpened = 0; WarehouseOpened = 0; TradeOpened = 0;
-                        ChaosBoxCloseAck();
+                        ChaosBoxCloseAck();   // mecanismo de cierre de MuEmu (catalogo A)
                         ChaosMixOpened = 1;
                         DAT_07eaa140 = 0;     // MixState = 0
                         for (int i = 0; i < 4; i++)
@@ -5217,7 +5161,6 @@ void Net_ProcessPacket(void)
                         InventoryOpened = 1;
                         break;
                     default:  // Shop (buy/sell)
-                        WarehouseOpened = 0; ChaosMixOpened = 0; TradeOpened = 0;
                         ShopOpened = 1;
                         *((BYTE*)&DAT_07eaa150 + 2) = 0;   // BYTE2(dword_7EAA150)=0
                         break;
@@ -5486,8 +5429,8 @@ void Net_ProcessPacket(void)
                     //
                     // Desviacion consciente: en vez de dejarlo pegado al cursor lo
                     // devolvemos a su slot de origen. El efecto observable es el mismo
-                    // (no se pierde) y ademas libera `EquipmentItem` (DAT_07eaa165), un
-                    // guard propio del port que IDA no tiene y que si queda seteado
+                    // (no se pierde) y ademas libera `EquipmentItem` (DAT_07eaa165,
+                    // el mismo global de IDA 0x07EAA165), que si queda seteado
                     // bloquea los drops siguientes.
                     RestorePickedItemToSource();
                     DAT_05826d1c = 0;

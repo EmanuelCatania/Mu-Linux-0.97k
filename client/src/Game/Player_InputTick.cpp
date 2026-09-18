@@ -16,7 +16,6 @@ extern "C" BOOL ChaosBoxRequestClose(void);
 static bool HUD_IsQuestPanelOpenRuntime(void);
 static bool HUD_IsGoldenArcherPanelRuntime(void);
 static bool HUD_IsInventoryFamilyActive(void);
-static bool HUD_CloseNpcWindowsIfAny(void);
 extern "C" int g_nGuildMemberCount;
 static bool HUD_IsAnyRightPanelOpen(void);
 static bool HUD_IsGuildCreationRuntime(void);
@@ -176,69 +175,49 @@ static void MouseOnWindow_Update(void)
     }
 }
 
-// Render/Chat original: both the bottom HUD icon and P execute this same
-// Party toggle.  Opening discards only the displayed count and immediately
-// asks the server for an authoritative 0x42; it never clears Party rows or
-// changes membership locally.
-static void Party_ToggleAndRefresh(void)
+// Cola comun de Chat_InputTick (0x4B14F0) al abrir guild/party/personaje y al
+// cerrar el inventario, en sus dos versiones (teclas G/P/C/I/V L4921-6414 y
+// botones de la barra L1116-2214):
+//   TradeOpened      -> cancelar el trade (C3 0x3D)
+//   WarehouseOpened  -> con EquipmentItem pendiente no se puede; si no, cerrar
+//                       ventanas, devolver el item agarrado y mandar 0x82
+//   ChaosMixOpened   -> 0x87 si la caja esta vacia y no hay item agarrado; si
+//                       no, aviso 593
+//   si no            -> apagar los paneles que no conviven y cerrar ventanas
+//                       (CloseInventoryRelatedWindows ya manda el 0x31 de la
+//                       tienda, fix del DLL)
+// Devuelve false cuando la ventana del NPC no se pudo cerrar (la tecla apaga
+// entonces el panel que acababa de abrir).  2026-09-18: reemplaza a
+// HUD_CloseNpcWindowsIfAny / HUD_CloseInventoryFamilyFromUI, que mandaban 0x31
+// para todo e impedian abrir el panel.
+enum HudPanelTail { TAIL_GUILD, TAIL_PARTY, TAIL_CHARACTER, TAIL_INVENTORY_CLOSE };
+static bool HUD_PanelTail97k(HudPanelTail kind)
 {
-    GuildOpened = 0;
-    GuildCreatorOpened = 0;
-    if (PartyOpened) {
-        PartyOpened = 0;
-        FUN_00404bc0(0x19, 0, 0);
-        FUN_00404bc0(0x1c, 0, 0);
-        return;
-    }
-
-    PartyNumber = 0;
-    // IDA Chat_InputTick L5639-5807: abrir el party cierra inventario y personaje.
-    DAT_07eaa117 = 0;   // InventoryOpened
-    DAT_07eaa116 = 0;   // CharacterOpened
-    const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
-    Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
-    PartyOpened = 1;
-}
-
-static bool HUD_CloseNpcWindowsIfAny(void)
-{
-    if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
-        const bool wasChaos = (DAT_07eaa11a != 0);
-        if (wasChaos) {
-            // 0x87 ACK performs the close; never expose another NPC panel
-            // while the Chaos interface remains server-active.
-            ChaosBoxRequestClose();
-            return false;
-        }
-        extern void __cdecl CloseInventoryRelatedWindows(void);
-        CloseInventoryRelatedWindows();
-        g_NpcTalkActive = 0;
-        Net_SendNpcTalkClose();
-        DbgLogPublic("HKT CLOSE-NPC (C/G/P panel)");
-    }
-    return true;
-}
-
-
-// Cierra la familia de ventanas de inventario/NPC.  Es la rama de cierre que
-// comparten la tecla I/V y el boton de la barra inferior (IDA Chat_InputTick
-// 0x4B14F0 L2078-2260: TradeOpened -> cancelar trade; WarehouseOpened -> close
-// 0x82; ChaosMixOpened -> close 0x87; si no, InventoryOpened = 0).
-static void HUD_CloseInventoryFamilyFromUI(void)
-{
-    if (DAT_07eaa11a) {              // ChaosMixOpened: el ACK del 0x87 cierra
-        ChaosBoxRequestClose();
-        return;
-    }
-    const bool hadNpcWindow = (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11b ||
-                               DAT_07eaa128 || g_NpcTalkActive);
     extern void __cdecl CloseInventoryRelatedWindows(void);
-    CloseInventoryRelatedWindows();
-    DAT_07eaa117 = 0;                // InventoryOpened
-    if (hadNpcWindow) {
-        g_NpcTalkActive = 0;
-        Net_SendNpcTalkClose();
+    if (DAT_07eaa11b) {                                     // TradeOpened
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };
+        Net_SendSmallPacket(pkt, sizeof(pkt));
+        return true;
     }
+    if (DAT_07eaa119) {                                     // WarehouseOpened
+        if (DAT_07eaa165) return false;                     // EquipmentItem
+        DAT_07eaa117 = 0;                                   // InventoryOpened
+        CloseInventoryRelatedWindows();
+        if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x82 };
+        Net_SendC1Packet(pkt, sizeof(pkt));
+        return true;
+    }
+    if (DAT_07eaa11a)                                       // ChaosMixOpened
+        return ChaosBoxRequestClose() != FALSE;             // aviso 593 incluido
+    switch (kind) {
+    case TAIL_GUILD:     DAT_07eaa117 = 0; DAT_07eaa116 = 0; break;
+    case TAIL_PARTY:     DAT_07eaa117 = 0; DAT_07eaa11b = 0; DAT_07eaa116 = 0; break;
+    case TAIL_CHARACTER: DAT_07eaa114 = 0; DAT_07eaa115 = 0; break;
+    case TAIL_INVENTORY_CLOSE: DAT_07eaa117 = 0; break;
+    }
+    CloseInventoryRelatedWindows();
+    return true;
 }
 
 // Botones de la barra inferior.  En el binario esto vive dentro de
@@ -285,48 +264,58 @@ void HUD_BottomBarButtons_HitTest(void)
     const int mx = (int)DAT_083a427c;       // 640-space mouse X
     const int my = (int)DAT_083a4278;       // 480-space mouse Y
 
-    // ── Guild ────────────────────────────────────────────────────────────────
+    // -- Guild --
     if (mx >= 582 && mx < 634 && my >= 459 && my < 477) {
         DAT_083a4124 = 0;                    // MouseLButtonPush = 0
         DAT_07eaa115 = 0;                    // PartyOpened = 0
         if (DAT_07eaa114) {                  // GuildOpened
             DAT_07eaa114 = 0;
-            FUN_00404bc0(0x19, 0, 0);
-            FUN_00404bc0(0x1c, 0, 0);
         } else {
-            if (!HUD_CloseNpcWindowsIfAny()) return;
             // 0x52 pide Encrypt=0 en HackPacketCheck.txt -> frame C1 plano.
             const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
             Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
             g_nGuildMemberCount = -1;
             DAT_07eaa114 = 1;
+            HUD_PanelTail97k(TAIL_GUILD);
+        }
+        FUN_00404bc0(0x19, 0, 0);            // IDA LABEL_123: en las dos ramas
+        FUN_00404bc0(0x1c, 0, 0);
+        return;
+    }
+
+    // -- Party --
+    if (mx >= 348 && mx < 372 && my >= 452 && my < 476) {
+        DAT_083a4124 = 0;
+        DAT_07eaa114 = 0;                    // GuildOpened
+        if (PartyOpened) {
+            PartyOpened = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            PartyNumber = 0;
+            const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
+            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            PartyOpened = 1;
+            HUD_PanelTail97k(TAIL_PARTY);
         }
         return;
     }
 
-    // ── Party ────────────────────────────────────────────────────────────────
-    if (mx >= 348 && mx < 372 && my >= 452 && my < 476) {
-        DAT_083a4124 = 0;
-        if (!DAT_07eaa115 && !HUD_CloseNpcWindowsIfAny()) return;
-        Party_ToggleAndRefresh();            // ya hace GuildOpened=0 + sonidos
-        return;
-    }
-
-    // ── Personaje ────────────────────────────────────────────────────────────
-    // IDA no toca ningun otro flag aca: Character convive con Inventory.
+    // -- Personaje --
     if (mx >= 379 && mx < 403 && my >= 452 && my < 476) {
         DAT_083a4124 = 0;
         if (DAT_07eaa116) {                  // CharacterOpened
             DAT_07eaa116 = 0;
             FUN_00404bc0(0x19, 0, 0);
             FUN_00404bc0(0x1c, 0, 0);
-        } else if (HUD_CloseNpcWindowsIfAny()) {
+        } else {
             DAT_07eaa116 = 1;
+            HUD_PanelTail97k(TAIL_CHARACTER);
         }
         return;
     }
 
-    // ── Inventario ───────────────────────────────────────────────────────────
+    // -- Inventario --
     if (mx >= 410 && mx < 434 && my >= 452 && my < 476) {
         DAT_083a4124 = 0;
         if (!DAT_07eaa117) {                 // InventoryOpened
@@ -334,7 +323,7 @@ void HUD_BottomBarButtons_HitTest(void)
             DAT_07eaa114 = 0;                // GuildOpened = 0
             DAT_07eaa115 = 0;                // PartyOpened = 0
         } else {
-            HUD_CloseInventoryFamilyFromUI();
+            HUD_PanelTail97k(TAIL_INVENTORY_CLOSE);
         }
         return;
     }
@@ -392,9 +381,9 @@ static void ClampChatModeIME(const char* tag)
             if (s_onLogs < 12) {
                 s_onLogs++;
                 char b[160];
-                wsprintfA(b, "CHATMODE ON [%s]  ime=%02X shop=%d inv=%d npcActive=%d",
+                wsprintfA(b, "CHATMODE ON [%s]  ime=%02X shop=%d inv=%d",
                           tag, (BYTE)DAT_07e11d71, (int)DAT_07eaa118,
-                          (int)DAT_07eaa117, g_NpcTalkActive);
+                          (int)DAT_07eaa117);
                 DbgLogPublic(b);
             }
         }
@@ -473,85 +462,59 @@ static void HUD_HotkeyTick(void)
     int kG = Input_IsKeyJustPressed(0x47); // 'G'  Guild
     int kP = Input_IsKeyJustPressed(0x50); // 'P'  Party
 
-    // Toggle pattern matches IDA Chat_InputTick (sub_4B14F0):
-    //   tecla C → si CharacterOpened: 0; si no: 1 (con el paquete de tab de clase).
-    //   tecla G → si GuildOpened: 0; si no: 1 (con limpieza de party + paquete).
-    //   tecla P → si PartyOpened: 0; si no: 1 (con limpieza de guild + paquete).
-    //   kV/kI    → if InventoryOpened: 0 (close inventory + clear shop/etc);
-    //              else: 1 (open inventory).
-    // Abrir G también pide la lista autoritativa de miembros del guild. MuEmu
-    // maneja C1:03:52 en CGGuildListRecv; el resultado es el frame C2:52
-    // decoded by Net_Process.
-    // 2026-07-27 FIX (tienda "vacía" al abrir Character/Party/Guild): el panel
-    // de inventario se mueve a x=260 cuando CharacterOpened||PartyOpened
-    // (HUD_Pass6:440), que es EXACTAMENTE donde se dibuja el panel de la tienda
-    // (dword_7EAA0C8=260) → el inventario quedaba encima de la tienda y parecía
-    // vacía (en realidad los datos estaban intactos: diag SHOPREND occ=56).
-    // En MU los paneles izquierdos (Character / Shop / Warehouse) son mutuamente
-    // excluyentes: abrir C/G/P cierra la ventana del NPC (y avisa al server con
-    // el close 0x31, como ya hacen I/V y Escape).
-    // IDA Chat_InputTick L4921-5826: al CERRAR con G/P/C suenan 25 y 28 (P ya
-    // los tiene en Party_ToggleAndRefresh); G apaga el party antes de mirar
-    // su propio flag.  2026-09-14: faltaban los sonidos y el PartyOpened = 0.
+    // IDA Chat_InputTick L4921-6414.  Al abrir con tecla, si la ventana del
+    // NPC no se pudo cerrar (baul con EquipmentItem, Chaos con items) el panel
+    // queda cerrado.  Los sonidos 25/28 salen al cerrar y al abrir el
+    // inventario.
+    if (kG) {
+        DAT_07eaa115 = 0;                    // PartyOpened
+        if (DAT_07eaa114) {
+            DAT_07eaa114 = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            // 0x52: Encrypt=0 en HackPacketCheck.txt -> C1 plano.
+            const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
+            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
+            g_nGuildMemberCount = -1;
+            DAT_07eaa114 = 1;
+            if (!HUD_PanelTail97k(TAIL_GUILD)) DAT_07eaa114 = 0;
+        }
+    }
+    if (kP) {
+        DAT_07eaa114 = 0;                    // GuildOpened
+        if (PartyOpened) {
+            PartyOpened = 0;
+            FUN_00404bc0(0x19, 0, 0);
+            FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            PartyNumber = 0;
+            const BYTE partyListPkt[3] = { 0xC1, 0x03, 0x42 };
+            Net_SendC1Packet(partyListPkt, sizeof(partyListPkt));
+            PartyOpened = 1;
+            if (!HUD_PanelTail97k(TAIL_PARTY)) PartyOpened = 0;
+        }
+    }
     if (kC) {
         if (DAT_07eaa116) {
             DAT_07eaa116 = 0;
             FUN_00404bc0(0x19, 0, 0);
             FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            DAT_07eaa116 = 1;
+            if (!HUD_PanelTail97k(TAIL_CHARACTER)) DAT_07eaa116 = 0;
         }
-        else if (HUD_CloseNpcWindowsIfAny()) { DAT_07eaa116 = 1; }
-    }
-    if (kG) {
-        DAT_07eaa115 = 0;   // PartyOpened (IDA L4928)
-        if (DAT_07eaa114 || DAT_07eaa124) {
-            DAT_07eaa114 = 0;
-            DAT_07eaa124 = 0;
-            FUN_00404bc0(0x19, 0, 0);
-            FUN_00404bc0(0x1c, 0, 0);
-        }
-        else {
-            if (!HUD_CloseNpcWindowsIfAny()) return;
-            DAT_07eaa114 = 1;
-            DAT_07eaa115 = 0; // close Party
-            // IDA Chat_InputTick L5275-5277: abrir el guild cierra inventario y
-            // personaje (se dibujan en la misma franja x=450).
-            DAT_07eaa117 = 0; // InventoryOpened
-            DAT_07eaa116 = 0; // CharacterOpened
-            // 2026-08-15 BUG-FIX (abrir el panel de guild con G desconectaba):
-            // el opcode 0x52 pide Encrypt=0 en HackPacketCheck.txt, o sea frame
-            // C1 plano. Enviarlo como C3 (Net_SendSmallPacket) hace que el
-            // server responda "Packet encryption error" y cierre la sesión.
-            const BYTE guildListPkt[3] = { 0xC1, 0x03, 0x52 };
-            Net_SendC1Packet(guildListPkt, sizeof(guildListPkt));
-        }
-    }
-    if (kP) {
-        if (!PartyOpened && !HUD_CloseNpcWindowsIfAny()) return;
-        Party_ToggleAndRefresh();
     }
     if (kV || kI) {
-        // 2026-07-27 FIX: el gate era HUD_IsInventoryFamilyActive(), que incluye
-        // CharacterOpened/Party/Guild → con el panel de Character abierto, tocar V
-        // caía en la rama "cerrar todo" y cerraba TODOS los menús en vez de
-        // togglear el inventario. Per IDA (Chat_InputTick sección 15) la tecla
-        // I/V togglea InventoryOpened; al cerrar arrastra las ventanas de NPC.
-        if (DAT_07eaa117 || DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a ||
-            DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
-            // 2026-07-27 FIX: con la tienda abierta, apretar I/V cerraba solo
-            // InventoryOpened y dejaba la tienda abierta (y el server con
-            // Interface.use=1 → no dejaba abrir otra). Ahora cierra toda la
-            // familia de ventanas de NPC y avisa al server con el close 0x31,
-            // igual que Escape / click-para-mover.
-            // (NO tocar CharacterOpened: I/V sólo maneja el inventario y las
-            //  ventanas de NPC; el panel de Character lo togglea la tecla C.)
-            HUD_CloseInventoryFamilyFromUI();
-        } else {
-            // IDA L6323-6327: al abrir apaga guild y party y suenan 25 y 28.
+        if (!DAT_07eaa117) {                 // InventoryOpened
+            DAT_07eaa11b = 0;                // IDA: TradeOpened = 0 al abrir
             DAT_07eaa117 = 1;
-            DAT_07eaa114 = 0;   // GuildOpened
-            DAT_07eaa115 = 0;   // PartyOpened
+            DAT_07eaa114 = 0;                // GuildOpened
+            DAT_07eaa115 = 0;                // PartyOpened
             FUN_00404bc0(0x19, 0, 0);
             FUN_00404bc0(0x1c, 0, 0);
+        } else {
+            HUD_PanelTail97k(TAIL_INVENTORY_CLOSE);
         }
     }
 }
@@ -642,49 +605,6 @@ static void SendPacket(const char *buf, unsigned int len)
         sent += r;
         remaining -= r;
     }
-}
-
-// 2026-07-25 (#2 shops): envía el request "hablar con NPC" (client→server 0x30,
-// PMSG_NPC_TALK_RECV: [C1][05][30][idxHi][idxLo]). El server (CGNpcTalkRecv)
-// responde con 0x30 ReceiveTalk (abre shop/baúl/chaos) + 0x31 lista de items.
-// Mismo pipeline de encriptación que el attack in-range 0x15 (chain-XOR
-// s_LoginKey + MuEmu::EncryptSend + send raw) que ya funciona end-to-end.
-extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
-static void SendNpcTalkRequest(const BYTE* npc)
-{
-    if (!npc) return;
-
-    // IDA FUN_0048d640:0048fbfa..0048fc2d: side effects antes de enviar 0x30.
-    // Offset +0x2EB (747) = npcType.
-    // 243 = Craftsman, 246 = Weapon Merchant, 251 = Blacksmith: activan repair.
-    const BYTE npcType = *(const BYTE*)(npc + 0x2eb);
-    DAT_07eaa132 = (npcType == 243 || npcType == 246 || npcType == 251) ? 1 : 0;
-    DAT_07eaa134 = 0;
-
-    const WORD npcEntityId = *(const WORD*)(npc + 0x1dc);
-
-    unsigned char pkt[8];
-    pkt[0] = 0xC1;
-    pkt[1] = 0x05;
-    pkt[2] = 0x30;
-    pkt[3] = (unsigned char)((npcEntityId >> 8) & 0xFF);
-    pkt[4] = (unsigned char)(npcEntityId & 0xFF);
-    // FIX 2026-07-25: 0x30 (NPC talk) requiere C3 (encriptado + serial), no C1.
-    // El server (HackPacketCheck.cpp:143 CheckPacketHack) cierra la conexión si
-    // `lpInfo->Encrypt != encrypt` — cada opcode define su encriptación esperada.
-    // Los moves (0x10) van C1, pero 0x30 exige C3 como el login. Net_SendSmallPacket
-    // hace chain-XOR + serial-stomp + wrap C3 (mismo camino que el login F1).
-    // NO pre-XORear: Net_SendSmallPacket ya aplica el chain-XOR internamente.
-    Net_SendSmallPacket(pkt, 5);
-    // 2026-07-27: marcar que hay un diálogo de NPC potencialmente abierto en el
-    // server (Interface.use=1). Cubre shop/warehouse/chaos PERO también NPCs que
-    // no setean flag local (Golden Archer, quest, etc.) — sin esto, cerrar esos
-    // diálogos no mandaba el 0x31 y el server quedaba con Interface.use=1,
-    // bloqueando abrir cualquier otra tienda.
-    g_NpcTalkActive = 1;
-    char ab[80];
-    wsprintfA(ab, "PIT NPC-TALK send (C3): npcId=%d", (int)npcEntityId);
-    DbgLogPublic(ab);
 }
 
 // IDA: FUN_004acef0
@@ -873,80 +793,11 @@ void __cdecl Player_ProcessInput(void)
                     // que después lee la rotación por octante.
                     DAT_07e11dbc = (int)*(float*)(ent + 36);
                     DAT_07e11db8 = 0;
-                    Send_MovePacket_Player_legacy_stub();
-                    // 2026-05-06: si hay action queued en c+0x2ed (set por
-                    // click on mob/NPC con value 3=attack, 1=npc-talk, etc.),
-                    // disparar Action(c, o) para procesar y mandar packet
-                    // attack 0x15 / skill 0x19 / talk 0x30 al server.
-                    //
-                    // En IDA Action(c, o), tanto `c` como `o` son ENTITY ptr —
-                    // c lee fields como c+0x2ED (action_queue), c+0x2F5 (attack
-                    // pending), c+0x310 (target_idx). Para hero player, c y o
-                    // son el mismo entity (DAT_07abf5d8). Anti-crash: validar
-                    // que action queued sea uno de los cases válidos (1..5).
-                    BYTE actionQueued = ent[0x2ed];
-                    {
-                        char wb[160];
-                        wsprintfA(wb,
-                            "PIT WALKER ARRIVE: 2ed=%d 559c70=%d 559ce8=%d hero=(%d,%d) anim=0x%02x",
-                            (int)actionQueued, (int)DAT_00559c70,
-                            (int)DAT_00559ce8,
-                            (int)*(int*)(ent + 0x388), (int)*(int*)(ent + 0x38c),
-                            (int)ent[0x105]);
-                        DbgLogPublic(wb);
-                    }
-                    // 2026-05-06: en lugar del mini-attack inline (que ignoraba
-                    // weapon-range, animation gates, position cache, etc),
-                    // delegamos al port completo de Action() (Combat_ProcessQueuedAction
-                    // case 2) SOLO para action=3 (attack). Otros valores de
-                    // actionQueued (1=npc-talk, 2=pickup, 4=walk-final, 5=skill)
-                    // dispararían cases 0,1,3,4 de Action() — esos NO están
-                    // todavía completamente porteados y crashearon en runtime
-                    // (user reportó AV addr=0x55D1D6 al moverse 2026-05-06).
-                    if (actionQueued == 3) {
-                        Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-                        // 2026-05-07: hard-clear queue post walker-arrival
-                        // fire para que la SECONDARY TICK abajo no double-fire
-                        // si Action() out-of-range no clean por sí sola.
-                        *(unsigned char*)(ent + 0x2ed) = 0;
-                    }
-                    // 2026-07-25 (#2 shops): llegada a NPC (2ed==2) → mandar el
-                    // request de talk 0x30. DAT_00559c70 = índice del NPC clickeado.
-                    else if (actionQueued == 2) {
-                        int npcIdx = (int)DAT_00559c70;
-                        if (npcIdx >= 0 && npcIdx < 400) {
-                            BYTE* npc = (BYTE*)(uintptr_t)DAT_07abf5d0 + npcIdx * 0x394;
-                            if (npc[0] != 0)
-                                SendNpcTalkRequest(npc);
-                        }
-                        *(unsigned char*)(ent + 0x2ed) = 0;
-                    }
-                    // 2026-07-27: llegada al item (2ed==1) → mandar pickup 0x22.
-                    else if (actionQueued == 1) {
-                        // 2026-08-22: aca se releia SelectedItem EN VIVO al
-                        // llegar.  IDA latchea el indice al hacer click
-                        // (Player_InputTick L1278-1283: `ItemKey = v181;` junto
-                        // con `c[749] = 1`) y `Action` (0x48D640) arma el pickup
-                        // con ItemKey, no con SelectedItem.  Releerlo en vivo
-                        // hace que, con varios items juntos, se levante el que
-                        // este bajo el cursor AL LLEGAR y no el que se clickeo:
-                        // el nombre flotante decia uno y entraba otro.
-                        //
-                        // 2026-09-11: aca se mandaba el 0x22 directo.  IDA llama
-                        // a Action (0x48D640) cuando el camino termina, y es
-                        // Action la que primero mira si hay lugar: sin lugar
-                        // muestra GlobalText[375] y hace rebotar el item en el
-                        // suelo, sin mandar nada.  Mandandolo directo el server
-                        // contestaba "inventario lleno" y el rebote no salia.
-                        int itemSlotIdx = (int)ItemKey;
-                        if (itemSlotIdx >= 0 && itemSlotIdx < 1000) {
-                            BYTE* itemEnt = (BYTE*)&DAT_07e12840[0]
-                                          + (uintptr_t)itemSlotIdx * 0x204;
-                            if (itemEnt[72])     // active
-                                Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-                        }
-                        *(unsigned char*)(ent + 0x2ed) = 0;
-                    }
+                    // IDA L397-403: al terminar el camino, Action(c, c) con
+                    // la cola que haya (0 = nada).  El port despachaba por
+                    // tipo de cola con atajos propios (talk directo, pickup,
+                    // solo ataque) y dejaba la cola 4 a un tick secundario.
+                    Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                 }
             }
             else
@@ -1000,47 +851,6 @@ void __cdecl Player_ProcessInput(void)
         }
     }
 
-    // 2026-05-06: SECONDARY attack tick — si user click on mob already in
-    // range, walker no se ejecuta (no path needed) y mi wireup arriba (que
-    // está dentro del walker arrival branch) no dispara. Aquí check cada
-    // tick si ent[+0x2ed]=3 y walker idle, dispara Action() completa.
-    //
-    // 2026-05-07 (v3) — FIRE-ONCE-PER-CLICK. Antes el SECONDARY TICK
-    // disparaba Action() cada 200ms mientras 0x2ed==3 + walker idle. Esto
-    // creaba auto-attack: usuario clickea mob → 0x2ed=3 → mientras user
-    // sostenía el botón izq, safety guard skipea (bClickHeld=true), queue
-    // queda armado, SECONDARY fires every 200ms → "ataca solo con hover".
-    //
-    // Fix: cada vez que ent[0x2ed] entra al value 3 (click nuevo o walker
-    // arrival que lo dejó armado), permitir UN solo fire del Action() y
-    // luego HARD-CLEAR el queue. La próxima fire requiere que el queue
-    // caiga a 0 primero (que ahora pasa siempre tras el hard-clear) y
-    // vuelva a 3 por un nuevo click.
-    //
-    // Crítico: hard-clear ent[0x2ed]=0 después del fire para que el
-    // safety guard no necesite ejecutar (que skipea cuando bClickHeld=1).
-    {
-        unsigned char *ent = (unsigned char*)DAT_07abf5d8;
-        // 2026-09-04: se agrega la cola 4 (MOVEMENT_OPERATE).  Antes solo cubria
-        // la 3, asi que al clickear una silla LEJOS el heroe caminaba hasta ella
-        // y al llegar no disparaba nunca la accion.  Con la silla al lado si
-        // funcionaba, porque ese camino llama a Action directo.
-        if (ent && (ent[0x2ed] == 3 || ent[0x2ed] == 4) && ent[0x356] == 0) {
-            {
-                char dbg[200];
-                wsprintfA(dbg, "PIT SECONDARY TICK (1-shot): 2ed=%d c50=%d ce8=%d 4124=%d 42c4=%d 413c=%d bClickEdge=%d bClickHeld=%d",
-                    (int)ent[0x2ed], (int)SelectedCharacter, (int)DAT_00559ce8,
-                    (int)DAT_083a4124, (int)DAT_083a42c4, (int)DAT_083a413c,
-                    0, 0);  // bClickEdge/bClickHeld read later — log raw flags
-                DbgLogPublic(dbg);
-            }
-            Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-            // Limpia la cola de una después de disparar — elimina el auto-fire mientras
-            // mouse held. Si Action() in-range ya lo limpió, este write
-            // es no-op idempotente.
-            ent[0x2ed] = 0;
-        }
-    }
     // ── obsolete inline mini-attack disabled below ──────────────────────────
     #if 0
     {
@@ -1353,23 +1163,6 @@ void __cdecl Player_ProcessInput(void)
         // && SelectedCharacter!=-1` AND v32 (current click) para continuar combat.
         // Sin alguna de esas, bail (= no attack/action).
         //
-        // Bug previo: ent[0x2ed] (3=attack/2=pickup/1=npc/4=walk-final/5=skill)
-        // quedaba armado entre frames. Si user clickea entity → action set →
-        // walker walks → Action() falla → no clear → secondary tick fires
-        // Action() cada frame. User mueve mouse a otro entity → Action() puede
-        // dispararse contra NUEVO target sin nuevo click. User reportó:
-        // "ataca con hover incluso con NPCs" 2026-05-07.
-        //
-        // Clear cualquier valor del queue (no solo ==3) para cubrir todos los
-        // action types. Walker activo (ent[0x356]>0) significa que el user
-        // tiene movimiento en progreso → preservar queue para el walker-arrival.
-        if (DAT_07abf5d8 && !bClickEdge && !bClickHeld) {
-            BYTE* hero = (BYTE*)DAT_07abf5d8;
-            if (hero[0x356] == 0 && hero[0x2ed] != 0) {
-                hero[0x2ed] = 0;   // disarm stale action queue when idle + no click
-            }
-        }
-
         bool bHoverActive = false;
         if ((bClickHeld || bClickLatched) && !s_clickCycleConsumed) {
             bHoverActive = true;
@@ -1794,7 +1587,6 @@ void __cdecl Player_ProcessInput(void)
                         // paquete de movimiento y NUNCA llamaba a Action,
                         // asi que sentarse no se disparaba nunca.
                         Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-                        *(unsigned char*)(ent + 0x2ed) = 0;
                     } else {
                         // LABEL_340: hay camino -> caminar hasta el objeto.
                         Combat_SendMovePathPacket((int)ent, (int)ent);
@@ -1821,22 +1613,6 @@ void __cdecl Player_ProcessInput(void)
                     _DAT_07e118e4 = *(DWORD*)(tgtBase + 0x24);
                     DAT_00559c70  = SelectedNpc;
 
-                    // 2026-07-25 (#2 shops): si el NPC ya está en rango de talk
-                    // (server exige ±5 tiles — CGNpcTalkRecv L261), mandar el
-                    // request 0x30 YA. Si está lejos, se encola (2ed=2) y el
-                    // walker-arrival lo dispara al llegar.
-                    {
-                        int hgx = *(int*)(ent + 0x388), hgy = *(int*)(ent + 0x38c);
-                        int ngx = *(int*)(tgtBase + 0x388), ngy = *(int*)(tgtBase + 0x38c);
-                        int ddx = (hgx - ngx < 0) ? (ngx - hgx) : (hgx - ngx);
-                        int ddy = (hgy - ngy < 0) ? (ngy - hgy) : (hgy - ngy);
-                        if (((ddx > ddy) ? ddx : ddy) <= 4) {
-                            SendNpcTalkRequest((const BYTE*)tgtBase);
-                            *(unsigned char*)(ent + 0x2ed) = 0;  // no encolar walk
-                            goto end_tick_inc;
-                        }
-                    }
-
                     int srcX = *(int*)(ent + 0x388);
                     int srcY = *(int*)(ent + 0x38c);
                     int dstX = *(int*)(tgtBase + 0x388);
@@ -1849,7 +1625,8 @@ void __cdecl Player_ProcessInput(void)
                                                     dstX, dstY,
                                                     ent + 0x354, 0.0f);
                     if ((char)ok == '\0') {
-                        Send_MovePacket_Player_legacy_stub();
+                        // IDA L1210: sin camino -> LABEL_312 (Action manda el 0x30).
+                        Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                     } else {
                         Combat_SendMovePathPacket((int)ent, (int)ent);
                     }
@@ -1883,29 +1660,12 @@ void __cdecl Player_ProcessInput(void)
                 int srcX = *(int*)(ent + 0x388);
                 int srcY = *(int*)(ent + 0x38c);
 
-                // 2026-07-27: si el héroe ya está sobre/al lado del item, mandar
-                // el pickup 0x22 AHORA (no hay walk → el arrival no dispara).
-                // CGItemGetRecv: [C1][05][22][idxH][idxL], C3. El índice del pool
-                // ES el map item index (el 0x20 handler guarda en pool[key*0x204]).
-                {
-                    int adx = srcX - dstX; if (adx < 0) adx = -adx;
-                    int ady = srcY - dstY; if (ady < 0) ady = -ady;
-                    if (adx <= 1 && ady <= 1) {
-                        // Igual que al llegar caminando: el pickup lo resuelve
-                        // Action (IDA LABEL_312 cuando PathFinding no devuelve
-                        // camino), que es quien chequea el inventario lleno.
-                        if (itemEnt[72])     // active
-                            Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
-                        *(unsigned char*)(ent + 0x2ed) = 0;
-                        goto end_tick_inc;
-                    }
-                }
-
                 unsigned int ok = Path_FindRoute(srcX, srcY,
                                                 dstX, dstY,
                                                 ent + 0x354, 0.0f);
                 if ((char)ok == '\0') {
-                    Send_MovePacket_Player_legacy_stub();
+                    // IDA L1318: sin camino -> Action y cola en 0.
+                    Combat_ProcessQueuedAction((DWORD)ent, (DWORD)ent);
                     *(unsigned char*)(ent + 0x2ed) = 0;
                 } else {
                     Combat_SendMovePathPacket((int)ent, (int)ent);
