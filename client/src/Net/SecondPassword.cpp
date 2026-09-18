@@ -2812,10 +2812,19 @@ int __cdecl FUN_0047e3c0(int characterMachine, int /*p2*/, int /*p3*/) {
     return v7 / 100;
 }
 // CheckGate @ 0x004AC140.
-// IDA 0.97K: GateAttribute contains exactly 100 records of 9 bytes:
-// active, source map, min X, min Y, max X, max Y, target gate, direction,
-// minimum level.  The client detects the source rectangle and asks the server
-// to resolve the target gate with C3:06:1C:<source gate>:00:00.
+// GateAttribute: 100 registros de 9 bytes (activo, mapa, minX, minY, maxX, maxY,
+// gate destino, direccion, nivel minimo).  Si el heroe pisa el rectangulo pide
+// al server el gate con C1:06:1C:<gate>:00:00.
+//
+// Detalles fieles a IDA que el port anterior no tenia:
+//  - el recorrido NO corta al encontrar un gate: cada rama termina en
+//    LABEL_121 y sigue con el siguiente registro;
+//  - `LoadingWorld = 50` al rechazar por nivel (antirrebote del aviso) y
+//    `LoadingWorld = 9999999` (`(int)&unk_98967F`) al pedir el viaje, que
+//    ReceiveTeleport baja a 30; si el pedido se descarta por el antirrebote
+//    vuelve a 0;
+//  - los avisos van con etiqueta vacia (byte_7E11E50.. son BSS sin escritor),
+//    no "ERROR".
 void __cdecl FUN_004ac140(void)
 {
     if (!DAT_07cf5600 || !Hero || !CharacterAttribute)
@@ -2823,83 +2832,76 @@ void __cdecl FUN_004ac140(void)
 
     const BYTE* const gates = (const BYTE*)(uintptr_t)DAT_07cf5600;
     BYTE* const hero = (BYTE*)Hero;
-    const int heroX = *(const int*)(hero + 904);
-    const int heroY = *(const int*)(hero + 908);
+    const WORD& level = *(WORD*)((BYTE*)CharacterAttribute + 14);
 
     for (int gateIndex = 0; gateIndex < 100; ++gateIndex) {
         const BYTE* const gate = gates + gateIndex * 9; // IDA: GateAttribute + 9*i
         if (gate[0] != 1 || gate[1] != (BYTE)World)
             continue;
+        const int heroX = *(const int*)(hero + 904);
+        const int heroY = *(const int*)(hero + 908);
         if (heroX < gate[2] || heroY < gate[3] || heroX > gate[4] || heroY > gate[5])
             continue;
-        if (DAT_07e11d1c != 0 || hero[773] != 0)
-            return;
+        if (DAT_07e11d1c != 0 || hero[773] != 0)          // LoadingWorld
+            continue;
 
         unsigned int requiredLevel = gate[8];
-        if ((hero[444] & 7) == 3) // Magic Gladiator: IDA uses two thirds.
+        if ((hero[444] & 7) == 3) // Magic Gladiator: dos tercios.
             requiredLevel = (requiredLevel * 2) / 3;
 
-        // Gate 28 is the one exceptional level branch in IDA: it simply does
-        // not enter the common gate path when the character is below minimum.
-        if (gateIndex == 28 &&
-            *(const WORD*)((const BYTE*)CharacterAttribute + 14) < requiredLevel)
-            return;
+        // El gate 28 no entra a la rama comun si no llega al nivel.
+        if (gateIndex == 28 && level < requiredLevel)
+            continue;
 
-        // IDA CheckGate blocks travel to the Atlans/Tarkan pairs while an
-        // Uniria/Dinorant is equipped or being dragged by the cursor.
+        // Atlans/Tarkan: no con Uniria/Dinorant equipado o agarrado.
         if ((gateIndex >= 45 && gateIndex <= 49) ||
             (gateIndex >= 55 && gateIndex <= 56)) {
             const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
             const WORD picked = *(const WORD*)DAT_07e91350;
             if ((helper >= 418 && helper <= 419) ||
                 (DAT_07e91388 > 0 && picked >= 418 && picked <= 419)) {
-                UIChatLogWindow_AddText("ERROR", GlobalText[261], 2);
-                return;
+                UIChatLogWindow_AddText("", GlobalText[261], 2);
+                continue;
             }
         }
 
-        // IDA CheckGate has the Icarus-only branch for gate records 62..65:
-        // wings (384..390) or a Dinorant (419) are mandatory in both
-        // directions; an Uniria (418) is specifically rejected.
+        // Icarus (62..65): alas (384..390) o Dinorant (419); la Uniria no.
         if (gateIndex >= 62 && gateIndex <= 65) {
             const WORD wings = *(const WORD*)((const BYTE*)CharacterMachine + 1012);
             const WORD helper = *(const WORD*)((const BYTE*)CharacterMachine + 1080);
             if ((wings < 384 || wings > 390) && helper != 419) {
-                UIChatLogWindow_AddText("ERROR", GlobalText[263], 2);
-                if (*(const WORD*)((const BYTE*)CharacterAttribute + 14) < requiredLevel) {
-                    char levelMessage[128];
+                UIChatLogWindow_AddText("", GlobalText[263], 2);
+                if (level < requiredLevel) {
+                    char levelMessage[100];
                     sprintf_s(levelMessage, GlobalText[350], requiredLevel);
-                    UIChatLogWindow_AddText("ERROR", levelMessage, 2);
+                    UIChatLogWindow_AddText("", levelMessage, 2);
                 }
-                return;
+                continue;
             }
             if (helper == 418) {
-                UIChatLogWindow_AddText("ERROR", GlobalText[569], 2);
-                return;
+                UIChatLogWindow_AddText("", GlobalText[569], 2);
+                continue;
             }
         }
 
-        if (*(const WORD*)((const BYTE*)CharacterAttribute + 14) < requiredLevel) {
-            // CheckGate @ 0x004AC140 formats GlobalText[350] with the required
-            // level before leaving the gate untouched.  This is especially
-            // relevant to Icarus gate 64, whose minimum is 50.
-            char message[128];
+        if (level < requiredLevel) {
+            DAT_07e11d1c = 50;                                  // LoadingWorld
+            char message[100];
             sprintf_s(message, GlobalText[350], requiredLevel);
-            UIChatLogWindow_AddText("ERROR", message, 2);
-            return;
+            UIChatLogWindow_AddText("", message, 2);
+            continue;
         }
 
-        const DWORD now = GetTickCount();
-        if (DAT_05826d14 || DAT_07e11dc4 || now - DAT_07e11dc8 < 3000) {
+        DAT_07e11d1c = 9999999;                                 // LoadingWorld
+        if (DAT_05826d14 || DAT_07e11dc4 || GetTickCount() - DAT_07e11dc8 < 3000) {
             DAT_07e11dc4 = 0;
-            return;
+            DAT_07e11d1c = 0;
+            continue;
         }
 
         if (gateIndex == 0)
-            DAT_05826d14 = 1;
+            DAT_05826d14 = 1;                                   // Teleport
 
-        // Original's encrypted packet becomes this plaintext before the shared
-        // C3 serializer: C1:06:1C:gate:00:00 (PMSG_TELEPORT_RECV).
         const BYTE packet[6] = { 0xC1, 0x06, 0x1C, (BYTE)gateIndex, 0, 0 };
         Net_SendSmallPacket(packet, sizeof(packet));
 
@@ -2907,10 +2909,9 @@ void __cdecl FUN_004ac140(void)
         SelectedNpc = -1;
         SelectedCharacter = -1;
         SelectedOperate = -1;
-        DAT_00559c58 = -1;
+        DAT_00559c58 = -1;                                      // Attacking
         DAT_07e11dc4 = 1;
         DAT_07e11db8 = 0;
-        return;
     }
 }
 

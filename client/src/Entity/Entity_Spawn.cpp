@@ -106,6 +106,9 @@ void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
     // Store grid coords into entity (the value the HashTable block also writes)
     *(unsigned int *)(param_1 + 0x388) = grid_x;
     *(unsigned int *)(param_1 + 0x38c) = grid_y;
+    // IDA L354-355: la casilla destino arranca en la de spawn.
+    param_1[0x306] = (unsigned char)PositionX;
+    param_1[0x307] = (unsigned char)PositionY;
 
     // ── Real initialization (lines 481+ in Ghidra) ───────────────────────────
 
@@ -213,6 +216,7 @@ void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
     // IDA L641-642: -1032847360 = 0xC2700000 = -60.0f. Set ONCE — don't overwrite.
     *(int    *)(param_1 + 0x118) = 0xc2700000;   // -60.0f
     *(int    *)(param_1 + 0x11c) = 0xc2700000;
+    *(int    *)(param_1 + 0x320) = 0;   // IDA L645 (+800)
     *(int    *)(param_1 + 0x324) = 0;
     *(int    *)(param_1 + 0x328) = 0;
     *(int    *)(param_1 + 0xe8)  = 0;

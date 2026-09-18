@@ -577,7 +577,7 @@ LAB_postprocess:
     // ── Post-render: PvP outline ───────────────────────────────────────────────
     if (((unsigned char)*(unsigned int *)(param_1 + 0x78) & 2) == 2) {
         FUN_00441e00(model, 2,
-                     *(float *)(param_1 + 0x168), -1, 1.0f,
+                     *(float *)(param_1 + 0x168), -2, 1.0f,   // IDA L845: BlendMesh -2
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70),
                      *(int *)(param_1 + 0x58),  0xffffffff);
     }
@@ -587,7 +587,7 @@ LAB_postprocess:
         FUN_00440d30();
         float wave2 = (float)(fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0)
                       * (long double)_DAT_005528b8 + (long double)_DAT_00552504);
-        int texFrame = (int)(*(unsigned int *)((int)*(int *)((int)model + 0x38) + 0xc));
+        int texFrame = *(short *)(*(int *)((int)model + 0x38) + 0xc);   // IDA: (__int16) de la malla 0
         FUN_00440d50(model, 0.0f, 2,
                      *(float *)(param_1 + 0x168), 0, wave2,
                      *(float *)(param_1 + 0x6c), *(float *)(param_1 + 0x70),
