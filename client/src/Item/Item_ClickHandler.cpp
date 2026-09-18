@@ -539,9 +539,75 @@ void RestorePickedItemToSource(void)
 // Anti-tamper hash-table noise around CharacterMachine ref-count omitted
 // per project policy.
 // ─────────────────────────────────────────────────────────────────────────────
+// IDA: sub_4CC270 (0x004CC270) — compara dos items del mismo tipo.
+// Devuelve 2 si el tipo es distinto, 0 si no se distinguen, -1 si `n` es mejor
+// que `p` y 1 si es peor.  IDA recibe los dos ITEM por valor (17 y 12 DWORD);
+// los offsets de abajo son los del struct en memoria.
+static int Item_CompareForTradeHistory(const BYTE* p, const BYTE* n)
+{
+    if (*(short*)p != *(short*)n) return 2;
+    if (p[9] != n[9]) return 0;
+    const int lp = (*(int*)(p + 4) >> 3) & 0xF;
+    const int ln = (*(int*)(n + 4) >> 3) & 0xF;
+    if (lp != ln) return (lp < ln) ? -1 : 1;
+
+    const int sp = (*(int*)(p + 4) >> 7) & 1, sn = (*(int*)(n + 4) >> 7) & 1;
+    if (sp < sn) return -1;
+    if (sp > sn) return 1;
+    const int ep = p[27] & 0x3F, en = n[27] & 0x3F;
+    if (ep < en) return -1;
+    if (ep > en) return 1;
+    if (p[36] < n[36]) return -1;
+    if (p[36] > n[36]) return 1;
+    int fp = 0, vp = 0, fn = 0, vn = 0;
+    for (int i = 0; i < n[36]; ++i) {
+        if (p[37 + i] >= 0x3C && p[37 + i] <= 0x3F) { fp = 1; vp = p[45 + i]; }
+        if (n[37 + i] >= 0x3C && n[37 + i] <= 0x3F) { fn = 1; vn = n[45 + i]; }
+    }
+    if (n[36]) {
+        if (fp < fn || vp < vn) return -1;
+        if (fp != fn && vp != vn) return 1;
+    }
+    if (p[26] > n[26]) return 1;
+    return (p[26] < n[26]) ? -1 : 0;
+}
+
+// IDA: sub_4CC530 (0x004CC530) — recuerda un item valioso recibido por trade
+// en la lista de 32 entradas word_7E11F78 (DAT_07e11f78): alas y pets
+// (384..390, 399, 416..419, 461/462/464), items +5 o mas y excellent.  Si ya
+// hay uno igual o mejor no hace nada; si el nuevo es mejor lo reemplaza; si no
+// esta, lo agrega en la primera entrada libre.
+extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool)
+{
+    BYTE* const item = pool + 68 * slot;
+    const short t = *(short*)item;
+    if (!((t >= 416 && t <= 419) || t == 461 || t == 462 || t == 464 ||
+          (t >= 384 && t <= 390) || t == 399 ||
+          ((item[4] & 0x78) > 0x20 && t < 384) || (item[27] & 0x3F)))
+        return;
+
+    bool sameTypeKept = false;
+    for (int i = 0; i < 32; ++i) {
+        BYTE* entry = DAT_07e11f78 + 68 * i;
+        if (*(short*)entry == -1) continue;
+        const int r = Item_CompareForTradeHistory(entry, item);
+        if (r == 0) return;
+        if (r == -1) { memcpy(entry, item, 0x44); return; }
+        if (r != 2) sameTypeKept = true;
+    }
+    if (sameTypeKept) return;
+    for (int i = 0; i < 32; ++i) {
+        BYTE* entry = DAT_07e11f78 + 68 * i;
+        if (*(short*)entry == -1) { memcpy(entry, item, 0x44); return; }
+    }
+}
+
 extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int gridW)
 {
     if (slot_idx == 255) return;   // sentinel: no-op
+    // IDA L67-70: al sacar un item del trade del otro jugador se recuerda.
+    if ((BYTE*)inv_base == &Inventory[0])
+        Item_TradeHistoryAdd(slot_idx, (BYTE*)inv_base);
 
     auto clear_footprint = [&](ITEM* slot) {
         if (!slot) return;
@@ -1462,8 +1528,8 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         // que pasa arriba del grid (mouseY < InventoryStartY+200), o sea toda
         // la zona de equipo. En el binario ese click lo atiende el hit-test de
         // equipo del render antes de este dispatcher.
-        // Esa región la maneja `InventoryEquipmentHitTest` (HUD_Pass6) durante
-        // el render, así que acá salimos SIN consumir el click para que le
+        // Esa región la maneja sub_4CDC70 (FUN_004cdc70, desde sub_4E6550),
+        // así que acá salimos SIN consumir el click para que le
         // llegue. Sin esto: mensaje rojo + `RestorePickedItemToSource`, y el
         // item nunca se equipaba/desequipaba.
         if (!dropMain && !dropTrade && !dropWH && !dropMix &&

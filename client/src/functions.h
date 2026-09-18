@@ -476,7 +476,7 @@ char  __cdecl FUN_00513440(char *buf);                               // Chat_Val
 void  __cdecl CheckChatText(char* text);                             // IDA: sub_497C70 (0x00497C70) gestos por texto del chat
 void  __cdecl SetActionClass(int c, int o, int action, int actionType); // IDA: SetActionClass (0x00497870)
 void  __cdecl Net_ProcessReceiveQueue(void); // FUN_004cbdf0
-void  __cdecl FUN_004cc530(int, int, int, int);
+extern "C" void __cdecl Item_TradeHistoryAdd(int slot, BYTE* pool);  // IDA: sub_4CC530 (0x004CC530)
 void  __cdecl FUN_004cc660(BYTE* Inv, int Width, int Height,
                            int Index, BYTE* Item, int First);   // InsertInventoryItem
 void  __cdecl FUN_004cce00(int, int, int, int);                    // UI_Main

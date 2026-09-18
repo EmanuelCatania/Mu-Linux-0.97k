@@ -796,9 +796,11 @@ void __cdecl FUN_004e6550(void) {
         }
     }
 
-    // Render de la grilla: si Y >= __ftol() (aprox. DAT_07ea5284), renderiza la grilla completa; si no, vacía
+    // IDA sub_4E6550 L232-240: por debajo de InventoryStartY + 200 esta la
+    // grilla (sub_4D23B0); por arriba, los casilleros de equipo (sub_4D1FC0).
+    // 2026-09-17: faltaba el +200, asi que los casilleros nunca se procesaban.
     DAT_07eaa164 = 0;
-    int lVal = (int)DAT_07ea5284;
+    int lVal = (int)((double)(int)DAT_07ea5284 + 200.0);
     if ((int)DAT_083a4278 < lVal) {
         FUN_004d1fc0();
     } else {
@@ -1921,38 +1923,209 @@ uint __cdecl FUN_004f6a70(void)
 //   slot 10 @ ( 55, 152) 20x20  Ring 2          (+1216)
 //   slot 11 @ (115, 152) 20x20  Pendant         (+1284)
 //
-// FUN_004cdc70 @ 0x004CDC70 — RenderEquipmentSlot(sx, sy, w, h, slotIdx)
-// Port simplificado: el IDA decompile son 3396 lineas, ~65% es HashTable
-// obfuscation (anti-tamper).  El render real:
-//   1. Leer item desde CharacterMachine + 536 + 68*slotIdx (stride = sizeof(ITEM)).
-//   2. Si Type != -1, llamar RenderItem3D para dibujar el modelo.
-//   3. Anti-tamper STRUCT_DECRYPT/ENCRYPT — skipped per project policy.
-//
-// 2026-09-02: la tabla de arriba estaba MAL en el comentario (decia 2=Pendant,
-// 4=Boots, 5=Pants, 6=Gloves, 8=Helmet).  El codigo siempre uso la identidad
-// 536 + 68*slot, que es la correcta segun RenderEquipment3D (0x4E3100); lo que
-// mentia eran las etiquetas.  Corregidas contra esa tabla y contra las
-// posiciones que usa FUN_004d1fc0 aca abajo.
+// IDA: sub_4CDC70 (0x004CDC70) — casillero de equipo del inventario.
+// NO dibuja: es la logica del casillero (el item lo dibuja RenderEquipment3D).
+//   * Sin item levantado: hover (tooltip + Color 2), martillo de reparar (0x34)
+//     y levantar el item equipado (SetCharacterClass, DeleteBug del pet).
+//   * Con item levantado: valida si se puede equipar en este casillero (clase,
+//     dos manos, flechas, stats, nivel, restricciones de mapa), pinta la casilla
+//     (Color 2 = valido, 3 = invalido) y con click manda el 0x24.
+// 2026-09-17: antes esta funcion dibujaba el item y la logica la hacia un
+// hit-test inventado en HUD_Pass6 (InventoryEquipmentHitTest), sin la
+// validacion ni el color de la casilla.
+extern "C" void __cdecl SyncPickedItemVisualState(void);
 extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx)
 {
-    if (!CharacterMachine || slotIdx < 0 || slotIdx >= 12) return;
+    if ((int)EnableUse > 0 || DAT_07eaa165 /* EquipmentItem */) return;
+    if (!CharacterMachine || !CharacterAttribute || !DAT_07abf5d8 || !DAT_07d78068) return;
 
-    BYTE* CM = (BYTE*)CharacterMachine;
-    int slotOffset = 536 + slotIdx * 68;
-    short itemType = *(short*)(CM + slotOffset);
-    if (itemType == -1) return;   // empty slot
+    const int  a5  = slotIdx;
+    const int  x0  = (int)DAT_07ea5288 + (int)sx;          // InventoryStartX + a1
+    const int  y0  = (int)DAT_07ea5284 + (int)sy;          // InventoryStartY + a2
+    const int  mx  = (int)DAT_083a427c;
+    const int  my  = (int)DAT_083a4278;
+    const bool inside = mx >= x0 && (double)x0 + w > (double)mx &&
+                        my >= y0 && (double)y0 + h > (double)my;
+    BYTE* const CM   = (BYTE*)CharacterMachine;
+    BYTE* const CA   = (BYTE*)CharacterAttribute;
+    BYTE* const slot = CM + 536 + 68 * a5;
+    ITEM_ATTRIBUTE* const IA = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
+    ITEM* const picked = (ITEM*)DAT_07e91350;              // pPickedItem
 
-    int   itemLevel  = *(int*)(CM + slotOffset + 4);
-    BYTE  itemOption = *(BYTE*)(CM + slotOffset + 27);
+    // ── Sin item levantado ────────────────────────────────────────────────
+    if ((int)DAT_07e91388 <= 0) {
+        const short type = *(short*)slot;
+        if (type == -1 || !inside) return;
+        DAT_07eaa164 = 1;                                   // byte_7EAA164
+        if (!DAT_083a4124) {                                // MouseLButtonPush
+            slot[64] = 2;                                   // Color: hover
+            DAT_07ea9844 = 0;                               // byte_7EA9844
+            DAT_07eaa160 = (DWORD)(uintptr_t)slot;          // CheckInventory
+            DAT_07ea8408 = (DWORD)y0;                       // sy
+            DAT_07ea840c = (DWORD)(x0 + (int)w / 2);        // sx
+            return;
+        }
+        if (DAT_05826d14) return;                           // Teleport
+        if (DAT_07eaa134) {                                 // RepairEnable_0
+            if ((type >= 416 && type <= 419) || type == 426 || type == 135 ||
+                type == 143 || type >= 448 || (type >= 391 && type <= 403) ||
+                (type >= 430 && type <= 435))
+                return;
+            DAT_083a4124 = 0;
+            BYTE pkt[5] = { 0xC1, 0x05, 0x34, (BYTE)a5, (BYTE)DAT_07eaa138 };
+            Net_SendSmallPacket(pkt, sizeof(pkt));
+            return;
+        }
+        DAT_083a4124 = 0;
+        if ((int)World == 10) {
+            // Icarus: no se puede sacar el unico item que permite volar
+            // (alas 384..390 o Dinorant 419).
+            int flying = 0;
+            const short wing = *(short*)(CM + 1012);
+            if (wing >= 384 && wing <= 390) flying = 1;
+            if (*(short*)(CM + 1080) >= 419) ++flying;
+            if (flying <= 1 && ((type >= 384 && type <= 390) || type == 419))
+                return;
+        }
+        DAT_07ea9800 = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+        memcpy(DAT_07e91350, slot, 0x44);                   // pPickedItem = *slot
+        DAT_07e91388 = 1;                                   // pPickedItem.Key (copia del port)
+        SyncPickedItemVisualState();
+        g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+        g_ItemMoveTargetPool = 0;
+        *(short*)slot = -1;
+        *(int*)(slot + 4) = 0;
+        slot[27] = 0;
+        DAT_07ea5b18 = (DWORD)a5;                           // Inventory[32].Type
+        FUN_0045c130((int)(uintptr_t)DAT_07abf5d8);         // SetCharacterClass(Hero)
+        DAT_07eaa160 = 0;                                   // CheckInventory
+        FUN_00404bc0(29, 0, 0);
+        if (a5 == 8)
+            DeleteBug((int)(uintptr_t)DAT_07abf5d8);
+        return;
+    }
 
-    // Read InventoryStartX/Y para el offset absoluto del panel.
-    int startX = (int)DAT_07ea5288;   // InventoryStartX
-    int startY = (int)DAT_07ea5284;   // InventoryStartY
+    // ── Con item levantado ────────────────────────────────────────────────
+    if (!inside) return;
+    const short pt    = picked->Type;
+    const short left  = *(short*)(CM + 536);
+    const short right = *(short*)(CM + 604);
+    const int   cls   = CA[11] & 7;
+    const BYTE* req   = IA[pt].RequireClass;
+    bool ok = true;
 
-    // RenderItem3D quiere coords screen-space; sx/sy son relativas al panel.
-    int itemExt = *(BYTE*)(CM + slotOffset + 61);
-    RenderItem3D((float)startX + sx, (float)startY + sy, w, h,
-                 itemType, itemLevel, (int)itemOption, itemExt, false);
+    if ((*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7) == 3) {       // Magic Gladiator
+        if (!req[3] && !req[0] && !req[1]) ok = false;
+    } else if (!req[*(BYTE*)(DAT_07abf5d8 + 0x1BC) & 7]) {
+        ok = false;
+    }
+
+    bool rightHandChecks = false;
+    if (pt != 135 && pt != 143) {
+        if (left != -1 && left != 135 && left != 143 && a5 == 1) {
+            if (IA[pt].Width >= 2 && (pt < 192 || pt >= 224)) ok = false;
+            if (IA[left].Width >= 2) ok = false;
+        }
+        if (right != -1 && right != 135 && right != 143 && a5 == 0) {
+            if (IA[pt].Width >= 2) ok = false;
+            if (IA[right].Width >= 2 && (right < 192 || right >= 224)) ok = false;
+            rightHandChecks = true;                         // LABEL_118
+        }
+    }
+    if (!rightHandChecks && a5 == 1) {
+        if (pt == 143) ok = false;
+        if (cls == 0 || cls == 2) {
+            if (pt >= 0 && pt < 128) ok = false;
+            if (pt >= 160 && pt < 192) ok = false;
+            if (left == 143) {
+                if (pt == 135 || pt < 128 || pt > 160) ok = false;
+            } else if (pt == 135 && left != -1 && (left < 128 || left > 160)) {
+                ok = false;
+            }
+        }
+    } else if (rightHandChecks || a5 == 0) {
+        // LABEL_118
+        if (pt == 135) ok = false;
+        if (cls == 2 && right == 135 && (pt < 128 || pt >= 160 || pt == 143)) ok = false;
+    }
+
+    // LABEL_164
+    if (pt >= 430 && pt <= 435) ok = false;
+    if (picked->RequireStrength  > *(WORD*)(CA + 20)) ok = false;
+    if (picked->RequireDexterity > *(WORD*)(CA + 22)) ok = false;
+    if (picked->RequireEnergy    > *(WORD*)(CA + 26)) ok = false;
+    const BYTE part = picked->Part;
+    if ((part >= 7 && part <= 11) && picked->RequireLevel > *(WORD*)(CA + 14)) ok = false;
+
+    bool invalid = false;
+    if (part == 7) {
+        if (pt >= 392 && pt < 416) invalid = true;
+    } else if (part == 8) {
+        if ((int)World == 7) {
+            if (pt == 418 || pt == 419) invalid = true;
+        } else if ((int)World == 10 && pt == 418) {
+            invalid = true;
+        }
+    }
+    if (!invalid && !ok) invalid = true;                    // LABEL_231
+    if (!invalid && part != (BYTE)a5) {
+        if (part == 10) {
+            if (a5 != 11) invalid = true;
+        } else if (part != 0 || a5 != 1 || IA[pt].Width >= 2) {
+            invalid = true;
+        }
+    }
+    if (invalid) {                                          // LABEL_220
+        slot[64] = 3;
+        if (DAT_083a4124) {
+            DAT_083a4124 = 0;
+            if (!DAT_07eaa165) Item_ReturnPickedItem();     // sub_4CD3B0
+        }
+        return;
+    }
+
+    slot[64] = 2;
+    if (!DAT_083a4124) return;
+    DAT_07eaa164 = 1;
+    DAT_083a4124 = 0;
+    DAT_07e11e78 = (DWORD)a5;
+    if (a5 == 1 && pt >= 0 && pt < 96 && left == -1)
+        DAT_07e11e78 = 0;
+
+    const BYTE* src = (const BYTE*)(uintptr_t)DAT_07ea9800;
+    BYTE srcFlag;
+    if (src == &OffsetInventoryItems[0])      srcFlag = 0;
+    else if (src == &OffsetWarehouseItems[0]) srcFlag = 2;
+    else if (src == &OffsetMixItems[0])       srcFlag = 3;
+    else                                      srcFlag = 1;  // trade
+
+    if (srcFlag == 2 && DAT_00559f5f && !DAT_07eaa148) {
+        // Baul con candado: pedir el PIN antes de sacar el item.
+        DAT_07ea9810 = (DWORD)a5;
+        DAT_07ea9808 = DAT_07ea5b18;
+        DAT_07ea9804 = 2;
+        DAT_07ea980c = 0;
+        short* digits = (short*)&DAT_07e91394;
+        for (short i = 0; i < 10; ++i) digits[i] = i;
+        for (int n = 0; n < 20; ++n) {
+            const int a = rand() % 10, b = rand() % 10;
+            if (a != b) {
+                digits[a] ^= digits[b];
+                digits[b] ^= digits[a];
+                digits[a] ^= digits[b];
+            }
+        }
+        DAT_07eaa14c = 1;
+        memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
+        return;
+    }
+
+    if (DAT_07eaa165) return;                               // EquipmentItem
+    DAT_07eaa165 = 1;
+    g_ItemMoveSourcePool = DAT_07ea9800 ? DAT_07ea9800
+                                        : (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+    g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
+    SendRequestEquipmentItem_stub(srcFlag, (int)DAT_07ea5b18, picked, 0, (int)DAT_07e11e78);
 }
 
 void __cdecl FUN_004d1fc0(void) {
