@@ -6776,6 +6776,7 @@ void Net_ProcessPacket(void)
                 // slots de Boids (= g_WeatherSlotPool).  La cola DebugText que
                 // IDA llena antes no tiene lectores en el binario; se omite.
                 if (Size < 5) break;
+                NetLog("NET:  → 0x0B EventState state=%d event=%d", Msg[3], Msg[4]);
                 if (Msg[4] == 1)      DAT_083a3ff0 = (Msg[3] != 0) ? 1 : 0;   // EnableEvent
                 else if (Msg[4] == 3) DAT_083a3ff0 = (Msg[3] != 0) ? 3 : 0;
                 // event 2 = Tamachan.  No existe en el 0.97k; viene del 0.98j
