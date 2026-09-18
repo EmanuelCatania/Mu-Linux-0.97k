@@ -6778,6 +6778,15 @@ void Net_ProcessPacket(void)
                 if (Size < 5) break;
                 if (Msg[4] == 1)      DAT_083a3ff0 = (Msg[3] != 0) ? 1 : 0;   // EnableEvent
                 else if (Msg[4] == 3) DAT_083a3ff0 = (Msg[3] != 0) ? 3 : 0;
+                // event 2 = Tamachan.  No existe en el 0.97k; viene del 0.98j
+                // (ProtocolCore 0x4437A0, bloque en 0x444299):
+                //     if (state) { sub_46C220(); sub_46C190(); }   // limpiar + aparecer
+                //     else         sub_46C250();                   // despedir
+                // y despues DeleteBoids(), como los otros tipos.
+                else if (Msg[4] == 2) {
+                    if (Msg[3]) { Tamachan_Clear(); Tamachan_Spawn(); }
+                    else        Tamachan_Dismiss();
+                }
                 for (int i = 0; i < 40; ++i)
                     g_WeatherSlotPool[i * 0x1bc] = 0;
                 break;

@@ -63,6 +63,128 @@
 
 #include "stdafx.h"
 
+// Tamachan -- IDA 0.98j MoveEffect (sub_4723F0) case 183 (aca, tipo 193; ver
+// Tamachan_Create en Effect_Create.cpp).  `life` es el contador +96 leido
+// ANTES del decremento de la cola, como el `v3` del binario.  Al volver, el
+// caller cae a la cola comun (animacion del modelo, avance por +192 y
+// decremento de +96), igual que el `break` / LABEL_524 del 0.98j.
+//
+// Estados (+260): 0 baja hasta 5 sobre el suelo mirando al heroe;
+//                 1 sube hasta 40 mirando al heroe;
+//                 2 camina hacia +368 levantando polvo (particula 103);
+//                 3 se va: se hunde 5 por frame (lo pone el 0x0B de fin).
+// En Atlans (World 7) se queda vivo; en cualquier otro mapa que no sea
+// Lorencia desaparece.
+//
+// Desviacion: los sonidos 101/102 del 0.98j son 365/366 aca (en el 0.97k
+// esos slots son eIceArrow/eTelekinesis).
+static void Tamachan_FaceHero(char *o)
+{
+    char *hero = (char *)DAT_07abf5d8;
+    if (!hero) return;   // guard del port: el binario asume Hero
+    float target = FUN_0043e050(*(float *)(o + 16), *(float *)(o + 20),
+                                *(float *)(hero + 16), *(float *)(hero + 20));
+    float diff = target - *(float *)(o + 36);
+    if (diff > 5.0f)       *(float *)(o + 36) = *(float *)(o + 36) + 5.0f;
+    else if (diff < -5.0f) *(float *)(o + 36) = *(float *)(o + 36) - 5.0f;
+}
+
+static void Tamachan_Move(char *o, int life)
+{
+    if (World == 7) {
+        *(int *)(o + 96) = 10;
+        return;
+    }
+    if (World) {
+        *(int *)(o + 96) = -1;
+        *o = 0;
+        return;
+    }
+    switch ((unsigned char)o[260]) {
+    case 0:
+        if (life < 10) {
+            *(int *)(o + 216) = 0;
+            int state = rand() % 2 + 1;
+            o[260] = (char)state;
+            FUN_0043e820((int)o, state);
+            if (o[260] == 2) goto walk;       // LABEL_312
+            goto newLife;                     // LABEL_313
+        }
+        *(float *)(o + 24) = *(float *)(o + 60) + *(float *)(o + 216);
+        if (*(float *)(o + 216) > 5.0f) *(float *)(o + 216) = *(float *)(o + 216) - 1.0f;
+        else                           *(float *)(o + 216) = 5.0f;
+        Tamachan_FaceHero(o);
+        if (!(rand() % 100)) FUN_00404bc0(366, 0, 0);
+        return;
+    case 1:
+        if (life < 10) {
+            *(float *)(o + 216) = 40.0f;
+            o[260] = 0;
+            FUN_0043e820((int)o, 0);
+            if (o[260] == 2) goto walk;
+            goto newLife;
+        }
+        *(float *)(o + 24) = *(float *)(o + 60) + *(float *)(o + 216);
+        if (*(float *)(o + 216) < 40.0f) *(float *)(o + 216) = *(float *)(o + 216) + 1.0f;
+        else                            *(float *)(o + 216) = 40.0f;
+        Tamachan_FaceHero(o);
+        if (!(*(int *)(o + 96) % (rand() % 20 + 10))) FUN_00404bc0(365, 0, 0);
+        return;
+    case 2: {
+        float dx = *(float *)(o + 16) - *(float *)(o + 368);
+        float dy = *(float *)(o + 20) - *(float *)(o + 372);
+        *(int *)(o + 96) = 10;
+        float dist = (float)sqrt(dy * dy + dx * dx);
+        FUN_0043e4a0((float *)(o + 16), (float *)(o + 28), (float *)(o + 368), 3000.0f / dist);
+        *(float *)(o + 28) = -10.0f;
+        *(float *)(o + 32) = 0.0f;
+        // En el binario el valor es el st0 de RequestTerrainHeight menos 10
+        // (0x475722: `fstp st` descarta 3000/dist, `fsub flt_566460`).
+        *(float *)(o + 24) = FUN_004f7500(*(float *)(o + 16), *(float *)(o + 20)) - 10.0f;
+        if (dist <= 10.0f) {
+            float offset[3], angle[3], matrix[12], rotated[3];
+            int r = rand();
+            offset[0] = 0.0f;
+            offset[1] = (float)(-150.0 - (double)(r % 150));
+            offset[2] = 0.0f;
+            angle[0] = 0.0f;
+            angle[1] = 0.0f;
+            angle[2] = (float)((double)(rand() % 120) + 180.0 - 60.0);
+            Matrix_BuildFromEuler(angle, matrix);
+            Vector_Rotate(offset, matrix, rotated);
+            for (int i = 0; i < 3; ++i)
+                ((float *)(o + 368))[i] = rotated[i] + ((float *)(o + 52))[i];
+            *(int *)(o + 96) = rand() % 100 + 50;
+            int state = rand() % 3;
+            o[260] = (char)state;
+            FUN_0043e820((int)o, state);
+            if (o[260] != 2) {
+                *(float *)(o + 192) = 0.0f;
+                *(float *)(o + 196) = 0.0f;
+                *(float *)(o + 200) = 0.0f;
+            }
+        }
+        if (!(rand() % 3)) {
+            float pos[3] = { *(float *)(o + 16), *(float *)(o + 20), *(float *)(o + 24) + 11.0f };
+            Particle_Spawn(103, pos, (float *)(o + 28), (float *)(o + 232), 1, 2.0f, 0);
+        }
+        FUN_00404bc0(11, 0, 0);
+        return;
+    }
+    case 3:
+        *(float *)(o + 24) = *(float *)(o + 24) - 5.0f;
+        return;
+    }
+    return;
+walk:
+    *(float *)(o + 192) = 0.0f;
+    *(float *)(o + 196) = -2.0f;
+    *(float *)(o + 200) = 0.0f;
+    return;
+newLife:
+    *(int *)(o + 96) = rand() % 50 + 50;
+}
+
 void FUN_00466ad0(float *param_1, int param_2)
 {
   // 2026-08-23 FIX [[locales-contiguos-ghidra]]: el codigo pasa `&local_XXX` a
@@ -758,6 +880,9 @@ LAB_0046a366:
     }
 // SECTION_3
     switch(iVar9) {
+    case 0xc1:                                  // Tamachan (0.98j case 183)
+      Tamachan_Move((char *)param_1, __cnt);
+      break;
     case 0xbe:
       fVar13 = param_1[1];
       if (fVar13 == 0.0) {

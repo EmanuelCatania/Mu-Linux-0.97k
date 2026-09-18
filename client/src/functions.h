@@ -342,6 +342,10 @@ void  __cdecl Monster_SaveSetBase(const char*); // FUN_0045fa20 — writes Monst
 float* __cdecl Effect_Create(int type, float *p1, float *p2, float *p3, float *p4, float *p5, float *p6, float *p7, byte flag); // IDA: FUN_00460dc0
 // Compatibility bridge used only by stubs_IDA_ports.cpp.
 float* __cdecl FUN_00460dc0(int type, float *p1, float *p2, float *p3, float *p4, float *p5, float *p6, float *p7, byte flag); // IDA: FUN_00460dc0
+// Tamachan (0.98j, efecto 193): control por el opcode 0x0B tipo 2.
+void __cdecl Tamachan_Clear(void);     // IDA 0.98j: sub_46C220
+void __cdecl Tamachan_Spawn(void);     // IDA 0.98j: sub_46C190
+void __cdecl Tamachan_Dismiss(void);   // IDA 0.98j: sub_46C250
 void  __cdecl Effect_SpawnSmokeBurst(float *, char); // IDA: FUN_004660f0
 void  __cdecl Effect_SpawnSmokeExplosion(undefined4 *, char); // IDA: FUN_004661f0
 void  __cdecl Effect_SpawnLightningBurst(int); // IDA: FUN_00460c30
