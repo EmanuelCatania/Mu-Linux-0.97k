@@ -179,7 +179,7 @@ void __cdecl FUN_004fae00(void *param_1_v, int param_2, int param_3, char param_
 
     // Sub-state 10 (dense rain) + type 0x12d → blue-tinted tint
     if (DAT_0055a7ac == 10 && *(short *)(param_1 + 2) == 0x12d) {
-        *(float *)((int)model + 0x48) = 0.3f * 0.5f;   // ~0.020 R (0x3ca3d70a)
+        *(float *)((int)model + 0x48) = 0.02f;          // 0x3ca3d70a R (el port tenia 0.15)
         *(float *)((int)model + 0x4c) = 0.05f;          // 0x3d4ccccd G
         *(float *)((int)model + 0x50) = 0.15f;          // 0x3e19999a B
         goto LAB_render_dispatch;
@@ -217,7 +217,7 @@ LAB_render_dispatch:
     if (sType == 0x128) {
         // Double-pass: dim orange first, then normal
         *(float *)((int)model + 0x48) = 0.4f;    // 0x3ecccccd R
-        *(float *)((int)model + 0x4c) = 0.575f;  // 0x3f19999a G
+        *(float *)((int)model + 0x4c) = 0.6f;    // 0x3f19999a G (el port tenia 0.575)
         *(float *)((int)model + 0x50) = 1.0f;
         *(unsigned char *)((int)model + 0x88) = 0;
         FUN_00441e00(model, 2,
@@ -360,7 +360,7 @@ LAB_substate4_done:
                 // PvP player: yellow-green
                 *(float *)((int)model + 0x4c) = 1.0f;
                 *(float *)((int)model + 0x48) = 0.3f;   // 0x3e99999a
-                *(float *)((int)model + 0x50) = 0.6f;   // 0x3f4ccccd
+                *(float *)((int)model + 0x50) = 0.8f;   // 0x3f4ccccd (el port tenia 0.6)
             } else {
                 // Party player: yellow
                 *(float *)((int)model + 0x4c) = 1.0f;
@@ -492,7 +492,7 @@ LAB_substate4_done:
         if (param_4 != '\0') {
             *(float *)((int)model + 0x48) = 0.1f;
             *(float *)((int)model + 0x4c) = 1.0f;
-            *(float *)((int)model + 0x50) = 0.6f;  // 0x3f4ccccd
+            *(float *)((int)model + 0x50) = 0.8f;  // 0x3f4ccccd (el port tenia 0.6)
         }
         goto LAB_standard_render;
     }
@@ -541,9 +541,9 @@ LAB_substate4_done:
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
                      0x492);
         *(unsigned char *)((int)model + 0x88) = 0xff;
-        *(float *)((int)model + 0x48) = 0.575f;  // 0x3f19999a
-        *(float *)((int)model + 0x4c) = 0.575f;
-        *(float *)((int)model + 0x50) = 0.575f;
+        *(float *)((int)model + 0x48) = 0.6f;    // 0x3f19999a (el port tenia 0.575)
+        *(float *)((int)model + 0x4c) = 0.6f;
+        *(float *)((int)model + 0x50) = 0.6f;
         goto LAB_standard_render;
     }
 
