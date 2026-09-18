@@ -1159,27 +1159,6 @@ extern "C" void GuildWar_ResetClientState()
     GuildWar_RefreshEntityRelations();
 }
 
-// Inserta la rama demostrada de IDA SetActionClass (FUN_00497870). El auxiliar
-// completo aún no tiene un port enlazado, pero Guerra de guild sólo usa este
-// contrato local fijo de acción/ACK.
-static void GuildWar_SetHeroAction(int action, BYTE actionType)
-{
-    BYTE* hero = (BYTE*)(uintptr_t)Hero;
-    if (!hero || hero[261] == 0 || hero[261] > 12) return;
-
-    int resolvedAction = action;
-    if ((hero[444] & 7) == 2 && (action < 123 || action > 128))
-        ++resolvedAction;
-    FUN_0043e820((int)(uintptr_t)hero, resolvedAction);
-
-    const BYTE ack[5] = {
-        0xC1, 0x05, 0x18,
-        (BYTE)((int)((*(float*)(hero + 36) + 22.5f) / 45.0f + 1.0f) & 7),
-        actionType
-    };
-    Net_SendC1Packet(ack, sizeof(ack));
-}
-
 static void ReceiveDeclareWar97k(const BYTE* packet, int size)
 {
     if (size < 12) return;
@@ -1207,18 +1186,21 @@ static void ReceiveGuildBeginWar97k(const BYTE* packet, int size)
     if (size < 13) return;
     EnableGuildWar = 1;
     GuildWar_CopyOpponentName(packet);
-    EnableSoccer = packet[11] != 0;
+    const bool soccer = packet[11] != 0;
+    if (soccer) EnableSoccer = 1;   // IDA no lo apaga en la otra rama
     HeroSoccerTeam = packet[12];
     GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
 
     char notice[300] = {};
     _snprintf_s(notice, sizeof(notice), _TRUNCATE,
-                GlobalText[EnableSoccer ? 533 : 526], GuildWarName);
+                GlobalText[soccer ? 533 : 526], GuildWarName);
     UI_AddNotice(notice, 1);
     GuildWar_RefreshEntityRelations();
 
-    // IDA: SetActionClass(Hero, Hero, 128, 128).
-    GuildWar_SetHeroAction(128, 128);
+    // IDA: SetActionClass(Hero, Hero, 128, 128) y además manda el 0x18 por su
+    // cuenta (doble envío, igual que el binario).
+    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, 128, 128);
+    SendRequestAction(128);
 }
 
 static void ReceiveGuildEndWar97k(const BYTE* packet, int size)
@@ -1235,10 +1217,13 @@ static void ReceiveGuildEndWar97k(const BYTE* packet, int size)
     EnableSoccer = 0;
     GuildWar_ResetClientState();
 
-    // IDA asigna los resultados 1, 2 y 4 al par de acción de victoria (113, 121);
-    // los demás resultados demostrados usan el par normal de cierre (107, 117).
+    // IDA: resultados 1, 2 y 4 -> Win = 2 -> (113, 121); 0, 3 y 5 -> Win = 0 ->
+    // (107, 117); el 6 (Win = 1) no anima ni manda nada. Cada rama llama a
+    // SetActionClass y ademas manda el 0x18 por su cuenta (doble envio fiel).
+    if (result == 6) return;
     const bool victoryAction = result == 1 || result == 2 || result == 4;
-    GuildWar_SetHeroAction(victoryAction ? 113 : 107, victoryAction ? 121 : 117);
+    SetActionClass((int)(uintptr_t)Hero, (int)(uintptr_t)Hero, victoryAction ? 113 : 107, victoryAction ? 121 : 117);
+    SendRequestAction(victoryAction ? 121 : 117);
 }
 
 // IDA: FUN_00433A80 ReceiveGGAuth. Pertenece al flujo de protocolo/autenticación,
@@ -5242,9 +5227,9 @@ void Net_ProcessPacket(void)
                 PartyOpened     = 0;
                 PlayBuffer(25, 0, 0);
                 PlayBuffer(28, 0, 0);
-                // IDA además reposiciona el cursor del OS (SetCursorPos) a la zona
-                // de la ventana; lo omitimos (mover el cursor del sistema es
-                // intrusivo y no afecta la lógica del juego).
+                // IDA termina con SetCursorPos(260*MouseX/640 escalado, MouseY).
+                // Omitido a propósito: el DLL lo anula ("Fix move cursor NPC",
+                // Patchs.cpp: NOP en 0x00430B9F y 0x00430BBD).
                 break;
             }
 
@@ -6250,6 +6235,10 @@ void Net_ProcessPacket(void)
                        (unsigned)gate, (unsigned)map, (unsigned)gridX,
                        (unsigned)gridY, (unsigned)direction);
 
+                // IDA: lo primero es sub_4CD3B0 = devolver el item que se tenga
+                // agarrado a su celda (en las dos ramas).
+                Item_ReturnPickedItem();
+
                 BYTE* hero = (BYTE*)(uintptr_t)Hero;
                 const float worldX = ((float)gridX + 0.5f) * 100.0f;
                 const float worldY = ((float)gridY + 0.5f) * 100.0f;
@@ -6264,6 +6253,9 @@ void Net_ProcessPacket(void)
                 if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
                     worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
                 *(float*)(hero + 24) = worldZ;
+                // Los stores de +788/+792, +0x388/+0x38C y +0x306/+0x307 no estan
+                // en IDA (que solo escribe +904/+908): son del port, para que el
+                // walker no retome el camino viejo despues del salto.
                 *(float*)(hero + 788) = worldX;
                 *(float*)(hero + 792) = worldY;
                 *(DWORD*)(hero + 0x388) = gridX;
@@ -6272,7 +6264,7 @@ void Net_ProcessPacket(void)
                 *(DWORD*)(hero + 908) = gridY;
                 hero[0x306] = gridX;
                 hero[0x307] = gridY;
-                *(float*)(hero + 36) = ((float)(direction & 0x0F) - 1.0f) * 45.0f;
+                *(float*)(hero + 36) = ((float)direction - 1.0f) * 45.0f;
 
                 if (gate != 0) {
                     // ReceiveTeleport's gate branch clears the old viewport
@@ -6308,6 +6300,11 @@ void Net_ProcessPacket(void)
                         if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
                             worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
                         *(float*)(hero + 24) = worldZ;
+
+                        // IDA L275-277: aviso "<mapa> ..." en el chat.
+                        char mapNotice[256];
+                        sprintf_s(mapNotice, "%s%s", GetMapName(World), GlobalText[484]);
+                        UIChatLogWindow_AddText("", mapNotice, 1);
                     }
 
                     // ── ACK de fin de carga: C1 04 F3 12 ──────────────────
@@ -6367,7 +6364,6 @@ void Net_ProcessPacket(void)
                     WarehouseOpened = 0;
                     DAT_00559f5f = 0;
                     DAT_07eaa14c = 0;
-                    TradeOpened = 0;
                     EventWindowOpened = 0;
                     Effect_Create(1265, (float*)(hero + 16), (float*)(hero + 28),
                                  (float*)(hero + 232), nullptr, (float*)hero,
@@ -6578,6 +6574,31 @@ void Net_ProcessPacket(void)
                 break;
             }
 
+            case 0x29: {
+                // IDA: ReceiveHelperItem (0x004321F0) — efecto con tiempo de una
+                // pocion especial.  MuEmu: PMSG_ITEM_SPECIAL_TIME_SEND
+                // [C3][06][29][number][pad][WORD time] (GCItemUseSpecialTimeSend).
+                //   CharacterAttribute + 42 + 2*number = 24 * time
+                //   number 0 -> +40 |= 1 y recalcula la velocidad de ataque
+                //   number 1 -> +40 |= 2 y recalcula el dano (fisico y magico)
+                // La rama sin encriptar de IDA es la respuesta anti-hack; MuEmu
+                // lo manda siempre encriptado.
+                if (Size < 6 || !CharacterAttribute) break;
+                const BYTE number = Msg[3];
+                BYTE* ca = (BYTE*)(uintptr_t)CharacterAttribute;
+                *(WORD*)(ca + 42 + 2 * number) = (WORD)(24 * *(const WORD*)(Msg + 4));
+                if (number == 0) {
+                    ca[40] |= 1;
+                    FUN_0047dd80((int)(uintptr_t)CharacterMachine);   // CalculateAttackSpeed
+                } else if (number == 1) {
+                    ca[40] |= 2;
+                    FUN_0047d410((int)(uintptr_t)CharacterMachine);   // Stats_CalcBase
+                    FUN_0047dae0((int)(uintptr_t)CharacterMachine);   // Stats_CalcMagicDmgRange
+                }
+                EnableUse = 0;
+                break;
+            }
+
             case 0x2A: {
                 // 2026-06-02: actualización de durabilidad/cantidad del lado del server. La usa
                 // stackable potions/jewels after partial merge.
@@ -6781,6 +6802,22 @@ void Net_ProcessPacket(void)
                 // aislado para no reinterpretar un paquete ajeno, pero no puede
                 // modificar ni el staging de miembros ni la tabla de marks.
                 NetLog("NET:  → 0x65 sin asociación a Guild, size=%d", Size);
+                break;
+            }
+
+            case 0x0B: {
+                // IDA ProtocolCore case 0xB (inline).  MuEmu: GCEventStateSend,
+                // PMSG_EVENT_STATE_SEND [C1][05][0B][state][event].
+                //   event 1 -> EnableEvent = (state != 0)
+                //   event 3 -> EnableEvent = state ? 3 : 0
+                // y en todos los casos DeleteBoids() (0x500A80): apaga los 40
+                // slots de Boids (= g_WeatherSlotPool).  La cola DebugText que
+                // IDA llena antes no tiene lectores en el binario; se omite.
+                if (Size < 5) break;
+                if (Msg[4] == 1)      DAT_083a3ff0 = (Msg[3] != 0) ? 1 : 0;   // EnableEvent
+                else if (Msg[4] == 3) DAT_083a3ff0 = (Msg[3] != 0) ? 3 : 0;
+                for (int i = 0; i < 40; ++i)
+                    g_WeatherSlotPool[i * 0x1bc] = 0;
                 break;
             }
 

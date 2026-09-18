@@ -19,7 +19,7 @@
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 // [C1][05][18][dir][tipo]; dir = octante del facing del heroe.
-static void SendRequestAction(BYTE actionType)
+void __cdecl SendRequestAction(BYTE actionType)
 {
     BYTE* hero = (BYTE*)(uintptr_t)Hero;
     if (!hero) return;

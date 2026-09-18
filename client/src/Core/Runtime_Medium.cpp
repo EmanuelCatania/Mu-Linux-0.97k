@@ -59,21 +59,14 @@ void __cdecl RenderInformation(void) {
     FUN_0051e0c0(); // RenderInfomation3D
 }
 
-// GetMapName @ 0x004EF120 (64 bytes) — return map display name
-//
-// BUG-FIX 2026-04-28: el original devolvía punteros directos a strings dentro de
-// GlobalText[] usando direcciones absolutas del binario (0x07d2c04c etc.). En
-// nuestro proceso esas addrs no existen → AV si se desreferencia. Usamos una
-// tabla estática con los nombres de mapa estándar de Mu 0.97k.
+// GetMapName @ 0x004EF120 (64 bytes) -- nombre del mapa desde GlobalText.
+// (Antes era una tabla de nombres en ingles inventada: el original devolvia
+//  punteros a GlobalText y el port lo habia leido como direcciones fijas.)
 char *__cdecl GetMapName(int iMap) {
-    static char s_mapNames[18][32] = {
-        "Lorencia", "Dungeon", "Devias", "Noria", "LostTower", "Exile",
-        "Stadium", "Atlans", "Tarkan", "Devil Square", "Icarus", "BloodCastle",
-        "BloodCastle", "BloodCastle", "BloodCastle", "BloodCastle", "BloodCastle",
-        "ChaosCastle"
-    };
-    if (iMap < 0 || iMap >= 18) iMap = 0;
-    return s_mapNames[iMap];
+    if (iMap >= 11 && iMap <= 16) return GlobalText[56];   // Blood Castle
+    if (iMap == 10)               return GlobalText[55];   // Icarus
+    if (iMap < 17)                return GlobalText[iMap + 30];
+    return GlobalText[iMap + 40];
 }
 
 // CErrorReport::WriteFile @ 0x004054B0 (65 bytes) — XOR + write to log
