@@ -1,40 +1,7 @@
-// CharMenu_Build.cpp — RenderHelpWindow @ 0x004c3530
-// Character info / stats menu builder.  Dispatches on DAT_07e11d20 (mode 1/2/3).
-//
-// Populates a string list buffer (lpString_07e90798, 100 bytes/entry, ~30 slots)
-// with formatted text for the character menu, then calls FUN_004c2420 to display it.
-//
-// ── Mode 1: class-list type A ─────────────────────────────────────────────────
-//   Writes header (DAT_0055a408), subheader (DAT_0055a40c).
-//   Iterates DAT_07d32af0 (stride 300, limit 0x7d34134) — class info list A.
-//   Writes footer (DAT_0055a410).
-//   Calls FUN_004c2420(1,1,count,0,2,1).
-//
-// ── Mode 2: class-list type B ─────────────────────────────────────────────────
-//   Same structure with DAT_07d34260 (limit 0x7d358a4) and strings DAT_0055a414/418/41c.
-//
-// ── Mode 3: class stats detail ────────────────────────────────────────────────
-//   Layout parameters by resolution (DAT_0056156c):
-//     0x280(640)  → col_w=0x5a, pad=0x34
-//     800         → col_w=0x5a, pad=0x2f
-//     0x400(1024) → col_w=0x67, pad=0x28
-//     0x500(1280) → col_w=0x7b, pad=0x20
-//
-//   Class-id ranges in DAT_07e11d24:
-//     0x000..0x09F → type 1 (max 0x870 xp)
-//     0x0A0..0x0BF → type 2 (max 900)
-//     0x0C0..0x0DF → type 3 (max 0x708)
-//     0x0E0..0x17F → type 4 (max 3000)
-//     0x1E0..0x1FF → type 5 (no xp bar)
-//
-//   Computes local_1c = max_xp / col_width (horizontal scale for progress bar).
-//   Calls FUN_004c2e20(class_id) to prepare class data.
-//   Builds string slots: class name, subtype header, padding rows, then calls
-//   ItemHelp_RequireClass(class_data_ptr) for the detail block.
-//   Draws stat rows via FUN_004c2d50 / FUN_004c2c10 conditionally on stat flags
-//   (DAT_07e91530/534/53c/540) and class-id range.
-//
-// After building: sets DAT_07e11d6e = 1 (dirty flag → triggers re-render).
+// CharMenu_Build.cpp — ventana de ayuda F1 (RenderHelpWindow @ 0x004C3530)
+// y los helpers que arman sus lineas (sub_4C2420, sub_4C2C10, sub_4C2D50,
+// sub_4C2E20). El modo sale de DAT_07e11d20: 1 y 2 son listas de ayuda de
+// GlobalText[120..159]; 3 es la tabla de valores del item DAT_07e11d24.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -52,278 +19,153 @@
 // vez de desbordar.  El original no lo necesita porque alli el hueco de memoria
 // que sigue al buffer es de relleno.
 #define CHARMENU_ROW_MAX 28
-static inline int CharMenu_Row(void)
+
+
+// Aliases de los globals del binario que usa esta funcion.
+#define TextList       lpString_07e90798   // 30 x 100 bytes
+#define TextListColor  DAT_07e91708
+#define TextBold       DAT_07ea7b10
+#define TextNum        DAT_07eaa154
+
+// IDA: sub_4C3530 modo 1/2 -- una lista de lineas de ayuda de GlobalText.
+static void HelpWindow_BuildTextList(int title, int firstLine, int endLine)
 {
-    int r = DAT_07eaa154;
-    if (r < 0) r = 0;
-    if (r > CHARMENU_ROW_MAX) r = CHARMENU_ROW_MAX;
-    return r;
+    GL_ResetState();                        // DisableAlphaBlend
+    TextNum = 0;
+    crt_sprintf(TextList, "\n");
+    int row = 1;
+    TextListColor[row] = 1;
+    TextBold[row]      = 1;
+    strcpy(TextList + row * 100, GlobalText[title]);
+    row++;
+    crt_sprintf(TextList + row * 100, "\n");
+    row++;
+    // IDA recorre el bloque de GlobalText con un puntero de a 300 bytes hasta
+    // GlobalText[endLine]; el port lo hacia contra la direccion absoluta del
+    // binario (0x7D34134), que en este build no existe y se leia fuera.
+    for (int i = firstLine; i < endLine; ++i, ++row) {
+        TextListColor[row] = 0;
+        TextBold[row]      = 0;
+        strcpy(TextList + row * 100, GlobalText[i]);
+    }
+    crt_sprintf(TextList + row * 100, "\n");
+    TextNum = row + 1;
+    DAT_07e11d6e = 1;
+    FUN_004c2420(1, 1, TextNum, 0, 2, 1);
 }
-static inline void CharMenu_RowAdvance(int n)
-{
-    int r = DAT_07eaa154 + n;
-    if (r < 0) r = 0;
-    if (r > CHARMENU_ROW_MAX) r = CHARMENU_ROW_MAX;
-    DAT_07eaa154 = r;
-}
-
-
-// String table aliases for readability
-#define s_ChMenu_HdrA  DAT_0055a408
-#define s_ChMenu_SubA  DAT_0055a40c
-#define s_ChMenu_FtrA  DAT_0055a410
-#define s_ChMenu_HdrB  DAT_0055a414
-#define s_ChMenu_SubB  DAT_0055a418
-#define s_ChMenu_FtrB  DAT_0055a41c
-#define s_ChMenu_HdrC  DAT_0055a420
-#define s_ChMenu_SubC1 DAT_0055a424
-#define s_ChMenu_SubC2 DAT_0055a428
-#define s_ChMenu_SubC3 DAT_0055a42c
-#define s_ChMenu_SubC4 DAT_0055a430
-#define s_ChMenu_FtrC  DAT_0055a434
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Helper: strcpy-length into lpString_07e90798[slot] using manual word-copy loop.
-// (Ghidra emits length + word-copy idiom for all string copies here.)
-static void slot_strcpy(int slot, const char *src)
-{
-    char *dst = lpString_07e90798 + slot * 100;
-    // determine source length
-    int len = 0; while (src[len]) len++; len++;   // include NUL
-    const char *s = src;
-    char *d = dst;
-    for (unsigned u = (unsigned)len >> 2; u; u--, s+=4, d+=4)
-        *(unsigned int *)d = *(unsigned int *)s;
-    for (unsigned u = (unsigned)len & 3; u; u--)
-        *d++ = *s++;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 // IDA: RenderHelpWindow (0x004C3530)
 void RenderHelpWindow(void)
 {
-    // ── Mode 1: build class-list A ────────────────────────────────────────────
     if (DAT_07e11d20 == 1)
-    {
-        GL_ResetState();
-        DAT_07eaa154 = 0;
-
-        // Slot 0: header line
-        crt_sprintf(lpString_07e90798, s_ChMenu_HdrA);
-        int iVar4 = DAT_07eaa154 + 1;
-        DAT_07e91708[iVar4] = 1;
-        DAT_07ea7b10[iVar4] = 1;
-        slot_strcpy(iVar4, &DAT_07d329c4);
-        DAT_07eaa154 = iVar4 + 1; if (DAT_07eaa154 > CHARMENU_ROW_MAX) DAT_07eaa154 = CHARMENU_ROW_MAX;   // +2
-
-        // Slot 2 (iVar4): subheader
-        crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubA);
-        CharMenu_RowAdvance(1);
-
-        // Class entries from list A (stride 300, limit 0x7d34134)
-        char *pcVar5 = &DAT_07d32af0;
-        char *local_c = lpString_07e90798 + CharMenu_Row() * 100;
-        while (pcVar5 != nullptr && (int)pcVar5 < 0x7d34134) {
-            DAT_07e91708[CharMenu_Row()] = 0;
-            DAT_07ea7b10[CharMenu_Row()] = 0;
-            slot_strcpy(CharMenu_Row(), pcVar5);
-            CharMenu_RowAdvance(1);
-            pcVar5 += 300;
-            local_c += 100;
-        }
-
-        // Footer
-        crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_FtrA);
-        CharMenu_RowAdvance(1);
-        DAT_07e11d6e = 1;
-        FUN_004c2420(1, 1, DAT_07eaa154, 0, 2, 1);
+        HelpWindow_BuildTextList(120, 121, 140);
+    if (DAT_07e11d20 == 2) {
+        HelpWindow_BuildTextList(140, 141, 160);
         return;
     }
-
-    // ── Mode 2: build class-list B ────────────────────────────────────────────
-    if (DAT_07e11d20 == 2)
-    {
-        GL_ResetState();
-        DAT_07eaa154 = 0;
-
-        crt_sprintf(lpString_07e90798, s_ChMenu_HdrB);
-        int iVar4 = DAT_07eaa154 + 1;
-        DAT_07e91708[iVar4] = 1;
-        DAT_07ea7b10[iVar4] = 1;
-        slot_strcpy(iVar4, &DAT_07d34134);
-        DAT_07eaa154 = iVar4 + 1; if (DAT_07eaa154 > CHARMENU_ROW_MAX) DAT_07eaa154 = CHARMENU_ROW_MAX;   // +2
-
-        crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubB);
-        CharMenu_RowAdvance(1);
-
-        char *pcVar5 = &DAT_07d34260;
-        char *local_c = lpString_07e90798 + CharMenu_Row() * 100;
-        while (pcVar5 != nullptr && (int)pcVar5 < 0x7d358a4) {
-            DAT_07e91708[CharMenu_Row()] = 0;
-            DAT_07ea7b10[CharMenu_Row()] = 0;
-            slot_strcpy(CharMenu_Row(), pcVar5);
-            CharMenu_RowAdvance(1);
-            pcVar5 += 300;
-            local_c += 100;
-        }
-
-        crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_FtrB);
-        CharMenu_RowAdvance(1);
-        DAT_07e11d6e = 1;
-        FUN_004c2420(1, 1, DAT_07eaa154, 0, 2, 1);
-        return;
-    }
-
-    // ── Mode 3: class stats detail ────────────────────────────────────────────
     if (DAT_07e11d20 != 3) return;
 
-    GL_ResetState();
+    // ── Modo 3: tabla de valores de un item (DAT_07e11d24 = tipo) ─────────
+    GL_ResetState();                        // DisableAlphaBlend
+    int colW = 0, pad = 0, colW2 = 0, pad2 = 0;
+    if (DAT_0056156c > 1024) {
+        if (DAT_0056156c == 1280) { colW = 123; pad = 22; colW2 = 123; pad2 = 32; }
+    } else switch (DAT_0056156c) {
+        case 1024: colW = 103; pad = 28; colW2 = 103; pad2 = 40; break;
+        case 640:  colW = 90;  pad = 38; colW2 = 90;  pad2 = 52; break;
+        case 800:  colW = 90;  pad = 33; colW2 = 90;  pad2 = 47; break;
+    }
 
-    // Layout parameters by screen resolution
-    int col_w  = 0;    // column width (iVar4 / iVar7 in Ghidra)
-    int pad    = 0;    // padding (local_14)
-    int col_w2 = 0;    // second col width (local_18)
-    int pad2   = 0;    // second pad (local_c as int)
+    int id = (int)DAT_07e11d24;
+    int kind, maxVal = 0;
+    if      (id >= 0   && id < 160) { kind = 1; maxVal = 2160; }
+    else if (id >= 160 && id < 192) { kind = 2; maxVal = 900;  }
+    else if (id >= 192 && id < 224) { kind = 3; maxVal = 1800; }
+    else if (id >= 224 && id < 384) { kind = 4; maxVal = 3000; }
+    else if (id >= 480 && id < 512) {
+        kind = 5;
+        if (DAT_0056156c == 640 || DAT_0056156c == 1280)      maxVal = 5940;
+        else if (DAT_0056156c == 800 || DAT_0056156c == 1024) maxVal = 5200;
+    } else { DAT_07e11d20 = 0; return; }
+    bool isKind5 = (kind == 5);
 
-    if (DAT_0056156c < 0x401) {
-        if      (DAT_0056156c == 0x400) { col_w=0x67; pad=0x1c; col_w2=0x67; pad2=0x28; }
-        else if (DAT_0056156c == 0x280) { col_w=0x5a; pad=0x26; col_w2=0x5a; pad2=0x34; }
-        else if (DAT_0056156c == 800  ) { col_w=0x5a; pad=0x21; col_w2=0x5a; pad2=0x2f; }
-    } else if (DAT_0056156c == 0x500)   { col_w=0x7b; pad=0x16; col_w2=0x7b; pad2=0x20; }
+    // IDA: v30 = v12 / v10 (sin guarda; con otra resolucion divide por 0).
+    int scale = (maxVal && colW) ? maxVal / colW : 0;
+    int blankRows = isKind5 ? 0 : 11;
+    int attr = id * 0x40 + DAT_07d78068;    // &ItemAttribute[id]
 
-    // Determine class type from DAT_07e11d24 (class ID)
-    int iVar7  = 0;      // class type (1..5)
-    unsigned int uVar2 = 0;   // xp max constant
-    int local_10 = 0;
-
-    int cls = (int)DAT_07e11d24;
-    if      (cls < 0xa0)                        { iVar7=1; uVar2=0x870;  local_10=1; }
-    else if (cls < 0xc0)                        { iVar7=2; uVar2=900;    local_10=2; }
-    else if (cls < 0xe0)                        { iVar7=3; uVar2=0x708;  local_10=3; }
-    else if (cls < 0x180)                       { iVar7=4; uVar2=3000;   local_10=4; }
-    else if (cls >= 0x1e0 && cls <= 0x1ff)     { iVar7=5; uVar2=0x1734; local_10=5;
-        if (DAT_0056156c == 800 || DAT_0056156c == 0x400) uVar2 = 0x1450; }
-    else { DAT_07e11d20 = 0; return; }
-
-    int local_1c = (col_w > 0) ? (int)((unsigned long long)uVar2 / (unsigned long long)(long long)col_w) : 0;
-
-    // Extra slot count for class type 5
-    int local_8 = (iVar7 == 5) ? 0 : 0xb;
-
-    // Pointer to class data: DAT_07d78068[class_id * 0x40]
-    int iVar4 = (int)DAT_07e11d24 * 0x40 + DAT_07d78068;
-
-    FUN_004c2e20(DAT_07e11d24);
-    DAT_07eaa154 = 0;
-
-    // Header slot
-    crt_sprintf(lpString_07e90798, s_ChMenu_HdrC);
-    int iVar7b = DAT_07eaa154 + 2;
-    DAT_07e91708[DAT_07eaa154 + 1] = 1;
-    DAT_07ea7b10[DAT_07eaa154 + 1] = 1;
-    slot_strcpy(DAT_07eaa154 + 1, &DAT_07d358a4);
-    DAT_07e91708[iVar7b] = 1;
-    DAT_07ea7b10[iVar7b] = 1;
-
-    crt_sprintf(lpString_07e90798 + iVar7b * 100, s_ChMenu_SubC1);
-    DAT_07e91708[CharMenu_Row()] = 0;
-    DAT_07ea7b10[CharMenu_Row()] = 1;
-    DAT_07eaa154 = iVar7b + 1; if (DAT_07eaa154 > CHARMENU_ROW_MAX) DAT_07eaa154 = CHARMENU_ROW_MAX;
-
-    crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubC2);
-    CharMenu_RowAdvance(1);
-    crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubC3);
-    CharMenu_RowAdvance(1);
-    crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_SubC4);
-    int iVar7c = DAT_07eaa154 + 1;
+    FUN_004c2e20(id);
+    TextNum = 0;
+    crt_sprintf(TextList, "\n");
+    strcpy(TextList + 1 * 100, GlobalText[160]);
+    TextListColor[1] = 1;
+    TextBold[1]      = 1;
+    crt_sprintf(TextList + 2 * 100, "%s", (const char*)(uintptr_t)attr);
+    TextListColor[2] = 0;
+    TextBold[2]      = 1;
+    crt_sprintf(TextList + 3 * 100, "\n");
+    crt_sprintf(TextList + 4 * 100, " ");
+    crt_sprintf(TextList + 5 * 100, "\n");
     DAT_07e11d6e = 1;
-
-    // Padding row (spaces, width adjusted for resolution)
-    unsigned int uVar3 = (DAT_0056156c > 800) ? 0x2e + 5 : 0x2e;
-    char *pPad = lpString_07e90798 + iVar7c * 100;
-    unsigned int *pu = (unsigned int *)pPad;
-    for (unsigned u = uVar3 >> 2; u; u--) *pu++ = 0x20202020;
-    DAT_07e91708[iVar7c] = 0;
-    for (unsigned u = uVar3 & 3; u; u--) *(unsigned char *)pu++ = 0x20;
-    DAT_07ea7b10[iVar7c] = 0;
-    CharMenu_RowAdvance(2);
-    pPad[uVar3] = 0;
-
-    // Extra blank rows for type ≠ 5
-    if (local_8 > 0) {
-        unsigned char *pu10 = (unsigned char *)(DAT_07ea7b10 + DAT_07eaa154);
-        for (char *p2 = (char *)local_8; p2; p2--) { *pu10 = 0; pu10 += 4; }
-        char *pb = &lpString_07e90798[0] + CharMenu_Row() * 100 + 1;
-        while (local_8 > 0) {
-            pb[-1] = 0x20;
-            pb[0]  = 0;
-            CharMenu_RowAdvance(1);
-            pb += 100;
-            local_8--;
-            DAT_07e91708[CharMenu_Row()] = 0;
-        }
+    unsigned spaces = (DAT_0056156c > 800) ? 51 : 46;
+    memset(TextList + 6 * 100, ' ', spaces);
+    TextList[6 * 100 + spaces] = 0;
+    TextListColor[6] = 0;
+    TextBold[6]      = 0;
+    int row = 7;
+    for (int n = 0; n < blankRows; ++n, ++row) {
+        TextBold[row] = 0;
+        TextList[row * 100]     = ' ';
+        TextList[row * 100 + 1] = 0;
+        TextListColor[row + 1]  = 0;   // IDA escribe el color de la fila siguiente
     }
+    TextNum = row;
 
-    // Class detail block
-    ItemHelp_RequireClass(iVar4);
+    ItemHelp_RequireClass(attr);
+    crt_sprintf(TextList + TextNum * 100, "\n");
+    ++TextNum;
+    FUN_004c2420(1, 1, TextNum, colW2, 2, 1);
+    GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
+    TextNum = 0;
 
-    // Footer
-    crt_sprintf(lpString_07e90798 + CharMenu_Row() * 100, s_ChMenu_FtrC);
-    CharMenu_RowAdvance(1);
-    FUN_004c2420(1, 1, DAT_07eaa154, col_w2, 2, 1);
-    GL_SetBlendSrcOver('\x01');
-
-    // Stat rows
-    DAT_07eaa154 = 0;
-    FUN_004c2d50(0, local_1c, pad);
-    FUN_004c2c10(0, (unsigned char *)0x0055a440, &local_1c,
-                 (const char *)0x0055a438, pad2, local_10);
-
-    if (DAT_07e91530 > 0 && !(cls >= 0x1e0 && cls <= 0x1ff)) {
-        FUN_004c2c10(2, (unsigned char *)0x0055a448, &local_1c,
-                     (const char *)0x0055a444, pad2, 0);
-        FUN_004c2d50(2, local_1c, pad);
-        FUN_004c2c10(0, (unsigned char *)0x0055a450, &local_1c,
-                     (const char *)0x0055a44c, pad2, 0);
+    // Filas de valores. Formatos leidos de .rdata 0x0055A438..0x0055A4B0.
+    FUN_004c2d50(0, scale, pad);
+    FUN_004c2c10(0, (unsigned char*)"+%d", &scale, "000000", pad2, kind);
+    if (DAT_07e91530 > 0 && !isKind5) {
+        FUN_004c2c10(2, (unsigned char*)"%3d", &scale, "00 ", pad2, 0);
+        FUN_004c2d50(2, scale, pad);
+        FUN_004c2c10(0, (unsigned char*)"~", &scale, " 00", pad2, 0);
     }
-    if (DAT_07e91534 > 0 && !(cls >= 0x1e0 && cls <= 0x1ff)) {
-        FUN_004c2c10(3, (unsigned char *)0x0055a45c, &local_1c,
-                     (const char *)0x0055a454, pad2, 0);
-    }
-    if (cls >= 0xa0 && cls < 0xc0) {
-        FUN_004c2d50(4, local_1c, pad);
-        FUN_004c2c10(4, (unsigned char *)0x0055a468, &local_1c,
-                     (const char *)0x0055a460, pad2, 0);
+    if (DAT_07e91534 > 0 && !isKind5)
+        FUN_004c2c10(3, (unsigned char*)"%3d", &scale, "00000", pad2, 0);
+    if (id >= 160 && id < 192) {
+        FUN_004c2d50(4, scale, pad);
+        FUN_004c2c10(4, (unsigned char*)"%2d%%", &scale, "00000", pad2, 0);
     }
     if (DAT_07e9153c > 0) {
-        FUN_004c2d50(5, local_1c, pad);
-        FUN_004c2c10(5, (unsigned char *)0x0055a478, &local_1c,
-                     (const char *)0x0055a470, pad2, 0);
+        FUN_004c2d50(5, scale, pad);
+        FUN_004c2c10(5, (unsigned char*)"%3d", &scale, "000000", pad2, 0);
     }
     if (DAT_07e91540 > 0) {
-        FUN_004c2d50(6, local_1c, pad);
-        FUN_004c2c10(6, (unsigned char *)0x0055a484, &local_1c,
-                     (const char *)0x0055a47c, pad2, 0);
+        FUN_004c2d50(6, scale, pad);
+        FUN_004c2c10(6, (unsigned char*)"%3d%%", &scale, "000000", pad2, 0);
     }
-    if (!(cls >= 0x1e0 && cls <= 0x1ff)) {
-        FUN_004c2d50(7, local_1c, pad);
-        FUN_004c2c10(7, (unsigned char *)0x0055a494, &local_1c,
-                     (const char *)0x0055a48c, pad2, 0);
+    if (!isKind5) {
+        FUN_004c2d50(7, scale, pad);
+        FUN_004c2c10(7, (unsigned char*)"%3d", &scale, "00000", pad2, 0);
+        FUN_004c2d50(8, scale, pad);
+        FUN_004c2c10(8, (unsigned char*)"%3d", &scale, "00000", pad2, 0);
+    } else {
+        FUN_004c2d50(9, scale, pad);
+        FUN_004c2c10(9, (unsigned char*)"%3d", &scale, "000000", pad2, kind);
     }
-    if (!(cls >= 0x1e0 && cls <= 0x1ff)) {
-        FUN_004c2d50(8, local_1c, pad);
-        FUN_004c2c10(8, (unsigned char *)0x0055a4a0, &local_1c,
-                     (const char *)0x0055a498, pad2, 0);
-    }
-    if (cls >= 0x1e0 && cls <= 0x1ff) {
-        FUN_004c2d50(9, local_1c, pad);
-        FUN_004c2c10(9, (unsigned char *)0x0055a4ac, &local_1c,
-                     (const char *)0x0055a4a4, pad2, local_10);
-    }
-    GL_ResetState();
+    GL_ResetState();                        // DisableAlphaBlend
 }
+
+#undef TextList
+#undef TextListColor
+#undef TextBold
+#undef TextNum
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -722,39 +564,31 @@ void __cdecl ItemHelp_RequireClass(int param_1)
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004c2c10 @ 0x004c2c10 — CharMenu_AppendStatRows
-//
-// Loops 0 to 0xb (skips if param_6==5), reads from DAT_07e9152c.
-// Calls FUN_004c2420 for display.
-// Uses GetTextExtentPointA for width measurement.
-
-void __cdecl FUN_004c2c10(int row, unsigned char *color, int *value,
-                            const char *label, int x, int flags)
+// IDA: sub_4C2C10 (0x004C2C10) — columna de valores de la ventana de ayuda F1.
+// Escribe una linea por cada fila de la tabla DAT_07e91528 (12 filas x 10
+// ints; con kind 5 solo la primera), color 0 si la fila cumple (columna 1 == 1)
+// y 2 si no, la dibuja en x = *value y despues corre *value por el ancho de
+// `widthRef` (o de la ultima linea si es NULL).
+// 2026-09-17: el port anterior usaba el patron de ancho como formato y el
+// formato como tabla de colores, y salteaba las filas en cero.
+void __cdecl FUN_004c2c10(int column, unsigned char *format, int *value,
+                            const char *widthRef, int y, int kind)
 {
-    char   buf[256];
-    int    iVar1;
-    SIZE   sz;
-    HDC    hdc = (HDC)DAT_055c9fec;
-
-    if (flags == 5) return;
-
-    for (int i = 0; i <= 0xb; i++) {
-        // IDA sub_4C2C10: `v9 = &dword_7E9152C; ... v9 += 10;` — columna 1 de
-        // cada fila, paso de 10 ints.  (El port usaba `&DAT_07e9152c + i * 4`
-        // sobre un int*: 64 bytes de paso sobre un global de 4 bytes.)
-        int val = DAT_07e91528[10 * i + 1];
-        if (val == 0) continue;
-
-        crt_sprintf(buf, label, val);
-        GetTextExtentPointA(hdc, buf, (int)strlen(buf), &sz);
-
-        DAT_07e91708[CharMenu_Row()] = (color ? color[i] : 0);
-        DAT_07ea7b10[CharMenu_Row()] = 0;
-        slot_strcpy(CharMenu_Row(), buf);
-        CharMenu_RowAdvance(1);
+    int last = (kind == 5) ? 0 : 11;
+    for (int i = 0; i <= last; i++) {
+        crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, (const char*)format,
+                    DAT_07e91528[10 * i + column]);
+        DAT_07e91708[i] = (DAT_07e91528[10 * i + 1] == 1) ? 0 : 2;
+        DAT_07ea7b10[i] = 0;
+        ++DAT_07eaa154;
     }
+    FUN_004c2420(*value, y, DAT_07eaa154, 0, 3, 0);
 
-    FUN_004c2420(row, x, DAT_07eaa154, *value, 2, 1);
+    SIZE sz = { 0, 0 };
+    const char* ref = widthRef ? widthRef : lpString_07e90798 + (DAT_07eaa154 - 1) * 100;
+    GetTextExtentPointA((HDC)DAT_055c9fec, ref, lstrlenA(ref), &sz);
+    *value += (int)((double)sz.cx / _DAT_055c9b70);
+    DAT_07eaa154 = DAT_07eaa154 - 1 - last;
 }
 
 

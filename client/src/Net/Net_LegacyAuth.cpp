@@ -94,12 +94,8 @@ char __cdecl FUN_00513440(char *param_1) {
     }
     return 0;
 }
-// FUN_00497c70 @ 0x00497C70 — Auth_KeySchedule(void)
-// Initializes the RC4-variant S-box used by FUN_00494520.
-// Reads seed data from DAT_07cf1ffc (CharData), permutes 256-byte key table.
-// Called once during login handshake. Many unreachable blocks (dead code).
-// NOP confirmed safe — key schedule runs in original binary only; stub here has no effect.
-void __cdecl FUN_00497c70(void) {} // NOP — Auth_KeySchedule (no external side effects needed)
+// 0x00497C70 no es un key schedule: es CheckChatText (gestos por texto del
+// chat). Portado en src/UI/Chat_Gestures.cpp.
 // FUN_004e9250 @ 0x004E9250 — SecondPassword_Shuffle(mode)
 // Initializes a 10-element short array at DAT_07e91394 with values 0..9,
 // then performs 20 random XOR swaps. Stores mode in DAT_07eaa14c.

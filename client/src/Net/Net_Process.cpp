@@ -2583,7 +2583,7 @@ static void Recv_LogOut(const BYTE* Msg)
         // → cliente "recargaba el mapa" en vez de mostrar char-select.
         CharSelectSceneInitialized = 0;
         DAT_083a7c4c = 0;                // CharSelect per-tick init
-        DAT_083a7c4d = 0;                // Main scene warning
+        DAT_083a7c10 = 0;                // IDA: EnableMainRender (0x083A7C10)
         DAT_083a4299 = 0;                // double-click flag
         DAT_083a4124 = 0;                // single-click flag
         DAT_005616ac = -1;               // selected slot
@@ -2632,7 +2632,7 @@ static void Recv_LogOut(const BYTE* Msg)
         DAT_083a7c49 = 0;                // InitLogIn
         CharSelectSceneInitialized = 0;
         DAT_083a7c4c = 0;                // InitMainScene
-        DAT_083a7c4d = 0;                // EnableMainRender / warning flag
+        DAT_083a7c10 = 0;                // IDA: EnableMainRender (0x083A7C10)
         InitGame();
         return;
     }

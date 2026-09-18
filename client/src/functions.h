@@ -473,7 +473,8 @@ void  __cdecl FUN_004cba60(void);                                    // CharPrev
 char  __cdecl FUN_004e3d60(void *ctx, int p1, int p2);              // Connection_Check → '\0'=ok else error
 DWORD __cdecl FUN_00494520(void *key_val, BYTE *buf, char flag);    // IME_InputChar — input char into buffer; returns '\0' = no-enter
 char  __cdecl FUN_00513440(char *buf);                               // Chat_Validate — validate text buf; '\0'=ok
-void  __cdecl FUN_00497c70(void);                                    // UI_SendFacingPacket (called on Enter from non-elf class)
+void  __cdecl CheckChatText(char* text);                             // IDA: sub_497C70 (0x00497C70) gestos por texto del chat
+void  __cdecl SetActionClass(int c, int o, int action, int actionType); // IDA: SetActionClass (0x00497870)
 void  __cdecl Net_ProcessReceiveQueue(void); // FUN_004cbdf0
 void  __cdecl FUN_004cc530(int, int, int, int);
 void  __cdecl FUN_004cc660(BYTE* Inv, int Width, int Height,
@@ -748,7 +749,7 @@ char  __cdecl FUN_004e5980(void);        // SecondPassword_IsActive
 // ── Char menu builder helpers (RenderHelpWindow) ──────────────────────────────────
 void  __cdecl FUN_004c2420(int, int, int, int, int, int);  // DrawItemInfoBox(x, y, count, fixedWidth, iSort, drawBox)
 void  __cdecl ItemHelp_RequireClass(int class_data_ptr);            // build class info block
-void  __cdecl FUN_004c2c10(int row, unsigned char *color, int *value, const char *label, int x, int flags); // draw stat row
+void  __cdecl FUN_004c2c10(int column, unsigned char *format, int *value, const char *widthRef, int y, int kind); // IDA: sub_4C2C10 columna de valores de la ayuda F1
 void  __cdecl FUN_004c2d50(int row, int value, int col_width); // draw value column
 void  __cdecl FUN_004c2e20(int class_id);                  // prepare class data
 

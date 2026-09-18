@@ -101,15 +101,13 @@ void Game_CharSelectTick(void)
     }
 
     // ── WAIT FOR SERVER ACK ───────────────────────────────────────────────────
-    // BUG-FIX 2026-04-28: el latch DAT_083a7c10 se settea cuando vemos
-    // DAT_05826cb0==0x3d (CurrentProtocolState=61, set por Recv_JoinMapServer).
-    // Pero nuestro Recv puede correr en un frame y luego DAT_05826cb0 cambia
-    // antes que Game_CharSelectTick lo vea → latch nunca se settea →
-    // Player_InputTick (movement) nunca corre → hero estático.
-    // Relajación: si ya estamos en estado 5 con world cargado, asumir latch.
-    if (DAT_05826cb0 == 0x3d || (DAT_005615c0 == 5 && (int)DAT_0055a7ac >= 0)) {
+    // IDA 0x524E30 L281-287: EnableMainRender (DAT_083a7c10) se prende recien
+    // cuando JoinMapServer deja CurrentProtocolState en 61. Mientras tanto no
+    // corre el tick ni el render (Game_RenderTick tiene el mismo gate), asi que
+    // queda en pantalla el ultimo frame de la carga.
+    if (DAT_05826cb0 == 0x3d) {
         DAT_083a7c10 = 1;
-    } else if (DAT_083a7c10 == '\0') {
+    } else if (DAT_083a7c10 == 0) {
         return;
     }
 
