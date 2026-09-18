@@ -474,6 +474,90 @@ extern "C" BYTE OffsetInventoryItems[];
 // Sends opcode 0x10 movement packet: C1 len 10 wp_count target_x target_y facing path[wp_count]
 // Codifica con XOR usando la clave hardcodeada de 32 bytes. Saltea si la entidad tiene el bit 0x20 en +0x78.
 // wp_count se limita a 0xe. Setea DAT_00559bec = pkt_size_code.
+// IDA: SendMove (0x00491C40) L436-788 — moverse con una ventana de NPC abierta
+// la cierra (el personaje igual camina: MuEmu no chequea la interfaz en
+// CGMoveRecv). Cada ventana avisa al server con su propio paquete.
+// Desviaciones del DLL aplicadas: sin el SetCursorPos de LABEL_168 (NOP en
+// 0x492EBD/0x492EDB, "Fix move cursor") y el 0x31 de la tienda lo manda
+// CloseInventoryRelatedWindows (FixShopNpcClose, hook en 0x4CBB15).
+extern "C" int g_bServerDivisionEnable;
+extern "C" int g_bServerDivisionAccept;
+void __fastcall CSQuest_clearQuest(int param_1);
+extern "C" void Net_SendNpcTalkClose(void);
+static void SendMove_CloseWindows97k(void)
+{
+    const bool questPanel = g_csQuest &&
+        *(char*)((uintptr_t)g_csQuest + 0x1c87f) != 0;       // g_csQuest + 116863
+    if (!ShopOpened && !WarehouseOpened && !TradeOpened && !ChaosMixOpened &&
+        !EventWindowOpened && !DAT_07eaa128 && !questPanel && !g_bServerDivisionEnable) {
+        // Port: NPCs que solo muestran un cartel (Charon del Devil Square, etc.)
+        // no prenden ninguna ventana local pero dejan g_NpcTalkActive en 1;
+        // moverse cierra esa charla. Sin esto I/V no vuelve a abrir el inventario.
+        if (g_NpcTalkActive) {
+            g_NpcTalkActive = 0;
+            Net_SendNpcTalkClose();
+        }
+        return;
+    }
+
+    if (TradeOpened) {
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x3D };            // cancelar trade (C3)
+        Net_SendSmallPacket(pkt, sizeof(pkt));
+    } else if (WarehouseOpened) {
+        if (!DAT_07eaa165) {                                 // EquipmentItem
+            InventoryOpened = 0;
+            CloseInventoryRelatedWindows();
+            if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
+            const BYTE pkt[3] = { 0xC1, 0x03, 0x82 };        // cerrar baul
+            Net_SendC1Packet(pkt, sizeof(pkt));
+        }
+    } else if (ChaosMixOpened) {
+        if (!FUN_004e3d60(OffsetMixItems, 8, 4) || (int)DAT_07e91388 > 0) {
+            UIChatLogWindow_AddText("", GlobalText[593], 2);
+        } else {
+            const BYTE pkt[3] = { 0xC1, 0x03, 0x87 };        // cerrar Chaos Machine
+            Net_SendC1Packet(pkt, sizeof(pkt));
+        }
+    } else if (DAT_07eaa128) {                               // g_bEventChipDialogEnable
+        // IDA manda [C1][03][97]; MuEmu marca Interface.use para el Golden Archer
+        // y ese 0x97 sin subopcode no lo libera. Fix del DLL
+        // (SendMove_GoldenArcherFixClose, hook en 0x492AD2): cerrar ventanas y
+        // mandar el 0x31.
+        CloseInventoryRelatedWindows();
+        Net_SendNpcTalkClose();
+        if (DAT_07eaa128 == 3) {
+            Input_ClearState(0);
+            DAT_00559c84 = 0;                                // InputEnable
+            DAT_07e11d72 = 0;                                // GoldInputEnable
+            DAT_07e11d74 = 0;                                // InputGold
+            DAT_07eaa108 = 0;                                // StorageGoldFlag
+            DAT_07e11d73 = 0;                                // g_bScratchTicket
+        }
+        DAT_07eaa128 = 0;
+        InventoryOpened = 0;
+    } else if (ShopOpened && !EventWindowOpened) {
+        CloseInventoryRelatedWindows();
+        InventoryOpened = 0;
+    } else if (!ShopOpened && !EventWindowOpened) {
+        if (questPanel)
+            CSQuest_clearQuest((int)(uintptr_t)g_csQuest);
+        else if (g_bServerDivisionEnable) {
+            CloseInventoryRelatedWindows();
+            g_bServerDivisionEnable = 0;
+            g_bServerDivisionAccept = 0;
+        }
+    } else {                                                 // ventana de eventos
+        const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
+        Net_SendC1Packet(pkt, sizeof(pkt));
+        CloseInventoryRelatedWindows();
+        InventoryOpened = 0;
+    }
+
+    // LABEL_168 (sin el SetCursorPos, ver arriba).
+    DAT_00559bec = 6;                                        // MouseUpdateTimeMax
+    MouseLButton = 0;
+}
+
 void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 {
     // Saltea si la entidad en param_2+0x78 tiene el flag 0x20 seteado (entidad ocupada/bloqueada)
@@ -488,8 +572,14 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
     else
         DAT_00559bec = (unsigned int)wpCount * 3 + 4;
 
+    // IDA sigue aunque no haya camino (activa la ruta y cierra ventanas), pero
+    // ahi solo se llama tras un PathFinding exitoso. El port ademas la llama
+    // cuando el pathfinding falla (Send_MovePacket_Player_legacy_stub): sin
+    // este return se reactivaba la ruta vieja y el heroe seguia caminando,
+    // atravesando paredes.
     if (wpCount == 0)
         return;
+    {
     if (wpCount > 0xe)
         wpCount = 0xe;
 
@@ -589,12 +679,15 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
     }
 
     Net_SendBuf((const char*)pkt, (int)payloadLen);
+    }
 
     // IDA 00491C40, justo después del camino de envío por la red:
     // acá se activa la ruta generada localmente. Player_InputTick sólo la
     // avanza/interpola mientras este byte esté seteado.
     if (DAT_083a7c24 != 113)
         *(unsigned char*)(param_1 + 748) = 1;
+
+    SendMove_CloseWindows97k();
 }
 
 // ──────────────────────────────────────────────────────────────────────────

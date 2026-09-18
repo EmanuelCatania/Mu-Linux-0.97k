@@ -66,7 +66,16 @@ extern "C" BYTE Inventory[];
 extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetMixItems[];
 extern "C" BYTE ShopItems[];
+extern "C" void Net_SendNpcTalkClose(void);
 void __cdecl CloseInventoryRelatedWindows(void) {
+    // DLL FixShopNpcClose (hook en 0x4CBB15): con la tienda abierta avisa al
+    // server con el 0x31; el original no lo manda y MuEmu deja Interface.use
+    // en 1, con lo que el siguiente NPC no responde.
+    if (ShopOpened) Net_SendNpcTalkClose();
+    // g_NpcTalkActive es del port (no existe en IDA): marca que se le hablo a
+    // un NPC. Cerrar las ventanas lo libera; si queda en 1, I/V y Escape toman
+    // la rama de "cerrar" para siempre y el inventario no vuelve a abrir.
+    g_NpcTalkActive         = 0;
     ShopOpened              = 0;   // 0x07EAA118
     DAT_07eaa132            = 0;   // byte_7EAA132
     DAT_07eaa134            = 0;   // RepairEnable_0

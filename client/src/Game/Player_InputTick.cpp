@@ -1956,70 +1956,11 @@ void __cdecl Player_ProcessInput(void)
             // esto, clickear el botón [+] de stats o la X de cerrar del panel también
             // hacía caminar al jugador hacia esa posición de pantalla.
             if (g_MouseOnWindow) goto end_tick_inc;
-            // 2026-07-25 (#2 shops): si hay una ventana de NPC abierta (shop/
-            // warehouse/chaos/trade) y el user clickea el MUNDO (fuera del panel),
-            // cerrarla en vez de moverse.  Mandar el move con Interface.use=1 en
-            // el server hace que lo rechace → desconexión.  Comportamiento MU:
-            // clickear afuera cierra el diálogo del NPC.  El close 0x31 va en C1
-            // (el talk 0x30 es C3, pero el close es C1 — HackPacketCheck).
-            if (DAT_07eaa118 || DAT_07eaa119 || DAT_07eaa11a || DAT_07eaa11b || DAT_07eaa128 || g_NpcTalkActive) {
-                // 2026-08-24 FIX (issue #15, "la segunda tienda ya no vende"): este
-                // bloque disparaba tambien con el boton MANTENIDO, no solo con un
-                // click nuevo. El talk 0x30 se manda al LLEGAR al NPC (actionQueued
-                // == 2, mas arriba en este mismo tick) y deja `g_NpcTalkActive = 1`;
-                // si el usuario venia sosteniendo el boton del click-to-move, el gate
-                // lo veia activo en el MISMO tick y mandaba el close. El log lo
-                // mostraba con el mismo milisegundo:
-                //     [1748718953] PIT NPC-TALK send (C3): npcId=15
-                //     [1748718953] PIT CLOSE-NPC (move): sending 0x31 close
-                // El server procesaba talk (TargetShopNumber=15, Interface.use=1) y
-                // acto seguido close, que hace `TargetShopNumber = -1` +
-                // `Interface.use = 0` (NpcTalk.cpp:330-332). El cliente ya habia
-                // recibido el 0x30 y mostraba la tienda, pero toda venta caia en el
-                // `if (SHOP_RANGE(lpObj->TargetShopNumber) == 0) return;` de
-                // CGItemSellRecv -> 0x33 con result 0. De ahi "la primera tienda
-                // vende y la segunda no": dependia de si se solto el boton antes de
-                // llegar caminando al NPC.
-                //
-                // Un boton que venia sostenido desde ANTES de que la ventana se
-                // abriera no es "el usuario clickeo afuera". Sin edge no cerramos, y
-                // tampoco movemos (que es lo que este bloque venia a evitar).
-                if (!bClickEdge) goto end_tick_inc;
-                const bool wasChaos = (DAT_07eaa11a != 0);
-                if (wasChaos) {
-                    ChaosBoxRequestClose();
-                    goto end_tick_inc;
-                }
-                extern void __cdecl CloseInventoryRelatedWindows(void);
-                // 2026-09-02 (sonido de "abre UI" al hablarle al guardia):
-                // `g_NpcTalkActive` es una invencion del port -- lo prende
-                // SendNpcTalkRequest para CUALQUIER NPC, incluidos los que no
-                // abren ninguna ventana (guardia, quest, Golden Archer).  Con
-                // el guardia el server contesta solo un `0x01 ChatTarget`
-                // (NpcTalk.cpp:223 NpcGuard) y ningun 0x30, asi que no queda
-                // nada abierto; el click siguiente entraba igual a este bloque
-                // y llamaba CloseInventoryRelatedWindows, que termina en
-                // `PlayBuffer(25); PlayBuffer(28);` (eso SI es fiel: IDA
-                // 0x4CBA60 los tiene al final).  O sea sonaba el cierre de una
-                // ventana que nunca se abrio.
-                //
-                // Si ninguna ventana real esta abierta, se libera el
-                // `Interface.use` del server con el 0x31 y se sale, sin tocar
-                // los pools ni reproducir el sonido.
-                const bool anyWindowOpen = (DAT_07eaa118 || DAT_07eaa119 ||
-                                            DAT_07eaa11a || DAT_07eaa11b ||
-                                            DAT_07eaa128);
-                if (!anyWindowOpen) {
-                    g_NpcTalkActive = 0;
-                    Net_SendNpcTalkClose();
-                    goto end_tick_inc;
-                }
-                CloseInventoryRelatedWindows();          // limpia Shop/Warehouse/Mix/Trade + pools
-                DAT_07eaa117 = 0;                         // InventoryOpened
-                g_NpcTalkActive = 0;
-                Net_SendNpcTalkClose();
-                goto end_tick_inc;                        // este click sólo cierra; no mueve
-            }
+            // IDA: el click al mundo NO cierra ventanas de NPC acá. Lo hace
+            // SendMove (0x491C40) al mandar el movimiento: el personaje camina
+            // y la ventana se cierra con su paquete (Combat.cpp,
+            // SendMove_CloseWindows97k). MuEmu no rechaza el 0x10 con la
+            // interfaz abierta (CGMoveRecv no la chequea).
             // 2026-05-05: También bloquear si el click se inició sobre window
             // (caso: user click skill cell, Chat_InputTick consume y resetea
             // DAT_07db870c → siguiente frame g_MouseOnWindow=0 pero el click
