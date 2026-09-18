@@ -606,6 +606,11 @@ float* __cdecl FUN_0045fec0(unsigned int param_1, float* param_2, float param_3,
     if (count < 1)
         return (float*)(uintptr_t)0;
 
+    // IDA L197-218: si el nombre del heroe contiene "webzen" (aWebzen_2,
+    // 0x559B80) sale sin mandar el 0x1D.  Exencion de las cuentas de Webzen.
+    if (DAT_07abf5d8 && strstr((const char*)DAT_07abf5d8 + 449, "webzen"))
+        return (float*)(uintptr_t)1;
+
     // 3. Paquete C1:1D — PMSG_MULTI_SKILL_ATTACK_RECV.
     //
     // IDA sub_45FEC0 anexa, en este orden (L228, 277, 326, 374, 427 y el bucle
