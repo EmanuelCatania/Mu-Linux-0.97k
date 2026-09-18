@@ -1547,7 +1547,15 @@ void __cdecl Player_ProcessInput(void)
         //     if ( GetAsyncKeyState(16) >> 8 != 0x80 ) { RenderTerrain(1); ... }
         // y las dos salidas del bloque saltan al final del tick, o sea
         // tienen PRECEDENCIA sobre el click al suelo.
-        if (SelectedOperate != -1 && bClickEdge) {
+        // IDA L590-598: las ramas de mobiliario, NPC e item corren con
+        //     v32 = MouseLButtonPush || MouseLButton
+        // o sea con el boton MANTENIDO tambien, igual que el click al suelo.
+        // El port les exigia el flanco (bClickEdge): si el flanco se consumia
+        // en un tick bloqueado por la animacion o el debounce, el click caia
+        // al suelo con el item bajo el cursor y el heroe caminaba en vez de
+        // levantarlo.  2026-09-18.
+        const bool bClickNow = bClickEdge || DAT_083a42c4 != 0;   // MouseLButton
+        if (SelectedOperate != -1 && bClickNow) {
             // Gate de montura (IDA L1135): solo se opera si NO se va
             // montado, o si se esta en zona segura.
             const unsigned short helper = *(unsigned short*)(ent + 0x2b8);
@@ -1600,7 +1608,7 @@ void __cdecl Player_ProcessInput(void)
             || ((*(short*)(ent + 0x2b8) == 0x332 || *(short*)(ent + 0x2b8) == 0x333)
                 && *(char*)(ent + 0x34e) == '\0'))
         {
-            if (SelectedNpc != -1 && bClickEdge) {
+            if (SelectedNpc != -1 && bClickNow) {
                 // 2026-05-06: bClickEdge en vez de bHoverActive — mismo fix
                 // que el attack handler arriba para evitar disparos por
                 // bClickLatched stale + cambio de hover.
@@ -1635,7 +1643,7 @@ void __cdecl Player_ProcessInput(void)
             }
 
             // ── Tertiary target (SelectedItem) ───────────────────────────────
-            if (SelectedItem != -1 && bClickEdge) {
+            if (SelectedItem != -1 && bClickNow) {
                 // 2026-05-06: bClickEdge en vez de bHoverActive (mismo fix).
                 *(unsigned char*)(ent + 0x2ed) = 1;
                 ItemKey = (DWORD)SelectedItem;   // latch, IDA L1281
