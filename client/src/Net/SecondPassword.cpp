@@ -1009,207 +1009,9 @@ void __cdecl FUN_004e6c40(void) {
     Net_SendC1Packet(pkt, 5);
 }
 
-// FUN_004e7ac0 @ 0x004E7AC0 — SecondPassword_Screen6 (854 lines)
-//   - Segunda contraseña del char-select: parecido a Screen5 pero para el flujo de selección de personaje.
-//     Checks DAT_07eaa14c mode (2=new PIN, 3=confirm PIN, 6=set-mode).
-//   - SEH. Implemented in SecondPassword_UI.cpp.
-void __cdecl FUN_004e7ac0(void) {
-    // SecondPassword_Screen6 — CharSelect second-password digit input
-    // Guard: DAT_07eaa128 must be non-zero
-    if (DAT_07eaa128 == 0) return;
-
-    // Mouse hover zone 0x1c2-0x280 x 0-0x1b1
-    if ((0x1c1 < (int)DAT_083a427c) && ((int)DAT_083a427c < 0x280) &&
-        (-1 < (int)DAT_083a4278) && ((int)DAT_083a4278 < 0x1b1)) {
-        DAT_07d78094 = 1;
-    }
-
-    // mode==4: final submit button (0x1e4-0x25d, 0xdb-0xf4)
-    if (DAT_07eaa128 == 4) {
-        if ((0x1e4 < (int)DAT_083a427c) && ((int)DAT_083a427c < 0x25d) &&
-            (0xdb < (int)DAT_083a4278) && ((int)DAT_083a4278 < 0xf4) &&
-            DAT_083a413c != '\0') {
-            // Build and send 4-byte packet C1/01/98
-            static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                          0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                          0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                          0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-            BYTE pkt[4];
-            pkt[0] = 0xC1; pkt[1] = 1; pkt[2] = 0x98; pkt[3] = 1;
-            for (uint ui = 3; ui < 4; ui++) { uint uk = ui & 0x1f; pkt[ui] ^= key[uk] ^ pkt[ui+1]; }
-            int off = 0; unsigned int rem = 4;
-            if (DAT_055ca168 != 0xffffffff) {
-                do {
-                    int r = send((SOCKET)DAT_055ca168, (char*)pkt+off, (int)(rem-off), 0);
-                    if (r == -1) {
-                        int e = WSAGetLastError();
-                        if (e == WSAEWOULDBLOCK && (int)(DAT_055cc16c + rem) < 0x2001) {
-                            memcpy(DAT_055ca16c + DAT_055cc16c, pkt, rem);
-                            DAT_055cc16c += rem;
-                        } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                        break;
-                    }
-                    if (r == 0) break;
-                    if (DAT_055ce174) FUN_0043de60();
-                    rem -= r; off += r;
-                } while ((int)rem > 0);
-            }
-            DAT_083a413c = '\0';
-        }
-        goto LAB_004e8950_impl;
-    }
-
-    {
-        int iX9 = (DAT_07eaa128 != 3) ? 0x1e5 : 0x1c2;
-        int iW9 = 0x78, iBY9 = 0x16;
-
-        if (DAT_07eaa128 != 3) {
-            iX9 = 0x1e5; iW9 = 0x78; iBY9 = 0x16;
-            // Digit button (0x1e4-0x25d, 0xe6-0xfd)
-            if ((0x1e4 < (int)DAT_083a427c) && ((int)DAT_083a427c < 0x25d) &&
-                (0xe6 < (int)DAT_083a4278) && ((int)DAT_083a4278 < 0xfd) &&
-                DAT_083a413c != '\0') {
-                DAT_083a413c = '\0';
-                int iSlot = FUN_00482d70(0x1d5, (int)DAT_07eaa128 - 1);
-                if (iSlot != -1) {
-                    // Send 5-byte packet C1/01/95/iSlot
-                    static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                                  0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                                  0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                                  0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-                    BYTE pkt[5];
-                    pkt[0] = 0xC1; pkt[1] = 1; pkt[2] = 0x95; pkt[3] = 1;
-                    for (uint ui=3;ui<4;ui++){uint uk=ui&0x1f;pkt[ui]^=key[uk]^pkt[ui+1];}
-                    pkt[4] = (char)iSlot;
-                    {uint uk=4&0x1f;pkt[4]^=key[uk]^pkt[4];}
-                    int off=0; unsigned int rem=5;
-                    if (DAT_055ca168 != 0xffffffff) {
-                        do {
-                            int r=send((SOCKET)DAT_055ca168,(char*)pkt+off,(int)(rem-off),0);
-                            if (r==-1){int e=WSAGetLastError();if(e==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pkt,rem);DAT_055cc16c+=rem;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                            if(r==0)break;if(DAT_055ce174)FUN_0043de60();rem-=r;off+=r;
-                        } while ((int)rem > 0);
-                    }
-                }
-            }
-        } else {
-            // mode==3: confirm-PIN digit button (uses __ftol Y boundaries → approx 0xdb-0xf4, 0x13f-0x158)
-            // Las dos llamadas a __ftol() se aproximan como (int)DAT_07ea5288 para X y constantes fijas para Y
-            int lX3 = (int)DAT_07ea5288;
-            if ((lX3 <= (int)DAT_083a427c) && ((int)DAT_083a427c < lX3 + 0x78) &&
-                (0x13f < (int)DAT_083a4278) && ((int)DAT_083a4278 < 0x158) &&
-                DAT_083a413c != '\0') {
-                DAT_083a413c = '\0';
-                DAT_083a42c4 = 0;
-                // CharSelect second-password lookup via GetItemCount(-1, -1)
-                int cnt = FUN_00482ff0(0x1d5, 0xffffffff);
-                if (cnt == 0) {
-                    FUN_0051d6f0((char*)&DAT_07d6b724);
-                } else {
-                    // Build 0x9D packet with char data (13 bytes total)
-                    DWORD uVar1 = *(DWORD*)(&DAT_07db8714 + DAT_07e11d78 * 0x100);
-                    int local_428 = *(int*)(&DAT_07db8718 + DAT_07e11d78 * 0x80);
-                    static const BYTE key[32] = {0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,
-                                                  0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
-                                                  0x8a,0xcb,0x63,0x8d,0xea,0x7d,0x2b,0x5f,
-                                                  0xc3,0xb1,0xe9,0x83,0x29,0x51,0xe8,0x56};
-                    BYTE pkt[13];
-                    pkt[0] = 0xC1; pkt[1] = 1; pkt[2] = 0x9D; pkt[3] = 1;
-                    pkt[4] = 0; pkt[5] = 0; pkt[6] = 0; pkt[7] = 0; pkt[8] = 0;
-                    // XOR encode bytes 3..7
-                    for (uint ui=3;ui<8;ui++){uint uk=ui&0x1f;pkt[ui]^=key[uk]^pkt[ui+1];}
-                    memcpy(pkt+8, &uVar1, 4);
-                    pkt[12] = 0;
-                    // XOR encode 8..12
-                    for (uint ui=8;ui<13;ui++){uint uk=ui&0x1f;pkt[ui]^=key[uk]^(ui+1<13?pkt[ui+1]:0);}
-                    memcpy(pkt+8, &local_428, 4);
-                    pkt[12] = 0;
-                    for (uint ui=8;ui<13;ui++){uint uk=ui&0x1f;pkt[ui]^=key[uk]^(ui+1<13?pkt[ui+1]:0);}
-                    int off=0; unsigned int rem=13;
-                    if (DAT_055ca168 != 0xffffffff) {
-                        do {
-                            int r=send((SOCKET)DAT_055ca168,(char*)pkt+off,(int)(rem-off),0);
-                            if(r==-1){int e=WSAGetLastError();if(e==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pkt,rem);DAT_055cc16c+=rem;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                            if(r==0)break;if(DAT_055ce174)FUN_0043de60();rem-=r;off+=r;
-                        } while((int)rem>0);
-                    }
-                }
-            }
-        }
-
-        // mode==1: OK button at fixed position
-        if (DAT_07eaa128 == 1) {
-            if ((iX9 <= (int)DAT_083a427c) && ((int)DAT_083a427c < iW9 + iX9) &&
-                (0xfe < (int)DAT_083a4278) && ((int)DAT_083a4278 < iBY9 + 0xff) &&
-                DAT_083a413c != '\0') {
-                DAT_083a413c = '\0';
-                int cnt2 = FUN_00482ff0(0x1d5, 0xffffffff);
-                if (cnt2 < 10) {
-                    // Short send 3-byte C1/01/96
-                    if (_DAT_00559f58 != -1 && DAT_00559f5c != -1) {
-                        // Proceed
-                        goto LAB_Screen6_ok_send;
-                    }
-                    goto LAB_004e83a5_impl;
-                }
-            LAB_Screen6_ok_send:
-                {
-                    BYTE pkt2[3] = {0xC1, 3, 0x96};
-                    int off=0; unsigned int rem=3;
-                    if (DAT_055ca168 != 0xffffffff) {
-                        do {
-                            int r=send((SOCKET)DAT_055ca168,(char*)pkt2+off,(int)(rem-off),0);
-                            if(r==-1){int e=WSAGetLastError();if(e==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pkt2,rem);DAT_055cc16c+=rem;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                            if(r==0)break;if(DAT_055ce174)FUN_0043de60();rem-=r;off+=r;
-                        } while((int)rem>0);
-                    }
-                }
-            }
-        }
-    LAB_004e83a5_impl:
-        if (_DAT_00559f58 != -1 &&
-            (int)(WORD)_DAT_00559f58 != -1 && DAT_00559f5c != -1 &&
-            (iX9 <= (int)DAT_083a427c) && ((int)DAT_083a427c < 0x78 + iX9) &&
-            (0xc9 < (int)DAT_083a4278) && ((int)DAT_083a4278 < 0xca + iBY9) &&
-            DAT_083a413c != '\0') {
-            DAT_083a413c = '\0';
-            CreateDialogInterface(0x2c9, 5);
-        }
-    }
-
-LAB_004e8950_impl:
-    // Botón atrás: DAT_07ea5288+0x19 a +0x31 x DAT_07ea5284+0x18b a +0x1a3
-    if ((int)(DAT_07ea5288 + 0x19) <= (int)DAT_083a427c &&
-        (int)DAT_083a427c < (int)(DAT_07ea5288 + 0x31) &&
-        (int)(DAT_07ea5284 + 0x18b) <= (int)DAT_083a4278 &&
-        (int)DAT_083a4278 < (int)(DAT_07ea5284 + 0x1a3) &&
-        IsClickPushed()) {
-        DAT_083a4124 = '\0';
-        // Send C1/03/97 cancel packet
-        BYTE pkt3[3] = {0xC1, 3, 0x97};
-        int off=0; unsigned int rem=3;
-        if (DAT_055ca168 != 0xffffffff) {
-            do {
-                int r=send((SOCKET)DAT_055ca168,(char*)pkt3+off,(int)(rem-off),0);
-                if(r==-1){int e=WSAGetLastError();if(e==WSAEWOULDBLOCK&&(int)(DAT_055cc16c+rem)<0x2001){memcpy(DAT_055ca16c+DAT_055cc16c,pkt3,rem);DAT_055cc16c+=rem;}else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));break;}
-                if(r==0)break;if(DAT_055ce174)FUN_0043de60();rem-=r;off+=r;
-            } while((int)rem>0);
-        }
-        DAT_07eaa128 = 0;
-        DAT_07eaa117 = 0;
-        FUN_004cba60();
-        DAT_07e11d28 = 0;
-        DAT_00559bec = 6;
-        Input_ClearState(0);
-        DAT_00559c84 = 0;
-        DAT_07e11d72 = 0;
-        DAT_07e11d74 = 0;
-        DAT_07eaa108 = 0;
-        DAT_07e11d73 = 0;
-    }
-
-    if (DAT_083a413c != '\0') DAT_083a413c = '\0';
-}
+// FUN_004e7ac0 (CheckGoldenArcherWindow) vive en UI/GoldenArcher.cpp.
+extern "C" int g_GoldenArcherCustom;
+extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action);
 // FUN_004e8b70 @ 0x004E8B70 -- IDA: sub_4E8B70, clicks de la ventana de
 // transferencia de server (la etiqueta vieja "SecondPassword_Screen7" era falsa).
 // Los dos `__ftol()` que el port no habia resuelto son `InventoryStartX + 35.0`:
@@ -3476,12 +3278,14 @@ void __cdecl FUN_00449900(int p1)
     }
 
     // ─── IDA L478-498: tag stationary event NPCs in cities (Lorencia,Dungeon)
+    // Evento propio del Golden Archer (DLL MoveCharacter_GoldenArcherMovement,
+    // hook en 0x44A31A): tambien en Noria, con la orientacion de Lorencia.
     if (*(BYTE*)(o + 132) == 4
-        && (!World || World == 2)
+        && (!World || World == 2 || (g_GoldenArcherCustom && World == 3))
         && *(short*)(o + 2) == 390
         && *(int*)(o + 4) >= 206 && *(int*)(o + 4) <= 208)
     {
-        if (World) {
+        if (World == 2) {
             *(DWORD*)(o + 28) = 0;
             *(DWORD*)(o + 32) = 0;
             *(DWORD*)(o + 36) = 0;
@@ -3622,6 +3426,9 @@ void __cdecl FUN_00449900(int p1)
             {
                 // L642-738: event NPC idle chatter / random pose dispatch
                 int action = rand() % 100;
+                if (GoldenArcher_CustomNpcIdle((int)c, action)) {
+                    skipIdleSelect = true;
+                } else
                 if (*(BYTE*)(o + 261) == 1)  // PLAYER_STOP_MALE
                 {
                     int TextIndex = 0;

@@ -2249,6 +2249,17 @@ int __cdecl FUN_0047dae0(int param_1) {
     return (int)itemRing1;
 }
 
+// IDA: CHARACTER_MACHINE::GetMagicSkillDamage (0x0047E4F0).  Fuera del ruido
+// anti-tamper (que descifra el registro de SkillAttribute; el nuestro ya esta en
+// claro): el dano del skill es el BYTE +0x21 del registro de 40 bytes, y se suma
+// al rango magico de CHARACTER_MACHINE (+70 / +72); el maximo lleva +50%.
+void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* piMaxDamage)
+{
+    const BYTE damage = (BYTE)SkillAttribute.Raw[40 * (iType & 0xFF) + 0x21];
+    *piMinDamage = damage + *(unsigned short*)(This + 70);
+    *piMaxDamage = (damage >> 1) + damage + *(unsigned short*)(This + 72);
+}
+
 // ── FUN_0047dd50 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DD50 @ 0x0047DD50 (39 bytes) — Stats_CalcAddStrength (or similar).
 // Computes a derived stat from CharacterMachine fields:

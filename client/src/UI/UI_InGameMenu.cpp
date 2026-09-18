@@ -600,84 +600,65 @@ void __cdecl UI_InGameMenu(void)
     // y=0x2c entre x=0x6a y x=0x16a, contra las dos filas de 35 px en y=180/265
     // (x 245-395) que el original usa para el estado 143.
 
-    // ── State 141 (0x8d) — Yes/No dialog with paging arrows ──────────────
-    // Per IDA L3867-3963. The 7-line message-box buffer (g_lpszMessageBoxCustom)
-    // shows up to 7 rows of GlobalText starting at offset (300 * unk_83A7C04).
-    // unk_83A7C08 is the current page index (0..byte_83A7C09[0]).
-    //
-    // Left arrow at (249,202)-(264,222): decrement page (--unk_83A7C08, clamp 0)
-    // Right arrow at (377,202)-(392,222): increment page (++unk_83A7C08, clamp max)
-    // Both repaginate via SeparateTextIntoLines into g_lpszMessageBoxCustom.
-    //
-    // 2026-05-08: ported faithfully. Existing 0x8d-0x8e fall-through to shop
-    // handler was wrong — caused NPC Yes/No dialogs to misroute.
+    // IDA UI_InGameMenu (0x514310) L3857-3963: carteles 139 (CreateOkMessageBox),
+    // 140, 141 (CreateDialogInterface, con paginas) y 154.  2026-09-18: fiel.
+    // El port terminaba el 141 con un `goto tail` incondicional, que cierra el
+    // cartel en el primer frame (boton Explicacion del Golden Archer).
+    case 0x8b:
+    case 0x8c:
     case 0x8d:
+    case 0x9a:
     {
-        // Iterate button-rect array (DAT_083a42fc, stride 5 ints, count =
-        // g_iNumLineMessageBoxCustom). Set hover/click state per button.
-        int*  base = (int*)&DAT_083a42fc;
-        int  *btn  = base;
-        int   nBtns = (int)g_iNumLineMessageBoxCustom;
-        bool  clickConsumed = false;
-        for (int i = 0; i < nBtns; ++i, btn += 5) {
-            if (btn[-1] >= 1) {
-                if (mouseX < btn[0] + 213 || mouseY < btn[1] + 60 ||
-                    mouseX > btn[0] + btn[2] + 213 ||
-                    mouseY > btn[3] + btn[1] + 60)
-                {
-                    btn[-1] = 1;       // normal
-                } else {
-                    btn[-1] = 2;       // hover
-                    if (IsClickPushed()) {
-                        DAT_083a4124 = 0;
-                        clickConsumed = true;
-                    }
+        // Hover de los dos botones de DAT_083a42f8 (5 ints: estado, x, y, w, h).
+        int  clicked = -1;
+        bool push    = (DAT_083a4124 != 0);
+        int* entry   = (int*)&DAT_083a42f8[0];
+        for (int i = 0; i < 2; ++i, entry += 5) {
+            if (entry[0] < 1) continue;
+            if (entry[1] + 213 > mouseX || entry[2] + 60 > mouseY
+                || mouseX > entry[1] + entry[3] + 213
+                || mouseY > entry[4] + entry[2] + 60) {
+                entry[0] = 1;
+            } else {
+                entry[0] = 2;
+                if (push) {
+                    push = false;
+                    clicked = i;
+                    DAT_083a42c4 = 0;                    // MouseLButton
                 }
             }
         }
+        DAT_083a4124 = push ? 1 : 0;                     // MouseLButtonPush
 
-        // Left arrow click: previous page
-        if (mouseX >= 249 && mouseY >= 202 && mouseX <= 264 && mouseY <= 222 &&
-            IsClickPushed())
-        {
-            int newIdx = (int)DAT_083a7c08 - 1;
-            if (newIdx < 0) newIdx = 0;
-            DAT_083a7c08 = (DWORD)newIdx;
-            // Repaginate: SeparateTextIntoLines from
-            //   GlobalText[unk_83A7C04 + newIdx]  (300 * idx + 0x07D29D24)
-            const char* src = (const char*)
-                ((uintptr_t)&GlobalText[0][0] + 300 * (DAT_083a7c04 + newIdx));
-            g_iNumLineMessageBoxCustom = SeparateTextIntoLines(
-                src, &DAT_083a44c4[0], 7, 38);
-            DAT_083a4124 = 0;
-            goto tail;
+        if (state == 0x8d) {
+            int page = -1;
+            if (mouseX >= 249 && mouseY >= 202 && mouseX <= 264 && mouseY <= 222 && DAT_083a4124) {
+                page = (int)(signed char)(BYTE)DAT_083a7c08 - 1;
+                if (page <= 0) page = 0;
+            } else if (mouseX >= 377 && mouseY >= 202 && mouseX <= 392 && mouseY <= 222 && DAT_083a4124) {
+                page = (int)(signed char)(BYTE)DAT_083a7c08 + 1;
+                if (page >= (int)(BYTE)DAT_083a7c09) page = (BYTE)DAT_083a7c09;
+            }
+            if (page >= 0) {
+                DAT_083a7c08 = (DWORD)page;
+                const char* src = (const char*)
+                    ((uintptr_t)&GlobalText[0][0] + 300 * (DAT_083a7c04 + page));
+                g_iNumLineMessageBoxCustom = SeparateTextIntoLines(
+                    src, &DAT_083a44c4[0], 7, 38);
+            }
         }
 
-        // Right arrow click: next page
-        if (mouseX >= 377 && mouseY >= 202 && mouseX <= 392 && mouseY <= 222 &&
-            IsClickPushed())
-        {
-            int newIdx = (int)DAT_083a7c08 + 1;
-            int maxIdx = (int)DAT_083a7c09;
-            if (newIdx > maxIdx) newIdx = maxIdx;
-            DAT_083a7c08 = (DWORD)newIdx;
-            const char* src = (const char*)
-                ((uintptr_t)&GlobalText[0][0] + 300 * (DAT_083a7c04 + newIdx));
-            g_iNumLineMessageBoxCustom = SeparateTextIntoLines(
-                src, &DAT_083a44c4[0], 7, 38);
-            DAT_083a4124 = 0;
-            goto tail;
+        if (DAT_055ca038) {
+            DAT_055ca038 = '\0';                         // Enter cierra
+        } else if (clicked < 0) {
+            return;                                      // persiste
         }
-
-        // Click on body (not on arrows): close the dialog
-        if (clickConsumed) {
-            DAT_07e11d28 = 0;
-            DAT_00559bec = 6;
-            DAT_083a7c24 = DAT_083a7c28;
-            DAT_083a7c28 = 0;
-            FUN_00404bc0(0x19, 0, 0);
-        }
-        goto tail;
+        DAT_00559bec = 6;                                // MouseUpdateTimeMax
+        DAT_083a7c24 = DAT_083a7c28;                     // ErrorMessage = NextErrorMessage
+        DAT_083a7c28 = 0;
+        DAT_07e11d28 = 0;                                // MouseUpdateTime
+        FUN_00404bc0(0x19, 0, 0);
+        return;
     }
 
     // ── State 142 (0x8e) — NPC multi-answer dialog ──────────────────────

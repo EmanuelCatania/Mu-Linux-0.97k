@@ -245,6 +245,12 @@ unsigned int Game_RenderTick(void)
     // ultimo frame (la pantalla de carga) hasta que llega JoinMapServer.
     if (DAT_083a7c10 == 0) return 0;
 
+    // IDA L62-65: con LoadingWorld > 30 (portal pedido al server, CheckGate lo
+    // pone en 9999999) devuelve 0 -> sin SwapBuffers, queda el ultimo frame.
+    // El port cortaba adentro de Render_Scene3D pero devolvia 1, y el swap
+    // mostraba un buffer sin dibujar (pantalla negra al usar un gate).
+    if (DAT_07e11d1c > 30) return 0;
+
     // BUG-FIX 2026-05-04: drain residual GL errors antes del frame para que el
     // diagnostic logging de GL_DisableDepthTest no spamee con 0x504 stale (de pops
     // sin push del frame previo durante la transición login→in-game).

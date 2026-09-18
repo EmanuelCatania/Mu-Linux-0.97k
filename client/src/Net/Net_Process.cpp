@@ -3009,6 +3009,7 @@ void Net_ProcessPacket(void)
                             *(WORD*)(CA + 0x1A) = ClampToWord(ViewEne);
                             *(WORD*)(CA + 0x20) = ClampToWord(ViewMaxHP);
                             *(WORD*)(CA + 0x22) = ClampToWord(ViewMaxMP);
+                            *(WORD*)(CA + 0x26) = ClampToWord(*(DWORD*)(Msg + 24));   // MaxBP
                             NetLog("NET:  → F3/06 AddPoint OK slot=%d pts=%u str=%u agi=%u vit=%u ene=%u",
                                    slot, ViewPoint, ViewStr, ViewDex, ViewVit, ViewEne);
                         } else {
@@ -3022,9 +3023,14 @@ void Net_ProcessPacket(void)
                             case 2: (*(WORD*)(CA + 0x18))++; *(WORD*)(CA + 0x20) = maxLifeMana; break;
                             case 3: (*(WORD*)(CA + 0x1A))++; *(WORD*)(CA + 0x22) = maxLifeMana; break;
                             }
+                            *(WORD*)(CA + 0x26) = *(WORD*)(Msg + 8);                 // IDA v4[19] = MaxBP
                             NetLog("NET:  → F3/06 AddPoint OK (no-extra) slot=%d maxLifeMana=%u",
                                    slot, maxLifeMana);
                         }
+                        // IDA ReceiveAddPoint (0x431480) termina con sub_47E3C0
+                        // (CharData_RecalcStats).  Sin esto dano, defensa y
+                        // velocidad quedaban viejos hasta cambiar el equipo.
+                        FUN_0047e3c0((int)(uintptr_t)CharacterMachine, 0, 0);
                         break;
                     }
 
@@ -3321,7 +3327,17 @@ void Net_ProcessPacket(void)
                         Recv_NewCharacterCalc(Msg);
                         break;
                     }
-                    case 0xE2: case 0xE3: case 0xE4: case 0xE5: {
+                    case 0xE3: {  // lista de apilado (DLL CItemStack)
+                        extern void Recv_ItemStackList(const BYTE* Msg, int Size);
+                        Recv_ItemStackList((const BYTE*)Msg, Size);
+                        break;
+                    }
+                    case 0xE4: {  // precios fijos (DLL CItemValue)
+                        extern void Recv_ItemValueList(const BYTE* Msg, int Size);
+                        Recv_ItemValueList((const BYTE*)Msg, Size);
+                        break;
+                    }
+                    case 0xE2: case 0xE5: {
                         // F3/E3 (126B) quest, F3/E4 (854B) skills, F3/E5 (1111B) master tree.
                         // Pendientes — dump-only por ahora (estructuras Protocol.h aún no porteadas).
                         char b[400];
@@ -5902,20 +5918,30 @@ void Net_ProcessPacket(void)
             }
             case 0x94: {  // ReceiveEventChipInfomation @ 0x004372C0
                 NetLog("NET:  -> 0x94 EventChipInfomation");
-                extern void Recv_EventChipInfomation(BYTE* Msg, int Size);
-                Recv_EventChipInfomation((BYTE*)Msg, Size);
+                extern void GoldenArcher_Recv94(BYTE* Msg, int Size);
+                GoldenArcher_Recv94((BYTE*)Msg, Size);
                 break;
             }
             case 0x95: {  // ReceiveEventChip @ 0x00437380
                 NetLog("NET:  -> 0x95 EventChip");
-                extern void Recv_EventChip(BYTE* Msg, int Size);
-                Recv_EventChip((BYTE*)Msg, Size);
+                extern void GoldenArcher_Recv95(BYTE* Msg, int Size);
+                GoldenArcher_Recv95((BYTE*)Msg, Size);
                 break;
             }
             case 0x96: {  // ReceiveMutoNumber @ 0x004373A0
                 NetLog("NET:  -> 0x96 MutoNumber");
-                extern void Recv_MutoNumber(BYTE* Msg, int Size);
-                Recv_MutoNumber((BYTE*)Msg, Size);
+                extern void GoldenArcher_Recv96(BYTE* Msg, int Size);
+                GoldenArcher_Recv96((BYTE*)Msg, Size);
+                break;
+            }
+            case 0x97: {  // Golden Archer del evento propio (C1:97:00..04)
+                extern void GoldenArcher_Recv97(BYTE* Msg, int Size);
+                GoldenArcher_Recv97((BYTE*)Msg, Size);
+                break;
+            }
+            case 0x9D: {  // ReceiveScratchResult @ 0x00437400 / resultado del evento propio
+                extern void GoldenArcher_Recv9D(BYTE* Msg, int Size);
+                GoldenArcher_Recv9D((BYTE*)Msg, Size);
                 break;
             }
             case 0x99: {  // ReceiveServerImmigration @ 0x004373D0
@@ -6196,17 +6222,10 @@ void Net_ProcessPacket(void)
                 if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
                     worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
                 *(float*)(hero + 24) = worldZ;
-                // Los stores de +788/+792, +0x388/+0x38C y +0x306/+0x307 no estan
-                // en IDA (que solo escribe +904/+908): son del port, para que el
-                // walker no retome el camino viejo despues del salto.
-                *(float*)(hero + 788) = worldX;
-                *(float*)(hero + 792) = worldY;
-                *(DWORD*)(hero + 0x388) = gridX;
-                *(DWORD*)(hero + 0x38c) = gridY;
+                // IDA L141-160: solo +904/+908 (la grilla).  El camino viejo no se
+                // retoma porque el final del handler hace c+748 = 0 y SetPlayerStop.
                 *(DWORD*)(hero + 904) = gridX;
                 *(DWORD*)(hero + 908) = gridY;
-                hero[0x306] = gridX;
-                hero[0x307] = gridY;
                 *(float*)(hero + 36) = ((float)direction - 1.0f) * 45.0f;
 
                 if (gate != 0) {

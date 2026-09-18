@@ -170,78 +170,8 @@ void Recv_DevilSquareRank(BYTE* Msg, int Size)
     else                FUN_0051d9e0((int)Msg[4], (int)Msg[3], Msg + 5);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 0x94 — ReceiveEventChipInfomation (0x004372C0)
-// Estado del dialogo del Golden Archer. Msg[3] + 1 elige el modo del panel
-// (1 = normal, 3 = scratch ticket / regalo).
-// ─────────────────────────────────────────────────────────────────────────────
-void Recv_EventChipInfomation(BYTE* Msg, int Size)
-{
-    if (Size < 6) return;
 
-    CloseInventoryRelatedWindows();
 
-    const int mode = (int)Msg[3] + 1;
-    DAT_07e11e1c = *(short*)(Msg + 4);      // g_shEventChipCount
-    _g_bEventChipDialogEnable = mode;
-
-    // mode == 3 (scratch ticket / regalo) — SIN PORTAR. El original prepara el
-    // campo de texto del nombre del regalo:
-    //     memset(g_strGiftName, 0, sizeof(g_strGiftName));
-    //     ClearInput(0); InputTextMax[0] = 12; InputNumber = 1;
-    //     InputEnable = 0; GoldInputEnable = 0; InputGold = 0;
-    //     StorageGoldFlag = 0; g_bScratchTicket = 1;
-    // De esos, `g_strGiftName`, `g_bScratchTicket`, `InputNumber` y `ClearInput`
-    // no existen todavia en el arbol, y los de zen aparecen con nombre DAT_
-    // (GoldInputEnable = DAT_07e11d72). Es una tanda propia del Golden Archer.
-    // El panel igual abre; lo que falta es el modo de escribir el nombre.
-
-    InventoryOpened = 0;
-    CharacterOpened = 0;
-
-    // Los tres shorts de g_shMutoNumber solo se pisan si ninguno viene en -1.
-    if (mode == 1 && Size >= 12) {
-        const short a = *(short*)(Msg + 6);
-        const short b = *(short*)(Msg + 8);
-        const short c = *(short*)(Msg + 10);
-        if (a != -1 && b != -1 && c != -1) {
-            // El original hace un store de 4 bytes sobre g_shMutoNumber[0..1];
-            // aca se escribe short por short porque los tres son globals
-            // separados y su contiguidad no esta garantizada.
-            DAT_07e11e20 = a;
-            DAT_07e11e22 = b;
-            DAT_07e11e24 = c;
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 0x95 — ReceiveEventChip (0x00437380)
-// Actualiza el contador de chips. -1 = sin dato, no se toca.
-// ─────────────────────────────────────────────────────────────────────────────
-void Recv_EventChip(BYTE* Msg, int Size)
-{
-    if (Size < 6) return;
-    const short count = *(short*)(Msg + 4);
-    if (count != -1) DAT_07e11e1c = count;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 0x96 — ReceiveMutoNumber (0x004373A0)
-// Los tres numeros del scratch ticket. Se aplican solo si ninguno viene en -1.
-// ─────────────────────────────────────────────────────────────────────────────
-void Recv_MutoNumber(BYTE* Msg, int Size)
-{
-    if (Size < 10) return;
-    const short a = *(short*)(Msg + 4);
-    const short b = *(short*)(Msg + 6);
-    const short c = *(short*)(Msg + 8);
-    if (a != -1 && b != -1 && c != -1) {
-        DAT_07e11e20 = a;
-        DAT_07e11e22 = b;
-        DAT_07e11e24 = c;
-    }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 0x99 — ReceiveServerImmigration (0x004373D0)

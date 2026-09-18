@@ -529,7 +529,17 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
 
     const float dx = *(float *)(ent + 16) - targetX;
     const float dy = *(float *)(ent + 20) - targetY;
-    if (sqrtf(dx*dx + dy*dy) > 20.0f || ++*(byte *)(ent + 853) <= 3) {
+    // IDA L150-166: las tres condiciones (lejos del punto, subpaso <= 3, o
+    // waypoint siguiente sin llegar al final) comparten el mismo cuerpo, que
+    // gira al personaje.  El port no giraba en la tercera.
+    bool stillMoving = sqrtf(dx*dx + dy*dy) > 20.0f || ++*(byte *)(ent + 853) <= 3;
+    if (!stillMoving) {
+        ++*(byte *)(ent + 852);
+        *(byte *)(ent + 853) = 0;
+        current = *(byte *)(ent + 852);
+        stillMoving = current < count - 1;
+    }
+    if (stillMoving) {
         if (turn) {
             const float angle = FUN_0043e050(*(float *)(ent + 16), *(float *)(ent + 20), targetX, targetY);
             const float delta = Angle_GetDifference(*(float *)(ent + 36), angle, 1);
@@ -537,11 +547,6 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
         }
         return 0;
     }
-
-    ++*(byte *)(ent + 852);
-    *(byte *)(ent + 853) = 0;
-    current = *(byte *)(ent + 852);
-    if (current < count - 1) return 0;
 
     *(byte *)(ent + 852) = count - 1;
     *(int *)(ent + 904) = *(byte *)(ent + 855 + count - 1);
