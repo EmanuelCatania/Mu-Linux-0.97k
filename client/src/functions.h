@@ -567,6 +567,7 @@ void  __cdecl FUN_00504b50(int, int, float *, float, unsigned int, unsigned char
 void  __cdecl FUN_00505970(void *, void *, int, char, int);
 // Entity_DrawAt(entity_ptr, class, slot, angle_ptr, rot, state_flags, byte, a,b,c, d, mode)
 void  __cdecl FUN_00505a10(int, int, unsigned int, float *, float, unsigned int, unsigned char, char, unsigned char, char, int, unsigned int);
+void  __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model);   // desviacion: Physics/Cloth_MeshDivine.cpp
 void  __cdecl Model_SetAnimationSlots(int, int, int, int, int, int); // FUN_00509810 — writes model animation slots
 // ── Map / terrain loaders (called from World_Load / Map_LoadResources) ─────────
 void  __cdecl FUN_004ffd50(void);                                  // Terrain_ResetObjects

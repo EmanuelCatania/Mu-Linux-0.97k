@@ -274,6 +274,7 @@
     <ClCompile Include="src\Render\BMD_FilterData.cpp" />
     <ClCompile Include="src\Item\Quest_UIState.cpp" />
     <ClCompile Include="src\Physics\Cloth_Simulation.cpp" />
+    <ClCompile Include="src\Physics\Cloth_MeshDivine.cpp" />
     <ClCompile Include="src\Render\BMD_LegacyEffects.cpp" />
     <ClCompile Include="src\Scene\Scene_LegacyHelpers.cpp" />
     <ClCompile Include="src\Path\Path_Legacy.cpp" />
