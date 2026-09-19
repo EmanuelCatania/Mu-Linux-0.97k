@@ -73,6 +73,8 @@ struct Sphere {
     int   bone;
 };
 
+const int kMaxSpheres = 5;
+
 struct MeshCloth {
     int     part;            // clave: puntero a la pieza (PART_t)
     int     lastFrame;
@@ -80,7 +82,7 @@ struct MeshCloth {
     Vertex *vertices;
     int     numLinks;
     Link   *links;
-    Sphere  spheres[5];
+    Sphere  spheres[kMaxSpheres];
     int     numSpheres;
     unsigned type;
 };
@@ -189,11 +191,18 @@ bool Create(MeshCloth &c, void *model) {
     }
     c.numLinks = link;
 
-    // AddCollisionSphere(0, 0, z, r, 2) x5
-    const float z[5] = { -15.0f, -27.0f, -40.0f, -54.0f, -69.0f };
-    const float r[5] = {  22.0f,  23.0f,  24.0f,  25.0f,  26.0f };
-    c.numSpheres = 5;
-    for (int i = 0; i < 5; ++i) {
+    // AddCollisionSphere(0, 0, z, r, 2) x5 -- valores del 5.2.
+    //
+    // Nota: la falda del modelo del 0.99 que se usa hoy es mas larga y ancha
+    // que estas esferas (cono de hasta ~59 de radio por ~80 de largo, medido
+    // sobre PantMale20.bmd), asi que cuelga rozando las piernas.  Se probo
+    // alargar la cadena y abrir los radios y la tela quedaba inestable, asi
+    // que se mantienen los del 5.2: lo correcto es usar el modelo original
+    // (PantMaleTest20.bmd del 5.2), para el que estan hechos.
+    const float z[kMaxSpheres] = { -15.0f, -27.0f, -40.0f, -54.0f, -69.0f };
+    const float r[kMaxSpheres] = {  22.0f,  23.0f,  24.0f,  25.0f,  26.0f };
+    c.numSpheres = kMaxSpheres;
+    for (int i = 0; i < kMaxSpheres; ++i) {
         c.spheres[i].centerLocal.x = 0.0f;
         c.spheres[i].centerLocal.y = 0.0f;
         c.spheres[i].centerLocal.z = z[i];
@@ -387,14 +396,22 @@ void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
         Destroy(*c);
         c->part = part;
     }
-    c->lastFrame = frame;
     if (!c->vertices && !Create(*c, model)) { Destroy(*c); return; }
 
-    const float angleZ = *(float *)(entity + 0x24);
-    for (int i = 0; i < 5; ++i) {                      // Move2(0.005f, 5)
-        if (!Step(*c, model, boneBase, angleZ, 0.005f)) {
-            Destroy(*c);                               // DeleteCloth
-            return;
+    // RenderPartObject corre varias veces por frame para la misma pieza (el
+    // pase de sombra y el doble dibujado del brillo de +N), asi que la
+    // simulacion se ata al tick: Move2(0.005, 5) una sola vez por frame.  Con
+    // un paso por llamada la tela recibia 10-15 pasos por frame, se descolgaba
+    // y no volvia.
+    const bool bStep = (c->lastFrame != frame);
+    c->lastFrame = frame;
+    if (bStep) {
+        const float angleZ = *(float *)(entity + 0x24);
+        for (int i = 0; i < 5; ++i) {                  // Move2(0.005f, 5)
+            if (!Step(*c, model, boneBase, angleZ, 0.005f)) {
+                Destroy(*c);                           // DeleteCloth
+                return;
+            }
         }
     }
 
