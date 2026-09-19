@@ -697,10 +697,13 @@ switchD_00464efe_caseD_4ab:
       pfVar17[0x19] = 0.0;
       return pfVar8;
     }
-    if ((int)fVar27 < 1) {
+    // SubType viaja en los BITS del float (IDA: *((_DWORD *)i + 1)).  Con
+    // (int)fVar27 un 1 denormal daba 0 y los subtipos 1/2 del Ice Arrow
+    // salian por aca con el slot ya activo y sin inicializar.
+    if (*(int *)&fVar27 < 1) {
       return (float *)0x0;
     }
-    if (2 < (int)fVar27) {
+    if (2 < *(int *)&fVar27) {
       return (float *)0x0;
     }
     pfVar17[0x18] = 2.8026e-44;
