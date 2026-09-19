@@ -423,7 +423,11 @@ LAB_00501064:
                 (&DAT_0839bdb4)[iVar2] = 0;
                 (&DAT_0839bdb5)[iVar2] = 0;
 
-                // Select type by game sub-state
+                // Tipo por mundo (IDA 0x500E80, switch (World) tras el memset).
+                // Solo nieve, luciernagas y peces pasan por LABEL_62, que sube la
+                // luz del cuerpo (+0xE8..F0) de 0.5 a 1.0; los pajaros de Lorencia
+                // y los murcielagos quedan en 0.5.
+                bool __light1 = false;
                 if (iVar12 == 0) {
                     (&DAT_0839bcb2)[iVar14 * 0xde] = 0xae;   // cloud (connecting)
                 } else if ((iVar12 == 1) || (iVar12 == 4)) {
@@ -432,6 +436,7 @@ LAB_00501064:
                     (&DAT_0839bcb2)[iVar14 * 0xde] = 0xaf;   // snow
                     (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x3e99999a;
                     WSLOT_DW(0x0dc) = 0;
+                    __light1 = true;
                 } else if (iVar12 == 10) {
                     if (iVar14 < 3) {
                         // Lightning slots 0-2 in loading state
@@ -446,11 +451,30 @@ LAB_00501064:
                     WSLOT_DW(0x0dc) = 0;
                     (&DAT_0839bd10)[iVar14 * 0x6f] = 0x2580;
                     (&DAT_0839bdb4)[iVar2] = 2;
+                    __light1 = true;
+                } else if (iVar12 != 7) {
+                    // Mundos 11-16 (Blood Castle): tipo 184.
+                    (&DAT_0839bcb2)[iVar14 * 0xde] = 0xb8;
+                } else if (*(float *)(DAT_07abf5d8 + 0x14) * 0.01f < 128.0f) {
+                    // Atlans, mitad sur: peces 182/183.
+                    const short __fish = (short)(_rand() % 2);
+                    *(unsigned int *)(&DAT_0839bd88 + iVar2) = 0x41700000;   // 15.0
+                    (&DAT_0839bcb2)[iVar14 * 0xde] = __fish + 0xb6;
+                    (&DAT_0839bd7c)[iVar14 * 0x6f] = (_rand() % 100 < 90) ? 0x3e99999a   // 0.3
+                                                                           : 0x3e800000;  // 0.25
+                    WSLOT_DW(0x0dc) = 0;
+                    __light1 = true;
+                } else {
+                    // Atlans, mitad norte: IDA apaga el slot y sale de la funcion.
+                    *pcVar3 = '\0';
+                    return 0;
                 }
 
-                *(unsigned int *)(&DAT_0839bd98 + iVar2) = 0x3f800000;
-                *(unsigned int *)(&DAT_0839bd9c + iVar2) = 0x3f800000;
-                *(unsigned int *)(&DAT_0839bda0 + iVar2) = 0x3f800000;
+                if (__light1) {
+                    *(unsigned int *)(&DAT_0839bd98 + iVar2) = 0x3f800000;
+                    *(unsigned int *)(&DAT_0839bd9c + iVar2) = 0x3f800000;
+                    *(unsigned int *)(&DAT_0839bda0 + iVar2) = 0x3f800000;
+                }
 
                 (&DAT_0839be11)[iVar2] = 1;
                 (&DAT_0839bcbc)[iVar14 * 0x6f] = 0x3f4ccccd;
