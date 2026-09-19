@@ -85,27 +85,37 @@ int __cdecl FUN_004faa70(int param_1, char param_2, int param_3) {
     if      (param_3 == 3) _DAT_005597c8 = 1.4f;
     else if (param_3 == 2) _DAT_005597c8 = 1.2f;
     else if (param_3 == 1) {
-        // shadow pass: set tint colors, draw twice with bone animation
+        // Contorno de seleccion (hover sobre monstruo/NPC).  IDA 0x4FAA70
+        // case 1: DOS pasadas en RENDER_COLOR (flag 64), primero un contorno
+        // ancho y oscuro y despues uno mas fino y claro, con un color por
+        // pasada que depende de Kind (4 = NPC).  2026-09-18: el port hacia
+        // una sola pasada, con dos colores mal (0.4 y 0.02 en vez de 0.1 y
+        // 0.01) y sin el caso Kind == 4 del factor de escala.
         *(BYTE *)((int)this_+0x44) = 0;
-        bool dark = (*(char*)(param_1+0x84) == '\x04');
-        *(float*)((int)this_+0x48) = dark ? 0.02f   : 0.1f;
-        *(float*)((int)this_+0x4c) = dark ? 0.4f    : 0.02f;
-        *(float*)((int)this_+0x50) = 0.0f;
-        _DAT_005597c8 = (cls == 0x12e) ? 1.2f
-                        : (_DAT_005524f4 / *(float*)(param_1+0x0c) + _DAT_0055256c);
-        puVar3 = (*(char*)(param_1+0x110)=='\0') ? &DAT_06970a9c : *(void**)(param_1+0x114);
-        // BUG-FIX CRÍTICO (2026-04-21): el original IDA @ 0x004FAA70 pasa
-        // `Translate` RAW (no !Translate) al último arg de Skeleton_Transform
-        // (sub_4404E0, líneas 112/151/173). En cambio BMD_Animation recibe
-        // `!Translate`. La sesión previa invirtió ambos → doble aplicación
-        // de entity scale+origin (root matrix Y per-vertex) → ships en
-        // (-1260,1260,0) en vez de (-700,700,0). Volvemos a `param_2` raw.
-        FUN_004404e0(this_, (int)puVar3, (float*)(param_1+0x118),
-                     (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
-        FUN_00441e00(this_, 0x40,
-                     *(float*)(param_1+0x168), *(int *)(param_1+100),
-                     *(float*)(param_1+0x68),  *(float*)(param_1+0x6c),
-                     *(float*)(param_1+0x70),  *(int *)(param_1+0x58), 0xffffffff);
+        const bool npc = (*(char*)(param_1+0x84) == '\x04');
+        for (int pass = 0; pass < 2; ++pass) {
+            if (npc) {
+                *(float*)((int)this_+0x48) = pass ? 0.16f : 0.02f;
+                *(float*)((int)this_+0x4c) = pass ? 0.7f  : 0.1f;
+                _DAT_005597c8 = pass ? 1.08f : 1.2f;
+            } else {
+                *(float*)((int)this_+0x48) = pass ? 0.7f  : 0.1f;
+                *(float*)((int)this_+0x4c) = pass ? 0.07f : 0.01f;
+                if (cls == 0x12e)
+                    _DAT_005597c8 = pass ? 1.08f : 1.2f;
+                else
+                    _DAT_005597c8 = (pass ? 0.039999999f : 0.1f) / *(float*)(param_1+0x0c) + 1.0f;
+            }
+            *(float*)((int)this_+0x50) = 0.0f;
+            puVar3 = (*(char*)(param_1+0x110)=='\0') ? &DAT_06970a9c : *(void**)(param_1+0x114);
+            // IDA pasa `Translate` tal cual a sub_4404E0 (BMD_Animation recibe !Translate).
+            FUN_004404e0(this_, (int)puVar3, (float*)(param_1+0x118),
+                         (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
+            FUN_00441e00(this_, 0x40,
+                         *(float*)(param_1+0x168), *(int *)(param_1+100),
+                         *(float*)(param_1+0x68),  *(float*)(param_1+0x6c),
+                         *(float*)(param_1+0x70),  *(int *)(param_1+0x58), 0xffffffff);
+        }
         FUN_004fa930(param_1, (int)this_);
         _DAT_005597c8 = 1.0f;
     }
