@@ -99,6 +99,11 @@
 //   FUN_005129f0   — terrain height at angle
 
 #include "stdafx.h"
+
+// Campos float del slot (OBJECT de 444 bytes).  Las macros DAT_0839bXXX
+// estan tipadas como unsigned int; WSF reinterpreta los bits.  Leerlos con
+// (float)(&X)[i] convertia el entero y la posicion salia en ~1e9.
+#define WSF(field, idx) (*(float *)&(&field)[idx])
 // Decompilation artifacts: suppress truncation/conversion/uninitialized warnings
 #pragma warning(disable: 4244 4305 4309 4700)
 
@@ -309,10 +314,9 @@ LAB_00501064:
     }
 
     // Get terrain tile at player position
-    lVar24 = (long long)(unsigned int)__ftol();
-    uVar8  = (uint)lVar24;
-    lVar24 = (long long)(unsigned int)__ftol();
-    uVar8  = FUN_004f6c40((uint)lVar24, uVar8);
+    // IDA: Terrain_Load((__int64)(Hero.x * 0.01), (__int64)(Hero.y * 0.01)).
+    uVar8  = FUN_004f6c40((uint)(long long)(*(float *)(DAT_07abf5d8 + 0x10) * 0.01f),
+                          (uint)(long long)(*(float *)(DAT_07abf5d8 + 0x14) * 0.01f));
     iVar14 = 0;
     iVar12 = DAT_0055a7ac;
     uStack_48 = uVar8;
@@ -349,7 +353,7 @@ LAB_00501064:
                     WSLOT_DW(0x004) = 0;
                     (&DAT_0839bd08)[iVar14 * 0x6f] = 0xffffffff;
                     (&DAT_0839bd14)[iVar14 * 0x6f] = 0xffffffff;
-                    (&DAT_0839bcbc)[iVar14 * 0x6f] = (float)(iVar12 % 3 + 6) * _DAT_005524f4;
+                    WSF(DAT_0839bcbc, iVar14 * 0x6f) = (float)((float)(iVar12 % 3 + 6) * _DAT_005524f4);
                     uVar8 = _rand(); uVar8 &= 0x8000007f;
                     if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffff80) + 1;
                     (&DAT_0839bd10)[iVar14 * 0x6f] = uVar8 + 0x80;
@@ -358,16 +362,16 @@ LAB_00501064:
                     iVar12 = DAT_083a3ff0;
                     (&DAT_0839bcd0)[iVar14 * 0x6f] = 0;
                     (&DAT_0839bcd4)[iVar14 * 0x6f] = 0xc2b40000;
-                    (&DAT_0839bd30)[iVar14 * 0x6f] = (float)(iVar11 % 10) * _DAT_005524f4;
+                    WSF(DAT_0839bd30, iVar14 * 0x6f) = (float)((float)(iVar11 % 10) * _DAT_005524f4);
                     if (iVar12 == 3)
                         WSLOT_DW(0x004) = 1;
                     iVar12 = _rand();
-                    (&DAT_0839bcc0)[iVar14 * 0x6f] = (float)(iVar12 % 600 + -100) + *(float *)(DAT_07abf5d8 + 0x10);
+                    WSF(DAT_0839bcc0, iVar14 * 0x6f) = (float)((float)(iVar12 % 600 + -100) + *(float *)(DAT_07abf5d8 + 0x10));
                     iVar11 = _rand();
                     uVar8 = (uint)(uintptr_t)DAT_07abf5d8;
                     iVar12 = DAT_0055a7ac;
-                    (&DAT_0839bcc4)[iVar14 * 0x6f] = (float)(iVar11 % 400 + 200) + *(float *)(DAT_07abf5d8 + 0x14);
-                    (&DAT_0839bcc8)[iVar14 * 0x6f] = *(float *)(uVar8 + 0x18) + _DAT_00552900;
+                    WSF(DAT_0839bcc4, iVar14 * 0x6f) = (float)((float)(iVar11 % 400 + 200) + *(float *)(DAT_07abf5d8 + 0x14));
+                    WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)(*(float *)(uVar8 + 0x18) + _DAT_00552900);
                 }
                 goto LAB_0050172b;
             }
@@ -455,7 +459,7 @@ LAB_00501064:
                 (&DAT_0839bd14)[iVar14 * 0x6f] = 0xffffffff;
                 iVar12 = _rand();
                 pfVar1 = (float *)(&DAT_0839bcc0 + iVar14 * 0x6f);
-                (&DAT_0839bd30)[iVar14 * 0x6f] = (float)(iVar12 % 0x13a) * _DAT_005524f8;
+                WSF(DAT_0839bd30, iVar14 * 0x6f) = (float)((float)(iVar12 % 0x13a) * _DAT_005524f8);
                 uVar8 = _rand(); uVar8 &= 0x800003ff;
                 if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffc00) + 1;
                 *pfVar1 = (float)(int)(uVar8 - 0x200) + *(float *)(DAT_07abf5d8 + 0x10);
@@ -463,7 +467,7 @@ LAB_00501064:
                 uVar13 &= 0x800003ff;
                 if ((int)uVar13 < 0) uVar13 = (uVar13 - 1 | 0xfffffc00) + 1;
                 sVar5 = (&DAT_0839bcb2)[iVar14 * 0xde];
-                (&DAT_0839bcc4)[iVar14 * 0x6f] = (float)(int)(uVar13 - 0x200) + *(float *)(uVar8 + 0x14);
+                WSF(DAT_0839bcc4, iVar14 * 0x6f) = (float)((float)(int)(uVar13 - 0x200) + *(float *)(uVar8 + 0x14));
                 (&DAT_0839bcc8)[iVar14 * 0x6f] = *(unsigned int *)(uVar8 + 0x18);
                 iVar12 = DAT_0055a7ac;
 
@@ -480,8 +484,8 @@ LAB_00501064:
                                              (int)pcVar3, 25.0f, -1, 0);
                     }
                 } else {
-                    fVar22 = FUN_004f7500((float)(&DAT_0839bcc0)[iVar14*0x6f], (float)(&DAT_0839bcc4)[iVar14*0x6f]);
-                    (&DAT_0839bcc8)[iVar14 * 0x6f] = (float)(iVar12 % 200 + 0x96) + (float)fVar22;
+                    fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                    WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)(_rand() % 200 + 0x96) + (float)fVar22;   // IDA: rand() % 200 + 150
                 }
 
                 // Initialize velocity
@@ -490,7 +494,7 @@ LAB_00501064:
                 (&DAT_0839bcd4)[iVar14 * 0x6f] = 0;
                 if (sVar5 == 0x10a) {
                     iVar12 = _rand();
-                    (&DAT_0839bcd4)[iVar14 * 0x6f] = (float)(iVar12 % 0x168);
+                    WSF(DAT_0839bcd4, iVar14 * 0x6f) = (float)((float)(iVar12 % 0x168));
                 }
             }
         }
@@ -520,12 +524,12 @@ LAB_00501734:
                     // Cloud life-cycle: rising(0) → hovering(1) → descending(2) → fading(3)
                     if ((&DAT_0839bdb4)[iVar2] == '\0') {
                         // Phase 0: move upward, check distance
-                        lVar24 = (long long)(unsigned int)__ftol();
+                        lVar24 = (long long)DAT_05826e08;   // IDA: (__int64)WorldTime
                         uVar8  = (uint)lVar24 & 0x80001fff;
                         if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xffffe000) + 1;
                         if (((int)uVar8 < 0x800) &&
                             (fVar25 = *pfVar1 - *(float *)(DAT_07abf5d8 + 0x10),
-                             fVar7  = (float)(&DAT_0839bcc4)[iVar14 * 0x6f] - *(float *)(DAT_07abf5d8 + 0x14),
+                             fVar7  = WSF(DAT_0839bcc4, iVar14 * 0x6f) - *(float *)(DAT_07abf5d8 + 0x14),
                              fVar25 = SQRT(fVar25*fVar25 + fVar7*fVar7),
                              _DAT_0055285c <= fVar25) && (fVar25 <= _DAT_00552850)) {
                             (&DAT_0839bdb4)[iVar2] = 1;
@@ -533,7 +537,7 @@ LAB_00501734:
                         (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x3f800000;
                         uVar8 = _rand(); uVar8 &= 0x8000000f;
                         if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-                        fVar25 = (float)(int)(uVar8 - 8) + (float)(&DAT_0839bcc8)[iVar14 * 0x6f];
+                        fVar25 = (float)(int)(uVar8 - 8) + WSF(DAT_0839bcc8, iVar14 * 0x6f);
                         (&DAT_0839bcc8)[iVar14 * 0x6f] = (unsigned int)(*(int *)&fVar25);
                         if (_DAT_0055285c <= fVar25) {
                             if (_DAT_00552ab4 < fVar25)
@@ -545,8 +549,8 @@ LAB_00501734:
                     if ((&DAT_0839bdb4)[iVar2] == '\x01') {
                         // Phase 1: hover at altitude, check terrain height
                         *(unsigned int *)(&DAT_0839bd78 + iVar2) = 0xc1a00000;
-                        fVar22 = FUN_004f7500((float)(&DAT_0839bcc0)[iVar14*0x6f], (float)(&DAT_0839bcc4)[iVar14*0x6f]);
-                        if ((float10)(float)(&DAT_0839bcc8)[iVar14 * 0x6f] < fVar22) {
+                        fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                        if ((float10)WSF(DAT_0839bcc8, iVar14 * 0x6f) < fVar22) {
                             (&DAT_0839bdb4)[iVar2] = 3;
                             (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x3f8ccccd;
                             *(unsigned int *)(&DAT_0839bd78 + iVar2) = 0x41a00000;
@@ -571,24 +575,24 @@ LAB_00501cb5:
                         // Phase 3: fade out / scale down
                         uVar8 = _rand(); uVar8 &= 0x8000000f;
                         if ((int)uVar8 < 0) uVar8 = (uVar8 - 1 | 0xfffffff0) + 1;
-                        (&DAT_0839bcc8)[iVar14 * 0x6f] = (unsigned int)
-                            ((float)(int)(uVar8-8) + (float)(&DAT_0839bcc8)[iVar14*0x6f]);
-                        fVar25 = (float)(&DAT_0839bd7c)[iVar14 * 0x6f] - _DAT_00552940;
+                        WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)
+                            ((float)(int)(uVar8-8) + WSF(DAT_0839bcc8, iVar14*0x6f));
+                        fVar25 = WSF(DAT_0839bd7c, iVar14 * 0x6f) - _DAT_00552940;
                         (&DAT_0839bd7c)[iVar14 * 0x6f] = (unsigned int)(*(int *)&fVar25);
                         if (fVar25 <= _DAT_0055256c)
                             (&DAT_0839bdb4)[iVar2] = 0;
                     }
                 } else if (sVar5 == 0xb0) {
                     // Rain: follow terrain height via sine
-                    fVar22 = FUN_004f7500((float)(&DAT_0839bcc0)[iVar14*0x6f], (float)(&DAT_0839bcc4)[iVar14*0x6f]);
-                    (&DAT_0839bcc8)[iVar14 * 0x6f] = (unsigned int)(float)fVar22;
-                    fVar22 = (float10)fsin((float10)(float)(&DAT_0839bd30)[iVar14*0x6f]);
+                    fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                    WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)fVar22;
+                    fVar22 = (float10)fsin((float10)WSF(DAT_0839bd30, iVar14*0x6f));
                     fVar22 = FUN_005129f0((float)fVar22);
-                    (&DAT_0839bcc8)[iVar14 * 0x6f] = (unsigned int)(float)
-                        ((float10)(float)(&DAT_0839bcc8)[iVar14*0x6f] - fVar22*(float10)_DAT_0055297c
+                    WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)
+                        ((float10)WSF(DAT_0839bcc8, iVar14*0x6f) - fVar22*(float10)_DAT_0055297c
                          + (float10)_DAT_00552ca4);
-                    (&DAT_0839bd30)[iVar14 * 0x6f] = (unsigned int)
-                        ((float)(&DAT_0839bd30)[iVar14*0x6f] + _DAT_005526e4);
+                    WSF(DAT_0839bd30, iVar14 * 0x6f) = (float)
+                        (WSF(DAT_0839bd30, iVar14*0x6f) + _DAT_005526e4);
                 } else if (sVar5 == 0xaf) {
                     // Snow: random drift
                     uVar8 = _rand(); uVar8 &= 0x8000001f;
@@ -596,38 +600,38 @@ LAB_00501cb5:
                     if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xffffffe0)==0xffffffff);
                     if (bVar20) {
                         iVar12 = _rand();
-                        (&DAT_0839bcd4)[iVar14*0x6f] = (float)(iVar12 % 0x168);
+                        WSF(DAT_0839bcd4, iVar14*0x6f) = (float)((float)(iVar12 % 0x168));
                         iVar12 = _rand();
                         *(float *)(&DAT_0839bd78 + iVar2) = (float)(iVar12 % 0xf - 7);
                     }
                     iVar12 = _rand();
                     *(float *)(&DAT_0839bd78 + iVar2) =
                         (float)(iVar12 % 0xf - 7) * _DAT_005526e4 + *(float *)(&DAT_0839bd78 + iVar2);
-                    fVar22 = FUN_004f7500((float)(&DAT_0839bcc0)[iVar14*0x6f], (float)(&DAT_0839bcc4)[iVar14*0x6f]);
-                    if ((float10)(float)(&DAT_0839bcc8)[iVar14*0x6f] < fVar22 + (float10)_DAT_00552598) {
+                    fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                    if ((float10)WSF(DAT_0839bcc8, iVar14*0x6f) < fVar22 + (float10)_DAT_00552598) {
                         *(float *)(&DAT_0839bd78 + iVar2) =
                             *(float *)(&DAT_0839bd78+iVar2) * _DAT_00552530 + _DAT_0055256c;
                     }
-                    if (fVar22 + (float10)_DAT_00552900 < (float10)(float)(&DAT_0839bcc8)[iVar14*0x6f]) {
+                    if (fVar22 + (float10)_DAT_00552900 < (float10)WSF(DAT_0839bcc8, iVar14*0x6f)) {
                         *(float *)(&DAT_0839bd78 + iVar2) =
                             *(float *)(&DAT_0839bd78+iVar2) * _DAT_00552530 - _DAT_0055256c;
                     }
                     iVar12 = _rand();
-                    (&DAT_0839bcc8)[iVar14*0x6f] = (unsigned int)
-                        ((float)(iVar12%0xf - 7) * _DAT_005528b8 + (float)(&DAT_0839bcc8)[iVar14*0x6f]);
+                    WSF(DAT_0839bcc8, iVar14*0x6f) = (float)
+                        ((float)(iVar12%0xf - 7) * _DAT_005528b8 + WSF(DAT_0839bcc8, iVar14*0x6f));
                 } else if (sVar5 == 0x10a) {
                     // Firefly/butterfly: circular orbit
-                    fVar22 = (float10)fsin((float10)(float)(&DAT_0839bcd4)[iVar14*0x6f]);
-                    *pfVar1 = (float)(fVar22 * (float10)(float)(&DAT_0839bd7c)[iVar14*0x6f] + (float10)*pfVar1);
-                    fVar22 = (float10)fcos((float10)(float)(&DAT_0839bcd4)[iVar14*0x6f]);
-                    (&DAT_0839bcc4)[iVar14*0x6f] = (unsigned int)(float)
-                        ((float10)(float)(&DAT_0839bcc4)[iVar14*0x6f] - fVar22*(float10)(float)(&DAT_0839bd7c)[iVar14*0x6f]);
+                    fVar22 = (float10)fsin((float10)WSF(DAT_0839bcd4, iVar14*0x6f));
+                    *pfVar1 = (float)(fVar22 * (float10)WSF(DAT_0839bd7c, iVar14*0x6f) + (float10)*pfVar1);
+                    fVar22 = (float10)fcos((float10)WSF(DAT_0839bcd4, iVar14*0x6f));
+                    WSF(DAT_0839bcc4, iVar14*0x6f) = (float)
+                        ((float10)WSF(DAT_0839bcc4, iVar14*0x6f) - fVar22*(float10)WSF(DAT_0839bd7c, iVar14*0x6f));
                     fVar22 = (float10)fsin((float10)(iStack_3c + iVar14*0x1429 + 0x4544) * (float10)_DAT_00552d28);
                     fVar23 = (float10)fcos((float10)(iStack_3c + iVar14*0xa139 + 0x870b) * (float10)_DAT_00552d28);
-                    (&DAT_0839bcd4)[iVar14*0x6f] = (unsigned int)(float)
-                        (fVar23 * fVar22 * (float10)_DAT_005524f8 + (float10)(float)(&DAT_0839bcd4)[iVar14*0x6f]);
+                    WSF(DAT_0839bcd4, iVar14*0x6f) = (float)
+                        (fVar23 * fVar22 * (float10)_DAT_005524f8 + (float10)WSF(DAT_0839bcd4, iVar14*0x6f));
                     fVar25 = *pfVar1 - *(float *)(uVar8 + 0x10);
-                    fVar7  = (float)(&DAT_0839bcc4)[iVar14*0x6f] - *(float *)(uVar8 + 0x14);
+                    fVar7  = WSF(DAT_0839bcc4, iVar14*0x6f) - *(float *)(uVar8 + 0x14);
                     if (_DAT_00552d24 <= SQRT(fVar25*fVar25 + fVar7*fVar7)) *pcVar3 = '\0';
                     if (_rand() % 0x1400 == 0) *pcVar3 = '\0';
                     if (((10 < DAT_0055a7ac) && (DAT_0055a7ac < 0x11)) &&
@@ -647,31 +651,31 @@ LAB_00501cb5:
 
                     // Scale velocity by sub-state
                     if (DAT_0055a7ac == 7) {
-                        if (_DAT_00552660 <= (float)(&DAT_0839bd30)[iVar14*0x6f]) {
+                        if (_DAT_00552660 <= WSF(DAT_0839bd30, iVar14*0x6f)) {
                             uVar8 = _rand(); uVar8 &= 0x8000001f;
                             if ((int)uVar8 < 0) uVar8 = (uVar8-1|0xffffffe0)+1;
                             fStack_30 = *(float *)(&DAT_0839bd78 + iVar2);
                             *(unsigned int *)(&DAT_0839bd88 + iVar2) = 0x40a00000;
-                            fStack_38 = (float)(int)(uVar8+0x20) * (float)(&DAT_0839bd7c)[iVar14*0x6f];
+                            fStack_38 = (float)(int)(uVar8+0x20) * WSF(DAT_0839bd7c, iVar14*0x6f);
                         } else if (iVar14 < 0x23) {
                             uVar8 = _rand(); uVar8 &= 0x8000000f;
                             if ((int)uVar8 < 0) uVar8 = (uVar8-1|0xfffffff0)+1;
                             fStack_30 = *(float *)(&DAT_0839bd78 + iVar2);
                             *(unsigned int *)(&DAT_0839bd88 + iVar2) = 0x41700000;
-                            fStack_38 = (float)(int)(uVar8+8) * (float)(&DAT_0839bd7c)[iVar14*0x6f];
+                            fStack_38 = (float)(int)(uVar8+8) * WSF(DAT_0839bd7c, iVar14*0x6f);
                         } else {
                             uVar8 = _rand(); uVar8 &= 0x8000000f;
                             if ((int)uVar8 < 0) uVar8 = (uVar8-1|0xfffffff0)+1;
                             fStack_30 = *(float *)(&DAT_0839bd78 + iVar2);
                             *(unsigned int *)(&DAT_0839bd88 + iVar2) = 0x41700000;
-                            fStack_38 = (float)(int)(uVar8+0x10) * (float)(&DAT_0839bd7c)[iVar14*0x6f];
+                            fStack_38 = (float)(int)(uVar8+0x10) * WSF(DAT_0839bd7c, iVar14*0x6f);
                         }
-                        fVar25 = (float)(&DAT_0839bd30)[iVar14*0x6f] + _DAT_005524f4;
+                        fVar25 = WSF(DAT_0839bd30, iVar14*0x6f) + _DAT_005524f4;
                         (&DAT_0839bd30)[iVar14*0x6f] = (unsigned int)(*(int *)&fVar25);
                         if (_DAT_00552488 <= fVar25)
                             (&DAT_0839bd30)[iVar14*0x6f] = 0;
                     } else {
-                        fStack_38 = (float)(&DAT_0839bd7c)[iVar14*0x6f] * _DAT_00552464;
+                        fStack_38 = WSF(DAT_0839bd7c, iVar14*0x6f) * _DAT_00552464;
                         fStack_30 = *(float *)(&DAT_0839bd78 + iVar2);
                     }
                     fStack_34 = 0.0f;
@@ -680,10 +684,10 @@ LAB_00501cb5:
                     sVar5  = (&DAT_0839bcb2)[iVar14*0xde];
                     puStack_44 = (DWORD *)0x44bb8000;
                     *pfVar1 = fVar7;
-                    fVar25 = fStack_28 + (float)(&DAT_0839bcc4)[iVar14*0x6f];
+                    fVar25 = fStack_28 + WSF(DAT_0839bcc4, iVar14*0x6f);
                     (&DAT_0839bcc4)[iVar14*0x6f] = (unsigned int)(*(int *)&fVar25);
                     uVar8 = (uint)(uintptr_t)DAT_07abf5d8;
-                    (&DAT_0839bcc8)[iVar14*0x6f] = (unsigned int)(fStack_24 + (float)(&DAT_0839bcc8)[iVar14*0x6f]);
+                    WSF(DAT_0839bcc8, iVar14*0x6f) = (float)(fStack_24 + WSF(DAT_0839bcc8, iVar14*0x6f));
                     *(float *)(&DAT_0839bd70 + iVar2) = fStack_2c * _DAT_00552540 + fVar7;
                     *(float *)(&DAT_0839bd74 + iVar2) = fStack_28 * _DAT_00552540 + fVar25;
                     fVar7  = fVar7 - *(float *)(uVar8 + 0x10);
@@ -708,10 +712,10 @@ LAB_00501cb5:
                 // Loop-kill conditions (state 7, terrain type = grass)
                 if ((((int)(&DAT_0839bd10)[iVar14*0x6f] < 1) && (DAT_0055a7ac == 7)) &&
                     ((unsigned char)DAT_0838bc70[uStack_48] == 0x01)) {
-                    fVar25 = (float)(&DAT_0839bcd4)[iVar14*0x6f] + _DAT_005524ec;
+                    fVar25 = WSF(DAT_0839bcd4, iVar14*0x6f) + _DAT_005524ec;
                     bVar20 = (_DAT_0055286c <= fVar25);
                     (&DAT_0839bcd4)[iVar14*0x6f] = (unsigned int)(*(int *)&fVar25);
-                    if (bVar20) (&DAT_0839bcd4)[iVar14*0x6f] = (unsigned int)(fVar25 - _DAT_0055286c);
+                    if (bVar20) WSF(DAT_0839bcd4, iVar14*0x6f) = (float)(fVar25 - _DAT_0055286c);
                     (&DAT_0839bd10)[iVar14*0x6f] = 10;
                     WSLOT_DW(0x004) = (int)WSLOT_DW(0x004) + 1;
                 }
@@ -720,7 +724,7 @@ LAB_00501cb5:
 
                 // Proximity effects (cloud type: chance to play sound/effect)
                 fVar25 = *pfVar1 - *(float *)(DAT_07abf5d8 + 0x10);
-                fVar7  = (float)(&DAT_0839bcc4)[iVar14*0x6f] - *(float *)(DAT_07abf5d8 + 0x14);
+                fVar7  = WSF(DAT_0839bcc4, iVar14*0x6f) - *(float *)(DAT_07abf5d8 + 0x14);
                 if (SQRT(fVar25*fVar25 + fVar7*fVar7) < _DAT_00552ab4) {
                     sVar5 = (&DAT_0839bcb2)[iVar14*0xde];
                     pcVar19 = pcVar3;
@@ -754,23 +758,23 @@ LAB_00501cb5:
                              (float *)(&DAT_0839bdbc + iVar2),
                              &DAT_0839bdb6 + iVar2, fVar25);
                 Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
-                fStack_20 = (float)(&DAT_0839bcbc)[iVar14*0x6f] * _DAT_005528e4;
+                fStack_20 = WSF(DAT_0839bcbc, iVar14*0x6f) * _DAT_005528e4;
                 fStack_1c = 0.0f; fStack_18 = 0.0f;
                 Vector_Rotate(&fStack_20, (float *)(&DAT_0839bd40 + iVar2), &fStack_14);
-                (&DAT_0839bcc0)[iVar14*0x6f] = (unsigned int)(fStack_14 + (float)(&DAT_0839bcc0)[iVar14*0x6f]);
-                (&DAT_0839bcc4)[iVar14*0x6f] = (unsigned int)(fStack_10 + (float)(&DAT_0839bcc4)[iVar14*0x6f]);
-                (&DAT_0839bcc8)[iVar14*0x6f] = (unsigned int)(fStack_c  + (float)(&DAT_0839bcc8)[iVar14*0x6f]);
-                fVar22 = FUN_004f7500((float)(&DAT_0839bcc0)[iVar14*0x6f], (float)(&DAT_0839bcc4)[iVar14*0x6f]);
-                (&DAT_0839bcc8)[iVar14*0x6f] = (unsigned int)(float)(fVar22 + (float10)_DAT_00552900);
-                fVar22 = (float10)fsin((float10)(float)(&DAT_0839bd30)[iVar14*0x6f]);
+                WSF(DAT_0839bcc0, iVar14*0x6f) = (float)(fStack_14 + WSF(DAT_0839bcc0, iVar14*0x6f));
+                WSF(DAT_0839bcc4, iVar14*0x6f) = (float)(fStack_10 + WSF(DAT_0839bcc4, iVar14*0x6f));
+                WSF(DAT_0839bcc8, iVar14*0x6f) = (float)(fStack_c  + WSF(DAT_0839bcc8, iVar14*0x6f));
+                fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                WSF(DAT_0839bcc8, iVar14*0x6f) = (float)(fVar22 + (float10)_DAT_00552900);
+                fVar22 = (float10)fsin((float10)WSF(DAT_0839bd30, iVar14*0x6f));
                 fVar23 = FUN_005129f0((float)fVar22);
                 fVar22 = (float10)_DAT_005524f0;
                 iVar12 = (&DAT_0839bd10)[iVar14*0x6f];
                 (&DAT_0839bd10)[iVar14*0x6f] = iVar12 - 1;
-                (&DAT_0839bcc8)[iVar14*0x6f] = (unsigned int)(float)
-                    ((float10)(float)(&DAT_0839bcc8)[iVar14*0x6f] - fVar23*fVar22 + fVar22);
-                (&DAT_0839bd30)[iVar14*0x6f] = (unsigned int)
-                    ((float)(&DAT_0839bcbc)[iVar14*0x6f] * _DAT_00552874 + (float)(&DAT_0839bd30)[iVar14*0x6f]);
+                WSF(DAT_0839bcc8, iVar14*0x6f) = (float)
+                    ((float10)WSF(DAT_0839bcc8, iVar14*0x6f) - fVar23*fVar22 + fVar22);
+                WSF(DAT_0839bd30, iVar14*0x6f) = (float)
+                    (WSF(DAT_0839bcbc, iVar14*0x6f) * _DAT_00552874 + WSF(DAT_0839bd30, iVar14*0x6f));
                 if (iVar12 - 1 < 1) *pcVar3 = '\0';
                 uVar8 = _rand(); uVar8 &= 0x8000007f;
                 bVar20 = (uVar8 == 0);
