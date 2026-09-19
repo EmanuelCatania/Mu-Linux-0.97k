@@ -47,178 +47,140 @@ extern void __cdecl FUN_0054158c(void* ptr);
 #endif
 
 
-// FUN_004414d0 @ 0x004414D0 — BMD_DrawBoneSlot_Anim
-// Renders polygons for a mesh slot using bone-animated vertex positions.
-// unaff_EBX in original = mesh entry = model.Actions[frame], same as iVar7 computed below.
+// IDA: sub_4414D0 (0x004414D0) -- dibujado de una malla con deformacion
+// senoidal por vertice.  sub_440D50 delega aca cuando (flags & 0x400).
+//
+// Orden de parametros: IDA es (this, a2, a3, a4 = malla, a5 = flags, alpha,
+// a7 = BlendMesh, a8 = BlendMeshLight, a9 = U, a10 = V, a11 = textura).  El
+// port usa (model, a, b, frame = malla, flags, f3 = alpha, f4 = BlendMesh,
+// f5 = U, f6 = V, f7 = BlendMeshLight, rgba = textura), o sea U/V van antes
+// que la luz.  El unico caller (FUN_00440d50) ya pasa en este orden.
 void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
                            float f3, int f4, float f5, float f6, float f7, unsigned int rgba)
 {
+    (void)b;
     if (!model) return;
 
-    // Mesh entry = Actions[frame] at stride 0x28
-    int meshEntry = *(int *)((int)model + 0x28) + (int)frame * 0x28;
+    const int meshIdx  = (int)frame;
+    const int meshEntry = *(int *)((int)model + 0x28) + meshIdx * 0x28;
+    if (*(short *)(meshEntry + 10) == 0) return;             // sin triangulos
 
-    // Texture index from bone index lookup
-    unsigned int texIdx = (unsigned int)*(short *)(*(int *)((int)model + 0x38) +
-                           *(short *)(meshEntry + 2) * 2);
-    if (texIdx == 300) return;  // BITMAP_HIDE
-    if (*(short *)(meshEntry + 10) == 0) return;  // no polygons
+    int tex = *(short *)(*(int *)((int)model + 0x38) + *(short *)(meshEntry + 2) * 2);
+    if (tex == 300) return;                                   // BITMAP_HIDE
+    if (rgba != 0xffffffff) tex = (int)rgba;
 
-    // Override texture with rgba param if not 0xffffffff
-    if (rgba != 0xffffffff) texIdx = rgba;
+    const int blendMesh = f4;
+    const float *bodyLight = (const float *)((int)model + 0x48);
 
-    int bVar3 = (int)(unsigned char)((unsigned int)flags & 0xFF);
-    // BlendMesh viaja en los BITS del float (los callers pasan *(float*)(o+100),
-    // que es un int). -1 = ninguna; Queen Rainer usa -2.
-    int blendMeshInt = f4;   // IDA a5: entero (indice de malla o -1)
-
-    // v58 de IDA: LightEnable del modelo; algunas ramas lo apagan.
-    int lightEnable = *(unsigned char *)((int)model + 0x44);
+    // UV animadas (LOBYTE(a11) de IDA): la malla es la de BlendMesh o la de
+    // StreamMesh (model+0x88, o la propia si el script de la malla lo pide),
+    // y hay algun desplazamiento de UV.
+    const int streamMesh = *(signed char *)((int)model + 0x88);
+    int waveMesh = streamMesh;
     {
-        int v14 = *(signed char *)((int)model + 0x88);
-        if ((int)frame == v14) {
-            glColor3fv((const float *)((int)model + 0x48));
-            lightEnable = 0;
+        const int script = *(int *)(meshEntry + 0x24);
+        if (script && *(char *)(script + 2)) waveMesh = meshIdx;
+    }
+    const bool uvAnim = (meshIdx == blendMesh || meshIdx == waveMesh) &&
+                        (f5 != 0.0f || f6 != 0.0f);
+
+    // v58: LightEnable del modelo.  Con StreamMesh el color es plano; si no,
+    // se arma la luz por vertice = IntensityTransform * BodyLight (IDA
+    // escribe el mismo buffer que sub_440D50 antes de delegar).
+    int lightEnable = *(unsigned char *)((int)model + 0x44);
+    if (meshIdx == streamMesh) {
+        glColor3fv(bodyLight);
+        lightEnable = 0;
+    } else if (lightEnable) {
+        const int nNormals = *(short *)(meshEntry + 6);
+        const float *src = (const float *)(&DAT_077e298c + meshIdx * 15000);
+        float *dst = (float *)(&DAT_060db65c + meshIdx * 180000);
+        for (int i = 0; i < nNormals; ++i) {
+            dst[i * 3 + 0] = src[i] * bodyLight[0];
+            dst[i * 3 + 1] = src[i] * bodyLight[1];
+            dst[i * 3 + 2] = src[i] * bodyLight[2];
         }
     }
 
-    // a7 de IDA: el MODO que fija el bloque de estado de abajo y que despues
-    // gatea la emision de texcoords. NO es `flags`.
-    //
-    // El port gateaba con `flags == 2` / `flags == 4`, pero a esta funcion solo
-    // se entra con (flags & 0x400) puesto, asi que esas comparaciones NUNCA eran
-    // ciertas: no se emitia glTexCoord2f y toda malla dibujada por aca salia de
-    // color plano. En IDA el default del bloque de estado es `a7 = 2`.
-    int mode = 2;
-
-    // GL state setup
-    if ((bVar3 & 1) == 1) {
+    // Estado GL; `mode` es el a7 de IDA reasignado, que despues decide si se
+    // emiten texcoords (2) o no (1, 64).
+    const int fl = flags & 0xFF;
+    int mode;
+    if ((fl & 1) == 1) {
         mode = 1;
-        if ((bVar3 & 0x40) == 0x40)      GL_SetBlendAdditive();
-        else if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-        else                             GL_ResetState();
-        GL_SetAlphaTest('\0');
-        glColor3fv((float *)((int)model + 0x48));
-    } else if (blendMeshInt <= -2 || *(short *)(meshEntry + 2) == blendMeshInt) {
-        // IDA sub_4414D0: rama que faltaba entera, y va ANTES de la de (flags & 2).
-        //
-        //   else if ( a7 <= -2 || *(__int16 *)(v13 + 2) == a7 ) {
-        //       a7 = 2;
-        //       BindTexture(tex);
-        //       (v21 & 0x80) ? EnableAlphaBlendMinus() : EnableAlphaBlend();
-        //       glColor3f(a8 * this[72], a8 * this[76], a8 * this[80]);
-        //   }
-        //
-        // a7 = BlendMesh (entero, llega en los BITS del float) y a8 =
-        // BlendMeshLight. Sin esta rama la malla caia en la de (flags & 2), que
-        // usa blending NORMAL y no setea color: quedaba una silueta oscura.
-        // Aca va ADITIVO y con color = BlendMeshLight * BodyLight.
-        //
-        // Queen Rainer (ModelID 321) tiene BlendMesh = -2 (CreateMonster case 70),
-        // asi que su malla 1 — el vestido — entra por aca.
-        GL_BindTextureSlot(texIdx);
-        if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();   // EnableAlphaBlendMinus (0x511790)
-        else                        GL_SetBlendAdditive();   // EnableAlphaBlend    (0x511710)
-        {
-            const float *bodyLight = (const float *)((int)model + 0x48);
-            glColor3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
-        }
+        if ((fl & 0x40) == 0x40)      GL_SetBlendAdditive();
+        else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+        else                          GL_ResetState();
+        GL_SetAlphaTest('\0');                                // DisableTexture(0)
+        glColor3fv(bodyLight);
+    } else if (blendMesh <= -2 || *(short *)(meshEntry + 2) == blendMesh) {
         mode = 2;
-        lightEnable = 0;          // IDA: v58 = 0 en esta rama
-    } else if ((bVar3 & 2) == 2) {
+        GL_BindTextureSlot(tex);
+        if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();       // EnableAlphaBlendMinus
+        else                     GL_SetBlendAdditive();       // EnableAlphaBlend
+        glColor3f(f7 * bodyLight[0], f7 * bodyLight[1], f7 * bodyLight[2]);
+        lightEnable = 0;
+    } else if ((fl & 2) == 2) {
         mode = 2;
-        GL_BindTextureSlot(texIdx);
-        if ((bVar3 & 0x40) == 0x40)      GL_SetBlendAdditive();
-        else if ((bVar3 & 0x80) == 0x80) GL_SetBlendSrcAlpha();
-        else                             GL_ResetState();
-    } else if ((bVar3 & 0x40) == 0x40) {
-        if (texIdx == 4) return;  // (&DAT_083a7cc8)[local_24 * 0x38] == 4 early-out
+        GL_BindTextureSlot(tex);
+        if ((fl & 0x40) == 0x40)      GL_SetBlendAdditive();
+        else if ((fl & 0x80) == 0x80) GL_SetBlendSrcAlpha();
+        else if (f3 < _DAT_00552544 || (&DAT_083a7cc8)[tex * 0x38] == '\x04')
+            GL_SetBlendSrcOver('\x01');                       // EnableAlphaTest(1)
+        else
+            GL_ResetState();                                  // DisableAlphaBlend
+    } else if ((fl & 0x40) == 0x40) {
+        if ((&DAT_083a7cc8)[tex * 0x38] == '\x04') return;    // Bitmaps[tex].Components == 4
         mode = 64;
         GL_SetBlendAdditive();
         GL_SetAlphaTest('\0');
         GL_DisableDepthWrites();
+    } else {
+        mode = 2;
     }
-    // else param_6 = 2.8026e-45 — no extra state
 
-    // (HashTable obfuscation block skipped — pure ref-count noise)
+    // (bloque de hash-table anti-tamper omitido)
+
+    // v55 = a2 & 1: la deformacion depende del PRIMER argumento, que
+    // sub_440D50 pasa siempre en 1.  El port miraba el segundo (siempre 0),
+    // asi que la onda nunca se aplicaba.
+    const bool deform = (a & 1) != 0;
 
     glBegin(GL_TRIANGLES);
-
-    int polyCount = *(short *)(meshEntry + 10);
-    int param_5_i = 0;
-    for (int local_20 = 0; local_20 < polyCount; local_20++) {
-        char *pcVar10 = (char *)(param_5_i + *(int *)(meshEntry + 0x1c));
-        if (*pcVar10 > 0) {
-            int deformFlag = b & 1;
-            short *psVar15 = (short *)(pcVar10 + 10);
-            for (int vi = 0; vi < (int)*pcVar10; vi++, psVar15++) {
-                int iVar7 = (int)psVar15[-4];
-
-                if (mode == 2) {
-                    // Textured: UV from UV array
-                    float *uvPtr = (float *)(*(int *)(meshEntry + 0x18) + (int)psVar15[4] * 8);
-                    float uCoord, vCoord;
-                    if (f5 == 0.0f) {
-                        uCoord = *uvPtr;
-                        vCoord = uvPtr[1];
-                    } else {
-                        uCoord = f5 + *uvPtr;
-                        vCoord = f6 + uvPtr[1];
-                    }
-                    glTexCoord2f(uCoord, vCoord);
-                    if (lightEnable) {
-                        int iVar13 = ((int)*psVar15 + (int)frame * 15000) * 0xc;
-                        if (f3 < _DAT_00552544) {
-                            glColor4f(*(float *)(&DAT_060db65c + iVar13),
-                                      *(float *)(&DAT_060db65c + iVar13 + 4),
-                                      *(float *)(&DAT_060db65c + iVar13 + 8), f3);
-                        } else {
-                            glColor3fv((float *)(&DAT_060db65c + iVar13));
-                        }
-                    }
-                } else if (mode == 4) {
-                    // Chrome UV
-                    if (f3 < _DAT_00552544) {
-                        glColor4f(*(float *)((int)model + 0x48), *(float *)((int)model + 0x4c),
-                                  *(float *)((int)model + 0x50), f3);
-                    } else {
-                        glColor3fv((float *)((int)model + 0x48));
-                    }
-                    // BUG-FIX 2026-07-15: el V leía `&DAT_05828d5c + (idx*2+1)*4`
-                    // (stride ×4, Ghidra float→byte mis-decompile) → out-of-bounds /
-                    // UV degenerado. La tabla es {U,V} contigua: V = índice idx*2+1.
-                    glTexCoord2f((&DAT_05828d5c)[*psVar15 * 2],
-                                 (&DAT_05828d5c)[*psVar15 * 2 + 1]);
+    const int polyCount = *(short *)(meshEntry + 10);
+    for (int poly = 0; poly < polyCount; ++poly) {
+        const char *tri = (const char *)(*(int *)(meshEntry + 0x1c) + poly * 0x24);
+        const int nv = *tri;
+        const short *idx = (const short *)(tri + 10);
+        for (int vi = 0; vi < nv; ++vi, ++idx) {
+            const int vtx = idx[-4];                          // indice de vertice
+            if (mode == 2) {
+                const float *uv = (const float *)(*(int *)(meshEntry + 0x18) + idx[4] * 8);
+                if (uvAnim) glTexCoord2f(f5 + uv[0], f6 + uv[1]);
+                else        glTexCoord2f(uv[0], uv[1]);
+                if (lightEnable) {
+                    const float *c = (const float *)(&DAT_060db65c + ((int)idx[0] + meshIdx * 15000) * 12);
+                    if (f3 < _DAT_00552544) glColor4f(c[0], c[1], c[2], f3);
+                    else                    glColor3fv(c);
                 }
-
-                // Vertex position
-                float *pfVar5;
-                float afStack_14[3];
-                if (deformFlag) {
-                    // Sin-wave deformation
-                    // IDA: v56 = (__int64)WorldTime + 931 * v33;  (v33 = indice
-                    // de vertice). El port ponia `frame` — el indice de MALLA —
-                    // donde va WorldTime, asi que la onda quedaba congelada.
-                    int iVar13 = (long long)DAT_05826e08 + 0x3a3 * iVar7;
-                    float sinVal = (float)fsin((double)iVar13 * (double)_DAT_005528c4);
-                    float *pfVar12 = (float *)((char*)&DAT_0584621c + ((int)frame * 15000 + iVar7) * 3 * 4);
-                    int normBase = ((int)*psVar15 + (int)frame * 15000) * 0xc;
-                    for (int k = 0; k < 3; k++) {
-                        afStack_14[k] = sinVal * *(float *)(&DAT_06f433bc + normBase + k * 4)
-                                        * _DAT_00552644 + pfVar12[k];
-                    }
-                    pfVar5 = afStack_14;
-                } else {
-                    pfVar5 = (float *)((char*)&DAT_0584621c + (iVar7 + (int)frame * 15000) * 3 * 4);
-                }
-                glVertex3fv(pfVar5);
             }
-        }
-        param_5_i += 0x24;
-    }
 
+            const float *pos = (const float *)((char *)&DAT_0584621c + (vtx + meshIdx * 15000) * 12);
+            float moved[3];
+            if (deform) {
+                // IDA: v56 = (__int64)WorldTime + 931 * vtx;
+                //      pos + sin(v56 * 0.007) * normal * 28
+                const int phase = (int)(long long)DAT_05826e08 + 0x3a3 * vtx;
+                const float sn = (float)sin((double)phase * (double)_DAT_005528c4);
+                const float *nrm = (const float *)(&DAT_06f433bc + ((int)idx[0] + meshIdx * 15000) * 12);
+                for (int k = 0; k < 3; ++k)
+                    moved[k] = sn * nrm[k] * _DAT_00552644 + pos[k];
+                pos = moved;
+            }
+            glVertex3fv(pos);
+        }
+    }
     glEnd();
-    // f4 = BlendMesh y f7 = BlendMeshLight: ya se consumen en la rama de estado.
 }
 
 // FUN_004e13a0 @ 0x004E13A0 — RenderObjectScreen
