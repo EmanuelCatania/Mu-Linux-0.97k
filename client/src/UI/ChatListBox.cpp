@@ -1207,32 +1207,25 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
     return r;
 }
 
-// slot 23 — sub_40D610 — render por línea con paleta según el tipo de mensaje y
-// composición de "[guild] nombre: texto". El decompile de IDA tiene dos ramas
-// (g_pRenderText[+8]==1 → font-bitmap path; else → CUIRenderText path).
-// En nuestro build no tenemos la vtable real del motor de g_pRenderText, así que
-// tomamos la segunda rama y ruteamos por UI_DrawText.
+// slot 23 — sub_40D610 (0x0040D610) — dibuja UNA linea del chat.
 //
-// Paleta por tipo de mensaje (se lee de self[25]+276 — el DWORD de tipo adentro del
-// linked-list node payload):
-//   0: chat        text=black, bg=light blue
-//   1: system      text=red,   bg=dark grey
-//   2: GM          text=yellow,bg=dark grey
-//   3: whisper     text=white, bg=dark grey
-//   4: party       text=black, bg=dark green
-//   5: guild       text=black, bg=dark purple
+// El binario tiene dos ramas segun `g_pRenderText + 8` (el "TextOut" del
+// registro, por defecto 0):
+//   == 1 -> un solo RenderText con marcadores de estilo <estilo>.
+//   != 1 -> dos RenderText: primero "remitente: " con su paleta (y el parpadeo
+//           de la linea seleccionada), despues el texto corrido el ancho medido
+//           del remitente, con una segunda paleta.
+// Nuestro cliente corre con TextOut = 0, asi que se porta la segunda rama.
+// Las dos paletas son iguales salvo el susurro (tipo 3): el remitente va en
+// 0xFFEFDCCD y el texto en 0xFFC8DCE6.  El parpadeo solo afecta al remitente.
 //
-// Devuelve 1 si tuvo éxito (RenderScroll usa el signo para ajustar el índice de fila).
+// Tipo de mensaje en nodo+276: 0 chat, 1 sistema, 2 GM, 3 susurro, 4 party,
+// 5 guild.  nodo+284 = cuantas lineas extra ocupa el mensaje (lo incrementa
+// FUN_0040c930); fuera del modo lista desplaza la fila y corta si no entra.
+//
+// Devuelve 1 si dibujo; RenderScroll usa el valor para ajustar la fila.
 static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
 {
-    // 2026-07-19: REMOVIDO el gate `if (!DAT_00559c84) return 0;` — era una
-    // invención nuestra (IDA sub_40D610 NO lo tiene). El original renderiza las
-    // últimas N líneas del chat SIEMPRE in-world (no solo al abrir el input).
-    // La preocupación previa de "doble render" (cyan de sub_480980 + blanco de
-    // acá) no aplica: in-world sub_480980 NO corre (RenderInformation lo gatea a
-    // g_bUseChatListBox||state!=5; in-world state=5 + g_bUseChatListBox=0 = falso),
-    // y este render solo corre in-world (via Render_GameFrame). Escenas distintas.
-
     int v5;
     if (!DAT_005590ac || self[11]) {
         v5 = row;
@@ -1244,43 +1237,67 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
     if (DAT_005590ac) {
         DWORD t = *(DWORD*)(self[25] + 276);
         if (t == 1 || t == 2) return 0;
+    } else {
+        int extra = *(int*)(self[25] + 284);
+        if (extra && !self[34]) {
+            if ((int)self[35] - extra - v5 - 1 < 0) return v5 - (int)self[35];
+            v5 += extra;
+        }
     }
 
     EnableAlphaTest(true);
-    // Colores 1:1 con IDA sub_40D610 (rama g_pRenderText==1). Antes casi todos
-    // estaban mal (case 1/2/3 text, case 0/4/5 back) Y encima m_dwTextColor era
-    // otro global → nunca llegaban al render. Ahora m_dwTextColor==DAT_00559c78.
-    DWORD msgType = *(DWORD*)(self[25] + 276);
-    switch (msgType) {
-        case 0:  m_dwTextColor = 0xFF000000u; m_dwBackColor = 0x9632C8FFu; break; // chat: negro / azul
-        case 1:  m_dwTextColor = 0xFFFF9664u; m_dwBackColor = 0x96000000u; break; // sistema: celeste / negro
-        case 2:  m_dwTextColor = 0xFF001EFFu; m_dwBackColor = 0x96000000u; break; // GM: rojo / negro
-        case 3:  m_dwTextColor = 0xFFEFDCCDu; m_dwBackColor = 0x96000000u; break; // whisper: blanco-azulado / negro
-        case 4:  m_dwTextColor = 0xFF000000u; m_dwBackColor = 0x96FFC800u; break; // party: negro / celeste
-        case 5:  m_dwTextColor = 0xFF000000u; m_dwBackColor = 0xC896FF00u; break; // guild: negro / verde
+
+    const int x = (int)self[11] + 10;
+    const int y = (int)self[12] - 13 * v5 - 16;
+    char Buffer[256];
+    SIZE sz = {0, 0};
+
+    // Remitente: "nombre: " con su paleta.
+    if (*(const char*)(self[25] + 8)) {
+        DWORD back = 0x96000000u;
+        switch (*(DWORD*)(self[25] + 276)) {
+            case 0: back = 0x9632C8FFu; m_dwTextColor = 0xFF000000u; m_dwBackColor = back; break;
+            case 1: m_dwTextColor = 0xFFFF9664u; m_dwBackColor = 0x96000000u; break;
+            case 2: m_dwTextColor = 0xFF001EFFu; m_dwBackColor = 0x96000000u; break;
+            case 3: m_dwTextColor = 0xFFEFDCCDu; m_dwBackColor = 0x96000000u; break;
+            case 4: back = 0x96FFC800u; m_dwTextColor = 0xFF000000u; m_dwBackColor = back; break;
+            case 5: back = 0xC896FF00u; m_dwTextColor = 0xFF000000u; m_dwBackColor = back; break;
+            default: back = m_dwBackColor; break;
+        }
+        if (DAT_005590ac && (back & 0xFFFFFFu) == 0) {
+            back = 0;
+            m_dwBackColor = 0;
+        }
+        // Parpadeo de la linea seleccionada (self[28]): cada 6 frames, 3 con
+        // los colores invertidos.
+        if (self[28] == self[25] && (int)(self[46] % 6) < 3) {
+            DWORD t = m_dwTextColor;
+            m_dwTextColor = back;
+            m_dwBackColor = t;
+        }
+        wsprintfA(Buffer, "%s: ", (const char*)(self[25] + 8));
+        UI_DrawText(x, y, Buffer, 0, 1, 0);
+        if (m_hFontDC)
+            GetTextExtentPointA(m_hFontDC, Buffer, lstrlenA(Buffer), &sz);
+        // GetTextExtentPointA mide en pixeles de ventana; el layout es 640x480.
+        sz.cx = (LONG)((float)sz.cx / _DAT_055c9b70);   // g_fScreenRate_x
+    }
+
+    // Texto: segunda paleta (solo cambia el susurro).
+    switch (*(DWORD*)(self[25] + 276)) {
+        case 0: m_dwTextColor = 0xFF000000u; m_dwBackColor = 0x9632C8FFu; break;
+        case 1: m_dwTextColor = 0xFFFF9664u; m_dwBackColor = 0x96000000u; break;
+        case 2: m_dwTextColor = 0xFF001EFFu; m_dwBackColor = 0x96000000u; break;
+        case 3: m_dwTextColor = 0xFFC8DCE6u; m_dwBackColor = 0x96000000u; break;
+        case 4: m_dwTextColor = 0xFF000000u; m_dwBackColor = 0x96FFC800u; break;
+        case 5: m_dwTextColor = 0xFF000000u; m_dwBackColor = 0xC896FF00u; break;
         default: break;
     }
     if (DAT_005590ac && (m_dwBackColor & 0xFFFFFFu) == 0) m_dwBackColor = 0;
+    lstrcpynA(Buffer, (const char*)(self[25] + 19), sizeof(Buffer));
+    UI_DrawText(x + (int)sz.cx, y, Buffer, 0, 1, 0);
 
-    // Cursor highlight blink: alternate text/back colour every 6 frames
-    // por ~3 frames cuando self[28] == self[25].
-    if (self[28] == self[25] && (int)(self[46] % 6) < 3) {
-        DWORD t = m_dwTextColor;
-        m_dwTextColor = m_dwBackColor;
-        m_dwBackColor = t;
-    }
-
-    // Compone "[remitente]: texto" — el remitente está en nodo+8, el texto en nodo+19.
-    char Buffer[512];
-    const char* sender = (const char*)(self[25] + 8);
-    const char* text   = (const char*)(self[25] + 19);
-    if (sender[0]) wsprintfA(Buffer, "%s: %s", sender, text);
-    else           wsprintfA(Buffer, "%s", text);
-
-    int x = (int)self[11] + 10;
-    int y = (int)self[12] - 13 * v5 - 16;
-    UI_DrawText(x, y, Buffer, 0, 1, 0);
-    GL_ResetState();
+    GL_ResetState();   // DisableAlphaBlend
     return 1;
 }
 
