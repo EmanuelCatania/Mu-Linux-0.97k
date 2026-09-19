@@ -1166,16 +1166,24 @@ void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int r
 }
 
 // ── FUN_00409ad0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_00409ad0 @ 0x00409AD0 (~42 lines) — CSQuest constructor: init doubly-linked list
-// __fastcall(ecx=questObj). Aloca los nodos centinela de cabeza y cola (0xC cada uno, con punteros next/prev),
-// los enlaza, pone count=0, setea la vtable a PTR_FUN_00552568 y llama a FUN_00403a30 (reset de quests).
+// IDA: sub_409AD0 (0x00409AD0) -- constructor de CPhysicsManager.
+// Lo llama el inicializador estatico sub_5133F0 sobre g_PhysicsManager.
+// La etiqueta vieja ("CSQuest constructor") era incorrecta.
+// Arma una lista doble con dos nodos centinela de 0xC bytes (+4 prev,
+// +8 next): This[2] = cabeza, This[3] = cola, cabeza->next = cola,
+// cola->prev = cabeza, This[1] = 0 (cantidad).  La vtable (off_552568) no se
+// instala: nadie despacha por ella.  CWsctlc::LogPrintOn es un nullsub.
 void* __fastcall FUN_00409ad0(void* param_1) {
-    // head = new Node{0,0,0}; tail = new Node{0,0,0}
-    // param_1[2] = head; param_1[3] = tail
-    // head->next = tail; tail->prev = head
-    // param_1[1] = 0 (count)
-    // *param_1 = &PTR_FUN_00552568 (vtable)
-    // FUN_00403a30() — quest state reset
+    DWORD* This = (DWORD*)param_1;
+    DWORD* head = (DWORD*)operator new(0xC);
+    head[0] = 0; head[1] = 0; head[2] = 0;
+    DWORD* tail = (DWORD*)operator new(0xC);
+    tail[0] = 0; tail[1] = 0; tail[2] = 0;
+    This[2] = (DWORD)(uintptr_t)head;
+    This[3] = (DWORD)(uintptr_t)tail;
+    head[2] = (DWORD)(uintptr_t)tail;
+    tail[1] = (DWORD)(uintptr_t)head;
+    This[1] = 0;
     return param_1;
 }
 
