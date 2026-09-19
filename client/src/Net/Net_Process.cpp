@@ -6731,26 +6731,27 @@ void Net_ProcessPacket(void)
                         ? basePtr + entitySlot * 916 : nullptr;
                     if (slot) {
                         const int guildRow = GuildMark_FindRecordByKey(guildKey);
-                        // IDA sub_435110 resuelve aquí la fila enemiga de forma diferida si
-                        // el paquete de declaración/inicio llegó antes que su marca.
-                        if (EnableGuildWar && GuildWarIndex == -1 && GuildWarName[0] != '\0')
-                            GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
-                        // 00435110 limpia el flag de relación antes de calcular
-                        // el estado de aliado/guerra, por lo que una asociación de guild antigua no
-                        // puede sobrevivir a una actualización del viewport.
+                        // IDA sub_435110: si la clave no esta en la tabla de marcas,
+                        // +474 queda como estaba (el bucle sale sin escribir).
+                        if (guildRow >= 0)
+                            *(short*)(slot + 474) = (short)guildRow;
+                        if (!slot[0]) continue;          // entidad inactiva
                         slot[745] = 0;
-                        // Una asociación 5B cuya clave no está en la 5A
-                        // debe limpiar una asociación de guild anterior.
-                        *(short*)(slot + 474) = (short)guildRow;
-                        if (guildRow < 0) continue;
-                        // Flag de aliado si es del mismo guild que el héroe
-                        if (DAT_07abf5d8 && slot != (BYTE*)DAT_07abf5d8) {
-                            short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
-                            if (heroGuild != -1 && guildRow == heroGuild) {
-                                slot[745] = 1;  // aliado
-                            }
+                        // Mismo guild que el heroe.  IDA no excluye al heroe: el
+                        // propio personaje tambien queda marcado con 1.
+                        if (DAT_07abf5d8) {
+                            const short heroGuild = *(short*)((BYTE*)DAT_07abf5d8 + 474);
+                            if (heroGuild != -1 && *(short*)(slot + 474) == heroGuild)
+                                slot[745] = 1;
                         }
-                        if (EnableGuildWar && GuildWarIndex >= 0 && guildRow == GuildWarIndex)
+                        if (!EnableGuildWar) continue;
+                        // Guerra: si la fila enemiga todavia no se resolvio, se busca
+                        // por nombre (el paquete de la guerra pudo llegar antes).
+                        if (GuildWarIndex == -1) {
+                            if (!GuildWarName[0]) continue;
+                            GuildWarIndex = GuildMark_FindRecordByName(GuildWarName);
+                        }
+                        if (GuildWarIndex >= 0 && *(short*)(slot + 474) == GuildWarIndex)
                             slot[745] = 2;  // guild enemiga en la guerra activa
                     }
                 }

@@ -243,7 +243,9 @@ DWORD    DAT_005597c8  = 0;
 DWORD    DAT_0055987c  = 0;
 DWORD    DAT_005599b0  = 0;
 DWORD    DAT_005599e0  = 0;
-DWORD    DAT_00559bf0  = 0;
+// IDA: m_bBlockWhisper (0x00559BF0) -- interruptor de susurros (F3; icono 239
+// del chat).  En .data vale 1: arrancan activados.
+DWORD    DAT_00559bf0  = 1;
 // DAT_00559c4c/50 are defined below in the named hover/targeting section.
 DWORD    DAT_00559c78  = 0xffffffff;
 // 0x00559C7C — IDA `SetTextColor_0`: color del PREFIJO (nombre de guild) en la

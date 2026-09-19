@@ -57,7 +57,11 @@ int __cdecl Math_GetAngleFromPoints(float param_1, float param_2, float param_3,
     } else {
         fVar2 = ((double)param_2 - (double)param_4) / ((double)param_3 - (double)param_1);
     }
-    int iVar1 = (int)atan(fVar2);  // fpatan → ftol (result in radians-as-int units)
+    // IDA: (__int64)(atan2(v5, 1.0) * 57.295776) -- en GRADOS.  El port
+    // truncaba los radianes (quedaba en -1..1), asi que el agrupamiento de los
+    // pajaros (sub_43E680, unico caller) solo giraba hacia 0 o 180 grados y no
+    // formaban los circulos del original.
+    int iVar1 = (int)(long long)(atan2(fVar2, 1.0) * 57.295776);
     if (param_3 < param_1) iVar1 += 0xb4;   // 180
     if (iVar1 < 0)         iVar1 += 0x168;  // 360
     return (0x168 - iVar1) % 0x168;

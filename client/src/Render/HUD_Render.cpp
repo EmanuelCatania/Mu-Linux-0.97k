@@ -228,7 +228,7 @@
 //         lpString += 0x100;
 //         iVar2++;
 //       } while (lpString < 0x7e118e4);
-//       // Ícono de desconexión (if DAT_00559bf0)
+//       // Ícono de susurros activados (if m_bBlockWhisper = DAT_00559bf0)
 //       if (DAT_00559bf0 != '\0'):
 //         Texture_Draw2D(0xef, 432, 420, 15, 16, 0,0,0.9375,1.0, ...);
 //     }
@@ -239,7 +239,7 @@
 //   DAT_07e11d71   — chat overlay flag
 //   DAT_07e113e4   — chat history buffer (stride 0x100, ~10 entradas hasta 0x7e118e4)
 //   DAT_00559cc4   — índice del mensaje más reciente
-//   DAT_00559bf0   — disconnected indicator flag
+//   DAT_00559bf0   — m_bBlockWhisper: interruptor de susurros (F3)
 //   0xf8/0xf9     → background del chat input box
 //   0xef          → ícono de desconexión
 //
