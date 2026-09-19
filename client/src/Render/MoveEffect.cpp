@@ -941,14 +941,14 @@ LAB_0046a366:
             goto LAB_00469366;
           }
 LAB_0046934f:
-          param_1[0x16] = -NAN;
+          *(int *)&param_1[0x16] = -1;   // IDA: HiddenMesh = -1 (ninguna)
         }
         else {
           if (bVar28 != 2) goto LAB_0046934f;
           param_1[0x43] = 0.0;
           param_1[0x42] = 0.0;
 LAB_00469366:
-          param_1[0x16] = -NAN;
+          *(int *)&param_1[0x16] = -2;   // IDA LABEL_246: HiddenMesh = -2 (oculta el hielo)
         }
         bVar16 = _DAT_00552650 <= param_1[0x42];
         param_1[4] = *(float *)(pcVar11 + 0x10);
@@ -2379,7 +2379,7 @@ LAB_004695c0:
     case 0xff:
       pcVar11 = (char *)*(int*)&param_1[0x3f];
       if (*pcVar11 == '\0') {
-        param_1[0x18] = -NAN;
+        *(int *)&param_1[0x18] = -1;   // IDA: lifetime = -1
       }
       else {
         pfVar10 = param_1 + 4;
