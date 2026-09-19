@@ -215,7 +215,7 @@ extern DWORD   DAT_005597c8;
 extern DWORD   DAT_0055987c;
 extern DWORD   DAT_005599b0;
 extern DWORD   DAT_005599e0;
-extern DWORD   DAT_00559bf0;
+extern DWORD   DAT_00559bf0;   // IDA: m_bBlockWhisper (0x00559BF0), interruptor de susurros (F3)
 extern int    _DAT_00559b9c;   // wind speed result (fsin * tick, *10)
 extern DWORD   DAT_00559bec;   // movement cooldown threshold
 // Hover/selection state.  Names follow the 5.2 reference only where the

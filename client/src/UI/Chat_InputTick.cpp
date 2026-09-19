@@ -276,7 +276,10 @@ extern "C" void Chat_SendChatLine(const char* text)
     // General chat is exactly SendChat @ 0x004C1B90.  Keep the whisper
     // builder below as a separate branch: IDA places it inline in this UI
     // tick and it uses the recipient name in the C1:02 header.
-    if (((const char*)&DAT_07db8810)[0] == '\0') {
+    // IDA WndProc L2077: `if ( InputLength[1] && m_bBlockWhisper )` -- sin
+    // nombre, o con los susurros apagados (F3, m_bBlockWhisper = 0x559BF0),
+    // la linea sale como chat normal aunque el campo de nombre tenga texto.
+    if (((const char*)&DAT_07db8810)[0] == '\0' || !DAT_00559bf0) {
         SendChat((char*)text);
         return;
     }
@@ -376,6 +379,12 @@ extern "C" void Chat_SendChatLine(const char* text)
         if (DAT_055ce174) FUN_0043de60();
         off += n; rem -= n;
     } while (rem > 0);
+
+    // IDA WndProc L2261: el server no le devuelve el susurro a quien lo
+    // manda, asi que el cliente agrega la linea con el nombre propio y el
+    // tipo 0 (colores del chat normal).
+    if (pkt[2] == 0x02 && DAT_07abf5d8)
+        UIChatLogWindow_AddText((const char*)DAT_07abf5d8 + 0x1C1, text, 0);
 
     // Update last-sent-cmp buffer + reset rate-limit (matches IDA).
     memcpy(&DAT_05826adc[0], text, tlen + 1);
