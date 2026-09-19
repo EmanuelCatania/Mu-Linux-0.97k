@@ -119,10 +119,12 @@ void __cdecl Sound_LoadGameSamples(void)
     FUN_00404a10(0x6a, "Data\\Sound\\eHitGate2.wav", 1, '\0');   // eHitGate2.wav
     FUN_00404a10(0x6b, "Data\\Sound\\eHitCristal.wav", 1, '\0');   // eHitCristal.wav
     // IDA 0.98j (sub_5276F0): Tamachan en los slots 101/102, con (1, 1).
-    // Desviacion: en el 0.97k esos slots son eIceArrow/eTelekinesis; van a
-    // 365/366, libres.
-    FUN_00404a10(365, "Data\\Sound\\aTamajjang1.wav", 1, '\x01');
-    FUN_00404a10(366, "Data\\Sound\\aTamajjang2.wav", 1, '\x01');
+    // Desviacion: en el 0.97k esos slots son eIceArrow/eTelekinesis.  Van a
+    // 118/119: libres en el arbol y en IDA, y por debajo de 120, porque
+    // OpenWorldModels libera 120..419 en cada carga de mapa (los sonidos de
+    // monstruos); cargados en 365/366 se perdian al entrar al mundo.
+    FUN_00404a10(118, "Data\\Sound\\aTamajjang1.wav", 1, '\x01');
+    FUN_00404a10(119, "Data\\Sound\\aTamajjang2.wav", 1, '\x01');
     FUN_00404a10(0x6c, "Data\\Sound\\eDownGate.wav", 1, '\0');   // eDownGate.wav
     FUN_00404a10(0x6d, "Data\\Sound\\eCrow.wav", 1, '\0');   // eCrow.wav
 }

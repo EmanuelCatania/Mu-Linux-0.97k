@@ -76,8 +76,8 @@
 // En Atlans (World 7) se queda vivo; en cualquier otro mapa que no sea
 // Lorencia desaparece.
 //
-// Desviacion: los sonidos 101/102 del 0.98j son 365/366 aca (en el 0.97k
-// esos slots son eIceArrow/eTelekinesis).
+// Desviacion: los sonidos 101/102 del 0.98j son 118/119 aca (ver
+// Sound_LoadGameSamples).
 static void Tamachan_FaceHero(char *o)
 {
     char *hero = (char *)DAT_07abf5d8;
@@ -114,7 +114,7 @@ static void Tamachan_Move(char *o, int life)
         if (*(float *)(o + 216) > 5.0f) *(float *)(o + 216) = *(float *)(o + 216) - 1.0f;
         else                           *(float *)(o + 216) = 5.0f;
         Tamachan_FaceHero(o);
-        if (!(rand() % 100)) FUN_00404bc0(366, 0, 0);
+        if (!(rand() % 100)) FUN_00404bc0(119, 0, 0);
         return;
     case 1:
         if (life < 10) {
@@ -128,7 +128,7 @@ static void Tamachan_Move(char *o, int life)
         if (*(float *)(o + 216) < 40.0f) *(float *)(o + 216) = *(float *)(o + 216) + 1.0f;
         else                            *(float *)(o + 216) = 40.0f;
         Tamachan_FaceHero(o);
-        if (!(*(int *)(o + 96) % (rand() % 20 + 10))) FUN_00404bc0(365, 0, 0);
+        if (!(*(int *)(o + 96) % (rand() % 20 + 10))) FUN_00404bc0(118, 0, 0);
         return;
     case 2: {
         float dx = *(float *)(o + 16) - *(float *)(o + 368);
