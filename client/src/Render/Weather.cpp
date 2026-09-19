@@ -571,14 +571,25 @@ LAB_00501734:
                         }
                     }
                     if ((&DAT_0839bdb4)[iVar2] == '\x01') {
-                        // Phase 1: hover at altitude, check terrain height
+                        // Phase 1: el pajaro baja (velocidad Z -20).
+                        //
+                        // DESVIACION (fix del DLL, Patchs.cpp FixPigeons, hook en
+                        // 0x00501C26): en el 0.97k, al tocar el suelo pasaba al
+                        // estado 3 (volver a volar), o sea nunca se posaba -- y el
+                        // estado 2 (en el suelo, se vuela cuando el heroe camina)
+                        // quedaba inalcanzable.  El DLL lo deja en el suelo:
+                        //   Z = altura del terreno, estado 2 (BOID_GROUND),
+                        //   velocidad (rand() % 4 + 6) * 0.05, accion 1.
+                        // Original IDA 0x500E80:
+                        //   if (RequestTerrainHeight(x, y) > z) { AI = 3;
+                        //       Velocity = 1.1; Direction[2] = 20; CurrentAction = 0; }
                         *(unsigned int *)(&DAT_0839bd78 + iVar2) = 0xc1a00000;
                         fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
                         if ((float10)WSF(DAT_0839bcc8, iVar14 * 0x6f) < fVar22) {
-                            (&DAT_0839bdb4)[iVar2] = 3;
-                            (&DAT_0839bd7c)[iVar14 * 0x6f] = 0x3f8ccccd;
-                            *(unsigned int *)(&DAT_0839bd78 + iVar2) = 0x41a00000;
-                            (&DAT_0839bdb5)[iVar2] = 0;
+                            WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)fVar22;
+                            (&DAT_0839bdb4)[iVar2] = 2;
+                            WSF(DAT_0839bd7c, iVar14 * 0x6f) = (float)(_rand() % 4 + 6) * 0.05f;
+                            (&DAT_0839bdb5)[iVar2] = 1;
                         }
                     }
                     if ((&DAT_0839bdb4)[iVar2] == '\x02') {
