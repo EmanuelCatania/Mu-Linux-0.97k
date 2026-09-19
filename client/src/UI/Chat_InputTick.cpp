@@ -354,6 +354,9 @@ extern "C" void Chat_SendChatLine(const char* text)
     }
 
     memcpy(pkt + 13, text, msgBytes);
+    // Se guarda ANTES del send: el hook de MuEmu (`#define send
+    // MuEmu_send_hook`) encripta el buffer en el lugar y pkt[2] deja de valer 0x02.
+    const bool isWhisper = (pkt[2] == 0x02);
 
     // BUG-FIX: era un XOR simple `pkt[i] ^= key[i]`. El server (XorData en
     // PacketManager.cpp) reversa el CHAIN-XOR, así que el cliente debe usar
@@ -383,7 +386,7 @@ extern "C" void Chat_SendChatLine(const char* text)
     // IDA WndProc L2261: el server no le devuelve el susurro a quien lo
     // manda, asi que el cliente agrega la linea con el nombre propio y el
     // tipo 0 (colores del chat normal).
-    if (pkt[2] == 0x02 && DAT_07abf5d8)
+    if (isWhisper && DAT_07abf5d8)
         UIChatLogWindow_AddText((const char*)DAT_07abf5d8 + 0x1C1, text, 0);
 
     // Update last-sent-cmp buffer + reset rate-limit (matches IDA).
