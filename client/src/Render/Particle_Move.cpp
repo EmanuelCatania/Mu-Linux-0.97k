@@ -134,6 +134,21 @@ void __stdcall MoveParticles_stub(void)
         // The original binary has a complex nested switch. We replicate the
         // structure exactly, including fall-through and goto patterns.
 
+        // IDA 0.98j MoveParticles (sub_484310): tipos 103/104, el polvo que
+        // levanta el Tamachan al caminar (no existen en el 0.97k).
+        //     if (life <= 0) flag = 0;
+        //     Scale = SubType == 1 ? Scale + (+72) : Scale + 0.03;
+        //     Light[0..2] -= 0.05;
+        if (iVar5 == 103 || iVar5 == 104) {
+            if (P_LIFE(iVar9) <= 0) P_ACTIVE(iVar9) = 0;
+            if (P_SUB(iVar9) == 1) P_SCALE(iVar9) = P_GRAV(iVar9) + P_SCALE(iVar9);
+            else                   P_SCALE(iVar9) = P_SCALE(iVar9) + 0.03f;
+            P_LR(iVar9) -= 0.05f;
+            P_LG(iVar9) -= 0.05f;
+            P_LB(iVar9) -= 0.05f;
+            continue;
+        }
+
         if (iVar5 > 0x4c4) {
             // High type range: 0x4c5..0x599
             switch (iVar5) {

@@ -177,6 +177,14 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     FUN_00505c80(0xfe,  "Skill\\", 0x2600, '\x01');
     DAT_0055a7c4 = 1;
 
+    // IDA 0.98j: OpenSkills (0x523DC0) carga el Tamachan en el slot 183:
+    //     AccessModel(183, "Data\\Skill\\", "Tama", 1);
+    // Desviacion: en el 0.97k el 183 lo pisan los peces de Atlans
+    // (OpenWorldModels case 7), asi que va al 193 (0xC1), libre y dentro de los
+    // rangos que dibuja RenderEffects (190..268) y anima MoveEffect (174..268).
+    // Sus texturas las cubre el bucle de abajo.
+    FUN_005060b0(0xc1,  "Data\\Skill\\", "Tama", 1);
+
     // Full skill texture range (0xbe-0x10c)
     for (int i = 0xbe; i < 0x10d; i++) {
         int slot = (i == 0xff) ? 0xff : i;

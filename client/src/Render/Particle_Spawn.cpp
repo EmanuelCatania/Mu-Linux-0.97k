@@ -521,6 +521,28 @@ switchD_4b5:
     //    0x4c5; ver la nota del `goto particleSpawn_outerSwitch` de arriba) ────
 particleSpawn_outerSwitch:
     switch (param_1) {
+    // IDA 0.98j CreateParticle (sub_482370): tipos 103/104, el polvo del
+    // Tamachan (no existen en el 0.97k).  Usan el bitmap 103 = World1/rain02,
+    // igual en los dos binarios, y el render cae al caso por defecto.
+    case 103:
+    case 104: {
+        *(int *)(pcVar11 + 0x38) = 20;
+        iVar7 = _rand() % 6;
+        *(float *)(pcVar11 + 0x0c) = (float)((double)(iVar7 + 8) * 0.1);
+        if (*(int *)(pcVar11 + 4) == 104 || *(int *)(pcVar11 + 8) == 1) {
+            *pfVar1 = (float)(_rand() % 10 - 5) + *pfVar1;
+            *(float *)(pcVar11 + 0x14) = (float)(_rand() % 10 - 5) + *(float *)(pcVar11 + 0x14);
+            iVar7 = _rand() % 10;
+            *(float *)(pcVar11 + 0x18) = (float)(iVar7 - 5) + *(float *)(pcVar11 + 0x18);
+            if (*(int *)(pcVar11 + 8) == 1) {
+                *(float *)(pcVar11 + 0x0c) = param_6;
+                iVar7 = _rand() % 100;
+                *(float *)(pcVar11 + 0x50) = 1.0f;
+                *(float *)(pcVar11 + 0x48) = (float)((double)iVar7 * 0.001);
+            }
+        }
+        return iVar6;
+    }
     case 0x4a7: {
         switch (param_5) {
         case 0:

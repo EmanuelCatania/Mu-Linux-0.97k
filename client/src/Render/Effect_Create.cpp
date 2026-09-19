@@ -11,6 +11,43 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
+// Tamachan -- IDA 0.98j CreateEffect (sub_46C290) case 183.
+// Desviacion: en el 0.97k el tipo 183 lo usan los peces de Atlans, asi que
+// va en el 193 (0xC1), libre en los dos binarios.  Arranca en la accion 1
+// (flotando), y nace a 150..300 de su punto de aparicion (+52) en un angulo
+// al azar de 120 a 240 grados; ese punto queda tambien como destino (+368).
+static void Tamachan_Create(char *o)
+{
+    *(int *)(o + 96) = rand() % 50 + 50;           // lifetime
+    o[260] = 1;                                    // estado: flotando
+    *(float *)(o + 216) = -30.0f;                  // 0xC1F00000
+    FUN_0043e820((int)o, (unsigned char)o[260]);   // SetAction
+    *(float *)(o + 192) = 0.0f;                    // velocidad
+    *(float *)(o + 196) = 0.0f;
+    *(float *)(o + 200) = 0.0f;
+    *(float *)(o + 232) = 1.0f;                    // Light
+    *(float *)(o + 236) = 1.0f;
+    *(float *)(o + 240) = 1.0f;
+    for (int i = 0; i < 3; ++i) {
+        ((float *)(o + 368))[i] = ((float *)(o + 16))[i];
+        ((float *)(o + 52))[i]  = ((float *)(o + 16))[i];
+    }
+    float offset[3], angle[3], matrix[12], rotated[3];
+    int r = rand();
+    offset[0] = 0.0f;
+    offset[1] = (float)(-150.0 - (double)(r % 150));
+    offset[2] = 0.0f;
+    angle[0] = 0.0f;
+    angle[1] = 0.0f;
+    angle[2] = (float)((double)(rand() % 120) + 180.0 - 60.0);
+    Matrix_BuildFromEuler(angle, matrix);          // AngleMatrix
+    Vector_Rotate(offset, matrix, rotated);        // VectorRotate
+    for (int i = 0; i < 3; ++i) {
+        ((float *)(o + 368))[i] = rotated[i] + ((float *)(o + 52))[i];
+        ((float *)(o + 16))[i]  = ((float *)(o + 368))[i];
+    }
+}
+
 // IDA: FUN_00460dc0
 float * __cdecl
 Effect_Create(int param_1,float *param_2,float *param_3,float *param_4,float *param_5,float *param_6,
@@ -138,6 +175,10 @@ LAB_00460dd8:
   pfVar17[0x30] = 0.0;
   pfVar17[0x31] = 0.0;
   pfVar17[0x32] = 0.0;
+  if (param_1 == 0xc1) {                     // Tamachan (0.98j case 183)
+    Tamachan_Create((char *)pfVar17);
+    return pfVar8;
+  }
   pfVar4 = (float*)DAT_07cf1ffc;
   pfVar3 = (float*)DAT_07abf5d8;
   iVar9 = DAT_055c9bc8;
@@ -4206,4 +4247,51 @@ float* __cdecl FUN_00460dc0(int type, float* p1, float* p2, float* p3, float* p4
                             float* p5, float* p6, float* p7, byte flag)
 {
   return Effect_Create(type, p1, p2, p3, p4, p5, p6, p7, flag);
+}
+
+// ── Tamachan: control por red (opcode 0x0B, tipo de evento 2) ────────────────
+// IDA 0.98j sub_46C220: apaga todo Tamachan vivo.
+void __cdecl Tamachan_Clear(void)
+{
+  for (int i = 0; i < 200; ++i) {
+    char *o = &DAT_07b11670[i * 0x1bc];
+    if (*o && *(short *)(o + 2) == 0xc1) {
+      *o = 0;
+      *(int *)(o + 96) = -1;
+    }
+  }
+}
+
+// IDA 0.98j sub_46C190: lo hace aparecer en el puente de Lorencia (tile
+// 162,120), mirando al heroe.  El 0.98j pasa el mismo vector como Angle y
+// como Light; CreateEffect pisa la luz con (1,1,1) igual.
+void __cdecl Tamachan_Spawn(void)
+{
+  float pos[3];
+  float angle[3];
+  pos[0] = 16284.0f;
+  pos[1] = 12031.0f;
+  pos[2] = FUN_004f7500(16284.0f, 12031.0f);
+  angle[0] = 0.0f;
+  angle[1] = 0.0f;
+  angle[2] = 0.0f;
+  if (DAT_07abf5d8)   // guard del port: el binario asume Hero
+    angle[2] = FUN_0043e050(16284.0f, 12031.0f,
+                            *(float *)((char *)DAT_07abf5d8 + 16),
+                            *(float *)((char *)DAT_07abf5d8 + 20));
+  Effect_Create(0xc1, pos, angle, angle, (float *)0, (float *)0, (float *)-1,
+                (float *)0, 0);
+}
+
+// IDA 0.98j sub_46C250: fin del evento -- cada Tamachan pasa al estado 3
+// (se hunde) y le quedan 10 frames.
+void __cdecl Tamachan_Dismiss(void)
+{
+  for (int i = 0; i < 200; ++i) {
+    char *o = &DAT_07b11670[i * 0x1bc];
+    if (*o && *(short *)(o + 2) == 0xc1) {
+      *(int *)(o + 96) = 10;
+      o[260] = 3;
+    }
+  }
 }
