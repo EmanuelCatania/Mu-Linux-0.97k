@@ -292,7 +292,9 @@ void __cdecl FUN_00449840(int param_1, int param_2, int param_3)
             int *puVar1 = (int*)*piVar4;
             if (puVar1 != nullptr) {
                 FUN_004086e0((int)puVar1, 0, 0);
-                (**(void (__cdecl**)(int))*puVar1)(1);
+                // IDA: (**v8)(v8, 1) -- dtor thiscall de la vtable (sub_45AAA0).
+                // El port lo llamaba como cdecl sin `this`.
+                FUN_0045aaa0_impl(puVar1, 1);
                 *piVar4 = 0;
             }
             piVar4 += 6;
@@ -301,7 +303,7 @@ void __cdecl FUN_00449840(int param_1, int param_2, int param_3)
     if ((param_3 != 0) && (*(int*)(param_3 + 0x14) != 0)) {
         int *puVar1 = (int*)*(int*)(param_3 + 0x14);
         FUN_004086e0((int)puVar1, 0, 0);
-        (**(void (__cdecl**)(int))*puVar1)(1);
+        FUN_0045aaa0_impl(puVar1, 1);   // IDA: (**v9)(v9, 1)
         *(int*)(param_3 + 0x14) = 0;
     }
 }
