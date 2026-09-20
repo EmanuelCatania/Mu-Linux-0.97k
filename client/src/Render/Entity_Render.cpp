@@ -672,6 +672,9 @@ FUN_00505a10(int param_1,int param_2,undefined4 param_3,float *param_4,float par
     }
     FUN_004404e0(this_,(int)puVar2,(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
                  (float *)(param_1 + 0x130),param_10);
+    // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_MeshDivine.cpp).
+    // Va aca, entre la transformacion y el dibujado, igual que en 5.2.
+    DivineSkirt_Apply(param_1, param_2, (int)param_3, this_);
     FUN_00504b50(param_1,param_2,param_4,param_5,param_6,param_7,param_11,param_12);
   }
   return;
