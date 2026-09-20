@@ -206,12 +206,28 @@ void __cdecl Game_MainLoop(HDC param_1)
     {
         SYSTEMTIME st;
         GetLocalTime(&st);
-        // Formato: "Screen MM DD HH MM - YYYY" (25 chars + '\0')
-        crt_sprintf((char*)&DAT_083a4174, "Screen %02d %02d %02d %02d - %04d",
+        // IDA 0x525D40 L308:
+        //   sprintf(GrabFileName, "Screen(%02d_%02d-%02d_%02d)-%04d.jpg",
+        //           st.wMonth, st.wDay, st.wHour, st.wMinute, GrabScreen);
+        //
+        // El port tenia "Screen %02d %02d %02d %02d - %04d" con st.wYear. Dos
+        // bugs: (a) sin la extension .jpg, y el archivo lo escribe WriteJpeg
+        // (FUN_00529000, calidad 100), asi que quedaba un JPEG sin extension
+        // que el explorador no reconocia; (b) con el ANO en vez de GrabScreen
+        // el nombre solo cambiaba por minuto, asi que dos capturas en el mismo
+        // minuto se pisaban. GrabScreen (DAT_083a42f0) lo incrementa
+        // SaveScreen modulo 10000.
+        //
+        // No lleva ruta: el original guarda en la raiz del cliente.
+        crt_sprintf((char*)&DAT_083a4174, "Screen(%02d_%02d-%02d_%02d)-%04d.jpg",
                     (int)st.wMonth, (int)st.wDay, (int)st.wHour,
-                    (int)st.wMinute, (int)st.wYear);
+                    (int)st.wMinute, (int)DAT_083a42f0);
     }
-    crt_sprintf(nameBuf, (const char*)&DAT_07d4b708);
+    // IDA L309: sprintf(strText, GlobalText[459], GrabFileName).
+    // GlobalText[459] es "%s: La captura fue guardada." -- lleva un %s con el
+    // nombre del archivo. El port no pasaba el argumento, asi que el %s
+    // consumia un valor cualquiera de la pila.
+    crt_sprintf(nameBuf, (const char*)&DAT_07d4b708, (const char*)&DAT_083a4174);
 
     // Build window title: serverName + " " + charName
     {
@@ -228,7 +244,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         // apunta a bytes no-inicializados; wsprintfA no trunca.
         char srvTrim[32];  strncpy_s(srvTrim, sizeof(srvTrim), serverName, 30); srvTrim[31] = 0;
         char chrTrim[32];  strncpy_s(chrTrim, sizeof(chrTrim), charName,   30); chrTrim[31] = 0;
-        wsprintfA(titleBuf, "%s %s", srvTrim, chrTrim);
+        wsprintfA(titleBuf, " [%s / %s]", srvTrim, chrTrim);   // IDA L334
         // Append titleBuf to nameBuf
         int tlen = (int)strlen(titleBuf);
         int nlen = (int)strlen(nameBuf);
