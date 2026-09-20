@@ -1828,6 +1828,33 @@ void __cdecl Player_ProcessInput(void)
                             int srcX = *(int*)(ent + 0x388);
                             int srcY = *(int*)(ent + 0x38c);
 
+                            // IDA 0x4ACEF0 L1344-1381, dos gates que faltaban.
+                            //
+                            // 1) Mientras el heroe camina (c+748), el inicio
+                            //    cacheado (c+904/908) tiene que estar a menos de
+                            //    2 tiles de su posicion real; si no, se saltea el
+                            //    click (solo ++MouseUpdateTime).  Sin esto el
+                            //    port recalculaba la ruta desde un tile que el
+                            //    heroe ya habia dejado y mandaba un movimiento
+                            //    que arranca en otro lado.
+                            // 2) Si el destino es el tile donde ya arranca la
+                            //    ruta y sigue caminando, no se re-rutea: solo
+                            //    MouseUpdateTime = 0 (IDA LABEL_389).
+                            {
+                                const int heroGX = (int)(*(float*)(ent + 0x10) * 0.01f);
+                                const int heroGY = (int)(*(float*)(ent + 0x14) * 0.01f);
+                                const bool bMoving = (*(unsigned char*)(ent + 0x2ec) != 0);
+                                if (bMoving) {
+                                    if (abs(srcX - heroGX) >= 2) goto end_tick_inc;
+                                    if (abs(srcY - heroGY) >= 2) goto end_tick_inc;
+                                }
+                                if (bMoving &&
+                                    srcX == (int)DAT_07e016c0 && srcY == (int)DAT_07e016c4) {
+                                    DAT_07e11d28 = 0;          // IDA LABEL_389
+                                    goto end_tick_inc;
+                                }
+                            }
+
                             { char d[160]; wsprintfA(d,
                                 "PIT pathfind src=(%d,%d) dst=(%d,%d) terrAttr=%02X dontMove=%d",
                                 srcX, srcY, (int)DAT_07e016c0, (int)DAT_07e016c4,
