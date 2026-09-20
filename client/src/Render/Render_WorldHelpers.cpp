@@ -557,14 +557,6 @@ extern "C" void Net_SendNpcTalkClose(void) {
     SendNpcPacket(pkt, 3);
 }
 
-// 0x97 — cerrar ventana de evento / Golden Archer
-// Wire: [C1][03][97]  (Protocol.cpp case 0x97; lo manda
-// CheckGoldenArcherWindow 0x4E7AC0 al click en el botón de cerrar)
-extern "C" void Net_SendEventWindowClose(void) {
-    BYTE pkt[4] = { 0xC1, 0x03, 0x97, 0 };
-    SendNpcPacket(pkt, 3);
-}
-
 // 0x32 PMSG_ITEM_BUY_RECV — buy item from shop
 // Wire: [C1][04][32][slot]
 extern "C" void Net_SendItemBuy(BYTE shopSlot) {
