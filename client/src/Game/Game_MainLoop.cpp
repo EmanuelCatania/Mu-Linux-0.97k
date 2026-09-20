@@ -218,9 +218,30 @@ void __cdecl Game_MainLoop(HDC param_1)
         // minuto se pisaban. GrabScreen (DAT_083a42f0) lo incrementa
         // SaveScreen modulo 10000.
         //
-        // No lleva ruta: el original guarda en la raiz del cliente.
-        crt_sprintf((char*)&DAT_083a4174, "Screen(%02d_%02d-%02d_%02d)-%04d.jpg",
-                    (int)st.wMonth, (int)st.wDay, (int)st.wHour,
+        // DESVIACION DELIBERADA (pedido del usuario, 2026-09-20): el binario
+        // guarda en la RAIZ del cliente -- GrabFileName no lleva ruta.  Para
+        // no ensuciarla, las capturas van a "Screenshots/".  La carpeta se
+        // crea una sola vez por sesion y, si no se puede crear, se cae a la
+        // raiz, que es el comportamiento original.
+        //
+        // Se usa barra normal a proposito: fopen la acepta en Windows y es lo
+        // que ya usa el resto del archivo (ver Monster_SaveSetBase mas abajo).
+        //
+        // SCREENSHOT_DIR_DEVIATION en 0 devuelve el comportamiento de IDA.
+        #define SCREENSHOT_DIR_DEVIATION 1
+        const char* shotDir = "";
+#if SCREENSHOT_DIR_DEVIATION
+        {
+            static int s_dirReady = -1;   // -1 sin probar, 1 lista, 0 fallback
+            if (s_dirReady < 0) {
+                s_dirReady = (CreateDirectoryA("Screenshots", NULL) != 0 ||
+                              GetLastError() == ERROR_ALREADY_EXISTS) ? 1 : 0;
+            }
+            if (s_dirReady == 1) shotDir = "Screenshots/";
+        }
+#endif
+        crt_sprintf((char*)&DAT_083a4174, "%sScreen(%02d_%02d-%02d_%02d)-%04d.jpg",
+                    shotDir, (int)st.wMonth, (int)st.wDay, (int)st.wHour,
                     (int)st.wMinute, (int)DAT_083a42f0);
     }
     // IDA L309: sprintf(strText, GlobalText[459], GrabFileName).
