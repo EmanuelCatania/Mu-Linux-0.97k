@@ -915,15 +915,6 @@ void __cdecl Player_ProcessInput(void)
     // 2026-05-05: el gate se movió a DESPUÉS del walker, así el walker siempre avanza
     // incluso con DAT_07d78094 seteado (mouse sobre la barra de skills). Sin esto,
     // hover over skill icon froze hero mid-walk with looping anim.
-    // [DIAG TEMP #2] por qué se bloquea el input (gate 717) en un frame con click. REMOVER al cerrar #2.
-    if (DAT_083a4124 || DAT_083a42c4 || DAT_083a413c) {
-        char d[220]; wsprintfA(d,
-            "MOVEBLOCK editFlag=%d mouseOnWin=%d invOpen=%d skillMenu=%d mouse=(%d,%d) -> %s",
-            (int)DAT_07e11d30, (int)g_MouseOnWindow, (int)DAT_07eaa117, (int)DAT_07db870c,
-            (int)DAT_083a427c, (int)DAT_083a4278,
-            (DAT_07e11d30 != 0 || g_MouseOnWindow != 0) ? "BLOCKED@717" : "reaches-clickblock");
-        DbgLogPublic(d);
-    }
     if (DAT_07e11d30 != 0 || g_MouseOnWindow != 0)
         goto end_tick;
 
@@ -934,16 +925,6 @@ void __cdecl Player_ProcessInput(void)
     // Ahora: si idle, aceptar clicks de inmediato; si moviendo, mantener el
     // gate original para no spamear el server con paths intermedios.
     bool walkerIdle = (((unsigned char*)DAT_07abf5d8)[0x356] == 0);
-    // [DIAG TEMP #2c] inputs del gate de debounce (736) en frame con click. REMOVER al cerrar #2.
-    if (DAT_083a4124 || DAT_083a42c4 || DAT_083a413c) {
-        bool gatePass = DAT_00559bec <= DAT_07e11d28 && DAT_07e11dc0 == '\0';
-        char dg[200]; wsprintfA(dg,
-            "MOVEDEB invOpen=%d walkerIdle=%d 559bec=%d 11d28=%d 11dc0=%d wpcnt=%d -> %s",
-            (int)DAT_07eaa117, (int)walkerIdle, (int)DAT_00559bec, (int)DAT_07e11d28,
-            (int)DAT_07e11dc0, (int)((unsigned char*)DAT_07abf5d8)[0x356],
-            gatePass ? "PASS" : "BLOCKED@debounce");
-        DbgLogPublic(dg);
-    }
     // [FIX #2 2026-06-30] DAT_07e11dc0 ("movement lock flag B") — per IDA solo lo
     // escriben Attack (0x49CC50) y Chat_InputTick (0x4B6630). Attack es stub vacío
     // en nuestro build y el port de Chat_InputTick omitió ese write, así que NADA
@@ -1200,16 +1181,6 @@ void __cdecl Player_ProcessInput(void)
             DAT_083a42c4 = 0;
         }
 
-        // [DIAG TEMP #2b] inputs de bHoverActive + hover-targets en frame con click. REMOVER al cerrar #2.
-        if (bClickHeld || bClickLatched || bMousePush) {
-            char dh[256]; wsprintfA(dh,
-                "MOVEHOVER invOpen=%d push=%d held=%d latch=%d cycCons=%d startWin=%d mouseOnWin=%d hovActive=%d c50=%d c4c=%d c54=%d",
-                (int)DAT_07eaa117, (int)bMousePush, (int)bClickHeld, (int)bClickLatched,
-                (int)s_clickCycleConsumed, (int)s_clickStartedOnWindow, (int)g_MouseOnWindow,
-                (int)bHoverActive, (int)SelectedCharacter, (int)SelectedNpc, (int)SelectedOperate);
-            DbgLogPublic(dh);
-        }
-
         // 2026-05-05: si el user NO está clickeando activamente (no held, no
         // latched), forzar DAT_083a42c4=0 también. Sin esto, un click anterior
         // que no se consumió bien puede dejar este flag activo después de
@@ -1217,40 +1188,6 @@ void __cdecl Player_ProcessInput(void)
         if (!bClickHeld && !bClickLatched) {
             DAT_083a42c4 = 0;
         }
-        // [DIAG 2026-04-28] Una vez por segundo: loguea todo lo que afecta al caminar
-        {
-            static DWORD s_lastDiag = 0;
-            DWORD now = GetTickCount();
-            if (now - s_lastDiag > 1000) {
-                s_lastDiag = now;
-                unsigned char *ent_dbg = (unsigned char*)DAT_07abf5d8;
-                if (ent_dbg) {
-                    char dbg[320];
-                    float wx = *(float*)(ent_dbg + 0x10);
-                    float wy = *(float*)(ent_dbg + 0x14);
-                    float wz = *(float*)(ent_dbg + 0x18);
-                    float fa = *(float*)(ent_dbg + 0x24);
-                    int wxi = (int)wx, wyi = (int)wy, wzi = (int)wz, fai = (int)fa;
-                    int wxf = (int)((wx - wxi) * 100), wyf = (int)((wy - wyi) * 100);
-                    int wzf = (int)((wz - wzi) * 100), faf = (int)((fa - fai) * 10);
-                    wsprintfA(dbg,
-                        "PIT click=%d hov=%d tgt=%d,%d cwp=%d,%d wp=%d/%d "
-                        "move=%d 2ec=%d ANIM=0x%02x|0x%02x WPOS=(%d.%02d,%d.%02d,%d.%02d) FACE=%d.%d "
-                        "h50=%d h4c=%d h48=%d c70=%d",
-                        (int)DAT_083a4124, (int)bHoverActive,
-                        (int)ent_dbg[0x306], (int)ent_dbg[0x307],
-                        (int)*(int*)(ent_dbg + 0x388), (int)*(int*)(ent_dbg + 0x38c),
-                        (int)ent_dbg[0x354], (int)ent_dbg[0x356],
-                        (int)ent_dbg[0x305], (int)ent_dbg[0x2ec],
-                        (int)ent_dbg[0x105], (int)ent_dbg[0x106],
-                        wxi, wxf, wyi, wyf, wzi, wzf, fai, faf,
-                        (int)SelectedCharacter, (int)SelectedNpc,
-                        (int)SelectedItem, (int)DAT_00559c70);
-                    DbgLogPublic(dbg);
-                }
-            }
-        }
-
 
         // IDA 0x004ACEF0 L599-604: si NO hay click (v32 = MouseLButtonPush ||
         // MouseLButton) y el auto-ataque no esta enganchado, el original sale
@@ -1405,15 +1342,6 @@ void __cdecl Player_ProcessInput(void)
                     // queued as attack targets without Ctrl after Guild War.
                     if ((char)canAct == '\0') {
                         goto end_tick_inc;
-                    }
-                    {
-                        // 2026-05-07 diag — keep until hover bug resolved.
-                        char dbg[200];
-                        wsprintfA(dbg, "PIT MOB CLICK FIRED: c50=%d bMousePush=%d bClickHeld=%d bClickLatched=%d 4124=%d 42c4=%d 413c=%d",
-                            (int)SelectedCharacter, (int)bMousePush,
-                            (int)bClickHeld, (int)bClickLatched,
-                            (int)DAT_083a4124, (int)DAT_083a42c4, (int)DAT_083a413c);
-                        DbgLogPublic(dbg);
                     }
                     BYTE* hoverEnt = (BYTE*)(uintptr_t)DAT_07abf5d0
                                    + (uintptr_t)SelectedCharacter * 0x394;
@@ -1778,9 +1706,6 @@ void __cdecl Player_ProcessInput(void)
                     }
                 }
             }
-            { char d[64]; wsprintfA(d, "PIT GroundClick! 559c4c=%d c48=%d c54=%d",
-                (int)SelectedNpc, (int)SelectedItem, (int)SelectedOperate);
-              DbgLogPublic(d); }
             {
                 SHORT shift = GetAsyncKeyState(0x10);
                 bool shiftHeld = ((char)((unsigned short)shift >> 8) == -0x80);
@@ -1794,13 +1719,6 @@ void __cdecl Player_ProcessInput(void)
                     FUN_004f9ac0('\x01');         // iterate tiles + raycast
 
                     char cHit = (DAT_07eab1fc != 0) ? '\x01' : '\0';
-
-                    { char d[128]; wsprintfA(d,
-                        "PIT pickRay hit=%d picked=(%d,%d) DAT_080ab288=%08x",
-                        (int)cHit,
-                        (int)*(float*)&DAT_080ab288, (int)*(float*)&DAT_080ab28c,
-                        DAT_080ab288);
-                      DbgLogPublic(d); }
 
                     if (cHit != '\0') {
                         // BUG-FIX 2026-04-30: el "fix 2026-04-28" estaba MAL.
@@ -1817,12 +1735,6 @@ void __cdecl Player_ProcessInput(void)
                         float pickWY = *(float*)&DAT_080ab28c;
                         DAT_07e016c0 = (DWORD)(int)pickWX;
                         DAT_07e016c4 = (DWORD)(int)pickWY;
-                        { char d[128]; wsprintfA(d,
-                            "PIT pickGrid wx=%d wy=%d gridX=%d gridY=%d",
-                            (int)pickWX, (int)pickWY,
-                            (int)DAT_07e016c0, (int)DAT_07e016c4);
-                          DbgLogPublic(d); }
-
                         // DAT_07e11d64 es `DontMove` (0x07E11D64 en el binario), NO un
                         // "walkable": es COSMETICO, sólo elige el sprite del cursor
                         // (10 = prohibido / 3 = mover) en el render del puntero. No
@@ -1882,22 +1794,11 @@ void __cdecl Player_ProcessInput(void)
                                 }
                             }
 
-                            { char d[160]; wsprintfA(d,
-                                "PIT pathfind src=(%d,%d) dst=(%d,%d) terrAttr=%02X dontMove=%d",
-                                srcX, srcY, (int)DAT_07e016c0, (int)DAT_07e016c4,
-                                terrAttr, (int)DAT_07e11d64);
-                              DbgLogPublic(d); }
-
                             unsigned int ok = Path_FindRoute(srcX, srcY,
                                                             DAT_07e016c0, DAT_07e016c4,
                                                             ent + 0x354, 0.0f);
-                            { char d[80]; wsprintfA(d,
-                                "PIT pathfind result ok=%d wp_count=%d",
-                                (int)(char)ok, (int)*(unsigned char*)(ent + 0x356));
-                              DbgLogPublic(d); }
                             if ((char)ok != '\0') {
                                 *(unsigned char*)(ent + 0x2ed) = 0;
-                                DbgLogPublic("PIT calling Combat_SendMovePathPacket (send move)");
                                 Combat_SendMovePathPacket((int)ent, (int)ent);
                                 goto end_tick_inc;
                             }
