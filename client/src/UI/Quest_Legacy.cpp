@@ -111,11 +111,21 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
             crt_sprintf(buf, "%s x %d", name, nCount);
             RenderText(510, (int)sy, buf, 0, 0, nullptr);
         } else {
-            // Desviacion conocida del binario: el DLL de inyeccion parchea el
-            // byte de 0x004032A8 ("Fix Quest Item Preview") para que este
-            // Level sea 0 en vez de -1, porque con -1 la vista previa del item
-            // sale mal.  Se deja fiel a IDA.
-            RenderItem3D(480.0f, sy, 20.0f, 20.0f, nType, -1, 0, 0, false);
+            // DESVIACION DELIBERADA (pedido del usuario, 2026-09-20).
+            //
+            // IDA pasa Level = -1 aca (`push 0FFFFFFFFh` en 0x004032A5).  Rio
+            // abajo, RenderObjectScreen extrae el +N con `(Level >> 3) & 0xF`,
+            // y para -1 eso da 15: la vista previa se dibuja como si el item
+            // fuera +15, o sea con el doble render del glow (flags 0x44/0x48).
+            //
+            // El DLL de inyeccion parchea exactamente ese byte --
+            // `SetByte(0x004032A8, 0x0)`, "Fix Quest Item Preview" en
+            // Patchs.cpp:100 -- para que el Level sea 0.  Replicamos el parche
+            // con el mismo valor.  Poner QUEST_ITEM_PREVIEW_DLL_FIX en 0
+            // devuelve el comportamiento de IDA.
+            #define QUEST_ITEM_PREVIEW_DLL_FIX 1
+            RenderItem3D(480.0f, sy, 20.0f, 20.0f, nType,
+                         QUEST_ITEM_PREVIEW_DLL_FIX ? 0 : -1, 0, 0, false);
         }
         sy += _DAT_00552464;
     }
