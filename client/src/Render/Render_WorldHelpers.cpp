@@ -109,10 +109,21 @@ void __cdecl FUN_00500aa0(void)
                 }
 
                 // Type 175: random fire-cloud sparkle.
+                //
+                // IDA RenderBoids L61:
+                //   CreateSprite(1150, v0 - 86, 1.0, v14, (DWORD)(v0 - 90), 0.0, 0);
+                //
+                // El port llamaba a Particle_Spawn, que es OTRA funcion con
+                // otra firma, y para que los argumentos entraran metia un
+                // nullptr como Position pasando la posicion real en el slot
+                // del Angle.  Particle_Spawn hace `*param_2` sin guard, asi
+                // que esto crasheaba leyendo la direccion 0 apenas aparecia
+                // una entidad de tipo 175 (reporte: al entrar a Noria).
                 if (entType == 175) {
                     float scale = (float)((rand() % 32 + 64) * 0.01);
                     float color[3] = { scale * 0.2f, scale * 0.4f, scale * 0.4f };
-                    Particle_Spawn(1150, nullptr, v0 - 86, color, (int)(uintptr_t)(v0 - 90), 1.0f, 0);
+                    FUN_004795c0(1150, v0 - 86, 1.0f, color,
+                                 (int)(uintptr_t)(v0 - 90), 0.0f, 0);
                 }
 
                 // Type 184: dual-side flame jets.
@@ -124,12 +135,20 @@ void __cdecl FUN_00500aa0(void)
                     float scale  = (float)((rand() % 32 + 128) * 0.01);
                     float color[3] = { scale, scale * 0.2f, 0.0f };
 
+                    // IDA L80-95: TransformPosition(v4, flt_6970ACC, ...) y
+                    // CreateSprite(1150, Position, 0.1, Light, owner, 0.0, 0).
+                    // Mismos dos errores que en el caso 175, mas un nullptr
+                    // como matriz de hueso: Vector_Transform la deferencia, o
+                    // sea era otro crash latente.  flt_6970ACC es nuestro
+                    // DAT_06970acc (g_BoneScratch + 0x30).
                     // Left jet
-                    BMD_TransformPosition(model, nullptr, locOffsetL, Position, 1);
-                    Particle_Spawn(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
+                    BMD_TransformPosition(model, (float*)&DAT_06970acc, locOffsetL, Position, 1);
+                    FUN_004795c0(1150, Position, 0.1f, color,
+                                 (int)(uintptr_t)(v0 - 90), 0.0f, 0);
                     // Right jet
-                    BMD_TransformPosition(model, nullptr, locOffsetR, Position, 1);
-                    Particle_Spawn(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
+                    BMD_TransformPosition(model, (float*)&DAT_06970acc, locOffsetR, Position, 1);
+                    FUN_004795c0(1150, Position, 0.1f, color,
+                                 (int)(uintptr_t)(v0 - 90), 0.0f, 0);
                 }
 
                 // World != 10: render shadow on terrain.
