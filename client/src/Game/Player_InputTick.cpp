@@ -1252,6 +1252,33 @@ void __cdecl Player_ProcessInput(void)
         }
 
 
+        // IDA 0x004ACEF0 L599-604: si NO hay click (v32 = MouseLButtonPush ||
+        // MouseLButton) y el auto-ataque no esta enganchado, el original sale
+        // por LABEL_390 SIN tocar MouseUpdateTime:
+        //     if ( (!m_bAutoAttack || World == 6 || Attacking != 1
+        //           || SelectedCharacter == -1) && !v32 )
+        //     { flt_7E11D50 = 0.0; flt_7E11D4C = WorldTime; goto LABEL_390; }
+        //
+        // Faltaba, y es la causa de "hay que clickear varias veces para
+        // caminar".  El `MouseUpdateTime = 0` de LABEL_190 (mas abajo) corria
+        // en CADA frame en que el gate de debounce estaba abierto, aunque no
+        // hubiera click, asi que el contador quedaba en diente de sierra
+        // 0..max en vez de saturar en max.  Solo el frame exacto en que
+        // llegaba a max aceptaba un click: con MouseUpdateTimeMax = 3*wp+4
+        // (31 tras una ruta de 9 waypoints) eso es 1 de cada 31 frames.
+        {
+            const bool bHasClick = (bMousePush || bClickHeld || bClickLatched);
+            const bool bAutoAttackEngaged = (DAT_00559c5c != 0)
+                                         && (DAT_0055a7ac != 6)
+                                         && (g_Attacking == 1)
+                                         && (SelectedCharacter != -1);
+            if (!bAutoAttackEngaged && !bHasClick) {
+                _DAT_07e11d50 = 0.0f;
+                _DAT_07e11d4c = DAT_05826e08;      // WorldTime
+                goto end_tick_inc;                 // IDA: goto LABEL_390
+            }
+        }
+
         // (Walker movido arriba del gate — ya corrió al inicio del tick.)
         unsigned char *ent = (unsigned char*)DAT_07abf5d8;
 
