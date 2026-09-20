@@ -2025,27 +2025,127 @@ static void __fastcall GuildLB_AddMember(DWORD* self, int /*edx*/,
         self[34] = (DWORD)(((FnInt)vt[19])(self) - (int)self[35]);
 }
 
-// ── slot 29 — sub_4125F0 — deleting-dtor del sub-objeto ─────────────────────
-// TODO(sin portar): `sub_412610` (el teardown real de la lista) no esta
-// portado; aca queda solo el `if (flag & 1) delete this`, que es la parte
-// observable.  Este slot no se alcanza desde la ruta de render.
-static void* __fastcall GuildLB_scalarDelete(DWORD* self, int /*edx*/, char flag)
+// Libera los nodos de una lista doble circular con centinela (next en +0) y
+// despues el centinela.  Es lo que hacen los dos bucles de sub_411360 de los
+// teardowns del widget sobre las listas de +0x5C y +0x7C.
+static void GuildLB_freeList(DWORD* head)
 {
+    if (!head) return;
+    DWORD* n = (DWORD*)head[0];
+    while (n && n != head) {
+        DWORD* next = (DWORD*)n[0];
+        free(n);
+        n = next;
+    }
+    free(head);
+}
+
+// IDA: sub_40EAE0 (0x0040EAE0) / sub_412610 (0x00412610) -- teardown del
+// widget: vacia la lista de lineas (+0x5C) y la de entradas (+0x7C), pone el
+// scroll en 0 y libera los centinelas; al final la cabeza del map de la base
+// (+0x08).  Los nodos del std::map de la base no se recorren: el port usa una
+// lista propia en su lugar (ver sub_410E50 en la auditoria).
+static void GuildLB_teardown(DWORD* self)
+{
+    GuildLB_freeList((DWORD*)self[23]);
+    self[23] = 0; self[24] = 0;
+    self[34] = 0;
+    GuildLB_freeList((DWORD*)self[31]);
+    self[31] = 0; self[32] = 0;
+    if (self[2]) { free((void*)self[2]); self[2] = 0; }
+}
+
+// slot 0 — IDA: sub_40EAC0 (0x0040EAC0) — dtor: sub_40EAE0 + delete si flag&1.
+static void* __fastcall GuildLB_dtor(DWORD* self, int /*edx*/, char flag)
+{
+    GuildLB_teardown(self);
     if (flag & 1) free(self);
     return self;
+}
+
+// ── slot 29 — IDA: sub_4125F0 — deleting-dtor: sub_412610 + delete si flag&1.
+static void* __fastcall GuildLB_scalarDelete(DWORD* self, int /*edx*/, char flag)
+{
+    GuildLB_teardown(self);
+    if (flag & 1) free(self);
+    return self;
+}
+
+// slot 9 — IDA: sub_412180 (0x00412180) — teclas de la lista de guild.
+// this[4] trae la tecla: 7 -> slot 27; 12 -> sube una pagina (slot 12 con
+// -100) y lleva el cursor a la primera entrada; 13/14 mueven el cursor
+// (this[28]) una fila arriba/abajo y ajustan el scroll para que quede visible.
+// Solo con seleccion activa (this[26] == 1) y lista no vacia.
+static int __fastcall GuildLB_keyHandler(DWORD* self)
+{
+    typedef void (__fastcall *FnV)(DWORD*);
+    typedef int  (__fastcall *FnScroll)(DWORD*, int, int);
+    void** vt = (void**)*self;
+    const int key = (int)self[4];
+
+    switch (key) {
+    case 7:
+        ((FnV)vt[27])(self);
+        return 0;
+    case 12: {
+        ((FnScroll)vt[12])(self, 0, -100);
+        if (self[26] != 1 || !self[24]) return 0;
+        DWORD* head = (DWORD*)self[23];
+        self[28] = head[1];                       // cursor = ultima (head->prev)
+        return 0;
+    }
+    case 13:
+    case 14: {
+        if (self[26] != 1 || !self[24]) return 0;
+        DWORD* head = (DWORD*)self[23];
+        if (key == 13) {
+            DWORD* cur = (DWORD*)self[28];
+            if (cur == head) return 0;
+            DWORD next = cur[0];
+            self[28] = next;
+            if (next == (DWORD)(uintptr_t)head)
+                self[28] = ((DWORD*)next)[1];
+        } else {
+            DWORD* cur = (DWORD*)self[28];
+            if ((DWORD)(uintptr_t)cur == head[0]) return 0;
+            self[28] = cur[1];
+        }
+        if (self[24] <= self[35]) return 0;
+
+        // Indice del cursor contando desde la primera entrada.
+        int idx = 0;
+        DWORD it = head[0];
+        self[25] = it;
+        if (it != (DWORD)(uintptr_t)head) {
+            do {
+                if (self[28] == it) break;
+                ++idx;
+                it = *(DWORD*)self[25];
+                self[25] = it;
+            } while (it != (DWORD)(uintptr_t)head);
+        }
+        const int visible = (int)self[35];
+        const int scroll  = (int)self[34];
+        if (idx < scroll + visible) {
+            if (idx < scroll)
+                ((FnScroll)vt[12])(self, 0, scroll - idx);
+            return 0;
+        }
+        ((FnScroll)vt[12])(self, 0, scroll - (idx - visible + 1));
+        return 0;
+    }
+    default:
+        return 0;
+    }
 }
 
 // ---------------------------------------------------------------------------
 // Vtable del widget de guild — off_5526EC.  Los slots que el binario comparte
 // con off_5525CC apuntan a la misma implementacion que el chat.
 //
-// TODO(sin portar): slot 0 (sub_40EAC0, dtor) y slot 9 (sub_412180, key
-// handler).  Ninguno esta en la ruta de render ni en la de datos; quedan con la
-// implementacion del chat para no dejar el slot en NULL, y anotados aca porque
-// NO son equivalentes en el binario.
 // ---------------------------------------------------------------------------
 static ChatLB_VTable s_GuildLB_VTable = { {
-    /*0x00*/ (void*)ChatLB_dtor,            // != real: sub_40EAC0  (TODO)
+    /*0x00*/ (void*)GuildLB_dtor,           // sub_40EAC0
     /*0x04*/ (void*)ChatLB_setState,
     /*0x08*/ (void*)ChatLB_setColor1,
     /*0x0C*/ (void*)ChatLB_setColor2,
@@ -2054,7 +2154,7 @@ static ChatLB_VTable s_GuildLB_VTable = { {
     /*0x18*/ (void*)ChatLB_nullsub,
     /*0x1C*/ (void*)ChatLB_handleScrollIn,
     /*0x20*/ (void*)ChatLB_nullsub,
-    /*0x24*/ (void*)ChatLB_keyHandler,      // != real: sub_412180  (TODO)
+    /*0x24*/ (void*)GuildLB_keyHandler,     // sub_412180
     /*0x28*/ (void*)ChatLB_clearList,       // sub_4118D0 — compartido
     /*0x2C*/ (void*)ChatLB_nullsub2,
     /*0x30*/ (void*)GuildLB_scrollByN,      // sub_4119A0

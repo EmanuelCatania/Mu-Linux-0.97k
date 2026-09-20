@@ -2206,6 +2206,7 @@ extern DWORD   DAT_07ea5288;
 extern DWORD   DAT_07ea9844;
 extern char    DAT_083a2f78[10 * 0x1bc];   // Ambient particle pool: 10 slots × 0x1bc bytes
 extern float   _DAT_00590af0;
+extern DWORD   g_PhysicsManager[4];   // IDA: g_PhysicsManager (0x083A4338)
 extern float   DAT_00590af4;   // 3D sound sin component (updated by Sound_UpdateChannel3D_Tick)
 extern float   DAT_00590af8;   // 3D sound cos component (updated by Sound_UpdateChannel3D_Tick)
 extern float   DAT_00590afc;   // cloth wind Z

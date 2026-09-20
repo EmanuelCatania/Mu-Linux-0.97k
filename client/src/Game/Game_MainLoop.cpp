@@ -149,9 +149,11 @@ void __cdecl Game_MainLoop(HDC param_1)
         if (DAT_005615c0 == 4) { Game_EnterWorldTick();  CHK("ML/post_EnterWorld"); }
         if (DAT_005615c0 == 5) { Game_CharSelectTick();  CHK("ML/post_CharSelectTick"); }
 
-        // Hash table ticks (anti-tamper, ×5) — comentado: dirección absoluta
-        // hardcodeada 0x83a4338 no existe como símbolo en nuestro build.
-        // for (int i = 0; i < 5; i++) CPhysicsManager_Move((void*)0x83a4338); // IDA: FUN_00409C40
+        // IDA 0x52626B: cinco pasos de fisica por frame con fTime = 0.005
+        // (0x3BA3D70A).  Ademas del recorrido de la lista (vacia en el 0.97k:
+        // nadie registra objetos en g_PhysicsManager), cada paso mueve el
+        // viento flt_590AF0 que usa la tela (sub_4089B0).
+        for (int i = 0; i < 5; i++) CPhysicsManager_Move(g_PhysicsManager, 0.005f);
 
         // Input update
         Chat_TickNoticeTimer();   CHK("ML/post_0047fcb0");
@@ -303,10 +305,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     //  bool correctamente ahora que el init-loop no se repite por frame y el
     //  buffer de bones no desborda. Forzarlo causaba SwapBuffers prematuro.)
 
-    // CPhysicsManager_Render((void*)0x83a4338); // IDA: FUN_00409CF0; hardcoded abs-addr
-    // artifact de Ghidra: 0x83a4338 no es un símbolo real en nuestro build.
-    // Es cleanup de lista enlazada de canales de audio (Net_StopAllChannels),
-    // no-op sin la estructura construida.
+    CPhysicsManager_Render(g_PhysicsManager);   // IDA 0x5269C3: CPhysicsManager::Render
 
     if (DAT_083a42ec != '\0') {
         if (DAT_083a410c != '\0')

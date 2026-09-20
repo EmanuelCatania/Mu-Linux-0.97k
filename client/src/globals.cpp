@@ -2289,7 +2289,18 @@ DWORD   DAT_07ea9844   = 0;
 // 2026-04-28: Ambient particle pool — Ambient_ParticleUpdate itera 10 slots
 // × 0x1bc bytes (stride 0x6f DWORDs). Antes era DWORD simple → AV al spawnear.
 char    DAT_083a2f78[10 * 0x1bc] = {};
-float   _DAT_00590af0  = 0.0f;
+float   _DAT_00590af0  = 0.0f;   // IDA: flt_590AF0, magnitud del viento de la tela
+
+// IDA: g_PhysicsManager (0x083A4338) -- CPhysicsManager de 16 bytes
+// (vtable, cantidad, cabeza, cola).  En el binario lo construye el
+// inicializador estatico sub_5133F0 con sub_409AD0; aca, el ctor de un
+// objeto estatico de este archivo.
+DWORD g_PhysicsManager[4] = { 0, 0, 0, 0 };
+namespace {
+struct PhysicsManagerInit {
+    PhysicsManagerInit() { FUN_00409ad0(g_PhysicsManager); }
+} s_PhysicsManagerInit;
+}
 float   DAT_00590af4   = 0.0f;
 float   DAT_00590af8   = 0.0f;
 float   DAT_00590afc   = 0.0f;  // cloth wind Z (flt_590AFC; el binario nunca lo escribe)

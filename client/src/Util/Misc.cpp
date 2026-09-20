@@ -76,7 +76,7 @@ LAB_00406bbe:
 // in ±0.1 range, clamped to [-0.2, 1.0].
 // Then iterates a linked list from *(param_1+8)+8, calling FUN_00408940
 // on each node until sentinel *(param_1+0xc) is reached.
-void __cdecl CPhysicsManager_Move(void* physics_manager)
+void __cdecl CPhysicsManager_Move(void* physics_manager, float fTime)
 {
   const int param_1 = (int)(uintptr_t)physics_manager;
   undefined4 *puVar1;
@@ -96,7 +96,7 @@ void __cdecl CPhysicsManager_Move(void* physics_manager)
       if (puVar1 == (undefined4 *)0x0) {
         return;
       }
-      FUN_00408940((int *)*puVar1, 0.005f);   // dt por defecto (IDA pasa el de sub_408900)
+      FUN_00408940((int *)*puVar1, fTime);
       puVar1 = (undefined4 *)puVar1[2];
     } while (*(undefined4 **)(param_1 + 0xc) != puVar1);
   }
@@ -116,7 +116,9 @@ void __cdecl CPhysicsManager_Render(void* physics_manager)
       if (puVar1 == (undefined4 *)0x0) {
         return;
       }
-      (**(code **)(*(int *)*puVar1 + 0xc))(0);
+      // IDA: vtable[3](*i, 0) -- thiscall; se llama como __fastcall(ecx, edx).
+      void* obj = (void*)(uintptr_t)*puVar1;
+      (*(void (__fastcall **)(void*, void*, int))(*(int *)obj + 0xc))(obj, nullptr, 0);
       puVar1 = (undefined4 *)puVar1[2];
     } while (*(undefined4 **)(param_1 + 0xc) != puVar1);
   }

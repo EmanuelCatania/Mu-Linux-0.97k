@@ -94,7 +94,7 @@ void  __cdecl FUN_00406fd0(int, int, int, int);
 // ── Network ───────────────────────────────────────────────────────────────────
 void  __cdecl FUN_004080f0(int);           // Widget_BaseRelease — releases core widget struct
 void  __cdecl FUN_004086e0(int, int, int); // Widget_Release — releases linked list + widget base
-void  __cdecl CPhysicsManager_Move(void* physics_manager);   // IDA: FUN_00409C40
+void  __cdecl CPhysicsManager_Move(void* physics_manager, float fTime);   // IDA: CPhysicsManager::Move (0x00409C40)
 void  __cdecl CPhysicsManager_Render(void* physics_manager); // IDA: FUN_00409CF0
 // FUN_00409e20 signature — canonical (void*,void*) at line 25 above
 void  __cdecl FUN_0040c690(void*, undefined4, undefined4);  // Object_SetRectFields
@@ -567,6 +567,7 @@ void  __cdecl FUN_00504b50(int, int, float *, float, unsigned int, unsigned char
 void  __cdecl FUN_00505970(void *, void *, int, char, int);
 // Entity_DrawAt(entity_ptr, class, slot, angle_ptr, rot, state_flags, byte, a,b,c, d, mode)
 void  __cdecl FUN_00505a10(int, int, unsigned int, float *, float, unsigned int, unsigned char, char, unsigned char, char, int, unsigned int);
+void  __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model);   // desviacion: Physics/Cloth_MeshDivine.cpp
 void  __cdecl Model_SetAnimationSlots(int, int, int, int, int, int); // FUN_00509810 — writes model animation slots
 // ── Map / terrain loaders (called from World_Load / Map_LoadResources) ─────────
 void  __cdecl FUN_004ffd50(void);                                  // Terrain_ResetObjects
@@ -1181,7 +1182,7 @@ int   __stdcall FUN_004070d0(int param_1, int param_2);              // GameGuar
 void  __fastcall FUN_00408ff0(void* param_1);                        // BMD mesh render prepare+draw
 void  __fastcall FUN_004090b0(void* ecx, void* edx, int p1, float p2, int p3); // BMD emit quads
 void  __fastcall FUN_004091d0(void* ecx, void* edx, int p1, int p2, float p3); // BMD emit vertex
-void* __fastcall FUN_00409ad0(void* param_1);                        // CSQuest constructor
+void* __fastcall FUN_00409ad0(void* param_1);                        // IDA: sub_409AD0 (0x00409AD0), ctor de CPhysicsManager
 void  __fastcall FUN_00409b80(void* param_1);                        // CSQuest destructor
 void  __fastcall FUN_00409d20(int param_1);                          // CSQuest clear all nodes
 int   __fastcall FUN_00409f30(void* ecx, void* edx, int p1, int p2, int p3, char p4); // BMD visible tri list

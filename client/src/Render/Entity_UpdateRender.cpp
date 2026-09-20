@@ -989,9 +989,38 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                                  '\0', 0, '\x01',
                                  (int)(size_t)param_3, 2);
                 }
-                // Optional widget spawn for iVar9 == 0x2c2 (guild-mark related)
-                // skipped — anti-tamper obfuscation touches this, original
-                // path rarely hits unless 0x2c2 model is equipped.
+                // IDA RenderCharacter (0x456770 L1070-1104): la tela de los
+                // pants Grand Soul (modelo 706 = MODEL_PANTS + 18).  Cada pieza
+                // guarda su tela en part+0x14 (el DWORD al que apunta piVar16).
+                // El port lo salteaba con la etiqueta "guild-mark related",
+                // que era incorrecta: la capita de atras se movia pegada al
+                // cuerpo en vez de simularse.
+                {
+                    const bool isGrandSoulPants = (iVar9 == 706);
+                    if (*piVar16 == 0 && isGrandSoulPants) {
+                        // IDA: operator_new(0x54) + sub_407FE0, SIN el prefijo de
+                        // count del `eh vector` (a diferencia de la capa del MG):
+                        // DeleteCloth la libera con el dtor en modo 1.
+                        void *cloth = FUN_00407fe0(operator_new(0x54));
+                        // sub_408130(obj, c, 2, 10.0, 10.0, 5, 15, 45.0, 85.0,
+                        //            1276, 1276, 0x1400)
+                        FUN_00408130(cloth, PtrAsFloatBits(param_1), 2, 10.0f, 10.0f,
+                                     5, 15, 45.0f, 85.0f, 1276, 1276, 0x1400);
+                        // sub_409250(obj, 0, -15.0, -20.0, 30.0, 2)
+                        FUN_00409250(cloth, 0.0f, -15.0f, -20.0f, 30.0f, 2);
+                        *piVar16 = (int)cloth;
+                    }
+                    if (*piVar16) {
+                        if (!isGrandSoulPants) {
+                            FUN_00449840((int)param_1, 0, 0);          // DeleteCloth(c, 0, 0)
+                        } else if (FUN_00408900((int *)*piVar16, 0x3ba3d70a, 5)) {
+                            if (*(float *)(puVar13 + 0x5a) > 0.01f)
+                                FUN_00408ff0((void *)*piVar16);        // vtable[3]
+                        } else {
+                            FUN_00449840((int)param_1, (int)puVar13, 0);  // DeleteCloth(c, o, 0)
+                        }
+                    }
+                }
             }
             piVar16 += 6;   // advance to next slot (+0x18 bytes)
         }
