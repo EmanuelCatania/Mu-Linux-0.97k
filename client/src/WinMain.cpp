@@ -38,7 +38,6 @@
 // escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
 // handler de Enter en WndProc cuando InputEnable=1 y el buffer no está vacío.
 extern "C" void Chat_SendChatLine(const char* text);
-extern "C" DWORD g_ItemAttribute_Backup;   // src/globals.cpp — recovery pointer
 extern "C" BYTE InputTextHide[10];
 
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
@@ -812,11 +811,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     DAT_055c9e44 = (DWORD)malloc(0x18000);
     DAT_07d78068 = DAT_055c9e44 + (rand() % 0x400) * 0x40;
     memset((void*)DAT_07d78068, 0, 0x2000 * 4);
-    // 2026-05-08: puntero de respaldo que usan los helpers del tooltip para
-    // recuperarse cuando algún escritor desconocido corrompe DAT_07d78068 a 0x1.
-    // (g_ItemAttribute_Backup se declara más abajo a nivel de archivo con extern "C").
-    g_ItemAttribute_Backup = (DWORD)DAT_07d78068;
-
     DAT_07cf1ff0 = (int)malloc(0x8000);
     memset((void*)DAT_07cf1ff0, 0, 0x2000 * 4);
 

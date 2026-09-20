@@ -18,7 +18,6 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern "C" DWORD g_ItemAttribute_Backup;
 extern void __cdecl FUN_0054158c(void* ptr);
 
 #ifndef qmemcpy

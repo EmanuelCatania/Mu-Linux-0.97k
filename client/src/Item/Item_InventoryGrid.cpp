@@ -10,7 +10,6 @@
 #include "globals.h"
 #include "functions.h"
 
-extern "C" DWORD g_ItemAttribute_Backup;   // DAT_07d78068 recovery pointer
 // InsertWarehouseItem @ 0x004CC0E0 (~52 lines) — fills warehouse grid cells for an item
 // ConvertItemType(param_2) -> get Width/Height from ItemAttribute[type].
 // For each cell in WxH: set item type, grid coords, call ItemConvert.
@@ -252,19 +251,6 @@ unsigned long long __cdecl CheckInventorySpace_stub(int p1, int p2, unsigned sho
     // Returns low byte=1 if space available, 0 otherwise.
     // Also handles stackable item merging (arrows 0x1bf..0x1c8, potions 0x87/0x8f).
 
-    // 2026-05-09: ItemAttribute base watchdog (mirror of FUN_004d23b0 +
-    // Inventory_DropItemEx). Algún writer corrompe DAT_07d78068 = 0x1
-    // intermitentemente. Sin restore, attrBase = type*0x40 + 1 → itemW/itemH
-    // = bytes random → spaceFree=0 SIEMPRE → drop nunca dispara.
-    {
-        unsigned int p = (unsigned int)DAT_07d78068;
-        if ((p < 0x100000u || p >= 0x80000000u)
-            && g_ItemAttribute_Backup >= 0x100000u
-            && g_ItemAttribute_Backup < 0x80000000u)
-        {
-            DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        }
-    }
 
     // Get picked item dimensions from ItemAttribute table
     short pickedType = *(short*)DAT_07e91350;
@@ -360,15 +346,6 @@ int __cdecl FindEmptySlot_stub(int param_1, int param_2, int param_3, int param_
     // param_3 = grid width, param_4 = grid height
     // Returns low byte=1 if found, 0 otherwise.
 
-    {
-        unsigned int p = (unsigned int)DAT_07d78068;
-        if ((p < 0x100000u || p >= 0x80000000u)
-            && g_ItemAttribute_Backup >= 0x100000u
-            && g_ItemAttribute_Backup < 0x80000000u)
-        {
-            DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        }
-    }
 
     int attrBase = param_1 * 0x40 + DAT_07d78068;
     unsigned int itemH = (unsigned int)*(unsigned char*)(attrBase + 0x21);  // Height

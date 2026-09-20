@@ -9,7 +9,6 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern "C" DWORD g_ItemAttribute_Backup;   // defined in Render_Frame.cpp
 extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 extern void __cdecl FUN_0054158c(void* ptr);
 extern void FUN_004fa5a0(void);

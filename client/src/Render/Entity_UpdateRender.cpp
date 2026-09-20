@@ -19,7 +19,6 @@ static inline float PtrAsFloatBits(const void *p) {
     float f; int v = (int)(uintptr_t)p; memcpy(&f, &v, 4); return f;
 }
 
-extern "C" DWORD g_ItemAttribute_Backup;   // src/globals.cpp
 #pragma warning(disable: 4244 4305 4701 4702 4700)
 // Entity_UpdateRender.cpp  —  FUN_00456770 @ 0x00456770  (2195 lines in Ghidra)
 //
@@ -565,32 +564,6 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     if (DAT_005615c0 == 5 && param_1_ == DAT_07abf5d8) {
         HeroEquipWatchdog((int)(uintptr_t)param_1_);
 
-        // 2026-07-27 WATCHDOG global de ItemAttribute: DAT_07d78068 se corrompe
-        // a ~1 en runtime (confirmado: "SHOPINS ... attrBase=00000001" dejaba la
-        // tienda vacía). Restaurarlo una vez por frame beneficia a TODOS los
-        // consumidores (tienda, inventario, tooltips, stats) en vez de parchear
-        // cada uno por separado.
-        {
-            unsigned int p = (unsigned int)(uintptr_t)DAT_07d78068;
-            if ((p < 0x100000u || p >= 0x80000000u)
-                && g_ItemAttribute_Backup >= 0x100000u
-                && g_ItemAttribute_Backup < 0x80000000u)
-            {
-                DAT_07d78068 = (int)g_ItemAttribute_Backup;
-            }
-        }
-
-        // 2026-07-27 WATCHDOG (tinte rojo PK): +0x2EA es el PKLevel; el render
-        // pinta el cuerpo de rojo cuando es >= 6 (línea ~333). Entity_Spawn lo
-        // inicializa en 3 para los mobs, pero el héroe se crea por otro path y
-        // quedaba sin inicializar (0xFF → rojo permanente). El valor real lo
-        // setea el F3/03; acá saneamos cualquier valor fuera del rango 0..6.
-        {
-            BYTE* hb = (BYTE*)param_1_;
-            if (hb[0x2ea] > 6) {
-                hb[0x2ea] = 0;
-            }
-        }
 
         // 2026-08-10 — WATCHDOG REMOVIDO. Ya no hace falta: no había ningún
         // "escritor misterioso" del flag. +0x34E es **SafeZone**, no dead_flag,
