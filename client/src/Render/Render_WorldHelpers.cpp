@@ -780,7 +780,21 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
             const BYTE kind = *(BYTE*)(ent + 0x84);   // 1=jugador, 2=monstruo, 4=npc
             if (kind == 2) {
                 // Monstruo: el nombre va arriba del todo, centrado.
-                DAT_00559c80 = 0xFF000064;  // m_dwBackColor (azul oscuro)
+                //
+                // 2026-09-21, fix del DLL: IDA pone el fondo en rojo oscuro
+                // (0xFF000064; el formato es ABGR) y el texto en celeste, y NO
+                // los restaura.  Como el bucle de Alt (LABEL_39) viene justo
+                // despues, en el original los nombres de items del suelo se
+                // ponen rojos mientras se apunta a un monstruo.  Antes no se
+                // veia porque el port dibujaba los items antes que el monstruo.
+                // El DLL lo tapa en su hook de esta rama (HealthBar.cpp,
+                // DrawPointingHealthBar en 0x004CB7AD): despues del nombre hace
+                // `SetBackgroundTextColor = Color4b(0,0,0,0)`.  Aca se restaura
+                // el valor ANTERIOR en vez de forzar 0, para que los items
+                // queden igual que cuando no se apunta a nada.
+                const DWORD savedBack = DAT_00559c80;
+                const DWORD savedText = DAT_00559c78;
+                DAT_00559c80 = 0xFF000064;  // m_dwBackColor (rojo oscuro, ABGR)
                 DAT_00559c78 = 0xFFC8E6FF;  // m_dwTextColor (celeste)
                 // IDA LABEL_35: `RenderCenteredText(v13 / 2, 10, v3)`, con v13
                 // del MISMO arbol que GetScreenWidth (0x4CB520): 260 con
@@ -788,6 +802,8 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
                 // ninguno.  (2026-08-22: aca habia un criterio inventado que
                 // leia CharacterAttribute + 0x14E como "inventario abierto".)
                 RenderCenteredText(GetScreenWidth() / 2, 10, name);
+                DAT_00559c80 = savedBack;
+                DAT_00559c78 = savedText;
             } else {
                 // IDA: TODO lo que no es monstruo va a CreateChat (el port lo
                 // limitaba a kind == 1).
