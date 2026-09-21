@@ -72,7 +72,6 @@ extern void Entity_TeleportAnim(float* world_pos, float, float, float); // Legac
 extern void UI_ShowExpGainOverlay(int amount);              // 0x00480620
 extern void Entity_MeleeAttackStart(int entity_idx);        // Legacy helper; no verified FUN mapping.
 extern int  Entity_FindById(int id);                        // 0x0045ac80 (Monster.cpp)
-extern void Particle_Spawn(int type, float x, float y, float z, int flags); // particle system
 extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);
 
 // SetPlayerBow @ 0042BC00. It selects the bow/crossbow animation and keeps
