@@ -584,7 +584,8 @@ void  __cdecl FUN_0045abb0(int map_id);                            // Map_SetupE
 // ── Font / UI init ───────────────────────────────────────────────────────────────
 void  __cdecl PathFinder_ResetContext(void);                                  // IDA: FUN_0043f2d0
 void  __cdecl FUN_0050f700(const char *map_name);                  // Map_Load(name)
-void  __cdecl FUN_0050f7a0(void);                                  // Map_Unload
+// FUN_0050f7a0 NO es "Map_Unload": es sub_50F7A0, el envio de opciones F3/30.
+// Portada como SaveOptionsToServer97k en UI/UI_InGameMenu.cpp (2026-09-21).
 // FUN_0050f5f0 @ 0x0050F5F0 (IDA)
 void  __cdecl Font_CreateTextDib(int dc);
 // FUN_0040f570 @ 0x0040F570 (IDA)

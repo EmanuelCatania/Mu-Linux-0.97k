@@ -226,9 +226,9 @@ extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none
 extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
 extern int     DAT_00559c58;   // hover: secondary target index
 extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
-extern int     DAT_00559c60;   // equipped weapon type (right hand)
-extern int     DAT_00559c64;   // equipped weapon type (left hand)
-extern int     DAT_00559c68;   // equipped weapon type (crossbow/secondary)
+extern int     DAT_00559c60;   // QKey: tipo de item de la tecla Q (NO arma equipada; F3/30 le suma 448)
+extern int     DAT_00559c64;   // WKey: tipo de item de la tecla W
+extern int     DAT_00559c68;   // EKey: tipo de item de la tecla E
 extern int     DAT_00559c70;   // hover attack target (entity index copy)
 extern DWORD   DAT_00559c78;
 // 0x00559C7C — IDA `SetTextColor_0` (color del prefijo/guild en sub_47F360).
