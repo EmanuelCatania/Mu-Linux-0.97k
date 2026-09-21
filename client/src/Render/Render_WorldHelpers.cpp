@@ -730,88 +730,88 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
     // mob/NPC/player hovers en el mundo de juego.
     if (DAT_005615c0 != 5) return;
 
-    // 2026-07-27: render de nombres de items en el suelo (port sub_4CB6F0
-    // L61-68 + L158-177). Antes se skipeaba → nunca aparecía el nombre.
-    //   o = &Items[i][72] (= slot base + 72, donde RenderItemName lee o+2 = model
-    //   y hace -400 para el ItemAttribute). ItemLevel = ip+8, ItemOption = ip+31.
-    {
-        extern void __cdecl RenderItemName_stub(int, DWORD, int, int, bool);
-        BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
-        int hovered = (int)SelectedItem;   // SelectedItem (item bajo el cursor)
+    // 2026-09-21: reordenada segun el flujo de IDA (sub_4CB6F0).  El port
+    // dibujaba PRIMERO todos los nombres de items y despues el del monstruo.
+    // RenderItemName deja el glColor del ultimo item (IDA tampoco lo
+    // restaura), y como el texto sale como m_dwTextColor x glColor, el nombre
+    // del monstruo heredaba el color de ese item.  Reporte del tester: "el
+    // nombre de los monsters cambia de color segun el ultimo item pickeado,
+    // solo con el Alt activado" -- con Alt se dibujan todos, de ahi el "solo".
+    //
+    // Flujo real: PASO 1 dibuja UNO solo, por prioridad, con el glColor todavia
+    // en blanco; PASO 2 (LABEL_39) recien ahi los items de Alt.
+    extern void __cdecl RenderItemName_stub(int, DWORD, int, int, bool);
+    BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
+    const int hovered = (int)SelectedItem;
 
-        // 1. Nombre del item hovereado (Sort=0, se dibuja sobre el item).
-        if (hovered >= 0 && hovered < 1000) {
-            BYTE* o = itemPool + hovered * 0x204 + 72;
-            if (o[0] && o[352]) {
-                RenderItemName_stub(hovered, (DWORD)(uintptr_t)o,
-                                    *(int*)(o - 64), (int)*(char*)(o - 41), 0);
-            }
-        }
+    // IDA LABEL_37: nombre del item bajo el cursor (Sort=0, sobre el item).
+    //   o = &Items[i][72] (= slot base + 72, donde RenderItemName lee o+2 =
+    //   model y hace -400 para el ItemAttribute). ItemLevel = ip+8, Option = ip+31.
+    auto drawHoveredItem = [&]() {
+        if (hovered < 0 || hovered >= 1000) return;
+        BYTE* o = itemPool + hovered * 0x204 + 72;
+        if (o[0] && o[352])
+            RenderItemName_stub(hovered, (DWORD)(uintptr_t)o,
+                                *(int*)(o - 64), (int)*(char*)(o - 41), 0);
+    };
 
-        // 2. Alt como TOGGLE (IDA sub_4CB6F0 L159-163: PressKey(VK_MENU) togglea
-        //    byte_7EAA15C; se muestran si el toggle está on O Alt está mantenido).
-        //    Una pulsación de Alt alterna mostrar/ocultar todos los nombres.
-        static int s_altNameToggle = 0;
-        if (Input_IsKeyJustPressed(VK_MENU))               // Alt recién pulsado (edge)
-            s_altNameToggle = !s_altNameToggle;
-        if (s_altNameToggle || (GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
-            for (int i = 0; i < 1000; ++i) {
-                if (i == hovered) continue;
-                BYTE* o = itemPool + i * 0x204 + 72;
-                if (o[0] && o[352]) {
-                    RenderItemName_stub(i, (DWORD)(uintptr_t)o,
-                                        *(int*)(o - 64), (int)*(char*)(o - 41), 1);
-                }
-            }
-        }
-    }
+    // ── PASO 1: uno solo, por prioridad (IDA L28-155) ────────────────────────
+    //   NPC  >  (item solo)  >  personaje.  Con personaje seleccionado y
+    //   `Attacking != -1` (LABEL_8) se dibuja el item en vez del personaje.
+    char* base = (char*)(uintptr_t)DAT_07abf5d0;
+    const int npc = (int)SelectedNpc;
+    const int chr = (int)SelectedCharacter;
 
-    if (SelectedCharacter == -1 && SelectedNpc == -1) {
-        return;
-    }
-
-    if (SelectedNpc != -1) {
-        // NPC hovered — chat bubble per IDA CreateChat (CreateChat).
-        char* base = (char*)(uintptr_t)DAT_07abf5d0;
-        char* ent  = base + (int)SelectedNpc * 0x394;
+    if (npc != -1) {
+        // IDA LABEL_6: charla del NPC (gana aunque haya un item debajo).
+        char* ent = base + npc * 0x394;
         if (ent[0] != 0) {
             const char* name = (const char*)(ent + 0x1C1);
-            if (name[0]) {
+            if (name[0]) CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
+        }
+    } else if (chr == -1) {
+        if (hovered != -1) drawHoveredItem();          // IDA LABEL_37
+    } else if (DAT_00559c58 != -1) {                  // IDA LABEL_8: Attacking != -1
+        drawHoveredItem();                             //   -> LABEL_37
+    } else {
+        char* ent = base + chr * 0x394;
+        const char* name = (const char*)(ent + 0x1C1);
+        if (ent[0] != 0 && name[0]) {
+            const BYTE kind = *(BYTE*)(ent + 0x84);   // 1=jugador, 2=monstruo, 4=npc
+            if (kind == 2) {
+                // Monstruo: el nombre va arriba del todo, centrado.
+                DAT_00559c80 = 0xFF000064;  // m_dwBackColor (azul oscuro)
+                DAT_00559c78 = 0xFFC8E6FF;  // m_dwTextColor (celeste)
+                // IDA LABEL_35: `RenderCenteredText(v13 / 2, 10, v3)`, con v13
+                // del MISMO arbol que GetScreenWidth (0x4CB520): 260 con
+                // inventario + panel lateral, 450 con cualquier panel, 640 sin
+                // ninguno.  (2026-08-22: aca habia un criterio inventado que
+                // leia CharacterAttribute + 0x14E como "inventario abierto".)
+                RenderCenteredText(GetScreenWidth() / 2, 10, name);
+            } else {
+                // IDA: TODO lo que no es monstruo va a CreateChat (el port lo
+                // limitaba a kind == 1).
                 CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
             }
         }
-        return;
     }
 
-    if (SelectedCharacter == -1) return;
-
-    char* base = (char*)(uintptr_t)DAT_07abf5d0;
-    char* ent  = base + (int)SelectedCharacter * 0x394;
-    if (ent[0] == 0) return;
-
-    BYTE kind = *(BYTE*)(ent + 0x84);  // 1=player, 2=monster, 4=npc
-    const char* name = (const char*)(ent + 0x1C1);
-    if (!name[0]) return;
-
-    if (kind == 2) {
-        // Monstruo: el nombre va arriba del todo, centrado.
-        DAT_00559c80 = 0xFF000064;  // m_dwBackColor (azul oscuro)
-        DAT_00559c78 = 0xFFC8E6FF;  // m_dwTextColor (celeste)
-        // IDA sub_4CB6F0 LABEL_35: `RenderCenteredText(v13 / 2, 10, v3)`, donde
-        // v13 se calcula con EL MISMO arbol de decision que GetScreenWidth
-        // (0x4CB520, verificado linea por linea): 260 con inventario + panel
-        // lateral, 450 con cualquier panel abierto, 640 con ninguno.
-        //
-        // 2026-08-22: aca habia un criterio inventado — leia un byte de
-        // CharacterAttribute + 0x14E como si fuera "inventario abierto".  Ese
-        // offset es un campo cualquiera del struct del personaje, asi que en
-        // cuanto valia != 0 el nombre quedaba centrado en 225 (= el caso 450)
-        // de forma permanente, sin ningun panel abierto.  Ademas faltaba el
-        // caso 260.  Ahora sale de GetScreenWidth, que es la misma fuente.
-        RenderCenteredText(GetScreenWidth() / 2, 10, name);
-    } else if (kind == 1) {
-        // Player: chat bubble per IDA (NOT chat log).
-        CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
+    // ── PASO 2: IDA LABEL_39 -- Alt muestra todos los items del suelo ────────
+    // PressKey(VK_MENU) togglea byte_7EAA15C; se muestran si el toggle esta on
+    // O Alt esta mantenido.  El global no lo usa nadie mas (ni InitGame), asi
+    // que el static local es equivalente.
+    static int s_altNameToggle = 0;
+    if (Input_IsKeyJustPressed(VK_MENU))
+        s_altNameToggle = !s_altNameToggle;
+    if (s_altNameToggle || (GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
+        for (int i = 0; i < 1000; ++i) {
+            if (i == hovered) continue;
+            BYTE* o = itemPool + i * 0x204 + 72;
+            if (o[0] && o[352]) {
+                RenderItemName_stub(i, (DWORD)(uintptr_t)o,
+                                    *(int*)(o - 64), (int)*(char*)(o - 41), 1);
+            }
+        }
     }
 }
 

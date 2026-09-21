@@ -224,7 +224,7 @@ extern int     SelectedItem;       // DAT_00559c48 — item on ground (-1 = none
 extern int     SelectedNpc;        // DAT_00559c4c — NPC/shop entity (-1 = none)
 extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none)
 extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
-extern int     DAT_00559c58;   // hover: secondary target index
+extern int     DAT_00559c58;   // IDA: Attacking (0x00559C58) -- -1 = no esta atacando. NO es un "hover target"
 extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
 extern int     DAT_00559c60;   // QKey: tipo de item de la tecla Q (NO arma equipada; F3/30 le suma 448)
 extern int     DAT_00559c64;   // WKey: tipo de item de la tecla W
