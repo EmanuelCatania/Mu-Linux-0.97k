@@ -180,23 +180,42 @@ void Mouse_UpdateHoverTargets(void)
 
         // ── Secondary hover without second password ───────────────────────────
         if (FUN_004e5980() == '\0') {
-            // 2026-07-27: click sobre un item del suelo = levantarlo. El IDA
-            // chequea el item ÚLTIMO, pero eso hace que cualquier mob/NPC cercano
-            // en pantalla robe el hover y no se pueda levantar. Comportamiento MU
-            // esperado (confirmado por el usuario): el item bajo el cursor tiene
-            // PRIORIDAD. Lo chequeamos primero; si hay item, es pickup.
-            if (DAT_07e91388 == 0) {
-                SelectedItem = ItemOnGround_HoverTest();
-                if (SelectedItem != -1) goto check_click;   // item bajo el cursor → pickup
+            // IDA sub_4B0310 L315-351 (Alt SIN apretar): cadena de descarte
+            // estricta, personaje -> personaje -> NPC -> ITEM -> mobiliario.  El
+            // item solo se elige si el cursor no esta sobre ningun personaje ni NPC.
+            //
+            // 2026-09-21: aca habia una inversion puesta el 2026-07-27 que miraba
+            // el item PRIMERO, porque "cualquier mob cercano en pantalla robaba el
+            // hover".  Esa causa desaparecio el 2026-09-16 (2f83d26): desde ahi
+            // Entity_SelectNearest usa el rayo contra la OBB, como IDA, y solo
+            // elige al que esta realmente bajo el cursor.  La inversion quedo
+            // compensando un problema que ya no existia, y su efecto era el
+            // reporte del tester: con un item debajo del monstruo el cursor
+            // quedaba en el de levantar en vez del de ataque (RenderCursor le da
+            // prioridad a SelectedItem).  Con Alt APRETADO los items si van
+            // primero -- esa rama de arriba es la de IDA y no se toca.
+            //
+            // Orden de los dos tipos de personaje (IDA L117-118 y L318-322): por
+            // defecto monstruos (0x22) y despues jugadores (1); con un buff de
+            // elfa activo (skills 26-28: curar, mas defensa, mas dano) se invierte,
+            // para poder apuntarle a un jugador que tiene un monstruo detras.
+            int firstKind = 0x22, secondKind = 1;
+            if (DAT_07abf5d8 && CharacterAttribute) {
+                const BYTE slot  = *(BYTE*)((BYTE*)DAT_07abf5d8 + 913);
+                const BYTE skill = ((BYTE*)CharacterAttribute)[87 + slot];
+                if (skill >= 26 && skill <= 28) { firstKind = 1; secondKind = 0x22; }
             }
             if (SelectedCharacter == -1) {
-                SelectedCharacter = Entity_SelectNearest(0x22);  // mob type
+                SelectedCharacter = Entity_SelectNearest(firstKind);
                 if (SelectedCharacter == -1) {
-                    SelectedCharacter = Entity_SelectNearest(1);  // player type
+                    SelectedCharacter = Entity_SelectNearest(secondKind);
                     if (SelectedCharacter != -1) goto done;
-                    SelectedNpc = Entity_SelectNearest(4);  // NPC type
+                    SelectedNpc = Entity_SelectNearest(4);  // NPC
                     if (SelectedNpc == -1) {
-                        SelectedOperate = SpecialObject_HoverTest();
+                        if (DAT_07e91388 == 0)
+                            SelectedItem = ItemOnGround_HoverTest();
+                        if (SelectedItem == -1)
+                            SelectedOperate = SpecialObject_HoverTest();
                     }
                     goto check_click;
                 }
