@@ -448,11 +448,41 @@ static void HUD_HotkeyTick(void)
     if (DAT_07e11d70 != '\0') return;  // g_ChatMode
     if (DAT_00559c84 != '\0') return;  // g_TextMode (login / dialog text)
     if (DAT_07e11d71 != '\0') return;  // g_IME_Mode
-    // 2026-08-21: con la ventana de quest abierta el original NO deja tocar los
-    // hotkeys de panel (IDA Chat_InputTick L3978-3985 corta con
-    // `*(BYTE*)(g_csQuest + 116863) == 1`).  Sin este gate se podia abrir el
-    // inventario encima del panel de quest — los dos se dibujan en x=450.
-    if (HUD_IsQuestPanelOpenRuntime()) return;
+    // IDA Chat_InputTick L3976-3985: ANTES de mirar cualquier hotkey de panel,
+    // el original corta la funcion entera con esta lista:
+    //
+    //   TradeOpened || GuildCreatorOpened || GuildInputEnable
+    //   || ErrorMessage == 126 || ErrorMessage == 152
+    //   || g_bEventChipDialogEnable
+    //   || *(BYTE*)(g_csQuest + 116863) == 1
+    //   || g_bServerDivisionEnable
+    //
+    // 2026-08-21 se habia portado SOLO el termino de la ventana de quest
+    // ("sin el gate se podia abrir el inventario encima del panel de quest --
+    // los dos se dibujan en x=450").  El mismo razonamiento vale para el resto
+    // de la lista, que es la que ya usa el handler de la barra inferior.
+    //
+    // 2026-09-20: faltaba g_bEventChipDialogEnable (el Golden Archer), y eso
+    // causaba dos sintomas.  Con la ventana abierta, la V dibujaba el
+    // inventario ENCIMA del panel (los dos van a x=450); y al volver a
+    // apretarla, HUD_PanelTail97k -> CloseInventoryRelatedWindows (0x4CBA60
+    // L154) limpia g_bEventChipDialogEnable sin avisarle al server.  El server
+    // se queda con Interface.use != 0 y rechaza /move con el mensaje 65,
+    // "You cannot move right now" (Move.cpp L181-185) -- y no se recupera,
+    // porque el 0x31 que manda SendMove al caminar esta gateado por ese mismo
+    // flag que la V ya puso en cero.
+    //
+    // Con el gate puesto, la ventana solo se cierra por su X o caminando, que
+    // son los dos caminos que si mandan el 0x31 (igual que el DLL, que para
+    // eso hookea SendMove en 0x00492AD2).
+    if (DAT_07eaa11b ||                      // TradeOpened
+        DAT_07eaa124 ||                      // GuildCreatorOpened
+        DAT_083a7c24 == 126 ||               // ErrorMessage: expulsar del guild
+        DAT_083a7c24 == 152 ||
+        _g_bEventChipDialogEnable ||         // Golden Archer / chip de evento
+        DAT_07eaa130 ||                      // g_bServerDivisionEnable
+        HUD_IsQuestPanelOpenRuntime())
+        return;
 
     // Cada llamada a Key_IsJustPressed tiene efectos secundarios de detección por flanco, así que
     // capturamos los resultados antes de combinarlos (V o I invierten el inventario).
