@@ -39,14 +39,12 @@ void __cdecl Effect_UpdateAll(void) {
 }
 
 
-// Particle_Spawn (5-arg legacy alias) — delegates to Particle_Spawn (Effect_Spawn).
-// Skills.cpp callers pass (type, x, y, z, flags). The real spawner takes
-// (type, bone_mat, pos, size, flag, alpha, mode) — we synthesize a position
-// vec3 from x/y/z and pass NULL for the optional bone_mat / size with default
-// alpha = 1.0 and mode = 0.
-void __cdecl Particle_Spawn(int type, float x, float y, float z, int flags) {
-    float pos[3]   = { x, y, z };
-    float color[3] = { 1.0f, 1.0f, 1.0f };
-    Particle_Spawn(type, /*bone_mat*/nullptr, pos, color, flags, 1.0f, 0);
-}
+// 2026-09-21: aca vivia un wrapper de 5 argumentos
+// `Particle_Spawn(type, x, y, z, flags)` que delegaba en el real pasando
+// `nullptr` como Position.  Particle_Spawn hace `*param_2` sin guard, asi que
+// cualquier llamada habria sido una lectura de la direccion 0.  No tenia
+// callers (Combat/Skills.cpp solo lo declaraba), o sea era una trampa armada:
+// la misma familia que ya causo dos crashes, en RenderBoids y en la caida de
+// la puerta de Blood Castle.  Se borra en vez de ponerle un guard, porque el
+// binario tampoco lo tiene: ahi Position nunca llega en NULL.
 

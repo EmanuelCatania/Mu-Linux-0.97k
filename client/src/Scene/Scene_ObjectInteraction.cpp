@@ -55,17 +55,29 @@ void __cdecl MoveObject_Special_stub(int param_1) {
             _DAT_0055a7bc = 2.0f;
 
             if (*pHeight == 80.0f) {
-                // Spawn 10 dust particles at ground level
+                // IDA sub_4FA5F0 L74-86:
+                //   Position[0] = (rand() % 300) - 150.0 + obj[16];
+                //   Position[1] = obj[20] - ((rand() % 20) + 600.0);
+                //   Position[2] = obj[24];   (fijado antes del bucle)
+                //   Particle_Spawn(1221, Position, obj+28, obj+232, 0, 1.0, 0);
+                //
+                // 2026-09-21: la llamada estaba mal en cinco cosas, y la nota
+                // del port lo admitia ("Due to phantom stack params, exact arg
+                // mapping is approximate").  La grave: pasaba NULL como Light,
+                // y Particle_Spawn hace `*param_4` sin guard -> lectura de la
+                // direccion 0.  Las otras cuatro: Position[1] usaba la altura
+                // del objeto en vez del valor sorteado, Position[2] leia +0xE8
+                // en vez de +0x18, el angulo recibia el vector de luz, y la
+                // escala recibia la coordenada sorteada en vez de 1.0.
+                float Position[3];
+                Position[2] = *(float*)(param_1 + 0x18);
                 for (int i = 10; i != 0; i--) {
-                    float posX = (float)(rand() % 300 - (int)_DAT_0055297c) + *(float*)(param_1 + 0x10);
-                    float posZ = *(float*)(param_1 + 0x14) - (float)(rand() % 0x14 + (int)_DAT_00552ab4);
-                    // CreateParticle — Ghidra shows phantom regs (unaff_EBX/EBP/ESI/EDI);
-                    // actual call signature: Particle_Spawn(type, pos, light, size, flag, alpha, mode)
-                    // The particle spawn at height 80 with dust effect 0x4c5 is the key logic.
-                    // Due to phantom stack params, exact arg mapping is approximate.
-                    float pos[3] = { posX, *pHeight, *(float*)(param_1 + 0xe8) };
-                    float light[3] = { 1.0f, 1.0f, 1.0f };
-                    Particle_Spawn(0x4C5, pos, light, NULL, 0, posZ, 0);
+                    Position[0] = (float)(rand() % 300) - _DAT_0055297c + *(float*)(param_1 + 0x10);
+                    Position[1] = *(float*)(param_1 + 0x14) - ((float)(rand() % 20) + _DAT_00552ab4);
+                    Particle_Spawn(0x4C5, Position,
+                                   (float*)(param_1 + 0x1c),   // Angle  = obj + 28
+                                   (float*)(param_1 + 0xe8),   // Light  = obj + 232
+                                   0, 1.0f, 0);
                 }
             }
         }
