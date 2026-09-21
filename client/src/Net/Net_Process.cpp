@@ -1266,13 +1266,32 @@ static void Recv_NewCharacterInfo(const BYTE* Msg)
 }
 
 // ── F3/E1 PMSG_NEW_CHARACTER_CALC_RECV ───────────────────────────────────────
-// Port FIEL del DLL injection (Protocol.cpp:898 GCNewCharacterCalcRecv).
-// Recibe stats calculados (HP/MP actuales tras buffs/items, defense, attack).
-// Layout: header(4) + ~17 DWORDs (ViewCurHP..MagicDamageRate).
-static void Recv_NewCharacterCalc(const BYTE* Msg)
+// Del DLL de inyeccion (Protocol.cpp GCNewCharacterCalcRecv).  Trae los stats
+// ya calculados por el server (MuEmu, con resets y sus propias formulas).
+//
+// Layout real, PMSG_NEW_CHARACTER_CALC_SEND (Protocol.h:566 del server):
+// header(4) + 17 DWORDs.
+//    p+0  CurHP          p+4  MaxHP          p+8  CurMP         p+12 MaxMP
+//    p+16 CurBP          p+20 MaxBP          p+24 PhysiSpeed    p+28 MagicSpeed
+//    p+32 PhysiDmgMin    p+36 PhysiDmgMax    p+40 MagicDmgMin   p+44 MagicDmgMax
+//    p+48 MagicDmgRate   p+52 AttackSuccessRate                 p+56 DamageMultiplier
+//    p+60 Defense        p+64 DefenseSuccessRate
+//
+// 2026-09-21 (issue #54, "defensa rate y dano se cruzan al subir de nivel"):
+// el port asumia que despues de MagicSpeed venian directo MagicDmgMin/Max y
+// leia AttackSuccessRate en p+40, Defense en p+48 y DefenseSuccessRate en p+52.
+// Faltaban los 4 campos del medio, asi que cargaba:
+//    tasa de ataque   <- MagicDmgMin        (en la captura: 3678)
+//    defensa          <- MagicDmgRate       (53)
+//    tasa de defensa  <- AttackSuccessRate  (42652)
+// Los tres numeros de la captura cuadran exactos.  Antes de subir de nivel se
+// veian bien porque venian del recalculo local (FUN_0047e3c0); el server manda
+// el E1 al subir, y ahi se pisaban.
+static void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
 {
     BYTE* CA = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     if (!CA) return;
+    if (Size < 4 + 17 * 4) return;   // paquete corto: no leer fuera
 
     const BYTE* p = Msg + 4;
     DWORD ViewCurHP            = *(const DWORD*)(p + 0);
@@ -1283,10 +1302,10 @@ static void Recv_NewCharacterCalc(const BYTE* Msg)
     DWORD ViewMaxBP            = *(const DWORD*)(p + 20);
     DWORD ViewPhysiSpeed       = *(const DWORD*)(p + 24);
     DWORD ViewMagicSpeed       = *(const DWORD*)(p + 28);
-    // bytes 32-39: MagicDamageMin/Max (skip — set later)
-    DWORD ViewAttackSuccessRate= *(const DWORD*)(p + 40);
-    DWORD ViewDefense          = *(const DWORD*)(p + 48);
-    DWORD ViewDefenseSuccess   = *(const DWORD*)(p + 52);
+    // p+32..p+48: danos y tasa magica (el panel los calcula localmente).
+    DWORD ViewAttackSuccessRate= *(const DWORD*)(p + 52);
+    DWORD ViewDefense          = *(const DWORD*)(p + 60);
+    DWORD ViewDefenseSuccess   = *(const DWORD*)(p + 64);
 
     *(WORD*)(CA + 0x1C) = ClampToWord(ViewCurHP);
     *(WORD*)(CA + 0x20) = ClampToWord(ViewMaxHP);
@@ -3308,7 +3327,7 @@ void Net_ProcessPacket(void)
                     case 0xE1: {
                         // F3/E1 PMSG_NEW_CHARACTER_CALC_RECV: HP/MP/Defense/Attack.
                         NetLog("NET:  → F3/E1 NewCharacterCalc");
-                        Recv_NewCharacterCalc(Msg);
+                        Recv_NewCharacterCalc(Msg, Size);
                         break;
                     }
                     case 0xE3: {  // lista de apilado (DLL CItemStack)
