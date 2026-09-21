@@ -79,11 +79,11 @@
 enum eSceneFlags
 {
     NON_SCENE       = 0,
-    WEBZEN_SCENE    = 1,  // g_GameState 1 = Intro
-    LOG_IN_SCENE    = 2,  // g_GameState 2 = Login
-    LOADING_SCENE   = 3,  // g_GameState 3 = Loading
-    CHARACTER_SCENE = 4,  // g_GameState 4 = CharSelect
-    MAIN_SCENE      = 5   // g_GameState 5 = InGame
+    WEBZEN_SCENE    = 1,  // SceneFlag 1 = Intro
+    LOG_IN_SCENE    = 2,  // SceneFlag 2 = Login
+    LOADING_SCENE   = 3,  // SceneFlag 3 = Loading
+    CHARACTER_SCENE = 4,  // SceneFlag 4 = CharSelect
+    MAIN_SCENE      = 5   // SceneFlag 5 = InGame
 };
 
 enum eMapNumber
@@ -385,8 +385,7 @@ struct SERVER_LIST_t
 // g_hWnd, g_hDC already in stdafx.h
 
 // State
-// g_GameState (SceneFlag) already in stdafx.h
-#define g_GameSubState      DAT_0055a7ac     // int (World in DLL)
+// SceneFlag ya está declarado en stdafx.h; World en globals.h.
 #define MouseX              DAT_083a427c     // int
 #define MouseY              DAT_083a4278     // int
 #define MouseLButtonPop     DAT_083a413c     // bool
@@ -395,9 +394,26 @@ struct SERVER_LIST_t
 #define MouseLButton        DAT_083a42c4     // bool
 
 // Character
-#define Hero                DAT_07abf5d8     // DWORD — ptr to local player entity
-#define CharactersClient    DAT_07abf5d0     // DWORD — entity array base
-#define HeroIndex           DAT_05826ca0     // int (approx, not in our globals yet — add below)
+#define DAT_07abf5d8        Hero                // IDA: DAT_07abf5d8 (0x07ABF5D8)
+#define DAT_07abf5d0        CharactersClient    // IDA: DAT_07abf5d0 (0x07ABF5D0)
+#define DAT_05826ca0        HeroIndex         // IDA: DAT_05826ca0 (0x05826CA0)
+#define DAT_05826c10        g_SimpleModulusCS // IDA: DAT_05826c10 (0x05826C10)
+#define DAT_05826c58        g_SimpleModulusSC // IDA: DAT_05826c58 (0x05826C58)
+#define DAT_05826cb4        ChatWhisperID     // IDA: DAT_05826cb4 (0x05826CB4)
+#define DAT_05826cac        HeroKey           // IDA: DAT_05826cac (0x05826CAC)
+#define DAT_05826cb0        CurrentProtocolState // IDA: DAT_05826cb0 (0x05826CB0)
+#define DAT_05826d10        CurrentSkill      // IDA: DAT_05826d10 (0x05826D10)
+#define DAT_05826d18        BuyCost           // IDA: DAT_05826d18 (0x05826D18)
+#define DAT_05826d08        ChatTime          // IDA: DAT_05826d08 (0x05826D08)
+#define DAT_05826cf4        g_dwLatestMagicTick // IDA: DAT_05826cf4 (0x05826CF4)
+#define DAT_05826cd4        LogInID           // IDA: DAT_05826cd4 (0x05826CD4)
+#define DAT_05826cf8        LogIn             // IDA: DAT_05826cf8 (0x05826CF8)
+#define SocketStartupFirst  First             // IDA: First (0x055CA15C)
+#define DAT_00558090        bBuxCode          // IDA: DAT_00558090 (0x00558090)
+#define DAT_05826cec        g_byPacketSerialRecv // IDA: DAT_05826cec (0x05826CEC)
+#define DAT_05826c9c        m_nTempMyTradeGold // IDA: DAT_05826c9c (0x05826C9C)
+#define DAT_0055961c        Version           // IDA: DAT_0055961c (0x0055961C)
+#define DAT_00559624        Serial            // IDA: DAT_00559624 (0x00559624)
 // SelectedCharacter is a named global declared in globals.h.
 // IDA provenance: DAT_00559c50.
 
@@ -410,8 +426,7 @@ struct SERVER_LIST_t
 #define EarthQuake          _DAT_083a0210    // float
 #define FogEnable           DAT_083a42ea     // bool
 
-// Connection
-#define g_bGameServerConnected  DAT_05826cf0 // BOOL (add to globals if needed)
+// Connection: g_bGameServerConnected is declared in globals.h.
 #define ServerList          (*(SERVER_LIST_t(*)[MAX_SERVER_HI])&DAT_083a45d8)
 // 2026-08-22: `ServerNumber` es un nombre INVENTADO del port y describe mal el
 // campo.  `0x083A7C40` es la **cantidad de servidores** que trajo el F4/02
@@ -436,7 +451,17 @@ extern char g_BitmapsRaw[];
 // ── Companion-project aliases (IDA decompile compatibility) ──────────────────
 // Globals:
 #define WorldTime            DAT_05826e08          // float — absolute animation time
-#define InputEnable          DAT_00559c84          // DWORD
+#define DAT_00559c84         InputEnable          // IDA: DAT_00559c84 (0x00559C84)
+#define DAT_005616ac         SelectedHero         // IDA: DAT_005616ac (0x005616AC)
+#define DAT_083a7c14         LoginSubState        // IDA: DAT_083a7c14 (0x083A7C14)
+#define DAT_00559c58         Attacking            // IDA: DAT_00559c58 (0x00559C58)
+#define DAT_05826d24         SummonLife           // IDA: DAT_05826d24 (0x05826D24)
+#define DAT_05826c08         SoccerTime           // IDA: DAT_05826c08 (0x05826C08)
+#define DAT_05826d33         SoccerObserver       // IDA: DAT_05826d33 (0x05826D33)
+#define DAT_07e11d6f         LockInputStatus      // IDA: DAT_07e11d6f (0x07E11D6F)
+#define DAT_07eaa138         RepairEnable         // IDA: DAT_07eaa138 (0x07EAA138)
+#define DAT_07e11998         SendGetItem          // IDA: DAT_07e11998 (0x07E11998)
+#define DAT_05826d14         Teleport             // IDA: DAT_05826d14 (0x05826D14)
 // 2026-08-23 FIX: esto apuntaba a `DAT_07eab250`, que es un DWORD de 4 bytes.
 // El propio `globals.h:837` ya documentaba el mislabel ("NO es
 // PrimaryTerrainLight (ese es DAT_081cb608)") pero el macro nunca se corrigio.
@@ -451,7 +476,6 @@ extern char g_BitmapsRaw[];
 // resetea DAT_081cb608 por frame, que es lo que acota la acumulacion.
 #define PrimaryTerrainLight  ((float(*)[3])&DAT_081cb608[0])  // float[256*256][3]
 // Functions (map companion-project names → FUN_ addresses from functions.h):
-#define SetAction(ent, act)  FUN_0043e820((int)(ent), (int)(act))
 #define VectorRotate         Vector_InverseRotate
 // 2026-08-23 FIX (el fuego no iluminaba): esto aliaseaba `AddTerrainLight` a
 // `AddTerrainLightClip_stub`, que es OTRA funcion del binario.
@@ -471,9 +495,8 @@ inline void AddTerrainLight(float xf, float yf, float* Light, int Range, float* 
     FUN_004f76c0(xf, yf, (int)(uintptr_t)Light, Range, (int)(uintptr_t)Buffer);
 }
 #define AngleMatrix          AngleMatrix
-#define CreateEffect         Effect_Create
+#define CreateEffect         CreateEffect
 #define CreateBomb           Effect_SpawnSmokeBurst
-#define Alpha                FUN_0043e5c0   // Particle_CommitState / finalize alpha
 #define AddTerrainAttributeRange Terrain_UpdateTileAttributeRect
 #define AddTerrainAttribute      Terrain_SetTileAttributeBits
 #define RenderBitmap         GL_DrawTexture

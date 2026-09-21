@@ -196,15 +196,15 @@ extern BYTE    PacketXorKey16[16];   // DAT_00559050 — 16-byte XOR key table (
 extern BYTE (&DAT_00559050)[16];
 extern float  _DAT_00559070;   // Verlet physics damping/gravity scalar
 extern DWORD   DAT_00559070;
-extern DWORD   DAT_005590ac;
+extern DWORD   g_bUseChatListBox; // IDA: g_bUseChatListBox (0x005590AC)
 // Layout de los 3 botones popup del ChatListBox — flt_5590B0/B4/B8 en IDA.
 // Leídos del binario: 295.0 / 417.0 / 18.0 (ver comentario en globals.cpp).
 extern float   ChatListBox_TabButtonsX;       // DAT_005590b0 — X del primer botón
 extern float   ChatListBox_TabButtonsY;       // DAT_005590b4 — Y de los tres
 extern float   ChatListBox_TabButtonSpacing;  // DAT_005590b8 — separación horizontal
-extern BYTE    DAT_0055961c[5];    // Version — obfuscated as Version[i]-i-1 in login pkt
-extern BYTE    DAT_00559624[16];   // Serial — sent raw in login pkt
-extern DWORD   PacketXorKey3; // DAT_00559678 — 3-byte packet XOR key
+extern BYTE    Version[5]; // IDA: DAT_0055961c (0x0055961C)
+extern BYTE    Serial[16]; // IDA: DAT_00559624 (0x00559624)
+extern DWORD   PacketXorKey3; // IDA: DAT_00559678 (0x00559678)
 extern float  _DAT_00559680;   // LOD factor
 extern DWORD   DAT_00559680;
 extern DWORD   DAT_00559684;
@@ -224,7 +224,7 @@ extern int     SelectedItem;       // DAT_00559c48 — item on ground (-1 = none
 extern int     SelectedNpc;        // DAT_00559c4c — NPC/shop entity (-1 = none)
 extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none)
 extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
-extern int     DAT_00559c58;   // hover: secondary target index
+extern int     Attacking; // IDA: DAT_00559c58 (0x00559C58)
 extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
 extern int     DAT_00559c60;   // equipped weapon type (right hand)
 extern int     DAT_00559c64;   // equipped weapon type (left hand)
@@ -242,7 +242,7 @@ extern DWORD SetTextColor_0;
 #define DAT_00559c7c SetTextColor_0
 extern DWORD   DAT_00559c80;
 extern char    DAT_00559b80[];  // GM/admin name substring (Entity_FindNearby filter string)
-extern DWORD   DAT_00559c84;
+extern DWORD   InputEnable; // IDA: DAT_00559c84 (0x00559C84)
 extern DWORD   DAT_00559c88;
 extern DWORD   DAT_00559c8c;
 extern DWORD   DAT_00559c90;
@@ -284,12 +284,12 @@ extern char    s__s_file_not_found__0055a784[];  // "%s file not found" format s
 extern DWORD   DAT_0055a798;
 extern char    DAT_0055a79c[];  // "Data\\"  path prefix
 extern char    DAT_0055a7a4[];  // "Data2\\" path prefix
-extern int     DAT_0055a7ac;   // g_GameSubState: 0=connecting 2=in-world 7=loading-map
+extern int     World; // IDA: World (0x0055A7AC)
 extern float  _DAT_0055a7c0;
 extern DWORD   DAT_0055a7c0;
 
 // ── Game loop / scene state (0x005615xx – 0x005617xx) ─────────────────────────
-// Nota: g_GameState (DAT_005615c0), g_hWnd y g_hDC se declaran en stdafx.h.
+// Nota: SceneFlag (SceneFlag), g_hWnd y g_hDC se declaran en stdafx.h.
 extern DWORD   DAT_0056154c;
 extern DWORD   DAT_00561550;
 extern DWORD   DAT_00561554;
@@ -298,9 +298,9 @@ extern float   CameraDistance;         // DAT_083A45D0: current MoveMainCamera d
 extern DWORD   DAT_0056156c;
 extern DWORD   DAT_00561570;
 extern DWORD   DAT_00561574;
-extern char   *DAT_005615b8;   // server IP string ptr
-#define PTR_s_connect_muonline_co_kr_005615b8  DAT_005615b8
-extern WORD    DAT_005615bc;   // server port
+extern char   *szServerIpAddress; // IDA: szServerIpAddress (0x005615B8)
+#define PTR_s_connect_muonline_co_kr_005615b8  szServerIpAddress
+extern WORD    g_ServerPort; // IDA: g_ServerPort (0x005615BC)
 
 // ── ConnectServer flow (2026-07-15) ──────────────────────────────────────────
 extern int             g_HasConnectServer;       // server.cfg tiene 2 líneas → flujo CS
@@ -308,7 +308,7 @@ extern int             g_ConnectServerMode;      // 1 = socket actual habla con 
 extern int             g_ConnectServerRequested; // 1 = ya mandamos C1 04 F4 02
 extern char            g_GameServerIP[128];      // GameServer fallback (server.cfg línea 2)
 extern unsigned short  g_GameServerPort;
-// DAT_005615c0 = g_GameState (in stdafx.h)
+// SceneFlag = SceneFlag (in stdafx.h)
 // g_lpszMp3 @ 0x005615C4 — tabla de 6 rutas de BGM (ver globals.cpp).
 // Los DAT_005615c4..d8 NO son handles independientes: son sus 6 elementos.
 extern char*   g_lpszMp3[6];
@@ -354,7 +354,7 @@ extern DWORD   DAT_00561698;
 extern DWORD   DAT_005616a0;
 extern int     DAT_005616a4;   // dialog Y (signed; ver globals.cpp)
 extern int     DAT_005616a8;   // camera X (signed; ver globals.cpp)
-extern DWORD   DAT_005616ac;
+extern DWORD   SelectedHero; // IDA: DAT_005616ac (0x005616AC)
 extern DWORD   DAT_005616b0;
 extern DWORD   DAT_005616b8;
 extern DWORD   DAT_005617a0;
@@ -487,58 +487,58 @@ extern DWORD   DAT_055ca03c;
 extern DWORD   DAT_055ca040;
 extern DWORD   DAT_055ca050;
 // Socket context struct (contiguous buffer, ~0x4030 bytes). Callers of
-// FUN_0043db30/Net_Connect/Net_Disconnect pass the base address directly
+// CWsctlc_Startup/Net_Connect/Net_Disconnect pass the base address directly
 // (originalmente el literal 0x55ca160). Los campos se superponen al buffer:
-extern char    DAT_055ca160[0x260000]; // socket context object base (struct + 300-slot recv queue)
-#define DAT_055ca164  (*(DWORD*)(DAT_055ca160 + 4))    // g_bGameServerConnected
-#define DAT_055ca168  (*(SOCKET*)(DAT_055ca160 + 8))   // socket handle
-#define DAT_055ca16c  ((char*)(DAT_055ca160 + 0xC))    // send/recv buffer
-extern DWORD   DAT_055cc16c;
-extern DWORD   DAT_055ce174;
+extern char    SocketClient[0x260000]; // IDA: SocketClient (0x055CA160)
+#define SocketClientIsGame  (*(DWORD*)(SocketClient + 4))    // IDA: SocketClient.m_bGame (0x055CA164)
+#define SocketClientSocket  (*(SOCKET*)(SocketClient + 8))   // IDA: SocketClient.m_socket (0x055CA168)
+#define SocketClientSendBuffer  ((char*)(SocketClient + 0xC))    // IDA: SocketClient.m_SendBuf (0x055CA16C)
+extern DWORD   SocketClientSendBufferLength; // IDA: SocketClient.m_nSendBufLen (0x055CC16C)
+extern DWORD   SocketClientLogPrint;         // IDA: SocketClient.m_LogPrint (0x055CE174)
 
 // ── Network / login state (0x05826xxx) ────────────────────────────────────────
 extern DWORD   DAT_05826bdc;
 extern DWORD   DAT_05826c00;
 extern DWORD   DAT_05826c04;
-extern DWORD   DAT_05826c08;   // SoccerTime (IDA @0x05826C08) - reloj del
+extern DWORD   SoccerTime; // IDA: DAT_05826c08 (0x05826C08)
                                // evento; lo escriben InitGame y el F3/22.
 extern DWORD   DAT_00562e48[4];   // CSimpleModulus XOR-deobfuscate key table
-extern DWORD   DAT_05826c10[17];  // g_SimpleModulusCS (17 DWORDs = 68 bytes)
-extern DWORD   DAT_05826c58[17];  // g_SimpleModulusSC (17 DWORDs = 68 bytes)
-extern DWORD   DAT_05826c9c;
-extern DWORD   DAT_05826ca0;   // HeroIndex (random 0..399 picked by ReceiveJoinMapServer)
+extern DWORD   g_SimpleModulusCS[17]; // IDA: DAT_05826c10 (0x05826C10)
+extern DWORD   g_SimpleModulusSC[17]; // IDA: DAT_05826c58 (0x05826C58)
+extern DWORD   m_nTempMyTradeGold; // IDA: DAT_05826C9C (0x05826C9C)
+extern DWORD   HeroIndex; // IDA: DAT_05826ca0 (0x05826CA0)
 extern DWORD   DAT_05826ca4;
 extern DWORD   DAT_05826ca8;
-extern DWORD   DAT_05826cac;
-extern DWORD   DAT_05826cb0;   // server response code (0x0b=LoginOK, 0x14=char-list)
-extern char    DAT_05826cb4[12];   // IDA: ChatWhisperID (0x05826CB4) — ultimo destinatario de susurro
+extern DWORD   HeroKey; // IDA: DAT_05826cac (0x05826CAC)
+extern DWORD   CurrentProtocolState; // IDA: DAT_05826cb0 (0x05826CB0)
+extern char    ChatWhisperID[12]; // IDA: DAT_05826cb4 (0x05826CB4)
 extern DWORD   DAT_05826cc0;
 extern DWORD   DAT_05826cc8;
 extern char    DAT_05826cc9;
-extern char    DAT_05826cd4[16];       // username copy destination (needs >= 11 bytes)
+extern char    LogInID[16]; // IDA: DAT_05826CD4 (0x05826CD4)
 extern char    DAT_05826ceb;
-extern DWORD   DAT_05826cec;
-extern DWORD   DAT_05826cf0;   // g_bGameServerConnected (1=connected, 0=disconnected)
+extern DWORD   g_byPacketSerialRecv; // IDA: DAT_05826CEC (0x05826CEC)
+extern DWORD   g_bGameServerConnected; // IDA: g_bGameServerConnected (0x05826CF0)
 extern float  _DAT_05826cf4;
-extern DWORD   DAT_05826cf4;
-extern DWORD   DAT_05826cf8;
-extern DWORD   DAT_05826d08;   // chat rate-limit counter (max 0x46 = 70 ticks)
+extern DWORD   g_dwLatestMagicTick; // IDA: DAT_05826cf4 (0x05826CF4)
+extern DWORD   LogIn; // IDA: DAT_05826CF8 (0x05826CF8)
+extern DWORD   ChatTime; // IDA: DAT_05826d08 (0x05826D08)
 // Teleport es 0x05826D14 (ida_xrefs_to: ReceiveTeleport, Attack, CheckGate,
 // Skills_PacketHandler, sub_482BE0, sub_4D23B0...).  Hasta 2026-09-12 Attack
 // escribia un global aparte (DAT_05826d04) y el resto leia DAT_05826d14: el
 // gate del Town Portal no se enteraba del teleport en curso.
-#define DAT_05826d04 DAT_05826d14
+#define DAT_05826d04 Teleport
 extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit compare)
-extern char    DAT_05826d14;   // Teleport (IDA `Teleport` @0x05826D14) — 0=normal,
+extern char    Teleport; // IDA: DAT_05826d14 (0x05826D14)
                                // 1=gate/teleport en curso.  La etiqueta vieja
                                // ("NPC script keepalive") era falsa.
-extern DWORD   DAT_05826d18;   // cooldown de COMPRA en tienda (IDA dword_5826D18 @0x05826D18):
+extern DWORD   BuyCost; // IDA: DAT_05826d18 (0x05826D18)
                                // lo escribe ProtocolCore y lo lee sub_4D23B0.
 extern DWORD   EnableUse;      // IDA: EnableUse (0x05826D1C) — cooldown de equipar/usar item;
                                // lo ponen en 10 los usos y lo resetean las respuestas del server
 #define DAT_05826d1c   EnableUse   // 2026-09-17: eran dos globals; los usos escribian uno y los handlers el otro
 extern DWORD   DAT_05826d20;
-extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la mascota
+extern DWORD   SummonLife; // IDA: DAT_05826d24 (0x05826D24)
 // AttackPlayer (IDA @0x05826D28): indice de slot del ULTIMO atacante.  Lo
 // escriben ReceiveAction (act 100/101), Skills_PacketHandler y
 // ReceiveMagicPosition; lo lee ReceiveAttackDamage para el destello de
@@ -555,7 +555,7 @@ extern "C" { extern int m_iMatchCountDownType; extern DWORD m_dwMatchCountDownSt
 extern DWORD   DAT_05826d30;
 extern char    DAT_05826d31;
 extern char    DAT_05826d32;
-extern char    DAT_05826d33;
+extern char    SoccerObserver; // IDA: DAT_05826d33 (0x05826D33)
 extern DWORD   DAT_05826d78;
 extern DWORD   DAT_05826dc8;
 extern DWORD   DAT_05826df4;
@@ -596,7 +596,7 @@ extern char    g_BoneScratch[200 * 0x30];   // 2026-07-17: MAX_BONES=200 (era 0x
 
 // ── Preview character entity (0x07abf050) ─────────────────────────────────────
 // BUG-FIX 2026-07-17: DAT_07abf050 ES el struct de entidad del PREVIEW char de
-// char-select (creado por FUN_0045adc0/CreateCharacterPointer con model 0xab).
+// char-select (creado por CreateCharacterPointer/CreateCharacterPointer con model 0xab).
 // Es un entity struct COMPLETO (stride 0x394; el original lo espacia 0x580 hasta
 // el array en 0x07abf5d0). Estaba declarado como un DWORD de 4 bytes, así que
 // CreateCharacterPointer (que escribe hasta +908) desbordaba ~900 bytes sobre los
@@ -629,9 +629,9 @@ extern char    DAT_07d2b494[];  // class name table (stride 300, 30 slots)
 #define _DAT_07abf5c4 (*(float*)(DAT_07abf050 + 0x574))  // preview entity field (BodyOrigin x)
 #define _DAT_07abf5c8 (*(float*)(DAT_07abf050 + 0x578))  // preview entity field (BodyOrigin y)
 #define _DAT_07abf5cc (*(float*)(DAT_07abf050 + 0x57c))  // preview entity field (BodyOrigin z)
-extern DWORD   DAT_07abf5d0;   // entity array base (stride 0x394)
+extern DWORD   CharactersClient; // IDA: DAT_07abf5d0 (0x07ABF5D0)
 extern int     DAT_07abf5d4;   // visible entity counter (reset each frame)
-extern char   *DAT_07abf5d8;   // local player entity ptr
+extern char   *Hero; // IDA: DAT_07abf5d8 (0x07ABF5D8)
 extern DWORD   DAT_07abf5dc;
 extern DWORD   DAT_07abf5e0;
 extern float  _DAT_07abf5e8;   // extra flag (reset 0 each frame)
@@ -791,7 +791,7 @@ extern DWORD   DAT_07e919b8;
 // handler 0x52 de Net_Process) la recorren con `&DAT_07e919bc + N*80`.
 extern char    DAT_07e919bc[0x13C30];
 // Pools de índices de nombres de personaje — cada uno es un buffer de 0x880 bytes (32 entradas × 0x44).
-// Lo recorre FUN_004cba60 (CharPreview_Reset) con stride 0x44.
+// Lo recorre CloseInventoryRelatedWindows (CharPreview_Reset) con stride 0x44.
 // DAT_07ea5298: alias de Inventory (ver el bloque de alias de pools mas abajo).
 extern DWORD   DAT_07ea5b18;
 extern DWORD   DAT_07ea5b1c;
@@ -1110,7 +1110,7 @@ extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
 // minimal de stubs_linker.cpp. Aliases IDA→DAT que el port full necesita.
 #define IDA_PORT_004FDC00 1
 
-// ── FUN_00445230 (AttackEffect) full IDA port activation ─────────────────────
+// ── AttackEffect (AttackEffect) full IDA port activation ─────────────────────
 // 2026-08-16: `AttackEffect` es la que spawnea los efectos VISUALES de los
 // skills (CreateEffect 191/200/201/223/240/241/568/1210/1211/1271, CreateJoint
 // 1253...). El port fiel de IDA (2043 lineas) vivia en stubs_IDA_ports.cpp pero
@@ -1118,7 +1118,7 @@ extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
 // lineas en stubs_misc2.cpp -> Lightning no mostraba nada y Evil Spirit /
 // Inferno salian incompletos. Activado el port completo.
 // El ruido anti-tamper crudo (CErrorReport::Write/aHashTableFullG, hash table
-// FUN_004041e0/FUN_00403f80 con otras firmas, delete__, PACKET_ENCRYPT, `Models`)
+// FUN_004041e0/HashTable_Insert con otras firmas, delete__, PACKET_ENCRYPT, `Models`)
 // quedo neutralizado con shims locales al inicio del bloque gated en
 // stubs_IDA_ports.cpp (con sus #undef al final). Ver CLAUDE.md 2026-08-16.
 #define IDA_PORT_00445230 1
@@ -1133,7 +1133,7 @@ extern char    DAT_083a7c09;   // in-game UI flag byte
 extern DWORD   DAT_083a7c0c;
 #define g_iNumAnswer  (*(int*)&DAT_083a7c0c)
 extern DWORD   DAT_083a7c10;
-extern int     DAT_083a7c14;   // login sub-state machine
+extern int     LoginSubState; // IDA: DAT_083a7c14 (0x083A7C14)
 extern DWORD   DAT_083a7c18;
 extern DWORD   DAT_083a7c1c;
 extern DWORD   DAT_083a7c20;
@@ -1290,7 +1290,7 @@ extern float  _DAT_0055294c;       // Entity_UpdateRender sin amplitude (0x15d)
 extern float  _DAT_00552acc;       // anim speed scale constant A
 extern float  _DAT_00552914;       // anim speed scale constant B
 
-// ── Server select input (FUN_0051e7e0) ───────────────────────────────────────
+// ── Server select input (CServerSelWin_UpdateWhileActive) ───────────────────────────────────────
 extern DWORD   DAT_0056169c;        // selected channel (port % 0x14 + 1)
 
 // ── Char menu UI builder (RenderHelpWindow) ───────────────────────────────────────
@@ -1456,8 +1456,8 @@ extern char    DAT_07eaa132;           // guard for B-key toggle enable
 extern char    DAT_07eaa134;           // RepairEnable_0
 
 // Screenshot / error dialog context
-extern DWORD   lpDefault_00583d88;     // default context for FUN_00480620
-// extern char    DAT_07d55410;           // error/info message for FUN_00480620   // -> alias a GlobalText, ver el final del archivo
+extern DWORD   lpDefault_00583d88;     // default context for UIChatLogWindow_AddText
+// extern char    DAT_07d55410;           // error/info message for UIChatLogWindow_AddText   // -> alias a GlobalText, ver el final del archivo
 
 // Connection-check context
 extern DWORD   DAT_07ea9848;           // connection context for FUN_004e3d60
@@ -1469,8 +1469,8 @@ extern int     DAT_00559cdc;           // system-message scroll timer (reset to 
 extern int     DAT_00559ce4;           // player-chat scroll timer   (reset to 0x96 on UI_ShowDialog)
 // Strings que Sound_Countdown1 / Sound_Countdown2 vuelven a mostrar al vencer el timer:
 extern char    DAT_07e11dd0[256];      // byte_7E11DD0: texto del aviso periódico (MoveNotices/CreateNotice)
-extern char    DAT_07e11dd8;           // player-chat periodic refresh msg  (arg2 of FUN_00480620)
-extern char    DAT_07e11ddc;           // player-chat periodic refresh label (arg1 of FUN_00480620)
+extern char    DAT_07e11dd8;           // player-chat periodic refresh msg  (arg2 of UIChatLogWindow_AddText)
+extern char    DAT_07e11ddc;           // player-chat periodic refresh label (arg1 of UIChatLogWindow_AddText)
 
 // ── Chat ring buffers ─────────────────────────────────────────────────────────
 // System message buffer (UI_AddNotice / Chat_DrawMessages)
@@ -1484,7 +1484,7 @@ extern "C" {
     extern BYTE  g_CharCreationEnable;    // 0xDE — permite crear chars
 }
 extern int     DAT_07e11d9c;           // system message count (max 5, i.e. 6 entries 0..5)
-// Player chat / notification buffer (FUN_00480620 / UI_DrawPlayerList)
+// Player chat / notification buffer (UIChatLogWindow_AddText / UI_DrawPlayerList)
 // Entry stride: 0x118 bytes (= 0x46 × sizeof(DWORD), Ghidra type convention)
 // Layout per entry: sender[0..0xA] + msg[0xB..0x10B] + type[0x10C]
 extern int     DAT_07e11da4;           // player chat entry count (max 0x77 = 119 entries)
@@ -1510,7 +1510,7 @@ extern int     DAT_07eaa12c;           // g_shEventChipCount (IDA 0x07EAA12C)
 // DAT_07eaa108 — guild UI flag — declared above as DWORD (line 609)
 extern BYTE    DAT_07ea97c0[64];       // guild entity pool (zeroed on stage 3, 0x40 bytes)
 extern char    DAT_07e11d73;           // char-select flag D (set 1 when guild stage==3)
-// Guild message string buffers (shown via ShowGuildMessage / FUN_0051d6f0):
+// Guild message string buffers (shown via ShowGuildMessage / CreateOkMessageBox):
 // extern BYTE    DAT_07d5b680;           // guild create result msg 1   // -> alias a GlobalText, ver el final del archivo
 // extern BYTE    DAT_07d5b7ac;           // guild create result msg 2   // -> alias a GlobalText, ver el final del archivo
 // extern BYTE    DAT_07d5c10c;           // guild create result msg 3   // -> alias a GlobalText, ver el final del archivo
@@ -1557,7 +1557,7 @@ extern int     DAT_083a7c34;           // guild UI auxiliary param
 // ── Declaraciones perdidas al restaurar globals.h desde git (2026-09-03) ──────
 // Estos globals ya existian en globals.cpp; sus `extern` estaban entre los
 // cambios sin commitear del header.
-extern char    DAT_07e11d6f;              // LockInputStatus (gate del IME)
+extern char    LockInputStatus; // IDA: DAT_07e11d6f (0x07E11D6F)
 extern DWORD   DAT_07e11d84;              // UseSkillWarrior 43: tick de activacion
 extern char    DAT_07e11dec;
 extern char    DAT_07e11df0;
@@ -1804,7 +1804,7 @@ extern char    DAT_0055de84;
 extern char    DAT_0055de10;
 extern FILE   *DAT_07d7806c;   // file handle (MonsterSetBase2 parser)
 extern char    DAT_005580ac[]; // "rb" fopen mode string
-extern char    DAT_00558090[3];   // bBuxCode — clave XOR de Quest.bmd (FC CF AB)
+extern char    bBuxCode[3]; // IDA: DAT_00558090 (0x00558090)
 extern char    TextParserTokenString[256]; // DAT_07CF1EF0 — TokenString output of
                                    // GetToken (0x47A1F0).  NO confundir con
                                    // ParserTokenString, que es el buffer del OTRO
@@ -1933,7 +1933,7 @@ extern char    s_Data_Sound_mRedSkull_wav_0055caec[];
 extern char    s_Data_Sound_mRedSkullDie_wav_0055cad0[];
 extern char    s_Data_Sound_mRedSkullAttack_wav_0055cab0[];
 
-// ── Effect_Create float constants ────────────────────────────────────────────
+// ── CreateEffect float constants ────────────────────────────────────────────
 extern float   _DAT_005524ec;
 extern float   _DAT_0055253c;
 extern float   _DAT_00552828;
@@ -2056,7 +2056,7 @@ extern char    s_PlayMp3_cmd_00559140[];    // play command string
 extern DWORD   DAT_0058443c;   // DS3D state dword
 
 // ── Net_Connect globals ───────────────────────────────────────────────────────
-extern DWORD   DAT_055ca15c;   // net connect state dword
+extern DWORD   First; // IDA: First (0x055CA15C)
 extern char    s_Failed_to_connect__00559688[]; // error string
 
 // ── Net_PacketSession globals ─────────────────────────────────────────────────
@@ -2064,7 +2064,7 @@ extern char    s_Failed_to_connect__00559688[]; // error string
 //   DAT_07ea5b68 .. 0x07ea7b48 (= 8160 bytes = 116 slots × 0x44 stride)
 //   DAT_07ea9880 .. 0x07eaa100 (= 2176 bytes =  32 slots × 0x44 stride)
 // Cada slot es el registro del panel de char-select. En nuestro build estaban
-// declarados como DWORDs sueltos, lo que hacía que FUN_004cba60 (CharPreview_Reset)
+// declarados como DWORDs sueltos, lo que hacía que CloseInventoryRelatedWindows (CharPreview_Reset)
 // recorriera mucho más allá del final, en memoria random → AV.
 extern DWORD   DAT_07eaa0e8;
 extern DWORD   DAT_07e11f34[16];   // MarkColor[16] — paleta de la marca de guild (ARGB)
@@ -2359,12 +2359,12 @@ extern DWORD   DAT_07eaa140;   // MixState (ver el alias mas arriba). La etiquet
                                // llama MixState y sus writers son ReceiveMix (0x4366C0),
                                // el envio del mix y ReceiveTalk.
 extern DWORD   DAT_07eaa131;   // SecondPassword checkbox/toggle state
-extern DWORD   DAT_07eaa138;   // RepairEnable (low byte cleared on teleport)
+extern DWORD   RepairEnable; // IDA: DAT_07eaa138 (0x07EAA138)
 extern DWORD   DAT_07ea5290;   // SecondPassword alt-panel origin X
 extern DWORD   DAT_07ea528c;   // SecondPassword alt-panel origin Y
 // Entradas de la tabla de strings que usa el switch de FUN_004e9050:
 // extern char    DAT_07d544d4;   // error string for case 0 (second password wrong)   // -> alias a GlobalText, ver el final del archivo
-extern char    DAT_07eaa1a0;   // UI message label A (FUN_00480620 arg1)
+extern char    DAT_07eaa1a0;   // UI message label A (UIChatLogWindow_AddText arg1)
 // extern char    DAT_07d54600;   // error string for auth-fail case   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa198;   // UI message label B
 // extern char    DAT_07d55c44;   // error string for case 0xfffffff8/0xfffffffe   // -> alias a GlobalText, ver el final del archivo
@@ -2471,7 +2471,7 @@ extern char    DAT_083a4100;          // flag: Lorencia object models already lo
 extern char    DAT_083a8ad8[32 * 0x38];  // Icarus water-tile name table (32 × 0x38)
 // DAT_0055e714 — format string for custom map object file path (zone index)
 // DAT_005580ac — declared above (file open mode char)
-// DAT_083a410c, DAT_0055a7c4, DAT_0055a7ac, DAT_05828d58 — declared above
+// DAT_083a410c, DAT_0055a7c4, World, DAT_05828d58 — declared above
 
 // ── BMD_SkinUpdate (0x0040b630) ──────────────────────────────────────────────
 extern int     DAT_00590c10;          // skinned vertex count
@@ -2521,9 +2521,8 @@ extern char    lpText_07d2aa08[];  // fatal-error message string (shown by ExitP
 // ── HeroTile — terrain tile type under the hero character ─────────────────────
 // DAT_07e118e8 ya declarado como DWORD cerca de la línea 546 (tipo de mundo/mapa)
 #define HeroTile ((int)DAT_07e118e8)
-// World = g_GameSubState = DAT_0055a7ac (already declared above)
+// World ya está declarado arriba.
 #ifndef World
-#define World    g_GameSubState
 
 // ── Pools de items y atributos de terreno ────────────────────────────────────
 // Centralizadas acá por el refactor B3 (2026-08-16). Antes cada .cpp las
@@ -2745,7 +2744,7 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 
 // Batch 18 — InitGame / ReceiveChat globals
 // EnableUse declarado arriba junto a DAT_05826d1c.
-extern int     DAT_07e11998;       // SendGetItem
+extern int     SendGetItem; // IDA: DAT_07e11998 (0x07E11998)
 // DAT_07e11d28 already declared above (line ~554) as DWORD
 extern int     DAT_07e11e10;       // SoccerTime
 extern int     DAT_07e11e14;       // SoccerObserver
@@ -2770,7 +2769,7 @@ extern int     DAT_07e11980;       // SceneFlag
 
 // Batch 19 — SendCheck globals
 extern DWORD   DAT_07e11d10;       // g_bGameServerConnected
-extern BYTE    DAT_07db8600;       // g_byPacketSerialSend
+extern BYTE    g_byPacketSerialSend; // IDA: g_byPacketSerialSend (0x07DB8600)
 extern BYTE    DAT_05826cfc;       // SendCheck first-call flag
 extern DWORD   DAT_05826d00;       // SendCheck first-call tickCount
 
@@ -2789,7 +2788,7 @@ extern void*   g_LoginSceneObjects[9]; // exact CreateObject pointers for login 
 
 // Batch 22 — AttackStage, CreateArrow
 extern int     DAT_00559858;       // g_iLimitAttackTime (attack frame limit counter)
-extern DWORD   DAT_05826d10;       // CurrentSkill (current skill ID for arrow/projectile)
+extern DWORD   CurrentSkill; // IDA: DAT_05826d10 (0x05826D10)
 extern float   _DAT_00552904;      // sin/cos offset multiplier (sword trail radius)
 extern float   _DAT_005528f8;      // sin/cos offset multiplier (slash projectile)
 extern float   _DAT_005528f4;      // combo animation offset constant
@@ -2877,10 +2876,10 @@ extern char    DAT_07d3c348;        // empty chat message string
 
 // ── Skill selection globals ──
 extern char    DAT_07d78098;        // skill mode flag (0=direct, nonzero=from attribute)
-extern DWORD   DAT_00559c84;        // InputEnable flag (already declared above, kept for reference)
+extern DWORD   InputEnable;          // IDA: DAT_00559c84 (0x00559C84)
 
 // ── CharSelect packet globals ──
-extern DWORD   DAT_005616ac;        // SelectedHero index (already declared above, kept for reference)
+extern DWORD   SelectedHero;         // IDA: DAT_005616ac (0x005616AC)
 
 // ── Chat bubble pool ──
 // Pool base = 0x07E016F8; stride 0x254 per entry; ~96 slots.

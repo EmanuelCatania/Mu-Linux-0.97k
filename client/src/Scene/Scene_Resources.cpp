@@ -4,7 +4,7 @@
 // FUN_0050fcf0 @ 0x0050fcf0 — Scene_LoadAccountResources
 // FUN_0050ff50 @ 0x0050ff50 — Scene_LoadCharSelectResources
 // FUN_0050ff10 @ 0x0050ff10 — Scene_UnloadAccountResources
-// FUN_005102c0 @ 0x005102c0 — Scene_UnloadCharSelectResources
+// IDA: ReleaseCharacterSceneData (0x005102C0)
 
 #include "stdafx.h"
 
@@ -131,12 +131,12 @@ void Scene_UnloadAccountResources(void)
 
   iVar1 = 0;
   do {
-    FUN_0052a050(iVar1 + 0xc);
+    UnloadImage(iVar1 + 0xc);
     iVar1 = iVar1 + 1;
   } while (iVar1 < 9);
   iVar1 = 0x56a;
   do {
-    FUN_0052a050(iVar1);
+    UnloadImage(iVar1);
     iVar1 = iVar1 + 1;
   } while (iVar1 < 0x5aa);
   FUN_004ffd50();
@@ -145,23 +145,23 @@ void Scene_UnloadAccountResources(void)
 }
 
 
-// FUN_005102c0 — Scene_UnloadCharSelectResources
+// IDA: ReleaseCharacterSceneData (0x005102C0)
 // Frees texture slots 0xc–0x1d and 0x56a–0x5a9 used by the char-select scene,
 // clears model data for slots 0x7cd8–0x7fc8 (stride 0xbc),
 // then calls FUN_004ffd50 and FUN_0045abb0(-1).
-// IDA: FUN_005102C0
-void Scene_UnloadCharSelectResources(void)
+// IDA: ReleaseCharacterSceneData (0x005102C0)
+void ReleaseCharacterSceneData(void)
 {
   int iVar1;
 
   iVar1 = 0;
   do {
-    FUN_0052a050(iVar1 + 0xc);
+    UnloadImage(iVar1 + 0xc);
     iVar1 = iVar1 + 1;
   } while (iVar1 < 0x12);
   iVar1 = 0x56a;
   do {
-    FUN_0052a050(iVar1);
+    UnloadImage(iVar1);
     iVar1 = iVar1 + 1;
   } while (iVar1 < 0x5aa);
   FUN_004ffd50();

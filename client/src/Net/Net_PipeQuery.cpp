@@ -5,7 +5,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_0053ed00 @ 0x0053ed00 — Pipe_SendQuery
+// IDA: FUN_0053ed00 (0x0053ED00)
 // If manager's first byte is non-zero (pipe open), sends opcode 0x616.
 uint __cdecl Pipe_SendQuery(void* mgr, char* name)
 {

@@ -26,7 +26,7 @@
 //
 // Architecture
 // ------------
-// Net_Recv (stubs.cpp FUN_0043de70) calls MuEmu::DecryptRecv on every fresh
+// Net_Recv (stubs.cpp CWsctlc_nRecv) calls MuEmu::DecryptRecv on every fresh
 // chunk returned by recv(), BEFORE any C1/C2/C3/C4 parsing. Likewise any
 // outbound send site that talks to a MuEmu server should encrypt with
 // MuEmu::EncryptSend just before calling ::send().

@@ -198,7 +198,7 @@ LABEL_57:
         {
           v11 = operator_new(0x585u);
           *(BYTE *)(v11 + 1412) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v11, (int)v7);
+          HashTable_Insert(&DAT_055c9bc8, v11, (int)v7);
         }
         else
         {
@@ -215,7 +215,7 @@ LABEL_57:
           v9[1412] = v10;
           if ( v10 < 2u )
           {
-            FUN_00404370(v7, v9);
+            Packet_DecryptBuffer(v7, v9);
           }
         }
         v12 = (const void *)CharacterMachine;
@@ -228,7 +228,7 @@ LABEL_57:
           v15[1412] = v16;
           if ( !v16 )
           {
-            FUN_00404400(v15, v12);
+            Packet_EncryptBuffer(v15, v12);
           }
         }
         if ( (unsigned short)*v6 > v13 )
@@ -246,7 +246,7 @@ LABEL_57:
         {
           v21 = operator_new(0x585u);
           *(BYTE *)(v21 + 1412) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v21, (int)v17);
+          HashTable_Insert(&DAT_055c9bc8, v21, (int)v17);
         }
         else
         {
@@ -263,7 +263,7 @@ LABEL_57:
           v19[1412] = v20;
           if ( v20 < 2u )
           {
-            FUN_00404370(v17, v19);
+            Packet_DecryptBuffer(v17, v19);
           }
         }
         v22 = (const void *)CharacterMachine;
@@ -276,7 +276,7 @@ LABEL_57:
           v25[1412] = v26;
           if ( !v26 )
           {
-            FUN_00404400(v25, v22);
+            Packet_EncryptBuffer(v25, v22);
           }
         }
         if ( (unsigned short)v6[1] < v23 )
@@ -313,7 +313,7 @@ LABEL_55:
   {
     v32 = operator_new(0x585u);
     *(BYTE *)(v32 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v32, (int)v28);
+    HashTable_Insert(&DAT_055c9bc8, v32, (int)v28);
   }
   else
   {
@@ -330,19 +330,19 @@ LABEL_55:
     v30[1412] = v31;
     if ( v31 < 2u )
     {
-      FUN_00404370(v28, v30);
+      Packet_DecryptBuffer(v28, v30);
     }
   }
   v33 = (const void *)CharacterMachine;
   v34 = *(DWORD *)(CharacterMachine + 1352);
   if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
   {
-    v35 = (BYTE *)FUN_00404280(&DAT_055c9bc8, v33);
+    v35 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, v33);
     v36 = v35[1412] - 1;
     v35[1412] = v36;
     if ( !v36 )
     {
-      FUN_00404400(v35, v33);
+      Packet_EncryptBuffer(v35, v33);
     }
   }
   v37 = *((DWORD *)v6 + 1);
@@ -565,7 +565,7 @@ void __cdecl CSQuest::clearQuest(DWORD This)
       }
       if ( v3 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2(&buf[2], v3);
         }
@@ -578,10 +578,10 @@ void __cdecl CSQuest::clearQuest(DWORD This)
       }
       return;
     }
-    if ( WSAGetLastError() == 10035 && DAT_055cc16c + 3 <= 0x2000 )
+    if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + 3 <= 0x2000 )
     {
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[2], v2);
-      DAT_055cc16c += v2;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[2], v2);
+      SocketClientSendBufferLength += v2;
     }
     else
     {
@@ -846,16 +846,16 @@ void __cdecl FUN_00401af0(DWORD This)
           {
             v14 = operator_new(2u);
             *(BYTE *)(v14 + 1) = 1;
-            FUN_00403f80(&DAT_055c9bc8, v14, (int)&g_byPacketSerialSend);
+            HashTable_Insert(&DAT_055c9bc8, v14, (int)&g_byPacketSerialSend);
           }
           else
           {
-            v12 = FUN_00404280(&DAT_055c9bc8, &g_byPacketSerialSend);
+            v12 = HashTable_GetNode(&DAT_055c9bc8, &g_byPacketSerialSend);
             v13 = *(BYTE *)(v12 + 1) + 1;
             *(BYTE *)(v12 + 1) = v13;
             if ( v13 < 2u )
             {
-              FUN_00404330(&g_byPacketSerialSend, v12);
+              Packet_DecryptByte(&g_byPacketSerialSend, v12);
             }
           }
           v15 = g_byPacketSerialSend;
@@ -865,14 +865,14 @@ void __cdecl FUN_00401af0(DWORD This)
           v16 = v11 - 1;
           v17 = v10 - v16;
           v18 = &v111[v16];
-          v19 = FUN_0053cc30(0, (int)&v111[v16], v17);
+          v19 = CSimpleModulus_Encode(0, (int)&v111[v16], v17);
           if ( v19 >= 256 )
           {
             v26 = v19 + 3;
             v107 = -60;
             v109 = v19 + 3;
             v108 = (v19 + 3) / 256;
-            FUN_0053cc30((int)v110, (int)v18, v17);
+            CSimpleModulus_Encode((int)v110, (int)v18, v17);
             v27 = 0;
             v28 = v26;
             if ( s != -1 )
@@ -887,7 +887,7 @@ void __cdecl FUN_00401af0(DWORD This)
                 }
                 if ( v29 )
                 {
-                  if ( DAT_055ce174 )
+                  if ( SocketClientLogPrint )
                   {
                     nullsub_2(&v107, v29);
                   }
@@ -900,10 +900,10 @@ void __cdecl FUN_00401af0(DWORD This)
                 }
                 goto LABEL_52;
               }
-              if ( WSAGetLastError() == 10035 && DAT_055cc16c + v26 <= 0x2000 )
+              if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v26 <= 0x2000 )
               {
-                qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v107, v28);
-                v25 = v28 + DAT_055cc16c;
+                qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v107, v28);
+                v25 = v28 + SocketClientSendBufferLength;
                 goto LABEL_51;
               }
 LABEL_49:
@@ -919,7 +919,7 @@ LABEL_106:
             v101 = v19 + 2;
             buf = -61;
             v105 = v19 + 2;
-            FUN_0053cc30((int)v106, (int)&v111[v16], v17);
+            CSimpleModulus_Encode((int)v106, (int)&v111[v16], v17);
             v20 = v101;
             v21 = 0;
             v22 = v101;
@@ -935,7 +935,7 @@ LABEL_106:
                 }
                 if ( v23 )
                 {
-                  if ( DAT_055ce174 )
+                  if ( SocketClientLogPrint )
                   {
                     nullsub_2(&buf, v23);
                   }
@@ -948,12 +948,12 @@ LABEL_106:
                 }
                 goto LABEL_52;
               }
-              if ( WSAGetLastError() == 10035 && DAT_055cc16c + v20 <= 0x2000 )
+              if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v20 <= 0x2000 )
               {
-                qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, v22);
-                v25 = v22 + DAT_055cc16c;
+                qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, v22);
+                v25 = v22 + SocketClientSendBufferLength;
 LABEL_51:
-                DAT_055cc16c = v25;
+                SocketClientSendBufferLength = v25;
                 goto LABEL_52;
               }
               goto LABEL_49;
@@ -1093,7 +1093,7 @@ LABEL_107:
         {
           v41 = operator_new(2u);
           *(BYTE *)(v41 + 1) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v41, (int)&g_byPacketSerialSend);
+          HashTable_Insert(&DAT_055c9bc8, v41, (int)&g_byPacketSerialSend);
         }
         else
         {
@@ -1110,7 +1110,7 @@ LABEL_107:
           *(BYTE *)(v39 + 1) = v40;
           if ( v40 < 2u )
           {
-            FUN_00404330(&g_byPacketSerialSend, v39);
+            Packet_DecryptByte(&g_byPacketSerialSend, v39);
           }
         }
         v42 = g_byPacketSerialSend;
@@ -1124,20 +1124,20 @@ LABEL_107:
           v44[1] = v45;
           if ( !v45 )
           {
-            FUN_00423710(v44, &g_byPacketSerialSend);
+            Packet_EncryptByte(v44, &g_byPacketSerialSend);
           }
         }
         v46 = v37 - 1;
         v47 = v36 - v46;
         v48 = &v111[v46];
-        v49 = FUN_0053cc30(0, (int)&v111[v46], v36 - v46);
+        v49 = CSimpleModulus_Encode(0, (int)&v111[v46], v36 - v46);
         if ( v49 >= 256 )
         {
           v59 = v49 + 3;
           v107 = -60;
           v109 = v49 + 3;
           v108 = (v49 + 3) / 256;
-          FUN_0053cc30((int)v110, (int)v48, v47);
+          CSimpleModulus_Encode((int)v110, (int)v48, v47);
           v60 = 0;
           v52 = v59;
           if ( s != -1 )
@@ -1152,7 +1152,7 @@ LABEL_107:
               }
               if ( v61 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2(&v107, v61);
                 }
@@ -1165,10 +1165,10 @@ LABEL_107:
               }
               goto LABEL_105;
             }
-            if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v59) <= 0x2000 )
+            if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v59) <= 0x2000 )
             {
-              v63 = (char *)&DAT_055ca16c + DAT_055cc16c;
-              qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v107, 4 * (v52 >> 2));
+              v63 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+              qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v107, 4 * (v52 >> 2));
               v57 = &v107 + 4 * (v52 >> 2);
               v56 = &v63[4 * (v52 >> 2)];
               v58 = v52;
@@ -1182,7 +1182,7 @@ LABEL_107:
           v50 = v49 + 2;
           buf = -61;
           v105 = v49 + 2;
-          FUN_0053cc30((int)v106, (int)&v111[v46], v47);
+          CSimpleModulus_Encode((int)v106, (int)&v111[v46], v47);
           v51 = 0;
           v52 = v50;
           if ( s != -1 )
@@ -1197,7 +1197,7 @@ LABEL_107:
               }
               if ( v53 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2(&buf, v53);
                 }
@@ -1210,16 +1210,16 @@ LABEL_107:
               }
               goto LABEL_105;
             }
-            if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v50) <= 0x2000 )
+            if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v50) <= 0x2000 )
             {
-              v55 = (char *)&DAT_055ca16c + DAT_055cc16c;
-              qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, 4 * (v52 >> 2));
+              v55 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+              qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, 4 * (v52 >> 2));
               v57 = &buf + 4 * (v52 >> 2);
               v56 = &v55[4 * (v52 >> 2)];
               v58 = v52;
 LABEL_104:
               qmemcpy(v56, v57, v58 & 3);
-              DAT_055cc16c += v52;
+              SocketClientSendBufferLength += v52;
               goto LABEL_105;
             }
 LABEL_102:
@@ -1750,7 +1750,7 @@ LABEL_6:
 
 // ── FUN_004042b0 (IDA-only, gated) ──
 #if defined(IDA_PORT_004042B0)
-int __cdecl FUN_00404280(int *_this, int a2)
+int __cdecl HashTable_GetNode(int *_this, int a2)
 {
   int v3; // edx
   int v4; // eax
@@ -2625,7 +2625,7 @@ LABEL_55:
       {
         v11 = operator_new(2u);
         *(BYTE *)(v11 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v11, (int)&g_byPacketSerialSend);
+        HashTable_Insert(&DAT_055c9bc8, v11, (int)&g_byPacketSerialSend);
       }
       else
       {
@@ -2642,7 +2642,7 @@ LABEL_55:
         v9[1] = v10;
         if ( (unsigned char)v10 < 2u )
         {
-          FUN_00404330(&g_byPacketSerialSend, v9);
+          Packet_DecryptByte(&g_byPacketSerialSend, v9);
         }
       }
       v12 = g_byPacketSerialSend;
@@ -2650,25 +2650,25 @@ LABEL_55:
       g_byPacketSerialSend = v12 + 1;
       if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
       {
-        v13 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v13 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
         v14 = v13[1] - 1;
         v13[1] = v14;
         if ( !v14 )
         {
-          FUN_00423710(v13, &g_byPacketSerialSend);
+          Packet_EncryptByte(v13, &g_byPacketSerialSend);
         }
       }
       v15 = v7 - 1;
       v16 = v6 - v15;
       v17 = &v74[v15];
-      v18 = FUN_0053cc30(0, (int)&v74[v15], v6 - v15);
+      v18 = CSimpleModulus_Encode(0, (int)&v74[v15], v6 - v15);
       if ( v18 >= 256 )
       {
         v28 = v18 + 3;
         v72[0] = -60;
         v72[2] = v18 + 3;
         v72[1] = (v18 + 3) / 256;
-        FUN_0053cc30((int)v73, (int)v17, v16);
+        CSimpleModulus_Encode((int)v73, (int)v17, v16);
         v29 = 0;
         v21 = v28;
         if ( s != -1 )
@@ -2683,7 +2683,7 @@ LABEL_55:
             }
             if ( v30 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2(v72, v30);
               }
@@ -2696,10 +2696,10 @@ LABEL_55:
             }
             return 1;
           }
-          if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v28) <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v28) <= 0x2000 )
           {
-            v33 = (char *)&DAT_055ca16c + DAT_055cc16c;
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, v72, 4 * (v21 >> 2));
+            v33 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, v72, 4 * (v21 >> 2));
             v26 = &v72[4 * (v21 >> 2)];
             v25 = &v33[4 * (v21 >> 2)];
             v27 = v21;
@@ -2716,7 +2716,7 @@ LABEL_45:
         v19 = v18 + 2;
         buf[0] = -61;
         buf[1] = v18 + 2;
-        FUN_0053cc30((int)v71, (int)&v74[v15], v34);
+        CSimpleModulus_Encode((int)v71, (int)&v74[v15], v34);
         v20 = 0;
         v21 = v19;
         if ( s != -1 )
@@ -2731,7 +2731,7 @@ LABEL_45:
             }
             if ( v22 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2(buf, v22);
               }
@@ -2744,16 +2744,16 @@ LABEL_45:
             }
             return 1;
           }
-          if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v19) <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v19) <= 0x2000 )
           {
-            v24 = (char *)&DAT_055ca16c + DAT_055cc16c;
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, buf, 4 * (v21 >> 2));
+            v24 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, buf, 4 * (v21 >> 2));
             v26 = &buf[4 * (v21 >> 2)];
             v25 = &v24[4 * (v21 >> 2)];
             v27 = v21;
 LABEL_47:
             qmemcpy(v25, v26, v27 & 3);
-            DAT_055cc16c += v21;
+            SocketClientSendBufferLength += v21;
             return 1;
           }
           goto LABEL_45;
@@ -4661,9 +4661,9 @@ int __cdecl FUN_0040c500(DWORD *_this, int a2, int a3, int a4)
 }
 #endif
 
-// ── FUN_0040c580 (IDA-only, gated) ──
+// ── ChatListBox_DequeueFront (IDA-only, gated) ──
 #if defined(IDA_PORT_0040C580)
-int __cdecl FUN_0040c580(int _this)
+int __cdecl ChatListBox_DequeueFront(int _this)
 {
   int result; // eax
   DWORD *v3; // eax
@@ -4775,7 +4775,7 @@ int __cdecl FUN_0040c710(DWORD *_this, int a2)
 
   while ( _this[3] )
   {
-    FUN_0040c580((int)_this);
+    ChatListBox_DequeueFront((int)_this);
     if ( !(*(int (__cdecl **)(DWORD *))(*_this + 36))(_this) )
     {
       (*(void (__cdecl **)(DWORD *))(*_this + 32))(_this);
@@ -8159,7 +8159,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
     v239 = v101;
     v240 = v101;
     *(BYTE *)(v101 + 4) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v240, (int)&DAT_055ca01c);
+    HashTable_Insert(&DAT_055c9bc8, v240, (int)&DAT_055ca01c);
   }
   else
   {
@@ -8176,7 +8176,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
     }
     if ( (unsigned char)++*(BYTE *)(v241 + 4) < 2u )
     {
-      FUN_00409e20(&DAT_055ca01c, v241);
+      Packet_DecryptDword(&DAT_055ca01c, v241);
     }
   }
   v100 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
@@ -8195,7 +8195,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
     }
     if ( !--*(BYTE *)(v236 + 4) )
     {
-      FUN_00423760(v236, &DAT_055ca01c);
+      Packet_EncryptDword(v236, &DAT_055ca01c);
     }
   }
   OpenTextData();
@@ -8526,7 +8526,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
           v121 = v21;
           v122 = v21;
           *(BYTE *)(v21 + 4) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v122, (int)&DAT_055ca02c);
+          HashTable_Insert(&DAT_055c9bc8, v122, (int)&DAT_055ca02c);
         }
         else
         {
@@ -8543,7 +8543,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
           }
           if ( (unsigned char)++*(BYTE *)(v123 + 4) < 2u )
           {
-            FUN_00409e20(&DAT_055ca02c, v123);
+            Packet_DecryptDword(&DAT_055ca02c, v123);
           }
         }
         if ( DAT_055ca02c <= 1 )
@@ -8565,7 +8565,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             }
             if ( !--*(BYTE *)(v115 + 4) )
             {
-              FUN_00423760(v115, &DAT_055ca02c);
+              Packet_EncryptDword(v115, &DAT_055ca02c);
             }
           }
           v16 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
@@ -8575,7 +8575,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             v110 = v14;
             v111 = v14;
             *(BYTE *)(v14 + 4) = 1;
-            FUN_00403f80(&DAT_055c9bc8, v111, (int)&DAT_055ca01c);
+            HashTable_Insert(&DAT_055c9bc8, v111, (int)&DAT_055ca01c);
           }
           else
           {
@@ -8592,18 +8592,18 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             }
             if ( (unsigned char)++*(BYTE *)(v112 + 4) < 2u )
             {
-              FUN_00409e20(&DAT_055ca01c, v112);
+              Packet_DecryptDword(&DAT_055ca01c, v112);
             }
           }
           DAT_055ca01c = 1;
           v13 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
           if ( v13 != -1 )
           {
-            v12 = FUN_00404280(&DAT_055c9bc8, &DAT_055ca01c);
+            v12 = HashTable_GetNode(&DAT_055c9bc8, &DAT_055ca01c);
             v107 = v12;
             if ( !--*(BYTE *)(v107 + 4) )
             {
-              FUN_00423760(v107, &DAT_055ca01c);
+              Packet_EncryptDword(v107, &DAT_055ca01c);
             }
           }
           ShowWindow(g_hWnd, 6);
@@ -8614,16 +8614,16 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             v104 = v9;
             v105 = v9;
             *(BYTE *)(v9 + 4) = 1;
-            FUN_00403f80(&DAT_055c9bc8, v105, (int)&DAT_055ca01c);
+            HashTable_Insert(&DAT_055c9bc8, v105, (int)&DAT_055ca01c);
           }
           else
           {
-            v10 = FUN_00404280(&DAT_055c9bc8, &DAT_055ca01c);
+            v10 = HashTable_GetNode(&DAT_055c9bc8, &DAT_055ca01c);
             v106 = v10;
             ++*(BYTE *)(v10 + 4);
             if ( *(unsigned char *)(v106 + 4) < 2u )
             {
-              FUN_00409e20(&DAT_055ca01c, v106);
+              Packet_DecryptDword(&DAT_055ca01c, v106);
             }
           }
           DAT_055ca01c = 0;
@@ -8648,7 +8648,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             }
             if ( !--*(BYTE *)(v118 + 4) )
             {
-              FUN_00423760(v118, &DAT_055ca02c);
+              Packet_EncryptDword(v118, &DAT_055ca02c);
             }
           }
           SetTimer(g_hWnd, 0x3E9u, 0x3E8u, 0);
@@ -8723,12 +8723,12 @@ void __cdecl FUN_00422c50(int _this)
   lpMem = v2;
   if ( v2[2] )
   {
-    FUN_004235d0(v2[2]);
+    CBTree_RemoveFrom(v2[2]);
     v2 = (LPVOID *)lpMem;
   }
   if ( v2[3] )
   {
-    FUN_004235d0(v2[3]);
+    CBTree_RemoveFrom(v2[3]);
     v2 = (LPVOID *)lpMem;
   }
   v11 = 0;
@@ -8790,7 +8790,7 @@ LABEL_27:
   while ( v4 );
   v6 = *v5;
   v7 = v5[1];
-  FUN_004232f0(&v11);
+  CBTree_RemoveNode(&v11);
   *(DWORD *)lpMem = v6;
   *((DWORD *)lpMem + 1) = v7;
   v3[2] = 0;
@@ -9128,7 +9128,7 @@ LABEL_6:
 LABEL_24:
     v22 = operator_new(5u);
     *(BYTE *)(v22 + 4) = 1;
-    FUN_00403f80(_this, v22, (int)v3);
+    HashTable_Insert(_this, v22, (int)v3);
   }
   v15 = *_this;
   v27 = *(DWORD *)v3;
@@ -9159,7 +9159,7 @@ LABEL_24:
           *(BYTE *)(v24 + 4) = v25;
           if ( !v25 )
           {
-            FUN_00423760((DWORD *)v24, a2);
+            Packet_EncryptDword((DWORD *)v24, a2);
           }
         }
         return v27;
@@ -9491,7 +9491,7 @@ void __cdecl FUN_00444b30(DWORD o)
 }
 #endif
 
-// ── FUN_00445230 (IDA-only, gated) ──
+// ── AttackEffect (IDA-only, gated) ──
 #if defined(IDA_PORT_00445230)
 extern "C" void DbgLogPublic(const char* msg);   // probe AEDBG (temporal)
 
@@ -9536,11 +9536,11 @@ static inline unsigned char AE_SkillRead(const void* ctx, const void* p)
 // float*/void*. Se castea aca en vez de tocar los ~50 call sites.
 static inline float* AE_CreateEffect(int type, float* p1, float* p2, float* p3,
                                      int a4, int a5, int a6, int a7, int flag)
-{ return FUN_00460dc0(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
+{ return CreateEffect(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
                       (float*)(intptr_t)a6, (float*)(intptr_t)a7, (byte)flag); }
 static inline float* AE_CreateEffect(int type, float* p1, float* p2, float* p3,
                                      int a4, int a5, float* a6, int a7, int flag)
-{ return FUN_00460dc0(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
+{ return CreateEffect(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
                       a6, (float*)(intptr_t)a7, (byte)flag); }
 static inline void* AE_CreateJoint(int type, float* p1, float* p2, float* p3,
                                    int sub, int owner, double scale, int a, int b)
@@ -9548,25 +9548,25 @@ static inline void* AE_CreateJoint(int type, float* p1, float* p2, float* p3,
                       (short)a, (unsigned char)b); }
 static inline void AE_TransformPosition(DWORD model, const void* mat,
                                         float* pos, float* out, int flag)
-{ FUN_004409a0((void*)(uintptr_t)model, (float*)mat, pos, out, (char)flag); }
+{ BMD_TransformPosition((void*)(uintptr_t)model, (float*)mat, pos, out, (char)flag); }
 
 #define Models                        DAT_05828d58
 #define Matrix                        DAT_07abf444   // IDA `Matrix` @ 0x07ABF444
 #define operator_new(n)               AE_new((size_t)(n))
 #define delete__(p)                   AE_delete((DWORD)(uintptr_t)(p))
 #define FUN_004041e0(ctx, key)        AE_ht_index((const void*)(ctx), (DWORD)(key))
-#define FUN_00403f80(ctx, node, key)  AE_ht_noop3((const void*)(ctx), (DWORD)(uintptr_t)(node), (DWORD)(key))
-#define FUN_00423710(node, key)       AE_ht_noop2((const void*)(uintptr_t)(node), (DWORD)(uintptr_t)(key))
+#define HashTable_Insert(ctx, node, key)  AE_ht_noop3((const void*)(ctx), (DWORD)(uintptr_t)(node), (DWORD)(key))
+#define Packet_EncryptByte(node, key)       AE_ht_noop2((const void*)(uintptr_t)(node), (DWORD)(uintptr_t)(key))
 #define PACKET_ENCRYPT(ctx, key)      AE_ht_noop2((const void*)(ctx), (DWORD)(uintptr_t)(key))
 #define FUN_0045fae0(ctx, p)          AE_SkillRead((const void*)(ctx), (const void*)(p))
 #define FUN_00466300(pos)             FUN_00466300((float*)(uintptr_t)(pos))
 #define CreateJoint                   AE_CreateJoint
 #define TransformPosition(a,b,c,d,e)  AE_TransformPosition((DWORD)(uintptr_t)(a), (const void*)(b), (c), (d), (e))
-#define PlayBuffer(a,b,c)             FUN_00404bc0((a), (DWORD)(b), (BOOL)(c))
+#define PlayBuffer(a,b,c)             PlayBuffer((a), (DWORD)(b), (BOOL)(c))
 #undef  CreateEffect
 #define CreateEffect                  AE_CreateEffect
 
-void __cdecl FUN_00445230(int Owner)
+void __cdecl AttackEffect(int Owner)
 {
   // Guard de port (no esta en IDA): si la tabla de modelos todavia no esta
   // cargada, `Models + 188*type` seria un puntero basura que TransformPosition
@@ -9920,7 +9920,7 @@ LABEL_263:
       }
       v174 = operator_new(2u);
       *(BYTE *)(v174 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v174, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v174, Owner + 770);
 LABEL_265:
       Ownert = *v171;
       v244 = (const char *)(Owner + 770);
@@ -10039,7 +10039,7 @@ LABEL_291:
       v188 = operator_new(2u);
       v189 = (char *)(Owner + 770);
       *(BYTE *)(v188 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v188, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v188, Owner + 770);
 LABEL_293:
       v190 = *v189;
       PACKET_ENCRYPT(&DAT_055c9bc8, v189);
@@ -10120,7 +10120,7 @@ LABEL_236:
       }
       v155 = operator_new(2u);
       *(BYTE *)(v155 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v155, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v155, Owner + 770);
 LABEL_238:
       Ownerr = *v152;
       v244 = (const char *)(Owner + 770);
@@ -10275,7 +10275,7 @@ LABEL_208:
       }
       v134 = operator_new(2u);
       *(BYTE *)(v134 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v134, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v134, Owner + 770);
 LABEL_210:
       Ownerp = *v131;
       v244 = (const char *)(Owner + 770);
@@ -10410,7 +10410,7 @@ LABEL_179:
         }
         v118 = operator_new(2u);
         *(BYTE *)(v118 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v118, Owner + 770);
+        HashTable_Insert(&DAT_055c9bc8, v118, Owner + 770);
 LABEL_181:
         Ownerm = *v117;
         v244 = (const char *)(Owner + 770);
@@ -10431,7 +10431,7 @@ LABEL_181:
                 v126[1] = v127;
                 if ( !v127 )
                 {
-                  FUN_00423710(v126, (BYTE *)(Owner + 770));
+                  Packet_EncryptByte(v126, (BYTE *)(Owner + 770));
                 }
               }
               break;
@@ -10563,7 +10563,7 @@ LABEL_114:
         }
         v83 = operator_new(2u);
         *(BYTE *)(v83 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v83, Owner + 770);
+        HashTable_Insert(&DAT_055c9bc8, v83, Owner + 770);
 LABEL_116:
         Ownerh = *v80;
         v244 = (const char *)(Owner + 770);
@@ -10702,7 +10702,7 @@ LABEL_146:
       }
       v101 = operator_new(2u);
       *(BYTE *)(v101 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v101, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v101, Owner + 770);
 LABEL_148:
       Ownerk = *v98;
       v244 = (const char *)(Owner + 770);
@@ -10837,7 +10837,7 @@ LABEL_44:
       }
       v30 = operator_new(2u);
       *(BYTE *)(v30 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v30, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v30, Owner + 770);
 LABEL_46:
       Ownerd = *v27;
       v244 = (const char *)(Owner + 770);
@@ -11043,7 +11043,7 @@ LABEL_82:
       }
       v64 = operator_new(2u);
       *(BYTE *)(v64 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v64, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v64, Owner + 770);
 LABEL_84:
       Ownerf = *v61;
       v244 = (const char *)(Owner + 770);
@@ -11173,7 +11173,7 @@ LABEL_6:
       }
       v7 = operator_new(2u);
       *(BYTE *)(v7 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v7, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v7, Owner + 770);
 LABEL_8:
       Ownerb = *v4;
       v245 = Owner + 770;
@@ -11637,8 +11637,8 @@ LABEL_75:
 #undef operator_new
 #undef delete__
 #undef FUN_004041e0
-#undef FUN_00403f80
-#undef FUN_00423710
+#undef HashTable_Insert
+#undef Packet_EncryptByte
 #undef PACKET_ENCRYPT
 #undef FUN_0045fae0
 #undef FUN_00466300
@@ -11646,7 +11646,7 @@ LABEL_75:
 #undef TransformPosition
 #undef PlayBuffer
 #undef CreateEffect
-#define CreateEffect FUN_00460dc0
+#define CreateEffect CreateEffect
 #endif
 
 // ── FUN_004454fc (IDA-only, gated) ──
@@ -12000,7 +12000,7 @@ LABEL_263:
       }
       v174 = operator_new(2u);
       *(BYTE *)(v174 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v174, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v174, Owner + 770);
 LABEL_265:
       Ownert = *v171;
       v244 = (const char *)(Owner + 770);
@@ -12119,7 +12119,7 @@ LABEL_291:
       v188 = operator_new(2u);
       v189 = (char *)(Owner + 770);
       *(BYTE *)(v188 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v188, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v188, Owner + 770);
 LABEL_293:
       v190 = *v189;
       PACKET_ENCRYPT(&DAT_055c9bc8, v189);
@@ -12200,7 +12200,7 @@ LABEL_236:
       }
       v155 = operator_new(2u);
       *(BYTE *)(v155 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v155, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v155, Owner + 770);
 LABEL_238:
       Ownerr = *v152;
       v244 = (const char *)(Owner + 770);
@@ -12355,7 +12355,7 @@ LABEL_208:
       }
       v134 = operator_new(2u);
       *(BYTE *)(v134 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v134, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v134, Owner + 770);
 LABEL_210:
       Ownerp = *v131;
       v244 = (const char *)(Owner + 770);
@@ -12490,7 +12490,7 @@ LABEL_179:
         }
         v118 = operator_new(2u);
         *(BYTE *)(v118 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v118, Owner + 770);
+        HashTable_Insert(&DAT_055c9bc8, v118, Owner + 770);
 LABEL_181:
         Ownerm = *v117;
         v244 = (const char *)(Owner + 770);
@@ -12511,7 +12511,7 @@ LABEL_181:
                 v126[1] = v127;
                 if ( !v127 )
                 {
-                  FUN_00423710(v126, (BYTE *)(Owner + 770));
+                  Packet_EncryptByte(v126, (BYTE *)(Owner + 770));
                 }
               }
               break;
@@ -12643,7 +12643,7 @@ LABEL_114:
         }
         v83 = operator_new(2u);
         *(BYTE *)(v83 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v83, Owner + 770);
+        HashTable_Insert(&DAT_055c9bc8, v83, Owner + 770);
 LABEL_116:
         Ownerh = *v80;
         v244 = (const char *)(Owner + 770);
@@ -12782,7 +12782,7 @@ LABEL_146:
       }
       v101 = operator_new(2u);
       *(BYTE *)(v101 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v101, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v101, Owner + 770);
 LABEL_148:
       Ownerk = *v98;
       v244 = (const char *)(Owner + 770);
@@ -12917,7 +12917,7 @@ LABEL_44:
       }
       v30 = operator_new(2u);
       *(BYTE *)(v30 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v30, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v30, Owner + 770);
 LABEL_46:
       Ownerd = *v27;
       v244 = (const char *)(Owner + 770);
@@ -13123,7 +13123,7 @@ LABEL_82:
       }
       v64 = operator_new(2u);
       *(BYTE *)(v64 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v64, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v64, Owner + 770);
 LABEL_84:
       Ownerf = *v61;
       v244 = (const char *)(Owner + 770);
@@ -13253,7 +13253,7 @@ LABEL_6:
       }
       v7 = operator_new(2u);
       *(BYTE *)(v7 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v7, Owner + 770);
+      HashTable_Insert(&DAT_055c9bc8, v7, Owner + 770);
 LABEL_8:
       Ownerb = *v4;
       v245 = Owner + 770;
@@ -13899,7 +13899,7 @@ LABEL_6:
 LABEL_20:
     v22 = operator_new(2u);
     *(BYTE *)(v22 + 1) = 1;
-    FUN_00403f80(_this, v22, (int)v3);
+    HashTable_Insert(_this, v22, (int)v3);
   }
   v15 = *_this;
   v26 = *v3;
@@ -13930,7 +13930,7 @@ LABEL_20:
           v24[1] = v25;
           if ( !v25 )
           {
-            FUN_00423710(v24, a2);
+            Packet_EncryptByte(v24, a2);
           }
         }
         return v26;
@@ -14581,9 +14581,9 @@ short __cdecl FUN_0047d000(WORD *a1)
 }
 #endif
 
-// ── FUN_0047e350 (IDA-only, gated) ──
+// ── CalculateNextExperince (IDA-only, gated) ──
 #if defined(IDA_PORT_0047E350)
-int __cdecl FUN_0047e350(int _this)
+int __cdecl CalculateNextExperince(int _this)
 {
   unsigned short v1; // di
   int result; // eax
@@ -14835,7 +14835,7 @@ LABEL_5:
   }
   v5 = operator_new(0x585u);
   *(BYTE *)(v5 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v5, (int)v2);
+  HashTable_Insert(&DAT_055c9bc8, v5, (int)v2);
 LABEL_7:
   v6 = (const void *)CharacterMachine;
   v23 = *(unsigned short *)(CharacterAttribute + 14);
@@ -14864,7 +14864,7 @@ LABEL_7:
           v15[1412] = v16;
           if ( !v16 )
           {
-            FUN_00404400(v15, v6);
+            Packet_EncryptBuffer(v15, v6);
           }
         }
         break;
@@ -15644,12 +15644,12 @@ int FUN_004824c0()
         {
           break;
         }
-        v3 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v0);
+        v3 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v0);
         v4 = v3[1412] + 1;
         v3[1412] = v4;
         if ( v4 < 2u )
         {
-          FUN_00404370(v0, v3);
+          Packet_DecryptBuffer(v0, v3);
         }
         goto LABEL_9;
       }
@@ -15668,7 +15668,7 @@ LABEL_5:
   }
   v8 = operator_new(0x585u);
   *(BYTE *)(v8 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v8, (int)v0);
+  HashTable_Insert(&DAT_055c9bc8, v8, (int)v0);
 LABEL_9:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
   {
@@ -15694,7 +15694,7 @@ LABEL_9:
             v10[1412] = v11;
             if ( !v11 )
             {
-              FUN_00404400(v10, v5);
+              Packet_EncryptBuffer(v10, v5);
             }
           }
           break;
@@ -15770,7 +15770,7 @@ LABEL_35:
             v21[1412] = v22;
             if ( !v22 )
             {
-              FUN_00404400(v21, v18);
+              Packet_EncryptBuffer(v21, v18);
             }
           }
           return -1;
@@ -15844,12 +15844,12 @@ int FUN_004824c0()
         {
           break;
         }
-        v3 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v0);
+        v3 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v0);
         v4 = v3[1412] + 1;
         v3[1412] = v4;
         if ( v4 < 2u )
         {
-          FUN_00404370(v0, v3);
+          Packet_DecryptBuffer(v0, v3);
         }
         goto LABEL_9;
       }
@@ -15868,7 +15868,7 @@ LABEL_5:
   }
   v8 = operator_new(0x585u);
   *(BYTE *)(v8 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v8, (int)v0);
+  HashTable_Insert(&DAT_055c9bc8, v8, (int)v0);
 LABEL_9:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
   {
@@ -15894,7 +15894,7 @@ LABEL_9:
             v10[1412] = v11;
             if ( !v11 )
             {
-              FUN_00404400(v10, v5);
+              Packet_EncryptBuffer(v10, v5);
             }
           }
           break;
@@ -15970,7 +15970,7 @@ LABEL_35:
             v21[1412] = v22;
             if ( !v22 )
             {
-              FUN_00404400(v21, v18);
+              Packet_EncryptBuffer(v21, v18);
             }
           }
           return -1;
@@ -16043,12 +16043,12 @@ int FUN_00482850()
         {
           break;
         }
-        v7 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v0);
+        v7 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v0);
         v8 = v7[1412] + 1;
         v7[1412] = v8;
         if ( v8 < 2u )
         {
-          FUN_00404370(v0, v7);
+          Packet_DecryptBuffer(v0, v7);
         }
         goto LABEL_7;
       }
@@ -16067,7 +16067,7 @@ LABEL_5:
   }
   v3 = operator_new(0x585u);
   *(BYTE *)(v3 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v3, (int)v0);
+  HashTable_Insert(&DAT_055c9bc8, v3, (int)v0);
 LABEL_7:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
   {
@@ -16093,7 +16093,7 @@ LABEL_7:
             v10[1412] = v11;
             if ( !v11 )
             {
-              FUN_00404400(v10, v4);
+              Packet_EncryptBuffer(v10, v4);
             }
           }
           break;
@@ -16167,7 +16167,7 @@ LABEL_13:
             v21[1412] = v22;
             if ( !v22 )
             {
-              FUN_00404400(v21, v18);
+              Packet_EncryptBuffer(v21, v18);
             }
           }
           return 0;
@@ -16643,7 +16643,7 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
   {
     v6 = operator_new(0x585u);
     *(BYTE *)(v6 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v6, (int)v2);
+    HashTable_Insert(&DAT_055c9bc8, v6, (int)v2);
   }
   else
   {
@@ -16660,7 +16660,7 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
     v4[1412] = v5;
     if ( v5 < 2u )
     {
-      FUN_00404370(v2, v4);
+      Packet_DecryptBuffer(v2, v4);
     }
   }
   if ( (BYTE)DAT_07d78098 )
@@ -16680,7 +16680,7 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
     v9[1412] = v10;
     if ( !v10 )
     {
-      FUN_00404400(v9, v7);
+      Packet_EncryptBuffer(v9, v7);
     }
   }
   v11 = (char *)(Hero + 904);
@@ -16837,7 +16837,7 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
       }
       if ( v22 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&buf[1], v22);
         }
@@ -16850,10 +16850,10 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
       }
       goto LABEL_44;
     }
-    if ( WSAGetLastError() == 10035 && DAT_055cc16c + v20 <= 0x2000 )
+    if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v20 <= 0x2000 )
     {
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[1], Position);
-      DAT_055cc16c += Position;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[1], Position);
+      SocketClientSendBufferLength += Position;
     }
     else
     {
@@ -17262,14 +17262,14 @@ LABEL_44:
     --v58;
     v60 = v57 - v58;
     v61 = &v333[v58];
-    v62 = FUN_0053cc30(0, (int)v61, v60);
+    v62 = CSimpleModulus_Encode(0, (int)v61, v60);
     if ( v62 >= 256 )
     {
       v68 = (float *)(v62 + 3);
       v329 = -60;
       v331 = v62 + 3;
       v330 = (v62 + 3) / 256;
-      FUN_0053cc30((int)v332, (int)v61, v60);
+      CSimpleModulus_Encode((int)v332, (int)v61, v60);
       v69 = 0;
       Positiond = v68;
       if ( s != -1 )
@@ -17284,7 +17284,7 @@ LABEL_44:
           }
           if ( v70 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&v329, v70);
             }
@@ -17297,10 +17297,10 @@ LABEL_44:
           }
           goto LABEL_120;
         }
-        if ( WSAGetLastError() == 10035 && (int)v68 + DAT_055cc16c <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && (int)v68 + SocketClientSendBufferLength <= 0x2000 )
         {
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v329, (unsigned int)Positiond);
-          v67 = (int)Positiond + DAT_055cc16c;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v329, (unsigned int)Positiond);
+          v67 = (int)Positiond + SocketClientSendBufferLength;
           goto LABEL_119;
         }
         goto LABEL_117;
@@ -17311,7 +17311,7 @@ LABEL_44:
       Positionc = (float *)(v62 + 2);
       v326 = -61;
       v327 = v62 + 2;
-      FUN_0053cc30((int)v328, (int)v61, v60);
+      CSimpleModulus_Encode((int)v328, (int)v61, v60);
       v63 = (signed int)Positionc;
       v64 = 0;
       if ( s != -1 )
@@ -17326,7 +17326,7 @@ LABEL_44:
           }
           if ( v65 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&v326, v65);
             }
@@ -17339,12 +17339,12 @@ LABEL_44:
           }
           goto LABEL_120;
         }
-        if ( WSAGetLastError() == 10035 && (int)Positionc + DAT_055cc16c <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && (int)Positionc + SocketClientSendBufferLength <= 0x2000 )
         {
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v326, v63);
-          v67 = v63 + DAT_055cc16c;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v326, v63);
+          v67 = v63 + SocketClientSendBufferLength;
 LABEL_119:
-          DAT_055cc16c = v67;
+          SocketClientSendBufferLength = v67;
           goto LABEL_120;
         }
 LABEL_117:
@@ -17372,7 +17372,7 @@ LABEL_121:
     {
       v78 = operator_new(0x585u);
       *(BYTE *)(v78 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v78, (int)v74);
+      HashTable_Insert(&DAT_055c9bc8, v78, (int)v74);
     }
     else
     {
@@ -17389,7 +17389,7 @@ LABEL_121:
       v76[1412] = v77;
       if ( v77 < 2u )
       {
-        FUN_00404370(v74, v76);
+        Packet_DecryptBuffer(v74, v76);
       }
     }
     LODWORD(x2) = *(unsigned char *)(*(unsigned char *)(Hero + 913) + CharacterAttribute + 87);
@@ -17406,7 +17406,7 @@ LABEL_121:
       v82[1412] = v83;
       if ( !v83 )
       {
-        FUN_00404400(v82, v79);
+        Packet_EncryptBuffer(v82, v79);
       }
     }
     v84 = Hero + 449;
@@ -17764,16 +17764,16 @@ LABEL_121:
     {
       v114 = operator_new(2u);
       *(BYTE *)(v114 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v114, (int)&g_byPacketSerialSend);
+      HashTable_Insert(&DAT_055c9bc8, v114, (int)&g_byPacketSerialSend);
     }
     else
     {
-      v112 = (char *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+      v112 = (char *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
       v113 = v112[1] + 1;
       v112[1] = v113;
       if ( (unsigned char)v113 < 2u )
       {
-        FUN_00404330(&g_byPacketSerialSend, v112);
+        Packet_DecryptByte(&g_byPacketSerialSend, v112);
       }
     }
     v115 = g_byPacketSerialSend;
@@ -17783,13 +17783,13 @@ LABEL_121:
     v116 = v111 - 1;
     v117 = v110 - v116;
     v118 = &v333[v116];
-    v119 = FUN_0053cc30(0, (int)&v333[v116], v117);
+    v119 = CSimpleModulus_Encode(0, (int)&v333[v116], v117);
     if ( v119 < 256 )
     {
       Positione = (float *)(v119 + 2);
       v326 = -61;
       v327 = v119 + 2;
-      FUN_0053cc30((int)v328, (int)&v333[v116], v117);
+      CSimpleModulus_Encode((int)v328, (int)&v333[v116], v117);
       v120 = (signed int)Positione;
       v121 = 0;
       if ( s != -1 )
@@ -17804,7 +17804,7 @@ LABEL_121:
           }
           if ( v122 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&v326, v122);
             }
@@ -17817,13 +17817,13 @@ LABEL_121:
           }
           goto LABEL_304;
         }
-        if ( WSAGetLastError() == 10035 && (int)Positione + DAT_055cc16c <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && (int)Positione + SocketClientSendBufferLength <= 0x2000 )
         {
 LABEL_194:
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v326, v120);
-          v124 = v120 + DAT_055cc16c;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v326, v120);
+          v124 = v120 + SocketClientSendBufferLength;
 LABEL_303:
-          DAT_055cc16c = v124;
+          SocketClientSendBufferLength = v124;
           goto LABEL_304;
         }
         goto LABEL_300;
@@ -17836,7 +17836,7 @@ LABEL_304:
     v329 = -60;
     v331 = v119 + 3;
     v330 = (v119 + 3) / 256;
-    FUN_0053cc30((int)v332, (int)v118, v117);
+    CSimpleModulus_Encode((int)v332, (int)v118, v117);
     v126 = 0;
     Positionf = v125;
     if ( s == -1 )
@@ -17853,7 +17853,7 @@ LABEL_304:
       }
       if ( v127 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&v329, v127);
         }
@@ -17866,7 +17866,7 @@ LABEL_304:
       }
       goto LABEL_304;
     }
-    if ( WSAGetLastError() != 10035 || (v129 = DAT_055cc16c, (int)v125 + DAT_055cc16c > 0x2000) )
+    if ( WSAGetLastError() != 10035 || (v129 = SocketClientSendBufferLength, (int)v125 + SocketClientSendBufferLength > 0x2000) )
     {
 LABEL_300:
       CWsctlc::Close((DWORD)&SocketClient);
@@ -17889,16 +17889,16 @@ LABEL_300:
     {
       v137 = operator_new(0x585u);
       *(BYTE *)(v137 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v137, (int)v132);
+      HashTable_Insert(&DAT_055c9bc8, v137, (int)v132);
     }
     else
     {
-      v135 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v132);
+      v135 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v132);
       v136 = v135[1412] + 1;
       v135[1412] = v136;
       if ( v136 < 2u )
       {
-        FUN_00404370(v132, v135);
+        Packet_DecryptBuffer(v132, v135);
       }
     }
     v138 = 0.0;
@@ -17922,16 +17922,16 @@ LABEL_216:
     {
       v143 = operator_new(0x585u);
       *(BYTE *)(v143 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v143, (int)v140);
+      HashTable_Insert(&DAT_055c9bc8, v143, (int)v140);
     }
     else
     {
-      v141 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v140);
+      v141 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v140);
       v142 = v141[1412] + 1;
       v141[1412] = v142;
       if ( v142 < 2u )
       {
-        FUN_00404370(v140, v141);
+        Packet_DecryptBuffer(v140, v141);
       }
     }
     v144 = 0;
@@ -17965,12 +17965,12 @@ LABEL_230:
     v149 = (BYTE *)FUN_004041e0(&DAT_055c9bc8, CharacterMachine);
     if ( v149 != (BYTE *)-1 )
     {
-      v149 = (BYTE *)FUN_00404280(&DAT_055c9bc8, *(int *)SkillIndex);
+      v149 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, *(int *)SkillIndex);
       v150 = v149[1412] - 1;
       v149[1412] = v150;
       if ( !v150 )
       {
-        FUN_00404400(v149, *(const void **)SkillIndex);
+        Packet_EncryptBuffer(v149, *(const void **)SkillIndex);
       }
     }
     (WORD)(v149) = *(WORD *)(o + 134);
@@ -17992,12 +17992,12 @@ LABEL_238:
     v153 = (BYTE *)FUN_004041e0(&DAT_055c9bc8, CharacterMachine);
     if ( v153 != (BYTE *)-1 )
     {
-      v153 = (BYTE *)FUN_00404280(&DAT_055c9bc8, *(int *)SkillIndex);
+      v153 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, *(int *)SkillIndex);
       v154 = v153[1412] - 1;
       v153[1412] = v154;
       if ( !v154 )
       {
-        FUN_00404400(v153, *(const void **)SkillIndex);
+        Packet_EncryptBuffer(v153, *(const void **)SkillIndex);
       }
     }
     (WORD)(v153) = *(WORD *)(o + 134);
@@ -18019,12 +18019,12 @@ LABEL_246:
     v156 = (const void *)CharacterMachine;
     if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
     {
-      v158 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v156);
+      v158 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v156);
       v159 = v158[1412] - 1;
       v158[1412] = v159;
       if ( !v159 )
       {
-        FUN_00404400(v158, v156);
+        Packet_EncryptBuffer(v158, v156);
       }
     }
     (WORD)(v157) = *(WORD *)(o + 134);
@@ -18194,16 +18194,16 @@ LABEL_258:
       {
         v180 = operator_new(2u);
         *(BYTE *)(v180 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v180, (int)&g_byPacketSerialSend);
+        HashTable_Insert(&DAT_055c9bc8, v180, (int)&g_byPacketSerialSend);
       }
       else
       {
-        v178 = (char *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v178 = (char *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
         v179 = v178[1] + 1;
         v178[1] = v179;
         if ( (unsigned char)v179 < 2u )
         {
-          FUN_00404330(&g_byPacketSerialSend, v178);
+          Packet_DecryptByte(&g_byPacketSerialSend, v178);
         }
       }
       v181 = g_byPacketSerialSend;
@@ -18213,13 +18213,13 @@ LABEL_258:
       v182 = v177 - 1;
       v183 = v176 - v182;
       v184 = &v333[v182];
-      v185 = FUN_0053cc30(0, (int)&v333[v182], v183);
+      v185 = CSimpleModulus_Encode(0, (int)&v333[v182], v183);
       if ( v185 < 256 )
       {
         Positiong = (float *)(v185 + 2);
         v326 = -61;
         v327 = v185 + 2;
-        FUN_0053cc30((int)v328, (int)&v333[v182], v183);
+        CSimpleModulus_Encode((int)v328, (int)&v333[v182], v183);
         v120 = (signed int)Positiong;
         v186 = 0;
         if ( s == -1 )
@@ -18236,7 +18236,7 @@ LABEL_258:
           }
           if ( v187 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&v326, v187);
             }
@@ -18249,7 +18249,7 @@ LABEL_258:
           }
           goto LABEL_304;
         }
-        if ( WSAGetLastError() == 10035 && (int)Positiong + DAT_055cc16c <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && (int)Positiong + SocketClientSendBufferLength <= 0x2000 )
         {
           goto LABEL_194;
         }
@@ -18259,7 +18259,7 @@ LABEL_258:
       v329 = -60;
       v331 = v185 + 3;
       v330 = (v185 + 3) / 256;
-      FUN_0053cc30((int)v332, (int)v184, v183);
+      CSimpleModulus_Encode((int)v332, (int)v184, v183);
       v190 = 0;
       Positionh = v189;
       if ( s == -1 )
@@ -18276,7 +18276,7 @@ LABEL_258:
         }
         if ( v191 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v329, v191);
           }
@@ -18293,16 +18293,16 @@ LABEL_258:
       {
         goto LABEL_300;
       }
-      v129 = DAT_055cc16c;
-      if ( (int)v189 + DAT_055cc16c > 0x2000 )
+      v129 = SocketClientSendBufferLength;
+      if ( (int)v189 + SocketClientSendBufferLength > 0x2000 )
       {
         goto LABEL_300;
       }
       v130 = Positionh;
       v131 = (unsigned int)Positionh;
 LABEL_302:
-      qmemcpy((char *)&DAT_055ca16c + v129, &v329, v131);
-      v124 = (int)v130 + DAT_055cc16c;
+      qmemcpy((char *)&SocketClientSendBuffer + v129, &v329, v131);
+      v124 = (int)v130 + SocketClientSendBufferLength;
       goto LABEL_303;
     }
     v164 = 0;
@@ -18497,7 +18497,7 @@ LABEL_318:
           }
           if ( v205 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&buf[1], v205);
             }
@@ -18510,10 +18510,10 @@ LABEL_318:
           }
           return;
         }
-        if ( WSAGetLastError() == 10035 && DAT_055cc16c + v202 <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v202 <= 0x2000 )
         {
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[1], v204);
-          DAT_055cc16c += v204;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[1], v204);
+          SocketClientSendBufferLength += v204;
         }
         else
         {
@@ -18591,7 +18591,7 @@ void __cdecl FUN_0048b680(int a1)
           v8[1412] = v9;
           if ( v9 < 2u )
           {
-            FUN_00404370(v1, v8);
+            Packet_DecryptBuffer(v1, v8);
           }
           goto LABEL_8;
         }
@@ -18611,7 +18611,7 @@ LABEL_6:
     }
     v4 = operator_new(0x585u);
     *(BYTE *)(v4 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v4, (int)v1);
+    HashTable_Insert(&DAT_055c9bc8, v4, (int)v1);
 LABEL_8:
     v5 = (const void *)CharacterMachine;
     if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 && !DAT_07e91388 )
@@ -18841,7 +18841,7 @@ LABEL_5:
   }
   v3 = operator_new(0x585u);
   *(BYTE *)(v3 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v3, (int)v0);
+  HashTable_Insert(&DAT_055c9bc8, v3, (int)v0);
 LABEL_7:
   v4 = 0;
   for ( i = 0; i < 816; i += 68 )
@@ -19351,7 +19351,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
   {
     v11 = operator_new(0x585u);
     *(BYTE *)(v11 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v11, (int)v7);
+    HashTable_Insert(&DAT_055c9bc8, v11, (int)v7);
   }
   else
   {
@@ -19368,7 +19368,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
     v9[1412] = v10;
     if ( v10 < 2u )
     {
-      FUN_00404370(v7, v9);
+      Packet_DecryptBuffer(v7, v9);
     }
   }
   v12 = (WORD *)(CharacterMachine + 68 * a5 + 536);
@@ -19508,7 +19508,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
       {
         v243 = operator_new(2u);
         *(BYTE *)(v243 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v243, (int)&g_byPacketSerialSend);
+        HashTable_Insert(&DAT_055c9bc8, v243, (int)&g_byPacketSerialSend);
       }
       else
       {
@@ -19525,7 +19525,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
         v241[1] = v242;
         if ( (unsigned char)v242 < 2u )
         {
-          FUN_00404330(&g_byPacketSerialSend, v241);
+          Packet_DecryptByte(&g_byPacketSerialSend, v241);
         }
       }
       v244 = g_byPacketSerialSend;
@@ -19539,19 +19539,19 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
         v246[1] = v247;
         if ( !v247 )
         {
-          FUN_00423710(v246, &g_byPacketSerialSend);
+          Packet_EncryptByte(v246, &g_byPacketSerialSend);
         }
       }
       v248 = v239 - 1;
       v249 = v238 - v248;
       v250 = &v323[v248];
-      v251 = FUN_0053cc30(0, (int)&v323[v248], v238 - v248);
+      v251 = CSimpleModulus_Encode(0, (int)&v323[v248], v238 - v248);
       if ( v251 < 256 )
       {
         v252 = v251 + 2;
         buf = -61;
         v317 = v251 + 2;
-        FUN_0053cc30((int)v318, (int)&v323[v248], v249);
+        CSimpleModulus_Encode((int)v318, (int)&v323[v248], v249);
         v253 = 0;
         v124 = v252;
         if ( s != -1 )
@@ -19566,7 +19566,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
             }
             if ( v254 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)&buf, v254);
               }
@@ -19579,7 +19579,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
             }
             goto LABEL_574;
           }
-          if ( WSAGetLastError() == 10035 && DAT_055cc16c + v252 <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v252 <= 0x2000 )
           {
             goto LABEL_561;
           }
@@ -19591,7 +19591,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
       v319 = -60;
       v321 = v251 + 3;
       v320 = (v251 + 3) / 256;
-      FUN_0053cc30((int)v322, (int)v250, v249);
+      CSimpleModulus_Encode((int)v322, (int)v250, v249);
       v257 = 0;
       v129 = v256;
       if ( s == -1 )
@@ -19608,7 +19608,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
         }
         if ( v258 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v319, v258);
           }
@@ -19621,7 +19621,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
         }
         goto LABEL_574;
       }
-      if ( WSAGetLastError() != 10035 || DAT_055cc16c + v256 > 0x2000 )
+      if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v256 > 0x2000 )
       {
         goto LABEL_571;
       }
@@ -19675,7 +19675,7 @@ LABEL_515:
   {
     v17 = operator_new(0x585u);
     *(BYTE *)(v17 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v17, (int)v13);
+    HashTable_Insert(&DAT_055c9bc8, v17, (int)v13);
   }
   else
   {
@@ -19692,7 +19692,7 @@ LABEL_515:
     v15[1412] = v16;
     if ( v16 < 2u )
     {
-      FUN_00404370(v13, v15);
+      Packet_DecryptBuffer(v13, v15);
     }
   }
   v18 = CharacterMachine;
@@ -19708,7 +19708,7 @@ LABEL_515:
     v22[1412] = v23;
     if ( !v23 )
     {
-      FUN_00404400(v22, (const void *)v18);
+      Packet_EncryptBuffer(v22, (const void *)v18);
     }
   }
   (WORD)(v18) = (WORD)pPickedItem;
@@ -19826,12 +19826,12 @@ LABEL_118:
             {
               break;
             }
-            v71 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v51);
+            v71 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v51);
             v72 = v71[1412] + 1;
             v71[1412] = v72;
             if ( v72 < 2u )
             {
-              FUN_00404370(v51, v71);
+              Packet_DecryptBuffer(v51, v71);
             }
             goto LABEL_136;
           }
@@ -19849,7 +19849,7 @@ LABEL_134:
       }
       v61 = operator_new(0x585u);
       *(BYTE *)(v61 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v61, (int)v51);
+      HashTable_Insert(&DAT_055c9bc8, v61, (int)v51);
 LABEL_136:
       if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2
         && v308 == 135
@@ -19918,7 +19918,7 @@ LABEL_136:
             {
               goto LABEL_163;
             }
-            v49 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v39);
+            v49 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v39);
             v73 = v49[1412] - 1;
             v49[1412] = v73;
             if ( v73 )
@@ -20005,12 +20005,12 @@ LABEL_163:
           {
             break;
           }
-          v37 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v26);
+          v37 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v26);
           v38 = v37[1412] + 1;
           v37[1412] = v38;
           if ( v38 < 2u )
           {
-            FUN_00404370(v26, v37);
+            Packet_DecryptBuffer(v26, v37);
           }
           goto LABEL_77;
         }
@@ -20028,7 +20028,7 @@ LABEL_75:
     }
     v36 = operator_new(0x585u);
     *(BYTE *)(v36 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v36, (int)v26);
+    HashTable_Insert(&DAT_055c9bc8, v36, (int)v26);
 LABEL_77:
     if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 0 || (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
     {
@@ -20112,13 +20112,13 @@ LABEL_98:
         {
           if ( v40 != -1 )
           {
-            v49 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v39);
+            v49 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v39);
             v50 = v49[1412] - 1;
             v49[1412] = v50;
             if ( !v50 )
             {
 LABEL_162:
-              FUN_00404400(v49, v39);
+              Packet_EncryptBuffer(v49, v39);
             }
           }
           goto LABEL_163;
@@ -20202,12 +20202,12 @@ LABEL_164:
         {
           break;
         }
-        v95 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v74);
+        v95 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v74);
         v96 = v95[1412] + 1;
         v95[1412] = v96;
         if ( v96 < 2u )
         {
-          FUN_00404370(v74, v95);
+          Packet_DecryptBuffer(v74, v95);
         }
         goto LABEL_183;
       }
@@ -20225,7 +20225,7 @@ LABEL_181:
   }
   v84 = operator_new(0x585u);
   *(BYTE *)(v84 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v84, (int)v74);
+  HashTable_Insert(&DAT_055c9bc8, v84, (int)v74);
 LABEL_183:
   if ( (unsigned short)DAT_07e9136c > *(WORD *)(CharacterAttribute + 20) )
   {
@@ -20307,12 +20307,12 @@ LABEL_183:
       {
         if ( v86 != -1 )
         {
-          v97 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v85);
+          v97 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v85);
           v98 = v97[1412] - 1;
           v97[1412] = v98;
           if ( !v98 )
           {
-            FUN_00404400(v97, v85);
+            Packet_EncryptBuffer(v97, v85);
           }
         }
         break;
@@ -20787,13 +20787,13 @@ LABEL_231:
     --v117;
     v119 = v116 - v117;
     v120 = &v323[v117];
-    v121 = FUN_0053cc30(0, (int)v120, v119);
+    v121 = CSimpleModulus_Encode(0, (int)v120, v119);
     if ( v121 < 256 )
     {
       v122 = v121 + 2;
       buf = -61;
       v317 = v121 + 2;
-      FUN_0053cc30((int)v318, (int)v120, v119);
+      CSimpleModulus_Encode((int)v318, (int)v120, v119);
       v123 = 0;
       v124 = v122;
       if ( s != -1 )
@@ -20808,7 +20808,7 @@ LABEL_231:
           }
           if ( v125 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&buf, v125);
             }
@@ -20821,11 +20821,11 @@ LABEL_231:
           }
           goto LABEL_574;
         }
-        if ( WSAGetLastError() == 10035 && DAT_055cc16c + v122 <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v122 <= 0x2000 )
         {
 LABEL_561:
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, v124);
-          v199 = v124 + DAT_055cc16c;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, v124);
+          v199 = v124 + SocketClientSendBufferLength;
           goto LABEL_573;
         }
 LABEL_571:
@@ -20839,7 +20839,7 @@ LABEL_571:
     v319 = -60;
     v321 = v121 + 3;
     v320 = (v121 + 3) / 256;
-    FUN_0053cc30((int)v322, (int)v120, v119);
+    CSimpleModulus_Encode((int)v322, (int)v120, v119);
     v128 = 0;
     v129 = v127;
     if ( s == -1 )
@@ -20856,7 +20856,7 @@ LABEL_571:
       }
       if ( v130 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&v319, v130);
         }
@@ -20869,7 +20869,7 @@ LABEL_571:
       }
       goto LABEL_574;
     }
-    if ( WSAGetLastError() != 10035 || DAT_055cc16c + v127 > 0x2000 )
+    if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v127 > 0x2000 )
     {
       goto LABEL_571;
     }
@@ -21253,25 +21253,25 @@ LABEL_571:
       g_byPacketSerialSend = v183 + 1;
       if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
       {
-        v184 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v184 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
         v185 = v184[1] - 1;
         v184[1] = v185;
         if ( !v185 )
         {
-          FUN_00423710(v184, &g_byPacketSerialSend);
+          Packet_EncryptByte(v184, &g_byPacketSerialSend);
         }
       }
       v186 = v182 - 1;
       v187 = v181 - v186;
       v188 = &v323[v186];
-      v189 = FUN_0053cc30(0, (int)&v323[v186], v181 - v186);
+      v189 = CSimpleModulus_Encode(0, (int)&v323[v186], v181 - v186);
       if ( v189 < 256 )
       {
         v273 = v181 - v186;
         v190 = v189 + 2;
         buf = -61;
         v317 = v189 + 2;
-        FUN_0053cc30((int)v318, (int)&v323[v186], v273);
+        CSimpleModulus_Encode((int)v318, (int)&v323[v186], v273);
         v191 = 0;
         v124 = v190;
         if ( s != -1 )
@@ -21286,7 +21286,7 @@ LABEL_571:
             }
             if ( v192 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)&buf, v192);
               }
@@ -21299,7 +21299,7 @@ LABEL_571:
             }
             goto LABEL_574;
           }
-          if ( WSAGetLastError() == 10035 && DAT_055cc16c + v190 <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v190 <= 0x2000 )
           {
             goto LABEL_561;
           }
@@ -21311,7 +21311,7 @@ LABEL_571:
       v319 = -60;
       v321 = v189 + 3;
       v320 = (v189 + 3) / 256;
-      FUN_0053cc30((int)v322, (int)v188, v187);
+      CSimpleModulus_Encode((int)v322, (int)v188, v187);
       v195 = 0;
       v196 = v194;
       if ( s == -1 )
@@ -21328,7 +21328,7 @@ LABEL_571:
         }
         if ( v197 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v319, v197);
           }
@@ -21341,7 +21341,7 @@ LABEL_571:
         }
         goto LABEL_574;
       }
-      if ( WSAGetLastError() != 10035 || DAT_055cc16c + v194 > 0x2000 )
+      if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v194 > 0x2000 )
       {
         goto LABEL_571;
       }
@@ -21726,25 +21726,25 @@ LABEL_571:
       g_byPacketSerialSend = v217 + 1;
       if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
       {
-        v218 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v218 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
         v219 = v218[1] - 1;
         v218[1] = v219;
         if ( !v219 )
         {
-          FUN_00423710(v218, &g_byPacketSerialSend);
+          Packet_EncryptByte(v218, &g_byPacketSerialSend);
         }
       }
       v220 = v216 - 1;
       v221 = v215 - v220;
       v222 = &v323[v220];
-      v223 = FUN_0053cc30(0, (int)&v323[v220], v215 - v220);
+      v223 = CSimpleModulus_Encode(0, (int)&v323[v220], v215 - v220);
       if ( v223 < 256 )
       {
         v274 = v215 - v220;
         v224 = v223 + 2;
         buf = -61;
         v317 = v223 + 2;
-        FUN_0053cc30((int)v318, (int)&v323[v220], v274);
+        CSimpleModulus_Encode((int)v318, (int)&v323[v220], v274);
         v225 = 0;
         v124 = v224;
         if ( s != -1 )
@@ -21759,7 +21759,7 @@ LABEL_571:
             }
             if ( v226 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)&buf, v226);
               }
@@ -21772,7 +21772,7 @@ LABEL_571:
             }
             goto LABEL_574;
           }
-          if ( WSAGetLastError() == 10035 && DAT_055cc16c + v224 <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v224 <= 0x2000 )
           {
             goto LABEL_561;
           }
@@ -21784,7 +21784,7 @@ LABEL_571:
       v319 = -60;
       v321 = v223 + 3;
       v320 = (v223 + 3) / 256;
-      FUN_0053cc30((int)v322, (int)v222, v221);
+      CSimpleModulus_Encode((int)v322, (int)v222, v221);
       v229 = 0;
       v196 = v228;
       if ( s == -1 )
@@ -21801,7 +21801,7 @@ LABEL_571:
         }
         if ( v230 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v319, v230);
           }
@@ -21814,15 +21814,15 @@ LABEL_571:
         }
         goto LABEL_574;
       }
-      if ( WSAGetLastError() != 10035 || DAT_055cc16c + v228 > 0x2000 )
+      if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v228 > 0x2000 )
       {
         goto LABEL_571;
       }
     }
-    qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v319, v196);
-    v199 = v196 + DAT_055cc16c;
+    qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v319, v196);
+    v199 = v196 + SocketClientSendBufferLength;
 LABEL_573:
-    DAT_055cc16c = v199;
+    SocketClientSendBufferLength = v199;
     goto LABEL_574;
   }
   if ( !DAT_00559f5f || DAT_07eaa148 )
@@ -22203,13 +22203,13 @@ LABEL_573:
     --v153;
     v155 = v152 - v153;
     v156 = &v323[v153];
-    v157 = FUN_0053cc30(0, (int)v156, v155);
+    v157 = CSimpleModulus_Encode(0, (int)v156, v155);
     if ( v157 < 256 )
     {
       v158 = v157 + 2;
       buf = -61;
       v317 = v157 + 2;
-      FUN_0053cc30((int)v318, (int)v156, v155);
+      CSimpleModulus_Encode((int)v318, (int)v156, v155);
       v159 = 0;
       v124 = v158;
       if ( s != -1 )
@@ -22224,7 +22224,7 @@ LABEL_573:
           }
           if ( v160 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&buf, v160);
             }
@@ -22237,7 +22237,7 @@ LABEL_573:
           }
           goto LABEL_574;
         }
-        if ( WSAGetLastError() == 10035 && DAT_055cc16c + v158 <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v158 <= 0x2000 )
         {
           goto LABEL_561;
         }
@@ -22251,7 +22251,7 @@ LABEL_574:
     v319 = -60;
     v321 = v157 + 3;
     v320 = (v157 + 3) / 256;
-    FUN_0053cc30((int)v322, (int)v156, v155);
+    CSimpleModulus_Encode((int)v322, (int)v156, v155);
     v163 = 0;
     v129 = v162;
     if ( s == -1 )
@@ -22268,7 +22268,7 @@ LABEL_574:
       }
       if ( v164 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&v319, v164);
         }
@@ -22281,13 +22281,13 @@ LABEL_574:
       }
       goto LABEL_574;
     }
-    if ( WSAGetLastError() != 10035 || DAT_055cc16c + v162 > 0x2000 )
+    if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v162 > 0x2000 )
     {
       goto LABEL_571;
     }
 LABEL_572:
-    qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v319, v129);
-    v199 = v129 + DAT_055cc16c;
+    qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v319, v129);
+    v199 = v129 + SocketClientSendBufferLength;
     goto LABEL_573;
   }
   DAT_07ea9810 = v100;
@@ -22469,7 +22469,7 @@ void FUN_004d1fc0()
         v7[1412] = v8;
         if ( v8 < 2u )
         {
-          FUN_00404370(v0, v7);
+          Packet_DecryptBuffer(v0, v7);
         }
         goto LABEL_7;
       }
@@ -22488,7 +22488,7 @@ LABEL_5:
   }
   v3 = operator_new(0x585u);
   *(BYTE *)(v3 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v3, (int)v0);
+  HashTable_Insert(&DAT_055c9bc8, v3, (int)v0);
 LABEL_7:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) != 3 )
   {
@@ -23041,14 +23041,14 @@ LABEL_87:
       --v50;
       v52 = v49 - v50;
       v53 = &v304[v50];
-      v54 = FUN_0053cc30(0, (int)v53, v52);
+      v54 = CSimpleModulus_Encode(0, (int)v53, v52);
       if ( v54 >= 256 )
       {
         v64 = v54 + 3;
         v300[0] = -60;
         v300[2] = v54 + 3;
         v300[1] = (v54 + 3) / 256;
-        FUN_0053cc30((int)&v300[3], (int)v53, v52);
+        CSimpleModulus_Encode((int)&v300[3], (int)v53, v52);
         v65 = 0;
         v57 = v64;
         if ( s != -1 )
@@ -23063,7 +23063,7 @@ LABEL_87:
             }
             if ( v66 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)v300, v66);
               }
@@ -23076,10 +23076,10 @@ LABEL_87:
             }
             goto LABEL_123;
           }
-          if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v64) <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v64) <= 0x2000 )
           {
-            v68 = (char *)&DAT_055ca16c + DAT_055cc16c;
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, v300, 4 * (v57 >> 2));
+            v68 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, v300, 4 * (v57 >> 2));
             v62 = &v300[4 * (v57 >> 2)];
             v61 = &v68[4 * (v57 >> 2)];
             v63 = v57;
@@ -23096,7 +23096,7 @@ LABEL_120:
         v55 = v54 + 2;
         buf = -61;
         v298 = v54 + 2;
-        FUN_0053cc30((int)v299, (int)v53, v52);
+        CSimpleModulus_Encode((int)v299, (int)v53, v52);
         v56 = 0;
         v57 = v55;
         if ( s != -1 )
@@ -23111,7 +23111,7 @@ LABEL_120:
             }
             if ( v58 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)&buf, v58);
               }
@@ -23124,16 +23124,16 @@ LABEL_120:
             }
             goto LABEL_123;
           }
-          if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v55) <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v55) <= 0x2000 )
           {
-            v60 = (char *)&DAT_055ca16c + DAT_055cc16c;
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, 4 * (v57 >> 2));
+            v60 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, 4 * (v57 >> 2));
             v62 = &buf + 4 * (v57 >> 2);
             v61 = &v60[4 * (v57 >> 2)];
             v63 = v57;
 LABEL_122:
             qmemcpy(v61, v62, v63 & 3);
-            DAT_055cc16c += v57;
+            SocketClientSendBufferLength += v57;
             goto LABEL_123;
           }
           goto LABEL_120;
@@ -23252,25 +23252,25 @@ LABEL_123:
         g_byPacketSerialSend = v27 + 1;
         if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
         {
-          v28 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v28 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
           v29 = v28[1] - 1;
           v28[1] = v29;
           if ( !v29 )
           {
-            FUN_00423710(v28, &g_byPacketSerialSend);
+            Packet_EncryptByte(v28, &g_byPacketSerialSend);
           }
         }
         v30 = v26 - 1;
         v31 = v25 - v30;
         v32 = &v304[v30];
-        v33 = FUN_0053cc30(0, (int)&v304[v30], v31);
+        v33 = CSimpleModulus_Encode(0, (int)&v304[v30], v31);
         if ( v33 >= 256 )
         {
           v40 = v33 + 3;
           v300[0] = -60;
           v300[2] = v33 + 3;
           v300[1] = (v33 + 3) / 256;
-          FUN_0053cc30((int)&v300[3], (int)v32, v31);
+          CSimpleModulus_Encode((int)&v300[3], (int)v32, v31);
           v41 = 0;
           v42 = v40;
           if ( s != -1 )
@@ -23285,7 +23285,7 @@ LABEL_123:
               }
               if ( v43 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2((int)v300, v43);
                 }
@@ -23298,14 +23298,14 @@ LABEL_123:
               }
               goto LABEL_74;
             }
-            if ( WSAGetLastError() != 10035 || DAT_055cc16c + v40 > 0x2000 )
+            if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v40 > 0x2000 )
             {
               goto LABEL_71;
             }
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, v300, v42);
-            v39 = v42 + DAT_055cc16c;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, v300, v42);
+            v39 = v42 + SocketClientSendBufferLength;
 LABEL_73:
-            DAT_055cc16c = v39;
+            SocketClientSendBufferLength = v39;
           }
         }
         else
@@ -23313,7 +23313,7 @@ LABEL_73:
           v34 = v33 + 2;
           buf = -61;
           v298 = v33 + 2;
-          FUN_0053cc30((int)v299, (int)&v304[v30], v31);
+          CSimpleModulus_Encode((int)v299, (int)&v304[v30], v31);
           v35 = 0;
           v36 = v34;
           if ( s != -1 )
@@ -23328,7 +23328,7 @@ LABEL_73:
               }
               if ( v37 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2((int)&buf, v37);
                 }
@@ -23341,10 +23341,10 @@ LABEL_73:
               }
               goto LABEL_74;
             }
-            if ( WSAGetLastError() == 10035 && DAT_055cc16c + v34 <= 0x2000 )
+            if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v34 <= 0x2000 )
             {
-              qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, v36);
-              v39 = v36 + DAT_055cc16c;
+              qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, v36);
+              v39 = v36 + SocketClientSendBufferLength;
               goto LABEL_73;
             }
 LABEL_71:
@@ -23377,12 +23377,12 @@ LABEL_74:
       v72 = TradeOpened;
       if ( FUN_004041e0(&DAT_055c9bc8, (int)&TradeOpened) != -1 )
       {
-        v73 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&TradeOpened);
+        v73 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&TradeOpened);
         v74 = v73[1] - 1;
         v73[1] = v74;
         if ( !v74 )
         {
-          FUN_00423710(v73, &TradeOpened);
+          Packet_EncryptByte(v73, &TradeOpened);
         }
       }
       if ( v72 && m_bMyConfirm && a3 == OffsetTradeItems )
@@ -23438,16 +23438,16 @@ LABEL_74:
         {
           v80 = operator_new(2u);
           *(BYTE *)(v80 + 1) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v80, (int)&g_byPacketSerialSend);
+          HashTable_Insert(&DAT_055c9bc8, v80, (int)&g_byPacketSerialSend);
         }
         else
         {
-          v78 = (char *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v78 = (char *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
           v79 = v78[1] + 1;
           v78[1] = v79;
           if ( (unsigned char)v79 < 2u )
           {
-            FUN_00404330(&g_byPacketSerialSend, v78);
+            Packet_DecryptByte(&g_byPacketSerialSend, v78);
           }
         }
         v81 = g_byPacketSerialSend;
@@ -23457,14 +23457,14 @@ LABEL_74:
         v82 = v77 - 1;
         v83 = v76 - v82;
         v84 = &v304[v82];
-        v85 = FUN_0053cc30(0, (int)&v304[v82], v83);
+        v85 = CSimpleModulus_Encode(0, (int)&v304[v82], v83);
         if ( v85 >= 256 )
         {
           v92 = v85 + 3;
           v300[0] = -60;
           v300[2] = v85 + 3;
           v300[1] = (v85 + 3) / 256;
-          FUN_0053cc30((int)&v300[3], (int)v84, v83);
+          CSimpleModulus_Encode((int)&v300[3], (int)v84, v83);
           v93 = 0;
           v94 = v92;
           if ( s != -1 )
@@ -23479,7 +23479,7 @@ LABEL_74:
               }
               if ( v95 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2((int)v300, v95);
                 }
@@ -23492,14 +23492,14 @@ LABEL_74:
               }
               goto LABEL_166;
             }
-            if ( WSAGetLastError() != 10035 || DAT_055cc16c + v92 > 0x2000 )
+            if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v92 > 0x2000 )
             {
               goto LABEL_163;
             }
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, v300, v94);
-            v91 = v94 + DAT_055cc16c;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, v300, v94);
+            v91 = v94 + SocketClientSendBufferLength;
 LABEL_165:
-            DAT_055cc16c = v91;
+            SocketClientSendBufferLength = v91;
           }
         }
         else
@@ -23507,7 +23507,7 @@ LABEL_165:
           v86 = v85 + 2;
           buf = -61;
           v298 = v85 + 2;
-          FUN_0053cc30((int)v299, (int)&v304[v82], v83);
+          CSimpleModulus_Encode((int)v299, (int)&v304[v82], v83);
           v87 = 0;
           v88 = v86;
           if ( s != -1 )
@@ -23522,7 +23522,7 @@ LABEL_165:
               }
               if ( v89 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2((int)&buf, v89);
                 }
@@ -23535,10 +23535,10 @@ LABEL_165:
               }
               goto LABEL_166;
             }
-            if ( WSAGetLastError() == 10035 && DAT_055cc16c + v86 <= 0x2000 )
+            if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v86 <= 0x2000 )
             {
-              qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, v88);
-              v91 = v88 + DAT_055cc16c;
+              qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, v88);
+              v91 = v88 + SocketClientSendBufferLength;
               goto LABEL_165;
             }
 LABEL_163:
@@ -23696,7 +23696,7 @@ LABEL_85:
         }
         if ( v137 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v301[2], v137);
           }
@@ -23709,7 +23709,7 @@ LABEL_85:
         }
         return;
       }
-      if ( WSAGetLastError() == 10035 && DAT_055cc16c + v134 <= 0x2000 )
+      if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v134 <= 0x2000 )
       {
         goto LABEL_239;
       }
@@ -23754,11 +23754,11 @@ LABEL_85:
       v136 = *(unsigned short *)v301;
       if...
       while...
-      if ( WSAGetLastError() == 10035 && DAT_055cc16c + v143 <= 0x2000 )
+      if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v143 <= 0x2000 )
       {
 LABEL_239:
-        qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v301[2], v136);
-        DAT_055cc16c += v136;
+        qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v301[2], v136);
+        SocketClientSendBufferLength += v136;
         return;
       }
 LABEL_260:
@@ -23827,7 +23827,7 @@ LABEL_322:
       v163 = v156 - 1;
       v164 = v155 - v163;
       v165 = &v304[v163];
-      v166 = FUN_0053cc30(0, (int)&v304[v163], v164);
+      v166 = CSimpleModulus_Encode(0, (int)&v304[v163], v164);
       if...
       CWsctlc::Close((DWORD)&SocketClient);
       goto LABEL_318;
@@ -23842,7 +23842,7 @@ LABEL_322:
       if...
       v181 = operator_new(0x585u);
       *(BYTE *)(v181 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v181, (int)v178);
+      HashTable_Insert(&DAT_055c9bc8, v181, (int)v178);
 LABEL_335:
       if ( (unsigned int)*(WORD *)(CharacterAttribute + 14) < ItemAttribute[*v285].RequireLevel
         || *(WORD *)(CharacterAttribute + 26) < (unsigned short)v285[16]
@@ -23910,7 +23910,7 @@ LABEL_417:
       v209 = v200 - 1;
       v210 = v199 - v209;
       v211 = &v304[v209];
-      v212 = FUN_0053cc30(0, (int)&v304[v209], v199 - v209);
+      v212 = CSimpleModulus_Encode(0, (int)&v304[v209], v199 - v209);
       if...
 LABEL_411:
       v224 = *(&OffsetInventoryItems.Type + 34 * v287);
@@ -24071,7 +24071,7 @@ LABEL_217:
     v114 = v109 - 1;
     v115 = v108 - v114;
     v116 = &v304[v114];
-    v117 = FUN_0053cc30(0, (int)&v304[v114], v115);
+    v117 = CSimpleModulus_Encode(0, (int)&v304[v114], v115);
     if...
 LABEL_215:
     v129 = *(&OffsetInventoryItems.Type + 34 * v287);
@@ -24526,7 +24526,7 @@ char FUN_004f6850()
         }
         if ( v5 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&buf[2], v5);
           }
@@ -24539,13 +24539,13 @@ char FUN_004f6850()
         }
         return 1;
       }
-      if ( WSAGetLastError() != 10035 || DAT_055cc16c + 3 > 0x2000 )
+      if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + 3 > 0x2000 )
       {
         CWsctlc::Close((DWORD)&SocketClient);
         return 1;
       }
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[2], v4);
-      DAT_055cc16c += v4;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[2], v4);
+      SocketClientSendBufferLength += v4;
     }
     return 1;
   }
@@ -24597,7 +24597,7 @@ char __cdecl FUN_004f6a70(int a1, int a2)
       }
       if ( v5 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&buf[2], v5);
         }
@@ -24610,10 +24610,10 @@ char __cdecl FUN_004f6a70(int a1, int a2)
       }
       return 1;
     }
-    if ( WSAGetLastError() == 10035 && DAT_055cc16c + 3 <= 0x2000 )
+    if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + 3 <= 0x2000 )
     {
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[2], v4);
-      DAT_055cc16c += v4;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[2], v4);
+      SocketClientSendBufferLength += v4;
     }
     else
     {
@@ -25073,7 +25073,7 @@ LABEL_22:
   // de la animación). Los omitimos: el avance de frame —lo que faltaba— funciona.
   FUN_00440aa0((void*)v5, (float*)(LODWORD(o) + 264), (float*)(LODWORD(o) + 268),
                (void*)(LODWORD(o) + 262), oa);
-  if ( g_GameState == 2 || g_GameState == 4 )
+  if ( SceneFlag == 2 || SceneFlag == 4 )
   {
     if ( *(WORD *)(LODWORD(o) + 2) == 160 )
     {
@@ -25216,7 +25216,7 @@ LABEL_38:
             ob = v16;
             if ( v16 >= 200.0 )
             {
-              *(float *)(LODWORD(o) + 36) = FUN_0043e1b0(*(float *)(LODWORD(o) + 36), *(float *)(LODWORD(o) + 48), 10.0);
+              *(float *)(LODWORD(o) + 36) = TurnAngle2(*(float *)(LODWORD(o) + 36), *(float *)(LODWORD(o) + 48), 10.0);
               *v7 = (*(float *)(LODWORD(o) + 52) - *v7) * 0.2 + *v7;
               *(float *)(LODWORD(o) + 20) = (*(float *)(LODWORD(o) + 56) - *(float *)(LODWORD(o) + 20)) * 0.2
                                           + *(float *)(LODWORD(o) + 20);
@@ -26860,7 +26860,7 @@ void FUN_00513c10()
       }
       if ( v17 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&buf[1], v17);
         }
@@ -26873,10 +26873,10 @@ void FUN_00513c10()
       }
       goto LABEL_32;
     }
-    if ( WSAGetLastError() == 10035 && DAT_055cc16c + v14 <= 0x2000 )
+    if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v14 <= 0x2000 )
     {
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[1], v16);
-      DAT_055cc16c += v16;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[1], v16);
+      SocketClientSendBufferLength += v16;
     }
     else
     {
@@ -27225,9 +27225,9 @@ int __cdecl FUN_0053ce30(DWORD *_this, DWORD *a2, int a3)
   v25 = 4;
   do
   {
-    FUN_0053cf90(v5, 0, a3, v4, 16);
+    CSimpleModulus_AddBits(v5, 0, a3, v4, 16);
     v6 = v4 + 16;
-    FUN_0053cf90(v5, 22, a3, v6, 2);
+    CSimpleModulus_AddBits(v5, 22, a3, v6, 2);
     v4 = v6 + 2;
     ++v5;
     --v25;
@@ -27267,7 +27267,7 @@ int __cdecl FUN_0053ce30(DWORD *_this, DWORD *a2, int a3)
   }
   while ( !v20 );
   (WORD)(v24) = 0;
-  FUN_0053cf90(&v24, 0, a3, v4, 16);
+  CSimpleModulus_AddBits(&v24, 0, a3, v4, 16);
   v21 = -8;
   (BYTE)(v24) = v24 ^ ((BYTE)((v24) >> 8)) ^ 0x3D;
   for ( i = 0; i < 8; ++i )
@@ -27285,9 +27285,9 @@ int __cdecl FUN_0053ce30(DWORD *_this, DWORD *a2, int a3)
 }
 #endif
 
-// ── FUN_0053cf90 (IDA-only, gated) ──
+// ── CSimpleModulus_AddBits (IDA-only, gated) ──
 #if defined(IDA_PORT_0053CF90)
-int __stdcall FUN_0053cf90(int a1, int a2, int a3, int a4, int a5)
+int __stdcall CSimpleModulus_AddBits(int a1, int a2, int a3, int a4, int a5)
 {
   int v5; // ebx
   unsigned int v6; // ebx
@@ -27297,20 +27297,20 @@ int __stdcall FUN_0053cf90(int a1, int a2, int a3, int a4, int a5)
   int v10; // ecx
   char *lpMem; // [esp+10h] [ebp-8h]
 
-  v5 = FUN_0053d170(a4 + a5 - 1);
-  v6 = 1 - FUN_0053d170(a4) + v5;
+  v5 = CSimpleModulus_GetByteOfBit(a4 + a5 - 1);
+  v6 = 1 - CSimpleModulus_GetByteOfBit(a4) + v5;
   lpMem = (char *)operator_new(v6 + 1);
   memset(lpMem, 0, v6 + 1);
-  qmemcpy(lpMem, (const void *)(a3 + FUN_0053d170(a4)), v6);
+  qmemcpy(lpMem, (const void *)(a3 + CSimpleModulus_GetByteOfBit(a4)), v6);
   v7 = (a4 + a5) % 8;
   if ( v7 )
   {
     lpMem[v6 - 1] &= -1 << (8 - v7);
   }
-  FUN_0053d0d0(lpMem, v6, -(a4 % 8));
-  FUN_0053d0d0(lpMem, v6 + 1, a2 % 8);
+  CSimpleModulus_Shift(lpMem, v6, -(a4 % 8));
+  CSimpleModulus_Shift(lpMem, v6 + 1, a2 % 8);
   v8 = v6 + (a2 % 8 > a4 % 8);
-  v9 = (BYTE *)(a1 + FUN_0053d170(a2));
+  v9 = (BYTE *)(a1 + CSimpleModulus_GetByteOfBit(a2));
   if ( v8 > 0 )
   {
     v10 = lpMem - v9;
@@ -27327,9 +27327,9 @@ int __stdcall FUN_0053cf90(int a1, int a2, int a3, int a4, int a5)
 }
 #endif
 
-// ── FUN_0053d0d0 (IDA-only, gated) ──
+// ── CSimpleModulus_Shift (IDA-only, gated) ──
 #if defined(IDA_PORT_0053D0D0)
-char __stdcall FUN_0053d0d0(BYTE *a1, int a2, int a3)
+char __stdcall CSimpleModulus_Shift(BYTE *a1, int a2, int a3)
 {
   char result; // al
   BYTE *v4; // ecx
@@ -27386,9 +27386,9 @@ char __stdcall FUN_0053d0d0(BYTE *a1, int a2, int a3)
 }
 #endif
 
-// ── FUN_0053d1c0 (IDA-only, gated) ──
+// ── CSimpleModulus_LoadKey (IDA-only, gated) ──
 #if defined(IDA_PORT_0053D1C0)
-int __cdecl FUN_0053d1c0(DWORD *_this, LPCSTR lpFileName, short a3, int a4, int a5, int a6, int a7)
+int __cdecl CSimpleModulus_LoadKey(DWORD *_this, LPCSTR lpFileName, short a3, int a4, int a5, int a6, int a7)
 {
   HANDLE FileA; // eax
   void *v9; // esi
@@ -28757,9 +28757,9 @@ int __cdecl FUN_005414ce(void (__cdecl *Func)())
 }
 #endif
 
-// ── FUN_005416bc (IDA-only, gated) ──
+// ── crt_sprintf (IDA-only, gated) ──
 #if defined(IDA_PORT_005416BC)
-int FUN_005416bc(char *const Buffer, const char *const Format, ...)
+int crt_sprintf(char *const Buffer, const char *const Format, ...)
 {
   int v2; // eax
   bool v3; // sf

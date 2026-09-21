@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -45,7 +45,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// Terrain / map loaders (called from FUN_0050e5a0 / Map_LoadResources in stubs.cpp)
+// Terrain / map loaders (called from OpenWorld / Map_LoadResources in stubs.cpp)
 
 // FUN_004f6f90 @ 0x004F6F90 — Terrain_LoadMap(path)
 // Reads map file: skips 1 byte, copies 0x4000×4 bytes to DAT_080bb2b4 (tile map),
@@ -140,7 +140,7 @@ int __cdecl FUN_004f6ce0(const char *FileName) {
 
     if (DAT_083a410c == '\0') {
         // Per-world magic byte check (sanity vs distributed .att files).
-        switch (DAT_0055a7ac) {
+        switch (World) {
         case 0: if (TerrainWall[31623] != 5) Error = true; break;
         case 1: if (TerrainWall[30947] != 4) Error = true; break;
         case 2: if (TerrainWall[14288] != 5) Error = true; break;
@@ -187,7 +187,7 @@ void __cdecl FUN_004ffe70(const char *path) {
         // there overwrote cell[0].head/tail with garbage like 0x656c6946
         // ("File"), turning the bucket walker into a deref-into-unmapped
         // memory fault on the next frame (the AV chain
-        // Object_MoveUpdate → MoveObjects → FUN_004fdc00 → FUN_0043e5c0).
+        // Object_MoveUpdate → MoveObjects → FUN_004fdc00 → Alpha).
         char Text[256];
         crt_sprintf(Text, "OpenObjectsEnc: file not found '%s'", path);
         DbgLogPublic(Text);
@@ -243,7 +243,7 @@ void __cdecl FUN_004ffe70(const char *path) {
 void __cdecl FUN_004f7250(const char *path) {
     FUN_00529360((char*)path, (int)(uintptr_t)DAT_07eeb238);
     CreateTerrainNormal(); // FUN_004f70b0 (IDA)
-    Terrain_FinalizeLighting(); // FUN_004f71c0 (IDA)
+    CreateTerrainLight(); // IDA: CreateTerrainLight (0x004F71C0)
 }
 
 // FUN_004f7270 @ 0x004F7270 — Terrain_LoadHeight(path)
@@ -295,13 +295,13 @@ void __cdecl FUN_0050c4d0(void) {
     char cVar2 = DAT_0055a7c4;
     if (DAT_083a410c != '\0') {
         DAT_0055a7c4 = '\0';
-        DAT_0055a7ac = 7;
+        World = 7;
     }
 
     FUN_00529740("Object8_drop01.jpg", 0x4d9, 0x2600, 0x2900, 0, '\x01');
 
     if (DAT_0055a7c4 == '\0') {
-        switch (DAT_0055a7ac) {
+        switch (World) {
         case 0:
             FUN_00505e90((int)0xae, "Data2/Object1/Animal/", "bird.smd");
             FUN_00505e90((int)0xb5, "Data2/Object1/Animal/", "fish.smd");
@@ -366,7 +366,7 @@ void __cdecl FUN_0050c4d0(void) {
 
     // Object type texture/name registration (second pass, all maps)
     FUN_00505bd0(0x69);
-    switch (DAT_0055a7ac) {
+    switch (World) {
     case 0:
         FUN_005060b0(0xae, "Data/Object1/", "bird", 1);
         FUN_00505c80(0xae, "Object1/", 0x2600, '\x01');
@@ -492,7 +492,7 @@ void __cdecl FUN_0050c4d0(void) {
 
     // Object model loading for all maps (FUN_00505bd0(0x2ee) then per-map loading)
     FUN_00505bd0(0x2ee);
-    if (DAT_0055a7ac == 0) {
+    if (World == 0) {
         // Lorencia (Object1) — load SMD models on first call
         if (DAT_0055a7c4 == '\0') {
             FUN_00505e90((int)0x00, "Data2/Object1/", "treesmall.smd");
@@ -725,8 +725,8 @@ void __cdecl FUN_0050c4d0(void) {
         // buscaban Object13..Object17, que no existen -- de ahi que el mapa
         // apareciera pelado, sin paredes ni props.  El nivel 1 (World 11 -> 12)
         // acertaba de casualidad.
-        int objFolder = DAT_0055a7ac + 1;
-        if (DAT_0055a7ac >= 11 && DAT_0055a7ac <= 16)
+        int objFolder = World + 1;
+        if (World >= 11 && World <= 16)
             objFolder = 12;
 
         // Dynamic map: load from per-map object file
@@ -758,9 +758,9 @@ void __cdecl FUN_0050c4d0(void) {
         for (int i = 0; i < 0xa0; i++)
             FUN_00505c80(i, local_384, 0x2600, '\x01');
         // Map-specific post-load fixups
-        if (DAT_0055a7ac == 1)
+        if (World == 1)
             *(unsigned int *)(*(int *)(DAT_05828d58 + 0x1d90) + 0x14) = 0x3ecccccd; // 0.4f
-        else if (DAT_0055a7ac == 8) {
+        else if (World == 8) {
             *(unsigned char *)(DAT_05828d58 + 0x89c)  = 0;
             *(unsigned char *)(DAT_05828d58 + 0x958)  = 0;
             *(unsigned char *)(DAT_05828d58 + 0xa14)  = 0;

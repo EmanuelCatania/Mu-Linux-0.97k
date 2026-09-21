@@ -1,7 +1,7 @@
 // Game_EnterWorldTick.cpp
 // Game_EnterWorldTick @ 0x00521D80
 //
-// Character-select scene tick. Called every frame while g_GameState==4.
+// Character-select scene tick. Called every frame while SceneFlag==4.
 // Drives the character list display, selection, and world-entry sequence.
 //
 // Entry guard: if DAT_05826cb0 < 0x33 → return (not ready yet).
@@ -12,7 +12,7 @@
 //   0x16  — slide out (char chosen) → transition
 //   0x17  — camera slide (equip view) → left
 //   0x18  — slide out → send char-select 0xC1/0xF3 packet
-//   0x19  — slide in → enter world (DAT_005615c0 = 3)
+//   0x19  — slide in → enter world (SceneFlag = 3)
 //   0x1a  — camera slide right
 //   0x1b  — slide in to Y=0xd
 //   0x1c  — slide out to transition / back to char list
@@ -83,7 +83,7 @@ static const BYTE s_Key[32] = {
 // como const → necesitamos un buffer mutable.  Copiamos a buf_local.
 static void Pkt_Send(const BYTE* pkt_in, int len)
 {
-    if (DAT_055ca168 == 0xffffffff) return;
+    if (SocketClientSocket == 0xffffffff) return;
     BYTE pkt[256];
     if (len > (int)sizeof(pkt)) return;
     memcpy(pkt, pkt_in, len);
@@ -91,19 +91,19 @@ static void Pkt_Send(const BYTE* pkt_in, int len)
 
     int sent = 0, rem = len;
     do {
-        int n = send(DAT_055ca168, (char*)pkt + sent, rem - sent, 0);
+        int n = send(SocketClientSocket, (char*)pkt + sent, rem - sent, 0);
         if (n == -1) {
             int err = WSAGetLastError();
-            if (err == WSAEWOULDBLOCK && (int)(DAT_055cc16c + len) < 0x2001) {
-                memcpy(DAT_055ca16c + DAT_055cc16c, pkt, len);
-                DAT_055cc16c += len;
+            if (err == WSAEWOULDBLOCK && (int)(SocketClientSendBufferLength + len) < 0x2001) {
+                memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, len);
+                SocketClientSendBufferLength += len;
             } else {
-                Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                Net_Disconnect(((int)(uintptr_t)SocketClient));
             }
             return;
         }
         if (n == 0) break;
-        if (DAT_055ce174) FUN_0043de60();
+        if (SocketClientLogPrint) FUN_0043de60();
         sent += n; rem -= n;
     } while (rem > 0);
 }
@@ -230,7 +230,7 @@ void Game_EnterWorldTick(void)
         float pos3[3] = {0,0,0}, rot3[3] = {0,0,0};
         FUN_004ff5a0(0xa4, pos3, rot3, 1.0f);
 
-        FUN_0045adc0((unsigned char*)&DAT_07abf050, 0xab, 0, 0, 0.0f);
+        CreateCharacterPointer((unsigned char*)&DAT_07abf050, 0xab, 0, 0, 0.0f);
         DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | 1;
         DAT_07abf0d4  = 0;
 
@@ -245,10 +245,10 @@ void Game_EnterWorldTick(void)
             DAT_083a7c14 = 0x14;  // no free slot: char list only
         } else {
             DAT_083a7c14 = 0x15;  // free slot: can create char
-            FUN_00404bc0(0x1b, 0, 0);
+            PlayBuffer(0x1b, 0, 0);
         }
 
-        Net_ProcessReceiveQueue();
+        ClearInventory();
 
         // Anti-tamper: register DAT_07cf1ffc in hash table
         {
@@ -256,12 +256,12 @@ void Game_EnterWorldTick(void)
             if (idx == 0xffffffff) {
                 void* node = operator_new(0x585);
                 *((BYTE*)node + 0x584) = 1;
-                FUN_00403f80(&DAT_055c9bc8, node, DAT_07cf1ffc);
+                HashTable_Insert(&DAT_055c9bc8, node, DAT_07cf1ffc);
             } else {
-                void* node = FUN_00404280(&DAT_055c9bc8, DAT_07cf1ffc);
+                void* node = HashTable_GetNode(&DAT_055c9bc8, DAT_07cf1ffc);
                 ((char*)node)[0x161]--;
                 if (((char*)node)[0x161] == '\0')
-                    FUN_00404400(node, DAT_07cf1ffc);
+                    Packet_EncryptBuffer(node, DAT_07cf1ffc);
             }
         }
 
@@ -279,7 +279,7 @@ void Game_EnterWorldTick(void)
             if (idx == 0xffffffff) {
                 void* node = operator_new(0x585);
                 *((BYTE*)node + 0x584) = 1;
-                FUN_00403f80(&DAT_055c9bc8, node, DAT_07cf1ffc);
+                HashTable_Insert(&DAT_055c9bc8, node, DAT_07cf1ffc);
             }
         }
 
@@ -293,14 +293,14 @@ void Game_EnterWorldTick(void)
 
         DAT_07e11d70 = 0; DAT_07e11d71 = 0; DAT_07e11d72 = 0;
         DAT_00559c84 = 1;
-        Input_ClearState(1);
+        ClearInput(1);
         DAT_07e11d78 = 0;
         DAT_00559c8c = 0x5a;
         DAT_00559c88 = 1;
 
         // 120× widget draw
         for (int i = 0x78; i > 0; i--)
-            FUN_00480620((const char*)&DAT_083a7c88, (const char*)&DAT_083a7c84, 0);
+            UIChatLogWindow_AddText((const char*)&DAT_083a7c88, (const char*)&DAT_083a7c84, 0);
 
         // Clear entity local player ptr if null
         if (DAT_07abf5d8 == 0) {
@@ -324,7 +324,7 @@ void Game_EnterWorldTick(void)
         DAT_083a4330  = DAT_00561668;     // DWORD&=DWORD ok
         _DAT_083a4334 = *(float*)&DAT_0056166c;
 
-        FUN_00405540(&DAT_055c9bf0, "> Character scene init success");
+        CErrorReport_Write(&DAT_055c9bf0, "> Character scene init success");
     }
 
     // ── PER-FRAME UPDATES ─────────────────────────────────────────────────────
@@ -352,7 +352,7 @@ void Game_EnterWorldTick(void)
     Joint_TickAll();             // MoveJoints  (0x004736E0)
     MoveParticles_stub();        CLK_WATCH("after-MoveParticles");
     Character_UpdateAll();       CLK_WATCH("after-Character_UpdateAll");
-    FUN_00454fc0((float*)&DAT_07abf050); CLK_WATCH("after-FUN_00454fc0");
+    MoveCharacterClient((float*)&DAT_07abf050); CLK_WATCH("after-MoveCharacterClient");
 
     // ── Per-character animation tick ──────────────────────────────────────────
     // En el binario original MoveCharactersClient (0x00455010) itera todas las
@@ -361,7 +361,7 @@ void Game_EnterWorldTick(void)
     // donde MoveCharacter (0x00449900, 2773 lines) llama CharacterAnimation
     // (0x00448600) que avanza entity[+0x108] vía sub_440AA0.
     //
-    // En nuestro port FUN_00449900 es un stub vacío y MoveCharacter está sin
+    // En nuestro port MoveCharacter es un stub vacío y MoveCharacter está sin
     // portar (es enorme, 90% es lógica de combate/mov in-game irrelevante para
     // char-select). Pero los chars en char-select necesitan que su frame de
     // animación avance cada tick para que la idle se vea animada.
@@ -374,7 +374,7 @@ void Game_EnterWorldTick(void)
         for (int s = 0; s < 8; ++s) {
             int e = (int)(uintptr_t)DAT_07abf5d0 + s * 0x394;
             if (*(char*)e != '\0') {
-                FUN_004520c0(e);            // MoveCharacterVisual: model.action ← entity.action
+                MoveCharacterVisual(e);            // MoveCharacterVisual: model.action ← entity.action
                 CharacterAnimation(e, e);   // advance entity[+0x108] (anim frame)
             }
         }
@@ -421,11 +421,11 @@ void Game_EnterWorldTick(void)
                 slotFound = DAT_005616b0;
             }
             DAT_005616b0 = slotFound;
-            FUN_00404bc0(0x19, 0, 0);
+            PlayBuffer(0x19, 0, 0);
             DAT_083a7c14 = 0x16;
             DAT_083a7c18 = 0x1b;
-            FUN_00404bc0(0x1b, 0, 0);
-            Input_ClearState(1);
+            PlayBuffer(0x1b, 0, 0);
+            ClearInput(1);
             DAT_00559c84 = 1;
             DAT_00559c88 = 1;
             _DAT_00559c94 = 10;
@@ -450,7 +450,7 @@ void Game_EnterWorldTick(void)
                     if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x19; else DAT_083a7c28 = 0x19;
                 } else {
                     if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x72; else DAT_083a7c28 = 0x72;
-                    Input_ClearState(1);
+                    ClearInput(1);
                     DAT_00559c84 = 1; DAT_00559c88 = 1;
                     _DAT_00559c94 = DAT_083a7acc;
                     DAT_07e113d8[0] = 1;
@@ -458,7 +458,7 @@ void Game_EnterWorldTick(void)
             } else {
                 if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x84; else DAT_083a7c28 = 0x84;
             }
-            FUN_00404bc0(0x19, 0, 0);
+            PlayBuffer(0x19, 0, 0);
         }
 
         // ── BUG-FIX 2026-07-17: las flechas de cambio de clase se MOVIERON al
@@ -517,9 +517,9 @@ void Game_EnterWorldTick(void)
                         DAT_083a7c28 = 0;
                         DAT_005616ac = i;
                         DAT_083a7c24 = pendingB;
-                        FUN_00404bc0(0x19, 0, 0);
+                        PlayBuffer(0x19, 0, 0);
                         if (DAT_083a7c14 != 0x17 && DAT_083a7c14 != 0x15)
-                            FUN_00404bc0(0x1b, 0, 0);
+                            PlayBuffer(0x1b, 0, 0);
                         DAT_083a7c14 = 0x18;
                         DAT_083a7c18 = 0x17;
                         selSlot = DAT_005616ac;
@@ -552,7 +552,7 @@ void Game_EnterWorldTick(void)
                         DAT_083a7c28 = 0;
                         confirmed = true;
                         DAT_083a7c24 = pendingB;
-                        FUN_00404bc0(0x19, 0, 0);
+                        PlayBuffer(0x19, 0, 0);
                     }
                 }
 
@@ -570,7 +570,7 @@ void Game_EnterWorldTick(void)
                     DAT_083a4124 = '\0';
                     DAT_083a7c28 = 0;
                     DAT_083a7c24 = pendingB;
-                    FUN_00404bc0(0x19, 0, 0);
+                    PlayBuffer(0x19, 0, 0);
                     selectClicked = true;
                 }
             }
@@ -583,7 +583,7 @@ void Game_EnterWorldTick(void)
                 // Precedence-fix: IDA `(flags & 1) == 0`, no `!flags & 1`.
                 if ((flags & 1) == 0) {
                     DAT_083a7c14 = 0x19;
-                    FUN_00404bc0(0x1b, 0, 0);
+                    PlayBuffer(0x1b, 0, 0);
                 } else {
                     if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x85; else DAT_083a7c28 = 0x85;
                 }
@@ -608,13 +608,13 @@ void Game_EnterWorldTick(void)
         {
             DAT_083a4124 = '\0';
             if ((char)DAT_07abf20c == '\0') {
-                FUN_00404bc0(0x1a, 0, 0);
+                PlayBuffer(0x1a, 0, 0);
             } else {
                 BYTE b = (BYTE)((char)DAT_07abf20c - 1);
                 DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | b;
-                FUN_0045adc0((unsigned char*)&DAT_07abf050, b + 0xaa, 0, 0, 0.0f);
+                CreateCharacterPointer((unsigned char*)&DAT_07abf050, b + 0xaa, 0, 0, 0.0f);
                 DAT_07abf0d4 = 0;
-                FUN_00404bc0(0x19, 0, 0);
+                PlayBuffer(0x19, 0, 0);
             }
         }
         unsigned maxPage = 2;   // rotate limit: 3 si algún char >= lvl 220
@@ -631,13 +631,13 @@ void Game_EnterWorldTick(void)
             if ((DAT_07abf20c & 0xff) >= maxPage) {
                 // Tope de rotacion: sonido de "bloqueado". Faltaba — IDA
                 // Game_EnterWorldTick L635-638 tiene las dos ramas.
-                FUN_00404bc0(0x1a, 0, 0);   // PlayBuffer(26)
+                PlayBuffer(0x1a, 0, 0);   // PlayBuffer(26)
             } else {
                 BYTE b = (BYTE)((char)DAT_07abf20c + 1);
                 DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | b;
-                FUN_0045adc0((unsigned char*)&DAT_07abf050, b + 0xaa, 0, 0, 0.0f);
+                CreateCharacterPointer((unsigned char*)&DAT_07abf050, b + 0xaa, 0, 0, 0.0f);
                 DAT_07abf0d4 = 0;
-                FUN_00404bc0(0x19, 0, 0);
+                PlayBuffer(0x19, 0, 0);
             }
         }
 
@@ -652,10 +652,10 @@ void Game_EnterWorldTick(void)
         if (backClick) {
             DAT_083a4124 = '\0';
             DAT_005616b0 = -1;
-            FUN_00404bc0(0x19, 0, 0);
+            PlayBuffer(0x19, 0, 0);
             DAT_083a7c14 = 0x1c;
             DAT_083a7c18 = 0x15;
-            FUN_00404bc0(0x1b, 0, 0);
+            PlayBuffer(0x1b, 0, 0);
         }
         else {
             // "OK button" hit-test (0x14f..0x196)
@@ -666,10 +666,10 @@ void Game_EnterWorldTick(void)
             if (okClick || clearBtn) {
                 if (okClick) DAT_083a4124 = '\0';
                 DAT_005616b0 = -1;
-                FUN_00404bc0(0x19, 0, 0);
+                PlayBuffer(0x19, 0, 0);
                 DAT_083a7c14 = 0x1c;
                 DAT_083a7c18 = 0x15;
-                FUN_00404bc0(0x1b, 0, 0);
+                PlayBuffer(0x1b, 0, 0);
 
                 // Validate username length
                 int ulen = (int)strlen((char*)DAT_07db8710);
@@ -734,7 +734,7 @@ void Game_EnterWorldTick(void)
         DAT_005616a4 -= (DAT_005616a4 + 0x102) / 2;
         if (DAT_005616a4 < -0xff) {
             DAT_083a7c14 = DAT_083a7c18;
-            FUN_00404bc0(0x1b, 0, 0);
+            PlayBuffer(0x1b, 0, 0);
         }
         break;
 
@@ -750,7 +750,7 @@ void Game_EnterWorldTick(void)
         DAT_005616a8 -= (DAT_005616a8 + 0xca) / 2;
         if (DAT_005616a8 < -199) {
             DAT_083a7c14 = DAT_083a7c18;
-            FUN_00404bc0(0x1b, 0, 0);
+            PlayBuffer(0x1b, 0, 0);
             if (DAT_05826cb0 == 0x3a) {
                 int code = DAT_05826cb0;
                 if (DAT_083a7c24 == 0) { DAT_083a7c24 = 0x3a; DAT_05826cb0 = 0x33; }
@@ -805,9 +805,9 @@ void Game_EnterWorldTick(void)
                     charData[0xc] = ((char*)DAT_07abf5d0)[DAT_005616ac * 0x394 + 0x1bd];
                 }
 
-                DAT_005615c0  = 3;  // g_GameState = Loading
+                SceneFlag  = 3;  // SceneFlag = Loading
                 DAT_083a7c4a  = 0;  // reset Scene_Loading init guard
-                Scene_UnloadCharSelectResources(); // FUN_005102c0 (IDA) — world loading kickoff
+                ReleaseCharacterSceneData(); // IDA: ReleaseCharacterSceneData (0x005102C0) — world loading kickoff
                 Sound_StopBuffer(5);
             }
         }
@@ -830,7 +830,7 @@ void Game_EnterWorldTick(void)
 
                 if (anyFree) {
                     DAT_083a7c14 = 0x15;
-                    FUN_00404bc0(0x1b, 0, 0);
+                    PlayBuffer(0x1b, 0, 0);
                 } else {
                     DAT_083a7c14 = 0x14;
                 }
@@ -853,7 +853,7 @@ void Game_EnterWorldTick(void)
         break;
     }
   // 2026-07-16 DIAG: bracket la sección UI de char-select
-    // (NB: the world-entry transition block — DAT_005615c0=3, FUN_005102c0,
+    // (NB: the world-entry transition block — SceneFlag=3, FUN_005102c0,
     //  FUN_00404c60(5) — used to live here, OUTSIDE the switch.  Eso era un
     //  port-bug: en el binario original ese código está DENTRO de case 25
     //  (= nuestro case 0x19), tras el Pkt_Send y el check de validCode.

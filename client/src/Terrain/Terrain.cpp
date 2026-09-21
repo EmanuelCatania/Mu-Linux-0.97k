@@ -202,7 +202,7 @@
 //     // 3. Anima agua (ondas sinusoidales)
 //     Para tiles visibles en viewport:
 //       DAT_07eab200[tile_idx] = sin(tile_col * DAT_00552660 + sun_angle) * DAT_00552488
-//       (Para g_GameSubState==8 (Devias?): usa DAT_00552598 en vez de DAT_00552660)
+//       (Para World==8 (Devias?): usa DAT_00552598 en vez de DAT_00552660)
 //
 //   DAT_0839bc90  — tile X cámara (columna izquierda visible)
 //   DAT_0839bc94  — tile Y cámara (fila superior visible)
@@ -212,7 +212,7 @@
 // ── TERRAIN_HEIGHATATPOS (0x004f7500) ─────────────────────────────────────────
 //
 //   float Terrain_HeightAtPos(float world_x, float world_y):
-//     // Solo válido con g_GameState == 5
+//     // Solo válido con SceneFlag == 5
 //     col = (int)world_x  (tile column)
 //     row = (int)world_y  (tile row)
 //     frac_x = world_x - col
@@ -256,7 +256,7 @@
 //       TerrainTile_SetupVertices(texture_id, tile_x, tile_y, es_borde_agua, 0)
 //       TerrainTile_Draw(texture_id)
 //
-//       Si g_GameSubState==7 (Atlans bajo el agua) && attrib2==5 && altura>0:
+//       Si World==7 (Atlans bajo el agua) && attrib2==5 && altura>0:
 //         // Renderiza superficie del agua sobre el tile
 //         animated_idx = DAT_0839bc8c + 0x1E  // frame animado (mod 32 + 30)
 //         TerrainTile_SetupVertices(animated_idx, ...)
@@ -315,7 +315,7 @@
 // ── TERRAIN_RENDER (0x004fd800) ───────────────────────────────────────────────
 //
 //   void Terrain_Render():
-//     color_underwater = (g_GameSubState == 10) ? 0xC1200000 : 0.0f
+//     color_underwater = (World == 10) ? 0xC1200000 : 0.0f
 //
 //     Itera 8×8 bloques de tiles (local_20 y local_24):
 //       Para cada bloque (tile_x=8, tile_y=8..):
@@ -324,7 +324,7 @@
 //           Para objetos en lista de ese bloque:
 //             obj[+0x160] = FUN_004f8ff0(...)  // cull por objeto
 //             Si visible: TerrainTile_Render(...)
-//             Si g_GameSubState==2 && entity_type==100:
+//             Si World==2 && entity_type==100:
 //               // Render entity especial (NPC marker?) con CharData check
 //
 //   FUN_004f8ff0 @ 0x004f8ff0 = Frustum_TestSphere(x, y, z) → visible
@@ -353,7 +353,7 @@
 //   DAT_00552cb0  — scale_objects (para objetos estáticos)
 //   DAT_00552488  — water_amplitude (amplitud de olas sinusoidales)
 //   DAT_00552660  — water_freq (frecuencia de ola, modo normal)
-//   DAT_00552598  — water_freq2 (frecuencia alternativa, g_GameSubState==8)
+//   DAT_00552598  — water_freq2 (frecuencia alternativa, World==8)
 //   DAT_00552580  — 0.0f (nivel mínimo / superficie del agua)
 //   DAT_0055256c  — 1.0f (máximo normalizado)
 //   DAT_0055a7c4  — compressed_flag (0=no comprimido, 1=comprimido)
@@ -464,10 +464,10 @@ void __cdecl CreateTerrainNormal(void) {
     }
 }
 
-// FUN_004f71c0 @ 0x004F71C0 — Terrain_FinalizeLighting: multiplies normal buffer
+// IDA: CreateTerrainLight (0x004F71C0)
 // by lightmap (DAT_07eeb238) and clamps into DAT_0828b608.
 // IDA: FUN_004F71C0
-void __cdecl Terrain_FinalizeLighting(void) {
+void __cdecl CreateTerrainLight(void) {
     int iVar4 = 0;
     do {
         int iVar6 = 0x100;
@@ -537,7 +537,7 @@ uint __cdecl OpenTerrainHeight(char *filename)
     FILE *fp = fopen(FileName, "rb");
     if (!fp) {
         crt_sprintf(Text, "%s file not found.", FileName);
-        FUN_00405540(&DAT_055c9bf0, Text);
+        CErrorReport_Write(&DAT_055c9bf0, Text);
         if (g_hWnd) {
             MessageBoxA(g_hWnd, Text, nullptr, 0);
             SendMessageA(g_hWnd, WM_DESTROY, 0, 0);
@@ -676,10 +676,10 @@ void __cdecl FUN_00529360(char *path, int dst)
     fclose(f);
 }
 
-// FUN_00454b00 @ 0x00454B00 — Entity_GetMoveRate(entity_ptr) → float10
+// CharacterMoveSpeed @ 0x00454B00 — Entity_GetMoveRate(entity_ptr) → float10
 // Returns movement speed rate based on entity state (+0x300 stamina, +0x2b8 class, +0x84 flag).
-// FUN_00454b00 (IDA-activated, was Ghidra stub)
-float10 __cdecl FUN_00454b00(int c)
+// IDA: CharacterMoveSpeed (0x00454B00)
+float10 __cdecl CharacterMoveSpeed(int c)
 {
   double result; // st7
   short v2; // dx

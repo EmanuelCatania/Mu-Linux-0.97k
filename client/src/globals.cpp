@@ -7,7 +7,7 @@
 #include "stdafx.h"
 
 // ── Named globals: defined in WinMain.cpp, only extern-declared here ─────────
-// int g_GameState, HWND g_hWnd, HINSTANCE g_hInst, HDC g_hDC — see WinMain.cpp
+// int SceneFlag, HWND g_hWnd, HINSTANCE g_hInst, HDC g_hDC — see WinMain.cpp
 
 // ── Low-address constants ─────────────────────────────────────────────────────
 float    _DAT_00000010 = 0.0f;
@@ -184,19 +184,20 @@ DWORD    DAT_00552d4c  = 0;
 DWORD    DAT_005538a0  = 0;
 
 // ── Entity / render constants ─────────────────────────────────────────────────
-// 16-byte XOR key table — usado por Crypto.cpp/Effect_Create.cpp/Net_PacketSession etc.
+// 16-byte XOR key table — usado por Crypto.cpp/CreateEffect.cpp/Net_PacketSession etc.
 // Indexado como (&DAT_00559050)[i&0xf] o DAT_00559050[i%16].
 BYTE     PacketXorKey16[16] = {0}; // DAT_00559050
 BYTE (&DAT_00559050)[16] = PacketXorKey16; // compatibility alias for stubs_IDA_ports.cpp
 float    _DAT_00559070 = 400.0f;  // Verlet physics damping/gravity scalar
 DWORD    DAT_00559070  = 0;
-// DAT_005590ac = g_bUseChatListBox. Default IDA = 1 (verificado: bytes en 0x5590ac
+// g_bUseChatListBox = g_bUseChatListBox. Default IDA = 1 (verificado: bytes en 0x5590ac
 // = 01 00 00 00, seguidos de flt_5590B0/B4/B8 = 295/417/18 coords del input dialog).
 // FIX 2026-07-19: estaba en 0 (una sesión previa lo bajó para tapar un doble-render
 // que en realidad se resuelve con el skip de mode 1/2 en ChatLB_renderLine). Con =1,
 // sub_480980 corre in-world → mensajes de sistema/GM salen ARRIBA-IZQUIERDA (no en el
 // área del ChatListBox abajo). Fiel a IDA.
-DWORD    DAT_005590ac  = 1;
+// IDA: g_bUseChatListBox (0x005590AC)
+DWORD    g_bUseChatListBox  = 1; // IDA: g_bUseChatListBox (0x005590AC)
 // flt_5590B0 / flt_5590B4 / flt_5590B8 — layout de los 3 botones popup del
 // ChatListBox (ver-chat / tamaño-historial / transparencia).
 // Valores LEÍDOS DEL BINARIO en 0x5590B0 (12 bytes: 00 80 93 43 | 00 80 d0 43 |
@@ -221,7 +222,8 @@ float    ChatListBox_TabButtonSpacing  = 18.0f; // separación horizontal entre 
 // expects "09711"; bytes are computed as target_char + (i + 1) so that
 // (DAT[i] - i - 1) = "09711":
 //     '0'+1=0x31, '9'+2=0x3B, '7'+3=0x3A, '1'+4=0x35, '1'+5=0x36
-BYTE     DAT_0055961c[5]  = { 0x31, 0x3B, 0x3A, 0x35, 0x36 };
+// IDA: DAT_0055961c (0x0055961C)
+BYTE     Version[5]  = { 0x31, 0x3B, 0x3A, 0x35, 0x36 };
 // Serial (16 bytes) @ 0x00559624: sent raw in login packet.
 //
 // HISTORICAL VALUE from original main.exe:
@@ -230,9 +232,11 @@ BYTE     DAT_0055961c[5]  = { 0x31, 0x3B, 0x3A, 0x35, 0x36 };
 // Current value matches MuServer Encoder/MainInfo.ini ClientSerial=TbYehR2hFUPBKgZj.
 // Server compares strict equality after CSM decode, so client and server must
 // agree on this 16-byte string verbatim.
-BYTE     DAT_00559624[16] = { 'T', 'b', 'Y', 'e', 'h', 'R', '2', 'h',
+// IDA: DAT_00559624 (0x00559624)
+BYTE     Serial[16] = { 'T', 'b', 'Y', 'e', 'h', 'R', '2', 'h',
                               'F', 'U', 'P', 'B', 'K', 'g', 'Z', 'j' };
-DWORD    PacketXorKey3  = 0; // DAT_00559678
+// IDA: DAT_00559678 (0x00559678)
+DWORD    PacketXorKey3  = 0; // IDA: DAT_00559678 (0x00559678)
 float    _DAT_00559680 = 0.0f;
 DWORD    DAT_00559680  = 0;
 DWORD    DAT_00559684  = 0;
@@ -255,7 +259,7 @@ DWORD    DAT_00559c78  = 0xffffffff;
 extern "C" DWORD SetTextColor_0 = 0xffffffff;
 char     DAT_00559b80[64] = "";   // GM/admin name filter string (Entity_FindNearby)
 DWORD    DAT_00559c80  = 0;
-DWORD    DAT_00559c84  = 0;
+DWORD    InputEnable  = 0; // IDA: DAT_00559c84 (0x00559C84)
 DWORD    DAT_00559c88  = 0;
 DWORD    DAT_00559c8c  = 0;
 DWORD    DAT_00559c90  = 0;
@@ -298,7 +302,8 @@ char     s__s_file_not_found__0055a784[] = "%s file not found";
 DWORD    DAT_0055a798  = 0;
 char     DAT_0055a79c[] = "Data\\";    // texture/asset path prefix ("Data mode")
 char     DAT_0055a7a4[] = "Data2\\";   // texture/asset path prefix ("Data2 / pak mode")
-int      DAT_0055a7ac  = 0;
+// IDA: World (0x0055A7AC)
+int      World  = 0; // IDA: World (0x0055A7AC)
 float    _DAT_0055a7c0 = 0.0f;
 DWORD    DAT_0055a7c0  = 0;
 
@@ -317,14 +322,16 @@ DWORD    DAT_0056156c  = 640;   // WindowWidth default
 DWORD    DAT_00561570  = 480;   // WindowHeight default
 DWORD    DAT_00561574  = 0;
 // Buffer for server IP (writable — Config_ReadServerAddr fills it from server.cfg).
-// DAT_005615b8 puntua a este buffer por defecto; si server.cfg existe, se sobreescribe
+// szServerIpAddress puntua a este buffer por defecto; si server.cfg existe, se sobreescribe
 // con la IP del ConnectServer local.
 char     g_ServerIPBuf[128] = "connect.muonline.co.kr";
-char    *DAT_005615b8  = g_ServerIPBuf;
-WORD     DAT_005615bc  = 55901;  // default MU port
+// IDA: szServerIpAddress (0x005615B8)
+char    *szServerIpAddress  = g_ServerIPBuf; // IDA: szServerIpAddress (0x005615B8)
+// IDA: g_ServerPort (0x005615BC)
+WORD     g_ServerPort  = 55901; // IDA: g_ServerPort (0x005615BC)
 
 // ── ConnectServer flow (2026-07-15) ──────────────────────────────────────────
-// Cuando server.cfg tiene 2 líneas: línea 1 = ConnectServer (DAT_005615b8/bc),
+// Cuando server.cfg tiene 2 líneas: línea 1 = ConnectServer (szServerIpAddress/bc),
 // línea 2 = GameServer fallback (g_GameServerIP/Port). g_HasConnectServer activa
 // el flujo original: conectar al CS → recibir lista+load (F4/04/F4/02) → al
 // elegir server mandar F4/03 → redirect al GameServer → login.
@@ -333,7 +340,7 @@ int             g_ConnectServerMode     = 0;  // 1 = socket actual habla con el 
 int             g_ConnectServerRequested = 0; // 1 = ya mandamos C1 04 F4 02 en esta conexión CS
 char            g_GameServerIP[128]     = ""; // GameServer fallback (server.cfg línea 2)
 unsigned short  g_GameServerPort        = 0;
-// DAT_005615c0 = g_GameState (above)
+// SceneFlag = SceneFlag (above)
 // g_lpszMp3 @ 0x005615C4 — tabla de 6 punteros a las rutas de los BGM.
 // NO son handles: son `char*`. Los DAT_005615c4..d8 son sus 6 elementos (cuarto
 // caso del patron "DAT_ vecinos = una sola tabla"). Los consumen Game_MainLoop
@@ -349,7 +356,7 @@ unsigned short  g_GameServerPort        = 0;
 // Se apunta a los archivos reales. El mapeo de MuTheme -> Lorencia.mp3 lo
 // confirma el DLL de inyeccion (Encoder/MapManager.txt: "THE LOGIN MUSIC IS
 // Data\Music\MuTheme.mp3") y encaja con que Game_MainLoop use este mismo slot
-// para el login (g_GameState == 2) y para Lorencia.
+// para el login (SceneFlag == 2) y para Lorencia.
 //
 // ASSET FALTANTE: el track de la catedral de Devias (¼º´ç) no vino en el pack.
 // Se deja el nombre apuntando a un archivo inexistente a proposito: PlayMp3
@@ -414,7 +421,7 @@ DWORD    DAT_005616a0  = 0;
 // machine oscilaba 0x18 ↔ 0x17 sin parar.
 int      DAT_005616a4  = 0;
 int      DAT_005616a8  = 0;
-DWORD    DAT_005616ac  = 0;
+DWORD    SelectedHero  = 0; // IDA: DAT_005616ac (0x005616AC)
 DWORD    DAT_005616b0  = 0;
 DWORD    DAT_005616b8  = 0;
 DWORD    DAT_005617a0  = 0;
@@ -509,7 +516,7 @@ DWORD    DAT_055c9b80  = 0;
 //
 // External callers using HashTable_GetIndex (functions.h wrapper) get
 // 0xFFFFFFFF instead, so their `if (idx != -1)` guard skips the subsequent
-// FUN_00404280 lookup + NULL deref.
+// HashTable_GetNode lookup + NULL deref.
 static unsigned int __cdecl HashFn_Sentinel(void*) { return 0; }
 static void* g_FakeHashVtable[8] = {
     nullptr, nullptr, nullptr,
@@ -587,19 +594,22 @@ DWORD    DAT_055ca050  = 0;
 // BUG fixed: previously sized 0x4030 — slot 0 data area (offset 0x4024..0x6024)
 // extended PAST the array by ~0x1FF4 bytes, so any packet >12 bytes scribbled
 // into adjacent globals. DAT_05826c58 (Dec2 keys) was placed by linker right
-// after DAT_055ca160's end, so every C3 packet trashed the decryption keys
+// after SocketClient's end, so every C3 packet trashed the decryption keys
 // → C3 decode FAILED with checksum mismatch on every server response.
-char     DAT_055ca160[0x260000] = {};
+// IDA: SocketClient (0x055CA160)
+char     SocketClient[0x260000] = {};
 // Static init: socket field must start as INVALID_SOCKET (0xFFFFFFFF)
-struct NetCtxInit_t { NetCtxInit_t() { *(SOCKET*)(DAT_055ca160 + 8) = INVALID_SOCKET; } } g_NetCtxInitObj;
-DWORD    DAT_055cc16c  = 0;
-DWORD    DAT_055ce174  = 0;
+struct NetCtxInit_t { NetCtxInit_t() { *(SOCKET*)(SocketClient + 8) = INVALID_SOCKET; } } g_NetCtxInitObj;
+// IDA: SocketClient.m_nSendBufLen (0x055CC16C)
+DWORD    SocketClientSendBufferLength  = 0;
+// IDA: SocketClient.m_LogPrint (0x055CE174)
+DWORD    SocketClientLogPrint  = 0;
 
 // ── Network / login state ─────────────────────────────────────────────────────
 DWORD    DAT_05826bdc  = 0;
 DWORD    DAT_05826c00  = 0;
 DWORD    DAT_05826c04  = 0;
-DWORD    DAT_05826c08  = 0;
+DWORD    SoccerTime  = 0; // IDA: DAT_05826c08 (0x05826C08)
 // CSimpleModulus XOR key table @ 0x00562E48 (.rdata in the original binary).
 // Used by CSimpleModulus_LoadEncryptionKey / LoadDecryptionKey (sub_53D1C0)
 // to de-obfuscate the key DWORDs read from Enc1.dat / Dec2.dat.
@@ -615,36 +625,50 @@ DWORD    DAT_00562e48[4] = {
 //   [9..12]  : DecKey[4]      (this+36 .. this+51)
 //   [13..16] : XorKey[4]      (this+52 .. this+67)
 // Loaded at WinMain startup from Data\Enc1.dat (CS) and Data\Dec2.dat (SC).
-DWORD    DAT_05826c10[17] = {0};   // g_SimpleModulusCS (client→server encryption keys)
-DWORD    DAT_05826c58[17] = {0};   // g_SimpleModulusSC (server→client decryption keys)
-DWORD    DAT_05826c9c  = 0;
-DWORD    DAT_05826ca0  = 0;  // HeroIndex
+// IDA: DAT_05826c10 (0x05826C10)
+DWORD    g_SimpleModulusCS[17] = {0};
+// IDA: DAT_05826c58 (0x05826C58)
+DWORD    g_SimpleModulusSC[17] = {0};
+// IDA: DAT_05826C9C (0x05826C9C)
+DWORD    m_nTempMyTradeGold  = 0;
+// IDA: DAT_05826ca0 (0x05826CA0)
+DWORD    HeroIndex  = 0;
 DWORD    DAT_05826ca4  = 0;
 DWORD    DAT_05826ca8  = 0;
-DWORD    DAT_05826cac  = 0;
-DWORD    DAT_05826cb0  = 0;
-char     DAT_05826cb4[12] = {0};   // IDA: ChatWhisperID (0x05826CB4); era un DWORD suelto sin uso
+// IDA: DAT_05826cac (0x05826CAC)
+DWORD    HeroKey  = 0;
+// IDA: DAT_05826cb0 (0x05826CB0)
+DWORD    CurrentProtocolState  = 0;
+// IDA: DAT_05826cb4 (0x05826CB4)
+char     ChatWhisperID[12] = {0};
 DWORD    DAT_05826cc0  = 0;
 DWORD    DAT_05826cc8  = 0;
 char     DAT_05826cc9  = 0;
-char     DAT_05826cd4[16]  = {0};
+// IDA: DAT_05826CD4 (0x05826CD4)
+char     LogInID[16]  = {0};
 char     DAT_05826ceb  = 0;
-DWORD    DAT_05826cec  = 0;
+// IDA: DAT_05826CEC (0x05826CEC)
+DWORD    g_byPacketSerialRecv  = 0;
 float    _DAT_05826cf4 = 0.0f;
-DWORD    DAT_05826cf4  = 0;
-DWORD    DAT_05826cf8  = 0;
-DWORD    DAT_05826cf0  = 0;  // g_bGameServerConnected
-DWORD    DAT_05826d08  = 0;
-char     DAT_05826d14  = 0;   // Teleport (IDA @0x05826D14) — flag de gate/teleport en curso
-DWORD    DAT_05826d18  = 0;   // cooldown de COMPRA en tienda (IDA dword_5826D18)
+// IDA: DAT_05826cf4 (0x05826CF4)
+DWORD    g_dwLatestMagicTick  = 0;
+// IDA: DAT_05826CF8 (0x05826CF8)
+DWORD    LogIn  = 0;
+// IDA: g_bGameServerConnected (0x05826CF0)
+DWORD    g_bGameServerConnected  = 0; // IDA: g_bGameServerConnected (0x05826CF0)
+// IDA: DAT_05826d08 (0x05826D08)
+DWORD    ChatTime  = 0;
+char     Teleport  = 0; // IDA: DAT_05826d14 (0x05826D14)
+// IDA: DAT_05826d18 (0x05826D18)
+DWORD    BuyCost  = 0;
 // DAT_05826d1c = EnableUse (IDA 0x05826D1C), definido mas abajo; ver globals.h.
 DWORD    DAT_05826d20  = 0;
-DWORD    DAT_05826d24  = 0;   // SummonLife (IDA @0x05826D24) — HP % de la mascota invocada
+DWORD    SummonLife  = 0; // IDA: DAT_05826d24 (0x05826D24)
 int      AttackPlayer  = 0;   // 0x05826D28 — indice de slot del ultimo atacante
 DWORD    DAT_05826d30  = 0;
 char     DAT_05826d31  = 0;
 char     DAT_05826d32  = 0;
-char     DAT_05826d33  = 0;
+char     SoccerObserver  = 0; // IDA: DAT_05826d33 (0x05826D33)
 DWORD    DAT_05826d78  = 0;
 DWORD    DAT_05826dc8  = 0;
 DWORD    DAT_05826df4  = 0;
@@ -734,9 +758,9 @@ char     g_BoneScratch[200 * 0x30] = {0};   // = 0x2580 (BoneTransform[200][3][4
 // los campos se acceden por macros (ver globals.h). Ver charselect-deferred-issues.
 char     DAT_07abf050[0x580] = {0};
 char     DAT_07d2b494[9000] = {};  // class name table (stride 300, 30 slots) — símbolo aparte
-DWORD    DAT_07abf5d0  = 0;  // CharactersClient
+DWORD    CharactersClient  = 0; // IDA: DAT_07abf5d0 (0x07ABF5D0)
 int      DAT_07abf5d4  = 0;
-char    *DAT_07abf5d8  = NULL;  // Hero
+char    *Hero  = NULL; // IDA: DAT_07abf5d8 (0x07ABF5D8)
 DWORD    DAT_07abf5dc  = 0;
 DWORD    DAT_07abf5e0  = 0;
 float    _DAT_07abf5e8 = 0.0f;
@@ -811,7 +835,7 @@ DWORD    DAT_07e11e78  = 0;
 DWORD    DAT_07e11e98  = 0;
 char     DAT_07e11e9c  = 0;
 char     DAT_07e11d6e           = 0;
-char     DAT_07e11d6f           = 0;   // LockInputStatus
+char     LockInputStatus           = 0; // IDA: DAT_07e11d6f (0x07E11D6F)
 int      g_WorldLoading         = 0;   // >0 mientras corre OpenWorld (ver WinMain WM_USER)
 // 2026-09-07: era un buffer aparte; en realidad es GlobalText[450]. Ver el bloque de alias al final de globals.h.
 // char     DAT_07d4ac7c[256]      = {};
@@ -1171,7 +1195,8 @@ float&   DAT_083a7ad8 = CurrentCameraAngle[2];
 DWORD    DAT_083a7af4  = 0;
 DWORD    DAT_083a7c00  = 0;
 DWORD    DAT_083a7c10  = 0;
-int      DAT_083a7c14  = 0;  // login sub-state
+// IDA: DAT_083a7c14 (0x083A7C14)
+int      LoginSubState  = 0;
 DWORD    DAT_083a7c18  = 0;
 DWORD    DAT_083a7c1c  = 0;
 DWORD    DAT_083a7c20  = 0;
@@ -1328,7 +1353,7 @@ float   _DAT_00552954  = 0.0015f;
 char     DAT_07c80110[100 * 0x70] = {};
 
 // Character/effect update pool — 1002 slots × 444 bytes = 0x6c660 (matches
-// binario original 0x07c85890..0x07cf1ef0). Antes era 1 byte → FUN_004795c0
+// binario original 0x07c85890..0x07cf1ef0). Antes era 1 byte → CreateSprite
 // (Effect_Spawn) tenía un AUTO-SKIP que saltaba la implementación entera y
 // NO spawneaba NINGUNA partícula (glow +9, wing FX, weapon glows, lightning
 // crackles — todo invisible). Buffer real ahora permite que el pool funcione.
@@ -1430,7 +1455,7 @@ int      SelectedItem       = -1;  // DAT_00559c48
 int      SelectedNpc        = -1;  // DAT_00559c4c
 int      SelectedCharacter  = -1;  // DAT_00559c50
 int      SelectedOperate    = -1;  // DAT_00559c54
-int      DAT_00559c58  = -1;  // SelectedCharacter secondary
+int      Attacking  = -1; // IDA: DAT_00559c58 (0x00559C58)
 // 2026-05-06 BUG-FIX: m_bAutoAttack default = 1 (enabled). Per IDA
 // Mouse_Hover (sub_4B0310:85), if !m_bAutoAttack the hover-target
 // (DAT_00559c50 / SelectedCharacter) is reset to -1 every frame BEFORE the click handler reads
@@ -1892,7 +1917,8 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // `(&DAT_00558090)[i % 3]` sobre un cero y dos bytes de globals vecinos: el
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
 // equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.
-char    DAT_00558090[3] = { (char)0xFC, (char)0xCF, (char)0xAB };
+// IDA: DAT_00558090 (0x00558090)
+char    bBuxCode[3] = { (char)0xFC, (char)0xCF, (char)0xAB };
 char    TextParserTokenString[256] = {}; // DAT_07CF1EF0 — GetToken buffer (0x47A1F0)
 char    DAT_00559088 = 0;
 int     DAT_07d7807c = 0;
@@ -2018,7 +2044,7 @@ char    s_Data_Sound_mRedSkull_wav_0055caec[] = "Data/Sound/mRedSkull.wav";
 char    s_Data_Sound_mRedSkullDie_wav_0055cad0[] = "Data/Sound/mRedSkullDie.wav";
 char    s_Data_Sound_mRedSkullAttack_wav_0055cab0[] = "Data/Sound/mRedSkullAttack.wav";
 
-// ── Effect_Create float constants ────────────────────────────────────────────
+// ── CreateEffect float constants ────────────────────────────────────────────
 float   _DAT_005524ec = 180.0f;
 float   _DAT_0055253c = 0.0174532924f;
 float   _DAT_00552828 = -5.0f;
@@ -2124,7 +2150,8 @@ char    s_PlayMp3_cmd_00559140[]    = ">PlayMp3<";
 DWORD   DAT_0058443c   = 0;
 
 // ── Net_Connect globals ───────────────────────────────────────────────────────
-DWORD   DAT_055ca15c   = 0;
+// IDA: First (0x055CA15C)
+DWORD   First   = 0;
 char    s_Failed_to_connect__00559688[] = "Failed to connect.";
 
 // ── Net_PacketSession globals ─────────────────────────────────────────────────
@@ -2270,7 +2297,7 @@ BYTE    DAT_0055984c[9] = { 10, 18, 37, 38, 51, 52, 58, 59, 66 };
 // de chat proyectado a +40. Ver DAT_07e016f8 más abajo. La declaración vieja
 // (26 slots sueltos) convivía con `DAT_07e016f8` como char de 1 byte, y
 // CreateChat caminaba ESE char con stride 596 → AV.
-// Key-state table para Input_IsKeyJustPressed (PressKey / Key_IsJustPressed).
+// Key-state table para PressKey (PressKey / Key_IsJustPressed).
 // La función indexa como `*(DWORD*)((char*)&DAT_07e118ec + vkey*4)`, o sea
 // 256 entradas DWORD (1024 bytes) — una por código VK. En IDA es una tabla
 // al símbolo dword_7E118EC. Si se deja como DWORD single, cualquier tecla
@@ -2493,7 +2520,7 @@ DWORD   DAT_07eaa0c8  = 0;   // SecondPassword dialog origin X (pixel)
 DWORD   DAT_07eaa0cc  = 0;   // SecondPassword dialog origin Y (pixel)
 DWORD   DAT_07eaa140  = 0;   // MixState (0x07EAA140)
 DWORD   DAT_07eaa131  = 0;   // SecondPassword checkbox/toggle state
-DWORD   DAT_07eaa138  = 0;   // RepairEnable (low byte)
+DWORD   RepairEnable  = 0; // IDA: DAT_07eaa138 (0x07EAA138)
 DWORD   DAT_07ea5290  = 0;   // SecondPassword alt-panel origin X
 DWORD   DAT_07ea528c  = 0;   // SecondPassword alt-panel origin Y
 // 2026-09-07: era un buffer aparte; en realidad es GlobalText[580]. Ver el bloque de alias al final de globals.h.
@@ -2797,7 +2824,7 @@ DWORD  DAT_0055339c       = 0;
 
 // Batch 18 — InitGame / ReceiveChat globals
 DWORD  EnableUse          = 0;
-int    DAT_07e11998       = -1;
+int    SendGetItem       = -1; // IDA: DAT_07e11998 (0x07E11998)
 // DAT_07e11d28 already defined above (line ~805)
 int    DAT_07e11e10       = 0;
 int    DAT_07e11e14       = 0;
@@ -2817,7 +2844,8 @@ int    DAT_07e11980       = 0;
 
 // Batch 19 — SendCheck globals
 DWORD  DAT_07e11d10       = 0;
-BYTE   DAT_07db8600       = 0;
+// IDA: g_byPacketSerialSend (0x07DB8600)
+BYTE   g_byPacketSerialSend       = 0; // IDA: g_byPacketSerialSend (0x07DB8600)
 BYTE   DAT_05826cfc       = 0;
 DWORD  DAT_05826d00       = 0;
 
@@ -2844,7 +2872,8 @@ void*  g_LoginSceneObjects[9] = {0}; // sky, ship1, wave1, ship2, wave2, ship3, 
 // corria en CADA frame para CADA entidad: en char-select eso disparaba cientos
 // de PlayBuffer(rand()%7+50) = el ruido de golpes (eBlow/eShortBlow).
 int    DAT_00559858       = 15;    // g_iLimitAttackTime
-DWORD  DAT_05826d10       = 0;     // CurrentSkill (current skill ID for arrow/projectile)
+// IDA: DAT_05826d10 (0x05826D10)
+DWORD  CurrentSkill       = 0;
 DWORD  DAT_07e11d84       = 0;     // UseSkillWarrior 43 activation tick
 float  _DAT_00552904      = 1400.0f;  // sin/cos offset multiplier (sword trail radius)
 float  _DAT_005528f8      = 145.0f;  // sin/cos offset multiplier (slash projectile)

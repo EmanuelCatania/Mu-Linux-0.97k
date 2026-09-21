@@ -12,9 +12,9 @@
 // Closes the game socket and resets connection state.
 int __cdecl Net_Disconnect(int ctx) {
     (void)ctx;
-    if (DAT_055ca168 != (DWORD)INVALID_SOCKET) {
-        closesocket((SOCKET)DAT_055ca168);
-        DAT_055ca168 = (DWORD)INVALID_SOCKET;
+    if (SocketClientSocket != (DWORD)INVALID_SOCKET) {
+        closesocket((SOCKET)SocketClientSocket);
+        SocketClientSocket = (DWORD)INVALID_SOCKET;
     }
     return 0;
 }

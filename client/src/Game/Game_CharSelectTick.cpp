@@ -15,8 +15,8 @@
 //   DAT_083a7c10  — server ack flag (gates per-frame logic)
 //   DAT_05826cb0  — server response: 0x3c=sent, 0x3d=confirmed
 //   CameraTopViewEnabled  — special viewport mode flag
-//   DAT_005590ac  — flag enabling anti-tamper block
-//   DAT_0055a7ac  — g_GameSubState
+//   g_bUseChatListBox  — flag enabling anti-tamper block
+//   World  — World
 //   DAT_07eaa11b  — anti-tamper sequence counter
 //   DAT_07eaa116/117 — anti-tamper flags
 //   DAT_007eaa118..11c — anti-tamper bytes
@@ -40,7 +40,7 @@ void Game_CharSelectTick(void)
 {
     // ── ONE-TIME INIT ─────────────────────────────────────────────────────────
     if (DAT_083a7c4c == '\0') {
-        FUN_00405540(&DAT_055c9bf0, "> Character selected <%d> %s");
+        CErrorReport_Write(&DAT_055c9bf0, "> Character selected <%d> %s");
         DAT_083a7c4c = 1;
 
         // IDA 0x524E30 L80-219: el F3/03 (pedir entrar con el personaje) sale
@@ -68,7 +68,7 @@ void Game_CharSelectTick(void)
         // NaN propagaba a AngleMatrix→VectorIRotate→CameraPosition (escena negra).
         // Escribir el float directamente (bit-pattern 0xC2340000), igual a IDA.
         CameraAngle[2] = -45.0f;  // yaw = -45° (iso rotation around Z)
-        Input_ClearState(1);
+        ClearInput(1);
         DAT_00559c84 = 0;
         DAT_07e11d71 = 0;
         DAT_00559c8c = 0x100;
@@ -78,7 +78,7 @@ void Game_CharSelectTick(void)
 
         // 120× widget draw
         for (int i = 0x78; i > 0; i--)
-            FUN_00480620((const char*)&DAT_083a7c90, (const char*)&DAT_083a7c8c, 0);
+            UIChatLogWindow_AddText((const char*)&DAT_083a7c90, (const char*)&DAT_083a7c8c, 0);
 
         ((BYTE*)&DAT_07e913a8)[0] = 0;
         DAT_07e91428 = 0;
@@ -96,7 +96,7 @@ void Game_CharSelectTick(void)
             ((FnClear)vt[10])(obj);
             FUN_0040e590((int)DAT_055c9ff0);
         }
-        FUN_00405540(&DAT_055c9bf0, "> Main Scene init success");
+        CErrorReport_Write(&DAT_055c9bf0, "> Main Scene init success");
         CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
     }
 
@@ -134,12 +134,12 @@ void Game_CharSelectTick(void)
             typedef int (__fastcall *FnTick)(DWORD*, int /*edx*/, int);
             ((FnTick)vt[5])(obj, 0, 0);
         }
-        Bisect_ChatMode("CST_post_chatLB");        Scene_ProcessPacketUpdates();
+        Bisect_ChatMode("CST_post_chatLB");        UpdateWindowsMouse();
         Bisect_ChatMode("CST_post_4ecb00");        FUN_00402fd0((void*)(uintptr_t)DAT_00583d8c);
         Bisect_ChatMode("CST_post_402fd0");        Chat_InputTick();
         Bisect_ChatMode("CST_post_4b14f0_ChatInputTick");
         // ── Reposición per-frame del ChatListBox ────────────────────────────
-        // FIX 2026-07-20: faltaba el `else` del `DAT_005590ac == 1`, y el caso
+        // FIX 2026-07-20: faltaba el `else` del `g_bUseChatListBox == 1`, y el caso
         // (-10, 81) estaba metido en la rama equivocada.
         //
         // Las 3 posiciones (verificadas en el binario en 0x5258D8: tres pares
@@ -155,7 +155,7 @@ void Game_CharSelectTick(void)
         // dibujándose ahí abajo en vez de volver arriba a la izquierda: las
         // filas se posicionan SIEMPRE en `this[11]+10, this[12]-13*n-16`
         // (IDA sub_40D610), así que mover el widget es lo único que las mueve.
-        if (DAT_005590ac == 1) {
+        if (g_bUseChatListBox == 1) {
             int y, x;
             if (DAT_07eaa117 == '\0') {
                 y = 0x1a4; x = 0xba;
@@ -165,18 +165,18 @@ void Game_CharSelectTick(void)
                     unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa11b);
                     if (idx == 0xffffffff) {
                         void* node = operator_new(2); *((BYTE*)node+1)=1;
-                        FUN_00403f80(&DAT_055c9bc8, node, &DAT_07eaa11b);
+                        HashTable_Insert(&DAT_055c9bc8, node, &DAT_07eaa11b);
                     } else {
                         BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
                         node[1]++;
-                        if (node[1] < 2) FUN_00404330(&DAT_07eaa11b, node);
+                        if (node[1] < 2) Packet_DecryptByte(&DAT_07eaa11b, node);
                     }
                     // Decrement
                     idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa11b);
                     if (idx != 0xffffffff) {
                         BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
                         node[1]--;
-                        if (node[1] == 0) FUN_00423710(node, &DAT_07eaa11b);
+                        if (node[1] == 0) Packet_EncryptByte(node, &DAT_07eaa11b);
                     }
                     // TradeOpened (11b) + Warehouse (119) + ChaosMix (11a) +
                     // EventWindow (11c); después ShopOpened (118).  Per IDA,
@@ -224,33 +224,33 @@ void Game_CharSelectTick(void)
     // World 2 INVERTIDAS: corria solo en los casos en que IDA saltea, asi que
     // las hojas de Lorencia y Devias estaban al reves.
     bool doLeaves;
-    if (DAT_0055a7ac == 0)
+    if (World == 0)
         doLeaves = (DAT_07e118e8 != 4);
-    else if (DAT_0055a7ac == 2)
+    else if (World == 2)
         doLeaves = !(DAT_07e118e8 == 3 || DAT_07e118e8 >= 10);
     else
-        doLeaves = (DAT_0055a7ac == 3 || DAT_0055a7ac == 7 ||
-                    DAT_0055a7ac == 9 || DAT_0055a7ac == 10);
+        doLeaves = (World == 3 || World == 7 ||
+                    World == 9 || World == 10);
     if (doLeaves) WeatherParticles_Update();
     Bisect_ChatMode("CST_post_skillFX");
     // Full world pipeline
     FUN_00500e80();           Bisect_ChatMode("CST_post_500e80");    AmbientParticles_Update(); Bisect_ChatMode("CST_post_502320");    Object_MoveUpdate();      Bisect_ChatMode("CST_post_ObjMove");    UI_TickHoverBubbles();           Bisect_ChatMode("CST_post_4821a0");    Player_ProcessInput();    Bisect_ChatMode("CST_post_PlayerInput");
     // 2026-05-03: per-entity animation tick RE-ENABLED. La concern de stack
-    // corruption original venía de NULL-deref en hash table (FUN_00404280
+    // corruption original venía de NULL-deref en hash table (HashTable_GetNode
     // returning NULL on key-mismatch). Con el sentinel hash setup ahora hay
     // un buffer válido siempre, y HashTable_GetIndex retorna -1 para que los
     // callers skip el deref.
     //
     // 2026-05-05: Wire MoveCharactersClient_stub (per-frame entity tick que
-    // llama FUN_00454fc0 → FUN_00454cd0 path-walker para cada entidad). Sin
+    // llama MoveCharacterClient → MoveMonsterClient path-walker para cada entidad). Sin
     // esto los monsters/NPCs llegaban con packet 0x10 (target_grid set) pero
     // nunca se invocaba el path-walker, así quedaban quietos en su pos
     // inicial. El path-walker SÍ existe y funciona — solo faltaba wirear.
     // 2026-05-05: per-frame entity tick.
-    //   FUN_00454cd0 — path tick: pathfind (+0x306/7 target ≠ cached) y
+    //   MoveMonsterClient — path tick: pathfind (+0x306/7 target ≠ cached) y
     //                  advance waypoint cuando arrived. NO se llama para el
     //                  hero (Player_InputTick maneja su propio path/motion).
-    //   FUN_004520c0 — copia entity.action y world pos al model. SÍ para
+    //   MoveCharacterVisual — copia entity.action y world pos al model. SÍ para
     //                  todos los entities (incl hero). Sin esto el model
     //                  queda en posición inicial.
     //   CharacterAnimation — avanza entity[+0x108] (frame counter). Para todos.
@@ -262,9 +262,9 @@ void Game_CharSelectTick(void)
             int e = base + s * 0x394;
             if (*(char*)e == '\0') continue;   // inactive
             if (e != heroEnt) {
-                FUN_00454cd0(e, e);            // path tick (skip hero)
+                MoveMonsterClient(e, e);            // path tick (skip hero)
             }
-            FUN_004520c0(e);                   // action → model (incl hero)
+            MoveCharacterVisual(e);                   // action → model (incl hero)
             CharacterAnimation(e, e);          // advance anim frame (incl hero)
         }
     }

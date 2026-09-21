@@ -11,7 +11,7 @@
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" DWORD g_ItemAttribute_Backup;   // defined in Render_Frame.cpp
 extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void FUN_004fa5a0(void);
 extern void __cdecl FUN_0046ca00(DWORD Object);
 extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx);
@@ -57,7 +57,7 @@ extern "C" int dword_7EAA0CC;             // HUD_Pass3.cpp
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 
 
@@ -100,10 +100,10 @@ void __stdcall InitGame(void)
                           // la flecha arriba del chat.
     DAT_00559c5c = 1;     // m_bAutoAttack (IDA InitGame L39, 0x00559C5C)
     DAT_07e11d24 = 0;     // _CheckInventory
-    // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (DAT_0055a7ac).
+    // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (World).
     // El port escribia DAT_005615c4, que es g_lpszMp3[0] — el puntero al mp3 de
     // la taberna — asi que cada InitGame lo dejaba en -1 y PlayMp3 recibia (char*)-1.
-    DAT_0055a7ac = -1;   // World
+    World = -1;   // World
     // CSQuest__ClearQuest(g_csQuest);
     // IDA InitGame L43 es `LockInputStatus = 0`, y LockInputStatus vive en
     // 0x07E11D6F (xrefs: WndProc x4, InitGame, ReceiveJoinMapServer,
@@ -132,7 +132,7 @@ void __stdcall InitGame(void)
 
     // --- Phase 4: Second hash pass (decrement ref-count, free if zero) ---
     // Same hash table pattern as Phase 2, but decrements refcount.
-    // If refcount hits 0, calls FUN_00404400 to free the entry.
+    // If refcount hits 0, calls Packet_EncryptBuffer to free the entry.
 
     // --- Phase 5: Final cleanup ---
     DAT_07e11e1c = 0;     // _g_shEventChipCount
@@ -142,7 +142,7 @@ void __stdcall InitGame(void)
     DAT_07e11d80 = 0;     // m_bWhisperSound (IDA InitGame L167, 0x07E11D80)
     ClearWhisperID();     // IDA: ClearWhisperID (0x004804D0).  Antes llamaba a
                           // FUN_00482350, que no es una funcion (cae dentro de sub_4824C0).
-    FUN_0047eb80();       // clearMatchInfo (0x0047EB80; antes se llamaba a
+    clearMatchInfo();       // clearMatchInfo (0x0047EB80; antes se llamaba a
                           // FUN_004827a0, un stub vacio con la direccion mal)
     FUN_00433830();       // InitPartyList
 }
@@ -166,9 +166,9 @@ void __stdcall InitGame(void)
 // ─────────────────────────────────────────────────────────────────────────────
 void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
 {
-    // BUG-FIX: DAT_07e11980 no existe en PE. SceneFlag real = DAT_005615c0.
+    // BUG-FIX: DAT_07e11980 no existe en PE. SceneFlag real = SceneFlag.
     // El comentario "(in-game)" era incorrecto: 2 = Login en este cliente.
-    if (DAT_005615c0 == 2) {  // g_GameState == 2 (Login scene)
+    if (SceneFlag == 2) {  // SceneFlag == 2 (Login scene)
         // Send 4-byte ACK: C1 04 0E xx
         char ackPkt[4];
         ackPkt[0] = (char)0xC1;
@@ -177,25 +177,25 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
         ackPkt[3] = 0;
         int sent = 0;
         int remain = 4;
-        if (DAT_055ca168 != (SOCKET)INVALID_SOCKET) {
+        if (SocketClientSocket != (SOCKET)INVALID_SOCKET) {
             while (remain > 0) {
-                int r = send(DAT_055ca168, ackPkt + sent, remain, 0);
+                int r = send(SocketClientSocket, ackPkt + sent, remain, 0);
                 if (r == SOCKET_ERROR) {
                     if (WSAGetLastError() != WSAEWOULDBLOCK) {
-                        FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));  // Net_Disconnect
+                        CWsctlc_Close(((int)(uintptr_t)SocketClient));  // Net_Disconnect
                         return;
                     }
                     // Queue to send buffer
-                    if (DAT_055cc16c + 4 > 0x2000) {
-                        FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));
+                    if (SocketClientSendBufferLength + 4 > 0x2000) {
+                        CWsctlc_Close(((int)(uintptr_t)SocketClient));
                         return;
                     }
-                    memcpy((char*)DAT_055ca16c + DAT_055cc16c, ackPkt, 4);
-                    DAT_055cc16c += 4;
+                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, ackPkt, 4);
+                    SocketClientSendBufferLength += 4;
                     return;
                 }
                 if (r == 0) return;
-                if (DAT_055ce174 != 0) FUN_0043de60();  // Net_FlushSendQueue
+                if (SocketClientLogPrint != 0) FUN_0043de60();  // Net_FlushSendQueue
                 remain -= r;
                 sent += r;
             }
@@ -375,7 +375,7 @@ void __stdcall FUN_00422074(void)
 // 2. Appends a NULL byte (encrypted with XOR key)
 // 3. Appends GetTickCount() as 4-byte DWORD (XOR-encrypted)
 // 4. Hash table lookup for CharacterMachine — anti-tamper obfuscation:
-//    - If not found: allocate 0x585-byte entry, insert via FUN_00403f80
+//    - If not found: allocate 0x585-byte entry, insert via HashTable_Insert
 //    - If found: increment refcount, clone+encrypt if refcount < 2
 // 5. Reads CharacterAttribute fields and appends (XOR-encrypted):
 //    - If AbilityTime[0] bit 0 == 0 (normal):
@@ -392,7 +392,7 @@ void __stdcall FUN_00422074(void)
 //     - Inserts serial number at offset [1] or [2] depending on header type
 //     - Increments g_byPacketSerialSend
 //     - Decrements refcount on old serial entry
-// 11. Calls FUN_0053cc30 to encode/compress the payload
+// 11. Calls CSimpleModulus_Encode to encode/compress the payload
 // 12. Sends via send() with full WSAEWOULDBLOCK queue handling
 //     - C1 header: acStack_914 buffer (< 0x100 encoded size)
 //     - C2 header: acStack_810 buffer (>= 0x100 encoded size)
@@ -417,20 +417,20 @@ void __stdcall FUN_00422074(void)
 //
 // Uses MAIN_HASH_CLASS (anti-tamper obfuscation, not game logic):
 //   FUN_004041e0 — hash lookup (returns slot index or 0xFFFFFFFF)
-//   FUN_00403f80 — hash insert (allocates 0x585-byte entry)
-//   FUN_00404280 — hash get value (returns entry pointer)
-//   FUN_00404330 — hash clone+encrypt entry
-//   FUN_00404400 — hash free entry (when refcount hits 0)
-//   FUN_00423710 — hash remove entry
+//   HashTable_Insert — hash insert (allocates 0x585-byte entry)
+//   HashTable_GetNode — hash get value (returns entry pointer)
+//   Packet_DecryptByte — hash clone+encrypt entry
+//   Packet_EncryptBuffer — hash free entry (when refcount hits 0)
+//   Packet_EncryptByte — hash remove entry
 //
 // == Network send ==
 //
 // Same pattern as all other packet sends:
 //   send() in a loop, handle WSAEWOULDBLOCK by copying to
-//   DAT_055ca16c queue (max 0x2001 bytes), or disconnect
-//   via FUN_0043dc90 on hard error.
+//   SocketClientSendBuffer queue (max 0x2001 bytes), or disconnect
+//   via CWsctlc_Close on hard error.
 //   FUN_0043de60 called after successful partial send if
-//   DAT_055ce174 != 0 (flush pending queue).
+//   SocketClientLogPrint != 0 (flush pending queue).
 // ─────────────────────────────────────────────────────────────────────────────
 void __stdcall SendCheck(void)
 {
@@ -499,11 +499,11 @@ void __stdcall SendCheck(void)
     // --- Insert packet serial number ---
     // Hash lookup g_byPacketSerialSend, insert at offset [1] or [2]
     int serialOffset = (sendBuf[0] != 0xC1) ? 2 : 1;
-    sendBuf[serialOffset + 1] = DAT_07db8600;  // g_byPacketSerialSend
-    DAT_07db8600++;
+    sendBuf[serialOffset + 1] = g_byPacketSerialSend;  // g_byPacketSerialSend
+    g_byPacketSerialSend++;
 
-    // --- Encode payload via FUN_0053cc30 ---
-    int encodedLen = FUN_0053cc30(0, sendBuf + serialOffset + 1, pktLen - (serialOffset + 1));
+    // --- Encode payload via CSimpleModulus_Encode ---
+    int encodedLen = CSimpleModulus_Encode(0, sendBuf + serialOffset + 1, pktLen - (serialOffset + 1));
 
     // --- Send over socket ---
     char outBuf[0x404];
@@ -511,27 +511,27 @@ void __stdcall SendCheck(void)
         // C3 header (small packet)
         outBuf[0] = (char)0xC3;
         outBuf[1] = (char)(encodedLen + 2);
-        FUN_0053cc30((int)(outBuf + 2), sendBuf + serialOffset + 1, pktLen - (serialOffset + 1));
+        CSimpleModulus_Encode((int)(outBuf + 2), sendBuf + serialOffset + 1, pktLen - (serialOffset + 1));
         int totalLen = encodedLen + 2;
         int sent = 0;
-        if (DAT_055ca168 != (SOCKET)INVALID_SOCKET) {
+        if (SocketClientSocket != (SOCKET)INVALID_SOCKET) {
             while (sent < totalLen) {
-                int r = send(DAT_055ca168, outBuf + sent, totalLen - sent, 0);
+                int r = send(SocketClientSocket, outBuf + sent, totalLen - sent, 0);
                 if (r == SOCKET_ERROR) {
                     if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                        if ((int)(totalLen + DAT_055cc16c) < 0x2001) {
-                            memcpy((char *)DAT_055ca16c + DAT_055cc16c, outBuf, totalLen);
-                            DAT_055cc16c += totalLen;
+                        if ((int)(totalLen + SocketClientSendBufferLength) < 0x2001) {
+                            memcpy((char *)SocketClientSendBuffer + SocketClientSendBufferLength, outBuf, totalLen);
+                            SocketClientSendBufferLength += totalLen;
                         } else {
-                            FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));
+                            CWsctlc_Close(((int)(uintptr_t)SocketClient));
                         }
                     } else {
-                        FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));
+                        CWsctlc_Close(((int)(uintptr_t)SocketClient));
                     }
                     break;
                 }
                 if (r == 0) break;
-                if (DAT_055ce174 != 0) FUN_0043de60();
+                if (SocketClientLogPrint != 0) FUN_0043de60();
                 totalLen -= r;
                 sent += r;
             }
@@ -542,26 +542,26 @@ void __stdcall SendCheck(void)
         outBuf[0] = (char)0xC4;
         outBuf[1] = (char)((totalLen >> 8) & 0xFF);
         outBuf[2] = (char)(totalLen & 0xFF);
-        FUN_0053cc30((int)(outBuf + 3), sendBuf + serialOffset + 1, pktLen - (serialOffset + 1));
+        CSimpleModulus_Encode((int)(outBuf + 3), sendBuf + serialOffset + 1, pktLen - (serialOffset + 1));
         int sent = 0;
-        if (DAT_055ca168 != (SOCKET)INVALID_SOCKET) {
+        if (SocketClientSocket != (SOCKET)INVALID_SOCKET) {
             while (sent < totalLen) {
-                int r = send(DAT_055ca168, outBuf + sent, totalLen - sent, 0);
+                int r = send(SocketClientSocket, outBuf + sent, totalLen - sent, 0);
                 if (r == SOCKET_ERROR) {
                     if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                        if ((int)(totalLen + DAT_055cc16c) < 0x2001) {
-                            memcpy((char *)DAT_055ca16c + DAT_055cc16c, outBuf, totalLen);
-                            DAT_055cc16c += totalLen;
+                        if ((int)(totalLen + SocketClientSendBufferLength) < 0x2001) {
+                            memcpy((char *)SocketClientSendBuffer + SocketClientSendBufferLength, outBuf, totalLen);
+                            SocketClientSendBufferLength += totalLen;
                         } else {
-                            FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));
+                            CWsctlc_Close(((int)(uintptr_t)SocketClient));
                         }
                     } else {
-                        FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));
+                        CWsctlc_Close(((int)(uintptr_t)SocketClient));
                     }
                     break;
                 }
                 if (r == 0) break;
-                if (DAT_055ce174 != 0) FUN_0043de60();
+                if (SocketClientLogPrint != 0) FUN_0043de60();
                 totalLen -= r;
                 sent += r;
             }

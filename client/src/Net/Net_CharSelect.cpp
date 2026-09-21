@@ -5,7 +5,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_00513c10 @ 0x00513C10 — CharSelect_SendSelectPacket
+// IDA: FUN_00513c10 (0x00513C10)
 // Builds a C1 XOR-encrypted packet: [C1][len][F3][01][charID...][padding][pin10bytes]
 // charID = entity +0x1C1 from CharactersClient[DAT_005615e0], stride 0x394.
 // InputText[0] is at DAT_07db8710 (10 bytes of PIN data).
@@ -24,7 +24,7 @@ void __cdecl CharSelect_SendSelectPacket(void)
 
     DAT_005615e0 = DAT_005616ac; // SelectedHero
     DAT_005616ac = (DWORD)-1;
-    DAT_083a7c14 = 0x38;  // CurrentProtocolState
+    LoginSubState = 0x38;
 
     // Build packet: [C1][len][F3][01] + payload
     unsigned char pkt[0x400];
@@ -85,7 +85,7 @@ void __cdecl CharSelect_SendSelectPacket(void)
     pkt[1] = (unsigned char)pos;
 
     // Send via socket
-    SOCKET sock = DAT_055ca168;
+    SOCKET sock = SocketClientSocket;
     if (sock != INVALID_SOCKET) {
         int totalSent = 0;
         int remaining = (int)pos;
@@ -94,19 +94,19 @@ void __cdecl CharSelect_SendSelectPacket(void)
             if (sent == SOCKET_ERROR) {
                 int err = WSAGetLastError();
                 if (err == WSAEWOULDBLOCK) {
-                    if ((int)(DAT_055cc16c + pos) < 0x2001) {
-                        memcpy((char*)DAT_055ca16c + DAT_055cc16c, pkt, pos);
-                        DAT_055cc16c += pos;
+                    if ((int)(SocketClientSendBufferLength + pos) < 0x2001) {
+                        memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, pos);
+                        SocketClientSendBufferLength += pos;
                     } else {
-                        FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));
+                        CWsctlc_Close(((int)(uintptr_t)SocketClient));
                     }
                 } else {
-                    FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));
+                    CWsctlc_Close(((int)(uintptr_t)SocketClient));
                 }
                 break;
             }
             if (sent == 0) break;
-            if (DAT_055ce174 != 0) {
+            if (SocketClientLogPrint != 0) {
                 FUN_0043de60();
             }
             remaining -= sent;
@@ -118,12 +118,12 @@ void __cdecl CharSelect_SendSelectPacket(void)
     DAT_083a7c14 = 0x18;
     DAT_083a7c18 = 0x15;
     PlayBuffer(0x1b, 0, 0);
-    Input_ClearState(1);              // ClearInput(1)
+    ClearInput(1);              // ClearInput(1)
     DAT_00559c84 = 0;             // InputEnable = false
 }
 // RenderErrorMessage — implemented in src/UI/UI_StatsPanel.cpp (UI_StatsPanel_Render)
-// FUN_0051e0c0 — implemented in src/Render/Scene_CharPreview.cpp
-// FUN_0051e7e0 — implemented in src/Scene/Scene_ServerSelect_Input.cpp (server select hit-test, 337 lines)
+// RenderInfomation3D — implemented in src/Render/Scene_CharPreview.cpp
+// CServerSelWin_UpdateWhileActive — implemented in src/Scene/Scene_ServerSelect_Input.cpp (server select hit-test, 337 lines)
 // FUN_005239a0 — implemented in src/Render/Scene_CharPreview.cpp
-// FUN_0052a050 — implemented in src/Render/Texture.cpp
+// UnloadImage — implemented in src/Render/Texture.cpp
 // FUN_0053d5c0 — implemented in src/Render/Texture.cpp
