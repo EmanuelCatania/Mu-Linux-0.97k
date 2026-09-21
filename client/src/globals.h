@@ -1319,21 +1319,11 @@ extern int     DAT_07d78068;        // character data base (indexed by class_id 
 extern "C" BYTE Inventory[];
 #define ItemPickedPos  (*(int*)&Inventory[32 * 68])   // Inventory[32].Type
 
-// 2026-05-08: ItemAttribute base address backup (recovery copy).
-// Usar ItemAttribute_Base() en vez de leer DAT_07d78068 directo cuando
-// computing attrBase = type*0x40 + base — DAT_07d78068 is being clobbered
-// a 0x1 por algún escritor desconocido, y provoca un AV en el tooltip / RenderBrokenItem.
-extern "C" DWORD g_ItemAttribute_Backup;
+// Base de la tabla ItemAttribute.  Devuelve 0 si todavia no se cargo, para
+// que los callers no computen attrBase = type*0x40 + basura.
 static __forceinline unsigned int ItemAttribute_Base(void) {
-    unsigned int p = (unsigned int)DAT_07d78068;
-    if (p < 0x100000u || p >= 0x80000000u) {
-        p = g_ItemAttribute_Backup;
-        if (p >= 0x100000u && p < 0x80000000u) {
-            DAT_07d78068 = (int)p;
-        } else {
-            return 0;   // truly uninitialized
-        }
-    }
+    const unsigned int p = (unsigned int)DAT_07d78068;
+    if (p < 0x100000u || p >= 0x80000000u) return 0;
     return p;
 }
 extern int     DAT_07d78080;        // font height (set by resolution in WinMain step 15)

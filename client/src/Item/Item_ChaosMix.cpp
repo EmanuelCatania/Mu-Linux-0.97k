@@ -7,7 +7,6 @@
 #include "globals.h"
 #include "functions.h"
 
-extern "C" DWORD g_ItemAttribute_Backup;   // DAT_07d78068 recovery pointer
 // CheckMixRecipe @ 0x004E40F0
 // Validates chaos/mix recipe ingredients in the mix inventory grid.
 // Scans all items, counts by category (wings, jewels, excellent items, +level items).
@@ -339,15 +338,6 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
     char counts[77];
     memset(counts + 1, 0, 0x4C);
 
-    {
-        unsigned int p = (unsigned int)DAT_07d78068;
-        if ((p < 0x100000u || p >= 0x80000000u)
-            && g_ItemAttribute_Backup >= 0x100000u
-            && g_ItemAttribute_Backup < 0x80000000u)
-        {
-            DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        }
-    }
 
     int levelD1 = 0;
     int levelD2 = 0;

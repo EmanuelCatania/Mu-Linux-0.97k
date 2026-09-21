@@ -700,7 +700,6 @@ extern "C" BYTE OffsetMixItems[];
 extern "C" BYTE Inventory[];
 extern "C" BYTE ShopItems[];   // pool dedicado de la tienda (120 slots)
 extern "C" void DbgLogPublic(const char* msg);
-extern "C" DWORD g_ItemAttribute_Backup;
 int __cdecl Entity_FindById(int entity_id);   // stubs.cpp
 extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base,
                                  unsigned int gridW);  // Item_ClickHandler.cpp
@@ -725,21 +724,6 @@ static void ShopInsertItem(int slot, const BYTE* Item)
 {
     int type = ConvertItemType((BYTE*)Item);
     if (type == 255 || type < 0 || type >= 512) return;
-    // 2026-07-27 FIX (tienda abre vacía — causa raíz): DAT_07d78068
-    // (ItemAttribute base) se corrompe a ~1 (confirmado por el diag:
-    // "SHOPINS slot=0 type=5 attrBase=00000001"). El guard de abajo abortaba
-    // TODOS los inserts → el pool quedaba limpio → tienda vacía. Restauramos
-    // desde el backup (mismo watchdog que Item_GetAttribute / DropItemEx) en
-    // vez de descartar la lista.
-    {
-        unsigned int p = (unsigned int)(uintptr_t)DAT_07d78068;
-        if ((p < 0x100000u || p >= 0x80000000u)
-            && g_ItemAttribute_Backup >= 0x100000u
-            && g_ItemAttribute_Backup < 0x80000000u)
-        {
-            DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        }
-    }
     BYTE* attrBase = (BYTE*)(uintptr_t)DAT_07d78068;
     if ((uintptr_t)attrBase < 0x100000u || (uintptr_t)attrBase >= 0x80000000u) return;
     BYTE* attr = attrBase + type * 0x40;

@@ -214,11 +214,8 @@ extern "C" { void DbgLogPublic(const char* msg); }
 // it lives in a different .obj's BSS, NOT adjacent to DAT_07d78068. The
 // unknown writer that sets DAT_07d78068=0x1 also clobbers the next 4 bytes
 // to 0 (8-byte write). Putting the backup far away keeps it intact.
-extern "C" DWORD g_ItemAttribute_Backup = 0;
 // Plus a CANARY before/after to detect if even this gets clobbered.
-extern "C" DWORD g_ItemAttr_CanaryBefore = 0xDEADBEEF;
 // (g_ItemAttribute_Backup here)
-extern "C" DWORD g_ItemAttr_CanaryAfter  = 0xCAFEBABE;
 
 // Forward decls for HUD helpers defined later in this TU.
 void Render_CharInfoPanel(void);
@@ -344,36 +341,6 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
 
 void Render_GameFrame(void)
 {
-    // 2026-05-08: per-frame watchdog. Some unknown writer occasionally
-    // clobbers DAT_07d78068 (ItemAttribute table base) to a small value
-    // (e.g. 0x00000001), causing tooltip / RenderBrokenItem / RenderObjectScreen
-    // to compute attrBase = type*0x40 + 1 → AV when dereferencing.
-    // Restore from backup + log to identify the writer pattern.
-    {
-        unsigned int p = (unsigned int)DAT_07d78068;
-        bool canaryB_ok = (g_ItemAttr_CanaryBefore == 0xDEADBEEF);
-        bool canaryA_ok = (g_ItemAttr_CanaryAfter  == 0xCAFEBABE);
-        if (p < 0x100000u || p >= 0x80000000u) {
-            // CORRUPTION DETECTED — log the specific bad value first time.
-            static DWORD s_lastLog = 0;
-            DWORD now = GetTickCount();
-            if (now - s_lastLog > 2000) {
-                s_lastLog = now;
-                char b[256];
-                wsprintfA(b, "WD DAT_07d78068 corrupted: was=%p backup=%p canaryB=%X(%s) canaryA=%X(%s)",
-                          (void*)(uintptr_t)p,
-                          (void*)(uintptr_t)g_ItemAttribute_Backup,
-                          g_ItemAttr_CanaryBefore, canaryB_ok ? "ok" : "BAD",
-                          g_ItemAttr_CanaryAfter,  canaryA_ok ? "ok" : "BAD");
-                DbgLogPublic(b);
-            }
-            if (g_ItemAttribute_Backup >= 0x100000u &&
-                g_ItemAttribute_Backup < 0x80000000u)
-            {
-                DAT_07d78068 = (int)g_ItemAttribute_Backup;
-            }
-        }
-    }
 
     if (DAT_0055a7ac == 8) {
         // Tarkan: dos capas de arena a pantalla completa, blend aditivo.

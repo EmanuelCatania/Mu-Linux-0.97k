@@ -790,7 +790,7 @@ void  __cdecl FUN_00505c80(int id, const char* prefix, int flags, char loop);   
 void  __cdecl GL_DisableCullFace(void);           // GL_SetTextureState
 void  __cdecl GL_DisableDepthWrites(void);           // GL_SetDepthState
 void  __cdecl GL_EnableCullFace(void);           // GL_TexEnable
-unsigned int __cdecl FUN_00529000(const char* path, int width, int height, void* pixelBuf, int flip); // PNG_WriteFile (BMP replacement)
+unsigned int __cdecl FUN_00529000(const char* path, int width, int height, void* pixelBuf, int quality); // IDA: WriteJpeg (0x00529000) -- libjpeg, filas invertidas
 // ── Particle path-finding helpers ────────────────────────────────────────────
 int   __cdecl Math_GetAngleFromPoints(float x1, float y1, float x2, float y2); // IDA: FUN_0043e430
 int   __cdecl FUN_0043e120(int a, int b, int c);                     // Angle_Clamp
