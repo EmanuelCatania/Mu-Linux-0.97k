@@ -99,51 +99,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     int  entity_type = (int)sVar2;
     void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
 
-    // ── DIAG: log slot/type/anim-frame guard for char-select frames ─────────
-    // Rate-limit PER SLOT (not globally) so all 5 chars emit once a second.
-    if (DAT_005615c0 == 4) {
-        int slot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
-        if (slot >= 0 && slot < 5) {
-            static DWORD s_lastUR[5] = {0,0,0,0,0};
-            DWORD now = GetTickCount();
-            if (now - s_lastUR[slot] > 1000) {
-                s_lastUR[slot] = now;
-                char b[200];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "UR slot=%d type=%d cls=%d animCount@26=%d model=%p early_out=%d",
-                    slot, entity_type, ((BYTE*)param_1_)[0x1bc],
-                    *(short*)((char*)model + 0x26),
-                    model,
-                    (*(short *)((char *)model + 0x26) == 0) ? 1 : 0);
-                DbgLogPublic(b);
-            }
-        }
-    }
 
-    // ── DIAG: log hero in-game render entry/exit ────────────────────────────
-    if (DAT_005615c0 == 5 && param_1_ == DAT_07abf5d8) {
-        static DWORD s_lastUR5 = 0;
-        DWORD now = GetTickCount();
-        if (now - s_lastUR5 > 1000) {
-            s_lastUR5 = now;
-            char b[256];
-            short animCount = *(short*)((char*)model + 0x26);
-            short numBones  = *(short*)((char*)model + 0x22);
-            BYTE  curAct    = *(BYTE*)(((char*)param_1_) + 0x105);
-            float frame     = *(float*)(((char*)param_1_) + 0x108);
-            int   actBase   = *(int*)((char*)model + 0x30);
-            float actSpd    = (actBase && actBase >= 0x100000) ? *(float*)(actBase + curAct*0x10 + 4) : 0.0f;
-            short actFrames = (actBase && actBase >= 0x100000) ? *(short*)(actBase + curAct*0x10 + 8) : 0;
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "UR5 hero type=%d cls=%d animCount@26=%d numBones@22=%d model=%p early_out=%d "
-                "act=0x%02x frame=%.3f actSpd=%.3f actFrames=%d",
-                entity_type, ((BYTE*)param_1_)[0x1bc],
-                animCount, numBones, model,
-                (animCount == 0) ? 1 : 0,
-                (int)curAct, frame, actSpd, (int)actFrames);
-            DbgLogPublic(b);
-        }
-    }
 
     // Early-out: no animation data in this model slot
     if (*(short *)((char *)model + 0x26) == 0)
@@ -574,57 +530,6 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // arma a la espalda y el gate de "no atacar en zona segura".
     }
 
-    // ── DIAG: hero entry into case 0x186 ─────────────────────────────────────
-    if (DAT_005615c0 == 5 && param_1_ == DAT_07abf5d8) {
-        static DWORD s_lastH186 = 0;
-        DWORD now = GetTickCount();
-        if (now - s_lastH186 > 2000) {
-            s_lastH186 = now;
-            BYTE* be = (BYTE*)param_1_;
-            int slotIdx = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
-            char b[200];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "UR5 case186 slot=%d sVar2=0x%X wing@2a0=%d eq=%d w0=%d w1=%d hero=%p be0=%d",
-                slotIdx, (int)sVar2, (int)*(short*)(be + 0x2a0),
-                (sVar2 == 0x186) ? 1 : 0,
-                (int)*(short*)(be + 0x270), (int)*(short*)(be + 0x288),
-                DAT_07abf5d8, (int)be[0]);
-            DbgLogPublic(b);
-            // 2026-07-27 DIAG alas rojas "PK": volcar el body-Light (c+0x320) y
-            // los bytes de estado candidatos al tinte rojo (hit-flash/shock/PK).
-            // Si el R domina sobre G/B, el personaje entero (incl. alas) se ve
-            // rojo. Capturamos qué campo lo dispara la próxima vez que pase.
-            float* bl = (float*)(be + 0x320);
-            char b2[220];
-            _snprintf_s(b2, sizeof(b2), _TRUNCATE,
-                "UR5 HEROLIGHT R=%.3f G=%.3f B=%.3f | 2ea=%d 2eb=%d 2ec=%d 2ed=%d "
-                "2f4=%d 2f5=%d 301=%d 303=%d 34e=%d 105=%d",
-                bl[0], bl[1], bl[2],
-                (int)be[0x2ea], (int)be[0x2eb], (int)be[0x2ec], (int)be[0x2ed],
-                (int)be[0x2f4], (int)be[0x2f5], (int)be[0x301], (int)be[0x303],
-                (int)be[0x34e], (int)be[0x105]);
-            DbgLogPublic(b2);
-        }
-    }
-    // ── DIAG: ANY entity with wing@2a0 != -1 (find where wings actually live)
-    if (DAT_005615c0 == 5) {
-        BYTE* be = (BYTE*)param_1_;
-        if (*(short*)(be + 0x2a0) != -1 && *(short*)(be + 2) == 0x186) {
-            static DWORD s_lastWE = 0;
-            DWORD now = GetTickCount();
-            if (now - s_lastWE > 2000) {
-                s_lastWE = now;
-                int slotIdx = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
-                char b[200];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "UR5 wingFOUND slot=%d wing@2a0=%d w0=%d w1=%d hero=%p ptr=%p",
-                    slotIdx, (int)*(short*)(be + 0x2a0),
-                    (int)*(short*)(be + 0x270), (int)*(short*)(be + 0x288),
-                    DAT_07abf5d8, param_1_);
-                DbgLogPublic(b);
-            }
-        }
-    }
 
     // ── 7a. NPC / monster body render (IDA L347-401) ─────────────────────────
     // 2026-05-08: missing port — sin esto NPCs/monsters renderean SOLO efectos
