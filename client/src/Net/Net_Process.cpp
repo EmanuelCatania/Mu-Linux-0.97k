@@ -1302,7 +1302,8 @@ static void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
     DWORD ViewMaxBP            = *(const DWORD*)(p + 20);
     DWORD ViewPhysiSpeed       = *(const DWORD*)(p + 24);
     DWORD ViewMagicSpeed       = *(const DWORD*)(p + 28);
-    // p+32..p+48: danos y tasa magica (el panel los calcula localmente).
+    DWORD ViewMagicDamageMin   = *(const DWORD*)(p + 40);
+    DWORD ViewMagicDamageMax   = *(const DWORD*)(p + 44);
     DWORD ViewAttackSuccessRate= *(const DWORD*)(p + 52);
     DWORD ViewDefense          = *(const DWORD*)(p + 60);
     DWORD ViewDefenseSuccess   = *(const DWORD*)(p + 64);
@@ -1318,6 +1319,11 @@ static void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
     *(WORD*)(CA + 0x3A) = ClampToWord(ViewAttackSuccessRate);
     *(WORD*)(CA + 0x4E) = ClampToWord(ViewDefense);
     *(WORD*)(CA + 0x4C) = ClampToWord(ViewDefenseSuccess);
+    // 2026-09-24: los dos unicos campos que el DLL escribe y este port no
+    // (GCNewCharacterCalcRecv, Protocol.cpp:925).  El dano FISICO no viaja
+    // por aca -- el DLL tampoco lo escribe, lo sigue calculando el cliente.
+    *(WORD*)(CA + 0x46) = ClampToWord(ViewMagicDamageMin);
+    *(WORD*)(CA + 0x48) = ClampToWord(ViewMagicDamageMax);
 }
 
 // Debug log (defined in WinMain.cpp).
