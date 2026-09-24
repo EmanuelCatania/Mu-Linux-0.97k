@@ -502,6 +502,28 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         *(float *)(param_1 + 0xca) = 0.3f;
     }
 
+    // ── BodyLight del heroe + tinte de las bebidas (IDA RenderCharacter
+    //    L786-L1009, `if (c == Hero)`) ──────────────────────────────────────
+    // El heroe NO usa la luz del terreno que se acaba de calcular: la pisa con
+    // (1,1,1) y despues le aplica el tinte segun los dos bits de bebida activa
+    // de `CharacterAttribute + 40`, que escribe el handler del 0x29
+    // (ReceiveHelperItem / PMSG_ITEM_SPECIAL_TIME_SEND) y limpia el timer.
+    //   bit 0 -> Ale             (0.9, 0.5, 0.5) = rojizo
+    //   bit 1 -> Remedy of Love  multiplica (0.5, 0.9, 0.5)
+    // Todo lo que IDA tiene entre el gate y estas tres escrituras es el ruido
+    // de hash-table que descifra CharacterMachine para leer el byte (omitido
+    // por policy, ver CLAUDE.md).
+    if ((void *)param_1 == DAT_07abf5d8) {
+        float L0 = 1.0f, L1 = 1.0f, L2 = 1.0f;
+        const unsigned char drink = CharacterAttribute
+            ? *((unsigned char *)(uintptr_t)CharacterAttribute + 40) : 0;
+        if (drink & 1) { L0 = 0.9f;   L1 = 0.5f;   L2 = 0.5f;   }
+        if (drink & 2) { L0 *= 0.5f;  L1 *= 0.9f;  L2 *= 0.5f;  }
+        *(float *)(param_1 + 200)  = L0;
+        *(float *)(param_1 + 0xc9) = L1;
+        *(float *)(param_1 + 0xca) = L2;
+    }
+
     // ── 7. Entity type 0x186 weapon-slot arm render ──────────────────────────
     // (Local_74 = `Bind` de IDA RenderCharacter: arma a la espalda.)
     // +0x34E es SafeZone (NO dead_flag — el dead real es +0x2FD). Sólo se
