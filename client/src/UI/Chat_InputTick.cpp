@@ -728,13 +728,15 @@ void __cdecl Chat_InputTick(void)
                                 goto chat_done;
                         }
 
-                        // Copy to last-sent buffer, reset rate-limit
-                        {
-                            size_t tlen = strlen((char *)chBuf);
-                            if (tlen > 0x3c) tlen = 0x3c;
-                            memcpy(&DAT_05826adc[0], chBuf, tlen + 1);
-                            DAT_05826d08 = 0x46;
-                        }
+                        // NOTA DEL PORT: aca IDA copia el texto a la "ultima
+                        // linea dicha" (byte_5826ADC) y pone ChatTime = 70,
+                        // porque arma y manda el paquete INLINE.  Nuestro port
+                        // delega en SendChat (0x4C1B90), que hace ese mismo
+                        // bookkeeping -- y ademas vuelve a chequear el limite y
+                        // el duplicado.  Haciendolo tambien aca, la macro se
+                        // auto-bloqueaba: SendChat veia ChatTime = 70 y salia
+                        // sin enviar (sintoma: la barra "Macro Time" aparecia
+                        // pero el mensaje no se mandaba).
 
                         // Player name length for name-match check
                         {
@@ -777,7 +779,12 @@ void __cdecl Chat_InputTick(void)
                             }
                         }
 
-                        Chat_SendChatLine((const char*)chBuf);
+                        // IDA L2747: una macro que empieza con '/' NO se envia al
+                        // chat -- ya la consumio CheckChatText (gesto) o es un
+                        // comando.  Sin este gate, Alt+N con "/Go go" mandaba el
+                        // texto ademas de hacer la animacion.
+                        if (chBuf[0] != '/')
+                            Chat_SendChatLine((const char*)chBuf);
                         chat_done:
                         DAT_07e11d7c = 100;
                     }
