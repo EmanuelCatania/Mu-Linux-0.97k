@@ -66,7 +66,7 @@ static const int kItemRena = 469;   // GET_ITEM(14, 21)
 
 static void GA_ClearInputFields(void)
 {
-    Input_ClearState(0);                // ClearInput(0)
+    ClearInput(0);                // ClearInput(0)
     GA_InputEnable = 0;
     GA_GoldInputEnable = 0;
     GA_InputGold = 0;
@@ -76,7 +76,7 @@ static void GA_ClearInputFields(void)
 static void GA_OpenLuckyNumberInput(void)
 {
     memset(GA_GiftName, 0, 64);
-    Input_ClearState(0);
+    ClearInput(0);
     DAT_00559c94 = 12;                  // InputTextMax[0]
     GA_InputNumber = 1;
     GA_InputEnable = 0;
@@ -585,11 +585,11 @@ static bool CheckPagination(void)
 {
     const int x = kStartX + 95, y = kStartY + 375, s = 19;
     if (s_CurrentPage > 1 && IsWorkZone(x - 40, y, s, s)) {
-        if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); --s_CurrentPage; }
+        if (ConsumeClick()) { PlayBuffer(25, 0, 0); --s_CurrentPage; }
         return true;
     }
     if (s_CurrentPage < s_TotalPages && IsWorkZone(x + 21, y, s, s)) {
-        if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); ++s_CurrentPage; }
+        if (ConsumeClick()) { PlayBuffer(25, 0, 0); ++s_CurrentPage; }
         return true;
     }
     return false;
@@ -598,7 +598,7 @@ static bool CheckPagination(void)
 static bool CheckExplanation(int x, int y)
 {
     if (!IsWorkZone(x, y, 120, 22)) return false;
-    if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); CreateDialogInterface(713, 5); }
+    if (ConsumeClick()) { PlayBuffer(25, 0, 0); CreateDialogInterface(713, 5); }
     return true;
 }
 
@@ -633,7 +633,7 @@ static bool CheckRena(void)
     if (CheckExplanation(x, y)) return true;
     y += 85;
     if (GetItemSlot(kItemRena, 0) != -1 && IsWorkZone(x, y, 120, 22)) {
-        if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); SendRegister(0); }
+        if (ConsumeClick()) { PlayBuffer(25, 0, 0); SendRegister(0); }
         return true;
     }
     y += 50;
@@ -643,7 +643,7 @@ static bool CheckRena(void)
     for (int i = 0; i < 4; ++i) {
         if (s_RenaRequired[i] <= 0) continue;
         if (GA_ItemCount >= s_RenaRequired[i] && IsWorkZone(x, y, 120, 22)) {
-            if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); SendExchange(0, i); }
+            if (ConsumeClick()) { PlayBuffer(25, 0, 0); SendExchange(0, i); }
             return true;
         }
         y += 30;
@@ -715,7 +715,7 @@ static bool CheckStone(void)
     if (CheckExplanation(x, y)) return true;
     y += 85;
     if (GetItemSlot(kItemRena, 1) != -1 && IsWorkZone(x, y, 120, 22)) {
-        if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); SendRegister(1); }
+        if (ConsumeClick()) { PlayBuffer(25, 0, 0); SendRegister(1); }
         return true;
     }
     y += 60;
@@ -723,7 +723,7 @@ static bool CheckStone(void)
         for (int i = 0; i < 3; ++i) {
             if (s_StoneRequired[i] <= 0) continue;
             if (GA_ItemCount >= s_StoneRequired[i] && IsWorkZone(x, y, 120, 22)) {
-                if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); SendExchange(1, i); }
+                if (ConsumeClick()) { PlayBuffer(25, 0, 0); SendExchange(1, i); }
                 return true;
             }
             y += 45;
@@ -731,13 +731,13 @@ static bool CheckStone(void)
     } else if (s_CurrentPage == 2 && s_StoneRequired[3] > 0) {
         if (s_LuckyNumber[0] == '\0') {
             if (GA_ItemCount >= s_StoneRequired[3] && IsWorkZone(x, y, 120, 22)) {
-                if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); SendExchange(1, 3); }
+                if (ConsumeClick()) { PlayBuffer(25, 0, 0); SendExchange(1, 3); }
                 return true;
             }
         } else {
             y += 30;
             if (IsWorkZone(x, y, 120, 22)) {
-                if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); SendRegisterLucky(s_LuckyNumber); }
+                if (ConsumeClick()) { PlayBuffer(25, 0, 0); SendRegisterLucky(s_LuckyNumber); }
                 return true;
             }
         }
@@ -794,7 +794,7 @@ static bool CheckLucky(void)
     if (CheckExplanation(x, y)) return true;
     y += 160;
     if (strlen(DAT_07db8710[GA_InputIndex]) > 0 && IsWorkZone(x, y, 120, 22)) {
-        if (ConsumeClick()) { FUN_00404bc0(25, 0, 0); SendExchangeLucky(DAT_07db8710[GA_InputIndex]); }
+        if (ConsumeClick()) { PlayBuffer(25, 0, 0); SendExchangeLucky(DAT_07db8710[GA_InputIndex]); }
         return true;
     }
     return false;
@@ -939,10 +939,11 @@ extern "C" void __cdecl RenderGoldenArcherWindow(void)
     else                      GA_Ida_Render();
 }
 
-// IDA: CheckGoldenArcherWindow (0x004E7AC0).  (El nombre FUN_004e7ac0 se
+// IDA: CheckGoldenArcherWindow (0x004E7AC0).  (El nombre CheckGoldenArcherWindow se
 // mantiene porque lo llama UpdateWindowsMouse; la etiqueta vieja
 // "SecondPassword_Screen6" era falsa.)
-void __cdecl FUN_004e7ac0(void)
+// IDA: CheckGoldenArcherWindow (0x004E7AC0)
+void __cdecl CheckGoldenArcherWindow(void)
 {
     if (!GA_OpenType) return;
     if (g_GoldenArcherCustom) GA_Custom_Check();
@@ -1015,17 +1016,17 @@ void GoldenArcher_Recv9D(BYTE* Msg, int Size)
 extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action)
 {
     if (!g_GoldenArcherCustom) return false;
-    if (action < 80)       FUN_0043e820(c, 1);
-    else if (action < 85)  FUN_0043e820(c, 97);
-    else if (action < 90)  FUN_0043e820(c, 99);
-    else if (action < 95)  FUN_0043e820(c, 111);
-    else if (action < 100) FUN_0043e820(c, 105);
+    if (action < 80)       SetAction(c, 1);
+    else if (action < 85)  SetAction(c, 97);
+    else if (action < 90)  SetAction(c, 99);
+    else if (action < 95)  SetAction(c, 111);
+    else if (action < 100) SetAction(c, 105);
     if (*(BYTE*)(c + 261) != *(BYTE*)(c + 262)) {
         int text = 0;
-        if (DAT_0055a7ac == 0 || DAT_0055a7ac == 3) {
+        if (World == 0 || World == 3) {
             static const int k[] = { 700, 701, 702, 703, 704 };
             text = k[rand() % 5];
-        } else if (DAT_0055a7ac == 2) {
+        } else if (World == 2) {
             static const int k[] = { 818, 819, 820, 821, 822, 823 };
             text = k[rand() % 6];
         }

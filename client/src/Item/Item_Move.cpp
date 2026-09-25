@@ -19,7 +19,7 @@
 //   1. Chain XOR con s_LoginKey (i=3..len)
 //   2. Stomp pkt[1] = DAT_05826ceb++ (serial counter — server valida que sea
 //      monotónico vía CSerialCheck::CheckSerial)
-//   3. CSimpleModulus encrypt vía FUN_0053cc30
+//   3. CSimpleModulus encrypt vía CSimpleModulus_Encode
 //   4. C3 wrap: [C3][outerLen][encryptedBlob]
 //   5. Send vía socket con WSAEWOULDBLOCK queue
 //

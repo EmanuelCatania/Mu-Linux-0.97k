@@ -700,13 +700,13 @@ switchD_4ab:
     case 0x4bf:
         pcVar11[0x38] = '\x14'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
         *(float *)(pcVar11 + 0x0c) = param_6;
-        FUN_00404bc0(0x2c, 0, 0);
+        PlayBuffer(0x2c, 0, 0);
         return iVar6;
 
     case 0x4c0:
         pcVar11[0x38] = '\f'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
         *(float *)(pcVar11 + 0x0c) = param_6;
-        FUN_00404bc0(0x2c, 0, 0);
+        PlayBuffer(0x2c, 0, 0);
         return iVar6;
 
     case 0x4c5:

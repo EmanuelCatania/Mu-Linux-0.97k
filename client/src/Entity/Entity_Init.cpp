@@ -1,7 +1,7 @@
 // Entity_Init.cpp
 // Entity slot initialisation and position persistence.
 //
-// FUN_0045f930 @ 0x0045f930 — Entity_InitSlot
+// IDA: CreateHero (0x0045F930)
 // FUN_0045fa20 @ 0x0045fa20 — Monster_SaveSetBase
 //
 // Entity pool base: DAT_07abf5d0
@@ -11,21 +11,22 @@
 #include "stdafx.h"
 
 
-// FUN_0045f930 — CreateHero (Ghidra-confirmed signature)
+// CreateHero — CreateHero (Ghidra-confirmed signature)
 //   CHARACTER* CreateHero(int Index, int Class, int Skin,
 //                         float x, float y, float Rotate)
 // Creates hero character slot at Index. Calls CreateCharacterPointer with
 // Type=0x186 (hero placeholder). Sets light, position, class, skin, body
 // parts, weapon/wing/helper slots to -1. Calls SetCharacterScale +
 // SetPlayerStop.
+// IDA: CreateHero (0x0045F930)
 unsigned char * __cdecl
-FUN_0045f930(int Index, int Class, int Skin, float x, float y, float Rotate)
+CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
 {
   unsigned char *puVar1;
   unsigned short uVar2;
 
   puVar1 = (unsigned char *)(DAT_07abf5d0 + Index * 0x394);
-  FUN_0045adc0(puVar1, 0x186, 0, 0, Rotate);
+  CreateCharacterPointer(puVar1, 0x186, 0, 0, Rotate);
 
   // Object.Light[0..2] = 0.3f (0x3e99999a)
   *(unsigned int *)(puVar1 + 0xe8) = 0x3e99999a;
@@ -53,8 +54,8 @@ FUN_0045f930(int Index, int Class, int Skin, float x, float y, float Rotate)
   *(unsigned short *)(puVar1 + 0x2a0) = 0xffff;         // Wing.Type
   *(unsigned short *)(puVar1 + 0x2b8) = 0xffff;         // Helper.Type
 
-  FUN_0045c050((int)puVar1);    // SetCharacterScale
-  FUN_004430c0((int)puVar1);    // SetPlayerStop
+  SetCharacterScale((int)puVar1);    // SetCharacterScale
+  SetPlayerStop((int)puVar1);    // SetPlayerStop
   return puVar1;
 }
 

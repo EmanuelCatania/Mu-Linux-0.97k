@@ -15,7 +15,7 @@
 //         [0x26] = cooldown
 //         [0x27] = range
 //       Inserts/updates entry in hash table at DAT_055c9bc8.
-//       Hash table ops use FUN_00403f80 (insert), HashTable_GetIndex,
+//       Hash table ops use HashTable_Insert (insert), HashTable_GetIndex,
 //       FUN_0047ea70 (serialize+insert), FUN_0047eaf0 (free+remove).
 //   2 = EOF — close file, return
 //
@@ -81,7 +81,7 @@ void __cdecl Skill_LoadBMD(const char *path)
     FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
-        FUN_00405540(&DAT_055c9bf0, msg);
+        CErrorReport_Write(&DAT_055c9bf0, msg);
         MessageBoxA(DAT_055c9ffc, msg, nullptr, 0);
         SendMessageA(DAT_055c9ffc, 2, 0, 0);
         return;
@@ -104,7 +104,7 @@ void __cdecl Skill_LoadBMD(const char *path)
     }
     if (stored_cs != cs) {
         crt_sprintf(msg, (const char *)s__s___File_corrupted__00559bd4);
-        FUN_00405540(&DAT_055c9bf0, msg);
+        CErrorReport_Write(&DAT_055c9bf0, msg);
         MessageBoxA(DAT_055c9ffc, msg, nullptr, 0);
         SendMessageA(DAT_055c9ffc, 2, 0, 0);
         operator_delete(buf0);

@@ -28,12 +28,12 @@ void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
     float tY = *(float*)(TargetCharacter + 0x14);  // target->Object.Position[1]
     float tZ = *(float*)(TargetCharacter + 0x18);  // target->Object.Position[2]
 
-    // CreateAngle @ 0x0043e050: declared as FUN_0043e050 with wrong sig; cast to correct prototype
+    // CreateAngle @ 0x0043e050: declared as CreateAngle with wrong sig; cast to correct prototype
     typedef float (__cdecl *CreateAngleFn)(float, float, float, float);
-    float angle = ((CreateAngleFn)&FUN_0043e050)(oX, oY, tX, tY);
+    float angle = ((CreateAngleFn)&CreateAngle)(oX, oY, tX, tY);
 
     // FarAngle(oFacing, angle, 1) — angular distance
-    double deltaAngle = (double)Angle_GetDifference(oFacing, angle, '\x01');
+    double deltaAngle = (double)FarAngle(oFacing, angle, '\x01');
 
     float* headTarget = (float*)(o + 0x34);  // o->HeadTargetAngle[3]
 

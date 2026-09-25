@@ -12,7 +12,7 @@ static inline void *ClothNew(void) {
     int *raw = (int *)operator_new(0x58);
     if (!raw) return nullptr;
     raw[0] = 1;                       // count = 1 elemento
-    return FUN_00407fe0(raw + 1);     // el ctor recibe el objeto, no el bloque
+    return Widget_CtorBase(raw + 1);     // el ctor recibe el objeto, no el bloque
 }
 
 static inline float PtrAsFloatBits(const void *p) {
@@ -28,7 +28,7 @@ extern "C" DWORD g_ItemAttribute_Backup;   // src/globals.cpp
 //   - Skill-channel widget objects  (channeling beams / barriers)
 //   - Entity_PrepareRender          (bone + AABB compute)
 //   - Per-skill / per-anim-state particle effects on entity bones
-//   - Weapon-slot rendering         (FUN_00455430 = RenderLinkObject)
+//   - Weapon-slot rendering         (RenderLinkObject = RenderLinkObject)
 //   - Per-entity-type NPC / monster special effects (large outer switch)
 //
 // param_1  — player / local entity  (int*, stride 0x394, base DAT_07abf5d0[0])
@@ -89,7 +89,8 @@ void __cdecl FUN_004552c0(int entity, int shield_id)
     GL_DisableCullFace();
 }
 
-void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
+// IDA: RenderCharacter (0x00456770)
+void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 {
     int *param_1  = (int *)param_1_;
     int *puVar13  = (int *)param_2_;   // Ghidra alias for param_2
@@ -102,7 +103,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
 
     // ── DIAG: log slot/type/anim-frame guard for char-select frames ─────────
     // Rate-limit PER SLOT (not globally) so all 5 chars emit once a second.
-    if (DAT_005615c0 == 4) {
+    if (SceneFlag == 4) {
         int slot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
         if (slot >= 0 && slot < 5) {
             static DWORD s_lastUR[5] = {0,0,0,0,0};
@@ -122,7 +123,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     }
 
     // ── DIAG: log hero in-game render entry/exit ────────────────────────────
-    if (DAT_005615c0 == 5 && param_1_ == DAT_07abf5d8) {
+    if (SceneFlag == 5 && param_1_ == DAT_07abf5d8) {
         static DWORD s_lastUR5 = 0;
         DWORD now = GetTickCount();
         if (now - s_lastUR5 > 1000) {
@@ -151,7 +152,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         return (void *)entity_type;
 
     // ── BUG-FIX 2026-04-27: declarar como arrays contiguos para que `&local_X`
-    // pasado a funciones que leen/escriben 3 floats consecutivos (FUN_004795c0,
+    // pasado a funciones que leen/escriben 3 floats consecutivos (CreateSprite,
     // BMD_TransformPosition, etc.) no caiga en stack slots aleatorios. Mismo patrón ya
     // arreglado en Sprite/Math_3D/Scene_CharSelect.
     float local_60_buf[3] = { 1.0f, 1.0f, 1.0f }; // RGB color tint
@@ -187,7 +188,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     case (char)-0x7e: case (char)-0x78:
     {
         // Skill channel active — beam/barrier widget path
-        unsigned int uVar11 = (unsigned int)(size_t)FUN_004faa70((int)puVar13, '\x01', (int)param_3);
+        unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject((int)puVar13, '\x01', (int)param_3);
         if (param_1[0x61] == 0) {
             // 2026-09-04 FIX (crash 0xC0000005 param1=0xCDCDCDD5 al romper la
             // puerta de Blood Castle).  IDA 0x456770 L308-323:
@@ -210,7 +211,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             void *puVar8 = operator_new(100);
             *(int *)puVar8 = 1;                    // count del eh vector ctor
             void *clothObj = (char *)puVar8 + 4;   // el objeto vive en +4
-            FUN_00541ec1(clothObj, 0x60, 1, (void *)FUN_004093a0);
+            FUN_00541ec1(clothObj, 0x60, 1, (void *)Widget_Ctor);
             FUN_004093e0(clothObj, (int)param_1, (short *)2, 0x12, 0x400, -1);
             FUN_00409250(clothObj, 0.0f,   0.0f, 0.0f, 50.0f, 18);
             FUN_00409250(clothObj, 0.0f, -20.0f, 0.0f, 30.0f, 18);
@@ -219,9 +220,9 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         }
         int *piVar16 = (int *)param_1[0x61];
         if (piVar16) {
-            int iVar9 = (int)(size_t)FUN_00408900(piVar16, 0x3ba3d70a, 5);
+            int iVar9 = (int)(size_t)Widget_CheckState(piVar16, 0x3ba3d70a, 5);
             if (iVar9 == 0)
-                FUN_00449840((int)param_1, (int)puVar13, 0);
+                DeleteCloth((int)param_1, (int)puVar13, 0);
             else
                 FUN_00408ff0((void *)piVar16);
         }
@@ -267,11 +268,11 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         bVar7 == 67 || (bVar7 >= 78 && bVar7 <= 83)) {
         const float bodyBright = (bVar7 == 59) ? 0.5f : 1.0f;
         if (bVar7 == 43 || (bVar7 >= 78 && bVar7 <= 83)) {
-            FUN_00504960(model, (int)puVar13, entity_type,
+            RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                          *(float *)(puVar13 + 0x5a), 0x48, bodyBright, 0xffffffff);
         }
         const int secondFlags = (bVar7 == 67) ? 0x144 : 0x44;
-        FUN_00504960(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), secondFlags, bodyBright, 0xffffffff);
     }
     else if (bVar7 == 0x45) {
@@ -285,7 +286,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             BMD_TransformPosition(model,
                 (float *)(puVar13[0x45] + (int)(UINT)boneIdxTable[i] * 0x30),
                 &local_48, &local_54, '\x01');
-            FUN_004795c0(0x47e, &local_54, 0.6f, &local_60, (int)puVar13, 0.0f, 0);
+            CreateSprite(0x47e, &local_54, 0.6f, &local_60, (int)puVar13, 0.0f, 0);
         }
         // IDA changes only the random-particle tint after the nine sprites.
         local_60 = sparkle * 0.6f;
@@ -309,7 +310,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     else if (bVar7 == 0x46) {
         BMD_TransformPosition(model, (float *)(puVar13[0x45] + 0x3c0),
                      &local_48, &local_54, '\x01');
-        FUN_004795c0(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
+        CreateSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
     }
     else if ((bVar7 == 0x47) || (bVar7 == 0x4a)) {
         // Glow bar widget for special skill (0x1ed = Meteor / 0x1ef = another)
@@ -327,8 +328,8 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         }
         int *piVar16 = (int *)param_1[0x61];
         if (piVar16) {
-            int iVar9 = (int)(size_t)FUN_00408900(piVar16, 0x3ba3d70a, 5);
-            if (iVar9 == 0) FUN_00449840((int)param_1, (int)puVar13, 0);
+            int iVar9 = (int)(size_t)Widget_CheckState(piVar16, 0x3ba3d70a, 5);
+            if (iVar9 == 0) DeleteCloth((int)param_1, (int)puVar13, 0);
             else {
                 // vtable+0xC = sub_408FF0 (ver nota en el case 0x186).
                 FUN_00408ff0((void *)piVar16);
@@ -349,7 +350,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         for (int off = 0x270; off < 0x510; off += 0x30) {
             BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
                          &local_48, &local_54, '\x01');
-            FUN_004795c0(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
+            CreateSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
             // IDA: `if (v29 >= 672 && v29 <= 768 || v29 == 1104)`.
             // Al port le faltaba el `|| off == 0x450` (hueso 23), o sea un
             // tramo de la cadena no se dibujaba.
@@ -362,11 +363,11 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         for (int off = 0x9c0; off < 0xb10; off += 0x30) {
             BMD_TransformPosition(model, (float *)(puVar13[0x45] + off),
                          &local_48, &local_54, '\x01');
-            FUN_004795c0(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
+            CreateSprite(0x47e, &local_54, 0.8f, &local_60, (int)puVar13, 0.0f, 0);
         }
         // Drakan (73): IDA emite DOS pases distintos, no un 0x344 combinado.
         // El segundo es RenderPartObjectBodyColorAlt (sub_504AC0, flags 592).
-        FUN_00504960(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
         FUN_00504ac0(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), 0x250, 1.0f, 0xffffffff);
@@ -378,7 +379,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                      &local_60, 0, 0.3f, 0);
         // Giant Drakan (75): a diferencia de Drakan (73), IDA hace UN solo
         // pase con flags (0x100 | 0x44) = 0x144 y sin sub_504AC0.
-        FUN_00504960(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), 0x144, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4d) {
@@ -387,7 +388,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // caching the attack-effect bones and ticking the cloth widget.
         const float targetLight = (sinf(fmodf(DAT_05826e08, 10000.0f) * 0.001f) + 1.0f) * 0.5f;
         const float bodyBright = targetLight * 0.7f + 0.3f;
-        FUN_00504960(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), 0x44, bodyBright, 0xffffffff);
 
         // IDA temporarily changes the render pose components, prepares slots
@@ -422,8 +423,8 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         }
         int *piVar16 = (int *)param_1[0x61];
         if (piVar16) {
-            int iVar9 = (int)(size_t)FUN_00408900(piVar16, 0x3ba3d70a, 5);
-            if (iVar9 == 0) FUN_00449840((int)param_1, (int)puVar13, 0);
+            int iVar9 = (int)(size_t)Widget_CheckState(piVar16, 0x3ba3d70a, 5);
+            if (iVar9 == 0) DeleteCloth((int)param_1, (int)puVar13, 0);
             else {
                 // IDA invokes vtable slot 3 as `this->Render(0)`.  The port
                 // was invoking the function pointer as cdecl with literal 0,
@@ -440,7 +441,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     // diferencia del resto — una textura FIJA (1231) en vez de -1.
     // Faltaba entero en el port.
     if (bVar7 == 53 || bVar7 == 54) {
-        FUN_00504960(model, (int)puVar13, entity_type,
+        RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), 0x48, 1.0f, 1231);
     }
 
@@ -451,11 +452,11 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         *psVar1 = 0xea;
         *(char *)(param_1 + 0xa9) = 9;
         param_1[0xac] = 0x3e4ccccd; // 0.2f alpha
-        FUN_00455430(0.0f, 0.0f, -40.0f, (int)param_1, (int)psVar1,
+        RenderLinkObject(0.0f, 0.0f, -40.0f, (int)param_1, (int)psVar1,
                      0xea, '\0', 0, '\0', '\x01', 0);
         *psVar1 = 0xeb;
         *(char *)(param_1 + 0xa9) = 0x3d;
-        FUN_00455430(0.0f, -40.0f, 45.0f, (int)param_1, (int)psVar1,
+        RenderLinkObject(0.0f, -40.0f, 45.0f, (int)param_1, (int)psVar1,
                      0xeb, '\0', 0, '\0', '\x01', 0);
     }
     else if ((bVar7 > 0x83) && (bVar7 < 0x87)) {
@@ -466,7 +467,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         if (bVar7 == 0x84) *psVar1 = 0x23a;
         if (bVar7 == 0x85) *psVar1 = 0x1a3;
         if (bVar7 == 0x86) { *psVar1 = 0x222; *(int *)(puVar13 + 3) = 0x3f666666; }
-        FUN_00455430(0.0f, 0.0f, 0.0f, (int)param_1, (int)psVar1,
+        RenderLinkObject(0.0f, 0.0f, 0.0f, (int)param_1, (int)psVar1,
                      (int)*psVar1, '\0', 0, '\x01', '\x01', 0);
     }
 
@@ -477,22 +478,22 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     // simplificacion nuestra.
     {
         char *o = (char *)puVar13;
-        if (*(float *)(o + 360) >= 0.5f && DAT_0055a7ac != 10 &&
+        if (*(float *)(o + 360) >= 0.5f && World != 10 &&
             *(short *)(o + 2) == 390)
         {
             const unsigned short helper = *(unsigned short *)((char *)param_1 + 696);
             if (helper < 818 || helper > 819 || *((char *)param_1 + 846) != 0) {
                 // Blood Castle (11..16): si esta muerto sobre el puente, la
                 // sombra se pega al terreno en vez de quedar flotando.
-                if (DAT_0055a7ac >= 11 && DAT_0055a7ac <= 16 &&
+                if (World >= 11 && World <= 16 &&
                     *(BYTE *)(o + 405) != 0 && *((BYTE *)param_1 + 765) != 0)
                 {
-                    float th = FUN_004f7500(*(float *)(o + 16), *(float *)(o + 20));
+                    float th = RequestTerrainHeight(*(float *)(o + 16), *(float *)(o + 20));
                     if (th < *(float *)(o + 24)) *(float *)(o + 24) = th;
                 }
                 const float shadowAlpha = *(float *)(o + 360);
                 *(BYTE *)(o + 140) = 1;              // EnableShadow
-                FUN_00505a10((int)param_1, 391, 0,
+                RenderPartObject((int)param_1, 391, 0,
                              (float *)((char *)param_1 + 800), shadowAlpha,
                              0, 0, '\0', 0, '\x01', 0, 2);
                 *(BYTE *)(o + 140) = 0;
@@ -509,7 +510,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         float terrainLight[3] = { 0.0f, 0.0f, 0.0f };
         float wx = *(float*)((char*)puVar13 + 16);
         float wy = *(float*)((char*)puVar13 + 20);
-        FUN_004f7960(wx, wy, terrainLight);
+        RequestTerrainLight(wx, wy, terrainLight);
         local_60 = terrainLight[0];
         local_5c = terrainLight[1];
         local_58 = terrainLight[2];
@@ -521,8 +522,8 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
         *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
 
-        // Sub-state zone-scale override (DAT_0055a7ac - 9 in [1..7])
-        int iSub = DAT_0055a7ac - 9;
+        // Sub-state zone-scale override (World - 9 in [1..7])
+        int iSub = World - 9;
         BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
         bool bInRange = (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
                         (0x72 < bv2 && bv2 < 0x77) || (0x78 < bv2 && bv2 < 0x7d) ||
@@ -555,14 +556,14 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         bool bSafeZone = *(char *)((int)param_1 + 0x34e) != '\0';
         BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
         local_74 = (void *)((bSafeZone || (bAnim >= 0x5d && bAnim <= 0x7c)) ? 0 : 1);
-        if (DAT_0055a7ac == 7 && (bAnim == 0x15 || bAnim == 0x1d))
+        if (World == 7 && (bAnim == 0x15 || bAnim == 0x1d))
             local_74 = (void *)1;
-        if (DAT_0055a7ac > 10 && DAT_0055a7ac < 0x11)
+        if (World > 10 && World < 0x11)
             local_74 = (void *)0;
     }
 
     // ── 2026-05-04: re-apply equipment stash si está reseteado ──────────────
-    if (DAT_005615c0 == 5 && param_1_ == DAT_07abf5d8) {
+    if (SceneFlag == 5 && param_1_ == DAT_07abf5d8) {
         HeroEquipWatchdog((int)(uintptr_t)param_1_);
 
         // 2026-07-27 WATCHDOG global de ItemAttribute: DAT_07d78068 se corrompe
@@ -602,7 +603,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     }
 
     // ── DIAG: hero entry into case 0x186 ─────────────────────────────────────
-    if (DAT_005615c0 == 5 && param_1_ == DAT_07abf5d8) {
+    if (SceneFlag == 5 && param_1_ == DAT_07abf5d8) {
         static DWORD s_lastH186 = 0;
         DWORD now = GetTickCount();
         if (now - s_lastH186 > 2000) {
@@ -634,7 +635,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         }
     }
     // ── DIAG: ANY entity with wing@2a0 != -1 (find where wings actually live)
-    if (DAT_005615c0 == 5) {
+    if (SceneFlag == 5) {
         BYTE* be = (BYTE*)param_1_;
         if (*(short*)(be + 0x2a0) != -1 && *(short*)(be + 2) == 0x186) {
             static DWORD s_lastWE = 0;
@@ -667,7 +668,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     // Excluded entity_type 330/331 (terrain decorations rendered elsewhere)
     if (sVar2 != 0x186 && *(BYTE *)((char *)puVar13 + 0x84) != 8) {
         BYTE v11 = bVar7;   // *(c + 747)
-        int  World = (int)DAT_0055a7ac;
+        int  World = (int)World;
         float alpha = *(float *)((char *)puVar13 + 0x168);   // o + 360
 
         if (v11 != 25 && v11 != 22 && v11 != 42 && v11 != (BYTE)-14 &&
@@ -681,7 +682,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                     *(BYTE *)((char *)param_1 + 0x2FD) != 0) {     // c+765 Dead>0 byte
                     float wx = *(float *)((char *)puVar13 + 0x10);
                     float wy = *(float *)((char *)puVar13 + 0x14);
-                    float th = FUN_004f7500(wx, wy);
+                    float th = RequestTerrainHeight(wx, wy);
                     if (th < *(float *)((char *)puVar13 + 0x18)) {
                         *(float *)((char *)puVar13 + 0x18) = th;
                     }
@@ -696,7 +697,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             short v15 = sVar2;
             if (v15 != 330 && v15 != 331) {
                 *(BYTE *)((char *)puVar13 + 0x8C) = 1;       // EnableShadow = 1
-                FUN_00505a10((int)param_1,
+                RenderPartObject((int)param_1,
                              (int)v15,
                              0,
                              (float *)(param_1 + 200),       // c+800 Light
@@ -727,7 +728,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // ── BACK weapon render (IDA 1166-1239: gated por Bind=1) ────────────
         // Renderiza arma en la espalda cuando es bow/crossbow + Bind activo.
         // Bind = 1 sólo en in-game con World en 10-16, fuera de greeting anims.
-        // Para char-select (DAT_005615c0 == 4) Bind siempre = 0 → este bloque
+        // Para char-select (SceneFlag == 4) Bind siempre = 0 → este bloque
         // NO debe disparar y dejar el render de armas al `Render_PlayerWeaponLoop`
         // (líneas finales de este case 0x186) que las pone en la mano.
         //
@@ -736,11 +737,11 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // → flicker visible cuando ambos paths competían por DAT_06989c9c.
         //
         // Bind detection (port simplificado IDA líneas 1140-1153):
-        //   Bind = (DAT_0055a7ac in 10..16) && (anim < 93 || anim > 124) &&
+        //   Bind = (World in 10..16) && (anim < 93 || anim > 124) &&
         //          !c+0x34E && !(c+747 in special-skill ranges)
         bool Bind = false;
-        if (DAT_005615c0 == 5) {  // in-game
-            const int __world = (int)DAT_0055a7ac;   // `World` es macro de DAT_0055a7ac: nombrar
+        if (SceneFlag == 5) {  // in-game
+            const int __world = (int)World;   // `World` es macro de World: nombrar
                                                     // la local `World` la volvia una
                                                     // auto-inicializacion con basura.
             if (__world >= 10 && __world <= 16) {
@@ -792,7 +793,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             // Overridden by zone state
             bool zoneOverride = false;
             if ((*(char *)((int)puVar13 + 0x21) == '\x04') &&
-                (DAT_0055a7ac == 0) &&
+                (World == 0) &&
                 (puVar13[1] > 0xcd) && (puVar13[1] < 0xd1)) {
                 iVar18 = 0x219;
                 cLv = '\b';
@@ -803,7 +804,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 *(BYTE *)(param_1 + 0xa9) = 0x2f;
                 BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
                 param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-                FUN_00455430(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
                              iVar18, cLv, uOp, (char)(size_t)(zoneOverride ? (void*)1 : param_3b), '\x01', 0);
                 param_1[0xaa] = (int)local_68;
             }
@@ -823,7 +824,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // siempre se alcanza.  Sintoma: el arco de la estatua no se dibujaba en
         // la espalda al levantarlo.  Verificado en el log del cliente: el server
         // manda `0x9B ... owner=9001 lvl=3` (3 = Bow) durante 80 paquetes.
-        if ((DAT_0055a7ac >= 11) && (DAT_0055a7ac <= 16) &&
+        if ((World >= 11) && (World <= 16) &&
             (*(char *)(param_1 + 0xba) != 0)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
             BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
@@ -833,7 +834,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                            (cType == 2) ? 0x1a3 :   // 419 Sword
                            (cType == 3) ? 0x222 : 0; // 546 Bow
             if (iSecType != 0) {
-                FUN_00455430(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+                RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
                              iSecType, 0, 0, 1, 1, 0);
             }
         }
@@ -843,7 +844,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             *(BYTE *)(param_1 + 0xa9) = 0x2f;
             BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
             param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-            FUN_00455430(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
+            RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
                          (int)*(short *)(param_1 + 0xa8),
                          *(char *)((int)param_1 + 0x2a2),
                          *(BYTE *)((int)param_1 + 0x2a3), '\0', '\x01', 0);
@@ -853,7 +854,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         if (*(short *)(param_1 + 0xae) == 0x331) {
             *(BYTE *)(param_1 + 0xaf) = 0x22;
             param_1[0xb2] = 0x3f000000; // 0.5f
-            FUN_00455430(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
+            RenderLinkObject(20.0f, 0.0f, 0.0f, (int)param_1, (int)(param_1 + 0xae),
                          0x331,
                          *(char *)((int)param_1 + 0x2ba),
                          (UINT)(size_t)local_74, '\0', '\x01', 0);
@@ -864,7 +865,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                          (float *)((UINT)*(BYTE *)(param_1 + 0xaf) * 0x30 + puVar13[0x45]),
                          fOff, fWorldPos, '\x01');
             float fColor2[3] = { fVar32 * _DAT_00552504, 0.0f, 0.0f };
-            FUN_004795c0(0x47e, fWorldPos, 1.5f, fColor2, (int)puVar13, 0, 0);
+            CreateSprite(0x47e, fWorldPos, 1.5f, fColor2, (int)puVar13, 0, 0);
         }
 
         // ── Helper render (IDA 1267-1288) ──────────────────────────────────
@@ -889,7 +890,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
     // Missing in previous port — this is what actually draws player geometry.
     // Player.bmd is skeleton-only (numMesh=0); body geometry lives in separate
     // BMD models (HelmClass##/ArmorClass##/PantClass##/GloveClass##/BootClass##)
-    // referenced by entity equipment slots and rendered here via FUN_00505a10
+    // referenced by entity equipment slots and rendered here via RenderPartObject
     // (Entity_DrawAt) using the parent entity's animated bones.
     //
     // Equipment slot layout (6 entries, stride 0x18 bytes):
@@ -925,10 +926,10 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         if (subType >= 206 && subType <= 208) {
             float alphaST = *(float *)((char *)puVar13 + 0x168);
             int   flags   = 0;
-            if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)DAT_0055a7ac == 0) {
+            if (*(BYTE *)((char *)puVar13 + 0x84) == 4 && (int)World == 0) {
                 flags = 8 * (int)*(unsigned short *)((char *)param_1 + 446);
             }
-            FUN_00505a10((int)param_1, subType, 0,
+            RenderPartObject((int)param_1, subType, 0,
                          (float *)(param_1 + 200), alphaST,
                          flags, 0, '\0', 0, '\x01', 0, 2);
             bSubTypeNpcRendered = true;
@@ -949,9 +950,9 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 BYTE bClassByte = *(BYTE *)((int)param_1 + 0x1bc);
                 *(BYTE *)(DAT_05828d58 + iVar9 * 0xbc + 0x98) =
                     (BYTE)(((bClassByte & 7) << 1) | (bClassByte >> 3));
-                // ── DIAG: log per-call to FUN_00505a10 (Entity_DrawAt) for char-select
+                // ── DIAG: log per-call to RenderPartObject (Entity_DrawAt) for char-select
                 // dump scale, model addr, animCount@26, and DAT_005524f8 (cull thresh).
-                if (DAT_005615c0 == 4) {
+                if (SceneFlag == 4) {
                     int csSlot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
                     if (csSlot >= 0 && csSlot < 5) {
                         static DWORD s_lastDA[5] = {0,0,0,0,0};
@@ -979,7 +980,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                     // encoda para que RenderPartObjectEffect lo decodifique con
                     // (val>>3)&0xF. FIEL a IDA (8 * *(BYTE*)(v76-18)).
                     UINT shiftedLvl = (UINT)rawLvl << 3;
-                    FUN_00505a10((int)param_1,
+                    RenderPartObject((int)param_1,
                                  iVar9,
                                  (int)(piVar16 - 5),
                                  (float *)(param_1 + 200),
@@ -1001,7 +1002,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                         // IDA: operator_new(0x54) + sub_407FE0, SIN el prefijo de
                         // count del `eh vector` (a diferencia de la capa del MG):
                         // DeleteCloth la libera con el dtor en modo 1.
-                        void *cloth = FUN_00407fe0(operator_new(0x54));
+                        void *cloth = Widget_CtorBase(operator_new(0x54));
                         // sub_408130(obj, c, 2, 10.0, 10.0, 5, 15, 45.0, 85.0,
                         //            1276, 1276, 0x1400)
                         FUN_00408130(cloth, PtrAsFloatBits(param_1), 2, 10.0f, 10.0f,
@@ -1012,12 +1013,12 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                     }
                     if (*piVar16) {
                         if (!isGrandSoulPants) {
-                            FUN_00449840((int)param_1, 0, 0);          // DeleteCloth(c, 0, 0)
-                        } else if (FUN_00408900((int *)*piVar16, 0x3ba3d70a, 5)) {
+                            DeleteCloth((int)param_1, 0, 0);          // DeleteCloth(c, 0, 0)
+                        } else if (Widget_CheckState((int *)*piVar16, 0x3ba3d70a, 5)) {
                             if (*(float *)(puVar13 + 0x5a) > 0.01f)
                                 FUN_00408ff0((void *)*piVar16);        // vtable[3]
                         } else {
-                            FUN_00449840((int)param_1, (int)puVar13, 0);  // DeleteCloth(c, o, 0)
+                            DeleteCloth((int)param_1, (int)puVar13, 0);  // DeleteCloth(c, o, 0)
                         }
                     }
                 }
@@ -1089,7 +1090,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                              &local_48, &local_54, '\x01');
                 UINT uType = bAlt ? 0x4f0 : 0x4cf;
                 float fSc  = bAlt ? 1.3f : 2.5f;
-                FUN_004795c0((int)uType, &local_54, fSc, &local_60, (int)puVar13, 0, (int)!bAlt);
+                CreateSprite((int)uType, &local_54, fSc, &local_60, (int)puVar13, 0, (int)!bAlt);
                 // Random 1/4 chance: add spark if walking
                 BYTE bAnimState = *(BYTE *)((int)puVar13 + 0x105);
                 if ((rand() & 3) == 0 && bAnimState >= 3 && bAnimState <= 4)
@@ -1149,9 +1150,9 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         local_60 = fCol; local_5c = fCol; local_58 = fCol;
         BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x3c0),
                      &local_48, &local_54, '\x01');
-        FUN_004795c0(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
+        CreateSprite(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
                      (float)DAT_05826e08 * _DAT_00552944, 0);
-        FUN_004795c0(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
+        CreateSprite(0x4a7, &local_54, 0.3f, &local_60, (int)puVar13,
                      -(float)DAT_05826e08 * _DAT_00552944, 0);
         if (rand() % 0x1e == 0) {
             // Scatter lightning from random offsets around bone position
@@ -1174,7 +1175,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // CheckFullSet detecta si las 5 piezas de armadura forman un set
         // matcheado con level >= 9 → setea `EquipmentLevelSet` global y devuelve
         // true si el char tiene 5 piezas (aunque no matcheen, para v230=true).
-        bool v230 = FUN_00451b20((int)param_1);
+        bool v230 = CheckFullSet((int)param_1);
         local_48 = 0.0f; local_44 = 0.0f; local_40 = 0.0f;
 
         // ── Capa del Magic Gladiator (IDA RenderCharacter L667-743) ───────────
@@ -1246,9 +1247,9 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 }
                 int *pCloth = (int *)param_1[0x61];
                 if (pCloth) {
-                    int alive = (int)(size_t)FUN_00408900(pCloth, 0x3ba3d70a, 5);
+                    int alive = (int)(size_t)Widget_CheckState(pCloth, 0x3ba3d70a, 5);
                     if (alive == 0) {
-                        FUN_00449840((int)param_1, (int)puVar13, 0);
+                        DeleteCloth((int)param_1, (int)puVar13, 0);
                     } else {
                         // IDA: `(*(void (__thiscall **)(int,_DWORD))(*(_DWORD *)v49 + 12))(v49, 0);`
                         // La vtable `off_552520` no está portada (FUN_00407fe0
@@ -1265,7 +1266,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 }
             }
         }
-        if (DAT_005615c0 == 2) {
+        if (SceneFlag == 2) {
             return puVar13;
         }
 
@@ -1277,9 +1278,9 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
             local_60 = 1.0f; local_5c = 1.0f; local_58 = 1.0f;
             BMD_TransformPosition(pvVar23, (float *)(puVar13[0x45] + 0x390),
                          &local_48, &local_54, '\x01');
-            FUN_004795c0(0x498, &local_54, 0.6f, &local_60, 0, 0, 0);
+            CreateSprite(0x498, &local_54, 0.6f, &local_60, 0, 0, 0);
             float fS = (float)(double)fsin((double)(DAT_05826e08 * _DAT_00552500));
-            FUN_004795c0(0x4cf, &local_54, (float)(fS * _DAT_005528b4),
+            CreateSprite(0x4cf, &local_54, (float)(fS * _DAT_005528b4),
                          &local_60, 0, 0, 0);
         }
 
@@ -1294,12 +1295,12 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 &local_48, &local_54, '\x01');
             float Scalep = *(float *)((int)puVar13 + 0x108) * 0.1f;  // anim frame * 0.1
             local_60 = 0.1f; local_5c = 0.1f; local_58 = 1.0f;
-            FUN_004795c0(0x4a7, &local_54, Scalep * 0.30000001f,
+            CreateSprite(0x4a7, &local_54, Scalep * 0.30000001f,
                          &local_60, (int)puVar13, 0, 0);
             float WorldTime = (float)DAT_05826e08;
-            FUN_004795c0(0x4a7, &local_54, Scalep, (float*)(puVar13 + 0x3a),
+            CreateSprite(0x4a7, &local_54, Scalep, (float*)(puVar13 + 0x3a),
                          (int)puVar13, -WorldTime * 0.1f, 0);
-            FUN_004795c0(0x4a7, &local_54, Scalep * 2.5f, (float*)(puVar13 + 0x3a),
+            CreateSprite(0x4a7, &local_54, Scalep * 2.5f, (float*)(puVar13 + 0x3a),
                          (int)puVar13, WorldTime * 0.1f, 0);
         }
 
@@ -1314,15 +1315,15 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + (UINT)*pbVar20 * 0x30),
                     &local_48, &local_54, '\x01');
-                FUN_004795c0(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
+                CreateSprite(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbVar20 - 6) * 0x30),
                     &local_48, &local_54, '\x01');
-                FUN_004795c0(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
+                CreateSprite(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbVar20 - 7) * 0x30),
                     &local_48, &local_54, '\x01');
-                FUN_004795c0(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
+                CreateSprite(0x4cf, &local_54, 1.5f, &local_60, (int)puVar13, 0, 0);
             }
         }
 
@@ -1334,7 +1335,7 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
         // ── 5. Full set body glow: PartObjectColor + 6 sparkles (3 bones × 2) ──
         // IDA línea 2191: PartObjectColor(c->Boot.Type, alpha, 0.5, Light, 0)
         // → escribe en Light[3] el RGB del glow basado en el tipo de bota.
-        FUN_00503cf0(*(short*)((int)param_1 + 600),
+        PartObjectColor(*(short*)((int)param_1 + 600),
                      *(float *)((int)puVar13 + 0x168),
                      0.5f, &local_60, '\0');
 
@@ -1350,15 +1351,15 @@ void* __cdecl FUN_00456770(void *param_1_, void *param_2_, void *param_3)
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + (UINT)*pbV193 * 0x30),
                     &local_48, &local_54, '\x01');
-                FUN_004795c0(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);  // CreateSprite 1150
+                CreateSprite(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);  // CreateSprite 1150
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbV193 - 6) * 0x30),
                     &local_48, &local_54, '\x01');
-                FUN_004795c0(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
+                CreateSprite(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
                 BMD_TransformPosition(pvVar23,
                     (float *)(puVar13[0x45] + ((int)*pbV193 - 7) * 0x30),
                     &local_48, &local_54, '\x01');
-                FUN_004795c0(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
+                CreateSprite(0x47e, &local_54, 1.3f, &local_60, (int)puVar13, 0, 0);
             }
         }
 

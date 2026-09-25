@@ -1,4 +1,4 @@
-// Scene_ServerSelect_Input.cpp — FUN_0051e7e0 @ 0x0051e7e0
+// Scene_ServerSelect_Input.cpp — CServerSelWin_UpdateWhileActive @ 0x0051e7e0
 // Server-select UI: mouse hit-test for group buttons + individual server entries.
 //
 // Called each frame during server select to handle mouse clicks.
@@ -18,13 +18,13 @@
 // On group button click:
 //   Sends 4-byte packet [0xC1][0x04][0xF4][?] to select server group.
 //   Saves selected group index to DAT_00561694; resets DAT_00561698 = -1.
-//   Calls FUN_00404bc0(0x19, 0, 0) (BGM_Play).
+//   Calls PlayBuffer(0x19, 0, 0) (BGM_Play).
 //
 // On server entry click (if group already selected, ping < 100, no cooldown):
 //   Saves channel = (port % 0x14 + 1) to DAT_0056169c.
 //   Sends 6-byte packet [0xC1][0x06][0xF4][?][portLo][portHi].
 //   Sets connect timer: DAT_083a7ac8 = GetTickCount().
-//   Calls FUN_00480620 twice to copy IP/port into connection context.
+//   Calls UIChatLogWindow_AddText twice to copy IP/port into connection context.
 //   Sets cooldown: DAT_083a7c44 = 0x32 frames.
 //
 // Packet buffer layout (stack, sent via send() with WOULDBLOCK fallback):
@@ -45,7 +45,8 @@
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-void FUN_0051e7e0(void)
+// IDA: CServerSelWin::UpdateWhileActive (0x0051E7E0)
+void CServerSelWin_UpdateWhileActive(void)
 {
     // Re-enabled: la lista estática poblada en WinMain (entry "MuServer") hace
     // que el loop tenga algo que procesar. Sin populate el Pass 1 no encontraba
@@ -117,7 +118,7 @@ void FUN_0051e7e0(void)
                 iVar9 <= (int)DAT_083a4278 && (int)DAT_083a4278 < iVar3 &&
                 DAT_083a4124 != '\0')
             {
-                FUN_00405540(&DAT_055c9bf0, "> Server group selected");
+                CErrorReport_Write(&DAT_055c9bf0, "> Server group selected");
                 DAT_083a4124 = '\0';
 
                 // Build and send 4-byte group-select packet
@@ -131,32 +132,32 @@ void FUN_0051e7e0(void)
 
                 unsigned int uVar5 = 4;
                 int iOff = 0;
-                if (DAT_055ca168 != 0xffffffff) {
+                if (SocketClientSocket != 0xffffffff) {
                     do {
-                        int iVar4b = send(DAT_055ca168, pkt + iOff, (int)uVar5, 0);
+                        int iVar4b = send(SocketClientSocket, pkt + iOff, (int)uVar5, 0);
                         if (iVar4b == -1) {
                             int err = WSAGetLastError();
                             if (err == WSAEWOULDBLOCK) {
-                                if (DAT_055cc16c + (int)uVar5 < 0x2001) {
+                                if (SocketClientSendBufferLength + (int)uVar5 < 0x2001) {
                                     const char *src = pkt;
-                                    char *dst = (char*)DAT_055ca16c + DAT_055cc16c;
+                                    char *dst = (char*)SocketClientSendBuffer + SocketClientSendBufferLength;
                                     for (unsigned int u = uVar5 >> 2; u; u--) {
                                         *(unsigned int *)dst = *(unsigned int *)src;
                                         src += 4; dst += 4;
                                     }
                                     for (unsigned int u = uVar5 & 3; u; u--)
                                         *dst++ = *src++;
-                                    DAT_055cc16c += (int)uVar5;
+                                    SocketClientSendBufferLength += (int)uVar5;
                                 } else {
-                                    Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                                    Net_Disconnect(((int)(uintptr_t)SocketClient));
                                 }
                             } else {
-                                Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                                Net_Disconnect(((int)(uintptr_t)SocketClient));
                             }
                             break;
                         }
                         if (iVar4b == 0) break;
-                        if (DAT_055ce174) FUN_0043de60();
+                        if (SocketClientLogPrint) FUN_0043de60();
                         uVar5 -= (unsigned int)iVar4b;
                         iOff  += iVar4b;
                     } while ((int)uVar5 > 0);
@@ -164,7 +165,7 @@ void FUN_0051e7e0(void)
 
                 DAT_00561694 = local_834;
                 DAT_00561698 = -1;
-                FUN_00404bc0(0x19, 0, 0);
+                PlayBuffer(0x19, 0, 0);
                 iVar12 = local_820;
                 iVar4  = local_824;
             }
@@ -230,13 +231,13 @@ void FUN_0051e7e0(void)
 
                 if (!full && DAT_083a4124 != '\0') {
                     DAT_083a4124 = '\0';
-                    FUN_00404bc0(0x19, 0, 0);
+                    PlayBuffer(0x19, 0, 0);
 
                     if (ping_ok && DAT_083a7c44 == 0) {
                         DAT_0056169c = (unsigned int)
                             *(unsigned short *)((char*)&DAT_083a4604 + (int)DAT_00561694 * 0x21e + local_830b)
                             % 0x14 + 1;
-                        FUN_00405540(&DAT_055c9bf0, "> Server selected");
+                        CErrorReport_Write(&DAT_055c9bf0, "> Server selected");
 
                         DAT_083a7c44 = 0x32;
                         DAT_083a7c24 = DAT_083a7c28;
@@ -267,17 +268,17 @@ void FUN_0051e7e0(void)
                             // No hay ConnectServer: conectar directo al GameServer
                             // de server.cfg. La transición a state 1 (Connecting)
                             // arranca el progress bar + espera JoinServer.
-                            extern void Net_ConnectServer(const char *server, unsigned int port);
-                            Net_ConnectServer(PTR_s_connect_muonline_co_kr_005615b8,
-                                         (unsigned int)DAT_005615bc);
+                            extern void CreateSocket(const char *server, unsigned int port);
+                            CreateSocket(PTR_s_connect_muonline_co_kr_005615b8,
+                                         (unsigned int)g_ServerPort);
                         }
                         DAT_083a7c14 = 1;   // state = Connecting
 
                         // IDA 0x0051E7E0 L315-316 (CServerSelWin): these are
                         // GlobalText[470]/[471], not the standalone buffers
                         // DAT_07d4c3ec / lpString_07d4c518 that Ghidra split.
-                        FUN_00480620(DAT_083a7c64, GlobalText[470], 1);
-                        FUN_00480620((const char*)&DAT_083a7c68, GlobalText[471], 1);
+                        UIChatLogWindow_AddText(DAT_083a7c64, GlobalText[470], 1);
+                        UIChatLogWindow_AddText((const char*)&DAT_083a7c68, GlobalText[471], 1);
 
                     } else if (ping_ok) {
                         // Already has cooldown — flash counters

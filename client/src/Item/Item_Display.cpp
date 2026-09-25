@@ -294,8 +294,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     //     original binary. Our re-implementation reads them as globals instead.
     //   - Repeated XOR key init (0x893a6de7/0x739fb2bc/0xb6fea823) + single-iteration loops
     //     around every packet byte — compiler artifact / anti-tamper padding.
-    //   - Hash table operations (FUN_00403f80, FUN_004041e0, FUN_004042b0, FUN_00404280,
-    //     FUN_00404330, FUN_00404400) interspersed around every packet send — anti-tamper
+    //   - Hash table operations (HashTable_Insert, FUN_004041e0, FUN_004042b0, HashTable_GetNode,
+    //     Packet_DecryptByte, Packet_EncryptBuffer) interspersed around every packet send — anti-tamper
     //     hash table, skipped.
     //
     // The caller (Inventory_DropDispatch @ 0x004DF410) calls this up to 4 times per frame,

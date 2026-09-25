@@ -8,7 +8,7 @@
 // FUN_0040c690 @ 0x0040c690 — Object_SetRectFields
 // FUN_0040e590 @ 0x0040e590 — Object_ClearMembers
 // FUN_00402fd0 @ 0x00402fd0 — Packet_ParseReceived
-// FUN_00503760 @ 0x00503760 — Entity_UpdateGravity
+// MoveItems @ 0x00503760 — Entity_UpdateGravity
 
 #include "stdafx.h"
 
@@ -177,18 +177,18 @@ undefined4 __cdecl FUN_00402fd0(void *param_1)
 }
 
 
-// FUN_00503760 — Entity_UpdateGravity
+// IDA: FUN_00503760 (0x00503760)
 // Iterates the entity-gravity pool (per-slot offset +0x18 inside the
 // 1000-slot ground-items pool DAT_07e12840, stride 0x204). Per active slot:
 // advances Z by velocity, decays velocity by _DAT_005527d0. Checks terrain
-// height via FUN_004f7500; if entity is above terrain + offset, adjusts Y or
-// Z velocity. Calls FUN_005030c0 and Entity_UpdateSparkleEffect (FUN_00503650).
+// height via RequestTerrainHeight; if entity is above terrain + offset, adjusts Y or
+// Z velocity. Calls ItemAngle and Entity_UpdateSparkleEffect (FUN_00503650).
 //
 // 2026-05-08: AUTO-SKIP removed. Walker now uses the properly-sized pool
 // `DAT_07e12840` (1000 × 0x204) with an explicit slot count instead of the
 // literal end-bound `< 0x7e907f8`. Per-slot pfVar2 = slot_base + 0x18 (the
 // gravity-field anchor that the orphan DAT_07e12858 used to alias).
-void FUN_00503760(void)
+void MoveItems(void)
 {
   // 2026-08-21: el walker estaba corrido 72 bytes.  Tomaba `DAT_07e12840` como
   // si fuera `Items + 72` (leía el flag activo en slot+0), pero en nuestro build
@@ -211,7 +211,7 @@ void FUN_00503760(void)
     *pZ  = *pVz + *pZ;
     *pVz = *pVz - _DAT_005527d0;
 
-    float10 fVar3 = (float10)FUN_004f7500(*(float *)(ip + 88), *(float *)(ip + 92));
+    float10 fVar3 = (float10)RequestTerrainHeight(*(float *)(ip + 88), *(float *)(ip + 92));
     short  sVar1  = *(short *)(ip + 74);
     fVar3 = fVar3 + (float10)_DAT_0055284c;
     if ((399 < sVar1) && (sVar1 < 0x250)) {
@@ -229,7 +229,7 @@ void FUN_00503760(void)
     else {
       // Tocó el suelo: se apoya sobre el terreno.
       *pZ = (float)fVar3;
-      FUN_005030c0((int)(ip + 72));
+      ItemAngle((int)(ip + 72));
     }
     Entity_UpdateSparkleEffect((int)(ip + 72));
   }

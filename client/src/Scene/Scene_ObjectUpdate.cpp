@@ -66,8 +66,8 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         }
     }
 
-    // Alpha fade — FUN_0043e5c0(entity_ptr)
-    FUN_0043e5c0(objPtr);
+    // Alpha fade — Alpha(entity_ptr)
+    Alpha(objPtr);
 
     // Check alpha > 0
     float alpha = *(float*)(objPtr + 0x168);
@@ -98,7 +98,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     //   160 = Logo01 (cielo) y 161 = Logo02 (olas): scroll de la V de textura.
     //   162 = Logo03 (banner MU): rampa de Light + alpha-scalar. Sin esto el
     //         banner queda con bodyLight=(0,0,0) → rectángulo negro.
-    if (DAT_005615c0 == 2 || DAT_005615c0 == 4) {
+    if (SceneFlag == 2 || SceneFlag == 4) {
         short t = *(short*)(objPtr + 2);
         if (t == 160 || t == 161) {
             *(float*)(objPtr + 112) = -((float)((__int64)WorldTime % 4000) * 0.00025f);
@@ -221,7 +221,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         case 0x2a: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 190.0f); return (float*)0;       // 0x433e0000
         case 0x34:
             if (!(rand() % 3)) {
-                Effect_Create(215, (float*)(objPtr + 16), (float*)(objPtr + 28),
+                CreateEffect(215, (float*)(objPtr + 16), (float*)(objPtr + 28),
                               (float*)(objPtr + 232), 0, 0,
                               (float*)(uintptr_t)0xffffffffu, 0, 0);
                 *(int*)(objPtr + 88) = -2;
@@ -244,7 +244,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
                 const float dy = *(float*)(Hero + 20) - *(float*)(objPtr + 56);
                 const float distance = sqrtf(dx * dx + dy * dy);
                 if (distance >= 200.0f) {
-                    *(float*)(objPtr + 36) = FUN_0043e1b0(*(float*)(objPtr + 36), *(float*)(objPtr + 48), 10.0f);
+                    *(float*)(objPtr + 36) = TurnAngle2(*(float*)(objPtr + 36), *(float*)(objPtr + 48), 10.0f);
                     *(float*)(objPtr + 16) += (*(float*)(objPtr + 52) - *(float*)(objPtr + 16)) * 0.2f;
                     *(float*)(objPtr + 20) += (*(float*)(objPtr + 56) - *(float*)(objPtr + 20)) * 0.2f;
                 } else if (objType == 86) {
@@ -310,7 +310,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         case 0x18:
             *(int*)(objPtr + 88) = -2;
             if (!(rand() % 64))
-                Effect_Create(1200, (float*)(objPtr + 16), (float*)(objPtr + 28),
+                CreateEffect(1200, (float*)(objPtr + 16), (float*)(objPtr + 28),
                               (float*)(objPtr + 232), 0, 0,
                               (float*)(uintptr_t)0xffffffffu, 0, 0);
             break;
@@ -473,7 +473,7 @@ int __stdcall MoveHeavenThunder_stub(void) {
 
     // La NUBE: efecto 182 en la posicion del heroe (no en Position).
     memset(Angle, 0, sizeof(Angle));
-    Effect_Create(182, (float *)(Hero + 16), Angle, Light,
+    CreateEffect(182, (float *)(Hero + 16), Angle, Light,
                   (float *)0, (float *)0, (float *)0xffffffff, (float *)0, 0);
 
     if (DAT_083a3fec) objectCount = rand() % (int)DAT_083a3fec;
@@ -682,7 +682,7 @@ void __stdcall MoveObjects_stub(void) {
                                 light[0] = (float)(rand() % 10) * 0.02f;
                                 light[1] = (float)(rand() % 10) * 0.02f;
                                 light[2] = (float)(rand() % 10) * 0.02f;
-                                FUN_004795c0(1269, (float*)(pcVar6 + 16), 0.5f,
+                                CreateSprite(1269, (float*)(pcVar6 + 16), 0.5f,
                                              light, (int)Hero, 0.0f, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
                                 Joint_Create(1254, (float*)(pcVar6 + 16),
@@ -747,13 +747,13 @@ void __stdcall MoveBugs_stub(void) {
             goto next_bug;
 
         DWORD owner = *v0;                     // *v0 — Owner ptr
-        if (DAT_005615c0 == 5) {               // g_GameState == InGame
+        if (SceneFlag == 5) {               // SceneFlag == InGame
             if (owner == 0 || *(BYTE*)owner == 0 || *(BYTE*)(owner + 132) != 1) {
                 *(BYTE*)e = 0;                 // kill: owner muerto / Kind != 1
                 goto next_bug;
             }
         }
-        FUN_0043e5c0((int)e);                  // Alpha() — fade
+        Alpha((int)e);                  // Alpha() — fade
 
         {
         int   v2 = (int)owner;
@@ -816,8 +816,8 @@ void __stdcall MoveBugs_stub(void) {
                 *(DWORD*)(e + 0x24) = *(DWORD*)(v8 + 36);   // angleZ
                 BYTE v14 = *(BYTE*)(v8 + 261);              // owner CurrentAction
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
-                    if (v11 == 267 && (v12 == 8 || v12 == 10)) FUN_0043e820((int)e, 3);
-                    else                                       FUN_0043e820((int)e, 2);
+                    if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 3);
+                    else                                       SetAction((int)e, 2);
                     if ((rand() & 1) == 0 && World != 10) {
                         float Light[3] = { 1.0f, 1.0f, 1.0f };
                         float Position[3];
@@ -830,22 +830,22 @@ void __stdcall MoveBugs_stub(void) {
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;        // animSpeed = 0.34f
                     *(BYTE*)e = *(BYTE*)(*v0);               // Live = owner.Live
                 } else if (v14 == 64 || v14 == 65) {
-                    if (v12 == 8 || v12 == 10) FUN_0043e820((int)e, 7);
-                    else                       FUN_0043e820((int)e, 6);
+                    if (v12 == 8 || v12 == 10) SetAction((int)e, 7);
+                    else                       SetAction((int)e, 6);
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else if (v14 < 0x22 || v14 > 0x37) {
-                    if (v11 == 267 && (v12 == 8 || v12 == 10)) FUN_0043e820((int)e, 1);
-                    else                                       FUN_0043e820((int)e, 0);
+                    if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 1);
+                    else                                       SetAction((int)e, 0);
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else if (v11 == 267) {
-                    if (v12 == 8 || v12 == 10) FUN_0043e820((int)e, 5);
-                    else                       FUN_0043e820((int)e, 4);
+                    if (v12 == 8 || v12 == 10) SetAction((int)e, 5);
+                    else                       SetAction((int)e, 4);
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else {
-                    FUN_0043e820((int)e, 3);
+                    SetAction((int)e, 3);
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 }
@@ -878,8 +878,8 @@ void __stdcall MoveBugs_stub(void) {
             float v31 = (y2 - v30) * (y2 - v30) + (x2 - x1) * (x2 - x1);
             float v38 = v36 * v36;
             if (v31 >= v38) {
-                float v41 = FUN_0043e050(x1, v30, x2, y2);   // Movement_Tick (CreateAngle)
-                *(float*)(e + 0x24) = FUN_0043e1b0(*(float*)(e + 0x24), v41, 20.0f);
+                float v41 = CreateAngle(x1, v30, x2, y2);   // Movement_Tick (CreateAngle)
+                *(float*)(e + 0x24) = TurnAngle2(*(float*)(e + 0x24), v41, 20.0f);
             }
             // PORT FIEL 1:1 (2026-07-18): el ASM (0x5007DB) escribe la matriz de
             // AngleMatrix en `[esi+0x90]` (campo scratch), NO en 0x24. Hex-Rays lo

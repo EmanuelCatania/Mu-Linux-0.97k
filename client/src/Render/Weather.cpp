@@ -1,5 +1,5 @@
 // Weather.cpp
-// FUN_00500e80 @ 0x00500E80
+// IDA: FUN_00500e80 (0x00500E80)
 //
 // Weather_Update — per-frame weather particle system update (846 lines).
 //
@@ -10,7 +10,7 @@
 //   0xae  = falling cloud / puff (LoginScene)
 //   0xaf  = snow flake
 //   0xb0  = rain drop
-//   0xb6  = snow variant A (g_GameSubState==7)
+//   0xb6  = snow variant A (World==7)
 //   0xb7  = snow variant B
 //   0xb8  = tree leaves / debris
 //   0x10a = firefly / butterfly (circular orbit with sin/cos)
@@ -71,7 +71,7 @@
 //   DAT_07abf5d8   — local player entity ptr
 //   DAT_083a3ff0   — weather mode (0=sun/clear, 1=rain, 2=snow, 3=storm)
 //   DAT_0838bc70   — per-tile terrain attribute array
-//   DAT_0055a7ac   — g_GameSubState
+//   World   — World
 //   DAT_055c9bc8   — HashTable context (anti-tamper)
 //   DAT_083a7c00   — anti-tamper key
 //   _DAT_005524f0  — world grid scale
@@ -88,9 +88,9 @@
 //   _DAT_00552ab4  — near distance (sound trigger)
 //   _DAT_00552d24  — far distance (despawn)
 //   _DAT_00552d28  — orbit angle step
-//   FUN_0043e5c0   — commit particle / advance state
+//   Alpha   — commit particle / advance state
 //   FUN_0043e680   — particle path update
-//   FUN_0043e820   — set particle animation
+//   SetAction   — set particle animation
 //   FUN_00440aa0   — BMD_Animation tick
 //   FUN_004f76c0   — spawn ground ripple
 //   Matrix_BuildFromEuler   — Vec3_Normalize or direction update
@@ -138,7 +138,7 @@
 // Los dos pasan por este accesor, que fija el paso en 0x1bc bytes y el ancho
 // en 4, que es lo que el binario hace (`0x6f * 4 == 0x1bc`).
 #define WSLOT_DW(off) (*(unsigned int *)&g_WeatherSlotPool[(off) + iVar14 * 0x1bc])
-uint __cdecl FUN_00500e80(void)
+uint __cdecl Weather_Update(void)
 {
     float  *pfVar1;
     int     iVar2;
@@ -172,7 +172,7 @@ uint __cdecl FUN_00500e80(void)
     // Medido: las nubes de Icarus (Weather_Update -> CreateEffect 1150) nacian en
     // pos=(6936, 0, 0) — X bien, Y y Z en cero — o sea fuera del mapa y por eso
     // no se veian. Mismo patron que ya mordio en MoveJoint, CreateJoint,
-    // Effect_Create y los texcoords de los sprites.
+    // CreateEffect y los texcoords de los sprites.
     float   __fr[12] = { 0.0f };
     float  &fStack_38 = __fr[0],  &fStack_34 = __fr[1],  &fStack_30 = __fr[2];
     float  &fStack_2c = __fr[3],  &fStack_28 = __fr[4],  &fStack_24 = __fr[5];
@@ -214,18 +214,18 @@ uint __cdecl FUN_00500e80(void)
                 cVar4 = *(char *)(puVar10 + 1);
                 *(unsigned char *)(puVar10 + 1) = cVar4 + 1U;
                 if ((unsigned char)(cVar4 + 1U) < 2)
-                    FUN_00409e20(&DAT_083a7c00, puVar10);
+                    Packet_DecryptDword(&DAT_083a7c00, puVar10);
                 goto LAB_00500f34;
             }
             uVar8 = (uVar8 + 1) % DAT_055c9bd4;
             uVar13++;
         } while (uVar13 < DAT_055c9bd4);
     }
-    FUN_00405540(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
+    CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 LAB_00500f16:
     pvVar9 = operator_new(5);
     *(unsigned char *)((int)pvVar9 + 4) = 1;
-    FUN_00403f80(&DAT_055c9bc8, pvVar9, &DAT_083a7c00);
+    HashTable_Insert(&DAT_055c9bc8, pvVar9, &DAT_083a7c00);
 LAB_00500f34:
     // Anti-tamper: HashTable reference-count decrement
     fStack_38 = DAT_083a7c00;
@@ -263,7 +263,7 @@ LAB_00500f34:
                     cVar4 = *(char *)(puVar10 + 1);
                     *(char *)(puVar10 + 1) = cVar4 - 1;
                     if ((char)(cVar4 - 1) == '\0')
-                        FUN_00423760(puVar10, &DAT_083a7c00);
+                        Packet_EncryptDword(puVar10, &DAT_083a7c00);
                 }
                 goto LAB_00501064;
             }
@@ -271,7 +271,7 @@ LAB_00500f34:
             uVar13++;
         } while (uVar13 < DAT_055c9bd4);
     }
-    FUN_00405540(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
+    CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 LAB_00501064:
 
     // ── Weather-mode: random rain effects (DAT_083a3ff0 != 0) ─────────────────
@@ -289,17 +289,17 @@ LAB_00501064:
             fStack_18 = *(float *)(DAT_07abf5d8 + 0x18) + _DAT_00552900;
             fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
             fStack_38 = 1.0f; fStack_34 = 1.0f; fStack_30 = 1.0f;
-            Effect_Create(0xbf, &fStack_20, &fStack_2c, &fStack_38,
+            CreateEffect(0xbf, &fStack_20, &fStack_2c, &fStack_38,
                          (float *)0x3, (float *)0x0, (float *)0xffffffff, (float *)0x0, 0);
-            FUN_00404bc0(0x2e, 0, 0);
+            PlayBuffer(0x2e, 0, 0);
         }
         // Ground ripple effect
         fStack_38 = -0.3f; fStack_34 = -0.3f; fStack_30 = -0.2f;
         FUN_004f76c0(*(float *)(uVar8 + 0x10), *(float *)(uVar8 + 0x14), (int)&fStack_38, 0x10, (int)&DAT_081cb608[0]);
     }
 
-    // ── g_GameSubState == 10: spawn distant lightning clouds ─────────────────
-    if ((DAT_0055a7ac == 10) && (_rand() % 10 == 0)) {
+    // ── World == 10: spawn distant lightning clouds ─────────────────
+    if ((World == 10) && (_rand() % 10 == 0)) {
         iVar12 = _rand();
         puStack_44 = (DWORD *)(iVar12 % 5000 + -0x9c4);
         fStack_38 = (float)(int)puStack_44 + *(float *)(DAT_07abf5d8 + 0x10);
@@ -309,16 +309,16 @@ LAB_00501064:
         fStack_30 = *(float *)(DAT_07abf5d8 + 0x18) - _DAT_00552ab8;
         fStack_20 = 1.0f; fStack_1c = 1.0f; fStack_18 = 1.0f;
         fStack_2c = 0.0f; fStack_28 = 0.0f; fStack_24 = 0.0f;
-        Effect_Create(0x47e, &fStack_38, &fStack_2c, &fStack_20,
+        CreateEffect(0x47e, &fStack_38, &fStack_2c, &fStack_20,
                      (float *)0x0, (float *)0x0, (float *)0xffffffff, (float *)0x0, 0);
     }
 
     // Get terrain tile at player position
     // IDA: Terrain_Load((__int64)(Hero.x * 0.01), (__int64)(Hero.y * 0.01)).
-    uVar8  = FUN_004f6c40((uint)(long long)(*(float *)(DAT_07abf5d8 + 0x10) * 0.01f),
+    uVar8  = Terrain_GetTileIndex((uint)(long long)(*(float *)(DAT_07abf5d8 + 0x10) * 0.01f),
                           (uint)(long long)(*(float *)(DAT_07abf5d8 + 0x14) * 0.01f));
     iVar14 = 0;
-    iVar12 = DAT_0055a7ac;
+    iVar12 = World;
     uStack_48 = uVar8;
 
     // ── Main weather slot loop (40 slots) ─────────────────────────────────────
@@ -339,7 +339,7 @@ LAB_00501064:
                 // Thunder/storm mode: random thunder cloud (1/300 chance)
                 iVar11 = _rand();
                 uVar8  = iVar11 / 300;
-                iVar12 = DAT_0055a7ac;
+                iVar12 = World;
                 if (iVar11 % 300 == 0) {
                     *pcVar3 = '\x01';
                     FUN_005098c0(0x1f);   // play thunder sound
@@ -369,7 +369,7 @@ LAB_00501064:
                     WSF(DAT_0839bcc0, iVar14 * 0x6f) = (float)((float)(iVar12 % 600 + -100) + *(float *)(DAT_07abf5d8 + 0x10));
                     iVar11 = _rand();
                     uVar8 = (uint)(uintptr_t)DAT_07abf5d8;
-                    iVar12 = DAT_0055a7ac;
+                    iVar12 = World;
                     WSF(DAT_0839bcc4, iVar14 * 0x6f) = (float)((float)(iVar11 % 400 + 200) + *(float *)(DAT_07abf5d8 + 0x14));
                     WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)(*(float *)(uVar8 + 0x18) + _DAT_00552900);
                 }
@@ -493,7 +493,7 @@ LAB_00501064:
                 sVar5 = (&DAT_0839bcb2)[iVar14 * 0xde];
                 WSF(DAT_0839bcc4, iVar14 * 0x6f) = (float)((float)(int)(uVar13 - 0x200) + *(float *)(uVar8 + 0x14));
                 (&DAT_0839bcc8)[iVar14 * 0x6f] = *(unsigned int *)(uVar8 + 0x18);
-                iVar12 = DAT_0055a7ac;
+                iVar12 = World;
 
                 // Firefly: init joint chain
                 if (sVar5 == 0x10a) {
@@ -508,7 +508,7 @@ LAB_00501064:
                                              (int)pcVar3, 25.0f, -1, 0);
                     }
                 } else {
-                    fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                    fVar22 = RequestTerrainHeight(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
                     WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)(_rand() % 200 + 0x96) + (float)fVar22;   // IDA: rand() % 200 + 150
                 }
 
@@ -584,7 +584,7 @@ LAB_00501734:
                         //   if (RequestTerrainHeight(x, y) > z) { AI = 3;
                         //       Velocity = 1.1; Direction[2] = 20; CurrentAction = 0; }
                         *(unsigned int *)(&DAT_0839bd78 + iVar2) = 0xc1a00000;
-                        fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                        fVar22 = RequestTerrainHeight(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
                         if ((float10)WSF(DAT_0839bcc8, iVar14 * 0x6f) < fVar22) {
                             WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)fVar22;
                             (&DAT_0839bdb4)[iVar2] = 2;
@@ -619,7 +619,7 @@ LAB_00501cb5:
                     }
                 } else if (sVar5 == 0xb0) {
                     // Rain: follow terrain height via sine
-                    fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                    fVar22 = RequestTerrainHeight(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
                     WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)fVar22;
                     fVar22 = (float10)fsin((float10)WSF(DAT_0839bd30, iVar14*0x6f));
                     fVar22 = FUN_005129f0((float)fVar22);
@@ -642,7 +642,7 @@ LAB_00501cb5:
                     iVar12 = _rand();
                     *(float *)(&DAT_0839bd78 + iVar2) =
                         (float)(iVar12 % 0xf - 7) * _DAT_005526e4 + *(float *)(&DAT_0839bd78 + iVar2);
-                    fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                    fVar22 = RequestTerrainHeight(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
                     if ((float10)WSF(DAT_0839bcc8, iVar14*0x6f) < fVar22 + (float10)_DAT_00552598) {
                         *(float *)(&DAT_0839bd78 + iVar2) =
                             *(float *)(&DAT_0839bd78+iVar2) * _DAT_00552530 + _DAT_0055256c;
@@ -669,7 +669,7 @@ LAB_00501cb5:
                     fVar7  = WSF(DAT_0839bcc4, iVar14*0x6f) - *(float *)(uVar8 + 0x14);
                     if (_DAT_00552d24 <= SQRT(fVar25*fVar25 + fVar7*fVar7)) *pcVar3 = '\0';
                     if (_rand() % 0x1400 == 0) *pcVar3 = '\0';
-                    if (((10 < DAT_0055a7ac) && (DAT_0055a7ac < 0x11)) &&
+                    if (((10 < World) && (World < 0x11)) &&
                         ((int)(&DAT_0839bd10)[iVar14*0x6f] < 1)) *pcVar3 = '\0';
                 }
 
@@ -685,7 +685,7 @@ LAB_00501cb5:
                     Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
 
                     // Scale velocity by sub-state
-                    if (DAT_0055a7ac == 7) {
+                    if (World == 7) {
                         if (_DAT_00552660 <= WSF(DAT_0839bd30, iVar14*0x6f)) {
                             uVar8 = _rand(); uVar8 &= 0x8000001f;
                             if ((int)uVar8 < 0) uVar8 = (uVar8-1|0xffffffe0)+1;
@@ -745,7 +745,7 @@ LAB_00501cb5:
                 }
 
                 // Loop-kill conditions (state 7, terrain type = grass)
-                if ((((int)(&DAT_0839bd10)[iVar14*0x6f] < 1) && (DAT_0055a7ac == 7)) &&
+                if ((((int)(&DAT_0839bd10)[iVar14*0x6f] < 1) && (World == 7)) &&
                     ((unsigned char)DAT_0838bc70[uStack_48] == 0x01)) {
                     fVar25 = WSF(DAT_0839bcd4, iVar14*0x6f) + _DAT_005524ec;
                     bVar20 = (_DAT_0055286c <= fVar25);
@@ -767,26 +767,26 @@ LAB_00501cb5:
                         uVar8 = _rand(); uVar8 &= 0x800001ff;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xfffffe00)==0xffffffff);
-                        if (bVar20) FUN_00404bc0(0xc, (int)pcVar3, 0);
+                        if (bVar20) PlayBuffer(0xc, (int)pcVar3, 0);
                         uVar8 = _rand(); uVar8 &= 0x800001ff;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xfffffe00)==0xffffffff);
-                        if (bVar20) FUN_00404bc0(0xd, (int)pcVar19, 0);
+                        if (bVar20) PlayBuffer(0xd, (int)pcVar19, 0);
                     } else if (sVar5 == 0xb0) {
                         uVar8 = _rand(); uVar8 &= 0x800000ff;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xffffff00)==0xffffffff);
-                        if (bVar20) FUN_00404bc0(0xe, (int)pcVar19, 0);
+                        if (bVar20) PlayBuffer(0xe, (int)pcVar19, 0);
                     } else if ((sVar5 == 0xb8) && ((unsigned char)DAT_0838bc70[uStack_48] == 0x01)) {
                         uVar8 = _rand(); uVar8 &= 0x8000007f;
                         bVar20 = (uVar8 == 0);
                         if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xffffff80)==0xffffffff);
-                        if (bVar20) FUN_00404bc0(0x6d, (int)pcVar19, 0);
+                        if (bVar20) PlayBuffer(0x6d, (int)pcVar19, 0);
                     }
                 }
             } else {
                 // DAT_083a3ff0 != 0 && type == 0x12d: thunder cloud — full animation
-                FUN_0043e820((int)pcVar3, 7);
+                SetAction((int)pcVar3, 7);
                 *(unsigned char *)((int)pvVar9 + 0xa0) = (&DAT_0839bdb5)[iVar2];
                 FUN_00440aa0(pvVar9,
                              (float *)(&DAT_0839bdb8 + iVar2),
@@ -799,7 +799,7 @@ LAB_00501cb5:
                 WSF(DAT_0839bcc0, iVar14*0x6f) = (float)(fStack_14 + WSF(DAT_0839bcc0, iVar14*0x6f));
                 WSF(DAT_0839bcc4, iVar14*0x6f) = (float)(fStack_10 + WSF(DAT_0839bcc4, iVar14*0x6f));
                 WSF(DAT_0839bcc8, iVar14*0x6f) = (float)(fStack_c  + WSF(DAT_0839bcc8, iVar14*0x6f));
-                fVar22 = FUN_004f7500(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
+                fVar22 = RequestTerrainHeight(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
                 WSF(DAT_0839bcc8, iVar14*0x6f) = (float)(fVar22 + (float10)_DAT_00552900);
                 fVar22 = (float10)fsin((float10)WSF(DAT_0839bd30, iVar14*0x6f));
                 fVar23 = FUN_005129f0((float)fVar22);
@@ -814,13 +814,13 @@ LAB_00501cb5:
                 uVar8 = _rand(); uVar8 &= 0x8000007f;
                 bVar20 = (uVar8 == 0);
                 if ((int)uVar8 < 0) bVar20 = ((uVar8-1|0xffffff80)==0xffffffff);
-                if (bVar20) FUN_00404bc0(0x126, 0, 0);
+                if (bVar20) PlayBuffer(0x126, 0, 0);
             }
         }
 
-        FUN_0043e5c0((int)pcVar3);
-        uVar8 = 0;  // return value unused; FUN_0043e5c0 returns void
-        iVar12 = DAT_0055a7ac;
+        Alpha((int)pcVar3);
+        uVar8 = 0;  // return value unused; Alpha returns void
+        iVar12 = World;
 
         iVar14++;
         if (0x27 < iVar14) return uVar8;

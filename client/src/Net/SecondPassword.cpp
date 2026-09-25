@@ -2021,7 +2021,7 @@ void __cdecl SetPlayerStop(int c) {
         if (SceneFlag == 5 && World == 7) {
             int gx = (int)(*(float*)(c + 16) * 0.0099999998f);
             int gy = (int)(*(float*)(c + 20) * 0.0099999998f);
-            int v3 = FUN_004f6c40((unsigned int)gx, (unsigned int)gy);
+            int v3 = Terrain_GetTileIndex((unsigned int)gx, (unsigned int)gy);
             if ((DAT_0838bc70[v3] & 1) != 1) gateA = true;
         }
         if (gateA || Fly) {
@@ -2087,7 +2087,7 @@ void __cdecl SetPlayerStop(int c) {
         // Sólo el resultado final importa: terrain check + SetAction.
         int gx = (int)(*(float*)(c + 16) * 0.0099999998f);
         int gy = (int)(*(float*)(c + 20) * 0.0099999998f);
-        int v50 = FUN_004f6c40((unsigned int)gx, (unsigned int)gy);
+        int v50 = Terrain_GetTileIndex((unsigned int)gx, (unsigned int)gy);
         if (*(short*)(c + 2) == 302 && (DAT_0838bc70[v50] & 1) == 1) {
             SetAction_local(7);
         } else {
@@ -4214,7 +4214,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         int gx = (int)(*(float *)(entity_ptr + 0x10) * 0.01f);
         int gy = (int)(*(float *)(entity_ptr + 0x14) * 0.01f);
         if (gx >= 0 && gx < 256 && gy >= 0 && gy < 256) {
-            int attrIdx = FUN_004f6c40(gx, gy);
+            int attrIdx = Terrain_GetTileIndex(gx, gy);
             *(unsigned char *)(entity_ptr + 0x34e) =
                 (unsigned char)((((unsigned char *)DAT_0838bc70)[attrIdx] & 1) == 1);
         }

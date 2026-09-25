@@ -276,7 +276,7 @@ LAB_00504925:
 // FUN_00440a30 @ 0x00440a30 — BoneTransformOffset (sub_440A30 en IDA)
 // Transforms pos_in through bone rotation, scales by model scale (this[+0x68]),
 // stores result in pos_out, AND COPIES the bone matrix into the global root
-// matrix DAT_06989c9c so that BMD_Animation (FUN_00440060), cuando procesa el
+// matrix DAT_06989c9c so that BMD_Animation (BMD_Animation), cuando procesa el
 // root bone del ala/arma con parentIdx=-1 y param_7=='\x01', use esta matriz
 // del bone padre del player como su "parent transform" → el modelo linked
 // queda renderizado en la posición del hueso del player en lugar del origen.
@@ -341,5 +341,5 @@ void __cdecl FUN_004553c0(void *model, int type, int bone_idx, float scale, floa
   BMD_TransformPosition(model,
                         (float *)((char *)&DAT_06970a9c + bone_idx * 0x30),
                         in, world_pos, 1);
-  FUN_004795c0((unsigned short)type, world_pos, scale, color, entity, 0.0f, 0);
+  CreateSprite((unsigned short)type, world_pos, scale, color, entity, 0.0f, 0);
 }

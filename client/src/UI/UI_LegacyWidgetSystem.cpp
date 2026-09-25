@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -113,7 +113,8 @@ void __cdecl FUN_004086e0(int param_1, int, int) {
     FUN_004080f0(param_1);
 }
 
-// FUN_00407fe0 @ 0x00407FE0 — Widget_CtorBase: allocate and cross-link two doubly-linked-list
+// IDA: FUN_00407fe0 (0x00407FE0)
+// Widget_CtorBase: allocate and cross-link two doubly-linked-list
 // sentinel nodes, zero the count field, set vtable, then zero all widget node fields.
 // List layout at param_1: [+0x4c]=head_sentinel*, [+0x50]=tail_sentinel*, [+0x48]=count.
 // Sentinel node (0xc bytes): [+0]=unused, [+4]=prev, [+8]=next.
@@ -131,7 +132,7 @@ static void *g_ClothVTable[4] = {
     (void *)FUN_004089b0,  (void *)FUN_00408ff0
 };
 
-void* __fastcall FUN_00407fe0(void *param_1)
+void* __fastcall Widget_CtorBase(void *param_1)
 {
     // head sentinel
     int *head = (int *)operator_new(0xc);
@@ -152,7 +153,7 @@ void* __fastcall FUN_00407fe0(void *param_1)
     // 2026-08-11 — vtable. IDA hace `*(_DWORD *)this = &off_552520;` y varias
     // rutinas la usan por indirección; con el campo sin inicializar se ejecuta
     // basura (crash 0xC0000005 param0=8 al entrar al mundo, desde
-    // `FUN_00449840`/DeleteCloth que llama vtable[0](3)).
+    // `DeleteCloth`/DeleteCloth que llama vtable[0](3)).
     //
     // Leída del binario original (`Cliente armado/main.exe`, MD5 eb95ac…):
     //     off_552520 = { 0x0045AAA0, 0x00408780, 0x004089B0, 0x00408FF0 }
@@ -185,7 +186,8 @@ DWORD* __cdecl   FUN_00407e50(DWORD *node); // IDA-port: returns this
 void  __fastcall FUN_00407ef0(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 
 
-// FUN_00408900 @ 0x00408900 — Widget_CheckState(widget, hash, flags)
+// IDA: FUN_00408900 (0x00408900)
+// Widget_CheckState(widget, hash, flags)
 // __thiscall in original (this=widget via ECX). Calls FUN_00408940 `flags` times,
 // returns 0 if any fails, 1 if all pass. FUN_00408940 is a void stub → always return 1.
 // Port FIEL de IDA `sub_408900` (Hex-Rays perdió el `this`, que viaja en ECX):
@@ -197,7 +199,7 @@ void  __fastcall FUN_00407ef0(void *node, float p1, float p2, float p3, float ra
 // iteraciones. 2026-08-11: era un stub que devolvía 1 SIN ejecutar la
 // simulación, así que los nodos de la tela nunca se movían.
 int __cdecl FUN_00408940(int *param_1, float dt);
-int __cdecl FUN_00408900(int *widget, unsigned int hash, int flags) {
+int __cdecl Widget_CheckState(int *widget, unsigned int hash, int flags) {
     if (!widget || flags <= 0) return 1;
     float dt; memcpy(&dt, &hash, 4);
     int it = 0;

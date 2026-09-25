@@ -7,7 +7,7 @@
 //
 // ── SIGNATURA ─────────────────────────────────────────────────────────────────
 //
-//   void __cdecl FUN_00505a10(
+//   void __cdecl RenderPartObject(
 //     int   param_1,   // entity ptr
 //     int   param_2,   // class code (entity type)
 //     uint  param_3,   // slot / extra param (unused here, passed through)
@@ -19,7 +19,7 @@
 //     byte  param_9,   // extra byte → this[+0x99]
 //     char  param_10,  // passed to FUN_004404e0 and FUN_00505970
 //     int   param_11,  // scale mode: 0=1.0, 1=shadow, 2=0.8, 3=1.4
-//     uint  param_12   // extra uint → FUN_00504b50
+//     uint  param_12   // extra uint → RenderPartObjectEffect
 //   )
 //
 // ── GUARD ─────────────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@
 //   FUN_004404e0(this, puVar2, entity+0x118, entity+0x124, entity+0x130, param_10)
 //     → Sprite_DrawBone(model, bone, anim_A, anim_B, anim_C, blend_factor)
 //
-//   FUN_00504b50(entity, class, angle_ptr, rot, state_flags, misc_byte, scale_mode, extra)
+//   RenderPartObjectEffect(entity, class, angle_ptr, rot, state_flags, misc_byte, scale_mode, extra)
 //     → Entity_DrawSprite(entity, class, angle, rot, flags, byte, mode, extra)
 //     Función final que hace los calls OpenGL reales (glVertex, glTexCoord, etc.)
 //
@@ -85,7 +85,7 @@
 //   FUN_004fa930  → Sprite_SetupAnim(entity, model)
 //   FUN_00505970  → Sprite_DrawShadow(model, entity, param, blend, alpha)
 //   FUN_004404e0  → Sprite_DrawBone(model, bone, anim[3], blend)
-//   FUN_00504b50  → Entity_DrawSprite(entity, class, angle_ptr, rot, flags, byte, mode, extra)
+//   RenderPartObjectEffect  → Entity_DrawSprite(entity, class, angle_ptr, rot, flags, byte, mode, extra)
 //   DAT_06970a9c  → root bone data (pose matrix, usado como fallback)
 
 #include "stdafx.h"
@@ -168,6 +168,6 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
                  (float *)(param_1 + 0x130),
                  param_10);   // Sprite_DrawBone(model, bone, anim[3], blend)
 
-    FUN_00504b50(param_1, param_2, param_4, param_5, param_6,
+    RenderPartObjectEffect(param_1, param_2, param_4, param_5, param_6,
                  param_7, param_11, param_12);   // Entity_DrawSprite
 }

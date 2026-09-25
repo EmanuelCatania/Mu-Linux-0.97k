@@ -19,13 +19,13 @@
 #include "Party/Party.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 
 #ifndef LODWORD
@@ -58,11 +58,11 @@ extern "C" bool __cdecl OpenSMDFile(const char* FileName, int Type, char Flip) {
 extern "C" void __cdecl FixupSMD(void) { /* SMD post-process — not ported */ }
 extern "C" void __cdecl SMD2BMDModel(int /*ID*/, int /*Actions*/) { /* convert — not ported */ }
 extern "C" void __cdecl SMD2BMDAnimation(int /*ID*/, char /*LockPosition*/) { /* convert anim — not ported */ }
-// FUN_00506050 @ 0x00506050 — OpenModels(Model, FileName, i)
+// OpenModels @ 0x00506050 — OpenModels(Model, FileName, i)
 // Port FIEL del IDA: construye "prefix01.smd" (i<10) o "prefix11.smd" (i>=10),
 // llama OpenSMDModel + OpenSMDAnimation. Mismo no-op silencioso si SMD no
 // existe en filesystem.
-void __cdecl FUN_00506050(int Model, const char* FileName, int i) {
+void __cdecl OpenModels(int Model, const char* FileName, int i) {
     char Buffer[256];
     if (i >= 10) {
         crt_sprintf(Buffer, "%s%d.smd", FileName, i);
@@ -84,17 +84,18 @@ void __cdecl FUN_00543264(int ch, int *fp) {
     if (fp) fputc(ch, (FILE*)fp);
 }
 
-// FUN_00529740 (Texture_Load OZJ), FUN_00529bd0 (OpenTGA), FUN_0052a050 (Texture_FreeSlot)
+// FUN_00529740 (Texture_Load OZJ), FUN_00529bd0 (OpenTGA), UnloadImage (Texture_FreeSlot)
 // moved to src/Render/Texture/Texture.cpp (B3 refactor 2026-05-07, 395 lines).
 
-// FUN_0043db30 @ 0x0043DB30 — Net_WSAStartup(__fastcall int param_1)
+// CWsctlc_Startup @ 0x0043DB30 — Net_WSAStartup(__fastcall int param_1)
 // Initialises WinSock 2.2. On success: stores wVersion low-word at param_1+4,
 // clears param_1+8, returns 1. On failure: logs error, shows MessageBox, returns 0.
-void __cdecl FUN_0043db30(int param_1) {
+// IDA: CWsctlc::Startup (0x0043DB30)
+void __cdecl CWsctlc_Startup(int param_1) {
     WSADATA wsaData;
     int r = WSAStartup(0x202, &wsaData);
     if (r != 0) {
-        FUN_00405540(&DAT_055c9bf0, "Winsock DLL Initialize error");
+        CErrorReport_Write(&DAT_055c9bf0, "Winsock DLL Initialize error");
         MessageBoxA(NULL, "Winsock error", "IError", 0);
         return;
     }
@@ -104,32 +105,33 @@ void __cdecl FUN_0043db30(int param_1) {
         FUN_00403a30();
     } else {
         WSACleanup();
-        FUN_00405540(&DAT_055c9bf0, "Winsock version low");
+        CErrorReport_Write(&DAT_055c9bf0, "Winsock version low");
         MessageBoxA(NULL, "Winsock version error", "IError", 0);
     }
 }
 
-// FUN_0043dbf0 @ 0x0043DBF0 — Net_CreateSocket(__thiscall void *this, int param_1)
+// CWsctlc_Create @ 0x0043DBF0 — Net_CreateSocket(__thiscall void *this, int param_1)
 // Creates TCP socket, stores in *(this+8). Logs and shows MessageBox on failure.
-void __cdecl FUN_0043dbf0(void* ctx, int param_1) {
+// IDA: CWsctlc::Create (0x0043DBF0)
+void __cdecl CWsctlc_Create(void* ctx, int param_1) {
     SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
     *(SOCKET*)((char*)ctx + 8) = s;
-    DAT_05826cf0 = 0;
+    g_bGameServerConnected = 0;
     if (s == INVALID_SOCKET) {
         char buf[128];
         int err = WSAGetLastError();
         wsprintfA(buf, "Socket error: %d", err);
-        FUN_00405540(&DAT_055c9bf0, buf);
+        CErrorReport_Write(&DAT_055c9bf0, buf);
         MessageBoxA(NULL, buf, "IError", 0);
         return;
     }
     *(DWORD*)ctx = (DWORD)param_1;
 }
 
-// FUN_0045c050 @ 0x0045C050 — Entity_SetMoveSpeed(entity_ptr)
+// IDA: SetCharacterScale (0x0045C050)
 // Sets entity speed (+0x0c) based on move_type_flags (+0x1bc) and swim flag (+0x1bd).
 // Also sets +0x1e0 to anim speed table index for vehicle entities.
-void __cdecl FUN_0045c050(int param_1) {
+void __cdecl SetCharacterScale(int param_1) {
     if (*(char*)(param_1 + 0x34f) == '\0') {
         short sVar1 = *(short*)(param_1 + 0x1f8);
         if (((sVar1 == 0x270) || (sVar1 == 0x272)) || ((0x279 < sVar1 && (sVar1 < 0x27e)))) {
@@ -209,7 +211,7 @@ void __cdecl FUN_00442090(int param_1) {
         }
         int texId = (int)*(short*)(*(int*)(param_1 + 0x38) + *(short*)(mBase + 2) * 2);
         if (texId != 0x12d)
-            FUN_0052a050(texId);
+            UnloadImage(texId);
     }
     if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD*)(param_1 + 0x28) = 0; }
     if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD*)(param_1 + 0x2c) = 0; }
@@ -249,7 +251,7 @@ void __cdecl FUN_004ffd50(void) {
         }
         if (gridEnd < puVar5) {
             // unload tile textures
-            for (int ti = 0x23; ti < 0x68; ti++) FUN_0052a050(ti);
+            for (int ti = 0x23; ti < 0x68; ti++) UnloadImage(ti);
             // ── Pool zero-clear loops (DESACTIVADOS) ─────────────────────────────
             // El binario original limpiaba 9 pools de partículas/efectos/entidades
             // usando direcciones ABSOLUTAS del .bss original (rangos 0x07c85890..0x83a3fe8).
@@ -282,7 +284,7 @@ void __cdecl FUN_004ffd50(void) {
 // Loops over entity array (base DAT_07abf5d0, stride 0x394).
 // For each active entity whose type (+0x1dc) != map_id: clears active flag,
 // also clears matching emitter pool entries (DAT_083a1218, stride 0x1bc).
-// Then calls FUN_00449840 on every slot.
+// Then calls DeleteCloth on every slot.
 //
 // Inner loop bound: el binario original usaba el literal 0x83a2370 (= DAT_083a1218
 // + 0x1158, fin del array Butterfles). En nuestro port DAT_083a1218 es un array
@@ -302,7 +304,7 @@ void __cdecl FUN_0045abb0(int param_1) {
                 pcVar2 += 0x1bc;
             } while (pcVar2 < butterflesEnd);
         }
-        FUN_00449840((int)puVar1, (int)puVar1, 0);
+        DeleteCloth((int)puVar1, (int)puVar1, 0);
     }
 
     // Gate/map transition removes the viewport but not Party membership.
@@ -753,9 +755,9 @@ void __cdecl FUN_0046fe90(int param_1, float *param_2) {
 float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float param_4)
 {
     // Horizontal angle: from (pos.x, pos.y) to (target.x, target.y)
-    float horizAngle = FUN_0043e050(param_1[0], param_1[1], param_3[0], param_3[1]);
+    float horizAngle = CreateAngle(param_1[0], param_1[1], param_3[0], param_3[1]);
     // Interpolate rot[2] (yaw) toward horizontal angle
-    param_2[2] = FUN_0043e1b0(param_2[2], horizAngle, param_4);
+    param_2[2] = TurnAngle2(param_2[2], horizAngle, param_4);
 
     // Compute delta vector for vertical angle
     float dx = param_1[0] - param_3[0];
@@ -764,16 +766,16 @@ float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float
     float horizDist = sqrtf(dx * dx + dy * dy);
 
     // Vertical angle: from (pos.z, horizDist) to (target.z, 0)
-    float vertAngle = FUN_0043e050(param_1[2], horizDist, param_3[2], 0.0f);
+    float vertAngle = CreateAngle(param_1[2], horizDist, param_3[2], 0.0f);
     // Interpolate rot[0] (pitch) toward (360 - vertAngle)
-    param_2[0] = FUN_0043e1b0(param_2[0], _DAT_0055286c - vertAngle, param_4);
+    param_2[0] = TurnAngle2(param_2[0], _DAT_0055286c - vertAngle, param_4);
 
     // VectorLength(Range) — el valor de retorno de la funcion.
     float local[3] = { dx, dy, dz };
     return FUN_004f9c40(local);
 }
 
-// FUN_004e1be0 @ 0x004E1BE0 — RenderItem3D
+// RenderItem3D @ 0x004E1BE0 — RenderItem3D
 //
 // 2026-04-30: la versión anterior estaba MAL identificada como
 // `ItemDrop_SpawnEffect` y llamaba `FUN_004e13a0(type+400, ...)` (RenderObjectScreen)
@@ -799,15 +801,6 @@ float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float
 //
 // Per IDA: pasamos raw Level. Entity_DrawSetup (línea 52 de su archivo)
 // hace el shift una sola vez (la cadena solo shifteaba después).
-void __cdecl FUN_004e1be0(float param_1, float param_2, float param_3, float param_4,
-                          int param_5, unsigned int param_6, unsigned char param_7, char param_8)
-{
-    // Forward to RenderItem3D with RAW Level — downstream extracts the
-    // ItemLevel via (Level >> 3) & 0xF in RenderObjectScreen / Entity_DrawSetup.
-    RenderItem3D(param_1, param_2, param_3, param_4,
-                 param_5, (int)param_6, (int)param_7, 0, param_8 != 0);
-}
-
 // FUN_00441e00 @ 0x00441E00 — BMD::RenderBodyTranslate
 // Signature IDA: __thiscall(this, Flag, Alpha, BlendMesh, BlendMeshLight,
 //                           BlendMeshTexCoordU, BlendMeshTexCoordV, HiddenMesh, Texture8)
@@ -873,7 +866,7 @@ void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int 
     *(short*)(base + 0xb2) = (short)param_6;
 }
 
-// FUN_0045bfa0 (CreateCharacter), FUN_0045ccf0 (CreateMonster) moved to
+// CreateCharacter (CreateCharacter), CreateMonster (CreateMonster) moved to
 // src/Monster/Monster.cpp (B3 refactor 2026-05-07, 925 lines).
 
 // Sound
@@ -882,7 +875,7 @@ void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int 
 // signature in functions.h: void (void) — no return used at call site, treat as void.
 void __cdecl FUN_00404bb0(void) { /* NOP — original returns 1 but callers ignore it */ }
 
-// FUN_00483160 @ 0x00483160 — CheckAttack.
+// IDA: CheckAttack (0x00483160)
 //
 // This is deliberately a boolean predicate, despite the historical unsigned
 // return type in functions.h.  Every caller uses it as one: the combat paths
@@ -890,7 +883,7 @@ void __cdecl FUN_00404bb0(void) { /* NOP — original returns 1 but callers igno
 // cursor.  The guild-war branch is controlled by EnableGuildWar and the
 // entity's relation byte at +745 (2 = current war opponent), exactly as in
 // the original client.
-unsigned int __cdecl FUN_00483160(void) {
+unsigned int __cdecl CheckAttack(void) {
     if (SelectedCharacter == -1) {
         return 0;
     }
@@ -931,7 +924,7 @@ unsigned int __cdecl FUN_00483160(void) {
 
     return targetPkLevel;
 }
-// FUN_004cb520 @ 0x004CB520 — `GetScreenWidth` per IDA companion (Offsets.h).
+// GetScreenWidth @ 0x004CB520 — `GetScreenWidth` per IDA companion (Offsets.h).
 // Returns the "logical width" of the 3D world viewport based on which UI
 // panel is open: 260 (right pane open) / 450 (right pane open, narrower
 // content) / 640 (no panel — full width).
@@ -945,13 +938,8 @@ unsigned int __cdecl FUN_00483160(void) {
 //
 // Body kept verbatim to original IDA decompile (matches the safe path
 // of the anti-tamper hash-table-decorated original).
-extern "C" int __cdecl GetScreenWidth(void);
-int __cdecl FUN_004cb520(void) {
-    return GetScreenWidth();
-}
-
 // Net PacketSession helpers
-// SecondPassword screens (FUN_004e93a0 / 004df410 / 004e4760-004ec330) moved to
+// SecondPassword screens (SecondPassword_Handler / 004df410 / 004e4760-004ec330) moved to
 // src/Net/SecondPassword.cpp (B3 refactor 2026-05-07, ~1535 lines).
 
 // Net_Connect @ 0x0043DC70 — connect socket to server (TCP) + arm WSAAsyncSelect.
@@ -969,18 +957,18 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
         if (h == nullptr || h->h_addr_list == nullptr || h->h_addr_list[0] == nullptr) {
             char buf[160];
             wsprintfA(buf, "gethostbyname failed for %.64s (WSA=%d)", ip, WSAGetLastError());
-            FUN_00405540(&DAT_055c9bf0, buf);
+            CErrorReport_Write(&DAT_055c9bf0, buf);
             return 0;
         }
         addr = *(unsigned long*)h->h_addr_list[0];
     }
 
-    // 2. Ensure socket exists (FUN_0043dbf0 already created one into ctx+8)
+    // 2. Ensure socket exists (CWsctlc_Create already created one into ctx+8)
     SOCKET s = *(SOCKET*)((char*)ctx + 8);
     if (s == INVALID_SOCKET || s == 0) {
         s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (s == INVALID_SOCKET) {
-            FUN_00405540(&DAT_055c9bf0, "socket() failed");
+            CErrorReport_Write(&DAT_055c9bf0, "socket() failed");
             return 0;
         }
         *(SOCKET*)((char*)ctx + 8) = s;
@@ -1006,7 +994,7 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
         if (err != WSAEWOULDBLOCK) {
             char buf[160];
             wsprintfA(buf, "connect(%.64s:%u) failed (WSA=%d)", ip, (unsigned)port, err);
-            FUN_00405540(&DAT_055c9bf0, buf);
+            CErrorReport_Write(&DAT_055c9bf0, buf);
             return 0;
         }
         // WSAEWOULDBLOCK = connect in progress; FD_CONNECT will fire later.

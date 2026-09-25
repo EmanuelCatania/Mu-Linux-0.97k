@@ -7,11 +7,11 @@
 // GameGuard_Init @ 0x00406F20
 // GameGuard_GetStatus @ 0x00406F60
 // GameGuard_TickCheck @ 0x00406F90
-// Net_Connect @ 0x0043DC70   (__thiscall, ctx=NetCtx @ ((int)(uintptr_t)DAT_055ca160))
+// Net_Connect @ 0x0043DC70   (__thiscall, ctx=NetCtx @ ((int)(uintptr_t)SocketClient))
 // Net_Recv @ 0x0043DE30      (__thiscall)
 //
 // Globals clave:
-//   g_GameState    @ 0x005615c0
+//   SceneFlag    @ 0x005615c0
 //   g_hWnd         @ 0x055c9ffc
 //   g_hDC          @ 0x055c9fec  (= DAT_055ca004 en decompile)
 //   g_hRC          @ 0x055ca008
@@ -22,7 +22,7 @@
 //   g_ScreenH      @ 0x00561570
 //   Entity array base @ 0x07abf5d0  = DAT_055c9e48 + rand()%0x80 * 0x394  (RANDOMIZADO)
 //   Player ptr     @ 0x07abf5d8  = entity array base (slot 0)
-//   NetCtx         @ ((int)(uintptr_t)DAT_055ca160)
+//   NetCtx         @ ((int)(uintptr_t)SocketClient)
 //   socket handle  @ 0x055ca168
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
@@ -43,7 +43,8 @@ extern "C" BYTE InputTextHide[10];
 
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 
-int       g_GameState = 0;    // 0x005615c0
+// IDA: SceneFlag (0x005615C0)
+int       SceneFlag = 0; // IDA: SceneFlag (0x005615C0)
 HWND      g_hWnd     = NULL;  // 0x055c9ffc
 HINSTANCE g_hInst    = NULL;  // 0x055ca000
 HDC       g_hDC      = NULL;  // 0x055ca004
@@ -104,7 +105,7 @@ static void Window_Create(HINSTANCE hInst)
 //   5. wglMakeCurrent(hDC, hRC)                       error: "OpenGL Make Current Error"
 //   6. ShowWindow(g_hWnd, SW_SHOW=5) + SetForegroundWindow + SetFocus
 //   7. return 1
-// Cada error: FUN_00405540(log, errStr) + OpenGL_Release() + MessageBoxA + return 0
+// Cada error: CErrorReport_Write(log, errStr) + OpenGL_Release() + MessageBoxA + return 0
 // ─────────────────────────────────────────────────────────────────────────────
 static int OpenGL_Init(void)
 {
@@ -118,7 +119,7 @@ static int OpenGL_Init(void)
 
     g_hDC = GetDC(g_hWnd); // DAT_055ca004
     if (!g_hDC) {
-        // FUN_00405540(DAT_055c9bf0, "OpenGL Get DC Error");
+        // CErrorReport_Write(DAT_055c9bf0, "OpenGL Get DC Error");
         // OpenGL_Release(); MessageBoxA(g_hWnd, ..., "IError", MB_OK);
         return 0;
     }
@@ -165,13 +166,13 @@ void OpenGL_Release(void)
     FreeDirectSound();
 
     if (!wglMakeCurrent(NULL, NULL)) {
-        // FUN_00405540(DAT_055c9bf0, "GL - Release Of DC And RC Failed");
+        // CErrorReport_Write(DAT_055c9bf0, "GL - Release Of DC And RC Failed");
     }
     if (!wglDeleteContext(g_hRC)) {
-        // FUN_00405540(DAT_055c9bf0, "GL - Release Rendering Context Failed");
+        // CErrorReport_Write(DAT_055c9bf0, "GL - Release Rendering Context Failed");
     }
     if (!DeleteDC(g_hDC)) {
-        // FUN_00405540(DAT_055c9bf0, "GL - Release Device Context Failed");
+        // CErrorReport_Write(DAT_055c9bf0, "GL - Release Device Context Failed");
     }
     ReleaseDC(g_hWnd, g_hDC);
     ChangeDisplaySettingsA(NULL, 0);
@@ -261,7 +262,7 @@ static void GameGuard_TickCheck(void)
 // ── Net_Recv @ 0x0043DE30 (78 líneas, __thiscall) ────────────────────────────
 //
 // Lee datos del socket al ring buffer de recepción.
-//   this → NetCtx @ ((int)(uintptr_t)DAT_055ca160)
+//   this → NetCtx @ ((int)(uintptr_t)SocketClient)
 //   Buffer: this+0x2010, capacidad 0x2000; puntero de llenado: this+0x4010
 //
 // Secuencia:
@@ -272,7 +273,7 @@ static void GameGuard_TickCheck(void)
 //        byte[0] == 0xC1 || 0xC3:  pktLen = byte[1]
 //        byte[0] == 0xC2 || 0xC4:  pktLen = byte[1]*256 + byte[2]
 //        if fill < pktLen: break   // paquete incompleto, esperar
-//        FUN_0043df90(ctx, ptr, pktLen)  // Net_ProcessPacket(ctx, data, len)
+//        CPacketQueue_PushPacket(ctx, ptr, pktLen)  // Net_ProcessPacket(ctx, data, len)
 //        ptr += pktLen; fill -= pktLen
 //   4. Si quedan bytes (paquete parcial): memmove(ctx+0x2010, ptr, fill)
 //      ctx+0x4010 = fill
@@ -290,7 +291,7 @@ static void GameGuard_TickCheck(void)
 //   5.  Client_GetSystemInfo(local_3d4)          — IDA: FUN_004065F0
 //   6.  Config_ReadServerAddr(this, cmdLine, &DAT_055c9e04, &port)
 //         → PTR_s_connect_muonline_co_kr_005615b8 = &DAT_055c9e04
-//         → DAT_005615bc = port
+//         → g_ServerPort = port
 //       si cmdline == "-1":
 //         WinExec(serverAddr, SW_SHOW)           — lanza otra instancia
 //   7.  FindWindowA("Dialog", windowTitle)
@@ -337,7 +338,7 @@ static void GameGuard_TickCheck(void)
 //  22.  vtable constructions:
 //         new(0x5c8) → FUN_0040c7d0 → DAT_055c9ff0
 //         new(0xbc)  → FUN_0040e990 → DAT_055c9ff4
-//         new(0xc)   → FUN_0040f500 → DAT_055c9ff8
+//         new(0xc)   → exception_ctor → DAT_055c9ff8
 //  23.  SystemParametersInfoA(0x61, 1, ...)  — ajusta velocidad del ratón
 //
 //  ── MESSAGE LOOP ────────────────────────────────────────────────────────────
@@ -643,17 +644,17 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // Si server.cfg no existe, se mantiene "connect.muonline.co.kr" (falla el connect).
     {
         extern char g_ServerIPBuf[128];
-        unsigned short cfgPort = DAT_005615bc;
+        unsigned short cfgPort = g_ServerPort;
         if (Config_ReadServerAddr(NULL, lpCmdLine, g_ServerIPBuf, &cfgPort)) {
-            DAT_005615b8 = g_ServerIPBuf;
-            DAT_005615bc = cfgPort;
+            szServerIpAddress = g_ServerIPBuf;
+            g_ServerPort = cfgPort;
             DbgLog("server.cfg: overrode server IP/port");
         }
         {
             char b[160];
             _snprintf_s(b, sizeof(b), _TRUNCATE,
                 "CS-DIAG WinMain: g_HasConnectServer=%d line1=%s:%d gsIP=%s gsPort=%d",
-                g_HasConnectServer, g_ServerIPBuf, (int)DAT_005615bc,
+                g_HasConnectServer, g_ServerIPBuf, (int)g_ServerPort,
                 g_GameServerIP, (int)g_GameServerPort);
             DbgLog(b);
         }
@@ -851,7 +852,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // (0x0043F280..0x0043F2C7: reserva de 0x424 bytes, vtable y campos en cero).
     //
     // InitPath (0x0043F2D0) NO se llama aca: ya estaba portada en
-    // stubs_externs.cpp y la llama FUN_0050f690 (World_Init) desde Scene_Intro,
+    // stubs_externs.cpp y la llama OpenFont (World_Init) desde Scene_Intro,
     // igual que en el binario. Este ctor corre antes, que es el orden correcto.
     extern void __cdecl PathContext_Create(void);   // src/Game/PathFinder.cpp
     PathContext_Create();
@@ -911,7 +912,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
     // 24: Set initial game state → Intro (Webzen logo)
     DbgLog("allocs done, entering message loop");
-    g_GameState = 1;  // DAT_005615c0: 1=Intro, 2=Login, 3=Loading, 4=CharSelect, 5=InGame
+    SceneFlag = 1;  // SceneFlag: 1=Intro, 2=Login, 3=Loading, 4=CharSelect, 5=InGame
 
     // ── MESSAGE LOOP ─────────────────────────────────────────────────────────
     // PeekMessage (non-blocking): cuando no hay mensajes → Scene_Dispatch
@@ -1024,7 +1025,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 // ── WM_TIMER ─────────────────────────────────────────────────────────────────
 //   id=1000 (period=20000ms):
 //     → GameGuard_TickCheck() — comprueba que el proceso GG sigue vivo
-//     si DAT_05826cf0 != 0 (conectado): envía keep-alive 0xC1/0x0E
+//     si g_bGameServerConnected != 0 (conectado): envía keep-alive 0xC1/0x0E
 //
 // ── GLOBALS CLAVE ────────────────────────────────────────────────────────────
 //   DAT_083a427c = g_MouseX  (0..639, normalizado 640×480)
@@ -1075,11 +1076,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // socket nuevo antes de que Windows entregue el FD_CLOSE del socket
         // viejo. Si procesamos ese evento tardío como si fuera del socket
         // actual, cerramos la sesión nueva inmediatamente.
-        extern int  __fastcall FUN_0043de70(void* ctx);
-        extern int  __fastcall FUN_0043ddd0(int  ctx);
+        extern int  __fastcall CWsctlc_nRecv(void* ctx);
+        extern int  __fastcall CWsctlc_FDWriteSend(int  ctx);
         extern void Net_ProcessPacket(void);
         if (evt & 0x01) { // FD_READ
-            FUN_0043de70((void*)(uintptr_t)DAT_055ca160);
+            CWsctlc_nRecv((void*)(uintptr_t)SocketClient);
             CsmWatchdog("after-Recv");        // catches any future trample regression
             // 2026-09-02: durante OpenWorld el pump de FUN_005060b0 reentra aca.
             // Se drena el socket (arriba) para que el server no cierre por
@@ -1090,7 +1091,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 Net_ProcessPacket();
         }
         if (evt & 0x02) { // FD_WRITE
-            FUN_0043ddd0((int)(uintptr_t)DAT_055ca160);
+            CWsctlc_FDWriteSend((int)(uintptr_t)SocketClient);
             // Robustez: la conexión no-bloqueante completa suele señalizarse con
             // el primer FD_WRITE (el mask WSAAsyncSelect es 0x23, sin FD_CONNECT).
             // Mandamos el request de lista al ConnectServer acá también; el guard
@@ -1106,7 +1107,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (evt & 0x10) { // FD_CONNECT
             DbgLog("NET: FD_CONNECT fired (socket ready for I/O)");
             extern void CS_SendPlain(const BYTE* data, int len);
-            extern void Net_ConnectServer(const char* server, unsigned int port);
+            extern void CreateSocket(const char* server, unsigned int port);
             if (err == 0 && g_ConnectServerMode && !g_ConnectServerRequested) {
                 // Conectados al ConnectServer → pedir la lista de servers.
                 // C1 04 F4 02 (PMSG_SERVER_LIST_RECV) — plano, sin encriptar.
@@ -1130,9 +1131,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             // "Conexión cerrada" sin que el cliente se mate solo.
             extern void UIChatLogWindow_AddText(const char* strID, const char* msg, int color);
             UIChatLogWindow_AddText((const char*)&DAT_083a7c5c, GlobalText[3], 1);
-            if (DAT_055ca168 != 0xffffffff) {
-                closesocket((SOCKET)DAT_055ca168);
-                DAT_055ca168 = (DWORD)INVALID_SOCKET;
+            if (SocketClientSocket != 0xffffffff) {
+                closesocket((SOCKET)SocketClientSocket);
+                SocketClientSocket = (DWORD)INVALID_SOCKET;
             }
         }
     }
@@ -1296,7 +1297,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (wParam == 9) {           // Tab — rotate active slot
             if (DAT_00559c84 && DAT_00559c88 > 1) {
                 DAT_07e11d78 = (DAT_07e11d78 + 1) % DAT_00559c88;
-                FUN_00404bc0(0x19, 0, 0);   // PlayBuffer(25) — click sfx
+                PlayBuffer(0x19, 0, 0);   // PlayBuffer(25) — click sfx
             }
             break;
         }
@@ -1333,7 +1334,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             // casos el input no puede abrir ni enviar chat.
             const bool guildDeleteCodeDialog =
                 DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
-            if (DAT_005615c0 == 5 && DAT_07e11d70 == 0 && !guildDeleteCodeDialog) {
+            if (SceneFlag == 5 && DAT_07e11d70 == 0 && !guildDeleteCodeDialog) {
                 bool empty = (lens[slot] == 0);
                 if (empty) {
                     if (DAT_00559c84) {
@@ -1353,7 +1354,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                         DAT_00559c84 = 1;                       // InputEnable = 1
                         DAT_07e11d78 = 0;                       // InputIndex = 0
                     }
-                    FUN_00404bc0(0x19, 0, 0);   // click sfx
+                    PlayBuffer(0x19, 0, 0);   // click sfx
                 } else if (DAT_00559c84) {
                     // Con texto + chat abierto → envía la línea (slot 0), limpia y
                     // cierra. Refleja las líneas 2046-2120 del WndProc de IDA condensadas
@@ -1378,7 +1379,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     // la queja del usuario era que Enter-con-texto NO
                     // close).
                     DAT_00559c84 = 0;
-                    FUN_00404bc0(0x19, 0, 0);   // click sfx
+                    PlayBuffer(0x19, 0, 0);   // click sfx
                 }
             }
             break;

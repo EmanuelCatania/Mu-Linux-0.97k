@@ -542,7 +542,7 @@ void Texture_Draw2D(int id,
 
 // =============================================================================
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 4805-5199 (395 lines)
-// FUN_00529740 (Texture_Load OZJ/JPEG raw), FUN_00529bd0 (OpenTGA), FUN_0052a050 (Texture_FreeSlot)
+// FUN_00529740 (Texture_Load OZJ/JPEG raw), FUN_00529bd0 (OpenTGA), UnloadImage (Texture_FreeSlot)
 // =============================================================================
 // ── FUN_00529740 @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
 // Loads JPEG or OZJ texture from disk, decompresses with libjpeg, uploads to GL.
@@ -643,7 +643,7 @@ int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int fla
     while (pow2_h < (int)img_h && pow2_h < 1024) pow2_h *= 2;
 
     // --- Setup texture slot (Bitmaps macro from structs.h) ---
-    FUN_0052a050(id);  // Unload any existing texture in this slot
+    UnloadImage(id);  // Unload any existing texture in this slot
 
     BITMAP_t* slot = &Bitmaps[id];
     slot->Components = 3;          // RGB
@@ -831,7 +831,7 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
         int ph = 1; while (ph < height) ph <<= 1;
 
         // ── Unload existing slot ──────────────────────────────────────────────
-        FUN_0052a050(uiTextureIndex);
+        UnloadImage(uiTextureIndex);
 
         // ── Write slot metadata (stride 0x38 bytes = 0xe floats) ─────────────
         float* texWidth  = (float*) &DAT_083a7cc0;
@@ -923,10 +923,11 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
 }
 
 // Scene/render helpers
-// FUN_0052a050 @ 0x0052A050 — Texture_FreeSlot
+// UnloadImage @ 0x0052A050 — Texture_FreeSlot
 // Decrements ref-count at slot (stride 0x38); when reaches 0, calls glDeleteTextures
 // and operator_delete on the pixel buffer.
-void __cdecl FUN_0052a050(int param_1)
+// IDA: UnloadImage (0x0052A050)
+void __cdecl UnloadImage(int param_1)
 {
     int iVar1 = param_1 * 0x38;
     DWORD *texArr_cd4 = (DWORD*)&DAT_083a7cd4;

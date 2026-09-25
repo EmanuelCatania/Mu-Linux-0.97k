@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -509,11 +509,10 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
                  (const char*)param_3, (DWORD)param_4);
 }
 
-// FUN_004977f0 @ 0x004977F0 — String_FindSubstr(str, pattern, from_start)
+// IDA: FindText (0x004977F0)
 // DBCS-aware strstr. param_3!=0 forces search from position 0 only.
 // Returns 1 if found, 0 otherwise.
-unsigned int __cdecl FUN_004977f0(char *param_1, void *param_2, char param_3) {
-    char *pat = (char*)param_2;
+bool __cdecl FindTextA(char *param_1, char *pat, bool param_3) {
     int iVar5 = (int)strlen(pat);
     // BUG-FIX 2026-07-17: patrón vacío = no-match. El IDA devuelve 1 para patrón
     // vacío, pero eso solo es "correcto" porque en el original los strings de filtro
@@ -720,7 +719,7 @@ static void Text_StyleColors(char style, DWORD *fg, DWORD *bg)
         case -9:  v4 = (DWORD)-16777116; break;                 // 0xFF000064
         case -8:
             v4 = (DWORD)-3613466;                               // 0xFFC8DCE6
-            if (!DAT_005590ac /* g_bUseChatListBox */)
+            if (!g_bUseChatListBox /* g_bUseChatListBox */)
                 result = (DWORD)-1778384896;                    // 0x96000000
             break;
         default:  v4 = 0xFFFFFFFFu; break;

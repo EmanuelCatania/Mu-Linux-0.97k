@@ -1,5 +1,5 @@
 // Terrain_Water.cpp
-// FUN_004f95e0 @ 0x004F95E0
+// IDA: FUN_004f95e0 (0x004F95E0)
 //
 // World-tick / terrain water wave animation.
 // Two responsibilities:
@@ -24,14 +24,14 @@
 //   DAT_0839bc90/94  — viewport top-left (col, row)
 //   DAT_0055a774/778 — viewport extents (+3 gives inclusive max)
 //   DAT_083a3ff0     — 0=ocean wave mode, else terrain mode
-//   DAT_0055a7ac     — g_GameSubState
+//   World     — World
 //   DAT_07eab200     — water height table [row][col] floats
 //   DAT_081cb608     — live per-tile lighting buffer (3 floats/tile)
 //   DAT_0828b608/0c/10 — shadow/pre-computed lighting buffers
 
 #include "stdafx.h"
 
-int __cdecl FUN_004f95e0(void)
+int __cdecl Terrain_Water(void)
 {
     int   iVar4;
     float fVar1;
@@ -89,7 +89,7 @@ int __cdecl FUN_004f95e0(void)
         fVar11 = (float10)(int)((long long)uVar14 % 36000) * (float10)_DAT_005524f8;
     }
 
-    int iVar2b = DAT_0055a7ac;
+    int iVar2b = World;
 
     // ── 3) Fill water height table with sine wave ─────────────────────────────
     if ((int)uVar8 <= rowMax) {

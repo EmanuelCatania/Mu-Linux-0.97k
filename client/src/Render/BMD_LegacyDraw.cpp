@@ -19,13 +19,13 @@
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" DWORD g_ItemAttribute_Backup;
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -1687,7 +1687,7 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     // Pose model with BMD_Animation
     float angleArr[3] = { _DAT_07ea952c, _DAT_07ea9530, _DAT_07ea9534 };
     float headAngle[3] = { _DAT_07ea9538, 0.0f, 0.0f };
-    FUN_00440060(modelThis, (int)&DAT_06970a9c, 0.0f, 0, 0, (unsigned int *)angleArr, headAngle, '\0', '\0');
+    BMD_Animation(modelThis, (int)&DAT_06970a9c, 0.0f, 0, 0, (unsigned int *)angleArr, headAngle, '\0', '\0');
 
     // Build stack entity and draw
     // entity_type at [+2], scale at [+0x0c], world_pos at [+0x10..+0x18]
@@ -1697,9 +1697,9 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     *(DWORD *)(ent + 0x0c) = local_3bc;  // write raw float bits into entity+0x0c
     *(unsigned char *)(ent + 0x3d) = param_4; // preserve raw ExtOption for later render passes
 
-    FUN_00502ba0((int)ent);
+    ItemObjectAttribute((int)ent);
 
-    // FIX 2026-05-01 (BUG REAL): ItemObjectAttribute (FUN_00502ba0) sobreescribe
+    // FIX 2026-05-01 (BUG REAL): ItemObjectAttribute (ItemObjectAttribute) sobreescribe
     // ent[+0xC] con un valor default (0x3F4CCCCD = 0.8f para items en mundo).
     // En IDA, después de ItemObjectAttribute hay un `v16 = v11;` que reasigna el
     // scale (v16 = ent+0xC). Sin esa reasignación, RenderPartObject lee scale=0.8
@@ -1747,10 +1747,10 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     // entity scale/distance).
 
     // FIX confirmado 2026-05-01: el bug de "items rendering huge" venía de
-    // ItemObjectAttribute(FUN_00502ba0) sobreescribiendo ent[+0xc] con 0.8f.
+    // ItemObjectAttribute(ItemObjectAttribute) sobreescribiendo ent[+0xc] con 0.8f.
     // La reasignación post-ItemObjectAttribute arreglo el problema.
 
-    FUN_00505a10((int)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);
+    RenderPartObject((int)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);
     (void)param_6;
 }
 #endif
@@ -1874,12 +1874,12 @@ void __cdecl FUN_004e13a0(int Type, unsigned int ItemLevel, unsigned char Option
     DAT_07ea9616 = 0;
     float renderAngle[3] = { _DAT_07ea952c, _DAT_07ea9530, _DAT_07ea9534 };
     float headAngle[3] = { _DAT_07ea9538, 0.0f, 0.0f };
-    FUN_00440060(model, (int)&DAT_06970a9c, 0.0f, 0, 0,
+    BMD_Animation(model, (int)&DAT_06970a9c, 0.0f, 0, 0,
                  (unsigned int*)renderAngle, headAngle, '\0', '\0');
 
     char object[0x200] = {};
     *(short*)(object + 2) = (short)Type;
-    FUN_00502ba0((int)object);
+    ItemObjectAttribute((int)object);
     *(float*)(object + 0x0C) = scale;
     *(float*)(object + 0x10) = position[0];
     *(float*)(object + 0x14) = position[1];
@@ -1891,6 +1891,6 @@ void __cdecl FUN_004e13a0(int Type, unsigned int ItemLevel, unsigned char Option
     float light[3] = { 1.0f, 1.0f, 1.0f };
     // Entity_DrawAt's visibility argument is 1.0 in the native UI path used
     // by this client; all OpenGL state setup/teardown stays inside that renderer.
-    FUN_00505a10((int)object, Type, 0, light, 1.0f, ItemLevel, Option1,
+    RenderPartObject((int)object, Type, 0, light, 1.0f, ItemLevel, Option1,
                  '\x01', 1, '\x01', 0, 2);
 }

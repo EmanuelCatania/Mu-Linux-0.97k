@@ -3,7 +3,7 @@
 //
 // Itera el array global de entidades y para cada una activa y visible llama
 // a Entity_UpdateRender. También aplica overrides de física al player local
-// cuando está en juego (g_GameState == 5) y tiene flag de colisión activo.
+// cuando está en juego (SceneFlag == 5) y tiene flag de colisión activo.
 //
 // ── ARRAY DE ENTIDADES ────────────────────────────────────────────────────────
 //
@@ -25,7 +25,7 @@
 //
 //       if (pcVar1 == DAT_07abf5d8                       // es el player local
 //        && (DAT_07abf5d8[0x1c0] & 4) != 0              // flag de colisión/física activo
-//        && DAT_005615c0 == 5) {                         // g_GameState == InGame
+//        && SceneFlag == 5) {                         // SceneFlag == InGame
 //
 //         // Override de física: fuerza velocidades a valores fijos
 //         // Probablemente resetea velocidad al colisionar con terreno
@@ -68,7 +68,7 @@
 //   DAT_07abf5d4  — contador de entidades visibles este frame (reset aquí)
 //   DAT_07abf5d8  — puntero a la entidad del jugador local (dentro del array)
 //   DAT_07abf5e8  — flag extra (reset a 0)
-//   DAT_005615c0  — g_GameState (5 = InGame)
+//   SceneFlag  — SceneFlag (5 = InGame)
 //   SelectedCharacter  — slot index A del jugador local (para identificación)
 //   SelectedNpc  — slot index B del jugador local
 //
@@ -82,11 +82,11 @@
 
 extern "C" { void DbgLogPublic(const char*); }
 
-// Entity_RenderAll_3D @ 0x0045AB00 (51 lines)
+// IDA: Entity_RenderAll_3D (0x0045AB00)
 // Iterates entity array, resets the local player's velocity fields if in InGame,
 // then calls Entity_UpdateRender for each active entity.
 // Defined as FUN_0045ab00 to match callers (Scene_Login, Scene_CharSelect, etc.).
-void FUN_0045ab00(void)
+void Entity_RenderAll_3D(void)
 {
     char       *pcVar1;
     int         iVar2;   // entity slot index
@@ -96,7 +96,7 @@ void FUN_0045ab00(void)
     // ── DIAG: dump first 5 slots' render-relevant fields (once/sec, char-select only)
     static DWORD s_lastERA = 0;
     bool diag = false;
-    if (DAT_005615c0 == 4) {
+    if (SceneFlag == 4) {
         DWORD now = GetTickCount();
         if (now - s_lastERA > 1000) { s_lastERA = now; diag = true; }
     }
@@ -125,7 +125,7 @@ void FUN_0045ab00(void)
         // que en nuestro build nunca matchean (flag bit 2, visibility flag).
         // Resultado: hero nunca renderiza. Detectamos hero ANTES que cualquier
         // otra cosa y forzamos el render.
-        if (pcVar1 == DAT_07abf5d8 && DAT_005615c0 == 5 && *pcVar1 != '\0') {
+        if (pcVar1 == DAT_07abf5d8 && SceneFlag == 5 && *pcVar1 != '\0') {
             // Reset velocity / motion fields (per IDA original).
             pcVar1[0x130] = '\0'; pcVar1[0x131] = '\0';
             pcVar1[0x132] = 'z';  pcVar1[0x133] = 'D';
@@ -143,7 +143,7 @@ void FUN_0045ab00(void)
             // EXCLUIDO de esos → el original lo dibuja con 0.  Este forced-render
             // hardcodeaba 1 → el PJ tenía el borde de hover pegado siempre.
             // Debe ser 0 (el Hero nunca es su propio target de hover).
-            FUN_00456770((undefined4 *)pcVar1, (undefined4 *)pcVar1, (undefined4 *)0);
+            RenderCharacter((undefined4 *)pcVar1, (undefined4 *)pcVar1, (undefined4 *)0);
         } else if ((*pcVar1 != '\0') && (pcVar1[0x160] != '\0')) {
             DAT_07abf5d4 = DAT_07abf5d4 + 1;
             // is_local_player = (slot == SelectedCharacter || slot == SelectedNpc)
@@ -155,7 +155,7 @@ void FUN_0045ab00(void)
                     "ERA slot=%d -> FUN_00456770(local=%d)", iVar2, (int)(uintptr_t)puVar4);
                 DbgLogPublic(b);
             }
-            FUN_00456770((undefined4 *)pcVar1, (undefined4 *)pcVar1, puVar4);
+            RenderCharacter((undefined4 *)pcVar1, (undefined4 *)pcVar1, puVar4);
         } else if (diag && iVar2 < 5) {
             char b[120];
             _snprintf_s(b, sizeof(b), _TRUNCATE,

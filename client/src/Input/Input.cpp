@@ -227,7 +227,7 @@ int NumPad_HitTest(void);
 //
 //   1. WM_MOUSEMOVE: g_MouseX/Y actualizados cada evento
 //   2. WM_LBUTTONDOWN: g_ClickFlag = 1, guardar posición
-//   3. Game_SceneUpdate (g_GameState==5, g_GameSubState==2):
+//   3. Game_SceneUpdate (SceneFlag==5, World==2):
 //      a. Lee g_ClickFlag
 //      b. Camera_MouseRay(g_MouseX, g_MouseY) → ray en world space
 //      c. Ray × terrain heightmap → world position (x, y)
@@ -260,7 +260,7 @@ int NumPad_HitTest(void);
 //   0x00480620  Chat_Scroll       — scroll periódico del chat (no es input)
 
 
-// Input_IsKeyJustPressed @ 0x0047ec20 — Input_GetKeyDown (Key_IsJustPressed)
+// IDA: PressKey (0x0047EC20)
 // Returns 1 on the first frame a key goes down (edge trigger), 0 otherwise.
 //
 // BUG-FIX CRÍTICO (ESC-flicker): la versión de Ghidra terminaba con
@@ -271,8 +271,8 @@ int NumPad_HitTest(void);
 // lo interpretaba como "tecla recién presionada" y el menú ESC flipeaba
 // ~16 veces/seg sin tocar nada. IDA (`PressKey`) siempre devuelve 0 en
 // cualquier path que no sea el edge-trigger.
-// IDA: FUN_0047ec20
-int __cdecl Input_IsKeyJustPressed(int param_1)
+// IDA: PressKey
+int __cdecl PressKey(int param_1)
 {
   SHORT SVar1 = GetAsyncKeyState(param_1);
   // &DAT_07e118ec + param_1*4: byte offset correcto para el slot DWORD
@@ -291,11 +291,11 @@ int __cdecl Input_IsKeyJustPressed(int param_1)
 }
 
 
-// Input_ClearState @ 0x0047ec60 — Input_ClearAll
+// IDA: ClearInput (0x0047EC60)
 // Resets global input state: clears active slot and key tables.
 // param_1 != 0: also clears slot 1 (password buffer); 0: preserves slot 1.
-// IDA: FUN_0047ec60
-void __cdecl Input_ClearState(int param_1)
+// IDA: ClearInput
+void __cdecl ClearInput(int param_1)
 {
   int iVar1;
   int iVar2;
@@ -344,7 +344,7 @@ void Input_ProcessFunctionKeys(void)
       else {
         DAT_07e11d20 = (DAT_07e11d20 + 1) % 3;
       }
-      FUN_00404bc0(0x19,0,0);
+      PlayBuffer(0x19,0,0);
     }
   }
   else {
@@ -355,7 +355,7 @@ void Input_ProcessFunctionKeys(void)
     if (DAT_07e11ab0 == 0) {
       DAT_00559bf1 = DAT_00559bf1 == '\0';
       DAT_07e11ab0 = 1;
-      FUN_00404bc0(0x19,0,0);
+      PlayBuffer(0x19,0,0);
       // vtable[+0x30] = slot 12 = ChatLB_scrollByN (__fastcall this+n).
       if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
           DWORD* obj = (DWORD*)DAT_055c9ff0;
@@ -373,7 +373,7 @@ void Input_ProcessFunctionKeys(void)
     if (DAT_07e11ab4 == 0) {
       DAT_07e11ab4 = 1;
       DAT_00559bf0 = DAT_00559bf0 == '\0';
-      FUN_00404bc0(0x19,0,0);
+      PlayBuffer(0x19,0,0);
     }
   }
   else {
@@ -389,7 +389,7 @@ void Input_ProcessFunctionKeys(void)
   }
   DAT_07e11ab8 = 1;
   FUN_0040e330(DAT_055c9ff0);
-  if (DAT_005590ac != 1) {
+  if (g_bUseChatListBox != 1) {
     uVar7 = 0x51;
     uVar6 = 0xfffffff6;
     goto LAB_004c06e6;
@@ -405,11 +405,11 @@ LAB_004c06d6:
       cVar2 = DAT_07eaa11b;
       uVar4 = HashTable_GetIndex(&DAT_055c9bc8,&DAT_07eaa11b);
       if (uVar4 != 0xffffffff) {
-        pbVar5 = (byte *)FUN_00404280(&DAT_055c9bc8,&DAT_07eaa11b);
+        pbVar5 = (byte *)HashTable_GetNode(&DAT_055c9bc8,&DAT_07eaa11b);
         bVar1 = pbVar5[1];
         pbVar5[1] = bVar1 - 1;
         if ((byte)(bVar1 - 1) == 0) {
-          FUN_00423710(pbVar5,&DAT_07eaa11b);
+          Packet_EncryptByte(pbVar5,&DAT_07eaa11b);
         }
       }
       if ((((cVar2 == '\0') && (DAT_07eaa119 == '\0')) && (DAT_07eaa11a == '\0')) &&
@@ -418,11 +418,11 @@ LAB_004c06d6:
         cVar2 = DAT_07eaa118;
         uVar4 = HashTable_GetIndex(&DAT_055c9bc8,&DAT_07eaa118);
         if (uVar4 != 0xffffffff) {
-          pbVar5 = (byte *)FUN_00404280(&DAT_055c9bc8,&DAT_07eaa118);
+          pbVar5 = (byte *)HashTable_GetNode(&DAT_055c9bc8,&DAT_07eaa118);
           bVar1 = pbVar5[1];
           pbVar5[1] = bVar1 - 1;
           if ((byte)(bVar1 - 1) == 0) {
-            FUN_00423710(pbVar5,&DAT_07eaa118);
+            Packet_EncryptByte(pbVar5,&DAT_07eaa118);
           }
         }
         if (cVar2 == '\0') goto LAB_004c06d6;
@@ -433,6 +433,6 @@ LAB_004c06d6:
   }
 LAB_004c06e6:
   FUN_0040c690((void*)(uintptr_t)DAT_055c9ff0,uVar6,uVar7);
-  FUN_00404bc0(0x19,0,0);
+  PlayBuffer(0x19,0,0);
   return;
 }

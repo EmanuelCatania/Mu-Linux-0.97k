@@ -27,11 +27,11 @@
 //   RenderErrorMessage → RenderErrorMessage()          — (no era Chat_Render)
 //   FUN_004f64d0 → Scene_MapTick()               — (no era UI_Render)
 //   UI_RenderNotices → RenderNotices()               — (no era StatusBar_Render)
-//   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — DAT_005590ac=g_bUseChatListBox
+//   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — g_bUseChatListBox=g_bUseChatListBox
 //   UI_UpdateFpsCounter → RenderDebugWindow()
 //   RenderHelpWindow → RenderHelpWindow()
 //   Cursor_Render → RenderCursor()                — (no era Minimap_Render)
-//   FUN_0051e0c0 → RenderInfomation3D()          — (no era Cursor_Render)
+//   RenderInfomation3D → RenderInfomation3D()          — (no era Cursor_Render)
 //   GL_End2D → EndBitmap()                   — 2x glPopMatrix (balancea BeginBitmap+BeginSprite)
 //   GL_EndOpenGL → EndOpengl()                   — pop MV + pop PROJ (balancea BeginOpengl)
 //
@@ -51,8 +51,8 @@
 //   DAT_083a7af4   — fade state
 //   DAT_005615e8   — fade counter
 //   DAT_0056156c   — WindowWidth
-//   DAT_005590ac   — g_bUseChatListBox
-//   DAT_005615c0   — g_GameState
+//   g_bUseChatListBox   — g_bUseChatListBox
+//   SceneFlag   — SceneFlag
 //   DAT_083a4320   — retry counter
 
 #include "stdafx.h"
@@ -83,9 +83,9 @@ uint Scene_Login(void)
 
     // ── 3D background render (orden exacto de IDA) ───────────────────────────
     FUN_004fd800();    // Terrain_Render
-    FUN_0045ab00();    // Entity_RenderAll_3D
+    Entity_RenderAll_3D();
     FUN_00500970();    // RenderBugs
-    FUN_0046c3e0();    // Trail_RenderAll
+    Trail_RenderAll();
     GL_BeginSprite();    // BeginSprite — push MV, loadIdentity
     Render_DrawSpritePool();    // RenderSprites
     FUN_00478c00();    // RenderParticles
@@ -281,12 +281,12 @@ uint Scene_Login(void)
     RenderErrorMessage();    // RenderErrorMessage
     FUN_004f64d0();    // Scene_MapTick
     UI_RenderNotices();    // RenderNotices
-    if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
+    if ((g_bUseChatListBox == 1) || (SceneFlag != 5))
         UI_RenderChatLogOverlay();   // sub_480980 — chat log render
     UI_UpdateFpsCounter();    // RenderDebugWindow
     RenderHelpWindow();    // RenderHelpWindow
     Cursor_Render();    // RenderCursor
-    FUN_0051e0c0();    // RenderInfomation3D
+    RenderInfomation3D();    // RenderInfomation3D
 
     // ── Teardown (port exacto de IDA: EndBitmap + EndOpengl) ─────────────────
     GL_End2D();    // EndBitmap  — 2x glPopMatrix

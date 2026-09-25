@@ -500,9 +500,9 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                                 ITEM_ATTRIBUTE* v8 = &ItemAttribute[v7];
                                 float Height = (float)((double)v8->Height * 20.0);
                                 float Width  = (float)((double)v8->Width  * 20.0);
-                                FUN_004e1be0(sxa, sy, Width, Height, v7,
+                                RenderItem3D(sxa, sy, Width, Height, v7,
                                              *(int*)(v6_addr + 4),
-                                             *(unsigned char*)(v6_addr + 27), 0);
+                                             *(unsigned char*)(v6_addr + 27), 0, 0);
                             }
                             ++v23;
                         }

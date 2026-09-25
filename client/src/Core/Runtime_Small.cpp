@@ -813,7 +813,8 @@ void __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster,
 // OJO: `functions.h` tenia esto mapeado a FUN_004827a0, que es una direccion
 // EN MEDIO de sub_4824C0 (el scan de flechas del inventario) -- por eso el stub
 // vacio.  La direccion real es 0x0047EB80.
-void __cdecl FUN_0047eb80(void) {
+// IDA: clearMatchInfo (0x0047EB80)
+void __cdecl clearMatchInfo(void) {
     m_byMatchType     = 0;
     m_iMatchTimeMax   = -1;
     m_iMatchTime      = -1;

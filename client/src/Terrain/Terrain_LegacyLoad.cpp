@@ -171,7 +171,7 @@ int __cdecl FUN_004f6ce0(const char *FileName) {
 }
 
 // FUN_004ffe70 @ 0x004FFE70 — Terrain_LoadObjects(path)
-// Reads .obj file: 2-byte count, then count×0x1e entries → calls FUN_004ff5a0 for each.
+// Reads .obj file: 2-byte count, then count×0x1e entries → calls CreateObject for each.
 //
 // BUG-FIX 2026-05-01: el archivo `EncTerrain%d.obj` está ENCRIPTADO (mismo
 // BuxConvert 3-byte XOR rolling key que .att). Sin descifrar, count y posiciones
@@ -220,13 +220,13 @@ void __cdecl FUN_004ffe70(const char *path) {
         for (int i = 0; i < count; i++, p += 0xf) {
             float pos[3]  = { *(float*)(p+1), *(float*)(p+3), *(float*)(p+5) };
             float tgt[3]  = { *(float*)(p+7), *(float*)(p+9), *(float*)(p+0xb) };
-            // BUG-FIX 2026-05-03: el 4° arg de FUN_004ff5a0 es `float param_4`
+            // BUG-FIX 2026-05-03: el 4° arg de CreateObject es `float param_4`
             // (la SCALE del objeto en el .obj). Antes leíamos como `*(unsigned int*)`
             // y la conversión implícita int→float convertía el bit pattern de 1.0f
             // (= 0x3F800000 = 1065353216) en el float 1065353216.0f literal →
             // scale gigante → vertices transformados fuera del frustum → invisible.
             // El IDA original lee como `*(float*)` (bit-cast) preservando los bits.
-            FUN_004ff5a0((int)*p, pos, tgt, *(float*)(p + 0xd));
+            CreateObject((int)*p, pos, tgt, *(float*)(p + 0xd));
         }
     }
     operator_delete(buf);
@@ -365,7 +365,7 @@ void __cdecl FUN_0050c4d0(void) {
     }
 
     // Object type texture/name registration (second pass, all maps)
-    FUN_00505bd0(0x69);
+    SetMaxTextures(0x69);
     switch (World) {
     case 0:
         FUN_005060b0(0xae, "Data/Object1/", "bird", 1);
@@ -490,8 +490,8 @@ void __cdecl FUN_0050c4d0(void) {
         break;
     }
 
-    // Object model loading for all maps (FUN_00505bd0(0x2ee) then per-map loading)
-    FUN_00505bd0(0x2ee);
+    // Object model loading for all maps (SetMaxTextures(0x2ee) then per-map loading)
+    SetMaxTextures(0x2ee);
     if (World == 0) {
         // Lorencia (Object1) — load SMD models on first call
         if (DAT_0055a7c4 == '\0') {
@@ -753,7 +753,7 @@ void __cdecl FUN_0050c4d0(void) {
         crt_sprintf(local_384, "Data/Object%d/", objFolder);
         for (int i = 0; i < 0xa0; i++)
             FUN_005060b0(i, local_384, "Object", i + 1);
-        FUN_00505bd0(0x2ee);
+        SetMaxTextures(0x2ee);
         crt_sprintf(local_384, "Object%d/", objFolder);
         for (int i = 0; i < 0xa0; i++)
             FUN_00505c80(i, local_384, 0x2600, '\x01');
@@ -774,4 +774,4 @@ void __cdecl FUN_0050c4d0(void) {
         DAT_0055a7c4 = cVar2;
 }
 
-// Font helpers (called from FUN_0050f690 in stubs.cpp)
+// Font helpers (called from OpenFont in stubs.cpp)

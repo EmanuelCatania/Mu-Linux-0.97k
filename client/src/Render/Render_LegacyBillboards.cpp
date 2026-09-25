@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -99,10 +99,10 @@ void __cdecl FUN_00474f90(int cls, float *pos, float *rot, float sc) {
 
 // ── Weapon/Entity color helpers ───────────────────────────────────────────────
 
-// FUN_00503cf0 @ 0x00503CF0 — Weapon_SetColor: maps item type to RGB color into color[3].
+// IDA: PartObjectColor (0x00503CF0)
 // color[3] *= scale * half_scale (scaled product), direction varies by item type index.
 // flag=1 or flag=8 overrides selection for type 0x129/0x1f9.
-void __cdecl FUN_00503cf0(int param_1, float param_2, float param_3, float *param_4, char param_5)
+void __cdecl PartObjectColor(int param_1, float param_2, float param_3, float *param_4, char param_5)
 {
     unsigned int uVar4 = 0;
     // flag overrides
@@ -198,11 +198,11 @@ void __cdecl FUN_00503fe0(int param_1, float param_2, float param_3, float *para
     }
 }
 
-// FUN_00504960 @ 0x00504960 — Entity_SetModelColor: weapon type → color/alpha → render.
+// RenderPartObjectBodyColor @ 0x00504960 — Entity_SetModelColor: weapon type → color/alpha → render.
 // Sets model color at +0x48..+0x50. Special cases for type 0x144 (two-tone), 0x1d7
 // (sets entity +0x58=2 then resets to -1 afterward), 0x235 (FUN_00441e00 with extra arg).
 // Falls through to FUN_00441e00 for bone rendering.
-void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
+void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int etype, float scale,
                             int flags, float alpha, int rgba)
 {
     float *color = (float *)((char*)model + 0x48);
@@ -220,7 +220,7 @@ void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
                      *(float*)(entity+0x6c), *(float*)(entity+0x70), -1, (uint)rgba);
         return nullptr;
     } else {
-        FUN_00503cf0(etype, scale, alpha, color, (char)((flags >> 8) & 1));
+        PartObjectColor(etype, scale, alpha, color, (char)((flags >> 8) & 1));
     }
     if (etype == 0x1d7) {
         *(int *)(entity + 0x58) = 2;
@@ -246,7 +246,7 @@ void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
 }
 
 // FUN_00504ac0 @ 0x00504AC0 — Entity_SetModelColorAlt: simpler version.
-// No special type 0x144 path; uses FUN_00503fe0 instead of FUN_00503cf0.
+// No special type 0x144 path; uses FUN_00503fe0 instead of PartObjectColor.
 void* __cdecl FUN_00504ac0(void *model, int entity, int etype, float scale,
                              int flags, float alpha, int rgba)
 {
@@ -262,15 +262,16 @@ void* __cdecl FUN_00504ac0(void *model, int entity, int etype, float scale,
                  *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
     return nullptr;
 }
-// FUN_00455430 @ 0x00455430 — RenderLinkObject (COMPLETO)
+// RenderLinkObject @ 0x00455430 — RenderLinkObject (COMPLETO)
 // Implemented in src/Render/RenderLinkObject.cpp
-// FUN_00449840 @ 0x00449840 — Entity_ClearBoneLinks(param1, param2, param3)
+// DeleteCloth @ 0x00449840 — Entity_ClearBoneLinks(param1, param2, param3)
 // Clears bone/widget link arrays on entity objects.
 // For param2: iterates (+0x184, count at +0x180), calls FUN_004086e0 + vtable[0](3) per entry.
 // For param1: iterates 6 weapon/equip slots (stride 0x18 at +0x1f4), calls FUN_004086e0 + vtable[0](1).
 // For param3: clears one link at +0x14 via FUN_004086e0 + vtable[0](1).
 // FUN_004086e0 signature: (int, int, int) — called here as (ptr, 0, 0) (3-arg form, per functions.h).
-void __cdecl FUN_00449840(int param_1, int param_2, int param_3)
+// IDA: DeleteCloth (0x00449840)
+void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
 {
     if ((param_2 != 0) && (*(int*)(param_2 + 0x184) != 0)) {
         int count = (int)(unsigned char)*(char*)(param_2 + 0x180);

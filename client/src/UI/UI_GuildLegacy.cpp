@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -181,7 +181,8 @@ int __cdecl FUN_0051db00(void)
     return (int)UI_RenderText(0x140 - cx, iY, buf, (LPSIZE)0, '\0', 0);
 }
 
-// CreateOkMessageBox @ 0x0051D6F0 — show an OK dialog by setting the UI state.
+// IDA: FUN_0051D6F0 (0x0051D6F0)
+// CreateOkMessageBox — show an OK dialog by setting the UI state.
 // Wraps text at 7 chars / 0x26 lines into DAT_083a44c4, sets a fixed panel descriptor,
 // then transitions DAT_083a7c24 or DAT_083a7c28 to state 0x8b.
 void __cdecl CreateOkMessageBox(char *msg)
@@ -289,4 +290,4 @@ int __cdecl FUN_0051d840(int param_1) {
     else                   DAT_083a7c24 = 142;
     return 1;
 }
-// FUN_0051e7e0 — implemented in src/Scene/Scene_ServerSelect_Input.cpp
+// CServerSelWin_UpdateWhileActive — implemented in src/Scene/Scene_ServerSelect_Input.cpp

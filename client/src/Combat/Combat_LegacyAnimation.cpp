@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -47,9 +47,9 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 
 // ── Particle / animation / bone math ─────────────────────────────────────────
 
-// FUN_0043e820 — replaced by full implementation above (line ~6057)
+// SetAction — replaced by full implementation above (line ~6057)
 
-// FUN_00443e70 @ 0x00443E70 — SetAttackSpeed
+// IDA: FUN_00443e70 (0x00443E70)
 // Real logic (after anti-tamper hash table blocks):
 //   1. Reads CharacterAttribute->MagicDamageMax and AttackDamageMinRight
 //   2. Computes animation speed: fVar2 = AttackDamageMinRight * _DAT_005524bc
@@ -95,7 +95,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //   P+1444  HELL                     v34 + 0.5
 //   P+1460  RIDE_SKILL               v34 + 0.3
 extern DWORD CharacterAttribute_var;     // alias - already in our globals
-void __cdecl FUN_00443e70(void) {
+void __cdecl SetAttackSpeed(void) {
     DWORD ca = (DWORD)DAT_07cf1ff4;       // CharacterAttribute base
     if (ca == 0) return;
     DWORD models = DAT_05828d58;          // Models base

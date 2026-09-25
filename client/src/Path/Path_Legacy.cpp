@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -348,7 +348,7 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     // Ahora PathContext_Create() (src/Game/PathFinder.cpp, llamada desde WinMain)
     // replica el ctor del binario: 0x0043F280..0x0043F2C7, reserva de 0x424 bytes
     // -no 0x420- y vtable en +0x414. InitPath (PathFinder_ResetContext, mas abajo en este
-    // mismo archivo) ya estaba portada y la llama FUN_0050f690 (World_Init), igual
+    // mismo archivo) ya estaba portada y la llama OpenFont (World_Init), igual
     // que en el binario; corre despues del ctor, que es el orden correcto.
     //
     // El camino original queda detrás de un switch porque FUN_0043f500 todavía
@@ -412,13 +412,13 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     }
 
     // First attempt: strict walkable filter
-    unsigned int found = FUN_0043f500(pfCtx, sx, (float)sy, tx, ty, 1, 2, radius);
+    unsigned int found = PATH_FindPath(pfCtx, sx, (float)sy, tx, ty, 1, 2, radius);
     if (found) goto success;
 
     // Check terrain flags at src and dst
     {
-        int srcAttr = FUN_004f6c40((unsigned int)sx, (unsigned int)sy);
-        int dstAttr = FUN_004f6c40((unsigned int)tx, (unsigned int)ty);
+        int srcAttr = Terrain_GetTileIndex((unsigned int)sx, (unsigned int)sy);
+        int dstAttr = Terrain_GetTileIndex((unsigned int)tx, (unsigned int)ty);
         // 2026-08-17: estaba INVERTIDO respecto del binario. En PathFinding2 el
         // filtro sube a 4 cuando origen/destino tienen el bit 0, y vuelve a 2 sólo
         // si el destino tiene además el bit 1:
@@ -426,7 +426,7 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
         // Acá se hacía al revés (subía a 4 justo cuando el bit 1 estaba puesto).
         // Camino muerto hoy (pfReady siempre false), pero queda alineado.
         if ((DAT_0838bc70[srcAttr] & 1) == 1 || (DAT_0838bc70[dstAttr] & 1) == 1) {
-            int dstAttr2 = FUN_004f6c40((unsigned int)tx, (unsigned int)ty);
+            int dstAttr2 = Terrain_GetTileIndex((unsigned int)tx, (unsigned int)ty);
             filterMode = 4;
             if ((DAT_0838bc70[dstAttr2] & 2) == 2) {
                 filterMode = 2;
@@ -435,7 +435,7 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     }
 
     // Second attempt: relaxed filter
-    found = FUN_0043f500(pfCtx, sx, (float)sy, tx, ty, 0, filterMode, radius);
+    found = PATH_FindPath(pfCtx, sx, (float)sy, tx, ty, 0, filterMode, radius);
     if (!found) return 0;
 
 success:
@@ -457,7 +457,7 @@ success:
         return 1;
     }
 }
-// IDA: FUN_0043e370 @ 0x0043E370 — FarAngle(curAngle, tgtAngle, mode)
+// IDA: FUN_0043e370 (0x0043E370)
 // Returns signed angular difference between two angles, handling wrap-around at 360.
 // If mode==1, returns absolute value (unsigned distance).
 //
@@ -466,7 +466,7 @@ success:
 // `fcom a2, a1` (comparando a2 con a1) ANTES del `fsub` → v6 representa
 // `a2 > a1`, no el signo del result. Reescrito preservando exactamente las
 // asignaciones del decomp (`360 - a2 + a1` y `360 - a1 + a2`) en cada rama.
-float __cdecl Angle_GetDifference(float a1, float a2, char a3)
+float __cdecl FarAngle(float a1, float a2, char a3)
 {
   if ( a1 < 0.0f ) a1 += 360.0f;
   if ( a2 < 0.0f ) a2 += 360.0f;
@@ -541,9 +541,9 @@ static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
     }
     if (stillMoving) {
         if (turn) {
-            const float angle = FUN_0043e050(*(float *)(ent + 16), *(float *)(ent + 20), targetX, targetY);
-            const float delta = Angle_GetDifference(*(float *)(ent + 36), angle, 1);
-            *(float *)(ent + 36) = (delta >= 45.0f) ? angle : FUN_0043e1b0(*(float *)(ent + 36), angle, delta * 0.5f);
+            const float angle = CreateAngle(*(float *)(ent + 16), *(float *)(ent + 20), targetX, targetY);
+            const float delta = FarAngle(*(float *)(ent + 36), angle, 1);
+            *(float *)(ent + 36) = (delta >= 45.0f) ? angle : TurnAngle2(*(float *)(ent + 36), angle, delta * 0.5f);
         }
         return 0;
     }
@@ -565,8 +565,8 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
 
     // 2026-04-30 BUG-FIX: cuando no hay path (wp_count <= cur_wp), DEBE
     // retornar 1 ("arrived/idle"), NO 0.  El caller hace:
-    //     if (moveOk == 0) FUN_00454ba0(ent);   // mueve al hero
-    //     else             FUN_004430c0(ent);   // detiene
+    //     if (moveOk == 0) MoveCharacterPosition(ent);   // mueve al hero
+    //     else             SetPlayerStop(ent);   // detiene
     // Si retornábamos 0 cuando no hay path → caller llamaba al mover →
     // hero caminaba en facing direction sin importar si había path.
     // Por eso "se movía solo" sin click.
@@ -627,13 +627,13 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
     }
 
     // 2026-04-30 BUG-FIX (v3): actualizar facing.  Convención REAL de MU
-    // (verificada con la rotación de matriz en FUN_00454ba0):
+    // (verificada con la rotación de matriz en MoveCharacterPosition):
     //   0°   = NORTH (-Y)
     //   90°  = EAST  (+X)
     //   180° = SOUTH (+Y)
     //   270° = WEST  (-X)
     //
-    // FUN_00454ba0 hace: vel_local=(0,-speed,0), rotated by facing (Z-axis).
+    // MoveCharacterPosition hace: vel_local=(0,-speed,0), rotated by facing (Z-axis).
     // Result: out_x = +speed*sin(θ), out_y = -speed*cos(θ).
     // → θ=0 ⇒ out=(0,-speed) = north ✓
     // → θ=90 ⇒ out=(+speed,0)  = east  ✓
@@ -674,7 +674,7 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
 // casi siempre.  La usan Attack (3 sitios, uno de ellos el gate del bucle de
 // manos), Action (2) y Player_InputTick (1).
 char __cdecl Path_IsLineClear(int sx1, int sy1, int sx2, int sy2) {
-    int tile = FUN_004f6c40((unsigned int)sx1, (unsigned int)sy1);   // IDA: v4
+    int tile = Terrain_GetTileIndex((unsigned int)sx1, (unsigned int)sy1);   // IDA: v4
     int err  = 0;                                                    // IDA: v5
     int dx = sx2 - sx1;                                              // IDA: v6
     int dy = sy2 - sy1;                                              // IDA: v7

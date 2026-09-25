@@ -1,5 +1,5 @@
 // Entity_Reset.cpp
-// FUN_00502ba0 @ 0x00502BA0 — Entity_Reset
+// ItemObjectAttribute @ 0x00502BA0 — Entity_Reset
 // Initializes/resets an effect-entity slot with default field values,
 // then applies type-specific overrides via a switch on entity type.
 // Returns an integer state value (type-dependent, usually 0).
@@ -34,7 +34,8 @@
 #include "stdafx.h"
 
 
-int __cdecl FUN_00502ba0(int param_1)
+// IDA: ItemObjectAttribute (0x00502BA0)
+int __cdecl ItemObjectAttribute(int param_1)
 {
   short sVar1;
   int iVar2;

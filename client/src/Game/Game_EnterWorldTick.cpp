@@ -228,7 +228,7 @@ void Game_EnterWorldTick(void)
 
         // Spawn background object 0xA4 at origin
         float pos3[3] = {0,0,0}, rot3[3] = {0,0,0};
-        FUN_004ff5a0(0xa4, pos3, rot3, 1.0f);
+        CreateObject(0xa4, pos3, rot3, 1.0f);
 
         CreateCharacterPointer((unsigned char*)&DAT_07abf050, 0xab, 0, 0, 0.0f);
         DAT_07abf20c = (DAT_07abf20c & 0xffffff00) | 1;

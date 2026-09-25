@@ -38,15 +38,15 @@ void __cdecl FUN_00441be0(void *model, int param_1, int param_2)
             float *vpos = (float*)(g_BoneVertexBuf + 12 * (vertIdx + 15000 * meshIdx));
             if (param_2 == 260) {
                 if (_rand() % 2 == 0)
-                    Effect_Create(261, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                    CreateEffect(261, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
                 if (_rand() % 10 == 0)
-                    Effect_Create(260, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                    CreateEffect(260, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
             } else if (param_2 == 262) {
                 Light[0] = Light[1] = Light[2] = 0.2f;
                 if (_rand() % 12 == 0)
-                    Effect_Create(263, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                    CreateEffect(263, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
                 if (_rand() % 50 == 0)
-                    Effect_Create(262, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
+                    CreateEffect(262, vpos, Angle, Light, nullptr, nullptr, (float*)(UINT_PTR)0xffffffff, nullptr, 0);
             }
         }
     }

@@ -993,7 +993,7 @@ extern DWORD   DAT_083a0210;
 // Cell layout (matches original binary 0x083a0218..0x083a1217):
 //   cell+0  → alias DAT_083a0218 (base de la celda, también usada como scratch por el walker de descarga FUN_004ffd50)
 //   cell+4  → DAT_083a021c  puntero head (Terrain_Render lo lee vía *chunk_ptr)
-//   cell+8  → puntero tail  (el insert de FUN_004ff5a0 appendea acá; la descarga arranca el recorrido desde acá)
+//   cell+8  → puntero tail  (el insert de CreateObject appendea acá; la descarga arranca el recorrido desde acá)
 //   cell+12 → visibility flag (Terrain_Render writes *(chunk_ptr+8))
 // IMPORTANTE: g_ObjectBucketGrid[0] representa la dirección 0x083a0218, así que DAT_083a0218 está
 // en el offset 0 y DAT_083a021c en el +4. Antes DAT_083a021c estaba en el offset 0

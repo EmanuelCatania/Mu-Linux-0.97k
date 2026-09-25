@@ -22,11 +22,11 @@
 // grid (DAT_083a021c..) which is only properly populated when a world is
 // loaded (state 5 = in-game). During Login/CharSelect/Loading the bucket
 // linked-list pointers are uninitialized garbage → AV in FUN_004fdc00 →
-// FUN_0043e5c0 reading param_1 + 0x161. Gate on g_GameState == 5 so this
+// Alpha reading param_1 + 0x161. Gate on SceneFlag == 5 so this
 // is only active in-game where the pool is real.
 extern void __stdcall MoveObjects_stub(void);
 void __cdecl Object_MoveUpdate(void) {
-    if (DAT_005615c0 == 5) {
+    if (SceneFlag == 5) {
         MoveObjects_stub();
         return;
     }
@@ -37,7 +37,7 @@ void __cdecl Object_MoveUpdate(void) {
     // the original scene uses a narrower update path than the generic object
     // mover. We'll recover the logo / ship glows from the render side instead
     // of mutating login objects here.
-    if (DAT_005615c0 == 2 || DAT_005615c0 == 4) {
+    if (SceneFlag == 2 || SceneFlag == 4) {
         return;
     }
 }

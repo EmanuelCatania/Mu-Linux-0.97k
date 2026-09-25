@@ -38,8 +38,8 @@ static void SendMuEmuEncryptedPacket(BYTE* pkt, int len)
 // target set recovered from the switch at 0x489006: 1,2,3,4,7,11,17.
 //
 // ~70% of original 1227 lines is anti-tamper hash table operations
-// (FUN_00403f80, FUN_004041e0, FUN_00404280, FUN_00404330, FUN_00404370,
-//  FUN_00404400) and XOR key init + dead forward/reverse loops — all skipped.
+// (HashTable_Insert, FUN_004041e0, HashTable_GetNode, Packet_DecryptByte, Packet_DecryptBuffer,
+//  Packet_EncryptBuffer) and XOR key init + dead forward/reverse loops — all skipped.
 //
 // IDA: UseSkillWizard @ 0x004889D0. Ghidra shows 63 phantom stack params
 // (unaff_retaddr etc.) — anti-tamper obfuscation.
@@ -96,7 +96,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
     float heroX = *(float*)((char*)(DWORD)o + 0x10);
     float heroY = *(float*)((char*)(DWORD)o + 0x14);
     typedef float (__cdecl *CreateAngleFn)(float, float, float, float);
-    float angle = ((CreateAngleFn)&FUN_0043e050)(heroX, heroY, targetPosX, targetPosY);
+    float angle = ((CreateAngleFn)&CreateAngle)(heroX, heroY, targetPosX, targetPosY);
     *(float*)((char*)(DWORD)o + 36) = angle;
 
     // ── Switch on skill ID ──
@@ -128,12 +128,12 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
 
         // 300ms cooldown check on magic tick
         DWORD now = GetTickCount();
-        DWORD elapsed = now - DAT_05826cf4;
+        DWORD elapsed = now - g_dwLatestMagicTick;
         // Ghidra: abs(elapsed) > 300
         if (elapsed > 0x80000000) elapsed = (DWORD)(-(int)elapsed);  // abs
         if ((int)elapsed <= 300) break;
 
-        DAT_05826cf4 = GetTickCount();  // g_dwLatestMagicTick = now
+        g_dwLatestMagicTick = GetTickCount();
 
         // Get target entity key (CharactersClient[MovementSkillTarget].Key)
         // Key is at entity offset +0x??? — Ghidra shows CharactersClient[target].Key
@@ -183,7 +183,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
         }
 
         // Set CurrentSkill
-        DAT_05826d10 = skillId;  // CurrentSkill
+        CurrentSkill = skillId;
 
         // The sole duration case in this helper is skill 13.  It uses the
         // cached target world point established immediately above.
@@ -212,7 +212,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
     // Ghidra: SetPlayerMagic @ 0x00444a80
     // If entity type != 0x186: alternate between action 3 and 4 based on combo counter % 3
     // If entity type == 0x186: SetAttackSpeed, then class-specific action
-    FUN_00444a80((int)c);
+    SetPlayerMagic((int)c);
 }
 
 // ── SkillElf support ──────────────────────────────────────────────────────────
@@ -274,7 +274,7 @@ static void SendSkillPacket1E_Local(BYTE skillId, BYTE gridX, BYTE gridY, BYTE d
     SendMuEmuEncryptedPacket(pktBuf, sizeof(pktBuf));
 }
 
-// GetSkillInformation @ 0x0047E7A0 — reads skill table entry for given type/level.
+// IDA: GetSkillInformation (0x0047E7A0)
 // Outputs mana cost, distance, and AG (SkillMana) cost via out-pointers.
 // 0047E7A0 uses the clear SkillAttribute table, with 0x28-byte entries.
 void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piMana, int* piDistance, int* piSkillMana) {
@@ -343,8 +343,8 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
 //   dir                = v52         (angulo * 0.71111113)
 //   skillDistance      = v112        (SkillAttribute[40*skill + 38])
 // ~60% of the original decompile is anti-tamper hash table operations
-// (FUN_00403f80, FUN_004041e0, FUN_00404280, FUN_00404330, FUN_00404370,
-//  FUN_00404400) and XOR key init + dead forward/reverse loops — all skipped.
+// (HashTable_Insert, FUN_004041e0, HashTable_GetNode, Packet_DecryptByte, Packet_DecryptBuffer,
+//  Packet_EncryptBuffer) and XOR key init + dead forward/reverse loops — all skipped.
 bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
     // c = CHARACTER* (hero entity), pItem = CHARACTER_ATTRIBUTE* (char attributes)
     // Cast to usable pointers
@@ -511,7 +511,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             // CHARACTER->TargetPosition at offset +0x314 (float[3])
             float targetPosX = *(float*)(heroEntity + 0x314);
             float targetPosY = *(float*)(heroEntity + 0x318);
-            float angle = ((float (__cdecl*)(float,float,float,float))FUN_0043e050)(
+            float angle = ((float (__cdecl*)(float,float,float,float))CreateAngle)(
                 heroPosX, heroPosY, targetPosX, targetPosY);  // CreateAngle
 
             // Set hero facing angle: Object.Angle[2] at entity offset +0x24
@@ -524,7 +524,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             // Skipping detailed string comparison; the game logic proceeds regardless
 
             // Set CurrentSkill global to this skill ID
-            DAT_05826d10 = (DWORD)skillId;  // CurrentSkill
+            CurrentSkill = (DWORD)skillId;
 
             // 0x48BD70 emite el C3:1E directo; el campo de direccion es
             // `Object.Direction * 0.71111113`.
@@ -548,7 +548,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
 
             // Set player attack animation
             // SetPlayerAttack(hero) — Ghidra shows 1-arg; use 4-arg decl with dummies
-            FUN_00444410((int)(DWORD)heroEntity, 0, 0, 0);
+            SetPlayerAttack((int)(DWORD)heroEntity, 0, 0, 0);
 
             // If object type is not 0x186 (special entity), create arrow projectiles
             WORD objType = *(WORD*)(heroEntity + 0x02);  // Object.Type at offset +0x02

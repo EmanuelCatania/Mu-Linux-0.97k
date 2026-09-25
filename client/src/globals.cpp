@@ -1030,7 +1030,7 @@ float    g_TerrainTexCoord[8] = {};   // TerrainTextureCoord[4][2] (RenderTerrai
 DWORD    DAT_0814b2dc  = 0;
 BYTE     g_TerrainObjTable[0x328] = {};   // ambient terrain-object table (sub_4F7060); &DAT_081cb2ed=&[5]
 // 2026-05-04: live per-tile lighting buffer — 256×256 tiles × 3 floats =
-// 786432 bytes.  Was a 4-byte DWORD here, but FUN_004f95e0 writes via
+// 786432 bytes.  Was a 4-byte DWORD here, but Terrain_Water writes via
 // `(char*)&DAT_081cb608 + iVar2*12` (and analogous via cb60c, cb610) up to
 // 786KB into adjacent BSS — that was the source of the DAT_07cf5600 "Oye!"
 // corruption.  Original binary placed cb608/cb60c/cb610 as the three DWORDs
@@ -1079,7 +1079,7 @@ DWORD    DAT_083a0210  = 0;
 // Maps to original 0x083a0218..0x083a1217. Macros in globals.h:
 //   DAT_083a0218 = grid+0  (cell[0]+0  scratch)
 //   DAT_083a021c = grid+4  (cell[0].head — Terrain_Render reads *chunk_ptr)
-// Insert (FUN_004ff5a0) writes head at cell+4, tail at cell+8.
+// Insert (CreateObject) writes head at cell+4, tail at cell+8.
 // Unload (FUN_004ffd50) walks puVar5=&DAT_083a0218 reading puVar5+8 as tail.
 // Previously DAT_083a0218 was a separate orphan DWORD and DAT_083a021c was at
 // grid+0 — the unload walker read 4096 bytes of unrelated BSS past the orphan

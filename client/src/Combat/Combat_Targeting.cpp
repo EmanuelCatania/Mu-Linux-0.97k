@@ -44,11 +44,11 @@ bool __cdecl CheckTarget_stub(DWORD c) {
     }
 
     // Terrain pick path
-    FUN_004f9ac0('\x01');  // RenderTerrain(true) — init ray cast
+    RenderTerrain('\x01');  // RenderTerrain(true) — init ray cast
 
     int gridX = (int)*(float*)&DAT_080ab288;     // SelectXF
     int gridY = (int)*(float*)&DAT_080ab28c;     // SelectYF
-    bool hit = (bool)FUN_004f8480(
+    bool hit = (bool)RenderTerrainTile(
         *(int*)&DAT_080ab288,  // SelectXF as int (float bits)
         *(int*)&DAT_080ab28c,  // SelectYF as int (float bits)
         // 0049CAE0: RenderTerrainTile(SelectXF, SelectYF,

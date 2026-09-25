@@ -5,11 +5,11 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_0050e5a0 @ 0x0050e5a0 — OpenWorld(int Map)
+// IDA: OpenWorld (0x0050E5A0)
 // Per IDA decompile (raw/0050E5A0_OpenWorld.c, 1500 bytes).
 // Loads all terrain and tile textures for the current world map.
 //
-// World name = "World<N>" where N = DAT_0055a7ac+1 (capped at 12 for dungeons 11-16).
+// World name = "World<N>" where N = World+1 (capped at 12 for dungeons 11-16).
 // Loads Terrain.map, Terrain<N>.att, terrain.obj (or terrain<N>.obj for maps 2/3),
 // TerrainHeight.bmp, TerrainLight.jpg, then 14 tile JPGs (slots 0x23-0x30) +
 // 3 alpha-overlay TGAs (slots 0x32-0x34) + leaf01/02 + rain01/02 (always from
@@ -21,7 +21,7 @@
 //   - "Data/%s/terrain/%d" → "Data/%s/terrain%d"  (no extra slash)
 //   - rain01/02 use "World1" hardcoded; rain03 uses "World10" hardcoded.
 //   - Pass FileName to OpenTerrainAttribute (was called with no args → no-op).
-void __cdecl FUN_0050e5a0(void) {
+void __cdecl OpenWorld(void) {
     BYTE  uVar1;
     CHAR  world_name[32];
     CHAR  local_40[64];
@@ -30,7 +30,7 @@ void __cdecl FUN_0050e5a0(void) {
     FUN_00509190();             // DeleteNpcs
     FUN_00509880();             // DeleteMonsters
     FUN_00502b80();             // ClearItems
-    FUN_0045abb0(DAT_05826cac); // ClearCharacters(HeroKey)
+    FUN_0045abb0(HeroKey); // ClearCharacters(HeroKey)
 
     // BUG-FIX 2026-04-28: limpiar TODOS los pools de char-select que
     // sobreviven al world load. Sin esto los tick-functions iteran slots
@@ -48,8 +48,8 @@ void __cdecl FUN_0050e5a0(void) {
 
     FUN_0050c4d0();             // OpenWorldModels
 
-    int iVar2 = DAT_0055a7ac + 1;
-    if (DAT_0055a7ac >= 11 && DAT_0055a7ac <= 16) iVar2 = 12;
+    int iVar2 = World + 1;
+    if (World >= 11 && World <= 16) iVar2 = 12;
 
     crt_sprintf(world_name, "World%d", iVar2);
 
@@ -116,10 +116,10 @@ void __cdecl FUN_0050e5a0(void) {
     if (DAT_083a410c != '\0') DAT_0055a7c4 = uVar1;
 }
 
-// FUN_0050f690 @ 0x0050f690 — Font_Init
+// IDA: FUN_0050f690 (0x0050F690)
 // Resets font state, loads FontInput.tga (slot 0) and FontTest.tga (slot 1) as TGA,
 // then builds the font DIB (FUN_0050f5f0) and renderer (FUN_0040f570).
-void __cdecl FUN_0050f690(void) {
+void __cdecl OpenFont(void) {
     PathFinder_ResetContext();
     FUN_00529bd0("Interface/FontInput.tga", 0, 0x2600, 0x2900, 0, '\x01');
     FUN_00529bd0("Interface/FontTest.tga",  1, 0x2600, 0x2900, 0, '\x01');

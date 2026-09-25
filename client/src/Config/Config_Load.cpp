@@ -25,7 +25,7 @@
 //
 // Config_ReadServerAddr @ 0x0041E800
 //   Reads server IP from config.ini using key 0x75 ('u') and port using 0x70 ('p').
-//   Result stored at: PTR_s_connect_muonline_co_kr_005615b8 (IP) and DAT_005615bc (port).
+//   Result stored at: PTR_s_connect_muonline_co_kr_005615b8 (IP) and g_ServerPort (port).
 //   Patchs.cpp overrides these:
 //     MemoryCpy(0x00558ED8, serverIP, size);
 //     SetWord(0x005615BC, serverPort);
@@ -241,7 +241,7 @@ static int Path_GetBasename(char* outBuf, char* fullPath)
 // outVer[3] = LOWORD(FileVersionLS)  — revision
 //
 // Returns 1 on success, 0 on failure.
-// Uses operator_new / operator_delete (FUN_0054158c) for the info buffer.
+// Uses operator_new / operator_delete (operator_delete) for the info buffer.
 // lpSubBlock_005592d0 = "\\" (root query, retrieves VS_FIXEDFILEINFO).
 // -----------------------------------------------------------------------
 static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
@@ -301,7 +301,7 @@ static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
 //   Config_ReadServerAddr(this, param_3, &DAT_055c9e04, &port)
 //   If success:
 //     PTR_s_connect_muonline_co_kr_005615b8 = &DAT_055c9e04  (server IP)
-//     DAT_005615bc = port
+//     g_ServerPort = port
 //
 // Helpers:
 //   Config_ReadByEncKey @ 0x0041e450 — reads config.ini value by obfuscated key byte
@@ -325,7 +325,7 @@ static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
 //
 // Retorna 1 si encontró IP+puerto válidos (y los escribió en outIP/outPort),
 // 0 en caso contrario (el caller mantiene los valores por defecto —
-// s_connect_muonline_co_kr_005615b8 / DAT_005615bc).
+// s_connect_muonline_co_kr_005615b8 / g_ServerPort).
 int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned short* outPort)
 {
     (void)pConfig; (void)lpCmdLine;
@@ -393,10 +393,10 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
                     // o la clave saldria bien y el login fallaria igual.
                     // Se rellena con ceros porque el server compara 16 bytes
                     // contra su m_ServerSerial[17], que tambien viene en cero.
-                    memset(DAT_00559624, 0, sizeof(DAT_00559624));
+                    memset(Serial, 0, sizeof(Serial));
                     int serLen = (int)strlen(cfgServerSerial);
-                    if (serLen > (int)sizeof(DAT_00559624)) serLen = (int)sizeof(DAT_00559624);
-                    memcpy(DAT_00559624, cfgServerSerial, serLen);
+                    if (serLen > (int)sizeof(Serial)) serLen = (int)sizeof(Serial);
+                    memcpy(Serial, cfgServerSerial, serLen);
                 }
                 else if (_stricmp(key, "ClientVersion") == 0) {
                     // El server compara los 5 bytes contra su m_ServerVersion
@@ -421,7 +421,7 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
                         // El paquete lleva la version ofuscada: el cliente
                         // guarda (v[i] + i + 1) y el receptor hace (b[i] - i - 1).
                         for (int i = 0; i < 5; i++)
-                            DAT_0055961c[i] = (BYTE)(v5[i] + i + 1);
+                            Version[i] = (BYTE)(v5[i] + i + 1);
 
                         char line[96];
                         wsprintfA(line, "server.cfg: ClientVersion='%s'", v5);

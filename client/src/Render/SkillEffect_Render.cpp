@@ -2,7 +2,7 @@
 // SkillEffect_Render @ 0x0046CB70  (44 lines, decompile completo)
 //
 // Renderiza todos los efectos de habilidades activos. Soporta dos modos:
-// en-mundo 2D (g_GameSubState == 2) y billboard 3D para otras escenas.
+// en-mundo 2D (World == 2) y billboard 3D para otras escenas.
 //
 // ── POOL DE EFECTOS ───────────────────────────────────────────────────────────
 //
@@ -26,7 +26,7 @@
 //   void FUN_0046cb70(void)
 //   {
 //     // Modo: update timing vs GL state
-//     if (g_GameSubState == 2 || g_GameSubState == 7 || g_GameSubState == 10)
+//     if (World == 2 || World == 7 || World == 10)
 //       GL_SetBlendAdditive();           → Frame_UpdateTimer()
 //     else
 //       GL_SetBlendSrcOver('\x01');     → GL_SetMode(1) — 2D ortho setup para otras escenas
@@ -38,7 +38,7 @@
 //       if (pfVar1[-3] != '\0') {             // efecto activo
 //         BindTexture(*((_DWORD *)v0 - 2));    ← DWORD, no float (ver fix 2026-08-15)
 //
-//         if (g_GameSubState == 2) {
+//         if (World == 2) {
 //           // Modo en-mundo: draw 2D en espacio mundo
 //           FUN_00511d00((int)pfVar1[-2], pfVar1+1, *pfVar1, *pfVar1,
 //                        pfVar1+7, 0.0, 0.0, 0.0, 1.0, 1.0);
@@ -66,7 +66,7 @@
 //
 //   Esta función se llama dos veces en Game_RenderTick:
 //   1. Siempre (línea 106) — para todas las escenas
-//   2. Solo si g_GameSubState == 2 && DAT_07e118e8 not in {3, >=10} (línea 121)
+//   2. Solo si World == 2 && DAT_07e118e8 not in {3, >=10} (línea 121)
 //      → segunda pasada solo en modo in-world normal
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
@@ -99,7 +99,7 @@
 void SkillEffect_Render(void)
 {
     // IDA: World 2/7/10 → EnableAlphaBlend(); resto → EnableAlphaTest(1).
-    if ((DAT_0055a7ac == 2) || (DAT_0055a7ac == 7) || (DAT_0055a7ac == 10))
+    if ((World == 2) || (World == 7) || (World == 10))
         GL_SetBlendAdditive();       // EnableAlphaBlend (0x511710) — NO es un timer
     else
         // ── 2026-08-16: CAUSA REAL DE LOS CUADROS BLANCOS ────────────────────
@@ -139,7 +139,7 @@ void SkillEffect_Render(void)
         const int texId = *(int*)(pfVar1 - 2);
         GL_BindTextureSlot(texId);             // BindTexture
 
-        if (DAT_0055a7ac == 2) {
+        if (World == 2) {
             // In-world: flat 2D billboard
             FUN_00511d00(texId, pfVar1 + 1, *pfVar1, *pfVar1,
                          pfVar1 + 7, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);

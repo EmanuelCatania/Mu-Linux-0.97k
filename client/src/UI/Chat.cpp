@@ -490,7 +490,7 @@ void UI_RenderNotices(void)
     iVar1 = lstrlenA(lpString);
     GetTextExtentPointA(DAT_055c9fec,lpString,iVar1,lpsz);
     iVar1 = iVar2;
-    if (DAT_005590ac == 1) {
+    if (g_bUseChatListBox == 1) {
       iVar1 = iVar2 + -0x118;
     }
     UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / DAT_0056156c >> 1),iVar1,(char*)lpString,0,1,0);
@@ -652,7 +652,7 @@ LAB_00480b8e:
 // Each entry: timers (3 ints), target entity ptr, screen XYWH (4 ints).
 // Decrements timers; clears timer if entity is dead/inactive.
 // On mouse-over (cursor inside widget XYWH + hover flag set + entity is local
-// player's target): copies entity name into DAT_07db8810, calls FUN_00404bc0
+// player's target): copies entity name into DAT_07db8810, calls PlayBuffer
 // to trigger a UI sound.
 // IDA: FUN_004821A0
 void UI_TickHoverBubbles(void)
@@ -746,7 +746,7 @@ LAB_004822b6:
           } while (cVar1 != '\0');
           DAT_07d780ac = ~uVar5 - 1;
           DAT_083a42d0 = '\0';
-          FUN_00404bc0(0x19,0,0);
+          PlayBuffer(0x19,0,0);
         }
       }
     }
@@ -806,7 +806,7 @@ char Chat_ValidateInputCommand(void)
   if (0 < DAT_07d78074) {
     pcVar5 = DAT_07d27610;
     do {
-      uVar2 = FUN_004977f0(local_100,pcVar5,'\0');
+      uVar2 = FindTextA(local_100,pcVar5,'\0');
       if ((char)uVar2 != '\0') goto LAB_00513792;
       iVar3 = iVar3 + 1;
       pcVar5 = pcVar5 + 0x14;
@@ -845,34 +845,34 @@ char Chat_ValidateInputCommand(void)
     if (0 < DAT_07d78070) {
       pcVar5 = DAT_07d73104;
       do {
-        uVar2 = FUN_004977f0(local_100,pcVar5,'\0');
+        uVar2 = FindTextA(local_100,pcVar5,'\0');
         if ((char)uVar2 != '\0') goto LAB_00513792;
         iVar3 = iVar3 + 1;
         pcVar5 = pcVar5 + 0x14;
       } while (iVar3 < DAT_07d78070);
     }
   }
-  uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_00561740,'\0');
+  uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_00561740,'\0');
   if ((char)uVar2 == '\0') {
-    uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_00561744,'\0');
+    uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_00561744,'\0');
     if ((char)uVar2 == '\0') {
-      uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_00561748,'\0');
+      uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_00561748,'\0');
       if ((char)uVar2 == '\0') {
-        uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_0056174c,'\0');
+        uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_0056174c,'\0');
         if ((char)uVar2 == '\0') {
-          uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_00561750,'\0');
+          uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_00561750,'\0');
           if ((char)uVar2 == '\0') {
-            uVar2 = FUN_004977f0((char *)DAT_07db8710,s_Webzen_00561754,'\0');
+            uVar2 = FindTextA((char *)DAT_07db8710,s_Webzen_00561754,'\0');
             if ((char)uVar2 == '\0') {
-              uVar2 = FUN_004977f0((char *)DAT_07db8710,s_WebZen_0056175c,'\0');
+              uVar2 = FindTextA((char *)DAT_07db8710,s_WebZen_0056175c,'\0');
               if ((char)uVar2 == '\0') {
-                uVar2 = FUN_004977f0((char *)DAT_07db8710,s_Webzen_00561764,'\0');
+                uVar2 = FindTextA((char *)DAT_07db8710,s_Webzen_00561764,'\0');
                 if ((char)uVar2 == '\0') {
-                  uVar2 = FUN_004977f0((char *)DAT_07db8710,s_WEBZEN_0056176c,'\0');
+                  uVar2 = FindTextA((char *)DAT_07db8710,s_WEBZEN_0056176c,'\0');
                   if ((char)uVar2 == '\0') {
-                    uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_07d4b4b0,'\0');
+                    uVar2 = FindTextA((char *)DAT_07db8710,&DAT_07d4b4b0,'\0');
                     if ((char)uVar2 == '\0') {
-                      uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_07d4b5dc,'\0');
+                      uVar2 = FindTextA((char *)DAT_07db8710,&DAT_07d4b5dc,'\0');
                       if ((char)uVar2 == '\0') {
                         return uVar2;
                       }

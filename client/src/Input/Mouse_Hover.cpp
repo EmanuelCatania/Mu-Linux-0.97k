@@ -6,7 +6,7 @@
 //   2. Determine which entity/item is under the cursor and store hover targets.
 //
 // ── Cursor billboard ──────────────────────────────────────────────────────────
-// FUN_004f8480(DAT_080ab288, DAT_080ab28c, screenX, screenY, 1.0f, 1, 1):
+// RenderTerrainTile(DAT_080ab288, DAT_080ab28c, screenX, screenY, 1.0f, 1, 1):
 //   Returns nonzero if cursor is visible/active.
 // If visible, calls GL_SetBlendAdditive() (hide char anim sprite for cursor area),
 // then FUN_004f8bb0(type=8, x, y, sx, sy, color, 0, alpha) to draw the quad.
@@ -54,20 +54,20 @@ void Mouse_UpdateHoverTargets(void)
     // en nuestro port. Crash AV en FUN_004f8740 al acceder al buffer null.
     // El cursor 2D (Cursor_Render) sigue funcionando normalmente.
     #if 0
-    if (DAT_005615c0 == 2 || DAT_005615c0 == 4 || DAT_005615c0 == 5)
+    if (SceneFlag == 2 || SceneFlag == 4 || SceneFlag == 5)
     {
         float color[3] = { 1.0f, 0.766f, 0.0f };
-        char visible = FUN_004f8480(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
+        char visible = RenderTerrainTile(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
         if (visible != '\0') {
             GL_SetBlendAdditive();
-            int frame = (DAT_005615c0 == 2) ? 1 : (DAT_07e11d5c + 1);
+            int frame = (SceneFlag == 2) ? 1 : (DAT_07e11d5c + 1);
             float sz = (float)frame;
             FUN_004f8bb0(8, DAT_083a4130, DAT_083a4134, sz, sz, color, 0, 1.0f);
         }
     }
-    if (DAT_005615c0 == 1 || DAT_005615c0 == 3) {
+    if (SceneFlag == 1 || SceneFlag == 3) {
         float color[3] = { 1.0f, 0.766f, 0.0f };
-        char visible = FUN_004f8480(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
+        char visible = RenderTerrainTile(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
         if (visible != '\0') {
             GL_SetBlendAdditive();
             float base = (float)DAT_07e11d5c + (float)DAT_07e11d5c + _DAT_0055256c;
@@ -83,7 +83,7 @@ void Mouse_UpdateHoverTargets(void)
     // 2026-05-06: añadido guard `c50 >= 0` para evitar OOB read cuando
     // SelectedCharacter == -1 (initial state). Antes se leía entity[+0x2fd] con
     // c50=-1 → puntero negativo → crash latente.
-    if (DAT_00559c5c == '\0' || DAT_0055a7ac == 6) {
+    if (DAT_00559c5c == '\0' || World == 6) {
         // Cursor disabled or spectator state
         SelectedCharacter = -1;
         DAT_00559c58 = -1;
@@ -223,11 +223,12 @@ done:
 
 // ── Additional helpers extracted from stubs_mouse_hover.cpp ─────────────────
 // ── Mouse hover helpers ────────────────────────────────────────────────────────
-// FUN_004f8480 @ 0x004F8480 — Terrain_TilePick(x,y,row,col,unused,stride,flag)
+// RenderTerrainTile @ 0x004F8480 — Terrain_TilePick(x,y,row,col,unused,stride,flag)
 // Stores world coords + tile index, optionally renders a debug outline (GL_LINE_STRIP).
 // For state 3 (combat target select), draws a filled quad and does mouse-ray intersection.
 // Returns 1 if mouse ray intersects tile, 0 otherwise.
-int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, float param_5, int param_6, int param_7) {
+// IDA: RenderTerrainTile (0x004F8480)
+int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param_4, float param_5, int param_6, int param_7) {
     float param_1 = *(float*)&iparam_1;
     float param_2 = *(float*)&iparam_2;
     *(float*)&DAT_07feb258 = param_1 * _DAT_005524f0;
@@ -344,7 +345,7 @@ void FUN_00512d30()
 int __cdecl Entity_SelectNearest(int param_1_int)
 {
     byte param_1 = (byte)param_1_int;
-    bool bVar17 = (DAT_005615c0 == 4);  // g_GameState == CharSelect
+    bool bVar17 = (SceneFlag == 4);  // SceneFlag == CharSelect
 
     // Pass 1: set highlight flags and color tints for visible entities
     byte *pbVar4 = (byte *)(DAT_07abf5d0 + 0x84);
@@ -377,7 +378,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     int   ent_idx   = 0;
     // DIAG: rate-limited per slot, log filter rejection reasons
     static DWORD s_lastFilt[5] = {0,0,0,0,0};
-    bool diagFilt = (DAT_005615c0 == 4);
+    bool diagFilt = (SceneFlag == 4);
 
     for (int ofs = 0; ofs < 0x59740; ofs += 0x394, ent_idx++) {
         char *ent = (char *)(ofs + DAT_07abf5d0);
@@ -448,10 +449,10 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             // Filtro de techos (IDA L~115-131): en Lorencia (World 0) una entidad
             // sobre un tile 4, y en Devias (World 2) sobre un tile 3, solo se
             // puede elegir si el heroe esta en ese mismo tipo de tile.
-            // `DAT_0055a7ac` es el indice de mapa (el macro `World` que lo
-            // nombraba g_GameSubState mentia; la nota vieja que deshabilito este
+            // `World` es el indice de mapa (el macro `World` que lo
+            // nombraba World mentia; la nota vieja que deshabilito este
             // filtro partia de esa etiqueta).
-            const int map = (int)DAT_0055a7ac;
+            const int map = (int)World;
             if (map == 0 || map == 2) {
                 int tx = (int)*(float*)(ent + 0x10) / 100;
                 int ty = (int)*(float*)(ent + 0x14) / 100;
@@ -497,7 +498,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 //   El path fiel (sub_4AFA40) hace un test de rayo contra la OBB del item con
 //   `sub_513260`; aca se usa proximidad world-space -- se compara el tile del item
 //   con el tile del terreno bajo el mouse (el mismo picker del click-to-move,
-//   FUN_004f9ac0 -> DAT_080ab288/28c).
+//   RenderTerrain -> DAT_080ab288/28c).
 //
 //   El motivo que se anotaba para no portarlo ("FUN_00513260 depende de macros
 //   Hex-Rays sin portar") YA NO APLICA: ese test quedo portado el 2026-09-04 al
@@ -517,7 +518,7 @@ int __cdecl ItemOnGround_HoverTest(void)
     // point-in-quad screen-space (FUN_00513260, 12-arg) que depende de macros
     // Hex-Rays sin portar. En su lugar usamos proximidad world-space: comparar
     // el tile del item con el tile del terreno bajo el mouse (el mismo picker
-    // que usa el click-to-move, FUN_004f9ac0 → DAT_080ab288/28c).
+    // que usa el click-to-move, RenderTerrain → DAT_080ab288/28c).
     // El pool DAT_07e12840 es 1000×0x204; layout por slot (base = pool+i*0x204):
     //   base+72   active flag
     //   base+424  visible flag (lo setea el render)

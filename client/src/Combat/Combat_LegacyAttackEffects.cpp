@@ -17,14 +17,14 @@
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -45,7 +45,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 #endif
 
 
-// FUN_00445230 @ 0x00445230 — AttackEffect(CHARACTER* c)
+// IDA: AttackEffect (0x00445230)
 // Spawns attack-hit effects and plays sounds based on the attacker's entity type.
 // Signature in original binary: __stdcall AttackEffect(CHARACTER *c) — 1 param.
 // Declared in functions.h as 3 ints; callers must use that convention.
@@ -67,7 +67,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 // de IDA en stubs_IDA_ports.cpp (2043 lineas), que ahora se activa con
 // IDA_PORT_00445230 en globals.h.
 #if !defined(IDA_PORT_00445230)
-void __cdecl FUN_00445230(int entity)
+void __cdecl AttackEffect(int entity)
 {
     if (!entity) return;
     const BYTE attackEffectKind = *(BYTE*)(entity + 747);
@@ -99,36 +99,36 @@ void __cdecl FUN_00445230(int entity)
         if (queuedSkill == 50 && frame == 1) {
             for (int n = 0; n < 18; ++n) {
                 effectAngle[0] = 0.0f; effectAngle[1] = 0.0f; effectAngle[2] = n * 20.0f;
-                Effect_Create(191, pos, effectAngle, light, (float*)1, (float*)entity, (float*)-1, 0, 0);
+                CreateEffect(191, pos, effectAngle, light, (float*)1, (float*)entity, (float*)-1, 0, 0);
             }
-            FUN_00404bc0(46, 0, 0);
+            PlayBuffer(46, 0, 0);
         }
         break;
     case 38:
     case 67:
         if (queuedSkill == 50) {
             if (frame == 1) {
-                Effect_Create(200, pos, angle, light, 0, 0, (float*)-1, 0, 0);
-                Effect_Create(201, pos, angle, light, 0, 0, (float*)-1, 0, 0);
-                FUN_00404bc0(89, 0, 0);
+                CreateEffect(200, pos, angle, light, 0, 0, (float*)-1, 0, 0);
+                CreateEffect(201, pos, angle, light, 0, 0, (float*)-1, 0, 0);
+                PlayBuffer(89, 0, 0);
             }
             world[0] = pos[0] + (float)(rand() % 1024) - 512.0f;
             world[1] = pos[1] + (float)(rand() % 1024) - 512.0f;
             world[2] = pos[2];
-            Effect_Create(191, world, angle, light, 0, 0, (float*)-1, 0, 0);
-            FUN_00404bc0(46, 0, 0);
+            CreateEffect(191, world, angle, light, 0, 0, (float*)-1, 0, 0);
+            PlayBuffer(46, 0, 0);
         }
         break;
     case 42:
         if (queuedSkill == 50 && frame == 1 && modelTop && boneMatricesTop) {
             BMD_TransformPosition(modelTop, (float*)(boneMatricesTop + 528), zero, world, 1);
             effectAngle[0] = angle[0] - 20.0f; effectAngle[1] = angle[1]; effectAngle[2] = angle[2] - 30.0f;
-            Effect_Create(191, world, effectAngle, light, (float*)2, 0, (float*)-1, 0, 0);
+            CreateEffect(191, world, effectAngle, light, (float*)2, 0, (float*)-1, 0, 0);
             effectAngle[0] = angle[0] - 30.0f; effectAngle[2] = angle[2];
-            Effect_Create(191, world, effectAngle, light, (float*)2, 0, (float*)-1, 0, 0);
+            CreateEffect(191, world, effectAngle, light, (float*)2, 0, (float*)-1, 0, 0);
             effectAngle[0] = angle[0] - 20.0f; effectAngle[2] = angle[2] + 30.0f;
-            Effect_Create(191, world, effectAngle, light, (float*)2, 0, (float*)-1, 0, 0);
-            FUN_00404bc0(46, 0, 0);
+            CreateEffect(191, world, effectAngle, light, (float*)2, 0, (float*)-1, 0, 0);
+            PlayBuffer(46, 0, 0);
         }
         break;
     case 45:
@@ -143,7 +143,7 @@ void __cdecl FUN_00445230(int entity)
         if (frame % 5 == 1 && modelTop && boneMatricesTop) {
             zero[0] = zero[1] = zero[2] = 0.0f;
             BMD_TransformPosition(modelTop, (float*)(boneMatricesTop + 3024), zero, world, 1);
-            Effect_Create(1211, world, angle, light, 0, 0, (float*)-1, 0, 0);
+            CreateEffect(1211, world, angle, light, 0, 0, (float*)-1, 0, 0);
         }
         if (queuedSkill == 50 && frame == 1) {
             float boltAngle[3] = { angle[0], angle[1], angle[2] + 20.0f };
@@ -151,7 +151,7 @@ void __cdecl FUN_00445230(int entity)
             float boltLight[3] = { 0.42000002f, 0.84000003f, 1.4f };
             for (int n = 0; n < 9; ++n) {
                 boltAngle[2] += 40.0f;
-                Effect_Create(1210, boltPosition, boltAngle, boltLight, 0, 0, (float*)-1, 0, 0);
+                CreateEffect(1210, boltPosition, boltAngle, boltLight, 0, 0, (float*)-1, 0, 0);
             }
         }
         break;
@@ -160,52 +160,52 @@ void __cdecl FUN_00445230(int entity)
         if (attackEffectKind == 59 && queuedSkill == 50 && frame == 14) {
             for (int n = 0; n < 18; ++n) {
                 effectAngle[0] = angle[0]; effectAngle[1] = angle[1]; effectAngle[2] = angle[2] + n * 20.0f;
-                Effect_Create(568, pos, effectAngle, light, 0, 0, (float*)-1, 0, 0);
+                CreateEffect(568, pos, effectAngle, light, 0, 0, (float*)-1, 0, 0);
             }
         }
         break;
     case 54: case 57: case 151:
         if (frame == 1) {
-            Effect_Create(223, pos, angle, light, 0, (float*)entity, (float*)-1, 0, 0);
+            CreateEffect(223, pos, angle, light, 0, (float*)entity, (float*)-1, 0, 0);
             if (attackEffectKind == 57) {
                 effectAngle[0] = angle[0]; effectAngle[1] = angle[1]; effectAngle[2] = angle[2] + 20.0f;
-                Effect_Create(223, pos, effectAngle, light, 0, (float*)entity, (float*)-1, 0, 0);
+                CreateEffect(223, pos, effectAngle, light, 0, (float*)entity, (float*)-1, 0, 0);
                 effectAngle[2] -= 40.0f;
-                Effect_Create(223, pos, effectAngle, light, 0, (float*)entity, (float*)-1, 0, 0);
+                CreateEffect(223, pos, effectAngle, light, 0, (float*)entity, (float*)-1, 0, 0);
             }
         }
         break;
     case 61:
-        if (frame == 1) Effect_Create(241, pos, angle, light, 0, 0, (float*)-1, 0, 0);
+        if (frame == 1) CreateEffect(241, pos, angle, light, 0, 0, (float*)-1, 0, 0);
         break;
     case 63:
         if (frame == 1) {
             Effect_SpawnBombRing(pos);
-            Effect_Create(241, pos, angle, light, 0, 0, (float*)-1, 0, 0);
+            CreateEffect(241, pos, angle, light, 0, 0, (float*)-1, 0, 0);
         }
         if (queuedSkill == 50) {
             world[0] = pos[0] + (float)(rand() % 800) - 400.0f;
             world[1] = pos[1] + (float)(rand() % 800) - 400.0f; world[2] = pos[2];
-            Effect_Create(240, world, angle, light, 0, 0, (float*)-1, 0, 0);
+            CreateEffect(240, world, angle, light, 0, 0, (float*)-1, 0, 0);
             if (frame == 14) for (int n = 0; n < 18; ++n) {
                 effectAngle[0] = angle[0]; effectAngle[1] = angle[1]; effectAngle[2] = angle[2] + n * 20.0f;
-                Effect_Create(568, pos, effectAngle, light, 0, 0, (float*)-1, 0, 0);
+                CreateEffect(568, pos, effectAngle, light, 0, 0, (float*)-1, 0, 0);
             }
         }
         break;
     case 66:
         if (queuedSkill == 50 && frame == 1)
-            Effect_Create(241, pos, angle, light, (float*)1, 0, (float*)-1, 0, 0);
+            CreateEffect(241, pos, angle, light, (float*)1, 0, (float*)-1, 0, 0);
         break;
     case 70:
         if (frame == 5 && *(short*)(entity + 784) >= 0 && *(short*)(entity + 784) < 400) {
             BYTE* targetTop = (BYTE*)(uintptr_t)CharactersClient + *(short*)(entity + 784) * 916;
-            for (int n = 0; n < 20; ++n) Effect_Create(1271, (float*)(targetTop + 16), (float*)(targetTop + 28), whiteTop, 0, 0, (float*)-1, 0, 0);
+            for (int n = 0; n < 20; ++n) CreateEffect(1271, (float*)(targetTop + 16), (float*)(targetTop + 28), whiteTop, 0, 0, (float*)-1, 0, 0);
         }
         break;
     case 71: case 74:
         if ((action == 3 || action == 4) && frame == 5) {
-            Effect_SpawnBombRing(pos); Effect_Create(241, pos, angle, light, 0, 0, (float*)-1, 0, 0);
+            Effect_SpawnBombRing(pos); CreateEffect(241, pos, angle, light, 0, 0, (float*)-1, 0, 0);
         }
         break;
     case 72:
@@ -222,7 +222,7 @@ void __cdecl FUN_00445230(int entity)
             for (int n = 0; n < 5; ++n) {
                 world[0] = pos[0] + (float)(rand() % 1001 - 500); world[1] = pos[1] + (float)(rand() % 1001 - 500); world[2] = pos[2] + 500.0f;
                 *(float*)(entity + 368) = world[0]; *(float*)(entity + 372) = world[1]; *(float*)(entity + 376) = world[2];
-                Effect_Create(256, world, effectAngle, orange, (float*)1, (float*)entity, (float*)-1, 0, 0);
+                CreateEffect(256, world, effectAngle, orange, (float*)1, (float*)entity, (float*)-1, 0, 0);
             }
         }
         break;
@@ -238,10 +238,10 @@ void __cdecl FUN_00445230(int entity)
             if (rand() & 1) {
                 world[0] = pos[0] + (float)(rand() % 1024) - 512.0f;
                 world[1] = pos[1] + (float)(rand() % 1024) - 512.0f; world[2] = pos[2];
-                Effect_Create(191, world, angle, light, 0, 0, (float*)-1, 0, 0);
-                FUN_00404bc0(46, 0, 0);
+                CreateEffect(191, world, angle, light, 0, 0, (float*)-1, 0, 0);
+                PlayBuffer(46, 0, 0);
             } else if (frame == 1) {
-                Effect_Create(241, pos, angle, light, (float*)1, 0, (float*)-1, 0, 0);
+                CreateEffect(241, pos, angle, light, (float*)1, 0, (float*)-1, 0, 0);
             }
         }
         break;
@@ -249,8 +249,8 @@ void __cdecl FUN_00445230(int entity)
         if (queuedSkill == 50) {
             world[0] = pos[0] + (float)(rand() % 1024) - 512.0f;
             world[1] = pos[1] + (float)(rand() % 1024) - 512.0f; world[2] = pos[2];
-            Effect_Create(191, world, angle, light, 0, 0, (float*)-1, 0, 0);
-            FUN_00404bc0(46, 0, 0);
+            CreateEffect(191, world, angle, light, 0, 0, (float*)-1, 0, 0);
+            PlayBuffer(46, 0, 0);
         }
         break;
     default: break;
@@ -287,7 +287,7 @@ void __cdecl FUN_00445230(int entity)
     if (queuedSkill == 17) {
         switch (attackEffectKind) {
         case 0x25:
-            if (*(BYTE*)(entity + 757) == 1) FUN_00404bc0(87, 0, 0);
+            if (*(BYTE*)(entity + 757) == 1) PlayBuffer(87, 0, 0);
             for (int n = 0; n < 4; ++n) {
                 handPosition(n, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
@@ -296,7 +296,7 @@ void __cdecl FUN_00445230(int entity)
             }
             break;
         case 0x2E:
-            if (*(BYTE*)(entity + 757) == 1) FUN_00404bc0(87, 0, 0);
+            if (*(BYTE*)(entity + 757) == 1) PlayBuffer(87, 0, 0);
             for (int n = 0; n < 4; ++n) {
                 handPosition(n, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = 0.0f;
@@ -311,7 +311,7 @@ void __cdecl FUN_00445230(int entity)
                 Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (int)target, 50.0f, -1, 0);
                 Joint_Create(1254, source, (float*)(target + 16), jointAngle, 2, (int)target, 10.0f, -1, 0);
             }
-            if (*(BYTE*)(entity + 757) == 1) FUN_00404bc0(87, 0, 0);
+            if (*(BYTE*)(entity + 757) == 1) PlayBuffer(87, 0, 0);
             for (int n = 0; n < 4; ++n) {
                 handPosition(n, 0.0f);
                 jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
@@ -320,7 +320,7 @@ void __cdecl FUN_00445230(int entity)
             }
             break;
         case 0x42: {
-            if (*(BYTE*)(entity + 757) == 1) FUN_00404bc0(60, 0, 0);
+            if (*(BYTE*)(entity + 757) == 1) PlayBuffer(60, 0, 0);
             float spin = 225.0f - (float)(((long long)DAT_05826e08 / 10 +
                                            3 * *(BYTE*)(entity + 757)) % 90);
             for (int n = 0; n < 4; ++n, spin += 270.0f) {
@@ -339,7 +339,7 @@ void __cdecl FUN_00445230(int entity)
                                           *(float*)(entity + 32), *(float*)(entity + 36) };
                 float orange[3] = { 1.0f, 0.5f, 0.0f };
                 BMD_TransformPosition(model, (float*)(boneMatrices + 528), offset, source, 1);
-                Effect_Create(256, source, effectAngle, orange, (float*)1, 0, (float*)-1, 0, 0);
+                CreateEffect(256, source, effectAngle, orange, (float*)1, 0, (float*)-1, 0, 0);
                 Joint_Create(1254, source, (float*)(target + 16), effectAngle, 2, (int)target, 50.0f, -1, 0);
             }
             break;
@@ -348,7 +348,7 @@ void __cdecl FUN_00445230(int entity)
                 float zero[3] = { 0.0f, 0.0f, 0.0f };
                 float effectAngle[3] = { *(float*)(entity + 28), *(float*)(entity + 32), *(float*)(entity + 36) };
                 BMD_TransformPosition(model, (float*)g_AttackEffectMatrix_04D, zero, source, 1);
-                Effect_Create(256, source, effectAngle, white, (float*)1, 0, (float*)-1, 0, 0);
+                CreateEffect(256, source, effectAngle, white, (float*)1, 0, (float*)-1, 0, 0);
                 Joint_Create(1254, source, source, effectAngle, 2, (int)target, 50.0f, -1, 0);
             }
             break;
@@ -357,7 +357,7 @@ void __cdecl FUN_00445230(int entity)
                 float offset[3] = { 60.0f, 30.0f, 0.0f };
                 float effectAngle[3] = { *(float*)(entity + 28), *(float*)(entity + 32), *(float*)(entity + 36) };
                 BMD_TransformPosition(model, (float*)(boneMatrices + 288), offset, source, 1);
-                Effect_Create(191, source, effectAngle, light, (float*)5, 0, (float*)-1, 0, 0);
+                CreateEffect(191, source, effectAngle, light, (float*)5, 0, (float*)-1, 0, 0);
             }
             break;
         case 0x59: case 0x5F: case 0x70: case 0x76: case 0x7C: case 0x82: case 0x88:
@@ -365,7 +365,7 @@ void __cdecl FUN_00445230(int entity)
                 float zero[3] = { 0.0f, 0.0f, 0.0f };
                 float effectAngle[3] = { *(float*)(entity + 28), *(float*)(entity + 32), *(float*)(entity + 36) };
                 BMD_TransformPosition(model, (float*)(boneMatrices + 1584), zero, source, 1);
-                Effect_Create(256, source, effectAngle, white, (float*)1, 0, (float*)-1, 0, 0);
+                CreateEffect(256, source, effectAngle, white, (float*)1, 0, (float*)-1, 0, 0);
                 Joint_Create(1254, source, source, effectAngle, 2, (int)target, 50.0f, -1, 0);
             }
             break;
@@ -388,7 +388,7 @@ void __cdecl FUN_00445230(int entity)
         }
         break;
     case 0x25:
-        if (*(BYTE*)(entity + 757) == 1) FUN_00404bc0(87, 0, 0);
+        if (*(BYTE*)(entity + 757) == 1) PlayBuffer(87, 0, 0);
         for (int n = 0; n < 4; ++n) {
             handPosition(n, 0.0f);
             jointAngle[0] = 0.0f; jointAngle[1] = 0.0f; jointAngle[2] = (float)(rand() % 360);
@@ -412,7 +412,7 @@ void __cdecl FUN_00445230(int entity)
         }
         break;
     case 0x59: case 0x5F: case 0x70: case 0x76: case 0x7C: case 0x82: case 0x88: {
-        if (*(BYTE*)(entity + 757) == 1) FUN_00404bc0(60, 0, 0);
+        if (*(BYTE*)(entity + 757) == 1) PlayBuffer(60, 0, 0);
         float spin = 225.0f - (float)(((long long)DAT_05826e08 / 10 +
                                        3 * *(BYTE*)(entity + 757)) % 90);
         for (int n = 0; n < 4; ++n, spin += 270.0f) {

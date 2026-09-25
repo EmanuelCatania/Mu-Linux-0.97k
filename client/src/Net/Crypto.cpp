@@ -1070,11 +1070,12 @@ int __cdecl FUN_00408e30(DWORD *a1)
   return 1;
 }
 
-// ── FUN_004093a0 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_004093a0 @ 0x004093A0 — Widget_Ctor: llama a FUN_00407fe0 y después setea la vtable.
-void* __fastcall FUN_004093a0(void *param_1)
+// ── Widget_Ctor — movida desde stubs_externs.cpp (refactor B3) ──
+// IDA: FUN_004093a0 (0x004093A0)
+// Widget_Ctor llama a Widget_CtorBase y después setea la vtable.
+void* __fastcall Widget_Ctor(void *param_1)
 {
-    FUN_00407fe0(param_1);
+    Widget_CtorBase(param_1);
     // vtable = &PTR_LAB_00552548 — skipped in re-impl
     return param_1;
 }

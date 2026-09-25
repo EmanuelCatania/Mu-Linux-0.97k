@@ -132,13 +132,13 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
             // El objetivo es la key del propio heroe, no SelectedCharacter.
             *(BYTE*)(uintptr_t)(character + 748) = 0;
             if (*(WORD*)(uintptr_t)(character + 2) == 390)
-                FUN_0043e820((int)character, 92);     // IDA: SetAction(v4, 92)
+                SetAction((int)character, 92);     // IDA: SetAction(v4, 92)
             else
-                FUN_00444410((int)character, 0, 0, 0); // IDA: SetPlayerAttack(v4)
+                SetPlayerAttack((int)character, 0, 0, 0); // IDA: SetPlayerAttack(v4)
 
             const DWORD now = GetTickCount();          // IDA L599-603
-            if ((DWORD)(now - DAT_05826cf4) <= 300) { result = 1; break; }
-            DAT_05826cf4 = now;
+            if ((DWORD)(now - g_dwLatestMagicTick) <= 300) { result = 1; break; }
+            g_dwLatestMagicTick = now;
             const WORD heroKey = *(WORD*)(Hero + 476); // IDA: *(_WORD *)(Hero + 476)
             BYTE packet[6] = { 0xC1, 6, 0x19, 18,
                                (BYTE)(heroKey >> 8), (BYTE)heroKey };
@@ -148,7 +148,7 @@ static char ItemEquip_DispatchFromItemSkillList(DWORD character, DWORD object, B
         }
         case 0x13: case 0x14: case 0x15:              // IDA L895-904: 19..23 y 49
         case 0x16: case 0x17: case 0x31:
-            if (FUN_00483160())                        // IDA: CheckAttack()
+            if (CheckAttack())                        // IDA: CheckAttack()
                 result = ItemEquip_UseSelectedTargetSkill(character, object, skill);
             break;
         default:                                       // IDA L906: goto LABEL_217
@@ -224,7 +224,7 @@ char __cdecl Item_Equip(DWORD character /* IDA: o */, DWORD object /* IDA: a2 */
         }
         if (piSkillMana > (int)*(unsigned short*)(attributes + 36))
             return 0;                                  // IDA L516-518
-        if (FUN_00483160())                            // IDA L520: CheckAttack()
+        if (CheckAttack())                            // IDA L520: CheckAttack()
             return ItemEquip_UseSelectedTargetSkill(character, character, skill);
         // IDA: si CheckAttack falla NO retorna — sigue por LABEL_25.
     }

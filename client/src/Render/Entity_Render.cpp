@@ -23,12 +23,12 @@
 //     puVar9[-0xed]    — float: world Z position
 //     puVar9[-0x103]   — short: entity class code (drives model lookup)
 //     puVar9[-0x145]   — uint:  entity state flags (byte>>3 & 0xf = sub-class)
-//     puVar9[-0x12e]   — byte:  — (passed to FUN_00505a10)
+//     puVar9[-0x12e]   — byte:  — (passed to RenderPartObject)
 //     puVar9[-0x1d..]  — floats: position-related offsets (for name tag placement)
 //     puVar9[+0x03]    — float: rotation angle
 //     puVar9[+0x07]    — float: — (model param)
-//     puVar9[+0x01]    — byte:  — (passed to FUN_00440060)
-//     puVar9[+0x63]    — float: — (passed to FUN_00505a10 as 'rot')
+//     puVar9[+0x01]    — byte:  — (passed to BMD_Animation)
+//     puVar9[+0x63]    — float: — (passed to RenderPartObject as 'rot')
 //     puVar9[-0xa9]    — short: screen X (world_to_screen result, written here)
 //     puVar9[-0xa7]    — short: screen Y (world_to_screen result, written here)
 //     puVar9[+0x5b]    — byte:  frustum visibility flag (written here)
@@ -37,7 +37,7 @@
 //
 //   DAT_05828d58  — sprite model table base (model entries at base + class * 0xbc)
 //   DAT_07abf5d8  — local player entity (stride 0x394); byte+0x1bc & 7 = equipped weapon slot
-//   DAT_0055a7ac  — g_GameSubState (== 10 → apply Z oscillation)
+//   World  — World (== 10 → apply Z oscillation)
 //   DAT_05826e08  — frame oscillation counter (for Z bob)
 //   local_9c      — running counter incremented each active entity
 //   local_98      — angle accumulator for Z bob (+=0x4d5 per entity)
@@ -78,11 +78,11 @@
 //     this[+0x74] = puVar9[-0xed]   (world Z)
 //
 //     FUN_00503830(class, this) → Sprite_SetupAnimation(class, model)
-//     FUN_00440060(this, 0x6970a9c, rot, pos, scale, ptr1, ptr2, '\0', '\0')
+//     BMD_Animation(this, 0x6970a9c, rot, pos, scale, ptr1, ptr2, '\0', '\0')
 //         → Sprite_Draw(model, flags=0x6970a9c, rot, pos, scale, ...) — main draw call
 //
 //     // Terrain slope angle for grounding
-//     FUN_004f7960(x, y, &local_74) → Terrain_GetAngle(x, y, out_angle)
+//     RequestTerrainLight(x, y, &local_74) → Terrain_GetAngle(x, y, out_angle)
 //     local_74 += puVar9[-0x1d]   (entity Z angle offset)
 //     local_70 += puVar9[-0x19]   (entity X angle offset)
 //     local_6c += puVar9[-0x15]   (entity Y angle offset)
@@ -97,16 +97,16 @@
 //         Matrix_BuildFromEuler(local_60, local_3c+3) → Matrix_FromEuler
 //         Vector_Rotate(local_3c, local_3c+3, &local_54) → Matrix_Transform
 //         offset_pos = base_pos + local_54
-//         FUN_00505a10(entity, class, 0, &local_74, rot, state_flags, ...)
+//         RenderPartObject(entity, class, 0, &local_74, rot, state_flags, ...)
 //             → Entity_DrawAt(entity, class, 0, angle, rot, flags, ...) (trail node)
 //       // restore original pos
 //
 //     // Main sprite draw
-//     FUN_00505a10(entity, class, 0, &local_74, rot, state_flags, ...)
+//     RenderPartObject(entity, class, 0, &local_74, rot, state_flags, ...)
 //         → Entity_DrawAt(entity, class, 0, angle, rot, flags, ...)
 //
-//     // Z oscillation (when g_GameSubState == 10)
-//     if g_GameSubState == 10:
+//     // Z oscillation (when World == 10)
+//     if World == 10:
 //       puVar9[-0xed] += sin(local_98 + DAT_05826e08) * _DAT_00552488
 //
 //     // World-to-screen projection for UI (HP bars, name tags)
@@ -142,9 +142,9 @@
 //
 //   Frustum_TestSphere  → FrustumCull_2D(float *pos, float max_dist) — returns short
 //   FUN_00503830  → Sprite_SetupAnimation(class, model_ptr)
-//   FUN_00440060  → Sprite_Draw(model, flags, rot, pos_ptr, scale_ptr, anim_ptr, dir_ptr, a, b)
-//   FUN_00505a10  → Entity_DrawAt(entity, class, slot, angle_ptr, rot, state, byte, a, b, c, d, e)
-//   FUN_004f7960  → Terrain_GetAngle(world_x, world_y, out_angle_xyz)
+//   BMD_Animation  → Sprite_Draw(model, flags, rot, pos_ptr, scale_ptr, anim_ptr, dir_ptr, a, b)
+//   RenderPartObject  → Entity_DrawAt(entity, class, slot, angle_ptr, rot, state, byte, a, b, c, d, e)
+//   RequestTerrainLight  → Terrain_GetAngle(world_x, world_y, out_angle_xyz)
 //   Camera_ProjectWorldToScreen  → World_ToScreen(pos[3], out_x, out_y)
 //   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
 //   Vector_Rotate  → Matrix_TransformPoint(pt, mat, out)
@@ -192,7 +192,7 @@ void Entity_Render(void)
     int         local_9c = 1;             // trail step counter
     int         local_98 = 0;             // Z-bob phase accumulator
     int         local_94 = 0;            // entity index (for random table)
-    float       local_74[3] = {};  // terrain angle output (x,y,z) from FUN_004f7960
+    float       local_74[3] = {};  // terrain angle output (x,y,z) from RequestTerrainLight
 #define local_70 local_74[1]    // Ghidra alias: local_70 is local_74+4
 #define local_6c local_74[2]    // Ghidra alias: local_6c is local_74+8
     undefined2  local_68[2] = {}, local_64[2] = {};   // screen XY output
@@ -244,7 +244,7 @@ void Entity_Render(void)
                 FUN_00503830((int)*(short *)(puVar9 + -0x103), (int)pModel);
 
                 // Bone animation setup + draw (anim[3] from entity offsets)
-                FUN_00440060(pModel, (int)&DAT_06970a9c,
+                BMD_Animation(pModel, (int)&DAT_06970a9c,
                              *(float *)(puVar9 + 3),
                              *(undefined4 *)(puVar9 + 7),
                              puVar9[1],
@@ -253,7 +253,7 @@ void Entity_Render(void)
                              '\0', '\0');
 
                 // Terrain slope angle for this position
-                FUN_004f7960(*pfVar1, *(float *)(puVar9 + -0xf1), local_74);
+                RequestTerrainLight(*pfVar1, *(float *)(puVar9 + -0xf1), local_74);
                 local_74[0] += *(float *)(puVar9 + -0x1d);
                 local_74[1] += *(float *)(puVar9 + -0x19);
                 local_74[2] += *(float *)(puVar9 + -0x15);
@@ -295,7 +295,7 @@ void Entity_Render(void)
                             *(float *)(puVar9 + -0xf5) = local_54 + fVar2;
                             *(float *)(puVar9 + -0xf1) = local_50 + fVar3;
                             *(float *)(puVar9 + -0xed) = local_4c + fVar4;
-                            FUN_00505a10((int)(puVar9 + -0x105),
+                            RenderPartObject((int)(puVar9 + -0x105),
                                          (int)*(short *)(puVar9 + -0x103),
                                          0, &local_74[0],
                                          *(float *)(puVar9 + 99),
@@ -317,7 +317,7 @@ void Entity_Render(void)
                 fVar3 = *(float *)(puVar9 + -0xed);
 
                 // ── Z-bob in sub-state 10 ─────────────────────────────────────
-                if (DAT_0055a7ac == 10) {
+                if (World == 10) {
                     fVar11 = (float10)sinl(((float10)local_98 + (float10)DAT_05826e08)
                                            * (float10)_DAT_005528e0);
                     *(float *)(puVar9 + -0xed) = (float)(fVar11 * (float10)_DAT_00552488
@@ -325,7 +325,7 @@ void Entity_Render(void)
                 }
 
                 // Main sprite draw
-                FUN_00505a10((int)(puVar9 + -0x105),
+                RenderPartObject((int)(puVar9 + -0x105),
                              (int)*(short *)(puVar9 + -0x103),
                              0, local_74,
                              *(float *)(puVar9 + 99),
@@ -363,7 +363,7 @@ void Entity_Render(void)
 // FUN_004fc030 @ 0x004fc030
 //
 // Entity_PrepareRender — validates an entity then sets up its render state.
-// Calls FUN_004faa70 (Entity_IsVisible) and, if non-zero, FUN_004fae00
+// Calls Calc_RenderObject (Entity_IsVisible) and, if non-zero, FUN_004fae00
 // (Entity_SetupRenderState) to configure matrices/culling for the entity.
 
 void __cdecl FUN_004fc030(unsigned char *param_1,unsigned int param_2,int param_3,char param_4)
@@ -371,7 +371,7 @@ void __cdecl FUN_004fc030(unsigned char *param_1,unsigned int param_2,int param_
 {
   undefined4 uVar1;
 
-  uVar1 = FUN_004faa70((int)param_1,(char)param_2,param_3);
+  uVar1 = Calc_RenderObject((int)param_1,(char)param_2,param_3);
   if ((char)uVar1 != '\0') {
     FUN_004fae00(param_1,param_2,param_3,param_4);
   }
@@ -379,24 +379,25 @@ void __cdecl FUN_004fc030(unsigned char *param_1,unsigned int param_2,int param_
 }
 
 
-// FUN_00454fc0 — Entity_UpdateVisibility
+// MoveCharacterClient — Entity_UpdateVisibility
 // Updates one entity's visibility flag and per-frame state.
 // param_1: entity pointer (float*)
 // Checks active flag (byte at param_1+0), runs frustum test, then calls:
 //   FUN_004f8ff0  — Frustum_TestPoint2D (returns visible flag)
-//   FUN_00454cd0  — update animation frame
-//   FUN_00449900  — compute screen position
-//   FUN_004520c0  — update entity state
-void __cdecl FUN_00454fc0(float *param_1)
+//   MoveMonsterClient  — update animation frame
+//   MoveCharacter  — compute screen position
+//   MoveCharacterVisual  — update entity state
+// IDA: MoveCharacterClient (0x00454FC0)
+void __cdecl MoveCharacterClient(float *param_1)
 {
   undefined2 uVar1;
 
   if (*(char *)param_1 != '\0') {
     uVar1 = FUN_004f8ff0(param_1[4] * _DAT_005524f8,param_1[5] * _DAT_005524f8,-20.0);
     *(char *)(param_1 + 0x58) = (char)uVar1;
-    FUN_00454cd0((int)param_1,(int)param_1);
-    FUN_00449900((int)param_1);
-    FUN_004520c0((int)param_1);
+    MoveMonsterClient((int)param_1,(int)param_1);
+    MoveCharacter((int)param_1);
+    MoveCharacterVisual((int)param_1);
   }
   return;
 }
@@ -418,7 +419,7 @@ void FUN_0045ab00(void)
   iVar2 = 0;
   do {
     pcVar1 = (char *)(DAT_07abf5d0 + iVar3);
-    if (((pcVar1 == DAT_07abf5d8) && ((DAT_07abf5d8[0x1c0] & 4U) != 0)) && (DAT_005615c0 == 5)) {
+    if (((pcVar1 == DAT_07abf5d8) && ((DAT_07abf5d8[0x1c0] & 4U) != 0)) && (SceneFlag == 5)) {
       pcVar1[0x130] = '\0';
       pcVar1[0x131] = '\0';
       pcVar1[0x132] = 'z';
@@ -444,7 +445,7 @@ void FUN_0045ab00(void)
       else {
         puVar4 = (undefined4 *)0x0;
       }
-      FUN_00456770((undefined4 *)pcVar1,(undefined4 *)pcVar1,puVar4);
+      RenderCharacter((undefined4 *)pcVar1,(undefined4 *)pcVar1,puVar4);
     }
     iVar3 = iVar3 + 0x394;
     iVar2 = iVar2 + 1;
@@ -475,7 +476,7 @@ void FUN_0045ab00(void)
 uint FUN_00500970(void)
 {
     // 2026-05-07: re-habilitado. Antes estaba TEMP DISABLED por flicker en
-    // char-select. Ahora gated por g_GameState == 5 (in-world) para evitar
+    // char-select. Ahora gated por SceneFlag == 5 (in-world) para evitar
     // ese path. Port FIEL desde IDA mu97k-src-IDA/raw/00500970_RenderBugs.c.
     //
     // Pool: DAT_083a1218 (10 entries × 0x1BC = 4440 bytes).
@@ -494,7 +495,7 @@ uint FUN_00500970(void)
     // se crean con CreateBug y se dibujan acá vía FUN_004fc030 → Draw_RenderObject.
     // El IDA no tiene gate interno — Scene_CharSelect (0x523B30 L142) llama RenderBugs
     // directamente. Se agrega state 4.
-    if (!(DAT_005615c0 == 5 || DAT_005615c0 == 4 || DAT_005615c0 == 2)) return 0;
+    if (!(SceneFlag == 5 || SceneFlag == 4 || SceneFlag == 2)) return 0;
 
     char* base = (char*)&DAT_083a1218[0];
     for (int i = 0; i < 10; ++i) {
@@ -525,7 +526,7 @@ uint FUN_00500970(void)
                 light[0] = intensity * 0.5f;
                 light[1] = intensity * 0.8f;
                 light[2] = intensity * 0.6f;
-                FUN_004795c0(1150, (float*)(slot + 16), 1.0f, light,
+                CreateSprite(1150, (float*)(slot + 16), 1.0f, light,
                              (int)slot, 0.0f, 0);
             }
         }
@@ -602,14 +603,14 @@ void __cdecl FUN_00505970(void *param_1,void *param_2_v,int param_3,char param_4
 }
 
 
-// FUN_00505a10 — Entity_RenderFull
+// RenderPartObject — Entity_RenderFull
 // Full entity render with LOD selection and double-pass for shadow/highlight.
 // param_11: quality level (0/1/2/3) controlling alpha and double-draw.
 // Skips if param_5 (distance) is below epsilon. Adjusts model type for
 // class 0x35c by sub-class bits. Copies position/flag fields from entity
-// to render object, then calls FUN_00504b50 for final draw.
+// to render object, then calls RenderPartObjectEffect for final draw.
 void __cdecl
-FUN_00505a10(int param_1,int param_2,undefined4 param_3,float *param_4,float param_5,uint param_6,
+RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float param_5,uint param_6,
             byte param_7,char param_8,undefined1 param_9,char param_10,int param_11,uint param_12)
 {
   void *this_;
@@ -675,7 +676,7 @@ FUN_00505a10(int param_1,int param_2,undefined4 param_3,float *param_4,float par
     // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_MeshDivine.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.
     DivineSkirt_Apply(param_1, param_2, (int)param_3, this_);
-    FUN_00504b50(param_1,param_2,param_4,param_5,param_6,param_7,param_11,param_12);
+    RenderPartObjectEffect(param_1,param_2,param_4,param_5,param_6,param_7,param_11,param_12);
   }
   return;
 }

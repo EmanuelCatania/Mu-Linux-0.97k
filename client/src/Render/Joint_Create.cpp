@@ -582,7 +582,7 @@ switchD_0046dd50_default:
             local_88 = local_88 + 1;
           } while ((uint)(uintptr_t)local_88 < DAT_055c9bd4);
         }
-        FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+        CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046e550:
         local_98 = (byte*)operator_new(0x585);
         local_98[0x584] = 1;
@@ -637,7 +637,7 @@ LAB_0046e742:
             local_8c = local_8c + 1;
           } while ((uint)(uintptr_t)local_8c < DAT_055c9bd4);
         }
-        FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+        CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
         goto LAB_0046e76a;
       case 1:
         pcVar14[0x9c0] = '\0';
@@ -653,7 +653,7 @@ LAB_0046e742:
         pcVar14[0x55] = '\0';
         pcVar14[0x56] = '\0';
         pcVar14[0x57] = '\0';
-        FUN_00404bc0(0x2a,0,0);
+        PlayBuffer(0x2a,0,0);
         break;
       case 2:
         pcVar14[0x9c0] = '\0';
@@ -705,7 +705,7 @@ LAB_0046e742:
         pcVar14[0x3d] = -0x34;
         pcVar14[0x3e] = -0x34;
         pcVar14[0x3f] = '=';
-        FUN_00404bc0(0x49,0,0);
+        PlayBuffer(0x49,0,0);
         break;
       case 4:
         *pfVar2 = 0.0;
@@ -819,7 +819,7 @@ LAB_0046e742:
             local_98 = local_98 + 1;
           } while ((uint)(uintptr_t)local_98 < DAT_055c9bd4);
         }
-        FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+        CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046ea53:
         local_88 = (byte*)operator_new(0x585);
         local_88[0x584] = 1;
@@ -874,7 +874,7 @@ LAB_0046ec45:
             pbVar26 = pbVar26 + 1;
           } while ((uint)(uintptr_t)pbVar26 < DAT_055c9bd4);
         }
-        FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+        CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
         goto LAB_0046ec6d;
       }
       goto switchD_0046dee7_default;
@@ -1759,7 +1759,7 @@ LAB_0046f55a:
           uVar9 = (uVar9 - 1 | 0xfffffff8) + 1;
         }
         local_98 = (byte *)(uVar9 + 8);
-        FUN_004795c0(0x4cf,pfVar1,(float)(int)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
+        CreateSprite(0x4cf,pfVar1,(float)(int)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
         ;
         fVar24 = *pfVar2 * _DAT_005526d8;
         *pfVar3 = 1.0;
@@ -2144,7 +2144,7 @@ LAB_0046eb2f:
     }
   }
 LAB_0046eb8a:
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046eb9c:
   puVar13 = (undefined4 *)0x0;
 LAB_0046eb9e:
@@ -2241,7 +2241,7 @@ LAB_0046ec6d:
       pbVar10 = pbVar10 + 1;
     } while ((uint)(uintptr_t)pbVar10 < DAT_055c9bd4);
   }
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
   goto LAB_0046ee73;
   while( true ) {
     uVar9 = (uVar9 + 1) % (uint)DAT_055c9bd4;
@@ -2290,7 +2290,7 @@ LAB_0046ed54:
     }
   }
 LAB_0046edb0:
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046edc2:
   puVar13 = (undefined4 *)0x0;
 LAB_0046edc4:
@@ -2402,7 +2402,7 @@ LAB_0046e62c:
     }
   }
 LAB_0046e687:
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046e699:
   puVar13 = (undefined4 *)0x0;
 LAB_0046e69b:
@@ -2498,7 +2498,7 @@ LAB_0046e76a:
       pbVar10 = pbVar10 + 1;
     } while ((uint)(uintptr_t)pbVar10 < DAT_055c9bd4);
   }
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
   goto LAB_0046e970;
   while( true ) {
     uVar9 = (uVar9 + 1) % (uint)DAT_055c9bd4;
@@ -2547,7 +2547,7 @@ LAB_0046e851:
     }
   }
 LAB_0046e8ad:
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046e8bf:
   puVar13 = (undefined4 *)0x0;
 LAB_0046e8c1:

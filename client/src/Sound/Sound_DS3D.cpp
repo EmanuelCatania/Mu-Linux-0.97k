@@ -1,7 +1,7 @@
 // Sound_DS3D.cpp
 // DirectSound8 playback + per-frame 3D positional update.
 //
-// PlayBuffer        @ 0x00404BC0 — start playback on a loaded slot (also FUN_00404bc0)
+// PlayBuffer        @ 0x00404BC0 — start playback on a loaded slot (also PlayBuffer)
 // Sound_UpdatePos   @ 0x00404CD0 — per-frame 3D listener-relative SetPosition
 // SetHall           @ 0x00404BB0 — stub in original (returns 1)
 //
@@ -21,7 +21,7 @@ static int SetHall(int /*Buffer*/) { return 1; }
 
 
 // ============================================================================
-// PlayBuffer / FUN_00404bc0  @ 0x00404BC0
+// PlayBuffer / PlayBuffer  @ 0x00404BC0
 // ============================================================================
 // Plays the secondary buffer for slot [Buffer][BufferChannel[Buffer]].
 //   Buffer  — sound ID (the same index passed to LoadWaveFile).
@@ -31,6 +31,7 @@ static int SetHall(int /*Buffer*/) { return 1; }
 // Returns S_OK (0) on success, or the HRESULT from Play on failure. Matches
 // IDA 00404BC0_PlayBuffer.c semantics (including the channel-wrap reset).
 // ============================================================================
+// IDA: PlayBuffer (0x00404BC0)
 HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped)
 {
     if (!g_EnableSound)   return S_OK;
@@ -75,11 +76,6 @@ HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped)
     return S_OK;
 }
 
-// Alias retained — other code calls FUN_00404bc0 directly via functions.h.
-HRESULT __cdecl FUN_00404bc0(int Buffer, DWORD Object, BOOL bLooped)
-{
-    return PlayBuffer(Buffer, Object, bLooped);
-}
 
 
 // ============================================================================
@@ -208,8 +204,9 @@ void __cdecl CErrorReport_WriteDebugInfoStr(DWORD This, char *fmt) {
     CErrorReport__Write(This, fmt);
 }
 
-// ── FUN_00405540 — movida desde stubs_render_helpers.cpp (refactor B3) ──
-void __cdecl FUN_00405540(void*,const char*,...)            {} // debug log — kept as stub
+// ── CErrorReport_Write — movida desde stubs_render_helpers.cpp (refactor B3) ──
+// IDA: CErrorReport::Write (0x00405540)
+void __cdecl CErrorReport_Write(void*,const char*,...)            {} // debug log — kept as stub
 
 // CErrorReport::WriteLogBegin @ 0x00405590 (IDA: FUN_00405590).
 void __fastcall CErrorReport_WriteLogBegin(DWORD This) {
@@ -217,14 +214,14 @@ void __fastcall CErrorReport_WriteLogBegin(DWORD This) {
 }
 
 // CErrorReport::WriteCurrentTime @ 0x004055A0 (IDA: FUN_004055A0).
-// Logs current local date/time via FUN_00405540 (debug log sink at DAT_055C9BF0).
+// Logs current local date/time via CErrorReport_Write (debug log sink at DAT_055C9BF0).
 // If param_1 != 0, logs an additional data block from DAT_00558128.
 void CErrorReport_WriteCurrentTime(int param_1) {
     _SYSTEMTIME local_10;
     GetLocalTime(&local_10);
-    FUN_00405540(&DAT_055c9bf0, "%4d %02d %02d %02d %02d"); // date+time format
+    CErrorReport_Write(&DAT_055c9bf0, "%4d %02d %02d %02d %02d"); // date+time format
     if (param_1 != 0) {
-        FUN_00405540(&DAT_055c9bf0, DAT_00558128);
+        CErrorReport_Write(&DAT_055c9bf0, DAT_00558128);
     }
 }
 

@@ -17,14 +17,14 @@
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -44,7 +44,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 #define HIWORD(x)            (*(((unsigned short*)&(x))+1))
 #endif
 
-// FUN_0047b110 @ 0x0047B110 — ConvertItemType(BYTE* Item)  (21 bytes)
+// ConvertItemType @ 0x0047B110 — ConvertItemType(BYTE* Item)  (21 bytes)
 // Port FIEL desde IDA: returns Item[0] + 2*(Item[3] & 0x80). The high bit of
 // Item[3] is the "Type Hi" flag used to distinguish item categories beyond
 // 256 entries (e.g. shields >= 0x100).
@@ -52,4 +52,3 @@ extern "C" int __cdecl ConvertItemType(BYTE* Item)
 {
     return (int)Item[0] + 2 * (int)(Item[3] & 0x80);
 }
-int __cdecl FUN_0047b110(BYTE* Item) { return ConvertItemType(Item); }

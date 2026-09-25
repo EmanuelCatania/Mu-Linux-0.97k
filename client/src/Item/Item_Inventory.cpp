@@ -25,7 +25,7 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-int __cdecl FUN_0047b110(BYTE* Item);
+extern "C" int __cdecl ConvertItemType(BYTE* Item);
 
 // ── External handles -─────────────────────────────────────────────────────────
 //
@@ -228,7 +228,7 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
         memset(slot, 0, sizeof(ITEM));
         *(short*)(slot + 0)  = -1;
         *(DWORD*)(slot + 56) = 0;
-        if (DAT_005615c0 == 5 && DAT_07abf5d8) {
+        if (SceneFlag == 5 && DAT_07abf5d8) {
             HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
         }
         return;
@@ -269,7 +269,7 @@ static void WriteEquipmentSlot(int slotIdx, int type, int level, BYTE optByte, B
     equip->x = (BYTE)slotIdx;
     equip->y = 0;
     equip->Color = 0;
-    if (DAT_005615c0 == 5 && DAT_07abf5d8) {
+    if (SceneFlag == 5 && DAT_07abf5d8) {
         HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
     }
 }
@@ -330,7 +330,7 @@ extern "C" void __cdecl AddItemToGrid(BYTE* gridBase, int gridW, int gridH,
 
             // 2026-05-08: BUG-FIX item +N glow.
             // sub_4E38B0 pasa `*(int*)(slot+4)` (= slot->Level int) como param_6
-            // a FUN_004e1be0 → RenderObjectScreen, que extrae el level con
+            // a RenderItem3D → RenderObjectScreen, que extrae el level con
             // `(param_6 >> 3) & 0xF`. Si Level está pre-decoded (0-15), el
             // shift en RenderObjectScreen produce (9>>3)=1 → no glow.
             // ItemData_FillStats(level) acaba de setear Level = decoded —
@@ -447,7 +447,7 @@ extern "C" void __cdecl Recv_Inventory(const BYTE* Msg)
 
     SeedQuickPotionTypesFromInventory();
 
-    if (DAT_005615c0 == 5 && DAT_07abf5d8) {
+    if (SceneFlag == 5 && DAT_07abf5d8) {
         HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
     }
 

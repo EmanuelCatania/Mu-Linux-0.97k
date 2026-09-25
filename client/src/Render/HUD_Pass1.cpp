@@ -43,7 +43,7 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // Referencias externas a helpers que ya existen en nuestro build.
 // (Camera_ProjectWorldToScreen = Projection, GL_DrawTexture = RenderBitmap, GL_DrawRect = RenderColor,
 //  UI_DrawText = RenderText_1, Camera_BuildMouseRay = CreateScreenVector,
-//  FUN_004e1be0 = RenderItem3D, GL_Begin2D = BeginBitmap, GL_End2D = EndBitmap,
+//  RenderItem3D = RenderItem3D, GL_Begin2D = BeginBitmap, GL_End2D = EndBitmap,
 //  GL_ResetState = DisableAlphaBlend, EnableAlphaBlend / EnableAlphaTest exist.)
 //
 // Helpers de hash-table — ya declarados en functions.h con linkage C++; acá no
@@ -399,7 +399,7 @@ void RenderMainFrameWindow_(void)
             // round-trip elsewhere).
             BYTE* fresh = new BYTE[0x585]();
             fresh[1412] = 1;
-            FUN_00403f80(&DAT_055c9bc8, fresh, v0);
+            HashTable_Insert(&DAT_055c9bc8, fresh, v0);
         }
     }
 
@@ -417,7 +417,7 @@ void RenderMainFrameWindow_(void)
 
     // ── Anti-tamper #2: symmetric ref-count decrement ───────────────────────
     // Vuelve a buscar el mismo buffer, decrementa [+1412] y, al llegar a cero, llama a
-    // FUN_00404400 para sacar la entrada (lo que en el original dispara la
+    // Packet_EncryptBuffer para sacar la entrada (lo que en el original dispara la
     // vuelta de re-encriptado XOR vía sub_404370). Cuando la tabla está vacía
     // this no-ops, matching IDA's "table full" error-report fallback.
     if (CharacterMachine) {
@@ -429,7 +429,7 @@ void RenderMainFrameWindow_(void)
                 BYTE v14 = (BYTE)(v13[1412] - 1);
                 v13[1412] = v14;
                 if (!v14) {
-                    FUN_00404400(v13, v0);
+                    Packet_EncryptBuffer(v13, v0);
                 }
             }
         }
@@ -461,12 +461,12 @@ void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
 //   EndBitmap / BeginBitmap (GL_End2D / GL_Begin2D)
 //   sub_482BE0(slot)        — devuelve el índice de OffsetInventoryItems del slot de la barra
 //   OffsetInventoryItems    — array of {Type, Level, ...}
-//   RenderItem3D            — FUN_004e1be0
+//   RenderItem3D            — RenderItem3D
 //   CreateScreenVector      — Camera_BuildMouseRay
 //   CameraPosition[]        — float[3] world-space camera
 //   CameraMatrix[]          — 4x4 GL matrix (already in our globals)
 // =============================================================================
-// Item_FindQuickSlotByCategory, FUN_004e1be0 y Camera_BuildMouseRay ya están declaradas en
+// Item_FindQuickSlotByCategory, RenderItem3D y Camera_BuildMouseRay ya están declaradas en
 // functions.h (que entra vía stdafx.h). FUN_004f5ce0 / FUN_004f6420 están
 // declaradas pero sin implementar en nuestro build — acá dejamos stubs para que
 // enlacen los call sites del render de la barra. Son renderers de efectos de
@@ -538,9 +538,9 @@ void Render_HotbarItems3D_(void)
                 BYTE* slotBase = OffsetInventoryItems + v2 * 0x44;
                 short itemType = *(short*)(slotBase + 0);
                 int   itemLvl  = *(int*)(slotBase + 4);
-                FUN_004e1be0((float)slot_x, 454.0f, 20.0f, 20.0f,
+                RenderItem3D((float)slot_x, 454.0f, 20.0f, 20.0f,
                              (int)itemType, itemLvl,
-                             0, 0);
+                             0, 0, 0);
             }
             slot_x += 31;
         }

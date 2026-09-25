@@ -178,7 +178,7 @@ void __cdecl FUN_004fae00(void *param_1_v, int param_2, int param_3, char param_
     // ── Tint overrides based on game sub-state / type ──────────────────────────
 
     // Sub-state 10 (dense rain) + type 0x12d → blue-tinted tint
-    if (DAT_0055a7ac == 10 && *(short *)(param_1 + 2) == 0x12d) {
+    if (World == 10 && *(short *)(param_1 + 2) == 0x12d) {
         *(float *)((int)model + 0x48) = 0.02f;          // 0x3ca3d70a R (el port tenia 0.15)
         *(float *)((int)model + 0x4c) = 0.05f;          // 0x3d4ccccd G
         *(float *)((int)model + 0x50) = 0.15f;          // 0x3e19999a B
@@ -186,7 +186,7 @@ void __cdecl FUN_004fae00(void *param_1_v, int param_2, int param_3, char param_
     }
 
     // Sub-state 9 (snow) + type 0x120 → icy tint
-    if (DAT_0055a7ac == 9 && *(short *)(param_1 + 2) == 0x120) {
+    if (World == 9 && *(short *)(param_1 + 2) == 0x120) {
         *(float *)((int)model + 0x48) = 0.0f;
         *(float *)((int)model + 0x4c) = 0.3f;           // 0x3e99999a G
         *(float *)((int)model + 0x50) = 1.0f;            // 0x3f800000 B
@@ -235,7 +235,7 @@ LAB_render_dispatch:
     if (sType == 0x10b)
         goto LAB_simple_render;
 
-    if (DAT_0055a7ac == 0) {
+    if (World == 0) {
         if (sType == 0x69) {
             // IDA 0x004FAE00: Waterspout01 in Lorencia renders 4 explicit mesh
             // passes with mesh indices 0..3 and object fields as the remaining
@@ -258,7 +258,7 @@ LAB_render_dispatch:
             glPopMatrix();
             return;
         }
-    } else if (DAT_0055a7ac == 4) {
+    } else if (World == 4) {
         // Char-select scene: specific entity types get extra render passes
         if (sType == 0x17 || sType == 0x13 || sType == 0x14 || sType == 3 || sType == 4) {
             _rand();
@@ -313,7 +313,7 @@ LAB_substate4_done:
                          0xffffffff);
             return;
         }
-    } else if (DAT_0055a7ac == 8) {
+    } else if (World == 8) {
         if (sType == 0x51) {
             // Map transition portal
             FUN_00440d30();
@@ -328,7 +328,7 @@ LAB_substate4_done:
             glPopMatrix();
             return;
         }
-    } else if (DAT_0055a7ac > 10 && DAT_0055a7ac < 0x11) {
+    } else if (World > 10 && World < 0x11) {
         if (sType == 0x1c || sType == 0x1d) {
             // Map-load transition: render + shadow drop
             FUN_00440d30();
@@ -342,7 +342,7 @@ LAB_substate4_done:
             glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
             float wx = *(float *)(param_1 + 0x10);
             float wy = *(float *)(param_1 + 0x14);
-            *(float *)((int)model + 0x74) = FUN_004f7500(wx, wy);
+            *(float *)((int)model + 0x74) = RequestTerrainHeight(wx, wy);
             *(float *)((int)model + 0x6c) = wx;
             *(float *)((int)model + 0x70) = wy;
             *(int *)(param_1 + 0x58) = 2;
@@ -560,7 +560,7 @@ LAB_substate4_done:
         if (param_1[0x105] == '\x06') {
             // Death animation trigger
             *param_1 = 0;
-            FUN_00404bc0(0x6a, 0, 0);
+            PlayBuffer(0x6a, 0, 0);
             FUN_00441be0(model, 0, 0x106);
             goto LAB_postprocess;
         }
@@ -568,8 +568,8 @@ LAB_substate4_done:
     }
 
     // 2026-09-04: aca habia un segundo bloque para sType 0x14a gateado por
-    // `DAT_005615c0 == 2` (login).  Draw_RenderObject (0x4FAE00) NO consulta
-    // g_GameState en ninguna parte -- su switch tiene UN solo `case 330`.  Era
+    // `SceneFlag == 2` (login).  Draw_RenderObject (0x4FAE00) NO consulta
+    // SceneFlag en ninguna parte -- su switch tiene UN solo `case 330`.  Era
     // una copia del bloque de abajo sin el chequeo de frames, o sea el patron
     // [[bloque-duplicado-dentro-de-una-funcion]].  Removido.
 
@@ -630,7 +630,7 @@ LAB_substate4_done:
             if (bDead) {
                 *param_1 = 0;          // desactiva la entidad: corre un solo frame
             }
-            FUN_00404bc0(0x6a, 0, 0);  // PlayBuffer(106)
+            PlayBuffer(0x6a, 0, 0);  // PlayBuffer(106)
             FUN_00441be0(model, 0, 0x104);
         }
         goto LAB_postprocess;

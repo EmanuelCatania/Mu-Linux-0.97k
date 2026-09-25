@@ -183,9 +183,7 @@ extern "C" int DAT_07d78068;
 #define dword_7EAA14C_alias      dword_7EAA14C
 #define m_Resolution_alias       m_Resolution
 
-// PACKET_ENCRYPT — used by GetScreenWidth (HUD_Pass2) and sub_4F6050; both
-// are anti-tamper noise calling into the hash-table.  Stub if unimplemented.
-extern "C" void __cdecl PACKET_ENCRYPT(void* /*ctx*/, void* /*key*/) {}
+// PACKET_ENCRYPT se implementa en Net/Crypto.cpp (0x00404040).
 
 // =============================================================================
 // RenderCenteredText — sub_514270.  Centre `pszText` at iPos_x.

@@ -1,9 +1,9 @@
 // Terrain_Light.cpp
 // Terrain light map computation and per-entity light colour lookup.
 //
-// FUN_004f7960 @ 0x004f7960 — Terrain_GetLightColor
+// RequestTerrainLight @ 0x004f7960 — Terrain_GetLightColor
 // FUN_004fa930 @ 0x004fa930 — Entity_GetLightScale
-// FUN_004f95e0 @ 0x004f95e0 — Terrain_ComputeLightMap
+// Terrain_Water @ 0x004f95e0 — Terrain_ComputeLightMap
 //
 // Terrain light map:
 //   DAT_07eab200 — float[256][256] per-tile brightness (wave-modulated)
@@ -15,13 +15,13 @@
 #include "stdafx.h"
 
 
-// FUN_004f7960 — Terrain_GetLightColor
+// IDA: RequestTerrainLight (0x004F7960)
 // Samples the light colour at world position (param_1, param_2) using
 // bilinear interpolation over the 256x256 tile RGB map at DAT_081cb608.
-// Requires map mode 5 (DAT_005615c0==5) and DAT_0839bc84 != 0.
+// Requires map mode 5 (SceneFlag==5) and DAT_0839bc84 != 0.
 // param_1: world X  param_2: world Y  param_3: output float[3] RGB
 // On failure (out-of-bounds or wrong mode), writes (0,0,0).
-void __cdecl FUN_004f7960(float param_1,float param_2,float *param_3)
+void __cdecl RequestTerrainLight(float param_1,float param_2,float *param_3)
 {
   float fVar1;
   float fVar2;
@@ -35,7 +35,7 @@ void __cdecl FUN_004f7960(float param_1,float param_2,float *param_3)
   float *pfVar10;
   longlong lVar11;
 
-  if ((DAT_005615c0 == 5) && (DAT_0839bc84 != '\0')) {
+  if ((SceneFlag == 5) && (DAT_0839bc84 != '\0')) {
     fVar3 = param_1 * _DAT_00552594;
     fVar2 = param_2 * _DAT_00552594;
     lVar11 = (longlong)fVar3;   // IDA RequestTerrainLight: v3 = (__int64)xfa  (xf*0.01)
@@ -89,7 +89,7 @@ void __cdecl FUN_004fa930(int param_1,int param_2)
   float10 fVar1;
   // PORT FIX: Ghidra decompile produced three separate locals (local_c/8/4)
   // where the original binary had a contiguous float[3] on the stack.
-  // FUN_004f7960 writes 3 floats starting at its output pointer, so the
+  // RequestTerrainLight writes 3 floats starting at its output pointer, so the
   // locals MUST be contiguous. In MSVC, separate `float` declarations are
   // NOT guaranteed to be adjacent — so local_8/local_4 ended up reading
   // uninitialised stack slots, producing huge/subnormal values that were
@@ -119,7 +119,7 @@ void __cdecl FUN_004fa930(int param_1,int param_2)
   }
   *(undefined1 *)(param_2 + 0x44) = *(undefined1 *)(param_1 + 0xdc);
   if (*(char *)(param_1 + 0xdc) != '\0') {
-    FUN_004f7960(*(float *)(param_1 + 0x10),*(float *)(param_1 + 0x14),rgb);
+    RequestTerrainLight(*(float *)(param_1 + 0x10),*(float *)(param_1 + 0x14),rgb);
     // Login banner (`0xa2` / MODEL_MUGAME): the overlay path in sub_440D50
     // multiplies the animated blend light by model BodyLight. In gameplay the
     // terrain sampler feeds that base color, but our login scene has no world
@@ -128,17 +128,17 @@ void __cdecl FUN_004fa930(int param_1,int param_2)
     //
     // Keep this narrowly scoped to the login banner so we preserve the world
     // renderer semantics and avoid brightening unrelated objects.
-    if ((DAT_005615c0 == 2 || DAT_005615c0 == 4) &&
+    if ((SceneFlag == 2 || SceneFlag == 4) &&
         *(short *)(param_1 + 2) == 0xA2 &&
         rgb[0] == 0.0f && rgb[1] == 0.0f && rgb[2] == 0.0f) {
         rgb[0] = rgb[1] = rgb[2] = 1.0f;
     }
-    // IDA-faithful nuance: en login/char-select (g_GameState 2/4) el banner/logo
+    // IDA-faithful nuance: en login/char-select (SceneFlag 2/4) el banner/logo
     // depende de que el terrain-light cero NO se reemplace por (1,1,1), para que
     // el fade venga puramente de OBJECT.Light (+0xe8..+0xf0). Mantener el fallback
     // fuera de esas escenas evita volver negro el mundo cuando el lightmap aún no
     // propagó, sin contaminar el intro.
-    if (DAT_005615c0 != 2 && DAT_005615c0 != 4 &&
+    if (SceneFlag != 2 && SceneFlag != 4 &&
         rgb[0] == 0.0f && rgb[1] == 0.0f && rgb[2] == 0.0f) {
         rgb[0] = rgb[1] = rgb[2] = 1.0f;
     }
@@ -147,13 +147,13 @@ void __cdecl FUN_004fa930(int param_1,int param_2)
     *(float *)(param_2 + 0x50) = local_4 + *(float *)(param_1 + 0xf0);
     return;
   }
-  FUN_004f7960(*(float *)(param_1 + 0x10),*(float *)(param_1 + 0x14),rgb);
-  if ((DAT_005615c0 == 2 || DAT_005615c0 == 4) &&
+  RequestTerrainLight(*(float *)(param_1 + 0x10),*(float *)(param_1 + 0x14),rgb);
+  if ((SceneFlag == 2 || SceneFlag == 4) &&
       *(short *)(param_1 + 2) == 0xA2 &&
       rgb[0] == 0.0f && rgb[1] == 0.0f && rgb[2] == 0.0f) {
     rgb[0] = rgb[1] = rgb[2] = 1.0f;
   }
-  if (DAT_005615c0 != 2 && DAT_005615c0 != 4 &&
+  if (SceneFlag != 2 && SceneFlag != 4 &&
       rgb[0] == 0.0f && rgb[1] == 0.0f && rgb[2] == 0.0f) {
     rgb[0] = rgb[1] = rgb[2] = 1.0f;
   }
@@ -166,7 +166,7 @@ void __cdecl FUN_004fa930(int param_1,int param_2)
 }
 
 
-// FUN_004f95e0 — MOVED TO src/Render/Terrain_Water.cpp (canonical location)
+// Terrain_Water — MOVED TO src/Render/Terrain_Water.cpp (canonical location)
 // This duplicate definition is disabled to avoid LNK2005.
 #if 0
 int FUN_004f95e0_DISABLED(void)
@@ -219,7 +219,7 @@ int FUN_004f95e0_DISABLED(void)
     iVar4 = (int)((longlong)uVar14 / 36000);
     fVar11 = (float10)(int)((longlong)uVar14 % 36000) * (float10)_DAT_005524f8;
   }
-  iVar2 = DAT_0055a7ac;
+  iVar2 = World;
   if ((int)uVar8 <= iVar10) {
     iVar9 = uVar8 << 8;
     iVar3 = DAT_0055a774 + 3;
@@ -247,4 +247,4 @@ int FUN_004f95e0_DISABLED(void)
   }
   return iVar4;
 }
-#endif  // disabled FUN_004f95e0 — see Terrain_Water.cpp
+#endif  // disabled Terrain_Water — see Terrain_Water.cpp

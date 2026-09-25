@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -45,22 +45,22 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// FUN_00423040 @ 0x00423040 — HashTable_Insert_Obfuscated (__thiscall this, param_1)
+// IDA: STRUCT_DECRYPT (0x00423040)
 // STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl FUN_00423040(void *ctx, void *chardata) {
+void __cdecl STRUCT_DECRYPT(void *ctx, void *chardata) {
     // STUB: HashTable insert with obfuscation — cannot implement safely (unaff_retaddr)
     (void)ctx; (void)chardata;
 }
-// FUN_00422df0 @ 0x00422DF0 — HashTable_Insert_Ptr (__thiscall this, param_1)
+// IDA: FUN_00422DF0 (0x00422DF0)
 // STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl FUN_00422df0(void *ctx, void *counter) {
+void __cdecl PACKET_DECRYPT(void *ctx, void *counter) {
     // STUB: HashTable insert (ptr) with obfuscation — cannot implement safely
     (void)ctx; (void)counter;
 }
 // FUN_0040e330 @ 0x0040E330 — NO es "Timer_Advance": es el ciclador del TAMAÑO
 // del historial del ChatListBox (tecla F4 y botón 2 del popup del chat).
 // Cicla this[35] (visible row count, +0x8C): 3 → 6 → 30 → 6 …, alternando
-// g_bUseChatListBox (DAT_005590ac), y después re-scrollea.
+// g_bUseChatListBox (g_bUseChatListBox), y después re-scrollea.
 //
 // FIX 2026-07-20 — CRASH 0xC0000005 con param0=8 (violación de EJECUCIÓN):
 // las 4 ramas hacían `(**(void(__cdecl**)(int))(*(int*)param_1 + 0x30))(0)`.
@@ -90,23 +90,23 @@ void __cdecl FUN_0040e330(unsigned long val) {
         return;
     default:
         if (param_1[0x23] >= 0x1f) {
-            DAT_005590ac = 1;
+            g_bUseChatListBox = 1;
             param_1[0x23] = 6;
         }
         ChatLB_ScrollBy0(param_1);
         return;
     case 6: case 9: case 0xc: case 0xf: case 0x12: case 0x15: case 0x18: case 0x1b:
-        if (DAT_005590ac == 1) {
+        if (g_bUseChatListBox == 1) {
             param_1[0x23] = 0x1e;
         } else {
-            DAT_005590ac = 1;
+            g_bUseChatListBox = 1;
             param_1[0x23] = 3;
         }
         ChatLB_ScrollBy0(param_1);
         return;
     case 0x1e:
         param_1[0x23] = 6;
-        DAT_005590ac = 0;
+        g_bUseChatListBox = 0;
         ChatLB_ScrollBy0(param_1);
         return;
     }

@@ -48,7 +48,7 @@ static const BYTE s_xorKey[32] = {
 };
 
 // Build a C1-framed packet, XOR it with the login key, encode it via
-// FUN_0053cc30, then send it.  Same send+WSAEWOULDBLOCK queue pattern
+// CSimpleModulus_Encode, then send it.  Same send+WSAEWOULDBLOCK queue pattern
 // used throughout Net_Process.cpp.
 static void SendLoginPacket(BYTE *payload, int payloadLen)
 {
@@ -57,20 +57,20 @@ static void SendLoginPacket(BYTE *payload, int payloadLen)
         payload[i] ^= s_xorKey[i & 0x1f];
 
     // Encode and send
-    FUN_0053cc30(0, payload, payloadLen);
+    CSimpleModulus_Encode(0, payload, payloadLen);
 
-    int sent = send(DAT_055ca168, (char *)payload, payloadLen, 0);
+    int sent = send(SocketClientSocket, (char *)payload, payloadLen, 0);
     if (sent == SOCKET_ERROR && WSAGetLastError() == WSAEWOULDBLOCK)
     {
-        // Queue into overflow buffer (max 0x2001 bytes at DAT_055ca16c).
-        // Other send paths append directly at DAT_055ca16c + queuedBytes;
+        // Queue into overflow buffer (max 0x2001 bytes at SocketClientSendBuffer).
+        // Other send paths append directly at SocketClientSendBuffer + queuedBytes;
         // the extra +4 here leaves a gap and desynchronises popup/login sends.
-        BYTE *qbuf = (BYTE *)DAT_055ca16c;
-        DWORD q    = *(DWORD *)((char *)&DAT_055ca160 + 0x0c); // queued byte count
+        BYTE *qbuf = (BYTE *)SocketClientSendBuffer;
+        DWORD q    = *(DWORD *)((char *)&SocketClient + 0x0c); // queued byte count
         if (q + (DWORD)payloadLen <= 0x2001)
         {
             memcpy(qbuf + q, payload, payloadLen);
-            *(DWORD *)((char *)&DAT_055ca160 + 0x0c) += payloadLen;
+            *(DWORD *)((char *)&SocketClient + 0x0c) += payloadLen;
         }
     }
 }
@@ -101,7 +101,7 @@ void __cdecl UI_InGameMenu(void)
     // cerraba primero los paneles abiertos (y mandaba 0x31), cancelaba los
     // carteles Si/No 151/153 y abria el menu sobre los carteles de desconexion;
     // nada de eso esta en el binario.
-    int escHit = Input_IsKeyJustPressed(27);  // PressKey(27)
+    int escHit = PressKey(27);  // PressKey(27)
     if (escHit && !DAT_07eaa165) {            // EquipmentItem
         if (DAT_083a7c24) {                   // ErrorMessage
             if (DAT_083a7c24 == 110 || DAT_083a7c24 == 150) {
@@ -113,7 +113,7 @@ void __cdecl UI_InGameMenu(void)
             if ((int)DAT_07e91388 > 0) Item_ReturnPickedItem();
         }
         state = DAT_083a7c24;
-        FUN_00404bc0(0x19, 0, 0);             // PlayBuffer(25), siempre
+        PlayBuffer(0x19, 0, 0);             // PlayBuffer(25), siempre
     }
 
     // ── Exit-countdown (IDA 00514310 L536-550) ──────────────────────────────
@@ -176,7 +176,7 @@ void __cdecl UI_InGameMenu(void)
     }
 
     // ── Escape / in-game menu ────────────────────────────────────────────
-    // N buttons (3/4/5 según g_GameState) en X=[0x103..0x17b], Y=(3*i+6)*10.
+    // N buttons (3/4/5 según SceneFlag) en X=[0x103..0x17b], Y=(3*i+6)*10.
     //
     // Render order (UI_StatsPanel RenderErrorMessage):
     //   Login (state 2, 3 btns):     Salir • Opciones • Cancelar
@@ -184,14 +184,14 @@ void __cdecl UI_InGameMenu(void)
     //   Ingame (state 5, 5 btns):     Salir • IrOtroSrv • IrOtroChar • Opciones • Cancelar
     //
     // Click routing (IDA 0x00514310 L600-1320): el índice i tiene acción distinta
-    // según g_GameState — case 0 siempre Exit, case 1 Options(login)|JoinServer(cs/in),
+    // según SceneFlag — case 0 siempre Exit, case 1 Options(login)|JoinServer(cs/in),
     // case 2 Close(login)|Options(cs)|JoinChar(in), case 3 Close(cs)|Options(in),
     // case 4 Close(in).
     case 0x6e:
     {
         if (mouseX >= 0x103 && mouseX <= 0x17b && IsClickPushed())
         {
-            DWORD gs = DAT_005615c0;              // g_GameState
+            DWORD gs = SceneFlag;              // SceneFlag
             int btnCount = (gs == 5) ? 5 : ((gs == 4) ? 4 : 3);
 
             for (int i = 0; i < btnCount; ++i)
@@ -223,13 +223,13 @@ void __cdecl UI_InGameMenu(void)
                         // cuando estamos in-game (gs==5). En login/char-select
                         // (gs==2/4) la rama de L823-825 solo cierra el socket y
                         // arranca el countdown — no envía nada al server.
-                        if (DAT_005615c0 == 5) {
+                        if (SceneFlag == 5) {
                             BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
                             SendLoginPacket(pkt, 5);
                         }
-                        if (DAT_055ca168 != 0xffffffff) {
-                            closesocket((SOCKET)DAT_055ca168);
-                            DAT_055ca168 = (DWORD)INVALID_SOCKET;
+                        if (SocketClientSocket != 0xffffffff) {
+                            closesocket((SOCKET)SocketClientSocket);
+                            SocketClientSocket = (DWORD)INVALID_SOCKET;
                         }
                         DAT_083a7c1c = 1;
                         DAT_083a7c20 = 50;   // 50 ticks = 5 s at 10 FPS refresh
@@ -238,7 +238,7 @@ void __cdecl UI_InGameMenu(void)
 
                     // ── case 1/2: el menú-índice NO coincide con el sub-byte F1/02 ──
                     // Protocolo F1/02: sub=0 Exit, sub=1 JoinChar, sub=2 JoinSrv.
-                    // Layout del menú según g_GameState:
+                    // Layout del menú según SceneFlag:
                     //   gs=2 login    : { Options, Close }
                     //                   case1=Options  case2=Close
                     //   gs=4 cs       : { Exit, JoinSrv, Options, Close }
@@ -251,7 +251,7 @@ void __cdecl UI_InGameMenu(void)
                     // emulando lo que ReceiveLogOut@0x004247D0 haría con la respuesta.
                     case 1:
                     {
-                        if (DAT_005615c0 == 4 || DAT_005615c0 == 5) {
+                        if (SceneFlag == 4 || SceneFlag == 5) {
                             // IDA 00514310 L843-1074 (menu "seleccionar servidor"):
                             // con la Chaos Machine abierta avisa GlobalText[592];
                             // si no, LogOut = 1 y manda F1/02/02 y cierra el menu.
@@ -271,7 +271,7 @@ void __cdecl UI_InGameMenu(void)
                                 BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x02 };
                                 Net_SendSmallPacket(pkt, 5);
                             }
-                        } else if (DAT_005615c0 == 2) {
+                        } else if (SceneFlag == 2) {
                             // Login: case 1 = Options
                             DAT_083a7c28 = 0x96;
                         }
@@ -280,7 +280,7 @@ void __cdecl UI_InGameMenu(void)
 
                     case 2:
                     {
-                        if (DAT_005615c0 == 5) {
+                        if (SceneFlag == 5) {
                             // 2026-05-05 (final): JoinChar — back to char-select.
                             //
                             // Análisis del pcap+server log: server tarda ~5
@@ -307,7 +307,7 @@ void __cdecl UI_InGameMenu(void)
                             Net_SendSmallPacket(pkt, 5);
                             // NO transición local. NO F3/00 send. Dejamos
                             // que Recv_LogOut maneje todo cuando llegue el ack.
-                        } else if (DAT_005615c0 == 4) {
+                        } else if (SceneFlag == 4) {
                             // Char-select: case 2 = Options
                             DAT_083a7c28 = 0x96;
                         } else {
@@ -376,9 +376,9 @@ void __cdecl UI_InGameMenu(void)
         // Las dos ramas terminan igual (sub_513C10 LABEL_32 / L2183-2187).
         DAT_083a7c14 = 0x18;
         DAT_083a7c18 = 0x15;
-        FUN_00404bc0(0x1b, 0, 0);                        // PlayBuffer(27)
+        PlayBuffer(0x1b, 0, 0);                        // PlayBuffer(27)
         if (yes) {
-            Input_ClearState(1);                         // ClearInput(1)
+            ClearInput(1);                         // ClearInput(1)
             DAT_00559c84 = 0;                            // InputEnable
         }
         goto tail;
@@ -411,7 +411,7 @@ void __cdecl UI_InGameMenu(void)
             // diálogo numérico después de ClearInput; no queda una segunda
             // capa de entrada activa detrás del cartel 118.
             DAT_083a7c28 = 118;
-            Input_ClearState(0);            // ClearInput(0)
+            ClearInput(0);            // ClearInput(0)
             DAT_00559c94 = (DWORD)42;   // InputTextMax[0]
             DAT_00559c88 = 2;           // InputNumber
             DAT_07e11d72 = 0;           // GoldInputEnable
@@ -436,7 +436,7 @@ void __cdecl UI_InGameMenu(void)
             // durante 150 ticks el indicador rojo de oferta modificada.
             if (DAT_07eaa0f4 != 0)
                 TradeMyWait = 150;
-            DAT_05826c9c = (DWORD)gold; // IDA: m_nTempMyTradeGold
+            m_nTempMyTradeGold = (DWORD)gold; // IDA: DAT_05826C9C
 
             // IDA: UI_InGameMenu 0x5162A2 — C1:08:3A:00:<DWORD LE>.
             // El DWORD empieza en +4 por el relleno de PBMSG_HEAD antes de
@@ -448,7 +448,7 @@ void __cdecl UI_InGameMenu(void)
             Net_SendWarehouseMoney((BYTE)(DAT_07eaa108 & 1), (DWORD)gold);
         }
 
-        Input_ClearState(0);                // ClearInput(0)
+        ClearInput(0);                // ClearInput(0)
         DAT_00559c94 = (DWORD)42;
         DAT_00559c88 = 2;
         DAT_07e11d72 = 0;               // GoldInputEnable = 0
@@ -657,7 +657,7 @@ void __cdecl UI_InGameMenu(void)
         DAT_083a7c24 = DAT_083a7c28;                     // ErrorMessage = NextErrorMessage
         DAT_083a7c28 = 0;
         DAT_07e11d28 = 0;                                // MouseUpdateTime
-        FUN_00404bc0(0x19, 0, 0);
+        PlayBuffer(0x19, 0, 0);
         return;
     }
 
@@ -749,7 +749,7 @@ void __cdecl UI_InGameMenu(void)
         DAT_083a7c28 = 0;
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        FUN_00404bc0(0x19, 0, 0);
+        PlayBuffer(0x19, 0, 0);
         return;
     }
 
@@ -792,7 +792,7 @@ void __cdecl UI_InGameMenu(void)
                 // NO goto tail — case 0x96 maneja sus transiciones internamente,
                 // pero sí reproducimos el click sound (IDA L837 PlayBuffer(25))
                 // que en el original viene del LABEL_75 común.
-                FUN_00404bc0(0x19, 0, 0);
+                PlayBuffer(0x19, 0, 0);
                 return;
             }
         }
@@ -829,7 +829,7 @@ void __cdecl UI_InGameMenu(void)
             DAT_00559f5e = (clickResult[1] == 1) ? (char)2 : (char)1;  // No=2, Yes=1
             DAT_083a7c24 = DAT_083a7c28;     // ErrorMessage = NextErrorMessage
             DAT_083a7c28 = 0;
-            FUN_00404bc0(0x19, 0, 0);        // PlayBuffer(25)
+            PlayBuffer(0x19, 0, 0);        // PlayBuffer(25)
         }
         return;
     }
@@ -866,7 +866,7 @@ void __cdecl UI_InGameMenu(void)
         DAT_083a4124 = 0;
         DAT_083a7c24 = DAT_083a7c28;
         DAT_083a7c28 = 0;
-        FUN_00404bc0(0x19, 0, 0);
+        PlayBuffer(0x19, 0, 0);
         return;
     }
 
@@ -982,8 +982,8 @@ void __cdecl UI_InGameMenu(void)
 
                 // Sonido por tipo de item, igual que el resto de los usos.
                 short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slot];
-                if (t == 448)                  FUN_00404bc0(33, 0, 0);
-                else if (t >= 449 && t <= 457) FUN_00404bc0(32, 0, 0);
+                if (t == 448)                  PlayBuffer(33, 0, 0);
+                else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
             }
             goto tail;                       // IDA cae a LABEL_488: cierra + sonido 25
         }
@@ -1084,5 +1084,5 @@ tail:
     DAT_083a7c28  = 0;
     DAT_07e11d28  = 0;
     DAT_00559bec  = 6;
-    FUN_00404bc0(0x19, 0, 0);
+    PlayBuffer(0x19, 0, 0);
 }

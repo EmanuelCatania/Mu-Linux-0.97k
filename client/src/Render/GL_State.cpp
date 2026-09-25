@@ -216,6 +216,7 @@ void GL_EndOpenGL(void)
 // param_1 == 0: pop current into 0x24, clear 0x28.
 // param_1 != 0 and 0x24 already set: write into 0x28.
 // param_1 != 0 and 0x24 empty: write into 0x24.
+// IDA: SetErrorMessage (0x005142D0)
 void __cdecl SetErrorMessage(int param_1)
 {
   undefined4 uVar1;

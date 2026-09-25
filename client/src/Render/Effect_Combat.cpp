@@ -42,9 +42,9 @@ void __cdecl Effect_SpawnBombRing(float *a1)
     out[2] = out[2] + a1[2];
     CreateBomb(out, 1);
     v2 = rand() % 2;
-    void *r197 = Effect_Create(v2 + 197, out, Angle, Light, (float*)1, (float*)0, (float*)-1, (float*)0, 0);
+    void *r197 = CreateEffect(v2 + 197, out, Angle, Light, (float*)1, (float*)0, (float*)-1, (float*)0, 0);
     v3 = rand() % 2;
-    void *r198 = Effect_Create(v3 + 197, out, Angle, Light, (float*)0, (float*)0, (float*)-1, (float*)0, 0);
+    void *r198 = CreateEffect(v3 + 197, out, Angle, Light, (float*)0, (float*)0, (float*)-1, (float*)0, 0);
     v4 = ++v1;
   }
   while ( v1 < 8 );
@@ -94,7 +94,7 @@ void __cdecl RenderWheelWeapon_stub(DWORD o) {
     *(short*)(o + 2) = (short)Type;
 
     // ItemObjectAttribute — sets up object render attributes
-    FUN_00502ba0(o);
+    ItemObjectAttribute(o);
 
     // BMD::Animation — Ghidra shows phantom register params (unaff_EBX/ESI/EDI/EBP);
     // the real call sets up bone matrices for the weapon model.
@@ -103,7 +103,7 @@ void __cdecl RenderWheelWeapon_stub(DWORD o) {
 
     // RequestTerrainLight — sample terrain lighting at object position
     float terrainLight[3] = { 0.0f, 0.0f, 0.0f };
-    FUN_004f7960(*(float*)(o + 0x10), *(float*)(o + 0x14), terrainLight);
+    RequestTerrainLight(*(float*)(o + 0x10), *(float*)(o + 0x14), terrainLight);
 
     // Add object's own light contribution
     terrainLight[0] += *(float*)(o + 0xE8);
@@ -114,7 +114,7 @@ void __cdecl RenderWheelWeapon_stub(DWORD o) {
     int lightLevel = (int)(*(BYTE*)(*(int*)(o + 0xFC) + 0x89)) << 3;
 
     // RenderPartObject(o, Type, NULL, light, alpha=0.0, level=1, opt=1, globalTrans=true, hideSkin=false, translate=true, select, renderType)
-    FUN_00505a10(o, Type, 0, terrainLight, 0.0f, 1, 1, 1, 0, 1, 0, 0);
+    RenderPartObject(o, Type, 0, terrainLight, 0.0f, 1, 1, 1, 0, 1, 0, 0);
 
     // Restore original type
     *(short*)(o + 2) = origType;
@@ -158,12 +158,12 @@ void __cdecl ItemDrop_RenderGroundWeapon(int param_1) {
 
     // Set up object render attributes
     DWORD save_d8 = *(DWORD*)(param_1 + 0xD8);
-    FUN_00502ba0(param_1);  // ItemObjectAttribute
+    ItemObjectAttribute(param_1);  // ItemObjectAttribute
     *(DWORD*)(param_1 + 0xD8) = save_d8;  // restore overwritten field
 
     // RequestTerrainLight — sample terrain lighting at object position
     float terrainLight[3] = { 0.0f, 0.0f, 0.0f };
-    FUN_004f7960(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14), terrainLight);
+    RequestTerrainLight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14), terrainLight);
 
     // Add object's own light contribution
     terrainLight[0] += *(float*)(param_1 + 0xE8);
@@ -179,7 +179,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(int param_1) {
     // RenderPartObject below handles the actual render.
 
     // RenderPartObject
-    FUN_00505a10(param_1, Type, 0, terrainLight, 0.0f, 1, 1, 1, 0, 1, 0, 0);
+    RenderPartObject(param_1, Type, 0, terrainLight, 0.0f, 1, 1, 1, 0, 1, 0, 0);
 
     // Restore original type
     *(short*)(param_1 + 2) = (short)(int)origTypeF;
@@ -258,7 +258,7 @@ void __cdecl CreateBlood_stub(DWORD o) {
             float pos[3] = { *(float*)(o + 0x10), *(float*)(o + 0x14), *(float*)(o + 0x18) };
             float ang[3] = { *(float*)(o + 0x1C), *(float*)(o + 0x20), *(float*)(o + 0x24) };
             float lit[3] = { *(float*)(o + 0xE8), *(float*)(o + 0xEC), *(float*)(o + 0xF0) };
-            Effect_Create(199, pos, ang, lit, NULL, NULL, NULL, NULL, 0);
+            CreateEffect(199, pos, ang, lit, NULL, NULL, NULL, NULL, 0);
             count = count - 1;
         } while (count != 0);
         return;

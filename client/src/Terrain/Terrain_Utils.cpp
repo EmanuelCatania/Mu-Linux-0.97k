@@ -1,6 +1,6 @@
 // Terrain_Utils.cpp
-// FUN_004f6c40 @ 0x004f6c40  — Grid_TileIndex
-// FUN_004f7500 @ 0x004f7500  — Terrain_HeightAt
+// IDA: FUN_004f6c40 (0x004F6C40)
+// RequestTerrainHeight @ 0x004f7500  — Terrain_HeightAt
 //
 // Grid_TileIndex:
 //   Converts (x, y) grid coordinates to a flat tile index:
@@ -15,20 +15,20 @@
 //   function signature.
 //
 // Globals:
-//   DAT_005615c0 — current game state (5 = in-game)
+//   SceneFlag — current game state (5 = in-game)
 //   DAT_080cb2cc — terrain height map float[256][256]
 //   _DAT_00552580 — float constant 0.0
 
 #include "stdafx.h"
 
-int __cdecl FUN_004f6c40(uint param_1,uint param_2)
+int __cdecl Terrain_GetTileIndex(uint param_1,uint param_2)
 
 {
   return (param_2 & 0xff) * 0x100 + (param_1 & 0xff);
 }
 
 
-// FUN_004f7500 @ 0x004F7500 — RequestTerrainHeight(xf, yf)
+// IDA: RequestTerrainHeight (0x004F7500)
 // Per IDA decomp (raw/004F7500_RequestTerrainHeight.c, 177 bytes).
 //
 // Bilinear interpolation of terrain height at world (xf, yf).
@@ -38,15 +38,15 @@ int __cdecl FUN_004f6c40(uint param_1,uint param_2)
 // pero MSVC en Release usa SSE/SSE2 → ftol leía basura → return 0 → todos los
 // hero/entity quedaban con z=0 (heroPos.z=0.0 en el log). Cambiamos la firma a
 // (xf, yf) explícitos como el IDA original y actualizamos los call-sites.
-float __cdecl FUN_004f7500(float xf, float yf)
+float __cdecl RequestTerrainHeight(float xf, float yf)
 {
-    // BUG-FIX 2026-04-28: el IDA original tiene guard `if (g_GameState != 5)`
+    // BUG-FIX 2026-04-28: el IDA original tiene guard `if (SceneFlag != 5)`
     // pero Recv_JoinMapServer llama CreateCharacterPointer ANTES de que el state
     // pase a 5 (en MuEmu el F3/03 llega rápido y el state machine está aún en 3
     // o 4). Resultado: hero.z spawn = 0. Relajamos el guard — ahora es seguro
-    // mientras el world esté cargado (DAT_0055a7ac válido y DAT_080cb2cc con
+    // mientras el world esté cargado (World válido y DAT_080cb2cc con
     // height map real). Si el array está en 0 retornamos 0 (mismo resultado).
-    if ((int)DAT_0055a7ac < 0) return 0.0f;
+    if ((int)World < 0) return 0.0f;
 
     float gx = xf * 0.01f;
     float gy = yf * 0.01f;
@@ -78,7 +78,7 @@ float __cdecl FUN_004f7500(float xf, float yf)
 // signed-area (cross-product) test against param_3.
 //
 // The terrain quad is stored as 4 projected vertices in DAT_07eeb228 (X) and
-// DAT_07eeb218 (Y), filled by FUN_004f8eb0 (Login_CameraUpdate).
+// DAT_07eeb218 (Y), filled by CreateFrustrum2D (Login_CameraUpdate).
 // Iterates the 4 edges; if any cross product < param_3, returns a flag-encoded
 // short indicating outside/on boundary.  Only active in game state 5.
 //
@@ -90,7 +90,7 @@ float __cdecl FUN_004f7500(float xf, float yf)
 //   (short)1 if not in game state 5 or all edges pass.
 //
 // Globals:
-//   DAT_005615c0  — current game state
+//   SceneFlag  — current game state
 //   DAT_07eeb228  — quad vertex X array (4 floats)
 //   DAT_07eeb218  — quad vertex Y array (4 floats)
 
@@ -100,7 +100,7 @@ undefined2 __cdecl FUN_004f8ff0(float param_1,float param_2,float param_3)
   // 004F8FF0 TestFrustrum2D returns a boolean.  The prior reconstruction
   // returned diagnostic bit flags for a failed edge; callers use this as a
   // boolean and therefore treated every rejected block as visible.
-  if (DAT_005615c0 != 5)
+  if (SceneFlag != 5)
     return 1;
 
   for (int i = 0, previous = 3; i < 4; previous = i++) {

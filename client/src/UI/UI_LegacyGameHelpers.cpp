@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -46,15 +46,6 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 
 
 // UI/game helpers
-// IDA: CloseInventoryRelatedWindows (0x004CBA60)
-// 2026-09-11: segunda implementacion de 0x4CBA60, etiquetada "CharPreview_Reset"
-// (falso).  Tenia la lista de flags correcta pero los pools corridos 0x38
-// (DAT_07ea5b68 / DAT_07ea9880 abordados como base).  Ahora delega en la unica
-// implementacion, CloseInventoryRelatedWindows (Item/Item_LegacyLinker.cpp).
-void __cdecl FUN_004cba60(void) {
-    CloseInventoryRelatedWindows();
-}
-
 // Item_ReturnPickedItem @ 0x004CD3B0 — UI_ItemGrid_Fill
 // Fills 2D grid buffers with current item slot data (DAT_07e91350) for equipment display.
 // Dispatches by DAT_07ea9800; each grid entry = 0x11 dwords, selection flag at offset 0x38.
@@ -105,14 +96,14 @@ void __cdecl Item_ReturnPickedItem(void)
         if (pos == 8 && DAT_07abf5d8) {
             int bug = (type == 416) ? 816 : (type == 418) ? 195 : (type == 419) ? 267 : 0;
             if (bug)
-                FUN_004fffd0(bug, (void*)(DAT_07abf5d8 + 0x10), (void*)DAT_07abf5d8, 0);
+                CreateBug(bug, (void*)(DAT_07abf5d8 + 0x10), (void*)DAT_07abf5d8, 0);
         }
         memcpy((BYTE*)CharacterMachine + 68 * pos + 536, DAT_07e91350, 0x44);
     }
 
     DAT_07e91388 = 0;
-    if (DAT_07abf5d8) FUN_0045c130((int)DAT_07abf5d8);      // SetCharacterClass(Hero)
-    FUN_00404bc0(29, 0, 0);                                  // PlayBuffer(29)
+    if (DAT_07abf5d8) SetCharacterClass((int)DAT_07abf5d8);      // SetCharacterClass(Hero)
+    PlayBuffer(29, 0, 0);                                  // PlayBuffer(29)
     // (bloques de hash-table anti-tamper omitidos)
 }
 
@@ -159,7 +150,7 @@ char __cdecl SelectSkillByHotkey(int a1)
             playerEnt[913] = (char)i;
             found = 1;
         }
-        if (DAT_00559c5c != 0 && DAT_0055a7ac != 6) {
+        if (DAT_00559c5c != 0 && World != 6) {
             const char skillType = CA[(unsigned char)playerEnt[913] + 87];
             if (skillType == 6 || skillType == 15) {
                 SelectedCharacter = 0xffffffff;

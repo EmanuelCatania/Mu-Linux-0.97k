@@ -12,11 +12,11 @@
 // Helper functions:
 //   FUN_00434dc0  = GuildMark_UpsertRecord — tabla de nombre/marca (implementada
 //                     en Net_Process hasta recuperar su módulo Guild dedicado)
-//   FUN_00423ce0  = Entity_UpdateTradeFlag — update entity[+0x2e9] for one entity
-//   FUN_00423c80  = Shop_FindSlotByName — search shop table by name, return slot idx
+//   GuildWar_UpdateEntityRelation  = Entity_UpdateTradeFlag — update entity[+0x2e9] for one entity
+//   FindGuildName = búsqueda de marca de guild por nombre.
 //   UI_AddNotice  = UI_OpenWindow       — open/update a named UI window (title, mode)
 //   FUN_00497870  = SetActionClass — auxiliar de acción de entidad + paquete de dirección
-//   FUN_005142d0  = ShowErrorDialog     — modal dialog by message ID
+//   SetErrorMessage  = ShowErrorDialog     — modal dialog by message ID
 //
 // ── SHOP ITEM TABLE ──────────────────────────────────────────────────────────
 //
@@ -83,8 +83,8 @@
 int  __cdecl Entity_FindById(int key);
 void __cdecl Entity_UpdateTradeFlag(BYTE* entity);
 int  __cdecl Shop_FindSlotByName(BYTE* name);
-// UI_ShowDialog = UIChatLogWindow_AddText = FUN_00480620 (declared in functions.h)
-// ShowErrorDialog = SetErrorMessage = FUN_005142d0 (declared in functions.h, defined in GL_State.cpp)
+// UI_ShowDialog = UIChatLogWindow_AddText = UIChatLogWindow_AddText (declared in functions.h)
+// ShowErrorDialog = SetErrorMessage = SetErrorMessage (declared in functions.h, defined in GL_State.cpp)
 void __cdecl UI_OpenWindow(char* title, int mode);
 
 // Shop item table
@@ -329,7 +329,7 @@ void Entity_UpdateTradeFlag(BYTE* entity)
 
 
 // ============================================================
-// IDA: FUN_00423C80
+// IDA: FUN_00423C80 (0x00423C80)
 // Linear search of shop item table by 4-byte name key.
 // Returns slot index, or -1 if not found.
 // ============================================================
@@ -386,7 +386,7 @@ static void LegacyMisclassified_TradeRequestResult(BYTE* pkt)
     };
 
     if (result <= 6)
-        UI_ShowDialog(label_table[result], msg_table[result], 2);  // FUN_00480620
+        UI_ShowDialog(label_table[result], msg_table[result], 2);  // UIChatLogWindow_AddText
 
     // Reset trade flags on all entities when trade not accepted
     if (result != 1 && !g_trade_active)
@@ -425,7 +425,7 @@ static void LegacyMisclassified_TradeIncomingReq(BYTE* pkt)
     g_trade_requester = *(DWORD*)(pkt + 7);             // DAT_05826c00
     g_trade_accepted = 0;                                // DAT_05826c04
 
-    FUN_005142d0(0x80);  // ShowErrorDialog — "wants to trade" / "wants to duel" dialog
+    SetErrorMessage(0x80);  // ShowErrorDialog — "wants to trade" / "wants to duel" dialog
 
     if (pkt[0xb] == 1)
         g_duel_mode = 1;

@@ -4,8 +4,8 @@
 // External helpers
 extern unsigned short __cdecl FUN_004f8ff0(float x, float y, float z);
 extern void __cdecl FUN_004fc030(unsigned char *entity, unsigned int slot, int flag, char mode);
-extern void __cdecl FUN_00405540(void *buf, const char *msg);
-extern void __cdecl FUN_00403f80(void *ctx, void *obj, void *key);
+extern void __cdecl CErrorReport_Write(void *buf, const char *msg);
+extern void __cdecl HashTable_Insert(void *ctx, void *obj, void *key);
 
 
 // ── Mejora INTENCIONAL del cliente final (cámara mejorada del DLL) — NO es 1:1 ─
@@ -24,7 +24,7 @@ static const float OBJECT_CULL_EXTRA_MARGIN = 270.0f;   // -30 - 270 = Range ≈
 void FUN_004fd800(void)
 {
     float z_offset = 0.0f;
-    if (DAT_0055a7ac == 10) {
+    if (World == 10) {
         z_offset = -10.0f;
     }
 
@@ -56,7 +56,7 @@ void FUN_004fd800(void)
                             continue;
                         }
 
-                        if (DAT_005615c0 != 5 && *(short*)(entity + 2) == 0)
+                        if (SceneFlag != 5 && *(short*)(entity + 2) == 0)
                         {
                             entity = *(char**)(entity + 0x1b8);
                             continue;
@@ -74,15 +74,15 @@ void FUN_004fd800(void)
                         {
                             // Terrain_Render in the original only prepares and draws.
                             // Per-frame object animation/update belongs to MoveObjects.
-                            if (DAT_0055a7ac == 2 && *(short*)(entity + 2) == 100)
+                            if (World == 2 && *(short*)(entity + 2) == 100)
                             {
                                 void *pvSlot = operator_new(0x585);
                                 *(unsigned char*)((char*)pvSlot + 0x584) = 1;
-                                FUN_00403f80(&DAT_055c9bc8, pvSlot, DAT_07cf1ffc);
+                                HashTable_Insert(&DAT_055c9bc8, pvSlot, DAT_07cf1ffc);
                             }
 
                             FUN_004fc030((unsigned char*)entity, 0, 0, '\0');
-                            FUN_004fc070((int)entity);
+                            Entity_SpawnEffects((int)entity);
                         }
 
                         entity = *(char**)(entity + 0x1b8);
@@ -103,7 +103,7 @@ void FUN_004fd800(void)
 
     // Login/char-select fallback: only seed the frustum-visible flag and let
     // Entity_RenderAll_3D drive the actual draw path.
-    if (DAT_005615c0 != 5)
+    if (SceneFlag != 5)
     {
         int iVar = 0;
         do {

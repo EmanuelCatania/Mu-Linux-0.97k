@@ -39,13 +39,13 @@ void __cdecl SendChat(char* Text) {
     // no hacían nada — el jugador se quedaba en el destino del primero y
     // parecía que el comando "recordaba" el mapa anterior.
     // Lo usan además WndProc y Chat_InputTick, que ya leían el global real.
-    if ((int)DAT_05826d08 > 0x32) return;
+    if ((int)ChatTime > 0x32) return;
 
     // Duplicate check: compare with last-sent text
-    if ((int)DAT_05826d08 > 0 && strcmp(DAT_05826adc, Text) == 0) return;
+    if ((int)ChatTime > 0 && strcmp(DAT_05826adc, Text) == 0) return;
 
     // Set cooldown and copy to last-sent buffer
-    DAT_05826d08 = 0x46;
+    ChatTime = 0x46;
     strncpy(DAT_05826adc, Text, sizeof(DAT_05826adc) - 1);
     DAT_05826adc[sizeof(DAT_05826adc) - 1] = '\0';
 
@@ -150,8 +150,8 @@ void __cdecl SendChat(char* Text) {
     // Fix header length
     pkt[1] = (BYTE)totalLen;
 
-    // Send via socket — DAT_055ca168 is the socket handle
-    SOCKET sock = (SOCKET)DAT_055ca168;
+    // Send via socket — SocketClientSocket is the socket handle
+    SOCKET sock = (SOCKET)SocketClientSocket;
     if (sock != INVALID_SOCKET) {
         int sent = 0;
         int toSend = (int)(totalLen & 0xffff);
@@ -160,19 +160,19 @@ void __cdecl SendChat(char* Text) {
             if (ret == SOCKET_ERROR) {
                 int err = WSAGetLastError();
                 if (err != WSAEWOULDBLOCK) {
-                    FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));
+                    CWsctlc_Close(((int)(uintptr_t)SocketClient));
                     return;
                 }
-                if ((int)(DAT_055cc16c + (DWORD)toSend) > 0x2000) {
-                    FUN_0043dc90(((int)(uintptr_t)DAT_055ca160));
+                if ((int)(SocketClientSendBufferLength + (DWORD)toSend) > 0x2000) {
+                    CWsctlc_Close(((int)(uintptr_t)SocketClient));
                     return;
                 }
-                memcpy((char*)DAT_055ca16c + DAT_055cc16c, pkt, toSend);
-                DAT_055cc16c += (DWORD)toSend;
+                memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, toSend);
+                SocketClientSendBufferLength += (DWORD)toSend;
                 return;
             }
             if (ret == 0) return;
-            if (DAT_055ce174 != 0) FUN_0043de60();
+            if (SocketClientLogPrint != 0) FUN_0043de60();
             sent += ret;
         }
     }

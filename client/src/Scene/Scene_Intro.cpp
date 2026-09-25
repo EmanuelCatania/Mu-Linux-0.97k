@@ -2,8 +2,8 @@
 // Scene_Intro @ 0x005137A0  (230 lines, decompile completo)
 //
 // Pantalla de intro: logo Webzen + badge "Everyone". Al terminar:
-//   DAT_083a410c == '\0' → g_GameState = 2 (Login, flujo normal)
-//   DAT_083a410c != '\0' → g_GameState = 5 (InGame directo, modo bypass/debug)
+//   DAT_083a410c == '\0' → SceneFlag = 2 (Login, flujo normal)
+//   DAT_083a410c != '\0' → SceneFlag = 5 (InGame directo, modo bypass/debug)
 //
 // ── DECOMPILE COMPLETO ────────────────────────────────────────────────────────
 //
@@ -17,8 +17,8 @@
 //       puVar3 += 0x38;
 //     } while ((int)puVar3 < 0x83bba00);
 //
-//     FUN_0050f690();                          → World_Init()
-//     Input_ClearState(1);                         → CharList_Init(1)
+//     OpenFont();                          → World_Init()
+//     ClearInput(1);                         → CharList_Init(1)
 //
 //     FUN_00529740("Local/Webzenlogo.jpg", 0xc, 0x2600, 0x2900, 0, '\x01');
 //     FUN_00529740("Local/Everyone.jpg",   0xd, 0x2600, 0x2900, 0, '\x01');
@@ -51,26 +51,26 @@
 //     glFlush();
 //     SwapBuffers(param_1);
 //
-//     FUN_0052a050(0xd);   // Texture_Unload("Everyone.jpg")
-//     FUN_0052a050(0xc);   // Texture_Unload("Webzenlogo.jpg")
+//     UnloadImage(0xd);   // Texture_Unload("Everyone.jpg")
+//     UnloadImage(0xc);   // Texture_Unload("Webzenlogo.jpg")
 //
 //     // PATH NORMAL: ir a Login
 //     if (DAT_083a410c == '\0') {
-//       FUN_00405540(&DAT_055c9bf0, "> Loading ok...");
-//       DAT_005615c0 = 2;   // g_GameState = Login
+//       CErrorReport_Write(&DAT_055c9bf0, "> Loading ok...");
+//       SceneFlag = 2;   // SceneFlag = Login
 //       Scene_LoadGameAssets() (IDA: FUN_00510320);
 //       return;
 //     }
 //
 //     // PATH BYPASS: ir directo a InGame
-//     DAT_005615c0 = 5;   // g_GameState = InGame
+//     SceneFlag = 5;   // SceneFlag = InGame
 //     DAT_083a7c10 = 1;   // render enable flag
 //     Scene_LoadGameAssets() (IDA: FUN_00510320);
-//     FUN_0050e5a0();      // World_Load()
+//     OpenWorld();      // World_Load()
 //     DAT_05826cac = 0;
 //
 //     // Spawn entidad local en posición hardcodeada
-//     // FUN_0045f930(0, 0, 0, 5414.4f, 21981.5f)
+//     // CreateHero(0, 0, 0, 5414.4f, 21981.5f)
 //     //   → Entity_Create(type=0, ..., world_x=0x44a8c000, world_y=0x46a9ec00)
 //     // + HashTable tracking (anti-tamper, omitido)
 //   }
@@ -90,7 +90,7 @@
 //
 //   DAT_083a7cd0  — array reseteado al inicio (stride 0x38, hasta 0x83bba00)
 //   DAT_083a410c  — bypass flag (0=normal, 1=bypass a InGame)
-//   DAT_005615c0  — g_GameState
+//   SceneFlag  — SceneFlag
 //   DAT_083a7c10  — render enable flag
 //   DAT_05826cac  — counter reset
 //   DAT_0056156c  — screen_width (para posicionamiento centrado)
@@ -102,18 +102,18 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_0050f690  → World_Init()
-//   Input_ClearState  → CharList_Init(mode)
+//   OpenFont  → World_Init()
+//   ClearInput  → CharList_Init(mode)
 //   FUN_00529740  → Texture_Load(path, id, w, h, flag, mipmap)
 //   GL_BeginViewport  → Viewport_Set(x, y, w, h)
 //   GL_Begin2D  → GL_SetupOrtho2D()
 //   GL_DrawTexture  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
 //   GL_End2D  → GL_End2D()
-//   FUN_0052a050  → Texture_Unload(id)
+//   UnloadImage  → Texture_Unload(id)
 //   Scene_LoadGameAssets (IDA: FUN_00510320) → shared asset loader
-//   FUN_0050e5a0  → World_Load()
-//   FUN_0045f930  → Entity_Create(type, ?, ?, world_x, world_y)
-//   FUN_00405540  → Log(hashtable, msg)
+//   OpenWorld  → World_Load()
+//   CreateHero  → Entity_Create(type, ?, ?, world_x, world_y)
+//   CErrorReport_Write  → Log(hashtable, msg)
 
 #include "stdafx.h"
 #include "Scene/Scene_Intro.h"
@@ -157,9 +157,9 @@ void __cdecl Scene_Intro(HDC param_1)
     }
 
     DBG("Scene_Intro: before Font_Init");
-    FUN_0050f690();    // World_Init
+    OpenFont();    // World_Init
     DBG("Scene_Intro: after Font_Init, before ClearInput");
-    Input_ClearState(1);   // CharList_Init(1)
+    ClearInput(1);   // CharList_Init(1)
     DBG("Scene_Intro: after ClearInput, before Texture_Load Webzenlogo");
 
     // Load splash textures
@@ -170,7 +170,7 @@ void __cdecl Scene_Intro(HDC param_1)
 
     DAT_083a42ea = 0;
     // Nota: el iTitle.wav (id 4) lo dispara el original con PlayBuffer(4,...)
-    // en Game_SceneUpdate al entrar a Login — ruteado via FUN_00404bc0 +
+    // en Game_SceneUpdate al entrar a Login — ruteado via PlayBuffer +
     // kUISounds mapping en Sound_DS3D.cpp. NO tocar aquí (sonaría 2x).
     GL_BeginViewport(0, 0, 0x280, 0x1e0);   // Viewport_Set(0,0,640,480)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -207,29 +207,29 @@ void __cdecl Scene_Intro(HDC param_1)
     DBG("Scene_Intro: after swap");
 
     // Unload splash textures immediately after display
-    FUN_0052a050(0xd);   // Texture_Unload(Everyone)
-    FUN_0052a050(0xc);   // Texture_Unload(Webzenlogo)
+    UnloadImage(0xd);   // Texture_Unload(Everyone)
+    UnloadImage(0xc);   // Texture_Unload(Webzenlogo)
 
     // Normal path → Login
     if (DAT_083a410c == '\0') {
         DBG("Scene_Intro: entering normal path, calling OpenBasicData");
-        FUN_00405540(&DAT_055c9bf0, "> Loading ok...");
-        DAT_005615c0 = 2;   // g_GameState = Login
+        CErrorReport_Write(&DAT_055c9bf0, "> Loading ok...");
+        SceneFlag = 2;   // SceneFlag = Login
         Scene_LoadGameAssets();
         DBG("Scene_Intro: OpenBasicData returned");
         return;
     }
 
     // Bypass/debug path → skip login, go straight to InGame
-    DAT_005615c0 = 5;    // g_GameState = InGame
+    SceneFlag = 5;    // SceneFlag = InGame
     DAT_083a7c10 = 1;
     Scene_LoadGameAssets();
-    FUN_0050e5a0();      // World_Load
+    OpenWorld();      // World_Load
     DAT_05826cac = 0;
 
     // Spawn local entity at hardcoded position (5414.4f, 21981.5f)
     // 0x44a8c000 = 1350.0f (x), 0x46a9ec00 = 21742.0f (y)
-    local_8 = (undefined1 *)FUN_0045f930(0, 0, 0, 1350.0f, 21742.0f, 0.0f);
+    local_8 = (undefined1 *)CreateHero(0, 0, 0, 1350.0f, 21742.0f, 0.0f);
     puVar1  = (undefined4 *)(local_8 + 0x388);
     local_c = puVar1;
     uVar4   = (**(code **)(DAT_055c9bc8 + 0xc))(puVar1);
@@ -263,22 +263,22 @@ void __cdecl Scene_Intro(HDC param_1)
             if (!bVar13) iVar8 = (1 - (uint)bVar12) - (uint)(bVar12 != 0);
             if (iVar8 == 0) {
                 if (uVar4 == 0xffffffff) goto LAB_00513a36;
-                puVar6 = (undefined4 *)FUN_00404280(&DAT_055c9bc8, puVar1);
+                puVar6 = (undefined4 *)HashTable_GetNode(&DAT_055c9bc8, puVar1);
                 cVar2  = *(char *)(puVar6 + 1);
                 *(byte *)(puVar6 + 1) = cVar2 + 1U;
                 if ((byte)(cVar2 + 1U) < 2)
-                    FUN_00409e20(puVar1, puVar6);
+                    Packet_DecryptDword(puVar1, puVar6);
             }
             uVar4 = (uVar4 + 1) % DAT_055c9bd4;
             uVar14++;
         } while (uVar14 < DAT_055c9bd4);
     }
-    FUN_00405540(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
+    CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 
 LAB_00513a36:
     pvVar5 = operator_new(5);
     *(undefined1 *)((int)pvVar5 + 4) = 1;
-    FUN_00403f80(&DAT_055c9bc8, pvVar5, puVar1);
+    HashTable_Insert(&DAT_055c9bc8, pvVar5, puVar1);
 
 LAB_00513a50:
     iVar7 = DAT_055c9bc8;
@@ -307,11 +307,11 @@ LAB_00513a50:
             if (!bVar13) iVar7 = (1 - (uint)bVar12) - (uint)(bVar12 != 0);
             if (iVar7 == 0) {
                 if (uVar4 != 0xffffffff) {
-                    puVar6 = (undefined4 *)FUN_00404280(&DAT_055c9bc8, puVar1);
+                    puVar6 = (undefined4 *)HashTable_GetNode(&DAT_055c9bc8, puVar1);
                     cVar2  = *(char *)(puVar6 + 1);
                     *(char *)(puVar6 + 1) = cVar2 - 1;
                     if ((char)(cVar2 - 1) == '\0')
-                        FUN_00423760(puVar6, puVar1);
+                        Packet_EncryptDword(puVar6, puVar1);
                 }
                 goto LAB_00513b4e;
             }
@@ -319,7 +319,7 @@ LAB_00513a50:
             uStack_4++;
         } while (uStack_4 < DAT_055c9bd4);
     }
-    FUN_00405540(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
+    CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 
 LAB_00513b4e:
     puVar1 = (undefined4 *)(iStack_10 + 0x38c);
@@ -327,7 +327,7 @@ LAB_00513b4e:
     if (uVar4 == 0xffffffff) {
         pvVar5 = operator_new(5);
         *(undefined1 *)((int)pvVar5 + 4) = 1;
-        FUN_00403f80(&DAT_055c9bc8, pvVar5, puVar1);
+        HashTable_Insert(&DAT_055c9bc8, pvVar5, puVar1);
     } else {
         uVar4  = HashTable_GetIndex(&DAT_055c9bc8, puVar1);
         puVar6 = (uVar4 == 0xffffffff) ? (undefined4 *)0x0
@@ -335,7 +335,7 @@ LAB_00513b4e:
         cVar2  = *(char *)(puVar6 + 1);
         *(byte *)(puVar6 + 1) = cVar2 + 1U;
         if ((byte)(cVar2 + 1U) < 2)
-            FUN_00409e20(puVar1, puVar6);
+            Packet_DecryptDword(puVar1, puVar6);
     }
     *puVar1 = 0xd9;
     uVar4 = HashTable_GetIndex(&DAT_055c9bc8, puVar1);
@@ -346,6 +346,6 @@ LAB_00513b4e:
         cVar2  = *(char *)(puVar6 + 1);
         *(char *)(puVar6 + 1) = cVar2 - 1;
         if ((char)(cVar2 - 1) == '\0')
-            FUN_00423760(puVar6, puVar1);
+            Packet_EncryptDword(puVar6, puVar1);
     }
 }

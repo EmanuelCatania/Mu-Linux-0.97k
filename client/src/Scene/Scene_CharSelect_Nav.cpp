@@ -28,7 +28,7 @@ int __cdecl Net_Disconnect(int ctx);
 
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -38,7 +38,7 @@ extern void __cdecl FUN_0054158c(void* ptr);
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 
 // IDA Hex-Rays intrinsic shims (mirror of stubs.cpp shims).
@@ -302,17 +302,17 @@ void FUN_004fa5a0(void)
 void __cdecl FUN_00444b30(int param_1)
 {
     if (*(short *)(param_1 + 2) == 0x186) {
-        FUN_0043e820(param_1, 0x57);
+        SetAction(param_1, 0x57);
     } else {
-        FUN_0043e820(param_1, 5);
+        SetAction(param_1, 5);
     }
 }
 
-// FUN_0047e350 @ 0x0047E350 — CharData_CalcNextLevelExp
+// IDA: FUN_0047E350 (0x0047E350)
 // Calcula la experiencia que falta para el nivel siguiente y la guarda en
 // el struct de datos del personaje, en el offset +0x34.
 // Formula: (lvl+9)*lvl²*10, plus cubic correction term if lvl > 255.
-void __fastcall FUN_0047e350(int param_1)
+void __fastcall CalculateNextExperince(int param_1)
 {
     uint uVar1 = (uint)*(ushort *)(param_1 + 0xe);
     int  iVar2 = (uVar1 + 9) * uVar1 * uVar1 * 10;
@@ -441,7 +441,7 @@ void __cdecl FUN_0045c720(int param_1)
         v2 = false;
     }
     if ((v1 < 0x22u || v1 > 0x5Bu) && v2) {
-        SetPlayerStop((void *)param_1);
+        SetPlayerStop((int)(uintptr_t)param_1);
     }
 
     int v3 = *(BYTE *)(param_1 + 0x1bc) & 7;
@@ -532,11 +532,12 @@ int __fastcall FUN_0043daf0(int param_1)
     return param_1;
 }
 
-// FUN_0043ddd0 @ 0x0043DDD0 — Net_FlushSendBuffer
+// CWsctlc_FDWriteSend @ 0x0043DDD0 — Net_FlushSendBuffer
 // Manda la cola de salida pendiente vía send(); maneja WSAEWOULDBLOCK
-// con elegancia (devuelve 1). Llama a FUN_0043dc90 ante errores fatales de socket (devuelve 0).
+// con elegancia (devuelve 1). Llama a CWsctlc_Close ante errores fatales de socket (devuelve 0).
 // Devuelve 1 si tuvo éxito o si el bloqueo no es fatal.
-int __fastcall FUN_0043ddd0(int param_1)
+// IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
+int __fastcall CWsctlc_FDWriteSend(int param_1)
 {
     int iVar2 = 0;
     if (0 < *(int *)(param_1 + 0x200c)) {
@@ -548,10 +549,10 @@ int __fastcall FUN_0043ddd0(int param_1)
             if (iVar1 == -1) {
                 int err = WSAGetLastError();
                 if (err == WSAEWOULDBLOCK) return 1;
-                FUN_0043dc90(param_1);
+                CWsctlc_Close(param_1);
                 return 0;
             }
-            if (iVar1 < 1) { FUN_0043dc90(param_1); return 0; }
+            if (iVar1 < 1) { CWsctlc_Close(param_1); return 0; }
             if (*(int *)(param_1 + 0x4014) != 0) FUN_0043de60();
             iVar2 += iVar1;
             iVar1 = *(int *)(param_1 + 0x200c) - iVar1;
@@ -561,12 +562,13 @@ int __fastcall FUN_0043ddd0(int param_1)
     return 1;
 }
 
-// FUN_0043de70 @ 0x0043DE70 — Net_Recv
+// CWsctlc_nRecv @ 0x0043DE70 — Net_Recv
 // Lee los datos entrantes del socket al buffer de recepción del contexto, y después despacha
-// todos los paquetes completos vía FUN_0043df90. Los paquetes parciales los maneja corriendo
+// todos los paquetes completos vía CPacketQueue_PushPacket. Los paquetes parciales los maneja corriendo
 // los bytes restantes al frente del buffer.
 // Returns 0 on clean dispatch, 1 on no data / WSAEWOULDBLOCK, 3 on incomplete header.
-int __fastcall FUN_0043de70(void *param_1)
+// IDA: sub_43DE70; 5.2: CWsctlc::nRecv (0x0043DE70)
+int __fastcall CWsctlc_nRecv(void *param_1)
 {
     int iVar2 = recv(*(SOCKET *)((int)param_1 + 8),
                      (char *)(*(int *)((int)param_1 + 0x4010) + 0x2010 + (int)param_1),
@@ -631,7 +633,7 @@ int __fastcall FUN_0043de70(void *param_1)
             wsprintfA(dbg, "NET: Net_Recv enqueue hdr=%02X len=%u", hdr, uLen);
             DbgLogPublic(dbg);
         }
-        FUN_0043df90((int)param_1, (int)pPkt, uLen);
+        CPacketQueue_PushPacket((int)param_1, (int)pPkt, uLen);
         if (*(int *)((int)param_1 + 0x4014) != 0) FUN_0043de60();
         iOff += uLen;
         int rem = *(int *)((int)param_1 + 0x4010) - uLen;
@@ -653,11 +655,12 @@ int __fastcall FUN_0043de70(void *param_1)
     return 0;
 }
 
-// FUN_0043e010 @ 0x0043E010 — NetContext_AllocSlot
+// CWsctlc_GetReadMsg @ 0x0043E010 — NetContext_AllocSlot
 // Scans 300 packet slots (stride 0x2008) looking for a free slot (flag==1).
 // Si tiene éxito lo marca como usado (flag=0) y devuelve el puntero a su región de datos (+0x4024).
 // Returns NULL if no free slot is available.
-int __fastcall FUN_0043e010(int param_1)
+// IDA: CWsctlc::GetReadMsg (0x0043E010)
+int __fastcall CWsctlc_GetReadMsg(int param_1)
 {
     int iVar1 = 0;
     int *piVar2 = (int *)(param_1 + 0x401c);
@@ -1160,11 +1163,11 @@ void Quest_InitializeStaticState(void) { FUN_00403ea0((void *)&DAT_00567500); }
 void FUN_00401020(void) {}
 
 // BuxConvert @ 0x00401120 (IDA: FUN_00401120; name from 5.2).
-// 3-byte repeating XOR key at DAT_00558090.
+// 3-byte repeating XOR key at bBuxCode.
 void __cdecl BuxConvert(void* buffer, int size) {
     const int buf = (int)(uintptr_t)buffer;
     for (int i = 0; i < size; i++)
-        *(byte *)(buf + i) ^= (byte)DAT_00558090[i % 3];
+        *(byte *)(buf + i) ^= (byte)bBuxCode[i % 3];
 }
 
 // ── CSQuest_ShowDialogText — movida desde stubs_helpers.cpp (refactor B3) ──
@@ -1366,7 +1369,7 @@ void __fastcall FUN_00401af0(void *param_1)
     }
 
 done:
-    FUN_00404bc0(0x1c, 0, 0);
+    PlayBuffer(0x1c, 0, 0);
     // m_iLinkForAnswer[slot] = indice del dialogo siguiente (IDA sub_401AF0
     // L387: `v64 = g_DialogScript[g_iCurrentDialogScript].m_iLinkForAnswer[v100];`
     // y solo encadena `if (v64 > 0 && !v98)`).
@@ -1395,7 +1398,7 @@ void __cdecl FUN_0043ce50(unsigned char param_1, int param_2) {
     // Packet format: [C1][len][01][81][...payload XOR-encrypted...]
     // Usa la clave XOR de 32 bytes (la misma que la encriptación del login).
     // Anti-tamper: local_d58[0..0x1f] re-initialized repeatedly — compiler artifact, skipped.
-    // Envío por socket vía DAT_055ca168, con cola de WSAEWOULDBLOCK en DAT_055ca16c.
+    // Envío por socket vía SocketClientSocket, con cola de WSAEWOULDBLOCK en SocketClientSendBuffer.
 
     static const unsigned char xorKey[32] = {
         0xe7, 0x6d, 0x3a, 0x89, 0xbc, 0xb2, 0x9f, 0x73,
@@ -1441,8 +1444,8 @@ void __cdecl FUN_0043ce50(unsigned char param_1, int param_2) {
     Net_SendSmallPacket(pktBuf, payloadLen);
 }
 
-// ── FUN_0043d1d0 — movida desde stubs_externs.cpp (refactor B3) ──
-void* __cdecl FUN_0043d1d0(void *ctx, void *chardata) { return nullptr; }
+// IDA: STRUCT_ENCRYPT (0x0043D1D0)
+void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata) { return nullptr; }
 
 // ── FUN_0043d3e0 — movida desde stubs_helpers.cpp (refactor B3) ──
 // FUN_0043d3e0 @ 0x0043D3E0 — HashTable_LockRead (3-arg: ctx, key, *out)
@@ -1462,15 +1465,16 @@ void __cdecl FUN_0043d8a0(void *ctx, void *out) {
 // IDA live/raw: nullsub_2 (`retn 8`), not a send-queue drain.
 void FUN_0043de60(void) {}
 
-// ── FUN_0043df90 — movida desde stubs_linker.cpp (refactor B3) ──
+// ── CPacketQueue_PushPacket — movida desde stubs_linker.cpp (refactor B3) ──
 // ═════════════════════════════════════════════════════════════════════════════
 // Tanda 20 — stubs para el linker (cuerpos vacíos de funciones que se llaman pero todavía no están decompiladas)
 // ═════════════════════════════════════════════════════════════════════════════
 
-// FUN_0043df90 @ 0x0043DF90 (38 lines) — Net_EnqueuePacket: copies packet into 300-slot queue
+// CPacketQueue_PushPacket @ 0x0043DF90 (38 lines) — Net_EnqueuePacket: copies packet into 300-slot queue
 // Cola en this+0x401c, cada slot = 0x2008 bytes (flag de 4 bytes, largo de 4 bytes, 0x2000 de datos).
 // Returns: 0=success, 1=queue full, 2=packet too large.
-void __cdecl FUN_0043df90(int param_1, int param_2, int param_3) {
+// IDA: sub_43DF90; 5.2: CPacketQueue::PushPacket (0x0043DF90)
+void __cdecl CPacketQueue_PushPacket(int param_1, int param_2, int param_3) {
     // param_1 = net context ptr, param_2 = packet data ptr, param_3 = packet length
     if ((int)param_3 > 0x2000) return; // packet too large
 
@@ -1496,16 +1500,16 @@ void __cdecl FUN_0043df90(int param_1, int param_2, int param_3) {
     // queue full — packet dropped
 }
 
-// ── FUN_0043e050 — movida desde stubs_externs.cpp (refactor B3) ──
+// ── CreateAngle — movida desde stubs_externs.cpp (refactor B3) ──
 // ── Missing function stubs (all LNK2019 unresolved externals) ─────────────────
 // Movement / pathfinding
-// FUN_0043e050 @ 0x0043E050 — CreateAngle(x1, y1, x2, y2)
+// IDA: Movement_Tick (0x0043E050)
 // Calcula el ángulo (en grados, 0..360) del punto (x1,y1) al (x2,y2).
 // Usa atan2 para el caso general; trata aparte los casos de dx o dy cercanos a cero.
 // Constants: _DAT_00552868 ~ 0.0001 (epsilon), _DAT_00552860 = 57.29578 (180/pi),
 //            _DAT_00552848 = 90.0, _DAT_005524ec = 180.0, _DAT_0055286c = 360.0,
 //            _DAT_00552580 = 0.0, _DAT_00552864 = 270.0
-float __cdecl FUN_0043e050(float x1, float y1, float x2, float y2)
+float __cdecl CreateAngle(float x1, float y1, float x2, float y2)
 {
     float dx = x2 - x1;
     float dy = y2 - y1;
@@ -1570,8 +1574,7 @@ int __cdecl FUN_0043e120(int param_1, int param_2, int param_3) {
     return (iVar2 + 0x168 + param_1) % 0x168;
 }
 
-// ── FUN_0043e1b0 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_0043e1b0 @ 0x0043E1B0 — TurnAngle2(curAngle, tgtAngle, step)
+// IDA: FUN_0043e1b0 (0x0043E1B0)
 // Avanza curAngle hacia tgtAngle a lo sumo 'step' grados, manejando la vuelta de 360.
 // Devuelve tgtAngle directo si está dentro del rango de step; si no, curAngle +/- step.
 //
@@ -1580,7 +1583,7 @@ int __cdecl FUN_0043e120(int param_1, int param_2, int param_3) {
 // math estándar "smooth turn-toward with 360° wrap", preservando la semántica
 // observable: snap si |delta| <= step, sino avanzar `step` grados por el camino
 // más corto (con wrap 0/360 respetado).
-float __cdecl FUN_0043e1b0(float a1, float a2, float a3)
+float __cdecl TurnAngle2(float a1, float a2, float a3)
 {
   if ( a1 < 0.0f ) a1 += 360.0f;
   if ( a2 < 0.0f ) a2 += 360.0f;
@@ -1607,17 +1610,18 @@ float __cdecl FUN_0043e1b0(float a1, float a2, float a3)
   }
 }
 
-// ── FUN_00444410 — movida desde stubs_game.cpp (refactor B3) ──
+// ── SetPlayerAttack — movida desde stubs_game.cpp (refactor B3) ──
 // SetPlayerAttack @ 0x00444410 (1627 bytes) — port FIEL desde IDA (2026-05-02).
 // Setea la animación de ataque + el sonido de la entidad según:
 //   - Entity type (c+2): non-player (39/40/51/302/default) vs player (390)
 //   - Para el jugador: helper (c+696)=818/819 → a distancia, si no las armas izquierda/derecha
 //     (c+624 LH, c+648 RH) determine animation 34..89.
-// Calls: SetAction (FUN_0043e820), CreateEffect (Effect_Create), PlayBuffer,
-//   SetAttackSpeed (FUN_00443e70). All implemented.
+// Calls: SetAction (SetAction), CreateEffect (CreateEffect), PlayBuffer,
+//   SetAttackSpeed (SetAttackSpeed). All implemented.
 //
 // functions.h declara 4 argumentos pero IDA usa sólo 1 (DWORD c). Los extra se ignoran.
-void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*/) {
+// IDA: SetPlayerAttack (0x00444410)
+void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*extra*/) {
     DWORD c = (DWORD)c_entity;
     if (c == 0) return;
     short v1 = *(short*)(c + 2);
@@ -1626,33 +1630,33 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
         // Non-player entities
         switch (v1) {
         case 39:
-            Effect_Create(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            CreateEffect(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(16, c, 0);
             break;
         case 40:
-            FUN_0043e820((int)c, 1);
+            SetAction((int)c, 1);
             PlayBuffer(16, c, 0);
             break;
         case 51:
-            Effect_Create(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            CreateEffect(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(91, 0, 0);
             break;
         case 302: {
             int r = rand() % 8;
             if (r <= 2) {
-                FUN_0043e820((int)c, (r <= 0) ? 9 : 8);
+                SetAction((int)c, (r <= 0) ? 9 : 8);
             } else {
-                FUN_0043e820((int)c, rand() % 2 + 3);
+                SetAction((int)c, rand() % 2 + 3);
             }
             break;
         }
         default:
             if (*(unsigned char*)(c + 771) % 3) {
-                FUN_0043e820((int)c, 4);
+                SetAction((int)c, 4);
             } else {
-                FUN_0043e820((int)c, 3);
+                SetAction((int)c, 3);
             }
             ++*(unsigned char*)(c + 771);
             break;
@@ -1661,7 +1665,7 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
     }
 
     // Player path
-    FUN_00443e70();  // SetAttackSpeed
+    SetAttackSpeed();  // SetAttackSpeed
     short v2 = *(short*)(c + 696);  // Helper.Type
 
     // Helper path (818/819 = pet/fairy ranged)
@@ -1673,20 +1677,20 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
             if (v5 >= 400 && v5 < 496) {
                 if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
                     if (v5 == 431) {
-                        FUN_0043e820((int)c, 81);
+                        SetAction((int)c, 81);
                     } else {
-                        FUN_0043e820((int)c, *(unsigned char*)(c + 771) % 3 + 39);
+                        SetAction((int)c, *(unsigned char*)(c + 771) % 3 + 39);
                     }
                 } else {
                     short v6 = *(short*)(c + 648);
                     if (v6 < 400 || v6 >= 496) {
-                        FUN_0043e820((int)c, (*(unsigned char*)(c + 771) & 1) + 35);
+                        SetAction((int)c, (*(unsigned char*)(c + 771) & 1) + 35);
                     } else {
                         switch (*(unsigned char*)(c + 771) & 3) {
-                        case 0: FUN_0043e820((int)c, 35); break;
-                        case 1: FUN_0043e820((int)c, 37); break;
-                        case 2: FUN_0043e820((int)c, 36); break;
-                        case 3: FUN_0043e820((int)c, 38); break;
+                        case 0: SetAction((int)c, 35); break;
+                        case 1: SetAction((int)c, 37); break;
+                        case 2: SetAction((int)c, 36); break;
+                        case 3: SetAction((int)c, 38); break;
                         }
                     }
                 }
@@ -1694,39 +1698,39 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
             }
             short v7 = *(short*)(c + 648);
             if (v7 >= 400 && v7 < 496) {
-                FUN_0043e820((int)c, rand() % 2 + 37);
+                SetAction((int)c, rand() % 2 + 37);
                 goto LABEL_85;
             }
             // Spear (560-591)
             if (v5 >= 560 && v5 < 592) {
                 if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
-                    FUN_0043e820((int)c, rand() % 2 + 84);
+                    SetAction((int)c, rand() % 2 + 84);
                 } else {
-                    FUN_0043e820((int)c, rand() % 2 + 35);
+                    SetAction((int)c, rand() % 2 + 35);
                 }
                 goto LABEL_85;
             }
             // Mace 497/498
             if (v5 == 497 || v5 == 498) {
-                FUN_0043e820((int)c, 42);
+                SetAction((int)c, 42);
                 goto LABEL_85;
             }
             // Mace/staff (496-527)
             if (v5 >= 496 && v5 < 528) {
-                FUN_0043e820((int)c, *(unsigned char*)(c + 771) % 3 + 43);
+                SetAction((int)c, *(unsigned char*)(c + 771) % 3 + 43);
                 goto LABEL_85;
             }
             // Bow/crossbow type detection on right hand
             if ((v7 >= 528 && v7 < 535) || v7 == 545) {
-                FUN_0043e820((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 46 : 48);
+                SetAction((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 46 : 48);
                 goto LABEL_85;
             }
             if ((v5 >= 536 && v5 < 543) || (v5 >= 544 && v5 < 545) || v5 == 546) {
-                FUN_0043e820((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 47 : 49);
+                SetAction((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 47 : 49);
                 goto LABEL_85;
             }
         }
-        FUN_0043e820((int)c, 34);
+        SetAction((int)c, 34);
         goto LABEL_85;
     }
 
@@ -1736,25 +1740,25 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
         if (v3 < 496) {
             // fall through to LABEL_11 (right-hand weapon check)
         } else if (v3 < 501) {
-            FUN_0043e820((int)c, 52);
+            SetAction((int)c, 52);
             goto LABEL_85;
         } else if (v3 >= 528) {
             // continue to LABEL_11
         } else {
-            FUN_0043e820((int)c, 53);
+            SetAction((int)c, 53);
             goto LABEL_85;
         }
         // LABEL_11: weapon checks
         short v4 = *(short*)(c + 648);
         if ((v4 >= 528 && v4 < 535) || v4 == 545) {
-            FUN_0043e820((int)c, 54);
+            SetAction((int)c, 54);
         } else if ((v3 >= 536 && v3 < 543) || (v3 >= 544 && v3 < 545) || v3 == 546) {
-            FUN_0043e820((int)c, 55);
+            SetAction((int)c, 55);
         } else if (v3 != -1 &&
                    *((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v3 - 399] - 34)) {
-            FUN_0043e820((int)c, 51);
+            SetAction((int)c, 51);
         } else {
-            FUN_0043e820((int)c, 50);
+            SetAction((int)c, 50);
         }
     }
 
@@ -1804,12 +1808,13 @@ LABEL_85:
     ++*(unsigned char*)(c + 771);
 }
 
-// ── FUN_00444a80 — movida desde stubs_game.cpp (refactor B3) ──
+// ── SetPlayerMagic — movida desde stubs_game.cpp (refactor B3) ──
 // SetPlayerMagic @ 0x00444a80 (38 líneas) — setea la animación de casteo en la entidad del héroe
 // Si el tipo de entidad != 0x186: alterna la acción 3/4 según el contador de combo % 3
 // If entity type == 0x186 (special): SetAttackSpeed, class-specific action (0x52/0x53 random, 0x56 swim, 0x5b certain classes)
-// Declarada en functions.h como FUN_00444a80(int param_1)
-void __cdecl FUN_00444a80(int param_1) {
+// Declarada en functions.h como SetPlayerMagic(int param_1)
+// IDA: SetPlayerMagic (0x00444A80)
+void __cdecl SetPlayerMagic(int param_1) {
     DWORD c = (DWORD)param_1;
     if (c == 0) return;
     short entityType = *(short*)(c + 2);
@@ -1820,20 +1825,20 @@ void __cdecl FUN_00444a80(int param_1) {
         } else {
             action = 4;
         }
-        // SetAction(entity, action) — FUN_0043e820
-        FUN_0043e820((int)c, action);
+        // SetAction(entity, action) — SetAction
+        SetAction((int)c, action);
         *(char*)(c + 0x303) = *(char*)(c + 0x303) + 1;
         return;
     }
     // Special entity type 0x186: SetAttackSpeed then class-based action
-    FUN_00443e70();  // SetAttackSpeed
+    SetAttackSpeed();  // SetAttackSpeed
     short charClass = *(short*)(c + 0x2b8);
     if ((charClass == 0x332 || charClass == 0x333) && *(char*)(c + 0x34e) == '\0') {
-        FUN_0043e820((int)c, 0x5b);
+        SetAction((int)c, 0x5b);
         return;
     }
     if ((*(BYTE*)(c + 0x1bc) & 7) == 2) {
-        FUN_0043e820((int)c, 0x56);
+        SetAction((int)c, 0x56);
         return;
     }
     int r = rand();
@@ -1841,11 +1846,11 @@ void __cdecl FUN_00444a80(int param_1) {
     if ((int)v < 0) {
         v = (v - 1 | 0xFFFFFFFE) + 1;
     }
-    FUN_0043e820((int)c, (int)(v + 0x52));
+    SetAction((int)c, (int)(v + 0x52));
 }
 
-// ── FUN_00444b60 — movida desde stubs_misc2.cpp (refactor B3) ──
-// FUN_00444b60 @ 0x00444B60 — SetPlayerShock(DWORD c, int Hit)
+// ── SetPlayerShock — movida desde stubs_misc2.cpp (refactor B3) ──
+// SetPlayerShock @ 0x00444B60 — SetPlayerShock(DWORD c, int Hit)
 // Reproduce la reacción de "me pegaron" (anim 130 para el jugador, anim 5 para los monstruos) más
 // a hit-grunt sound (PlayBuffer). Port FIEL desde IDA decompile (546 bytes).
 //
@@ -1866,10 +1871,11 @@ void __cdecl FUN_00444a80(int param_1) {
 //   +0x2EC byte   alive_flag        (se limpia en el shock del jugador, per IDA)
 //   +0x2FD byte   dead_flag         (set ⇒ skip)
 // Forward decls (signatures match functions.h / existing impls — return type
-// de FUN_0043e820 en algunos headers es `void*`, así que delegamos vía el global
+// de SetAction en algunos headers es `void*`, así que delegamos vía el global
 // header rather than re-declaring locally).
 
-void __cdecl FUN_00444b60(int c, int Hit)
+// IDA: SetPlayerShock (0x00444B60)
+void __cdecl SetPlayerShock(int c, int Hit)
 {
     if (!c) return;
     if (*(BYTE*)(c + 765)) return;            // already dead
@@ -1881,11 +1887,11 @@ void __cdecl FUN_00444b60(int c, int Hit)
     short etype = *(short*)(c + 2);
     if (etype == 390) {
         // Player: shock anim, clear alive flag
-        (void)FUN_0043e820(c, 130);
+        (void)SetAction(c, 130);
         *(BYTE*)(c + 748) = 0;
     } else if (v3 < 3 || v3 > 4) {
         // Monstruos/NPCs (que no estén en las anims de caminar/correr 3-4): anim de shock genérica
-        (void)FUN_0043e820(c, 5);
+        (void)SetAction(c, 5);
     }
 
     // Sonido: sólo cuando no está a mitad de una animación (frame == 0)
@@ -1896,17 +1902,17 @@ void __cdecl FUN_00444b60(int c, int Hit)
                 if ((*(BYTE*)(c + 444) & 7) == 2) {
                     // Swimming: alternate splash sound 79 or 80
                     int v7 = rand() % 2;
-                    FUN_00404bc0(v7 + 79, c, 0);
+                    PlayBuffer(v7 + 79, c, 0);
                     goto label_26;
                 }
                 int v6 = rand() % 3 + 75;     // generic player hit grunt
-                FUN_00404bc0(v6, c, 0);
+                PlayBuffer(v6, c, 0);
                 goto label_26;
             }
         }
         int v8 = *(int*)(c + 4);
         if (v8 >= 206 && v8 <= 208) {
-            FUN_00404bc0(93, c, 0);           // Lorencia skeleton-NPC hit sound
+            PlayBuffer(93, c, 0);           // Lorencia skeleton-NPC hit sound
             goto label_26;
         }
         if (etype != 284) {
@@ -1915,7 +1921,7 @@ void __cdecl FUN_00444b60(int c, int Hit)
             short* sndTbl = (short*)(modelsBase + 188 * etype + 174);
             if ((unsigned short)*sndTbl != 0xFFFF) {
                 int v6 = sndTbl[rand() % 2] + 170;
-                FUN_00404bc0(v6, c, 0);
+                PlayBuffer(v6, c, 0);
             }
         }
     }
@@ -1935,14 +1941,13 @@ label_26:
                 Particle_Spawn(1221, pos, (float*)(c + 28), (float*)(c + 232), 0, 1.0f, 0);
             }
         }
-        FUN_00404bc0(105, 0, 0);
+        PlayBuffer(105, 0, 0);
     }
 }
 
-// ── FUN_0045ac80 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_0045ac80 @ 0x0045AC80 — Entity_GetIndex: search entity array by network ID
+// IDA: FindCharacterIndex (0x0045AC80)
 // Devuelve el índice de slot 0-399, o 400 si no lo encontró.
-int __cdecl FUN_0045ac80(int param_1)
+int __cdecl FindCharacterIndex(int param_1)
 {
     char *pcVar2 = (char*)(uintptr_t)DAT_07abf5d0;
     for (int iVar1 = 0; iVar1 <= 399; iVar1++, pcVar2 += 0x394) {
@@ -1952,8 +1957,7 @@ int __cdecl FUN_0045ac80(int param_1)
     return 400;
 }
 
-// ── FUN_0045c8c0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
-// ChangeCharacterExt @ 0x0045C8C0 (1063 bytes) — apply equipment visuals to char-select preview.
+// IDA: ChangeCharacterExt (0x0045C8C0)
 // Decodes a 10-byte CharSet[] payload (helmet/armor/pants/gloves/boots type+level packed bits) and
 // escribe campos WORD/BYTE repartidos por el slot de entidad en +624..+651 (slots de cabeza/alas) y
 // +504..+603 (5 body parts × 24-byte stride: type, lvl, exc-flag).
@@ -1965,7 +1969,8 @@ int __cdecl FUN_0045ac80(int param_1)
 // (writes -1/0 sentinel). Bit-pattern (Equipment[2/3/4]>>4) + ((Equipment[8] >> N) & 1) == 31
 // indica un set "antiguo/especial", que usa entity+444 (el nibble de skin de clase) como ID de sprite.
 // Ported verbatim from IDA reference 0045C8C0_ChangeCharacterExt.c.
-void __cdecl FUN_0045c8c0(int Key, BYTE *Equipment) {
+// IDA: ChangeCharacterExt (0x0045C8C0)
+void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     // DAT_07abf5d0 guarda la dirección base del array de entidades como entero.
     // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
     DWORD c = DAT_07abf5d0 + 916 * Key;
@@ -1999,13 +2004,13 @@ void __cdecl FUN_0045c8c0(int Key, BYTE *Equipment) {
     }
 
     // Wings: clear class-FX, then spawn type-specific
-    FUN_004fffa0(c);  // DeleteBug
+    DeleteBug(c);  // DeleteBug
     Type = Equipment[4] & 3;
     if (Type == 3) {
         if ((Equipment[9] & 1) == 1) {
             *(WORD*)(c + 696) = 819;
             float* pos = (float*)(c + 16);
-            FUN_004fffd0(267, (void*)pos, (void*)(uintptr_t)c, 0);
+            CreateBug(267, (void*)pos, (void*)(uintptr_t)c, 0);
         } else {
             *(WORD*)(c + 696) = (WORD)-1;
             *(BYTE*)(c + 699) = 0;
@@ -2014,12 +2019,12 @@ void __cdecl FUN_0045c8c0(int Key, BYTE *Equipment) {
         *(WORD*)(c + 696) = (WORD)(Type + 816);
         float* pos = (float*)(c + 16);
         if (Type == 0) {
-            FUN_004fffd0(816, (void*)pos, (void*)(uintptr_t)c, 0);
+            CreateBug(816, (void*)pos, (void*)(uintptr_t)c, 0);
         } else if (Type == 2) {
-            FUN_004fffd0(195, (void*)pos, (void*)(uintptr_t)c, 0);
+            CreateBug(195, (void*)pos, (void*)(uintptr_t)c, 0);
         } else if (Type == 3) {
             // inalcanzable — ya se atrapó arriba; se deja por paridad con IDA
-            FUN_004fffd0(267, (void*)pos, (void*)(uintptr_t)c, 0);
+            CreateBug(267, (void*)pos, (void*)(uintptr_t)c, 0);
         }
     }
 
@@ -2273,7 +2278,7 @@ int __cdecl FUN_0047dd50(short *param_1) {
     return v;
 }
 
-// ── FUN_0047dd80 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// IDA: CHARACTER_MACHINE::CalculateAttackSpeed (0x0047DD80)
 // CHARACTER_MACHINE::CalculateAttackSpeed @ 0x0047DD80 (598 bytes).
 // Calcula la velocidad de ataque/magia en this[+0x38] / this[+0x44] (o +56/+68
 // for non-class-1/2/3 = elf/etc).
@@ -2285,7 +2290,7 @@ int __cdecl FUN_0047dd50(short *param_1) {
 //   Pants (slot 5 = this+876) speed bonus.
 //   Flag de estado (this+40 bit 0): +20 a los dos.
 //   PlusSpecial(77) on WeaponL/R, Ring1, Helmet/byte 1080.
-int __cdecl FUN_0047dd80(int param_1) {
+int __cdecl CalculateAttackSpeed(int param_1) {
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;

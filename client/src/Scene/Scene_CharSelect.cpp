@@ -303,7 +303,7 @@ int Scene_CharSelect(void)
                 DbgLogPublic(b);
             }
         }
-        FUN_0045ab00();   // Entity_RenderAll_3D
+        Entity_RenderAll_3D();
 
         // Orbital particles for selected char
         if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * 0x394] != '\0')) {
@@ -321,9 +321,9 @@ int Scene_CharSelect(void)
         // MEJORA DEL DLL (no esta en IDA): el binario solo llama RenderBlurs en
         // 0x00523D80; el DLL (Patchs.cpp RenderBlurs_RenderCharacterScene)
         // agrega RenderJoints + RenderEffects para dibujar el efecto de las alas.
-        FUN_00473710();                    // RenderJoints  (0x00473710)
+        ItemDrop_Render();
         EffectPool_RenderAll();            // RenderEffects (0x0046BBA0)
-        FUN_0046c3e0();                    // RenderBlurs (Trail_RenderAll)
+        Trail_RenderAll();
         GL_SetBlendSrcOver('\x01');              // GL_SetMode(1)
         GL_BindTextureSlot(0x15);
         glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
@@ -625,7 +625,7 @@ int Scene_CharSelect(void)
                 // asignar 0x40a00000 / 0x3f800000 hace int→float (1e9), no 5.0f / 1.0f
                 _DAT_07abf06c = 0.0f; _DAT_07abf070 = 5.0f; _DAT_07abf05c = 1.0f;
                 _DAT_07abf138 = 0.8f; _DAT_07abf13c = 0.8f; _DAT_07abf140 = 0.8f;
-                FUN_00456770((undefined4 *)&DAT_07abf050, (undefined4 *)&DAT_07abf050, (undefined4 *)0x0);
+                RenderCharacter((undefined4 *)&DAT_07abf050, (undefined4 *)&DAT_07abf050, (undefined4 *)0x0);
                 GL_PopMatrixAll();
                 DAT_005597c4 = 1;
             }
@@ -709,12 +709,12 @@ int Scene_CharSelect(void)
         RenderErrorMessage();   // Chat_Render
         FUN_004f64d0();   // UI_Render
         UI_RenderNotices();   // StatusBar_Render
-        if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
+        if ((g_bUseChatListBox == 1) || (SceneFlag != 5))
             UI_RenderChatLogOverlay();   // Mouse_Render
         UI_UpdateFpsCounter();
         RenderHelpWindow();
         Cursor_Render();
-        FUN_0051e0c0();
+        RenderInfomation3D();
         GL_End2D();
         uVar13 = GL_PopMatrixAll();
         return ((uint)uVar13 & 0xFFFFFF00u) | 1u;

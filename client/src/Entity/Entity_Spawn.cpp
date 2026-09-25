@@ -1,4 +1,4 @@
-// Entity_Spawn.cpp — FUN_0045adc0 @ 0x0045adc0 (CreateCharacterPointer)
+// IDA: CreateCharacterPointer (0x0045ADC0)
 // Initialize/spawn an entity.
 //
 // Ghidra-confirmed signature:
@@ -79,7 +79,8 @@
 
 extern "C" { void DbgLogPublic(const char*); }
 
-void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
+// IDA: CreateCharacterPointer (0x0045ADC0)
+void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
                           int PositionX, int PositionY, float Rotation)
 {
     // DIAG: trace first 6 calls
@@ -113,7 +114,7 @@ void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
     // ── Real initialization (lines 481+ in Ghidra) ───────────────────────────
 
     // Atributo del terreno en la posición de spawn → SafeZone (+0x34E)
-    int terrainAttr = FUN_004f6c40((int)grid_x, (int)grid_y);
+    int terrainAttr = Terrain_GetTileIndex((int)grid_x, (int)grid_y);
     if ((unsigned char)DAT_0838bc70[terrainAttr] & 1) {
         param_1[0x34e] = 1;   // spawn dentro de zona segura
     } else {
@@ -188,15 +189,15 @@ void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
     *(float *)(param_1 + 0x14) = (float)(int)grid_y * _DAT_005524f0 + _DAT_00552598;
 
     // World Z: terrain height + height offset based on entity type / state
-    float terrainH = FUN_004f7500(*(float*)(param_1 + 0x10),
+    float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10),
                                   *(float*)(param_1 + 0x14));
-    if (DAT_0055a7ac == -1 ||
+    if (World == -1 ||
         *(short *)(param_1 + 0x2b8) != (short)0x333 ||
         param_1[0x34e] != '\0')
     {
         // Normal spawn
     }
-    else if (DAT_0055a7ac == 8 || DAT_0055a7ac == 10) {
+    else if (World == 8 || World == 10) {
         terrainH += (float)_DAT_00552848;
     }
     else {
@@ -279,7 +280,7 @@ void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
     // ── BoneTransform2 buffer allocation ──────────────────────────────────────
     //
     // Field entity[+0x114] es BoneTransform2: array de matrices 3×4 (48 B=0x30)
-    // por bone.  FUN_00440060 (Sprite_Draw) itera hasta model[+0x22] (boneCount)
+    // por bone.  BMD_Animation (Sprite_Draw) itera hasta model[+0x22] (boneCount)
     // y escribe cada bone en buf[boneIdx*0x30]. El buffer necesita al menos
     // `boneCount * 0x30` bytes.
     //
@@ -296,7 +297,7 @@ void __cdecl FUN_0045adc0(unsigned char *param_1, int Type,
     // menor que el bone count real → undersized buffer → overflow detectado por
     // PageHeap en FUN_004f9f70 línea 7266 (crash al escribir el último bone).
     // Correcto: offset +0x22 dentro del struct MODEL_t (mismo que usa
-    // FUN_00440060 para su loop count).
+    // BMD_Animation para su loop count).
     if (*(unsigned char **)(param_1 + 0x114) != NULL) {
         operator_delete(*(unsigned char **)(param_1 + 0x114));
         *(int *)(param_1 + 0x114) = 0;

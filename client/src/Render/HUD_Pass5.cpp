@@ -44,7 +44,6 @@ extern "C" void   __cdecl SeedQuickPotionTypesFromInventory(void);
 
 #define ItemAttribute  ((ITEM_ATTRIBUTE*)DAT_07d78068)
 #define byte_7DB870C   DAT_07db870c
-#define SelectedHero   DAT_005616ac
 #define dword_559C60   (&DAT_00559c60)
 #define dword_559C64   DAT_00559c64
 #define dword_559C68   DAT_00559c68

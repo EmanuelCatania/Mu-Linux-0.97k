@@ -6,14 +6,14 @@
 #include "structs.h"
 
 extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void FUN_004fa5a0(void);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -42,7 +42,7 @@ extern void FUN_004fa5a0(void);
 // Cierra tienda / baul / chaos / trade / eventos y vacia sus pools.
 //
 // 2026-09-11: unica implementacion de 0x4CBA60.  Habia dos ports vivos y
-// distintos: esta y `FUN_004cba60` (UI_LegacyGameHelpers.cpp, que ahora delega
+// distintos: esta y `CloseInventoryRelatedWindows` (UI_LegacyGameHelpers.cpp, que ahora delega
 // aca).  La lista de flags es la del disassembly (0x4CBB46..0x4CBD2F):
 //   ShopOpened, byte_7EAA132, RepairEnable_0 (DWORD en 0x07EAA134),
 //   WarehouseOpened, byte_559F5F, dword_7EAA14C, ChaosMixOpened, TradeOpened,

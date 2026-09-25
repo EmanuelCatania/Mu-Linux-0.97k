@@ -91,7 +91,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
             Position[0] = tx; Position[1] = ty; Position[2] = tz + 30.0f;
             const float rot = (float)(rand() % 360);
             const float sc  = (float)(rand() % 8 + 8) * 0.2f;
-            FUN_004795c0(1231, Position, sc, (float *)(o + 52), 0, rot, 0);
+            CreateSprite(1231, Position, sc, (float *)(o + 52), 0, rot, 0);
             const int life = *(int *)(o + 2488);
             if (life > 10) {
                 Light[0] = 0.5f; Light[1] = 0.5f; Light[2] = 0.5f;
@@ -814,7 +814,7 @@ LAB_0047036e:
         const int subtype_4e5 = *(int *)(param_1 + 8);
         if (subtype_4e5 == 1) {
             float light_4e5_1[3] = { 0.8f, 0.4f, 1.0f };
-            FUN_004795c0(1150, pfVar15, 4.0f, light_4e5_1,
+            CreateSprite(1150, pfVar15, 4.0f, light_4e5_1,
                           *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
             goto switchD_caseD_4ef;
         }
@@ -825,9 +825,9 @@ LAB_0047036e:
             *pfVar15 += orbit_4e5_3[0] * 50.0f;
             *(float *)(param_1 + 0x14) += orbit_4e5_3[1] * 50.0f;
             *(float *)(param_1 + 0x18) += orbit_4e5_3[2] * 50.0f;
-            FUN_004795c0(1150, pfVar15, 3.0f, light_4e5_3,
+            CreateSprite(1150, pfVar15, 3.0f, light_4e5_3,
                           *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
-            FUN_004795c0(1231, pfVar15, 1.5f, light_4e5_3,
+            CreateSprite(1231, pfVar15, 1.5f, light_4e5_3,
                           *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
             goto switchD_caseD_4ef;
         }
@@ -855,14 +855,14 @@ LAB_0047036e:
                 light_4e5_2[2] = fade_4e5_2;
             }
             const float scale_4e5_2 = (float)((20 - lifetime_4e5_2) / 5) + 4.0f;
-            FUN_004795c0(1150, pfVar15, scale_4e5_2, light_4e5_2,
+            CreateSprite(1150, pfVar15, scale_4e5_2, light_4e5_2,
                           *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
             *(float *)(param_1 + 0x9c0) += 5.0f;
             goto switchD_caseD_4ef;
         }
         if (subtype_4e5 == 0 || subtype_4e5 == 5) {
             if (*(int *)(param_1 + 0x0c) == 1117782016) {
-                Effect_Create(205, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34),
+                CreateEffect(205, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34),
                              (float *)(subtype_4e5 == 5 ? 3 : 0), 0, (float *)-1, 0, 0);
                 if ((*(int *)(param_1 + 0x9b8) % 15) == 0 && *(int *)(param_1 + 0x40) == (int)Hero) {
                     FUN_0045fec0(*(unsigned char *)(param_1 + 0x9d2), pfVar15, 150.0f,
@@ -889,7 +889,7 @@ LAB_0047036e:
                 *(float *)(param_1 + 0x9cc) = angleZ * 0.8f;
             }
 
-            const float terrain_4e5 = FUN_004f7500(*pfVar15, *(float *)(param_1 + 0x14));
+            const float terrain_4e5 = RequestTerrainHeight(*pfVar15, *(float *)(param_1 + 0x14));
             if (terrain_4e5 + 100.0f > *(float *)(param_1 + 0x18)) {
                 *(float *)(param_1 + 0x9c4) = 0.0f;
                 *(float *)(param_1 + 0x28) = -5.0f;
@@ -1129,10 +1129,10 @@ LAB_0047036e:
         if (subtype_4eb == 6 && lifetime_4eb <= 10) {
             const float pulse_4eb = (float)(6 - abs(lifetime_4eb - 6)) * 0.15f;
             float light_4eb[3] = { pulse_4eb, pulse_4eb, pulse_4eb };
-            FUN_004795c0(1231, target_4eb, (float)(rand() % 8 + 8) * 0.05f,
+            CreateSprite(1231, target_4eb, (float)(rand() % 8 + 8) * 0.05f,
                           light_4eb, *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
         } else if (subtype_4eb != 7 && lifetime_4eb == 1) {
-            FUN_004795c0(1231, target_4eb, (float)(rand() % 8 + 8) * 0.2f,
+            CreateSprite(1231, target_4eb, (float)(rand() % 8 + 8) * 0.2f,
                           (float *)(param_1 + 0x34), *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
         }
         goto switchD_caseD_4ef;
@@ -1580,11 +1580,11 @@ switchD_caseD_4fd:
             }
             {
                 float *ppos = (float *)(param_1 + 0x10);
-                FUN_004795c0(1231, ppos, (float)(_rand() % 2 + 8) * 0.1f,
+                CreateSprite(1231, ppos, (float)(_rand() % 2 + 8) * 0.1f,
                              jangles, jowner, (float)(_rand() % 360), 0);
-                FUN_004795c0(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
+                CreateSprite(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
                              jangles, jowner, (float)(_rand() % 360), 0);
-                FUN_004795c0(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
+                CreateSprite(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
                              jangles, jowner, (float)(_rand() % 360), 0);
                 if (jsub != 11 && *(int *)(param_1 + 0x9b8) == 1) {
                     float jzero[3]  = { 0.0f, 0.0f, 0.0f };

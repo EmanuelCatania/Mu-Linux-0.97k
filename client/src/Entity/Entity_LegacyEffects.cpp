@@ -17,14 +17,14 @@ int  __cdecl    FUN_00408e30(DWORD *a1);
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -45,10 +45,11 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// FUN_005030c0 @ 0x005030C0 — Entity_GravityInit(entity_ptr)
+// ItemAngle @ 0x005030C0 — Entity_GravityInit(entity_ptr)
 // Sets initial gravity velocity components at +0x1c/+0x20/+0x24 and scale +0x0c
 // based on entity type (short at +2). Each entity type has hardcoded float offsets.
-void __cdecl FUN_005030c0(int param_1) {
+// IDA: ItemAngle (0x005030C0)
+void __cdecl ItemAngle(int param_1) {
     short sVar1 = *(short*)(param_1 + 2);
     *(unsigned int*)(param_1 + 0x1c) = 0;
     *(unsigned int*)(param_1 + 0x20) = 0;

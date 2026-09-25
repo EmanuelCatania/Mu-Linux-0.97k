@@ -569,7 +569,7 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
     // un `_`) no las marca como bright y el mesh del glow queda RENDER_TEXTURE
     // opaco: el fondo negro del JPG se dibuja como un recuadro negro.
     //
-    // 2026-08-24: antes esto se gateaba por ESCENA (`g_GameState == 2 || == 4`),
+    // 2026-08-24: antes esto se gateaba por ESCENA (`SceneFlag == 2 || == 4`),
     // dejando in-world afuera a proposito "porque ahi el 816 puede renderizarse
     // como pet-item de inventario (opaco)". Consecuencia: con el Guardian Angel
     // equipado, en el mundo se veia el recuadro negro (reportado sobre el pet de

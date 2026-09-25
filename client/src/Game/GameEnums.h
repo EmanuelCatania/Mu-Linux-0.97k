@@ -161,15 +161,15 @@ enum eWindowModes
     MAX_WINDOW_MODE
 };
 
-/* Scene Flags — maps to g_GameState (DAT_005615c0) */
+/* Scene Flags — maps to SceneFlag (SceneFlag) */
 enum eSceneFlags
 {
     NON_SCENE       = 0,
-    WEBZEN_SCENE    = 1, // g_GameState == 1: Intro
-    LOG_IN_SCENE    = 2, // g_GameState == 2: Login
-    LOADING_SCENE   = 3, // g_GameState == 3: Loading
-    CHARACTER_SCENE = 4, // g_GameState == 4: CharSelect
-    MAIN_SCENE      = 5, // g_GameState == 5: InGame
+    WEBZEN_SCENE    = 1, // SceneFlag == 1: Intro
+    LOG_IN_SCENE    = 2, // SceneFlag == 2: Login
+    LOADING_SCENE   = 3, // SceneFlag == 3: Loading
+    CHARACTER_SCENE = 4, // SceneFlag == 4: CharSelect
+    MAIN_SCENE      = 5, // SceneFlag == 5: InGame
 };
 
 /* Skills */

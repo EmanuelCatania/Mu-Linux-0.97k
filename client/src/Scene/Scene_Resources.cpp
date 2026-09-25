@@ -46,7 +46,7 @@ void Scene_LoadAccountResources(void)
     iVar2 = iVar2 + 1;
   } while (iVar1 < 4);
   DbgLogPublic("Scene_LoadAccount: canary-B (after AccessModel, before SetMaxTextures)");
-  FUN_00505bd0(0x56a);
+  SetMaxTextures(0x56a);
   DbgLogPublic("Scene_LoadAccount: canary-C (after SetMaxTextures, before OpenTexture Ship)");
   FUN_00505c80(0x3c,s_Object1__0055f354,0x2601,'\x01');
   DbgLogPublic("Scene_LoadAccount: canary-D (after OpenTexture Ship, before Logos)");
@@ -103,7 +103,7 @@ void Scene_LoadCharSelectResources(void)
     iVar1 = iVar2 + -0xa9;
     iVar2 = iVar2 + 1;
   } while (iVar1 < 4);
-  FUN_00505bd0(0x56a);
+  SetMaxTextures(0x56a);
   FUN_00505c80(0xa4,s_Logo__00560698,0x2601,'\x01');
   iVar2 = 0;
   do {

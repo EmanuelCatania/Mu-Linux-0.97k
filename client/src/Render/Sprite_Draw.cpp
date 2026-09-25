@@ -6,7 +6,7 @@
 //
 // ── SIGNATURA ─────────────────────────────────────────────────────────────────
 //
-//   void __thiscall FUN_00440060(
+//   void __thiscall BMD_Animation(
 //     void       *this,      // model data ptr (DAT_05828d58 + class*0xbc)
 //     int         param_1,   // flags: 0x6970a9c = root bone offset constant
 //     float       param_2,   // rotation angle (float, animation frame)

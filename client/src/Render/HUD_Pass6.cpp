@@ -165,8 +165,8 @@ void __cdecl sub_4F6420(int, int, int, int)
     float Height = (float)((double)v0->Height * 20.0);
     float sx = (float)((double)MouseX - Width  * 0.5);
     float sy = (float)((double)MouseY - Height * 0.5);
-    FUN_004e1be0(sx, sy, Width, Height,
-                 (short)pPickedItem, Level, byte_7E9136B, 1);
+    RenderItem3D(sx, sy, Width, Height,
+                 (short)pPickedItem, Level, byte_7E9136B, 0, 1);
 }
 
 // =============================================================================
@@ -692,7 +692,7 @@ extern "C" void GuildCreator_OpenFromServer(void)
     // que Enter abra o envíe chat mientras el editor conserva el foco.
     DAT_07e11d70 = 1;
     DAT_00559c84 = 0;
-    Input_ClearState(0);
+    ClearInput(0);
     _InputTextMaxArr[0] = 8;
     DAT_00559c88 = 0;
     GuildMark_InitializePalette(true);
@@ -724,7 +724,7 @@ extern "C" void GuildCreator_OpenQuestionFromServer(void)
 
 extern "C" void GuildCreator_CloseFromResult(void)
 {
-    Input_ClearState(0);
+    ClearInput(0);
     _InputTextMaxArr[0] = 10;
     DAT_07e11d70 = 0;
     DAT_00559c84 = 0;

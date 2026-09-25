@@ -29,7 +29,6 @@ float* __cdecl Vector_Rotate(float *param_1,float *param_2,float *param_3)
   return param_3;
 }
 
-
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
 void __cdecl Matrix_BuildFromEuler(float *param_1,float *param_2)
@@ -148,7 +147,7 @@ void __cdecl Vector_Transform(float *param_1,float *param_2,float *param_3)
 }
 
 
-// IDA: FUN_004409a0
+// IDA: TransformPosition (0x004409A0)
 // BMD_TransformPosition @ 0x004409a0 — Matrix_TransformPoint (thiscall)
 // Transforms param_2 by matrix param_1 (via Vector_Transform).
 // If param_4 != 0: applies scale (this->+0x68) + offset (this->+0x6c/70/74).
@@ -191,10 +190,4 @@ void __cdecl BMD_TransformPosition(void *this_,float *param_1,float *param_2,flo
   }
   Vector_Transform(param_2,param_1,param_3);
   return;
-}
-
-// IDA compatibility bridge: stubs_IDA_ports.cpp intentionally preserves this ABI name.
-void __cdecl FUN_004409a0(void *model, float *bone_data, float *out_pos, float *out_col, char flag)
-{
-  BMD_TransformPosition(model, bone_data, out_pos, out_col, flag);
 }

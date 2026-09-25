@@ -19,7 +19,7 @@ void __cdecl MoveObject_Special_stub(int param_1) {
     // param_1 = pointer to scene object struct.
     // DAT_0055a7b4 = target world ID, DAT_0055a7b0 = target object type,
     // DAT_0055a7b8 = destruction frame counter, _DAT_0055a7bc = velocity accumulator.
-    // World = g_GameSubState (current map ID).
+    // World = World (current map ID).
 
     if ((int)DAT_0055a7b4 < 0) return;
     if ((int)DAT_0055a7b0 < 0) return;
@@ -136,11 +136,11 @@ char* __stdcall PickObject_Mouse_stub(void) {
                     *(DWORD*)(model + 0x74) = *(DWORD*)(obj + 0x18);
 
                     // BMD::Animation — set up bone matrices
-                    // FUN_00440060(model, BoneTransform, frame, priorFrame, priorAction, angles, headAngles, parent, translate)
+                    // BMD_Animation(model, BoneTransform, frame, priorFrame, priorAction, angles, headAngles, parent, translate)
                     // Phantom regs make exact mapping impractical; the key effect is populating BoneTransform.
                     float angles[3] = { 0.0f, 0.0f, *(float*)(obj + 0x28) };
                     float headAngles[3] = { 0.0f, 0.0f, 0.0f };
-                    FUN_00440060(model, 0, *(float*)(obj + 0x10C),
+                    BMD_Animation(model, 0, *(float*)(obj + 0x10C),
                                  (unsigned int)(unsigned char)obj[0x106],
                                  (unsigned char)obj[0x1C], (unsigned int*)angles, headAngles,
                                  0, 0);

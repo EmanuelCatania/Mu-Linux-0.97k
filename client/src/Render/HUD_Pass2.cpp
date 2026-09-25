@@ -205,6 +205,7 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
 // dance every other render does (refs ShopOpened / TradeOpened).  We skip
 // it: the path is benign in our build.
 extern "C" int __cdecl GetScreenWidth(void);
+// IDA: GetScreenWidth (0x004CB520)
 int __cdecl GetScreenWidth(void)
 {
     if (InventoryOpened) {

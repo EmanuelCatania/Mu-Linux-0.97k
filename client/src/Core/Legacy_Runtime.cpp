@@ -35,8 +35,8 @@ BYTE* g_PartyHPTable   = nullptr; // DAT_07e11e98
 
 // ── CRT wrappers (these are real implementations) ────────────────────────────
 
-// FUN_005416bc — crt_sprintf (MSVC CRT sprintf stub)
-int __cdecl FUN_005416bc(char* buf, const char* fmt, ...) {
+// IDA: FUN_005416bc (0x005416BC)
+int __cdecl crt_sprintf(char* buf, const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
     int r = vsprintf(buf, fmt, args);
@@ -44,8 +44,8 @@ int __cdecl FUN_005416bc(char* buf, const char* fmt, ...) {
     return r;
 }
 
-// FUN_0054158c — operator_delete (free)
-void __cdecl FUN_0054158c(void* ptr) {
+// IDA: FUN_0054158c (0x0054158C)
+void __cdecl operator_delete(void* ptr) {
     free(ptr);
 }
 

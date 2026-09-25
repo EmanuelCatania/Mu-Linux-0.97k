@@ -34,7 +34,7 @@ void __cdecl Monster_LoadStartupData(void)
 //
 // Monster_LoadScriptTable — loads the monster script/model table.
 //
-// Calls FUN_00505bd0 to initialize the table with 0x41a entries.
+// Calls SetMaxTextures to initialize the table with 0x41a entries.
 // Then, only in pre-load phase (DAT_0055a7c4 == 0), registers BMD model
 // files from Data2/Monster/ for monster types 0x13d–0x14c and invokes
 // FUN_005098c0 for monster IDs 0x32–0x3e to set up their sound+animation
@@ -50,15 +50,15 @@ void Monster_LoadScriptTable(void)
 {
   int iVar1;
 
-  FUN_00505bd0(0x41a);
+  SetMaxTextures(0x41a);
   if (DAT_0055a7c4 == '\0') {
-    FUN_00505e90((int)0x13d,s_Data2_Monster__0055e06c,s_swordbasic_smd_0055e07c);
-    FUN_00505e90((int)0x147,s_Data2_Monster__0055e06c,&DAT_0055dff0);
-    FUN_00505e90((int)0x148,s_Data2_Monster__0055e06c,&DAT_0055df70);
-    FUN_00505e90((int)0x149,s_Data2_Monster__0055e06c,&DAT_0055dee0);
-    FUN_00505e90((int)0x14a,s_Data2_Monster__0055e06c,&DAT_0055dec0);
-    FUN_00505e90((int)0x14b,s_Data2_Monster__0055e06c,&DAT_0055de84);
-    FUN_00505e90((int)0x14c,s_Data2_Monster__0055e06c,&DAT_0055de10);
+    OpenModel((int)0x13d,s_Data2_Monster__0055e06c,s_swordbasic_smd_0055e07c);
+    OpenModel((int)0x147,s_Data2_Monster__0055e06c,&DAT_0055dff0);
+    OpenModel((int)0x148,s_Data2_Monster__0055e06c,&DAT_0055df70);
+    OpenModel((int)0x149,s_Data2_Monster__0055e06c,&DAT_0055dee0);
+    OpenModel((int)0x14a,s_Data2_Monster__0055e06c,&DAT_0055dec0);
+    OpenModel((int)0x14b,s_Data2_Monster__0055e06c,&DAT_0055de84);
+    OpenModel((int)0x14c,s_Data2_Monster__0055e06c,&DAT_0055de10);
     iVar1 = 0x32;
     do {
       FUN_005098c0(iVar1);
@@ -83,7 +83,7 @@ void Monster_LoadScriptTable(void)
 //   - field 6 (ftol) = spawn Y
 //   - Stops on record type 2 or when the sentinel string (DAT_00559088)
 //     matches TextParserTokenString.
-// Creates the monster via FUN_0045ccf0 and sets field +0x84 = ' '.
+// Creates the monster via CreateMonster and sets field +0x84 = ' '.
 //
 // Globals:
 //   DAT_07d7806c  — file handle
@@ -145,7 +145,7 @@ LAB_0047d09b:
       }
       iVar2 = DAT_07d7807c;
       DAT_07d7807c = DAT_07d7807c + 1;
-      pcVar4 = FUN_0045ccf0((uint)lVar7,(int)lVar8,(int)lVar9,iVar2,0);
+      pcVar4 = CreateMonster((uint)lVar7,(int)lVar8,(int)lVar9,iVar2,0);
       if (pcVar4 != (char *)0x0) {
         pcVar4[0x84] = ' ';
       }
@@ -189,7 +189,7 @@ void __cdecl FUN_005098c0(int param_1)
   if (((DAT_0055a7c4 == '\0') || ((*(short *)(iVar2 + 0x26) < 1 && (*(short *)(iVar2 + 0x24) < 1))))
      && (FUN_005060b0(iVar1,s_Data_Monster__0055ddf8,s_Monster_0055de08,param_1 + 1),
         *(short *)(iVar2 + 0x24) != 0)) {
-    FUN_00505c80(iVar1,s_Monster__0055ddec,0x2600,'\x01');
+    OpenTexture(iVar1,s_Monster__0055ddec,0x2600,'\x01');
     *(undefined4 *)(*(int *)(iVar2 + 0x30) + 4) = 0x3e800000;
     *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x14) = 0x3e4ccccd;
     *(undefined4 *)(*(int *)(iVar2 + 0x30) + 0x24) = 0x3eae147b;

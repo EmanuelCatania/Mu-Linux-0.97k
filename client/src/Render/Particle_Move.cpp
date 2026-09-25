@@ -165,7 +165,7 @@ void __stdcall MoveParticles_stub(void)
                 P_VELX(iVar9) *= _DAT_005526e8;
                 P_VELY(iVar9) *= _DAT_005526e8;
                 P_VELZ(iVar9) *= _DAT_005526e8;
-                fVar15 = FUN_004f7500(P_POSX(iVar9), P_POSY(iVar9));
+                fVar15 = RequestTerrainHeight(P_POSX(iVar9), P_POSY(iVar9));
                 P_POSZ(iVar9) = BMP_HEIGHT(P_TYPE(iVar9)) * P_SCALE(iVar9) * _DAT_00552504 + fVar15;
                 break;
             }
@@ -290,7 +290,7 @@ void __stdcall MoveParticles_stub(void)
                     P_POSY(iVar9) += P_VELY(iVar9);
                     P_POSZ(iVar9) += P_VELZ(iVar9);
                 }
-                fVar15 = FUN_004f7500(P_POSX(iVar9), P_POSY(iVar9));
+                fVar15 = RequestTerrainHeight(P_POSX(iVar9), P_POSY(iVar9));
                 if (P_POSZ(iVar9) < fVar15) {
                     P_POSZ(iVar9) = fVar15;
                     P_FRAME(iVar9) = 1;
@@ -772,7 +772,7 @@ void __stdcall MoveParticles_stub(void)
                 P_LB(iVar9) = fVar15;
                 P_POSZ(iVar9) += P_GRAV(iVar9);
                 P_GRAV(iVar9) -= _DAT_0055264c;
-                fVar15 = FUN_004f7500(P_POSX(iVar9), P_POSY(iVar9));
+                fVar15 = RequestTerrainHeight(P_POSX(iVar9), P_POSY(iVar9));
                 if (P_POSZ(iVar9) < fVar15) {
                     P_POSZ(iVar9) = fVar15;
                     fVar15 = P_GRAV(iVar9) * _DAT_00552b50;

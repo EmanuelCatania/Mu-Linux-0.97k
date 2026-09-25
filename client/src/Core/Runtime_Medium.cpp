@@ -50,13 +50,13 @@ void __cdecl RenderInformation(void) {
     RenderErrorMessage(); // RenderErrorMessage / stats panel
     FUN_004f64d0(); // Scene_MapTick
     UI_RenderNotices(); // RenderNotices
-    if ((DAT_005590ac == 1) || (DAT_005615c0 != 5)) {
+    if ((g_bUseChatListBox == 1) || (SceneFlag != 5)) {
         UI_RenderChatLogOverlay(); // SystemText / chat list
     }
     UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     RenderHelpWindow(); // RenderHelpWindow / item info
     Cursor_Render(); // RenderCursor
-    FUN_0051e0c0(); // RenderInfomation3D
+    RenderInfomation3D(); // RenderInfomation3D
 }
 
 // GetMapName @ 0x004EF120 (64 bytes) -- nombre del mapa desde GlobalText.

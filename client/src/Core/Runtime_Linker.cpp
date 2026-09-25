@@ -6,14 +6,14 @@
 #include "structs.h"
 
 extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void FUN_004fa5a0(void);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -42,7 +42,7 @@ extern void FUN_004fa5a0(void);
 // Selects animation based on equipment, class, terrain. Most bulk is anti-tamper hash ops.
 // 2026-08-08 BUG-FIX (el MG se renderizaba como Dark Wizard, con casco y con
 // rayas): este stub coexistía con el port REAL de SetPlayerStop
-// (`FUN_004430c0`, Net/SecondPassword.cpp). `FUN_0045c720` llamaba a ESTE, y el
+// (`SetPlayerStop`, Net/SecondPassword.cpp). `FUN_0045c720` llamaba a ESTE, y el
 // stub hacía:
 //     *(BYTE*)(entity + 0x1bc) &= ~0x07;   // "clear movement bits"
 // pero **0x1BC NO son move flags: es el byte de CLASE/skin** (lo leen
@@ -55,12 +55,6 @@ extern void FUN_004fa5a0(void);
 //     MG  0x03 -> 0x00   ✗
 // Cazado con las sondas CLSPROBE: F(post-45c130)=3 → G(post-45c720)=0.
 // Delegamos al port real; el stub no debe existir.
-void __cdecl FUN_004430c0(int c);
-void __cdecl SetPlayerStop(void *entity) {
-    if (!entity) return;
-    FUN_004430c0((int)(uintptr_t)entity);
-}
-
 // CErrorReport__Write @ 0x00405540 (12 lines) — Variadic error log writer
 // Formats message via wvsprintfA then passes to debug info string writer.
 void __cdecl CErrorReport__Write(unsigned long ctx, char *fmt, ...) {

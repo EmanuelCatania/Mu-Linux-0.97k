@@ -17,14 +17,14 @@
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -48,9 +48,10 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 // FUN_004FAA70 @ 0x004FAA70 — Entity_PrepareRenderData(entity_ptr, shadow_pass, lod).
 // Copies entity data into the class render struct at DAT_05828D58 + entity_type*0xBC.
 // Guards on entity visibility (entity+0x168 >= DAT_005524F8).
-// Calls Sprite_Draw (FUN_00440060) and shadow/bone pass (FUN_004404E0, FUN_00441E00).
+// Calls Sprite_Draw (BMD_Animation) and shadow/bone pass (FUN_004404E0, FUN_00441E00).
 // Returns 1 on success, 0 if out of range.
-int __cdecl FUN_004faa70(int param_1, char param_2, int param_3) {
+// IDA: FUN_004faa70 (0x004FAA70)
+int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
     float fVar2 = *(float*)(param_1 + 0x168);
     if (fVar2 < _DAT_005524f8)
         return 0;
@@ -79,7 +80,7 @@ int __cdecl FUN_004faa70(int param_1, char param_2, int param_3) {
     float fVar2b = *(float*)(param_1 + 0x108);
     void* puVar3 = (*(char*)(param_1 + 0x110) == '\0') ? &DAT_06970a9c
                                                          : *(void**)(param_1 + 0x114);
-    FUN_00440060(this_, (int)puVar3, fVar2b, uVar1, bVar4,
+    BMD_Animation(this_, (int)puVar3, fVar2b, uVar1, bVar4,
                  (unsigned int*)(param_1+0x1c), (float*)(param_1+0x28), '\0', param_2=='\0');
     _DAT_005597c8 = 1.0f;
     if      (param_3 == 3) _DAT_005597c8 = 1.4f;
@@ -124,7 +125,7 @@ int __cdecl FUN_004faa70(int param_1, char param_2, int param_3) {
                  (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
     return 1;
 }
-// FUN_00440060 @ 0x00440060 — Sprite_Draw (thiscall: model animation interpolation)
+// IDA: BMD_Animation (0x00440060)
 // Computes animated bone transforms for the current frame.
 // param_1 = bone transform array (param_1[bone * 0x30] = 3x4 matrix per bone)
 // param_2 = anim speed (float), param_3 = RGBA color, param_4 = current anim index,
@@ -132,7 +133,7 @@ int __cdecl FUN_004faa70(int param_1, char param_2, int param_3) {
 // param_7/8 = flags for root-bone translation.
 // Output: bone quaternion+position stored in DAT_05826E18 (bone*0x10 stride).
 //         Final bone matrices written to param_1 (3x4 per bone).
-void __cdecl FUN_00440060(void* this_, int param_1, float param_2, unsigned int param_3,
+void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int param_3,
                            unsigned char param_4, unsigned int* param_5,
                            float* param_6, char param_7, char param_8) {
     int*  piModel = (int*)this_;
@@ -155,7 +156,7 @@ void __cdecl FUN_00440060(void* this_, int param_1, float param_2, unsigned int 
     float fFrac2 = _DAT_0055256c - fFrac;
     // BUG-FIX CRÍTICO: param_3 es realmente `float PriorFrame` (IDA firma),
     // no un entero. La firma C nuestra lo declara `unsigned int` porque el
-    // caller en FUN_004faa70 lo carga con *(DWORD*)(entity+0x10c) y los bits
+    // caller en Calc_RenderObject lo carga con *(DWORD*)(entity+0x10c) y los bits
     // del float caben en un DWORD. Hay que reinterpretar las bits → float
     // y truncar a int (== IDA: v12 = (__int64)PriorFrame; v39 = v12).
     // Antes calculábamos v39 = (int)(1.0 - fFrac) que es 0 ó 1 siempre →
@@ -334,7 +335,7 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
     // Restrict to in-game and Lorencia-area entities to avoid log flood.
     static int s_xform_dbg = 0;
     int  diag_this_call = s_xform_dbg;
-    bool diagInGame = (DAT_005615c0 == 5);
+    bool diagInGame = (SceneFlag == 5);
     if (diagInGame && s_xform_dbg < 200) {
         char b[256];
         float sc = *(float*)((char*)this_ + 0x68);
@@ -552,14 +553,14 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
 // BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformVertex)
 // Triangle_ComputeNormal — implemented in src/Math/Math_3D.cpp
 // Particle_Spawn — implemented in src/Render/Particle_Spawn.cpp (Particle_Spawn)
-// FUN_004795c0 — implemented in src/Render/Particle.cpp (Effect_Spawn, returns int)
-// Input_IsKeyJustPressed — implemented in src/Input/Input.cpp
-// FUN_00480620 — UIChatLogWindow_AddText — implemented above as UIChatLogWindow_AddText
+// CreateSprite — implemented in src/Render/Particle.cpp (Effect_Spawn, returns int)
+// PressKey — implemented in src/Input/Input.cpp
+// UIChatLogWindow_AddText — UIChatLogWindow_AddText — implemented above as UIChatLogWindow_AddText
 // FUN_004f8ff0 — implemented in src/Terrain/Terrain_Utils.cpp
 // FUN_00529740 — implemented in src/Render/Texture/Texture.cpp (Texture_Load)
 // ═════════════════════════════════════════════════════════════════════════════
 
-// CSimpleModulus crypto (FUN_0053cc30/cd20/cca0/ce30 + helpers) moved to
+// CSimpleModulus crypto (CSimpleModulus_Encode/cd20/cca0/ce30 + helpers) moved to
 // src/Net/Crypto.cpp (B3 refactor 2026-05-07, 282 lines).
 
 // Chat_ValidateInputCommand — implemented in src/UI/Chat.cpp

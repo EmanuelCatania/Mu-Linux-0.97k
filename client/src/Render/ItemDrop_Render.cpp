@@ -82,7 +82,7 @@
 //       Para tipo 0x10a sub {0,4} (cofre) con punto especial:
 //         if (local_20 == total/2) — punto central: dibujar sprite de destello
 //           centroid = average(4 puntos)
-//           FUN_004795c0(0x4fd, &centroid, alpha=0.2, &color, 0,0,0)
+//           CreateSprite(0x4fd, &centroid, alpha=0.2, &color, 0,0,0)
 //             → DrawSprite(tex=0x4fd, pos, scale, color, …)
 //
 //       Para tipo 0x4e7 (espada B) — color fade basado en lifetime:

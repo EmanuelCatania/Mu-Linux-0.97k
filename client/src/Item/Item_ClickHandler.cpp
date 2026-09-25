@@ -78,14 +78,14 @@ static BYTE* const g_InventoryPoolForClickGuard = Inventory;
 // La "posicion del item agarrado" vive en Inventory[32].Type → macro ItemPickedPos.
 #define byte_7EA9844       (*((BYTE*)&DAT_07ea9844))   // first byte of dword_7EA9844 = mode flag
 #define byte_83A42EB       DAT_083a42eb        // auto-drop trigger flag
-#define dword_55CC16C      DAT_055cc16c        // queued send buffer cursor
+#define dword_55CC16C      SocketClientSendBufferLength        // queued send buffer cursor
 // 2026-08-22 FIX: este alias apuntaba a DAT_05826d1c, que es OTRO global.
 // `ida_xrefs_to` los separa: 0x05826D18 lo escribe ProtocolCore y lo lee
 // sub_4D23B0 (cooldown de COMPRA), mientras 0x05826D1C lo escriben InitGame,
 // ReceiveLife y ReceiveDurability (cooldown de equipar/usar, `EnableUse`).
 // Compartiendo el mismo byte, comprar bloqueaba el equipar y viceversa.
 // Las dos direcciones están a ~4 bytes; acá las tratamos como el mismo concepto.
-#define dword_5826D18      DAT_05826d18
+#define dword_5826D18      BuyCost
 
 // CheckInventory: aliasa el puntero al ITEM del slot bajo el mouse que usa Scene_MapTick
 // to dispatch RenderItemInfo (tooltip).
@@ -154,24 +154,6 @@ DWORD g_PickupLatchY = 0;
 // capa de compatibilidad de abajo usa un offset dentro del pool OffsetInventoryItems.
 extern "C" BYTE OffsetWarehouseItems[];   // declared in HUD_Pass3.cpp
 extern "C" BYTE OffsetTradeItems[];
-
-// ── PressKey (Input_IsKeyJustPressed, 61 bytes) — port FIEL desde IDA ──────────────────
-// Chequeo de "tecla recién apretada" por flanco, usando DAT_07e118ec como tabla
-// de estado anterior. Devuelve true en el primer frame que la tecla está apretada,
-// y después false hasta que se suelte y se vuelva a apretar.
-int __cdecl PressKey(int vk)
-{
-    if (vk < 0 || vk >= 256) return 0;
-    if (((unsigned short)GetAsyncKeyState(vk) >> 8) == 0x80) {
-        if (DAT_07e118ec[vk] == 0) {
-            DAT_07e118ec[vk] = 1;
-            return 1;
-        }
-    } else {
-        DAT_07e118ec[vk] = 0;
-    }
-    return 0;
-}
 
 // ── sub_4D6020 (367 bytes) — port FIEL desde IDA ────────────────────────────
 // Busca un slot vacío en la grilla destino donde entre pPickedItem, y después
@@ -369,25 +351,25 @@ extern int __cdecl PressKey(int vk);
 static void SendPacketBytes(const void* data, int size)
 {
     if (!data || size <= 0) return;
-    if (DAT_055ca168 == (DWORD)INVALID_SOCKET) return;
+    if (SocketClientSocket == (DWORD)INVALID_SOCKET) return;
 
     const char* p = (const char*)data;
     int sent = 0, remaining = size;
     while (remaining > 0) {
-        int r = ::send((SOCKET)DAT_055ca168, p + sent, remaining, 0);
+        int r = ::send((SOCKET)SocketClientSocket, p + sent, remaining, 0);
         if (r == SOCKET_ERROR) {
             if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                // Encola la cola no enviada en DAT_055ca16c+DAT_055cc16c
-                int qlen = (int)DAT_055cc16c;
+                // Encola la cola no enviada en SocketClientSendBuffer+SocketClientSendBufferLength
+                int qlen = (int)SocketClientSendBufferLength;
                 if (qlen + remaining <= 0x2000) {
-                    memcpy((char*)DAT_055ca16c + qlen, p + sent, remaining);
-                    DAT_055cc16c = qlen + remaining;
+                    memcpy((char*)SocketClientSendBuffer + qlen, p + sent, remaining);
+                    SocketClientSendBufferLength = qlen + remaining;
                 }
             } else {
                 // Other error: close socket
-                if (DAT_055ca168 != (DWORD)INVALID_SOCKET) {
-                    closesocket((SOCKET)DAT_055ca168);
-                    DAT_055ca168 = (DWORD)INVALID_SOCKET;
+                if (SocketClientSocket != (DWORD)INVALID_SOCKET) {
+                    closesocket((SOCKET)SocketClientSocket);
+                    SocketClientSocket = (DWORD)INVALID_SOCKET;
                 }
             }
             return;
@@ -484,10 +466,10 @@ static bool GetHeroDropTile(BYTE* outX, BYTE* outY)
     *outX = 0; *outY = 0;
 
     // Pick del terreno bajo el cursor (mismo patron que Combat_Targeting).
-    FUN_004f9ac0('\x01');                    // RenderTerrain(true): arma el rayo
+    RenderTerrain('\x01');                    // RenderTerrain(true): arma el rayo
     const int gridX = (int)*(float*)&DAT_080ab288;   // SelectXF
     const int gridY = (int)*(float*)&DAT_080ab28c;   // SelectYF
-    if (!FUN_004f8480(*(int*)&DAT_080ab288, *(int*)&DAT_080ab28c,
+    if (!RenderTerrainTile(*(int*)&DAT_080ab288, *(int*)&DAT_080ab28c,
                       gridX, gridY, 1.0f, 1, 1))
         return false;
     *outX = (BYTE)(int)(DAT_083a4130 * 0.01f);   // CollisionPosition[0]
@@ -519,7 +501,7 @@ void RestorePickedItemToSource(void)
         wire[4] = it[61];    // byColorState
         int gridH = (srcPool == &OffsetWarehouseItems[0]) ? 15
                   : ((srcPool == &OffsetInventoryItems[0]) ? 8 : 4);
-        FUN_004cc660(srcPool, 8, gridH, srcSlot, wire, 1);
+        InsertInventoryItem(srcPool, 8, gridH, srcSlot, wire, 1);
     }
     dword_7E91388 = 0;
     memset(pPickedItem, 0, 0x44);
@@ -1073,7 +1055,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     // HackPacketCheck.txt índice 60 (=0x3C) → Encrypt=1.
                     SendC3Packet(pkt, 3);
                 }
-                FUN_00404bc0(29, 0, 0);       // pickup sound
+                PlayBuffer(29, 0, 0);       // pickup sound
                 return;
             }
 
@@ -1105,8 +1087,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
                     // Sonido: 33 para el tipo 448, 32 para 449..457.
                     short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
-                    if (t == 448) FUN_00404bc0(33, 0, 0);
-                    else if (t >= 449 && t <= 457) FUN_00404bc0(32, 0, 0);
+                    if (t == 448) PlayBuffer(33, 0, 0);
+                    else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
                 }
 
@@ -1169,8 +1151,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     SendC3Packet(pkt, 3);
 
                     short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
-                    if (t == 448)               FUN_00404bc0(33, 0, 0);
-                    else if (t >= 449 && t <= 457) FUN_00404bc0(32, 0, 0);
+                    if (t == 448)               PlayBuffer(33, 0, 0);
+                    else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
                 }
 
@@ -1205,8 +1187,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     SendC3Packet(pkt, 3);
 
                     short t = ((short*)(uintptr_t)&OffsetInventoryItems[0])[34 * slotIdx];
-                    if (t == 448)              FUN_00404bc0(33, 0, 0);
-                    else if (t >= 449 && t <= 457) FUN_00404bc0(32, 0, 0);
+                    if (t == 448)              PlayBuffer(33, 0, 0);
+                    else if (t >= 449 && t <= 457) PlayBuffer(32, 0, 0);
                     continue;
                 }
 
@@ -1255,7 +1237,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                         UI_Main(abs, inv_base, grid_w);
                         dword_7E91388 = 1;
                         CheckInventory = 0;
-                        FUN_00404bc0(29, 0, 0);
+                        PlayBuffer(29, 0, 0);
                         return;
                     }
                 } else {
@@ -1284,7 +1266,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                         UI_Main(abs, inv_base, grid_w);
                         dword_7E91388 = 1;
                         CheckInventory = 0;
-                        FUN_00404bc0(29, 0, 0);
+                        PlayBuffer(29, 0, 0);
                         return;
                     }
                 }

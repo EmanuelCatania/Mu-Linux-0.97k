@@ -21,8 +21,8 @@
 // ── TERRAIN TILE UPDATE (opcode 0x46, FUN_00436d60) ──────────────────────────
 //
 //   byte[3] == 0x00 → Rectangle tile update:
-//     if g_GameSubState in [10..16] and byte[4]==8:
-//       FUN_004fa5c0(g_GameSubState, 0x24, 0, 1)  — map zone transition
+//     if World in [10..16] and byte[4]==8:
+//       SetActionObject(World, 0x24, 0, 1)  — map zone transition
 //     Loop byte[6] count, stride 4 from byte[8]:
 //       byte[-1] = x1, byte[0] = y1, byte[1] = x2, byte[2] = y2
 //       Terrain_UpdateTileAttributeRect (IDA: FUN_004f6f30)
@@ -37,7 +37,7 @@
 //
 //   Terrain tile-attribute writers (IDA: FUN_004f6ef0 / FUN_004f6f10 / FUN_004f6f30).
 //
-// ── PARTY KEEPALIVE (opcode 0x71, FUN_00433900) ──────────────────────────────
+// ── PARTY KEEPALIVE (opcode 0x71, Party_PacketHandler) ───────────────────────
 //
 //   Legacy response path: if an external server sends opcode 0x71, the client
 //   replies with [0xC1][0x03][0x71].  Current MuEmu has no 0x71 route, so this
@@ -51,7 +51,7 @@
 //     Builds a small C1 packet with opcode 0xF1 sub-opcode 0x01:
 //       [0xC1][len][0xF1][0x01][0x00][rand_byte]
 //     XOR-encrypts with standard 32-byte key {0xe7,0x6d,0x3a,...,0xe8,0x56}
-//     then RC4-encodes via FUN_0053cc30 (same cipher as login)
+//     then RC4-encodes via CSimpleModulus_Encode (same cipher as login)
 //     and wraps in C3 or C4 envelope depending on final length.
 //     Sends with standard WSAEWOULDBLOCK retry loop.
 //     Purpose: re-send character authentication sync (used when joining party).
@@ -72,7 +72,7 @@
 // ── Guild create result (opcode 0x90, FUN_00436820) ──────────────────────────
 //   Sends a 3-byte ACK [C1][03][31] to the server.
 //   Switches on packet[3] (sub-type 1–5) to select a pre-loaded string buffer,
-//   then calls FUN_0051d6f0 to decode and display the guild notification in chat.
+//   then calls CreateOkMessageBox to decode and display the guild notification in chat.
 //     1 → DAT_07d5b680  (create success variant A)
 //     2 → DAT_07d5b7ac  (create success variant B)
 //     3 → DAT_07d5c10c  (create success variant C)
@@ -85,7 +85,7 @@
 //          else format param_2_07d58fd4 with packet[4] (error/rank code) via wsprintfA.
 //     ==2: Join confirm result — if packet[4]==0 show DAT_07d6813c (OK message),
 //          else format param_2_07d68268 with packet[4] via wsprintfA.
-//   Result message shown via FUN_0051d6f0.
+//   Result message shown via CreateOkMessageBox.
 //
 // ── Guild member list (opcode 0x93, FUN_00436a80) ────────────────────────────
 //   Dispatch on packet[4]:
@@ -100,7 +100,7 @@
 //        DAT_07eaa12c = packet[4..5] (short: guild ID or member count).
 //   When stage reaches 3 (packet[3]==2):
 //     Zeroes 64 bytes at DAT_07ea97c0 (guild entity pool).
-//     Calls Input_ClearState(0) to reset char-select.
+//     Calls ClearInput(0) to reset char-select.
 //     Sets _DAT_00559c94=0xC (login sub-state → CharSelectInit),
 //     clears DAT_00559c84/0x88, DAT_07e11d72/74, DAT_07eaa108.
 //     Sets DAT_07e11d73=1 (char-select flag D).
@@ -119,15 +119,14 @@
 //     DAT_00559f5c  = packet[8..9] (word, guild target Y)
 //
 // ── Guild join toggle (opcode 0x99, FUN_004373d0) ────────────────────────────
-//   packet[3] == 0 → FUN_005142d0(0x90)  — guild join accept UI
-//   packet[3] == 1 → FUN_005142d0(0x91)  — guild join decline UI
+//   packet[3] == 0 → SetErrorMessage(0x90)  — guild join accept UI
+//   packet[3] == 1 → SetErrorMessage(0x91)  — guild join decline UI
 
 #include "stdafx.h"
 #include "Party.h"
-#include "Net/Net.h"    // Net_Disconnect, DAT_055ca168 / WSAEWOULDBLOCK queue
+#include "Net/Net.h"    // Net_Disconnect, SocketClientSocket / WSAEWOULDBLOCK queue
 
-// g_GameSubState is declared as 'int DAT_0055a7ac' in globals.h; use the macro alias.
-#define g_GameSubState DAT_0055a7ac
+// World está declarado en globals.h.
 extern BYTE* g_PartyHPTable;           // DAT_07e11e98  stride 0x24
 
 #define PARTY_HP_STRIDE  0x24
@@ -231,8 +230,8 @@ void Terrain_TileUpdate(BYTE* pkt)
     if (pkt[3] == 0x00)
     {
         // Rectangle update
-        if (g_GameSubState > 10 && g_GameSubState < 0x11 && pkt[4] == 8)
-            FUN_004fa5c0(g_GameSubState, 0x24, 0, 1);  // map zone transition
+        if (World > 10 && World < 0x11 && pkt[4] == 8)
+            SetActionObject(World, 0x24, 0, 1);  // map zone transition
 
         int count = (BYTE)pkt[6];
         BYTE* entry = pkt + 8;
@@ -265,7 +264,7 @@ void Terrain_TileUpdate(BYTE* pkt)
 // ============================================================
 // Party_Keepalive  @ 0x00433900  (opcode 0x71)
 // Passive legacy reply. MuEmu does not currently emit or receive this route.
-// Standard send() + WSAEWOULDBLOCK queue at DAT_055ca16c.
+// Standard send() + WSAEWOULDBLOCK queue at SocketClientSendBuffer.
 // ============================================================
 void Party_Keepalive(void)
 {
@@ -302,7 +301,7 @@ void Party_Keepalive(void)
 //
 // Sends back a 3-byte packet [C1][03][31] (guild creation ACK).
 // Then switches on pkt[3] (sub-type 1-5) to pick a pre-loaded
-// string buffer and calls FUN_0051d6f0 to display it in chat.
+// string buffer and calls CreateOkMessageBox to display it in chat.
 // Standard WSAEWOULDBLOCK retry loop for the send().
 // ============================================================
 void Guild_CreateOk(BYTE* pkt)
@@ -312,29 +311,29 @@ void Guild_CreateOk(BYTE* pkt)
     int sent = 0;
     UINT remaining = 3;
     DAT_07eaa117 = 0;
-    if (DAT_055ca168 != (SOCKET)(~0))
+    if (SocketClientSocket != (SOCKET)(~0))
     {
         do {
-            int r = send(DAT_055ca168, (const char*)ack + sent, (int)remaining, 0);
+            int r = send(SocketClientSocket, (const char*)ack + sent, (int)remaining, 0);
             if (r == -1)
             {
                 int err = WSAGetLastError();
                 if (err == WSAEWOULDBLOCK)
                 {
-                    if (DAT_055cc16c + 3 < 0x2001)
+                    if (SocketClientSendBufferLength + 3 < 0x2001)
                     {
-                        memcpy(DAT_055ca16c + DAT_055cc16c, ack, 3);
-                        DAT_055cc16c += 3;
+                        memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, ack, 3);
+                        SocketClientSendBufferLength += 3;
                     }
                     else
-                        Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                        Net_Disconnect(((int)(uintptr_t)SocketClient));
                 }
                 else
-                    Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                    Net_Disconnect(((int)(uintptr_t)SocketClient));
                 break;
             }
             if (r == 0) break;
-            if (DAT_055ce174 != 0) FUN_0043de60();
+            if (SocketClientLogPrint != 0) FUN_0043de60();
             remaining -= r;
             sent += r;
         } while ((int)remaining > 0);
@@ -351,7 +350,7 @@ void Guild_CreateOk(BYTE* pkt)
     case 5: msg = (char*)&DAT_07d5b8d8; break;
     default: return;
     }
-    FUN_0051d6f0(msg);
+    CreateOkMessageBox(msg);
 }
 
 
@@ -365,7 +364,7 @@ void Guild_CreateOk(BYTE* pkt)
 // pkt[3]==2: join-confirm result
 //   pkt[4]==0 → show DAT_07d6813c (success)
 //   pkt[4]!=0 → wsprintfA format param_2_07d68268 with pkt[4] (error code)
-// Result shown via FUN_0051d6f0.
+// Result shown via CreateOkMessageBox.
 // ============================================================
 void Guild_AddMemberResult(BYTE* pkt)
 {
@@ -375,24 +374,24 @@ void Guild_AddMemberResult(BYTE* pkt)
     {
         if (pkt[4] == 0)
         {
-            FUN_0051d6f0((char*)&DAT_07d58ea8);
+            CreateOkMessageBox((char*)&DAT_07d58ea8);
         }
         else
         {
             wsprintfA(buf, &param_2_07d58fd4, (UINT)pkt[4]);
-            FUN_0051d6f0((char*)buf);
+            CreateOkMessageBox((char*)buf);
         }
     }
     else if (pkt[3] == 2)
     {
         if (pkt[4] == 0)
         {
-            FUN_0051d6f0((char*)&DAT_07d6813c);
+            CreateOkMessageBox((char*)&DAT_07d6813c);
         }
         else
         {
             wsprintfA(buf, &param_2_07d68268, (UINT)pkt[4]);
-            FUN_0051d6f0((char*)buf);
+            CreateOkMessageBox((char*)buf);
         }
     }
 }
@@ -426,7 +425,7 @@ void Guild_MemberList(BYTE* pkt)
 // DAT_07eaa12c = pkt[4..5] (short: guild ID or member count)
 //
 // Stage==3 (pkt[3]==2): reset char-select
-//   Zero DAT_07ea97c0[0..63], call Input_ClearState(0)
+//   Zero DAT_07ea97c0[0..63], call ClearInput(0)
 //   Set _DAT_00559c94=0xC (CharSelectInit), clear various flags
 //   Set DAT_07e11d73=1
 //
@@ -438,7 +437,7 @@ void Guild_MemberList(BYTE* pkt)
 // ============================================================
 void Guild_CharSelectResult(BYTE* pkt)
 {
-    FUN_004cba60();   // char-select reset helper
+    CloseInventoryRelatedWindows();   // char-select reset helper
     DAT_07eaa12c = (int)*(short*)(pkt + 4);
     DAT_07eaa128 = (int)(BYTE)pkt[3] + 1;
 
@@ -446,7 +445,7 @@ void Guild_CharSelectResult(BYTE* pkt)
     {
         // Zero guild entity pool
         memset(DAT_07ea97c0, 0, sizeof(DAT_07ea97c0));
-        Input_ClearState(0);                // reset char select
+        ClearInput(0);                // reset char select
         _DAT_00559c94 = 0xC;           // login sub-state → CharSelectInit
         DAT_00559c84  = 0;
         DAT_00559c88  = 1;
@@ -508,13 +507,13 @@ void Guild_SetTargetPos(BYTE* pkt)
 // Guild_JoinToggle  @ 0x004373d0  (opcode 0x99)
 // Server notifies client of guild join accept/decline.
 //
-// pkt[3]==0 → FUN_005142d0(0x90) — show guild join accept UI
-// pkt[3]==1 → FUN_005142d0(0x91) — show guild join decline UI
+// pkt[3]==0 → SetErrorMessage(0x90) — show guild join accept UI
+// pkt[3]==1 → SetErrorMessage(0x91) — show guild join decline UI
 // ============================================================
 void Guild_JoinToggle(BYTE* pkt)
 {
     if (pkt[3] == 0)
-        FUN_005142d0(0x90);
+        SetErrorMessage(0x90);
     else if (pkt[3] == 1)
-        FUN_005142d0(0x91);
+        SetErrorMessage(0x91);
 }

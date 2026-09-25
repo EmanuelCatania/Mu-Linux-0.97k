@@ -75,10 +75,10 @@ void __stdcall MoveCamera_stub(void) {
         DAT_005615e8 = 0;
         if (DAT_083a7af4 == 0) {
             DAT_083a7af4 = 1;
-        } else if (DAT_005615c0 == 2) {
+        } else if (SceneFlag == 2) {
             // BUG-FIX: el decompile original usaba DAT_07e11980 (una variable
             // que NO existe como xref en el binario; siempre 0). La instrucción
-            // real en PE @ 0x0051E5D5 es `CMP [0x005615c0], 2` → g_GameState.
+            // real en PE @ 0x0051E5D5 es `CMP [0x005615c0], 2` → SceneFlag.
             // Con la variable equivocada, la rama siempre caía al else y
             // elegía wp5 (200,-800,300, roll=-10°) → la cámara saltaba de
             // golpe a posición angulada tras ~128 frames (~3.2s).

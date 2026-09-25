@@ -17,14 +17,14 @@
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -47,12 +47,14 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // Monster_LoadScriptTable — implemented in src/Monster/Monster_Data.cpp
 // Monster_ParseSetBase2 — implemented in src/Monster/Monster_Data.cpp
-// FUN_00505bd0 @ 0x00505BD0 — Model_SetSlotIndex(index): sets active model slot index.
-void __cdecl FUN_00505bd0(int param_1) {
+// IDA: FUN_00505bd0 (0x00505BD0)
+// SetMaxTextures / Model_SetSlotIndex(index): sets active model slot index.
+void __cdecl SetMaxTextures(int param_1) {
     DAT_083a4104 = 0;
     DAT_083a4108 = param_1;
 }
-// FUN_00505e90 @ 0x00505E90 — OpenModel(Type, Dir, ModelFileName, ...).
+// IDA: FUN_00505e90 (0x00505E90)
+// OpenModel(Type, Dir, ModelFileName, ...).
 // Port FIEL del IDA (raw 0x505E90):
 //   1. FileName = Dir + ModelFileName
 //   2. Itera variadic args (extra animation .smd paths) hasta NULL o "end"
@@ -361,7 +363,7 @@ void __cdecl FUN_005060b0(int param_1, const char *param_2, const char *param_3,
     }
     if (DAT_0055a7c4 == '\0') {
         // HQ path original: si el SMD ya cargó bones, FUN_00442a60 agrega la anim BMD.
-        // PORT FALLBACK: como nuestro SMD loader (FUN_00505e90) es stub y nunca
+        // PORT FALLBACK: como nuestro SMD loader (OpenModel) es stub y nunca
         // popula bones, caemos al loader completo FUN_004423e0 para al menos traer
         // la geometría BMD y ver algo del background 3D.
         if (numBonesInSlot > 0)
@@ -386,7 +388,8 @@ void __cdecl FUN_005060b0(int param_1, const char *param_2, const char *param_3,
 // Forward-declare FindTextureByName (real implementation at ~line 12786 below).
 int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
 
-// ── FUN_00505c80 @ 0x00505C80 — OpenTexture (Model_LoadTextures) ────────────
+// IDA: FUN_00505c80 (0x00505C80)
+// ── OpenTexture (Model_LoadTextures) ────────────────────────────────────────
 // Para cada mesh del modelo en slot [Model]:
 //   1) Lee el nombre de textura (32 bytes) desde pBMD->Data[+0x34] + i*0x20.
 //   2) FindTextureByName — si ya está cargada, reusa e incrementa ref-count.
@@ -425,7 +428,7 @@ void __cdecl FUN_00505c80(int Model, const char* SubFolder, int Type, char Check
         if (s_oc_any < 8) {
             char b[160];
             _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "FUN_00505c80 CALL Model=0x%x sub='%s' nMesh=%d TextureCurrent=0x%x",
+                "OpenTexture CALL Model=0x%x sub='%s' nMesh=%d TextureCurrent=0x%x",
                 Model, SubFolder ? SubFolder : "(null)", (int)numMeshes, (unsigned)DAT_083a4108);
             DbgLogPublic(b);
             s_oc_any++;

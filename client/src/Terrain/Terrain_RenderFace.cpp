@@ -1,6 +1,6 @@
 // Terrain_RenderFace.cpp — port 1:1 desde IDA (2026-06-27)
 // Cadena de dibujo de tiles texturados del terreno (eslabón #4-#5 de RenderTerrain):
-//   RenderTerrainTile (FUN_004f8480) → RenderTerrainFace (FUN_004f7fb0) →
+//   RenderTerrainTile (RenderTerrainTile) → RenderTerrainFace (FUN_004f7fb0) →
 //   FaceTexture (UVs) + RenderFace / RenderFaceAlpha / RenderFaceBlend (draw).
 //
 // Antes: FUN_004f7fb0 era un no-op stub (stubs.cpp) y las 4 primitivas no existían,
@@ -17,13 +17,13 @@
 //   PrimaryTerrainLight  = DAT_081cb608 (float[256²][3])  ← 0x081CB608 (NO 0x07eab250;
 //                          el macro PrimaryTerrainLight de structs.h apunta mal a
 //                          0x07eab250 — buffer muerto. Lo leímos directo de DAT_081cb608,
-//                          que FUN_004f95e0 puebla per-frame desde BackTerrainLight 0x0828b608).
+//                          que Terrain_Water puebla per-frame desde BackTerrainLight 0x0828b608).
 //   TerrainVertex        = g_TilePickBuf[12]   (4 corners contiguos)
 //   TerrainTextureCoord  = g_TerrainTexCoord[8] (4 UV pairs)
 //   TerrainGrassWind     = DAT_07eab200 (float[256²])     (mislabel "water-wave heights")
 //   TerrainGrassTexture[(yi&0xFF)+1] = DAT_0810b2cc[yi&0xFF]
 //   WaterMove=DAT_07eeb214  WaterTextureNumber=DAT_0839bc8c  CurrentLayer=DAT_0814b2dc
-//   TerrainFlag=DAT_0838bc44  unk_839BC86=DAT_0839bc86  World=g_GameSubState
+//   TerrainFlag=DAT_0838bc44  unk_839BC86=DAT_0839bc86  World=World
 //   TerrainIndex1..4 = DAT_07eab1ec/f0/f4/f8
 
 #include "stdafx.h"

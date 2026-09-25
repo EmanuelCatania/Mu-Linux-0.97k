@@ -41,8 +41,8 @@ void __stdcall MoveCharactersClient_stub(void) {
             int val_388 = *(int*)(ent + 0x388);  // cached_wp_x (audit #10: comment was swapped)
 
             // Compute terrain index from cached waypoints and set walk-occupied bit
-            // Call order from asm: FUN_004f6c40(val_388, val_38c)
-            int terrainIdx = FUN_004f6c40((unsigned int)val_388, (unsigned int)val_38c);
+            // Call order from asm: Terrain_GetTileIndex(val_388, val_38c)
+            int terrainIdx = Terrain_GetTileIndex((unsigned int)val_388, (unsigned int)val_38c);
             terrainWall[terrainIdx] = terrainWall[terrainIdx] | 2;
         }
         offset += 0x394;
@@ -51,7 +51,7 @@ void __stdcall MoveCharactersClient_stub(void) {
     // Phase 3: Tick movement for each entity, then blur trails
     offset = 0;
     do {
-        FUN_00454fc0((float*)(entBase + offset));
+        MoveCharacterClient((float*)(entBase + offset));
         offset += 0x394;
     } while (offset < 0x59740);
 

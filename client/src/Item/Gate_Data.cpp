@@ -67,7 +67,7 @@ void __cdecl Gate_LoadBMD(const char *path)
     FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
-        FUN_00405540(&DAT_055c9bf0, msg);
+        CErrorReport_Write(&DAT_055c9bf0, msg);
         MessageBoxA(DAT_055c9ffc, msg, nullptr, 0);
         SendMessageA(DAT_055c9ffc, 2, 0, 0);
         return;

@@ -90,7 +90,7 @@ void __cdecl Render_DrawSprite(int param_1)
   // y lo dibuja como billboard cuadrado vía FUN_00511d00 (Sprite_DrawTexturedQuad).
   // El return; previo bloqueaba TODO el render de sprites del juego (glow +9, wing
   // FX, weapon sparkles, lightning, particles) — combinado con el AUTO-SKIP del
-  // pool en FUN_004795c0, NADA spawneaba ni se dibujaba.
+  // pool en CreateSprite, NADA spawneaba ni se dibujaba.
   // DAT_083a7cc0/cc4 = Bitmaps[type] tabla de texturas (stride 0x38), fields +0/+4
   // = width/height usados para scale del quad.
 
@@ -137,7 +137,7 @@ void Chat_TickNoticeTimer(void)
 
 // Chat_TickMessageTimer @ 0x00480950 — Sound_Countdown2
 // Decrements counter DAT_00559ce4 each frame.
-// When it underflows below 1, resets to 0x96 (150) and calls FUN_00480620.
+// When it underflows below 1, resets to 0x96 (150) and calls UIChatLogWindow_AddText.
 // IDA: FUN_00480950
 void Chat_TickMessageTimer(void)
 {
@@ -165,11 +165,11 @@ void Chat_TickMessageTimer(void)
       if (ch >= 0x20 && ch < 0x7F) { bValid = true; break; }  // ASCII imprimible
     }
     if (bValid) {
-      FUN_00480620(&DAT_07e11ddc,&DAT_07e11dd8,0);
+      UIChatLogWindow_AddText(&DAT_07e11ddc,&DAT_07e11dd8,0);
     }
   }
   return;
 }
 
 
-// FUN_004fffd0 — implemented in src/stubs.cpp (Sound_SpawnEmitter, cleaner version)
+// CreateBug — implemented in src/stubs.cpp (Sound_SpawnEmitter, cleaner version)

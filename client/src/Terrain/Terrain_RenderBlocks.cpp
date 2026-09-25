@@ -81,7 +81,7 @@ void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool Ed
     // 0x004F9720 — renders a 4x4 terrain tile block
     // _DAT_00552504 = 0.5f (half-tile center), _DAT_0055256c = 1.0f (tile stride)
     // CameraTopViewEnable = CameraTopViewEnabled
-    // RenderTerrainTile = FUN_004f8480 (declared with int params but actually takes floats via stack)
+    // RenderTerrainTile = RenderTerrainTile (declared with int params but actually takes floats via stack)
     // TestFrustrum2D = FUN_004f8ff0
     float startX = xf;
     int row = 0;
@@ -94,7 +94,7 @@ void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool Ed
             if (visible || CameraTopViewEnabled != 0) {
                 // RenderTerrainTile(xf, yf, col+xi, row+yi, 1.0f, 1, EditFlag)
                 // functions.h declares first 2 params as int; reinterpret float bits
-                FUN_004f8480(*(int*)&xf, *(int*)&yf, col + xi, row + yi, 1.0f, 1, (int)EditFlag);
+                RenderTerrainTile(*(int*)&xf, *(int*)&yf, col + xi, row + yi, 1.0f, 1, (int)EditFlag);
             }
             xf = xf + _DAT_0055256c;  // 1.0f
             col++;

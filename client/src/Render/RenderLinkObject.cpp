@@ -1,5 +1,5 @@
 // RenderLinkObject.cpp
-// FUN_00455430 @ 0x00455430  (642 decompiled lines, COMPLETO)
+// RenderLinkObject @ 0x00455430  (642 decompiled lines, COMPLETO)
 //
 // Renders an equipped item / weapon model attached to a bone on a parent entity.
 // Called from Player_Render / Entity_Render for each equipped part slot.
@@ -19,7 +19,7 @@
 //   param_9      = Link     — if nonzero: linked-bone path (builds angle matrix);
 //                              if zero: plain bone-to-world transform path
 //   param_10     = Translate — passed to BMD_Transform
-//   param_11     = RenderType — render flags OR'd into FUN_00504b50 call
+//   param_11     = RenderType — render flags OR'd into RenderPartObjectEffect call
 //
 // PART slot offsets (param_5):
 //   +0x04  BYTE  LinkBone       — bone index on parent model
@@ -42,7 +42,7 @@
 //   +0x114 DWORD BoneTransform ptr   (float[][3][4], stride 0x30 per bone)
 //   +0x34e char  SafeZone
 //   +0xe4  BYTE  ContrastEnable → model+0x45
-//   +0x168 float (alpha, passed to FUN_00504b50)
+//   +0x168 float (alpha, passed to RenderPartObjectEffect)
 //   +0x24  float facing_angle
 //   +0x302 BYTE  (param_4+0x302 = hash-table key / ref-count target)
 //
@@ -63,14 +63,14 @@
 //   DAT_06989c9c       — ParentMatrix scratch (root bone combine output)
 //   DAT_05826e08       — g_AnimTick (boss-head angle spin)
 //   DAT_07abf5c4/c8/cc — Boss-head position offset (x/y/z added to BodyOrigin)
-//   DAT_0055a7ac       — g_GameSubState (wing particle suppression when ==10)
+//   World       — World (wing particle suppression when ==10)
 //   _DAT_00552580      — 0.0f guard constant
 //   _DAT_00552940      — luminosity scale factor (rand%30+70)*factor
 //
 // Hash-table blocks (obfuscation, NOT game logic):
 //   DAT_055c9bc8/bcc/bd0/bd4/bf0 — ref-count hash table on param_4+0x302
 //   DAT_00559050 — XOR key used in ref-count manipulation
-//   FUN_00405540 — hash-table error reporter ("Hash table full")
+//   CErrorReport_Write — hash-table error reporter ("Hash table full")
 //   operator_new / operator_delete — used only in ref-count alloc/free
 //   This entire block manipulates param_4+0x302 but the net effect on game
 //   behavior is zero (anti-tamper). Faithfully transcribed from decompile.
@@ -86,7 +86,8 @@ extern "C" int g_BackItemHand;   // 0/1: mano del item colgado en la espalda
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
+// IDA: RenderLinkObject (0x00455430)
+void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                           int param_4, int param_5, int param_6,
                           char param_7, unsigned int param_8, char param_9,
                           char param_10, unsigned int param_11)
@@ -103,7 +104,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     //   [6..8]  = Position vec3 (world pos scratch / BodyOrigin temp)
     //   [9..11] = extra (matches IDA `Position[3]` at ebp-240h)
     // BUGFIX 2026-04-26: era float[7] pero los callees (BMD_TransformPosition,
-    // FUN_004795c0, Joint_Create) leen/escriben 3 floats desde
+    // CreateSprite, Joint_Create) leen/escriben 3 floats desde
     // `afStack_264 + 6` → [6][7][8] OOB. /GS canary check tripeaba al return.
     // local_248/local_244 eran las falsas vars que Ghidra emitió por las
     // posiciones [7] y [8].
@@ -136,14 +137,14 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     // callees (sub_4404E0 anim1/anim2) leen 3 floats. → OOB read garbage.
     float afStack_204[3];    // = IDA v70[3] — anim param scratch
     // BUGFIX 2026-04-26: el OBJECT local era unsigned char[2] + un short suelto.
-    // `FUN_00502ba0` (ItemObjectAttribute) escribe hasta offset 0x168 (360 bytes)
+    // `ItemObjectAttribute` (ItemObjectAttribute) escribe hasta offset 0x168 (360 bytes)
     // → smasheaba TODO el frame, devolvía a Entity_RenderAll con param_1
     // corrupto a la siguiente lectura (+0xae). Ahora dimensionado al stride
     // del effect-entity pool (0x1bc = 444 bytes) y `local_1ea` redirigido al
     // offset +2 dentro del buffer (campo Type según IDA `o[1]`).
     unsigned char local_1ec[0x1c0];     // local OBJECT — ItemObjectAttribute target
     #define local_1ea (*(unsigned short*)(local_1ec + 2))
-    float afStack_1dc[3];    // position scratch (passed to FUN_00440060/FUN_004404e0)
+    float afStack_1dc[3];    // position scratch (passed to BMD_Animation/FUN_004404e0)
 
     float local_1c8;         // boss-head BoneHead flag
     float afStack_3c[15];    // BoneTransform output scratch (passed to FUN_004404e0)
@@ -161,15 +162,15 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     // BUGFIX 2026-04-27: zero local_1ec antes de ItemObjectAttribute. La stack
     // tiene garbage cada llamada → ItemObjectAttribute no escribe TODOS los
     // campos del OBJECT struct, sólo los que le importan. Los bytes uninit
-    // pueden cambiar comportamiento de FUN_00504b50 / FUN_00504130 entre frames
+    // pueden cambiar comportamiento de RenderPartObjectEffect / FUN_00504130 entre frames
     // → flicker visible en weapons.
     memset(local_1ec, 0, sizeof(local_1ec));
     local_1ea = (unsigned short)param_6;  // OBJECT.Type = item type index
     local_22c = iVar7;
 
-    // FUN_00502ba0: initialise local_1ec as a minimal OBJECT for the item.
+    // ItemObjectAttribute: initialise local_1ec as a minimal OBJECT for the item.
     // It sets LightEnable, reads item attributes.
-    FUN_00502ba0((int)local_1ec);
+    ItemObjectAttribute((int)local_1ec);
 
     *(unsigned char*)(iVar7 + 0x44) = 0;  // LightEnable = false
 
@@ -422,7 +423,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 uVar16++;
             } while (uVar16 < DAT_055c9bd4);
             if (!false) // loop exhausted
-                FUN_00405540((void*)&DAT_055c9bf0, "Hash table full, GetIndex");
+                CErrorReport_Write((void*)&DAT_055c9bf0, "Hash table full, GetIndex");
             found = true;
         }
 
@@ -469,7 +470,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                 uVar3 = (uVar3 + 1) % DAT_055c9bd4;
                 uVar16++;
             } while (uVar16 < DAT_055c9bd4);
-            FUN_00405540((void*)&DAT_055c9bf0, "Hash table full, Insert");
+            CErrorReport_Write((void*)&DAT_055c9bf0, "Hash table full, Insert");
         }
 
     hash_insert_done:
@@ -524,7 +525,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                     uVar16++;
                 hash_getindex2_loop:;
                 } while (uVar16 < DAT_055c9bd4);
-                FUN_00405540((void*)&DAT_055c9bf0, "Hash table full, GetIndex");
+                CErrorReport_Write((void*)&DAT_055c9bf0, "Hash table full, GetIndex");
             }
 
         hash_getindex_done:
@@ -584,7 +585,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                     uVar3 = (uVar3 + 1) % DAT_055c9bd4;
                     uVar16++;
                 } while (uVar16 < DAT_055c9bd4);
-                FUN_00405540((void*)&DAT_055c9bf0, "Hash table full, GetIndex");
+                CErrorReport_Write((void*)&DAT_055c9bf0, "Hash table full, GetIndex");
             }
         hash_decref_found:
             pbVar12 = nullptr;
@@ -656,10 +657,10 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
     }
 
     // ── 8. BMD_Animation (bone interpolation) ────────────────────────────────
-    // FUN_00440060: __thiscall (model, BoneTransformArray, AnimFrame, PriorAnimFrame,
+    // BMD_Animation: __thiscall (model, BoneTransformArray, AnimFrame, PriorAnimFrame,
     //               PriorAction, Angle, HeadAngle, Parent=1, Translate=1)
     void* pModel = (void*)iVar7;
-    FUN_00440060(pModel, (int)&DAT_06970a9c,
+    BMD_Animation(pModel, (int)&DAT_06970a9c,
                  *(float*)((int)param_5 + 0x08),        // AnimationFrame
                  *(unsigned int*)((int)param_5 + 0x0c), // PriorAnimationFrame (as uint)
                  *(unsigned char*)((int)param_5 + 0x06), // PriorAction
@@ -672,11 +673,11 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
                  afStack_204, afStack_204, afStack_3c, param_10);
 
     // ── 10. RenderPartObject ─────────────────────────────────────────────────
-    // FUN_00504b50: (localObj, Type, Light*, alpha, 8*Level, Option1, 0, flags)
+    // RenderPartObjectEffect: (localObj, Type, Light*, alpha, 8*Level, Option1, 0, flags)
     {
         unsigned char monsterIndex = *(unsigned char*)(param_4 + 0x2eb);
         unsigned int baseRenderFlags = ((monsterIndex == 67) ? 0x102u : 0x2u);
-        FUN_00504b50((int)local_1ec, (int)param_6,
+        RenderPartObjectEffect((int)local_1ec, (int)param_6,
                      (float*)(param_4 + 800),     // Light offset +0x320
                      *(float*)(param_4 + 0x168),  // alpha
                      8u * (unsigned int)(unsigned char)param_7,  // 8*Level
@@ -735,10 +736,10 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
             if (r1 == 0)
             {
                 int r2 = rand();
-                FUN_004795c0(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
+                CreateSprite(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
                              (float)(r2 % 0x168), r1);
             }
-            FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+            CreateSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
             pfVar10 += 0xc;
         }
 
@@ -758,7 +759,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
 
     case 0x1af:  // MODEL_BOW+18 equivalent — wing trail particles
     {
-        if ((*(char*)(param_4 + 0x105) == 'P') && (DAT_0055a7ac != 10))
+        if ((*(char*)(param_4 + 0x105) == 'P') && (World != 10))
         {
             unsigned int uv = (unsigned int)rand() & 0x80000001u;
             bool bEven = (uv == 0);
@@ -800,12 +801,12 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
         afStack_264[5] = 0.0f;
         Light[0] = fLum;
         BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
-        FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+        CreateSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
         Light[0] = 0.5f;
         Light[1] = 0.5f;
         float fVar15 = (float)sin((double)((float)DAT_05826e08 * _DAT_005528e0));
         Light[2] = 0.5f;
-        FUN_004795c0(0x47e, afStack_264 + 6, fVar15 + _DAT_00552504, Light, param_4, 0, 0);
+        CreateSprite(0x47e, afStack_264 + 6, fVar15 + _DAT_00552504, Light, param_4, 0, 0);
         return;
     }
 
@@ -822,7 +823,7 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
         Light[2] = fLum * _DAT_00552530;
         for (int nBone = 0; nBone < 8; ++nBone) {
             BMD_TransformPosition(pModel2, pfVar10, afStack_264 + 3, afStack_264 + 6, '\x01');
-            FUN_004795c0(0x47e, afStack_264 + 6, 1.3f, Light, param_4, 0, 0);
+            CreateSprite(0x47e, afStack_264 + 6, 1.3f, Light, param_4, 0, 0);
             pfVar10 += 0xc;
         }
         return;
@@ -889,10 +890,10 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
             if (r1 == 0)
             {
                 int r2 = rand();
-                FUN_004795c0(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
+                CreateSprite(0x4cf, afStack_264 + 6, 0.6f, afStack_264, param_4,
                              (float)(r2 % 0x168), r1);
             }
-            FUN_004795c0(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
+            CreateSprite(0x47e, afStack_264 + 6, 2.0f, Light, param_4, 0, 0);
             iVar7_loc++;
         } while (iVar7_loc < 10);
         return;
@@ -907,8 +908,8 @@ void __cdecl FUN_00455430(float param_1, float param_2, float param_3,
         afStack_264[5] = 0.0f;
         Light[1] = Light[0];
         BMD_TransformPosition(pModel2, (float*)&DAT_06970acc, afStack_264 + 3, afStack_264 + 6, '\x01');
-        FUN_004795c0(0x4cf, afStack_264 + 6, 1.5f, Light, param_4, 0, 0);
-        FUN_004795c0(0x47e, afStack_264 + 6, fLum + _DAT_005528f0, Light, param_4, 0, 0);
+        CreateSprite(0x4cf, afStack_264 + 6, 1.5f, Light, param_4, 0, 0);
+        CreateSprite(0x47e, afStack_264 + 6, fLum + _DAT_005528f0, Light, param_4, 0, 0);
         return;
     }
 

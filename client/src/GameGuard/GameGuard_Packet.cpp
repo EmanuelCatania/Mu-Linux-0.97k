@@ -7,11 +7,11 @@
 
 // CSimpleModulus key-load wrappers, extracted with the GameGuard helpers.
 BOOL __cdecl CSimpleModulus_LoadEncryptionKey(DWORD *self, const char *fn) {
-    return FUN_0053d1c0(self, fn, 0x1112, 1, 1, 0, 1);
+    return CSimpleModulus_LoadKey(self, fn, 0x1112, 1, 1, 0, 1);
 }
 
 BOOL __cdecl CSimpleModulus_LoadDecryptionKey(DWORD *self, const char *fn) {
-    return FUN_0053d1c0(self, fn, 0x1112, 1, 0, 1, 1);
+    return CSimpleModulus_LoadKey(self, fn, 0x1112, 1, 0, 1, 1);
 }
 
 // FUN_004070d0 @ 0x004070D0 (~379 lines) — GameGuard packet handler (anti-tamper dispatch)

@@ -46,7 +46,7 @@
 //
 // Spawning logic:
 //   If slot is free (active==0):
-//     - Check terrain type at player position via FUN_004f6c40(row, col)
+//     - Check terrain type at player position via Terrain_GetTileIndex(row, col)
 //     - game state 0: tile type 5 (water) → 0xb5 (bubble)
 //     - game state 1: terrain flags → 0xb5 or splash
 //     - game state 7/8: snow / rain environment
@@ -59,13 +59,13 @@
 //     - Animate type-specific motion (rain falls, petal spins, firefly orbits)
 //     - Move: pos += velocity * speed
 //     - Kill if out of range from player (_DAT_00552d24 = max dist)
-//     - Special: type 0xb1 can spawn sound FUN_00404bc0(0xf, ...) near player
+//     - Special: type 0xb1 can spawn sound PlayBuffer(0xf, ...) near player
 //
 // Globals:
 //   DAT_083a2f78  — ambient particle table base
 //   DAT_05828d58  — particle model table base (stride 0xbc, indexed by type)
 //   DAT_07abf5d8  — local player entity ptr
-//   DAT_0055a7ac  — g_GameSubState
+//   World  — World
 //   DAT_0838bc70  — per-tile terrain attribute array
 //   DAT_080bb2b4  — per-tile terrain type array (type 5 = water)
 //   _DAT_005524f4 — PI/180 (deg→rad) or small angle step
@@ -101,7 +101,7 @@ void __cdecl AmbientParticles_Update(void)
 
     local_20 = 0;
     puVar9 = (unsigned int *)DAT_083a2f78;   // base of pool (now real array)
-    iVar8  = DAT_0055a7ac;
+    iVar8  = World;
 
     // BUG-FIX 2026-04-28: las dos comparaciones contra 0x83a34ac y 0x83a40cf
     // eran direcciones absolutas del binario original. Ahora computamos
@@ -139,16 +139,16 @@ void __cdecl AmbientParticles_Update(void)
                 lVar12 = (long long)(unsigned int)__ftol();
                 uVar6  = (unsigned int)lVar12;
                 lVar12 = (long long)(unsigned int)__ftol();
-                iVar7  = FUN_004f6c40((unsigned int)lVar12, uVar6);
-                iVar8  = DAT_0055a7ac;
+                iVar7  = Terrain_GetTileIndex((unsigned int)lVar12, uVar6);
+                iVar8  = World;
 
                 // ── Spawn logic per game state ────────────────────────────────
-                if (DAT_0055a7ac == 0) {
+                if (World == 0) {
                     // Connecting state: water bubble on water tiles
                     if (*(char *)((int)&DAT_080bb2b4 + iVar7) == '\x05') goto LAB_0050245e;
                     goto switchD_caseD_2;
                 }
-                if (DAT_0055a7ac == 1) {
+                if (World == 1) {
                     bVar2 = (unsigned char)DAT_0838bc70[iVar7];
                     goto joined_spawn_check;
                 }
@@ -181,7 +181,7 @@ LAB_0050245e:
                     puVar9[-0x22] = uVar6;  // lifetime = rand & 0x7f
 
                     uVar6 = _rand();
-                    iVar8 = DAT_0055a7ac;
+                    iVar8 = World;
                     uVar6 &= 0x80000003;
                     if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffc) + 1;
                     puVar9[-4]    = 0x41500000; // size = 13.0f
@@ -199,7 +199,7 @@ LAB_0050245e:
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
                         puVar9[0x1f] = (unsigned int)((float)(int)(uVar6 + 2) * _DAT_005524f4);
                         *(float*)&puVar9[-7] = _DAT_00552534 / *(float*)&puVar9[-0x37];
-                        iVar8 = DAT_0055a7ac;
+                        iVar8 = World;
                         break;
                     case 1:
                         fVar3 = _DAT_00552534 / fVar3;
@@ -219,7 +219,7 @@ LAB_0050245e:
                         if ((int)uVar6 < 0) uVar6 = (uVar6 - 1 | 0xfffffffe) + 1;
                         puVar9[-0x37] = (unsigned int)((float)(int)(uVar6 + 8) * _DAT_005524f4);
                         // More snow-specific initialization follows in binary...
-                        iVar8 = DAT_0055a7ac;
+                        iVar8 = World;
                         break;
                     case 8:
                         // Type 0xb3 — lightning bolt
@@ -240,7 +240,7 @@ LAB_0050245e:
                                      (float *)(puVar9 + -0x33), 4,
                                      (int)(puVar9 + -0x3a),
                                      30.0f, -1, 0);
-                        iVar8 = DAT_0055a7ac;
+                        iVar8 = World;
                         break;
                     }
                 }
@@ -280,9 +280,9 @@ switchD_caseD_2:
 
             // Despawn if out-of-type or expired
             if (((sVar5 < 0xb5) || (0xbf < sVar5)) && ((int)puVar9[-0x22] < 1)) {
-                FUN_0043e820((int)(puVar9 + -0x3a), 0);
+                SetAction((int)(puVar9 + -0x3a), 0);
             } else {
-                FUN_0043e820((int)(puVar9 + -0x3a), (unsigned int)(sVar5 == 0xb2));
+                SetAction((int)(puVar9 + -0x3a), (unsigned int)(sVar5 == 0xb2));
                 FUN_0043e680((int)(puVar9 + -0x3a), local_20, (int)(uintptr_t)DAT_083a2e90, 10);
                 Matrix_BuildFromEuler((float *)(puVar9 + -0x33), (float *)(puVar9 + -0x16));
 
@@ -294,14 +294,14 @@ switchD_caseD_2:
                 local_c[2] = 0.0f;
                 Vector_Rotate(local_c, (float *)(puVar9 + -0x16), &local_18);
 
-                bVar10 = (DAT_0055a7ac != 7);
+                bVar10 = (World != 7);
                 *pfVar1 = local_18 + *pfVar1;            // pos_x += vel_x
                 *(float*)&puVar9[-0x35] = local_14 + *(float*)&puVar9[-0x35]; // pos_y
                 *(float*)&puVar9[-0x34] = local_10 + *(float*)&puVar9[-0x34]; // pos_z
 
                 if (bVar10) {
                     // BUG-FIX 2026-04-28: pass explicit (xf, yf) — pos at pfVar1[0/1]
-                    float __h = FUN_004f7500(*pfVar1, *(float*)(puVar9 - 0x35));
+                    float __h = RequestTerrainHeight(*pfVar1, *(float*)(puVar9 - 0x35));
                     puVar9[-0x34] = *(unsigned int*)&__h;
                     fVar11 = (float10)__h;
                 }
@@ -314,7 +314,7 @@ switchD_caseD_2:
                 lVar12 = (long long)(unsigned int)__ftol();
                 uVar6  = (unsigned int)lVar12;
                 lVar12 = (long long)(unsigned int)__ftol();
-                iVar8  = FUN_004f6c40((unsigned int)lVar12, uVar6);
+                iVar8  = Terrain_GetTileIndex((unsigned int)lVar12, uVar6);
                 sVar5  = *(short *)((int)puVar9 + -0xe6);
 
                 // Transition to water or bounce on land
@@ -330,7 +330,7 @@ switchD_caseD_2:
                     iVar8 = puVar9[-0x39] + 1;
                     puVar9[-0x39] = iVar8;
                 } else {
-                    if (DAT_0055a7ac == 7 || DAT_0055a7ac == 8) {
+                    if (World == 7 || World == 8) {
                         bVar2 = (unsigned char)DAT_0838bc70[iVar8];
                         if ((bVar2 == 1) || (7 < bVar2)) {
                             fVar3 = (float)puVar9[-0x31] + _DAT_005524ec;
@@ -373,7 +373,7 @@ skip_decrement:
                     if ((int)uVar6 < 0)
                         bVar10 = ((uVar6 - 1 | 0xffffff00) == 0xffffffff);
                     if (bVar10)
-                        FUN_00404bc0(0xf, (int)(puVar9 + -0x3a), 0);
+                        PlayBuffer(0xf, (int)(puVar9 + -0x3a), 0);
                 }
             }
 
@@ -394,8 +394,8 @@ skip_decrement:
                 }
             }
 
-            FUN_0043e5c0((int)(puVar9 + -0x3a));  // commit particle state
-            iVar8 = DAT_0055a7ac;
+            Alpha((int)(puVar9 + -0x3a));  // commit particle state
+            iVar8 = World;
         }
 
 LAB_00502b38:

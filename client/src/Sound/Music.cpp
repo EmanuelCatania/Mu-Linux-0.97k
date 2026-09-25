@@ -42,7 +42,7 @@ void __cdecl Music_StopTrack(DWORD param_1_d, int bEnforce)
 
     if ((m_MusicOnOff || bEnforce) && MusicCurrentTrack[0] && strcmp(Name, MusicCurrentTrack) == 0)
     {
-        FUN_00405540(&DAT_055c9bf0, s_StopMp3_cmd_0055911c);
+        CErrorReport_Write(&DAT_055c9bf0, s_StopMp3_cmd_0055911c);
         HWND hWnd = FindWindowA(NULL, s_MuPlayer_00559110);
         if (hWnd)
         {
@@ -95,7 +95,7 @@ void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
 
     if (FindWindowA(NULL, s_MuPlayer_00559110) == NULL)
     {
-        FUN_00405540(&DAT_055c9bf0, s_PlayMp3_cmd_00559140);
+        CErrorReport_Write(&DAT_055c9bf0, s_PlayMp3_cmd_00559140);
         crt_sprintf(CmdLine, s_MuPlayer_exe__s_00559130, Name);
         WinExec(CmdLine, 0);
         strcpy_s(MusicCurrentTrack, sizeof(MusicCurrentTrack), Name);

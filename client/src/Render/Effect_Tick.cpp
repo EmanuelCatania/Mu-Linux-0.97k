@@ -39,7 +39,7 @@ void Effect_TickAll(void)
       // loguea su Type/SubType UNA vez por tipo — ese dato identifica al
       // culpable sin tener que reproducir con debugger.
       __try {
-        FUN_00466ad0(pfVar1,iVar2);
+        MoveEffect(pfVar1,iVar2);
       }
       __except (EXCEPTION_EXECUTE_HANDLER) {
         const int   type    = (int)*(short*)((char*)pfVar1 + 2);

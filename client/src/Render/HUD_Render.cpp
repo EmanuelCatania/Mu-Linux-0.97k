@@ -20,8 +20,8 @@
 //
 //   void Render_GameFrame(void)
 //   {
-//     // g_GameSubState == 8: map-loading screen scrolling textures
-//     if (DAT_0055a7ac == 8) {
+//     // World == 8: map-loading screen scrolling textures
+//     if (World == 8) {
 //       GL_SetBlendSrcOver('\x01');
 //       glColor4f(1.0, 1.0, 1.0, 0.5);
 //       GL_SetBlendAdditive();                 // Frame_UpdateTimer()
@@ -68,7 +68,7 @@
 //     // BLOQUE 1: buff activo (DAT_05826d30 != '\0' && entity[0x1da] != -1)
 //     if (DAT_05826d30 != '\0' && *(short*)(DAT_07abf5d8+0x1da) != -1) {
 //       GL_SetBlendSrcOver('\x01');   // GL_SetMode(1)
-//       iVar3 = FUN_004cb520(); // Screen_GetWidth()
+//       iVar3 = GetScreenWidth(); // Screen_GetWidth()
 //       fVar2 = (float)iVar3 * 0.5f - _DAT_005524fc;   // X centrado
 //       SelectObject(DC, font_small);
 //       // Color según DAT_05826d32:
@@ -442,7 +442,7 @@
 //       for i in 0..N:
 //         iVar1 = Item_FindQuickSlotByCategory(i);   // GetHotbarItem(i)
 //         if iVar1 != -1:
-//           FUN_004e1be0((float)local_14, 454.0, 20.0, 20.0,
+//           RenderItem3D((float)local_14, 454.0, 20.0, 20.0,
 //                        (&DAT_07ea8410)[iVar1*0x22], (&DAT_07ea8414)[iVar1*0x11], 0, '\0');
 //                        // DrawItemIcon(x, y, w, h, item_id, count, ?, ?)
 //         local_14 += 0x1f;   // siguiente slot (X+31)
@@ -472,7 +472,7 @@
 //   DAT_07eaa13c   — teleport flag
 //   DAT_07ea8410   — hotbar item array (stride 0x22*2 = item_id)
 //   DAT_07ea8414   — hotbar count array (stride 0x11*4)
-//   FUN_004e1be0   → DrawItemIcon(x,y,w,h,item_id,count,?,shadow)
+//   RenderItem3D   → DrawItemIcon(x,y,w,h,item_id,count,?,shadow)
 //   FUN_004f5ce0   → Skill_RenderEffects()
 //   FUN_004f6420   → TeleportEffect_Render()
 //   Item_FindQuickSlotByCategory   → GetHotbarItem(slot_idx) → item_idx
@@ -495,7 +495,7 @@
 //     // Guard: jugador en modo party  (entity[0x2b8] ∈ 0x330..0x333)
 //     if (0x32f < *(short*)(DAT_07abf5d8 + 0x2b8) < 0x334) {
 //
-//       int   sw     = FUN_004cb520();   // Screen_GetWidth()
+//       int   sw     = GetScreenWidth();   // Screen_GetWidth()
 //       float base_x = ((float)sw - _DAT_00552598) - hpOff - _DAT_00552834;
 //
 //       // [HashTable anti-tamper ~60 líneas — omitido]
@@ -521,7 +521,7 @@
 //
 //     // Bloque secundario: barra de party global (DAT_05826d24 = nro de miembros)
 //     if (DAT_05826d24 != 0) {
-//       int sw2     = FUN_004cb520();
+//       int sw2     = GetScreenWidth();
 //       int bar_w   = DAT_05826d24 * 0x32;   // member_count × 50
 //       float base2 = ((float)sw2 - _DAT_00552598) - _DAT_0055297c;
 //       GL_SetBlendSrcOver('\x01');
@@ -543,7 +543,7 @@
 //   DAT_07d43d28          — nombre para modo guild (subMode 0x332)
 //   DAT_07d43bfc          — nombre para modo trade (subMode 0x333)
 //   DAT_07d43e54          — label "Party"
-//   FUN_004cb520          → Screen_GetWidth()
+//   GetScreenWidth          → Screen_GetWidth()
 //   FUN_004bbdd0          → DrawHPBar(x, y, w, h, fill_pct, mirror, color)
 //   FUN_0047f6f0          → DrawText(x, y, str, unk, italic, flags)
 //
@@ -564,7 +564,7 @@
 //       float hpOff  = (DAT_07eaa0e0 > 0) ? 50.0f : 0.0f;
 //       glColor3f(1.0, 1.0, 1.0);
 //       GL_SetBlendSrcOver('\x01');        // SetBlendMode(alpha)
-//       int sw      = FUN_004cb520();
+//       int sw      = GetScreenWidth();
 //       float rightX = (float)sw - hpOff - _DAT_00552488;  // límite X derecho
 //       float idx    = 0.0f;    // offset de byte en lista on-screen (stride 0x44)
 //       int   textY  = 0;       // desplazamiento Y acumulado entre textos
@@ -625,7 +625,7 @@
 //   _DAT_00552488         — margen X derecho
 //   _DAT_005526e4/_DAT_005528b8/_DAT_00552504 — umbrales HP (alto/medio/bajo)
 //   Tipos excluidos de name tags: 0x87=NPC-A, 0x8f=NPC-B, 0x1a0..0x1a3=map objects
-//   FUN_004cb520          → Screen_GetWidth()
+//   GetScreenWidth          → Screen_GetWidth()
 //   FUN_004c45c0          → GetEntityLevel(ptr, spriteData, field) → int
 //   FUN_0047f6f0          → DrawText(x, y, str, unk, italic, flags)
 //
@@ -633,14 +633,14 @@
 // Render_MapLoadText @ 0x004BF2D0  (142 líneas, COMPLETO)
 // ══════════════════════════════════════════════════════════════════════════════
 //
-//   Overlay de carga de mapa/dungeon, visible cuando g_GameSubState ∈ [10..16].
+//   Overlay de carga de mapa/dungeon, visible cuando World ∈ [10..16].
 //   Retorna DAT_07e11d88 (tipo de texto activo, 0=off).
 //
 //   uint Render_MapLoadText(void)
 //   {
 //     uint type = DAT_07e11d88;  // 0=off, 1=dungeon, 2=PvP, 5=instancia especial
 //
-//     if (DAT_07e11d88 != 0 && 10 < DAT_0055a7ac && DAT_0055a7ac < 0x11) {
+//     if (DAT_07e11d88 != 0 && 10 < World && World < 0x11) {
 //
 //       GL_ResetState();            // GL_ResetBlend()
 //       GL_SetBlendSrcOver('\0');        // SetBlendMode(none)
@@ -691,7 +691,7 @@
 //
 //   Globals:
 //   DAT_07e11d88   — tipo de overlay (0=off, 1=dungeon, 2=PvP, 5=especial)
-//   DAT_0055a7ac   — g_GameSubState (10..16 = loading overlay activo)
+//   World   — World (10..16 = loading overlay activo)
 //   DAT_00559ccc   — segundos restantes (int)
 //   DAT_00559cd0   — límite jugadores (0xffff = sin límite)
 //   DAT_00559cd4   — jugadores actuales

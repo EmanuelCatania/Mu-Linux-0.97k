@@ -327,10 +327,10 @@ void __cdecl FUN_00408680(void *_this, char flags)
     if (flags & 2) {
         int count = *((int *)lpMem - 1);
         for (int i = count - 1; i >= 0; --i) FUN_00407970(lpMem + (size_t)0x3C * i);
-        if (flags & 1) FUN_0054158c((unsigned char *)(lpMem - 4));
+        if (flags & 1) operator_delete((unsigned char *)(lpMem - 4));
     } else {
         FUN_00407970(lpMem);
-        if (flags & 1) FUN_0054158c((unsigned char *)lpMem);
+        if (flags & 1) operator_delete((unsigned char *)lpMem);
     }
 }
 
@@ -343,9 +343,9 @@ void __fastcall FUN_0045aaa0_impl(void *_this, char flags)
     if (flags & 2) {
         int count = *((int *)lpMem - 1);
         for (int i = count - 1; i >= 0; --i) FUN_00408070(lpMem + (size_t)0x54 * i);
-        if (flags & 1) FUN_0054158c((unsigned char *)(lpMem - 4));
+        if (flags & 1) operator_delete((unsigned char *)(lpMem - 4));
     } else {
         FUN_00408070(lpMem);
-        if (flags & 1) FUN_0054158c((unsigned char *)lpMem);
+        if (flags & 1) operator_delete((unsigned char *)lpMem);
     }
 }

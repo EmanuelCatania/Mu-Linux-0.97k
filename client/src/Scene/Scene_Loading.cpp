@@ -2,7 +2,7 @@
 // Scene_Loading @ 0x00524B20  (34 lines, decompile completo)
 //
 // Carga 3 JPGs de loading, los dibuja side-by-side, SwapBuffers,
-// setea g_GameState=5 (InGame), descarga texturas, llama CharList_Init(1).
+// setea SceneFlag=5 (InGame), descarga texturas, llama CharList_Init(1).
 //
 // ── DECOMPILE COMPLETO ────────────────────────────────────────────────────────
 //
@@ -26,13 +26,13 @@
 //     GL_PopMatrixAll();
 //     glFlush();
 //     SwapBuffers(param_1);
-//     DAT_005615c0 = 5;          // g_GameState = InGame
+//     SceneFlag = 5;          // SceneFlag = InGame
 //     int iVar1 = 0;
 //     do {
-//       FUN_0052a050(iVar1 + 0x1e);   // Texture_Unload(0x1e..0x20)
+//       UnloadImage(iVar1 + 0x1e);   // Texture_Unload(0x1e..0x20)
 //       iVar1++;
 //     } while (iVar1 < 3);
-//     Input_ClearState(1);
+//     ClearInput(1);
 //   }
 //
 // ── TEXTURAS ──────────────────────────────────────────────────────────────────
@@ -45,7 +45,7 @@
 //
 //   DAT_083a7c4a  — init flag (carga solo una vez)
 //   DAT_083a42ea  — reset a 0 cada frame
-//   DAT_005615c0  — g_GameState → seteado a 5 (InGame) al final
+//   SceneFlag  — SceneFlag → seteado a 5 (InGame) al final
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
@@ -54,8 +54,8 @@
 //   GL_Begin2D  → GL_SetupOrtho2D()
 //   GL_DrawTexture  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
 //   GL_End2D  → GL_End2D()
-//   FUN_0052a050  → Texture_Unload(id)
-//   Input_ClearState  → CharList_Init(mode)
+//   UnloadImage  → Texture_Unload(id)
+//   ClearInput  → CharList_Init(mode)
 
 #include "stdafx.h"
 #include "Scene/Scene_Loading.h"
@@ -91,14 +91,14 @@ void __cdecl Scene_Loading(HDC param_1)
     SwapBuffers(param_1);
 
     // Transition to InGame
-    DAT_005615c0 = 5;
+    SceneFlag = 5;
 
     // Unload loading textures
     iVar1 = 0;
     do {
-        FUN_0052a050(iVar1 + 0x1e);
+        UnloadImage(iVar1 + 0x1e);
         iVar1++;
     } while (iVar1 < 3);
 
-    Input_ClearState(1);   // CharList_Init(1)
+    ClearInput(1);   // CharList_Init(1)
 }

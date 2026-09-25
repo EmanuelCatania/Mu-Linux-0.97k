@@ -216,7 +216,7 @@
 //     Stats_CalcBase(param_1);       // 0x0047d410 — ataque base (ver abajo)
 //     FUN_0047dae0(param_1);         // Stats_CalcDefense
 //     FUN_0047dd50(param_1);         // Stats_CalcHP_Max
-//     FUN_0047dd80(param_1);         // Stats_CalcMP_Max
+//     CalculateAttackSpeed(param_1);         // Stats_CalcMP_Max
 //     FUN_0047dfe0(param_1);         // Stats_CalcAttackSpeed
 //     FUN_0047e160(param_1);         // Stats_CalcCritBase
 //     FUN_0047e2e0(param_1);         // Stats_CalcDodgeBase

@@ -147,7 +147,7 @@ void __cdecl OpenNpc_stub(int Type) {
     // Wizard 339, SnowMerchant/Smith/Wizard 340-342, ElfMerchant 344, Master 345,
     // Storage 346, Tournament 347, MixNpc 348, DevilNpc 349) cargan su geometría
     // (nMesh>0) pero SIN textura → se renderizan como bloque sólido ("cubo cyan").
-    // Path "Npc\\": OpenTexture (FUN_00505c80) concatena SubFolder+texName y el
+    // Path "Npc\\": OpenTexture (OpenTexture) concatena SubFolder+texName y el
     // loader OZJ/TGA antepone "Data\\". OpenTexture ya guardea NumMeshes<=0 pero
     // replicamos el guard del binario original.
     //

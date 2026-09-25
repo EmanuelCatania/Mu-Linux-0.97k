@@ -19,13 +19,13 @@
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" DWORD g_ItemAttribute_Backup;
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -78,7 +78,7 @@ void* __cdecl FUN_00456590(int entity, int effectType, float scale, int bone, fl
     // sub_456590: CreateSprite(Type, Position, Scale, Light, Owner, 0.0, 0).
     // Con eso el quad media 152448 unidades y, pintado con Light=(v, v*0.6,
     // v*0.4) = salmon, tapaba la pantalla entera en Atlans.
-    FUN_004795c0((unsigned short)effectType, outPos, scale, light, entity, 0.0f, 0);
+    CreateSprite((unsigned short)effectType, outPos, scale, light, entity, 0.0f, 0);
     return (void *)entity;
 }
 
@@ -96,13 +96,13 @@ void* __cdecl FUN_00456650(int entity, int bone1, int bone2, float scale)
     float vec1[4] = { 5.0f, 0.0f, 0.0f, 0.0f };
     float outPos1[4];
     BMD_TransformPosition(modelPtr, (float *)(bone1 * 0x30 + *(int *)(entity + 0x114)), vec1, outPos1, '\x01');
-    FUN_004795c0(0x4d1, outPos1, scale, light, 0, 0.0f, 0);
+    CreateSprite(0x4d1, outPos1, scale, light, 0, 0.0f, 0);
 
     // Bone2: offset {-5, 0, 0} → spawn at world pos, write result to entity+0x40
     vec1[0] = -5.0f;
     float outPos2[4];
     BMD_TransformPosition(modelPtr, (float *)(bone2 * 0x30 + *(int *)(entity + 0x114)), vec1, outPos2, '\x01');
-    FUN_004795c0(0x4d1, outPos2, scale, light, 0, 0.0f, 0);
+    CreateSprite(0x4d1, outPos2, scale, light, 0, 0.0f, 0);
 
     *(float *)(entity + 0x40) = outPos2[0];
     *(float *)(entity + 0x44) = outPos2[1];

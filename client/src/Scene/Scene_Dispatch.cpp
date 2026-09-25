@@ -2,19 +2,19 @@
 // Scene_Dispatch @ 0x005274A8
 //
 // Main per-frame dispatcher. Called from the PeekMessage loop in WinMain.
-// Dispatches to the active scene via g_GameState, then handles keepalive
+// Dispatches to the active scene via SceneFlag, then handles keepalive
 // re-authentication and anti-tamper obfuscation (HashTable ref-count).
 //
 // Signature: void __cdecl Scene_Dispatch(HDC param_1)
 //
 // Globals:
-//   DAT_005615c0  — g_GameState (dispatch switch)
+//   SceneFlag  — SceneFlag (dispatch switch)
 //   DAT_05826e08  — frame time accumulator
 //   DAT_083a45d4  — login background animation angle
 //   DAT_055ca028  — keepalive counter (> 0x1f → send re-auth)
-//   DAT_055ca168  — socket handle
-//   DAT_055ca16c  — send buffer (WSAEWOULDBLOCK queue, max 0x2001)
-//   DAT_055cc16c  — send buffer byte count
+//   SocketClientSocket  — socket handle
+//   SocketClientSendBuffer  — send buffer (WSAEWOULDBLOCK queue, max 0x2001)
+//   SocketClientSendBufferLength  — send buffer byte count
 //   DAT_055ca038  — post-send flag (cleared at end of function)
 //   DAT_05826ceb  — packet sequence counter
 //   DAT_00559050  — 16-byte XOR key for keepalive re-randomization
@@ -52,7 +52,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
     }
 
     // ── SCENE DISPATCH ────────────────────────────────────────────────────────
-    switch (DAT_005615c0) {
+    switch (SceneFlag) {
     case 1: Scene_Intro(param_1);    break;
     case 2:
     case 4:
@@ -67,12 +67,12 @@ void __cdecl Scene_Dispatch(HDC param_1)
         if (idx == 0xffffffff) {
             void* node = operator_new(5);
             *((BYTE*)node + 4) = 1;
-            FUN_00403f80(&DAT_055c9bc8, node, &DAT_055ca028);
+            HashTable_Insert(&DAT_055c9bc8, node, &DAT_055ca028);
         } else {
             BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
             node[4]++;
             if (node[4] < 2)
-                FUN_00409e20(&DAT_055ca028, node);
+                Packet_DecryptDword(&DAT_055ca028, node);
         }
     }
 
@@ -119,12 +119,12 @@ void __cdecl Scene_Dispatch(HDC param_1)
             if (idx2 == 0xffffffff) {
                 void* node = operator_new(2);
                 *((BYTE*)node + 1) = 1;
-                FUN_00403f80(&DAT_055c9bc8, node, &DAT_05826ceb);
+                HashTable_Insert(&DAT_055c9bc8, node, &DAT_05826ceb);
             } else {
-                BYTE* node = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_05826ceb);
+                BYTE* node = (BYTE*)HashTable_GetNode(&DAT_055c9bc8, &DAT_05826ceb);
                 node[1]++;
                 if (node[1] < 2)
-                    FUN_00404330((BYTE*)&DAT_05826ceb, node);
+                    Packet_DecryptByte((BYTE*)&DAT_05826ceb, node);
             }
         }
 
@@ -137,17 +137,17 @@ void __cdecl Scene_Dispatch(HDC param_1)
         {
             unsigned idx3 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_05826ceb);
             if (idx3 != 0xffffffff) {
-                BYTE* node = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_05826ceb);
+                BYTE* node = (BYTE*)HashTable_GetNode(&DAT_055c9bc8, &DAT_05826ceb);
                 node[1]--;
                 if (node[1] == 0)
-                    FUN_00423710(node, &DAT_05826ceb);
+                    Packet_EncryptByte(node, &DAT_05826ceb);
             }
         }
 
         // Compute CRC and send
         int payStart = seqOff;
         int payLen   = 6 - seqOff;
-        int crc = FUN_0053cc30(0, pkt + payStart, payLen);
+        int crc = CSimpleModulus_Encode(0, pkt + payStart, payLen);
 
         if (crc < 0x100) {
             // Small packet: [0xC3][total_len][payload...]
@@ -155,23 +155,23 @@ void __cdecl Scene_Dispatch(HDC param_1)
             int  total = crc + 2;
             sbuf[0] = (char)0xC3;
             sbuf[1] = (char)total;
-            FUN_0053cc30((int)(sbuf + 2), pkt + payStart, payLen);
+            CSimpleModulus_Encode((int)(sbuf + 2), pkt + payStart, payLen);
             int sent = 0, rem = total;
-            if (DAT_055ca168 != 0xffffffff) {
+            if (SocketClientSocket != 0xffffffff) {
                 do {
-                    int n = send(DAT_055ca168, sbuf + sent, rem - sent, 0);
+                    int n = send(SocketClientSocket, sbuf + sent, rem - sent, 0);
                     if (n == -1) {
                         int err = WSAGetLastError();
-                        if (err == WSAEWOULDBLOCK && (int)(DAT_055cc16c + total) < 0x2001) {
-                            memcpy(DAT_055ca16c + DAT_055cc16c, sbuf, total);
-                            DAT_055cc16c += total;
+                        if (err == WSAEWOULDBLOCK && (int)(SocketClientSendBufferLength + total) < 0x2001) {
+                            memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, sbuf, total);
+                            SocketClientSendBufferLength += total;
                         } else {
-                            Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                            Net_Disconnect(((int)(uintptr_t)SocketClient));
                         }
                         goto send_done;
                     }
                     if (n == 0) break;
-                    if (DAT_055ce174) FUN_0043de60();
+                    if (SocketClientLogPrint) FUN_0043de60();
                     sent += n; rem -= n;
                 } while (rem > 0);
             }
@@ -182,23 +182,23 @@ void __cdecl Scene_Dispatch(HDC param_1)
             lbuf[0] = (char)0xC4;
             lbuf[1] = (char)((total + ((total >> 31) & 0xff)) >> 8);
             lbuf[2] = (char)total;
-            FUN_0053cc30((int)(lbuf + 3), pkt + payStart, payLen);
+            CSimpleModulus_Encode((int)(lbuf + 3), pkt + payStart, payLen);
             int sent = 0, rem = total;
-            if (DAT_055ca168 != 0xffffffff) {
+            if (SocketClientSocket != 0xffffffff) {
                 do {
-                    int n = send(DAT_055ca168, lbuf + sent, rem - sent, 0);
+                    int n = send(SocketClientSocket, lbuf + sent, rem - sent, 0);
                     if (n == -1) {
                         int err = WSAGetLastError();
-                        if (err == WSAEWOULDBLOCK && (int)(DAT_055cc16c + total) < 0x2001) {
-                            memcpy(DAT_055ca16c + DAT_055cc16c, lbuf, total);
-                            DAT_055cc16c += total;
+                        if (err == WSAEWOULDBLOCK && (int)(SocketClientSendBufferLength + total) < 0x2001) {
+                            memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, lbuf, total);
+                            SocketClientSendBufferLength += total;
                         } else {
-                            Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                            Net_Disconnect(((int)(uintptr_t)SocketClient));
                         }
                         goto send_done;
                     }
                     if (n == 0) break;
-                    if (DAT_055ce174) FUN_0043de60();
+                    if (SocketClientLogPrint) FUN_0043de60();
                     sent += n; rem -= n;
                 } while (rem > 0);
             }

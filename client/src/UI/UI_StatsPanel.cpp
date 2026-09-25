@@ -45,11 +45,11 @@ int RenderErrorMessage(void)
   DAT_00559c78 = 0xffffffff;
   if (DAT_083a7c24 != 0) {
     if (DAT_083a7c24 == 0x6e) {
-      if (DAT_005615c0 == 5) {
+      if (SceneFlag == 5) {
         pCVar6 = (LPCSTR)0x5;
       }
       else {
-        pCVar6 = (LPCSTR)((DAT_005615c0 == 4) + 3);
+        pCVar6 = (LPCSTR)((SceneFlag == 4) + 3);
       }
       if (pCVar6 != (LPCSTR)0x0) {
         local_dc = 0x3c;
@@ -76,7 +76,7 @@ int RenderErrorMessage(void)
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ba0,iVar3,ptVar17);
       UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,
                    (LPCSTR)lpString_07d45ba0,(LPSIZE)0x0,'\0',0);
-      if (DAT_005615c0 == 5) {
+      if (SceneFlag == 5) {
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
@@ -97,7 +97,7 @@ int RenderErrorMessage(void)
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
         uVar10 = 0xb9;
       }
-      else if (DAT_005615c0 == 4) {
+      else if (SceneFlag == 4) {
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
@@ -663,7 +663,7 @@ LAB_0051c13d:
     ppCVar11 = lpString_07d48e04;
     goto LAB_0051ca70;
   case 0x77:
-    FUN_0045ac80(DAT_07eaa0d8);
+    FindCharacterIndex(DAT_07eaa0d8);
     crt_sprintf(local_c8,DAT_07d486fc);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
@@ -682,7 +682,7 @@ LAB_0051c13d:
     // 0051AF50 obtains the visible character slot from 0045AC80 before
     // expanding the localized invitation format.  The prior void stub lost
     // that return value, so the party prompt had no inviter name.
-    const int characterIndex = FUN_0045ac80((int)DAT_07eaa0e4);
+    const int characterIndex = FindCharacterIndex((int)DAT_07eaa0e4);
     const char* inviterName = (characterIndex < 400 && DAT_07abf5d0)
         ? (const char*)(uintptr_t)(DAT_07abf5d0 + characterIndex * 916 + 449)
         : "";

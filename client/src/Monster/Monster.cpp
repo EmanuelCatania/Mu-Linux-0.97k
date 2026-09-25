@@ -305,7 +305,7 @@
 //         Particle_StartLoop(0x4FA, entity)
 //         color = {1.0, 1.0, 1.0}
 //         Particle_Spawn(0x4FA, world_pos, ...)  // rayo
-//         FUN_00404bc0(0x68, entity, 0)          // UI event 0x68
+//         PlayBuffer(0x68, entity, 0)          // UI event 0x68
 //       entity[+0x78] |= 0x40
 //
 //     bit 0x80 (Fire buff):
@@ -316,7 +316,7 @@
 //
 //     bit 0x100 (Skill shield buff):
 //       Si no ya activo && entity_type != 0x145:
-//         FUN_00404bc0(0x67, 0, 0)               // UI event 0x67
+//         PlayBuffer(0x67, 0, 0)               // UI event 0x67
 //         Particle_StartLoop(0x10A, entity, mode=0)
 //         5× Particle_Spawn(0x10A, ...)          // escudo orbital
 //       entity[+0x78] |= 0x100
@@ -395,7 +395,7 @@
 //       ptr += stride
 //
 //   Diferencia con PacketHandler_0x14 (opcode 0x14):
-//     0x14 = spawn individual (Entity_FindById + FUN_0045ac20)
+//     0x14 = spawn individual (Entity_FindById + DeleteCharacter)
 //     0x1F = lista de entidades (Entity_FindOrSpawn multiple)
 //
 // ── STATUS FLAGS (entity[+0x78]) ─────────────────────────────────────────────
@@ -475,7 +475,7 @@
 //   Entity_SetFlags         @ 0x0043bde0  — aplica buff/debuff visual
 //   Entity_ClearFlag        @ 0x0043c070  — quita buff/debuff
 //   PacketHandler_0x1F      @ 0x0042a530  — entity list spawn
-//   PacketHandler_0x14      @ Net_Process opcode 0x14 (FUN_0045ac20)
+//   PacketHandler_0x14      @ Net_Process opcode 0x14 (DeleteCharacter)
 //   Particle_Spawn          @ 0x00460dc0  (ver Combat.cpp)
 //   Particle_StartLoop      @ 0x0046fe00  (ver Particle_Render.cpp)
 //   Particle_StopLoop       @ 0x00460d20
@@ -485,9 +485,9 @@
 
 // =============================================================================
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 5239-6163 (925 lines)
-// FUN_0045bfa0 (CreateCharacter), FUN_0045ccf0 (CreateMonster — big switch)
+// CreateCharacter (CreateCharacter), CreateMonster (CreateMonster — big switch)
 // =============================================================================
-// FUN_0045ccf0 @ 0x0045CCF0 — CreateMonster(Type, PositionX, PositionY, Key, [phantom])
+// CreateMonster @ 0x0045CCF0 — CreateMonster(Type, PositionX, PositionY, Key, [phantom])
 // Ported from IDA Hex-Rays decompile (10619 bytes).
 //
 // Spawns a monster/NPC entity by Type ID:
@@ -504,32 +504,33 @@
 // MonsterScript scan overrides the name field anyway, and the original byte_5599xx
 // addresses are Korean strings in the data segment we don't reproduce.
 //
-// CreateCharacter (FUN_0045bfa0) is also implemented here (was a 3-arg stub).
+// CreateCharacter (CreateCharacter) is also implemented here (was a 3-arg stub).
 //
 // Helpers used (all already implemented in our codebase):
 //   FUN_005098c0 (OpenMonsterModel)  — Monster_Data.cpp
-//   FUN_0045adc0 (CreateCharacterPointer) — Entity_Spawn.cpp
-//   FUN_00449840 (DeleteCloth/Entity_ClearBoneLinks) — stubs.cpp
-//   FUN_0045c050 (SetCharacterScale) — alias macro
-//   FUN_0043e820 (SetAction)
+//   CreateCharacterPointer (CreateCharacterPointer) — Entity_Spawn.cpp
+//   DeleteCloth (DeleteCloth/Entity_ClearBoneLinks) — stubs.cpp
+//   SetCharacterScale (SetCharacterScale) — alias macro
+//   SetAction (SetAction)
 //   Joint_Create (CreateJoint)
-//   FUN_004f7500 (RequestTerrainHeight)
+//   RequestTerrainHeight (RequestTerrainHeight)
 //   OpenNpc_stub (0x005091D0)
 extern "C++" {
 extern void __cdecl OpenNpc_stub(int Type);
 }
 
+// IDA: CreateCharacter (0x0045BFA0)
 // CreateCharacter — finds/allocates an entity slot for Key, returns pointer.
 // 1) scan first 400 slots for matching key at +476 → reuse slot
 // 2) else find first inactive slot (active flag at +0 == 0) → init it
 // Returns pointer (DWORD) into CharactersClient (DAT_07abf5d0).
-unsigned int __cdecl FUN_0045bfa0(int Key, int Type, unsigned char PosX,
+unsigned int __cdecl CreateCharacter(int Key, int Type, unsigned char PosX,
                                    unsigned char PosY, float Rotation)
 {
     unsigned int c = DAT_07abf5d0;
     for (int i = 0; i < 400; ++i) {
         if (*(unsigned char*)c != 0 && *(short*)(c + 476) == (short)Key) {
-            FUN_0045adc0((unsigned char*)c, Type, PosX, PosY, Rotation);
+            CreateCharacterPointer((unsigned char*)c, Type, PosX, PosY, Rotation);
             return c;
         }
         c += 916;
@@ -544,8 +545,8 @@ unsigned int __cdecl FUN_0045bfa0(int Key, int Type, unsigned char PosX,
         }
         i += 916;
     }
-    FUN_00449840((int)i, (int)i, 0);  // DeleteCloth
-    FUN_0045adc0((unsigned char*)i, Type, PosX, PosY, Rotation);
+    DeleteCloth((int)i, (int)i, 0);  // DeleteCloth
+    CreateCharacterPointer((unsigned char*)i, Type, PosX, PosY, Rotation);
     *(short*)(i + 476) = (short)Key;
     return i;
 }
@@ -554,12 +555,13 @@ unsigned int __cdecl FUN_0045bfa0(int Key, int Type, unsigned char PosX,
 // (unused — left here as an inline-compat shim for future ports).
 static inline unsigned int CreateChar5(int Key, int Type, int PosX, int PosY)
 {
-    return FUN_0045bfa0(Key, Type, (unsigned char)PosX, (unsigned char)PosY, 0.0f);
+    return CreateCharacter(Key, Type, (unsigned char)PosX, (unsigned char)PosY, 0.0f);
 }
 
 // CreateMonster — the big switch.
 // Phantom 5th param kept for ABI compat with existing 5-arg call sites.
-char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
+// IDA: CreateMonster (0x0045CCF0)
+char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
                             int Key, int /*phantom_unused*/)
 {
     int Type = (int)Type_;
@@ -1209,7 +1211,7 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
         v17 = (unsigned char)PositionY;
         v16 = (unsigned char)PositionX;
         v15 = 375;
-        c = FUN_0045bfa0(Key, v15, v16, v17, 0.0f);
+        c = CreateCharacter(Key, v15, v16, v17, 0.0f);
         *(unsigned int*)(c + 12) = 1065353216;
         *(unsigned char*)(c + 132) = 4;
         break;
@@ -1218,7 +1220,7 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
         v17 = (unsigned char)PositionY;
         v16 = (unsigned char)PositionX;
         v15 = 376;
-        c = FUN_0045bfa0(Key, v15, v16, v17, 0.0f);
+        c = CreateCharacter(Key, v15, v16, v17, 0.0f);
         *(unsigned int*)(c + 12) = 1065353216;
         *(unsigned char*)(c + 132) = 4;
         break;
@@ -1229,14 +1231,14 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned char*)(c + 626) = 4;
         *(unsigned int*)(c + 12) = 1069547520;
         *(unsigned char*)(c + 132) = 4;
-        FUN_0043e820((int)c, 0);
+        SetAction((int)c, 0);
         break;
     case 235:
         OpenNpc_stub(374);
         v17 = (unsigned char)PositionY;
         v16 = (unsigned char)PositionX;
         v15 = 374;
-        c = FUN_0045bfa0(Key, v15, v16, v17, 0.0f);
+        c = CreateCharacter(Key, v15, v16, v17, 0.0f);
         *(unsigned int*)(c + 12) = 1065353216;
         *(unsigned char*)(c + 132) = 4;
         break;
@@ -1275,7 +1277,7 @@ char* __cdecl FUN_0045ccf0(unsigned int Type_, int PositionX, int PositionY,
         float v13 = *(float*)(c + 16);
         float v14 = *(float*)(c + 20);
         *(unsigned int*)(c + 100) = 1;
-        *(float*)(c + 24) = FUN_004f7500(v13, v14) + 140.0f;
+        *(float*)(c + 24) = RequestTerrainHeight(v13, v14) + 140.0f;
         break;
     }
     case 243:

@@ -45,25 +45,25 @@ void FUN_004f64d0(void)
       if (uVar2 == 0xffffffff) {
         pvVar3 = operator_new(0x585);
         *(undefined1 *)((int)pvVar3 + 0x584) = 1;
-        FUN_00403f80(&DAT_055c9bc8,pvVar3,puVar5);
+        HashTable_Insert(&DAT_055c9bc8,pvVar3,puVar5);
       }
       else {
-        puVar4 = (undefined4 *)FUN_00404280(&DAT_055c9bc8,puVar5);
+        puVar4 = (undefined4 *)HashTable_GetNode(&DAT_055c9bc8,puVar5);
         cVar1 = *(char *)(puVar4 + 0x161);
         *(byte *)(puVar4 + 0x161) = cVar1 + 1U;
         if ((byte)(cVar1 + 1U) < 2) {
-          FUN_00404370(puVar5,puVar4);
+          Packet_DecryptBuffer(puVar5,puVar4);
         }
       }
       RenderItemInfo((void*)0x109,(void*)0x78,DAT_07e91350,'\0');
       puVar5 = (undefined4*)DAT_07cf1ffc;
       uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
       if (uVar2 != 0xffffffff) {
-        puVar4 = (undefined4 *)FUN_00404280(&DAT_055c9bc8,puVar5);
+        puVar4 = (undefined4 *)HashTable_GetNode(&DAT_055c9bc8,puVar5);
         cVar1 = *(char *)(puVar4 + 0x161);
         *(char *)(puVar4 + 0x161) = cVar1 + -1;
         if ((char)(cVar1 + -1) == '\0') {
-          FUN_00404400(puVar4,puVar5);
+          Packet_EncryptBuffer(puVar4,puVar5);
         }
       }
     }
@@ -75,7 +75,7 @@ void FUN_004f64d0(void)
     if (uVar2 == 0xffffffff) {
       pvVar3 = operator_new(0x585);
       *(undefined1 *)((int)pvVar3 + 0x584) = 1;
-      FUN_00403f80(&DAT_055c9bc8,pvVar3,puVar5);
+      HashTable_Insert(&DAT_055c9bc8,pvVar3,puVar5);
     }
     else {
       uVar2 = HashTable_GetIndex(&DAT_055c9bc8,puVar5);
@@ -88,7 +88,7 @@ void FUN_004f64d0(void)
       cVar1 = *(char *)(puVar4 + 0x161);
       *(byte *)(puVar4 + 0x161) = cVar1 + 1U;
       if ((byte)(cVar1 + 1U) < 2) {
-        FUN_00404370(puVar5,puVar4);
+        Packet_DecryptBuffer(puVar5,puVar4);
       }
     }
     RenderItemInfo((void*)(uintptr_t)DAT_07ea840c,(void*)(uintptr_t)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160,(int)DAT_07ea9844);
@@ -104,7 +104,7 @@ void FUN_004f64d0(void)
     if (uVar2 == 0xffffffff) {
       pvVar3 = operator_new(0x585);
       *(undefined1 *)((int)pvVar3 + 0x584) = 1;
-      FUN_00403f80(&DAT_055c9bc8,pvVar3,puVar5);
+      HashTable_Insert(&DAT_055c9bc8,pvVar3,puVar5);
     }
     else {
       uVar2 = HashTable_GetIndex(&DAT_055c9bc8,puVar5);
@@ -117,7 +117,7 @@ void FUN_004f64d0(void)
       cVar1 = *(char *)(puVar4 + 0x161);
       *(byte *)(puVar4 + 0x161) = cVar1 + 1U;
       if ((byte)(cVar1 + 1U) < 2) {
-        FUN_00404370(puVar5,puVar4);
+        Packet_DecryptBuffer(puVar5,puVar4);
       }
     }
     RenderRepairInfo((void*)(uintptr_t)DAT_07ea840c,(int)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160);
@@ -136,7 +136,7 @@ LAB_004f6614:
   cVar1 = *(char *)(puVar4 + 0x161);
   *(char *)(puVar4 + 0x161) = cVar1 + -1;
   if ((char)(cVar1 + -1) == '\0') {
-    FUN_00404400(puVar4,puVar5);
+    Packet_EncryptBuffer(puVar4,puVar5);
   }
 LAB_004f6824:
   // 2026-05-05: clamp DAT_0055a3e4 to valid skill slot range (0..19) before

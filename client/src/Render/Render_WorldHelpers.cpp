@@ -13,13 +13,13 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 
 #ifndef LODWORD
@@ -57,7 +57,7 @@ extern void __cdecl FUN_0054158c(void* ptr);
 //   v0[+0]                  scale
 //   v0[+48..50]             color RGB
 // Externs ya en functions.h: FUN_004f8ff0, FUN_004fc030, Particle_Spawn,
-// FUN_004f7500, BMD_TransformPosition, FUN_00503cf0, FUN_00441f00
+// RequestTerrainHeight, BMD_TransformPosition, PartObjectColor, FUN_00441f00
 
 void __cdecl FUN_00500aa0(void)
 {
@@ -105,7 +105,7 @@ void __cdecl FUN_00500aa0(void)
                 // Type 301: special action — render hero body + secondary at pose offsets.
                 if (entType == 301 && *((int*)v0 - 89) == 1) {
                     float light[3] = { 1.0f, 1.0f, 1.0f };
-                    FUN_00503cf0(301, *v0, 1.0f, light, true);  // Hero body color
+                    PartObjectColor(301, *v0, 1.0f, light, true);  // Hero body color
                 }
 
                 // Type 175: random fire-cloud sparkle.
@@ -133,13 +133,13 @@ void __cdecl FUN_00500aa0(void)
                 }
 
                 // World != 10: render shadow on terrain.
-                if (DAT_0055a7ac != 10) {
+                if (World != 10) {
                     BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 188 * entType);
                     glEnable(GL_BLEND);
                     glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
                     float wx = v0[-86];
                     float wy = v0[-85];
-                    float wz = FUN_004f7500(wx, wy);
+                    float wz = RequestTerrainHeight(wx, wy);
                     *(float*)(model + 108) = wx;
                     *(float*)(model + 112) = wy;
                     *(float*)(model + 116) = wz;
@@ -161,10 +161,10 @@ void __cdecl FUN_00500aa0(void)
 // Itera Items[] pool (DAT_07e12840, 1000 entries × 516 bytes), per-entry:
 //   1. Frustum-cull con sub_4F9590 (=Frustum_TestSphere) radio 400.
 //   2. Resolve model slot por type (special handling 624..783, 860).
-//   3. BMD_Animation (FUN_00440060) con bone matrix.
+//   3. BMD_Animation (BMD_Animation) con bone matrix.
 //   4. RequestTerrainLight + offset by entity color.
 //   5. Special bombs (type 863): scatter pattern con N copies.
-//   6. RenderPartObject (FUN_00505a10) en posición.
+//   6. RenderPartObject (RenderPartObject) en posición.
 //   7. Projection a screen → save sx/sy en entity[+0xB8/+0xBA].
 // RandomTable (0x055C9E58) la siembra WinMain con `rand() % 360`; la usa el
 // montón de monedas del tipo 863 (Zen) para repartirlas en círculo.
@@ -217,13 +217,13 @@ void __cdecl FUN_005038e0(void)
                 // offsets de BYTE (disasm 0x5039E9/0x5039ED: `mov ecx,[esi+7]`,
                 // `mov edx,[esi+3]`).  2026-08-21: el port usaba v0+12 y v0+28,
                 // que es la misma confusión float*/BYTE* que el Alpha de arriba.
-                FUN_00440060(model, (int)&DAT_06970a9c,
+                BMD_Animation(model, (int)&DAT_06970a9c,
                              *(float*)(v0 + 3), *(unsigned int*)(v0 + 7),
                              v0[1], (unsigned int*)angles_in, headA, 0, 0);
 
                 // Compute lighting from terrain + entity color offset.
                 float Light[3];
-                FUN_004f7960(*v2, *(float*)(v0 - 241), Light);
+                RequestTerrainLight(*v2, *(float*)(v0 - 241), Light);
                 Light[0] += *(float*)(v0 - 29);
                 Light[1] += *(float*)(v0 - 25);
                 Light[2] += *(float*)(v0 - 21);
@@ -255,7 +255,7 @@ void __cdecl FUN_005038e0(void)
                         // (disasm 0x503B4C: `mov eax, [esi+63h]`), o sea Items+432,
                         // el mismo campo que usa el draw principal (v1 + 360).
                         // 2026-08-21: el port tenía v0 + 396 (Items+729).
-                        FUN_00505a10((int)v1, type, 0, Light, *(float*)(v0 + 99),
+                        RenderPartObject((int)v1, type, 0, Light, *(float*)(v0 + 99),
                                      *(DWORD*)(v0 - 325), *(v0 - 302),
                                      1, 1, 1, 0, 2);
                         ++v9; ++v10;
@@ -269,7 +269,7 @@ void __cdecl FUN_005038e0(void)
                 float v21 = *(float*)(v1 + 20);
                 float v22 = *(float*)(v1 + 24);
 
-                if (DAT_0055a7ac == 10) {  // World 10 (Icarus) — bamboleo
+                if (World == 10) {  // World 10 (Icarus) — bamboleo
                     // IDA: sin((v15 + WorldTime) * flt_5528E0) * flt_552488 + z
                     *(float*)(v1 + 24) = (float)(sin(((double)v15 + (double)DAT_05826e08)
                                                      * (double)_DAT_005528e0)
@@ -281,7 +281,7 @@ void __cdecl FUN_005038e0(void)
                 // del entity (= model del item, ej 662) a RenderPartObject.
                 // El port usaba v1+4 (= el flag "1" que escribe CreateItem en
                 // ip+76) → renderizaba el modelo equivocado.
-                FUN_00505a10((int)v1, *(short*)(v1 + 2), 0, Light,
+                RenderPartObject((int)v1, *(short*)(v1 + 2), 0, Light,
                              *(float*)(v1 + 360),
                              *(DWORD*)(v0 - 325), *(v0 - 302),
                              1, 1, 1, 0, 2);
@@ -330,7 +330,8 @@ void __cdecl FUN_005038e0(void)
 //   - GL_QUADS por segment con interpolación entre vertices vecinos
 // GL_SetBlendSrcOver/790/600/480 — declared en functions.h, sin extern "C" duplicate.
 
-void __cdecl FUN_00473710(void)
+// IDA: ItemDrop_Render (0x00473710)
+void __cdecl ItemDrop_Render(void)
 {
     // Pool: DAT_07b27150 (Joint pool) + 0x9b8 stride 0x9d8.
     int* poolBase = (int*)((char*)DAT_07b27150 + 0x9b8);
@@ -484,7 +485,7 @@ void __cdecl FUN_00473710(void)
                             pos[0] += p[-1]; pos[1] += p[0]; pos[2] += p[1];
                         }
                         pos[0] *= 0.25f; pos[1] *= 0.25f; pos[2] *= 0.25f;
-                        FUN_004795c0(1277, pos, 0.69999999f, c, 0, 0.0f, 0);
+                        CreateSprite(1277, pos, 0.69999999f, c, 0, 0.0f, 0);
                     }
                 } else if (type == 1255) {
                     float lz = light[2];
@@ -544,8 +545,8 @@ namespace {
             pkt[i] ^= pkt[i - 1] ^ s_NpcKey[i & 0x1f];
         }
         MuEmu::EncryptSend(pkt, totalLen);
-        if (DAT_055ca168 != 0xFFFFFFFF) {
-            ::send(DAT_055ca168, (const char*)pkt, totalLen, 0);
+        if (SocketClientSocket != 0xFFFFFFFF) {
+            ::send(SocketClientSocket, (const char*)pkt, totalLen, 0);
         }
     }
 }
@@ -717,7 +718,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
     // 2026-05-07: solo activo in-world. CharSelect tiene su propio path con
     // entity pool poblado de chars; queremos que Target_Render solo procese
     // mob/NPC/player hovers en el mundo de juego.
-    if (DAT_005615c0 != 5) return;
+    if (SceneFlag != 5) return;
 
     // 2026-07-27: render de nombres de items en el suelo (port sub_4CB6F0
     // L61-68 + L158-177). Antes se skipeaba → nunca aparecía el nombre.
@@ -741,7 +742,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
         //    byte_7EAA15C; se muestran si el toggle está on O Alt está mantenido).
         //    Una pulsación de Alt alterna mostrar/ocultar todos los nombres.
         static int s_altNameToggle = 0;
-        if (Input_IsKeyJustPressed(VK_MENU))               // Alt recién pulsado (edge)
+        if (PressKey(VK_MENU))               // Alt recién pulsado (edge)
             s_altNameToggle = !s_altNameToggle;
         if (s_altNameToggle || (GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
             for (int i = 0; i < 1000; ++i) {
@@ -804,7 +805,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
     }
 }
 
-// FUN_00502200 @ 0x00502200 — RenderFishs
+// IDA: FUN_00502200 (0x00502200)
 // 2026-05-07: port FIEL desde IDA mu97k-src-IDA/raw/00502200_RenderFishs.c.
 // Renderiza peces decorativos (Lorencia ponds, Devias mountains, etc).
 // Pool: DAT_083a2e90 (10 entries × 0x1BC bytes = 4440 bytes total).
@@ -822,7 +823,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
 //   3. If visible: PrepareRender, then if type != 188/189 and World != 10:
 //      enable alpha test, set black alpha=0.2 color, sync model render slot
 //      to pos with terrain height, call sub_441F00 (shadow render).
-void __cdecl FUN_00502200(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
+void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
 {
     char* base = (char*)&DAT_083a2e90[0];
     for (int i = 0; i < 10; ++i) {
@@ -842,7 +843,7 @@ void __cdecl FUN_00502200(int /*unused*/, int /*unused*/, int /*unused*/, int /*
             if (vis) {
                 FUN_004fc030((unsigned char*)slot, 0u, 0, 0);
                 short typeCode = *(short*)(slot + 2);
-                const int __world = (int)DAT_0055a7ac;   // `World` es macro de DAT_0055a7ac: nombrar
+                const int __world = (int)World;   // `World` es macro de World: nombrar
                                                         // la local `World` la volvia una
                                                         // auto-inicializacion con basura.
                 if (typeCode != 188 && typeCode != 189 && __world != 10) {
@@ -850,7 +851,7 @@ void __cdecl FUN_00502200(int /*unused*/, int /*unused*/, int /*unused*/, int /*
                     glColor4f(0.0f, 0.0f, 0.0f, 0.2f);     // shadow color
                     float* modelData = (float*)(DAT_05828d58 + 188 * (int)typeCode);
                     if (modelData) {
-                        modelData[29] = FUN_004f7500(posX, posY);  // height
+                        modelData[29] = RequestTerrainHeight(posX, posY);  // height
                         modelData[27] = posX;
                         modelData[28] = posY;
                         FUN_00441f00((void*)modelData, -1, -1);    // shadow draw
@@ -893,7 +894,8 @@ void __cdecl FUN_00502200(int /*unused*/, int /*unused*/, int /*unused*/, int /*
 // El truco del binario es que reusa el propio slot del efecto como si fuera la
 // entidad del arma: le cambia `Type` (o+2) al modelo del item y al final lo
 // devuelve. Por eso guarda/restaura pos (16/20/24), angle (28/32/36) y type.
-void __cdecl FUN_0046b7c0(DWORD o)
+// IDA: RenderWheelWeapon (0x0046B7C0)
+void __cdecl RenderWheelWeapon(DWORD o)
 {
     if (!o || !DAT_05828d58 || !DAT_07abf5d8) return;
 
@@ -933,21 +935,21 @@ void __cdecl FUN_0046b7c0(DWORD o)
     *(int*)  (mdl + 112) = *(int*)(o + 20);
 
     *(short*)(o + 2) = (short)model_id;
-    FUN_00502ba0((int)o);                          // ItemObjectAttribute
+    ItemObjectAttribute((int)o);                          // ItemObjectAttribute
 
     float angles_in[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) };
-    FUN_00440060(mdl, (int)&DAT_06970a9c,
+    BMD_Animation(mdl, (int)&DAT_06970a9c,
                  *(float*)(o + 264), *(unsigned int*)(o + 268),
                  *(BYTE*)(o + 262),
                  (unsigned int*)angles_in, (float*)(o + 40), 0, 0);
 
     float Light[3];
-    FUN_004f7960(*(float*)(o + 16), *(float*)(o + 20), Light);
+    RequestTerrainLight(*(float*)(o + 16), *(float*)(o + 20), Light);
     Light[0] += *(float*)(o + 232);
     Light[1] += *(float*)(o + 236);
     Light[2] += *(float*)(o + 240);
 
-    FUN_00505a10((int)o, model_id, 0, Light, alpha,
+    RenderPartObject((int)o, model_id, 0, Light, alpha,
                  (unsigned int)(8 * *(unsigned char*)(owner + 137)),
                  0, 1, 1, 1, 0, 2);
 
@@ -1010,7 +1012,7 @@ void __cdecl EffectPool_RenderAll(void)
             continue;                       // IDA: `break` — no renderiza nada
         }
         if (type == 239) {
-            FUN_0046b7c0((DWORD)(uintptr_t)(v0 - 10));   // RenderWheelWeapon
+            RenderWheelWeapon((DWORD)(uintptr_t)(v0 - 10));
             continue;
         }
         if (type == 244) {
@@ -1033,7 +1035,7 @@ void __cdecl EffectPool_RenderAll(void)
             float xf = v0[-6], yf = v0[-5], zf = v0[-4];
             for (int n = 0; n < 30; ++n) {
                 float pos[3] = { xf, yf, zf };
-                FUN_004795c0(1176, pos, v0[-7], v0 + 48,
+                CreateSprite(1176, pos, v0[-7], v0 + 48,
                              (int)(uintptr_t)(v0 - 10), 0.0f, 0);
                 xf += v0[38];
                 yf += v0[39];
@@ -1048,7 +1050,7 @@ void __cdecl EffectPool_RenderAll(void)
             BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 50008);
             float angles_in[3]  = { v0[-3], v0[-2], v0[-1] };
             float headA[3]      = { v0[0],  v0[1],  v0[2]  };
-            FUN_00440060(model, (int)&DAT_06970a9c,
+            BMD_Animation(model, (int)&DAT_06970a9c,
                          v0[56], *(unsigned int*)&v0[57],
                          *((BYTE*)v0 + 222),
                          (unsigned int*)angles_in, headA, 0, 0);
@@ -1060,7 +1062,7 @@ void __cdecl EffectPool_RenderAll(void)
                 v0[49] * intensity,
                 v0[50] * intensity
             };
-            FUN_00505a10((int)(v0 - 10), 266, 0, Light, 1.0f, 0, 0, 1, 1, 1, 0, 66);
+            RenderPartObject((int)(v0 - 10), 266, 0, Light, 1.0f, 0, 0, 1, 1, 1, 0, 66);
             continue;
         }
 
@@ -1073,7 +1075,7 @@ void __cdecl EffectPool_RenderAll(void)
                 // independent sprite pool (004795C0), not CreateParticle
                 // (00475220); the latter interprets its second argument as
                 // a position and dereferences the previous nullptr.
-                FUN_004795c0(1176, pos, v0[-7], v0 + 48,
+                CreateSprite(1176, pos, v0[-7], v0 + 48,
                               (int)(uintptr_t)(v0 - 10), 0.0f, 0);
                 xf += v0[38];
                 yf += v0[39];
@@ -1183,13 +1185,13 @@ void __cdecl FUN_00406f50(char* param_1) {
 
 
 // FUN_00440a30 @ 0x00440a30 — implemented in Render/BMD_SetupRender.cpp
-// FUN_00502ba0 @ 0x00502ba0 — implemented in Entity/Entity_Reset.cpp
+// ItemObjectAttribute @ 0x00502ba0 — implemented in Entity/Entity_Reset.cpp
 // FUN_004553c0 @ 0x004553c0 — implemented in Render/BMD_SetupRender.cpp
-// FUN_00454fc0 — implemented in src/Render/Entity_Render.cpp
+// MoveCharacterClient — implemented in src/Render/Entity_Render.cpp
 // FUN_00456770 — implemented in src/Render/Entity_UpdateRender.cpp (Entity_UpdateRender, 2195 lines)
 // FUN_0045ab00 — implemented in src/Render/Entity_Render.cpp
-// FUN_0045adc0 — implemented in src/Entity/Entity_Spawn.cpp (Entity_Spawn, 797 lines)
-// FUN_0045f930 — implemented in src/Entity/Entity_Init.cpp
+// CreateCharacterPointer — implemented in src/Entity/Entity_Spawn.cpp (Entity_Spawn, 797 lines)
+// CreateHero — implemented in src/Entity/Entity_Init.cpp
 // FUN_0045fa20 (Monster_SaveSetBase) — implemented in src/Entity/Entity_Init.cpp
 // Effect_TickAll (IDA: FUN_0046b790) — implemented in src/Render/Effect_Tick.cpp
 // FUN_0046c3e0 — implemented in src/Render/Joint_Render.cpp
@@ -1202,7 +1204,7 @@ void __cdecl FUN_00406f50(char* param_1) {
 // DamageNumbers_Tick (IDA: FUN_00479380) — implemented in src/Render/Effect_Tick.cpp
 // Effect_TickFlare (IDA: FUN_004794a0) — implemented in src/Render/Effect_Tick.cpp
 // Render_DrawSpritePool — implemented in src/Sound/Sound_Queue.cpp (Sound_UpdateQueue)
-// Input_ClearState — implemented in src/Input/Input.cpp
+// ClearInput — implemented in src/Input/Input.cpp
 // UI_RenderInputField — implemented in src/UI/Chat.cpp
 // UI_RenderText — implemented in src/UI/Chat.cpp
 // Chat_TickNoticeTimer — implemented in src/Sound/Sound_Queue.cpp

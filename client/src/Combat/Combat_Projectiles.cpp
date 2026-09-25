@@ -48,7 +48,7 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
     }
 
     // Set CurrentSkill
-    DAT_05826d10 = (DWORD)(SKKey & 0xFF);
+    CurrentSkill = (DWORD)(SKKey & 0xFF);
 
     if ((char)SKKey == '3') {
         PlayBuffer(0x65, (DWORD)o, 0);
@@ -73,55 +73,55 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
     //   10 = type 10 (legend bow)     -> effect 0xF2
     switch (adjType0) {
     case 0x218:
-        Effect_Create(0xD9, oPos, oAngle, oLight,
+        CreateEffect(0xD9, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x219:
-        Effect_Create(0xD9, oPos, oAngle, oLight,
+        CreateEffect(0xD9, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21A:
-        Effect_Create(0xDD, oPos, oAngle, oLight,
+        CreateEffect(0xDD, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21B:
-        Effect_Create(0xDB, oPos, oAngle, oLight,
+        CreateEffect(0xDB, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21C:
-        Effect_Create(0xDA, oPos, oAngle, oLight,
+        CreateEffect(0xDA, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21D:
-        Effect_Create(0xE0, oPos, oAngle, oLight,
+        CreateEffect(0xE0, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x21E:
-        Effect_Create(0xDF, oPos, oAngle, oLight,
+        CreateEffect(0xDF, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x220:
-        Effect_Create(0xF2, oPos, oAngle, oLight,
+        CreateEffect(0xF2, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         break;
     case 0x222:
-        Effect_Create(0xF2, oPos, oAngle, oLight,
+        CreateEffect(0xF2, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
@@ -138,28 +138,28 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
     case 0x213:
     case 0x214:
     case 0x215:
-        Effect_Create(0xD8, oPos, oAngle, oLight,
+        CreateEffect(0xD8, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         return;
 
     case 0x212:
-        Effect_Create(0xDC, oPos, oAngle, oLight,
+        CreateEffect(0xDC, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         return;
 
     case 0x216:
-        Effect_Create(0xDE, oPos, oAngle, oLight,
+        CreateEffect(0xDE, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);
         return;
 
     case 0x221:
-        Effect_Create(0xF3, oPos, oAngle, oLight,
+        CreateEffect(0xF3, oPos, oAngle, oLight,
                      (float*)(intptr_t)effectFlags, (float*)o,
                      (float*)(intptr_t)(int)oPKKey, (float*)(intptr_t)(int)SkillIndex,
                      (BYTE)Skill);

@@ -1,7 +1,7 @@
 #pragma once
 // Scene.h - Game state machine declarations
 //
-// g_GameState (DAT_005615c0) controls which scene renders each frame:
+// SceneFlag (SceneFlag) controls which scene renders each frame:
 //
 //   1 = Scene_Intro    - Webzen logo + Everyone (ESRB) image
 //   2 = Scene_Login    - Login screen (handled via Game_MainLoop)
@@ -10,13 +10,13 @@
 //   5 = InGame         - Actual gameplay (via Game_MainLoop)
 //
 // State transitions (confirmed from decompilation):
-//   Scene_Loading -> sets g_GameState = 5 when done
+//   Scene_Loading -> sets SceneFlag = 5 when done
 
 #include "../stdafx.h"
 
 // Called once per frame from the WinMain message loop.
 // Routes to Scene_Intro, Game_MainLoop (Login/CharSelect/InGame),
-// or Scene_Loading based on g_GameState.
+// or Scene_Loading based on SceneFlag.
 // @ 0x005274A8
 void Scene_Dispatch(HDC hDC);
 
@@ -24,7 +24,7 @@ void Scene_Dispatch(HDC hDC);
 // @ 0x005137A0
 void Scene_Intro(HDC hDC);
 
-// State 3: Loading01-03.jpg splash, then sets g_GameState = 5
+// State 3: Loading01-03.jpg splash, then sets SceneFlag = 5
 // @ 0x00524B20
 void Scene_Loading(HDC hDC);
 

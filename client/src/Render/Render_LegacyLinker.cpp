@@ -6,13 +6,13 @@
 #include "structs.h"
 
 extern "C" DWORD DAT_07eaa128;
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void FUN_004fa5a0(void);
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y) (0)
@@ -149,6 +149,7 @@ extern void __cdecl FUN_004e13a0(int param_1, unsigned int param_2,
 //      modelId = Type + 400 (default), o IDs específicos para items 459/457/469/435 según Level.
 //
 // Esto reemplaza el placeholder que pintaba quads coloreados por grupo.
+// IDA: RenderItem3D (0x004E1BE0)
 void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
                            int Type, int Level, int Option1, int ExtOption, bool PickUp)
 {

@@ -17,14 +17,14 @@
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -45,7 +45,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 #endif
 
 
-// FUN_004cc660 @ 0x004CC660 — InsertInventoryItem(ITEM* Inv, int Width,
+// InsertInventoryItem @ 0x004CC660 — InsertInventoryItem(ITEM* Inv, int Width,
 //   int Height, int Index, BYTE* Item, bool First)  (1945 bytes, IDA).
 //
 // IDA decomp ships with a `// local variable allocation has failed` warning,
@@ -74,6 +74,7 @@ extern "C" void __cdecl AddItemToGrid(BYTE* gridBase, int gridW, int gridH,
                                       int slotIdx, int type, int level,
                                       BYTE optByte, BYTE fillFlag, BYTE durability, BYTE byteHi, BYTE extByte);
 extern "C" BYTE OffsetInventoryItems[];
+// IDA: InsertInventoryItem (0x004CC660)
 extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
                                             int Index, BYTE* Item, bool First)
 {
@@ -200,12 +201,6 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
     if (Inv == Inventory) SortInventory_stub((short*)Inv);
     // (Anti-tamper hash-table ref-count for !First — skipped per policy.)
     (void)First;
-}
-
-void __cdecl FUN_004cc660(BYTE* Inv, int Width, int Height,
-                          int Index, BYTE* Item, int First)
-{
-    InsertInventoryItem(Inv, Width, Height, Index, Item, First != 0);
 }
 
 // FUN_0046fe00 @ 0x0046FE00 — DeleteJoint(int Type, DWORD Target, int SubType)

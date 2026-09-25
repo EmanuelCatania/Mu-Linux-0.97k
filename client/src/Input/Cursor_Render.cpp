@@ -71,7 +71,7 @@ void __cdecl Cursor_Render(void) {
     // SelectedOperate (hover sobre objeto interactivo del mundo)
     if (SelectedOperate != -1) {
         // Match per-World contra el type-code de la entidad; fallback bitmap 9.
-        // DAT_0055a7ac aquí actúa como `World` en IDA; puede no coincidir 100%
+        // World aquí actúa como `World` en IDA; puede no coincidir 100%
         // con nuestra interpretación de sub-state pero no afecta el default.
         // Guard (no esta en IDA): SelectedOperate lo deja el picker del frame
         // anterior; si el objeto se libero en el medio el puntero queda colgado.
@@ -84,7 +84,7 @@ void __cdecl Cursor_Render(void) {
             return;
         }
         short cls = *(short*)(operObj + 2);
-        int world = DAT_0055a7ac;
+        int world = World;
         bool match = false;
         if      (world == 0) match = (cls == 133);
         else if (world == 1) match = (cls == 60);
@@ -101,7 +101,7 @@ void __cdecl Cursor_Render(void) {
         *(char*)((char*)DAT_07abf5d8 + 0x34e) == '\0' &&
         SelectedCharacter != -1)
     {
-        if ((char)FUN_00483160() != '\0' && DAT_07d78094 == '\0') {
+        if ((char)CheckAttack() != '\0' && DAT_07d78094 == '\0') {
             GL_DrawTexture(4, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
         } else {
             draw_arrow();

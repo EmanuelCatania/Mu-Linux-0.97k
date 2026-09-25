@@ -183,7 +183,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     Ff(DAT_07eeb210) = -(plane4[0]*c1[0] + plane4[1]*c1[1] + plane4[2]*c1[2]);
 
     // Step 7 — Apply camera view matrix
-    FUN_004f8eb0(param_2);
+    CreateFrustrum2D(param_2);
 }
 
 // ── FUN_005112F0 @ 0x005112F0 — Camera_MouseRay ─────────────────────────────
@@ -309,7 +309,8 @@ int __cdecl Frustum_TestSphere(float *param_1, float param_2)
 // param_1: x offset,  param_2: y offset
 // param_3: width,     param_4: height (int → converted to float at _DAT_0055a7bc)
 // Globals: DAT_0055a7b0/b4/b8/bc
-void __cdecl FUN_004fa5c0(int param_1,int param_2,int param_3,int param_4)
+// IDA: SetActionObject (0x004FA5C0)
+void __cdecl SetActionObject(int param_1,int param_2,int param_3,int param_4)
 {
   DAT_0055a7b4 = param_1;
   _DAT_0055a7bc = (float)param_4;
