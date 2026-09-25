@@ -59,6 +59,11 @@ DWORD g_SoundOn    = 1;      // DAT_?? (default 1 = sound on)
 // que vive en globals.cpp. Ver la nota en Config.h.
 DWORD g_Resolution = 0;      // DAT_?? (default 0 = 640x480)
 DWORD g_TextOut    = 0;      // DAT_?? (default 0)
+
+// Overrides de server.cfg (ver Config.h).  -1 = no vino en el archivo.
+int g_CfgMusicOnOff = -1;
+int g_CfgSoundOnOff = -1;
+int g_CfgResolution = -1;
 // g_fScreenRate_x / _y — escala pixel -> layout 640x480. Las calcula
 // Config_Load desde WindowWidth/WindowHeight; el 1.0f es solo el valor
 // previo a esa llamada (y el correcto para 640x480).
@@ -138,6 +143,15 @@ int Config_Load(void)
 
         RegCloseKey(hKey);
     }
+
+    // --- 4b. Overrides de server.cfg (DESVIACION DOCUMENTADA) -----------
+    // Config_ReadServerAddr ya corrio (WinMain lo llama antes que a esta
+    // funcion) y dejo lo que hubiera en server.cfg.  Se aplican DESPUES del
+    // registro a proposito: la idea es poder distribuir el cliente ya
+    // configurado sin depender de un launcher que escriba la clave.
+    if (g_CfgSoundOnOff >= 0) g_SoundOn    = (DWORD)g_CfgSoundOnOff;
+    if (g_CfgMusicOnOff >= 0) g_MusicOn    = (DWORD)g_CfgMusicOnOff;
+    if (g_CfgResolution >= 0) g_Resolution = (DWORD)g_CfgResolution;
 
     // --- 5. Resolution -> screen dimensions ---
     //
@@ -427,6 +441,46 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
                         wsprintfA(line, "server.cfg: ClientVersion='%s'", v5);
                         DbgLogPublic(line);
                     }
+                }
+                else if (_stricmp(key, "MusicOnOff") == 0 ||
+                         _stricmp(key, "SoundOnOff") == 0 ||
+                         _stricmp(key, "Resolution") == 0) {
+                    // DESVIACION DOCUMENTADA (2026-09-24): el 0.97k lee estas
+                    // tres del registro y nada mas.  Sin launcher que las deje
+                    // escritas no hay forma de distribuir el cliente ya
+                    // configurado, asi que se aceptan tambien aca y Config_Load
+                    // las aplica DESPUES del registro (ver 4b).
+                    int parsed = -1;
+                    if (_stricmp(key, "Resolution") == 0) {
+                        // Acepta el indice del binario (0..4) o "ANCHOxALTO".
+                        const char* x = strchr(val, 'x');
+                        if (x == nullptr) x = strchr(val, 'X');
+                        if (x != nullptr) {
+                            int w = atoi(val), h = atoi(x + 1);
+                            if      (w == 640  && h == 480)  parsed = 0;
+                            else if (w == 800  && h == 600)  parsed = 1;
+                            else if (w == 1024 && h == 768)  parsed = 2;
+                            else if (w == 1280 && h == 1024) parsed = 3;
+                            else if (w == 1600 && h == 1200) parsed = 4;
+                        } else if (val[0] >= '0' && val[0] <= '4' && val[1] == 0) {
+                            parsed = val[0] - '0';
+                        }
+                        if (parsed >= 0) g_CfgResolution = parsed;
+                    } else {
+                        // 0/1 (tambien se aceptan "on"/"off" por comodidad).
+                        if      (_stricmp(val, "on")  == 0) parsed = 1;
+                        else if (_stricmp(val, "off") == 0) parsed = 0;
+                        else if (val[0] == '0' || val[0] == '1') parsed = val[0] - '0';
+                        if (parsed >= 0) {
+                            if (_stricmp(key, "MusicOnOff") == 0) g_CfgMusicOnOff = parsed;
+                            else                                  g_CfgSoundOnOff = parsed;
+                        }
+                    }
+
+                    char line[96];
+                    if (parsed >= 0) wsprintfA(line, "server.cfg: %s=%d", key, parsed);
+                    else             wsprintfA(line, "server.cfg: %s='%s' IGNORADO (valor invalido)", key, val);
+                    DbgLogPublic(line);
                 }
 
                 continue;   // nunca es una dirección

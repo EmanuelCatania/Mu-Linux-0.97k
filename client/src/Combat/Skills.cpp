@@ -72,7 +72,6 @@ extern void Entity_TeleportAnim(float* world_pos, float, float, float); // Legac
 extern void UI_ShowExpGainOverlay(int amount);              // 0x00480620
 extern void Entity_MeleeAttackStart(int entity_idx);        // Legacy helper; no verified FUN mapping.
 extern int  Entity_FindById(int id);                        // 0x0045ac80 (Monster.cpp)
-extern void Particle_Spawn(int type, float x, float y, float z, int flags); // particle system
 extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType);
 
 // SetPlayerBow @ 0042BC00. It selects the bow/crossbow animation and keeps
@@ -259,10 +258,10 @@ void PacketHandler_0x19(BYTE* pkt)
             CreateTeleportBegin((unsigned int)(uintptr_t)target);
         CreateTeleportEnd((unsigned int)(uintptr_t)caster);
         // IDA 0x42BCA0 L198-201: `if (sc == Hero) Teleport = 0;`
-        // (Teleport = 0x05826D14 = DAT_05826d14).  Faltaba: el flag quedaba
+        // (Teleport = 0x05826D14 = Teleport).  Faltaba: el flag quedaba
         // armado despues de terminar el teleport propio.
         if (caster == (BYTE*)DAT_07abf5d8)
-            DAT_05826d14 = 0;
+            Teleport = 0;
         PlayBuffer(102, (DWORD)(uintptr_t)caster, 0);
         return;
     }

@@ -87,13 +87,12 @@ int __cdecl LoadTextData_Bin(const char *FileName)
 //       sub_479950(...);
 //
 // DAT_0055a7c4 == 1 in our build (see globals.cpp:1248), so we take the
-// binary-file branch.  OpenMacro is not yet ported; skipping it leaves the
-// user's custom key bindings empty (defaults still work).
+// binary-file branch.
 void __cdecl OpenTextData(void)
 {
     if (DAT_0055a7c4) {
         LoadTextData_Bin("Data\\Local\\Text.bmd");
-        // TODO: OpenMacro("Data\\Macro.txt") — key-macro file loader.
+        OpenMacro("Data\\Macro.txt");   // macros de chat (Alt+1..0)
     } else {
         // Plain-text branch — not taken in our build, but implement for parity.
         // sub_4797B0 tokenises "index value" pairs out of Text(xxx).txt.

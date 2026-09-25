@@ -94,7 +94,7 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
 // External helpers already implemented elsewhere in our build.  Linkage
 // coincide con las definiciones que ya existen en stubs.cpp (C++, no extern "C").
 int  __cdecl    ChatListBox_GetFocusState(DWORD* self);                // IDA: FUN_0040c680
-void __fastcall ChatListBox_DequeueFront(int self); // IDA: FUN_0040c580 (0x0040C580)
+void __fastcall ChatListBox_DequeueFront(int self); // IDA: ChatListBox_DequeueFront (0x0040C580)
 int  __cdecl    FUN_00411a20(DWORD* self);                            // key-handler (slot 9)
 int  __cdecl    FUN_004119a0(DWORD* self, int v);                     // scroll-up helper
 int  __cdecl    FUN_0040c930(int slot);                               // ++[slot+0x114]
@@ -2295,7 +2295,7 @@ void __fastcall FUN_0040c500(void* ecx, void* /*edx*/, int param_1, int param_2,
     (void)ecx; (void)param_1; (void)param_2; (void)param_3;
 }
 
-// IDA: FUN_0040c580 (0x0040C580)
+// IDA: ChatListBox_DequeueFront (0x0040C580)
 // ── ChatListBox_DequeueFront — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // ChatListBox_DequeueFront @ 0x0040C580 (71 bytes) — dequeue front from linked list + copy 3 fields
 // IDA: ChatListBox_DequeueFront

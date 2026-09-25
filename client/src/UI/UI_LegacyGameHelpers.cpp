@@ -154,7 +154,7 @@ char __cdecl SelectSkillByHotkey(int a1)
             const char skillType = CA[(unsigned char)playerEnt[913] + 87];
             if (skillType == 6 || skillType == 15) {
                 SelectedCharacter = 0xffffffff;
-                DAT_00559c58      = 0xffffffff;   // Attacking = -1
+                Attacking      = 0xffffffff;   // Attacking = -1
             }
         }
     }

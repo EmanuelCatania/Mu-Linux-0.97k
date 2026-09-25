@@ -47,6 +47,75 @@ static const BYTE s_xorKey[32] = {
     0xc3, 0xb1, 0xe9, 0x83, 0x29, 0x51, 0xe8, 0x56
 };
 
+// IDA: sub_50F7A0 (0x0050F7A0) -- guarda las opciones del personaje en el server.
+//
+// 2026-09-21: faltaba entera.  `functions.h` la tenia declarada como
+// "Map_Unload" (mal identificada) y ni estaba definida ni la llamaba nadie, asi
+// que el cliente NUNCA mandaba el F3/30: las teclas de skill (Ctrl+numero) se
+// perdian al volver a entrar.  El handler de entrada (F3/30, ReceiveOption) ya
+// estaba y era fiel; faltaba esta mitad.
+//
+// PMSG_OPTION_DATA_RECV (Protocol.h:134 del server, #pragma pack(1)), 19 bytes:
+//   +4..13    SkillKey[10]  numero de tecla -> tipo de skill
+//   +14       GameOption    bit0/bit1 auto-ataque on/off, bit2/bit3 susurro on/off
+//   +15..17   QKey/WKey/EKey  BYTE(tipo_de_item) + 64, o sea tipo - 448
+//   +18       ChatWindow    (lineas_visibles / 3) << 4 | transparencia * 10
+// El mapa del cliente es slot -> numero (CA+215, 64 bytes por personaje); aca
+// se invierte a numero -> skill, que es lo que el handler de entrada vuelve a
+// dar vuelta.  El lado de la ventana de chat usa los mismos dos datos que
+// escribe ReceiveOption (self[35] y el float en +188), asi el ida-y-vuelta es
+// simetrico.
+//
+// Se descartan los numeros >= 10: en IDA los 10..14 caerian sobre los bytes de
+// opciones y se pisan acto seguido (mismo paquete final), y >= 15 escribiria
+// fuera del arreglo.
+static void SaveOptionsToServer97k(void)
+{
+    BYTE* CA = (BYTE*)CharacterAttribute;
+    if (!CA) return;
+
+    BYTE opt[15];
+    memset(opt, 0, sizeof(opt));
+
+    const int hero = (int)DAT_005616ac;                 // SelectedHero
+    if (hero >= 0 && hero <= 4) {
+        const BYTE* keyMap = CA + 215 + (hero << 6);
+        for (int slot = 0; slot < 64; ++slot) {
+            const BYTE num = keyMap[slot];
+            if (num != 0xFF && num < 10)
+                opt[num] = CA[slot + 87];               // tipo de skill del slot
+        }
+    }
+
+    opt[10] |= DAT_00559c5c ? 1 : 2;                    // m_bAutoAttack
+    opt[10] |= DAT_07e11d80 ? 4 : 8;                    // m_bWhisperSound
+    opt[11] = (BYTE)((BYTE)DAT_00559c60 + 64);          // QKey
+    opt[12] = (BYTE)((BYTE)DAT_00559c64 + 64);          // WKey
+    opt[13] = (BYTE)((BYTE)DAT_00559c68 + 64);          // EKey
+
+    int lines = 0, transp = 0;
+    if (DAT_055c9ff0) {
+        DWORD* cobj = (DWORD*)DAT_055c9ff0;
+        lines  = (int)cobj[35] / 3;                     // vtable[13] getVisibleCnt
+        transp = (int)(*(float*)((BYTE*)cobj + 188) * 10.0f);
+    }
+    if (!g_bUseChatListBox) lines = 0;                       // g_bUseChatListBox
+    opt[14] = (BYTE)(transp | (16 * lines));
+
+    // HackPacketCheck: 0xF3 acepta cualquier frame (`*`); C1 no toca el serial.
+    BYTE pkt[4 + sizeof(opt)] = { 0xC1, (BYTE)sizeof(pkt), 0xF3, 0x30 };
+    memcpy(pkt + 4, opt, sizeof(opt));
+    Net_SendC1Packet(pkt, sizeof(pkt));
+
+    {   // queda en el log: es el unico rastro de que las opciones se guardaron
+        char line[120];
+        wsprintfA(line, "NET:  <- F3/30 Option enviado: keys=%d%d%d%d%d%d%d%d%d%d Q=%d W=%d E=%d",
+                  opt[0], opt[1], opt[2], opt[3], opt[4], opt[5], opt[6], opt[7],
+                  opt[8], opt[9], opt[11], opt[12], opt[13]);
+        DbgLogPublic(line);
+    }
+}
+
 // Build a C1-framed packet, XOR it with the login key, encode it via
 // CSimpleModulus_Encode, then send it.  Same send+WSAEWOULDBLOCK queue pattern
 // used throughout Net_Process.cpp.
@@ -176,7 +245,7 @@ void __cdecl UI_InGameMenu(void)
     }
 
     // ── Escape / in-game menu ────────────────────────────────────────────
-    // N buttons (3/4/5 según SceneFlag) en X=[0x103..0x17b], Y=(3*i+6)*10.
+    // N buttons (3/4/5 según g_GameState) en X=[0x103..0x17b], Y=(3*i+6)*10.
     //
     // Render order (UI_StatsPanel RenderErrorMessage):
     //   Login (state 2, 3 btns):     Salir • Opciones • Cancelar
@@ -184,14 +253,14 @@ void __cdecl UI_InGameMenu(void)
     //   Ingame (state 5, 5 btns):     Salir • IrOtroSrv • IrOtroChar • Opciones • Cancelar
     //
     // Click routing (IDA 0x00514310 L600-1320): el índice i tiene acción distinta
-    // según SceneFlag — case 0 siempre Exit, case 1 Options(login)|JoinServer(cs/in),
+    // según g_GameState — case 0 siempre Exit, case 1 Options(login)|JoinServer(cs/in),
     // case 2 Close(login)|Options(cs)|JoinChar(in), case 3 Close(cs)|Options(in),
     // case 4 Close(in).
     case 0x6e:
     {
         if (mouseX >= 0x103 && mouseX <= 0x17b && IsClickPushed())
         {
-            DWORD gs = SceneFlag;              // SceneFlag
+            DWORD gs = SceneFlag;              // g_GameState
             int btnCount = (gs == 5) ? 5 : ((gs == 4) ? 4 : 3);
 
             for (int i = 0; i < btnCount; ++i)
@@ -224,6 +293,8 @@ void __cdecl UI_InGameMenu(void)
                         // (gs==2/4) la rama de L823-825 solo cierra el socket y
                         // arranca el countdown — no envía nada al server.
                         if (SceneFlag == 5) {
+                            SaveOptionsToServer97k();       // IDA L610: sub_50F7A0()
+                            FUN_0050f700("Data\\Macro.txt");  // IDA L611
                             BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
                             SendLoginPacket(pkt, 5);
                         }
@@ -238,7 +309,7 @@ void __cdecl UI_InGameMenu(void)
 
                     // ── case 1/2: el menú-índice NO coincide con el sub-byte F1/02 ──
                     // Protocolo F1/02: sub=0 Exit, sub=1 JoinChar, sub=2 JoinSrv.
-                    // Layout del menú según SceneFlag:
+                    // Layout del menú según g_GameState:
                     //   gs=2 login    : { Options, Close }
                     //                   case1=Options  case2=Close
                     //   gs=4 cs       : { Exit, JoinSrv, Options, Close }
@@ -265,6 +336,9 @@ void __cdecl UI_InGameMenu(void)
                             // F1/02/02, y es falso: User.cpp:2347
                             // GCCloseClientSend(2) tras CloseCount).  Por eso no
                             // habia cuenta regresiva.
+                            if (SceneFlag == 5)                      // IDA L1070: sub_50F7A0()
+                                SaveOptionsToServer97k();
+                                FUN_0050f700("Data\\Macro.txt");  // IDA L1071
                             if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
                                 UIChatLogWindow_AddText("", GlobalText[592], 2);
                             } else {
@@ -302,6 +376,8 @@ void __cdecl UI_InGameMenu(void)
                             //   5. Server GDCharacterListSend → DataServer →
                             //      F3/00 char-list fresca
                             //   6. Cliente Recv_CharList puebla slots 0-4
+                            SaveOptionsToServer97k();       // IDA L1080: sub_50F7A0()
+                            FUN_0050f700("Data\\Macro.txt");  // IDA L1081
                             DbgLogPublic("JoinChar: send F1/02/01 (waiting for server ack)");
                             BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x01 };
                             Net_SendSmallPacket(pkt, 5);
@@ -378,7 +454,7 @@ void __cdecl UI_InGameMenu(void)
         DAT_083a7c18 = 0x15;
         PlayBuffer(0x1b, 0, 0);                        // PlayBuffer(27)
         if (yes) {
-            ClearInput(1);                         // ClearInput(1)
+            ClearInput(1);
             DAT_00559c84 = 0;                            // InputEnable
         }
         goto tail;
@@ -411,7 +487,7 @@ void __cdecl UI_InGameMenu(void)
             // diálogo numérico después de ClearInput; no queda una segunda
             // capa de entrada activa detrás del cartel 118.
             DAT_083a7c28 = 118;
-            ClearInput(0);            // ClearInput(0)
+            ClearInput(0);
             DAT_00559c94 = (DWORD)42;   // InputTextMax[0]
             DAT_00559c88 = 2;           // InputNumber
             DAT_07e11d72 = 0;           // GoldInputEnable
@@ -436,7 +512,7 @@ void __cdecl UI_InGameMenu(void)
             // durante 150 ticks el indicador rojo de oferta modificada.
             if (DAT_07eaa0f4 != 0)
                 TradeMyWait = 150;
-            m_nTempMyTradeGold = (DWORD)gold; // IDA: DAT_05826C9C
+            m_nTempMyTradeGold = (DWORD)gold; // IDA: m_nTempMyTradeGold
 
             // IDA: UI_InGameMenu 0x5162A2 — C1:08:3A:00:<DWORD LE>.
             // El DWORD empieza en +4 por el relleno de PBMSG_HEAD antes de
@@ -448,7 +524,7 @@ void __cdecl UI_InGameMenu(void)
             Net_SendWarehouseMoney((BYTE)(DAT_07eaa108 & 1), (DWORD)gold);
         }
 
-        ClearInput(0);                // ClearInput(0)
+        ClearInput(0);
         DAT_00559c94 = (DWORD)42;
         DAT_00559c88 = 2;
         DAT_07e11d72 = 0;               // GoldInputEnable = 0

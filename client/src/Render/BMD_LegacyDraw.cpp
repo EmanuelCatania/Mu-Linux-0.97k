@@ -18,7 +18,6 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern "C" DWORD g_ItemAttribute_Backup;
 extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy
@@ -1761,15 +1760,6 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
 void __cdecl FUN_004e13a0(int Type, unsigned int ItemLevel, unsigned char Option1,
                           unsigned char ExtOption, float* Target, int Select, char PickUp)
 {
-    // This recovery is infrastructure-only: the original dereferences
-    // ItemAttribute below, while this client has a known external pointer
-    // watchdog.  It does not alter any item rendering state.
-    unsigned int attrAddress = (unsigned int)DAT_07d78068;
-    if (attrAddress < 0x100000u || attrAddress >= 0x80000000u) {
-        if (g_ItemAttribute_Backup < 0x100000u || g_ItemAttribute_Backup >= 0x80000000u)
-            return;
-        DAT_07d78068 = (int)g_ItemAttribute_Backup;
-    }
 
     float camera[3] = { _CameraRayOriginX, _CameraRayOriginY, _CameraRayOriginZ };
     float direction[3] = {

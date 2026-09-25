@@ -35,3 +35,19 @@ ServerSerial=TbYehR2hFUPBKgZj
 # también lo compara en el login y devuelve el mismo error. Se acepta "0.97.11"
 # o "09711" — las dos formas dan lo mismo.
 ClientVersion=0.97.11
+
+# --- Opciones del cliente (desviacion documentada) ---------------------------
+# El 0.97k original solo lee estas tres del registro de Windows (la clave
+# Config de Webzen\Mu), que es donde las deja el launcher oficial. Como aca no
+# hay launcher, se aceptan tambien desde este archivo y, cuando estan, ganan
+# sobre el registro. Comentalas para volver al comportamiento original.
+#
+#   MusicOnOff   0 = sin musica (default del binario), 1 = con musica
+#   SoundOnOff   0 = sin efectos de sonido, 1 = con (default del binario)
+#   Resolution   indice 0..4 del binario, o directamente "ANCHOxALTO":
+#                0=640x480  1=800x600  2=1024x768  3=1280x1024  4=1600x1200
+#
+# Lo que se aplico queda registrado en debug.log ("server.cfg: MusicOnOff=0").
+#MusicOnOff=0
+#SoundOnOff=1
+#Resolution=640x480

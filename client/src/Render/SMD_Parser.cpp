@@ -312,7 +312,7 @@ void __cdecl FUN_0045abb0(int param_1) {
 }
 
 // Effect/particle
-// FUN_00466ad0 @ 0x00466AD0 — MoveEffect: implemented in Render/MoveEffect.cpp
+// MoveEffect @ 0x00466AD0 — MoveEffect: implemented in Render/MoveEffect.cpp
 // Effect_SpawnSmokeBurst @ 0x004660F0 — Effect_SmokeBurst: implemented in Render/MoveEffect_Helpers.cpp
 // Effect_SpawnSmokeExplosion @ 0x004661F0 — Effect_SmokeExplosion: implemented in Render/MoveEffect_Helpers.cpp
 // Effect_SpawnLightningBurst @ 0x00460C30 — Effect_LightningBurst: implemented in Render/MoveEffect_Helpers.cpp

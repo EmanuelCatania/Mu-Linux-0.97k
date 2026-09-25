@@ -1,12 +1,12 @@
 // PathFinder.cpp
 // A* pathfinder and BST priority-queue helpers.
 //
-// IDA: FUN_0043fd30 (0x0043FD30)
-// IDA: FUN_0043fea0 (0x0043FEA0)
-// IDA: FUN_004232f0 (0x004232F0)
-// IDA: FUN_004235d0 (0x004235D0)
-// IDA: FUN_0043ff60 (0x0043FF60)
-// FUN_0043f500 @ 0x0043F500  — PathFinder2_Solve     (340 lines)
+// IDA: PATH_AddClearPos (0x0043FD30)
+// IDA: CBTree_Add (0x0043FEA0)
+// IDA: CBTree_RemoveNode (0x004232F0)
+// IDA: CBTree_RemoveFrom (0x004235D0)
+// IDA: CBTree_RemoveAll (0x0043FF60)
+// PATH_FindPath @ 0x0043F500  — PathFinder2_Solve     (340 lines)
 //
 // BST node layout (20 bytes each):
 //   [0] data/node-id   [1] cost(key)   [2] left*   [3] right*   [4] parent*
@@ -284,7 +284,7 @@ LAB_00423627:
 
 
 // RemoveAll de CBTree, usado por PATH::FindPath.
-// Removes the BST root node, rebalancing children via FUN_004235d0/FUN_004232f0.
+// Removes the BST root node, rebalancing children via CBTree_RemoveFrom/CBTree_RemoveNode.
 void __fastcall CBTree_RemoveAll(undefined4 *param_1)
 {
   undefined4 *puVar1;
@@ -375,7 +375,7 @@ LAB_0043ffbf:
 }
 
 
-// IDA: FUN_0043f500 (0x0043F500)
+// IDA: PATH_FindPath (0x0043F500)
 // A* pathfinder on a tile grid. Writes path into this->path_x/path_y arrays.
 // param_1 = start tile X       param_2 = start tile Y (float)
 // param_3 = target tile X      param_4 = target tile Y
@@ -743,7 +743,7 @@ LAB_0043fd21:
 //
 // Hasta ahora el contexto (DAT_05826df4) se reservaba en WinMain con
 // `malloc(0x420)` + memset, y por eso el vtable de la cola de prioridad en
-// +0x414 quedaba NULL: FUN_0043f500 (PATH::FindPath) crashea al llamarlo, y de
+// +0x414 quedaba NULL: PATH_FindPath (PATH::FindPath) crashea al llamarlo, y de
 // ahi venia el `pfReady = false` forzado en stubs_externs.cpp, que obliga a usar
 // el A* sustituto. Estas dos funciones portan lo que faltaba.
 //

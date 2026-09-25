@@ -1,5 +1,5 @@
 // Terrain_Water.cpp
-// IDA: FUN_004f95e0 (0x004F95E0)
+// IDA: Terrain_Water (0x004F95E0)
 //
 // World-tick / terrain water wave animation.
 // Two responsibilities:

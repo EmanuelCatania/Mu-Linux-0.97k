@@ -9,7 +9,6 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern "C" DWORD g_ItemAttribute_Backup;   // defined in Render_Frame.cpp
 extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 extern void __cdecl operator_delete(void* ptr);
 extern void FUN_004fa5a0(void);
@@ -95,7 +94,7 @@ void __stdcall InitGame(void)
     DAT_07e11990 = -1;    // SelectedOperate
     DAT_07e1198c = -1;    // SelectedCharacter
     DAT_07e11988 = -1;    // SelectedItem
-    DAT_00559c58 = -1;    // Attacking (IDA InitGame L38, global 0x00559C58).
+    Attacking = -1;    // Attacking (IDA InitGame L38, global 0x00559C58).
                           // Antes escribia DAT_07e11984, que es el debounce de
                           // la flecha arriba del chat.
     DAT_00559c5c = 1;     // m_bAutoAttack (IDA InitGame L39, 0x00559C5C)
@@ -254,8 +253,8 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
 // Resets +0x400 to 1950000000 (likely a timeout sentinel), +0x404 to -1.
 // Then rebuilds the BST rooted at +0x41C:
 //   - Sets vtable at +0x414 to PTR_LAB_00552840
-//   - Recursively inserts left/right children via FUN_004235d0
-//   - Removes root node via FUN_004236c0 or FUN_004232f0
+//   - Recursively inserts left/right children via CBTree_RemoveFrom
+//   - Removes root node via FUN_004236c0 or CBTree_RemoveNode
 //   - Handles the "find rightmost in left subtree" replacement for BST delete
 // Finally zeroes +0x41C (root) and +0x418 (count).
 // ─────────────────────────────────────────────────────────────────────────────
@@ -282,7 +281,7 @@ void __fastcall FUN_00422c50(int param_1)
     *(int *)(param_1 + 0x404) = -1;
 
     // BST rebuild at +0x414 / +0x41C
-    // Walks tree, re-inserts children via FUN_004235d0, then removes root.
+    // Walks tree, re-inserts children via CBTree_RemoveFrom, then removes root.
     // Handles standard BST node deletion with in-order predecessor swap.
     // Details: see Ghidra decompile @ 0x00422C50.
 

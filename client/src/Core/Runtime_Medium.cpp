@@ -89,18 +89,30 @@ int __cdecl LevelConvert(BYTE Level) {
 
 
 
-// OpenMacro @ 0x0050F750 (72 bytes) — load macro hotkey file
+// OpenMacro @ 0x0050F750 (72 bytes) -- carga Data\Macro.txt
 //
-// BUG-FIX 2026-04-28: usaba dirección absoluta 0x07e0ffc8 con bound 0x07e109c8.
-// Ahora indexa el array DAT_07e0ffc8[10][0x100] (10 slots × 256 bytes).
+// BUG-FIX 2026-04-28: usaba direccion absoluta 0x07e0ffc8 con bound
+// 0x07e109c8.  Ahora indexa el array DAT_07e0ffc8[10][0x100].
+//
+// 2026-09-24: el modo era "rb"; IDA abre con "rt" (aRt).
+//
+// DESVIACION DOCUMENTADA (tomada del DLL, CPatchs::MyOpenMacro): el original
+// lee con `fscanf(fp, "%s", slot)`, que **corta en el primer espacio**, asi que
+// una macro con mas de una palabra se pierde al reiniciar el cliente aunque
+// SaveMacro la haya escrito entera.  El DLL de inyeccion reemplaza esta misma
+// funcion por una con `fgets` + recorte del salto de linea; se porta esa
+// version, que es la unica que hace util al sistema de macros.  Tambien limpia
+// el array antes de leer, como el DLL.
 void __cdecl OpenMacro(char *FileName) {
-    FILE *fp = fopen(FileName, "rb");
-    if (fp != NULL) {
-        for (int i = 0; i < 10; ++i) {
-            fscanf(fp, "%s", DAT_07e0ffc8 + i * 0x100);
-        }
-        fclose(fp);
+    FILE *fp = fopen(FileName, "rt");
+    if (!fp) return;
+    memset(DAT_07e0ffc8, 0, 10 * 0x100);
+    for (int i = 0; i < 10; ++i) {
+        char* slot = DAT_07e0ffc8 + i * 0x100;
+        if (fgets(slot, 0x100, fp) == NULL) break;
+        slot[strcspn(slot, "\r\n")] = '\0';
     }
+    fclose(fp);
 }
 
 // CSQuest::setQuestLists @ 0x00401160 (73 bytes) — set quest list from packet

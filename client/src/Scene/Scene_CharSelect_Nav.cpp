@@ -1574,7 +1574,7 @@ int __cdecl FUN_0043e120(int param_1, int param_2, int param_3) {
     return (iVar2 + 0x168 + param_1) % 0x168;
 }
 
-// IDA: FUN_0043e1b0 (0x0043E1B0)
+// IDA: TurnAngle2 (0x0043E1B0)
 // Avanza curAngle hacia tgtAngle a lo sumo 'step' grados, manejando la vuelta de 360.
 // Devuelve tgtAngle directo si está dentro del rango de step; si no, curAngle +/- step.
 //

@@ -1738,7 +1738,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
             DAT_07ea840c = (DWORD)(x0 + (int)w / 2);        // sx
             return;
         }
-        if (DAT_05826d14) return;                           // Teleport
+        if (Teleport) return;                           // Teleport
         if (DAT_07eaa134) {                                 // RepairEnable_0
             if ((type >= 416 && type <= 419) || type == 426 || type == 135 ||
                 type == 143 || type >= 448 || (type >= 391 && type <= 403) ||
@@ -2672,14 +2672,14 @@ void __cdecl CheckGate(void)
         }
 
         DAT_07e11d1c = 9999999;                                 // LoadingWorld
-        if (DAT_05826d14 || DAT_07e11dc4 || GetTickCount() - DAT_07e11dc8 < 3000) {
+        if (Teleport || DAT_07e11dc4 || GetTickCount() - DAT_07e11dc8 < 3000) {
             DAT_07e11dc4 = 0;
             DAT_07e11d1c = 0;
             continue;
         }
 
         if (gateIndex == 0)
-            DAT_05826d14 = 1;                                   // Teleport
+            Teleport = 1;                                   // Teleport
 
         const BYTE packet[6] = { 0xC1, 0x06, 0x1C, (BYTE)gateIndex, 0, 0 };
         Net_SendSmallPacket(packet, sizeof(packet));
@@ -2688,7 +2688,7 @@ void __cdecl CheckGate(void)
         SelectedNpc = -1;
         SelectedCharacter = -1;
         SelectedOperate = -1;
-        DAT_00559c58 = -1;                                      // Attacking
+        Attacking = -1;                                      // Attacking
         DAT_07e11dc4 = 1;
         DAT_07e11db8 = 0;
     }
@@ -3703,7 +3703,7 @@ void __cdecl MoveCharacter(int p1)
             break;
         }
         case 49: {  // Magic — uses dword_5826D10 hotkey state
-            int hk = (int)DAT_05826d10;
+            int hk = (int)CurrentSkill;
             CreateEffect(1382, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(84, 0, 0);

@@ -335,20 +335,6 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     // DAT_07ea8414      = inventory item level array (offset +4 from base)
     // EnableUse         = DAT_05826d1c (extern EnableUse)
 
-    // 2026-05-09: ItemAttribute base watchdog. Mirror of the one in
-    // FUN_004d23b0. Some unknown writer sets DAT_07d78068 = 0x00000001 → all
-    // attr-based reads (CheckInventorySpace_stub itemW/H, attr[type] in this
-    // function) compute bogus values, making spaceFree always 0 and breaking
-    // drop on actually-empty slots. Restore from backup if corrupt.
-    {
-        unsigned int p = (unsigned int)DAT_07d78068;
-        if ((p < 0x100000u || p >= 0x80000000u)
-            && g_ItemAttribute_Backup >= 0x100000u
-            && g_ItemAttribute_Backup < 0x80000000u)
-        {
-            DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        }
-    }
 
     short pickedType = *(short*)DAT_07e91350;
     ITEM_ATTRIBUTE* pAttr = (ITEM_ATTRIBUTE*)DAT_07d78068;

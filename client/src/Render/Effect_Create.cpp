@@ -48,7 +48,7 @@ static void Tamachan_Create(char *o)
     }
 }
 
-// IDA: FUN_00460dc0 (0x00460DC0)
+// IDA: CreateEffect (0x00460DC0)
 float * __cdecl
 CreateEffect(int param_1,float *param_2,float *param_3,float *param_4,float *param_5,float *param_6,
             float *param_7,float *param_8,byte param_9)

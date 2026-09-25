@@ -17,6 +17,12 @@ bin/Client/*.log
 # Herramienta de trazado de OpenGL (se baja aparte, no es del proyecto)
 bin/Client/opengl32.dll.apitrace
 
+# Capturas de pantalla (Impr Pant). El binario las deja en la raiz del
+# cliente; nosotros las mandamos a esta carpeta (desviacion documentada en
+# Game_MainLoop, SCREENSHOT_DIR_DEVIATION).
+bin/Client/Screenshots/
+bin/Client/Screen(*.jpg
+
 *.pch
 *.pdb
 *.idb

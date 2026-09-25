@@ -47,13 +47,13 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // Monster_LoadScriptTable — implemented in src/Monster/Monster_Data.cpp
 // Monster_ParseSetBase2 — implemented in src/Monster/Monster_Data.cpp
-// IDA: FUN_00505bd0 (0x00505BD0)
+// IDA: SetMaxTextures (0x00505BD0)
 // SetMaxTextures / Model_SetSlotIndex(index): sets active model slot index.
 void __cdecl SetMaxTextures(int param_1) {
     DAT_083a4104 = 0;
     DAT_083a4108 = param_1;
 }
-// IDA: FUN_00505e90 (0x00505E90)
+// IDA: OpenModel (0x00505E90)
 // OpenModel(Type, Dir, ModelFileName, ...).
 // Port FIEL del IDA (raw 0x505E90):
 //   1. FileName = Dir + ModelFileName
@@ -73,7 +73,7 @@ void __cdecl SetMaxTextures(int param_1) {
 // Note: la signature original es variadic (`...` para extra anim paths) pero
 // TODOS los call sites en nuestro source pasan exactamente 3 args (sin anims
 // extras). Mantener 3 args para compat con functions.h.
-void __cdecl FUN_00505e90(int Type, const char* Dir, const char* ModelFileName) {
+void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
     char FileName[200];
     // Build base FileName = Dir + ModelFileName
     crt_sprintf(FileName, "%s%s", Dir ? Dir : "", ModelFileName ? ModelFileName : "");
@@ -388,7 +388,7 @@ void __cdecl FUN_005060b0(int param_1, const char *param_2, const char *param_3,
 // Forward-declare FindTextureByName (real implementation at ~line 12786 below).
 int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
 
-// IDA: FUN_00505c80 (0x00505C80)
+// IDA: OpenTexture (0x00505C80)
 // ── OpenTexture (Model_LoadTextures) ────────────────────────────────────────
 // Para cada mesh del modelo en slot [Model]:
 //   1) Lee el nombre de textura (32 bytes) desde pBMD->Data[+0x34] + i*0x20.
@@ -410,7 +410,7 @@ int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
 //   Bitmaps[]         = g_BitmapsRaw (stride 0x38; filename en [+0x00..+0x1F])
 //   DAT_0055a7a4      = base path "Data2\"   (Data2/pak mode)
 //   DAT_0055a79c      = base path "Data\"    (Data mode)
-void __cdecl FUN_00505c80(int Model, const char* SubFolder, int Type, char Check) {
+void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check) {
     // ── BUG fix (crash 0xC0000005 @ 0x61746168 "ataH"): el Model slot ES la
     //    estructura BMD completa (stride 0xBC), NO un puntero a datos. Los
     //    primeros 32 bytes del slot son el Name (string), no un data ptr.

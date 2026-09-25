@@ -116,7 +116,7 @@ void __cdecl OpenWorld(void) {
     if (DAT_083a410c != '\0') DAT_0055a7c4 = uVar1;
 }
 
-// IDA: FUN_0050f690 (0x0050F690)
+// IDA: OpenFont (0x0050F690)
 // Resets font state, loads FontInput.tga (slot 0) and FontTest.tga (slot 1) as TGA,
 // then builds the font DIB (FUN_0050f5f0) and renderer (FUN_0040f570).
 void __cdecl OpenFont(void) {

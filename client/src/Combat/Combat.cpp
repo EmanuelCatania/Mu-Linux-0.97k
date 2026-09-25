@@ -174,13 +174,13 @@
 //       SetPlayerShock(entity, target_pos)   — Entity_TeleportStart
 //       FUN_004792c0(entity+4, target, ...) — TeleportAnimation
 //       entity[+0x2BE] = (ushort)new_pos
-//       Si entity_id != DAT_05826cac (local player): return
+//       Si entity_id != HeroKey (local player): return
 //       // Si es el jugador local: actualiza g_CharData también
 //     Else:
 //       Actualiza posición normal (entity[+0x10/14/24])
 //       SetPlayerShock + state update
 //
-//   DAT_05826cac = local player entity ID
+//   HeroKey = local player entity ID
 //   SetPlayerShock @ 0x00444b60 = Entity_TeleportStart
 //
 // ─── OPCODE 0x16 — SKILL USE ──────────────────────────────────────────────────────────────────────────
@@ -801,7 +801,7 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 // 2026-09-01: aca vivian dos statics locales (`g_dwLatestMagicTick_Attack` y
 // `g_dwLatestTeleportRequest_Attack`) que reemplazaban a los globals del binario
 // porque se creia que sus direcciones aliaseaban timers de UI/NPC.  Es falso:
-//   g_dwLatestMagicTick  = DAT_05826cf4 (ya usado por UseSkillWarrior/Wizard)
+//   g_dwLatestMagicTick  = g_dwLatestMagicTick (ya usado por UseSkillWarrior/Wizard)
 //   dword_7E11DC8 / DC4  = DAT_07e11dc8 / DAT_07e11dc4 — los escribe
 //                          ReceiveTeleport (0x428210, xref 0x428EBF) y los leen
 //                          Attack (0x4AB5E7) y CheckGate (0x4AC6DE).
@@ -908,11 +908,11 @@ static void Attack_SeedSkillTarget97k()
 static void Attack_SendSkill19_97k(int iType, WORD key)
 {
     const DWORD now = GetTickCount();
-    DWORD elapsed = now - DAT_05826cf4;                      // IDA: g_dwLatestMagicTick
+    DWORD elapsed = now - g_dwLatestMagicTick;                      // IDA: g_dwLatestMagicTick
     if (elapsed > 0x80000000u) elapsed = (DWORD)(-(int)elapsed);   // IDA: abs32
     if ((int)elapsed <= 300)
         return;
-    DAT_05826cf4 = GetTickCount();
+    g_dwLatestMagicTick = GetTickCount();
     BYTE packet[6] = { 0xC1, 6, 0x19, (BYTE)iType,
                        (BYTE)(key >> 8), (BYTE)key };
     Net_SendSmallPacket(packet, sizeof(packet));
@@ -1061,7 +1061,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
                     *(float*)(entity + 36) = CreateAngle(    // IDA L2207: CreateAngle
                         *(float*)(entity + 16), *(float*)(entity + 20),
                         *(float*)(entity + 788), *(float*)(entity + 792));
-                    DAT_05826d10 = 52;                        // IDA L2237: CurrentSkill
+                    CurrentSkill = 52;                        // IDA L2237: CurrentSkill
                     const BYTE dir = (BYTE)(int)(*(float*)(entity + 36) * 0.71111113f);
                     // IDA L2240-2290: [52][heroGX][heroGY][dir][0][0]
                     Combat_SendDuration1E_97k(entity, 52, dir, 0, 0);
@@ -1146,7 +1146,7 @@ static void Attack_WarriorBranch97k(char* entity)
             *(float*)(entity + 788), *(float*)(entity + 792));
         if (lowMana) { Attack_UseManaScroll97k(); return; }
         if (!hasAg) return;                                   // IDA L3163
-        DAT_05826d10 = (DWORD)iType;                          // IDA L3197
+        CurrentSkill = (DWORD)iType;                          // IDA L3197
         Combat_SendDuration1E_97k(entity, iType, 0, 0, 0);    // IDA: [41][gx][gy][0][0][0]
         SetAttackSpeed();                                       // IDA LABEL_497: SetAttackSpeed
         SetAction((int)(uintptr_t)entity, 61);
@@ -1164,10 +1164,10 @@ static void Attack_WarriorBranch97k(char* entity)
             // IDA L3771: el case 42 es el UNICO de los tres out-of-range de
             // esta rama que ademas apaga el auto-ataque.  Los cases 55 y 56
             // salen derecho a LABEL_932 sin tocar Attacking.
-            DAT_00559c58 = -1;                                // IDA: Attacking = -1
+            Attacking = -1;                                // IDA: Attacking = -1
             return;                                           // IDA L3772: goto LABEL_932
         }
-        DAT_05826d10 = (DWORD)iType;                          // IDA L3809
+        CurrentSkill = (DWORD)iType;                          // IDA L3809
         Combat_SendDuration1E_97k(entity, iType, 0, 0, 0);
         SetAction((int)(uintptr_t)entity, 62);             // IDA LABEL_930 (sin SetAttackSpeed)
         entity[748] = 0;
@@ -1195,7 +1195,7 @@ static void Attack_WarriorBranch97k(char* entity)
         const BYTE field8 = (iType == 56)
             ? (BYTE)(int)((*(float*)(entity + 36) + 180.0f) * 0.0027777778f * 255.0f)
             : (BYTE)0;
-        DAT_05826d10 = (DWORD)iType;
+        CurrentSkill = (DWORD)iType;
         // IDA: [skill][heroGX][heroGY][0][packedOffset][field8].
         Combat_SendDuration1E_97k(entity, iType, 0, packedOffset, field8);
         SetAttackSpeed();                                       // IDA LABEL_497 / LABEL_715
@@ -1215,7 +1215,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
         BYTE* const target = (BYTE*)(uintptr_t)CharactersClient +
                              916 * (int)SelectedCharacter;    // IDA: v541
         if (target[132] != 1) {                               // IDA L7109
-            DAT_00559c58 = -1;                                // IDA L7111: Attacking = -1
+            Attacking = -1;                                // IDA L7111: Attacking = -1
             return;
         }
         if (PartyNumber <= 0)                                 // IDA L7115
@@ -1291,7 +1291,7 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
         const BYTE dir = (BYTE)(int)(*(float*)(entity + 36) * 0.71111113f);
         switch (iType) {
         case 5:                                               // IDA L7962 — Flame
-            DAT_05826d10 = (DWORD)iType;                      // IDA LABEL_1521
+            CurrentSkill = (DWORD)iType;                      // IDA LABEL_1521
             // IDA L8035/L8072: la posicion viene de c+788/792 / 100, no de la grilla.
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0,
                                       (int)(*(float*)(entity + 788) * 0.01f),
@@ -1300,14 +1300,14 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
             return;
         case 8:                                               // IDA L8369
         case 9:
-            DAT_05826d10 = (DWORD)iType;
+            CurrentSkill = (DWORD)iType;
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0);
             SetPlayerMagic((int)(uintptr_t)entity);             // IDA LABEL_1430
             return;
         case 12:                                              // IDA L8800 — Aqua Beam
             if (*(WORD*)(entity + 2) != 390)
                 return;                                       // IDA L8801-8804
-            DAT_05826d10 = (DWORD)iType;                      // IDA LABEL_1441
+            CurrentSkill = (DWORD)iType;                      // IDA LABEL_1441
             Combat_SendDuration1E_97k(entity, iType, dir, 0, 0);
             SetAttackSpeed();                                   // IDA LABEL_1512
             SetAction((int)(uintptr_t)entity, 88);
@@ -1353,13 +1353,13 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         // Los tres globals existen en nuestro arbol y ya los escribe el handler
         // 0x1C de Net_Process (ReceiveTeleport), asi que el cooldown queda
         // compartido igual que en el binario.
-        // `Teleport` de IDA es 0x05826D14 (DAT_05826d14), el mismo flag que
+        // `Teleport` de IDA es 0x05826D14 (Teleport), el mismo flag que
         // limpian ReceiveTeleport, el 0x19/0x0F, ReceiveRevival y CheckGate.
         // El port usaba DAT_05826d04, otro global (lo usan ReceiveLogOut y
         // UI_InGameMenu): el flag del skill nunca se limpiaba donde debia.
-        if (DAT_05826d14 || DAT_07e11dc4 || (GetTickCount() - DAT_07e11dc8) < 3000)
+        if (Teleport || DAT_07e11dc4 || (GetTickCount() - DAT_07e11dc8) < 3000)
             return;
-        DAT_05826d14 = 1;                                     // IDA L9307: Teleport = 1
+        Teleport = 1;                                     // IDA L9307: Teleport = 1
         // IDA Attack @0x49CBF0 arma el buffer con longitud inicial 3 y luego
         // anexa gate=0, TargetX y TargetY: [C1][06][1C][00][TargetX][TargetY].
         // El `05` que aparecia en una lectura anterior era el valor intermedio
@@ -1417,11 +1417,11 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             *(float*)(target + 36) = CreateAngle(              // IDA L9798
                 *(float*)(target + 16), *(float*)(target + 20),
                 *(float*)(target + 788), *(float*)(target + 792));
-            if (DAT_05826d14) {                                 // IDA L9802: if (Teleport)
-                DAT_05826d14 = 0;
+            if (Teleport) {                                 // IDA L9802: if (Teleport)
+                Teleport = 0;
                 return;
             }
-            DAT_05826d14 = 1;                                   // IDA L9807: Teleport = 1
+            Teleport = 1;                                   // IDA L9807: Teleport = 1
             Combat_SeedRuntimeState97k(iType, (int)SelectedCharacter);
             Combat_SendPartyRecall97k(entity, (int)SelectedCharacter, (BYTE)x, (BYTE)y);
             // IDA L10084 LABEL_1670 -> LABEL_1763: sub_444B30 = SetPlayerTeleport.
@@ -1464,7 +1464,7 @@ static void Attack_WizardBranch97k(char* entity)
     case 14:                                                  // IDA L6671 — Inferno
         if (*(WORD*)(entity + 2) != 390)
             return;
-        DAT_05826d10 = (DWORD)iType;                          // IDA LABEL_1172 / LABEL_1245
+        CurrentSkill = (DWORD)iType;                          // IDA LABEL_1172 / LABEL_1245
         // [iType][heroGX][heroGY][0][0][0] — sin direccion ni delta.
         Combat_SendDuration1E_97k(entity, iType, 0, 0, 0);
         SetAttackSpeed();                                       // IDA LABEL_1235 / LABEL_1310
@@ -1519,7 +1519,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
         const int worldIndex = (int)World;
         const bool autoAttackOK = (DAT_07e11e18 != 0)         // m_bAutoAttack
             && worldIndex != 6                                // not in dialog/loading
-            && DAT_00559c58 == 2                              // IDA: Attacking (0x00559C58)
+            && Attacking == 2                              // IDA: Attacking (0x00559C58)
             && SelectedCharacter != -1;                            // IDA: SelectedCharacter (0x00559C50)
         if (!autoAttackOK && !bSuccess) {
             g_RightButtonPressSeconds_Attack = 0.0f;
@@ -1576,16 +1576,16 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     // verificado con ida_xrefs_to — lo escriben InitGame L38 (=-1),
     // Player_InputTick L942 (=1) y este Attack (=2/-1), y lo leen el gate de
     // auto-ataque de arriba y Player_InputTick L599.  En nuestro arbol esa
-    // direccion es `DAT_00559c58`, que Mouse_Hover ya usa con esa semantica.
+    // direccion es `Attacking`, que Mouse_Hover ya usa con esa semantica.
     // Con el global equivocado el gate `Attacking == 2` no se cumplia nunca y
     // la continuacion de auto-ataque quedaba muerta.
     if (DAT_07e11e18 != 0 && (int)World != 6) {  // IDA: m_bAutoAttack, World
         const BYTE movementState = entity[444] & 7;       // IDA: v16 = c[444] & 7 (clase)
         if ((movementState != 2 || iType == 24 || iType == 25 || iType == 52)
             && (movementState != 1 || iType != 48)) {
-            DAT_00559c58 = 2;      // IDA: Attacking = 2
+            Attacking = 2;      // IDA: Attacking = 2
         } else {
-            DAT_00559c58 = -1;     // IDA: Attacking = -1
+            Attacking = -1;     // IDA: Attacking = -1
         }
     }
 
@@ -1741,7 +1741,7 @@ static void Combat_SeedRuntimeState97k(int skillType, int targetIdx)
     DAT_07d78098 = 1;
     DAT_07d7809c = (Hero ? *(unsigned char*)(Hero + 913) : 0);
     DAT_07d780a0 = (DWORD)targetIdx;
-    DAT_05826d10 = (DWORD)skillType;
+    CurrentSkill = (DWORD)skillType;
 }
 
 static void Combat_SendPartyRecall97k(char* entity, int targetIdx,
@@ -1938,14 +1938,14 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
     const DWORD now = GetTickCount();
 
     if (skillId >= 26 && skillId <= 28) {
-        DWORD elapsed = now - DAT_05826cf4;
+        DWORD elapsed = now - g_dwLatestMagicTick;
         if (elapsed > 0x80000000u)
             elapsed = (DWORD)(-(int)elapsed);
         if (elapsed <= 300) {
             SetPlayerMagic(c);
             return;
         }
-        DAT_05826cf4 = now;
+        g_dwLatestMagicTick = now;
         BYTE packet[6] = { 0xC1, 6, 0x19, skillId,
                            (BYTE)(targetKey >> 8), (BYTE)targetKey };
         Net_SendSmallPacket(packet, sizeof(packet));
@@ -1954,14 +1954,14 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
     }
 
     if (skillId == 51 && Combat_CheckArrowRequirement()) {
-        DWORD elapsed = now - DAT_05826cf4;
+        DWORD elapsed = now - g_dwLatestMagicTick;
         if (elapsed > 0x80000000u)
             elapsed = (DWORD)(-(int)elapsed);
         if (elapsed <= 300) {
             SetPlayerAttack(c, 0, 0, 0);
             return;
         }
-        DAT_05826cf4 = now;
+        g_dwLatestMagicTick = now;
         BYTE packet[6] = { 0xC1, 6, 0x19, 51,
                            (BYTE)(targetKey >> 8), (BYTE)targetKey };
         Net_SendSmallPacket(packet, sizeof(packet));

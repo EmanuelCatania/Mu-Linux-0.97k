@@ -1,5 +1,5 @@
 // Weather.cpp
-// IDA: FUN_00500e80 (0x00500E80)
+// IDA: Weather_Update (0x00500E80)
 //
 // Weather_Update — per-frame weather particle system update (846 lines).
 //

@@ -113,7 +113,7 @@ void __cdecl FUN_004086e0(int param_1, int, int) {
     FUN_004080f0(param_1);
 }
 
-// IDA: FUN_00407fe0 (0x00407FE0)
+// IDA: Widget_CtorBase (0x00407FE0)
 // Widget_CtorBase: allocate and cross-link two doubly-linked-list
 // sentinel nodes, zero the count field, set vtable, then zero all widget node fields.
 // List layout at param_1: [+0x4c]=head_sentinel*, [+0x50]=tail_sentinel*, [+0x48]=count.
@@ -186,7 +186,7 @@ DWORD* __cdecl   FUN_00407e50(DWORD *node); // IDA-port: returns this
 void  __fastcall FUN_00407ef0(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 
 
-// IDA: FUN_00408900 (0x00408900)
+// IDA: Widget_CheckState (0x00408900)
 // Widget_CheckState(widget, hash, flags)
 // __thiscall in original (this=widget via ECX). Calls FUN_00408940 `flags` times,
 // returns 0 if any fails, 1 if all pass. FUN_00408940 is a void stub → always return 1.

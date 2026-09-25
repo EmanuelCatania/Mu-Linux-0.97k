@@ -44,7 +44,7 @@ void __cdecl FUN_0053cc00_impl(int param_1);
 // Packet_DecryptByte — Packet_DecryptByte
 // Decrypts a single byte: *param_2 → *param_1
 // Decrypt steps: b -= 0x23; b ^= key[b]; b += 0xb9
-// IDA: FUN_00404330 (0x00404330)
+// IDA: Packet_DecryptByte (0x00404330)
 void __cdecl Packet_DecryptByte(void *param_1_v,void *param_2_v)
 {
   byte *param_1 = (byte*)param_1_v;
@@ -68,7 +68,7 @@ void __cdecl Packet_DecryptByte(void *param_1_v,void *param_2_v)
 // Packet_EncryptByte — Packet_EncryptByte
 // Encrypts a single byte (param_2) into param_1.
 // Encrypt steps: b += 0x47; b ^= key[b]; randomize *param_2
-// IDA: FUN_00423710 (0x00423710)
+// IDA: Packet_EncryptByte (0x00423710)
 void __cdecl Packet_EncryptByte(void *param_1_v,void *param_2_v)
 {
   byte *param_1 = (byte*)param_1_v;
@@ -93,7 +93,7 @@ void __cdecl Packet_EncryptByte(void *param_1_v,void *param_2_v)
 // Encrypts a 4-byte block (param_2) into param_1.
 // Cada byte: b += 0x47; b ^= key[i%16]; chain-XOR con el byte siguiente;
 // randomize source bytes with _rand().
-// IDA: FUN_00423760 (0x00423760)
+// IDA: Packet_EncryptDword (0x00423760)
 void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
 {
   undefined4 *param_1 = (undefined4*)param_1_v;
@@ -153,7 +153,7 @@ void __cdecl FUN_00423c40(int param_1,int param_2)
 // Encrypts a 0x584-byte (1412-byte) buffer param_2 into param_1.
 // Allocates temp heap buffer, applies chain-XOR with key table (16 bytes),
 // then randomizes source bytes.
-// IDA: FUN_00404400 (0x00404400)
+// IDA: Packet_EncryptBuffer (0x00404400)
 void __cdecl Packet_EncryptBuffer(void *param_1_v,void *param_2_v)
 {
   undefined4 *param_1 = (undefined4*)param_1_v;
@@ -243,7 +243,7 @@ void __cdecl Packet_DecryptDword(void *param_1_v,void *param_2_v)
 }
 
 
-// IDA: FUN_00403f80 (0x00403F80)
+// IDA: HashTable_Insert (0x00403F80)
 // Inserta (clave=param_1, valor=return_addr) en la hash table (this).
 // Busca un slot vacío o coincidente por sondeo lineal (stride 1 mod capacidad).
 // Llama a CErrorReport_Write con un mensaje de error si la tabla está llena.
@@ -327,7 +327,7 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
 }
 
 
-// IDA: FUN_00404280 (0x00404280)
+// IDA: HashTable_GetNode (0x00404280)
 // Busca param_1 en la hash table (this), devuelve el valor asociado o 0.
 // Devuelve 0 (no encontrado) sin error; a diferencia de Insert, que avisa si está llena.
 void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
@@ -547,7 +547,7 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
 // 11 bytes de entrada → 8 de salida por bloque. Devuelve el total de bytes decodificados
 // (o sólo el tamaño cuando dst==0). El bloque lo decodifica FUN_0053ce30.
 //
-// Context = DAT_05826c58 (g_SimpleModulusSC) loaded from Data\Dec2.dat.
+// Context = g_SimpleModulusSC (g_SimpleModulusSC) loaded from Data\Dec2.dat.
 // Layout: ctx[1+i]=ModKey, ctx[9+i]=DecKey, ctx[13+i]=XorKey (DWORD indices).
 // ─────────────────────────────────────────────────────────────────────────────
 static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src);
@@ -589,7 +589,7 @@ static void CsmTrace(const char *fmt, ...) {
     DbgLogPublic(buf);
 }
 
-// Watchdog: detects ANY future trample of DAT_05826c58 (Dec2 keys).
+// Watchdog: detects ANY future trample of g_SimpleModulusSC (Dec2 keys).
 // Silencioso mientras mod0 sea estable; loguea una vez por cambio. Se mantiene después de arreglar el bug
 // (SocketClient size mismatch) to catch any regression early.
 extern "C" void CsmWatchdog(const char *tag)
@@ -745,7 +745,7 @@ void __cdecl PACKET_ENCRYPT(void *ctx, void *key) {
 // Packet_DecryptBuffer @ 0x00404370 — HashTable_CopyEncrypt(param_1, param_2)
 // Copia 0x584 bytes de param_2 a un buffer nuevo, lo codifica con XOR (resta 0x23,
 // XOR con la tabla DAT_00559050, suma 0xb9) y copia el resultado de vuelta a param_1.
-// IDA: FUN_00404370 (0x00404370)
+// IDA: Packet_DecryptBuffer (0x00404370)
 void __cdecl Packet_DecryptBuffer(void *vparam_1, void *vparam_2) {
     unsigned int *param_1 = (unsigned int*)vparam_1;
     unsigned int *param_2 = (unsigned int*)vparam_2;
@@ -1071,7 +1071,7 @@ int __cdecl FUN_00408e30(DWORD *a1)
 }
 
 // ── Widget_Ctor — movida desde stubs_externs.cpp (refactor B3) ──
-// IDA: FUN_004093a0 (0x004093A0)
+// IDA: Widget_Ctor (0x004093A0)
 // Widget_Ctor llama a Widget_CtorBase y después setea la vtable.
 void* __fastcall Widget_Ctor(void *param_1)
 {

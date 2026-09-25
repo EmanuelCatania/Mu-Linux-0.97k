@@ -49,7 +49,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 
 // SetAction — replaced by full implementation above (line ~6057)
 
-// IDA: FUN_00443e70 (0x00443E70)
+// IDA: SetAttackSpeed (0x00443E70)
 // Real logic (after anti-tamper hash table blocks):
 //   1. Reads CharacterAttribute->MagicDamageMax and AttackDamageMinRight
 //   2. Computes animation speed: fVar2 = AttackDamageMinRight * _DAT_005524bc

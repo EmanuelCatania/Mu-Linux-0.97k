@@ -4,6 +4,7 @@
 #include "globals.h"
 #include "functions.h"
 #include "structs.h"
+#include <mbstring.h>   // _mbclen (SeparateTextIntoLines, fiel a 0x0051D600)
 
 extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
 extern void __cdecl operator_delete(void* ptr);
@@ -38,49 +39,72 @@ extern void FUN_004fa5a0(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// SeparateTextIntoLines @ 0x0051D600 (71 lines) — Word-wrap text into fixed-size line buffer
-// text = input string, out = 2D output buffer (stride=maxChars), maxLines = max output lines,
-// maxChars = chars per line. Returns number of lines produced.
-int __cdecl SeparateTextIntoLines(const char *text, char *out, int maxLines, int maxChars) {
-    if (!text || !out || maxLines <= 0 || maxChars <= 0) return 0;
-    int lineCount = 0;
-    int col = 0;
-    int lastSpace = -1;
-    const char *lineStart = text;
-    const char *p = text;
+// SeparateTextIntoLines @ 0x0051D600 -- corta un texto en lineas de ancho fijo.
+//
+// 2026-09-20: reescrita 1:1 contra el raw.  La anterior era una aproximacion
+// con dos reglas propias:
+//   (a) rebobinaba al ultimo espacio si caia en la mitad final de la linea
+//       (`lastSpace > maxChars/2`).  El binario rebobina solo si el espacio
+//       esta dentro de los ultimos min(iLineSize/2, 10) caracteres, o sea es
+//       mas estricto: parte un poco antes y las lineas salen mas cortas.
+//   (b) cuando no rebobinaba, cortaba a los 10 caracteres.  El binario no
+//       corta ahi: parte a lo ancho de la linea, sin rebobinar.
+//
+// Medido: para prosa normal las dos dan el mismo resultado, porque siempre hay
+// un espacio en la mitad final y la rama (b) no llega a correr.  La diferencia
+// aparece con palabras largas sin espacios (URLs, nombres pegados), donde la
+// version vieja cortaba a 10 caracteres.  O sea esto es fidelidad, no el
+// arreglo de ningun sintoma reportado.
+//
+// Detalles fieles que importan: avanza por caracteres MBCS (_mbclen; con el
+// locale "C" que usa este build devuelve siempre 1, igual que la version por
+// bytes), el terminador de cada linea se escribe ANTES de saltar al slot
+// siguiente, y el retorno es `indiceDeLinea + 1` -- nunca 0 para texto no
+// vacio, cosa que la version vieja si podia devolver.
+int __cdecl SeparateTextIntoLines(const char *lpszText, char *lpszSeparated, int iMaxLine, int iLineSize) {
+    if (!lpszText || !lpszSeparated || iMaxLine <= 0 || iLineSize <= 0) return 0;  // guard de port
 
-    while (*p != '\0' && lineCount < maxLines) {
-        if (*p == ' ') lastSpace = col;
-        col++;
-        if (col >= maxChars) {
-            // Line full — break at last space or hard-break
-            int breakAt;
-            if (lastSpace > 0 && lastSpace > maxChars / 2) {
-                breakAt = lastSpace;
-            } else {
-                breakAt = (col < 10) ? col : 10;
+    const unsigned char *pSrc      = (const unsigned char *)lpszText;
+    char                *pDst      = lpszSeparated;
+    const unsigned char *pPrevSpc  = nullptr;   // v6: espacio visto en la vuelta anterior
+    const unsigned char *pLastSpc  = nullptr;   // String: ultimo espacio de esta linea
+    const char          *pLineHead = lpszText;  // v13
+    char                *pLineBase = lpszSeparated;  // v14
+    int                  iLine     = 0;         // v12
+
+    if (*lpszText) {
+        while (true) {
+            const unsigned int nChar = (unsigned int)_mbclen(pSrc);
+
+            if ((int)(nChar + (unsigned int)(pSrc - (const unsigned char *)pLineHead)) >= iLineSize) {
+                if (pPrevSpc) {
+                    int iBack = iLineSize / 2;
+                    if (iBack > 10) iBack = 10;
+                    if ((int)(pSrc - pPrevSpc) < iBack) {
+                        const int iDelta = (int)(pPrevSpc - pSrc);
+                        pSrc  = pPrevSpc + 1;
+                        pDst += iDelta + 1;
+                    }
+                }
+                pLineHead = (const char *)pSrc;
+                *pDst = 0;
+                if (iLine >= iMaxLine - 1) break;
+                pDst = &pLineBase[iLineSize];
+                ++iLine;
+                pLineBase += iLineSize;
+                pLastSpc = nullptr;
             }
-            char *dst = out + lineCount * maxChars;
-            memcpy(dst, lineStart, breakAt);
-            dst[breakAt] = '\0';
-            lineCount++;
-            lineStart = lineStart + breakAt;
-            if (*lineStart == ' ') lineStart++; // skip space after break
-            p = lineStart;
-            col = 0;
-            lastSpace = -1;
-            continue;
+
+            memcpy(pDst, pSrc, nChar);
+            if (*pSrc == ' ') pLastSpc = pSrc;
+            pSrc += nChar;
+            pDst += nChar;
+            if (!*pSrc) break;
+            pPrevSpc = pLastSpc;
         }
-        p++;
     }
-    // Copy remaining text
-    if (col > 0 && lineCount < maxLines) {
-        char *dst = out + lineCount * maxChars;
-        memcpy(dst, lineStart, col);
-        dst[col] = '\0';
-        lineCount++;
-    }
-    return lineCount;
+    *pDst = 0;
+    return iLine + 1;
 }
 
 

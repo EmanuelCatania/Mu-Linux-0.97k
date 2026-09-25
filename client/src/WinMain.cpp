@@ -38,7 +38,6 @@
 // escrita en InputText[0] (DAT_07db8710 slot 0) por WM_CHAR; la llama el
 // handler de Enter en WndProc cuando InputEnable=1 y el buffer no está vacío.
 extern "C" void Chat_SendChatLine(const char* text);
-extern "C" DWORD g_ItemAttribute_Backup;   // src/globals.cpp — recovery pointer
 extern "C" BYTE InputTextHide[10];
 
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
@@ -53,6 +52,53 @@ HGLRC     g_hRC      = NULL;  // 0x055ca008
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static int  OpenGL_Init(void);
+
+// Chat_TryAssignMacro -- "/1 texto" guarda una macro en la tecla 1.
+//
+// DESVIACION DOCUMENTADA (2026-09-24).  El 0.97k NO tiene esto: sus macros
+// salen unicamente de Data\\Macro.txt (OpenMacro 0x50F750) y no hay una sola
+// escritura al array fuera de ese loader -- verificado con los xrefs de
+// 0x07E0FFC8.  La asignacion por chat aparece recien en MU 5.2
+// (ZzzInterface.cpp, CheckCommand): compara los dos primeros caracteres contra
+// "/1".."/9" y "/0", y copia el texto desde el indice 3.
+//
+// Se porta de ahi, con dos diferencias deliberadas:
+//   - 5.2 termina el slot con `MacroText[i][iTextSize-3] = NULL` donde
+//     iTextSize quedo en el ULTIMO indice recorrido, asi que se come el ultimo
+//     caracter del mensaje.  Aca se copia entero.
+//   - la lista de comandos prohibidos (CheckMacroLimit) se compara contra los
+//     literales, no contra GlobalText: los indices de esa tabla son los de 5.2
+//     y no tienen por que coincidir con los del 0.97k.
+//
+// Devuelve true si la linea era una asignacion (y entonces no se envia).
+static bool Chat_TryAssignMacro(const char* text)
+{
+    if (!text || text[0] != '/') return false;
+    if (text[1] < '0' || text[1] > '9') return false;
+    if (text[2] != ' ') return false;
+
+    const char* body = text + 3;
+    while (*body == ' ') ++body;
+    if (*body == '\0') return false;   // "/1 " solo: no es asignacion
+
+    // CheckMacroLimit: comandos que abren un dialogo con otro jugador no se
+    // pueden dejar en una macro.
+    static const char* const kBlocked[] = {
+        "/trade", "/party", "/pt", "/guild", "/guildwar", "/battlesoccer"
+    };
+    for (int i = 0; i < (int)(sizeof(kBlocked) / sizeof(kBlocked[0])); ++i) {
+        if (_stricmp(body, kBlocked[i]) == 0)
+            return false;
+    }
+
+    const int slot = (text[1] == '0') ? 9 : (text[1] - '1');
+    char* dst = (char*)DAT_07e0ffc8 + slot * 0x100;
+    memset(dst, 0, 0x100);
+    lstrcpynA(dst, body, 0x100);
+    PlayBuffer(0x19, 0, 0);   // SOUND_CLICK01
+    return true;
+}
+
 void OpenGL_Release(void);
 static void GameGuard_Init(CHAR* hWnd);
 static int  GameGuard_GetStatus(void);
@@ -297,8 +343,8 @@ static void GameGuard_TickCheck(void)
 //   7.  FindWindowA("Dialog", windowTitle)
 //         → si existe: SendMessageA(hWnd, WM_CLOSE, 0, 0)   — mata instancia previa
 //   8.  App_SingleInstanceCheck() @ 0x00412cd0  — mutex / named pipe check
-//   9.  DataFile_LoadEnc(&DAT_05826c10, "Data_Enc1.dat")  @ 0x0053d180
-//       DataFile_LoadDec(&DAT_05826c58, "Data_Dec2.dat")  @ 0x0053d1a0
+//   9.  DataFile_LoadEnc(&g_SimpleModulusCS, "Data_Enc1.dat")  @ 0x0053d180
+//       DataFile_LoadDec(&g_SimpleModulusSC, "Data_Dec2.dat")  @ 0x0053d1a0
 //  10.  Config_Load()  — lee config.ini + registry
 //         si retorna 0: log "config_ini_read_error" + abort
 //  11.  EnumDisplaySettings loop:
@@ -672,8 +718,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     extern BOOL __cdecl CSimpleModulus_LoadEncryptionKey(DWORD *self, const char *fn);
     extern BOOL __cdecl CSimpleModulus_LoadDecryptionKey(DWORD *self, const char *fn);
     DbgLog("before CSimpleModulus::LoadEncryptionKey");
-    BOOL okEnc = CSimpleModulus_LoadEncryptionKey(DAT_05826c10, "Data\\Enc1.dat");
-    BOOL okDec = CSimpleModulus_LoadDecryptionKey(DAT_05826c58, "Data\\Dec2.dat");
+    BOOL okEnc = CSimpleModulus_LoadEncryptionKey(g_SimpleModulusCS, "Data\\Enc1.dat");
+    BOOL okDec = CSimpleModulus_LoadDecryptionKey(g_SimpleModulusSC, "Data\\Dec2.dat");
     {
         char b[256];
         _snprintf_s(b, sizeof(b), _TRUNCATE,
@@ -681,8 +727,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         DbgLog(b);
         _snprintf_s(b, sizeof(b), _TRUNCATE,
                     "POST-LOAD Dec2 mod=[%08X %08X %08X %08X] addr=%p",
-                    DAT_05826c58[1], DAT_05826c58[2], DAT_05826c58[3], DAT_05826c58[4],
-                    (void*)DAT_05826c58);
+                    g_SimpleModulusSC[1], g_SimpleModulusSC[2], g_SimpleModulusSC[3], g_SimpleModulusSC[4],
+                    (void*)g_SimpleModulusSC);
         DbgLog(b);
     }
 
@@ -813,11 +859,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     DAT_055c9e44 = (DWORD)malloc(0x18000);
     DAT_07d78068 = DAT_055c9e44 + (rand() % 0x400) * 0x40;
     memset((void*)DAT_07d78068, 0, 0x2000 * 4);
-    // 2026-05-08: puntero de respaldo que usan los helpers del tooltip para
-    // recuperarse cuando algún escritor desconocido corrompe DAT_07d78068 a 0x1.
-    // (g_ItemAttribute_Backup se declara más abajo a nivel de archivo con extern "C").
-    g_ItemAttribute_Backup = (DWORD)DAT_07d78068;
-
     DAT_07cf1ff0 = (int)malloc(0x8000);
     memset((void*)DAT_07cf1ff0, 0, 0x2000 * 4);
 
@@ -847,7 +888,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // Contexto del pathfinder (DAT_05826df4).
     //
     // 2026-08-17: antes era `malloc(0x420)` + memset, que dejaba el vtable de la
-    // cola de prioridad (+0x414) en NULL — por eso FUN_0043f500 (PATH::FindPath)
+    // cola de prioridad (+0x414) en NULL — por eso PATH_FindPath (PATH::FindPath)
     // no se podia usar. Ahora se construye igual que el binario
     // (0x0043F280..0x0043F2C7: reserva de 0x424 bytes, vtable y campos en cero).
     //
@@ -1363,6 +1404,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     // loop de canales de Chat_InputTick; el envío crudo anda
                     // bien para el caso del chat normal).
                     char* line = (char*)DAT_07db8710 + slot * 0x100;
+                    // "/N texto" guarda la macro N en vez de enviarse (desviacion).
+                    if (Chat_TryAssignMacro(line)) {
+                        memset(line, 0, 0x100);
+                        lens[slot] = 0;
+                        DAT_00559c84 = 0;
+                        break;
+                    }
                     // IDA WndProc L2265-2268: antes del SendChat (no en el
                     // susurro) revisa los gestos, salvo montado fuera de zona segura.
                     if (((const char*)&DAT_07db8810)[0] == '\0') {

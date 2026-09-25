@@ -28,7 +28,7 @@ void __cdecl SendChat(char* Text) {
     //   7. Build C1 packet: [C1][len][01][heroID 10 bytes][text up to 60 bytes]
     //   8. XOR-encrypt payload with 32-byte key, fix header, send via socket
 
-    // Rate limit — `ChatTime` es el GLOBAL 0x05826D08 (= DAT_05826d08), que
+    // Rate limit — `ChatTime` es el GLOBAL 0x05826D08 (= ChatTime), que
     // `Game_MainLoop` decrementa un tick por frame (IDA 0x5262D9-0x5262EA):
     //     if ( ChatTime > 0 ) --ChatTime;
     //

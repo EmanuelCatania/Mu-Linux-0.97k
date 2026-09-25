@@ -1,5 +1,5 @@
 // Entity_DrawSetup.cpp
-// IDA: FUN_00504b50 (0x00504B50)
+// IDA: RenderPartObjectEffect (0x00504B50)
 //
 // Entity_SetColorAndRender — resolves anim-mode, sets model color from light
 // array, dispatches to FUN_00504130 / RenderPartObjectBodyColor / FUN_00504ac0, applies

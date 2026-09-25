@@ -1,5 +1,5 @@
 // Terrain_Utils.cpp
-// IDA: FUN_004f6c40 (0x004F6C40)
+// IDA: Terrain_GetTileIndex (0x004F6C40)
 // RequestTerrainHeight @ 0x004f7500  — Terrain_HeightAt
 //
 // Grid_TileIndex:

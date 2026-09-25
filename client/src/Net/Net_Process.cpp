@@ -22,7 +22,7 @@
 //       C1: byte[2] = opcode,  byte[3..] = payload
 //       C2: byte[3] = opcode,  byte[4..] = payload
 //
-//   Decryption: CSimpleModulus_Decode(&DAT_05826c58, ...) — RC4-like stream cipher for C3/C4
+//   Decryption: CSimpleModulus_Decode(&g_SimpleModulusSC, ...) — RC4-like stream cipher for C3/C4
 //
 // ── BUFFER POOL ───────────────────────────────────────────────────────────────
 //
@@ -66,7 +66,7 @@
 //               Guarda puVar8 en DAT_07e016c8[slot], copia los datos a DAT_07e109cc[slot*0x100]
 //               FUN_00500a80()           — process buffered data
 //
-//   case 0x0c:  if byte[3]==0: UIChatLogWindow_AddText(DAT_05826cb4, DAT_07d4d1fc, 2)
+//   case 0x0c:  if byte[3]==0: UIChatLogWindow_AddText(ChatWhisperID, DAT_07d4d1fc, 2)
 //                              → draw login/char-select widget
 //
 //   case 0x0d:  FUN_00427a00(puVar8)
@@ -86,7 +86,7 @@
 //   case 0x16:  FUN_0042db60(puVar8, iVar20)
 //   case 0x17:  FUN_0042f030(puVar8)
 //   case 0x18:  FUN_0042b4f0(puVar8)
-//   case 0x19:  FUN_0042bca0(puVar8, puVar9, iVar20)
+//   case 0x19:  Skills_PacketHandler(puVar8, puVar9, iVar20)
 //   case 0x1a:  FUN_0042d780(puVar8)
 //
 //   case 0x1b:  Entity state switch on byte[3]:
@@ -134,15 +134,15 @@
 //
 //   case 0x33:  if byte[3] != 0:
 //                 DAT_07e91388 = 0
-//                 FUN_00423040(&DAT_055c9bc8, DAT_07cf1ffc)  — decode g_CharData
+//                 STRUCT_DECRYPT(&DAT_055c9bc8, DAT_07cf1ffc)  — decode g_CharData
 //                 DAT_07cf1ffc[0x152] = *(puVar8+2)
-//                 FUN_0043d1d0(&DAT_055c9bc8, puVar23)       — re-encode g_CharData
+//                 STRUCT_ENCRYPT(&DAT_055c9bc8, puVar23)       — re-encode g_CharData
 //                 PlayBuffer(0x1d, 0, 0)
 //
 //   case 0x34:  if packet[2] != 0:
-//                 FUN_00423040; DAT_07cf1ffc[0x152] = *(puVar8+2)
+//                 STRUCT_DECRYPT; DAT_07cf1ffc[0x152] = *(puVar8+2)
 //                 CalculateAll(puVar23)
-//                 FUN_0043d1d0; PlayBuffer(0x25, 0, 0)
+//                 STRUCT_ENCRYPT; PlayBuffer(0x25, 0, 0)
 //
 //   case 0x36:  Server-triggered re-login:
 //               Stores PIN buffer: DAT_07ea9834/38/3c ← puVar8[3/7/0xb]
@@ -237,7 +237,7 @@
 //
 //   case 0x64:  DAT_05826ca4 = byte[3]; DAT_05826ca8 = byte[2]; DAT_05826d30 = 1
 //
-//   case 0x71:  FUN_00433900()
+//   case 0x71:  Party_PacketHandler()
 //   case 0x73:  FUN_00433a80(puVar8, iVar20)
 //   case 0x81:  FUN_00434170(puVar8)
 //   case 0x82:  FUN_00434400()
@@ -325,8 +325,8 @@
 //   F3/06: FUN_00431480(puVar8)
 //   F3/07: EXP update:
 //          XOR decode puVar8+2 (3-byte key PacketXorKey3[i%3])
-//          FUN_00423040 → decode g_CharData; g_CharData[0x1c] -= decoded_exp
-//          FUN_0043d1d0 → re-encode g_CharData
+//          STRUCT_DECRYPT → decode g_CharData; g_CharData[0x1c] -= decoded_exp
+//          STRUCT_ENCRYPT → re-encode g_CharData
 //   F3/08: FUN_00431dc0(puVar8)
 //   F3/10: FUN_00426cf0(puVar8, iVar20)
 //   F3/11: FUN_004269f0(puVar8)
@@ -393,7 +393,7 @@
 //   FUN_0042db60  → PacketHandler_0x16(puVar8, iVar20)
 //   FUN_0042f030  → PacketHandler_0x17(puVar8)
 //   FUN_0042b4f0  → PacketHandler_0x18(puVar8)
-//   FUN_0042bca0  → PacketHandler_0x19(puVar8, puVar9, iVar20)
+//   Skills_PacketHandler  → PacketHandler_0x19(puVar8, puVar9, iVar20)
 //   FUN_0042d780  → PacketHandler_0x1a(puVar8)
 //   FUN_0042cd10  → PacketHandler_0x1e(puVar8, puVar9, iVar20)
 //   FUN_0042a530  → PacketHandler_0x1f(puVar8)
@@ -411,9 +411,9 @@
 //   FUN_004301b0  → PacketHandler_0x30(puVar8, iVar20)
 //   FUN_00427560  → PacketHandler_0x31(puVar8)
 //   InsertInventoryItem  → ItemTable_UpdateSlot(table, stride, size, slot, data, flag)
-//   FUN_00423040  → CharData_Decode(ctx, g_CharData)  — XOR-decode g_CharData
+//   STRUCT_DECRYPT  → CharData_Decode(ctx, g_CharData)  — XOR-decode g_CharData
 //   CalculateAll  → CharData_RecalcStats(charData)
-//   FUN_0043d1d0  → CharData_Encode(ctx, g_CharData)  — XOR-encode g_CharData
+//   STRUCT_ENCRYPT  → CharData_Encode(ctx, g_CharData)  — XOR-encode g_CharData
 //   FUN_004332e0  → PacketHandler_0x37(puVar8)
 //   FUN_004337f0  → PacketHandler_0x3d(puVar8)
 //   FUN_00434660  → PacketHandler_0x42(puVar8)
@@ -429,7 +429,7 @@
 //   FUN_00435390  → PacketHandler_0x61(puVar8)
 //   FUN_004354f0  → PacketHandler_0x62(puVar8)
 //   FUN_00435aa0  → PacketHandler_0x63(puVar8)
-//   FUN_00433900  → PacketHandler_0x71()
+//   Party_PacketHandler  → PacketHandler_0x71()
 //   FUN_00433a80  → PacketHandler_0x73(puVar8, iVar20)
 //   FUN_00434170  → PacketHandler_0x81(puVar8)
 //   FUN_00434400  → PacketHandler_0x82()
@@ -587,7 +587,7 @@
 //     operator_delete para cada buffer no-NULL
 //
 //   0x0043f3e0  PacketQueue_Enqueue(uint id, float param2, uint p3, uint p4, void* data, float p6)
-//     Wrapper: llama FUN_0043f500(DAT_05826df4, id, param2, p3, p4, 1, 2, p6)
+//     Wrapper: llama PATH_FindPath(DAT_05826df4, id, param2, p3, p4, 1, 2, p6)
 //     local_4 = 2 (prioridad/tipo)
 //
 //   0x0043f500  ActionQueue_Insert(void* this, int id, float t, int p3, int p4, int p5, int p6, float p7)
@@ -700,7 +700,6 @@ extern "C" BYTE OffsetMixItems[];
 extern "C" BYTE Inventory[];
 extern "C" BYTE ShopItems[];   // pool dedicado de la tienda (120 slots)
 extern "C" void DbgLogPublic(const char* msg);
-extern "C" DWORD g_ItemAttribute_Backup;
 int __cdecl Entity_FindById(int entity_id);   // stubs.cpp
 extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base,
                                  unsigned int gridW);  // Item_ClickHandler.cpp
@@ -721,21 +720,6 @@ static void ShopInsertItem(int slot, const BYTE* Item)
 {
     int type = ConvertItemType((BYTE*)Item);
     if (type == 255 || type < 0 || type >= 512) return;
-    // 2026-07-27 FIX (tienda abre vacía — causa raíz): DAT_07d78068
-    // (ItemAttribute base) se corrompe a ~1 (confirmado por el diag:
-    // "SHOPINS slot=0 type=5 attrBase=00000001"). El guard de abajo abortaba
-    // TODOS los inserts → el pool quedaba limpio → tienda vacía. Restauramos
-    // desde el backup (mismo watchdog que Item_GetAttribute / DropItemEx) en
-    // vez de descartar la lista.
-    {
-        unsigned int p = (unsigned int)(uintptr_t)DAT_07d78068;
-        if ((p < 0x100000u || p >= 0x80000000u)
-            && g_ItemAttribute_Backup >= 0x100000u
-            && g_ItemAttribute_Backup < 0x80000000u)
-        {
-            DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        }
-    }
     BYTE* attrBase = (BYTE*)(uintptr_t)DAT_07d78068;
     if ((uintptr_t)attrBase < 0x100000u || (uintptr_t)attrBase >= 0x80000000u) return;
     BYTE* attr = attrBase + type * 0x40;
@@ -1278,14 +1262,71 @@ static void Recv_NewCharacterInfo(const BYTE* Msg)
     *(DWORD*)(CA + 0x34) = NextExperience;
 }
 
+// ── Teclas de skill del F3/30 ───────────────────────────────────────────────
+// El paquete trae `tecla -> tipo de skill` y el cliente guarda lo contrario
+// (`slot -> tecla`, 64 bytes por personaje en CharacterAttribute+215), asi que
+// para traducirlo hay que buscar cada skill en la lista del personaje
+// (CharacterAttribute+87), que la puebla el F3/11.
+//
+// 2026-09-25: MuEmu manda el F3/30 ANTES del F3/11 (verificado en debug.log:
+// Option llega ~20 paquetes antes que SkillList), asi que al traducir la lista
+// todavia estaba vacia, ninguna skill matcheaba y el mapa quedaba entero en
+// 0xFF -- las teclas asignadas se perdian en cada login por mas veces que se
+// reasignaran.  Se guardan los 10 bytes y se aplica el mapeo dos veces: al
+// recibir el F3/30 (por si la lista ya estuviera, que es el orden que asume
+// IDA) y de nuevo al final del snapshot del F3/11.
+static void NetLog(const char* fmt, ...);   // definida mas abajo
+
+static BYTE s_PendingSkillKey[10];
+static bool s_HasPendingSkillKey = false;
+
+static void ApplySkillKeyMap(void)
+{
+    if (!s_HasPendingSkillKey || !CharacterAttribute) return;
+    const int hero = (int)DAT_005616ac;                  // SelectedHero
+    if (hero < 0 || hero > 4) return;
+
+    BYTE* attr   = (BYTE*)(uintptr_t)CharacterAttribute;
+    BYTE* keyMap = attr + 215 + (hero << 6);
+    memset(keyMap, 0xFF, 0x40);
+    int applied = 0;
+    for (int i = 0; i < 10; ++i) {
+        const BYTE sk = s_PendingSkillKey[i];
+        if (sk == 255) continue;
+        for (int j = 0; j < 64; ++j) {
+            if (sk == attr[j + 87]) { keyMap[j] = (BYTE)i; ++applied; break; }
+        }
+    }
+    NetLog("NET:    skill-keys aplicadas: %d de 10 (hero=%d)", applied, hero);
+}
+
 // ── F3/E1 PMSG_NEW_CHARACTER_CALC_RECV ───────────────────────────────────────
-// Port FIEL del DLL injection (Protocol.cpp:898 GCNewCharacterCalcRecv).
-// Recibe stats calculados (HP/MP actuales tras buffs/items, defense, attack).
-// Layout: header(4) + ~17 DWORDs (ViewCurHP..MagicDamageRate).
-static void Recv_NewCharacterCalc(const BYTE* Msg)
+// Del DLL de inyeccion (Protocol.cpp GCNewCharacterCalcRecv).  Trae los stats
+// ya calculados por el server (MuEmu, con resets y sus propias formulas).
+//
+// Layout real, PMSG_NEW_CHARACTER_CALC_SEND (Protocol.h:566 del server):
+// header(4) + 17 DWORDs.
+//    p+0  CurHP          p+4  MaxHP          p+8  CurMP         p+12 MaxMP
+//    p+16 CurBP          p+20 MaxBP          p+24 PhysiSpeed    p+28 MagicSpeed
+//    p+32 PhysiDmgMin    p+36 PhysiDmgMax    p+40 MagicDmgMin   p+44 MagicDmgMax
+//    p+48 MagicDmgRate   p+52 AttackSuccessRate                 p+56 DamageMultiplier
+//    p+60 Defense        p+64 DefenseSuccessRate
+//
+// 2026-09-21 (issue #54, "defensa rate y dano se cruzan al subir de nivel"):
+// el port asumia que despues de MagicSpeed venian directo MagicDmgMin/Max y
+// leia AttackSuccessRate en p+40, Defense en p+48 y DefenseSuccessRate en p+52.
+// Faltaban los 4 campos del medio, asi que cargaba:
+//    tasa de ataque   <- MagicDmgMin        (en la captura: 3678)
+//    defensa          <- MagicDmgRate       (53)
+//    tasa de defensa  <- AttackSuccessRate  (42652)
+// Los tres numeros de la captura cuadran exactos.  Antes de subir de nivel se
+// veian bien porque venian del recalculo local (CalculateAll); el server manda
+// el E1 al subir, y ahi se pisaban.
+static void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
 {
     BYTE* CA = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     if (!CA) return;
+    if (Size < 4 + 17 * 4) return;   // paquete corto: no leer fuera
 
     const BYTE* p = Msg + 4;
     DWORD ViewCurHP            = *(const DWORD*)(p + 0);
@@ -1296,10 +1337,11 @@ static void Recv_NewCharacterCalc(const BYTE* Msg)
     DWORD ViewMaxBP            = *(const DWORD*)(p + 20);
     DWORD ViewPhysiSpeed       = *(const DWORD*)(p + 24);
     DWORD ViewMagicSpeed       = *(const DWORD*)(p + 28);
-    // bytes 32-39: MagicDamageMin/Max (skip — set later)
-    DWORD ViewAttackSuccessRate= *(const DWORD*)(p + 40);
-    DWORD ViewDefense          = *(const DWORD*)(p + 48);
-    DWORD ViewDefenseSuccess   = *(const DWORD*)(p + 52);
+    DWORD ViewMagicDamageMin   = *(const DWORD*)(p + 40);
+    DWORD ViewMagicDamageMax   = *(const DWORD*)(p + 44);
+    DWORD ViewAttackSuccessRate= *(const DWORD*)(p + 52);
+    DWORD ViewDefense          = *(const DWORD*)(p + 60);
+    DWORD ViewDefenseSuccess   = *(const DWORD*)(p + 64);
 
     *(WORD*)(CA + 0x1C) = ClampToWord(ViewCurHP);
     *(WORD*)(CA + 0x20) = ClampToWord(ViewMaxHP);
@@ -1312,6 +1354,11 @@ static void Recv_NewCharacterCalc(const BYTE* Msg)
     *(WORD*)(CA + 0x3A) = ClampToWord(ViewAttackSuccessRate);
     *(WORD*)(CA + 0x4E) = ClampToWord(ViewDefense);
     *(WORD*)(CA + 0x4C) = ClampToWord(ViewDefenseSuccess);
+    // 2026-09-24: los dos unicos campos que el DLL escribe y este port no
+    // (GCNewCharacterCalcRecv, Protocol.cpp:925).  El dano FISICO no viaja
+    // por aca -- el DLL tampoco lo escribe, lo sigue calculando el cliente.
+    *(WORD*)(CA + 0x46) = ClampToWord(ViewMagicDamageMin);
+    *(WORD*)(CA + 0x48) = ClampToWord(ViewMagicDamageMax);
 }
 
 // Debug log (defined in WinMain.cpp).
@@ -1449,7 +1496,7 @@ static void Recv_JoinServer(const BYTE* Msg)
 {
     if (Msg[4] == 1) {
         g_HeroKey      = (unsigned short)(Msg[6] | (Msg[5] << 8));
-        // FIX 2026-07-24: DAT_05826cac (HeroKey que usa ClearCharacters vía
+        // FIX 2026-07-24: HeroKey (HeroKey que usa ClearCharacters vía
         // OpenWorld) NUNCA se seteaba → quedaba en 0.  Con eso, al entrar al
         // mundo ClearCharacters(0) conservaba las entidades con Key==0 (incluida
         // la del Hero stale del slot 0 que quedaba de antes del join) → fantasma
@@ -1873,7 +1920,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // BUG-FIX 2026-04-28: leer class + body-part slots del char-select entity
     // ANTES de OpenWorld (que llama ClearCharacters y borra los entities).
     // Body parts (helm/armor/pant/glove/boot) son lo que efectivamente renderiza
-    // el cuerpo del hero — sin esto FUN_00456770 entra pero no dibuja nada.
+    // el cuerpo del hero — sin esto RenderCharacter entra pero no dibuja nada.
     // (3) World setup: mapa, terreno, tiles.
     World = world;
 
@@ -2118,7 +2165,7 @@ static void Recv_Revival(const BYTE* Msg, int Size)
 
     // (1) Reset de input + estado de teleport, y baja del slot del héroe viejo.
     DAT_083a42c4 = 0;                                  // MouseLButton = 0
-    DAT_05826d14 = 0;                                  // Teleport = 0
+    Teleport = 0;                                  // Teleport = 0
     if (DAT_07abf5d8) *(BYTE*)DAT_07abf5d8 = 0;        // *(BYTE *)Hero = 0
 
     // (2) Stats desde el paquete.
@@ -3303,7 +3350,11 @@ void Net_ProcessPacket(void)
                             BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
                             if (hero[913] >= 20) hero[913] = 0;
                         }
-                        if ((DWORD)DAT_005616ac >= 4) DAT_005616ac = 0;
+                        if ((DWORD)DAT_005616ac > 4) DAT_005616ac = 0;   // 5 slots: 0..4 (era >= 4, pisaba el quinto)
+                        // La lista recien ahora esta completa: re-traducir las
+                        // teclas de skill que llegaron en el F3/30 (MuEmu lo
+                        // manda antes que este paquete).
+                        ApplySkillKeyMap();
                         NetLog("NET:    F3/11 stored %d skills: %d %d %d %d %d %d %d %d %d %d",
                                written, CA[87], CA[88], CA[89], CA[90], CA[91],
                                CA[92], CA[93], CA[94], CA[95], CA[96]);
@@ -3319,7 +3370,7 @@ void Net_ProcessPacket(void)
                     case 0xE1: {
                         // F3/E1 PMSG_NEW_CHARACTER_CALC_RECV: HP/MP/Defense/Attack.
                         NetLog("NET:  → F3/E1 NewCharacterCalc");
-                        Recv_NewCharacterCalc(Msg);
+                        Recv_NewCharacterCalc(Msg, Size);
                         break;
                     }
                     case 0xE3: {  // lista de apilado (DLL CItemStack)
@@ -3360,24 +3411,13 @@ void Net_ProcessPacket(void)
                         NetLog("NET:  → F3/30 Option size=%d", Size);
                         if (Size < 19) { NetLog("NET:    F3/30 too short — skip"); break; }
 
-                        // 1) Mapa de skill-keys: 64 bytes por héroe en CharacterAttribute+215.
-                        //    Para cada slot i del hotbar, busca su skill en la lista del
-                        //    personaje (+87, 64 entradas) y marca keyMap[slot_skill] = i.
-                        if (CharacterAttribute) {
-                            int hero = (int)DAT_005616ac;
-                            if (hero >= 0 && hero <= 4) {
-                                BYTE* attr   = (BYTE*)CharacterAttribute;
-                                BYTE* keyMap = attr + 215 + (hero << 6);
-                                memset(keyMap, 0xFF, 0x40);
-                                for (int i = 0; i < 10; ++i) {
-                                    BYTE sk = p[i];
-                                    if (sk == 255) continue;
-                                    for (int j = 0; j < 64; ++j) {
-                                        if (sk == attr[j + 87]) { keyMap[j] = (BYTE)i; break; }
-                                    }
-                                }
-                            }
-                        }
+                        // 1) Teclas de skill: se guardan y se traducen en
+                        //    ApplySkillKeyMap, que tambien corre al final del
+                        //    F3/11 porque MuEmu manda este paquete antes que la
+                        //    lista de skills (ver la nota del helper).
+                        memcpy(s_PendingSkillKey, p, sizeof(s_PendingSkillKey));
+                        s_HasPendingSkillKey = true;
+                        ApplySkillKeyMap();
 
                         // 2) Opciones de juego.
                         DAT_07e11e18 = ((p[10] & 1) == 1);          // m_bAutoAttack
@@ -6331,7 +6371,7 @@ void Net_ProcessPacket(void)
                     SelectedNpc = -1;                 // SelectedNpc
                     SelectedCharacter = -1;                 // SelectedCharacter
                     SelectedOperate = -1;                 // SelectedOperate
-                    DAT_00559c58 = -1;                 // Attacking
+                    Attacking = -1;                 // Attacking
                     DAT_00559c6d = -1;
                     // IDA hace un store de DWORD en 07EAA134. En este port de C++
                     // sólo está representado su byte vivo RepairEnable_0; no
@@ -6342,7 +6382,7 @@ void Net_ProcessPacket(void)
                     // El server usa gate=0 para el teleport de skill. IDA
                     // completa ese efecto visual y limpia Teleport acá.
                     CreateTeleportEnd((unsigned int)(uintptr_t)hero);
-                    DAT_05826d14 = 0;                 // IDA L508: Teleport = 0 (0x05826D14)
+                    Teleport = 0;                 // IDA L508: Teleport = 0 (0x05826D14)
                 }
 
                 // Este store es común a las dos ramas en el original.

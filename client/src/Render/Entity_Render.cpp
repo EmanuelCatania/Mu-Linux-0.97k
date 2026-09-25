@@ -403,10 +403,10 @@ void __cdecl MoveCharacterClient(float *param_1)
 }
 
 
-// FUN_0045ab00 — Entity_TickAll  (DISABLED 2026-04-26: duplicate definition;
+// Entity_RenderAll_3D — Entity_TickAll  (DISABLED 2026-04-26: duplicate definition;
 // active version is in src/Render/Entity_RenderAll_3D.cpp with diag tracers)
 #if 0
-void FUN_0045ab00(void)
+void Entity_RenderAll_3D(void)
 {
   char *pcVar1;
   int iVar2;
@@ -452,7 +452,7 @@ void FUN_0045ab00(void)
   } while (iVar3 < 0x59740);
   return;
 }
-#endif  // duplicate FUN_0045ab00 disabled — use Entity_RenderAll_3D.cpp
+#endif  // duplicate Entity_RenderAll_3D disabled — use Entity_RenderAll_3D.cpp
 
 
 // FUN_00500970 — RenderBugs (Entity_VisibilityCheckAll)
@@ -673,7 +673,7 @@ RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float
     }
     FUN_004404e0(this_,(int)puVar2,(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
                  (float *)(param_1 + 0x130),param_10);
-    // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_MeshDivine.cpp).
+    // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_Simulation.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.
     DivineSkirt_Apply(param_1, param_2, (int)param_3, this_);
     RenderPartObjectEffect(param_1,param_2,param_4,param_5,param_6,param_7,param_11,param_12);

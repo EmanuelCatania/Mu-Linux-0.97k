@@ -109,10 +109,21 @@ void __cdecl FUN_00500aa0(void)
                 }
 
                 // Type 175: random fire-cloud sparkle.
+                //
+                // IDA RenderBoids L61:
+                //   CreateSprite(1150, v0 - 86, 1.0, v14, (DWORD)(v0 - 90), 0.0, 0);
+                //
+                // El port llamaba a Particle_Spawn, que es OTRA funcion con
+                // otra firma, y para que los argumentos entraran metia un
+                // nullptr como Position pasando la posicion real en el slot
+                // del Angle.  Particle_Spawn hace `*param_2` sin guard, asi
+                // que esto crasheaba leyendo la direccion 0 apenas aparecia
+                // una entidad de tipo 175 (reporte: al entrar a Noria).
                 if (entType == 175) {
                     float scale = (float)((rand() % 32 + 64) * 0.01);
                     float color[3] = { scale * 0.2f, scale * 0.4f, scale * 0.4f };
-                    Particle_Spawn(1150, nullptr, v0 - 86, color, (int)(uintptr_t)(v0 - 90), 1.0f, 0);
+                    CreateSprite(1150, v0 - 86, 1.0f, color,
+                                 (int)(uintptr_t)(v0 - 90), 0.0f, 0);
                 }
 
                 // Type 184: dual-side flame jets.
@@ -124,12 +135,20 @@ void __cdecl FUN_00500aa0(void)
                     float scale  = (float)((rand() % 32 + 128) * 0.01);
                     float color[3] = { scale, scale * 0.2f, 0.0f };
 
+                    // IDA L80-95: TransformPosition(v4, flt_6970ACC, ...) y
+                    // CreateSprite(1150, Position, 0.1, Light, owner, 0.0, 0).
+                    // Mismos dos errores que en el caso 175, mas un nullptr
+                    // como matriz de hueso: Vector_Transform la deferencia, o
+                    // sea era otro crash latente.  flt_6970ACC es nuestro
+                    // DAT_06970acc (g_BoneScratch + 0x30).
                     // Left jet
-                    BMD_TransformPosition(model, nullptr, locOffsetL, Position, 1);
-                    Particle_Spawn(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
+                    BMD_TransformPosition(model, (float*)&DAT_06970acc, locOffsetL, Position, 1);
+                    CreateSprite(1150, Position, 0.1f, color,
+                                 (int)(uintptr_t)(v0 - 90), 0.0f, 0);
                     // Right jet
-                    BMD_TransformPosition(model, nullptr, locOffsetR, Position, 1);
-                    Particle_Spawn(1150, nullptr, Position, color, (int)(uintptr_t)(v0 - 90), 0.1f, 0);
+                    BMD_TransformPosition(model, (float*)&DAT_06970acc, locOffsetR, Position, 1);
+                    CreateSprite(1150, Position, 0.1f, color,
+                                 (int)(uintptr_t)(v0 - 90), 0.0f, 0);
                 }
 
                 // World != 10: render shadow on terrain.
@@ -558,14 +577,6 @@ extern "C" void Net_SendNpcTalkClose(void) {
     SendNpcPacket(pkt, 3);
 }
 
-// 0x97 — cerrar ventana de evento / Golden Archer
-// Wire: [C1][03][97]  (Protocol.cpp case 0x97; lo manda
-// CheckGoldenArcherWindow 0x4E7AC0 al click en el botón de cerrar)
-extern "C" void Net_SendEventWindowClose(void) {
-    BYTE pkt[4] = { 0xC1, 0x03, 0x97, 0 };
-    SendNpcPacket(pkt, 3);
-}
-
 // 0x32 PMSG_ITEM_BUY_RECV — buy item from shop
 // Wire: [C1][04][32][slot]
 extern "C" void Net_SendItemBuy(BYTE shopSlot) {
@@ -720,92 +731,108 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
     // mob/NPC/player hovers en el mundo de juego.
     if (SceneFlag != 5) return;
 
-    // 2026-07-27: render de nombres de items en el suelo (port sub_4CB6F0
-    // L61-68 + L158-177). Antes se skipeaba → nunca aparecía el nombre.
-    //   o = &Items[i][72] (= slot base + 72, donde RenderItemName lee o+2 = model
-    //   y hace -400 para el ItemAttribute). ItemLevel = ip+8, ItemOption = ip+31.
-    {
-        extern void __cdecl RenderItemName_stub(int, DWORD, int, int, bool);
-        BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
-        int hovered = (int)SelectedItem;   // SelectedItem (item bajo el cursor)
+    // 2026-09-21: reordenada segun el flujo de IDA (sub_4CB6F0).  El port
+    // dibujaba PRIMERO todos los nombres de items y despues el del monstruo.
+    // RenderItemName deja el glColor del ultimo item (IDA tampoco lo
+    // restaura), y como el texto sale como m_dwTextColor x glColor, el nombre
+    // del monstruo heredaba el color de ese item.  Reporte del tester: "el
+    // nombre de los monsters cambia de color segun el ultimo item pickeado,
+    // solo con el Alt activado" -- con Alt se dibujan todos, de ahi el "solo".
+    //
+    // Flujo real: PASO 1 dibuja UNO solo, por prioridad, con el glColor todavia
+    // en blanco; PASO 2 (LABEL_39) recien ahi los items de Alt.
+    extern void __cdecl RenderItemName_stub(int, DWORD, int, int, bool);
+    BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
+    const int hovered = (int)SelectedItem;
 
-        // 1. Nombre del item hovereado (Sort=0, se dibuja sobre el item).
-        if (hovered >= 0 && hovered < 1000) {
-            BYTE* o = itemPool + hovered * 0x204 + 72;
-            if (o[0] && o[352]) {
-                RenderItemName_stub(hovered, (DWORD)(uintptr_t)o,
-                                    *(int*)(o - 64), (int)*(char*)(o - 41), 0);
-            }
-        }
+    // IDA LABEL_37: nombre del item bajo el cursor (Sort=0, sobre el item).
+    //   o = &Items[i][72] (= slot base + 72, donde RenderItemName lee o+2 =
+    //   model y hace -400 para el ItemAttribute). ItemLevel = ip+8, Option = ip+31.
+    auto drawHoveredItem = [&]() {
+        if (hovered < 0 || hovered >= 1000) return;
+        BYTE* o = itemPool + hovered * 0x204 + 72;
+        if (o[0] && o[352])
+            RenderItemName_stub(hovered, (DWORD)(uintptr_t)o,
+                                *(int*)(o - 64), (int)*(char*)(o - 41), 0);
+    };
 
-        // 2. Alt como TOGGLE (IDA sub_4CB6F0 L159-163: PressKey(VK_MENU) togglea
-        //    byte_7EAA15C; se muestran si el toggle está on O Alt está mantenido).
-        //    Una pulsación de Alt alterna mostrar/ocultar todos los nombres.
-        static int s_altNameToggle = 0;
-        if (PressKey(VK_MENU))               // Alt recién pulsado (edge)
-            s_altNameToggle = !s_altNameToggle;
-        if (s_altNameToggle || (GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
-            for (int i = 0; i < 1000; ++i) {
-                if (i == hovered) continue;
-                BYTE* o = itemPool + i * 0x204 + 72;
-                if (o[0] && o[352]) {
-                    RenderItemName_stub(i, (DWORD)(uintptr_t)o,
-                                        *(int*)(o - 64), (int)*(char*)(o - 41), 1);
-                }
-            }
-        }
-    }
+    // ── PASO 1: uno solo, por prioridad (IDA L28-155) ────────────────────────
+    //   NPC  >  (item solo)  >  personaje.  Con personaje seleccionado y
+    //   `Attacking != -1` (LABEL_8) se dibuja el item en vez del personaje.
+    char* base = (char*)(uintptr_t)DAT_07abf5d0;
+    const int npc = (int)SelectedNpc;
+    const int chr = (int)SelectedCharacter;
 
-    if (SelectedCharacter == -1 && SelectedNpc == -1) {
-        return;
-    }
-
-    if (SelectedNpc != -1) {
-        // NPC hovered — chat bubble per IDA CreateChat (CreateChat).
-        char* base = (char*)(uintptr_t)DAT_07abf5d0;
-        char* ent  = base + (int)SelectedNpc * 0x394;
+    if (npc != -1) {
+        // IDA LABEL_6: charla del NPC (gana aunque haya un item debajo).
+        char* ent = base + npc * 0x394;
         if (ent[0] != 0) {
             const char* name = (const char*)(ent + 0x1C1);
-            if (name[0]) {
+            if (name[0]) CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
+        }
+    } else if (chr == -1) {
+        if (hovered != -1) drawHoveredItem();          // IDA LABEL_37
+    } else if (Attacking != -1) {                  // IDA LABEL_8: Attacking != -1
+        drawHoveredItem();                             //   -> LABEL_37
+    } else {
+        char* ent = base + chr * 0x394;
+        const char* name = (const char*)(ent + 0x1C1);
+        if (ent[0] != 0 && name[0]) {
+            const BYTE kind = *(BYTE*)(ent + 0x84);   // 1=jugador, 2=monstruo, 4=npc
+            if (kind == 2) {
+                // Monstruo: el nombre va arriba del todo, centrado.
+                //
+                // 2026-09-21, fix del DLL: IDA pone el fondo en rojo oscuro
+                // (0xFF000064; el formato es ABGR) y el texto en celeste, y NO
+                // los restaura.  Como el bucle de Alt (LABEL_39) viene justo
+                // despues, en el original los nombres de items del suelo se
+                // ponen rojos mientras se apunta a un monstruo.  Antes no se
+                // veia porque el port dibujaba los items antes que el monstruo.
+                // El DLL lo tapa en su hook de esta rama (HealthBar.cpp,
+                // DrawPointingHealthBar en 0x004CB7AD): despues del nombre hace
+                // `SetBackgroundTextColor = Color4b(0,0,0,0)`.  Aca se restaura
+                // el valor ANTERIOR en vez de forzar 0, para que los items
+                // queden igual que cuando no se apunta a nada.
+                const DWORD savedBack = DAT_00559c80;
+                const DWORD savedText = DAT_00559c78;
+                DAT_00559c80 = 0xFF000064;  // m_dwBackColor (rojo oscuro, ABGR)
+                DAT_00559c78 = 0xFFC8E6FF;  // m_dwTextColor (celeste)
+                // IDA LABEL_35: `RenderCenteredText(v13 / 2, 10, v3)`, con v13
+                // del MISMO arbol que GetScreenWidth (0x4CB520): 260 con
+                // inventario + panel lateral, 450 con cualquier panel, 640 sin
+                // ninguno.  (2026-08-22: aca habia un criterio inventado que
+                // leia CharacterAttribute + 0x14E como "inventario abierto".)
+                RenderCenteredText(GetScreenWidth() / 2, 10, name);
+                DAT_00559c80 = savedBack;
+                DAT_00559c78 = savedText;
+            } else {
+                // IDA: TODO lo que no es monstruo va a CreateChat (el port lo
+                // limitaba a kind == 1).
                 CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
             }
         }
-        return;
     }
 
-    if (SelectedCharacter == -1) return;
-
-    char* base = (char*)(uintptr_t)DAT_07abf5d0;
-    char* ent  = base + (int)SelectedCharacter * 0x394;
-    if (ent[0] == 0) return;
-
-    BYTE kind = *(BYTE*)(ent + 0x84);  // 1=player, 2=monster, 4=npc
-    const char* name = (const char*)(ent + 0x1C1);
-    if (!name[0]) return;
-
-    if (kind == 2) {
-        // Monstruo: el nombre va arriba del todo, centrado.
-        DAT_00559c80 = 0xFF000064;  // m_dwBackColor (azul oscuro)
-        DAT_00559c78 = 0xFFC8E6FF;  // m_dwTextColor (celeste)
-        // IDA sub_4CB6F0 LABEL_35: `RenderCenteredText(v13 / 2, 10, v3)`, donde
-        // v13 se calcula con EL MISMO arbol de decision que GetScreenWidth
-        // (0x4CB520, verificado linea por linea): 260 con inventario + panel
-        // lateral, 450 con cualquier panel abierto, 640 con ninguno.
-        //
-        // 2026-08-22: aca habia un criterio inventado — leia un byte de
-        // CharacterAttribute + 0x14E como si fuera "inventario abierto".  Ese
-        // offset es un campo cualquiera del struct del personaje, asi que en
-        // cuanto valia != 0 el nombre quedaba centrado en 225 (= el caso 450)
-        // de forma permanente, sin ningun panel abierto.  Ademas faltaba el
-        // caso 260.  Ahora sale de GetScreenWidth, que es la misma fuente.
-        RenderCenteredText(GetScreenWidth() / 2, 10, name);
-    } else if (kind == 1) {
-        // Player: chat bubble per IDA (NOT chat log).
-        CreateChat((char*)name, (char*)"", (DWORD)ent, 0, -1);
+    // ── PASO 2: IDA LABEL_39 -- Alt muestra todos los items del suelo ────────
+    // PressKey(VK_MENU) togglea byte_7EAA15C; se muestran si el toggle esta on
+    // O Alt esta mantenido.  El global no lo usa nadie mas (ni InitGame), asi
+    // que el static local es equivalente.
+    static int s_altNameToggle = 0;
+    if (PressKey(VK_MENU))
+        s_altNameToggle = !s_altNameToggle;
+    if (s_altNameToggle || (GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
+        for (int i = 0; i < 1000; ++i) {
+            if (i == hovered) continue;
+            BYTE* o = itemPool + i * 0x204 + 72;
+            if (o[0] && o[352]) {
+                RenderItemName_stub(i, (DWORD)(uintptr_t)o,
+                                    *(int*)(o - 64), (int)*(char*)(o - 41), 1);
+            }
+        }
     }
 }
 
-// IDA: FUN_00502200 (0x00502200)
+// RenderFishs @ 0x00502200 — RenderFishs
 // 2026-05-07: port FIEL desde IDA mu97k-src-IDA/raw/00502200_RenderFishs.c.
 // Renderiza peces decorativos (Lorencia ponds, Devias mountains, etc).
 // Pool: DAT_083a2e90 (10 entries × 0x1BC bytes = 4440 bytes total).
@@ -894,7 +921,6 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
 // El truco del binario es que reusa el propio slot del efecto como si fuera la
 // entidad del arma: le cambia `Type` (o+2) al modelo del item y al final lo
 // devuelve. Por eso guarda/restaura pos (16/20/24), angle (28/32/36) y type.
-// IDA: RenderWheelWeapon (0x0046B7C0)
 void __cdecl RenderWheelWeapon(DWORD o)
 {
     if (!o || !DAT_05828d58 || !DAT_07abf5d8) return;
@@ -1012,7 +1038,7 @@ void __cdecl EffectPool_RenderAll(void)
             continue;                       // IDA: `break` — no renderiza nada
         }
         if (type == 239) {
-            RenderWheelWeapon((DWORD)(uintptr_t)(v0 - 10));
+            RenderWheelWeapon((DWORD)(uintptr_t)(v0 - 10));   // RenderWheelWeapon
             continue;
         }
         if (type == 244) {
@@ -1188,8 +1214,8 @@ void __cdecl FUN_00406f50(char* param_1) {
 // ItemObjectAttribute @ 0x00502ba0 — implemented in Entity/Entity_Reset.cpp
 // FUN_004553c0 @ 0x004553c0 — implemented in Render/BMD_SetupRender.cpp
 // MoveCharacterClient — implemented in src/Render/Entity_Render.cpp
-// FUN_00456770 — implemented in src/Render/Entity_UpdateRender.cpp (Entity_UpdateRender, 2195 lines)
-// FUN_0045ab00 — implemented in src/Render/Entity_Render.cpp
+// RenderCharacter — implemented in src/Render/Entity_UpdateRender.cpp (Entity_UpdateRender, 2195 lines)
+// Entity_RenderAll_3D — implemented in src/Render/Entity_Render.cpp
 // CreateCharacterPointer — implemented in src/Entity/Entity_Spawn.cpp (Entity_Spawn, 797 lines)
 // CreateHero — implemented in src/Entity/Entity_Init.cpp
 // FUN_0045fa20 (Monster_SaveSetBase) — implemented in src/Entity/Entity_Init.cpp

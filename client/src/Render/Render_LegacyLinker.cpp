@@ -77,7 +77,7 @@ void __cdecl EnableAlphaTest(bool enable) {
 // usado por OpenWorld para cargar Object1, Object11, etc. Misma signatura
 // (id, path, name, idx). Delegamos directamente.
 //
-// 2026-05-05 (followup): además llamar FUN_00505c80 (OpenTexture) post-BMD
+// 2026-05-05 (followup): además llamar OpenTexture (OpenTexture) post-BMD
 // load. Sin esto los NPCs cargaban geometría pero las texturas no se
 // resolvían en los slots (IndexTexture[]) → render en blanco. El cliente
 // original sí hace este paso después del BMD load para NPCs.
@@ -86,7 +86,7 @@ void __cdecl AccessModel(int id, char* path, char* name, int param) {
     // Path para OpenTexture: typically "Npc\" sin "Data\" prefijo (los
     // path-strippers en FUN_00529bd0/740 ya lo manejan si viene completo).
     if (path) {
-        FUN_00505c80(id, path, 0x2600, '\x01');
+        OpenTexture(id, path, 0x2600, '\x01');
     }
     // 2026-05-05: setup de animation speeds (idéntico al patrón que
     // FUN_005098c0 hace para monsters). Sin esto, los NPCs cargan
@@ -117,11 +117,11 @@ void __cdecl AccessModel(int id, char* path, char* name, int param) {
     }
 }
 
-// OpenTexture @ 0x00505C80 — forward al símbolo FUN_00505c80 (implementado arriba).
+// OpenTexture @ 0x00505C80 — forward al símbolo OpenTexture (implementado arriba).
 // functions.h lo declara con esta firma (void*, bool); en x86 cdecl los tipos
 // son binariamente compatibles con (const char*, char).
 void __cdecl OpenTexture(int id, void* path, int flags, bool param) {
-    FUN_00505c80(id, (const char*)path, flags, (char)param);
+    OpenTexture(id, (const char*)path, flags, (char)param);
 }
 
 // LoadWaveFile @ 0x00404A10 — real implementation in src/Sound/Sound.cpp.

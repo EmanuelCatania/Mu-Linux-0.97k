@@ -9194,7 +9194,7 @@ DWORD *__cdecl FUN_0043daf0(DWORD *_this)
 }
 #endif
 
-// ── FUN_0043dc90 (IDA-only, gated) ──
+// ── CWsctlc_Close (IDA-only, gated) ──
 #if defined(IDA_PORT_0043DC90)
 BOOL __cdecl CWsctlc::Close(DWORD This)
 {
@@ -9205,9 +9205,9 @@ BOOL __cdecl CWsctlc::Close(DWORD This)
 }
 #endif
 
-// ── FUN_0043ddd0 (IDA-only, gated) ──
+// ── CWsctlc_FDWriteSend (IDA-only, gated) ──
 #if defined(IDA_PORT_0043DDD0)
-int __cdecl FUN_0043ddd0(const char *This)
+int __cdecl CWsctlc_FDWriteSend(const char *This)
 {
   int v2; // ebx
   const char *v3; // ebp
@@ -9255,9 +9255,9 @@ LABEL_10:
 }
 #endif
 
-// ── FUN_0043de70 (IDA-only, gated) ──
+// ── CWsctlc_nRecv (IDA-only, gated) ──
 #if defined(IDA_PORT_0043DE70)
-int __cdecl FUN_0043de70(SOCKET *_this)
+int __cdecl CWsctlc_nRecv(SOCKET *_this)
 {
   int v2; // eax
   int v4; // edx
@@ -9316,7 +9316,7 @@ int __cdecl FUN_0043de70(SOCKET *_this)
           }
           return 0;
         }
-        FUN_0043df90((char *)_this + v5 + 8208, v7);
+        CPacketQueue_PushPacket((char *)_this + v5 + 8208, v7);
         if ( _this[4101] )
         {
           nullsub_2((int)_this + v5 + 8208, v7);
@@ -16977,7 +16977,7 @@ LABEL_44:
       }
       while ( SLODWORD(x2) <= (int)(v43 - v41) );
     }
-    DAT_05826d10 = 0x2B;
+    CurrentSkill = 0x2B;
     v324 = &DAT_00552460;
     buf[1] = 0x1C1;
     v334 = 1;
@@ -22977,13 +22977,13 @@ LABEL_87:
         return;
       }
       MouseLButtonPush = 0;
-      if ( DAT_05826d18 )
+      if ( BuyCost )
       {
         return;
       }
       v47 = *((unsigned char *)v285 + 62) + a4 * *((unsigned char *)v285 + 63);
       v283 = ItemValue((int)&a3[34 * v47], 0);
-      if ( DAT_05826d18 )
+      if ( BuyCost )
       {
         return;
       }
@@ -23087,7 +23087,7 @@ LABEL_87:
           }
 LABEL_120:
           CWsctlc::Close((DWORD)&SocketClient);
-          DAT_05826d18 = v283;
+          BuyCost = v283;
           return;
         }
       }
@@ -23140,7 +23140,7 @@ LABEL_122:
         }
       }
 LABEL_123:
-      DAT_05826d18 = v283;
+      BuyCost = v283;
       return;
     }
     if ( *(DWORD *)&RepairEnable_0 )

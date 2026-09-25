@@ -177,7 +177,7 @@ undefined4 __cdecl FUN_00402fd0(void *param_1)
 }
 
 
-// IDA: FUN_00503760 (0x00503760)
+// IDA: MoveItems (0x00503760)
 // Iterates the entity-gravity pool (per-slot offset +0x18 inside the
 // 1000-slot ground-items pool DAT_07e12840, stride 0x204). Per active slot:
 // advances Z by velocity, decays velocity by _DAT_005527d0. Checks terrain

@@ -55,7 +55,6 @@
 #include <winsock2.h>
 
 extern "C" void DbgLogPublic(const char* msg);
-extern "C" DWORD g_ItemAttribute_Backup;   // defined in Render_Frame.cpp
 
 // ── Globals referenced (declared elsewhere) ──────────────────────────────────
 extern "C" {
@@ -165,15 +164,6 @@ extern "C" BYTE OffsetTradeItems[];
 unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
                                                     int grid_base, int grid_w, int grid_h)
 {
-    {
-        unsigned int p = (unsigned int)DAT_07d78068;
-        if ((p < 0x100000u || p >= 0x80000000u)
-            && g_ItemAttribute_Backup >= 0x100000u
-            && g_ItemAttribute_Backup < 0x80000000u)
-        {
-            DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        }
-    }
 
     short pickedType = *(short*)pPickedItem;
     if (pickedType < 0) return 0;
@@ -725,26 +715,6 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
     // ── Guards (IDA lines 307-318) ──────────────────────────────────────────
     bool wasClick = (DAT_083a4124 != 0);
 
-    // 2026-05-09: ItemAttribute base watchdog. Algún writer desconocido
-    // sets DAT_07d78068 a valores bogus (e.g., 0x1) ocasionalmente. Hay un
-    // watchdog en Render_GameFrame, pero entre éste y FUN_004d23b0 puede
-    // re-corromperse — bloqueando el pickup en attr-bogus check más abajo.
-    // Restaurar acá del backup si está corrupt.
-    {
-        unsigned int p = (unsigned int)DAT_07d78068;
-        if ((p < 0x100000u || p >= 0x80000000u)
-            && g_ItemAttribute_Backup >= 0x100000u
-            && g_ItemAttribute_Backup < 0x80000000u)
-        {
-            if (wasClick) {
-                char db[160];
-                wsprintfA(db, "FUN_004d23b0 RESTORE attr: was=%08X → backup=%08X",
-                          (unsigned)p, (unsigned)g_ItemAttribute_Backup);
-                DbgLogPublic(db);
-            }
-            DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        }
-    }
 
     if (grid_h <= 0)                { if (wasClick) DbgLogPublic("FUN_004d23b0 EXIT: gh<=0"); return; }
 
@@ -1068,8 +1038,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // ── Item 458 (Teleport scroll) — handled by Teleport check ─
                 if (type == 458) {
                     // IDA sub_4D23B0 L1440: `if ( Teleport ) return;`
-                    // Teleport = 0x05826D14 (DAT_05826d14).
-                    if (DAT_05826d14 != 0) return;
+                    // Teleport = 0x05826D14 (Teleport).
+                    if (Teleport != 0) return;
                     if (DAT_07eaa119 != 0 || DAT_07eaa11b != 0) {
                         UIChatLogWindow_AddText("", GlobalText[474], 2);
                         continue;

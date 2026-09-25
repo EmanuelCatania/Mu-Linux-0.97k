@@ -11,7 +11,7 @@
 // ── MAPEO FUN_XXXX → nombre real IDA ──────────────────────────────────────────
 //   GL_BeginViewport → BeginOpengl(x,y,w,h)          — setup 3D: push PROJ+MV, persp, rota cam
 //   FUN_004fd800 → Terrain_Render()
-//   FUN_0045ab00 → Entity_RenderAll_3D()
+//   Entity_RenderAll_3D → Entity_RenderAll_3D()
 //   FUN_00500970 → RenderBugs()                  — (no era Entity_Render_Sprites)
 //   FUN_0046c3e0 → Trail_RenderAll()             — (no era Particle_Render)
 //   GL_BeginSprite → BeginSprite()                 — sólo push MV + loadIdentity

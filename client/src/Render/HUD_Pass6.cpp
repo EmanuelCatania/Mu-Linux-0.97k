@@ -39,7 +39,7 @@ void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* p
 
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
-extern "C" void Net_SendEventWindowClose(void);
+extern "C" void Net_SendNpcTalkClose(void);
 extern "C" void Net_SendNpcTalkClose(void);
 
 // Origen (esquina superior izquierda) de los paneles Character / Guild.
@@ -1904,7 +1904,19 @@ extern "C" void __cdecl RenderEventWindow(void)
             DAT_083a4124 != 0)
         {
             DAT_083a4124 = 0;
-            Net_SendEventWindowClose();
+            // 2026-09-20: aca se mandaba `Net_SendEventWindowClose()` = un
+            // [C1][03][97], copiado del boton de cerrar del Golden Archer.  Es
+            // invencion del port: la ventana de evento (Devil Square / Blood
+            // Castle) la abre un NPC via 0x30, `CloseInventoryRelatedWindows`
+            // (0x4CBA60) no manda NADA al cerrarla, y el unico paquete que el
+            // binario emite por esa ventana es el 0x31 de `SendMove`
+            // (0x491C40 L742: `buf[4] = 49` con EventWindowOpened).
+            //
+            // Ademas era peligroso contra MuEmu: su `case 0x97` es un paquete
+            // con sub-opcode (`lpMsg[3]`), asi que con un frame de 3 bytes leia
+            // un byte FUERA del paquete y, si caia en 0x02 o 0x03, despachaba
+            // un canje del Golden Archer con datos basura.
+            Net_SendNpcTalkClose();
             InventoryOpened = 0;
             CloseInventoryRelatedWindows();
         }

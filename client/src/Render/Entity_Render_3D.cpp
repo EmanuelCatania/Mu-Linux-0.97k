@@ -114,7 +114,7 @@
 extern "C" { void DbgLogPublic(const char* msg); }
 #include "Render/Entity_Render_3D.h"
 
-// IDA: FUN_004fc070 (0x004FC070)
+// IDA: Entity_SpawnEffects (0x004FC070)
 // Spawna partículas/efectos visuales en la posición de los huesos de la entidad.
 // Switch principal: World × entity.type.
 //

@@ -50,7 +50,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 // Guards on entity visibility (entity+0x168 >= DAT_005524F8).
 // Calls Sprite_Draw (BMD_Animation) and shadow/bone pass (FUN_004404E0, FUN_00441E00).
 // Returns 1 on success, 0 if out of range.
-// IDA: FUN_004faa70 (0x004FAA70)
+// IDA: Calc_RenderObject (0x004FAA70)
 int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
     float fVar2 = *(float*)(param_1 + 0x168);
     if (fVar2 < _DAT_005524f8)

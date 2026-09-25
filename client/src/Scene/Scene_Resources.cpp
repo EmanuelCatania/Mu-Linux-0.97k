@@ -31,11 +31,11 @@ void Scene_LoadAccountResources(void)
   FUN_00529740(s_Interface_Progress_Back_jpg_0056070c,0x13,0x2600,0x2900,0,'\x01');
   FUN_00529740(s_Interface_Progress_jpg_005606f4,0x14,0x2600,0x2900,0,'\x01');
   if (DAT_0055a7c4 == '\0') {
-    FUN_00505e90(0x3c,s_Data2_Object1__0055f120,s_ship_smd_0055ee54);
-    FUN_00505e90(0xa0,s_Data2_Logo__005606dc,(const char*)&DAT_005606e8);
-    FUN_00505e90(0xa1,s_Data2_Logo__005606dc,(const char*)&DAT_005606d0);
-    FUN_00505e90(0xa2,s_Data2_Logo__005606dc,s_mu_smd_005606c8);
-    FUN_00505e90(0xa3,s_Data2_Logo__005606dc,s_sun_smd_005606b4);
+    OpenModel(0x3c,s_Data2_Object1__0055f120,s_ship_smd_0055ee54);
+    OpenModel(0xa0,s_Data2_Logo__005606dc,(const char*)&DAT_005606e8);
+    OpenModel(0xa1,s_Data2_Logo__005606dc,(const char*)&DAT_005606d0);
+    OpenModel(0xa2,s_Data2_Logo__005606dc,s_mu_smd_005606c8);
+    OpenModel(0xa3,s_Data2_Logo__005606dc,s_sun_smd_005606b4);
   }
   DbgLogPublic("Scene_LoadAccount: canary-A (before AccessModel Ship+Logos)");
   FUN_005060b0(0x3c,s_Data_Object1__0055f360,(const char*)&DAT_0055e834,1);
@@ -48,11 +48,11 @@ void Scene_LoadAccountResources(void)
   DbgLogPublic("Scene_LoadAccount: canary-B (after AccessModel, before SetMaxTextures)");
   SetMaxTextures(0x56a);
   DbgLogPublic("Scene_LoadAccount: canary-C (after SetMaxTextures, before OpenTexture Ship)");
-  FUN_00505c80(0x3c,s_Object1__0055f354,0x2601,'\x01');
+  OpenTexture(0x3c,s_Object1__0055f354,0x2601,'\x01');
   DbgLogPublic("Scene_LoadAccount: canary-D (after OpenTexture Ship, before Logos)");
   iVar2 = 0;
   do {
-    FUN_00505c80(iVar2 + 0xa0,s_Logo__00560698,0x2601,'\x01');
+    OpenTexture(iVar2 + 0xa0,s_Logo__00560698,0x2601,'\x01');
     iVar2 = iVar2 + 1;
   } while (iVar2 < 4);
   DbgLogPublic("Scene_LoadAccount: canary-E (after OpenTexture Logos, returning)");
@@ -90,11 +90,11 @@ void Scene_LoadCharSelectResources(void)
   FUN_00529740(s_Logo_New_Character003_jpg_005608bc,0x1c,0x2600,0x2900,0,'\x01');
   FUN_00529740(s_Logo_New_Character004_jpg_005608a0,0x1d,0x2600,0x2900,0,'\x01');
   if (DAT_0055a7c4 == '\0') {
-    FUN_00505e90(0xa4,s_Data2_Logo__005606dc,s_main_smd_00560894);
-    FUN_00505e90(0xaa,s_Data2_Logo__005606dc,(const char*)&DAT_0056085c);
-    FUN_00505e90(0xab,s_Data2_Logo__005606dc,s_warrior_smd_00560828);
-    FUN_00505e90(0xac,s_Data2_Logo__005606dc,s_fairy_smd_0055c438);
-    FUN_00505e90(0xad,s_Data2_Logo__005606dc,(const char*)&DAT_005607c8);
+    OpenModel(0xa4,s_Data2_Logo__005606dc,s_main_smd_00560894);
+    OpenModel(0xaa,s_Data2_Logo__005606dc,(const char*)&DAT_0056085c);
+    OpenModel(0xab,s_Data2_Logo__005606dc,s_warrior_smd_00560828);
+    OpenModel(0xac,s_Data2_Logo__005606dc,s_fairy_smd_0055c438);
+    OpenModel(0xad,s_Data2_Logo__005606dc,(const char*)&DAT_005607c8);
   }
   FUN_005060b0(0xa4,s_Data_Logo__005606a0,(const char*)&DAT_005606ac,5);
   iVar2 = 0xaa;
@@ -104,10 +104,10 @@ void Scene_LoadCharSelectResources(void)
     iVar2 = iVar2 + 1;
   } while (iVar1 < 4);
   SetMaxTextures(0x56a);
-  FUN_00505c80(0xa4,s_Logo__00560698,0x2601,'\x01');
+  OpenTexture(0xa4,s_Logo__00560698,0x2601,'\x01');
   iVar2 = 0;
   do {
-    FUN_00505c80(iVar2 + 0xaa,s_Logo__00560698,0x2600,'\x01');
+    OpenTexture(iVar2 + 0xaa,s_Logo__00560698,0x2600,'\x01');
     iVar2 = iVar2 + 1;
   } while (iVar2 < 4);
   iVar2 = 0;

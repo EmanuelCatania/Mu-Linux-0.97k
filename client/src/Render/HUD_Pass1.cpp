@@ -51,10 +51,10 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // gateado `if (CharacterMachine && dword_55C9BD4)`, que en nuestro build se saltea,
 // así que no necesitamos sus referencias al enlazar.
 
-// sub_403150 (desencriptado de g_csQuest) — existe en nuestro stubs.cpp como FUN_00403150;
-// declarado en functions.h. En realidad no hace falta llamarlo para el
-// render de la barra de accesos rápidos — su propósito es refrescar el estado encriptado de quests, que
-// has no visible effect when called repeatedly per frame on a stable state.
+// sub_403150: NO es un "desencriptado de g_csQuest" como decia la nota vieja.
+// Es el render de la lista de items que pide la quest (UI/Quest_Legacy.cpp):
+// con a3 = 1 los dibuja como texto y con a3 = 0 como modelos 3D.  La llamada
+// con a3 = 0 vive en este pase; ver el comentario en el cuerpo.
 
 // ── Globals que el original referencia por nombre simbólico ─────────────────
 // Definimos #defines para que los nombres estilo IDA coincidan con el storage que
@@ -518,8 +518,17 @@ void Render_HotbarItems3D_(void)
     GL_GetModelViewMatrix((unsigned int*)DAT_083a4140);
     GL_EnableDepthTest();
     GL_EnableDepthWrites();
-    // En el original refresca g_csQuest antes del HUD 3D.
-    // En este build no tenemos ese símbolo exportado; no afecta la hotbar visual.
+    // IDA sub_4BFDE0 L31: `sub_403150(g_csQuest, 1, 0)`.
+    //
+    // Aca habia un comentario que daba a sub_403150 por "refresco del estado
+    // encriptado de quests" y la saltaba por "no afecta la hotbar visual".  Es
+    // una misidentificacion: con a3 = 0 esa funcion dibuja los MODELOS 3D de
+    // los items que pide la quest, y tiene que correr aca porque este pase es
+    // el que deja montado el FOV de 1 grado y la CameraMatrix identidad que
+    // RenderItem3D necesita.  Sin la llamada, la ventana de quest mostraba el
+    // nombre del item ("Scroll of Emperor x 1", que lo dibuja la otra llamada
+    // con a3 = 1 desde sub_403320) pero nunca su modelo.
+    if (g_csQuest) FUN_00403150((void*)(uintptr_t)g_csQuest, 0, 1, 0);
 
     if (!HUD_IsGoldenArcherPanelRuntime()) {
         FUN_004f5ce0(0, 0, 0, 0);

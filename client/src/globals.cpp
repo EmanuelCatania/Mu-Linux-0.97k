@@ -222,7 +222,7 @@ float    ChatListBox_TabButtonSpacing  = 18.0f; // separación horizontal entre 
 // expects "09711"; bytes are computed as target_char + (i + 1) so that
 // (DAT[i] - i - 1) = "09711":
 //     '0'+1=0x31, '9'+2=0x3B, '7'+3=0x3A, '1'+4=0x35, '1'+5=0x36
-// IDA: DAT_0055961c (0x0055961C)
+// IDA: Version (0x0055961C)
 BYTE     Version[5]  = { 0x31, 0x3B, 0x3A, 0x35, 0x36 };
 // Serial (16 bytes) @ 0x00559624: sent raw in login packet.
 //
@@ -232,11 +232,11 @@ BYTE     Version[5]  = { 0x31, 0x3B, 0x3A, 0x35, 0x36 };
 // Current value matches MuServer Encoder/MainInfo.ini ClientSerial=TbYehR2hFUPBKgZj.
 // Server compares strict equality after CSM decode, so client and server must
 // agree on this 16-byte string verbatim.
-// IDA: DAT_00559624 (0x00559624)
+// IDA: Serial (0x00559624)
 BYTE     Serial[16] = { 'T', 'b', 'Y', 'e', 'h', 'R', '2', 'h',
                               'F', 'U', 'P', 'B', 'K', 'g', 'Z', 'j' };
-// IDA: DAT_00559678 (0x00559678)
-DWORD    PacketXorKey3  = 0; // IDA: DAT_00559678 (0x00559678)
+// IDA: PacketXorKey3 (0x00559678)
+DWORD    PacketXorKey3  = 0; // IDA: PacketXorKey3 (0x00559678)
 float    _DAT_00559680 = 0.0f;
 DWORD    DAT_00559680  = 0;
 DWORD    DAT_00559684  = 0;
@@ -593,7 +593,7 @@ DWORD    DAT_055ca050  = 0;
 //
 // BUG fixed: previously sized 0x4030 — slot 0 data area (offset 0x4024..0x6024)
 // extended PAST the array by ~0x1FF4 bytes, so any packet >12 bytes scribbled
-// into adjacent globals. DAT_05826c58 (Dec2 keys) was placed by linker right
+// into adjacent globals. g_SimpleModulusSC (Dec2 keys) was placed by linker right
 // after SocketClient's end, so every C3 packet trashed the decryption keys
 // → C3 decode FAILED with checksum mismatch on every server response.
 // IDA: SocketClient (0x055CA160)
@@ -625,21 +625,21 @@ DWORD    DAT_00562e48[4] = {
 //   [9..12]  : DecKey[4]      (this+36 .. this+51)
 //   [13..16] : XorKey[4]      (this+52 .. this+67)
 // Loaded at WinMain startup from Data\Enc1.dat (CS) and Data\Dec2.dat (SC).
-// IDA: DAT_05826c10 (0x05826C10)
+// IDA: g_SimpleModulusCS (0x05826C10)
 DWORD    g_SimpleModulusCS[17] = {0};
-// IDA: DAT_05826c58 (0x05826C58)
+// IDA: g_SimpleModulusSC (0x05826C58)
 DWORD    g_SimpleModulusSC[17] = {0};
-// IDA: DAT_05826C9C (0x05826C9C)
+// IDA: m_nTempMyTradeGold (0x05826C9C)
 DWORD    m_nTempMyTradeGold  = 0;
-// IDA: DAT_05826ca0 (0x05826CA0)
+// IDA: HeroIndex (0x05826CA0)
 DWORD    HeroIndex  = 0;
 DWORD    DAT_05826ca4  = 0;
 DWORD    DAT_05826ca8  = 0;
-// IDA: DAT_05826cac (0x05826CAC)
+// IDA: HeroKey (0x05826CAC)
 DWORD    HeroKey  = 0;
 // IDA: DAT_05826cb0 (0x05826CB0)
 DWORD    CurrentProtocolState  = 0;
-// IDA: DAT_05826cb4 (0x05826CB4)
+// IDA: ChatWhisperID (0x05826CB4)
 char     ChatWhisperID[12] = {0};
 DWORD    DAT_05826cc0  = 0;
 DWORD    DAT_05826cc8  = 0;
@@ -650,16 +650,16 @@ char     DAT_05826ceb  = 0;
 // IDA: DAT_05826CEC (0x05826CEC)
 DWORD    g_byPacketSerialRecv  = 0;
 float    _DAT_05826cf4 = 0.0f;
-// IDA: DAT_05826cf4 (0x05826CF4)
+// IDA: g_dwLatestMagicTick (0x05826CF4)
 DWORD    g_dwLatestMagicTick  = 0;
 // IDA: DAT_05826CF8 (0x05826CF8)
 DWORD    LogIn  = 0;
 // IDA: g_bGameServerConnected (0x05826CF0)
 DWORD    g_bGameServerConnected  = 0; // IDA: g_bGameServerConnected (0x05826CF0)
-// IDA: DAT_05826d08 (0x05826D08)
+// IDA: ChatTime (0x05826D08)
 DWORD    ChatTime  = 0;
-char     Teleport  = 0; // IDA: DAT_05826d14 (0x05826D14)
-// IDA: DAT_05826d18 (0x05826D18)
+char     Teleport  = 0; // IDA: Teleport (0x05826D14)
+// IDA: BuyCost (0x05826D18)
 DWORD    BuyCost  = 0;
 // DAT_05826d1c = EnableUse (IDA 0x05826D1C), definido mas abajo; ver globals.h.
 DWORD    DAT_05826d20  = 0;
@@ -813,7 +813,7 @@ void    *DAT_07cf1ffc  = nullptr;  // g_CharData pointer (0x584-byte XOR-encoded
 // ── UI / HUD data ─────────────────────────────────────────────────────────────
 DWORD   _DAT_07e118e4  = 0;    // facing angle (float, movement packet)
 DWORD    DAT_07e118e8  = 0;    // world/map type
-DWORD    DAT_07e11d7c  = 0;    // countdown counter B
+DWORD    DAT_07e11d7c  = 0;    // MacroTime (0x07E11D7C)
 DWORD    DAT_07e11d8c  = 0;
 DWORD    DAT_07e11d90  = 0;
 DWORD    DAT_07e11d94  = 0;
@@ -1455,7 +1455,7 @@ int      SelectedItem       = -1;  // DAT_00559c48
 int      SelectedNpc        = -1;  // DAT_00559c4c
 int      SelectedCharacter  = -1;  // DAT_00559c50
 int      SelectedOperate    = -1;  // DAT_00559c54
-int      Attacking  = -1; // IDA: DAT_00559c58 (0x00559C58)
+int      Attacking  = -1; // IDA: Attacking (0x00559C58)
 // 2026-05-06 BUG-FIX: m_bAutoAttack default = 1 (enabled). Per IDA
 // Mouse_Hover (sub_4B0310:85), if !m_bAutoAttack the hover-target
 // (DAT_00559c50 / SelectedCharacter) is reset to -1 every frame BEFORE the click handler reads
@@ -1914,10 +1914,10 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // BuxConvert_0 (DAT_00559bb4), pero es otra copia en otra direccion.
 // 2026-08-21: estaba declarada como UN char = 0, asi que BuxConvert
 // (IDA: FUN_00401120) hacia
-// `(&DAT_00558090)[i % 3]` sobre un cero y dos bytes de globals vecinos: el
+// `(&bBuxCode)[i % 3]` sobre un cero y dos bytes de globals vecinos: el
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
 // equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.
-// IDA: DAT_00558090 (0x00558090)
+// IDA: bBuxCode (0x00558090)
 char    bBuxCode[3] = { (char)0xFC, (char)0xCF, (char)0xAB };
 char    TextParserTokenString[256] = {}; // DAT_07CF1EF0 — GetToken buffer (0x47A1F0)
 char    DAT_00559088 = 0;
@@ -2222,7 +2222,7 @@ float   _DAT_00552a08  = 0.003f;
 // construct malformed paths (e.g. "Data\\Object1\\01.bmd" instead of "Ship01.bmd").
 // Ship/Logo/Face are BMD basenames used by FUN_005060b0;
 // the three SMD entries (Korean-named background/face assets) are only consumed
-// by FUN_00505e90 which is stubbed in this port — kept as empty strings so any
+// by OpenModel which is stubbed in this port — kept as empty strings so any
 // sprintf(%s, "") produces harmless paths without crashing.
 char    DAT_0055e834[8]   = "Ship";          // → Data\Object1\Ship01.bmd (login ship)
 char    DAT_005606ac[8]   = "Logo";          // → Data\Logo\Logo0N.bmd   (login logos 1..4)
@@ -2585,7 +2585,7 @@ float  _DAT_005528c0  = 0.00024f; // chrome U scale factor
 float  _DAT_005528c4  = 0.007f; // sin period scale for vertex deformation
 float  _DAT_00552644  = 28.0f; // sin amplitude for vertex deformation
 
-// ── MoveEffect (FUN_00466ad0) constants ──────────────────────────────────────
+// ── MoveEffect (MoveEffect) constants ──────────────────────────────────────
 float  _DAT_005524a8  = 27.0f;
 float  _DAT_00552864  = 270.0f;
 float  _DAT_00552990  = -0.4f;
@@ -2872,7 +2872,7 @@ void*  g_LoginSceneObjects[9] = {0}; // sky, ship1, wave1, ship2, wave2, ship3, 
 // corria en CADA frame para CADA entidad: en char-select eso disparaba cientos
 // de PlayBuffer(rand()%7+50) = el ruido de golpes (eBlow/eShortBlow).
 int    DAT_00559858       = 15;    // g_iLimitAttackTime
-// IDA: DAT_05826d10 (0x05826D10)
+// IDA: CurrentSkill (0x05826D10)
 DWORD  CurrentSkill       = 0;
 DWORD  DAT_07e11d84       = 0;     // UseSkillWarrior 43 activation tick
 float  _DAT_00552904      = 1400.0f;  // sin/cos offset multiplier (sword trail radius)

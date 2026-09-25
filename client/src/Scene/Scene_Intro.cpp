@@ -67,7 +67,7 @@
 //     DAT_083a7c10 = 1;   // render enable flag
 //     Scene_LoadGameAssets() (IDA: FUN_00510320);
 //     OpenWorld();      // World_Load()
-//     DAT_05826cac = 0;
+//     HeroKey = 0;
 //
 //     // Spawn entidad local en posición hardcodeada
 //     // CreateHero(0, 0, 0, 5414.4f, 21981.5f)
@@ -92,7 +92,7 @@
 //   DAT_083a410c  — bypass flag (0=normal, 1=bypass a InGame)
 //   SceneFlag  — SceneFlag
 //   DAT_083a7c10  — render enable flag
-//   DAT_05826cac  — counter reset
+//   HeroKey  — counter reset
 //   DAT_0056156c  — screen_width (para posicionamiento centrado)
 //   DAT_005617a0  — debug string (mostrado si bypass activo)
 //   _DAT_005529bc — offset X logo (centering adjust)
@@ -225,7 +225,7 @@ void __cdecl Scene_Intro(HDC param_1)
     DAT_083a7c10 = 1;
     Scene_LoadGameAssets();
     OpenWorld();      // World_Load
-    DAT_05826cac = 0;
+    HeroKey = 0;
 
     // Spawn local entity at hardcoded position (5414.4f, 21981.5f)
     // 0x44a8c000 = 1350.0f (x), 0x46a9ec00 = 21742.0f (y)

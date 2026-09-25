@@ -31,7 +31,7 @@
 //
 //   Offset  Tipo    Nombre                  Descripción
 //   +0x02   short   entity_type             Tipo (0x186=skeleton, 0x129=player, etc.)
-//   +0x04   int     entity_id               ID de red (coincide con DAT_05826cac para el jugador)
+//   +0x04   int     entity_id               ID de red (coincide con HeroKey para el jugador)
 //   +0x10   float   world_x                 Posición X world (OpenGL)
 //   +0x14   float   world_y                 Posición Y world (OpenGL)
 //   +0x18   float   world_z                 Elevación Z (del heightmap)
@@ -289,7 +289,7 @@ void Entity_UpdateWalkAnim(int entity);
 //   entity = FindCharacterIndex(byte[3]<<8 | byte[4])  — busca entidad por ID de red
 //   entity+0x2fc = byte[7] >> 4                   — speed tier
 //
-//   SI es el jugador (entityId == DAT_05826cac):
+//   SI es el jugador (entityId == HeroKey):
 //     Actualiza entity+0x388 = byte[5] (X grid start)
 //     Actualiza entity+0x38c = byte[6] (Y grid start)
 //     Si entity+0x2ec == 0: enqueue inmediato.
@@ -338,7 +338,7 @@ void PacketHandler_0x0D(int packet);
 // ─────────────────────────────────────────────────────────────────────────────
 //
 //   0x0043f3e0  PacketQueue_Enqueue(uint id, float current, uint x, uint y, void* pathState, float t)
-//     Wrapper → FUN_0043f500(DAT_05826df4, id, t, x, y, 1, 2, t)
+//     Wrapper → PATH_FindPath(DAT_05826df4, id, t, x, y, 1, 2, t)
 //     Inserta movimiento en la cola de acciones de red (predicción de cliente).
 //
 //   0x0043f500  ActionQueue_Insert(this, int id, float t, int x, int y, int p5, int p6, float p7)

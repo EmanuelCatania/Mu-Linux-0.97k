@@ -37,3 +37,14 @@ extern DWORD m_MusicOnOff;
 #define g_MusicOn m_MusicOnOff   // 0x055C9E3C  (0 = musica apagada)
 extern DWORD g_Resolution; // lpData_055c9e38 (0-4)
 extern DWORD g_TextOut;    // lpData_055ca044
+
+// -- Overrides de server.cfg (DESVIACION DOCUMENTADA, 2026-09-24) ------------
+// El 0.97k solo lee estas opciones del registro (la clave Config de Webzen/Mu),
+// que es donde las deja el launcher oficial.  Sin launcher no hay forma de
+// mandar el cliente preconfigurado, asi que `server.cfg` acepta las mismas
+// tres claves y, cuando estan, ganan sobre el registro.
+//   MusicOnOff=0|1   SoundOnOff=0|1   Resolution=0..4  (o "800x600")
+// -1 = la clave no estaba en el archivo -> se respeta el registro.
+extern int g_CfgMusicOnOff;
+extern int g_CfgSoundOnOff;
+extern int g_CfgResolution;

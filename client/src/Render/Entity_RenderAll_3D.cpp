@@ -14,7 +14,7 @@
 //
 // ── DECOMPILE COMPLETO ────────────────────────────────────────────────────────
 //
-//   void FUN_0045ab00(void)
+//   void Entity_RenderAll_3D(void)
 //   {
 //     int iVar3 = 0;
 //     DAT_07abf5d4 = 0;          // reset contador de entidades visibles
@@ -44,7 +44,7 @@
 //         DAT_07abf5d4 += 1;                            // contador visibles
 //         // Determina si es el jugador local (slot especial)
 //         uint is_local = (iVar2 == SelectedCharacter || iVar2 == SelectedNpc) ? 1 : 0;
-//         FUN_00456770(entity, entity, is_local);        // Entity_UpdateRender
+//         RenderCharacter(entity, entity, is_local);        // Entity_UpdateRender
 //       }
 //
 //       iVar3 += 0x394;   // siguiente entidad
@@ -74,7 +74,7 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_00456770  → Entity_UpdateRender(entity, entity, is_local_player)
+//   RenderCharacter  → Entity_UpdateRender(entity, entity, is_local_player)
 //                   Actualiza el estado de renderizado de la entidad (animación, posición, etc.)
 
 #include "stdafx.h"
@@ -85,7 +85,7 @@ extern "C" { void DbgLogPublic(const char*); }
 // IDA: Entity_RenderAll_3D (0x0045AB00)
 // Iterates entity array, resets the local player's velocity fields if in InGame,
 // then calls Entity_UpdateRender for each active entity.
-// Defined as FUN_0045ab00 to match callers (Scene_Login, Scene_CharSelect, etc.).
+// Defined as Entity_RenderAll_3D to match callers (Scene_Login, Scene_CharSelect, etc.).
 void Entity_RenderAll_3D(void)
 {
     char       *pcVar1;
@@ -137,7 +137,7 @@ void Entity_RenderAll_3D(void)
             pcVar1[0x13e] = -0x80; pcVar1[0x13f] = '?';
 
             pcVar1[0x160] = 1;   // force visible flag
-            // FIX 2026-07-24: el 3er param de RenderCharacter (FUN_00456770) es
+            // FIX 2026-07-24: el 3er param de RenderCharacter (RenderCharacter) es
             // el flag de HOVER/highlight (dibuja el borde de selección).  El IDA
             // pasa `(slot == SelectedCharacter || SelectedNpc)`, y el Hero está
             // EXCLUIDO de esos → el original lo dibuja con 0.  Este forced-render
@@ -152,7 +152,7 @@ void Entity_RenderAll_3D(void)
             if (diag && iVar2 < 5) {
                 char b[120];
                 _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "ERA slot=%d -> FUN_00456770(local=%d)", iVar2, (int)(uintptr_t)puVar4);
+                    "ERA slot=%d -> RenderCharacter(local=%d)", iVar2, (int)(uintptr_t)puVar4);
                 DbgLogPublic(b);
             }
             RenderCharacter((undefined4 *)pcVar1, (undefined4 *)pcVar1, puVar4);

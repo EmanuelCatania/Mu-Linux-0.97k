@@ -18,7 +18,7 @@ extern "C" void DbgLogPublic(const char* msg);   // OWNERDBG (temporal)
 
 // FUN_0046b790 — Effect_TickAll
 // Iterates the effect pool (base DAT_07b11670, stride 0x1bc, end 0x7b27150).
-// For each active slot (first byte != 0), calls FUN_00466ad0(slot, index).
+// For each active slot (first byte != 0), calls MoveEffect(slot, index).
 // IDA: FUN_0046b790
 void Effect_TickAll(void)
 {

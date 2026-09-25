@@ -342,8 +342,8 @@ extern "C" void Chat_SendChatLine(const char* text)
         // IDA WndProc (0x41D954, tras el send del susurro): ChatWhisperID =
         // InputText[1][0..9], con '\0' en [10].  Lo usa el aviso del 0x0C
         // ("no esta conectado") como remitente.  2026-09-12.
-        memcpy(DAT_05826cb4, whisperTarget, 10);
-        DAT_05826cb4[10] = '\0';
+        memcpy(ChatWhisperID, whisperTarget, 10);
+        ChatWhisperID[10] = '\0';
     } else {
         pkt[2] = 0x00;                        // headcode = chat normal
         // BUG-FIX 2026-07-19 (nuestros mensajes no llegaban): el campo name[10]
@@ -391,7 +391,7 @@ extern "C" void Chat_SendChatLine(const char* text)
 
     // Update last-sent-cmp buffer + reset rate-limit (matches IDA).
     memcpy(&DAT_05826adc[0], text, tlen + 1);
-    DAT_05826d08 = 0x46;
+    ChatTime = 0x46;
 }
 
 // Sequence called on every class-tab click.
@@ -682,7 +682,7 @@ void __cdecl Chat_InputTick(void)
             // Channels 0-8 each have a 0x100-byte input buffer at DAT_07e0ffc8+ch*0x100.
             // FUN_00494520 reads a key press into the buffer, returns ch != '\0' if Enter.
             // FUN_00513440 validates the text (profanity/length); '\0' = ok.
-            // Rate-limit: DAT_05826d08 starts at 0x46, counts down each frame.
+            // Rate-limit: ChatTime starts at 0x46, counts down each frame.
             //             If > 0x32, reject (too fast). Resets to 0x46 on send.
             // Duplicate check: compare buffer vs DAT_05826adc (last sent).
             // Command parsing (prefix '/'):
@@ -692,18 +692,21 @@ void __cdecl Chat_InputTick(void)
             // Normal send:
             //   Build C1 packet: [0xC1][len][opcode][sub][player_name][chat_text][0x00]
             //   XOR-encrypt payload from byte offset 3 onward, CSimpleModulus_Encode + send.
-            if (DAT_07e11d7c == 0)
+            // El disparo es ALT + el numero, NO Enter: el texto que se tipea
+            // en el chat vive en InputText (DAT_07db8710) y lo envia el WndProc.
+            if (DAT_07e11d7c == 0 &&
+                ((unsigned short)GetAsyncKeyState(VK_MENU) >> 8) != 0)
             {
-                SHORT svEnter = GetAsyncKeyState(0x0D); // VK_RETURN
-                if ((char)((unsigned short)svEnter >> 8) != '\0')
                 {
                     for (int ch = 0; ch < 9; ++ch)
                     {
+                        // Alt+1 .. Alt+9  ->  macros 0..8  (IDA: v221 + 49)
+                        if (((unsigned short)GetAsyncKeyState('1' + ch) >> 8) == 0)
+                            continue;
                         BYTE *chBuf = (BYTE *)&DAT_07e0ffc8 + ch * 0x100;
-                        DWORD keyVal = (DWORD)((unsigned short)GetAsyncKeyState(0x0D) >> 8);
-                        DWORD uVar9  = FUN_00494520((void *)keyVal, chBuf, '\x01');
-                        if ((char)uVar9 != '\0')
-                            continue;  // not Enter for this channel
+                        if (chBuf[0] == '\0') { DAT_07e11d7c = 100; continue; }
+                        if ((char)FUN_00494520(chBuf, '\x01') != '\0')
+                            continue;
 
                         // Validate input
                         if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
@@ -715,23 +718,25 @@ void __cdecl Chat_InputTick(void)
                             continue;  // invalid text
 
                         // Rate-limit and duplicate check
-                        if (DAT_05826d08 >= 0x33) {
+                        if (ChatTime >= 0x33) {
                             DAT_07e11d7c = 100;
                             continue;
                         }
 
-                        if (DAT_05826d08 > 0) {
+                        if (ChatTime > 0) {
                             if (strcmp((char *)chBuf, &DAT_05826adc[0]) == 0)
                                 goto chat_done;
                         }
 
-                        // Copy to last-sent buffer, reset rate-limit
-                        {
-                            size_t tlen = strlen((char *)chBuf);
-                            if (tlen > 0x3c) tlen = 0x3c;
-                            memcpy(&DAT_05826adc[0], chBuf, tlen + 1);
-                            DAT_05826d08 = 0x46;
-                        }
+                        // NOTA DEL PORT: aca IDA copia el texto a la "ultima
+                        // linea dicha" (byte_5826ADC) y pone ChatTime = 70,
+                        // porque arma y manda el paquete INLINE.  Nuestro port
+                        // delega en SendChat (0x4C1B90), que hace ese mismo
+                        // bookkeeping -- y ademas vuelve a chequear el limite y
+                        // el duplicado.  Haciendolo tambien aca, la macro se
+                        // auto-bloqueaba: SendChat veia ChatTime = 70 y salia
+                        // sin enviar (sintoma: la barra "Macro Time" aparecia
+                        // pero el mensaje no se mandaba).
 
                         // Player name length for name-match check
                         {
@@ -774,7 +779,12 @@ void __cdecl Chat_InputTick(void)
                             }
                         }
 
-                        Chat_SendChatLine((const char*)chBuf);
+                        // IDA L2747: una macro que empieza con '/' NO se envia al
+                        // chat -- ya la consumio CheckChatText (gesto) o es un
+                        // comando.  Sin este gate, Alt+N con "/Go go" mandaba el
+                        // texto ademas de hacer la animacion.
+                        if (chBuf[0] != '/')
+                            Chat_SendChatLine((const char*)chBuf);
                         chat_done:
                         DAT_07e11d7c = 100;
                     }
@@ -783,8 +793,10 @@ void __cdecl Chat_InputTick(void)
                 // ── 8. Whisper-target channel (channel 9) ────────────────────
                 // Uses DAT_07e108c8 buffer (offset 0x900 from DAT_07e0ffc8).
                 {
-                    DWORD keyVal = (DWORD)((unsigned short)GetAsyncKeyState(0x0D) >> 8);
-                    DWORD uVar9  = FUN_00494520((void *)keyVal, (BYTE *)&DAT_07e108c8, '\x01');
+                    // Alt+0 -> macro 10 (IDA: GetAsyncKeyState(48), o sea '0')
+                    DWORD uVar9 = (((unsigned short)GetAsyncKeyState('0') >> 8) == 0)
+                                ? 1u
+                                : (DWORD)(unsigned char)FUN_00494520((BYTE *)&DAT_07e108c8, '\x01');
                     if ((char)uVar9 == '\0') {
                         // SendChat@004C1B90 never emits a C1:00 chat shorter
                         // than 14 bytes (the text terminator is part of it).
@@ -799,14 +811,14 @@ void __cdecl Chat_InputTick(void)
                             CheckChatText(&DAT_07e108c8);   // IDA: sub_497C70
 
                         if ((char)FUN_00513440(&DAT_07e108c8) == '\0') {
-                            if (DAT_05826d08 < 0x33) {
-                                bool bDupWhisper = (DAT_05826d08 > 0) &&
+                            if (ChatTime < 0x33) {
+                                bool bDupWhisper = (ChatTime > 0) &&
                                                    (strcmp(&DAT_07e108c8, &DAT_05826adc[0]) == 0);
                                 if (!bDupWhisper) {
                                 size_t tlen = strlen(&DAT_07e108c8);
                                 if (tlen > 0x3c) tlen = 0x3c;
                                 memcpy(&DAT_05826adc[0], &DAT_07e108c8, tlen + 1);
-                                DAT_05826d08 = 0x46;
+                                ChatTime = 0x46;
 
                                 // Build and send whisper packet (same XOR+encode pattern)
                                 {

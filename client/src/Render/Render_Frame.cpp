@@ -67,7 +67,7 @@
 //   FUN_00500aa0()    → Entity_UpdatePositions()   — avanza timers/pos de entidades
 //                         itera DAT_0839be18, campo -0x5a=active, -0x51=pos float
 //                         tipo != 0x10a (cofre): actualiza float pos
-//   FUN_0045ab00()    → Entity_RenderAll_3D()      — geometría 3D chars/NPCs
+//   Entity_RenderAll_3D()    → Entity_RenderAll_3D()      — geometría 3D chars/NPCs
 //   if DAT_07e11d30:    RenderTerrain('\x01')       → GL_DepthTest(true)
 //   if !debug_view:     FUN_005038e0()             → Entity_Render_Sprites() (billboards)
 //   RenderFishs()    → Entity_PrepareVisibleList() — proyecta world→screen, cull off-screen
@@ -175,7 +175,7 @@
 //   FUN_004fd800  → Terrain_Render()
 //   Particle_RenderAll (IDA: FUN_0046be40) → particle system draw
 //   FUN_00500aa0  → Entity_UpdatePositions()       — timer/pos update pool DAT_0839be18
-//   FUN_0045ab00  → Entity_RenderAll_3D()
+//   Entity_RenderAll_3D  → Entity_RenderAll_3D()
 //   FUN_005038e0  → Entity_Render_Sprites()        — billboards 2D-in-3D
 //   RenderFishs  → Entity_PrepareVisibleList()    — frustum cull + PrepareRender
 //   FUN_00500970  → NPC_UpdateVisibleList()        — cull NPCs pool DAT_083a1378
@@ -214,11 +214,8 @@ extern "C" { void DbgLogPublic(const char* msg); }
 // it lives in a different .obj's BSS, NOT adjacent to DAT_07d78068. The
 // unknown writer that sets DAT_07d78068=0x1 also clobbers the next 4 bytes
 // to 0 (8-byte write). Putting the backup far away keeps it intact.
-extern "C" DWORD g_ItemAttribute_Backup = 0;
 // Plus a CANARY before/after to detect if even this gets clobbered.
-extern "C" DWORD g_ItemAttr_CanaryBefore = 0xDEADBEEF;
 // (g_ItemAttribute_Backup here)
-extern "C" DWORD g_ItemAttr_CanaryAfter  = 0xCAFEBABE;
 
 // Forward decls for HUD helpers defined later in this TU.
 void Render_CharInfoPanel(void);
@@ -344,36 +341,6 @@ static void RenderBitmapUV(int Texture, float x, float y, float Width, float Hei
 
 void Render_GameFrame(void)
 {
-    // 2026-05-08: per-frame watchdog. Some unknown writer occasionally
-    // clobbers DAT_07d78068 (ItemAttribute table base) to a small value
-    // (e.g. 0x00000001), causing tooltip / RenderBrokenItem / RenderObjectScreen
-    // to compute attrBase = type*0x40 + 1 → AV when dereferencing.
-    // Restore from backup + log to identify the writer pattern.
-    {
-        unsigned int p = (unsigned int)DAT_07d78068;
-        bool canaryB_ok = (g_ItemAttr_CanaryBefore == 0xDEADBEEF);
-        bool canaryA_ok = (g_ItemAttr_CanaryAfter  == 0xCAFEBABE);
-        if (p < 0x100000u || p >= 0x80000000u) {
-            // CORRUPTION DETECTED — log the specific bad value first time.
-            static DWORD s_lastLog = 0;
-            DWORD now = GetTickCount();
-            if (now - s_lastLog > 2000) {
-                s_lastLog = now;
-                char b[256];
-                wsprintfA(b, "WD DAT_07d78068 corrupted: was=%p backup=%p canaryB=%X(%s) canaryA=%X(%s)",
-                          (void*)(uintptr_t)p,
-                          (void*)(uintptr_t)g_ItemAttribute_Backup,
-                          g_ItemAttr_CanaryBefore, canaryB_ok ? "ok" : "BAD",
-                          g_ItemAttr_CanaryAfter,  canaryA_ok ? "ok" : "BAD");
-                DbgLogPublic(b);
-            }
-            if (g_ItemAttribute_Backup >= 0x100000u &&
-                g_ItemAttribute_Backup < 0x80000000u)
-            {
-                DAT_07d78068 = (int)g_ItemAttribute_Backup;
-            }
-        }
-    }
 
     if (World == 8) {
         // Tarkan: dos capas de arena a pantalla completa, blend aditivo.
@@ -543,7 +510,7 @@ void Render_HPBars_OLD(void)
 //   Camera_BuildMouseRay  → CreateScreenVector (mouse ray)
 //   FUN_004fd800  → Terrain_Render
 //   FUN_00500aa0  → Entity_UpdatePositions / RenderObjects
-//   FUN_0045ab00  → Entity_RenderAll_3D / RenderCharactersClient
+//   Entity_RenderAll_3D  → Entity_RenderAll_3D / RenderCharactersClient
 //   FUN_005038e0  → RenderItems / Entity_Render_Sprites
 //   FUN_00500970  → RenderBoids / NPC_UpdateVisibleList
 //   FUN_005022f0  → RenderFishs

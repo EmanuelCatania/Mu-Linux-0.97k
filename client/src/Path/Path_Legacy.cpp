@@ -327,7 +327,7 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
 }
 
 // IDA: FUN_0043f3e0 @ 0x0043F3E0 — PathFinding2(sx, sy, tx, ty, path_buf, radius)
-// Calls A* solver (FUN_0043f500). On fail, checks terrain walk flags at src/dst
+// Calls A* solver (PATH_FindPath). On fail, checks terrain walk flags at src/dst
 // to decide filter mode (2 or 4) and retries. On success (path_len >= 2),
 // copies waypoints from DAT_05826df4 result buffer into path_buf.
 // path_buf layout: [0]=0, [1]=0, [2]=wp_count, [3..17]=wp_x, [0x12..0x20]=wp_y.
@@ -337,13 +337,13 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     int filterMode = 2;
     // BUG-FIX 2026-04-26 (audit #4): _this debe ser el contexto del pathfinder
     // (DAT_05826df4), no `sx`. Net_Process.cpp documenta el wrapper:
-    //   FUN_0043f500(DAT_05826df4, id, t, x, y, 1, 2, t)
+    //   PATH_FindPath(DAT_05826df4, id, t, x, y, 1, 2, t)
     // Antes pasábamos `(void*)sx` → la función deref-eaba un coord como ptr.
     void* pfCtx = (void*)(intptr_t)DAT_05826df4;
 
     // 2026-08-17: el contexto YA se construye completo. Antes se reservaba en
     // WinMain con `malloc(0x420)` + memset y el vtable de la cola de prioridad
-    // (+0x414) quedaba NULL, así que FUN_0043f500 (PATH::FindPath) crasheaba al
+    // (+0x414) quedaba NULL, así que PATH_FindPath (PATH::FindPath) crasheaba al
     // dereferenciarlo — de ahí el `pfReady = false` forzado desde 2026-05-03.
     // Ahora PathContext_Create() (src/Game/PathFinder.cpp, llamada desde WinMain)
     // replica el ctor del binario: 0x0043F280..0x0043F2C7, reserva de 0x424 bytes
@@ -351,13 +351,13 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     // mismo archivo) ya estaba portada y la llama OpenFont (World_Init), igual
     // que en el binario; corre despues del ctor, que es el orden correcto.
     //
-    // El camino original queda detrás de un switch porque FUN_0043f500 todavía
+    // El camino original queda detrás de un switch porque PATH_FindPath todavía
     // no se ejercitó en runtime: nuestro A* sustituto sigue siendo el default.
     // Poner PF_USE_ORIGINAL en 1 para usar el algoritmo del binario.
     // 2026-08-17: probado en runtime con 1 → CRASH inmediato en la primera llamada
     // (0xC0000005 leyendo 0x63082BFC). El contexto se construye bien -el log
     // muestra `pfCtx check #1: vtbl@0x414=0x6960b4 pfReady=1`-, asi que el ctor
-    // esta ok y el problema esta dentro de la propia portacion de FUN_0043f500.
+    // esta ok y el problema esta dentro de la propia portacion de PATH_FindPath.
     // Queda en 0 hasta auditar esa funcion contra el decompile. Ver DESCOBERTAS.md.
     #define PF_USE_ORIGINAL 0
     bool pfReady = false;

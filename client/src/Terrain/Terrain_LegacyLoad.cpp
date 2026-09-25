@@ -303,60 +303,60 @@ void __cdecl FUN_0050c4d0(void) {
     if (DAT_0055a7c4 == '\0') {
         switch (World) {
         case 0:
-            FUN_00505e90((int)0xae, "Data2/Object1/Animal/", "bird.smd");
-            FUN_00505e90((int)0xb5, "Data2/Object1/Animal/", "fish.smd");
+            OpenModel((int)0xae, "Data2/Object1/Animal/", "bird.smd");
+            OpenModel((int)0xb5, "Data2/Object1/Animal/", "fish.smd");
             break;
         case 1:
         case 4:
-            FUN_00505e90((int)0xd7, "Data2/Object2/", "DungeonStone.smd");
-            FUN_00505e90((int)0xb0, "Data2/Object2/", "Bat.smd");
-            FUN_00505e90((int)0xb1, "Data2/Object2/", "mouse.smd");
+            OpenModel((int)0xd7, "Data2/Object2/", "DungeonStone.smd");
+            OpenModel((int)0xb0, "Data2/Object2/", "Bat.smd");
+            OpenModel((int)0xb1, "Data2/Object2/", "mouse.smd");
             break;
         case 3:
-            FUN_00505e90((int)0xaf, "Data2/Object1/Animal/", "butterfly.smd");
+            OpenModel((int)0xaf, "Data2/Object1/Animal/", "butterfly.smd");
             break;
         case 5:
-            FUN_00505e90((int)0xe4, "Data2/Object6/", "Meteo.smd");
-            FUN_00505e90((int)0xe5, "Data2/Object6/", "Meteo.smd");
-            FUN_00505e90((int)0xe6, "Data2/Object6/", "Meteo.smd");
-            FUN_00505e90((int)0xe7, "Data2/Object6/", "Meteo.smd");
-            FUN_00505e90((int)0xe8, "Data2/Object6/", "Meteo.smd");
-            FUN_00505e90((int)0xea, "Data2/Monster/", "BossHead.smd");
-            FUN_00505e90((int)0xeb, "Data2/Object6/", "Princess.smd");
+            OpenModel((int)0xe4, "Data2/Object6/", "Meteo.smd");
+            OpenModel((int)0xe5, "Data2/Object6/", "Meteo.smd");
+            OpenModel((int)0xe6, "Data2/Object6/", "Meteo.smd");
+            OpenModel((int)0xe7, "Data2/Object6/", "Meteo.smd");
+            OpenModel((int)0xe8, "Data2/Object6/", "Meteo.smd");
+            OpenModel((int)0xea, "Data2/Monster/", "BossHead.smd");
+            OpenModel((int)0xeb, "Data2/Object6/", "Princess.smd");
             break;
         case 6:
-            FUN_00505e90((int)0xb2, "Data2/Object7/", "SummonMonster.smd");
+            OpenModel((int)0xb2, "Data2/Object7/", "SummonMonster.smd");
             *(unsigned char *)(*(int *)(DAT_05828d58 + 0x82e8) + 0x1a) = 1;
             break;
         case 7:
-            FUN_00505e90((int)0xb6, "Data2/Object8/", "WaterMill.smd");
-            FUN_00505e90((int)0xb7, "Data2/Object8/", "BladedStatue.smd");
-            FUN_00505e90((int)0xb8, "Data2/Object8/", "Stairway.smd");
-            FUN_00505e90((int)0xb9, "Data2/Object8/", "Bridge.smd");
-            FUN_00505e90((int)0xba, "Data2/Object8/", "Trap01.smd");
-            FUN_00505e90((int)0xbb, "Data2/Object8/", "Trap02.smd");
-            FUN_00505e90((int)0xbc, "Data2/Object8/", "Trap03.smd");
-            FUN_00505e90((int)0xbd, "Data2/Object8/", "FireArrow.smd");
+            OpenModel((int)0xb6, "Data2/Object8/", "WaterMill.smd");
+            OpenModel((int)0xb7, "Data2/Object8/", "BladedStatue.smd");
+            OpenModel((int)0xb8, "Data2/Object8/", "Stairway.smd");
+            OpenModel((int)0xb9, "Data2/Object8/", "Bridge.smd");
+            OpenModel((int)0xba, "Data2/Object8/", "Trap01.smd");
+            OpenModel((int)0xbb, "Data2/Object8/", "Trap02.smd");
+            OpenModel((int)0xbc, "Data2/Object8/", "Trap03.smd");
+            OpenModel((int)0xbd, "Data2/Object8/", "FireArrow.smd");
             for (int iVar7 = 0xbc; iVar7 < 0x69c; iVar7 += 0xbc)
                 *(unsigned char *)(*(int *)(iVar7 + 0x851c + DAT_05828d58) + 10) = 1;
             break;
         case 8:
-            FUN_00505e90((int)0xb3, "Data2/Object9/", "SandPillar.smd");
+            OpenModel((int)0xb3, "Data2/Object9/", "SandPillar.smd");
             break;
         case 10:
             FUN_00529740("Effect/clouds.jpg",      0x4f4, 0x2601, 0x2900, 0, '\x01');
-            FUN_00505e90((int)0xb6, "Data2/Object11/", "cloud.smd");
+            OpenModel((int)0xb6, "Data2/Object11/", "cloud.smd");
             FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
-            FUN_00505c80(0xb6, "Object11/", 0x2600, '\x01');
+            OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
             FUN_00529740("Effect/cloudLight.jpg",  0x4f5, 0x2601, 0x2900, 0, '\x01');
             break;
         case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
-            FUN_00505e90((int)0xb8, "Data2/Object12/", "Angel.smd");
-            FUN_00505e90((int)0x106, "Data2/Object12/", "gate_entrance.smd");
-            FUN_00505e90((int)0x107, "Data2/Object12/", "gate_entrance2.smd");
-            FUN_00505e90((int)0x104, "Data2/Object12/", "gate_left.smd");
-            FUN_00505e90((int)0x105, "Data2/Object12/", "gate_right.smd");
-            FUN_00505e90((int)0xb9, "Data2/Object12/", "shine.smd");
+            OpenModel((int)0xb8, "Data2/Object12/", "Angel.smd");
+            OpenModel((int)0x106, "Data2/Object12/", "gate_entrance.smd");
+            OpenModel((int)0x107, "Data2/Object12/", "gate_entrance2.smd");
+            OpenModel((int)0x104, "Data2/Object12/", "gate_left.smd");
+            OpenModel((int)0x105, "Data2/Object12/", "gate_right.smd");
+            OpenModel((int)0xb9, "Data2/Object12/", "shine.smd");
             FUN_00529740("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
             FUN_00404a10(0x6e, "Data/Sound/iBloodCastle.wav", 1, '\0');
             DAT_0055a7c4 = '\x01';
@@ -369,33 +369,33 @@ void __cdecl FUN_0050c4d0(void) {
     switch (World) {
     case 0:
         FUN_005060b0(0xae, "Data/Object1/", "bird", 1);
-        FUN_00505c80(0xae, "Object1/", 0x2600, '\x01');
+        OpenTexture(0xae, "Object1/", 0x2600, '\x01');
         FUN_005060b0(0xb5, "Data/Object1/", "fish", 1);
-        FUN_00505c80(0xb5, "Object1/", 0x2600, '\x01');
+        OpenTexture(0xb5, "Object1/", 0x2600, '\x01');
         break;
     case 1: case 4:
         FUN_005060b0(0xd7, "Data/Object2/", "DungeonStone", 1);
-        FUN_00505c80(0xd7, "Object2/", 0x2600, '\x01');
+        OpenTexture(0xd7, "Object2/", 0x2600, '\x01');
         FUN_005060b0(0xb0, "Data/Object2/", "Bat", 1);
-        FUN_00505c80(0xb0, "Object2/", 0x2600, '\x01');
+        OpenTexture(0xb0, "Object2/", 0x2600, '\x01');
         FUN_005060b0(0xb1, "Data/Object2/", "mouse", 1);
-        FUN_00505c80(0xb1, "Object2/", 0x2600, '\x01');
+        OpenTexture(0xb1, "Object2/", 0x2600, '\x01');
         break;
     case 3:
         FUN_005060b0(0xaf, "Data/Object1/", "Butterfly", 1);
-        FUN_00505c80(0xaf, "Object1/", 0x2600, '\x01');
+        OpenTexture(0xaf, "Object1/", 0x2600, '\x01');
         break;
     case 5:
         for (int i = 0xe4; i < 0xec; i++) {
             FUN_005060b0(i, "Data/Object6/", "Meteo", i - 0xe3);
-            FUN_00505c80(i, "Object6/", 0x2600, '\x01');
+            OpenTexture(i, "Object6/", 0x2600, '\x01');
         }
         FUN_005060b0(0xea, "Data/Object6/", "BossHead", 1);
         FUN_005060b0(0xeb, "Data/Object6/", "Princess", 1);
         break;
     case 6:
         FUN_005060b0(0xb2, "Data/Object7/", "SummonMonster", 1);
-        FUN_00505c80(0xb2, "Object7/", 0x2600, '\x01');
+        OpenTexture(0xb2, "Object7/", 0x2600, '\x01');
         break;
     case 7:
         // BUG-FIX 2026-08-17: el basename era "Object8" → pedía Object802..Object810,
@@ -403,7 +403,7 @@ void __cdecl FUN_0050c4d0(void) {
         //   AccessModel(v3, "Data\Object8\", "Fish", v3 - 180)  para v3 = 182..190
         for (int i = 0xb6; i < 0xbf; i++) {
             FUN_005060b0(i, "Data/Object8/", "Fish", i - 0xb4);
-            FUN_00505c80(i, "Object8/", 0x2600, '\x01');
+            OpenTexture(i, "Object8/", 0x2600, '\x01');
         }
         // BUG-FIX 2026-08-17: faltaba entero el bloque de texturas de agua de
         // Atlans (IDA L175-199). Carga wt00..wt31 en Bitmaps[65..96] y además
@@ -429,7 +429,7 @@ void __cdecl FUN_0050c4d0(void) {
         FUN_00529740("Object9/sand02.jpg",    0x495, 0x2601, 0x2901, 0, '\x01');
         FUN_00529740("Object9/Impack03.jpg",  0x597, 0x2601, 0x2900, 0, '\x01');
         FUN_005060b0(0xb3, "Data/Object9/", "SandPillar", 2);
-        FUN_00505c80(0xb3, "Object9/", 0x2600, '\x01');
+        OpenTexture(0xb3, "Object9/", 0x2600, '\x01');
         break;
     case 10:
         // IDA 0050C4D0 L209-214 (segundo switch, el que corre siempre):
@@ -444,7 +444,7 @@ void __cdecl FUN_0050c4d0(void) {
         // nubes por frame se dibujaban invisibles.
         FUN_00529740("Effect/clouds.jpg",     0x4f4, 0x2601, 0x2900, 0, '\x01');
         FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
-        FUN_00505c80(0xb6, "Object11/", 0x2600, '\x01');
+        OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
         FUN_00529740("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
     case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
@@ -467,17 +467,17 @@ void __cdecl FUN_0050c4d0(void) {
         //  c) faltaban las cuatro OpenTexture de la puerta y los sarcofagos,
         //     que salen de "Monster/" y no de "Object12/".
         FUN_005060b0(0xb8, "Data/Object12/", "Crow", 1);
-        FUN_00505c80(0xb8, "Object12/", 0x2600, '\x01');
+        OpenTexture(0xb8, "Object12/", 0x2600, '\x01');
         FUN_005060b0(0x106, "Data/Object12/", "Gate", 1);
         FUN_005060b0(0x107, "Data/Object12/", "Gate", 2);
         FUN_005060b0(0x104, "Data/Object12/", "StoneCoffin", 1);
         FUN_005060b0(0x105, "Data/Object12/", "StoneCoffin", 2);
         for (int k = 0; k < 2; ++k)
-            FUN_00505c80(k + 0x106, "Monster/", 0x2600, '\x01');
+            OpenTexture(k + 0x106, "Monster/", 0x2600, '\x01');
         for (int m = 0; m < 2; ++m)
-            FUN_00505c80(m + 0x104, "Monster/", 0x2600, '\x01');
+            OpenTexture(m + 0x104, "Monster/", 0x2600, '\x01');
         FUN_005060b0(0xb9, "Data/Object12/", "Shine", 1);
-        FUN_00505c80(0xb9, "Object12/", 0x2600, '\x01');
+        OpenTexture(0xb9, "Object12/", 0x2600, '\x01');
         // 2026-09-04 FIX: estas dos estaban en el PRIMER switch, que va dentro de
         // `if (DAT_0055a7c4 == 0)` -- el gate de "primera carga de mundo".  Como
         // cualquier mapa anterior ya deja ese flag en 1, en Blood Castle no corrian.
@@ -495,122 +495,122 @@ void __cdecl FUN_0050c4d0(void) {
     if (World == 0) {
         // Lorencia (Object1) — load SMD models on first call
         if (DAT_0055a7c4 == '\0') {
-            FUN_00505e90((int)0x00, "Data2/Object1/", "treesmall.smd");
-            FUN_00505e90((int)0x01, "Data2/Object1/", "treebig.smd");
-            FUN_00505e90((int)0x02, "Data2/Object1/", "treea_01.smd");
-            FUN_00505e90((int)0x03, "Data2/Object1/", "treea_02.smd");
-            FUN_00505e90((int)0x04, "Data2/Object1/", "treea_03.smd");
-            FUN_00505e90((int)0x05, "Data2/Object1/", "treea_04.smd");
-            FUN_00505e90((int)0x06, "Data2/Object1/", "treea_05.smd");
-            FUN_00505e90((int)0x07, "Data2/Object1/", "treea_06.smd");
-            FUN_00505e90((int)0x08, "Data2/Object1/", "treea_07.smd");
-            FUN_00505e90((int)0x09, "Data2/Object1/", "treea_08.smd");
-            FUN_00505e90((int)0x0a, "Data2/Object1/", "treea_09.smd");
-            FUN_00505e90((int)0x0b, "Data2/Object1/", "treea_10.smd");
-            FUN_00505e90((int)0x0c, "Data2/Object1/", "treea_11.smd");
-            FUN_00505e90((int)0x14, "Data2/Object1/", "grass_01.smd");
-            FUN_00505e90((int)0x15, "Data2/Object1/", "grass_02.smd");
-            FUN_00505e90((int)0x16, "Data2/Object1/", "grass_03.smd");
-            FUN_00505e90((int)0x17, "Data2/Object1/", "grass_04.smd");
-            FUN_00505e90((int)0x18, "Data2/Object1/", "grass_05.smd");
-            FUN_00505e90((int)0x19, "Data2/Object1/", "grass_06.smd");
+            OpenModel((int)0x00, "Data2/Object1/", "treesmall.smd");
+            OpenModel((int)0x01, "Data2/Object1/", "treebig.smd");
+            OpenModel((int)0x02, "Data2/Object1/", "treea_01.smd");
+            OpenModel((int)0x03, "Data2/Object1/", "treea_02.smd");
+            OpenModel((int)0x04, "Data2/Object1/", "treea_03.smd");
+            OpenModel((int)0x05, "Data2/Object1/", "treea_04.smd");
+            OpenModel((int)0x06, "Data2/Object1/", "treea_05.smd");
+            OpenModel((int)0x07, "Data2/Object1/", "treea_06.smd");
+            OpenModel((int)0x08, "Data2/Object1/", "treea_07.smd");
+            OpenModel((int)0x09, "Data2/Object1/", "treea_08.smd");
+            OpenModel((int)0x0a, "Data2/Object1/", "treea_09.smd");
+            OpenModel((int)0x0b, "Data2/Object1/", "treea_10.smd");
+            OpenModel((int)0x0c, "Data2/Object1/", "treea_11.smd");
+            OpenModel((int)0x14, "Data2/Object1/", "grass_01.smd");
+            OpenModel((int)0x15, "Data2/Object1/", "grass_02.smd");
+            OpenModel((int)0x16, "Data2/Object1/", "grass_03.smd");
+            OpenModel((int)0x17, "Data2/Object1/", "grass_04.smd");
+            OpenModel((int)0x18, "Data2/Object1/", "grass_05.smd");
+            OpenModel((int)0x19, "Data2/Object1/", "grass_06.smd");
             // IDA 0x0050C4D0: mushrooms are 26..27; stones are 30..34.
             // These IDs are consumed directly as Models[Object.Type].
-            FUN_00505e90((int)0x1a, "Data2/Object1/", "mushroom_01.smd");
-            FUN_00505e90((int)0x1b, "Data2/Object1/", "mushroom_02.smd");
-            FUN_00505e90((int)0x1e, "Data2/Object1/", "Ston_01.smd");
-            FUN_00505e90((int)0x1f, "Data2/Object1/", "Ston_02.smd");
-            FUN_00505e90((int)0x20, "Data2/Object1/", "Ston_03.smd");
-            FUN_00505e90((int)0x21, "Data2/Object1/", "Ston_04.smd");
-            FUN_00505e90((int)0x22, "Data2/Object1/", "Ston_05.smd");
-            FUN_00505e90((int)0x28, "Data2/Object1/", "stone_statue01.smd");
-            FUN_00505e90((int)0x29, "Data2/Object1/", "stone_statue02.smd");
-            FUN_00505e90((int)0x2a, "Data2/Object1/", "Angel_Stone.smd");
-            FUN_00505e90((int)0x2b, "Data2/Object1/", "steel_barred_door_side.smd");
-            FUN_00505e90((int)0x2c, "Data2/Object1/", "Tomb_arc.smd");
+            OpenModel((int)0x1a, "Data2/Object1/", "mushroom_01.smd");
+            OpenModel((int)0x1b, "Data2/Object1/", "mushroom_02.smd");
+            OpenModel((int)0x1e, "Data2/Object1/", "Ston_01.smd");
+            OpenModel((int)0x1f, "Data2/Object1/", "Ston_02.smd");
+            OpenModel((int)0x20, "Data2/Object1/", "Ston_03.smd");
+            OpenModel((int)0x21, "Data2/Object1/", "Ston_04.smd");
+            OpenModel((int)0x22, "Data2/Object1/", "Ston_05.smd");
+            OpenModel((int)0x28, "Data2/Object1/", "stone_statue01.smd");
+            OpenModel((int)0x29, "Data2/Object1/", "stone_statue02.smd");
+            OpenModel((int)0x2a, "Data2/Object1/", "Angel_Stone.smd");
+            OpenModel((int)0x2b, "Data2/Object1/", "steel_barred_door_side.smd");
+            OpenModel((int)0x2c, "Data2/Object1/", "Tomb_arc.smd");
             DAT_083a4100 = 1;
-            FUN_00505e90((int)0x2d, "Data2/Object1/", "Tomb_cross.smd");
-            FUN_00505e90((int)0x2e, "Data2/Object1/", "TombStone.smd");
-            FUN_00505e90((int)0x32, "Data2/Object1/", "fire_light.smd");
-            FUN_00505e90((int)0x33, "Data2/Object1/", "Fire_Light_01.smd");
-            FUN_00505e90((int)0x34, "Data2/Object1/", "Fire.smd");
-            FUN_00505e90((int)0x37, "Data2/Object1/", "dungeon_gate_01.smd");
-            FUN_00505e90((int)0x3a, "Data2/Object1/", "Drum.smd");
-            FUN_00505e90((int)0x3b, "Data2/Object1/", "Treasure_Chest.smd");
-            FUN_00505e90((int)0x3c, "Data2/Object1/", "ship.smd");
-            FUN_00505e90((int)0x38, "Data2/Object1/", "monster_a.smd");
-            FUN_00505e90((int)0x39, "Data2/Object1/", "monster_b.smd");
-            FUN_00505e90((int)0x41, "Data2/Object1/", "steel_barred_wall01.smd");
-            FUN_00505e90((int)0x42, "Data2/Object1/", "steel_barred_wall02.smd");
-            FUN_00505e90((int)0x43, "Data2/Object1/", "steel_barred_wall03.smd");
-            FUN_00505e90((int)0x44, "Data2/Object1/", "steel_barred_door.smd");
-            FUN_00505e90((int)0x45, "Data2/Object1/", "wall_01.smd");
-            FUN_00505e90((int)0x46, "Data2/Object1/", "wall_02.smd");
-            FUN_00505e90((int)0x47, "Data2/Object1/", "wall_03.smd");
-            FUN_00505e90((int)0x48, "Data2/Object1/", "wall_04.smd");
-            FUN_00505e90((int)0x49, "Data2/Object1/", "wall_05.smd");
-            FUN_00505e90((int)0x4a, "Data2/Object1/", "wall_06.smd");
-            FUN_00505e90((int)0x4b, "Data2/Object1/", "c_wall01.smd");
-            FUN_00505e90((int)0x4c, "Data2/Object1/", "c_wall02.smd");
-            FUN_00505e90((int)0x4d, "Data2/Object1/", "c_wall03.smd");
-            FUN_00505e90((int)0x4e, "Data2/Object1/", "c_wall04.smd");
-            FUN_00505e90((int)0x4f, "Data2/Object1/", "c_wall05.smd");
-            FUN_00505e90((int)0x50, "Data2/Object1/", "bridge_01.smd");
-            FUN_00505e90((int)0x51, "Data2/Object1/", "fence_01.smd");
-            FUN_00505e90((int)0x52, "Data2/Object1/", "fence_02.smd");
-            FUN_00505e90((int)0x53, "Data2/Object1/", "fence_03.smd");
-            FUN_00505e90((int)0x54, "Data2/Object1/", "fence_04.smd");
-            FUN_00505e90((int)0x55, "Data2/Object1/", "bridge_stone.smd");
-            FUN_00505e90((int)0x5a, "Data2/Object1/", "StreetLight.smd");
-            FUN_00505e90((int)0x5b, "Data2/Object1/", "cannon_01.smd");
-            FUN_00505e90((int)0x5c, "Data2/Object1/", "cannon_02.smd");
-            FUN_00505e90((int)0x5d, "Data2/Object1/", "cannon_03.smd");
-            FUN_00505e90((int)0x5f, "Data2/Object1/", "badge_01.smd");
-            FUN_00505e90((int)0x60, "Data2/Object1/", "signboard_01.smd");
-            FUN_00505e90((int)0x61, "Data2/Object1/", "signboard_02.smd");
-            FUN_00505e90((int)0x62, "Data2/Object1/", "carriage_01.smd");
-            FUN_00505e90((int)0x63, "Data2/Object1/", "carriage_02.smd");
-            FUN_00505e90((int)0x64, "Data2/Object1/", "carriage_03.smd");
-            FUN_00505e90((int)0x65, "Data2/Object1/", "carriage_04.smd");
-            FUN_00505e90((int)0x66, "Data2/Object1/", "straw_01.smd");
-            FUN_00505e90((int)0x67, "Data2/Object1/", "straw_02.smd");
-            FUN_00505e90((int)0x69, "Data2/Object1/", "waterspout.smd");
-            FUN_00505e90((int)0x6a, "Data2/Object1/", "jar_01.smd");
-            FUN_00505e90((int)0x6b, "Data2/Object1/", "jar_02.smd");
-            FUN_00505e90((int)0x6c, "Data2/Object1/", "jar_03.smd");
-            FUN_00505e90((int)0x6d, "Data2/Object1/", "jar_04.smd");
-            FUN_00505e90((int)0x6e, "Data2/Object1/", "hanging_01.smd");
-            FUN_00505e90((int)0x6f, "Data2/Object1/", "stair_01.smd");
-            FUN_00505e90((int)0x73, "Data2/Object1/", "house_01.smd");
-            FUN_00505e90((int)0x74, "Data2/Object1/", "house_02.smd");
-            FUN_00505e90((int)0x75, "Data2/Object1/", "house_03.smd");
-            FUN_00505e90((int)0x76, "Data2/Object1/", "house_04.smd");
-            FUN_00505e90((int)0x77, "Data2/Object1/", "house_05.smd");
-            FUN_00505e90((int)0x78, "Data2/Object1/", "tent_01.smd");
-            FUN_00505e90((int)0x79, "Data2/Object1/", "house_wall_01.smd");
-            FUN_00505e90((int)0x7a, "Data2/Object1/", "house_wall_02.smd");
-            FUN_00505e90((int)0x7b, "Data2/Object1/", "house_wall_03.smd");
-            FUN_00505e90((int)0x7c, "Data2/Object1/", "house_wall_04.smd");
-            FUN_00505e90((int)0x7d, "Data2/Object1/", "house_wall_05.smd");
-            FUN_00505e90((int)0x7e, "Data2/Object1/", "house_wall_06.smd");
-            FUN_00505e90((int)0x7f, "Data2/Object1/", "house_etc_01.smd");
-            FUN_00505e90((int)0x80, "Data2/Object1/", "house_etc_02.smd");
-            FUN_00505e90((int)0x81, "Data2/Object1/", "house_etc_03.smd");
-            FUN_00505e90((int)0x82, "Data2/Object1/", "light_01.smd");
-            FUN_00505e90((int)0x83, "Data2/Object1/", "light_02.smd");
-            FUN_00505e90((int)0x84, "Data2/Object1/", "light_03.smd");
-            FUN_00505e90((int)0x85, "Data2/Object1/", "posebox_01.smd");
-            FUN_00505e90((int)0x8c, "Data2/Object1/", "furniture_01.smd");
-            FUN_00505e90((int)0x8d, "Data2/Object1/", "furniture_02.smd");
-            FUN_00505e90((int)0x8e, "Data2/Object1/", "furniture_03.smd");
-            FUN_00505e90((int)0x8f, "Data2/Object1/", "furniture_04.smd");
-            FUN_00505e90((int)0x90, "Data2/Object1/", "furniture_05.smd");
-            FUN_00505e90((int)0x91, "Data2/Object1/", "furniture_06.smd");
-            FUN_00505e90((int)0x92, "Data2/Object1/", "furniture_07.smd");
-            FUN_00505e90((int)0x96, "Data2/Object1/", "candle.smd");
-            FUN_00505e90((int)0x97, "Data2/Object1/", "beer_01.smd");
-            FUN_00505e90((int)0x98, "Data2/Object1/", "beer_02.smd");
-            FUN_00505e90((int)0x99, "Data2/Object1/", "beer_03.smd");
+            OpenModel((int)0x2d, "Data2/Object1/", "Tomb_cross.smd");
+            OpenModel((int)0x2e, "Data2/Object1/", "TombStone.smd");
+            OpenModel((int)0x32, "Data2/Object1/", "fire_light.smd");
+            OpenModel((int)0x33, "Data2/Object1/", "Fire_Light_01.smd");
+            OpenModel((int)0x34, "Data2/Object1/", "Fire.smd");
+            OpenModel((int)0x37, "Data2/Object1/", "dungeon_gate_01.smd");
+            OpenModel((int)0x3a, "Data2/Object1/", "Drum.smd");
+            OpenModel((int)0x3b, "Data2/Object1/", "Treasure_Chest.smd");
+            OpenModel((int)0x3c, "Data2/Object1/", "ship.smd");
+            OpenModel((int)0x38, "Data2/Object1/", "monster_a.smd");
+            OpenModel((int)0x39, "Data2/Object1/", "monster_b.smd");
+            OpenModel((int)0x41, "Data2/Object1/", "steel_barred_wall01.smd");
+            OpenModel((int)0x42, "Data2/Object1/", "steel_barred_wall02.smd");
+            OpenModel((int)0x43, "Data2/Object1/", "steel_barred_wall03.smd");
+            OpenModel((int)0x44, "Data2/Object1/", "steel_barred_door.smd");
+            OpenModel((int)0x45, "Data2/Object1/", "wall_01.smd");
+            OpenModel((int)0x46, "Data2/Object1/", "wall_02.smd");
+            OpenModel((int)0x47, "Data2/Object1/", "wall_03.smd");
+            OpenModel((int)0x48, "Data2/Object1/", "wall_04.smd");
+            OpenModel((int)0x49, "Data2/Object1/", "wall_05.smd");
+            OpenModel((int)0x4a, "Data2/Object1/", "wall_06.smd");
+            OpenModel((int)0x4b, "Data2/Object1/", "c_wall01.smd");
+            OpenModel((int)0x4c, "Data2/Object1/", "c_wall02.smd");
+            OpenModel((int)0x4d, "Data2/Object1/", "c_wall03.smd");
+            OpenModel((int)0x4e, "Data2/Object1/", "c_wall04.smd");
+            OpenModel((int)0x4f, "Data2/Object1/", "c_wall05.smd");
+            OpenModel((int)0x50, "Data2/Object1/", "bridge_01.smd");
+            OpenModel((int)0x51, "Data2/Object1/", "fence_01.smd");
+            OpenModel((int)0x52, "Data2/Object1/", "fence_02.smd");
+            OpenModel((int)0x53, "Data2/Object1/", "fence_03.smd");
+            OpenModel((int)0x54, "Data2/Object1/", "fence_04.smd");
+            OpenModel((int)0x55, "Data2/Object1/", "bridge_stone.smd");
+            OpenModel((int)0x5a, "Data2/Object1/", "StreetLight.smd");
+            OpenModel((int)0x5b, "Data2/Object1/", "cannon_01.smd");
+            OpenModel((int)0x5c, "Data2/Object1/", "cannon_02.smd");
+            OpenModel((int)0x5d, "Data2/Object1/", "cannon_03.smd");
+            OpenModel((int)0x5f, "Data2/Object1/", "badge_01.smd");
+            OpenModel((int)0x60, "Data2/Object1/", "signboard_01.smd");
+            OpenModel((int)0x61, "Data2/Object1/", "signboard_02.smd");
+            OpenModel((int)0x62, "Data2/Object1/", "carriage_01.smd");
+            OpenModel((int)0x63, "Data2/Object1/", "carriage_02.smd");
+            OpenModel((int)0x64, "Data2/Object1/", "carriage_03.smd");
+            OpenModel((int)0x65, "Data2/Object1/", "carriage_04.smd");
+            OpenModel((int)0x66, "Data2/Object1/", "straw_01.smd");
+            OpenModel((int)0x67, "Data2/Object1/", "straw_02.smd");
+            OpenModel((int)0x69, "Data2/Object1/", "waterspout.smd");
+            OpenModel((int)0x6a, "Data2/Object1/", "jar_01.smd");
+            OpenModel((int)0x6b, "Data2/Object1/", "jar_02.smd");
+            OpenModel((int)0x6c, "Data2/Object1/", "jar_03.smd");
+            OpenModel((int)0x6d, "Data2/Object1/", "jar_04.smd");
+            OpenModel((int)0x6e, "Data2/Object1/", "hanging_01.smd");
+            OpenModel((int)0x6f, "Data2/Object1/", "stair_01.smd");
+            OpenModel((int)0x73, "Data2/Object1/", "house_01.smd");
+            OpenModel((int)0x74, "Data2/Object1/", "house_02.smd");
+            OpenModel((int)0x75, "Data2/Object1/", "house_03.smd");
+            OpenModel((int)0x76, "Data2/Object1/", "house_04.smd");
+            OpenModel((int)0x77, "Data2/Object1/", "house_05.smd");
+            OpenModel((int)0x78, "Data2/Object1/", "tent_01.smd");
+            OpenModel((int)0x79, "Data2/Object1/", "house_wall_01.smd");
+            OpenModel((int)0x7a, "Data2/Object1/", "house_wall_02.smd");
+            OpenModel((int)0x7b, "Data2/Object1/", "house_wall_03.smd");
+            OpenModel((int)0x7c, "Data2/Object1/", "house_wall_04.smd");
+            OpenModel((int)0x7d, "Data2/Object1/", "house_wall_05.smd");
+            OpenModel((int)0x7e, "Data2/Object1/", "house_wall_06.smd");
+            OpenModel((int)0x7f, "Data2/Object1/", "house_etc_01.smd");
+            OpenModel((int)0x80, "Data2/Object1/", "house_etc_02.smd");
+            OpenModel((int)0x81, "Data2/Object1/", "house_etc_03.smd");
+            OpenModel((int)0x82, "Data2/Object1/", "light_01.smd");
+            OpenModel((int)0x83, "Data2/Object1/", "light_02.smd");
+            OpenModel((int)0x84, "Data2/Object1/", "light_03.smd");
+            OpenModel((int)0x85, "Data2/Object1/", "posebox_01.smd");
+            OpenModel((int)0x8c, "Data2/Object1/", "furniture_01.smd");
+            OpenModel((int)0x8d, "Data2/Object1/", "furniture_02.smd");
+            OpenModel((int)0x8e, "Data2/Object1/", "furniture_03.smd");
+            OpenModel((int)0x8f, "Data2/Object1/", "furniture_04.smd");
+            OpenModel((int)0x90, "Data2/Object1/", "furniture_05.smd");
+            OpenModel((int)0x91, "Data2/Object1/", "furniture_06.smd");
+            OpenModel((int)0x92, "Data2/Object1/", "furniture_07.smd");
+            OpenModel((int)0x96, "Data2/Object1/", "candle.smd");
+            OpenModel((int)0x97, "Data2/Object1/", "beer_01.smd");
+            OpenModel((int)0x98, "Data2/Object1/", "beer_02.smd");
+            OpenModel((int)0x99, "Data2/Object1/", "beer_03.smd");
         }
         // BUG-FIX 2026-05-04: agregar load explícito de BMDs Object1.
         // El bloque SMD arriba está gated por `DAT_0055a7c4 == 0` que en nuestro
@@ -715,7 +715,7 @@ void __cdecl FUN_0050c4d0(void) {
 
         // Register all Object1 slots 0..0x9f
         for (int i = 0; i < 0xa0; i++)
-            FUN_00505c80(i, "Object1/", 0x2600, '\x01');
+            OpenTexture(i, "Object1/", 0x2600, '\x01');
     } else {
         // Numero de carpeta de objetos.  IDA 0x50C4D0:
         //     v33 = World + 1;
@@ -743,7 +743,7 @@ void __cdecl FUN_0050c4d0(void) {
                     ParseNextToken(); strncpy(local_100, ParserTokenString, 255);
                     char pathBuf[32];
                     crt_sprintf(pathBuf, "Data2/Object%d/", objFolder);
-                    FUN_00505e90(objIdx, pathBuf, local_300);
+                    OpenModel(objIdx, pathBuf, local_300);
                 }
                 fclose(ParserFileHandle);
             }
@@ -756,7 +756,7 @@ void __cdecl FUN_0050c4d0(void) {
         SetMaxTextures(0x2ee);
         crt_sprintf(local_384, "Object%d/", objFolder);
         for (int i = 0; i < 0xa0; i++)
-            FUN_00505c80(i, local_384, 0x2600, '\x01');
+            OpenTexture(i, local_384, 0x2600, '\x01');
         // Map-specific post-load fixups
         if (World == 1)
             *(unsigned int *)(*(int *)(DAT_05828d58 + 0x1d90) + 0x14) = 0x3ecccccd; // 0.4f

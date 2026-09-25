@@ -51,7 +51,7 @@
 //   FUN_004fd800();     → Terrain_Render()
 //   _DAT_07abf138 = 1.0; _DAT_07abf13c = 0.9; _DAT_07abf140 = 0.8;
 //   if (DAT_005616b0 == -1): Mouse_UpdateHoverTargets(); → CharPreview_Render()
-//   FUN_0045ab00();     → Entity_RenderAll_3D()
+//   Entity_RenderAll_3D();     → Entity_RenderAll_3D()
 //   FUN_00500970();     → Entity_Render_Sprites()
 //   FUN_0046c3e0();     → Particle_Render()
 //   GL_SetBlendSrcOver('\x01'); GL_SetMode(1)
@@ -110,7 +110,7 @@
 //   _DAT_083a42d4 = screenPt.x + _DAT_07abf060;
 //   _DAT_083a42d8 = screenPt.y + _DAT_07abf064;
 //   GL_BeginViewport(0x11d, iVar9+0x5a, 0x4a, 0x4f);
-//   FUN_00456770(&entity, &entity, NULL);   → Entity_UpdateRender()
+//   RenderCharacter(&entity, &entity, NULL);   → Entity_UpdateRender()
 //   GL_PopMatrixAll();
 //
 // ── PANEL SERVER SELECT (DAT_005616b0 == -1, bottom) ─────────────────────────
@@ -162,7 +162,7 @@
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
 //   FUN_004fd800   → Terrain_Render()
-//   FUN_0045ab00   → Entity_RenderAll_3D()
+//   Entity_RenderAll_3D   → Entity_RenderAll_3D()
 //   FUN_00500970   → Entity_Render_Sprites()
 //   FUN_0046c3e0   → Particle_Render()
 //   FUN_00473ea0   → Particle_Spawn(type, pos, r0, r1, r2, angle, ?, z)
@@ -170,7 +170,7 @@
 //   Camera_ProjectWorldToScreen   → World_ToScreen(pos, &x, &y)
 //   Mouse_UpdateHoverTargets   → CharPreview_Render()
 //   FUN_005239a0   → CharSelect_UpdateInput()
-//   FUN_00456770   → Entity_UpdateRender(entity, entity, is_local)
+//   RenderCharacter   → Entity_UpdateRender(entity, entity, is_local)
 //   Vector_InverseRotate   → Matrix_TransformVec(pos, mat, out)
 //   Matrix_BuildFromEuler   → Matrix_FromEuler(angles, out)
 //   GL_BindTextureSlot   → Particle_SetTexture(type)

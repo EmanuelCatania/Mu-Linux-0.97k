@@ -35,7 +35,7 @@ BYTE* g_PartyHPTable   = nullptr; // DAT_07e11e98
 
 // ── CRT wrappers (these are real implementations) ────────────────────────────
 
-// IDA: FUN_005416bc (0x005416BC)
+// IDA: crt_sprintf (0x005416BC)
 int __cdecl crt_sprintf(char* buf, const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -44,7 +44,7 @@ int __cdecl crt_sprintf(char* buf, const char* fmt, ...) {
     return r;
 }
 
-// IDA: FUN_0054158c (0x0054158C)
+// IDA: operator_delete (0x0054158C)
 void __cdecl operator_delete(void* ptr) {
     free(ptr);
 }

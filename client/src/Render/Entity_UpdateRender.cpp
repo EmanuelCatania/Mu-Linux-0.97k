@@ -19,9 +19,8 @@ static inline float PtrAsFloatBits(const void *p) {
     float f; int v = (int)(uintptr_t)p; memcpy(&f, &v, 4); return f;
 }
 
-extern "C" DWORD g_ItemAttribute_Backup;   // src/globals.cpp
 #pragma warning(disable: 4244 4305 4701 4702 4700)
-// Entity_UpdateRender.cpp  —  FUN_00456770 @ 0x00456770  (2195 lines in Ghidra)
+// Entity_UpdateRender.cpp  —  RenderCharacter @ 0x00456770  (2195 lines in Ghidra)
 //
 // Per-frame visual update for a single entity.  Called from Entity_RenderAll_3D
 // for every visible entity.  Drives:
@@ -41,7 +40,7 @@ extern "C" DWORD g_ItemAttribute_Backup;   // src/globals.cpp
 // All FUN_* prototypes and DAT_* globals come from stdafx.h → functions.h / globals.h
 
 
-// ── FUN_00456770  Entity_UpdateRender ──────────────────────────────────────
+// ── RenderCharacter  Entity_UpdateRender ──────────────────────────────────────
 extern "C" {
     void DbgLogPublic(const char*);
     // From Render_PlayerEquipment.cpp
@@ -89,7 +88,6 @@ void __cdecl FUN_004552c0(int entity, int shield_id)
     GL_DisableCullFace();
 }
 
-// IDA: RenderCharacter (0x00456770)
 void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 {
     int *param_1  = (int *)param_1_;
@@ -101,51 +99,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     int  entity_type = (int)sVar2;
     void *model = (void *)(DAT_05828d58 + entity_type * 0xbc);
 
-    // ── DIAG: log slot/type/anim-frame guard for char-select frames ─────────
-    // Rate-limit PER SLOT (not globally) so all 5 chars emit once a second.
-    if (SceneFlag == 4) {
-        int slot = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
-        if (slot >= 0 && slot < 5) {
-            static DWORD s_lastUR[5] = {0,0,0,0,0};
-            DWORD now = GetTickCount();
-            if (now - s_lastUR[slot] > 1000) {
-                s_lastUR[slot] = now;
-                char b[200];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "UR slot=%d type=%d cls=%d animCount@26=%d model=%p early_out=%d",
-                    slot, entity_type, ((BYTE*)param_1_)[0x1bc],
-                    *(short*)((char*)model + 0x26),
-                    model,
-                    (*(short *)((char *)model + 0x26) == 0) ? 1 : 0);
-                DbgLogPublic(b);
-            }
-        }
-    }
 
-    // ── DIAG: log hero in-game render entry/exit ────────────────────────────
-    if (SceneFlag == 5 && param_1_ == DAT_07abf5d8) {
-        static DWORD s_lastUR5 = 0;
-        DWORD now = GetTickCount();
-        if (now - s_lastUR5 > 1000) {
-            s_lastUR5 = now;
-            char b[256];
-            short animCount = *(short*)((char*)model + 0x26);
-            short numBones  = *(short*)((char*)model + 0x22);
-            BYTE  curAct    = *(BYTE*)(((char*)param_1_) + 0x105);
-            float frame     = *(float*)(((char*)param_1_) + 0x108);
-            int   actBase   = *(int*)((char*)model + 0x30);
-            float actSpd    = (actBase && actBase >= 0x100000) ? *(float*)(actBase + curAct*0x10 + 4) : 0.0f;
-            short actFrames = (actBase && actBase >= 0x100000) ? *(short*)(actBase + curAct*0x10 + 8) : 0;
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "UR5 hero type=%d cls=%d animCount@26=%d numBones@22=%d model=%p early_out=%d "
-                "act=0x%02x frame=%.3f actSpd=%.3f actFrames=%d",
-                entity_type, ((BYTE*)param_1_)[0x1bc],
-                animCount, numBones, model,
-                (animCount == 0) ? 1 : 0,
-                (int)curAct, frame, actSpd, (int)actFrames);
-            DbgLogPublic(b);
-        }
-    }
 
     // Early-out: no animation data in this model slot
     if (*(short *)((char *)model + 0x26) == 0)
@@ -548,6 +502,28 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         *(float *)(param_1 + 0xca) = 0.3f;
     }
 
+    // ── BodyLight del heroe + tinte de las bebidas (IDA RenderCharacter
+    //    L786-L1009, `if (c == Hero)`) ──────────────────────────────────────
+    // El heroe NO usa la luz del terreno que se acaba de calcular: la pisa con
+    // (1,1,1) y despues le aplica el tinte segun los dos bits de bebida activa
+    // de `CharacterAttribute + 40`, que escribe el handler del 0x29
+    // (ReceiveHelperItem / PMSG_ITEM_SPECIAL_TIME_SEND) y limpia el timer.
+    //   bit 0 -> Ale             (0.9, 0.5, 0.5) = rojizo
+    //   bit 1 -> Remedy of Love  multiplica (0.5, 0.9, 0.5)
+    // Todo lo que IDA tiene entre el gate y estas tres escrituras es el ruido
+    // de hash-table que descifra CharacterMachine para leer el byte (omitido
+    // por policy, ver CLAUDE.md).
+    if ((void *)param_1 == DAT_07abf5d8) {
+        float L0 = 1.0f, L1 = 1.0f, L2 = 1.0f;
+        const unsigned char drink = CharacterAttribute
+            ? *((unsigned char *)(uintptr_t)CharacterAttribute + 40) : 0;
+        if (drink & 1) { L0 = 0.9f;   L1 = 0.5f;   L2 = 0.5f;   }
+        if (drink & 2) { L0 *= 0.5f;  L1 *= 0.9f;  L2 *= 0.5f;  }
+        *(float *)(param_1 + 200)  = L0;
+        *(float *)(param_1 + 0xc9) = L1;
+        *(float *)(param_1 + 0xca) = L2;
+    }
+
     // ── 7. Entity type 0x186 weapon-slot arm render ──────────────────────────
     // (Local_74 = `Bind` de IDA RenderCharacter: arma a la espalda.)
     // +0x34E es SafeZone (NO dead_flag — el dead real es +0x2FD). Sólo se
@@ -566,32 +542,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     if (SceneFlag == 5 && param_1_ == DAT_07abf5d8) {
         HeroEquipWatchdog((int)(uintptr_t)param_1_);
 
-        // 2026-07-27 WATCHDOG global de ItemAttribute: DAT_07d78068 se corrompe
-        // a ~1 en runtime (confirmado: "SHOPINS ... attrBase=00000001" dejaba la
-        // tienda vacía). Restaurarlo una vez por frame beneficia a TODOS los
-        // consumidores (tienda, inventario, tooltips, stats) en vez de parchear
-        // cada uno por separado.
-        {
-            unsigned int p = (unsigned int)(uintptr_t)DAT_07d78068;
-            if ((p < 0x100000u || p >= 0x80000000u)
-                && g_ItemAttribute_Backup >= 0x100000u
-                && g_ItemAttribute_Backup < 0x80000000u)
-            {
-                DAT_07d78068 = (int)g_ItemAttribute_Backup;
-            }
-        }
-
-        // 2026-07-27 WATCHDOG (tinte rojo PK): +0x2EA es el PKLevel; el render
-        // pinta el cuerpo de rojo cuando es >= 6 (línea ~333). Entity_Spawn lo
-        // inicializa en 3 para los mobs, pero el héroe se crea por otro path y
-        // quedaba sin inicializar (0xFF → rojo permanente). El valor real lo
-        // setea el F3/03; acá saneamos cualquier valor fuera del rango 0..6.
-        {
-            BYTE* hb = (BYTE*)param_1_;
-            if (hb[0x2ea] > 6) {
-                hb[0x2ea] = 0;
-            }
-        }
 
         // 2026-08-10 — WATCHDOG REMOVIDO. Ya no hace falta: no había ningún
         // "escritor misterioso" del flag. +0x34E es **SafeZone**, no dead_flag,
@@ -602,57 +552,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // arma a la espalda y el gate de "no atacar en zona segura".
     }
 
-    // ── DIAG: hero entry into case 0x186 ─────────────────────────────────────
-    if (SceneFlag == 5 && param_1_ == DAT_07abf5d8) {
-        static DWORD s_lastH186 = 0;
-        DWORD now = GetTickCount();
-        if (now - s_lastH186 > 2000) {
-            s_lastH186 = now;
-            BYTE* be = (BYTE*)param_1_;
-            int slotIdx = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
-            char b[200];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "UR5 case186 slot=%d sVar2=0x%X wing@2a0=%d eq=%d w0=%d w1=%d hero=%p be0=%d",
-                slotIdx, (int)sVar2, (int)*(short*)(be + 0x2a0),
-                (sVar2 == 0x186) ? 1 : 0,
-                (int)*(short*)(be + 0x270), (int)*(short*)(be + 0x288),
-                DAT_07abf5d8, (int)be[0]);
-            DbgLogPublic(b);
-            // 2026-07-27 DIAG alas rojas "PK": volcar el body-Light (c+0x320) y
-            // los bytes de estado candidatos al tinte rojo (hit-flash/shock/PK).
-            // Si el R domina sobre G/B, el personaje entero (incl. alas) se ve
-            // rojo. Capturamos qué campo lo dispara la próxima vez que pase.
-            float* bl = (float*)(be + 0x320);
-            char b2[220];
-            _snprintf_s(b2, sizeof(b2), _TRUNCATE,
-                "UR5 HEROLIGHT R=%.3f G=%.3f B=%.3f | 2ea=%d 2eb=%d 2ec=%d 2ed=%d "
-                "2f4=%d 2f5=%d 301=%d 303=%d 34e=%d 105=%d",
-                bl[0], bl[1], bl[2],
-                (int)be[0x2ea], (int)be[0x2eb], (int)be[0x2ec], (int)be[0x2ed],
-                (int)be[0x2f4], (int)be[0x2f5], (int)be[0x301], (int)be[0x303],
-                (int)be[0x34e], (int)be[0x105]);
-            DbgLogPublic(b2);
-        }
-    }
-    // ── DIAG: ANY entity with wing@2a0 != -1 (find where wings actually live)
-    if (SceneFlag == 5) {
-        BYTE* be = (BYTE*)param_1_;
-        if (*(short*)(be + 0x2a0) != -1 && *(short*)(be + 2) == 0x186) {
-            static DWORD s_lastWE = 0;
-            DWORD now = GetTickCount();
-            if (now - s_lastWE > 2000) {
-                s_lastWE = now;
-                int slotIdx = (int)(((uintptr_t)param_1_ - (uintptr_t)DAT_07abf5d0) / 0x394);
-                char b[200];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "UR5 wingFOUND slot=%d wing@2a0=%d w0=%d w1=%d hero=%p ptr=%p",
-                    slotIdx, (int)*(short*)(be + 0x2a0),
-                    (int)*(short*)(be + 0x270), (int)*(short*)(be + 0x288),
-                    DAT_07abf5d8, param_1_);
-                DbgLogPublic(b);
-            }
-        }
-    }
 
     // ── 7a. NPC / monster body render (IDA L347-401) ─────────────────────────
     // 2026-05-08: missing port — sin esto NPCs/monsters renderean SOLO efectos
@@ -886,7 +785,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     if (!bSkipWeaponLoop)
         Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
 
-    // ── 7b. Body-part render loop (Ghidra FUN_00456770 lines 1622-1700) ──────
+    // ── 7b. Body-part render loop (Ghidra RenderCharacter lines 1622-1700) ──────
     // Missing in previous port — this is what actually draws player geometry.
     // Player.bmd is skeleton-only (numMesh=0); body geometry lives in separate
     // BMD models (HelmClass##/ArmorClass##/PantClass##/GloveClass##/BootClass##)
@@ -1025,7 +924,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             }
             piVar16 += 6;   // advance to next slot (+0x18 bytes)
         }
-        // IDA: FUN_00456770 llama CreateGuildMark/FUN_004552C0 después de
+        // IDA: RenderCharacter llama CreateGuildMark/FUN_004552C0 después de
         // renderizar las seis piezas, sólo para modelos de jugador visibles.
         const short guildMarkIndex = *(short*)((BYTE*)param_1 + 474);
         if (guildMarkIndex >= 0 &&
@@ -1252,7 +1151,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                         DeleteCloth((int)param_1, (int)puVar13, 0);
                     } else {
                         // IDA: `(*(void (__thiscall **)(int,_DWORD))(*(_DWORD *)v49 + 12))(v49, 0);`
-                        // La vtable `off_552520` no está portada (FUN_00407fe0
+                        // La vtable `off_552520` no está portada (Widget_CtorBase
                         // tiene el vtable-set saltado), así que la indirección
                         // saltaba a basura → crash por ejecución (param0=8).
                         // 2026-08-11: leí la vtable del binario original

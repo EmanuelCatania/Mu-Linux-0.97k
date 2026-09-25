@@ -242,7 +242,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             float centre[3] = { *(float*)(o + 16) + step[0],
                                 *(float*)(o + 20) + step[1],
                                 *(float*)(o + 24) + step[2] }; // IDA: Angle after first loop pass
-            DAT_05826d10 = 43;                        // IDA L680: dword_5826D10 = 0x2B
+            CurrentSkill = 43;                        // IDA L680: dword_5826D10 = 0x2B
             // IDA L687-690 / L738 / L780: los dos bytes de grilla salen de
             // `c + 904` y `c + 908` (la grilla del HEROE), no de la posicion de
             // mundo del objetivo (c+788/792) que usaba el port.

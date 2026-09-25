@@ -29,7 +29,7 @@
 //   DAT_07e118e8  — world/map type
 //   DAT_07c74ae4  — BGM track 1 enable flag
 //   DAT_07abf5d8  — local player entity pointer
-//   DAT_05826d08  — countdown counter A
+//   ChatTime  — countdown counter A
 //   DAT_07e11d7c  — countdown counter B
 //   DAT_0839bc8c  — frame index mod 32
 
@@ -206,12 +206,49 @@ void __cdecl Game_MainLoop(HDC param_1)
     {
         SYSTEMTIME st;
         GetLocalTime(&st);
-        // Formato: "Screen MM DD HH MM - YYYY" (25 chars + '\0')
-        crt_sprintf((char*)&DAT_083a4174, "Screen %02d %02d %02d %02d - %04d",
-                    (int)st.wMonth, (int)st.wDay, (int)st.wHour,
-                    (int)st.wMinute, (int)st.wYear);
+        // IDA 0x525D40 L308:
+        //   sprintf(GrabFileName, "Screen(%02d_%02d-%02d_%02d)-%04d.jpg",
+        //           st.wMonth, st.wDay, st.wHour, st.wMinute, GrabScreen);
+        //
+        // El port tenia "Screen %02d %02d %02d %02d - %04d" con st.wYear. Dos
+        // bugs: (a) sin la extension .jpg, y el archivo lo escribe WriteJpeg
+        // (FUN_00529000, calidad 100), asi que quedaba un JPEG sin extension
+        // que el explorador no reconocia; (b) con el ANO en vez de GrabScreen
+        // el nombre solo cambiaba por minuto, asi que dos capturas en el mismo
+        // minuto se pisaban. GrabScreen (DAT_083a42f0) lo incrementa
+        // SaveScreen modulo 10000.
+        //
+        // DESVIACION DELIBERADA (pedido del usuario, 2026-09-20): el binario
+        // guarda en la RAIZ del cliente -- GrabFileName no lleva ruta.  Para
+        // no ensuciarla, las capturas van a "Screenshots/".  La carpeta se
+        // crea una sola vez por sesion y, si no se puede crear, se cae a la
+        // raiz, que es el comportamiento original.
+        //
+        // Se usa barra normal a proposito: fopen la acepta en Windows y es lo
+        // que ya usa el resto del archivo (ver Monster_SaveSetBase mas abajo).
+        //
+        // SCREENSHOT_DIR_DEVIATION en 0 devuelve el comportamiento de IDA.
+        #define SCREENSHOT_DIR_DEVIATION 1
+        const char* shotDir = "";
+#if SCREENSHOT_DIR_DEVIATION
+        {
+            static int s_dirReady = -1;   // -1 sin probar, 1 lista, 0 fallback
+            if (s_dirReady < 0) {
+                s_dirReady = (CreateDirectoryA("Screenshots", NULL) != 0 ||
+                              GetLastError() == ERROR_ALREADY_EXISTS) ? 1 : 0;
+            }
+            if (s_dirReady == 1) shotDir = "Screenshots/";
+        }
+#endif
+        crt_sprintf((char*)&DAT_083a4174, "%sScreen(%02d_%02d-%02d_%02d)-%04d.jpg",
+                    shotDir, (int)st.wMonth, (int)st.wDay, (int)st.wHour,
+                    (int)st.wMinute, (int)DAT_083a42f0);
     }
-    crt_sprintf(nameBuf, (const char*)&DAT_07d4b708);
+    // IDA L309: sprintf(strText, GlobalText[459], GrabFileName).
+    // GlobalText[459] es "%s: La captura fue guardada." -- lleva un %s con el
+    // nombre del archivo. El port no pasaba el argumento, asi que el %s
+    // consumia un valor cualquiera de la pila.
+    crt_sprintf(nameBuf, (const char*)&DAT_07d4b708, (const char*)&DAT_083a4174);
 
     // Build window title: serverName + " " + charName
     {
@@ -228,7 +265,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         // apunta a bytes no-inicializados; wsprintfA no trunca.
         char srvTrim[32];  strncpy_s(srvTrim, sizeof(srvTrim), serverName, 30); srvTrim[31] = 0;
         char chrTrim[32];  strncpy_s(chrTrim, sizeof(chrTrim), charName,   30); chrTrim[31] = 0;
-        wsprintfA(titleBuf, "%s %s", srvTrim, chrTrim);
+        wsprintfA(titleBuf, " [%s / %s]", srvTrim, chrTrim);   // IDA L334
         // Append titleBuf to nameBuf
         int tlen = (int)strlen(titleBuf);
         int nlen = (int)strlen(nameBuf);

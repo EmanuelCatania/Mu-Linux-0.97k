@@ -19,7 +19,7 @@
 //   SelectedNpc = NPC / shop entity (-1=none)
 //   SelectedCharacter = mob or player entity (-1=none)
 //   SelectedOperate = special object (-1=none)
-//   DAT_00559c58 = secondary hover (cleared if SelectedCharacter resets)
+//   Attacking = secondary hover (cleared if SelectedCharacter resets)
 //
 // Priority with Alt held (VK_MENU):
 //   item-ground (ItemOnGround_HoverTest, IDA: FUN_004afa40) → NPC type 4 → mob type 0x22 → player type 1 → special
@@ -32,7 +32,7 @@
 //   char-data buffer). Per CLAUDE.md policy, hash table operations are
 //   reference-count obfuscation — not game logic. Omitted from implementation.
 //
-// After hover detection: if hover target found and DAT_00559c58 != -1,
+// After hover detection: if hover target found and Attacking != -1,
 //   calls FUN_004afb00() to process the pending click action.
 
 #include "stdafx.h"
@@ -86,7 +86,7 @@ void Mouse_UpdateHoverTargets(void)
     if (DAT_00559c5c == '\0' || World == 6) {
         // Cursor disabled or spectator state
         SelectedCharacter = -1;
-        DAT_00559c58 = -1;
+        Attacking = -1;
     } else if (SelectedCharacter >= 0 &&
                *(char *)(DAT_07abf5d0 + 0x2fd + SelectedCharacter * 0x394) == '\0' &&
                *(char *)(DAT_07abf5d0 + SelectedCharacter * 0x394 + 0x84) == '\x02') {
@@ -121,7 +121,7 @@ void Mouse_UpdateHoverTargets(void)
         // ida_xrefs_to:  MouseLButton = 0x083A42C4 · MouseLButtonPush = 0x083A4124
         //                MouseRButton = 0x083A42AC · MouseRButtonPush = 0x083A42D0
         //                m_bAutoAttack = 0x00559C5C · Attacking = 0x00559C58
-        if (DAT_00559c58 == -1 ||
+        if (Attacking == -1 ||
             DAT_083a42c4 != '\0' || DAT_083a4124 != 0 ||
             DAT_083a42ac != '\0' || DAT_083a42d0 != '\0' ||
             *(char *)(DAT_07abf5d8 + 0x2fd) != '\0')
@@ -130,7 +130,7 @@ void Mouse_UpdateHoverTargets(void)
         }
     } else if (SelectedCharacter >= 0) {
         // Current target is no longer valid (died or kind changed).
-        DAT_00559c58 = -1;
+        Attacking = -1;
         SelectedCharacter = -1;
     }
 
@@ -180,35 +180,54 @@ void Mouse_UpdateHoverTargets(void)
 
         // ── Secondary hover without second password ───────────────────────────
         if (FUN_004e5980() == '\0') {
-            // 2026-07-27: click sobre un item del suelo = levantarlo. El IDA
-            // chequea el item ÚLTIMO, pero eso hace que cualquier mob/NPC cercano
-            // en pantalla robe el hover y no se pueda levantar. Comportamiento MU
-            // esperado (confirmado por el usuario): el item bajo el cursor tiene
-            // PRIORIDAD. Lo chequeamos primero; si hay item, es pickup.
-            if (DAT_07e91388 == 0) {
-                SelectedItem = ItemOnGround_HoverTest();
-                if (SelectedItem != -1) goto check_click;   // item bajo el cursor → pickup
+            // IDA sub_4B0310 L315-351 (Alt SIN apretar): cadena de descarte
+            // estricta, personaje -> personaje -> NPC -> ITEM -> mobiliario.  El
+            // item solo se elige si el cursor no esta sobre ningun personaje ni NPC.
+            //
+            // 2026-09-21: aca habia una inversion puesta el 2026-07-27 que miraba
+            // el item PRIMERO, porque "cualquier mob cercano en pantalla robaba el
+            // hover".  Esa causa desaparecio el 2026-09-16 (2f83d26): desde ahi
+            // Entity_SelectNearest usa el rayo contra la OBB, como IDA, y solo
+            // elige al que esta realmente bajo el cursor.  La inversion quedo
+            // compensando un problema que ya no existia, y su efecto era el
+            // reporte del tester: con un item debajo del monstruo el cursor
+            // quedaba en el de levantar en vez del de ataque (RenderCursor le da
+            // prioridad a SelectedItem).  Con Alt APRETADO los items si van
+            // primero -- esa rama de arriba es la de IDA y no se toca.
+            //
+            // Orden de los dos tipos de personaje (IDA L117-118 y L318-322): por
+            // defecto monstruos (0x22) y despues jugadores (1); con un buff de
+            // elfa activo (skills 26-28: curar, mas defensa, mas dano) se invierte,
+            // para poder apuntarle a un jugador que tiene un monstruo detras.
+            int firstKind = 0x22, secondKind = 1;
+            if (DAT_07abf5d8 && CharacterAttribute) {
+                const BYTE slot  = *(BYTE*)((BYTE*)DAT_07abf5d8 + 913);
+                const BYTE skill = ((BYTE*)CharacterAttribute)[87 + slot];
+                if (skill >= 26 && skill <= 28) { firstKind = 1; secondKind = 0x22; }
             }
             if (SelectedCharacter == -1) {
-                SelectedCharacter = Entity_SelectNearest(0x22);  // mob type
+                SelectedCharacter = Entity_SelectNearest(firstKind);
                 if (SelectedCharacter == -1) {
-                    SelectedCharacter = Entity_SelectNearest(1);  // player type
+                    SelectedCharacter = Entity_SelectNearest(secondKind);
                     if (SelectedCharacter != -1) goto done;
-                    SelectedNpc = Entity_SelectNearest(4);  // NPC type
+                    SelectedNpc = Entity_SelectNearest(4);  // NPC
                     if (SelectedNpc == -1) {
-                        SelectedOperate = SpecialObject_HoverTest();
+                        if (DAT_07e91388 == 0)
+                            SelectedItem = ItemOnGround_HoverTest();
+                        if (SelectedItem == -1)
+                            SelectedOperate = SpecialObject_HoverTest();
                     }
                     goto check_click;
                 }
             }
-            if (DAT_00559c58 != -1) goto process_click;
+            if (Attacking != -1) goto process_click;
         }
         else goto process_click;
     }
 
 check_click:
     if (SelectedCharacter == -1) {
-        DAT_00559c58 = -1;
+        Attacking = -1;
     }
     goto done;
 
@@ -217,7 +236,7 @@ process_click:
 
 done:
     if (SelectedCharacter == -1)
-        DAT_00559c58 = -1;
+        Attacking = -1;
 
 }
 

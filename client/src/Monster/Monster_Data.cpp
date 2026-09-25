@@ -88,7 +88,7 @@ void Monster_LoadScriptTable(void)
 // Globals:
 //   DAT_07d7806c  — file handle
 //   DAT_07d7807c  — next spawn slot index
-//   DAT_05826cac  — max spawn slot (skips if equal)
+//   HeroKey  — max spawn slot (skips if equal)
 //   DAT_00559088  — sentinel string "END"
 
 void __cdecl Monster_ParseSetBase2(LPCSTR param_1)
@@ -140,7 +140,7 @@ LAB_0047d09b:
       TextParser_GetToken();
       lVar9 = (longlong)ParserTokenNumber;   // IDA sub_47D020: (__int64)TokenNumber
       TextParser_GetToken();
-      if (DAT_07d7807c == DAT_05826cac) {
+      if (DAT_07d7807c == HeroKey) {
         DAT_07d7807c = DAT_07d7807c + 1;
       }
       iVar2 = DAT_07d7807c;

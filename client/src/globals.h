@@ -202,9 +202,9 @@ extern DWORD   g_bUseChatListBox; // IDA: g_bUseChatListBox (0x005590AC)
 extern float   ChatListBox_TabButtonsX;       // DAT_005590b0 — X del primer botón
 extern float   ChatListBox_TabButtonsY;       // DAT_005590b4 — Y de los tres
 extern float   ChatListBox_TabButtonSpacing;  // DAT_005590b8 — separación horizontal
-extern BYTE    Version[5]; // IDA: DAT_0055961c (0x0055961C)
-extern BYTE    Serial[16]; // IDA: DAT_00559624 (0x00559624)
-extern DWORD   PacketXorKey3; // IDA: DAT_00559678 (0x00559678)
+extern BYTE    Version[5]; // IDA: Version (0x0055961C)
+extern BYTE    Serial[16]; // IDA: Serial (0x00559624)
+extern DWORD   PacketXorKey3; // IDA: PacketXorKey3 (0x00559678)
 extern float  _DAT_00559680;   // LOD factor
 extern DWORD   DAT_00559680;
 extern DWORD   DAT_00559684;
@@ -224,11 +224,11 @@ extern int     SelectedItem;       // DAT_00559c48 — item on ground (-1 = none
 extern int     SelectedNpc;        // DAT_00559c4c — NPC/shop entity (-1 = none)
 extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none)
 extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
-extern int     Attacking; // IDA: DAT_00559c58 (0x00559C58)
+extern int     Attacking; // IDA: Attacking (0x00559C58) -- -1 = no esta atacando. NO es un "hover target"
 extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
-extern int     DAT_00559c60;   // equipped weapon type (right hand)
-extern int     DAT_00559c64;   // equipped weapon type (left hand)
-extern int     DAT_00559c68;   // equipped weapon type (crossbow/secondary)
+extern int     DAT_00559c60;   // QKey: tipo de item de la tecla Q (NO arma equipada; F3/30 le suma 448)
+extern int     DAT_00559c64;   // WKey: tipo de item de la tecla W
+extern int     DAT_00559c68;   // EKey: tipo de item de la tecla E
 extern int     DAT_00559c70;   // hover attack target (entity index copy)
 extern DWORD   DAT_00559c78;
 // 0x00559C7C — IDA `SetTextColor_0` (color del prefijo/guild en sub_47F360).
@@ -503,15 +503,15 @@ extern DWORD   DAT_05826c04;
 extern DWORD   SoccerTime; // IDA: DAT_05826c08 (0x05826C08)
                                // evento; lo escriben InitGame y el F3/22.
 extern DWORD   DAT_00562e48[4];   // CSimpleModulus XOR-deobfuscate key table
-extern DWORD   g_SimpleModulusCS[17]; // IDA: DAT_05826c10 (0x05826C10)
-extern DWORD   g_SimpleModulusSC[17]; // IDA: DAT_05826c58 (0x05826C58)
-extern DWORD   m_nTempMyTradeGold; // IDA: DAT_05826C9C (0x05826C9C)
-extern DWORD   HeroIndex; // IDA: DAT_05826ca0 (0x05826CA0)
+extern DWORD   g_SimpleModulusCS[17]; // IDA: g_SimpleModulusCS (0x05826C10)
+extern DWORD   g_SimpleModulusSC[17]; // IDA: g_SimpleModulusSC (0x05826C58)
+extern DWORD   m_nTempMyTradeGold; // IDA: m_nTempMyTradeGold (0x05826C9C)
+extern DWORD   HeroIndex; // IDA: HeroIndex (0x05826CA0)
 extern DWORD   DAT_05826ca4;
 extern DWORD   DAT_05826ca8;
-extern DWORD   HeroKey; // IDA: DAT_05826cac (0x05826CAC)
+extern DWORD   HeroKey; // IDA: HeroKey (0x05826CAC)
 extern DWORD   CurrentProtocolState; // IDA: DAT_05826cb0 (0x05826CB0)
-extern char    ChatWhisperID[12]; // IDA: DAT_05826cb4 (0x05826CB4)
+extern char    ChatWhisperID[12]; // IDA: ChatWhisperID (0x05826CB4)
 extern DWORD   DAT_05826cc0;
 extern DWORD   DAT_05826cc8;
 extern char    DAT_05826cc9;
@@ -520,19 +520,19 @@ extern char    DAT_05826ceb;
 extern DWORD   g_byPacketSerialRecv; // IDA: DAT_05826CEC (0x05826CEC)
 extern DWORD   g_bGameServerConnected; // IDA: g_bGameServerConnected (0x05826CF0)
 extern float  _DAT_05826cf4;
-extern DWORD   g_dwLatestMagicTick; // IDA: DAT_05826cf4 (0x05826CF4)
+extern DWORD   g_dwLatestMagicTick; // IDA: g_dwLatestMagicTick (0x05826CF4)
 extern DWORD   LogIn; // IDA: DAT_05826CF8 (0x05826CF8)
-extern DWORD   ChatTime; // IDA: DAT_05826d08 (0x05826D08)
+extern DWORD   ChatTime; // IDA: ChatTime (0x05826D08)
 // Teleport es 0x05826D14 (ida_xrefs_to: ReceiveTeleport, Attack, CheckGate,
 // Skills_PacketHandler, sub_482BE0, sub_4D23B0...).  Hasta 2026-09-12 Attack
-// escribia un global aparte (DAT_05826d04) y el resto leia DAT_05826d14: el
+// escribia un global aparte (DAT_05826d04) y el resto leia Teleport: el
 // gate del Town Portal no se enteraba del teleport en curso.
 #define DAT_05826d04 Teleport
 extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit compare)
-extern char    Teleport; // IDA: DAT_05826d14 (0x05826D14)
+extern char    Teleport; // IDA: Teleport (0x05826D14)
                                // 1=gate/teleport en curso.  La etiqueta vieja
                                // ("NPC script keepalive") era falsa.
-extern DWORD   BuyCost; // IDA: DAT_05826d18 (0x05826D18)
+extern DWORD   BuyCost; // IDA: BuyCost (0x05826D18)
                                // lo escribe ProtocolCore y lo lee sub_4D23B0.
 extern DWORD   EnableUse;      // IDA: EnableUse (0x05826D1C) — cooldown de equipar/usar item;
                                // lo ponen en 10 los usos y lo resetean las respuestas del server
@@ -700,7 +700,7 @@ extern char    DAT_07e11d71;   // char-select flag B
 extern char    DAT_07e11d72;   // char-select flag C
 extern int     DAT_07e11d74;   // gold / currency (checked vs 0x2faf081)
 extern DWORD   DAT_07e11d78;   // InputIndex — indice del campo de input activo (lo rota el Tab)
-extern DWORD   DAT_07e11d7c;   // countdown counter B
+extern DWORD   DAT_07e11d7c;   // MacroTime (0x07E11D7C) -- cooldown de las macros de chat
 extern DWORD   DAT_07e11d1c;   // per-frame cooldown tick counter
 extern DWORD   DAT_07e11d28;   // movement debounce step counter
 extern DWORD   DAT_07e11d30;   // frame counter (anti-tamper)
@@ -1319,21 +1319,11 @@ extern int     DAT_07d78068;        // character data base (indexed by class_id 
 extern "C" BYTE Inventory[];
 #define ItemPickedPos  (*(int*)&Inventory[32 * 68])   // Inventory[32].Type
 
-// 2026-05-08: ItemAttribute base address backup (recovery copy).
-// Usar ItemAttribute_Base() en vez de leer DAT_07d78068 directo cuando
-// computing attrBase = type*0x40 + base — DAT_07d78068 is being clobbered
-// a 0x1 por algún escritor desconocido, y provoca un AV en el tooltip / RenderBrokenItem.
-extern "C" DWORD g_ItemAttribute_Backup;
+// Base de la tabla ItemAttribute.  Devuelve 0 si todavia no se cargo, para
+// que los callers no computen attrBase = type*0x40 + basura.
 static __forceinline unsigned int ItemAttribute_Base(void) {
-    unsigned int p = (unsigned int)DAT_07d78068;
-    if (p < 0x100000u || p >= 0x80000000u) {
-        p = g_ItemAttribute_Backup;
-        if (p >= 0x100000u && p < 0x80000000u) {
-            DAT_07d78068 = (int)p;
-        } else {
-            return 0;   // truly uninitialized
-        }
-    }
+    const unsigned int p = (unsigned int)DAT_07d78068;
+    if (p < 0x100000u || p >= 0x80000000u) return 0;
     return p;
 }
 extern int     DAT_07d78080;        // font height (set by resolution in WinMain step 15)
@@ -1804,7 +1794,7 @@ extern char    DAT_0055de84;
 extern char    DAT_0055de10;
 extern FILE   *DAT_07d7806c;   // file handle (MonsterSetBase2 parser)
 extern char    DAT_005580ac[]; // "rb" fopen mode string
-extern char    bBuxCode[3]; // IDA: DAT_00558090 (0x00558090)
+extern char    bBuxCode[3]; // IDA: bBuxCode (0x00558090)
 extern char    TextParserTokenString[256]; // DAT_07CF1EF0 — TokenString output of
                                    // GetToken (0x47A1F0).  NO confundir con
                                    // ParserTokenString, que es el buffer del OTRO
@@ -2124,7 +2114,7 @@ extern float   _DAT_00552a08;  // terrain light float constant
 // definidas junto a las declaraciones de cb608 / 0828b608, más arriba en este header.
 
 // ── Scene_Resources string literals ──────────────────────────────────────────
-// Nombres base de BMD/SMD que consumen FUN_005060b0 / FUN_00505e90 en Scene_Resources.
+// Nombres base de BMD/SMD que consumen FUN_005060b0 / OpenModel en Scene_Resources.
 extern char    DAT_0055e834[8];     // "Ship"
 extern char    DAT_005606ac[8];     // "Logo"
 extern char    DAT_005607c0[8];     // "Face"
@@ -2424,7 +2414,7 @@ extern float   _DAT_005528c0;  // chrome U scale factor
 extern float   _DAT_005528c4;  // sin period scale for vertex deformation (FUN_004414d0)
 extern float   _DAT_00552644;  // sin amplitude for vertex deformation (FUN_004414d0)
 
-// ── MoveEffect (FUN_00466ad0) constants (0x005524a8–0x00552a20 range) ─────────
+// ── MoveEffect (MoveEffect) constants (0x005524a8–0x00552a20 range) ─────────
 extern float   _DAT_005524a8;  // move effect float constant
 extern float   _DAT_00552864;  // move effect float constant
 extern float   _DAT_00552990;  // move effect float constant
@@ -2788,7 +2778,7 @@ extern void*   g_LoginSceneObjects[9]; // exact CreateObject pointers for login 
 
 // Batch 22 — AttackStage, CreateArrow
 extern int     DAT_00559858;       // g_iLimitAttackTime (attack frame limit counter)
-extern DWORD   CurrentSkill; // IDA: DAT_05826d10 (0x05826D10)
+extern DWORD   CurrentSkill; // IDA: CurrentSkill (0x05826D10)
 extern float   _DAT_00552904;      // sin/cos offset multiplier (sword trail radius)
 extern float   _DAT_005528f8;      // sin/cos offset multiplier (slash projectile)
 extern float   _DAT_005528f4;      // combo animation offset constant

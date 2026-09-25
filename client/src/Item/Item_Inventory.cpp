@@ -44,26 +44,11 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
 // Si no está cargada (ItemAttribute=0 o type fuera de rango), defaulteamos
 // a 1×1 (worst case visualmente, pero al menos el item aparece).
 extern "C" int DAT_07d78068;
-extern "C" DWORD g_ItemAttribute_Backup;   // src/globals.cpp — recovery pointer
 
 static inline ITEM_ATTRIBUTE* Item_GetAttribute(int type)
 {
-    // 2026-07-27 CRASH-FIX (0xC0000005 en Item_GetWidth): algún writer corrompe
-    // DAT_07d78068 (ItemAttribute base) a un valor chico (~0/1). El check `!tbl`
-    // NO lo atrapaba (tbl=1 != null) → devolvía `1 + type*0x40` = puntero NULL+off
-    // → los callers (Item_GetWidth/Height, ItemData_FillStats) crasheaban al
-    // dereferenciar. Pasaba al comprar/mover con el inventario lleno (más
-    // inserts = más chances de pegarle a la ventana corrupta). Mismo watchdog
-    // que FUN_004d23b0 / Inventory_DropItemEx: restauramos desde el backup.
-    unsigned int p = (unsigned int)(uintptr_t)DAT_07d78068;
-    if ((p < 0x100000u || p >= 0x80000000u)
-        && g_ItemAttribute_Backup >= 0x100000u
-        && g_ItemAttribute_Backup < 0x80000000u)
-    {
-        DAT_07d78068 = (int)g_ItemAttribute_Backup;
-        p = g_ItemAttribute_Backup;
-    }
-    if (p < 0x100000u || p >= 0x80000000u) return nullptr;  // sin backup válido → no crash
+    const unsigned int p = (unsigned int)(uintptr_t)DAT_07d78068;
+    if (p < 0x100000u || p >= 0x80000000u) return nullptr;  // tabla sin cargar → no crash
     if (type < 0 || type > 0xFFF) return nullptr;
     return &((ITEM_ATTRIBUTE*)(uintptr_t)p)[type];
 }
