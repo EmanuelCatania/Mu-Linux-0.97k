@@ -83,8 +83,8 @@
 int  __cdecl Entity_FindById(int key);
 void __cdecl Entity_UpdateTradeFlag(BYTE* entity);
 int  __cdecl Shop_FindSlotByName(BYTE* name);
-// UI_ShowDialog = UIChatLogWindow_AddText = UIChatLogWindow_AddText (declared in functions.h)
-// ShowErrorDialog = SetErrorMessage = SetErrorMessage (declared in functions.h, defined in GL_State.cpp)
+// UI_ShowDialog = UIChatLogWindow_AddText (declared in functions.h)
+// ShowErrorDialog = SetErrorMessage (declared in functions.h, defined in GL_State.cpp)
 void __cdecl UI_OpenWindow(char* title, int mode);
 
 // Shop item table

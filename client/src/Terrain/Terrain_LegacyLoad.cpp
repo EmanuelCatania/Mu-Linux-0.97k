@@ -101,7 +101,7 @@ void __cdecl FUN_004f6f90(const char *path) {
 // next short must be 0xFFFF (file marker). Per-world magic-byte check at
 // known offsets validates the right map. Any byte >= 0x80 triggers Error.
 //
-// BUG-FIX 2026-04-27: previously a no-op (signature was void(void), path
+// BUG-FIX 2026-04-27: previously a no-op (signature was void, path
 // param lost). Now properly loads the .att file via the same FUN_0054xxxx
 // pipeline used by the other terrain loaders.
 unsigned char* TerrainWall = (unsigned char*)&DAT_0838bc70;

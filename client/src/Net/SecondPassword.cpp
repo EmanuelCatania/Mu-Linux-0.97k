@@ -1009,7 +1009,7 @@ void __cdecl FUN_004e6c40(void) {
     Net_SendC1Packet(pkt, 5);
 }
 
-// CheckGoldenArcherWindow (CheckGoldenArcherWindow) vive en UI/GoldenArcher.cpp.
+// CheckGoldenArcherWindow vive en UI/GoldenArcher.cpp.
 extern "C" int g_GoldenArcherCustom;
 extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action);
 // FUN_004e8b70 @ 0x004E8B70 -- IDA: sub_4E8B70, clicks de la ventana de
@@ -2712,7 +2712,7 @@ int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + 
 //   → toggle ^=1 → sub_4F9A30.
 //
 // Dependencias verificadas en IDA (bytes de operando):
-//   Hero=0x07abf5d8, World=World(0x0055a7ac), WorldTime=0x05826e08,
+//   Hero=0x07abf5d8, World(0x0055a7ac), WorldTime=0x05826e08,
 //   WaterMove=0x07eeb214, SelectFlag=0x07eab1fc, SelectXF/YF=0x080ab288/28c,
 //   TerrainFlag=0x0838bc44, toggle=0x0839bc88, unk_55A76C=0x0055a76c.
 //   - WorldTime: en el binario es float ((float)timeGetTime() en CalcFPS 0x43FD70);
@@ -2972,7 +2972,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //   BMD_Animation   BMD::Animation
 //   AngleMatrix    (no FUN_)
 //   VectorRotate   = Vector_InverseRotate
-//   FUN_004b1170   FindHotKey (FindHotKey)
+//   FUN_004b1170   FindHotKey
 //   CreateArrows
 //   FUN_005129f0   fabs
 //   FUN_0046fe40   Joint_Find

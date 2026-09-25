@@ -333,7 +333,7 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
 // `SkillElf(c, i + CharacterMachine + 536)` en L1464.  functions.h ya la declaraba
 // con la direccion correcta.
 // Correspondencia con el decompile de 0x0048BD70:
-//   charAttr / pItem   = pItem        (ITEM* equipado)
+//   charAttr / pItem        (ITEM* equipado)
 //   skillCount         = *(BYTE *)(pItem + 36)     = ITEM::SpecialNum
 //   skillId            = *(BYTE *)(pItem + i + 37) = ITEM::Special[i]
 //   i                  = i           (L119, la variable de bucle del binario)

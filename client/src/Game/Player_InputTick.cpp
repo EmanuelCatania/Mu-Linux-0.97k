@@ -1294,7 +1294,7 @@ void __cdecl Player_ProcessInput(void)
         // Si la entidad está viva y CanAct y en movimiento de nado:
         if (*(char*)(ent + 0x34e) == '\0') {
             unsigned int canAct = CheckAttack();
-            // BUG-FIX 2026-04-28: CheckAttack (CheckAttack) retorna 0 cuando
+            // BUG-FIX 2026-04-28: CheckAttack retorna 0 cuando
             // no hay entidad bajo el mouse (SelectedCharacter == -1). El gate
             // original solo dejaba pasar entity-hover-clicks → ground-click
             // (clic en el suelo sin hover de entidad) NUNCA disparaba el

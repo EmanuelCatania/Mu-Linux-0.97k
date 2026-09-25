@@ -55,7 +55,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // NUMÉRICA contra el parámetro `iWall`, restando antes el bit 0x20 si está puesto:
 //
 //     uVar5 = TerrainWall[idx];
-//     if ((TerrainWall[idx] & 0x20) == 0x20) uVar5 = uVar5 - 0x20;
+//     if ((TerrainWall[idx] & 0x20) == 0x20) uVar5 - 0x20;
 //     if (((visited[idx] & 1) == 0) && ((int)uVar5 < iWall)) { ...expandir vecino... }
 //
 // Con iWall=2 ambos criterios coinciden para los attrs comunes (0,1 pasan; 2,3,4,5

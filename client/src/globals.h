@@ -289,7 +289,7 @@ extern float  _DAT_0055a7c0;
 extern DWORD   DAT_0055a7c0;
 
 // ── Game loop / scene state (0x005615xx – 0x005617xx) ─────────────────────────
-// Nota: SceneFlag (SceneFlag), g_hWnd y g_hDC se declaran en stdafx.h.
+// Nota: SceneFlag, g_hWnd y g_hDC se declaran en stdafx.h.
 extern DWORD   DAT_0056154c;
 extern DWORD   DAT_00561550;
 extern DWORD   DAT_00561554;
@@ -308,7 +308,7 @@ extern int             g_ConnectServerMode;      // 1 = socket actual habla con 
 extern int             g_ConnectServerRequested; // 1 = ya mandamos C1 04 F4 02
 extern char            g_GameServerIP[128];      // GameServer fallback (server.cfg línea 2)
 extern unsigned short  g_GameServerPort;
-// SceneFlag = SceneFlag (in stdafx.h)
+// SceneFlag (in stdafx.h)
 // g_lpszMp3 @ 0x005615C4 — tabla de 6 rutas de BGM (ver globals.cpp).
 // Los DAT_005615c4..d8 NO son handles independientes: son sus 6 elementos.
 extern char*   g_lpszMp3[6];
@@ -1110,7 +1110,7 @@ extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
 // minimal de stubs_linker.cpp. Aliases IDA→DAT que el port full necesita.
 #define IDA_PORT_004FDC00 1
 
-// ── AttackEffect (AttackEffect) full IDA port activation ─────────────────────
+// ── AttackEffect full IDA port activation ─────────────────────
 // 2026-08-16: `AttackEffect` es la que spawnea los efectos VISUALES de los
 // skills (CreateEffect 191/200/201/223/240/241/568/1210/1211/1271, CreateJoint
 // 1253...). El port fiel de IDA (2043 lineas) vivia en stubs_IDA_ports.cpp pero
@@ -2414,7 +2414,7 @@ extern float   _DAT_005528c0;  // chrome U scale factor
 extern float   _DAT_005528c4;  // sin period scale for vertex deformation (FUN_004414d0)
 extern float   _DAT_00552644;  // sin amplitude for vertex deformation (FUN_004414d0)
 
-// ── MoveEffect (MoveEffect) constants (0x005524a8–0x00552a20 range) ─────────
+// ── MoveEffect constants (0x005524a8–0x00552a20 range) ─────────
 extern float   _DAT_005524a8;  // move effect float constant
 extern float   _DAT_00552864;  // move effect float constant
 extern float   _DAT_00552990;  // move effect float constant

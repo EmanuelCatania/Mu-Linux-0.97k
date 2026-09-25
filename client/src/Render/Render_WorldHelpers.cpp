@@ -180,10 +180,10 @@ void __cdecl FUN_00500aa0(void)
 // Itera Items[] pool (DAT_07e12840, 1000 entries × 516 bytes), per-entry:
 //   1. Frustum-cull con sub_4F9590 (=Frustum_TestSphere) radio 400.
 //   2. Resolve model slot por type (special handling 624..783, 860).
-//   3. BMD_Animation (BMD_Animation) con bone matrix.
+//   3. BMD_Animation con bone matrix.
 //   4. RequestTerrainLight + offset by entity color.
 //   5. Special bombs (type 863): scatter pattern con N copies.
-//   6. RenderPartObject (RenderPartObject) en posición.
+//   6. RenderPartObject en posición.
 //   7. Projection a screen → save sx/sy en entity[+0xB8/+0xBA].
 // RandomTable (0x055C9E58) la siembra WinMain con `rand() % 360`; la usa el
 // montón de monedas del tipo 863 (Zen) para repartirlas en círculo.
@@ -1138,8 +1138,8 @@ void __cdecl SkillEffects_RenderAll(void) { SkillEffect_Render(); }
 //   CameraDistance = 1000 + smoothing (CameraDistanceTarget)
 //   CameraPosition vía AngleMatrix(CameraAngle)+VectorIRotate del offset (0,-1000,0)
 //   CameraAngle[0] = EarthQuake - 48.5  (pitch SET después de la posición)
-// Símbolos IDA: CameraTopViewEnable=CameraTopViewEnabled, CameraDistance=CameraDistance,
-//   CameraDistanceTarget=CameraDistanceTarget. Retorna 0 (no-spectator) como IDA.
+// Símbolos IDA: CameraTopViewEnable=CameraTopViewEnabled, CameraDistance,
+//   CameraDistanceTarget. Retorna 0 (no-spectator) como IDA.
 // Sin force-yaw ni DIAG: el yaw lo preserva el estado de cámara, igual que IDA.
 bool __cdecl FUN_00524cb0(void) {
     float in1[3];

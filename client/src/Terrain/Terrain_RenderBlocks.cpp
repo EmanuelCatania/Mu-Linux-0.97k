@@ -81,7 +81,7 @@ void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool Ed
     // 0x004F9720 — renders a 4x4 terrain tile block
     // _DAT_00552504 = 0.5f (half-tile center), _DAT_0055256c = 1.0f (tile stride)
     // CameraTopViewEnable = CameraTopViewEnabled
-    // RenderTerrainTile = RenderTerrainTile (declared with int params but actually takes floats via stack)
+    // RenderTerrainTile (declared with int params but actually takes floats via stack)
     // TestFrustrum2D = FUN_004f8ff0
     float startX = xf;
     int row = 0;

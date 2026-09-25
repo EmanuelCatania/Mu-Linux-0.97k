@@ -1024,7 +1024,7 @@ MeshCloth* FindSlot(int part) {
 
 } // namespace
 
-// Llamada desde RenderPartObject (RenderPartObject) entre la transformacion de
+// Llamada desde RenderPartObject entre la transformacion de
 // los vertices (FUN_004404e0) y el dibujado (RenderPartObjectEffect).
 void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
 {

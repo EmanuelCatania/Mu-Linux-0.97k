@@ -190,7 +190,7 @@ BYTE     PacketXorKey16[16] = {0}; // DAT_00559050
 BYTE (&DAT_00559050)[16] = PacketXorKey16; // compatibility alias for stubs_IDA_ports.cpp
 float    _DAT_00559070 = 400.0f;  // Verlet physics damping/gravity scalar
 DWORD    DAT_00559070  = 0;
-// g_bUseChatListBox = g_bUseChatListBox. Default IDA = 1 (verificado: bytes en 0x5590ac
+// g_bUseChatListBox. Default IDA = 1 (verificado: bytes en 0x5590ac
 // = 01 00 00 00, seguidos de flt_5590B0/B4/B8 = 295/417/18 coords del input dialog).
 // FIX 2026-07-19: estaba en 0 (una sesión previa lo bajó para tapar un doble-render
 // que en realidad se resuelve con el skip de mode 1/2 en ChatLB_renderLine). Con =1,
@@ -340,7 +340,7 @@ int             g_ConnectServerMode     = 0;  // 1 = socket actual habla con el 
 int             g_ConnectServerRequested = 0; // 1 = ya mandamos C1 04 F4 02 en esta conexión CS
 char            g_GameServerIP[128]     = ""; // GameServer fallback (server.cfg línea 2)
 unsigned short  g_GameServerPort        = 0;
-// SceneFlag = SceneFlag (above)
+// SceneFlag (above)
 // g_lpszMp3 @ 0x005615C4 — tabla de 6 punteros a las rutas de los BGM.
 // NO son handles: son `char*`. Los DAT_005615c4..d8 son sus 6 elementos (cuarto
 // caso del patron "DAT_ vecinos = una sola tabla"). Los consumen Game_MainLoop
@@ -890,7 +890,7 @@ DWORD    DAT_07ea8414  = 0;
 // Equip grid buffer — see globals.h header for layout rationale.  Each
 // 68-byte row contains 8 ITEM cells at stride 544 bytes (so cells overlap
 // across rows in a tiled layout).  Initialise all Type fields (every 56-th
-// byte = byte at row-relative offset -56, but here we just zero-fill and
+// byte at row-relative offset -56, but here we just zero-fill and
 // stamp 0xFFFF in HUD_InitInventoryPools).
 // unk_7EA9504 / unk_7EA9328 son POSICIONES DENTRO DEL INVENTARIO REAL, no un
 // buffer aparte.  OffsetInventoryItems esta en 0x07EA8410 y la cuenta cierra
@@ -1099,7 +1099,7 @@ DWORD    DAT_083a4124  = 0;
 DWORD    DAT_083a413c  = 0;
 // ─── View/camera 3x4 matrix (48 bytes = 12 DWORDs) ───────────────────────────
 // En el binario original 0x083a4140..0x083a416f es UN único buffer que
-// GL_GetModelViewMatrix (GL_GetModelViewMatrix) llena con 3 filas × 4 floats.
+// GL_GetModelViewMatrix llena con 3 filas × 4 floats.
 // DAT_083a414c / DAT_083a415c / DAT_083a416c son los 4-th elementos de cada
 // fila (offsets 0x0c, 0x1c, 0x2c) — no globales independientes.
 // Si se declaran por separado el linker los reubica y GL_GetModelViewMatrix
@@ -2585,7 +2585,7 @@ float  _DAT_005528c0  = 0.00024f; // chrome U scale factor
 float  _DAT_005528c4  = 0.007f; // sin period scale for vertex deformation
 float  _DAT_00552644  = 28.0f; // sin amplitude for vertex deformation
 
-// ── MoveEffect (MoveEffect) constants ──────────────────────────────────────
+// ── MoveEffect constants ──────────────────────────────────────
 float  _DAT_005524a8  = 27.0f;
 float  _DAT_00552864  = 270.0f;
 float  _DAT_00552990  = -0.4f;

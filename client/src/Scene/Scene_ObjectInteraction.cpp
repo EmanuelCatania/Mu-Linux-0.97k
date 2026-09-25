@@ -19,7 +19,7 @@ void __cdecl MoveObject_Special_stub(int param_1) {
     // param_1 = pointer to scene object struct.
     // DAT_0055a7b4 = target world ID, DAT_0055a7b0 = target object type,
     // DAT_0055a7b8 = destruction frame counter, _DAT_0055a7bc = velocity accumulator.
-    // World = World (current map ID).
+    // World (current map ID).
 
     if ((int)DAT_0055a7b4 < 0) return;
     if ((int)DAT_0055a7b0 < 0) return;

@@ -786,13 +786,13 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 //   - Los 65 send-blocks inline (cada uno ~130 líneas C0/C1/C3/C4 wrapping)
 //     se reducen a una sola call Net_SendSmallPacket().
 //
-// CALLER: MoveCharacter (MoveCharacter) — llama esta función cuando el hero
+// CALLER: MoveCharacter — llama esta función cuando el hero
 // tiene flag de attack activo. También llamada desde UseSkillWarrior y
 // UseSkillElf como fallback continuation.
 
 // Helpers: real names exposed via functions.h
 //   Path_FindRoute = PathFinding2(sx, sy, tx, ty, path_buf, radius) — uint
-//   CheckAttack = CheckAttack() — uint (0 if locked)
+//   CheckAttack() — uint (0 if locked)
 //   FUN_0049cae0 = CheckTarget_stub(c) — bool
 //
 // HeroKey se lee del campo +0x1DC de la entidad del héroe (= g_HeroKey que asigna
@@ -801,7 +801,7 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 // 2026-09-01: aca vivian dos statics locales (`g_dwLatestMagicTick_Attack` y
 // `g_dwLatestTeleportRequest_Attack`) que reemplazaban a los globals del binario
 // porque se creia que sus direcciones aliaseaban timers de UI/NPC.  Es falso:
-//   g_dwLatestMagicTick  = g_dwLatestMagicTick (ya usado por UseSkillWarrior/Wizard)
+//   g_dwLatestMagicTick (ya usado por UseSkillWarrior/Wizard)
 //   dword_7E11DC8 / DC4  = DAT_07e11dc8 / DAT_07e11dc4 — los escribe
 //                          ReceiveTeleport (0x428210, xref 0x428EBF) y los leen
 //                          Attack (0x4AB5E7) y CheckGate (0x4AC6DE).
@@ -820,7 +820,7 @@ static float g_RightButtonReleaseTime_Attack = 0.0f;
 // Correspondencia con el decompile de IDA (0049CBF0), para que los nombres
 // semanticos de abajo sigan siendo rastreables:
 //   entity        = c            (CHARACTER*, el heroe)
-//   iType         = iType / v13  (id del skill del slot equipado)
+//   iType / v13  (id del skill del slot equipado)
 //   bSuccess      = Success      (latch del boton derecho)
 //   piManaLocal   = piMana       ·  piSkillManaLocal = piSkillMana
 //   scrollSlot    = LODWORD(y1)  (retorno de sub_482BE0 / GetItemSlot)

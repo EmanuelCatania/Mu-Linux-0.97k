@@ -27,7 +27,7 @@ static inline float PtrAsFloatBits(const void *p) {
 //   - Skill-channel widget objects  (channeling beams / barriers)
 //   - Entity_PrepareRender          (bone + AABB compute)
 //   - Per-skill / per-anim-state particle effects on entity bones
-//   - Weapon-slot rendering         (RenderLinkObject = RenderLinkObject)
+//   - Weapon-slot rendering         (RenderLinkObject)
 //   - Per-entity-type NPC / monster special effects (large outer switch)
 //
 // param_1  — player / local entity  (int*, stride 0x394, base DAT_07abf5d0[0])

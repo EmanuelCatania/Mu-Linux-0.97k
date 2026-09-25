@@ -2346,7 +2346,7 @@ LAB_0046ee73:
     // que es el PUNTERO al vec3 de angulos -- una direccion de pila.  El campo
     // es la **Scale** del joint (+0x0C).  Confirmado con MU 5.2 CreateJoint,
     // case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70; LifeTime = 49;
-    // Scale = Scale; MaxTails = 6  -- los otros tres valores de este mismo
+    // Scale; MaxTails = 6  -- los otros tres valores de este mismo
     // bloque coinciden exacto.  Medido con la sonda ESPIRIT JOINT:
     // `scaleBits=001AF32C` (una direccion de stack) en vez de 42A00000 (80.0f).
     *(float *)(pcVar14 + 0xc) = param_7;
@@ -2603,7 +2603,7 @@ LAB_0046e970:
     // que es el PUNTERO al vec3 de angulos -- una direccion de pila.  El campo
     // es la **Scale** del joint (+0x0C).  Confirmado con MU 5.2 CreateJoint,
     // case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70; LifeTime = 49;
-    // Scale = Scale; MaxTails = 6  -- los otros tres valores de este mismo
+    // Scale; MaxTails = 6  -- los otros tres valores de este mismo
     // bloque coinciden exacto.  Medido con la sonda ESPIRIT JOINT:
     // `scaleBits=001AF32C` (una direccion de stack) en vez de 42A00000 (80.0f).
     *(float *)(pcVar14 + 0xc) = param_7;

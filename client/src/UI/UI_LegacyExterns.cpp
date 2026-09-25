@@ -495,7 +495,7 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
     //
     //   param_4  -> pixel -> / g_fScreenRate_x -> logico
     //   textW    -> logico (Text_MeasureOrthoWidth ya divide)
-    //   x        -> logico + logico = logico  -> lo convierte CUIRenderText_RenderText
+    //   x        -> logico + logico  -> lo convierte CUIRenderText_RenderText
     if (param_5 >= 2 && param_4 > 0 && DAT_055c9fec) {
         const float rateX  = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
         const int   boxLog = (int)((float)param_4 / rateX);

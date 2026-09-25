@@ -1616,8 +1616,8 @@ float __cdecl TurnAngle2(float a1, float a2, float a3)
 //   - Entity type (c+2): non-player (39/40/51/302/default) vs player (390)
 //   - Para el jugador: helper (c+696)=818/819 → a distancia, si no las armas izquierda/derecha
 //     (c+624 LH, c+648 RH) determine animation 34..89.
-// Calls: SetAction (SetAction), CreateEffect (CreateEffect), PlayBuffer,
-//   SetAttackSpeed (SetAttackSpeed). All implemented.
+// Calls: SetAction, CreateEffect, PlayBuffer,
+//   SetAttackSpeed. All implemented.
 //
 // functions.h declara 4 argumentos pero IDA usa sólo 1 (DWORD c). Los extra se ignoran.
 // IDA: SetPlayerAttack (0x00444410)

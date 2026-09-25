@@ -24,11 +24,11 @@
 // Helper functions identified:
 //   FUN_004742b0  = CreateTeleportBegin — canonical mapping; the port's `Entity_WeaponHit`
 //                   helper has no verified FUN mapping.
-//   SetPlayerBow = SetPlayerBow (nombre real en IDA; el alias
+//   SetPlayerBow (nombre real en IDA; el alias
 //                   `Entity_ResetToWalk` es inventado del port).  Toma el
 //                   PUNTERO a la entidad, no el indice.
 //   SetPlayerMagic  = Entity_SelectTarget_Player — set caster's attack target to player entity
-//   SetPlayerDie  = SetPlayerDie (per Net/SecondPassword.cpp); the port's `Entity_TeleportEnd`
+//   SetPlayerDie (per Net/SecondPassword.cpp); the port's `Entity_TeleportEnd`
 //                   helper has no verified FUN mapping.
 //   FUN_004792c0  = CreatePoint (per Entity_LegacyTeleport.cpp); the port's `Entity_TeleportAnim`
 //                   helper has no verified FUN mapping.

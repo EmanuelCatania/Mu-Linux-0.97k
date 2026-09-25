@@ -161,7 +161,7 @@ enum eWindowModes
     MAX_WINDOW_MODE
 };
 
-/* Scene Flags — maps to SceneFlag (SceneFlag) */
+/* Scene Flags -- SceneFlag (0x005615C0) */
 enum eSceneFlags
 {
     NON_SCENE       = 0,

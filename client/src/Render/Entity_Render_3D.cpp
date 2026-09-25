@@ -15,7 +15,7 @@
 //   this = DAT_05828d58 + entity[+2] * 0xbc    → model data para la clase de entidad
 //   fVar14 = (rand() % 30 + 70) * g_TileScale  → tamaño base aleatorio [70-99] × tile_scale
 //
-// ── SWITCH PRINCIPAL: World (World) ──────────────────────────
+// ── SWITCH PRINCIPAL: World ──────────────────────────
 //
 //   case 0 (login/connecting):
 //     switch entity.type (*(short*)(param_1+2)):

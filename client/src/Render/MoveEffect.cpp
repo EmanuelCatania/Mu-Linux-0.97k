@@ -40,26 +40,26 @@
 //   [+0x106/byte]= anim state prev
 //
 // External functions:
-//   Particle_Spawn = Particle_Spawn(type, pos, dir, color, mode, size, entity_ptr)
-//   CreateEffect = CreateEffect(type, pos, dir, color, v1, v2, v3, v4, flag)
+//   Particle_Spawn(type, pos, dir, color, mode, size, entity_ptr)
+//   CreateEffect(type, pos, dir, color, v1, v2, v3, v4, flag)
 //   Joint_Create = CreateJoint(type, pos, target, dir, mode, entity, size, ...)
 //   Matrix_BuildFromEuler = AngleMatrix(angles, matrix)
 //   Vector_Rotate = EulerToMatrix3x4(v, matrix, out)
-//   RequestTerrainHeight = RequestTerrainHeight(x, y)
+//   RequestTerrainHeight(x, y)
 //   FUN_004f76c0 = RequestTerrainLight(x, y, light_ptr, mode, addr)
-//   CreateSprite = CreateSprite (Flare_Spawn?)
-//   FUN_00465fe0 = FUN_00465fe0 (effect color update)
-//   Effect_SpawnProximityHit = Effect_SpawnProximityHit (effect deactivate?)
-//   FUN_00466440 = FUN_00466440 (effect helper)
-//   Effect_SpawnSmokeBurst = Effect_SpawnSmokeBurst (effect helper2)
-//   Effect_SpawnSmokeExplosion = Effect_SpawnSmokeExplosion (effect helper3)
+//   CreateSprite (Flare_Spawn?)
+//   FUN_00465fe0 (effect color update)
+//   Effect_SpawnProximityHit (effect deactivate?)
+//   FUN_00466440 (effect helper)
+//   Effect_SpawnSmokeBurst (effect helper2)
+//   Effect_SpawnSmokeExplosion (effect helper3)
 //   FUN_0046c3e0 = Trail_RenderAll?
 //   FUN_00440aa0 = BMD_SetAnim?
 //   FUN_0045fec0 = Entity_SpawnImpact?
 //   PlayBuffer = Sound_Play(id, slot, flag)
-//   FUN_00473d90 = FUN_00473d90 (ring?)
+//   FUN_00473d90 (ring?)
 //   Terrain_GetTileIndex = Terrain_GetTileAttr(x, y)
-//   TERRAIN_INDEX = TERRAIN_INDEX (terrain helper)
+//   TERRAIN_INDEX (terrain helper)
 
 #include "stdafx.h"
 

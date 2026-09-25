@@ -547,7 +547,7 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
 // 11 bytes de entrada → 8 de salida por bloque. Devuelve el total de bytes decodificados
 // (o sólo el tamaño cuando dst==0). El bloque lo decodifica FUN_0053ce30.
 //
-// Context = g_SimpleModulusSC (g_SimpleModulusSC) loaded from Data\Dec2.dat.
+// Context = g_SimpleModulusSC loaded from Data\Dec2.dat.
 // Layout: ctx[1+i]=ModKey, ctx[9+i]=DecKey, ctx[13+i]=XorKey (DWORD indices).
 // ─────────────────────────────────────────────────────────────────────────────
 static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src);

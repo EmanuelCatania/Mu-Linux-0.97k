@@ -27,7 +27,7 @@
 //   RenderErrorMessage → RenderErrorMessage()          — (no era Chat_Render)
 //   FUN_004f64d0 → Scene_MapTick()               — (no era UI_Render)
 //   UI_RenderNotices → RenderNotices()               — (no era StatusBar_Render)
-//   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — g_bUseChatListBox=g_bUseChatListBox
+//   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — g_bUseChatListBox
 //   UI_UpdateFpsCounter → RenderDebugWindow()
 //   RenderHelpWindow → RenderHelpWindow()
 //   Cursor_Render → RenderCursor()                — (no era Minimap_Render)

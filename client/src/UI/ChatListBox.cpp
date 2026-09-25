@@ -1669,7 +1669,7 @@ static int __stdcall ChatLB_isRowVisible(int rowData)
 // Globals compartidos con el resto del build.
 // ===========================================================================
 
-// g_bUseChatListBox (g_bUseChatListBox) ya está definido en globals.cpp:192.
+// g_bUseChatListBox ya está definido en globals.cpp:192.
 // En el original, /chatlistbox lo invierte en runtime. Nosotros sólo lo consumimos.
 
 // MouseOnWindow — GLOBAL PARTIDO, corregido 2026-07-20.
@@ -1726,9 +1726,9 @@ extern "C" int g_ChatLB_MouseOnWindow = 0;
 
 extern "C" void  __cdecl CreateGuildMark(int markIndex, bool blend);
 extern "C" void  __cdecl RenderTipText(int sx, int sy, const char* Text);
-// UI_DrawText (RenderText) y ClearInput (ClearInput) ya vienen de
+// UI_DrawText (RenderText) y ClearInput ya vienen de
 // functions.h con vinculacion C++; no re-declararlos aca.
-// PlayBuffer (PlayBuffer) tambien viene de functions.h (vinculacion C++).
+// PlayBuffer tambien viene de functions.h (vinculacion C++).
 extern "C" float flt_83A7ACC[8];
 extern "C" BYTE  InputTextHide[10];
 

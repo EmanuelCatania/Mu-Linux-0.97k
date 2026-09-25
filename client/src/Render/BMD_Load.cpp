@@ -163,7 +163,7 @@ void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
     }
 
     *(char *)((int)thisPtr + 0x20) = verByte;
-    // El nombre se lee de Buffer+4 (Ghidra: puVar7 = puVar7+1 antes del body).
+    // El nombre se lee de Buffer+4 (Ghidra: puVar7+1 antes del body).
     memcpy(thisPtr, Buffer + 4, 32);
 
     // EARLY defensive BodyLight init: write (1,1,1) BEFORE any parsing path that

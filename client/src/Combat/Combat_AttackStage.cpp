@@ -10,7 +10,7 @@
 // Phantom params: unaff_EBX/ESI/EDI/EBP/retaddr are anti-tamper artifacts, not real args.
 // The function reads c->Skill (c+0x302), dispatches on its value to spawn
 // effects, joints, sounds per weapon/skill type. Each case creates visual FX
-// via CreateEffect (CreateEffect) or Joint_Create (CreateJoint).
+// via CreateEffect or Joint_Create (CreateJoint).
 static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
     int Hand = GetHandOfWeapon((int)o);
 

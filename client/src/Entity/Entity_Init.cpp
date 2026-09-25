@@ -37,7 +37,7 @@ CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
   *(float *)(puVar1 + 0x10) = x;
   *(float *)(puVar1 + 0x14) = y;
 
-  // c->Class = Class (byte), c->Skin = Skin (byte)
+  // c->Class (byte), c->Skin (byte)
   puVar1[0x1bc] = (unsigned char)Class;
   puVar1[0x1bd] = (unsigned char)Skin;
 

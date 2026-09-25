@@ -422,7 +422,7 @@ int Game_SceneUpdate(void)
         {
             // ── VALORES CANÓNICOS (2026-04-21) ─────────────────────────────
             // Restaurados desde Ghidra/IDA @ 0x0051F900 líneas 150-235.
-            // CreateObject (CreateObject) aplica scale override vía
+            // CreateObject aplica scale override vía
             // byte_4FFAA4[type-60] cuando SceneFlag==2||4:
             //   type 60  (ship)    → scale 0.8
             //   type 160 (sky)     → scale 0.0438

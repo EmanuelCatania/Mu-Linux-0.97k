@@ -43,7 +43,7 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // Referencias externas a helpers que ya existen en nuestro build.
 // (Camera_ProjectWorldToScreen = Projection, GL_DrawTexture = RenderBitmap, GL_DrawRect = RenderColor,
 //  UI_DrawText = RenderText_1, Camera_BuildMouseRay = CreateScreenVector,
-//  RenderItem3D = RenderItem3D, GL_Begin2D = BeginBitmap, GL_End2D = EndBitmap,
+//  RenderItem3D, GL_Begin2D = BeginBitmap, GL_End2D = EndBitmap,
 //  GL_ResetState = DisableAlphaBlend, EnableAlphaBlend / EnableAlphaTest exist.)
 //
 // Helpers de hash-table — ya declarados en functions.h con linkage C++; acá no

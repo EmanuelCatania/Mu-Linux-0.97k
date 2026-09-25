@@ -608,7 +608,7 @@ void Render_Scene3D(void)
     Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float*)&DAT_083a4110);
 
     // ── 6. 3D render passes ──────────────────────────────────────────────────
-    // BUG-FIX 2026-04-28: faltaba la llamada a RenderTerrain (RenderTerrain) que
+    // BUG-FIX 2026-04-28: faltaba la llamada a RenderTerrain que
     // dibuja la malla de tiles del terreno. Sin ella, el cliente entraba al
     // mundo pero quedaba 100% negro.
     if (worldId != 10) {

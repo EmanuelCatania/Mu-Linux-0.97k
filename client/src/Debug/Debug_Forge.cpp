@@ -25,10 +25,10 @@ extern void __cdecl operator_delete(void* ptr);
 // REMOVER cuando se identifique el renderable.
 //   fn    = punto del pipeline (RenderObject/RenderMesh/RenderSprite/...)
 //   type  = entity type / particle-bitmap type (-1 si N/A)
-//   model = model index (-1 si N/A)
+//   model index (-1 si N/A)
 //   bmp   = bitmap id solicitado (-1 si N/A)
 //   glTex = GL texture handle (-1 si N/A)
-//   mesh  = mesh index (-1 si N/A)
+//   mesh index (-1 si N/A)
 //   blend = flags/Components de blend (-1 si N/A)
 // [DIAG FORGE] — trazado selectivo del pipeline de habilidades.  No modifica
 // pools ni estado GL: sólo registra los tipos visuales de combate, limitado

@@ -485,7 +485,7 @@
 
 // =============================================================================
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 5239-6163 (925 lines)
-// CreateCharacter (CreateCharacter), CreateMonster (CreateMonster — big switch)
+// CreateCharacter, CreateMonster (CreateMonster — big switch)
 // =============================================================================
 // CreateMonster @ 0x0045CCF0 — CreateMonster(Type, PositionX, PositionY, Key, [phantom])
 // Ported from IDA Hex-Rays decompile (10619 bytes).
@@ -504,16 +504,16 @@
 // MonsterScript scan overrides the name field anyway, and the original byte_5599xx
 // addresses are Korean strings in the data segment we don't reproduce.
 //
-// CreateCharacter (CreateCharacter) is also implemented here (was a 3-arg stub).
+// CreateCharacter is also implemented here (was a 3-arg stub).
 //
 // Helpers used (all already implemented in our codebase):
 //   FUN_005098c0 (OpenMonsterModel)  — Monster_Data.cpp
-//   CreateCharacterPointer (CreateCharacterPointer) — Entity_Spawn.cpp
+//   CreateCharacterPointer — Entity_Spawn.cpp
 //   DeleteCloth (DeleteCloth/Entity_ClearBoneLinks) — stubs.cpp
-//   SetCharacterScale (SetCharacterScale) — alias macro
-//   SetAction (SetAction)
+//   SetCharacterScale — alias macro
+//   SetAction
 //   Joint_Create (CreateJoint)
-//   RequestTerrainHeight (RequestTerrainHeight)
+//   RequestTerrainHeight
 //   OpenNpc_stub (0x005091D0)
 extern "C++" {
 extern void __cdecl OpenNpc_stub(int Type);

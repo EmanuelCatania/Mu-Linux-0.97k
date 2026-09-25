@@ -1948,7 +1948,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         DAT_07abf5d8 = nullptr;
     }
 
-    // BUG-FIX 2026-04-29: OpenWorld (OpenWorld) bloquea ~2 segundos cargando
+    // BUG-FIX 2026-04-29: OpenWorld bloquea ~2 segundos cargando
     // BMDs. Durante ese tiempo el server manda ~3KB de packets post-JoinMapServer,
     // pero como nuestro message pump está bloqueado no hacemos recv → server's
     // IoSideBuffer overflows o WSASend falla con WSAENOBUFS → CloseClient.
@@ -4181,8 +4181,8 @@ void Net_ProcessPacket(void)
                     BYTE dirpk = e[10];
                     BYTE dir = (dirpk >> 4) & 0x0F;
                     const WORD viewSkillState = (WORD)(e[4] | (e[5] << 8));
-                    // 2026-05-04: usar CreateMonster (CreateMonster) en vez de
-                    // CreateCharacterPointer (CreateCharacterPointer). El primero ADEMÁS
+                    // 2026-05-04: usar CreateMonster en vez de
+                    // CreateCharacterPointer. El primero ADEMÁS
                     // carga el BMD model via OpenMonsterModel/OpenNpc, que es
                     // lo que faltaba — antes los slots se creaban "vacíos"
                     // sin modelo → no rendían en pantalla.

@@ -255,7 +255,7 @@ static int Path_GetBasename(char* outBuf, char* fullPath)
 // outVer[3] = LOWORD(FileVersionLS)  — revision
 //
 // Returns 1 on success, 0 on failure.
-// Uses operator_new / operator_delete (operator_delete) for the info buffer.
+// Uses operator_new / operator_delete for the info buffer.
 // lpSubBlock_005592d0 = "\\" (root query, retrieves VS_FIXEDFILEINFO).
 // -----------------------------------------------------------------------
 static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])

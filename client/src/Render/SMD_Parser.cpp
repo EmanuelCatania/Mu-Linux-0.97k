@@ -866,13 +866,13 @@ void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int 
     *(short*)(base + 0xb2) = (short)param_6;
 }
 
-// CreateCharacter (CreateCharacter), CreateMonster (CreateMonster) moved to
+// CreateCharacter, CreateMonster moved to
 // src/Monster/Monster.cpp (B3 refactor 2026-05-07, 925 lines).
 
 // Sound
 // FUN_00404bb0 @ 0x00404BB0 — returns 1 (Sound_BufferUnlock helper)
 // Ghidra: undefined4 FUN_00404bb0(void) { return 1; }
-// signature in functions.h: void (void) — no return used at call site, treat as void.
+// signature in functions.h: void — no return used at call site, treat as void.
 void __cdecl FUN_00404bb0(void) { /* NOP — original returns 1 but callers ignore it */ }
 
 // IDA: CheckAttack (0x00483160)

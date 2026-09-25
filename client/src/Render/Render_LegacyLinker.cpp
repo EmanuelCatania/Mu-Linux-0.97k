@@ -77,7 +77,7 @@ void __cdecl EnableAlphaTest(bool enable) {
 // usado por OpenWorld para cargar Object1, Object11, etc. Misma signatura
 // (id, path, name, idx). Delegamos directamente.
 //
-// 2026-05-05 (followup): además llamar OpenTexture (OpenTexture) post-BMD
+// 2026-05-05 (followup): además llamar OpenTexture post-BMD
 // load. Sin esto los NPCs cargaban geometría pero las texturas no se
 // resolvían en los slots (IndexTexture[]) → render en blanco. El cliente
 // original sí hace este paso después del BMD load para NPCs.

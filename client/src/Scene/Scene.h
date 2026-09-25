@@ -1,7 +1,7 @@
 #pragma once
 // Scene.h - Game state machine declarations
 //
-// SceneFlag (SceneFlag) controls which scene renders each frame:
+// SceneFlag controls which scene renders each frame:
 //
 //   1 = Scene_Intro    - Webzen logo + Everyone (ESRB) image
 //   2 = Scene_Login    - Login screen (handled via Game_MainLoop)

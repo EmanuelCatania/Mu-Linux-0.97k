@@ -276,7 +276,7 @@ LAB_00504925:
 // FUN_00440a30 @ 0x00440a30 — BoneTransformOffset (sub_440A30 en IDA)
 // Transforms pos_in through bone rotation, scales by model scale (this[+0x68]),
 // stores result in pos_out, AND COPIES the bone matrix into the global root
-// matrix DAT_06989c9c so that BMD_Animation (BMD_Animation), cuando procesa el
+// matrix DAT_06989c9c so that BMD_Animation, cuando procesa el
 // root bone del ala/arma con parentIdx=-1 y param_7=='\x01', use esta matriz
 // del bone padre del player como su "parent transform" → el modelo linked
 // queda renderizado en la posición del hueso del player en lugar del origen.

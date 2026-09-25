@@ -104,7 +104,7 @@
 //      UI_RenderText(0x96, y-0x1f, DAT_07d53214)   — server IP line 2
 //
 // ─── HELPER FUNCTIONS ──────────────────────────────────────────────────────────
-//  __chkstk_probe = __chkstk_probe (0x00541c10)
+//  __chkstk_probe (0x00541c10)
 //                — MSVC CRT stack-probe stub, NOT game logic.
 //                  Called automatically by the compiler because this function
 //                  allocates ~48 KB of locals (24 groups × 20 channels × 100 chars).

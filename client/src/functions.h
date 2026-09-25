@@ -6,20 +6,16 @@ typedef long double float10;
 // functions.h — Prototypes for all FUN_ (unresolved) functions.
 //
 // Kayito canonical name index (from main.exe.idb, 2026-01-03):
-//   MoveEffect = MoveEffect       FUN_00470030 = MoveJoint       FUN_004736e0 = MoveJoints
-//   SetAttackSpeed = SetAttackSpeed   MoveCharacterVisual = MoveCharacterVisual
-//   SetAction = SetAction        Entity_AdvancePath = MovePath        MoveCharacter = MoveCharacter
-//   RenderCharacter = RenderCharacter  Entity_RenderAll_3D = RenderCharactersClient
-//   Action = Action           Combat_SendMovePathPacket = SendMove        CheckGate = CheckGate
-//   Player_ProcessInput (IDA: FUN_004acef0) = MoveHero         Chat_InputTick = MoveInterface   RenderItemInfo = RenderItemInfo
-//   RenderRepairInfo = RenderRepairInfo CreateMonster = CreateMonster   CreateHero = CreateHero
-//   Path_FindRoute = PathFinding2     Timer_UpdateFrameTiming (IDA: FUN_0043fd70) = CalcFPS         BMD_Animation = BMD::Animation
-//   BMD_TransformPosition = BMD::TransformPosition        FUN_00442090 = BMD::Release
-//   FUN_004423e0 = BMD::Open        FUN_00442a60 = BMD::Save       SetPlayerStop = SetPlayerStop
-//   SetPlayerWalk = SetPlayerWalk    CreateAngle = CreateAngle
-//   SetPlayerAttack = SetPlayerAttack  SetPlayerShock = SetPlayerShock  AttackEffect = AttackEffect
-//   FUN_00448600 = CharacterAnimation               Combat_UseWarriorSkill = UseSkillWarrior
-//   Combat_UseElfSkill = UseSkillElf      FUN_0047e4f0 = CHARACTER_MACHINE::GetMagicSkillDamage
+// Nombres del port que NO coinciden con el de IDA (el resto ya se renombro
+// al nombre de IDA y la equivalencia es trivial):
+//   FUN_00470030 = MoveJoint     FUN_004736e0 = MoveJoints     Entity_AdvancePath = MovePath
+//   Entity_RenderAll_3D = RenderCharactersClient     Combat_SendMovePathPacket = SendMove
+//   Player_ProcessInput (IDA: FUN_004acef0) = MoveHero     Chat_InputTick = MoveInterface
+//   Path_FindRoute = PathFinding2     Timer_UpdateFrameTiming (IDA: FUN_0043fd70) = CalcFPS
+//   BMD_Animation = BMD::Animation     BMD_TransformPosition = BMD::TransformPosition
+//   FUN_00442090 = BMD::Release     FUN_004423e0 = BMD::Open     FUN_00442a60 = BMD::Save
+//   FUN_00448600 = CharacterAnimation     Combat_UseWarriorSkill = UseSkillWarrior
+//   Combat_UseElfSkill = UseSkillElf     FUN_0047e4f0 = CHARACTER_MACHINE::GetMagicSkillDamage
 // Signatures are best-effort from call-site analysis; wrong-arity calls will
 // produce C4087/C2660 errors — fix by updating the specific prototype.
 //
@@ -351,7 +347,7 @@ void  __cdecl FUN_00473d90(int, float *, float);        // Ring_ComputeOrbit
 // ── Particle / effect system ──────────────────────────────────────────────────
 void  __cdecl Effect_TickAll(void); // IDA: FUN_0046b790
 void  __cdecl EffectPool_RenderAll(void); // IDA: FUN_0046bba0
-// 2026-05-07: Particle_Render real es void(void) per IDA mu97k-src-IDA/raw/
+// 2026-05-07: Particle_Render real es void per IDA mu97k-src-IDA/raw/
 // 0046BE40_Particle_Render.c. La firma anterior (6 args) era erronea — el
 // llamador en Game_RenderTick lo invoca sin args.
 void  __cdecl Particle_RenderAll(void); // IDA: FUN_0046be40
@@ -1346,7 +1342,7 @@ void  __cdecl RenderItem3D(float sx, float sy, float w, float h, int Type, int L
 // RenderEquipmentPart3D = RenderEquipmentPart3D_stub (declared at line 1303)
 void  __cdecl RenderNumber2D_fn(float x, float y, int Num, float Width, float Height); // 0x005122F0
 // DisableAlphaBlend = GL_ResetState (declared at line 578)
-// CreateAngle = CreateAngle (4 floats → float). Line 207 has wrong sig; cast in callers.
+// CreateAngle (4 floats → float). Line 207 has wrong sig; cast in callers.
 // FarAngle está declarado arriba con su dirección IDA.
 // RenderBitmap = GL_DrawTexture (declared at line 601)
 
@@ -1365,5 +1361,5 @@ int   __cdecl ItemValue(ITEM* ip, unsigned int goldType);                  // 0x
 // ── SkillElf dependencies ────────────────────────────────────────────────────
 void  __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piMana, int* piDistance, int* piSkillMana); // IDA: GetSkillInformation (0x0047E7A0)
 // CheckArrow = Combat_CheckArrowRequirement (already declared as char __cdecl Combat_CheckArrowRequirement(void))
-// SetPlayerAttack = SetPlayerAttack (already declared; Ghidra shows 1-arg DWORD — cast in caller)
-// CreateAngle = CreateAngle (already declared line 207; Ghidra shows 4 floats → float — cast in caller)
+// SetPlayerAttack (already declared; Ghidra shows 1-arg DWORD — cast in caller)
+// CreateAngle (already declared line 207; Ghidra shows 4 floats → float — cast in caller)

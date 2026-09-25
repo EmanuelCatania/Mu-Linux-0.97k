@@ -1698,7 +1698,7 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
 
     ItemObjectAttribute((int)ent);
 
-    // FIX 2026-05-01 (BUG REAL): ItemObjectAttribute (ItemObjectAttribute) sobreescribe
+    // FIX 2026-05-01 (BUG REAL): ItemObjectAttribute sobreescribe
     // ent[+0xC] con un valor default (0x3F4CCCCD = 0.8f para items en mundo).
     // En IDA, después de ItemObjectAttribute hay un `v16 = v11;` que reasigna el
     // scale (v16 = ent+0xC). Sin esa reasignación, RenderPartObject lee scale=0.8
@@ -1746,7 +1746,7 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
     // entity scale/distance).
 
     // FIX confirmado 2026-05-01: el bug de "items rendering huge" venía de
-    // ItemObjectAttribute(ItemObjectAttribute) sobreescribiendo ent[+0xc] con 0.8f.
+    // ItemObjectAttribute sobreescribiendo ent[+0xc] con 0.8f.
     // La reasignación post-ItemObjectAttribute arreglo el problema.
 
     RenderPartObject((int)ent, param_1, 0, light, 1.0f, param_2, param_3, '\x01', 1, '\x01', 0, 2);

@@ -137,7 +137,7 @@ void Entity_RenderAll_3D(void)
             pcVar1[0x13e] = -0x80; pcVar1[0x13f] = '?';
 
             pcVar1[0x160] = 1;   // force visible flag
-            // FIX 2026-07-24: el 3er param de RenderCharacter (RenderCharacter) es
+            // FIX 2026-07-24: el 3er param de RenderCharacter es
             // el flag de HOVER/highlight (dibuja el borde de selección).  El IDA
             // pasa `(slot == SelectedCharacter || SelectedNpc)`, y el Hero está
             // EXCLUIDO de esos → el original lo dibuja con 0.  Este forced-render

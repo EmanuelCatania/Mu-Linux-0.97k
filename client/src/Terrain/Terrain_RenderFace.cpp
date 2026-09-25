@@ -1,6 +1,6 @@
 // Terrain_RenderFace.cpp — port 1:1 desde IDA (2026-06-27)
 // Cadena de dibujo de tiles texturados del terreno (eslabón #4-#5 de RenderTerrain):
-//   RenderTerrainTile (RenderTerrainTile) → RenderTerrainFace (FUN_004f7fb0) →
+//   RenderTerrainTile → RenderTerrainFace (FUN_004f7fb0) →
 //   FaceTexture (UVs) + RenderFace / RenderFaceAlpha / RenderFaceBlend (draw).
 //
 // Antes: FUN_004f7fb0 era un no-op stub (stubs.cpp) y las 4 primitivas no existían,
@@ -23,7 +23,7 @@
 //   TerrainGrassWind     = DAT_07eab200 (float[256²])     (mislabel "water-wave heights")
 //   TerrainGrassTexture[(yi&0xFF)+1] = DAT_0810b2cc[yi&0xFF]
 //   WaterMove=DAT_07eeb214  WaterTextureNumber=DAT_0839bc8c  CurrentLayer=DAT_0814b2dc
-//   TerrainFlag=DAT_0838bc44  unk_839BC86=DAT_0839bc86  World=World
+//   TerrainFlag=DAT_0838bc44  unk_839BC86=DAT_0839bc86  World
 //   TerrainIndex1..4 = DAT_07eab1ec/f0/f4/f8
 
 #include "stdafx.h"
