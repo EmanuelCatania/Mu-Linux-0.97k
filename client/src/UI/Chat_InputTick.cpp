@@ -692,18 +692,21 @@ void __cdecl Chat_InputTick(void)
             // Normal send:
             //   Build C1 packet: [0xC1][len][opcode][sub][player_name][chat_text][0x00]
             //   XOR-encrypt payload from byte offset 3 onward, FUN_0053cc30 + send.
-            if (DAT_07e11d7c == 0)
+            // El disparo es ALT + el numero, NO Enter: el texto que se tipea
+            // en el chat vive en InputText (DAT_07db8710) y lo envia el WndProc.
+            if (DAT_07e11d7c == 0 &&
+                ((unsigned short)GetAsyncKeyState(VK_MENU) >> 8) != 0)
             {
-                SHORT svEnter = GetAsyncKeyState(0x0D); // VK_RETURN
-                if ((char)((unsigned short)svEnter >> 8) != '\0')
                 {
                     for (int ch = 0; ch < 9; ++ch)
                     {
+                        // Alt+1 .. Alt+9  ->  macros 0..8  (IDA: v221 + 49)
+                        if (((unsigned short)GetAsyncKeyState('1' + ch) >> 8) == 0)
+                            continue;
                         BYTE *chBuf = (BYTE *)&DAT_07e0ffc8 + ch * 0x100;
-                        DWORD keyVal = (DWORD)((unsigned short)GetAsyncKeyState(0x0D) >> 8);
-                        DWORD uVar9  = FUN_00494520((void *)keyVal, chBuf, '\x01');
-                        if ((char)uVar9 != '\0')
-                            continue;  // not Enter for this channel
+                        if (chBuf[0] == '\0') { DAT_07e11d7c = 100; continue; }
+                        if ((char)FUN_00494520(chBuf, '\x01') != '\0')
+                            continue;
 
                         // Validate input
                         if (((*(short *)(DAT_07abf5d8 + 0x2b8) != 0x332) &&
@@ -783,8 +786,10 @@ void __cdecl Chat_InputTick(void)
                 // ── 8. Whisper-target channel (channel 9) ────────────────────
                 // Uses DAT_07e108c8 buffer (offset 0x900 from DAT_07e0ffc8).
                 {
-                    DWORD keyVal = (DWORD)((unsigned short)GetAsyncKeyState(0x0D) >> 8);
-                    DWORD uVar9  = FUN_00494520((void *)keyVal, (BYTE *)&DAT_07e108c8, '\x01');
+                    // Alt+0 -> macro 10 (IDA: GetAsyncKeyState(48), o sea '0')
+                    DWORD uVar9 = (((unsigned short)GetAsyncKeyState('0') >> 8) == 0)
+                                ? 1u
+                                : (DWORD)(unsigned char)FUN_00494520((BYTE *)&DAT_07e108c8, '\x01');
                     if ((char)uVar9 == '\0') {
                         // SendChat@004C1B90 never emits a C1:00 chat shorter
                         // than 14 bytes (the text terminator is part of it).

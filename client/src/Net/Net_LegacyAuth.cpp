@@ -69,7 +69,7 @@ char __cdecl FUN_004e3d60(void *ctx, int p1, int p2) {
 // from this->key_table (256-byte S-box from RC4 variant). flag=0: encode only; flag!=0: also validates.
 // Uses SEH frame + 256-byte S-box + HashTable obfuscation. 3500+ lines in binary.
 // STUB: SEH + unaff_ESI pattern prevent safe implementation.
-unsigned long __cdecl FUN_00494520(void*, unsigned char*, char) { return 0; } // STUB: Auth_XorEncode — SEH+RC4
+unsigned long __cdecl FUN_00494520(void*, char) { return 0; } // STUB: sub_494520 (SEH+RC4, anti-tamper)
 
 // FUN_00513440 @ 0x00513440 — Chat_Validate(buf)
 // Returns 1 if buf (after stripping spaces) matches any word in the
