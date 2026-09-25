@@ -29,7 +29,7 @@
 //     do {
 //       if (*(char*)(puVar1 - 0x3b) != '\0') {   // jugador activo
 //         glColor3f(puVar1[-1], *puVar1, puVar1[1]);  // setear color RGB
-//         FUN_00474f90(
+//         RenderPlane(
 //           (int)*(short*)((int)puVar1 - 0xea),  // class/type code
 //           puVar1 - 0x37,                        // posición XYZ (array)
 //           (float)puVar1[-0x38],                 // rotation angle
@@ -54,7 +54,7 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_00474f90  → Player_DrawSprite(class_code, pos[3], rotation, scale)
+//   RenderPlane  → Player_DrawSprite(class_code, pos[3], rotation, scale)
 //                   Función que hace el draw real del sprite del jugador.
 //                   Probablemente llama a Sprite_Draw o Entity_DrawAt con los parámetros.
 //   glColor3f     → OpenGL color sin alpha (afecta al sprite del jugador)
@@ -94,7 +94,7 @@ void Player_Render(void)
             float* posXYZ   = (float*)(puVar1 - 0x37);
             float* rotation = (float*)(puVar1 - 0x38);
             float  scale    = *(float*)(puVar1 - 0x32);
-            FUN_00474f90((int)classCode, posXYZ, rotation, Ff(scale));
+            RenderPlane((int)classCode, posXYZ, rotation, Ff(scale));
         }
         puVar1 += 0x6F;
     }

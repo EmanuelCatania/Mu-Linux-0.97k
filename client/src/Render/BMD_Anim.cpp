@@ -103,7 +103,7 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
     // for the current action (model+160 = active action byte) in the actions
     // table (model+48 = ptr; stride 0x10; field +4 = speed).
     // Note: offset semantics here are functional — they match what
-    // FUN_005098c0 writes to (and what works for monsters). Don't change.
+    // OpenMonsterModel writes to (and what works for monsters). Don't change.
     short actionCount = *(short*)(model + 38);
     BYTE  modelAction = *(BYTE*)(o + 261);  // entity[+0x105] — current action
     int   actionsBase = (actionCount > 0) ? *(int*)(model + 48) : 0;

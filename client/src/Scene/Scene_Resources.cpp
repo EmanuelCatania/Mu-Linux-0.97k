@@ -1,16 +1,16 @@
 // Scene_Resources.cpp
 // Texture and model resource loading/unloading for login/account/char-select scenes.
 //
-// FUN_0050fcf0 @ 0x0050fcf0 — Scene_LoadAccountResources
-// FUN_0050ff50 @ 0x0050ff50 — Scene_LoadCharSelectResources
-// FUN_0050ff10 @ 0x0050ff10 — Scene_UnloadAccountResources
+// OpenLogoSceneData @ 0x0050fcf0 — Scene_LoadAccountResources
+// OpenCharacterSceneData @ 0x0050ff50 — Scene_LoadCharSelectResources
+// ReleaseLogoSceneData @ 0x0050ff10 — Scene_UnloadAccountResources
 // IDA: ReleaseCharacterSceneData (0x005102C0)
 
 #include "stdafx.h"
 
 extern "C" { void DbgLogPublic(const char*); }
 
-// FUN_0050fcf0 — Scene_LoadAccountResources
+// OpenLogoSceneData — Scene_LoadAccountResources
 // Loads textures and 3D models for the Account Creation / New Character screens.
 // Textures: Logo_0Account_new.tga, On_Botton.jpg, etc. (slots 0xc–0x14).
 // Models: ship.smd (0x3c), logo objects (0xa0–0xa3).
@@ -21,15 +21,15 @@ void Scene_LoadAccountResources(void)
   int iVar1;
   int iVar2;
 
-  FUN_00529bd0(s_Logo_0Account_new_tga_005607a8,0xc,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_0On_Botton_jpg_00560794,0xd,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_0On_Botton2_jpg_0056077c,0xe,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_0Text_Box_jpg_00560768,0xf,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_0New_Account01_tga_00560750,0x10,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_0New_Account02_tga_00560738,0x11,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_0Box_jpg_00560728,0x12,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Interface_Progress_Back_jpg_0056070c,0x13,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Interface_Progress_jpg_005606f4,0x14,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_0Account_new_tga_005607a8,0xc,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_0On_Botton_jpg_00560794,0xd,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_0On_Botton2_jpg_0056077c,0xe,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_0Text_Box_jpg_00560768,0xf,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_0New_Account01_tga_00560750,0x10,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_0New_Account02_tga_00560738,0x11,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_0Box_jpg_00560728,0x12,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Interface_Progress_Back_jpg_0056070c,0x13,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Interface_Progress_jpg_005606f4,0x14,0x2600,0x2900,0,'\x01');
   if (DAT_0055a7c4 == '\0') {
     OpenModel(0x3c,s_Data2_Object1__0055f120,s_ship_smd_0055ee54);
     OpenModel(0xa0,s_Data2_Logo__005606dc,(const char*)&DAT_005606e8);
@@ -60,7 +60,7 @@ void Scene_LoadAccountResources(void)
 }
 
 
-// FUN_0050ff50 — Scene_LoadCharSelectResources
+// OpenCharacterSceneData — Scene_LoadCharSelectResources
 // Loads textures and 3D models for the Character Selection screen.
 // Textures: Logo_Interface01–04.tga, New_Character201.tga, etc. (slots 0xc–0x1d).
 // Models: main.smd (0xa4), warrior/fairy/dark/etc. (0xaa–0xad).
@@ -71,24 +71,24 @@ void Scene_LoadCharSelectResources(void)
   int iVar1;
   int iVar2;
 
-  FUN_00529bd0(s_Logo_Interface01_tga_00560a4c,0xc,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_Interface02_tga_00560a34,0xd,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_Interface03_tga_00560a1c,0xe,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_Interface04_tga_00560a04,0xf,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_New_Character201_tga_005609e8,0x10,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_New_Character202_jpg_005609cc,0x11,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_Delete01_tga_005609b8,0x12,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_Delete02_jpg_005609a4,0x13,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_Ok01_tga_00560994,0x14,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_Ok02_jpg_00560984,0x15,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_New_Character01_tga_00560968,0x16,0x2600,0x2900,0,'\x01');
-  FUN_00529bd0(s_Logo_New_Character02_tga_0056094c,0x17,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_New_Character_Cancel_jpg_0056092c,0x18,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_New_Character_Ok_jpg_00560910,0x19,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_New_Character001_jpg_005608f4,0x1a,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_New_Character002_jpg_005608d8,0x1b,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_New_Character003_jpg_005608bc,0x1c,0x2600,0x2900,0,'\x01');
-  FUN_00529740(s_Logo_New_Character004_jpg_005608a0,0x1d,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_Interface01_tga_00560a4c,0xc,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_Interface02_tga_00560a34,0xd,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_Interface03_tga_00560a1c,0xe,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_Interface04_tga_00560a04,0xf,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_New_Character201_tga_005609e8,0x10,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_New_Character202_jpg_005609cc,0x11,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_Delete01_tga_005609b8,0x12,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_Delete02_jpg_005609a4,0x13,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_Ok01_tga_00560994,0x14,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_Ok02_jpg_00560984,0x15,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_New_Character01_tga_00560968,0x16,0x2600,0x2900,0,'\x01');
+  OpenTGA(s_Logo_New_Character02_tga_0056094c,0x17,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_New_Character_Cancel_jpg_0056092c,0x18,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_New_Character_Ok_jpg_00560910,0x19,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_New_Character001_jpg_005608f4,0x1a,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_New_Character002_jpg_005608d8,0x1b,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_New_Character003_jpg_005608bc,0x1c,0x2600,0x2900,0,'\x01');
+  OpenJPG(s_Logo_New_Character004_jpg_005608a0,0x1d,0x2600,0x2900,0,'\x01');
   if (DAT_0055a7c4 == '\0') {
     OpenModel(0xa4,s_Data2_Logo__005606dc,s_main_smd_00560894);
     OpenModel(0xaa,s_Data2_Logo__005606dc,(const char*)&DAT_0056085c);
@@ -121,7 +121,7 @@ void Scene_LoadCharSelectResources(void)
 }
 
 
-// FUN_0050ff10 — Scene_UnloadAccountResources
+// ReleaseLogoSceneData — Scene_UnloadAccountResources
 // Frees texture slots 0xc–0x14 and 0x56a–0x5a9 used by the account scene,
 // then calls FUN_004ffd50 (clear model cache) and FUN_0045abb0(-1) (reset entities).
 // IDA: FUN_0050FF10
@@ -167,7 +167,7 @@ void ReleaseCharacterSceneData(void)
   FUN_004ffd50();
   iVar1 = 0x7cd8;
   do {
-    FUN_00442090(DAT_05828d58 + iVar1);
+    BMD__Release(DAT_05828d58 + iVar1);
     iVar1 = iVar1 + 0xbc;
   } while (iVar1 < 0x7fc8);
   FUN_0045abb0(-1);

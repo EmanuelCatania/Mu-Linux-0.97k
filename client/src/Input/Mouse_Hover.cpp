@@ -268,7 +268,7 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
     _DAT_07feb280 = _DAT_07feb274;
     if (param_7 == 0) {
         if (((unsigned char)DAT_0838bc70[DAT_07eab1ec] & 8) != 8)
-            FUN_004f7fb0(param_1, param_2, param_3, param_4, param_5);   // RenderTerrainFace(xf,yf,xi,yi,lodf)
+            RenderTerrainFace(param_1, param_2, param_3, param_4, param_5);   // RenderTerrainFace(xf,yf,xi,yi,lodf)
         return 0;
     }
     char cVar1 = '\0';

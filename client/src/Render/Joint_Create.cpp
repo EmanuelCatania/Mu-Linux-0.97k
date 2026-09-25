@@ -11,7 +11,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-// IDA: FUN_0046d840
+// IDA: CreateJoint
 void * __cdecl
 Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4 param_5,int param_6
             ,float param_7,short param_8,byte param_9)
@@ -2615,7 +2615,7 @@ LAB_0046e970:
 }
 
 // IDA compatibility bridge: stubs_IDA_ports.cpp intentionally retains this ABI name.
-void* __cdecl FUN_0046d840(int type, float* p1, float* p2, float* p3, unsigned int subType,
+void* __cdecl CreateJoint(int type, float* p1, float* p2, float* p3, unsigned int subType,
                             int owner, float scale, short link, unsigned char flag)
 {
   return Joint_Create(type, p1, p2, p3, subType, owner, scale, link, flag);

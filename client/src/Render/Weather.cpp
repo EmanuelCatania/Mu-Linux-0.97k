@@ -15,7 +15,7 @@
 //   0xb8  = tree leaves / debris
 //   0x10a = firefly / butterfly (circular orbit with sin/cos)
 //   0x12d = thunder cloud (DAT_083a3ff0 == rain-mode)
-//   0x1f  = thunder sound (played via FUN_005098c0)
+//   0x1f  = thunder sound (played via OpenMonsterModel)
 //
 // Slot layout (all offsets relative to iVar14, stride=0x1bc):
 //   pcVar3         = &DAT_0839bcb0 + iVar14*0x1bc  — slot base
@@ -95,7 +95,7 @@
 //   FUN_004f76c0   — spawn ground ripple
 //   Matrix_BuildFromEuler   — Vec3_Normalize or direction update
 //   Vector_Rotate   — Vec3_Scale (multiply direction by speed)
-//   FUN_005098c0   — play thunder sound
+//   OpenMonsterModel   — play thunder sound
 //   FUN_005129f0   — terrain height at angle
 
 #include "stdafx.h"
@@ -342,7 +342,7 @@ LAB_00501064:
                 iVar12 = World;
                 if (iVar11 % 300 == 0) {
                     *pcVar3 = '\x01';
-                    FUN_005098c0(0x1f);   // play thunder sound
+                    OpenMonsterModel(0x1f);   // play thunder sound
                     (&DAT_0839bcb2)[iVar14 * 0xde] = 0x12d;  // type = lightning
                     iVar12 = _rand();
                     (*(unsigned int*)&g_WeatherSlotPool[0x168 + iVar14 * 0x1bc]) = 0x3f800000;
@@ -441,7 +441,7 @@ LAB_00501064:
                     if (iVar14 < 3) {
                         // Lightning slots 0-2 in loading state
                         *pcVar3 = '\x01';
-                        FUN_005098c0(0x1f);
+                        OpenMonsterModel(0x1f);
                         (&DAT_0839bcb2)[iVar14 * 0xde] = 0x12d;
                         // (detailed init same as storm mode above)
                         goto LAB_0050172b;

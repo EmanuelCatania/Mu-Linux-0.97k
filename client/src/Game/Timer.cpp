@@ -1,5 +1,5 @@
 // Timer.cpp
-// IDA: FUN_0043fd70 @ 0x0043fd70 — Timer_FrameUpdate
+// IDA: CalcFPS @ 0x0043fd70 — Timer_FrameUpdate
 //
 // Called once per frame to update timing globals:
 //   DAT_05826e08  — current absolute time (ms, as float)

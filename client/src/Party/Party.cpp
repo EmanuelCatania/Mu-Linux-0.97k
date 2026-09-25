@@ -33,9 +33,9 @@
 //     Loop byte[6] count, stride 2 from byte[7]:
 //       byte[0] = tile_x, byte[1] = tile_y
 //       if byte[5]==0: Terrain_SetTileAttributeBits (IDA: FUN_004f6ef0)
-//       else:          Terrain_ClearTileAttributeBits (IDA: FUN_004f6f10)
+//       else:          Terrain_ClearTileAttributeBits (IDA: SubTerrainAttribute)
 //
-//   Terrain tile-attribute writers (IDA: FUN_004f6ef0 / FUN_004f6f10 / FUN_004f6f30).
+//   Terrain tile-attribute writers (IDA: FUN_004f6ef0 / SubTerrainAttribute / FUN_004f6f30).
 //
 // ── PARTY KEEPALIVE (opcode 0x71, Party_PacketHandler) ───────────────────────
 //

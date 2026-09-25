@@ -42,7 +42,7 @@ bool __cdecl CheckSpecialText(const byte *param_1)
     if (bVar1 == 0) {
       return 0; // valid: no invalid chars found
     }
-    cVar3 = FUN_00541eab(param_1);
+    cVar3 = mbclen(param_1);
     iVar4 = cVar3;
     if (iVar4 == 1) {
       bVar1 = *param_1;

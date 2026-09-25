@@ -1,4 +1,4 @@
-// IDA: FUN_005079d0 @ 0x005079d0 — Model_LoadItemMeshes
+// IDA: OpenItems @ 0x005079d0 — Model_LoadItemMeshes
 // Loads all weapon, shield, item, wing, helper and miscellaneous item models
 // into slots 0x190-0x3bd.  Uses OpenModels (numbered prefix loader) and
 // OpenModel (named SMD loader) for Korean-locale files, then
@@ -8,7 +8,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// IDA: FUN_005079d0
+// IDA: OpenItems
 void __cdecl Model_LoadItemMeshes(void)
 {
     // ── Korean SMD item models ────────────────────────────────────────────────

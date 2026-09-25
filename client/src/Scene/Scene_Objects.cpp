@@ -26,7 +26,7 @@ void Map_LoadObjectModels(void)
     }
 
     // Global drop texture always loaded
-    FUN_00529740("Object8/drop01.jpg", 0x4d9, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Object8/drop01.jpg", 0x4d9, 0x2600, 0x2900, 0, '\x01');
 
     if (DAT_0055a7c4 != '\0') goto section2;
 
@@ -79,11 +79,11 @@ void Map_LoadObjectModels(void)
         OpenModel(0xb3, "Data2/Object9/", "Barracks1.smd" /* DAT_0055f434 */);
         break;
     case 10: // Clouds
-        FUN_00529740("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
+        OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
         OpenModel(0xb6, "Data2/Object11/", "cloud.smd");
         FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
         OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
-        FUN_00529740("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
+        OpenJPG("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
     case 0xb:
     case 0xc:
@@ -159,7 +159,7 @@ section2:
             const char* fmtPath = (texIdx < 10) ? "Object8/wt0_%d.jpg" : "Object8/wt_%d.jpg";
             const char* fmtName = (texIdx < 10) ? "wt0_%d.jpg"         : "wt_%d.jpg";
             crt_sprintf(local_364, fmtPath);
-            FUN_00529740(local_364, texIdx + 0x41, 0x2601, 0x2901, 0, '\0');
+            OpenJPG(local_364, texIdx + 0x41, 0x2601, 0x2901, 0, '\0');
             crt_sprintf(local_364, fmtName);
             // strcpy local_364 into pEntry (string + null)
             char* pDst = pEntry;
@@ -168,17 +168,17 @@ section2:
         }
         break;
     case 8: // Barracks — sand + impact textures
-        FUN_00529740("Object9/sand01.jpg",    0x494, 0x2601, 0x2901, 0, '\x01');
-        FUN_00529740("Object9/sand02.jpg",    0x495, 0x2601, 0x2901, 0, '\x01');
-        FUN_00529740("Object9/Impack03.jpg",  0x597, 0x2601, 0x2900, 0, '\x01');
+        OpenJPG("Object9/sand01.jpg",    0x494, 0x2601, 0x2901, 0, '\x01');
+        OpenJPG("Object9/sand02.jpg",    0x495, 0x2601, 0x2901, 0, '\x01');
+        OpenJPG("Object9/Impack03.jpg",  0x597, 0x2601, 0x2900, 0, '\x01');
         FUN_005060b0(0xb3, "Data/Object9/", "Barracks" /* PTR_DAT_0055f2cc */, 2);
         OpenTexture(0xb3, "Object9/", 0x2600, '\x01');
         break;
     case 10: // Clouds
-        FUN_00529740("Effect/clouds.jpg",     0x4f4, 0x2601, 0x2900, 0, '\x01');
+        OpenJPG("Effect/clouds.jpg",     0x4f4, 0x2601, 0x2900, 0, '\x01');
         FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
         OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
-        FUN_00529740("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
+        OpenJPG("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
     case 0xb:
     case 0xc:
@@ -212,7 +212,7 @@ section2:
         } while (iVar7 < 2);
         FUN_005060b0(0xb9,  "Data/Object12/", "Shine", 1);
         OpenTexture(0xb9,  "Object12/", 0x2600, '\x01');
-        FUN_00529740("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
+        OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
         FUN_00404a10(0x6e, "Data/Sound/iBloodCastle.wav", 1, '\0');
         DAT_0055a7c4 = '\x01';
         break;

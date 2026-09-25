@@ -212,7 +212,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         //
         // El port tenia "Screen %02d %02d %02d %02d - %04d" con st.wYear. Dos
         // bugs: (a) sin la extension .jpg, y el archivo lo escribe WriteJpeg
-        // (FUN_00529000, calidad 100), asi que quedaba un JPEG sin extension
+        // (WriteJpeg, calidad 100), asi que quedaba un JPEG sin extension
         // que el explorador no reconocia; (b) con el ANO en vez de GrabScreen
         // el nombre solo cambiaba por minuto, asi que dos capturas en el mismo
         // minuto se pisaban. GrabScreen (DAT_083a42f0) lo incrementa

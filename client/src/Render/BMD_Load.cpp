@@ -3,12 +3,12 @@
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 12147-12807 (661 lines).
 //
 // BMD (Mu Online 3D model format) loaders:
-//   FUN_004423e0 (BMD::Open)              — load compressed BMD file into model slot
-//   FUN_004422f0 (BMD_BuildAdjacentFaceTable)
-//   FUN_00442260 (BMD_InitAdjFaceTable)
-//   FUN_00442e60 (BMD_ComputeBounds)
-//   FUN_00442e00 (BMD_ResetAnimState)
-//   FUN_00442a60 (BMD_SaveToFile)
+//   BMD__Open (BMD::Open)              — load compressed BMD file into model slot
+//   BMD__FindTriangleForEdge (BMD_BuildAdjacentFaceTable)
+//   BMD__FindNearTriangle (BMD_InitAdjFaceTable)
+//   BMD_CreateBoundingBox (BMD_ComputeBounds)
+//   BMD__Init (BMD_ResetAnimState)
+//   BMD__Save (BMD_SaveToFile)
 
 #include "stdafx.h"
 #include "globals.h"
@@ -17,7 +17,7 @@
 extern "C" void DbgLogPublic(const char* msg);
 
 // ── BMD loaders ──────────────────────────────────────────────────────────────
-// FUN_004423e0 @ 0x004423E0 — BMD::Open (load compressed BMD file into model slot)
+// BMD__Open @ 0x004423E0 — BMD::Open (load compressed BMD file into model slot)
 // param_1 = this (model object), param_2 = path string, param_3 = filename string, param_4 = unused
 // Reescrito contra Ghidra 97k (verbatim de "Main 97K", confirmado). Layout 97k:
 //   Buffer: [ver@3][name@4..0x23 (32B)][numMeshes@0x24][numActions@0x26]
@@ -44,7 +44,7 @@ extern "C" void DbgLogPublic(const char* msg);
 //           +0x34   TexNames[nM] stride 0x20 (char[32] por mesh)
 //           +0x38   TexIdx  [nM] stride 2
 // Loop order: Mesh → FindNearTriangle → Bone → Action
-void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
+void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
 {
     (void)param_4;
     void *thisPtr = (void *)param_1;
@@ -322,7 +322,7 @@ void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
         }
     }
 
-    FUN_00442260(thisPtr);
+    BMD__FindNearTriangle(thisPtr);
 
     // ============ BONE loop ============
     // Bone (stride 0x10):
@@ -422,13 +422,13 @@ void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
     }
 
     operator_delete(Buffer);
-    FUN_00442e00(thisPtr, '\0');
+    BMD__Init(thisPtr, '\0');
 }
 
-// FUN_004422f0 @ 0x004422F0 — BMD_BuildAdjacentFaceTable
+// BMD__FindTriangleForEdge @ 0x004422F0 — BMD_BuildAdjacentFaceTable
 // For each face in bone param_1, and each edge param_3 (0-2): finds the adjacent face sharing
 // the flipped edge and stores the adjacency index in psVar1[faceIdx*0x12 + edgeIdx + 0xd].
-void __cdecl FUN_004422f0(void *pThis, int param_1, int param_2, int param_3)
+void __cdecl BMD__FindTriangleForEdge(void *pThis, int param_1, int param_2, int param_3)
 {
     short *psVar1 = *(short **)(*(int *)((int)pThis + 0x28) + 0x1c + param_1 * 0x28);
     if (psVar1[param_2 * 0x12 + param_3 + 0xd] == -1) {
@@ -460,9 +460,9 @@ void __cdecl FUN_004422f0(void *pThis, int param_1, int param_2, int param_3)
     }
 }
 
-// FUN_00442260 @ 0x00442260 — BMD_InitAdjFaceTable
-// For each action/bone, resets adjacency table to -1, then calls FUN_004422f0 on each face×edge.
-void __cdecl FUN_00442260(void *param_1)
+// BMD__FindNearTriangle @ 0x00442260 — BMD_InitAdjFaceTable
+// For each action/bone, resets adjacency table to -1, then calls BMD__FindTriangleForEdge on each face×edge.
+void __cdecl BMD__FindNearTriangle(void *param_1)
 {
     int iVar3 = 0;
     if (0 < *(short *)((int)param_1 + 0x24)) {
@@ -484,9 +484,9 @@ void __cdecl FUN_00442260(void *param_1)
             int iVar1_ = 0;
             if (0 < iVar4) {
                 do {
-                    FUN_004422f0(param_1, iVar3, iVar1_, 0);
-                    FUN_004422f0(param_1, iVar3, iVar1_, 1);
-                    FUN_004422f0(param_1, iVar3, iVar1_, 2);
+                    BMD__FindTriangleForEdge(param_1, iVar3, iVar1_, 0);
+                    BMD__FindTriangleForEdge(param_1, iVar3, iVar1_, 1);
+                    BMD__FindTriangleForEdge(param_1, iVar3, iVar1_, 2);
                     iVar1_++;
                 } while (iVar1_ < iVar4);
             }
@@ -496,9 +496,9 @@ void __cdecl FUN_00442260(void *param_1)
     }
 }
 
-// FUN_00442e60 @ 0x00442E60 — BMD_ComputeBounds
+// BMD_CreateBoundingBox @ 0x00442E60 — BMD_ComputeBounds
 // Computes per-bone bounding boxes by scanning vertex positions; stores into bbox arrays.
-void __cdecl FUN_00442e60(int param_1)
+void __cdecl BMD_CreateBoundingBox(int param_1)
 {
     int iVar3 = 0;
     if (0 < *(short *)(param_1 + 0x22)) {
@@ -589,10 +589,10 @@ void __cdecl FUN_00442e60(int param_1)
     }
 }
 
-// FUN_00442e00 @ 0x00442E00 — BMD_ResetAnimState
+// BMD__Init @ 0x00442E00 — BMD_ResetAnimState
 // If flag!=0: scan action array (stride 0x8c), mark entries Du/non-Du;
-// then reset frame index and call FUN_00442e60 (BMD_ComputeBounds).
-void __cdecl FUN_00442e00(void *pThis, char param_1)
+// then reset frame index and call BMD_CreateBoundingBox (BMD_ComputeBounds).
+void __cdecl BMD__Init(void *pThis, char param_1)
 {
     char *pcVar1;
     int iVar2, iVar3;
@@ -607,13 +607,13 @@ void __cdecl FUN_00442e00(void *pThis, char param_1)
     }
     *(unsigned int *)((int)pThis + 0x54) = 0xffffffff;
     *(unsigned char *)((int)pThis + 0x88) = 0xff;
-    FUN_00442e60((int)pThis);
+    BMD_CreateBoundingBox((int)pThis);
 }
 
-// FUN_00442a60 @ 0x00442A60 — BMD_SaveToFile
+// BMD__Save @ 0x00442A60 — BMD_SaveToFile
 // Writes BMD model structure to binary file param_1+param_2 (concatenated paths).
 // Writes header 'B'/'M'/'D', then mesh/bone/action data via FUN_005430f0 (fwrite).
-undefined4 __cdecl FUN_00442a60(int thisModel, char *param_1, char *param_2)
+undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
 {
     char local_40[64];
     // concatenate param_1 + param_2
@@ -625,9 +625,9 @@ undefined4 __cdecl FUN_00442a60(int thisModel, char *param_1, char *param_2)
     FILE *pFVar4 = (FILE *)FUN_0054173f(local_40, &DAT_005597d4);
     if (!pFVar4) return 0;
 
-    FUN_00543264(0x42, (int *)pFVar4);  // 'B'
-    FUN_00543264(0x4d, (int *)pFVar4);  // 'M'
-    FUN_00543264(0x44, (int *)pFVar4);  // 'D'
+    putc(0x42, (int *)pFVar4);  // 'B'
+    putc(0x4d, (int *)pFVar4);  // 'M'
+    putc(0x44, (int *)pFVar4);  // 'D'
     FUN_005430f0((char *)(thisModel + 0x20), 1, 1, (int *)pFVar4);
     FUN_005430f0((char *)thisModel, 0x20, 1, (int *)pFVar4);
     FUN_005430f0((char *)(thisModel + 0x24), 2, 1, (int *)pFVar4);

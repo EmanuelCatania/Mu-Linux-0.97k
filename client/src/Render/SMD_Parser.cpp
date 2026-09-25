@@ -69,8 +69,8 @@ void __cdecl OpenModels(int Model, const char* FileName, int i) {
     } else {
         crt_sprintf(Buffer, "%s0%d.smd", FileName, i);
     }
-    FUN_0040b280(Model, Buffer, 1, 0);
-    FUN_0040b310(Model, Buffer, 0);
+    OpenSMDModel(Model, Buffer, 1, 0);
+    OpenSMDAnimation(Model, Buffer, 0);
 }
 
 // CRT file helpers
@@ -80,11 +80,11 @@ FILE* __cdecl FUN_0054173f(const char* path, const void* mode) {
 void __cdecl FUN_0054150f(FILE* f) {
     if (f) fclose(f);
 }
-void __cdecl FUN_00543264(int ch, int *fp) {
+void __cdecl putc(int ch, int *fp) {
     if (fp) fputc(ch, (FILE*)fp);
 }
 
-// FUN_00529740 (Texture_Load OZJ), FUN_00529bd0 (OpenTGA), UnloadImage (Texture_FreeSlot)
+// OpenJPG (Texture_Load OZJ), OpenTGA (OpenTGA), UnloadImage (Texture_FreeSlot)
 // moved to src/Render/Texture/Texture.cpp (B3 refactor 2026-05-07, 395 lines).
 
 // CWsctlc_Startup @ 0x0043DB30 — Net_WSAStartup(__fastcall int param_1)
@@ -102,7 +102,7 @@ void __cdecl CWsctlc_Startup(int param_1) {
     if (((char)wsaData.wVersion == '\x02') && ((char)(wsaData.wVersion >> 8) == '\x02')) {
         *(unsigned int*)(param_1 + 8) = 0;
         *(unsigned int*)(param_1 + 4) = wsaData.wVersion & 0xffff;
-        FUN_00403a30();
+        CWsctlc__LogPrintOn();
     } else {
         WSACleanup();
         CErrorReport_Write(&DAT_055c9bf0, "Winsock version low");
@@ -168,10 +168,10 @@ void __cdecl FUN_00543274(void* param_1, void* param_2) {
     fprintf((FILE*)param_1, "%s", (const char*)param_2);
 }
 
-// FUN_00442090 @ 0x00442090 — BMD_FreeModel(model_ptr)
+// BMD__Release @ 0x00442090 — BMD_FreeModel(model_ptr)
 // Frees all bone mesh/action/texture data from a model slot at param_1.
 // Bones: stride 0x8c, sub-meshes: stride 0x28, actions: stride 0x10, textures via Texture_Unload.
-void __cdecl FUN_00442090(int param_1) {
+void __cdecl BMD__Release(int param_1) {
     short numBones   = *(short*)(param_1 + 0x22);
     short numMeshes  = *(short*)(param_1 + 0x26);
     short numActions = *(short*)(param_1 + 0x24);
@@ -230,7 +230,7 @@ void __cdecl FUN_00442090(int param_1) {
 void __cdecl FUN_004ffd50(void) {
     // free all model slots
     for (int i = 0; i < 0x7580; i += 0xbc)
-        FUN_00442090(i + DAT_05828d58);
+        BMD__Release(i + DAT_05828d58);
 
     // free scene entity grid (16x16, stride 0x10)
     // Original binary terminated when puVar5 > 0x83a1217 (grid_base 0x83a0218 + 0xFFF).
@@ -464,12 +464,12 @@ void __cdecl FUN_00466440(int Target) {
     }
 }
 
-// FUN_00470030 @ 0x00470030 — MoveJoint(entity_ptr, frame_id)    [Kayito: MoveJoint]
+// MoveJoint @ 0x00470030 — MoveJoint(entity_ptr, frame_id)    [Kayito: MoveJoint]
 // Implemented in Render/MoveJoint.cpp
 
-// FUN_00511bf0 @ 0x00511BF0 — sets *param_1 = param_2, param_1[1] = (DWORD)param_3
+// TEXCOORD @ 0x00511BF0 — sets *param_1 = param_2, param_1[1] = (DWORD)param_3
 // Signature from decompile: (undefined4 *param_1, undefined4 param_2, undefined4 param_3)
-void __cdecl FUN_00511bf0(float* param_1, float param_2, int param_3) {
+void __cdecl TEXCOORD(float* param_1, float param_2, int param_3) {
     // Match Ghidra: *param_1 = param_2; param_1[1] = param_3
     *param_1 = param_2;
     *(int*)(param_1 + 1) = param_3;
@@ -778,7 +778,7 @@ float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float
 // RenderItem3D @ 0x004E1BE0 — RenderItem3D
 //
 // 2026-04-30: la versión anterior estaba MAL identificada como
-// `ItemDrop_SpawnEffect` y llamaba `FUN_004e13a0(type+400, ...)` (RenderObjectScreen)
+// `ItemDrop_SpawnEffect` y llamaba `RenderObjectScreen(type+400, ...)` (RenderObjectScreen)
 // con effect-ids inventados.  Para items "normales" (helmet=0x4E1, etc.) eso
 // resolvía a un BMD inexistente y crasheaba en BMD_Animation con AV.
 //
@@ -855,7 +855,7 @@ void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, fl
     glPopMatrix();
 }
 
-// FUN_00509810 @ 0x00509810 — Model_SetAnimationSlots(slot_idx, s0, s1, s2, s3, s4)
+// SetMonsterSound @ 0x00509810 — Model_SetAnimationSlots(slot_idx, s0, s1, s2, s3, s4)
 // Writes 5 shorts into model slot at DAT_05828d58 + slot_idx * 0xbc + 0xaa.
 void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int param_4, int param_5, int param_6) {
     int base = param_1 * 0xbc + DAT_05828d58;

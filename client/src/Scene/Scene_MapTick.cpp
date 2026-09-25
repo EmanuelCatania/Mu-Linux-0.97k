@@ -1,7 +1,7 @@
 // Scene_MapTick.cpp
 // Per-frame map/tile update and walk-mode tile dispatch.
 //
-// FUN_004f64d0 @ 0x004f64d0 — Scene_MapTick
+// Scene_MapTick @ 0x004f64d0 — Scene_MapTick
 //
 // Manages the map-tile hash table for the current player position.
 // Uses HashTable at MAIN_HASH_CLASS and player position at DAT_07cf1ffc.
@@ -11,13 +11,13 @@
 #include "stdafx.h"
 
 
-// FUN_004f64d0 — Scene_MapTick
+// Scene_MapTick — Scene_MapTick
 // Updates the tile hash table entry for the local player's tile position.
 // If the player has moved outside the current map tile bounds, reloads the map:
 //   - Checks bounds: x in [DAT_07ea5284..0x27f], y in [DAT_07ea5288..0x1df]
 //   - Calls RenderItemInfo or RenderRepairInfo to reload walk/alt map
 // Also handles DAT_0055a3e4 as a pending map-change request.
-void FUN_004f64d0(void)
+void Scene_MapTick(void)
 {
   char cVar1;
   uint uVar2;

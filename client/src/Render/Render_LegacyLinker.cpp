@@ -84,16 +84,16 @@ void __cdecl EnableAlphaTest(bool enable) {
 void __cdecl AccessModel(int id, char* path, char* name, int param) {
     FUN_005060b0(id, path, name, param);
     // Path para OpenTexture: typically "Npc\" sin "Data\" prefijo (los
-    // path-strippers en FUN_00529bd0/740 ya lo manejan si viene completo).
+    // path-strippers en OpenTGA/740 ya lo manejan si viene completo).
     if (path) {
         OpenTexture(id, path, 0x2600, '\x01');
     }
     // 2026-05-05: setup de animation speeds (idéntico al patrón que
-    // FUN_005098c0 hace para monsters). Sin esto, los NPCs cargan
+    // OpenMonsterModel hace para monsters). Sin esto, los NPCs cargan
     // geometry/textures pero entity[+0x105] action speed = 0 →
     // CharacterAnimation no avanza el frame → NPCs estáticos.
     //
-    // CharacterAnimation lee de model+48 (=bones table per FUN_004423e0
+    // CharacterAnimation lee de model+48 (=bones table per BMD__Open
     // alloc) con stride 16 bytes. Esa tabla tiene `numBones` entries de 0x10
     // bytes c/u. Para evitar buffer overflow (crashes vimos con NPCs de
     // pocos bones), solo escribir speeds hasta el límite de bones disponibles.
@@ -134,7 +134,7 @@ void __cdecl OpenModel(int id, char* path, ...) {
 // Camera_BuildMouseRay is CreateScreenVector.  RenderObjectScreen lives in
 // BMD_LegacyDraw.cpp and owns the native BMD animation/draw path.
 extern void __cdecl Camera_BuildMouseRay(int sx, int sy, float* out);
-extern void __cdecl FUN_004e13a0(int param_1, unsigned int param_2,
+extern void __cdecl RenderObjectScreen(int param_1, unsigned int param_2,
                                    unsigned char param_3, unsigned char param_4,
                                    float* param_5, int param_6, char param_7);
 
@@ -367,7 +367,7 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
         }
 
     // Guard contra modelo no cargado o pointer corrupto. RenderObjectScreen
-    // (FUN_004e13a0) deferenciaría el modelEntry → libjpeg crash si meshBase
+    // (RenderObjectScreen) deferenciaría el modelEntry → libjpeg crash si meshBase
     // o numMesh están en garbage. Retornar silencioso si modelo no listo.
     {
         if (modelId < 0 || modelId >= 1200) return;
@@ -384,7 +384,7 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
 
     // IDA 0x004E1BE0 calls RenderObjectScreen(Type+400, Level, Option1, Position, Success, PickUp).
     // The original path does not forward ExtOption here.
-    FUN_004e13a0(modelId, (unsigned int)levelArg, (unsigned char)Option1,
+    RenderObjectScreen(modelId, (unsigned int)levelArg, (unsigned char)Option1,
                  0, Position, Success ? 1 : 0, PickUp ? 1 : 0);
 }
 

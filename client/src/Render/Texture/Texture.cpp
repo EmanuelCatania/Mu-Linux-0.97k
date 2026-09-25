@@ -58,7 +58,7 @@
 //
 //   DAT_0055a7c4 == 0  →  Standard mode:
 //       Full path = DAT_0055a7a4 (base dir) + param_1 (filename)
-//       FUN_00529130(id, extension, path, NULL, 0) handles the actual I/O.
+//       SaveImage(id, extension, path, NULL, 0) handles the actual I/O.
 //
 //   DAT_0055a7c4 != 0  →  Extension-swap mode (OZJ ↔ OZT):
 //       Strips extension from filename up to the last '.'.
@@ -215,7 +215,7 @@ void Texture_Unload(int id)
 //     Append g_tex_ext_hq or g_tex_ext_lq based on current quality mode.
 //
 // Decode pipeline:
-//   g_tex_ext_mode == 0: FUN_00529130(0x18, g_tex_ext_lq, path, NULL, 0)
+//   g_tex_ext_mode == 0: SaveImage(0x18, g_tex_ext_lq, path, NULL, 0)
 //                        — inner loader, re-opens file internally
 //   g_tex_ext_mode != 0: FUN_00543037(file_ptr, 0x18, 0)
 //                        — alternate format decoder (OZT / proprietary)
@@ -542,16 +542,16 @@ void Texture_Draw2D(int id,
 
 // =============================================================================
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 4805-5199 (395 lines)
-// FUN_00529740 (Texture_Load OZJ/JPEG raw), FUN_00529bd0 (OpenTGA), UnloadImage (Texture_FreeSlot)
+// OpenJPG (Texture_Load OZJ/JPEG raw), OpenTGA (OpenTGA), UnloadImage (Texture_FreeSlot)
 // =============================================================================
-// ── FUN_00529740 @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
+// ── OpenJPG @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
 // Loads JPEG or OZJ texture from disk, decompresses with libjpeg, uploads to GL.
 // Path mode:
 //   DAT_0055a7c4 == 0 → full_path = g_tex_base_dir + filename
 //   DAT_0055a7c4 != 0 → strip extension, try g_tex_ext_hq then g_tex_ext_lq
 // OZJ files: fseek(f, 24, SEEK_SET) to skip 24-byte Webzen header before JPEG data.
 // Limits: 256x256 max, rounds to power-of-2 before GL upload.
-int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int flags, char show_err)
+int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, char show_err)
 {
     // --- Path construction ---
     char full_path[256];
@@ -712,7 +712,7 @@ int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int fla
     return 1;
 }
 
-// ── FUN_00529bd0 @ 0x00529BD0 — OpenTGA ──────────────────────────────────────
+// ── OpenTGA @ 0x00529BD0 — OpenTGA ──────────────────────────────────────
 // Loads a custom TGA variant (32-bpp, 6-byte mini-header) from disk,
 // performs BGR→RGB swap, uploads to GL, and stores metadata in the texture slot
 // table (stride 0x38 bytes / 0xe floats, base DAT_083a7ca0).
@@ -726,7 +726,7 @@ int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int fla
 //
 // hdrOff = 0x0C when DAT_0055a7c4 == 0 (Data2 / pak mode)
 //        = 0x10 when DAT_0055a7c4 != 0 (Data  / plain mode)
-int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
+int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
                          int uiFilter, int uiWrapMode, int bFullPath, char bCheck)
 {
     char local_200[256];
@@ -848,7 +848,7 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
 
         BYTE* pixBuf = (BYTE*)operator_new(pw * ph * 4);
         // DESVIACION CONSCIENTE vs IDA: idem OpenJPG (ver el bloque largo en
-        // FUN_00529740). El original (OpenTGA 0x529BD0) tampoco inicializa:
+        // OpenJPG). El original (OpenTGA 0x529BD0) tampoco inicializa:
         // `operator_new(4 * v21 * v22)` y luego rellena solo width x height.
         memset(pixBuf, 0, (size_t)pw * ph * 4);
         texPix[uiTextureIndex * 0xe] = (UINT)(uintptr_t)pixBuf;

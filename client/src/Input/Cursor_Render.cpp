@@ -5,7 +5,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// IDA: FUN_004bffa0 @ 0x004BFFA0 — Cursor_Render.
+// IDA: RenderCursor @ 0x004BFFA0 — Cursor_Render.
 // Draws the in-game mouse cursor sprite. Sprite ID selected by:
 //   game_substate, hovered entity type, cursor-mode flags (DAT_00559C48/4C/50/54).
 // Uses FUN_005125A0(sprite_id, x, y, 24, 24, u, v, 1, 1) for fixed sprites,
@@ -28,7 +28,7 @@
 // NULL-guard sobre Hero (DAT_07abf5d8): en el original el crash acá era
 // imposible porque SelectedCharacter=-1 en login y Hero siempre apuntaba a
 // una entidad válida in-game; acá Hero=NULL en login si aún no se asignó.
-// IDA: FUN_004bffa0
+// IDA: RenderCursor
 void __cdecl Cursor_Render(void) {
     GL_SetBlendSrcOver('\x01');  // EnableAlphaTest(1)
     glColor3f(1.0f, 1.0f, 1.0f);

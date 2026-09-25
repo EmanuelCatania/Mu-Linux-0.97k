@@ -468,8 +468,8 @@ skip_wings: ;
 // ClearWhisperID @ 0x004804D0 (19 bytes) — rep stosd 0x1B + stosw = 0x6E bytes del anillo
 void __cdecl ClearWhisperID(void) { memset(WhisperRegistID, 0, 0x6e); }
 
-// FUN_0040f650 @ 0x0040F650 (20 bytes) — thiscall: call vtable method on sub-object
-void __fastcall FUN_0040f650(int ecx, int /*edx*/, int param_1) {
+// CUIRenderText_SetFont @ 0x0040F650 (20 bytes) — thiscall: call vtable method on sub-object
+void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {
     if (param_1 != 0) {
         // Call release method: (*(this+4))->vtable[2](param_1)
         typedef void (__cdecl *ReleaseFunc)(int);
@@ -540,7 +540,7 @@ void __cdecl ReleaseMainData(void) {
 
 
 
-// FUN_00404e60 @ 0x00404E60 — CWaveFile deinit (set vtable, close MMIO)
+// waveIO__CloseWaveFile @ 0x00404E60 — CWaveFile deinit (set vtable, close MMIO)
 
 
 // FUN_00406cb0 @ 0x00406CB0 — HashWidget ~dtor

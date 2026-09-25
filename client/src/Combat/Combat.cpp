@@ -298,7 +298,7 @@
 //
 //     DAT_05826D28 = entity_idx   // global: índice del atacante activo
 //
-//     FUN_004741e0(entity_ptr, 0)  // Entity_AttackEffect (weapon bone trail x2)
+//     CreateMagicShiny(entity_ptr, 0)  // Entity_AttackEffect (weapon bone trail x2)
 //     UI_FireEvent(0x58)           // mostrar UI de combate (damage overlay)
 //     Entity_SetAnimation(entity_ptr, 0x5A)  // anim 0x5A = target acquired
 //
@@ -330,14 +330,14 @@
 //     world_x = (grid_x + DAT_00552504) * DAT_005524f0
 //     world_y = (grid_y + DAT_00552504) * DAT_005524f0
 //
-//     FUN_005032f0(&DAT_07e127f8 + entity_id*0x204, item_raw, world_x, is_mine)
+//     CreateItem(&DAT_07e127f8 + entity_id*0x204, item_raw, world_x, is_mine)
 //       — GroundItem_Spawn(slot_ptr, item_data, pos, ownership_flag)
 //
 //     item_type = Item_GetType(item_raw)
 //     stride    = (item_type == 0x1CF) ? 9 : 8  // Jewel of Chaos = stride 9
 //
 //   DAT_07e127f8 = ground items array (stride 0x204 por slot, max 1000 slots)
-//   FUN_005032f0 @ 0x005032f0 = GroundItem_Spawn(slot, item_raw, world_pos, is_mine)
+//   CreateItem @ 0x005032f0 = GroundItem_Spawn(slot, item_raw, world_pos, is_mine)
 //
 // ─── OPCODE 0x22 — PLAYER HP/MP UPDATE ──────────────────────────────────────────────────────────────────────────
 //
@@ -470,7 +470,7 @@ extern "C" BYTE OffsetInventoryItems[];
 // Combat_UseElfSkill (UseSkillElf stub), Action (Action big switch),
 // TERRAIN_INDEX (Terrain_GetAttrDirect)
 // =============================================================================
-// IDA: FUN_00491c40 @ 0x00491C40 — Send_MovePacket(entity_ptr, player_entity_ptr)
+// IDA: SendMove @ 0x00491C40 — Send_MovePacket(entity_ptr, player_entity_ptr)
 // Sends opcode 0x10 movement packet: C1 len 10 wp_count target_x target_y facing path[wp_count]
 // Codifica con XOR usando la clave hardcodeada de 32 bytes. Saltea si la entidad tiene el bit 0x20 en +0x78.
 // wp_count se limita a 0xe. Setea DAT_00559bec = pkt_size_code.
@@ -693,7 +693,7 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// IDA: FUN_0049cbf0 @ 0x0049CBF0 — Attack(c)  [PORTED 2026-05-05]
+// IDA: Attack @ 0x0049CBF0 — Attack(c)  [PORTED 2026-05-05]
 //
 // Tamaño binario: 62649 bytes (la función más grande del cliente).
 // Decompile IDA: 10112 líneas con cientos de stack vars de obfuscation.
@@ -793,7 +793,7 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 // Helpers: real names exposed via functions.h
 //   Path_FindRoute = PathFinding2(sx, sy, tx, ty, path_buf, radius) — uint
 //   CheckAttack() — uint (0 if locked)
-//   FUN_0049cae0 = CheckTarget_stub(c) — bool
+//   CheckTarget = CheckTarget_stub(c) — bool
 //
 // HeroKey se lee del campo +0x1DC de la entidad del héroe (= g_HeroKey que asigna
 // Net_Process at JoinServer ACK; see Net_Process.cpp:1294).
@@ -1686,7 +1686,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     Attack_WizardBranch97k(entity);
 }
 
-// IDA: FUN_0048ba70 @ 0x0048BA70 — CheckArrow(void)
+// IDA: CheckArrow @ 0x0048BA70 — CheckArrow(void)
 // Validates the bow/bolt pairing held by CharacterMachine.  The two item
 // types are at +536 and +604; the byte flags used by the exceptional pairs
 // are +562 and +630.

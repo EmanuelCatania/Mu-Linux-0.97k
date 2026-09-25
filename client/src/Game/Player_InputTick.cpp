@@ -66,7 +66,7 @@ static bool HUD_IsCharacterInfoRuntime(void);
 // de ChatListBox.cpp que no leía nadie.
 extern "C" int g_ChatLB_MouseOnWindow;
 
-// Resetea y puebla MouseOnWindow al inicio del frame. La llama FUN_004acef0.
+// Resetea y puebla MouseOnWindow al inicio del frame. La llama Player_InputTick.
 static void MouseOnWindow_Update(void)
 {
     // Sin reset: el valor del frame lo fija `Game_CharSelectTick` (IDA L298,
@@ -549,7 +549,7 @@ static void HUD_HotkeyTick(void)
     }
 }
 
-// IDA: FUN_004acef0 — Player_InputTick (0x004acef0, 1688 lines)
+// IDA: Player_InputTick — Player_InputTick (0x004acef0, 1688 lines)
 //
 // Procesador de input del jugador por frame. Se llama desde el camino de render del HUD/UI en cada frame.
 // Responsibilities:
@@ -637,7 +637,7 @@ static void SendPacket(const char *buf, unsigned int len)
     }
 }
 
-// IDA: FUN_004acef0
+// IDA: Player_InputTick
 void __cdecl Player_ProcessInput(void)
 {
     // 2026-04-30: el procesamiento de hotkeys de UI va PRIMERO, para que los toggles funcionen incluso

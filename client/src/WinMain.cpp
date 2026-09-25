@@ -361,7 +361,7 @@ static void GameGuard_TickCheck(void)
 //         0x500 (1280) → 0x0f
 //       CreateFontA(0,0,0,0,400,...)   → DAT_055ca00c  (normal)
 //       CreateFontA(0,0,0,0,700,...) ×2 → DAT_055ca010, DAT_055ca014  (bold)
-//  16.  FUN_0054283e(0, DAT_055c9d00)  — WSAStartup(0x0202, &wsaData)
+//  16.  setlocale(0, DAT_055c9d00)  — WSAStartup(0x0202, &wsaData)
 //  17.  SetTimer(hWnd, 1000, 20000, NULL)  — GameGuard watchdog (20s)
 //  18.  srand(FUN_00542762(NULL))       — time() seed; + obfuscación rand()
 //
@@ -379,7 +379,7 @@ static void GameGuard_TickCheck(void)
 //                                               cleared 0x161*4 bytes
 //
 //  20.  DAT_07cf1ff4 = DAT_07cf1ffc
-//       FUN_0047d3d0(DAT_07cf1ffc)  — HashTable_Init
+//       CHARACTER_MACHINE_Init(DAT_07cf1ffc)  — HashTable_Init
 //  21.  DAT_07abf5d8 = DAT_07abf5d0  — player ptr = entity array base (slot 0)
 //  22.  vtable constructions:
 //         new(0x5c8) → FUN_0040c7d0 → DAT_055c9ff0
@@ -882,7 +882,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // Si solo seteamos DAT_07cf1ffc, el HUD nunca rendea HP/MP/skills.
     extern void* CharacterMachine;
     CharacterMachine = DAT_07cf1ffc;
-    // FUN_0047d3d0(DAT_07cf1ffc);   // HashTable_Init — TODO: implement
+    // CHARACTER_MACHINE_Init(DAT_07cf1ffc);   // HashTable_Init — TODO: implement
     DAT_07abf5d8 = (char*)DAT_07abf5d0;  // player ptr = entity array slot 0
 
     // Contexto del pathfinder (DAT_05826df4).
@@ -922,7 +922,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     DAT_055c9ff8 = (DWORD)malloc(0xc);   memset((void*)DAT_055c9ff8, 0, 0xc);
 
     // Fallback de la tabla de modelos: Model_LoadPlayerAndItemMeshes
-    // (IDA: FUN_00506170) sólo corre
+    // (IDA: OpenPlayers) sólo corre
     // durante la carga del mapa (state=5). Los spawns de entidades de la escena de
     // login deferencian DAT_05828d58 + etype*0xbc + offset y crashean si es NULL.
     // Alocamos un fallback en cero, grande como para etype hasta ~0x300.

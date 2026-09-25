@@ -1,4 +1,4 @@
-// Weather_Particles.cpp — IDA: FUN_0046cc80 @ 0x0046cc80 — WeatherParticles_Update
+// Weather_Particles.cpp — IDA: MoveLeaves @ 0x0046cc80 — WeatherParticles_Update
 // Per-frame weather particle pool tick.
 //
 // Iterates a particle pool at DAT_07c5ab5c (pointer to base), stride 0x70 bytes

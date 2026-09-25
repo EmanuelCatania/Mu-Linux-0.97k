@@ -12,11 +12,11 @@
 //   GL_BeginViewport → BeginOpengl(x,y,w,h)          — setup 3D: push PROJ+MV, persp, rota cam
 //   FUN_004fd800 → Terrain_Render()
 //   Entity_RenderAll_3D → Entity_RenderAll_3D()
-//   FUN_00500970 → RenderBugs()                  — (no era Entity_Render_Sprites)
+//   RenderBugs → RenderBugs()                  — (no era Entity_Render_Sprites)
 //   FUN_0046c3e0 → Trail_RenderAll()             — (no era Particle_Render)
 //   GL_BeginSprite → BeginSprite()                 — sólo push MV + loadIdentity
 //   Render_DrawSpritePool → RenderSprites()               — (no era Portal_Render)
-//   FUN_00478c00 → RenderParticles()             — (no era ItemDrop_Render_2)
+//   RenderParticles → RenderParticles()             — (no era ItemDrop_Render_2)
 //   GL_Begin2D → BeginBitmap()                 — setup 2D ortho
 //   GL_SetBlendSrcOver → EnableAlphaTest(flag)         — (no era GL_SetMode)
 //   GL_DrawTexture → RenderBitmap(id,x,y,w,h,u0,v0,u1,v1,fx,fy)
@@ -25,7 +25,7 @@
 //   GL_SetBlendAdditive → EnableAlphaBlend()            — (no era Frame_UpdateTimer)
 //   GL_ResetState → DisableAlphaBlend()           — (no era GL_ResetBlend)
 //   RenderErrorMessage → RenderErrorMessage()          — (no era Chat_Render)
-//   FUN_004f64d0 → Scene_MapTick()               — (no era UI_Render)
+//   Scene_MapTick → Scene_MapTick()               — (no era UI_Render)
 //   UI_RenderNotices → RenderNotices()               — (no era StatusBar_Render)
 //   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — g_bUseChatListBox
 //   UI_UpdateFpsCounter → RenderDebugWindow()
@@ -84,11 +84,11 @@ uint Scene_Login(void)
     // ── 3D background render (orden exacto de IDA) ───────────────────────────
     FUN_004fd800();    // Terrain_Render
     Entity_RenderAll_3D();
-    FUN_00500970();    // RenderBugs
+    RenderBugs();    // RenderBugs
     Trail_RenderAll();
     GL_BeginSprite();    // BeginSprite — push MV, loadIdentity
     Render_DrawSpritePool();    // RenderSprites
-    FUN_00478c00();    // RenderParticles
+    RenderParticles();    // RenderParticles
     glPopMatrix();     // balancea BeginSprite
     GL_Begin2D();    // BeginBitmap — setup 2D ortho
 
@@ -279,7 +279,7 @@ uint Scene_Login(void)
 
     // ── Final subsystems (nombres corregidos desde IDA) ──────────────────────
     RenderErrorMessage();    // RenderErrorMessage
-    FUN_004f64d0();    // Scene_MapTick
+    Scene_MapTick();    // Scene_MapTick
     UI_RenderNotices();    // RenderNotices
     if ((g_bUseChatListBox == 1) || (SceneFlag != 5))
         UI_RenderChatLogOverlay();   // sub_480980 — chat log render

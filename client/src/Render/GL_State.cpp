@@ -155,7 +155,7 @@ void __cdecl GL_SetBlendSrcOver(char param_1)
 }
 
 
-// FUN_005111d0 @ 0x005111d0 — GL_GetModelViewMatrix
+// GetOpenGLMatrix @ 0x005111d0 — GL_GetModelViewMatrix
 // Reads GL_MODELVIEW_MATRIX (0xba6) via glGetFloatv and repackages the
 // first 3 columns (each 4 floats) row-by-row into param_1[0..11].
 void __cdecl GL_GetModelViewMatrix(unsigned int *param_1)
@@ -187,7 +187,7 @@ void __cdecl GL_GetModelViewMatrix(unsigned int *param_1)
 }
 
 
-// FUN_00511cf0 @ 0x00511cf0 — GL_BeginSprite
+// BeginSprite @ 0x00511cf0 — GL_BeginSprite
 // Pushes current matrix and loads identity.
 void GL_BeginSprite(void)
 {
@@ -286,9 +286,9 @@ void GL_EnableLightMap(void) {
 }
 
 
-// FUN_00511140 @ 0x00511140 — GL_CaptureScreenshot
+// SaveScreen @ 0x00511140 — GL_CaptureScreenshot
 // Reads current framebuffer into a heap buffer via glReadPixels (GL_RGB/GL_UNSIGNED_BYTE),
-// encodes it to a JPEG via FUN_00529000, then increments a screenshot counter.
+// encodes it to a JPEG via WriteJpeg, then increments a screenshot counter.
 // Returns 1 when counter wraps past 10000 (i.e. the Nth screenshot), else 0.
 int GL_CaptureScreenshot(void)
 {
@@ -298,7 +298,7 @@ int GL_CaptureScreenshot(void)
   DAT_083a42f4 = 1;
   puVar2 = (undefined*)operator_new(DAT_00561570 * DAT_0056156c * 3);
   glReadPixels(0,0,DAT_0056156c,DAT_00561570,0x1907,0x1401,puVar2);
-  FUN_00529000((const char*)&GrabFileName,DAT_0056156c,DAT_00561570,puVar2,100);
+  WriteJpeg((const char*)&GrabFileName,DAT_0056156c,DAT_00561570,puVar2,100);
   operator_delete(puVar2);
   iVar1 = DAT_083a42f0 + 1;
   DAT_083a42f0 = iVar1 % 10000;

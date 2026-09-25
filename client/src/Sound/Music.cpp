@@ -2,7 +2,7 @@
 // BGM (mp3) via el proceso externo MuPlayer.exe.
 //
 // IDA: FUN_004127F0 — StopMp3
-// IDA: FUN_00412890 — PlayMp3
+// IDA: PlayMp3 — PlayMp3
 //
 // Las dos comparan el nombre recibido contra el track en curso (MusicCurrentTrack).
 // StopMp3 manda WM_CLOSE a la ventana "MuPlayer"; PlayMp3 ademas la lanza con
@@ -53,7 +53,7 @@ void __cdecl Music_StopTrack(DWORD param_1_d, int bEnforce)
 }
 
 
-// IDA: FUN_00412890
+// IDA: PlayMp3
 // Arranca `name` lanzando MuPlayer.exe como proceso externo.
 //   - mismo track ya sonando        -> no hace nada
 //   - otro track sonando            -> lo corta (WM_CLOSE) y sale

@@ -894,7 +894,7 @@ extern DWORD   DAT_07eeb208;
 extern DWORD   DAT_07eeb20c;
 extern DWORD   DAT_07eeb210;
 extern float   DAT_07eeb214;      // WaterMove — terrain water UV scroll offset (RenderTerrain)
-extern float   FrustrumY[4];   // frustum quad Y[4] (per FUN_004f8ff0)  [IDA 0x07EEB218]
+extern float   FrustrumY[4];   // frustum quad Y[4] (per TestFrustrum2D)  [IDA 0x07EEB218]
 extern float   FrustrumX[4];   // frustum quad X[4]  [IDA 0x07EEB228]
 extern float   DAT_07eeb238[256 * 256 * 3];   // TerrainLight RGB ambient buffer (256x256 RGB floats)
 extern DWORD   DAT_07feb238;
@@ -1208,7 +1208,7 @@ extern char    g_BoneVertexBuf[32 * 15000 * 12];
 // de FUN_004404e0: pfDst = pfOut - 2 = &DAT_0584621c + local_64). Las escrituras abarcan 12 bytes desde pfDst.
 #define DAT_05846224  (*(DWORD*)(g_BoneVertexBuf + 8))
 
-// ── BMD bounding-box scratch arrays (FUN_00442e60 — BMD_ComputeBounds) ────────
+// ── BMD bounding-box scratch arrays (BMD_CreateBoundingBox — BMD_ComputeBounds) ────────
 // Scratch de BMD_CreateBoundingBox — una entrada por hueso (ver globals.cpp).
 // Los companions +4/+8 son macros que proyectan dentro del slot 0 de su base,
 // igual que DAT_081cb60c, para que `(char*)&DAT_x + n` y `((float*)&DAT_x)[i]`
@@ -1279,7 +1279,7 @@ extern float  _DAT_00552cbc;   // login camera Y-rotation speed
 extern char    DAT_007d29e5;
 extern char    DAT_007eaa11;
 
-// ── Sprite entity pool (FUN_00478c00 — decoration/item-drop sprite render) ────
+// ── Sprite entity pool (RenderParticles — decoration/item-drop sprite render) ────
 extern DWORD   DAT_07abf634;       // sprite entity pool base (stride 0x70, limit 0x7b116b3)
 extern float  _DAT_005528dc;       // UV step per sprite-sheet column (1/N cols)
 extern float  _DAT_00552940;       // UV row base offset for sprite-sheet

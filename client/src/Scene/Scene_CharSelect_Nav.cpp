@@ -110,7 +110,7 @@ uint __fastcall CSQuest_CheckActCondition(void *pThis, short *param_1)
             in_EAX = pbVar4 + (uint)*(BYTE *)((int)pThis + 4) + (-0x28 - (int)param_1);
             if (((in_EAX + 0x2c)[(int)param_1] == 1) &&
                 ((in_EAX = (BYTE *)(pbVar4[-1] - 1), in_EAX == (BYTE *)0x0))) {
-                int iVar2 = FUN_00482dd0(
+                int iVar2 = CSQuest_FindQuestItemsInInven(
                     (uint)pbVar4[1] + (uint)*pbVar4 * 0x20,
                     (uint)pbVar4[2], 0xffffffff);
                 if (iVar2 != 0) {
@@ -1162,7 +1162,7 @@ void Quest_InitializeStaticState(void) { FUN_00403ea0((void *)&DAT_00567500); }
 // FUN_00401020 @ 0x00401020 (12 bytes)
 void FUN_00401020(void) {}
 
-// BuxConvert @ 0x00401120 (IDA: FUN_00401120; name from 5.2).
+// BuxConvert @ 0x00401120 (IDA: BuxConvert_1; name from 5.2).
 // 3-byte repeating XOR key at bBuxCode.
 void __cdecl BuxConvert(void* buffer, int size) {
     const int buf = (int)(uintptr_t)buffer;
@@ -2161,12 +2161,12 @@ void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4
     }
 }
 
-// ── FUN_00479790 — movida desde stubs_misc2.cpp (refactor B3) ──
-// FUN_00479790 @ 0x00479790 — Effect_UpdateAll
+// ── CheckSprites — movida desde stubs_misc2.cpp (refactor B3) ──
+// CheckSprites @ 0x00479790 — Effect_UpdateAll
 // Marca todos los slots activos del pool de personajes/efectos (DAT_07c85890, stride 0x1BC)
 // para el tick de render, poniendo el byte [+0x160] = 1 en cada entrada activa (flag de activo distinto de cero).
 // Se llama una vez por frame antes del loop de render, para que cada slot se procese exactamente una vez.
-void FUN_00479790(void)
+void CheckSprites(void)
 {
     // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba el dirty-mark.
     char *pcVar1 = DAT_07c85890;

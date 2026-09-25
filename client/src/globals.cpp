@@ -428,7 +428,7 @@ DWORD    DAT_005616b8  = 0;
 DWORD    DAT_005617a0  = 0;
 char     DAT_00561a30[]  = "%s";  // Scene_CharSelect — name label (top, bold)
 DWORD    DAT_00561b04  = 0;
-char     DAT_00561b70[8] = "OZJ";   // FUN_00529740 extension suffix (Data mode: .jpg→.OZJ)
+char     DAT_00561b70[8] = "OZJ";   // OpenJPG extension suffix (Data mode: .jpg→.OZJ)
 
 // String literals (read-only — actual game strings come from the binary)
 char     s_Local_Webzenlogo_jpg_00561774[]  = "Local/Webzenlogo.jpg";
@@ -695,7 +695,7 @@ char     DAT_05826e18[200 * 0x10] = {0};
 DWORD    DAT_05828d58  = 0;  // Models
 void*    DAT_06f42a58  = nullptr;  // model memory pool
 
-// BMD bounding-box scratch arrays (FUN_00442e60)
+// BMD bounding-box scratch arrays (BMD_CreateBoundingBox)
 // Tablas scratch de BMD_CreateBoundingBox (0x442E60), la unica funcion del
 // binario que las toca.  Se recorren UNA ENTRADA POR HUESO hasta numBones
 // (= *(short*)(model+34)): word_77D87FC[bone] es el contador de vertices y
@@ -992,13 +992,13 @@ DWORD    DAT_07eeb208  = 0;
 DWORD    DAT_07eeb20c  = 0;
 DWORD    DAT_07eeb210  = 0;
 float    DAT_07eeb214  = 0.0f;   // WaterMove — terrain water UV scroll offset (RenderTerrain)
-// BUG-FIX 2026-05-01: era DWORD simple pero FUN_004f8ff0 (Frustum_IsVisible)
+// BUG-FIX 2026-05-01: era DWORD simple pero TestFrustrum2D (Frustum_IsVisible)
 // lee 4 floats consecutivos desde cada array. Camera_SetMatrix también escribe
 // los 4 corners. Sin contiguidad garantizada, el cull del frustum rechazaba
 // TODOS los chunks (chunks_vis=0) y los objetos del .obj nunca se renderean.
 float    FrustrumY[4] = {0};   // frustum quad Y[4]
 float    FrustrumX[4] = {0};   // frustum quad X[4]
-// BUG-FIX 2026-04-28: era DWORD simple pero FUN_00529360 escribe 256x256 RGB
+// BUG-FIX 2026-04-28: era DWORD simple pero OpenJpegBuffer escribe 256x256 RGB
 // floats (= 196608 floats) usados como TerrainLight RGB ambiente.
 float    DAT_07eeb238[256 * 256 * 3] = {};
 DWORD    DAT_07feb238  = 0;
@@ -1013,7 +1013,7 @@ float    DAT_07feb288[256 * 256 * 3] = {};
 
 // ── Large game data arrays ────────────────────────────────────────────────────
 // BUG-FIX 2026-04-28: estos cuatro estaban declarados como `DWORD` simple pero
-// el código (FUN_004f6c60 Terrain_Clear y otros) los indexa hasta [65535].
+// el código (InitTerrainMappingLayer Terrain_Clear y otros) los indexa hasta [65535].
 // El IDA decomp expresa los accesos como `(int)&DAT_xxxx + iVar2` que MSVC
 // compila como offset del símbolo → escribe fuera de bounds → AV/corruption.
 // Cambiar a arrays explícitos del tamaño real evita el crash y elimina la
@@ -1428,7 +1428,7 @@ char     DAT_0055a630[] = "";    // secondary stats line
 // 2026-09-07: era un buffer aparte; en realidad es GlobalText[238]. Ver el bloque de alias al final de globals.h.
 // char     DAT_07d3b40c[] = "";    // item level line format
 
-// Weather particle system (FUN_0046cc80): DAT_07c5ab5c is the +0x20 alias
+// Weather particle system (MoveLeaves): DAT_07c5ab5c is the +0x20 alias
 // of DAT_07c5ab3c, declared in globals.h; it has no standalone storage.
 DWORD    DAT_07c74ae8  = 0;
 DWORD    DAT_07c74aec  = 0;
@@ -1489,7 +1489,7 @@ char     DAT_083a2e90[10 * 0x1bc] = {};
 char     DAT_083a7c64[64] = {};
 DWORD    DAT_083a7c68 = 0;
 
-// Sprite entity pool (FUN_00478c00)
+// Sprite entity pool (RenderParticles)
 DWORD    DAT_07abf634 = 0;
 float   _DAT_005528dc = 0.25f;
 float   _DAT_00552940 = 0.005f;
@@ -1914,7 +1914,7 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // la que descifra Quest.bmd.  Leida del binario: FC CF AB — la misma que usa
 // BuxConvert_0 (DAT_00559bb4), pero es otra copia en otra direccion.
 // 2026-08-21: estaba declarada como UN char = 0, asi que BuxConvert
-// (IDA: FUN_00401120) hacia
+// (IDA: BuxConvert_1) hacia
 // `(&bBuxCode)[i % 3]` sobre un cero y dos bytes de globals vecinos: el
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
 // equivocado (getMonsterName de un tipo basura) y el texto de la quest vacio.
@@ -2356,7 +2356,7 @@ char    DAT_07db8714    = 0;
 char    DAT_07db8716    = 0;
 DWORD   DAT_07db8718    = 0;   // PIN data base for char-select second-password
 // Word-filter table (banned chat keywords), 1000 entries × 20 bytes = 20000 bytes.
-// Loaded at boot by FUN_00479b30("Data/Local/Filter.bmd") — 20000 bytes XOR'd
+// Loaded at boot by OpenFilterFile("Data/Local/Filter.bmd") — 20000 bytes XOR'd
 // with BuxConvert_0 (3-byte key FC CF AB), preceded by a 4-byte ring checksum
 // (seed 0x7cfa00, magic 15997).  Empty first byte terminates the valid range.
 char    DAT_07d73104[20000] = {};
@@ -2369,7 +2369,7 @@ DWORD   DAT_07db8070    = 0;
 int     DAT_07d78074    = 0;         // command table A count (name-filter)
 int     DAT_07d78070    = 0;         // command table B count (word-filter)
 // Name-filter table (banned character names), 1000 entries × 20 bytes = 20000 bytes.
-// Loaded at boot by FUN_00479e50("Data/Local/FilterName.bmd") — seed 0x578200,
+// Loaded at boot by OpenNameFilterFile("Data/Local/FilterName.bmd") — seed 0x578200,
 // magic 11201, same BuxConvert_0 XOR cipher.
 char    DAT_07d27610[20000] = {};
 float   _DAT_00552950   = 2.5f;     // lightning speed constant
@@ -2455,7 +2455,7 @@ float   _DAT_005527d0   = 6.0f;    // MoveItems: decaimiento de la velocidad Z p
 float   _DAT_00552a28   = -10.0f;  // MoveItems: giro del item mientras cae
 
 
-// ── Terrain map globals (FUN_004f6f90, FUN_004ffe70, FUN_004f7270) ────────────
+// ── Terrain map globals (OpenTerrainMapping, OpenObjectsEnc, CreateTerrain) ────────────
 // DAT_083a0218 is now a macro alias into g_ObjectBucketGrid[0] (see line ~811).
 float   _DAT_00552b70 = 0.00392156886f; // height scale
 

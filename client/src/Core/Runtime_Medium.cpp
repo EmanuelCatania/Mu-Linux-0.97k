@@ -48,7 +48,7 @@ int __cdecl FUN_004c3dd0(int param_1) {
 // RenderInformation @ 0x0051E200 (58 bytes) — render all HUD info layers
 void __cdecl RenderInformation(void) {
     RenderErrorMessage(); // RenderErrorMessage / stats panel
-    FUN_004f64d0(); // Scene_MapTick
+    Scene_MapTick(); // Scene_MapTick
     UI_RenderNotices(); // RenderNotices
     if ((g_bUseChatListBox == 1) || (SceneFlag != 5)) {
         UI_RenderChatLogOverlay(); // SystemText / chat list
@@ -676,7 +676,7 @@ LABEL_6:
 // END BATCH 3
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// FUN_00482dd0 @ 0x00482dd0 — CSQuest::FindQuestItemsInInven
+// CSQuest_FindQuestItemsInInven @ 0x00482dd0 — CSQuest::FindQuestItemsInInven
 // Counts items in inventory matching nType (param_1), optional level filter (param_3).
 // Returns shortage = nCount - found (0 means at least nCount items present).
 // Inventory grid: 8 rows × 8 cols at DAT_07EA9328..DAT_07EA9504 (stride 0x44 per cell row,
@@ -687,7 +687,7 @@ LABEL_6:
 // a different address (linker-placed) so the comparison was meaningless: it
 // either triggered immediately (early-exit returns wrong shortage) or never
 // (infinite loop / heap walk crash). Replaced with explicit iteration count.
-int __cdecl FUN_00482dd0(int param_1, int param_2, uint param_3)
+int __cdecl CSQuest_FindQuestItemsInInven(int param_1, int param_2, uint param_3)
 {
     int iVar3 = 0;
     int *piVar4 = &DAT_07ea9504;

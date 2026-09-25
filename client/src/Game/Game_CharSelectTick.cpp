@@ -306,8 +306,8 @@ void Game_CharSelectTick(void)
     if (DAT_0839bc86 != '\0' && DAT_07e11d30 == 0) {
         __ftol();
         __ftol();
-        FUN_00403a30();
-        FUN_00403a30();
+        CWsctlc__LogPrintOn();
+        CWsctlc__LogPrintOn();
     }
 
     Input_ProcessFunctionKeys();

@@ -47,11 +47,11 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // GL helpers — cached OpenGL state wrappers
 // CORRECCION: 0xb71 es GL_DEPTH_TEST, NO GL_SCISSOR_TEST (que es 0x0c11).
-// FUN_005114d0 @ 0x005114D0 — GL_EnableDepthTest
+// EnableDepthTest @ 0x005114D0 — GL_EnableDepthTest
 void __cdecl GL_EnableDepthTest(void) {
     if (DAT_083a411e == '\0') { DAT_083a411e = '\x01'; glEnable(0x0b71); }
 }
-// FUN_005114f0 @ 0x005114F0 — GL_DisableDepthTest
+// DisableDepthTest @ 0x005114F0 — GL_DisableDepthTest
 // DIAG: el AV NVIDIA aparece acá no por el glDisable per se, sino por corrupción previa
 // del contexto GL que aflora al primer comando subsiguiente (driver bufferea cmds).
 // Loggeamos antes/después con glGetError() para localizar el comando ofensivo.
@@ -76,7 +76,7 @@ void __cdecl GL_DisableDepthTest(void) {
         DbgLogPublic(b);
     }
 }
-// FUN_00511510 @ 0x00511510 — GL_EnableDepthWrites
+// EnableDepthMask @ 0x00511510 — GL_EnableDepthWrites
 void __cdecl GL_EnableDepthWrites(void) {
     if (DAT_083a42e8 == '\0') { DAT_083a42e8 = '\x01'; glDepthMask(1); }
 }
@@ -84,12 +84,12 @@ void __cdecl GL_EnableDepthWrites(void) {
 void __cdecl GL_DisableDepthWrites(void) {
     if (DAT_083a42e8 != '\0') { DAT_083a42e8 = '\0'; glDepthMask(0); }
 }
-// FUN_00511550 @ 0x00511550 — GL_EnableCullFace
+// EnableCullFace @ 0x00511550 — GL_EnableCullFace
 // (Called by 3D blend setters GL_ResetState / GL_EnableLightMap per 5.2 source pattern.)
 void __cdecl GL_EnableCullFace(void) {
     if (DAT_083a411c == '\0') { DAT_083a411c = '\x01'; glEnable(0xb44); }
 }
-// FUN_00511570 @ 0x00511570 — GL_DisableCullFace
+// DisableCullFace @ 0x00511570 — GL_DisableCullFace
 // (Called by 2D blend setters GL_SetBlendSrcOver / GL_SetBlendAdditive / GL_SetBlendSrcAlpha.)
 void __cdecl GL_DisableCullFace(void) {
     if (DAT_083a411c != '\0') { DAT_083a411c = '\0'; glDisable(0xb44); }
@@ -104,7 +104,7 @@ void __cdecl GL_SetAlphaTest(char param_1) {
     }
     if (DAT_083a4125 != '\0') { DAT_083a4125 = '\0'; glDisable(0xde1); }
 }
-// FUN_00511910 @ 0x00511910 — GL_SetViewport
+// glViewport2 @ 0x00511910 — GL_SetViewport
 void __cdecl GL_SetViewport(int param_1, int param_2, int param_3, int param_4) {
     OpenglWindowWidth = (DWORD)param_3;
     OpenglWindowX = (DWORD)param_1;
@@ -112,7 +112,7 @@ void __cdecl GL_SetViewport(int param_1, int param_2, int param_3, int param_4) 
     OpenglWindowHeight = (DWORD)param_4;
     glViewport(param_1, (int)(DAT_00561570 - param_2) - param_4, param_3, param_4);
 }
-// FUN_00511220 @ 0x00511220 — GL_SetPerspective
+// gluPerspective2 @ 0x00511220 — GL_SetPerspective
 void __cdecl GL_SetPerspective(int fov, float aspect, int near_clip, float far_clip) {
     float fovF  = Ff(fov);
     float nearF = Ff(near_clip);
@@ -135,11 +135,11 @@ long double __cdecl Screen_ToGLX(float v) {
 long double __cdecl Screen_ToGLY(float v) {
     return (long double)((float)(int)DAT_00561570 * v * _DAT_00552838);
 }
-// FUN_00529000 @ 0x00529000 — WriteJpeg(path, width, height, pixel_buf, quality)
+// WriteJpeg @ 0x00529000 — WriteJpeg(path, width, height, pixel_buf, quality)
 // Writes RGB pixel buffer to JPEG file using libjpeg compression.
 // Rows are written bottom-up (flipped) to match OpenGL framebuffer layout.
 // Ghidra: local_1d8=3 (components), local_1d4=2 (JCS_RGB), quality from param_5.
-unsigned int __cdecl FUN_00529000(const char* path, int width, int height, void* pixelBuf, int quality)
+unsigned int __cdecl WriteJpeg(const char* path, int width, int height, void* pixelBuf, int quality)
 {
     FILE* f = fopen(path, "wb");
     if (f == NULL) return 0;

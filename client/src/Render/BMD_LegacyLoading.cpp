@@ -65,9 +65,9 @@ void __cdecl SetMaxTextures(int param_1) {
 //
 // NOTA 2026-05-01: los archivos Data2/Item/<class>/<file>.smd NO existen en el
 // filesystem distribuido (solo Data/Item/<file>.bmd está). Las llamadas a
-// fopen dentro de FUN_0040b280/FUN_0040b310 retornarán NULL → early return →
+// fopen dentro de OpenSMDModel/OpenSMDAnimation retornarán NULL → early return →
 // no-op silencioso. El path BMD (FUN_005060b0) cubre la carga real de items.
-// (FUN_0040b280, FUN_0040b310 — declared via functions.h.
+// (OpenSMDModel, OpenSMDAnimation — declared via functions.h.
 //  DAT_083a4100 — declared in globals.h.)
 
 // Note: la signature original es variadic (`...` para extra anim paths) pero
@@ -79,8 +79,8 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
     crt_sprintf(FileName, "%s%s", Dir ? Dir : "", ModelFileName ? ModelFileName : "");
     // Sin variadic args, v11=0 → call OpenSMDModel + OpenSMDAnimation con
     // FileName base solamente.
-    FUN_0040b280(Type, FileName, 1, (char)DAT_083a4100);
-    FUN_0040b310(Type, FileName, 0);
+    OpenSMDModel(Type, FileName, 1, (char)DAT_083a4100);
+    OpenSMDAnimation(Type, FileName, 0);
     DAT_083a4100 = 0;
 
     // BUG-FIX 2026-05-04: el cliente 0.97k distribuido NO tiene Data2/Object*/
@@ -198,7 +198,7 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
         if (meshCount > 0) return;
     }
 }
-// FUN_005098c0 — implemented in src/Monster/Monster_Data.cpp
+// OpenMonsterModel — implemented in src/Monster/Monster_Data.cpp
 // FUN_0047A1F0 @ 0x0047A1F0 — TextParser_GetToken: tokenizer for all game data files
 // (Monster.txt / Item.txt / Skill.txt / NPC.txt / Gate.txt / Filter.txt).
 //
@@ -362,16 +362,16 @@ void __cdecl FUN_005060b0(int param_1, const char *param_2, const char *param_3,
         DbgLogPublic(diag);
     }
     if (DAT_0055a7c4 == '\0') {
-        // HQ path original: si el SMD ya cargó bones, FUN_00442a60 agrega la anim BMD.
+        // HQ path original: si el SMD ya cargó bones, BMD__Save agrega la anim BMD.
         // PORT FALLBACK: como nuestro SMD loader (OpenModel) es stub y nunca
-        // popula bones, caemos al loader completo FUN_004423e0 para al menos traer
+        // popula bones, caemos al loader completo BMD__Open para al menos traer
         // la geometría BMD y ver algo del background 3D.
         if (numBonesInSlot > 0)
-            FUN_00442a60((int)(DAT_05828d58 + param_1 * 0xbc), (char*)param_2, local_40);
+            BMD__Save((int)(DAT_05828d58 + param_1 * 0xbc), (char*)param_2, local_40);
         else
-            FUN_004423e0((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
+            BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
     } else {
-        FUN_004423e0((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
+        BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
     }
 
     // Post-load defensive init: ensure bodyLight is (1,1,1) even if the BMD
@@ -418,7 +418,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
     //       slot +0x24 short  numMeshes
     //       slot +0x34 char*  texNameTable (char[n][0x20])
     //       slot +0x38 short* indexTexture (short[n])
-    //    Verificado en Ghidra FUN_004423e0 (BMD::Open): this[0x24]=numMeshes,
+    //    Verificado en Ghidra BMD__Open (BMD::Open): this[0x24]=numMeshes,
     //    this[0x34]=texName[] y this[0x38]=indexTex[] se asignan directamente.
     char* slot = (char*)(DAT_05828d58 + Model * 0xBC);
     short numMeshes = *(short*)(slot + 0x24);
@@ -506,9 +506,9 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
             int extChar = (dotPos + 1 < nameLen) ? tolower((unsigned char)Name[dotPos + 1]) : 'j';
             int slot = (int)TextureCurrent;  // TextureCurrent
             if (extChar == 't')
-                FUN_00529bd0(local_40, slot, 0x2600, 0x2901, 0, Check);   // OpenTGA
+                OpenTGA(local_40, slot, 0x2600, 0x2901, 0, Check);   // OpenTGA
             else
-                FUN_00529740(local_40, slot, Type,   0x2901, 0, Check);   // OpenJPG/OZJ
+                OpenJPG(local_40, slot, Type,   0x2901, 0, Check);   // OpenJPG/OZJ
 
             // Store filename into the Bitmaps slot (first 32 bytes)
             char* slotBase = &g_BitmapsRaw[slot * 0x38];
@@ -570,7 +570,7 @@ extern "C" void __cdecl FixupSMD(void);
 extern "C" void __cdecl SMD2BMDModel(int ID, int Actions);
 extern "C" void __cdecl SMD2BMDAnimation(int ID, char LockPosition);
 
-// FUN_0040b280 @ 0x0040b280 — OpenSMDModel(ID, FileName, Actions, Flip)
+// OpenSMDModel @ 0x0040b280 — OpenSMDModel(ID, FileName, Actions, Flip)
 // Port FIEL del IDA (raw 0x40B280):
 //   if (Models[id].numMesh <= 0) {
 //     if (OpenSMDFile(FileName, 0, Flip)) {
@@ -580,7 +580,7 @@ extern "C" void __cdecl SMD2BMDAnimation(int ID, char LockPosition);
 //       SMD2BMDModel(ID, Actions);
 //     }
 //   }
-void __cdecl FUN_0040b280(int ID, const char* FileName, int Actions, char Flip) {
+void __cdecl OpenSMDModel(int ID, const char* FileName, int Actions, char Flip) {
     char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);  // stride 188 = 0xbc
     if (*(short*)(slot + 36) > 0) return;  // already loaded
     if (!OpenSMDFile(FileName, 0, Flip)) return;
@@ -591,13 +591,13 @@ void __cdecl FUN_0040b280(int ID, const char* FileName, int Actions, char Flip) 
     SMD2BMDModel(ID, Actions);
 }
 
-// FUN_0040b310 @ 0x0040b310 — OpenSMDAnimation(ID, FileName, LockPosition)
+// OpenSMDAnimation @ 0x0040b310 — OpenSMDAnimation(ID, FileName, LockPosition)
 // Port FIEL del IDA (raw 0x40B310):
 //   if (Models[id].numAnims > 0) {
 //     OpenSMDFile(FileName, 1, 0);
 //     SMD2BMDAnimation(ID, LockPosition);
 //   }
-void __cdecl FUN_0040b310(int ID, const char* FileName, char LockPosition) {
+void __cdecl OpenSMDAnimation(int ID, const char* FileName, char LockPosition) {
     char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);
     if (*(short*)(slot + 34) <= 0) return;  // mesh slot not initialized
     OpenSMDFile(FileName, 1, 0);

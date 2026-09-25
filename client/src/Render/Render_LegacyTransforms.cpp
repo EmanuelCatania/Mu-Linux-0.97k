@@ -69,9 +69,9 @@ void __cdecl FUN_004f9e90(float *param_1, float *param_2) {
     param_2[10] = cx * cy;
 }
 
-// FUN_004f9f70 @ 0x004F9F70 — Bone_CombineMatrices(parent[12], rot[12], out[12])
+// R_ConcatTransforms @ 0x004F9F70 — Bone_CombineMatrices(parent[12], rot[12], out[12])
 // 3×4 matrix multiply: out = parent × rot.
-void __cdecl FUN_004f9f70(float *p, float *r, float *o) {
+void __cdecl R_ConcatTransforms(float *p, float *r, float *o) {
     o[0]  = p[2]*r[8]  + p[1]*r[4]  + p[0]*r[0];
     o[1]  = p[2]*r[9]  + p[0]*r[1]  + p[1]*r[5];
     o[2]  = p[2]*r[10] + p[0]*r[2]  + p[1]*r[6];

@@ -223,8 +223,8 @@ void Game_EnterWorldTick(void)
         DAT_083a4124 = 0;   // single-click flag
         Clk_Watch("scene-init");
 
-        Scene_LoadCharSelectResources(); // FUN_0050ff50 (IDA)
-        Clk_Watch("after-FUN_0050ff50");
+        Scene_LoadCharSelectResources(); // OpenCharacterSceneData (IDA)
+        Clk_Watch("after-OpenCharacterSceneData");
 
         // Spawn background object 0xA4 at origin
         float pos3[3] = {0,0,0}, rot3[3] = {0,0,0};
@@ -339,7 +339,7 @@ void Game_EnterWorldTick(void)
     { extern void __stdcall MoveBugs_stub(void); MoveBugs_stub(); }
     CLK_WATCH("after-MoveBugs");
     Object_MoveUpdate();         CLK_WATCH("after-Object_MoveUpdate");
-    // ── BUG-FIX 2026-04-27: MoveParticles_stub (FUN_00477090) decrementa
+    // ── BUG-FIX 2026-04-27: MoveParticles_stub (MoveParticles) decrementa
     // lifetime de cada particle del pool DAT_07abf5f0. Sin esta llamada los
     // particles spawneados (lightning ELS=11, fire/smoke, etc.) se acumulan
     // forever → whiteout. Per IDA/5.2 RenderBlurs_RenderCharacterScene este

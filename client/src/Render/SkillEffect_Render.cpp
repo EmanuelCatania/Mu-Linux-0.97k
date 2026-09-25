@@ -19,7 +19,7 @@
 //     pfVar1[+0]    — float: escala / intensidad
 //     pfVar1[+1..3] — float[3]: posición XYZ
 //     pfVar1[+4..6] — float[3]: rotación XYZ (Euler angles)
-//     pfVar1[+7..N] — datos adicionales (pasados a FUN_00511d00)
+//     pfVar1[+7..N] — datos adicionales (pasados a RenderSprite_0)
 //
 // ── DECOMPILE COMPLETO ────────────────────────────────────────────────────────
 //
@@ -40,7 +40,7 @@
 //
 //         if (World == 2) {
 //           // Modo en-mundo: draw 2D en espacio mundo
-//           FUN_00511d00((int)pfVar1[-2], pfVar1+1, *pfVar1, *pfVar1,
+//           RenderSprite_0((int)pfVar1[-2], pfVar1+1, *pfVar1, *pfVar1,
 //                        pfVar1+7, 0.0, 0.0, 0.0, 1.0, 1.0);
 //                        → SkillEffect_Draw2D(type, pos[3], r, g, scale, 0,0,0, 1, 1)
 //         }
@@ -74,7 +74,7 @@
 //   GL_SetBlendAdditive  → Frame_UpdateTimer()
 //   GL_SetBlendSrcOver  → GL_SetMode(mode)
 //   GL_BindTextureSlot  → Particle_SetTexture(type) — glBindTexture
-//   FUN_00511d00  → SkillEffect_Draw2D(type, pos, r, g, scale, ...)
+//   RenderSprite_0  → SkillEffect_Draw2D(type, pos, r, g, scale, ...)
 //   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
 //   GL_DrawBillboard  → SkillEffect_DrawBillboard(width, height, rot_mat)
 
@@ -95,7 +95,7 @@
 //   +0x0c float scale / intensity   (= pfVar1[0])
 //   +0x10..0x18 float[3] position   (= pfVar1[1..3])
 //   +0x1c..0x24 float[3] euler rot  (= pfVar1[4..6])
-//   +0x28..    additional data passed to FUN_00511d00
+//   +0x28..    additional data passed to RenderSprite_0
 void SkillEffect_Render(void)
 {
     // IDA: World 2/7/10 → EnableAlphaBlend(); resto → EnableAlphaTest(1).
@@ -141,7 +141,7 @@ void SkillEffect_Render(void)
 
         if (World == 2) {
             // In-world: flat 2D billboard
-            FUN_00511d00(texId, pfVar1 + 1, *pfVar1, *pfVar1,
+            RenderSprite_0(texId, pfVar1 + 1, *pfVar1, *pfVar1,
                          pfVar1 + 7, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
         } else {
             // Other states: 3D billboard via Euler matrix

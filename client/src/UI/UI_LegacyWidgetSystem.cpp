@@ -168,8 +168,8 @@ void* __fastcall Widget_CtorBase(void *param_1)
     return param_1;
 }
 
-// FUN_00541ec1 @ 0x00541EC1 — Array_Construct(arr, elem_size, count, ctor): calls __fastcall ctor(elem) for each element.
-void __cdecl FUN_00541ec1(void *arr, int elem_size, int count, void *ctor) {
+// L_YGXPAXIHP6EX0_Z1_Z @ 0x00541EC1 — Array_Construct(arr, elem_size, count, ctor): calls __fastcall ctor(elem) for each element.
+void __cdecl L_YGXPAXIHP6EX0_Z1_Z(void *arr, int elem_size, int count, void *ctor) {
     typedef void* (__fastcall *CtorFn)(void*);
     CtorFn fn = (CtorFn)ctor;
     char *p = (char*)arr;
@@ -256,7 +256,7 @@ void __cdecl FUN_00408130(void *widget, float entity, int p3, float p4, float p5
     } else {
         nodes = raw + 1;
         *raw  = node_count;
-        FUN_00541ec1(nodes, 0x3c, node_count, (void*)FUN_00407950);
+        L_YGXPAXIHP6EX0_Z1_Z(nodes, 0x3c, node_count, (void*)FUN_00407950);
     }
     *(int **)(thiz + 0x34) = nodes;
 

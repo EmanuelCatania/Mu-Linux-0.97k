@@ -158,9 +158,9 @@ void __cdecl Sound_StopBuffer(int Buffer) {
     }
 }
 
-// ── FUN_00404e40 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// FUN_00404e40 @ 0x00404E40 — CWaveFile ~dtor (calls FUN_00404e60)
-void __fastcall FUN_00404e40(int ecx, int /*edx*/, BYTE param_1) {
+// ── waveIO__dtor — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// waveIO__dtor @ 0x00404E40 — CWaveFile ~dtor (calls waveIO__CloseWaveFile)
+void __fastcall waveIO__dtor(int ecx, int /*edx*/, BYTE param_1) {
     FUN_00404e60_impl(ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -196,7 +196,7 @@ void __stdcall FUN_00405340(void) {
 // ── CErrorReport_WriteDebugInfoStr — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 52-byte ─────────────────────────────────────────────────────────────────
 
-// CErrorReport::WriteDebugInfoStr @ 0x00405500 (IDA: FUN_00405500).
+// CErrorReport::WriteDebugInfoStr @ 0x00405500 (IDA: CErrorReport__WriteDebugInfoStr).
 // (declared in Ghidra as CErrorReport::WriteDebugInfoStr — writes debug string)
 // This is a thin wrapper that calls CErrorReport__Write; implementation is in the
 // vtable dispatch. We stub it as a pass-through.
@@ -208,7 +208,7 @@ void __cdecl CErrorReport_WriteDebugInfoStr(DWORD This, char *fmt) {
 // IDA: CErrorReport::Write (0x00405540)
 void __cdecl CErrorReport_Write(void*,const char*,...)            {} // debug log — kept as stub
 
-// CErrorReport::WriteLogBegin @ 0x00405590 (IDA: FUN_00405590).
+// CErrorReport::WriteLogBegin @ 0x00405590 (IDA: CErrorReport__WriteLogBegin).
 void __fastcall CErrorReport_WriteLogBegin(DWORD This) {
     CErrorReport__Write(This, (char *)"========Log Begin========");
 }
@@ -225,7 +225,7 @@ void CErrorReport_WriteCurrentTime(int param_1) {
     }
 }
 
-// CErrorReport::WriteSystemInfo @ 0x00405620 (IDA: FUN_00405620).
+// CErrorReport::WriteSystemInfo @ 0x00405620 (IDA: CErrorReport__WriteSystemInfo).
 // Logs OS name, CPU name, RAM (MB), DirectX version to error report.
 // si points to 264-byte SystemInfo struct: si[0..127]=CPU, si[128..255]=OS, si[256..259]=RAMbytes, si[260..]=DirectX.
 void __fastcall CErrorReport_WriteSystemInfo(void* This_v, void* /*edx*/, void* si_v) {
@@ -259,7 +259,7 @@ void __fastcall CErrorReport_WriteOpenGLInfo(void* This_v) {
     CErrorReport__Write(This, (char*)"Max viewport \t\t: %d x %d\r\n", maxView[0], maxView[1]);
 }
 
-// CErrorReport::WriteImeInfo @ 0x00405760 (IDA: FUN_00405760).
+// CErrorReport::WriteImeInfo @ 0x00405760 (IDA: CErrorReport__WriteImeInfo).
 // Logs IME description, IME file, keyboard layout name.
 void __fastcall CErrorReport_WriteImeInfo(void* This_v, void* /*edx*/, HWND hWnd) {
     DWORD This = (DWORD)(uintptr_t)This_v;

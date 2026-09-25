@@ -491,4 +491,4 @@ void __cdecl Entity_MeleeAttackStart(int param_1) {
     PlayBuffer(0x58, 0, 0);
 }
 
-// FUN_00479330 @ 0x00479330 — RenderPoints (damage popup renderer)
+// RenderPoints @ 0x00479330 — RenderPoints (damage popup renderer)

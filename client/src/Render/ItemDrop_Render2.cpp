@@ -1,4 +1,4 @@
-// ItemDrop_Render2.cpp — FUN_00478c00 @ 0x00478c00
+// ItemDrop_Render2.cpp — RenderParticles @ 0x00478c00
 // Sprite-pool render loop for decoration/item-drop billboards.
 //
 // Iterates a fixed sprite entity pool starting at (DAT_07abf634 - 0x44) = 0x07abf5f0,
@@ -27,7 +27,7 @@
 // billboards (item drops, decorative glows, spell sprites).
 //
 // After per-type UV / frame computation, calls:
-//   FUN_00511d00(type, pos, scale_x, scale_y, uv_base, frame, u0, v0, u_size, v_size)
+//   RenderSprite_0(type, pos, scale_x, scale_y, uv_base, frame, u0, v0, u_size, v_size)
 
 #include "stdafx.h"
 #include "globals.h"
@@ -41,7 +41,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-void FUN_00478c00(void)
+void RenderParticles(void)
 {
     // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODO el render del particle
     // pool DAT_07abf5f0 — particles spawneadas via CreateParticle (Particle_Spawn)
@@ -93,7 +93,7 @@ void FUN_00478c00(void)
                 // vez que esta familia muerde (ver la tabla en CLAUDE.md).
                 GL_SetBlendSrcOver('\0');      // EnableAlphaTest(0)
 
-            uint  uVar3  = puVar8[-0x10];  // entity_type (passed to FUN_00511d00)
+            uint  uVar3  = puVar8[-0x10];  // entity_type (passed to RenderSprite_0)
             uint  uVar6;
             float fVar15, fVar16, fVar17, fVar18, fVar19;
 
@@ -220,14 +220,14 @@ void FUN_00478c00(void)
                             pfVar7++;
                             iVar2b++;
                         }
-                        FUN_00511d00(0x4df, local_18 + 3, fVar13, fVar14,
+                        RenderSprite_0(0x4df, local_18 + 3, fVar13, fVar14,
                                      local_18, *(float *)(puVar8 - 1),
                                      0.0f, 0.0f, 1.0f, 1.0f);
                         local_3c--;
                         local_38++;
                     } while (0 <= local_3c);
                 }
-                goto next_entry;   // already drew above; skip final FUN_00511d00 call
+                goto next_entry;   // already drew above; skip final RenderSprite_0 call
             }
 
             // ── 0x4e1: single-frame or skip based on anim_state ───────────
@@ -296,7 +296,7 @@ void FUN_00478c00(void)
                 break;
             } // switch
 
-            FUN_00511d00(uVar3,
+            RenderSprite_0(uVar3,
                          (float *)(puVar8 - 0xd),  // world pos
                          fVar13, fVar14,
                          (float *)(puVar8 - 7),     // uv_base

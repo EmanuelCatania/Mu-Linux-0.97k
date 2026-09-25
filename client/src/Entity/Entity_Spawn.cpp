@@ -295,7 +295,7 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     // decompile Ghidra que mostraba "Models[0xee8ef].Data + 0x9e"), lo que leía
     // 22 structs MODEL_t adelante y devolvía un short basura. Si ese short era
     // menor que el bone count real → undersized buffer → overflow detectado por
-    // PageHeap en FUN_004f9f70 línea 7266 (crash al escribir el último bone).
+    // PageHeap en R_ConcatTransforms línea 7266 (crash al escribir el último bone).
     // Correcto: offset +0x22 dentro del struct MODEL_t (mismo que usa
     // BMD_Animation para su loop count).
     if (*(unsigned char **)(param_1 + 0x114) != NULL) {

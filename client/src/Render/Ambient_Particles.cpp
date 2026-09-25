@@ -1,5 +1,5 @@
 // Ambient_Particles.cpp
-// IDA: FUN_00502320 @ 0x00502320 — AmbientParticles_Update
+// IDA: Ambient_ParticleUpdate @ 0x00502320 — AmbientParticles_Update
 //
 // Ambient_ParticleUpdate — per-frame ambient particle spawner/updater.
 //

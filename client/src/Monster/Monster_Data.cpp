@@ -1,5 +1,5 @@
 // Monster_Data.cpp
-// FUN_00511060 @ 0x00511060
+// Monster_Data_Load @ 0x00511060
 //
 // Loads monster script / base data files.
 // Only executed if DAT_083a410c != 0 (multiplayer / server-mode flag).
@@ -15,7 +15,7 @@
 
 #include "stdafx.h"
 
-// IDA: FUN_00511060
+// IDA: Monster_Data_Load
 void __cdecl Monster_LoadStartupData(void)
 {
     if (DAT_083a410c != '\0') {
@@ -37,7 +37,7 @@ void __cdecl Monster_LoadStartupData(void)
 // Calls SetMaxTextures to initialize the table with 0x41a entries.
 // Then, only in pre-load phase (DAT_0055a7c4 == 0), registers BMD model
 // files from Data2/Monster/ for monster types 0x13d–0x14c and invokes
-// FUN_005098c0 for monster IDs 0x32–0x3e to set up their sound+animation
+// OpenMonsterModel for monster IDs 0x32–0x3e to set up their sound+animation
 // data.
 //
 // Globals:
@@ -61,7 +61,7 @@ void Monster_LoadScriptTable(void)
     OpenModel((int)0x14c,s_Data2_Monster__0055e06c,&DAT_0055de10);
     iVar1 = 0x32;
     do {
-      FUN_005098c0(iVar1);
+      OpenMonsterModel(iVar1);
       iVar1 = iVar1 + 1;
     } while (iVar1 < 0x3f);
   }
@@ -156,7 +156,7 @@ LAB_0047d09b:
 }
 
 
-// FUN_005098c0 @ 0x005098c0
+// OpenMonsterModel @ 0x005098c0
 //
 // Monster_SetupSoundAnim — registers sound and animation data for one
 // monster type (param_1 = monster index 0x00–0x3f).
@@ -175,7 +175,7 @@ LAB_0047d09b:
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl FUN_005098c0(int param_1)
+void __cdecl OpenMonsterModel(int param_1)
 
 {
   int iVar1;
@@ -589,8 +589,8 @@ LAB_005099d1:
       FUN_00404a10(0x13e,s_Data_Sound_jaikan_attack2_wav_0055cfe8,2,'\x01');
       FUN_00404a10(0x13f,s_Data_Sound_jaikan_die_wav_0055cfcc,2,'\x01');
       Model_SetAnimationSlots(iVar1,0x91,0x92,0x93,0x94,0x95);
-      FUN_00529740(s_Monster_bv01_2_jpg_0055cfb8,0x56b,0x2601,0x2901,0,'\x01');
-      FUN_00529740(s_Monster_bv02_2_jpg_0055cfa4,0x56c,0x2601,0x2901,0,'\x01');
+      OpenJPG(s_Monster_bv01_2_jpg_0055cfb8,0x56b,0x2601,0x2901,0,'\x01');
+      OpenJPG(s_Monster_bv02_2_jpg_0055cfa4,0x56c,0x2601,0x2901,0,'\x01');
       *(undefined4 *)(DAT_05828d58 + 0xe574) = 0x14;
       return;
     case 0x2b:
@@ -656,8 +656,8 @@ LAB_005099d1:
       Model_SetAnimationSlots(iVar1,0xab,0xffff,0xac,0xac,0xad);
       return;
     case 0x34:
-      FUN_00529bd0(s_Monster_iui02_tga_0055cddc,0x1ed,0x2600,0x2900,0,'\x01');
-      FUN_00529bd0(s_Monster_iui03_tga_0055cdc8,0x1ef,0x2600,0x2900,0,'\x01');
+      OpenTGA(s_Monster_iui02_tga_0055cddc,0x1ed,0x2600,0x2900,0,'\x01');
+      OpenTGA(s_Monster_iui03_tga_0055cdc8,0x1ef,0x2600,0x2900,0,'\x01');
       *(undefined4 *)(*(int *)(iVar2 + 0x30) + 100) = 0x3e6147ae;
       FUN_00404a10(0x15e,s_Data_Sound_mMegaCrust1_wav_0055cdac,2,'\x01');
       FUN_00404a10(0x15f,s_Data_Sound_mMegaCrustAttack1_wav_0055cd88,2,'\x01');

@@ -400,7 +400,7 @@ int Game_SceneUpdate(void)
         }
 
         // Load login-scene resources (sounds, textures)
-        Scene_LoadAccountResources(); // FUN_0050fcf0 (IDA)
+        Scene_LoadAccountResources(); // OpenLogoSceneData (IDA)
 
         // Clear 8 entity slots at base entity array + 0x168 (stride 0x394)
         {
@@ -1063,7 +1063,7 @@ state_fail_common:
                     }
                 }
                 FUN_00406f50((CHAR*)LogInID);
-                Scene_UnloadAccountResources(); // FUN_0050ff10 (IDA)
+                Scene_UnloadAccountResources(); // ReleaseLogoSceneData (IDA)
                 return 0;
 
             // Login error codes 0x13-0x24: show error, back to CredentialInput

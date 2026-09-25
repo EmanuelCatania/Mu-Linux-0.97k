@@ -1,9 +1,9 @@
 // MoveJoint.cpp
-// FUN_00470030 @ 0x00470030  [Kayito: MoveJoint]
+// MoveJoint @ 0x00470030  [Kayito: MoveJoint]
 //
 // Per-frame movement/animation tick for "joint" effect slots.
 // Joint slots are chained lightning/beam/special-link effects.
-// Called by MoveJoints (FUN_004736e0) once per active joint slot per frame.
+// Called by MoveJoints (MoveJoints) once per active joint slot per frame.
 //
 // param_1 = undefined1*  — pointer to joint slot (stride ~0x9d4, base near DAT_07abf5d0)
 // param_2 = uint         — frame counter / slot index used for trig oscillation seeds
@@ -279,7 +279,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
     }
 }
 
-char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
+char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
 {
     float   fVar2;
     float   fVar3;
@@ -1684,7 +1684,7 @@ _skipLabel182:;
         const int subtype = *(int *)(param_1 + 8);
         if ((remainingLife % 12) != 0 && (type == 1249 || type == 1277) &&
             (subtype == 4 || subtype == 12)) {
-            return FUN_00470030(param_1, param_2);
+            return MoveJoint(param_1, param_2);
         }
         return (char *)(intptr_t)remainingLife;
     }
@@ -1704,7 +1704,7 @@ _skipLabel182:;
             ((pcVar12 = *(char **)(param_1 + 8),
               (pcVar12 == (char *)0x4) || (pcVar12 == (char *)0xc))))
         {
-            pcVar12 = FUN_00470030(param_1, param_2);
+            pcVar12 = MoveJoint(param_1, param_2);
         }
         return pcVar12;
     }
@@ -1715,4 +1715,4 @@ _skipLabel182:;
 #endif
 }
 
-// end of FUN_00470030
+// end of MoveJoint

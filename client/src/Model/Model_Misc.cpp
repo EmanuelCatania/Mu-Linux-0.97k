@@ -1,4 +1,4 @@
-// IDA: FUN_0050b710 @ 0x0050b710 — Model_LoadSkillEffectAssets
+// IDA: OpenSkills @ 0x0050b710 — Model_LoadSkillEffectAssets
 // Loads skill effect geometry (SMD meshes for ice, fire, arrows, bone warriors,
 // dragon magic, etc.) and their BMD equivalents.  Also loads skill textures
 // and flower particle textures.  Covers model slots 0xbe-0x10d.
@@ -6,7 +6,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// IDA: FUN_0050b710
+// IDA: OpenSkills
 void __cdecl Model_LoadSkillEffectAssets(void)
 {
     // ── Korean-locale SMD skill meshes ────────────────────────────────────────
@@ -192,8 +192,8 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     }
 
     // Flower particle textures
-    FUN_00529bd0("Skill\\flower1.tga", 0x4da, 0x2600, 0x2900, 0, '\x01');
-    FUN_00529bd0("Skill\\flower2.tga", 0x4db, 0x2600, 0x2900, 0, '\x01');
-    FUN_00529bd0("Skill\\flower3.tga", 0x4dc, 0x2600, 0x2900, 0, '\x01');
+    OpenTGA("Skill\\flower1.tga", 0x4da, 0x2600, 0x2900, 0, '\x01');
+    OpenTGA("Skill\\flower2.tga", 0x4db, 0x2600, 0x2900, 0, '\x01');
+    OpenTGA("Skill\\flower3.tga", 0x4dc, 0x2600, 0x2900, 0, '\x01');
     DAT_0055a7c4 = 1;
 }

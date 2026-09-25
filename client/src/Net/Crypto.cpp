@@ -1122,7 +1122,7 @@ void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int r
     } else {
         nodes = raw + 1;
         *raw  = node_count;
-        FUN_00541ec1(nodes, 0x3c, node_count, (void*)FUN_00407950);
+        L_YGXPAXIHP6EX0_Z1_Z(nodes, 0x3c, node_count, (void*)FUN_00407950);
     }
     *(int **)(thiz + 0x34) = nodes;
 
@@ -1194,18 +1194,18 @@ void* __fastcall FUN_00409ad0(void* param_1) {
     return param_1;
 }
 
-// ── FUN_00409b60 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// FUN_00409b60 @ 0x00409B60 — SoundWidgetB ~dtor
-void __fastcall FUN_00409b60(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00409b80((void *)ecx);
+// ── scalar_deleting_destructor_locale — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// scalar_deleting_destructor_locale @ 0x00409B60 — SoundWidgetB ~dtor
+void __fastcall scalar_deleting_destructor_locale(int ecx, int /*edx*/, BYTE param_1) {
+    Locimp_dtor((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00409b80 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_00409b80 @ 0x00409B80 (~39 lines) — CSQuest destructor: clear list + free sentinels
+// ── Locimp_dtor — movida desde stubs_bulk_misc.cpp (refactor B3) ──
+// Locimp_dtor @ 0x00409B80 (~39 lines) — CSQuest destructor: clear list + free sentinels
 // __fastcall(ecx=questObj). Setea la vtable, llama a FUN_00409d20 (limpia todos los nodos),
 // y después libera la cadena de nodos entre la cabeza y la cola, y los propios centinelas.
-void __fastcall FUN_00409b80(void* param_1) {
+void __fastcall Locimp_dtor(void* param_1) {
     // *param_1 = &PTR_FUN_00552568 (vtable)
     // FUN_00409d20(param_1) — clear all quest nodes
     // Recorre la cadena head->next y borra cada nodo

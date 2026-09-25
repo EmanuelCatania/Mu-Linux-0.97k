@@ -182,7 +182,7 @@ void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
     glEnd();
 }
 
-// FUN_004e13a0 @ 0x004E13A0 — RenderObjectScreen
+// RenderObjectScreen @ 0x004E13A0 — RenderObjectScreen
 // Renders a 3D item/object at world position param_4[0..2].
 // Sets rotation globals per type, builds a stack entity, calls BMD_Animation + Entity_DrawAt.
 static bool ApplyInventoryExactPoseLate(int param_1, int level, float* outPos)
@@ -417,7 +417,7 @@ static bool ApplyInventoryExactPoseLate(int param_1, int level, float* outPos)
 
 #if 0
 #if 0 // Superseded by the literal 0.97k RenderObjectScreen port below.
-void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param_3, unsigned char param_4, float *param_5, int param_6, char param_7)
+void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char param_3, unsigned char param_4, float *param_5, int param_6, char param_7)
 {
     // 2026-05-08: per-call recovery. Esta función se llama MUCHAS veces por
     // frame (una por cada item 3D del inventario). El watchdog en Render_GameFrame
@@ -651,7 +651,7 @@ static bool ApplyInventoryExactPoseTail(int param_1, float* outPos)
     }
     return false;
 }
-void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param_3, unsigned char param_4, float *param_5, int param_6, char param_7)
+void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char param_3, unsigned char param_4, float *param_5, int param_6, char param_7)
 {
     // 2026-05-08: per-call recovery. Esta función se llama muchas veces por frame.
     {
@@ -1754,10 +1754,10 @@ void __cdecl FUN_004e13a0(int param_1, unsigned int param_2, unsigned char param
 }
 #endif
 
-// FUN_004e13a0 @ 0x004E13A0 — RenderObjectScreen.
+// RenderObjectScreen @ 0x004E13A0 — RenderObjectScreen.
 // Literal control-flow port of the 0.97k IDA routine.  This is the common 3D
 // item path for inventory, equipment, shop, warehouse, trade and Chaos grids.
-void __cdecl FUN_004e13a0(int Type, unsigned int ItemLevel, unsigned char Option1,
+void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char Option1,
                           unsigned char ExtOption, float* Target, int Select, char PickUp)
 {
 

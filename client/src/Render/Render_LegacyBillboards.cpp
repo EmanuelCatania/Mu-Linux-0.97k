@@ -67,10 +67,10 @@ void __cdecl FUN_00475170(int param_1) {
         (float*)(param_1 + 0x10),
         '\x01');
 }
-// FUN_00474f90 @ 0x00474F90 — Player_DrawInstance
+// RenderPlane @ 0x00474F90 — Player_DrawInstance
 // Renders a billboard quad at pos[], scaled by sc, rotated around Z by rot[0] angle,
 // using texture slot param_1.
-void __cdecl FUN_00474f90(int cls, float *pos, float *rot, float sc) {
+void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
     GL_BindTextureSlot(cls);
     GL_SetBlendAdditive();
     glPushMatrix();

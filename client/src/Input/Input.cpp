@@ -137,7 +137,7 @@ uint Key_IsJustPressed(int vk);
 //   Si guard false: ignorado.
 //
 //   wParam == 8  (Backspace):
-//     FUN_00541eab — mide longitud del último carácter (1 o 2 para DBCS)
+//     mbclen — mide longitud del último carácter (1 o 2 para DBCS)
 //     Resta esa longitud de g_TextLen[g_ActiveSlot]
 //     Null-termina en la nueva posición
 //
@@ -323,7 +323,7 @@ void __cdecl ClearInput(int param_1)
 
 // Input_ProcessFunctionKeys @ 0x004c04a0 — Input_ProcessFunctionKeys
 // Handles F1(0x70)-F4(0x73) toggle keys each frame.
-// IDA: FUN_004c04a0
+// IDA: CheckFunctionButtons
 void Input_ProcessFunctionKeys(void)
 {
   byte bVar1;

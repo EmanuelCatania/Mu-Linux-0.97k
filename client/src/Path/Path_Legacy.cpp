@@ -326,7 +326,7 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
     return 1;
 }
 
-// IDA: FUN_0043f3e0 @ 0x0043F3E0 — PathFinding2(sx, sy, tx, ty, path_buf, radius)
+// IDA: PathFinding2 @ 0x0043F3E0 — PathFinding2(sx, sy, tx, ty, path_buf, radius)
 // Calls A* solver (PATH_FindPath). On fail, checks terrain walk flags at src/dst
 // to decide filter mode (2 or 4) and retries. On success (path_len >= 2),
 // copies waypoints from DAT_05826df4 result buffer into path_buf.
@@ -487,7 +487,7 @@ float __cdecl FarAngle(float a1, float a2, char a3)
 
 
 
-// IDA: FUN_0043ea20 @ 0x0043EA20 — Entity_MovePath(entity, flag)
+// IDA: MovePath @ 0x0043EA20 — Entity_MovePath(entity, flag)
 // Advances entity along its Catmull-Rom waypoint path.
 // path_wp_x/y arrays at entity+0x357/0x366 (grid coords); path_substep 0-3 per segment.
 // Returns 1 when entity arrives at final waypoint; 0 otherwise.

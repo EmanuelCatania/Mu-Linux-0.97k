@@ -224,7 +224,7 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
                 // quaternion to 3x3 rotation matrix, embedded in a 3x4.
                 // BUG-FIX: FUN_004fa270 solo escribe posiciones [0,1,2,4,5,6,8,9,10]
                 // (9 floats de 3x3). Las posiciones 3,7,11 (columna de translación)
-                // quedaban sin inicializar. FUN_004f9f70 las lee como translation,
+                // quedaban sin inicializar. R_ConcatTransforms las lee como translation,
                 // así que generaba bone matrices con translate = stack garbage →
                 // vértices astronómicos. Zero-init + inyectar tX/tY/tZ abajo.
                 float rot33[12] = {0};
@@ -291,7 +291,7 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
                 rot33[3]  = tX;
                 rot33[7]  = tY;
                 rot33[11] = tZ;
-                FUN_004f9f70(parentMat, rot33, (float*)(boneIdx * 0x30 + param_1));
+                R_ConcatTransforms(parentMat, rot33, (float*)(boneIdx * 0x30 + param_1));
             }
         }
     }
@@ -556,8 +556,8 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
 // CreateSprite — implemented in src/Render/Particle.cpp (Effect_Spawn, returns int)
 // PressKey — implemented in src/Input/Input.cpp
 // UIChatLogWindow_AddText — UIChatLogWindow_AddText — implemented above as UIChatLogWindow_AddText
-// FUN_004f8ff0 — implemented in src/Terrain/Terrain_Utils.cpp
-// FUN_00529740 — implemented in src/Render/Texture/Texture.cpp (Texture_Load)
+// TestFrustrum2D — implemented in src/Terrain/Terrain_Utils.cpp
+// OpenJPG — implemented in src/Render/Texture/Texture.cpp (Texture_Load)
 // ═════════════════════════════════════════════════════════════════════════════
 
 // CSimpleModulus crypto (CSimpleModulus_Encode/cd20/cca0/ce30 + helpers) moved to
@@ -565,13 +565,13 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
 
 // Chat_ValidateInputCommand — implemented in src/UI/Chat.cpp
 // GL_DrawTexture — implemented in src/Render/GL_2D.cpp
-// FUN_00511d00 — implemented in src/Render/Sprite.cpp (Sprite_DrawTexturedQuad)
+// RenderSprite_0 — implemented in src/Render/Sprite.cpp (Sprite_DrawTexturedQuad)
 
-// FUN_005433b0 @ 0x005433b0 — GetTickCount-based time accumulator
+// CIsin @ 0x005433b0 — GetTickCount-based time accumulator
 // Takes x87 FPU float10 (in_ST0) from the FPU stack, converts to double, passes to
-// FUN_00549ae8 (store low DWORD) + FUN_005433cd (return via x87). Returns float10.
+// checkTOS_withFB (store low DWORD) + FUN_005433cd (return via x87). Returns float10.
 // Ghidra shows void; real calling convention returns value on x87 stack.
-float10 __cdecl FUN_005433b0(void) { return 0.0L; }
+float10 __cdecl CIsin(void) { return 0.0L; }
 
 // ── Screen coordinate converters (@ 0x00511950 / 0x00511980) ─────────────────
 float __cdecl Screen_ToGLx(float x) { return x; }

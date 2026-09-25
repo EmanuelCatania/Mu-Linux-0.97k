@@ -9,7 +9,7 @@
 #include "Render/Camera.h"
 
 // ── Terrain tile outline / ray-triangle intersection stubs ───────────────────
-// FUN_004f7fb0 (RenderTerrainFace) — PORTADO 1:1 en src/Terrain/Terrain_RenderFace.cpp
+// RenderTerrainFace (RenderTerrainFace) — PORTADO 1:1 en src/Terrain/Terrain_RenderFace.cpp
 // (antes era un no-op stub de 4 args; la firma real es 5 args con lodf).
 // FUN_00512d40 @ 0x00512D40 — CollisionDetectLineToFace (a.k.a. Ray_TriIntersect)
 // BUG-FIX 2026-04-26 (audit #7): activated full IDA port.  Old stub returned 0

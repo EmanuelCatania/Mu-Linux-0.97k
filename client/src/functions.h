@@ -8,20 +8,20 @@ typedef long double float10;
 // Kayito canonical name index (from main.exe.idb, 2026-01-03):
 // Nombres del port que NO coinciden con el de IDA (el resto ya se renombro
 // al nombre de IDA y la equivalencia es trivial):
-//   FUN_00470030 = MoveJoint     FUN_004736e0 = MoveJoints     Entity_AdvancePath = MovePath
+//   MoveJoint = MoveJoint     MoveJoints = MoveJoints     Entity_AdvancePath = MovePath
 //   Entity_RenderAll_3D = RenderCharactersClient     Combat_SendMovePathPacket = SendMove
-//   Player_ProcessInput (IDA: FUN_004acef0) = MoveHero     Chat_InputTick = MoveInterface
-//   Path_FindRoute = PathFinding2     Timer_UpdateFrameTiming (IDA: FUN_0043fd70) = CalcFPS
+//   Player_ProcessInput (IDA: Player_InputTick) = MoveHero     Chat_InputTick = MoveInterface
+//   Path_FindRoute = PathFinding2     Timer_UpdateFrameTiming (IDA: CalcFPS) = CalcFPS
 //   BMD_Animation = BMD::Animation     BMD_TransformPosition = BMD::TransformPosition
-//   FUN_00442090 = BMD::Release     FUN_004423e0 = BMD::Open     FUN_00442a60 = BMD::Save
+//   BMD__Release = BMD::Release     BMD__Open = BMD::Open     BMD__Save = BMD::Save
 //   FUN_00448600 = CharacterAnimation     Combat_UseWarriorSkill = UseSkillWarrior
-//   Combat_UseElfSkill = UseSkillElf     FUN_0047e4f0 = CHARACTER_MACHINE::GetMagicSkillDamage
+//   Combat_UseElfSkill = UseSkillElf     CHARACTER_MACHINE_GetMagicSkillDamage = CHARACTER_MACHINE::GetMagicSkillDamage
 // Signatures are best-effort from call-site analysis; wrong-arity calls will
 // produce C4087/C2660 errors — fix by updating the specific prototype.
 //
 // MSVC CRT stubs — NOT game logic:
 //   crt_sprintf → crt_sprintf
-//   FUN_0054519d → crt_output_engine
+//   output → crt_output_engine
 //   operator_delete → operator_delete
 //   __chkstk_probe → __chkstk_probe (large-frame stack allocator)
 
@@ -34,7 +34,7 @@ void* __cdecl HashTable_GetNode(void *ctx, void *key); // IDA: HashTable_GetNode
 uint  __cdecl HashTable_GetIndex(void *ctx, void *key);       // Returns slot index (0xffffffff = not found)
 void  __cdecl PACKET_ENCRYPT(void *ctx, void *key); // IDA: PACKET_ENCRYPT (0x00404040)
 void  __cdecl FUN_00403f30(void *a, void *b);
-void  __cdecl FUN_00403a30(void);
+void  __cdecl CWsctlc__LogPrintOn(void);   // IDA: CWsctlc__LogPrintOn (0x00403A30)
 void  __cdecl Packet_DecryptBuffer(void *node, void *key); // IDA: Packet_DecryptBuffer (0x00404370)
 void  __cdecl Packet_EncryptBuffer(void *a, void *b); // IDA: Packet_EncryptBuffer (0x00404400)
 void  __cdecl Packet_DecryptDword(void *key, void *node); // IDA: FUN_00409E20 (0x00409E20)
@@ -68,7 +68,7 @@ short __fastcall CSQuest_FindQuestContext(void *pThis, short *quest, int context
 void  __fastcall CSQuest_GetQuestState(void *pThis, int quest_index);                       // IDA: FUN_004016E0
 uint  __fastcall CSQuest_CheckActCondition(void *pThis, short *quest);                      // IDA: FUN_00401650
 void  __fastcall CSQuest_CheckQuestState(void *pThis, char state);                          // IDA: FUN_00401730
-int   __cdecl    FUN_00482dd0(int a, int b, uint c);                    // ItemSlot_Check
+int   __cdecl    CSQuest_FindQuestItemsInInven(int a, int b, uint c);                    // ItemSlot_Check
 void  __cdecl Sound_StopBuffer(int);        // IDA: FUN_00404C60
 void  __cdecl Sound_Update3DPositions(void);// IDA: FUN_00404CD0
 
@@ -101,7 +101,7 @@ void  __cdecl FUN_0040f670(int, int, int);
 
 // ── Input ─────────────────────────────────────────────────────────────────────
 void  __cdecl Music_StopTrack(DWORD, int); // IDA: FUN_004127F0
-void  __cdecl Music_PlayTrack(DWORD, int); // IDA: FUN_00412890
+void  __cdecl Music_PlayTrack(DWORD, int); // IDA: PlayMp3
 void  __cdecl CheckHack(int, int, int); // IDA: CheckHack (0x00412A70)
 void  __cdecl GetCheckSum(int, int, int, int); // IDA: GetCheckSum (0x00412DE0)
 void  __cdecl FUN_00413900(void);
@@ -225,7 +225,7 @@ void* __cdecl SetAction(int entity_ptr, int anim_id); // IDA: SetAction (0x0043E
 void  __cdecl Alpha(int entity_ptr); // IDA: Alpha (0x0043E5C0)
 void  __cdecl FUN_0043e680(int entity_ptr, int slot_idx, int table_base, int stride); // Particle_PathUpdate
 // Pathfind(src_cached_x, src_cached_y, tgt_x, tgt_y, path_buf, reserved) → 1=ok 0=fail
-unsigned int __cdecl Path_FindRoute(int src_x, int src_y, int tgt_x, int tgt_y, unsigned char *path, float reserved); // IDA: FUN_0043f3e0
+unsigned int __cdecl Path_FindRoute(int src_x, int src_y, int tgt_x, int tgt_y, unsigned char *path, float reserved); // IDA: PathFinding2
 // PathFinder2_Solve: A* grid search — implemented in Game/PathFinder.cpp
 uint  __cdecl PATH_FindPath(void *_this, int sx, float sy, int tx, int ty, int filter, int walkmax, float radius); // IDA: PATH_FindPath (0x0043F500)
 // A* BST priority queue helpers — implemented in Game/PathFinder.cpp
@@ -234,7 +234,7 @@ void  __cdecl CBTree_Add(void *_this, undefined4 data, int cost); // IDA: CBTree
 undefined4 __cdecl CBTree_RemoveNode(void *_this, int *pnode); // IDA: CBTree_RemoveNode (0x004232F0)
 void  __cdecl CBTree_RemoveFrom(void *_this, undefined4 *node); // IDA: CBTree_RemoveFrom (0x004235D0)
 void  __fastcall CBTree_RemoveAll(undefined4 *open_set); // IDA: CBTree_RemoveAll (0x0043FF60)
-void  __cdecl Timer_UpdateFrameTiming(void); // IDA: FUN_0043fd70
+void  __cdecl Timer_UpdateFrameTiming(void); // IDA: CalcFPS
 
 // ── Model render helpers (FUN_004400xx / FUN_004410xx / FUN_004414xx) ─────────
 // Called on model context pointer (this = DAT_05828d58 + type*0xbc).
@@ -246,11 +246,11 @@ void  __cdecl FUN_00440d50(void *model, float layer, int anim_id, float scale, i
 void  __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba);
 void  __cdecl FUN_00441be0(void *model, int a, int b);             // Model_KillAnim(model, 0, anim_slot)
 void  __cdecl FUN_00441f00(void *model, int height_int, int anim); // Model_RenderShadow(model, height, anim)
-void  __cdecl FUN_00442090(int model_ptr);                         // Model_Unload (free BMD model data)
-void  __cdecl FUN_00442260(void *model);                           // BMD_PostActionsInit (post-load action setup)
-void  __cdecl FUN_00442e00(void *model, char flag);                // BMD_PostLoadInit (post-load finalize)
-void  __cdecl FUN_004422f0(void *pThis, int param_1, int param_2, int param_3);  // BMD_BuildAdjacentFaceTable
-void  __cdecl FUN_00442e60(int param_1);                           // BMD_ComputeBounds
+void  __cdecl BMD__Release(int model_ptr);                         // Model_Unload (free BMD model data)
+void  __cdecl BMD__FindNearTriangle(void *model);                           // BMD_PostActionsInit (post-load action setup)
+void  __cdecl BMD__Init(void *model, char flag);                // BMD_PostLoadInit (post-load finalize)
+void  __cdecl BMD__FindTriangleForEdge(void *pThis, int param_1, int param_2, int param_3);  // BMD_BuildAdjacentFaceTable
+void  __cdecl BMD_CreateBoundingBox(int param_1);                           // BMD_ComputeBounds
 // VTable helpers used by type 0x13f/0x14a entity dispatch
 void* __fastcall FUN_0040a660(void *param_1);                      // WidgetB_CtorFull
 void* __fastcall FUN_00409ed0(void *param_1);                      // WidgetB_Ctor
@@ -268,11 +268,11 @@ void  __cdecl FUN_004404e0(void *model, int bone, float *anim1, float *anim2, fl
 void  __cdecl BMD_TransformPosition(void *model, float *bone_data, float *out_pos, float *out_col, char flag); // IDA: TransformPosition (0x004409A0)
 void  __cdecl FUN_00440a30(void *model, float *bone_mat, float *pos_in, float *pos_out); // BoneTransformOffset — implemented in Render/BMD_SetupRender.cpp
 int   __cdecl ItemObjectAttribute(int param_1); // IDA: ItemObjectAttribute (0x00502BA0)
-void  __cdecl FUN_004423e0(int, int, int, int);
-undefined4 __cdecl FUN_00442a60(int thisModel, char *pathDir, char *pathFile);  // BMD_SaveToFile
+void  __cdecl BMD__Open(int, int, int, int);   // IDA: BMD__Open (0x004423E0)
+undefined4 __cdecl BMD__Save(int thisModel, char *pathDir, char *pathFile);  // BMD_SaveToFile
 void  __cdecl SetPlayerStop(int entity); // IDA: SetPlayerStop (0x004430C0)
 void  __cdecl SetPlayerWalk(int entity); // IDA: SetPlayerWalk (0x00443930)
-unsigned int __cdecl Entity_AdvancePath(void *entity, char flag); // IDA: FUN_0043ea20
+unsigned int __cdecl Entity_AdvancePath(void *entity, char flag); // IDA: MovePath
 void  __cdecl MoveCharacterPosition(int entity); // IDA: MoveCharacterPosition (0x00454BA0)
 void  __cdecl SetCharacterClass(int entity); // IDA: SetCharacterClass (0x0045C130)
 void  __cdecl FUN_0045c720(int entity);        // Character_UpdateEquipSlotAnimations
@@ -283,9 +283,9 @@ void  __cdecl FUN_00444b30(int param_1);       // SetPlayerTeleport - anim de ca
 void  __cdecl SetPlayerShock(int c, int Hit); // IDA: SetPlayerShock (0x00444B60)
 void  __cdecl SetPlayerDie(int entity_idx); // IDA: SetPlayerDie (0x00444D90)
 // ── Character/Effect update pool (0x004796xx) ────────────────────────────────
-void  __cdecl Render_DrawSprite(int slot);               // IDA: FUN_00479670
-void  __cdecl Render_DrawSpritePool(void);               // IDA: FUN_00479730
-void  __cdecl FUN_00479790(void);              // Effect_UpdateAll (mark all active)
+void  __cdecl Render_DrawSprite(int slot);               // IDA: RenderSprite
+void  __cdecl Render_DrawSpritePool(void);               // IDA: RenderSprites
+void  __cdecl CheckSprites(void);              // Effect_UpdateAll (mark all active)
 // GL_SetBlendSrcOver / GL_SetBlendAdditive / GL_SetBlendSrcAlpha — declared below (GL state / sound)
 extern "C" int __cdecl GetScreenWidth(void); // IDA: GetScreenWidth (0x004CB520)
 
@@ -319,7 +319,7 @@ void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float
 // ── Skill/weapon widget system (UI overlay beams) ─────────────────────────────
 void* __fastcall Widget_Ctor(void *param_1); // IDA: Widget_Ctor (0x004093A0)
 void* __fastcall Widget_CtorBase(void *param_1); // IDA: Widget_CtorBase (0x00407FE0)
-void  __cdecl FUN_00541ec1(void *arr, int size, int elem, void *ctor); // Array_InitWithCtor
+void  __cdecl L_YGXPAXIHP6EX0_Z1_Z(void *arr, int size, int elem, void *ctor); // Array_InitWithCtor
 void  __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int radius, int flags); // Widget_BindEntity
 void  __cdecl FUN_00409250(void *widget, float x, float y, float z, float radius, int boneIdx); // Cloth_AddAnchor
 int   __cdecl Widget_CheckState(int *widget, unsigned int hash, int flags); // IDA: Widget_CheckState (0x00408900)
@@ -331,7 +331,7 @@ unsigned int __cdecl CreateCharacter(int Key, int Type, unsigned char PosX, unsi
 void  __cdecl ChangeCharacterExt(int Key, BYTE *Equipment); // ChangeCharacterExt
 char* __cdecl CreateMonster(uint, int, int, int, int); // IDA: CreateMonster (0x0045CCF0)
 unsigned char* __cdecl CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate); // CreateHero
-void  __cdecl Monster_SaveSetBase(const char*); // FUN_0045fa20 — writes MonsterSetBase position records
+void  __cdecl Monster_SaveSetBase(const char*); // SaveMonsters — writes MonsterSetBase position records
 float* __cdecl CreateEffect(int type, float *p1, float *p2, float *p3, float *p4, float *p5, float *p6, float *p7, byte flag); // IDA: CreateEffect (0x00460DC0)
 // Tamachan (0.98j, efecto 193): control por el opcode 0x0B tipo 2.
 void __cdecl Tamachan_Clear(void);     // IDA 0.98j: sub_46C220
@@ -345,46 +345,46 @@ void  __cdecl FUN_00466440(int);                        // STUB: HashTable obfus
 void  __cdecl FUN_00473d90(int, float *, float);        // Ring_ComputeOrbit
 
 // ── Particle / effect system ──────────────────────────────────────────────────
-void  __cdecl Effect_TickAll(void); // IDA: FUN_0046b790
-void  __cdecl EffectPool_RenderAll(void); // IDA: FUN_0046bba0
+void  __cdecl Effect_TickAll(void); // IDA: MoveEffects
+void  __cdecl EffectPool_RenderAll(void); // IDA: RenderEffects
 // 2026-05-07: Particle_Render real es void per IDA mu97k-src-IDA/raw/
 // 0046BE40_Particle_Render.c. La firma anterior (6 args) era erronea — el
 // llamador en Game_RenderTick lo invoca sin args.
 void  __cdecl Particle_RenderAll(void); // IDA: FUN_0046be40
 void  __cdecl Trail_RenderAll(void); // IDA: Trail_RenderAll (0x0046C3E0)
 void  __cdecl SkillEffects_RenderAll(void); // IDA: FUN_0046cb70
-void  __cdecl WeatherParticles_Update(void); // IDA: FUN_0046cc80
-void* __cdecl Joint_Create(int, float *, float *, float *, unsigned int, int, float, short, unsigned char); // IDA: FUN_0046d840
+void  __cdecl WeatherParticles_Update(void); // IDA: MoveLeaves
+void* __cdecl Joint_Create(int, float *, float *, float *, unsigned int, int, float, short, unsigned char); // IDA: CreateJoint
 // Compatibility bridge used only by stubs_IDA_ports.cpp.
-void* __cdecl FUN_0046d840(int, float *, float *, float *, unsigned int, int, float, short, unsigned char); // IDA: FUN_0046d840
+void* __cdecl CreateJoint(int, float *, float *, float *, unsigned int, int, float, short, unsigned char); // IDA: CreateJoint
 
 // ── Item drop render ──────────────────────────────────────────────────────────
-void  __cdecl Joint_TickAll(void); // IDA: FUN_004736e0
+void  __cdecl Joint_TickAll(void); // IDA: MoveJoints
 void  __cdecl ItemDrop_Render(void); // IDA: ItemDrop_Render (0x00473710)
 void  __cdecl FUN_00473ea0(int, float *, unsigned int, unsigned int, unsigned int, float, unsigned int, float); // Particle_Spawn
-void  __cdecl FUN_004741e0(int, int, int, int);
+void  __cdecl CreateMagicShiny(int, int, int, int);   // IDA: CreateMagicShiny (0x004741E0)
 void  __cdecl FUN_004742b0(int, int, int, int);
 void  __cdecl FUN_00474310(int, int, int, int);
 
 // ── Player render ─────────────────────────────────────────────────────────────
-void  __cdecl FUN_00474f90(int char_class, float *pos, float *rot, float scale); // Player_DrawInstance
-void  __cdecl Effect_TickFade(void); // IDA: FUN_00475090
+void  __cdecl RenderPlane(int char_class, float *pos, float *rot, float scale); // Player_DrawInstance
+void  __cdecl Effect_TickFade(void); // IDA: MovePlanes
 void  __cdecl FUN_00475110(void);                                   // Player_Render
 void  __cdecl FUN_00475170(int particle_slot);                      // Particle_InitDir — sets dir vector from entity pos delta
 int   __cdecl Particle_Spawn(int type, float *bone_mat, float *pos, float *size, int flag, float alpha, int mode); // IDA: FUN_00475220
 
 // ── Char list / spawn ─────────────────────────────────────────────────────────
-void  __cdecl FUN_00478c00(void);
-void  __cdecl FUN_00479330(int, int, int, int);
-void  __cdecl DamageNumbers_Tick(void); // IDA: FUN_00479380
-void  __cdecl Effect_TickFlare(void); // IDA: FUN_004794a0
+void  __cdecl RenderParticles(void);   // IDA: RenderParticles (0x00478C00)
+void  __cdecl RenderPoints(int, int, int, int);   // IDA: RenderPoints (0x00479330)
+void  __cdecl DamageNumbers_Tick(void); // IDA: MovePoints
+void  __cdecl Effect_TickFlare(void); // IDA: MovePointers
 int   __cdecl CreateSprite(unsigned short, float *, float, float *, int, float, int); // IDA: CreateSprite (0x004795C0)
-// Render_DrawSprite / Render_DrawSpritePool / FUN_00479790 — implemented in src/stubs.cpp (Character/Effect pool)
+// Render_DrawSprite / Render_DrawSpritePool / CheckSprites — implemented in src/stubs.cpp (Character/Effect pool)
 void  __cdecl ItemConvert(int, int, int);
 void  __cdecl FUN_0047cef0(int, int, int);
 int   __cdecl FUN_0047cf40(short* a1, int a2, int a3, unsigned short a4);  // Stats_ApplyBonus2
 void  __cdecl FUN_0047d330(int, int, int);
-void  __cdecl FUN_0047d3d0(int, int, int);
+void  __cdecl CHARACTER_MACHINE_Init(int, int, int);   // IDA: CHARACTER_MACHINE_Init (0x0047D3D0)
 // Stat helpers — ported 2026-05-02. Signatures match IDA decompile.
 int   __fastcall FUN_0047d410(int characterMachine);                // Stats_CalcBase (attack damage)
 int   __cdecl    FUN_0047dae0(int characterMachine);                // Stats_CalcMagicDmgRange
@@ -408,7 +408,7 @@ void  __cdecl FUN_0047f6f0(int, int, int);
 void  __cdecl UI_DrawText(int x, int y, char* text, int max_width, int style, int extra);
 // FUN_0047FAE0 @ 0x0047FAE0
 void  __cdecl UI_AddNotice(char *, unsigned char);
-void  __cdecl Chat_TickNoticeTimer(void);                // IDA: FUN_0047fcb0
+void  __cdecl Chat_TickNoticeTimer(void);                // IDA: MoveNotices
 // FUN_0047FCE0 @ 0x0047FCE0
 void  __cdecl UI_RenderNotices(void);
 void  __cdecl UIChatLogWindow_AddText(const char* strID, const char* strText, int MsgType); // IDA: UIChatLogWindow_AddText (0x00480620)
@@ -430,12 +430,12 @@ bool  __cdecl FindTextA(char* src, char* pattern, bool caseSensitive); // IDA: F
 void  __cdecl CutText(void*, int, void*, int);            // Chat_SplitLine
 void  __cdecl FUN_00497870(int, int, int, int);
 void  __cdecl CheckGate(void); // IDA: CheckGate (0x004AC140)
-char  __cdecl Path_IsLineClear(int src_x, int src_y, int tgt_x, int tgt_y); // IDA: FUN_004830b0
-// IDA: FUN_00491c40
+char  __cdecl Path_IsLineClear(int src_x, int src_y, int tgt_x, int tgt_y); // IDA: CheckWall
+// IDA: SendMove
 void  __cdecl Combat_SendMovePathPacket(int entity, int entity2);                 // sends the local hero's path packet
-// IDA: FUN_0049cbf0
+// IDA: Attack
 void  __cdecl Combat_DispatchHeroSkillAttack(void *entity);                       // hero skill/attack dispatcher
-// IDA: FUN_0048ba70
+// IDA: CheckArrow
 char  __cdecl Combat_CheckArrowRequirement(void);                                  // validates arrow/bolt availability
 // IDA: Action (0x0048D640)
 // Despachador real de acciones (pickup/equip/attack/skill/walk) basado en
@@ -443,14 +443,14 @@ char  __cdecl Combat_CheckArrowRequirement(void);                               
 // IDA: FUN_0048d640
 void  __cdecl Action(DWORD c, DWORD o);
 unsigned int __cdecl CheckAttack(void); // IDA: CheckAttack (0x00483160)
-void  __cdecl Player_ProcessInput(void); // IDA: FUN_004acef0
+void  __cdecl Player_ProcessInput(void); // IDA: Player_InputTick
 void  __cdecl Mouse_UpdateHoverTargets(void);                                    // IDA: FUN_004b0310
 char  __cdecl SelectSkillByHotkey(int number);                              // SelectSkillByHotkey (0x4B0E80)
 void  __cdecl Chat_InputTick(void);
 void  __cdecl FUN_004bbdd0(int, int, int, int);
-void  __cdecl Cursor_Render(void);                                               // IDA: FUN_004bffa0
-void  __cdecl Input_ProcessFunctionKeys(void);      // IDA: FUN_004c04a0
-void  __cdecl UI_UpdateFpsCounter(void);                                         // IDA: FUN_004c14e0
+void  __cdecl Cursor_Render(void);                                               // IDA: RenderCursor
+void  __cdecl Input_ProcessFunctionKeys(void);      // IDA: CheckFunctionButtons
+void  __cdecl UI_UpdateFpsCounter(void);                                         // IDA: RenderDebugWindow
 void  __cdecl RenderHelpWindow(void);
 unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int level); // IDA: FUN_004C45C0
 int          __cdecl Item_CalculateValue(void* item, int sellMode);                    // IDA: FUN_0047C690
@@ -475,7 +475,7 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
 void  __cdecl Item_ReturnPickedItem(void);  // CharPreview_Refresh (no args per call-site)
 
 // ── 3D / terrain / world ──────────────────────────────────────────────────────
-void  __cdecl FUN_004e13a0(int effect_id, unsigned int type, unsigned char class_id, unsigned char ext_option, float *pos, int in_bounds, char flag); // ItemDrop_SpawnEffect
+void  __cdecl RenderObjectScreen(int effect_id, unsigned int type, unsigned char class_id, unsigned char ext_option, float *pos, int in_bounds, char flag); // ItemDrop_SpawnEffect
 int   __cdecl FUN_004e9250(int mode);            // SecondPassword_Shuffle (10-element array shuffle)
 void  __cdecl FUN_004e9300(int, int, int, int);
 void  __cdecl FUN_004eb070(int, int, int, int);
@@ -497,17 +497,17 @@ void  __cdecl FUN_004f5570(int, int, int, int);
 void  __cdecl FUN_004f5ce0(int, int, int, int);
 void  __cdecl FUN_004f6050(int, int, int, int);
 void  __cdecl FUN_004f6420(int, int, int, int);
-void  __cdecl FUN_004f64d0(void);
+void  __cdecl Scene_MapTick(void);   // IDA: Scene_MapTick (0x004F64D0)
 int   __cdecl TERRAIN_INDEX(int grid_x, int grid_y); // IDA: TERRAIN_INDEX (0x004F6C30)
 int   __cdecl Terrain_GetTileIndex(unsigned int, unsigned int);            // IDA: Terrain_GetTileIndex (0x004F6C40)
 void  __cdecl Terrain_SetTileAttributeBits(int, int, int); // IDA: FUN_004f6ef0
-void  __cdecl Terrain_ClearTileAttributeBits(int, int, int); // IDA: FUN_004f6f10
+void  __cdecl Terrain_ClearTileAttributeBits(int, int, int); // IDA: SubTerrainAttribute
 void  __cdecl Terrain_UpdateTileAttributeRect(int, int, int, int, int, int); // IDA: FUN_004f6f30
 void  __cdecl FUN_004f8740(float x, float y, float scale, int flags, int corners_ptr, char blend, float alpha); // Particle_DrawTile
 void  __cdecl FUN_004f8980(int, int, int, float);  // Terrain_SpawnObject(type, x, y, height)
 // FUN_004f8bb0 — Particle_Draw (see declaration above in Entity render section)
 void  __cdecl CreateFrustrum2D(float *cam_pos); // IDA: CreateFrustrum2D (0x004F8EB0)
-unsigned short __cdecl FUN_004f8ff0(float x, float y, float z);    // Frustum_IsVisible
+unsigned short __cdecl TestFrustrum2D(float x, float y, float z);    // Frustum_IsVisible
 
 // ── Camera ────────────────────────────────────────────────────────────────────
 void  __cdecl FUN_004f9050(float fov_w, float *cam_pos);           // Camera_SetupFrustum
@@ -518,7 +518,7 @@ void  __cdecl RenderTerrain(char flag); // IDA: RenderTerrain (0x004F9AC0)
 int   __cdecl FUN_004f9c70(int, int, int, int);
 float __cdecl FUN_004f9c40(float *vec);  // Vec3_Length (physics variant — returns length, does NOT normalize)
 void  __cdecl FUN_004f9ce0(float *cam_pos, float factor, float *in_rel, float *out_pos); // Camera_ProjectRelative
-void  __cdecl FUN_004f9f70(float *parent, float *rot, float *out);  // Bone_CombineMatrices
+void  __cdecl R_ConcatTransforms(float *parent, float *rot, float *out);  // Bone_CombineMatrices
 void  __cdecl Matrix_BuildFromEuler(float *angles, float *out_mat12);       // Matrix_FromEuler
 float* __cdecl Vector_Rotate(float *pt, float *mat12, float *out);    // Matrix_TransformPoint
 void  __cdecl Vector_Transform(float *pt, float *mat12, float *out);    // Matrix_TransformPoint (alt)
@@ -530,7 +530,7 @@ void  __cdecl Triangle_ComputeNormal(float *origin, float *A, float *B, float *o
 void  __cdecl SetActionObject(int, int, int, int); // IDA: SetActionObject (0x004FA5C0)
 void  __cdecl FUN_004fa930(int entity, int model);  // Entity_ProjectToScreen
 int   __cdecl Calc_RenderObject(int entity, char param2, int param3);   // IDA: Calc_RenderObject (0x004FAA70)
-void  __cdecl FUN_004fae00(void *, int, int, char); // Entity_SetupGL
+void  __cdecl Draw_RenderObject(void *, int, int, char); // Entity_SetupGL
 
 // ── Entity render pipeline ────────────────────────────────────────────────────
 void  __cdecl FUN_004fc030(unsigned char *, unsigned int, int, char); // Entity_PrepareRender
@@ -540,13 +540,13 @@ void *__cdecl CreateObject(int type, float *world_pos, float *target_pos, float 
 void *__cdecl FUN_004ff580(void *entity);                           // Entity_InitRenderState
 void  __cdecl DeleteBug(DWORD Owner); // IDA: DeleteBug (0x004FFFA0)
 void  __cdecl CreateBug(int, void *, void *, int); // IDA: CreateBug (0x004FFFD0)
-uint  __cdecl FUN_00500970(void);  // returns entity count
+uint  __cdecl RenderBugs(void);  // returns entity count
 void  __cdecl DeleteBoids(int, int, int, int); // IDA: DeleteBoids (0x00500A80)
-void  __cdecl FUN_00500aa0(void);   // RenderBoids (decoration/animal entity tick+render)
+void  __cdecl RenderBoids(void);   // RenderBoids (decoration/animal entity tick+render)
 uint  __cdecl Weather_Update(void); // IDA: Weather_Update (0x00500E80)
 void  __cdecl RenderFishs(int, int, int, int); // IDA: RenderFishs (0x00502200)
-void  __cdecl AmbientParticles_Update(void); // IDA: FUN_00502320
-void  __cdecl FUN_005032f0(int, int, int, int);
+void  __cdecl AmbientParticles_Update(void); // IDA: Ambient_ParticleUpdate
+void  __cdecl CreateItem(int, int, int, int);   // IDA: CreateItem (0x005032F0)
 void  __cdecl MoveItems(void); // IDA: MoveItems (0x00503760)
 void  __cdecl FUN_00503830(int entity_class, int model_ptr);        // Sprite_SetupAnimation
 void  __cdecl FUN_005038e0(void);                                   // Entity_Render (sprite loop)
@@ -555,18 +555,18 @@ void  __cdecl FUN_00505970(void *, void *, int, char, int);
 // Entity_DrawAt(entity_ptr, class, slot, angle_ptr, rot, state_flags, byte, a,b,c, d, mode)
 void  __cdecl RenderPartObject(int, int, unsigned int, float *, float, unsigned int, unsigned char, char, unsigned char, char, int, unsigned int); // IDA: RenderPartObject (0x00505A10)
 void  __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model);   // desviacion: Physics/Cloth_MeshDivine.cpp
-void  __cdecl Model_SetAnimationSlots(int, int, int, int, int, int); // FUN_00509810 — writes model animation slots
+void  __cdecl Model_SetAnimationSlots(int, int, int, int, int, int); // SetMonsterSound — writes model animation slots
 // ── Map / terrain loaders (called from World_Load / Map_LoadResources) ─────────
 void  __cdecl FUN_004ffd50(void);                                  // Terrain_ResetObjects
-void  __cdecl FUN_004ffe70(const char *path);                      // Terrain_LoadObjects
-void  __cdecl FUN_004f6f90(const char *path);                      // Terrain_LoadMap
-int   __cdecl FUN_004f6ce0(const char *FileName);                  // OpenTerrainAttribute
-void  __cdecl FUN_004f7250(const char *path);                      // Terrain_LoadLight
-void  __cdecl FUN_004f7270(const char *path);                      // Terrain_LoadHeight
+void  __cdecl OpenObjectsEnc(const char *path);                      // Terrain_LoadObjects
+void  __cdecl OpenTerrainMapping(const char *path);                      // Terrain_LoadMap
+int   __cdecl OpenTerrainAttribute(const char *FileName);                  // OpenTerrainAttribute
+void  __cdecl OpenTerrainLight(const char *path);                      // Terrain_LoadLight
+void  __cdecl CreateTerrain(const char *path);                      // Terrain_LoadHeight
 void  __cdecl FUN_00502b80(void);                                  // Map_InitEntities
 void  __cdecl FUN_00509190(void);                                  // Terrain_InitLayers
 void  __cdecl FUN_00509880(void);                                  // Terrain_InitWater
-void  __cdecl FUN_0050c4d0(void);                                  // Map_InitLighting
+void  __cdecl OpenWorldModels(void);                                  // Map_InitLighting
 void  __cdecl FUN_0045abb0(int map_id);                            // Map_SetupEntities
 // ── Font / UI init ───────────────────────────────────────────────────────────────
 void  __cdecl PathFinder_ResetContext(void);                                  // IDA: FUN_0043f2d0
@@ -579,13 +579,13 @@ void  __cdecl Font_CreateTextDib(int dc);
 // FUN_0040f570 @ 0x0040F570 (IDA)
 void  __cdecl Font_CreateRenderer(int hwnd, int data, int dc);
 // ── Model / data loaders (called from UI_LoadTextures) ───────────────────────────
-void  __cdecl Model_LoadPlayerAndItemMeshes(void); // IDA: FUN_00506170
-void  __cdecl Model_LoadPlayerEquipmentTextures(void); // IDA: FUN_00507610
-void  __cdecl Model_LoadItemMeshes(void); // IDA: FUN_005079d0
-void  __cdecl Model_AssignItemTexturePrefixes(void); // IDA: FUN_00508d10
-void  __cdecl Model_LoadSkillEffectAssets(void); // IDA: FUN_0050b710
-void  __cdecl UI_LoadInterfaceTextures(void); // IDA: FUN_0050eb80
-void  __cdecl Sound_LoadGameSamples(void); // IDA: FUN_0050f030
+void  __cdecl Model_LoadPlayerAndItemMeshes(void); // IDA: OpenPlayers
+void  __cdecl Model_LoadPlayerEquipmentTextures(void); // IDA: OpenPlayerTextures
+void  __cdecl Model_LoadItemMeshes(void); // IDA: OpenItems
+void  __cdecl Model_AssignItemTexturePrefixes(void); // IDA: OpenItemTextures
+void  __cdecl Model_LoadSkillEffectAssets(void); // IDA: OpenSkills
+void  __cdecl UI_LoadInterfaceTextures(void); // IDA: OpenImages
+void  __cdecl Sound_LoadGameSamples(void); // IDA: OpenSounds
 void  __cdecl Item_LoadTextData(const char *path);                 // IDA: FUN_0047B130
 void  __cdecl Item_SaveBMD(const char *path);                      // IDA: FUN_0047B650
 void  __cdecl Item_LoadBMD(const char *path);                      // IDA: FUN_0047B740
@@ -597,25 +597,25 @@ void  __cdecl Gate_SaveBMD(const char *path);                      // IDA: FUN_0
 void  __cdecl Gate_LoadBMD(const char *path);                      // IDA: FUN_0047A4D0
 void  __cdecl Filter_LoadTextFile(const char *path);                      // Filter_LoadData
 void  __cdecl FUN_00479a50(const char *path);                      // Filter_LoadBMD
-void  __cdecl FUN_00479b30(const char *path);                      // Filter_LoadBMD_Alt
+void  __cdecl OpenFilterFile(const char *path);                      // Filter_LoadBMD_Alt
 void  __cdecl FUN_00479cf0(const char *path);                      // FilterName_LoadData
 void  __cdecl FUN_00479d70(const char *path);                      // FilterName_LoadBMD
-void  __cdecl FUN_00479e50(const char *path);                      // FilterName_LoadBMD_Alt
+void  __cdecl OpenNameFilterFile(const char *path);                      // FilterName_LoadBMD_Alt
 void  __cdecl Dialog_LoadBMD(const char *path);                    // IDA: FUN_0047B020
 uint  __cdecl CSQuest_OpenQuestScript(int handle, const char *path);          // Quest_LoadBMD
 void  __cdecl NPCName_LoadTextData(const char *path);              // IDA: FUN_0047D120
 // FUN_00404a10 — declared above as Sound_LoadAndPlay(int type, int flags)
 void  __cdecl OpenWorld(void); // IDA: OpenWorld (0x0050E5A0)
 void  __cdecl OpenFont(void);              // IDA: OpenFont (0x0050F690)
-void  __cdecl Scene_LoadAccountResources(void); // FUN_0050fcf0 (IDA)
-void  __cdecl Scene_UnloadAccountResources(void); // FUN_0050ff10 (IDA)
-void  __cdecl Scene_LoadCharSelectResources(void); // FUN_0050ff50 (IDA)
+void  __cdecl Scene_LoadAccountResources(void); // OpenLogoSceneData (IDA)
+void  __cdecl Scene_UnloadAccountResources(void); // ReleaseLogoSceneData (IDA)
+void  __cdecl Scene_LoadCharSelectResources(void); // OpenCharacterSceneData (IDA)
 
 // ── GL helper layer ───────────────────────────────────────────────────────────
 void  __cdecl ReleaseCharacterSceneData(void); // IDA: ReleaseCharacterSceneData (0x005102C0)
-void  __cdecl Scene_LoadGameAssets(void); // IDA: FUN_00510320
+void  __cdecl Scene_LoadGameAssets(void); // IDA: OpenBasicData
 void  __cdecl FUN_00510fe0(int, int, int, int);
-void  __cdecl Monster_LoadStartupData(void); // IDA: FUN_00511060
+void  __cdecl Monster_LoadStartupData(void); // IDA: Monster_Data_Load
 int   __cdecl GL_CaptureScreenshot(void);          // Screenshot capture; returns counter/10000
 void  __cdecl GL_GetModelViewMatrix(unsigned int *);                         // Matrix_GetViewRotation
 void  __cdecl GL_SetPerspective(int fov, float aspect, int near_clip, float far_clip);  // GL_SetPerspective
@@ -639,7 +639,7 @@ void  __cdecl GL_BeginViewport(int x, int y, int w, int h);       // Viewport_Se
 void  __cdecl GL_DrawBillboard(float w, float h, float *rot_mat);     // SkillEffect_DrawBillboard
 void  __cdecl GL_BeginSprite(void);
 void  __cdecl GL_EndOpenGL(void);                                  // EndOpengl
-void  __cdecl FUN_00511d00(int type, float *pos, float r, float g, // SkillEffect_Draw2D
+void  __cdecl RenderSprite_0(int type, float *pos, float r, float g, // SkillEffect_Draw2D
                             float *extra, float, float, float,
                             float, float);
 void  __cdecl FUN_005120c0(int, int, int, int);
@@ -680,11 +680,11 @@ void  __cdecl CServerSelWin_UpdateWhileActive(void); // IDA: CServerSelWin::Upda
 
 // ── Scene functions ───────────────────────────────────────────────────────────
 void  __cdecl FUN_005239a0(void);                                  // CharSelect_UpdateInput
-bool  __cdecl FUN_00524cb0(void);   // MoveMainCamera (per-frame camera follow + Hero offset)
-void  __cdecl FUN_00529130(int, int, int, int);
-int   __cdecl FUN_00529740(const char *path, int id,               // Texture_Load (OZJ/JPEG)
+bool  __cdecl MoveMainCamera(void);   // MoveMainCamera (per-frame camera follow + Hero offset)
+void  __cdecl SaveImage(int, int, int, int);   // IDA: SaveImage (0x00529130)
+int   __cdecl OpenJPG(const char *path, int id,               // Texture_Load (OZJ/JPEG)
                             int w, int h, int flags, char mipmap);
-int   __cdecl FUN_00529bd0(const char *path, int id,               // Texture_LoadTGA (TGA/OZT)
+int   __cdecl OpenTGA(const char *path, int id,               // Texture_LoadTGA (TGA/OZT)
                             int w, int h, int flags, char mipmap);
 void  __cdecl UnloadImage(int id); // IDA: UnloadImage (0x0052A050)
 int   __cdecl CSimpleModulus_Encode(int mode, BYTE* src, int len); // IDA: FUN_0053CC30 (0x0053CC30)
@@ -692,12 +692,12 @@ int   __cdecl CSimpleModulus_Decode(int, int, int, int); // IDA: FUN_0053CCA0 (0
 void  __cdecl FUN_0053d410(int, int, int, int);
 void  __cdecl FUN_0053d470(int, int, int, int);
 uint  __cdecl FUN_0053d5c0(char *);  // Texture_GetSlot — returns slot index
-float10 __cdecl FUN_005433b0(void);  // GetTickCount-based time accumulator → float10
+float10 __cdecl CIsin(void);  // GetTickCount-based time accumulator → float10
 void  __cdecl FUN_005524c0(int, int, int, int);
 
 // ── MSVC CRT stubs (obfuscation / anti-tamper wrappers) ───────────────────────
 int   __cdecl crt_sprintf(char *buf, const char *fmt, ...); // IDA: crt_sprintf (0x005416BC)
-void  __cdecl crt_output_engine(int, int, int, int); // IDA: FUN_0054519d (0x0054519D)
+void  __cdecl crt_output_engine(int, int, int, int); // IDA: output (0x0054519D)
 void  __cdecl operator_delete(void *ptr); // IDA: operator_delete (0x0054158C)
 void  __cdecl __chkstk_probe(int frame_size); // IDA: __chkstk_probe (0x00541C10)
 
@@ -708,10 +708,10 @@ void  __cdecl __chkstk_probe(int frame_size); // IDA: __chkstk_probe (0x00541C10
 inline void* operator_new(size_t n) { return ::operator new(n); }
 #endif
 FILE* __cdecl FUN_0054173f(LPCSTR, const void*);    // fopen-wrapper
-int   __cdecl FUN_00541eab(const byte *str);   // IsLeadByte — DBCS lead-byte check
+int   __cdecl mbclen(const byte *str);   // IsLeadByte — DBCS lead-byte check
 void  __cdecl FUN_00542457(int, int, int, int);
 void  __cdecl FUN_00542762(int, int, int, int);
-void  __cdecl FUN_0054283e(int, int, int, int);
+void  __cdecl setlocale(int, int, int, int);   // IDA: setlocale (0x0054283E)
 void  __cdecl FUN_00543037(int, int, int, int);
 
 // ── GL_PopMatrixAll ───────────────────────────────────────────────────────────
@@ -760,14 +760,14 @@ float* __cdecl FUN_0045fec0(uint, float*, float, int, short);     // Particle_Sp
 void  __cdecl Monster_LoadScriptTable(void); // FUN_0050b510 — loads monster script/model table
 void  __cdecl Monster_ParseSetBase2(LPCSTR param_1); // FUN_0047d020 — parses MonsterSetBase2 spawn definitions
 void  __cdecl SetMaxTextures(int count); // IDA: SetMaxTextures (0x00505BD0)
-void  __cdecl FUN_005098c0(int monster_idx);                    // Monster_SetupSoundAnim
+void  __cdecl OpenMonsterModel(int monster_idx);                    // Monster_SetupSoundAnim
 int   __cdecl TextParser_GetToken(void);                         // FUN_0047A1F0 — text-data tokenizer (returns record type)
 void  __cdecl FUN_00479910(int buf, int len);                   // XOR-cipher buffer in-place (key: FC CF AB, 3-byte cycle)
 void  __cdecl FUN_0047ea70(void *dst, void *src);               // Skill_HashTable_SerializeEntry (encode + insert)
 void  __cdecl FUN_0047eaf0(void *entry, void *key);             // Skill_HashTable_FreeEntry (decode + remove)
-void  __cdecl BuxConvert(void* buffer, int size);               // IDA: FUN_00401120; 5.2: BuxConvert
+void  __cdecl BuxConvert(void* buffer, int size);               // IDA: BuxConvert_1; 5.2: BuxConvert
 uint  __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp); // fwrite-wrapper (locked)
-void  __cdecl FUN_00543264(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
+void  __cdecl putc(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
 void  __cdecl FUN_0054150f(FILE* fp);                           // fclose-wrapper
 void  __cdecl FUN_005060b0(int id, const char* dir, const char* file, int idx); // Monster_LoadBase
 void  __cdecl OpenTexture(int id, const char* prefix, int flags, char loop);   // Monster_LoadSound
@@ -775,7 +775,7 @@ void  __cdecl OpenTexture(int id, const char* prefix, int flags, char loop);   /
 void  __cdecl GL_DisableCullFace(void);           // GL_SetTextureState
 void  __cdecl GL_DisableDepthWrites(void);           // GL_SetDepthState
 void  __cdecl GL_EnableCullFace(void);           // GL_TexEnable
-unsigned int __cdecl FUN_00529000(const char* path, int width, int height, void* pixelBuf, int quality); // IDA: WriteJpeg (0x00529000) -- libjpeg, filas invertidas
+unsigned int __cdecl WriteJpeg(const char* path, int width, int height, void* pixelBuf, int quality); // IDA: WriteJpeg (0x00529000) -- libjpeg, filas invertidas
 // ── Particle path-finding helpers ────────────────────────────────────────────
 int   __cdecl Math_GetAngleFromPoints(float x1, float y1, float x2, float y2); // IDA: FUN_0043e430
 int   __cdecl FUN_0043e120(int a, int b, int c);                     // Angle_Clamp
@@ -798,8 +798,8 @@ void  __cdecl MoveCharacterVisual(int entity_ptr); // IDA: MoveCharacterVisual (
 
 // ── Effect_Tick helpers ───────────────────────────────────────────────────────
 void  __cdecl MoveEffect(float *, int); // IDA: MoveEffect (0x00466AD0)
-char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2); // MoveJoint — implemented in Render/MoveJoint.cpp
-void  __cdecl FUN_00511bf0(float*, float, int);  // sincos helper (dest, angle, scale)
+char * __cdecl MoveJoint(undefined1 *param_1, uint param_2); // MoveJoint — implemented in Render/MoveJoint.cpp
+void  __cdecl TEXCOORD(float*, float, int);  // sincos helper (dest, angle, scale)
 void  __cdecl FUN_004f9e90(float*, float*);      // EulerToMatrix(angles, out_mat)
 void  __cdecl FUN_00465fe0(int, int);
 
@@ -875,17 +875,17 @@ HRESULT __cdecl Sound_ReleaseBuffer(int buffer); // IDA: FUN_00404AD0; 5.2: Rele
 void  __cdecl FUN_00543037(int *fp, int offset, int whence);  // CRT fseek wrapper
 int   __cdecl FUN_00542eb4(char *fp);                         // CRT ftell wrapper
 int   __cdecl FUN_00541597(void *dst, int size, int count, int *fp); // CRT fread wrapper
-int   __cdecl FUN_00541eab(const unsigned char *str);         // IsLeadByte — already in stubs.cpp
+int   __cdecl mbclen(const unsigned char *str);         // IsLeadByte — already in stubs.cpp
 
 // ── Terrain helpers ───────────────────────────────────────────────────────────
-void  __cdecl Terrain_Clear(void);  // FUN_004f6c60 (IDA) — resets terrain tile buffers
-void  __cdecl FUN_004f6cb0(void);   // Terrain_ReadFallback
+void  __cdecl Terrain_Clear(void);  // InitTerrainMappingLayer (IDA) — resets terrain tile buffers
+void  __cdecl ExitProgram(void);   // Terrain_ReadFallback
 void  __cdecl FUN_004f6eb0(int data, int size); // Terrain_ProcessBlock
 void  __cdecl CreateTerrainNormal(void); // FUN_004f70b0 (IDA)
 void  __cdecl CreateTerrainLight(void); // IDA: CreateTerrainLight (0x004F71C0)
 uint  __cdecl OpenTerrainHeight(char *path); // FUN_004f7290 (IDA)
 void  __cdecl FUN_004f9c20(void);   // TerrainHeight_Flush
-void  __cdecl FUN_00529360(char *path, int dst); // Texture_LoadToBuf
+void  __cdecl OpenJpegBuffer(char *path, int dst); // Texture_LoadToBuf
 void  __cdecl FUN_00512d30(void);   // Map_InitRayCast
 int   __cdecl FUN_004f98c0(int, int, int, int, int); // RayCast_Setup / terrain light setup (sub_4F98C0)
 void  __cdecl FUN_004f7060(void);   // Terrain_SpawnAmbientObjects (sub_4F7060)
@@ -902,17 +902,17 @@ void  __cdecl SetMaxTextures(int slot); // IDA: SetMaxTextures (0x00505BD0)
 void  __cdecl FUN_00505060(int slot, const char *dir, const char *file); // alternate SMD loader
 
 // ── Model mesh/anim loaders (used by Model_Load* functions) ──────────────────
-// FUN_0040b280: loads main BMD mesh into model slot
+// OpenSMDModel: loads main BMD mesh into model slot
 //   param_1 = model id (as ptr cast to int)
 //   param_2 = path to .smd/.bmd file
 //   param_3 = num anims
 //   param_4 = flag
-void  __cdecl FUN_0040b280(int model_id, const char *path, int num_anims, char flag);
-// FUN_0040b310: adds an animation to a loaded model
+void  __cdecl OpenSMDModel(int model_id, const char *path, int num_anims, char flag);   // IDA: OpenSMDModel (0x0040B280)
+// OpenSMDAnimation: adds an animation to a loaded model
 //   param_1 = model id (int)
 //   param_2 = path to animation .smd file
 //   param_3 = loop flag (0=no loop, 1=loop)
-void  __cdecl FUN_0040b310(int model_id, const char *path, char loop);
+void  __cdecl OpenSMDAnimation(int model_id, const char *path, char loop);   // IDA: OpenSMDAnimation (0x0040B310)
 // OpenModels: loads a numbered model file (format: "prefix%s%02d.smd" or "%s%d.smd")
 //   param_1 = model id
 //   param_2 = path prefix string
@@ -920,7 +920,7 @@ void  __cdecl FUN_0040b310(int model_id, const char *path, char loop);
 void  __cdecl OpenModels(int model_id, const char *prefix, int index); // IDA: OpenModels (0x00506050)
 
 // ── Terrain tile pick helpers ─────────────────────────────────────────────────
-void  __cdecl FUN_004f7fb0(float xf, float yf, int xi, int yi, float lodf); // RenderTerrainFace (0x004F7FB0)
+void  __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf); // RenderTerrainFace (0x004F7FB0)
 unsigned int __cdecl FUN_00512d40(float *Position, float *Target, int Polygon, float *v1, float *v2, float *v3, float *v4, float *Normal, char Collision); // CollisionDetectLineToFace — IDA-activated 2026-04-26 audit #7
 
 // ── Item inventory helpers (from Offsets.h) ───────────────────────────────────
@@ -954,11 +954,11 @@ void  __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
 // SetPlayerAttack — already declared above (line 266) with 4 args: (int, int, int, int)
 void  __cdecl SetPlayerShock(int entity, int type); // IDA: SetPlayerShock (0x00444B60)
 void  __cdecl AttackEffect(int entity); // IDA: AttackEffect (0x00445230)
-// IDA: FUN_00485780
+// IDA: UseSkillWarrior
 void  __cdecl Combat_UseWarriorSkill(int entity, int skillType);
-// IDA: FUN_0048a180
+// IDA: UseSkillElf
 void  __cdecl Combat_UseElfSkill(int entity, int object);
-int   __cdecl FUN_0047e4f0(int machinePtr, int skillType, int level); // CHARACTER_MACHINE::GetMagicSkillDamage
+int   __cdecl CHARACTER_MACHINE_GetMagicSkillDamage(int machinePtr, int skillType, int level); // CHARACTER_MACHINE::GetMagicSkillDamage
 
 // ── Sound: PlayBuffer ─────────────────────────────────────────────────────────
 HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped); // IDA: PlayBuffer (0x00404BC0)
@@ -1010,7 +1010,7 @@ void  __fastcall FUN_0040a600(void *This);                           // Sound de
 
 // Destructor chains (virtual ~dtor pattern: call deinit, conditional delete)
 void  __fastcall FUN_00406cd0(void *This);                           // HashWidget deinit
-void  __fastcall FUN_00409b80(void *This);                           // SoundWidgetB deinit
+void  __fastcall Locimp_dtor(void *This);                           // SoundWidgetB deinit
 void  __fastcall FUN_0040dba0(void *This);                           // DSBuffer deinit
 void  __fastcall FUN_0040eae0(void *This);                           // DSBufferB deinit
 void  __fastcall FUN_0040f540(void *This);                           // Stream deinit+release
@@ -1109,7 +1109,7 @@ void  __cdecl EnableAlphaTest(bool enable);                          // 0x004f88
 void  __cdecl RenderTerrainAlphaBitmap(int tex, float x, float y, float sx, float sy, float *light, float alpha, float size); // 0x004fd100
 
 // Codec / JPEG internal helpers (batch 3)
-void  __cdecl FUN_00543839(int param);                               // CRT init
+void  __cdecl crt_exit(int param);                               // CRT init
 void *__cdecl FUN_00543d81(void);                                    // CRT alloc
 void  __cdecl _strncpy(char *dst, char *src, int n);                 // strncpy wrapper
 // FUN_005430f0 already declared above (line ~713) as fwrite-wrapper
@@ -1142,9 +1142,9 @@ HRESULT __cdecl CreateStaticBuffer(int Buffer, const char* strFileName, int MaxC
 void    __cdecl LoadWaveFile(int Buffer, const char* strFileName, int MaxChannel, bool Enable);       // 0x00404a10
 void  __stdcall FUN_00405340(void);                                  // CErrorReport: rotate log
 char* __stdcall CErrorReport_FindLogMarker(char* param_1);           // IDA: FUN_00405420
-void  __fastcall CErrorReport_WriteSystemInfo(void* report);           // IDA: FUN_00405620
+void  __fastcall CErrorReport_WriteSystemInfo(void* report);           // IDA: CErrorReport__WriteSystemInfo
 void  __fastcall CErrorReport_WriteOpenGLInfo(void* report);           // IDA: FUN_004056B0
-void  __fastcall CErrorReport_WriteImeInfo(void* report, void* edx, HWND hwnd); // IDA: FUN_00405760
+void  __fastcall CErrorReport_WriteImeInfo(void* report, void* edx, HWND hwnd); // IDA: CErrorReport__WriteImeInfo
 void  __cdecl GetOSVersion(DWORD si);                                // detect Windows version
 long long __cdecl Cpu_MeasureClockRate(DWORD param_1);               // IDA: FUN_00405e20
 void  __cdecl GetCPUInfo(DWORD si);                                  // detect CPU vendor+model
@@ -1160,7 +1160,7 @@ void  __fastcall FUN_00408ff0(void* param_1);                        // BMD mesh
 void  __fastcall FUN_004090b0(void* ecx, void* edx, int p1, float p2, int p3); // BMD emit quads
 void  __fastcall FUN_004091d0(void* ecx, void* edx, int p1, int p2, float p3); // BMD emit vertex
 void* __fastcall FUN_00409ad0(void* param_1);                        // IDA: sub_409AD0 (0x00409AD0), ctor de CPhysicsManager
-void  __fastcall FUN_00409b80(void* param_1);                        // CSQuest destructor
+void  __fastcall Locimp_dtor(void* param_1);                        // CSQuest destructor
 void  __fastcall FUN_00409d20(int param_1);                          // CSQuest clear all nodes
 int   __fastcall FUN_00409f30(void* ecx, void* edx, int p1, int p2, int p3, char p4); // BMD visible tri list
 void  __fastcall FUN_0040a110(void* ecx, void* edx, short p1, short p2, short p3, int p4, int p5, int p6); // shadow edge add
@@ -1311,7 +1311,7 @@ bool  __cdecl CheckTarget_stub(DWORD c);                                 // 0x00
 
 // Missing forward declarations (compilation fixes)
 int   __cdecl Xor_ConvertBuffer(void *lpBuffer, DWORD nBytes, int key); // XOR encode buffer
-void  __cdecl FUN_0054337b(int *fp, char *fmt);                          // CRT fscanf wrapper
+void  __cdecl fscanf(int *fp, char *fmt);                          // CRT fscanf wrapper
 void  __cdecl RenderCenterText(int x, int y, char *text);               // Quest UI center text
 
 // Batch 18 — final 5 game functions

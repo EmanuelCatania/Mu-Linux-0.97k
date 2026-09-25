@@ -1682,7 +1682,7 @@ static int __stdcall ChatLB_isRowVisible(int rowData)
 // No se puede escribir g_MouseOnWindow directo desde acá: Player_InputTick lo
 // resetea a 0 al principio de su propio tick (MouseOnWindow_Update), que corre
 // DESPUÉS del tick del ChatListBox (Game_CharSelectTick: slot 5 en la línea 217,
-// FUN_004acef0 en la 298).  Así que el slot 7 deja el resultado en este latch y
+// Player_InputTick en la 298).  Así que el slot 7 deja el resultado en este latch y
 // MouseOnWindow_Update lo consulta.  El latch se reescribe entero en cada tick
 // del widget, así que no se queda pegado.
 extern "C" int MouseOnWindow = 0;
@@ -2200,20 +2200,20 @@ extern "C" void GuildList_AddMember(const char* name, char connected, char party
     ((FnAdd)((void**)*obj)[28])(obj, 0, name, connected, partyNumber);
 }
 
-// ── FUN_0040c170 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── TextureScript_setScript — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 29-byte ─────────────────────────────────────────────────────────────────
 
-// FUN_0040c170 @ 0x0040C170 (29 bytes) — thiscall: copia 4 bytes del parámetro a this
-void __fastcall FUN_0040c170(int ecx, int /*edx*/, BYTE *param_1) {
+// TextureScript_setScript @ 0x0040C170 (29 bytes) — thiscall: copia 4 bytes del parámetro a this
+void __fastcall TextureScript_setScript(int ecx, int /*edx*/, BYTE *param_1) {
     *(BYTE *)ecx       = param_1[0];
     *(BYTE *)(ecx + 1) = param_1[1];
     *(BYTE *)(ecx + 2) = param_1[2];
     *(BYTE *)(ecx + 3) = param_1[3];
 }
 
-// ── FUN_0040c190 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_0040c190 @ 0x0040C190 (~77 lines) — Parse mesh flags from material name suffix
-char __fastcall FUN_0040c190(void* ecx, void* /*edx*/, DWORD* param_1) {
+// ── TextureScriptParsing_parsingTScript — movida desde stubs_bulk_misc.cpp (refactor B3) ──
+// TextureScriptParsing_parsingTScript @ 0x0040C190 (~77 lines) — Parse mesh flags from material name suffix
+char __fastcall TextureScriptParsing_parsingTScript(void* ecx, void* /*edx*/, DWORD* param_1) {
     (void)ecx; (void)param_1;
     // After '_': R->flag[0], H->flag[1], S->flag[2], N->flag[3]; flag[4]=valid
     return 0;

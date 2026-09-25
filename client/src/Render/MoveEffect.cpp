@@ -2,7 +2,7 @@
 // MoveEffect @ 0x00466AD0  [Kayito: MoveEffect]
 //
 // Per-frame particle/effect spawner for active effect slots.
-// Called by Effect_TickAll (FUN_0046b790) once per slot per frame.
+// Called by Effect_TickAll (MoveEffects) once per slot per frame.
 //
 // param_1 = float* pointing to effect slot (stride 0x1bc, base DAT_07b11670)
 // param_2 = slot index

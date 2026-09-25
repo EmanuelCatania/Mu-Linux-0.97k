@@ -41,7 +41,7 @@ extern void __cdecl operator_delete(void* ptr);
 // link errors. Each will be ported per-IDA when the corresponding pool/entity
 // system gets activated.
 //
-// FUN_00500aa0 @ 0x00500AA0 — RenderBoids
+// RenderBoids @ 0x00500AA0 — RenderBoids
 // Port FIEL del IDA: itera DAT_0839BE18 pool stride 444B (40 entries).
 // Decoración de fauna/efectos del mapa: birds, fish, butterflies, magic gates.
 //
@@ -56,10 +56,10 @@ extern void __cdecl operator_delete(void* ptr);
 //   v0[-90..]               entity start
 //   v0[+0]                  scale
 //   v0[+48..50]             color RGB
-// Externs ya en functions.h: FUN_004f8ff0, FUN_004fc030, Particle_Spawn,
+// Externs ya en functions.h: TestFrustrum2D, FUN_004fc030, Particle_Spawn,
 // RequestTerrainHeight, BMD_TransformPosition, PartObjectColor, FUN_00441f00
 
-void __cdecl FUN_00500aa0(void)
+void __cdecl RenderBoids(void)
 {
     // 2026-09-03 -- BOIDS QUE NUNCA SE DIBUJABAN.
     // IDA RenderBoids (0x00500AA0) arranca con `v0 = (float *)dword_839BE18` y
@@ -90,7 +90,7 @@ void __cdecl FUN_00500aa0(void)
         if (*((BYTE*)v0 - 360)) {
             float xf = v0[-86] * 0.01f;
             float yf = v0[-85] * 0.01f;
-            char vis = (char)FUN_004f8ff0(xf, yf, -20.0f);
+            char vis = (char)TestFrustrum2D(xf, yf, -20.0f);
             *((BYTE*)v0 - 8) = vis;
 
             if (vis) {
@@ -863,9 +863,9 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
             float posY = *(float*)(slot + 20);
             float xGrid = posX * 0.01f;
             float yGrid = posY * 0.01f;
-            // Wrapper compatible: FUN_004f8ff0 returns short (visible flag).
+            // Wrapper compatible: TestFrustrum2D returns short (visible flag).
             // IDA's TestFrustrum2D returns bool.
-            unsigned short vis = FUN_004f8ff0(xGrid, yGrid, -20.0f);
+            unsigned short vis = TestFrustrum2D(xGrid, yGrid, -20.0f);
             slot[352] = (char)(vis != 0);
             if (vis) {
                 FUN_004fc030((unsigned char*)slot, 0u, 0, 0);
@@ -893,7 +893,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
     }
 }
 
-// FUN_0046bba0 @ 0x0046BBA0 — RenderEffects
+// RenderEffects @ 0x0046BBA0 — RenderEffects
 // Port FIEL del IDA: itera HeadAngle pool stride 111 floats (444 bytes).
 // Dispatcher por type code para spell effects, weapon glow, gates.
 //
@@ -989,7 +989,7 @@ void __cdecl RenderWheelWeapon(DWORD o)
     *(int*)  (o + 36) = savedAng2;
 }
 
-// IDA: FUN_0046bba0
+// IDA: RenderEffects
 void __cdecl EffectPool_RenderAll(void)
 {
     // BUG-FIX 2026-05-01: HeadAngle (0x07B11698) está en offset +40 dentro del
@@ -1131,7 +1131,7 @@ extern void SkillEffect_Render(void);
 // IDA: FUN_0046cb70
 void __cdecl SkillEffects_RenderAll(void) { SkillEffect_Render(); }
 
-// FUN_00524cb0 @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA, 2026-06-27)
+// MoveMainCamera @ 0x00524CB0 — MoveMainCamera  (port 1:1 desde IDA, 2026-06-27)
 // Setea los parámetros de cámara que consume Camera_SetupFrustum:
 //   CameraFOV = 35.0  (antes el port no lo seteaba → quedaba stale 45/55/10)
 //   CameraViewFar = 2000 (o 3200 en topview)
@@ -1141,7 +1141,7 @@ void __cdecl SkillEffects_RenderAll(void) { SkillEffect_Render(); }
 // Símbolos IDA: CameraTopViewEnable=CameraTopViewEnabled, CameraDistance,
 //   CameraDistanceTarget. Retorna 0 (no-spectator) como IDA.
 // Sin force-yaw ni DIAG: el yaw lo preserva el estado de cámara, igual que IDA.
-bool __cdecl FUN_00524cb0(void) {
+bool __cdecl MoveMainCamera(void) {
     float in1[3];
     float out[3];
     float matrix[3][4];
@@ -1218,17 +1218,17 @@ void __cdecl FUN_00406f50(char* param_1) {
 // Entity_RenderAll_3D — implemented in src/Render/Entity_Render.cpp
 // CreateCharacterPointer — implemented in src/Entity/Entity_Spawn.cpp (Entity_Spawn, 797 lines)
 // CreateHero — implemented in src/Entity/Entity_Init.cpp
-// FUN_0045fa20 (Monster_SaveSetBase) — implemented in src/Entity/Entity_Init.cpp
-// Effect_TickAll (IDA: FUN_0046b790) — implemented in src/Render/Effect_Tick.cpp
+// SaveMonsters (Monster_SaveSetBase) — implemented in src/Entity/Entity_Init.cpp
+// Effect_TickAll (IDA: MoveEffects) — implemented in src/Render/Effect_Tick.cpp
 // FUN_0046c3e0 — implemented in src/Render/Joint_Render.cpp
-// WeatherParticles_Update (IDA: FUN_0046cc80) — implemented in src/Render/Weather_Particles.cpp
-// Joint_TickAll (IDA: FUN_004736e0) — implemented in src/Render/Effect_Tick.cpp
+// WeatherParticles_Update (IDA: MoveLeaves) — implemented in src/Render/Weather_Particles.cpp
+// Joint_TickAll (IDA: MoveJoints) — implemented in src/Render/Effect_Tick.cpp
 // FUN_00473ea0 — implemented in src/Render/Effect_Tick.cpp
-// FUN_00474f90 — implemented in src/Render/Effect_Tick.cpp
-// Effect_TickFade (IDA: FUN_00475090) — implemented in src/Render/Effect_Tick.cpp
-// FUN_00478c00 — implemented in src/Render/ItemDrop_Render2.cpp (sprite pool render, 244 lines)
-// DamageNumbers_Tick (IDA: FUN_00479380) — implemented in src/Render/Effect_Tick.cpp
-// Effect_TickFlare (IDA: FUN_004794a0) — implemented in src/Render/Effect_Tick.cpp
+// RenderPlane — implemented in src/Render/Effect_Tick.cpp
+// Effect_TickFade (IDA: MovePlanes) — implemented in src/Render/Effect_Tick.cpp
+// RenderParticles — implemented in src/Render/ItemDrop_Render2.cpp (sprite pool render, 244 lines)
+// DamageNumbers_Tick (IDA: MovePoints) — implemented in src/Render/Effect_Tick.cpp
+// Effect_TickFlare (IDA: MovePointers) — implemented in src/Render/Effect_Tick.cpp
 // Render_DrawSpritePool — implemented in src/Sound/Sound_Queue.cpp (Sound_UpdateQueue)
 // ClearInput — implemented in src/Input/Input.cpp
 // UI_RenderInputField — implemented in src/UI/Chat.cpp
@@ -1238,5 +1238,5 @@ void __cdecl FUN_00406f50(char* param_1) {
 // Chat_TickMessageTimer — implemented in src/Sound/Sound_Queue.cpp
 // UI_RenderChatLogOverlay — implemented in src/UI/Chat.cpp
 // UI_TickHoverBubbles — implemented in src/UI/Chat.cpp
-// FUN_004acef0 — implemented in src/Game/Player_InputTick.cpp
+// Player_InputTick — implemented in src/Game/Player_InputTick.cpp
 // Mouse_UpdateHoverTargets — implemented in src/Input/Mouse_Hover.cpp (mouse hover/cursor tick, 523 lines)

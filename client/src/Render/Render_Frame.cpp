@@ -34,7 +34,7 @@
 //
 // ── CAMERA POSITION ──────────────────────────────────────────────────────────
 //
-//   FUN_00524cb0() → Camera_IsSpectator()
+//   MoveMainCamera() → Camera_IsSpectator()
 //   if '\0' (normal): cam_pos = entity[slot][+0x10..+0x18]  (X,Y,Z floats)
 //   else (spectator): cam_pos = entity[slot][+0x170..+0x178]
 //
@@ -64,36 +64,36 @@
 //   if World != 10: RenderTerrain('\0') → GL_DepthTest(false)
 //   FUN_004fd800()    → Terrain_Render()          — tile grid terrain + objects
 //   Particle_RenderAll() (IDA: FUN_0046be40)       — particle system draw
-//   FUN_00500aa0()    → Entity_UpdatePositions()   — avanza timers/pos de entidades
+//   RenderBoids()    → Entity_UpdatePositions()   — avanza timers/pos de entidades
 //                         itera DAT_0839be18, campo -0x5a=active, -0x51=pos float
 //                         tipo != 0x10a (cofre): actualiza float pos
 //   Entity_RenderAll_3D()    → Entity_RenderAll_3D()      — geometría 3D chars/NPCs
 //   if DAT_07e11d30:    RenderTerrain('\x01')       → GL_DepthTest(true)
 //   if !debug_view:     FUN_005038e0()             → Entity_Render_Sprites() (billboards)
 //   RenderFishs()    → Entity_PrepareVisibleList() — proyecta world→screen, cull off-screen
-//                         itera DAT_083a2e92; llama FUN_004f8ff0 (frustum cull);
+//                         itera DAT_083a2e92; llama TestFrustrum2D (frustum cull);
 //                         si visible: Entity_PrepareRender(); glColor4f(shadow)
-//   FUN_00500970()    → NPC_UpdateVisibleList()    — misma lógica para pool DAT_083a1378
+//   RenderBugs()    → NPC_UpdateVisibleList()    — misma lógica para pool DAT_083a1378
 //                         tipo 0x186 o sub-state 0x330; rand() para variación
 //   FUN_0046cb70()    → SkillEffect_Render()       — proyectiles/efectos de habilidad
 //   FUN_00473710()    → ItemDrop_Render()           — items en el suelo
-//   FUN_0046bba0()    → MapEffect_RenderAll()      — efectos de mapa (pool DAT_07b11698)
+//   RenderEffects()    → MapEffect_RenderAll()      — efectos de mapa (pool DAT_07b11698)
 //                         itera stride variable; Frustum_TestSphere(pos, 400.0) = cull a 400u
 //                         tipos < 0x104 con sub-dispatch
 //   FUN_00475110()    → Player_Render()             — jugador local
 //   FUN_0046c3e0()    → SpellCircle_RenderAll()    — círculos/efectos mágicos en suelo
 //                         itera DAT_07c608b4; tipo 0: Frame_UpdateTimer, tipo>2: GL_SetBlend2
 //                         tex ID = sub_type + 0x48d
-//   FUN_00479790()    → Portal_Render()             — portales / warp pads
+//   CheckSprites()    → Portal_Render()             — portales / warp pads
 //   GL_BeginSprite()    → Render_Flush()              — 1 instrucción, posiblemente glFlush
 //   if World == 2 && DAT_07e118e8 not in {3, >=10}:
 //     FUN_0046cb70()  → SkillEffect_Render() again  — segunda pasada en in-world state
 //   Render_DrawSpritePool()    → Sigil_RenderAll()           — círculos de invocación/sigils
 //                         itera DAT_07c85894 stride 0x1bc; tipos 0/1/2 → blend distinto
 //                         llama Render_DrawSprite (Sigil_Draw) + resetea active flag
-//   FUN_00478c00()    → Character_Animate()         — actualiza animaciones de personaje
+//   RenderParticles()    → Character_Animate()         — actualiza animaciones de personaje
 //                         función compleja con muchos floats; ~50 líneas
-//   FUN_00479330()    → Sign_RenderAll()            — billboards/letreros en mundo
+//   RenderPoints()    → Sign_RenderAll()            — billboards/letreros en mundo
 //                         itera DAT_07c80158 stride 0x70; SetBlendMode(alpha) + EnableAlpha
 //                         llama FUN_005120c0(pos, type, pos2, scale, alpha) = Sign_Draw
 //   glPopMatrix()
@@ -110,7 +110,7 @@
 //   if !debug_view: Render_GameFrame()  → 2D HUD overlay (HUD_Render.cpp)
 //   RenderErrorMessage()    → CharInfo_TextRender()       — texto info personaje (stats panel)
 //                         múltiples LPCSTR, tagSIZE, texto centrado; ~40+ líneas
-//   FUN_004f64d0()    → TeleportUI_Update()         — update/click handler del teleport
+//   Scene_MapTick()    → TeleportUI_Update()         — update/click handler del teleport
 //                         GL_ResetState() + DAT_07e11d6e=0; hit-test mouse vs bounds
 //                         (_DAT_00552cac, _DAT_00552c24, _DAT_00552c14, _DAT_00552ca8)
 //   UI_RenderNotices()    → PlayerName_Render()         — nombres de jugadores con parpadeo
@@ -167,33 +167,33 @@
 //
 // ── FUNCTION CROSS-REFERENCE ─────────────────────────────────────────────────
 //
-//   FUN_00524cb0  → Camera_IsSpectator()          — '\0' si vista normal
+//   MoveMainCamera  → Camera_IsSpectator()          — '\0' si vista normal
 //   GetScreenWidth  → Screen_GetWidth()              — ancho viewport en pixels
 //   GL_BeginViewport  → GL_SetViewport(x,y,w,h)       — glViewport wrapper
 //   FUN_004f9050  → Camera_SetupFrustum(fov_w, cam_pos)
 //   RenderTerrain  → GL_DepthTest(enable)           — glEnable/Disable(GL_DEPTH_TEST)
 //   FUN_004fd800  → Terrain_Render()
 //   Particle_RenderAll (IDA: FUN_0046be40) → particle system draw
-//   FUN_00500aa0  → Entity_UpdatePositions()       — timer/pos update pool DAT_0839be18
+//   RenderBoids  → Entity_UpdatePositions()       — timer/pos update pool DAT_0839be18
 //   Entity_RenderAll_3D  → Entity_RenderAll_3D()
 //   FUN_005038e0  → Entity_Render_Sprites()        — billboards 2D-in-3D
 //   RenderFishs  → Entity_PrepareVisibleList()    — frustum cull + PrepareRender
-//   FUN_00500970  → NPC_UpdateVisibleList()        — cull NPCs pool DAT_083a1378
+//   RenderBugs  → NPC_UpdateVisibleList()        — cull NPCs pool DAT_083a1378
 //   FUN_0046cb70  → SkillEffect_Render()
 //   FUN_00473710  → ItemDrop_Render()
-//   FUN_0046bba0  → MapEffect_RenderAll()          — efectos mapa pool DAT_07b11698
+//   RenderEffects  → MapEffect_RenderAll()          — efectos mapa pool DAT_07b11698
 //   FUN_00475110  → Player_Render()
 //   FUN_0046c3e0  → SpellCircle_RenderAll()        — círculos mágicos pool DAT_07c608b4
-//   FUN_00479790  → Portal_Render()
+//   CheckSprites  → Portal_Render()
 //   GL_BeginSprite  → Render_Flush()                 — 1 instrucción
 //   Render_DrawSpritePool  → Sigil_RenderAll()              — sigils pool DAT_07c85894 stride 0x1bc
-//   FUN_00478c00  → Character_Animate()            — animación de personaje (~50 líneas)
-//   FUN_00479330  → Sign_RenderAll()               — letreros pool DAT_07c80158 stride 0x70
+//   RenderParticles  → Character_Animate()            — animación de personaje (~50 líneas)
+//   RenderPoints  → Sign_RenderAll()               — letreros pool DAT_07c80158 stride 0x70
 //   Mouse_UpdateHoverTargets  → EntityInfo_Overlay()           — overlay info entidades (HashTable)
 //   GL_Begin2D  → GL_SetupOrtho2D()              — glPushMatrix+glMatrixMode+glViewport
 //   FUN_004cb6f0  → Target_Render()               — info entidad seleccionada (entity lookup)
 //   RenderErrorMessage  → CharInfo_TextRender()          — texto stats panel (~40+ líneas)
-//   FUN_004f64d0  → TeleportUI_Update()            — hit-test teleport UI + GL reset
+//   Scene_MapTick  → TeleportUI_Update()            — hit-test teleport UI + GL reset
 //   UI_RenderNotices  → PlayerName_Render()           — nombres jugadores con parpadeo
 //   UI_RenderChatLogOverlay  → SystemText_Render()            — notificaciones sistema
 //   UI_UpdateFpsCounter  → FPS_TimerReset()              — tick/s: timeGetTime %1000 reset
@@ -203,7 +203,7 @@
 //   FUN_0040f670  → Watchdog_Reset(obj)
 //   GL_End2D  → GL_PopMatrix2()              — glPopMatrix() × 2
 //   Camera_BuildMouseRay  → Camera_MouseRay(mouseX, mouseY, out_ray[3])
-//   FUN_004f8ff0  → Frustum_IsVisible(x, y, z)   — world→screen cull check
+//   TestFrustrum2D  → Frustum_IsVisible(x, y, z)   — world→screen cull check
 
 #include "stdafx.h"
 #include "Render/Render.h"
@@ -503,24 +503,24 @@ void Render_HPBars_OLD(void)
 // del mundo + UI 2D del HUD.
 //
 // Helper functions used (ver functions.h):
-//   FUN_00524cb0  → MoveMainCamera (returns spectator flag)
+//   MoveMainCamera  → MoveMainCamera (returns spectator flag)
 //   GetScreenWidth  → GetScreenWidth (returns viewport width)
 //   GL_BeginViewport  → BeginOpengl (viewport setup + perspective)
 //   FUN_004f9050  → Camera_SetupFrustum
 //   Camera_BuildMouseRay  → CreateScreenVector (mouse ray)
 //   FUN_004fd800  → Terrain_Render
-//   FUN_00500aa0  → Entity_UpdatePositions / RenderObjects
+//   RenderBoids  → Entity_UpdatePositions / RenderObjects
 //   Entity_RenderAll_3D  → Entity_RenderAll_3D / RenderCharactersClient
 //   FUN_005038e0  → RenderItems / Entity_Render_Sprites
-//   FUN_00500970  → RenderBoids / NPC_UpdateVisibleList
+//   RenderBugs  → RenderBoids / NPC_UpdateVisibleList
 //   FUN_005022f0  → RenderFishs
 //   FUN_00500e40  → RenderBugs
 //   FUN_004ffeb0  → RenderLeaves (?)
 //   FUN_00473710  → RenderJoints
-//   FUN_0046bba0  → RenderEffects
+//   RenderEffects  → RenderEffects
 //   FUN_0046cb70  → RenderPlanes / SkillEffect_Render
 //   FUN_0046c3e0  → RenderBlurs / Particle_Render
-//   FUN_00478c00  → RenderParticles (effect pool)
+//   RenderParticles  → RenderParticles (effect pool)
 //   Render_DrawSpritePool  → RenderSprites
 //   GL_Begin2D  → BeginBitmap (ortho2D)
 //   GL_End2D  → EndBitmap
@@ -560,7 +560,7 @@ void Render_Scene3D(void)
     DAT_083a42ea = 0;   // FogEnable = false
 
     // ── 2. Camera position ────────────────────────────────────────────────────
-    FUN_00524cb0();
+    MoveMainCamera();
     float camPos[3];
     if (DAT_07abf5d8) {
         BYTE* hero = (BYTE*)DAT_07abf5d8;
@@ -619,7 +619,7 @@ void Render_Scene3D(void)
     // Game_RenderTick:113. Itera el effect pool y renderiza partículas
     // (gate sparks, magic glow, etc). ANTES no estaba wireado.
     Particle_RenderAll();                         // particle system draw
-    FUN_00500aa0();                              // RenderBoids (decoration animals)
+    RenderBoids();                              // RenderBoids (decoration animals)
     Entity_RenderAll_3D();
     if (DAT_07e11d30 != 0) {                     // if (EditFlag) RenderTerrain(1) — IDA: aquí, no tras Trail
         RenderTerrain('\x01');
@@ -630,25 +630,25 @@ void Render_Scene3D(void)
     // 2026-05-07: RenderFishs + RenderBugs — port FIEL desde IDA
     // Game_RenderTick:124-125. Fauna decorativa (peces, mariposas).
     RenderFishs(0, 0, 0, 0);                    // RenderFishs
-    FUN_00500970();                              // RenderBugs
+    RenderBugs();                              // RenderBugs
     SkillEffects_RenderAll();
     ItemDrop_Render();
     EffectPool_RenderAll();
     Player_Render();                             // Player_Render
     Trail_RenderAll();
-    FUN_00479790();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
+    CheckSprites();                              // CheckSprites — faltaba (mark sprites antes de BeginSprite)
 
     GL_BeginSprite();                              // BeginSprite (push + identity)
     if (worldId == 2 && HeroTile != 3 && HeroTile < 10) {
         SkillEffects_RenderAll();
     }
     Render_DrawSpritePool();                              // RenderSprites
-    FUN_00478c00();                              // RenderParticles (effect pool)
+    RenderParticles();                              // RenderParticles (effect pool)
     // 2026-05-06: damage popup numbers (port FIEL desde IDA Game_RenderTick:139).
     // Llamado entre RenderParticles y glPopMatrix para que los números floten en
     // world-space. CreatePoint (= FUN_004792c0 en stubs.cpp:3407) los populeya
     // desde Net_Process case 0x15 (ReceiveAttackDamage).
-    FUN_00479330(0, 0, 0, 0);                    // RenderPoints (damage)
+    RenderPoints(0, 0, 0, 0);                    // RenderPoints (damage)
     glPopMatrix();
 
     Mouse_UpdateHoverTargets();                              // EntityInfo / CharPreview overlay

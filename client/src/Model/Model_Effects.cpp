@@ -1,4 +1,4 @@
-// IDA: FUN_00508d10 @ 0x00508d10 — Model_AssignItemTexturePrefixes
+// IDA: OpenItemTextures @ 0x00508d10 — Model_AssignItemTexturePrefixes
 // Binds texture paths to item/skill model slots using OpenTexture
 // (Model_LoadTextures).  Covers all equipment slots (0x1a1-0x3bd range)
 // and skill slots (0x333).  Slot 500 is initialised as the texture-slot base.
@@ -8,7 +8,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// IDA: FUN_00508d10
+// IDA: OpenItemTextures
 void __cdecl Model_AssignItemTexturePrefixes(void)
 {
     // Initialise texture base slot 500

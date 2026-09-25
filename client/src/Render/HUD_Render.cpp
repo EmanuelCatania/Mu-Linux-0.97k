@@ -582,7 +582,7 @@
 //           if (entType != 0x87 && entType != 0x8f &&
 //               !(0x1a0 <= entType && entType <= 0x1a3)) {
 //
-//             int level = FUN_004c45c0(psVar1, entType*0x40+DAT_07d78068, field>>3&0xf);
+//             int level = CalcMaxDurability(psVar1, entType*0x40+DAT_07d78068, field>>3&0xf);
 //             level &= 0xffff;
 //             if (*psVar1 == 0x1aa) level = 200;  // GM: nivel forzado a 200
 //
@@ -626,7 +626,7 @@
 //   _DAT_005526e4/_DAT_005528b8/_DAT_00552504 — umbrales HP (alto/medio/bajo)
 //   Tipos excluidos de name tags: 0x87=NPC-A, 0x8f=NPC-B, 0x1a0..0x1a3=map objects
 //   GetScreenWidth          → Screen_GetWidth()
-//   FUN_004c45c0          → GetEntityLevel(ptr, spriteData, field) → int
+//   CalcMaxDurability          → GetEntityLevel(ptr, spriteData, field) → int
 //   FUN_0047f6f0          → DrawText(x, y, str, unk, italic, flags)
 //
 // ══════════════════════════════════════════════════════════════════════════════

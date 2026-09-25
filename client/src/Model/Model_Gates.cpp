@@ -1,4 +1,4 @@
-// IDA: FUN_0050f030 @ 0x0050F030 — Sound_LoadGameSamples
+// IDA: OpenSounds @ 0x0050F030 — Sound_LoadGameSamples
 //
 // Precarga los sonidos globales del juego (ids 0..109) via FUN_00404a10
 // (LoadWaveFile).  El nombre del archivo viene del port anterior; a pesar de
@@ -30,7 +30,7 @@
 #include "globals.h"
 #include "functions.h"
 
-// IDA: FUN_0050f030
+// IDA: OpenSounds
 void __cdecl Sound_LoadGameSamples(void)
 {
     FUN_00404a10(0,    "Data\\Sound\\aWind.wav", 1, '\0');   // a바람.wav

@@ -10,9 +10,9 @@
 //   {
 //     if (DAT_083a7c4a == '\0') {
 //       DAT_083a7c4a = '\x01';
-//       FUN_00529740("Local/Loading01.jpg", 0x1e, 0x2600, 0x2900, 0, '\x01');
-//       FUN_00529740("Local/Loading02.jpg", 0x1f, 0x2600, 0x2900, 0, '\x01');
-//       FUN_00529740("Local/Loading03.jpg", 0x20, 0x2600, 0x2900, 0, '\x01');
+//       OpenJPG("Local/Loading01.jpg", 0x1e, 0x2600, 0x2900, 0, '\x01');
+//       OpenJPG("Local/Loading02.jpg", 0x1f, 0x2600, 0x2900, 0, '\x01');
+//       OpenJPG("Local/Loading03.jpg", 0x20, 0x2600, 0x2900, 0, '\x01');
 //     }
 //     DAT_083a42ea = 0;
 //     GL_BeginViewport(0, 0, 0x280, 0x1e0);
@@ -49,7 +49,7 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_00529740  → Texture_Load(path, id, w, h, flag, mipmap)
+//   OpenJPG  → Texture_Load(path, id, w, h, flag, mipmap)
 //   GL_BeginViewport  → Viewport_Set(x, y, w, h)
 //   GL_Begin2D  → GL_SetupOrtho2D()
 //   GL_DrawTexture  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
@@ -69,9 +69,9 @@ void __cdecl Scene_Loading(HDC param_1)
     // Load textures once (guarded by init flag)
     if (DAT_083a7c4a == '\0') {
         DAT_083a7c4a = '\x01';
-        FUN_00529740(s_Local_Loading01_jpg_00561a88, 0x1e, 0x2600, 0x2900, 0, '\x01');
-        FUN_00529740(s_Local_Loading02_jpg_00561a9c, 0x1f, 0x2600, 0x2900, 0, '\x01');
-        FUN_00529740(s_Local_Loading03_jpg_00561ab0, 0x20, 0x2600, 0x2900, 0, '\x01');
+        OpenJPG(s_Local_Loading01_jpg_00561a88, 0x1e, 0x2600, 0x2900, 0, '\x01');
+        OpenJPG(s_Local_Loading02_jpg_00561a9c, 0x1f, 0x2600, 0x2900, 0, '\x01');
+        OpenJPG(s_Local_Loading03_jpg_00561ab0, 0x20, 0x2600, 0x2900, 0, '\x01');
     }
 
     DAT_083a42ea = 0;

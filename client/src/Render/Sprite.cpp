@@ -1,5 +1,5 @@
 // Sprite.cpp
-// FUN_00511d00 @ 0x00511d00  — Sprite_DrawTexturedQuad
+// RenderSprite_0 @ 0x00511d00  — Sprite_DrawTexturedQuad
 //
 // Draws a textured billboard quad (GL_QUADS) at a world position.
 //
@@ -57,7 +57,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
 void __cdecl
-FUN_00511d00(int param_1,float *param_2,float param_3,float param_4,float *param_5,float param_6,
+RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *param_5,float param_6,
             float param_7,float param_8,float param_9,float param_10)
 
 {

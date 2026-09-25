@@ -10,7 +10,7 @@
 //   {
 //     undefined4 uVar1 = Calc_RenderObject((int)entity, (char)slot, flag);
 //     if ((char)uVar1 != '\0') {
-//       FUN_004fae00(entity, slot, flag, mode);
+//       Draw_RenderObject(entity, slot, flag, mode);
 //     }
 //   }
 //
@@ -21,7 +21,7 @@
 //        Probablemente verifica: flag de visibilidad, distancia, estado activo, LOD
 //
 //   2. Si es renderable:
-//        FUN_004fae00(entity, slot, flag, mode) → Entity_SetupGL(entity, slot, flag, mode)
+//        Draw_RenderObject(entity, slot, flag, mode) → Entity_SetupGL(entity, slot, flag, mode)
 //        Configura el estado OpenGL para esta entidad antes de Entity_Render_3D
 //
 // ── PATRONES DE LLAMADA ───────────────────────────────────────────────────────
@@ -34,7 +34,7 @@
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
 //   Calc_RenderObject  → Entity_IsRenderable(entity, slot, flag)  — cull / LOD check
-//   FUN_004fae00  → Entity_SetupGL(entity, slot, flag, mode) — glPushMatrix, texture bind, etc.
+//   Draw_RenderObject  → Entity_SetupGL(entity, slot, flag, mode) — glPushMatrix, texture bind, etc.
 
 #include "stdafx.h"
 #include "Render/Entity_PrepareRender.h"
@@ -45,5 +45,5 @@ void __cdecl Entity_PrepareRender(void *param_1, int param_2, int param_3, char 
 {
     int uVar1 = Calc_RenderObject((int)param_1, (char)param_2, param_3);  // Entity_IsRenderable
     if ((char)uVar1 != '\0')
-        FUN_004fae00(param_1, param_2, param_3, param_4);                   // Entity_SetupGL
+        Draw_RenderObject(param_1, param_2, param_3, param_4);                   // Entity_SetupGL
 }

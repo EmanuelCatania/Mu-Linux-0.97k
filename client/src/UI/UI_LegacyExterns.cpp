@@ -48,7 +48,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // RenderItemInfo and RenderRepairInfo — implemented in src/UI/RenderItemInfo.cpp
 
 // RenderSkillTooltip @ 0x004C9730 — UI_CommandPanel_BuildEntry(chardata, slot)
-// Real logic: calls FUN_0047e4f0 (GetMagicSkillDamage) and GetSkillInformation for the
+// Real logic: calls CHARACTER_MACHINE_GetMagicSkillDamage (GetMagicSkillDamage) and GetSkillInformation for the
 // skill in CharacterAttribute->Skill[param_2+4], then sprintf's skill name, damage, mana cost,
 // distance, and class-specific descriptions into the Items[999] text buffer (stride 100 bytes).
 // Class 0 (Dark Wizard): skill 0x10 gets 3 extra stat lines (MaxMana, Energy, Dexterity).
@@ -165,7 +165,7 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     int  piMana = 0, piDistance = 0, piSkillMana = 0;
     (void)piMinDamage; (void)piMaxDamage; (void)piMana; (void)piDistance; (void)piSkillMana;
 
-    // Get min/max damage range — FUN_0047e4f0 (GetMagicSkillDamage, ~700 bytes, IDA-only
+    // Get min/max damage range — CHARACTER_MACHINE_GetMagicSkillDamage (GetMagicSkillDamage, ~700 bytes, IDA-only
     // and gated behind IDA_PORT_0047E4F0). Without it we leave piMin/piMaxDamage at 0;
     // the damage line will show "0~0" until the helper is unconditionally ported.
 
@@ -530,7 +530,7 @@ bool __cdecl FindTextA(char *param_1, char *pat, bool param_3) {
         while ((param_1 + iVar8)[iVar2] == pat[iVar2]) {
             if (++iVar2 >= iVar5) return 1;
         }
-        char c = FUN_00541eab((byte*)(param_1 + iVar8));
+        char c = mbclen((byte*)(param_1 + iVar8));
         iVar8 += (unsigned int)(unsigned char)c;
     }
     return 0;
@@ -549,7 +549,7 @@ void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4)
             uVar3 = uVar4;
             if ((param_4/2 - 2 <= (int)uVar4 && param_1[uVar4] == ' ') ||
                 (param_4/2 + 2 <= (int)uVar4)) break;
-            char c = FUN_00541eab((byte*)(param_1 + uVar4));
+            char c = mbclen((byte*)(param_1 + uVar4));
             uVar4 += (unsigned int)(unsigned char)c;
             uVar3 = 0;
         } while ((int)uVar4 < param_4);

@@ -80,7 +80,7 @@ void __cdecl FUN_004552c0(int entity, int shield_id)
 
     // `object+276` es el buffer de matrices animadas; 26 * 48 = 1248.
     float* bone26 = (float*)((BYTE*)(uintptr_t)*(DWORD*)(object + 276) + 1248);
-    FUN_004f9f70(bone26, localMatrix, &DAT_06989c9c);
+    R_ConcatTransforms(bone26, localMatrix, &DAT_06989c9c);
 
     glTranslatef(*(float*)(object + 16), *(float*)(object + 20), *(float*)(object + 24));
     GL_DrawBillboard(5.0f, 7.0f, &DAT_06989c9c);
@@ -165,7 +165,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             void *puVar8 = operator_new(100);
             *(int *)puVar8 = 1;                    // count del eh vector ctor
             void *clothObj = (char *)puVar8 + 4;   // el objeto vive en +4
-            FUN_00541ec1(clothObj, 0x60, 1, (void *)Widget_Ctor);
+            L_YGXPAXIHP6EX0_Z1_Z(clothObj, 0x60, 1, (void *)Widget_Ctor);
             FUN_004093e0(clothObj, (int)param_1, (short *)2, 0x12, 0x400, -1);
             FUN_00409250(clothObj, 0.0f,   0.0f, 0.0f, 50.0f, 18);
             FUN_00409250(clothObj, 0.0f, -20.0f, 0.0f, 30.0f, 18);
@@ -181,7 +181,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 FUN_00408ff0((void *)piVar16);
         }
         if ((BYTE)uVar11 != 0)
-            FUN_004fae00(puVar13, 1, (int)param_3, '\0');
+            Draw_RenderObject(puVar13, 1, (int)param_3, '\0');
         break;
     }
     default:

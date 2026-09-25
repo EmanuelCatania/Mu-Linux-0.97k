@@ -1,4 +1,4 @@
-// Entity_DrawByType.cpp — FUN_004fae00 @ 0x004fae00
+// Entity_DrawByType.cpp — Draw_RenderObject @ 0x004fae00
 // Dispatches entity render based on entity type (*(short*)(param_1+2)).
 //
 // param_1 = entity data pointer (stride 0x394, entity array at DAT_07abf5d0)
@@ -160,7 +160,7 @@ static void MoltSilhouette_Render(unsigned char *model, unsigned char *o)
     if (s.buf8) operator delete(s.buf8);
 }
 
-void __cdecl FUN_004fae00(void *param_1_v, int param_2, int param_3, char param_4)
+void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char param_4)
 {
     unsigned char *param_1 = (unsigned char *)param_1_v;
     // Model context for this entity type

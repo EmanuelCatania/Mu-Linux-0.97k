@@ -82,7 +82,7 @@ void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool Ed
     // _DAT_00552504 = 0.5f (half-tile center), _DAT_0055256c = 1.0f (tile stride)
     // CameraTopViewEnable = CameraTopViewEnabled
     // RenderTerrainTile (declared with int params but actually takes floats via stack)
-    // TestFrustrum2D = FUN_004f8ff0
+    // TestFrustrum2D = TestFrustrum2D
     float startX = xf;
     int row = 0;
     do {
@@ -90,7 +90,7 @@ void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool Ed
         int col = 0;
         xf = startX;
         do {
-            unsigned short visible = FUN_004f8ff0(xf + _DAT_00552504, centerY, 0.0f);
+            unsigned short visible = TestFrustrum2D(xf + _DAT_00552504, centerY, 0.0f);
             if (visible || CameraTopViewEnabled != 0) {
                 // RenderTerrainTile(xf, yf, col+xi, row+yi, 1.0f, 1, EditFlag)
                 // functions.h declares first 2 params as int; reinterpret float bits
@@ -110,7 +110,7 @@ void __cdecl RenderTerrainFrustrum_stub(bool EditFlag) {
     // FrustrumBoundMinX_1 = FrustrumBoundMinX_1, FrustrumBoundMinY_1 = FrustrumBoundMinY_1
     // FrustrumBoundMaxX_1 = FrustrumBoundMaxX_1, FrustrumBoundMaxY_1 = FrustrumBoundMaxY_1
     // _DAT_0055264c = 2.0f (block center offset), _DAT_00552650 = 4.0f (block stride)
-    // TestFrustrum2D = FUN_004f8ff0, CameraTopViewEnable = CameraTopViewEnabled
+    // TestFrustrum2D = TestFrustrum2D, CameraTopViewEnable = CameraTopViewEnabled
     int yi = (int)FrustrumBoundMinY_1;  // FrustrumBoundMinY_1
     if (yi <= (int)FrustrumBoundMaxY_1) {  // FrustrumBoundMaxY_1
         float blockY = (float)yi;
@@ -121,7 +121,7 @@ void __cdecl RenderTerrainFrustrum_stub(bool EditFlag) {
                 int xi = (int)FrustrumBoundMinX_1;  // FrustrumBoundMinX_1
                 float blockX = (float)xi;
                 do {
-                    unsigned short visible = FUN_004f8ff0(blockX + _DAT_0055264c, centerY, -40.0f);
+                    unsigned short visible = TestFrustrum2D(blockX + _DAT_0055264c, centerY, -40.0f);
                     if (visible || CameraTopViewEnabled != 0) {
                         RenderTerrainBlock_stub(blockX, blockY, xi, yi, EditFlag);
                     }

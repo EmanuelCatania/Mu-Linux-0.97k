@@ -40,9 +40,9 @@ void BMD_SkinUpdate(void)
                 // Child bone: build local matrix then combine with parent
                 int iBone = (int)*psVar16;
                 Matrix_BuildFromEuler(&local_48, local_30);
-                FUN_004f9f70((float *)(&DAT_055c4038 + iBone * 0x6c), local_30, pfVar14 - 0xc);
+                R_ConcatTransforms((float *)(&DAT_055c4038 + iBone * 0x6c), local_30, pfVar14 - 0xc);
                 FUN_004f9e90(&local_48, local_30);
-                FUN_004f9f70(local_30, (float *)(&DAT_055c4068 + iBone * 0x6c), pfVar14);
+                R_ConcatTransforms(local_30, (float *)(&DAT_055c4068 + iBone * 0x6c), pfVar14);
                 // Transform normal by bone matrix, add bone world-space origin
                 Vector_Transform(pfVar11 - 0x259, (float *)(&DAT_055c4038 + iBone * 0x6c), &local_3c);
                 pfVar14[0xc] = local_3c + (&DAT_055c4098)[iBone * 0x1b];

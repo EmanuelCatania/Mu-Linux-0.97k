@@ -35,7 +35,7 @@
 // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODO el render — ahora itera
 // por índice acotado a 1002 slots.
 extern "C" void DbgLogPublic(const char*);
-// IDA: FUN_00479730
+// IDA: RenderSprites
 void __cdecl Render_DrawSpritePool(void)
 {
     char *pcVar2 = DAT_07c85890;
@@ -61,7 +61,7 @@ void __cdecl Render_DrawSpritePool(void)
 //   0 — fade out: subtract _DAT_005524f4 per frame; clamp to 0.2 (0x3e4ccccd)
 //   1 — fade in:  add    _DAT_005524f4 per frame; clamp to 1.0 (0x3f800000)
 //
-// After adjusting volume, calls FUN_00511d00 to submit the sound update:
+// After adjusting volume, calls RenderSprite_0 to submit the sound update:
 //   channel  = *(short*)(param_1 + 2)
 //   position = (float*)(param_1 + 0x10)
 //   volume   = slot_volume * channel_volume_R * channel_volume_G (from DAT_083a7cc0/DAT_083a7cc4)
@@ -77,7 +77,7 @@ void __cdecl Render_DrawSpritePool(void)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-// IDA: FUN_00479670
+// IDA: RenderSprite
 void __cdecl Render_DrawSprite(int param_1)
 
 {
@@ -87,7 +87,7 @@ void __cdecl Render_DrawSprite(int param_1)
   // BUG-FIX 2026-04-27: esta función NO es Sound_Queue_Advance — es **RenderSprite**
   // (verificado vía Ghidra, addr 0x00479670 → "RenderSprite"). El comentario y el
   // archivo Sound_Queue.cpp tenían el nombre wrong. Saca cada slot del effect pool
-  // y lo dibuja como billboard cuadrado vía FUN_00511d00 (Sprite_DrawTexturedQuad).
+  // y lo dibuja como billboard cuadrado vía RenderSprite_0 (Sprite_DrawTexturedQuad).
   // El return; previo bloqueaba TODO el render de sprites del juego (glow +9, wing
   // FX, weapon sparkles, lightning, particles) — combinado con el AUTO-SKIP del
   // pool en CreateSprite, NADA spawneaba ni se dibujaba.
@@ -110,7 +110,7 @@ void __cdecl Render_DrawSprite(int param_1)
   }
   fVar1 = *(float *)(param_1 + 0xc) * *(float *)(param_1 + 0x108);
   iVar2 = *(short *)(param_1 + 2) * 0x38;
-  FUN_00511d00((int)*(short *)(param_1 + 2),(float *)(param_1 + 0x10),
+  RenderSprite_0((int)*(short *)(param_1 + 2),(float *)(param_1 + 0x10),
                fVar1 * *(float *)((char*)&DAT_083a7cc0 + iVar2),fVar1 * *(float *)((char*)&DAT_083a7cc4 + iVar2),
                (float *)(param_1 + 0xe8),*(float *)(param_1 + 0x24),0.0,0.0,1.0,1.0);
   return;
@@ -120,7 +120,7 @@ void __cdecl Render_DrawSprite(int param_1)
 // Chat_TickNoticeTimer @ 0x0047fcb0 — Sound_Countdown1
 // Decrements counter DAT_00559cdc each frame.
 // When it underflows below 1, resets to 300 and calls UI_AddNotice (queue advance).
-// IDA: FUN_0047fcb0
+// IDA: MoveNotices
 void Chat_TickNoticeTimer(void)
 {
   bool bVar1;

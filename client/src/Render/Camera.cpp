@@ -247,7 +247,7 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
     }
 
     // BUG-FIX 2026-05-01: el código previo SOLO escribía corner[0]. Pero
-    // FUN_004f8ff0 (Frustum_IsVisible) hace test point-in-quad usando los
+    // TestFrustrum2D (Frustum_IsVisible) hace test point-in-quad usando los
     // 4 vertices en FrustrumX[0..3] (X) y FrustrumY[0..3] (Y).
     // Con 3/4 vertices en (0,0), el quad degenerado rechazaba TODOS los
     // chunks → mapa renderizaba vacío de objetos pese a que se spawn 2142.

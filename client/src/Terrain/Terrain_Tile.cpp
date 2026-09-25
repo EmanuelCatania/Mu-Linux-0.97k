@@ -2,7 +2,7 @@
 // Tile attribute flag operations on the 256×256 tile map at DAT_0838bc70.
 //
 // IDA: FUN_004f6ef0 @ 0x004f6ef0 — Terrain_SetTileAttributeBits
-// IDA: FUN_004f6f10 @ 0x004f6f10 — Terrain_ClearTileAttributeBits
+// IDA: SubTerrainAttribute @ 0x004f6f10 — Terrain_ClearTileAttributeBits
 // IDA: FUN_004f6f30 @ 0x004f6f30 — Terrain_UpdateTileAttributeRect
 //
 // The tile map is a flat byte[256][256] array.
@@ -21,7 +21,7 @@ void __cdecl Terrain_SetTileAttributeBits(int param_1,int param_2,int param_3)
 }
 
 
-// IDA: FUN_004f6f10 — Terrain_ClearTileAttributeBits
+// IDA: SubTerrainAttribute — Terrain_ClearTileAttributeBits
 // Clears flag bits param_3 at tile (param_1, param_2).
 void __cdecl Terrain_ClearTileAttributeBits(int param_1,int param_2,int param_3)
 {

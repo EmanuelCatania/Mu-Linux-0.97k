@@ -51,8 +51,8 @@ void __cdecl operator_delete(void* ptr) {
 
 
 // ── FUN_ stubs (void returning) ───────────────────────────────────────────────
-// FUN_00403a30 @ 0x00403A30 — NOP (empty function in original binary).
-void __cdecl FUN_00403a30(void) {}
+// CWsctlc__LogPrintOn @ 0x00403A30 — NOP (empty function in original binary).
+void __cdecl CWsctlc__LogPrintOn(void) {}
 
 // ── CRT wrappers (forwarded to real CRT) ─────────────────────────────────────
 // FUN_00543037 — CRT fseek wrapper

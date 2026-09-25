@@ -47,7 +47,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 
 // Terrain / map loaders (called from OpenWorld / Map_LoadResources in stubs.cpp)
 
-// FUN_004f6f90 @ 0x004F6F90 — Terrain_LoadMap(path)
+// OpenTerrainMapping @ 0x004F6F90 — Terrain_LoadMap(path)
 // Reads map file: skips 1 byte, copies 0x4000×4 bytes to TerrainMappingLayer1 (tile map),
 // next 0x4000×4 bytes to TerrainMappingLayer2 (alt-tile), then 0x10000 height bytes → TerrainMappingAlpha as float.
 //
@@ -56,8 +56,8 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // descifrarlo, los bytes raw del file se interpretaban como tile-texture-IDs
 // y heights → suelo render como mosaico de UI textures con quads de altura
 // infinity (causa el triángulo cyan gigante). Aplicar BuxConvert antes de parsear.
-void __cdecl FUN_004f6f90(const char *path) {
-    Terrain_Clear(); // FUN_004f6c60 (IDA)
+void __cdecl OpenTerrainMapping(const char *path) {
+    Terrain_Clear(); // InitTerrainMappingLayer (IDA)
     FILE *f = FUN_0054173f(path, DAT_005580ac);
     if (!f) {
         char d[256]; wsprintfA(d, "TerrainMap LOAD FAIL: %s", path);
@@ -92,7 +92,7 @@ void __cdecl FUN_004f6f90(const char *path) {
     operator_delete(buf);
 }
 
-// FUN_004f6ce0 @ 0x004F6CE0 — OpenTerrainAttribute(FileName)
+// OpenTerrainAttribute @ 0x004F6CE0 — OpenTerrainAttribute(FileName)
 // Per IDA decompile (raw/004F6CE0_OpenTerrainAttribute.c, 442 bytes).
 //
 // Reads a 65539-byte .att file into a temp buffer, runs BuxConvert (XOR
@@ -105,7 +105,7 @@ void __cdecl FUN_004f6f90(const char *path) {
 // param lost). Now properly loads the .att file via the same FUN_0054xxxx
 // pipeline used by the other terrain loaders.
 unsigned char* TerrainWall = (unsigned char*)&DAT_0838bc70;
-int __cdecl FUN_004f6ce0(const char *FileName) {
+int __cdecl OpenTerrainAttribute(const char *FileName) {
     FILE *fp = fopen(FileName, "rb");
     if (!fp) {
         // 2026-05-04: silent fail — el caller (stubs.cpp:1922) prueba dos
@@ -170,14 +170,14 @@ int __cdecl FUN_004f6ce0(const char *FileName) {
     return 1;
 }
 
-// FUN_004ffe70 @ 0x004FFE70 — Terrain_LoadObjects(path)
+// OpenObjectsEnc @ 0x004FFE70 — Terrain_LoadObjects(path)
 // Reads .obj file: 2-byte count, then count×0x1e entries → calls CreateObject for each.
 //
 // BUG-FIX 2026-05-01: el archivo `EncTerrain%d.obj` está ENCRIPTADO (mismo
 // BuxConvert 3-byte XOR rolling key que .att). Sin descifrar, count y posiciones
 // son basura → no se spawnean instancias de objetos del mundo (casas, NPCs
 // estáticos, props) → mapa renderiza solo terreno + hero.
-void __cdecl FUN_004ffe70(const char *path) {
+void __cdecl OpenObjectsEnc(const char *path) {
     FILE *f = FUN_0054173f(path, DAT_005580ac);
     if (!f) {
         // CRITICAL BUG-FIX 2026-05-08: previously wrote the error string into
@@ -232,7 +232,7 @@ void __cdecl FUN_004ffe70(const char *path) {
     operator_delete(buf);
 }
 
-// FUN_004f7250 @ 0x004F7250 — Terrain_LoadLight(path)
+// OpenTerrainLight @ 0x004F7250 — Terrain_LoadLight(path)
 // Loads TerrainLight.jpg into DAT_07eeb238 (RGB float buffer, 256x256x3),
 // then processes via FUN_004f70b0 / FUN_004f71c0.
 //
@@ -240,15 +240,15 @@ void __cdecl FUN_004ffe70(const char *path) {
 // 0x7eeb238 que en el binario original es DAT_07eeb238. En nuestro proceso
 // esa dirección no existe → AV al escribir. Ahora pasamos &DAT_07eeb238,
 // que es el array real.
-void __cdecl FUN_004f7250(const char *path) {
-    FUN_00529360((char*)path, (int)(uintptr_t)DAT_07eeb238);
+void __cdecl OpenTerrainLight(const char *path) {
+    OpenJpegBuffer((char*)path, (int)(uintptr_t)DAT_07eeb238);
     CreateTerrainNormal(); // FUN_004f70b0 (IDA)
     CreateTerrainLight(); // IDA: CreateTerrainLight (0x004F71C0)
 }
 
-// FUN_004f7270 @ 0x004F7270 — Terrain_LoadHeight(path)
+// CreateTerrain @ 0x004F7270 — Terrain_LoadHeight(path)
 // Sets flag, loads height bitmap, flushes.
-void __cdecl FUN_004f7270(const char *path) {
+void __cdecl CreateTerrain(const char *path) {
     DAT_0839bc84 = 1;
     OpenTerrainHeight((char*)path); // FUN_004f7290 (IDA)
     FUN_004f9c20();
@@ -276,7 +276,7 @@ void __cdecl FUN_00502b80(void) {
 // Frees tile model slots (0xf604..0x11710), then frees sound channels 0x78..0xa9.
 void __cdecl FUN_00509190(void) {
     for (int i = 0xf604; i < 0x11710; i += 0xbc)
-        FUN_00442090(i + DAT_05828d58);
+        BMD__Release(i + DAT_05828d58);
     for (int i = 0x78; i < 0xaa; i++) Sound_ReleaseBuffer(i); // IDA: FUN_00404AD0
 }
 
@@ -284,21 +284,21 @@ void __cdecl FUN_00509190(void) {
 // Frees water model slots (0xc648..0xf604), then frees sound channels 0xaa..0x1a3.
 void __cdecl FUN_00509880(void) {
     for (int i = 0xc648; i < 0xf604; i += 0xbc)
-        FUN_00442090(i + DAT_05828d58);
+        BMD__Release(i + DAT_05828d58);
     for (int i = 0xaa; i < 0x1a4; i++) Sound_ReleaseBuffer(i); // IDA: FUN_00404AD0
 }
 
-// FUN_0050c4d0 @ 0x0050C4D0 — Map_LoadObjectModels
+// OpenWorldModels @ 0x0050C4D0 — Map_LoadObjectModels
 // Loads world-specific animated props + object models for current zone.
 // (Scene_Objects.cpp tiene un port alternativo con strings distintos.)
-void __cdecl FUN_0050c4d0(void) {
+void __cdecl OpenWorldModels(void) {
     char cVar2 = DAT_0055a7c4;
     if (DAT_083a410c != '\0') {
         DAT_0055a7c4 = '\0';
         World = 7;
     }
 
-    FUN_00529740("Object8_drop01.jpg", 0x4d9, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Object8_drop01.jpg", 0x4d9, 0x2600, 0x2900, 0, '\x01');
 
     if (DAT_0055a7c4 == '\0') {
         switch (World) {
@@ -344,11 +344,11 @@ void __cdecl FUN_0050c4d0(void) {
             OpenModel((int)0xb3, "Data2/Object9/", "SandPillar.smd");
             break;
         case 10:
-            FUN_00529740("Effect/clouds.jpg",      0x4f4, 0x2601, 0x2900, 0, '\x01');
+            OpenJPG("Effect/clouds.jpg",      0x4f4, 0x2601, 0x2900, 0, '\x01');
             OpenModel((int)0xb6, "Data2/Object11/", "cloud.smd");
             FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
             OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
-            FUN_00529740("Effect/cloudLight.jpg",  0x4f5, 0x2601, 0x2900, 0, '\x01');
+            OpenJPG("Effect/cloudLight.jpg",  0x4f5, 0x2601, 0x2900, 0, '\x01');
             break;
         case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
             OpenModel((int)0xb8, "Data2/Object12/", "Angel.smd");
@@ -357,7 +357,7 @@ void __cdecl FUN_0050c4d0(void) {
             OpenModel((int)0x104, "Data2/Object12/", "gate_left.smd");
             OpenModel((int)0x105, "Data2/Object12/", "gate_right.smd");
             OpenModel((int)0xb9, "Data2/Object12/", "shine.smd");
-            FUN_00529740("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
+            OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
             FUN_00404a10(0x6e, "Data/Sound/iBloodCastle.wav", 1, '\0');
             DAT_0055a7c4 = '\x01';
             break;
@@ -416,7 +416,7 @@ void __cdecl FUN_0050c4d0(void) {
             for (int v4 = 0; v4 < 32; v4++) {
                 const char* fmtFull = (v4 >= 10) ? "Object8/wt%d.jpg" : "Object8/wt0%d.jpg";
                 _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtFull, v4);
-                FUN_00529740(Buffer, v4 + 65, 0x2601, 0x2901, 0, '\0');
+                OpenJPG(Buffer, v4 + 65, 0x2601, 0x2901, 0, '\0');
 
                 const char* fmtLeaf = (v4 >= 10) ? "wt%d.jpg" : "wt0%d.jpg";
                 _snprintf_s(Buffer, sizeof(Buffer), _TRUNCATE, fmtLeaf, v4);
@@ -425,9 +425,9 @@ void __cdecl FUN_0050c4d0(void) {
         }
         break;
     case 8:
-        FUN_00529740("Object9/sand01.jpg",    0x494, 0x2601, 0x2901, 0, '\x01');
-        FUN_00529740("Object9/sand02.jpg",    0x495, 0x2601, 0x2901, 0, '\x01');
-        FUN_00529740("Object9/Impack03.jpg",  0x597, 0x2601, 0x2900, 0, '\x01');
+        OpenJPG("Object9/sand01.jpg",    0x494, 0x2601, 0x2901, 0, '\x01');
+        OpenJPG("Object9/sand02.jpg",    0x495, 0x2601, 0x2901, 0, '\x01');
+        OpenJPG("Object9/Impack03.jpg",  0x597, 0x2601, 0x2900, 0, '\x01');
         FUN_005060b0(0xb3, "Data/Object9/", "SandPillar", 2);
         OpenTexture(0xb3, "Object9/", 0x2600, '\x01');
         break;
@@ -442,10 +442,10 @@ void __cdecl FUN_0050c4d0(void) {
         // switch, gateado por `DAT_0055a7c4 == 0`, que ya no corre cuando se
         // llega a Icarus. La textura 1268 quedaba sin handle GL y las ~6800
         // nubes por frame se dibujaban invisibles.
-        FUN_00529740("Effect/clouds.jpg",     0x4f4, 0x2601, 0x2900, 0, '\x01');
+        OpenJPG("Effect/clouds.jpg",     0x4f4, 0x2601, 0x2900, 0, '\x01');
         FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
         OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
-        FUN_00529740("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
+        OpenJPG("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
     case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
         // Blood Castle.  Port 1:1 de IDA 0x50C4D0 L228-242:
@@ -485,7 +485,7 @@ void __cdecl FUN_0050c4d0(void) {
         // (0x50C4D0 L243-245), o sea se ejecutan en cada entrada al mapa.
         // Sin el LoadWaveFile el `PlayBuffer(110, 0, 1)` del estado 0 del 0x9B no
         // tenia nada que reproducir: por eso no sonaba la musica del evento.
-        FUN_00529740("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, 1);
+        OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, 1);
         FUN_00404a10(0x6e, "Data/Sound/iBloodCastle.wav", 1, 0);
         break;
     }

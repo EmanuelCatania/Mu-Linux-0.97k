@@ -1,31 +1,31 @@
-// IDA: FUN_00507610 @ 0x00507610 — Model_LoadPlayerEquipmentTextures
+// IDA: OpenPlayerTextures @ 0x00507610 — Model_LoadPlayerEquipmentTextures
 // Loads player skin textures (slots 0x12d-0x133) and binds texture paths to
 // all class/tier equipment model slots using OpenTexture (Model_LoadTextures).
 // Also loads robe textures at the end.
 // Note: despite the name, this loads textures for player gear, not monster models.
-// Monster models are handled by Monster_Data.cpp (Monster_LoadStartupData, IDA: FUN_00511060).
+// Monster models are handled by Monster_Data.cpp (Monster_LoadStartupData, IDA: Monster_Data_Load).
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
 
-// IDA: FUN_00507610
+// IDA: OpenPlayerTextures
 void __cdecl Model_LoadPlayerEquipmentTextures(void)
 {
     // Initialise texture slot 0x12d (Barbarian skin)
     SetMaxTextures(0x12d);
-    FUN_00529740("Player\\skin_barbarian_01.jpg", 0x12d, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Player\\skin_barbarian_01.jpg", 0x12d, 0x2600, 0x2900, 0, '\x01');
     TextureCurrent++;
-    FUN_00529740("Player\\level_man022.jpg",      0x12e, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Player\\level_man022.jpg",      0x12e, 0x2600, 0x2900, 0, '\x01');
     TextureCurrent++;
-    FUN_00529740("Player\\skin_wizard_01.jpg",    0x12f, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Player\\skin_wizard_01.jpg",    0x12f, 0x2600, 0x2900, 0, '\x01');
     TextureCurrent++;
-    FUN_00529740("Player\\level_man01.jpg",       0x130, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Player\\level_man01.jpg",       0x130, 0x2600, 0x2900, 0, '\x01');
     TextureCurrent++;
-    FUN_00529740("Player\\skin_archer_01.jpg",    0x131, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Player\\skin_archer_01.jpg",    0x131, 0x2600, 0x2900, 0, '\x01');
     TextureCurrent++;
-    FUN_00529740("Player\\level_man033.jpg",      0x132, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Player\\level_man033.jpg",      0x132, 0x2600, 0x2900, 0, '\x01');
     TextureCurrent++;
-    FUN_00529740("Player\\skin_special_01.jpg",   0x133, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Player\\skin_special_01.jpg",   0x133, 0x2600, 0x2900, 0, '\x01');
     TextureCurrent++;
 
     // Slot 0x136: Load textures for all class equipment slots (class 1-4, 5 piece types)
@@ -85,7 +85,7 @@ void __cdecl Model_LoadPlayerEquipmentTextures(void)
     OpenTexture(0x187, "Player\\", 0x2600, '\x01');
 
     // Robe textures (worn-item rendering)
-    FUN_00529740("Player\\Robe01.jpg",  0x1ea, 0x2600, 0x2900, 0, '\x01');
-    FUN_00529740("Player\\Robe02.jpg",  0x1eb, 0x2600, 0x2900, 0, '\x01');
-    FUN_00529bd0("Player\\Robe03.tga", 0x1ec, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Player\\Robe01.jpg",  0x1ea, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Player\\Robe02.jpg",  0x1eb, 0x2600, 0x2900, 0, '\x01');
+    OpenTGA("Player\\Robe03.tga", 0x1ec, 0x2600, 0x2900, 0, '\x01');
 }

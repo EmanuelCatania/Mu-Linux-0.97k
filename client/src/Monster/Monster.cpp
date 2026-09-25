@@ -243,9 +243,9 @@
 //
 //     if (DAT_0055a7c4 == 0):   // sin compresión
 //       if entity_def[+0x22] > 0: skip  // ya cargado
-//       FUN_00442a60(entity_def, folder, path_bmd)  // BMD_LoadFile
+//       BMD__Save(entity_def, folder, path_bmd)  // BMD_LoadFile
 //     else:
-//       FUN_004423e0(entity_def, folder, path_bmd)  // BMD_LoadCompressed
+//       BMD__Open(entity_def, folder, path_bmd)  // BMD_LoadCompressed
 //
 //   Directorio "Data/Monster/" contiene los modelos BMD de monstruos.
 //   "Data/Player/" contiene modelos de personajes.
@@ -507,7 +507,7 @@
 // CreateCharacter is also implemented here (was a 3-arg stub).
 //
 // Helpers used (all already implemented in our codebase):
-//   FUN_005098c0 (OpenMonsterModel)  — Monster_Data.cpp
+//   OpenMonsterModel (OpenMonsterModel)  — Monster_Data.cpp
 //   CreateCharacterPointer — Entity_Spawn.cpp
 //   DeleteCloth (DeleteCloth/Entity_ClearBoneLinks) — stubs.cpp
 //   SetCharacterScale — alias macro
@@ -574,7 +574,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
     switch (Type) {
     case 1:
     case 5:
-        FUN_005098c0(1);
+        OpenMonsterModel(1);
         c = CreateChar5(Key, 271, PositionX, PositionY);
         if (Type == 1) {
             *(unsigned int*)(c + 88) = 0;
@@ -589,18 +589,18 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         }
         break;
     case 2:
-        FUN_005098c0(2);
+        OpenMonsterModel(2);
         c = CreateChar5(Key, 272, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1056964608;
         break;
     case 3:
-        FUN_005098c0(9);
+        OpenMonsterModel(9);
         c = CreateChar5(Key, 279, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1053609165;
         break;
     case 6:
     case 9:
-        FUN_005098c0(4);
+        OpenMonsterModel(4);
         c = CreateChar5(Key, 274, PositionX, PositionY);
         if (Type == 6) {
             *(unsigned short*)(c + 624) = 562;
@@ -612,33 +612,33 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         }
         break;
     case 7:
-        FUN_005098c0(5);
+        OpenMonsterModel(5);
         c = CreateChar5(Key, 275, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 434;
         *(unsigned short*)(c + 648) = 434;
         *(unsigned int*)(c + 12) = 1070386381;
         break;
     case 10:
-        FUN_005098c0(3);
+        OpenMonsterModel(3);
         c = CreateChar5(Key, 273, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1061997773;
         *(unsigned short*)(c + 446) = 1;
         *(unsigned short*)(c + 624) = 413;
         break;
     case 11:
-        FUN_005098c0(7);
+        OpenMonsterModel(7);
         c = CreateChar5(Key, 277, PositionX, PositionY);
         *(unsigned int*)(c + 356) = 1053609165;
         *(unsigned short*)(c + 762) = 15;
         *(unsigned char*)(c + 766) = 1;
         break;
     case 12:
-        FUN_005098c0(6);
+        OpenMonsterModel(6);
         c = CreateChar5(Key, 276, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1058642330;
         break;
     case 13:
-        FUN_005098c0(8);
+        OpenMonsterModel(8);
         c = CreateChar5(Key, 278, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 562;
         *(unsigned int*)(c + 12) = 1066192077;
@@ -680,12 +680,12 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned char*)(c + 766) = 1;
         break;
     case 17:
-        FUN_005098c0(10);
+        OpenMonsterModel(10);
         c = CreateChar5(Key, 280, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 440;
         break;
     case 18:
-        FUN_005098c0(11);
+        OpenMonsterModel(11);
         c = CreateChar5(Key, 281, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1069547520;
         *(unsigned short*)(c + 624) = 564;
@@ -693,39 +693,39 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned int*)(c + 104) = 1065353216;  // 1.0f
         break;
     case 19:
-        FUN_005098c0(12);
+        OpenMonsterModel(12);
         c = CreateChar5(Key, 282, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1066192077;
         break;
     case 20:
-        FUN_005098c0(13);
+        OpenMonsterModel(13);
         c = CreateChar5(Key, 283, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1068708659;
         break;
     case 21:
-        FUN_005098c0(14);
+        OpenMonsterModel(14);
         c = CreateChar5(Key, 284, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1064514355;
         break;
     case 22:
-        FUN_005098c0(15);
+        OpenMonsterModel(15);
         c = CreateChar5(Key, 285, PositionX, PositionY);
         *(unsigned int*)(c + 100) = 0;
         *(unsigned int*)(c + 104) = 1065353216;
         break;
     case 23:
-        FUN_005098c0(16);
+        OpenMonsterModel(16);
         c = CreateChar5(Key, 286, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 439;
         *(unsigned short*)(c + 648) = 602;
         *(unsigned int*)(c + 12) = 1066611507;
         break;
     case 24:
-        FUN_005098c0(17);
+        OpenMonsterModel(17);
         c = CreateChar5(Key, 287, PositionX, PositionY);
         break;
     case 25:
-        FUN_005098c0(18);
+        OpenMonsterModel(18);
         c = CreateChar5(Key, 288, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 561;
         *(unsigned int*)(c + 100) = 2;
@@ -735,47 +735,47 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned short*)(c + 446) = 3;
         break;
     case 26:
-        FUN_005098c0(19);
+        OpenMonsterModel(19);
         c = CreateChar5(Key, 289, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 432;
         *(unsigned int*)(c + 12) = 1061997773;
         break;
     case 27:
-        FUN_005098c0(20);
+        OpenMonsterModel(20);
         c = CreateChar5(Key, 290, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1066192077;
         break;
     case 28:
-        FUN_005098c0(21);
+        OpenMonsterModel(21);
         c = CreateChar5(Key, 291, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 497;
         *(unsigned int*)(c + 12) = 1061997773;
         *(unsigned int*)(c + 100) = 1;
         break;
     case 29:
-        FUN_005098c0(22);
+        OpenMonsterModel(22);
         c = CreateChar5(Key, 292, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 538;
         *(unsigned int*)(c + 12) = 1064514355;
         break;
     case 30:
-        FUN_005098c0(23);
+        OpenMonsterModel(23);
         c = CreateChar5(Key, 293, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1061158912;
         break;
     case 31:
-        FUN_005098c0(24);
+        OpenMonsterModel(24);
         c = CreateChar5(Key, 294, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1067869798;
         *(unsigned short*)(c + 624) = 408;
         *(unsigned short*)(c + 648) = 408;
         break;
     case 32:
-        FUN_005098c0(25);
+        OpenMonsterModel(25);
         c = CreateChar5(Key, 295, PositionX, PositionY);
         break;
     case 33:
-        FUN_005098c0(19);
+        OpenMonsterModel(19);
         c = CreateChar5(Key, 289, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 465;
         *(unsigned short*)(c + 648) = 593;
@@ -804,7 +804,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         }
         break;
     case 35:
-        FUN_005098c0(11);
+        OpenMonsterModel(11);
         c = CreateChar5(Key, 281, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1067869798;
         *(unsigned short*)(c + 624) = 440;
@@ -814,43 +814,43 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned short*)(c + 446) = 2;
         break;
     case 36:
-        FUN_005098c0(28);
+        OpenMonsterModel(28);
         c = CreateChar5(Key, 298, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1067030938;
         break;
     case 37:
-        FUN_005098c0(26);
+        OpenMonsterModel(26);
         c = CreateChar5(Key, 296, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1066192077;
         break;
     case 38:
     case 67:
-        FUN_005098c0(27);
+        OpenMonsterModel(27);
         c = CreateChar5(Key, 297, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 505;
         *(unsigned char*)(c + 626) = 9;
         *(unsigned int*)(c + 12) = 1070386381;
         break;
     case 39:
-        FUN_005098c0(28);
+        OpenMonsterModel(28);
         c = CreateChar5(Key, 298, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1067030938;
         *(unsigned short*)(c + 446) = 1;
         break;
     case 40:
-        FUN_005098c0(29);
+        OpenMonsterModel(29);
         c = CreateChar5(Key, 299, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 414;
         *(unsigned int*)(c + 12) = 1067869798;
         break;
     case 41:
-        FUN_005098c0(30);
+        OpenMonsterModel(30);
         c = CreateChar5(Key, 300, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 467;
         *(unsigned int*)(c + 12) = 1066192077;
         break;
     case 42:
-        FUN_005098c0(31);
+        OpenMonsterModel(31);
         c = CreateChar5(Key, 301, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1067869798;
         *(unsigned int*)(c + 292) = 1128792064;
@@ -858,29 +858,29 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned int*)(c + 300) = 1133248512;
         break;
     case 43:
-        FUN_005098c0(2);
+        OpenMonsterModel(2);
         c = CreateChar5(Key, 272, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1060320051;
         break;
     case 44:
     case 79:
-        FUN_005098c0(31);
+        OpenMonsterModel(31);
         c = CreateChar5(Key, 301, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1063675494;
         break;
     case 45:
-        FUN_005098c0(33);
+        OpenMonsterModel(33);
         c = CreateChar5(Key, 303, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1058642330;
         break;
     case 46:
     case 81:
-        FUN_005098c0(34);
+        OpenMonsterModel(34);
         c = CreateChar5(Key, 304, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1065353216;
         break;
     case 47:
-        FUN_005098c0(35);
+        OpenMonsterModel(35);
         c = CreateChar5(Key, 305, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1066192077;
         *(unsigned short*)(c + 624) = 541;
@@ -888,37 +888,37 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned int*)(c + 104) = 1065353216;
         break;
     case 48:
-        FUN_005098c0(36);
+        OpenMonsterModel(36);
         c = CreateChar5(Key, 306, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1068708659;
         *(unsigned short*)(c + 624) = 566;
         break;
     case 49:
-        FUN_005098c0(37);
+        OpenMonsterModel(37);
         c = CreateChar5(Key, 307, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1065353216;
         *(unsigned int*)(c + 100) = 5;
         *(unsigned int*)(c + 104) = 0;
         break;
     case 50:
-        FUN_005098c0(38);
+        OpenMonsterModel(38);
         c = CreateChar5(Key, 308, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1072064102;
         break;
     case 51:
-        FUN_005098c0(33);
+        OpenMonsterModel(33);
         c = CreateChar5(Key, 303, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1065353216;
         *(unsigned short*)(c + 446) = 1;
         break;
     case 52:
-        FUN_005098c0(35);
+        OpenMonsterModel(35);
         c = CreateChar5(Key, 305, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1068708659;
         *(unsigned short*)(c + 624) = 541;
         break;
     case 53:
-        FUN_005098c0(39);
+        OpenMonsterModel(39);
         c = CreateChar5(Key, 309, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1072064102;
         *(unsigned int*)(c + 100) = 2;
@@ -928,7 +928,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         break;
     case 54:
     case 151:
-        FUN_005098c0(40);
+        OpenMonsterModel(40);
         c = CreateChar5(Key, 310, PositionX, PositionY);
         *(unsigned short*)(c + 648) = 542;
         if (Type == 54) {
@@ -938,7 +938,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         }
         break;
     case 57:
-        FUN_005098c0(41);
+        OpenMonsterModel(41);
         c = CreateChar5(Key, 311, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1068708659;
         *(unsigned short*)(c + 624) = 542;
@@ -947,7 +947,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         break;
     case 58:
     case 59:
-        FUN_005098c0(42);
+        OpenMonsterModel(42);
         c = CreateChar5(Key, 312, PositionX, PositionY);
         *(unsigned int*)(c + 100) = 2;
         *(unsigned int*)(c + 104) = 1065353216;
@@ -963,7 +963,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 60:
-        FUN_005098c0(43);
+        OpenMonsterModel(43);
         c = CreateChar5(Key, 313, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1074580685;
         Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
@@ -971,7 +971,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         break;
     case 61:
     case 63:
-        FUN_005098c0(44);
+        OpenMonsterModel(44);
         c = CreateChar5(Key, 314, PositionX, PositionY);
         if (Type == 63) {
             *(unsigned int*)(c + 12) = 1072902963;
@@ -984,42 +984,42 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 62:
-        FUN_005098c0(45);
+        OpenMonsterModel(45);
         c = CreateChar5(Key, 315, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1069547520;
         Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 2, (int)c, 30.0f, -1, 0);
         Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 64:
-        FUN_005098c0(46);
+        OpenMonsterModel(46);
         c = CreateChar5(Key, 316, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1067030938;
         *(unsigned short*)(c + 648) = 531;
         *(unsigned char*)(c + 650) = 3;
         break;
     case 65:
-        FUN_005098c0(47);
+        OpenMonsterModel(47);
         c = CreateChar5(Key, 317, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1067869798;
         break;
     case 66:
-        FUN_005098c0(48);
+        OpenMonsterModel(48);
         c = CreateChar5(Key, 318, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1071225242;
         break;
     case 68:
-        FUN_005098c0(49);
+        OpenMonsterModel(49);
         c = CreateChar5(Key, 319, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1068708659;
         break;
     case 69:
-        FUN_005098c0(50);
+        OpenMonsterModel(50);
         c = CreateChar5(Key, 320, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1065353216;
         *(unsigned int*)(c + 100) = 0;
         break;
     case 70:
-        FUN_005098c0(51);
+        OpenMonsterModel(51);
         c = CreateChar5(Key, 321, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1067869798;
         *(unsigned int*)(c + 100) = (unsigned int)-2;
@@ -1027,7 +1027,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         break;
     case 71:
     case 74:
-        FUN_005098c0(52);
+        OpenMonsterModel(52);
         c = CreateChar5(Key, 322, PositionX, PositionY);
         if (Type == 71) {
             *(unsigned int*)(c + 12) = 1066192077;
@@ -1046,7 +1046,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned int*)(c + 104) = 1065353216;
         break;
     case 72:
-        FUN_005098c0(53);
+        OpenMonsterModel(53);
         c = CreateChar5(Key, 323, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1069128090;
         *(unsigned short*)(c + 624) = 417;
@@ -1054,7 +1054,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         break;
     case 73:
     case 75:
-        FUN_005098c0(54);
+        OpenMonsterModel(54);
         c = CreateChar5(Key, 324, PositionX, PositionY);
         if (Type == 75) {
             *(unsigned int*)(c + 12) = 1065353216;
@@ -1075,28 +1075,28 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         }
         break;
     case 77:
-        FUN_005098c0(55);
-        FUN_005098c0(56);
+        OpenMonsterModel(55);
+        OpenMonsterModel(56);
         c = CreateChar5(Key, 325, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1065353216;
         *(unsigned char*)(uintptr_t)(DAT_05828d58 + 61236u) = 0;
         break;
     case 78:
-        FUN_005098c0(19);
+        OpenMonsterModel(19);
         c = CreateChar5(Key, 289, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 432;
         *(unsigned char*)(c + 626) = 9;
         *(unsigned int*)(c + 12) = 1061997773;
         break;
     case 80:
-        FUN_005098c0(36);
+        OpenMonsterModel(36);
         c = CreateChar5(Key, 306, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1068708659;
         *(unsigned short*)(c + 624) = 567;
         *(unsigned char*)(c + 627) = 63;
         break;
     case 82:
-        FUN_005098c0(42);
+        OpenMonsterModel(42);
         c = CreateChar5(Key, 312, PositionX, PositionY);
         *(unsigned int*)(c + 100) = 2;
         *(unsigned int*)(c + 104) = 1065353216;
@@ -1107,7 +1107,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 83:
-        FUN_005098c0(41);
+        OpenMonsterModel(41);
         c = CreateChar5(Key, 311, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1068708659;
         *(unsigned short*)(c + 624) = 542;
@@ -1116,19 +1116,19 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         Joint_Create(1258, (float*)(c + 16), (float*)(c + 16), (float*)(c + 28), 3, (int)c, 30.0f, -1, 0);
         break;
     case 84: case 90: case 96: case 113: case 119: case 125:
-        FUN_005098c0(47);
+        OpenMonsterModel(47);
         c = CreateChar5(Key, 317, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1066192077;
         break;
     case 85: case 91: case 97: case 114: case 120: case 126:
-        FUN_005098c0(46);
+        OpenMonsterModel(46);
         c = CreateChar5(Key, 316, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1066192077;
         *(unsigned short*)(c + 648) = 531;
         *(unsigned char*)(c + 650) = 1;
         break;
     case 86: case 92: case 98: case 115: case 121: case 127:
-        FUN_005098c0(59);
+        OpenMonsterModel(59);
         c = CreateChar5(Key, 329, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 440;
         *(unsigned char*)(c + 626) = 0;
@@ -1137,12 +1137,12 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned int*)(c + 12) = 1065353216;
         break;
     case 87: case 93: case 99: case 116: case 122: case 128:
-        FUN_005098c0(58);
+        OpenMonsterModel(58);
         c = CreateChar5(Key, 328, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1061997773;
         break;
     case 88: case 94: case 111: case 117: case 123: case 129:
-        FUN_005098c0(57);
+        OpenMonsterModel(57);
         c = CreateChar5(Key, 327, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 470;
         if ((World - 9) / 3) {
@@ -1153,7 +1153,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned int*)(c + 12) = 1066947052;
         break;
     case 89: case 95: case 112: case 118: case 124: case 130:
-        FUN_005098c0(62);
+        OpenMonsterModel(62);
         c = CreateChar5(Key, 332, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 560;
         *(unsigned char*)(c + 626) = 11;
@@ -1172,19 +1172,19 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         c = CreateChar5(Key, 25, PositionX, PositionY);
         break;
     case 131:
-        FUN_005098c0(61);
+        OpenMonsterModel(61);
         c = CreateChar5(Key, 331, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1061997773;
         *(unsigned char*)(c + 140) = 0;
         break;
     case 132: case 133: case 134:
-        FUN_005098c0(60);
+        OpenMonsterModel(60);
         c = CreateChar5(Key, 330, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1061997773;
         *(unsigned char*)(c + 140) = 0;
         break;
     case 150:
-        FUN_005098c0(32);
+        OpenMonsterModel(32);
         c = CreateChar5(Key, 302, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1039516303;
         break;
@@ -1225,7 +1225,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned char*)(c + 132) = 4;
         break;
     case 234:
-        FUN_005098c0(19);
+        OpenMonsterModel(19);
         c = CreateChar5(Key, 289, PositionX, PositionY);
         *(unsigned short*)(c + 624) = 560;
         *(unsigned char*)(c + 626) = 4;
@@ -1358,7 +1358,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned short*)(c + 600) = 359;
         break;
     default:
-        FUN_005098c0(0);
+        OpenMonsterModel(0);
         c = CreateChar5(Key, 270, PositionX, PositionY);
         if (Type) {
             if (Type == 4) {

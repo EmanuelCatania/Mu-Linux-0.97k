@@ -1,4 +1,4 @@
-// IDA: FUN_00506170 @ 0x00506170 — Model_LoadPlayerAndItemMeshes
+// IDA: OpenPlayers @ 0x00506170 — Model_LoadPlayerAndItemMeshes
 // Allocates the model data pool, zeroes it, then loads the player body mesh
 // (model slot 0x186) with all its animations (Korean-locale paths when
 // DAT_0055a7c4 == 0), plus all equipment piece slots (Helm/Armor/Pant/Glove/Boot
@@ -10,7 +10,7 @@
 
 // Model_LoadItems — loads player body + all equipment model slots.
 // Called once from OpenWorld (Map_LoadResources) during startup.
-// IDA: FUN_00506170
+// IDA: OpenPlayers
 void __cdecl Model_LoadPlayerAndItemMeshes(void)
 {
     // Allocate raw model pool (0x5b334 bytes) and align the base pointer
@@ -27,132 +27,132 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     // ── Korean-locale SMD animations (skipped in compressed-asset mode) ──────
     if (DAT_0055a7c4 == '\0') {
         // Player body (female base mesh, slot 0x186, 0x8d = 141 animation slots)
-        FUN_0040b280((int)0x186, "Data2\\Player\\BodyFemale.smd", 0x8d, '\0');
+        OpenSMDModel((int)0x186, "Data2\\Player\\BodyFemale.smd", 0x8d, '\0');
 
         // Idle / stand animations
-        FUN_0040b310(0x186, "Data2\\Player\\set_01.smd",            1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB3\xB2\xC0\xDA\xB8\xDE\xBC\xCB\xB5\xBF\xC0\xDB.smd", 0); // ³²ÀڸžÛ·Á
-        FUN_0040b310(0x186, "Data2\\Player\\stop_female_01.smd",    0);
-        FUN_0040b310(0x186, "Data2\\Player\\stop_sword_01.smd",     0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBB\xC7\xB0\xED\xB5\xBF\xC0\xDB.smd", 0); // »ÇGoµ¿ÀÛ (shield idle)
-        FUN_0040b310(0x186, "Data2\\Player\\\xC1\xA4\xB8\xED\xB5\xBF\xC0\xDB.smd", 0); // Á¤¸éµ¿ÀÛ
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xC7\xAE\xBD\xC3\xBD\xBA.smd", 0); // ½ºÅÀÀ§½º
-        FUN_0040b310(0x186, "Data2\\Player\\stop_bow_01.smd",       0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBF\xC0\xBD\xBA\xC5\xC0\xC7\xAE.smd", 0); // ¿À½ºÅÀÀ®
-        FUN_0040b310(0x186, "Data2\\Player\\stop_fly_01.smd",       0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBF\xC0\xC7\xAE\xC0\xDA\xBB\xF3.smd", 0); // ¿ÀÀ®ÀÚ»ó
-        FUN_0040b310(0x186, "Data2\\Player\\uniconp_stop.smd",      0);
-        FUN_0040b310(0x186, "Data2\\Player\\uniconp_stop_weapon.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\set_01.smd",            1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB3\xB2\xC0\xDA\xB8\xDE\xBC\xCB\xB5\xBF\xC0\xDB.smd", 0); // ³²ÀڸžÛ·Á
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_female_01.smd",    0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_sword_01.smd",     0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBB\xC7\xB0\xED\xB5\xBF\xC0\xDB.smd", 0); // »ÇGoµ¿ÀÛ (shield idle)
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xC1\xA4\xB8\xED\xB5\xBF\xC0\xDB.smd", 0); // Á¤¸éµ¿ÀÛ
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xC7\xAE\xBD\xC3\xBD\xBA.smd", 0); // ½ºÅÀÀ§½º
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_bow_01.smd",       0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBF\xC0\xBD\xBA\xC5\xC0\xC7\xAE.smd", 0); // ¿À½ºÅÀÀ®
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_fly_01.smd",       0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBF\xC0\xC7\xAE\xC0\xDA\xBB\xF3.smd", 0); // ¿ÀÀ®ÀÚ»ó
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_stop.smd",      0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_stop_weapon.smd", 0);
 
         // Run animations
-        FUN_0040b310(0x186, "Data2\\Player\\run_male_01.smd",       1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB5\xB5.smd", 1); // ½ºÅÀ·Î (run to stop?)
-        FUN_0040b310(0x186, "Data2\\Player\\run_sword_01.smd",      1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xC7\xAE\xC0\xDA\xBB\xF3.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xC1\xA4\xB8\xED.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB8\xDE\xC0\xCC\xBD\xBA.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\run_bow_01.smd",        1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD\xBA.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC0\xDA.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB5\xAF\xAE\xEC.smd", 1);  // µ¿Àۯ
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA.smd", 1);
-        FUN_0040b310(0x186, "Data2\\Player\\run_fly_01.smd",        0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\uniconp_run.smd",       1);
-        FUN_0040b310(0x186, "Data2\\Player\\uniconp_run_weapon.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_male_01.smd",       1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB5\xB5.smd", 1); // ½ºÅÀ·Î (run to stop?)
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_sword_01.smd",      1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xC7\xAE\xC0\xDA\xBB\xF3.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xC1\xA4\xB8\xED.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB8\xDE\xC0\xCC\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_bow_01.smd",        1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC0\xDA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB5\xAF\xAE\xEC.smd", 1);  // µ¿Àۯ
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA.smd", 1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_fly_01.smd",        0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0\xBD\xBA\xC5\xC0.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_run.smd",       1);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_run_weapon.smd", 1);
 
         // Attack animations
-        FUN_0040b310(0x186, "Data2\\Player\\attack_fist.smd",       0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC1\xF6\xC8\xF4\xB0\xF8\xB0\xDD_01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC1\xF6\xC8\xF4\xB0\xF8\xB0\xDD_02.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xB0\xF8\xB0\xDD_01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xB0\xF8\xB0\xDD_02.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xCD\xB0\xEE\xB0\xF8\xB0" "\xDD" "01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xCD\xB0\xEE\xB0\xF8\xB0" "\xDD" "02.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xCD\xB0\xEE\xB0\xF8\xB0" "\xDD" "03.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xC1\xD6\xB0\xEE_\xC7\xEC" "01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xC1\xD6\xB0\xEE_\xB3\xB2" "01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0); // 6F4=Hwaro
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xBA\xBD\xBA\xB0\xF8\xB0" "\xDD" "01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xBA\xBD\xBA\xB0\xF8\xB0" "\xDD" "02.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0); // 7F8=Hwalro
-        FUN_0040b310(0x186, "Data2\\Player\\attack_bow_fly_01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\attack_crossbow_fly_01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\uniconp_attack_sword.smd",   0);
-        FUN_0040b310(0x186, "Data2\\Player\\uniconp_attack_twohands.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\uniconp_attack_spear.smd",   0);
-        FUN_0040b310(0x186, "Data2\\Player\\uniconp_attack_sickle.smd",  0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\attack_fist.smd",       0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC1\xF6\xC8\xF4\xB0\xF8\xB0\xDD_01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC1\xF6\xC8\xF4\xB0\xF8\xB0\xDD_02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xB0\xF8\xB0\xDD_01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xB0\xF8\xB0\xDD_02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xCD\xB0\xEE\xB0\xF8\xB0" "\xDD" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xCD\xB0\xEE\xB0\xF8\xB0" "\xDD" "02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xCD\xB0\xEE\xB0\xF8\xB0" "\xDD" "03.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xC1\xD6\xB0\xEE_\xC7\xEC" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xC7\xD8\xC1\xD6\xB0\xEE_\xB3\xB2" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0); // 6F4=Hwaro
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xBA\xBD\xBA\xB0\xF8\xB0" "\xDD" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xB0\xF8\xB0\xDD_\xBD\xBA\xBD\xBA\xB0\xF8\xB0" "\xDD" "02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0); // 7F8=Hwalro
+        OpenSMDAnimation(0x186, "Data2\\Player\\attack_bow_fly_01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\attack_crossbow_fly_01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_attack_sword.smd",   0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_attack_twohands.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_attack_spear.smd",   0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\uniconp_attack_sickle.smd",  0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
 
         // (8 padding idle anims follow from Ghidra loop: iVar4=8 times &DAT_0055bd4c)
         for (int i = 0; i < 8; i++)
-            FUN_0040b310(0x186, "Data2\\Player\\\xB3\xB2\xC0\xDA\xB8\xDE\xBC\xCB\xB5\xBF\xC0\xDB.smd", 0);
+            OpenSMDAnimation(0x186, "Data2\\Player\\\xB3\xB2\xC0\xDA\xB8\xDE\xBC\xCB\xB5\xBF\xC0\xDB.smd", 0);
 
         // Pegasus / TwoHand Two / Skill animations
-        FUN_0040b310(0x186, "Data2\\Player\\Pegasus_fly.smd",              0);
-        FUN_0040b310(0x186, "Data2\\Player\\Pegasus_fly_weapon.smd",       0);
-        FUN_0040b310(0x186, "Data2\\Player\\stop_TwoHandTwo.smd",          0);
-        FUN_0040b310(0x186, "Data2\\Player\\walk_TwoHandTwo.smd",          0);
-        FUN_0040b310(0x186, "Data2\\Player\\run_TwoHandTwo.smd",           0);
-        FUN_0040b310(0x186, "Data2\\Player\\attack_TwoHandTwo.smd",        0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBF\xEC\xC1\xF6\xB0\xF8\xB0" "\xDD" "01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBF\xEC\xC1\xF6\xB0\xF8\xB0" "\xDD" "02.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD" "\xBA" "01.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD" "\xBA" "02.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD" "\xBA" "03.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\Skill_02.smd",                 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\defense_01.smd",               0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\shock_01.smd",                 0);
-        FUN_0040b310(0x186, "Data2\\Player\\die_01.smd",                   0);
-        FUN_0040b310(0x186, "Data2\\Player\\die_02.smd",                   0);
-        FUN_0040b310(0x186, "Data2\\Player\\action_sit1.smd",              0);
-        FUN_0040b310(0x186, "Data2\\Player\\action_sit2.smd",              0);
-        FUN_0040b310(0x186, "Data2\\Player\\action_sit_f_01.smd",          0);
-        FUN_0040b310(0x186, "Data2\\Player\\action_sit_f_02.smd",          0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
-        FUN_0040b310(0x186, "Data2\\Player\\action_pose_01.smd",           0);
-        FUN_0040b310(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\Pegasus_fly.smd",              0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\Pegasus_fly_weapon.smd",       0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\stop_TwoHandTwo.smd",          0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\walk_TwoHandTwo.smd",          0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\run_TwoHandTwo.smd",           0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\attack_TwoHandTwo.smd",        0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBF\xEC\xC1\xF6\xB0\xF8\xB0" "\xDD" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBF\xEC\xC1\xF6\xB0\xF8\xB0" "\xDD" "02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD" "\xBA" "01.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD" "\xBA" "02.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xBD\xBA\xBD" "\xBA" "03.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\Skill_02.smd",                 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\defense_01.smd",               0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\shock_01.smd",                 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\die_01.smd",                   0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\die_02.smd",                   0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_sit1.smd",              0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_sit2.smd",              0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_sit_f_01.smd",          0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_sit_f_02.smd",          0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\action_pose_01.smd",           0);
+        OpenSMDAnimation(0x186, "Data2\\Player\\\xBD\xBA\xC5\xC0\xB0\xFC\xC3\xA3.smd", 0);
 
         // Equipment piece loaders (class 1-4): each loads class_N suffix
         for (int i = 1; i <= 4; i++) {

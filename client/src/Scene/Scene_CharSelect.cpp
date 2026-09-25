@@ -52,13 +52,13 @@
 //   _DAT_07abf138 = 1.0; _DAT_07abf13c = 0.9; _DAT_07abf140 = 0.8;
 //   if (DAT_005616b0 == -1): Mouse_UpdateHoverTargets(); → CharPreview_Render()
 //   Entity_RenderAll_3D();     → Entity_RenderAll_3D()
-//   FUN_00500970();     → Entity_Render_Sprites()
+//   RenderBugs();     → Entity_Render_Sprites()
 //   FUN_0046c3e0();     → Particle_Render()
 //   GL_SetBlendSrcOver('\x01'); GL_SetMode(1)
 //   GL_BindTextureSlot(0x15); glColor4f(1,1,1,0.8);
 //   GL_BeginSprite();     → SkillEffect_Render_2()
 //   Render_DrawSpritePool();     → Portal_Render()
-//   FUN_00478c00();     → ItemDrop_Render_2()
+//   RenderParticles();     → ItemDrop_Render_2()
 //   glPopMatrix();
 //   GL_Begin2D();     → GL_SetupOrtho2D()
 //
@@ -129,7 +129,7 @@
 //
 //   FUN_005239a0()  → CharSelect_UpdateInput()
 //   RenderErrorMessage()  → Chat_Render()
-//   FUN_004f64d0()  → UI_Render()
+//   Scene_MapTick()  → UI_Render()
 //   UI_RenderNotices()  → StatusBar_Render()
 //   UI_RenderChatLogOverlay()  → Mouse_Render()
 //   UI_UpdateFpsCounter/4c3530/4bffa0/0051e0c0/5124b0 → UI finalizadores
@@ -163,7 +163,7 @@
 //
 //   FUN_004fd800   → Terrain_Render()
 //   Entity_RenderAll_3D   → Entity_RenderAll_3D()
-//   FUN_00500970   → Entity_Render_Sprites()
+//   RenderBugs   → Entity_Render_Sprites()
 //   FUN_0046c3e0   → Particle_Render()
 //   FUN_00473ea0   → Particle_Spawn(type, pos, r0, r1, r2, angle, ?, z)
 //   Camera_BuildMouseRay   → Camera_Update(mx, my, mat)
@@ -317,7 +317,7 @@ int Scene_CharSelect(void)
                          0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0f);
         }
 
-        FUN_00500970();                    // Entity_Render_Sprites
+        RenderBugs();                    // Entity_Render_Sprites
         // MEJORA DEL DLL (no esta en IDA): el binario solo llama RenderBlurs en
         // 0x00523D80; el DLL (Patchs.cpp RenderBlurs_RenderCharacterScene)
         // agrega RenderJoints + RenderEffects para dibujar el efecto de las alas.
@@ -329,7 +329,7 @@ int Scene_CharSelect(void)
         glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
         GL_BeginSprite();                    // SkillEffect_Render_2
         Render_DrawSpritePool();                    // Portal_Render
-        FUN_00478c00();                    // ItemDrop_Render_2
+        RenderParticles();                    // ItemDrop_Render_2
         glPopMatrix();
         GL_Begin2D();                    // GL_SetupOrtho2D
         glColor3f(1.0f, 1.0f, 1.0f);
@@ -707,7 +707,7 @@ int Scene_CharSelect(void)
         // ── Final subsystems ──────────────────────────────────────────────────
         FUN_005239a0();   // CharSelect_UpdateInput
         RenderErrorMessage();   // Chat_Render
-        FUN_004f64d0();   // UI_Render
+        Scene_MapTick();   // UI_Render
         UI_RenderNotices();   // StatusBar_Render
         if ((g_bUseChatListBox == 1) || (SceneFlag != 5))
             UI_RenderChatLogOverlay();   // Mouse_Render

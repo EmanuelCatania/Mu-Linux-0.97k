@@ -135,7 +135,7 @@ void __cdecl Triangle_ComputeNormal(float *param_1,float *param_2,float *param_3
 // Transforms a 3-component vector (param_1) by a 3x4 matrix (param_2)
 // where the translation column is included (indices 3, 7, 11).
 // Contrast with Vector_Rotate which uses pure rotation (no translation term).
-// Used by Sprite_DrawTexturedQuad (FUN_00511d00) to project world→screen.
+// Used by Sprite_DrawTexturedQuad (RenderSprite_0) to project world→screen.
 void __cdecl Vector_Transform(float *param_1,float *param_2,float *param_3)
 {
   *param_3 = *param_1 * *param_2 + param_2[2] * param_1[2] + param_2[1] * param_1[1] + param_2[3];

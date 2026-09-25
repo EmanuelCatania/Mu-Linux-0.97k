@@ -71,7 +71,7 @@ float __cdecl RequestTerrainHeight(float xf, float yf)
 }
 
 
-// FUN_004f8ff0 @ 0x004f8ff0
+// TestFrustrum2D @ 0x004f8ff0
 //
 // Terrain_PointInQuad — tests whether a 2D world point (param_1, param_2)
 // lies inside (or on the boundary of) the current terrain quad, using a
@@ -94,7 +94,7 @@ float __cdecl RequestTerrainHeight(float xf, float yf)
 //   FrustrumX  — quad vertex X array (4 floats)
 //   FrustrumY  — quad vertex Y array (4 floats)
 
-undefined2 __cdecl FUN_004f8ff0(float param_1,float param_2,float param_3)
+undefined2 __cdecl TestFrustrum2D(float param_1,float param_2,float param_3)
 
 {
   // 004F8FF0 TestFrustrum2D returns a boolean.  The prior reconstruction

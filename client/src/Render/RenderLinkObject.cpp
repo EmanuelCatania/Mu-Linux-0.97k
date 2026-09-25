@@ -347,14 +347,14 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
 
         // Translation column already written via local_21c/20c/1fc macros, which
         // alias local_228[3]/[7]/[11] (BUGFIX 2026-04-26 — see decl block).
-        // FUN_004f9f70 takes: (bone_mat, angle_mat_12, out_parentmat)
+        // R_ConcatTransforms takes: (bone_mat, angle_mat_12, out_parentmat)
 
         // BoneTransform for LinkBone
         float* pBoneMat = (float*)((unsigned int)*(unsigned char*)(param_5 + 4) * 0x30
                                    + *(int*)(param_4 + 0x114));
 
-        // FUN_004f9f70: combine bone matrix with local angle matrix → ParentMatrix
-        FUN_004f9f70(pBoneMat, local_228, (float*)&DAT_06989c9c);
+        // R_ConcatTransforms: combine bone matrix with local angle matrix → ParentMatrix
+        R_ConcatTransforms(pBoneMat, local_228, (float*)&DAT_06989c9c);
 
         // BodyOrigin = entity world position (copy from entity, no local offset added)
         *(unsigned int*)(iVar7 + 0x6c) = *(unsigned int*)(param_4 + 0x10);

@@ -37,7 +37,7 @@
 // ── Anti-tamper / obfuscation note ───────────────────────────────────────────
 // Several string lookups via FUN_0053e8c0(&DAT_005632xx) decode GameGuard
 // binary paths and log messages at runtime — not reimplemented here.
-// FUN_00540b30 (CryptHashData?), FUN_00543efe (verify), FUN_00541210 (INI read)
+// FUN_00540b30 (CryptHashData?), mbsicmp (verify), FUN_00541210 (INI read)
 // FUN_0053f4f0, FUN_00540520, FUN_00540660 — GG internal checks.
 
 #include "stdafx.h"
@@ -49,7 +49,7 @@
 // These are GameGuard-private and not part of the game logic layer.
 extern "C" {
     int   __cdecl FUN_0053fc50(int this_int);                    // GG_GetVersion
-    void  __cdecl FUN_0054414b(void *dst, void *src, int len);   // GG_memcpy
+    void  __cdecl mbsnbcpy(void *dst, void *src, int len);   // GG_memcpy
     int   __cdecl FUN_0053f410(void *buf, int size);             // GG_PathInit (for log dir)
     int   __cdecl FUN_0053f460(void *buf, int size);             // GG_PathInit2 (for binary dir)
     int   __cdecl FUN_00544105(const char *path, int flags);     // GG_CheckFileAttr
@@ -61,13 +61,13 @@ extern "C" {
     int   __cdecl FUN_00540b30(void *ctx, const char *path, char flag); // GG_LoadBinary
     int   __cdecl FUN_00540f40(const char *src, char *out, int max, int offset); // GG_ExtractSection
     void  __cdecl FUN_00541280(int a, int b, void *c, void *d, int e, char *f);  // GG_INI_Parse
-    int   __cdecl FUN_00543efe(void *ctx, void *sig, void *key); // GG_VerifySig
+    int   __cdecl mbsicmp(void *ctx, void *sig, void *key); // GG_VerifySig
     int   __cdecl FUN_00541210(int ctx, int key, int def, char *out);            // GG_INI_ReadInt
     int   __cdecl FUN_00540520(void *ctx);                       // GG_Check32Bit
     int   __cdecl FUN_00540660(void *ctx);                       // GG_Check64Bit
     int   __cdecl FUN_0053efa0(void *ctx, int val);              // GG_ValidateNP
     void  __cdecl FUN_005404a0(int a, int b, char *c);           // GG_Report
-    char  __cdecl FUN_00544093(char *str, char ch);              // GG_StrRChr
+    char  __cdecl mbsrchr(char *str, char ch);              // GG_StrRChr
 }
 
 // GG process ID / handle stored globally (written at Phase2 launch)
@@ -160,7 +160,7 @@ int __cdecl FUN_0053d890(void *gg_ctx, unsigned char *param_1)
     *(char *)((int)gg_ctx + 0x331) = (char)FUN_0053fc50((int)gg_ctx);
     *(DWORD *)((int)gg_ctx + 0x2c4) = GetCurrentProcessId();
     DAT_083bbaf4 = GetCurrentThreadId();
-    FUN_0054414b((char *)((int)gg_ctx + 0x2c8), param_1, 0x20);
+    mbsnbcpy((char *)((int)gg_ctx + 0x2c8), param_1, 0x20);
     *(unsigned char *)((int)gg_ctx + 0x2e7) = 0;
 
     // ── Create/verify GG data directory ──────────────────────────────────────
@@ -195,7 +195,7 @@ int __cdecl FUN_0053d890(void *gg_ctx, unsigned char *param_1)
             memcpy(logPath, lpString1_083bb9e0, pathLen + 1);
         } else {
             GetModuleFileNameA(NULL, logPath, 0x104);
-            char *lastSlash = (char *)FUN_00544093(logPath, '\\');
+            char *lastSlash = (char *)mbsrchr(logPath, '\\');
             if (lastSlash) *(lastSlash + 1) = '\0';
             lstrcatA(logPath, lpString1_083bb9e0);
         }
@@ -326,9 +326,9 @@ int __cdecl FUN_0053d890(void *gg_ctx, unsigned char *param_1)
 
         // Parse INI section; create command line; launch Phase1
         char cmdLine[256] = {0};
-        // (INI parse via FUN_00541280 + FUN_00543efe + FUN_00541210 omitted)
+        // (INI parse via FUN_00541280 + mbsicmp + FUN_00541210 omitted)
         // Verification of signature
-        // ... (FUN_00543efe call omitted)
+        // ... (mbsicmp call omitted)
 
         // Prepare STARTUPINFO / PROCESS_INFORMATION and launch
         STARTUPINFOA        si = {0}; si.cb = sizeof(si);

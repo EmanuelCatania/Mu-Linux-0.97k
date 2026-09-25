@@ -74,7 +74,7 @@
 //   0x438       | 65.536 B | height bytes (256×256) → DAT_080cb2cc (× height_scale2)
 //
 //   Si DAT_0055a7c4 != 0: skip 4 bytes al inicio (header comprimido).
-//   Si DAT_0055a7c4 == 0: aplica FUN_00529130 (decompression/CRC).
+//   Si DAT_0055a7c4 == 0: aplica SaveImage (decompression/CRC).
 //   height_scale2 = DAT_005528f0
 //
 //   Path: construido a partir de DAT_0055a79c (prefix) + base_name + DAT_0055a798 (suffix)
@@ -142,7 +142,7 @@
 //     src = buffer
 //     for 0x10E veces: DAT_0838b800[i] = *(dword*)src; src += 4
 //
-//     if (DAT_0055a7c4 == 0): FUN_00529130(4, DAT_0055a798, param_1, buffer, 0x10438)
+//     if (DAT_0055a7c4 == 0): SaveImage(4, DAT_0055a798, param_1, buffer, 0x10438)
 //
 //     // Heights → float (256×256 = 65536 entradas)
 //     src = buffer + 0x438
@@ -153,7 +153,7 @@
 //     delete buffer
 //     return true
 //
-//   FUN_00529130 @ 0x00529130 = Terrain_Decompress o Terrain_CRC_Check
+//   SaveImage @ 0x00529130 = Terrain_Decompress o Terrain_CRC_Check
 //
 // ── TERRAIN_COMPUTENORMALS (0x004f70b0) ───────────────────────────────────────
 //
@@ -319,15 +319,15 @@
 //
 //     Itera 8×8 bloques de tiles (local_20 y local_24):
 //       Para cada bloque (tile_x=8, tile_y=8..):
-//         uVar3 = FUN_004f8ff0(tile_x, tile_y, -180.0)  // frustum cull
+//         uVar3 = TestFrustrum2D(tile_x, tile_y, -180.0)  // frustum cull
 //         Si visible || CameraTopViewEnabled:
 //           Para objetos en lista de ese bloque:
-//             obj[+0x160] = FUN_004f8ff0(...)  // cull por objeto
+//             obj[+0x160] = TestFrustrum2D(...)  // cull por objeto
 //             Si visible: TerrainTile_Render(...)
 //             Si World==2 && entity_type==100:
 //               // Render entity especial (NPC marker?) con CharData check
 //
-//   FUN_004f8ff0 @ 0x004f8ff0 = Frustum_TestSphere(x, y, z) → visible
+//   TestFrustrum2D @ 0x004f8ff0 = Frustum_TestSphere(x, y, z) → visible
 //   CameraTopViewEnabled = force_render_all flag (debug)
 //
 // ── PIPELINE DE CARGA COMPLETO ────────────────────────────────────────────────
@@ -397,7 +397,7 @@
 // moved from stubs.cpp lines 9775-10173 (399 lines).
 // =============================================================================
 // ── Terrain helpers ───────────────────────────────────────────────────────────
-// FUN_004f6c60 @ 0x004F6C60 — Terrain_Clear: resets tile/height/noise arrays.
+// InitTerrainMappingLayer @ 0x004F6C60 — Terrain_Clear: resets tile/height/noise arrays.
 //
 // BUG-FIX 2026-04-28: el decomp Ghidra usaba `(int)&DAT_xxxx + iVar2` y
 // `*(float*)(iVar2 * 4 + 0x810b2c8)` — accesos por dirección absoluta /
@@ -567,10 +567,10 @@ uint __cdecl OpenTerrainHeight(char *filename)
     return 1;
 }
 
-// FUN_00529130 @ 0x00529130 — SaveImage (relabeled audit #10; was mislabeled
+// SaveImage @ 0x00529130 — SaveImage (relabeled audit #10; was mislabeled
 // "Terrain_Decompress / Terrain_CRC_Check"). Persists screenshot/texture data
 // to disk depending on `mode`.  Stub passthrough.
-void __cdecl FUN_00529130(int mode, int ext, int path, int buf)
+void __cdecl SaveImage(int mode, int ext, int path, int buf)
 {
     (void)mode; (void)ext; (void)path; (void)buf;
 }
@@ -582,13 +582,13 @@ void __cdecl FUN_004f9c20(void) {
     *(DWORD*)&_DAT_0838b710 = 0x3f800000u;  // float bits: 1.0f
 }
 
-// FUN_00529360 @ 0x00529360 — OpenJpegBuffer / Texture_LoadToBuf
+// OpenJpegBuffer @ 0x00529360 — OpenJpegBuffer / Texture_LoadToBuf
 // Loads OZJ/JPEG file, decompresses, converts each pixel component to float
 // using _DAT_00552b70 (1/255 normalization), stores into float* buffer at dst.
 // Output: 3 floats per pixel (R, G, B), rows stored bottom-up (flipped).
-void __cdecl FUN_00529360(char *path, int dst)
+void __cdecl OpenJpegBuffer(char *path, int dst)
 {
-    // --- Path construction (same logic as FUN_00529740) ---
+    // --- Path construction (same logic as OpenJPG) ---
     char full_path[256];
     if (DAT_0055a7c4 == '\0') {
         strcpy(full_path, (const char*)DAT_0055a7a4);

@@ -20,8 +20,8 @@
 //     OpenFont();                          → World_Init()
 //     ClearInput(1);                         → CharList_Init(1)
 //
-//     FUN_00529740("Local/Webzenlogo.jpg", 0xc, 0x2600, 0x2900, 0, '\x01');
-//     FUN_00529740("Local/Everyone.jpg",   0xd, 0x2600, 0x2900, 0, '\x01');
+//     OpenJPG("Local/Webzenlogo.jpg", 0xc, 0x2600, 0x2900, 0, '\x01');
+//     OpenJPG("Local/Everyone.jpg",   0xd, 0x2600, 0x2900, 0, '\x01');
 //
 //     DAT_083a42ea = 0;
 //     GL_BeginViewport(0, 0, 0x280, 0x1e0);       // Viewport_Set(0,0,640,480)
@@ -58,14 +58,14 @@
 //     if (DAT_083a410c == '\0') {
 //       CErrorReport_Write(&DAT_055c9bf0, "> Loading ok...");
 //       SceneFlag = 2;   // SceneFlag = Login
-//       Scene_LoadGameAssets() (IDA: FUN_00510320);
+//       Scene_LoadGameAssets() (IDA: OpenBasicData);
 //       return;
 //     }
 //
 //     // PATH BYPASS: ir directo a InGame
 //     SceneFlag = 5;   // SceneFlag = InGame
 //     DAT_083a7c10 = 1;   // render enable flag
-//     Scene_LoadGameAssets() (IDA: FUN_00510320);
+//     Scene_LoadGameAssets() (IDA: OpenBasicData);
 //     OpenWorld();      // World_Load()
 //     HeroKey = 0;
 //
@@ -104,13 +104,13 @@
 //
 //   OpenFont  → World_Init()
 //   ClearInput  → CharList_Init(mode)
-//   FUN_00529740  → Texture_Load(path, id, w, h, flag, mipmap)
+//   OpenJPG  → Texture_Load(path, id, w, h, flag, mipmap)
 //   GL_BeginViewport  → Viewport_Set(x, y, w, h)
 //   GL_Begin2D  → GL_SetupOrtho2D()
 //   GL_DrawTexture  → Texture_Draw2D(id, x, y, w, h, u0, v0, u1, v1, fx, fy)
 //   GL_End2D  → GL_End2D()
 //   UnloadImage  → Texture_Unload(id)
-//   Scene_LoadGameAssets (IDA: FUN_00510320) → shared asset loader
+//   Scene_LoadGameAssets (IDA: OpenBasicData) → shared asset loader
 //   OpenWorld  → World_Load()
 //   CreateHero  → Entity_Create(type, ?, ?, world_x, world_y)
 //   CErrorReport_Write  → Log(hashtable, msg)
@@ -163,9 +163,9 @@ void __cdecl Scene_Intro(HDC param_1)
     DBG("Scene_Intro: after ClearInput, before Texture_Load Webzenlogo");
 
     // Load splash textures
-    FUN_00529740(s_Local_Webzenlogo_jpg_00561774, 0xc, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG(s_Local_Webzenlogo_jpg_00561774, 0xc, 0x2600, 0x2900, 0, '\x01');
     DBG("Scene_Intro: after Webzenlogo load");
-    FUN_00529740(s_Local_Everyone_jpg_0056178c,   0xd, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG(s_Local_Everyone_jpg_0056178c,   0xd, 0x2600, 0x2900, 0, '\x01');
     DBG("Scene_Intro: after Everyone load");
 
     DAT_083a42ea = 0;

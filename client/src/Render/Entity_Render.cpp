@@ -363,7 +363,7 @@ void Entity_Render(void)
 // FUN_004fc030 @ 0x004fc030
 //
 // Entity_PrepareRender — validates an entity then sets up its render state.
-// Calls Calc_RenderObject (Entity_IsVisible) and, if non-zero, FUN_004fae00
+// Calls Calc_RenderObject (Entity_IsVisible) and, if non-zero, Draw_RenderObject
 // (Entity_SetupRenderState) to configure matrices/culling for the entity.
 
 void __cdecl FUN_004fc030(unsigned char *param_1,unsigned int param_2,int param_3,char param_4)
@@ -373,7 +373,7 @@ void __cdecl FUN_004fc030(unsigned char *param_1,unsigned int param_2,int param_
 
   uVar1 = Calc_RenderObject((int)param_1,(char)param_2,param_3);
   if ((char)uVar1 != '\0') {
-    FUN_004fae00(param_1,param_2,param_3,param_4);
+    Draw_RenderObject(param_1,param_2,param_3,param_4);
   }
   return;
 }
@@ -383,7 +383,7 @@ void __cdecl FUN_004fc030(unsigned char *param_1,unsigned int param_2,int param_
 // Updates one entity's visibility flag and per-frame state.
 // param_1: entity pointer (float*)
 // Checks active flag (byte at param_1+0), runs frustum test, then calls:
-//   FUN_004f8ff0  — Frustum_TestPoint2D (returns visible flag)
+//   TestFrustrum2D  — Frustum_TestPoint2D (returns visible flag)
 //   MoveMonsterClient  — update animation frame
 //   MoveCharacter  — compute screen position
 //   MoveCharacterVisual  — update entity state
@@ -393,7 +393,7 @@ void __cdecl MoveCharacterClient(float *param_1)
   undefined2 uVar1;
 
   if (*(char *)param_1 != '\0') {
-    uVar1 = FUN_004f8ff0(param_1[4] * _DAT_005524f8,param_1[5] * _DAT_005524f8,-20.0);
+    uVar1 = TestFrustrum2D(param_1[4] * _DAT_005524f8,param_1[5] * _DAT_005524f8,-20.0);
     *(char *)(param_1 + 0x58) = (char)uVar1;
     MoveMonsterClient((int)param_1,(int)param_1);
     MoveCharacter((int)param_1);
@@ -455,7 +455,7 @@ void Entity_RenderAll_3D(void)
 #endif  // duplicate Entity_RenderAll_3D disabled — use Entity_RenderAll_3D.cpp
 
 
-// FUN_00500970 — RenderBugs (Entity_VisibilityCheckAll)
+// RenderBugs — RenderBugs (Entity_VisibilityCheckAll)
 // Itera el pool de butterflies/effect-entities (DAT_083a1218, 10 entries × 0x1BC).
 // Por cada entry activo: frustum test, si visible y (owner es player o type==0x330)
 // llama a FUN_004fc030 (render). Type 0x330 además spawnea sparkle.
@@ -473,7 +473,7 @@ void Entity_RenderAll_3D(void)
 //   +0x018  float  pos.z
 //   +0x0FC  DWORD  owner (entity ptr)
 //   +0x160  byte   visibility flag (escrito por frustum test)
-uint FUN_00500970(void)
+uint RenderBugs(void)
 {
     // 2026-05-07: re-habilitado. Antes estaba TEMP DISABLED por flicker en
     // char-select. Ahora gated por SceneFlag == 5 (in-world) para evitar
@@ -504,7 +504,7 @@ uint FUN_00500970(void)
 
         float posX = *(float*)(slot + 16);
         float posY = *(float*)(slot + 20);
-        unsigned short vis = FUN_004f8ff0(posX * 0.01f, posY * 0.01f, -20.0f);
+        unsigned short vis = TestFrustrum2D(posX * 0.01f, posY * 0.01f, -20.0f);
         slot[0x160] = (char)(vis != 0);
         if (!vis) continue;
 

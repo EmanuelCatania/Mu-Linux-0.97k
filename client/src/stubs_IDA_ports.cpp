@@ -1797,7 +1797,7 @@ LABEL_5:
 }
 #endif
 
-// ── FUN_00404e40 (IDA-only, gated) ──
+// ── waveIO__dtor (IDA-only, gated) ──
 #if defined(IDA_PORT_00404E40)
 DWORD __cdecl waveIO::_waveIO(DWORD This, bool IO)
 {
@@ -1810,7 +1810,7 @@ DWORD __cdecl waveIO::_waveIO(DWORD This, bool IO)
 }
 #endif
 
-// ── FUN_00404e60 (IDA-only, gated) ──
+// ── waveIO__CloseWaveFile (IDA-only, gated) ──
 #if defined(IDA_PORT_00404E60)
 bool __cdecl waveIO::CloseWaveFile(DWORD This)
 {
@@ -2010,7 +2010,7 @@ char *__stdcall FUN_00405420(char *Str, int a2)
 }
 #endif
 
-// ── FUN_00405500 (IDA-only, gated) ──
+// ── CErrorReport__WriteDebugInfoStr (IDA-only, gated) ──
 #if defined(IDA_PORT_00405500)
 void __cdecl CErrorReport::WriteDebugInfoStr(DWORD This, char *lpszToWrite)
 {
@@ -2024,7 +2024,7 @@ void __cdecl CErrorReport::WriteDebugInfoStr(DWORD This, char *lpszToWrite)
 }
 #endif
 
-// ── FUN_00405590 (IDA-only, gated) ──
+// ── CErrorReport__WriteLogBegin (IDA-only, gated) ──
 #if defined(IDA_PORT_00405590)
 void __cdecl CErrorReport::WriteLogBegin(DWORD This)
 {
@@ -2032,7 +2032,7 @@ void __cdecl CErrorReport::WriteLogBegin(DWORD This)
 }
 #endif
 
-// ── FUN_00405620 (IDA-only, gated) ──
+// ── CErrorReport__WriteSystemInfo (IDA-only, gated) ──
 #if defined(IDA_PORT_00405620)
 void __cdecl CErrorReport::WriteSystemInfo(DWORD This, DWORD si)
 {
@@ -2045,7 +2045,7 @@ void __cdecl CErrorReport::WriteSystemInfo(DWORD This, DWORD si)
 }
 #endif
 
-// ── FUN_004056b0 (IDA-only, gated) ──
+// ── CErrorReport__WriteOpenGLInfo (IDA-only, gated) ──
 #if defined(IDA_PORT_004056B0)
 void __cdecl CErrorReport::WriteOpenGLInfo(DWORD This)
 {
@@ -2066,7 +2066,7 @@ void __cdecl CErrorReport::WriteOpenGLInfo(DWORD This)
 }
 #endif
 
-// ── FUN_00405760 (IDA-only, gated) ──
+// ── CErrorReport__WriteImeInfo (IDA-only, gated) ──
 #if defined(IDA_PORT_00405760)
 void __cdecl CErrorReport::WriteImeInfo(DWORD This, HWND hWnd)
 {
@@ -3575,7 +3575,7 @@ DWORD *__cdecl FUN_00409ad0(DWORD *This)
 }
 #endif
 
-// ── FUN_00409b60 (IDA-only, gated) ──
+// ── scalar_deleting_destructor_locale (IDA-only, gated) ──
 #if defined(IDA_PORT_00409B60)
 std::locale::_Locimp *__cdecl std::locale::_Locimp::`scalar deleting destructor'(
         std::locale::_Locimp *_this,
@@ -3590,7 +3590,7 @@ std::locale::_Locimp *__cdecl std::locale::_Locimp::`scalar deleting destructor'
 }
 #endif
 
-// ── FUN_00409b80 (IDA-only, gated) ──
+// ── Locimp_dtor (IDA-only, gated) ──
 #if defined(IDA_PORT_00409B80)
 void __cdecl std::locale::_Locimp::~_Locimp(std::locale::_Locimp *_this)
 {
@@ -4450,7 +4450,7 @@ LABEL_25:
 }
 #endif
 
-// ── FUN_0040c170 (IDA-only, gated) ──
+// ── TextureScript_setScript (IDA-only, gated) ──
 #if defined(IDA_PORT_0040C170)
 void __cdecl TextureScript::setScript(DWORD This, DWORD That)
 {
@@ -4461,7 +4461,7 @@ void __cdecl TextureScript::setScript(DWORD This, DWORD That)
 }
 #endif
 
-// ── FUN_0040c190 (IDA-only, gated) ──
+// ── TextureScriptParsing_parsingTScript (IDA-only, gated) ──
 #if defined(IDA_PORT_0040C190)
 bool __cdecl TextureScriptParsing::parsingTScript(DWORD This, char *filename)
 {
@@ -5417,7 +5417,7 @@ DWORD *__cdecl FUN_0040f540(DWORD *_this)
 }
 #endif
 
-// ── FUN_0040f650 (IDA-only, gated) ──
+// ── CUIRenderText_SetFont (IDA-only, gated) ──
 #if defined(IDA_PORT_0040F650)
 int __cdecl CUIRenderText::SetFont(DWORD **_this, int a2)
 {
@@ -9336,7 +9336,7 @@ int __cdecl CWsctlc_nRecv(SOCKET *_this)
 }
 #endif
 
-// ── FUN_00442260 (IDA-only, gated) ──
+// ── BMD__FindNearTriangle (IDA-only, gated) ──
 #if defined(IDA_PORT_00442260)
 void __cdecl BMD::FindNearTriangle(DWORD This)
 {
@@ -9385,7 +9385,7 @@ void __cdecl BMD::FindNearTriangle(DWORD This)
 }
 #endif
 
-// ── FUN_004422f0 (IDA-only, gated) ──
+// ── BMD__FindTriangleForEdge (IDA-only, gated) ──
 #if defined(IDA_PORT_004422F0)
 void __cdecl BMD::FindTriangleForEdge(DWORD This, int iMesh, int iTri1, int iIndex11)
 {
@@ -9446,7 +9446,7 @@ LABEL_10:
 }
 #endif
 
-// ── FUN_00442e00 (IDA-only, gated) ──
+// ── BMD__Init (IDA-only, gated) ──
 #if defined(IDA_PORT_00442E00)
 void __cdecl BMD::Init(DWORD This, bool Dummy)
 {
@@ -9544,7 +9544,7 @@ static inline float* AE_CreateEffect(int type, float* p1, float* p2, float* p3,
                       a6, (float*)(intptr_t)a7, (byte)flag); }
 static inline void* AE_CreateJoint(int type, float* p1, float* p2, float* p3,
                                    int sub, int owner, double scale, int a, int b)
-{ return FUN_0046d840(type, p1, p2, p3, (unsigned int)sub, owner, (float)scale,
+{ return CreateJoint(type, p1, p2, p3, (unsigned int)sub, owner, (float)scale,
                       (short)a, (unsigned char)b); }
 static inline void AE_TransformPosition(DWORD model, const void* mat,
                                         float* pos, float* out, int flag)
@@ -14284,9 +14284,9 @@ int __cdecl FUN_00479a50(char *FileName)
 }
 #endif
 
-// ── FUN_00479b30 (IDA-only, gated) ──
+// ── OpenFilterFile (IDA-only, gated) ──
 #if defined(IDA_PORT_00479B30)
-void __cdecl FUN_00479b30(char *FileName)
+void __cdecl OpenFilterFile(char *FileName)
 {
   FILE *v1; // esi
   char *v2; // ebp
@@ -14446,9 +14446,9 @@ int __cdecl FUN_00479d70(char *FileName)
 }
 #endif
 
-// ── FUN_00479e50 (IDA-only, gated) ──
+// ── OpenNameFilterFile (IDA-only, gated) ──
 #if defined(IDA_PORT_00479E50)
-void __cdecl FUN_00479e50(char *FileName)
+void __cdecl OpenNameFilterFile(char *FileName)
 {
   FILE *v1; // esi
   char *v2; // ebp
@@ -14602,7 +14602,7 @@ int __cdecl CalculateNextExperince(int _this)
 }
 #endif
 
-// ── FUN_0047e4f0 (IDA-only, gated) ──
+// ── CHARACTER_MACHINE_GetMagicSkillDamage (IDA-only, gated) ──
 #if defined(IDA_PORT_0047E4F0)
 void __cdecl CHARACTER_MACHINE::GetMagicSkillDamage(DWORD This, int iType, int *piMinDamage, int *piMaxDamage)
 {
@@ -16227,7 +16227,7 @@ LABEL_2:
 }
 #endif
 
-// ── FUN_00482dd0 (IDA-only, gated) ──
+// ── CSQuest_FindQuestItemsInInven (IDA-only, gated) ──
 #if defined(IDA_PORT_00482DD0)
 int __cdecl CSQuest::FindQuestItemsInInven(DWORD This, int nType, int nCount, int nLevel)
 {
@@ -16300,9 +16300,9 @@ int __cdecl FUN_00482ff0(int iType, int iLevel)
 }
 #endif
 
-// ── FUN_00485780 (IDA-only, gated) ──
+// ── UseSkillWarrior (IDA-only, gated) ──
 #if defined(IDA_PORT_00485780)
-void __cdecl FUN_00485780(DWORD c, DWORD o)
+void __cdecl UseSkillWarrior(DWORD c, DWORD o)
 {
   void *v2; // esi
   unsigned int v3; // eax
@@ -24090,9 +24090,9 @@ LABEL_319:
 }
 #endif
 
-// ── FUN_004e13a0 (IDA-only, gated) ──
+// ── RenderObjectScreen (IDA-only, gated) ──
 #if defined(IDA_PORT_004E13A0)
-void __cdecl FUN_004e13a0(int Type, int ItemLevel, int Option1, float Target[3], int Select, bool PickUp)
+void __cdecl RenderObjectScreen(int Type, int ItemLevel, int Option1, float Target[3], int Select, bool PickUp)
 {
   int Level; // edi
   short v9; // ax
@@ -24624,18 +24624,18 @@ char __cdecl FUN_004f6a70(int a1, int a2)
 }
 #endif
 
-// ── FUN_004f6cb0 (IDA-only, gated) ──
+// ── ExitProgram (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6CB0)
-void __cdecl FUN_004f6cb0()
+void __cdecl ExitProgram()
 {
   MessageBoxA(g_hWnd, GlobalText[11], 0, 0);
   SendMessageA(g_hWnd, 2u, 0, 0);
 }
 #endif
 
-// ── FUN_004f6ce0 (IDA-only, gated) ──
+// ── OpenTerrainAttribute (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6CE0)
-int __cdecl FUN_004f6ce0(char *FileName)
+int __cdecl OpenTerrainAttribute(char *FileName)
 {
   FILE *fp; // eax MAPDST
   int result; // eax
@@ -24750,9 +24750,9 @@ void __cdecl FUN_004f6eb0(BYTE *Buffer, int Size)
 }
 #endif
 
-// ── FUN_004f7250 (IDA-only, gated) ──
+// ── OpenTerrainLight (IDA-only, gated) ──
 #if defined(IDA_PORT_004F7250)
-void __cdecl FUN_004f7250(char *FileName)
+void __cdecl OpenTerrainLight(char *FileName)
 {
   OpenJpegBuffer(FileName, &TerrainLight);
   CreateTerrainNormal();
@@ -25702,9 +25702,9 @@ void __cdecl FUN_00509880()
 }
 #endif
 
-// ── FUN_0050c4d0 (IDA-only, gated) ──
+// ── OpenWorldModels (IDA-only, gated) ──
 #if defined(IDA_PORT_0050C4D0)
-void __cdecl FUN_0050c4d0()
+void __cdecl OpenWorldModels()
 {
   int i; // eax
   int v1; // esi
@@ -26947,9 +26947,9 @@ void __cdecl FUN_0051d780(int a1, char a2)
 }
 #endif
 
-// ── FUN_00529360 (IDA-only, gated) ──
+// ── OpenJpegBuffer (IDA-only, gated) ──
 #if defined(IDA_PORT_00529360)
-bool __cdecl FUN_00529360(char *filename, float *BufferFloat)
+bool __cdecl OpenJpegBuffer(char *filename, float *BufferFloat)
 {
   char *v2; // ebx
   const char *v3; // edi
@@ -28710,7 +28710,7 @@ int __cdecl FUN_00540ac0(void *_this)
 }
 #endif
 
-// ── FUN_00541450 (IDA-only, gated) ──
+// ── crt_onexit (IDA-only, gated) ──
 #if defined(IDA_PORT_00541450)
 _onexit_t __cdecl _onexit(_onexit_t Func)
 {
@@ -28852,17 +28852,17 @@ int __cdecl FUN_00542eb4(FILE *Stream)
 }
 #endif
 
-// ── FUN_00543264 (IDA-only, gated) ──
+// ── putc (IDA-only, gated) ──
 #if defined(IDA_PORT_00543264)
-int __cdecl FUN_00543264(int Character, FILE *Stream)
+int __cdecl putc(int Character, FILE *Stream)
 {
   return fputc(Character, Stream);
 }
 #endif
 
-// ── FUN_0054337b (IDA-only, gated) ──
+// ── fscanf (IDA-only, gated) ──
 #if defined(IDA_PORT_0054337B)
-int FUN_0054337b(FILE *const Stream, const char *const Format, ...)
+int fscanf(FILE *const Stream, const char *const Format, ...)
 {
   int v2; // esi
   va_list va; // [esp+14h] [ebp+10h] BYREF
@@ -28903,9 +28903,9 @@ int __cdecl FUN_005436a6(FILE *Stream)
 }
 #endif
 
-// ── FUN_00543839 (IDA-only, gated) ──
+// ── exit (IDA-only, gated) ──
 #if defined(IDA_PORT_00543839)
-void __cdecl  FUN_00543839(int Code)
+void __cdecl  exit(int Code)
 {
   doexit(Code, 0, 0);
 }
@@ -28956,7 +28956,7 @@ int __cdecl FUN_0054385b(UINT uExitCode, int a2, int a3)
 }
 #endif
 
-// ── FUN_005439e8 (IDA-only, gated) ──
+// ── lock_file (IDA-only, gated) ──
 #if defined(IDA_PORT_005439E8)
 void __cdecl _lock_file(FILE *Stream)
 {
@@ -28971,7 +28971,7 @@ void __cdecl _lock_file(FILE *Stream)
 }
 #endif
 
-// ── FUN_00543a3a (IDA-only, gated) ──
+// ── unlock_file (IDA-only, gated) ──
 #if defined(IDA_PORT_00543A3A)
 void __cdecl _unlock_file(FILE *Stream)
 {
@@ -29144,7 +29144,7 @@ LABEL_15:
 }
 #endif
 
-// ── FUN_00546a50 (IDA-only, gated) ──
+// ── stbuf (IDA-only, gated) ──
 #if defined(IDA_PORT_00546A50)
 int __cdecl _stbuf(int a1)
 {
@@ -29195,7 +29195,7 @@ int __cdecl _stbuf(int a1)
 }
 #endif
 
-// ── FUN_00546add (IDA-only, gated) ──
+// ── ftbuf (IDA-only, gated) ──
 #if defined(IDA_PORT_00546ADD)
 int __cdecl _ftbuf(int a1, int a2)
 {
@@ -29216,7 +29216,7 @@ int __cdecl _ftbuf(int a1, int a2)
 }
 #endif
 
-// ── FUN_00549ae8 (IDA-only, gated) ──
+// ── checkTOS_withFB (IDA-only, gated) ──
 #if defined(IDA_PORT_00549AE8)
 int __cdecl _checkTOS_withFB(int a1, int a2)
 {

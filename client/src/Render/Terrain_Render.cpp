@@ -2,7 +2,7 @@
 #include "Render/Terrain_Render.h"
 
 // External helpers
-extern unsigned short __cdecl FUN_004f8ff0(float x, float y, float z);
+extern unsigned short __cdecl TestFrustrum2D(float x, float y, float z);
 extern void __cdecl FUN_004fc030(unsigned char *entity, unsigned int slot, int flag, char mode);
 extern void __cdecl CErrorReport_Write(void *buf, const char *msg);
 extern void __cdecl HashTable_Insert(void *ctx, void *obj, void *key);
@@ -37,7 +37,7 @@ void FUN_004fd800(void)
         int chunk_x = 8;
         do
         {
-            unsigned short vis = FUN_004f8ff0(chunk_yf, (float)chunk_x, -180.0f);
+            unsigned short vis = TestFrustrum2D(chunk_yf, (float)chunk_x, -180.0f);
             *((char*)chunk_ptr + 8) = (char)vis;
 
             if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
@@ -67,7 +67,7 @@ void FUN_004fd800(void)
                         // Range = z_offset + CollisionRange(obj[+0xD0]) - margen ampliado
                         // (mejora intencional, ver OBJECT_CULL_EXTRA_MARGIN arriba).
                         float ez = z_offset + *(float*)(entity + 0xd0) - OBJECT_CULL_EXTRA_MARGIN;
-                        vis = FUN_004f8ff0(ex, ey, ez);
+                        vis = TestFrustrum2D(ex, ey, ez);
                         entity[0x160] = (char)vis;
 
                         if ((char)vis != '\0' || CameraTopViewEnabled != '\0')
@@ -112,7 +112,7 @@ void FUN_004fd800(void)
                 float ex = *(float*)(entity + 0x10) * _DAT_005524f8;
                 float ey = *(float*)(entity + 0x14) * _DAT_005524f8;
                 float ez = z_offset + *(float*)(entity + 0xd0);
-                unsigned short vis = FUN_004f8ff0(ex, ey, ez);
+                unsigned short vis = TestFrustrum2D(ex, ey, ez);
                 entity[0x160] = (char)vis;
             }
             iVar += 0x394;

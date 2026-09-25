@@ -503,7 +503,7 @@
 //   0x0043db30  Net_WSAInit(int ctx)   __fastcall
 //     WSAStartup(0x0202, &local_190)
 //     Si error: log "Winsock_DLL_Initialize_error" + MessageBoxA("IError") → return 0
-//     Si versión OK (2.2): ctx+8=0; ctx+4=wVersion; FUN_00403a30(); return 1
+//     Si versión OK (2.2): ctx+8=0; ctx+4=wVersion; CWsctlc__LogPrintOn(); return 1
 //
 //   0x0043dbf0  Net_CreateSocket(void* this, HWND hWnd)   __thiscall
 //     socket(AF_INET=2, SOCK_STREAM=1, IPPROTO_TCP=0) → this+8

@@ -45,7 +45,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 #endif
 
 
-// FUN_00479330 @ 0x00479330 — RenderPoints (damage popup renderer)
+// RenderPoints @ 0x00479330 — RenderPoints (damage popup renderer)
 // 2026-05-06: ported from IDA mu97k-src-IDA/raw/00479330_RenderPoints.c.
 //
 // Itera el pool DAT_07c80110[100 × 0x70] de damage popups (poblado por
@@ -145,7 +145,7 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
 
 // RenderPoints — port FIEL de IDA 0x479330. Los 4 args son un artefacto del
 // call site anterior; se ignoran.
-void __cdecl FUN_00479330(int, int, int, int)
+void __cdecl RenderPoints(int, int, int, int)
 {
     EnableAlphaTest(true);
     GL_DisableDepthTest();                    // DisableDepthTest
