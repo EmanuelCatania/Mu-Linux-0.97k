@@ -11,7 +11,7 @@ extern void FUN_004fa5a0(void);
 // MoveObject_Special @ 0x004FA5F0 (~93 lines) — castle gate destruction animation
 // Gate objects in castle siege world. Decrements counter, plays sound 0x6c,
 // spawns 10 dust particles at height 80, clears terrain on completion.
-void __cdecl MoveObject_Special_stub(int param_1) {
+void __cdecl MoveObject_Special(int param_1) {
     // Retain the old exported name, but execute the exact IDA port.
     FUN_004fa5f0(param_1);
     return;
@@ -104,7 +104,7 @@ label_gate_side:
 // PickObject_Mouse @ 0x004FA7C0 (~90 lines) — mouse-picking scene objects
 // Iterates 0x10 * 0x10 object lists. Per visible object:
 // BMD::Animation + Transform, then CollisionDetectLineToMesh vs MousePosition/Target.
-char* __stdcall PickObject_Mouse_stub(void) {
+char* __stdcall PickObject_Mouse(void) {
     // 0x004FA7C0 — Mouse-picking scene objects.
     // Iterates 0x10 * 0x10 object linked lists rooted at DAT_083a021c (stride 4 DWORDs per cell).
     // Per visible object: sets up BMD model data, calls BMD::Animation + Transform,
@@ -171,7 +171,7 @@ char* __stdcall PickObject_Mouse_stub(void) {
                     if ((char)hit != '\0') {
                         // CollisionDetectLineToMesh — precise line-mesh test
                         // Phantom regs in Ghidra; approximate call:
-                        if (BMD__CollisionDetectLineToMesh_stub(
+                        if (BMD__CollisionDetectLineToMesh(
                                 (DWORD)model, (float*)&CameraRayOriginX, (float*)&DAT_083a4110,
                                 false, 0, 0)) {
                             result = obj;

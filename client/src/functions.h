@@ -1223,30 +1223,30 @@ void  __cdecl SendRequestEquipmentItem_stub(int iSrcType, int iSrcIndex, ITEM *p
 int   __stdcall FindHotKey(int Skill);                              // 0x004B1170
 void  __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float height); // 0x004BB940
 void  __cdecl SendChat(char *Text);                                      // 0x004C1B90
-int   __cdecl ConvertGold64_stub(int Zen, char *Buffer);                 // 0x004C3E10
+int   __cdecl ConvertGold64(int Zen, char *Buffer);                 // 0x004C3E10
 void  __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort); // 0x004C9E70
-void  __cdecl InsertWarehouseItem_stub(unsigned int param_1, unsigned char *param_2); // 0x004CC0E0
-void  __cdecl SetItemGridFlag_stub(int param_1, int param_2, unsigned char param_3); // 0x004CC1E0
-int   __cdecl CompareItems_stub(short param_1, int param_2, int param_3); // 0x004CC270
-void  __cdecl SortInventory_stub(short *param_1);                        // 0x004CC3C0
-unsigned long long __cdecl CheckInventorySpace_stub(int p1, int p2, unsigned short *p3, int p4, int p5); // 0x004D5D70
-int   __cdecl FindEmptySlot_stub(int p1, int p2, int p3, int p4);       // 0x004D5F20
-unsigned int __stdcall Inventory_DropItem_stub(void);                    // 0x004D6470
-long long __fastcall CalculateInventoryValue_stub(int p1, unsigned int p2, short *p3, int p4, short *p5); // 0x004DF330
+void  __cdecl InsertWarehouseItem(unsigned int param_1, unsigned char *param_2); // 0x004CC0E0
+void  __cdecl SetItemGridFlag(int param_1, int param_2, unsigned char param_3); // 0x004CC1E0
+int   __cdecl CompareItems(short param_1, int param_2, int param_3); // 0x004CC270
+void  __cdecl SortInventory(short *param_1);                        // 0x004CC3C0
+unsigned long long __cdecl CheckInventorySpace(int p1, int p2, unsigned short *p3, int p4, int p5); // 0x004D5D70
+int   __cdecl FindEmptySlot(int p1, int p2, int p3, int p4);       // 0x004D5F20
+unsigned int __stdcall Inventory_DropItem(void);                    // 0x004D6470
+long long __fastcall CalculateInventoryValue(int p1, unsigned int p2, short *p3, int p4, short *p5); // 0x004DF330
 void  __cdecl InventoryColor(ITEM *p);                              // 0x004E2420
 void  __stdcall RenderEquipmentBox(void);                           // 0x004E25A0
 void  __cdecl RenderEquipmentPart3D(int Index, float sx, float sy, float Width, float Height); // 0x004E2E40
 void  __stdcall RenderEquipment3D(void);                            // 0x004E3100
 void  __cdecl RenderItemsBoxes_stub(float fPosX, float fPosY, DWORD Inventory, int iMaxWidth, int iMaxHeight); // 0x004E37B0
-void  __cdecl RenderItems3D_stub(float p1, float p2, short *p3, int p4, int p5, char p6); // 0x004E38B0
+void  __cdecl RenderItems3D(float p1, float p2, short *p3, int p4, int p5, char p6); // 0x004E38B0
 int   __cdecl CheckMixRecipe(short *p1, int p2, int p3);                // 0x004E40F0
 void  __cdecl RenderInventoryInterface_stub(int StartX, int StartY, int Flag); // 0x004ECBA0
-void  __cdecl RenderGuildMark_stub(float p1, float p2, float p3, float p4, int p5); // 0x004F02F0
+void  __cdecl RenderGuildMark(float p1, float p2, float p3, float p4, int p5); // 0x004F02F0
 void  __cdecl AddTerrainLightClip(float xf, float yf, float Light[3], int Range, float Buffer[3]); // 0x004F7800
 void  __cdecl RenderTerrainBlock(float xf, float yf, int xi, int yi, bool EditFlag); // 0x004F9720
 void  __cdecl RenderTerrainFrustrum_stub(bool EditFlag);                 // 0x004F97E0
-void  __cdecl MoveObject_Special_stub(int param_1); // legacy alias of FUN_004fa5f0 (0x004FA5F0)
-char* __stdcall PickObject_Mouse_stub(void);                             // 0x004FA7C0
+void  __cdecl MoveObject_Special(int param_1); // legacy alias of FUN_004fa5f0 (0x004FA5F0)
+char* __stdcall PickObject_Mouse(void);                             // 0x004FA7C0
 float* __cdecl MoveObject_PerWorld(float param_1);                       // 0x004FDC00
 int   __stdcall MoveHeavenThunder(void);                            // 0x004FED90
 void  __stdcall MoveObjects(void);                                  // 0x004FF260
@@ -1261,9 +1261,9 @@ bool  __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem);           // 0x004
 
 // Batch 17 — Entity, combat, rendering, IME, chat, particles
 void  __cdecl FUN_0043ce50(unsigned char param_1, int param_2);          // action request packet (0x0043CE50)
-void  __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter);         // 0x0043E890
-void  __cdecl MoveHead_stub(int param_1);                                // 0x0043E940
-bool  __cdecl BMD__CollisionDetectLineToMesh_stub(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle); // 0x00440BE0
+void  __cdecl LookAtTarget(DWORD o, DWORD TargetCharacter);         // 0x0043E890
+void  __cdecl MoveHead(int param_1);                                // 0x0043E940
+bool  __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle); // 0x00440BE0
 bool  __cdecl AttackStage(DWORD c, DWORD o);                       // 0x00448930
 // IDA: FUN_00451f30
 void  __cdecl Combat_SpawnDeathDustParticles(int entity);

@@ -389,7 +389,7 @@ void __cdecl RenderItemsBoxes_stub(float fPosX, float fPosY, DWORD Inventory, in
 // For each non-empty cell: call RenderItem3D with item dimensions from ItemAttribute.
 // If MixItems + _MixState active (1..0x32): render sparkle effects (textures 0x4ce/0x4cf/0x47e).
 // Also renders "new item" cyan glow for items marked Color=='c'.
-void __cdecl RenderItems3D_stub(float p1, float p2, short* p3, int p4, int p5, char p6) {
+void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p6) {
     // 0x004E38B0 — Render 3D item models in inventory grid
     // p1=posX, p2=posY, p3=inventory array (short*, stride 0x22 words=0x44 bytes)
     // p4=gridWidth, p5=gridHeight, p6=mode (0=normal 3D render, 1=show arrow count + mix sparkles)

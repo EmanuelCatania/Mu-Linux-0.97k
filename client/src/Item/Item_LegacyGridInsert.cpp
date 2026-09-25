@@ -198,7 +198,7 @@ extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
     }
 
     // IDA InsertInventoryItem L77-80 (LABEL_59).
-    if (Inv == Inventory) SortInventory_stub((short*)Inv);
+    if (Inv == Inventory) SortInventory((short*)Inv);
     // (Anti-tamper hash-table ref-count for !First — skipped per policy.)
     (void)First;
 }

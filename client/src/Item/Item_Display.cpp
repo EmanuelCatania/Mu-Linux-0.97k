@@ -28,7 +28,7 @@ static void InventoryMove_SetPendingPools(const BYTE* sourcePoolBase,
 }
 
 // ConvertGold64 @ 0x004C3E10 (~23 lines) — formats gold with thousand separators
-int __cdecl ConvertGold64_stub(int Zen, char* Buffer) {
+int __cdecl ConvertGold64(int Zen, char* Buffer) {
     if (Zen > 999999999)
         return sprintf(Buffer, "%d,%03d,%03d,%03d", Zen / 1000000000, (Zen / 1000000) % 1000, (Zen / 1000) % 1000, Zen % 1000);
     if (Zen > 999999)
@@ -248,7 +248,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                                             BYTE* invBase, int gridW,
                                             int gridH, int slotType);
 
-unsigned int __stdcall Inventory_DropItem_stub(void) {
+unsigned int __stdcall Inventory_DropItem(void) {
     BYTE* invBase = (BYTE*)(uintptr_t)DAT_07ea9800;
     int gridW = 8;
     int gridH = (invBase == &OffsetMixItems[0]) ? 4 : 8;
@@ -404,7 +404,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         // gridX = (MouseX - 1)*0.05 ≈ 30 → fuera del grid → emptyCount=0 →
         // spaceFree=0 SIEMPRE. Esto es por qué el drop nunca encontraba slots
         // libres aún con el watchdog de attr.
-        unsigned long long result = CheckInventorySpace_stub(
+        unsigned long long result = CheckInventorySpace(
             origin_x, origin_y,
             (unsigned short*)invBase,
             gridWidth, gridHeight

@@ -672,7 +672,7 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
     }
 
     if (inv_base == (__int16*)Inventory) {
-        SortInventory_stub(inv_base);
+        SortInventory(inv_base);
     }
 }
 

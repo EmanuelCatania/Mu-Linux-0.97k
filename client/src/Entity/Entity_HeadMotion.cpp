@@ -7,7 +7,7 @@
 
 // IDA: FUN_0043E890 @ 0x0043E890 — LookAtTarget (~38 lines), rotates entity head toward target character.
 // Computes angle between entity and target, sets HeadTargetAngle if within threshold.
-void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
+void __cdecl LookAtTarget(DWORD o, DWORD TargetCharacter) {
     // 0x0043E890 — Rotates entity head toward target character
     // o = OBJECT* (entity), TargetCharacter = CHARACTER* (target, OBJECT at offset 0)
     // OBJECT struct (from Ghidra, size 0x1BC):
@@ -56,7 +56,7 @@ void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
 }
 
 // IDA: FUN_0043E940 @ 0x0043E940 — MoveHead (~56 lines), random/tracked head movement for entities.
-void __cdecl MoveHead_stub(int param_1) {
+void __cdecl MoveHead(int param_1) {
     char anim = *(char*)(param_1 + 0x105);
     if (anim == '\x06') return; // dead — no head movement
 
@@ -95,7 +95,7 @@ void __cdecl MoveHead_stub(int param_1) {
         // del struct de la entidad 0: LookAtTarget leia su "posicion" de campos
         // arbitrarios y el angulo de cabeza salia disparado a cualquier lado.
         // 916 = 0x394 es el stride del array de entidades.
-        LookAtTarget_stub((DWORD)param_1,
+        LookAtTarget((DWORD)param_1,
                           CharactersClient + 916 * (int)*(short*)(param_1 + 0x310));
         return;
     }

@@ -187,7 +187,7 @@ void __fastcall FUN_00403320(void* param_1) {
         RenderText(470, 370, GlobalText[198], 0, 0, nullptr);
         int zen = *(int*)(This + 116868);       // +0x1C884
         m_dwTextColor = (DWORD)FUN_004c3dd0(zen);
-        ConvertGold64_stub(zen, Buffer);
+        ConvertGold64(zen, Buffer);
         RenderText(510, 370, Buffer, 0, 0, nullptr);
     }
 

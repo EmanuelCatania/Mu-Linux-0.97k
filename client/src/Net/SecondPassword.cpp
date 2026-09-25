@@ -4249,7 +4249,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         // Maneja el seguimiento con la cabeza, su giro suave y el pico temporal en
         // c+848; nada de esto es lógica de combate.
         if (*(unsigned short *)(entity_ptr + 2) != 390) {
-            MoveHead_stub(entity_ptr);
+            MoveHead(entity_ptr);
         }
         if (entity_ptr != (int)(uintptr_t)DAT_07abf5d8 &&
             !*(unsigned char *)(entity_ptr + 765) && !(rand() % 32)) {

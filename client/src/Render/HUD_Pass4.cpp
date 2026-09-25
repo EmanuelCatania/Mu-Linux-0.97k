@@ -86,7 +86,7 @@ extern "C" {
     // Guild mark colour palette (16 entries × DWORD ARGB).
     // 2026-08-25: esto era una copia LOCAL del array. El global real es
     // 0x7E11F34 (= DAT_07e11f34), que es el que lee `RenderGuildMark`
-    // (0x4F02F0, nuestro RenderGuildMark_stub): `CreateGuildMark` llenaba esta
+    // (0x4F02F0, nuestro RenderGuildMark): `CreateGuildMark` llenaba esta
     // copia y el render leia el global, que quedaba en ceros — y encima estaba
     // declarado como UN DWORD, asi que indexarlo 0..15 desbordaba.
     // Ver [[global-partido-en-dos]].

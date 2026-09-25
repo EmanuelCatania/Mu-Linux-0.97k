@@ -1272,7 +1272,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
                 for (int gx = 0; gx < 8; ++gx) {
                     int sx = iPosX + 50 + gx * 15;
                     unsigned char color = mark[gx + gy * 8];
-                    RenderGuildMark_stub((float)(sx + 1), (float)(sy + 1), 13.0f, 13.0f, color);
+                    RenderGuildMark((float)(sx + 1), (float)(sy + 1), 13.0f, 13.0f, color);
                 }
             }
             for (int py = 0; py < 2; ++py) {
@@ -1280,10 +1280,10 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
                 for (int px = 0; px < 8; ++px) {
                     int sx = iPosX + 15 + px * 20;
                     int color = px + py * 8;
-                    RenderGuildMark_stub((float)(sx + 1), (float)(sy + 1), 18.0f, 18.0f, color);
+                    RenderGuildMark((float)(sx + 1), (float)(sy + 1), 18.0f, 18.0f, color);
                 }
             }
-            RenderGuildMark_stub((float)(iPosX + 16), (float)(iPosY + 231),
+            RenderGuildMark((float)(iPosX + 16), (float)(iPosY + 231),
                                  23.0f, 23.0f, ((unsigned char)DAT_07eaa0dc & 0x0F));
         }
 

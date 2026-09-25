@@ -2025,7 +2025,7 @@ void __cdecl Action(DWORD c, DWORD o)
 
         DAT_00559bec = 6;                                      // IDA: MouseUpdateTimeMax
         const WORD itemType = *(const WORD*)(groundItem + 4);  // IDA: Items[ItemKey][4]
-        if (itemType != 463 && !FindEmptySlot_stub(itemType, (int)(uintptr_t)OffsetInventoryItems, 8, 8)) {
+        if (itemType != 463 && !FindEmptySlot(itemType, (int)(uintptr_t)OffsetInventoryItems, 8, 8)) {
             // 0x48F5B7-0x48F61B: report the full inventory and restart the
             // item's short fall animation.  `Items` is a 0x204-byte record;
             // these are the original +0x58/+0x5c world position, +0x60 Z and
