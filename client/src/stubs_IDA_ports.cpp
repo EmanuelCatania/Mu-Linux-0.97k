@@ -29073,9 +29073,9 @@ LABEL_11:
 }
 #endif
 
-// ── FUN_00543d81 (IDA-only, gated) ──
+// ── crt_tmpfile (IDA-only, gated) ──
 #if defined(IDA_PORT_00543D81)
-FILE *__cdecl FUN_00543d81()
+FILE *__cdecl crt_tmpfile()
 {
   FILE *v0; // esi
   int v1; // ebp

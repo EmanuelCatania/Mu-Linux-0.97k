@@ -106,9 +106,9 @@ void __cdecl crt_exit(int param) {
     (void)param;
 }
 
-// FUN_00543d81 @ 0x00543D81 (~45 lines) — MSVC CRT _tmpfile()
+// crt_tmpfile @ 0x00543D81 (~45 lines) — MSVC CRT _tmpfile()
 // Creates a temporary file using CRT file table. Returns stream pointer.
-void *__cdecl FUN_00543d81(void) {
+void *__cdecl crt_tmpfile(void) {
     // Original: acquires CRT lock, attempts tmpnam + open with O_CREAT|O_RDWR|O_BINARY,
     // retries on EEXIST, returns FILE* stream.
     // In our build, delegate to standard tmpfile
