@@ -51,6 +51,53 @@ HGLRC     g_hRC      = NULL;  // 0x055ca008
 // Forward declarations
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static int  OpenGL_Init(void);
+
+// Chat_TryAssignMacro -- "/1 texto" guarda una macro en la tecla 1.
+//
+// DESVIACION DOCUMENTADA (2026-09-24).  El 0.97k NO tiene esto: sus macros
+// salen unicamente de Data\\Macro.txt (OpenMacro 0x50F750) y no hay una sola
+// escritura al array fuera de ese loader -- verificado con los xrefs de
+// 0x07E0FFC8.  La asignacion por chat aparece recien en MU 5.2
+// (ZzzInterface.cpp, CheckCommand): compara los dos primeros caracteres contra
+// "/1".."/9" y "/0", y copia el texto desde el indice 3.
+//
+// Se porta de ahi, con dos diferencias deliberadas:
+//   - 5.2 termina el slot con `MacroText[i][iTextSize-3] = NULL` donde
+//     iTextSize quedo en el ULTIMO indice recorrido, asi que se come el ultimo
+//     caracter del mensaje.  Aca se copia entero.
+//   - la lista de comandos prohibidos (CheckMacroLimit) se compara contra los
+//     literales, no contra GlobalText: los indices de esa tabla son los de 5.2
+//     y no tienen por que coincidir con los del 0.97k.
+//
+// Devuelve true si la linea era una asignacion (y entonces no se envia).
+static bool Chat_TryAssignMacro(const char* text)
+{
+    if (!text || text[0] != '/') return false;
+    if (text[1] < '0' || text[1] > '9') return false;
+    if (text[2] != ' ') return false;
+
+    const char* body = text + 3;
+    while (*body == ' ') ++body;
+    if (*body == '\0') return false;   // "/1 " solo: no es asignacion
+
+    // CheckMacroLimit: comandos que abren un dialogo con otro jugador no se
+    // pueden dejar en una macro.
+    static const char* const kBlocked[] = {
+        "/trade", "/party", "/pt", "/guild", "/guildwar", "/battlesoccer"
+    };
+    for (int i = 0; i < (int)(sizeof(kBlocked) / sizeof(kBlocked[0])); ++i) {
+        if (_stricmp(body, kBlocked[i]) == 0)
+            return false;
+    }
+
+    const int slot = (text[1] == '0') ? 9 : (text[1] - '1');
+    char* dst = (char*)DAT_07e0ffc8 + slot * 0x100;
+    memset(dst, 0, 0x100);
+    lstrcpynA(dst, body, 0x100);
+    FUN_00404bc0(0x19, 0, 0);   // SOUND_CLICK01
+    return true;
+}
+
 void OpenGL_Release(void);
 static void GameGuard_Init(CHAR* hWnd);
 static int  GameGuard_GetStatus(void);
@@ -1356,6 +1403,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     // loop de canales de Chat_InputTick; el envío crudo anda
                     // bien para el caso del chat normal).
                     char* line = (char*)DAT_07db8710 + slot * 0x100;
+                    // "/N texto" guarda la macro N en vez de enviarse (desviacion).
+                    if (Chat_TryAssignMacro(line)) {
+                        memset(line, 0, 0x100);
+                        lens[slot] = 0;
+                        DAT_00559c84 = 0;
+                        break;
+                    }
                     // IDA WndProc L2265-2268: antes del SendChat (no en el
                     // susurro) revisa los gestos, salvo montado fuera de zona segura.
                     if (((const char*)&DAT_07db8810)[0] == '\0') {
