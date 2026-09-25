@@ -7,7 +7,7 @@
 #include "globals.h"
 #include "functions.h"
 // EnableAlphaBlend2 @ 0x00511810 (~28 lines) — OpenGL additive blending
-void __stdcall EnableAlphaBlend2_stub(void) {
+void __stdcall GL_SetBlendInvSrcColor(void) {
     // 0x00511810 — OpenGL additive blending (ONE_MINUS_DST_COLOR, ONE)
     // 2026-04-30 BUG-FIX: previously cached state in DAT_07eaa160/164/168
     // — those addresses are CheckInventory + adjacent ITEM ptrs, NOT GL

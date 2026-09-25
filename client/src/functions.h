@@ -1252,7 +1252,7 @@ int   __stdcall MoveHeavenThunder(void);                            // 0x004FED9
 void  __stdcall MoveObjects(void);                                  // 0x004FF260
 void  __stdcall MoveBugs_stub(void);                                     // 0x005001F0
 void  __cdecl OpenNpc(int Type);                                    // 0x005091D0
-void  __stdcall EnableAlphaBlend2_stub(void);                            // 0x00511810
+void  __stdcall GL_SetBlendInvSrcColor(void);                            // 0x00511810
 void  __cdecl RenderSpriteUV(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha); // 0x00511FB0
 double __cdecl RenderNumber2D_stub(float x, float y, int Num, float Width, float Height); // 0x005122F0
 void  __stdcall MoveCamera_stub(void);                                   // 0x0051E4E0

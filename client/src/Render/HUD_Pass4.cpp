@@ -145,6 +145,11 @@ static bool HUD_IsCharacterInfoRuntime(void)
 // Constants.
 static const char aMacroTime[] = "Macro Time";
 
+// Implementaciones reales de los tres modos de blend (ver el bloque de abajo).
+void GL_EnableLightMap(void);
+void GL_SetBlendSrcAlpha(void);
+void __stdcall GL_SetBlendInvSrcColor(void);
+
 // All 9 sub-panels are implemented in src/Render/HUD_Pass6.cpp.  sub_5126E0
 // is also there.  Forward-declare the ones called from this TU.
 extern "C" {
@@ -158,11 +163,18 @@ extern "C" {
     void __cdecl RenderEventWindow(void);
     void __cdecl RenderGoldenArcherWindow(void);
     void __cdecl RenderServerDivision(void);
-    // GL state helpers — minor stubs, the real pipeline doesn't drive these
-    // distinct alpha-blend modes in our build yet.
-    void __cdecl EnableLightMap(void) {}
-    void __cdecl EnableAlphaBlendMinus(void) {}
-    void __cdecl EnableAlphaBlend2(void) {}
+    // Modos de blend que usa la cola de RenderTipText (sub_47F7F0) para dejar
+    // el estado GL como estaba.  Los tres eran cuerpos VACIOS con el comentario
+    // "the real pipeline doesn't drive these modes yet" -- falso: las tres
+    // implementaciones existen y el port duplicado de UI_Tooltip.cpp ya las
+    // usaba.  Con los cuerpos vacios, un tooltip dibujado sobre blend 1, 4 o 5
+    // dejaba el estado GL sin restaurar.
+    //   EnableLightMap        0x00511890 -> GL_EnableLightMap    (GL_State.cpp)
+    //   EnableAlphaBlendMinus 0x00511790 -> GL_SetBlendSrcAlpha  (GL_State.cpp)
+    //   EnableAlphaBlend2     0x00511810 -> GL_SetBlendInvSrcColor (Render_SpriteHelpers.cpp)
+    void __cdecl EnableLightMap(void)        { GL_EnableLightMap(); }
+    void __cdecl EnableAlphaBlendMinus(void) { GL_SetBlendSrcAlpha(); }
+    void __cdecl EnableAlphaBlend2(void)     { GL_SetBlendInvSrcColor(); }
 }
 
 // =============================================================================

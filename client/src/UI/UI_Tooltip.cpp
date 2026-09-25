@@ -82,7 +82,7 @@ void __cdecl RenderTipText_stub(int sx, int sy, char* Text) {
         case 2:  GL_SetBlendSrcOver('\x01'); break;  // EnableAlphaTest(true)
         case 3:  GL_SetBlendAdditive();    break;  // EnableAlphaBlend
         case 4:  GL_SetBlendSrcAlpha();    break;  // EnableAlphaBlendMinus
-        case 5:  EnableAlphaBlend2_stub();  break;  // EnableAlphaBlend2
+        case 5:  GL_SetBlendInvSrcColor();  break;  // EnableAlphaBlend2
         default: GL_ResetState();    break;  // DisableAlphaBlend
     }
 }
