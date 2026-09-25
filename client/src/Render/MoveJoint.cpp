@@ -260,7 +260,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
                 Light[1] = v100;
             }
             Light[2] = v100;
-            AddTerrainLight(pos[0], pos[1], Light, 2, PrimaryTerrainLight[0]);
+            AddTerrainLight(pos[0], pos[1], (float*)Light, 2, (float*)PrimaryTerrainLight[0]);
         }
 
         Position[0] = 0.0f;
@@ -367,7 +367,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
         if (dist_4e8 > *(float *)(param_1 + 0x9c0)) {
             const float brightness = (float)(rand() % 4 + 4) * 0.1f;
             float light_4e8[3] = { brightness, brightness * 0.6f, brightness * 0.2f };
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light_4e8, 4, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)light_4e8, 4, (float*)&DAT_081cb608[0]);
             float step_4e8[3] = { 0.0f, -*(float *)(param_1 + 0x9c0), 0.0f };
             float rotated_4e8[3];
             Vector_Rotate(step_4e8, matrix_4e8, rotated_4e8);
@@ -401,7 +401,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             local_d8[3] = local_e8_f * _DAT_005524f4;
             local_d8[4] = local_d8[3] * _DAT_00552534;
             local_d8[5] = local_d8[3] * _DAT_005526e4;
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)(local_d8 + 3), 4, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)((local_d8 + 3)), 4, (float*)&DAT_081cb608[0]);
             local_d8[7] = -*(float *)(param_1 + 0x9c0);
             local_d8[6] = 0.0f;
             local_b8    = 0.0f;
@@ -904,7 +904,7 @@ LAB_0047036e:
             *(float *)(param_1 + 0x3c) = color_4e5;
             const float darkness_4e5 = (float)(rand() % 4 + 4) * -0.01f;
             float light_4e5[3] = { darkness_4e5, darkness_4e5, darkness_4e5 };
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light_4e5, 4, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)light_4e5, 4, (float*)&DAT_081cb608[0]);
             goto switchD_caseD_4ef;
         }
 
@@ -1041,7 +1041,7 @@ LAB_0047036e:
             }
             const float brightness_4ea = (float)(rand() % 4 + 8) * 0.03f;
             float terrainLight_4ea[3] = { brightness_4ea * 0.4f, brightness_4ea, brightness_4ea * 0.8f };
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)terrainLight_4ea, 2, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)terrainLight_4ea, 2, (float*)&DAT_081cb608[0]);
             if (subtype_4ea == 6 || subtype_4ea == 9)
                 Particle_Spawn(1191, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 3, 0.05f, 0);
             else
@@ -1161,7 +1161,7 @@ LAB_0047036e:
 
         const float terrainLight = (float)(rand() % 4 + 4) * -0.01f;
         float light[3] = { terrainLight, terrainLight, terrainLight };
-        FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light, 4, (int)&DAT_081cb608[0]);
+        AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)light, 4, (float*)&DAT_081cb608[0]);
         goto switchD_caseD_4ef;
     }
 
@@ -1218,7 +1218,7 @@ LAB_0047036e:
                 light[1] = intensity * 0.1f;
                 light[2] = intensity * 0.2f;
             }
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light, 2, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)light, 2, (float*)&DAT_081cb608[0]);
 
             float step[3] = { 0.0f, -*(float *)(param_1 + 0x9c0), 0.0f };
             Vector_Rotate(step, matrix, rotated);

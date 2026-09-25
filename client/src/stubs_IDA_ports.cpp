@@ -14134,7 +14134,7 @@ void __cdecl FUN_0046c7f0(int a1, float *a2, float a3, float a4, float a5)
       v13 = rand() % 4;
       Particle_Spawn(1195, out, v5, Light, v13, 1.0, 0);
     }
-    AddTerrainLight(out[0], out[1], Light, 4, PrimaryTerrainLight[0]);
+    AddTerrainLight(out[0], out[1], (float*)Light, 4, (float*)PrimaryTerrainLight[0]);
   }
 }
 #endif
@@ -25018,7 +25018,7 @@ void __cdecl FUN_004fdc00(float o)
       Light[2] = v1 * 0.5;
       yf = (double)(rand() % 1200) + *(float *)(Hero + 20) - 600.0;
       xf = (double)(rand() % 1200) + *(float *)(Hero + 16) - 600.0;
-      AddTerrainLight(xf, yf, Light, 12, PrimaryTerrainLight[0]);
+      AddTerrainLight(xf, yf, (float*)Light, 12, (float*)PrimaryTerrainLight[0]);
     }
     PlayBuffer(1, 0, 1);
   }

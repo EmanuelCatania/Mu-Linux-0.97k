@@ -4293,12 +4293,10 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 const short itemType = *(short *)(entity_ptr + itemOffset);
                 if (itemType == 412) {
                     float itemLight[3] = {0.80000001f, 0.64000005f, 0.40000001f};
-                    AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20),
-                                    itemLight, 3, PrimaryTerrainLight[0]);
+                    AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)itemLight, 3, (float*)PrimaryTerrainLight[0]);
                 } else if (itemType == 419 || itemType == 546 || itemType == 570) {
                     float itemLight[3] = {0.64000005f, 0.40000001f, 0.24000001f};
-                    AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20),
-                                    itemLight, 2, PrimaryTerrainLight[0]);
+                    AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)itemLight, 2, (float*)PrimaryTerrainLight[0]);
                 }
             }
         }
@@ -4382,8 +4380,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                     }
                 }
                 float L2[3] = { Luminosity, Luminosity * 0.2f, 0.0f };
-                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20),
-                                L2, 2, PrimaryTerrainLight[0]);
+                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)L2, 2, (float*)PrimaryTerrainLight[0]);
             }
             break;
         }
@@ -4486,7 +4483,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 624), WorldPosition, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 float darkness[3] = {-1.3f,-1.3f,-1.3f};
-                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), darkness, 3, PrimaryTerrainLight[0]);
+                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)darkness, 3, (float*)PrimaryTerrainLight[0]);
             } else { Combat_SpawnIdleAmbientParticle(entity_ptr); Combat_SpawnDeathDustParticles(entity_ptr); }
             break;
         }
@@ -4569,8 +4566,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 }
 
                 float darkness[3] = {-1.3f, -1.3f, -1.3f};
-                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), darkness, 3,
-                                PrimaryTerrainLight[0]);
+                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)darkness, 3, (float*)PrimaryTerrainLight[0]);
             } else {
                 float targetPosition[3] = {0.0f, 0.0f, 0.0f};
                 float effectLight = sinf((float)WorldTime * 0.0020000001f) * 0.30000001f + 0.69999999f;
@@ -4647,8 +4643,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 
             // Luz naranja proyectada sobre el terreno alrededor de la fragua.
             float Light[3] = { Luminosity, Luminosity * 0.40000001f, 0.0f };
-            AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20),
-                            Light, 3, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)Light, 3, (float*)PrimaryTerrainLight[0]);
 
             // Chispas: 4 por golpe, en la ventana de frames 5..6 (el impacto).
             // El origen es el hueso 17 (BoneTransform + 48*17 = +816) = el yunque.
@@ -4687,7 +4682,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
                 float white[3] = { 1.0f, 1.0f, 1.0f };
                 float local[3] = { 0.0f, 5.0f, 10.0f }, origin[3];
                 float terrainLight[3] = { Luminosity * 0.5f, Luminosity * 0.30000001f, 0.0f };
-                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), terrainLight, 3, PrimaryTerrainLight[0]);
+                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1776), local, origin, '\x01');
                 for (int i = 0; i < 4; ++i) {
                     float angle[3] = { (float)(rand() % 60 + 90), 0.0f, (float)(rand() % 30) };

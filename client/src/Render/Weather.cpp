@@ -92,7 +92,7 @@
 //   FUN_0043e680   — particle path update
 //   SetAction   — set particle animation
 //   FUN_00440aa0   — BMD_Animation tick
-//   FUN_004f76c0   — spawn ground ripple
+//   AddTerrainLight   — spawn ground ripple
 //   Matrix_BuildFromEuler   — Vec3_Normalize or direction update
 //   Vector_Rotate   — Vec3_Scale (multiply direction by speed)
 //   OpenMonsterModel   — play thunder sound
@@ -295,7 +295,7 @@ LAB_00501064:
         }
         // Ground ripple effect
         fStack_38 = -0.3f; fStack_34 = -0.3f; fStack_30 = -0.2f;
-        FUN_004f76c0(*(float *)(uVar8 + 0x10), *(float *)(uVar8 + 0x14), (int)&fStack_38, 0x10, (int)&DAT_081cb608[0]);
+        AddTerrainLight(*(float *)(uVar8 + 0x10), *(float *)(uVar8 + 0x14), (float*)&fStack_38, 0x10, (float*)&DAT_081cb608[0]);
     }
 
     // ── World == 10: spawn distant lightning clouds ─────────────────

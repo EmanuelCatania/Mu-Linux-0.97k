@@ -2151,7 +2151,7 @@ void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4
         float Light[3] = { v10, v10 * 0.60000002f, v10 * 0.40000001f };
         if ((rand() % 2) == 0)
             Particle_Spawn(1195, out, v5, Light, rand() % 4, 1.0f, 0);
-        AddTerrainLight(out[0], out[1], Light, 4, PrimaryTerrainLight[0]);
+        AddTerrainLight(out[0], out[1], (float*)Light, 4, (float*)PrimaryTerrainLight[0]);
     } else if (param_1 == 1) {
         if ((rand() % 2) == 0)
             Particle_Spawn(1220, out, v5, a2 + 58, 0, 1.0f, 0);   // o+232 = Light

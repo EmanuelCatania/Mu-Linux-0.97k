@@ -483,17 +483,11 @@ extern char g_BitmapsRaw[];
 //   AddTerrainLightClip 0x004F7800  clampea a 1.0       · UN caller (0x4C0E59)
 // Con el alias, toda la luz dinamica (fuego, antorchas, efectos) quedaba cortada
 // en 1.0 y no llegaba a saturar — de ahi que el fuego se dibujara pero sin
-// resplandor.  El port correcto de 0x4F76C0 ya existia como `FUN_004f76c0`
+// resplandor.  El port correcto de 0x4F76C0 ya existia como `AddTerrainLight`
 // (Render/SMD_Parser.cpp), mal etiquetado en functions.h como "Terrain_SetHeight
 // or similar"; ese nombre inventado es lo que llevo a crear este alias.
 //
-// Wrapper en vez de `#define` a secas porque `FUN_004f76c0` quedo tipada con los
-// punteros como `int` (artefacto del decompile) y los call sites pasan `float*`.
-void __cdecl FUN_004f76c0(float, float, int, int, int);   // decl local: structs.h no incluye functions.h
-inline void AddTerrainLight(float xf, float yf, float* Light, int Range, float* Buffer)
-{
-    FUN_004f76c0(xf, yf, (int)(uintptr_t)Light, Range, (int)(uintptr_t)Buffer);
-}
+void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float *Buffer);   // decl local: structs.h no incluye functions.h
 #define AngleMatrix          AngleMatrix
 #define CreateEffect         CreateEffect
 #define CreateBomb           Effect_SpawnSmokeBurst

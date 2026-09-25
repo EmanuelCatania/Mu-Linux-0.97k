@@ -747,7 +747,7 @@ switchD_00464efe_caseD_4ab:
     *param_4 = 0.4;
     param_4[1] = 0.3;
     param_4[2] = 0.2;
-    FUN_004f76c0(fVar27,pfVar17[5],(int)param_4,2,(int)&DAT_081cb608[0]);
+    AddTerrainLight(fVar27,pfVar17[5], (float*)param_4,2, (float*)&DAT_081cb608[0]);
 LAB_00463e3d:
     pfVar17[0x5c] = pfVar17[4];
     pfVar17[0x5d] = pfVar17[5];

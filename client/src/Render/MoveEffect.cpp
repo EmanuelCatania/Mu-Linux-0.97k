@@ -46,7 +46,7 @@
 //   Matrix_BuildFromEuler = AngleMatrix(angles, matrix)
 //   Vector_Rotate = EulerToMatrix3x4(v, matrix, out)
 //   RequestTerrainHeight(x, y)
-//   FUN_004f76c0 = RequestTerrainLight(x, y, light_ptr, mode, addr)
+//   AddTerrainLight = RequestTerrainLight(x, y, light_ptr, mode, addr)
 //   CreateSprite (Flare_Spawn?)
 //   FUN_00465fe0 (effect color update)
 //   Effect_SpawnProximityHit (effect deactivate?)
@@ -425,7 +425,7 @@ void MoveEffect(float *param_1, int param_2)
           local_364 = local_36c * _DAT_005528b4;
           local_368 = local_36c;
           local_360 = 0.0;
-          FUN_004f76c0(*pfVar10,param_1[5],(int)&local_368,3,(int)DAT_081cb608);
+          AddTerrainLight(*pfVar10,param_1[5], (float*)&local_368,3, (float*)DAT_081cb608);
           if (((char *)*(int*)&param_1[0x3f] == DAT_07abf5d8) && ((*(int*)&param_1[0x18]) % 0x14 == 0)) {
             FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),pfVar10,150.0,
                          *(byte *)(param_1 + 0x22),*(short *)((int)param_1 + 0x86));
@@ -532,7 +532,7 @@ void MoveEffect(float *param_1, int param_2)
               local_368 = local_36c * _DAT_005526e4;
               local_360 = local_36c;
               local_364 = local_36c * _DAT_005528b4;
-              FUN_004f76c0(*pfVar10,param_1[5],(int)&local_368,2,(int)DAT_081cb608);
+              AddTerrainLight(*pfVar10,param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
             }
           }
           else if ((iVar9 == 0x490) && (*(int*)&fVar13 == 30)) {
@@ -569,7 +569,7 @@ void MoveEffect(float *param_1, int param_2)
             local_368 = fVar13 * _DAT_005526e4;
             local_364 = fVar13 * _DAT_005528b4;
             local_360 = fVar13;
-            FUN_004f76c0(*pfVar10,param_1[5],(int)&local_368,2,(int)DAT_081cb608);
+            AddTerrainLight(*pfVar10,param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
             Effect_SpawnProximityHit((int)param_1);
             break;
           case 0x4a7:
@@ -588,7 +588,7 @@ void MoveEffect(float *param_1, int param_2)
             local_364 = local_36c * _DAT_00552534;
             local_368 = local_36c;
             local_360 = local_36c * _DAT_005528b8;
-            FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
+            AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
           }
         }
       }
@@ -618,7 +618,7 @@ void MoveEffect(float *param_1, int param_2)
           local_368 = local_36c * _DAT_005528b4;
           local_364 = local_36c * _DAT_005528b8;
           local_360 = local_36c * _DAT_005526e4;
-          FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,1,(int)DAT_081cb608);
+          AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,1, (float*)DAT_081cb608);
           break;
         case 0x4e0:
           if ((__cnt % 5 == 0) && (iVar9 = _rand(), iVar9 % 3 == 0)) {
@@ -818,7 +818,7 @@ void MoveEffect(float *param_1, int param_2)
           pfVar10 = param_1 + 4;
           local_360 = local_36c * _DAT_00552530;
           local_364 = local_368;
-          FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
+          AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
           local_334 = param_1[7];
           local_330 = param_1[8];
           local_32c = param_1[9] + _DAT_00552848;
@@ -1143,7 +1143,7 @@ LAB_00469a2f:
         param_1[0x16] = 0.0;
         param_1[0x1a] = 0.0;
         local_360 = 0.0;
-        FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
+        AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
         iVar9 = _rand();
         if (iVar9 % 5 != 0) {
           Particle_Spawn(0x567,param_1 + 4,param_1 + 7,&local_368,0,1.0,0);
@@ -1182,7 +1182,7 @@ LAB_00469ab9:
         }
         pfVar10 = param_1 + 4;
         local_360 = 0.0;
-        FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
+        AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
         if (*(int*)&param_1[1] == 6) {
           Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,5,1.0,0);
           Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,0,1.0,0);
@@ -1322,7 +1322,7 @@ LAB_00468772:
       local_368 = local_36c * _DAT_005528b8;
       local_360 = local_36c;
       local_364 = local_36c * _DAT_00552534;
-      FUN_004f76c0(*pfVar15,param_1[5],(int)&local_368,3,(int)DAT_081cb608);
+      AddTerrainLight(*pfVar15,param_1[5], (float*)&local_368,3, (float*)DAT_081cb608);
       if (*(int*)&param_1[1] == 2) {
         local_334 = *pfVar10;
         local_330 = param_1[8];
@@ -1414,7 +1414,7 @@ LAB_00468772:
       local_368 = local_36c * _DAT_00552990;
       local_364 = local_36c * _DAT_005529c0;
       local_360 = local_36c * _DAT_00552570;
-      FUN_004f76c0(*pfVar15,param_1[5],(int)&local_368,5,(int)DAT_081cb608);
+      AddTerrainLight(*pfVar15,param_1[5], (float*)&local_368,5, (float*)DAT_081cb608);
       if (((*(int*)&param_1[0x18]) % 0xf == 0) && ((char *)*(int*)&param_1[0x3f] == DAT_07abf5d8)) {
         FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),pfVar15,150.0,*(byte *)(param_1 + 0x22),
                      *(short *)((int)param_1 + 0x86));
@@ -1511,7 +1511,7 @@ switchD_00466b93_caseD_c7:
       local_368 = local_36c * _DAT_00552530;
       local_364 = local_36c * _DAT_00552504;
       local_360 = local_36c * _DAT_005526e4;
-      FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
+      AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
       pfVar10 = param_1 + 7;
       Particle_Spawn(0x4ab,param_1 + 4,pfVar10,&local_368,0,1.0,0);
       FUN_00466440((int)param_1);
@@ -1674,7 +1674,7 @@ switchD_00466b93_caseD_c7:
       local_368 = local_36c * _DAT_00552534;
       local_364 = local_36c * _DAT_00552530;
       local_360 = local_364;
-      FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,2,(int)DAT_081cb608);
+      AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
       FUN_00466440((int)param_1);
       break;
     case 0xe1:
@@ -1741,7 +1741,7 @@ switchD_00466b93_caseD_c7:
         param_1[3] = param_1[3] + _DAT_005524f8;
         local_364 = 0.0;
         local_360 = 0.0;
-        FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,3,(int)DAT_081cb608);
+        AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,3, (float*)DAT_081cb608);
         param_1[0x1a] = (float)(*(int*)&param_1[0x18]) * _DAT_00552a00;
       }
       else {
@@ -1798,7 +1798,7 @@ switchD_00466b93_caseD_c7:
       local_368 = local_36c * _DAT_005528b8;
       local_364 = local_368;
       local_360 = local_368;
-      FUN_004f76c0(*pfVar15,param_1[5],(int)&local_368,3,(int)DAT_081cb608);
+      AddTerrainLight(*pfVar15,param_1[5], (float*)&local_368,3, (float*)DAT_081cb608);
       local_368 = 1.0;
       local_364 = 1.0;
       local_360 = 1.0;
@@ -1894,7 +1894,7 @@ switchD_00466b93_caseD_c7:
       local_368 = local_36c * _DAT_005526e4;
       local_360 = local_36c;
       local_364 = local_36c * _DAT_005528b4;
-      FUN_004f76c0(local_344,local_348,(int)&local_368,2,(int)DAT_081cb608);
+      AddTerrainLight(local_344,local_348, (float*)&local_368,2, (float*)DAT_081cb608);
       break;
     case 0xf1:
       fVar4 = param_1[1];
@@ -1939,7 +1939,7 @@ LAB_00466e5e:
       param_1[0x11] = local_348;
       local_368 = local_36c * _DAT_005526e4;
       local_364 = local_36c * _DAT_005528b4;
-      FUN_004f76c0(local_344,local_348,(int)&local_368,2,(int)DAT_081cb608);
+      AddTerrainLight(local_344,local_348, (float*)&local_368,2, (float*)DAT_081cb608);
       FUN_00466440((int)param_1);
       break;
     case 0xf3:
@@ -1947,7 +1947,7 @@ LAB_00466e5e:
       param_1[8] = param_1[8] + _DAT_0055284c;
       local_368 = local_36c * _DAT_005526e4;
       local_364 = local_36c * _DAT_005528b4;
-      FUN_004f76c0(param_1[0x5c],param_1[0x5d],(int)&local_368,2,(int)DAT_081cb608);
+      AddTerrainLight(param_1[0x5c],param_1[0x5d], (float*)&local_368,2, (float*)DAT_081cb608);
       if (param_1[1] != 0.0) {
         if (*(int*)&param_1[0x18] == 13) {
           CreateEffect(0xff,param_1 + 4,param_1 + 7,param_1 + 0x3a,(float *)0x0,param_1,
@@ -2332,7 +2332,7 @@ LAB_00467f78:
       param_1[0x1b] = (float)(*(int*)&param_1[0x18]) * _DAT_005529d0;
 LAB_00468736:
       local_368 = local_36c;
-      FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,iVar9,(int)DAT_081cb608);
+      AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,iVar9, (float*)DAT_081cb608);
       break;
     case 0xfc:
       fVar4 = fVar13;
@@ -2350,7 +2350,7 @@ LAB_00468736:
       param_1[0x1b] = (float)(*(int*)&param_1[0x18]) * _DAT_005529d0;
       local_364 = 0.0;
       local_360 = 0.0;
-      FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,1,(int)DAT_081cb608);
+      AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,1, (float*)DAT_081cb608);
       break;
     case 0xfd:
       if (param_1[3] <= _DAT_0055264c) {
@@ -2370,7 +2370,7 @@ LAB_00466d90:
       local_364 = local_368;
       local_360 = local_368;
 LAB_004695c0:
-      FUN_004f76c0(param_1[4],param_1[5],(int)&local_368,iVar9,(int)DAT_081cb608);
+      AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,iVar9, (float*)DAT_081cb608);
       break;
     case 0xfe:
       param_1[6] = param_1[6] - param_1[0x36];
@@ -2435,7 +2435,7 @@ LAB_004695c0:
       local_368 = local_36c * _DAT_00552534;
       local_364 = local_36c * _DAT_00552530;
       local_360 = local_364;
-      FUN_004f76c0(*pfVar10,param_1[5],(int)&local_368,2,(int)DAT_081cb608);
+      AddTerrainLight(*pfVar10,param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
       break;
     case 0x104:
     case 0x105:

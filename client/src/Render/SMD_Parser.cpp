@@ -504,31 +504,36 @@ void __cdecl FUN_00465fe0(int param_1, int param_2) {
     }
 }
 
-// FUN_004f76c0 @ 0x004F76C0 — Terrain_BlendLightSphere(cx, cy, src3f, radius, dst_buf)
-// Blends a spherical gradient from a 3-float source colour into dst_buf
-// (indexed as [row&0xff * 0x100 + col&0xff] * 0xc, i.e. 3×float per tile).
-void __cdecl FUN_004f76c0(float param_1, float param_2, int param_3, int param_4, int param_5) {
-    float cx   = param_1 * _DAT_00552594;
-    float cy   = param_2 * _DAT_00552594;
+// AddTerrainLight @ 0x004F76C0 — suma una esfera de luz al buffer de luz del
+// terreno.  dst se indexa como [(row & 0xff) * 0x100 + (col & 0xff)] * 3 floats.
+//
+// A diferencia de AddTerrainLightClip (0x004F7800) esta NO clampea a 1.0: solo
+// evita valores negativos, que es lo que produce el resplandor del fuego.
+//
+// 2026-09-25: se llamaba AddTerrainLight y convivia con un wrapper inline
+// AddTerrainLight en structs.h que solo existia para castear los punteros --
+// Ghidra los habia tipado como int.  Ahora la firma es la real y el wrapper se
+// elimino, asi que hay un unico simbolo para esta direccion.
+void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float *Buffer) {
+    float cx   = xf * _DAT_00552594;
+    float cy   = yf * _DAT_00552594;
     int   icx  = (int)cx;
     int   icy  = (int)cy;
-    int   rMin = icy - param_4,  rMax = icy + param_4;
+    int   rMin = icy - Range,  rMax = icy + Range;
     if (rMin > rMax) return;
     unsigned int uRow = (unsigned int)rMin;
     for (int row = rMin; row <= rMax; row++, uRow++) {
         float fRow = (float)row;
         float fDy  = cy - fRow;
-        int   cMin = icx - param_4, cMax = param_4 + icx;
+        int   cMin = icx - Range, cMax = Range + icx;
         for (int col = cMin; col <= cMax; col++) {
             float fDx  = cx - (float)col;
-            float fVal = ((float)param_4 - sqrtf(fDx * fDx + fDy * fDy)) / (float)param_4;
+            float fVal = ((float)Range - sqrtf(fDx * fDx + fDy * fDy)) / (float)Range;
             if (_DAT_00552580 >= fVal) continue;
-            float *dst = (float*)(param_5 + ((int)((uRow & 0xff) * 0x100 + ((unsigned int)col & 0xff))) * 0xc);
-            int   off  = param_3 - (int)dst;
+            float *dst = Buffer + ((uRow & 0xff) * 0x100 + ((unsigned int)col & 0xff)) * 3;
             for (int k = 0; k < 3; k++) {
-                float fv = fVal * *(float*)((int)dst + off) + *dst;
-                *dst = (fv < _DAT_00552580) ? 0.0f : fv;
-                dst++;
+                float fv = fVal * Light[k] + dst[k];
+                dst[k] = (fv < _DAT_00552580) ? 0.0f : fv;
             }
         }
     }

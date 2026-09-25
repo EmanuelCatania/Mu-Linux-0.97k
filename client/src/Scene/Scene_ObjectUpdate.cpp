@@ -38,7 +38,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             float light[3] = { intensity * 0.2f, intensity * 0.3f, intensity * 0.5f };
             const float x = (float)(rand() % 1200) + *(float*)(Hero + 16) - 600.0f;
             const float y = (float)(rand() % 1200) + *(float*)(Hero + 20) - 600.0f;
-            AddTerrainLight(x, y, light, 12, PrimaryTerrainLight[0]);
+            AddTerrainLight(x, y, (float*)light, 12, (float*)PrimaryTerrainLight[0]);
         }
         PlayBuffer(1, 0, 1);
     }
@@ -169,7 +169,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             terrainLight[0] = light;
             terrainLight[1] = light * 0.8f;
             terrainLight[2] = light * 0.6f;
-            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), terrainLight, 3, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         }
         case 0x75:
@@ -197,7 +197,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             terrainLight[0] = light;
             terrainLight[1] = light * 0.6f;
             terrainLight[2] = light * 0.2f;
-            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), terrainLight, 3, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         }
         }
@@ -386,7 +386,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             float light[3] = { wave, wave * 0.6f, wave * 0.2f };
             *(int*)(objPtr + 100) = 0;
             *(float*)(objPtr + 104) = wave;
-            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), light, 3, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), (float*)light, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         } else if (objType == 0x0b) {
             *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
@@ -405,7 +405,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             float light[3] = { wave, wave * 0.6f, wave * 0.2f };
             *(int*)(objPtr + 100) = 1;
             *(float*)(objPtr + 112) = scroll;
-            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), light, 2, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), (float*)light, 2, (float*)PrimaryTerrainLight[0]);
         } else if (objType == 0x3f || objType == 0x40) {
             *(int*)(objPtr + 88) = -2;
         } else if (objType == 0x48) {
@@ -469,7 +469,7 @@ int __stdcall MoveHeavenThunder(void) {
         Light[1] = Light[0];
         Light[2] = lum * 0.081f;
     }
-    AddTerrainLight(Position[0], Position[1], Light, 2, PrimaryTerrainLight[0]);
+    AddTerrainLight(Position[0], Position[1], (float*)Light, 2, (float*)PrimaryTerrainLight[0]);
 
     // La NUBE: efecto 182 en la posicion del heroe (no en Position).
     memset(Angle, 0, sizeof(Angle));

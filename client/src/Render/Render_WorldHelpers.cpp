@@ -1066,7 +1066,7 @@ void __cdecl EffectPool_RenderAll(void)
                 xf += v0[38];
                 yf += v0[39];
                 zf += v0[40];
-                AddTerrainLight(xf, yf, v0 + 48, 2, PrimaryTerrainLight[0]);
+                AddTerrainLight(xf, yf, (float*)(v0 + 48), 2, (float*)PrimaryTerrainLight[0]);
             }
             continue;
         }
