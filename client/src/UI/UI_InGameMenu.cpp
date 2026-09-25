@@ -286,6 +286,7 @@ void __cdecl UI_InGameMenu(void)
                         // arranca el countdown — no envía nada al server.
                         if (DAT_005615c0 == 5) {
                             SaveOptionsToServer97k();       // IDA L610: sub_50F7A0()
+                            FUN_0050f700("Data\\Macro.txt");  // IDA L611
                             BYTE pkt[8] = { 0xC1, 0x05, 0xF1, 0x02, 0x00, 0x00, 0x00, 0x00 };
                             SendLoginPacket(pkt, 5);
                         }
@@ -329,6 +330,7 @@ void __cdecl UI_InGameMenu(void)
                             // habia cuenta regresiva.
                             if (DAT_005615c0 == 5)                      // IDA L1070: sub_50F7A0()
                                 SaveOptionsToServer97k();
+                                FUN_0050f700("Data\\Macro.txt");  // IDA L1071
                             if (DAT_07eaa11a != 0) {                    // ChaosMixOpened
                                 UIChatLogWindow_AddText("", GlobalText[592], 2);
                             } else {
@@ -367,6 +369,7 @@ void __cdecl UI_InGameMenu(void)
                             //      F3/00 char-list fresca
                             //   6. Cliente Recv_CharList puebla slots 0-4
                             SaveOptionsToServer97k();       // IDA L1080: sub_50F7A0()
+                            FUN_0050f700("Data\\Macro.txt");  // IDA L1081
                             DbgLogPublic("JoinChar: send F1/02/01 (waiting for server ack)");
                             BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x01 };
                             Net_SendSmallPacket(pkt, 5);

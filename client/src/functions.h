@@ -471,7 +471,10 @@ unsigned int __cdecl Item_CalculateRepairCost(int Gold, int Durability, int MaxD
 void  __cdecl FUN_004cb6f0(int, int, int, int);
 void  __cdecl FUN_004cba60(void);                                    // CharPreview_Reset (resets char/NPC preview UI)
 char  __cdecl FUN_004e3d60(void *ctx, int p1, int p2);              // Connection_Check → '\0'=ok else error
-DWORD __cdecl FUN_00494520(void *key_val, BYTE *buf, char flag);    // IME_InputChar — input char into buffer; returns '\0' = no-enter
+// IDA sub_494520(texto, 1): valida/consume el buffer de texto; 0 = seguir.
+// 2026-09-24: la firma tenia un tercer parametro inventado (el estado de
+// Enter); los dos unicos call sites son el tick de macros y pasan 2 args.
+DWORD __cdecl FUN_00494520(void *buf, char flag);
 char  __cdecl FUN_00513440(char *buf);                               // Chat_Validate — validate text buf; '\0'=ok
 void  __cdecl CheckChatText(char* text);                             // IDA: sub_497C70 (0x00497C70) gestos por texto del chat
 void  __cdecl SetActionClass(int c, int o, int action, int actionType); // IDA: SetActionClass (0x00497870)
@@ -583,7 +586,8 @@ void  __cdecl FUN_0050c4d0(void);                                  // Map_InitLi
 void  __cdecl FUN_0045abb0(int map_id);                            // Map_SetupEntities
 // ── Font / UI init ───────────────────────────────────────────────────────────────
 void  __cdecl PathFinder_ResetContext(void);                                  // IDA: FUN_0043f2d0
-void  __cdecl FUN_0050f700(const char *map_name);                  // Map_Load(name)
+void  __cdecl FUN_0050f700(const char *FileName);                  // SaveMacro (Data/Macro.txt)
+void  __cdecl OpenMacro(char *FileName);                            // 0x0050F750
 // FUN_0050f7a0 NO es "Map_Unload": es sub_50F7A0, el envio de opciones F3/30.
 // Portada como SaveOptionsToServer97k en UI/UI_InGameMenu.cpp (2026-09-21).
 // FUN_0050f5f0 @ 0x0050F5F0 (IDA)
