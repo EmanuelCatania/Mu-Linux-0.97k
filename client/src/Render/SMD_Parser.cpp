@@ -874,11 +874,9 @@ void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int 
 // CreateCharacter, CreateMonster moved to
 // src/Monster/Monster.cpp (B3 refactor 2026-05-07, 925 lines).
 
-// Sound
-// FUN_00404bb0 @ 0x00404BB0 — returns 1 (Sound_BufferUnlock helper)
-// Ghidra: undefined4 FUN_00404bb0(void) { return 1; }
-// signature in functions.h: void — no return used at call site, treat as void.
-void __cdecl FUN_00404bb0(void) { /* NOP — original returns 1 but callers ignore it */ }
+// SetHall (0x00404BB0) vive en src/Sound/Sound_DS3D.cpp.  Aca habia una segunda
+// copia bajo el nombre FUN_00404bb0, sin callers: las dos son fieles (en el
+// binario la funcion es un stub que devuelve 1), asi que solo sobraba el nombre.
 
 // IDA: CheckAttack (0x00483160)
 //

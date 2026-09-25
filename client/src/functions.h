@@ -416,7 +416,7 @@ void  __cdecl Chat_TickMessageTimer(void);               // IDA: FUN_00480950
 // FUN_00480980 @ 0x00480980
 void  __cdecl UI_RenderChatLogOverlay(void);
 void  __cdecl FUN_00480c60(int, int, int);
-void  __cdecl FUN_00480e00(int, int, int);
+void  __cdecl RenderBoolean(int x, int y, DWORD c);   // IDA: RenderBoolean (0x00480E00)
 void  __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetColor); // CreateChat
 // FUN_004821A0 @ 0x004821A0
 void  __cdecl UI_TickHoverBubbles(void);
@@ -791,7 +791,6 @@ void  __cdecl SetCharacterScale(int); // IDA: SetCharacterScale (0x0045C050)
 void  __cdecl crt_fprintf(void*, void*);  // fprintf-like helper
 
 // ── Sound helpers ─────────────────────────────────────────────────────────────
-void  __cdecl FUN_00404bb0(void);  // Sound_BufferUnlock helper
 
 // ── Net_PacketSession helpers ─────────────────────────────────────────────────
 void  __cdecl Inventory_DropDispatch(undefined4, uint);  // packet handler with ECX/EDX args

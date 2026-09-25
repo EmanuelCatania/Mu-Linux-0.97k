@@ -608,131 +608,17 @@ void Render_HudPass_4EB070(void) { Render_HudPass_4EB070_(); }
 
 
 // =============================================================================
-// RenderBoolean — sub_480E00.  Per-floating-number entry renderer.  IDA
-// body is huge (3081 bytes) and depends on the CUIRenderText vtable's [+8]
-// flag (mode 1 → big offscreen-bitmap path; else → glColor + RenderColor +
-// CUIRenderText::RenderText path).
+// RenderBoolean — sub_480E00.  La copia VIVA es la de mas abajo.
 //
-// In our build g_pRenderText points to a stub object where [+8] = 0 — the
-// "else" branch wins.  We port that branch byte-for-byte EXCEPT the actual
-// text-glyph composition is delegated to RenderText_1 / UI_DrawText
-// (which already drives the same downstream font pipeline our build has).
-//
-// Entry layout (offsets from `c`, in bytes):
-//   +0    sender ID (string)
-//   +24   guild prefix (string)
-//   +36   msg-type byte (0..5)
-//   +37   sub-mode byte (0..2)
-//   +44   primary text (string)
-//   +300  wrapped overflow text (string)
-//   +556  text-fade timer 1
-//   +560  text-fade timer 2
-//   +568  cached screen X
-//   +572  cached screen Y
-//   +576  text width  (cx)
-//   +580  text height (cy)
+// 2026-09-25: aca habia una SEGUNDA implementacion de la misma direccion (90
+// lineas) que su propio comentario ya daba por muerta -- "0 callers de codigo:
+// solo la referencian comentarios" -- y quedaba como candidata a borrar.  Se
+// borro: el simbolo que corre es el de abajo, al que llegaba el unico caller
+// (HUD_Pass1) pasando por un wrapper llamado FUN_00480e00 que tambien se
+// elimino.  Ver [[simbolo-duplicado-patron]].
 // =============================================================================
-// ⚠️ CÓDIGO MUERTO — NO USAR (verificado 2026-07-19)
-// Esta es una copia VIEJA de sub_480E00. El dispatcher real `FUN_00480e00`
-// delega en `RenderBoolean_IDA` (más abajo en este mismo archivo), que es la
-// que se mantiene. Esta copia NO tiene los fixes aplicados (en particular el
-// de `*(float*)&TextSize.cx` vs `(float)TextSize.cx` en las llamadas a
-// FUN_0047f4c0, que era lo que impedía que se dibujara la burbuja de chat).
-// Grep confirma 0 callers de código: solo la referencian comentarios.
-// Mismo patrón de función fantasma que ya costó caro con OpenSMDFile —
-// candidata a borrar en una pasada de limpieza (tarea B3 del roadmap).
+
 void __cdecl RenderBoolean(int x, int y, DWORD c)
-{
-    if (!c) return;
-
-    EnableAlphaTest(true);
-    glColor3f(1.0f, 1.0f, 1.0f);
-
-    LONG cx = *(int*)(c + 576);
-    LONG cy = *(int*)(c + 580);
-    TextSize.cx = cx;
-    TextSize.cy = cy;
-
-    // Pick palette by msg-type at +36.
-    BYTE kind = *(BYTE*)(c + 36);
-    switch (kind) {
-        case 0:  m_dwTextColor = 0xFFF0FFE6u; break;   // -983146
-        case 1:  m_dwTextColor = 0xFFFF7724u; break;   // -34716
-        case 2:  m_dwTextColor = 0xFFFFB44Cu; break;   // -19316
-        case 3:  m_dwTextColor = 0xFFFFDCE8u; break;   // -9016
-        case 4:  m_dwTextColor = 0xFF3CCBFFu; break;   // -12806401
-        case 5:  m_dwTextColor = 0xFF1DE3FFu; break;   // -14790401
-        default: m_dwTextColor = 0xFF0000FFu; break;   // -16776961
-    }
-
-    // Background bg colour by sub-mode at +37.
-    BYTE mode = *(BYTE*)(c + 37);
-    DWORD bg;
-    switch (mode) {
-        case 0:  bg = 0x96143214u; SetTextColor_0 = 0xFFFFC8DCu; break;
-        case 1:  bg = 0x96000000u; SetTextColor_0 = 0xFF005228u; break;
-        default: bg = 0x96000000u; SetTextColor_0 = 0xFF0000FFu; break;
-    }
-    m_dwBackColor = bg;
-
-    // Hover: when mouse is over the entry rect AND the entry is from a
-    // different sender than Hero, swap text/back colours for a flicker.
-    int rectX = *(int*)(c + 568);
-    int rectY = *(int*)(c + 572);
-    int rectW = 640 * (int)cx / (int)WindowWidth;
-    int rectH = 480 * (int)cy / (int)WindowHeight;
-    if ((int)MouseX >= rectX && (int)MouseX < rectX + rectW &&
-        (int)MouseY >= rectY && (int)MouseY < rectY + rectH &&
-        InputEnable && Hero && *(BYTE*)((BYTE*)(uintptr_t)Hero + 846) &&
-        strcmp((const char*)c, (const char*)((BYTE*)(uintptr_t)Hero + 449)) &&
-        (int)(dword_7E11DA8 % 6) < 3)
-    {
-        DWORD swap = m_dwTextColor;
-        m_dwTextColor = bg;
-        m_dwBackColor = swap;
-    }
-
-    // Compose label: "[guild] sender" + main text (and wrapped tail).
-    CHAR a4[256] = {0};
-    BYTE pulse = byte_7E11DE0;
-    a4[0] = (char)pulse;
-    if (*(BYTE*)(c + 24)) {
-        BYTE styleByte = *(BYTE*)(c + 37) - 14;   // (kind != 0 → -14, etc.)
-        // 'small' is a Windows SDK keyword (RPC IDL) — use 'marker' instead.
-        char marker[3]; marker[0] = 2; marker[1] = (char)styleByte; marker[2] = 0;
-        strcat(a4, marker);
-        marker[1] = -16;
-        strcat(a4, (const char*)(c + 24));
-        strcat(a4, marker);
-    }
-    strcat(a4, (const char*)c);
-
-    // Background quad first.
-    GL_DrawRect((float)x, (float)y,
-                 (float)rectW, (float)rectH);
-
-    // Render the composed text via RenderText_1 (our font pipeline alias).
-    UI_DrawText(x, y, a4, 0, 1, 0);
-
-    // Wrapped overflow text on the next line(s).
-    int v20 = *(int*)(c + 560);
-    if (v20 > 0) {
-        m_dwTextColor = (v20 < 10) ? 0xFFFFFFA6u : 0xFFC8C8C8u;
-        UI_DrawText(x, y + FontHeight + 1, (char*)(c + 300), 0, 1, 0);
-
-        int v22 = *(int*)(c + 556);
-        m_dwTextColor = (v22 < 10) ? 0xFFFFFFA6u : 0xFFC8C8C8u;
-        UI_DrawText(x, y + 2 * FontHeight + 1, (char*)(c + 44), 0, 1, 0);
-    } else {
-        int v24 = *(int*)(c + 556);
-        if (v24 > 0) {
-            m_dwTextColor = (v24 < 10) ? 0xFFFFFFA6u : 0xFFC8C8C8u;
-            UI_DrawText(x, y + FontHeight + 1, (char*)(c + 44), 0, 1, 0);
-        }
-    }
-}
-
-static void RenderBoolean_IDA(int x, int y, DWORD c)
 {
     if (!c) return;
 
@@ -843,11 +729,4 @@ static void RenderBoolean_IDA(int x, int y, DWORD c)
             Font_RenderBitmapText(drawX, drawY + FontHeight, *(float*)&TextSize.cx, *(float*)&FontHeight, texW, texH, 0.0f, 640);
         }
     }
-}
-
-// IDA's name was FUN_00480e00.  functions.h declares it with C++ linkage;
-// match that here (no extern "C") to avoid the redeclaration conflict.
-void __cdecl FUN_00480e00(int xx, int yy, int eb)
-{
-    RenderBoolean_IDA(xx, yy, (DWORD)eb);
 }

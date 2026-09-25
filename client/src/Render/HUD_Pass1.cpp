@@ -317,7 +317,7 @@ void RenderBooleans_(void)
     // Pasada 3: renderiza cada entrada activa vía RenderBoolean.
     for (int* v10 = (int*)(base + 0x000); v10 < v3_end; v10 += 149) {
         if (*(v10 - 129) > 0 || *v10 > 0) {
-            FUN_00480e00(v10[3], v10[4], (int)(v10 - 139));
+            RenderBoolean(v10[3], v10[4], (DWORD)(uintptr_t)(v10 - 139));
         }
     }
 }
