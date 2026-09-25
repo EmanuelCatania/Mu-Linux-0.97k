@@ -478,7 +478,7 @@ extern char g_BitmapsRaw[];
 // Functions (map companion-project names → FUN_ addresses from functions.h):
 #define VectorRotate         Vector_InverseRotate
 // 2026-08-23 FIX (el fuego no iluminaba): esto aliaseaba `AddTerrainLight` a
-// `AddTerrainLightClip_stub`, que es OTRA funcion del binario.
+// `AddTerrainLightClip`, que es OTRA funcion del binario.
 //   AddTerrainLight     0x004F76C0  sin clamp superior  · decenas de callers
 //   AddTerrainLightClip 0x004F7800  clampea a 1.0       · UN caller (0x4C0E59)
 // Con el alias, toda la luz dinamica (fuego, antorchas, efectos) quedaba cortada

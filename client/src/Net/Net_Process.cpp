@@ -2069,7 +2069,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     DAT_05826cb0 = 61;           // CurrentProtocolState → enter-world fade
     // IDA ReceiveJoinMapServer L380: LockInputStatus = 0 (0x07E11D6F, el gate
     // del IME que WndProc pone en 1 al abrir el chat).  CheckIME_Status(1, 0)
-    // queda pendiente: nuestro CheckIME_Status_stub no reproduce todavia el
+    // queda pendiente: nuestro CheckIME_Status no reproduce todavia el
     // guardado/restaurado del estado de conversion.
     DAT_07e11d6f = 0;            // LockInputStatus
 

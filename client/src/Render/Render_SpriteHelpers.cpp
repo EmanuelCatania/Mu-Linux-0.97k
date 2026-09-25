@@ -36,7 +36,7 @@ void __stdcall EnableAlphaBlend2_stub(void) {
 }
 
 // RenderSpriteUV @ 0x00511FB0 (~67 lines) — renders textured billboard quad with custom UVs
-void __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha) {
+void __cdecl RenderSpriteUV(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha) {
     // 0x00511FB0 — Render textured billboard quad with custom UVs.
     // Binds texture, transforms Position through CameraMatrix (CameraMatrix),
     // then draws GL_QUADS with 4 vertices: color from Light[][4] + Alpha, texcoord from UV[][2],

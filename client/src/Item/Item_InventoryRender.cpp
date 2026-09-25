@@ -8,7 +8,7 @@
 #include "globals.h"
 #include "functions.h"
 // InventoryColor @ 0x004E2420 (~38 lines) — sets GL color by item Color field
-void __cdecl InventoryColor_stub(ITEM* p) {
+void __cdecl InventoryColor(ITEM* p) {
     if (!p) return;
     switch (p->Color) {
     case 0:  glColor3f(1.0f, 1.0f, 1.0f); return;        // white (normal)
@@ -136,7 +136,7 @@ static void SetEquipmentSlotPlaceholderColorForIndex(int slotIdx)
 {
     ITEM* slot = GetPanelEquipmentSourceItem(slotIdx);
     if (IsVisualEquipSlotOccupied(slot)) {
-        InventoryColor_stub(slot);
+        InventoryColor(slot);
     } else {
         glColor3f(1.0f, 1.0f, 1.0f);
     }
@@ -167,7 +167,7 @@ static void SetEquipmentSlotPlaceholderColorForIndex(int slotIdx)
 // que no estaban inicializados con los valores correctos → boxes se pintaban
 // en posiciones equivocadas (cuadro gris al lado de armor que el user reportó).
 // Ahora todas las posiciones son hardcoded literales matching IDA exactamente.
-void __stdcall RenderEquipmentBox_stub(void) {
+void __stdcall RenderEquipmentBox(void) {
     EnableAlphaTest(true);
 
     float sx = (float)(int)DAT_07ea5288;  // InventoryStartX
@@ -206,7 +206,7 @@ void __stdcall RenderEquipmentBox_stub(void) {
     //                                            RenderBitmap(264, v56, v57, 40, 60)
     //   RenderEquipment3D   (0x4E3100):          `syc = v45 + 89.0 - 10.0;`
     // O sea la caja va en +89 y el item se dibuja 10 px más arriba dentro de
-    // ella (que es lo que hace RenderEquipmentPart3D_stub, y eso queda igual).
+    // ella (que es lo que hace RenderEquipmentPart3D, y eso queda igual).
     SetEquipmentSlotPlaceholderColorForIndex(3);
     GL_DrawTexture(0x108, colBody, rowMid, 40.0f, 60.0f, 0.0f, 0.0f, 0.625f, 0.9375f, 1, 1);
 
@@ -238,7 +238,7 @@ void __stdcall RenderEquipmentBox_stub(void) {
 }
 
 // RenderEquipmentPart3D @ 0x004E2E40 (~201 lines) — renders one 3D equipment piece
-void __cdecl RenderEquipmentPart3D_stub(int Index, float sx, float sy, float Width, float Height) {
+void __cdecl RenderEquipmentPart3D(int Index, float sx, float sy, float Width, float Height) {
     if (Index < EQUIPMENT_WEAPON_RIGHT || Index > EQUIPMENT_RING_LEFT) return;
 
     ITEM* src = GetPanelEquipmentSourceItem(Index);
@@ -281,7 +281,7 @@ void __cdecl RenderEquipmentPart3D_stub(int Index, float sx, float sy, float Wid
 // byte 1012 = Wings real, etc) y screen positions desde DAT_ globals con valores
 // distintos a los de IDA. Esto causaba que en la pantalla aparecieran items en
 // posiciones equivocadas (helmet apilado con rings, pendant donde casco, etc).
-void __stdcall RenderEquipment3D_stub(void) {
+void __stdcall RenderEquipment3D(void) {
     if (!CharacterAttribute) return;
 
     float sx = (float)(int)DAT_07ea5288;
@@ -295,43 +295,43 @@ void __stdcall RenderEquipment3D_stub(void) {
     float colPendant = sx + _DAT_00552c14;
     float colRight = sx + _DAT_00552c04;
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(8));
-    RenderEquipmentPart3D_stub(8, colLeft, rowTop, 40.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(8));
+    RenderEquipmentPart3D(8, colLeft, rowTop, 40.0f, 40.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(7));
-    RenderEquipmentPart3D_stub(7, colPendant, rowTop, 60.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(7));
+    RenderEquipmentPart3D(7, colPendant, rowTop, 60.0f, 40.0f);
 
     if (((*(BYTE*)((BYTE*)CharacterAttribute + 11)) & 7) != 3) {
-        InventoryColor_stub(GetPanelEquipmentSourceItem(2));
-        RenderEquipmentPart3D_stub(2, colBody, rowTop, 40.0f, 40.0f);
+        InventoryColor(GetPanelEquipmentSourceItem(2));
+        RenderEquipmentPart3D(2, colBody, rowTop, 40.0f, 40.0f);
     }
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(3));
-    RenderEquipmentPart3D_stub(3, colBody, rowMid - _DAT_00552488, 40.0f, 60.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(3));
+    RenderEquipmentPart3D(3, colBody, rowMid - _DAT_00552488, 40.0f, 60.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(4));
-    RenderEquipmentPart3D_stub(4, colBody, rowBottom, 40.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(4));
+    RenderEquipmentPart3D(4, colBody, rowBottom, 40.0f, 40.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(0));
-    RenderEquipmentPart3D_stub(0, colLeft, rowMid, 40.0f, 60.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(0));
+    RenderEquipmentPart3D(0, colLeft, rowMid, 40.0f, 60.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(1));
-    RenderEquipmentPart3D_stub(1, colRight, rowMid, 40.0f, 60.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(1));
+    RenderEquipmentPart3D(1, colRight, rowMid, 40.0f, 60.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(5));
-    RenderEquipmentPart3D_stub(5, colLeft, rowBottom, 40.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(5));
+    RenderEquipmentPart3D(5, colLeft, rowBottom, 40.0f, 40.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(6));
-    RenderEquipmentPart3D_stub(6, colRight, rowBottom, 40.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(6));
+    RenderEquipmentPart3D(6, colRight, rowBottom, 40.0f, 40.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(9));
-    RenderEquipmentPart3D_stub(9, colRing, rowMid, 20.0f, 20.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(9));
+    RenderEquipmentPart3D(9, colRing, rowMid, 20.0f, 20.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(10));
-    RenderEquipmentPart3D_stub(10, colRing, rowBottom, 20.0f, 20.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(10));
+    RenderEquipmentPart3D(10, colRing, rowBottom, 20.0f, 20.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(11));
-    RenderEquipmentPart3D_stub(11, colPendant, rowBottom, 20.0f, 20.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(11));
+    RenderEquipmentPart3D(11, colPendant, rowBottom, 20.0f, 20.0f);
 
     glColor3f(1.0f, 1.0f, 1.0f);
 }
@@ -361,12 +361,12 @@ void __cdecl RenderItemsBoxes_stub(float fPosX, float fPosY, DWORD Inventory, in
                 int Texture;
                 float uWidth, vHeight;
                 if (p->Type == -1) {
-                    InventoryColor_stub(p);
+                    InventoryColor(p);
                     vHeight = 1.0f;
                     uWidth = 1.0f;
                     Texture = 0x115;
                 } else {
-                    InventoryColor_stub(p);
+                    InventoryColor(p);
                     vHeight = 0.6666667f;
                     uWidth = 0.625f;
                     Texture = 0x116;

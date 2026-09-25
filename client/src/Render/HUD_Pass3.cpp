@@ -139,7 +139,7 @@ extern "C" {
     BYTE  ShopItems[120 * 68]             = {0};
 
     // 2026-04-30: Inventory/Trade panel origin globals — unified with the
-    // IDA-side DAT_ addresses that RenderEquipment3D_stub / RenderItem3D
+    // IDA-side DAT_ addresses that RenderEquipment3D / RenderItem3D
     // already read.  The Ghidra-era phantoms (InventoryStartX = 380 etc.)
     // were independent of DAT_07ea5288 → equipment items rendered at
     // x≈0 while the panel frame rendered at x=450.

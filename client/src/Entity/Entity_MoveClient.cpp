@@ -8,7 +8,7 @@
 // IDA: MoveCharactersClient @ 0x00455010 — MoveCharactersClient (~169 lines), summary stub.
 // Per-frame entity update. Clears terrain walk flags, then for each alive character:
 // decrypt movement via hash table, tick movement, re-encrypt, update cached waypoints.
-void __stdcall MoveCharactersClient_stub(void) {
+void __stdcall MoveCharactersClient(void) {
     // 0x00455010 — Per-frame entity update
     // Phase 1: Clear bit 2 from all terrain walk flags (0x10000 tiles)
     // Phase 2: For each alive entity, decrypt movement waypoints via hash table,

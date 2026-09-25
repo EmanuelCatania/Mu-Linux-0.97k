@@ -231,7 +231,7 @@ found_existing:
 // AssignChat @ 0x00482090 (~78 lines) — finds character by ID, creates chat bubble
 // Pass 1: search Kind==1 (players). Pass 2: search Kind==2 (NPCs).
 // On match: CreateChat(ID, Text, character, Flag, -1).
-void __cdecl AssignChat_stub(char* ID, char* Text, int Flag) {
+void __cdecl AssignChat(char* ID, char* Text, int Flag) {
     // 0x00482090 — Find character by ID, create chat bubble
     //
     // BUG-FIX 2026-07-19 (LA BURBUJA NUNCA APARECÍA): los offsets estaban mal.

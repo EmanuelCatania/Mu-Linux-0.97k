@@ -741,7 +741,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
     //
     // Flujo real: PASO 1 dibuja UNO solo, por prioridad, con el glColor todavia
     // en blanco; PASO 2 (LABEL_39) recien ahi los items de Alt.
-    extern void __cdecl RenderItemName_stub(int, DWORD, int, int, bool);
+    extern void __cdecl RenderItemName(int, DWORD, int, int, bool);
     BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
     const int hovered = (int)SelectedItem;
 
@@ -752,7 +752,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
         if (hovered < 0 || hovered >= 1000) return;
         BYTE* o = itemPool + hovered * 0x204 + 72;
         if (o[0] && o[352])
-            RenderItemName_stub(hovered, (DWORD)(uintptr_t)o,
+            RenderItemName(hovered, (DWORD)(uintptr_t)o,
                                 *(int*)(o - 64), (int)*(char*)(o - 41), 0);
     };
 
@@ -825,7 +825,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
             if (i == hovered) continue;
             BYTE* o = itemPool + i * 0x204 + 72;
             if (o[0] && o[352]) {
-                RenderItemName_stub(i, (DWORD)(uintptr_t)o,
+                RenderItemName(i, (DWORD)(uintptr_t)o,
                                     *(int*)(o - 64), (int)*(char*)(o - 41), 1);
             }
         }

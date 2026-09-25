@@ -514,9 +514,9 @@
 //   SetAction
 //   Joint_Create (CreateJoint)
 //   RequestTerrainHeight
-//   OpenNpc_stub (0x005091D0)
+//   OpenNpc (0x005091D0)
 extern "C++" {
-extern void __cdecl OpenNpc_stub(int Type);
+extern void __cdecl OpenNpc(int Type);
 }
 
 // IDA: CreateCharacter (0x0045BFA0)
@@ -1195,7 +1195,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned short*)(c + 446) = 1;
         break;
     case 230:
-        OpenNpc_stub(336);
+        OpenNpc(336);
         c = CreateChar5(Key, 336, PositionX, PositionY);
         *(unsigned short*)(c + 504) = 360;
         *(unsigned short*)(c + 528) = 363;
@@ -1203,11 +1203,11 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned short*)(c + 600) = 366;
         break;
     case 231:
-        OpenNpc_stub(377);
+        OpenNpc(377);
         c = CreateChar5(Key, 377, PositionX, PositionY);
         break;
     case 232:
-        OpenNpc_stub(375);
+        OpenNpc(375);
         v17 = (unsigned char)PositionY;
         v16 = (unsigned char)PositionX;
         v15 = 375;
@@ -1216,7 +1216,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned char*)(c + 132) = 4;
         break;
     case 233:
-        OpenNpc_stub(376);
+        OpenNpc(376);
         v17 = (unsigned char)PositionY;
         v16 = (unsigned char)PositionX;
         v15 = 376;
@@ -1234,7 +1234,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         SetAction((int)c, 0);
         break;
     case 235:
-        OpenNpc_stub(374);
+        OpenNpc(374);
         v17 = (unsigned char)PositionY;
         v16 = (unsigned char)PositionX;
         v15 = 374;
@@ -1243,7 +1243,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned char*)(c + 132) = 4;
         break;
     case 236:
-        OpenNpc_stub(390);
+        OpenNpc(390);
         c = CreateChar5(Key, 390, PositionX, PositionY);
         *(unsigned int*)(c + 4) = 207;
         *(unsigned int*)(c + 12) = 1065353216;
@@ -1251,28 +1251,28 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned short*)(c + 446) = 8;
         break;
     case 237:
-        OpenNpc_stub(349);
+        OpenNpc(349);
         c = CreateChar5(Key, 349, PositionX, PositionY);
         break;
     case 238:
-        OpenNpc_stub(348);
+        OpenNpc(348);
         c = CreateChar5(Key, 348, PositionX, PositionY);
         *(unsigned int*)(c + 100) = 1;
         break;
     case 239:
-        OpenNpc_stub(347);
+        OpenNpc(347);
         c = CreateChar5(Key, 347, PositionX, PositionY);
         break;
     case 240:
-        OpenNpc_stub(346);
+        OpenNpc(346);
         c = CreateChar5(Key, 346, PositionX, PositionY);
         break;
     case 241:
-        OpenNpc_stub(345);
+        OpenNpc(345);
         c = CreateChar5(Key, 345, PositionX, PositionY);
         break;
     case 242: {
-        OpenNpc_stub(343);
+        OpenNpc(343);
         c = CreateChar5(Key, 343, PositionX, PositionY);
         float v13 = *(float*)(c + 16);
         float v14 = *(float*)(c + 20);
@@ -1281,19 +1281,19 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         break;
     }
     case 243:
-        OpenNpc_stub(344);
+        OpenNpc(344);
         c = CreateChar5(Key, 344, PositionX, PositionY);
         break;
     case 244:
-        OpenNpc_stub(340);
+        OpenNpc(340);
         c = CreateChar5(Key, 340, PositionX, PositionY);
         break;
     case 245:
-        OpenNpc_stub(342);
+        OpenNpc(342);
         c = CreateChar5(Key, 342, PositionX, PositionY);
         break;
     case 246:
-        OpenNpc_stub(341);
+        OpenNpc(341);
         c = CreateChar5(Key, 341, PositionX, PositionY);
         break;
     case 247:
@@ -1308,7 +1308,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         SetCharacterScale((int)c);
         break;
     case 248:
-        OpenNpc_stub(336);
+        OpenNpc(336);
         c = CreateChar5(Key, 336, PositionX, PositionY);
         *(unsigned short*)(c + 504) = 361;
         *(unsigned short*)(c + 528) = 363;
@@ -1326,7 +1326,7 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         SetCharacterScale((int)c);
         break;
     case 250:
-        OpenNpc_stub(336);
+        OpenNpc(336);
         c = CreateChar5(Key, 336, PositionX, PositionY);
         *(unsigned short*)(c + 504) = 360;
         *(unsigned short*)(c + 528) = 362;
@@ -1334,23 +1334,23 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
         *(unsigned short*)(c + 600) = 366;
         break;
     case 251:
-        OpenNpc_stub(338);
+        OpenNpc(338);
         c = CreateChar5(Key, 338, PositionX, PositionY);
         *(unsigned int*)(c + 12) = 1064514355;
         break;
     case 253:
-        OpenNpc_stub(337);
+        OpenNpc(337);
         c = CreateChar5(Key, 337, PositionX, PositionY);
         *(unsigned short*)(c + 504) = 368;
         *(unsigned short*)(c + 528) = 370;
         *(unsigned short*)(c + 552) = 372;
         break;
     case 254:
-        OpenNpc_stub(339);
+        OpenNpc(339);
         c = CreateChar5(Key, 339, PositionX, PositionY);
         break;
     case 255:
-        OpenNpc_stub(335);
+        OpenNpc(335);
         c = CreateChar5(Key, 335, PositionX, PositionY);
         *(unsigned short*)(c + 504) = 351;
         *(unsigned short*)(c + 528) = 353;

@@ -10,7 +10,7 @@
 // Switch on Type: 0x14f=Female, 0x150=Male, 0x151=Girl, 0x152=Smith (+sound),
 // 0x153=Wizard, 0x154..0x15d various merchants/masters,
 // 0x176+=special NPCs (Sevina, BloodCastle) via OpenModel.
-void __cdecl OpenNpc_stub(int Type) {
+void __cdecl OpenNpc(int Type) {
     // 0x005091D0 — Load NPC model + textures by Type
     // Models = DAT_05828d58, each entry is a BMD struct.
     // DAT_0055a7c4 = g_tex_ext_mode (0=plain, 1=compressed OZJ/OZT)

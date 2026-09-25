@@ -241,7 +241,7 @@ void Game_CharSelectTick(void)
     // un buffer válido siempre, y HashTable_GetIndex retorna -1 para que los
     // callers skip el deref.
     //
-    // 2026-05-05: Wire MoveCharactersClient_stub (per-frame entity tick que
+    // 2026-05-05: Wire MoveCharactersClient (per-frame entity tick que
     // llama MoveCharacterClient → MoveMonsterClient path-walker para cada entidad). Sin
     // esto los monsters/NPCs llegaban con packet 0x10 (target_grid set) pero
     // nunca se invocaba el path-walker, así quedaban quietos en su pos
@@ -257,7 +257,7 @@ void Game_CharSelectTick(void)
     {
         int heroEnt = (int)(uintptr_t)DAT_07abf5d8;
         int base = (int)(uintptr_t)DAT_07abf5d0;
-        MoveCharactersClient_stub();
+        MoveCharactersClient();
         for (int s = 0; false && s < 400; ++s) {
             int e = base + s * 0x394;
             if (*(char*)e == '\0') continue;   // inactive

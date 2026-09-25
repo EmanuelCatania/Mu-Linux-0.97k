@@ -66,7 +66,7 @@ int __cdecl ConvertGold64_stub(int Zen, char* Buffer) {
 //
 // Desviación: donde IDA hace `sprintf(String, GlobalText[N])` (una cadena de
 // datos usada como formato) nosotros usamos `sprintf(String, "%s", GlobalText[N])`.
-void __cdecl RenderItemName_stub(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort) {
+void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort) {
     (void)i;
 
     const int v5 = ItemLevel;

@@ -8,7 +8,7 @@
 // SetPositionIME_Wnd @ 0x0047ECAF (~27 lines) — positions IME composition window
 // Builds a COMPOSITIONFORM-like struct {style=2, x, y} and sends WM_IME_CONTROL
 // (0x283) with IMC_SETCOMPOSITIONWINDOW (0xC) to the default IME window.
-void __stdcall SetPositionIME_Wnd_stub(float x, float y) {
+void __stdcall SetPositionIME_Wnd(float x, float y) {
     int xRight = WindowWidth;
     DWORD style = 2;  // CFS_POINT
     LONG ptX = (LONG)x;
@@ -32,7 +32,7 @@ void __stdcall SetPositionIME_Wnd_stub(float x, float y) {
 
 // CheckIME_Status @ 0x0047EDC0 (~32 lines) — checks/saves/resets IME conversion status
 // Globals: DAT_07e11d94 = g_dwOldConv, DAT_00559cd8 = g_dwOldSent, DAT_07e11d98 = g_dwCurrConv
-bool __cdecl CheckIME_Status_stub(bool change, int mode) {
+bool __cdecl CheckIME_Status(bool change, int mode) {
     bool bIme = false;
     HIMC hImc = ImmGetContext(g_hWnd);
     DWORD dwConv = 0, dwSent = 0;
@@ -60,7 +60,7 @@ bool __cdecl CheckIME_Status_stub(bool change, int mode) {
 // Renders Korean/English mode, sentence mode, old sentence mode, lock status
 // at screen positions (100, 100/110/120/130).
 // Uses DAT_07e11d94 (g_dwOldConv), DAT_00559cd8 (g_dwOldSent).
-void __stdcall RenderIME_Status_stub(void) {
+void __stdcall RenderIME_Status(void) {
     char local_64[100];
 
     // Line 1: Korean/English mode based on bit 0 of g_dwOldConv

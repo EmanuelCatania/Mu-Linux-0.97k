@@ -235,13 +235,13 @@ void __cdecl ReceiveChat(BYTE *ReceiveBuffer)
     else if (chatType == '#') {
         // Solo burbuja sobre el personaje (sin entrada en el log)
         memcpy(msg, ReceiveBuffer + 0x0E, 59);
-        AssignChat_stub(sender, msg, 1);
+        AssignChat(sender, msg, 1);
     }
     else {
         // Chat normal: burbuja + log en canal 3 (color casi-blanco 0xFFEFDCCD;
         // renderLine lo saltea si byte_559BF1==0, que es el toggle de F2).
         memcpy(msg, ReceiveBuffer + 0x0D, 60);
-        AssignChat_stub(sender, msg, 0);
+        AssignChat(sender, msg, 0);
         UIChatLogWindow_AddText(sender, msg, 3);
     }
 }

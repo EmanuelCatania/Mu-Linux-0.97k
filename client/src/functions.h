@@ -1224,7 +1224,7 @@ int   __stdcall FindHotKey(int Skill);                              // 0x004B117
 void  __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float height); // 0x004BB940
 void  __cdecl SendChat(char *Text);                                      // 0x004C1B90
 int   __cdecl ConvertGold64_stub(int Zen, char *Buffer);                 // 0x004C3E10
-void  __cdecl RenderItemName_stub(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort); // 0x004C9E70
+void  __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort); // 0x004C9E70
 void  __cdecl InsertWarehouseItem_stub(unsigned int param_1, unsigned char *param_2); // 0x004CC0E0
 void  __cdecl SetItemGridFlag_stub(int param_1, int param_2, unsigned char param_3); // 0x004CC1E0
 int   __cdecl CompareItems_stub(short param_1, int param_2, int param_3); // 0x004CC270
@@ -1233,27 +1233,27 @@ unsigned long long __cdecl CheckInventorySpace_stub(int p1, int p2, unsigned sho
 int   __cdecl FindEmptySlot_stub(int p1, int p2, int p3, int p4);       // 0x004D5F20
 unsigned int __stdcall Inventory_DropItem_stub(void);                    // 0x004D6470
 long long __fastcall CalculateInventoryValue_stub(int p1, unsigned int p2, short *p3, int p4, short *p5); // 0x004DF330
-void  __cdecl InventoryColor_stub(ITEM *p);                              // 0x004E2420
-void  __stdcall RenderEquipmentBox_stub(void);                           // 0x004E25A0
-void  __cdecl RenderEquipmentPart3D_stub(int Index, float sx, float sy, float Width, float Height); // 0x004E2E40
-void  __stdcall RenderEquipment3D_stub(void);                            // 0x004E3100
+void  __cdecl InventoryColor(ITEM *p);                              // 0x004E2420
+void  __stdcall RenderEquipmentBox(void);                           // 0x004E25A0
+void  __cdecl RenderEquipmentPart3D(int Index, float sx, float sy, float Width, float Height); // 0x004E2E40
+void  __stdcall RenderEquipment3D(void);                            // 0x004E3100
 void  __cdecl RenderItemsBoxes_stub(float fPosX, float fPosY, DWORD Inventory, int iMaxWidth, int iMaxHeight); // 0x004E37B0
 void  __cdecl RenderItems3D_stub(float p1, float p2, short *p3, int p4, int p5, char p6); // 0x004E38B0
 int   __cdecl CheckMixRecipe(short *p1, int p2, int p3);                // 0x004E40F0
 void  __cdecl RenderInventoryInterface_stub(int StartX, int StartY, int Flag); // 0x004ECBA0
 void  __cdecl RenderGuildMark_stub(float p1, float p2, float p3, float p4, int p5); // 0x004F02F0
-void  __cdecl AddTerrainLightClip_stub(float xf, float yf, float Light[3], int Range, float Buffer[3]); // 0x004F7800
-void  __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool EditFlag); // 0x004F9720
+void  __cdecl AddTerrainLightClip(float xf, float yf, float Light[3], int Range, float Buffer[3]); // 0x004F7800
+void  __cdecl RenderTerrainBlock(float xf, float yf, int xi, int yi, bool EditFlag); // 0x004F9720
 void  __cdecl RenderTerrainFrustrum_stub(bool EditFlag);                 // 0x004F97E0
 void  __cdecl MoveObject_Special_stub(int param_1); // legacy alias of FUN_004fa5f0 (0x004FA5F0)
 char* __stdcall PickObject_Mouse_stub(void);                             // 0x004FA7C0
 float* __cdecl MoveObject_PerWorld(float param_1);                       // 0x004FDC00
-int   __stdcall MoveHeavenThunder_stub(void);                            // 0x004FED90
-void  __stdcall MoveObjects_stub(void);                                  // 0x004FF260
+int   __stdcall MoveHeavenThunder(void);                            // 0x004FED90
+void  __stdcall MoveObjects(void);                                  // 0x004FF260
 void  __stdcall MoveBugs_stub(void);                                     // 0x005001F0
-void  __cdecl OpenNpc_stub(int Type);                                    // 0x005091D0
+void  __cdecl OpenNpc(int Type);                                    // 0x005091D0
 void  __stdcall EnableAlphaBlend2_stub(void);                            // 0x00511810
-void  __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha); // 0x00511FB0
+void  __cdecl RenderSpriteUV(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha); // 0x00511FB0
 double __cdecl RenderNumber2D_stub(float x, float y, int Num, float Width, float Height); // 0x005122F0
 void  __stdcall MoveCamera_stub(void);                                   // 0x0051E4E0
 void  __cdecl Combat_UseWizardSkill(DWORD c, DWORD o);                  // 0x004889D0
@@ -1264,12 +1264,12 @@ void  __cdecl FUN_0043ce50(unsigned char param_1, int param_2);          // acti
 void  __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter);         // 0x0043E890
 void  __cdecl MoveHead_stub(int param_1);                                // 0x0043E940
 bool  __cdecl BMD__CollisionDetectLineToMesh_stub(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle); // 0x00440BE0
-bool  __cdecl AttackStage_stub(DWORD c, DWORD o);                       // 0x00448930
+bool  __cdecl AttackStage(DWORD c, DWORD o);                       // 0x00448930
 // IDA: FUN_00451f30
 void  __cdecl Combat_SpawnDeathDustParticles(int entity);
 // IDA: FUN_00452030
 void  __cdecl Combat_SpawnIdleAmbientParticle(int entity);
-void  __stdcall MoveCharactersClient_stub(void);                         // 0x00455010
+void  __stdcall MoveCharactersClient(void);                         // 0x00455010
 unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char *param_1);   // hash read 1-byte (0x0045FAE0)
 void  __cdecl Effect_SpawnBombRing(float *param_1); // IDA: FUN_00466300
 // Compatibility bridge used only by stubs_IDA_ports.cpp.
@@ -1280,15 +1280,15 @@ void  __cdecl ItemDrop_RenderGroundWeapon(int param_1); // IDA: FUN_0046b980
 void  __cdecl FUN_0046b980(int param_1); // IDA: FUN_0046b980
 void  __cdecl RenderWheelWeapon(DWORD o); // IDA: RenderWheelWeapon (0x0046B7C0)
 void  __cdecl FUN_0046c5a0(int p1, int p2, float *p3, float *p4);       // skill impact particles (0x0046C5A0)
-void  __cdecl CreateBlood_stub(DWORD o);                                 // 0x0046C680
+void  __cdecl CreateBlood(DWORD o);                                 // 0x0046C680
 void  __cdecl FUN_0046c7f0(int p1, int p2, float p3, float p4, float p5); // directional blood (0x0046C7F0)
-void  __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
-void  __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
+void  __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
+void  __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
 void  __stdcall MoveParticles_stub(void);                                // 0x00477090
 unsigned int __cdecl Item_GetDefenseWithSpecial(DWORD ecx, short *param_1);            // item special option (0x0047CFB0)
-void  __stdcall SetPositionIME_Wnd_stub(float x, float y);              // 0x0047ECAF
-bool  __cdecl CheckIME_Status_stub(bool change, int mode);              // 0x0047EDC0
-void  __stdcall RenderIME_Status_stub(void);                             // 0x0047EE52
+void  __stdcall SetPositionIME_Wnd(float x, float y);              // 0x0047ECAF
+bool  __cdecl CheckIME_Status(bool change, int mode);              // 0x0047EDC0
+void  __stdcall RenderIME_Status(void);                             // 0x0047EE52
 // FUN_0047f360 @ 0x0047F360 (IDA)
 void  __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, int p6, int p7, int p8, LPCSTR p9);
 // FUN_0047f4c0 @ 0x0047F4C0 (IDA)
@@ -1297,13 +1297,13 @@ void  __cdecl RenderTipText_stub(int sx, int sy, char *Text);           // 0x004
 int   __cdecl FUN_0047fed0(int lvl, const char* name);                 // IDA: sub_47FED0 (0x0047FED0) — gate de envio de susurro
 void  __cdecl RegistWhisperID(int lvl, const char* text);              // IDA: RegistWhisperID (0x004801C0)
 void  __cdecl FUN_00481a40(int param_1, char *param_2, int param_3);    // assign chat text (0x00481A40)
-void  __cdecl AssignChat_stub(char *ID, char *Text, int Flag);          // 0x00482090
+void  __cdecl AssignChat(char *ID, char *Text, int Flag);          // 0x00482090
 int   __stdcall Item_FindElfWeaponInventorySlot(void);                   // IDA: FUN_004824C0
 int   __stdcall Item_CountElfWeaponInventorySlots(void);                 // IDA: FUN_00482850
 int   __cdecl Item_CountWeaponGroupItems(int param_1);                   // IDA: FUN_00482e40
 void  __cdecl Item_AutoEquipAmmo(int weaponType);                              // elf weapon validation/swap (0x0048B680)
 unsigned int __cdecl FUN_004942e0(int param_1);                          // chat command parser (0x004942E0)
-bool  __cdecl CheckTarget_stub(DWORD c);                                 // 0x0049CAE0
+bool  __cdecl CheckTarget(DWORD c);                                 // 0x0049CAE0
 
 // Missing forward declarations (compilation fixes)
 int   __cdecl Xor_ConvertBuffer(void *lpBuffer, DWORD nBytes, int key); // XOR encode buffer
@@ -1333,8 +1333,8 @@ void  __cdecl OpenTexture(int id, void *path, int flags, bool param);   // 0x005
 // LoadWaveFile declared above (line 1088) with real signature — real impl in src/Sound/Sound.cpp.
 void  __cdecl OpenModel(int id, char *path, ...);                       // 0x00505E90 (varargs: texName, normName, etc.)
 void  __cdecl RenderItem3D(float sx, float sy, float w, float h, int Type, int Level, int Option1, int ExtOption, bool PickUp); // IDA: RenderItem3D (0x004E1BE0)
-// InventoryColor = InventoryColor_stub (declared at line 1301)
-// RenderEquipmentPart3D = RenderEquipmentPart3D_stub (declared at line 1303)
+// InventoryColor = InventoryColor (declared at line 1301)
+// RenderEquipmentPart3D = RenderEquipmentPart3D (declared at line 1303)
 void  __cdecl RenderNumber2D_fn(float x, float y, int Num, float Width, float Height); // 0x005122F0
 // DisableAlphaBlend = GL_ResetState (declared at line 578)
 // CreateAngle (4 floats → float). Line 207 has wrong sig; cast in callers.

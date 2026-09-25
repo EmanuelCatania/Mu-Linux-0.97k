@@ -13,7 +13,7 @@
 // visual effect, plays sound, sets CurrentSkill, then dispatches through
 // two switch tables: first by weapon-type for the projectile, second by
 // adjusted weapon-type (+400) for the trail effect.
-void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey) {
+void __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey) {
     // Read weapon types from character equipment slots
     int weaponType0 = (int)*(short*)(c + 0x270);  // Weapon[0].Type
     int weaponType1 = (int)*(short*)(c + 0x288);  // Weapon[1].Type
@@ -174,7 +174,7 @@ void __cdecl CreateArrow_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD 
 // SKKey '3'/'4': single arrow + counter increment.
 // Skill 1: triple shot (center + 2 angle offsets).
 // Skill 2: five-way shot with 4 additional angle offsets.
-void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey) {
+void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey) {
     // 0x00474BD0 — Multi-arrow skill handler.
     // SKKey '3' or '4': single arrow + increment arrow counter in CharacterMachine.
     // Skill 1: triple shot (center + 2 angle offsets via _DAT_00552834 / _DAT_0055284c).
@@ -188,7 +188,7 @@ void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD
 
     if ((char)SKKey == '4' || (char)SKKey == '3') {
         // Single arrow + counter increment
-        CreateArrow_stub(c, o, to, SkillIndex, Skill, SKKey);
+        CreateArrow(c, o, to, SkillIndex, Skill, SKKey);
 
         // anti-tamper hash table — skipped (encrypt CharacterMachine)
         // Increment the native projectile serial at CharacterMachine +1408.
@@ -199,14 +199,14 @@ void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD
     }
     else {
         // Multi-arrow based on Skill level
-        CreateArrow_stub(c, o, to, SkillIndex, Skill, SKKey);
+        CreateArrow(c, o, to, SkillIndex, Skill, SKKey);
 
         if ((char)Skill == 1) {
             // Triple shot: center already created, now +offset and -offset
             *pAngleZ += _DAT_00552834;
-            CreateArrow_stub(c, o, to, SkillIndex, 1, SKKey);
+            CreateArrow(c, o, to, SkillIndex, 1, SKKey);
             *pAngleZ -= _DAT_0055284c;  // goes to negative offset from original
-            CreateArrow_stub(c, o, to, SkillIndex, 1, SKKey);
+            CreateArrow(c, o, to, SkillIndex, 1, SKKey);
             *pAngleZ += _DAT_00552834;  // restore to original angle
 
             // anti-tamper hash table — skipped (encrypt CharacterMachine)
@@ -217,13 +217,13 @@ void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD
         else if ((char)Skill == 2) {
             // Five-way shot: center already created, now 4 additional angles
             *pAngleZ += _DAT_00552ab0;
-            CreateArrow_stub(c, o, to, SkillIndex, 2, SKKey);
+            CreateArrow(c, o, to, SkillIndex, 2, SKKey);
             *pAngleZ += _DAT_00552ab0;
-            CreateArrow_stub(c, o, to, SkillIndex, 2, SKKey);
+            CreateArrow(c, o, to, SkillIndex, 2, SKKey);
             *pAngleZ -= _DAT_00552584;   // jump to negative side
-            CreateArrow_stub(c, o, to, SkillIndex, 2, SKKey);
+            CreateArrow(c, o, to, SkillIndex, 2, SKKey);
             *pAngleZ -= _DAT_00552ab0;
-            CreateArrow_stub(c, o, to, SkillIndex, 2, SKKey);
+            CreateArrow(c, o, to, SkillIndex, 2, SKKey);
             *pAngleZ += _DAT_00552834;   // restore to original angle
 
             // anti-tamper hash table — skipped (encrypt CharacterMachine)

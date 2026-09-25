@@ -10,7 +10,7 @@
 
 // ── Named aliases ────────────────────────────────────────────────────────────
 
-// Object_MoveUpdate — alias for MoveObjects_stub (FUN_004FF260, per-frame
+// Object_MoveUpdate — alias for MoveObjects (FUN_004FF260, per-frame
 // world-objects animation/render-update dispatcher). The historical naming
 // "Object_MoveUpdate" came from a Ghidra mis-id of FUN_0043E050 which is
 // actually Movement_Tick (angle math). The CALLERS (Game_SceneUpdate /
@@ -18,16 +18,16 @@
 // which IS MoveObjects (0x004FF260). Wire them here so the world-objects
 // pool actually advances each frame.
 //
-// 2026-05-07 (revert): MoveObjects_stub iterates the world-objects bucket
+// 2026-05-07 (revert): MoveObjects iterates the world-objects bucket
 // grid (DAT_083a021c..) which is only properly populated when a world is
 // loaded (state 5 = in-game). During Login/CharSelect/Loading the bucket
 // linked-list pointers are uninitialized garbage → AV in FUN_004fdc00 →
 // Alpha reading param_1 + 0x161. Gate on SceneFlag == 5 so this
 // is only active in-game where the pool is real.
-extern void __stdcall MoveObjects_stub(void);
+extern void __stdcall MoveObjects(void);
 void __cdecl Object_MoveUpdate(void) {
     if (SceneFlag == 5) {
-        MoveObjects_stub();
+        MoveObjects();
         return;
     }
 

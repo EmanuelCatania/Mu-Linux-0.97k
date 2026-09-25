@@ -793,7 +793,7 @@ void __cdecl Combat_SendMovePathPacket(int param_1, int param_2)
 // Helpers: real names exposed via functions.h
 //   Path_FindRoute = PathFinding2(sx, sy, tx, ty, path_buf, radius) — uint
 //   CheckAttack() — uint (0 if locked)
-//   CheckTarget = CheckTarget_stub(c) — bool
+//   CheckTarget = CheckTarget(c) — bool
 //
 // HeroKey se lee del campo +0x1DC de la entidad del héroe (= g_HeroKey que asigna
 // Net_Process at JoinServer ACK; see Net_Process.cpp:1294).
@@ -1035,7 +1035,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
     if (piSkillMana > (int)*(unsigned short*)(attr + 36))     // IDA L1753
         return AF_RETURN;                                     // IDA LABEL_146
 
-    CheckTarget_stub((DWORD)(uintptr_t)entity);               // IDA L1778 (retorno ignorado)
+    CheckTarget((DWORD)(uintptr_t)entity);               // IDA L1778 (retorno ignorado)
 
     if (iType >= 30 && iType <= 36) {
         // IDA L2617-2680: invocaciones del arbol Elf.
@@ -1089,7 +1089,7 @@ static Attack_Flow97k Attack_ElfBranch97k(char* entity, int iType)
                         int skillIndex = 0;                   // IDA: v128 / v129
                         while (skillIndex < 20 && attr[87 + skillIndex] != queuedSkill)
                             ++skillIndex;
-                        CreateArrows_stub((DWORD)(uintptr_t)entity,
+                        CreateArrows((DWORD)(uintptr_t)entity,
                                           (DWORD)(uintptr_t)entity, 0,
                                           (WORD)skillIndex, 0, (WORD)queuedSkill);
                     }
@@ -1457,7 +1457,7 @@ static void Attack_WizardBranch97k(char* entity)
         return;
 
     // IDA L6246: `HIBYTE(v1025) = CheckTarget(c)` — CheckTarget devuelve bool.
-    const bool hasTarget = (CheckTarget_stub((DWORD)(uintptr_t)entity) != 0);
+    const bool hasTarget = (CheckTarget((DWORD)(uintptr_t)entity) != 0);
 
     switch (iType) {                                          // IDA L6247
     case 10:                                                  // IDA L6249 — Hell Fire
@@ -1621,7 +1621,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
     // IDA L1346-1484 — bucle de manos equipadas, comun a las clases != 0.
     // ══════════════════════════════════════════════════════════════════════════
     if ((entity[444] & 7) != 0) {
-        CheckTarget_stub((DWORD)(uintptr_t)entity);            // IDA L1348
+        CheckTarget((DWORD)(uintptr_t)entity);            // IDA L1348
         const int heroGridY = *(int*)(entity + 908);           // IDA: v18
         const int heroGridX = *(int*)(entity + 904);           // IDA: v19
         // IDA L1355: CheckWall(v19, v18, TargetX, TargetY) — 0x004830B0, que en

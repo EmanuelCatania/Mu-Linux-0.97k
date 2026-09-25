@@ -257,10 +257,10 @@ extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY,
                     // (no entra) / 3 (entra) / 4 (moneda) sobre las celdas
                     // VACIAS bajo el cursor, y con el color fijo ese marcado no
                     // se veia nunca.
-                    InventoryColor_stub(v7);
+                    InventoryColor(v7);
                     GL_DrawTexture(277, x, v8, 20.0f, 20.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1, 1);
                 } else {
-                    InventoryColor_stub(v7);
+                    InventoryColor(v7);
                     GL_DrawTexture(278, x, v8, 20.0f, 20.0f, 0.0f, 0.0f, 0.625f, 0.66666669f, 1, 1);
                 }
                 ++v7;
@@ -279,7 +279,7 @@ extern "C" char __cdecl sub_4F5CE0_(void);
 char __cdecl sub_4F5CE0_(void)
 {
     if (InventoryOpened) {
-        RenderEquipment3D_stub();
+        RenderEquipment3D();
         sub_4E38B0((float)((double)InventoryStartX + 15.0),
                    (float)((double)InventoryStartY + 200.0),
                    PointerBitsAsFloat_HudPass6(OffsetInventoryItems), 8, 8.0f, 0);
@@ -383,7 +383,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     InventoryStartX = sx;
     InventoryStartY = 0;
     RenderInventoryInterface(sx, 0, 0);
-    RenderEquipmentBox_stub();
+    RenderEquipmentBox();
     // Los casilleros de equipo los procesa sub_4CDC70 (FUN_004cdc70) desde
     // sub_4E6550, en el tick; no aca en el render.
 

@@ -439,7 +439,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
 // MoveHeavenThunder @ 0x004FED90 (~472 lines) — SUMMARY STUB
 // Lightning storm for World 10 (Icarus). Random bolts via CreateEffect(0xb6).
 // Adds terrain light flash, returns nonzero when strike occurs.
-int __stdcall MoveHeavenThunder_stub(void) {
+int __stdcall MoveHeavenThunder(void) {
     // Port fiel de IDA MoveHeavenThunder (0x004FED90).
     //
     // Antes era un ESQUELETO: calculaba la probabilidad y devolvia 1/0, pero las
@@ -550,7 +550,7 @@ int __stdcall MoveHeavenThunder_stub(void) {
 // MoveObjects @ 0x004FF260 (~169 lines) — per-frame object update dispatcher
 // World 10: MoveHeavenThunder. World 11..16: ambient particles.
 // Iterates all object lists calling MoveObject_Special or MoveObject_PerWorld.
-void __stdcall MoveObjects_stub(void) {
+void __stdcall MoveObjects(void) {
     // 0x004FF260 — Per-frame object update dispatcher.
     // World 10: calls MoveHeavenThunder. World 11..16: spawn ambient particles.
     // Then iterates all object bucket lists (16 buckets per block, from DAT_083a021c)
@@ -559,7 +559,7 @@ void __stdcall MoveObjects_stub(void) {
 
     float Scale = 0.0f;
     if (World == 10) {
-        Scale = (float)MoveHeavenThunder_stub();
+        Scale = (float)MoveHeavenThunder();
     }
     else if (World > 10 && World < 0x11) {
         // Worlds 11..16: spawn ambient particle near hero

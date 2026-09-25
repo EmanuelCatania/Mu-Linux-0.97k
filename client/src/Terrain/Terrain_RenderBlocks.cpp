@@ -20,7 +20,7 @@
 //
 // Diferencia entre las dos: esta clampea a [0, 1]; 0x4F76C0 solo evita negativos
 // y deja que la luz supere 1.0 (que es lo que produce el resplandor del fuego).
-void __cdecl AddTerrainLightClip_stub(float xf, float yf, float Light[3], int Range, float Buffer[3]) {
+void __cdecl AddTerrainLightClip(float xf, float yf, float Light[3], int Range, float Buffer[3]) {
     // 0x004F7800 — Add clamped light to terrain light buffer.
     // Iterates a square region of radius Range around (xf,yf) in grid coords.
     // Per cell: falloff = (Range - dist) / Range. Adds Light * falloff to Buffer, clamps [0,1].
@@ -77,7 +77,7 @@ void __cdecl AddTerrainLightClip_stub(float xf, float yf, float Light[3], int Ra
 }
 
 // RenderTerrainBlock @ 0x004F9720 (~33 lines) — renders a 4x4 terrain tile block
-void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool EditFlag) {
+void __cdecl RenderTerrainBlock(float xf, float yf, int xi, int yi, bool EditFlag) {
     // 0x004F9720 — renders a 4x4 terrain tile block
     // _DAT_00552504 = 0.5f (half-tile center), _DAT_0055256c = 1.0f (tile stride)
     // CameraTopViewEnable = CameraTopViewEnabled
@@ -123,7 +123,7 @@ void __cdecl RenderTerrainFrustrum_stub(bool EditFlag) {
                 do {
                     unsigned short visible = TestFrustrum2D(blockX + _DAT_0055264c, centerY, -40.0f);
                     if (visible || CameraTopViewEnabled != 0) {
-                        RenderTerrainBlock_stub(blockX, blockY, xi, yi, EditFlag);
+                        RenderTerrainBlock(blockX, blockY, xi, yi, EditFlag);
                     }
                     blockX = blockX + _DAT_00552650;  // 4.0f
                     xi += 4;

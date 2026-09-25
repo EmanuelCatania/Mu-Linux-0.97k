@@ -88,7 +88,7 @@ extern "C" // ──────────────────────
 // con `RenderSpriteUV` (0x511FB0), que ya transforma por la CameraMatrix. Por
 // eso el call site está dentro del bloque 3D, entre BeginSprite y glPopMatrix.
 // ─────────────────────────────────────────────────────────────────────────────
-// (RenderSpriteUV_stub y GL_DisableDepthTest ya están declarados en functions.h)
+// (RenderSpriteUV y GL_DisableDepthTest ya están declarados en functions.h)
 
 extern "C" void __cdecl RenderNumber(float Position[3], int Num,
                                      float Color[3], float Alpha, float Scale);
@@ -114,7 +114,7 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
         UV[1][0] = 0.125f; UV[1][1] = 1.0f;
         UV[2][0] = 0.125f; UV[2][1] = 0.53125f;
         UV[3][0] = 0.0f;   UV[3][1] = 0.53125f;
-        RenderSpriteUV_stub(1, p, 45.0f, 20.0f, UV, Light, Alpha);
+        RenderSpriteUV(1, p, 45.0f, 20.0f, UV, Light, Alpha);
         return;
     }
 
@@ -137,7 +137,7 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
         UV[1][0] = u + 0.0625f;  UV[1][1] = 0.5f;
         UV[2][0] = u + 0.0625f;  UV[2][1] = 0.0f;
         UV[3][0] = u;            UV[3][1] = 0.0f;
-        RenderSpriteUV_stub(1, p, Scale, Scale, UV, Light, Alpha);
+        RenderSpriteUV(1, p, Scale, Scale, UV, Light, Alpha);
         p[0] += step;
         p[1] += step;
     }

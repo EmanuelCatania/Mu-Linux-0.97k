@@ -7,7 +7,7 @@
 
 // IDA: FUN_0049CAE0 @ 0x0049CAE0 — CheckTarget (~51 lines), validates attack target.
 // If SelectedCharacter!=-1: use character position. Otherwise: terrain pick.
-bool __cdecl CheckTarget_stub(DWORD c) {
+bool __cdecl CheckTarget(DWORD c) {
     // 0x0049CAE0 — Validates attack target
     // If SelectedCharacter != -1: use selected character's position as target.
     // Otherwise: do terrain ray pick to find target position.

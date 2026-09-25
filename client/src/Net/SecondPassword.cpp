@@ -2992,10 +2992,10 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 extern "C" bool __cdecl CharacterAnimation(int c, int o);
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl DeleteCloth(int c, int o, int flag);   // DeleteCloth
-extern bool __cdecl AttackStage_stub(DWORD c, DWORD o);
-extern void __cdecl CreateBlood_stub(DWORD o);
+extern bool __cdecl AttackStage(DWORD c, DWORD o);
+extern void __cdecl CreateBlood(DWORD o);
 extern int  __stdcall FindHotKey(int Skill);
-extern void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
+extern void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
 extern unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* p);
 
 // Helpers definidos localmente, usados sólo por MoveCharacter:
@@ -3418,7 +3418,7 @@ void __cdecl MoveCharacter(int p1)
             {
                 // L623-631: hit/stun anims 131/132 → Blood + return
                 if (*(BYTE*)(o + 261) == 131 || *(BYTE*)(o + 261) == 132) {
-                    if (!*(BYTE*)(c + 766)) { *(BYTE*)(c + 766) = 1; CreateBlood_stub(o); }
+                    if (!*(BYTE*)(c + 766)) { *(BYTE*)(c + 766) = 1; CreateBlood(o); }
                     return;
                 }
                 // L632-639: walking/running/dying actions stay; otherwise stop
@@ -3496,7 +3496,7 @@ void __cdecl MoveCharacter(int p1)
         else {
             // Monster (270..334)
             if (*(BYTE*)(o + 261) == 6) {  // MONSTER01_DIE
-                if (!*(BYTE*)(c + 766)) { *(BYTE*)(c + 766) = 1; CreateBlood_stub(o); }
+                if (!*(BYTE*)(c + 766)) { *(BYTE*)(c + 766) = 1; CreateBlood(o); }
                 return;
             }
             BYTE act = *(BYTE*)(o + 261);
@@ -3529,7 +3529,7 @@ void __cdecl MoveCharacter(int p1)
 
     // L812-817: attack swing tick
     if (*(BYTE*)(c + 757)) {
-        AttackStage_stub(c, o);
+        AttackStage(c, o);
         AttackEffect((int)c);         // AttackEffect @ 00445230
         ++*(BYTE*)(c + 757);
     }
@@ -3733,12 +3733,12 @@ void __cdecl MoveCharacter(int p1)
             {
                 unsigned char arrowSkill = *(BYTE*)(c + 770);  // direct read (anti-tamper stripped)
                 int hk = FindHotKey(arrowSkill);
-                CreateArrows_stub(c, o, 0, (WORD)hk, (WORD)v393, (WORD)*(BYTE*)(c + 770));
+                CreateArrows(c, o, 0, (WORD)hk, (WORD)v393, (WORD)*(BYTE*)(c + 770));
             }
             // L2098-2101: ranged-monster auto-arrows
             if (*(short*)(o + 2) == 292 || *(short*)(o + 2) == 305 || *(short*)(o + 2) == 310 || *(short*)(o + 2) == 316)
             {
-                CreateArrows_stub(c, o, 0, 0, 1, 0);
+                CreateArrows(c, o, 0, 0, 1, 0);
             }
         }
         else
@@ -3763,11 +3763,11 @@ void __cdecl MoveCharacter(int p1)
             {
                 unsigned char arrowSkill = *(BYTE*)(c + 770);
                 int hk = FindHotKey(arrowSkill);
-                CreateArrows_stub(c, o, Owner, (WORD)hk, 0, (WORD)*(BYTE*)(c + 770));
+                CreateArrows(c, o, Owner, (WORD)hk, 0, (WORD)*(BYTE*)(c + 770));
             }
             // L2198-2201: ranged-monster
             if (*(short*)(o + 2) == 292 || *(short*)(o + 2) == 305 || *(short*)(o + 2) == 310)
-                CreateArrows_stub(c, o, Owner, 0, 1, 0);
+                CreateArrows(c, o, Owner, 0, 1, 0);
 
             // L2202-2229: target halo + Atlans bubble shower
             if (*(short*)(v390 + 760)) {
@@ -3897,7 +3897,7 @@ void __cdecl MoveCharacter(int p1)
             }
             case 24: {
                 int hk = FindHotKey(skillId);
-                CreateArrows_stub(c, o, 0, (WORD)hk, 1, 0);
+                CreateArrows(c, o, 0, (WORD)hk, 1, 0);
                 goto LABEL_720;
             }
             case 26:
@@ -3937,7 +3937,7 @@ void __cdecl MoveCharacter(int p1)
                 {
                     unsigned char skill2 = *(BYTE*)(c + 770);
                     int hk = FindHotKey(skill2);
-                    CreateArrows_stub(c, o, 0, (WORD)hk, 0, (WORD)skill2);
+                    CreateArrows(c, o, 0, (WORD)hk, 0, (WORD)skill2);
                 }
                 break;
             default: break;

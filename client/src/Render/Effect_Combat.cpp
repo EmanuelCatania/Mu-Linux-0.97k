@@ -241,7 +241,7 @@ void __cdecl FUN_0046c5a0(int param_1, int param_2, float* param_3, float* param
 // Others: BMD bone transform to position blood at hit location.
 // Models base = DAT_05828d58, stride 0xbc. OBJECT struct (Ghidra): Type@+0x02, Live@+0x00,
 // Position@+0x10, Angle@+0x1C, Light@+0xE8, BoneTransform2@+0x114.
-void __cdecl CreateBlood_stub(DWORD o) {
+void __cdecl CreateBlood(DWORD o) {
     WORD wType = *(WORD*)(o + 0x02);  // o->Type
     // Models[type].Data + 0x54 = bone index for blood attachment point
     int boneIdx = *(int*)(DAT_05828d58 + (short)wType * 0xbc + 0x54);

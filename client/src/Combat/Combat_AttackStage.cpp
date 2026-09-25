@@ -324,7 +324,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
 // Combat_SpawnDeathDustParticles (IDA-activated, was Ghidra stub)
 // 00448930 AttackStage — direct IDA switch (raw/00448930_AttackStage.c).
 // The older AttackStage_legacy_mismatched above is intentionally not called.
-bool __cdecl AttackStage_stub(DWORD c, DWORD o)
+bool __cdecl AttackStage(DWORD c, DWORD o)
 {
     const int hand = GetHandOfWeapon((int)o);
     const BYTE skill = *(BYTE*)(c + 770), stage = *(BYTE*)(c + 757);
