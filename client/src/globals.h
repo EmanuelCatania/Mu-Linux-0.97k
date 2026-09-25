@@ -700,7 +700,7 @@ extern char    DAT_07e11d71;   // char-select flag B
 extern char    DAT_07e11d72;   // char-select flag C
 extern int     DAT_07e11d74;   // gold / currency (checked vs 0x2faf081)
 extern DWORD   DAT_07e11d78;   // InputIndex — indice del campo de input activo (lo rota el Tab)
-extern DWORD   DAT_07e11d7c;   // countdown counter B
+extern DWORD   DAT_07e11d7c;   // MacroTime (0x07E11D7C) -- cooldown de las macros de chat
 extern DWORD   DAT_07e11d1c;   // per-frame cooldown tick counter
 extern DWORD   DAT_07e11d28;   // movement debounce step counter
 extern DWORD   DAT_07e11d30;   // frame counter (anti-tamper)

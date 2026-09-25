@@ -32,12 +32,17 @@ extern "C" {
 // ── Aliases: WM_CHAR + RenderInputText share storage via DAT_07db8710 /
 // DAT_07d780a8 globals (matching the IDA original where InputText is at
 // 0x07db8710 and InputLength at 0x07d780a8). See globals.h.
+// MacroTime es 0x07E11D7C (IDA lo decrementa en Game_MainLoop y lo pone en
+// 100 al disparar una macro).  Hasta 2026-09-24 este archivo definia una
+// variable propia con ese nombre, asi que la barra "Macro Time" nunca se
+// dibujaba: el contador que se escribia no era el que se leia.
+#define MacroTime   DAT_07e11d7c
+
 #define InputText   DAT_07db8710                    // char[10][256]
 #define InputLength ((int*)(void*)DAT_07d780a8)     // 10 × DWORD lengths
 
 // ── Local globals (kept here to avoid widening globals.h further) ───────────
 extern "C" {
-    int   MacroTime               = 0;
     // 0x07E11D8C / 0x07E11D90.  Los escribe StartMatchCountDown (0x47EC00),
     // que atiende el opcode 0x92; declarados en globals.h para que el handler
     // los vea (antes eran estaticos de este .cpp y nadie los seteaba).
