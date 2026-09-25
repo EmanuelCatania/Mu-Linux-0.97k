@@ -94,7 +94,7 @@ static void LoginScene_ApplySafeObjectAnim()
 
         // BUG-FIX 2026-07-13: NO spawnear efectos aquí. Este call site duplicaba
         // el spawn de Entity_SpawnEffects: los barcos/objetos ya lo reciben desde
-        // el pass de render (Terrain_Render.cpp:149, tras FUN_004fc030 que computa
+        // el pass de render (Terrain_Render.cpp:149, tras Entity_PrepareRender que computa
         // los bones world-space frescos). Aquí, Calc_RenderObject NO refresca bien el
         // bone scratch → los 2 flares del barco salían con bones stale (mismo valor
         // para los 3 barcos) → aparecían flotando en el centro/al lado. El original

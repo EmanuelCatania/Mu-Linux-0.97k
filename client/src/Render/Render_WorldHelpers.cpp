@@ -56,7 +56,7 @@ extern void __cdecl operator_delete(void* ptr);
 //   v0[-90..]               entity start
 //   v0[+0]                  scale
 //   v0[+48..50]             color RGB
-// Externs ya en functions.h: TestFrustrum2D, FUN_004fc030, Particle_Spawn,
+// Externs ya en functions.h: TestFrustrum2D, Entity_PrepareRender, Particle_Spawn,
 // RequestTerrainHeight, BMD_TransformPosition, PartObjectColor, FUN_00441f00
 
 void __cdecl RenderBoids(void)
@@ -100,7 +100,7 @@ void __cdecl RenderBoids(void)
                 }
 
                 // Standard render path
-                FUN_004fc030((unsigned char*)(v0 - 90), 1, 0, 0);
+                Entity_PrepareRender((unsigned char*)(v0 - 90), 1, 0, 0);
 
                 // Type 301: special action — render hero body + secondary at pose offsets.
                 if (entType == 301 && *((int*)v0 - 89) == 1) {
@@ -868,7 +868,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
             unsigned short vis = TestFrustrum2D(xGrid, yGrid, -20.0f);
             slot[352] = (char)(vis != 0);
             if (vis) {
-                FUN_004fc030((unsigned char*)slot, 0u, 0, 0);
+                Entity_PrepareRender((unsigned char*)slot, 0u, 0, 0);
                 short typeCode = *(short*)(slot + 2);
                 const int __world = (int)World;   // `World` es macro de World: nombrar
                                                         // la local `World` la volvia una
@@ -1019,7 +1019,7 @@ void __cdecl EffectPool_RenderAll(void)
             int counter = *((int*)v0 + 14);
             if (counter >= 10) continue;
             v0[16] = (float)counter * 0.1f;
-            FUN_004fc030((unsigned char*)(v0 - 10), 0, 0, 0);
+            Entity_PrepareRender((unsigned char*)(v0 - 10), 0, 0, 0);
             continue;
         }
 
@@ -1050,7 +1050,7 @@ void __cdecl EffectPool_RenderAll(void)
         if (type == 182 || type == 185 || type == 568 ||
             (type >= 260 && type <= 263) || type == 268 ||
             (type >= 190 && type < 269 && type != 266)) {
-            FUN_004fc030((unsigned char*)(v0 - 10), 0, 0, 0);
+            Entity_PrepareRender((unsigned char*)(v0 - 10), 0, 0, 0);
             continue;
         }
 

@@ -187,7 +187,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     default:
         // Normal state — prepare entity render (bone / AABB)
         cVar6 = ((cVar6 == 'C') || (cVar6 == 'J') || (cVar6 == 'K')) ? '\x01' : '\0';
-        FUN_004fc030((unsigned char *)puVar13, 1, (int)param_3, cVar6);
+        Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, cVar6);
         break;
     }
     // -- 3. (bloque removido 2026-09-04) --------------------------------------
@@ -350,8 +350,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // restores it after the cloth/effect pass.
         *(int *)((BYTE *)puVar13 + 100) = 0;
         *(float *)((BYTE *)puVar13 + 104) = (2.0f - targetLight) * 0.3f;
-        FUN_004fc030((unsigned char *)puVar13, 1, 2, 0);
-        FUN_004fc030((unsigned char *)puVar13, 1, 3, 0);
+        Entity_PrepareRender((unsigned char *)puVar13, 1, 2, 0);
+        Entity_PrepareRender((unsigned char *)puVar13, 1, 3, 0);
 
         const DWORD actionBones = *(DWORD*)((BYTE*)puVar13 + 276);
         if (actionBones) {
@@ -359,7 +359,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         }
         *(int *)((BYTE *)puVar13 + 100) = -1;
         ++*(short *)((BYTE *)puVar13 + 2);
-        FUN_004fc030((unsigned char *)puVar13, 1, (int)param_3, 0);
+        Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, 0);
         if (actionBones) {
             memcpy(g_AttackEffectMatrix_04D_Alt, (const void*)(actionBones + 1104), sizeof(g_AttackEffectMatrix_04D_Alt));
             memcpy(g_AttackEffectMatrix_04D_Aux, (const void*)(actionBones + 672),  sizeof(g_AttackEffectMatrix_04D_Aux));

@@ -6,7 +6,7 @@
 //
 // ── DECOMPILE COMPLETO ────────────────────────────────────────────────────────
 //
-//   void __cdecl FUN_004fc030(undefined1 *entity, undefined4 slot, int flag, char mode)
+//   void __cdecl Entity_PrepareRender(undefined1 *entity, undefined4 slot, int flag, char mode)
 //   {
 //     undefined4 uVar1 = Calc_RenderObject((int)entity, (char)slot, flag);
 //     if ((char)uVar1 != '\0') {
@@ -27,7 +27,7 @@
 // ── PATRONES DE LLAMADA ───────────────────────────────────────────────────────
 //
 //   Terrain_Render llama siempre como:
-//     FUN_004fc030(entity, 0, 0, '\0')   → Entity_PrepareRender(entity, 0, 0, normal)
+//     Entity_PrepareRender(entity, 0, 0, '\0')   → Entity_PrepareRender(entity, 0, 0, normal)
 //   Inmediatamente seguido de:
 //     Entity_SpawnEffects(entity)               → Entity_Render_3D(entity)
 //

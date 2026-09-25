@@ -360,23 +360,15 @@ void Entity_Render(void)
 }
 
 
-// FUN_004fc030 @ 0x004fc030
+// Entity_PrepareRender @ 0x004fc030
 //
 // Entity_PrepareRender — validates an entity then sets up its render state.
 // Calls Calc_RenderObject (Entity_IsVisible) and, if non-zero, Draw_RenderObject
 // (Entity_SetupRenderState) to configure matrices/culling for the entity.
 
-void __cdecl FUN_004fc030(unsigned char *param_1,unsigned int param_2,int param_3,char param_4)
-
-{
-  undefined4 uVar1;
-
-  uVar1 = Calc_RenderObject((int)param_1,(char)param_2,param_3);
-  if ((char)uVar1 != '\0') {
-    Draw_RenderObject(param_1,param_2,param_3,param_4);
-  }
-  return;
-}
+// Entity_PrepareRender (0x004FC030) vive en src/Render/Entity_PrepareRender.cpp.
+// Aca habia una copia identica bajo el nombre Entity_PrepareRender -- mismo cuerpo, solo
+// cambiaban los tipos de los parametros.  Eliminada.
 
 
 // MoveCharacterClient — Entity_UpdateVisibility
@@ -458,7 +450,7 @@ void Entity_RenderAll_3D(void)
 // RenderBugs — RenderBugs (Entity_VisibilityCheckAll)
 // Itera el pool de butterflies/effect-entities (DAT_083a1218, 10 entries × 0x1BC).
 // Por cada entry activo: frustum test, si visible y (owner es player o type==0x330)
-// llama a FUN_004fc030 (render). Type 0x330 además spawnea sparkle.
+// llama a Entity_PrepareRender (render). Type 0x330 además spawnea sparkle.
 //
 // BUGFIX 2026-04-26: tenía AUTO-SKIP early-return. Reactivado y reescrito para
 // usar nuestro DAT_083a1218 array (stride 0x1bc, 10 entries). El layout original
@@ -492,7 +484,7 @@ uint RenderBugs(void)
     // player [type 390] or type==816) → PrepareRender + sparkle for type 816.
     // BUG-FIX 2026-07-16: se gateaba a state 5/2, EXCLUYENDO char-select (state 4).
     // Eso rompía el render de las monturas (Uniria bug=195 / Dinorant bug=267) que
-    // se crean con CreateBug y se dibujan acá vía FUN_004fc030 → Draw_RenderObject.
+    // se crean con CreateBug y se dibujan acá vía Entity_PrepareRender → Draw_RenderObject.
     // El IDA no tiene gate interno — Scene_CharSelect (0x523B30 L142) llama RenderBugs
     // directamente. Se agrega state 4.
     if (!(SceneFlag == 5 || SceneFlag == 4 || SceneFlag == 2)) return 0;
@@ -518,7 +510,7 @@ uint RenderBugs(void)
         }
 
         if (ownerIsPlayer || typeCode == 0x330) {
-            FUN_004fc030((unsigned char*)slot, 0u, 0, 0);
+            Entity_PrepareRender((unsigned char*)slot, 0u, 0, 0);
             if (typeCode == 0x330) {   // IDA: type==816 → sparkle 1150 (pool de efectos, no causa whiteout)
                 // Fairy helper sparkle effect
                 float intensity = (float)(_rand() % 30 + 70) * 0.01f;

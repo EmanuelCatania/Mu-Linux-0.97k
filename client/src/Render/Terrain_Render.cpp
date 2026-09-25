@@ -3,7 +3,8 @@
 
 // External helpers
 extern unsigned short __cdecl TestFrustrum2D(float x, float y, float z);
-extern void __cdecl FUN_004fc030(unsigned char *entity, unsigned int slot, int flag, char mode);
+// Entity_PrepareRender se declara en functions.h (que este archivo ya incluye);
+// la declaracion local de aca tenia otra firma y creaba una sobrecarga.
 extern void __cdecl CErrorReport_Write(void *buf, const char *msg);
 extern void __cdecl HashTable_Insert(void *ctx, void *obj, void *key);
 
@@ -81,7 +82,7 @@ void FUN_004fd800(void)
                                 HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
                             }
 
-                            FUN_004fc030((unsigned char*)entity, 0, 0, '\0');
+                            Entity_PrepareRender((unsigned char*)entity, 0, 0, '\0');
                             Entity_SpawnEffects((int)entity);
                         }
 
