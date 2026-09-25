@@ -446,7 +446,7 @@ int __stdcall MoveHeavenThunder_stub(void) {
     // dos llamadas que hacen el trabajo estaban solo como comentario
     // ("In original: complex phantom-register-based call"). La que faltaba y se
     // nota es `CreateEffect(182, ...)`: el tipo 182 es el modelo `cloud`
-    // (`OpenWorldModels` case 10 hace `AccessModel(182, "Data\Object11", "cloud", -1)`
+    // (`OpenWorldModels` case 10 hace `AccessModelWithTextures(182, "Data\Object11", "cloud", -1)`
     // + `OpenJPG("Effect\clouds.jpg", 1268)`), y `RenderEffects` lo dibuja por su
     // `case 182:`. O sea ESTE es el generador de las nubes de Icarus.
     //

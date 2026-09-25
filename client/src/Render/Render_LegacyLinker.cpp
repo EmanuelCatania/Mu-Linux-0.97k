@@ -67,21 +67,32 @@ void __cdecl EnableAlphaTest(bool enable) {
 // These are placeholders until the actual implementations are decompiled.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// 2026-05-05: AccessModel era stub vacío → ningún BMD de NPC se cargaba.
+// AccessModelWithTextures - DESVIACION DEL PORT, no existe en IDA.
+//
+// Envuelve a AccessModel (0x005060B0, el loader BMD crudo) y le agrega los dos
+// pasos que el port necesita para que un NPC quede utilizable: cargar su
+// textura y sembrar las velocidades de animacion.  Los ~42 call sites que la
+// usan son los que antes llamaban al nombre AccessModel cuando el loader crudo
+// todavia se llamaba FUN_005060b0.
+//
+// 2026-09-25: hasta el renombrado esta funcion SE llamaba AccessModel y convivia
+// con FUN_005060b0.  Al renombrar el loader crudo a AccessModel las dos quedaron
+// como sobrecargas (char* vs const char*), functions.h solo declaro la del loader
+// y este puente quedo muerto: los NPC cargaban su BMD pero sin velocidades de
+// animacion, o sea congelados -- y el herrero, cuyo sonido se dispara por rango
+// de frame, lo reproducia en loop.  Ver [[simbolo-duplicado-patron]].
+//
+// 2026-05-05: AccessModel era stub vacio -> ningun BMD de NPC se cargaba.
 // Solo el guardia (type=249) renderizaba porque usa player model 390 ya
-// cargado. Los demás NPCs (Storage, Smith, Wizard, etc.) llamaban a
-// AccessModel("Data\\Npc\\", "Storage", 1) etc pero el modelo nunca se
-// cargaba → invisible.
+// cargado. Los demas NPCs (Storage, Smith, Wizard, etc.) llamaban a
+// AccessModel(0x149, "Data\\Npc\\", "Storage", 1) etc pero el modelo nunca
+// cargaba -> invisible.
 //
-// AccessModel es la impl real del BMD loader (Monster_LoadModel) — ya
-// usado por OpenWorld para cargar Object1, Object11, etc. Misma signatura
-// (id, path, name, idx). Delegamos directamente.
-//
-// 2026-05-05 (followup): además llamar OpenTexture post-BMD
-// load. Sin esto los NPCs cargaban geometría pero las texturas no se
-// resolvían en los slots (IndexTexture[]) → render en blanco. El cliente
-// original sí hace este paso después del BMD load para NPCs.
-void __cdecl AccessModel(int id, char* path, char* name, int param) {
+// 2026-05-05 (followup): ademas llamar OpenTexture post-BMD load. Sin esto los
+// NPCs cargaban geometria pero las texturas no se resolvian en los slots
+// (IndexTexture[]) -> render en blanco. El cliente original si hace este paso
+// despues del BMD load para NPCs.
+void __cdecl AccessModelWithTextures(int id, char* path, char* name, int param) {
     AccessModel(id, path, name, param);
     // Path para OpenTexture: typically "Npc\" sin "Data\" prefijo (los
     // path-strippers en OpenTGA/740 ya lo manejan si viene completo).

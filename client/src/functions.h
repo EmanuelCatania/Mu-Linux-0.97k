@@ -769,6 +769,9 @@ uint  __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp); // fwrite
 void  __cdecl putc(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
 void  __cdecl FUN_0054150f(FILE* fp);                           // fclose-wrapper
 void  __cdecl AccessModel(int id, const char* dir, const char* file, int idx); // Monster_LoadBase
+// DESVIACION DEL PORT (no existe en IDA): AccessModel + OpenTexture + siembra de
+// velocidades de animacion.  Definida en Render/Render_LegacyLinker.cpp.
+void  __cdecl AccessModelWithTextures(int id, char* path, char* name, int param);
 void  __cdecl OpenTexture(int id, const char* prefix, int flags, char loop);   // Monster_LoadSound
 // ── GL_State sub-functions ────────────────────────────────────────────────────
 void  __cdecl GL_DisableCullFace(void);           // GL_SetTextureState

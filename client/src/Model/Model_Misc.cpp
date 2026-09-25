@@ -77,7 +77,7 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     // bucles venian con la BASE de la condicion tomada del argumento en vez del
     // valor inicial.  IDA los escribe asi (OpenSkills 0x0050B710 L91-97):
     //     v1 = 206;
-    //     do { AccessModel(v1, ..., v1 - 205); ++v1; } while ( v1 - 206 < 3 );
+    //     do { AccessModelWithTextures(v1, ..., v1 - 205); ++v1; } while ( v1 - 206 < 3 );
     // o sea la condicion usa el INICIO (206) y el argumento otra base (205).
     // El port usaba la del argumento en los dos lados, asi que cada bucle
     // cargaba (N - (inicio - base)) modelos en vez de N.
@@ -178,7 +178,7 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     DAT_0055a7c4 = 1;
 
     // IDA 0.98j: OpenSkills (0x523DC0) carga el Tamachan en el slot 183:
-    //     AccessModel(183, "Data\\Skill\\", "Tama", 1);
+    //     AccessModelWithTextures(183, "Data\\Skill\\", "Tama", 1);
     // Desviacion: en el 0.97k el 183 lo pisan los peces de Atlans
     // (OpenWorldModels case 7), asi que va al 193 (0xC1), libre y dentro de los
     // rangos que dibuja RenderEffects (190..268) y anima MoveEffect (174..268).

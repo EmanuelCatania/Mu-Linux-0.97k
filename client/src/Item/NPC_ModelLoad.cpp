@@ -30,12 +30,12 @@ void __cdecl OpenNpc_stub(int Type) {
 
     switch (Type) {
     case 0x14f:
-        AccessModel(0x14f, "Data\\Npc\\", "Female", 1);
+        AccessModelWithTextures(0x14f, "Data\\Npc\\", "Female", 1);
         for (int i = 1; i <= 3; i++) {
-            AccessModel(i + 0x15d, "Data\\Npc\\", "FemaleHead", i);
-            AccessModel(i + 0x15f, "Data\\Npc\\", "FemaleUpper", i);
-            AccessModel(i + 0x161, "Data\\Npc\\", "FemaleLower", i);
-            AccessModel(i + 0x165, "Data\\Npc\\", "FemaleBoots", i);
+            AccessModelWithTextures(i + 0x15d, "Data\\Npc\\", "FemaleHead", i);
+            AccessModelWithTextures(i + 0x15f, "Data\\Npc\\", "FemaleUpper", i);
+            AccessModelWithTextures(i + 0x161, "Data\\Npc\\", "FemaleLower", i);
+            AccessModelWithTextures(i + 0x165, "Data\\Npc\\", "FemaleBoots", i);
             OpenTexture(i + 0x15d, (void*)"Data\\Npc\\", 0x2600, true);
             OpenTexture(i + 0x15f, (void*)"Data\\Npc\\", 0x2600, true);
             OpenTexture(i + 0x161, (void*)"Data\\Npc\\", 0x2600, true);
@@ -43,12 +43,12 @@ void __cdecl OpenNpc_stub(int Type) {
         }
         break;
     case 0x150:
-        AccessModel(0x150, "Data\\Npc\\", "Man", 1);
+        AccessModelWithTextures(0x150, "Data\\Npc\\", "Man", 1);
         for (int i = 1; i <= 3; i++) {
-            AccessModel(i + 0x167, "Data\\Npc\\", "ManHead", i);
-            AccessModel(i + 0x169, "Data\\Npc\\", "ManUpper", i);
-            AccessModel(i + 0x16b, "Data\\Npc\\", "ManGloves", i);
-            AccessModel(i + 0x16d, "Data\\Npc\\", "ManBoots", i);
+            AccessModelWithTextures(i + 0x167, "Data\\Npc\\", "ManHead", i);
+            AccessModelWithTextures(i + 0x169, "Data\\Npc\\", "ManUpper", i);
+            AccessModelWithTextures(i + 0x16b, "Data\\Npc\\", "ManGloves", i);
+            AccessModelWithTextures(i + 0x16d, "Data\\Npc\\", "ManBoots", i);
             OpenTexture(i + 0x167, (void*)"Data\\Npc\\", 0x2600, true);
             OpenTexture(i + 0x169, (void*)"Data\\Npc\\", 0x2600, true);
             OpenTexture(i + 0x16b, (void*)"Data\\Npc\\", 0x2600, true);
@@ -56,60 +56,60 @@ void __cdecl OpenNpc_stub(int Type) {
         }
         break;
     case 0x151:
-        AccessModel(0x151, "Data\\Npc\\", "Girl", 1);
+        AccessModelWithTextures(0x151, "Data\\Npc\\", "Girl", 1);
         for (int i = 1; i <= 3; i++) {
-            AccessModel(i + 0x16f, "Data\\Npc\\", "GirlHead", i);
-            AccessModel(i + 0x171, "Data\\Npc\\", "GirlUpper", i);
-            AccessModel(i + 0x173, "Data\\Npc\\", "GirlLower", i);
+            AccessModelWithTextures(i + 0x16f, "Data\\Npc\\", "GirlHead", i);
+            AccessModelWithTextures(i + 0x171, "Data\\Npc\\", "GirlUpper", i);
+            AccessModelWithTextures(i + 0x173, "Data\\Npc\\", "GirlLower", i);
             OpenTexture(i + 0x16f, (void*)"Data\\Npc\\", 0x2600, true);
             OpenTexture(i + 0x171, (void*)"Data\\Npc\\", 0x2600, true);
             OpenTexture(i + 0x173, (void*)"Data\\Npc\\", 0x2600, true);
         }
         break;
     case 0x152:
-        AccessModel(0x152, "Data\\Npc\\", "Smith", 1);
+        AccessModelWithTextures(0x152, "Data\\Npc\\", "Smith", 1);
         LoadWaveFile(0x78, "Data\\Sound\\nBlackSmith.wav", 1, false);   // IDA: n<herrero>.wav
         break;
     case 0x153:
-        AccessModel(0x153, "Data\\Npc\\", "Wizard", 1);
+        AccessModelWithTextures(0x153, "Data\\Npc\\", "Wizard", 1);
         break;
     case 0x154:
-        AccessModel(0x154, "Data\\Npc\\", "SnowMerchant", 1);
+        AccessModelWithTextures(0x154, "Data\\Npc\\", "SnowMerchant", 1);
         break;
     case 0x155:
-        AccessModel(0x155, "Data\\Npc\\", "SnowSmith", 1);
+        AccessModelWithTextures(0x155, "Data\\Npc\\", "SnowSmith", 1);
         break;
     case 0x156:
-        AccessModel(0x156, "Data\\Npc\\", "SnowWizard", 1);
+        AccessModelWithTextures(0x156, "Data\\Npc\\", "SnowWizard", 1);
         break;
     case 0x157:
-        AccessModel(0x157, "Data\\Npc\\", "ElfWizard", 1);
+        AccessModelWithTextures(0x157, "Data\\Npc\\", "ElfWizard", 1);
         LoadWaveFile(0x78, "Data\\Sound\\nHarp.wav", 1, false);   // IDA: n<arpa>.wav
         break;
     case 0x158:
-        AccessModel(0x158, "Data\\Npc\\", "ElfMerchant", 1);
+        AccessModelWithTextures(0x158, "Data\\Npc\\", "ElfMerchant", 1);
         break;
     case 0x159:
-        AccessModel(0x159, "Data\\Npc\\", "Master", 1);
+        AccessModelWithTextures(0x159, "Data\\Npc\\", "Master", 1);
         break;
     case 0x15a:
-        AccessModel(0x15a, "Data\\Npc\\", "Storage", 1);
+        AccessModelWithTextures(0x15a, "Data\\Npc\\", "Storage", 1);
         break;
     case 0x15b:
-        AccessModel(0x15b, "Data\\Npc\\", "Tournament", 1);
+        AccessModelWithTextures(0x15b, "Data\\Npc\\", "Tournament", 1);
         break;
     case 0x15c:
-        AccessModel(0x15c, "Data\\Npc\\", "MixNpc", 1);
+        AccessModelWithTextures(0x15c, "Data\\Npc\\", "MixNpc", 1);
         LoadWaveFile(0x79, "Data\\Sound\\nMix.wav", 1, false);   // IDA: n<mix>.wav
         break;
     case 0x15d:
-        AccessModel(0x15d, "Data\\Npc\\", "DevilNpc", 1);
+        AccessModelWithTextures(0x15d, "Data\\Npc\\", "DevilNpc", 1);
         break;
     case 0x176:
         if (DAT_0055a7c4 == '\0') {
             OpenModel(0x176, "Data2\\Npc\\", "Sevina", "Sevina", (void*)&DAT_00559088);
         }
-        AccessModel(0x176, "Data\\Npc\\", "Sevina", 1);
+        AccessModelWithTextures(0x176, "Data\\Npc\\", "Sevina", 1);
         OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
         DAT_0055a7c4 = '\x01';
         break;
@@ -117,7 +117,7 @@ void __cdecl OpenNpc_stub(int Type) {
         if (DAT_0055a7c4 == '\0') {
             OpenModel(0x177, "Data2\\Npc\\", "BloodCastle1", "BloodCastle1", (void*)&DAT_00559088);
         }
-        AccessModel(0x177, "Data\\Npc\\", "BloodCastle", 1);
+        AccessModelWithTextures(0x177, "Data\\Npc\\", "BloodCastle", 1);
         OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
         DAT_0055a7c4 = '\x01';
         break;
@@ -125,7 +125,7 @@ void __cdecl OpenNpc_stub(int Type) {
         if (DAT_0055a7c4 == '\0') {
             OpenModel(0x178, "Data2\\Npc\\", "BloodCastle2", "BloodCastle2", (void*)&DAT_00559088);
         }
-        AccessModel(0x178, "Data\\Npc\\", "BloodCastle", 2);
+        AccessModelWithTextures(0x178, "Data\\Npc\\", "BloodCastle", 2);
         OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
         DAT_0055a7c4 = '\x01';
         break;
@@ -133,7 +133,7 @@ void __cdecl OpenNpc_stub(int Type) {
         if (DAT_0055a7c4 == '\0') {
             OpenModel(0x179, "Data2\\Npc\\", "DeviasTrader1", "DeviasTrader1", "DeviasTrader1", (void*)&DAT_00559088);
         }
-        AccessModel(0x179, "Data\\Npc\\", "DeviasTrader", 1);
+        AccessModelWithTextures(0x179, "Data\\Npc\\", "DeviasTrader", 1);
         OpenTexture(Type, (void*)"Data\\Npc\\", 0x2600, true);
         DAT_0055a7c4 = '\x01';
         break;

@@ -400,7 +400,7 @@ void __cdecl OpenWorldModels(void) {
     case 7:
         // BUG-FIX 2026-08-17: el basename era "Object8" → pedía Object802..Object810,
         // que no existen; los 9 peces de Atlans no cargaban. IDA 0050C4D0 L171:
-        //   AccessModel(v3, "Data\Object8\", "Fish", v3 - 180)  para v3 = 182..190
+        //   AccessModelWithTextures(v3, "Data\Object8\", "Fish", v3 - 180)  para v3 = 182..190
         for (int i = 0xb6; i < 0xbf; i++) {
             AccessModel(i, "Data/Object8/", "Fish", i - 0xb4);
             OpenTexture(i, "Object8/", 0x2600, '\x01');
@@ -434,7 +434,7 @@ void __cdecl OpenWorldModels(void) {
     case 10:
         // IDA 0050C4D0 L209-214 (segundo switch, el que corre siempre):
         //     OpenJPG("Effect\clouds.jpg",     0x4F4u, ...);
-        //     AccessModel(182, "Data\Object11", "cloud", -1);
+        //     AccessModelWithTextures(182, "Data\Object11", "cloud", -1);
         //     OpenTexture(182, "Object11\\", 9728, 1);
         //     OpenJPG("Effect\cloudLight.jpg", 0x4F5u, ...);
         //
@@ -449,13 +449,13 @@ void __cdecl OpenWorldModels(void) {
         break;
     case 0xb: case 0xc: case 0xd: case 0xe: case 0xf: case 0x10:
         // Blood Castle.  Port 1:1 de IDA 0x50C4D0 L228-242:
-        //     AccessModel(184, "Data\\Object12\\", "Crow", 1);
+        //     AccessModelWithTextures(184, "Data\\Object12\\", "Crow", 1);
         //     OpenTexture(184, "Object12\\", 9728, 1);
-        //     AccessModel(262/263, "Data\\Object12\\", "Gate", 1/2);
-        //     AccessModel(260/261, "Data\\Object12\\", "StoneCoffin", 1/2);
+        //     AccessModelWithTextures(262/263, "Data\\Object12\\", "Gate", 1/2);
+        //     AccessModelWithTextures(260/261, "Data\\Object12\\", "StoneCoffin", 1/2);
         //     for (k=0;k<2;k++) OpenTexture(k+262, "Monster\\", 9728, 1);
         //     for (m=0;m<2;m++) OpenTexture(m+260, "Monster\\", 9728, 1);
-        //     AccessModel(185, "Data\\Object12\\", "Shine", 1);
+        //     AccessModelWithTextures(185, "Data\\Object12\\", "Shine", 1);
         //     OpenTexture(185, "Object12\\", 9728, 1);
         //
         // 2026-09-04 FIX, tres cosas:

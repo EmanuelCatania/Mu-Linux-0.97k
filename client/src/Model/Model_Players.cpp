@@ -240,8 +240,8 @@ void __cdecl Model_LoadItemMeshes(void)
     for (int i = 0x35d; i-0x35d < 2; i++)
         AccessModel(i, "Data\\Item\\", "Jewel", i - 0x35c);
 
-    AccessModel(MODEL_POTION + 13, (char*)"Data\\Item\\", (char*)"Jewel", 1);
-    AccessModel(MODEL_POTION + 14, (char*)"Data\\Item\\", (char*)"Jewel", 2);
+    AccessModelWithTextures(MODEL_POTION + 13, (char*)"Data\\Item\\", (char*)"Jewel", 1);
+    AccessModelWithTextures(MODEL_POTION + 14, (char*)"Data\\Item\\", (char*)"Jewel", 2);
     OpenTexture(MODEL_POTION + 13, (void*)"Item\\", 0x2600, true);
     OpenTexture(MODEL_POTION + 14, (void*)"Item\\", 0x2600, true);
 
@@ -295,7 +295,7 @@ void __cdecl Model_LoadItemMeshes(void)
     // cargaba: la fruta quedaba invisible en el grid del inventario y por eso
     // no habia nada que hoverear para que saliera su tooltip.
     // IDA 0x5079D0 L203-209:
-    //   v30 = 830; do { AccessModel(v30, ..., "Quest", v30 - 826); ++v30; }
+    //   v30 = 830; do { AccessModelWithTextures(v30, ..., "Quest", v30 - 826); ++v30; }
     //   while (v30 - 830 < 2);      // -> 830 (Quest04) y 831 (Quest05)
     for (int i = 0x33e; i-0x33e < 2; i++)
         AccessModel(i, "Data\\Item\\", "Quest", i - 0x33a);
