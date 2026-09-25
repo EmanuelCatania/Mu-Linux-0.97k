@@ -41,7 +41,7 @@ int RenderErrorMessage(void)
   GL_ResetState();
   glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
   SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
-  DAT_00559c80 = 0;
+  SetBackgroundTextColor = 0;
   DAT_00559c78 = 0xffffffff;
   if (DAT_083a7c24 != 0) {
     if (DAT_083a7c24 == 0x6e) {
@@ -149,7 +149,7 @@ int RenderErrorMessage(void)
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
       UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x23,
                    (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
-      if (DAT_00559c5c == '\0') {
+      if (m_bAutoAttack == '\0') {
         pcVar14 = s__s_Off_00561854;
       }
       else {
@@ -161,7 +161,7 @@ int RenderErrorMessage(void)
       GetTextExtentPointA(DAT_055c9fec,local_64,iVar3,ptVar17);
       UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,local_64,
                    (LPSIZE)0x0,'\0',0);
-      if (DAT_07e11d80 == '\0') {
+      if (m_bWhisperSound == '\0') {
         pcVar14 = s__s_Off_00561864;
       }
       else {
@@ -631,13 +631,13 @@ LAB_0051c13d:
     ppCVar11 = lpString_07d469b0;
     break;
   case 0x74:
-    if (DAT_07eaa108 == 0) {
+    if (StorageGoldFlag == 0) {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d48954);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d48954,iVar3,ptVar17);
       ppCVar11 = lpString_07d48954;
     }
-    else if (DAT_07eaa108 == 1) {
+    else if (StorageGoldFlag == 1) {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d48a80);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d48a80,iVar3,ptVar17);
@@ -913,8 +913,8 @@ LAB_0051c13d:
     local_d8 = 0x140;
     SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
     glColor3f(1.0f, 1.0f, 0.0f);  // BUG-FIX
-    uVar5 = ((int)DAT_07eaa16c < 0) - 1 & DAT_07eaa16c;
-    if (DAT_07eaa16c == 0xb) {
+    uVar5 = ((int)MixType < 0) - 1 & MixType;
+    if (MixType == 0xb) {
       uVar5 = 7;
 LAB_0051d2dd:
       iVar3 = uVar5 + 0x25f;

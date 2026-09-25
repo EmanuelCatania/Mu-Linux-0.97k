@@ -257,7 +257,7 @@ void HUD_BottomBarButtons_HitTest(void)
         DAT_083a7c24 == 126 ||               // ErrorMessage: expulsar del guild
         DAT_083a7c24 == 152 ||
         _g_bEventChipDialogEnable ||
-        DAT_07eaa130 ||                      // g_bServerDivisionEnable
+        ServerDivisionOpened ||                      // g_bServerDivisionEnable
         HUD_IsQuestPanelOpenRuntime())
         return;
 
@@ -338,7 +338,7 @@ void HUD_BottomBarButtons_HitTest(void)
 //
 // Se suprime mientras haya algún modo de entrada de texto activo (chat, IME, texto de login)
 // para que tipear letras en el chat no invierta paneles sin querer.
-// 2026-05-04: defensive guard — DAT_07e11d70/d71 (ChatMode/IME) get corrupted
+// 2026-05-04: defensive guard — GuildInputEnable/d71 (ChatMode/IME) get corrupted
 // a 0xFF (-1 con signo) por ALGÚN código, poco después de abrir el inventario. El
 // writer is hard to find via grep (no literal -1 store).  As a defense, clamp
 // cualquier valor que no sea {0,1} a 0 al inicio de cada llamada a Player_InputTick Y logueamos
@@ -348,7 +348,7 @@ extern char g_PadAfterChatMode[64];
 static void ClampChatModeIME(const char* tag)
 {
     static int s_logs = 0;
-    BYTE chat = (BYTE)DAT_07e11d70;
+    BYTE chat = (BYTE)GuildInputEnable;
     BYTE ime  = (BYTE)DAT_07e11d71;
     if (chat > 1 || ime > 1) {
         if (s_logs < 8) {
@@ -363,7 +363,7 @@ static void ClampChatModeIME(const char* tag)
                 (BYTE)g_PadAfterChatMode[0],  (BYTE)g_PadAfterChatMode[63]);
             DbgLogPublic(b);
         }
-        if (chat > 1) DAT_07e11d70 = 0;
+        if (chat > 1) GuildInputEnable = 0;
         if (ime  > 1) DAT_07e11d71 = 0;
     }
 
@@ -375,7 +375,7 @@ static void ClampChatModeIME(const char* tag)
     // escritor real.
     {
         static BYTE s_prevChat = 0;
-        BYTE now = (BYTE)DAT_07e11d70;
+        BYTE now = (BYTE)GuildInputEnable;
         if (now == 1 && s_prevChat == 0) {
             static int s_onLogs = 0;
             if (s_onLogs < 12) {
@@ -402,7 +402,7 @@ static bool HUD_IsQuestPanelOpenRuntime(void)
 
 static bool HUD_IsGoldenArcherPanelRuntime(void)
 {
-    return (DAT_07eaa128 != 0 && DAT_07eaa128 != 3);
+    return (GoldenArcherOpenType != 0 && GoldenArcherOpenType != 3);
 }
 
 static bool HUD_IsGuildCreationRuntime(void)
@@ -431,7 +431,7 @@ static bool HUD_IsInventoryFamilyActive(void)
            (DAT_07eaa11c != 0) ||   // EventWindowOpened
            (DAT_07eaa124 != 0) ||   // GuildCreatorOpened
            HUD_IsGoldenArcherPanelRuntime() ||
-           (DAT_07eaa130 != 0) ||   // ServerDivisionOpened
+           (ServerDivisionOpened != 0) ||   // ServerDivisionOpened
            HUD_IsQuestPanelOpenRuntime();
 }
 
@@ -445,7 +445,7 @@ static bool HUD_IsAnyRightPanelOpen(void)
 static void HUD_HotkeyTick(void)
 {
     ClampChatModeIME("HKT_enter");
-    if (DAT_07e11d70 != '\0') return;  // g_ChatMode
+    if (GuildInputEnable != '\0') return;  // g_ChatMode
     if (DAT_00559c84 != '\0') return;  // g_TextMode (login / dialog text)
     if (DAT_07e11d71 != '\0') return;  // g_IME_Mode
     // IDA Chat_InputTick L3976-3985: ANTES de mirar cualquier hotkey de panel,
@@ -480,7 +480,7 @@ static void HUD_HotkeyTick(void)
         DAT_083a7c24 == 126 ||               // ErrorMessage: expulsar del guild
         DAT_083a7c24 == 152 ||
         _g_bEventChipDialogEnable ||         // Golden Archer / chip de evento
-        DAT_07eaa130 ||                      // g_bServerDivisionEnable
+        ServerDivisionOpened ||                      // g_bServerDivisionEnable
         HUD_IsQuestPanelOpenRuntime())
         return;
 
@@ -684,7 +684,7 @@ void __cdecl Player_ProcessInput(void)
     if (DAT_00559c84 != '\0'
         && *(char*)((int)DAT_07abf5d8 + 0x34e) != '\0'
         && SelectedCharacter != -1
-        && DAT_083a42d0 != '\0')
+        && MouseRButtonPush != '\0')
     {
         unsigned char *hoverEntity = (unsigned char*)(DAT_07abf5d0 + SelectedCharacter * 0x394);
         unsigned char *nameSrc     = hoverEntity + 0x1c1;
@@ -1235,7 +1235,7 @@ void __cdecl Player_ProcessInput(void)
         // (31 tras una ruta de 9 waypoints) eso es 1 de cada 31 frames.
         {
             const bool bHasClick = (bMousePush || bClickHeld || bClickLatched);
-            const bool bAutoAttackEngaged = (DAT_00559c5c != 0)
+            const bool bAutoAttackEngaged = (m_bAutoAttack != 0)
                                          && (World != 6)
                                          && (g_Attacking == 1)
                                          && (SelectedCharacter != -1);
@@ -1360,7 +1360,7 @@ void __cdecl Player_ProcessInput(void)
                 // el ataque continua al soltar mientras el objetivo siga
                 // vivo (sub_4B0310 lo mantiene fijo).  Antes solo pegaba en el
                 // frame del click.
-                const bool bAutoAttackGoOn = DAT_00559c5c != 0          // m_bAutoAttack
+                const bool bAutoAttackGoOn = m_bAutoAttack != 0          // m_bAutoAttack
                                           && World != 6           // World
                                           && (int)Attacking == 1;     // Attacking
                 if (SelectedCharacter > -1 && (bClickEdge || bClickHeld || bAutoAttackGoOn)) {
@@ -1407,8 +1407,8 @@ void __cdecl Player_ProcessInput(void)
                     // entonces pathfind iba a un tile aleatorio basado en
                     // frame number → user reportó que click far mob no movía
                     // al hero pero hacía attack animation in place.
-                    DAT_07e016c0 = (DWORD)dstX;
-                    DAT_07e016c4 = (DWORD)dstY;
+                    TargetX = (DWORD)dstX;
+                    TargetY = (DWORD)dstY;
 
                     DAT_07db8708    = (int)*(short*)(tgtEntityBase + 2);
                     _DAT_07e118e4   = *(DWORD*)(tgtEntityBase + 0x24);
@@ -1558,10 +1558,10 @@ void __cdecl Player_ProcessInput(void)
                 // DEL OBJETO, no del tile bajo el cursor.  IDA L1138:
                 //     TargetX = (__int64)(o->Position[0] * 0.01);
                 //     TargetY = (__int64)(o->Position[1] * 0.01);
-                DAT_07e016c0 = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x10) * 0.01f);
-                DAT_07e016c4 = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x14) * 0.01f);
+                TargetX = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x10) * 0.01f);
+                TargetY = (DWORD)(int)(*(float*)(tgtEntityPtr + 0x14) * 0.01f);
 
-                const int attrIdx = TERRAIN_INDEX((int)DAT_07e016c0, (int)DAT_07e016c4);
+                const int attrIdx = TERRAIN_INDEX((int)TargetX, (int)TargetY);
                 if (((unsigned char*)&DAT_0838bc70)[attrIdx] < 2
                     && *(char*)(ent + 0x2ec) == 0)
                 {
@@ -1572,7 +1572,7 @@ void __cdecl Player_ProcessInput(void)
                     const int srcX = *(int*)(ent + 0x388);
                     const int srcY = *(int*)(ent + 0x38c);
                     unsigned int ok = Path_FindRoute(srcX, srcY,
-                                                     DAT_07e016c0, DAT_07e016c4,
+                                                     TargetX, TargetY,
                                                      ent + 0x354, 0.0f);
                     if ((char)ok == 0) {
                         // LABEL_312: sin camino (ya estamos al lado) ->
@@ -1611,8 +1611,8 @@ void __cdecl Player_ProcessInput(void)
                     int dstX = *(int*)(tgtBase + 0x388);
                     int dstY = *(int*)(tgtBase + 0x38c);
                     // 2026-05-07 BUG-FIX: dst grid coords del NPC, NO el animTick.
-                    DAT_07e016c0 = (DWORD)dstX;
-                    DAT_07e016c4 = (DWORD)dstY;
+                    TargetX = (DWORD)dstX;
+                    TargetY = (DWORD)dstY;
 
                     unsigned int ok = Path_FindRoute(srcX, srcY,
                                                     dstX, dstY,
@@ -1648,8 +1648,8 @@ void __cdecl Player_ProcessInput(void)
                 // que la pos está en itemEnt+88/92.
                 int dstX = (int)(*(float*)(itemEnt + 88) / 100.0f);
                 int dstY = (int)(*(float*)(itemEnt + 92) / 100.0f);
-                DAT_07e016c0 = (DWORD)dstX;
-                DAT_07e016c4 = (DWORD)dstY;
+                TargetX = (DWORD)dstX;
+                TargetY = (DWORD)dstY;
                 int srcX = *(int*)(ent + 0x388);
                 int srcY = *(int*)(ent + 0x38c);
 
@@ -1763,8 +1763,8 @@ void __cdecl Player_ProcessInput(void)
                         // Cast directo a int.
                         float pickWX = *(float*)&DAT_080ab288;
                         float pickWY = *(float*)&DAT_080ab28c;
-                        DAT_07e016c0 = (DWORD)(int)pickWX;
-                        DAT_07e016c4 = (DWORD)(int)pickWY;
+                        TargetX = (DWORD)(int)pickWX;
+                        TargetY = (DWORD)(int)pickWY;
                         // DAT_07e11d64 es `DontMove` (0x07E11D64 en el binario), NO un
                         // "walkable": es COSMETICO, sólo elige el sprite del cursor
                         // (10 = prohibido / 3 = mover) en el render del puntero. No
@@ -1780,7 +1780,7 @@ void __cdecl Player_ProcessInput(void)
                         // o sea DontMove = true  <=>  attr >= 8 && !(attr & 0x20),
                         // que es exactamente lo que hace la forma de abajo. Es fiel;
                         // el nombre "walkability" del comentario viejo confundía.
-                        int terrIdx = DAT_07e016c0 + DAT_07e016c4 * 0x100;
+                        int terrIdx = TargetX + TargetY * 0x100;
                         unsigned char terrAttr = ((unsigned char*)&DAT_0838bc70)[terrIdx];
                         if (terrAttr < 8 || (terrAttr & 0x20) == 0x20)
                             DAT_07e11d64 = 0;   // DontMove = false
@@ -1818,14 +1818,14 @@ void __cdecl Player_ProcessInput(void)
                                     if (abs(srcY - heroGY) >= 2) goto end_tick_inc;
                                 }
                                 if (bMoving &&
-                                    srcX == (int)DAT_07e016c0 && srcY == (int)DAT_07e016c4) {
+                                    srcX == (int)TargetX && srcY == (int)TargetY) {
                                     DAT_07e11d28 = 0;          // IDA LABEL_389
                                     goto end_tick_inc;
                                 }
                             }
 
                             unsigned int ok = Path_FindRoute(srcX, srcY,
-                                                            DAT_07e016c0, DAT_07e016c4,
+                                                            TargetX, TargetY,
                                                             ent + 0x354, 0.0f);
                             if ((char)ok != '\0') {
                                 *(unsigned char*)(ent + 0x2ed) = 0;
@@ -1890,7 +1890,7 @@ end_tick:
             int idx = gx + (gy << 8);
             if (idx < 0)       idx = 0;
             if (idx > 0xffff)  idx = 0xffff;
-            DAT_07e118e8 = ((unsigned char*)&DAT_080bb2b4)[idx];
+            DAT_07e118e8 = ((unsigned char*)&TerrainMappingLayer1)[idx];
         }
     }
 }

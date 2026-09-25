@@ -97,7 +97,7 @@ void __stdcall InitGame(void)
     Attacking = -1;    // Attacking (IDA InitGame L38, global 0x00559C58).
                           // Antes escribia DAT_07e11984, que es el debounce de
                           // la flecha arriba del chat.
-    DAT_00559c5c = 1;     // m_bAutoAttack (IDA InitGame L39, 0x00559C5C)
+    m_bAutoAttack = 1;     // m_bAutoAttack (IDA InitGame L39, 0x00559C5C)
     DAT_07e11d24 = 0;     // _CheckInventory
     // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (World).
     // El port escribia DAT_005615c4, que es g_lpszMp3[0] — el puntero al mp3 de
@@ -138,7 +138,7 @@ void __stdcall InitGame(void)
     DAT_07e11e20 = -1;    // g_shMutoNumber[0]
     DAT_07e11e22 = -1;    // g_shMutoNumber[1]
     DAT_07e11e24 = -1;    // g_shMutoNumber[2]
-    DAT_07e11d80 = 0;     // m_bWhisperSound (IDA InitGame L167, 0x07E11D80)
+    m_bWhisperSound = 0;     // m_bWhisperSound (IDA InitGame L167, 0x07E11D80)
     ClearWhisperID();     // IDA: ClearWhisperID (0x004804D0).  Antes llamaba a
                           // FUN_00482350, que no es una funcion (cae dentro de sub_4824C0).
     clearMatchInfo();       // clearMatchInfo (0x0047EB80; antes se llamaba a

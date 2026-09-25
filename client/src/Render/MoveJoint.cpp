@@ -721,7 +721,7 @@ LAB_0047036e:
         }
 
         /* HashTable obfuscation block skipped */
-        // (ref-count insert/remove on DAT_055c9bc8/bcc/bd0/bd4 — not game logic)
+        // (ref-count insert/remove on MAIN_HASH_CLASS/bcc/bd0/bd4 — not game logic)
 
         // Harmonic oscillation seed for wispy movement
         uVar7  = param_2 & 0x80000001;

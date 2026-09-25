@@ -69,7 +69,7 @@ int g_CfgResolution = -1;
 // previo a esa llamada (y el correcto para 640x480).
 float _DAT_055c9b70 = 1.0f;  // g_fScreenRate_x
 float _DAT_055c9b74 = 1.0f;  // g_fScreenRate_y
-char  ConfigLoginVersion[12] = {}; // IDA: DAT_055c9bac — config.ini [LOGIN] Version string
+char  ConfigLoginVersion[12] = {}; // IDA: m_ExeVersion — config.ini [LOGIN] Version string
 
 // Forward declarations
 // Path_GetBasename  @ 0x00412BE0 — extracts filename from a full path/cmdline string
@@ -95,8 +95,8 @@ int Config_Load(void)
     strcat_s(configPath, MAX_PATH, "config.ini");
 
     // --- 2. Read [LOGIN] Version from config.ini ---
-    //   GetPrivateProfileStringA("LOGIN", "Version", "", DAT_055c9bac, 11, configPath)
-    //   Result: 10-char version string (e.g. "1.00h") at DAT_055c9bac
+    //   GetPrivateProfileStringA("LOGIN", "Version", "", m_ExeVersion, 11, configPath)
+    //   Result: 10-char version string (e.g. "1.00h") at m_ExeVersion
     GetPrivateProfileStringA("LOGIN", "Version", "", ConfigLoginVersion, 11, configPath);
 
     // --- 3. Extract exe name + read PE version ---
@@ -121,7 +121,7 @@ int Config_Load(void)
         // Ghidra @ 0x0041e272: RegQueryValueExA(hKey, lpValueName_00559450, NULL, NULL,
         //                       (LPBYTE)0x055c9ba0, &DStack_330=0xb)
         // Usado luego por MoveLogInScene para prefilear DAT_07db8710 (InputText[0]=username).
-        // ¡OJO! En el port anterior se escribía a DAT_055c9bac pisando la versión de config.ini.
+        // ¡OJO! En el port anterior se escribía a m_ExeVersion pisando la versión de config.ini.
         DWORD dwSize = 11;
         RegQueryValueExA(hKey, "ID", NULL, NULL, (LPBYTE)lpData_055c9ba0, &dwSize);
 

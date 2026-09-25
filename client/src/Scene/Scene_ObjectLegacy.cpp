@@ -5,7 +5,7 @@
 #include "functions.h"
 #include "structs.h"
 
-extern "C" DWORD DAT_07eaa128;
+extern "C" DWORD GoldenArcherOpenType;
 extern void __cdecl operator_delete(void* ptr);
 extern void FUN_004fa5a0(void);
 #ifndef qmemcpy

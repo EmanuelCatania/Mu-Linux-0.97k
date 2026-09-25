@@ -38,7 +38,7 @@
 //
 //   DAT_00561574   int   g_bound_texture_id   last texture bound (avoids redundant calls)
 //   DAT_00561570   int   g_screen_height      used in Texture_Draw2D for Y-flip
-//   DAT_083bb9d0   int   g_vram_used          running tally of texture memory (bpp*w*h bytes)
+//   m_dwUsedTextureMemory   int   g_vram_used          running tally of texture memory (bpp*w*h bytes)
 //
 // ── FILE FORMAT ───────────────────────────────────────────────────────────────
 //
@@ -122,7 +122,7 @@ static TexSlot* TexTable = (TexSlot*)g_BitmapsRaw;
 
 extern int  g_bound_texture_id;   // DAT_00561574
 extern int  g_screen_height;      // DAT_00561570
-extern int  g_vram_used;          // DAT_083bb9d0
+extern int  g_vram_used;          // m_dwUsedTextureMemory
 // g_tex_ext_mode is declared via #define in globals.h as DAT_0055a7c4 (char)
 extern char g_tex_base_dir[];     // DAT_0055a7a4  base directory string
 extern char g_tex_ext_hq[];       // DAT_0055a79c  high-quality extension (e.g. ".OZJ")
@@ -677,8 +677,8 @@ int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int fla
     memset(pixels, 0, (size_t)pow2_w * pow2_h * 3);
     slot->Buffer = pixels;
 
-    // Track VRAM usage (DAT_083bb9d0)
-    *(int*)&DAT_083bb9d0 += 3 * pow2_w * pow2_h;
+    // Track VRAM usage (m_dwUsedTextureMemory)
+    *(int*)&m_dwUsedTextureMemory += 3 * pow2_w * pow2_h;
 
     // --- Read scanlines ---
     int row_stride = components * img_w;
@@ -852,7 +852,7 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
         // `operator_new(4 * v21 * v22)` y luego rellena solo width x height.
         memset(pixBuf, 0, (size_t)pw * ph * 4);
         texPix[uiTextureIndex * 0xe] = (UINT)(uintptr_t)pixBuf;
-        *(int*)&DAT_083bb9d0 += 4 * pw * ph;
+        *(int*)&m_dwUsedTextureMemory += 4 * pw * ph;
 
         // ── BGR(A) → RGBA copy, TGA row-0 = bottom → flip vertically ─────────
         BYTE* src = PakBuffer + hdrOff + 6;
@@ -949,7 +949,7 @@ void __cdecl UnloadImage(int param_1)
             texArr_ca0[param_1 * 0xe] = 0;  // approximated from (&DAT_083a7ca0)[iVar1]
             operator_delete((unsigned char*)pixels);
             texArr_cd4[param_1 * 0xe] = 0;
-            (void)cVar2; // used in original for DAT_083bb9d0 -= cVar2 * w * h
+            (void)cVar2; // used in original for m_dwUsedTextureMemory -= cVar2 * w * h
         }
     }
 }

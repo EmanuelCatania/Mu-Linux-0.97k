@@ -10,7 +10,7 @@
 //   DAT_081cb608 — float[256][256][3] per-tile RGB light colour (bilinear)
 //   DAT_0828b608 — source RGB light colour table (read-only)
 //   DAT_0839bc84 — flag: light map enabled
-//   DAT_0839bc90/94 — current dirty rect corners
+//   FrustrumBoundMinX_1/94 — current dirty rect corners
 
 #include "stdafx.h"
 
@@ -186,14 +186,14 @@ int FUN_004f95e0_DISABLED(void)
   float10 fVar13;
   ulonglong uVar14;
 
-  iVar10 = DAT_0055a778 + 3;
-  uVar8 = DAT_0839bc94;
-  if ((int)DAT_0839bc94 <= iVar10) {
-    iVar4 = DAT_0055a774 + 3;
-    uVar7 = DAT_0839bc94;
+  iVar10 = FrustrumBoundMaxY_1 + 3;
+  uVar8 = FrustrumBoundMinY_1;
+  if ((int)FrustrumBoundMinY_1 <= iVar10) {
+    iVar4 = FrustrumBoundMaxX_1 + 3;
+    uVar7 = FrustrumBoundMinY_1;
     do {
-      if ((int)DAT_0839bc90 <= iVar4) {
-        uVar5 = DAT_0839bc90;
+      if ((int)FrustrumBoundMinX_1 <= iVar4) {
+        uVar5 = FrustrumBoundMinX_1;
         do {
           iVar2 = (uVar5 & 0xff) + (uVar7 & 0xff) * 0x100;
           iVar3 = iVar2 * 0xc;
@@ -201,7 +201,7 @@ int FUN_004f95e0_DISABLED(void)
           *(undefined4 *)(&DAT_081cb608 + iVar3) = DAT_0828b608[iVar2 * 3];
           *(undefined4 *)(&DAT_081cb60c + iVar3) = (&DAT_0828b60c)[iVar2 * 3];
           *(undefined4 *)(&DAT_081cb610 + iVar3) = (&DAT_0828b610)[iVar2 * 3];
-          uVar8 = DAT_0839bc94;
+          uVar8 = FrustrumBoundMinY_1;
         } while ((int)uVar5 <= iVar4);
       }
       uVar7 = uVar7 + 1;
@@ -222,13 +222,13 @@ int FUN_004f95e0_DISABLED(void)
   iVar2 = World;
   if ((int)uVar8 <= iVar10) {
     iVar9 = uVar8 << 8;
-    iVar3 = DAT_0055a774 + 3;
+    iVar3 = FrustrumBoundMaxX_1 + 3;
     iVar10 = (iVar10 - uVar8) + 1;
     do {
-      fVar12 = (float10)(int)DAT_0839bc90;
-      if ((int)DAT_0839bc90 <= iVar3) {
-        iVar4 = (iVar3 - DAT_0839bc90) + 1;
-        pfVar6 = (float *)(&DAT_07eab200 + (iVar9 + DAT_0839bc90) * 4);
+      fVar12 = (float10)(int)FrustrumBoundMinX_1;
+      if ((int)FrustrumBoundMinX_1 <= iVar3) {
+        iVar4 = (iVar3 - FrustrumBoundMinX_1) + 1;
+        pfVar6 = (float *)(&DAT_07eab200 + (iVar9 + FrustrumBoundMinX_1) * 4);
         do {
           fVar1 = _DAT_00552660;
           if (iVar2 == 8) {

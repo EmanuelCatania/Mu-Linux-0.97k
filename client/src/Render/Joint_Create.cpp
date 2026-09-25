@@ -527,7 +527,7 @@ switchD_0046dd50_default:
       case 0:
         local_98 = (byte*)DAT_07cf1ffc;
         local_80 = (byte*)DAT_07cf1ffc;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
         local_98 = (byte *)0x0;
         local_88 = (byte*)0x0;
         if (DAT_055c9bd4 != 0) {
@@ -572,7 +572,7 @@ switchD_0046dd50_default:
             if (iVar11 == 0) {
               if (uVar9 == 0xffffffff) goto LAB_0046e550;
               local_80 = pbVar10;
-              uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(pbVar10);
+              uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
               local_88 = (byte*)0x0;
               local_8c = (byte*)0x0;
               if (DAT_055c9bd4 != 0) goto LAB_0046e62c;
@@ -586,7 +586,7 @@ switchD_0046dd50_default:
 LAB_0046e550:
         local_98 = (byte*)operator_new(0x585);
         local_98[0x584] = 1;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(pbVar10);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
         local_84 = (byte *)0x0;
         local_8c = (byte*)0x0;
         if (DAT_055c9bd4 != 0) {
@@ -767,7 +767,7 @@ LAB_0046e742:
       case 5:
         local_84 = (byte*)DAT_07cf1ffc;
         local_7c = (byte*)DAT_07cf1ffc;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
         local_98 = (byte *)0x0;
         if (DAT_055c9bd4 != 0) {
           do {
@@ -810,7 +810,7 @@ LAB_0046e742:
             if (iVar11 == 0) {
               if (uVar9 == 0xffffffff) goto LAB_0046ea53;
               local_84 = pbVar10;
-              uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(pbVar10);
+              uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
               pbVar10 = (byte *)0x0;
               if (DAT_055c9bd4 != 0) goto LAB_0046eb2f;
               goto LAB_0046eb8a;
@@ -823,7 +823,7 @@ LAB_0046e742:
 LAB_0046ea53:
         local_88 = (byte*)operator_new(0x585);
         local_88[0x584] = 1;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(pbVar10);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
         local_84 = (byte *)0x0;
         pbVar26 = (byte *)0x0;
         if (DAT_055c9bd4 != 0) {
@@ -2186,7 +2186,7 @@ LAB_0046eb9e:
   }
 LAB_0046ec6d:
   pbVar10 = (byte*)DAT_07cf1ffc;
-  iVar6 = DAT_055c9bc8;
+  iVar6 = MAIN_HASH_CLASS;
   local_8c = (byte*)DAT_07cf1ffc;
   local_88 = (byte*)DAT_07cf1ffc;
   pcVar14[0x9d3] = ((byte*)DAT_07cf1ffc)[0x580];
@@ -2232,7 +2232,7 @@ LAB_0046ec6d:
       if (iVar6 == 0) {
         if (uVar9 == 0xffffffff) goto LAB_0046ee73;
         local_8c = (byte*)(uintptr_t)(int)local_90;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))((void*)(uintptr_t)(int)local_90);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))((void*)(uintptr_t)(int)local_90);
         pbVar10 = (byte *)0x0;
         if (DAT_055c9bd4 != 0) goto LAB_0046ed54;
         goto LAB_0046edb0;
@@ -2443,7 +2443,7 @@ LAB_0046e69b:
   }
 LAB_0046e76a:
   pbVar10 = (byte*)DAT_07cf1ffc;
-  iVar6 = DAT_055c9bc8;
+  iVar6 = MAIN_HASH_CLASS;
   local_8c = (byte*)DAT_07cf1ffc;
   local_88 = (byte*)DAT_07cf1ffc;
   pcVar14[0x9d3] = ((byte*)DAT_07cf1ffc)[0x580];
@@ -2489,7 +2489,7 @@ LAB_0046e76a:
       if (iVar6 == 0) {
         if (uVar9 == 0xffffffff) goto LAB_0046e970;
         local_8c = (byte*)(uintptr_t)(int)local_90;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))((void*)(uintptr_t)(int)local_90);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))((void*)(uintptr_t)(int)local_90);
         pbVar10 = (byte *)0x0;
         if (DAT_055c9bd4 != 0) goto LAB_0046e851;
         goto LAB_0046e8ad;

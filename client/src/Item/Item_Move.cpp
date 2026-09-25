@@ -101,7 +101,7 @@ void __cdecl SendRequestEquipmentItem_stub(int srcFlag, int iSrcIndex, ITEM* pIt
     // (inventario <-> Trade o Trade <-> Trade) bloquea la confirmación durante
     // 150 ticks cuando todavía no estaba confirmada. FUN_004EB7F0 descuenta
     // m_nMyTradeWait y RenderTrade tiñe la lámpara de rojo mientras dure.
-    if ((srcFlag == 1 || dstFlag == 1) && DAT_07eaa0fd == 0) {
+    if ((srcFlag == 1 || dstFlag == 1) && m_bMyConfirm == 0) {
         TradeMyWait = 150;
     }
 }

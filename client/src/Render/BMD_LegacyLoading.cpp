@@ -50,8 +50,8 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 // IDA: SetMaxTextures (0x00505BD0)
 // SetMaxTextures / Model_SetSlotIndex(index): sets active model slot index.
 void __cdecl SetMaxTextures(int param_1) {
-    DAT_083a4104 = 0;
-    DAT_083a4108 = param_1;
+    TextureBegin = 0;
+    TextureCurrent = param_1;
 }
 // IDA: OpenModel (0x00505E90)
 // OpenModel(Type, Dir, ModelFileName, ...).
@@ -405,8 +405,8 @@ int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
 //
 // Globals:
 //   Models            = DAT_05828d58 (BMD table, stride 0xBC; Data ptr at +0x00)
-//   TextureBegin      = DAT_083a4104 (int, lower bound del scan)
-//   TextureCurrent    = DAT_083a4108 (int, next-free slot)
+//   TextureBegin      = TextureBegin (int, lower bound del scan)
+//   TextureCurrent    = TextureCurrent (int, next-free slot)
 //   Bitmaps[]         = g_BitmapsRaw (stride 0x38; filename en [+0x00..+0x1F])
 //   DAT_0055a7a4      = base path "Data2\"   (Data2/pak mode)
 //   DAT_0055a79c      = base path "Data\"    (Data mode)
@@ -429,7 +429,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
             char b[160];
             _snprintf_s(b, sizeof(b), _TRUNCATE,
                 "OpenTexture CALL Model=0x%x sub='%s' nMesh=%d TextureCurrent=0x%x",
-                Model, SubFolder ? SubFolder : "(null)", (int)numMeshes, (unsigned)DAT_083a4108);
+                Model, SubFolder ? SubFolder : "(null)", (int)numMeshes, (unsigned)TextureCurrent);
             DbgLogPublic(b);
             s_oc_any++;
         }
@@ -450,7 +450,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
             _snprintf_s(b, sizeof(b), _TRUNCATE,
                 "OpenTex ENTER Model=0x%x sub='%s' nMesh=%d texNames=%p idxTex=%p firstName='%s' TextureCurrent=0x%x",
                 Model, SubFolder, (int)numMeshes, texNameTable0, indexTexture0,
-                firstName, (unsigned)DAT_083a4108);
+                firstName, (unsigned)TextureCurrent);
             DbgLogPublic(b);
             s_oc++;
         }
@@ -504,7 +504,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
 
             // Dispatch by extension character (tolower'd)
             int extChar = (dotPos + 1 < nameLen) ? tolower((unsigned char)Name[dotPos + 1]) : 'j';
-            int slot = (int)DAT_083a4108;  // TextureCurrent
+            int slot = (int)TextureCurrent;  // TextureCurrent
             if (extChar == 't')
                 FUN_00529bd0(local_40, slot, 0x2600, 0x2901, 0, Check);   // OpenTGA
             else
@@ -517,7 +517,7 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
             if (fnLen < 32) memset(slotBase + fnLen, 0, 32 - fnLen);
 
             resolvedIdx = slot;
-            DAT_083a4108 = slot + 1;   // TextureCurrent++
+            TextureCurrent = slot + 1;   // TextureCurrent++
         } else {
             // Hit: reuse existing slot, bump ref count at +0x30
             if (pSlot != 0) {

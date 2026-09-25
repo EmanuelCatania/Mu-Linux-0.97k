@@ -181,7 +181,7 @@ LAB_00460dd8:
   }
   pfVar4 = (float*)DAT_07cf1ffc;
   pfVar3 = (float*)DAT_07abf5d8;
-  iVar9 = DAT_055c9bc8;
+  iVar9 = MAIN_HASH_CLASS;
   fVar27 = _DAT_00552580;
   if (0xf6 < param_1) {
     if (param_1 < 0x1f1) {
@@ -909,12 +909,12 @@ LAB_00463e3d:
     if ((float*)(uintptr_t)*(int*)&pfVar17[0x3f] != pfVar3) {
       return (float*)(uintptr_t)*(int*)&pfVar17[0x3f];
     }
-    STRUCT_DECRYPT(&DAT_055c9bc8,DAT_07cf1ffc);
+    STRUCT_DECRYPT(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     pfVar12 = (float*)DAT_07cf1ffc;
     cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
     *(char *)(pfVar17 + 0x22) = cVar5;
     *(char *)(pfVar12 + 0x160) = cVar5 + '\x01';
-    STRUCT_ENCRYPT(&DAT_055c9bc8,pfVar12);
+    STRUCT_ENCRYPT(&MAIN_HASH_CLASS,pfVar12);
     sVar28 = *(short *)((int)pfVar17 + 0x86);
     bVar6 = *(byte *)(pfVar17 + 0x22);
     fVar27 = 300.0;
@@ -1220,7 +1220,7 @@ switchD_00461001_caseD_c7:
     }
     pfVar12 = (float*)DAT_07cf1ffc;
     param_5 = (float*)DAT_07cf1ffc;
-    uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
     param_8 = (float *)0x0;
     param_7 = (float *)0x0;
     if (DAT_055c9bd4 == 0) goto LAB_00462bfb;
@@ -1317,7 +1317,7 @@ switchD_00461001_caseD_c7:
     Joint_Create(0x4ea,pfVar12,pfVar12,pfVar17 + 7,5,(int)pfVar17,100.0,-1,0);
     pfVar12 = (float*)DAT_07cf1ffc;
     param_5 = (float*)DAT_07cf1ffc;
-    uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
     param_8 = (float *)0x0;
     param_7 = (float *)0x0;
     if (DAT_055c9bd4 == 0) goto LAB_004611cb;
@@ -1381,7 +1381,7 @@ switchD_00461001_caseD_c7:
       return pfVar12;
     }
     param_5 = (float*)DAT_07cf1ffc;
-    uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
     param_8 = (float *)0x0;
     param_7 = (float *)0x0;
     if (DAT_055c9bd4 == 0) goto LAB_00461843;
@@ -1407,7 +1407,7 @@ switchD_00461001_caseD_c7:
     }
     pfVar12 = (float*)DAT_07cf1ffc;
     param_5 = (float*)DAT_07cf1ffc;
-    uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
     param_8 = (float *)0x0;
     param_7 = (float *)0x0;
     if (DAT_055c9bd4 == 0) goto LAB_00461f5f;
@@ -1443,7 +1443,7 @@ switchD_00461001_caseD_c7:
       iVar9 = iVar9 + 1;
     } while (iVar9 < 4);
     param_5 = (float*)DAT_07cf1ffc;
-    uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
+    uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
     param_8 = (float *)0x0;
     param_7 = (float *)0x0;
     if (DAT_055c9bd4 != 0) {
@@ -1487,7 +1487,7 @@ switchD_00461001_caseD_c7:
         if (iVar15 == 0) {
           if (uVar10 == 0xffffffff) goto LAB_004625aa;
           param_6 = pfVar14;
-          uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar14);
+          uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar14);
           param_8 = (float *)0x0;
           param_7 = (float *)0x0;
           if (DAT_055c9bd4 == 0) goto LAB_00462722;
@@ -1502,7 +1502,7 @@ switchD_00461001_caseD_c7:
 LAB_004625aa:
     pvVar7 = operator_new(0x585);
     *(undefined1 *)((int)pvVar7 + 0x584) = 1;
-    HashTable_Insert(&DAT_055c9bc8,pvVar7,pfVar14);
+    HashTable_Insert(&MAIN_HASH_CLASS,pvVar7,pfVar14);
     goto LAB_004625ca;
   case 0xf4:
     pfVar17[10] = pfVar17[7];
@@ -1525,12 +1525,12 @@ LAB_004625aa:
     pfVar17[0x19] = 0.0;
     return pfVar8;
   }
-  STRUCT_DECRYPT(&DAT_055c9bc8,DAT_07cf1ffc);
+  STRUCT_DECRYPT(&MAIN_HASH_CLASS,DAT_07cf1ffc);
   pfVar12 = (float*)DAT_07cf1ffc;
   cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
   *(char *)(pfVar17 + 0x22) = cVar5;
   *(char *)(pfVar12 + 0x160) = cVar5 + '\x01';
-  pfVar12 = (float *)STRUCT_ENCRYPT(&DAT_055c9bc8,pfVar12);
+  pfVar12 = (float *)STRUCT_ENCRYPT(&MAIN_HASH_CLASS,pfVar12);
   return pfVar12;
 switchD_00460f25_caseD_100:
   pfVar12 = pfVar17 + 7;
@@ -1598,7 +1598,7 @@ LAB_00465011:
     if (iVar15 == 0) {
       if (uVar10 == 0xffffffff) goto LAB_00465094;
       param_6 = pfVar4;
-      uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar4);
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar4);
       param_7 = (float *)0x0;
       param_6 = (float *)0x0;
       if (DAT_055c9bd4 == 0) goto LAB_004651f7;
@@ -1610,7 +1610,7 @@ LAB_00465094:
   param_4 = (float*)operator_new(0x585);
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar4;
-  uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar4);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar4);
   param_5 = (float *)0x0;
   param_6 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -1663,7 +1663,7 @@ LAB_004652b0:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
 LAB_004652dd:
   pfVar12 = (float*)DAT_07cf1ffc;
-  iVar9 = DAT_055c9bc8;
+  iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_5 = pfVar12;
   uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
@@ -1714,7 +1714,7 @@ LAB_004652dd:
           return pfVar8;
         }
         param_4 = pfVar12;
-        uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
         param_5 = (float *)0x0;
         param_4 = (float *)0x0;
         if (DAT_055c9bd4 == 0) goto LAB_00465448;
@@ -1987,7 +1987,7 @@ LAB_00462736:
   }
 LAB_004625ca:
   pfVar12 = (float*)DAT_07cf1ffc;
-  iVar9 = DAT_055c9bc8;
+  iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_6 = pfVar12;
   uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
@@ -2038,7 +2038,7 @@ LAB_004625ca:
         return pfVar8;
       }
       param_4 = pfVar12;
-      uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
       param_5 = (float *)0x0;
       param_4 = (float *)0x0;
       if (DAT_055c9bd4 == 0) goto LAB_00462884;
@@ -2139,7 +2139,7 @@ LAB_00461eee:
     if (iVar15 == 0) {
       if (uVar10 == 0xffffffff) goto LAB_00461f71;
       param_6 = pfVar12;
-      uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
       param_7 = (float *)0x0;
       param_6 = (float *)0x0;
       if (DAT_055c9bd4 == 0) goto LAB_004620d4;
@@ -2152,7 +2152,7 @@ LAB_00461f71:
   param_4 = (float*)operator_new(0x585);
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar12;
-  uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
   param_5 = (float *)0x0;
   param_6 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -2205,7 +2205,7 @@ LAB_0046218d:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
 LAB_004621ba:
   pfVar12 = (float*)DAT_07cf1ffc;
-  iVar9 = DAT_055c9bc8;
+  iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_5 = pfVar12;
   uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
@@ -2256,7 +2256,7 @@ LAB_004621ba:
           return pfVar8;
         }
         param_4 = pfVar12;
-        uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
         param_5 = (float *)0x0;
         param_4 = (float *)0x0;
         if (DAT_055c9bd4 == 0) goto LAB_00462314;
@@ -2661,7 +2661,7 @@ LAB_0046115a:
     if (iVar15 == 0) {
       if (uVar10 == 0xffffffff) goto LAB_004611dd;
       param_6 = pfVar12;
-      uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
       param_7 = (float *)0x0;
       param_6 = (float *)0x0;
       if (DAT_055c9bd4 == 0) goto LAB_00461340;
@@ -2674,7 +2674,7 @@ LAB_004611dd:
   param_4 = (float*)operator_new(0x585);
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar12;
-  uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
   param_5 = (float *)0x0;
   param_6 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -2729,7 +2729,7 @@ LAB_00461426:
   pfVar12 = (float*)DAT_07cf1ffc;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_5 = pfVar12;
-  uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
   param_6 = (float *)0x0;
   param_5 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -2777,7 +2777,7 @@ LAB_00461426:
           return pfVar8;
         }
         param_4 = pfVar12;
-        uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
         param_5 = (float *)0x0;
         param_4 = (float *)0x0;
         if (DAT_055c9bd4 == 0) goto LAB_00461580;
@@ -3008,7 +3008,7 @@ LAB_004636ad:
     if (iVar15 == 0) {
       if (uVar10 == 0xffffffff) goto LAB_00463730;
       param_6 = pfVar4;
-      uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar4);
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar4);
       param_8 = (float *)0x0;
       param_7 = (float *)0x0;
       if (DAT_055c9bd4 == 0) goto LAB_004638a8;
@@ -3020,7 +3020,7 @@ LAB_0046371e:
 LAB_00463730:
   pvVar7 = operator_new(0x585);
   *(undefined1 *)((int)pvVar7 + 0x584) = 1;
-  HashTable_Insert(&DAT_055c9bc8,pvVar7,pfVar4);
+  HashTable_Insert(&MAIN_HASH_CLASS,pvVar7,pfVar4);
   goto LAB_00463750;
   while( true ) {
     uVar10 = (uVar10 + 1) % (uint)DAT_055c9bd4;
@@ -3108,7 +3108,7 @@ LAB_004638bc:
   }
 LAB_00463750:
   pfVar12 = (float*)DAT_07cf1ffc;
-  iVar9 = DAT_055c9bc8;
+  iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_6 = pfVar12;
   uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
@@ -3159,7 +3159,7 @@ LAB_00463750:
           return pfVar8;
         }
         param_4 = pfVar12;
-        uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
         param_5 = (float *)0x0;
         param_4 = (float *)0x0;
         if (DAT_055c9bd4 == 0) goto LAB_00463a0a;
@@ -3303,7 +3303,7 @@ LAB_004631b2:
     if (iVar15 == 0) {
       if (uVar10 == 0xffffffff) goto LAB_0046321d;
       param_6 = param_7;
-      uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(param_7);
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(param_7);
       pfVar12 = (float *)0x0;
       param_7 = (float *)0x0;
       if (DAT_055c9bd4 == 0) goto LAB_00463363;
@@ -3316,7 +3316,7 @@ LAB_0046321d:
   param_4 = (float*)operator_new(0x585);
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = param_7;
-  uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(param_7);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(param_7);
   pfVar12 = (float *)0x0;
   param_5 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -3372,7 +3372,7 @@ LAB_00463451:
   param_6 = (float*)DAT_07cf1ffc;
   param_5 = (float*)DAT_07cf1ffc;
   *(char *)((char*)DAT_07cf1ffc + 0x160) = *(char *)((char*)DAT_07cf1ffc + 0x160) + '\x01';
-  uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
   pfVar12 = (float *)0x0;
   param_6 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -3420,7 +3420,7 @@ LAB_00463451:
           return pfVar8;
         }
         param_4 = param_5;
-        uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(param_5);
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(param_5);
         pfVar12 = (float *)0x0;
         param_5 = (float *)0x0;
         if (DAT_055c9bd4 == 0) goto LAB_0046358c;
@@ -3937,7 +3937,7 @@ LAB_004617d3:
     if (iVar9 == 0) {
       if (uVar10 == 0xffffffff) goto LAB_00461855;
       param_6 = pfVar8;
-      uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar8);
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar8);
       param_7 = (float *)0x0;
       param_6 = (float *)0x0;
       if (DAT_055c9bd4 == 0) goto LAB_004619b8;
@@ -3950,7 +3950,7 @@ LAB_00461855:
   param_4 = (float*)operator_new(0x585);
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar8;
-  uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar8);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar8);
   param_5 = (float *)0x0;
   param_6 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -4003,7 +4003,7 @@ LAB_00461a71:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
 LAB_00461a9e:
   pfVar12 = (float*)DAT_07cf1ffc;
-  iVar9 = DAT_055c9bc8;
+  iVar9 = MAIN_HASH_CLASS;
   param_6 = (float*)DAT_07cf1ffc;
   param_3 = (float*)DAT_07cf1ffc;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
@@ -4050,7 +4050,7 @@ LAB_00461a9e:
       if (iVar9 == 0) {
         if (uVar10 == 0xffffffff) goto LAB_00461ce3;
         param_5 = param_8;
-        uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(param_8);
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(param_8);
         param_7 = (float *)0x0;
         _param_9 = (float *)0x0;
         if (DAT_055c9bd4 == 0) goto LAB_00461c11;
@@ -4112,7 +4112,7 @@ LAB_00462b8a:
     if (iVar15 == 0) {
       if (uVar10 == 0xffffffff) goto LAB_00462c0d;
       param_6 = pfVar12;
-      uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+      uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
       param_7 = (float *)0x0;
       param_6 = (float *)0x0;
       if (DAT_055c9bd4 == 0) goto LAB_00462d70;
@@ -4125,7 +4125,7 @@ LAB_00462c0d:
   param_4 = (float*)operator_new(0x585);
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar12;
-  uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+  uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
   param_5 = (float *)0x0;
   param_6 = (float *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -4178,7 +4178,7 @@ LAB_00462e29:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
 LAB_00462e56:
   pfVar12 = (float*)DAT_07cf1ffc;
-  iVar9 = DAT_055c9bc8;
+  iVar9 = MAIN_HASH_CLASS;
   *(undefined1 *)(pfVar17 + 0x22) = *(undefined1 *)((char*)DAT_07cf1ffc + 0x160);
   param_5 = pfVar12;
   uVar10 = (**(code **)(iVar9 + 0xc))(pfVar12);
@@ -4229,7 +4229,7 @@ LAB_00462e56:
           return pfVar8;
         }
         param_4 = pfVar12;
-        uVar10 = (**(code **)(DAT_055c9bc8 + 0xc))(pfVar12);
+        uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
         param_5 = (float *)0x0;
         param_4 = (float *)0x0;
         if (DAT_055c9bd4 == 0) goto LAB_00462fb0;

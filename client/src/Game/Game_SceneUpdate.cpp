@@ -518,12 +518,12 @@ int Game_SceneUpdate(void)
         DAT_083a7c18 = 0;
         DAT_005616a4 = 0x1e0;   // dialog Y start
         DAT_005616a8 = (int)0xffffff38;
-        DAT_00561694 = -1;      // no server selected
-        DAT_00561698 = -1;      // no channel selected
+        ServerSelectHi = -1;      // no server selected
+        ServerSelectLo = -1;      // no channel selected
         DAT_083a7c44 = 0;
-        DAT_07e11d70 = 0;
+        GuildInputEnable = 0;
         DAT_07e11d71 = 0;
-        DAT_07e11d72 = 0;
+        GoldInputEnable = 0;
         DAT_00559c84 = 1;
         ClearInput(1);        // CharSelect_Init
 
@@ -534,9 +534,9 @@ int Game_SceneUpdate(void)
             // InputTextMax is a per-slot array. IDA canonical init sets BOTH
             // slots so password accepts input too; only setting slot 0 used to
             // silently reject every keystroke in the password field.
-            ((int*)&_DAT_00559c94)[0] = 10;  // InputTextMax[0] = username max
-            ((int*)&_DAT_00559c94)[1] = 10;  // InputTextMax[1] = password max
-            DAT_00559c88 = 2;
+            ((int*)&InputTextMax)[0] = 10;  // InputTextMax[0] = username max
+            ((int*)&InputTextMax)[1] = 10;  // InputTextMax[1] = password max
+            InputNumber = 2;
             DAT_07e113d9 = 1;
             *(DWORD*)DAT_07d780a8 = vlen;
             DAT_07e11d78 = (vlen != 0) ? 1 : 0;
@@ -715,7 +715,7 @@ int Game_SceneUpdate(void)
         // Account list click: entries at Y = dialogY+0x32, stride 0x14
         {
             int entryY = dialogY + 0x32;
-            for (int i = 0; i < DAT_00559c88; i++, entryY += 0x14) {
+            for (int i = 0; i < InputNumber; i++, entryY += 0x14) {
                 if (DAT_083a427c > 0x124 && DAT_083a427c < 0x1a1 &&
                     DAT_083a4278 >= entryY && DAT_083a4278 < entryY + 0x14 &&
                     IsClickPushed())
@@ -981,7 +981,7 @@ LAB_00520fd8:
             case 0x0b: // Login OK
                 DAT_083a7c14 = 2;
                 DAT_07e11d78 = 0;
-                DAT_00559c88 = 2;
+                InputNumber = 2;
                 if (respCode == 0) {
                     DAT_083a7c28 = 0; DAT_05826cb0 = 2; DAT_083a7c24 = slotB;
                 } else if (slotA == 0) {
@@ -1092,9 +1092,9 @@ state_fail_common:
                 DAT_083a7c14 = 8;
                 PlayBuffer(0x1b, 0, 0);
                 ClearInput(1);
-                DAT_00559c88 = 2;
+                InputNumber = 2;
                 DAT_00559c90 = 1;
-                _DAT_00559c94 = 0x1e;
+                InputTextMax = 0x1e;
                 _DAT_00559c98 = 0xe;
                 DAT_07e113d9 = 2;
                 return 0;
@@ -1122,9 +1122,9 @@ state_fail_common:
                     int vlen = (int)strlen((char*)lpData_055c9ba0);
                     memcpy(DAT_07db8710, lpData_055c9ba0, vlen + 1);
                     DAT_07e113d9 = 1;
-                    DAT_00559c88 = 2;
+                    InputNumber = 2;
                     *(DWORD*)DAT_07d780a8 = vlen;
-                    _DAT_00559c94 = 10;
+                    InputTextMax = 10;
                     _DAT_00559c98 = 10;
                     DAT_07e11d78 = (vlen != 0) ? 1 : 0;
                 }

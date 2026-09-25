@@ -451,9 +451,9 @@ void __cdecl Chat_InputTick(void)
             {
                 // Compare entity name at +0x1c1 against table name
                 const char *entityName = DAT_07abf5d8 + 0x1c1;
-                if (strcmp(tableName, entityName) != 0 && DAT_083a42d0 != '\0')
+                if (strcmp(tableName, entityName) != 0 && MouseRButtonPush != '\0')
                 {
-                    DAT_083a42d0 = '\0';
+                    MouseRButtonPush = '\0';
                     size_t nameLen = strlen(tableName);
                     memcpy(DAT_07db8810, tableName, nameLen + 1);
                     // Update input length counter
@@ -537,21 +537,21 @@ void __cdecl Chat_InputTick(void)
 
     // ── 4. Class-tab buttons + hot gate ─────────────────────────────────────
     // Guard condition: all of these must be true to process tab/hotkey/chat input:
-    //   bVar4(hash)==0, DAT_07eaa124==0, DAT_07e11d70==0,
-    //   DAT_083a7c24 not 0x7e/0x98, DAT_07eaa128==0,
-    //   *(DAT_00583d8c+0x1c87f)==0, DAT_07eaa130==0
+    //   bVar4(hash)==0, DAT_07eaa124==0, GuildInputEnable==0,
+    //   DAT_083a7c24 not 0x7e/0x98, GoldenArcherOpenType==0,
+    //   *(DAT_00583d8c+0x1c87f)==0, ServerDivisionOpened==0
     {
-        FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+        FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
         char bVar4 = DAT_07eaa11b;
-        PACKET_ENCRYPT(&DAT_055c9bc8, (char *)&DAT_07eaa11b);
+        PACKET_ENCRYPT(&MAIN_HASH_CLASS, (char *)&DAT_07eaa11b);
 
         if ((bVar4 == 0) &&
             (DAT_07eaa124 == '\0') &&
-            (DAT_07e11d70 == '\0') &&
+            (GuildInputEnable == '\0') &&
             (DAT_083a7c24 != 0x7e) && (DAT_083a7c24 != 0x98) &&
-            (DAT_07eaa128 == 0) &&
+            (GoldenArcherOpenType == 0) &&
             (*(char *)((uintptr_t)DAT_00583d8c + 0x1c87f) == '\0') &&
-            (DAT_07eaa130 == '\0'))
+            (ServerDivisionOpened == '\0'))
         {
             // ── Botones de la barra inferior (guild / party / personaje /
             //    inventario) ────────────────────────────────────────────────
@@ -634,7 +634,7 @@ void __cdecl Chat_InputTick(void)
                                         int key = k % 10;          // 1..9, despues 0
                                         if (((unsigned short)GetAsyncKeyState(0x30 + key) >> 8) == 0)
                                             continue;
-                                        STRUCT_DECRYPT(&DAT_055c9bc8, DAT_07cf1ffc);
+                                        STRUCT_DECRYPT(&MAIN_HASH_CLASS, DAT_07cf1ffc);
                                         int charRow = (int)DAT_005616ac;
                                         for (int j = 0; j < 0x14; ++j) {
                                             char *slot_ptr = (char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + j;
@@ -644,7 +644,7 @@ void __cdecl Chat_InputTick(void)
                                             }
                                         }
                                         *((char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + (int)uVar14) = (char)key;
-                                        STRUCT_ENCRYPT(&DAT_055c9bc8, (void *)DAT_07cf1ffc);
+                                        STRUCT_ENCRYPT(&MAIN_HASH_CLASS, (void *)DAT_07cf1ffc);
                                     }
                                 }
                                 break;
@@ -679,7 +679,7 @@ void __cdecl Chat_InputTick(void)
             }
 
             // ── 7. Chat input — 9 channels ───────────────────────────────────
-            // Channels 0-8 each have a 0x100-byte input buffer at DAT_07e0ffc8+ch*0x100.
+            // Channels 0-8 each have a 0x100-byte input buffer at MacroText+ch*0x100.
             // FUN_00494520 reads a key press into the buffer, returns ch != '\0' if Enter.
             // FUN_00513440 validates the text (profanity/length); '\0' = ok.
             // Rate-limit: ChatTime starts at 0x46, counts down each frame.
@@ -703,7 +703,7 @@ void __cdecl Chat_InputTick(void)
                         // Alt+1 .. Alt+9  ->  macros 0..8  (IDA: v221 + 49)
                         if (((unsigned short)GetAsyncKeyState('1' + ch) >> 8) == 0)
                             continue;
-                        BYTE *chBuf = (BYTE *)&DAT_07e0ffc8 + ch * 0x100;
+                        BYTE *chBuf = (BYTE *)&MacroText + ch * 0x100;
                         if (chBuf[0] == '\0') { DAT_07e11d7c = 100; continue; }
                         if ((char)FUN_00494520(chBuf, '\x01') != '\0')
                             continue;
@@ -791,7 +791,7 @@ void __cdecl Chat_InputTick(void)
                 }
 
                 // ── 8. Whisper-target channel (channel 9) ────────────────────
-                // Uses DAT_07e108c8 buffer (offset 0x900 from DAT_07e0ffc8).
+                // Uses DAT_07e108c8 buffer (offset 0x900 from MacroText).
                 {
                     // Alt+0 -> macro 10 (IDA: GetAsyncKeyState(48), o sea '0')
                     DWORD uVar9 = (((unsigned short)GetAsyncKeyState('0') >> 8) == 0)
@@ -892,7 +892,7 @@ void __cdecl Chat_InputTick(void)
     if (DAT_07e11d71 != 0) return;   // g_IME_Mode  (composición DBCS/coreano)
     if (DAT_07eaa11b != 0) return;   // TradeOpened
     if (DAT_07eaa124 != 0) return;   // GuildCreatorOpened
-    if (DAT_07e11d70 != 0) return;   // g_ChatMode
+    if (GuildInputEnable != 0) return;   // g_ChatMode
 
     // ── 9. 'B' key — toggle body rendering / battle mode ────────────────────
     // HashTable ops are obfuscation noise around the real toggle.
@@ -955,7 +955,7 @@ void __cdecl Chat_InputTick(void)
                         DAT_07eaa119 == 0 &&
                         DAT_07eaa11a == 0 &&
                         DAT_07eaa11c == 0 &&
-                        DAT_07eaa128 == 0)
+                        GoldenArcherOpenType == 0)
                     {
                         DAT_07eaa134 = (DAT_07eaa134 == 0) ? 1 : 0;
                         ((BYTE*)&DAT_07eaa150)[2] =

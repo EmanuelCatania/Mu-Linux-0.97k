@@ -83,9 +83,9 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
   }
   // Lo que sigue es ofuscación HashTable inlined sobre DAT_05826ceb/cec
   // (ref-count de session-key bytes). Neutralizado vía fake vtable en
-  // DAT_055c9bc8 + capacity (DAT_055c9bd4) = 0 → loops se saltean.
+  // MAIN_HASH_CLASS + capacity (DAT_055c9bd4) = 0 → loops se saltean.
   param_1 = &DAT_05826ceb;
-  uVar3 = (**(code **)(DAT_055c9bc8 + 0xc))(&DAT_05826ceb);
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&DAT_05826ceb);
   uVar6 = 0;
   param_1 = (char *)0x0;
   if (DAT_055c9bd4 != 0) {
@@ -127,7 +127,7 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
       }
       if (iVar7 == 0) {
         if (uVar3 == 0xffffffff) goto LAB_00423a34;
-        pbVar5 = (byte *)HashTable_GetNode(&DAT_055c9bc8,&DAT_05826ceb);
+        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_05826ceb);
         bVar1 = pbVar5[1];
         pbVar5[1] = bVar1 + 1;
         if ((byte)(bVar1 + 1) < 2) {
@@ -143,10 +143,10 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
 LAB_00423a34:
   pvVar4 = operator_new(2);
   *(undefined1 *)((int)pvVar4 + 1) = 1;
-  HashTable_Insert(&DAT_055c9bc8,pvVar4,&DAT_05826ceb);
+  HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&DAT_05826ceb);
 LAB_00423a52:
   DAT_05826ceb = 0;
-  uVar3 = (**(code **)(DAT_055c9bc8 + 0xc))(&DAT_05826ceb);
+  uVar3 = (**(code **)(MAIN_HASH_CLASS + 0xc))(&DAT_05826ceb);
   uVar6 = 0;
   if (DAT_055c9bd4 != 0) {
     do {
@@ -187,7 +187,7 @@ LAB_00423a52:
       }
       if (iVar7 == 0) {
         if (uVar3 != 0xffffffff) {
-          pbVar5 = (byte *)HashTable_GetNode(&DAT_055c9bc8,&DAT_05826ceb);
+          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_05826ceb);
           bVar1 = pbVar5[1];
           pbVar5[1] = bVar1 - 1;
           if ((byte)(bVar1 - 1) == 0) {
@@ -202,14 +202,14 @@ LAB_00423a52:
   }
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00423b59:
-  uVar3 = HashTable_GetIndex(&DAT_055c9bc8,&g_byPacketSerialRecv);
+  uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
   if (uVar3 == 0xffffffff) {
     pvVar4 = operator_new(2);
     *(undefined1 *)((int)pvVar4 + 1) = 1;
-    HashTable_Insert(&DAT_055c9bc8,pvVar4,&g_byPacketSerialRecv);
+    HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&g_byPacketSerialRecv);
   }
   else {
-    uVar3 = HashTable_GetIndex(&DAT_055c9bc8,&g_byPacketSerialRecv);
+    uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
     if (uVar3 == 0xffffffff) {
       pbVar5 = (byte *)0x0;
     }
@@ -223,9 +223,9 @@ LAB_00423b59:
     }
   }
   g_byPacketSerialRecv = 0;
-  uVar3 = HashTable_GetIndex(&DAT_055c9bc8,&g_byPacketSerialRecv);
+  uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
   if (uVar3 != 0xffffffff) {
-    uVar3 = HashTable_GetIndex(&DAT_055c9bc8,&g_byPacketSerialRecv);
+    uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
     if (uVar3 == 0xffffffff) {
       pbVar5 = (byte *)0x0;
     }

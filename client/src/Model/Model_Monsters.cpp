@@ -14,19 +14,19 @@ void __cdecl Model_LoadPlayerEquipmentTextures(void)
     // Initialise texture slot 0x12d (Barbarian skin)
     SetMaxTextures(0x12d);
     FUN_00529740("Player\\skin_barbarian_01.jpg", 0x12d, 0x2600, 0x2900, 0, '\x01');
-    DAT_083a4108++;
+    TextureCurrent++;
     FUN_00529740("Player\\level_man022.jpg",      0x12e, 0x2600, 0x2900, 0, '\x01');
-    DAT_083a4108++;
+    TextureCurrent++;
     FUN_00529740("Player\\skin_wizard_01.jpg",    0x12f, 0x2600, 0x2900, 0, '\x01');
-    DAT_083a4108++;
+    TextureCurrent++;
     FUN_00529740("Player\\level_man01.jpg",       0x130, 0x2600, 0x2900, 0, '\x01');
-    DAT_083a4108++;
+    TextureCurrent++;
     FUN_00529740("Player\\skin_archer_01.jpg",    0x131, 0x2600, 0x2900, 0, '\x01');
-    DAT_083a4108++;
+    TextureCurrent++;
     FUN_00529740("Player\\level_man033.jpg",      0x132, 0x2600, 0x2900, 0, '\x01');
-    DAT_083a4108++;
+    TextureCurrent++;
     FUN_00529740("Player\\skin_special_01.jpg",   0x133, 0x2600, 0x2900, 0, '\x01');
-    DAT_083a4108++;
+    TextureCurrent++;
 
     // Slot 0x136: Load textures for all class equipment slots (class 1-4, 5 piece types)
     SetMaxTextures(0x136);

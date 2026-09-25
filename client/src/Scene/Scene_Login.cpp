@@ -42,7 +42,7 @@
 //   DAT_07e11d6e   — byte flag reset
 //   DAT_00559c8c   — InputTextWidth
 //   DAT_00559c78   — m_dwTextColor
-//   DAT_00559c80   — m_dwBackColor
+//   SetBackgroundTextColor   — m_dwBackColor
 //   DAT_055c9fec   — m_hFontDC (HDC usado para GetTextExtentPointA)
 //   DAT_055ca00c   — g_hFont
 //   DAT_005616a4   — base Y panel credenciales
@@ -97,7 +97,7 @@ uint Scene_Login(void)
     GL_SetBlendSrcOver('\x01');                 // EnableAlphaTest(1)
     glColor3f(1.0f, 1.0f, 1.0f);
     DAT_00559c78 = 0xffd2e6ff;            // m_dwTextColor
-    DAT_00559c80 = 0;                     // m_dwBackColor
+    SetBackgroundTextColor = 0;                     // m_dwBackColor
     SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
 
     // ── Credential input panel (sub-states 2..3) ─────────────────────────────
@@ -166,7 +166,7 @@ uint Scene_Login(void)
         *(undefined4 *)pcVar9 = *(undefined4 *)pcVar8;
         pcVar8 += 4; pcVar9 += 4;
     }
-    DAT_00559c80 = 0x80000000;
+    SetBackgroundTextColor = 0x80000000;
     for (uVar6 = uVar6 & 3; uVar6 != 0; uVar6--) {
         *pcVar9 = *pcVar8; pcVar8++; pcVar9++;
     }
@@ -255,7 +255,7 @@ uint Scene_Login(void)
 
         GL_SetBlendSrcOver('\x01');
         ptVar10 = &tStack_74;
-        DAT_00559c80 = 0x80000000;
+        SetBackgroundTextColor = 0x80000000;
         // IDA 0x00521630 L134-136: these reference GlobalText[471] (localized
         // "Conectando..." status string), not the standalone empty buffer
         // lpString_07d4c518 that Ghidra emitted.

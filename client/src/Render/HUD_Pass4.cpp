@@ -72,7 +72,7 @@ extern "C" {
     // que este archivo nunca veia lo que escribia el resto del cliente.
     //
     //   InputIndex = DAT_07e11d78 — indice del campo de input activo. Lo rota el
-    //     Tab en WndProc (`DAT_07e11d78 = (DAT_07e11d78 + 1) % DAT_00559c88`) y
+    //     Tab en WndProc (`DAT_07e11d78 = (DAT_07e11d78 + 1) % InputNumber`) y
     //     lo lee `RenderInputText` (Chat.cpp) para saber en que campo va el
     //     caret. Con la copia local clavada en 0, el `_` se dibujaba SIEMPRE en
     //     el campo de chat aunque se estuviera escribiendo en el de whisper.

@@ -72,9 +72,9 @@ void Game_CharSelectTick(void)
         DAT_00559c84 = 0;
         DAT_07e11d71 = 0;
         DAT_00559c8c = 0x100;
-        _DAT_00559c94 = 0x2a;
+        InputTextMax = 0x2a;
         _DAT_00559c98 = 10;
-        DAT_00559c88 = 2;
+        InputNumber = 2;
 
         // 120× widget draw
         for (int i = 0x78; i > 0; i--)
@@ -162,17 +162,17 @@ void Game_CharSelectTick(void)
             } else {
                 if (DAT_07eaa116 == '\0') {
                     // Anti-tamper: track DAT_07eaa11b ref-count
-                    unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa11b);
+                    unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
                     if (idx == 0xffffffff) {
                         void* node = operator_new(2); *((BYTE*)node+1)=1;
-                        HashTable_Insert(&DAT_055c9bc8, node, &DAT_07eaa11b);
+                        HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_07eaa11b);
                     } else {
                         BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
                         node[1]++;
                         if (node[1] < 2) Packet_DecryptByte(&DAT_07eaa11b, node);
                     }
                     // Decrement
-                    idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa11b);
+                    idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
                     if (idx != 0xffffffff) {
                         BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
                         node[1]--;

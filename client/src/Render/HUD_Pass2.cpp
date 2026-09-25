@@ -93,7 +93,7 @@ static bool HUD_IsQuestPanelOpenRuntime(void)
 
 static bool HUD_IsGoldenArcherPanelRuntime(void)
 {
-    return (DAT_07eaa128 != 0 && DAT_07eaa128 != 3);
+    return (GoldenArcherOpenType != 0 && GoldenArcherOpenType != 3);
 }
 
 static bool HUD_IsInventorySidePairOpen(void)
@@ -108,7 +108,7 @@ static bool HUD_IsAnyRightPanelOpen(void)
            GuildOpened || GuildCreatorOpened ||
            HUD_IsGoldenArcherPanelRuntime() ||
            HUD_IsQuestPanelOpenRuntime() ||
-           (DAT_07eaa130 != '\0');
+           (ServerDivisionOpened != '\0');
 }
 
 // ── Helper PORTS ─────────────────────────────────────────────────────────────
@@ -426,7 +426,7 @@ int RenderEquipedHelperLife_(bool a2)
     const BYTE* hero = (const BYTE*)DAT_07abf5d8;
     const WORD helperType = hero ? *(const WORD*)(hero + 0x2B8) : 0;
 
-    DWORD backupBgTextColor = DAT_00559c80;
+    DWORD backupBgTextColor = SetBackgroundTextColor;
     DWORD backupTextColor   = DAT_00559c78;
 
     if (helperType >= 816 && helperType <= 819) {
@@ -454,7 +454,7 @@ int RenderEquipedHelperLife_(bool a2)
 
         SelectObject(m_hFontDC, g_hFont);
         EnableAlphaTest(true);
-        DAT_00559c80 = 0x80000000u;
+        SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
 
         // IDA centra el texto en el rango [x, x+50] (sub_47F6F0 recibe x en st0
@@ -481,7 +481,7 @@ int RenderEquipedHelperLife_(bool a2)
 
         SelectObject(m_hFontDC, g_hFont);
         EnableAlphaTest(true);
-        DAT_00559c80 = 0x80000000u;
+        SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
 
         const char* summonText = GlobalText[356] ? GlobalText[356] : "";
@@ -496,7 +496,7 @@ int RenderEquipedHelperLife_(bool a2)
         glColor3f(1.0f, 1.0f, 1.0f);
     }
 
-    DAT_00559c80 = backupBgTextColor;
+    SetBackgroundTextColor = backupBgTextColor;
     DAT_00559c78 = backupTextColor;
     return retY;
 }

@@ -78,7 +78,7 @@ void FUN_004fd800(void)
                             {
                                 void *pvSlot = operator_new(0x585);
                                 *(unsigned char*)((char*)pvSlot + 0x584) = 1;
-                                HashTable_Insert(&DAT_055c9bc8, pvSlot, DAT_07cf1ffc);
+                                HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
                             }
 
                             FUN_004fc030((unsigned char*)entity, 0, 0, '\0');

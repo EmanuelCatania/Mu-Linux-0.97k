@@ -482,8 +482,8 @@ void __cdecl FUN_004e4760(void) {
             DAT_07db8714 = 0;
             DAT_07db8718 = 0;
             *(DWORD*)DAT_07d780a8 = 0;
-            _DAT_00559c94 = 10;
-            DAT_07e11d70 = 0;
+            InputTextMax = 10;
+            GuildInputEnable = 0;
             DAT_07eaa124 = '\0';
             DAT_07eaa144 = 0;
             PlayBuffer(0x1c, 0, 0);
@@ -682,12 +682,12 @@ void __cdecl FUN_004e6550(void) {
         DAT_07d78094 = 1;
     }
 
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa118);
+    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa118);
     char sv1 = DAT_07eaa118;
     {
-        uint uVar4 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa118);
+        uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
         if (uVar4 != 0xffffffff) {
-            BYTE* pbVar5 = (BYTE*)HashTable_GetNode(&DAT_055c9bc8, &DAT_07eaa118);
+            BYTE* pbVar5 = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa118);
             BYTE bVar1 = pbVar5[1];
             pbVar5[1] = bVar1 - 1;
             if ((BYTE)(bVar1 - 1) == 0) Packet_EncryptByte(pbVar5, &DAT_07eaa118);
@@ -715,12 +715,12 @@ void __cdecl FUN_004e6550(void) {
         DAT_07d78094 = 1;
     }
 
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv2 = DAT_07eaa11b;
     {
-        uint uVar4 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa11b);
+        uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
         if (uVar4 != 0xffffffff) {
-            BYTE* pbVar5 = (BYTE*)HashTable_GetNode(&DAT_055c9bc8, &DAT_07eaa11b);
+            BYTE* pbVar5 = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa11b);
             BYTE bVar1 = pbVar5[1];
             pbVar5[1] = bVar1 - 1;
             if ((BYTE)(bVar1 - 1) == 0) Packet_EncryptByte(pbVar5, &DAT_07eaa11b);
@@ -744,13 +744,13 @@ void __cdecl FUN_004e6550(void) {
     // Refresh char-list visibility arrays for all CharData slots (stride 0x44, 12 slots)
     for (int i = 0; i < 0x330; i += 0x44) {
         void* puVar8 = DAT_07cf1ffc;
-        uint uVar4 = HashTable_GetIndex(&DAT_055c9bc8, (void*)DAT_07cf1ffc);
+        uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, (void*)DAT_07cf1ffc);
         if (uVar4 == 0xffffffff) {
             void* pvVar10 = operator_new(0x585);
             *(unsigned char*)((int)pvVar10 + 0x584) = 1;
-            HashTable_Insert(&DAT_055c9bc8, pvVar10, puVar8);
+            HashTable_Insert(&MAIN_HASH_CLASS, pvVar10, puVar8);
         } else {
-            uint uVar4b = HashTable_GetIndex(&DAT_055c9bc8, puVar8);
+            uint uVar4b = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar8);
             void* puVar9 = (uVar4b == 0xffffffff) ? nullptr : *(void**)(DAT_055c9bcc + uVar4b * 4);
             char cVar2 = *(char*)((int)puVar9 + 0x584);
             *(BYTE*)((int)puVar9 + 0x584) = (BYTE)(cVar2 + 1);
@@ -762,9 +762,9 @@ void __cdecl FUN_004e6550(void) {
         else
             *(BYTE*)((int)DAT_07cf1ffc + 0x258 + i) = 1;
 
-        uVar4 = HashTable_GetIndex(&DAT_055c9bc8, puVar8);
+        uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar8);
         if (uVar4 != 0xffffffff) {
-            uint uVar4b = HashTable_GetIndex(&DAT_055c9bc8, puVar8);
+            uint uVar4b = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar8);
             void* puVar9 = (uVar4b == 0xffffffff) ? nullptr : *(void**)(DAT_055c9bcc + uVar4b * 4);
             char cVar2 = *(char*)((int)puVar9 + 0x584);
             *(char*)((int)puVar9 + 0x584) = cVar2 - 1;
@@ -817,14 +817,14 @@ void __cdecl FUN_004e6550(void) {
 
     DAT_07eaa138 = 0;
     // Char-count check and back-button
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv3 = DAT_07eaa11b;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &DAT_07eaa11b);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     if (sv3 == '\0') {
-        FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa118);
+        FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa118);
         char sv4 = DAT_07eaa118;
-        PACKET_ENCRYPT(&DAT_055c9bc8, &DAT_07eaa118);
-        if (sv4 == '\0' && DAT_07eaa119 == '\0' && DAT_07eaa11a == '\0' && DAT_07eaa128 == 0) {
+        PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
+        if (sv4 == '\0' && DAT_07eaa119 == '\0' && DAT_07eaa11a == '\0' && GoldenArcherOpenType == 0) {
             ushort uVar3 = *(ushort*)((int)DAT_07cf1ff4 + 0xe);
             if (0x31 < uVar3) {
                 DAT_07eaa138 = 1;
@@ -852,9 +852,9 @@ void __cdecl FUN_004e6550(void) {
         }
     }
 
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv5 = DAT_07eaa11b;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &DAT_07eaa11b);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     if (sv5 != '\0') {
         // 2026-05-08: trade — DAT_07ea5298 / DAT_07ea7b88 son DWORDs (4 bytes)
         // en globals.cpp pero en el binario original son las bases de los
@@ -875,9 +875,9 @@ void __cdecl FUN_004e6550(void) {
     // Sincronizamos el global con los valores del render para que coincidan.
     DAT_07eaa0c8 = 260;
     DAT_07eaa0cc = 0;
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa118);
+    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa118);
     char sv6 = DAT_07eaa118;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &DAT_07eaa118);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (sv6 != '\0') {
         // FIX 2026-07-25: era copy-paste del branch de Warehouse (usaba
         // OffsetWarehouseItems → el hover leía un slot basura y el tooltip
@@ -1067,7 +1067,7 @@ void __cdecl FUN_004e8b70(void) {
         DAT_083a4124 = 0;
         const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
         Net_SendC1Packet(pkt, sizeof(pkt));
-        DAT_07eaa128 = 0;         // g_bEventChipDialogEnable
+        GoldenArcherOpenType = 0;         // g_bEventChipDialogEnable
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
         DAT_07e11d28 = 0;
@@ -1079,7 +1079,7 @@ void __cdecl FUN_004e8b70(void) {
 // Guard: DAT_07eaa11a must be non-zero (button active flag).
 // Hit-test: mouse within [DAT_07eaa0c8+0x4b, DAT_07eaa0c8+0x77) x [DAT_07eaa0cc+300, DAT_07eaa0cc+0x14c).
 // DAT_07eaa140 must be 0 (no timeout in progress), DAT_083a4124 must be non-zero (click pending).
-// Switch on DAT_07eaa16c:
+// Switch on MixType:
 //   0         → UIChatLogWindow_AddText(&DAT_07eaa1a0, &DAT_07d544d4, 2) — show wrong-PIN message
 //   1,2,3,4,5,6,7,8,0xb → FUN_004e3db0(0x7ea8410, 8, 8, iVar1, iVar3) — send auth
 //     sub-switch: cases 1,7,0xb → iVar1=5 iVar3=4; case 8 → iVar1=2 iVar3=2; else → iVar1=DAT_0055a3f8 iVar3=DAT_0055a3fc
@@ -1101,13 +1101,13 @@ void __cdecl FUN_004e9050(void) {
         IsClickPushed()) {
 
         DAT_083a4124 = '\0';
-        switch ((int)DAT_07eaa16c) {
+        switch ((int)MixType) {
         case 0:
             UIChatLogWindow_AddText(&DAT_07eaa1a0, &DAT_07d544d4, 2);
             break;
         case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 0xb: {
             int iVar1 = 5, iVar3 = 4;
-            switch ((int)DAT_07eaa16c) {
+            switch ((int)MixType) {
             case 1: case 7: case 0xb:
                 break; // iVar1=5, iVar3=4 (defaults)
             case 8:
@@ -1161,7 +1161,7 @@ void __cdecl FUN_004e9050(void) {
 // y los offsets y {0x186, 0x186, 0x186, 0x18b} relativos a DAT_07eaa0c8/0cc.
 // Al hacer click (DAT_083a4124 != '\0'), despacha por índice de fila:
 //   0 → new char: SetErrorMessage(0x74), ClearInput(0), set substate flags
-//   1 → borrar carácter: igual que 0 pero DAT_07eaa108=1
+//   1 → borrar carácter: igual que 0 pero StorageGoldFlag=1
 //   2 → shuffle/new-PIN: shuffle DAT_07e91394 short[10] via Fisher-Yates (20 passes),
 //        reset _DAT_07ea9814=0, DAT_07ea9818=0, DAT_07eaa14c = 4 - DAT_00559f5f,
 //        DAT_07ea981c=0, DAT_07ea981e=0
@@ -1193,22 +1193,22 @@ void __cdecl FUN_004eb5d0(void) {
     case 0:
         SetErrorMessage(0x74);
         ClearInput(0);
-        DAT_07e11d74 = 0;
-        DAT_07eaa108 = 0;
-        _DAT_00559c94 = 8;
-        DAT_00559c88 = 1;
+        InputGold = 0;
+        StorageGoldFlag = 0;
+        InputTextMax = 8;
+        InputNumber = 1;
         DAT_00559c84 = 0;
-        DAT_07e11d72 = 1;
+        GoldInputEnable = 1;
         break;
     case 1:
         SetErrorMessage(0x74);
         ClearInput(0);
-        DAT_07e11d74 = 0;
-        _DAT_00559c94 = 8;
-        DAT_00559c88 = 1;
+        InputGold = 0;
+        InputTextMax = 8;
+        InputNumber = 1;
         DAT_00559c84 = 0;
-        DAT_07e11d72 = 1;
-        DAT_07eaa108 = 1;
+        GoldInputEnable = 1;
+        StorageGoldFlag = 1;
         break;
     case 2: {
         // Inicializa el array short[10] en DAT_07e91394 con 0..9 y después lo mezcla (Fisher-Yates, 20 pasadas)
@@ -1241,12 +1241,12 @@ void __cdecl FUN_004eb5d0(void) {
 void __cdecl FUN_004eb7f0(void) {
     // IDA: el guard lee TradeOpened; se omite únicamente el ruido de HashTable.
 
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char cGuard = DAT_07eaa11b;
     {
-        uint uVar3 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa11b);
+        uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
         if (uVar3 != 0xffffffff) {
-            BYTE* pb = (BYTE*)HashTable_GetNode(&DAT_055c9bc8, &DAT_07eaa11b);
+            BYTE* pb = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa11b);
             BYTE b = pb[1]; pb[1] = b - 1;
             if ((BYTE)(b-1) == 0) Packet_EncryptByte(pb, &DAT_07eaa11b);
         }
@@ -1262,12 +1262,12 @@ void __cdecl FUN_004eb7f0(void) {
         DAT_083a4124 = '\0';
         SetErrorMessage(0x74);
         ClearInput(0);
-        _DAT_00559c94 = 8;
-        DAT_00559c88 = 1;
+        InputTextMax = 8;
+        InputNumber = 1;
         DAT_00559c84 = 0;
-        DAT_07e11d72 = 1;
-        DAT_07e11d74 = 0;
-        DAT_07eaa108 = 2;
+        GoldInputEnable = 1;
+        InputGold = 0;
+        StorageGoldFlag = 2;
         PlayBuffer(0x19, 0, 0);
     }
 
@@ -1287,19 +1287,19 @@ void __cdecl FUN_004eb7f0(void) {
         PlayBuffer(0x19, 0, 0);
 
         if (DAT_07eaa0e8 == '\0') {
-            if (DAT_07eaa0fd == '\0') {
-                DAT_07eaa0fd = '\x01';
+            if (m_bMyConfirm == '\0') {
+                m_bMyConfirm = '\x01';
             } else {
-                DAT_07eaa0fd = '\0';
+                m_bMyConfirm = '\0';
             }
         } else {
-            if (DAT_07eaa0fd == '\0') {
+            if (m_bMyConfirm == '\0') {
                 DAT_07eaa13c = 3;
                 DAT_00559f5e = (char)0xff;
                 FUN_0051e240(4, 0x173, 0x97);
                 return;
             }
-            DAT_07eaa0fd = '\0';
+            m_bMyConfirm = '\0';
         }
         DAT_07eaa0e8 = '\x01';
 
@@ -1334,18 +1334,18 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 //   - Updates repair cost per-frame via Item_RecalculateRepairCost()
 //   - Handles inventory close button click
 void __cdecl FUN_004ec330(void) {
-    uint uVar3 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa118);
+    uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (uVar3 == 0xffffffff) {
         void* pv = operator_new(2);
         *(unsigned char*)((int)pv + 1) = 1;
-        HashTable_Insert(&DAT_055c9bc8, pv, &DAT_07eaa118);
+        HashTable_Insert(&MAIN_HASH_CLASS, pv, &DAT_07eaa118);
     } else {
-        BYTE* pb = (BYTE*)HashTable_GetNode(&DAT_055c9bc8, &DAT_07eaa118);
+        BYTE* pb = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa118);
         BYTE b = pb[1]; pb[1] = b + 1;
         if ((BYTE)(b+1) < 2) Packet_DecryptByte((BYTE*)&DAT_07eaa118, pb);
     }
     char cGuard = DAT_07eaa118;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &DAT_07eaa118);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
 
     if (cGuard != '\0') {
         if (DAT_07eaa132 != '\0') {
@@ -1656,7 +1656,7 @@ uint __cdecl FUN_004f6a70(void)
 
 // FUN_004d1fc0 @ 0x004D1FC0 — SecondPassword_WidgetGrid_Init
 // Inicializa la grilla del widget de segunda contraseña insertando / actualizando entradas en la
-// hash-table global (DAT_055c9bc8) con clave DAT_07cf1ffc, y después llama a FUN_004cdc70 para
+// hash-table global (MAIN_HASH_CLASS) con clave DAT_07cf1ffc, y después llama a FUN_004cdc70 para
 // place 12 grid-slot widgets at fixed screen positions:
 //   slot 0-1 : (700,184)  (380,184) size 40×40 / 60×40
 //   slot 2-4 : (300,360)  (300,400) (180,360)
@@ -1676,7 +1676,7 @@ uint __cdecl FUN_004f6a70(void)
 //   slot 1: (134.0, 89.0) 40×60   slot 5: (15.0, 152.0) 40×40
 //   slot 6: (134.0, 152.0) 40×40  slot 9: (55.0, 89.0) 20×20
 //   slot10: (55.0, 152.0) 20×20   slot11: (115.0, 152.0) 20×20
-// Anti-tamper hash table blocks (DAT_055c9bc8) interspersed — skipped.
+// Anti-tamper hash table blocks (MAIN_HASH_CLASS) interspersed — skipped.
 // FUN_004d1fc0 @ 0x004D1FC0 — Render Character Equipment Slots (12 slots).
 // Port FIEL del IDA: 12 llamadas a sub_4CDC70(x, y, w, h, slotIdx) renderizando
 // los slots del Character panel. STRUCT_DECRYPT/ENCRYPT (HashTable obfuscation)
@@ -2606,10 +2606,10 @@ int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
 // IDA: CheckGate (0x004AC140)
 void __cdecl CheckGate(void)
 {
-    if (!DAT_07cf5600 || !Hero || !CharacterAttribute)
+    if (!GateAttribute || !Hero || !CharacterAttribute)
         return;
 
-    const BYTE* const gates = (const BYTE*)(uintptr_t)DAT_07cf5600;
+    const BYTE* const gates = (const BYTE*)(uintptr_t)GateAttribute;
     BYTE* const hero = (BYTE*)Hero;
     const WORD& level = *(WORD*)((BYTE*)CharacterAttribute + 14);
 
@@ -2847,7 +2847,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
             // (slots 0..0xC son cursor sprites) → "suelo mosaico" UI.
             // Tiles cargados en OpenWorld: 0x23 grass1, 0x24 grass2, 0x25 ground1,
             // 0x26 ground2, 0x27 ground3, 0x28 water, 0x29 wood, 0x2a-0x30 rock1-7.
-            int tileIdx = (int)(unsigned char)DAT_080bb2b4[idx0];
+            int tileIdx = (int)(unsigned char)TerrainMappingLayer1[idx0];
             int tileTex = 0x23 + tileIdx;
             if (tileTex < 0x23 || tileTex > 0x30) tileTex = 0x23;   // fallback grass01
             if (tileTex != lastTex) {
@@ -3556,7 +3556,7 @@ void __cdecl MoveCharacter(int p1)
     }
 
     // ─── L840-2486: SKILL DISPATCH (when c+757 exhaust limit, drain c+770 queue)
-    if (*(unsigned char*)(c + 757) >= (unsigned char)DAT_00559858)
+    if (*(unsigned char*)(c + 757) >= (unsigned char)g_iLimitAttackTime)
     {
         *(BYTE*)(c + 757) = 0;
         *(short*)(o + 134) = -1;
@@ -4827,7 +4827,7 @@ void __cdecl UI_OpenWindow(char* title, int mode) {
 //
 // Construye un quad 2D top-view del frustum proyectado: rota por Z=45° las 4
 // corners hardcoded, las traslada por param_1 (cam pos), y las escribe a
-// DAT_07eeb228/218 (X/Y respectivamente) en tile coords (×0.01 = ÷100).
+// FrustrumX/218 (X/Y respectivamente) en tile coords (×0.01 = ÷100).
 //
 // Esta versión SÍ funciona para in-game. La duplicada Camera_SetMatrix en
 // src/Render/Camera.cpp es código muerto que opera sobre DAT_07eab1bc..1e8
@@ -4861,7 +4861,7 @@ void __cdecl CreateFrustrum2D(float *param_1)
         pfVar1[0] += param_1[0];
         pfVar1[1] += param_1[1];
         pfVar1[2] += param_1[2];
-        *(float*)((char*)&DAT_07eeb228 + j) = pfVar1[0] * _DAT_005524f8;  // X (tile coords)
-        *(float*)((char*)&DAT_07eeb218 + j) = pfVar1[1] * _DAT_005524f8;  // Y
+        *(float*)((char*)&FrustrumX + j) = pfVar1[0] * _DAT_005524f8;  // X (tile coords)
+        *(float*)((char*)&FrustrumY + j) = pfVar1[1] * _DAT_005524f8;  // Y
     }
 }

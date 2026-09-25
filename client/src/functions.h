@@ -38,7 +38,7 @@ void  __cdecl FUN_00403a30(void);
 void  __cdecl Packet_DecryptBuffer(void *node, void *key); // IDA: Packet_DecryptBuffer (0x00404370)
 void  __cdecl Packet_EncryptBuffer(void *a, void *b); // IDA: Packet_EncryptBuffer (0x00404400)
 void  __cdecl Packet_DecryptDword(void *key, void *node); // IDA: FUN_00409E20 (0x00409E20)
-// HashTable_GetIndex — dispatch via vtable at (DAT_055c9bc8+0xC)
+// HashTable_GetIndex — dispatch via vtable at (MAIN_HASH_CLASS+0xC)
 // Returns slot index, or 0xFFFFFFFF if not found.
 //
 // DEFENSIVE (silencioso): anti-tamper invocado desde sistemas per-frame.  Un
@@ -46,7 +46,7 @@ void  __cdecl Packet_DecryptDword(void *key, void *node); // IDA: FUN_00409E20 (
 // Validamos y retornamos 0xFFFFFFFF (== "no encontrado") en lugar de morir.
 // NO se loggea desde acá — hacerlo re-entra DbgLog cuando Windows bombea
 // mensajes durante la escritura, y termina en stack smash.  Si se sospecha
-// que la tabla hash está rota, mirar DAT_055c9bc8 en el debugger.
+// que la tabla hash está rota, mirar MAIN_HASH_CLASS en el debugger.
 // 2026-05-03: SAFE STUB. Always return 0xFFFFFFFF (= "not found") so all
 // callers' `if (idx != 0xffffffff) ...` guards skip the subsequent deref.
 // Previously this called the vtable's hash function (g_FakeHashVtable[3] =

@@ -77,8 +77,8 @@ float __cdecl RequestTerrainHeight(float xf, float yf)
 // lies inside (or on the boundary of) the current terrain quad, using a
 // signed-area (cross-product) test against param_3.
 //
-// The terrain quad is stored as 4 projected vertices in DAT_07eeb228 (X) and
-// DAT_07eeb218 (Y), filled by CreateFrustrum2D (Login_CameraUpdate).
+// The terrain quad is stored as 4 projected vertices in FrustrumX (X) and
+// FrustrumY (Y), filled by CreateFrustrum2D (Login_CameraUpdate).
 // Iterates the 4 edges; if any cross product < param_3, returns a flag-encoded
 // short indicating outside/on boundary.  Only active in game state 5.
 //
@@ -91,8 +91,8 @@ float __cdecl RequestTerrainHeight(float xf, float yf)
 //
 // Globals:
 //   SceneFlag  — current game state
-//   DAT_07eeb228  — quad vertex X array (4 floats)
-//   DAT_07eeb218  — quad vertex Y array (4 floats)
+//   FrustrumX  — quad vertex X array (4 floats)
+//   FrustrumY  — quad vertex Y array (4 floats)
 
 undefined2 __cdecl FUN_004f8ff0(float param_1,float param_2,float param_3)
 
@@ -104,10 +104,10 @@ undefined2 __cdecl FUN_004f8ff0(float param_1,float param_2,float param_3)
     return 1;
 
   for (int i = 0, previous = 3; i < 4; previous = i++) {
-    const float cross = (DAT_07eeb218[previous] - param_2) *
-                        (DAT_07eeb228[i] - param_1) -
-                        (DAT_07eeb228[previous] - param_1) *
-                        (DAT_07eeb218[i] - param_2);
+    const float cross = (FrustrumY[previous] - param_2) *
+                        (FrustrumX[i] - param_1) -
+                        (FrustrumX[previous] - param_1) *
+                        (FrustrumY[i] - param_2);
     if (!(cross > param_3))
       return 0;
   }

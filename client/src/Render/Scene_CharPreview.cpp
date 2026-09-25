@@ -33,7 +33,7 @@ void RenderInfomation3D(void)
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
-  GL_GetModelViewMatrix((unsigned int *)&DAT_083a4140);
+  GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
   GL_EnableDepthTest();
   GL_EnableDepthWrites();
 

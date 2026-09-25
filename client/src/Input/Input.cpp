@@ -38,15 +38,15 @@ extern "C" { void DbgLogPublic(const char* msg); }
 //   (fórmula: g_TextBuf_base + slot * 0x100)
 //
 //   DAT_07d780a8  g_TextLen[N]         int[N] — longitud actual de cada slot
-//   DAT_00559c94  g_TextMaxLen[N]      int[N] — longitud máxima permitida por slot (de config)
+//   InputTextMax  g_TextMaxLen[N]      int[N] — longitud máxima permitida por slot (de config)
 //   DAT_07e11d78  g_ActiveSlot         Slot activo de input (Tab para rotar)
 //
 //   Flags de modo de input (todos en WM_CHAR guard):
 //   DAT_00559c84  g_TextMode           General text input active (login screen / chat)
-//   DAT_07e11d70  g_ChatMode           Chat input mode
+//   GuildInputEnable  g_ChatMode           Chat input mode
 //   DAT_07e11d71  g_IME_Mode           Korean/DBCS IME input active
-//   DAT_07e11d72  g_DigitOnly          Modo solo dígitos (0-9) — PIN/second password
-//   DAT_07e11d73  g_UppercaseOnly      Modo solo mayúsculas
+//   GoldInputEnable  g_DigitOnly          Modo solo dígitos (0-9) — PIN/second password
+//   GoldenArcherLuckyNumberTicket  g_UppercaseOnly      Modo solo mayúsculas
 //   DAT_083a7c24  g_UIScene            Si == 0x7E o 0x98: texto activo aunque otras flags == 0
 //
 //   Para Korean DBCS (WM_IME_COMPOSITION, 0x10F):
@@ -61,7 +61,7 @@ extern "C" { void DbgLogPublic(const char* msg); }
 // TABLA DE EDGE-DETECTION DE TECLADO
 // ─────────────────────────────────────────────────────────────────────────────
 //
-//   DAT_07e118ec  g_KeyState[256]      int[256] — estado de "ya procesé esta tecla"
+//   KeyState  g_KeyState[256]      int[256] — estado de "ya procesé esta tecla"
 //                 Indexado por VK code (0..255), 4 bytes cada entrada.
 //                 0 = tecla libre o ya procesada
 //                 1 = tecla presionada y aún no procesada (rising edge)
@@ -275,10 +275,10 @@ int NumPad_HitTest(void);
 int __cdecl PressKey(int param_1)
 {
   SHORT SVar1 = GetAsyncKeyState(param_1);
-  // &DAT_07e118ec + param_1*4: byte offset correcto para el slot DWORD
+  // &KeyState + param_1*4: byte offset correcto para el slot DWORD
   // (disasm @ 0x0047ec35 = MOV EAX,[ESI*0x4 + 0x7e118ec]). Necesario castear
-  // la base a char* porque DAT_07e118ec es DWORD[256].
-  DWORD* slot = (DWORD*)((char*)&DAT_07e118ec + param_1 * 4);
+  // la base a char* porque KeyState es DWORD[256].
+  DWORD* slot = (DWORD*)((char*)&KeyState + param_1 * 4);
   if (((unsigned short)SVar1 >> 8) == 0x80) {
     if (*slot == 0) {
       *slot = 1;
@@ -401,11 +401,11 @@ LAB_004c06d6:
   }
   else {
     if (DAT_07eaa116 == '\0') {
-      FUN_0043d8a0(&DAT_055c9bc8,&DAT_07eaa11b);
+      FUN_0043d8a0(&MAIN_HASH_CLASS,&DAT_07eaa11b);
       cVar2 = DAT_07eaa11b;
-      uVar4 = HashTable_GetIndex(&DAT_055c9bc8,&DAT_07eaa11b);
+      uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa11b);
       if (uVar4 != 0xffffffff) {
-        pbVar5 = (byte *)HashTable_GetNode(&DAT_055c9bc8,&DAT_07eaa11b);
+        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_07eaa11b);
         bVar1 = pbVar5[1];
         pbVar5[1] = bVar1 - 1;
         if ((byte)(bVar1 - 1) == 0) {
@@ -414,11 +414,11 @@ LAB_004c06d6:
       }
       if ((((cVar2 == '\0') && (DAT_07eaa119 == '\0')) && (DAT_07eaa11a == '\0')) &&
          (DAT_07eaa11c == '\0')) {
-        FUN_0043d8a0(&DAT_055c9bc8,&DAT_07eaa118);
+        FUN_0043d8a0(&MAIN_HASH_CLASS,&DAT_07eaa118);
         cVar2 = DAT_07eaa118;
-        uVar4 = HashTable_GetIndex(&DAT_055c9bc8,&DAT_07eaa118);
+        uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa118);
         if (uVar4 != 0xffffffff) {
-          pbVar5 = (byte *)HashTable_GetNode(&DAT_055c9bc8,&DAT_07eaa118);
+          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_07eaa118);
           bVar1 = pbVar5[1];
           pbVar5[1] = bVar1 - 1;
           if ((byte)(bVar1 - 1) == 0) {

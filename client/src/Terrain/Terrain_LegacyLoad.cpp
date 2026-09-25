@@ -48,8 +48,8 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Terrain / map loaders (called from OpenWorld / Map_LoadResources in stubs.cpp)
 
 // FUN_004f6f90 @ 0x004F6F90 — Terrain_LoadMap(path)
-// Reads map file: skips 1 byte, copies 0x4000×4 bytes to DAT_080bb2b4 (tile map),
-// next 0x4000×4 bytes to DAT_080ab2b4 (alt-tile), then 0x10000 height bytes → DAT_0834b608 as float.
+// Reads map file: skips 1 byte, copies 0x4000×4 bytes to TerrainMappingLayer1 (tile map),
+// next 0x4000×4 bytes to TerrainMappingLayer2 (alt-tile), then 0x10000 height bytes → TerrainMappingAlpha as float.
 //
 // BUG-FIX 2026-05-01: el archivo `EncTerrain%d.map` está ENCRIPTADO con el mismo
 // BuxConvert (3-byte XOR rolling) que usa OpenTerrainAttribute (.att). Sin
@@ -81,12 +81,12 @@ void __cdecl FUN_004f6f90(const char *path) {
     // Verificación: archivo .obj size = 64324 = 1+1+2(count short)+30*2144 → count=0x0860.
     // El parser 0.85 leía desde buf+1; en archivos Enc hay que leer desde buf+2.
     char *p = buf + 2;
-    DWORD *dst = (DWORD*)DAT_080bb2b4;
+    DWORD *dst = (DWORD*)TerrainMappingLayer1;
     for (int i = 0; i < 0x4000; i++) { *dst++ = *(DWORD*)p; p += 4; }
-    dst = (DWORD*)DAT_080ab2b4;
+    dst = (DWORD*)TerrainMappingLayer2;
     for (int i = 0; i < 0x4000; i++) { *dst++ = *(DWORD*)p; p += 4; }
     // alpha bytes → float (per IDA 0.85: alpha[i] = byte * (1/255.0f))
-    float *fDst = DAT_0834b608;
+    float *fDst = TerrainMappingAlpha;
     unsigned char *hSrc = (unsigned char*)p;
     for (int i = 0; i < 0x10000; i++) *fDst++ = (float)*hSrc++ * _DAT_00552b70;
     operator_delete(buf);

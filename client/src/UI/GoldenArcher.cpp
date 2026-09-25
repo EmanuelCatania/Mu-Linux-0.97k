@@ -37,11 +37,11 @@ extern "C" void   __cdecl RenderInputText(int x, int y, int Index);
 extern "C" int g_GoldenArcherCustom = 0;
 
 // ── Globales (nombres de IDA) ───────────────────────────────────────────────
-#define GA_OpenType          (*(int*)&DAT_07eaa128)        // g_bEventChipDialogEnable
-#define GA_ItemCount         (*(int*)&DAT_07eaa12c)        // g_shEventChipCount
-#define GA_ChipCount16       (*(short*)&DAT_07eaa12c)
-#define GA_GiftName          ((char*)DAT_07ea97c0)         // g_strGiftName[64]
-#define GA_ScratchTicket     DAT_07e11d73                  // g_bScratchTicket
+#define GA_OpenType          (*(int*)&GoldenArcherOpenType)        // g_bEventChipDialogEnable
+#define GA_ItemCount         (*(int*)&GoldenArcherItemCount)        // g_shEventChipCount
+#define GA_ChipCount16       (*(short*)&GoldenArcherItemCount)
+#define GA_GiftName          ((char*)GoldenArcherLuckyNumberText)         // g_strGiftName[64]
+#define GA_ScratchTicket     GoldenArcherLuckyNumberTicket                  // g_bScratchTicket
 #define GA_MouseX            ((int)DAT_083a427c)
 #define GA_MouseY            ((int)DAT_083a4278)
 #define GA_MouseLButtonPush  DAT_083a4124
@@ -53,10 +53,10 @@ extern "C" int g_GoldenArcherCustom = 0;
 #define GA_InventoryStartX   (*(int*)&DAT_07ea5288)
 #define GA_InventoryStartY   (*(int*)&DAT_07ea5284)
 #define GA_InputEnable       DAT_00559c84
-#define GA_GoldInputEnable   DAT_07e11d72
-#define GA_InputGold         DAT_07e11d74
-#define GA_StorageGoldFlag   DAT_07eaa108
-#define GA_InputNumber       DAT_00559c88
+#define GA_GoldInputEnable   GoldInputEnable
+#define GA_InputGold         InputGold
+#define GA_StorageGoldFlag   StorageGoldFlag
+#define GA_InputNumber       InputNumber
 #define GA_InputTextWidth    DAT_00559c8c
 #define GA_InputIndex        DAT_07e11d78
 #define GA_WindowWidth       ((int)DAT_0056156c)
@@ -77,7 +77,7 @@ static void GA_OpenLuckyNumberInput(void)
 {
     memset(GA_GiftName, 0, 64);
     ClearInput(0);
-    DAT_00559c94 = 12;                  // InputTextMax[0]
+    InputTextMax = 12;                  // InputTextMax[0]
     GA_InputNumber = 1;
     GA_InputEnable = 0;
     GA_GoldInputEnable = 0;

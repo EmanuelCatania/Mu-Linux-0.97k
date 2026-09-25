@@ -232,7 +232,7 @@ void __cdecl Scene_Intro(HDC param_1)
     local_8 = (undefined1 *)CreateHero(0, 0, 0, 1350.0f, 21742.0f, 0.0f);
     puVar1  = (undefined4 *)(local_8 + 0x388);
     local_c = puVar1;
-    uVar4   = (**(code **)(DAT_055c9bc8 + 0xc))(puVar1);
+    uVar4   = (**(code **)(MAIN_HASH_CLASS + 0xc))(puVar1);
 
     // HashTable anti-tamper tracking (ref-count register/unregister, not game logic)
     uVar14 = 0;
@@ -263,7 +263,7 @@ void __cdecl Scene_Intro(HDC param_1)
             if (!bVar13) iVar8 = (1 - (uint)bVar12) - (uint)(bVar12 != 0);
             if (iVar8 == 0) {
                 if (uVar4 == 0xffffffff) goto LAB_00513a36;
-                puVar6 = (undefined4 *)HashTable_GetNode(&DAT_055c9bc8, puVar1);
+                puVar6 = (undefined4 *)HashTable_GetNode(&MAIN_HASH_CLASS, puVar1);
                 cVar2  = *(char *)(puVar6 + 1);
                 *(byte *)(puVar6 + 1) = cVar2 + 1U;
                 if ((byte)(cVar2 + 1U) < 2)
@@ -278,10 +278,10 @@ void __cdecl Scene_Intro(HDC param_1)
 LAB_00513a36:
     pvVar5 = operator_new(5);
     *(undefined1 *)((int)pvVar5 + 4) = 1;
-    HashTable_Insert(&DAT_055c9bc8, pvVar5, puVar1);
+    HashTable_Insert(&MAIN_HASH_CLASS, pvVar5, puVar1);
 
 LAB_00513a50:
-    iVar7 = DAT_055c9bc8;
+    iVar7 = MAIN_HASH_CLASS;
     *puVar1 = 0xd;
     uVar4 = (**(code **)(iVar7 + 0xc))(puVar1);
     uStack_4 = 0;
@@ -307,7 +307,7 @@ LAB_00513a50:
             if (!bVar13) iVar7 = (1 - (uint)bVar12) - (uint)(bVar12 != 0);
             if (iVar7 == 0) {
                 if (uVar4 != 0xffffffff) {
-                    puVar6 = (undefined4 *)HashTable_GetNode(&DAT_055c9bc8, puVar1);
+                    puVar6 = (undefined4 *)HashTable_GetNode(&MAIN_HASH_CLASS, puVar1);
                     cVar2  = *(char *)(puVar6 + 1);
                     *(char *)(puVar6 + 1) = cVar2 - 1;
                     if ((char)(cVar2 - 1) == '\0')
@@ -323,13 +323,13 @@ LAB_00513a50:
 
 LAB_00513b4e:
     puVar1 = (undefined4 *)(iStack_10 + 0x38c);
-    uVar4  = HashTable_GetIndex(&DAT_055c9bc8, puVar1);
+    uVar4  = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar1);
     if (uVar4 == 0xffffffff) {
         pvVar5 = operator_new(5);
         *(undefined1 *)((int)pvVar5 + 4) = 1;
-        HashTable_Insert(&DAT_055c9bc8, pvVar5, puVar1);
+        HashTable_Insert(&MAIN_HASH_CLASS, pvVar5, puVar1);
     } else {
-        uVar4  = HashTable_GetIndex(&DAT_055c9bc8, puVar1);
+        uVar4  = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar1);
         puVar6 = (uVar4 == 0xffffffff) ? (undefined4 *)0x0
                                        : *(undefined4 **)(DAT_055c9bcc + uVar4 * 4);
         cVar2  = *(char *)(puVar6 + 1);
@@ -338,9 +338,9 @@ LAB_00513b4e:
             Packet_DecryptDword(puVar1, puVar6);
     }
     *puVar1 = 0xd9;
-    uVar4 = HashTable_GetIndex(&DAT_055c9bc8, puVar1);
+    uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar1);
     if (uVar4 != 0xffffffff) {
-        uVar4  = HashTable_GetIndex(&DAT_055c9bc8, puVar1);
+        uVar4  = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar1);
         puVar6 = (uVar4 == 0xffffffff) ? (undefined4 *)0x0
                                        : *(undefined4 **)(DAT_055c9bcc + uVar4 * 4);
         cVar2  = *(char *)(puVar6 + 1);

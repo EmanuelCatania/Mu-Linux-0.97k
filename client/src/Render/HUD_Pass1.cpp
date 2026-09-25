@@ -37,7 +37,7 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text);
 
 static bool HUD_IsGoldenArcherPanelRuntime(void)
 {
-    return (DAT_07eaa128 != 0 && DAT_07eaa128 != 3);
+    return (GoldenArcherOpenType != 0 && GoldenArcherOpenType != 3);
 }
 
 // Referencias externas a helpers que ya existen en nuestro build.
@@ -75,7 +75,7 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 #define PerspectiveY         _DAT_083a42a8
 
 #define byte_7E11D6E         DAT_07e11d6e
-#define dword_55C9BC8        DAT_055c9bc8
+#define dword_55C9BC8        MAIN_HASH_CLASS
 #define dword_55C9BCC        DAT_055c9bcc
 #define dword_55C9BD0        DAT_055c9bd0
 #define dword_55C9BD4        DAT_055c9bd4
@@ -364,7 +364,7 @@ void RenderMainFrameWindow_(void)
     // dword_55C9BC8 como corresponde, la estructura coincide byte a byte con IDA.
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v6 = HashTable_GetIndex(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
+        UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, /*edx*/ 0, (DWORD)v0);
         if (v6 != 0xFFFFFFFFu && DAT_055c9bd4) {
             // Encontrado: toma el puntero al valor del array de valores
             // (dword_55C9BCC[v6]) e incrementa su byte de ref-count [+1412].
@@ -399,7 +399,7 @@ void RenderMainFrameWindow_(void)
             // round-trip elsewhere).
             BYTE* fresh = new BYTE[0x585]();
             fresh[1412] = 1;
-            HashTable_Insert(&DAT_055c9bc8, fresh, v0);
+            HashTable_Insert(&MAIN_HASH_CLASS, fresh, v0);
         }
     }
 
@@ -422,7 +422,7 @@ void RenderMainFrameWindow_(void)
     // this no-ops, matching IDA's "table full" error-report fallback.
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v12 = HashTable_GetIndex(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
+        UINT  v12 = HashTable_GetIndex(&MAIN_HASH_CLASS, /*edx*/ 0, (DWORD)v0);
         if (v12 != 0xFFFFFFFFu && DAT_055c9bd4) {
             BYTE* v13 = *(BYTE**)((BYTE*)DAT_055c9bcc + 4 * v12);
             if (v13) {
@@ -515,7 +515,7 @@ void Render_HotbarItems3D_(void)
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    GL_GetModelViewMatrix((unsigned int*)DAT_083a4140);
+    GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
     GL_EnableDepthTest();
     GL_EnableDepthWrites();
     // IDA sub_4BFDE0 L31: `sub_403150(g_csQuest, 1, 0)`.
@@ -559,7 +559,7 @@ void Render_HotbarItems3D_(void)
 
     glLoadIdentity();
     glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
-    GL_GetModelViewMatrix((unsigned int*)DAT_083a4140);
+    GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
 
     float Target[3] = {0, 0, 0};
     Camera_BuildMouseRay(100, 100, Target);

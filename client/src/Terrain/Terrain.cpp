@@ -31,9 +31,9 @@
 //
 //   Nombre           | Address    | Tipo           | Contenido
 //   ─────────────────┼────────────┼────────────────┼──────────────────────────────
-//   DAT_080bb2b4     | 0x80BB2B4  | byte[65536]    | texture_type_id por tile
-//   DAT_080ab2b4     | 0x80AB2B4  | byte[65536]    | atributo secundario por tile
-//   DAT_0834b608     | 0x834B608  | float[65536]   | altura por tile (de .att)
+//   TerrainMappingLayer1     | 0x80BB2B4  | byte[65536]    | texture_type_id por tile
+//   TerrainMappingLayer2     | 0x80AB2B4  | byte[65536]    | atributo secundario por tile
+//   TerrainMappingAlpha     | 0x834B608  | float[65536]   | altura por tile (de .att)
 //   DAT_080cb2cc     | 0x80CB2CC  | float[65536]   | altura por tile (de TerrainHeight)
 //   DAT_0838b800     | 0x838B800  | uint[270]      | paleta de texturas (IDs de OZJ)
 //   DAT_07feb288     | 0x7FEB288  | float[3×65536] | normales por tile (XYZ)
@@ -56,9 +56,9 @@
 //   Offset      | Tamaño   | Contenido
 //   ────────────┼──────────┼────────────────────────────────────────────────────
 //   0x00000     | 1 byte   | version byte (ignorado)
-//   0x00001     | 65.536 B | tile_attrib1 (256×256 bytes) → DAT_080bb2b4
-//   0x10001     | 65.536 B | tile_attrib2 (256×256 bytes) → DAT_080ab2b4
-//   0x20001     | 65.536 B | height bytes (256×256) → DAT_0834b608 (× height_scale1)
+//   0x00001     | 65.536 B | tile_attrib1 (256×256 bytes) → TerrainMappingLayer1
+//   0x10001     | 65.536 B | tile_attrib2 (256×256 bytes) → TerrainMappingLayer2
+//   0x20001     | 65.536 B | height bytes (256×256) → TerrainMappingAlpha (× height_scale1)
 //
 //   Lectura: loops de 0x4000 dwords (4 bytes por dword = 65536 bytes por sección).
 //   height_scale1 = DAT_00552b70
@@ -90,9 +90,9 @@
 //
 //   void Terrain_Clear():
 //     Para cada i in 0..65535:
-//       DAT_080bb2b4[i] = 0               // attrib1 = 0 (sin textura)
-//       DAT_080ab2b4[i] = 0xFF            // attrib2 = 0xFF (por defecto)
-//       DAT_0834b608[i] = 0.0f           // height = nivel cero
+//       TerrainMappingLayer1[i] = 0               // attrib1 = 0 (sin textura)
+//       TerrainMappingLayer2[i] = 0xFF            // attrib2 = 0xFF (por defecto)
+//       TerrainMappingAlpha[i] = 0.0f           // height = nivel cero
 //       DAT_0810b2cc[i+1] = (rand() & 3) * DAT_005528dc  // ruido aleatorio
 //
 //   Nota: DAT_0810b2cc se inicializa con 0..3 * scale → variación de textura.
@@ -111,16 +111,16 @@
 //
 //     // Sección 1: attrib1 (256×256 bytes como dwords)
 //     src = buffer + 1
-//     for 0x4000 veces: DAT_080bb2b4[i] = *(dword*)src; src += 4
+//     for 0x4000 veces: TerrainMappingLayer1[i] = *(dword*)src; src += 4
 //
 //     // Sección 2: attrib2
 //     src = buffer + 0x10001
-//     for 0x4000 veces: DAT_080ab2b4[i] = *(dword*)src; src += 4
+//     for 0x4000 veces: TerrainMappingLayer2[i] = *(dword*)src; src += 4
 //
 //     // Sección 3: heights → float
 //     src = buffer + 0x20001
-//     for cada float en DAT_0834b608 (65536 entradas):
-//       DAT_0834b608[i] = (float)*src++ * DAT_00552b70
+//     for cada float en TerrainMappingAlpha (65536 entradas):
+//       TerrainMappingAlpha[i] = (float)*src++ * DAT_00552b70
 //
 //     delete buffer
 //     return true
@@ -189,7 +189,7 @@
 //
 //   void Terrain_FrameUpdate():
 //     // 1. Copia colores iluminados al buffer de viewport actual
-//     Para tiles (x,y) en cámara [DAT_0839bc90..DAT_0839bc94+3]:
+//     Para tiles (x,y) en cámara [FrustrumBoundMinX_1..FrustrumBoundMinY_1+3]:
 //       DAT_081cb608[idx*3..+2] = DAT_0828b608[tile_idx*3..+2]
 //
 //     // 2. Calcula ángulo solar (ciclo día/noche)
@@ -204,8 +204,8 @@
 //       DAT_07eab200[tile_idx] = sin(tile_col * DAT_00552660 + sun_angle) * DAT_00552488
 //       (Para World==8 (Devias?): usa DAT_00552598 en vez de DAT_00552660)
 //
-//   DAT_0839bc90  — tile X cámara (columna izquierda visible)
-//   DAT_0839bc94  — tile Y cámara (fila superior visible)
+//   FrustrumBoundMinX_1  — tile X cámara (columna izquierda visible)
+//   FrustrumBoundMinY_1  — tile Y cámara (fila superior visible)
 //   DAT_083a3ff0  — modo ciclo día/noche (0=normal, 1=rápido)
 //   DAT_07eab200  — water wave offsets (modifica altura Z del vertex de agua)
 //
@@ -239,7 +239,7 @@
 //     Si DAT_0838bc44 == 2 (agua):
 //       Si las 4 alturas del tile <= DAT_00552580 (= bajo el agua):
 //         Si DAT_0814b2dc == 0 && no PvP sub-estado:
-//           texture_id = DAT_080bb2b4[tile_idx] + 0x32  // textura de agua
+//           texture_id = TerrainMappingLayer1[tile_idx] + 0x32  // textura de agua
 //           GL_BindTextureSlot(texture_id)
 //           glTexCoord2f(uv_x, ...)
 //           // Agrega offset de ola (DAT_07eab200) a los vértices Y
@@ -248,10 +248,10 @@
 //
 //     Sino (terreno normal):
 //       Si alguna altura del tile < 0 (borde agua-tierra):
-//         texture_id = DAT_080bb2b4[tile_idx]  // textura desde attrib1
+//         texture_id = TerrainMappingLayer1[tile_idx]  // textura desde attrib1
 //         Si attrib1 == 5: es_borde_agua = true
 //       Sino:
-//         texture_id = DAT_080ab2b4[tile_idx]  // usa attrib2
+//         texture_id = TerrainMappingLayer2[tile_idx]  // usa attrib2
 //
 //       TerrainTile_SetupVertices(texture_id, tile_x, tile_y, es_borde_agua, 0)
 //       TerrainTile_Draw(texture_id)
@@ -264,11 +264,11 @@
 //
 //       Si tile tiene borde agua-tierra && alguna altura>0:
 //         // Renderiza capa de transición tierra-agua
-//         texture_id = DAT_080ab2b4[tile_idx]
+//         texture_id = TerrainMappingLayer2[tile_idx]
 //         TerrainTile_SetupVertices(texture_id, ...)
 //         TerrainTile_DrawTransition(texture_id)
 //
-//   DAT_080bb2b4 tile attrib1 values known:
+//   TerrainMappingLayer1 tile attrib1 values known:
 //     0..N  = índice de tipo de terreno (referencia a paleta DAT_0838b800)
 //     5     = borde de agua (usa lógica especial)
 //
@@ -407,16 +407,16 @@
 // los símbolos a arrays reales (globals.cpp) y este loop a indexación normal.
 //
 // Layout (256x256 tile grid = 65536 entries):
-//   DAT_080bb2b4[i] = 0     (TileTex1 byte)
-//   DAT_080ab2b4[i] = 0xFF  (TileTex2 byte)
-//   DAT_0834b608[i] = 0.0f  (TerrainHeight)
+//   TerrainMappingLayer1[i] = 0     (TileTex1 byte)
+//   TerrainMappingLayer2[i] = 0xFF  (TileTex2 byte)
+//   TerrainMappingAlpha[i] = 0.0f  (TerrainHeight)
 //   DAT_0810b2cc[i] = (rand() & 3) * scale  (TerrainNoise per-tile UV jitter)
 // IDA: FUN_004F6C60
 void __cdecl Terrain_Clear(void) {
     for (int i = 0; i < 0x10000; ++i) {
-        DAT_080bb2b4[i] = 0;
-        DAT_080ab2b4[i] = 0xff;
-        DAT_0834b608[i] = 0.0f;
+        TerrainMappingLayer1[i] = 0;
+        TerrainMappingLayer2[i] = 0xff;
+        TerrainMappingAlpha[i] = 0.0f;
         unsigned int uVar1 = (unsigned int)rand() & 3u;     // 0..3
         DAT_0810b2cc[i]   = (float)(int)uVar1 * _DAT_005528dc;
     }

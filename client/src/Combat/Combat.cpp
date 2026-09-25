@@ -490,7 +490,7 @@ static void SendMove_CloseWindows97k(void)
     const bool questPanel = g_csQuest &&
         *(char*)((uintptr_t)g_csQuest + 0x1c87f) != 0;       // g_csQuest + 116863
     if (!ShopOpened && !WarehouseOpened && !TradeOpened && !ChaosMixOpened &&
-        !EventWindowOpened && !DAT_07eaa128 && !questPanel && !g_bServerDivisionEnable) {
+        !EventWindowOpened && !GoldenArcherOpenType && !questPanel && !g_bServerDivisionEnable) {
         return;
     }
 
@@ -512,7 +512,7 @@ static void SendMove_CloseWindows97k(void)
             const BYTE pkt[3] = { 0xC1, 0x03, 0x87 };        // cerrar Chaos Machine
             Net_SendC1Packet(pkt, sizeof(pkt));
         }
-    } else if (DAT_07eaa128) {                               // g_bEventChipDialogEnable
+    } else if (GoldenArcherOpenType) {                               // g_bEventChipDialogEnable
         // Evento propio del server: fix del DLL (SendMove_GoldenArcherFixClose,
         // hook en 0x492AD2), cerrar ventanas y mandar 0x31.  Original: [C1][03][97].
         CloseInventoryRelatedWindows();
@@ -522,15 +522,15 @@ static void SendMove_CloseWindows97k(void)
             const BYTE pkt[3] = { 0xC1, 0x03, 0x97 };
             Net_SendC1Packet(pkt, sizeof(pkt));
         }
-        if (DAT_07eaa128 == 3) {
+        if (GoldenArcherOpenType == 3) {
             ClearInput(0);
             DAT_00559c84 = 0;                                // InputEnable
-            DAT_07e11d72 = 0;                                // GoldInputEnable
-            DAT_07e11d74 = 0;                                // InputGold
-            DAT_07eaa108 = 0;                                // StorageGoldFlag
-            DAT_07e11d73 = 0;                                // g_bScratchTicket
+            GoldInputEnable = 0;                                // GoldInputEnable
+            InputGold = 0;                                // InputGold
+            StorageGoldFlag = 0;                                // StorageGoldFlag
+            GoldenArcherLuckyNumberTicket = 0;                                // g_bScratchTicket
         }
-        DAT_07eaa128 = 0;
+        GoldenArcherOpenType = 0;
         InventoryOpened = 0;
     } else if (ShopOpened && !EventWindowOpened) {
         CloseInventoryRelatedWindows();
@@ -856,8 +856,8 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget);
 //   sqrt((c+20 - (TargetY*100+50))^2 + (c+16 - (TargetX*100+50))^2) > range*100
 static bool Attack_OutOfRange97k(const char* entity, int range)
 {
-    const float tx = (float)(int)DAT_07e016c0 * 100.0f + 50.0f;   // IDA: TargetX
-    const float ty = (float)(int)DAT_07e016c4 * 100.0f + 50.0f;   // IDA: TargetY
+    const float tx = (float)(int)TargetX * 100.0f + 50.0f;   // IDA: TargetX
+    const float ty = (float)(int)TargetY * 100.0f + 50.0f;   // IDA: TargetY
     const float dx = *(float*)(entity + 16) - tx;
     const float dy = *(float*)(entity + 20) - ty;
     const float maxDistance = (float)range * 100.0f;
@@ -898,9 +898,9 @@ static void Attack_SeedSkillTarget97k()
         return;
     DAT_07d78098 = 1;                                        // IDA: dword_7D78098
     DAT_07d7809c = 0;                                        // IDA L1785
-    DAT_07d780a0 = 0;                                        // IDA L1786: MovementSkillTarget
+    MovementSkillTarget = 0;                                        // IDA L1786: MovementSkillTarget
     const BYTE slot = Hero ? *(BYTE*)(Hero + 913) : 0;       // IDA: v133 / v545 / v629
-    DAT_07d780a0 = (DWORD)SelectedCharacter;
+    MovementSkillTarget = (DWORD)SelectedCharacter;
     DAT_07d7809c = slot;
 }
 
@@ -955,8 +955,8 @@ static BYTE Attack_PackDestination97k(const char* entity)
 {
     return Combat_GetDestValue97k((int)*(DWORD*)(entity + 904),
                                   (int)*(DWORD*)(entity + 908),
-                                  (int)DAT_07e016c0,
-                                  (int)DAT_07e016c4);
+                                  (int)TargetX,
+                                  (int)TargetY);
 }
 
 // Byte `index` del C3:1E — DLL, los 13 hooks `SendContinue*` de Patchs.cpp:
@@ -980,7 +980,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
         if (SelectedCharacter != -1 &&
             *((BYTE*)(uintptr_t)CharactersClient + 916 * (int)SelectedCharacter + 132) == 1) {
             if (Path_FindRoute(*(int*)(entity + 904), *(int*)(entity + 908),
-                               (int)DAT_07e016c0, (int)DAT_07e016c4,
+                               (int)TargetX, (int)TargetY,
                                (unsigned char*)(entity + 852), (float)range)) {
                 entity[748] = 1;                              // IDA L1827
                 entity[749] = 5;                              // IDA L1828
@@ -990,7 +990,7 @@ static Attack_Flow97k Attack_Label240_97k(char* entity, int iType)
     }
     // IDA L1862: CheckWall(c+904, c+908, TargetX, TargetY) && SelectedCharacter != -1
     if (Path_IsLineClear(*(int*)(entity + 904), *(int*)(entity + 908),
-                         (int)DAT_07e016c0, (int)DAT_07e016c4)
+                         (int)TargetX, (int)TargetY)
         && SelectedCharacter != -1) {
         BYTE* const target = (BYTE*)(uintptr_t)CharactersClient +
                              916 * (int)SelectedCharacter;    // IDA: CharactersClient[SelectedCharacter]
@@ -1238,7 +1238,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
         if (Attack_OutOfRange97k(entity, range)) {            // IDA L7173
             if (SelectedCharacter != -1) {
                 if (Path_FindRoute(*(int*)(entity + 904), *(int*)(entity + 908),
-                                   (int)DAT_07e016c0, (int)DAT_07e016c4,
+                                   (int)TargetX, (int)TargetY,
                                    (unsigned char*)(entity + 852), (float)range)) {
                     entity[748] = 1;                          // IDA L7205
                     entity[749] = 5;                          // IDA L7206
@@ -1248,7 +1248,7 @@ static void Attack_SoulBarrier97k(char* entity, int iType, bool hasTarget)
         }
         // IDA L7264-7506: C1:06:19 con la key del objetivo, y despues LABEL_1157.
         const WORD targetKey = *(WORD*)((BYTE*)(uintptr_t)CharactersClient +
-                                        916 * (int)DAT_07d780a0 + 476);
+                                        916 * (int)MovementSkillTarget + 476);
         Attack_SendSkill19_97k(iType, targetKey);
     } else {
         // IDA L7508-7754: sin objetivo el skill se lanza sobre uno mismo.
@@ -1266,7 +1266,7 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
     if (Attack_OutOfRange97k(entity, range)) {                // IDA L7819
         if (SelectedCharacter != -1 && CheckAttack()) {      // IDA L7821: CheckAttack()
             if (Path_FindRoute(*(int*)(entity + 904), *(int*)(entity + 908),
-                               (int)DAT_07e016c0, (int)DAT_07e016c4,
+                               (int)TargetX, (int)TargetY,
                                (unsigned char*)(entity + 852), (float)range)) {
                 entity[748] = 1;                              // IDA L7864
                 entity[749] = 5;                              // IDA L7865
@@ -1275,7 +1275,7 @@ static void Attack_Label1158_97k(char* entity, int iType, bool hasTarget)
         return;                                               // IDA L7871
     }
     if (!Path_IsLineClear(*(int*)(entity + 904), *(int*)(entity + 908),
-                          (int)DAT_07e016c0, (int)DAT_07e016c4)) {   // IDA L7930
+                          (int)TargetX, (int)TargetY)) {   // IDA L7930
         Attack_Label1585_97k(entity, iType, hasTarget);       // IDA LABEL_1584 -> LABEL_1585
         return;
     }
@@ -1340,8 +1340,8 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         if (fadeState == 1 || fadeState == 2 || *(float*)(entity + 360) < 0.69999999f)
             return;                                           // IDA L9285
         extern unsigned char* TerrainWall;
-        BYTE terrainAttr = TerrainWall[(((unsigned)DAT_07e016c4 & 0xFF) << 8)
-                                       | ((unsigned)DAT_07e016c0 & 0xFF)];   // IDA: TerrainWall[Terrain_Load(TargetX, TargetY)]
+        BYTE terrainAttr = TerrainWall[(((unsigned)TargetY & 0xFF) << 8)
+                                       | ((unsigned)TargetX & 0xFF)];   // IDA: TerrainWall[Terrain_Load(TargetX, TargetY)]
         if ((terrainAttr & 0x20) == 0x20)
             terrainAttr -= 0x20;                              // IDA L9290-9292
         if (terrainAttr != 0)
@@ -1365,7 +1365,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         // El `05` que aparecia en una lectura anterior era el valor intermedio
         // previo al ultimo append, no la longitud enviada.
         BYTE packet[6] = { 0xC1, 0x06, 0x1C, 0x00,
-                           (BYTE)DAT_07e016c0, (BYTE)DAT_07e016c4 };
+                           (BYTE)TargetX, (BYTE)TargetY };
         Net_SendSmallPacket(packet, sizeof(packet));
         // IDA L9682 LABEL_1762 -> LABEL_1763: sub_444B30(c) = SetPlayerTeleport,
         // o sea la animacion de casteo (accion 87) sobre el propio heroe.
@@ -1410,8 +1410,8 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             if (rx == 1 && ry == 1) continue;                   // IDA L9784
             const int x = heroGX + rx - 1;
             const int y = heroGY + ry - 1;
-            DAT_07e016c0 = (DWORD)x;                            // IDA L9786: TargetX
-            DAT_07e016c4 = (DWORD)y;                            // IDA L9787: TargetY
+            TargetX = (DWORD)x;                            // IDA L9786: TargetX
+            TargetY = (DWORD)y;                            // IDA L9787: TargetY
             BYTE terrainAttr = TerrainWall[((y & 0xFF) << 8) | (x & 0xFF)];   // IDA: TERRAIN_INDEX
             if ((terrainAttr & 0x20) == 0x20) terrainAttr -= 0x20;
             *(float*)(target + 36) = CreateAngle(              // IDA L9798
@@ -1509,8 +1509,8 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
         DAT_083a4124 = 0;  // MouseLButtonPush = 0
     } else {
         // Normal: RMB triggers attack
-        if (DAT_083a42d0 != 0 || DAT_083a42ac != 0) {
-            DAT_083a42d0 = 0;
+        if (MouseRButtonPush != 0 || DAT_083a42ac != 0) {
+            MouseRButtonPush = 0;
             bSuccess = true;
         }
         // 0049CBF0: la continuación automática sólo vale para el
@@ -1532,7 +1532,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
         g_RightButtonPressSeconds_Attack =
             (DAT_05826e08 - g_RightButtonReleaseTime_Attack) * 0.001f;
         if (g_RightButtonPressSeconds_Attack >= 3600.0f) {
-            DAT_083a42d0 = 0;
+            MouseRButtonPush = 0;
             DAT_083a42ac = 0;
             return;
         }
@@ -1628,7 +1628,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
         // nuestro arbol se llama Path_IsLineClear (functions.h lo mapea a esa
         // misma direccion).  No es una aproximacion: es la misma funcion.
         if (Path_IsLineClear(heroGridX, heroGridY,
-                             (int)DAT_07e016c0, (int)DAT_07e016c4)) {
+                             (int)TargetX, (int)TargetY)) {
             for (int i = 0; i <= 68; i += 68) {                // IDA L1357: i
                 const BYTE handClass = (BYTE)(entity[444] & 7);   // IDA: v21
                 if (handClass == 1 || handClass == 3) {
@@ -1645,7 +1645,7 @@ void __cdecl Combat_DispatchHeroSkillAttack(void *entity_v /* IDA: c */)
                     }
                     if (handAllowed) {
                         DAT_07d78098 = 1;                       // IDA L1422
-                        DAT_07d780a0 = (DWORD)SelectedCharacter;// IDA L1424
+                        MovementSkillTarget = (DWORD)SelectedCharacter;// IDA L1424
                         DAT_07d7809c = Hero ? *(BYTE*)(Hero + 913) : 0; // IDA L1423/1425
                         if (DAT_07cf1ffc != 0 &&
                             Item_Equip((DWORD)(uintptr_t)entity,
@@ -1740,7 +1740,7 @@ static void Combat_SeedRuntimeState97k(int skillType, int targetIdx)
 {
     DAT_07d78098 = 1;
     DAT_07d7809c = (Hero ? *(unsigned char*)(Hero + 913) : 0);
-    DAT_07d780a0 = (DWORD)targetIdx;
+    MovementSkillTarget = (DWORD)targetIdx;
     CurrentSkill = (DWORD)skillType;
 }
 
@@ -1910,7 +1910,7 @@ void __cdecl Combat_UseElfSkill(int c, int o) {
     BYTE* const character = (BYTE*)(uintptr_t)c;
     BYTE* const object = (BYTE*)(uintptr_t)o;
     BYTE* const attributes = (BYTE*)(uintptr_t)DAT_07cf1ff4;
-    const int targetIndex = (int)DAT_07d780a0;
+    const int targetIndex = (int)MovementSkillTarget;
     if (targetIndex < 0 || targetIndex >= 400)
         return;
 
@@ -2017,8 +2017,8 @@ void __cdecl Action(DWORD c, DWORD o)
         // has no SetPlayerStop nor queue cleanup side effect.
         const DWORD groundKey = ItemKey;                         // IDA: v114
         const BYTE* const groundItem = &DAT_07e12840[0] + (size_t)groundKey * 0x204;
-        const float deltaY = *(float*)(o + 20) - ((float)DAT_07e016c4 * 100.0f + 50.0f);
-        const float deltaX = *(float*)(o + 16) - ((float)DAT_07e016c0 * 100.0f + 50.0f);
+        const float deltaY = *(float*)(o + 20) - ((float)TargetY * 100.0f + 50.0f);
+        const float deltaX = *(float*)(o + 16) - ((float)TargetX * 100.0f + 50.0f);
 
         if (sqrtf(deltaX * deltaX + deltaY * deltaY) > 150.0f)
             return;
@@ -2176,8 +2176,8 @@ void __cdecl Action(DWORD c, DWORD o)
         // IDA L1231-1232: el original ESCRIBE los globales TargetX/TargetY, no
         // solo locales.  Los lee la rama de fuera-de-alcance de mas abajo
         // (PathFinding2) y tambien el resto del frame (Attack, HeroTile).
-        DAT_07e016c0 = (DWORD)tgtGX;                          // IDA: TargetX
-        DAT_07e016c4 = (DWORD)tgtGY;                          // IDA: TargetY
+        TargetX = (DWORD)tgtGX;                          // IDA: TargetX
+        TargetY = (DWORD)tgtGY;                          // IDA: TargetY
 
         bool forceWalk = (*(unsigned char*)(c + 846) != 0);
 
@@ -2330,7 +2330,7 @@ void __cdecl Action(DWORD c, DWORD o)
         int heroGY = *(int*)(c + 908);
         // 2026-09-04 FIX: el comentario anterior decia "en nuestro build TargetX/Y
         // no son globals" y leia `o + 0x306/0x307`.  Es FALSO: TargetX/TargetY son
-        // 0x07E016C0 / 0x07E016C4 (= DAT_07e016c0/c4), los mismos que escriben
+        // 0x07E016C0 / 0x07E016C4 (= TargetX/c4), los mismos que escriben
         // `CheckTarget` y el bloque de SelectedOperate de Player_InputTick.
         // El +0x306/0x307 lo setea SOLO el click al suelo, asi que para una accion
         // sobre mobiliario tenia valores viejos y el gate cortaba con `return`:
@@ -2341,8 +2341,8 @@ void __cdecl Action(DWORD c, DWORD o)
         //   if ( abs(heroX - TargetX) <= abs(heroY - TargetY) ) { v = heroY; t = TargetY; }
         //   else                                               { v = heroX; t = TargetX; }
         //   if ( abs(v - t) > 1 ) return;
-        int TargetX_v = (int)DAT_07e016c0;
-        int TargetY_v = (int)DAT_07e016c4;
+        int TargetX_v = (int)TargetX;
+        int TargetY_v = (int)TargetY;
         int dxAbs = (heroGX - TargetX_v); if (dxAbs < 0) dxAbs = -dxAbs;
         int dyAbs = (heroGY - TargetY_v); if (dyAbs < 0) dyAbs = -dyAbs;
         int diffAbs = (dxAbs > dyAbs) ? dxAbs : dyAbs;
@@ -2467,7 +2467,7 @@ void __cdecl Action(DWORD c, DWORD o)
     //
     // Flow (per IDA Action.c:2244-2583):
     //  1. Resolve skill type from DAT_07d78098/DAT_07d7809c (+ skill table).
-    //  2. Validate target (DAT_07d780a0 = MovementSkillTarget) is alive.
+    //  2. Validate target (MovementSkillTarget = MovementSkillTarget) is alive.
     //  3. Skill type dispatch:
     //     a) Direct-target skills (1-4,7,11,17): in-range — sub_4889D0(c,o);
     //        out-of-range — PathFinding2 — c+748=1
@@ -2486,7 +2486,7 @@ void __cdecl Action(DWORD c, DWORD o)
             ? (attributes ? attributes[(BYTE)DAT_07d7809c + 87] : 0)
             : (int)DAT_07d7809c;                             // IDA: v62
 
-        int skillTarget = (int)DAT_07d780a0;  // MovementSkillTarget
+        int skillTarget = (int)MovementSkillTarget;  // MovementSkillTarget
         if (skillTarget < 0) {
             return;
         }
@@ -2500,8 +2500,8 @@ void __cdecl Action(DWORD c, DWORD o)
         // IDA L2302/2305, L2380/2381, L2427/2428, L2495/2496: los cuatro
         // sub-casos escriben los globales TargetX/TargetY antes del chequeo
         // de alcance.
-        DAT_07e016c0 = (DWORD)tgtGX;                      // IDA: TargetX
-        DAT_07e016c4 = (DWORD)tgtGY;                      // IDA: TargetY
+        TargetX = (DWORD)tgtGX;                      // IDA: TargetX
+        TargetY = (DWORD)tgtGY;                      // IDA: TargetY
 
         int skillRange = Combat_GetSkillRange97k(skillType);
 

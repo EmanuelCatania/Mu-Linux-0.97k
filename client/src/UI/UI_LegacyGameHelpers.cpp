@@ -150,7 +150,7 @@ char __cdecl SelectSkillByHotkey(int a1)
             playerEnt[913] = (char)i;
             found = 1;
         }
-        if (DAT_00559c5c != 0 && World != 6) {
+        if (m_bAutoAttack != 0 && World != 6) {
             const char skillType = CA[(unsigned char)playerEnt[913] + 87];
             if (skillType == 6 || skillType == 15) {
                 SelectedCharacter = 0xffffffff;

@@ -5,7 +5,7 @@
 // IDA: FUN_0047A010
 // Reads text-format gate/warp data file (Data2/Gate.txt Korean locale).
 // Parser uses TextParser_GetToken (type 0=comment/END, 1=record, 2=EOF).
-// Gate data structure: DAT_07cf5600 + gate_id * 9 bytes (stride 9).
+// Gate data structure: GateAttribute + gate_id * 9 bytes (stride 9).
 //   Each 9-byte record stores: [0]=flag, [1]=mapid, [2]=x, [3]=y,
 //     [4]=dst_mapid, [5]=dst_x, [6]=dst_y, [7]=size, [8]=dir.
 // Total 100 entries (900 bytes, loop runs while off < 900).
@@ -24,7 +24,7 @@ void __cdecl Gate_LoadTextData(const char *path)
                 // gate_id = (int)__ftol() from TextParser_GetToken
                 // Then read 9 fields sequentially; each TextParser_GetToken call
                 // returns the next token as float; cast to byte.
-                // ptr = &DAT_07cf5600 + gate_id * 9
+                // ptr = &GateAttribute + gate_id * 9
                 // ptr[0..8] = 9 successive field reads
             }
         }
@@ -46,9 +46,9 @@ void __cdecl Gate_SaveBMD(const char *path)
     int off   = 0;
     do {
         // copy 9 bytes from gate table
-        *(DWORD *)buf          = *(DWORD *)((char *)DAT_07cf5600 + off);
-        *(DWORD *)(buf + 4)    = *(DWORD *)((char *)DAT_07cf5600 + off + 4);
-        buf[8]                 = *((char *)DAT_07cf5600 + off + 8);
+        *(DWORD *)buf          = *(DWORD *)((char *)GateAttribute + off);
+        *(DWORD *)(buf + 4)    = *(DWORD *)((char *)GateAttribute + off + 4);
+        buf[8]                 = *((char *)GateAttribute + off + 8);
         FUN_00479910((int)buf, 9);
         FUN_005430f0(buf, 9, 1, (int *)fp);
         off += 9;
@@ -60,7 +60,7 @@ void __cdecl Gate_SaveBMD(const char *path)
 // IDA: FUN_0047A4D0
 // Reads binary .bmd gate data (counterpart to FUN_0047a170).
 // Allocates 9-byte scratch buffer, reads 100 records sequentially,
-// XOR-decrypts each via FUN_00479910, copies into DAT_07cf5600 (stride 9).
+// XOR-decrypts each via FUN_00479910, copies into GateAttribute (stride 9).
 void __cdecl Gate_LoadBMD(const char *path)
 {
     CHAR msg[256];
@@ -77,7 +77,7 @@ void __cdecl Gate_LoadBMD(const char *path)
     do {
         FUN_00541597(buf, 9, 1, (int *)fp);
         FUN_00479910((int)buf, 9);
-        DWORD *dst = (DWORD *)((char *)DAT_07cf5600 + off);
+        DWORD *dst = (DWORD *)((char *)GateAttribute + off);
         off += 9;
         dst[0] = *(DWORD *)buf;
         dst[1] = *(DWORD *)(buf + 4);

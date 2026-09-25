@@ -793,9 +793,9 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
                 // `SetBackgroundTextColor = Color4b(0,0,0,0)`.  Aca se restaura
                 // el valor ANTERIOR en vez de forzar 0, para que los items
                 // queden igual que cuando no se apunta a nada.
-                const DWORD savedBack = DAT_00559c80;
+                const DWORD savedBack = SetBackgroundTextColor;
                 const DWORD savedText = DAT_00559c78;
-                DAT_00559c80 = 0xFF000064;  // m_dwBackColor (rojo oscuro, ABGR)
+                SetBackgroundTextColor = 0xFF000064;  // m_dwBackColor (rojo oscuro, ABGR)
                 DAT_00559c78 = 0xFFC8E6FF;  // m_dwTextColor (celeste)
                 // IDA LABEL_35: `RenderCenteredText(v13 / 2, 10, v3)`, con v13
                 // del MISMO arbol que GetScreenWidth (0x4CB520): 260 con
@@ -803,7 +803,7 @@ void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*
                 // ninguno.  (2026-08-22: aca habia un criterio inventado que
                 // leia CharacterAttribute + 0x14E como "inventario abierto".)
                 RenderCenteredText(GetScreenWidth() / 2, 10, name);
-                DAT_00559c80 = savedBack;
+                SetBackgroundTextColor = savedBack;
                 DAT_00559c78 = savedText;
             } else {
                 // IDA: TODO lo que no es monstruo va a CreateChat (el port lo

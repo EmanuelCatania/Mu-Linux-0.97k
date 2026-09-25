@@ -298,7 +298,7 @@ int GL_CaptureScreenshot(void)
   DAT_083a42f4 = 1;
   puVar2 = (undefined*)operator_new(DAT_00561570 * DAT_0056156c * 3);
   glReadPixels(0,0,DAT_0056156c,DAT_00561570,0x1907,0x1401,puVar2);
-  FUN_00529000((const char*)&DAT_083a4174,DAT_0056156c,DAT_00561570,puVar2,100);
+  FUN_00529000((const char*)&GrabFileName,DAT_0056156c,DAT_00561570,puVar2,100);
   operator_delete(puVar2);
   iVar1 = DAT_083a42f0 + 1;
   DAT_083a42f0 = iVar1 % 10000;

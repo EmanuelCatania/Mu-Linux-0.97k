@@ -35,7 +35,7 @@
 //   puVar9   = packet length (ushort)
 //   param_1  = opcode (main switch key)
 //
-//   DAT_07e11dcc += byte[opcode] each packet (running byte counter)
+//   TotalPacketSize += byte[opcode] each packet (running byte counter)
 //
 // ── MAIN OPCODE SWITCH (param_1 = opcode byte) ────────────────────────────────
 //
@@ -48,7 +48,7 @@
 //   case 0x02:  World-enter / spawn position:
 //               Copies position payload into locals (0xf dwords)
 //               FUN_004801c0()           — world state init
-//               if DAT_07e11d80: PlayBuffer(0x26, 0, 0)
+//               if m_bWhisperSound: PlayBuffer(0x26, 0, 0)
 //               UIChatLogWindow_AddText(posData, nameData, 0)
 //
 //   case 0x03:  XOR handshake:
@@ -134,9 +134,9 @@
 //
 //   case 0x33:  if byte[3] != 0:
 //                 DAT_07e91388 = 0
-//                 STRUCT_DECRYPT(&DAT_055c9bc8, DAT_07cf1ffc)  — decode g_CharData
+//                 STRUCT_DECRYPT(&MAIN_HASH_CLASS, DAT_07cf1ffc)  — decode g_CharData
 //                 DAT_07cf1ffc[0x152] = *(puVar8+2)
-//                 STRUCT_ENCRYPT(&DAT_055c9bc8, puVar23)       — re-encode g_CharData
+//                 STRUCT_ENCRYPT(&MAIN_HASH_CLASS, puVar23)       — re-encode g_CharData
 //                 PlayBuffer(0x1d, 0, 0)
 //
 //   case 0x34:  if packet[2] != 0:
@@ -165,9 +165,9 @@
 //   case 0x3b:  DAT_07eaa0f0 = *(puVar8+2)   — 4-byte misc update
 //
 //   case 0x3c:  PIN/SecondPassword UI control:
-//               0 → DAT_07eaa0fc = 0
-//               1 → DAT_07eaa0fc = 1; UI_SetScene(0x19)
-//               2 → DAT_07eaa0fd = 0; UI_SetScene(0x19)
+//               0 → m_bYourConfirm = 0
+//               1 → m_bYourConfirm = 1; UI_SetScene(0x19)
+//               2 → m_bMyConfirm = 0; UI_SetScene(0x19)
 //               * → UI_SetScene(0x19)
 //
 //   case 0x3d:  FUN_004337f0(puVar8)
@@ -200,15 +200,15 @@
 //
 //   case 0x54:  Second password / PIN full reset:
 //               DAT_07eaa114-117 = 0
-//               FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa118); DAT_07eaa118=0
+//               FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa118); DAT_07eaa118=0
 //               PACKET_ENCRYPT; DAT_07eaa119=0; DAT_00559f5f=0; DAT_07eaa14c=0
-//               FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b); DAT_07eaa11b=0
+//               FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b); DAT_07eaa11b=0
 //               PACKET_ENCRYPT; DAT_07eaa124=1; DAT_07eaa144=0
 //
 //   case 0x55:  Character list change (delete/create result):
-//               DAT_07eaa124=1; DAT_07eaa144=1; DAT_07e11d70=1
+//               DAT_07eaa124=1; DAT_07eaa144=1; GuildInputEnable=1
 //               DAT_00559c84=0; ClearInput(0)
-//               _DAT_00559c94=8; DAT_00559c88=0
+//               InputTextMax=8; InputNumber=0
 //               *(DAT_07abf5d8+0x1da) = 999
 //
 //   case 0x56:  FUN_00435280(puVar8)
@@ -2795,8 +2795,8 @@ static void ReceiveTradeExit97k(const BYTE* Msg, int Size)
     DAT_07eaa165 = 0;
     DAT_07eaa0f0 = 0;
     DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
-    DAT_07eaa0fc = 0;
-    DAT_07eaa0fd = 0;
+    m_bYourConfirm = 0;
+    m_bMyConfirm = 0;
     TradeYourWait = 0;
     TradeMyWait = 0;
     TradeRemoteGuildKey = 0;
@@ -2813,7 +2813,7 @@ static void ReceiveTradeExit97k(const BYTE* Msg, int Size)
         SetErrorMessage(0);
         ClearInput(0);
         _InputTextMaxArr[0] = 42;
-        DAT_00559c88 = 2;
+        InputNumber = 2;
         InputEnable = 0;
     }
 }
@@ -3421,7 +3421,7 @@ void Net_ProcessPacket(void)
 
                         // 2) Opciones de juego.
                         DAT_07e11e18 = ((p[10] & 1) == 1);          // m_bAutoAttack
-                        DAT_07e11d80 = (char)((p[10] & 4) == 4);    // m_bWhisperSound (0x07E11D80); antes un DAT_07e11e26 sin xrefs en IDA
+                        m_bWhisperSound = (char)((p[10] & 4) == 4);    // m_bWhisperSound (0x07E11D80); antes un DAT_07e11e26 sin xrefs en IDA
                         DAT_00559c60 = p[11] + 448;                 // QKey  (item type)
                         DAT_00559c64 = p[12] + 448;                 // WKey
                         DAT_00559c68 = p[13] + 448;                 // EKey
@@ -3597,7 +3597,7 @@ void Net_ProcessPacket(void)
                     // pueda contestar (ver FUN_0047fed0) — y el sonido SOLO con
                     // m_bWhisperSound (0x07E11D80).
                     RegistWhisperID(10, wname);
-                    if (DAT_07e11d80)
+                    if (m_bWhisperSound)
                         PlayBuffer(0x26, 0, 0);
                     UIChatLogWindow_AddText(wname, wmsg, 0);
                 }
@@ -5538,8 +5538,8 @@ void Net_ProcessPacket(void)
                     DAT_07eaa0e8 = 0;
                     DAT_07eaa0f0 = 0;
                     DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
-                    DAT_07eaa0fc = 0;
-                    DAT_07eaa0fd = 0;
+                    m_bYourConfirm = 0;
+                    m_bMyConfirm = 0;
                     TradeYourWait = 0;
                     TradeMyWait = 0;
                     DAT_00559684 = 0xFFFFFFFF;
@@ -5604,13 +5604,13 @@ void Net_ProcessPacket(void)
                 // confirmación, no estado de la segunda contraseña.
                 const BYTE sub = Msg[3];
                 if (sub == 0) {
-                    DAT_07eaa0fc = 0;
+                    m_bYourConfirm = 0;
                 } else if (sub == 1) {
-                    DAT_07eaa0fc = 1;
+                    m_bYourConfirm = 1;
                     PlayBuffer(0x19, 0, 0);
                 } else {
                     if (sub == 2) {
-                        DAT_07eaa0fd = 0;
+                        m_bMyConfirm = 0;
                     }
                     PlayBuffer(0x19, 0, 0);
                 }

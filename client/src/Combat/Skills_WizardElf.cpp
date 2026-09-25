@@ -77,7 +77,7 @@ void __cdecl Combat_UseWizardSkill(DWORD c, DWORD o) {
 
     // ── Set target position from CharactersClient[MovementSkillTarget] ──
     char* heroEntity = (char*)(DWORD)c;
-    int targetIdx = (int)DAT_07d780a0;  // MovementSkillTarget
+    int targetIdx = (int)MovementSkillTarget;  // MovementSkillTarget
     DWORD entityBase = DAT_07abf5d0;    // CharactersClient array base
 
     // Target entity position: entityBase + targetIdx * 0x394 + offset
@@ -463,7 +463,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             return false;
         }
 
-        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + (int)DAT_07d780a0 * 0x394 + 476);
+        WORD targetKey = *(WORD*)((char*)(uintptr_t)DAT_07abf5d0 + (int)MovementSkillTarget * 0x394 + 476);
         if (targetKey == 0xFFFF) {
             continue;
         }
@@ -496,8 +496,8 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             //     v35 = c.y - (TargetY * 100.0 + 50.0);
             //     v36 = c.x - (TargetX * 100.0 + 50.0);
             //     if (sqrt(v35*v35 + v36*v36) > Distance * 100.0) -> no dispara
-            float targetWorldX = (float)((int)DAT_07e016c0) * _DAT_005524f0 + 50.0f;
-            float targetWorldY = (float)((int)DAT_07e016c4) * _DAT_005524f0 + 50.0f;
+            float targetWorldX = (float)((int)TargetX) * _DAT_005524f0 + 50.0f;
+            float targetWorldY = (float)((int)TargetY) * _DAT_005524f0 + 50.0f;
 
             // Check range: distance from hero to target must be within skill range
             float dx = heroPosX - targetWorldX;
@@ -542,7 +542,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             // "a veces".
             const BYTE dest = Combat_GetDestValue97kExt(
                                   (int)gridX, (int)gridY,
-                                  (int)DAT_07e016c0, (int)DAT_07e016c4);
+                                  (int)TargetX, (int)TargetY);
             const BYTE angleByte = (BYTE)(int)((angle + 180.0f) * (256.0f / 360.0f));
             SendSkillPacket1E_Local(skillId, gridX, gridY, dir, dest, angleByte, targetKey);
 

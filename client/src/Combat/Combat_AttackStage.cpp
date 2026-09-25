@@ -17,7 +17,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
     // anti-tamper hash table — skipped (encrypt/decrypt c->Skill)
     BYTE skillByte = *(BYTE*)(c + 0x302);
 
-    DAT_00559858 = 15; // g_iLimitAttackTime = 15
+    g_iLimitAttackTime = 15; // g_iLimitAttackTime = 15
 
     // Models base
     DWORD modelsBase = DAT_05828d58;
@@ -230,18 +230,18 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
             PlayBuffer(100, (DWORD)o, 0);
         }
 
-        DAT_00559858 = 5; // g_iLimitAttackTime = 5
+        g_iLimitAttackTime = 5; // g_iLimitAttackTime = 5
         return true;
     }
 
     // ── case '7' (0x37) — summoner/special skill: CreateEffect(0x4F3) + CreateEffect(0x490) ──
     case 0x37: {
         if (*(short*)(o + 0x02) != 0x186) {
-            DAT_00559858 = 15;
+            g_iLimitAttackTime = 15;
             return true;
         }
         if (*(BYTE*)(o + 0x105) != 0x3D) {
-            DAT_00559858 = 15;
+            g_iLimitAttackTime = 15;
             return true;
         }
 
@@ -254,7 +254,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         }
 
         if (*(float*)(o + 0x108) < _DAT_00552540) {
-            DAT_00559858 = 15;
+            g_iLimitAttackTime = 15;
             return true;
         }
 
@@ -274,7 +274,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         DWORD modelData = *(DWORD*)(modelsBase + 0x186 * 0xBC + 0x30);
         *(float*)(modelData + 0x3D4) = (float)(int)c + _DAT_005528f4;
         *(BYTE*)(c + 0x2F5) = 0x0F;
-        DAT_00559858 = 15;
+        g_iLimitAttackTime = 15;
         return true;
     }
 
@@ -308,7 +308,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
             PlayBuffer(0x54, 0, 0);
             *(BYTE*)(c + 0x2F5) = 0x0F;
         }
-        DAT_00559858 = 15;
+        g_iLimitAttackTime = 15;
         return true;
     }
 
@@ -330,7 +330,7 @@ bool __cdecl AttackStage_stub(DWORD c, DWORD o)
     const BYTE skill = *(BYTE*)(c + 770), stage = *(BYTE*)(c + 757);
     const short type = *(short*)(o + 2);
     const DWORD model = DAT_05828d58 + type * 188;
-    DAT_00559858 = 15;
+    g_iLimitAttackTime = 15;
     if (skill == 43) {
         if (stage == 8) PlayBuffer(83, 0, 0);
         if (stage >= 2 && stage <= 8) {
@@ -359,7 +359,7 @@ bool __cdecl AttackStage_stub(DWORD c, DWORD o)
         if(stage>=13 && stage<=14) { const float r=*(float*)(o+36)*0.017453292f; for(int i=0;i<3;++i) { float p[3]={*(float*)(o+16)+sinf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+20)-cosf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+24)+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; CreateEffect(266,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
     } else if(skill==48) { if(stage>9 && type==390 && *(BYTE*)(o+261)==63) *(BYTE*)(c+757)=15; }
     else if(skill==49) { if(*(float*)(o+264)>=5.0f && type==390 && (*(BYTE*)(o+261)==64 || *(BYTE*)(o+261)==65)) *(BYTE*)(c+757)=15; }
-    else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} DAT_00559858=5; }
+    else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} g_iLimitAttackTime=5; }
     else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
     else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);*(BYTE*)(c+757)=15;} }
     // -- PENDIENTE: grupo de skills de magia del DLL (mejora, NO esta en IDA) --

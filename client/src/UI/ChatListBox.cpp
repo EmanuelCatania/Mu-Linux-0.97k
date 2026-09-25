@@ -1571,7 +1571,7 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
             extern int __fastcall FUN_0040e730(void* This, int edx, char* param_1);
             if (!FUN_0040e730(self, 0, src) && !FUN_0040e730(self, 0, msg))
                 return;
-            if (*((BYTE*)self + 200) && DAT_07e11d80)
+            if (*((BYTE*)self + 200) && m_bWhisperSound)
                 PlayBuffer(38, 0, 0);
         }
     } else if (kind == 3) {
@@ -1961,7 +1961,7 @@ static int __fastcall GuildLB_perFrameInput(DWORD* self)
                         dword_5615E4     = v9 - v3 - 1;
                         ClearInput(0);                        // ClearInput(0)
                         InputEnable      = 0;
-                        DAT_00559c88     = 1;     // InputNumber
+                        InputNumber     = 1;     // InputNumber
                         // IDA: `*(float *)InputTextMax = flt_83A7ACC[0];` —
                         // escribe BITS de float sobre InputTextMax[0], que es
                         // int.  Se porta tal cual (el original lo lee despues

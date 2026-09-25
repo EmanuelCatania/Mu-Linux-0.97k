@@ -72,7 +72,7 @@
 //   DAT_083a3ff0   — weather mode (0=sun/clear, 1=rain, 2=snow, 3=storm)
 //   DAT_0838bc70   — per-tile terrain attribute array
 //   World   — World
-//   DAT_055c9bc8   — HashTable context (anti-tamper)
+//   MAIN_HASH_CLASS   — HashTable context (anti-tamper)
 //   DAT_083a7c00   — anti-tamper key
 //   _DAT_005524f0  — world grid scale
 //   _DAT_005524f4  — PI/180
@@ -181,7 +181,7 @@ uint __cdecl Weather_Update(void)
 
     // ── Anti-tamper: HashTable reference-count increment for DAT_083a7c00 ─────
     local_40 = &DAT_083a7c00;
-    uVar8 = (**(unsigned int (**)(void *))((char *)DAT_055c9bc8 + 0xc))(&DAT_083a7c00);
+    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 0xc))(&DAT_083a7c00);
     uVar13 = 0;
     local_40 = (DWORD *)0x0;
     if (DAT_055c9bd4 != 0) {
@@ -208,7 +208,7 @@ uint __cdecl Weather_Update(void)
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) {
                 if (uVar8 == 0xffffffff) goto LAB_00500f16;
-                uVar8 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_083a7c00);
+                uVar8 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
                 puVar10 = (uVar8 == 0xffffffff) ? (DWORD *)0x0
                                                  : *(DWORD **)(DAT_055c9bcc + uVar8 * 4);
                 cVar4 = *(char *)(puVar10 + 1);
@@ -225,12 +225,12 @@ uint __cdecl Weather_Update(void)
 LAB_00500f16:
     pvVar9 = operator_new(5);
     *(unsigned char *)((int)pvVar9 + 4) = 1;
-    HashTable_Insert(&DAT_055c9bc8, pvVar9, &DAT_083a7c00);
+    HashTable_Insert(&MAIN_HASH_CLASS, pvVar9, &DAT_083a7c00);
 LAB_00500f34:
     // Anti-tamper: HashTable reference-count decrement
     fStack_38 = DAT_083a7c00;
     puStack_44 = &DAT_083a7c00;
-    uVar8 = (**(unsigned int (**)(void *))((char *)DAT_055c9bc8 + 0xc))(&DAT_083a7c00);
+    uVar8 = (**(unsigned int (**)(void *))((char *)MAIN_HASH_CLASS + 0xc))(&DAT_083a7c00);
     uVar13 = 0;
     puStack_44 = (DWORD *)0x0;
     if (DAT_055c9bd4 != 0) {
@@ -257,7 +257,7 @@ LAB_00500f34:
             if (!bVar21) iVar14 = (1 - (uint)bVar20) - (uint)(bVar20 != 0);
             if (iVar14 == 0) {
                 if (uVar8 != 0xffffffff) {
-                    uVar8 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_083a7c00);
+                    uVar8 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
                     puVar10 = (uVar8 == 0xffffffff) ? (DWORD *)0x0
                                                      : *(DWORD **)(DAT_055c9bcc + uVar8 * 4);
                     cVar4 = *(char *)(puVar10 + 1);

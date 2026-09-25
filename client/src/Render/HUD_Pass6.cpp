@@ -325,7 +325,7 @@ extern "C" void FUN_004f5ce0_realbody(void) { sub_4F5CE0_(); }
 // =============================================================================
 extern "C" void __cdecl RenderServerDivision(void)
 {
-    if (DAT_07eaa130 == '\0') return;
+    if (ServerDivisionOpened == '\0') return;
 
     glColor3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
@@ -690,11 +690,11 @@ extern "C" void GuildCreator_OpenFromServer(void)
     // IDA: ProtocolCore 0x55 activa GuildInputEnable y mantiene InputEnable
     // apagado. Ambos caminos escriben InputText[0], pero sólo el primero evita
     // que Enter abra o envíe chat mientras el editor conserva el foco.
-    DAT_07e11d70 = 1;
+    GuildInputEnable = 1;
     DAT_00559c84 = 0;
     ClearInput(0);
     _InputTextMaxArr[0] = 8;
-    DAT_00559c88 = 0;
+    InputNumber = 0;
     GuildMark_InitializePalette(true);
     if (Hero)
         *(short*)((BYTE*)Hero + 474) = 999;
@@ -726,7 +726,7 @@ extern "C" void GuildCreator_CloseFromResult(void)
 {
     ClearInput(0);
     _InputTextMaxArr[0] = 10;
-    DAT_07e11d70 = 0;
+    GuildInputEnable = 0;
     DAT_00559c84 = 0;
     GuildCreatorOpened = 0;
     g_iKeyPadEnable = 0;
@@ -821,10 +821,10 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     //     sprintf(pszText, GlobalText[460], &ServerList[idx], channel);
     //   else
     //     sprintf(pszText, GlobalText[461], &ServerList[idx], channel);
-    // ServerSelectHi=DAT_00561694 (index del server elegido), channel=DAT_0056169c.
+    // ServerSelectHi=ServerSelectHi (index del server elegido), channel=ServerLocalSelect.
     {
-        DWORD srvIdx = DAT_00561694;
-        DWORD channel = DAT_0056169c;
+        DWORD srvIdx = ServerSelectHi;
+        DWORD channel = ServerLocalSelect;
         const char* srvName = (const char*)&DAT_083a45d8 + srvIdx * 0x21e;
         const char* fmt = FUN_00406b10((int)srvIdx, (int)channel)
                           ? GlobalText[460]
@@ -1348,7 +1348,7 @@ extern "C" void __cdecl RenderTrade(void)
     // activo no cambia el sprite sino que tiñe de rojo la lámpara correspondiente.
     glColor3f(1.0f, TradeYourWait > 0 ? 0.0f : 1.0f,
               TradeYourWait > 0 ? 0.0f : 1.0f);
-    GL_DrawTexture(DAT_07eaa0fc ? 291 : 290,
+    GL_DrawTexture(m_bYourConfirm ? 291 : 290,
                    (float)TradeInventoryStartX + 140.0f,
                    (float)TradeInventoryStartY + 185.0f,
                    24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
@@ -1365,7 +1365,7 @@ extern "C" void __cdecl RenderTrade(void)
                    24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
     glColor3f(1.0f, TradeMyWait > 0 ? 0.0f : 1.0f,
               TradeMyWait > 0 ? 0.0f : 1.0f);
-    GL_DrawTexture(DAT_07eaa0fd ? 291 : 290, confirmX, buttonsY,
+    GL_DrawTexture(m_bMyConfirm ? 291 : 290, confirmX, buttonsY,
                    24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
     glColor3f(1, 1, 1);
     GL_DrawTexture(280, cancelX, buttonsY, 24.0f, 24.0f, 0, 0, .75f, .75f, 1, 1);
@@ -1570,7 +1570,7 @@ extern "C" void __cdecl RenderChaosMix(void)
 
     if (DAT_07eaa140 >= 2) return; // el resultado/animación ocupa sólo la grilla
 
-    const int mixType = (int)DAT_07eaa16c;
+    const int mixType = (int)MixType;
     int rate = ChaosMixLegacyValue() / 20000;
     if (rate > 100) rate = 100;
     int money = rate * 10000;

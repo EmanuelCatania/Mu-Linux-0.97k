@@ -130,7 +130,7 @@ void __cdecl Game_MainLoop(HDC param_1)
                     DWORD key = ((DWORD*)old_bd0)[i];
                     DWORD val = ((DWORD*)old_bcc)[i];
                     // HashTable_Insert equivalent
-                    unsigned h = (**(unsigned(__cdecl**)(DWORD))(DAT_055c9bc8 + 0xc))(key);
+                    unsigned h = (**(unsigned(__cdecl**)(DWORD))(MAIN_HASH_CLASS + 0xc))(key);
                     while (((DWORD*)DAT_055c9bd0)[h] != 0 && ((DWORD*)DAT_055c9bd0)[h] != key)
                         h = (h + 1) % DAT_055c9bd4;
                     ((DWORD*)DAT_055c9bcc)[h] = val;
@@ -172,10 +172,10 @@ void __cdecl Game_MainLoop(HDC param_1)
 
         // Anti-tamper: track DAT_083a7c00 ref-count, then increment
         {
-            unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_083a7c00);
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
             if (idx == 0xffffffff) {
                 void* node = operator_new(5); *((BYTE*)node + 4) = 1;
-                HashTable_Insert(&DAT_055c9bc8, node, &DAT_083a7c00);
+                HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_083a7c00);
             } else {
                 BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
                 node[4]++;
@@ -184,9 +184,9 @@ void __cdecl Game_MainLoop(HDC param_1)
         }
         DAT_083a7c00++;
         {
-            unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_083a7c00);
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
             if (idx != 0xffffffff) {
-                BYTE* node = (BYTE*)HashTable_GetNode(&DAT_055c9bc8, &DAT_083a7c00);
+                BYTE* node = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_083a7c00);
                 node[4]--;
                 if (node[4] == 0) Packet_EncryptDword(node, &DAT_083a7c00);
             }
@@ -240,7 +240,7 @@ void __cdecl Game_MainLoop(HDC param_1)
             if (s_dirReady == 1) shotDir = "Screenshots/";
         }
 #endif
-        crt_sprintf((char*)&DAT_083a4174, "%sScreen(%02d_%02d-%02d_%02d)-%04d.jpg",
+        crt_sprintf((char*)&GrabFileName, "%sScreen(%02d_%02d-%02d_%02d)-%04d.jpg",
                     shotDir, (int)st.wMonth, (int)st.wDay, (int)st.wHour,
                     (int)st.wMinute, (int)DAT_083a42f0);
     }
@@ -248,15 +248,15 @@ void __cdecl Game_MainLoop(HDC param_1)
     // GlobalText[459] es "%s: La captura fue guardada." -- lleva un %s con el
     // nombre del archivo. El port no pasaba el argumento, asi que el %s
     // consumia un valor cualquiera de la pila.
-    crt_sprintf(nameBuf, (const char*)&DAT_07d4b708, (const char*)&DAT_083a4174);
+    crt_sprintf(nameBuf, (const char*)&DAT_07d4b708, (const char*)&GrabFileName);
 
     // Build window title: serverName + " " + charName
     {
-        // DAT_00561694 es signed en el original (Game_SceneUpdate lo setea a -1
+        // ServerSelectHi es signed en el original (Game_SceneUpdate lo setea a -1
         // cuando "no server selected"). Tratarlo como unsigned haría si=0x1e y
         // leer OOB de DAT_083a45d8[0x3600] → strlen de basura → overflow del
         // titleBuf[64] → /GS cookie fail al retornar Game_MainLoop.
-        int idx = (int)DAT_00561694;
+        int idx = (int)ServerSelectHi;
         int si  = (idx < 0x1e) ? idx : 0x1e;
         if (si < 0) si = 0;
         const char* serverName = (const char*)&DAT_083a45d8 + si * 0x21e;

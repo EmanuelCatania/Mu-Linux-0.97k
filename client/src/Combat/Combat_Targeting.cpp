@@ -22,8 +22,8 @@ bool __cdecl CheckTarget_stub(DWORD c) {
         // Position at Object.Position: +0x10 (x), +0x14 (y), +0x18 (z)
         // 0049CAE0 stores target *grid* coordinates, not world coordinates.
         // The native calculation is `(int)(world * 0.01f)`.
-        DAT_07e016c0 = (DWORD)(int)(*(float*)(selEntity + 0x10) * 0.01f);
-        DAT_07e016c4 = (DWORD)(int)(*(float*)(selEntity + 0x14) * 0.01f);
+        TargetX = (DWORD)(int)(*(float*)(selEntity + 0x10) * 0.01f);
+        TargetY = (DWORD)(int)(*(float*)(selEntity + 0x14) * 0.01f);
         // Copy selected character position to entity's TargetPosition
         // TargetPosition at some offset in CHARACTER struct
         float posX = *(float*)(selEntity + 0x10);
@@ -62,8 +62,8 @@ bool __cdecl CheckTarget_stub(DWORD c) {
         *(float*)(c + 788) = DAT_083a4130;
         *(float*)(c + 792) = DAT_083a4134;
         *(float*)(c + 796) = DAT_083a4138;
-        DAT_07e016c0 = (DWORD)(int)(DAT_083a4130 * 0.01f);
-        DAT_07e016c4 = (DWORD)(int)(DAT_083a4134 * 0.01f);
+        TargetX = (DWORD)(int)(DAT_083a4130 * 0.01f);
+        TargetY = (DWORD)(int)(DAT_083a4134 * 0.01f);
         return true;
     }
     return false;

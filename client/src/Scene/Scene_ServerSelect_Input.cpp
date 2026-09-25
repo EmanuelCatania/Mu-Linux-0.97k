@@ -17,11 +17,11 @@
 //
 // On group button click:
 //   Sends 4-byte packet [0xC1][0x04][0xF4][?] to select server group.
-//   Saves selected group index to DAT_00561694; resets DAT_00561698 = -1.
+//   Saves selected group index to ServerSelectHi; resets ServerSelectLo = -1.
 //   Calls PlayBuffer(0x19, 0, 0) (BGM_Play).
 //
 // On server entry click (if group already selected, ping < 100, no cooldown):
-//   Saves channel = (port % 0x14 + 1) to DAT_0056169c.
+//   Saves channel = (port % 0x14 + 1) to ServerLocalSelect.
 //   Sends 6-byte packet [0xC1][0x06][0xF4][?][portLo][portHi].
 //   Sets connect timer: DAT_083a7ac8 = GetTickCount().
 //   Calls UIChatLogWindow_AddText twice to copy IP/port into connection context.
@@ -163,8 +163,8 @@ void CServerSelWin_UpdateWhileActive(void)
                     } while ((int)uVar5 > 0);
                 }
 
-                DAT_00561694 = local_834;
-                DAT_00561698 = -1;
+                ServerSelectHi = local_834;
+                ServerSelectLo = -1;
                 PlayBuffer(0x19, 0, 0);
                 iVar12 = local_820;
                 iVar4  = local_824;
@@ -180,10 +180,10 @@ void CServerSelWin_UpdateWhileActive(void)
     } while ((int)local_830 < (int)((const char*)&DAT_083a45ed + 0x34ee));
 
     // ── Pass 3: hit-test individual server entries in selected group ──────────
-    if ((int)DAT_00561694 == -1) goto done;
+    if ((int)ServerSelectHi == -1) goto done;
 
     {
-        int iVar10b = (int)DAT_00561694 * 0x21e;
+        int iVar10b = (int)ServerSelectHi * 0x21e;
         int iVar8b;
 
         // IDA Pass 3 uses v38 (non-PVP base) / v40 (PVP base), NOT the mutated
@@ -208,7 +208,7 @@ void CServerSelWin_UpdateWhileActive(void)
         int iVar12b = (0x18 - server_count) * 0x14;
         if (iVar12b <= iVar8b) iVar8b = iVar12b;
 
-        DAT_00561698 = -1;
+        ServerSelectLo = -1;
         int local_834b = 0;
         int local_830b = 0;   // byte offset into server port/flag arrays for this group
 
@@ -222,9 +222,9 @@ void CServerSelWin_UpdateWhileActive(void)
                 // ×4/×2. Con el server en slot 23 (CS) eso leía FUERA del array.
                 // Igual que en el render (Scene_Login_ServerSelect), castear a
                 // char*/unsigned char* para aritmética de bytes.
-                DAT_0056169c = (unsigned int)
+                ServerLocalSelect = (unsigned int)
                     *(unsigned short *)((char*)&DAT_083a4604 + iVar10b + local_830b) % 0x14 + 1;
-                DAT_00561698 = local_834b;
+                ServerSelectLo = local_834b;
 
                 bool full = ((*((unsigned char*)&DAT_083a4606 + iVar10b + local_830b)) & 0x80) == 0x80;
                 bool ping_ok = ((*((unsigned char*)&DAT_083a4606 + iVar10b + local_830b)) & 0x7f) < 100;
@@ -234,8 +234,8 @@ void CServerSelWin_UpdateWhileActive(void)
                     PlayBuffer(0x19, 0, 0);
 
                     if (ping_ok && DAT_083a7c44 == 0) {
-                        DAT_0056169c = (unsigned int)
-                            *(unsigned short *)((char*)&DAT_083a4604 + (int)DAT_00561694 * 0x21e + local_830b)
+                        ServerLocalSelect = (unsigned int)
+                            *(unsigned short *)((char*)&DAT_083a4604 + (int)ServerSelectHi * 0x21e + local_830b)
                             % 0x14 + 1;
                         CErrorReport_Write(&DAT_055c9bf0, "> Server selected");
 
@@ -247,7 +247,7 @@ void CServerSelWin_UpdateWhileActive(void)
 
                         // Selected server's ServerCode (channel_id, +0x2c field).
                         unsigned short serverCode =
-                            *(unsigned short *)((char*)&DAT_083a4604 + (int)DAT_00561694 * 0x21e + local_830b);
+                            *(unsigned short *)((char*)&DAT_083a4604 + (int)ServerSelectHi * 0x21e + local_830b);
                         DAT_083a4328 = (DAT_083a4328 & 0xffff0000) | serverCode;
 
                         if (g_ConnectServerMode) {

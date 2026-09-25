@@ -92,7 +92,7 @@ int __cdecl LevelConvert(BYTE Level) {
 // OpenMacro @ 0x0050F750 (72 bytes) -- carga Data\Macro.txt
 //
 // BUG-FIX 2026-04-28: usaba direccion absoluta 0x07e0ffc8 con bound
-// 0x07e109c8.  Ahora indexa el array DAT_07e0ffc8[10][0x100].
+// 0x07e109c8.  Ahora indexa el array MacroText[10][0x100].
 //
 // 2026-09-24: el modo era "rb"; IDA abre con "rt" (aRt).
 //
@@ -106,9 +106,9 @@ int __cdecl LevelConvert(BYTE Level) {
 void __cdecl OpenMacro(char *FileName) {
     FILE *fp = fopen(FileName, "rt");
     if (!fp) return;
-    memset(DAT_07e0ffc8, 0, 10 * 0x100);
+    memset(MacroText, 0, 10 * 0x100);
     for (int i = 0; i < 10; ++i) {
-        char* slot = DAT_07e0ffc8 + i * 0x100;
+        char* slot = MacroText + i * 0x100;
         if (fgets(slot, 0x100, fp) == NULL) break;
         slot[strcspn(slot, "\r\n")] = '\0';
     }
@@ -331,8 +331,8 @@ void __fastcall FUN_004052b0_impl(int ecx, int /*edx*/, char *param_1) {
 // en *dwTexture y devuelve el índice; en miss, devuelve -1 y deja *dwTexture=0.
 int __cdecl FindTextureByName(char *Name, DWORD *dwTexture) {
     *dwTexture = 0;
-    int lo = (int)DAT_083a4104;   // TextureBegin
-    int hi = (int)DAT_083a4108;   // TextureCurrent
+    int lo = (int)TextureBegin;   // TextureBegin
+    int hi = (int)TextureCurrent;   // TextureCurrent
     for (int i = lo; i < hi; i++) {
         char* slot = &g_BitmapsRaw[i * 0x38];
         if (strncmp(slot, Name, 32) == 0) {

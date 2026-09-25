@@ -491,7 +491,7 @@ float __cdecl FarAngle(float a1, float a2, char a3)
 // Advances entity along its Catmull-Rom waypoint path.
 // path_wp_x/y arrays at entity+0x357/0x366 (grid coords); path_substep 0-3 per segment.
 // Returns 1 when entity arrives at final waypoint; 0 otherwise.
-// Anti-tamper HashTable blocks (DAT_055c9bc8/bd0/bd4) skipped per project policy.
+// Anti-tamper HashTable blocks (MAIN_HASH_CLASS/bd0/bd4) skipped per project policy.
 static unsigned int MovePath_IDA_0043EA20(char *ent, char turn)
 {
     // 0043EA20 without its hash-table obfuscation blocks.  Offsets are decimal

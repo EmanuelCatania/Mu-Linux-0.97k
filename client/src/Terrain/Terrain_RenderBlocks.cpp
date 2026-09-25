@@ -107,18 +107,18 @@ void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool Ed
 // RenderTerrainFrustrum @ 0x004F97E0 (~42 lines) — iterates visible terrain blocks
 void __cdecl RenderTerrainFrustrum_stub(bool EditFlag) {
     // 0x004F97E0 — iterates visible terrain blocks in frustum bounds
-    // FrustrumBoundMinX_1 = DAT_0839bc90, FrustrumBoundMinY_1 = DAT_0839bc94
-    // FrustrumBoundMaxX_1 = DAT_0055a774, FrustrumBoundMaxY_1 = DAT_0055a778
+    // FrustrumBoundMinX_1 = FrustrumBoundMinX_1, FrustrumBoundMinY_1 = FrustrumBoundMinY_1
+    // FrustrumBoundMaxX_1 = FrustrumBoundMaxX_1, FrustrumBoundMaxY_1 = FrustrumBoundMaxY_1
     // _DAT_0055264c = 2.0f (block center offset), _DAT_00552650 = 4.0f (block stride)
     // TestFrustrum2D = FUN_004f8ff0, CameraTopViewEnable = CameraTopViewEnabled
-    int yi = (int)DAT_0839bc94;  // FrustrumBoundMinY_1
-    if (yi <= (int)DAT_0055a778) {  // FrustrumBoundMaxY_1
+    int yi = (int)FrustrumBoundMinY_1;  // FrustrumBoundMinY_1
+    if (yi <= (int)FrustrumBoundMaxY_1) {  // FrustrumBoundMaxY_1
         float blockY = (float)yi;
         do {
-            int maxX = (int)DAT_0055a774;  // FrustrumBoundMaxX_1
-            if ((int)DAT_0839bc90 <= maxX) {
+            int maxX = (int)FrustrumBoundMaxX_1;  // FrustrumBoundMaxX_1
+            if ((int)FrustrumBoundMinX_1 <= maxX) {
                 float centerY = blockY + _DAT_0055264c;  // 2.0f
-                int xi = (int)DAT_0839bc90;  // FrustrumBoundMinX_1
+                int xi = (int)FrustrumBoundMinX_1;  // FrustrumBoundMinX_1
                 float blockX = (float)xi;
                 do {
                     unsigned short visible = FUN_004f8ff0(blockX + _DAT_0055264c, centerY, -40.0f);
@@ -127,11 +127,11 @@ void __cdecl RenderTerrainFrustrum_stub(bool EditFlag) {
                     }
                     blockX = blockX + _DAT_00552650;  // 4.0f
                     xi += 4;
-                    maxX = (int)DAT_0055a774;
+                    maxX = (int)FrustrumBoundMaxX_1;
                 } while (xi <= maxX);
             }
             blockY = blockY + _DAT_00552650;  // 4.0f
             yi += 4;
-        } while (yi <= (int)DAT_0055a778);
+        } while (yi <= (int)FrustrumBoundMaxY_1);
     }
 }

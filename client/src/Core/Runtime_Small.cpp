@@ -828,9 +828,9 @@ void __cdecl clearMatchInfo(void) {
 // RE-ACTIVADO 2026-07-24: la tabla ahora esta bien dimensionada (512 × 0x36) y
 // la carga NPCName_Load con Type[0]/Name[1].  IDA: `mov dl,[eax]` (Type es un
 // BYTE en [0]), stride 0x36, hasta GateAttribute.  Aca acotamos por el contador
-// real (DAT_07d78078 = EditMonsterNumber) en vez del literal 0x7cf5600.
+// real (EditMonsterNumber = EditMonsterNumber) en vez del literal 0x7cf5600.
 char *__cdecl getMonsterName(int type) {
-    int n = DAT_07d78078;
+    int n = EditMonsterNumber;
     if (n > 512) n = 512;
     for (int i = 0; i < n; ++i) {
         BYTE *m = &MonsterScript[i * 0x36];

@@ -61,7 +61,7 @@
 //     Passes string pointer from packet to background music player.
 //     Purpose: server instructs client to play a specific BGM track.
 //
-//   HashTable operations (DAT_055c9bc8, key DAT_05826ceb) interspersed
+//   HashTable operations (MAIN_HASH_CLASS, key DAT_05826ceb) interspersed
 //   throughout — anti-tamper obfuscation, not game logic.
 //
 // ── GUILD (opcodes 0x90-0x99) ────────────────────────────────────────────────
@@ -96,26 +96,26 @@
 //   UI sub-state: 0x8c (member list panel) or 0x9a (single add).
 //
 // ── Guild char-select result (opcode 0x94, FUN_004372c0) ─────────────────────
-//   Sets DAT_07eaa128 = packet[3]+1 (guild load stage) and
-//        DAT_07eaa12c = packet[4..5] (short: guild ID or member count).
+//   Sets GoldenArcherOpenType = packet[3]+1 (guild load stage) and
+//        GoldenArcherItemCount = packet[4..5] (short: guild ID or member count).
 //   When stage reaches 3 (packet[3]==2):
-//     Zeroes 64 bytes at DAT_07ea97c0 (guild entity pool).
+//     Zeroes 64 bytes at GoldenArcherLuckyNumberText (guild entity pool).
 //     Calls ClearInput(0) to reset char-select.
-//     Sets _DAT_00559c94=0xC (login sub-state → CharSelectInit),
-//     clears DAT_00559c84/0x88, DAT_07e11d72/74, DAT_07eaa108.
-//     Sets DAT_07e11d73=1 (char-select flag D).
+//     Sets InputTextMax=0xC (login sub-state → CharSelectInit),
+//     clears DAT_00559c84/0x88, GoldInputEnable/74, StorageGoldFlag.
+//     Sets GoldenArcherLuckyNumberTicket=1 (char-select flag D).
 //   When stage==1 and packet[6..10] are all != -1:
-//     _DAT_00559f58 = packet[6..9] (dword, guild target tile X)
+//     GoldenArcherLuckyNumber = packet[6..9] (dword, guild target tile X)
 //     DAT_00559f5c  = packet[10..11] (word, guild target tile Y)
 //   Clears DAT_07eaa117 and DAT_07eaa116.
 //
 // ── Guild update pos (opcode 0x95, FUN_00437380) ──────────────────────────────
 //   If packet[4..5] (ushort) != 0xFFFF:
-//     DAT_07eaa12c = packet[4..5]  — update guild ID / member count
+//     GoldenArcherItemCount = packet[4..5]  — update guild ID / member count
 //
 // ── Guild set target pos (opcode 0x96, FUN_004373a0) ─────────────────────────
 //   If packet[4..5], packet[6..7], packet[8..9] are all != -1:
-//     _DAT_00559f58 = packet[4..7] (dword, guild target X)
+//     GoldenArcherLuckyNumber = packet[4..7] (dword, guild target X)
 //     DAT_00559f5c  = packet[8..9] (word, guild target Y)
 //
 // ── Guild join toggle (opcode 0x99, FUN_004373d0) ────────────────────────────
@@ -421,16 +421,16 @@ void Guild_MemberList(BYTE* pkt)
 // Guild_CharSelectResult  @ 0x004372c0  (opcode 0x94)
 // Server sends guild-load pipeline stage result.
 //
-// DAT_07eaa128 = pkt[3]+1  (stage counter)
-// DAT_07eaa12c = pkt[4..5] (short: guild ID or member count)
+// GoldenArcherOpenType = pkt[3]+1  (stage counter)
+// GoldenArcherItemCount = pkt[4..5] (short: guild ID or member count)
 //
 // Stage==3 (pkt[3]==2): reset char-select
-//   Zero DAT_07ea97c0[0..63], call ClearInput(0)
-//   Set _DAT_00559c94=0xC (CharSelectInit), clear various flags
-//   Set DAT_07e11d73=1
+//   Zero GoldenArcherLuckyNumberText[0..63], call ClearInput(0)
+//   Set InputTextMax=0xC (CharSelectInit), clear various flags
+//   Set GoldenArcherLuckyNumberTicket=1
 //
 // Stage==1 and pkt[6..10] all != -1: store target tile coords
-//   _DAT_00559f58 = pkt[6..9] (dword)
+//   GoldenArcherLuckyNumber = pkt[6..9] (dword)
 //   DAT_00559f5c  = pkt[10..11] (word)
 //
 // Always clears DAT_07eaa117 and DAT_07eaa116.
@@ -438,32 +438,32 @@ void Guild_MemberList(BYTE* pkt)
 void Guild_CharSelectResult(BYTE* pkt)
 {
     CloseInventoryRelatedWindows();   // char-select reset helper
-    DAT_07eaa12c = (int)*(short*)(pkt + 4);
-    DAT_07eaa128 = (int)(BYTE)pkt[3] + 1;
+    GoldenArcherItemCount = (int)*(short*)(pkt + 4);
+    GoldenArcherOpenType = (int)(BYTE)pkt[3] + 1;
 
-    if (DAT_07eaa128 == 3)
+    if (GoldenArcherOpenType == 3)
     {
         // Zero guild entity pool
-        memset(DAT_07ea97c0, 0, sizeof(DAT_07ea97c0));
+        memset(GoldenArcherLuckyNumberText, 0, sizeof(GoldenArcherLuckyNumberText));
         ClearInput(0);                // reset char select
-        _DAT_00559c94 = 0xC;           // login sub-state → CharSelectInit
+        InputTextMax = 0xC;           // login sub-state → CharSelectInit
         DAT_00559c84  = 0;
-        DAT_00559c88  = 1;
-        DAT_07e11d72  = 0;
-        DAT_07e11d74  = 0;
-        DAT_07eaa108  = 0;
-        DAT_07e11d73  = 1;
+        InputNumber  = 1;
+        GoldInputEnable  = 0;
+        InputGold  = 0;
+        StorageGoldFlag  = 0;
+        GoldenArcherLuckyNumberTicket  = 1;
     }
 
     DAT_07eaa117 = 0;
     DAT_07eaa116 = 0;
 
-    if (DAT_07eaa128 == 1
+    if (GoldenArcherOpenType == 1
         && *(short*)(pkt + 6)  != -1
         && *(short*)(pkt + 8)  != -1
         && *(short*)(pkt + 10) != -1)
     {
-        _DAT_00559f58 = *(DWORD*)(pkt + 6);
+        GoldenArcherLuckyNumber = *(DWORD*)(pkt + 6);
         DAT_00559f5c  = *(WORD*) (pkt + 10);
     }
 }
@@ -473,13 +473,13 @@ void Guild_CharSelectResult(BYTE* pkt)
 // Guild_UpdatePos  @ 0x00437380  (opcode 0x95)
 // Updates guild member count / guild ID if packet value is valid.
 //
-// pkt[4..5] (ushort) != 0xFFFF → DAT_07eaa12c = pkt[4..5]
+// pkt[4..5] (ushort) != 0xFFFF → GoldenArcherItemCount = pkt[4..5]
 // ============================================================
 void Guild_UpdatePos(BYTE* pkt)
 {
     USHORT val = *(USHORT*)(pkt + 4);
     if (val != 0xFFFF)
-        DAT_07eaa12c = (int)val;
+        GoldenArcherItemCount = (int)val;
 }
 
 
@@ -488,7 +488,7 @@ void Guild_UpdatePos(BYTE* pkt)
 // Sets guild map target position if all three shorts are valid.
 //
 // Validates pkt[4..5], pkt[6..7], pkt[8..9] are all != -1, then:
-//   _DAT_00559f58 = pkt[4..7] (dword, target X)
+//   GoldenArcherLuckyNumber = pkt[4..7] (dword, target X)
 //   DAT_00559f5c  = pkt[8..9] (word,  target Y)
 // ============================================================
 void Guild_SetTargetPos(BYTE* pkt)
@@ -497,7 +497,7 @@ void Guild_SetTargetPos(BYTE* pkt)
         && *(short*)(pkt + 6) != -1
         && *(short*)(pkt + 8) != -1)
     {
-        _DAT_00559f58 = *(DWORD*)(pkt + 4);
+        GoldenArcherLuckyNumber = *(DWORD*)(pkt + 4);
         DAT_00559f5c  = *(WORD*) (pkt + 8);
     }
 }

@@ -194,15 +194,15 @@ LABEL_57:
       if ( *v6 )
       {
         v7 = (void *)CharacterMachine;
-        if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
         {
           v11 = operator_new(0x585u);
           *(BYTE *)(v11 + 1412) = 1;
-          HashTable_Insert(&DAT_055c9bc8, v11, (int)v7);
+          HashTable_Insert(&MAIN_HASH_CLASS, v11, (int)v7);
         }
         else
         {
-          v8 = FUN_004041e0(&DAT_055c9bc8, (int)v7);
+          v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v7);
           if ( v8 == -1 )
           {
             v9 = 0;
@@ -220,9 +220,9 @@ LABEL_57:
         }
         v12 = (const void *)CharacterMachine;
         v13 = *(WORD *)(CharacterAttribute + 14);
-        if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
         {
-          v14 = FUN_004041e0(&DAT_055c9bc8, (int)v12);
+          v14 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v12);
           v15 = v14 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v14);
           v16 = v15[1412] - 1;
           v15[1412] = v16;
@@ -242,15 +242,15 @@ LABEL_57:
       if ( v6[1] )
       {
         v17 = (void *)CharacterMachine;
-        if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
         {
           v21 = operator_new(0x585u);
           *(BYTE *)(v21 + 1412) = 1;
-          HashTable_Insert(&DAT_055c9bc8, v21, (int)v17);
+          HashTable_Insert(&MAIN_HASH_CLASS, v21, (int)v17);
         }
         else
         {
-          v18 = FUN_004041e0(&DAT_055c9bc8, (int)v17);
+          v18 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v17);
           if ( v18 == -1 )
           {
             v19 = 0;
@@ -268,9 +268,9 @@ LABEL_57:
         }
         v22 = (const void *)CharacterMachine;
         v23 = *(WORD *)(CharacterAttribute + 14);
-        if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
         {
-          v24 = FUN_004041e0(&DAT_055c9bc8, (int)v22);
+          v24 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v22);
           v25 = v24 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v24);
           v26 = v25[1412] - 1;
           v25[1412] = v26;
@@ -309,15 +309,15 @@ LABEL_55:
     goto LABEL_55;
   }
   v28 = (void *)CharacterMachine;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
   {
     v32 = operator_new(0x585u);
     *(BYTE *)(v32 + 1412) = 1;
-    HashTable_Insert(&DAT_055c9bc8, v32, (int)v28);
+    HashTable_Insert(&MAIN_HASH_CLASS, v32, (int)v28);
   }
   else
   {
-    v29 = FUN_004041e0(&DAT_055c9bc8, (int)v28);
+    v29 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v28);
     if ( v29 == -1 )
     {
       v30 = 0;
@@ -335,9 +335,9 @@ LABEL_55:
   }
   v33 = (const void *)CharacterMachine;
   v34 = *(DWORD *)(CharacterMachine + 1352);
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
   {
-    v35 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, v33);
+    v35 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, v33);
     v36 = v35[1412] - 1;
     v35[1412] = v36;
     if ( !v36 )
@@ -842,15 +842,15 @@ void __cdecl FUN_00401af0(DWORD This)
           qmemcpy(v111, &v103[2], *(unsigned short *)v103);
           v111[v10] = rand();
           v11 = (v111[0] != -63) + 2;
-          if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+          if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
           {
             v14 = operator_new(2u);
             *(BYTE *)(v14 + 1) = 1;
-            HashTable_Insert(&DAT_055c9bc8, v14, (int)&g_byPacketSerialSend);
+            HashTable_Insert(&MAIN_HASH_CLASS, v14, (int)&g_byPacketSerialSend);
           }
           else
           {
-            v12 = HashTable_GetNode(&DAT_055c9bc8, &g_byPacketSerialSend);
+            v12 = HashTable_GetNode(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
             v13 = *(BYTE *)(v12 + 1) + 1;
             *(BYTE *)(v12 + 1) = v13;
             if ( v13 < 2u )
@@ -861,7 +861,7 @@ void __cdecl FUN_00401af0(DWORD This)
           v15 = g_byPacketSerialSend;
           v110[v11 + 1024] = g_byPacketSerialSend;
           g_byPacketSerialSend = v15 + 1;
-          PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+          PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
           v16 = v11 - 1;
           v17 = v10 - v16;
           v18 = &v111[v16];
@@ -1089,15 +1089,15 @@ LABEL_107:
         qmemcpy(v111, &v103[2], *(unsigned short *)v103);
         v111[v36] = rand();
         v37 = (v111[0] != -63) + 2;
-        if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
         {
           v41 = operator_new(2u);
           *(BYTE *)(v41 + 1) = 1;
-          HashTable_Insert(&DAT_055c9bc8, v41, (int)&g_byPacketSerialSend);
+          HashTable_Insert(&MAIN_HASH_CLASS, v41, (int)&g_byPacketSerialSend);
         }
         else
         {
-          v38 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v38 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
           if ( v38 == -1 )
           {
             v39 = 0;
@@ -1116,9 +1116,9 @@ LABEL_107:
         v42 = g_byPacketSerialSend;
         v110[v37 + 1024] = g_byPacketSerialSend;
         g_byPacketSerialSend = v42 + 1;
-        if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
         {
-          v43 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v43 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
           v44 = v43 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v43);
           v45 = v44[1] - 1;
           v44[1] = v45;
@@ -2621,15 +2621,15 @@ LABEL_55:
       qmemcpy(v74, &v69[2], *(unsigned short *)v69);
       v74[v6] = rand();
       v7 = (v74[0] != -63) + 2;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
       {
         v11 = operator_new(2u);
         *(BYTE *)(v11 + 1) = 1;
-        HashTable_Insert(&DAT_055c9bc8, v11, (int)&g_byPacketSerialSend);
+        HashTable_Insert(&MAIN_HASH_CLASS, v11, (int)&g_byPacketSerialSend);
       }
       else
       {
-        v8 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         if ( v8 == -1 )
         {
           v9 = 0;
@@ -2648,9 +2648,9 @@ LABEL_55:
       v12 = g_byPacketSerialSend;
       v73[v7 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v12 + 1;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
       {
-        v13 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v13 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v14 = v13[1] - 1;
         v13[1] = v14;
         if ( !v14 )
@@ -7788,28 +7788,28 @@ int *FUN_00412780()
   unsigned int v5; // edx
   int v6; // eax
 
-  DAT_055c9bc8 = (int)&DAT_005524c8;
-  FUN_00406d20(&DAT_055c9bc8);
-  if ( *(&DAT_055c9bc8 + 6) )
+  MAIN_HASH_CLASS = (int)&DAT_005524c8;
+  FUN_00406d20(&MAIN_HASH_CLASS);
+  if ( *(&MAIN_HASH_CLASS + 6) )
   {
-    delete__((LPVOID)*(&DAT_055c9bc8 + 6));
+    delete__((LPVOID)*(&MAIN_HASH_CLASS + 6));
   }
   v0 = rand();
-  *(&DAT_055c9bc8 + 6) = operator_new(v0 % 3271 + 345);
-  *(&DAT_055c9bc8 + 3) = 1024;
+  *(&MAIN_HASH_CLASS + 6) = operator_new(v0 % 3271 + 345);
+  *(&MAIN_HASH_CLASS + 3) = 1024;
   v1 = operator_new(0x1000u);
-  v2 = *(&DAT_055c9bc8 + 3);
-  *(&DAT_055c9bc8 + 1) = v1;
+  v2 = *(&MAIN_HASH_CLASS + 3);
+  *(&MAIN_HASH_CLASS + 1) = v1;
   v3 = operator_new(4 * v2);
-  v4 = (void *)*(&DAT_055c9bc8 + 1);
-  v5 = 4 * *(&DAT_055c9bc8 + 3);
-  *(&DAT_055c9bc8 + 2) = v3;
+  v4 = (void *)*(&MAIN_HASH_CLASS + 1);
+  v5 = 4 * *(&MAIN_HASH_CLASS + 3);
+  *(&MAIN_HASH_CLASS + 2) = v3;
   memset(v4, 0, v5);
-  memset((void *)*(&DAT_055c9bc8 + 2), 0, 4 * *(&DAT_055c9bc8 + 3));
-  v6 = *(&DAT_055c9bc8 + 1);
-  *(&DAT_055c9bc8 + 9) = *(&DAT_055c9bc8 + 2);
-  *(&DAT_055c9bc8 + 8) = v6;
-  return &DAT_055c9bc8;
+  memset((void *)*(&MAIN_HASH_CLASS + 2), 0, 4 * *(&MAIN_HASH_CLASS + 3));
+  v6 = *(&MAIN_HASH_CLASS + 1);
+  *(&MAIN_HASH_CLASS + 9) = *(&MAIN_HASH_CLASS + 2);
+  *(&MAIN_HASH_CLASS + 8) = v6;
+  return &MAIN_HASH_CLASS;
 }
 #endif
 
@@ -7826,28 +7826,28 @@ int *FUN_00412790()
   unsigned int v5; // edx
   int v6; // eax
 
-  DAT_055c9bc8 = (int)&DAT_005524c8;
-  FUN_00406d20(&DAT_055c9bc8);
-  if ( *(&DAT_055c9bc8 + 6) )
+  MAIN_HASH_CLASS = (int)&DAT_005524c8;
+  FUN_00406d20(&MAIN_HASH_CLASS);
+  if ( *(&MAIN_HASH_CLASS + 6) )
   {
-    delete__((LPVOID)*(&DAT_055c9bc8 + 6));
+    delete__((LPVOID)*(&MAIN_HASH_CLASS + 6));
   }
   v0 = rand();
-  *(&DAT_055c9bc8 + 6) = operator_new(v0 % 3271 + 345);
-  *(&DAT_055c9bc8 + 3) = 1024;
+  *(&MAIN_HASH_CLASS + 6) = operator_new(v0 % 3271 + 345);
+  *(&MAIN_HASH_CLASS + 3) = 1024;
   v1 = operator_new(0x1000u);
-  v2 = *(&DAT_055c9bc8 + 3);
-  *(&DAT_055c9bc8 + 1) = v1;
+  v2 = *(&MAIN_HASH_CLASS + 3);
+  *(&MAIN_HASH_CLASS + 1) = v1;
   v3 = operator_new(4 * v2);
-  v4 = (void *)*(&DAT_055c9bc8 + 1);
-  v5 = 4 * *(&DAT_055c9bc8 + 3);
-  *(&DAT_055c9bc8 + 2) = v3;
+  v4 = (void *)*(&MAIN_HASH_CLASS + 1);
+  v5 = 4 * *(&MAIN_HASH_CLASS + 3);
+  *(&MAIN_HASH_CLASS + 2) = v3;
   memset(v4, 0, v5);
-  memset((void *)*(&DAT_055c9bc8 + 2), 0, 4 * *(&DAT_055c9bc8 + 3));
-  v6 = *(&DAT_055c9bc8 + 1);
-  *(&DAT_055c9bc8 + 9) = *(&DAT_055c9bc8 + 2);
-  *(&DAT_055c9bc8 + 8) = v6;
-  return &DAT_055c9bc8;
+  memset((void *)*(&MAIN_HASH_CLASS + 2), 0, 4 * *(&MAIN_HASH_CLASS + 3));
+  v6 = *(&MAIN_HASH_CLASS + 1);
+  *(&MAIN_HASH_CLASS + 9) = *(&MAIN_HASH_CLASS + 2);
+  *(&MAIN_HASH_CLASS + 8) = v6;
+  return &MAIN_HASH_CLASS;
 }
 #endif
 
@@ -8152,18 +8152,18 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
   v274 = &v8;
   v275 = 0;
   FUN_00406af0();
-  v103 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+  v103 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
   if ( v103 == -1 )
   {
     v101 = operator_new(5u);
     v239 = v101;
     v240 = v101;
     *(BYTE *)(v101 + 4) = 1;
-    HashTable_Insert(&DAT_055c9bc8, v240, (int)&DAT_055ca01c);
+    HashTable_Insert(&MAIN_HASH_CLASS, v240, (int)&DAT_055ca01c);
   }
   else
   {
-    v102 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+    v102 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
     v237 = v102;
     if ( v102 == -1 )
     {
@@ -8179,10 +8179,10 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
       Packet_DecryptDword(&DAT_055ca01c, v241);
     }
   }
-  v100 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+  v100 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
   if ( v100 != -1 )
   {
-    v99 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+    v99 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
     v234 = v99;
     if ( v99 == -1 )
     {
@@ -8316,7 +8316,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
   CErrorReport::Write((DWORD)&g_ErrorReport, aGgInitSuccess);
   CErrorReport::WriteImeInfo((DWORD)&g_ErrorReport, g_hWnd);
   CErrorReport::AddSeparator((DWORD)&g_ErrorReport);
-  FUN_00406db0(&DAT_055c9bc8, (int)g_hWnd, 1025);// Esta función no aparece en el S5
+  FUN_00406db0(&MAIN_HASH_CLASS, (int)g_hWnd, 1025);// Esta función no aparece en el S5
   Width = WindowWidth;
   if ( WindowWidth > 1024 )
   {
@@ -8492,25 +8492,25 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
   {
     while ( !PeekMessageA(&msg, 0, 0, 0, 0) )
     {
-      v74 = FUN_004041e0(&DAT_055c9bc8, (int)&g_iNoMouseTime);
+      v74 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_iNoMouseTime);
       if...
       if ( ++g_iNoMouseTime > 30 )
       {
-        v71 = FUN_004041e0(&DAT_055c9bc8, (int)&g_iNoMouseTime);
+        v71 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_iNoMouseTime);
         if...
-        v69 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca024);
+        v69 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca024);
         if...
         if...
         if...
-        v31 = FUN_004041e0(&DAT_055c9bc8, (int)&g_iNoMouseTime);
+        v31 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_iNoMouseTime);
         if...
       }
-      v28 = FUN_004041e0(&DAT_055c9bc8, (int)&g_iNoMouseTime);
+      v28 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_iNoMouseTime);
       if...
-      v26 = FUN_004041e0(&DAT_055c9bc8, (int)&g_bWndActive);
+      v26 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_bWndActive);
       if...
       (BYTE)(v127) = g_bWndActive;
-      PACKET_ENCRYPT(&DAT_055c9bc8, &g_bWndActive);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_bWndActive);
       if ( (BYTE)v127 )
       {
         Scene_Dispatch(g_hDC);
@@ -8519,18 +8519,18 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
       {
         SetForegroundWindow(g_hWnd);
         SetFocus(g_hWnd);
-        v23 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+        v23 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
         if ( v23 == -1 )
         {
           v21 = operator_new(5u);
           v121 = v21;
           v122 = v21;
           *(BYTE *)(v21 + 4) = 1;
-          HashTable_Insert(&DAT_055c9bc8, v122, (int)&DAT_055ca02c);
+          HashTable_Insert(&MAIN_HASH_CLASS, v122, (int)&DAT_055ca02c);
         }
         else
         {
-          v22 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+          v22 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
           v119 = v22;
           if ( v22 == -1 )
           {
@@ -8549,10 +8549,10 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
         if ( DAT_055ca02c <= 1 )
         {
           ++DAT_055ca02c;
-          v18 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+          v18 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
           if ( v18 != -1 )
           {
-            v17 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+            v17 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
             v113 = v17;
             if ( v17 == -1 )
             {
@@ -8568,18 +8568,18 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
               Packet_EncryptDword(v115, &DAT_055ca02c);
             }
           }
-          v16 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+          v16 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
           if ( v16 == -1 )
           {
             v14 = operator_new(5u);
             v110 = v14;
             v111 = v14;
             *(BYTE *)(v14 + 4) = 1;
-            HashTable_Insert(&DAT_055c9bc8, v111, (int)&DAT_055ca01c);
+            HashTable_Insert(&MAIN_HASH_CLASS, v111, (int)&DAT_055ca01c);
           }
           else
           {
-            v15 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+            v15 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
             v108 = v15;
             if ( v15 == -1 )
             {
@@ -8596,10 +8596,10 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             }
           }
           DAT_055ca01c = 1;
-          v13 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+          v13 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
           if ( v13 != -1 )
           {
-            v12 = HashTable_GetNode(&DAT_055c9bc8, &DAT_055ca01c);
+            v12 = HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_055ca01c);
             v107 = v12;
             if ( !--*(BYTE *)(v107 + 4) )
             {
@@ -8607,18 +8607,18 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             }
           }
           ShowWindow(g_hWnd, 6);
-          v11 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+          v11 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
           if ( v11 == -1 )
           {
             v9 = operator_new(5u);
             v104 = v9;
             v105 = v9;
             *(BYTE *)(v9 + 4) = 1;
-            HashTable_Insert(&DAT_055c9bc8, v105, (int)&DAT_055ca01c);
+            HashTable_Insert(&MAIN_HASH_CLASS, v105, (int)&DAT_055ca01c);
           }
           else
           {
-            v10 = HashTable_GetNode(&DAT_055c9bc8, &DAT_055ca01c);
+            v10 = HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_055ca01c);
             v106 = v10;
             ++*(BYTE *)(v10 + 4);
             if ( *(unsigned char *)(v106 + 4) < 2u )
@@ -8627,15 +8627,15 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             }
           }
           DAT_055ca01c = 0;
-          FUN_004233e0(&DAT_055c9bc8, &DAT_055ca01c);
+          FUN_004233e0(&MAIN_HASH_CLASS, &DAT_055ca01c);
           ShowWindow(g_hWnd, 3);
         }
         else
         {
-          v20 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+          v20 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
           if ( v20 != -1 )
           {
-            v19 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+            v19 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
             v116 = v19;
             if ( v19 == -1 )
             {
@@ -9522,7 +9522,7 @@ static DWORD      g_ErrorReport = 0;
 static BYTE g_AE_HashScratch[16];
 static inline DWORD AE_new(size_t)            { return (DWORD)(uintptr_t)g_AE_HashScratch; }
 static inline void  AE_delete(DWORD)          {}
-// Reemplaza el dispatch inline `(*(int(**)(int*,DWORD))(DAT_055c9bc8+12))(...)`.
+// Reemplaza el dispatch inline `(*(int(**)(int*,DWORD))(MAIN_HASH_CLASS+12))(...)`.
 // En nuestro build ese slot es HashFn_Sentinel (globals.cpp) y devuelve 0; el
 // shim evita el deref de vtable sin cambiar el comportamiento.
 static inline int AE_ht_hash(DWORD) { return 0; }
@@ -9881,7 +9881,7 @@ void __cdecl AttackEffect(int Owner)
             {
               break;
             }
-            v175 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v175 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v175 == -1 )
             {
               v176 = 0;
@@ -9920,7 +9920,7 @@ LABEL_263:
       }
       v174 = operator_new(2u);
       *(BYTE *)(v174 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v174, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v174, Owner + 770);
 LABEL_265:
       Ownert = *v171;
       v244 = (const char *)(Owner + 770);
@@ -9935,7 +9935,7 @@ LABEL_265:
           {
             if ( v242 != -1 )
             {
-              v181 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v181 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v182 = v181 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v181);
               v183 = v182[1] - 1;
               v182[1] = v183;
@@ -9998,7 +9998,7 @@ LABEL_269:
               break;
             }
             v189 = (char *)(Owner + 770);
-            v192 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v192 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v192 == -1 )
             {
               v193 = 0;
@@ -10039,10 +10039,10 @@ LABEL_291:
       v188 = operator_new(2u);
       v189 = (char *)(Owner + 770);
       *(BYTE *)(v188 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v188, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v188, Owner + 770);
 LABEL_293:
       v190 = *v189;
-      PACKET_ENCRYPT(&DAT_055c9bc8, v189);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, v189);
       if ( v190 == 50 )
       {
         if ( *(BYTE *)(Owner + 757) == 1 )
@@ -10081,7 +10081,7 @@ LABEL_293:
             {
               break;
             }
-            v156 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v156 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v156 == -1 )
             {
               v157 = 0;
@@ -10120,7 +10120,7 @@ LABEL_236:
       }
       v155 = operator_new(2u);
       *(BYTE *)(v155 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v155, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v155, Owner + 770);
 LABEL_238:
       Ownerr = *v152;
       v244 = (const char *)(Owner + 770);
@@ -10135,7 +10135,7 @@ LABEL_238:
           {
             if ( v241 != -1 )
             {
-              v162 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v162 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v163 = v162 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v162);
               v164 = v163[1] - 1;
               v163[1] = v164;
@@ -10236,7 +10236,7 @@ LABEL_242:
             {
               break;
             }
-            v135 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v135 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v135 == -1 )
             {
               v136 = 0;
@@ -10275,7 +10275,7 @@ LABEL_208:
       }
       v134 = operator_new(2u);
       *(BYTE *)(v134 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v134, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v134, Owner + 770);
 LABEL_210:
       Ownerp = *v131;
       v244 = (const char *)(Owner + 770);
@@ -10290,7 +10290,7 @@ LABEL_210:
           {
             if ( v240 != -1 )
             {
-              v141 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v141 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v142 = v141 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v141);
               v143 = v142[1] - 1;
               v142[1] = v143;
@@ -10370,7 +10370,7 @@ LABEL_214:
               {
                 break;
               }
-              v119 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v119 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               if ( v119 == -1 )
               {
                 v120 = 0;
@@ -10410,7 +10410,7 @@ LABEL_179:
         }
         v118 = operator_new(2u);
         *(BYTE *)(v118 + 1) = 1;
-        HashTable_Insert(&DAT_055c9bc8, v118, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v118, Owner + 770);
 LABEL_181:
         Ownerm = *v117;
         v244 = (const char *)(Owner + 770);
@@ -10425,7 +10425,7 @@ LABEL_181:
             {
               if ( v239 != -1 )
               {
-                v125 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+                v125 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
                 v126 = v125 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v125);
                 v127 = v126[1] - 1;
                 v126[1] = v127;
@@ -10524,7 +10524,7 @@ LABEL_185:
               {
                 break;
               }
-              v84 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v84 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               if ( v84 == -1 )
               {
                 v85 = 0;
@@ -10563,7 +10563,7 @@ LABEL_114:
         }
         v83 = operator_new(2u);
         *(BYTE *)(v83 + 1) = 1;
-        HashTable_Insert(&DAT_055c9bc8, v83, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v83, Owner + 770);
 LABEL_116:
         Ownerh = *v80;
         v244 = (const char *)(Owner + 770);
@@ -10578,7 +10578,7 @@ LABEL_116:
             {
               if ( v237 != -1 )
               {
-                v90 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+                v90 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
                 v91 = v90 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v90);
                 v92 = v91[1] - 1;
                 v91[1] = v92;
@@ -10663,7 +10663,7 @@ LABEL_120:
             {
               break;
             }
-            v102 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v102 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v102 == -1 )
             {
               v103 = 0;
@@ -10702,7 +10702,7 @@ LABEL_146:
       }
       v101 = operator_new(2u);
       *(BYTE *)(v101 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v101, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v101, Owner + 770);
 LABEL_148:
       Ownerk = *v98;
       v244 = (const char *)(Owner + 770);
@@ -10717,7 +10717,7 @@ LABEL_148:
           {
             if ( v238 != -1 )
             {
-              v108 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v108 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v109 = v108 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v108);
               v110 = v109[1] - 1;
               v109[1] = v110;
@@ -10798,7 +10798,7 @@ LABEL_152:
             {
               break;
             }
-            v31 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v31 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v31 == -1 )
             {
               v32 = 0;
@@ -10837,7 +10837,7 @@ LABEL_44:
       }
       v30 = operator_new(2u);
       *(BYTE *)(v30 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v30, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v30, Owner + 770);
 LABEL_46:
       Ownerd = *v27;
       v244 = (const char *)(Owner + 770);
@@ -10852,7 +10852,7 @@ LABEL_46:
           {
             if ( v235 != -1 )
             {
-              v37 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v37 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v38 = v37 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v37);
               v39 = v38[1] - 1;
               v38[1] = v39;
@@ -11004,7 +11004,7 @@ LABEL_50:
             {
               break;
             }
-            v65 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v65 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v65 == -1 )
             {
               v66 = 0;
@@ -11043,7 +11043,7 @@ LABEL_82:
       }
       v64 = operator_new(2u);
       *(BYTE *)(v64 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v64, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v64, Owner + 770);
 LABEL_84:
       Ownerf = *v61;
       v244 = (const char *)(Owner + 770);
@@ -11058,7 +11058,7 @@ LABEL_84:
           {
             if ( v236 != -1 )
             {
-              v71 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v71 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v72 = v71 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v71);
               v73 = v72[1] - 1;
               v72[1] = v73;
@@ -11133,7 +11133,7 @@ LABEL_88:
             {
               break;
             }
-            v8 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v8 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v8 == -1 )
             {
               v9 = 0;
@@ -11173,7 +11173,7 @@ LABEL_6:
       }
       v7 = operator_new(2u);
       *(BYTE *)(v7 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v7, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v7, Owner + 770);
 LABEL_8:
       Ownerb = *v4;
       v245 = Owner + 770;
@@ -11188,7 +11188,7 @@ LABEL_8:
           {
             if ( v234 != -1 )
             {
-              v14 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v14 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v15 = v14 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v14);
               v16 = v15[1] - 1;
               v15[1] = v16;
@@ -11244,7 +11244,7 @@ LABEL_30:
       }
       break;
     case 103:
-      if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 50 )
+      if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 50 )
       {
         TargetPosition[0] = (double)(rand() % 1024) + *(float *)(Owner + 16) - 512.0;
         v198 = (double)(rand() % 1024) + *(float *)(Owner + 20);
@@ -11265,7 +11265,7 @@ LABEL_75:
   if ( v202 >= 0 && v202 < 400 && CharactersClient )
   {
     v203 = CharactersClient + 916 * v202;
-    if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 17 )
+    if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 17 )
     {
       switch ( *(BYTE *)(Owner + 747) )
       {
@@ -11482,7 +11482,7 @@ LABEL_75:
           return;
       }
     }
-    else if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 3 )
+    else if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 3 )
     {
       switch ( *(BYTE *)(Owner + 747) )
       {
@@ -11961,7 +11961,7 @@ void __cdecl FUN_004454fc(DWORD Owner)
             {
               break;
             }
-            v175 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v175 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v175 == -1 )
             {
               v176 = 0;
@@ -12000,7 +12000,7 @@ LABEL_263:
       }
       v174 = operator_new(2u);
       *(BYTE *)(v174 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v174, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v174, Owner + 770);
 LABEL_265:
       Ownert = *v171;
       v244 = (const char *)(Owner + 770);
@@ -12015,7 +12015,7 @@ LABEL_265:
           {
             if ( v242 != -1 )
             {
-              v181 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v181 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v182 = v181 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v181);
               v183 = v182[1] - 1;
               v182[1] = v183;
@@ -12078,7 +12078,7 @@ LABEL_269:
               break;
             }
             v189 = (char *)(Owner + 770);
-            v192 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v192 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v192 == -1 )
             {
               v193 = 0;
@@ -12119,10 +12119,10 @@ LABEL_291:
       v188 = operator_new(2u);
       v189 = (char *)(Owner + 770);
       *(BYTE *)(v188 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v188, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v188, Owner + 770);
 LABEL_293:
       v190 = *v189;
-      PACKET_ENCRYPT(&DAT_055c9bc8, v189);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, v189);
       if ( v190 == 50 )
       {
         if ( *(BYTE *)(Owner + 757) == 1 )
@@ -12161,7 +12161,7 @@ LABEL_293:
             {
               break;
             }
-            v156 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v156 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v156 == -1 )
             {
               v157 = 0;
@@ -12200,7 +12200,7 @@ LABEL_236:
       }
       v155 = operator_new(2u);
       *(BYTE *)(v155 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v155, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v155, Owner + 770);
 LABEL_238:
       Ownerr = *v152;
       v244 = (const char *)(Owner + 770);
@@ -12215,7 +12215,7 @@ LABEL_238:
           {
             if ( v241 != -1 )
             {
-              v162 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v162 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v163 = v162 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v162);
               v164 = v163[1] - 1;
               v163[1] = v164;
@@ -12316,7 +12316,7 @@ LABEL_242:
             {
               break;
             }
-            v135 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v135 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v135 == -1 )
             {
               v136 = 0;
@@ -12355,7 +12355,7 @@ LABEL_208:
       }
       v134 = operator_new(2u);
       *(BYTE *)(v134 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v134, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v134, Owner + 770);
 LABEL_210:
       Ownerp = *v131;
       v244 = (const char *)(Owner + 770);
@@ -12370,7 +12370,7 @@ LABEL_210:
           {
             if ( v240 != -1 )
             {
-              v141 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v141 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v142 = v141 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v141);
               v143 = v142[1] - 1;
               v142[1] = v143;
@@ -12450,7 +12450,7 @@ LABEL_214:
               {
                 break;
               }
-              v119 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v119 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               if ( v119 == -1 )
               {
                 v120 = 0;
@@ -12490,7 +12490,7 @@ LABEL_179:
         }
         v118 = operator_new(2u);
         *(BYTE *)(v118 + 1) = 1;
-        HashTable_Insert(&DAT_055c9bc8, v118, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v118, Owner + 770);
 LABEL_181:
         Ownerm = *v117;
         v244 = (const char *)(Owner + 770);
@@ -12505,7 +12505,7 @@ LABEL_181:
             {
               if ( v239 != -1 )
               {
-                v125 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+                v125 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
                 v126 = v125 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v125);
                 v127 = v126[1] - 1;
                 v126[1] = v127;
@@ -12604,7 +12604,7 @@ LABEL_185:
               {
                 break;
               }
-              v84 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v84 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               if ( v84 == -1 )
               {
                 v85 = 0;
@@ -12643,7 +12643,7 @@ LABEL_114:
         }
         v83 = operator_new(2u);
         *(BYTE *)(v83 + 1) = 1;
-        HashTable_Insert(&DAT_055c9bc8, v83, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v83, Owner + 770);
 LABEL_116:
         Ownerh = *v80;
         v244 = (const char *)(Owner + 770);
@@ -12658,7 +12658,7 @@ LABEL_116:
             {
               if ( v237 != -1 )
               {
-                v90 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+                v90 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
                 v91 = v90 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v90);
                 v92 = v91[1] - 1;
                 v91[1] = v92;
@@ -12743,7 +12743,7 @@ LABEL_120:
             {
               break;
             }
-            v102 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v102 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v102 == -1 )
             {
               v103 = 0;
@@ -12782,7 +12782,7 @@ LABEL_146:
       }
       v101 = operator_new(2u);
       *(BYTE *)(v101 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v101, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v101, Owner + 770);
 LABEL_148:
       Ownerk = *v98;
       v244 = (const char *)(Owner + 770);
@@ -12797,7 +12797,7 @@ LABEL_148:
           {
             if ( v238 != -1 )
             {
-              v108 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v108 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v109 = v108 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v108);
               v110 = v109[1] - 1;
               v109[1] = v110;
@@ -12878,7 +12878,7 @@ LABEL_152:
             {
               break;
             }
-            v31 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v31 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v31 == -1 )
             {
               v32 = 0;
@@ -12917,7 +12917,7 @@ LABEL_44:
       }
       v30 = operator_new(2u);
       *(BYTE *)(v30 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v30, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v30, Owner + 770);
 LABEL_46:
       Ownerd = *v27;
       v244 = (const char *)(Owner + 770);
@@ -12932,7 +12932,7 @@ LABEL_46:
           {
             if ( v235 != -1 )
             {
-              v37 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v37 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v38 = v37 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v37);
               v39 = v38[1] - 1;
               v38[1] = v39;
@@ -13084,7 +13084,7 @@ LABEL_50:
             {
               break;
             }
-            v65 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v65 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v65 == -1 )
             {
               v66 = 0;
@@ -13123,7 +13123,7 @@ LABEL_82:
       }
       v64 = operator_new(2u);
       *(BYTE *)(v64 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v64, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v64, Owner + 770);
 LABEL_84:
       Ownerf = *v61;
       v244 = (const char *)(Owner + 770);
@@ -13138,7 +13138,7 @@ LABEL_84:
           {
             if ( v236 != -1 )
             {
-              v71 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v71 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v72 = v71 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v71);
               v73 = v72[1] - 1;
               v72[1] = v73;
@@ -13213,7 +13213,7 @@ LABEL_88:
             {
               break;
             }
-            v8 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v8 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v8 == -1 )
             {
               v9 = 0;
@@ -13253,7 +13253,7 @@ LABEL_6:
       }
       v7 = operator_new(2u);
       *(BYTE *)(v7 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v7, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v7, Owner + 770);
 LABEL_8:
       Ownerb = *v4;
       v245 = Owner + 770;
@@ -13268,7 +13268,7 @@ LABEL_8:
           {
             if ( v234 != -1 )
             {
-              v14 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v14 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v15 = v14 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v14);
               v16 = v15[1] - 1;
               v15[1] = v16;
@@ -13324,7 +13324,7 @@ LABEL_30:
       }
       break;
     case 103:
-      if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 50 )
+      if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 50 )
       {
         TargetPosition[0] = (double)(rand() % 1024) + *(float *)(Owner + 16) - 512.0;
         v198 = (double)(rand() % 1024) + *(float *)(Owner + 20);
@@ -13345,7 +13345,7 @@ LABEL_75:
   if ( v202 >= 0 && v202 < 400 && CharactersClient )
   {
     v203 = CharactersClient + 916 * v202;
-    if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 17 )
+    if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 17 )
     {
       switch ( *(BYTE *)(Owner + 747) )
       {
@@ -13562,7 +13562,7 @@ LABEL_75:
           return;
       }
     }
-    else if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 3 )
+    else if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 3 )
     {
       switch ( *(BYTE *)(Owner + 747) )
       {
@@ -14637,7 +14637,7 @@ void __cdecl CHARACTER_MACHINE::GetMagicSkillDamage(DWORD This, int iType, int *
   iTypea = &SkillAttribute[40 * iType];
   v5 = (int)iTypea;
   v25 = iTypea;
-  v6 = (*(int (__cdecl **)(int *, BYTE *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, iTypea);
+  v6 = (*(int (__cdecl **)(int *, BYTE *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, iTypea);
   v24 = 0;
   v23 = 0;
   if...
@@ -14647,7 +14647,7 @@ void __cdecl CHARACTER_MACHINE::GetMagicSkillDamage(DWORD This, int iType, int *
   *piMaxDamage = (*v17 >> 1) + *v17 + *(unsigned short *)(v16 + 72);
   v18 = (int *)&SkillAttribute[v4];
   piMaxDamage = v18;
-  v19 = (*(int (__cdecl **)(int *, int *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, v18);
+  v19 = (*(int (__cdecl **)(int *, int *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, v18);
   piMinDamage = 0;
   iTypeb = 0;
   if...
@@ -14774,7 +14774,7 @@ char __cdecl FUN_0047fed0(int a1, const char *a2)
 
   v2 = (void *)CharacterMachine;
   v22 = CharacterMachine;
-  v3 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v3 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v21 = 0;
   v19 = 0;
   if ( DAT_055c9bd4 )
@@ -14787,7 +14787,7 @@ char __cdecl FUN_0047fed0(int a1, const char *a2)
         {
           break;
         }
-        v8 = FUN_004041e0(&DAT_055c9bc8, (int)v2);
+        v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v2);
         if ( v8 == -1 )
         {
           v9 = 0;
@@ -14835,12 +14835,12 @@ LABEL_5:
   }
   v5 = operator_new(0x585u);
   *(BYTE *)(v5 + 1412) = 1;
-  HashTable_Insert(&DAT_055c9bc8, v5, (int)v2);
+  HashTable_Insert(&MAIN_HASH_CLASS, v5, (int)v2);
 LABEL_7:
   v6 = (const void *)CharacterMachine;
   v23 = *(unsigned short *)(CharacterAttribute + 14);
   v21 = CharacterMachine;
-  v7 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v7 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v22 = 0;
   v20 = 0;
   if ( DAT_055c9bd4 )
@@ -14851,7 +14851,7 @@ LABEL_7:
       {
         if ( v7 != -1 )
         {
-          v14 = FUN_004041e0(&DAT_055c9bc8, (int)v6);
+          v14 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v6);
           if ( v14 == -1 )
           {
             v15 = 0;
@@ -15631,7 +15631,7 @@ int FUN_004824c0()
 
   v0 = (void *)CharacterMachine;
   v26 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v25 = 0;
   v23 = 0;
   if ( DAT_055c9bd4 )
@@ -15644,7 +15644,7 @@ int FUN_004824c0()
         {
           break;
         }
-        v3 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v0);
+        v3 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v0);
         v4 = v3[1412] + 1;
         v3[1412] = v4;
         if ( v4 < 2u )
@@ -15668,7 +15668,7 @@ LABEL_5:
   }
   v8 = operator_new(0x585u);
   *(BYTE *)(v8 + 1412) = 1;
-  HashTable_Insert(&DAT_055c9bc8, v8, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v8, (int)v0);
 LABEL_9:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
   {
@@ -15677,7 +15677,7 @@ LABEL_9:
     v28 = *(short *)(CharacterMachine + 604);
     v24 = v6;
     v27 = CharacterMachine;
-    v7 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v7 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v26 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -15688,7 +15688,7 @@ LABEL_9:
         {
           if ( v7 != -1 )
           {
-            v9 = FUN_004041e0(&DAT_055c9bc8, (int)v5);
+            v9 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v5);
             v10 = v9 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v9);
             v11 = v10[1412] - 1;
             v10[1412] = v11;
@@ -15753,7 +15753,7 @@ LABEL_35:
   {
     v18 = (const void *)CharacterMachine;
     v27 = CharacterMachine;
-    v19 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v19 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v28 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -15764,7 +15764,7 @@ LABEL_35:
         {
           if ( v19 != -1 )
           {
-            v20 = FUN_004041e0(&DAT_055c9bc8, (int)v18);
+            v20 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v18);
             v21 = v20 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v20);
             v22 = v21[1412] - 1;
             v21[1412] = v22;
@@ -15831,7 +15831,7 @@ int FUN_004824c0()
 
   v0 = (void *)CharacterMachine;
   v26 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v25 = 0;
   v23 = 0;
   if ( DAT_055c9bd4 )
@@ -15844,7 +15844,7 @@ int FUN_004824c0()
         {
           break;
         }
-        v3 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v0);
+        v3 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v0);
         v4 = v3[1412] + 1;
         v3[1412] = v4;
         if ( v4 < 2u )
@@ -15868,7 +15868,7 @@ LABEL_5:
   }
   v8 = operator_new(0x585u);
   *(BYTE *)(v8 + 1412) = 1;
-  HashTable_Insert(&DAT_055c9bc8, v8, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v8, (int)v0);
 LABEL_9:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
   {
@@ -15877,7 +15877,7 @@ LABEL_9:
     v28 = *(short *)(CharacterMachine + 604);
     v24 = v6;
     v27 = CharacterMachine;
-    v7 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v7 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v26 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -15888,7 +15888,7 @@ LABEL_9:
         {
           if ( v7 != -1 )
           {
-            v9 = FUN_004041e0(&DAT_055c9bc8, (int)v5);
+            v9 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v5);
             v10 = v9 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v9);
             v11 = v10[1412] - 1;
             v10[1412] = v11;
@@ -15953,7 +15953,7 @@ LABEL_35:
   {
     v18 = (const void *)CharacterMachine;
     v27 = CharacterMachine;
-    v19 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v19 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v28 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -15964,7 +15964,7 @@ LABEL_35:
         {
           if ( v19 != -1 )
           {
-            v20 = FUN_004041e0(&DAT_055c9bc8, (int)v18);
+            v20 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v18);
             v21 = v20 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v20);
             v22 = v21[1412] - 1;
             v21[1412] = v22;
@@ -16030,7 +16030,7 @@ int FUN_00482850()
 
   v0 = (void *)CharacterMachine;
   v26 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v25 = 0;
   v23 = 0;
   if ( DAT_055c9bd4 )
@@ -16043,7 +16043,7 @@ int FUN_00482850()
         {
           break;
         }
-        v7 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v0);
+        v7 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v0);
         v8 = v7[1412] + 1;
         v7[1412] = v8;
         if ( v8 < 2u )
@@ -16067,7 +16067,7 @@ LABEL_5:
   }
   v3 = operator_new(0x585u);
   *(BYTE *)(v3 + 1412) = 1;
-  HashTable_Insert(&DAT_055c9bc8, v3, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v3, (int)v0);
 LABEL_7:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
   {
@@ -16076,7 +16076,7 @@ LABEL_7:
     v28 = *(short *)(CharacterMachine + 604);
     v24 = v5;
     v27 = CharacterMachine;
-    v6 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v6 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v26 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -16087,7 +16087,7 @@ LABEL_7:
         {
           if ( v6 != -1 )
           {
-            v9 = FUN_004041e0(&DAT_055c9bc8, (int)v4);
+            v9 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v4);
             v10 = v9 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v9);
             v11 = v10[1412] - 1;
             v10[1412] = v11;
@@ -16150,7 +16150,7 @@ LABEL_13:
   {
     v18 = (const void *)CharacterMachine;
     v27 = CharacterMachine;
-    v19 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v19 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v28 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -16161,7 +16161,7 @@ LABEL_13:
         {
           if ( v19 != -1 )
           {
-            v20 = FUN_004041e0(&DAT_055c9bc8, (int)v18);
+            v20 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v18);
             v21 = v20 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v20);
             v22 = v21[1412] - 1;
             v21[1412] = v22;
@@ -16639,15 +16639,15 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
   int v334; // [esp+DCCh] [ebp-4h]
 
   v2 = (void *)CharacterMachine;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
   {
     v6 = operator_new(0x585u);
     *(BYTE *)(v6 + 1412) = 1;
-    HashTable_Insert(&DAT_055c9bc8, v6, (int)v2);
+    HashTable_Insert(&MAIN_HASH_CLASS, v6, (int)v2);
   }
   else
   {
-    v3 = FUN_004041e0(&DAT_055c9bc8, (int)v2);
+    v3 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v2);
     if ( v3 == -1 )
     {
       v4 = 0;
@@ -16672,9 +16672,9 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
     v317 = DAT_07d7809c;
   }
   v7 = (const void *)CharacterMachine;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
   {
-    v8 = FUN_004041e0(&DAT_055c9bc8, (int)v7);
+    v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v7);
     v9 = v8 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v8);
     v10 = v9[1412] - 1;
     v9[1412] = v10;
@@ -16684,10 +16684,10 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
     }
   }
   v11 = (char *)(Hero + 904);
-  FUN_0043d3e0(&DAT_055c9bc8, (DWORD *)(Hero + 904));
+  FUN_0043d3e0(&MAIN_HASH_CLASS, (DWORD *)(Hero + 904));
   *(float *)SkillIndex = *(float *)v11;
-  FUN_004233e0(&DAT_055c9bc8, v11);
-  v12 = FUN_0043d670(&DAT_055c9bc8, (char *)(Hero + 908));
+  FUN_004233e0(&MAIN_HASH_CLASS, v11);
+  v12 = FUN_0043d670(&MAIN_HASH_CLASS, (char *)(Hero + 908));
   v324 = &DAT_00552460;
   v13 = *(float *)(Hero + 36);
   buf[1] = 0x1C1;
@@ -16942,12 +16942,12 @@ LABEL_44:
     v322 = v37 * v322;
     v38 = (char *)(c + 908);
     LODWORD(x2) = (__int64)(*(float *)(c + 788) * 0.0099999998);
-    FUN_0043d3e0(&DAT_055c9bc8, (DWORD *)(c + 908));
-    FUN_004233e0(&DAT_055c9bc8, (char *)(c + 908));
+    FUN_0043d3e0(&MAIN_HASH_CLASS, (DWORD *)(c + 908));
+    FUN_004233e0(&MAIN_HASH_CLASS, (char *)(c + 908));
     v39 = (char *)(c + 904);
-    FUN_0043d3e0(&DAT_055c9bc8, (DWORD *)(c + 904));
+    FUN_0043d3e0(&MAIN_HASH_CLASS, (DWORD *)(c + 904));
     Positionj = *(float **)(c + 904);
-    FUN_004233e0(&DAT_055c9bc8, (char *)(c + 904));
+    FUN_004233e0(&MAIN_HASH_CLASS, (char *)(c + 904));
     v316 = (16 * ((BYTE)(x2) - (BYTE)Positionj + 8)) | ((BYTE)(x2) - (BYTE)Positionj - 8) & 0xF;
     v284 = Hero + 449;
     v40 = 0;
@@ -16983,12 +16983,12 @@ LABEL_44:
     v334 = 1;
     (BYTE)(buf[2]) = 0x1E;
     buf[0] = 3;
-    FUN_0043d3e0(&DAT_055c9bc8, v38);
+    FUN_0043d3e0(&MAIN_HASH_CLASS, v38);
     x2 = *(float *)v38;
-    FUN_004233e0(&DAT_055c9bc8, v38);
-    FUN_0043d3e0(&DAT_055c9bc8, v39);
+    FUN_004233e0(&MAIN_HASH_CLASS, v38);
+    FUN_0043d3e0(&MAIN_HASH_CLASS, v39);
     *(DWORD *)v318 = *(DWORD *)v39;
-    FUN_004233e0(&DAT_055c9bc8, v39);
+    FUN_004233e0(&MAIN_HASH_CLASS, v39);
     if ( buf[0] + 1 <= 1024 )
     {
       v219 = -25;
@@ -17254,11 +17254,11 @@ LABEL_44:
     qmemcpy(v333, &buf[1], buf[0]);
     v333[v57] = rand();
     v58 = (v333[0] != -63) + 2;
-    PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v59 = g_byPacketSerialSend;
     v332[v58 + 1024] = g_byPacketSerialSend;
     g_byPacketSerialSend = v59 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     --v58;
     v60 = v57 - v58;
     v61 = &v333[v58];
@@ -17368,15 +17368,15 @@ LABEL_121:
     }
     while ( v72 );
     v74 = (void *)CharacterMachine;
-    if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
     {
       v78 = operator_new(0x585u);
       *(BYTE *)(v78 + 1412) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v78, (int)v74);
+      HashTable_Insert(&MAIN_HASH_CLASS, v78, (int)v74);
     }
     else
     {
-      v75 = FUN_004041e0(&DAT_055c9bc8, (int)v74);
+      v75 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v74);
       if ( v75 == -1 )
       {
         v76 = 0;
@@ -17398,9 +17398,9 @@ LABEL_121:
     v207 = CharacterMachine;
     *(BYTE *)(o + 136) = v80;
     v79[1408] = v80 + 1;
-    if ( FUN_004041e0(&DAT_055c9bc8, v207) != -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, v207) != -1 )
     {
-      v81 = FUN_004041e0(&DAT_055c9bc8, (int)v79);
+      v81 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v79);
       v82 = v81 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v81);
       v83 = v82[1412] - 1;
       v82[1412] = v83;
@@ -17760,15 +17760,15 @@ LABEL_121:
     qmemcpy(v333, &buf[1], buf[0]);
     v333[v110] = rand();
     v111 = (v333[0] != -63) + 2;
-    if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
     {
       v114 = operator_new(2u);
       *(BYTE *)(v114 + 1) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v114, (int)&g_byPacketSerialSend);
+      HashTable_Insert(&MAIN_HASH_CLASS, v114, (int)&g_byPacketSerialSend);
     }
     else
     {
-      v112 = (char *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+      v112 = (char *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
       v113 = v112[1] + 1;
       v112[1] = v113;
       if ( (unsigned char)v113 < 2u )
@@ -17779,7 +17779,7 @@ LABEL_121:
     v115 = g_byPacketSerialSend;
     v332[v111 + 1024] = g_byPacketSerialSend;
     g_byPacketSerialSend = v115 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v116 = v111 - 1;
     v117 = v110 - v116;
     v118 = &v333[v116];
@@ -17885,15 +17885,15 @@ LABEL_300:
     Angle[1] = v133;
     *(float *)SkillIndex = 0.0;
     Angle[2] = v134;
-    if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
     {
       v137 = operator_new(0x585u);
       *(BYTE *)(v137 + 1412) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v137, (int)v132);
+      HashTable_Insert(&MAIN_HASH_CLASS, v137, (int)v132);
     }
     else
     {
-      v135 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v132);
+      v135 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v132);
       v136 = v135[1412] + 1;
       v135[1412] = v136;
       if ( v136 < 2u )
@@ -17912,21 +17912,21 @@ LABEL_300:
     }
     *(float *)SkillIndex = v138;
 LABEL_216:
-    STRUCT_ENCRYPT(&DAT_055c9bc8, (const void *)CharacterMachine);
+    STRUCT_ENCRYPT(&MAIN_HASH_CLASS, (const void *)CharacterMachine);
     (WORD)(v139) = *(WORD *)(o + 134);
     CreateEffect(203, Positiona, Angle, (float *)(o + 232), 2, o, v139, *(int *)SkillIndex, 0);
     v140 = (void *)CharacterMachine;
     *(DWORD *)v318 = 0;
     Angle[2] = Angle[2] + 20.0;
-    if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
     {
       v143 = operator_new(0x585u);
       *(BYTE *)(v143 + 1412) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v143, (int)v140);
+      HashTable_Insert(&MAIN_HASH_CLASS, v143, (int)v140);
     }
     else
     {
-      v141 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v140);
+      v141 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v140);
       v142 = v141[1412] + 1;
       v141[1412] = v142;
       if ( v142 < 2u )
@@ -17945,12 +17945,12 @@ LABEL_216:
     }
     v145 = v144;
 LABEL_225:
-    STRUCT_ENCRYPT(&DAT_055c9bc8, (const void *)CharacterMachine);
+    STRUCT_ENCRYPT(&MAIN_HASH_CLASS, (const void *)CharacterMachine);
     (WORD)(v146) = *(WORD *)(o + 134);
     CreateEffect(203, Positiona, Angle, (float *)(o + 232), 2, o, v146, v145, 0);
     v147 = 0;
     Angle[2] = Angle[2] + 20.0;
-    STRUCT_DECRYPT(&DAT_055c9bc8, (void *)CharacterMachine);
+    STRUCT_DECRYPT(&MAIN_HASH_CLASS, (void *)CharacterMachine);
     v148 = 0;
     while ( *(BYTE *)(CharacterAttribute + v148 + 87) != 56 )
     {
@@ -17962,10 +17962,10 @@ LABEL_225:
     v147 = v148;
 LABEL_230:
     *(float *)SkillIndex = *(float *)&CharacterMachine;
-    v149 = (BYTE *)FUN_004041e0(&DAT_055c9bc8, CharacterMachine);
+    v149 = (BYTE *)FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine);
     if ( v149 != (BYTE *)-1 )
     {
-      v149 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, *(int *)SkillIndex);
+      v149 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, *(int *)SkillIndex);
       v150 = v149[1412] - 1;
       v149[1412] = v150;
       if ( !v150 )
@@ -17977,7 +17977,7 @@ LABEL_230:
     CreateEffect(203, Positiona, Angle, (float *)(o + 232), 2, o, (int)v149, v147, 0);
     v151 = 0;
     Angle[2] = Angle[2] + 20.0;
-    STRUCT_DECRYPT(&DAT_055c9bc8, (void *)CharacterMachine);
+    STRUCT_DECRYPT(&MAIN_HASH_CLASS, (void *)CharacterMachine);
     v152 = 0;
     while ( *(BYTE *)(CharacterAttribute + v152 + 87) != 56 )
     {
@@ -17989,10 +17989,10 @@ LABEL_230:
     v151 = v152;
 LABEL_238:
     *(float *)SkillIndex = *(float *)&CharacterMachine;
-    v153 = (BYTE *)FUN_004041e0(&DAT_055c9bc8, CharacterMachine);
+    v153 = (BYTE *)FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine);
     if ( v153 != (BYTE *)-1 )
     {
-      v153 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, *(int *)SkillIndex);
+      v153 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, *(int *)SkillIndex);
       v154 = v153[1412] - 1;
       v153[1412] = v154;
       if ( !v154 )
@@ -18004,7 +18004,7 @@ LABEL_238:
     CreateEffect(203, Positiona, Angle, (float *)(o + 232), 2, o, (int)v153, v151, 0);
     *(float *)SkillIndex = 0.0;
     Angle[2] = Angle[2] + 20.0;
-    STRUCT_DECRYPT(&DAT_055c9bc8, (void *)CharacterMachine);
+    STRUCT_DECRYPT(&MAIN_HASH_CLASS, (void *)CharacterMachine);
     v155 = 0.0;
     while ( *(BYTE *)(CharacterAttribute + LODWORD(v155) + 87) != 56 )
     {
@@ -18017,9 +18017,9 @@ LABEL_238:
     *(float *)SkillIndex = v155;
 LABEL_246:
     v156 = (const void *)CharacterMachine;
-    if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
     {
-      v158 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v156);
+      v158 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v156);
       v159 = v158[1412] - 1;
       v158[1412] = v159;
       if ( !v159 )
@@ -18190,15 +18190,15 @@ LABEL_258:
       qmemcpy(v333, &buf[1], buf[0]);
       v333[v176] = rand();
       v177 = (v333[0] != -63) + 2;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
       {
         v180 = operator_new(2u);
         *(BYTE *)(v180 + 1) = 1;
-        HashTable_Insert(&DAT_055c9bc8, v180, (int)&g_byPacketSerialSend);
+        HashTable_Insert(&MAIN_HASH_CLASS, v180, (int)&g_byPacketSerialSend);
       }
       else
       {
-        v178 = (char *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v178 = (char *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v179 = v178[1] + 1;
         v178[1] = v179;
         if ( (unsigned char)v179 < 2u )
@@ -18209,7 +18209,7 @@ LABEL_258:
       v181 = g_byPacketSerialSend;
       v332[v177 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v181 + 1;
-      PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       v182 = v177 - 1;
       v183 = v176 - v182;
       v184 = &v333[v182];
@@ -18565,7 +18565,7 @@ void __cdecl FUN_0048b680(int a1)
   {
     v1 = (void *)CharacterMachine;
     v27 = CharacterMachine;
-    v2 = (*(int (__cdecl **)(int *, DWORD, int))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine, a1);
+    v2 = (*(int (__cdecl **)(int *, DWORD, int))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine, a1);
     v26 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -18578,7 +18578,7 @@ void __cdecl FUN_0048b680(int a1)
           {
             break;
           }
-          v7 = FUN_004041e0(&DAT_055c9bc8, (int)v1);
+          v7 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v1);
           if ( v7 == -1 )
           {
             v8 = 0;
@@ -18611,7 +18611,7 @@ LABEL_6:
     }
     v4 = operator_new(0x585u);
     *(BYTE *)(v4 + 1412) = 1;
-    HashTable_Insert(&DAT_055c9bc8, v4, (int)v1);
+    HashTable_Insert(&MAIN_HASH_CLASS, v4, (int)v1);
 LABEL_8:
     v5 = (const void *)CharacterMachine;
     if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 && !DAT_07e91388 )
@@ -18620,7 +18620,7 @@ LABEL_8:
       retaddr = (void *)(CharacterMachine + 604);
     }
     v29 = (short *)CharacterMachine;
-    v6 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v6 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v27 = 0;
     v23 = 0;
     if ( DAT_055c9bd4 )
@@ -18631,7 +18631,7 @@ LABEL_8:
         {
           if ( v6 != -1 )
           {
-            v10 = FUN_004041e0(&DAT_055c9bc8, (int)v5);
+            v10 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v5);
             if ( v10 == -1 )
             {
               v24 = 0;
@@ -18780,7 +18780,7 @@ void FUN_004c4080()
   v0 = (void *)CharacterMachine;
   DAT_07eaa0f8 = 0;
   v41 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v39 = 0;
   v40 = 0;
   if ( DAT_055c9bd4 )
@@ -18793,7 +18793,7 @@ void FUN_004c4080()
         {
           break;
         }
-        v16 = FUN_004041e0(&DAT_055c9bc8, (int)v0);
+        v16 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v0);
         if ( v16 == -1 )
         {
           v17 = 0;
@@ -18841,7 +18841,7 @@ LABEL_5:
   }
   v3 = operator_new(0x585u);
   *(BYTE *)(v3 + 1412) = 1;
-  HashTable_Insert(&DAT_055c9bc8, v3, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v3, (int)v0);
 LABEL_7:
   v4 = 0;
   for ( i = 0; i < 816; i += 68 )
@@ -18908,7 +18908,7 @@ LABEL_7:
   while ( (int)v10 < (int)&DAT_07ea9510 );
   v39 = (char *)CharacterMachine;
   v40 = (char *)CharacterMachine;
-  v15 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v15 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v41 = 0;
   if ( DAT_055c9bd4 )
   {
@@ -18919,7 +18919,7 @@ LABEL_7:
         if ( v15 != -1 )
         {
           v40 = v39;
-          v22 = (*(int (__cdecl **)(int *, char *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, v39);
+          v22 = (*(int (__cdecl **)(int *, char *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, v39);
           v23 = 0;
           v41 = 0;
           if ( DAT_055c9bd4 )
@@ -19347,15 +19347,15 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
   v6 = (char *)(InventoryStartY + (__int64)a2);
   v7 = (void *)CharacterMachine;
   v306 = v6;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
   {
     v11 = operator_new(0x585u);
     *(BYTE *)(v11 + 1412) = 1;
-    HashTable_Insert(&DAT_055c9bc8, v11, (int)v7);
+    HashTable_Insert(&MAIN_HASH_CLASS, v11, (int)v7);
   }
   else
   {
-    v8 = FUN_004041e0(&DAT_055c9bc8, (int)v7);
+    v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v7);
     if ( v8 == -1 )
     {
       v9 = 0;
@@ -19504,15 +19504,15 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
       qmemcpy(v323, &v314, v313);
       v323[v238] = rand();
       v239 = (v323[0] != -63) + 2;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
       {
         v243 = operator_new(2u);
         *(BYTE *)(v243 + 1) = 1;
-        HashTable_Insert(&DAT_055c9bc8, v243, (int)&g_byPacketSerialSend);
+        HashTable_Insert(&MAIN_HASH_CLASS, v243, (int)&g_byPacketSerialSend);
       }
       else
       {
-        v240 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v240 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         if ( v240 == -1 )
         {
           v241 = 0;
@@ -19531,9 +19531,9 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
       v244 = g_byPacketSerialSend;
       v322[v239 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v244 + 1;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
       {
-        v245 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v245 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v246 = v245 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v245);
         v247 = v246[1] - 1;
         v246[1] = v247;
@@ -19671,15 +19671,15 @@ LABEL_515:
   }
   v13 = (void *)CharacterMachine;
   (BYTE)((v305) >> 8) = 1;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
   {
     v17 = operator_new(0x585u);
     *(BYTE *)(v17 + 1412) = 1;
-    HashTable_Insert(&DAT_055c9bc8, v17, (int)v13);
+    HashTable_Insert(&MAIN_HASH_CLASS, v17, (int)v13);
   }
   else
   {
-    v14 = FUN_004041e0(&DAT_055c9bc8, (int)v13);
+    v14 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v13);
     if ( v14 == -1 )
     {
       v15 = 0;
@@ -19700,9 +19700,9 @@ LABEL_515:
   v20 = *(short *)(CharacterMachine + 604);
   v311 = v19;
   v308 = v20;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
   {
-    v21 = FUN_004041e0(&DAT_055c9bc8, v18);
+    v21 = FUN_004041e0(&MAIN_HASH_CLASS, v18);
     v22 = v21 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v21);
     v23 = v22[1412] - 1;
     v22[1412] = v23;
@@ -19767,7 +19767,7 @@ LABEL_118:
       }
       v51 = (void *)CharacterMachine;
       v310 = CharacterMachine;
-      v52 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v52 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v307 = 0;
       v306 = 0;
       if ( DAT_055c9bd4 )
@@ -19826,7 +19826,7 @@ LABEL_118:
             {
               break;
             }
-            v71 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v51);
+            v71 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v51);
             v72 = v71[1412] + 1;
             v71[1412] = v72;
             if ( v72 < 2u )
@@ -19849,7 +19849,7 @@ LABEL_134:
       }
       v61 = operator_new(0x585u);
       *(BYTE *)(v61 + 1412) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v61, (int)v51);
+      HashTable_Insert(&MAIN_HASH_CLASS, v61, (int)v51);
 LABEL_136:
       if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2
         && v308 == 135
@@ -19859,7 +19859,7 @@ LABEL_136:
       }
       v39 = (const void *)CharacterMachine;
       v307 = (BYTE *)CharacterMachine;
-      v62 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v62 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v308 = 0;
       v306 = 0;
       if ( DAT_055c9bd4 )
@@ -19918,7 +19918,7 @@ LABEL_136:
             {
               goto LABEL_163;
             }
-            v49 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v39);
+            v49 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v39);
             v73 = v49[1412] - 1;
             v49[1412] = v73;
             if ( v73 )
@@ -19946,7 +19946,7 @@ LABEL_163:
     }
     v26 = (void *)CharacterMachine;
     v307 = (BYTE *)CharacterMachine;
-    v27 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v27 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v310 = 0;
     v306 = 0;
     if ( DAT_055c9bd4 )
@@ -20005,7 +20005,7 @@ LABEL_163:
           {
             break;
           }
-          v37 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v26);
+          v37 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v26);
           v38 = v37[1412] + 1;
           v37[1412] = v38;
           if ( v38 < 2u )
@@ -20028,7 +20028,7 @@ LABEL_75:
     }
     v36 = operator_new(0x585u);
     *(BYTE *)(v36 + 1412) = 1;
-    HashTable_Insert(&DAT_055c9bc8, v36, (int)v26);
+    HashTable_Insert(&MAIN_HASH_CLASS, v36, (int)v26);
 LABEL_77:
     if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 0 || (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
     {
@@ -20055,7 +20055,7 @@ LABEL_98:
     }
     v39 = (const void *)CharacterMachine;
     v310 = CharacterMachine;
-    v40 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v40 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v307 = 0;
     v306 = 0;
     if ( DAT_055c9bd4 )
@@ -20112,7 +20112,7 @@ LABEL_98:
         {
           if ( v40 != -1 )
           {
-            v49 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v39);
+            v49 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v39);
             v50 = v49[1412] - 1;
             v49[1412] = v50;
             if ( !v50 )
@@ -20143,7 +20143,7 @@ LABEL_164:
   }
   v74 = (void *)CharacterMachine;
   v307 = (BYTE *)CharacterMachine;
-  v75 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v75 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v308 = 0;
   v306 = 0;
   if ( DAT_055c9bd4 )
@@ -20202,7 +20202,7 @@ LABEL_164:
         {
           break;
         }
-        v95 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v74);
+        v95 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v74);
         v96 = v95[1412] + 1;
         v95[1412] = v96;
         if ( v96 < 2u )
@@ -20225,7 +20225,7 @@ LABEL_181:
   }
   v84 = operator_new(0x585u);
   *(BYTE *)(v84 + 1412) = 1;
-  HashTable_Insert(&DAT_055c9bc8, v84, (int)v74);
+  HashTable_Insert(&MAIN_HASH_CLASS, v84, (int)v74);
 LABEL_183:
   if ( (unsigned short)DAT_07e9136c > *(WORD *)(CharacterAttribute + 20) )
   {
@@ -20250,7 +20250,7 @@ LABEL_183:
   }
   v85 = (const void *)CharacterMachine;
   v307 = (BYTE *)CharacterMachine;
-  v86 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v86 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v308 = 0;
   v306 = 0;
   if ( DAT_055c9bd4 )
@@ -20307,7 +20307,7 @@ LABEL_183:
       {
         if ( v86 != -1 )
         {
-          v97 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)v85);
+          v97 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v85);
           v98 = v97[1412] - 1;
           v97[1412] = v98;
           if ( !v98 )
@@ -20779,11 +20779,11 @@ LABEL_231:
     qmemcpy(v323, &v314, v313);
     v323[v116] = rand();
     v117 = (v323[0] != -63) + 2;
-    PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v118 = g_byPacketSerialSend;
     v322[v117 + 1024] = g_byPacketSerialSend;
     g_byPacketSerialSend = v118 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     --v117;
     v119 = v116 - v117;
     v120 = &v323[v117];
@@ -21247,13 +21247,13 @@ LABEL_571:
       qmemcpy(v323, &v314, v313);
       v323[v181] = rand();
       v182 = (v323[0] != -63) + 2;
-      PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       v183 = g_byPacketSerialSend;
       v322[v182 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v183 + 1;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
       {
-        v184 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v184 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v185 = v184[1] - 1;
         v184[1] = v185;
         if ( !v185 )
@@ -21720,13 +21720,13 @@ LABEL_571:
       qmemcpy(v323, &v314, v313);
       v323[v215] = rand();
       v216 = (v323[0] != -63) + 2;
-      PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       v217 = g_byPacketSerialSend;
       v322[v216 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v217 + 1;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
       {
-        v218 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v218 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v219 = v218[1] - 1;
         v218[1] = v219;
         if ( !v219 )
@@ -22195,11 +22195,11 @@ LABEL_573:
     qmemcpy(v323, &v314, v313);
     v323[v152] = rand();
     v153 = (v323[0] != -63) + 2;
-    PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v154 = g_byPacketSerialSend;
     v322[v153 + 1024] = g_byPacketSerialSend;
     g_byPacketSerialSend = v154 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     --v153;
     v155 = v152 - v153;
     v156 = &v323[v153];
@@ -22323,7 +22323,7 @@ LABEL_572:
 LABEL_576:
   v309 = (BYTE *)CharacterMachine;
   v307 = (BYTE *)CharacterMachine;
-  v260 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v260 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v261 = 0;
   v308 = 0;
   if ( DAT_055c9bd4 )
@@ -22335,7 +22335,7 @@ LABEL_576:
         if ( v260 != -1 )
         {
           v307 = v309;
-          v262 = (*(int (__cdecl **)(int *, BYTE *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, v309);
+          v262 = (*(int (__cdecl **)(int *, BYTE *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, v309);
           v263 = 0;
           v308 = 0;
           if ( DAT_055c9bd4 )
@@ -22443,7 +22443,7 @@ void FUN_004d1fc0()
   FUN_004cdc70(115.0, 46.0, 60.0, 40.0, 7);
   v0 = (void *)CharacterMachine;
   v21 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v20 = 0;
   v17 = 0;
   if ( DAT_055c9bd4 )
@@ -22456,7 +22456,7 @@ void FUN_004d1fc0()
         {
           break;
         }
-        v6 = FUN_004041e0(&DAT_055c9bc8, (int)v0);
+        v6 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v0);
         if ( v6 == -1 )
         {
           v7 = 0;
@@ -22488,7 +22488,7 @@ LABEL_5:
   }
   v3 = operator_new(0x585u);
   *(BYTE *)(v3 + 1412) = 1;
-  HashTable_Insert(&DAT_055c9bc8, v3, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v3, (int)v0);
 LABEL_7:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) != 3 )
   {
@@ -22496,7 +22496,7 @@ LABEL_7:
   }
   v4 = (const void *)CharacterMachine;
   v20 = CharacterMachine;
-  v5 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v5 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v21 = 0;
   v18 = 0;
   if ( DAT_055c9bd4 )
@@ -22507,7 +22507,7 @@ LABEL_7:
       {
         if ( v5 != -1 )
         {
-          v9 = FUN_004041e0(&DAT_055c9bc8, (int)v4);
+          v9 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v4);
           if ( v9 == -1 )
           {
             v19 = 0;
@@ -23033,11 +23033,11 @@ LABEL_87:
       qmemcpy(v304, &v295, v294);
       v304[v49] = rand();
       v50 = (v304[0] != -63) + 2;
-      PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       v51 = g_byPacketSerialSend;
       v304[v50 - 1] = g_byPacketSerialSend;
       g_byPacketSerialSend = v51 + 1;
-      PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       --v50;
       v52 = v49 - v50;
       v53 = &v304[v50];
@@ -23246,13 +23246,13 @@ LABEL_123:
         qmemcpy(v304, &v295, v294);
         v304[v25] = rand();
         v26 = (v304[0] != -63) + 2;
-        PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+        PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
         v27 = g_byPacketSerialSend;
         v304[v26 - 1] = g_byPacketSerialSend;
         g_byPacketSerialSend = v27 + 1;
-        if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
         {
-          v28 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v28 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
           v29 = v28[1] - 1;
           v28[1] = v29;
           if ( !v29 )
@@ -23373,11 +23373,11 @@ LABEL_74:
       *(DWORD *)&Inventory[32].Type = v71;
       UI_Main(v71, a3, a4);
       CheckInventory = 0;
-      FUN_0043d8a0(&DAT_055c9bc8, &TradeOpened);
+      FUN_0043d8a0(&MAIN_HASH_CLASS, &TradeOpened);
       v72 = TradeOpened;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&TradeOpened) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&TradeOpened) != -1 )
       {
-        v73 = (BYTE *)HashTable_GetNode(&DAT_055c9bc8, (int)&TradeOpened);
+        v73 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&TradeOpened);
         v74 = v73[1] - 1;
         v73[1] = v74;
         if ( !v74 )
@@ -23434,15 +23434,15 @@ LABEL_74:
         qmemcpy(v304, &v295, v294);
         v304[v76] = rand();
         v77 = (v304[0] != -63) + 2;
-        if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
         {
           v80 = operator_new(2u);
           *(BYTE *)(v80 + 1) = 1;
-          HashTable_Insert(&DAT_055c9bc8, v80, (int)&g_byPacketSerialSend);
+          HashTable_Insert(&MAIN_HASH_CLASS, v80, (int)&g_byPacketSerialSend);
         }
         else
         {
-          v78 = (char *)HashTable_GetNode(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v78 = (char *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
           v79 = v78[1] + 1;
           v78[1] = v79;
           if ( (unsigned char)v79 < 2u )
@@ -23453,7 +23453,7 @@ LABEL_74:
         v81 = g_byPacketSerialSend;
         v304[v77 - 1] = g_byPacketSerialSend;
         g_byPacketSerialSend = v81 + 1;
-        PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+        PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
         v82 = v77 - 1;
         v83 = v76 - v82;
         v84 = &v304[v82];
@@ -23773,7 +23773,7 @@ LABEL_260:
       }
       if...
       v151 = TradeOpened;
-      PACKET_ENCRYPT(&DAT_055c9bc8, &TradeOpened);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, &TradeOpened);
       if ( v151 )
       {
 LABEL_322:
@@ -23836,13 +23836,13 @@ LABEL_322:
     {
       v178 = (void *)CharacterMachine;
       v284 = (WORD *)CharacterMachine;
-      v179 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v179 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v283 = 0;
       v286 = 0;
       if...
       v181 = operator_new(0x585u);
       *(BYTE *)(v181 + 1412) = 1;
-      HashTable_Insert(&DAT_055c9bc8, v181, (int)v178);
+      HashTable_Insert(&MAIN_HASH_CLASS, v181, (int)v178);
 LABEL_335:
       if ( (unsigned int)*(WORD *)(CharacterAttribute + 14) < ItemAttribute[*v285].RequireLevel
         || *(WORD *)(CharacterAttribute + 26) < (unsigned short)v285[16]
@@ -23926,7 +23926,7 @@ LABEL_411:
 LABEL_418:
       v286 = (char *)CharacterMachine;
       v284 = (WORD *)CharacterMachine;
-      v225 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v225 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v226 = 0;
       v283 = 0;
       if...
@@ -23936,14 +23936,14 @@ LABEL_418:
     {
       v285 = (short *)CharacterMachine;
       v284 = (WORD *)CharacterMachine;
-      v238 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v238 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v239 = 0;
       v283 = 0;
       if...
       v286 = (char *)operator_new(0x585u);
       v286[1412] = 1;
       v283 = (int)v285;
-      v240 = (*(int (__cdecl **)(int *, short *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, v285);
+      v240 = (*(int (__cdecl **)(int *, short *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, v285);
       v241 = 0;
       v284 = 0;
       if...
@@ -23951,7 +23951,7 @@ LABEL_466:
       v290 = *(unsigned short *)(CharacterAttribute + 14);
       v286 = (char *)CharacterMachine;
       v284 = (WORD *)CharacterMachine;
-      v249 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v249 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v250 = 0;
       v283 = 0;
       if...
@@ -24016,7 +24016,7 @@ LABEL_498:
   }
   if...
   v104 = TradeOpened;
-  PACKET_ENCRYPT(&DAT_055c9bc8, &TradeOpened);
+  PACKET_ENCRYPT(&MAIN_HASH_CLASS, &TradeOpened);
   if ( v104 )
   {
 LABEL_217:
@@ -24067,7 +24067,7 @@ LABEL_217:
     v113 = g_byPacketSerialSend;
     v304[v109 - 1] = g_byPacketSerialSend;
     g_byPacketSerialSend = v113 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v114 = v109 - 1;
     v115 = v108 - v114;
     v116 = &v304[v114];
@@ -24254,7 +24254,7 @@ LABEL_51:
     *(float *)&DAT_07ea9530 = WorldTime * 0.44999999;
   }
   v9 = Type;
-  DAT_07ea9512 = Type;
+  ObjectSelect_Type = Type;
   if ( (short)Type < 624 || (short)Type >= 784 )
   {
     if ( (WORD)Type == 860 )
@@ -24265,25 +24265,25 @@ LABEL_51:
         {
           v9 = 948;
           Type = 948;
-          DAT_07ea9512 = 948;
+          ObjectSelect_Type = 948;
         }
       }
       else
       {
         v9 = 947;
         Type = 947;
-        DAT_07ea9512 = 947;
+        ObjectSelect_Type = 947;
       }
     }
   }
   else
   {
     v9 = 390;
-    DAT_07ea9512 = 390;
+    ObjectSelect_Type = 390;
   }
-  DAT_07ea9618 = 0;
-  DAT_07ea961c = 0;
-  DAT_07ea9616 = 0;
+  ObjectSelect_AnimationFrame = 0;
+  ObjectSelect_PriorAnimationFrame = 0;
+  ObjectSelect_PriorAction = 0;
   v10 = Models + 188 * v9;
   *(BYTE *)(v10 + 160) = 0;
   if ( Type >= 624 )
@@ -24459,7 +24459,7 @@ LABEL_104:
   }
   v11 = 0x3B23D70A;
 LABEL_142:
-  BMD_Animation(v10, (float (*)[3][4])BoneMatrix, 0.0, 0.0, 0, Angle, DAT_07ea9538, 0, 0);
+  BMD_Animation(v10, (float (*)[3][4])BoneMatrix, 0.0, 0.0, 0, Angle, ObjectSelect_HeadAngle, 0, 0);
   (WORD)((o) >> 16) = Type;
   ItemObjectAttribute((DWORD)&o);
   v17 = Position[0];
@@ -26340,7 +26340,7 @@ int __cdecl FUN_0050f700(char *FileName)
   const char *v2; // esi
 
   v1 = fopen(FileName, aWt);
-  v2 = (const char *)&DAT_07e0ffc8;
+  v2 = (const char *)&MacroText;
   do
   {
     fprintf(v1, "%s\n", v2);

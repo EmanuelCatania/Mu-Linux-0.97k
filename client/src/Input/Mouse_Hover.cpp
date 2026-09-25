@@ -83,7 +83,7 @@ void Mouse_UpdateHoverTargets(void)
     // 2026-05-06: añadido guard `c50 >= 0` para evitar OOB read cuando
     // SelectedCharacter == -1 (initial state). Antes se leía entity[+0x2fd] con
     // c50=-1 → puntero negativo → crash latente.
-    if (DAT_00559c5c == '\0' || World == 6) {
+    if (m_bAutoAttack == '\0' || World == 6) {
         // Cursor disabled or spectator state
         SelectedCharacter = -1;
         Attacking = -1;
@@ -115,7 +115,7 @@ void Mouse_UpdateHoverTargets(void)
         // objetivo sigue al mouse en el original.
         //
         // El port tenia SOLO los dos flags del boton DERECHO
-        // (DAT_083a42ac / DAT_083a42d0), asi que clickeando con el IZQUIERDO el
+        // (DAT_083a42ac / MouseRButtonPush), asi que clickeando con el IZQUIERDO el
         // target nunca se limpiaba: quedaba pegado el primer mob que hubiera
         // pasado por debajo del cursor.  Direcciones confirmadas con
         // ida_xrefs_to:  MouseLButton = 0x083A42C4 · MouseLButtonPush = 0x083A4124
@@ -123,7 +123,7 @@ void Mouse_UpdateHoverTargets(void)
         //                m_bAutoAttack = 0x00559C5C · Attacking = 0x00559C58
         if (Attacking == -1 ||
             DAT_083a42c4 != '\0' || DAT_083a4124 != 0 ||
-            DAT_083a42ac != '\0' || DAT_083a42d0 != '\0' ||
+            DAT_083a42ac != '\0' || MouseRButtonPush != '\0' ||
             *(char *)(DAT_07abf5d8 + 0x2fd) != '\0')
         {
             SelectedCharacter = -1;
@@ -477,7 +477,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
                 int ty = (int)*(float*)(ent + 0x14) / 100;
                 if (tx < 0) tx = 0; if (tx > 255) tx = 255;
                 if (ty < 0) ty = 0; if (ty > 255) ty = 255;
-                const unsigned char tile = DAT_080bb2b4[tx + (ty << 8)];   // TerrainMappingLayer1
+                const unsigned char tile = TerrainMappingLayer1[tx + (ty << 8)];   // TerrainMappingLayer1
                 const unsigned char roof = (map == 0) ? 4 : 3;
                 if (tile == roof && (DWORD)tile != DAT_07e118e8)           // HeroTile
                     continue;
@@ -661,8 +661,8 @@ char __cdecl FUN_004e5980(void)
         // All clear: check if all flags inactive
         if ((DAT_07eaa116 == '\0') && (DAT_07eaa115 == '\0') &&
             (DAT_07eaa114 == '\0') && (DAT_07eaa124 == 0) &&
-            (DAT_07eaa128 == 0) && (*(char*)((uintptr_t)DAT_00583d8c + 0x1c87f) == '\0') &&
-            (DAT_07eaa130 == '\0')) {
+            (GoldenArcherOpenType == 0) && (*(char*)((uintptr_t)DAT_00583d8c + 0x1c87f) == '\0') &&
+            (ServerDivisionOpened == '\0')) {
             local_20 = 0x280;
         } else {
             local_20 = 0x1c2;

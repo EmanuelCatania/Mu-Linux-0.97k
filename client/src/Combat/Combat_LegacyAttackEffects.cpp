@@ -78,7 +78,7 @@ void __cdecl AttackEffect(int entity)
     // 00445230 reads the queued skill through FUN_0045fae0. +770 is a
     // hash-table protected byte in the original client; comparing its storage
     // directly made this path depend on the encoded value instead of the skill.
-    const BYTE queuedSkill = FUN_0045fae0((DWORD)&DAT_055c9bc8,
+    const BYTE queuedSkill = FUN_0045fae0((DWORD)&MAIN_HASH_CLASS,
                                           (BYTE*)(entity + 770));
 
     // First switch of 00445230 (lines 293..1689): this selector is +747,

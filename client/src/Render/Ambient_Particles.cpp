@@ -67,7 +67,7 @@
 //   DAT_07abf5d8  — local player entity ptr
 //   World  — World
 //   DAT_0838bc70  — per-tile terrain attribute array
-//   DAT_080bb2b4  — per-tile terrain type array (type 5 = water)
+//   TerrainMappingLayer1  — per-tile terrain type array (type 5 = water)
 //   _DAT_005524f4 — PI/180 (deg→rad) or small angle step
 //   _DAT_005524f8 — grid_to_world scale
 //   _DAT_00552504 — 1.0f
@@ -145,7 +145,7 @@ void __cdecl AmbientParticles_Update(void)
                 // ── Spawn logic per game state ────────────────────────────────
                 if (World == 0) {
                     // Connecting state: water bubble on water tiles
-                    if (*(char *)((int)&DAT_080bb2b4 + iVar7) == '\x05') goto LAB_0050245e;
+                    if (*(char *)((int)&TerrainMappingLayer1 + iVar7) == '\x05') goto LAB_0050245e;
                     goto switchD_caseD_2;
                 }
                 if (World == 1) {
@@ -319,7 +319,7 @@ switchD_caseD_2:
 
                 // Transition to water or bounce on land
                 if (((sVar5 == 0xb5) &&
-                     (*(char *)((int)&DAT_080bb2b4 + iVar8) != '\x05')) ||
+                     (*(char *)((int)&TerrainMappingLayer1 + iVar8) != '\x05')) ||
                     ((sVar5 == 0xb1) && (7 < (unsigned char)(unsigned char)DAT_0838bc70[iVar8])))
                 {
                     // Rolling angle

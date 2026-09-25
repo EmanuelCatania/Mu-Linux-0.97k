@@ -87,8 +87,8 @@ static void SaveOptionsToServer97k(void)
         }
     }
 
-    opt[10] |= DAT_00559c5c ? 1 : 2;                    // m_bAutoAttack
-    opt[10] |= DAT_07e11d80 ? 4 : 8;                    // m_bWhisperSound
+    opt[10] |= m_bAutoAttack ? 1 : 2;                    // m_bAutoAttack
+    opt[10] |= m_bWhisperSound ? 4 : 8;                    // m_bWhisperSound
     opt[11] = (BYTE)((BYTE)DAT_00559c60 + 64);          // QKey
     opt[12] = (BYTE)((BYTE)DAT_00559c64 + 64);          // WKey
     opt[13] = (BYTE)((BYTE)DAT_00559c68 + 64);          // EKey
@@ -469,7 +469,7 @@ void __cdecl UI_InGameMenu(void)
     // NO cuenta — la única confirmación es Enter (byte_55CA038). Y L1420-1432:
     // si InputGold > 50.000.000 se muestra el cartel 118 y se resetea el input.
     //
-    // StorageGoldFlag (DAT_07eaa108) lo setea quien abrió el diálogo:
+    // StorageGoldFlag (StorageGoldFlag) lo setea quien abrió el diálogo:
     //   0 = guardar zen en el baúl     (sub_4EB5D0 case 0)
     //   1 = sacar zen del baúl         (sub_4EB5D0 case 1)
     //   2 = poner zen en el trade      (sub_4EB7F0)
@@ -480,7 +480,7 @@ void __cdecl UI_InGameMenu(void)
         if (!enterHit) return;          // el cartel persiste hasta Enter
         DAT_055ca038 = '\0';            // consumimos Enter
 
-        int gold = (int)DAT_07e11d74;   // InputGold (lo llena WndProc con atoi)
+        int gold = (int)InputGold;   // InputGold (lo llena WndProc con atoi)
 
         if (gold > 50000000) {
             // IDA: UI_InGameMenu 0x515BED/0x517379 — el error reemplaza al
@@ -488,22 +488,22 @@ void __cdecl UI_InGameMenu(void)
             // capa de entrada activa detrás del cartel 118.
             DAT_083a7c28 = 118;
             ClearInput(0);
-            DAT_00559c94 = (DWORD)42;   // InputTextMax[0]
-            DAT_00559c88 = 2;           // InputNumber
-            DAT_07e11d72 = 0;           // GoldInputEnable
+            InputTextMax = (DWORD)42;   // InputTextMax[0]
+            InputNumber = 2;           // InputNumber
+            GoldInputEnable = 0;           // GoldInputEnable
             DAT_00559c84 = 0;           // InputEnable
             DAT_07e11d28 = 0;           // MouseUpdateTime
             DAT_00559bec = 6;           // MouseUpdateTimeMax
             goto tail;
         }
 
-        if (DAT_07eaa108 == 2) {
+        if (StorageGoldFlag == 2) {
             // IDA: UI_InGameMenu 0x515D64 — cambiar la oferta cancela la
             // confirmación local mediante el mismo C3(C1:04:3C:00) que usa
             // el binario antes de enviar el nuevo importe.
-            if (DAT_07eaa0fd != 0) {
+            if (m_bMyConfirm != 0) {
                 const BYTE resetConfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
-                DAT_07eaa0fd = 0;
+                m_bMyConfirm = 0;
                 Net_SendSmallPacket(resetConfirm, sizeof(resetConfirm));
             }
 
@@ -521,15 +521,15 @@ void __cdecl UI_InGameMenu(void)
             memcpy(pkt + 4, &gold, sizeof(DWORD));
             Net_SendC1Packet(pkt, sizeof(pkt));
         } else if (gold > 0) {
-            Net_SendWarehouseMoney((BYTE)(DAT_07eaa108 & 1), (DWORD)gold);
+            Net_SendWarehouseMoney((BYTE)(StorageGoldFlag & 1), (DWORD)gold);
         }
 
         ClearInput(0);
-        DAT_00559c94 = (DWORD)42;
-        DAT_00559c88 = 2;
-        DAT_07e11d72 = 0;               // GoldInputEnable = 0
+        InputTextMax = (DWORD)42;
+        InputNumber = 2;
+        GoldInputEnable = 0;               // GoldInputEnable = 0
         DAT_00559c84 = 0;               // InputEnable = 0
-        DAT_07e11d74 = 0;               // InputGold = 0
+        InputGold = 0;               // InputGold = 0
         goto tail;
     }
 
@@ -833,8 +833,8 @@ void __cdecl UI_InGameMenu(void)
     // IDA 0x00514310 case 150 (L1336-1377):
     //   i=0: Back to ESC menu (NextErrorMessage=110 if ErrorMessage still nonzero,
     //        else ErrorMessage=110).
-    //   i=1: toggle sound effect (m_bAutoAttack == DAT_00559c5c)
-    //   i=2: toggle music (m_bWhisperSound == DAT_07e11d80)
+    //   i=1: toggle sound effect (m_bAutoAttack == m_bAutoAttack)
+    //   i=2: toggle music (m_bWhisperSound == m_bWhisperSound)
     //   i=3: close submenu → ErrorMessage = NextErrorMessage; NextErrorMessage = 0.
     // Buttons at X∈[0x104..0x17c], Y = 10*(3*i+3) = 30,60,90,120; height 22.
     case 0x96:
@@ -852,10 +852,10 @@ void __cdecl UI_InGameMenu(void)
                     DAT_083a7c28 = 0x6e;
                     break;
                 case 1:  // Toggle sound
-                    DAT_00559c5c ^= 1;
+                    m_bAutoAttack ^= 1;
                     break;
                 case 2:  // Toggle music
-                    DAT_07e11d80 ^= 1;
+                    m_bWhisperSound ^= 1;
                     break;
                 case 3:  // Close — swap NextErrorMessage → ErrorMessage
                 {

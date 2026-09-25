@@ -37,12 +37,12 @@
 //
 // Sub-functions:
 //   GL_BindTextureSlot — GL_BindTextureSlot
-//   Vector_Transform — World_ToScreen (projects param_2 using DAT_083a4140 matrix)
+//   Vector_Transform — World_ToScreen (projects param_2 using CameraMatrix matrix)
 //   Matrix_BuildFromEuler — EulerToMatrix3x4
 //   Vector_Rotate — Vec3_TransformByMatrix
 //
 // Globals:
-//   DAT_083a4140  — current view/projection matrix
+//   CameraMatrix  — current view/projection matrix
 //   DAT_083a7cc8  — per-channel flags table (stride 0x38, byte at +0 = type)
 //   _DAT_00552504 — degrees-to-radians or scale constant
 //   _DAT_00552580 — float 0.0
@@ -106,7 +106,7 @@ FUN_00511d00(int param_1,float *param_2,float param_3,float param_4,float *param
   // unrelated → sprite quad corner depth basura → sprites invisibles o
   // mal-clipeados. Usamos un array TPos_buf[3] contiguo y copiamos a las vars.
   float TPos_buf[3];
-  Vector_Transform(param_2,(float *)&DAT_083a4140, TPos_buf);
+  Vector_Transform(param_2,(float *)&CameraMatrix, TPos_buf);
   local_ac = TPos_buf[0];
   local_a8 = TPos_buf[1];
   *(float*)&local_a4 = TPos_buf[2];

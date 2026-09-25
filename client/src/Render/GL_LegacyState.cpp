@@ -106,10 +106,10 @@ void __cdecl GL_SetAlphaTest(char param_1) {
 }
 // FUN_00511910 @ 0x00511910 — GL_SetViewport
 void __cdecl GL_SetViewport(int param_1, int param_2, int param_3, int param_4) {
-    DAT_083a4280 = (DWORD)param_3;
-    DAT_083a42c8 = (DWORD)param_1;
-    DAT_083a42cc = (DWORD)param_2;
-    DAT_083a42b0 = (DWORD)param_4;
+    OpenglWindowWidth = (DWORD)param_3;
+    OpenglWindowX = (DWORD)param_1;
+    OpenglWindowY = (DWORD)param_2;
+    OpenglWindowHeight = (DWORD)param_4;
     glViewport(param_1, (int)(DAT_00561570 - param_2) - param_4, param_3, param_4);
 }
 // FUN_00511220 @ 0x00511220 — GL_SetPerspective
@@ -118,12 +118,12 @@ void __cdecl GL_SetPerspective(int fov, float aspect, int near_clip, float far_c
     float nearF = Ff(near_clip);
     gluPerspective((double)fovF, (double)aspect, (double)nearF, (double)far_clip);
     double tanHalfFov = tan((double)fovF * (double)_DAT_00552cc4);
-    ViewportCenterX = DAT_083a4280 / 2 + DAT_083a42c8;
-    ViewportCenterY = DAT_083a42b0 / 2 + DAT_083a42cc;
-    _DAT_083a4294 = (float)((int)DAT_0056156c - (int)ViewportCenterY);
-    _DAT_083a42a4 = (float)(tanHalfFov / (double)(DAT_083a4280 / 2) * (double)aspect);
-    _DAT_083a42a8 = (float)(tanHalfFov / (double)(DAT_083a42b0 / 2)
-                            * ((double)(int)DAT_00561570 / (double)(int)DAT_083a42b0));
+    ViewportCenterX = OpenglWindowWidth / 2 + OpenglWindowX;
+    ViewportCenterY = OpenglWindowHeight / 2 + OpenglWindowY;
+    ScreenCenterYFlip = (float)((int)DAT_0056156c - (int)ViewportCenterY);
+    _DAT_083a42a4 = (float)(tanHalfFov / (double)(OpenglWindowWidth / 2) * (double)aspect);
+    _DAT_083a42a8 = (float)(tanHalfFov / (double)(OpenglWindowHeight / 2)
+                            * ((double)(int)DAT_00561570 / (double)(int)OpenglWindowHeight));
 }
 // FUN_00511950 @ 0x00511950 — Screen_ToGLX
 // FUN_00511980 @ 0x00511980 — Screen_ToGLY

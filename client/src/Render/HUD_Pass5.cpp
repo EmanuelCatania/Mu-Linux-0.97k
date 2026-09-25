@@ -60,7 +60,7 @@ static bool HUD_IsQuestPanelOpenRuntime(void)
 
 static bool HUD_IsGoldenArcherPanelRuntime(void)
 {
-    return (DAT_07eaa128 != 0 && DAT_07eaa128 != 3);
+    return (GoldenArcherOpenType != 0 && GoldenArcherOpenType != 3);
 }
 
 static bool HUD_IsInventoryFamilyActive(void)
@@ -68,7 +68,7 @@ static bool HUD_IsInventoryFamilyActive(void)
     return InventoryOpened || CharacterOpened || ShopOpened ||
            WarehouseOpened || ChaosMixOpened || TradeOpened ||
            EventWindowOpened || GuildCreatorOpened ||
-           HUD_IsGoldenArcherPanelRuntime() || (DAT_07eaa130 != 0) ||
+           HUD_IsGoldenArcherPanelRuntime() || (ServerDivisionOpened != 0) ||
            HUD_IsQuestPanelOpenRuntime();
 }
 

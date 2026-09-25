@@ -11,7 +11,7 @@
 //   SceneFlag  — SceneFlag (dispatch switch)
 //   DAT_05826e08  — frame time accumulator
 //   DAT_083a45d4  — login background animation angle
-//   DAT_055ca028  — keepalive counter (> 0x1f → send re-auth)
+//   g_iNoMouseTime  — keepalive counter (> 0x1f → send re-auth)
 //   SocketClientSocket  — socket handle
 //   SocketClientSendBuffer  — send buffer (WSAEWOULDBLOCK queue, max 0x2001)
 //   SocketClientSendBufferLength  — send buffer byte count
@@ -61,18 +61,18 @@ void __cdecl Scene_Dispatch(HDC param_1)
     }
 
     // ── KEEPALIVE COUNTER: HASH TABLE REF-COUNT TRACKING ─────────────────────
-    // (anti-tamper obfuscation — tracks DAT_055ca028 via a reference-count table)
+    // (anti-tamper obfuscation — tracks g_iNoMouseTime via a reference-count table)
     {
-        unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_055ca028);
+        unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &g_iNoMouseTime);
         if (idx == 0xffffffff) {
             void* node = operator_new(5);
             *((BYTE*)node + 4) = 1;
-            HashTable_Insert(&DAT_055c9bc8, node, &DAT_055ca028);
+            HashTable_Insert(&MAIN_HASH_CLASS, node, &g_iNoMouseTime);
         } else {
             BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
             node[4]++;
             if (node[4] < 2)
-                Packet_DecryptDword(&DAT_055ca028, node);
+                Packet_DecryptDword(&g_iNoMouseTime, node);
         }
     }
 
@@ -85,7 +85,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
     //
     //   Symptom: server FD_CLOSEs ~656 ms after F3/00 charlist arrives.  Login
     //   itself works because we wrap the F1/01 send through MuEmu::EncryptSend
-    //   explicitly — but THIS path bypasses it, so once DAT_055ca028 (re-auth
+    //   explicitly — but THIS path bypasses it, so once g_iNoMouseTime (re-auth
     //   keepalive counter) randomizes >0x1f, every frame leaks an unencrypted
     //   C3 onto the wire that MuEmu can't decode → server kills the socket.
     //
@@ -93,7 +93,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
     //   MuEmu doesn't, so we just skip the entire block.  The hash-table
     //   bookkeeping below still runs (anti-tamper ref-count, harmless).
     #if 0
-    if (DAT_055ca028 > 0x1f) {
+    if (g_iNoMouseTime > 0x1f) {
         // Build a 6-byte re-auth packet: [0xC1, len, 0xF1, b3, b2, b0]
         // Each byte after the header is XOR-encrypted with s_PktKey.
         BYTE pkt[8];
@@ -115,13 +115,13 @@ void __cdecl Scene_Dispatch(HDC param_1)
 
         // Sequence counter tracking (anti-tamper)
         {
-            unsigned idx2 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_05826ceb);
+            unsigned idx2 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_05826ceb);
             if (idx2 == 0xffffffff) {
                 void* node = operator_new(2);
                 *((BYTE*)node + 1) = 1;
-                HashTable_Insert(&DAT_055c9bc8, node, &DAT_05826ceb);
+                HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_05826ceb);
             } else {
-                BYTE* node = (BYTE*)HashTable_GetNode(&DAT_055c9bc8, &DAT_05826ceb);
+                BYTE* node = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_05826ceb);
                 node[1]++;
                 if (node[1] < 2)
                     Packet_DecryptByte((BYTE*)&DAT_05826ceb, node);
@@ -135,9 +135,9 @@ void __cdecl Scene_Dispatch(HDC param_1)
 
         // Decrement next seq slot ref-count
         {
-            unsigned idx3 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_05826ceb);
+            unsigned idx3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_05826ceb);
             if (idx3 != 0xffffffff) {
-                BYTE* node = (BYTE*)HashTable_GetNode(&DAT_055c9bc8, &DAT_05826ceb);
+                BYTE* node = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_05826ceb);
                 node[1]--;
                 if (node[1] == 0)
                     Packet_EncryptByte(node, &DAT_05826ceb);
@@ -209,19 +209,19 @@ send_done:
     #endif  // re-auth packet block disabled for MuEmu
 
     // ── KEEPALIVE COUNTER DECREMENT + RE-RANDOMIZE ────────────────────────────
-    // Decrements DAT_055ca028 ref-count; when it hits 0 re-randomizes it
+    // Decrements g_iNoMouseTime ref-count; when it hits 0 re-randomizes it
     // using a 16-byte XOR key (DAT_00559050). This is anti-tamper obfuscation.
     {
         // Look up the value in the hash table (two lookups: one for zero key, one for value)
         // Simplified: decrement the tracked ref-count
-        unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_055ca028);
+        unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &g_iNoMouseTime);
         if (idx != 0xffffffff) {
             int* node = *(int**)(DAT_055c9bcc + idx * 4);
             ((char*)node)[4]--;
             if (((char*)node)[4] == '\0') {
-                // Re-randomize DAT_055ca028 with: (+0x47) ^ key[i&0xf] + 0x23 ^ next_byte
+                // Re-randomize g_iNoMouseTime with: (+0x47) ^ key[i&0xf] + 0x23 ^ next_byte
                 int* tmp = (int*)operator_new(4);
-                *tmp = DAT_055ca028;
+                *tmp = g_iNoMouseTime;
                 for (unsigned i = 0; i < 4; i++) {
                     char* b = (char*)tmp + i;
                     *b = *b + 'G';
@@ -229,7 +229,7 @@ send_done:
                     *b = *b + '#';
                     if (i < 3)
                         *(BYTE*)b ^= *((BYTE*)tmp + i + 1);
-                    ((char*)&DAT_055ca028)[i] = (char)_rand();
+                    ((char*)&g_iNoMouseTime)[i] = (char)_rand();
                 }
                 *node = *tmp;
                 operator_delete((BYTE*)tmp);

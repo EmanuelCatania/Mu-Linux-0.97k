@@ -122,7 +122,7 @@
 //                         CHAR buf[256]; renderiza mensajes del sistema
 //   UI_UpdateFpsCounter()    → FPS_TimerReset()            — tick por segundo
 //                         SelectObject(normal_font); timeGetTime() % 1000:
-//                         si > 999ms: resetea DAT_07e016f0 + DAT_07e11dcc=0 (frame counter)
+//                         si > 999ms: resetea DAT_07e016f0 + TotalPacketSize=0 (frame counter)
 //   RenderHelpWindow()    → CondText_Render()           — texto condicional (DAT_07e11d20==1)
 //                         GL_ResetState() + DAT_07eaa154=0; operaciones de string
 //   Cursor_Render()    → AnimUI_Render() × 2        — elemento UI animado (6 frames)

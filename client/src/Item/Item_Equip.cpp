@@ -69,12 +69,12 @@ static char ItemEquip_UseSelectedTargetSkill(DWORD character /* IDA: sy */,
     // de rango generico de Attack limpia el flag pendiente antes de anotar el slot.
     DAT_07d78098 = 0;                                 // IDA: dword_7D78098 = 0
     DAT_07d7809c = skill;                             // IDA: dword_7D7809C = a4
-    DAT_07d780a0 = (DWORD)SelectedCharacter;          // IDA: MovementSkillTarget
+    MovementSkillTarget = (DWORD)SelectedCharacter;          // IDA: MovementSkillTarget
 
     const int targetX = (int)(*(float*)(target + 16) * 0.01f);   // IDA: TargetX
     const int targetY = (int)(*(float*)(target + 20) * 0.01f);   // IDA: TargetY (v5)
-    DAT_07e016c0 = (DWORD)targetX;
-    DAT_07e016c4 = (DWORD)targetY;
+    TargetX = (DWORD)targetX;
+    TargetY = (DWORD)targetY;
     const float dx = *(float*)(object + 16) - (targetX * 100.0f + 50.0f);  // IDA: v14
     const float dy = *(float*)(object + 20) - (targetY * 100.0f + 50.0f);  // IDA: v13
     BYTE* const skillInfo = (BYTE*)SkillAttribute.Raw + skill * 0x28;

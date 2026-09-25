@@ -38,7 +38,7 @@ void __stdcall EnableAlphaBlend2_stub(void) {
 // RenderSpriteUV @ 0x00511FB0 (~67 lines) — renders textured billboard quad with custom UVs
 void __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha) {
     // 0x00511FB0 — Render textured billboard quad with custom UVs.
-    // Binds texture, transforms Position through CameraMatrix (DAT_083a4140),
+    // Binds texture, transforms Position through CameraMatrix (CameraMatrix),
     // then draws GL_QUADS with 4 vertices: color from Light[][4] + Alpha, texcoord from UV[][2],
     // vertex position offset from transformed Position.
     //
@@ -53,9 +53,9 @@ void __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, fl
 
     GL_BindTextureSlot(Texture);  // GL_BindTextureSlot
 
-    // VectorTransform: transform Position by CameraMatrix (4x3 matrix at DAT_083a4140)
+    // VectorTransform: transform Position by CameraMatrix (4x3 matrix at CameraMatrix)
     float transformed[3];
-    float* camMat = (float*)&DAT_083a4140;
+    float* camMat = (float*)&CameraMatrix;
     // VectorTransform(in, matrix, out) — 3x4 matrix multiply
     transformed[0] = Position[0] * camMat[0] + Position[1] * camMat[1] + Position[2] * camMat[2] + camMat[3];
     transformed[1] = Position[0] * camMat[4] + Position[1] * camMat[5] + Position[2] * camMat[6] + camMat[7];

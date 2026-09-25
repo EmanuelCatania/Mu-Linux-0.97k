@@ -92,7 +92,7 @@ static bool Chat_TryAssignMacro(const char* text)
     }
 
     const int slot = (text[1] == '0') ? 9 : (text[1] - '1');
-    char* dst = (char*)DAT_07e0ffc8 + slot * 0x100;
+    char* dst = (char*)MacroText + slot * 0x100;
     memset(dst, 0, 0x100);
     lstrcpynA(dst, body, 0x100);
     PlayBuffer(0x19, 0, 0);   // SOUND_CLICK01
@@ -366,7 +366,7 @@ static void GameGuard_TickCheck(void)
 //  18.  srand(FUN_00542762(NULL))       — time() seed; + obfuscación rand()
 //
 //  19.  BUFFER ALLOCATIONS:
-//         DAT_07cf5600 = new(900)             → cleared 0xe1*4 bytes
+//         GateAttribute = new(900)             → cleared 0xe1*4 bytes
 //         DAT_07d29d20 = new(0xa00)           → cleared 0x280*4 bytes
 //         DAT_07cf1ff8 = new(0xa00)           → cleared 0x280*4 bytes
 //         DAT_055c9e44 = new(0x18000)         → DAT_07d78068 = base + rand()%0x400 * 0x40
@@ -395,7 +395,7 @@ static void GameGuard_TickCheck(void)
 //
 //  ── ANTI-TAMPER ─────────────────────────────────────────────────────────────
 //   ~60 bloques unreachable (dead code). 63 phantom stack params (anti-tamper stack padding).
-//   HashTable tracking de DAT_055ca01c, DAT_055ca028, etc. entre cada paso.
+//   HashTable tracking de DAT_055ca01c, g_iNoMouseTime, etc. entre cada paso.
 // ─────────────────────────────────────────────────────────────────────────────
 // ── TRACING DE DEBUG (temporal, para diagnosticar la pantalla negra) ──────────
 extern "C" void DbgLogPublic(const char* msg);
@@ -851,7 +851,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         RandomTable[j] = rand() % 360;
 
     // 19: alocación de buffers (tamaños sacados del decompile)
-    DAT_07cf5600 = (DWORD)malloc(900);     memset((void*)DAT_07cf5600, 0, 0xe1 * 4);
+    GateAttribute = (DWORD)malloc(900);     memset((void*)GateAttribute, 0, 0xe1 * 4);
     DAT_07d29d20 = (int)malloc(0xa00);     memset((void*)DAT_07d29d20, 0, 0x280 * 4);
     DAT_07cf1ff8 = (int)malloc(0xa00);     memset((void*)DAT_07cf1ff8, 0, 0x280 * 4);
 
@@ -1247,14 +1247,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // MouseRButtonPush = 1; MouseRButton = 1.  Attack (0049CBF0)
     // consume esos dos flags para arrancar y sostener el casteo de un skill.
         if (DAT_083a42ac == 0) {
-            DAT_083a42d0 = 1;                // MouseRButtonPush
+            MouseRButtonPush = 1;                // MouseRButtonPush
         }
         DAT_083a42ac = 1;                    // MouseRButton
         {
             char dbg[128];
             wsprintfA(dbg, "INPUT RMB down @ (%d,%d) push=%u held=%u",
                 (int)DAT_083a427c, (int)DAT_083a4278,
-                (unsigned)DAT_083a42d0, (unsigned)DAT_083a42ac);
+                (unsigned)MouseRButtonPush, (unsigned)DAT_083a42ac);
             DbgLogPublic(dbg);
         }
         break;
@@ -1262,7 +1262,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_RBUTTONUP:     // 0x205
         // El original limpia Push y suelta MouseRButton (también setea el flag
         // Pop aparte, que hoy ningún camino de gameplay compilado lee).
-        DAT_083a42d0 = 0;
+        MouseRButtonPush = 0;
         DAT_083a42ac = 0;
         DbgLogPublic("INPUT RMB up");
         break;
@@ -1291,8 +1291,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     //   InputLength[i]        → ((DWORD*)DAT_07d780a8)[i]
     //   InputText[i][j]       → DAT_07db8710 + i*0x100 + j
     //   InputEnable           → DAT_00559c84
-    //   InputNumber           → DAT_00559c88
-    //   InputTextMax[0]       → _DAT_00559c94 (alias floatizado del DWORD 0x559c94)
+    //   InputNumber           → InputNumber
+    //   InputTextMax[0]       → InputTextMax (alias floatizado del DWORD 0x559c94)
     //   byte_55CA019 (IME)    → DAT_055ca019
     //   byte_55CA038 (Enter)  → DAT_055ca038   (lo lee el disparador de login de Game_SceneUpdate)
     case WM_CHAR:          // 0x102
@@ -1303,7 +1303,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             char dbg[128];
             // 2026-05-04: leer MaxLen como el int crudo de _InputTextMaxArr[slot]
-            // — `(int)_DAT_00559c94` castearía el VALOR float (siempre 0 para
+            // — `(int)InputTextMax` castearía el VALOR float (siempre 0 para
             // patrones de bits de enteros chicos), en vez de reinterpretar los bits.
             wsprintfA(dbg,
                 "WM_CHAR: wParam=0x%02X slot=%u len=%u InputEnable=%u InputNumber=%u MaxLen=%d",
@@ -1311,7 +1311,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 (unsigned)DAT_07e11d78,
                 (unsigned)((DWORD*)DAT_07d780a8)[DAT_07e11d78 & 0x0F],
                 (unsigned)DAT_00559c84,
-                (unsigned)DAT_00559c88,
+                (unsigned)InputNumber,
                 _InputTextMaxArr[DAT_07e11d78 & 0x0F]);
             DbgLog(dbg);
         }
@@ -1336,8 +1336,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             break;
         }
         if (wParam == 9) {           // Tab — rotate active slot
-            if (DAT_00559c84 && DAT_00559c88 > 1) {
-                DAT_07e11d78 = (DAT_07e11d78 + 1) % DAT_00559c88;
+            if (DAT_00559c84 && InputNumber > 1) {
+                DAT_07e11d78 = (DAT_07e11d78 + 1) % InputNumber;
                 PlayBuffer(0x19, 0, 0);   // PlayBuffer(25) — click sfx
             }
             break;
@@ -1350,12 +1350,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             //   if (GoldInputEnable) { InputGold = atoi(InputText[0]); ... }
             // Sin esto InputGold quedaba siempre en 0 y el diálogo de zen del
             // baúl no tenía forma de saber cuánto tecleó el jugador.
-            // GoldInputEnable = DAT_07e11d72, InputGold = DAT_07e11d74.
-            if (DAT_07e11d72) {
+            // GoldInputEnable = GoldInputEnable, InputGold = InputGold.
+            if (GoldInputEnable) {
                 DAT_07e11d78 = 0;                     // InputIndex = 0
                 char* goldBuf = (char*)DAT_07db8710;  // InputText[0]
                 goldBuf[0xFF] = 0;
-                DAT_07e11d74 = atoi(goldBuf);
+                InputGold = atoi(goldBuf);
                 // LABEL_591: limpia el slot y cierra el input (el envío lo hace
                 // UI_InGameMenu case 116 leyendo DAT_055ca038 el frame siguiente).
                 memset(goldBuf, 0, 0x100);
@@ -1375,7 +1375,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             // casos el input no puede abrir ni enviar chat.
             const bool guildDeleteCodeDialog =
                 DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
-            if (SceneFlag == 5 && DAT_07e11d70 == 0 && !guildDeleteCodeDialog) {
+            if (SceneFlag == 5 && GuildInputEnable == 0 && !guildDeleteCodeDialog) {
                 bool empty = (lens[slot] == 0);
                 if (empty) {
                     if (DAT_00559c84) {
@@ -1390,7 +1390,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                         // chat. El diálogo 126 deja este slot enmascarado
                         // para el Personal Code.
                         InputTextHide[0] = 0;
-                        DAT_00559c88 = 2;                       // InputNumber = 2 (chat + whisper target)
+                        InputNumber = 2;                       // InputNumber = 2 (chat + whisper target)
                         // GoldInputEnable = 0 — ya está en 0 en el juego normal
                         DAT_00559c84 = 1;                       // InputEnable = 1
                         DAT_07e11d78 = 0;                       // InputIndex = 0
@@ -1443,9 +1443,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // sólo se aceptan dígitos '0'..'9'.
         const bool guildDeleteCodeDialog =
             DAT_083a7c24 == 126 || DAT_083a7c24 == 152;
-        if (DAT_00559c84 || DAT_07e11d72 || DAT_07e11d70 || guildDeleteCodeDialog) {
+        if (DAT_00559c84 || GoldInputEnable || GuildInputEnable || guildDeleteCodeDialog) {
             BYTE c = (BYTE)wParam;
-            if (DAT_07e11d72 && (c < '0' || c > '9')) break;
+            if (GoldInputEnable && (c < '0' || c > '9')) break;
             // RANGO ACEPTADO — DESVIACIÓN DELIBERADA, hermana del charset de
             // CreateFontA (ver WinMain paso 15).
             // Acá había `c < 0x7F`, o sea ASCII puro: por eso no se podía

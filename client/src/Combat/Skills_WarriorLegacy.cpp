@@ -213,7 +213,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     // Play random sword sound (0x28 or 0x29)
     PlayBuffer((_rand() & 1) + 0x28, 0, 0);
 
-    int targetIdx = (int)DAT_07d780a0; // IDA: MovementSkillTarget @ 0x07D780A0
+    int targetIdx = (int)MovementSkillTarget; // IDA: MovementSkillTarget @ 0x07D780A0
     // Native code indexes CharactersClient directly at 0x4859A9.  Attack and
     // Action establish this index before entering this helper; adding a local
     // rejection here changes the original tail (state + C1:11 confirmation).

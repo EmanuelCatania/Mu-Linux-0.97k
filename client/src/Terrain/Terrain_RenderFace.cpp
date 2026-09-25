@@ -11,9 +11,9 @@
 //   RenderFaceAlpha    0x004F7B80   RenderFaceBlend   0x004F7CE0
 //   RenderTerrainFace  0x004F7FB0   BindTexture       0x00511480 (GL_BindTextureSlot)
 //   Bitmaps base       0x083A7CA0 (stride 0x38, BITMAP_t: Width@0x20 Height@0x24)
-//   TerrainMappingAlpha  = DAT_0834b608 (float[256²])   (mislabel "TerrainHeight")
-//   TerrainMappingLayer1 = DAT_080bb2b4 (BYTE[256²])
-//   TerrainMappingLayer2 = DAT_080ab2b4 (BYTE[256²])
+//   TerrainMappingAlpha  = TerrainMappingAlpha (float[256²])   (mislabel "TerrainHeight")
+//   TerrainMappingLayer1 = TerrainMappingLayer1 (BYTE[256²])
+//   TerrainMappingLayer2 = TerrainMappingLayer2 (BYTE[256²])
 //   PrimaryTerrainLight  = DAT_081cb608 (float[256²][3])  ← 0x081CB608 (NO 0x07eab250;
 //                          el macro PrimaryTerrainLight de structs.h apunta mal a
 //                          0x07eab250 — buffer muerto. Lo leímos directo de DAT_081cb608,
@@ -35,9 +35,9 @@
 #define TER_IDX2    DAT_07eab1f0
 #define TER_IDX3    DAT_07eab1f4
 #define TER_IDX4    DAT_07eab1f8
-#define TER_ALPHA   DAT_0834b608                          // TerrainMappingAlpha (float)
-#define TER_L1      DAT_080bb2b4                           // TerrainMappingLayer1 (BYTE)
-#define TER_L2      DAT_080ab2b4                           // TerrainMappingLayer2 (BYTE)
+#define TER_ALPHA   TerrainMappingAlpha                          // TerrainMappingAlpha (float)
+#define TER_L1      TerrainMappingLayer1                           // TerrainMappingLayer1 (BYTE)
+#define TER_L2      TerrainMappingLayer2                           // TerrainMappingLayer2 (BYTE)
 #define TER_WIND    DAT_07eab200                           // TerrainGrassWind (float)
 #define TER_VERT    ((float(*)[3])&g_TilePickBuf[0])       // TerrainVertex[4][3]
 #define TER_TEX     ((float(*)[2])&g_TerrainTexCoord[0])   // TerrainTextureCoord[4][2]

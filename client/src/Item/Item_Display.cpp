@@ -635,7 +635,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     if (slotType == 1 && sourceInvBase == &OffsetInventoryItems[0]) {
         // IDA L5158-5163: del inventario al trade primero se retira la
         // confirmacion propia (0x3C con 0), ANTES del guard de EquipmentItem.
-        DAT_07eaa0fd = 0;                               // m_bMyConfirm
+        m_bMyConfirm = 0;                               // m_bMyConfirm
         BYTE unconfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
         Net_SendSmallPacket(unconfirm, 4);
     }

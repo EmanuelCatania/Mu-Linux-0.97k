@@ -76,7 +76,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
 
         // Store to global frustum corner array
         switch (i) {
-        case 0: DAT_07eab1b0=wx; DAT_07eab1b4=wy; DAT_07eab1b8=wz; break;
+        case 0: FrustrumVertex=wx; DAT_07eab1b4=wy; DAT_07eab1b8=wz; break;
         case 1: DAT_07eab1bc=wx; DAT_07eab1c0=wy; DAT_07eab1c4=wz; break;
         case 2: DAT_07eab1c8=wx; DAT_07eab1cc=wy; DAT_07eab1d0=wz; break;
         case 3: DAT_07eab1d4=wx; DAT_07eab1d8=wy; DAT_07eab1dc=wz; break;
@@ -103,44 +103,44 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
 
     // Near tile bounds — clamped [0, 0xFB = 251]
     int iVar2 = floor4tile_min(local_7c, _DAT_005524f0);
-    DAT_0839bc90 = iVar2;
+    FrustrumBoundMinX_1 = iVar2;
     int iVar3 = floor4tile_min(local_84, _DAT_005524f0);
-    DAT_0839bc94 = iVar3;
+    FrustrumBoundMinY_1 = iVar3;
     int iVar1 = floor4tile_max(local_80, _DAT_005524f0);
-    DAT_0055a774 = iVar1;
-    DAT_0055a778 = floor4tile_max(local_88, _DAT_005524f0);
+    FrustrumBoundMaxX_1 = iVar1;
+    FrustrumBoundMaxY_1 = floor4tile_max(local_88, _DAT_005524f0);
 
-    if (iVar2 < 0)              { iVar2 = 0; DAT_0839bc90 = 0; }
-    if (iVar3 < 0)              { iVar3 = 0; DAT_0839bc94 = 0; }
-    if (iVar1 < 0)              { iVar1 = 0; DAT_0055a774 = 0; }
-    if ((int)DAT_0055a778 < 0)  DAT_0055a778 = 0;
-    if (0xfb < iVar2)           DAT_0839bc90 = 0xfb;
-    if (0xfb < iVar3)           DAT_0839bc94 = 0xfb;
-    if (0xfb < iVar1)           DAT_0055a774 = 0xfb;
-    if (0xfb < (int)DAT_0055a778) DAT_0055a778 = 0xfb;
+    if (iVar2 < 0)              { iVar2 = 0; FrustrumBoundMinX_1 = 0; }
+    if (iVar3 < 0)              { iVar3 = 0; FrustrumBoundMinY_1 = 0; }
+    if (iVar1 < 0)              { iVar1 = 0; FrustrumBoundMaxX_1 = 0; }
+    if ((int)FrustrumBoundMaxY_1 < 0)  FrustrumBoundMaxY_1 = 0;
+    if (0xfb < iVar2)           FrustrumBoundMinX_1 = 0xfb;
+    if (0xfb < iVar3)           FrustrumBoundMinY_1 = 0xfb;
+    if (0xfb < iVar1)           FrustrumBoundMaxX_1 = 0xfb;
+    if (0xfb < (int)FrustrumBoundMaxY_1) FrustrumBoundMaxY_1 = 0xfb;
 
     // Extended (far) tile bounds — clamped [0, 0xEF = 239]
     iVar2 = floor4tile_min(local_7c, _DAT_005524f0);
-    DAT_0839bc98 = iVar2;
+    FrustrumBoundMinX_2 = iVar2;
     iVar3 = floor4tile_min(local_84, _DAT_005524f0);
-    DAT_0839bc9c = iVar3;
+    FrustrumBoundMinY_2 = iVar3;
     iVar1 = floor4tile_max(local_80, _DAT_005524f0);
-    DAT_0055a77c = iVar1;
-    DAT_0055a780 = floor4tile_max(local_88, _DAT_005524f0);
+    FrustrumBoundMaxX_2 = iVar1;
+    FrustrumBoundMaxY_2 = floor4tile_max(local_88, _DAT_005524f0);
 
-    if (iVar2 < 0)              { iVar2 = 0; DAT_0839bc98 = 0; }
-    if (iVar3 < 0)              { iVar3 = 0; DAT_0839bc9c = 0; }
-    if (iVar1 < 0)              { iVar1 = 0; DAT_0055a77c = 0; }
-    if ((int)DAT_0055a780 < 0)  DAT_0055a780 = 0;
-    if (0xef < iVar2)           DAT_0839bc98 = 0xef;
-    if (0xef < iVar3)           DAT_0839bc9c = 0xef;
-    if (0xef < iVar1)           DAT_0055a77c = 0xef;
-    if (0xef < (int)DAT_0055a780) DAT_0055a780 = 0xef;
+    if (iVar2 < 0)              { iVar2 = 0; FrustrumBoundMinX_2 = 0; }
+    if (iVar3 < 0)              { iVar3 = 0; FrustrumBoundMinY_2 = 0; }
+    if (iVar1 < 0)              { iVar1 = 0; FrustrumBoundMaxX_2 = 0; }
+    if ((int)FrustrumBoundMaxY_2 < 0)  FrustrumBoundMaxY_2 = 0;
+    if (0xef < iVar2)           FrustrumBoundMinX_2 = 0xef;
+    if (0xef < iVar3)           FrustrumBoundMinY_2 = 0xef;
+    if (0xef < iVar1)           FrustrumBoundMaxX_2 = 0xef;
+    if (0xef < (int)FrustrumBoundMaxY_2) FrustrumBoundMaxY_2 = 0xef;
 
     // Step 5 — 5 frustum plane normals ────────────────────────────────────────
     // Planes from: apex + 2 adjacent near corners; near plane from 3 near corners.
     float plane0[3], plane1[3], plane2[3], plane3[3], plane4[3];
-    float c0[3] = { DAT_07eab1b0, DAT_07eab1b4, DAT_07eab1b8 };  // apex
+    float c0[3] = { FrustrumVertex, DAT_07eab1b4, DAT_07eab1b8 };  // apex
     float c1[3] = { DAT_07eab1bc, DAT_07eab1c0, DAT_07eab1c4 };  // top-left
     float c2[3] = { DAT_07eab1c8, DAT_07eab1cc, DAT_07eab1d0 };  // top-right
     float c3[3] = { DAT_07eab1d4, DAT_07eab1d8, DAT_07eab1dc };  // bot-right
@@ -167,7 +167,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     Triangle_ComputeNormal(c3, c2, c1, plane4);
 
     // Store plane normals to globals (read by Frustum_IsVisible)
-    DAT_0838b7c4 = plane0[0]; DAT_0838b7c8 = plane0[1]; DAT_0838b7cc = plane0[2];
+    FrustrumFaceNormal = plane0[0]; DAT_0838b7c8 = plane0[1]; DAT_0838b7cc = plane0[2];
     DAT_0838b7d0 = plane1[0]; DAT_0838b7d4 = plane1[1]; DAT_0838b7d8 = plane1[2];
     DAT_0838b7dc = plane2[0]; DAT_0838b7e0 = plane2[1]; DAT_0838b7e4 = plane2[2];
     DAT_0838b7e8 = plane3[0]; DAT_0838b7ec = plane3[1]; DAT_0838b7f0 = plane3[2];
@@ -176,7 +176,7 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
     // Step 6 — Plane D values: D = -(normal · reference_point) ───────────────
     // Los planos 0-3 se referencian al ápice (V[0] = c0); el 4 a V[1] = c1
     // (IDA L186-188: `FrustrumFaceD[4] = -(dot(normal[4], FrustrumVertex[1]))`).
-    Ff(DAT_07eeb200) = -(plane0[0]*c0[0] + plane0[1]*c0[1] + plane0[2]*c0[2]);
+    Ff(FrustrumFaceD) = -(plane0[0]*c0[0] + plane0[1]*c0[1] + plane0[2]*c0[2]);
     Ff(DAT_07eeb204) = -(plane1[0]*c0[0] + plane1[1]*c0[1] + plane1[2]*c0[2]);
     Ff(DAT_07eeb208) = -(plane2[0]*c0[0] + plane2[1]*c0[1] + plane2[2]*c0[2]);
     Ff(DAT_07eeb20c) = -(plane3[0]*c0[0] + plane3[1]*c0[1] + plane3[2]*c0[2]);
@@ -206,8 +206,8 @@ void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
     float view_dir[3] = { view_x, view_y, view_z };
 
     // Transform to world space using stored view matrix
-    Vector_InverseRotate(cam_fwd_neg, (float*)&DAT_083a4140, (float*)&CameraRayOriginX);
-    Vector_InverseRotate(view_dir,    (float*)&DAT_083a4140, out_ray);
+    Vector_InverseRotate(cam_fwd_neg, (float*)&CameraMatrix, (float*)&CameraRayOriginX);
+    Vector_InverseRotate(view_dir,    (float*)&CameraMatrix, out_ray);
 
     out_ray[0] += Ff(CameraRayOriginX);
     out_ray[1] += Ff(CameraRayOriginY);
@@ -248,14 +248,14 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
 
     // BUG-FIX 2026-05-01: el código previo SOLO escribía corner[0]. Pero
     // FUN_004f8ff0 (Frustum_IsVisible) hace test point-in-quad usando los
-    // 4 vertices en DAT_07eeb228[0..3] (X) y DAT_07eeb218[0..3] (Y).
+    // 4 vertices en FrustrumX[0..3] (X) y FrustrumY[0..3] (Y).
     // Con 3/4 vertices en (0,0), el quad degenerado rechazaba TODOS los
     // chunks → mapa renderizaba vacío de objetos pese a que se spawn 2142.
     //
     // Per ghidra_backup line 6127-6128: loop 4 iterations, j stride 4 bytes
     // (= 1 float), escribiendo 4 vertices contiguos en cada array.
-    float* outX = (float*)&DAT_07eeb228;
-    float* outY = (float*)&DAT_07eeb218;
+    float* outX = (float*)&FrustrumX;
+    float* outY = (float*)&FrustrumY;
     for (int i = 0; i < 4; i++) {
         outX[i] = corners_world[i][0] / _DAT_005524f0;  // tile-space X
         outY[i] = corners_world[i][1] / _DAT_005524f0;  // tile-space Y
@@ -269,10 +269,10 @@ void __cdecl Camera_SetMatrix(float *cam_pos)
 // param_2: radius (frustum half-width extension)
 // Returns a short: low byte 1 if inside all planes, high byte flags if outside.
 // Iterates 6 frustum planes stored at DAT_0838b7c8 (normal[3] stride=3) +
-// corresponding plane-distances at DAT_07eeb200.
+// corresponding plane-distances at FrustrumFaceD.
 // 2026-05-03: AUTO-SKIP removed. The original Ghidra walked five plane normals
 // at &DAT_0838b7c8 (= plane[0].Y) bound by literal `< 0x838b804`. In our build
-// each plane component is a SEPARATE global (DAT_0838b7c4..7fc, 15 floats) —
+// each plane component is a SEPARATE global (FrustrumFaceNormal..7fc, 15 floats) —
 // the linker may not place them contiguously, so the pointer walk would read
 // random memory between plane components. Camera_SetupFrustum (Camera.cpp:148)
 // writes all 5 planes; here we read them by name. Unrolled 5×.
@@ -292,7 +292,7 @@ int __cdecl Frustum_TestSphere(float *param_1, float param_2)
         if (ltf) return (int)bVar3 << 8;                                       \
     } while (0)
 
-    PLANE_TEST(DAT_0838b7c4, DAT_0838b7c8, DAT_0838b7cc, DAT_07eeb200);
+    PLANE_TEST(FrustrumFaceNormal, DAT_0838b7c8, DAT_0838b7cc, FrustrumFaceD);
     PLANE_TEST(DAT_0838b7d0, DAT_0838b7d4, DAT_0838b7d8, DAT_07eeb204);
     PLANE_TEST(DAT_0838b7dc, DAT_0838b7e0, DAT_0838b7e4, DAT_07eeb208);
     PLANE_TEST(DAT_0838b7e8, DAT_0838b7ec, DAT_0838b7f0, DAT_07eeb20c);
@@ -342,13 +342,13 @@ void __cdecl SetActionObject(int param_1,int param_2,int param_3,int param_4)
 void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_3)
 {
   // Port directo del IDA Projection (sub_5113F0). Usa la matriz de cámara
-  // GUARDADA en DAT_083a4140[12] (poblada por GetOpenGLMatrix tras BeginOpengl)
+  // GUARDADA en CameraMatrix[12] (poblada por GetOpenGLMatrix tras BeginOpengl)
   // en lugar de gluProject sobre el GL state actual. Esto permite proyectar
   // posiciones del mundo a coords de pantalla EVEN AFTER haber cambiado a
   // 2D ortho (necesario para los name labels del char-select que se renderan
   // tras el `glPopMatrix` y `BeginBitmap`).
   float TPos[3];
-  Vector_Transform(param_1, (float*)&DAT_083a4140, TPos);
+  Vector_Transform(param_1, (float*)&CameraMatrix, TPos);
 
   // Perspective divide (eye-space → NDC → window pixels)
   if (TPos[2] == 0.0f) { *param_2 = -1000; *param_3 = -1000; return; }
@@ -381,7 +381,7 @@ void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_
 // Configures the full 3D projection + modelview matrix for a sub-viewport.
 // param_1/2/3/4: logical tile coordinates mapped from the 640x480 grid.
 // Sets perspective, camera rotation (yaw/pitch/roll), translation, enables
-// depth test, blending, fog; saves modelview matrix to DAT_083a4140.
+// depth test, blending, fog; saves modelview matrix to CameraMatrix.
 extern "C" { void DbgLogPublic(const char* msg); }
 void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
 {
@@ -446,11 +446,11 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
     glEnable(0xb60);
     glFogi(0xb65,0x801);
     glFogf(0xb62,DAT_00561558);
-    glFogfv(0xb66,(const GLfloat*)&DAT_0056155c);
-    GL_GetModelViewMatrix((unsigned int *)&DAT_083a4140);
+    glFogfv(0xb66,(const GLfloat*)&FogColor);
+    GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
     return;
   }
   glDisable(0xb60);
-  GL_GetModelViewMatrix((unsigned int *)&DAT_083a4140);
+  GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
   return;
 }

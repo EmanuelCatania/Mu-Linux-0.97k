@@ -1054,7 +1054,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             if (endChar <= startChar) continue;
 
             DWORD fg    = (run == 0) ? DAT_00559c78 : markers[run - 1].fg;
-            DWORD bc    = (run == 0) ? DAT_00559c80 : markers[run - 1].bg;
+            DWORD bc    = (run == 0) ? SetBackgroundTextColor : markers[run - 1].bg;
             int   runPx = (run == 0) ? 0            : markers[run - 1].pixelStart;
             float runX  = (float)x + (float)runPx;   // pixel + pixel
 

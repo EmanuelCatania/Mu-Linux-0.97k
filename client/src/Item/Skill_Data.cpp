@@ -14,12 +14,12 @@
 //         [0x24..0x25] = short dmg
 //         [0x26] = cooldown
 //         [0x27] = range
-//       Inserts/updates entry in hash table at DAT_055c9bc8.
+//       Inserts/updates entry in hash table at MAIN_HASH_CLASS.
 //       Hash table ops use HashTable_Insert (insert), HashTable_GetIndex,
 //       FUN_0047ea70 (serialize+insert), FUN_0047eaf0 (free+remove).
 //   2 = EOF — close file, return
 //
-// Hash table context: DAT_055c9bc8 (vtable), DAT_055c9bd0 (bucket array),
+// Hash table context: MAIN_HASH_CLASS (vtable), DAT_055c9bd0 (bucket array),
 //   DAT_055c9bcc (value array), DAT_055c9bd4 (bucket count).
 // Each skill entry is 0x29 bytes; [0x28] = 1 (alive flag).
 void __cdecl Skill_LoadTextData(const char *path)
@@ -31,7 +31,7 @@ void __cdecl Skill_LoadTextData(const char *path)
     // The real loop calls TextParser_GetToken to tokenize floats/strings from the
     // open file handle DAT_07d7806c, using TextParserTokenString as a temp string buf.
     // Skill records are stored at DAT_07d29d20 + index*0x28 (stride 0x28).
-    // Each record written is also registered in the hash table (DAT_055c9bc8).
+    // Each record written is also registered in the hash table (MAIN_HASH_CLASS).
     // Stub: call parser until EOF.
     while (TextParser_GetToken() != 2) { /* parse handled by TextParser_GetToken side-effects */ }
     FUN_0054150f(DAT_07d7806c);

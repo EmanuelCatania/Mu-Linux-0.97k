@@ -5,7 +5,7 @@
 #include "functions.h"
 #include "structs.h"
 
-extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
+extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
 extern void __cdecl operator_delete(void* ptr);
 extern void FUN_004fa5a0(void);
 
@@ -50,7 +50,7 @@ extern void FUN_004fa5a0(void);
 //   g_shEventChipCount (0x07EAA12C), g_bServerDivisionEnable/Accept.
 // Esta version limpiaba antes DAT_07e11d14 como "RepairEnable" y dos alias del
 // panel del Golden Archer (DAT_07e5ba80 / DAT_07e11e1c): ninguno de los tres
-// tiene xrefs en IDA.  La anterior "desviacion" DAT_07eaa128 = 0 era en
+// tiene xrefs en IDA.  La anterior "desviacion" GoldenArcherOpenType = 0 era en
 // realidad g_bEventChipDialogEnable, o sea parte del original.
 //
 // Pools (0x4CBD36..0x4CBD9C), Type = -1 y Key (+0x38) = 0:
@@ -81,8 +81,8 @@ void __cdecl CloseInventoryRelatedWindows(void) {
     ChaosMixOpened          = 0;   // 0x07EAA11A
     TradeOpened             = 0;   // 0x07EAA11B
     EventWindowOpened       = 0;   // 0x07EAA11C
-    DAT_07eaa128            = 0;   // g_bEventChipDialogEnable
-    DAT_07eaa12c            = 0;   // g_shEventChipCount
+    GoldenArcherOpenType            = 0;   // g_bEventChipDialogEnable
+    GoldenArcherItemCount            = 0;   // g_shEventChipCount
     g_bServerDivisionEnable = 0;   // 0x07EAA130
     g_bServerDivisionAccept = 0;   // 0x07EAA131
 

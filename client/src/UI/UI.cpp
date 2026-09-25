@@ -311,7 +311,7 @@
 //   DAT_07abf5d8   — player entity ptr (local player)
 //   DAT_07abf5dc   — mount entity ptr
 //   DAT_07abf5e0   — mount state flag
-//   DAT_055c9bc8   — HashTable base (anti-tamper, no game logic)
+//   MAIN_HASH_CLASS   — HashTable base (anti-tamper, no game logic)
 //
 // ── CROSS-REFERENCE ───────────────────────────────────────────────────────────
 //

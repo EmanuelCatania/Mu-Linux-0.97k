@@ -252,13 +252,13 @@ void Game_EnterWorldTick(void)
 
         // Anti-tamper: register DAT_07cf1ffc in hash table
         {
-            unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, DAT_07cf1ffc);
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, DAT_07cf1ffc);
             if (idx == 0xffffffff) {
                 void* node = operator_new(0x585);
                 *((BYTE*)node + 0x584) = 1;
-                HashTable_Insert(&DAT_055c9bc8, node, DAT_07cf1ffc);
+                HashTable_Insert(&MAIN_HASH_CLASS, node, DAT_07cf1ffc);
             } else {
-                void* node = HashTable_GetNode(&DAT_055c9bc8, DAT_07cf1ffc);
+                void* node = HashTable_GetNode(&MAIN_HASH_CLASS, DAT_07cf1ffc);
                 ((char*)node)[0x161]--;
                 if (((char*)node)[0x161] == '\0')
                     Packet_EncryptBuffer(node, DAT_07cf1ffc);
@@ -275,11 +275,11 @@ void Game_EnterWorldTick(void)
 
         // Re-register new entry
         {
-            unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, DAT_07cf1ffc);
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, DAT_07cf1ffc);
             if (idx == 0xffffffff) {
                 void* node = operator_new(0x585);
                 *((BYTE*)node + 0x584) = 1;
-                HashTable_Insert(&DAT_055c9bc8, node, DAT_07cf1ffc);
+                HashTable_Insert(&MAIN_HASH_CLASS, node, DAT_07cf1ffc);
             }
         }
 
@@ -291,12 +291,12 @@ void Game_EnterWorldTick(void)
         DAT_07eaa124 = 0; DAT_07eaa144 = 0;
         DAT_07eaa14c = 0;
 
-        DAT_07e11d70 = 0; DAT_07e11d71 = 0; DAT_07e11d72 = 0;
+        GuildInputEnable = 0; DAT_07e11d71 = 0; GoldInputEnable = 0;
         DAT_00559c84 = 1;
         ClearInput(1);
         DAT_07e11d78 = 0;
         DAT_00559c8c = 0x5a;
-        DAT_00559c88 = 1;
+        InputNumber = 1;
 
         // 120× widget draw
         for (int i = 0x78; i > 0; i--)
@@ -427,8 +427,8 @@ void Game_EnterWorldTick(void)
             PlayBuffer(0x1b, 0, 0);
             ClearInput(1);
             DAT_00559c84 = 1;
-            DAT_00559c88 = 1;
-            _DAT_00559c94 = 10;
+            InputNumber = 1;
+            InputTextMax = 10;
         }
 
         // Update free slot flag after possible change
@@ -451,8 +451,8 @@ void Game_EnterWorldTick(void)
                 } else {
                     if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x72; else DAT_083a7c28 = 0x72;
                     ClearInput(1);
-                    DAT_00559c84 = 1; DAT_00559c88 = 1;
-                    _DAT_00559c94 = DAT_083a7acc;
+                    DAT_00559c84 = 1; InputNumber = 1;
+                    InputTextMax = DAT_083a7acc;
                     DAT_07e113d8[0] = 1;
                 }
             } else {

@@ -28,7 +28,7 @@ DWORD g_LocalEntity   = 0;        // DAT_07abf5d8
 // Texture.cpp
 int g_bound_texture_id = 0;   // DAT_00561574
 int g_screen_height    = 480; // DAT_00561570
-int g_vram_used        = 0;   // DAT_083bb9d0
+int g_vram_used        = 0;   // m_dwUsedTextureMemory
 
 // Party.cpp
 BYTE* g_PartyHPTable   = nullptr; // DAT_07e11e98

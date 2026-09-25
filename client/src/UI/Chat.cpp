@@ -102,7 +102,7 @@ void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
 
   ptVar2 = (LPSIZE)(uintptr_t)DAT_00559c8c;
   DAT_00559c78 = 0xffd2e6ff;
-  DAT_00559c80 = 0;
+  SetBackgroundTextColor = 0;
   if (DAT_07e113d8[param_3] == '\x01') {
     iVar3 = -1;
     uVar5 = 0;
@@ -479,7 +479,7 @@ void UI_RenderNotices(void)
   iVar2 = 300;
   lpString = (LPCSTR)&DAT_07db80d8[0];
   for (int slot = 0; slot < 6; ++slot) {
-    DAT_00559c80 = 0x80000000;
+    SetBackgroundTextColor = 0x80000000;
     if (lpString[0x104] == '\0') {
       DAT_00559c78 = ((4 < (int)DAT_07e11da0 % 10) - 1 & 0x81000000) - 0xaf3701;
     }
@@ -551,27 +551,27 @@ void UI_RenderChatLogOverlay(void)
       switch((&DAT_07df948c)[iVar5 * 0x46]) {
       case 0:
         DAT_00559c78 = 0xff000000;
-        DAT_00559c80 = 0x9632c8ff;
+        SetBackgroundTextColor = 0x9632c8ff;
         break;
       case 1:
         DAT_00559c78 = 0xffff9664;
-        DAT_00559c80 = 0x96000000;
+        SetBackgroundTextColor = 0x96000000;
         break;
       case 2:
         DAT_00559c78 = 0xff001eff;
-        DAT_00559c80 = 0x96000000;
+        SetBackgroundTextColor = 0x96000000;
         break;
       case 3:
         DAT_00559c78 = 0xffc8dce6;
-        DAT_00559c80 = 0x96000000;
+        SetBackgroundTextColor = 0x96000000;
         break;
       case 4:
         DAT_00559c78 = 0xff000000;
-        DAT_00559c80 = 0x96ffc800;
+        SetBackgroundTextColor = 0x96ffc800;
         break;
       case 5:
         DAT_00559c78 = 0xff000000;
-        DAT_00559c80 = 0xc896ff00;
+        SetBackgroundTextColor = 0xc896ff00;
       }
       // BUG-FIX Ghidra: perdió los varargs de sprintf.  Port exacto de IDA:
       //   name  @ DAT_07df9380 + slot*280       (offset 0)
@@ -603,7 +603,7 @@ void UI_RenderChatLogOverlay(void)
       // a char* antes de sumar el stride-en-bytes 0x118 para que el LONG
       // aterrice en el slot correcto.
       *(LONG *)((char *)&DAT_07df9494 + iVar5 * 0x118) = local_108.cx;
-      uVar2 = DAT_00559c80;
+      uVar2 = SetBackgroundTextColor;
       if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / DAT_0056156c))) &&
            (iVar7 <= DAT_083a4278)) && ((DAT_083a4278 < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
          (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')) {
@@ -626,7 +626,7 @@ LAB_00480b89:
         iVar5 = 0;
 LAB_00480b8e:
         if ((iVar5 != 0) && (DAT_07e11da8 % 6 < 3)) {
-          DAT_00559c80 = DAT_00559c78;
+          SetBackgroundTextColor = DAT_00559c78;
           DAT_00559c78 = uVar2;
         }
       }
@@ -712,7 +712,7 @@ LAB_004822b1:
         } while (bVar2 != 0);
         iVar4 = 0;
 LAB_004822b6:
-        if ((iVar4 != 0) && (DAT_083a42d0 != '\0')) {
+        if ((iVar4 != 0) && (MouseRButtonPush != '\0')) {
           uVar5 = 0xffffffff;
           pbVar3 = (byte *)(piVar7 + -10);
           do {
@@ -745,7 +745,7 @@ LAB_004822b6:
             pcVar9 = pcVar9 + 1;
           } while (cVar1 != '\0');
           DAT_07d780ac = ~uVar5 - 1;
-          DAT_083a42d0 = '\0';
+          MouseRButtonPush = '\0';
           PlayBuffer(0x19,0,0);
         }
       }

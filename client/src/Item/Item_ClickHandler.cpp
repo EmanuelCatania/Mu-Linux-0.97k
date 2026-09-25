@@ -685,7 +685,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 {
     // ── DIAG (2026-05-08): loguea la entrada cada vez que hay un pulso de click, para
     // poder ver si la función se alcanza y qué estado ve.
-    if (DAT_083a4124 != 0 || DAT_083a42d0 != 0) {
+    if (DAT_083a4124 != 0 || MouseRButtonPush != 0) {
         char b[400];
         int p = wsprintfA(b,
             "FUN_004d23b0 CLICK ENTRY: pool=%08X origX=%d origY=%d gw=%d gh=%d mf=%d "
@@ -693,7 +693,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             (unsigned)(uintptr_t)inv_base, (int)(uintptr_t)origin_x, origin_y,
             grid_w, grid_h, (int)mode_flag,
             (int)EnableUse, (int)DAT_07eaa165, (int)dword_7E91388,
-            (int)DAT_083a4124, (int)DAT_083a42d0,
+            (int)DAT_083a4124, (int)MouseRButtonPush,
             (int)DAT_083a427c, (int)DAT_083a4278);
         // Calcula la celda bajo el mouse y vuelca los primeros 4 shorts de ese slot.
         int mx = (int)DAT_083a427c;
@@ -928,7 +928,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     "FUN_004d23b0 DISPATCH type=%d slotXY=(%d,%d) Lpush=%d Rpush=%d "
                     "RepairEnable_0=%d mode=%d",
                     (int)typeRaw, (int)slotX, (int)slotY,
-                    (int)DAT_083a4124, (int)DAT_083a42d0,
+                    (int)DAT_083a4124, (int)MouseRButtonPush,
                     (int)DAT_07eaa134, (int)mode_flag);
                 DbgLogPublic(db);
             }
@@ -1014,10 +1014,10 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // Trade: cuando el item está en la grilla de trade Y ya
                 // confirmed our side (m_bMyConfirm), uncomfirm + tell server.
                 if (DAT_07eaa11b != 0 &&
-                    DAT_07eaa0fd != 0 &&     // m_bMyConfirm
+                    m_bMyConfirm != 0 &&     // m_bMyConfirm
                     (BYTE*)inv_base == (BYTE*)&OffsetTradeItems[0])
                 {
-                    DAT_07eaa0fd = 0;
+                    m_bMyConfirm = 0;
                     BYTE pkt[3];
                     pkt[0] = 0x3C;            // opcode (= '<' — trade-uncomfirm)
                     pkt[1] = 0x01;
@@ -1030,8 +1030,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             }
 
             // ── BRANCH E: Right-click → use item / open dialog ─────────────
-            if (DAT_083a42d0 != 0) {       // MouseRButtonPush
-                DAT_083a42d0 = 0;
+            if (MouseRButtonPush != 0) {       // MouseRButtonPush
+                MouseRButtonPush = 0;
 
                 int slotIdx = grid_w * ((BYTE*)rowSlot)[63] + ((BYTE*)rowSlot)[62];
 
@@ -1331,7 +1331,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         // evento recibidas en el talk packet; MuEmu no expone esa variante y
         // usa el enum normal, por lo que conservamos el resultado exacto del
         // reconocedor para el adaptador 0x86.
-        DAT_07eaa16c = (DWORD)CheckMixRecipe((short*)OffsetMixItems, 8, 4);
+        MixType = (DWORD)CheckMixRecipe((short*)OffsetMixItems, 8, 4);
     }
 
     if (DAT_07eaa165 != 0) return;   // EquipmentItem in-flight
@@ -1372,7 +1372,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             // reconocida, TIRABA AL SUELO el item de la mano (0x23): el
             // original no tiene confirmacion de drop al suelo.
             DAT_07eaa140 = 1;
-            Net_SendChaosBoxMix((BYTE)DAT_07eaa16c);
+            Net_SendChaosBoxMix((BYTE)MixType);
         } else if (DAT_00559f5e == 2) {
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
             RestorePickedItemToSource();   // ver nota arriba
@@ -1387,10 +1387,10 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
         if (DAT_00559f5e == 1) {
             DAT_07eaa13c = 0;
             DAT_00559f5e = 0;
-            DAT_07eaa0fd = DAT_07eaa0fd ? 0 : 1;
+            m_bMyConfirm = m_bMyConfirm ? 0 : 1;
             DAT_07eaa0e8 = 1;
 
-            BYTE pkt[4] = { 0xC1, 0x04, 0x3C, (BYTE)DAT_07eaa0fd };
+            BYTE pkt[4] = { 0xC1, 0x04, 0x3C, (BYTE)m_bMyConfirm };
             Net_SendSmallPacket(pkt, sizeof(pkt));
         } else if (DAT_00559f5e == 2) {
             DAT_07eaa13c = 0;

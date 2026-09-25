@@ -4,8 +4,8 @@
 // Called once per frame to update timing globals:
 //   DAT_05826e08  — current absolute time (ms, as float)
 //   FrameTimeCurrentMs  — last frame timestamp (ms)
-//   _DAT_0055979c — delta time (seconds per frame, clamped to 0.0001 min)
-//   _DAT_05826df8 — smoothed FPS (frames per second)
+//   DeltaT — delta time (seconds per frame, clamped to 0.0001 min)
+//   FPS — smoothed FPS (frames per second)
 //
 // Also maintains a 5-second sliding FPS average window.
 //
@@ -70,11 +70,11 @@ void Timer_UpdateFrameTiming(void)
     DAT_05826e00 = timeGetTime();
     DAT_05826e14 = 0;
   }
-  _DAT_0055979c = (float)(int)(FrameTimeCurrentMs - FrameTimePreviousMs) * _DAT_00552890;
+  DeltaT = (float)(int)(FrameTimeCurrentMs - FrameTimePreviousMs) * _DAT_00552890;
   if (FrameTimeCurrentMs == FrameTimePreviousMs) {
-    _DAT_0055979c = 0.000100000005;
+    DeltaT = 0.000100000005;
   }
   FrameTimePreviousMs = FrameTimeCurrentMs;
-  _DAT_05826df8 = (float)local_8;
+  FPS = (float)local_8;
   return;
 }
