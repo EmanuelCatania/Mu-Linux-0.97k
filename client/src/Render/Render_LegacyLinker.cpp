@@ -73,7 +73,7 @@ void __cdecl EnableAlphaTest(bool enable) {
 // AccessModel("Data\\Npc\\", "Storage", 1) etc pero el modelo nunca se
 // cargaba → invisible.
 //
-// FUN_005060b0 es la impl real del BMD loader (Monster_LoadModel) — ya
+// AccessModel es la impl real del BMD loader (Monster_LoadModel) — ya
 // usado por OpenWorld para cargar Object1, Object11, etc. Misma signatura
 // (id, path, name, idx). Delegamos directamente.
 //
@@ -82,7 +82,7 @@ void __cdecl EnableAlphaTest(bool enable) {
 // resolvían en los slots (IndexTexture[]) → render en blanco. El cliente
 // original sí hace este paso después del BMD load para NPCs.
 void __cdecl AccessModel(int id, char* path, char* name, int param) {
-    FUN_005060b0(id, path, name, param);
+    AccessModel(id, path, name, param);
     // Path para OpenTexture: typically "Npc\" sin "Data\" prefijo (los
     // path-strippers en OpenTGA/740 ya lo manejan si viene completo).
     if (path) {

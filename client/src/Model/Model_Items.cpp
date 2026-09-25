@@ -197,7 +197,7 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     } // end if DAT_0055a7c4 == '\0' (Korean SMD branch)
 
     // ── Compressed-asset branch (always runs: BMD-based loads) ───────────────
-    FUN_005060b0(0x186, "Data\\Player\\", "Player", -1);
+    AccessModel(0x186, "Data\\Player\\", "Player", -1);
     DAT_0055a7c4 = '\x01';
 
     // Check that BMD loaded successfully — DESHABILITADO
@@ -211,11 +211,11 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
 
     // Class armour BMD (class 1-4)
     for (int i = 1; i <= 4; i++) {
-        FUN_005060b0(i + 0x38f, "Data\\Player\\", "HelmClass",  i);
-        FUN_005060b0(i + 0x396, "Data\\Player\\", "ArmorClass", i);
-        FUN_005060b0(i + 0x39d, "Data\\Player\\", "PantClass",  i);
-        FUN_005060b0(i + 0x3a4, "Data\\Player\\", "GloveClass", i);
-        FUN_005060b0(i + 0x3ab, "Data\\Player\\", "BootClass",  i);
+        AccessModel(i + 0x38f, "Data\\Player\\", "HelmClass",  i);
+        AccessModel(i + 0x396, "Data\\Player\\", "ArmorClass", i);
+        AccessModel(i + 0x39d, "Data\\Player\\", "PantClass",  i);
+        AccessModel(i + 0x3a4, "Data\\Player\\", "GloveClass", i);
+        AccessModel(i + 0x3ab, "Data\\Player\\", "BootClass",  i);
     }
 
     // Class2 SMD (only in Korean locale)
@@ -234,43 +234,43 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
 
     // Class2 BMD (classes 1-3) — same off-by-one fix as SMD path
     for (int i = 1; i+3 < 7; i++) {
-        FUN_005060b0(i + 0x393, "Data\\Player\\", "HelmClass2",  i);
-        FUN_005060b0(i + 0x39a, "Data\\Player\\", "ArmorClass2", i);
-        FUN_005060b0(i + 0x3a1, "Data\\Player\\", "PantClass2",  i);
-        FUN_005060b0(i + 0x3a8, "Data\\Player\\", "GloveClass2", i);
-        FUN_005060b0(i + 0x3af, "Data\\Player\\", "BootClass2",  i);
+        AccessModel(i + 0x393, "Data\\Player\\", "HelmClass2",  i);
+        AccessModel(i + 0x39a, "Data\\Player\\", "ArmorClass2", i);
+        AccessModel(i + 0x3a1, "Data\\Player\\", "PantClass2",  i);
+        AccessModel(i + 0x3a8, "Data\\Player\\", "GloveClass2", i);
+        AccessModel(i + 0x3af, "Data\\Player\\", "BootClass2",  i);
     }
 
     DAT_0055a7c4 = '\x01';
 
     // Male armour BMD tiers (1-10)
     for (int i = 1; i <= 10; i++) {
-        FUN_005060b0(i + 0x26f, "Data\\Player\\", "HelmMale",  i);
-        FUN_005060b0(i + 0x28f, "Data\\Player\\", "ArmorMale", i);
-        FUN_005060b0(i + 0x2af, "Data\\Player\\", "PantMale",  i);
-        FUN_005060b0(i + 0x2cf, "Data\\Player\\", "GloveMale", i);
-        FUN_005060b0(i + 0x2ef, "Data\\Player\\", "BootMale",  i);
+        AccessModel(i + 0x26f, "Data\\Player\\", "HelmMale",  i);
+        AccessModel(i + 0x28f, "Data\\Player\\", "ArmorMale", i);
+        AccessModel(i + 0x2af, "Data\\Player\\", "PantMale",  i);
+        AccessModel(i + 0x2cf, "Data\\Player\\", "GloveMale", i);
+        AccessModel(i + 0x2ef, "Data\\Player\\", "BootMale",  i);
     }
 
     // Elf armour BMD (1-5)
     for (int i = 1; i <= 5; i++) {
-        FUN_005060b0(i + 0x279, "Data\\Player\\", "HelmElf",  i);
-        FUN_005060b0(i + 0x299, "Data\\Player\\", "ArmorElf", i);
-        FUN_005060b0(i + 0x2b9, "Data\\Player\\", "PantElf",  i);
-        FUN_005060b0(i + 0x2d9, "Data\\Player\\", "GloveElf", i);
-        FUN_005060b0(i + 0x2f9, "Data\\Player\\", "BootElf",  i);
+        AccessModel(i + 0x279, "Data\\Player\\", "HelmElf",  i);
+        AccessModel(i + 0x299, "Data\\Player\\", "ArmorElf", i);
+        AccessModel(i + 0x2b9, "Data\\Player\\", "PantElf",  i);
+        AccessModel(i + 0x2d9, "Data\\Player\\", "GloveElf", i);
+        AccessModel(i + 0x2f9, "Data\\Player\\", "BootElf",  i);
     }
 
     // Extra slots (0x10/0x11 index range)
-    FUN_005060b0(0x29f, "Data\\Player\\", "ArmorMale", 0x10);
-    FUN_005060b0(0x2bf, "Data\\Player\\", "PantMale",  0x10);
-    FUN_005060b0(0x2df, "Data\\Player\\", "GloveMale", 0x10);
-    FUN_005060b0(0x2ff, "Data\\Player\\", "BootMale",  0x10);
-    FUN_005060b0(0x280, "Data\\Player\\", "HelmMale",  0x11);
-    FUN_005060b0(0x2a0, "Data\\Player\\", "ArmorMale", 0x11);
-    FUN_005060b0(0x2c0, "Data\\Player\\", "PantMale",  0x11);
-    FUN_005060b0(0x2e0, "Data\\Player\\", "GloveMale", 0x11);
-    FUN_005060b0(0x300, "Data\\Player\\", "BootMale",  0x11);
+    AccessModel(0x29f, "Data\\Player\\", "ArmorMale", 0x10);
+    AccessModel(0x2bf, "Data\\Player\\", "PantMale",  0x10);
+    AccessModel(0x2df, "Data\\Player\\", "GloveMale", 0x10);
+    AccessModel(0x2ff, "Data\\Player\\", "BootMale",  0x10);
+    AccessModel(0x280, "Data\\Player\\", "HelmMale",  0x11);
+    AccessModel(0x2a0, "Data\\Player\\", "ArmorMale", 0x11);
+    AccessModel(0x2c0, "Data\\Player\\", "PantMale",  0x11);
+    AccessModel(0x2e0, "Data\\Player\\", "GloveMale", 0x11);
+    AccessModel(0x300, "Data\\Player\\", "BootMale",  0x11);
 
     // Dark/Soul/Muz/Ma unique armour (Korean SMD only)
     if (DAT_0055a7c4 == '\0') {
@@ -304,17 +304,17 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     // 0x00506170 línea 104: `while (v9 - 18 < 4)` = 4 iteraciones (v9=18..21).
     for (int i = 0x12; i-0x12 < 4; i++) {
         if (i - 0x12 < 3)
-            FUN_005060b0(i + 0x26f, "Data\\Player\\", "HelmMale",  i);
-        FUN_005060b0(i + 0x28f, "Data\\Player\\", "ArmorMale", i);
-        FUN_005060b0(i + 0x2af, "Data\\Player\\", "PantMale",  i);
-        FUN_005060b0(i + 0x2cf, "Data\\Player\\", "GloveMale", i);
-        FUN_005060b0(i + 0x2ef, "Data\\Player\\", "BootMale",  i);
+            AccessModel(i + 0x26f, "Data\\Player\\", "HelmMale",  i);
+        AccessModel(i + 0x28f, "Data\\Player\\", "ArmorMale", i);
+        AccessModel(i + 0x2af, "Data\\Player\\", "PantMale",  i);
+        AccessModel(i + 0x2cf, "Data\\Player\\", "GloveMale", i);
+        AccessModel(i + 0x2ef, "Data\\Player\\", "BootMale",  i);
     }
 
     DAT_0055a7c4 = 1;
 
     // Shadow BMD
-    FUN_005060b0(0x187, "Data\\Player\\", "Shadow", 1);
+    AccessModel(0x187, "Data\\Player\\", "Shadow", 1);
 
     // ── Player action PlaySpeed table (IDA OpenPlayers @ 0x00506170 lines 107-154) ──
     // BMD::Open NO carga el campo action+4 (PlaySpeed) del archivo BMD. Quedan en 0

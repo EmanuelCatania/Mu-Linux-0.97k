@@ -15,7 +15,7 @@
 //   GuildWar_UpdateEntityRelation  = Entity_UpdateTradeFlag — update entity[+0x2e9] for one entity
 //   FindGuildName = búsqueda de marca de guild por nombre.
 //   UI_AddNotice  = UI_OpenWindow       — open/update a named UI window (title, mode)
-//   FUN_00497870  = SetActionClass — auxiliar de acción de entidad + paquete de dirección
+//   SetActionClass  = SetActionClass — auxiliar de acción de entidad + paquete de dirección
 //   SetErrorMessage  = ShowErrorDialog     — modal dialog by message ID
 //
 // ── SHOP ITEM TABLE ──────────────────────────────────────────────────────────
@@ -496,7 +496,7 @@ static void LegacyMisclassified_TradeOpen(BYTE* pkt)
 
     // Send ACK opcode 0x80 (trade window open confirmation)
     // Standard XOR encrypt + send() retry loop (same key as WinMain.cpp)
-    // FUN_00497870(local_player, local_player, 0x80, 0x80) before send
+    // SetActionClass(local_player, local_player, 0x80, 0x80) before send
     // [C1][03][80] XOR-encrypted
 }
 
@@ -560,7 +560,7 @@ static void LegacyMisclassified_TradeItemUpdate(BYTE* pkt)
         }
     }
 
-    // Send ACK — uses FUN_00497870 for anim check, then standard XOR+send
+    // Send ACK — uses SetActionClass for anim check, then standard XOR+send
     if (ack_type == 0)
     {
         // Send [C1][03][6b] then [C1][03][75]

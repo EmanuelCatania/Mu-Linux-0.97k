@@ -81,7 +81,7 @@ void Map_LoadObjectModels(void)
     case 10: // Clouds
         OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
         OpenModel(0xb6, "Data2/Object11/", "cloud.smd");
-        FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
+        AccessModel(0xb6, "Data/Object11/", "cloud", -1);
         OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
         OpenJPG("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
@@ -101,33 +101,33 @@ section2:
 
     switch (World) {
     case 0: // Lorencia
-        FUN_005060b0(0xae, "Data/Object1/", "bird"   /* DAT_0055f370 */, 1);
+        AccessModel(0xae, "Data/Object1/", "bird"   /* DAT_0055f370 */, 1);
         OpenTexture(0xae, "Object1/", 0x2600, '\x01');
-        FUN_005060b0(0xb5, "Data/Object1/", "fish"   /* DAT_0055f34c */, 1);
+        AccessModel(0xb5, "Data/Object1/", "fish"   /* DAT_0055f34c */, 1);
         OpenTexture(0xb5, "Object1/", 0x2600, '\x01');
         break;
     case 1:
     case 4: // Dungeon
-        FUN_005060b0(0xd7, "Data/Object2/", "DungeonStone", 1);
+        AccessModel(0xd7, "Data/Object2/", "DungeonStone", 1);
         OpenTexture(0xd7, "Object2/", 0x2600, '\x01');
-        FUN_005060b0(0xb0, "Data/Object2/", "Bat"   /* PTR_DAT_0055f31c */, 1);
+        AccessModel(0xb0, "Data/Object2/", "Bat"   /* PTR_DAT_0055f31c */, 1);
         OpenTexture(0xb0, "Object2/", 0x2600, '\x01');
-        FUN_005060b0(0xb1, "Data/Object2/", "mouse" /* PTR_DAT_0055f318 */, 1);
+        AccessModel(0xb1, "Data/Object2/", "mouse" /* PTR_DAT_0055f318 */, 1);
         OpenTexture(0xb1, "Object2/", 0x2600, '\x01');
         break;
     case 3: // Noria
-        FUN_005060b0(0xaf, "Data/Object1/", "Butterfly", 1);
+        AccessModel(0xaf, "Data/Object1/", "Butterfly", 1);
         OpenTexture(0xaf, "Object1/", 0x2600, '\x01');
         break;
     case 5: // LostTower — Meteo1..5, BossHead, Princess
         iVar7 = 0xe4;
         do {
-            FUN_005060b0(iVar7, "Data/Object6/", "Meteo", iVar7 + -0xe3);
+            AccessModel(iVar7, "Data/Object6/", "Meteo", iVar7 + -0xe3);
             iVar3 = iVar7 + -0xe3;
             iVar7 = iVar7 + 1;
         } while (iVar3 < 5);
-        FUN_005060b0(0xea, "Data/Object6/", "BossHead", 1);
-        FUN_005060b0(0xeb, "Data/Object6/", "Princess", 1);
+        AccessModel(0xea, "Data/Object6/", "BossHead", 1);
+        AccessModel(0xeb, "Data/Object6/", "Princess", 1);
         iVar7 = 0xe4;
         do {
             OpenTexture(iVar7, "Object6/", 0x2600, '\x01');
@@ -135,13 +135,13 @@ section2:
         } while (iVar7 < 0xec);
         break;
     case 6: // Atlans
-        FUN_005060b0(0xb2, "Data/Object7/", "SeaCreature" /* PTR_DAT_0055f2cc */, 1);
+        AccessModel(0xb2, "Data/Object7/", "SeaCreature" /* PTR_DAT_0055f2cc */, 1);
         OpenTexture(0xb2, "Object7/", 0x2600, '\x01');
         break;
     case 7: // Icarus — animated wings + water textures
         iVar7 = 0xb6;
         do {
-            FUN_005060b0(iVar7, "Data/Object8/", "fish" /* DAT_0055f34c */, iVar7 + -0xb4);
+            AccessModel(iVar7, "Data/Object8/", "fish" /* DAT_0055f34c */, iVar7 + -0xb4);
             OpenTexture(iVar7, "Object8/", 0x2600, '\x01');
             iVar3 = iVar7 + -0xb4;
             iVar7 = iVar7 + 1;
@@ -171,12 +171,12 @@ section2:
         OpenJPG("Object9/sand01.jpg",    0x494, 0x2601, 0x2901, 0, '\x01');
         OpenJPG("Object9/sand02.jpg",    0x495, 0x2601, 0x2901, 0, '\x01');
         OpenJPG("Object9/Impack03.jpg",  0x597, 0x2601, 0x2900, 0, '\x01');
-        FUN_005060b0(0xb3, "Data/Object9/", "Barracks" /* PTR_DAT_0055f2cc */, 2);
+        AccessModel(0xb3, "Data/Object9/", "Barracks" /* PTR_DAT_0055f2cc */, 2);
         OpenTexture(0xb3, "Object9/", 0x2600, '\x01');
         break;
     case 10: // Clouds
         OpenJPG("Effect/clouds.jpg",     0x4f4, 0x2601, 0x2900, 0, '\x01');
-        FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
+        AccessModel(0xb6, "Data/Object11/", "cloud", -1);
         OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
         OpenJPG("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
@@ -194,12 +194,12 @@ section2:
             OpenModel(0x105, "Data2/Object12/", "BC_Coffin2.smd" /* DAT_0055f1b8 */);
             OpenModel(0xb9,  "Data2/Object12/", "BC_Shine.smd"   /* DAT_0055f1ac */);
         }
-        FUN_005060b0(0xb8,  "Data/Object12/", "BC_Gate"    /* DAT_0055f1a4 */, 1);
+        AccessModel(0xb8,  "Data/Object12/", "BC_Gate"    /* DAT_0055f1a4 */, 1);
         OpenTexture(0xb8,  "Object12/", 0x2600, '\x01');
-        FUN_005060b0(0x106, "Data/Object12/", "BC_Statue"  /* DAT_0055f180 */, 1);
-        FUN_005060b0(0x107, "Data/Object12/", "BC_Statue"  /* DAT_0055f180 */, 2);
-        FUN_005060b0(0x104, "Data/Object12/", "StoneCoffin", 1);
-        FUN_005060b0(0x105, "Data/Object12/", "StoneCoffin", 2);
+        AccessModel(0x106, "Data/Object12/", "BC_Statue"  /* DAT_0055f180 */, 1);
+        AccessModel(0x107, "Data/Object12/", "BC_Statue"  /* DAT_0055f180 */, 2);
+        AccessModel(0x104, "Data/Object12/", "StoneCoffin", 1);
+        AccessModel(0x105, "Data/Object12/", "StoneCoffin", 2);
         iVar7 = 0;
         do {
             OpenTexture(iVar7 + 0x106, "Monster/", 0x2600, '\x01');
@@ -210,10 +210,10 @@ section2:
             OpenTexture(iVar7 + 0x104, "Monster/", 0x2600, '\x01');
             iVar7 = iVar7 + 1;
         } while (iVar7 < 2);
-        FUN_005060b0(0xb9,  "Data/Object12/", "Shine", 1);
+        AccessModel(0xb9,  "Data/Object12/", "Shine", 1);
         OpenTexture(0xb9,  "Object12/", 0x2600, '\x01');
         OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
-        FUN_00404a10(0x6e, "Data/Sound/iBloodCastle.wav", 1, '\0');
+        LoadWaveFile(0x6e, "Data/Sound/iBloodCastle.wav", 1, '\0');
         DAT_0055a7c4 = '\x01';
         break;
     }
@@ -370,13 +370,13 @@ section2:
         iVar7 = 0;
         do {
             iVar3 = iVar7 + 1;
-            FUN_005060b0(iVar7, "Data/Object1/", "Tree" /* DAT_0055e8a8 */, iVar3);
+            AccessModel(iVar7, "Data/Object1/", "Tree" /* DAT_0055e8a8 */, iVar3);
             iVar7 = iVar3;
         } while (iVar3 < 0xd);
         // Grass 0x14..0x19 → anim "Grass" index 1..6
         iVar7 = 0x14;
         do {
-            FUN_005060b0(iVar7, "Data/Object1/", "Grass", iVar7 - 0x13);
+            AccessModel(iVar7, "Data/Object1/", "Grass", iVar7 - 0x13);
             iVar7++;
         } while (iVar7 < 0x1a);
         // Textures for all Lorencia objects 0x00..0x9f
@@ -415,7 +415,7 @@ section2:
         iVar7 = 0;
         do {
             iVar3 = iVar7 + 1;
-            FUN_005060b0(iVar7, local_384, "Object", iVar3);
+            AccessModel(iVar7, local_384, "Object", iVar3);
             iVar7 = iVar3;
         } while (iVar3 < 0xa0);
         SetMaxTextures(0x2ee);

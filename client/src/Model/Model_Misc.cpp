@@ -69,10 +69,10 @@ void __cdecl Model_LoadSkillEffectAssets(void)
 
     // ── Compressed-asset (BMD) skill loads ────────────────────────────────────
     DAT_0055a7c4 = '\x01';
-    FUN_005060b0(0xbe,  "Data\\Skill\\", "Ice",   1);
-    FUN_005060b0(199,   "Data\\Skill\\", "Ice",   2);
-    FUN_005060b0(0xbf,  "Data\\Skill\\", "Fire",  1);
-    FUN_005060b0(0xc0,  "Data\\Skill\\", "Poison",1);
+    AccessModel(0xbe,  "Data\\Skill\\", "Ice",   1);
+    AccessModel(199,   "Data\\Skill\\", "Ice",   2);
+    AccessModel(0xbf,  "Data\\Skill\\", "Fire",  1);
+    AccessModel(0xc0,  "Data\\Skill\\", "Poison",1);
     // 2026-09-02 (Inferno sin fuego / "solo un pedazo del circulo"): estos
     // bucles venian con la BASE de la condicion tomada del argumento en vez del
     // valor inicial.  IDA los escribe asi (OpenSkills 0x0050B710 L91-97):
@@ -88,56 +88,56 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     // a un modelo vacio: de ahi "solo carga un pedazo del circulo".
     // Habia 17 bucles con el mismo error (ver Model_Players.cpp).
     for (int i = 0xc5; i-0xc5 < 2; i++)
-        FUN_005060b0(i, "Data\\Skill\\", "Stone", i - 0xc4);
-    FUN_005060b0(200,   "Data\\Skill\\", "Circle",1);
-    FUN_005060b0(0xc9,  "Data\\Skill\\", "Circle",2);
-    FUN_005060b0(0xca,  "Data\\Skill\\", "Magic", 1);
-    FUN_005060b0(0xcb,  "Data\\Skill\\", "Magic", 2);
-    FUN_005060b0(0xcc,  "Data\\Skill\\", "Storm", 1);
-    FUN_005060b0(0xcd,  "Data\\Skill\\", "Laser", 1);
+        AccessModel(i, "Data\\Skill\\", "Stone", i - 0xc4);
+    AccessModel(200,   "Data\\Skill\\", "Circle",1);
+    AccessModel(0xc9,  "Data\\Skill\\", "Circle",2);
+    AccessModel(0xca,  "Data\\Skill\\", "Magic", 1);
+    AccessModel(0xcb,  "Data\\Skill\\", "Magic", 2);
+    AccessModel(0xcc,  "Data\\Skill\\", "Storm", 1);
+    AccessModel(0xcd,  "Data\\Skill\\", "Laser", 1);
     for (int i = 0xce; i-0xce < 3; i++)
-        FUN_005060b0(i, "Data\\Skill\\", "Skeleton", i - 0xcd);
-    FUN_005060b0(0xd1,  "Data\\Skill\\", "Saw",   1);
+        AccessModel(i, "Data\\Skill\\", "Skeleton", i - 0xcd);
+    AccessModel(0xd1,  "Data\\Skill\\", "Saw",   1);
     for (int i = 0xd2; i-0xd2 < 2; i++)
-        FUN_005060b0(i, "Data\\Skill\\", "Bone",  i - 0xd1);
+        AccessModel(i, "Data\\Skill\\", "Bone",  i - 0xd1);
     for (int i = 0xd4; i-0xd4 < 3; i++)
-        FUN_005060b0(i, "Data\\Skill\\", "Snow",  i - 0xd3);
-    FUN_005060b0(0xc3,  "Data\\Skill\\", "Rider", 1);
+        AccessModel(i, "Data\\Skill\\", "Snow",  i - 0xd3);
+    AccessModel(0xc3,  "Data\\Skill\\", "Rider", 1);
 
     if (DAT_0055a7c4 == '\0')
         OpenModel((int)0x10b, "Data2\\Skill\\", "\xBD\xBA\xC5\xC0.smd");
-    FUN_005060b0(0x10b, "Data\\Skill\\", "Rider", 2);
+    AccessModel(0x10b, "Data\\Skill\\", "Rider", 2);
     DAT_0055a7c4 = '\x01';
 
-    FUN_005060b0(0x10c, "Data\\Skill\\", "PhoenixShield", 1);
-    FUN_005060b0(0xd8,  "Data\\Skill\\", "Arrow",         1);
-    FUN_005060b0(0xd9,  "Data\\Skill\\", "ArrowSteel",    1);
-    FUN_005060b0(0xda,  "Data\\Skill\\", "ArrowThunder",  1);
-    FUN_005060b0(0xdb,  "Data\\Skill\\", "ArrowLaser",    1);
-    FUN_005060b0(0xdc,  "Data\\Skill\\", "ArrowV",        1);
-    FUN_005060b0(0xdd,  "Data\\Skill\\", "ArrowSaw",      1);
-    FUN_005060b0(0xde,  "Data\\Skill\\", "ArrowNature",   1);
+    AccessModel(0x10c, "Data\\Skill\\", "PhoenixShield", 1);
+    AccessModel(0xd8,  "Data\\Skill\\", "Arrow",         1);
+    AccessModel(0xd9,  "Data\\Skill\\", "ArrowSteel",    1);
+    AccessModel(0xda,  "Data\\Skill\\", "ArrowThunder",  1);
+    AccessModel(0xdb,  "Data\\Skill\\", "ArrowLaser",    1);
+    AccessModel(0xdc,  "Data\\Skill\\", "ArrowV",        1);
+    AccessModel(0xdd,  "Data\\Skill\\", "ArrowSaw",      1);
+    AccessModel(0xde,  "Data\\Skill\\", "ArrowNature",   1);
 
     OpenTexture(0x103, "Skill\\", 0x2600, '\x01');
-    FUN_005060b0(0x103, "Data\\Skill\\", "Protect",     2);
+    AccessModel(0x103, "Data\\Skill\\", "Protect",     2);
     OpenTexture(0x10a, "Skill\\", 0x2600, '\x01');
-    FUN_005060b0(0x10a, "Data\\Skill\\", "RidingSpear", 1);
-    FUN_005060b0(0xe1,  "Data\\Skill\\", "Protect",     1);
+    AccessModel(0x10a, "Data\\Skill\\", "RidingSpear", 1);
+    AccessModel(0xe1,  "Data\\Skill\\", "Protect",     1);
     for (int i = 0xe2; i-0xe2 < 2; i++)
-        FUN_005060b0(i, "Data\\Skill\\", "BigStone", i - 0xe1);
-    FUN_005060b0(0xe9,  "Data\\Skill\\", "MagicCircle", 1);
-    FUN_005060b0(0xe0,  "Data\\Skill\\", "ArrowWing",   1);
-    FUN_005060b0(0xdf,  "Data\\Skill\\", "ArrowBomb",   1);
-    FUN_005060b0(0xec,  "Data\\Skill\\", "Ball",        1);
+        AccessModel(i, "Data\\Skill\\", "BigStone", i - 0xe1);
+    AccessModel(0xe9,  "Data\\Skill\\", "MagicCircle", 1);
+    AccessModel(0xe0,  "Data\\Skill\\", "ArrowWing",   1);
+    AccessModel(0xdf,  "Data\\Skill\\", "ArrowBomb",   1);
+    AccessModel(0xec,  "Data\\Skill\\", "Ball",        1);
 
     // Scale adjustment for slot 0xec — DESHABILITADO
     // 0xad80*4 = 0x2B600 → no es índice, sino absoluto 0x05828d58+0x2B600 = 0x05854358
     // (otro DAT_ en el binario original). Ghidra lo renderizó como base+index por error.
     // *(DWORD*)(*(DWORD*)((BYTE*)DAT_05828d58 + 0xad80*4) + 4) = 0x3f000000; // 0.5f
 
-    FUN_005060b0(0xf0,  "Data\\Skill\\", "Blast",       1);
-    FUN_005060b0(0xf1,  "Data\\Skill\\", "Inferno",     1);
-    FUN_005060b0(0xf2,  "Data\\Skill\\", "ArrowDouble", 1);
+    AccessModel(0xf0,  "Data\\Skill\\", "Blast",       1);
+    AccessModel(0xf1,  "Data\\Skill\\", "Inferno",     1);
+    AccessModel(0xf2,  "Data\\Skill\\", "ArrowDouble", 1);
 
     // EarthQuake variants (Korean SMD re-load before BMD)
     if (DAT_0055a7c4 == '\0') {
@@ -150,18 +150,18 @@ void __cdecl Model_LoadSkillEffectAssets(void)
         OpenModel((int)0xfd, "Data2\\Skill\\", "magic2.smd");
         OpenModel((int)0xfe, "Data2\\Skill\\", "magic3.smd");
     }
-    FUN_005060b0(0xf5, "Data\\Skill\\", "EarthQuake", 1);
-    FUN_005060b0(0xf6, "Data\\Skill\\", "EarthQuake", 2);
-    FUN_005060b0(0xf7, "Data\\Skill\\", "EarthQuake", 3);
-    FUN_005060b0(0xf9, "Data\\Skill\\", "EarthQuake", 5);
-    FUN_005060b0(0xfb, "Data\\Skill\\", "EarthQuake", 7);
-    FUN_005060b0(0xfc, "Data\\Skill\\", "EarthQuake", 8);
-    FUN_005060b0(0xfd, "Data\\Skill\\", "flashing",  -1);
-    FUN_005060b0(0xfe, "Data\\Skill\\", "tail",      -1);
+    AccessModel(0xf5, "Data\\Skill\\", "EarthQuake", 1);
+    AccessModel(0xf6, "Data\\Skill\\", "EarthQuake", 2);
+    AccessModel(0xf7, "Data\\Skill\\", "EarthQuake", 3);
+    AccessModel(0xf9, "Data\\Skill\\", "EarthQuake", 5);
+    AccessModel(0xfb, "Data\\Skill\\", "EarthQuake", 7);
+    AccessModel(0xfc, "Data\\Skill\\", "EarthQuake", 8);
+    AccessModel(0xfd, "Data\\Skill\\", "flashing",  -1);
+    AccessModel(0xfe, "Data\\Skill\\", "tail",      -1);
     DAT_0055a7c4 = 1;
-    FUN_005060b0(0xf8, "Data\\Skill\\", "EarthQuake", 4);
-    FUN_005060b0(0xfa, "Data\\Skill\\", "EarthQuake", 6);
-    FUN_005060b0(0xff, "Data\\Skill\\", "Piercing",  -1);
+    AccessModel(0xf8, "Data\\Skill\\", "EarthQuake", 4);
+    AccessModel(0xfa, "Data\\Skill\\", "EarthQuake", 6);
+    AccessModel(0xff, "Data\\Skill\\", "Piercing",  -1);
 
     // ── Skill texture bindings ────────────────────────────────────────────────
     SetMaxTextures(700);
@@ -183,7 +183,7 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     // (OpenWorldModels case 7), asi que va al 193 (0xC1), libre y dentro de los
     // rangos que dibuja RenderEffects (190..268) y anima MoveEffect (174..268).
     // Sus texturas las cubre el bucle de abajo.
-    FUN_005060b0(0xc1,  "Data\\Skill\\", "Tama", 1);
+    AccessModel(0xc1,  "Data\\Skill\\", "Tama", 1);
 
     // Full skill texture range (0xbe-0x10c)
     for (int i = 0xbe; i < 0x10d; i++) {

@@ -223,11 +223,11 @@ void __cdecl BMD__Release(int param_1) {
     *(short*)(param_1 + 0x24) = 0;
 }
 
-// FUN_004ffd50 @ 0x004FFD50 — Terrain_ResetObjects
+// DeleteObjects @ 0x004FFD50 — Terrain_ResetObjects
 // Calls BMD_FreeModel on every model slot (stride 0xbc, count 0x7580/0xbc).
 // Then walks the 16x16 scene-entity grid (DAT_083a0218, stride 0x10) freeing nodes via FUN_004ffcc0.
 // Finally unloads tile textures 0x23-0x67, clears particle/effect/entity pools.
-void __cdecl FUN_004ffd50(void) {
+void __cdecl DeleteObjects(void) {
     // free all model slots
     for (int i = 0; i < 0x7580; i += 0xbc)
         BMD__Release(i + DAT_05828d58);
@@ -280,7 +280,7 @@ void __cdecl FUN_004ffd50(void) {
     } while (true);
 }
 
-// FUN_0045abb0 @ 0x0045ABB0 — Entity_ClearByType(map_id)
+// ClearCharacters @ 0x0045ABB0 — Entity_ClearByType(map_id)
 // Loops over entity array (base DAT_07abf5d0, stride 0x394).
 // For each active entity whose type (+0x1dc) != map_id: clears active flag,
 // also clears matching emitter pool entries (DAT_083a1218, stride 0x1bc).
@@ -291,7 +291,7 @@ void __cdecl FUN_004ffd50(void) {
 // real (10 × 0x1bc = 0x1158 bytes) pero el linker lo coloca en otra dirección,
 // así que el literal es basura — pcVar2 sigue iterando hasta crashear.
 // Se reemplaza por DAT_083a1218 + 0x1158 (end-pointer real).
-void __cdecl FUN_0045abb0(int param_1) {
+void __cdecl ClearCharacters(int param_1) {
     char* butterflesEnd = DAT_083a1218 + 0x1158;
     for (int i = 0; i < 0x59740; i += 0x394) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);

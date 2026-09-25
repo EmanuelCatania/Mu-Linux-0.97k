@@ -60,7 +60,7 @@ inline unsigned int HashTable_GetIndex(void* /*ctx_ptr*/, void* /*key*/) {
 }
 
 // ── Sound (0x00404xxx) ────────────────────────────────────────────────────────
-void  __cdecl FUN_00404a10(int, const char*, int, char); // IDA: FUN_00404A10; wrapper to LoadWaveFile
+void  __cdecl LoadWaveFile(int, const char*, int, char); // IDA: FUN_00404A10; wrapper to LoadWaveFile
 // CSQuest navigation/state helpers.  Names are from 5.2; retain IDA addresses.
 uint  __fastcall CSQuest_CheckRequestCondition(void *pThis, short *quest, char last_check); // IDA: FUN_00401230
 void  __fastcall CSQuest_ShowDialogText(int dialog_index);                                  // IDA: FUN_004017E0
@@ -428,7 +428,7 @@ char  __cdecl Item_Equip(DWORD character, DWORD object);            // 0x00483B3
 // ── UI / HUD ──────────────────────────────────────────────────────────────────
 bool  __cdecl FindTextA(char* src, char* pattern, bool caseSensitive); // IDA: FindText (0x004977F0)
 void  __cdecl CutText(void*, int, void*, int);            // Chat_SplitLine
-void  __cdecl FUN_00497870(int, int, int, int);
+void  __cdecl SetActionClass(int, int, int, int);
 void  __cdecl CheckGate(void); // IDA: CheckGate (0x004AC140)
 char  __cdecl Path_IsLineClear(int src_x, int src_y, int tgt_x, int tgt_y); // IDA: CheckWall
 // IDA: SendMove
@@ -465,7 +465,6 @@ char  __cdecl FUN_004e3d60(void *ctx, int p1, int p2);              // Connectio
 DWORD __cdecl FUN_00494520(void *buf, char flag);
 char  __cdecl FUN_00513440(char *buf);                               // Chat_Validate — validate text buf; '\0'=ok
 void  __cdecl CheckChatText(char* text);                             // IDA: sub_497C70 (0x00497C70) gestos por texto del chat
-void  __cdecl SetActionClass(int c, int o, int action, int actionType); // IDA: SetActionClass (0x00497870)
 void  __cdecl SendRequestAction(BYTE actionType); // [C1][05][18][dir][tipo], inline en IDA
 char* __cdecl GetMapName(int iMap); // IDA: GetMapName (0x004EF120)
 void  __cdecl ClearInventory(void); // IDA: ClearInventory (0x004CBDF0)
@@ -557,17 +556,17 @@ void  __cdecl RenderPartObject(int, int, unsigned int, float *, float, unsigned 
 void  __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model);   // desviacion: Physics/Cloth_MeshDivine.cpp
 void  __cdecl Model_SetAnimationSlots(int, int, int, int, int, int); // SetMonsterSound — writes model animation slots
 // ── Map / terrain loaders (called from World_Load / Map_LoadResources) ─────────
-void  __cdecl FUN_004ffd50(void);                                  // Terrain_ResetObjects
+void  __cdecl DeleteObjects(void);                                  // Terrain_ResetObjects
 void  __cdecl OpenObjectsEnc(const char *path);                      // Terrain_LoadObjects
 void  __cdecl OpenTerrainMapping(const char *path);                      // Terrain_LoadMap
 int   __cdecl OpenTerrainAttribute(const char *FileName);                  // OpenTerrainAttribute
 void  __cdecl OpenTerrainLight(const char *path);                      // Terrain_LoadLight
 void  __cdecl CreateTerrain(const char *path);                      // Terrain_LoadHeight
-void  __cdecl FUN_00502b80(void);                                  // Map_InitEntities
-void  __cdecl FUN_00509190(void);                                  // Terrain_InitLayers
-void  __cdecl FUN_00509880(void);                                  // Terrain_InitWater
+void  __cdecl ClearItems(void);                                  // Map_InitEntities
+void  __cdecl DeleteNpcs(void);                                  // Terrain_InitLayers
+void  __cdecl DeleteMonsters(void);                                  // Terrain_InitWater
 void  __cdecl OpenWorldModels(void);                                  // Map_InitLighting
-void  __cdecl FUN_0045abb0(int map_id);                            // Map_SetupEntities
+void  __cdecl ClearCharacters(int map_id);                            // Map_SetupEntities
 // ── Font / UI init ───────────────────────────────────────────────────────────────
 void  __cdecl PathFinder_ResetContext(void);                                  // IDA: FUN_0043f2d0
 void  __cdecl FUN_0050f700(const char *FileName);                  // SaveMacro (Data/Macro.txt)
@@ -604,7 +603,7 @@ void  __cdecl OpenNameFilterFile(const char *path);                      // Filt
 void  __cdecl Dialog_LoadBMD(const char *path);                    // IDA: FUN_0047B020
 uint  __cdecl CSQuest_OpenQuestScript(int handle, const char *path);          // Quest_LoadBMD
 void  __cdecl NPCName_LoadTextData(const char *path);              // IDA: FUN_0047D120
-// FUN_00404a10 — declared above as Sound_LoadAndPlay(int type, int flags)
+// LoadWaveFile — declared above as Sound_LoadAndPlay(int type, int flags)
 void  __cdecl OpenWorld(void); // IDA: OpenWorld (0x0050E5A0)
 void  __cdecl OpenFont(void);              // IDA: OpenFont (0x0050F690)
 void  __cdecl Scene_LoadAccountResources(void); // OpenLogoSceneData (IDA)
@@ -769,7 +768,7 @@ void  __cdecl BuxConvert(void* buffer, int size);               // IDA: BuxConve
 uint  __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp); // fwrite-wrapper (locked)
 void  __cdecl putc(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
 void  __cdecl FUN_0054150f(FILE* fp);                           // fclose-wrapper
-void  __cdecl FUN_005060b0(int id, const char* dir, const char* file, int idx); // Monster_LoadBase
+void  __cdecl AccessModel(int id, const char* dir, const char* file, int idx); // Monster_LoadBase
 void  __cdecl OpenTexture(int id, const char* prefix, int flags, char loop);   // Monster_LoadSound
 // ── GL_State sub-functions ────────────────────────────────────────────────────
 void  __cdecl GL_DisableCullFace(void);           // GL_SetTextureState
@@ -1039,11 +1038,6 @@ void  __cdecl CenterMouseY(void);                                    // 0x005110
 
 // Terrain / objects
 void  __cdecl ReleaseMainData(void);                                 // 0x005110a0
-void  __cdecl DeleteObjects(void);
-void  __cdecl DeleteNpcs(void);
-void  __cdecl DeleteMonsters(void);
-void  __cdecl ClearItems(void);
-void  __cdecl ClearCharacters(int param);
 void  __cdecl EndOpengl(void);                                       // 0x00511bc0
 void  __cdecl StopMusic(void);                                       // 0x00513420
 
@@ -1139,7 +1133,6 @@ void  __fastcall FUN_00403a40(void* param_1);                        // quest UI
 UINT  __fastcall HashTable_GetIndex(void* ecx, void* edx, DWORD param_1); // IDA: FUN_004041e0
 HRESULT __cdecl InitDirectSound(HWND hDlg);                          // 0x004044A0 — DirectSound8 init (src/Sound/Sound.cpp)
 HRESULT __cdecl CreateStaticBuffer(int Buffer, const char* strFileName, int MaxChannel, bool Enable); // 0x00404650
-void    __cdecl LoadWaveFile(int Buffer, const char* strFileName, int MaxChannel, bool Enable);       // 0x00404a10
 void  __stdcall FUN_00405340(void);                                  // CErrorReport: rotate log
 char* __stdcall CErrorReport_FindLogMarker(char* param_1);           // IDA: FUN_00405420
 void  __fastcall CErrorReport_WriteSystemInfo(void* report);           // IDA: CErrorReport__WriteSystemInfo
@@ -1333,7 +1326,6 @@ void  __stdcall SendCheck(void);                                         // 0x00
 void  __cdecl RenderText(int x, int y, char *text, int p1, int p2, void *p3); // Text render
 
 // Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, LookAtTarget
-void  __cdecl AccessModel(int id, char *path, char *name, int param);   // 0x005060B0
 void  __cdecl OpenTexture(int id, void *path, int flags, bool param);   // 0x00505C80
 // LoadWaveFile declared above (line 1088) with real signature — real impl in src/Sound/Sound.cpp.
 void  __cdecl OpenModel(int id, char *path, ...);                       // 0x00505E90 (varargs: texName, normName, etc.)

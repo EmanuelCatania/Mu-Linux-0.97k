@@ -990,7 +990,7 @@ extern float  _DAT_083a0210;
 extern DWORD   DAT_083a0210;
 // Object-bucket grid (see globals.cpp). 16×16 cells × 16 B = 0x1000.
 // Cell layout (matches original binary 0x083a0218..0x083a1217):
-//   cell+0  → alias DAT_083a0218 (base de la celda, también usada como scratch por el walker de descarga FUN_004ffd50)
+//   cell+0  → alias DAT_083a0218 (base de la celda, también usada como scratch por el walker de descarga DeleteObjects)
 //   cell+4  → DAT_083a021c  puntero head (Terrain_Render lo lee vía *chunk_ptr)
 //   cell+8  → puntero tail  (el insert de CreateObject appendea acá; la descarga arranca el recorrido desde acá)
 //   cell+12 → visibility flag (Terrain_Render writes *(chunk_ptr+8))
@@ -2113,7 +2113,7 @@ extern float   _DAT_00552a08;  // terrain light float constant
 // definidas junto a las declaraciones de cb608 / 0828b608, más arriba en este header.
 
 // ── Scene_Resources string literals ──────────────────────────────────────────
-// Nombres base de BMD/SMD que consumen FUN_005060b0 / OpenModel en Scene_Resources.
+// Nombres base de BMD/SMD que consumen AccessModel / OpenModel en Scene_Resources.
 extern char    DAT_0055e834[8];     // "Ship"
 extern char    DAT_005606ac[8];     // "Logo"
 extern char    DAT_005607c0[8];     // "Face"

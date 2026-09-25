@@ -38,26 +38,12 @@ extern void FUN_004fa5a0(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// DeleteObjects / DeleteNpcs / DeleteMonsters / ClearItems — delegan en los
-// ports reales de las mismas direcciones (los que usa OpenWorld al cambiar de
-// mapa).
-//
-// 2026-09-16: los cuatro eran cuerpos VACIOS ("Simplified — handled at
-// shutdown").  Su unico caller es ReleaseMainData (0x5110A0), que llama
-// ReceiveLogOut al volver al char-select o al login: el mundo quedaba cargado
-// entero (modelos, texturas, objetos, sonidos, items del suelo) y el
-// char-select andaba lento.  Mismo patron de simbolo duplicado de siempre.
-void __cdecl DeleteObjects(void)  { FUN_004ffd50(); }   // IDA: DeleteObjects  (0x004FFD50)
-void __cdecl DeleteNpcs(void)     { FUN_00509190(); }   // IDA: DeleteNpcs     (0x00509190)
-void __cdecl DeleteMonsters(void) { FUN_00509880(); }   // IDA: DeleteMonsters (0x00509880)
-void __cdecl ClearItems(void)     { FUN_00502b80(); }   // IDA: ClearItems     (0x00502B80)
+// 2026-09-25: los cinco puentes que habia aca (DeleteObjects, DeleteNpcs,
+// DeleteMonsters, ClearItems y ClearCharacters) se eliminaron al renombrar:
+// solo redirigian al FUN_ de la misma direccion, y con los dos lados ya con
+// el mismo nombre quedaban llamandose a si mismos.  Las implementaciones
+// reales viven en Render/SMD_Parser.cpp y Terrain/Terrain_LegacyLoad.cpp.
 
-// ClearCharacters @ 0x0045ABB0 — DUPLICADO de FUN_0045abb0 (misma direccion).
-// 2026-07-24: antes esta version leia el Key del offset EQUIVOCADO (+4 en vez
-// de +476).  La impl VIVA (la que llama OpenWorld) es FUN_0045abb0 en
-// Render/SMD_Parser.cpp, que ya lee +0x1dc correcto.  Se delega para que no
-// haya dos comportamientos distintos para el mismo 0x45ABB0.
-void __cdecl ClearCharacters(int Key) { FUN_0045abb0(Key); }
 
 // CSQuest__CheckQuestState @ 0x00401730
 // 2026-08-21: acá había un resumen inventado ("State machine dispatch

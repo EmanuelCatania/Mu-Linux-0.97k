@@ -1081,7 +1081,7 @@ DWORD    DAT_083a0210  = 0;
 //   DAT_083a0218 = grid+0  (cell[0]+0  scratch)
 //   DAT_083a021c = grid+4  (cell[0].head — Terrain_Render reads *chunk_ptr)
 // Insert (CreateObject) writes head at cell+4, tail at cell+8.
-// Unload (FUN_004ffd50) walks puVar5=&DAT_083a0218 reading puVar5+8 as tail.
+// Unload (DeleteObjects) walks puVar5=&DAT_083a0218 reading puVar5+8 as tail.
 // Previously DAT_083a0218 was a separate orphan DWORD and DAT_083a021c was at
 // grid+0 — the unload walker read 4096 bytes of unrelated BSS past the orphan
 // DWORD and crashed when it hit a non-null garbage value (treated as a node).
@@ -2221,7 +2221,7 @@ float   _DAT_00552a08  = 0.003f;
 // Originally at .rdata in the binary; their content must match the actual
 // asset file basenames on disk or Scene_LoadAccountResources / ...CharSelectResources
 // construct malformed paths (e.g. "Data\\Object1\\01.bmd" instead of "Ship01.bmd").
-// Ship/Logo/Face are BMD basenames used by FUN_005060b0;
+// Ship/Logo/Face are BMD basenames used by AccessModel;
 // the three SMD entries (Korean-named background/face assets) are only consumed
 // by OpenModel which is stubbed in this port — kept as empty strings so any
 // sprintf(%s, "") produces harmless paths without crashing.

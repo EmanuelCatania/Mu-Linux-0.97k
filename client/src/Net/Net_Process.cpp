@@ -1967,7 +1967,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 
     // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
     // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
-    // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+    // AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
     // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
     // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
     // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
@@ -2241,7 +2241,7 @@ static void Recv_Revival(const BYTE* Msg, int Size)
     World = map;
     // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
     // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
-    // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+    // AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
     // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
     // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
     // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
@@ -6276,7 +6276,7 @@ void Net_ProcessPacket(void)
                         World = map;
                         // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
                         // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
-                        // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+                        // AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
                         // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
                         // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
                         // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el

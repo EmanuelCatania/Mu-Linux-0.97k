@@ -220,8 +220,8 @@
 //     case 29:  0x1C = 0.14f
 //     case 37,40: entity_def[+0x10] = 1   // flag especial (levitante?)
 //
-//     // Configura sound samples por tipo (FUN_00404a10):
-//     FUN_00404a10(sound_id, &sound_data, 2, 1) — 5 sonidos por monstruo:
+//     // Configura sound samples por tipo (LoadWaveFile):
+//     LoadWaveFile(sound_id, &sound_data, 2, 1) — 5 sonidos por monstruo:
 //       0xAA..0xAE  = monstruo tipo 0 (Goblin: idle/walk/attack/hurt/die)
 //       0xAF..0xB3  = monstruo tipo 1 (Bull Fighter)
 //       0xB4..0xB6,0xBF..0xC2 = tipo 2 (Worm)

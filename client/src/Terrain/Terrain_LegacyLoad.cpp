@@ -254,7 +254,7 @@ void __cdecl CreateTerrain(const char *path) {
     FUN_004f9c20();
 }
 
-// FUN_00502b80 @ 0x00502B80 — ClearItems / Map_InitEntities
+// ClearItems @ 0x00502B80 — ClearItems / Map_InitEntities
 // Clears the "alive" flag (offset 0) for every slot in the GroundItem pool.
 // Pool is at DAT_07e12840, 1000 slots × 0x204 bytes.
 //
@@ -266,23 +266,23 @@ void __cdecl CreateTerrain(const char *path) {
 // `&Items[0][72]` — el flag activo vive en ip+72, que es el que leen
 // Net_Process (0x20), FUN_005038e0 y MoveItems.  O sea ClearItems no borraba
 // nada y los items del mapa anterior seguían "vivos" al cambiar de zona.
-void __cdecl FUN_00502b80(void) {
+void __cdecl ClearItems(void) {
     for (int i = 0; i < 1000; ++i) {
         DAT_07e12840[i * 0x204 + 72] = 0;
     }
 }
 
-// FUN_00509190 @ 0x00509190 — Terrain_InitLayers
+// DeleteNpcs @ 0x00509190 — Terrain_InitLayers
 // Frees tile model slots (0xf604..0x11710), then frees sound channels 0x78..0xa9.
-void __cdecl FUN_00509190(void) {
+void __cdecl DeleteNpcs(void) {
     for (int i = 0xf604; i < 0x11710; i += 0xbc)
         BMD__Release(i + DAT_05828d58);
     for (int i = 0x78; i < 0xaa; i++) Sound_ReleaseBuffer(i); // IDA: FUN_00404AD0
 }
 
-// FUN_00509880 @ 0x00509880 — Terrain_InitWater
+// DeleteMonsters @ 0x00509880 — Terrain_InitWater
 // Frees water model slots (0xc648..0xf604), then frees sound channels 0xaa..0x1a3.
-void __cdecl FUN_00509880(void) {
+void __cdecl DeleteMonsters(void) {
     for (int i = 0xc648; i < 0xf604; i += 0xbc)
         BMD__Release(i + DAT_05828d58);
     for (int i = 0xaa; i < 0x1a4; i++) Sound_ReleaseBuffer(i); // IDA: FUN_00404AD0
@@ -346,7 +346,7 @@ void __cdecl OpenWorldModels(void) {
         case 10:
             OpenJPG("Effect/clouds.jpg",      0x4f4, 0x2601, 0x2900, 0, '\x01');
             OpenModel((int)0xb6, "Data2/Object11/", "cloud.smd");
-            FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
+            AccessModel(0xb6, "Data/Object11/", "cloud", -1);
             OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
             OpenJPG("Effect/cloudLight.jpg",  0x4f5, 0x2601, 0x2900, 0, '\x01');
             break;
@@ -358,7 +358,7 @@ void __cdecl OpenWorldModels(void) {
             OpenModel((int)0x105, "Data2/Object12/", "gate_right.smd");
             OpenModel((int)0xb9, "Data2/Object12/", "shine.smd");
             OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, '\x01');
-            FUN_00404a10(0x6e, "Data/Sound/iBloodCastle.wav", 1, '\0');
+            LoadWaveFile(0x6e, "Data/Sound/iBloodCastle.wav", 1, '\0');
             DAT_0055a7c4 = '\x01';
             break;
         }
@@ -368,33 +368,33 @@ void __cdecl OpenWorldModels(void) {
     SetMaxTextures(0x69);
     switch (World) {
     case 0:
-        FUN_005060b0(0xae, "Data/Object1/", "bird", 1);
+        AccessModel(0xae, "Data/Object1/", "bird", 1);
         OpenTexture(0xae, "Object1/", 0x2600, '\x01');
-        FUN_005060b0(0xb5, "Data/Object1/", "fish", 1);
+        AccessModel(0xb5, "Data/Object1/", "fish", 1);
         OpenTexture(0xb5, "Object1/", 0x2600, '\x01');
         break;
     case 1: case 4:
-        FUN_005060b0(0xd7, "Data/Object2/", "DungeonStone", 1);
+        AccessModel(0xd7, "Data/Object2/", "DungeonStone", 1);
         OpenTexture(0xd7, "Object2/", 0x2600, '\x01');
-        FUN_005060b0(0xb0, "Data/Object2/", "Bat", 1);
+        AccessModel(0xb0, "Data/Object2/", "Bat", 1);
         OpenTexture(0xb0, "Object2/", 0x2600, '\x01');
-        FUN_005060b0(0xb1, "Data/Object2/", "mouse", 1);
+        AccessModel(0xb1, "Data/Object2/", "mouse", 1);
         OpenTexture(0xb1, "Object2/", 0x2600, '\x01');
         break;
     case 3:
-        FUN_005060b0(0xaf, "Data/Object1/", "Butterfly", 1);
+        AccessModel(0xaf, "Data/Object1/", "Butterfly", 1);
         OpenTexture(0xaf, "Object1/", 0x2600, '\x01');
         break;
     case 5:
         for (int i = 0xe4; i < 0xec; i++) {
-            FUN_005060b0(i, "Data/Object6/", "Meteo", i - 0xe3);
+            AccessModel(i, "Data/Object6/", "Meteo", i - 0xe3);
             OpenTexture(i, "Object6/", 0x2600, '\x01');
         }
-        FUN_005060b0(0xea, "Data/Object6/", "BossHead", 1);
-        FUN_005060b0(0xeb, "Data/Object6/", "Princess", 1);
+        AccessModel(0xea, "Data/Object6/", "BossHead", 1);
+        AccessModel(0xeb, "Data/Object6/", "Princess", 1);
         break;
     case 6:
-        FUN_005060b0(0xb2, "Data/Object7/", "SummonMonster", 1);
+        AccessModel(0xb2, "Data/Object7/", "SummonMonster", 1);
         OpenTexture(0xb2, "Object7/", 0x2600, '\x01');
         break;
     case 7:
@@ -402,7 +402,7 @@ void __cdecl OpenWorldModels(void) {
         // que no existen; los 9 peces de Atlans no cargaban. IDA 0050C4D0 L171:
         //   AccessModel(v3, "Data\Object8\", "Fish", v3 - 180)  para v3 = 182..190
         for (int i = 0xb6; i < 0xbf; i++) {
-            FUN_005060b0(i, "Data/Object8/", "Fish", i - 0xb4);
+            AccessModel(i, "Data/Object8/", "Fish", i - 0xb4);
             OpenTexture(i, "Object8/", 0x2600, '\x01');
         }
         // BUG-FIX 2026-08-17: faltaba entero el bloque de texturas de agua de
@@ -428,7 +428,7 @@ void __cdecl OpenWorldModels(void) {
         OpenJPG("Object9/sand01.jpg",    0x494, 0x2601, 0x2901, 0, '\x01');
         OpenJPG("Object9/sand02.jpg",    0x495, 0x2601, 0x2901, 0, '\x01');
         OpenJPG("Object9/Impack03.jpg",  0x597, 0x2601, 0x2900, 0, '\x01');
-        FUN_005060b0(0xb3, "Data/Object9/", "SandPillar", 2);
+        AccessModel(0xb3, "Data/Object9/", "SandPillar", 2);
         OpenTexture(0xb3, "Object9/", 0x2600, '\x01');
         break;
     case 10:
@@ -443,7 +443,7 @@ void __cdecl OpenWorldModels(void) {
         // llega a Icarus. La textura 1268 quedaba sin handle GL y las ~6800
         // nubes por frame se dibujaban invisibles.
         OpenJPG("Effect/clouds.jpg",     0x4f4, 0x2601, 0x2900, 0, '\x01');
-        FUN_005060b0(0xb6, "Data/Object11/", "cloud", -1);
+        AccessModel(0xb6, "Data/Object11/", "cloud", -1);
         OpenTexture(0xb6, "Object11/", 0x2600, '\x01');
         OpenJPG("Effect/cloudLight.jpg", 0x4f5, 0x2601, 0x2900, 0, '\x01');
         break;
@@ -466,17 +466,17 @@ void __cdecl OpenWorldModels(void) {
         //     puerta terminaba trabajando sobre esa entrada vacia.
         //  c) faltaban las cuatro OpenTexture de la puerta y los sarcofagos,
         //     que salen de "Monster/" y no de "Object12/".
-        FUN_005060b0(0xb8, "Data/Object12/", "Crow", 1);
+        AccessModel(0xb8, "Data/Object12/", "Crow", 1);
         OpenTexture(0xb8, "Object12/", 0x2600, '\x01');
-        FUN_005060b0(0x106, "Data/Object12/", "Gate", 1);
-        FUN_005060b0(0x107, "Data/Object12/", "Gate", 2);
-        FUN_005060b0(0x104, "Data/Object12/", "StoneCoffin", 1);
-        FUN_005060b0(0x105, "Data/Object12/", "StoneCoffin", 2);
+        AccessModel(0x106, "Data/Object12/", "Gate", 1);
+        AccessModel(0x107, "Data/Object12/", "Gate", 2);
+        AccessModel(0x104, "Data/Object12/", "StoneCoffin", 1);
+        AccessModel(0x105, "Data/Object12/", "StoneCoffin", 2);
         for (int k = 0; k < 2; ++k)
             OpenTexture(k + 0x106, "Monster/", 0x2600, '\x01');
         for (int m = 0; m < 2; ++m)
             OpenTexture(m + 0x104, "Monster/", 0x2600, '\x01');
-        FUN_005060b0(0xb9, "Data/Object12/", "Shine", 1);
+        AccessModel(0xb9, "Data/Object12/", "Shine", 1);
         OpenTexture(0xb9, "Object12/", 0x2600, '\x01');
         // 2026-09-04 FIX: estas dos estaban en el PRIMER switch, que va dentro de
         // `if (DAT_0055a7c4 == 0)` -- el gate de "primera carga de mundo".  Como
@@ -486,7 +486,7 @@ void __cdecl OpenWorldModels(void) {
         // Sin el LoadWaveFile el `PlayBuffer(110, 0, 1)` del estado 0 del 0x9B no
         // tenia nada que reproducir: por eso no sonaba la musica del evento.
         OpenJPG("Effect/clouds.jpg", 0x4f4, 0x2601, 0x2900, 0, 1);
-        FUN_00404a10(0x6e, "Data/Sound/iBloodCastle.wav", 1, 0);
+        LoadWaveFile(0x6e, "Data/Sound/iBloodCastle.wav", 1, 0);
         break;
     }
 
@@ -700,7 +700,7 @@ void __cdecl OpenWorldModels(void) {
             int slotIdx = lorenciaSlots[i].slot;
             char* slotPtr = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * slotIdx);
             if (*(short*)(slotPtr + 0x22) > 0) continue;  // already loaded (e.g. SMD worked)
-            FUN_005060b0(slotIdx, "Data/Object1/", lorenciaSlots[i].bmd, -1);
+            AccessModel(slotIdx, "Data/Object1/", lorenciaSlots[i].bmd, -1);
             // Post-load verification log
             short nMesh   = *(short*)(slotPtr + 0x24);
             short nAction = *(short*)(slotPtr + 0x22);
@@ -752,7 +752,7 @@ void __cdecl OpenWorldModels(void) {
         char local_384[32];
         crt_sprintf(local_384, "Data/Object%d/", objFolder);
         for (int i = 0; i < 0xa0; i++)
-            FUN_005060b0(i, local_384, "Object", i + 1);
+            AccessModel(i, local_384, "Object", i + 1);
         SetMaxTextures(0x2ee);
         crt_sprintf(local_384, "Object%d/", objFolder);
         for (int i = 0; i < 0xa0; i++)

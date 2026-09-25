@@ -38,10 +38,10 @@ void Scene_LoadAccountResources(void)
     OpenModel(0xa3,s_Data2_Logo__005606dc,s_sun_smd_005606b4);
   }
   DbgLogPublic("Scene_LoadAccount: canary-A (before AccessModel Ship+Logos)");
-  FUN_005060b0(0x3c,s_Data_Object1__0055f360,(const char*)&DAT_0055e834,1);
+  AccessModel(0x3c,s_Data_Object1__0055f360,(const char*)&DAT_0055e834,1);
   iVar2 = 0xa0;
   do {
-    FUN_005060b0(iVar2,s_Data_Logo__005606a0,(const char*)&DAT_005606ac,iVar2 + -0x9f);
+    AccessModel(iVar2,s_Data_Logo__005606a0,(const char*)&DAT_005606ac,iVar2 + -0x9f);
     iVar1 = iVar2 + -0x9f;
     iVar2 = iVar2 + 1;
   } while (iVar1 < 4);
@@ -96,10 +96,10 @@ void Scene_LoadCharSelectResources(void)
     OpenModel(0xac,s_Data2_Logo__005606dc,s_fairy_smd_0055c438);
     OpenModel(0xad,s_Data2_Logo__005606dc,(const char*)&DAT_005607c8);
   }
-  FUN_005060b0(0xa4,s_Data_Logo__005606a0,(const char*)&DAT_005606ac,5);
+  AccessModel(0xa4,s_Data_Logo__005606a0,(const char*)&DAT_005606ac,5);
   iVar2 = 0xaa;
   do {
-    FUN_005060b0(iVar2,s_Data_Logo__005606a0,(const char*)&DAT_005607c0,iVar2 + -0xa9);
+    AccessModel(iVar2,s_Data_Logo__005606a0,(const char*)&DAT_005607c0,iVar2 + -0xa9);
     iVar1 = iVar2 + -0xa9;
     iVar2 = iVar2 + 1;
   } while (iVar1 < 4);
@@ -123,7 +123,7 @@ void Scene_LoadCharSelectResources(void)
 
 // ReleaseLogoSceneData — Scene_UnloadAccountResources
 // Frees texture slots 0xc–0x14 and 0x56a–0x5a9 used by the account scene,
-// then calls FUN_004ffd50 (clear model cache) and FUN_0045abb0(-1) (reset entities).
+// then calls DeleteObjects (clear model cache) and ClearCharacters(-1) (reset entities).
 // IDA: FUN_0050FF10
 void Scene_UnloadAccountResources(void)
 {
@@ -139,8 +139,8 @@ void Scene_UnloadAccountResources(void)
     UnloadImage(iVar1);
     iVar1 = iVar1 + 1;
   } while (iVar1 < 0x5aa);
-  FUN_004ffd50();
-  FUN_0045abb0(-1);
+  DeleteObjects();
+  ClearCharacters(-1);
   return;
 }
 
@@ -148,7 +148,7 @@ void Scene_UnloadAccountResources(void)
 // IDA: ReleaseCharacterSceneData (0x005102C0)
 // Frees texture slots 0xc–0x1d and 0x56a–0x5a9 used by the char-select scene,
 // clears model data for slots 0x7cd8–0x7fc8 (stride 0xbc),
-// then calls FUN_004ffd50 and FUN_0045abb0(-1).
+// then calls DeleteObjects and ClearCharacters(-1).
 // IDA: ReleaseCharacterSceneData (0x005102C0)
 void ReleaseCharacterSceneData(void)
 {
@@ -164,12 +164,12 @@ void ReleaseCharacterSceneData(void)
     UnloadImage(iVar1);
     iVar1 = iVar1 + 1;
   } while (iVar1 < 0x5aa);
-  FUN_004ffd50();
+  DeleteObjects();
   iVar1 = 0x7cd8;
   do {
     BMD__Release(DAT_05828d58 + iVar1);
     iVar1 = iVar1 + 0xbc;
   } while (iVar1 < 0x7fc8);
-  FUN_0045abb0(-1);
+  ClearCharacters(-1);
   return;
 }

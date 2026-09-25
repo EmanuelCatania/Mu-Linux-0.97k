@@ -26,11 +26,11 @@ void __cdecl OpenWorld(void) {
     CHAR  world_name[32];
     CHAR  local_40[64];
 
-    FUN_004ffd50();             // DeleteObjects
-    FUN_00509190();             // DeleteNpcs
-    FUN_00509880();             // DeleteMonsters
-    FUN_00502b80();             // ClearItems
-    FUN_0045abb0(HeroKey); // ClearCharacters(HeroKey)
+    DeleteObjects();             // DeleteObjects
+    DeleteNpcs();             // DeleteNpcs
+    DeleteMonsters();             // DeleteMonsters
+    ClearItems();             // ClearItems
+    ClearCharacters(HeroKey); // ClearCharacters(HeroKey)
 
     // BUG-FIX 2026-04-28: limpiar TODOS los pools de char-select que
     // sobreviven al world load. Sin esto los tick-functions iteran slots

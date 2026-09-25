@@ -25543,9 +25543,9 @@ void __cdecl FUN_004ffcc0(DWORD *lpMem, int a2)
 }
 #endif
 
-// ── FUN_00502b80 (IDA-only, gated) ──
+// ── ClearItems (IDA-only, gated) ──
 #if defined(IDA_PORT_00502B80)
-void __cdecl FUN_00502b80()
+void __cdecl ClearItems()
 {
   BYTE *v0; // eax
 
@@ -25666,9 +25666,9 @@ LABEL_17:
 }
 #endif
 
-// ── FUN_00509190 (IDA-only, gated) ──
+// ── DeleteNpcs (IDA-only, gated) ──
 #if defined(IDA_PORT_00509190)
-void __cdecl FUN_00509190()
+void __cdecl DeleteNpcs()
 {
   int i; // esi
   int j; // esi
@@ -25684,9 +25684,9 @@ void __cdecl FUN_00509190()
 }
 #endif
 
-// ── FUN_00509880 (IDA-only, gated) ──
+// ── DeleteMonsters (IDA-only, gated) ──
 #if defined(IDA_PORT_00509880)
-void __cdecl FUN_00509880()
+void __cdecl DeleteMonsters()
 {
   int i; // esi
   int j; // esi

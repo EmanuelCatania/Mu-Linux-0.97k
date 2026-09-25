@@ -1123,7 +1123,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (evt & 0x01) { // FD_READ
             CWsctlc_nRecv((void*)(uintptr_t)SocketClient);
             CsmWatchdog("after-Recv");        // catches any future trample regression
-            // 2026-09-02: durante OpenWorld el pump de FUN_005060b0 reentra aca.
+            // 2026-09-02: durante OpenWorld el pump de AccessModel reentra aca.
             // Se drena el socket (arriba) para que el server no cierre por
             // backpressure, pero NO se despachan los paquetes: quedan en la cola
             // y los procesa el frame siguiente, ya con los modelos cargados.

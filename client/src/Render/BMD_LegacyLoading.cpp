@@ -66,7 +66,7 @@ void __cdecl SetMaxTextures(int param_1) {
 // NOTA 2026-05-01: los archivos Data2/Item/<class>/<file>.smd NO existen en el
 // filesystem distribuido (solo Data/Item/<file>.bmd está). Las llamadas a
 // fopen dentro de OpenSMDModel/OpenSMDAnimation retornarán NULL → early return →
-// no-op silencioso. El path BMD (FUN_005060b0) cubre la carga real de items.
+// no-op silencioso. El path BMD (AccessModel) cubre la carga real de items.
 // (OpenSMDModel, OpenSMDAnimation — declared via functions.h.
 //  DAT_083a4100 — declared in globals.h.)
 
@@ -143,7 +143,7 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
     };
     for (size_t i = 0; i < sizeof(remaps)/sizeof(remaps[0]); ++i) {
         if (_stricmp(baseName, remaps[i].smd) == 0) {
-            FUN_005060b0(Type, bmdDir, remaps[i].bmd, -1);
+            AccessModel(Type, bmdDir, remaps[i].bmd, -1);
             meshCount = *(short*)(slot + 0x22);
             if (meshCount > 0) return;
             break;
@@ -190,10 +190,10 @@ void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
         cand[2][j] = 0;
     }
 
-    // Try each variant. FUN_005060b0 with idx=-1 appends ".bmd" → "<name>.bmd".
+    // Try each variant. AccessModel with idx=-1 appends ".bmd" → "<name>.bmd".
     // After each attempt check mesh count; bail when slot is populated.
     for (int v = 0; v < 3; ++v) {
-        FUN_005060b0(Type, bmdDir, cand[v], -1);
+        AccessModel(Type, bmdDir, cand[v], -1);
         meshCount = *(short*)(slot + 0x22);
         if (meshCount > 0) return;
     }
@@ -322,14 +322,14 @@ void __cdecl FUN_0047eaf0(void *entry, void *key) { /* hash table free stub */ }
 uint __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp) {
     return (uint)fwrite(buf, size, count, (FILE *)fp);
 }
-// FUN_005060b0 @ 0x005060B0 — Model_LoadBMD_ByIdx(slot, dir, basename, idx): loads BMD file at slot.
+// AccessModel @ 0x005060B0 — Model_LoadBMD_ByIdx(slot, dir, basename, idx): loads BMD file at slot.
 // Construye leafname "basename.bmd" (idx==-1), "basename0N.bmd" (idx<10) o
 // "basenameNN.bmd" (idx>=10), usando param_3 (BASENAME) — NO param_2 (directorio).
 // param_2 (directorio "Data/Logo/") se pasa aparte al loader BMD.
 // BUG PREVIO: el sprintf pasaba param_2 en vez de param_3 → el filename quedaba
 // "Data/Logo/01.bmd" en vez de "Logo01.bmd", los modelos de login/select nunca
 // cargaban y el fondo 3D del server select quedaba vacío.
-void __cdecl FUN_005060b0(int param_1, const char *param_2, const char *param_3, int param_4) {
+void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, int param_4) {
     // BUG-FIX 2026-04-29: pump message queue cada N llamadas para evitar que
     // OpenWorld (que llama esta func ~hundreds de veces) bloquee el message
     // pump por 2+ segundos. El server MuEmu nos kickea por backpressure si
@@ -356,7 +356,7 @@ void __cdecl FUN_005060b0(int param_1, const char *param_2, const char *param_3,
     {
         char diag[200];
         _snprintf_s(diag, sizeof(diag), _TRUNCATE,
-            "FUN_005060b0: slot=0x%x dir='%s' leaf='%s' idx=%d bones=%d hqMode=%d",
+            "AccessModel: slot=0x%x dir='%s' leaf='%s' idx=%d bones=%d hqMode=%d",
             param_1, param_2 ? param_2 : "(null)", local_40, param_4,
             numBonesInSlot, (int)(DAT_0055a7c4 == '\0'));
         DbgLogPublic(diag);

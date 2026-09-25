@@ -2,7 +2,7 @@
 // Loads all weapon, shield, item, wing, helper and miscellaneous item models
 // into slots 0x190-0x3bd.  Uses OpenModels (numbered prefix loader) and
 // OpenModel (named SMD loader) for Korean-locale files, then
-// FUN_005060b0 (BMD index loader) for compressed-asset paths.
+// AccessModel (BMD index loader) for compressed-asset paths.
 // Note: "Players" here is a misnomer — this function loads item/weapon geometry.
 #include "stdafx.h"
 #include "globals.h"
@@ -139,130 +139,130 @@ void __cdecl Model_LoadItemMeshes(void)
     //
     // Swords (0x190-0x1a0) — 17 iter (400-416)
     for (int i = 400; i-400 < 17; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Sword", i - 399);
+        AccessModel(i, "Data\\Item\\", "Sword", i - 399);
 
     if (DAT_0055a7c4 == '\0') {
         OpenModel((int)0x1a1, "Data2\\Item\\Sword\\", "DarkBreaker.smd");
         OpenModel((int)0x1a2, "Data2\\Item\\Sword\\", "ThunderBlade.smd");
     }
-    FUN_005060b0(0x1a1, "Data\\Item\\", "Sword", 0x12);
-    FUN_005060b0(0x1a2, "Data\\Item\\", "Sword", 0x13);
+    AccessModel(0x1a1, "Data\\Item\\", "Sword", 0x12);
+    AccessModel(0x1a2, "Data\\Item\\", "Sword", 0x13);
 
     if (DAT_0055a7c4 == '\0')
         OpenModel((int)0x1a3, "Data2\\Item\\Sword\\", "UniqueSword.smd");
-    FUN_005060b0(0x1a3, "Data\\Item\\", "Sword", 0x14);
+    AccessModel(0x1a3, "Data\\Item\\", "Sword", 0x14);
     DAT_0055a7c4 = '\x01';
 
-    FUN_005060b0(0x1af, "Data\\Item\\", "Sword", 0x20);
+    AccessModel(0x1af, "Data\\Item\\", "Sword", 0x20);
 
     // Axes BMD (0x1b0-0x1b8) — 9 iter (432-440)
     for (int i = 0x1b0; i-0x1b0 < 9; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Axe", i - 0x1af);
+        AccessModel(i, "Data\\Item\\", "Axe", i - 0x1af);
 
     // Maces BMD (0x1d0-0x1d6) — 7 iter (464-470)
     for (int i = 0x1d0; i-0x1d0 < 7; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Mace", i - 0x1cf);
-    FUN_005060b0(0x1d7, "Data\\Item\\", "Mace", 8);
+        AccessModel(i, "Data\\Item\\", "Mace", i - 0x1cf);
+    AccessModel(0x1d7, "Data\\Item\\", "Mace", 8);
 
     // Spears BMD (0x1f0-0x1f9) — 10 iter (496-505)  ← DK weapon=505 vivía aquí
     for (int i = 0x1f0; i-0x1f0 < 10; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Spear", i - 0x1ef);
-    FUN_005060b0(0x1fa, "Data\\Item\\", "Spear", 0xb);
+        AccessModel(i, "Data\\Item\\", "Spear", i - 0x1ef);
+    AccessModel(0x1fa, "Data\\Item\\", "Spear", 0xb);
 
     // Shields BMD (0x250-0x260) — 15 iter (592-606)
     for (int i = 0x250; i-0x250 < 15; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Shield", i - 0x24f);
-    FUN_005060b0(0x25f, "Data\\Item\\", "Shield", 0x10);
-    FUN_005060b0(0x260, "Data\\Item\\", "Shield", 0x11);
+        AccessModel(i, "Data\\Item\\", "Shield", i - 0x24f);
+    AccessModel(0x25f, "Data\\Item\\", "Shield", 0x10);
+    AccessModel(0x260, "Data\\Item\\", "Shield", 0x11);
 
     // Staffs BMD (0x230-0x238) — 9 iter (560-568)  ← SM weapon=568 vivía aquí
     for (int i = 0x230; i-0x230 < 9; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Staff", i - 0x22f);
+        AccessModel(i, "Data\\Item\\", "Staff", i - 0x22f);
 
     if (DAT_0055a7c4 == '\0')
         OpenModel((int)0x239, "Data2\\Item\\Staff\\", "SpiritStaff.smd");
-    FUN_005060b0(0x239, "Data\\Item\\", "Staff", 10);
+    AccessModel(0x239, "Data\\Item\\", "Staff", 10);
 
     if (DAT_0055a7c4 == '\0')
         OpenModel((int)0x23a, "Data2\\Item\\Staff\\", "UniqueStaff.smd");
-    FUN_005060b0(0x23a, "Data\\Item\\", "Staff", 0xb);
+    AccessModel(0x23a, "Data\\Item\\", "Staff", 0xb);
     DAT_0055a7c4 = '\x01';
 
     // Bows BMD (0x210-0x216) — 7 iter (528-534)
     for (int i = 0x210; i-0x210 < 7; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Bow", i - 0x20f);
+        AccessModel(i, "Data\\Item\\", "Bow", i - 0x20f);
 
     // Crossbows BMD (0x218-0x21e) — 7 iter (536-542)
     for (int i = 0x218; i-0x218 < 7; i++)
-        FUN_005060b0(i, "Data\\Item\\", "CrossBow", i - 0x217);
+        AccessModel(i, "Data\\Item\\", "CrossBow", i - 0x217);
 
-    FUN_005060b0(0x217, "Data\\Item\\", "Arrows",   1);
-    FUN_005060b0(0x21f, "Data\\Item\\", "Arrows",   2);
-    FUN_005060b0(0x220, "Data\\Item\\", "CrossBow", 0x11);
+    AccessModel(0x217, "Data\\Item\\", "Arrows",   1);
+    AccessModel(0x21f, "Data\\Item\\", "Arrows",   2);
+    AccessModel(0x220, "Data\\Item\\", "CrossBow", 0x11);
 
     if (DAT_0055a7c4 == '\0')
         OpenModel((int)0x221, "Data2\\Item\\Bow\\", "\xBD\xBA\xC5\xC0.smd");
-    FUN_005060b0(0x221, "Data\\Item\\", "Bow", 0x12);
+    AccessModel(0x221, "Data\\Item\\", "Bow", 0x12);
 
     if (DAT_0055a7c4 == '\0')
         OpenModel((int)0x222, "Data2\\Item\\Bow\\", "UniqueBow.smd");
-    FUN_005060b0(0x222, "Data\\Item\\", "Bow", 0x13);
+    AccessModel(0x222, "Data\\Item\\", "Bow", 0x13);
     DAT_0055a7c4 = '\x01';
 
     // Helpers BMD (familiars 0x330-0x332) — 3 iter (816-818)
     for (int i = 0x330; i-0x330 < 3; i++)
-        FUN_005060b0(i, "Data\\Player\\", "Helper", i - 0x32f);
+        AccessModel(i, "Data\\Player\\", "Helper", i - 0x32f);
 
     // Rings BMD — 2 iter (824-825)
     for (int i = 0x338; i-0x338 < 2; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Ring", i - 0x337);
-    FUN_005060b0(0x33a, "Data\\Item\\", "Ring", 1);
+        AccessModel(i, "Data\\Item\\", "Ring", i - 0x337);
+    AccessModel(0x33a, "Data\\Item\\", "Ring", 1);
 
     // Necklaces BMD — 2 iter (828-829)
     for (int i = 0x33c; i-0x33c < 2; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Necklace", i - 0x33b);
+        AccessModel(i, "Data\\Item\\", "Necklace", i - 0x33b);
 
     if (DAT_0055a7c4 == '\0')
         OpenModel((int)0x333, "Data2\\Item\\Helper\\", "\xBD\xBA\xC5\xC0.smd");
-    FUN_005060b0(0x333, "Data\\Player\\", "Helper", 4);
+    AccessModel(0x333, "Data\\Player\\", "Helper", 4);
 
     // Potions / consumables BMD (0x350-0x356)
     for (int i = 0x350; i-0x34f <= 7; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Potion", i - 0x34f);
+        AccessModel(i, "Data\\Item\\", "Potion", i - 0x34f);
 
-    FUN_005060b0(0x358, "Data\\Item\\", "Antidote", 1);
-    FUN_005060b0(0x359, "Data\\Item\\", "Beer",     1);
-    FUN_005060b0(0x35a, "Data\\Item\\", "Scroll",   1);
-    FUN_005060b0(0x35b, "Data\\Item\\", "MagicBox", 1);
-    FUN_005060b0(0x35c, "Data\\Item\\", "Event",    1);
+    AccessModel(0x358, "Data\\Item\\", "Antidote", 1);
+    AccessModel(0x359, "Data\\Item\\", "Beer",     1);
+    AccessModel(0x35a, "Data\\Item\\", "Scroll",   1);
+    AccessModel(0x35b, "Data\\Item\\", "MagicBox", 1);
+    AccessModel(0x35c, "Data\\Item\\", "Event",    1);
 
     // Jewels (0x35d-0x35e)
     for (int i = 0x35d; i-0x35d < 2; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Jewel", i - 0x35c);
+        AccessModel(i, "Data\\Item\\", "Jewel", i - 0x35c);
 
     AccessModel(MODEL_POTION + 13, (char*)"Data\\Item\\", (char*)"Jewel", 1);
     AccessModel(MODEL_POTION + 14, (char*)"Data\\Item\\", (char*)"Jewel", 2);
     OpenTexture(MODEL_POTION + 13, (void*)"Item\\", 0x2600, true);
     OpenTexture(MODEL_POTION + 14, (void*)"Item\\", 0x2600, true);
 
-    FUN_005060b0(0x35f, "Data\\Item\\", "Gold",  1);
-    FUN_005060b0(0x360, "Data\\Item\\", "Jewel", 3);
+    AccessModel(0x35f, "Data\\Item\\", "Gold",  1);
+    AccessModel(0x360, "Data\\Item\\", "Jewel", 3);
 
     // Devil items (0x361-0x363)
     for (int i = 0; i < 3; i++)
-        FUN_005060b0(i + 0x361, "Data\\Item\\", "Devil", i);
+        AccessModel(i + 0x361, "Data\\Item\\", "Devil", i);
 
-    FUN_005060b0(0x364, "Data\\Item\\", "Drink",   0);
-    FUN_005060b0(0x365, "Data\\Item\\", "ConChip", 0);
-    FUN_005060b0(0x3b7, "Data\\Item\\", "MagicBox", 2);
-    FUN_005060b0(0x3b9, "Data\\Item\\", "MagicBox", 5);
-    FUN_005060b0(0x3ba, "Data\\Item\\", "Beer",     2);
-    FUN_005060b0(0x3bb, "Data\\Item\\", "MagicBox", 6);
-    FUN_005060b0(0x3bc, "Data\\Item\\", "MagicBox", 7);
-    FUN_005060b0(0x3bd, "Data\\Item\\", "MagicBox", 8);
-    FUN_005060b0(0x3b8, "Data\\Item\\", "MagicBox", 4);
-    FUN_005060b0(0x3b3, "Data\\Item\\", "Event",    2);
-    FUN_005060b0(0x3b4, "Data\\Item\\", "Event",    3);
+    AccessModel(0x364, "Data\\Item\\", "Drink",   0);
+    AccessModel(0x365, "Data\\Item\\", "ConChip", 0);
+    AccessModel(0x3b7, "Data\\Item\\", "MagicBox", 2);
+    AccessModel(0x3b9, "Data\\Item\\", "MagicBox", 5);
+    AccessModel(0x3ba, "Data\\Item\\", "Beer",     2);
+    AccessModel(0x3bb, "Data\\Item\\", "MagicBox", 6);
+    AccessModel(0x3bc, "Data\\Item\\", "MagicBox", 7);
+    AccessModel(0x3bd, "Data\\Item\\", "MagicBox", 8);
+    AccessModel(0x3b8, "Data\\Item\\", "MagicBox", 4);
+    AccessModel(0x3b3, "Data\\Item\\", "Event",    2);
+    AccessModel(0x3b4, "Data\\Item\\", "Event",    3);
 
     // Blood Castle event items (Korean SMD)
     if (DAT_0055a7c4 == '\0') {
@@ -274,14 +274,14 @@ void __cdecl Model_LoadItemMeshes(void)
     // BloodCastle items BMD (0x340-0x342 + 0x3be mapped to 0-3)
     for (int i = 0; i < 4; i++) {
         int slot = (i < 3) ? (i + 0x340) : (i + 0x3bb);
-        FUN_005060b0(slot, "Data\\Item\\", "EventBloodCastle", i);
+        AccessModel(slot, "Data\\Item\\", "EventBloodCastle", i);
     }
 
     DAT_0055a7c4 = '\x01';
 
     // Quest items (0x367-0x36a)
     for (int i = 0; i < 4; i++)
-        FUN_005060b0(i + 0x367, "Data\\Item\\", "Quest", i);
+        AccessModel(i + 0x367, "Data\\Item\\", "Quest", i);
 
     // Extra ETC items (Korean SMD)
     if (DAT_0055a7c4 == '\0') {
@@ -289,7 +289,7 @@ void __cdecl Model_LoadItemMeshes(void)
         OpenModel((int)0x33e, "Data2\\Item\\ETC\\", "\xBD\xBA\xC5\xC0.smd");
         OpenModel((int)0x33f, "Data2\\Item\\ETC\\", "\xBD\xBA\xC5\xC0.smd");
     }
-    FUN_005060b0(0x366, "Data\\Item\\", "jewel", 0x16);
+    AccessModel(0x366, "Data\\Item\\", "jewel", 0x16);
     // BUGFIX 2026-09-01: el bound era `i-0x33d < 2` (base 829) -> UNA sola
     // vuelta, asi que el modelo 0x33f (831 = Fruit, Quest05.bmd) nunca se
     // cargaba: la fruta quedaba invisible en el grid del inventario y por eso
@@ -298,13 +298,13 @@ void __cdecl Model_LoadItemMeshes(void)
     //   v30 = 830; do { AccessModel(v30, ..., "Quest", v30 - 826); ++v30; }
     //   while (v30 - 830 < 2);      // -> 830 (Quest04) y 831 (Quest05)
     for (int i = 0x33e; i-0x33e < 2; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Quest", i - 0x33a);
+        AccessModel(i, "Data\\Item\\", "Quest", i - 0x33a);
 
     // Wings BMD (0x310-0x312)
     // BUGFIX 2026-04-26: era `i-0x30f < 3` → 2 iter (perdía Wing03 idx 0x312).
     // IDA 0x005079D0 línea 216: `while (v31 - 784 < 3)` con v31=784 → 3 iter.
     for (int i = 0x310; i-0x310 < 3; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Wing", i - 0x30f);
+        AccessModel(i, "Data\\Item\\", "Wing", i - 0x30f);
 
     // Wings SMD (Korean)
     if (DAT_0055a7c4 == '\0') {
@@ -318,25 +318,25 @@ void __cdecl Model_LoadItemMeshes(void)
     // BUGFIX 2026-04-26: era `i-0x312 < 4` → 3 iter (perdía Wing07 idx 0x316,
     // ala que usa MG/0x316). IDA línea 224: `while (v32 - 787 < 4)` con v32=787 → 4 iter.
     for (int i = 0x313; i-0x313 < 4; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Wing", i - 0x30f);
+        AccessModel(i, "Data\\Item\\", "Wing", i - 0x30f);
 
     DAT_0055a7c4 = 1;
 
     // Gem slots (0x317-0x322, skip 0x31f=9)
     for (int i = 1; i <= 0xd; i++) {
         if (i != 9)
-            FUN_005060b0(i + 0x316, "Data\\Item\\", "Gem", i);
+            AccessModel(i + 0x316, "Data\\Item\\", "Gem", i);
     }
 
     DAT_0055a7c4 = 1;
 
-    FUN_005060b0(799, "Data\\Item\\", "Jewel", 0xf);
+    AccessModel(799, "Data\\Item\\", "Jewel", 0xf);
 
     // Magic books BMD (Book01..Book16 / models 0x370..0x37f).
     // IDA OpenItems loads the inclusive range; stopping before 0x37f leaves
     // Book16 unloaded, which is Soul Barrier (type 495/model 895).
     for (int i = 0x370; i <= 0x37f; i++)
-        FUN_005060b0(i, "Data\\Item\\", "Book", i - 0x36f);
+        AccessModel(i, "Data\\Item\\", "Book", i - 0x36f);
 
     // NoneBlendMesh flags — RE-HABILITADO 2026-07-16 (fix del filo glowing).
     // Marca el mesh del FILO (emisivo) de estas armas como NoneBlendMesh=1 (mesh+0),

@@ -144,13 +144,13 @@ void __cdecl Scene_LoadGameAssets(void) {
     // y los binary patches del companion project (Mu-linux-97K/Source/Client/
     // Main/Sound.cpp:162-166). Ghidra había inventado los nombres
     // iPickUp/iGet/iDrop/iEquip — no existen como archivos .wav en Data/Sound.
-    FUN_00404a10(4,    "Data\\Sound\\iTitle.wav",        1, '\0');
-    FUN_00404a10(0x1b, "Data\\Sound\\iButtonMove.wav",   2, '\0');  // 27
-    FUN_00404a10(0x19, "Data\\Sound\\iButtonClick.wav",  1, '\0');  // 25
-    FUN_00404a10(0x1a, "Data\\Sound\\iButtonError.wav",  1, '\0');  // 26
-    FUN_00404a10(0x1c, "Data\\Sound\\iCreateWindow.wav", 1, '\0');  // 28
-    FUN_00404a10(0x25, "Data\\Sound\\iRepair.wav",       1, '\0');  // 37
-    FUN_00404a10(0x26, "Data\\Sound\\iWhisper.wav",      1, '\0');  // 38
+    LoadWaveFile(4,    "Data\\Sound\\iTitle.wav",        1, '\0');
+    LoadWaveFile(0x1b, "Data\\Sound\\iButtonMove.wav",   2, '\0');  // 27
+    LoadWaveFile(0x19, "Data\\Sound\\iButtonClick.wav",  1, '\0');  // 25
+    LoadWaveFile(0x1a, "Data\\Sound\\iButtonError.wav",  1, '\0');  // 26
+    LoadWaveFile(0x1c, "Data\\Sound\\iCreateWindow.wav", 1, '\0');  // 28
+    LoadWaveFile(0x25, "Data\\Sound\\iRepair.wav",       1, '\0');  // 37
+    LoadWaveFile(0x26, "Data\\Sound\\iWhisper.wav",      1, '\0');  // 38
 }
 // Monster_LoadStartupData (IDA: Monster_Data_Load) — implemented in src/Monster/Monster_Data.cpp
 // GL_CaptureScreenshot — implemented in src/Render/GL_State.cpp
