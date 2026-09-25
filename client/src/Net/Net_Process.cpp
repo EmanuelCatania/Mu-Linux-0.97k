@@ -1265,14 +1265,71 @@ static void Recv_NewCharacterInfo(const BYTE* Msg)
     *(DWORD*)(CA + 0x34) = NextExperience;
 }
 
+// ── Teclas de skill del F3/30 ───────────────────────────────────────────────
+// El paquete trae `tecla -> tipo de skill` y el cliente guarda lo contrario
+// (`slot -> tecla`, 64 bytes por personaje en CharacterAttribute+215), asi que
+// para traducirlo hay que buscar cada skill en la lista del personaje
+// (CharacterAttribute+87), que la puebla el F3/11.
+//
+// 2026-09-25: MuEmu manda el F3/30 ANTES del F3/11 (verificado en debug.log:
+// Option llega ~20 paquetes antes que SkillList), asi que al traducir la lista
+// todavia estaba vacia, ninguna skill matcheaba y el mapa quedaba entero en
+// 0xFF -- las teclas asignadas se perdian en cada login por mas veces que se
+// reasignaran.  Se guardan los 10 bytes y se aplica el mapeo dos veces: al
+// recibir el F3/30 (por si la lista ya estuviera, que es el orden que asume
+// IDA) y de nuevo al final del snapshot del F3/11.
+static void NetLog(const char* fmt, ...);   // definida mas abajo
+
+static BYTE s_PendingSkillKey[10];
+static bool s_HasPendingSkillKey = false;
+
+static void ApplySkillKeyMap(void)
+{
+    if (!s_HasPendingSkillKey || !CharacterAttribute) return;
+    const int hero = (int)DAT_005616ac;                  // SelectedHero
+    if (hero < 0 || hero > 4) return;
+
+    BYTE* attr   = (BYTE*)(uintptr_t)CharacterAttribute;
+    BYTE* keyMap = attr + 215 + (hero << 6);
+    memset(keyMap, 0xFF, 0x40);
+    int applied = 0;
+    for (int i = 0; i < 10; ++i) {
+        const BYTE sk = s_PendingSkillKey[i];
+        if (sk == 255) continue;
+        for (int j = 0; j < 64; ++j) {
+            if (sk == attr[j + 87]) { keyMap[j] = (BYTE)i; ++applied; break; }
+        }
+    }
+    NetLog("NET:    skill-keys aplicadas: %d de 10 (hero=%d)", applied, hero);
+}
+
 // ── F3/E1 PMSG_NEW_CHARACTER_CALC_RECV ───────────────────────────────────────
-// Port FIEL del DLL injection (Protocol.cpp:898 GCNewCharacterCalcRecv).
-// Recibe stats calculados (HP/MP actuales tras buffs/items, defense, attack).
-// Layout: header(4) + ~17 DWORDs (ViewCurHP..MagicDamageRate).
-static void Recv_NewCharacterCalc(const BYTE* Msg)
+// Del DLL de inyeccion (Protocol.cpp GCNewCharacterCalcRecv).  Trae los stats
+// ya calculados por el server (MuEmu, con resets y sus propias formulas).
+//
+// Layout real, PMSG_NEW_CHARACTER_CALC_SEND (Protocol.h:566 del server):
+// header(4) + 17 DWORDs.
+//    p+0  CurHP          p+4  MaxHP          p+8  CurMP         p+12 MaxMP
+//    p+16 CurBP          p+20 MaxBP          p+24 PhysiSpeed    p+28 MagicSpeed
+//    p+32 PhysiDmgMin    p+36 PhysiDmgMax    p+40 MagicDmgMin   p+44 MagicDmgMax
+//    p+48 MagicDmgRate   p+52 AttackSuccessRate                 p+56 DamageMultiplier
+//    p+60 Defense        p+64 DefenseSuccessRate
+//
+// 2026-09-21 (issue #54, "defensa rate y dano se cruzan al subir de nivel"):
+// el port asumia que despues de MagicSpeed venian directo MagicDmgMin/Max y
+// leia AttackSuccessRate en p+40, Defense en p+48 y DefenseSuccessRate en p+52.
+// Faltaban los 4 campos del medio, asi que cargaba:
+//    tasa de ataque   <- MagicDmgMin        (en la captura: 3678)
+//    defensa          <- MagicDmgRate       (53)
+//    tasa de defensa  <- AttackSuccessRate  (42652)
+// Los tres numeros de la captura cuadran exactos.  Antes de subir de nivel se
+// veian bien porque venian del recalculo local (FUN_0047e3c0); el server manda
+// el E1 al subir, y ahi se pisaban.
+static void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
 {
     BYTE* CA = (BYTE*)(uintptr_t)DAT_07cf1ff4;
     if (!CA) return;
+    if (Size < 4 + 17 * 4) return;   // paquete corto: no leer fuera
 
     const BYTE* p = Msg + 4;
     DWORD ViewCurHP            = *(const DWORD*)(p + 0);
@@ -1283,10 +1340,11 @@ static void Recv_NewCharacterCalc(const BYTE* Msg)
     DWORD ViewMaxBP            = *(const DWORD*)(p + 20);
     DWORD ViewPhysiSpeed       = *(const DWORD*)(p + 24);
     DWORD ViewMagicSpeed       = *(const DWORD*)(p + 28);
-    // bytes 32-39: MagicDamageMin/Max (skip — set later)
-    DWORD ViewAttackSuccessRate= *(const DWORD*)(p + 40);
-    DWORD ViewDefense          = *(const DWORD*)(p + 48);
-    DWORD ViewDefenseSuccess   = *(const DWORD*)(p + 52);
+    DWORD ViewMagicDamageMin   = *(const DWORD*)(p + 40);
+    DWORD ViewMagicDamageMax   = *(const DWORD*)(p + 44);
+    DWORD ViewAttackSuccessRate= *(const DWORD*)(p + 52);
+    DWORD ViewDefense          = *(const DWORD*)(p + 60);
+    DWORD ViewDefenseSuccess   = *(const DWORD*)(p + 64);
 
     *(WORD*)(CA + 0x1C) = ClampToWord(ViewCurHP);
     *(WORD*)(CA + 0x20) = ClampToWord(ViewMaxHP);
@@ -1299,6 +1357,11 @@ static void Recv_NewCharacterCalc(const BYTE* Msg)
     *(WORD*)(CA + 0x3A) = ClampToWord(ViewAttackSuccessRate);
     *(WORD*)(CA + 0x4E) = ClampToWord(ViewDefense);
     *(WORD*)(CA + 0x4C) = ClampToWord(ViewDefenseSuccess);
+    // 2026-09-24: los dos unicos campos que el DLL escribe y este port no
+    // (GCNewCharacterCalcRecv, Protocol.cpp:925).  El dano FISICO no viaja
+    // por aca -- el DLL tampoco lo escribe, lo sigue calculando el cliente.
+    *(WORD*)(CA + 0x46) = ClampToWord(ViewMagicDamageMin);
+    *(WORD*)(CA + 0x48) = ClampToWord(ViewMagicDamageMax);
 }
 
 // Debug log (defined in WinMain.cpp).
@@ -3292,7 +3355,11 @@ void Net_ProcessPacket(void)
                             BYTE* hero = (BYTE*)(uintptr_t)DAT_07abf5d8;
                             if (hero[913] >= 20) hero[913] = 0;
                         }
-                        if ((DWORD)DAT_005616ac >= 4) DAT_005616ac = 0;
+                        if ((DWORD)DAT_005616ac > 4) DAT_005616ac = 0;   // 5 slots: 0..4 (era >= 4, pisaba el quinto)
+                        // La lista recien ahora esta completa: re-traducir las
+                        // teclas de skill que llegaron en el F3/30 (MuEmu lo
+                        // manda antes que este paquete).
+                        ApplySkillKeyMap();
                         NetLog("NET:    F3/11 stored %d skills: %d %d %d %d %d %d %d %d %d %d",
                                written, CA[87], CA[88], CA[89], CA[90], CA[91],
                                CA[92], CA[93], CA[94], CA[95], CA[96]);
@@ -3308,7 +3375,7 @@ void Net_ProcessPacket(void)
                     case 0xE1: {
                         // F3/E1 PMSG_NEW_CHARACTER_CALC_RECV: HP/MP/Defense/Attack.
                         NetLog("NET:  → F3/E1 NewCharacterCalc");
-                        Recv_NewCharacterCalc(Msg);
+                        Recv_NewCharacterCalc(Msg, Size);
                         break;
                     }
                     case 0xE3: {  // lista de apilado (DLL CItemStack)
@@ -3349,24 +3416,13 @@ void Net_ProcessPacket(void)
                         NetLog("NET:  → F3/30 Option size=%d", Size);
                         if (Size < 19) { NetLog("NET:    F3/30 too short — skip"); break; }
 
-                        // 1) Mapa de skill-keys: 64 bytes por héroe en CharacterAttribute+215.
-                        //    Para cada slot i del hotbar, busca su skill en la lista del
-                        //    personaje (+87, 64 entradas) y marca keyMap[slot_skill] = i.
-                        if (CharacterAttribute) {
-                            int hero = (int)DAT_005616ac;
-                            if (hero >= 0 && hero <= 4) {
-                                BYTE* attr   = (BYTE*)CharacterAttribute;
-                                BYTE* keyMap = attr + 215 + (hero << 6);
-                                memset(keyMap, 0xFF, 0x40);
-                                for (int i = 0; i < 10; ++i) {
-                                    BYTE sk = p[i];
-                                    if (sk == 255) continue;
-                                    for (int j = 0; j < 64; ++j) {
-                                        if (sk == attr[j + 87]) { keyMap[j] = (BYTE)i; break; }
-                                    }
-                                }
-                            }
-                        }
+                        // 1) Teclas de skill: se guardan y se traducen en
+                        //    ApplySkillKeyMap, que tambien corre al final del
+                        //    F3/11 porque MuEmu manda este paquete antes que la
+                        //    lista de skills (ver la nota del helper).
+                        memcpy(s_PendingSkillKey, p, sizeof(s_PendingSkillKey));
+                        s_HasPendingSkillKey = true;
+                        ApplySkillKeyMap();
 
                         // 2) Opciones de juego.
                         DAT_07e11e18 = ((p[10] & 1) == 1);          // m_bAutoAttack

@@ -789,7 +789,7 @@ void    *DAT_07cf1ffc  = nullptr;  // g_CharData pointer (0x584-byte XOR-encoded
 // ── UI / HUD data ─────────────────────────────────────────────────────────────
 DWORD   _DAT_07e118e4  = 0;    // facing angle (float, movement packet)
 DWORD    DAT_07e118e8  = 0;    // world/map type
-DWORD    DAT_07e11d7c  = 0;    // countdown counter B
+DWORD    DAT_07e11d7c  = 0;    // MacroTime (0x07E11D7C)
 DWORD    DAT_07e11d8c  = 0;
 DWORD    DAT_07e11d90  = 0;
 DWORD    DAT_07e11d94  = 0;

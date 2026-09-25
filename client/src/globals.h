@@ -224,11 +224,11 @@ extern int     SelectedItem;       // DAT_00559c48 — item on ground (-1 = none
 extern int     SelectedNpc;        // DAT_00559c4c — NPC/shop entity (-1 = none)
 extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none)
 extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
-extern int     DAT_00559c58;   // hover: secondary target index
+extern int     DAT_00559c58;   // IDA: Attacking (0x00559C58) -- -1 = no esta atacando. NO es un "hover target"
 extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
-extern int     DAT_00559c60;   // equipped weapon type (right hand)
-extern int     DAT_00559c64;   // equipped weapon type (left hand)
-extern int     DAT_00559c68;   // equipped weapon type (crossbow/secondary)
+extern int     DAT_00559c60;   // QKey: tipo de item de la tecla Q (NO arma equipada; F3/30 le suma 448)
+extern int     DAT_00559c64;   // WKey: tipo de item de la tecla W
+extern int     DAT_00559c68;   // EKey: tipo de item de la tecla E
 extern int     DAT_00559c70;   // hover attack target (entity index copy)
 extern DWORD   DAT_00559c78;
 // 0x00559C7C — IDA `SetTextColor_0` (color del prefijo/guild en sub_47F360).
@@ -700,7 +700,7 @@ extern char    DAT_07e11d71;   // char-select flag B
 extern char    DAT_07e11d72;   // char-select flag C
 extern int     DAT_07e11d74;   // gold / currency (checked vs 0x2faf081)
 extern DWORD   DAT_07e11d78;   // InputIndex — indice del campo de input activo (lo rota el Tab)
-extern DWORD   DAT_07e11d7c;   // countdown counter B
+extern DWORD   DAT_07e11d7c;   // MacroTime (0x07E11D7C) -- cooldown de las macros de chat
 extern DWORD   DAT_07e11d1c;   // per-frame cooldown tick counter
 extern DWORD   DAT_07e11d28;   // movement debounce step counter
 extern DWORD   DAT_07e11d30;   // frame counter (anti-tamper)

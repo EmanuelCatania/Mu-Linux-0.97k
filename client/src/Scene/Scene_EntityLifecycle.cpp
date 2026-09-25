@@ -5,23 +5,30 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_0050f700 @ 0x0050F700 — Map_Load(filename)
-// Opens map file and reads blocks into the buffer at DAT_07e0ffc8 via the
-// format descriptor at DAT_00560694 (10 iterations of 0x100 bytes each).
+// SaveMacro @ 0x0050F700 -- guarda Data\Macro.txt (10 lineas de hasta 256).
 //
-// 2026-05-03: AUTO-SKIP removed. DAT_07e0ffc8 is properly sized
-// `char[10 * 0x100]` (2560 bytes) in globals.cpp; only the bound was a
-// literal source-binary address. Iteration count is exactly 10.
+// 2026-09-24: estaba portada como "Map_Load" y ademas ROTA: abria con
+// DAT_00559b74 ("rb") y llamaba `FUN_00543274(fp, &DAT_00560694)` diez veces
+// sin pasarle el texto, o sea vaciaba el archivo de macros cada vez que
+// corriera.  IDA (0x50F700) es sencilla:
+//
+//   v1 = fopen(FileName, "wt");
+//   v2 = &unk_7E0FFC8;
+//   do { fprintf(v1, "%s\n", v2); v2 += 256; } while ((int)v2 < (int)&ItemKey);
+//   return fclose(v1);
+//
+// El bound `&ItemKey` (0x07E109C8) es el final del array: (0x7E109C8 -
+// 0x7E0FFC8) / 256 = 10 entradas.  La llaman los tres puntos de salida de
+// UI_InGameMenu, al lado de SaveOptionsToServer97k (sub_50F7A0).
+//
+// Guard propio del port: el original no chequea el fopen y deferencia el NULL.
 void __cdecl FUN_0050f700(const char* map_name)
 {
-    FILE* pFVar1 = (FILE*)fopen(map_name, (const char*)DAT_00559b74);
-    if (!pFVar1) return;
-    char* puVar2 = (char*)&DAT_07e0ffc8[0];
-    for (int i = 0; i < 10; ++i, puVar2 += 0x100) {
-        FUN_00543274((int*)pFVar1, (void*)&DAT_00560694);
-    }
-    fclose(pFVar1);
-    (void)puVar2;
+    FILE* fp = fopen(map_name, "wt");
+    if (!fp) return;
+    for (int i = 0; i < 10; ++i)
+        fprintf(fp, "%s\n", &DAT_07e0ffc8[i * 0x100]);
+    fclose(fp);
 }
 
 // FUN_004ff5a0 @ 0x004ff5a0 — Entity_New (scene entity allocator)
