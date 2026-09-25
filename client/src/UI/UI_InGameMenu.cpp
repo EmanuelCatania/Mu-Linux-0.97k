@@ -106,6 +106,14 @@ static void SaveOptionsToServer97k(void)
     BYTE pkt[4 + sizeof(opt)] = { 0xC1, (BYTE)sizeof(pkt), 0xF3, 0x30 };
     memcpy(pkt + 4, opt, sizeof(opt));
     Net_SendC1Packet(pkt, sizeof(pkt));
+
+    {   // queda en el log: es el unico rastro de que las opciones se guardaron
+        char line[120];
+        wsprintfA(line, "NET:  <- F3/30 Option enviado: keys=%d%d%d%d%d%d%d%d%d%d Q=%d W=%d E=%d",
+                  opt[0], opt[1], opt[2], opt[3], opt[4], opt[5], opt[6], opt[7],
+                  opt[8], opt[9], opt[11], opt[12], opt[13]);
+        DbgLogPublic(line);
+    }
 }
 
 // Build a C1-framed packet, XOR it with the login key, encode it via
