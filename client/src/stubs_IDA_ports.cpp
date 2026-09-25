@@ -28749,9 +28749,9 @@ LABEL_6:
 }
 #endif
 
-// ── FUN_005414ce (IDA-only, gated) ──
+// ── crt_atexit (IDA-only, gated) ──
 #if defined(IDA_PORT_005414CE)
-int __cdecl FUN_005414ce(void (__cdecl *Func)())
+int __cdecl crt_atexit(void (__cdecl *Func)())
 {
   return (_onexit((_onexit_t)Func) != 0) - 1;
 }
@@ -28787,9 +28787,9 @@ int crt_sprintf(char *const Buffer, const char *const Format, ...)
 }
 #endif
 
-// ── FUN_005420dd (IDA-only, gated) ──
+// ── crt_isspace (IDA-only, gated) ──
 #if defined(IDA_PORT_005420DD)
-int __cdecl FUN_005420dd(int C)
+int __cdecl crt_isspace(int C)
 {
   if ( (int)SrcSizeInBytes <= 1 )
   {
@@ -28802,9 +28802,9 @@ int __cdecl FUN_005420dd(int C)
 }
 #endif
 
-// ── FUN_00542133 (IDA-only, gated) ──
+// ── crt_atof (IDA-only, gated) ──
 #if defined(IDA_PORT_00542133)
-double __cdecl FUN_00542133(const char *String)
+double __cdecl crt_atof(const char *String)
 {
   char v4[24]; // [esp+4h] [ebp-18h] BYREF
 
@@ -28819,9 +28819,9 @@ double __cdecl FUN_00542133(const char *String)
 }
 #endif
 
-// ── FUN_0054218a (IDA-only, gated) ──
+// ── crt_fgetc (IDA-only, gated) ──
 #if defined(IDA_PORT_0054218A)
-int __cdecl FUN_0054218a(FILE *Stream)
+int __cdecl crt_fgetc(FILE *Stream)
 {
   int v2; // edi
 
@@ -28839,9 +28839,9 @@ int __cdecl FUN_0054218a(FILE *Stream)
 }
 #endif
 
-// ── FUN_00542eb4 (IDA-only, gated) ──
+// ── crt_ftell (IDA-only, gated) ──
 #if defined(IDA_PORT_00542EB4)
-int __cdecl FUN_00542eb4(FILE *Stream)
+int __cdecl crt_ftell(FILE *Stream)
 {
   int v1; // edi
 
@@ -28886,9 +28886,9 @@ double __cdecl _CIsin(double x)
 }
 #endif
 
-// ── FUN_005436a6 (IDA-only, gated) ──
+// ── crt_fflush (IDA-only, gated) ──
 #if defined(IDA_PORT_005436A6)
-int __cdecl FUN_005436a6(FILE *Stream)
+int __cdecl crt_fflush(FILE *Stream)
 {
   int v2; // edi
 
@@ -28911,9 +28911,9 @@ void __cdecl  exit(int Code)
 }
 #endif
 
-// ── FUN_0054385b (IDA-only, gated) ──
+// ── crt_doexit (IDA-only, gated) ──
 #if defined(IDA_PORT_0054385B)
-int __cdecl FUN_0054385b(UINT uExitCode, int a2, int a3)
+int __cdecl crt_doexit(UINT uExitCode, int a2, int a3)
 {
   HANDLE CurrentProcess; // eax
   void (**v4)(void); // esi
@@ -28986,9 +28986,9 @@ void __cdecl _unlock_file(FILE *Stream)
 }
 #endif
 
-// ── FUN_00543a8c (IDA-only, gated) ──
+// ── crt_sscanf (IDA-only, gated) ──
 #if defined(IDA_PORT_00543A8C)
-int FUN_00543a8c(const char *const Buffer, const char *const Format, ...)
+int crt_sscanf(const char *const Buffer, const char *const Format, ...)
 {
   FILE Stream; // [esp+0h] [ebp-20h] BYREF
   va_list va; // [esp+30h] [ebp+10h] BYREF

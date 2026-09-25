@@ -24,7 +24,7 @@
 // Each skill entry is 0x29 bytes; [0x28] = 1 (alive flag).
 void __cdecl Skill_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
 
     // Streaming text parser — logic mirrors Ghidra decompile of FUN_0047a5b0.
@@ -34,7 +34,7 @@ void __cdecl Skill_LoadTextData(const char *path)
     // Each record written is also registered in the hash table (MAIN_HASH_CLASS).
     // Stub: call parser until EOF.
     while (TextParser_GetToken() != 2) { /* parse handled by TextParser_GetToken side-effects */ }
-    FUN_0054150f(DAT_07d7806c);
+    crt_fclose(DAT_07d7806c);
 }
 
 // IDA: FUN_0047A970
@@ -46,7 +46,7 @@ void __cdecl Skill_LoadTextData(const char *path)
 // Hash table operations (FUN_0047ea70 / FUN_0047eaf0) manage in-memory index.
 void __cdecl Skill_SaveBMD(const char *path)
 {
-    FILE *fp   = (FILE *)FUN_0054173f(path, DAT_005597d4);  // "wb"
+    FILE *fp   = (FILE *)crt_fopen(path, DAT_005597d4);  // "wb"
     char *buf  = (char *)operator_new(0xa00);
     const char *src = (const char *)DAT_07d29d20;
     char *p = buf;
@@ -66,7 +66,7 @@ void __cdecl Skill_SaveBMD(const char *path)
     }
     FUN_005430f0((char *)&cs, 4, 1, (int *)fp);
     operator_delete(buf);
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 }
 
 // IDA: FUN_0047AC50
@@ -78,7 +78,7 @@ void __cdecl Skill_SaveBMD(const char *path)
 void __cdecl Skill_LoadBMD(const char *path)
 {
     CHAR msg[256];
-    FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
         CErrorReport_Write(&DAT_055c9bf0, msg);
@@ -91,7 +91,7 @@ void __cdecl Skill_LoadBMD(const char *path)
     FUN_00541597(buf, 0xa00, 1, (int *)fp);
     DWORD stored_cs;
     FUN_00541597((char *)&stored_cs, 4, 1, (int *)fp);
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 
     DWORD cs = DAT_00b43000;
     for (UINT i = 0; i < 0x9fd; i += 4) {

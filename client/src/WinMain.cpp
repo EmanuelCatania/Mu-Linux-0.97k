@@ -363,7 +363,7 @@ static void GameGuard_TickCheck(void)
 //       CreateFontA(0,0,0,0,700,...) ×2 → DAT_055ca010, DAT_055ca014  (bold)
 //  16.  setlocale(0, DAT_055c9d00)  — WSAStartup(0x0202, &wsaData)
 //  17.  SetTimer(hWnd, 1000, 20000, NULL)  — GameGuard watchdog (20s)
-//  18.  srand(FUN_00542762(NULL))       — time() seed; + obfuscación rand()
+//  18.  srand(crt_time(NULL))       — time() seed; + obfuscación rand()
 //
 //  19.  BUFFER ALLOCATIONS:
 //         GateAttribute = new(900)             → cleared 0xe1*4 bytes

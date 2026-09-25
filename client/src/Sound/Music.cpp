@@ -85,13 +85,13 @@ void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
         }
     }
 
-    FILE* fp = FUN_0054173f(s_MuPlayer_exe_00559154, DAT_005580ac);
+    FILE* fp = crt_fopen(s_MuPlayer_exe_00559154, DAT_005580ac);
     if (fp == NULL) return;
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 
-    fp = FUN_0054173f(Name, DAT_005580ac);
+    fp = crt_fopen(Name, DAT_005580ac);
     if (fp == NULL) return;
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 
     if (FindWindowA(NULL, s_MuPlayer_00559110) == NULL)
     {

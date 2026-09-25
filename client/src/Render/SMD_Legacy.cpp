@@ -55,12 +55,12 @@ void __cdecl ParseTriangles(bool Flip) {
 // 2=EOF, 0x23='#', 0x2c=',', 0x3b=';', 0x7b='{', 0x7d='}'.
 // Handles quoted strings (delimited by '"'), numbers with sign/decimal.
 int __stdcall FUN_0040b350(void) {
-    // Read char from SMDFile via FUN_0054218a
-    // Skip whitespace (FUN_005420dd), skip // comments
+    // Read char from SMDFile via crt_fgetc
+    // Skip whitespace (crt_isspace), skip // comments
     // Switch on char:
     //   '"': read quoted string into DAT_00590b10, return 0
     //   '#',',',';','{','}': return char code
-    //   '-','.',0-9: read number, parse via FUN_00542133 -> DAT_00809798, return 1
+    //   '-','.',0-9: read number, parse via crt_atof -> DAT_00809798, return 1
     //   else: read identifier into DAT_00590b10, return 0
     // EOF: return 2
     return 0;

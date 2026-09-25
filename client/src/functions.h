@@ -706,12 +706,15 @@ void  __cdecl __chkstk_probe(int frame_size); // IDA: __chkstk_probe (0x00541C10
 #include <new>
 inline void* operator_new(size_t n) { return ::operator new(n); }
 #endif
-FILE* __cdecl FUN_0054173f(LPCSTR, const void*);    // fopen-wrapper
+FILE* __cdecl crt_fopen(LPCSTR, const void*);    // fopen-wrapper
 int   __cdecl mbclen(const byte *str);   // IsLeadByte — DBCS lead-byte check
-void  __cdecl FUN_00542457(int, int, int, int);
-void  __cdecl FUN_00542762(int, int, int, int);
+void  __cdecl crt_toupper(int, int, int, int);
+void  __cdecl crt_time(int, int, int, int);
 void  __cdecl setlocale(int, int, int, int);   // IDA: setlocale (0x0054283E)
-void  __cdecl FUN_00543037(int, int, int, int);
+// crt_fseek: su unica declaracion buena esta mas abajo (int*, int, int).  Aca
+// habia una SEGUNDA con firma generica de 4 ints, sin ningun call site: dos
+// declaraciones del mismo simbolo del binario con firmas distintas son dos
+// simbolos C++ distintos, que es como quedo muerto el puente de AccessModel.
 
 // ── GL_PopMatrixAll ───────────────────────────────────────────────────────────
 unsigned int __cdecl GL_PopMatrixAll(void);
@@ -767,7 +770,7 @@ void  __cdecl FUN_0047eaf0(void *entry, void *key);             // Skill_HashTab
 void  __cdecl BuxConvert(void* buffer, int size);               // IDA: BuxConvert_1; 5.2: BuxConvert
 uint  __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp); // fwrite-wrapper (locked)
 void  __cdecl putc(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
-void  __cdecl FUN_0054150f(FILE* fp);                           // fclose-wrapper
+void  __cdecl crt_fclose(FILE* fp);                           // fclose-wrapper
 void  __cdecl AccessModel(int id, const char* dir, const char* file, int idx); // Monster_LoadBase
 // DESVIACION DEL PORT (no existe en IDA): AccessModel + OpenTexture + siembra de
 // velocidades de animacion.  Definida en Render/Render_LegacyLinker.cpp.
@@ -814,7 +817,7 @@ void  __cdecl CWsctlc_Close(int);         // IDA: CWsctlc::Close (0x0043DC90)
 
 // ── Entity_Init helpers ───────────────────────────────────────────────────────
 void  __cdecl SetCharacterScale(int); // IDA: SetCharacterScale (0x0045C050)
-void  __cdecl FUN_00543274(void*, void*);  // fprintf-like helper
+void  __cdecl crt_fprintf(void*, void*);  // fprintf-like helper
 
 // ── Sound helpers ─────────────────────────────────────────────────────────────
 void  __cdecl FUN_00404bb0(void);  // Sound_BufferUnlock helper
@@ -874,8 +877,8 @@ void  __cdecl FUN_004ffcc0(void *node, int cell_ptr);  // Entity_GridUnlink — 
 HRESULT __cdecl Sound_ReleaseBuffer(int buffer); // IDA: FUN_00404AD0; 5.2: ReleaseBuffer
 
 // ── File I/O CRT helpers ──────────────────────────────────────────────────────
-void  __cdecl FUN_00543037(int *fp, int offset, int whence);  // CRT fseek wrapper
-int   __cdecl FUN_00542eb4(char *fp);                         // CRT ftell wrapper
+void  __cdecl crt_fseek(int *fp, int offset, int whence);  // CRT fseek wrapper
+int   __cdecl crt_ftell(char *fp);                         // CRT ftell wrapper
 int   __cdecl FUN_00541597(void *dst, int size, int count, int *fp); // CRT fread wrapper
 int   __cdecl mbclen(const unsigned char *str);         // IsLeadByte — already in stubs.cpp
 
@@ -987,7 +990,7 @@ void  __cdecl CErrorReport__Write(DWORD This, char *lpszFormat, ...); // 0x00405
 
 // ── Forward declarations for small unmapped functions ─────────────────────────
 // CRT internals
-void  __cdecl FUN_005414ce(void *pFunc);                             // CRT atexit registration
+void  __cdecl crt_atexit(void *pFunc);                             // CRT atexit registration
 void  __cdecl FUN_00543c98(void *ptr);                               // CRT free wrapper
 void  __cdecl FUN_0053d430(BYTE *ptr);                               // GameGuard string cleanup
 int   __cdecl FUN_0053ea90(void *ptr);                               // GameGuard query
@@ -1110,7 +1113,7 @@ void  __cdecl crt_exit(int param);                               // CRT init
 void *__cdecl FUN_00543d81(void);                                    // CRT alloc
 void  __cdecl _strncpy(char *dst, char *src, int n);                 // strncpy wrapper
 // FUN_005430f0 already declared above (line ~713) as fwrite-wrapper
-void  __cdecl FUN_005436a6(int *fp);                                 // fflush wrapper
+void  __cdecl crt_fflush(int *fp);                                 // fflush wrapper
 
 // BST / RB-tree operations
 void  __cdecl FUN_00411420(int *param_1);                            // BST recursive delete

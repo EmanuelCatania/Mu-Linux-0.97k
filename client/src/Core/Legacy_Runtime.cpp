@@ -55,13 +55,13 @@ void __cdecl operator_delete(void* ptr) {
 void __cdecl CWsctlc__LogPrintOn(void) {}
 
 // ── CRT wrappers (forwarded to real CRT) ─────────────────────────────────────
-// FUN_00543037 — CRT fseek wrapper
-void __cdecl FUN_00543037(int *fp, int offset, int whence) {
+// crt_fseek — CRT fseek wrapper
+void __cdecl crt_fseek(int *fp, int offset, int whence) {
     fseek((FILE*)fp, offset, whence);
 }
 
-// FUN_00542eb4 — CRT ftell wrapper
-int __cdecl FUN_00542eb4(char *fp) {
+// crt_ftell — CRT ftell wrapper
+int __cdecl crt_ftell(char *fp) {
     return (int)ftell((FILE*)fp);
 }
 

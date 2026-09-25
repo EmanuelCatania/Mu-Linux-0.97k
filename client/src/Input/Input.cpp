@@ -154,7 +154,7 @@ uint Key_IsJustPressed(int vk);
 //     IME_GetAndClearState('\0', 3) — leer estado IME sin limpiar
 //     Filtros por modo:
 //       g_DigitOnly   → solo '0'..'9'
-//       g_UppercaseOnly → solo 'A'..'Z' (FUN_00542457 = toupper)
+//       g_UppercaseOnly → solo 'A'..'Z' (crt_toupper = toupper)
 //     DBCS: g_DBCS_Counter decrementado por byte; si era lead byte: counter = 2
 //     Append a g_TextBuf[g_ActiveSlot]: DAT_07db8710 + slot * 0x100 + len
 //     g_TextLen++ (max 255 / g_TextMaxLen[slot])

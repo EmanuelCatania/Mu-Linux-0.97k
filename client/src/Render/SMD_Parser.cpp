@@ -74,10 +74,10 @@ void __cdecl OpenModels(int Model, const char* FileName, int i) {
 }
 
 // CRT file helpers
-FILE* __cdecl FUN_0054173f(const char* path, const void* mode) {
+FILE* __cdecl crt_fopen(const char* path, const void* mode) {
     return fopen(path, (const char*)mode);
 }
-void __cdecl FUN_0054150f(FILE* f) {
+void __cdecl crt_fclose(FILE* f) {
     if (f) fclose(f);
 }
 void __cdecl putc(int ch, int *fp) {
@@ -158,12 +158,12 @@ void __cdecl SetCharacterScale(int param_1) {
     }
 }
 
-// FUN_00543274 @ 0x00543274 — fprintf wrapper.
+// crt_fprintf @ 0x00543274 — fprintf wrapper.
 // IDA: int fprintf(FILE* Stream, const char* Format, ...). Original wraps
 // _lock_file/_stbuf/_output/_ftbuf/_unlock_file. Equivalent to plain fprintf.
 // Only call site (line ~1835) passes 2 args (file, format string with no
 // variadic args), so the simple 2-arg form is safe.
-void __cdecl FUN_00543274(void* param_1, void* param_2) {
+void __cdecl crt_fprintf(void* param_1, void* param_2) {
     if (!param_1 || !param_2) return;
     fprintf((FILE*)param_1, "%s", (const char*)param_2);
 }

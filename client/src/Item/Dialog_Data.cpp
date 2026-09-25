@@ -13,7 +13,7 @@
 void __cdecl Dialog_LoadBMD(const char *path)
 {
     CHAR msg[256];
-    FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
         CErrorReport_Write(&DAT_055c9bf0, msg);
@@ -36,5 +36,5 @@ void __cdecl Dialog_LoadBMD(const char *path)
         dst = next;
     } while (dst < end);
     operator_delete(buf);
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 }

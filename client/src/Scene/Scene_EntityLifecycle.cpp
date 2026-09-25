@@ -8,7 +8,7 @@
 // SaveMacro @ 0x0050F700 -- guarda Data\Macro.txt (10 lineas de hasta 256).
 //
 // 2026-09-24: estaba portada como "Map_Load" y ademas ROTA: abria con
-// DAT_00559b74 ("rb") y llamaba `FUN_00543274(fp, &DAT_00560694)` diez veces
+// DAT_00559b74 ("rb") y llamaba `crt_fprintf(fp, &DAT_00560694)` diez veces
 // sin pasarle el texto, o sea vaciaba el archivo de macros cada vez que
 // corriera.  IDA (0x50F700) es sencilla:
 //

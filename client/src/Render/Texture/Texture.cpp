@@ -47,7 +47,7 @@
 //         (jpeg_create_decompress, jpeg_read_header, jpeg_start_decompress,
 //          jpeg_read_scanlines, jpeg_finish_decompress / destroy)
 //
-//   OZT = alternate format, processed with FUN_00543037(file_ptr, 0x18, 0)
+//   OZT = alternate format, processed with crt_fseek(file_ptr, 0x18, 0)
 //         (likely a Webzen proprietary compressed texture, possibly zlib or RLE)
 //
 //   Both decode to: width × height × 3 bytes (GL_RGB, GL_UNSIGNED_BYTE)
@@ -217,7 +217,7 @@ void Texture_Unload(int id)
 // Decode pipeline:
 //   g_tex_ext_mode == 0: SaveImage(0x18, g_tex_ext_lq, path, NULL, 0)
 //                        — inner loader, re-opens file internally
-//   g_tex_ext_mode != 0: FUN_00543037(file_ptr, 0x18, 0)
+//   g_tex_ext_mode != 0: crt_fseek(file_ptr, 0x18, 0)
 //                        — alternate format decoder (OZT / proprietary)
 //   Both eventually call libjpeg-style functions to produce RGB scanlines.
 //
@@ -793,9 +793,9 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
     }
 
     // ── Read entire file into buffer ──────────────────────────────────────────
-    FUN_00543037((int*)Stream, 0, 2);            // fseek SEEK_END
-    unsigned int uVar5 = (unsigned int)FUN_00542eb4((char*)Stream); // ftell
-    FUN_00543037((int*)Stream, 0, 0);            // fseek SEEK_SET
+    crt_fseek((int*)Stream, 0, 2);            // fseek SEEK_END
+    unsigned int uVar5 = (unsigned int)crt_ftell((char*)Stream); // ftell
+    crt_fseek((int*)Stream, 0, 0);            // fseek SEEK_SET
     BYTE* PakBuffer = (BYTE*)operator_new(uVar5);
     fread(PakBuffer, 1, uVar5, Stream);
     fclose(Stream);

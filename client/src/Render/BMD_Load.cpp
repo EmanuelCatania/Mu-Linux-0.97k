@@ -72,7 +72,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         }
     }
 
-    FILE *fp = FUN_0054173f(local_4c, DAT_005580ac);
+    FILE *fp = crt_fopen(local_4c, DAT_005580ac);
     if (!fp) {
         char diag[200];
         _snprintf_s(diag, sizeof(diag), _TRUNCATE, "BMD::Open fopen FAIL: %s", local_4c);
@@ -622,7 +622,7 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
     strncpy(local_40 + len1, param_2, sizeof(local_40)-len1-1);
     local_40[63] = '\0';
 
-    FILE *pFVar4 = (FILE *)FUN_0054173f(local_40, &DAT_005597d4);
+    FILE *pFVar4 = (FILE *)crt_fopen(local_40, &DAT_005597d4);
     if (!pFVar4) return 0;
 
     putc(0x42, (int *)pFVar4);  // 'B'
@@ -705,6 +705,6 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
             param_1i++;
         } while (param_1i < (int)*(short *)(thisModel + 0x22));
     }
-    FUN_0054150f(pFVar4);
+    crt_fclose(pFVar4);
     return 1;
 }

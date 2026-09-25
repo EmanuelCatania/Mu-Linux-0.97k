@@ -28,7 +28,7 @@
 // GetToken (TextParser_GetToken) saltea el header "//..." y las comillas.
 void __cdecl NPCName_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
 
     while (1) {
@@ -50,5 +50,5 @@ void __cdecl NPCName_LoadTextData(const char *path)
         while (src[n] != '\0' && n < 31) { dst[n] = src[n]; n++; }
         dst[n] = '\0';
     }
-    FUN_0054150f(DAT_07d7806c);
+    crt_fclose(DAT_07d7806c);
 }

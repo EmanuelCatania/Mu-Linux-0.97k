@@ -58,19 +58,19 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // infinity (causa el triángulo cyan gigante). Aplicar BuxConvert antes de parsear.
 void __cdecl OpenTerrainMapping(const char *path) {
     Terrain_Clear(); // InitTerrainMappingLayer (IDA)
-    FILE *f = FUN_0054173f(path, DAT_005580ac);
+    FILE *f = crt_fopen(path, DAT_005580ac);
     if (!f) {
         char d[256]; wsprintfA(d, "TerrainMap LOAD FAIL: %s", path);
         DbgLogPublic(d);
         return;
     }
-    FUN_00543037((int*)f, 0, 2);
-    unsigned int sz = (unsigned int)FUN_00542eb4((char*)f);
-    FUN_00543037((int*)f, 0, 0);
+    crt_fseek((int*)f, 0, 2);
+    unsigned int sz = (unsigned int)crt_ftell((char*)f);
+    crt_fseek((int*)f, 0, 0);
     char *buf = (char*)operator_new(sz);
-    if (!buf) { FUN_0054150f(f); return; }
+    if (!buf) { crt_fclose(f); return; }
     FUN_00541597(buf, 1, sz, (int*)f);
-    FUN_0054150f(f);
+    crt_fclose(f);
 
     // Decrypt with MapFileDecrypt (16-byte rolling key + running counter).
     // Format post-decrypt: byte 0 = magic, bytes 1+ = 3 layers of 0x10000 bytes.
@@ -178,7 +178,7 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
 // son basura → no se spawnean instancias de objetos del mundo (casas, NPCs
 // estáticos, props) → mapa renderiza solo terreno + hero.
 void __cdecl OpenObjectsEnc(const char *path) {
-    FILE *f = FUN_0054173f(path, DAT_005580ac);
+    FILE *f = crt_fopen(path, DAT_005580ac);
     if (!f) {
         // CRITICAL BUG-FIX 2026-05-08: previously wrote the error string into
         // `(char*)&DAT_083a0218` — the bucket-grid cell[0] start in our build.
@@ -193,12 +193,12 @@ void __cdecl OpenObjectsEnc(const char *path) {
         DbgLogPublic(Text);
         return;
     }
-    FUN_00543037((int*)f, 0, 2);
-    unsigned int sz = (unsigned int)FUN_00542eb4((char*)f);
-    FUN_00543037((int*)f, 0, 0);
+    crt_fseek((int*)f, 0, 2);
+    unsigned int sz = (unsigned int)crt_ftell((char*)f);
+    crt_fseek((int*)f, 0, 0);
     char *buf = (char*)operator_new(sz);
     FUN_00541597(buf, 1, sz, (int*)f);
-    FUN_0054150f(f);
+    crt_fclose(f);
 
     // Decrypt with MapFileDecrypt; format Enc post-decrypt: byte 0 = magic,
     // byte 1 = version flag, short[2..3] = count, entries from byte 4 (stride 30B).

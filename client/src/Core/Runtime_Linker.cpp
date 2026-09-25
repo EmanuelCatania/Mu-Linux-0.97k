@@ -68,9 +68,9 @@ void __cdecl CErrorReport__Write(unsigned long ctx, char *fmt, ...) {
     (void)ctx;
 }
 
-// FUN_005414ce @ 0x005414CE (11 lines) — CRT atexit wrapper
+// crt_atexit @ 0x005414CE (11 lines) — CRT atexit wrapper
 // Registers a function pointer for cleanup at program exit.
-void __cdecl FUN_005414ce(void *addr) {
+void __cdecl crt_atexit(void *addr) {
     // Original calls crt_onexit (_onexit internal registration)
     // In our build, use standard atexit
     if (addr) atexit((void (__cdecl *)(void))addr);
@@ -101,7 +101,7 @@ void __cdecl StopMp3(char *cmd, int param) {
 // crt_exit @ 0x00543839 (4 lines) — CRT _cinit wrapper
 // Forwards to internal CRT initializer with default params.
 void __cdecl crt_exit(int param) {
-    // Original: FUN_0054385b(param, 0, 0) — CRT initialization dispatch
+    // Original: crt_doexit(param, 0, 0) — CRT initialization dispatch
     // In our build, no-op (CRT initializes through normal startup)
     (void)param;
 }
@@ -120,8 +120,8 @@ void __cdecl _strncpy(char *dst, char *src, int n) {
     if (dst && src && n > 0) strncpy(dst, src, n);
 }
 
-// FUN_005436a6 @ 0x005436A6 (17 lines) — CRT fflush
+// crt_fflush @ 0x005436A6 (17 lines) — CRT fflush
 // NULL → flushall; non-NULL → lock, flush, unlock.
-void __cdecl FUN_005436a6(int *fp) {
+void __cdecl crt_fflush(int *fp) {
     fflush((FILE *)fp);
 }

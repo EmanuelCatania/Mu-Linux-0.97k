@@ -2121,7 +2121,7 @@ extern char    DAT_005606e8[32];    // SMD basename (stub)
 extern char    DAT_005606d0[32];    // SMD basename (stub)
 extern char    DAT_005607c8[32];    // SMD basename (stub)
 extern char    DAT_0056085c[32];    // SMD basename (stub)
-extern DWORD   DAT_00560694;    // Map_Load block-read descriptor (format/context for FUN_00543274)
+extern DWORD   DAT_00560694;    // Map_Load block-read descriptor (format/context for crt_fprintf)
 extern char    s_Logo_Webzenlogo_jpg_005606b0[];
 extern char    s_Logo_Title_jpg_005606bc[];
 extern char    s_Interface_GFx_Interface_jpg_005607c4[];

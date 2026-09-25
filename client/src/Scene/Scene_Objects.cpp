@@ -389,7 +389,7 @@ section2:
         // Custom / unknown map — load models from a data file
         if (DAT_0055a7c4 == '\0') {
             crt_sprintf(local_384, "%d" /* DAT_0055e714 format: zone index path */);
-            ParserFileHandle = (FILE*)FUN_0054173f(local_384, DAT_005580ac);
+            ParserFileHandle = (FILE*)crt_fopen(local_384, DAT_005580ac);
             if (ParserFileHandle != NULL) {
                 while (true) {
                     int typeId = ParseNextToken();
@@ -407,7 +407,7 @@ section2:
                     // If local_200 is empty, load model with just local_300
                     OpenModel(puVar10, local_384, local_300);
                 }
-                FUN_0054150f(ParserFileHandle);
+                crt_fclose(ParserFileHandle);
             }
         }
         // Animations for custom map objects 0x00..0x9f

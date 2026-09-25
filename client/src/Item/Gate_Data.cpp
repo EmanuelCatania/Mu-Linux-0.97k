@@ -11,7 +11,7 @@
 // Total 100 entries (900 bytes, loop runs while off < 900).
 void __cdecl Gate_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
 
     do {
@@ -32,7 +32,7 @@ void __cdecl Gate_LoadTextData(const char *path)
     } while (true);
 
 EOF_done:
-    FUN_0054150f(DAT_07d7806c);
+    crt_fclose(DAT_07d7806c);
 }
 
 // IDA: FUN_0047A170
@@ -41,7 +41,7 @@ EOF_done:
 // XOR-encrypts each 9-byte record via FUN_00479910, writes via FUN_005430f0.
 void __cdecl Gate_SaveBMD(const char *path)
 {
-    FILE *fp  = (FILE *)FUN_0054173f(path, DAT_005597d4);  // "wb"
+    FILE *fp  = (FILE *)crt_fopen(path, DAT_005597d4);  // "wb"
     char *buf = (char *)operator_new(9);
     int off   = 0;
     do {
@@ -54,7 +54,7 @@ void __cdecl Gate_SaveBMD(const char *path)
         off += 9;
     } while (off < 900);
     operator_delete(buf);
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 }
 
 // IDA: FUN_0047A4D0
@@ -64,7 +64,7 @@ void __cdecl Gate_SaveBMD(const char *path)
 void __cdecl Gate_LoadBMD(const char *path)
 {
     CHAR msg[256];
-    FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
         CErrorReport_Write(&DAT_055c9bf0, msg);
@@ -84,5 +84,5 @@ void __cdecl Gate_LoadBMD(const char *path)
         *(char *)(dst + 2) = buf[8];
     } while (off < 900);
     operator_delete(buf);
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 }

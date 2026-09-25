@@ -70,20 +70,20 @@ void __cdecl Monster_SaveSetBase(LPCSTR param_1)
   int iVar2;
   int iVar3;
 
-  pFVar1 = (FILE *)FUN_0054173f(param_1,DAT_00559b74);
-  FUN_00543274((int *)pFVar1,&DAT_00559b70);
+  pFVar1 = (FILE *)crt_fopen(param_1,DAT_00559b74);
+  crt_fprintf((int *)pFVar1,&DAT_00559b70);
   iVar2 = 0;
   iVar3 = DAT_07abf5d0;
   do {
     if ((*(char *)(iVar2 + iVar3) != '\0') && (*(char *)(iVar2 + 0x84 + iVar3) == ' ')) {
       __ftol();
       __ftol();
-      FUN_00543274((int *)pFVar1,(byte *)s__4d__4d_30__4d__4d__1_00559b58);
+      crt_fprintf((int *)pFVar1,(byte *)s__4d__4d_30__4d__4d__1_00559b58);
       iVar3 = DAT_07abf5d0;
     }
     iVar2 = iVar2 + 0x394;
   } while (iVar2 < 0x59740);
-  FUN_00543274((int *)pFVar1,&DAT_00559b50);
-  FUN_0054150f(pFVar1);
+  crt_fprintf((int *)pFVar1,&DAT_00559b50);
+  crt_fclose(pFVar1);
   return;
 }

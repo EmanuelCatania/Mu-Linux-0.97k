@@ -74,7 +74,7 @@ void Monster_LoadScriptTable(void)
 // Monster_ParseSetBase2 — parses "Data2/MonsterSetBase2.txt" to
 // populate the monster spawn table.
 //
-// Opens the file via FUN_0054173f, then reads records with TextParser_GetToken.
+// Opens the file via crt_fopen, then reads records with TextParser_GetToken.
 // For each record:
 //   - field 0 (ftol) = monster type
 //   - fields 1,2,3  = skipped
@@ -104,7 +104,7 @@ void __cdecl Monster_ParseSetBase2(LPCSTR param_1)
   longlong lVar8;
   longlong lVar9;
 
-  DAT_07d7806c = (FILE *)FUN_0054173f(param_1,DAT_005580ac);
+  DAT_07d7806c = (FILE *)crt_fopen(param_1,DAT_005580ac);
   if (DAT_07d7806c != (FILE *)0x0) {
     TextParser_GetToken();
     while( true ) {
@@ -150,7 +150,7 @@ LAB_0047d09b:
         pcVar4[0x84] = ' ';
       }
     }
-    FUN_0054150f(DAT_07d7806c);
+    crt_fclose(DAT_07d7806c);
   }
   return;
 }

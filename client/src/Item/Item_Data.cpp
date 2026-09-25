@@ -41,14 +41,14 @@
 //   >13   (others/consumables): skips extra reads
 void __cdecl Item_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
 
 LAB_loop:
     {
         int recType = TextParser_GetToken();
         if (recType == 2) {
-            FUN_0054150f(DAT_07d7806c);
+            crt_fclose(DAT_07d7806c);
             return;
         }
         if (recType == 1) {
@@ -76,7 +76,7 @@ LAB_loop:
 // checksum and appends 4 bytes (checksum seed: DAT_01c5e200 = 0x01c5e200).
 void __cdecl Item_SaveBMD(const char *path)
 {
-    FILE *fp = (FILE *)FUN_0054173f(path, DAT_005597d4);  // "wb"
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005597d4);  // "wb"
     char *buf = (char *)operator_new(0x8000);
     int off = 0;
     char *p = buf;
@@ -101,7 +101,7 @@ void __cdecl Item_SaveBMD(const char *path)
     }
     FUN_005430f0((char *)&cs, 4, 1, (int *)fp);
     operator_delete(buf);
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 }
 
 // IDA: FUN_0047B740
@@ -113,7 +113,7 @@ void __cdecl Item_SaveBMD(const char *path)
 void __cdecl Item_LoadBMD(const char *path)
 {
     CHAR msg[256];
-    FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);  // "rb"
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005580ac);  // "rb"
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
         CErrorReport_Write(&DAT_055c9bf0, msg);
@@ -125,7 +125,7 @@ void __cdecl Item_LoadBMD(const char *path)
     FUN_00541597(buf, 0x8000, 1, (int *)fp);
     DWORD stored_cs;
     FUN_00541597((char *)&stored_cs, 4, 1, (int *)fp);
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 
     // validate checksum
     DWORD cs = DAT_01c5e200;
