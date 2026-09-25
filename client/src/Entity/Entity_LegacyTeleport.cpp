@@ -72,8 +72,8 @@ extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType)
         }
     }
 }
-void __cdecl FUN_0046fe00(int Type, DWORD Target, int SubType)
-{ DeleteJoint(Type, Target, SubType); }
+// 2026-09-25: aca habia un puente FUN_0046fe00 sin callers que solo llamaba a
+// DeleteJoint (misma direccion, 0x0046FE00).  Eliminado.
 
 // IDA: FUN_004792C0 (0x004792C0)
 // CreatePoint(float Position[3], int Value,

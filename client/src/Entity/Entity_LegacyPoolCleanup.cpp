@@ -107,5 +107,5 @@ extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
         o += 111;  // stride 0x1BC
     }
 }
-void __cdecl FUN_00460d20(int Type, DWORD Owner, int iSubType)
-{ DeleteEffect(Type, Owner, iSubType); }
+// 2026-09-25: aca habia un puente FUN_00460d20 sin callers que solo llamaba a
+// DeleteEffect (misma direccion, 0x00460D20).  Eliminado.
