@@ -7,7 +7,7 @@
 //
 // ── SIGNATURA ─────────────────────────────────────────────────────────────────
 //
-//   void __cdecl FUN_004f8bb0(
+//   void __cdecl RenderTerrainAlphaBitmap(
 //     int        param_1,  // particle type (0x4a7=spark, 0x4b0=snow, 0x4f0=glow, etc.)
 //     float      param_2,  // world X
 //     float      param_3,  // world Y

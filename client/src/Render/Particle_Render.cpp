@@ -33,13 +33,13 @@
 //     size = piVar2[0] * _DAT_005524f4  (base_size * tile_scale)
 //     RGB = (constant R, G, B based on velocity)
 //     gravity = -(float)piVar2[-0xf]
-//     → FUN_004f8bb0(0x4a7, x, y, size, size, &color_r, z_neg, 1.0)
+//     → RenderTerrainAlphaBitmap(0x4a7, x, y, size, size, &color_r, z_neg, 1.0)
 //
 //   case 0x4b0  (Random walk / snow):
 //     uVar1 = rand() & 0x80000003   (small random int)
 //     size  = (uVar1 + 8) * _DAT_005524f4
 //     RGB   = constant
-//     → FUN_004f8bb0(0x4b0, x, y, 2.0, 2.0, &color_r, z_neg, 1.0)
+//     → RenderTerrainAlphaBitmap(0x4b0, x, y, 2.0, 2.0, &color_r, z_neg, 1.0)
 //
 //   case 0x4f0  (Fade / glow):
 //     Lifetime fade:
@@ -53,7 +53,7 @@
 //       3:    local_c = fVar3,       local_8 = fVar3*0x53C, local_4 = fVar3*0x48B
 //       4:    local_c = fVar3,       local_8 = fVar3*0x50C, local_4 = fVar3*0x24F
 //       (warm orange/red, warm reverse, cool blue-green, fire red-orange)
-//     → FUN_004f8bb0(0x4f0, x, y, scale, scale, &local_c, z_neg, 1.0)
+//     → RenderTerrainAlphaBitmap(0x4f0, x, y, scale, scale, &local_c, z_neg, 1.0)
 //
 //   case 0x4f1  (Circular orbit / portal ring):
 //     GL_SetBlendAdditive()   — get frame time
@@ -64,24 +64,24 @@
 //     else:
 //       FUN_00473ea0(0x4f1, pos, 360, 520, 600, +fVar6, 0, 0.0)  → Orbit+
 //       FUN_00473ea0(0x4f1, pos, 360, 520, 600, -fVar6, 0, 0.0)  → Orbit-
-//     → FUN_004f8bb0(0x4f0, x, y, size, size, &local_c, z_neg, 1.0)
+//     → RenderTerrainAlphaBitmap(0x4f0, x, y, size, size, &local_c, z_neg, 1.0)
 //
 //   default (0x4a8 and all others):
 //     goto switchD_0046be8b_caseD_4a8 → skip directly to:
-//     FUN_004f8bb0(type, x, y, piVar2[-0x17], local_18, &local_c, z_neg, 1.0)
+//     RenderTerrainAlphaBitmap(type, x, y, piVar2[-0x17], local_18, &local_c, z_neg, 1.0)
 //     (passes sub-type as 'w', local_18 as extra param)
 //     Note: 0x4a8 case falls through to default dispatch.
 //
 // ── PARTICLE DRAW CALL ────────────────────────────────────────────────────────
 //
-//   FUN_004f8bb0(type, x, y, w, h, color_ptr, z, alpha)
+//   RenderTerrainAlphaBitmap(type, x, y, w, h, color_ptr, z, alpha)
 //     → Particle_Draw(type, world_x, world_y, size_w, size_h, &rgba, world_z, alpha)
 //     Likely: project world coords to screen, call glVertex/glTexCoord, set glColor.
 //     type selects texture or render mode (0x4a7=spark, 0x4b0=snowflake, 0x4f0=glow blob)
 //
 // ── FUNCTION CROSS-REFERENCE ─────────────────────────────────────────────────
 //
-//   FUN_004f8bb0  → Particle_Draw(type, x, y, w, h, color, z, alpha)
+//   RenderTerrainAlphaBitmap  → Particle_Draw(type, x, y, w, h, color, z, alpha)
 //   GL_SetBlendAdditive  → Frame_GetTime() or Frame_UpdateCounter()
 //   FUN_00473ea0  → Particle_SpawnOrbit(type, pos, r_min, r_mid, r_max, angle, flag, param)
 //   _rand         → MSVC rand()

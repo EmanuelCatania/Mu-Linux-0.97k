@@ -9,7 +9,7 @@
 // RenderTerrainTile(DAT_080ab288, DAT_080ab28c, screenX, screenY, 1.0f, 1, 1):
 //   Returns nonzero if cursor is visible/active.
 // If visible, calls GL_SetBlendAdditive() (hide char anim sprite for cursor area),
-// then FUN_004f8bb0(type=8, x, y, sx, sy, color, 0, alpha) to draw the quad.
+// then RenderTerrainAlphaBitmap(type=8, x, y, sx, sy, color, 0, alpha) to draw the quad.
 //   - States 2/4/5 (login/charselect/ingame): fixed size based on DAT_07e11d5c
 //   - States 1/3 (intro/loading): animated size using DAT_07e11d5c oscillation
 //
@@ -62,7 +62,7 @@ void Mouse_UpdateHoverTargets(void)
             GL_SetBlendAdditive();
             int frame = (SceneFlag == 2) ? 1 : (DAT_07e11d5c + 1);
             float sz = (float)frame;
-            FUN_004f8bb0(8, DAT_083a4130, DAT_083a4134, sz, sz, color, 0, 1.0f);
+            RenderTerrainAlphaBitmap(8, DAT_083a4130, DAT_083a4134, sz, sz, color, 0, 1.0f);
         }
     }
     if (SceneFlag == 1 || SceneFlag == 3) {
@@ -73,7 +73,7 @@ void Mouse_UpdateHoverTargets(void)
             float base = (float)DAT_07e11d5c + (float)DAT_07e11d5c + _DAT_0055256c;
             float szX = ((int)base / 100) * 100 + _DAT_00552598;
             float szY = ((int)base / 100) * 100 + _DAT_00552598;
-            FUN_004f8bb0(8, szX, szY, base, base, color, 0, 1.0f);
+            RenderTerrainAlphaBitmap(8, szX, szY, base, base, color, 0, 1.0f);
         }
     }
     #endif

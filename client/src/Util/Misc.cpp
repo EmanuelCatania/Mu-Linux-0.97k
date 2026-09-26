@@ -193,7 +193,7 @@ void MoveItems(void)
   // 2026-08-21: el walker estaba corrido 72 bytes.  Tomaba `DAT_07e12840` como
   // si fuera `Items + 72` (leía el flag activo en slot+0), pero en nuestro build
   // ese símbolo ES la base del item — es lo que asumen Net_Process (0x20) y
-  // FUN_005038e0 (que escriben/leen active en ip+72).  Resultado: el flag activo
+  // Entity_Render (que escriben/leen active en ip+72).  Resultado: el flag activo
   // salía siempre 0 y la función no hacía NADA: los items no caían al suelo, no
   // giraban al caer y no soltaban destellos.
   //

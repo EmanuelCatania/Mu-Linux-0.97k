@@ -6975,7 +6975,7 @@ void Net_ProcessPacket(void)
             // Port FIEL del IDA ReceiveCreateItemViewport @ 0x0042F240.
             // Per-entry stride 8 bytes (o 9 si Jewel of Chaos = type 0x1CF).
             // Spawnea cada item en DAT_07e12840 pool; el render lo hace
-            // FUN_005038e0 (Entity_Render) que itera el pool por slots activos.
+            // Entity_Render (Entity_Render) que itera el pool por slots activos.
             case 0x20: {
                 int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 int count = Msg[3 + hdrOff];

@@ -69,7 +69,7 @@
 //                         tipo != 0x10a (cofre): actualiza float pos
 //   Entity_RenderAll_3D()    → Entity_RenderAll_3D()      — geometría 3D chars/NPCs
 //   if DAT_07e11d30:    RenderTerrain('\x01')       → GL_DepthTest(true)
-//   if !debug_view:     FUN_005038e0()             → Entity_Render_Sprites() (billboards)
+//   if !debug_view:     Entity_Render()             → Entity_Render_Sprites() (billboards)
 //   RenderFishs()    → Entity_PrepareVisibleList() — proyecta world→screen, cull off-screen
 //                         itera DAT_083a2e92; llama TestFrustrum2D (frustum cull);
 //                         si visible: Entity_PrepareRender(); glColor4f(shadow)
@@ -176,7 +176,7 @@
 //   Particle_RenderAll (IDA: FUN_0046be40) → particle system draw
 //   RenderBoids  → Entity_UpdatePositions()       — timer/pos update pool DAT_0839be18
 //   Entity_RenderAll_3D  → Entity_RenderAll_3D()
-//   FUN_005038e0  → Entity_Render_Sprites()        — billboards 2D-in-3D
+//   Entity_Render  → Entity_Render_Sprites()        — billboards 2D-in-3D
 //   RenderFishs  → Entity_PrepareVisibleList()    — frustum cull + PrepareRender
 //   RenderBugs  → NPC_UpdateVisibleList()        — cull NPCs pool DAT_083a1378
 //   FUN_0046cb70  → SkillEffect_Render()
@@ -511,7 +511,7 @@ void Render_HPBars_OLD(void)
 //   FUN_004fd800  → Terrain_Render
 //   RenderBoids  → Entity_UpdatePositions / RenderObjects
 //   Entity_RenderAll_3D  → Entity_RenderAll_3D / RenderCharactersClient
-//   FUN_005038e0  → RenderItems / Entity_Render_Sprites
+//   Entity_Render  → RenderItems / Entity_Render_Sprites
 //   RenderBugs  → RenderBoids / NPC_UpdateVisibleList
 //   FUN_005022f0  → RenderFishs
 //   FUN_00500e40  → RenderBugs
@@ -625,7 +625,7 @@ void Render_Scene3D(void)
         RenderTerrain('\x01');
     }
     if (!topView) {                              // if (!CameraTopViewEnable) Entity_Render()
-        FUN_005038e0();                          // Entity_Render (sprites)
+        Entity_Render();                          // Entity_Render (sprites)
     }
     // 2026-05-07: RenderFishs + RenderBugs — port FIEL desde IDA
     // Game_RenderTick:124-125. Fauna decorativa (peces, mariposas).

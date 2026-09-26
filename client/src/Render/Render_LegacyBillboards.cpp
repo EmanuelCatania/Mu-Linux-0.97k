@@ -308,11 +308,11 @@ void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
         *(int*)(param_3 + 0x14) = 0;
     }
 }
-// FUN_004f8bb0 @ 0x004F8BB0 — Particle_DrawBillboard: draws a tiled billboard quad in world space.
+// RenderTerrainAlphaBitmap @ 0x004F8BB0 — Particle_DrawBillboard: draws a tiled billboard quad in world space.
 // Loads texture (param_1), sets GL color, computes tile grid from scale/position,
 // transforms each tile corner via Vector_Rotate (bone matrix), calls FUN_004f8740 per tile.
 // Uses __ftol for int grid coords from float positions.
-void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float *col, float angle, float alpha)
+void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, float sy, float *col, float angle, float alpha)
 {
     if (alpha == _DAT_0055256c)
         glColor3fv(col);
@@ -330,7 +330,7 @@ void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float
     int icy = (int)cy;
     float size = (sx > sy) ? sx : sy;
     if (size <= 0.0f)
-        return nullptr;
+        return;
     float half = size * _DAT_00552504;
     float inv  = _DAT_0055256c / size;
     float xScale = (sy != 0.0f) ? (sx / sy) : 1.0f;
@@ -362,5 +362,5 @@ void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float
                          (int)corners, '\0', alpha);
         }
     }
-    return nullptr;
+    return;
 }

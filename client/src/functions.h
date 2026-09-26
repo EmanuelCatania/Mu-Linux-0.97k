@@ -318,7 +318,7 @@ void  __cdecl FUN_00503fe0(int weapon_id, float scale, float half_scale, float *
 void  __cdecl FUN_004552c0(int entity, int shield_id);
 // IDA: FUN_004F0100 — CreateGuildMark, compone la textura 34 desde la tabla compartida de marks.
 extern "C" void __cdecl CreateGuildMark(int mark_index, bool blend);
-void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float *color, float angle, float alpha); // Particle_DrawBillboard
+void  __cdecl RenderTerrainAlphaBitmap(int Texture, float xf, float yf, float SizeX, float SizeY, float *Light, float Rotation, float Alpha); // IDA: RenderTerrainAlphaBitmap (0x004F8BB0)
 
 // ── Skill/weapon widget system (UI overlay beams) ─────────────────────────────
 void* __fastcall Widget_Ctor(void *param_1); // IDA: Widget_Ctor (0x004093A0)
@@ -485,7 +485,7 @@ void  __cdecl Terrain_ClearTileAttributeBits(int, int, int); // IDA: SubTerrainA
 void  __cdecl Terrain_UpdateTileAttributeRect(int, int, int, int, int, int); // IDA: FUN_004f6f30
 void  __cdecl FUN_004f8740(float x, float y, float scale, int flags, int corners_ptr, char blend, float alpha); // Particle_DrawTile
 void  __cdecl FUN_004f8980(int, int, int, float);  // Terrain_SpawnObject(type, x, y, height)
-// FUN_004f8bb0 — Particle_Draw (see declaration above in Entity render section)
+// RenderTerrainAlphaBitmap — Particle_Draw (see declaration above in Entity render section)
 void  __cdecl CreateFrustrum2D(float *cam_pos); // IDA: CreateFrustrum2D (0x004F8EB0)
 unsigned short __cdecl TestFrustrum2D(float x, float y, float z);    // Frustum_IsVisible
 
@@ -528,7 +528,7 @@ void  __cdecl AmbientParticles_Update(void); // IDA: Ambient_ParticleUpdate
 void  __cdecl CreateItem(int, int, int, int);   // IDA: CreateItem (0x005032F0)
 void  __cdecl MoveItems(void); // IDA: MoveItems (0x00503760)
 void  __cdecl FUN_00503830(int entity_class, int model_ptr);        // Sprite_SetupAnimation
-void  __cdecl FUN_005038e0(void);                                   // Entity_Render (sprite loop)
+void  __cdecl Entity_Render(void);                                   // Entity_Render (sprite loop)
 void  __cdecl RenderPartObjectEffect(int, int, float *, float, unsigned int, unsigned char, unsigned int, unsigned int); // IDA: RenderPartObjectEffect (0x00504B50)
 void  __cdecl FUN_00505970(void *, void *, int, char, int);
 // Entity_DrawAt(entity_ptr, class, slot, angle_ptr, rot, state_flags, byte, a,b,c, d, mode)
@@ -1072,7 +1072,10 @@ void  __cdecl FUN_004f9d60(float *param);                            // float in
 // Render helpers
 void  __cdecl EnableAlphaBlend(void);                                // 0x004f8830
 void  __cdecl EnableAlphaTest(bool enable);                          // 0x004f8870
-void  __cdecl RenderTerrainAlphaBitmap(int tex, float x, float y, float sx, float sy, float *light, float alpha, float size); // 0x004fd100
+// RenderTerrainAlphaBitmap se declara mas arriba.  Aca habia una SEGUNDA
+// declaracion que ademas mentia en dos cosas: la direccion (0x004FD100 cae
+// dentro de Entity_SpawnEffects) y el orden de los dos ultimos parametros
+// (son Rotation y Alpha, no alpha y size).
 
 // Codec / JPEG internal helpers (batch 3)
 void  __cdecl crt_exit(int param);                               // CRT init

@@ -176,7 +176,7 @@ void __cdecl RenderBoids(void)
     }
 }
 
-// FUN_005038e0 @ 0x005038E0 — Entity_Render. Port FIEL del IDA.
+// Entity_Render @ 0x005038E0 — Entity_Render. Port FIEL del IDA.
 // Itera Items[] pool (DAT_07e12840, 1000 entries × 516 bytes), per-entry:
 //   1. Frustum-cull con sub_4F9590 (=Frustum_TestSphere) radio 400.
 //   2. Resolve model slot por type (special handling 624..783, 860).
@@ -191,7 +191,7 @@ void __cdecl RenderBoids(void)
 // `% 360` daba ángulos de sólo 0..99° → las monedas salían en una cuña en vez
 // de en círculo, y siempre en el mismo patrón.
 
-void __cdecl FUN_005038e0(void)
+void __cdecl Entity_Render(void)
 {
     int v14 = 1, v15 = 0, v16 = 0;
     BYTE* Items = (BYTE*)DAT_07e12840;

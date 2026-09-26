@@ -860,7 +860,7 @@ char     lpString_07d4c518[128] = "Connecting...";
 DWORD    DAT_07e127f8  = 0;
 // El pool de items en el suelo es de 1000 entradas × 0x204 bytes (≈504 KB).
 // El slot base es DAT_07e12840 + key*0x204; CreateItem escribe active@ip+72,
-// model@ip+74, pos@ip+88 y el render (FUN_005038e0 en stubs_render_helpers.cpp)
+// model@ip+74, pos@ip+88 y el render (Entity_Render en stubs_render_helpers.cpp)
 // los lee en los mismos offsets (active@slot+72). Ambos alineados sobre
 // DAT_07e12840.
 unsigned char DAT_07e12840[1000 * 0x204] = {};
