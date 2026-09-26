@@ -849,7 +849,7 @@ void __cdecl SkillAttribute_SaveBin(const char *param_1)
         for (int i = 0x4b; i != 0; i--, pcVar4 += 4, pBuf += 4)
             *(DWORD *)pBuf = *(DWORD *)pcVar4;
         BuxConvert_0((int)Buffer, 300);
-        FUN_005430f0((char *)Buffer, 300, 1, (int *)pFile);
+        crt_fwrite((char *)Buffer, 300, 1, (int *)pFile);
         pcVar3 += 300;
         // 2026-09-08: el bound era `< 0x7d73104`, direccion absoluta del binario.
         // La base es `&SkillAttribute + 4` = 0x07D29D24 = GlobalText[0], y

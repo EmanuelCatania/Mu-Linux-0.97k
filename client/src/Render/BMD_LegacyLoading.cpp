@@ -318,8 +318,8 @@ int __cdecl TextParser_GetToken(void)
 void __cdecl Skill_HashTable_SerializeEntry(void *dst, void *src) { /* hash table serialize stub */ }
 // Skill_HashTable_FreeEntry @ 0x0047EAF0 — Skill_HashTable_FreeEntry: decode entry and remove.
 void __cdecl Skill_HashTable_FreeEntry(void *entry, void *key) { /* hash table free stub */ }
-// FUN_005430f0 @ 0x005430F0 — fwrite wrapper (with lock).
-uint __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp) {
+// crt_fwrite @ 0x005430F0 — fwrite wrapper (with lock).
+uint __cdecl crt_fwrite(char *buf, uint size, uint count, int *fp) {
     return (uint)fwrite(buf, size, count, (FILE *)fp);
 }
 // AccessModel @ 0x005060B0 — Model_LoadBMD_ByIdx(slot, dir, basename, idx): loads BMD file at slot.

@@ -1062,7 +1062,7 @@ state_fail_common:
                         } while (uVar12 > 0);
                     }
                 }
-                FUN_00406f50((CHAR*)LogInID);
+                Resource_LoadOrFatal((CHAR*)LogInID);
                 Scene_UnloadAccountResources(); // ReleaseLogoSceneData (IDA)
                 return 0;
 

@@ -90,7 +90,7 @@ void  __cdecl Client_GetSystemInfo(int, int, int, int); // IDA: FUN_004065F0; av
 void  __cdecl FUN_00406af0(int, int, int, int);
 int   __cdecl Packet_IsValidSockType(int server_idx, int channel);      // PVP flag query
 bool  __cdecl CheckSpecialText(const BYTE* text); // IDA: FUN_00406B30; 5.2: CheckSpecialText
-void  __cdecl FUN_00406f50(char *);
+void  __cdecl Resource_LoadOrFatal(char *);
 
 // ── Network ───────────────────────────────────────────────────────────────────
 void  __cdecl Widget_NodeInit(int);           // Widget_BaseRelease — releases core widget struct
@@ -739,7 +739,7 @@ void  __cdecl BuxConvert_0(int buf, int len);   // IDA: BuxConvert_0 (0x00479910
 void  __cdecl Skill_HashTable_SerializeEntry(void *dst, void *src);               // Skill_HashTable_SerializeEntry (encode + insert)
 void  __cdecl Skill_HashTable_FreeEntry(void *entry, void *key);             // Skill_HashTable_FreeEntry (decode + remove)
 void  __cdecl BuxConvert_1(void* buffer, int size);               // IDA: BuxConvert_1 (0x00401120)
-uint  __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp); // fwrite-wrapper (locked)
+uint  __cdecl crt_fwrite(char *buf, uint size, uint count, int *fp); // fwrite-wrapper (locked)
 void  __cdecl putc(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
 void  __cdecl crt_fclose(FILE* fp);                           // fclose-wrapper
 void  __cdecl AccessModel(int id, const char* dir, const char* file, int idx); // Monster_LoadBase
@@ -760,7 +760,7 @@ int   __cdecl Angle_Clamp(int a, int b, int c);                     // Angle_Cla
 void  __cdecl Joint_SegmentTick(int joint_ptr, float *mat);  // Joint_SegmentTick
 // MoveHumming(Position, Angle, TargetPosition, Turn) — gira Angle hacia el
 // target y DEVUELVE la distancia (Hex-Rays la tipa `void`: el retorno va en st0).
-float __cdecl FUN_0043e4a0(float *Position, float *Angle, float *TargetPosition, float Turn);
+float __cdecl MoveHumming(float *Position, float *Angle, float *TargetPosition, float Turn);
 
 // ── GL_2D helpers ─────────────────────────────────────────────────────────────
 void  __cdecl GL_DisableDepthTest(void);           // GL_End2D / restore state
@@ -801,7 +801,7 @@ void  __cdecl SecondPassword_Screen4(void);
 void  __cdecl SecondPassword_Screen5(void);
 void  __cdecl CheckGoldenArcherWindow(void); // IDA: CheckGoldenArcherWindow (0x004E7AC0)
 void  __cdecl FUN_004e8b70(void);
-void  __cdecl FUN_004e9050(void);
+void  __cdecl SecondPassword_Screen8(void);
 void  __cdecl SecondPassword_Screen9(void);
 void  __cdecl FUN_004eb7f0(void);
 void  __cdecl FUN_004ec330(void);
@@ -1082,7 +1082,7 @@ void  __cdecl EnableAlphaTest(bool enable);                          // 0x004f88
 void  __cdecl crt_exit(int param);                               // CRT init
 void *__cdecl crt_tmpfile(void);                                    // CRT alloc
 void  __cdecl _strncpy(char *dst, char *src, int n);                 // strncpy wrapper
-// FUN_005430f0 already declared above (line ~713) as fwrite-wrapper
+// crt_fwrite already declared above (line ~713) as fwrite-wrapper
 void  __cdecl crt_fflush(int *fp);                                 // fflush wrapper
 
 // BST / RB-tree operations

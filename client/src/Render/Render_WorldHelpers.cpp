@@ -1186,7 +1186,7 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 
 
 
-// FUN_00406f50 @ 0x00406F50 — Resource_LoadOrFatal(filename).
+// Resource_LoadOrFatal @ 0x00406F50 — Resource_LoadOrFatal(filename).
 // Original: calls Resource_Load (Resource_Load). On failure: shows "IError"
 // MessageBox + Window_FatalError to terminate.
 //
@@ -1200,7 +1200,7 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 // Neutralized: still calls Resource_Load (so any future side effects remain
 // once the manager is wired up) but suppresses the modal + fatal exit. Once
 // resource loading is fully ported this guard can be removed.
-void __cdecl FUN_00406f50(char* param_1) {
+void __cdecl Resource_LoadOrFatal(char* param_1) {
     (void)Resource_Load(param_1);
     // Suppressed:
     // if ((char)uVar1 == '\0') {

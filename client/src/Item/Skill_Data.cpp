@@ -54,7 +54,7 @@ void __cdecl Skill_SaveBMD(const char *path)
         memcpy(p, src, 0x28);
         BuxConvert_0((int)p, 0x28);
     }
-    FUN_005430f0(buf, 0xa00, 1, (int *)fp);
+    crt_fwrite(buf, 0xa00, 1, (int *)fp);
     DWORD cs = DAT_00b43000;
     for (UINT i = 0; i < 0x9fd; i += 4) {
         DWORD v  = *(DWORD *)(buf + i);
@@ -64,7 +64,7 @@ void __cdecl Skill_SaveBMD(const char *path)
         if ((i & 0xf) == 0)
             cs ^= (DWORD)(cs + 0x5a18) >> (((BYTE)(i >> 2) & 7) + 1);
     }
-    FUN_005430f0((char *)&cs, 4, 1, (int *)fp);
+    crt_fwrite((char *)&cs, 4, 1, (int *)fp);
     operator_delete(buf);
     crt_fclose(fp);
 }

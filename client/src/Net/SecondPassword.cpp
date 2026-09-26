@@ -1074,7 +1074,7 @@ void __cdecl FUN_004e8b70(void) {
         DAT_00559bec = 6;
     }
 }
-// FUN_004e9050 @ 0x004E9050 — SecondPassword_Screen8 (81 lines)
+// SecondPassword_Screen8 @ 0x004E9050 — SecondPassword_Screen8 (81 lines)
 // Handler del click en el botón OK del diálogo de segunda contraseña.
 // Guard: DAT_07eaa11a must be non-zero (button active flag).
 // Hit-test: mouse within [DAT_07eaa0c8+0x4b, DAT_07eaa0c8+0x77) x [DAT_07eaa0cc+300, DAT_07eaa0cc+0x14c).
@@ -1089,7 +1089,7 @@ void __cdecl FUN_004e8b70(void) {
 // After switch: PlayBuffer(0x19,0,0).
 // "Back" button: [DAT_07ea5288+0x19,DAT_07ea5288+0x31) x [DAT_07ea5284+0x18b,DAT_07ea5284+0x1a3)
 //   → SecondPassword_CancelReturn(); DAT_07e11d28=0; DAT_00559bec=6; PlayBuffer(0x19,0,0).
-void __cdecl FUN_004e9050(void) {
+void __cdecl SecondPassword_Screen8(void) {
     if (DAT_07eaa11a == '\0') return;
 
     // OK button hit-test
@@ -4477,11 +4477,11 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 
                 for (int link = 0; link < 30; link += 2) {
                     float particleLight[3];
-                    FUN_0043e4a0(bones[linksA[link + 1]], targetPosition, bones[linksA[link]], 360.0f);
+                    MoveHumming(bones[linksA[link + 1]], targetPosition, bones[linksA[link]], 360.0f);
                     particleLight[0] = Luminosity; // IDA sólo escribe este componente (Position[0] = v63).
                     Particle_Spawn(1200, bones[linksA[link]], targetPosition, particleLight, 2,
                                   link < 22 ? 1.0f : 0.5f, 0);
-                    FUN_0043e4a0(bones[linksB[link + 1]], targetPosition, bones[linksB[link]], 360.0f);
+                    MoveHumming(bones[linksB[link + 1]], targetPosition, bones[linksB[link]], 360.0f);
                     particleLight[0] = Luminosity;
                     Particle_Spawn(1200, bones[linksB[link]], targetPosition, particleLight, 2,
                                   link < 22 ? 1.0f : 0.5f, 0);
@@ -4489,17 +4489,17 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 
                 for (int link = 0; link < 8; link += 2) {
                     float particleLight[3];
-                    FUN_0043e4a0(bones[linksC[link + 1]], targetPosition, bones[linksC[link]], 360.0f);
+                    MoveHumming(bones[linksC[link + 1]], targetPosition, bones[linksC[link]], 360.0f);
                     particleLight[0] = Luminosity;
                     Particle_Spawn(1200, bones[linksC[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
-                    FUN_0043e4a0(bones[linksD[link + 1]], targetPosition, bones[linksD[link]], 360.0f);
+                    MoveHumming(bones[linksD[link + 1]], targetPosition, bones[linksD[link]], 360.0f);
                     particleLight[0] = Luminosity;
                     Particle_Spawn(1200, bones[linksD[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
                 }
 
                 if (!((long long)WorldTime % 2)) {
                     float particleLight[3];
-                    FUN_0043e4a0(bones[0], targetPosition, bones[30], 360.0f);
+                    MoveHumming(bones[0], targetPosition, bones[30], 360.0f);
                     particleLight[0] = (float)WorldTime;
                     Particle_Spawn(1200, bones[30], targetPosition, particleLight, 2, 1.3f, 0);
                     Particle_Spawn(1200, bones[1], targetPosition, particleLight, 3, 0.5f, 0);
@@ -4515,12 +4515,12 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
 
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 2640), WorldPosition, source, '\x01');
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 2976), WorldPosition, destination, '\x01');
-                FUN_0043e4a0(source, targetPosition, destination, 360.0f);
+                MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
 
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 3360), WorldPosition, source, '\x01');
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 3696), WorldPosition, destination, '\x01');
-                FUN_0043e4a0(source, targetPosition, destination, 360.0f);
+                MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
                 Combat_SpawnIdleAmbientParticle(entity_ptr);
                 Combat_SpawnDeathDustParticles(entity_ptr);

@@ -742,7 +742,7 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
     #undef local_4
 }
 
-// FUN_0043e4a0 @ 0x0043E4A0 — MoveHumming(Position, Angle, TargetPosition, Turn)
+// MoveHumming @ 0x0043E4A0 — MoveHumming(Position, Angle, TargetPosition, Turn)
 // Gira Angle hacia el target y **devuelve la distancia** al target.
 // NO mueve la posicion (de eso se encarga el tick generico del joint).
 //
@@ -757,7 +757,7 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
 // Sin el retorno, `MoveJoint` case 0x4ea comparaba la Z ABSOLUTA del target
 // (ownerZ + 120, siempre > 35) → las esferas de EXP nunca se absorbian y
 // quedaban orbitando al personaje acumulandose.
-float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float param_4)
+float __cdecl MoveHumming(float *param_1, float *param_2, float *param_3, float param_4)
 {
     // Horizontal angle: from (pos.x, pos.y) to (target.x, target.y)
     float horizAngle = CreateAngle(param_1[0], param_1[1], param_3[0], param_3[1]);

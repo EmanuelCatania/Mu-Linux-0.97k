@@ -2333,7 +2333,7 @@ extern char    DAT_00559bb4[3];    // XOR cipher key for BuxConvert_0 (0xFC,0xCF
 extern char    s__s___File_not_exist__00558094[];  // "%s - File not exist."
 extern char    s__s___File_corrupted__00559bd4[];  // "%s - File corrupted."
 // File open modes
-extern char    DAT_005597d4[];  // "wb" (binary write mode for FUN_005430f0 callers)
+extern char    DAT_005597d4[];  // "wb" (binary write mode for crt_fwrite callers)
 
 // ── SecondPassword Screen2 entity list globals ────────────────────────────────
 extern DWORD   DAT_07e11e80;   // char-select entity name table base (stride 0x24 per slot)
@@ -2351,7 +2351,7 @@ extern DWORD   DAT_07eaa131;   // SecondPassword checkbox/toggle state
 extern DWORD   RepairEnable; // IDA: DAT_07eaa138 (0x07EAA138)
 extern DWORD   DAT_07ea5290;   // SecondPassword alt-panel origin X
 extern DWORD   DAT_07ea528c;   // SecondPassword alt-panel origin Y
-// Entradas de la tabla de strings que usa el switch de FUN_004e9050:
+// Entradas de la tabla de strings que usa el switch de SecondPassword_Screen8:
 // extern char    DAT_07d544d4;   // error string for case 0 (second password wrong)   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa1a0;   // UI message label A (UIChatLogWindow_AddText arg1)
 // extern char    DAT_07d54600;   // error string for auth-fail case   // -> alias a GlobalText, ver el final del archivo

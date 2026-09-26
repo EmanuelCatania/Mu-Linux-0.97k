@@ -612,7 +612,7 @@ void __cdecl BMD__Init(void *pThis, char param_1)
 
 // BMD__Save @ 0x00442A60 — BMD_SaveToFile
 // Writes BMD model structure to binary file param_1+param_2 (concatenated paths).
-// Writes header 'B'/'M'/'D', then mesh/bone/action data via FUN_005430f0 (fwrite).
+// Writes header 'B'/'M'/'D', then mesh/bone/action data via crt_fwrite (fwrite).
 undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
 {
     char local_40[64];
@@ -628,11 +628,11 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
     putc(0x42, (int *)pFVar4);  // 'B'
     putc(0x4d, (int *)pFVar4);  // 'M'
     putc(0x44, (int *)pFVar4);  // 'D'
-    FUN_005430f0((char *)(thisModel + 0x20), 1, 1, (int *)pFVar4);
-    FUN_005430f0((char *)thisModel, 0x20, 1, (int *)pFVar4);
-    FUN_005430f0((char *)(thisModel + 0x24), 2, 1, (int *)pFVar4);
-    FUN_005430f0((char *)(thisModel + 0x22), 2, 1, (int *)pFVar4);
-    FUN_005430f0((char *)(thisModel + 0x26), 2, 1, (int *)pFVar4);
+    crt_fwrite((char *)(thisModel + 0x20), 1, 1, (int *)pFVar4);
+    crt_fwrite((char *)thisModel, 0x20, 1, (int *)pFVar4);
+    crt_fwrite((char *)(thisModel + 0x24), 2, 1, (int *)pFVar4);
+    crt_fwrite((char *)(thisModel + 0x22), 2, 1, (int *)pFVar4);
+    crt_fwrite((char *)(thisModel + 0x26), 2, 1, (int *)pFVar4);
 
     // Write mesh data
     int param_1i = 0;
@@ -640,25 +640,25 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
         int local_50 = 0, local_48 = 0;
         do {
             int iVar8 = *(int *)(thisModel + 0x28) + local_50;
-            FUN_005430f0((char *)(iVar8 + 4), 2, 1, (int *)pFVar4);
-            FUN_005430f0((char *)(iVar8 + 6), 2, 1, (int *)pFVar4);
-            FUN_005430f0((char *)(iVar8 + 8), 2, 1, (int *)pFVar4);
+            crt_fwrite((char *)(iVar8 + 4), 2, 1, (int *)pFVar4);
+            crt_fwrite((char *)(iVar8 + 6), 2, 1, (int *)pFVar4);
+            crt_fwrite((char *)(iVar8 + 8), 2, 1, (int *)pFVar4);
             short *psVar1 = (short *)(iVar8 + 10);
-            FUN_005430f0((char *)psVar1, 2, 1, (int *)pFVar4);
-            FUN_005430f0((char *)(iVar8 + 2), 2, 1, (int *)pFVar4);
-            FUN_005430f0(*(char **)(iVar8 + 0x10), (int)*(short *)(iVar8 + 4) << 4, 1, (int *)pFVar4);
-            FUN_005430f0(*(char **)(iVar8 + 0x14), *(short *)(iVar8 + 6) * 0x14, 1, (int *)pFVar4);
-            FUN_005430f0(*(char **)(iVar8 + 0x18), (int)*(short *)(iVar8 + 8) << 3, 1, (int *)pFVar4);
+            crt_fwrite((char *)psVar1, 2, 1, (int *)pFVar4);
+            crt_fwrite((char *)(iVar8 + 2), 2, 1, (int *)pFVar4);
+            crt_fwrite(*(char **)(iVar8 + 0x10), (int)*(short *)(iVar8 + 4) << 4, 1, (int *)pFVar4);
+            crt_fwrite(*(char **)(iVar8 + 0x14), *(short *)(iVar8 + 6) * 0x14, 1, (int *)pFVar4);
+            crt_fwrite(*(char **)(iVar8 + 0x18), (int)*(short *)(iVar8 + 8) << 3, 1, (int *)pFVar4);
             int local_4c = 0;
             if (0 < *psVar1) {
                 char *param_2p = (char *)0;
                 do {
-                    FUN_005430f0(param_2p + *(int *)(iVar8 + 0x1c), 0x40, 1, (int *)pFVar4);
+                    crt_fwrite(param_2p + *(int *)(iVar8 + 0x1c), 0x40, 1, (int *)pFVar4);
                     param_2p += 0x24;
                     local_4c++;
                 } while (local_4c < *psVar1);
             }
-            FUN_005430f0((char *)(*(int *)(thisModel + 0x34) + local_48), 0x20, 1, (int *)pFVar4);
+            crt_fwrite((char *)(*(int *)(thisModel + 0x34) + local_48), 0x20, 1, (int *)pFVar4);
             local_50 += 0x28;
             param_1i++;
             local_48 += 0x20;
@@ -670,10 +670,10 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
         char *param_2p = (char *)0;
         do {
             int iVar8 = *(int *)(thisModel + 0x30);
-            FUN_005430f0(param_2p + iVar8 + 8, 2, 1, (int *)pFVar4);
-            FUN_005430f0(param_2p + iVar8 + 10, 1, 1, (int *)pFVar4);
+            crt_fwrite(param_2p + iVar8 + 8, 2, 1, (int *)pFVar4);
+            crt_fwrite(param_2p + iVar8 + 10, 1, 1, (int *)pFVar4);
             if (*(param_2p + iVar8 + 10) != '\0')
-                FUN_005430f0(*(char **)(param_2p + iVar8 + 0xc), *(short *)(param_2p + iVar8 + 8) * 0xc, 1, (int *)pFVar4);
+                crt_fwrite(*(char **)(param_2p + iVar8 + 0xc), *(short *)(param_2p + iVar8 + 8) * 0xc, 1, (int *)pFVar4);
             param_1i++;
             param_2p += 0x10;
         } while (param_1i < (int)*(short *)(thisModel + 0x26));
@@ -684,17 +684,17 @@ undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
         int local_50 = 0;
         do {
             char *pcVar11 = (char *)(local_50 + *(int *)(thisModel + 0x2c));
-            FUN_005430f0(pcVar11 + 0x22, 1, 1, (int *)pFVar4);
+            crt_fwrite(pcVar11 + 0x22, 1, 1, (int *)pFVar4);
             if (pcVar11[0x22] == '\0') {
-                FUN_005430f0(pcVar11, 0x20, 1, (int *)pFVar4);
-                FUN_005430f0(pcVar11 + 0x20, 2, 1, (int *)pFVar4);
+                crt_fwrite(pcVar11, 0x20, 1, (int *)pFVar4);
+                crt_fwrite(pcVar11 + 0x20, 2, 1, (int *)pFVar4);
                 int iVar8 = 0, local_48 = 0;
                 if (0 < *(short *)(thisModel + 0x26)) {
                     char *param_2p = (char *)0;
                     do {
                         int iVar3 = *(int *)(pcVar11 + 0x24);
-                        FUN_005430f0(*(char **)(param_2p + iVar3), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
-                        FUN_005430f0(*(char **)(param_2p + iVar3 + 4), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
+                        crt_fwrite(*(char **)(param_2p + iVar3), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
+                        crt_fwrite(*(char **)(param_2p + iVar3 + 4), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
                         param_2p += 0xc;
                         local_48++;
                         iVar8 += 0x10;

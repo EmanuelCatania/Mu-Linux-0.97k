@@ -14222,7 +14222,7 @@ int __cdecl SkillAttribute_SaveBin(FILE *Stream)
   {
     qmemcpy(v1, v2, sizeof(char[300]));
     BuxConvert_0((BYTE *)v1, 300);
-    FUN_005430f0(v1, 0x12Cu, 1u, Streama);
+    crt_fwrite(v1, 0x12Cu, 1u, Streama);
     ++v2;
   }
   while ( (int)v2 < (int)DAT_07d73104 );
@@ -14277,8 +14277,8 @@ int __cdecl Filter_SaveBMD(char *FileName)
     }
   }
   Buffer = v3;
-  FUN_005430f0(FileNamea, 0x4E20u, 1u, Stream);
-  FUN_005430f0(&Buffer, 4u, 1u, Stream);
+  crt_fwrite(FileNamea, 0x4E20u, 1u, Stream);
+  crt_fwrite(&Buffer, 4u, 1u, Stream);
   delete__(FileNamea);
   return fclose(Stream);
 }
@@ -14439,8 +14439,8 @@ int __cdecl FilterName_SaveBMD(char *FileName)
     }
   }
   Buffer = v3;
-  FUN_005430f0(FileNamea, 0x4E20u, 1u, Stream);
-  FUN_005430f0(&Buffer, 4u, 1u, Stream);
+  crt_fwrite(FileNamea, 0x4E20u, 1u, Stream);
+  crt_fwrite(&Buffer, 4u, 1u, Stream);
   delete__(FileNamea);
   return fclose(Stream);
 }

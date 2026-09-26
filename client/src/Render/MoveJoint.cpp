@@ -143,15 +143,15 @@ static void MoveJoint_GenericTail(unsigned char *o)
                 tgt[1] = *(float *)(owner + 20);
                 tgt[2] = *(float *)(owner + 24) + 80.0f;
             }
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, 25.0f);   // LABEL_131
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, 25.0f);   // LABEL_131
             break;
         }
         case 3:
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, 50.0f);
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, 50.0f);
             break;
         case 4: case 5: {
             Position[0] = tgt[0]; Position[1] = tgt[1]; Position[2] = tgt[2] - 300.0f;
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), Position, -10.0f);
+            v295 = MoveHumming(pos, (float *)(o + 40), Position, -10.0f);
             break;
         }
         case 6: {
@@ -164,14 +164,14 @@ static void MoveJoint_GenericTail(unsigned char *o)
             tgt[0] += (float)(rand() % 200) + 2050.0f;
             tgt[1] += (float)(rand() % 200) + 2050.0f;
             tgt[2] -= 10000.0f;
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
             break;
         }
         case 7:
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
             break;
         case 9:
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), Position, (float)(rand() % 80 + 60));
+            v295 = MoveHumming(pos, (float *)(o + 40), Position, (float)(rand() % 80 + 60));
             break;
         case 0xC: {
             // IDA entra directo a LABEL_133: no recalcula la distancia.
@@ -185,7 +185,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
             break;
         }
         default:
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, 25.0f);    // LABEL_131
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, 25.0f);    // LABEL_131
             break;
         }
 
@@ -360,7 +360,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
         // FPU que Hex-Rays no tipa. Antes se aproximaba con `local_e4_f`
         // (distancia recalculada a mano); ahora se usa el valor real.
         const float dist_4e8 =
-            FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), pfVar14, 0.0f);
+            MoveHumming(pfVar15, (float *)(param_1 + 0x28), pfVar14, 0.0f);
         float matrix_4e8[12];
         Matrix_BuildFromEuler((float *)(param_1 + 0x28), matrix_4e8);
         Joint_SegmentTick((int)param_1, matrix_4e8);
@@ -381,11 +381,11 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
         }
 #if 0 // Former approximation, retained only as source history.
         float *pfVar26 = (float *)(param_1 + 0x28);
-        // FUN_0043e4a0 computes angle/distance and returns result via pfOut;
+        // MoveHumming computes angle/distance and returns result via pfOut;
         // Ghidra shows its return used as float — call with a temp output.
         float arc_out = 0.0f;
-        FUN_0043e4a0(pfVar15, pfVar26, pfVar14, 0.0f);  // result in pfVar14[2] area; use arc_out
-        // In the decompile: local_e4 = (undefined4*)(float)fVar24 where fVar24 = FUN_0043e4a0(...)
+        MoveHumming(pfVar15, pfVar26, pfVar14, 0.0f);  // result in pfVar14[2] area; use arc_out
+        // In the decompile: local_e4 = (undefined4*)(float)fVar24 where fVar24 = MoveHumming(...)
         // The function signature is void in functions.h so we approximate the distance check
         // using *(float*)(param_1+0x9c0) vs the 3D distance already computed above.
         local_e4_f = sqrtf(local_dc_f * local_dc_f + local_e4_f * local_e4_f);
@@ -875,7 +875,7 @@ LAB_0047036e:
             *(float *)(param_1 + 0x48) = *(float *)(owner_4e5 + 0x14);
             *(float *)(param_1 + 0x4c) = *(float *)(owner_4e5 + 0x18) + 80.0f;
             const float horizontalDistance_4e5 = sqrtf(local_e4_f * local_e4_f + local_dc_f * local_dc_f);
-            FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44),
+            MoveHumming(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44),
                           subtype_4e5 == 5 ? 2.0f : 10.0f);
             if (*(unsigned char *)(param_1 + 0x9bc) == 0 && *(float *)(param_1 + 0x9c0) * 2.0f >= horizontalDistance_4e5)
                 *(unsigned char *)(param_1 + 0x9bc) = 1;
@@ -953,7 +953,7 @@ LAB_0047036e:
             const int segmentLimit_4e7 = *(int *)(param_1 + 0x54);
             for (int segment_4e7 = 0; segment_4e7 < segmentLimit_4e7; ++segment_4e7) {
                 const float speed_4e7 = (float)(rand() % 80) + 60.0f;
-                FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), target_4e7, speed_4e7);
+                MoveHumming(pfVar15, (float *)(param_1 + 0x28), target_4e7, speed_4e7);
                 *(float *)(param_1 + 0x9c4) = (float)(rand() % 1400 - 700) / *(float *)(param_1 + 0x0c);
                 *(float *)(param_1 + 0x9cc) = (float)(rand() % 1400 - 700) / *(float *)(param_1 + 0x0c);
                 float angle_4e7[3] = {
@@ -1013,13 +1013,13 @@ LAB_0047036e:
                     *(float *)(param_1 + 0x4c) = target_4ea[2];
                 }
                 // 2026-08-16: `Distance` es el RETORNO de MoveHumming, no la Z
-                // del target. Hex-Rays tipaba FUN_0043e4a0 como void (retorno en
+                // del target. Hex-Rays tipaba MoveHumming como void (retorno en
                 // st0) y este port comparaba `target[2]` = ownerZ + 120, que en
                 // cualquier mapa es >> 35 → las esferas de EXP nunca llegaban a
                 // absorberse y orbitaban al pj acumulandose. Confirmado contra el
                 // source de MU 5.2 (ZzzEffectJoint.cpp:3368).
                 const float dist_4ea =
-                    FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), target_4ea,
+                    MoveHumming(pfVar15, (float *)(param_1 + 0x28), target_4ea,
                                  *(float *)(param_1 + 0x9c0));
                 if (dist_4ea > 35.0f) {
                     if (dist_4ea <= 70.0f && fabsf(originalAngleZ_4ea - *(float *)(param_1 + 0x30)) > 20.0f &&
@@ -1110,7 +1110,7 @@ LAB_0047036e:
             target_4eb[0] = *(float *)(owner_4eb + 0x10);
             target_4eb[1] = *(float *)(owner_4eb + 0x14);
             target_4eb[2] = *(float *)(owner_4eb + 0x18) + 120.0f;
-            FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), target_4eb, 10.0f);
+            MoveHumming(pfVar15, (float *)(param_1 + 0x28), target_4eb, 10.0f);
         }
         const float fade_4eb = (float)(12 - lifetime_4eb) * 0.1f;
         if (subtype_4eb == 1) {
@@ -1147,7 +1147,7 @@ LAB_0047036e:
 
         const float horizontalDistance = sqrtf(local_e4_f * local_e4_f + local_dc_f * local_dc_f);
         const float turnStep = 3000.0f / horizontalDistance;
-        FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44), turnStep);
+        MoveHumming(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44), turnStep);
 
         if (*(unsigned char *)(param_1 + 0x9bc) == 0 &&
             *(float *)(param_1 + 0x9c0) * 2.0f >= horizontalDistance) {
@@ -1182,7 +1182,7 @@ LAB_0047036e:
                 *(float *)(param_1 + 0x4c) = targetDistance;
             }
 
-            FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44), 25.0f);
+            MoveHumming(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44), 25.0f);
             *(float *)(param_1 + 0x9c4) = ((float)(rand() % 256 - 128) / *(float *)(param_1 + 0x0c) + *(float *)(param_1 + 0x9c4)) * 0.8f;
             *(float *)(param_1 + 0x9c8) *= 0.8f;
             *(float *)(param_1 + 0x9cc) = ((float)(rand() % 256 - 128) / *(float *)(param_1 + 0x0c) + *(float *)(param_1 + 0x9cc)) * 0.8f;

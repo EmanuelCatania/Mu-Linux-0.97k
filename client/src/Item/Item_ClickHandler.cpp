@@ -1365,7 +1365,7 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
             // IDA 004DF410 case 2 (L402-431): este dialogo es SOLO la
             // confirmacion del Chaos Mix -- lo abre el boton OK de la Chaos
-            // Machine (FUN_004e9050, unico writer de dword_7EAA13C = 2).  El
+            // Machine (SecondPassword_Screen8, unico writer de dword_7EAA13C = 2).  El
             // original pone MixState = 1 y manda C1:03:86 sin mas; para MuEmu
             // se agrega el tipo de receta reconocido localmente.
             // 2026-09-11: se quito una rama que, con una receta no

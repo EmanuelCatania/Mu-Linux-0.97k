@@ -1034,7 +1034,7 @@ LAB_0046ec45:
       pcVar14[0x3f] = '?';
       *(undefined4 *)(pcVar14 + 0x20) = *(undefined4 *)(pcVar14 + 0x14);
       *(undefined4 *)(pcVar14 + 0x24) = *(undefined4 *)(pcVar14 + 0x18);
-      FUN_0043e4a0(pfVar1,pfVar2,(float *)(pcVar14 + 0x44),360.0);
+      MoveHumming(pfVar1,pfVar2,(float *)(pcVar14 + 0x44),360.0);
       break;
     case 8:
       pcVar14[0xc] = '\0';

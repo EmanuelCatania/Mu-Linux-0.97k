@@ -72,7 +72,7 @@ LAB_loop:
 // Writes item data table to a binary .bmd file with checksum.
 // Allocates 0x8000-byte buffer, copies 0x200 item slots (stride 0x40) from
 // DAT_07d78068, XOR-encrypts each 0x40-byte block via BuxConvert_0,
-// writes the buffer (fwrite via FUN_005430f0), then computes a rolling
+// writes the buffer (fwrite via crt_fwrite), then computes a rolling
 // checksum and appends 4 bytes (checksum seed: DAT_01c5e200 = 0x01c5e200).
 void __cdecl Item_SaveBMD(const char *path)
 {
@@ -88,7 +88,7 @@ void __cdecl Item_SaveBMD(const char *path)
         off += 0x40;
         p   += 0x40;
     } while (off < 0x8000);
-    FUN_005430f0(buf, 0x8000, 1, (int *)fp);
+    crt_fwrite(buf, 0x8000, 1, (int *)fp);
     // compute checksum
     DWORD cs = DAT_01c5e200;
     for (UINT i = 0; i < 0x7ffd; i += 4) {
@@ -99,7 +99,7 @@ void __cdecl Item_SaveBMD(const char *path)
         if ((i & 0xf) == 0)
             cs ^= (DWORD)(cs + 0xe2f1) >> (((BYTE)(i >> 2) & 7) + 1);
     }
-    FUN_005430f0((char *)&cs, 4, 1, (int *)fp);
+    crt_fwrite((char *)&cs, 4, 1, (int *)fp);
     operator_delete(buf);
     crt_fclose(fp);
 }

@@ -135,7 +135,7 @@ static void Tamachan_Move(char *o, int life)
         float dy = *(float *)(o + 20) - *(float *)(o + 372);
         *(int *)(o + 96) = 10;
         float dist = (float)sqrt(dy * dy + dx * dx);
-        FUN_0043e4a0((float *)(o + 16), (float *)(o + 28), (float *)(o + 368), 3000.0f / dist);
+        MoveHumming((float *)(o + 16), (float *)(o + 28), (float *)(o + 368), 3000.0f / dist);
         *(float *)(o + 28) = -10.0f;
         *(float *)(o + 32) = 0.0f;
         // En el binario el valor es el st0 de RequestTerrainHeight menos 10

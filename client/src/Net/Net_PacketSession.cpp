@@ -81,7 +81,7 @@ void UpdateWindowsMouse(void)
   if (DAT_07eaa117 != '\0') {
     SecondPassword_Screen4();
     SecondPassword_Screen5();
-    FUN_004e9050();
+    SecondPassword_Screen8();
     SecondPassword_Screen9();
     FUN_004eb7f0();
     FUN_004ec330();
