@@ -102,7 +102,7 @@ void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
 
   ptVar2 = (LPSIZE)(uintptr_t)DAT_00559c8c;
   DAT_00559c78 = 0xffd2e6ff;
-  DAT_00559c80 = 0;
+  SetBackgroundTextColor = 0;
   if (DAT_07e113d8[param_3] == '\x01') {
     iVar3 = -1;
     uVar5 = 0;
@@ -479,7 +479,7 @@ void UI_RenderNotices(void)
   iVar2 = 300;
   lpString = (LPCSTR)&DAT_07db80d8[0];
   for (int slot = 0; slot < 6; ++slot) {
-    DAT_00559c80 = 0x80000000;
+    SetBackgroundTextColor = 0x80000000;
     if (lpString[0x104] == '\0') {
       DAT_00559c78 = ((4 < (int)DAT_07e11da0 % 10) - 1 & 0x81000000) - 0xaf3701;
     }
@@ -490,7 +490,7 @@ void UI_RenderNotices(void)
     iVar1 = lstrlenA(lpString);
     GetTextExtentPointA(DAT_055c9fec,lpString,iVar1,lpsz);
     iVar1 = iVar2;
-    if (DAT_005590ac == 1) {
+    if (g_bUseChatListBox == 1) {
       iVar1 = iVar2 + -0x118;
     }
     UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / DAT_0056156c >> 1),iVar1,(char*)lpString,0,1,0);
@@ -551,27 +551,27 @@ void UI_RenderChatLogOverlay(void)
       switch((&DAT_07df948c)[iVar5 * 0x46]) {
       case 0:
         DAT_00559c78 = 0xff000000;
-        DAT_00559c80 = 0x9632c8ff;
+        SetBackgroundTextColor = 0x9632c8ff;
         break;
       case 1:
         DAT_00559c78 = 0xffff9664;
-        DAT_00559c80 = 0x96000000;
+        SetBackgroundTextColor = 0x96000000;
         break;
       case 2:
         DAT_00559c78 = 0xff001eff;
-        DAT_00559c80 = 0x96000000;
+        SetBackgroundTextColor = 0x96000000;
         break;
       case 3:
         DAT_00559c78 = 0xffc8dce6;
-        DAT_00559c80 = 0x96000000;
+        SetBackgroundTextColor = 0x96000000;
         break;
       case 4:
         DAT_00559c78 = 0xff000000;
-        DAT_00559c80 = 0x96ffc800;
+        SetBackgroundTextColor = 0x96ffc800;
         break;
       case 5:
         DAT_00559c78 = 0xff000000;
-        DAT_00559c80 = 0xc896ff00;
+        SetBackgroundTextColor = 0xc896ff00;
       }
       // BUG-FIX Ghidra: perdió los varargs de sprintf.  Port exacto de IDA:
       //   name  @ DAT_07df9380 + slot*280       (offset 0)
@@ -603,7 +603,7 @@ void UI_RenderChatLogOverlay(void)
       // a char* antes de sumar el stride-en-bytes 0x118 para que el LONG
       // aterrice en el slot correcto.
       *(LONG *)((char *)&DAT_07df9494 + iVar5 * 0x118) = local_108.cx;
-      uVar2 = DAT_00559c80;
+      uVar2 = SetBackgroundTextColor;
       if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / DAT_0056156c))) &&
            (iVar7 <= DAT_083a4278)) && ((DAT_083a4278 < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
          (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')) {
@@ -626,7 +626,7 @@ LAB_00480b89:
         iVar5 = 0;
 LAB_00480b8e:
         if ((iVar5 != 0) && (DAT_07e11da8 % 6 < 3)) {
-          DAT_00559c80 = DAT_00559c78;
+          SetBackgroundTextColor = DAT_00559c78;
           DAT_00559c78 = uVar2;
         }
       }
@@ -652,7 +652,7 @@ LAB_00480b8e:
 // Each entry: timers (3 ints), target entity ptr, screen XYWH (4 ints).
 // Decrements timers; clears timer if entity is dead/inactive.
 // On mouse-over (cursor inside widget XYWH + hover flag set + entity is local
-// player's target): copies entity name into DAT_07db8810, calls FUN_00404bc0
+// player's target): copies entity name into DAT_07db8810, calls PlayBuffer
 // to trigger a UI sound.
 // IDA: FUN_004821A0
 void UI_TickHoverBubbles(void)
@@ -712,7 +712,7 @@ LAB_004822b1:
         } while (bVar2 != 0);
         iVar4 = 0;
 LAB_004822b6:
-        if ((iVar4 != 0) && (DAT_083a42d0 != '\0')) {
+        if ((iVar4 != 0) && (MouseRButtonPush != '\0')) {
           uVar5 = 0xffffffff;
           pbVar3 = (byte *)(piVar7 + -10);
           do {
@@ -745,8 +745,8 @@ LAB_004822b6:
             pcVar9 = pcVar9 + 1;
           } while (cVar1 != '\0');
           DAT_07d780ac = ~uVar5 - 1;
-          DAT_083a42d0 = '\0';
-          FUN_00404bc0(0x19,0,0);
+          MouseRButtonPush = '\0';
+          PlayBuffer(0x19,0,0);
         }
       }
     }
@@ -806,7 +806,7 @@ char Chat_ValidateInputCommand(void)
   if (0 < DAT_07d78074) {
     pcVar5 = DAT_07d27610;
     do {
-      uVar2 = FUN_004977f0(local_100,pcVar5,'\0');
+      uVar2 = FindTextA(local_100,pcVar5,'\0');
       if ((char)uVar2 != '\0') goto LAB_00513792;
       iVar3 = iVar3 + 1;
       pcVar5 = pcVar5 + 0x14;
@@ -845,34 +845,34 @@ char Chat_ValidateInputCommand(void)
     if (0 < DAT_07d78070) {
       pcVar5 = DAT_07d73104;
       do {
-        uVar2 = FUN_004977f0(local_100,pcVar5,'\0');
+        uVar2 = FindTextA(local_100,pcVar5,'\0');
         if ((char)uVar2 != '\0') goto LAB_00513792;
         iVar3 = iVar3 + 1;
         pcVar5 = pcVar5 + 0x14;
       } while (iVar3 < DAT_07d78070);
     }
   }
-  uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_00561740,'\0');
+  uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_00561740,'\0');
   if ((char)uVar2 == '\0') {
-    uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_00561744,'\0');
+    uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_00561744,'\0');
     if ((char)uVar2 == '\0') {
-      uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_00561748,'\0');
+      uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_00561748,'\0');
       if ((char)uVar2 == '\0') {
-        uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_0056174c,'\0');
+        uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_0056174c,'\0');
         if ((char)uVar2 == '\0') {
-          uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_00561750,'\0');
+          uVar2 = FindTextA((char *)DAT_07db8710,(char *)&DAT_00561750,'\0');
           if ((char)uVar2 == '\0') {
-            uVar2 = FUN_004977f0((char *)DAT_07db8710,s_Webzen_00561754,'\0');
+            uVar2 = FindTextA((char *)DAT_07db8710,s_Webzen_00561754,'\0');
             if ((char)uVar2 == '\0') {
-              uVar2 = FUN_004977f0((char *)DAT_07db8710,s_WebZen_0056175c,'\0');
+              uVar2 = FindTextA((char *)DAT_07db8710,s_WebZen_0056175c,'\0');
               if ((char)uVar2 == '\0') {
-                uVar2 = FUN_004977f0((char *)DAT_07db8710,s_Webzen_00561764,'\0');
+                uVar2 = FindTextA((char *)DAT_07db8710,s_Webzen_00561764,'\0');
                 if ((char)uVar2 == '\0') {
-                  uVar2 = FUN_004977f0((char *)DAT_07db8710,s_WEBZEN_0056176c,'\0');
+                  uVar2 = FindTextA((char *)DAT_07db8710,s_WEBZEN_0056176c,'\0');
                   if ((char)uVar2 == '\0') {
-                    uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_07d4b4b0,'\0');
+                    uVar2 = FindTextA((char *)DAT_07db8710,&DAT_07d4b4b0,'\0');
                     if ((char)uVar2 == '\0') {
-                      uVar2 = FUN_004977f0((char *)DAT_07db8710,&DAT_07d4b5dc,'\0');
+                      uVar2 = FindTextA((char *)DAT_07db8710,&DAT_07d4b5dc,'\0');
                       if ((char)uVar2 == '\0') {
                         return uVar2;
                       }

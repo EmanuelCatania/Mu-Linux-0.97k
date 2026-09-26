@@ -19,7 +19,7 @@
 int  Config_Load(void);
 
 // Read server IP and port from config.ini.
-// Stores results in PTR_s_connect_muonline_co_kr_005615b8 and DAT_005615bc.
+// Stores results in PTR_s_connect_muonline_co_kr_005615b8 and g_ServerPort.
 // @ 0x0041E800
 int  Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned short* outPort);
 

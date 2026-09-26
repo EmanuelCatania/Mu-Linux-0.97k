@@ -16,7 +16,7 @@
 // Anti-tamper artefacts removed:
 //   • Phantom stack params (in_stack_0x28..0x10b20) — SEH obfuscation, ignored
 //   • XOR key double-init (forward+reverse) — compiler artifact, same result
-//   • HashTable ops (FUN_00403f80/FUN_00404280/FUN_00404330/FUN_00423710) — ref-count noise
+//   • HashTable ops (HashTable_Insert/HashTable_GetNode/Packet_DecryptByte/Packet_EncryptByte) — ref-count noise
 //   • 70+ unreachable blocks stripped
 //
 // Packet format reminder: [0xC1][len][opcode][sub][payload…]
@@ -48,44 +48,44 @@ static const BYTE s_xorKey[32] = {
 };
 
 // Send a packet to the server.  Applies the XOR cipher (offset by hdr_skip bytes
-// to skip the C1/len header), encodes via FUN_0053cc30, then send()s.
-// If WSAEWOULDBLOCK, queues into DAT_055cc16c / 0x55ca16c overflow buffer.
+// to skip the C1/len header), encodes via CSimpleModulus_Encode, then send()s.
+// If WSAEWOULDBLOCK, queues into SocketClientSendBufferLength / 0x55ca16c overflow buffer.
 static void Chat_SendPacket(BYTE *pkt, int len, int hdr_skip = 0)
 {
     // XOR payload bytes starting at hdr_skip
     for (int i = hdr_skip; i < len; ++i)
         pkt[i] ^= s_xorKey[i & 0x1f];
 
-    FUN_0053cc30(0, pkt, len);
+    CSimpleModulus_Encode(0, pkt, len);
 
-    if (DAT_055ca168 == 0xffffffff)
+    if (SocketClientSocket == 0xffffffff)
         return;
 
     int sent = 0;
     int rem  = len;
     do {
-        int n = send(DAT_055ca168, (char *)pkt + sent, rem, 0);
+        int n = send(SocketClientSocket, (char *)pkt + sent, rem, 0);
         if (n == -1) {
             int err = WSAGetLastError();
             if (err == WSAEWOULDBLOCK) {
-                if ((int)(DAT_055cc16c + len) < 0x2001) {
+                if ((int)(SocketClientSendBufferLength + len) < 0x2001) {
                     // BUG-FIX 2026-05-03: was `(BYTE*)0x055ca16c + 4` — literal
                     // source-binary address (unmapped in our build → AV on first
                     // WSAEWOULDBLOCK retry). The other 5 sites of this same
                     // pattern (Game_*Tick, Party, Player_InputTick) all use the
-                    // DAT_055ca16c macro (= DAT_055ca160 + 0xC). Match them.
-                    memcpy((char*)DAT_055ca16c + DAT_055cc16c, pkt, len);
-                    DAT_055cc16c += len;
+                    // SocketClientSendBuffer macro (= SocketClient + 0xC). Match them.
+                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, len);
+                    SocketClientSendBufferLength += len;
                 } else {
-                    Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                    Net_Disconnect(((int)(uintptr_t)SocketClient));
                 }
             } else {
-                Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                Net_Disconnect(((int)(uintptr_t)SocketClient));
             }
             break;
         }
         if (n == 0) break;
-        if (DAT_055ce174 != 0)
+        if (SocketClientLogPrint != 0)
             FUN_0043de60();
         sent += n;
         rem  -= n;
@@ -93,27 +93,27 @@ static void Chat_SendPacket(BYTE *pkt, int len, int hdr_skip = 0)
 }
 
 // Send a raw 3-byte packet (no XOR, no encode — these class-select packets are
-// pre-encoded in the original code via FUN_0053cc30 before this call site).
+// pre-encoded in the original code via CSimpleModulus_Encode before this call site).
 extern "C" void HUD_BottomBarButtons_HitTest(void);
 
 static void SendRaw3(BYTE b0, BYTE b1, BYTE b2)
 {
     BYTE pkt[3] = { b0, b1, b2 };
-    if (DAT_055ca168 == 0xffffffff) return;
+    if (SocketClientSocket == 0xffffffff) return;
     int rem = 3, off = 0;
     do {
-        int n = send(DAT_055ca168, (char *)pkt + off, rem, 0);
+        int n = send(SocketClientSocket, (char *)pkt + off, rem, 0);
         if (n == -1) {
             if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                if ((int)(DAT_055cc16c + 3) < 0x2001) {
-                    memcpy((char*)DAT_055ca16c + DAT_055cc16c, pkt, 3);  // BUG-FIX 2026-05-03: was literal 0x055ca16c
-                    DAT_055cc16c += 3;
-                } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-            } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                if ((int)(SocketClientSendBufferLength + 3) < 0x2001) {
+                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, 3);  // BUG-FIX 2026-05-03: was literal 0x055ca16c
+                    SocketClientSendBufferLength += 3;
+                } else Net_Disconnect(((int)(uintptr_t)SocketClient));
+            } else Net_Disconnect(((int)(uintptr_t)SocketClient));
             break;
         }
         if (n == 0) break;
-        if (DAT_055ce174) FUN_0043de60();
+        if (SocketClientLogPrint) FUN_0043de60();
         off += n; rem -= n;
     } while (rem > 0);
 }
@@ -235,7 +235,7 @@ static bool Chat_TrySendPartyRequest(const char* text)
     const BYTE packet[5] = { 0xC1, 0x05, 0x40, (BYTE)(key >> 8), (BYTE)key };
     Net_SendSmallPacket(packet, sizeof(packet));
 
-    const int targetIndex = FUN_0045ac80((int)(short)key);
+    const int targetIndex = FindCharacterIndex((int)(short)key);
     if (targetIndex >= 0 && targetIndex < 400) {
         char message[300] = {};
         sprintf(message, GlobalText[476], entities + targetIndex * 916 + 449);
@@ -342,8 +342,8 @@ extern "C" void Chat_SendChatLine(const char* text)
         // IDA WndProc (0x41D954, tras el send del susurro): ChatWhisperID =
         // InputText[1][0..9], con '\0' en [10].  Lo usa el aviso del 0x0C
         // ("no esta conectado") como remitente.  2026-09-12.
-        memcpy(DAT_05826cb4, whisperTarget, 10);
-        DAT_05826cb4[10] = '\0';
+        memcpy(ChatWhisperID, whisperTarget, 10);
+        ChatWhisperID[10] = '\0';
     } else {
         pkt[2] = 0x00;                        // headcode = chat normal
         // BUG-FIX 2026-07-19 (nuestros mensajes no llegaban): el campo name[10]
@@ -365,21 +365,21 @@ extern "C" void Chat_SendChatLine(const char* text)
     for (int xi = 3; xi < pktLen; ++xi)
         pkt[xi] ^= pkt[xi - 1] ^ s_xorKey[xi & 0x1f];
 
-    if (DAT_055ca168 == 0xffffffff) return;
+    if (SocketClientSocket == 0xffffffff) return;
     int rem = pktLen, off = 0;
     do {
-        int n = send(DAT_055ca168, (char *)pkt + off, rem, 0);
+        int n = send(SocketClientSocket, (char *)pkt + off, rem, 0);
         if (n == -1) {
             if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                if ((int)(DAT_055cc16c + pktLen) < 0x2001) {
-                    memcpy((char*)DAT_055ca16c + DAT_055cc16c, pkt, pktLen);
-                    DAT_055cc16c += pktLen;
-                } else Net_Disconnect((int)(uintptr_t)DAT_055ca160);
-            } else Net_Disconnect((int)(uintptr_t)DAT_055ca160);
+                if ((int)(SocketClientSendBufferLength + pktLen) < 0x2001) {
+                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, pktLen);
+                    SocketClientSendBufferLength += pktLen;
+                } else Net_Disconnect((int)(uintptr_t)SocketClient);
+            } else Net_Disconnect((int)(uintptr_t)SocketClient);
             break;
         }
         if (n == 0) break;
-        if (DAT_055ce174) FUN_0043de60();
+        if (SocketClientLogPrint) FUN_0043de60();
         off += n; rem -= n;
     } while (rem > 0);
 
@@ -391,14 +391,14 @@ extern "C" void Chat_SendChatLine(const char* text)
 
     // Update last-sent-cmp buffer + reset rate-limit (matches IDA).
     memcpy(&DAT_05826adc[0], text, tlen + 1);
-    DAT_05826d08 = 0x46;
+    ChatTime = 0x46;
 }
 
 // Sequence called on every class-tab click.
 // After the first 3-byte packet, does the hash-table check then optionally
-// calls FUN_004cba60 or FUN_004e3d60 + sends a second 3-byte packet.
+// calls CloseInventoryRelatedWindows or Connection_Check + sends a second 3-byte packet.
 // pkt0/pkt1/pkt2 = first 3-byte packet bytes.
-// pkt_b0/b1/b2 = second 3-byte packet (FUN_004e3d60 branch).
+// pkt_b0/b1/b2 = second 3-byte packet (Connection_Check branch).
 // pkt_c0/c1/c2 = second 3-byte packet (DAT_07eaa165 branch).
 
 // ---------------------------------------------------------------------------
@@ -451,14 +451,14 @@ void __cdecl Chat_InputTick(void)
             {
                 // Compare entity name at +0x1c1 against table name
                 const char *entityName = DAT_07abf5d8 + 0x1c1;
-                if (strcmp(tableName, entityName) != 0 && DAT_083a42d0 != '\0')
+                if (strcmp(tableName, entityName) != 0 && MouseRButtonPush != '\0')
                 {
-                    DAT_083a42d0 = '\0';
+                    MouseRButtonPush = '\0';
                     size_t nameLen = strlen(tableName);
                     memcpy(DAT_07db8810, tableName, nameLen + 1);
                     // Update input length counter
                     DAT_07d780ac = (DWORD)strlen((const char *)DAT_07db8810);
-                    FUN_00404bc0(0x19, 0, 0);
+                    PlayBuffer(0x19, 0, 0);
                     // Re-read (loop continues from updated mouseX)
                     mouseX = (int)DAT_083a427c;
                 }
@@ -532,26 +532,26 @@ void __cdecl Chat_InputTick(void)
         const char *newHist = (const char *)&DAT_07e113e4 + DAT_00559cc4 * 0x100;
         memcpy(DAT_07db8810, newHist, strlen(newHist) + 1);
         DAT_07d780ac = (DWORD)strlen((const char *)DAT_07db8810);
-        FUN_00404bc0(0x19, 0, 0);
+        PlayBuffer(0x19, 0, 0);
     }
 
     // ── 4. Class-tab buttons + hot gate ─────────────────────────────────────
     // Guard condition: all of these must be true to process tab/hotkey/chat input:
-    //   bVar4(hash)==0, DAT_07eaa124==0, DAT_07e11d70==0,
-    //   DAT_083a7c24 not 0x7e/0x98, DAT_07eaa128==0,
-    //   *(DAT_00583d8c+0x1c87f)==0, DAT_07eaa130==0
+    //   bVar4(hash)==0, DAT_07eaa124==0, GuildInputEnable==0,
+    //   DAT_083a7c24 not 0x7e/0x98, GoldenArcherOpenType==0,
+    //   *(DAT_00583d8c+0x1c87f)==0, ServerDivisionOpened==0
     {
-        FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+        HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
         char bVar4 = DAT_07eaa11b;
-        FUN_00404040(&DAT_055c9bc8, (char *)&DAT_07eaa11b);
+        PACKET_ENCRYPT(&MAIN_HASH_CLASS, (char *)&DAT_07eaa11b);
 
         if ((bVar4 == 0) &&
             (DAT_07eaa124 == '\0') &&
-            (DAT_07e11d70 == '\0') &&
+            (GuildInputEnable == '\0') &&
             (DAT_083a7c24 != 0x7e) && (DAT_083a7c24 != 0x98) &&
-            (DAT_07eaa128 == 0) &&
+            (GoldenArcherOpenType == 0) &&
             (*(char *)((uintptr_t)DAT_00583d8c + 0x1c87f) == '\0') &&
-            (DAT_07eaa130 == '\0'))
+            (ServerDivisionOpened == '\0'))
         {
             // ── Botones de la barra inferior (guild / party / personaje /
             //    inventario) ────────────────────────────────────────────────
@@ -594,7 +594,7 @@ void __cdecl Chat_InputTick(void)
                     if (IsClickPushed()) {
                         DAT_07db870c = (DAT_07db870c == '\0') ? '\x01' : '\0';
                         DAT_083a4124 = '\0';
-                        FUN_00404bc0(0x19, 0, 0);
+                        PlayBuffer(0x19, 0, 0);
                     }
                 }
 
@@ -620,7 +620,7 @@ void __cdecl Chat_InputTick(void)
                                     DAT_083a4124 = '\0';
                                     *(char *)((char *)DAT_07abf5d8 + 0x391) = (char)uVar14;
                                     DAT_07db870c = '\0';
-                                    FUN_00404bc0(0x19, 0, 0);
+                                    PlayBuffer(0x19, 0, 0);
                                     DAT_07e11d28 = 0;
                                     DAT_00559bec = 6;
                                 }
@@ -634,7 +634,7 @@ void __cdecl Chat_InputTick(void)
                                         int key = k % 10;          // 1..9, despues 0
                                         if (((unsigned short)GetAsyncKeyState(0x30 + key) >> 8) == 0)
                                             continue;
-                                        FUN_00423040(&DAT_055c9bc8, DAT_07cf1ffc);
+                                        STRUCT_DECRYPT(&MAIN_HASH_CLASS, DAT_07cf1ffc);
                                         int charRow = (int)DAT_005616ac;
                                         for (int j = 0; j < 0x14; ++j) {
                                             char *slot_ptr = (char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + j;
@@ -644,7 +644,7 @@ void __cdecl Chat_InputTick(void)
                                             }
                                         }
                                         *((char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + (int)uVar14) = (char)key;
-                                        FUN_0043d1d0(&DAT_055c9bc8, (void *)DAT_07cf1ffc);
+                                        STRUCT_ENCRYPT(&MAIN_HASH_CLASS, (void *)DAT_07cf1ffc);
                                     }
                                 }
                                 break;
@@ -679,19 +679,19 @@ void __cdecl Chat_InputTick(void)
             }
 
             // ── 7. Chat input — 9 channels ───────────────────────────────────
-            // Channels 0-8 each have a 0x100-byte input buffer at DAT_07e0ffc8+ch*0x100.
+            // Channels 0-8 each have a 0x100-byte input buffer at MacroText+ch*0x100.
             // FUN_00494520 reads a key press into the buffer, returns ch != '\0' if Enter.
-            // FUN_00513440 validates the text (profanity/length); '\0' = ok.
-            // Rate-limit: DAT_05826d08 starts at 0x46, counts down each frame.
+            // Chat_Validate validates the text (profanity/length); '\0' = ok.
+            // Rate-limit: ChatTime starts at 0x46, counts down each frame.
             //             If > 0x32, reject (too fast). Resets to 0x46 on send.
             // Duplicate check: compare buffer vs DAT_05826adc (last sent).
             // Command parsing (prefix '/'):
-            //   /whisper → DAT_07e11dac=1, FUN_00480620 with DAT_07d3d608
-            //   /pvp     → DAT_07e11dac=0, FUN_00480620 with DAT_07d3d734
+            //   /whisper → DAT_07e11dac=1, UIChatLogWindow_AddText with DAT_07d3d608
+            //   /pvp     → DAT_07e11dac=0, UIChatLogWindow_AddText with DAT_07d3d734
             //   GM cmd   → if +0x2fd!=0 and strncmp to DAT_07d3cdd4 → discard
             // Normal send:
             //   Build C1 packet: [0xC1][len][opcode][sub][player_name][chat_text][0x00]
-            //   XOR-encrypt payload from byte offset 3 onward, FUN_0053cc30 + send.
+            //   XOR-encrypt payload from byte offset 3 onward, CSimpleModulus_Encode + send.
             // El disparo es ALT + el numero, NO Enter: el texto que se tipea
             // en el chat vive en InputText (DAT_07db8710) y lo envia el WndProc.
             if (DAT_07e11d7c == 0 &&
@@ -703,7 +703,7 @@ void __cdecl Chat_InputTick(void)
                         // Alt+1 .. Alt+9  ->  macros 0..8  (IDA: v221 + 49)
                         if (((unsigned short)GetAsyncKeyState('1' + ch) >> 8) == 0)
                             continue;
-                        BYTE *chBuf = (BYTE *)&DAT_07e0ffc8 + ch * 0x100;
+                        BYTE *chBuf = (BYTE *)&MacroText + ch * 0x100;
                         if (chBuf[0] == '\0') { DAT_07e11d7c = 100; continue; }
                         if ((char)FUN_00494520(chBuf, '\x01') != '\0')
                             continue;
@@ -714,16 +714,16 @@ void __cdecl Chat_InputTick(void)
                              (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
                             CheckChatText((char *)chBuf);   // IDA: sub_497C70
 
-                        if ((char)FUN_00513440((char *)chBuf) != '\0')
+                        if ((char)Chat_Validate((char *)chBuf) != '\0')
                             continue;  // invalid text
 
                         // Rate-limit and duplicate check
-                        if (DAT_05826d08 >= 0x33) {
+                        if (ChatTime >= 0x33) {
                             DAT_07e11d7c = 100;
                             continue;
                         }
 
-                        if (DAT_05826d08 > 0) {
+                        if (ChatTime > 0) {
                             if (strcmp((char *)chBuf, &DAT_05826adc[0]) == 0)
                                 goto chat_done;
                         }
@@ -758,7 +758,7 @@ void __cdecl Chat_InputTick(void)
                                             strlen(&DAT_07d3d284)) == 0) {
                                     // /whisper command
                                     DAT_07e11dac = 1;
-                                    FUN_00480620((const char*)&lpDefault_00583d88,&DAT_07d3d608, 1);
+                                    UIChatLogWindow_AddText((const char*)&lpDefault_00583d88,&DAT_07d3d608, 1);
                                     goto chat_done;
                                 }
                                 if (strlen(&DAT_07d3d3b0) > 0 &&
@@ -766,7 +766,7 @@ void __cdecl Chat_InputTick(void)
                                             strlen(&DAT_07d3d3b0)) == 0) {
                                     // /pvp command
                                     DAT_07e11dac = 0;
-                                    FUN_00480620((const char*)&lpDefault_00583d88,&DAT_07d3d734, 1);
+                                    UIChatLogWindow_AddText((const char*)&lpDefault_00583d88,&DAT_07d3d734, 1);
                                     goto chat_done;
                                 }
                             }
@@ -791,7 +791,7 @@ void __cdecl Chat_InputTick(void)
                 }
 
                 // ── 8. Whisper-target channel (channel 9) ────────────────────
-                // Uses DAT_07e108c8 buffer (offset 0x900 from DAT_07e0ffc8).
+                // Uses DAT_07e108c8 buffer (offset 0x900 from MacroText).
                 {
                     // Alt+0 -> macro 10 (IDA: GetAsyncKeyState(48), o sea '0')
                     DWORD uVar9 = (((unsigned short)GetAsyncKeyState('0') >> 8) == 0)
@@ -810,15 +810,15 @@ void __cdecl Chat_InputTick(void)
                              (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
                             CheckChatText(&DAT_07e108c8);   // IDA: sub_497C70
 
-                        if ((char)FUN_00513440(&DAT_07e108c8) == '\0') {
-                            if (DAT_05826d08 < 0x33) {
-                                bool bDupWhisper = (DAT_05826d08 > 0) &&
+                        if ((char)Chat_Validate(&DAT_07e108c8) == '\0') {
+                            if (ChatTime < 0x33) {
+                                bool bDupWhisper = (ChatTime > 0) &&
                                                    (strcmp(&DAT_07e108c8, &DAT_05826adc[0]) == 0);
                                 if (!bDupWhisper) {
                                 size_t tlen = strlen(&DAT_07e108c8);
                                 if (tlen > 0x3c) tlen = 0x3c;
                                 memcpy(&DAT_05826adc[0], &DAT_07e108c8, tlen + 1);
-                                DAT_05826d08 = 0x46;
+                                ChatTime = 0x46;
 
                                 // Build and send whisper packet (same XOR+encode pattern)
                                 {
@@ -831,22 +831,22 @@ void __cdecl Chat_InputTick(void)
                                         memcpy(pkt + 0x0d, &DAT_07e108c8, tlen);
                                         for (int xi = 3; xi < pktLen; ++xi)
                                             pkt[xi] ^= s_xorKey[xi & 0x1f];
-                                        FUN_0053cc30(0, pkt, pktLen);
-                                        if (DAT_055ca168 != 0xffffffff) {
+                                        CSimpleModulus_Encode(0, pkt, pktLen);
+                                        if (SocketClientSocket != 0xffffffff) {
                                             int rem = pktLen, off = 0;
                                             do {
-                                                int n = send(DAT_055ca168, (char *)pkt + off, rem, 0);
+                                                int n = send(SocketClientSocket, (char *)pkt + off, rem, 0);
                                                 if (n == -1) {
                                                     if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                                                        if ((int)(DAT_055cc16c + pktLen) < 0x2001) {
-                                                            memcpy((char*)DAT_055ca16c + DAT_055cc16c, pkt, pktLen);  // BUG-FIX 2026-05-03: was literal 0x055ca16c
-                                                            DAT_055cc16c += pktLen;
-                                                        } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-                                                    } else Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                                                        if ((int)(SocketClientSendBufferLength + pktLen) < 0x2001) {
+                                                            memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, pkt, pktLen);  // BUG-FIX 2026-05-03: was literal 0x055ca16c
+                                                            SocketClientSendBufferLength += pktLen;
+                                                        } else Net_Disconnect(((int)(uintptr_t)SocketClient));
+                                                    } else Net_Disconnect(((int)(uintptr_t)SocketClient));
                                                     break;
                                                 }
                                                 if (n == 0) break;
-                                                if (DAT_055ce174) FUN_0043de60();
+                                                if (SocketClientLogPrint) FUN_0043de60();
                                                 off += n; rem -= n;
                                             } while (rem > 0);
                                         }
@@ -892,7 +892,7 @@ void __cdecl Chat_InputTick(void)
     if (DAT_07e11d71 != 0) return;   // g_IME_Mode  (composición DBCS/coreano)
     if (DAT_07eaa11b != 0) return;   // TradeOpened
     if (DAT_07eaa124 != 0) return;   // GuildCreatorOpened
-    if (DAT_07e11d70 != 0) return;   // g_ChatMode
+    if (GuildInputEnable != 0) return;   // g_ChatMode
 
     // ── 9. 'B' key — toggle body rendering / battle mode ────────────────────
     // HashTable ops are obfuscation noise around the real toggle.
@@ -901,7 +901,7 @@ void __cdecl Chat_InputTick(void)
         if ((char)((unsigned short)sv >> 8) == (char)(-0x80)) {
             if (DAT_07e119f4 == 0) {
                 DAT_07e119f4 = 1;
-                // HashTable ref-count noise (FUN_00404280/FUN_00403f80 etc.) — skipped
+                // HashTable ref-count noise (HashTable_GetNode/HashTable_Insert etc.) — skipped
                 // Core toggle:
                 char cVar3 = DAT_07eaa118;
                 if (cVar3 == '\0') {
@@ -955,7 +955,7 @@ void __cdecl Chat_InputTick(void)
                         DAT_07eaa119 == 0 &&
                         DAT_07eaa11a == 0 &&
                         DAT_07eaa11c == 0 &&
-                        DAT_07eaa128 == 0)
+                        GoldenArcherOpenType == 0)
                     {
                         DAT_07eaa134 = (DAT_07eaa134 == 0) ? 1 : 0;
                         ((BYTE*)&DAT_07eaa150)[2] =
@@ -1004,9 +1004,9 @@ void __cdecl Chat_InputTick(void)
                             // Sound feedback by item type
                             int itemType = *(int*)(OffsetInventoryItems + slot * 0x44);
                             if (itemType == 448) {
-                                FUN_00404bc0(33, 0, 0);   // potion mana sound
+                                PlayBuffer(33, 0, 0);   // potion mana sound
                             } else if (itemType >= 449 && itemType <= 457) {
-                                FUN_00404bc0(32, 0, 0);   // potion HP / scroll sound
+                                PlayBuffer(32, 0, 0);   // potion HP / scroll sound
                             }
                         }
                     }
@@ -1020,7 +1020,7 @@ void __cdecl Chat_InputTick(void)
     // ── 12-15. C/V/I/G/P key handlers — REMOVED ────────────────────────────
     // 2026-05-08 (b): These keys are already handled by Player_InputTick
     // (`HUD_HotkeyTick` in src/Game/Player_InputTick.cpp:251-287) using the
-    // edge-triggered helper Input_IsKeyJustPressed. Adding duplicate handlers here
+    // edge-triggered helper PressKey. Adding duplicate handlers here
     // caused a DOUBLE-TOGGLE bug: pressing C played sound (Chat_InputTick set
     // CharacterOpened=1, played sound) but Player_InputTick toggled it back
     // to 0 in the same frame → net result = closed.

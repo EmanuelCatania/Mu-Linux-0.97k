@@ -97,7 +97,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
         if (a3 != 0) {
             // FindQuestItemsInInven devuelve 0 si ya los tiene, o cuantos
             // faltan.  De ahi que "0" pinte en celeste y "!= 0" en rojo.
-            int missing = FUN_00482dd0(nType, nCount, 0xFFFFFFFFu);
+            int missing = CSQuest_FindQuestItemsInInven(nType, nCount, 0xFFFFFFFFu);
             if (missing == 0) {
                 m_dwTextColor = 0xFF67BFDFu;
             } else {
@@ -151,7 +151,7 @@ void __fastcall FUN_00403320(void* param_1) {
 
     glColor3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    RenderInventoryInterface_stub(450, 0, 1);
+    RenderInventoryInterface(450, 0, 1);
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
 
@@ -187,7 +187,7 @@ void __fastcall FUN_00403320(void* param_1) {
         RenderText(470, 370, GlobalText[198], 0, 0, nullptr);
         int zen = *(int*)(This + 116868);       // +0x1C884
         m_dwTextColor = (DWORD)FUN_004c3dd0(zen);
-        ConvertGold64_stub(zen, Buffer);
+        ConvertGold64(zen, Buffer);
         RenderText(510, 370, Buffer, 0, 0, nullptr);
     }
 
@@ -252,19 +252,19 @@ UINT __fastcall FUN_00403700(void* ecx, void* /*edx*/, UINT param_1) {
 
 // FUN_00403a40 @ 0x00403A40 (~88 lines) — Quest UI main panel: tabs + quest list + close button
 // __fastcall(ecx=questObj). Renders 3-tab quest panel (tab 0=progress, 1=complete, 2=special).
-// Calls FUN_00403700 for tab 0/1 content, FUN_00403a30 for tab 2.
+// Calls FUN_00403700 for tab 0/1 content, CWsctlc__LogPrintOn for tab 2.
 // Renders NPC name, close button with tooltip, dialog answers via FUN_00402ff0.
 void __fastcall FUN_00403a40(void* param_1) {
     glColor3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    RenderInventoryInterface_stub(0x1c2, 0, 1);
+    RenderInventoryInterface(0x1c2, 0, 1);
     m_dwTextColor = 0xffd2e6ff;
     m_dwBackColor = 0;
     // SelectObject(m_hFontDC, g_hFont); // globals not yet declared
     // Render 3 tab buttons (stride 0x37, bitmaps 0x115/0x116 for normal/selected)
     // Tab click sets *(param_1+0x1c87d)
     // Render separator lines (bitmap 0x117) and border lines (bitmap 0x104)
-    // Dispatch to FUN_00403700(1 or 2) or FUN_00403a30() based on selected tab
+    // Dispatch to FUN_00403700(1 or 2) or CWsctlc__LogPrintOn() based on selected tab
     // Close button, NPC name, dialog answers
     char cVar1 = *(char*)((int)param_1 + 0x1c87d);
     if (cVar1 == '\0') {
@@ -272,7 +272,7 @@ void __fastcall FUN_00403a40(void* param_1) {
     } else if (cVar1 == '\x01') {
         FUN_00403700(param_1, NULL, 2);
     } else if (cVar1 == '\x02') {
-        FUN_00403a30();
+        CWsctlc__LogPrintOn();
     }
     // 2026-08-21: faltaba el render del texto del dialogo + respuestas.
     FUN_00402ff0((int)(uintptr_t)param_1);

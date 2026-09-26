@@ -1,12 +1,13 @@
 // Scene_CharPreview.cpp
 // 3D character preview rendering during login and character selection screens.
 //
-// FUN_0051e0c0 @ 0x0051e0c0 - Scene_CharPreview
+// RenderInfomation3D @ 0x0051e0c0 - Scene_CharPreview
 // FUN_005239a0 @ 0x005239a0 - UI_DrawLoginBg
 
 #include "stdafx.h"
 
-void FUN_0051e0c0(void)
+// IDA: RenderInfomation3D (0x0051E0C0)
+void RenderInfomation3D(void)
 {
   float aspect;
   short itemType;
@@ -32,7 +33,7 @@ void FUN_0051e0c0(void)
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
-  GL_GetModelViewMatrix((unsigned int *)&DAT_083a4140);
+  GL_GetModelViewMatrix((unsigned int *)&CameraMatrix);
   GL_EnableDepthTest();
   GL_EnableDepthWrites();
 
@@ -45,7 +46,7 @@ void FUN_0051e0c0(void)
     option1 = DAT_07ea525b;
   }
 
-  FUN_004e1be0(245.0f, 115.0f, 40.0f, 60.0f, (int)itemType, level, option1, '\x01');
+  RenderItem3D(245.0f, 115.0f, 40.0f, 60.0f, (int)itemType, level, option1, 0, '\x01');
 
   glPopMatrix();
   glMatrixMode(GL_PROJECTION);

@@ -19,7 +19,7 @@
 //   DAT_00552504 = 0.5f  (centrado en casilla)
 //   DAT_005524f0 = escala global (≈ tamaño de casilla en unidades de render)
 //
-// Elevación (Z) se obtiene por FUN_004f7500() — lectura del heightmap del mapa.
+// Elevación (Z) se obtiene por RequestTerrainHeight() — lectura del heightmap del mapa.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // ESTRUCTURA DE ENTIDAD — CAMPOS DE MOVIMIENTO
@@ -31,7 +31,7 @@
 //
 //   Offset  Tipo    Nombre                  Descripción
 //   +0x02   short   entity_type             Tipo (0x186=skeleton, 0x129=player, etc.)
-//   +0x04   int     entity_id               ID de red (coincide con DAT_05826cac para el jugador)
+//   +0x04   int     entity_id               ID de red (coincide con HeroKey para el jugador)
 //   +0x10   float   world_x                 Posición X world (OpenGL)
 //   +0x14   float   world_y                 Posición Y world (OpenGL)
 //   +0x18   float   world_z                 Elevación Z (del heightmap)
@@ -99,7 +99,7 @@
 //   0x1F  Walk con objetivo en rango + escudo
 //   0x20  DK idle (sin ataque activo)
 //   0x21  DK walk con ataque
-//   0x4C  DW idle (g_GameSubState=8 o 10, sin objetivo)
+//   0x4C  DW idle (World=8 o 10, sin objetivo)
 //   0x4D  DW walk con objetivo
 //   0x4E  Walk arma especial 0x1AF
 //   0x4F  Walk arma 0x1AF con objetivo
@@ -193,7 +193,7 @@ void Entity_FaceTarget(int entity, int target);
 //     0x02 (walk NPC): si entity+0x310 != -1:
 //                        Entity_FaceTarget(entity, target_entity)
 //     Otros: reset entity+0x34=0, entity+0x38=0.
-//   Nota: el avance real de frames de animación está en FUN_00440060 (AnimTimer_Tick).
+//   Nota: el avance real de frames de animación está en BMD_Animation (AnimTimer_Tick).
 void Entity_AnimTick(int entity);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ int Entity_MoveAlongPath(int entity, char update_angle);
 
 // 0x004430c0  Entity_SetWalkAnimation(int entity)
 //   Determina y aplica el ID de animación de caminata correcta según contexto.
-//   Llama FUN_004f6c40(x, y) = GetTileType para detectar agua/terreno especial.
+//   Llama Terrain_GetTileIndex(x, y) = GetTileType para detectar agua/terreno especial.
 //   DAT_07d78068 = tabla de propiedades de tiles (flags de terreno, stride 0x40).
 //   Lógica de selección:
 //     entity_type == 0x186 → animaciones especiales (skip; ver Entity_UpdateWalkAnim)
@@ -262,7 +262,7 @@ int Entity_MoveAlongPath(int entity, char update_angle);
 //       1 → caminata: selección por arma/escudo (0x0D..0x14, ver tabla arriba)
 //     Exhausto (entity+0x300 >= 0x28): animId = 0x16
 //   Aplica con Entity_SetAnimation(entity, animId).
-//   Tras setear anim, con rand()&0xF==0 llama FUN_00404bc0(soundId, entity, 0) — sonido de paso.
+//   Tras setear anim, con rand()&0xF==0 llama PlayBuffer(soundId, entity, 0) — sonido de paso.
 void Entity_SetWalkAnimation(int entity);
 
 // 0x00443930  Entity_UpdateWalkAnim(int entity)
@@ -274,8 +274,8 @@ void Entity_SetWalkAnimation(int entity);
 //       Offsets 0x160..0x210 (step 0x10): peso = 0x3EAE147B (≈ 0.085f)
 //       Si entity+0x78 bit1==1: multiplica por DAT_00552504 (0.5f)
 //     Luego, lógica completa de selección de animación (similar a Entity_SetWalkAnimation)
-//     con más casos para estados de juego (g_GameSubState==7, 8, 10).
-//     Finaliza con Entity_SetAnimation + FUN_00404bc0 para sonidos.
+//     con más casos para estados de juego (World==7, 8, 10).
+//     Finaliza con Entity_SetAnimation + PlayBuffer para sonidos.
 void Entity_UpdateWalkAnim(int entity);
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -286,10 +286,10 @@ void Entity_UpdateWalkAnim(int entity);
 //   Paquete: [C1][len][0x10][entityId_hi][entityId_lo][gridX][gridY][speed_flags]
 //   Actualiza posición destino de la entidad.
 //
-//   entity = FUN_0045ac80(byte[3]<<8 | byte[4])  — busca entidad por ID de red
+//   entity = FindCharacterIndex(byte[3]<<8 | byte[4])  — busca entidad por ID de red
 //   entity+0x2fc = byte[7] >> 4                   — speed tier
 //
-//   SI es el jugador (entityId == DAT_05826cac):
+//   SI es el jugador (entityId == HeroKey):
 //     Actualiza entity+0x388 = byte[5] (X grid start)
 //     Actualiza entity+0x38c = byte[6] (Y grid start)
 //     Si entity+0x2ec == 0: enqueue inmediato.
@@ -303,7 +303,7 @@ void Entity_UpdateWalkAnim(int entity);
 //     Caso normal (entity+0x350 == 0):
 //       FUN_0043d3e0 / Path_FindRoute → PacketQueue_Enqueue con coordenadas
 //       Si cola disponible: entity+0x2ec = 1 (movimiento en cola)
-//       Else: entity+0x2ec = 0, FUN_004430c0 (ejecutar animación inmediata)
+//       Else: entity+0x2ec = 0, SetPlayerStop (ejecutar animación inmediata)
 void PacketHandler_0x10(int packet);
 
 // 0x00427f40  PacketHandler_0x11(int packet)
@@ -314,7 +314,7 @@ void PacketHandler_0x10(int packet);
 //     entity+0xD8 = 20.0f (velocidad inicial)
 //     entity+0xC4 = (byte[5] - entity.x) * DAT_00552850  (velocidad X)
 //     entity+0xC0 = (entity.y - byte[6]) * DAT_00552850  (velocidad Y)
-//     FUN_00404bc0(0x1B, ...) — notificación UI
+//     PlayBuffer(0x1B, ...) — notificación UI
 //     Effect_SpawnSmokeBurst(entity+0x10, 0) — aplicar fuerza/posición
 //   Caso general:
 //     entity+0x388 = byte[5]  (target X grid)
@@ -328,7 +328,7 @@ void PacketHandler_0x11(int packet);
 //   Paquete de chat/notificación del servidor (NO es movimiento).
 //   byte[3] sub-tipo:
 //     0: UI_AddNotice(packet+4, 0)      — broadcast/aviso de sistema
-//     1: FUN_00480620(..., packet+4, 1) — mensaje de GM
+//     1: UIChatLogWindow_AddText(..., packet+4, 1) — mensaje de GM
 //     2: Copia string de packet+4 a DAT_07e913a8 (max 14 chars)
 //                                        para banner de texto en pantalla
 void PacketHandler_0x0D(int packet);
@@ -338,7 +338,7 @@ void PacketHandler_0x0D(int packet);
 // ─────────────────────────────────────────────────────────────────────────────
 //
 //   0x0043f3e0  PacketQueue_Enqueue(uint id, float current, uint x, uint y, void* pathState, float t)
-//     Wrapper → FUN_0043f500(DAT_05826df4, id, t, x, y, 1, 2, t)
+//     Wrapper → PATH_FindPath(DAT_05826df4, id, t, x, y, 1, 2, t)
 //     Inserta movimiento en la cola de acciones de red (predicción de cliente).
 //
 //   0x0043f500  ActionQueue_Insert(this, int id, float t, int x, int y, int p5, int p6, float p7)

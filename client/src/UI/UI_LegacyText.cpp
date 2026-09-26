@@ -6,15 +6,15 @@
 #include "structs.h"
 #include <mbstring.h>   // _mbclen (SeparateTextIntoLines, fiel a 0x0051D600)
 
-extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
-extern void __cdecl FUN_0054158c(void* ptr);
-extern void FUN_004fa5a0(void);
+extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
+extern void __cdecl operator_delete(void* ptr);
+extern void ClearActionObject(void);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -108,16 +108,6 @@ int __cdecl SeparateTextIntoLines(const char *lpszText, char *lpszSeparated, int
 }
 
 
-
-// IDA: FindText (0x004977F0).  `FindText` es una macro de la API de Windows que se
-// expande a FindTextA, por eso el cuerpo tiene este nombre.  2026-09-12: habia dos
-// ports de la misma funcion (este y FUN_004977f0, UI_LegacyExterns.cpp); este delega
-// en aquel, que ademas trae el fix del patron vacio.
-extern unsigned int __cdecl FUN_004977f0(char *param_1, void *param_2, char param_3);
-bool __cdecl FindTextA(char *haystack, char *needle, bool caseSensitive) {
-    if (!haystack || !needle) return false;
-    return FUN_004977f0(haystack, needle, caseSensitive ? 1 : 0) != 0;
-}
 
 
 // RenderCenterText @ 0x00514270 (18 lines) — Draw horizontally centered text

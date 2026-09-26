@@ -13,14 +13,14 @@
 // Layout:
 //   this+8 onward = 0x7210 DWORDs (zeroed first), then filled with quest data.
 //   File contains 200 records × 0x248 bytes each.
-//   Each record is XOR-decrypted by BuxConvert(buf, 0x248) before copy
-//   (IDA: FUN_00401120).
+//   Each record is XOR-decrypted by BuxConvert_1(buf, 0x248) before copy
+//   (IDA: BuxConvert_1).
 //   Copy: 0x92 DWORDs (0x248 bytes) per record into this+8 (sequential).
 // IDA: CSQuest::OpenQuestScript (0x00401040)
 uint __cdecl CSQuest_OpenQuestScript(int handle, const char *path)
 {
     CHAR msg[256];
-    FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
         // Note: original doesn't show a MessageBox here, just crt_sprintf
@@ -35,8 +35,8 @@ uint __cdecl CSQuest_OpenQuestScript(int handle, const char *path)
     int   cnt = 200;
     arr = (DWORD *)(handle + 8);
     do {
-        FUN_00541597(buf, 0x248, 1, (int *)fp);
-        BuxConvert(buf, 0x248);
+        crt_fread(buf, 0x248, 1, (int *)fp);
+        BuxConvert_1(buf, 0x248);
         const char *src = buf;
         DWORD      *dst = arr;
         for (int j = 0x92; j != 0; j--) {
@@ -47,7 +47,7 @@ uint __cdecl CSQuest_OpenQuestScript(int handle, const char *path)
         cnt--;
     } while (cnt != 0);
     operator_delete(buf);
-    FUN_0054150f(fp);
+    crt_fclose(fp);
     // Ghidra shows: return CONCAT31((int3)((uint)fclose_result >> 8), 1)
     // i.e. success = low byte 1, upper bytes from fclose. Simplified:
     return 1;

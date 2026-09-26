@@ -1,15 +1,15 @@
 // Crypto.cpp
 // Packet encryption / decryption routines and hash table operations.
 //
-// FUN_00404330 @ 0x00404330 — Packet_DecryptByte
-// FUN_00423710 @ 0x00423710 — Packet_EncryptByte
-// FUN_00423760 @ 0x00423760 — Packet_EncryptDword
-// FUN_00423c40 @ 0x00423c40 — Buffer_XorKey3
-// FUN_00404400 @ 0x00404400 — Packet_EncryptBuffer (0x584 bytes)
-// FUN_00409e20 @ 0x00409e20 — Packet_DecryptDword
-// FUN_00403f80 @ 0x00403f80 — HashTable_Insert
-// FUN_00404280 @ 0x00404280 — HashTable_GetValue
-// FUN_0043dcc0 @ 0x0043dcc0 — Object_GetType (accessor: return *(param+8))
+// Packet_DecryptByte @ 0x00404330 — Packet_DecryptByte
+// Packet_EncryptByte @ 0x00423710 — Packet_EncryptByte
+// Packet_EncryptDword @ 0x00423760 — Packet_EncryptDword
+// Buffer_XorKey3 @ 0x00423c40 — Buffer_XorKey3
+// Packet_EncryptBuffer @ 0x00404400 — Packet_EncryptBuffer (0x584 bytes)
+// Packet_DecryptDword @ 0x00409e20 — Packet_DecryptDword
+// HashTable_Insert @ 0x00403f80 — HashTable_Insert
+// HashTable_GetNode @ 0x00404280 — HashTable_GetValue
+// IDA: CWsctlc::GetSocket (0x0043DCC0)
 //
 // Key global:
 //   DAT_00559050 — 16-byte XOR key table (indices 0..15)
@@ -17,34 +17,35 @@
 #include "stdafx.h"
 
 void __fastcall FUN_00401af0(void*);
-void  __fastcall FUN_00407950(void *node);
-int   __cdecl    FUN_00407b90(int a1, int a3, const float *range);
-void  __cdecl    FUN_00407c60(int a1, int a3, float rest);
-char  __fastcall FUN_00407d10(int a1);
-DWORD* __cdecl   FUN_00407e50(DWORD *node);
-void  __fastcall FUN_004088b0(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
-extern void __cdecl FUN_0054158c(void* ptr);
+void  __fastcall SpringNode_Ctor(void *node);
+int   __cdecl    Cloth_SpringRange(int a1, int a3, const float *range);
+void  __cdecl    Cloth_SpringEqual(int a1, int a3, float rest);
+char  __fastcall VerletSystem_Flush(int a1);
+DWORD* __cdecl   ClothAnchor_Ctor(DWORD *node);
+void  __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
+extern void __cdecl operator_delete(void* ptr);
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 // -- Declaraciones de funciones que viven en otros modulos --------------
 // Agregadas por el refactor B3: se declaraban localmente en el archivo del
 // que se movieron estas funciones. Migrar a functions.h mas adelante.
 void __fastcall CSQuest_clearQuest(int param_1);
-void __fastcall FUN_004079b0(void *node, float x, float y, float z, int pinned);
-void __fastcall FUN_00407b30(void *node, float *out);
-float __fastcall FUN_00407b50(void *a, int b, float *c);
-void __fastcall FUN_00407ef0(void *node, float p1, float p2, float p3, float radius, int boneIdx);
+void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
+void __fastcall SpringNode_GetPos(void *node, float *out);
+float __fastcall SpringNode_Delta(void *a, int b, float *c);
+void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 void __fastcall FUN_0053cbf0(int *param_1);
 void __cdecl FUN_0053cc00_impl(int param_1);
 
 
 
 
-// FUN_00404330 — Packet_DecryptByte
+// Packet_DecryptByte — Packet_DecryptByte
 // Decrypts a single byte: *param_2 → *param_1
 // Decrypt steps: b -= 0x23; b ^= key[b]; b += 0xb9
-void __cdecl FUN_00404330(void *param_1_v,void *param_2_v)
+// IDA: Packet_DecryptByte (0x00404330)
+void __cdecl Packet_DecryptByte(void *param_1_v,void *param_2_v)
 {
   byte *param_1 = (byte*)param_1_v;
   byte *param_2 = (byte*)param_2_v;
@@ -64,10 +65,11 @@ void __cdecl FUN_00404330(void *param_1_v,void *param_2_v)
 }
 
 
-// FUN_00423710 — Packet_EncryptByte
+// Packet_EncryptByte — Packet_EncryptByte
 // Encrypts a single byte (param_2) into param_1.
 // Encrypt steps: b += 0x47; b ^= key[b]; randomize *param_2
-void __cdecl FUN_00423710(void *param_1_v,void *param_2_v)
+// IDA: Packet_EncryptByte (0x00423710)
+void __cdecl Packet_EncryptByte(void *param_1_v,void *param_2_v)
 {
   byte *param_1 = (byte*)param_1_v;
   char *param_2 = (char*)param_2_v;
@@ -87,11 +89,12 @@ void __cdecl FUN_00423710(void *param_1_v,void *param_2_v)
 }
 
 
-// FUN_00423760 — Packet_EncryptDword
+// Packet_EncryptDword — Packet_EncryptDword
 // Encrypts a 4-byte block (param_2) into param_1.
 // Cada byte: b += 0x47; b ^= key[i%16]; chain-XOR con el byte siguiente;
 // randomize source bytes with _rand().
-void __cdecl FUN_00423760(void *param_1_v,void *param_2_v)
+// IDA: Packet_EncryptDword (0x00423760)
+void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
 {
   undefined4 *param_1 = (undefined4*)param_1_v;
   undefined4 *param_2 = (undefined4*)param_2_v;
@@ -129,9 +132,9 @@ void __cdecl FUN_00423760(void *param_1_v,void *param_2_v)
 }
 
 
-// FUN_00423c40 — Buffer_XorKey3
-// Aplica XOR a cada byte de param_1[0..param_2-1] con DAT_00559678[i % 3].
-void __cdecl FUN_00423c40(int param_1,int param_2)
+// Buffer_XorKey3 — Buffer_XorKey3
+// Aplica XOR a cada byte de param_1[0..param_2-1] con PacketXorKey3[i % 3].
+void __cdecl Buffer_XorKey3(int param_1,int param_2)
 {
   int iVar1;
 
@@ -146,11 +149,12 @@ void __cdecl FUN_00423c40(int param_1,int param_2)
 }
 
 
-// FUN_00404400 — Packet_EncryptBuffer
+// Packet_EncryptBuffer — Packet_EncryptBuffer
 // Encrypts a 0x584-byte (1412-byte) buffer param_2 into param_1.
 // Allocates temp heap buffer, applies chain-XOR with key table (16 bytes),
 // then randomizes source bytes.
-void __cdecl FUN_00404400(void *param_1_v,void *param_2_v)
+// IDA: Packet_EncryptBuffer (0x00404400)
+void __cdecl Packet_EncryptBuffer(void *param_1_v,void *param_2_v)
 {
   undefined4 *param_1 = (undefined4*)param_1_v;
   undefined4 *param_2 = (undefined4*)param_2_v;
@@ -200,10 +204,11 @@ void __cdecl FUN_00404400(void *param_1_v,void *param_2_v)
 }
 
 
-// FUN_00409e20 — Packet_DecryptDword
+// Packet_DecryptDword — Packet_DecryptDword
 // Decrypts a 4-byte block param_2 into param_1.
 // Reverse chain-XOR then: b = (key[i%16] ^ (b-0x23)) + 0xb9
-void __cdecl FUN_00409e20(void *param_1_v,void *param_2_v)
+// IDA: FUN_00409E20 (0x00409E20)
+void __cdecl Packet_DecryptDword(void *param_1_v,void *param_2_v)
 {
   undefined4 *param_1 = (undefined4*)param_1_v;
   undefined4 *param_2 = (undefined4*)param_2_v;
@@ -238,11 +243,11 @@ void __cdecl FUN_00409e20(void *param_1_v,void *param_2_v)
 }
 
 
-// FUN_00403f80 — HashTable_Insert
+// IDA: HashTable_Insert (0x00403F80)
 // Inserta (clave=param_1, valor=return_addr) en la hash table (this).
 // Busca un slot vacío o coincidente por sondeo lineal (stride 1 mod capacidad).
-// Llama a FUN_00405540 con un mensaje de error si la tabla está llena.
-void __cdecl FUN_00403f80(void *this_,void *param_1_v,void *param_2_v)
+// Llama a CErrorReport_Write con un mensaje de error si la tabla está llena.
+void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
 {
   undefined4 param_1 = *(undefined4*)param_1_v;
   undefined4 param_2 = *(undefined4*)param_2_v;
@@ -317,15 +322,15 @@ void __cdecl FUN_00403f80(void *this_,void *param_1_v,void *param_2_v)
       uVar9 = uVar9 + 1;
     } while (uVar9 < *(uint *)((int)this_ + 0xc));
   }
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
   return;
 }
 
 
-// FUN_00404280 — HashTable_GetValue
+// IDA: HashTable_GetNode (0x00404280)
 // Busca param_1 en la hash table (this), devuelve el valor asociado o 0.
 // Devuelve 0 (no encontrado) sin error; a diferencia de Insert, que avisa si está llena.
-void* __cdecl FUN_00404280(void *this_,void *param_1_v)
+void* __cdecl HashTable_GetNode(void *this_,void *param_1_v)
 {
   undefined4 param_1 = *(undefined4*)param_1_v;
   uint uVar1;
@@ -394,32 +399,31 @@ void* __cdecl FUN_00404280(void *this_,void *param_1_v)
       uVar9 = uVar9 + 1;
     } while (uVar9 < *(uint *)((int)this_ + 0xc));
   }
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
   return (void*)0;
 }
 
 
-// FUN_0043dcc0 @ 0x0043dcc0 — Object_GetType
-// Devuelve *(undefined4*)(param_1 + 8) — el campo tipo/ID de un objeto.
-int __fastcall FUN_0043dcc0(int param_1)
+// IDA: CWsctlc::GetSocket (0x0043DCC0)
+int __fastcall CWsctlc_GetSocket(int param_1)
 {
   return *(int *)(param_1 + 8);
 }
 
 // =============================================================================
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 3155-3436 (282 lines)
-// CSimpleModulus encrypt/decrypt: FUN_0053cc30, FUN_0053cd20, FUN_0053cca0, FUN_0053ce30
+// CSimpleModulus encrypt/decrypt: CSimpleModulus_Encode, FUN_0053cd20, CSimpleModulus_Decode, FUN_0053ce30
 // + helpers: CSimpleModulus_EncryptBlock, CSimpleModulus_DecryptBlock, CsmTrace, CsmWatchdog
 // =============================================================================
 // CSimpleModulus encryption (Mu Online client→server) — ported from IDA
 // ═════════════════════════════════════════════════════════════════════════════
-// Three-level function tree (all reachable from FUN_0053cc30):
+// Three-level function tree (all reachable from CSimpleModulus_Encode):
 //
-//   FUN_0053cc30  CSimpleModulus::Encode(dst, src, len)     ← entry point
+//   CSimpleModulus_Encode  CSimpleModulus::Encode(dst, src, len)     ← entry point
 //       └─ FUN_0053cd20  Encrypt one 8-byte block → 11 bytes
-//              ├─ FUN_0053cf90  Insert N-bit integer into bit-packed buffer
-//              │       ├─ FUN_0053d170  bit-index → byte-index (>> 3)
-//              │       └─ FUN_0053d0d0  in-buffer bit-shift
+//              ├─ CSimpleModulus_AddBits  Insert N-bit integer into bit-packed buffer
+//              │       ├─ CSimpleModulus_GetByteOfBit  bit-index → byte-index (>> 3)
+//              │       └─ CSimpleModulus_Shift  in-buffer bit-shift
 //              └─ (acceso a claves: this+20 EncKey[4], this+52 XorKey[4])
 //
 // Object layout (17 DWORDs, 68 bytes), matches g_SimpleModulusCS @ 0x05826c10:
@@ -429,7 +433,7 @@ int __fastcall FUN_0043dcc0(int param_1)
 //   +36 : DecKey[0..3]  — multiplicador (server→cliente, el mismo objeto cuando se mezclan)
 //   +52 : XorKey[0..3]  — máscara de pre-XOR que se aplica al u16 en claro antes del módulo
 //
-// Cuando a FUN_0053cc30 se la llama con dst=0, sólo devuelve el tamaño de salida
+// Cuando a CSimpleModulus_Encode se la llama con dst=0, sólo devuelve el tamaño de salida
 // necesario (11 bytes por cada bloque de 8 bytes de entrada, redondeado hacia arriba). Con dst!=0 escribe
 // los bytes encriptados en dst y devuelve igual la cantidad de bytes.
 //
@@ -442,12 +446,12 @@ int __fastcall FUN_0043dcc0(int param_1)
 // Forward decl — body below.
 static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE xorSeed);
 
-// FUN_0053cc30 @ 0x0053cc30 — CSimpleModulus::Encode wrapper
+// IDA: FUN_0053CC30 (0x0053CC30)
 // a1 = dst buffer (0 → size-only query)
 // a2 = src plaintext buffer
 // a3 = src length in bytes
 // returns 11 * ceil(len / 8) (expanded encrypted size)
-int __cdecl FUN_0053cc30(int a1, unsigned char *a2, int a3)
+int __cdecl CSimpleModulus_Encode(int a1, unsigned char *a2, int a3)
 {
     int result = 11 * ((a3 + 7) / 8);
     if (!a1 || a3 <= 0) return result;
@@ -462,7 +466,7 @@ int __cdecl FUN_0053cc30(int a1, unsigned char *a2, int a3)
         int   take = remaining < 8 ? remaining : 8;
         for (int i = 0; i < take; ++i) blockIn[i] = src[i];
 
-        CSimpleModulus_EncryptBlock(DAT_05826c10, dst, (WORD *)blockIn, (BYTE)take);
+        CSimpleModulus_EncryptBlock(g_SimpleModulusCS, dst, (WORD *)blockIn, (BYTE)take);
 
         src       += 8;
         dst       += 11;
@@ -516,13 +520,13 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
         packed[0] = lo1 ^ xorKey[0] ^ packed[0];
     }
 
-    // ── Pass 3: bit-pack into dst using FUN_0053cf90 ─────────────────────────
+    // ── Pass 3: bit-pack into dst using CSimpleModulus_AddBits ─────────────────────────
     //   Por cada packed[i]: 16 bits arrancando en bitOff, después 2 bits en bitOff+22.
     //   bitOff avanza de a 18 por palabra (CF90 devuelve a2+a5).
     int bitOff = 0;
     for (int i = 0; i < 4; ++i) {
-        bitOff = FUN_0053cf90((int)dst, bitOff, (int)&packed[i], 0,  16);
-        bitOff = FUN_0053cf90((int)dst, bitOff, (int)&packed[i], 22, 2);
+        bitOff = CSimpleModulus_AddBits((int)dst, bitOff, (int)&packed[i], 0,  16);
+        bitOff = CSimpleModulus_AddBits((int)dst, bitOff, (int)&packed[i], 22, 2);
     }
 
     // ── Pass 4: checksum byte ────────────────────────────────────────────────
@@ -534,21 +538,21 @@ static void CSimpleModulus_EncryptBlock(DWORD *ctx, BYTE *dst, WORD *src, BYTE x
     WORD  tail;
     ((BYTE *)&tail)[0] = (BYTE)(chk ^ xorSeed ^ 0x3D);
     ((BYTE *)&tail)[1] = chk;
-    FUN_0053cf90((int)dst, bitOff, (int)&tail, 0, 16);
+    CSimpleModulus_AddBits((int)dst, bitOff, (int)&tail, 0, 16);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_0053cca0 @ 0x0053CCA0 — CSimpleModulus::Decode
+// IDA: FUN_0053CCA0 (0x0053CCA0)
 // Inversa de CC30 (codificar). Los paquetes server→cliente se decodifican con ésta.
 // 11 bytes de entrada → 8 de salida por bloque. Devuelve el total de bytes decodificados
 // (o sólo el tamaño cuando dst==0). El bloque lo decodifica FUN_0053ce30.
 //
-// Context = DAT_05826c58 (g_SimpleModulusSC) loaded from Data\Dec2.dat.
+// Context = g_SimpleModulusSC loaded from Data\Dec2.dat.
 // Layout: ctx[1+i]=ModKey, ctx[9+i]=DecKey, ctx[13+i]=XorKey (DWORD indices).
 // ─────────────────────────────────────────────────────────────────────────────
 static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src);
 
-int __cdecl FUN_0053cca0(int a1, int a2, int a3, int a4)
+int __cdecl CSimpleModulus_Decode(int a1, int a2, int a3, int a4)
 {
     BYTE *dst = (BYTE *)a1;
     BYTE *src = (BYTE *)a2;
@@ -560,7 +564,7 @@ int __cdecl FUN_0053cca0(int a1, int a2, int a3, int a4)
     int outBytes = 0;
     int srcCursor = 0;
     while (srcCursor < srcLen) {
-        int n = CSimpleModulus_DecryptBlock(DAT_05826c58, dst, src);
+        int n = CSimpleModulus_DecryptBlock(g_SimpleModulusSC, dst, src);
         if (n < 0) return n;            // checksum mismatch — propagate -1
         outBytes  += n;
         srcCursor += 11;
@@ -585,13 +589,13 @@ static void CsmTrace(const char *fmt, ...) {
     DbgLogPublic(buf);
 }
 
-// Watchdog: detects ANY future trample of DAT_05826c58 (Dec2 keys).
+// Watchdog: detects ANY future trample of g_SimpleModulusSC (Dec2 keys).
 // Silencioso mientras mod0 sea estable; loguea una vez por cambio. Se mantiene después de arreglar el bug
-// (DAT_055ca160 size mismatch) to catch any regression early.
+// (SocketClient size mismatch) to catch any regression early.
 extern "C" void CsmWatchdog(const char *tag)
 {
     static DWORD s_known = 0;
-    DWORD cur = DAT_05826c58[1];
+    DWORD cur = g_SimpleModulusSC[1];
     if (s_known == 0 && cur != 0) {
         s_known = cur;  // baseline
         return;
@@ -619,9 +623,9 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
     // ── Pass 1: bit-unpack 4×{16+2}-bit packed[i] from src ────────────────
     int bitOff = 0;
     for (int i = 0; i < 4; ++i) {
-        FUN_0053cf90((int)&packed[i], 0,  (int)src, bitOff,      16);
+        CSimpleModulus_AddBits((int)&packed[i], 0,  (int)src, bitOff,      16);
         bitOff += 16;
-        FUN_0053cf90((int)&packed[i], 22, (int)src, bitOff,      2);
+        CSimpleModulus_AddBits((int)&packed[i], 22, (int)src, bitOff,      2);
         bitOff += 2;
     }
     int tailBitOff = bitOff;  // 4*18 = 72
@@ -675,7 +679,7 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
 
     // ── Pass 4: read+verify checksum tail ────────────────────────────────
     DWORD tail = 0;
-    FUN_0053cf90((int)&tail, 0, (int)src, tailBitOff, 16);
+    CSimpleModulus_AddBits((int)&tail, 0, (int)src, tailBitOff, 16);
     BYTE  byteSeed = (BYTE)(tail & 0xFF);
     BYTE  byteChk  = (BYTE)((tail >> 8) & 0xFF);
     // Recupera el byteSeed original = (chk_lo ^ chk_hi ^ 0x3D) → deshacer para obtener xorSeed
@@ -694,9 +698,9 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
     return (int)xorSeed;          // 1..8 = number of valid plaintext bytes
 }
 
-// ── FUN_00403ea0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
-// FUN_00403ea0 @ 0x00403EA0 (73 bytes) — Quest class full init
-void __fastcall FUN_00403ea0(void *param_1_raw) {
+// ── Quest_FullInit — movida desde stubs_bulk_med.cpp (refactor B3) ──
+// Quest_FullInit @ 0x00403EA0 (73 bytes) — Quest class full init
+void __fastcall Quest_FullInit(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
     *param_1 = (int)&PTR_LAB_005524b8;
     if (g_csQuest == 0) g_csQuest = (DWORD)param_1;
@@ -728,19 +732,21 @@ void __fastcall FUN_00403f10(int ecx, int /*edx*/, BYTE param_1) {
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00404040 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_00404040 @ 0x00404040 — HashTable_Remove (__thiscall this, char *key)
+// ── PACKET_ENCRYPT — movida desde stubs_externs.cpp (refactor B3) ──
+// PACKET_ENCRYPT @ 0x00404040 — HashTable_Remove (__thiscall this, char *key)
 // STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl FUN_00404040(void *ctx, void *key) {
+// IDA: PACKET_ENCRYPT (0x00404040)
+void __cdecl PACKET_ENCRYPT(void *ctx, void *key) {
     // STUB: HashTable remove with obfuscation — cannot implement safely
     (void)ctx; (void)key;
 }
 
-// ── FUN_00404370 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_00404370 @ 0x00404370 — HashTable_CopyEncrypt(param_1, param_2)
+// ── Packet_DecryptBuffer — movida desde stubs_externs.cpp (refactor B3) ──
+// Packet_DecryptBuffer @ 0x00404370 — HashTable_CopyEncrypt(param_1, param_2)
 // Copia 0x584 bytes de param_2 a un buffer nuevo, lo codifica con XOR (resta 0x23,
 // XOR con la tabla DAT_00559050, suma 0xb9) y copia el resultado de vuelta a param_1.
-void __cdecl FUN_00404370(void *vparam_1, void *vparam_2) {
+// IDA: Packet_DecryptBuffer (0x00404370)
+void __cdecl Packet_DecryptBuffer(void *vparam_1, void *vparam_2) {
     unsigned int *param_1 = (unsigned int*)vparam_1;
     unsigned int *param_2 = (unsigned int*)vparam_2;
     unsigned int *puVar2 = (unsigned int*)operator_new(0x584);
@@ -765,8 +771,8 @@ void __cdecl FUN_00404370(void *vparam_1, void *vparam_2) {
     operator_delete((unsigned char*)puVar2);
 }
 
-// ── FUN_00408e30 — movida desde stubs_externs.cpp (refactor B3) ──
-int  __cdecl    FUN_00408e30(DWORD *a1);
+// ── Cloth_Solve — movida desde stubs_externs.cpp (refactor B3) ──
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
@@ -790,7 +796,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 // dibuja en (485,355) 120x24 con GlobalText[699] ("Proceder con la quest").
 // O sea el botón se veía y hasta se pintaba al pasar el mouse (ese feedback
 // está en sub_403320), pero el click no mandaba nada y la quest no avanzaba.
-int __cdecl FUN_00402850(void *param_1) {
+int __cdecl CSQuest_ProceedButton(void *param_1) {
     if ((0x1c1 < DAT_083a427c) && (DAT_083a427c < 0x280) &&
         (-1 < DAT_083a4278) && (DAT_083a4278 < 0x1b1))
         DAT_07d78094 = 1;                       // MouseOnWindow
@@ -840,7 +846,7 @@ int __cdecl FUN_00402850(void *param_1) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // FUN_00408ff0 @ 0x00408FF0 (~43 lines) — BMD mesh render: prepare vertices + draw front/back faces
-// __fastcall(ecx=meshObj). Aloca un buffer temporal de vértices (count*0xC), llama a FUN_00407b30 para transformar
+// __fastcall(ecx=meshObj). Aloca un buffer temporal de vértices (count*0xC), llama a SpringNode_GetPos para transformar
 // cada vértice, setea el modo de alpha según los flags de obj+0x14 (0=deshabilitar, 0x1000=alphaTest),
 // y después llama dos veces a FUN_004090b0, para la cara frontal (textura obj+0xC) y la trasera (textura obj+0x10).
 void __fastcall FUN_00408ff0(void* param_1) {
@@ -859,7 +865,7 @@ void __fastcall FUN_00408ff0(void* param_1) {
 
     for (int r = 0; r < rows; ++r)
         for (int c = 0; c < cols; ++c)
-            FUN_00407b30((void *)(nodes + 60 * (c + r * cols)),   // stride 0x3C
+            SpringNode_GetPos((void *)(nodes + 60 * (c + r * cols)),   // stride 0x3C
                          &verts[3 * (c + r * cols)]);
 
     unsigned flags = (unsigned)thiz[5] & 0x3000u;                 // +0x14
@@ -873,7 +879,7 @@ void __fastcall FUN_00408ff0(void* param_1) {
     FUN_004090b0(param_1, 0, 1, texFront, (int)verts);
     FUN_004090b0(param_1, 0, 0, texBack,  (int)verts);
 
-    FUN_0054158c((unsigned char *)verts);
+    operator_delete((unsigned char *)verts);
 }
 
 // ── FUN_004090b0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
@@ -938,17 +944,17 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2,
     glVertex3f(vert[0], vert[1], vert[2]);
 }
 
-// ── FUN_00409250 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_00409250 @ 0x00409250 — VerletNode_AddToSystem: allocate node, init, insert into doubly-linked list.
+// ── VerletNode_AddToSystem — movida desde stubs_externs.cpp (refactor B3) ──
+// VerletNode_AddToSystem @ 0x00409250 — VerletNode_AddToSystem: allocate node, init, insert into doubly-linked list.
 // La cabeza de la lista está en this+0x50 (nodo de 0xc bytes: [0]=datos, [4]=next, [8]=prev). El contador en this+0x48.
 // La entrada nueva se inserta justo después del centinela de cabecera.
-void __cdecl FUN_00409250(void *widget, float p1, float p2, float p3, float radius, int boneIdx)
+void __cdecl VerletNode_AddToSystem(void *widget, float p1, float p2, float p3, float radius, int boneIdx)
 {
     char *thiz = (char*)widget;
     // allocate and construct VerletNode (0x24 bytes)
     void *node_raw = operator_new(0x24);
-    void *node = (node_raw == NULL) ? NULL : (void *)FUN_00407e50((DWORD *)node_raw);
-    FUN_00407ef0(node, p1, p2, p3, radius, boneIdx);
+    void *node = (node_raw == NULL) ? NULL : (void *)ClothAnchor_Ctor((DWORD *)node_raw);
+    ClothAnchor_SetParams(node, p1, p2, p3, radius, boneIdx);
 
     // aloca la entrada de la lista enlazada (0xc bytes: [+0]=node_ptr, [+4]=next, [+8]=prev)
     int *entry = (int *)operator_new(0xc);
@@ -982,13 +988,13 @@ void __cdecl FUN_00409250(void *widget, float p1, float p2, float p3, float radi
     }
 }
 
-// ── FUN_00409310 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-int   __cdecl    FUN_00409310(DWORD *thiz);                       // colisión con anclas
-void  __fastcall FUN_00407e10(void *a, float b, int c, int d);
-void  __fastcall FUN_00407e30(void *a, float *b);
-void  __fastcall FUN_00407b30(void *node, float *out);
+// ── Cloth_CollideAnchors — movida desde stubs_misc_helpers.cpp (refactor B3) ──
+int   __cdecl    Cloth_CollideAnchors(DWORD *thiz);                       // colisión con anclas
+void  __fastcall VerletNode_SetTarget(void *a, float b, int c, int d);
+void  __fastcall VerletNode_GetPos(void *a, float *b);
+void  __fastcall SpringNode_GetPos(void *node, float *out);
 
-// FUN_00408e30 @ 0x00408E30 — Cloth_Solve: una iteración del solver.
+// Cloth_Solve @ 0x00408E30 — Cloth_Solve: una iteración del solver.
 // Port FIEL de IDA `sub_408E30`.
 //   1. Recorre la lista de anclas y refresca su posición de MUNDO desde el
 //      hueso al que están atadas (`TransformPosition`). Ese es el bucle que
@@ -998,7 +1004,7 @@ void  __fastcall FUN_00407b30(void *node, float *out);
 //   4. Flush de correcciones acumuladas (`sub_407D10`) sobre toda la grilla.
 //   5. Springs de rango (flags & 4): si alguno no converge, devuelve 0 para
 //      que `sub_408900` vuelva a iterar.
-int __cdecl FUN_00408e30(DWORD *a1)
+int __cdecl Cloth_Solve(DWORD *a1)
 {
   float Position[3];
   float WorldPosition[3];
@@ -1013,7 +1019,7 @@ int __cdecl FUN_00408e30(DWORD *a1)
   for (int i = *(int *)(a1[19] + 8); (int)a1[20] != i && i; i = *(int *)(i + 8))
   {
     DWORD *v5 = *(DWORD **)i;
-    FUN_00407e30(v5, Position);
+    VerletNode_GetPos(v5, Position);
     // IDA: rota el vector local (x,y,z) → (z,-y,x) antes de transformar.
     float v6 = Position[0];
     Position[1] = -Position[1];
@@ -1025,17 +1031,17 @@ int __cdecl FUN_00408e30(DWORD *a1)
         Position,
         WorldPosition,
         1);
-    FUN_00407e10(v5, WorldPosition[0], *(int *)&WorldPosition[1], *(int *)&WorldPosition[2]);
+    VerletNode_SetTarget(v5, WorldPosition[0], *(int *)&WorldPosition[1], *(int *)&WorldPosition[2]);
   }
 
-  FUN_00409310(a1);
+  Cloth_CollideAnchors(a1);
 
   // ── 2. springs de igualdad ────────────────────────────────────────────
   for (int v7 = 0, v8 = 0; v7 < (int)a1[14]; ++v7, v8 += 16)
   {
     float *v9 = (float *)(a1[15] + v8);
     if ((*(BYTE *)&v9[3] & 1) != 0)
-      FUN_00407c60(a1[13] + 60 * *(short *)v9, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
+      Cloth_SpringEqual(a1[13] + 60 * *(short *)v9, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
   }
 
   // ── 3. flush de correcciones ──────────────────────────────────────────
@@ -1044,7 +1050,7 @@ int __cdecl FUN_00408e30(DWORD *a1)
     int v11 = a1[10];
     for (int k = 0; k < v11; ++k)
     {
-      FUN_00407d10(a1[13] + 60 * (k + j * v11));
+      VerletSystem_Flush(a1[13] + 60 * (k + j * v11));
       v11 = a1[10];
     }
   }
@@ -1056,7 +1062,7 @@ int __cdecl FUN_00408e30(DWORD *a1)
     int v14 = *((short *)v13 + 1);
     if (v14 >= (int)a1[10]
         && (*(BYTE *)&v13[3] & 4) != 0
-        && !FUN_00407b90(a1[13] + 60 * v14, a1[13] + 60 * *(short *)v13, v13 + 1))
+        && !Cloth_SpringRange(a1[13] + 60 * v14, a1[13] + 60 * *(short *)v13, v13 + 1))
     {
       return 0;
     }
@@ -1064,11 +1070,12 @@ int __cdecl FUN_00408e30(DWORD *a1)
   return 1;
 }
 
-// ── FUN_004093a0 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_004093a0 @ 0x004093A0 — Widget_Ctor: llama a FUN_00407fe0 y después setea la vtable.
-void* __fastcall FUN_004093a0(void *param_1)
+// ── Widget_Ctor — movida desde stubs_externs.cpp (refactor B3) ──
+// IDA: Widget_Ctor (0x004093A0)
+// Widget_Ctor llama a Widget_CtorBase y después setea la vtable.
+void* __fastcall Widget_Ctor(void *param_1)
 {
-    FUN_00407fe0(param_1);
+    Widget_CtorBase(param_1);
     // vtable = &PTR_LAB_00552548 — skipped in re-impl
     return param_1;
 }
@@ -1080,14 +1087,14 @@ void __fastcall FUN_004093c0(void *This) {
     FUN_00408070(This);
 }
 
-// ── FUN_004093e0 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_004093e0 @ 0x004093E0 — SpringMesh_Create: builds triangle-mesh spring system from BMD face data.
+// ── SpringMesh_Create — movida desde stubs_externs.cpp (refactor B3) ──
+// SpringMesh_Create @ 0x004093E0 — SpringMesh_Create: builds triangle-mesh spring system from BMD face data.
 // Por cada vértice de cara: inicializa la posición del nodo desde el buffer de vértices de huesos (DAT_0584621c), lo marca como fijo si el tipo coincide.
-// Por cada arista de cara (3 por triángulo): calcula el largo de reposo vía FUN_00407b50, marca si es horizontal/vertical,
-// y agrega el resorte vía FUN_004088b0 a this->springs (stride 0x10; na,nb,rest_scaled,rest,flags).
+// Por cada arista de cara (3 por triángulo): calcula el largo de reposo vía SpringNode_Delta, marca si es horizontal/vertical,
+// y agrega el resorte vía Spring_StoreEdge a this->springs (stride 0x10; na,nb,rest_scaled,rest,flags).
 // Layout: this+4=entity, +8=type, +0x14=flags, +0x30=node_count, +0x34=node_array*, +0x38=spring_count,
 //         +0x3c=spring_array*, +0x54=slot_index, +0x5c=model_type.
-void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int radius, int flags)
+void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, int radius, int flags)
 {
     char *thiz = (char*)widget;
     *(int *)(thiz + 8)  = type;
@@ -1115,7 +1122,7 @@ void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int r
     } else {
         nodes = raw + 1;
         *raw  = node_count;
-        FUN_00541ec1(nodes, 0x3c, node_count, (void*)FUN_00407950);
+        L_YGXPAXIHP6EX0_Z1_Z(nodes, 0x3c, node_count, (void*)SpringNode_Ctor);
     }
     *(int **)(thiz + 0x34) = nodes;
 
@@ -1139,7 +1146,7 @@ void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int r
         float y = verts[vi * 3 + 1];
         float z = verts[vi * 3 + 2];
         int pinned = ((int)*(short *)(vert_indices + i * 4) == type) ? 1 : 0;
-        FUN_004079b0((char*)nodes + i * 0x3c, x, y, z, pinned);
+        SpringNode_SetPos((char*)nodes + i * 0x3c, x, y, z, pinned);
     }
 
     // build springs from face triangle edges
@@ -1153,12 +1160,12 @@ void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int r
             int pA = (int)nodes + na * 0x3c;
             int pB = (int)nodes + nb * 0x3c;
             float delta[3];
-            float dist = FUN_00407b50((void*)pA, pB, delta);
+            float dist = SpringNode_Delta((void*)pA, pB, delta);
             float posA[3], posB[3];
-            FUN_00407b30((void*)pA, posA);
-            FUN_00407b30((void*)pB, posB);
+            SpringNode_GetPos((void*)pA, posA);
+            SpringNode_GetPos((void*)pB, posB);
             BYTE edge_flags = (BYTE)(2 | (fabsf(posA[0] - posB[0]) <= _DAT_00552560 ? 4 : 1));
-            FUN_004088b0(widget, (int)sp, na, nb, dist * _DAT_00552504, dist, edge_flags);
+            Spring_StoreEdge(widget, (int)sp, na, nb, dist * _DAT_00552504, dist, edge_flags);
             sp++;
         }
     }
@@ -1187,18 +1194,18 @@ void* __fastcall FUN_00409ad0(void* param_1) {
     return param_1;
 }
 
-// ── FUN_00409b60 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// FUN_00409b60 @ 0x00409B60 — SoundWidgetB ~dtor
-void __fastcall FUN_00409b60(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00409b80((void *)ecx);
+// ── scalar_deleting_destructor_locale — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// scalar_deleting_destructor_locale @ 0x00409B60 — SoundWidgetB ~dtor
+void __fastcall scalar_deleting_destructor_locale(int ecx, int /*edx*/, BYTE param_1) {
+    Locimp_dtor((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00409b80 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_00409b80 @ 0x00409B80 (~39 lines) — CSQuest destructor: clear list + free sentinels
+// ── Locimp_dtor — movida desde stubs_bulk_misc.cpp (refactor B3) ──
+// Locimp_dtor @ 0x00409B80 (~39 lines) — CSQuest destructor: clear list + free sentinels
 // __fastcall(ecx=questObj). Setea la vtable, llama a FUN_00409d20 (limpia todos los nodos),
 // y después libera la cadena de nodos entre la cabeza y la cola, y los propios centinelas.
-void __fastcall FUN_00409b80(void* param_1) {
+void __fastcall Locimp_dtor(void* param_1) {
     // *param_1 = &PTR_FUN_00552568 (vtable)
     // FUN_00409d20(param_1) — clear all quest nodes
     // Recorre la cadena head->next y borra cada nodo
@@ -1208,19 +1215,19 @@ void __fastcall FUN_00409b80(void* param_1) {
 
 // ── FUN_00409d20 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00409d20 @ 0x00409D20 (~34 lines) — CSQuest: clear all quest nodes from linked list
-// __fastcall(ecx=questObj). Itera desde head->next hasta tail, llama a FUN_004086e0 sobre los datos
+// __fastcall(ecx=questObj). Itera desde head->next hasta tail, llama a Widget_Release sobre los datos
 // de cada nodo y después invoca el destructor vía la vtable. Libera todos los nodos intermedios.
 void __fastcall FUN_00409d20(int param_1) {
     // Recorre desde (param_1+8)->next hasta llegar al centinela (param_1+0xC):
-    //   FUN_004086e0(*node) — cleanup node data
+    //   Widget_Release(*node) — cleanup node data
     //   (*node->vtable[0])(1) — destructor with free
     // Free all intermediate nodes
     // Re-link head<->tail, count=0
 }
 
-// ── FUN_00409db0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
-// FUN_00409db0 @ 0x00409DB0 (110 bytes) — LinkedList: destroy all nodes + sentinels
-void __fastcall FUN_00409db0(int *param_1) {
+// ── LinkedList_DestroyAll — movida desde stubs_bulk_med.cpp (refactor B3) ──
+// LinkedList_DestroyAll @ 0x00409DB0 (110 bytes) — LinkedList: destroy all nodes + sentinels
+void __fastcall LinkedList_DestroyAll(int *param_1) {
     *(int *)(*(int *)(param_1[2] + 4) + 8) = 0;
     void *pvVar1 = *(void **)(param_1[1] + 8);
     while (pvVar1 != NULL) {
@@ -1237,17 +1244,17 @@ void __fastcall FUN_00409db0(int *param_1) {
 
 // ── FUN_00409ea0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00409ea0 @ 0x00409EA0 (10 bytes) — calls sound device init
-void FUN_00409ea0(void) { FUN_0040a600((void *)&DAT_00590b00); }
+void FUN_00409ea0(void) { LinkedList_InitSentinels((void *)&DAT_00590b00); }
 
 // ── FUN_00409eb0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00409eb0 @ 0x00409EB0 (12 bytes)
 void FUN_00409eb0(void) {}
 
-// ── FUN_00409ed0 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-// FUN_00409ed0 @ 0x00409ED0 — WidgetB_Ctor: set vtable + zero fields.
-void* __fastcall FUN_00409ed0(void *param_1)
+// ── WidgetB_Ctor — movida desde stubs_misc_helpers.cpp (refactor B3) ──
+// WidgetB_Ctor @ 0x00409ED0 — WidgetB_Ctor: set vtable + zero fields.
+void* __fastcall WidgetB_Ctor(void *param_1)
 {
-    FUN_00409f20((int)param_1);
+    WidgetB_ZeroFields((int)param_1);
     // vtable set skipped
     return param_1;
 }
@@ -1255,23 +1262,23 @@ void* __fastcall FUN_00409ed0(void *param_1)
 // ── FUN_00409ef0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00409ef0 @ 0x00409EF0 — WidgetC ~dtor
 void __fastcall FUN_00409ef0(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00409f10((void *)ecx);
+    WidgetB_SetVtable((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00409f10 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-// FUN_00409f10 @ 0x00409F10 — WidgetB_SetVtable: sólo setea el puntero de vtable.
-void __fastcall FUN_00409f10(void *param_1)
+// ── WidgetB_SetVtable — movida desde stubs_misc_helpers.cpp (refactor B3) ──
+// WidgetB_SetVtable @ 0x00409F10 — WidgetB_SetVtable: sólo setea el puntero de vtable.
+void __fastcall WidgetB_SetVtable(void *param_1)
 {
     // vtable = &PTR_FUN_00552574 — skipped in re-impl
     (void)param_1;
 }
 
-// ── FUN_00409f20 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-// ── FUN_00409f20/ed0/f10/0040a660 — second widget type ctor chain ────────────
+// ── WidgetB_ZeroFields — movida desde stubs_misc_helpers.cpp (refactor B3) ──
+// ── WidgetB_ZeroFields/ed0/f10/0040a660 — second widget type ctor chain ────────────
 
-// FUN_00409f20 @ 0x00409F20 — WidgetB_ZeroFields: clear 4 fields (+4,+8,+0x18,+0x1c).
-void __fastcall FUN_00409f20(int param_1)
+// WidgetB_ZeroFields @ 0x00409F20 — WidgetB_ZeroFields: clear 4 fields (+4,+8,+0x18,+0x1c).
+void __fastcall WidgetB_ZeroFields(int param_1)
 {
     *(short *)(param_1 + 4) = 0;
     *(int *)(param_1 + 8)   = 0;
@@ -1303,7 +1310,7 @@ void __fastcall FUN_0040a0a0(void *This, int /*edx*/, int param_1, int param_2, 
     *(DWORD *)((int)This + 0x10) = 0x3cf5c28f;
     *(DWORD *)((int)This + 0x14) = 0xbf800000;
     *(float *)((int)This + 0xc) = -1.0f;
-    FUN_004f9d60((float *)((int)This + 0xc));
+    Vec3_Normalize((float *)((int)This + 0xc));
     int iVar1 = FUN_00409f30(This, NULL, param_1, param_2, param_3, param_4);
     if (iVar1 != 0) {
         FUN_0040a300(This, NULL, param_1);
@@ -1384,11 +1391,12 @@ void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
 
 // ── FUN_00423c30 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00423c30 @ 0x00423C30 (10 bytes) — disconnect socket context
-void FUN_00423c30(void) { FUN_0043dc90(((int)(uintptr_t)DAT_055ca160)); }
+void FUN_00423c30(void) { CWsctlc_Close(((int)(uintptr_t)SocketClient)); }
 
-// ── FUN_00423db0 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_00423db0 @ 0x00423DB0 — Net_ResetTrade: clears trade/shop globals, re-enables party markers.
-void __cdecl FUN_00423db0(void) {
+// ── InitGuildWar — movida desde stubs_externs.cpp (refactor B3) ──
+// InitGuildWar @ 0x00423DB0 — Net_ResetTrade: clears trade/shop globals, re-enables party markers.
+// IDA: FUN_00423DB0 (0x00423DB0)
+void __cdecl InitGuildWar(void) {
     DAT_05826d30 = 0;
     DAT_00559684 = 0xffffffff;
     lpString_05826bfc[0] = '\0';
@@ -1408,11 +1416,12 @@ void __cdecl FUN_00423db0(void) {
     } while (iVar4 != 0);
 }
 
-// ── FUN_0043dc90 — movida desde stubs_linker.cpp (refactor B3) ──
-// FUN_0043dc90 @ 0x0043DC90 (11 lines) — NetContext_Disconnect
+// ── CWsctlc_Close — movida desde stubs_linker.cpp (refactor B3) ──
+// CWsctlc_Close @ 0x0043DC90 (11 lines) — NetContext_Disconnect
 // Clears connected flag, closes socket, invalidates handle.
-void __cdecl FUN_0043dc90(int ctx) {
-    DAT_055ca164 = 0; // g_bGameServerConnected
+// IDA: CWsctlc::Close (0x0043DC90)
+void __cdecl CWsctlc_Close(int ctx) {
+    SocketClientIsGame = 0; // g_bGameServerConnected
     closesocket(*(SOCKET *)(ctx + 8));
     *(int *)(ctx + 8) = -1; // INVALID_SOCKET
 }
@@ -1437,7 +1446,7 @@ void __fastcall FUN_0053cbf0(int *param_1) { *param_1 = (int)&PTR_FUN_0055389c; 
 
 // ── FUN_0053ce30 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_0053ce30 @ 0x0053CE30 (350 bytes) — Packet crypto decrypt block
-// 4-round Feistel cipher: extracts 16-bit + 2-bit fields via FUN_0053cf90,
+// 4-round Feistel cipher: extracts 16-bit + 2-bit fields via CSimpleModulus_AddBits,
 // applies reverse XOR chain using context keys (this+0x04..0x3c),
 // y después multiplica-módulo + XOR de salida. Devuelve el byte de checksum o 0xFFFFFFFF si falla.
 unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param_2) {
@@ -1446,15 +1455,16 @@ unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param
     return 0;
 }
 
-// ── FUN_0053cf90 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_0053cf90 @ 0x0053CF90 (305 bytes) — bit-field insert.
+// IDA: FUN_0053CF90 (0x0053CF90)
+// ── CSimpleModulus_AddBits — movida desde stubs_bulk_misc.cpp (refactor B3) ──
+// CSimpleModulus_AddBits @ 0x0053CF90 (305 bytes) — bit-field insert.
 // Copia el rango de bits [a4..a4+a5) del buffer de origen (a3) al destino (a1)
-// en el offset de bit a2. Usa un buffer temporal + FUN_0053d0d0 para el corrimiento entre bytes.
+// en el offset de bit a2. Usa un buffer temporal + CSimpleModulus_Shift para el corrimiento entre bytes.
 // Ported from IDA sub_53CF90.
-int __stdcall FUN_0053cf90(int a1, unsigned int a2, int a3, unsigned int a4, int a5)
+int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned int a4, int a5)
 {
-    int  lastByteIdx = FUN_0053d170((int)a4 + a5 - 1);
-    int  firstByteIdx= FUN_0053d170((int)a4);
+    int  lastByteIdx = CSimpleModulus_GetByteOfBit((int)a4 + a5 - 1);
+    int  firstByteIdx= CSimpleModulus_GetByteOfBit((int)a4);
     unsigned int v6  = (unsigned int)(1 + lastByteIdx - firstByteIdx);
 
     // Aloca un scratch con 1 byte extra para que el corrimiento a la derecha de abajo no
@@ -1470,11 +1480,11 @@ int __stdcall FUN_0053cf90(int a1, unsigned int a2, int a3, unsigned int a4, int
 
     // Alinea a la izquierda los bits extraídos al inicio del buffer scratch,
     // y después los alinea a la derecha al offset de bit del destino.
-    FUN_0053d0d0((BYTE *)lpMem, v6,     -(a4 % 8));
-    FUN_0053d0d0((BYTE *)lpMem, v6 + 1,  (a2 % 8));
+    CSimpleModulus_Shift((BYTE *)lpMem, v6,     -(a4 % 8));
+    CSimpleModulus_Shift((BYTE *)lpMem, v6 + 1,  (a2 % 8));
 
     int    nBytes = (int)v6 + ((a2 % 8) > (a4 % 8) ? 1 : 0);
-    BYTE  *v9     = (BYTE *)(a1 + FUN_0053d170(a2));
+    BYTE  *v9     = (BYTE *)(a1 + CSimpleModulus_GetByteOfBit(a2));
     if (nBytes > 0) {
         int off = (int)((BYTE *)lpMem - v9);
         do {
@@ -1487,11 +1497,12 @@ int __stdcall FUN_0053cf90(int a1, unsigned int a2, int a3, unsigned int a4, int
     return a2 + a5;
 }
 
-// ── FUN_0053d0d0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_0053d0d0 @ 0x0053D0D0 (155 bytes) — Byte-array bitwise shift for crypto.
+// IDA: FUN_0053D0D0 (0x0053D0D0)
+// ── CSimpleModulus_Shift — movida desde stubs_bulk_misc.cpp (refactor B3) ──
+// CSimpleModulus_Shift @ 0x0053D0D0 (155 bytes) — Byte-array bitwise shift for crypto.
 // Positive a3 → right-shift; negative a3 → left-shift.  Shifts bits across
 // adjacent bytes (1-byte ripple).  Ported from IDA sub_53D0D0.
-void __stdcall FUN_0053d0d0(unsigned char *a1, int a2, int a3)
+void __stdcall CSimpleModulus_Shift(unsigned char *a1, int a2, int a3)
 {
     if (a3 == 0) return;
     if (a3 > 0) {
@@ -1524,18 +1535,20 @@ void __stdcall FUN_0053d0d0(unsigned char *a1, int a2, int a3)
     }
 }
 
-// ── FUN_0053d170 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// ── 10-byte: FUN_0053d170 — shift right 3 ───────────────────────────────────
+// IDA: FUN_0053D170 (0x0053D170)
+// ── CSimpleModulus_GetByteOfBit — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── 10-byte: CSimpleModulus_GetByteOfBit — shift right 3 ───────────────────────────────────
 
-// FUN_0053d170 @ 0x0053D170 (10 bytes)
-// FUN_0053d170 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_0053d170(int a1)
+// CSimpleModulus_GetByteOfBit @ 0x0053D170 (10 bytes)
+// CSimpleModulus_GetByteOfBit (IDA-activated, was Ghidra stub)
+int __cdecl CSimpleModulus_GetByteOfBit(int a1)
 {
   return a1 >> 3;
 }
 
-// ── FUN_0053d1c0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_0053d1c0 @ 0x0053D1C0 (381 bytes) — Crypto key file loader.
+// IDA: FUN_0053D1C0 (0x0053D1C0)
+// ── CSimpleModulus_LoadKey — movida desde stubs_bulk_misc.cpp (refactor B3) ──
+// CSimpleModulus_LoadKey @ 0x0053D1C0 (381 bytes) — Crypto key file loader.
 // Reads a CSimpleModulus key file:
 //   header = [int16 magic][int32 expected_size]
 // y después hasta 4 grupos de clave de 16 bytes, con XOR contra DAT_00562e48, en el
@@ -1543,7 +1556,7 @@ int __cdecl FUN_0053d170(int a1)
 // cuál de los cuatro grupos trae el archivo (LoadEncryptionKey pasa
 // 1,1,0,1 → Mod,Enc,skip Dec,Xor; LoadDecryptionKey passes 1,0,1,1 →
 // Mod, saltea Enc, Dec, Xor). Devuelve 1 si tuvo éxito, 0 ante cualquier error de E/S o de formato.
-int __cdecl FUN_0053d1c0(void *self, const char *filename, short magic,
+int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic,
                           int a4, int a5, int a6, int a7)
 {
     DWORD *_this = (DWORD *)self;

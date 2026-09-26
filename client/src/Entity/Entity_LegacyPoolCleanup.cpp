@@ -18,14 +18,14 @@
 #include "Party/Party.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -46,11 +46,11 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 #endif
 
 
-// FUN_0045ac20 @ 0x0045AC20 — DeleteCharacter(int Key)  (95 bytes)
+// IDA: DeleteCharacter (0x0045AC20)
 // Linear-scans CharactersClient (400 slots × 0x394) for entity_id (+0x1DC).
 // On match, marks slot inactive (+0 = 0), kills any butterfly that owned this
 // character (Butterfles[+0xFC] == slot_ptr → +0 = 0), then calls DeleteCloth.
-extern void __cdecl FUN_00449840(int c, int o, int flag);  // DeleteCloth
+extern void __cdecl DeleteCloth(int c, int o, int flag);  // DeleteCloth
 extern "C" void __cdecl DeleteCharacter(int Key)
 {
     DWORD v1 = (DWORD)DAT_07abf5d0;
@@ -73,14 +73,13 @@ extern "C" void __cdecl DeleteCharacter(int Key)
         v3 += 111;  // stride 444 bytes = 0x1BC
     }
 
-    FUN_00449840((int)v1, (int)v1, 0);
+    DeleteCloth((int)v1, (int)v1, 0);
 
     // The reconstructed Party table is separate storage, so re-arm the
     // original runtime sentinels at the entity-destruction boundary instead
     // of retaining a destroyed/reused CharactersClient index.
     Party_RefreshViewportLinks();
 }
-void __cdecl FUN_0045ac20(int Key) { DeleteCharacter(Key); }
 
 // FUN_00460d20 @ 0x00460D20 — DeleteEffect(int Type, DWORD Owner, int iSubType)
 // (69 bytes) — walks Effects pool DAT_07b11670 (200 × 0x1BC), zeroes any slot
@@ -108,5 +107,5 @@ extern "C" void __cdecl DeleteEffect(int Type, DWORD Owner, int iSubType)
         o += 111;  // stride 0x1BC
     }
 }
-void __cdecl FUN_00460d20(int Type, DWORD Owner, int iSubType)
-{ DeleteEffect(Type, Owner, iSubType); }
+// 2026-09-25: aca habia un puente FUN_00460d20 sin callers que solo llamaba a
+// DeleteEffect (misma direccion, 0x00460D20).  Eliminado.

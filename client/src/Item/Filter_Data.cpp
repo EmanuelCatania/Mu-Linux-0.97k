@@ -12,7 +12,7 @@
 // IDA: sub_4799D0 (0x004799D0)
 void __cdecl Filter_LoadTextFile(const char *path)
 {
-    DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
 
     while (TextParser_GetToken() != 2) {
@@ -33,5 +33,5 @@ void __cdecl Filter_LoadTextFile(const char *path)
         }
         DAT_07d78070++;
     }
-    FUN_0054150f(DAT_07d7806c);
+    crt_fclose(DAT_07d7806c);
 }

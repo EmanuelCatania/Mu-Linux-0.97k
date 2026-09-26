@@ -8,23 +8,23 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "functions.h"
 
 // -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// FUN_00408cb0 vive ahora en Scene/Scene_CharSelect_Nav.cpp y FUN_00408e30 en
+// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
 // Net/Crypto.cpp; antes se definian en este archivo.
-void __fastcall FUN_00408cb0(int*, float);
-int  __cdecl    FUN_00408e30(DWORD *a1);
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -45,11 +45,11 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// FUN_00475170 @ 0x00475170 — ItemDrop_SetupRenderRef(slot_ptr)
+// ItemDrop_SetupRenderRef @ 0x00475170 — ItemDrop_SetupRenderRef(slot_ptr)
 // Resolves the entity reference at slot+0x3c, copies its world position to the
 // model render slot, selects the target bone via equip-flags, then calls
 // BMD_TransformPosition to animate/position it.
-void __cdecl FUN_00475170(int param_1) {
+void __cdecl ItemDrop_SetupRenderRef(int param_1) {
     int iVar1 = *(int*)(param_1 + 0x3c);
     float local_c[3] = {0.0f, 0.0f, 0.0f};
     void *this_ = (void*)(DAT_05828d58 + *(short*)(iVar1 + 2) * 0xbc);
@@ -67,10 +67,10 @@ void __cdecl FUN_00475170(int param_1) {
         (float*)(param_1 + 0x10),
         '\x01');
 }
-// FUN_00474f90 @ 0x00474F90 — Player_DrawInstance
+// RenderPlane @ 0x00474F90 — Player_DrawInstance
 // Renders a billboard quad at pos[], scaled by sc, rotated around Z by rot[0] angle,
 // using texture slot param_1.
-void __cdecl FUN_00474f90(int cls, float *pos, float *rot, float sc) {
+void __cdecl RenderPlane(int cls, float *pos, float *rot, float sc) {
     GL_BindTextureSlot(cls);
     GL_SetBlendAdditive();
     glPushMatrix();
@@ -93,16 +93,16 @@ void __cdecl FUN_00474f90(int cls, float *pos, float *rot, float sc) {
     glPopMatrix();
     GL_ResetState();
 }
-// FUN_00440aa0 (BMD::PlayAnimation / BMD_AnimTick) — moved to src/Render/BMD_Anim.cpp
+// BMD__PlayAnimation (BMD::PlayAnimation / BMD_AnimTick) — moved to src/Render/BMD_Anim.cpp
 // CharacterAnimation @ 0x00448600       — moved to src/Render/BMD_Anim.cpp
 // (B3 refactor 2026-05-07)
 
 // ── Weapon/Entity color helpers ───────────────────────────────────────────────
 
-// FUN_00503cf0 @ 0x00503CF0 — Weapon_SetColor: maps item type to RGB color into color[3].
+// IDA: PartObjectColor (0x00503CF0)
 // color[3] *= scale * half_scale (scaled product), direction varies by item type index.
 // flag=1 or flag=8 overrides selection for type 0x129/0x1f9.
-void __cdecl FUN_00503cf0(int param_1, float param_2, float param_3, float *param_4, char param_5)
+void __cdecl PartObjectColor(int param_1, float param_2, float param_3, float *param_4, char param_5)
 {
     unsigned int uVar4 = 0;
     // flag overrides
@@ -160,9 +160,9 @@ apply:;
     }
 }
 
-// FUN_00503fe0 @ 0x00503FE0 — Weapon_SetColorAlt: simpler color selector, no flag param.
+// Weapon_SetColorAlt @ 0x00503FE0 — Weapon_SetColorAlt: simpler color selector, no flag param.
 // Scales existing color[3] in place by (scale * half_scale).
-void __cdecl FUN_00503fe0(int param_1, float param_2, float param_3, float *param_4)
+void __cdecl Weapon_SetColorAlt(int param_1, float param_2, float param_3, float *param_4)
 {
     int iVar4 = 0;
     if ((param_1==0x215)||(param_1==0x21d)||(param_1==0x19e)||(param_1==0x235)) { iVar4=2; }
@@ -198,11 +198,11 @@ void __cdecl FUN_00503fe0(int param_1, float param_2, float param_3, float *para
     }
 }
 
-// FUN_00504960 @ 0x00504960 — Entity_SetModelColor: weapon type → color/alpha → render.
+// RenderPartObjectBodyColor @ 0x00504960 — Entity_SetModelColor: weapon type → color/alpha → render.
 // Sets model color at +0x48..+0x50. Special cases for type 0x144 (two-tone), 0x1d7
-// (sets entity +0x58=2 then resets to -1 afterward), 0x235 (FUN_00441e00 with extra arg).
-// Falls through to FUN_00441e00 for bone rendering.
-void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
+// (sets entity +0x58=2 then resets to -1 afterward), 0x235 (BMD__RenderBody with extra arg).
+// Falls through to BMD__RenderBody for bone rendering.
+void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int etype, float scale,
                             int flags, float alpha, int rgba)
 {
     float *color = (float *)((char*)model + 0x48);
@@ -215,28 +215,28 @@ void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
             flags -= 0x100;
             color[0] = 1.0f; color[1] = 0.1f; color[2] = 0.1f;
         }
-        FUN_00441e00(model, (uint)flags, scale,
+        BMD__RenderBody(model, (uint)flags, scale,
                      *(int *)(entity+100), *(float*)(entity+0x68),
                      *(float*)(entity+0x6c), *(float*)(entity+0x70), -1, (uint)rgba);
         return nullptr;
     } else {
-        FUN_00503cf0(etype, scale, alpha, color, (char)((flags >> 8) & 1));
+        PartObjectColor(etype, scale, alpha, color, (char)((flags >> 8) & 1));
     }
     if (etype == 0x1d7) {
         *(int *)(entity + 0x58) = 2;
     } else if (etype == 0x235) {
-        FUN_00441e00(model, (uint)flags, scale,
+        BMD__RenderBody(model, (uint)flags, scale,
                      *(int *)(entity+100), *(float*)(entity+0x68),
                      *(float*)(entity+0x6c), *(float*)(entity+0x70), 1, (uint)rgba);
         return nullptr;
     } else if (etype != 0x1af && etype != 0x1fa && etype != 0x260) {
-        FUN_00441e00(model, (uint)flags, scale,
+        BMD__RenderBody(model, (uint)flags, scale,
                      *(int *)(entity+100), *(float*)(entity+0x68),
                      *(float*)(entity+0x6c), *(float*)(entity+0x70), -1, (uint)rgba);
         return nullptr;
     }
     int fVar1 = *(int*)(entity + 0x58);
-    FUN_00441e00(model, (uint)flags, scale,
+    BMD__RenderBody(model, (uint)flags, scale,
                  *(int *)(entity+100), *(float*)(entity+0x68),
                  *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
     if (etype == 0x1d7) {
@@ -245,38 +245,39 @@ void* __cdecl FUN_00504960(void *model, int entity, int etype, float scale,
     return nullptr;
 }
 
-// FUN_00504ac0 @ 0x00504AC0 — Entity_SetModelColorAlt: simpler version.
-// No special type 0x144 path; uses FUN_00503fe0 instead of FUN_00503cf0.
-void* __cdecl FUN_00504ac0(void *model, int entity, int etype, float scale,
+// Entity_SetModelColorAlt @ 0x00504AC0 — Entity_SetModelColorAlt: simpler version.
+// No special type 0x144 path; uses Weapon_SetColorAlt instead of PartObjectColor.
+void* __cdecl Entity_SetModelColorAlt(void *model, int entity, int etype, float scale,
                              int flags, float alpha, int rgba)
 {
     float *color = (float *)((char*)model + 0x48);
     if ((flags & 0x10) == 0x10) {
         color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f;
     } else {
-        FUN_00503fe0(etype, scale, alpha, color);
+        Weapon_SetColorAlt(etype, scale, alpha, color);
     }
     int fVar1 = (etype == 0x235) ? 1 : -1;   // HiddenMesh: malla 1 / ninguna
-    FUN_00441e00(model, (uint)flags, scale,
+    BMD__RenderBody(model, (uint)flags, scale,
                  *(int *)(entity+100), *(float*)(entity+0x68),
                  *(float*)(entity+0x6c), *(float*)(entity+0x70), fVar1, (uint)rgba);
     return nullptr;
 }
-// FUN_00455430 @ 0x00455430 — RenderLinkObject (COMPLETO)
+// RenderLinkObject @ 0x00455430 — RenderLinkObject (COMPLETO)
 // Implemented in src/Render/RenderLinkObject.cpp
-// FUN_00449840 @ 0x00449840 — Entity_ClearBoneLinks(param1, param2, param3)
+// DeleteCloth @ 0x00449840 — Entity_ClearBoneLinks(param1, param2, param3)
 // Clears bone/widget link arrays on entity objects.
-// For param2: iterates (+0x184, count at +0x180), calls FUN_004086e0 + vtable[0](3) per entry.
-// For param1: iterates 6 weapon/equip slots (stride 0x18 at +0x1f4), calls FUN_004086e0 + vtable[0](1).
-// For param3: clears one link at +0x14 via FUN_004086e0 + vtable[0](1).
-// FUN_004086e0 signature: (int, int, int) — called here as (ptr, 0, 0) (3-arg form, per functions.h).
-void __cdecl FUN_00449840(int param_1, int param_2, int param_3)
+// For param2: iterates (+0x184, count at +0x180), calls Widget_Release + vtable[0](3) per entry.
+// For param1: iterates 6 weapon/equip slots (stride 0x18 at +0x1f4), calls Widget_Release + vtable[0](1).
+// For param3: clears one link at +0x14 via Widget_Release + vtable[0](1).
+// Widget_Release signature: (int, int, int) — called here as (ptr, 0, 0) (3-arg form, per functions.h).
+// IDA: DeleteCloth (0x00449840)
+void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
 {
     if ((param_2 != 0) && (*(int*)(param_2 + 0x184) != 0)) {
         int count = (int)(unsigned char)*(char*)(param_2 + 0x180);
         int *puVar1 = (int*)*(int*)(param_2 + 0x184);
         for (int i = 0; i < count; i++) {
-            FUN_004086e0((int)puVar1, 0, 0);
+            Widget_Release((int)puVar1, 0, 0);
             puVar1 += 0x15;
         }
         int *base = (int*)*(int*)(param_2 + 0x184);
@@ -291,7 +292,7 @@ void __cdecl FUN_00449840(int param_1, int param_2, int param_3)
         for (int i = 0; i < 6; i++) {
             int *puVar1 = (int*)*piVar4;
             if (puVar1 != nullptr) {
-                FUN_004086e0((int)puVar1, 0, 0);
+                Widget_Release((int)puVar1, 0, 0);
                 // IDA: (**v8)(v8, 1) -- dtor thiscall de la vtable (sub_45AAA0).
                 // El port lo llamaba como cdecl sin `this`.
                 FUN_0045aaa0_impl(puVar1, 1);
@@ -302,16 +303,16 @@ void __cdecl FUN_00449840(int param_1, int param_2, int param_3)
     }
     if ((param_3 != 0) && (*(int*)(param_3 + 0x14) != 0)) {
         int *puVar1 = (int*)*(int*)(param_3 + 0x14);
-        FUN_004086e0((int)puVar1, 0, 0);
+        Widget_Release((int)puVar1, 0, 0);
         FUN_0045aaa0_impl(puVar1, 1);   // IDA: (**v9)(v9, 1)
         *(int*)(param_3 + 0x14) = 0;
     }
 }
-// FUN_004f8bb0 @ 0x004F8BB0 — Particle_DrawBillboard: draws a tiled billboard quad in world space.
+// RenderTerrainAlphaBitmap @ 0x004F8BB0 — Particle_DrawBillboard: draws a tiled billboard quad in world space.
 // Loads texture (param_1), sets GL color, computes tile grid from scale/position,
-// transforms each tile corner via Vector_Rotate (bone matrix), calls FUN_004f8740 per tile.
+// transforms each tile corner via Vector_Rotate (bone matrix), calls Terrain_RenderQuad per tile.
 // Uses __ftol for int grid coords from float positions.
-void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float *col, float angle, float alpha)
+void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, float sy, float *col, float angle, float alpha)
 {
     if (alpha == _DAT_0055256c)
         glColor3fv(col);
@@ -329,7 +330,7 @@ void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float
     int icy = (int)cy;
     float size = (sx > sy) ? sx : sy;
     if (size <= 0.0f)
-        return nullptr;
+        return;
     float half = size * _DAT_00552504;
     float inv  = _DAT_0055256c / size;
     float xScale = (sy != 0.0f) ? (sx / sy) : 1.0f;
@@ -357,9 +358,9 @@ void* __cdecl FUN_004f8bb0(int type, float x, float y, float sx, float sy, float
                 corners[k][1] = out[1] + _DAT_00552504;
                 corners[k][2] = out[2];
             }
-            FUN_004f8740((float)icx + ti, (float)icy + tj, 1.0f, 1,
+            Terrain_RenderQuad((float)icx + ti, (float)icy + tj, 1.0f, 1,
                          (int)corners, '\0', alpha);
         }
     }
-    return nullptr;
+    return;
 }

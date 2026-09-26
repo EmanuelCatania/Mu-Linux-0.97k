@@ -18,13 +18,13 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -46,9 +46,9 @@ extern void __cdecl FUN_0054158c(void* ptr);
 #endif
 
 
-// FUN_005403a0 @ 0x005403a0 — Pipe_WriteFile
+// Pipe_WriteFile @ 0x005403a0 — Pipe_WriteFile
 // Writes a formatted message to the named pipe handle (lpTargetHandle_00563b58).
-void __cdecl FUN_005403a0(LPCVOID param_1, int param_2, CHAR *param_3)
+void __cdecl Pipe_WriteFile(LPCVOID param_1, int param_2, CHAR *param_3)
 {
     if (lpTargetHandle_00563b58 == NULL || lpTargetHandle_00563b58 == INVALID_HANDLE_VALUE)
         return;
@@ -61,16 +61,16 @@ void __cdecl FUN_005403a0(LPCVOID param_1, int param_2, CHAR *param_3)
 }
 
 
-// FUN_005404a0 @ 0x005404a0 — Pipe_Write (thin wrapper)
-void __cdecl FUN_005404a0(LPCVOID param_1, int param_2, CHAR *param_3)
+// Pipe_Write @ 0x005404a0 — Pipe_Write (thin wrapper)
+void __cdecl Pipe_Write(LPCVOID param_1, int param_2, CHAR *param_3)
 {
-    FUN_005403a0(param_1, param_2, param_3);
+    Pipe_WriteFile(param_1, param_2, param_3);
 }
 
 
-// FUN_0053ed30 @ 0x0053ed30 — Pipe_SetTarget
+// Pipe_SetTarget @ 0x0053ed30 — Pipe_SetTarget
 // Copies name into manager+0x2f0, then sends opcode 0x613 via Pipe_Write.
-void __cdecl FUN_0053ed30(void *mgr, CHAR *name)
+void __cdecl Pipe_SetTarget(void *mgr, CHAR *name)
 {
     if (mgr == NULL || name == NULL) return;
     char *dst = (char *)mgr + 0x2f0;
@@ -80,5 +80,5 @@ void __cdecl FUN_0053ed30(void *mgr, CHAR *name)
         ((short *)dst)[i] = ((short *)name)[i];
     if (len & 1)
         dst[len - 1] = name[len - 1];
-    FUN_005404a0((LPCVOID)0x8b1, 0x613, name);
+    Pipe_Write((LPCVOID)0x8b1, 0x613, name);
 }

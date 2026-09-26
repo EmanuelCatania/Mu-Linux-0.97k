@@ -5,11 +5,11 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_0050e5a0 @ 0x0050e5a0 — OpenWorld(int Map)
+// IDA: OpenWorld (0x0050E5A0)
 // Per IDA decompile (raw/0050E5A0_OpenWorld.c, 1500 bytes).
 // Loads all terrain and tile textures for the current world map.
 //
-// World name = "World<N>" where N = DAT_0055a7ac+1 (capped at 12 for dungeons 11-16).
+// World name = "World<N>" where N = World+1 (capped at 12 for dungeons 11-16).
 // Loads Terrain.map, Terrain<N>.att, terrain.obj (or terrain<N>.obj for maps 2/3),
 // TerrainHeight.bmp, TerrainLight.jpg, then 14 tile JPGs (slots 0x23-0x30) +
 // 3 alpha-overlay TGAs (slots 0x32-0x34) + leaf01/02 + rain01/02 (always from
@@ -21,16 +21,16 @@
 //   - "Data/%s/terrain/%d" → "Data/%s/terrain%d"  (no extra slash)
 //   - rain01/02 use "World1" hardcoded; rain03 uses "World10" hardcoded.
 //   - Pass FileName to OpenTerrainAttribute (was called with no args → no-op).
-void __cdecl FUN_0050e5a0(void) {
+void __cdecl OpenWorld(void) {
     BYTE  uVar1;
     CHAR  world_name[32];
     CHAR  local_40[64];
 
-    FUN_004ffd50();             // DeleteObjects
-    FUN_00509190();             // DeleteNpcs
-    FUN_00509880();             // DeleteMonsters
-    FUN_00502b80();             // ClearItems
-    FUN_0045abb0(DAT_05826cac); // ClearCharacters(HeroKey)
+    DeleteObjects();             // DeleteObjects
+    DeleteNpcs();             // DeleteNpcs
+    DeleteMonsters();             // DeleteMonsters
+    ClearItems();             // ClearItems
+    ClearCharacters(HeroKey); // ClearCharacters(HeroKey)
 
     // BUG-FIX 2026-04-28: limpiar TODOS los pools de char-select que
     // sobreviven al world load. Sin esto los tick-functions iteran slots
@@ -46,10 +46,10 @@ void __cdecl FUN_0050e5a0(void) {
     memset(DAT_083a2f78, 0, sizeof(DAT_083a2f78));   // ambient particle pool (10×0x1bc)
     memset(DAT_07e016f8, 0, sizeof(DAT_07e016f8));   // tooltip pool (26×0x254)
 
-    FUN_0050c4d0();             // OpenWorldModels
+    OpenWorldModels();             // OpenWorldModels
 
-    int iVar2 = DAT_0055a7ac + 1;
-    if (DAT_0055a7ac >= 11 && DAT_0055a7ac <= 16) iVar2 = 12;
+    int iVar2 = World + 1;
+    if (World >= 11 && World <= 16) iVar2 = 12;
 
     crt_sprintf(world_name, "World%d", iVar2);
 
@@ -60,7 +60,7 @@ void __cdecl FUN_0050e5a0(void) {
     // INSTANCIAS (qué objeto va dónde) jamás se leen → mapa renderiza
     // solo terreno + hero, sin casas/NPCs estáticos/props.
     crt_sprintf(local_40, "Data/%s/EncTerrain%d.map", world_name, iVar2);
-    FUN_004f6f90(local_40);     // OpenTerrainMapping
+    OpenTerrainMapping(local_40);     // OpenTerrainMapping
 
     // 2026-05-04: el archivo `EncTerrain%d.att` mide 131076 bytes (formato
     // encriptado custom) pero `OpenTerrainAttribute` solo acepta 65539 bytes
@@ -69,60 +69,60 @@ void __cdecl FUN_0050e5a0(void) {
     // Intentamos el archivo unencrypted `Terrain%d.att` primero (mismo formato
     // que IDA espera). Fallback a EncTerrain*.att si no existe.
     crt_sprintf(local_40, "Data/%s/Terrain%d.att", world_name, iVar2);
-    if (FUN_004f6ce0(local_40) == 0) {
+    if (OpenTerrainAttribute(local_40) == 0) {
         crt_sprintf(local_40, "Data/%s/EncTerrain%d.att", world_name, iVar2);
-        FUN_004f6ce0(local_40);     // OpenTerrainAttribute(FileName)
+        OpenTerrainAttribute(local_40);     // OpenTerrainAttribute(FileName)
     }
 
     crt_sprintf(local_40, "Data/%s/EncTerrain%d.obj", world_name, iVar2);
-    FUN_004ffe70(local_40);     // OpenObjectsEnc
+    OpenObjectsEnc(local_40);     // OpenObjectsEnc
 
     uVar1 = DAT_0055a7c4;
     if (DAT_083a410c != '\0') DAT_0055a7c4 = 0;
 
     // BUG-FIX 2026-05-01: archivos reales en filesystem son OZ* (encrypted),
-    // no .bmp/.jpg/.tga. La función FUN_00529740 no hace ext-swap automático
+    // no .bmp/.jpg/.tga. La función OpenJPG no hace ext-swap automático
     // a menos que DAT_0055a7c4 != 0 — y en in-game está en 0. Usamos extensiones
     // reales directamente para que fopen abra el archivo correcto.
-    crt_sprintf(local_40, "%s/TerrainHeight.OZB", world_name); FUN_004f7270(local_40);
-    crt_sprintf(local_40, "%s/TerrainLight.OZJ",  world_name); FUN_004f7250(local_40);
+    crt_sprintf(local_40, "%s/TerrainHeight.OZB", world_name); CreateTerrain(local_40);
+    crt_sprintf(local_40, "%s/TerrainLight.OZJ",  world_name); OpenTerrainLight(local_40);
 
     // Tile textures (OZJ: slots 0x23-0x30; OZT alpha overlays: slots 0x32-0x34)
-    crt_sprintf(local_40, "%s/TileGrass01.OZJ",  world_name); FUN_00529740(local_40, 0x23, 0x2600, 0x2901, 0, '\x01');
-    crt_sprintf(local_40, "%s/TileGrass01.OZT",  world_name); FUN_00529bd0(local_40, 0x32, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileGrass02.OZT",  world_name); FUN_00529bd0(local_40, 0x33, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileGrass03.OZT",  world_name); FUN_00529bd0(local_40, 0x34, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileGrass02.OZJ",  world_name); FUN_00529740(local_40, 0x24, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileGround01.OZJ", world_name); FUN_00529740(local_40, 0x25, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileGround02.OZJ", world_name); FUN_00529740(local_40, 0x26, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileGround03.OZJ", world_name); FUN_00529740(local_40, 0x27, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileWater01.OZJ",  world_name); FUN_00529740(local_40, 0x28, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileWood01.OZJ",   world_name); FUN_00529740(local_40, 0x29, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileRock01.OZJ",   world_name); FUN_00529740(local_40, 0x2a, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileRock02.OZJ",   world_name); FUN_00529740(local_40, 0x2b, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileRock03.OZJ",   world_name); FUN_00529740(local_40, 0x2c, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileRock04.OZJ",   world_name); FUN_00529740(local_40, 0x2d, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileRock05.OZJ",   world_name); FUN_00529740(local_40, 0x2e, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileRock06.OZJ",   world_name); FUN_00529740(local_40, 0x2f, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/TileRock07.OZJ",   world_name); FUN_00529740(local_40, 0x30, 0x2600, 0x2901, 0, '\0');
-    crt_sprintf(local_40, "%s/leaf01.OZT",  world_name); FUN_00529bd0(local_40, 100,  0x2600, 0x2900, 0, '\0');
-    crt_sprintf(local_40, "%s/leaf01.OZJ",  world_name); FUN_00529740(local_40, 100,  0x2600, 0x2900, 0, '\0');
-    crt_sprintf(local_40, "%s/leaf02.OZJ",  world_name); FUN_00529740(local_40, 0x65, 0x2600, 0x2900, 0, '\0');
+    crt_sprintf(local_40, "%s/TileGrass01.OZJ",  world_name); OpenJPG(local_40, 0x23, 0x2600, 0x2901, 0, '\x01');
+    crt_sprintf(local_40, "%s/TileGrass01.OZT",  world_name); OpenTGA(local_40, 0x32, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileGrass02.OZT",  world_name); OpenTGA(local_40, 0x33, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileGrass03.OZT",  world_name); OpenTGA(local_40, 0x34, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileGrass02.OZJ",  world_name); OpenJPG(local_40, 0x24, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileGround01.OZJ", world_name); OpenJPG(local_40, 0x25, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileGround02.OZJ", world_name); OpenJPG(local_40, 0x26, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileGround03.OZJ", world_name); OpenJPG(local_40, 0x27, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileWater01.OZJ",  world_name); OpenJPG(local_40, 0x28, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileWood01.OZJ",   world_name); OpenJPG(local_40, 0x29, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileRock01.OZJ",   world_name); OpenJPG(local_40, 0x2a, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileRock02.OZJ",   world_name); OpenJPG(local_40, 0x2b, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileRock03.OZJ",   world_name); OpenJPG(local_40, 0x2c, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileRock04.OZJ",   world_name); OpenJPG(local_40, 0x2d, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileRock05.OZJ",   world_name); OpenJPG(local_40, 0x2e, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileRock06.OZJ",   world_name); OpenJPG(local_40, 0x2f, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/TileRock07.OZJ",   world_name); OpenJPG(local_40, 0x30, 0x2600, 0x2901, 0, '\0');
+    crt_sprintf(local_40, "%s/leaf01.OZT",  world_name); OpenTGA(local_40, 100,  0x2600, 0x2900, 0, '\0');
+    crt_sprintf(local_40, "%s/leaf01.OZJ",  world_name); OpenJPG(local_40, 100,  0x2600, 0x2900, 0, '\0');
+    crt_sprintf(local_40, "%s/leaf02.OZJ",  world_name); OpenJPG(local_40, 0x65, 0x2600, 0x2900, 0, '\0');
     // rain01/02 always loaded from World1; rain03 always from World10 (per IDA).
-    crt_sprintf(local_40, "World1/rain01.OZT"); FUN_00529bd0(local_40, 0x66, 0x2600, 0x2900, 0, '\0');
-    crt_sprintf(local_40, "World1/rain02.OZT"); FUN_00529bd0(local_40, 0x67, 0x2600, 0x2900, 0, '\0');
-    crt_sprintf(local_40, "World10/rain03.OZT"); FUN_00529bd0(local_40, 0x68, 0x2600, 0x2900, 0, '\0');
+    crt_sprintf(local_40, "World1/rain01.OZT"); OpenTGA(local_40, 0x66, 0x2600, 0x2900, 0, '\0');
+    crt_sprintf(local_40, "World1/rain02.OZT"); OpenTGA(local_40, 0x67, 0x2600, 0x2900, 0, '\0');
+    crt_sprintf(local_40, "World10/rain03.OZT"); OpenTGA(local_40, 0x68, 0x2600, 0x2900, 0, '\0');
 
     if (DAT_083a410c != '\0') DAT_0055a7c4 = uVar1;
 }
 
-// FUN_0050f690 @ 0x0050f690 — Font_Init
+// IDA: OpenFont (0x0050F690)
 // Resets font state, loads FontInput.tga (slot 0) and FontTest.tga (slot 1) as TGA,
 // then builds the font DIB (FUN_0050f5f0) and renderer (FUN_0040f570).
-void __cdecl FUN_0050f690(void) {
+void __cdecl OpenFont(void) {
     PathFinder_ResetContext();
-    FUN_00529bd0("Interface/FontInput.tga", 0, 0x2600, 0x2900, 0, '\x01');
-    FUN_00529bd0("Interface/FontTest.tga",  1, 0x2600, 0x2900, 0, '\x01');
+    OpenTGA("Interface/FontInput.tga", 0, 0x2600, 0x2900, 0, '\x01');
+    OpenTGA("Interface/FontTest.tga",  1, 0x2600, 0x2900, 0, '\x01');
     Font_CreateTextDib(DAT_055ca004);
     Font_CreateRenderer(DAT_055c9ff8, (int)lpData_055ca044, DAT_055ca004);
 }

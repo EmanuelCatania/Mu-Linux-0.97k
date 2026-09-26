@@ -1,8 +1,8 @@
 // Entity_Init.cpp
 // Entity slot initialisation and position persistence.
 //
-// FUN_0045f930 @ 0x0045f930 — Entity_InitSlot
-// FUN_0045fa20 @ 0x0045fa20 — Monster_SaveSetBase
+// IDA: CreateHero (0x0045F930)
+// SaveMonsters @ 0x0045fa20 — Monster_SaveSetBase
 //
 // Entity pool base: DAT_07abf5d0
 // Stride: 0x394 bytes per slot
@@ -11,21 +11,22 @@
 #include "stdafx.h"
 
 
-// FUN_0045f930 — CreateHero (Ghidra-confirmed signature)
+// CreateHero — CreateHero (Ghidra-confirmed signature)
 //   CHARACTER* CreateHero(int Index, int Class, int Skin,
 //                         float x, float y, float Rotate)
 // Creates hero character slot at Index. Calls CreateCharacterPointer with
 // Type=0x186 (hero placeholder). Sets light, position, class, skin, body
 // parts, weapon/wing/helper slots to -1. Calls SetCharacterScale +
 // SetPlayerStop.
+// IDA: CreateHero (0x0045F930)
 unsigned char * __cdecl
-FUN_0045f930(int Index, int Class, int Skin, float x, float y, float Rotate)
+CreateHero(int Index, int Class, int Skin, float x, float y, float Rotate)
 {
   unsigned char *puVar1;
   unsigned short uVar2;
 
   puVar1 = (unsigned char *)(DAT_07abf5d0 + Index * 0x394);
-  FUN_0045adc0(puVar1, 0x186, 0, 0, Rotate);
+  CreateCharacterPointer(puVar1, 0x186, 0, 0, Rotate);
 
   // Object.Light[0..2] = 0.3f (0x3e99999a)
   *(unsigned int *)(puVar1 + 0xe8) = 0x3e99999a;
@@ -36,7 +37,7 @@ FUN_0045f930(int Index, int Class, int Skin, float x, float y, float Rotate)
   *(float *)(puVar1 + 0x10) = x;
   *(float *)(puVar1 + 0x14) = y;
 
-  // c->Class = Class (byte), c->Skin = Skin (byte)
+  // c->Class (byte), c->Skin (byte)
   puVar1[0x1bc] = (unsigned char)Class;
   puVar1[0x1bd] = (unsigned char)Skin;
 
@@ -53,13 +54,13 @@ FUN_0045f930(int Index, int Class, int Skin, float x, float y, float Rotate)
   *(unsigned short *)(puVar1 + 0x2a0) = 0xffff;         // Wing.Type
   *(unsigned short *)(puVar1 + 0x2b8) = 0xffff;         // Helper.Type
 
-  FUN_0045c050((int)puVar1);    // SetCharacterScale
-  FUN_004430c0((int)puVar1);    // SetPlayerStop
+  SetCharacterScale((int)puVar1);    // SetCharacterScale
+  SetPlayerStop((int)puVar1);    // SetPlayerStop
   return puVar1;
 }
 
 
-// FUN_0045fa20 — Monster_SaveSetBase
+// SaveMonsters — Monster_SaveSetBase
 // Writes entity positions to a file param_1 in a proprietary format.
 // Opens file, iterates active entities (stride 0x394, count up to 0x59740/0x394),
 // writes position with format string s__4d__4d_30__4d__4d__1_00559b58, closes file.
@@ -69,20 +70,20 @@ void __cdecl Monster_SaveSetBase(LPCSTR param_1)
   int iVar2;
   int iVar3;
 
-  pFVar1 = (FILE *)FUN_0054173f(param_1,DAT_00559b74);
-  FUN_00543274((int *)pFVar1,&DAT_00559b70);
+  pFVar1 = (FILE *)crt_fopen(param_1,DAT_00559b74);
+  crt_fprintf((int *)pFVar1,&DAT_00559b70);
   iVar2 = 0;
   iVar3 = DAT_07abf5d0;
   do {
     if ((*(char *)(iVar2 + iVar3) != '\0') && (*(char *)(iVar2 + 0x84 + iVar3) == ' ')) {
       __ftol();
       __ftol();
-      FUN_00543274((int *)pFVar1,(byte *)s__4d__4d_30__4d__4d__1_00559b58);
+      crt_fprintf((int *)pFVar1,(byte *)s__4d__4d_30__4d__4d__1_00559b58);
       iVar3 = DAT_07abf5d0;
     }
     iVar2 = iVar2 + 0x394;
   } while (iVar2 < 0x59740);
-  FUN_00543274((int *)pFVar1,&DAT_00559b50);
-  FUN_0054150f(pFVar1);
+  crt_fprintf((int *)pFVar1,&DAT_00559b50);
+  crt_fclose(pFVar1);
   return;
 }

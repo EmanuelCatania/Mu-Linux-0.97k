@@ -51,7 +51,7 @@ static void HelpWindow_BuildTextList(int title, int firstLine, int endLine)
     crt_sprintf(TextList + row * 100, "\n");
     TextNum = row + 1;
     DAT_07e11d6e = 1;
-    FUN_004c2420(1, 1, TextNum, 0, 2, 1);
+    CharMenu_RenderTextList(1, 1, TextNum, 0, 2, 1);
 }
 
 // IDA: RenderHelpWindow (0x004C3530)
@@ -94,7 +94,7 @@ void RenderHelpWindow(void)
     int blankRows = isKind5 ? 0 : 11;
     int attr = id * 0x40 + DAT_07d78068;    // &ItemAttribute[id]
 
-    FUN_004c2e20(id);
+    CharMenu_BuildStatRequirements(id);
     TextNum = 0;
     crt_sprintf(TextList, "\n");
     strcpy(TextList + 1 * 100, GlobalText[160]);
@@ -124,40 +124,40 @@ void RenderHelpWindow(void)
     ItemHelp_RequireClass(attr);
     crt_sprintf(TextList + TextNum * 100, "\n");
     ++TextNum;
-    FUN_004c2420(1, 1, TextNum, colW2, 2, 1);
+    CharMenu_RenderTextList(1, 1, TextNum, colW2, 2, 1);
     GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
     TextNum = 0;
 
     // Filas de valores. Formatos leidos de .rdata 0x0055A438..0x0055A4B0.
-    FUN_004c2d50(0, scale, pad);
-    FUN_004c2c10(0, (unsigned char*)"+%d", &scale, "000000", pad2, kind);
+    CharMenu_AppendSkillDesc(0, scale, pad);
+    CharMenu_RenderStatRow(0, (unsigned char*)"+%d", &scale, "000000", pad2, kind);
     if (DAT_07e91530 > 0 && !isKind5) {
-        FUN_004c2c10(2, (unsigned char*)"%3d", &scale, "00 ", pad2, 0);
-        FUN_004c2d50(2, scale, pad);
-        FUN_004c2c10(0, (unsigned char*)"~", &scale, " 00", pad2, 0);
+        CharMenu_RenderStatRow(2, (unsigned char*)"%3d", &scale, "00 ", pad2, 0);
+        CharMenu_AppendSkillDesc(2, scale, pad);
+        CharMenu_RenderStatRow(0, (unsigned char*)"~", &scale, " 00", pad2, 0);
     }
     if (DAT_07e91534 > 0 && !isKind5)
-        FUN_004c2c10(3, (unsigned char*)"%3d", &scale, "00000", pad2, 0);
+        CharMenu_RenderStatRow(3, (unsigned char*)"%3d", &scale, "00000", pad2, 0);
     if (id >= 160 && id < 192) {
-        FUN_004c2d50(4, scale, pad);
-        FUN_004c2c10(4, (unsigned char*)"%2d%%", &scale, "00000", pad2, 0);
+        CharMenu_AppendSkillDesc(4, scale, pad);
+        CharMenu_RenderStatRow(4, (unsigned char*)"%2d%%", &scale, "00000", pad2, 0);
     }
     if (DAT_07e9153c > 0) {
-        FUN_004c2d50(5, scale, pad);
-        FUN_004c2c10(5, (unsigned char*)"%3d", &scale, "000000", pad2, 0);
+        CharMenu_AppendSkillDesc(5, scale, pad);
+        CharMenu_RenderStatRow(5, (unsigned char*)"%3d", &scale, "000000", pad2, 0);
     }
     if (DAT_07e91540 > 0) {
-        FUN_004c2d50(6, scale, pad);
-        FUN_004c2c10(6, (unsigned char*)"%3d%%", &scale, "000000", pad2, 0);
+        CharMenu_AppendSkillDesc(6, scale, pad);
+        CharMenu_RenderStatRow(6, (unsigned char*)"%3d%%", &scale, "000000", pad2, 0);
     }
     if (!isKind5) {
-        FUN_004c2d50(7, scale, pad);
-        FUN_004c2c10(7, (unsigned char*)"%3d", &scale, "00000", pad2, 0);
-        FUN_004c2d50(8, scale, pad);
-        FUN_004c2c10(8, (unsigned char*)"%3d", &scale, "00000", pad2, 0);
+        CharMenu_AppendSkillDesc(7, scale, pad);
+        CharMenu_RenderStatRow(7, (unsigned char*)"%3d", &scale, "00000", pad2, 0);
+        CharMenu_AppendSkillDesc(8, scale, pad);
+        CharMenu_RenderStatRow(8, (unsigned char*)"%3d", &scale, "00000", pad2, 0);
     } else {
-        FUN_004c2d50(9, scale, pad);
-        FUN_004c2c10(9, (unsigned char*)"%3d", &scale, "000000", pad2, kind);
+        CharMenu_AppendSkillDesc(9, scale, pad);
+        CharMenu_RenderStatRow(9, (unsigned char*)"%3d", &scale, "000000", pad2, kind);
     }
     GL_ResetState();                        // DisableAlphaBlend
 }
@@ -169,11 +169,11 @@ void RenderHelpWindow(void)
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004c2420 @ 0x004c2420 — DrawItemInfoBox(x, y, count, fixedWidth, iSort, drawBox)
+// CharMenu_RenderTextList @ 0x004c2420 — DrawItemInfoBox(x, y, count, fixedWidth, iSort, drawBox)
 //
 // Port fiel, verificado sobre el desensamblado 0x004c2420..0x004c285e.  Es la
 // MISMA rutina que usan el menú de personaje (RenderHelpWindow @0x004c3530,
-// FUN_004c2c10, FUN_004c2d50), el tooltip de ítem (RenderItemInfo @0x004c4650)
+// CharMenu_RenderStatRow, CharMenu_AppendSkillDesc), el tooltip de ítem (RenderItemInfo @0x004c4650)
 // y el de reparación (RenderRepairInfo @0x004c8d70): dibuja el recuadro y la
 // lista de líneas de lpString_07e90798.
 //
@@ -348,7 +348,7 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
     return ((float)local_8.cy / _DAT_055c9b74) / 2.0f;
 }
 
-void __cdecl FUN_004c2420(int param_1, int param_2, int param_3,
+void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
                           int param_4, int param_5, int param_6)
 {
     float  y;
@@ -571,7 +571,7 @@ void __cdecl ItemHelp_RequireClass(int param_1)
 // `widthRef` (o de la ultima linea si es NULL).
 // 2026-09-17: el port anterior usaba el patron de ancho como formato y el
 // formato como tabla de colores, y salteaba las filas en cero.
-void __cdecl FUN_004c2c10(int column, unsigned char *format, int *value,
+void __cdecl CharMenu_RenderStatRow(int column, unsigned char *format, int *value,
                             const char *widthRef, int y, int kind)
 {
     int last = (kind == 5) ? 0 : 11;
@@ -582,7 +582,7 @@ void __cdecl FUN_004c2c10(int column, unsigned char *format, int *value,
         DAT_07ea7b10[i] = 0;
         ++DAT_07eaa154;
     }
-    FUN_004c2420(*value, y, DAT_07eaa154, 0, 3, 0);
+    CharMenu_RenderTextList(*value, y, DAT_07eaa154, 0, 3, 0);
 
     SIZE sz = { 0, 0 };
     const char* ref = widthRef ? widthRef : lpString_07e90798 + (DAT_07eaa154 - 1) * 100;
@@ -593,16 +593,16 @@ void __cdecl FUN_004c2c10(int column, unsigned char *format, int *value,
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004c2d50 @ 0x004c2d50 — CharMenu_AppendSkillDesc
+// CharMenu_AppendSkillDesc @ 0x004c2d50 — CharMenu_AppendSkillDesc
 //
 // Switches on param_1 (0-9) to select description string from
-// DAT_07d359d0...DAT_07d36204. Formats into text buffer, calls FUN_004c2420.
+// DAT_07d359d0...DAT_07d36204. Formats into text buffer, calls CharMenu_RenderTextList.
 
 // IDA: sub_4C2D50 (0x004C2D50)
 // 2026-09-12: era un no-op (la tabla vieja tenia direcciones literales del
 // binario).  IDA usa GlobalText directamente: una linea por tipo, color 1, la
 // dibuja con sub_4C2420(x, y, n, 0, 3, 0) y vuelve TextNum a 0.
-void __cdecl FUN_004c2d50(int param_1, int param_2, int param_3)
+void __cdecl CharMenu_AppendSkillDesc(int param_1, int param_2, int param_3)
 {
     const char* text = "";
     switch (param_1) {
@@ -620,13 +620,13 @@ void __cdecl FUN_004c2d50(int param_1, int param_2, int param_3)
     crt_sprintf(lpString_07e90798 + DAT_07eaa154 * 100, "%s", text);
     DAT_07e91708[DAT_07eaa154] = 1;
     ++DAT_07eaa154;
-    FUN_004c2420(param_2, param_3, DAT_07eaa154, 0, 3, 0);
+    CharMenu_RenderTextList(param_2, param_3, DAT_07eaa154, 0, 3, 0);
     DAT_07eaa154 = 0;
 }
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_004c2e20 @ 0x004c2e20 — CharMenu_BuildStatRequirements
+// CharMenu_BuildStatRequirements @ 0x004c2e20 — CharMenu_BuildStatRequirements
 //
 // Guard: if DAT_00559fe0 == param_1, return (already built for this class).
 // Reads char data from DAT_07d78068 + param_1 * 0x40.
@@ -634,7 +634,7 @@ void __cdecl FUN_004c2d50(int param_1, int param_2, int param_3)
 // Contains HashTable operations with XOR encryption (key at DAT_00559050,
 // 0x584 bytes, ref-count at +0x161). Loops 0-11 per stat level.
 
-void __cdecl FUN_004c2e20(int param_1)
+void __cdecl CharMenu_BuildStatRequirements(int param_1)
 {
     // IDA: sub_4C2E20 (0x004C2E20), tabla de la ventana F1 para el item
     // dword_7E11D24: 12 filas (+0..+11) x 10 columnas.  Fórmulas tomadas del

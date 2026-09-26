@@ -1,9 +1,9 @@
 // Terrain_RenderFace.cpp — port 1:1 desde IDA (2026-06-27)
 // Cadena de dibujo de tiles texturados del terreno (eslabón #4-#5 de RenderTerrain):
-//   RenderTerrainTile (FUN_004f8480) → RenderTerrainFace (FUN_004f7fb0) →
+//   RenderTerrainTile → RenderTerrainFace (RenderTerrainFace) →
 //   FaceTexture (UVs) + RenderFace / RenderFaceAlpha / RenderFaceBlend (draw).
 //
-// Antes: FUN_004f7fb0 era un no-op stub (stubs.cpp) y las 4 primitivas no existían,
+// Antes: RenderTerrainFace era un no-op stub (stubs.cpp) y las 4 primitivas no existían,
 // por eso el dev previo escribió una fallback flat-shaded en RenderTerrain.
 //
 // Direcciones/buffers verificados por bytes de operando en IDA:
@@ -11,19 +11,19 @@
 //   RenderFaceAlpha    0x004F7B80   RenderFaceBlend   0x004F7CE0
 //   RenderTerrainFace  0x004F7FB0   BindTexture       0x00511480 (GL_BindTextureSlot)
 //   Bitmaps base       0x083A7CA0 (stride 0x38, BITMAP_t: Width@0x20 Height@0x24)
-//   TerrainMappingAlpha  = DAT_0834b608 (float[256²])   (mislabel "TerrainHeight")
-//   TerrainMappingLayer1 = DAT_080bb2b4 (BYTE[256²])
-//   TerrainMappingLayer2 = DAT_080ab2b4 (BYTE[256²])
+//   TerrainMappingAlpha  = TerrainMappingAlpha (float[256²])   (mislabel "TerrainHeight")
+//   TerrainMappingLayer1 = TerrainMappingLayer1 (BYTE[256²])
+//   TerrainMappingLayer2 = TerrainMappingLayer2 (BYTE[256²])
 //   PrimaryTerrainLight  = DAT_081cb608 (float[256²][3])  ← 0x081CB608 (NO 0x07eab250;
 //                          el macro PrimaryTerrainLight de structs.h apunta mal a
 //                          0x07eab250 — buffer muerto. Lo leímos directo de DAT_081cb608,
-//                          que FUN_004f95e0 puebla per-frame desde BackTerrainLight 0x0828b608).
+//                          que Terrain_Water puebla per-frame desde BackTerrainLight 0x0828b608).
 //   TerrainVertex        = g_TilePickBuf[12]   (4 corners contiguos)
 //   TerrainTextureCoord  = g_TerrainTexCoord[8] (4 UV pairs)
 //   TerrainGrassWind     = DAT_07eab200 (float[256²])     (mislabel "water-wave heights")
 //   TerrainGrassTexture[(yi&0xFF)+1] = DAT_0810b2cc[yi&0xFF]
 //   WaterMove=DAT_07eeb214  WaterTextureNumber=DAT_0839bc8c  CurrentLayer=DAT_0814b2dc
-//   TerrainFlag=DAT_0838bc44  unk_839BC86=DAT_0839bc86  World=g_GameSubState
+//   TerrainFlag=DAT_0838bc44  unk_839BC86=DAT_0839bc86  World
 //   TerrainIndex1..4 = DAT_07eab1ec/f0/f4/f8
 
 #include "stdafx.h"
@@ -35,9 +35,9 @@
 #define TER_IDX2    DAT_07eab1f0
 #define TER_IDX3    DAT_07eab1f4
 #define TER_IDX4    DAT_07eab1f8
-#define TER_ALPHA   DAT_0834b608                          // TerrainMappingAlpha (float)
-#define TER_L1      DAT_080bb2b4                           // TerrainMappingLayer1 (BYTE)
-#define TER_L2      DAT_080ab2b4                           // TerrainMappingLayer2 (BYTE)
+#define TER_ALPHA   TerrainMappingAlpha                          // TerrainMappingAlpha (float)
+#define TER_L1      TerrainMappingLayer1                           // TerrainMappingLayer1 (BYTE)
+#define TER_L2      TerrainMappingLayer2                           // TerrainMappingLayer2 (BYTE)
 #define TER_WIND    DAT_07eab200                           // TerrainGrassWind (float)
 #define TER_VERT    ((float(*)[3])&g_TilePickBuf[0])       // TerrainVertex[4][3]
 #define TER_TEX     ((float(*)[2])&g_TerrainTexCoord[0])   // TerrainTextureCoord[4][2]
@@ -45,7 +45,7 @@
 #define TER_NODRAW  DAT_0839bc86                           // unk_839BC86 (skip-draw flag)
 
 // ── FaceTexture (FUN_004F7DF0) — computa UVs del tile en TerrainTextureCoord ──
-void __cdecl FUN_004f7df0(int Texture, float xf, float yf, char Water, char Scale)
+void __cdecl FaceTexture(int Texture, float xf, float yf, char Water, char Scale)
 {
     BITMAP_t* bmp = &Bitmaps[Texture + 35];
     float Width, dHeight;
@@ -78,7 +78,7 @@ void __cdecl FUN_004f7df0(int Texture, float xf, float yf, char Water, char Scal
 }
 
 // ── RenderFace (FUN_004F7A90) — quad opaco (base) ────────────────────────────
-void __cdecl FUN_004f7a90(int Texture)
+void __cdecl RenderFace(int Texture)
 {
     GL_ResetState();                  // DisableAlphaBlend
     GL_BindTextureSlot(Texture + 35);      // BindTexture
@@ -95,7 +95,7 @@ void __cdecl FUN_004f7a90(int Texture)
 }
 
 // ── RenderFaceAlpha (FUN_004F7B80) — overlay capa2 con alpha por vértice ──────
-void __cdecl FUN_004f7b80(int Texture)
+void __cdecl RenderFaceAlpha(int Texture)
 {
     GL_SetBlendSrcOver('\x01');            // EnableAlphaTest(1)
     GL_BindTextureSlot(Texture + 35);      // BindTexture
@@ -112,7 +112,7 @@ void __cdecl FUN_004f7b80(int Texture)
 }
 
 // ── RenderFaceBlend (FUN_004F7CE0) — overlay de agua (modula por alpha gris) ──
-void __cdecl FUN_004f7ce0(int Texture)
+void __cdecl RenderFaceBlend(int Texture)
 {
     GL_SetBlendAdditive();                  // EnableAlphaBlend
     GL_BindTextureSlot(Texture + 35);      // BindTexture
@@ -128,7 +128,7 @@ void __cdecl FUN_004f7ce0(int Texture)
 }
 
 // ── RenderTerrainFace (FUN_004F7FB0) — dispatcher de capas/overlays ──────────
-void __cdecl FUN_004f7fb0(float xf, float yf, int xi, int yi, float lodf)
+void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
 {
     (void)xi; (void)yi; (void)lodf;   // los TerrainVertex/Index ya los fijó RenderTerrainTile
 
@@ -190,16 +190,16 @@ void __cdecl FUN_004f7fb0(float xf, float yf, int xi, int yi, float lodf)
         hasL2 = 0;
         tex = (unsigned char)TER_L2[TER_IDX1];
     }
-    FUN_004f7df0(tex, xf, yf, water, 0);     // FaceTexture
-    FUN_004f7a90(tex);                       // RenderFace
+    FaceTexture(tex, xf, yf, water, 0);     // FaceTexture
+    RenderFace(tex);                       // RenderFace
 
     if (World == 7 && (unsigned char)TER_L2[TER_IDX1] == 5 &&
         (TER_ALPHA[TER_IDX1] > 0.0f || TER_ALPHA[TER_IDX2] > 0.0f ||
          TER_ALPHA[TER_IDX3] > 0.0f || TER_ALPHA[TER_IDX4] > 0.0f))
     {
         int t = (int)DAT_0839bc8c + 30;      // WaterTextureNumber + 30
-        FUN_004f7df0(t, xf, yf, 0, 1);       // FaceTexture
-        FUN_004f7ce0(t);                     // RenderFaceBlend
+        FaceTexture(t, xf, yf, 0, 1);       // FaceTexture
+        RenderFaceBlend(t);                     // RenderFaceBlend
     }
     else if (hasL2 &&
              (TER_ALPHA[TER_IDX1] > 0.0f || TER_ALPHA[TER_IDX2] > 0.0f ||
@@ -207,7 +207,7 @@ void __cdecl FUN_004f7fb0(float xf, float yf, int xi, int yi, float lodf)
     {
         int t2 = (unsigned char)TER_L2[TER_IDX1];
         if (t2 != 5) water = 0;
-        FUN_004f7df0(t2, xf, yf, water, 0);  // FaceTexture
-        FUN_004f7b80(t2);                    // RenderFaceAlpha
+        FaceTexture(t2, xf, yf, water, 0);  // FaceTexture
+        RenderFaceAlpha(t2);                    // RenderFaceAlpha
     }
 }

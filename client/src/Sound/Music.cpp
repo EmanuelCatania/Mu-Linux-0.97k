@@ -2,7 +2,7 @@
 // BGM (mp3) via el proceso externo MuPlayer.exe.
 //
 // IDA: FUN_004127F0 — StopMp3
-// IDA: FUN_00412890 — PlayMp3
+// IDA: PlayMp3 — PlayMp3
 //
 // Las dos comparan el nombre recibido contra el track en curso (MusicCurrentTrack).
 // StopMp3 manda WM_CLOSE a la ventana "MuPlayer"; PlayMp3 ademas la lanza con
@@ -42,7 +42,7 @@ void __cdecl Music_StopTrack(DWORD param_1_d, int bEnforce)
 
     if ((m_MusicOnOff || bEnforce) && MusicCurrentTrack[0] && strcmp(Name, MusicCurrentTrack) == 0)
     {
-        FUN_00405540(&DAT_055c9bf0, s_StopMp3_cmd_0055911c);
+        CErrorReport_Write(&DAT_055c9bf0, s_StopMp3_cmd_0055911c);
         HWND hWnd = FindWindowA(NULL, s_MuPlayer_00559110);
         if (hWnd)
         {
@@ -53,7 +53,7 @@ void __cdecl Music_StopTrack(DWORD param_1_d, int bEnforce)
 }
 
 
-// IDA: FUN_00412890
+// IDA: PlayMp3
 // Arranca `name` lanzando MuPlayer.exe como proceso externo.
 //   - mismo track ya sonando        -> no hace nada
 //   - otro track sonando            -> lo corta (WM_CLOSE) y sale
@@ -85,17 +85,17 @@ void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
         }
     }
 
-    FILE* fp = FUN_0054173f(s_MuPlayer_exe_00559154, DAT_005580ac);
+    FILE* fp = crt_fopen(s_MuPlayer_exe_00559154, DAT_005580ac);
     if (fp == NULL) return;
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 
-    fp = FUN_0054173f(Name, DAT_005580ac);
+    fp = crt_fopen(Name, DAT_005580ac);
     if (fp == NULL) return;
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 
     if (FindWindowA(NULL, s_MuPlayer_00559110) == NULL)
     {
-        FUN_00405540(&DAT_055c9bf0, s_PlayMp3_cmd_00559140);
+        CErrorReport_Write(&DAT_055c9bf0, s_PlayMp3_cmd_00559140);
         crt_sprintf(CmdLine, s_MuPlayer_exe__s_00559130, Name);
         WinExec(CmdLine, 0);
         strcpy_s(MusicCurrentTrack, sizeof(MusicCurrentTrack), Name);

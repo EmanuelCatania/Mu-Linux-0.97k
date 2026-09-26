@@ -46,7 +46,7 @@
 //   if (DAT_083a4124 != '\0'):  // a click or keypress happened
 //     if (DAT_07eaa14c in {2, 3, 6}): uVar14 = DAT_083a7acc (largo de la UI)
 //     else: uVar14 = 4 (default PIN length)
-//     FUN_00404bc0(0x19, 0, 0)  → UI_SetScene(0x19 = ServerSelect clear?)
+//     PlayBuffer(0x19, 0, 0)  → UI_SetScene(0x19 = ServerSelect clear?)
 //
 //   Key code 10 (Enter / \n):
 //     Chequea si DAT_07ea9814 tiene contenido:
@@ -56,13 +56,13 @@
 //            (DAT_07ea9814 == DAT_07ea9815 == DAT_07ea9816 == DAT_07ea9817)
 //            AND uVar14 == 4:
 //           _DAT_07ea9814 = 0; DAT_07ea9818 = 0; DAT_07ea981c = 0
-//           FUN_005142d0(0x88)  → ShowErrorDialog(0x88)  "All digits same"
+//           SetErrorMessage(0x88)  → ShowErrorDialog(0x88)  "All digits same"
 //         else:
 //           DAT_07eaa14c = 0
 //           → cae al switch (arma y manda el paquete)
 //
 //   Key code 0xb (Tab? Backspace+confirm?):
-//     Similar all-same-digits check → FUN_005142d0(0x88) or proceed
+//     Similar all-same-digits check → SetErrorMessage(0x88) or proceed
 //
 //   Other keys / character input:
 //     wsprintfA(&local_d20, format, (&DAT_07e91394)[iVar5])
@@ -101,10 +101,10 @@
 //     local_4 = 4
 //
 //   Camino de envío (igual que todos los otros paquetes):
-//     CRC = FUN_0053cc30(0, payload, len)
-//     if len < 0x100: header [0xC3][len+2], FUN_0053cc30(out+2, payload, len)
-//     else:           header [0xC4][hi][lo+3], FUN_0053cc30(out+3, payload, len)
-//     send(DAT_055ca168, ...) con WSAEWOULDBLOCK → encola en DAT_055ca16c
+//     CRC = CSimpleModulus_Encode(0, payload, len)
+//     if len < 0x100: header [0xC3][len+2], CSimpleModulus_Encode(out+2, payload, len)
+//     else:           header [0xC4][hi][lo+3], CSimpleModulus_Encode(out+3, payload, len)
+//     send(SocketClientSocket, ...) con WSAEWOULDBLOCK → encola en SocketClientSendBuffer
 //
 // ── POST-SEND ─────────────────────────────────────────────────────────────────
 //
@@ -114,7 +114,7 @@
 //   if (DAT_083a413c != '\0'): DAT_07eaa179 = 0
 //   return 1
 //
-// ── ANTI-TAMPER BLOCK (DAT_005590ac == 1 gate) ────────────────────────────────
+// ── ANTI-TAMPER BLOCK (g_bUseChatListBox == 1 gate) ────────────────────────────────
 //
 //   If DAT_07eaa119 == '\0':
 //     HashTable operations on DAT_07eaa11b (ref-count maintain)
@@ -125,14 +125,14 @@
 // ── FUNCTION CROSS-REFERENCE ─────────────────────────────────────────────────
 //
 //   FUN_004e9300   → Keyboard_GetLastKey()  — reads pending keystroke
-//   FUN_005142d0   → ShowErrorDialog(id)
+//   SetErrorMessage   → ShowErrorDialog(id)
 //                     id 0x88 = "Todos los dígitos iguales, el PIN es inválido"
-//   FUN_0053cc30   → Packet_Encode / CRC_Compute
-//   FUN_00404bc0   → UI_SetScene(id, 0, 0)
-//   FUN_00403f80   → HashTable_Insert
-//   FUN_00404330   → HashTable_Remove
-//   FUN_00422df0   → HashTable_GetOrInsert (packet seq tracking)
-//   FUN_00404040   → HashTable_Decrement
+//   CSimpleModulus_Encode   → Packet_Encode / CRC_Compute
+//   PlayBuffer   → UI_SetScene(id, 0, 0)
+//   HashTable_Insert   → HashTable_Insert
+//   Packet_DecryptByte   → HashTable_Remove
+//   PACKET_DECRYPT  → HashTable_GetOrInsert (packet seq tracking)
+//   PACKET_ENCRYPT   → HashTable_Decrement
 //   str_to_ushort  → parse 2 ASCII digits to ushort (Ghidra name retained)
 
 #include "stdafx.h"
@@ -155,10 +155,10 @@ extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetWarehouseItems[];
 extern "C" BYTE OffsetMixItems[];
 
-// 2026-05-07: B3 refactor — SecondPassword screens (FUN_004e4760 .. FUN_004ec330)
+// 2026-05-07: B3 refactor — SecondPassword screens (SecondPassword_Screen1 .. FUN_004ec330)
 // moved from stubs.cpp lines 6961-8495 (1535 lines). Full implementation below.
 
-// FUN_004e93a0 @ 0x004E93A0 — SecondPassword_Handler(void)
+// IDA: SecondPassword_Handler (0x004E93A0)
 // Teclado numerico del PIN del baul.  Lo llama UpdateWindowsMouse (0x4ECB00)
 // antes que el resto de los hit-tests, y lo dibuja sub_4EB070.  El modo lo fija
 // dword_7EAA14C (nuestro DAT_07eaa14c):
@@ -178,7 +178,7 @@ extern "C" BYTE OffsetMixItems[];
 // envuelven cada envio).
 extern "C" int __cdecl sub_4E9300_(void);   // hit-test del teclado (0x004E9300)
 
-unsigned int __cdecl FUN_004e93a0(void)
+unsigned int __cdecl SecondPassword_Handler(void)
 {
     if (!DAT_07eaa14c) return 0;
 
@@ -220,7 +220,7 @@ unsigned int __cdecl FUN_004e93a0(void)
                 if (mode == 4) {
                     // Guarda el PIN y pide repetirlo con el teclado rebarajado.
                     const unsigned int typed = *(unsigned int*)&DAT_07ea9814[0];
-                    FUN_004e9250(5);                  // baraja + DAT_07eaa14c = 5
+                    SecondPassword_Shuffle(5);                  // baraja + DAT_07eaa14c = 5
                     memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
                     DAT_07ea981f = typed;
                 } else if (mode == 5) {
@@ -291,13 +291,13 @@ static bool GetGuildCreatorOrigin(int& originX, int& originY)
     return (originX != 0 || originY != 0);
 }
 
-// FUN_004e4760 @ 0x004E4760 — SecondPassword_Screen1 (727 lines)
+// SecondPassword_Screen1 @ 0x004E4760 — SecondPassword_Screen1 (727 lines)
 //   - Chequea DAT_07eaa124 (hover habilitado). Si DAT_07eaa144==1: grilla de click para 8 botones
 //     (8×0x0F tiles con origen en DAT_07ea5b1c/20+100), escribe el array DAT_07ea51f5 con DAT_07eaa0dc.
 //   - Segunda pasada: itera los pasos de DAT_07ea5b18 (+0x32 cada uno), los compara con la posición del mouse para encontrar
 //     hovered button index, sets DAT_07ea51ed.
 //   - SEH + llamadas a UI_SetScene(0x19/0x1c). Implementado en SecondPassword_UI.cpp.
-void __cdecl FUN_004e4760(void) {
+void __cdecl SecondPassword_Screen1(void) {
     // 2026-05-04: BUG-FIX del sonido de click fantasma del lado izquierdo. El sub_4E4760 de IDA es
     // el hit-test del diálogo GuildCreator (gatea con GuildCreatorOpened, usa
     // Inventory[32].Level/Part as panel origin). Our port had wrong gate
@@ -320,7 +320,7 @@ void __cdecl FUN_004e4760(void) {
     }
 
     if (DAT_07eaa144 == 1) {
-        // IDA: FUN_004E4760. La grilla de edición tiene 8 filas de 8 celdas;
+        // IDA: SecondPassword_Screen1. La grilla de edición tiene 8 filas de 8 celdas;
         // cada celda conserva un índice de color completo en DAT_07ea51f5.
         // La compresión a 32 bytes ocurre únicamente al enviar el paquete 0x55.
         *(DWORD*)(DAT_07abf5d8 + 0x24) = 0x42e10000;
@@ -339,7 +339,7 @@ void __cdecl FUN_004e4760(void) {
             }
         }
 
-        // IDA: FUN_004E4760 — paleta 2×8, índice lineal fila*8+col.
+        // IDA: SecondPassword_Screen1 — paleta 2×8, índice lineal fila*8+col.
         for (int row = 0; row < 2; ++row) {
             const int colorY = originY + 260 + row * 20;
             for (int col = 0; col < 8; ++col) {
@@ -348,7 +348,7 @@ void __cdecl FUN_004e4760(void) {
                     (int)DAT_083a4278 >= colorY && (int)DAT_083a4278 < colorY + 20 &&
                     IsClickPushed()) {
                     DAT_083a4124 = '\0';
-                    FUN_00404bc0(0x19, 0, 0);
+                    PlayBuffer(0x19, 0, 0);
                     DAT_07eaa0dc = (char)(row * 8 + col);
                 }
             }
@@ -395,7 +395,7 @@ void __cdecl FUN_004e4760(void) {
             if (DAT_07eaa144) {
                 if (Chat_ValidateInputCommand()) {
                     // nombre invalido / vacio
-                    FUN_005142d0(115);
+                    SetErrorMessage(115);
                 } else {
                     // Empaquetado de la marca, fiel a IDA L180-193: 64 celdas de la
                     // grilla 8x8 -> 32 bytes, celda PAR en el nibble alto e IMPAR en el
@@ -410,8 +410,8 @@ void __cdecl FUN_004e4760(void) {
                         if (v) any = true;
                     }
                     if (!any) {
-                        FUN_005142d0(127);
-                        FUN_00404bc0(25, 0, 0);
+                        SetErrorMessage(127);
+                        PlayBuffer(25, 0, 0);
                     } else {
                         // IDA: strcpy(&dword_7EA51EC, InputText[0])
                         memset(DAT_07ea51ec, 0, sizeof(DAT_07ea51ec));
@@ -430,7 +430,7 @@ void __cdecl FUN_004e4760(void) {
                         memcpy(pkt + 11, mark, 32);
                         Net_SendC1Packet(pkt, 43);
 
-                        // IDA: FUN_004E4760 cae al cierre común inmediatamente
+                        // IDA: SecondPassword_Screen1 cae al cierre común inmediatamente
                         // después de encolar 0x55: limpia el input, cierra el
                         // editor y reinicia el intervalo de mouse 0/6.
                         GuildCreator_CloseFromResult();
@@ -450,7 +450,7 @@ void __cdecl FUN_004e4760(void) {
                     Net_SendC1Packet(pkt, sizeof(pkt));
                 }
             }
-            FUN_00404bc0(0x19, 0, 0);
+            PlayBuffer(0x19, 0, 0);
         }
     }
 
@@ -473,7 +473,7 @@ void __cdecl FUN_004e4760(void) {
                 Net_SendC1Packet(pkt3, sizeof(pkt3));
                 *(short*)(DAT_07abf5d8 + 0x1da) = (short)0xffff;
             }
-            FUN_00404bc0(0x19, 0, 0);
+            PlayBuffer(0x19, 0, 0);
             // 2026-05-04: DAT_07db8710 ahora es char[10][256] — escribimos el primer byte
             // del slot 0 explícitamente. (Los globals 8714/8718 son símbolos separados
             // preexistentes — los limpiamos como antes para terminar en NUL lo que haya quedado
@@ -482,11 +482,11 @@ void __cdecl FUN_004e4760(void) {
             DAT_07db8714 = 0;
             DAT_07db8718 = 0;
             *(DWORD*)DAT_07d780a8 = 0;
-            _DAT_00559c94 = 10;
-            DAT_07e11d70 = 0;
+            InputTextMax = 10;
+            GuildInputEnable = 0;
             DAT_07eaa124 = '\0';
             DAT_07eaa144 = 0;
-            FUN_00404bc0(0x1c, 0, 0);
+            PlayBuffer(0x1c, 0, 0);
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
         }
@@ -499,7 +499,7 @@ LAB_FUN_004e4760_end:
         // toma esto en ECX + argumento). El dispatch cdecl estilo Ghidra anterior
         // con el argumento `(0)` dejaba ECX = basura → ChatLB_tick leía memoria random
         // como `self[3]` (contador de list1), entraba al loop de desencolado, y
-        // FUN_0040c580 deferenciaba un puntero-atrás de nodo que eran bytes de código
+        // ChatListBox_DequeueFront deferenciaba un puntero-atrás de nodo que eran bytes de código
         // (0x83EC8B5D = pop ebp; mov ebp, esp; ...).
         if (DAT_055c9ff4 && *(int*)DAT_055c9ff4) {
             DWORD* obj = (DWORD*)DAT_055c9ff4;
@@ -514,17 +514,17 @@ LAB_FUN_004e4760_end:
             IsClickPushed()) {
             DAT_083a4124 = '\0';
             DAT_07eaa114 = '\0';
-            FUN_00404bc0(0x19, 0, 0);
-            FUN_00404bc0(0x1c, 0, 0);
+            PlayBuffer(0x19, 0, 0);
+            PlayBuffer(0x1c, 0, 0);
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
         }
     }
 }
-// FUN_004e5500 @ 0x004E5500 — Party panel input.
+// Party_MemberClickHandler @ 0x004E5500 — Party panel input.
 // The Party row action is gated by leader/self name matching and emits the
 // server-owned delete request.  The close button only closes the panel.
-void __cdecl FUN_004e5500(void) {
+void __cdecl Party_MemberClickHandler(void) {
     if (DAT_07eaa115 == '\0' || DAT_07ea5b24 == 0) return;
 
     if ((int)DAT_083a427c >= (int)DAT_07ea5b24 &&
@@ -545,7 +545,7 @@ void __cdecl FUN_004e5500(void) {
             (int)DAT_083a4278 >= rowY && (int)DAT_083a4278 < rowY + 24 &&
             IsClickPushed()) {
             DAT_083a4124 = '\0';
-            FUN_00404bc0(0x19, 0, 0);
+            PlayBuffer(0x19, 0, 0);
             // The original click gate uses the visual row.  MuEmu validates
             // the wire party number, which is explicitly supplied by 0x42.
             const BYTE pkt[4] = { 0xC1, 0x04, 0x43, member[11] };
@@ -562,13 +562,13 @@ void __cdecl FUN_004e5500(void) {
 
         DAT_083a4124 = '\0';
         DAT_07eaa115 = '\0';
-        FUN_00404bc0(0x19, 0, 0);
-        FUN_00404bc0(0x1c, 0, 0);
+        PlayBuffer(0x19, 0, 0);
+        PlayBuffer(0x1c, 0, 0);
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
     }
 }
-// FUN_004e5de0 @ 0x004E5DE0 — SecondPassword_Screen3 (443 lines)
+// SecondPassword_Screen3 @ 0x004E5DE0 — SecondPassword_Screen3 (443 lines)
 // Envío del paquete de selección de personaje: por cada uno de los hasta 0x10 botones de personaje de la columna,
 // chequea si el mouse clickeó en el área de la fila [DAT_07ea982c+0x7d,+0x95) x [DAT_07ea9830+0x73+row*15, +0x18).
 // Guard de entrada: DAT_07eaa116 tiene que ser distinto de cero. También chequea *(short*)(DAT_07cf1ff4+0x54) != 0.
@@ -576,15 +576,15 @@ void __cdecl FUN_004e5500(void) {
 //   opcode plain byte = (byte)(row_index), XOR key[3]=0x89, prev_plain_at[4]=4 → cipher = row^0x89^4
 //   Después appendea el byte del índice de fila como byte 4 (si total_len+1 < 0x401).
 //   El largo del paquete depende de los datos de cada fila. Clave: la misma de 32 bytes.
-// After click: FUN_00404bc0(0x19,0,0).
+// After click: PlayBuffer(0x19,0,0).
 // HashTable ref-count noise around DAT_07cf1ffc is anti-tamper, skipped.
 // Back button [DAT_07ea982c+0x19,+0x31) x [DAT_07ea9830+0x18b,+0x1a3):
-//   → clear DAT_07eaa116, FUN_00404bc0(0x19/0x1c), DAT_07e11d28=0, DAT_00559bec=6.
-void __cdecl FUN_004e5de0(void) {
+//   → clear DAT_07eaa116, PlayBuffer(0x19/0x1c), DAT_07e11d28=0, DAT_00559bec=6.
+void __cdecl SecondPassword_Screen3(void) {
     // 2026-05-04: BUG-FIX phantom click. IDA sub_4E5DE0 = Character panel
     // hit-test, usa CharacterInfoStartX/Y como base. Nuestro port usa
     // uninitialized DAT_07ea982c/30 (=0) → fake hit-tests at left side fire
-    // FUN_00404bc0 click sfx whenever Character is open. Skip until
+    // PlayBuffer click sfx whenever Character is open. Skip until
     // CharacterInfoStartX también se cablea acá; el RenderCharacterInfoWindow de HUD_Pass6
     // already handles [+] stat-add and other panel clicks.
     if (DAT_07eaa116 == '\0' || DAT_07ea982c == 0) return;
@@ -639,7 +639,7 @@ void __cdecl FUN_004e5de0(void) {
                 BYTE pkt[5] = { 0xC1, 5, 0xF3, 0x06, (BYTE)iRow };
                 Net_SendSmallPacket(pkt, 5);
 
-                FUN_00404bc0(0x19, 0, 0);
+                PlayBuffer(0x19, 0, 0);
                 iX = DAT_083a427c;
                 iY = DAT_083a4278;
             }
@@ -657,19 +657,19 @@ void __cdecl FUN_004e5de0(void) {
 
         DAT_083a4124 = '\0';
         DAT_07eaa116 = '\0';
-        FUN_00404bc0(0x19, 0, 0);
-        FUN_00404bc0(0x1c, 0, 0);
+        PlayBuffer(0x19, 0, 0);
+        PlayBuffer(0x1c, 0, 0);
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
     }
 }
-// FUN_004e6550 @ 0x004E6550 — SecondPassword_Screen4 (257 lines)
-//   - Wrong-password error handler: displays FUN_005142d0 error dialog for various
+// SecondPassword_Screen4 @ 0x004E6550 — SecondPassword_Screen4 (257 lines)
+//   - Wrong-password error handler: displays SetErrorMessage error dialog for various
 //     server error codes. Resets PIN buffer (DAT_07ea9814/18/1c = 0).
 //   - Contiene una llamada a __ftol() (FPU ST0 → long) para el límite Y del botón, con origen float desconocido.
 //     Casi toda la lógica (ruido de ref-count de HashTable + zonas de hover) está limpia, pero el origen del FPU
 //     unresolvable without call-site context. STUB: __ftol() button region.
-void __cdecl FUN_004e6550(void) {
+void __cdecl SecondPassword_Screen4(void) {
     // SecondPassword_Screen4 — wrong-password error handler + char-list item visibility reset
     // Setea DAT_07d78094=1 si el mouse está sobre el panel principal, resetea los arrays de visibilidad por personaje,
     // y llama a FUN_004d1fc0 o FUN_004d23b0 para renderizar la grilla.
@@ -682,15 +682,15 @@ void __cdecl FUN_004e6550(void) {
         DAT_07d78094 = 1;
     }
 
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa118);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118);
     char sv1 = DAT_07eaa118;
     {
-        uint uVar4 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa118);
+        uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
         if (uVar4 != 0xffffffff) {
-            BYTE* pbVar5 = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_07eaa118);
+            BYTE* pbVar5 = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa118);
             BYTE bVar1 = pbVar5[1];
             pbVar5[1] = bVar1 - 1;
-            if ((BYTE)(bVar1 - 1) == 0) FUN_00423710(pbVar5, &DAT_07eaa118);
+            if ((BYTE)(bVar1 - 1) == 0) Packet_EncryptByte(pbVar5, &DAT_07eaa118);
         }
     }
     if ((sv1 != '\0') &&
@@ -715,15 +715,15 @@ void __cdecl FUN_004e6550(void) {
         DAT_07d78094 = 1;
     }
 
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv2 = DAT_07eaa11b;
     {
-        uint uVar4 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa11b);
+        uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
         if (uVar4 != 0xffffffff) {
-            BYTE* pbVar5 = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_07eaa11b);
+            BYTE* pbVar5 = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa11b);
             BYTE bVar1 = pbVar5[1];
             pbVar5[1] = bVar1 - 1;
-            if ((BYTE)(bVar1 - 1) == 0) FUN_00423710(pbVar5, &DAT_07eaa11b);
+            if ((BYTE)(bVar1 - 1) == 0) Packet_EncryptByte(pbVar5, &DAT_07eaa11b);
         }
     }
     if (sv2 != '\0' &&
@@ -744,17 +744,17 @@ void __cdecl FUN_004e6550(void) {
     // Refresh char-list visibility arrays for all CharData slots (stride 0x44, 12 slots)
     for (int i = 0; i < 0x330; i += 0x44) {
         void* puVar8 = DAT_07cf1ffc;
-        uint uVar4 = HashTable_GetIndex(&DAT_055c9bc8, (void*)DAT_07cf1ffc);
+        uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, (void*)DAT_07cf1ffc);
         if (uVar4 == 0xffffffff) {
             void* pvVar10 = operator_new(0x585);
             *(unsigned char*)((int)pvVar10 + 0x584) = 1;
-            FUN_00403f80(&DAT_055c9bc8, pvVar10, puVar8);
+            HashTable_Insert(&MAIN_HASH_CLASS, pvVar10, puVar8);
         } else {
-            uint uVar4b = HashTable_GetIndex(&DAT_055c9bc8, puVar8);
+            uint uVar4b = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar8);
             void* puVar9 = (uVar4b == 0xffffffff) ? nullptr : *(void**)(DAT_055c9bcc + uVar4b * 4);
             char cVar2 = *(char*)((int)puVar9 + 0x584);
             *(BYTE*)((int)puVar9 + 0x584) = (BYTE)(cVar2 + 1);
-            if ((BYTE)(cVar2 + 1) < 2) FUN_00404370(puVar8, puVar9);
+            if ((BYTE)(cVar2 + 1) < 2) Packet_DecryptBuffer(puVar8, puVar9);
         }
         // Update slot visibility based on item type == -1
         if (*(short*)((int)DAT_07cf1ffc + 0x218 + i) == -1)
@@ -762,13 +762,13 @@ void __cdecl FUN_004e6550(void) {
         else
             *(BYTE*)((int)DAT_07cf1ffc + 0x258 + i) = 1;
 
-        uVar4 = HashTable_GetIndex(&DAT_055c9bc8, puVar8);
+        uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar8);
         if (uVar4 != 0xffffffff) {
-            uint uVar4b = HashTable_GetIndex(&DAT_055c9bc8, puVar8);
+            uint uVar4b = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar8);
             void* puVar9 = (uVar4b == 0xffffffff) ? nullptr : *(void**)(DAT_055c9bcc + uVar4b * 4);
             char cVar2 = *(char*)((int)puVar9 + 0x584);
             *(char*)((int)puVar9 + 0x584) = cVar2 - 1;
-            if ((char)(cVar2 - 1) == '\0') FUN_00404400(puVar9, puVar8);
+            if ((char)(cVar2 - 1) == '\0') Packet_EncryptBuffer(puVar9, puVar8);
         }
     }
 
@@ -817,14 +817,14 @@ void __cdecl FUN_004e6550(void) {
 
     DAT_07eaa138 = 0;
     // Char-count check and back-button
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv3 = DAT_07eaa11b;
-    FUN_00404040(&DAT_055c9bc8, &DAT_07eaa11b);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     if (sv3 == '\0') {
-        FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa118);
+        HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118);
         char sv4 = DAT_07eaa118;
-        FUN_00404040(&DAT_055c9bc8, &DAT_07eaa118);
-        if (sv4 == '\0' && DAT_07eaa119 == '\0' && DAT_07eaa11a == '\0' && DAT_07eaa128 == 0) {
+        PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
+        if (sv4 == '\0' && DAT_07eaa119 == '\0' && DAT_07eaa11a == '\0' && GoldenArcherOpenType == 0) {
             ushort uVar3 = *(ushort*)((int)DAT_07cf1ff4 + 0xe);
             if (0x31 < uVar3) {
                 DAT_07eaa138 = 1;
@@ -845,16 +845,16 @@ void __cdecl FUN_004e6550(void) {
                 IsClickPushed()) {
                 DAT_083a4124 = '\0';
                 DAT_07eaa117 = 0;
-                FUN_004cba60();
+                CloseInventoryRelatedWindows();
                 DAT_07e11d28 = 0;
                 DAT_00559bec = 6;
             }
         }
     }
 
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv5 = DAT_07eaa11b;
-    FUN_00404040(&DAT_055c9bc8, &DAT_07eaa11b);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     if (sv5 != '\0') {
         // 2026-05-08: trade — DAT_07ea5298 / DAT_07ea7b88 son DWORDs (4 bytes)
         // en globals.cpp pero en el binario original son las bases de los
@@ -875,9 +875,9 @@ void __cdecl FUN_004e6550(void) {
     // Sincronizamos el global con los valores del render para que coincidan.
     DAT_07eaa0c8 = 260;
     DAT_07eaa0cc = 0;
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa118);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118);
     char sv6 = DAT_07eaa118;
-    FUN_00404040(&DAT_055c9bc8, &DAT_07eaa118);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (sv6 != '\0') {
         // FIX 2026-07-25: era copy-paste del branch de Warehouse (usaba
         // OffsetWarehouseItems → el hover leía un slot basura y el tooltip
@@ -900,11 +900,11 @@ void __cdecl FUN_004e6550(void) {
                      (short*)OffsetMixItems, 8, 4, '\0');
     }
 }
-// FUN_004e6c40 @ 0x004E6C40 — SecondPassword_Screen5 (783 lines)
+// SecondPassword_Screen5 @ 0x004E6C40 — SecondPassword_Screen5 (783 lines)
 //   - Main second-password entry UI: draws 10-button numeric keypad, handles click
 //     (appends digit to DAT_07ea9814 buffer), Enter → sends packet, ESC → cancel.
 //   - SEH. Implemented in SecondPassword_UI.cpp.
-void __cdecl FUN_004e6c40(void) {
+void __cdecl SecondPassword_Screen5(void) {
     // Click del selector de nivel del evento.  El binario NO tiene aca ningun
     // teclado de PIN: son 4 filas (Devil Square) o 6 (Blood Castle) alineadas
     // con las que dibuja `RenderEventWindow` (0x4F3C50).
@@ -1009,14 +1009,14 @@ void __cdecl FUN_004e6c40(void) {
     Net_SendC1Packet(pkt, 5);
 }
 
-// FUN_004e7ac0 (CheckGoldenArcherWindow) vive en UI/GoldenArcher.cpp.
+// CheckGoldenArcherWindow vive en UI/GoldenArcher.cpp.
 extern "C" int g_GoldenArcherCustom;
 extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action);
-// FUN_004e8b70 @ 0x004E8B70 -- IDA: sub_4E8B70, clicks de la ventana de
+// ServerTransfer_HitTest @ 0x004E8B70 -- IDA: sub_4E8B70, clicks de la ventana de
 // transferencia de server (la etiqueta vieja "SecondPassword_Screen7" era falsa).
 // Los dos `__ftol()` que el port no habia resuelto son `InventoryStartX + 35.0`:
 // el hit-test de Aceptar y Cancelar estaba 35 px a la izquierda del boton.
-void __cdecl FUN_004e8b70(void) {
+void __cdecl ServerTransfer_HitTest(void) {
     if (!g_bServerDivisionEnable) return;
 
     int mx = (int)DAT_083a427c;   // MouseX
@@ -1042,7 +1042,7 @@ void __cdecl FUN_004e8b70(void) {
             DAT_083a42c4 = 0;
             DAT_07eaa13c = 4;
             DAT_00559f5e = (char)0xff;
-            FUN_0051e240(1, 448, 151);
+            ShowCheckBox(1, 448, 151);
             mx = (int)DAT_083a427c;
             my = (int)DAT_083a4278;
         }
@@ -1067,29 +1067,29 @@ void __cdecl FUN_004e8b70(void) {
         DAT_083a4124 = 0;
         const BYTE pkt[3] = { 0xC1, 0x03, 0x31 };
         Net_SendC1Packet(pkt, sizeof(pkt));
-        DAT_07eaa128 = 0;         // g_bEventChipDialogEnable
+        GoldenArcherOpenType = 0;         // g_bEventChipDialogEnable
         InventoryOpened = 0;
         CloseInventoryRelatedWindows();
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
     }
 }
-// FUN_004e9050 @ 0x004E9050 — SecondPassword_Screen8 (81 lines)
+// SecondPassword_Screen8 @ 0x004E9050 — SecondPassword_Screen8 (81 lines)
 // Handler del click en el botón OK del diálogo de segunda contraseña.
 // Guard: DAT_07eaa11a must be non-zero (button active flag).
 // Hit-test: mouse within [DAT_07eaa0c8+0x4b, DAT_07eaa0c8+0x77) x [DAT_07eaa0cc+300, DAT_07eaa0cc+0x14c).
 // DAT_07eaa140 must be 0 (no timeout in progress), DAT_083a4124 must be non-zero (click pending).
-// Switch on DAT_07eaa16c:
-//   0         → FUN_00480620(&DAT_07eaa1a0, &DAT_07d544d4, 2) — show wrong-PIN message
-//   1,2,3,4,5,6,7,8,0xb → FUN_004e3db0(0x7ea8410, 8, 8, iVar1, iVar3) — send auth
+// Switch on MixType:
+//   0         → UIChatLogWindow_AddText(&DAT_07eaa1a0, &DAT_07d544d4, 2) — show wrong-PIN message
+//   1,2,3,4,5,6,7,8,0xb → SecondPassword_GridSlotAvail(0x7ea8410, 8, 8, iVar1, iVar3) — send auth
 //     sub-switch: cases 1,7,0xb → iVar1=5 iVar3=4; case 8 → iVar1=2 iVar3=2; else → iVar1=DAT_0055a3f8 iVar3=DAT_0055a3fc
 //     si tiene éxito (retorno distinto de cero) y DAT_07e91388 < 1: setea DAT_07eaa13c=2, DAT_00559f5e=0xff,
-//     call FUN_0051e240(1, 0x21b, 0x97)
-//   0xfffffff8, 0xfffffffe → FUN_00480620(&DAT_07eaa19c, &DAT_07d55c44, 2) — show error message
-// After switch: FUN_00404bc0(0x19,0,0).
+//     call ShowCheckBox(1, 0x21b, 0x97)
+//   0xfffffff8, 0xfffffffe → UIChatLogWindow_AddText(&DAT_07eaa19c, &DAT_07d55c44, 2) — show error message
+// After switch: PlayBuffer(0x19,0,0).
 // "Back" button: [DAT_07ea5288+0x19,DAT_07ea5288+0x31) x [DAT_07ea5284+0x18b,DAT_07ea5284+0x1a3)
-//   → FUN_004f6850(); DAT_07e11d28=0; DAT_00559bec=6; FUN_00404bc0(0x19,0,0).
-void __cdecl FUN_004e9050(void) {
+//   → SecondPassword_CancelReturn(); DAT_07e11d28=0; DAT_00559bec=6; PlayBuffer(0x19,0,0).
+void __cdecl SecondPassword_Screen8(void) {
     if (DAT_07eaa11a == '\0') return;
 
     // OK button hit-test
@@ -1101,13 +1101,13 @@ void __cdecl FUN_004e9050(void) {
         IsClickPushed()) {
 
         DAT_083a4124 = '\0';
-        switch ((int)DAT_07eaa16c) {
+        switch ((int)MixType) {
         case 0:
-            FUN_00480620(&DAT_07eaa1a0, &DAT_07d544d4, 2);
+            UIChatLogWindow_AddText(&DAT_07eaa1a0, &DAT_07d544d4, 2);
             break;
         case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 0xb: {
             int iVar1 = 5, iVar3 = 4;
-            switch ((int)DAT_07eaa16c) {
+            switch ((int)MixType) {
             case 1: case 7: case 0xb:
                 break; // iVar1=5, iVar3=4 (defaults)
             case 8:
@@ -1121,24 +1121,24 @@ void __cdecl FUN_004e9050(void) {
             // 004E3DB0 comprueba que exista espacio en el inventario normal
             // para el resultado; en el binario el primer argumento era la
             // dirección absoluta de ese pool, no un literal portable.
-            uint uVar2 = FUN_004e3db0((int)(uintptr_t)OffsetInventoryItems, 8, 8, iVar1, iVar3);
+            uint uVar2 = SecondPassword_GridSlotAvail((int)(uintptr_t)OffsetInventoryItems, 8, 8, iVar1, iVar3);
             if ((char)uVar2 == '\0') {
-                FUN_00480620(&DAT_07eaa198, &DAT_07d54600, 2);
+                UIChatLogWindow_AddText(&DAT_07eaa198, &DAT_07d54600, 2);
             } else {
                 if ((int)DAT_07e91388 < 1) {
                     DAT_07eaa13c = 2;
                     DAT_00559f5e = 0xff;
-                    FUN_0051e240(1, 0x21b, 0x97);
+                    ShowCheckBox(1, 0x21b, 0x97);
                 }
             }
             break;
         }
         case (int)0xfffffff8:
         case (int)0xfffffffe:
-            FUN_00480620(&DAT_07eaa19c, &DAT_07d55c44, 2);
+            UIChatLogWindow_AddText(&DAT_07eaa19c, &DAT_07d55c44, 2);
             break;
         }
-        FUN_00404bc0(0x19, 0, 0);
+        PlayBuffer(0x19, 0, 0);
     }
 
     // Back button hit-test
@@ -1149,24 +1149,24 @@ void __cdecl FUN_004e9050(void) {
         IsClickPushed()) {
 
         DAT_083a4124 = '\0';
-        FUN_004f6850();
+        SecondPassword_CancelReturn();
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
-        FUN_00404bc0(0x19, 0, 0);
+        PlayBuffer(0x19, 0, 0);
     }
 }
-// FUN_004eb5d0 @ 0x004EB5D0 — SecondPassword_Screen9 (102 lines)
+// SecondPassword_Screen9 @ 0x004EB5D0 — SecondPassword_Screen9 (102 lines)
 // Detección de fila del teclado numérico del diálogo de segunda contraseña.
 // Chequea 4 filas de botones en los offsets x {0x1a, 0x4c, 0x7e, 0xd7} (0x18 de ancho cada uno)
 // y los offsets y {0x186, 0x186, 0x186, 0x18b} relativos a DAT_07eaa0c8/0cc.
 // Al hacer click (DAT_083a4124 != '\0'), despacha por índice de fila:
-//   0 → new char: SetErrorMessage(0x74), Input_ClearState(0), set substate flags
-//   1 → borrar carácter: igual que 0 pero DAT_07eaa108=1
+//   0 → new char: SetErrorMessage(0x74), ClearInput(0), set substate flags
+//   1 → borrar carácter: igual que 0 pero StorageGoldFlag=1
 //   2 → shuffle/new-PIN: shuffle DAT_07e91394 short[10] via Fisher-Yates (20 passes),
 //        reset _DAT_07ea9814=0, DAT_07ea9818=0, DAT_07eaa14c = 4 - DAT_00559f5f,
 //        DAT_07ea981c=0, DAT_07ea981e=0
-//   3 → exit: FUN_004f6a70(); DAT_07e11d28=0; DAT_00559bec=6
-void __cdecl FUN_004eb5d0(void) {
+//   3 → exit: Net_Disconnect_Clean(); DAT_07e11d28=0; DAT_00559bec=6
+void __cdecl SecondPassword_Screen9(void) {
     if (DAT_07eaa119 == '\0') return;
 
     static const int xOff[4] = { 0x1a, 0x4c, 0x7e, 0xd7 };
@@ -1187,28 +1187,28 @@ void __cdecl FUN_004eb5d0(void) {
 
     if (!IsClickPushed()) return;
     DAT_083a4124 = '\0';
-    FUN_00404bc0(0x19, 0, 0);
+    PlayBuffer(0x19, 0, 0);
 
     switch (iVar6) {
     case 0:
         SetErrorMessage(0x74);
-        Input_ClearState(0);
-        DAT_07e11d74 = 0;
-        DAT_07eaa108 = 0;
-        _DAT_00559c94 = 8;
-        DAT_00559c88 = 1;
+        ClearInput(0);
+        InputGold = 0;
+        StorageGoldFlag = 0;
+        InputTextMax = 8;
+        InputNumber = 1;
         DAT_00559c84 = 0;
-        DAT_07e11d72 = 1;
+        GoldInputEnable = 1;
         break;
     case 1:
         SetErrorMessage(0x74);
-        Input_ClearState(0);
-        DAT_07e11d74 = 0;
-        _DAT_00559c94 = 8;
-        DAT_00559c88 = 1;
+        ClearInput(0);
+        InputGold = 0;
+        InputTextMax = 8;
+        InputNumber = 1;
         DAT_00559c84 = 0;
-        DAT_07e11d72 = 1;
-        DAT_07eaa108 = 1;
+        GoldInputEnable = 1;
+        StorageGoldFlag = 1;
         break;
     case 2: {
         // Inicializa el array short[10] en DAT_07e91394 con 0..9 y después lo mezcla (Fisher-Yates, 20 pasadas)
@@ -1229,7 +1229,7 @@ void __cdecl FUN_004eb5d0(void) {
         break;
     }
     case 3:
-        FUN_004f6a70();
+        Net_Disconnect_Clean();
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         break;
@@ -1241,14 +1241,14 @@ void __cdecl FUN_004eb5d0(void) {
 void __cdecl FUN_004eb7f0(void) {
     // IDA: el guard lee TradeOpened; se omite únicamente el ruido de HashTable.
 
-    FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char cGuard = DAT_07eaa11b;
     {
-        uint uVar3 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa11b);
+        uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
         if (uVar3 != 0xffffffff) {
-            BYTE* pb = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_07eaa11b);
+            BYTE* pb = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa11b);
             BYTE b = pb[1]; pb[1] = b - 1;
-            if ((BYTE)(b-1) == 0) FUN_00423710(pb, &DAT_07eaa11b);
+            if ((BYTE)(b-1) == 0) Packet_EncryptByte(pb, &DAT_07eaa11b);
         }
     }
     if (cGuard == '\0') return;
@@ -1260,15 +1260,15 @@ void __cdecl FUN_004eb7f0(void) {
         (int)DAT_083a4278 < (int)(DAT_07ea528c + 0x19e) &&
         IsClickPushed()) {
         DAT_083a4124 = '\0';
-        FUN_005142d0(0x74);
-        Input_ClearState(0);
-        _DAT_00559c94 = 8;
-        DAT_00559c88 = 1;
+        SetErrorMessage(0x74);
+        ClearInput(0);
+        InputTextMax = 8;
+        InputNumber = 1;
         DAT_00559c84 = 0;
-        DAT_07e11d72 = 1;
-        DAT_07e11d74 = 0;
-        DAT_07eaa108 = 2;
-        FUN_00404bc0(0x19, 0, 0);
+        GoldInputEnable = 1;
+        InputGold = 0;
+        StorageGoldFlag = 2;
+        PlayBuffer(0x19, 0, 0);
     }
 
     // IDA: FUN_004EB7F0 — m_nMyTradeWait se descuenta una vez por tick
@@ -1284,22 +1284,22 @@ void __cdecl FUN_004eb7f0(void) {
         (int)DAT_083a4278 < (int)(DAT_07ea528c + 0x19e) &&
         IsClickPushed()) {
         DAT_083a4124 = '\0';
-        FUN_00404bc0(0x19, 0, 0);
+        PlayBuffer(0x19, 0, 0);
 
         if (DAT_07eaa0e8 == '\0') {
-            if (DAT_07eaa0fd == '\0') {
-                DAT_07eaa0fd = '\x01';
+            if (m_bMyConfirm == '\0') {
+                m_bMyConfirm = '\x01';
             } else {
-                DAT_07eaa0fd = '\0';
+                m_bMyConfirm = '\0';
             }
         } else {
-            if (DAT_07eaa0fd == '\0') {
+            if (m_bMyConfirm == '\0') {
                 DAT_07eaa13c = 3;
                 DAT_00559f5e = (char)0xff;
-                FUN_0051e240(4, 0x173, 0x97);
+                ShowCheckBox(4, 0x173, 0x97);
                 return;
             }
-            DAT_07eaa0fd = '\0';
+            m_bMyConfirm = '\0';
         }
         DAT_07eaa0e8 = '\x01';
 
@@ -1316,7 +1316,7 @@ void __cdecl FUN_004eb7f0(void) {
         (int)DAT_083a4278 < (int)(DAT_07ea528c + 0x19e) &&
         IsClickPushed()) {
         DAT_083a4124 = '\0';
-        FUN_00404bc0(0x19, 0, 0);
+        PlayBuffer(0x19, 0, 0);
         if (DAT_07e91388 == 0) {
             DAT_07eaa0e8 = '\0';
             // CGTradeCancelButtonRecv: C1:3D, no payload.
@@ -1334,18 +1334,18 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 //   - Updates repair cost per-frame via Item_RecalculateRepairCost()
 //   - Handles inventory close button click
 void __cdecl FUN_004ec330(void) {
-    uint uVar3 = HashTable_GetIndex(&DAT_055c9bc8, &DAT_07eaa118);
+    uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (uVar3 == 0xffffffff) {
         void* pv = operator_new(2);
         *(unsigned char*)((int)pv + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, pv, &DAT_07eaa118);
+        HashTable_Insert(&MAIN_HASH_CLASS, pv, &DAT_07eaa118);
     } else {
-        BYTE* pb = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_07eaa118);
+        BYTE* pb = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa118);
         BYTE b = pb[1]; pb[1] = b + 1;
-        if ((BYTE)(b+1) < 2) FUN_00404330((BYTE*)&DAT_07eaa118, pb);
+        if ((BYTE)(b+1) < 2) Packet_DecryptByte((BYTE*)&DAT_07eaa118, pb);
     }
     char cGuard = DAT_07eaa118;
-    FUN_00404040(&DAT_055c9bc8, &DAT_07eaa118);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
 
     if (cGuard != '\0') {
         if (DAT_07eaa132 != '\0') {
@@ -1403,88 +1403,28 @@ void __cdecl FUN_004ec330(void) {
             IsClickPushed()) {
             DAT_083a4124 = '\0';
             DAT_07eaa117 = 0;
-            FUN_004cba60();
+            CloseInventoryRelatedWindows();
             DAT_07e11d28 = 0;
             DAT_00559bec = 6;
         }
     }
 }
 
-// =============================================================================
-// 2026-05-07 B3 refactor — SecondPassword UI helper stubs
-// moved from stubs.cpp lines 5297-7762 (2466 lines).
-// =============================================================================
-// ── SecondPassword UI helper stubs (bodies in original binary) ────────────────
-// FUN_0051e240 @ 0x0051E240 — ShowCheckBox
-// param_1=count, param_2=índice base de GlobalText (stride 300),
-// param_3=mensaje de destino (0x99 activa el rótulo especial de ítem).
-// Copia las líneas al buffer del panel DAT_083a44c4 (stride 0x26) y configura el descriptor.
-undefined4 __cdecl FUN_0051e240(int param_1, int param_2, int param_3)
-{
-    int iVar3 = param_1;
-    if (param_3 != 0x99) {
-        if (0 < param_1) {
-            char *dst = (char *)&DAT_083a44c4;
-            for (int i = 0; i < param_1; ++i) {
-                // IDA: ShowCheckBox 0x51E240 copia desde
-                // GlobalText[index + i] (slots de 300 bytes). En Trade el
-                // caller FUN_004EB7F0 usa (4, 371, 151): GlobalText[371..374].
-                strncpy_s(dst, 0x26, GlobalText[param_2 + i], _TRUNCATE);
-                dst += 0x26;
-            }
-        }
-        goto LAB_0051e377;
-    }
-    // mode 0x99: build item class label for current item (DAT_07ea5240)
-    {
-        char local_34[0x34] = {};
-        if (*(short*)DAT_07ea5240 == 0x1af) {
-            byte *pbVar13 = nullptr;
-            switch (DAT_07ea5244 >> 3 & 0xf) {
-            case 0: pbVar13 = &DAT_005618b8; break;
-            case 1: pbVar13 = &DAT_005618bc; break;
-            case 2: pbVar13 = &DAT_005618c0; break;
-            case 3: pbVar13 = &DAT_005618c4; break;
-            default: goto switchD_default;
-            }
-            crt_sprintf(local_34, (const char*)pbVar13);
-        }
-switchD_default:
-        crt_sprintf((char *)&DAT_083a44c4, s____s___005618c8);
-        iVar3 = param_1 + 1;
-        if (1 < iVar3) {
-            char *puVar9 = &DAT_083a44ea;
-            do {
-                crt_sprintf(puVar9, &DAT_07d29d24 + param_2 * 300);
-                puVar9 += 0x26;
-                param_1--;
-            } while (param_1 != 0);
-        }
-    }
-LAB_0051e377:
-    {
-        static const unsigned int local_5c[10] = {1,0x15,0x5a,0x46,0x15, 3,0x78,0x5a,0x46,0x15};
-        DAT_083a4324 = (DWORD)iVar3;
-        memset(&DAT_083a42f8[0], 0, 10*4);
-        for (int i = 0; i < 5; i++) DAT_083a42f8[i] = local_5c[i];
-        unsigned int uVar2 = DAT_083a7c28;
-        for (int i = 0; i < 5; i++) DAT_083a430c[i] = local_5c[i+5];
-        if (param_3 != 0) {
-            if (DAT_083a7c24 == 0) { DAT_083a7c24 = (undefined4)param_3; return 1; }
-            DAT_083a7c28 = (undefined4)param_3;
-            return 1;
-        }
-        DAT_083a7c28 = (undefined4)param_3;
-        DAT_083a7c24 = (undefined4)uVar2;
-        return 1;
-    }
-}
+// ShowCheckBox (0x0051E240) vive en src/Item/Item_ClickHandler.cpp.
+//
+// 2026-09-26: aca habia una SEGUNDA implementacion bajo el nombre ShowCheckBox.
+// Las dos portan la misma funcion, pero difieren en la rama del mensaje 153
+// (0x99): IDA arma el rotulo con GlobalText[166..169] segun el tipo de huevo de
+// mascota (item 431), y esta copia usaba unos strings sueltos DAT_005618b8..c4.
+// La de Item_ClickHandler.cpp coincide termino por termino con el decompile
+// -- incluidos los descriptores de boton {1,21,90,70,21} y {3,120,90,70,21} --
+// asi que se queda esa y sus 3 call sites pasan a llamarla.
 
-// FUN_004e3db0 @ 0x004E3DB0 — SecondPassword_GridSlotAvail
+// SecondPassword_GridSlotAvail @ 0x004E3DB0 — SecondPassword_GridSlotAvail
 // Escanea una grilla 2D (param_3×param_2 filas/columnas) en el array de inventario en param_1,
 // con stride 0x44 por celda; devuelve 1 si alguna celda de la ventana está libre (slot==-1), si no 0.
-// FUN_004e3db0 (IDA-activated, was Ghidra stub)
-uint __cdecl FUN_004e3db0(int a1, int a2, int a3, int a4, int a5)
+// SecondPassword_GridSlotAvail (IDA-activated, was Ghidra stub)
+uint __cdecl SecondPassword_GridSlotAvail(int a1, int a2, int a3, int a4, int a5)
 {
   int v5; // ebp
   int v6; // eax
@@ -1568,10 +1508,10 @@ LABEL_16:
 }
 
 
-// FUN_004f6850 @ 0x004F6850 — SecondPassword_CancelReturn
+// SecondPassword_CancelReturn @ 0x004F6850 — SecondPassword_CancelReturn
 // Chequea si hay slots de entidad de segunda contraseña ocupados; si los hay, muestra el diálogo.
 // Otherwise sends a cancel packet (C1 03 87) over the socket.
-undefined4 __cdecl FUN_004f6850(void)
+undefined4 __cdecl SecondPassword_CancelReturn(void)
 {
     if (!ChaosMixOpened) return 0;
     return ChaosBoxRequestClose() ? 1 : 0;
@@ -1591,63 +1531,63 @@ undefined4 __cdecl FUN_004f6850(void)
         } while (iVar6 != 0);
     }
     if ((!bVar1) || (0 < (int)DAT_07e91388)) {
-        FUN_00480620((const char*)&lpDefault_00583d88, (const char*)&DAT_07d55410, 2);
+        UIChatLogWindow_AddText((const char*)&lpDefault_00583d88, (const char*)&DAT_07d55410, 2);
         return 0;
     }
     // Send C1 03 87 logout/cancel packet
     char pkt[3]; pkt[0] = (char)0xC1; pkt[1] = 3; pkt[2] = (char)0x87;
     unsigned int uVar8 = 3;
     int iVar6 = 0;
-    if (DAT_055ca168 != (SOCKET)INVALID_SOCKET) {
+    if (SocketClientSocket != (SOCKET)INVALID_SOCKET) {
         do {
-            int iVar3 = send(DAT_055ca168, pkt + iVar6, 3 - iVar6, 0);
+            int iVar3 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
             if (iVar3 == -1) {
                 iVar6 = WSAGetLastError();
-                if (iVar6 != 0x2733) { Net_Disconnect(((int)(uintptr_t)DAT_055ca160)); break; }
-                if (0x2000 < (int)(DAT_055cc16c + 3)) { Net_Disconnect(((int)(uintptr_t)DAT_055ca160)); break; }
-                memcpy(DAT_055ca16c + DAT_055cc16c, pkt, uVar8);
-                DAT_055cc16c += uVar8;
+                if (iVar6 != 0x2733) { Net_Disconnect(((int)(uintptr_t)SocketClient)); break; }
+                if (0x2000 < (int)(SocketClientSendBufferLength + 3)) { Net_Disconnect(((int)(uintptr_t)SocketClient)); break; }
+                memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, uVar8);
+                SocketClientSendBufferLength += uVar8;
                 break;
             }
             if (iVar3 == 0) break;
-            if (DAT_055ce174 != 0) FUN_0043de60();
+            if (SocketClientLogPrint != 0) FUN_0043de60();
             uVar8 -= iVar3; iVar6 += iVar3;
         } while (0 < (int)uVar8);
     }
-    return CONCAT31((int3)(DAT_055ca168 >> 8), 1);
+    return CONCAT31((int3)(SocketClientSocket >> 8), 1);
 #endif
 }
 
-// FUN_004f6a70 @ 0x004F6A70 — Net_Disconnect_Clean
+// Net_Disconnect_Clean @ 0x004F6A70 — Net_Disconnect_Clean
 // Limpia el estado de la UI y después manda un paquete de desconexión (C1 03 82) por el socket.
-uint __cdecl FUN_004f6a70(void)
+uint __cdecl Net_Disconnect_Clean(void)
 {
     if (DAT_07eaa165 != '\0') return 0;
     DAT_07eaa117 = 0;
-    FUN_004cba60();
+    CloseInventoryRelatedWindows();
     if (0 < (int)DAT_07e91388) Item_ReturnPickedItem();
     char pkt[3]; pkt[0] = (char)0xC1; pkt[1] = 3; pkt[2] = (char)0x82;
     unsigned int uVar4 = 3;
     int iVar6 = 0;
-    SOCKET SVar2 = DAT_055ca168;
-    if (DAT_055ca168 != (SOCKET)INVALID_SOCKET) {
+    SOCKET SVar2 = SocketClientSocket;
+    if (SocketClientSocket != (SOCKET)INVALID_SOCKET) {
         do {
-            int iVar1 = send(DAT_055ca168, pkt + iVar6, 3 - iVar6, 0);
+            int iVar1 = send(SocketClientSocket, pkt + iVar6, 3 - iVar6, 0);
             if (iVar1 == -1) {
                 iVar6 = WSAGetLastError();
-                SVar2 = (SOCKET)DAT_055cc16c;
+                SVar2 = (SOCKET)SocketClientSendBufferLength;
                 if (iVar6 == 0x2733) {
-                    if ((int)(DAT_055cc16c + 3) < 0x2001) {
-                        memcpy(DAT_055ca16c + DAT_055cc16c, pkt, uVar4);
-                        DAT_055cc16c += uVar4;
-                    } else { Net_Disconnect(((int)(uintptr_t)DAT_055ca160)); SVar2 = 0; }
-                } else { Net_Disconnect(((int)(uintptr_t)DAT_055ca160)); SVar2 = 0; }
+                    if ((int)(SocketClientSendBufferLength + 3) < 0x2001) {
+                        memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, uVar4);
+                        SocketClientSendBufferLength += uVar4;
+                    } else { Net_Disconnect(((int)(uintptr_t)SocketClient)); SVar2 = 0; }
+                } else { Net_Disconnect(((int)(uintptr_t)SocketClient)); SVar2 = 0; }
                 break;
             }
             SVar2 = 0;
             if (iVar1 == 0) break;
             SVar2 = 0;
-            if (DAT_055ce174 != 0) { FUN_0043de60(); SVar2 = 0; }
+            if (SocketClientLogPrint != 0) { FUN_0043de60(); SVar2 = 0; }
             uVar4 -= iVar1; iVar6 += iVar1;
         } while (0 < (int)uVar4);
     }
@@ -1656,7 +1596,7 @@ uint __cdecl FUN_004f6a70(void)
 
 // FUN_004d1fc0 @ 0x004D1FC0 — SecondPassword_WidgetGrid_Init
 // Inicializa la grilla del widget de segunda contraseña insertando / actualizando entradas en la
-// hash-table global (DAT_055c9bc8) con clave DAT_07cf1ffc, y después llama a FUN_004cdc70 para
+// hash-table global (MAIN_HASH_CLASS) con clave DAT_07cf1ffc, y después llama a FUN_004cdc70 para
 // place 12 grid-slot widgets at fixed screen positions:
 //   slot 0-1 : (700,184)  (380,184) size 40×40 / 60×40
 //   slot 2-4 : (300,360)  (300,400) (180,360)
@@ -1664,7 +1604,7 @@ uint __cdecl FUN_004f6a70(void)
 //   slot 7   : checkbox (190,360)   wait (190,400)
 //   slot 8-10: (350,360)  (350,400) (380,400) size 20×20
 //   slot 11  : (180,400)
-// Usa HashTable_GetIndex / FUN_00403f80 / FUN_00404370 con el ref-count ofuscado por XOR
+// Usa HashTable_GetIndex / HashTable_Insert / Packet_DecryptBuffer con el ref-count ofuscado por XOR
 // sobre el blob de widget de 0x584 bytes. La clave XOR sale de DAT_00559050 (tabla de 16 bytes).
 // STUB: la lógica real son 12 llamadas a FUN_004cdc70 (función de render de inventario de 3554 líneas, sin declarar)
 // setting up second-password widget grid at fixed screen coordinates.
@@ -1676,7 +1616,7 @@ uint __cdecl FUN_004f6a70(void)
 //   slot 1: (134.0, 89.0) 40×60   slot 5: (15.0, 152.0) 40×40
 //   slot 6: (134.0, 152.0) 40×40  slot 9: (55.0, 89.0) 20×20
 //   slot10: (55.0, 152.0) 20×20   slot11: (115.0, 152.0) 20×20
-// Anti-tamper hash table blocks (DAT_055c9bc8) interspersed — skipped.
+// Anti-tamper hash table blocks (MAIN_HASH_CLASS) interspersed — skipped.
 // FUN_004d1fc0 @ 0x004D1FC0 — Render Character Equipment Slots (12 slots).
 // Port FIEL del IDA: 12 llamadas a sub_4CDC70(x, y, w, h, slotIdx) renderizando
 // los slots del Character panel. STRUCT_DECRYPT/ENCRYPT (HashTable obfuscation)
@@ -1738,7 +1678,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
             DAT_07ea840c = (DWORD)(x0 + (int)w / 2);        // sx
             return;
         }
-        if (DAT_05826d14) return;                           // Teleport
+        if (Teleport) return;                           // Teleport
         if (DAT_07eaa134) {                                 // RepairEnable_0
             if ((type >= 416 && type <= 419) || type == 426 || type == 135 ||
                 type == 143 || type >= 448 || (type >= 391 && type <= 403) ||
@@ -1770,9 +1710,9 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
         *(int*)(slot + 4) = 0;
         slot[27] = 0;
         DAT_07ea5b18 = (DWORD)a5;                           // Inventory[32].Type
-        FUN_0045c130((int)(uintptr_t)DAT_07abf5d8);         // SetCharacterClass(Hero)
+        SetCharacterClass((int)(uintptr_t)DAT_07abf5d8);         // SetCharacterClass(Hero)
         DAT_07eaa160 = 0;                                   // CheckInventory
-        FUN_00404bc0(29, 0, 0);
+        PlayBuffer(29, 0, 0);
         if (a5 == 8)
             DeleteBug((int)(uintptr_t)DAT_07abf5d8);
         return;
@@ -1898,7 +1838,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     g_ItemMoveSourcePool = DAT_07ea9800 ? DAT_07ea9800
                                         : (DWORD)(uintptr_t)&OffsetInventoryItems[0];
     g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-    SendRequestEquipmentItem_stub(srcFlag, (int)DAT_07ea5b18, picked, 0, (int)DAT_07e11e78);
+    SendRequestEquipmentItem(srcFlag, (int)DAT_07ea5b18, picked, 0, (int)DAT_07e11e78);
 }
 
 void __cdecl FUN_004d1fc0(void) {
@@ -1936,10 +1876,10 @@ void __cdecl FUN_004d1fc0(void) {
 // compatibles hicieron que linkeara sin warning.
 
 // Player input helpers
-// FUN_004430c0 @ 0x004430C0 — SetPlayerStop(entity_ptr)
+// SetPlayerStop @ 0x004430C0 — SetPlayerStop(entity_ptr)
 // Port directo del IDA sub_4430C0 (2155 bytes). Selecciona la animación
 // idle/stop del personaje según el equipamiento (alas, armas, helm, armadura)
-// y el estado del mundo (g_GameState, World, terrain wall flag).
+// y el estado del mundo (SceneFlag, World, terrain wall flag).
 //
 // Mapping de offsets:
 //   c+0x002 short  EntityType (0x186 = Player)
@@ -1961,7 +1901,8 @@ void __cdecl FUN_004d1fc0(void) {
 // Hash-table refcounting (líneas 181-433 IDA) es anti-tamper, omitido.
 extern int DAT_07d78068;   // ItemAttribute base (declared in globals.h)
 
-void __cdecl FUN_004430c0(int c) {
+// IDA: SetPlayerStop (0x004430C0)
+void __cdecl SetPlayerStop(int c) {
     *(unsigned char*)(c + 0x300) = 0;   // c+768 = stamina counter
 
     auto SetAction_local = [c](unsigned char act) {
@@ -1980,7 +1921,7 @@ void __cdecl FUN_004430c0(int c) {
     // `&arr[i] - 34` con sizeof=64 == (i-1)*64 + 30, o sea TwoHand del item
     // anterior. Mantenemos el cálculo idéntico al IDA para preservar semántica.
     // 2026-08-08 CRASH-FIX (0xC0000005 al cerrar el inventario con V):
-    // stack = Game_CharSelectTick → FUN_00454cd0 → FUN_004430c0 → este lambda,
+    // stack = Game_CharSelectTick → MoveMonsterClient → SetPlayerStop → este lambda,
     // leyendo `[base + 0x1A00 - 0x21]` con base ≈ 0 (log: addr=0x005D4E95,
     // param1=0x000019DF, eax=0x1A00, edi=0).
     // Dos agujeros: (a) el guard sólo miraba `== 0`, pero DAT_07d78068 se
@@ -2013,14 +1954,14 @@ void __cdecl FUN_004430c0(int c) {
             Fly = 1;
         }
 
-        // Terrain wall check: en agua/Atlans (World==7) sin pared y g_GameState==5
-        // también dispara la animación de flotar. En char-select (g_GameState==4)
+        // Terrain wall check: en agua/Atlans (World==7) sin pared y SceneFlag==5
+        // también dispara la animación de flotar. En char-select (SceneFlag==4)
         // queda solo Fly.
         bool gateA = false;
-        if (DAT_005615c0 == 5 && DAT_0055a7ac == 7) {
+        if (SceneFlag == 5 && World == 7) {
             int gx = (int)(*(float*)(c + 16) * 0.0099999998f);
             int gy = (int)(*(float*)(c + 20) * 0.0099999998f);
-            int v3 = FUN_004f6c40((unsigned int)gx, (unsigned int)gy);
+            int v3 = Terrain_GetTileIndex((unsigned int)gx, (unsigned int)gy);
             if ((DAT_0838bc70[v3] & 1) != 1) gateA = true;
         }
         if (gateA || Fly) {
@@ -2035,7 +1976,7 @@ void __cdecl FUN_004430c0(int c) {
         // Sin helm/armor o cambiando clase fuera de mapas 11-16 → idle estándar
         if ((v5 == -1 && *(unsigned short*)(c + 648) == 0xFFFF)
             || (*(unsigned char*)(c + 846)
-                && (DAT_0055a7ac < 11 || DAT_0055a7ac > 16))) {
+                && (World < 11 || World > 16))) {
             bool isElf = ((*(unsigned char*)(c + 444) & 7) == 2);
             SetAction_local(isElf ? 2 : 1);
             goto LABEL_129;
@@ -2086,7 +2027,7 @@ void __cdecl FUN_004430c0(int c) {
         // Sólo el resultado final importa: terrain check + SetAction.
         int gx = (int)(*(float*)(c + 16) * 0.0099999998f);
         int gy = (int)(*(float*)(c + 20) * 0.0099999998f);
-        int v50 = FUN_004f6c40((unsigned int)gx, (unsigned int)gy);
+        int v50 = Terrain_GetTileIndex((unsigned int)gx, (unsigned int)gy);
         if (*(short*)(c + 2) == 302 && (DAT_0838bc70[v50] & 1) == 1) {
             SetAction_local(7);
         } else {
@@ -2110,14 +2051,14 @@ LABEL_129:
                 int v55 = rand() % 2;
                 short s = *(short*)((char*)(uintptr_t)DAT_05828d58
                                     + 2 * (v55 + 94 * v53) + 170);
-                // PlayBuffer(s + 170, c, 0) — sound playback (FUN_00404bc0 en nuestra port)
-                FUN_00404bc0(s + 170, (DWORD)c, 0);
+                // PlayBuffer(s + 170, c, 0) — sound playback (PlayBuffer en nuestra port)
+                PlayBuffer(s + 170, (DWORD)c, 0);
             }
         }
     }
 }
 
-// FUN_00443930 @ 0x00443930 — SetPlayerWalk (1337 bytes IDA)
+// SetPlayerWalk @ 0x00443930 — SetPlayerWalk (1337 bytes IDA)
 // Full port: selects walk/run animation based on character class, equipped
 // weapon, wings, stamina, and world.  IDA action IDs:
 //   13 (0x0d) = walk no-weapon
@@ -2136,7 +2077,8 @@ LABEL_129:
 // 2026-05-04: REEMPLAZA stub que devolvía hardcoded `uVar8 = 2` para todo
 // non-DarkLord. Por eso el player caminaba sin animación (action=2 es la
 // pose idle del modelo). Port faithful from IDA L62-227.
-void __cdecl FUN_00443930(int param_1) {
+// IDA: SetPlayerWalk (0x00443930)
+void __cdecl SetPlayerWalk(int param_1) {
     // +0x34E (=846) es **SafeZone**, NO dead (el dead real es +0x2FD).
     // Ver CLAUDE.md 2026-08-10; el nombre viejo `dead` mentía.
     char bSafeZone0 = *(char *)(param_1 + 0x34e);
@@ -2152,7 +2094,7 @@ void __cdecl FUN_00443930(int param_1) {
             // 3) Si no, si c+0x258 (Helper) != -1 Y c+0x25a > 4, incrementa.
             if ((*(unsigned char *)(param_1 + 0x1bc) & 7) == 3) {
                 *(unsigned char *)(param_1 + 0x300) = v2 + 1;
-            } else if (DAT_0055a7ac == 7) {
+            } else if (World == 7) {
                 if (*(short *)(param_1 + 0x240) != -1 &&
                     *(unsigned char *)(param_1 + 0x242) > 4)
                     *(unsigned char *)(param_1 + 0x300) = v2 + 1;
@@ -2168,7 +2110,7 @@ void __cdecl FUN_00443930(int param_1) {
 
     // Non-player (NPC/monster): always action 2.
     if (etype != 390) {
-        FUN_0043e820(param_1, 2);
+        SetAction(param_1, 2);
         goto label_119;
     }
 
@@ -2184,10 +2126,10 @@ void __cdecl FUN_00443930(int param_1) {
     // Pendant 818 + alive: stand-with-fairy (32) or holding-something (33).
     if (pendant == 818 && !bSafeZone) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
-            FUN_0043e820(param_1, 32);
+            SetAction(param_1, 32);
             goto label_119;
         }
-        FUN_0043e820(param_1, 33);
+        SetAction(param_1, 33);
         goto label_119;
     }
 
@@ -2196,9 +2138,9 @@ void __cdecl FUN_00443930(int param_1) {
         // Las alas están activas cuando c+672 != -1 (sólo si está vivo).
         if (!bSafeZone && wings != -1) {
             // Wings flying: action 30 (no spear) or 31 (spear 536-543, 544, 546).
-            if (LH >= 536 && LH < 543) { FUN_0043e820(param_1, 31); goto label_119; }
-            if (LH == 545 || LH == 546)    { FUN_0043e820(param_1, 31); goto label_119; }
-            FUN_0043e820(param_1, 30);
+            if (LH >= 536 && LH < 543) { SetAction(param_1, 31); goto label_119; }
+            if (LH == 545 || LH == 546)    { SetAction(param_1, 31); goto label_119; }
+            SetAction(param_1, 30);
             goto label_119;
         }
         // World 7 (Atlans): swim animations. Stamina < 0x28 → 21, else 29.
@@ -2207,22 +2149,22 @@ void __cdecl FUN_00443930(int param_1) {
         //   v6 = c+846 (SafeZone); v7 = (v6 == 0);
         //   if (!v6) { si hay alas → SetAction 30/31 y sale; si no, v7 = 1; }
         // O sea en zona segura NO se nada (ni se vuela): se camina.
-        if (!bSafeZone && DAT_0055a7ac == 7) {
-            FUN_0043e820(param_1, (stamina < 0x28) ? 21 : 29);
+        if (!bSafeZone && World == 7) {
+            SetAction(param_1, (stamina < 0x28) ? 21 : 29);
             goto label_119;
         }
         // No weapons equipped (or dead in non-event-map world):
         bool noWeapons = ((unsigned short)LH == 0xFFFF) && ((unsigned short)RH == 0xFFFF);
-        bool bSafeZoneNonEvent = bSafeZone && (DAT_0055a7ac < 11 || DAT_0055a7ac > 16);
+        bool bSafeZoneNonEvent = bSafeZone && (World < 11 || World > 16);
         if (noWeapons || bSafeZoneNonEvent) {
             if (stamina >= 0x28) {
                 // Exhausted: action 22.
-                FUN_0043e820(param_1, 22);
+                SetAction(param_1, 22);
                 goto label_119;
             }
             // Non-exhausted no-weapon walk/run: 13 (walk) or 14 (run).
             unsigned int act = ((*(unsigned char *)(param_1 + 0x1bc) & 7) == 2) ? 14u : 13u;
-            FUN_0043e820(param_1, act);
+            SetAction(param_1, act);
             goto label_119;
         }
         // Tiene armas, está vivo, no es Atlans, no está exhausto:
@@ -2238,100 +2180,100 @@ void __cdecl FUN_00443930(int param_1) {
             // Sword class (LH 400..495):
             if (LH >= 400 && LH < 496) {
                 if (ItemTwoHand(LH)) {
-                    FUN_0043e820(param_1, (LH == 431) ? 79 : 16);
+                    SetAction(param_1, (LH == 431) ? 79 : 16);
                     goto label_119;
                 }
-                FUN_0043e820(param_1, 15);   // 1H sword walk
+                SetAction(param_1, 15);   // 1H sword walk
                 goto label_119;
             }
             // Lanza (560..591): IDA chequea TwoHand → 18, si no cae a LABEL_64 (15)
             if (LH >= 560 && LH < 592) {
                 if (!ItemTwoHand(LH)) {
-                    FUN_0043e820(param_1, 15);  // LABEL_64
+                    SetAction(param_1, 15);  // LABEL_64
                     goto label_119;
                 }
-                FUN_0043e820(param_1, 18);
+                SetAction(param_1, 18);
                 goto label_119;
             }
             // Mace (497) / War-axe (530):
-            if (LH == 497 || LH == 530) { FUN_0043e820(param_1, 17); goto label_119; }
+            if (LH == 497 || LH == 530) { SetAction(param_1, 17); goto label_119; }
             // IDA L155-176: NOT magic-book range (LH < 496 || LH >= 528):
             //   Bow RH → 19, Staff LH → 20, fallthrough → LABEL_87 (13/14).
             // SI NO (mano izquierda en [496, 528)): SetAction 18 (terminal).
             if (LH < 496 || LH >= 528) {
                 if ((RH >= 528 && RH < 535) || RH == 545) {
-                    FUN_0043e820(param_1, 19);
+                    SetAction(param_1, 19);
                     goto label_119;
                 }
                 if ((LH >= 536 && LH < 543) || LH == 545 || LH == 546) {
-                    FUN_0043e820(param_1, 20);
+                    SetAction(param_1, 20);
                     goto label_119;
                 }
                 // LABEL_87: no-weapon walk class-conditional
                 unsigned int act = ((*(unsigned char *)(param_1 + 0x1bc) & 7) == 2) ? 14u : 13u;
-                FUN_0043e820(param_1, act);
+                SetAction(param_1, act);
                 goto label_119;
             }
             // LH in [496, 528): magic books — terminal action 18
-            FUN_0043e820(param_1, 18);
+            SetAction(param_1, 18);
             goto label_119;
         }
         // Stamina >= 0x28 (exhausted) with weapons:
         if (LH >= 400 && LH < 496) {
             if (RH >= 400 && RH < 496) {
-                FUN_0043e820(param_1, 24);     // dual-sword exhausted
+                SetAction(param_1, 24);     // dual-sword exhausted
                 goto label_119;
             }
             if (ItemTwoHand(LH)) {
-                FUN_0043e820(param_1, (LH == 431) ? 80 : 25);
+                SetAction(param_1, (LH == 431) ? 80 : 25);
                 goto label_119;
             }
-            FUN_0043e820(param_1, 23);
+            SetAction(param_1, 23);
             goto label_119;
         }
         // Spear exhausted: TwoHand → 26, else 23 (LABEL_97)
         if (LH >= 560 && LH < 592) {
             if (!ItemTwoHand(LH)) {
-                FUN_0043e820(param_1, 23);  // LABEL_97
+                SetAction(param_1, 23);  // LABEL_97
                 goto label_119;
             }
-            FUN_0043e820(param_1, 26);
+            SetAction(param_1, 26);
             goto label_119;
         }
         if (LH >= 496 && LH < 528) {
-            FUN_0043e820(param_1, 26);
+            SetAction(param_1, 26);
             goto label_119;
         }
         if ((RH >= 528 && RH < 535) || RH == 545) {
-            FUN_0043e820(param_1, 27);
+            SetAction(param_1, 27);
             goto label_119;
         }
         if ((LH >= 536 && LH < 543) || LH == 545 || LH == 546) {
-            FUN_0043e820(param_1, 28);
+            SetAction(param_1, 28);
             goto label_119;
         }
-        FUN_0043e820(param_1, 22);  // exhausted no-weapon walk (LABEL_59)
+        SetAction(param_1, 22);  // exhausted no-weapon walk (LABEL_59)
         goto label_119;
     }
 
     // Pendant 819 alive: world 8 (Tarkan) / world 10 (Aida) wings:
-    if (DAT_0055a7ac != 8 && DAT_0055a7ac != 10) {
+    if (World != 8 && World != 10) {
         if ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) {
-            FUN_0043e820(param_1, 32);
+            SetAction(param_1, 32);
             goto label_119;
         }
-        FUN_0043e820(param_1, 33);
+        SetAction(param_1, 33);
         goto label_119;
     }
     // Wings + Atlans/Aida: swim wings.
-    FUN_0043e820(param_1,
+    SetAction(param_1,
                  ((unsigned short)LH == 0xFFFF && (unsigned short)RH == 0xFFFF) ? 76 : 77);
 
 label_119:
 
     // Entity type 0x129 — special case with a fixed sound
     if (etype == 0x129) {
-        FUN_00404bc0(0x5e, param_1, 0);
+        PlayBuffer(0x5e, param_1, 0);
         return;
     }
     // Sonido de movimiento aleatorizado (1/64 para el jugador, 1/16 para el resto)
@@ -2343,7 +2285,7 @@ label_119:
     // Reproduce el sonido de paso de la tabla de sonidos del modelo si no es DarkLord (o si está en el rango de altura de paso)
     if (etype != 0x186 || (*(int *)(param_1 + 4) > 0xcd && *(int *)(param_1 + 4) < 0xd1)) {
         if (*(int *)(param_1 + 4) > 0xcd && *(int *)(param_1 + 4) < 0xd1)
-            FUN_00404bc0(0x5d, param_1, 0);
+            PlayBuffer(0x5d, param_1, 0);
         if (*(short *)(DAT_05828d58 + 0xaa + etype * 0xbc) != -1) {
             // BUG-FIX 2026-08-18: el indice de la tabla de sonidos era el action ID
             // actual del entity (+0x105 anim_state). IDA 0x443930 L288-289 es:
@@ -2356,19 +2298,20 @@ label_119:
             // ATAQUE sonando al caminar) y 104 -> slot 274, que ni existe.
             int v19 = rand() % 2;
             int iVar9 = 0;
-            FUN_00404bc0(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa,
+            PlayBuffer(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa,
                          param_1, iVar9);
         }
     }
 }
 
-// FUN_00454ba0 @ 0x00454BA0 — Entity_StopMove(entity_ptr)
-// Applies backward velocity step (FUN_00454b00) rotated by entity facing matrix,
-// y después fija la altura de la entidad a la del terreno (FUN_004f7500).
-void __cdecl FUN_00454ba0(int param_1) {
+// MoveCharacterPosition @ 0x00454BA0 — Entity_StopMove(entity_ptr)
+// Applies backward velocity step (CharacterMoveSpeed) rotated by entity facing matrix,
+// y después fija la altura de la entidad a la del terreno (RequestTerrainHeight).
+// IDA: MoveCharacterPosition (0x00454BA0)
+void __cdecl MoveCharacterPosition(int param_1) {
     float local_30[12];
-    float vel[3] = { 0.0f, -(float)FUN_00454b00(param_1), 0.0f };
-    // PORT FIX: el mismo artefacto de float[3] partido por Ghidra que en Terrain_Light FUN_004fa930.
+    float vel[3] = { 0.0f, -(float)CharacterMoveSpeed(param_1), 0.0f };
+    // PORT FIX: el mismo artefacto de float[3] partido por Ghidra que en Terrain_Light Entity_GetLightScale.
     // local_3c/local_38/local_34 eran el buffer de salida contiguo de 3 floats que
     // esperaba Vector_Rotate, pero MSVC no garantiza el layout de los locales.
     float out[3] = {0.0f, 0.0f, 0.0f};
@@ -2377,9 +2320,9 @@ void __cdecl FUN_00454ba0(int param_1) {
     *(float*)(param_1 + 0x10) = out[0] + *(float*)(param_1 + 0x10);
     *(float*)(param_1 + 0x14) = out[1] + *(float*)(param_1 + 0x14);
     *(float*)(param_1 + 0x18) = out[2] + *(float*)(param_1 + 0x18);
-    float terrainH = FUN_004f7500(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14));
+    float terrainH = RequestTerrainHeight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14));
     if (*(short*)(param_1 + 0x2b8) == 0x333) {
-        if (DAT_0055a7ac == 8 || DAT_0055a7ac == 10)
+        if (World == 8 || World == 10)
             terrainH += _DAT_00552848;
         else
             terrainH += _DAT_0055284c;
@@ -2389,13 +2332,13 @@ void __cdecl FUN_00454ba0(int param_1) {
     // Keep this model gate and phase ordering identical to the original.
     if (*(short*)(param_1 + 2) == 272) {
         const float bob = (float)sin(*(float*)(param_1 + 0x80));
-        (void)FUN_005129f0(bob); // IDA calls sub_5129F0 (fabs); result is unused.
+        (void)Math_Fabs(bob); // IDA calls sub_5129F0 (fabs); result is unused.
         *(float*)(param_1 + 0x18) = *(float*)(param_1 + 0x18) - bob * 70.0f + 70.0f;
     }
     *(float*)(param_1 + 0x80) = *(float*)(param_1 + 0x80) + _DAT_00552934;
 }
 
-// FUN_0045c130 @ 0x0045C130 — SetCharacterClass(entity)
+// SetCharacterClass @ 0x0045C130 — SetCharacterClass(entity)
 //
 // IDA-ported 2026-04-26 (audit #5). Antes era un stub parcial mal-llamado
 // "Entity_CancelTarget" que sólo copiaba el cluster primario con offsets
@@ -2411,7 +2354,8 @@ void __cdecl FUN_00454ba0(int param_1) {
 //
 // Hashtable obfuscation y comparación con `Hero` global: omitidos (anti-tamper
 // noise / no requeridos para gameplay observable).
-void __cdecl FUN_0045c130(int c) {
+// IDA: SetCharacterClass (0x0045C130)
+void __cdecl SetCharacterClass(int c) {
     if (*(short*)(c + 2) != 390) return;   // 390 = 0x186 = local player
 
     char* cd = (char*)DAT_07cf1ffc;
@@ -2454,7 +2398,7 @@ void __cdecl FUN_0045c130(int c) {
     {
         const short newHelper = *(short*)(c + 696);
         if (newHelper != prevHelper) {
-            FUN_004fffa0((DWORD)(uintptr_t)c);          // DeleteBug
+            DeleteBug((DWORD)(uintptr_t)c);          // DeleteBug
             int bugType = 0;
             if      (newHelper == 816) bugType = 816;   // Guardian Angel
             else if (newHelper == 818) bugType = 195;   // Uniria
@@ -2462,7 +2406,7 @@ void __cdecl FUN_0045c130(int c) {
             // 817 (Imp) NO lleva bug: lo dibuja RenderLinkObject desde
             // Render_PlayerHelper, fiel a RenderCharacter L1267-1287.
             if (bugType)
-                FUN_004fffd0(bugType, (void*)(c + 16), (void*)(uintptr_t)c, 0);
+                CreateBug(bugType, (void*)(c + 16), (void*)(uintptr_t)c, 0);
         }
     }
 
@@ -2476,7 +2420,7 @@ void __cdecl FUN_0045c130(int c) {
 
     bool skipCancel = (v11 >= 0x85u && v11 <= 0x8Cu);
     if (!skipCancel && (v11 < 0x22u || v11 > 0x5Bu)) {
-        FUN_004430c0(c);   // SetPlayerStop
+        SetPlayerStop(c);   // SetPlayerStop
     }
 
     // entity[+847] == 0 → secondary cluster needs filling
@@ -2530,7 +2474,7 @@ void __cdecl FUN_0045c130(int c) {
     // 1374..1407 de CharacterMachine (HP/MP/ATK/DEF/AS/crítico/acierto). No hace falta para el char-select; el gate
     // que la rodea (entity[+847] != 0) sólo dispara después de entrar al mundo. El stub de abajo mantiene
     // el link verde; portar la implementación completa cuando se retome el trabajo in-game.
-    FUN_0047e3c0((int)cd, 0, 0);
+    CalculateAll((int)cd, 0, 0);
 }
 
 // sub_47E3C0 @ 0x0047E3C0 (293 bytes) — CharData_RecalcStats wrapper.
@@ -2543,20 +2487,21 @@ void __cdecl FUN_0045c130(int c) {
 //   - this[+1404] = this[+76]  - this[+1382] (clampeado a 100)  (% de esquive)
 //   - this[+1406] = (rand()%100 < this[+1402]) ? 1 : 0  (tirada de crítico)
 //   - this[+1407] = (rand()%100 < this[+1404]) ? 1 : 0  (tirada de esquive)
-int __cdecl FUN_0047e3c0(int characterMachine, int /*p2*/, int /*p3*/) {
+// IDA: FUN_0047E3C0 (0x0047E3C0)
+int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
     int this_ = characterMachine;
     if (!this_) return 0;
 
     // Anti-tamper hash table — skipped per project policy
 
-    FUN_0047d410(this_);            // Stats_CalcBase (attack damage)
-    FUN_0047dae0(this_);            // Stats_CalcMagicDmgRange
-    FUN_0047dd50((short*)this_);    // Stats_CalcAddStrength
-    FUN_0047dd80(this_);            // CalculateAttackSpeed
-    FUN_0047dfe0(this_);            // Stats_CalcDefense
-    FUN_0047e160(this_);            // Stats_CalcCritBase / DefRate
-    FUN_0047e2e0((short*)this_);    // Stats_CalcExtraOption1
-    FUN_0047e310(this_);            // Stats_CalcExtraOption2
+    Stats_CalcBase(this_);            // Stats_CalcBase (attack damage)
+    Stats_CalcMagicDmgRange(this_);            // Stats_CalcMagicDmgRange
+    Stats_CalcAddStrength((short*)this_);    // Stats_CalcAddStrength
+    CalculateAttackSpeed(this_);            // CalculateAttackSpeed
+    Stats_CalcDefense(this_);            // Stats_CalcDefense
+    Stats_CalcDefenseRate(this_);            // Stats_CalcCritBase / DefRate
+    Stats_ExtraOptionEquip6((short*)this_);    // Stats_CalcExtraOption1
+    Stats_ExtraOptionGlovesWings(this_);            // Stats_CalcExtraOption2
 
     // Derived stats: max-min ranges
     unsigned short v2 = *(unsigned short*)(this_ + 1390);
@@ -2598,12 +2543,13 @@ int __cdecl FUN_0047e3c0(int characterMachine, int /*p2*/, int /*p3*/) {
 //    vuelve a 0;
 //  - los avisos van con etiqueta vacia (byte_7E11E50.. son BSS sin escritor),
 //    no "ERROR".
-void __cdecl FUN_004ac140(void)
+// IDA: CheckGate (0x004AC140)
+void __cdecl CheckGate(void)
 {
-    if (!DAT_07cf5600 || !Hero || !CharacterAttribute)
+    if (!GateAttribute || !Hero || !CharacterAttribute)
         return;
 
-    const BYTE* const gates = (const BYTE*)(uintptr_t)DAT_07cf5600;
+    const BYTE* const gates = (const BYTE*)(uintptr_t)GateAttribute;
     BYTE* const hero = (BYTE*)Hero;
     const WORD& level = *(WORD*)((BYTE*)CharacterAttribute + 14);
 
@@ -2666,14 +2612,14 @@ void __cdecl FUN_004ac140(void)
         }
 
         DAT_07e11d1c = 9999999;                                 // LoadingWorld
-        if (DAT_05826d14 || DAT_07e11dc4 || GetTickCount() - DAT_07e11dc8 < 3000) {
+        if (Teleport || DAT_07e11dc4 || GetTickCount() - DAT_07e11dc8 < 3000) {
             DAT_07e11dc4 = 0;
             DAT_07e11d1c = 0;
             continue;
         }
 
         if (gateIndex == 0)
-            DAT_05826d14 = 1;                                   // Teleport
+            Teleport = 1;                                   // Teleport
 
         const BYTE packet[6] = { 0xC1, 0x06, 0x1C, (BYTE)gateIndex, 0, 0 };
         Net_SendSmallPacket(packet, sizeof(packet));
@@ -2682,20 +2628,20 @@ void __cdecl FUN_004ac140(void)
         SelectedNpc = -1;
         SelectedCharacter = -1;
         SelectedOperate = -1;
-        DAT_00559c58 = -1;                                      // Attacking
+        Attacking = -1;                                      // Attacking
         DAT_07e11dc4 = 1;
         DAT_07e11db8 = 0;
     }
 }
 
 // Combat_SendMovePathPacket (Send_MovePacket), Combat_DispatchHeroSkillAttack (Attack), Combat_CheckArrowRequirement (CheckArrow),
-// Combat_UseElfSkill (UseSkillElf), Combat_ProcessQueuedAction (Action big switch),
+// Combat_UseElfSkill (UseSkillElf), Action (Action big switch),
 // movidos a src/Combat/Combat.cpp
 // (B3 refactor 2026-05-07, 1216 lines).
 
-// FUN_004f6c30 @ 0x004F6C30 — Terrain_GetAttrDirect(grid_x, grid_y) → grid_y * 0x100 + grid_x
-int  __cdecl FUN_004f6c30(int param_1, int param_2) { return param_2 * 0x100 + param_1; }
-// FUN_004f9ac0 @ 0x004F9AC0 — RenderTerrain(EditFlag)  ── PORT 1:1 (2026-06-27)
+// IDA: TERRAIN_INDEX (0x004F6C30)
+int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + param_1; }
+// IDA: RenderTerrain (0x004F9AC0)
 // Reemplaza la fallback flat-shaded previa por el decompile fiel de IDA (352 b).
 // Mantiene flujo y orden de Render States del binario:
 //   sub_4F98C0 (terrain light setup) → WaterMove update → [Edit: SelectFlag=0 +
@@ -2706,7 +2652,7 @@ int  __cdecl FUN_004f6c30(int param_1, int param_2) { return param_2 * 0x100 + p
 //   → toggle ^=1 → sub_4F9A30.
 //
 // Dependencias verificadas en IDA (bytes de operando):
-//   Hero=0x07abf5d8, World=g_GameSubState(0x0055a7ac), WorldTime=0x05826e08,
+//   Hero=0x07abf5d8, World(0x0055a7ac), WorldTime=0x05826e08,
 //   WaterMove=0x07eeb214, SelectFlag=0x07eab1fc, SelectXF/YF=0x080ab288/28c,
 //   TerrainFlag=0x0838bc44, toggle=0x0839bc88, unk_55A76C=0x0055a76c.
 //   - WorldTime: en el binario es float ((float)timeGetTime() en CalcFPS 0x43FD70);
@@ -2717,9 +2663,9 @@ int  __cdecl FUN_004f6c30(int param_1, int param_2) { return param_2 * 0x100 + p
 //     en todos sus sitios justamente por eso.
 //   - unk_55A76C: único xref es el read de abajo (sin writer en el binario) → el
 //     2º pass overlay (TerrainFlag=2) es inerte también en el original.
-//   - Callees aún fallback (a portar en esta cadena): RenderTerrainFrustrum_stub
-//     (#2, 0x004F97E0), FUN_004f8480 RenderTerrainTile (#3, 0x004F8480).
-void __cdecl FUN_004f9ac0(char EditFlag) {
+//   - Callees aún fallback (a portar en esta cadena): RenderTerrainFrustrum
+//     (#2, 0x004F97E0), RenderTerrainTile RenderTerrainTile (#3, 0x004F8480).
+void __cdecl RenderTerrain(char EditFlag) {
     FUN_004f98c0(
         (int)(*(float*)(Hero + 16) * 0.039999999f),   // hero X * 0.04 → tile coord
         (int)(*(float*)(Hero + 20) * 0.039999999f),   // hero Y * 0.04
@@ -2734,36 +2680,36 @@ void __cdecl FUN_004f9ac0(char EditFlag) {
 
     if (EditFlag) {
         DAT_07eab1fc = 0;                 // SelectFlag = 0
-        FUN_00512d30();                   // Map_InitRayCast (sub_512D30)
+        Map_InitRayCast();                   // Map_InitRayCast (sub_512D30)
     } else {
         GL_ResetState();                   // DisableAlphaBlend
     }
 
     DAT_0838bc44 = 0;                     // TerrainFlag = 0
-    RenderTerrainFrustrum_stub(EditFlag != 0);
+    RenderTerrainFrustrum(EditFlag != 0);
 
     if (EditFlag) {
         if (DAT_07eab1fc) {               // SelectFlag → render del tile pickeado
             float sxf = *(float*)&DAT_080ab288;   // SelectXF
             float syf = *(float*)&DAT_080ab28c;   // SelectYF
-            FUN_004f8480(*(int*)&sxf, *(int*)&syf, (int)sxf, (int)syf,
+            RenderTerrainTile(*(int*)&sxf, *(int*)&syf, (int)sxf, (int)syf,
                          1.0f, 1, (int)(unsigned char)EditFlag);
         }
     } else {
         GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
         if (DAT_0055a76c && World != 7) { // overlay (inerte: unk_55A76C nunca seteado)
             DAT_0838bc44 = 2;             // TerrainFlag = 2
-            RenderTerrainFrustrum_stub(false);
+            RenderTerrainFrustrum(false);
         }
-        FUN_004f7060();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
+        Terrain_SpawnAmbientObjects();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
         GL_DisableDepthTest();                   // DisableDepthTest
         GL_EnableCullFace();                   // EnableCullFace
-        FUN_00479540();                   // RenderTerrainAlphaBitmaps (sub_479540)
+        RenderTerrainAlphaBitmaps();                   // RenderTerrainAlphaBitmaps (sub_479540)
         GL_EnableDepthTest();                   // EnableDepthTest
     }
 
     DAT_0839bc88 ^= 1u;                   // terrain-light double-buffer toggle
-    FUN_004f9a30((int)DAT_0839bc88);
+    Terrain_WaterWaveUpdate((int)DAT_0839bc88);
 }
 
 #if 0
@@ -2772,7 +2718,7 @@ void __cdecl FUN_004f9ac0(char EditFlag) {
 static void RenderTerrain_FallbackUnused(char EditFlag) {
     if (!DAT_07abf5d8) return;
     // BUG-FIX 2026-04-28: Edit mode (EditFlag=1) lo llama Player_InputTick para
-    // mouse picking — necesita iterar tiles y llamar a FUN_004f8480 con flag de
+    // mouse picking — necesita iterar tiles y llamar a RenderTerrainTile con flag de
     // picking, que calcula la intersección rayo-tile y guarda el resultado en
     // DAT_080ab288 / DAT_080ab28c. Sin esto el click al suelo no genera path,
     // entonces el hero nunca se mueve.
@@ -2795,14 +2741,14 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
     if (yEnd > 254) yEnd = 254;
 
     if (EditFlag) {
-        // Mouse-pick mode: don't draw, just iterate tiles + call FUN_004f8480
-        // with picking flag.  FUN_004f8480 internally tests mouse ray against
+        // Mouse-pick mode: don't draw, just iterate tiles + call RenderTerrainTile
+        // with picking flag.  RenderTerrainTile internally tests mouse ray against
         // el quad del tile y guarda las coordenadas de grilla del impacto en DAT_080ab288/28c.
         for (int yi = yStart; yi < yEnd; ++yi) {
             for (int xi = xStart; xi < xEnd; ++xi) {
                 float xf = (float)xi;
                 float yf = (float)yi;
-                FUN_004f8480(*(int*)&xf, *(int*)&yf, xi, yi, 1.0f, 1, (int)'\x01');
+                RenderTerrainTile(*(int*)&xf, *(int*)&yf, xi, yi, 1.0f, 1, (int)'\x01');
             }
         }
         return;
@@ -2841,7 +2787,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
             // (slots 0..0xC son cursor sprites) → "suelo mosaico" UI.
             // Tiles cargados en OpenWorld: 0x23 grass1, 0x24 grass2, 0x25 ground1,
             // 0x26 ground2, 0x27 ground3, 0x28 water, 0x29 wood, 0x2a-0x30 rock1-7.
-            int tileIdx = (int)(unsigned char)DAT_080bb2b4[idx0];
+            int tileIdx = (int)(unsigned char)TerrainMappingLayer1[idx0];
             int tileTex = 0x23 + tileIdx;
             if (tileTex < 0x23 || tileTex > 0x30) tileTex = 0x23;   // fallback grass01
             if (tileTex != lastTex) {
@@ -2914,7 +2860,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 #endif  // fallback flat-shaded obsoleta
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FUN_00449900 @ 0x00449900 — MoveCharacter(c, o)  (full port from IDA, 2026-05-04)
+// IDA: MoveCharacter (0x00449900)
 // ─────────────────────────────────────────────────────────────────────────────
 // Tick de entidad por frame. Decompile de IDA: 2773 líneas / 32793 bytes; ~70% es
 // anti-tamper hash-table noise (dword_55C9BC8/BCC/BD0/BD4 + sub_403F80/04280/
@@ -2922,7 +2868,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 // lecturas). Per la política del proyecto (CLAUDE.md) todas las operaciones de hash-table se saltean
 // — son ofuscación, no lógica de juego.
 //
-// El llamador pasa la misma entidad como `c` y como `o` (FUN_00454fc0 → cc, cc).
+// El llamador pasa la misma entidad como `c` y como `o` (MoveCharacterClient → cc, cc).
 // Mapped: `c == o == ent`. Behavior:
 //   1. Sync entity world pos+rot → Models[entType] render slot
 //   2. Hero-only: decrement attack/magic speed buff timers (CA+42/44),
@@ -2943,40 +2889,40 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //  14. Pickup-bag splash (entType=236)
 //
 // Original signature: `void __cdecl MoveCharacter(DWORD c, DWORD o)`. Our ABI
-// es `void __cdecl FUN_00449900(int p1)`; los dos argumentos son la misma entidad.
+// es `void __cdecl MoveCharacter(int p1)`; los dos argumentos son la misma entidad.
 //
 // Dependencias (todas ya en el árbol como FUN_xxxxxxxx):
-//   FUN_0047d410   Stats_CalcBase (sub_47D410)
-//   FUN_0047dae0   Stats_CalcMagicDmgRange (sub_47DAE0)
-//   FUN_0047dd80   CHARACTER_MACHINE::CalculateAttackSpeed
-//   FUN_004f7500   RequestTerrainHeight
+//   Stats_CalcBase   Stats_CalcBase (sub_47D410)
+//   Stats_CalcMagicDmgRange   Stats_CalcMagicDmgRange (sub_47DAE0)
+//   CalculateAttackSpeed   CHARACTER_MACHINE::CalculateAttackSpeed
+//   RequestTerrainHeight   RequestTerrainHeight
 //   Particle_Spawn   Particle_Spawn
-//   CharacterAnimation (alias of FUN_00448600)
-//   FUN_004430c0   SetPlayerStop
-//   FUN_0043e820   SetAction
+//   CharacterAnimation
+//   SetPlayerStop   SetPlayerStop
+//   SetAction   SetAction
 //   CreateChat   CreateChat
-//   FUN_0046c680   CreateBlood (CreateBlood_stub)
-//   FUN_00449840   DeleteCloth
-//   FUN_00448930   AttackStage (AttackStage_stub)
-//   FUN_00445230   AttackEffect (existing port at line 3083)
-//   Effect_Create   CreateEffect
+//   CreateBlood
+//   DeleteCloth   DeleteCloth
+//   AttackStage
+//   AttackEffect   AttackEffect (existing port at line 3083)
+//   CreateEffect   CreateEffect
 //   Joint_Create   CreateJoint
 //   Effect_SpawnSmokeBurst   CreateBomb
 //   BMD_TransformPosition   BMD::TransformPosition
-//   FUN_00440060   BMD::Animation
+//   BMD_Animation   BMD::Animation
 //   AngleMatrix    (no FUN_)
 //   VectorRotate   = Vector_InverseRotate
-//   FUN_004b1170   FindHotKey (FindHotKey)
-//   FUN_00474bd0   CreateArrows (CreateArrows_stub)
-//   FUN_005129f0   fabs
+//   FUN_004b1170   FindHotKey
+//   CreateArrows
+//   Math_Fabs   fabs
 //   FUN_0046fe40   Joint_Find
 //   FUN_004451c0   AngleVectorOffset
 //   Effect_SpawnBombRing   bomb-ring effect
 //   FUN_0046c5a0   skill impact particles
 //   FUN_0046c7f0   directional blood
 //   FUN_0045fae0   lectura hash de 1 byte (lectura de la cola de skills)
-//   FUN_0043e5c0   Alpha
-//   FUN_00404bc0   PlayBuffer
+//   Alpha   Alpha
+//   PlayBuffer   PlayBuffer
 //   SetPlayerDie / DeleteJoint / CreateBlur — local helpers below
 //
 // Anti-tamper SKIPPED everywhere — all `if (c == Hero) { hash-decrypt; ...
@@ -2985,11 +2931,11 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 // Declaraciones externas locales a esta unidad de traducción:
 extern "C" bool __cdecl CharacterAnimation(int c, int o);
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_00449840(int c, int o, int flag);   // DeleteCloth
-extern bool __cdecl AttackStage_stub(DWORD c, DWORD o);
-extern void __cdecl CreateBlood_stub(DWORD o);
+extern void __cdecl DeleteCloth(int c, int o, int flag);   // DeleteCloth
+extern bool __cdecl AttackStage(DWORD c, DWORD o);
+extern void __cdecl CreateBlood(DWORD o);
 extern int  __stdcall FindHotKey(int Skill);
-extern void __cdecl CreateArrows_stub(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
+extern void __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey);
 extern unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char* p);
 
 // Helpers definidos localmente, usados sólo por MoveCharacter:
@@ -3097,9 +3043,9 @@ static inline char mc_JointFind(int Type, DWORD Owner, int flag)
     return 0;
 }
 
-// FUN_00444d90 @ 0x00444D90 — SetPlayerDie (1057 bytes IDA, port FIEL 2026-05-07).
+// SetPlayerDie @ 0x00444D90 — SetPlayerDie (1057 bytes IDA, port FIEL 2026-05-07).
 // Real signature: void __cdecl SetPlayerDie(DWORD c).
-// (functions.h declaró FUN_00444d90 como "Entity_TeleportEnd" — eso es un
+// (functions.h declaró SetPlayerDie como "Entity_TeleportEnd" — eso es un
 // mismap del port-time. La función AT 0x00444D90 ES SetPlayerDie per IDA.)
 //
 // Differentiation:
@@ -3109,7 +3055,8 @@ static inline char mc_JointFind(int Type, DWORD Owner, int flag)
 //   - NPC type 300 (=v13==5): explosion FX (210 + 211×10), c[0]=0
 //   - Other NPCs: SetAction(c, 6)  ← death anim
 // El ruido de hash table (camino sólo-Hero, L32-119) se saltea per la política del proyecto.
-void __cdecl FUN_00444d90(int c_in)
+// IDA: SetPlayerDie (0x00444D90)
+void __cdecl SetPlayerDie(int c_in)
 {
     DWORD c = (DWORD)c_in;
     if (!c) return;
@@ -3120,15 +3067,15 @@ void __cdecl FUN_00444d90(int c_in)
     if (v11 == 390) {
         int v12 = *(int*)(c + 4);
         if (v12 < 206 || v12 > 208) {
-            FUN_0043e820((int)c, 131);
+            SetAction((int)c, 131);
             goto LABEL_41;
         }
         // Player special class 206-208: explosion
         *(BYTE*)c = 0;
-        Effect_Create(210, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+        CreateEffect(210, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                      nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
         for (int i = 0; i < 10; ++i) {
-            Effect_Create(211, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            CreateEffect(211, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
         }
         playFxBuf = true;
@@ -3138,24 +3085,24 @@ void __cdecl FUN_00444d90(int c_in)
             // Type 295: 8x (226+227)
             *(BYTE*)c = 0;
             for (int i = 0; i < 8; ++i) {
-                Effect_Create(226, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+                CreateEffect(226, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                              nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
-                Effect_Create(227, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+                CreateEffect(227, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                              nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             }
             playFxBuf = true;
         } else if (v13 == 5) {
             // Type 300: 1x 210 + 10x 211
             *(BYTE*)c = 0;
-            Effect_Create(210, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            CreateEffect(210, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             for (int i = 0; i < 10; ++i) {
-                Effect_Create(211, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+                CreateEffect(211, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                              nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             }
             playFxBuf = true;
         } else {
-            FUN_0043e820((int)c, 6);
+            SetAction((int)c, 6);
             goto LABEL_41;
         }
     }
@@ -3191,7 +3138,7 @@ LABEL_41:
 static inline void mc_SetPlayerDie(DWORD c)
 {
     if (!c) return;
-    FUN_00444d90((int)c);
+    SetPlayerDie((int)c);
     // 2026-09-02: REMOVIDA la escritura `*(char*)(c + 0x2FD) = 1;`.  Era una
     // invencion del port: SetPlayerDie (0x00444D90, 1057 bytes) no toca +765 en
     // ninguna de sus lineas — el unico writer del dead_flag es ReceiveDie.
@@ -3213,7 +3160,7 @@ static inline void mc_SetPlayerDie(DWORD c)
     // la transición de estado de vida.
 }
 
-void __cdecl FUN_00449900(int p1)
+void __cdecl MoveCharacter(int p1)
 {
     if (!p1) return;
     DWORD c = (DWORD)p1;
@@ -3264,15 +3211,15 @@ void __cdecl FUN_00449900(int p1)
             if (*t1) (*t1)--;
             if (!*t1) {
                 *((BYTE*)CharacterAttribute + 40) &= ~1u;
-                FUN_0047dd80((int)(uintptr_t)CharacterMachine);  // CalculateAttackSpeed
+                CalculateAttackSpeed((int)(uintptr_t)CharacterMachine);  // CalculateAttackSpeed
             }
             // L458-467: magic-speed buff (CA+44 timer, CA+40 bit 1)
             unsigned short* t2 = (unsigned short*)((char*)CharacterAttribute + 44);
             if (*t2) (*t2)--;
             if (!*t2) {
                 *((BYTE*)CharacterAttribute + 40) &= ~2u;
-                FUN_0047d410((int)(uintptr_t)CharacterMachine);  // Stats_CalcBase
-                FUN_0047dae0((int)(uintptr_t)CharacterMachine);  // Stats_CalcMagicDmgRange
+                Stats_CalcBase((int)(uintptr_t)CharacterMachine);  // Stats_CalcBase
+                Stats_CalcMagicDmgRange((int)(uintptr_t)CharacterMachine);  // Stats_CalcMagicDmgRange
             }
         }
     }
@@ -3311,11 +3258,11 @@ void __cdecl FUN_00449900(int p1)
         *(float*)(o + 16) += (((float)*(BYTE*)(c + 774) + 0.5f) * 100.0f - *(float*)(o + 16)) * v414;
         *(float*)(o + 20) += (((float)*(BYTE*)(c + 775) + 0.5f) * 100.0f - *(float*)(o + 20)) * v414;
         if (*(short*)(o + 2) != 236)
-            *(float*)(o + 24) = FUN_004f7500(*(float*)(o + 16), *(float*)(o + 20));
+            *(float*)(o + 24) = RequestTerrainHeight(*(float*)(o + 16), *(float*)(o + 20));
         unsigned char step = (unsigned char)(*(BYTE*)(c + 773));
         (*(BYTE*)(c + 773))++;
         if (step > 15) {
-            if (*(short*)(o + 2) == 322) FUN_004430c0((int)c);
+            if (*(short*)(o + 2) == 322) SetPlayerStop((int)c);
             *(BYTE*)(c + 773) = 0;
         }
     }
@@ -3324,7 +3271,7 @@ void __cdecl FUN_00449900(int p1)
     if (*(short*)(o + 2) == 236) {
         *(float*)(o + 24)  += *(float*)(o + 216);
         *(float*)(o + 216) -= 6.0f;
-        v413 = FUN_004f7500(*(float*)(o + 16), *(float*)(o + 20)) + 30.0f;
+        v413 = RequestTerrainHeight(*(float*)(o + 16), *(float*)(o + 20)) + 30.0f;
         if (*(float*)(o + 24) < v413) {
             *(float*)(o + 24)  = v413;
             *(float*)(o + 216) = -*(float*)(o + 216) * 0.40000001f;
@@ -3352,7 +3299,7 @@ void __cdecl FUN_00449900(int p1)
             } else {
                 *(float*)(o + 24) -= 0.40000001f;
             }
-            FUN_00449840((int)c, (int)o, 0);  // DeleteCloth
+            DeleteCloth((int)c, (int)o, 0);  // DeleteCloth
         }
         // L572-592: Crywolf falling-debris physics (worlds 11..16)
         if (World >= 11 && World <= 16 && *(BYTE*)(o + 405)) {
@@ -3371,7 +3318,7 @@ void __cdecl FUN_00449900(int p1)
             *(float*)(o + 24) = *(float*)(o + 428) + *(float*)(o + 216);
         }
         // L593-605: Atlans bubble particles (world 7 in-game)
-        if (g_GameState == 5 && World == 7) {
+        if (SceneFlag == 5 && World == 7) {
             for (int jj = 0; jj < 4; ++jj) {
                 v407[0] = (float)(rand() % 128 - 64);
                 v407[1] = (float)(rand() % 128 - 64);
@@ -3385,7 +3332,7 @@ void __cdecl FUN_00449900(int p1)
     }
 
     // ─── IDA L607: Alpha(o)
-    FUN_0043e5c0((int)o);
+    Alpha((int)o);
 
     // ─── IDA L608-611: shaky timer decay
     if (*(float*)(c + 836) > 0.0f) *(float*)(c + 836) -= 0.029999999f;
@@ -3411,14 +3358,14 @@ void __cdecl FUN_00449900(int p1)
             {
                 // L623-631: hit/stun anims 131/132 → Blood + return
                 if (*(BYTE*)(o + 261) == 131 || *(BYTE*)(o + 261) == 132) {
-                    if (!*(BYTE*)(c + 766)) { *(BYTE*)(c + 766) = 1; CreateBlood_stub(o); }
+                    if (!*(BYTE*)(c + 766)) { *(BYTE*)(c + 766) = 1; CreateBlood(o); }
                     return;
                 }
                 // L632-639: walking/running/dying actions stay; otherwise stop
                 BYTE act = *(BYTE*)(o + 261);
                 if (act < 0x0Du
                     || (act >= 0x22u && act <= 0x82u && act != 79 && act != 80)) {
-                    FUN_004430c0((int)c);  // SetPlayerStop
+                    SetPlayerStop((int)c);  // SetPlayerStop
                 }
                 skipIdleSelect = true;  // jump to L195
             }
@@ -3440,25 +3387,25 @@ void __cdecl FUN_00449900(int p1)
                                         TextIndex = (World == 2) ? 905 : 0;
                                         if (!(rand() % 3) && TextIndex)
                                             CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
-                                        FUN_0043e820((int)c, 105);
+                                        SetAction((int)c, 105);
                                     }
                                 } else {
                                     TextIndex = (World == 2) ? 905 : 0;
                                     if (!(rand() % 3) && TextIndex)
                                         CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
-                                    FUN_0043e820((int)c, 111);
+                                    SetAction((int)c, 111);
                                 }
                             } else {
                                 TextIndex = (World == 2) ? 904 : 823;
                                 if (!(rand() % 2) && TextIndex)
                                     CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
-                                FUN_0043e820((int)c, 99);
+                                SetAction((int)c, 99);
                             }
                         } else {
                             TextIndex = (World == 2) ? 904 : 0;
                             if (!(rand() % 2) && TextIndex)
                                 CreateChat((char*)(c + 449), GlobalText[TextIndex], c, 0, -1);
-                            FUN_0043e820((int)c, 97);
+                            SetAction((int)c, 97);
                         }
                         skipIdleSelect = true;
                     }
@@ -3468,33 +3415,33 @@ void __cdecl FUN_00449900(int p1)
                             CreateChat((char*)(c + 0x1C1), GlobalText[TextIndex], c, 0, -1);
                     }
                 }
-                if (!skipIdleSelect) FUN_0043e820((int)c, 1);
+                if (!skipIdleSelect) SetAction((int)c, 1);
                 skipIdleSelect = true;  // fall to L195 either way (event NPCs done)
             }
         }
         else if (World == 1 && *(short*)(o + 2) == 40) {
-            FUN_0043e820((int)o, 0);
+            SetAction((int)o, 0);
         }
         else if (*(short*)(o + 2) < 270 || *(short*)(o + 2) >= 335) {
             // Non-player non-monster (NPCs, props)
             v48 = *(short*)(o + 2);
             if (v48 == 170 || v48 <= 337 || v48 > 339) {
-                FUN_0043e820((int)o, rand() % 2);
+                SetAction((int)o, rand() % 2);
             } else if (rand() % 16 >= 12) {
-                FUN_0043e820((int)o, rand() % 2 + 1);
+                SetAction((int)o, rand() % 2 + 1);
             } else {
-                FUN_0043e820((int)o, 0);
+                SetAction((int)o, 0);
             }
         }
         else {
             // Monster (270..334)
             if (*(BYTE*)(o + 261) == 6) {  // MONSTER01_DIE
-                if (!*(BYTE*)(c + 766)) { *(BYTE*)(c + 766) = 1; CreateBlood_stub(o); }
+                if (!*(BYTE*)(c + 766)) { *(BYTE*)(c + 766) = 1; CreateBlood(o); }
                 return;
             }
             BYTE act = *(BYTE*)(o + 261);
             if (act == 1 || act == 5 || act == 3 || act == 4 || act == 8 || act == 9) {
-                FUN_0043e820((int)o, 0);
+                SetAction((int)o, 0);
             }
         }
     }
@@ -3505,7 +3452,7 @@ void __cdecl FUN_00449900(int p1)
         && *(short*)(v422 + 168)
             == *(short*)(*(int*)(v422 + 48) + 16 * (*(BYTE*)(o + 261)) + 8) - 1)
     {
-        FUN_0043e820((int)o, (rand() % 32) ? 0 : 1);
+        SetAction((int)o, (rand() % 32) ? 0 : 1);
     }
 
     // L796-806: ragdoll-counter aging (force die after 0xF frames)
@@ -3522,8 +3469,8 @@ void __cdecl FUN_00449900(int p1)
 
     // L812-817: attack swing tick
     if (*(BYTE*)(c + 757)) {
-        AttackStage_stub(c, o);
-        FUN_00445230((int)c);         // AttackEffect @ 00445230
+        AttackStage(c, o);
+        AttackEffect((int)c);         // AttackEffect @ 00445230
         ++*(BYTE*)(c + 757);
     }
 
@@ -3549,7 +3496,7 @@ void __cdecl FUN_00449900(int p1)
     }
 
     // ─── L840-2486: SKILL DISPATCH (when c+757 exhaust limit, drain c+770 queue)
-    if (*(unsigned char*)(c + 757) >= (unsigned char)DAT_00559858)
+    if (*(unsigned char*)(c + 757) >= (unsigned char)g_iLimitAttackTime)
     {
         *(BYTE*)(c + 757) = 0;
         *(short*)(o + 134) = -1;
@@ -3589,16 +3536,16 @@ void __cdecl FUN_00449900(int p1)
         case 5: {  // FireBall
             WorldPosition[0] = ((float)*(BYTE*)(c + 776) + 0.5f) * 100.0f;
             WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
-            WorldPosition[2] = FUN_004f7500(WorldPosition[0], WorldPosition[1]);
+            WorldPosition[2] = RequestTerrainHeight(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey(5);
-            Effect_Create(1200, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(1200, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(91, 0, 0);
             break;
         }
         case 8: {  // Heal
             int hk = FindHotKey(8);
-            Effect_Create(204, (float*)(o + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(204, (float*)(o + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(86, 0, 0);
             break;
@@ -3619,9 +3566,9 @@ void __cdecl FUN_00449900(int p1)
         }
         case 10: {  // Defense
             int hk = FindHotKey(10);
-            Effect_Create(200, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(200, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
-            Effect_Create(201, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+            CreateEffect(201, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                          (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(89, 0, 0);
             break;
@@ -3629,7 +3576,7 @@ void __cdecl FUN_00449900(int p1)
         case 12: {  // FallingSlash
             mc_AngleVectorOffset((float*)o, -20.0f, -90.0f, 100.0f, WorldPosition);
             int hk = FindHotKey(12);
-            Effect_Create(1210, WorldPosition, (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(1210, WorldPosition, (float*)(o + 28), Light, (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(92, 0, 0);
             break;
@@ -3637,30 +3584,30 @@ void __cdecl FUN_00449900(int p1)
         case 13: {  // Lunge / Crescent
             WorldPosition[0] = ((float)*(BYTE*)(c + 776) + 0.5f) * 100.0f;
             WorldPosition[1] = ((float)*(BYTE*)(c + 777) + 0.5f) * 100.0f;
-            WorldPosition[2] = FUN_004f7500(WorldPosition[0], WorldPosition[1]);
+            WorldPosition[2] = RequestTerrainHeight(WorldPosition[0], WorldPosition[1]);
             int hk = FindHotKey(13);
-            Effect_Create(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
-            Effect_Create(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(240, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)(hk & 0xFF), 0);
             break;
         }
         case 14: {  // Decay (bomb-ring)
             Effect_SpawnBombRing((float*)(o + 16));
             int hk = FindHotKey(14);
-            Effect_Create(241, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(241, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             break;
         }
         case 30: case 31: case 32: case 33: case 34: case 35: case 36:  // Buff / Debuff
-            Effect_Create(1264, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)3, (float*)o,
+            CreateEffect(1264, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)3, (float*)o,
                          (float*)(uintptr_t)-1, nullptr, 0);
             break;
         case 41: {  // Bow special 1
             *(BYTE*)(o + 136) = (BYTE)(*(short*)(c + 624) + 112);
             *(BYTE*)(o + 137) = *(BYTE*)(c + 626);
             int hk = FindHotKey(41);
-            Effect_Create(238, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(238, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(85, 0, 0);
             break;
@@ -3669,7 +3616,7 @@ void __cdecl FUN_00449900(int p1)
             *(BYTE*)(o + 136) = (BYTE)(*(short*)(c + 624) + 112);
             *(BYTE*)(o + 137) = *(BYTE*)(c + 626);
             int hk = FindHotKey(42);
-            Effect_Create(244, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            CreateEffect(244, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(85, 0, 0);
             break;
@@ -3684,7 +3631,7 @@ void __cdecl FUN_00449900(int p1)
                 v396[2] = *(float*)(o + 24) + 100.0f;
                 Joint_Create(1253, v396, v396, Angle, 2, (int)o, 60.0f, 0, 0);
                 if (!(kk % 20)) {
-                    Effect_Create(1264, (float*)(o + 16), Angle, (float*)(o + 232), (float*)(uintptr_t)4, (float*)o,
+                    CreateEffect(1264, (float*)(o + 16), Angle, (float*)(o + 232), (float*)(uintptr_t)4, (float*)o,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                 }
             }
@@ -3696,8 +3643,8 @@ void __cdecl FUN_00449900(int p1)
             break;
         }
         case 49: {  // Magic — uses dword_5826D10 hotkey state
-            int hk = (int)DAT_05826d10;
-            Effect_Create(1382, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
+            int hk = (int)CurrentSkill;
+            CreateEffect(1382, (float*)(o + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, (float*)o,
                          (float*)(uintptr_t)(unsigned)*(unsigned short*)(o + 134), (float*)(uintptr_t)(unsigned)hk, 0);
             PlayBuffer(84, 0, 0);
             break;
@@ -3726,12 +3673,12 @@ void __cdecl FUN_00449900(int p1)
             {
                 unsigned char arrowSkill = *(BYTE*)(c + 770);  // direct read (anti-tamper stripped)
                 int hk = FindHotKey(arrowSkill);
-                CreateArrows_stub(c, o, 0, (WORD)hk, (WORD)v393, (WORD)*(BYTE*)(c + 770));
+                CreateArrows(c, o, 0, (WORD)hk, (WORD)v393, (WORD)*(BYTE*)(c + 770));
             }
             // L2098-2101: ranged-monster auto-arrows
             if (*(short*)(o + 2) == 292 || *(short*)(o + 2) == 305 || *(short*)(o + 2) == 310 || *(short*)(o + 2) == 316)
             {
-                CreateArrows_stub(c, o, 0, 0, 1, 0);
+                CreateArrows(c, o, 0, 0, 1, 0);
             }
         }
         else
@@ -3756,11 +3703,11 @@ void __cdecl FUN_00449900(int p1)
             {
                 unsigned char arrowSkill = *(BYTE*)(c + 770);
                 int hk = FindHotKey(arrowSkill);
-                CreateArrows_stub(c, o, Owner, (WORD)hk, 0, (WORD)*(BYTE*)(c + 770));
+                CreateArrows(c, o, Owner, (WORD)hk, 0, (WORD)*(BYTE*)(c + 770));
             }
             // L2198-2201: ranged-monster
             if (*(short*)(o + 2) == 292 || *(short*)(o + 2) == 305 || *(short*)(o + 2) == 310)
-                CreateArrows_stub(c, o, Owner, 0, 1, 0);
+                CreateArrows(c, o, Owner, 0, 1, 0);
 
             // L2202-2229: target halo + Atlans bubble shower
             if (*(short*)(v390 + 760)) {
@@ -3779,7 +3726,7 @@ void __cdecl FUN_00449900(int p1)
                             WorldPosition[1] = *(float*)(Owner + 20);
                             float v45 = *(float*)(Owner + 24) + 50.0f;
                             WorldPosition[2] = (float)(rand() % 30) + v45;
-                            Effect_Create(261, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                            CreateEffect(261, WorldPosition, (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                          (float*)(uintptr_t)-1, nullptr, 0);
                         }
                     }
@@ -3794,12 +3741,12 @@ void __cdecl FUN_00449900(int p1)
 
             // L2234-2237: la tercera componente del ángulo se recalcula a partir de las
             // posiciones del caster y del objetivo. A pesar de la etiqueta vieja del decompilador,
-            // esto es CreateAngle/FUN_0043e050 (00449900_MoveCharacter.c), no
+            // esto es CreateAngle/CreateAngle (00449900_MoveCharacter.c), no
             // a movement tick.
             v389[0] = *(float*)(o + 28);
             v389[1] = *(float*)(o + 32);
             v389[2] = *(float*)(o + 36);
-            v389[2] = FUN_0043e050(*(float*)(o + 16), *(float*)(o + 20),
+            v389[2] = CreateAngle(*(float*)(o + 16), *(float*)(o + 20),
                                     *(float*)(Owner + 16), *(float*)(Owner + 20));
 
             // L2238-2479: targeted-skill effect dispatch
@@ -3808,7 +3755,7 @@ void __cdecl FUN_00449900(int p1)
             {
             case 1:
                 if (*(short*)(o + 2) == 390)
-                    Effect_Create(192, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    CreateEffect(192, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                 Light[0] = 0.40000001f; Light[1] = 0.60000002f; Light[2] = 1.0f;
                 for (int kk = 0; kk < 10; ++kk)
@@ -3817,20 +3764,20 @@ void __cdecl FUN_00449900(int p1)
                 PlayBuffer(34, 0, 0);
                 break;
             case 2:
-                Effect_Create(191, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                CreateEffect(191, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 PlayBuffer(46, 0, 0);
                 break;
             case 4:
-                Effect_Create(191, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)1, (float*)Owner,
+                CreateEffect(191, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)1, (float*)Owner,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 PlayBuffer(46, 0, 0);
                 break;
             case 7:
-                Effect_Create(190, (float*)(Owner + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, nullptr,
+                CreateEffect(190, (float*)(Owner + 16), (float*)(o + 28), Light, (float*)(uintptr_t)0, nullptr,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 for (int kk = 0; kk < 5; ++kk)
-                    Effect_Create(199, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    CreateEffect(199, (float*)(Owner + 16), (float*)(o + 28), (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                 if (*(BYTE*)(c + 769) && (*(DWORD*)(Owner + 120) & 2) != 2)
                     *(DWORD*)(Owner + 120) |= 2u;
@@ -3839,14 +3786,14 @@ void __cdecl FUN_00449900(int p1)
             case 11:
                 if (*(short*)(o + 2) == 288) {
                     v389[2] += 10.0f;
-                    Effect_Create(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    CreateEffect(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                     v389[2] -= 20.0f;
-                    Effect_Create(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                    CreateEffect(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                     v389[2] += 10.0f;
                 }
-                Effect_Create(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
+                CreateEffect(203, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, nullptr,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 PlayBuffer(88, 0, 0);
                 break;
@@ -3877,10 +3824,10 @@ void __cdecl FUN_00449900(int p1)
                     skip766 = true; break;
                 default:
                     if (*(short*)(o + 2) == 282) {
-                        Effect_Create(212, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
+                        CreateEffect(212, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
                                      (float*)(uintptr_t)-1, nullptr, 0);
                     } else {
-                        Effect_Create(1180, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
+                        CreateEffect(1180, (float*)(o + 16), v389, (float*)(o + 232), (float*)(uintptr_t)0, (float*)Owner,
                                      (float*)(uintptr_t)-1, nullptr, 0);
                         PlayBuffer(88, 0, 0);
                     }
@@ -3890,16 +3837,16 @@ void __cdecl FUN_00449900(int p1)
             }
             case 24: {
                 int hk = FindHotKey(skillId);
-                CreateArrows_stub(c, o, 0, (WORD)hk, 1, 0);
+                CreateArrows(c, o, 0, (WORD)hk, 1, 0);
                 goto LABEL_720;
             }
             case 26:
-                Effect_Create(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)1, (float*)Owner,
+                CreateEffect(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)1, (float*)Owner,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 break;
             case 27:
                 if (*(BYTE*)(c + 769)) {
-                    Effect_Create(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)2, (float*)Owner,
+                    CreateEffect(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)2, (float*)Owner,
                                  (float*)(uintptr_t)-1, nullptr, 0);
                     if ((*(DWORD*)(Owner + 120) & 8) == 8) {
                         if (!mc_JointFind(266, Owner, 4)) {
@@ -3920,7 +3867,7 @@ void __cdecl FUN_00449900(int p1)
                 }
                 break;
             case 28:
-                Effect_Create(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)3, (float*)Owner,
+                CreateEffect(1264, (float*)(Owner + 16), (float*)(Owner + 28), (float*)(Owner + 232), (float*)(uintptr_t)3, (float*)Owner,
                              (float*)(uintptr_t)-1, nullptr, 0);
                 if (*(BYTE*)(c + 769)) *(DWORD*)(Owner + 120) |= 4u;
                 break;
@@ -3930,7 +3877,7 @@ void __cdecl FUN_00449900(int p1)
                 {
                     unsigned char skill2 = *(BYTE*)(c + 770);
                     int hk = FindHotKey(skill2);
-                    CreateArrows_stub(c, o, 0, (WORD)hk, 0, (WORD)skill2);
+                    CreateArrows(c, o, 0, (WORD)hk, 0, (WORD)skill2);
                 }
                 break;
             default: break;
@@ -3983,10 +3930,10 @@ void __cdecl FUN_00449900(int p1)
         float v385f = (*(float*)(c + 792) - *(float*)(o + 20)) * 0.30000001f;
         *(float*)(o + 16) += v384f;
         *(float*)(o + 20) += v385f;
-        float v33f = FUN_004f7500(*(float*)(o + 16), *(float*)(o + 20));
+        float v33f = RequestTerrainHeight(*(float*)(o + 16), *(float*)(o + 20));
         *(float*)(o + 24) = v33f;
-        if ((float)FUN_005129f0(v384f) < 1.0f) {
-            if ((float)FUN_005129f0(v385f) < 1.0f) {
+        if ((float)Math_Fabs(v384f) < 1.0f) {
+            if ((float)Math_Fabs(v385f) < 1.0f) {
                 *(BYTE*)(c + 912) = 0;
                 *(int*)(o + 100) = -1;
             }
@@ -4126,7 +4073,7 @@ void __cdecl FUN_00449900(int p1)
                 float v370f = *(float*)(*(int*)(v422 + 48) + 16 * (*(BYTE*)(v422 + 160)) + 4) / 10.0f;
                 for (int kk = 0; kk < (int)v368f; ++kk) {
                     unsigned int colorPack[3] = { 0, 0, 0 };
-                    FUN_00440060((void*)v422, (int)BoneMatrix, AnimationFrame,
+                    BMD_Animation((void*)v422, (int)BoneMatrix, AnimationFrame,
                                  *(unsigned int*)&PriorFrame,
                                  *(BYTE*)(o + 262), colorPack,
                                  (float*)(o + 40), 0, 1);
@@ -4154,10 +4101,11 @@ void __cdecl FUN_00449900(int p1)
     }
 }
 
-// FUN_004520c0 @ 0x004520C0 — Entity_UpdateState(entity_ptr)
+// MoveCharacterVisual @ 0x004520C0 — Entity_UpdateState(entity_ptr)
 // Updates model position/animation from entity. When model has no actions: copies cached
 // los parámetros de anim de entity+0x118..+0x12c a +0x130..+0x15c, sumando la posición de mundo de la entidad.
-void __cdecl FUN_004520c0(int entity_ptr)
+// IDA: MoveCharacterVisual (0x004520C0)
+void __cdecl MoveCharacterVisual(int entity_ptr)
 {
     if (!entity_ptr) return;
 
@@ -4206,7 +4154,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
         int gx = (int)(*(float *)(entity_ptr + 0x10) * 0.01f);
         int gy = (int)(*(float *)(entity_ptr + 0x14) * 0.01f);
         if (gx >= 0 && gx < 256 && gy >= 0 && gy < 256) {
-            int attrIdx = FUN_004f6c40(gx, gy);
+            int attrIdx = Terrain_GetTileIndex(gx, gy);
             *(unsigned char *)(entity_ptr + 0x34e) =
                 (unsigned char)((((unsigned char *)DAT_0838bc70)[attrIdx] & 1) == 1);
         }
@@ -4241,7 +4189,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
         // Maneja el seguimiento con la cabeza, su giro suave y el pico temporal en
         // c+848; nada de esto es lógica de combate.
         if (*(unsigned short *)(entity_ptr + 2) != 390) {
-            MoveHead_stub(entity_ptr);
+            MoveHead(entity_ptr);
         }
         if (entity_ptr != (int)(uintptr_t)DAT_07abf5d8 &&
             !*(unsigned char *)(entity_ptr + 765) && !(rand() % 32)) {
@@ -4254,8 +4202,8 @@ void __cdecl FUN_004520c0(int entity_ptr)
         }
         for (int i = 0; i < 2; ++i) {
             float *headCurrent = (float *)(entity_ptr + 40 + i * sizeof(float));
-            const float delta = Angle_GetDifference(*headCurrent, headCurrent[3], 1) * 0.2f;
-            *headCurrent = FUN_0043e1b0(*headCurrent, headCurrent[3], delta);
+            const float delta = FarAngle(*headCurrent, headCurrent[3], 1) * 0.2f;
+            *headCurrent = TurnAngle2(*headCurrent, headCurrent[3], delta);
         }
         if (*(unsigned char *)(entity_ptr + 848)) {
             --*(unsigned char *)(entity_ptr + 848);
@@ -4270,14 +4218,14 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 if (!(rand() % 10))
                     Particle_Spawn(1221, position, (float *)(entity_ptr + 28), light, 1, 1.0f, 0);
                 if (!(rand() % 10))
-                    Effect_Create(rand() % 2 + 197, (float *)(entity_ptr + 16),
+                    CreateEffect(rand() % 2 + 197, (float *)(entity_ptr + 16),
                                  (float *)(entity_ptr + 28), light, nullptr, nullptr,
                                  (float *)(uintptr_t)0xffffffff, nullptr, 0);
             }
         }
 
         extern void __cdecl AddTerrainLight(float x, float y, float* light, int range, float* buffer);
-        extern int __cdecl FUN_004793f0(int a1, DWORD *a2, int a3, DWORD *a4, int a5);
+        extern int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5);
         // 004520C0 L697-725: equipped-item terrain light.  The two item
         // los registros arrancan en c+624 y c+648 (stride de 24 bytes).
         if (*(unsigned char *)(entity_ptr + 746) < 6) {
@@ -4285,12 +4233,10 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 const short itemType = *(short *)(entity_ptr + itemOffset);
                 if (itemType == 412) {
                     float itemLight[3] = {0.80000001f, 0.64000005f, 0.40000001f};
-                    AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20),
-                                    itemLight, 3, PrimaryTerrainLight[0]);
+                    AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)itemLight, 3, (float*)PrimaryTerrainLight[0]);
                 } else if (itemType == 419 || itemType == 546 || itemType == 570) {
                     float itemLight[3] = {0.64000005f, 0.40000001f, 0.24000001f};
-                    AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20),
-                                    itemLight, 2, PrimaryTerrainLight[0]);
+                    AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)itemLight, 2, (float*)PrimaryTerrainLight[0]);
                 }
             }
         }
@@ -4335,7 +4281,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 float p[3];
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 336), WorldPosition, p, '\x01');
                 float spriteLight[3] = {Luminosity, Luminosity * 0.40000001f, Luminosity * 0.2f};
-                FUN_004795c0(1150, p, 1.0f, spriteLight, entity_ptr, 0.0f, 0);
+                CreateSprite(1150, p, 1.0f, spriteLight, entity_ptr, 0.0f, 0);
             }
             if (!*(unsigned char *)(entity_ptr + 765) && !(rand() & 3)) {
                 float p[3] = {(float)(rand() % 64 - 32) + *(float *)(entity_ptr + 16),
@@ -4374,8 +4320,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
                     }
                 }
                 float L2[3] = { Luminosity, Luminosity * 0.2f, 0.0f };
-                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20),
-                                L2, 2, PrimaryTerrainLight[0]);
+                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)L2, 2, (float*)PrimaryTerrainLight[0]);
             }
             break;
         }
@@ -4478,7 +4423,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 624), WorldPosition, p, '\x01');
                 Particle_Spawn(1195, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
                 float darkness[3] = {-1.3f,-1.3f,-1.3f};
-                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), darkness, 3, PrimaryTerrainLight[0]);
+                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)darkness, 3, (float*)PrimaryTerrainLight[0]);
             } else { Combat_SpawnIdleAmbientParticle(entity_ptr); Combat_SpawnDeathDustParticles(entity_ptr); }
             break;
         }
@@ -4532,11 +4477,11 @@ void __cdecl FUN_004520c0(int entity_ptr)
 
                 for (int link = 0; link < 30; link += 2) {
                     float particleLight[3];
-                    FUN_0043e4a0(bones[linksA[link + 1]], targetPosition, bones[linksA[link]], 360.0f);
+                    MoveHumming(bones[linksA[link + 1]], targetPosition, bones[linksA[link]], 360.0f);
                     particleLight[0] = Luminosity; // IDA sólo escribe este componente (Position[0] = v63).
                     Particle_Spawn(1200, bones[linksA[link]], targetPosition, particleLight, 2,
                                   link < 22 ? 1.0f : 0.5f, 0);
-                    FUN_0043e4a0(bones[linksB[link + 1]], targetPosition, bones[linksB[link]], 360.0f);
+                    MoveHumming(bones[linksB[link + 1]], targetPosition, bones[linksB[link]], 360.0f);
                     particleLight[0] = Luminosity;
                     Particle_Spawn(1200, bones[linksB[link]], targetPosition, particleLight, 2,
                                   link < 22 ? 1.0f : 0.5f, 0);
@@ -4544,25 +4489,24 @@ void __cdecl FUN_004520c0(int entity_ptr)
 
                 for (int link = 0; link < 8; link += 2) {
                     float particleLight[3];
-                    FUN_0043e4a0(bones[linksC[link + 1]], targetPosition, bones[linksC[link]], 360.0f);
+                    MoveHumming(bones[linksC[link + 1]], targetPosition, bones[linksC[link]], 360.0f);
                     particleLight[0] = Luminosity;
                     Particle_Spawn(1200, bones[linksC[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
-                    FUN_0043e4a0(bones[linksD[link + 1]], targetPosition, bones[linksD[link]], 360.0f);
+                    MoveHumming(bones[linksD[link + 1]], targetPosition, bones[linksD[link]], 360.0f);
                     particleLight[0] = Luminosity;
                     Particle_Spawn(1200, bones[linksD[link]], targetPosition, particleLight, 2, 0.60000002f, 0);
                 }
 
                 if (!((long long)WorldTime % 2)) {
                     float particleLight[3];
-                    FUN_0043e4a0(bones[0], targetPosition, bones[30], 360.0f);
+                    MoveHumming(bones[0], targetPosition, bones[30], 360.0f);
                     particleLight[0] = (float)WorldTime;
                     Particle_Spawn(1200, bones[30], targetPosition, particleLight, 2, 1.3f, 0);
                     Particle_Spawn(1200, bones[1], targetPosition, particleLight, 3, 0.5f, 0);
                 }
 
                 float darkness[3] = {-1.3f, -1.3f, -1.3f};
-                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), darkness, 3,
-                                PrimaryTerrainLight[0]);
+                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)darkness, 3, (float*)PrimaryTerrainLight[0]);
             } else {
                 float targetPosition[3] = {0.0f, 0.0f, 0.0f};
                 float effectLight = sinf((float)WorldTime * 0.0020000001f) * 0.30000001f + 0.69999999f;
@@ -4571,24 +4515,24 @@ void __cdecl FUN_004520c0(int entity_ptr)
 
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 2640), WorldPosition, source, '\x01');
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 2976), WorldPosition, destination, '\x01');
-                FUN_0043e4a0(source, targetPosition, destination, 360.0f);
+                MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
 
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 3360), WorldPosition, source, '\x01');
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 3696), WorldPosition, destination, '\x01');
-                FUN_0043e4a0(source, targetPosition, destination, 360.0f);
+                MoveHumming(source, targetPosition, destination, 360.0f);
                 Particle_Spawn(1200, destination, targetPosition, light, 1, 0.2f, 0);
                 Combat_SpawnIdleAmbientParticle(entity_ptr);
                 Combat_SpawnDeathDustParticles(entity_ptr);
             }
             break;
         }
-        // 0x13E — IDA raw L1118-1128; sub_4793F0 == FUN_004793f0 (verificado en IDA).
+        // 0x13E — IDA raw L1118-1128; sub_4793F0 == FloatingLabel_Add (verificado en IDA).
         case 0x13E:
             if (!(rand() % 5)) {
                 float p[3] = {(float)(rand() % 21 - 10) * 3.6571429f + *(float *)(entity_ptr + 16),
                               (float)(rand() % 21 - 10) * 3.6571429f + *(float *)(entity_ptr + 20), 0.0f};
-                FUN_004793f0(1205, (DWORD *)p, *(int *)(entity_ptr + 28), (DWORD *)(entity_ptr + 232), 0x3F266666);
+                FloatingLabel_Add(1205, (DWORD *)p, *(int *)(entity_ptr + 28), (DWORD *)(entity_ptr + 232), 0x3F266666);
             }
             break;
 
@@ -4639,8 +4583,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
 
             // Luz naranja proyectada sobre el terreno alrededor de la fragua.
             float Light[3] = { Luminosity, Luminosity * 0.40000001f, 0.0f };
-            AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20),
-                            Light, 3, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)Light, 3, (float*)PrimaryTerrainLight[0]);
 
             // Chispas: 4 por golpe, en la ventana de frames 5..6 (el impacto).
             // El origen es el hueso 17 (BoneTransform + 48*17 = +816) = el yunque.
@@ -4679,7 +4622,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
                 float white[3] = { 1.0f, 1.0f, 1.0f };
                 float local[3] = { 0.0f, 5.0f, 10.0f }, origin[3];
                 float terrainLight[3] = { Luminosity * 0.5f, Luminosity * 0.30000001f, 0.0f };
-                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), terrainLight, 3, PrimaryTerrainLight[0]);
+                AddTerrainLight(*(float *)(entity_ptr + 16), *(float *)(entity_ptr + 20), (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 1776), local, origin, '\x01');
                 for (int i = 0; i < 4; ++i) {
                     float angle[3] = { (float)(rand() % 60 + 90), 0.0f, (float)(rand() % 30) };
@@ -4694,7 +4637,7 @@ void __cdecl FUN_004520c0(int entity_ptr)
         case 0x186:
         {
             float p[3];
-            if (g_GameState == 5 && World == 7 && (long long)WorldTime % 10000 < 1000) {
+            if (SceneFlag == 5 && World == 7 && (long long)WorldTime % 10000 < 1000) {
                 float local[3] = {0.0f,20.0f,-10.0f};
                 BMD_TransformPosition(model, (float *)(*(int *)(entity_ptr + 276) + 48 * *(int *)((int)model + 84)), local, p, '\x01');
                 Particle_Spawn(1241, p, (float *)(entity_ptr + 28), Light, 0, 1.0f, 0);
@@ -4727,26 +4670,27 @@ void __cdecl FUN_004520c0(int entity_ptr)
         const unsigned char action = *(unsigned char *)(entity_ptr + 261);
         if ((action >= 13 && action <= 33) || action == 79 || action == 80) {
             const float frame = *(float *)(entity_ptr + 264);
-            extern char FUN_00451a90();
+            extern char Sound_PlayFootstep();
             if (frame >= 1.5f && !*(unsigned char *)(entity_ptr + 844)) {
                 *(unsigned char *)(entity_ptr + 844) = 1;
-                FUN_00451a90();
+                Sound_PlayFootstep();
             }
             if (frame >= 4.5f && !*(unsigned char *)(entity_ptr + 845)) {
                 *(unsigned char *)(entity_ptr + 845) = 1;
-                FUN_00451a90();
+                Sound_PlayFootstep();
             }
         }
     }
     // (Full animation bone update: HashTable obfuscation blocks — skipped)
 }
 
-// FUN_00454cd0 @ 0x00454CD0 — Entity_PathTick(entity, player_entity)
+// MoveMonsterClient @ 0x00454CD0 — Entity_PathTick(entity, player_entity)
 // Tick de camino por frame: si +0x2fd (teleport) está seteado → saltea. Si +0x2ec (flag de movimiento) está seteado →
 //   avanza el waypoint (Entity_AdvancePath), y al llegar limpia +0x2ec y cancela la acción.
 // Si no se está moviendo y la grilla objetivo difiere del cached_wp → llama a PathFinding2.
 // param_1 es el puntero a la entidad (Ghidra lo tipó float — castear a int).
-void __cdecl FUN_00454cd0(int param_1_i, int param_2)
+// IDA: MoveMonsterClient (0x00454CD0)
+void __cdecl MoveMonsterClient(int param_1_i, int param_2)
 {
     // Ghidra tipó param_1 como float pero es un puntero a entidad (dirección int)
     int entity = param_1_i;
@@ -4759,7 +4703,7 @@ void __cdecl FUN_00454cd0(int param_1_i, int param_2)
     // la superficie del terreno mientras ese flag está activo.
     if (*(char*)(entity + 0x2fd) != '\0') {
         if (*(short*)(param_2 + 2) == 272) {
-            *(float*)(param_2 + 24) = FUN_004f7500(
+            *(float*)(param_2 + 24) = RequestTerrainHeight(
                 *(float*)(param_2 + 16), *(float*)(param_2 + 20));
         }
         return;
@@ -4767,17 +4711,17 @@ void __cdecl FUN_00454cd0(int param_1_i, int param_2)
 
     if (*(char*)(entity + 0x2ec) != '\0') {
         // Entity is currently moving — advance one step
-        FUN_00443930(entity);
+        SetPlayerWalk(entity);
         unsigned int arrived = Entity_AdvancePath((void*)entity, '\x01');
         if ((char)arrived != '\0') {
             // Arrived at waypoint — stop
             *(unsigned char*)(entity + 0x2ec) = 0;
-            FUN_004430c0(entity);
+            SetPlayerStop(entity);
             // Actualiza el facing según el byte de dirección del camino en +0x2fc
             *(float*)(entity + 0x24) =
                 ((float)*(unsigned char*)(entity + 0x2fc) - _DAT_0055256c) * _DAT_00552844;
         }
-        FUN_00454ba0(entity);
+        MoveCharacterPosition(entity);
         return;
     }
 
@@ -4809,29 +4753,29 @@ void __cdecl UI_OpenWindow(char* title, int mode) {
     UI_AddNotice(title, (unsigned char)mode);
 }
 
-// FUN_004f8eb0 @ 0x004f8eb0 — CreateFrustrum2D
+// IDA: CreateFrustrum2D (0x004F8EB0)
 // CORRECCIÓN 2026-05-04: la decompilación previa de Ghidra confundió los
-// nombres. FUN_004cb520 NO es un frame counter — es GetScreenWidth(). Los
+// nombres. GetScreenWidth NO es un frame counter — es GetScreenWidth(). Los
 // constants `_DAT_00552cbc=1190.0` y `_DAT_00552cb8=540.0` son las half-widths
 // de la frustum quad (en view-space units), NO velocidades de rotación.
 // _DAT_0055283c = 1/640 (= screen pixel→aspect ratio).
 //
 // Construye un quad 2D top-view del frustum proyectado: rota por Z=45° las 4
 // corners hardcoded, las traslada por param_1 (cam pos), y las escribe a
-// DAT_07eeb228/218 (X/Y respectivamente) en tile coords (×0.01 = ÷100).
+// FrustrumX/218 (X/Y respectivamente) en tile coords (×0.01 = ÷100).
 //
 // Esta versión SÍ funciona para in-game. La duplicada Camera_SetMatrix en
 // src/Render/Camera.cpp es código muerto que opera sobre DAT_07eab1bc..1e8
 // (corners ya transformadas por Camera_SetupFrustum a world coords), lo cual
 // duplicaría la transformación si se invocara — no se llama desde ningún
 // lado y no debe wirearse.
-void __cdecl FUN_004f8eb0(float *param_1)
+void __cdecl CreateFrustrum2D(float *param_1)
 {
     float pts[15];   // euler[0..2], then 4×vec3 input offsets [3..14]
     float rot[12];   // 3×4 rotation matrix
     float out[12];   // 4 transformed output positions
 
-    int iVar2 = FUN_004cb520();   // GetScreenWidth (= 640 normalmente)
+    int iVar2 = GetScreenWidth();   // GetScreenWidth (= 640 normalmente)
     float angle_cbc = (float)iVar2 * _DAT_0055283c * _DAT_00552cbc;  // sw/640 * 1190 = far half-width
     float angle_cb8 = (float)iVar2 * _DAT_0055283c * _DAT_00552cb8;  // sw/640 * 540  = near half-width
 
@@ -4852,7 +4796,7 @@ void __cdecl FUN_004f8eb0(float *param_1)
         pfVar1[0] += param_1[0];
         pfVar1[1] += param_1[1];
         pfVar1[2] += param_1[2];
-        *(float*)((char*)&DAT_07eeb228 + j) = pfVar1[0] * _DAT_005524f8;  // X (tile coords)
-        *(float*)((char*)&DAT_07eeb218 + j) = pfVar1[1] * _DAT_005524f8;  // Y
+        *(float*)((char*)&FrustrumX + j) = pfVar1[0] * _DAT_005524f8;  // X (tile coords)
+        *(float*)((char*)&FrustrumY + j) = pfVar1[1] * _DAT_005524f8;  // Y
     }
 }

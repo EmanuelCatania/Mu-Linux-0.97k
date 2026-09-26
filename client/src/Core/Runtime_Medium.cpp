@@ -48,15 +48,15 @@ int __cdecl FUN_004c3dd0(int param_1) {
 // RenderInformation @ 0x0051E200 (58 bytes) — render all HUD info layers
 void __cdecl RenderInformation(void) {
     RenderErrorMessage(); // RenderErrorMessage / stats panel
-    FUN_004f64d0(); // Scene_MapTick
+    Scene_MapTick(); // Scene_MapTick
     UI_RenderNotices(); // RenderNotices
-    if ((DAT_005590ac == 1) || (DAT_005615c0 != 5)) {
+    if ((g_bUseChatListBox == 1) || (SceneFlag != 5)) {
         UI_RenderChatLogOverlay(); // SystemText / chat list
     }
     UI_UpdateFpsCounter(); // RenderDebugWindow / FPS reset
     RenderHelpWindow(); // RenderHelpWindow / item info
     Cursor_Render(); // RenderCursor
-    FUN_0051e0c0(); // RenderInfomation3D
+    RenderInfomation3D(); // RenderInfomation3D
 }
 
 // GetMapName @ 0x004EF120 (64 bytes) -- nombre del mapa desde GlobalText.
@@ -92,7 +92,7 @@ int __cdecl LevelConvert(BYTE Level) {
 // OpenMacro @ 0x0050F750 (72 bytes) -- carga Data\Macro.txt
 //
 // BUG-FIX 2026-04-28: usaba direccion absoluta 0x07e0ffc8 con bound
-// 0x07e109c8.  Ahora indexa el array DAT_07e0ffc8[10][0x100].
+// 0x07e109c8.  Ahora indexa el array MacroText[10][0x100].
 //
 // 2026-09-24: el modo era "rb"; IDA abre con "rt" (aRt).
 //
@@ -106,9 +106,9 @@ int __cdecl LevelConvert(BYTE Level) {
 void __cdecl OpenMacro(char *FileName) {
     FILE *fp = fopen(FileName, "rt");
     if (!fp) return;
-    memset(DAT_07e0ffc8, 0, 10 * 0x100);
+    memset(MacroText, 0, 10 * 0x100);
     for (int i = 0; i < 10; ++i) {
-        char* slot = DAT_07e0ffc8 + i * 0x100;
+        char* slot = MacroText + i * 0x100;
         if (fgets(slot, 0x100, fp) == NULL) break;
         slot[strcspn(slot, "\r\n")] = '\0';
     }
@@ -239,8 +239,8 @@ void __cdecl FUN_00406d40(int param_1) {
     *(int *)(param_1 + 0xc) = 0;
 }
 
-// FUN_0040a600 @ 0x0040A600 (82 bytes) — LinkedList: alloc head+tail sentinel nodes
-void __fastcall FUN_0040a600(void *param_1_raw) {
+// LinkedList_InitSentinels @ 0x0040A600 (82 bytes) — LinkedList: alloc head+tail sentinel nodes
+void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
     void *n1 = operator_new(0xc);
     if (n1 != NULL) { *(int *)((int)n1 + 8) = 0; *(int *)((int)n1 + 4) = 0; }
@@ -331,8 +331,8 @@ void __fastcall FUN_004052b0_impl(int ecx, int /*edx*/, char *param_1) {
 // en *dwTexture y devuelve el índice; en miss, devuelve -1 y deja *dwTexture=0.
 int __cdecl FindTextureByName(char *Name, DWORD *dwTexture) {
     *dwTexture = 0;
-    int lo = (int)DAT_083a4104;   // TextureBegin
-    int hi = (int)DAT_083a4108;   // TextureCurrent
+    int lo = (int)TextureBegin;   // TextureBegin
+    int hi = (int)TextureCurrent;   // TextureCurrent
     for (int i = lo; i < hi; i++) {
         char* slot = &g_BitmapsRaw[i * 0x38];
         if (strncmp(slot, Name, 32) == 0) {
@@ -391,9 +391,9 @@ void __cdecl FUN_00451ea0(int param_1, void *param_2, int param_3) {
         Position, WorldPosition, false);
 }
 
-// FUN_00479540 @ 0x00479540 (120 bytes) — render terrain alpha bitmaps
-// FUN_00479540 (IDA-activated, was Ghidra stub)
-void FUN_00479540()
+// RenderTerrainAlphaBitmaps @ 0x00479540 (120 bytes) — render terrain alpha bitmaps
+// RenderTerrainAlphaBitmaps (IDA-activated, was Ghidra stub)
+void RenderTerrainAlphaBitmaps()
 {
   float *v0; // esi
   float Rotation; // [esp+0h] [ebp-10h]
@@ -506,9 +506,9 @@ void __cdecl FUN_00411420_impl(int *param_1) {
 
 
 
-// FUN_004117c0 @ 0x004117C0 (95 bytes) — BST iterator: post-increment (return old, advance)
-// FUN_004117c0 (IDA-activated, was Ghidra stub)
-DWORD *__cdecl FUN_004117c0(int *_this, DWORD *a2, int a3)
+// BSTIterator_PostIncrement @ 0x004117C0 (95 bytes) — BST iterator: post-increment (return old, advance)
+// BSTIterator_PostIncrement (IDA-activated, was Ghidra stub)
+DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
 {
   int v3; // edi
   DWORD **v4; // edx
@@ -640,9 +640,9 @@ void __fastcall FUN_00410d90_impl(int param_1) {
     *(int *)(param_1 + 8) = 0;
 }
 
-// FUN_00410270 @ 0x00410270 (88 bytes) — allocate next free slot in pool
-// FUN_00410270 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_00410270(DWORD *_this)
+// Pool_AllocNextSlot @ 0x00410270 (88 bytes) — allocate next free slot in pool
+// Pool_AllocNextSlot (IDA-activated, was Ghidra stub)
+int __cdecl Pool_AllocNextSlot(DWORD *_this)
 {
   int v1; // edx
   int v2; // eax
@@ -676,7 +676,7 @@ LABEL_6:
 // END BATCH 3
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// FUN_00482dd0 @ 0x00482dd0 — CSQuest::FindQuestItemsInInven
+// CSQuest_FindQuestItemsInInven @ 0x00482dd0 — CSQuest::FindQuestItemsInInven
 // Counts items in inventory matching nType (param_1), optional level filter (param_3).
 // Returns shortage = nCount - found (0 means at least nCount items present).
 // Inventory grid: 8 rows × 8 cols at DAT_07EA9328..DAT_07EA9504 (stride 0x44 per cell row,
@@ -687,7 +687,7 @@ LABEL_6:
 // a different address (linker-placed) so the comparison was meaningless: it
 // either triggered immediately (early-exit returns wrong shortage) or never
 // (infinite loop / heap walk crash). Replaced with explicit iteration count.
-int __cdecl FUN_00482dd0(int param_1, int param_2, uint param_3)
+int __cdecl CSQuest_FindQuestItemsInInven(int param_1, int param_2, uint param_3)
 {
     int iVar3 = 0;
     int *piVar4 = &DAT_07ea9504;

@@ -196,15 +196,15 @@ extern BYTE    PacketXorKey16[16];   // DAT_00559050 — 16-byte XOR key table (
 extern BYTE (&DAT_00559050)[16];
 extern float  _DAT_00559070;   // Verlet physics damping/gravity scalar
 extern DWORD   DAT_00559070;
-extern DWORD   DAT_005590ac;
+extern DWORD   g_bUseChatListBox; // IDA: g_bUseChatListBox (0x005590AC)
 // Layout de los 3 botones popup del ChatListBox — flt_5590B0/B4/B8 en IDA.
 // Leídos del binario: 295.0 / 417.0 / 18.0 (ver comentario en globals.cpp).
 extern float   ChatListBox_TabButtonsX;       // DAT_005590b0 — X del primer botón
 extern float   ChatListBox_TabButtonsY;       // DAT_005590b4 — Y de los tres
 extern float   ChatListBox_TabButtonSpacing;  // DAT_005590b8 — separación horizontal
-extern BYTE    DAT_0055961c[5];    // Version — obfuscated as Version[i]-i-1 in login pkt
-extern BYTE    DAT_00559624[16];   // Serial — sent raw in login pkt
-extern DWORD   PacketXorKey3; // DAT_00559678 — 3-byte packet XOR key
+extern BYTE    Version[5]; // IDA: Version (0x0055961C)
+extern BYTE    Serial[16]; // IDA: Serial (0x00559624)
+extern DWORD   PacketXorKey3; // IDA: PacketXorKey3 (0x00559678)
 extern float  _DAT_00559680;   // LOD factor
 extern DWORD   DAT_00559680;
 extern DWORD   DAT_00559684;
@@ -224,8 +224,8 @@ extern int     SelectedItem;       // DAT_00559c48 — item on ground (-1 = none
 extern int     SelectedNpc;        // DAT_00559c4c — NPC/shop entity (-1 = none)
 extern int     SelectedCharacter;  // DAT_00559c50 — monster/player (-1 = none)
 extern int     SelectedOperate;    // DAT_00559c54 — special world object (-1 = none)
-extern int     DAT_00559c58;   // IDA: Attacking (0x00559C58) -- -1 = no esta atacando. NO es un "hover target"
-extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
+extern int     Attacking; // IDA: Attacking (0x00559C58) -- -1 = no esta atacando. NO es un "hover target"
+extern char    m_bAutoAttack;   // IDA: m_bAutoAttack (0x00559C5C)
 extern int     DAT_00559c60;   // QKey: tipo de item de la tecla Q (NO arma equipada; F3/30 le suma 448)
 extern int     DAT_00559c64;   // WKey: tipo de item de la tecla W
 extern int     DAT_00559c68;   // EKey: tipo de item de la tecla E
@@ -240,15 +240,14 @@ extern "C" DWORD SetTextColor_0;
 extern DWORD SetTextColor_0;
 #endif
 #define DAT_00559c7c SetTextColor_0
-extern DWORD   DAT_00559c80;
+extern DWORD   SetBackgroundTextColor;   // IDA: DAT_00559c80 (0x00559C80)
 extern char    DAT_00559b80[];  // GM/admin name substring (Entity_FindNearby filter string)
-extern DWORD   DAT_00559c84;
-extern DWORD   DAT_00559c88;
+extern DWORD   InputEnable; // IDA: DAT_00559c84 (0x00559C84)
+extern DWORD   InputNumber;   // IDA: DAT_00559c88 (0x00559C88)
 extern DWORD   DAT_00559c8c;
 extern DWORD   DAT_00559c90;
 extern int     _InputTextMaxArr[8];
-extern int&    _DAT_00559c94;
-extern DWORD&  DAT_00559c94;
+extern int&    InputTextMax;
 extern int&    _DAT_00559c98;
 extern DWORD&  DAT_00559c98;
 extern DWORD   DAT_00559bf1;   // chat/entity flag (allows type 3 show)
@@ -275,21 +274,21 @@ extern DWORD   DAT_0055a3e4;
 extern BYTE    DAT_0055a76c;    // unk_55A76C — gate de la 2da pasada del terreno
                                 // (capa de billboards de pasto/arena).  Constante
                                 // de .data: vale 1 en el binario.
-extern BYTE    DAT_0055a770;    // BuxConvert 3-byte XOR key [0] (key spans +0,+1,+2)
-extern DWORD   DAT_0055a774;
-extern DWORD   DAT_0055a778;
-extern DWORD   DAT_0055a77c;
-extern DWORD   DAT_0055a780;
+extern BYTE    DAT_0055a770[3]; // clave XOR de BuxConvert_1 (0x004F6EB0) -- en CERO a proposito, ver globals.cpp
+extern DWORD   FrustrumBoundMaxX_1;   // IDA: DAT_0055a774 (0x0055A774)
+extern DWORD   FrustrumBoundMaxY_1;   // IDA: DAT_0055a778 (0x0055A778)
+extern DWORD   FrustrumBoundMaxX_2;   // IDA: DAT_0055a77c (0x0055A77C)
+extern DWORD   FrustrumBoundMaxY_2;   // IDA: DAT_0055a780 (0x0055A780)
 extern char    s__s_file_not_found__0055a784[];  // "%s file not found" format string
 extern DWORD   DAT_0055a798;
 extern char    DAT_0055a79c[];  // "Data\\"  path prefix
 extern char    DAT_0055a7a4[];  // "Data2\\" path prefix
-extern int     DAT_0055a7ac;   // g_GameSubState: 0=connecting 2=in-world 7=loading-map
+extern int     World; // IDA: World (0x0055A7AC)
 extern float  _DAT_0055a7c0;
 extern DWORD   DAT_0055a7c0;
 
 // ── Game loop / scene state (0x005615xx – 0x005617xx) ─────────────────────────
-// Nota: g_GameState (DAT_005615c0), g_hWnd y g_hDC se declaran en stdafx.h.
+// Nota: SceneFlag, g_hWnd y g_hDC se declaran en stdafx.h.
 extern DWORD   DAT_0056154c;
 extern DWORD   DAT_00561550;
 extern DWORD   DAT_00561554;
@@ -298,9 +297,9 @@ extern float   CameraDistance;         // DAT_083A45D0: current MoveMainCamera d
 extern DWORD   DAT_0056156c;
 extern DWORD   DAT_00561570;
 extern DWORD   DAT_00561574;
-extern char   *DAT_005615b8;   // server IP string ptr
-#define PTR_s_connect_muonline_co_kr_005615b8  DAT_005615b8
-extern WORD    DAT_005615bc;   // server port
+extern char   *szServerIpAddress; // IDA: szServerIpAddress (0x005615B8)
+#define PTR_s_connect_muonline_co_kr_005615b8  szServerIpAddress
+extern WORD    g_ServerPort; // IDA: g_ServerPort (0x005615BC)
 
 // ── ConnectServer flow (2026-07-15) ──────────────────────────────────────────
 extern int             g_HasConnectServer;       // server.cfg tiene 2 líneas → flujo CS
@@ -308,7 +307,7 @@ extern int             g_ConnectServerMode;      // 1 = socket actual habla con 
 extern int             g_ConnectServerRequested; // 1 = ya mandamos C1 04 F4 02
 extern char            g_GameServerIP[128];      // GameServer fallback (server.cfg línea 2)
 extern unsigned short  g_GameServerPort;
-// DAT_005615c0 = g_GameState (in stdafx.h)
+// SceneFlag (in stdafx.h)
 // g_lpszMp3 @ 0x005615C4 — tabla de 6 rutas de BGM (ver globals.cpp).
 // Los DAT_005615c4..d8 NO son handles independientes: son sus 6 elementos.
 extern char*   g_lpszMp3[6];
@@ -349,12 +348,12 @@ extern DWORD&  DAT_0056166c;   // alias → CameraWalk[32]
 extern DWORD&  DAT_00561670;   // alias → CameraWalk[33]
 extern DWORD&  DAT_00561674;   // alias → CameraWalk[34]
 extern DWORD&  DAT_00561678;   // alias → CameraWalk[35]
-extern DWORD   DAT_00561694;
-extern DWORD   DAT_00561698;
+extern DWORD   ServerSelectHi;   // IDA: DAT_00561694 (0x00561694)
+extern DWORD   ServerSelectLo;   // IDA: DAT_00561698 (0x00561698)
 extern DWORD   DAT_005616a0;
 extern int     DAT_005616a4;   // dialog Y (signed; ver globals.cpp)
 extern int     DAT_005616a8;   // camera X (signed; ver globals.cpp)
-extern DWORD   DAT_005616ac;
+extern DWORD   SelectedHero; // IDA: DAT_005616ac (0x005616AC)
 extern DWORD   DAT_005616b0;
 extern DWORD   DAT_005616b8;
 extern DWORD   DAT_005617a0;
@@ -438,13 +437,13 @@ extern float  _DAT_055c9b70;
 extern DWORD   DAT_055c9b74;
 extern float  _DAT_055c9b74;   // g_fScreenRate_y
 extern DWORD   DAT_055c9b80;
-extern char    ConfigLoginVersion[12]; // IDA: DAT_055c9bac — config.ini [LOGIN] Version string
+extern char    ConfigLoginVersion[12]; // IDA: m_ExeVersion — config.ini [LOGIN] Version string
 // Contexto de la ofuscación por HashTable — buffer contiguo (el binario original tiene el
 // 4 fields physically contiguous at 0x055c9bc8..0x055c9bd4). Callers do
-// `&DAT_055c9bc8 + 0xC` esperando la capacidad; las macros superponen el buffer para que
+// `&MAIN_HASH_CLASS + 0xC` esperando la capacidad; las macros superponen el buffer para que
 // holds. See globals.cpp for init.
 extern DWORD   g_HashTableCtx[4];
-#define DAT_055c9bc8  (g_HashTableCtx[0])   // vtable pointer
+#define MAIN_HASH_CLASS  (g_HashTableCtx[0])   // vtable pointer
 #define DAT_055c9bcc  (g_HashTableCtx[1])   // values array
 #define DAT_055c9bd0  (g_HashTableCtx[2])   // keys array
 #define DAT_055c9bd4  (g_HashTableCtx[3])   // capacity
@@ -479,7 +478,7 @@ extern DWORD   DAT_055ca018;
 extern char    DAT_055ca019;
 extern DWORD   DAT_055ca01c;
 extern DWORD   DAT_055ca020;
-extern DWORD   DAT_055ca028;
+extern DWORD   g_iNoMouseTime;   // IDA: DAT_055ca028 (0x055CA028)
 extern char    DAT_055ca031;
 extern DWORD   DAT_055ca034;
 extern DWORD   DAT_055ca038;
@@ -487,58 +486,58 @@ extern DWORD   DAT_055ca03c;
 extern DWORD   DAT_055ca040;
 extern DWORD   DAT_055ca050;
 // Socket context struct (contiguous buffer, ~0x4030 bytes). Callers of
-// FUN_0043db30/Net_Connect/Net_Disconnect pass the base address directly
+// CWsctlc_Startup/Net_Connect/Net_Disconnect pass the base address directly
 // (originalmente el literal 0x55ca160). Los campos se superponen al buffer:
-extern char    DAT_055ca160[0x260000]; // socket context object base (struct + 300-slot recv queue)
-#define DAT_055ca164  (*(DWORD*)(DAT_055ca160 + 4))    // g_bGameServerConnected
-#define DAT_055ca168  (*(SOCKET*)(DAT_055ca160 + 8))   // socket handle
-#define DAT_055ca16c  ((char*)(DAT_055ca160 + 0xC))    // send/recv buffer
-extern DWORD   DAT_055cc16c;
-extern DWORD   DAT_055ce174;
+extern char    SocketClient[0x260000]; // IDA: SocketClient (0x055CA160)
+#define SocketClientIsGame  (*(DWORD*)(SocketClient + 4))    // IDA: SocketClient.m_bGame (0x055CA164)
+#define SocketClientSocket  (*(SOCKET*)(SocketClient + 8))   // IDA: SocketClient.m_socket (0x055CA168)
+#define SocketClientSendBuffer  ((char*)(SocketClient + 0xC))    // IDA: SocketClient.m_SendBuf (0x055CA16C)
+extern DWORD   SocketClientSendBufferLength; // IDA: SocketClient.m_nSendBufLen (0x055CC16C)
+extern DWORD   SocketClientLogPrint;         // IDA: SocketClient.m_LogPrint (0x055CE174)
 
 // ── Network / login state (0x05826xxx) ────────────────────────────────────────
 extern DWORD   DAT_05826bdc;
 extern DWORD   DAT_05826c00;
 extern DWORD   DAT_05826c04;
-extern DWORD   DAT_05826c08;   // SoccerTime (IDA @0x05826C08) - reloj del
+extern DWORD   SoccerTime; // IDA: DAT_05826c08 (0x05826C08)
                                // evento; lo escriben InitGame y el F3/22.
 extern DWORD   DAT_00562e48[4];   // CSimpleModulus XOR-deobfuscate key table
-extern DWORD   DAT_05826c10[17];  // g_SimpleModulusCS (17 DWORDs = 68 bytes)
-extern DWORD   DAT_05826c58[17];  // g_SimpleModulusSC (17 DWORDs = 68 bytes)
-extern DWORD   DAT_05826c9c;
-extern DWORD   DAT_05826ca0;   // HeroIndex (random 0..399 picked by ReceiveJoinMapServer)
+extern DWORD   g_SimpleModulusCS[17]; // IDA: g_SimpleModulusCS (0x05826C10)
+extern DWORD   g_SimpleModulusSC[17]; // IDA: g_SimpleModulusSC (0x05826C58)
+extern DWORD   m_nTempMyTradeGold; // IDA: m_nTempMyTradeGold (0x05826C9C)
+extern DWORD   HeroIndex; // IDA: HeroIndex (0x05826CA0)
 extern DWORD   DAT_05826ca4;
 extern DWORD   DAT_05826ca8;
-extern DWORD   DAT_05826cac;
-extern DWORD   DAT_05826cb0;   // server response code (0x0b=LoginOK, 0x14=char-list)
-extern char    DAT_05826cb4[12];   // IDA: ChatWhisperID (0x05826CB4) — ultimo destinatario de susurro
+extern DWORD   HeroKey; // IDA: HeroKey (0x05826CAC)
+extern DWORD   CurrentProtocolState; // IDA: DAT_05826cb0 (0x05826CB0)
+extern char    ChatWhisperID[12]; // IDA: ChatWhisperID (0x05826CB4)
 extern DWORD   DAT_05826cc0;
 extern DWORD   DAT_05826cc8;
 extern char    DAT_05826cc9;
-extern char    DAT_05826cd4[16];       // username copy destination (needs >= 11 bytes)
+extern char    LogInID[16]; // IDA: DAT_05826CD4 (0x05826CD4)
 extern char    DAT_05826ceb;
-extern DWORD   DAT_05826cec;
-extern DWORD   DAT_05826cf0;   // g_bGameServerConnected (1=connected, 0=disconnected)
+extern DWORD   g_byPacketSerialRecv; // IDA: DAT_05826CEC (0x05826CEC)
+extern DWORD   g_bGameServerConnected; // IDA: g_bGameServerConnected (0x05826CF0)
 extern float  _DAT_05826cf4;
-extern DWORD   DAT_05826cf4;
-extern DWORD   DAT_05826cf8;
-extern DWORD   DAT_05826d08;   // chat rate-limit counter (max 0x46 = 70 ticks)
+extern DWORD   g_dwLatestMagicTick; // IDA: g_dwLatestMagicTick (0x05826CF4)
+extern DWORD   LogIn; // IDA: DAT_05826CF8 (0x05826CF8)
+extern DWORD   ChatTime; // IDA: ChatTime (0x05826D08)
 // Teleport es 0x05826D14 (ida_xrefs_to: ReceiveTeleport, Attack, CheckGate,
 // Skills_PacketHandler, sub_482BE0, sub_4D23B0...).  Hasta 2026-09-12 Attack
-// escribia un global aparte (DAT_05826d04) y el resto leia DAT_05826d14: el
+// escribia un global aparte (DAT_05826d04) y el resto leia Teleport: el
 // gate del Town Portal no se enteraba del teleport en curso.
-#define DAT_05826d04 DAT_05826d14
+#define DAT_05826d04 Teleport
 extern char    DAT_05826adc[0x50]; // last-sent chat message buffer (rate-limit compare)
-extern char    DAT_05826d14;   // Teleport (IDA `Teleport` @0x05826D14) — 0=normal,
+extern char    Teleport; // IDA: Teleport (0x05826D14)
                                // 1=gate/teleport en curso.  La etiqueta vieja
                                // ("NPC script keepalive") era falsa.
-extern DWORD   DAT_05826d18;   // cooldown de COMPRA en tienda (IDA dword_5826D18 @0x05826D18):
+extern DWORD   BuyCost; // IDA: BuyCost (0x05826D18)
                                // lo escribe ProtocolCore y lo lee sub_4D23B0.
 extern DWORD   EnableUse;      // IDA: EnableUse (0x05826D1C) — cooldown de equipar/usar item;
                                // lo ponen en 10 los usos y lo resetean las respuestas del server
 #define DAT_05826d1c   EnableUse   // 2026-09-17: eran dos globals; los usos escribian uno y los handlers el otro
 extern DWORD   DAT_05826d20;
-extern DWORD   DAT_05826d24;   // SummonLife (IDA @0x05826D24) — HP % de la mascota
+extern DWORD   SummonLife; // IDA: DAT_05826d24 (0x05826D24)
 // AttackPlayer (IDA @0x05826D28): indice de slot del ULTIMO atacante.  Lo
 // escriben ReceiveAction (act 100/101), Skills_PacketHandler y
 // ReceiveMagicPosition; lo lee ReceiveAttackDamage para el destello de
@@ -555,7 +554,7 @@ extern "C" { extern int m_iMatchCountDownType; extern DWORD m_dwMatchCountDownSt
 extern DWORD   DAT_05826d30;
 extern char    DAT_05826d31;
 extern char    DAT_05826d32;
-extern char    DAT_05826d33;
+extern char    SoccerObserver; // IDA: DAT_05826d33 (0x05826D33)
 extern DWORD   DAT_05826d78;
 extern DWORD   DAT_05826dc8;
 extern DWORD   DAT_05826df4;
@@ -596,7 +595,7 @@ extern char    g_BoneScratch[200 * 0x30];   // 2026-07-17: MAX_BONES=200 (era 0x
 
 // ── Preview character entity (0x07abf050) ─────────────────────────────────────
 // BUG-FIX 2026-07-17: DAT_07abf050 ES el struct de entidad del PREVIEW char de
-// char-select (creado por FUN_0045adc0/CreateCharacterPointer con model 0xab).
+// char-select (creado por CreateCharacterPointer/CreateCharacterPointer con model 0xab).
 // Es un entity struct COMPLETO (stride 0x394; el original lo espacia 0x580 hasta
 // el array en 0x07abf5d0). Estaba declarado como un DWORD de 4 bytes, así que
 // CreateCharacterPointer (que escribe hasta +908) desbordaba ~900 bytes sobre los
@@ -629,9 +628,9 @@ extern char    DAT_07d2b494[];  // class name table (stride 300, 30 slots)
 #define _DAT_07abf5c4 (*(float*)(DAT_07abf050 + 0x574))  // preview entity field (BodyOrigin x)
 #define _DAT_07abf5c8 (*(float*)(DAT_07abf050 + 0x578))  // preview entity field (BodyOrigin y)
 #define _DAT_07abf5cc (*(float*)(DAT_07abf050 + 0x57c))  // preview entity field (BodyOrigin z)
-extern DWORD   DAT_07abf5d0;   // entity array base (stride 0x394)
+extern DWORD   CharactersClient; // IDA: DAT_07abf5d0 (0x07ABF5D0)
 extern int     DAT_07abf5d4;   // visible entity counter (reset each frame)
-extern char   *DAT_07abf5d8;   // local player entity ptr
+extern char   *Hero; // IDA: DAT_07abf5d8 (0x07ABF5D8)
 extern DWORD   DAT_07abf5dc;
 extern DWORD   DAT_07abf5e0;
 extern float  _DAT_07abf5e8;   // extra flag (reset 0 each frame)
@@ -681,8 +680,8 @@ extern void   *DAT_07cf1ff4;   // g_CharData sub-pointer (XOR-encoded)
 extern void   *DAT_07cf1ffc;   // g_CharData pointer (XOR-encoded, 0x584 bytes)
 
 // ── Player input / targeting state (0x07e01xxx – 0x07e11xxx) ─────────────────
-extern DWORD   DAT_07e016c0;   // target grid X (from ray cast or hover click)
-extern DWORD   DAT_07e016c4;   // target grid Y
+extern DWORD   TargetX;   // target grid X (from ray cast or hover click)  [IDA 0x07E016C0]
+extern DWORD   TargetY;   // target grid Y  [IDA 0x07E016C4]
 // 0x07E109C8 es `ItemKey` (confirmado por xrefs de IDA: lo escribe
 // Player_InputTick al clickear un item del suelo y lo leen los 3 sitios de
 // `Action` que arman el pickup).  NO es un indice de NPC — esa etiqueta
@@ -695,10 +694,10 @@ extern char    DAT_07e113e4[5 * 256];   // historial de chat: 5 entradas x 256B
 // ── UI / HUD data (0x07e1xxxx – 0x07eaxxxx) ──────────────────────────────────
 extern DWORD  _DAT_07e118e4;   // player facing angle (float, sent in movement packets)
 extern DWORD   DAT_07e118e8;   // world/map type
-extern char    DAT_07e11d70;   // char-select init flag
+extern char    GuildInputEnable;   // char-select init flag  [IDA 0x07E11D70]
 extern char    DAT_07e11d71;   // char-select flag B
-extern char    DAT_07e11d72;   // char-select flag C
-extern int     DAT_07e11d74;   // gold / currency (checked vs 0x2faf081)
+extern char    GoldInputEnable;   // char-select flag C  [IDA 0x07E11D72]
+extern int     InputGold;   // gold / currency (checked vs 0x2faf081)  [IDA 0x07E11D74]
 extern DWORD   DAT_07e11d78;   // InputIndex — indice del campo de input activo (lo rota el Tab)
 extern DWORD   DAT_07e11d7c;   // MacroTime (0x07E11D7C) -- cooldown de las macros de chat
 extern DWORD   DAT_07e11d1c;   // per-frame cooldown tick counter
@@ -721,7 +720,7 @@ extern int     DAT_07e11dbc;   // last facing tick time
 extern char    DAT_07e11dc0;   // movement lock flag B
 extern DWORD   DAT_07e11dc4;   // NPC script: dialog-active flag
 extern DWORD   DAT_07e11dc8;   // NPC script: keepalive timer (GetTickCount at last send)
-extern DWORD   DAT_07e11dcc;
+extern DWORD   TotalPacketSize;   // IDA: DAT_07e11dcc (0x07E11DCC)
 extern DWORD   DAT_07e11e50;   // NPC script chat-log slot 0
 extern DWORD   DAT_07e11e54;   // NPC script chat-log slot 1
 extern DWORD   DAT_07e11e58;   // NPC script chat-log slot 2
@@ -791,7 +790,7 @@ extern DWORD   DAT_07e919b8;
 // handler 0x52 de Net_Process) la recorren con `&DAT_07e919bc + N*80`.
 extern char    DAT_07e919bc[0x13C30];
 // Pools de índices de nombres de personaje — cada uno es un buffer de 0x880 bytes (32 entradas × 0x44).
-// Lo recorre FUN_004cba60 (CharPreview_Reset) con stride 0x44.
+// Lo recorre CloseInventoryRelatedWindows (CharPreview_Reset) con stride 0x44.
 // DAT_07ea5298: alias de Inventory (ver el bloque de alias de pools mas abajo).
 extern DWORD   DAT_07ea5b18;
 extern DWORD   DAT_07ea5b1c;
@@ -833,14 +832,14 @@ extern DWORD   DAT_07eaa0e4;
 extern DWORD   DAT_07eaa0f0;
 extern DWORD   DAT_07eaa0f4;
 extern int     DAT_07eaa0f8;   // CharData_RecalcDurability accumulator (count of items needing repair)
-extern DWORD   DAT_07eaa0fc;
-extern char    DAT_07eaa0fd;
+extern DWORD   m_bYourConfirm;   // IDA: DAT_07eaa0fc (0x07EAA0FC)
+extern char    m_bMyConfirm;   // IDA: DAT_07eaa0fd (0x07EAA0FD)
 extern int     TradeYourWait;       // IDA: m_nYourTradeWait
 extern int     TradeMyWait;         // IDA: m_nMyTradeWait
 extern DWORD   TradeRemoteGuildKey; // IDA: DAT_00559F54 durante Trade
 extern WORD    TradeRemoteLevel;    // IDA: DAT_07EAA0EC durante Trade
-extern DWORD   DAT_07eaa104;   // shop/item selection A
-extern DWORD   DAT_07eaa108;   // shop/item selection B
+extern DWORD   m_nMyTradeWait;   // shop/item selection A  [IDA 0x07EAA104]
+extern DWORD   StorageGoldFlag;   // shop/item selection B  [IDA 0x07EAA108]
 extern char    DAT_07eaa114;
 extern char    DAT_07eaa115;
 extern char    DAT_07eaa116;
@@ -851,9 +850,9 @@ extern char    DAT_07eaa11a;
 extern char    DAT_07eaa11b;
 extern char    DAT_07eaa11c;
 extern DWORD   DAT_07eaa124;
-extern DWORD   DAT_07eaa128;
+extern DWORD   GoldenArcherOpenType;   // IDA: DAT_07eaa128 (0x07EAA128)
 extern DWORD   DAT_07eaa13c;
-extern DWORD   DAT_07eaa16c;   // guild join/select current selection index
+extern DWORD   MixType;   // guild join/select current selection index  [IDA 0x07EAA16C]
 extern DWORD   DAT_07eaa144;
 extern DWORD   DAT_07eaa148;   // shop/item selection C
 extern DWORD   DAT_07eaa14c;
@@ -865,7 +864,7 @@ extern DWORD   DAT_07eaa168;   // TextureEnable (GL texture state cache)
 extern char    DAT_07eaa179;
 extern char    DAT_07eaa190;   // inventory drop error message ID string
 // Frustum world corners: 5 corners × 3 floats = 15 DWORDs at 0x07eab1b0
-extern float   DAT_07eab1b0;   // corner 0 X (apex)
+extern float   FrustrumVertex;   // corner 0 X (apex)  [IDA 0x07EAB1B0]
 extern float   DAT_07eab1b4;   // corner 0 Y
 extern float   DAT_07eab1b8;   // corner 0 Z
 extern float   DAT_07eab1bc;   // corner 1 X (top-left)
@@ -889,14 +888,14 @@ extern DWORD   DAT_07eab24c;   // BackTerrainHeight array base
 extern DWORD   DAT_07eab250;   // MISLABEL: NO es PrimaryTerrainLight (ese es
                                // DAT_081cb608 @0x081CB608). Global muerto, sin
                                // usos desde 2026-08-23 — no reintroducirlo.
-extern DWORD   DAT_07eeb200;
+extern DWORD   FrustrumFaceD;   // IDA: DAT_07eeb200 (0x07EEB200)
 extern DWORD   DAT_07eeb204;
 extern DWORD   DAT_07eeb208;
 extern DWORD   DAT_07eeb20c;
 extern DWORD   DAT_07eeb210;
 extern float   DAT_07eeb214;      // WaterMove — terrain water UV scroll offset (RenderTerrain)
-extern float   DAT_07eeb218[4];   // frustum quad Y[4] (per FUN_004f8ff0)
-extern float   DAT_07eeb228[4];   // frustum quad X[4]
+extern float   FrustrumY[4];   // frustum quad Y[4] (per TestFrustrum2D)  [IDA 0x07EEB218]
+extern float   FrustrumX[4];   // frustum quad X[4]  [IDA 0x07EEB228]
 extern float   DAT_07eeb238[256 * 256 * 3];   // TerrainLight RGB ambient buffer (256x256 RGB floats)
 extern DWORD   DAT_07feb238;
 extern DWORD   DAT_07feb23c;
@@ -920,12 +919,12 @@ extern float   DAT_07feb288[256 * 256 * 3];   // TerrainNormal[256*256][3] verte
 // ── Large game data arrays (0x080xxxxx – 0x083bxxxx) ─────────────────────────
 extern DWORD   DAT_080ab288;   // cursor screen X (float)
 extern DWORD   DAT_080ab28c;   // cursor screen Y (float)
-extern unsigned char  DAT_080ab2b4[0x10000];   // TileTex2[256*256] tile texture index 2
-extern unsigned char  DAT_080bb2b4[0x10000];   // TileTex1[256*256] tile texture index 1
+extern unsigned char  TerrainMappingLayer2[0x10000];   // TileTex2[256*256] tile texture index 2  [IDA 0x080AB2B4]
+extern unsigned char  TerrainMappingLayer1[0x10000];   // TileTex1[256*256] tile texture index 1  [IDA 0x080BB2B4]
 extern float   DAT_080cb2cc[0x10000];          // BackTerrainHeight[256*256] tile height
 extern float   DAT_0810b2cc[0x10000];          // TerrainNoise[256*256] random noise init
 extern DWORD   DAT_0814b2dc;
-// Ambient terrain-object table — sub_4F7060 (FUN_004f7060) walks 100 records de
+// Ambient terrain-object table — sub_4F7060 (Terrain_SpawnAmbientObjects) walks 100 records de
 // stride 8 leyendo campos en [-5..+1].  Backing zeroado con prefijo de 5 bytes
 // para que las lecturas [-5] queden in-bounds; vacío en nuestro build (el loader
 // de objetos .obj no está wireado) → el loop no spawnea nada.
@@ -944,8 +943,8 @@ extern float   DAT_0828b608[256 * 256 * 3];   // TerrainLightData[256*256][3] po
 #define DAT_081cb610   (*(DWORD*)((char*)&DAT_081cb608[0] + 8))
 #define DAT_0828b60c   (*(DWORD*)((char*)&DAT_0828b608[0] + 4))
 #define DAT_0828b610   (*(DWORD*)((char*)&DAT_0828b608[0] + 8))
-extern float   DAT_0834b608[0x10000];          // TerrainMappingAlpha[256*256] — blend factor layer1↔layer2 (IDA/DLL; NO es height)
-extern float   DAT_0838b7c4;  // frustum plane 0 normal X
+extern float   TerrainMappingAlpha[0x10000];          // TerrainMappingAlpha[256*256] — blend factor layer1↔layer2 (IDA/DLL; NO es height)  [IDA 0x0834B608]
+extern float   FrustrumFaceNormal;  // frustum plane 0 normal X  [IDA 0x0838B7C4]
 extern float   DAT_0838b7c8;  // frustum plane 0 normal Y
 extern float   DAT_0838b7cc;  // frustum plane 0 normal Z
 extern float   DAT_0838b7d0;  // frustum plane 1 normal X
@@ -966,10 +965,10 @@ extern char    DAT_0838bc70[];  // char array (monster name/flag table)
 extern DWORD   DAT_0839bc88;    // terrain-light double-buffer toggle (RenderTerrain ^=1 cada frame)
 extern DWORD   DAT_0839bc86;
 extern DWORD   DAT_0839bc8c;
-extern DWORD   DAT_0839bc90;
-extern DWORD   DAT_0839bc94;
-extern DWORD   DAT_0839bc98;
-extern DWORD   DAT_0839bc9c;
+extern DWORD   FrustrumBoundMinX_1;   // IDA: DAT_0839bc90 (0x0839BC90)
+extern DWORD   FrustrumBoundMinY_1;   // IDA: DAT_0839bc94 (0x0839BC94)
+extern DWORD   FrustrumBoundMinX_2;   // IDA: DAT_0839bc98 (0x0839BC98)
+extern DWORD   FrustrumBoundMinY_2;   // IDA: DAT_0839bc9c (0x0839BC9C)
 extern DWORD   DAT_0839be18;
 
 // ── Scene / state machine vars (0x083a0xxx – 0x083bxxxx) ─────────────────────
@@ -991,9 +990,9 @@ extern float  _DAT_083a0210;
 extern DWORD   DAT_083a0210;
 // Object-bucket grid (see globals.cpp). 16×16 cells × 16 B = 0x1000.
 // Cell layout (matches original binary 0x083a0218..0x083a1217):
-//   cell+0  → alias DAT_083a0218 (base de la celda, también usada como scratch por el walker de descarga FUN_004ffd50)
+//   cell+0  → alias DAT_083a0218 (base de la celda, también usada como scratch por el walker de descarga DeleteObjects)
 //   cell+4  → DAT_083a021c  puntero head (Terrain_Render lo lee vía *chunk_ptr)
-//   cell+8  → puntero tail  (el insert de FUN_004ff5a0 appendea acá; la descarga arranca el recorrido desde acá)
+//   cell+8  → puntero tail  (el insert de CreateObject appendea acá; la descarga arranca el recorrido desde acá)
 //   cell+12 → visibility flag (Terrain_Render writes *(chunk_ptr+8))
 // IMPORTANTE: g_ObjectBucketGrid[0] representa la dirección 0x083a0218, así que DAT_083a0218 está
 // en el offset 0 y DAT_083a021c en el +4. Antes DAT_083a021c estaba en el offset 0
@@ -1021,18 +1020,18 @@ extern float   DAT_083a4130;   // cursor billboard screen X
 extern float   DAT_083a4134;   // cursor billboard screen Y
 extern float   DAT_083a4138;   // terrain pick Z result
 extern DWORD   DAT_083a413c;
-// DAT_083a4140 es un buffer de 48 bytes (matrix 3×4 floats) — ver globals.cpp.
+// CameraMatrix es un buffer de 48 bytes (matrix 3×4 floats) — ver globals.cpp.
 // DAT_083a414c / DAT_083a415c / DAT_083a416c son referencias a índices 3/7/11
 // del mismo array; comparten memoria para que GL_GetModelViewMatrix (que escribe 12
 // DWORDs) no desborde sobre globales vecinos.
-extern DWORD   DAT_083a4140[12];
+extern DWORD   CameraMatrix[12];   // IDA: DAT_083a4140 (0x083A4140)
 extern DWORD&  DAT_083a414c;
 extern DWORD&  DAT_083a415c;
 extern DWORD&  DAT_083a416c;
-extern char    DAT_083a4174[0x104];   // screenshot name buf (26 chars+)
+extern char    GrabFileName[0x104];   // screenshot name buf (26 chars+)  [IDA 0x083A4174]
 extern DWORD   DAT_083a4278;
 extern DWORD   DAT_083a427c;
-extern DWORD   DAT_083a4280;   // viewport width (pixels)
+extern DWORD   OpenglWindowWidth;   // viewport width (pixels)  [IDA 0x083A4280]
 // CameraRayOriginX_arr — 3-DWORD storage para camera world position (escrito por
 // Camera_MouseRay vía Vector_InverseRotate(...&CameraRayOriginX)). _CameraRayOriginX..428c son
 // aliases float al mismo storage.
@@ -1046,15 +1045,15 @@ extern DWORD   ViewportCenterY;        // DAT_083A42A0
 extern DWORD   DAT_083a42a4;
 extern DWORD   DAT_083a42a8;
 extern DWORD   DAT_083a42ac;   // UI flag: mouse button state
-extern DWORD   DAT_083a42b0;   // viewport height (pixels)
+extern DWORD   OpenglWindowHeight;   // viewport height (pixels)  [IDA 0x083A42B0]
 // CameraAngle/CameraPosition contiguous — DAT_ names are aliases (see globals.cpp)
 extern DWORD&  DAT_083a42b8;   // alias → CameraAngle[0]
 extern DWORD&  DAT_083a42bc;   // alias → CameraAngle[1]
 extern DWORD&  DAT_083a42c0;   // alias → CameraAngle[2]
 extern DWORD   DAT_083a42c4;
-extern DWORD   DAT_083a42c8;   // viewport x offset
-extern DWORD   DAT_083a42cc;   // viewport y offset
-extern DWORD   DAT_083a42d0;   // UI flag: right-click / context menu
+extern DWORD   OpenglWindowX;   // viewport x offset  [IDA 0x083A42C8]
+extern DWORD   OpenglWindowY;   // viewport y offset  [IDA 0x083A42CC]
+extern DWORD   MouseRButtonPush;   // UI flag: right-click / context menu  [IDA 0x083A42D0]
 extern float&  _DAT_083a42d4;  // alias → CameraPosition[0]
 extern DWORD&  DAT_083a42d4;   // alias → CameraPosition[0] (DWORD view)
 extern float&  _DAT_083a42d8;  // alias → CameraPosition[1]
@@ -1110,7 +1109,7 @@ extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
 // minimal de stubs_linker.cpp. Aliases IDA→DAT que el port full necesita.
 #define IDA_PORT_004FDC00 1
 
-// ── FUN_00445230 (AttackEffect) full IDA port activation ─────────────────────
+// ── AttackEffect full IDA port activation ─────────────────────
 // 2026-08-16: `AttackEffect` es la que spawnea los efectos VISUALES de los
 // skills (CreateEffect 191/200/201/223/240/241/568/1210/1211/1271, CreateJoint
 // 1253...). El port fiel de IDA (2043 lineas) vivia en stubs_IDA_ports.cpp pero
@@ -1118,7 +1117,7 @@ extern DWORD   DAT_083a7af4;   // fade-in flag (1 = fading in)
 // lineas en stubs_misc2.cpp -> Lightning no mostraba nada y Evil Spirit /
 // Inferno salian incompletos. Activado el port completo.
 // El ruido anti-tamper crudo (CErrorReport::Write/aHashTableFullG, hash table
-// FUN_004041e0/FUN_00403f80 con otras firmas, delete__, PACKET_ENCRYPT, `Models`)
+// FUN_004041e0/HashTable_Insert con otras firmas, delete__, PACKET_ENCRYPT, `Models`)
 // quedo neutralizado con shims locales al inicio del bloque gated en
 // stubs_IDA_ports.cpp (con sus #undef al final). Ver CLAUDE.md 2026-08-16.
 #define IDA_PORT_00445230 1
@@ -1133,7 +1132,7 @@ extern char    DAT_083a7c09;   // in-game UI flag byte
 extern DWORD   DAT_083a7c0c;
 #define g_iNumAnswer  (*(int*)&DAT_083a7c0c)
 extern DWORD   DAT_083a7c10;
-extern int     DAT_083a7c14;   // login sub-state machine
+extern int     LoginSubState; // IDA: DAT_083a7c14 (0x083A7C14)
 extern DWORD   DAT_083a7c18;
 extern DWORD   DAT_083a7c1c;
 extern DWORD   DAT_083a7c20;
@@ -1185,9 +1184,9 @@ extern char    g_BitmapsRaw[0x13D30];
 #define DAT_083a7ccc  (*(DWORD*) &g_BitmapsRaw[0x2C])
 #define DAT_083a7cd0  (*(char*)  &g_BitmapsRaw[0x30])
 #define DAT_083a7cd4  (*(DWORD*) &g_BitmapsRaw[0x34])
-extern DWORD   DAT_083bb9d0;
+extern DWORD   m_dwUsedTextureMemory;   // IDA: DAT_083bb9d0 (0x083BB9D0)
 extern DWORD   DAT_083bbb14;
-extern char    lpBuffer_083bbb60[0x400]; // named pipe write buffer (FUN_005403a0)
+extern char    lpBuffer_083bbb60[0x400]; // named pipe write buffer (Pipe_WriteFile)
 extern DWORD   DAT_083bbb64;             // named pipe bytes written count
 extern DWORD   DAT_083bbb68;
 extern DWORD   DAT_083bbb6c;
@@ -1206,10 +1205,10 @@ extern void*   DAT_06f42a58;   // model memory pool base (allocated once in Mode
 extern char    g_BoneVertexBuf[32 * 15000 * 12];
 #define DAT_0584621c  (*(DWORD*)(g_BoneVertexBuf + 0))
 // DAT_05846224 es una etiqueta de Ghidra 8 bytes adentro del mismo buffer (el inicio de pfOut
-// de FUN_004404e0: pfDst = pfOut - 2 = &DAT_0584621c + local_64). Las escrituras abarcan 12 bytes desde pfDst.
+// de Skeleton_Transform: pfDst = pfOut - 2 = &DAT_0584621c + local_64). Las escrituras abarcan 12 bytes desde pfDst.
 #define DAT_05846224  (*(DWORD*)(g_BoneVertexBuf + 8))
 
-// ── BMD bounding-box scratch arrays (FUN_00442e60 — BMD_ComputeBounds) ────────
+// ── BMD bounding-box scratch arrays (BMD_CreateBoundingBox — BMD_ComputeBounds) ────────
 // Scratch de BMD_CreateBoundingBox — una entrada por hueso (ver globals.cpp).
 // Los companions +4/+8 son macros que proyectan dentro del slot 0 de su base,
 // igual que DAT_081cb60c, para que `(char*)&DAT_x + n` y `((float*)&DAT_x)[i]`
@@ -1222,7 +1221,7 @@ extern float   DAT_06f42a5c[200*3];    // bbox min, 3 floats por hueso
 #define DAT_06f42a60   (*(DWORD*)((char*)&DAT_06f42a5c[0] + 4))
 #define DAT_06f42a64   (*(DWORD*)((char*)&DAT_06f42a5c[0] + 8))
 
-// ── UI name-list panel data (FUN_0051e240) ────────────────────────────────────
+// ── UI name-list panel data (ShowCheckBox) ────────────────────────────────────
 // DAT_083a430c  — macro alias dentro de DAT_083a42f8 (ver bloque de dialog button rects)
 // 2026-05-08: alias por macro que proyecta en el offset +0x26 (line[1]) dentro del
 // properly-sized DAT_083a44c4 buffer (g_lpszMessageBoxCustom).
@@ -1246,7 +1245,7 @@ extern char    lpString_05826cc9[0x50]; // player guild name C
 // DAT_07e919bc — base del array de info de guild (indexado por slot de party) — declarado arriba como DWORD
 // DAT_07abf5dc — player/entity slot count — declared above as DWORD
 // DAT_07abf5d8 — entity_array[0] base pointer — declared above as char*
-// DAT_07eeb218/228 — login camera Y/X screen-pos — declared above as DWORD
+// FrustrumY/228 — login camera Y/X screen-pos — declared above as DWORD
 
 // ── Buffers temporales de posición de huesos (usados en el traspaso de animación) ──
 extern DWORD   DAT_07abf444[12]; // temp bone matrix buffer A
@@ -1280,7 +1279,7 @@ extern float  _DAT_00552cbc;   // login camera Y-rotation speed
 extern char    DAT_007d29e5;
 extern char    DAT_007eaa11;
 
-// ── Sprite entity pool (FUN_00478c00 — decoration/item-drop sprite render) ────
+// ── Sprite entity pool (RenderParticles — decoration/item-drop sprite render) ────
 extern DWORD   DAT_07abf634;       // sprite entity pool base (stride 0x70, limit 0x7b116b3)
 extern float  _DAT_005528dc;       // UV step per sprite-sheet column (1/N cols)
 extern float  _DAT_00552940;       // UV row base offset for sprite-sheet
@@ -1290,8 +1289,8 @@ extern float  _DAT_0055294c;       // Entity_UpdateRender sin amplitude (0x15d)
 extern float  _DAT_00552acc;       // anim speed scale constant A
 extern float  _DAT_00552914;       // anim speed scale constant B
 
-// ── Server select input (FUN_0051e7e0) ───────────────────────────────────────
-extern DWORD   DAT_0056169c;        // selected channel (port % 0x14 + 1)
+// ── Server select input (CServerSelWin_UpdateWhileActive) ───────────────────────────────────────
+extern DWORD   ServerLocalSelect;        // selected channel (port % 0x14 + 1)  [IDA 0x0056169C]
 
 // ── Char menu UI builder (RenderHelpWindow) ───────────────────────────────────────
 extern int     DAT_07e11d20;        // UI mode: 1=class-list-A, 2=class-list-B, 3=stats
@@ -1326,7 +1325,7 @@ static __forceinline unsigned int ItemAttribute_Base(void) {
     if (p < 0x100000u || p >= 0x80000000u) return 0;
     return p;
 }
-extern int     DAT_07d78080;        // font height (set by resolution in WinMain step 15)
+extern int     FontHeight;          // IDA: FontHeight (0x07D78080) — lo setea WinMain por resolucion
 // DAT_07e91530/534/53c/540 — columnas 2/3/5/6 de la fila 0 de DAT_07e91528
 // (ver la declaracion de la tabla mas abajo).
 #define DAT_07e91530   (DAT_07e91528[2])
@@ -1405,12 +1404,12 @@ extern DWORD   DAT_07ea840c;           // UI cursor / hotkey X position
 extern DWORD   DAT_07ea8408;           // UI cursor / hotkey Y position
 
 // Chat input channel buffers (9 channels × 0x100 bytes)
-extern char    DAT_07e0ffc8[10 * 0x100];   // macro hotkey table: 10 slots × 256 bytes
+extern char    MacroText[10 * 0x100];   // macro hotkey table: 10 slots × 256 bytes  [IDA 0x07E0FFC8]
 // Fila 9 de la tabla de arriba (0x07E0FFC8 + 0x900 = 0x07E108C8), no un global
 // aparte: es el buffer del destinatario de susurro y lo llenan FUN_00494520,
 // strcmp/strlen/memcpy.  2026-08-22: estaba declarado como UN char, o sea
 // escribia 255 bytes sobre los globals vecinos.
-#define DAT_07e108c8   (DAT_07e0ffc8[0x900])
+#define DAT_07e108c8   (MacroText[0x900])
 
 // Player name (for chat name-match / tab-complete)
 extern char    DAT_005592dc;           // player name string (char array)
@@ -1422,7 +1421,7 @@ extern char    DAT_07d5391c;           // current in-game text input buffer (cha
 // extern char    DAT_07d3d284;           // "/whisper" command string   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d3d3b0;           // "/pvp" command string   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d3cdd4;           // GM command string   // -> alias a GlobalText, ver el final del archivo
-// Chat command parser name buffers (FUN_004942e0)
+// Chat command parser name buffers (Chat_ValidateCommandName)
 // extern char    DAT_07d3cb7c;           // player name buffer 1 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d3cca8;           // player name buffer 2 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d3c924;           // player name buffer 3 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
@@ -1438,19 +1437,19 @@ extern DWORD   DAT_07e11dac;           // command-result flag (1=whisper, 0=pvp-
 // ReceiveTalk, SendMove, sub_492F10, Chat_InputTick, GetScreenWidth,
 // RenderServerDivision).  2026-08-22: estaba partido en dos variables —
 // el writer era g_bServerDivisionEnable (Net_Process, ReceiveTalk sub 5) y
-// los readers DAT_07eaa130, que nadie seteaba nunca.  Por eso el panel de
+// los readers ServerDivisionOpened, que nadie seteaba nunca.  Por eso el panel de
 // division de servidor no se dibujaba y GetScreenWidth no lo contaba.
 // El byte 1 de ese int es 0x07EAA131, que ya se usa asi en stubs_externs.
-#define DAT_07eaa130   (*(char*)&g_bServerDivisionEnable)
+#define ServerDivisionOpened   (*(char*)&g_bServerDivisionEnable)
 extern char    DAT_07eaa132;           // guard for B-key toggle enable
 extern char    DAT_07eaa134;           // RepairEnable_0
 
 // Screenshot / error dialog context
-extern DWORD   lpDefault_00583d88;     // default context for FUN_00480620
-// extern char    DAT_07d55410;           // error/info message for FUN_00480620   // -> alias a GlobalText, ver el final del archivo
+extern DWORD   lpDefault_00583d88;     // default context for UIChatLogWindow_AddText
+// extern char    DAT_07d55410;           // error/info message for UIChatLogWindow_AddText   // -> alias a GlobalText, ver el final del archivo
 
 // Connection-check context
-extern DWORD   DAT_07ea9848;           // connection context for FUN_004e3d60
+extern DWORD   DAT_07ea9848;           // connection context for Connection_Check
 
 // DAT_05826ceb — rolling packet counter byte (declared above near 0x05826xxx block)
 
@@ -1459,8 +1458,8 @@ extern int     DAT_00559cdc;           // system-message scroll timer (reset to 
 extern int     DAT_00559ce4;           // player-chat scroll timer   (reset to 0x96 on UI_ShowDialog)
 // Strings que Sound_Countdown1 / Sound_Countdown2 vuelven a mostrar al vencer el timer:
 extern char    DAT_07e11dd0[256];      // byte_7E11DD0: texto del aviso periódico (MoveNotices/CreateNotice)
-extern char    DAT_07e11dd8;           // player-chat periodic refresh msg  (arg2 of FUN_00480620)
-extern char    DAT_07e11ddc;           // player-chat periodic refresh label (arg1 of FUN_00480620)
+extern char    DAT_07e11dd8;           // player-chat periodic refresh msg  (arg2 of UIChatLogWindow_AddText)
+extern char    DAT_07e11ddc;           // player-chat periodic refresh label (arg1 of UIChatLogWindow_AddText)
 
 // ── Chat ring buffers ─────────────────────────────────────────────────────────
 // System message buffer (UI_AddNotice / Chat_DrawMessages)
@@ -1474,7 +1473,7 @@ extern "C" {
     extern BYTE  g_CharCreationEnable;    // 0xDE — permite crear chars
 }
 extern int     DAT_07e11d9c;           // system message count (max 5, i.e. 6 entries 0..5)
-// Player chat / notification buffer (FUN_00480620 / UI_DrawPlayerList)
+// Player chat / notification buffer (UIChatLogWindow_AddText / UI_DrawPlayerList)
 // Entry stride: 0x118 bytes (= 0x46 × sizeof(DWORD), Ghidra type convention)
 // Layout per entry: sender[0..0xA] + msg[0xB..0x10B] + type[0x10C]
 extern int     DAT_07e11da4;           // player chat entry count (max 0x77 = 119 entries)
@@ -1495,12 +1494,12 @@ extern char    DAT_00559d5c;           // player-list alternate format string
 // ── Guild system globals (opcodes 0x90-0x99) ──────────────────────────────────
 // DAT_07eaa117 — declared above as char (line 613)
 // DAT_07eaa116 — declared above as char (line 612)
-// DAT_07eaa128 — declared above as DWORD (line 620)
-extern int     DAT_07eaa12c;           // g_shEventChipCount (IDA 0x07EAA12C)
-// DAT_07eaa108 — guild UI flag — declared above as DWORD (line 609)
-extern BYTE    DAT_07ea97c0[64];       // guild entity pool (zeroed on stage 3, 0x40 bytes)
-extern char    DAT_07e11d73;           // char-select flag D (set 1 when guild stage==3)
-// Guild message string buffers (shown via ShowGuildMessage / FUN_0051d6f0):
+// GoldenArcherOpenType — declared above as DWORD (line 620)
+extern int     GoldenArcherItemCount;           // g_shEventChipCount (IDA 0x07EAA12C)  [IDA 0x07EAA12C]
+// StorageGoldFlag — guild UI flag — declared above as DWORD (line 609)
+extern BYTE    GoldenArcherLuckyNumberText[64];       // guild entity pool (zeroed on stage 3, 0x40 bytes)  [IDA 0x07EA97C0]
+extern char    GoldenArcherLuckyNumberTicket;           // char-select flag D (set 1 when guild stage==3)  [IDA 0x07E11D73]
+// Guild message string buffers (shown via ShowGuildMessage / CreateOkMessageBox):
 // extern BYTE    DAT_07d5b680;           // guild create result msg 1   // -> alias a GlobalText, ver el final del archivo
 // extern BYTE    DAT_07d5b7ac;           // guild create result msg 2   // -> alias a GlobalText, ver el final del archivo
 // extern BYTE    DAT_07d5c10c;           // guild create result msg 3   // -> alias a GlobalText, ver el final del archivo
@@ -1511,12 +1510,12 @@ extern char    param_2_07d68268;       // guild join error format string (wsprin
 // extern BYTE    DAT_07d58ea8;           // guild request OK message   // -> alias a GlobalText, ver el final del archivo
 extern char    param_2_07d58fd4;       // guild request error format string (wsprintfA %d)
 // Posición objetivo del guild (la setean los opcodes 0x94 / 0x96):
-extern DWORD   _DAT_00559f58;          // guild target tile X (4-byte, overlapping)
+extern DWORD   GoldenArcherLuckyNumber;          // guild target tile X (4-byte, overlapping)  [IDA 0x00559F58]
 extern WORD    DAT_00559f5c;           // guild target tile Y (2-byte)
 // Campos del sub-estado de login (también los escribe la rama 3 del guild 0x94):
-// _DAT_00559c94 — declared above as float (line 202)
+// InputTextMax — declared above as float (line 202)
 // DAT_00559c84  — declared above as DWORD (line 198)
-// DAT_00559c88  — declared above as DWORD (line 199)
+// InputNumber  — declared above as DWORD (line 199)
 // ── Estado de la UI de guild (bloque 0x083a, usado por ShowGuildMessage / la lista de miembros) ──
 // DAT_083a4324  — declared above as DWORD (line 749)
 // DAT_083a44c4  — declared above as DWORD (line 755)
@@ -1547,7 +1546,7 @@ extern int     DAT_083a7c34;           // guild UI auxiliary param
 // ── Declaraciones perdidas al restaurar globals.h desde git (2026-09-03) ──────
 // Estos globals ya existian en globals.cpp; sus `extern` estaban entre los
 // cambios sin commitear del header.
-extern char    DAT_07e11d6f;              // LockInputStatus (gate del IME)
+extern char    LockInputStatus; // IDA: DAT_07e11d6f (0x07E11D6F)
 extern DWORD   DAT_07e11d84;              // UseSkillWarrior 43: tick de activacion
 extern char    DAT_07e11dec;
 extern char    DAT_07e11df0;
@@ -1569,7 +1568,7 @@ extern BYTE    DAT_083a7af8[GUILD_MEMBER_TABLE_BYTES];
 #define DAT_083a7b0c  (*(DWORD*)&DAT_083a7af8[0x14])
 // Columnas de datos de miembro de guild (parte del mismo array de stride 0x18 que arranca en DAT_083a7af8):
 
-// Guild leaderboard UI strings (FUN_0051ddf0 / FUN_0051db00):
+// Guild leaderboard UI strings (RenderMatchScore / GuildOverview_Render):
 // extern char    DAT_07d59358;           // guild panel title string ("Guild War Score" etc.)   // -> alias a GlobalText, ver el final del archivo
 extern char    param_2_07d59484;       // format string for current player name ("%s")
 // extern char    DAT_07d5ba04;           // column headers array (stride 300, ~5 entries, ends at 0x7d5bfe0)   // -> alias a GlobalText, ver el final del archivo
@@ -1614,15 +1613,15 @@ extern char    DAT_083a1218[0x1158];   // Butterfles OBJECT array (10 entries ×
 
 // Float aliases for view/projection matrix globals (0x083a4xxx):
 // DWORD counterparts (DAT_083a414c etc.) are already declared above.
-extern float& _DAT_083a414c;   // alias → DAT_083a4140[3]
-extern float& _DAT_083a415c;   // alias → DAT_083a4140[7]
-extern float& _DAT_083a416c;   // alias → DAT_083a4140[11]
+extern float& _DAT_083a414c;   // alias → CameraMatrix[3]
+extern float& _DAT_083a415c;   // alias → CameraMatrix[7]
+extern float& _DAT_083a416c;   // alias → CameraMatrix[11]
 extern float& _CameraRayOriginX;   // _DAT_083A4284: camera position X alias
 extern float& _CameraRayOriginY;   // _DAT_083A4288: camera position Y alias
 extern float& _CameraRayOriginZ;   // _DAT_083A428C: camera position Z alias
 extern float  _DAT_083a42a4;   // projection scale X (float alias of DAT_083a42a4)
 extern float  _DAT_083a42a8;   // projection scale Y (float alias of DAT_083a42a8)
-extern float  _DAT_083a4294;   // projection center Y (float)
+extern float  ScreenCenterYFlip;   // projection center Y (float)  [IDA 0x083A4294]
 
 // Bone transform scratch buffer (0x06989xxx) — 3x4 row-major matrix (12 floats).
 // Respaldado por DAT_06989c9c_matrix (contiguo). DAT_06989c9c es la dirección de
@@ -1664,11 +1663,11 @@ extern float  _DAT_00552d40;   // panel X offset
 extern float  _DAT_00552d44;   // UV scale U  (Texture_Draw2D)
 // Dialog text color control
 extern DWORD   DAT_00559c78;   // current text color ABGR (0xffffffff = white)
-// DAT_00559c80 — declared above as DWORD (line 197)
+// SetBackgroundTextColor — declared above as DWORD (line 197)
 // DAT_00559c8c — declared above as DWORD (line 200)
 // Toggle flags
-extern char    DAT_00559c5c;   // IDA: m_bAutoAttack (0x00559C5C)
-extern char    DAT_07e11d80;   // IDA: m_bWhisperSound (0x07E11D80) — aviso sonoro de susurros
+extern char    m_bAutoAttack;   // IDA: m_bAutoAttack (0x00559C5C)
+extern char    m_bWhisperSound;   // IDA: m_bWhisperSound (0x07E11D80) — aviso sonoro de susurros
 // Entity/level data
 // Format strings for numeric dialogs
 // extern char    DAT_07d46e60;   // login account name format   // -> alias a GlobalText, ver el final del archivo
@@ -1775,7 +1774,7 @@ extern float   _DAT_00552580;  // 0.0f guard constant
 extern float   _DAT_00552850;  // particle proximity threshold (squared)
 extern float   _DAT_00552878;  // particle half-way distance
 extern float   Math_DegreesToRadians;  // degrees-to-radians (π/180 = 0.017453f)
-extern float   _DAT_00552ce0;  // half-angle factor 0.5 (used in FUN_004fa1d0 EulerToQuat; input already radians)
+extern float   _DAT_00552ce0;  // half-angle factor 0.5 (used in EulerToQuat EulerToQuat; input already radians)
 extern float   _DAT_00552cf0;  // 1.0f (used in quaternion→matrix)
 extern float   _DAT_00552cf8;  // π/2 (used in SLERP degenerate case)
 extern float   _DAT_00552d00;  // SLERP near-parallel threshold (~1e-3)
@@ -1794,7 +1793,7 @@ extern char    DAT_0055de84;
 extern char    DAT_0055de10;
 extern FILE   *DAT_07d7806c;   // file handle (MonsterSetBase2 parser)
 extern char    DAT_005580ac[]; // "rb" fopen mode string
-extern char    DAT_00558090[3];   // bBuxCode — clave XOR de Quest.bmd (FC CF AB)
+extern char    bBuxCode[3]; // IDA: bBuxCode (0x00558090)
 extern char    TextParserTokenString[256]; // DAT_07CF1EF0 — TokenString output of
                                    // GetToken (0x47A1F0).  NO confundir con
                                    // ParserTokenString, que es el buffer del OTRO
@@ -1923,7 +1922,7 @@ extern char    s_Data_Sound_mRedSkull_wav_0055caec[];
 extern char    s_Data_Sound_mRedSkullDie_wav_0055cad0[];
 extern char    s_Data_Sound_mRedSkullAttack_wav_0055cab0[];
 
-// ── Effect_Create float constants ────────────────────────────────────────────
+// ── CreateEffect float constants ────────────────────────────────────────────
 extern float   _DAT_005524ec;
 extern float   _DAT_0055253c;
 extern float   _DAT_00552828;
@@ -1941,7 +1940,7 @@ extern float   _DAT_00552988;
 extern float   _DAT_0055298c;
 // ── Weather particle pool (40 slots × 0x1bc bytes = 0x4560 bytes) ────────────
 // BUG-FIX 2026-05-04: antes los 30+ globals DAT_0839bc?? eran chars sueltos
-// en BSS, pero Weather_Update y FUN_0043e680 los acceden con stride 0x1bc
+// en BSS, pero Weather_Update y Particle_PathUpdate los acceden con stride 0x1bc
 // (slot stride) o 0x6f (int stride = 0x1bc/4). Sin un buffer contiguo, escribir
 // a slot 1+ corrompe globals adyacentes; leer slot 1+ leía garbage o causaba AV
 // (visible como crash en RenderNumArrow al entrar al mundo, addr=0x004BF712,
@@ -2005,7 +2004,7 @@ extern DWORD   DAT_083a42e8;   // GL state cache dword
 
 // ── Fog / projection globals ──────────────────────────────────────────────────
 extern float   DAT_00561558;   // fog start distance
-extern DWORD   DAT_0056155c;   // fog color pointer / float start
+extern DWORD   FogColor;   // fog color pointer / float start  [IDA 0x0056155C]
 
 // ── Perspective constant ──────────────────────────────────────────────────────
 extern float   _DAT_00552d34;  // perspective scale constant
@@ -2028,9 +2027,9 @@ extern float   _DAT_005528a8;  // 1/1000 ms-to-s scale
 extern float   _DAT_00552898;  // 5.0 second FPS window
 extern float   _DAT_00552890;  // delta-time scale
 extern DWORD   DAT_05826e00;   // FPS accumulator ring buffer
-extern float   _DAT_0055979c;  // delta time per frame
+extern float   DeltaT;  // delta time per frame  [IDA 0x0055979C]
 extern DWORD   FrameTimePreviousMs;  // IDA: DAT_05826dfc
-extern float   _DAT_05826df8;  // smoothed FPS value
+extern float   FPS;  // smoothed FPS value  [IDA 0x05826DF8]
 
 // ── Music.cpp globals ─────────────────────────────────────────────────────────
 extern DWORD   m_MusicOnOff;            // 0x055C9E3C — flag on/off de la musica (ver globals.cpp)
@@ -2046,7 +2045,7 @@ extern char    s_PlayMp3_cmd_00559140[];    // play command string
 extern DWORD   DAT_0058443c;   // DS3D state dword
 
 // ── Net_Connect globals ───────────────────────────────────────────────────────
-extern DWORD   DAT_055ca15c;   // net connect state dword
+extern DWORD   First; // IDA: First (0x055CA15C)
 extern char    s_Failed_to_connect__00559688[]; // error string
 
 // ── Net_PacketSession globals ─────────────────────────────────────────────────
@@ -2054,7 +2053,7 @@ extern char    s_Failed_to_connect__00559688[]; // error string
 //   DAT_07ea5b68 .. 0x07ea7b48 (= 8160 bytes = 116 slots × 0x44 stride)
 //   DAT_07ea9880 .. 0x07eaa100 (= 2176 bytes =  32 slots × 0x44 stride)
 // Cada slot es el registro del panel de char-select. En nuestro build estaban
-// declarados como DWORDs sueltos, lo que hacía que FUN_004cba60 (CharPreview_Reset)
+// declarados como DWORDs sueltos, lo que hacía que CloseInventoryRelatedWindows (CharPreview_Reset)
 // recorriera mucho más allá del final, en memoria random → AV.
 extern DWORD   DAT_07eaa0e8;
 extern DWORD   DAT_07e11f34[16];   // MarkColor[16] — paleta de la marca de guild (ARGB)
@@ -2114,7 +2113,7 @@ extern float   _DAT_00552a08;  // terrain light float constant
 // definidas junto a las declaraciones de cb608 / 0828b608, más arriba en este header.
 
 // ── Scene_Resources string literals ──────────────────────────────────────────
-// Nombres base de BMD/SMD que consumen FUN_005060b0 / FUN_00505e90 en Scene_Resources.
+// Nombres base de BMD/SMD que consumen AccessModel / OpenModel en Scene_Resources.
 extern char    DAT_0055e834[8];     // "Ship"
 extern char    DAT_005606ac[8];     // "Logo"
 extern char    DAT_005607c0[8];     // "Face"
@@ -2122,7 +2121,7 @@ extern char    DAT_005606e8[32];    // SMD basename (stub)
 extern char    DAT_005606d0[32];    // SMD basename (stub)
 extern char    DAT_005607c8[32];    // SMD basename (stub)
 extern char    DAT_0056085c[32];    // SMD basename (stub)
-extern DWORD   DAT_00560694;    // Map_Load block-read descriptor (format/context for FUN_00543274)
+extern DWORD   DAT_00560694;    // Map_Load block-read descriptor (format/context for crt_fprintf)
 extern char    s_Logo_Webzenlogo_jpg_005606b0[];
 extern char    s_Logo_Title_jpg_005606bc[];
 extern char    s_Interface_GFx_Interface_jpg_005607c4[];
@@ -2184,7 +2183,7 @@ extern char    s_fairy_smd_0055c438[];
 #define DAT_07e016f0  _DAT_07e016f0
 // DAT_07e01720 -> macro sobre el pool (ver abajo)   // Tooltip/bubble pool: 26 × 0x254 bytes
 extern BYTE    DAT_0055984c[9];  // bone index table for glitter effect (Entity_UpdateRender)
-extern DWORD   DAT_07e118ec[256];  // key-state edge-trigger table
+extern DWORD   KeyState[256];  // key-state edge-trigger table  [IDA 0x07E118EC]
 extern DWORD   DAT_07e11aac;
 extern DWORD   DAT_07e11ab0;
 extern DWORD   DAT_07e11ab4;
@@ -2265,8 +2264,8 @@ extern DWORD   DAT_07eab1fc;   // tile pick result flag
 extern DWORD   DAT_07e11d44;   // combat target select sub-mode
 
 // ── Model slot index globals ──────────────────────────────────────────────────
-extern DWORD   DAT_083a4104;   // model slot active flag
-extern DWORD   DAT_083a4108;   // model slot current index
+extern DWORD   TextureBegin;   // model slot active flag  [IDA 0x083A4104]
+extern DWORD   TextureCurrent;   // model slot current index  [IDA 0x083A4108]
 
 // ── Terrain culling globals ───────────────────────────────────────────────────
 extern short   _DAT_0838b60a;  // terrain horizon/clip value
@@ -2283,7 +2282,7 @@ extern char    s__s_d_bmd_0055a7e0[];  // "%s%d.bmd"
 extern int     DAT_07cf1ff0;       // item record shadow array base (mirrors DAT_07d78068)
 extern int     DAT_07cf1ff8;       // skill record shadow array base
 extern int     DAT_07d29d20;       // skill/gate data array base
-extern DWORD   DAT_07cf5600;       // gate data array base (stride 9 bytes, 100 entries) — malloc'd in WinMain
+extern DWORD   GateAttribute;       // gate data array base (stride 9 bytes, 100 entries) — malloc'd in WinMain  [IDA 0x07CF5600]
 // ── g_DialogScript @ 0x07CF5608 — 200 entradas x 0x400 bytes ────────────────
 // Layout verificado contra el disassembly de CSQuest::ShowDialogText (0x4017E0):
 //   0x4017F1  shl eax, 0Ah            → stride de entrada = 0x400
@@ -2320,7 +2319,7 @@ static_assert(offsetof(DIALOG_SCRIPT, m_lpszAnswer)        == 0x180, "DIALOG_SCR
 #define DAT_07cf5788   (g_DialogScript[0].m_lpszAnswer[0][0])
 // extern char    DAT_07d566d0;       // fallback char name string (no-char placeholder)   // -> alias a GlobalText, ver el final del archivo
 extern char    s__d___s_005580b0[];// "%d %s" format string for char-select display
-extern int     DAT_07d78078;       // NPC name count
+extern int     EditMonsterNumber;       // NPC name count  [IDA 0x07D78078]
 // DAT_07cf2000 / DAT_07cf2001: alias a MonsterScript (misma tabla 0x07CF2000).
 // Ver nota en globals.cpp.  &DAT_07cf2000 = base de la tabla; DAT_07cf2001 =
 // primer byte del campo Name de la entrada 0.
@@ -2329,19 +2328,19 @@ extern int     DAT_07d78078;       // NPC name count
 extern void   *ppvBits_055c9e4c;   // DIB section bitmap pointer (Font_BuildLayout)
 extern DWORD   DAT_01c5e200;       // item/skill BMD checksum seed A
 extern DWORD   DAT_00b43000;       // item/skill BMD checksum seed B
-extern char    DAT_00559bb4[3];    // XOR cipher key for FUN_00479910 (0xFC,0xCF,0xAB)
+extern char    DAT_00559bb4[3];    // XOR cipher key for BuxConvert_0 (0xFC,0xCF,0xAB)
 // Error message format strings
 extern char    s__s___File_not_exist__00558094[];  // "%s - File not exist."
 extern char    s__s___File_corrupted__00559bd4[];  // "%s - File corrupted."
 // File open modes
-extern char    DAT_005597d4[];  // "wb" (binary write mode for FUN_005430f0 callers)
+extern char    DAT_005597d4[];  // "wb" (binary write mode for crt_fwrite callers)
 
 // ── SecondPassword Screen2 entity list globals ────────────────────────────────
 extern DWORD   DAT_07e11e80;   // char-select entity name table base (stride 0x24 per slot)
 extern DWORD   DAT_07ea5b24;   // Screen2 panel origin X
 extern DWORD   DAT_07ea5b28;   // Screen2 panel origin Y
 
-// ── SecondPassword UI sub-handler globals (FUN_004e8b70 / 004e9050 / 004eb5d0 / 004e6550) ──
+// ── SecondPassword UI sub-handler globals (ServerTransfer_HitTest / 004e9050 / 004eb5d0 / 004e6550) ──
 extern DWORD   DAT_07eaa0c8;   // SecondPassword dialog origin X (pixel)
 extern DWORD   DAT_07eaa0cc;   // SecondPassword dialog origin Y (pixel)
 extern DWORD   DAT_07eaa140;   // MixState (ver el alias mas arriba). La etiqueta
@@ -2349,17 +2348,17 @@ extern DWORD   DAT_07eaa140;   // MixState (ver el alias mas arriba). La etiquet
                                // llama MixState y sus writers son ReceiveMix (0x4366C0),
                                // el envio del mix y ReceiveTalk.
 extern DWORD   DAT_07eaa131;   // SecondPassword checkbox/toggle state
-extern DWORD   DAT_07eaa138;   // RepairEnable (low byte cleared on teleport)
+extern DWORD   RepairEnable; // IDA: DAT_07eaa138 (0x07EAA138)
 extern DWORD   DAT_07ea5290;   // SecondPassword alt-panel origin X
 extern DWORD   DAT_07ea528c;   // SecondPassword alt-panel origin Y
-// Entradas de la tabla de strings que usa el switch de FUN_004e9050:
+// Entradas de la tabla de strings que usa el switch de SecondPassword_Screen8:
 // extern char    DAT_07d544d4;   // error string for case 0 (second password wrong)   // -> alias a GlobalText, ver el final del archivo
-extern char    DAT_07eaa1a0;   // UI message label A (FUN_00480620 arg1)
+extern char    DAT_07eaa1a0;   // UI message label A (UIChatLogWindow_AddText arg1)
 // extern char    DAT_07d54600;   // error string for auth-fail case   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa198;   // UI message label B
 // extern char    DAT_07d55c44;   // error string for case 0xfffffff8/0xfffffffe   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa19c;   // UI message label C
-// DAT_0055a3f8 / DAT_0055a3fc — iVar1/iVar3 defaults for FUN_004e3db0 non-1/7/0xb/8 cases
+// DAT_0055a3f8 / DAT_0055a3fc — iVar1/iVar3 defaults for SecondPassword_GridSlotAvail non-1/7/0xb/8 cases
 extern int     DAT_0055a3f8;   // auth mode param A
 extern int     DAT_0055a3fc;   // auth mode param B
 
@@ -2376,7 +2375,7 @@ extern float  _DAT_00552c20;   // Screen5 button X upper bound
 extern float  _DAT_00552c1c;   // Screen5 button height
 extern float  _DAT_00552c28;   // Screen5 button Y base
 // extern char    DAT_07d6b724;   // Error message: "no item in slot"   // -> alias a GlobalText, ver el final del archivo
-// extern char    DAT_07d685ec;   // Error message: "invalid slot" (FUN_004e6c40)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d685ec;   // Error message: "invalid slot" (SecondPassword_Screen5)   // -> alias a GlobalText, ver el final del archivo
 extern short   DAT_00559f5a;   // second-password level check B (short)
 extern int     DAT_00559f80;   // level threshold array base (index by slot)
 extern int     DAT_00559f84;   // level threshold array upper (index by slot)
@@ -2384,14 +2383,14 @@ extern int     DAT_00559f84;   // level threshold array upper (index by slot)
 // Verificado con ida_get_function: m_iDevilSquareLimitLevel = 0x00559F60 y
 // m_iBloodCastleLimitLevel = 0x00559F80 (32 bytes despues = 4 niveles x 2 int).
 // Estaban partidos en dos: el handler del 0x8E llenaba el array C y
-// `FUN_004e6c40` leia `(&DAT_00559f60)[i*2]`, un int suelto -> el chequeo de
+// `SecondPassword_Screen5` leia `(&DAT_00559f60)[i*2]`, un int suelto -> el chequeo de
 // nivel del Devil Square comparaba contra basura de los globals vecinos.
 #define DAT_00559f60   (m_iDevilSquareLimitLevel[0][0])
 #define DAT_00559f64   (m_iDevilSquareLimitLevel[0][1])
 // DAT_07ea7b88 — declared above as DWORD (line 1474)
 extern char    DAT_07ea5b30;   // second-password char-slot list base
 
-// BMD_DrawMesh / BMD_DrawBoneSlot_Anim (FUN_00440d50 / FUN_004414d0) buffers
+// BMD_DrawMesh / BMD_DrawBoneSlot_Anim (BMD__RenderMesh / BMD__RenderMeshTranslate) buffers
 // LightTransform pool (see globals.cpp). Backed by g_BoneLightBuf.
 // DAT_060db65c es un lvalue char en el offset 0 del buffer; &DAT_060db65c + k avanza
 // k bytes (aritmética de bytes) — lo exigen los accesos de BMD_DrawMesh.cpp.
@@ -2411,10 +2410,10 @@ extern char    g_BoneChromeNormalBuf[32 * 15000 * 12];
 // _DAT_ float constants missing from earlier declarations
 extern float   _DAT_00552544;  // alpha threshold (alpha < this → use alpha channel path)
 extern float   _DAT_005528c0;  // chrome U scale factor
-extern float   _DAT_005528c4;  // sin period scale for vertex deformation (FUN_004414d0)
-extern float   _DAT_00552644;  // sin amplitude for vertex deformation (FUN_004414d0)
+extern float   _DAT_005528c4;  // sin period scale for vertex deformation (BMD__RenderMeshTranslate)
+extern float   _DAT_00552644;  // sin amplitude for vertex deformation (BMD__RenderMeshTranslate)
 
-// ── MoveEffect (FUN_00466ad0) constants (0x005524a8–0x00552a20 range) ─────────
+// ── MoveEffect constants (0x005524a8–0x00552a20 range) ─────────
 extern float   _DAT_005524a8;  // move effect float constant
 extern float   _DAT_00552864;  // move effect float constant
 extern float   _DAT_00552990;  // move effect float constant
@@ -2446,9 +2445,9 @@ extern float   _DAT_00552a90;  // MoveJoint color fade rate B
 extern float   _DAT_00552a94;  // MoveJoint trig freq A
 extern float   _DAT_00552a98;  // MoveJoint trig scale B
 extern float   _DAT_00552aa4;  // MoveJoint HP-bar scale factor
-extern float   _DAT_00552a9c;  // FUN_00473d90 ring trig scale X
-extern float   _DAT_00552aa0;  // FUN_00473d90 ring trig scale Y
-extern float   _DAT_00552aa8;  // FUN_00473d90 ring trig scale Z
+extern float   _DAT_00552a9c;  // Ring_ComputeOrbit ring trig scale X
+extern float   _DAT_00552aa0;  // Ring_ComputeOrbit ring trig scale Y
+extern float   _DAT_00552aa8;  // Ring_ComputeOrbit ring trig scale Z
 extern char    DAT_00559b78[8];
 #define DAT_00559b7f (DAT_00559b78 + 7)   // alias: mismo buffer, offset 7
 
@@ -2461,7 +2460,7 @@ extern char    DAT_083a4100;          // flag: Lorencia object models already lo
 extern char    DAT_083a8ad8[32 * 0x38];  // Icarus water-tile name table (32 × 0x38)
 // DAT_0055e714 — format string for custom map object file path (zone index)
 // DAT_005580ac — declared above (file open mode char)
-// DAT_083a410c, DAT_0055a7c4, DAT_0055a7ac, DAT_05828d58 — declared above
+// DAT_083a410c, DAT_0055a7c4, World, DAT_05828d58 — declared above
 
 // ── BMD_SkinUpdate (0x0040b630) ──────────────────────────────────────────────
 extern int     DAT_00590c10;          // skinned vertex count
@@ -2494,14 +2493,14 @@ extern short   DAT_008b3f08;          // normal index table   (stride 0x637d2)
 
 // ── RenderObjectScreen (0x004e13a0) ──────────────────────────────────────────
 // Estos globals guardan la pose de render por frame del item/objeto que se está mostrando.
-extern float   _DAT_07ea952c;         // item render: rotation X offset
+extern float   ObjectSelect_Angle;         // item render: rotation X offset  [IDA 0x07EA952C]
 extern float   _DAT_07ea9530;         // item render: rotation Y
 extern float   _DAT_07ea9534;         // item render: rotation Z
-extern short   _DAT_07ea9512;         // item render: resolved model type index
-extern float   _DAT_07ea9538;         // item render: HeadAngle[0] (used by BMD_Animation)
-extern int     _DAT_07ea9618;         // item render: state flag A
-extern int     _DAT_07ea961c;         // item render: state flag B
-extern short   DAT_07ea9616;          // item render: state flag C
+extern short   ObjectSelect_Type;         // item render: resolved model type index  [IDA 0x07EA9512]
+extern float   ObjectSelect_HeadAngle;         // item render: HeadAngle[0] (used by BMD_Animation)  [IDA 0x07EA9538]
+extern int     ObjectSelect_AnimationFrame;         // item render: state flag A  [IDA 0x07EA9618]
+extern int     ObjectSelect_PriorAnimationFrame;         // item render: state flag B  [IDA 0x07EA961C]
+extern short   ObjectSelect_PriorAction;          // item render: state flag C  [IDA 0x07EA9616]
 
 // ── Filter / name-filter system globals ──────────────────────────────────────
 extern DWORD   DAT_007cfa00;    // word-filter BMD checksum seed
@@ -2511,9 +2510,8 @@ extern char    lpText_07d2aa08[];  // fatal-error message string (shown by ExitP
 // ── HeroTile — terrain tile type under the hero character ─────────────────────
 // DAT_07e118e8 ya declarado como DWORD cerca de la línea 546 (tipo de mundo/mapa)
 #define HeroTile ((int)DAT_07e118e8)
-// World = g_GameSubState = DAT_0055a7ac (already declared above)
+// World ya está declarado arriba.
 #ifndef World
-#define World    g_GameSubState
 
 // ── Pools de items y atributos de terreno ────────────────────────────────────
 // Centralizadas acá por el refactor B3 (2026-08-16). Antes cada .cpp las
@@ -2660,10 +2658,10 @@ extern float   CameraAngle[3];     // DAT_083a42e0 (3 floats)
 extern float   CameraPosition[3];  // DAT_083a42d4 (3 floats)
 
 // Quest/NPC window
-// g_bEventChipDialogEnable es 0x07EAA128 (DAT_07eaa128).  Hasta 2026-09-11 era
+// g_bEventChipDialogEnable es 0x07EAA128 (GoldenArcherOpenType).  Hasta 2026-09-11 era
 // un global aparte: el 0x94 lo escribia y el panel del Golden Archer leia
-// DAT_07eaa128, asi que nunca se enteraba.
-#define _g_bEventChipDialogEnable (*(int*)&DAT_07eaa128)
+// GoldenArcherOpenType, asi que nunca se enteraba.
+#define _g_bEventChipDialogEnable (*(int*)&GoldenArcherOpenType)
 
 // 2026-04-30: los flags de los paneles de UI ahora aliasan los bytes reales DAT_07eaa11x (per
 // el Offsets.h del proyecto companion de IDA, líneas 59-69). Las direcciones de la época de
@@ -2703,12 +2701,12 @@ extern DWORD   DAT_00563e00;       // codec state A
 extern DWORD   DAT_07c82cf4[0xAF0];       // terrain alpha bitmap pool (0x2BC0 bytes = 100 slots * 112 bytes)
 #define DAT_07c858b4 DAT_07c82cf4[0xAF0-1]   // end-marker alias
 extern DWORD   DAT_0055339c;       // JPEG natural order table
-// m_dwTextColor / m_dwBackColor SON DAT_00559c78 / DAT_00559c80 (mismo global en IDA:
+// m_dwTextColor / m_dwBackColor SON DAT_00559c78 / SetBackgroundTextColor (mismo global en IDA:
 // 0x559c78 / 0x559c80, verificado por disasm de sub_40D610 y sub_480980). El render de
 // texto (CUIRenderText_RenderText) lee DAT_00559c78; sin esta unificación los seteos de m_dwTextColor
 // (HUD passes + ChatListBox) se perdían → texto blanco. DAT_00559c78/80 declarados arriba.
 #define m_dwTextColor  DAT_00559c78
-#define m_dwBackColor  DAT_00559c80
+#define m_dwBackColor  SetBackgroundTextColor
 // g_iNumAnswer — alias de DAT_083a7c0c (ver arriba).
 // g_iNumLineMessageBoxCustom — alias de DAT_083a4324 (ver arriba).
 // g_lpszMessageBoxCustom — alias de DAT_083a44c4 (el buffer real de 7 lineas x
@@ -2735,7 +2733,7 @@ extern DWORD   DAT_0055339c;       // JPEG natural order table
 
 // Batch 18 — InitGame / ReceiveChat globals
 // EnableUse declarado arriba junto a DAT_05826d1c.
-extern int     DAT_07e11998;       // SendGetItem
+extern int     SendGetItem; // IDA: DAT_07e11998 (0x07E11998)
 // DAT_07e11d28 already declared above (line ~554) as DWORD
 extern int     DAT_07e11e10;       // SoccerTime
 extern int     DAT_07e11e14;       // SoccerObserver
@@ -2744,15 +2742,15 @@ extern int     DAT_07e11990;       // SelectedOperate
 // DAT_07e1198c already declared above (line ~1003) as DWORD
 extern int     DAT_07e11988;       // SelectedItem
 // DAT_07e11984 already declared above (line ~1002) as DWORD
-// m_bAutoAttack vive en 0x00559C5C (DAT_00559c5c, IDA InitGame L39).  El port
+// m_bAutoAttack vive en 0x00559C5C (m_bAutoAttack, IDA InitGame L39).  El port
 // tenia ademas DAT_07e11e18: el toggle del menu y el hover escribian uno y el
 // combate / F3/30 leian el otro.  Ahora es un alias.
-#define DAT_07e11e18   DAT_00559c5c
+#define DAT_07e11e18   m_bAutoAttack
 extern int     DAT_07e11d24;       // _CheckInventory
 // DAT_07e11d1c already declared above (line ~553) as DWORD
 extern BYTE    DAT_00559c6d;       // UI alpha/state byte
-// g_shEventChipCount es 0x07EAA12C (DAT_07eaa12c); mismo caso que el de arriba.
-#define DAT_07e11e1c (*(short*)&DAT_07eaa12c)
+// g_shEventChipCount es 0x07EAA12C (GoldenArcherItemCount); mismo caso que el de arriba.
+#define DAT_07e11e1c (*(short*)&GoldenArcherItemCount)
 extern short   DAT_07e11e20;       // g_shMutoNumber[0]
 extern short   DAT_07e11e22;       // g_shMutoNumber[1]
 extern short   DAT_07e11e24;       // g_shMutoNumber[2]
@@ -2760,11 +2758,11 @@ extern int     DAT_07e11980;       // SceneFlag
 
 // Batch 19 — SendCheck globals
 extern DWORD   DAT_07e11d10;       // g_bGameServerConnected
-extern BYTE    DAT_07db8600;       // g_byPacketSerialSend
+extern BYTE    g_byPacketSerialSend; // IDA: g_byPacketSerialSend (0x07DB8600)
 extern BYTE    DAT_05826cfc;       // SendCheck first-call flag
 extern DWORD   DAT_05826d00;       // SendCheck first-call tickCount
 
-// Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, FUN_0043ce50, LookAtTarget
+// Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, Send_ActionRequest, LookAtTarget
 // Sólo los globals realmente nuevos (los que no estaban declarados arriba):
 extern float   _DAT_005524a0;      // equip pendant X offset
 extern float   _DAT_00552c18;      // equip slot Y offset (helm row)
@@ -2778,8 +2776,8 @@ extern float   _DAT_00552a30;      // lerp speed (camera smoothing)
 extern void*   g_LoginSceneObjects[9]; // exact CreateObject pointers for login bg: sky, 3 ships, 3 waves, banner, sun
 
 // Batch 22 — AttackStage, CreateArrow
-extern int     DAT_00559858;       // g_iLimitAttackTime (attack frame limit counter)
-extern DWORD   DAT_05826d10;       // CurrentSkill (current skill ID for arrow/projectile)
+extern int     g_iLimitAttackTime;       // g_iLimitAttackTime (attack frame limit counter)  [IDA 0x00559858]
+extern DWORD   CurrentSkill; // IDA: CurrentSkill (0x05826D10)
 extern float   _DAT_00552904;      // sin/cos offset multiplier (sword trail radius)
 extern float   _DAT_005528f8;      // sin/cos offset multiplier (slash projectile)
 extern float   _DAT_005528f4;      // combo animation offset constant
@@ -2795,7 +2793,7 @@ extern float   _DAT_00552584;      // arrow angle offset (5-way shot large)
 extern float   _DAT_00552a4c;      // RenderNumber2D Y offset
 
 // ── UseSkillWizard dependencies ──────────────────────────────────────────────
-extern DWORD   DAT_07d780a0;       // MovementSkillTarget (index into CharactersClient)
+extern DWORD   MovementSkillTarget;       // MovementSkillTarget (index into CharactersClient)  [IDA 0x07D780A0]
 extern DWORD   DAT_07d7809c;       // skill slot index (current selected skill slot)
 extern char    DAT_00559d94[8];    // GM name string "webzen" (anti-impersonation check 1)
 extern char    DAT_00559d9c[8];    // GM name string "webzen" (anti-impersonation check 2)
@@ -2867,10 +2865,10 @@ extern char    DAT_07d3c348;        // empty chat message string
 
 // ── Skill selection globals ──
 extern char    DAT_07d78098;        // skill mode flag (0=direct, nonzero=from attribute)
-extern DWORD   DAT_00559c84;        // InputEnable flag (already declared above, kept for reference)
+extern DWORD   InputEnable;          // IDA: DAT_00559c84 (0x00559C84)
 
 // ── CharSelect packet globals ──
-extern DWORD   DAT_005616ac;        // SelectedHero index (already declared above, kept for reference)
+extern DWORD   SelectedHero;         // IDA: DAT_005616ac (0x005616AC)
 
 // ── Chat bubble pool ──
 // Pool base = 0x07E016F8; stride 0x254 per entry; ~96 slots.
@@ -2927,11 +2925,11 @@ extern char    SoccerTeamName[2][80];// team names
 // Globals de fuente / medición de texto que consumen sub_480C60 y el HUD
 // renderers (HFONT object handles + DC + computed dimensions).
 #define g_hFont      ((HFONT)(uintptr_t)DAT_055ca00c)              // primary plain font handle
-extern int     FontHeight;           // pixel height of g_hFont
+// FontHeight se declara mas arriba (0x07D78080).
 extern SIZE    TextSize;             // shared scratch SIZE for text extent
 
 // Anti-tamper hash-table state — already declared above as g_HashTableCtx[4]
-// con las macros DAT_055c9bc8/cc/d0/d4. Sólo referenciarlos; NO volver a hacerles extern.
+// con las macros MAIN_HASH_CLASS/cc/d0/d4. Sólo referenciarlos; NO volver a hacerles extern.
 
 // CharacterMachine — the encrypted player attribute buffer (size 0x584).
 // Los desencripta in situ el bloque anti-tamper interno de RenderMainFrameWindow.

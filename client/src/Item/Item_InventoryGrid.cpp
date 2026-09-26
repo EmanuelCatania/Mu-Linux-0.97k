@@ -15,7 +15,7 @@
 // For each cell in WxH: set item type, grid coords, call ItemConvert.
 // Stride 0x44 per cell at OffsetWarehouseItems base (DAT_07ea5b30).
 // ItemAttribute = DAT_07d78068 (ITEM_ATTRIBUTE array, stride 0x40).
-void __cdecl InsertWarehouseItem_stub(unsigned int param_1, unsigned char* param_2) {
+void __cdecl InsertWarehouseItem(unsigned int param_1, unsigned char* param_2) {
     // ConvertItemType: item_type = param_2[0] + (param_2[3] & 0x80) * 2
     int iVar3 = (unsigned int)param_2[0] + (param_2[3] & 0x80) * 2;
     ITEM_ATTRIBUTE* pAttr = (ITEM_ATTRIBUTE*)DAT_07d78068;
@@ -70,7 +70,7 @@ void __cdecl InsertWarehouseItem_stub(unsigned int param_1, unsigned char* param
 // Reads item type at (param_2 + param_1*0x44), gets Width/Height from ItemAttribute.
 // Reads grid origin from offsets 0x3e (x) and 0x3f (y).
 // Writes param_3 to each cell at (param_2 + 0x40 + (gx + gy*8)*0x44).
-void __cdecl SetItemGridFlag_stub(int param_1, int param_2, unsigned char param_3) {
+void __cdecl SetItemGridFlag(int param_1, int param_2, unsigned char param_3) {
     // 0x004CC1E0 — marks cells occupied/free in inventory grid
     // param_1 = item slot index, param_2 = inventory base ptr, param_3 = flag value to write
     short itemType = *(short*)(param_2 + param_1 * 0x44);
@@ -100,7 +100,7 @@ void __cdecl SetItemGridFlag_stub(int param_1, int param_2, unsigned char param_
 // CompareItems @ 0x004CC270 (~93 lines) — compare two items for sorting
 // Returns: -1 (a<b), 0 (equal), 1 (a>b), 2 (different type)
 // Compares: type, level (bits 3..6), excellent bit (bit 7), option bytes, durability
-int __cdecl CompareItems_stub(short param_1, int param_2, int param_3) {
+int __cdecl CompareItems(short param_1, int param_2, int param_3) {
     // 0x004CC270 — Compare two items for sorting
     // Ghidra shows phantom stack params (in_stack_*) because caller pushes two full
     // 0x44-byte item records on the stack. param_1/param_2/param_3 overlap the first record.
@@ -191,10 +191,10 @@ int __cdecl CompareItems_stub(short param_1, int param_2, int param_3) {
 // footprint queda en 99 (color de advertencia) y byte_7EAA0E8 = 1; si es igual
 // o mejor, en 1.  Los tipos que empataron (resultado 0) vuelven a 1 en todas
 // sus celdas al final.
-// (El port anterior llamaba a CompareItems_stub con tipo/nivel/durabilidad en
+// (El port anterior llamaba a CompareItems con tipo/nivel/durabilidad en
 // vez de los dos registros, asi que la comparacion era basura.)
 extern "C" int __cdecl Item_CompareForTradeHistory(const BYTE* p, const BYTE* n);
-void __cdecl SortInventory_stub(short* param_1) {
+void __cdecl SortInventory(short* param_1) {
     BYTE* const pool = (BYTE*)param_1;
     DAT_07eaa0e8 = 0;                                   // byte_7EAA0E8
     for (int i = 0; i < 32; ++i)
@@ -215,12 +215,12 @@ void __cdecl SortInventory_stub(short* param_1) {
             const int r = Item_CompareForTradeHistory(entry, item);
             if (r == 1) {                               // peor que el historial
                 DAT_07eaa0e8 = 1;
-                SetItemGridFlag_stub(slot, (int)(uintptr_t)pool, 99);
+                SetItemGridFlag(slot, (int)(uintptr_t)pool, 99);
                 continue;
             }
             if (r == 0 && tiedCount < 10)               // el original no acota
                 tied[tiedCount++] = *(const short*)entry;
-            SetItemGridFlag_stub(slot, (int)(uintptr_t)pool, 1);
+            SetItemGridFlag(slot, (int)(uintptr_t)pool, 1);
             break;
         }
     }
@@ -232,7 +232,7 @@ void __cdecl SortInventory_stub(short* param_1) {
                 const BYTE* item = pool + i * 68;
                 if (*(const short*)item != -1 && *(const short*)item == tied[t] &&
                     *(const DWORD*)(item + 56) != 0)
-                    SetItemGridFlag_stub(i, (int)(uintptr_t)pool, 1);
+                    SetItemGridFlag(i, (int)(uintptr_t)pool, 1);
             }
     }
 }
@@ -240,7 +240,7 @@ void __cdecl SortInventory_stub(short* param_1) {
 // CheckInventorySpace @ 0x004D5D70 (~66 lines) — check if picked item fits at position
 // Returns 1 in low byte if space available, 0 otherwise.
 // Also handles stackable item merging (arrows 0x1bf..0x1c8, potions 0x87/0x8f).
-unsigned long long __cdecl CheckInventorySpace_stub(int p1, int p2, unsigned short* p3, int p4, int p5) {
+unsigned long long __cdecl CheckInventorySpace(int p1, int p2, unsigned short* p3, int p4, int p5) {
     // 0x004D5D70 — Check if the currently picked item fits at the mouse grid position
     // p1 = screen offset X (inventory panel left), p2 = screen offset Y (inventory panel top)
     // p3 = inventory array base (short*, stride 0x22 words = 0x44 bytes)
@@ -339,7 +339,7 @@ unsigned long long __cdecl CheckInventorySpace_stub(int p1, int p2, unsigned sho
 
 // FindEmptySlot @ 0x004D5F20 (~62 lines) — search for empty rectangular area from bottom-right
 // Scans grid from (maxH-itemH, maxW-itemW) upward/leftward for a W*H block of -1 cells.
-int __cdecl FindEmptySlot_stub(int param_1, int param_2, int param_3, int param_4) {
+int __cdecl FindEmptySlot(int param_1, int param_2, int param_3, int param_4) {
     // 0x004D5F20 — Search for empty rectangular area from bottom-right
     // param_1 = item type index (for Width/Height from ItemAttribute)
     // param_2 = inventory base pointer (short*, stride 0x44 bytes)
@@ -412,7 +412,7 @@ next_cell:
 // CalculateInventoryValue @ 0x004DF330 (~65 lines) — sum item values in inventory grid
 // Iterates grid rows*cols, calls ItemValue for each non-empty slot.
 // Special items: 0x1cd=100k, 0x1ce=70k, 399=40k, 0x1d0/0x1d6=450k zen.
-long long __fastcall CalculateInventoryValue_stub(int p1, unsigned int p2, short* p3, int p4, short* p5) {
+long long __fastcall CalculateInventoryValue(int p1, unsigned int p2, short* p3, int p4, short* p5) {
     // 0x004DF330 — Sum item values in inventory grid
     // p1 = unused (fastcall ECX), p2 = unused (fastcall EDX, but reused as temp)
     // p3 = inventory base (short*, stride 0x22 words = 0x44 bytes)

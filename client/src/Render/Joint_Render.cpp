@@ -45,7 +45,8 @@ extern "C" void DbgLogPublic(const char* msg);
 // 2026-05-03: AUTO-SKIP removed. Pool now properly sized in globals.cpp
 // (g_RenderPool_07c608a8 = 100 slots × 0x2f0). DAT_07c608b4 is the +12
 // anchor inside slot[0]. Walk replaced with explicit count.
-void FUN_0046c3e0(void)
+// IDA: Trail_RenderAll (0x0046C3E0)
+void Trail_RenderAll(void)
 
 {
   float fVar1;

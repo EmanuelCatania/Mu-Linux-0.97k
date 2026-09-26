@@ -5,14 +5,14 @@
 #include "functions.h"
 #include "structs.h"
 
-extern "C" DWORD DAT_07eaa128;
-extern void __cdecl FUN_0054158c(void* ptr);
-extern void FUN_004fa5a0(void);
+extern "C" DWORD GoldenArcherOpenType;
+extern void __cdecl operator_delete(void* ptr);
+extern void ClearActionObject(void);
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y) (0)
@@ -120,10 +120,11 @@ void __cdecl FaceNormalize(float v1[3], float v2[3], float v3[3], float Normal[3
     }
 }
 
-bool __cdecl CollisionDetectLineToFace(float pos[3], float target[3], int normalIdx,
-          float localC[3], float* posZ, float* v3, float* v4, float normal[3], char flag) {
-    // 0x00440C90 approx — Test line segment against a triangle face
-    (void)pos; (void)target; (void)normalIdx; (void)localC;
-    (void)posZ; (void)v3; (void)v4; (void)normal; (void)flag;
-    return false;
-}
+// CollisionDetectLineToFace (0x00512D40) vive en Terrain/Terrain_RayCollision.cpp.
+//
+// 2026-09-26: aca habia un STUB que devolvia false con el nombre real, mientras
+// la implementacion completa estaba bajo el nombre CollisionDetectLineToFace.  Su unico
+// consumidor es BMD__CollisionDetectLineToMesh (sub_440BE0), o sea el picking
+// por triangulo de los objetos del mundo: con el stub nunca detectaba impacto.
+// El comentario del stub ademas decia "0x00440C90 approx", que no es esta
+// funcion sino un punto DENTRO de sub_440BE0, su propio caller.

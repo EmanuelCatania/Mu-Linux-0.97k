@@ -8,7 +8,7 @@
 #include "globals.h"
 #include "functions.h"
 // InventoryColor @ 0x004E2420 (~38 lines) — sets GL color by item Color field
-void __cdecl InventoryColor_stub(ITEM* p) {
+void __cdecl InventoryColor(ITEM* p) {
     if (!p) return;
     switch (p->Color) {
     case 0:  glColor3f(1.0f, 1.0f, 1.0f); return;        // white (normal)
@@ -136,7 +136,7 @@ static void SetEquipmentSlotPlaceholderColorForIndex(int slotIdx)
 {
     ITEM* slot = GetPanelEquipmentSourceItem(slotIdx);
     if (IsVisualEquipSlotOccupied(slot)) {
-        InventoryColor_stub(slot);
+        InventoryColor(slot);
     } else {
         glColor3f(1.0f, 1.0f, 1.0f);
     }
@@ -167,7 +167,7 @@ static void SetEquipmentSlotPlaceholderColorForIndex(int slotIdx)
 // que no estaban inicializados con los valores correctos → boxes se pintaban
 // en posiciones equivocadas (cuadro gris al lado de armor que el user reportó).
 // Ahora todas las posiciones son hardcoded literales matching IDA exactamente.
-void __stdcall RenderEquipmentBox_stub(void) {
+void __stdcall RenderEquipmentBox(void) {
     EnableAlphaTest(true);
 
     float sx = (float)(int)DAT_07ea5288;  // InventoryStartX
@@ -206,7 +206,7 @@ void __stdcall RenderEquipmentBox_stub(void) {
     //                                            RenderBitmap(264, v56, v57, 40, 60)
     //   RenderEquipment3D   (0x4E3100):          `syc = v45 + 89.0 - 10.0;`
     // O sea la caja va en +89 y el item se dibuja 10 px más arriba dentro de
-    // ella (que es lo que hace RenderEquipmentPart3D_stub, y eso queda igual).
+    // ella (que es lo que hace RenderEquipmentPart3D, y eso queda igual).
     SetEquipmentSlotPlaceholderColorForIndex(3);
     GL_DrawTexture(0x108, colBody, rowMid, 40.0f, 60.0f, 0.0f, 0.0f, 0.625f, 0.9375f, 1, 1);
 
@@ -238,7 +238,7 @@ void __stdcall RenderEquipmentBox_stub(void) {
 }
 
 // RenderEquipmentPart3D @ 0x004E2E40 (~201 lines) — renders one 3D equipment piece
-void __cdecl RenderEquipmentPart3D_stub(int Index, float sx, float sy, float Width, float Height) {
+void __cdecl RenderEquipmentPart3D(int Index, float sx, float sy, float Width, float Height) {
     if (Index < EQUIPMENT_WEAPON_RIGHT || Index > EQUIPMENT_RING_LEFT) return;
 
     ITEM* src = GetPanelEquipmentSourceItem(Index);
@@ -281,7 +281,7 @@ void __cdecl RenderEquipmentPart3D_stub(int Index, float sx, float sy, float Wid
 // byte 1012 = Wings real, etc) y screen positions desde DAT_ globals con valores
 // distintos a los de IDA. Esto causaba que en la pantalla aparecieran items en
 // posiciones equivocadas (helmet apilado con rings, pendant donde casco, etc).
-void __stdcall RenderEquipment3D_stub(void) {
+void __stdcall RenderEquipment3D(void) {
     if (!CharacterAttribute) return;
 
     float sx = (float)(int)DAT_07ea5288;
@@ -295,101 +295,57 @@ void __stdcall RenderEquipment3D_stub(void) {
     float colPendant = sx + _DAT_00552c14;
     float colRight = sx + _DAT_00552c04;
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(8));
-    RenderEquipmentPart3D_stub(8, colLeft, rowTop, 40.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(8));
+    RenderEquipmentPart3D(8, colLeft, rowTop, 40.0f, 40.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(7));
-    RenderEquipmentPart3D_stub(7, colPendant, rowTop, 60.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(7));
+    RenderEquipmentPart3D(7, colPendant, rowTop, 60.0f, 40.0f);
 
     if (((*(BYTE*)((BYTE*)CharacterAttribute + 11)) & 7) != 3) {
-        InventoryColor_stub(GetPanelEquipmentSourceItem(2));
-        RenderEquipmentPart3D_stub(2, colBody, rowTop, 40.0f, 40.0f);
+        InventoryColor(GetPanelEquipmentSourceItem(2));
+        RenderEquipmentPart3D(2, colBody, rowTop, 40.0f, 40.0f);
     }
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(3));
-    RenderEquipmentPart3D_stub(3, colBody, rowMid - _DAT_00552488, 40.0f, 60.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(3));
+    RenderEquipmentPart3D(3, colBody, rowMid - _DAT_00552488, 40.0f, 60.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(4));
-    RenderEquipmentPart3D_stub(4, colBody, rowBottom, 40.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(4));
+    RenderEquipmentPart3D(4, colBody, rowBottom, 40.0f, 40.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(0));
-    RenderEquipmentPart3D_stub(0, colLeft, rowMid, 40.0f, 60.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(0));
+    RenderEquipmentPart3D(0, colLeft, rowMid, 40.0f, 60.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(1));
-    RenderEquipmentPart3D_stub(1, colRight, rowMid, 40.0f, 60.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(1));
+    RenderEquipmentPart3D(1, colRight, rowMid, 40.0f, 60.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(5));
-    RenderEquipmentPart3D_stub(5, colLeft, rowBottom, 40.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(5));
+    RenderEquipmentPart3D(5, colLeft, rowBottom, 40.0f, 40.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(6));
-    RenderEquipmentPart3D_stub(6, colRight, rowBottom, 40.0f, 40.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(6));
+    RenderEquipmentPart3D(6, colRight, rowBottom, 40.0f, 40.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(9));
-    RenderEquipmentPart3D_stub(9, colRing, rowMid, 20.0f, 20.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(9));
+    RenderEquipmentPart3D(9, colRing, rowMid, 20.0f, 20.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(10));
-    RenderEquipmentPart3D_stub(10, colRing, rowBottom, 20.0f, 20.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(10));
+    RenderEquipmentPart3D(10, colRing, rowBottom, 20.0f, 20.0f);
 
-    InventoryColor_stub(GetPanelEquipmentSourceItem(11));
-    RenderEquipmentPart3D_stub(11, colPendant, rowBottom, 20.0f, 20.0f);
+    InventoryColor(GetPanelEquipmentSourceItem(11));
+    RenderEquipmentPart3D(11, colPendant, rowBottom, 20.0f, 20.0f);
 
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
-// RenderItemsBoxes @ 0x004E37B0 (~49 lines) — render 2D item grid boxes
-void __cdecl RenderItemsBoxes_stub(float fPosX, float fPosY, DWORD Inventory, int iMaxWidth, int iMaxHeight) {
-    // 0x004E37B0 — render 2D item grid boxes
-    // For each cell: InventoryColor sets GL color, then RenderBitmap draws the cell background.
-    // Empty cell (Type==-1) uses texture 0x115 with UV 1.0x1.0.
-    // Occupied cell uses texture 0x116 with UV 0.625x0.667.
-    // Cell size: 20x20 px, stride 0x14 (20) px per cell.
-    // Row stride in Inventory: each row is iMaxWidth ITEMs = iMaxWidth * sizeof(ITEM).
-    // Ghidra shows Inventory += 0x220 per row => sizeof(ITEM)*iMaxWidth varies but Ghidra
-    // hardcodes 0x220 based on a specific grid width. We use pointer arithmetic from ITEM*.
-
-    if (iMaxHeight <= 0) return;
-
-    int pixelY = 0;
-    int rowsLeft = iMaxHeight;
-    do {
-        if (0 < iMaxWidth) {
-            int pixelX = 0;
-            int colsLeft = iMaxWidth;
-            ITEM* p = (ITEM*)Inventory;
-            int gridCol = 0;
-            do {
-                int Texture;
-                float uWidth, vHeight;
-                if (p->Type == -1) {
-                    InventoryColor_stub(p);
-                    vHeight = 1.0f;
-                    uWidth = 1.0f;
-                    Texture = 0x115;
-                } else {
-                    InventoryColor_stub(p);
-                    vHeight = 0.6666667f;
-                    uWidth = 0.625f;
-                    Texture = 0x116;
-                }
-                GL_DrawTexture(Texture, (float)pixelX + fPosX, (float)pixelY + fPosY,
-                             20.0f, 20.0f, 0.0f, 0.0f, uWidth, vHeight, '\x01', '\x01');
-                p = p + 1;
-                ++gridCol;
-                pixelX = pixelX + 0x14;
-                colsLeft = colsLeft - 1;
-            } while (colsLeft != 0);
-        }
-        pixelY = pixelY + 0x14;
-        Inventory = Inventory + (iMaxWidth * (int)sizeof(ITEM));
-        rowsLeft = rowsLeft - 1;
-    } while (rowsLeft != 0);
-}
+// RenderItemsBoxes vive en Render/HUD_Pass6.cpp.
+//
+// 2026-09-26: aca habia una copia bajo el nombre RenderItemsBoxes.  Las dos
+// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.
 
 // RenderItems3D @ 0x004E38B0 (~130 lines) — render 3D item models in inventory grid
 // For each non-empty cell: call RenderItem3D with item dimensions from ItemAttribute.
 // If MixItems + _MixState active (1..0x32): render sparkle effects (textures 0x4ce/0x4cf/0x47e).
 // Also renders "new item" cyan glow for items marked Color=='c'.
-void __cdecl RenderItems3D_stub(float p1, float p2, short* p3, int p4, int p5, char p6) {
+void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p6) {
     // 0x004E38B0 — Render 3D item models in inventory grid
     // p1=posX, p2=posY, p3=inventory array (short*, stride 0x22 words=0x44 bytes)
     // p4=gridWidth, p5=gridHeight, p6=mode (0=normal 3D render, 1=show arrow count + mix sparkles)
@@ -431,7 +387,7 @@ void __cdecl RenderItems3D_stub(float p1, float p2, short* p3, int p4, int p5, c
                             if (p6 != '\0' && itemType > 0x1bf && itemType < 0x1c9 &&
                                 cell->Durability > 1) {
                                 glColor3f(1.0f, 0.9f, 0.7f);
-                                RenderNumber2D_stub(x + _DAT_005527dc, y,
+                                RenderNumber2D(x + _DAT_005527dc, y,
                                     (unsigned int)cell->Durability, 9.0f, 10.0f);
                             }
                         }
@@ -454,10 +410,10 @@ void __cdecl RenderItems3D_stub(float p1, float p2, short* p3, int p4, int p5, c
                             float fy = (float)(r5 % 0x14) + y;
                             float mixRot = (float)((__int64)DAT_05826e08 % 100) * 20.0f;
                             glColor3f(colorR, colorG, 0.2f);
-                            FUN_005126e0(0x4ce, fx, fy, sparkSize, sparkSize, 0);
-                            FUN_005126e0(0x4ce, fx, fy, sparkSize, sparkSize, mixRot);
-                            FUN_005126e0(0x4cf, fx, fy, sparkSize * _DAT_00552540, sparkSize * _DAT_00552540, mixRot);
-                            FUN_005126e0(0x47e, fx, fy, sparkSize * _DAT_005527d0, sparkSize * _DAT_005527d0, 0);
+                            GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, 0);
+                            GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, mixRot);
+                            GL_DrawRotatedRect(0x4cf, fx, fy, sparkSize * _DAT_00552540, sparkSize * _DAT_00552540, mixRot);
+                            GL_DrawRotatedRect(0x47e, fx, fy, sparkSize * _DAT_005527d0, sparkSize * _DAT_005527d0, 0);
                             GL_ResetState();  // DisableAlphaBlend
                         }
                     }

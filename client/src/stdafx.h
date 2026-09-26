@@ -54,15 +54,14 @@ static inline double    fsin(double x) { return sin(x); }
 #endif
 
 // -----------------------------------------------------------------------
-// Game state (DAT_005615c0)
+// Game state (SceneFlag)
 // State 1 = Intro (Webzen logo)
 // State 2 = Login
 // State 3 = Loading
 // State 4 = CharSelect
 // State 5 = InGame
 // -----------------------------------------------------------------------
-extern int g_GameState;   // 0x005615c0
-#define DAT_005615c0 g_GameState
+extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 
 // Global HWND (DAT_055c9ffc)
 extern HWND g_hWnd;       // 0x055c9ffc

@@ -163,12 +163,12 @@ void EncryptSend(BYTE* buf, int len)
 // first byte is then the encrypted sentinel (41/42/47/44), so the plaintext
 // header test below still guarantees exactly one MuEmu transform.
 // =============================================================================
-// DAT_055ca168 already declared in globals.h with C++ linkage.
+// SocketClientSocket already declared in globals.h with C++ linkage.
 // MuEmu_send_hook callable as extern "C" symbol; body is not in the C block
 // to avoid name-mangling vs linkage conflicts.
 extern "C" int __stdcall MuEmu_send_hook(SOCKET s, const char* buf, int len, int flags)
 {
-    if (s == (SOCKET)DAT_055ca168 && MuEmu::IsActive() && len > 0 && buf) {
+    if (s == (SOCKET)SocketClientSocket && MuEmu::IsActive() && len > 0 && buf) {
         BYTE first = (BYTE)buf[0];
         // Plain MuEmu header? → not yet encrypted.
         if (first == 0xC1 || first == 0xC2 || first == 0xC3 || first == 0xC4) {

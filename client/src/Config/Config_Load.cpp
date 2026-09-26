@@ -25,7 +25,7 @@
 //
 // Config_ReadServerAddr @ 0x0041E800
 //   Reads server IP from config.ini using key 0x75 ('u') and port using 0x70 ('p').
-//   Result stored at: PTR_s_connect_muonline_co_kr_005615b8 (IP) and DAT_005615bc (port).
+//   Result stored at: PTR_s_connect_muonline_co_kr_005615b8 (IP) and g_ServerPort (port).
 //   Patchs.cpp overrides these:
 //     MemoryCpy(0x00558ED8, serverIP, size);
 //     SetWord(0x005615BC, serverPort);
@@ -69,7 +69,7 @@ int g_CfgResolution = -1;
 // previo a esa llamada (y el correcto para 640x480).
 float _DAT_055c9b70 = 1.0f;  // g_fScreenRate_x
 float _DAT_055c9b74 = 1.0f;  // g_fScreenRate_y
-char  ConfigLoginVersion[12] = {}; // IDA: DAT_055c9bac — config.ini [LOGIN] Version string
+char  ConfigLoginVersion[12] = {}; // IDA: m_ExeVersion — config.ini [LOGIN] Version string
 
 // Forward declarations
 // Path_GetBasename  @ 0x00412BE0 — extracts filename from a full path/cmdline string
@@ -95,8 +95,8 @@ int Config_Load(void)
     strcat_s(configPath, MAX_PATH, "config.ini");
 
     // --- 2. Read [LOGIN] Version from config.ini ---
-    //   GetPrivateProfileStringA("LOGIN", "Version", "", DAT_055c9bac, 11, configPath)
-    //   Result: 10-char version string (e.g. "1.00h") at DAT_055c9bac
+    //   GetPrivateProfileStringA("LOGIN", "Version", "", m_ExeVersion, 11, configPath)
+    //   Result: 10-char version string (e.g. "1.00h") at m_ExeVersion
     GetPrivateProfileStringA("LOGIN", "Version", "", ConfigLoginVersion, 11, configPath);
 
     // --- 3. Extract exe name + read PE version ---
@@ -121,7 +121,7 @@ int Config_Load(void)
         // Ghidra @ 0x0041e272: RegQueryValueExA(hKey, lpValueName_00559450, NULL, NULL,
         //                       (LPBYTE)0x055c9ba0, &DStack_330=0xb)
         // Usado luego por MoveLogInScene para prefilear DAT_07db8710 (InputText[0]=username).
-        // ¡OJO! En el port anterior se escribía a DAT_055c9bac pisando la versión de config.ini.
+        // ¡OJO! En el port anterior se escribía a m_ExeVersion pisando la versión de config.ini.
         DWORD dwSize = 11;
         RegQueryValueExA(hKey, "ID", NULL, NULL, (LPBYTE)lpData_055c9ba0, &dwSize);
 
@@ -255,7 +255,7 @@ static int Path_GetBasename(char* outBuf, char* fullPath)
 // outVer[3] = LOWORD(FileVersionLS)  — revision
 //
 // Returns 1 on success, 0 on failure.
-// Uses operator_new / operator_delete (FUN_0054158c) for the info buffer.
+// Uses operator_new / operator_delete for the info buffer.
 // lpSubBlock_005592d0 = "\\" (root query, retrieves VS_FIXEDFILEINFO).
 // -----------------------------------------------------------------------
 static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
@@ -315,7 +315,7 @@ static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
 //   Config_ReadServerAddr(this, param_3, &DAT_055c9e04, &port)
 //   If success:
 //     PTR_s_connect_muonline_co_kr_005615b8 = &DAT_055c9e04  (server IP)
-//     DAT_005615bc = port
+//     g_ServerPort = port
 //
 // Helpers:
 //   Config_ReadByEncKey @ 0x0041e450 — reads config.ini value by obfuscated key byte
@@ -339,7 +339,7 @@ static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
 //
 // Retorna 1 si encontró IP+puerto válidos (y los escribió en outIP/outPort),
 // 0 en caso contrario (el caller mantiene los valores por defecto —
-// s_connect_muonline_co_kr_005615b8 / DAT_005615bc).
+// s_connect_muonline_co_kr_005615b8 / g_ServerPort).
 int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned short* outPort)
 {
     (void)pConfig; (void)lpCmdLine;
@@ -407,10 +407,10 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
                     // o la clave saldria bien y el login fallaria igual.
                     // Se rellena con ceros porque el server compara 16 bytes
                     // contra su m_ServerSerial[17], que tambien viene en cero.
-                    memset(DAT_00559624, 0, sizeof(DAT_00559624));
+                    memset(Serial, 0, sizeof(Serial));
                     int serLen = (int)strlen(cfgServerSerial);
-                    if (serLen > (int)sizeof(DAT_00559624)) serLen = (int)sizeof(DAT_00559624);
-                    memcpy(DAT_00559624, cfgServerSerial, serLen);
+                    if (serLen > (int)sizeof(Serial)) serLen = (int)sizeof(Serial);
+                    memcpy(Serial, cfgServerSerial, serLen);
                 }
                 else if (_stricmp(key, "ClientVersion") == 0) {
                     // El server compara los 5 bytes contra su m_ServerVersion
@@ -435,7 +435,7 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
                         // El paquete lleva la version ofuscada: el cliente
                         // guarda (v[i] + i + 1) y el receptor hace (b[i] - i - 1).
                         for (int i = 0; i < 5; i++)
-                            DAT_0055961c[i] = (BYTE)(v5[i] + i + 1);
+                            Version[i] = (BYTE)(v5[i] + i + 1);
 
                         char line[96];
                         wsprintfA(line, "server.cfg: ClientVersion='%s'", v5);

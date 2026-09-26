@@ -31,9 +31,9 @@
 //
 //   Nombre           | Address    | Tipo           | Contenido
 //   ─────────────────┼────────────┼────────────────┼──────────────────────────────
-//   DAT_080bb2b4     | 0x80BB2B4  | byte[65536]    | texture_type_id por tile
-//   DAT_080ab2b4     | 0x80AB2B4  | byte[65536]    | atributo secundario por tile
-//   DAT_0834b608     | 0x834B608  | float[65536]   | altura por tile (de .att)
+//   TerrainMappingLayer1     | 0x80BB2B4  | byte[65536]    | texture_type_id por tile
+//   TerrainMappingLayer2     | 0x80AB2B4  | byte[65536]    | atributo secundario por tile
+//   TerrainMappingAlpha     | 0x834B608  | float[65536]   | altura por tile (de .att)
 //   DAT_080cb2cc     | 0x80CB2CC  | float[65536]   | altura por tile (de TerrainHeight)
 //   DAT_0838b800     | 0x838B800  | uint[270]      | paleta de texturas (IDs de OZJ)
 //   DAT_07feb288     | 0x7FEB288  | float[3×65536] | normales por tile (XYZ)
@@ -56,9 +56,9 @@
 //   Offset      | Tamaño   | Contenido
 //   ────────────┼──────────┼────────────────────────────────────────────────────
 //   0x00000     | 1 byte   | version byte (ignorado)
-//   0x00001     | 65.536 B | tile_attrib1 (256×256 bytes) → DAT_080bb2b4
-//   0x10001     | 65.536 B | tile_attrib2 (256×256 bytes) → DAT_080ab2b4
-//   0x20001     | 65.536 B | height bytes (256×256) → DAT_0834b608 (× height_scale1)
+//   0x00001     | 65.536 B | tile_attrib1 (256×256 bytes) → TerrainMappingLayer1
+//   0x10001     | 65.536 B | tile_attrib2 (256×256 bytes) → TerrainMappingLayer2
+//   0x20001     | 65.536 B | height bytes (256×256) → TerrainMappingAlpha (× height_scale1)
 //
 //   Lectura: loops de 0x4000 dwords (4 bytes por dword = 65536 bytes por sección).
 //   height_scale1 = DAT_00552b70
@@ -74,7 +74,7 @@
 //   0x438       | 65.536 B | height bytes (256×256) → DAT_080cb2cc (× height_scale2)
 //
 //   Si DAT_0055a7c4 != 0: skip 4 bytes al inicio (header comprimido).
-//   Si DAT_0055a7c4 == 0: aplica FUN_00529130 (decompression/CRC).
+//   Si DAT_0055a7c4 == 0: aplica SaveImage (decompression/CRC).
 //   height_scale2 = DAT_005528f0
 //
 //   Path: construido a partir de DAT_0055a79c (prefix) + base_name + DAT_0055a798 (suffix)
@@ -90,9 +90,9 @@
 //
 //   void Terrain_Clear():
 //     Para cada i in 0..65535:
-//       DAT_080bb2b4[i] = 0               // attrib1 = 0 (sin textura)
-//       DAT_080ab2b4[i] = 0xFF            // attrib2 = 0xFF (por defecto)
-//       DAT_0834b608[i] = 0.0f           // height = nivel cero
+//       TerrainMappingLayer1[i] = 0               // attrib1 = 0 (sin textura)
+//       TerrainMappingLayer2[i] = 0xFF            // attrib2 = 0xFF (por defecto)
+//       TerrainMappingAlpha[i] = 0.0f           // height = nivel cero
 //       DAT_0810b2cc[i+1] = (rand() & 3) * DAT_005528dc  // ruido aleatorio
 //
 //   Nota: DAT_0810b2cc se inicializa con 0..3 * scale → variación de textura.
@@ -111,16 +111,16 @@
 //
 //     // Sección 1: attrib1 (256×256 bytes como dwords)
 //     src = buffer + 1
-//     for 0x4000 veces: DAT_080bb2b4[i] = *(dword*)src; src += 4
+//     for 0x4000 veces: TerrainMappingLayer1[i] = *(dword*)src; src += 4
 //
 //     // Sección 2: attrib2
 //     src = buffer + 0x10001
-//     for 0x4000 veces: DAT_080ab2b4[i] = *(dword*)src; src += 4
+//     for 0x4000 veces: TerrainMappingLayer2[i] = *(dword*)src; src += 4
 //
 //     // Sección 3: heights → float
 //     src = buffer + 0x20001
-//     for cada float en DAT_0834b608 (65536 entradas):
-//       DAT_0834b608[i] = (float)*src++ * DAT_00552b70
+//     for cada float en TerrainMappingAlpha (65536 entradas):
+//       TerrainMappingAlpha[i] = (float)*src++ * DAT_00552b70
 //
 //     delete buffer
 //     return true
@@ -142,7 +142,7 @@
 //     src = buffer
 //     for 0x10E veces: DAT_0838b800[i] = *(dword*)src; src += 4
 //
-//     if (DAT_0055a7c4 == 0): FUN_00529130(4, DAT_0055a798, param_1, buffer, 0x10438)
+//     if (DAT_0055a7c4 == 0): SaveImage(4, DAT_0055a798, param_1, buffer, 0x10438)
 //
 //     // Heights → float (256×256 = 65536 entradas)
 //     src = buffer + 0x438
@@ -153,7 +153,7 @@
 //     delete buffer
 //     return true
 //
-//   FUN_00529130 @ 0x00529130 = Terrain_Decompress o Terrain_CRC_Check
+//   SaveImage @ 0x00529130 = Terrain_Decompress o Terrain_CRC_Check
 //
 // ── TERRAIN_COMPUTENORMALS (0x004f70b0) ───────────────────────────────────────
 //
@@ -189,7 +189,7 @@
 //
 //   void Terrain_FrameUpdate():
 //     // 1. Copia colores iluminados al buffer de viewport actual
-//     Para tiles (x,y) en cámara [DAT_0839bc90..DAT_0839bc94+3]:
+//     Para tiles (x,y) en cámara [FrustrumBoundMinX_1..FrustrumBoundMinY_1+3]:
 //       DAT_081cb608[idx*3..+2] = DAT_0828b608[tile_idx*3..+2]
 //
 //     // 2. Calcula ángulo solar (ciclo día/noche)
@@ -202,17 +202,17 @@
 //     // 3. Anima agua (ondas sinusoidales)
 //     Para tiles visibles en viewport:
 //       DAT_07eab200[tile_idx] = sin(tile_col * DAT_00552660 + sun_angle) * DAT_00552488
-//       (Para g_GameSubState==8 (Devias?): usa DAT_00552598 en vez de DAT_00552660)
+//       (Para World==8 (Devias?): usa DAT_00552598 en vez de DAT_00552660)
 //
-//   DAT_0839bc90  — tile X cámara (columna izquierda visible)
-//   DAT_0839bc94  — tile Y cámara (fila superior visible)
+//   FrustrumBoundMinX_1  — tile X cámara (columna izquierda visible)
+//   FrustrumBoundMinY_1  — tile Y cámara (fila superior visible)
 //   DAT_083a3ff0  — modo ciclo día/noche (0=normal, 1=rápido)
 //   DAT_07eab200  — water wave offsets (modifica altura Z del vertex de agua)
 //
 // ── TERRAIN_HEIGHATATPOS (0x004f7500) ─────────────────────────────────────────
 //
 //   float Terrain_HeightAtPos(float world_x, float world_y):
-//     // Solo válido con g_GameState == 5
+//     // Solo válido con SceneFlag == 5
 //     col = (int)world_x  (tile column)
 //     row = (int)world_y  (tile row)
 //     frac_x = world_x - col
@@ -239,7 +239,7 @@
 //     Si DAT_0838bc44 == 2 (agua):
 //       Si las 4 alturas del tile <= DAT_00552580 (= bajo el agua):
 //         Si DAT_0814b2dc == 0 && no PvP sub-estado:
-//           texture_id = DAT_080bb2b4[tile_idx] + 0x32  // textura de agua
+//           texture_id = TerrainMappingLayer1[tile_idx] + 0x32  // textura de agua
 //           GL_BindTextureSlot(texture_id)
 //           glTexCoord2f(uv_x, ...)
 //           // Agrega offset de ola (DAT_07eab200) a los vértices Y
@@ -248,15 +248,15 @@
 //
 //     Sino (terreno normal):
 //       Si alguna altura del tile < 0 (borde agua-tierra):
-//         texture_id = DAT_080bb2b4[tile_idx]  // textura desde attrib1
+//         texture_id = TerrainMappingLayer1[tile_idx]  // textura desde attrib1
 //         Si attrib1 == 5: es_borde_agua = true
 //       Sino:
-//         texture_id = DAT_080ab2b4[tile_idx]  // usa attrib2
+//         texture_id = TerrainMappingLayer2[tile_idx]  // usa attrib2
 //
 //       TerrainTile_SetupVertices(texture_id, tile_x, tile_y, es_borde_agua, 0)
 //       TerrainTile_Draw(texture_id)
 //
-//       Si g_GameSubState==7 (Atlans bajo el agua) && attrib2==5 && altura>0:
+//       Si World==7 (Atlans bajo el agua) && attrib2==5 && altura>0:
 //         // Renderiza superficie del agua sobre el tile
 //         animated_idx = DAT_0839bc8c + 0x1E  // frame animado (mod 32 + 30)
 //         TerrainTile_SetupVertices(animated_idx, ...)
@@ -264,11 +264,11 @@
 //
 //       Si tile tiene borde agua-tierra && alguna altura>0:
 //         // Renderiza capa de transición tierra-agua
-//         texture_id = DAT_080ab2b4[tile_idx]
+//         texture_id = TerrainMappingLayer2[tile_idx]
 //         TerrainTile_SetupVertices(texture_id, ...)
 //         TerrainTile_DrawTransition(texture_id)
 //
-//   DAT_080bb2b4 tile attrib1 values known:
+//   TerrainMappingLayer1 tile attrib1 values known:
 //     0..N  = índice de tipo de terreno (referencia a paleta DAT_0838b800)
 //     5     = borde de agua (usa lógica especial)
 //
@@ -298,7 +298,7 @@
 //     obj_ptr = &DAT_081cb2ed
 //     while (obj_ptr < 0x81cb60d):
 //       if obj_ptr[-5] != 0:    // is_visible flag
-//         FUN_004f8980(
+//         RenderTerrainBitmap(
 //           8,                  // tipo de objeto (8 = static prop)
 //           obj_ptr[-1],        // object_type
 //           *obj_ptr,           // object_subtype
@@ -315,19 +315,19 @@
 // ── TERRAIN_RENDER (0x004fd800) ───────────────────────────────────────────────
 //
 //   void Terrain_Render():
-//     color_underwater = (g_GameSubState == 10) ? 0xC1200000 : 0.0f
+//     color_underwater = (World == 10) ? 0xC1200000 : 0.0f
 //
 //     Itera 8×8 bloques de tiles (local_20 y local_24):
 //       Para cada bloque (tile_x=8, tile_y=8..):
-//         uVar3 = FUN_004f8ff0(tile_x, tile_y, -180.0)  // frustum cull
+//         uVar3 = TestFrustrum2D(tile_x, tile_y, -180.0)  // frustum cull
 //         Si visible || CameraTopViewEnabled:
 //           Para objetos en lista de ese bloque:
-//             obj[+0x160] = FUN_004f8ff0(...)  // cull por objeto
+//             obj[+0x160] = TestFrustrum2D(...)  // cull por objeto
 //             Si visible: TerrainTile_Render(...)
-//             Si g_GameSubState==2 && entity_type==100:
+//             Si World==2 && entity_type==100:
 //               // Render entity especial (NPC marker?) con CharData check
 //
-//   FUN_004f8ff0 @ 0x004f8ff0 = Frustum_TestSphere(x, y, z) → visible
+//   TestFrustrum2D @ 0x004f8ff0 = Frustum_TestSphere(x, y, z) → visible
 //   CameraTopViewEnabled = force_render_all flag (debug)
 //
 // ── PIPELINE DE CARGA COMPLETO ────────────────────────────────────────────────
@@ -353,7 +353,7 @@
 //   DAT_00552cb0  — scale_objects (para objetos estáticos)
 //   DAT_00552488  — water_amplitude (amplitud de olas sinusoidales)
 //   DAT_00552660  — water_freq (frecuencia de ola, modo normal)
-//   DAT_00552598  — water_freq2 (frecuencia alternativa, g_GameSubState==8)
+//   DAT_00552598  — water_freq2 (frecuencia alternativa, World==8)
 //   DAT_00552580  — 0.0f (nivel mínimo / superficie del agua)
 //   DAT_0055256c  — 1.0f (máximo normalizado)
 //   DAT_0055a7c4  — compressed_flag (0=no comprimido, 1=comprimido)
@@ -397,7 +397,7 @@
 // moved from stubs.cpp lines 9775-10173 (399 lines).
 // =============================================================================
 // ── Terrain helpers ───────────────────────────────────────────────────────────
-// FUN_004f6c60 @ 0x004F6C60 — Terrain_Clear: resets tile/height/noise arrays.
+// InitTerrainMappingLayer @ 0x004F6C60 — Terrain_Clear: resets tile/height/noise arrays.
 //
 // BUG-FIX 2026-04-28: el decomp Ghidra usaba `(int)&DAT_xxxx + iVar2` y
 // `*(float*)(iVar2 * 4 + 0x810b2c8)` — accesos por dirección absoluta /
@@ -407,16 +407,16 @@
 // los símbolos a arrays reales (globals.cpp) y este loop a indexación normal.
 //
 // Layout (256x256 tile grid = 65536 entries):
-//   DAT_080bb2b4[i] = 0     (TileTex1 byte)
-//   DAT_080ab2b4[i] = 0xFF  (TileTex2 byte)
-//   DAT_0834b608[i] = 0.0f  (TerrainHeight)
+//   TerrainMappingLayer1[i] = 0     (TileTex1 byte)
+//   TerrainMappingLayer2[i] = 0xFF  (TileTex2 byte)
+//   TerrainMappingAlpha[i] = 0.0f  (TerrainHeight)
 //   DAT_0810b2cc[i] = (rand() & 3) * scale  (TerrainNoise per-tile UV jitter)
 // IDA: FUN_004F6C60
 void __cdecl Terrain_Clear(void) {
     for (int i = 0; i < 0x10000; ++i) {
-        DAT_080bb2b4[i] = 0;
-        DAT_080ab2b4[i] = 0xff;
-        DAT_0834b608[i] = 0.0f;
+        TerrainMappingLayer1[i] = 0;
+        TerrainMappingLayer2[i] = 0xff;
+        TerrainMappingAlpha[i] = 0.0f;
         unsigned int uVar1 = (unsigned int)rand() & 3u;     // 0..3
         DAT_0810b2cc[i]   = (float)(int)uVar1 * _DAT_005528dc;
     }
@@ -464,10 +464,10 @@ void __cdecl CreateTerrainNormal(void) {
     }
 }
 
-// FUN_004f71c0 @ 0x004F71C0 — Terrain_FinalizeLighting: multiplies normal buffer
+// IDA: CreateTerrainLight (0x004F71C0)
 // by lightmap (DAT_07eeb238) and clamps into DAT_0828b608.
 // IDA: FUN_004F71C0
-void __cdecl Terrain_FinalizeLighting(void) {
+void __cdecl CreateTerrainLight(void) {
     int iVar4 = 0;
     do {
         int iVar6 = 0x100;
@@ -537,7 +537,7 @@ uint __cdecl OpenTerrainHeight(char *filename)
     FILE *fp = fopen(FileName, "rb");
     if (!fp) {
         crt_sprintf(Text, "%s file not found.", FileName);
-        FUN_00405540(&DAT_055c9bf0, Text);
+        CErrorReport_Write(&DAT_055c9bf0, Text);
         if (g_hWnd) {
             MessageBoxA(g_hWnd, Text, nullptr, 0);
             SendMessageA(g_hWnd, WM_DESTROY, 0, 0);
@@ -567,28 +567,28 @@ uint __cdecl OpenTerrainHeight(char *filename)
     return 1;
 }
 
-// FUN_00529130 @ 0x00529130 — SaveImage (relabeled audit #10; was mislabeled
+// SaveImage @ 0x00529130 — SaveImage (relabeled audit #10; was mislabeled
 // "Terrain_Decompress / Terrain_CRC_Check"). Persists screenshot/texture data
 // to disk depending on `mode`.  Stub passthrough.
-void __cdecl FUN_00529130(int mode, int ext, int path, int buf)
+void __cdecl SaveImage(int mode, int ext, int path, int buf)
 {
     (void)mode; (void)ext; (void)path; (void)buf;
 }
 
-// FUN_004f9c20 @ 0x004F9C20 — Terrain_SetupCulling: initialises raycast/frustum globals.
-void __cdecl FUN_004f9c20(void) {
+// Terrain_SetupCulling @ 0x004F9C20 — Terrain_SetupCulling: initialises raycast/frustum globals.
+void __cdecl Terrain_SetupCulling(void) {
     _DAT_0838b60a = 0x47e;                  // short: horizon value
     *(DWORD*)&_DAT_0838b614 = 0x41000000u;  // float bits: 8.0f
     *(DWORD*)&_DAT_0838b710 = 0x3f800000u;  // float bits: 1.0f
 }
 
-// FUN_00529360 @ 0x00529360 — OpenJpegBuffer / Texture_LoadToBuf
+// OpenJpegBuffer @ 0x00529360 — OpenJpegBuffer / Texture_LoadToBuf
 // Loads OZJ/JPEG file, decompresses, converts each pixel component to float
 // using _DAT_00552b70 (1/255 normalization), stores into float* buffer at dst.
 // Output: 3 floats per pixel (R, G, B), rows stored bottom-up (flipped).
-void __cdecl FUN_00529360(char *path, int dst)
+void __cdecl OpenJpegBuffer(char *path, int dst)
 {
-    // --- Path construction (same logic as FUN_00529740) ---
+    // --- Path construction (same logic as OpenJPG) ---
     char full_path[256];
     if (DAT_0055a7c4 == '\0') {
         strcpy(full_path, (const char*)DAT_0055a7a4);
@@ -676,10 +676,10 @@ void __cdecl FUN_00529360(char *path, int dst)
     fclose(f);
 }
 
-// FUN_00454b00 @ 0x00454B00 — Entity_GetMoveRate(entity_ptr) → float10
+// CharacterMoveSpeed @ 0x00454B00 — Entity_GetMoveRate(entity_ptr) → float10
 // Returns movement speed rate based on entity state (+0x300 stamina, +0x2b8 class, +0x84 flag).
-// FUN_00454b00 (IDA-activated, was Ghidra stub)
-float10 __cdecl FUN_00454b00(int c)
+// IDA: CharacterMoveSpeed (0x00454B00)
+float10 __cdecl CharacterMoveSpeed(int c)
 {
   double result; // st7
   short v2; // dx
@@ -722,12 +722,12 @@ LABEL_12:
 // ported from IDA raw/0040A8F0_sub_40A8F0.c
 // Draws one edge of a physics/collision hull as a textured glBegin(GL_QUADS) strip,
 // using texture 494 and alpha-blend-minus. Widens the edge into a thin billboard
-// quad by jittering perpendicular via FUN_004f9d20/FUN_004f9d60 (cross+normalize).
-// Caller FUN_0040a860 passes 3 args (obj, p1, p2); IDA disassembled with 5 where
+// quad by jittering perpendicular via Vec3_Cross/Vec3_Normalize (cross+normalize).
+// Caller VTable_Release passes 3 args (obj, p1, p2); IDA disassembled with 5 where
 // a4/a5 were unreferenced stack slots — safely omitted here.
 void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     // Forward-declares (defined later in this TU, not in functions.h).
-    extern void __cdecl FUN_004f9d20(float *a, float *b, float *out);
+    extern void __cdecl Vec3_Cross(float *a, float *b, float *out);
     char *this_ = (char *)obj;
     float v27, v28, v29, v30, v31, v32, v33, v34, v35;
     float v24, v25, v26;
@@ -742,7 +742,7 @@ void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     v29 = p2[2] - p1[2];
     {
         float tmp[3] = { v27, v28, v29 };
-        v6 = (double)FUN_004f9c40(tmp);
+        v6 = (double)Vec3_Length(tmp);
     }
     float p1y = p1[1];
     float p1z = p1[2];
@@ -770,13 +770,13 @@ void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     GL_SetBlendSrcAlpha();                // EnableAlphaBlendMinus
     {
         float d[3] = { v27, v28, v29 };
-        float cross[3] = { 0.0f, 0.0f, 0.0f };   // FUN_004f9d20 lo escribe (out param);
+        float cross[3] = { 0.0f, 0.0f, 0.0f };   // Vec3_Cross lo escribe (out param);
                                                  // inicializarlo saca el C4700 que tapaba
                                                  // los avisos reales.
-        FUN_004f9d20((float *)(this_ + 12), d, cross);
+        Vec3_Cross((float *)(this_ + 12), d, cross);
         v24 = cross[0]; v25 = cross[1]; v26 = cross[2];
         float nrm[3] = { v24, v25, v26 };
-        FUN_004f9d60(nrm);
+        Vec3_Normalize(nrm);
         v24 = nrm[0]; v25 = nrm[1]; v26 = nrm[2];
     }
     v24 = v24 * 10.0f;

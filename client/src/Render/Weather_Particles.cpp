@@ -1,9 +1,9 @@
-// Weather_Particles.cpp — IDA: FUN_0046cc80 @ 0x0046cc80 — WeatherParticles_Update
+// Weather_Particles.cpp — IDA: MoveLeaves @ 0x0046cc80 — WeatherParticles_Update
 // Per-frame weather particle pool tick.
 //
 // Iterates a particle pool at DAT_07c5ab5c (pointer to base), stride 0x70 bytes
 // (pfVar10 advances by 0x1c floats = 0x70 bytes per entry).
-// Active count = iVar9, computed from g_GameSubState.
+// Active count = iVar9, computed from World.
 //
 // Particle entry layout (relative to pfVar10 at offset +0x44 in entry):
 //   pfVar10[-0xb]  char   active flag (0=free, nonzero=alive)
@@ -24,7 +24,7 @@
 //   pfVar10[0xb..d] float angular velocity xyz (butterfly/bubble)
 //   pfVar10[0xe..10] float origin xyz (butterfly/bubble start pos)
 //
-// g_GameSubState values (DAT_0055a7ac):
+// World values (World):
 //   0  = ServerSelect — butterfly/bubble floating around origin, deactivated at max dist
 //   2  = rain (light)  — falling drops, 1/10 chance heavy (drop_weight=10)
 //   3,7 = InGame map    — butterfly/bubble (same as 0)
@@ -53,7 +53,7 @@
 
 void WeatherParticles_Update(void)
 {
-    int iVar7 = DAT_0055a7ac;   // g_GameSubState
+    int iVar7 = World;   // World
 
     // ── Intensity ramp for sub-state 10 (dense rain) ─────────────────────────
     if (iVar7 == 10)
@@ -222,7 +222,7 @@ void WeatherParticles_Update(void)
                 pfVar10[-7] += pfVar10[8];
                 pfVar10[-6] += pfVar10[9];
                 pfVar10[-5] += pfVar10[10];
-                float terZ = FUN_004f7500(pfVar10[-7], pfVar10[-6]);
+                float terZ = RequestTerrainHeight(pfVar10[-7], pfVar10[-6]);
                 if (pfVar10[-5] < terZ) {
                     *(char *)(pfVar10 - 0xb) = 0;
                     pfVar10[-5] = terZ + (float)_DAT_00552488;
@@ -243,7 +243,7 @@ void WeatherParticles_Update(void)
                     pfVar10[-7] += pfVar10[8];
                     pfVar10[-6] += pfVar10[9];
                     pfVar10[-5] += pfVar10[10];
-                    float terZ = FUN_004f7500(pfVar10[-7], pfVar10[-6]);
+                    float terZ = RequestTerrainHeight(pfVar10[-7], pfVar10[-6]);
                     if (pfVar10[-5] < terZ) {
                         *(char *)(pfVar10 - 0xb) = 0;
                         pfVar10[-5] = terZ + (float)_DAT_00552488;
@@ -286,7 +286,7 @@ void WeatherParticles_Update(void)
             else
             {
                 // Other states: fall if above terrain; fade alpha when on ground
-                float terZ = FUN_004f7500(pfVar10[-7], pfVar10[-6]);
+                float terZ = RequestTerrainHeight(pfVar10[-7], pfVar10[-6]);
                 if (terZ < pfVar10[-5]) {
                     // still falling
                     unsigned int ur;
@@ -314,6 +314,6 @@ void WeatherParticles_Update(void)
 
         pfVar10 += 0x1c;
         local_d4++;
-        iVar7 = DAT_0055a7ac;
+        iVar7 = World;
     } while (local_d4 < iVar9);
 }

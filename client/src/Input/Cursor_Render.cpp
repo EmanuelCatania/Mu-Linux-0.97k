@@ -5,11 +5,11 @@
 #include "globals.h"
 #include "functions.h"
 
-// IDA: FUN_004bffa0 @ 0x004BFFA0 — Cursor_Render.
+// IDA: RenderCursor @ 0x004BFFA0 — Cursor_Render.
 // Draws the in-game mouse cursor sprite. Sprite ID selected by:
 //   game_substate, hovered entity type, cursor-mode flags (DAT_00559C48/4C/50/54).
 // Uses FUN_005125A0(sprite_id, x, y, 24, 24, u, v, 1, 1) for fixed sprites,
-// or FUN_005126E0 for animated/colored variants.
+// or GL_DrawRotatedRect for animated/colored variants.
 // Cursor offset = _DAT_0055264C from mouse pos (DAT_083A427C/78).
 // Reescrito 1:1 con IDA `RenderCursor` (004BFFA0_RenderCursor.c, 152 líneas).
 // Decisión de sprite por prioridad:
@@ -28,7 +28,7 @@
 // NULL-guard sobre Hero (DAT_07abf5d8): en el original el crash acá era
 // imposible porque SelectedCharacter=-1 en login y Hero siempre apuntaba a
 // una entidad válida in-game; acá Hero=NULL en login si aún no se asignó.
-// IDA: FUN_004bffa0
+// IDA: RenderCursor
 void __cdecl Cursor_Render(void) {
     GL_SetBlendSrcOver('\x01');  // EnableAlphaTest(1)
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -71,7 +71,7 @@ void __cdecl Cursor_Render(void) {
     // SelectedOperate (hover sobre objeto interactivo del mundo)
     if (SelectedOperate != -1) {
         // Match per-World contra el type-code de la entidad; fallback bitmap 9.
-        // DAT_0055a7ac aquí actúa como `World` en IDA; puede no coincidir 100%
+        // World aquí actúa como `World` en IDA; puede no coincidir 100%
         // con nuestra interpretación de sub-state pero no afecta el default.
         // Guard (no esta en IDA): SelectedOperate lo deja el picker del frame
         // anterior; si el objeto se libero en el medio el puntero queda colgado.
@@ -84,7 +84,7 @@ void __cdecl Cursor_Render(void) {
             return;
         }
         short cls = *(short*)(operObj + 2);
-        int world = DAT_0055a7ac;
+        int world = World;
         bool match = false;
         if      (world == 0) match = (cls == 133);
         else if (world == 1) match = (cls == 60);
@@ -101,7 +101,7 @@ void __cdecl Cursor_Render(void) {
         *(char*)((char*)DAT_07abf5d8 + 0x34e) == '\0' &&
         SelectedCharacter != -1)
     {
-        if ((char)FUN_00483160() != '\0' && DAT_07d78094 == '\0') {
+        if ((char)CheckAttack() != '\0' && DAT_07d78094 == '\0') {
             GL_DrawTexture(4, cx, cy, 24.0f, 24.0f, 0.0f, 0.0f, 1.0f, 1.0f, '\x01', '\x01');
         } else {
             draw_arrow();
@@ -117,11 +117,11 @@ void __cdecl Cursor_Render(void) {
     if (DAT_07eaa134 == 2) {
         float10 fv = fsin((float10)(long long)DAT_05826e08 * (float10)_DAT_00552914);
         if (fv <= (float10)FloatZero) {
-            FUN_005126e0(7, (float)(int)DAT_083a427c + _DAT_00552660,
+            GL_DrawRotatedRect(7, (float)(int)DAT_083a427c + _DAT_00552660,
                             (float)(int)DAT_083a4278 + _DAT_005529fc,
                          24.0f, 24.0f, 0x42340000);
         } else {
-            FUN_005126e0(7, (float)(int)DAT_083a427c + _DAT_00552488,
+            GL_DrawRotatedRect(7, (float)(int)DAT_083a427c + _DAT_00552488,
                             (float)(int)DAT_083a4278 + _DAT_00552488,
                          24.0f, 24.0f, 0);
         }

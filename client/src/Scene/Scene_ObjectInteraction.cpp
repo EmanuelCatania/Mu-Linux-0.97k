@@ -7,104 +7,21 @@
 #include "globals.h"
 #include "functions.h"
 
-extern void FUN_004fa5a0(void);
+extern void ClearActionObject(void);
 // MoveObject_Special @ 0x004FA5F0 (~93 lines) — castle gate destruction animation
 // Gate objects in castle siege world. Decrements counter, plays sound 0x6c,
 // spawns 10 dust particles at height 80, clears terrain on completion.
-void __cdecl MoveObject_Special_stub(int param_1) {
-    // Retain the old exported name, but execute the exact IDA port.
-    FUN_004fa5f0(param_1);
-    return;
-    // 0x004FA5F0 — Castle gate destruction animation.
-    // param_1 = pointer to scene object struct.
-    // DAT_0055a7b4 = target world ID, DAT_0055a7b0 = target object type,
-    // DAT_0055a7b8 = destruction frame counter, _DAT_0055a7bc = velocity accumulator.
-    // World = g_GameSubState (current map ID).
-
-    if ((int)DAT_0055a7b4 < 0) return;
-    if ((int)DAT_0055a7b0 < 0) return;
-    if ((int)DAT_0055a7b8 < 0) return;
-    if ((DWORD)World != DAT_0055a7b4) return;
-
-    short objType = *(short*)(param_1 + 2);
-
-    if (objType != (short)DAT_0055a7b0) {
-        if (objType == 9) goto label_gate_side;
-        if (objType != 10) return;
-    }
-
-    if ((objType != 9) && (objType != 10)) {
-        // Main gate object
-        if (objType != (short)DAT_0055a7b0) return;
-
-        if (DAT_0055a7b8 == 0x14) {
-            // Start destruction: set initial height offset and mark for removal
-            *(DWORD*)(param_1 + 0x1c) = 0x420c0000;  // 35.0f
-            *(DWORD*)(param_1 + 0x58) = 0xFFFFFFFF;   // -1 (destroy marker)
-            PlayBuffer(0x6c, 0, 0);  // gate destruction sound
-        }
-
-        if ((int)DAT_0055a7b8 < 0) return;
-
-        float* pHeight = (float*)(param_1 + 0x1c);
-        *pHeight = _DAT_0055a7bc + *pHeight;
-        _DAT_0055a7bc = _DAT_0055a7bc + _DAT_005528f0;  // accelerate
-
-        if (_DAT_00552848 <= *pHeight) {
-            *pHeight = *pHeight - (float)(int)DAT_0055a7b8;
-            _DAT_0055a7bc = 2.0f;
-
-            if (*pHeight == 80.0f) {
-                // IDA sub_4FA5F0 L74-86:
-                //   Position[0] = (rand() % 300) - 150.0 + obj[16];
-                //   Position[1] = obj[20] - ((rand() % 20) + 600.0);
-                //   Position[2] = obj[24];   (fijado antes del bucle)
-                //   Particle_Spawn(1221, Position, obj+28, obj+232, 0, 1.0, 0);
-                //
-                // 2026-09-21: la llamada estaba mal en cinco cosas, y la nota
-                // del port lo admitia ("Due to phantom stack params, exact arg
-                // mapping is approximate").  La grave: pasaba NULL como Light,
-                // y Particle_Spawn hace `*param_4` sin guard -> lectura de la
-                // direccion 0.  Las otras cuatro: Position[1] usaba la altura
-                // del objeto en vez del valor sorteado, Position[2] leia +0xE8
-                // en vez de +0x18, el angulo recibia el vector de luz, y la
-                // escala recibia la coordenada sorteada en vez de 1.0.
-                float Position[3];
-                Position[2] = *(float*)(param_1 + 0x18);
-                for (int i = 10; i != 0; i--) {
-                    Position[0] = (float)(rand() % 300) - _DAT_0055297c + *(float*)(param_1 + 0x10);
-                    Position[1] = *(float*)(param_1 + 0x14) - ((float)(rand() % 20) + _DAT_00552ab4);
-                    Particle_Spawn(0x4C5, Position,
-                                   (float*)(param_1 + 0x1c),   // Angle  = obj + 28
-                                   (float*)(param_1 + 0xe8),   // Light  = obj + 232
-                                   0, 1.0f, 0);
-                }
-            }
-        }
-
-        if (DAT_0055a7b8 == 0) {
-            *(DWORD*)(param_1 + 0x58) = 0xFFFFFFFE;  // -2 (fully destroyed)
-            *pHeight = 90.0f;
-            FUN_004fa5a0();  // GuildMark_ResetTarget
-            // AddTerrainAttributeRange(0xd, 0x46, 3, 6, 8, 0) — clear walkable zone
-            Terrain_UpdateTileAttributeRect(0x0d, 0x46, 3, 6, 0x08, 0x00);
-        }
-
-        DAT_0055a7b8 = DAT_0055a7b8 - 1;
-        return;
-    }
-
-label_gate_side:
-    // Side gate objects (types 9 and 10): hide when counter reaches 0
-    if (DAT_0055a7b8 != 0) return;
-    *(DWORD*)(param_1 + 0x58) = 0xFFFFFFFF;  // -1
-    *(unsigned short*)(param_1 + 0x86) = 4;
-}
+// MoveObject_Special (0x004FA5F0) vive en Render/Render_LegacyLinker.cpp.
+//
+// 2026-09-26: aca habia un puente con ese nombre cuyo cuerpo era
+//     MoveObject_Special(param_1); return;   + 80 lineas despues del return
+// o sea delegaba y dejaba la version vieja como codigo inalcanzable.  Nadie
+// lo llamaba: los cuatro call sites van al FUN_ directo.  Eliminado.
 
 // PickObject_Mouse @ 0x004FA7C0 (~90 lines) — mouse-picking scene objects
 // Iterates 0x10 * 0x10 object lists. Per visible object:
 // BMD::Animation + Transform, then CollisionDetectLineToMesh vs MousePosition/Target.
-char* __stdcall PickObject_Mouse_stub(void) {
+char* __stdcall PickObject_Mouse(void) {
     // 0x004FA7C0 — Mouse-picking scene objects.
     // Iterates 0x10 * 0x10 object linked lists rooted at DAT_083a021c (stride 4 DWORDs per cell).
     // Per visible object: sets up BMD model data, calls BMD::Animation + Transform,
@@ -117,7 +34,7 @@ char* __stdcall PickObject_Mouse_stub(void) {
 
     char* result = NULL;
 
-    FUN_00512d30();  // Map_InitRayCast — sets up MousePosition/MouseTarget ray
+    Map_InitRayCast();  // Map_InitRayCast — sets up MousePosition/MouseTarget ray
 
     DWORD* pCell = (DWORD*)&DAT_083a021c;
     do {
@@ -148,11 +65,11 @@ char* __stdcall PickObject_Mouse_stub(void) {
                     *(DWORD*)(model + 0x74) = *(DWORD*)(obj + 0x18);
 
                     // BMD::Animation — set up bone matrices
-                    // FUN_00440060(model, BoneTransform, frame, priorFrame, priorAction, angles, headAngles, parent, translate)
+                    // BMD_Animation(model, BoneTransform, frame, priorFrame, priorAction, angles, headAngles, parent, translate)
                     // Phantom regs make exact mapping impractical; the key effect is populating BoneTransform.
                     float angles[3] = { 0.0f, 0.0f, *(float*)(obj + 0x28) };
                     float headAngles[3] = { 0.0f, 0.0f, 0.0f };
-                    FUN_00440060(model, 0, *(float*)(obj + 0x10C),
+                    BMD_Animation(model, 0, *(float*)(obj + 0x10C),
                                  (unsigned int)(unsigned char)obj[0x106],
                                  (unsigned char)obj[0x1C], (unsigned int*)angles, headAngles,
                                  0, 0);
@@ -167,11 +84,11 @@ char* __stdcall PickObject_Mouse_stub(void) {
                     memcpy(obb, obj + 0x130, 48);
 
                     // Check ray intersection with bounding volume
-                    bool hit = FUN_00513260((float*)&CameraRayOriginX, (float*)&DAT_083a4110, obb);
+                    bool hit = Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, obb);
                     if ((char)hit != '\0') {
                         // CollisionDetectLineToMesh — precise line-mesh test
                         // Phantom regs in Ghidra; approximate call:
-                        if (BMD__CollisionDetectLineToMesh_stub(
+                        if (BMD__CollisionDetectLineToMesh(
                                 (DWORD)model, (float*)&CameraRayOriginX, (float*)&DAT_083a4110,
                                 false, 0, 0)) {
                             result = obj;

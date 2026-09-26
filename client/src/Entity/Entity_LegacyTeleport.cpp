@@ -17,14 +17,14 @@
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -72,10 +72,11 @@ extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType)
         }
     }
 }
-void __cdecl FUN_0046fe00(int Type, DWORD Target, int SubType)
-{ DeleteJoint(Type, Target, SubType); }
+// 2026-09-25: aca habia un puente FUN_0046fe00 sin callers que solo llamaba a
+// DeleteJoint (misma direccion, 0x0046FE00).  Eliminado.
 
-// FUN_004792c0 @ 0x004792C0 — CreatePoint(float Position[3], int Value,
+// IDA: FUN_004792C0 (0x004792C0)
+// CreatePoint(float Position[3], int Value,
 //   float Color[3], float scale)  (101 bytes)
 //
 // Spawns a damage popup / floating text in the point pool DAT_07c80110
@@ -106,9 +107,6 @@ extern "C" void __cdecl CreatePoint(float Position[3], int Value,
     *(int*)&val_as_float = Value;
     Entity_TeleportAnim(Position, val_as_float, Color, scale);
 }
-void __cdecl FUN_004792c0(float* Position, int Value, float* Color, float scale)
-{ CreatePoint(Position, Value, Color, scale); }
-
 // FUN_004742b0 @ 0x004742B0 — CreateTeleportBegin(DWORD o)  (83 bytes)
 // Per IDA decompile (raw/004742B0_CreateTeleportBegin.c). Begins teleport
 // animation: anim 87, alpha=0 (fade out), state byte 1, sparkle effect 1176.
@@ -116,18 +114,18 @@ void __cdecl FUN_004792c0(float* Position, int Value, float* Color, float scale)
 //
 // 2026-05-08: previously aliased as `Entity_WeaponHit` in CLAUDE.md and our
 // Combat.cpp comments, but IDA confirms this is the teleport-begin function.
-// FUN_00443e70 / FUN_0043e820 / Effect_Create / FUN_00404bc0 decls in functions.h.
+// SetAttackSpeed / SetAction / CreateEffect / PlayBuffer decls in functions.h.
 extern "C" void __cdecl CreateTeleportBegin(unsigned int o)
 {
     if (!o) return;
-    FUN_00443e70();                                  // SetAttackSpeed
-    (void)FUN_0043e820((int)o, 87);                  // SetAction(o, 87)
+    SetAttackSpeed();                                  // SetAttackSpeed
+    (void)SetAction((int)o, 87);                  // SetAction(o, 87)
     *(unsigned int*)(o + 356) = 0;                   // alpha = 0 (fade-out)
     *(BYTE*)(o + 124) = 1;                           // state byte = 1 (begin)
-    (void)Effect_Create(1176, (float*)(o + 16), (float*)(o + 28),
+    (void)CreateEffect(1176, (float*)(o + 16), (float*)(o + 28),
                        (float*)(o + 232), nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);
-    FUN_00404bc0(88, 0, 0);                          // PlayBuffer(88) whoosh
+    PlayBuffer(88, 0, 0);                          // PlayBuffer(88) whoosh
 }
 
 // FUN_00474310 @ 0x00474310 — CreateTeleportEnd(DWORD o)  (93 bytes)
@@ -137,15 +135,15 @@ extern "C" void __cdecl CreateTeleportBegin(unsigned int o)
 extern "C" void __cdecl CreateTeleportEnd(unsigned int o)
 {
     if (!o) return;
-    FUN_00443e70();
-    (void)FUN_0043e820((int)o, 87);
+    SetAttackSpeed();
+    (void)SetAction((int)o, 87);
     *(unsigned int*)(o + 264) = 0x40A00000u;        // anim_speed = 5.0f
     *(BYTE*)(o + 124) = 3;                           // state byte = 3 (end)
     *(unsigned int*)(o + 356) = 0x3F800000u;        // alpha = 1.0f (fade-in)
-    (void)Effect_Create(1176, (float*)(o + 16), (float*)(o + 28),
+    (void)CreateEffect(1176, (float*)(o + 16), (float*)(o + 28),
                        (float*)(o + 232), nullptr, nullptr,
                        (float*)(uintptr_t)0xFFFFFFFFu, nullptr, 0);
-    FUN_00404bc0(88, 0, 0);
+    PlayBuffer(88, 0, 0);
 }
 
 // Combat_UseWarriorSkill @ 0x00485780 — UseSkillWarrior(c=CHARACTER*, o=OBJECT*)

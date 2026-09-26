@@ -1,12 +1,12 @@
 // Terrain_Water.cpp
-// FUN_004f95e0 @ 0x004F95E0
+// IDA: Terrain_Water (0x004F95E0)
 //
 // World-tick / terrain water wave animation.
 // Two responsibilities:
 //   1) Copy per-tile lighting data from the "shadow" buffer (DAT_0828b608) to
 //      the live buffer (DAT_081cb608) for the current viewport rectangle.
-//      Viewport: columns [DAT_0839bc90 .. DAT_0055a774+3],
-//                rows    [DAT_0839bc94 .. DAT_0055a778+3]
+//      Viewport: columns [FrustrumBoundMinX_1 .. FrustrumBoundMaxX_1+3],
+//                rows    [FrustrumBoundMinY_1 .. FrustrumBoundMaxY_1+3]
 //      Each tile entry is 12 bytes (3 × float), layout:
 //        DAT_081cb608[tile*3+0] = DAT_0828b608[tile*3+0]  (R or X)
 //        DAT_081cb608[tile*3+1] = DAT_0828b60c[tile*3+0]  (G or Y)
@@ -21,17 +21,17 @@
 //      col step = _DAT_0055256c
 //
 // Globals:
-//   DAT_0839bc90/94  — viewport top-left (col, row)
-//   DAT_0055a774/778 — viewport extents (+3 gives inclusive max)
+//   FrustrumBoundMinX_1/94  — viewport top-left (col, row)
+//   FrustrumBoundMaxX_1/778 — viewport extents (+3 gives inclusive max)
 //   DAT_083a3ff0     — 0=ocean wave mode, else terrain mode
-//   DAT_0055a7ac     — g_GameSubState
+//   World     — World
 //   DAT_07eab200     — water height table [row][col] floats
 //   DAT_081cb608     — live per-tile lighting buffer (3 floats/tile)
 //   DAT_0828b608/0c/10 — shadow/pre-computed lighting buffers
 
 #include "stdafx.h"
 
-int __cdecl FUN_004f95e0(void)
+int __cdecl Terrain_Water(void)
 {
     int   iVar4;
     float fVar1;
@@ -43,14 +43,14 @@ int __cdecl FUN_004f95e0(void)
     ulonglong uVar14;
 
     // ── 1) Copy lighting data into live buffer for viewport rect ──────────────
-    int rowMax = DAT_0055a778 + 3;
-    uVar8 = DAT_0839bc94;  // viewport start row
-    if ((int)DAT_0839bc94 <= rowMax) {
-        int colMax = DAT_0055a774 + 3;
-        uVar7 = DAT_0839bc94;
+    int rowMax = FrustrumBoundMaxY_1 + 3;
+    uVar8 = FrustrumBoundMinY_1;  // viewport start row
+    if ((int)FrustrumBoundMinY_1 <= rowMax) {
+        int colMax = FrustrumBoundMaxX_1 + 3;
+        uVar7 = FrustrumBoundMinY_1;
         do {
-            if ((int)DAT_0839bc90 <= colMax) {
-                uVar5 = DAT_0839bc90;
+            if ((int)FrustrumBoundMinX_1 <= colMax) {
+                uVar5 = FrustrumBoundMinX_1;
                 do {
                     // tile index = col + row*256 (0x100)
                     iVar2 = (uVar5 & 0xff) + (uVar7 & 0xff) * 0x100;
@@ -69,7 +69,7 @@ int __cdecl FUN_004f95e0(void)
                     *(unsigned int *)((char*)&DAT_081cb608 + iVar3) = *(unsigned int*)&DAT_0828b608[iVar2 * 3];
                     *(unsigned int *)((char*)&DAT_081cb60c + iVar3) = (&DAT_0828b60c)[iVar2 * 3];
                     *(unsigned int *)((char*)&DAT_081cb610 + iVar3) = (&DAT_0828b610)[iVar2 * 3];
-                    uVar8 = DAT_0839bc94;
+                    uVar8 = FrustrumBoundMinY_1;
                 } while ((int)uVar5 <= colMax);
             }
             uVar7++;
@@ -89,21 +89,21 @@ int __cdecl FUN_004f95e0(void)
         fVar11 = (float10)(int)((long long)uVar14 % 36000) * (float10)_DAT_005524f8;
     }
 
-    int iVar2b = DAT_0055a7ac;
+    int iVar2b = World;
 
     // ── 3) Fill water height table with sine wave ─────────────────────────────
     if ((int)uVar8 <= rowMax) {
         int iVar9 = (int)uVar8 << 8;   // row * 256
-        int colMax2 = DAT_0055a774 + 3;
+        int colMax2 = FrustrumBoundMaxX_1 + 3;
         int rowCount = (rowMax - (int)uVar8) + 1;
         do {
-            fVar12 = (float10)(int)DAT_0839bc90;
-            if ((int)DAT_0839bc90 <= colMax2) {
-                iVar4 = (colMax2 - DAT_0839bc90) + 1;
+            fVar12 = (float10)(int)FrustrumBoundMinX_1;
+            if ((int)FrustrumBoundMinX_1 <= colMax2) {
+                iVar4 = (colMax2 - FrustrumBoundMinX_1) + 1;
                 // BUG-FIX: DAT_07eab200 es DWORD → &DAT_07eab200 + N*4 hace
                 // aritmética DWORD* (=+N*16 bytes). Disasm @ 0x004f96d1 muestra
                 // LEA EDX,[EAX*0x4 + 0x7eab200] = byte offset N*4. Castear a char*.
-                pfVar6 = (float *)((char*)&DAT_07eab200 + (iVar9 + DAT_0839bc90) * 4);
+                pfVar6 = (float *)((char*)&DAT_07eab200 + (iVar9 + FrustrumBoundMinX_1) * 4);
                 do {
                     // Select wave frequency by game sub-state
                     fVar1 = _DAT_00552660;

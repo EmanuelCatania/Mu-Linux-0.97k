@@ -1,22 +1,22 @@
 // Misc.cpp
 // Miscellaneous utility and validation functions.
 //
-// FUN_00406b10 @ 0x00406b10 — Packet_IsValidSockType
+// Packet_IsValidSockType @ 0x00406b10 — Packet_IsValidSockType
 // CheckSpecialText @ 0x00406B30 (IDA: FUN_00406B30; name from 5.2).
 // CPhysicsManager::Move @ 0x00409C40 (IDA: FUN_00409C40).
 // CPhysicsManager::Render @ 0x00409CF0 (IDA: FUN_00409CF0).
-// FUN_0040c690 @ 0x0040c690 — Object_SetRectFields
-// FUN_0040e590 @ 0x0040e590 — Object_ClearMembers
-// FUN_00402fd0 @ 0x00402fd0 — Packet_ParseReceived
-// FUN_00503760 @ 0x00503760 — Entity_UpdateGravity
+// Object_SetRectFields @ 0x0040c690 — Object_SetRectFields
+// Object_ClearMembers @ 0x0040e590 — Object_ClearMembers
+// Packet_ParseReceived @ 0x00402fd0 — Packet_ParseReceived
+// MoveItems @ 0x00503760 — Entity_UpdateGravity
 
 #include "stdafx.h"
 
 
-// FUN_00406b10 — Packet_IsValidSockType
+// Packet_IsValidSockType — Packet_IsValidSockType
 // Returns 1 if param_2 is socket type 1 (TCP) or 0xf (UDP-compatible),
 // otherwise returns 0.
-int __cdecl FUN_00406b10(int param_1,int param_2)
+int __cdecl Packet_IsValidSockType(int param_1,int param_2)
 {
   if ((param_2 != 1) && (param_2 != 0xf)) {
     return 0;
@@ -42,7 +42,7 @@ bool __cdecl CheckSpecialText(const byte *param_1)
     if (bVar1 == 0) {
       return 0; // valid: no invalid chars found
     }
-    cVar3 = FUN_00541eab(param_1);
+    cVar3 = mbclen(param_1);
     iVar4 = cVar3;
     if (iVar4 == 1) {
       bVar1 = *param_1;
@@ -74,7 +74,7 @@ LAB_00406bbe:
 // CPhysicsManager::Move — advances every registered physics object.
 // Updates the floating-point random key _DAT_00590af0 with a random delta
 // in ±0.1 range, clamped to [-0.2, 1.0].
-// Then iterates a linked list from *(param_1+8)+8, calling FUN_00408940
+// Then iterates a linked list from *(param_1+8)+8, calling Sound_UpdateChannel3D_Tick
 // on each node until sentinel *(param_1+0xc) is reached.
 void __cdecl CPhysicsManager_Move(void* physics_manager, float fTime)
 {
@@ -96,7 +96,7 @@ void __cdecl CPhysicsManager_Move(void* physics_manager, float fTime)
       if (puVar1 == (undefined4 *)0x0) {
         return;
       }
-      FUN_00408940((int *)*puVar1, fTime);
+      Sound_UpdateChannel3D_Tick((int *)*puVar1, fTime);
       puVar1 = (undefined4 *)puVar1[2];
     } while (*(undefined4 **)(param_1 + 0xc) != puVar1);
   }
@@ -126,9 +126,9 @@ void __cdecl CPhysicsManager_Render(void* physics_manager)
 }
 
 
-// FUN_0040c690 — Object_SetRectFields
+// Object_SetRectFields — Object_SetRectFields
 // Sets two consecutive fields at this+0x2c and this+0x30.
-void __cdecl FUN_0040c690(void *this_,undefined4 param_1,undefined4 param_2)
+void __cdecl Object_SetRectFields(void *this_,undefined4 param_1,undefined4 param_2)
 {
   *(undefined4 *)((int)this_ + 0x2c) = param_1;
   *(undefined4 *)((int)this_ + 0x30) = param_2;
@@ -136,9 +136,9 @@ void __cdecl FUN_0040c690(void *this_,undefined4 param_1,undefined4 param_2)
 }
 
 
-// FUN_0040e590 — Object_ClearMembers
+// Object_ClearMembers — Object_ClearMembers
 // Zeroes 0x140 dwords (1280 bytes) starting at param_1 + 200 (0xc8).
-void __cdecl FUN_0040e590(int param_1)
+void __cdecl Object_ClearMembers(int param_1)
 {
   int iVar1;
   undefined4 *puVar2;
@@ -152,23 +152,23 @@ void __cdecl FUN_0040e590(int param_1)
 }
 
 
-// FUN_00402fd0 — Packet_ParseReceived
+// Packet_ParseReceived — Packet_ParseReceived
 // Dispatches an incoming packet from param_1 based on the sub-type byte
-// at param_1+0x1c87f. Type 1: FUN_00402850. Type 2: FUN_00402f40.
+// at param_1+0x1c87f. Type 1: CSQuest_ProceedButton. Type 2: Packet_ParseType2.
 // Returns 1 (non-zero) on both paths.
-undefined4 __cdecl FUN_00402fd0(void *param_1)
+undefined4 __cdecl Packet_ParseReceived(void *param_1)
 {
   int iVar1;
   undefined4 uVar2;
 
   if (*(byte *)((int)param_1 + 0x1c87f) == 1) {
-    iVar1 = FUN_00402850(param_1);
+    iVar1 = CSQuest_ProceedButton(param_1);
     (void)iVar1;
   }
   else {
     iVar1 = *(byte *)((int)param_1 + 0x1c87f) - 2;
     if (iVar1 == 0) {
-      uVar2 = FUN_00402f40(param_1);
+      uVar2 = Packet_ParseType2(param_1);
       (void)uVar2;
       return 1;
     }
@@ -177,23 +177,23 @@ undefined4 __cdecl FUN_00402fd0(void *param_1)
 }
 
 
-// FUN_00503760 — Entity_UpdateGravity
+// IDA: MoveItems (0x00503760)
 // Iterates the entity-gravity pool (per-slot offset +0x18 inside the
 // 1000-slot ground-items pool DAT_07e12840, stride 0x204). Per active slot:
 // advances Z by velocity, decays velocity by _DAT_005527d0. Checks terrain
-// height via FUN_004f7500; if entity is above terrain + offset, adjusts Y or
-// Z velocity. Calls FUN_005030c0 and Entity_UpdateSparkleEffect (FUN_00503650).
+// height via RequestTerrainHeight; if entity is above terrain + offset, adjusts Y or
+// Z velocity. Calls ItemAngle and Entity_UpdateSparkleEffect (FUN_00503650).
 //
 // 2026-05-08: AUTO-SKIP removed. Walker now uses the properly-sized pool
 // `DAT_07e12840` (1000 × 0x204) with an explicit slot count instead of the
 // literal end-bound `< 0x7e907f8`. Per-slot pfVar2 = slot_base + 0x18 (the
 // gravity-field anchor that the orphan DAT_07e12858 used to alias).
-void FUN_00503760(void)
+void MoveItems(void)
 {
   // 2026-08-21: el walker estaba corrido 72 bytes.  Tomaba `DAT_07e12840` como
   // si fuera `Items + 72` (leía el flag activo en slot+0), pero en nuestro build
   // ese símbolo ES la base del item — es lo que asumen Net_Process (0x20) y
-  // FUN_005038e0 (que escriben/leen active en ip+72).  Resultado: el flag activo
+  // Entity_Render (que escriben/leen active en ip+72).  Resultado: el flag activo
   // salía siempre 0 y la función no hacía NADA: los items no caían al suelo, no
   // giraban al caer y no soltaban destellos.
   //
@@ -211,7 +211,7 @@ void FUN_00503760(void)
     *pZ  = *pVz + *pZ;
     *pVz = *pVz - _DAT_005527d0;
 
-    float10 fVar3 = (float10)FUN_004f7500(*(float *)(ip + 88), *(float *)(ip + 92));
+    float10 fVar3 = (float10)RequestTerrainHeight(*(float *)(ip + 88), *(float *)(ip + 92));
     short  sVar1  = *(short *)(ip + 74);
     fVar3 = fVar3 + (float10)_DAT_0055284c;
     if ((399 < sVar1) && (sVar1 < 0x250)) {
@@ -229,7 +229,7 @@ void FUN_00503760(void)
     else {
       // Tocó el suelo: se apoya sobre el terreno.
       *pZ = (float)fVar3;
-      FUN_005030c0((int)(ip + 72));
+      ItemAngle((int)(ip + 72));
     }
     Entity_UpdateSparkleEffect((int)(ip + 72));
   }

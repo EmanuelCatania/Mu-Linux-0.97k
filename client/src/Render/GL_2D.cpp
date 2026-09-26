@@ -2,9 +2,9 @@
 // 2D overlay rendering via gluOrtho2D + GL_TRIANGLE_FAN (glBegin(6)).
 // NOTA: glBegin(6) es GL_TRIANGLE_FAN, no GL_TRIANGLE_STRIP (confusion previa en comentarios).
 //
-// FUN_005123c0 @ 0x005123c0 — GL_Begin2D
-// FUN_005124b0 @ 0x005124b0 — GL_End2D
-// FUN_005124c0 @ 0x005124c0 — GL_DrawRect
+// BeginBitmap @ 0x005123c0 — GL_Begin2D
+// EndBitmap @ 0x005124b0 — GL_End2D
+// RenderColor @ 0x005124c0 — GL_DrawRect
 // FUN_005125a0 @ 0x005125a0 — GL_DrawTexture
 // FUN_00511c10 @ 0x00511c10 — GL_DrawBillboard
 //

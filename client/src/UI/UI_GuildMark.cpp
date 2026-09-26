@@ -61,7 +61,7 @@ extern "C" void GuildMark_InitializePalette(bool blend)
 }
 
 // IDA: FUN_004F02F0 — renderiza el emblema de guild en pantalla.
-void __cdecl RenderGuildMark_stub(float p1, float p2, float p3, float p4, int p5) {
+void __cdecl RenderGuildMark(float p1, float p2, float p3, float p4, int p5) {
     // IDA: FUN_004F02F0 — p5 indexa la paleta MarkColor[16] en DAT_07e11f34.
     // Bitmaps[34] es la textura temporal del emblema (Components, TextureNumber, Buffer).
 

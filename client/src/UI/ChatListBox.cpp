@@ -94,7 +94,7 @@ static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
 // External helpers already implemented elsewhere in our build.  Linkage
 // coincide con las definiciones que ya existen en stubs.cpp (C++, no extern "C").
 int  __cdecl    ChatListBox_GetFocusState(DWORD* self);                // IDA: FUN_0040c680
-void __fastcall ChatListBox_DequeueFront(int self);                     // IDA: FUN_0040c580
+void __fastcall ChatListBox_DequeueFront(int self); // IDA: ChatListBox_DequeueFront (0x0040C580)
 int  __cdecl    FUN_00411a20(DWORD* self);                            // key-handler (slot 9)
 int  __cdecl    FUN_004119a0(DWORD* self, int v);                     // scroll-up helper
 int  __cdecl    FUN_0040c930(int slot);                               // ++[slot+0x114]
@@ -774,7 +774,7 @@ static void __fastcall ChatLB_clearList(DWORD* self)
 }
 
 // slot 12 — sub_40CC50 — scroll de N páginas (negativo = página abajo). Cuando
-// el global `DAT_005590ac` no está seteado y el argumento es -6 (el "página-previa" especial),
+// el global `g_bUseChatListBox` no está seteado y el argumento es -6 (el "página-previa" especial),
 // recorremos la lista para calcular cuántas entradas entran. Si no, sólo desplazamos
 // el scroll en -N y lo clampeamos a [0, count-visible].
 static int __fastcall ChatLB_scrollByN(DWORD* self, int, int a2)
@@ -785,7 +785,7 @@ static int __fastcall ChatLB_scrollByN(DWORD* self, int, int a2)
     int result = (int)self[24];
     if ((unsigned)result < self[35]) return result;
 
-    if (DAT_005590ac || self[34] || a2 != -6) {
+    if (g_bUseChatListBox || self[34] || a2 != -6) {
         self[34] -= a2;
     } else {
         DWORD* v4 = (DWORD*)self[23];
@@ -911,7 +911,7 @@ static int __fastcall ChatLB_countVisible(DWORD* self)
     void** vt = (void**)*self;
 
     int v1 = 0;
-    if (!DAT_00559bf1 || DAT_005590ac) {
+    if (!DAT_00559bf1 || g_bUseChatListBox) {
         DWORD** v3 = (DWORD**)self[23];
         DWORD*  v4 = *v3;
         if (v4 != (DWORD*)v3) {
@@ -1007,7 +1007,7 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
     return 0;
 }
 
-// slot 22 — sub_40CE20 — full chat-frame BG render.  When DAT_005590ac
+// slot 22 — sub_40CE20 — full chat-frame BG render.  When g_bUseChatListBox
 // (g_bUseChatListBox) is enabled, draws:
 //   * Alpha-tinted background quad (RenderColor at chat box bounds)
 //   * Bitmap de la esquina superior (252) en el borde de arriba
@@ -1025,7 +1025,7 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
 // flt_55265C / flt_552654 / flt_552658 / flt_552660 de la
 // engine.  Those are 1-byte border thicknesses (typical: 1.0, 2.0, 3.0).
 // Las aproximamos con literales suficientemente cercanos a los valores de IDA.
-extern "C" SIZE* __cdecl FUN_0047f6f0(int x, int y, const char* lpString,
+extern "C" SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
                                       int boxWidth, char style, int extraSize);
 static int __fastcall ChatLB_renderBg(DWORD* self)
 {
@@ -1047,7 +1047,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
     typedef int  (__fastcall *FnIntSelf )(DWORD*);
     void** vt = (void**)*self;
 
-    if (DAT_005590ac == 1) {
+    if (g_bUseChatListBox == 1) {
         const float fx = (float)(int)self[11];   // x
         const float fw = (float)(int)self[13];   // width
 
@@ -1194,7 +1194,7 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         char Buffer[512] = {0};
         wsprintfA(Buffer, "%s: %s", GlobalText[754], v40);
         m_dwTextColor = 0xFFC8C8FFu;
-        m_dwBackColor = DAT_005590ac ? 0u : 0x96000000u;
+        m_dwBackColor = g_bUseChatListBox ? 0u : 0x96000000u;
         EnableAlphaTest(true);
         UI_DrawText((int)self[11] + 10, (int)self[12], Buffer, 0, 1, 0);
         GL_ResetState();
@@ -1227,14 +1227,14 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
 static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
 {
     int v5;
-    if (!DAT_005590ac || self[11]) {
+    if (!g_bUseChatListBox || self[11]) {
         v5 = row;
     } else {
         v5 = row + 1;
-        if (row + 1 >= (int)self[35]) return (int)DAT_005590ac;
+        if (row + 1 >= (int)self[35]) return (int)g_bUseChatListBox;
     }
     if (!DAT_00559bf1 && *(DWORD*)(self[25] + 276) == 3) return 0;
-    if (DAT_005590ac) {
+    if (g_bUseChatListBox) {
         DWORD t = *(DWORD*)(self[25] + 276);
         if (t == 1 || t == 2) return 0;
     } else {
@@ -1264,7 +1264,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
             case 5: back = 0xC896FF00u; m_dwTextColor = 0xFF000000u; m_dwBackColor = back; break;
             default: back = m_dwBackColor; break;
         }
-        if (DAT_005590ac && (back & 0xFFFFFFu) == 0) {
+        if (g_bUseChatListBox && (back & 0xFFFFFFu) == 0) {
             back = 0;
             m_dwBackColor = 0;
         }
@@ -1293,7 +1293,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         case 5: m_dwTextColor = 0xFF000000u; m_dwBackColor = 0xC896FF00u; break;
         default: break;
     }
-    if (DAT_005590ac && (m_dwBackColor & 0xFFFFFFu) == 0) m_dwBackColor = 0;
+    if (g_bUseChatListBox && (m_dwBackColor & 0xFFFFFFu) == 0) m_dwBackColor = 0;
     lstrcpynA(Buffer, (const char*)(self[25] + 19), sizeof(Buffer));
     UI_DrawText(x + (int)sz.cx, y, Buffer, 0, 1, 0);
 
@@ -1420,7 +1420,7 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
         char* tip = GlobalText[750 + (hovered - 1)];
         float tipX = bx + (float)(hovered - 1) * gap;
         int   tipY = (int)(by - 10.0f);
-        RenderTipText_stub((int)(tipX - 16.0f), tipY, tip);
+        RenderTipText((int)(tipX - 16.0f), tipY, tip);
     }
 
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1432,14 +1432,14 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
 static int __fastcall ChatLB_lineHover(DWORD* self, int, int row)
 {
     int v4;
-    if (!DAT_005590ac || self[11]) {
+    if (!g_bUseChatListBox || self[11]) {
         v4 = row;
     } else {
         v4 = row + 1;
-        if (row + 1 >= (int)self[35]) return DAT_005590ac;
+        if (row + 1 >= (int)self[35]) return g_bUseChatListBox;
     }
     if (!DAT_00559bf1 && *(DWORD*)(self[25] + 276) == 3) return 0;
-    if (DAT_005590ac) {
+    if (g_bUseChatListBox) {
         int v5 = *(int*)(self[25] + 276);
         if (v5 == 1 || v5 == 2) return 0;
     } else {
@@ -1519,7 +1519,7 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
 
         // Botón 2 — cicla el tamaño del historial (mismo que la tecla F4).
         if (FUN_0040c490(bx + gap, by, bw, bh, 1)) {
-            FUN_0040e330((int)(uintptr_t)self);
+            ChatListBox_ScrollByN((int)(uintptr_t)self);
             PlayBuffer(25, 0, 0);
             DAT_083a4124 = 0;
         }
@@ -1552,7 +1552,7 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
     if (!src || !msg) return;
 
     if (!*src && !*msg) {
-        if (!DAT_005590ac && !self[34]) {
+        if (!g_bUseChatListBox && !self[34]) {
             DWORD** v6 = (DWORD**)self[23];
             for (DWORD* i = *v6; i != (DWORD*)v6; i = (DWORD*)*i) {
                 FUN_0040c930((int)(i + 2));   // ++[+0x114] (cached cx — used as fade)
@@ -1571,7 +1571,7 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
             extern int __fastcall FUN_0040e730(void* This, int edx, char* param_1);
             if (!FUN_0040e730(self, 0, src) && !FUN_0040e730(self, 0, msg))
                 return;
-            if (*((BYTE*)self + 200) && DAT_07e11d80)
+            if (*((BYTE*)self + 200) && m_bWhisperSound)
                 PlayBuffer(38, 0, 0);
         }
     } else if (kind == 3) {
@@ -1658,7 +1658,7 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
 static int __stdcall ChatLB_isRowVisible(int rowData)
 {
     if (!DAT_00559bf1 && *(DWORD*)(rowData + 268) == 3) return 1;
-    if (DAT_005590ac) {
+    if (g_bUseChatListBox) {
         int v2 = *(DWORD*)(rowData + 268);
         if (v2 == 1 || v2 == 2) return 1;
     }
@@ -1669,7 +1669,7 @@ static int __stdcall ChatLB_isRowVisible(int rowData)
 // Globals compartidos con el resto del build.
 // ===========================================================================
 
-// DAT_005590ac (g_bUseChatListBox) ya está definido en globals.cpp:192.
+// g_bUseChatListBox ya está definido en globals.cpp:192.
 // En el original, /chatlistbox lo invierte en runtime. Nosotros sólo lo consumimos.
 
 // MouseOnWindow — GLOBAL PARTIDO, corregido 2026-07-20.
@@ -1682,7 +1682,7 @@ static int __stdcall ChatLB_isRowVisible(int rowData)
 // No se puede escribir g_MouseOnWindow directo desde acá: Player_InputTick lo
 // resetea a 0 al principio de su propio tick (MouseOnWindow_Update), que corre
 // DESPUÉS del tick del ChatListBox (Game_CharSelectTick: slot 5 en la línea 217,
-// FUN_004acef0 en la 298).  Así que el slot 7 deja el resultado en este latch y
+// Player_InputTick en la 298).  Así que el slot 7 deja el resultado en este latch y
 // MouseOnWindow_Update lo consulta.  El latch se reescribe entero en cada tick
 // del widget, así que no se queda pegado.
 extern "C" int MouseOnWindow = 0;
@@ -1726,9 +1726,9 @@ extern "C" int g_ChatLB_MouseOnWindow = 0;
 
 extern "C" void  __cdecl CreateGuildMark(int markIndex, bool blend);
 extern "C" void  __cdecl RenderTipText(int sx, int sy, const char* Text);
-// UI_DrawText (RenderText) y Input_ClearState (ClearInput) ya vienen de
+// UI_DrawText (RenderText) y ClearInput ya vienen de
 // functions.h con vinculacion C++; no re-declararlos aca.
-// FUN_00404bc0 (PlayBuffer) tambien viene de functions.h (vinculacion C++).
+// PlayBuffer tambien viene de functions.h (vinculacion C++).
 extern "C" float flt_83A7ACC[8];
 extern "C" BYTE  InputTextHide[10];
 
@@ -1955,13 +1955,13 @@ static int __fastcall GuildLB_perFrameInput(DWORD* self)
                     double my = (double)(int)MouseY;
                     if (my >= v12 && my < v12 + 10.0 && MouseLButtonPush) {
                         MouseLButtonPush = 0;
-                        FUN_00404bc0(25, 0, 0);                 // PlayBuffer(25)
+                        PlayBuffer(25, 0, 0);                 // PlayBuffer(25)
                         int v9 = ((FnInt)vt[19])(self) - (int)self[34];
                         DAT_083a7c24     = 126;   // ErrorMessage
                         dword_5615E4     = v9 - v3 - 1;
-                        Input_ClearState(0);                        // ClearInput(0)
+                        ClearInput(0);                        // ClearInput(0)
                         InputEnable      = 0;
-                        DAT_00559c88     = 1;     // InputNumber
+                        InputNumber     = 1;     // InputNumber
                         // IDA: `*(float *)InputTextMax = flt_83A7ACC[0];` —
                         // escribe BITS de float sobre InputTextMax[0], que es
                         // int.  Se porta tal cual (el original lo lee despues
@@ -2200,20 +2200,20 @@ extern "C" void GuildList_AddMember(const char* name, char connected, char party
     ((FnAdd)((void**)*obj)[28])(obj, 0, name, connected, partyNumber);
 }
 
-// ── FUN_0040c170 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── TextureScript_setScript — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 29-byte ─────────────────────────────────────────────────────────────────
 
-// FUN_0040c170 @ 0x0040C170 (29 bytes) — thiscall: copia 4 bytes del parámetro a this
-void __fastcall FUN_0040c170(int ecx, int /*edx*/, BYTE *param_1) {
+// TextureScript_setScript @ 0x0040C170 (29 bytes) — thiscall: copia 4 bytes del parámetro a this
+void __fastcall TextureScript_setScript(int ecx, int /*edx*/, BYTE *param_1) {
     *(BYTE *)ecx       = param_1[0];
     *(BYTE *)(ecx + 1) = param_1[1];
     *(BYTE *)(ecx + 2) = param_1[2];
     *(BYTE *)(ecx + 3) = param_1[3];
 }
 
-// ── FUN_0040c190 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_0040c190 @ 0x0040C190 (~77 lines) — Parse mesh flags from material name suffix
-char __fastcall FUN_0040c190(void* ecx, void* /*edx*/, DWORD* param_1) {
+// ── TextureScriptParsing_parsingTScript — movida desde stubs_bulk_misc.cpp (refactor B3) ──
+// TextureScriptParsing_parsingTScript @ 0x0040C190 (~77 lines) — Parse mesh flags from material name suffix
+char __fastcall TextureScriptParsing_parsingTScript(void* ecx, void* /*edx*/, DWORD* param_1) {
     (void)ecx; (void)param_1;
     // After '_': R->flag[0], H->flag[1], S->flag[2], N->flag[3]; flag[4]=valid
     return 0;
@@ -2295,9 +2295,10 @@ void __fastcall FUN_0040c500(void* ecx, void* /*edx*/, int param_1, int param_2,
     (void)ecx; (void)param_1; (void)param_2; (void)param_3;
 }
 
-// ── FUN_0040c580 — movida desde stubs_bulk_med.cpp (refactor B3) ──
-// FUN_0040c580 @ 0x0040C580 (71 bytes) — dequeue front from linked list + copy 3 fields
-// IDA: FUN_0040c580
+// IDA: ChatListBox_DequeueFront (0x0040C580)
+// ── ChatListBox_DequeueFront — movida desde stubs_bulk_med.cpp (refactor B3) ──
+// ChatListBox_DequeueFront @ 0x0040C580 (71 bytes) — dequeue front from linked list + copy 3 fields
+// IDA: ChatListBox_DequeueFront
 void __fastcall ChatListBox_DequeueFront(int param_1) {
     if (*(int *)(param_1 + 0xc) != 0) {
         int iVar1 = **(int **)(param_1 + 8);
@@ -2310,13 +2311,6 @@ void __fastcall ChatListBox_DequeueFront(int param_1) {
         operator_delete(lpMem);
         *(int *)(param_1 + 0xc) = *(int *)(param_1 + 0xc) - 1;
     }
-}
-
-// Compatibility entry point retained solely for stubs_IDA_ports.cpp.
-// IDA: FUN_0040c580
-void __fastcall FUN_0040c580(int param_1)
-{
-    ChatListBox_DequeueFront(param_1);
 }
 
 // ── FUN_0040c5d0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──

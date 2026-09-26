@@ -7,7 +7,7 @@
 
 // BMD::CollisionDetectLineToMesh @ 0x00440BE0 (~101 lines) — line-mesh collision test
 // Iterates all meshes and triangles. Per tri: FaceNormalize, CollisionDetectLineToFace.
-bool __cdecl BMD__CollisionDetectLineToMesh_stub(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle) {
+bool __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle) {
     // 0x00440BE0 — Line-mesh collision test (__thiscall in original, pThis = this pointer)
     // Iterates all meshes in the BMD model. For each mesh, iterates all triangles.
     // Per triangle: compute face normal via FaceNormalize, then test line-to-face intersection

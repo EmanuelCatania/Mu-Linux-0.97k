@@ -6,18 +6,18 @@
 #include "functions.h"
 
 // AttackStage @ 0x00448930 (~866 lines) — main attack animation/effect handler
-// Decompiled from Ghidra. Anti-tamper hash table ops (FUN_00403f80/4041e0/404280/404330) skipped.
+// Decompiled from Ghidra. Anti-tamper hash table ops (HashTable_Insert/4041e0/404280/404330) skipped.
 // Phantom params: unaff_EBX/ESI/EDI/EBP/retaddr are anti-tamper artifacts, not real args.
 // The function reads c->Skill (c+0x302), dispatches on its value to spawn
 // effects, joints, sounds per weapon/skill type. Each case creates visual FX
-// via Effect_Create (CreateEffect) or Joint_Create (CreateJoint).
+// via CreateEffect or Joint_Create (CreateJoint).
 static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
     int Hand = GetHandOfWeapon((int)o);
 
     // anti-tamper hash table — skipped (encrypt/decrypt c->Skill)
     BYTE skillByte = *(BYTE*)(c + 0x302);
 
-    DAT_00559858 = 15; // g_iLimitAttackTime = 15
+    g_iLimitAttackTime = 15; // g_iLimitAttackTime = 15
 
     // Models base
     DWORD modelsBase = DAT_05828d58;
@@ -150,9 +150,9 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
                 pos[2] = *(float*)(o + 0x18) + _DAT_005528fc;
                 float light[3] = {1.0f, 1.0f, 1.0f};
 
-                Effect_Create(0x1F0, pos, (float*)(o + 0x1C), light,
+                CreateEffect(0x1F0, pos, (float*)(o + 0x1C), light,
                              NULL, (float*)o, NULL, NULL, 0);
-                Effect_Create(0x1F0, pos, (float*)(o + 0x1C), light,
+                CreateEffect(0x1F0, pos, (float*)(o + 0x1C), light,
                              NULL, (float*)o, NULL, NULL, 0);
             }
         }
@@ -177,7 +177,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
                     pos[2] += (float)(rand() % 60 - 30);
                 }
 
-                Effect_Create(0x10A, pos, (float*)(o + 0x1C), light,
+                CreateEffect(0x10A, pos, (float*)(o + 0x1C), light,
                              (float*)(intptr_t)weapType, (float*)o, NULL, NULL, 0);
             }
             return true;
@@ -225,23 +225,23 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         }
 
         if (*(BYTE*)(c + 0x2F5) == 0x03) {
-            Effect_Create(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
+            CreateEffect(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
                          (float*)(o + 0xE8), NULL, (float*)o, NULL, NULL, 0);
             PlayBuffer(100, (DWORD)o, 0);
         }
 
-        DAT_00559858 = 5; // g_iLimitAttackTime = 5
+        g_iLimitAttackTime = 5; // g_iLimitAttackTime = 5
         return true;
     }
 
     // ── case '7' (0x37) — summoner/special skill: CreateEffect(0x4F3) + CreateEffect(0x490) ──
     case 0x37: {
         if (*(short*)(o + 0x02) != 0x186) {
-            DAT_00559858 = 15;
+            g_iLimitAttackTime = 15;
             return true;
         }
         if (*(BYTE*)(o + 0x105) != 0x3D) {
-            DAT_00559858 = 15;
+            g_iLimitAttackTime = 15;
             return true;
         }
 
@@ -249,12 +249,12 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
 
         // Spawn effect when attackTime in [1..2]
         if (attackTime != 0 && attackTime < 3) {
-            Effect_Create(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
+            CreateEffect(0x4F3, (float*)(o + 0x10), (float*)(o + 0x1C),
                          (float*)(o + 0xE8), (float*)1, (float*)o, NULL, NULL, 0);
         }
 
         if (*(float*)(o + 0x108) < _DAT_00552540) {
-            DAT_00559858 = 15;
+            g_iLimitAttackTime = 15;
             return true;
         }
 
@@ -264,7 +264,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         int hotKey = FindHotKey(0x37);
         WORD pkKey = *(WORD*)(o + 0x86);
 
-        Effect_Create(0x490, (float*)(o + 0x10), (float*)(o + 0x1C),
+        CreateEffect(0x490, (float*)(o + 0x10), (float*)(o + 0x1C),
                      (float*)(o + 0xE8), (float*)(intptr_t)hotKey, (float*)o,
                      (float*)(intptr_t)(int)pkKey, NULL, NULL);
 
@@ -274,7 +274,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
         DWORD modelData = *(DWORD*)(modelsBase + 0x186 * 0xBC + 0x30);
         *(float*)(modelData + 0x3D4) = (float)(int)c + _DAT_005528f4;
         *(BYTE*)(c + 0x2F5) = 0x0F;
-        DAT_00559858 = 15;
+        g_iLimitAttackTime = 15;
         return true;
     }
 
@@ -290,25 +290,25 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
             float* oLight = (float*)(o + 0xE8);
 
             // 5x CreateEffect(0xCB) at different angle offsets
-            Effect_Create(0xCB, oPos, angleDir, oLight,
+            CreateEffect(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            Effect_Create(0xCB, oPos, angleDir, oLight,
+            CreateEffect(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            Effect_Create(0xCB, oPos, angleDir, oLight,
+            CreateEffect(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            Effect_Create(0xCB, oPos, angleDir, oLight,
+            CreateEffect(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
             angleDir[2] += _DAT_005524fc;
-            Effect_Create(0xCB, oPos, angleDir, oLight,
+            CreateEffect(0xCB, oPos, angleDir, oLight,
                          (float*)2, (float*)o, NULL, NULL, 0);
 
             PlayBuffer(0x54, 0, 0);
             *(BYTE*)(c + 0x2F5) = 0x0F;
         }
-        DAT_00559858 = 15;
+        g_iLimitAttackTime = 15;
         return true;
     }
 
@@ -324,13 +324,13 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
 // Combat_SpawnDeathDustParticles (IDA-activated, was Ghidra stub)
 // 00448930 AttackStage — direct IDA switch (raw/00448930_AttackStage.c).
 // The older AttackStage_legacy_mismatched above is intentionally not called.
-bool __cdecl AttackStage_stub(DWORD c, DWORD o)
+bool __cdecl AttackStage(DWORD c, DWORD o)
 {
     const int hand = GetHandOfWeapon((int)o);
     const BYTE skill = *(BYTE*)(c + 770), stage = *(BYTE*)(c + 757);
     const short type = *(short*)(o + 2);
     const DWORD model = DAT_05828d58 + type * 188;
-    DAT_00559858 = 15;
+    g_iLimitAttackTime = 15;
     if (skill == 43) {
         if (stage == 8) PlayBuffer(83, 0, 0);
         if (stage >= 2 && stage <= 8) {
@@ -349,19 +349,19 @@ bool __cdecl AttackStage_stub(DWORD c, DWORD o)
             float z[3]={}, p[3], l[3]={1,1,1};
             BMD_TransformPosition((void*)model, (float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)), z, p, 1);
             const float r=*(float*)(o+36)*0.017453292f, d=(float)(stage-8)*10.0f+100.0f; p[0]+=sinf(r)*d; p[1]-=cosf(r)*d;
-            Effect_Create(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0); Effect_Create(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0);
+            CreateEffect(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0); CreateEffect(496,p,(float*)(o+28),l,(float*)1,(float*)o,(float*)-1,nullptr,0);
             const short target=*(short*)(c+784); if(target!=-1 && stage>=10) { BYTE* v=(BYTE*)(uintptr_t)CharactersClient+target*916; if(*v) v[404]=35; }
         }
     } else if (skill == 47) {
         if(stage==10) PlayBuffer(95,0,0);
-        else if(stage==4) { float z[3]={},p[3],l[3]={1,1,0.5f}; BMD_TransformPosition((void*)model,(float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)),z,p,1); Effect_Create(497,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); }
-        else if(stage==8) { const float r=*(float*)(o+36)*0.017453292f; float p[3]={*(float*)(o+16)+sinf(r)*50.0f,*(float*)(o+20)-cosf(r)*50.0f,*(float*)(o+24)+110.0f},l[3]={1,1,1}; Effect_Create(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); Effect_Create(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); }
-        if(stage>=13 && stage<=14) { const float r=*(float*)(o+36)*0.017453292f; for(int i=0;i<3;++i) { float p[3]={*(float*)(o+16)+sinf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+20)-cosf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+24)+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; Effect_Create(266,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
+        else if(stage==4) { float z[3]={},p[3],l[3]={1,1,0.5f}; BMD_TransformPosition((void*)model,(float*)(*(DWORD*)(o+276)+48**(BYTE*)(c+24*hand+628)),z,p,1); CreateEffect(497,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); }
+        else if(stage==8) { const float r=*(float*)(o+36)*0.017453292f; float p[3]={*(float*)(o+16)+sinf(r)*50.0f,*(float*)(o+20)-cosf(r)*50.0f,*(float*)(o+24)+110.0f},l[3]={1,1,1}; CreateEffect(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); CreateEffect(496,p,(float*)(o+28),l,nullptr,(float*)o,(float*)-1,nullptr,0); }
+        if(stage>=13 && stage<=14) { const float r=*(float*)(o+36)*0.017453292f; for(int i=0;i<3;++i) { float p[3]={*(float*)(o+16)+sinf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+20)-cosf(r)*145.0f+(float)(rand()%60-30),*(float*)(o+24)+110.0f+(float)(rand()%60-30)},l[3]={0.3f,0.3f,0.3f}; CreateEffect(266,p,(float*)(o+28),l,(float*)(intptr_t)*(short*)(c+8*(3*hand+78)),(float*)o,(float*)-1,nullptr,0); } }
     } else if(skill==48) { if(stage>9 && type==390 && *(BYTE*)(o+261)==63) *(BYTE*)(c+757)=15; }
     else if(skill==49) { if(*(float*)(o+264)>=5.0f && type==390 && (*(BYTE*)(o+261)==64 || *(BYTE*)(o+261)==65)) *(BYTE*)(c+757)=15; }
-    else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){Effect_Create(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} DAT_00559858=5; }
-    else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) Effect_Create(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); Effect_Create(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
-    else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){Effect_Create(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);*(BYTE*)(c+757)=15;} }
+    else if(skill==52) { if(type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91 && *(float*)(o+264)>=5.0f){*(float*)(o+268)=4.0f;*(float*)(o+264)=5.0f;} if(stage==3){CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)-1,nullptr,0);PlayBuffer(100,o,0);} g_iLimitAttackTime=5; }
+    else if(skill==55) { if(type==390 && *(BYTE*)(o+261)==61) { if(stage && stage<=2) CreateEffect(1267,(float*)(o+16),(float*)(o+28),(float*)(o+232),(float*)1,(float*)o,(float*)-1,nullptr,0); if(*(float*)(o+264)>=3.0f){PlayBuffer(84,0,0); CreateEffect(1168,(float*)(o+16),(float*)(o+28),(float*)(o+232),nullptr,(float*)o,(float*)(intptr_t)*(short*)(o+134),(float*)(intptr_t)FindHotKey(55),0); const DWORD modelState=DAT_05828d58?*(DWORD*)(DAT_05828d58+390*188+48):0; if(modelState && CharacterAttribute) *(float*)(modelState+980)=*(WORD*)((BYTE*)CharacterAttribute+56)*0.0040000002f+0.54000002f; *(BYTE*)(c+757)=15;} } }
+    else if(skill==56) { if(type==390 && *(BYTE*)(o+261)==81){float a[3]={*(float*)(o+28),*(float*)(o+32),*(float*)(o+36)-40.0f};for(int i=0;i<5;++i){CreateEffect(203,(float*)(o+16),a,(float*)(o+232),(float*)2,(float*)o,(float*)-1,nullptr,0);a[2]+=20.0f;}PlayBuffer(84,0,0);*(BYTE*)(c+757)=15;} }
     // -- PENDIENTE: grupo de skills de magia del DLL (mejora, NO esta en IDA) --
     //
     // El `else if` de abajo es el `default:` literal de IDA (0x00448930 L356-364):

@@ -8,23 +8,23 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "functions.h"
 
 // -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// FUN_00408cb0 vive ahora en Scene/Scene_CharSelect_Nav.cpp y FUN_00408e30 en
+// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
 // Net/Crypto.cpp; antes se definian en este archivo.
-void __fastcall FUN_00408cb0(int*, float);
-int  __cdecl    FUN_00408e30(DWORD *a1);
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -45,10 +45,11 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// FUN_005030c0 @ 0x005030C0 — Entity_GravityInit(entity_ptr)
+// ItemAngle @ 0x005030C0 — Entity_GravityInit(entity_ptr)
 // Sets initial gravity velocity components at +0x1c/+0x20/+0x24 and scale +0x0c
 // based on entity type (short at +2). Each entity type has hardcoded float offsets.
-void __cdecl FUN_005030c0(int param_1) {
+// IDA: ItemAngle (0x005030C0)
+void __cdecl ItemAngle(int param_1) {
     short sVar1 = *(short*)(param_1 + 2);
     *(unsigned int*)(param_1 + 0x1c) = 0;
     *(unsigned int*)(param_1 + 0x20) = 0;
@@ -147,15 +148,15 @@ void __cdecl Entity_UpdateSparkleEffect(int param_1)
 }
 
 
-// FUN_00408940 @ 0x00408940 — Sound_UpdateChannel3D_Tick(channel)
+// Sound_UpdateChannel3D_Tick @ 0x00408940 — Sound_UpdateChannel3D_Tick(channel)
 // Updates 3D sound position sin/cos from entity facing angle at param_1[1]+0x24,
 // scaled by random key _DAT_00590af0. Calls constraint update and validity check.
 // IDA `sub_408940` devuelve `sub_408E30(this) != 0` — el "¿convergió?" que usa
 // el bucle de `sub_408900`. El port lo descartaba (void).
-int __cdecl FUN_00408940(int *param_1, float dt) {
+int __cdecl Sound_UpdateChannel3D_Tick(int *param_1, float dt) {
     double angle = (*(float*)(param_1[1] + 0x24) + *(float*)&_DAT_005524ec) * *(float*)&_DAT_0055253c;
     DAT_00590af4 = (float)(sin(angle)  * *(float*)&_DAT_00590af0);
     DAT_00590af8 = (float)(-cos(angle) * *(float*)&_DAT_00590af0);
-    FUN_00408cb0(param_1, dt);
-    return FUN_00408e30((DWORD *)param_1) != 0;
+    Cloth_Integrate(param_1, dt);
+    return Cloth_Solve((DWORD *)param_1) != 0;
 }

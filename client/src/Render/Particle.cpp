@@ -4,25 +4,25 @@ extern "C" { void DbgLogPublic(const char* msg); }
 extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
                          int mesh, int blend, float wx, float wy, float wz,
                          float r, float g, float b, float a);   // [DIAG FORGE]
-// FUN_0043e5c0 @ 0x0043e5c0  — Particle_FinalizeAlpha
-// FUN_0043e680 @ 0x0043e680  — Particle_PathUpdate
-// FUN_0043e820 @ 0x0043e820  — Particle_SetAnimation
+// IDA: Alpha (0x0043E5C0)
+// Particle_PathUpdate @ 0x0043e680  — Particle_PathUpdate
+// SetAction @ 0x0043e820  — Particle_SetAnimation
 //
-// Particle_FinalizeAlpha (FUN_0043e5c0):
+// Particle_FinalizeAlpha (Alpha):
 //   Smoothly blends particle alpha (field +0x168) toward target (field
 //   +0x164). Behavior depends on flag at +0x161:
 //     0 — lerp toward target using _DAT_005524f4 factor
 //     non-zero — step toward target by _DAT_00552874; clamp to [0,1]
 //   Clamps display alpha (+0x68) to the computed value.
 //
-// Particle_PathUpdate (FUN_0043e680):
+// Particle_PathUpdate (Particle_PathUpdate):
 //   Steers a particle toward the average direction of nearby active
 //   particles in the pool (stride 0x1bc = 0x6f*4).  Uses a proximity
 //   threshold (_DAT_00552850) and a half-way distance (_DAT_00552878).
 //   Writes the resulting steering angle to field +0x24 via
-//   Math_GetAngleFromPoints (IDA: FUN_0043e430) / FUN_0043e120.
+//   Math_GetAngleFromPoints (IDA: FUN_0043e430) / Angle_Clamp.
 //
-// Particle_SetAnimation (FUN_0043e820):
+// Particle_SetAnimation (SetAction):
 //   Sets the current animation index (+0x105) for a particle/entity.
 //   Validates range against the model's animation count
 //   (DAT_05828d58 + 0x26 + type*0xbc).  Special values 0x4c and 0x4d
@@ -43,7 +43,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl FUN_0043e5c0(int param_1)
+void __cdecl Alpha(int param_1)
 
 {
   float fVar1;
@@ -76,7 +76,7 @@ void __cdecl FUN_0043e5c0(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl FUN_0043e680(int param_1,int param_2,int param_3,int param_4)
+void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4)
 
 {
   float fVar1;
@@ -124,7 +124,7 @@ void __cdecl FUN_0043e680(int param_1,int param_2,int param_3,int param_4)
       iVar7 = (int)lVar9;
       iVar8 = Math_GetAngleFromPoints(fVar1,fVar2,fVar3 / (float)iVar8 + fVar1,fVar5 / (float)iVar8 + fVar2);
       lVar9 = (longlong)(*(float *)(param_1 + 0x24));   // IDA sub_43E680: (__int64)*(float*)(a1+36)
-      iVar7 = FUN_0043e120((int)lVar9,iVar8,iVar7);
+      iVar7 = Angle_Clamp((int)lVar9,iVar8,iVar7);
       *(float *)(param_1 + 0x24) = (float)iVar7;
       return;
     }
@@ -141,7 +141,7 @@ void __cdecl FUN_0043e680(int param_1,int param_2,int param_3,int param_4)
 // consolidar no cambia comportamiento; sólo elimina la trampa.
 
 
-// FUN_004795c0 @ 0x004795c0
+// IDA: CreateSprite (0x004795C0)
 //
 // Effect_Spawn — allocates a free slot in the effect pool and initialises it.
 //
@@ -163,7 +163,7 @@ void __cdecl FUN_0043e680(int param_1,int param_2,int param_3,int param_4)
 //   DAT_07c85890 — effect pool base (stride 0x1bc, ends at 0x7cf1ef0)
 
 int __cdecl
-FUN_004795c0(unsigned short param_1, float *param_2, float param_3, float *param_4,
+CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param_4,
              int param_5, float param_6, int param_7)
 {
   // [DIAG FORGE] entry-point CreateSprite (a = scale param_3)
@@ -188,7 +188,7 @@ FUN_004795c0(unsigned short param_1, float *param_2, float param_3, float *param
       s_logged = true;
       char b[256];
       _snprintf_s(b, sizeof(b), _TRUNCATE,
-        "FUN_004795c0 NULL-arg: type=0x%x scale=%.3f param_2=%p param_4=%p param_5=%d param_7=%d",
+        "CreateSprite NULL-arg: type=0x%x scale=%.3f param_2=%p param_4=%p param_5=%d param_7=%d",
         param_1, param_3, param_2, param_4, param_5, param_7);
       DbgLogPublic(b);
     }

@@ -1,5 +1,5 @@
 // BMD_SetupRender.cpp
-// FUN_00504130 @ 0x00504130 — BMD_SetupRenderByType
+// BMD_SetupRenderByType @ 0x00504130 — BMD_SetupRenderByType
 // Sets up bone color and animation state for BMD models based on effect/entity type.
 // Called from entity rendering pipeline to apply type-specific color/anim overrides.
 //
@@ -10,14 +10,14 @@
 // param_5: flags / blend mode
 //
 // Uses:
-//   FUN_00440d50 — BMD_SetAnimFrame (model, frame_type, action, scale, phase, x, y, z, color)
-//   FUN_00441e00 — BMD_SetColorAnim (model, flags, f1..f6, color_mask)
-//   FUN_00440d30 — glPushMatrix wrapper
+//   BMD__RenderMesh  (0x00440D50) — dibuja una malla del modelo
+//   BMD__RenderBody  (0x00441E00) — recorre las mallas y llama a RenderMesh
+//   BMD__BeginRender (0x00440D30) — glPushMatrix
 
 #include "stdafx.h"
 
 
-void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4, uint param_5)
+void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, float param_4, uint param_5)
 {
   int iVar1;
   float10 fVar2;
@@ -50,7 +50,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
       *(undefined4 *)((int)param_1 + 0x48) = 0x3f59999a;   // R≈0.85
       *(undefined4 *)((int)param_1 + 0x4c) = 0x3f59999a;   // G≈0.85
       *(undefined4 *)((int)param_1 + 0x50) = 0x3f99999a;   // B≈1.2
-      FUN_00441e00(param_1, 6, *(float *)(param_2 + 0x168), *(int *)(param_2 + 100),
+      BMD__RenderBody(param_1, 6, *(float *)(param_2 + 0x168), *(int *)(param_2 + 100),
                    *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                    *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0x493);
       goto LAB_00504925;
@@ -60,13 +60,13 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-        FUN_00440d50(param_1, 0.0f, 10, param_4, 0,
+        BMD__RenderMesh(param_1, 0.0f, 10, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 0.0f, 0x12, param_4, 0,
+        BMD__RenderMesh(param_1, 0.0f, 0x12, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_00552868, 0x492);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, param_4, 0,
+        BMD__RenderMesh(param_1, 1.4013e-45f, 2, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         return;
@@ -75,13 +75,13 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-        FUN_00440d50(param_1, 0.0f, 10, param_4, 0,
+        BMD__RenderMesh(param_1, 0.0f, 10, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 0.0f, 0x12, 1.0f, 0,
+        BMD__RenderMesh(param_1, 0.0f, 0x12, 1.0f, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_00552920, 0x492);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, param_4, -1,
+        BMD__RenderMesh(param_1, 1.4013e-45f, 2, param_4, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         return;
@@ -90,13 +90,13 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-        FUN_00440d50(param_1, 0.0f, 10, param_4, 0,
+        BMD__RenderMesh(param_1, 0.0f, 10, param_4, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 0.0f, 0x12, 1.0f, 0,
+        BMD__RenderMesh(param_1, 0.0f, 0x12, 1.0f, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_00552920, 0x492);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, param_4, -1,
+        BMD__RenderMesh(param_1, 1.4013e-45f, 2, param_4, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         return;
@@ -105,21 +105,21 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-        FUN_00440d30();
+        BMD__BeginRender();
         // BUG-FIX: glColor3f espera float; *(undefined4*) lee bits y los pasa como int → C castea int→float = basura.
         glColor3f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                   *(float *)((int)param_1 + 0x50));
-        FUN_00440d50(param_1, 4.2039e-45f, 2, 1.0f, -1,
+        BMD__RenderMesh(param_1, 4.2039e-45f, 2, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, -1,
+        BMD__RenderMesh(param_1, 1.4013e-45f, 2, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         fVar2 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005524f8);
-        FUN_00440d50(param_1, 1.4013e-45f, 2, (float)fVar2, 1,
+        BMD__RenderMesh(param_1, 1.4013e-45f, 2, (float)fVar2, 1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
-        FUN_00440d50(param_1, 0.0f, 6, 1.0f, 0,
+        BMD__RenderMesh(param_1, 0.0f, 6, 1.0f, 0,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_00552500, 0x492);
         fVar2 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552500);
@@ -136,10 +136,10 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
           *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
           *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
           *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-          FUN_00441e00(param_1, param_5, param_4, *(int *)(param_2 + 100),
+          BMD__RenderBody(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                        *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0xffffffff);
-          FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, 1,
+          BMD__RenderMesh(param_1, 1.4013e-45f, 2, 1.0f, 1,
                        *(float *)(param_2 + 0x68),
                        DAT_05826e08 * _DAT_00552868, DAT_05826e08 * _DAT_00552a40, 0xffffffff);
           return;
@@ -148,7 +148,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
           *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
           *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
           *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-          FUN_00441e00(param_1, param_5, param_4, *(int *)(param_2 + 100),
+          BMD__RenderBody(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                        *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0xffffffff);
           fVar3 = (float10)DAT_05826e08;
@@ -158,7 +158,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
           *(float *)((int)param_1 + 0x48) = (float)fVar4;
           *(float *)((int)param_1 + 0x4c) = (float)fVar4;
           *(float *)((int)param_1 + 0x50) = (float)fVar4;
-          FUN_00440d50(param_1, 2.8026e-45f, 2, 1.0f, 2,
+          BMD__RenderMesh(param_1, 2.8026e-45f, 2, 1.0f, 2,
                        *(float *)(param_2 + 0x68),
                        (float)(fVar3 * fVar2), DAT_05826e08 * _DAT_0055291c, 0xffffffff);
           return;
@@ -168,49 +168,49 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
             *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
             *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
             *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-            FUN_00440d30();
+            BMD__BeginRender();
             // BUG-FIX: leer como float, no como undefined4 (int). Alpha 0x3f4ccccd=0.8f, 0x3f000000=0.5f.
             glColor4f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50), 0.8f);
-            FUN_00440d50(param_1, 1.4013e-45f, 2, 0.8f, -1,
+            BMD__RenderMesh(param_1, 1.4013e-45f, 2, 0.8f, -1,
                          *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                          *(float *)(param_2 + 0x70), 0xffffffff);
             glColor4f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50), 0.5f);
-            FUN_00440d50(param_1, 4.2039e-45f, 2, 0.5f, -1,
+            BMD__RenderMesh(param_1, 4.2039e-45f, 2, 0.5f, -1,
                          *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                          *(float *)(param_2 + 0x70), 0xffffffff);
             glColor3f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50));
-            FUN_00440d50(param_1, 0.0f, 2, 1.0f, -1,
+            BMD__RenderMesh(param_1, 0.0f, 2, 1.0f, -1,
                          *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                          *(float *)(param_2 + 0x70), 0xffffffff);
-            FUN_00440d50(param_1, 2.8026e-45f, 2, 1.0f, 2,
+            BMD__RenderMesh(param_1, 2.8026e-45f, 2, 1.0f, 2,
                          *(float *)(param_2 + 0x68),
                          DAT_05826e08 * _DAT_00552a40, *(float *)(param_2 + 0x70), 0xffffffff);
             uVar5 = 0xffffffff;
             iVar1 = _rand();
             fVar9 = (float)(iVar1 % 10) * _DAT_005524f4;
             iVar1 = _rand();
-            FUN_00440d50(param_1, 4.2039e-45f, 2, 1.0f, 3,
+            BMD__RenderMesh(param_1, 4.2039e-45f, 2, 1.0f, 3,
                          *(float *)(param_2 + 0x68),
                          (float)(iVar1 % 10) * _DAT_005524f4, fVar9, uVar5);
             glPopMatrix();
             return;
           }
-          FUN_00441e00(param_1, param_5, param_4, *(int *)(param_2 + 100),
+          BMD__RenderBody(param_1, param_5, param_4, *(int *)(param_2 + 100),
                        *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                        *(float *)(param_2 + 0x70), -1, 0xffffffff);
           return;
         }
         // param_3 == 0x25f
-        FUN_00440d30();
+        BMD__BeginRender();
         *(undefined4 *)((int)param_1 + 0x48) = 0x3e99999a;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3e99999a;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3e99999a;
         // BUG-FIX: 0x3e99999a = bits de 0.3f (≈ gris oscuro)
         glColor3f(0.3f, 0.3f, 0.3f);
-        FUN_00440d50(param_1, 2.8026e-45f, 1, 1.0f, -1,
+        BMD__RenderMesh(param_1, 2.8026e-45f, 1, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
@@ -218,17 +218,17 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
         // BUG-FIX: 0x3f800000 = bits de 1.0f (blanco)
         glColor3f(1.0f, 1.0f, 1.0f);
-        FUN_00440d50(param_1, 2.8026e-45f, 0x44, 1.0f, 2,
+        BMD__RenderMesh(param_1, 2.8026e-45f, 0x44, 1.0f, 2,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      DAT_05826e08 * _DAT_005524f8, 0x492);
-        FUN_00440d50(param_1, 0.0f, 2, 1.0f, -1,
+        BMD__RenderMesh(param_1, 0.0f, 2, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                      *(float *)(param_2 + 0x70), 0xffffffff);
         uVar5 = 0xffffffff;
         iVar1 = _rand();
         fVar9 = (float)(iVar1 % 10) * _DAT_005524f4;
         iVar1 = _rand();
-        FUN_00440d50(param_1, 1.4013e-45f, 2, 1.0f, 1,
+        BMD__RenderMesh(param_1, 1.4013e-45f, 2, 1.0f, 1,
                      *(float *)(param_2 + 0x68),
                      (float)(iVar1 % 10) * _DAT_005524f4, fVar9, uVar5);
         fVar2 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_00552500);
@@ -242,7 +242,7 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
         fVar9  = *(float *)(param_2 + 0x68);
         fVar10 = DAT_05826e08 * _DAT_00552868;
       }
-      FUN_00440d50(param_1, 2.8026e-45f, 0x42, 1.0f, 2, fVar9, fVar10, fVar11, 0xffffffff);
+      BMD__RenderMesh(param_1, 2.8026e-45f, 0x42, 1.0f, 2, fVar9, fVar10, fVar11, 0xffffffff);
       glPopMatrix();
       return;
     }
@@ -261,22 +261,22 @@ void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4
   // fVar9 es reuso de registro de Hex-Rays: en los dos caminos que llegan aca
   // vale `*(float *)(param_2 + 0x58)` (HiddenMesh, bit-pattern).  Se pasa el
   // entero directo para no depender de esa reinterpretacion.
-  FUN_00441e00(param_1, uVar5, fVar6, fVar7, fVar8, fVar10, fVar11,
+  BMD__RenderBody(param_1, uVar5, fVar6, fVar7, fVar8, fVar10, fVar11,
                *(int *)(param_2 + 0x58), 0x493);
 LAB_00504925:
   *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
   *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
   *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-  FUN_00441e00(param_1, 2, *(float *)(param_2 + 0x168), *(int *)(param_2 + 100),
+  BMD__RenderBody(param_1, 2, *(float *)(param_2 + 0x168), *(int *)(param_2 + 100),
                *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
                *(float *)(param_2 + 0x70), *(int *)(param_2 + 0x58), 0xffffffff);
   return;
 }
 
-// FUN_00440a30 @ 0x00440a30 — BoneTransformOffset (sub_440A30 en IDA)
+// BMD__RotationPosition @ 0x00440a30 — BoneTransformOffset (sub_440A30 en IDA)
 // Transforms pos_in through bone rotation, scales by model scale (this[+0x68]),
 // stores result in pos_out, AND COPIES the bone matrix into the global root
-// matrix DAT_06989c9c so that BMD_Animation (FUN_00440060), cuando procesa el
+// matrix DAT_06989c9c so that BMD_Animation, cuando procesa el
 // root bone del ala/arma con parentIdx=-1 y param_7=='\x01', use esta matriz
 // del bone padre del player como su "parent transform" → el modelo linked
 // queda renderizado en la posición del hueso del player en lugar del origen.
@@ -294,7 +294,7 @@ LAB_00504925:
 // BUGFIX 2026-04-26: el Ghidra port había stripped tanto el escalado como
 // (crítico) la copia de matriz. Sin la copia, las alas/armas renderizaban
 // en (entity_pos + rotated_offset_de_15) ≈ pies del char en lugar del back.
-void __cdecl FUN_00440a30(void *model, float *bone_mat, float *pos_in, float *pos_out)
+void __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, float *pos_out)
 {
   // 1. Rotate-only transform: pos_out = bone_rotation_3x3 * pos_in (no translation)
   Vector_Rotate(pos_in, bone_mat, pos_out);
@@ -311,11 +311,11 @@ void __cdecl FUN_00440a30(void *model, float *bone_mat, float *pos_in, float *po
   for (int i = 0; i < 12; ++i) dst[i] = bone_mat[i];
 }
 
-// FUN_004553c0 @ 0x004553c0 — Model_BoneParticle
+// Model_BoneParticle @ 0x004553c0 — Model_BoneParticle
 // Emits a particle at the world position of a specific bone.
 // model: BMD model ptr, type: entity type, bone_idx: bone index,
 // scale: particle scale, color: float[3] RGB, entity: entity index
-void __cdecl FUN_004553c0(void *model, int type, int bone_idx, float scale, float *color, int entity)
+void __cdecl Model_BoneParticle(void *model, int type, int bone_idx, float scale, float *color, int entity)
 {
   // 2026-09-04 FIX -- dos errores, y esta funcion la usan nueve sitios (el
   // brillo de arcos y bastones de RenderLinkObject, el equipo del jugador y
@@ -341,5 +341,5 @@ void __cdecl FUN_004553c0(void *model, int type, int bone_idx, float scale, floa
   BMD_TransformPosition(model,
                         (float *)((char *)&DAT_06970a9c + bone_idx * 0x30),
                         in, world_pos, 1);
-  FUN_004795c0((unsigned short)type, world_pos, scale, color, entity, 0.0f, 0);
+  CreateSprite((unsigned short)type, world_pos, scale, color, entity, 0.0f, 0);
 }

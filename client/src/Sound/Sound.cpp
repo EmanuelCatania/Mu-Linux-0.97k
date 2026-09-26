@@ -316,7 +316,7 @@ void __cdecl LoadWaveFile(int Buffer, const char* strFileName,
 // (Monster_Data, Model_Gates, stubs) which pass the 4th arg as char.
 // Forwards to LoadWaveFile with bool cast.
 // ============================================================================
-void __cdecl FUN_00404a10(int Buffer, const char* strFileName,
+void __cdecl LoadWaveFile(int Buffer, const char* strFileName,
                           int MaxChannel, char Enable)
 {
     LoadWaveFile(Buffer, strFileName, MaxChannel, Enable != 0);

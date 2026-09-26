@@ -1,4 +1,4 @@
-// Entity_DrawByType.cpp — FUN_004fae00 @ 0x004fae00
+// Entity_DrawByType.cpp — Draw_RenderObject @ 0x004fae00
 // Dispatches entity render based on entity type (*(short*)(param_1+2)).
 //
 // param_1 = entity data pointer (stride 0x394, entity array at DAT_07abf5d0)
@@ -61,7 +61,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 // el objeto (el metodo [2] solo libera sus buffers), y llama a los metodos por
 // la vtable.  Aca el objeto vive en el stack y los metodos se llaman directo:
 // mismo resultado, sin la fuga.  2026-09-18: antes el port llamaba por una
-// vtable que nunca se instalaba (FUN_0040a660 la saltea) y sin `this`.
+// vtable que nunca se instalaba (WidgetB_CtorFull la saltea) y sin `this`.
 // ─────────────────────────────────────────────────────────────────────────────
 struct MoltSilhouette {
     void          *vtable;
@@ -123,7 +123,7 @@ static void MoltSilhouette_Build(MoltSilhouette *s, unsigned char *verts,
     s->dir[0] = *(float *)(hero + 16) - _DAT_083a42d4;   // CameraPosition
     s->dir[1] = *(float *)(hero + 20) - _DAT_083a42d8;
     s->dir[2] = *(float *)(hero + 24) - _DAT_083a42dc;
-    FUN_004f9d60(s->dir);
+    Vec3_Normalize(s->dir);
     if (!(*(float *)(o + 360) >= 0.0099999998f)) return;
     const short hidden = *(short *)(o + 88);
     const short blend  = *(short *)(o + 100);
@@ -160,7 +160,7 @@ static void MoltSilhouette_Render(unsigned char *model, unsigned char *o)
     if (s.buf8) operator delete(s.buf8);
 }
 
-void __cdecl FUN_004fae00(void *param_1_v, int param_2, int param_3, char param_4)
+void __cdecl Draw_RenderObject(void *param_1_v, int param_2, int param_3, char param_4)
 {
     unsigned char *param_1 = (unsigned char *)param_1_v;
     // Model context for this entity type
@@ -178,7 +178,7 @@ void __cdecl FUN_004fae00(void *param_1_v, int param_2, int param_3, char param_
     // ── Tint overrides based on game sub-state / type ──────────────────────────
 
     // Sub-state 10 (dense rain) + type 0x12d → blue-tinted tint
-    if (DAT_0055a7ac == 10 && *(short *)(param_1 + 2) == 0x12d) {
+    if (World == 10 && *(short *)(param_1 + 2) == 0x12d) {
         *(float *)((int)model + 0x48) = 0.02f;          // 0x3ca3d70a R (el port tenia 0.15)
         *(float *)((int)model + 0x4c) = 0.05f;          // 0x3d4ccccd G
         *(float *)((int)model + 0x50) = 0.15f;          // 0x3e19999a B
@@ -186,7 +186,7 @@ void __cdecl FUN_004fae00(void *param_1_v, int param_2, int param_3, char param_
     }
 
     // Sub-state 9 (snow) + type 0x120 → icy tint
-    if (DAT_0055a7ac == 9 && *(short *)(param_1 + 2) == 0x120) {
+    if (World == 9 && *(short *)(param_1 + 2) == 0x120) {
         *(float *)((int)model + 0x48) = 0.0f;
         *(float *)((int)model + 0x4c) = 0.3f;           // 0x3e99999a G
         *(float *)((int)model + 0x50) = 1.0f;            // 0x3f800000 B
@@ -202,7 +202,7 @@ LAB_render_dispatch:
 
     // Render mode 0x80: special full render + return
     if (param_1[0x74] == (unsigned char)0x80) {
-        FUN_00441e00(model, 0x82,
+        BMD__RenderBody(model, 0x82,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -220,7 +220,7 @@ LAB_render_dispatch:
         *(float *)((int)model + 0x4c) = 0.6f;    // 0x3f19999a G (el port tenia 0.575)
         *(float *)((int)model + 0x50) = 1.0f;
         *(unsigned char *)((int)model + 0x88) = 0;
-        FUN_00441e00(model, 2,
+        BMD__RenderBody(model, 2,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -235,30 +235,30 @@ LAB_render_dispatch:
     if (sType == 0x10b)
         goto LAB_simple_render;
 
-    if (DAT_0055a7ac == 0) {
+    if (World == 0) {
         if (sType == 0x69) {
             // IDA 0x004FAE00: Waterspout01 in Lorencia renders 4 explicit mesh
             // passes with mesh indices 0..3 and object fields as the remaining
             // parameters. Our prior decompile treated small integer args as
             // denormal floats, collapsing mesh selection and blend args.
-            FUN_00440d30();
-            FUN_00440d50(model, 0.0f, 2,
+            BMD__BeginRender();
+            BMD__RenderMesh(model, 0.0f, 2,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 104), 0.0f, 0.0f, 0xffffffff);
-            FUN_00440d50(model, 1.0f, 2,
+            BMD__RenderMesh(model, 1.0f, 2,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 104), 0.0f, 0.0f, 0xffffffff);
-            FUN_00440d50(model, 2.0f, 2,
+            BMD__RenderMesh(model, 2.0f, 2,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 104), 0.0f, 0.0f, 0xffffffff);
-            FUN_00440d50(model, 3.0f, 2,
+            BMD__RenderMesh(model, 3.0f, 2,
                          *(float *)(param_1 + 0x168), 3,
                          *(float *)(param_1 + 104), *(float *)(param_1 + 108),
                          *(float *)(param_1 + 0x70),  0xffffffff);
             glPopMatrix();
             return;
         }
-    } else if (DAT_0055a7ac == 4) {
+    } else if (World == 4) {
         // Char-select scene: specific entity types get extra render passes
         if (sType == 0x17 || sType == 0x13 || sType == 0x14 || sType == 3 || sType == 4) {
             _rand();
@@ -276,7 +276,7 @@ LAB_render_dispatch:
                 *(float *)((int)model + 0x4c) = 0.2f;   // 0x3e4ccccd
                 *(float *)((int)model + 0x50) = 0.1f;   // 0x3dcccccd
                 *(unsigned char *)((int)model + 0x88) = 2;
-                FUN_00441e00(model, 2,
+                BMD__RenderBody(model, 2,
                              *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                              *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                              *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -295,7 +295,7 @@ LAB_render_dispatch:
                 *(float *)((int)model + 0x4c) = 0.2f;
                 *(float *)((int)model + 0x50) = 0.1f;
                 *(unsigned char *)((int)model + 0x88) = 1;
-                FUN_00441e00(model, 2,
+                BMD__RenderBody(model, 2,
                              *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                              *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                              *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -306,33 +306,33 @@ LAB_render_dispatch:
                 *(unsigned char *)((int)model + 0x88) = 0xff;
             }
 LAB_substate4_done:
-            FUN_00441e00(model, 2,
+            BMD__RenderBody(model, 2,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
                          0xffffffff);
             return;
         }
-    } else if (DAT_0055a7ac == 8) {
+    } else if (World == 8) {
         if (sType == 0x51) {
             // Map transition portal
-            FUN_00440d30();
-            FUN_00440d50(model, 0.0f,  2,
+            BMD__BeginRender();
+            BMD__RenderMesh(model, 0.0f,  2,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  0xffffffff);
-            FUN_00440d50(model, 0.0f,  0x44,
+            BMD__RenderMesh(model, 0.0f,  0x44,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  0x492);
             glPopMatrix();
             return;
         }
-    } else if (DAT_0055a7ac > 10 && DAT_0055a7ac < 0x11) {
+    } else if (World > 10 && World < 0x11) {
         if (sType == 0x1c || sType == 0x1d) {
             // Map-load transition: render + shadow drop
-            FUN_00440d30();
-            FUN_00441e00(model, 2,
+            BMD__BeginRender();
+            BMD__RenderBody(model, 2,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -342,11 +342,11 @@ LAB_substate4_done:
             glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
             float wx = *(float *)(param_1 + 0x10);
             float wy = *(float *)(param_1 + 0x14);
-            *(float *)((int)model + 0x74) = FUN_004f7500(wx, wy);
+            *(float *)((int)model + 0x74) = RequestTerrainHeight(wx, wy);
             *(float *)((int)model + 0x6c) = wx;
             *(float *)((int)model + 0x70) = wy;
             *(int *)(param_1 + 0x58) = 2;
-            FUN_00441f00(model, *(int *)(param_1 + 100), 2);
+            BMD__RenderBodyShadow(model, *(int *)(param_1 + 100), 2);
             *(int *)(param_1 + 0x58) = -1;
             return;
         }
@@ -406,19 +406,19 @@ LAB_substate4_done:
 
     if (sType == 0x138 && *(int *)(param_1 + 4) == 1) {
         // Wave-bobbing object (water lily etc.)
-        FUN_00440d30();
+        BMD__BeginRender();
         float wave = (float)(fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0)
                      * (long double)_DAT_005524f8 + (long double)_DAT_0055256c);
-        FUN_00440d50(model, 0.0f,        0x42,
+        BMD__RenderMesh(model, 0.0f,        0x42,
                      *(float *)(param_1 + 0x168), 0, wave,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0x56c);
-        FUN_00440d50(model, 1.4013e-45f, 0x42,
+        BMD__RenderMesh(model, 1.4013e-45f, 0x42,
                      *(float *)(param_1 + 0x168), 1, wave,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0x56b);
-        FUN_00440d50(model, 2.8026e-45f, 0x42,
+        BMD__RenderMesh(model, 2.8026e-45f, 0x42,
                      *(float *)(param_1 + 0x168), 1, wave,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0xffffffff);
-        FUN_00440d50(model, 2.8026e-45f, 0x42,
+        BMD__RenderMesh(model, 2.8026e-45f, 0x42,
                      *(float *)(param_1 + 0x168), 1, wave,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0xffffffff);
         glPopMatrix();
@@ -427,12 +427,12 @@ LAB_substate4_done:
 
     if (sType == 0x14c) {
         // Double render (main + overlay at scale 1.0)
-        FUN_00441e00(model, 2,
+        BMD__RenderBody(model, 2,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
                      0xffffffff);
-        FUN_00440d50(model, 2.8026e-45f, 2,
+        BMD__RenderMesh(model, 2.8026e-45f, 2,
                      *(float *)(param_1 + 0x168), 2, 1.0f,
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70), 0xffffffff);
         goto LAB_postprocess;
@@ -442,8 +442,8 @@ LAB_substate4_done:
         // Molt (monstruo 68, modelo 319).  IDA Draw_RenderObject case 319:
         // dibuja la malla 0 y encima las aristas de silueta de la malla 1, con
         // la clase de vtable off_552588 (sub_40A660).  Ver MoltSilhouette_*.
-        FUN_00440d30();
-        FUN_00440d50(model, 0.0f, 2,
+        BMD__BeginRender();
+        BMD__RenderMesh(model, 0.0f, 2,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  0xffffffff);
@@ -458,14 +458,14 @@ LAB_substate4_done:
             *(float *)((int)model + 0x48) = 0.1f;   // 0x3dcccccd
             *(float *)((int)model + 0x4c) = 0.1f;
             *(float *)((int)model + 0x50) = 0.1f;
-            FUN_00441e00(model, 2,
+            BMD__RenderBody(model, 2,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  1, 0xffffffff);
             *(float *)((int)model + 0x48) = 1.0f;
             *(float *)((int)model + 0x4c) = 0.1f;
             *(float *)((int)model + 0x50) = 0.1f;
-            FUN_00440d50(model, 1.4013e-45f, 2,
+            BMD__RenderMesh(model, 1.4013e-45f, 2,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  0xffffffff);
@@ -480,7 +480,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x48) = 0.4f;   // 0x3ecccccd
         *(float *)((int)model + 0x4c) = 0.3f;   // 0x3e99999a
         *(float *)((int)model + 0x50) = 0.5f;   // 0x3f000000
-        FUN_00441e00(model, 2,
+        BMD__RenderBody(model, 2,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -502,7 +502,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x48) = 0.9f;   // 0x3f666666
         *(float *)((int)model + 0x4c) = 0.8f;   // 0x3f4ccccd
         *(float *)((int)model + 0x50) = 1.0f;
-        FUN_00441e00(model, 4,
+        BMD__RenderBody(model, 4,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -514,15 +514,15 @@ LAB_substate4_done:
     }
 
     if (sType == 0x141) {
-        FUN_00441e00(model, 2,
+        BMD__RenderBody(model, 2,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  1, 0xffffffff);
-        FUN_00440d50(model, 1.4013e-45f, 0x402,
+        BMD__RenderMesh(model, 1.4013e-45f, 0x402,
                      0.5f, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(unsigned int *)(param_1 + 0x58));
-        FUN_00440d50(model, 1.4013e-45f, 0x402,
+        BMD__RenderMesh(model, 1.4013e-45f, 0x402,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(unsigned int *)(param_1 + 0x58));
@@ -535,7 +535,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x48) = 1.0f;
         *(float *)((int)model + 0x4c) = 1.0f;
         *(float *)((int)model + 0x50) = 1.0f;
-        FUN_00441e00(model, 0x42,
+        BMD__RenderBody(model, 0x42,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -549,7 +549,7 @@ LAB_substate4_done:
 
     if (sType == 0x10c) {
         // Direct render at facing=0
-        FUN_00441e00(model, 0x402,
+        BMD__RenderBody(model, 0x402,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  1, 0xffffffff);
@@ -560,16 +560,16 @@ LAB_substate4_done:
         if (param_1[0x105] == '\x06') {
             // Death animation trigger
             *param_1 = 0;
-            FUN_00404bc0(0x6a, 0, 0);
-            FUN_00441be0(model, 0, 0x106);
+            PlayBuffer(0x6a, 0, 0);
+            BMD__RenderMeshEffect(model, 0, 0x106);
             goto LAB_postprocess;
         }
         goto LAB_standard_render;
     }
 
     // 2026-09-04: aca habia un segundo bloque para sType 0x14a gateado por
-    // `DAT_005615c0 == 2` (login).  Draw_RenderObject (0x4FAE00) NO consulta
-    // g_GameState en ninguna parte -- su switch tiene UN solo `case 330`.  Era
+    // `SceneFlag == 2` (login).  Draw_RenderObject (0x4FAE00) NO consulta
+    // SceneFlag en ninguna parte -- su switch tiene UN solo `case 330`.  Era
     // una copia del bloque de abajo sin el chequeo de frames, o sea el patron
     // [[bloque-duplicado-dentro-de-una-funcion]].  Removido.
 
@@ -605,7 +605,7 @@ LAB_substate4_done:
         }
 
         if (bNormalRender) {
-            FUN_00441e00(model, 2,
+            BMD__RenderBody(model, 2,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -613,7 +613,7 @@ LAB_substate4_done:
             *(float *)((int)model + 0x48) = 1.0f;
             *(float *)((int)model + 0x4c) = 1.0f;
             *(float *)((int)model + 0x50) = 1.0f;
-            FUN_00441e00(model, 0x44,
+            BMD__RenderBody(model, 0x44,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -621,7 +621,7 @@ LAB_substate4_done:
             *(float *)((int)model + 0x50) = 1.0f;
             *(float *)((int)model + 0x48) = 0.3f;
             *(float *)((int)model + 0x4c) = 0.3f;
-            FUN_00441e00(model, 0x48,
+            BMD__RenderBody(model, 0x48,
                          *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                          *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                          *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -630,15 +630,15 @@ LAB_substate4_done:
             if (bDead) {
                 *param_1 = 0;          // desactiva la entidad: corre un solo frame
             }
-            FUN_00404bc0(0x6a, 0, 0);  // PlayBuffer(106)
-            FUN_00441be0(model, 0, 0x104);
+            PlayBuffer(0x6a, 0, 0);  // PlayBuffer(106)
+            BMD__RenderMeshEffect(model, 0, 0x104);
         }
         goto LAB_postprocess;
     }
 
     if (sType == 0x104 || sType == 0x105) {
         // Multi-layer entity: base + armor + weapon
-        FUN_00441e00(model, 2,
+        BMD__RenderBody(model, 2,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -646,7 +646,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x48) = 1.0f;
         *(float *)((int)model + 0x4c) = 1.0f;
         *(float *)((int)model + 0x50) = 1.0f;
-        FUN_00441e00(model, 0x44,
+        BMD__RenderBody(model, 0x44,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -654,7 +654,7 @@ LAB_substate4_done:
         *(float *)((int)model + 0x50) = 1.0f;
         *(float *)((int)model + 0x48) = 0.3f;
         *(float *)((int)model + 0x4c) = 0.3f;
-        FUN_00441e00(model, 0x48,
+        BMD__RenderBody(model, 0x48,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -663,7 +663,7 @@ LAB_substate4_done:
     }
 
 LAB_standard_render:
-    FUN_00441e00(model, 2,
+    BMD__RenderBody(model, 2,
                  *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                  *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                  *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -671,7 +671,7 @@ LAB_standard_render:
     goto LAB_postprocess;
 
 LAB_simple_render:
-    FUN_00441e00(model, 2,
+    BMD__RenderBody(model, 2,
                  *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                  *(float *)(param_1 + 0x68),  *(float *)(param_1 + 0x6c),
                  *(float *)(param_1 + 0x70),  *(int *)(param_1 + 0x58),
@@ -680,7 +680,7 @@ LAB_simple_render:
 LAB_postprocess:
     // ── Post-render: PvP outline ───────────────────────────────────────────────
     if (((unsigned char)*(unsigned int *)(param_1 + 0x78) & 2) == 2) {
-        FUN_00441e00(model, 2,
+        BMD__RenderBody(model, 2,
                      *(float *)(param_1 + 0x168), -2, 1.0f,   // IDA L845: BlendMesh -2
                      *(float *)(param_1 + 0x6c),  *(float *)(param_1 + 0x70),
                      *(int *)(param_1 + 0x58),  0xffffffff);
@@ -688,18 +688,18 @@ LAB_postprocess:
 
     // ── Type 0x133: wave-bobbing shadow ───────────────────────────────────────
     if (*(short *)(param_1 + 2) == 0x133) {
-        FUN_00440d30();
+        BMD__BeginRender();
         float wave2 = (float)(fsin((long double)DAT_05826e08 * (long double)_DAT_005528e0)
                       * (long double)_DAT_005528b8 + (long double)_DAT_00552504);
         int texFrame = *(short *)(*(int *)((int)model + 0x38) + 0xc);   // IDA: (__int16) de la malla 0
-        FUN_00440d50(model, 0.0f, 2,
+        BMD__RenderMesh(model, 0.0f, 2,
                      *(float *)(param_1 + 0x168), 0, wave2,
                      *(float *)(param_1 + 0x6c), *(float *)(param_1 + 0x70),
                      texFrame);
         // Modulo-100 periodic shadow offset (based on frame counter)
         int framemod = (int)((long long)DAT_05826e08 % 100);
         float modFrac = -(float)(framemod * _DAT_005524f8);
-        FUN_00440d50(model, 4.2039e-45f, 0x44,
+        BMD__RenderMesh(model, 4.2039e-45f, 0x44,
                      *(float *)(param_1 + 0x168), 3, wave2,
                      *(float *)(param_1 + 0x6c), modFrac, 0xffffffff);
         glPopMatrix();
@@ -707,7 +707,7 @@ LAB_postprocess:
 
     // ── Types 0x178/0x177: extra zero-position render ─────────────────────────
     if (*(short *)(param_1 + 2) == 0x178 || *(short *)(param_1 + 2) == 0x177) {
-        FUN_00440d50(model, 0.0f, 0x42,
+        BMD__RenderMesh(model, 0.0f, 0x42,
                      *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68),  0.0f, 0.0f, 0xffffffff);
     }

@@ -30,11 +30,11 @@
 //
 // ─── SELECTION STATE ───────────────────────────────────────────────────────────
 //
-//  DAT_00561694  g_SelectedServer     — index of highlighted server group (-1 = none)
-//  DAT_00561698  g_SelectedChannel    — index of highlighted channel within group
+//  ServerSelectHi  g_SelectedServer     — index of highlighted server group (-1 = none)
+//  ServerSelectLo  g_SelectedChannel    — index of highlighted channel within group
 //  DAT_00559c8c                       — set to 0x100 on entry (scissor/clip enable?)
 //  DAT_00559c78                       — set to 0xffffffff (clip mask full)
-//  DAT_00559c80                       — set to 0 then 0x80000000
+//  SetBackgroundTextColor                       — set to 0 then 0x80000000
 //
 // ─── RENDERING LAYOUT (640×480 reference coords) ───────────────────────────────
 //
@@ -63,7 +63,7 @@
 //    PVP    column   x=0x177 (375px), row y advances +16 per entry
 //
 //    Per entry:
-//      If selected (iVar8 == DAT_00561694):
+//      If selected (iVar8 == ServerSelectHi):
 //        Tex 0x12 quad at (0xa0, y, 160, 16)   Non-PVP selected
 //        Tex 0x12 quad at (0x16d, y, 160, 16)  PVP selected
 //        glColor3f(1.0, 1.0, 1.0)              — full brightness
@@ -104,7 +104,7 @@
 //      UI_RenderText(0x96, y-0x1f, DAT_07d53214)   — server IP line 2
 //
 // ─── HELPER FUNCTIONS ──────────────────────────────────────────────────────────
-//  FUN_00541c10 = __chkstk_probe (0x00541c10)
+//  __chkstk_probe (0x00541c10)
 //                — MSVC CRT stack-probe stub, NOT game logic.
 //                  Called automatically by the compiler because this function
 //                  allocates ~48 KB of locals (24 groups × 20 channels × 100 chars).
@@ -113,7 +113,7 @@
 //  crt_sprintf(buf,fmt) — sprintf-like into stack buffer
 //  GL_DrawTexture(tex,x,y,w,h,u0,v0,u1,v1,f1,f2) — draw textured quad
 //  UI_RenderText(x,y,str,sizeOut,center,shadow)   — draw text string
-//  FUN_00406b10(a,b)     — lookup/flag check (returns 0 or non-zero → PVP type)
+//  Packet_IsValidSockType(a,b)     — lookup/flag check (returns 0 or non-zero → PVP type)
 
 #include "stdafx.h"
 #include "Scene.h"
@@ -133,7 +133,7 @@ int Scene_Login_ServerSelect(void)
     // fVar4: era "current Y of last drawn row" en Pass 3 (float-but-really-int).
     // Pass 4 la lee para posicionar la columna de canales. Inicializar a 0xdd
     // (221, el tope que asigna iStartY cuando hay poca lista) para que, si
-    // DAT_00561694 != -1, Pass 4 use un Y razonable. El bug-fix en Pass 3 usa
+    // ServerSelectHi != -1, Pass 4 use un Y razonable. El bug-fix en Pass 3 usa
     // iYNonPvp/iYPvp locales y sincroniza fVar4 al final.
     float       fVar4 = 0.0f;
     int         iVar5, iVar8, iVar10;
@@ -198,7 +198,7 @@ int Scene_Login_ServerSelect(void)
                 iVar10 = 0;
                 do {
                     int chNum = (int)((unsigned)*(unsigned short *)(pbVar11 - 2) % 0x14 + 1);
-                    int isPvp = FUN_00406b10(iStack00000004, chNum);
+                    int isPvp = Packet_IsValidSockType(iStack00000004, chNum);
                     const char* status;
                     if ((*pbVar11 & 0x80) == 0x80)        status = STATUS_FULL;
                     else if ((*pbVar11 & 0x7f) < 100)     status = STATUS_LOW;
@@ -279,7 +279,7 @@ int Scene_Login_ServerSelect(void)
 
     DAT_00559c78 = 0xffffffff;
     iVar8 = 0;
-    DAT_00559c80 = 0;
+    SetBackgroundTextColor = 0;
     lpString = (LPCSTR)&DAT_083a45d8;
 
     do {
@@ -291,7 +291,7 @@ int Scene_Login_ServerSelect(void)
                 iDrawY = iYNonPvp;
                 iYNonPvp += 0x10;
                 iStack00000004 = 0x96;
-                if (iVar8 != DAT_00561694) goto LAB_0051f314;
+                if (iVar8 != ServerSelectHi) goto LAB_0051f314;
                 iVar10 = 0xa0;
                 uVar17 = 1.0f;         // selected: full brightness
                 iStack00000004 = 0xa0;
@@ -301,7 +301,7 @@ int Scene_Login_ServerSelect(void)
                 iDrawY = iYPvp;
                 iYPvp += 0x10;
                 iStack00000004 = 0x177;
-                if (iVar8 == DAT_00561694) {
+                if (iVar8 == ServerSelectHi) {
                     iVar10 = 0x16d;
                     uVar17 = 1.0f;         // selected
                     iStack00000004 = 0x16d;
@@ -324,9 +324,9 @@ LAB_0051f314:
     } while ((int)lpString < (int)(uintptr_t)(DAT_083a45d8 + 0x34ee));
 
     // ── PASS 4: draw channel sub-list for selected server ─────────────────────
-    iVar8 = DAT_00561694;
-    if (DAT_00561694 != -1) {
-        iVar8 = DAT_00561694 * 0x21e;
+    iVar8 = ServerSelectHi;
+    if (ServerSelectHi != -1) {
+        iVar8 = ServerSelectHi * 0x21e;
         if ((&DAT_083a45ed)[iVar8] == '\0') {
             // Non-PVP server: find Y position by counting preceding non-PVP entries
             iStack00000004 = 0;
@@ -400,7 +400,7 @@ LAB_0051f44c:
             do {
                 fVar4 = fStack00000018;
                 fVar3 = 1.0f;
-                if (iVar5 != DAT_00561698)
+                if (iVar5 != ServerSelectLo)
                     fVar3 = 0.8f;   // not selected → dim
 
                 // Color by load
@@ -437,19 +437,19 @@ LAB_0051f44c:
 
                 // Channel name text
                 ptVar19 = &text_size;
-                iVar8 = lstrlenA(chan_buf + (iVar5 + DAT_00561694 * 0x14) * 100);
+                iVar8 = lstrlenA(chan_buf + (iVar5 + ServerSelectHi * 0x14) * 100);
                 GetTextExtentPointA(DAT_055c9fec,
-                                    chan_buf + (iVar5 + DAT_00561694 * 0x14) * 100,
+                                    chan_buf + (iVar5 + ServerSelectHi * 0x14) * 100,
                                     iVar8, ptVar19);
                 UI_RenderText(0x129 - ((uint)(text_size.cx * 0x280) / DAT_0056156c >> 1),
                              iStack00000004 + 1,
-                             chan_buf + (iVar5 + DAT_00561694 * 0x14) * 100,
+                             chan_buf + (iVar5 + ServerSelectHi * 0x14) * 100,
                              (LPSIZE)0x0, '\0', 0);
 
                 // Load bar (only for non-full servers)
                 // BUG-FIX (idem): WORD lvalue → necesita byte arith (char* cast)
-                if ((*((unsigned char*)&DAT_083a4606 + DAT_00561694 * 0x21e + (int)fVar4) & 0x80) != 0x80) {
-                    uVar6 = *((unsigned char*)&DAT_083a4606 + DAT_00561694 * 0x21e + (int)fVar4) & 0x7f;
+                if ((*((unsigned char*)&DAT_083a4606 + ServerSelectHi * 0x21e + (int)fVar4) & 0x80) != 0x80) {
+                    uVar6 = *((unsigned char*)&DAT_083a4606 + ServerSelectHi * 0x21e + (int)fVar4) & 0x7f;
                     if (100 < uVar6) uVar6 = 100;
                     uVar6 = uVar6 / 5;   // 0..20 dots
                     fStack00000008 = 0.0f;
@@ -487,7 +487,7 @@ LAB_0051f44c:
                 }
 
                 iVar5++;
-                iVar8 = DAT_00561694 * 0x21e;
+                iVar8 = ServerSelectHi * 0x21e;
                 iStack00000004 += 0x14;
                 fStack00000018 = (float)((int)fVar4 + 0x1a);
             } while (iVar5 < (int)(uint)*((unsigned char*)&DAT_083a45ec + iVar8));  // BUG-FIX: byte arith
@@ -495,13 +495,13 @@ LAB_0051f44c:
 
         // ── PASS 5: selected server IP display ───────────────────────────────
         DAT_00559c78 = 0xffffffff;
-        DAT_00559c80 = 0x80000000;
+        SetBackgroundTextColor = 0x80000000;
         // BUG-FIX: literales 0x3fxxxxxx eran int → float value-cast. Usar literales float.
         glColor3f(1.0f, 0.2f, 0.1f);   // orange-red (IP text)
 
         fVar4   = (float)(int)puStack00000010;
         pbVar14 = (byte*)&DAT_07d52c38;
-        pbVar11 = (byte*)&DAT_083a45d8 + DAT_00561694 * 0x21e;
+        pbVar11 = (byte*)&DAT_083a45d8 + ServerSelectHi * 0x21e;
         do {
             bVar2 = *pbVar11; bVar15 = bVar2 < *pbVar14;
             if (bVar2 != *pbVar14) { iVar8 = (1 - (uint)bVar15) - (uint)(bVar15 != 0); goto LAB_0051f8b4; }

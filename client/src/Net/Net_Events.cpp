@@ -158,7 +158,7 @@ void Recv_StartMatchCountDown(BYTE* Msg, int Size)
 // Tabla de posiciones de Devil Square. Msg[4] == 0xFF trae UN registro;
 // si no, la lista entera.
 //
-// Nota: FUN_0051da80 / FUN_0051d9e0 figuran en functions.h como
+// Nota: GuildMemberList_Add / GuildMemberList_Update figuran en functions.h como
 // "GuildMemberList_*". Es otra etiqueta heredada del mismo error: su unico
 // caller en el binario es esta funcion, o sea son el render del ranking.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -166,8 +166,8 @@ void Recv_DevilSquareRank(BYTE* Msg, int Size)
 {
     if (Size < 5) return;
 
-    if (Msg[4] == 0xFF) FUN_0051da80((int)Msg[3], Msg + 5);
-    else                FUN_0051d9e0((int)Msg[4], (int)Msg[3], Msg + 5);
+    if (Msg[4] == 0xFF) GuildMemberList_Add((int)Msg[3], Msg + 5);
+    else                GuildMemberList_Update((int)Msg[4], (int)Msg[3], Msg + 5);
 }
 
 

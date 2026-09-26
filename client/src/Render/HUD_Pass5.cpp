@@ -36,7 +36,7 @@
 
 // External helpers ported in earlier passes.
 extern "C" int    GetScreenWidth(void);
-extern "C" SIZE*  __cdecl FUN_0047f6f0(int, int, const char*, int, char, int);
+extern "C" SIZE*  __cdecl Text_MeasureBox(int, int, const char*, int, char, int);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
 extern "C" void   __cdecl RenderTipText(int, int, const char*);
 extern "C" void   __cdecl SeedQuickPotionTypesFromInventory(void);
@@ -44,7 +44,6 @@ extern "C" void   __cdecl SeedQuickPotionTypesFromInventory(void);
 
 #define ItemAttribute  ((ITEM_ATTRIBUTE*)DAT_07d78068)
 #define byte_7DB870C   DAT_07db870c
-#define SelectedHero   DAT_005616ac
 #define dword_559C60   (&DAT_00559c60)
 #define dword_559C64   DAT_00559c64
 #define dword_559C68   DAT_00559c68
@@ -61,7 +60,7 @@ static bool HUD_IsQuestPanelOpenRuntime(void)
 
 static bool HUD_IsGoldenArcherPanelRuntime(void)
 {
-    return (DAT_07eaa128 != 0 && DAT_07eaa128 != 3);
+    return (GoldenArcherOpenType != 0 && GoldenArcherOpenType != 3);
 }
 
 static bool HUD_IsInventoryFamilyActive(void)
@@ -69,7 +68,7 @@ static bool HUD_IsInventoryFamilyActive(void)
     return InventoryOpened || CharacterOpened || ShopOpened ||
            WarehouseOpened || ChaosMixOpened || TradeOpened ||
            EventWindowOpened || GuildCreatorOpened ||
-           HUD_IsGoldenArcherPanelRuntime() || (DAT_07eaa130 != 0) ||
+           HUD_IsGoldenArcherPanelRuntime() || (ServerDivisionOpened != 0) ||
            HUD_IsQuestPanelOpenRuntime();
 }
 

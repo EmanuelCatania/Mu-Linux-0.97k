@@ -17,14 +17,14 @@
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -45,7 +45,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 #endif
 
 
-// FUN_00479330 @ 0x00479330 — RenderPoints (damage popup renderer)
+// RenderPoints @ 0x00479330 — RenderPoints (damage popup renderer)
 // 2026-05-06: ported from IDA mu97k-src-IDA/raw/00479330_RenderPoints.c.
 //
 // Itera el pool DAT_07c80110[100 × 0x70] de damage popups (poblado por
@@ -88,7 +88,7 @@ extern "C" // ──────────────────────
 // con `RenderSpriteUV` (0x511FB0), que ya transforma por la CameraMatrix. Por
 // eso el call site está dentro del bloque 3D, entre BeginSprite y glPopMatrix.
 // ─────────────────────────────────────────────────────────────────────────────
-// (RenderSpriteUV_stub y GL_DisableDepthTest ya están declarados en functions.h)
+// (RenderSpriteUV y GL_DisableDepthTest ya están declarados en functions.h)
 
 extern "C" void __cdecl RenderNumber(float Position[3], int Num,
                                      float Color[3], float Alpha, float Scale);
@@ -114,7 +114,7 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
         UV[1][0] = 0.125f; UV[1][1] = 1.0f;
         UV[2][0] = 0.125f; UV[2][1] = 0.53125f;
         UV[3][0] = 0.0f;   UV[3][1] = 0.53125f;
-        RenderSpriteUV_stub(1, p, 45.0f, 20.0f, UV, Light, Alpha);
+        RenderSpriteUV(1, p, 45.0f, 20.0f, UV, Light, Alpha);
         return;
     }
 
@@ -137,7 +137,7 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
         UV[1][0] = u + 0.0625f;  UV[1][1] = 0.5f;
         UV[2][0] = u + 0.0625f;  UV[2][1] = 0.0f;
         UV[3][0] = u;            UV[3][1] = 0.0f;
-        RenderSpriteUV_stub(1, p, Scale, Scale, UV, Light, Alpha);
+        RenderSpriteUV(1, p, Scale, Scale, UV, Light, Alpha);
         p[0] += step;
         p[1] += step;
     }
@@ -145,7 +145,7 @@ void __cdecl RenderNumber(float Position[3], int Num, float Color[3],
 
 // RenderPoints — port FIEL de IDA 0x479330. Los 4 args son un artefacto del
 // call site anterior; se ignoran.
-void __cdecl FUN_00479330(int, int, int, int)
+void __cdecl RenderPoints(int, int, int, int)
 {
     EnableAlphaTest(true);
     GL_DisableDepthTest();                    // DisableDepthTest

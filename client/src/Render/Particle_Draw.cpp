@@ -7,7 +7,7 @@
 //
 // ── SIGNATURA ─────────────────────────────────────────────────────────────────
 //
-//   void __cdecl FUN_004f8bb0(
+//   void __cdecl RenderTerrainAlphaBitmap(
 //     int        param_1,  // particle type (0x4a7=spark, 0x4b0=snow, 0x4f0=glow, etc.)
 //     float      param_2,  // world X
 //     float      param_3,  // world Y
@@ -73,7 +73,7 @@
 //         local_60[iVar12/4+1] += _DAT_00552504
 //
 //       // Draw call por sub-tile
-//       FUN_004f8740(lVar14 + local_d0, lVar15 + fVar11, 1.0, 1, local_60, '\0', param_8)
+//       Terrain_RenderQuad(lVar14 + local_d0, lVar15 + fVar11, 1.0, 1, local_60, '\0', param_8)
 //         → Particle_DrawQuad(tile_x, tile_y, scale, flag, corners[4][3], solid, alpha)
 //
 // ── CONSTANTES ────────────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@
 //   Matrix_BuildFromEuler  → Matrix_FromEuler(angles[3], out_mat[12])
 //   GL_BindTextureSlot  → Particle_SetTexture(type)  — bind GL texture por tipo
 //   Vector_Rotate  → Matrix_TransformPoint(pt, mat, out)
-//   FUN_004f8740  → Particle_DrawQuad(x, y, scale, flag, corners, solid, alpha)
+//   Terrain_RenderQuad  → Particle_DrawQuad(x, y, scale, flag, corners, solid, alpha)
 //                   Función que hace los calls glVertex3f / glTexCoord2f reales
 //   glColor3fv    → OpenGL color sin alpha
 //   glColor4f     → OpenGL color con alpha

@@ -41,14 +41,14 @@
 //   >13   (others/consumables): skips extra reads
 void __cdecl Item_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
 
 LAB_loop:
     {
         int recType = TextParser_GetToken();
         if (recType == 2) {
-            FUN_0054150f(DAT_07d7806c);
+            crt_fclose(DAT_07d7806c);
             return;
         }
         if (recType == 1) {
@@ -71,12 +71,12 @@ LAB_loop:
 // IDA: FUN_0047B650
 // Writes item data table to a binary .bmd file with checksum.
 // Allocates 0x8000-byte buffer, copies 0x200 item slots (stride 0x40) from
-// DAT_07d78068, XOR-encrypts each 0x40-byte block via FUN_00479910,
-// writes the buffer (fwrite via FUN_005430f0), then computes a rolling
+// DAT_07d78068, XOR-encrypts each 0x40-byte block via BuxConvert_0,
+// writes the buffer (fwrite via crt_fwrite), then computes a rolling
 // checksum and appends 4 bytes (checksum seed: DAT_01c5e200 = 0x01c5e200).
 void __cdecl Item_SaveBMD(const char *path)
 {
-    FILE *fp = (FILE *)FUN_0054173f(path, DAT_005597d4);  // "wb"
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005597d4);  // "wb"
     char *buf = (char *)operator_new(0x8000);
     int off = 0;
     char *p = buf;
@@ -84,11 +84,11 @@ void __cdecl Item_SaveBMD(const char *path)
         // copy 0x40 bytes from item table slot
         void *src = (void *)(DAT_07d78068 + off);
         memcpy(p, src, 0x40);
-        FUN_00479910((int)p, 0x40);  // XOR-encrypt
+        BuxConvert_0((int)p, 0x40);  // XOR-encrypt
         off += 0x40;
         p   += 0x40;
     } while (off < 0x8000);
-    FUN_005430f0(buf, 0x8000, 1, (int *)fp);
+    crt_fwrite(buf, 0x8000, 1, (int *)fp);
     // compute checksum
     DWORD cs = DAT_01c5e200;
     for (UINT i = 0; i < 0x7ffd; i += 4) {
@@ -99,9 +99,9 @@ void __cdecl Item_SaveBMD(const char *path)
         if ((i & 0xf) == 0)
             cs ^= (DWORD)(cs + 0xe2f1) >> (((BYTE)(i >> 2) & 7) + 1);
     }
-    FUN_005430f0((char *)&cs, 4, 1, (int *)fp);
+    crt_fwrite((char *)&cs, 4, 1, (int *)fp);
     operator_delete(buf);
-    FUN_0054150f(fp);
+    crt_fclose(fp);
 }
 
 // IDA: FUN_0047B740
@@ -113,19 +113,19 @@ void __cdecl Item_SaveBMD(const char *path)
 void __cdecl Item_LoadBMD(const char *path)
 {
     CHAR msg[256];
-    FILE *fp = (FILE *)FUN_0054173f(path, DAT_005580ac);  // "rb"
+    FILE *fp = (FILE *)crt_fopen(path, DAT_005580ac);  // "rb"
     if (!fp) {
         crt_sprintf(msg, (const char *)s__s___File_not_exist__00558094);
-        FUN_00405540(&DAT_055c9bf0, msg);
+        CErrorReport_Write(&DAT_055c9bf0, msg);
         MessageBoxA(DAT_055c9ffc, msg, nullptr, 0);
         SendMessageA(DAT_055c9ffc, 2, 0, 0);
         return;
     }
     char *buf = (char *)operator_new(0x8000);
-    FUN_00541597(buf, 0x8000, 1, (int *)fp);
+    crt_fread(buf, 0x8000, 1, (int *)fp);
     DWORD stored_cs;
-    FUN_00541597((char *)&stored_cs, 4, 1, (int *)fp);
-    FUN_0054150f(fp);
+    crt_fread((char *)&stored_cs, 4, 1, (int *)fp);
+    crt_fclose(fp);
 
     // validate checksum
     DWORD cs = DAT_01c5e200;
@@ -139,7 +139,7 @@ void __cdecl Item_LoadBMD(const char *path)
     }
     if (stored_cs != cs) {
         crt_sprintf(msg, (const char *)s__s___File_corrupted__00559bd4);
-        FUN_00405540(&DAT_055c9bf0, msg);
+        CErrorReport_Write(&DAT_055c9bf0, msg);
         MessageBoxA(DAT_055c9ffc, msg, nullptr, 0);
         SendMessageA(DAT_055c9ffc, 2, 0, 0);
         operator_delete(buf);
@@ -149,7 +149,7 @@ void __cdecl Item_LoadBMD(const char *path)
     int  off = 0;
     char *p  = buf;
     do {
-        FUN_00479910((int)p, 0x40);  // XOR-decrypt
+        BuxConvert_0((int)p, 0x40);  // XOR-decrypt
         // copy to raw table
         memcpy((char *)DAT_07d78068 + off, p, 0x40);
         // copy to shadow table

@@ -5,13 +5,13 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_004f6eb0 @ 0x004F6EB0 — BuxConvert(BYTE* Buffer, int Size)
+// BuxConvert @ 0x004F6EB0 — BuxConvert_1(BYTE* Buffer, int Size)
 // XOR-obfuscates Buffer in place using a 3-byte rotating key at DAT_0055a770.
 // Used for terrain block (.bux) encryption/decryption.
-void __cdecl FUN_004f6eb0(int data, int size)
+void __cdecl BuxConvert(int data, int size)
 {
     BYTE* Buffer = (BYTE*)data;
-    BYTE* key = &DAT_0055a770;   // 3 consecutive bytes at 0x0055a770..2
+    BYTE* key = DAT_0055a770;    // en CERO a proposito: ver globals.cpp
     for (int i = 0; i < size; i++)
         Buffer[i] ^= key[i % 3];
 }
@@ -24,9 +24,9 @@ void __cdecl FUN_004f6eb0(int data, int size)
 //   wKey = cipher[i] + 0x3D    (note: cipher byte, not plain)
 // Initial wKey = 0x5E.
 //
-// BUG-FIX 2026-05-01: BuxConvert (3-byte XOR) NO sirve para .map/.obj — esos
+// BUG-FIX 2026-05-01: BuxConvert_1 (3-byte XOR) NO sirve para .map/.obj — esos
 // archivos usan un algorithm distinto (de ahí el prefix "Enc" mientras que .att
-// usa BuxConvert simple).
+// usa BuxConvert_1 simple).
 void MapFileDecrypt(BYTE* buf, int size)
 {
     static const BYTE MapFileKey[16] = {

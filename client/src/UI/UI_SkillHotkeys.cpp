@@ -129,7 +129,7 @@ void __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float he
     // anti-tamper hash table — skipped (decrypt CharacterMachine after read)
 
     if (hotkey != 0xFF) {
-        RenderNumber2D_stub(x + _DAT_00552650, y + _DAT_00552a4c, hotkey, 9.0f, 10.0f);
+        RenderNumber2D(x + _DAT_00552650, y + _DAT_00552a4c, hotkey, 9.0f, 10.0f);
     }
     DAT_00559c6c = (char)hotkey;
 }

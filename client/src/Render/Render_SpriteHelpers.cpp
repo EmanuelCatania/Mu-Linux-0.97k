@@ -7,7 +7,7 @@
 #include "globals.h"
 #include "functions.h"
 // EnableAlphaBlend2 @ 0x00511810 (~28 lines) — OpenGL additive blending
-void __stdcall EnableAlphaBlend2_stub(void) {
+void __stdcall GL_SetBlendInvSrcColor(void) {
     // 0x00511810 — OpenGL additive blending (ONE_MINUS_DST_COLOR, ONE)
     // 2026-04-30 BUG-FIX: previously cached state in DAT_07eaa160/164/168
     // — those addresses are CheckInventory + adjacent ITEM ptrs, NOT GL
@@ -36,9 +36,9 @@ void __stdcall EnableAlphaBlend2_stub(void) {
 }
 
 // RenderSpriteUV @ 0x00511FB0 (~67 lines) — renders textured billboard quad with custom UVs
-void __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha) {
+void __cdecl RenderSpriteUV(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha) {
     // 0x00511FB0 — Render textured billboard quad with custom UVs.
-    // Binds texture, transforms Position through CameraMatrix (DAT_083a4140),
+    // Binds texture, transforms Position through CameraMatrix (CameraMatrix),
     // then draws GL_QUADS with 4 vertices: color from Light[][4] + Alpha, texcoord from UV[][2],
     // vertex position offset from transformed Position.
     //
@@ -53,9 +53,9 @@ void __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, fl
 
     GL_BindTextureSlot(Texture);  // GL_BindTextureSlot
 
-    // VectorTransform: transform Position by CameraMatrix (4x3 matrix at DAT_083a4140)
+    // VectorTransform: transform Position by CameraMatrix (4x3 matrix at CameraMatrix)
     float transformed[3];
-    float* camMat = (float*)&DAT_083a4140;
+    float* camMat = (float*)&CameraMatrix;
     // VectorTransform(in, matrix, out) — 3x4 matrix multiply
     transformed[0] = Position[0] * camMat[0] + Position[1] * camMat[1] + Position[2] * camMat[2] + camMat[3];
     transformed[1] = Position[0] * camMat[4] + Position[1] * camMat[5] + Position[2] * camMat[6] + camMat[7];
@@ -98,28 +98,7 @@ void __cdecl RenderSpriteUV_stub(int Texture, float Position[3], float Width, fl
     glEnd();
 }
 
-// RenderNumber2D @ 0x005122F0 (~40 lines) — renders integer as digit sprites
-// _itoa to string, then per digit: RenderBitmap sub-rect from digit atlas (texture 1).
-double __cdecl RenderNumber2D_stub(float x, float y, int Num, float Width, float Height) {
-    // 0x005122F0 — renders integer as digit sprites using texture atlas
-    // _DAT_00552504 = 0.5f, _DAT_00552928 = 0.7f (approx), _DAT_005526dc = 0.0625f
-    // RenderBitmap = GL_DrawTexture, texture 1 = digit atlas
-    char buf[32];
-    _itoa(Num, buf, 10);
-    // strlen inline (Ghidra pattern: decrement 0xFFFFFFFF counter)
-    int len = (int)strlen(buf);
-    int i = 0;
-    // Center the number string: shift x left by len * Width * 0.5f
-    x = x - (float)len * Width * _DAT_00552504;  // 0.5f
-    if (len > 0) {
-        float step = Width * _DAT_00552928;  // ~0.7f digit spacing
-        do {
-            // Each digit: sub-rect from atlas row, u = (digit * 0.0625f), v = 0, uW = 0.0625f, vH = 0.5f
-            float u = (float)(buf[i] - '0') * _DAT_005526dc;  // 0.0625f
-            GL_DrawTexture(1, x, y, Width, Height, u, 0.0f, 0.0625f, 0.5f, true, true);
-            x = step + x;
-            i++;
-        } while (i < len);
-    }
-    return (double)x;
-}
+// RenderNumber2D vive en Render/HUD_Pass2.cpp.
+//
+// 2026-09-26: aca habia una copia bajo el nombre RenderNumber2D.  Las dos
+// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.

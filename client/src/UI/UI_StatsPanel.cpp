@@ -41,15 +41,15 @@ int RenderErrorMessage(void)
   GL_ResetState();
   glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
   SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
-  DAT_00559c80 = 0;
+  SetBackgroundTextColor = 0;
   DAT_00559c78 = 0xffffffff;
   if (DAT_083a7c24 != 0) {
     if (DAT_083a7c24 == 0x6e) {
-      if (DAT_005615c0 == 5) {
+      if (SceneFlag == 5) {
         pCVar6 = (LPCSTR)0x5;
       }
       else {
-        pCVar6 = (LPCSTR)((DAT_005615c0 == 4) + 3);
+        pCVar6 = (LPCSTR)((SceneFlag == 4) + 3);
       }
       if (pCVar6 != (LPCSTR)0x0) {
         local_dc = 0x3c;
@@ -76,7 +76,7 @@ int RenderErrorMessage(void)
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ba0,iVar3,ptVar17);
       UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,
                    (LPCSTR)lpString_07d45ba0,(LPSIZE)0x0,'\0',0);
-      if (DAT_005615c0 == 5) {
+      if (SceneFlag == 5) {
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
@@ -97,7 +97,7 @@ int RenderErrorMessage(void)
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
         uVar10 = 0xb9;
       }
-      else if (DAT_005615c0 == 4) {
+      else if (SceneFlag == 4) {
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
@@ -149,7 +149,7 @@ int RenderErrorMessage(void)
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
       UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x23,
                    (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
-      if (DAT_00559c5c == '\0') {
+      if (m_bAutoAttack == '\0') {
         pcVar14 = s__s_Off_00561854;
       }
       else {
@@ -161,7 +161,7 @@ int RenderErrorMessage(void)
       GetTextExtentPointA(DAT_055c9fec,local_64,iVar3,ptVar17);
       UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,local_64,
                    (LPSIZE)0x0,'\0',0);
-      if (DAT_07e11d80 == '\0') {
+      if (m_bWhisperSound == '\0') {
         pcVar14 = s__s_Off_00561864;
       }
       else {
@@ -253,7 +253,7 @@ LAB_0051c08c:
           glColor3f(0.5f, 0.5f, 0.5f);  // BUG-FIX bits → float
           DAT_083a4124 = '\0';
         }
-        FUN_005126e0(9,253.0,210.0,25.0,16.0,0x43870000);
+        GL_DrawRotatedRect(9,253.0,210.0,25.0,16.0,0x43870000);
         glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
         if (DAT_083a7c08 == DAT_083a7c09) {
           uVar16 = 0x3e4ccccd;
@@ -273,7 +273,7 @@ LAB_0051c13d:
           glColor3f(0.5f, 0.5f, 0.5f);  // BUG-FIX bits → float
           DAT_083a4124 = '\0';
         }
-        FUN_005126e0(9,383.0,210.0,25.0,16.0,0x42b40000);
+        GL_DrawRotatedRect(9,383.0,210.0,25.0,16.0,0x42b40000);
         glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
       }
     }
@@ -631,13 +631,13 @@ LAB_0051c13d:
     ppCVar11 = lpString_07d469b0;
     break;
   case 0x74:
-    if (DAT_07eaa108 == 0) {
+    if (StorageGoldFlag == 0) {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d48954);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d48954,iVar3,ptVar17);
       ppCVar11 = lpString_07d48954;
     }
-    else if (DAT_07eaa108 == 1) {
+    else if (StorageGoldFlag == 1) {
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d48a80);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d48a80,iVar3,ptVar17);
@@ -663,7 +663,7 @@ LAB_0051c13d:
     ppCVar11 = lpString_07d48e04;
     goto LAB_0051ca70;
   case 0x77:
-    FUN_0045ac80(DAT_07eaa0d8);
+    FindCharacterIndex(DAT_07eaa0d8);
     crt_sprintf(local_c8,DAT_07d486fc);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
@@ -682,7 +682,7 @@ LAB_0051c13d:
     // 0051AF50 obtains the visible character slot from 0045AC80 before
     // expanding the localized invitation format.  The prior void stub lost
     // that return value, so the party prompt had no inviter name.
-    const int characterIndex = FUN_0045ac80((int)DAT_07eaa0e4);
+    const int characterIndex = FindCharacterIndex((int)DAT_07eaa0e4);
     const char* inviterName = (characterIndex < 400 && DAT_07abf5d0)
         ? (const char*)(uintptr_t)(DAT_07abf5d0 + characterIndex * 916 + 449)
         : "";
@@ -874,7 +874,7 @@ LAB_0051c13d:
     glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
     return 0;
   case 0x8c:
-    iVar3 = FUN_0051ddf0();
+    iVar3 = RenderMatchScore();
     return iVar3;
   case 0x8f:
     DAT_00559c78 = 0xff0080ff;
@@ -913,8 +913,8 @@ LAB_0051c13d:
     local_d8 = 0x140;
     SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca010);
     glColor3f(1.0f, 1.0f, 0.0f);  // BUG-FIX
-    uVar5 = ((int)DAT_07eaa16c < 0) - 1 & DAT_07eaa16c;
-    if (DAT_07eaa16c == 0xb) {
+    uVar5 = ((int)MixType < 0) - 1 & MixType;
+    if (MixType == 0xb) {
       uVar5 = 7;
 LAB_0051d2dd:
       iVar3 = uVar5 + 0x25f;
@@ -983,7 +983,7 @@ LAB_0051ca70:
                          (LPCSTR)ppCVar11,(LPSIZE)0x0,'\0',0);
     return (int)uVar9;
   case 0x9a:
-    uVar9 = FUN_0051db00();
+    uVar9 = GuildOverview_Render();
     return (int)uVar9;
   }
   uVar9 = UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)pCVar6,

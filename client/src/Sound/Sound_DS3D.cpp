@@ -1,7 +1,7 @@
 // Sound_DS3D.cpp
 // DirectSound8 playback + per-frame 3D positional update.
 //
-// PlayBuffer        @ 0x00404BC0 — start playback on a loaded slot (also FUN_00404bc0)
+// PlayBuffer        @ 0x00404BC0 — start playback on a loaded slot (also PlayBuffer)
 // Sound_UpdatePos   @ 0x00404CD0 — per-frame 3D listener-relative SetPosition
 // SetHall           @ 0x00404BB0 — stub in original (returns 1)
 //
@@ -21,7 +21,7 @@ static int SetHall(int /*Buffer*/) { return 1; }
 
 
 // ============================================================================
-// PlayBuffer / FUN_00404bc0  @ 0x00404BC0
+// PlayBuffer / PlayBuffer  @ 0x00404BC0
 // ============================================================================
 // Plays the secondary buffer for slot [Buffer][BufferChannel[Buffer]].
 //   Buffer  — sound ID (the same index passed to LoadWaveFile).
@@ -31,6 +31,7 @@ static int SetHall(int /*Buffer*/) { return 1; }
 // Returns S_OK (0) on success, or the HRESULT from Play on failure. Matches
 // IDA 00404BC0_PlayBuffer.c semantics (including the channel-wrap reset).
 // ============================================================================
+// IDA: PlayBuffer (0x00404BC0)
 HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped)
 {
     if (!g_EnableSound)   return S_OK;
@@ -75,11 +76,6 @@ HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped)
     return S_OK;
 }
 
-// Alias retained — other code calls FUN_00404bc0 directly via functions.h.
-HRESULT __cdecl FUN_00404bc0(int Buffer, DWORD Object, BOOL bLooped)
-{
-    return PlayBuffer(Buffer, Object, bLooped);
-}
 
 
 // ============================================================================
@@ -162,9 +158,9 @@ void __cdecl Sound_StopBuffer(int Buffer) {
     }
 }
 
-// ── FUN_00404e40 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// FUN_00404e40 @ 0x00404E40 — CWaveFile ~dtor (calls FUN_00404e60)
-void __fastcall FUN_00404e40(int ecx, int /*edx*/, BYTE param_1) {
+// ── waveIO__dtor — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// waveIO__dtor @ 0x00404E40 — CWaveFile ~dtor (calls waveIO__CloseWaveFile)
+void __fastcall waveIO__dtor(int ecx, int /*edx*/, BYTE param_1) {
     FUN_00404e60_impl(ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
@@ -200,7 +196,7 @@ void __stdcall FUN_00405340(void) {
 // ── CErrorReport_WriteDebugInfoStr — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 52-byte ─────────────────────────────────────────────────────────────────
 
-// CErrorReport::WriteDebugInfoStr @ 0x00405500 (IDA: FUN_00405500).
+// CErrorReport::WriteDebugInfoStr @ 0x00405500 (IDA: CErrorReport__WriteDebugInfoStr).
 // (declared in Ghidra as CErrorReport::WriteDebugInfoStr — writes debug string)
 // This is a thin wrapper that calls CErrorReport__Write; implementation is in the
 // vtable dispatch. We stub it as a pass-through.
@@ -208,27 +204,28 @@ void __cdecl CErrorReport_WriteDebugInfoStr(DWORD This, char *fmt) {
     CErrorReport__Write(This, fmt);
 }
 
-// ── FUN_00405540 — movida desde stubs_render_helpers.cpp (refactor B3) ──
-void __cdecl FUN_00405540(void*,const char*,...)            {} // debug log — kept as stub
+// ── CErrorReport_Write — movida desde stubs_render_helpers.cpp (refactor B3) ──
+// IDA: CErrorReport::Write (0x00405540)
+void __cdecl CErrorReport_Write(void*,const char*,...)            {} // debug log — kept as stub
 
-// CErrorReport::WriteLogBegin @ 0x00405590 (IDA: FUN_00405590).
+// CErrorReport::WriteLogBegin @ 0x00405590 (IDA: CErrorReport__WriteLogBegin).
 void __fastcall CErrorReport_WriteLogBegin(DWORD This) {
     CErrorReport__Write(This, (char *)"========Log Begin========");
 }
 
 // CErrorReport::WriteCurrentTime @ 0x004055A0 (IDA: FUN_004055A0).
-// Logs current local date/time via FUN_00405540 (debug log sink at DAT_055C9BF0).
+// Logs current local date/time via CErrorReport_Write (debug log sink at DAT_055C9BF0).
 // If param_1 != 0, logs an additional data block from DAT_00558128.
 void CErrorReport_WriteCurrentTime(int param_1) {
     _SYSTEMTIME local_10;
     GetLocalTime(&local_10);
-    FUN_00405540(&DAT_055c9bf0, "%4d %02d %02d %02d %02d"); // date+time format
+    CErrorReport_Write(&DAT_055c9bf0, "%4d %02d %02d %02d %02d"); // date+time format
     if (param_1 != 0) {
-        FUN_00405540(&DAT_055c9bf0, DAT_00558128);
+        CErrorReport_Write(&DAT_055c9bf0, DAT_00558128);
     }
 }
 
-// CErrorReport::WriteSystemInfo @ 0x00405620 (IDA: FUN_00405620).
+// CErrorReport::WriteSystemInfo @ 0x00405620 (IDA: CErrorReport__WriteSystemInfo).
 // Logs OS name, CPU name, RAM (MB), DirectX version to error report.
 // si points to 264-byte SystemInfo struct: si[0..127]=CPU, si[128..255]=OS, si[256..259]=RAMbytes, si[260..]=DirectX.
 void __fastcall CErrorReport_WriteSystemInfo(void* This_v, void* /*edx*/, void* si_v) {
@@ -262,7 +259,7 @@ void __fastcall CErrorReport_WriteOpenGLInfo(void* This_v) {
     CErrorReport__Write(This, (char*)"Max viewport \t\t: %d x %d\r\n", maxView[0], maxView[1]);
 }
 
-// CErrorReport::WriteImeInfo @ 0x00405760 (IDA: FUN_00405760).
+// CErrorReport::WriteImeInfo @ 0x00405760 (IDA: CErrorReport__WriteImeInfo).
 // Logs IME description, IME file, keyboard layout name.
 void __fastcall CErrorReport_WriteImeInfo(void* This_v, void* /*edx*/, HWND hWnd) {
     DWORD This = (DWORD)(uintptr_t)This_v;

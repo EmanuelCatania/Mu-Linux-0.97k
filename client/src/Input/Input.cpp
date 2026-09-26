@@ -38,15 +38,15 @@ extern "C" { void DbgLogPublic(const char* msg); }
 //   (fórmula: g_TextBuf_base + slot * 0x100)
 //
 //   DAT_07d780a8  g_TextLen[N]         int[N] — longitud actual de cada slot
-//   DAT_00559c94  g_TextMaxLen[N]      int[N] — longitud máxima permitida por slot (de config)
+//   InputTextMax  g_TextMaxLen[N]      int[N] — longitud máxima permitida por slot (de config)
 //   DAT_07e11d78  g_ActiveSlot         Slot activo de input (Tab para rotar)
 //
 //   Flags de modo de input (todos en WM_CHAR guard):
 //   DAT_00559c84  g_TextMode           General text input active (login screen / chat)
-//   DAT_07e11d70  g_ChatMode           Chat input mode
+//   GuildInputEnable  g_ChatMode           Chat input mode
 //   DAT_07e11d71  g_IME_Mode           Korean/DBCS IME input active
-//   DAT_07e11d72  g_DigitOnly          Modo solo dígitos (0-9) — PIN/second password
-//   DAT_07e11d73  g_UppercaseOnly      Modo solo mayúsculas
+//   GoldInputEnable  g_DigitOnly          Modo solo dígitos (0-9) — PIN/second password
+//   GoldenArcherLuckyNumberTicket  g_UppercaseOnly      Modo solo mayúsculas
 //   DAT_083a7c24  g_UIScene            Si == 0x7E o 0x98: texto activo aunque otras flags == 0
 //
 //   Para Korean DBCS (WM_IME_COMPOSITION, 0x10F):
@@ -61,7 +61,7 @@ extern "C" { void DbgLogPublic(const char* msg); }
 // TABLA DE EDGE-DETECTION DE TECLADO
 // ─────────────────────────────────────────────────────────────────────────────
 //
-//   DAT_07e118ec  g_KeyState[256]      int[256] — estado de "ya procesé esta tecla"
+//   KeyState  g_KeyState[256]      int[256] — estado de "ya procesé esta tecla"
 //                 Indexado por VK code (0..255), 4 bytes cada entrada.
 //                 0 = tecla libre o ya procesada
 //                 1 = tecla presionada y aún no procesada (rising edge)
@@ -137,7 +137,7 @@ uint Key_IsJustPressed(int vk);
 //   Si guard false: ignorado.
 //
 //   wParam == 8  (Backspace):
-//     FUN_00541eab — mide longitud del último carácter (1 o 2 para DBCS)
+//     mbclen — mide longitud del último carácter (1 o 2 para DBCS)
 //     Resta esa longitud de g_TextLen[g_ActiveSlot]
 //     Null-termina en la nueva posición
 //
@@ -154,7 +154,7 @@ uint Key_IsJustPressed(int vk);
 //     IME_GetAndClearState('\0', 3) — leer estado IME sin limpiar
 //     Filtros por modo:
 //       g_DigitOnly   → solo '0'..'9'
-//       g_UppercaseOnly → solo 'A'..'Z' (FUN_00542457 = toupper)
+//       g_UppercaseOnly → solo 'A'..'Z' (crt_toupper = toupper)
 //     DBCS: g_DBCS_Counter decrementado por byte; si era lead byte: counter = 2
 //     Append a g_TextBuf[g_ActiveSlot]: DAT_07db8710 + slot * 0x100 + len
 //     g_TextLen++ (max 255 / g_TextMaxLen[slot])
@@ -227,7 +227,7 @@ int NumPad_HitTest(void);
 //
 //   1. WM_MOUSEMOVE: g_MouseX/Y actualizados cada evento
 //   2. WM_LBUTTONDOWN: g_ClickFlag = 1, guardar posición
-//   3. Game_SceneUpdate (g_GameState==5, g_GameSubState==2):
+//   3. Game_SceneUpdate (SceneFlag==5, World==2):
 //      a. Lee g_ClickFlag
 //      b. Camera_MouseRay(g_MouseX, g_MouseY) → ray en world space
 //      c. Ray × terrain heightmap → world position (x, y)
@@ -260,7 +260,7 @@ int NumPad_HitTest(void);
 //   0x00480620  Chat_Scroll       — scroll periódico del chat (no es input)
 
 
-// Input_IsKeyJustPressed @ 0x0047ec20 — Input_GetKeyDown (Key_IsJustPressed)
+// IDA: PressKey (0x0047EC20)
 // Returns 1 on the first frame a key goes down (edge trigger), 0 otherwise.
 //
 // BUG-FIX CRÍTICO (ESC-flicker): la versión de Ghidra terminaba con
@@ -271,14 +271,14 @@ int NumPad_HitTest(void);
 // lo interpretaba como "tecla recién presionada" y el menú ESC flipeaba
 // ~16 veces/seg sin tocar nada. IDA (`PressKey`) siempre devuelve 0 en
 // cualquier path que no sea el edge-trigger.
-// IDA: FUN_0047ec20
-int __cdecl Input_IsKeyJustPressed(int param_1)
+// IDA: PressKey
+int __cdecl PressKey(int param_1)
 {
   SHORT SVar1 = GetAsyncKeyState(param_1);
-  // &DAT_07e118ec + param_1*4: byte offset correcto para el slot DWORD
+  // &KeyState + param_1*4: byte offset correcto para el slot DWORD
   // (disasm @ 0x0047ec35 = MOV EAX,[ESI*0x4 + 0x7e118ec]). Necesario castear
-  // la base a char* porque DAT_07e118ec es DWORD[256].
-  DWORD* slot = (DWORD*)((char*)&DAT_07e118ec + param_1 * 4);
+  // la base a char* porque KeyState es DWORD[256].
+  DWORD* slot = (DWORD*)((char*)&KeyState + param_1 * 4);
   if (((unsigned short)SVar1 >> 8) == 0x80) {
     if (*slot == 0) {
       *slot = 1;
@@ -291,11 +291,11 @@ int __cdecl Input_IsKeyJustPressed(int param_1)
 }
 
 
-// Input_ClearState @ 0x0047ec60 — Input_ClearAll
+// IDA: ClearInput (0x0047EC60)
 // Resets global input state: clears active slot and key tables.
 // param_1 != 0: also clears slot 1 (password buffer); 0: preserves slot 1.
-// IDA: FUN_0047ec60
-void __cdecl Input_ClearState(int param_1)
+// IDA: ClearInput
+void __cdecl ClearInput(int param_1)
 {
   int iVar1;
   int iVar2;
@@ -323,7 +323,7 @@ void __cdecl Input_ClearState(int param_1)
 
 // Input_ProcessFunctionKeys @ 0x004c04a0 — Input_ProcessFunctionKeys
 // Handles F1(0x70)-F4(0x73) toggle keys each frame.
-// IDA: FUN_004c04a0
+// IDA: CheckFunctionButtons
 void Input_ProcessFunctionKeys(void)
 {
   byte bVar1;
@@ -344,7 +344,7 @@ void Input_ProcessFunctionKeys(void)
       else {
         DAT_07e11d20 = (DAT_07e11d20 + 1) % 3;
       }
-      FUN_00404bc0(0x19,0,0);
+      PlayBuffer(0x19,0,0);
     }
   }
   else {
@@ -355,7 +355,7 @@ void Input_ProcessFunctionKeys(void)
     if (DAT_07e11ab0 == 0) {
       DAT_00559bf1 = DAT_00559bf1 == '\0';
       DAT_07e11ab0 = 1;
-      FUN_00404bc0(0x19,0,0);
+      PlayBuffer(0x19,0,0);
       // vtable[+0x30] = slot 12 = ChatLB_scrollByN (__fastcall this+n).
       if (DAT_055c9ff0 && *(int*)DAT_055c9ff0) {
           DWORD* obj = (DWORD*)DAT_055c9ff0;
@@ -373,7 +373,7 @@ void Input_ProcessFunctionKeys(void)
     if (DAT_07e11ab4 == 0) {
       DAT_07e11ab4 = 1;
       DAT_00559bf0 = DAT_00559bf0 == '\0';
-      FUN_00404bc0(0x19,0,0);
+      PlayBuffer(0x19,0,0);
     }
   }
   else {
@@ -388,8 +388,8 @@ void Input_ProcessFunctionKeys(void)
     return;
   }
   DAT_07e11ab8 = 1;
-  FUN_0040e330(DAT_055c9ff0);
-  if (DAT_005590ac != 1) {
+  ChatListBox_ScrollByN(DAT_055c9ff0);
+  if (g_bUseChatListBox != 1) {
     uVar7 = 0x51;
     uVar6 = 0xfffffff6;
     goto LAB_004c06e6;
@@ -401,28 +401,28 @@ LAB_004c06d6:
   }
   else {
     if (DAT_07eaa116 == '\0') {
-      FUN_0043d8a0(&DAT_055c9bc8,&DAT_07eaa11b);
+      HashTable_Insert_Short(&MAIN_HASH_CLASS,&DAT_07eaa11b);
       cVar2 = DAT_07eaa11b;
-      uVar4 = HashTable_GetIndex(&DAT_055c9bc8,&DAT_07eaa11b);
+      uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa11b);
       if (uVar4 != 0xffffffff) {
-        pbVar5 = (byte *)FUN_00404280(&DAT_055c9bc8,&DAT_07eaa11b);
+        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_07eaa11b);
         bVar1 = pbVar5[1];
         pbVar5[1] = bVar1 - 1;
         if ((byte)(bVar1 - 1) == 0) {
-          FUN_00423710(pbVar5,&DAT_07eaa11b);
+          Packet_EncryptByte(pbVar5,&DAT_07eaa11b);
         }
       }
       if ((((cVar2 == '\0') && (DAT_07eaa119 == '\0')) && (DAT_07eaa11a == '\0')) &&
          (DAT_07eaa11c == '\0')) {
-        FUN_0043d8a0(&DAT_055c9bc8,&DAT_07eaa118);
+        HashTable_Insert_Short(&MAIN_HASH_CLASS,&DAT_07eaa118);
         cVar2 = DAT_07eaa118;
-        uVar4 = HashTable_GetIndex(&DAT_055c9bc8,&DAT_07eaa118);
+        uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa118);
         if (uVar4 != 0xffffffff) {
-          pbVar5 = (byte *)FUN_00404280(&DAT_055c9bc8,&DAT_07eaa118);
+          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_07eaa118);
           bVar1 = pbVar5[1];
           pbVar5[1] = bVar1 - 1;
           if ((byte)(bVar1 - 1) == 0) {
-            FUN_00423710(pbVar5,&DAT_07eaa118);
+            Packet_EncryptByte(pbVar5,&DAT_07eaa118);
           }
         }
         if (cVar2 == '\0') goto LAB_004c06d6;
@@ -432,7 +432,7 @@ LAB_004c06d6:
     uVar6 = 0;
   }
 LAB_004c06e6:
-  FUN_0040c690((void*)(uintptr_t)DAT_055c9ff0,uVar6,uVar7);
-  FUN_00404bc0(0x19,0,0);
+  Object_SetRectFields((void*)(uintptr_t)DAT_055c9ff0,uVar6,uVar7);
+  PlayBuffer(0x19,0,0);
   return;
 }

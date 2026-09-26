@@ -7,7 +7,7 @@
 #include "globals.h"
 #include "functions.h"
 
-extern void __cdecl FUN_0046ca00(DWORD Object);
+extern void __cdecl Effect_PhysicsTick(DWORD Object);
 // MoveObject_PerWorld @ 0x004FDC00 (~608 lines) — SUMMARY STUB
 // Per-world object animation. Per-frame for each visible scene object.
 // World 9: random terrain lights. World 0: toggle objects by HeroTile.
@@ -38,7 +38,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             float light[3] = { intensity * 0.2f, intensity * 0.3f, intensity * 0.5f };
             const float x = (float)(rand() % 1200) + *(float*)(Hero + 16) - 600.0f;
             const float y = (float)(rand() % 1200) + *(float*)(Hero + 20) - 600.0f;
-            AddTerrainLight(x, y, light, 12, PrimaryTerrainLight[0]);
+            AddTerrainLight(x, y, (float*)light, 12, (float*)PrimaryTerrainLight[0]);
         }
         PlayBuffer(1, 0, 1);
     }
@@ -66,8 +66,8 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         }
     }
 
-    // Alpha fade — FUN_0043e5c0(entity_ptr)
-    FUN_0043e5c0(objPtr);
+    // Alpha fade — Alpha(entity_ptr)
+    Alpha(objPtr);
 
     // Check alpha > 0
     float alpha = *(float*)(objPtr + 0x168);
@@ -85,10 +85,10 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         animSpeed = animSpeed * _DAT_00552650;  // slow down lava objects
     }
 
-    // Play animation — FUN_00440aa0(model, frame*, scale*, extra, speed)
+    // Play animation — BMD__PlayAnimation(model, frame*, scale*, extra, speed)
     // Ghidra sig: BMD::PlayAnimation(this, frame*, priorFrame*, priorAction*, speed, pos*, angle*)
     // Our declaration has 5 params; pass what fits
-    FUN_00440aa0((void*)model, (float*)(objPtr + 0x108), (float*)(objPtr + 0x10c),
+    BMD__PlayAnimation((void*)model, (float*)(objPtr + 0x108), (float*)(objPtr + 0x10c),
                  (void*)(objPtr + 0x106), animSpeed);
 
     // ── Escena de login / char-select (IDA sub_4FDC00, bloque previo al switch)
@@ -98,7 +98,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     //   160 = Logo01 (cielo) y 161 = Logo02 (olas): scroll de la V de textura.
     //   162 = Logo03 (banner MU): rampa de Light + alpha-scalar. Sin esto el
     //         banner queda con bodyLight=(0,0,0) → rectángulo negro.
-    if (DAT_005615c0 == 2 || DAT_005615c0 == 4) {
+    if (SceneFlag == 2 || SceneFlag == 4) {
         short t = *(short*)(objPtr + 2);
         if (t == 160 || t == 161) {
             *(float*)(objPtr + 112) = -((float)((__int64)WorldTime % 4000) * 0.00025f);
@@ -132,7 +132,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     //          types 0x2a,0x2b → WorldTime scale
     // World 4: types 3,4 → WorldTime rotation
     //          type 0x18 → CreateEffect(0x4b0) on 1/64 chance
-    //          types 0x26,0x27 → FUN_0046ca00
+    //          types 0x26,0x27 → Effect_PhysicsTick
     // World 5: type 2 → SubType=0, type 3 → random scale
     // World 6: type 0x15 → WorldTime rotation, type 0x26 → SubType=-2
     // World 7: type 0x16 → pulsing scale with CreateParticle
@@ -169,7 +169,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             terrainLight[0] = light;
             terrainLight[1] = light * 0.8f;
             terrainLight[2] = light * 0.6f;
-            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), terrainLight, 3, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         }
         case 0x75:
@@ -197,7 +197,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             terrainLight[0] = light;
             terrainLight[1] = light * 0.6f;
             terrainLight[2] = light * 0.2f;
-            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), terrainLight, 3, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float*)(objPtr + 0x10), *(float*)(objPtr + 0x14), (float*)terrainLight, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         }
         }
@@ -221,7 +221,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         case 0x2a: FUN_0046c7f0(0, objPtr, 0.0f, 0.0f, 190.0f); return (float*)0;       // 0x433e0000
         case 0x34:
             if (!(rand() % 3)) {
-                Effect_Create(215, (float*)(objPtr + 16), (float*)(objPtr + 28),
+                CreateEffect(215, (float*)(objPtr + 16), (float*)(objPtr + 28),
                               (float*)(objPtr + 232), 0, 0,
                               (float*)(uintptr_t)0xffffffffu, 0, 0);
                 *(int*)(objPtr + 88) = -2;
@@ -244,7 +244,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
                 const float dy = *(float*)(Hero + 20) - *(float*)(objPtr + 56);
                 const float distance = sqrtf(dx * dx + dy * dy);
                 if (distance >= 200.0f) {
-                    *(float*)(objPtr + 36) = FUN_0043e1b0(*(float*)(objPtr + 36), *(float*)(objPtr + 48), 10.0f);
+                    *(float*)(objPtr + 36) = TurnAngle2(*(float*)(objPtr + 36), *(float*)(objPtr + 48), 10.0f);
                     *(float*)(objPtr + 16) += (*(float*)(objPtr + 52) - *(float*)(objPtr + 16)) * 0.2f;
                     *(float*)(objPtr + 20) += (*(float*)(objPtr + 56) - *(float*)(objPtr + 20)) * 0.2f;
                 } else if (objType == 86) {
@@ -310,7 +310,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         case 0x18:
             *(int*)(objPtr + 88) = -2;
             if (!(rand() % 64))
-                Effect_Create(1200, (float*)(objPtr + 16), (float*)(objPtr + 28),
+                CreateEffect(1200, (float*)(objPtr + 16), (float*)(objPtr + 28),
                               (float*)(objPtr + 232), 0, 0,
                               (float*)(uintptr_t)0xffffffffu, 0, 0);
             break;
@@ -318,7 +318,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             *(int*)(objPtr + 88) = -2;
             break;
         case 0x26:
-        case 0x27: FUN_0046ca00(objPtr); return (float*)0;
+        case 0x27: Effect_PhysicsTick(objPtr); return (float*)0;
         }
         break;
 
@@ -386,7 +386,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             float light[3] = { wave, wave * 0.6f, wave * 0.2f };
             *(int*)(objPtr + 100) = 0;
             *(float*)(objPtr + 104) = wave;
-            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), light, 3, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), (float*)light, 3, (float*)PrimaryTerrainLight[0]);
             return (float*)0;
         } else if (objType == 0x0b) {
             *(float*)(objPtr + 112) = -(float)((__int64)WorldTime % 10000) * 0.0002f;
@@ -405,7 +405,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             float light[3] = { wave, wave * 0.6f, wave * 0.2f };
             *(int*)(objPtr + 100) = 1;
             *(float*)(objPtr + 112) = scroll;
-            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), light, 2, PrimaryTerrainLight[0]);
+            AddTerrainLight(*(float*)(objPtr + 16), *(float*)(objPtr + 20), (float*)light, 2, (float*)PrimaryTerrainLight[0]);
         } else if (objType == 0x3f || objType == 0x40) {
             *(int*)(objPtr + 88) = -2;
         } else if (objType == 0x48) {
@@ -439,14 +439,14 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
 // MoveHeavenThunder @ 0x004FED90 (~472 lines) — SUMMARY STUB
 // Lightning storm for World 10 (Icarus). Random bolts via CreateEffect(0xb6).
 // Adds terrain light flash, returns nonzero when strike occurs.
-int __stdcall MoveHeavenThunder_stub(void) {
+int __stdcall MoveHeavenThunder(void) {
     // Port fiel de IDA MoveHeavenThunder (0x004FED90).
     //
     // Antes era un ESQUELETO: calculaba la probabilidad y devolvia 1/0, pero las
     // dos llamadas que hacen el trabajo estaban solo como comentario
     // ("In original: complex phantom-register-based call"). La que faltaba y se
     // nota es `CreateEffect(182, ...)`: el tipo 182 es el modelo `cloud`
-    // (`OpenWorldModels` case 10 hace `AccessModel(182, "Data\Object11", "cloud", -1)`
+    // (`OpenWorldModels` case 10 hace `AccessModelWithTextures(182, "Data\Object11", "cloud", -1)`
     // + `OpenJPG("Effect\clouds.jpg", 1268)`), y `RenderEffects` lo dibuja por su
     // `case 182:`. O sea ESTE es el generador de las nubes de Icarus.
     //
@@ -469,11 +469,11 @@ int __stdcall MoveHeavenThunder_stub(void) {
         Light[1] = Light[0];
         Light[2] = lum * 0.081f;
     }
-    AddTerrainLight(Position[0], Position[1], Light, 2, PrimaryTerrainLight[0]);
+    AddTerrainLight(Position[0], Position[1], (float*)Light, 2, (float*)PrimaryTerrainLight[0]);
 
     // La NUBE: efecto 182 en la posicion del heroe (no en Position).
     memset(Angle, 0, sizeof(Angle));
-    Effect_Create(182, (float *)(Hero + 16), Angle, Light,
+    CreateEffect(182, (float *)(Hero + 16), Angle, Light,
                   (float *)0, (float *)0, (float *)0xffffffff, (float *)0, 0);
 
     if (DAT_083a3fec) objectCount = rand() % (int)DAT_083a3fec;
@@ -550,16 +550,16 @@ int __stdcall MoveHeavenThunder_stub(void) {
 // MoveObjects @ 0x004FF260 (~169 lines) — per-frame object update dispatcher
 // World 10: MoveHeavenThunder. World 11..16: ambient particles.
 // Iterates all object lists calling MoveObject_Special or MoveObject_PerWorld.
-void __stdcall MoveObjects_stub(void) {
+void __stdcall MoveObjects(void) {
     // 0x004FF260 — Per-frame object update dispatcher.
     // World 10: calls MoveHeavenThunder. World 11..16: spawn ambient particles.
     // Then iterates all object bucket lists (16 buckets per block, from DAT_083a021c)
-    // calling FUN_004fa5f0 (Object_AnimUpdate) or FUN_004fdc00 (Object_RenderUpdate).
+    // calling MoveObject_Special (Object_AnimUpdate) or FUN_004fdc00 (Object_RenderUpdate).
     // In World 10 with thunder active, spawns lightning joints on random objects.
 
     float Scale = 0.0f;
     if (World == 10) {
-        Scale = (float)MoveHeavenThunder_stub();
+        Scale = (float)MoveHeavenThunder();
     }
     else if (World > 10 && World < 0x11) {
         // Worlds 11..16: spawn ambient particle near hero
@@ -611,7 +611,7 @@ void __stdcall MoveObjects_stub(void) {
                 while (pcVar6 != NULL && MOV_OBJ_VALID_PTR(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0') {
-                        FUN_004fa5f0((int)pcVar6);
+                        MoveObject_Special((int)pcVar6);
                     }
                     pcVar6[0x160] = '\0';
                     pcVar6 = *(char**)(pcVar6 + 0x1B8);
@@ -682,7 +682,7 @@ void __stdcall MoveObjects_stub(void) {
                                 light[0] = (float)(rand() % 10) * 0.02f;
                                 light[1] = (float)(rand() % 10) * 0.02f;
                                 light[2] = (float)(rand() % 10) * 0.02f;
-                                FUN_004795c0(1269, (float*)(pcVar6 + 16), 0.5f,
+                                CreateSprite(1269, (float*)(pcVar6 + 16), 0.5f,
                                              light, (int)Hero, 0.0f, 0);
                                 Scale = (float)(rand() % 20) + 10.0f;
                                 Joint_Create(1254, (float*)(pcVar6 + 16),
@@ -697,7 +697,7 @@ void __stdcall MoveObjects_stub(void) {
                                 DAT_083a3fec--;
                             }
                         }
-                        FUN_004fa5f0((int)pcVar6);
+                        MoveObject_Special((int)pcVar6);
                     }
                     pcVar6 = *(char**)(pcVar6 + 0x1B8);
                 } // end while linked list
@@ -734,7 +734,7 @@ void __stdcall MoveObjects_stub(void) {
 //   +0x108 frame +0x10C priorFrame        +0x168 alpha-target
 // Owner (CharactersClient) offsets: +0x10/14/18 pos, +0x1c/20/24 ang,
 //   +0x7c(124) state, +0x84(132) Kind, +0x105(261) CurrentAction.
-void __stdcall MoveBugs_stub(void) {
+void __stdcall MoveBugs(void) {
     extern unsigned char* TerrainWall;
 
     char*  base = (char*)DAT_083a1218;
@@ -747,13 +747,13 @@ void __stdcall MoveBugs_stub(void) {
             goto next_bug;
 
         DWORD owner = *v0;                     // *v0 — Owner ptr
-        if (DAT_005615c0 == 5) {               // g_GameState == InGame
+        if (SceneFlag == 5) {               // SceneFlag == InGame
             if (owner == 0 || *(BYTE*)owner == 0 || *(BYTE*)(owner + 132) != 1) {
                 *(BYTE*)e = 0;                 // kill: owner muerto / Kind != 1
                 goto next_bug;
             }
         }
-        FUN_0043e5c0((int)e);                  // Alpha() — fade
+        Alpha((int)e);                  // Alpha() — fade
 
         {
         int   v2 = (int)owner;
@@ -816,8 +816,8 @@ void __stdcall MoveBugs_stub(void) {
                 *(DWORD*)(e + 0x24) = *(DWORD*)(v8 + 36);   // angleZ
                 BYTE v14 = *(BYTE*)(v8 + 261);              // owner CurrentAction
                 if ((v14 >= 13 && v14 <= 33) || v14 == 76 || v14 == 77) {
-                    if (v11 == 267 && (v12 == 8 || v12 == 10)) FUN_0043e820((int)e, 3);
-                    else                                       FUN_0043e820((int)e, 2);
+                    if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 3);
+                    else                                       SetAction((int)e, 2);
                     if ((rand() & 1) == 0 && World != 10) {
                         float Light[3] = { 1.0f, 1.0f, 1.0f };
                         float Position[3];
@@ -830,22 +830,22 @@ void __stdcall MoveBugs_stub(void) {
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;        // animSpeed = 0.34f
                     *(BYTE*)e = *(BYTE*)(*v0);               // Live = owner.Live
                 } else if (v14 == 64 || v14 == 65) {
-                    if (v12 == 8 || v12 == 10) FUN_0043e820((int)e, 7);
-                    else                       FUN_0043e820((int)e, 6);
+                    if (v12 == 8 || v12 == 10) SetAction((int)e, 7);
+                    else                       SetAction((int)e, 6);
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else if (v14 < 0x22 || v14 > 0x37) {
-                    if (v11 == 267 && (v12 == 8 || v12 == 10)) FUN_0043e820((int)e, 1);
-                    else                                       FUN_0043e820((int)e, 0);
+                    if (v11 == 267 && (v12 == 8 || v12 == 10)) SetAction((int)e, 1);
+                    else                                       SetAction((int)e, 0);
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else if (v11 == 267) {
-                    if (v12 == 8 || v12 == 10) FUN_0043e820((int)e, 5);
-                    else                       FUN_0043e820((int)e, 4);
+                    if (v12 == 8 || v12 == 10) SetAction((int)e, 5);
+                    else                       SetAction((int)e, 4);
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 } else {
-                    FUN_0043e820((int)e, 3);
+                    SetAction((int)e, 3);
                     *(DWORD*)(e + 0xCC) = 0x3EAE147B;
                     *(BYTE*)e = *(BYTE*)(*v0);
                 }
@@ -868,7 +868,7 @@ void __stdcall MoveBugs_stub(void) {
         {
         float* v28 = (float*)(e + 0x10);
         *(BYTE*)(v40 + 160) = *(BYTE*)(e + 0x105);          // model.CurrentAction
-        FUN_00440aa0((void*)v40, (float*)(e + 0x108), (float*)(e + 0x10C),
+        BMD__PlayAnimation((void*)v40, (float*)(e + 0x108), (float*)(e + 0x10C),
                      (void*)(e + 0x106), *(float*)(e + 0xCC));   // sub_440AA0 (a6/a7 unused)
 
         short v29 = *(short*)(e + 2);
@@ -878,8 +878,8 @@ void __stdcall MoveBugs_stub(void) {
             float v31 = (y2 - v30) * (y2 - v30) + (x2 - x1) * (x2 - x1);
             float v38 = v36 * v36;
             if (v31 >= v38) {
-                float v41 = FUN_0043e050(x1, v30, x2, y2);   // Movement_Tick (CreateAngle)
-                *(float*)(e + 0x24) = FUN_0043e1b0(*(float*)(e + 0x24), v41, 20.0f);
+                float v41 = CreateAngle(x1, v30, x2, y2);   // Movement_Tick (CreateAngle)
+                *(float*)(e + 0x24) = TurnAngle2(*(float*)(e + 0x24), v41, 20.0f);
             }
             // PORT FIEL 1:1 (2026-07-18): el ASM (0x5007DB) escribe la matriz de
             // AngleMatrix en `[esi+0x90]` (campo scratch), NO en 0x24. Hex-Rays lo

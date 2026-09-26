@@ -1,9 +1,9 @@
 // MoveJoint.cpp
-// FUN_00470030 @ 0x00470030  [Kayito: MoveJoint]
+// MoveJoint @ 0x00470030  [Kayito: MoveJoint]
 //
 // Per-frame movement/animation tick for "joint" effect slots.
 // Joint slots are chained lightning/beam/special-link effects.
-// Called by MoveJoints (FUN_004736e0) once per active joint slot per frame.
+// Called by MoveJoints (MoveJoints) once per active joint slot per frame.
 //
 // param_1 = undefined1*  — pointer to joint slot (stride ~0x9d4, base near DAT_07abf5d0)
 // param_2 = uint         — frame counter / slot index used for trig oscillation seeds
@@ -91,7 +91,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
             Position[0] = tx; Position[1] = ty; Position[2] = tz + 30.0f;
             const float rot = (float)(rand() % 360);
             const float sc  = (float)(rand() % 8 + 8) * 0.2f;
-            FUN_004795c0(1231, Position, sc, (float *)(o + 52), 0, rot, 0);
+            CreateSprite(1231, Position, sc, (float *)(o + 52), 0, rot, 0);
             const int life = *(int *)(o + 2488);
             if (life > 10) {
                 Light[0] = 0.5f; Light[1] = 0.5f; Light[2] = 0.5f;
@@ -143,15 +143,15 @@ static void MoveJoint_GenericTail(unsigned char *o)
                 tgt[1] = *(float *)(owner + 20);
                 tgt[2] = *(float *)(owner + 24) + 80.0f;
             }
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, 25.0f);   // LABEL_131
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, 25.0f);   // LABEL_131
             break;
         }
         case 3:
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, 50.0f);
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, 50.0f);
             break;
         case 4: case 5: {
             Position[0] = tgt[0]; Position[1] = tgt[1]; Position[2] = tgt[2] - 300.0f;
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), Position, -10.0f);
+            v295 = MoveHumming(pos, (float *)(o + 40), Position, -10.0f);
             break;
         }
         case 6: {
@@ -164,14 +164,14 @@ static void MoveJoint_GenericTail(unsigned char *o)
             tgt[0] += (float)(rand() % 200) + 2050.0f;
             tgt[1] += (float)(rand() % 200) + 2050.0f;
             tgt[2] -= 10000.0f;
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
             break;
         }
         case 7:
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, (float)(rand() % 100 + 50));
             break;
         case 9:
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), Position, (float)(rand() % 80 + 60));
+            v295 = MoveHumming(pos, (float *)(o + 40), Position, (float)(rand() % 80 + 60));
             break;
         case 0xC: {
             // IDA entra directo a LABEL_133: no recalcula la distancia.
@@ -185,7 +185,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
             break;
         }
         default:
-            v295 = FUN_0043e4a0(pos, (float *)(o + 40), tgt, 25.0f);    // LABEL_131
+            v295 = MoveHumming(pos, (float *)(o + 40), tgt, 25.0f);    // LABEL_131
             break;
         }
 
@@ -218,7 +218,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
         Angle[1] = *(float *)(o + 44) + *(float *)(o + 2504);
         Angle[2] = *(float *)(o + 48) + *(float *)(o + 2508);
         Matrix_BuildFromEuler(Angle, v305);
-        FUN_0046fe90((int)(uintptr_t)o, v305);
+        Joint_SegmentTick((int)(uintptr_t)o, v305);
 
         const int sub3 = *(int *)(o + 8);
         if (sub3 == 3) {
@@ -260,7 +260,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
                 Light[1] = v100;
             }
             Light[2] = v100;
-            AddTerrainLight(pos[0], pos[1], Light, 2, PrimaryTerrainLight[0]);
+            AddTerrainLight(pos[0], pos[1], (float*)Light, 2, (float*)PrimaryTerrainLight[0]);
         }
 
         Position[0] = 0.0f;
@@ -279,7 +279,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
     }
 }
 
-char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
+char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
 {
     float   fVar2;
     float   fVar3;
@@ -360,14 +360,14 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
         // FPU que Hex-Rays no tipa. Antes se aproximaba con `local_e4_f`
         // (distancia recalculada a mano); ahora se usa el valor real.
         const float dist_4e8 =
-            FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), pfVar14, 0.0f);
+            MoveHumming(pfVar15, (float *)(param_1 + 0x28), pfVar14, 0.0f);
         float matrix_4e8[12];
         Matrix_BuildFromEuler((float *)(param_1 + 0x28), matrix_4e8);
-        FUN_0046fe90((int)param_1, matrix_4e8);
+        Joint_SegmentTick((int)param_1, matrix_4e8);
         if (dist_4e8 > *(float *)(param_1 + 0x9c0)) {
             const float brightness = (float)(rand() % 4 + 4) * 0.1f;
             float light_4e8[3] = { brightness, brightness * 0.6f, brightness * 0.2f };
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light_4e8, 4, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)light_4e8, 4, (float*)&DAT_081cb608[0]);
             float step_4e8[3] = { 0.0f, -*(float *)(param_1 + 0x9c0), 0.0f };
             float rotated_4e8[3];
             Vector_Rotate(step_4e8, matrix_4e8, rotated_4e8);
@@ -381,16 +381,16 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
         }
 #if 0 // Former approximation, retained only as source history.
         float *pfVar26 = (float *)(param_1 + 0x28);
-        // FUN_0043e4a0 computes angle/distance and returns result via pfOut;
+        // MoveHumming computes angle/distance and returns result via pfOut;
         // Ghidra shows its return used as float — call with a temp output.
         float arc_out = 0.0f;
-        FUN_0043e4a0(pfVar15, pfVar26, pfVar14, 0.0f);  // result in pfVar14[2] area; use arc_out
-        // In the decompile: local_e4 = (undefined4*)(float)fVar24 where fVar24 = FUN_0043e4a0(...)
+        MoveHumming(pfVar15, pfVar26, pfVar14, 0.0f);  // result in pfVar14[2] area; use arc_out
+        // In the decompile: local_e4 = (undefined4*)(float)fVar24 where fVar24 = MoveHumming(...)
         // The function signature is void in functions.h so we approximate the distance check
         // using *(float*)(param_1+0x9c0) vs the 3D distance already computed above.
         local_e4_f = sqrtf(local_dc_f * local_dc_f + local_e4_f * local_e4_f);
         Matrix_BuildFromEuler(pfVar26, local_a8 + 6);
-        FUN_0046fe90((int)param_1, local_a8 + 6);
+        Joint_SegmentTick((int)param_1, local_a8 + 6);
         if (*(float *)(param_1 + 0x9c0) < local_e4_f) {
             uVar7 = _rand();
             uVar7 = uVar7 & 0x80000003;
@@ -401,7 +401,7 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
             local_d8[3] = local_e8_f * _DAT_005524f4;
             local_d8[4] = local_d8[3] * _DAT_00552534;
             local_d8[5] = local_d8[3] * _DAT_005526e4;
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)(local_d8 + 3), 4, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)((local_d8 + 3)), 4, (float*)&DAT_081cb608[0]);
             local_d8[7] = -*(float *)(param_1 + 0x9c0);
             local_d8[6] = 0.0f;
             local_b8    = 0.0f;
@@ -457,7 +457,7 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
                 *(float *)(param_1 + 0x14) = rotated_4e2[1] + *(float *)(param_1 + 0x48);
                 *(float *)(param_1 + 0x18) = rotated_4e2[2] + *(float *)(param_1 + 0x4c);
                 if (*(int *)(param_1 + 0x50) < *(int *)(param_1 + 0x54) - 1 || *(unsigned char *)(param_1 + 0x9d2) != 0)
-                    FUN_0046fe90((int)param_1, jointMatrix_4e2);
+                    Joint_SegmentTick((int)param_1, jointMatrix_4e2);
             }
             if (*(int *)(param_1 + 0x9b8) < 15) {
                 *(float *)(param_1 + 0x34) *= 2.0f / 3.0f;
@@ -505,7 +505,7 @@ char * __cdecl FUN_00470030(undefined1 *param_1, uint param_2)
             if ((*(int *)(param_1 + 0x50) < *(int *)(param_1 + 0x54) + -1) ||
                 (*(char *)(param_1 + 0x9d2) != '\0'))
             {
-                FUN_0046fe90((int)param_1, local_60);
+                Joint_SegmentTick((int)param_1, local_60);
             }
             iVar16--;
         } while (iVar16 != 0);
@@ -564,7 +564,7 @@ LAB_00473578_498:
                     t = 0.0f;
                 }
                 float inv_t = _DAT_0055256c - t;
-                FUN_00473d90(param_2 * 0x4539, local_d8, 1.4f);
+                Ring_ComputeOrbit(param_2 * 0x4539, local_d8, 1.4f);
                 iVar16 = *(int *)(param_1 + 0x40);
                 local_d8[0] = local_d8[0] * _DAT_00552900 + *pfVar14;
                 local_d8[1] = local_d8[1] * _DAT_00552900 + *(float *)(param_1 + 0x48);
@@ -721,7 +721,7 @@ LAB_0047036e:
         }
 
         /* HashTable obfuscation block skipped */
-        // (ref-count insert/remove on DAT_055c9bc8/bcc/bd0/bd4 — not game logic)
+        // (ref-count insert/remove on MAIN_HASH_CLASS/bcc/bd0/bd4 — not game logic)
 
         // Harmonic oscillation seed for wispy movement
         uVar7  = param_2 & 0x80000001;
@@ -814,20 +814,20 @@ LAB_0047036e:
         const int subtype_4e5 = *(int *)(param_1 + 8);
         if (subtype_4e5 == 1) {
             float light_4e5_1[3] = { 0.8f, 0.4f, 1.0f };
-            FUN_004795c0(1150, pfVar15, 4.0f, light_4e5_1,
+            CreateSprite(1150, pfVar15, 4.0f, light_4e5_1,
                           *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
             goto switchD_caseD_4ef;
         }
         if (subtype_4e5 == 3) {
             float orbit_4e5_3[3];
             float light_4e5_3[3] = { 1.0f, 0.5f, 0.1f };
-            FUN_00473d90((int)param_2, orbit_4e5_3, 1.0f);
+            Ring_ComputeOrbit((int)param_2, orbit_4e5_3, 1.0f);
             *pfVar15 += orbit_4e5_3[0] * 50.0f;
             *(float *)(param_1 + 0x14) += orbit_4e5_3[1] * 50.0f;
             *(float *)(param_1 + 0x18) += orbit_4e5_3[2] * 50.0f;
-            FUN_004795c0(1150, pfVar15, 3.0f, light_4e5_3,
+            CreateSprite(1150, pfVar15, 3.0f, light_4e5_3,
                           *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
-            FUN_004795c0(1231, pfVar15, 1.5f, light_4e5_3,
+            CreateSprite(1231, pfVar15, 1.5f, light_4e5_3,
                           *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
             goto switchD_caseD_4ef;
         }
@@ -855,17 +855,17 @@ LAB_0047036e:
                 light_4e5_2[2] = fade_4e5_2;
             }
             const float scale_4e5_2 = (float)((20 - lifetime_4e5_2) / 5) + 4.0f;
-            FUN_004795c0(1150, pfVar15, scale_4e5_2, light_4e5_2,
+            CreateSprite(1150, pfVar15, scale_4e5_2, light_4e5_2,
                           *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
             *(float *)(param_1 + 0x9c0) += 5.0f;
             goto switchD_caseD_4ef;
         }
         if (subtype_4e5 == 0 || subtype_4e5 == 5) {
             if (*(int *)(param_1 + 0x0c) == 1117782016) {
-                Effect_Create(205, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34),
+                CreateEffect(205, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34),
                              (float *)(subtype_4e5 == 5 ? 3 : 0), 0, (float *)-1, 0, 0);
                 if ((*(int *)(param_1 + 0x9b8) % 15) == 0 && *(int *)(param_1 + 0x40) == (int)Hero) {
-                    FUN_0045fec0(*(unsigned char *)(param_1 + 0x9d2), pfVar15, 150.0f,
+                    Entity_FindNearby_SendPacket(*(unsigned char *)(param_1 + 0x9d2), pfVar15, 150.0f,
                                   *(unsigned char *)(param_1 + 0x9d3), *(unsigned short *)(param_1 + 0x9d0));
                 }
             }
@@ -875,7 +875,7 @@ LAB_0047036e:
             *(float *)(param_1 + 0x48) = *(float *)(owner_4e5 + 0x14);
             *(float *)(param_1 + 0x4c) = *(float *)(owner_4e5 + 0x18) + 80.0f;
             const float horizontalDistance_4e5 = sqrtf(local_e4_f * local_e4_f + local_dc_f * local_dc_f);
-            FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44),
+            MoveHumming(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44),
                           subtype_4e5 == 5 ? 2.0f : 10.0f);
             if (*(unsigned char *)(param_1 + 0x9bc) == 0 && *(float *)(param_1 + 0x9c0) * 2.0f >= horizontalDistance_4e5)
                 *(unsigned char *)(param_1 + 0x9bc) = 1;
@@ -889,7 +889,7 @@ LAB_0047036e:
                 *(float *)(param_1 + 0x9cc) = angleZ * 0.8f;
             }
 
-            const float terrain_4e5 = FUN_004f7500(*pfVar15, *(float *)(param_1 + 0x14));
+            const float terrain_4e5 = RequestTerrainHeight(*pfVar15, *(float *)(param_1 + 0x14));
             if (terrain_4e5 + 100.0f > *(float *)(param_1 + 0x18)) {
                 *(float *)(param_1 + 0x9c4) = 0.0f;
                 *(float *)(param_1 + 0x28) = -5.0f;
@@ -904,7 +904,7 @@ LAB_0047036e:
             *(float *)(param_1 + 0x3c) = color_4e5;
             const float darkness_4e5 = (float)(rand() % 4 + 4) * -0.01f;
             float light_4e5[3] = { darkness_4e5, darkness_4e5, darkness_4e5 };
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light_4e5, 4, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)light_4e5, 4, (float*)&DAT_081cb608[0]);
             goto switchD_caseD_4ef;
         }
 
@@ -953,7 +953,7 @@ LAB_0047036e:
             const int segmentLimit_4e7 = *(int *)(param_1 + 0x54);
             for (int segment_4e7 = 0; segment_4e7 < segmentLimit_4e7; ++segment_4e7) {
                 const float speed_4e7 = (float)(rand() % 80) + 60.0f;
-                FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), target_4e7, speed_4e7);
+                MoveHumming(pfVar15, (float *)(param_1 + 0x28), target_4e7, speed_4e7);
                 *(float *)(param_1 + 0x9c4) = (float)(rand() % 1400 - 700) / *(float *)(param_1 + 0x0c);
                 *(float *)(param_1 + 0x9cc) = (float)(rand() % 1400 - 700) / *(float *)(param_1 + 0x0c);
                 float angle_4e7[3] = {
@@ -963,7 +963,7 @@ LAB_0047036e:
                 };
                 float matrix_4e7[12], step_4e7[3] = { 0.0f, -speed_4e7, 0.0f }, rotated_4e7[3];
                 Matrix_BuildFromEuler(angle_4e7, matrix_4e7);
-                FUN_0046fe90((int)param_1, matrix_4e7);
+                Joint_SegmentTick((int)param_1, matrix_4e7);
                 Vector_Rotate(step_4e7, matrix_4e7, rotated_4e7);
                 *pfVar15 += rotated_4e7[0];
                 *(float *)(param_1 + 0x14) += rotated_4e7[1];
@@ -1013,13 +1013,13 @@ LAB_0047036e:
                     *(float *)(param_1 + 0x4c) = target_4ea[2];
                 }
                 // 2026-08-16: `Distance` es el RETORNO de MoveHumming, no la Z
-                // del target. Hex-Rays tipaba FUN_0043e4a0 como void (retorno en
+                // del target. Hex-Rays tipaba MoveHumming como void (retorno en
                 // st0) y este port comparaba `target[2]` = ownerZ + 120, que en
                 // cualquier mapa es >> 35 → las esferas de EXP nunca llegaban a
                 // absorberse y orbitaban al pj acumulandose. Confirmado contra el
                 // source de MU 5.2 (ZzzEffectJoint.cpp:3368).
                 const float dist_4ea =
-                    FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), target_4ea,
+                    MoveHumming(pfVar15, (float *)(param_1 + 0x28), target_4ea,
                                  *(float *)(param_1 + 0x9c0));
                 if (dist_4ea > 35.0f) {
                     if (dist_4ea <= 70.0f && fabsf(originalAngleZ_4ea - *(float *)(param_1 + 0x30)) > 20.0f &&
@@ -1041,7 +1041,7 @@ LAB_0047036e:
             }
             const float brightness_4ea = (float)(rand() % 4 + 8) * 0.03f;
             float terrainLight_4ea[3] = { brightness_4ea * 0.4f, brightness_4ea, brightness_4ea * 0.8f };
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)terrainLight_4ea, 2, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)terrainLight_4ea, 2, (float*)&DAT_081cb608[0]);
             if (subtype_4ea == 6 || subtype_4ea == 9)
                 Particle_Spawn(1191, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34), 3, 0.05f, 0);
             else
@@ -1110,7 +1110,7 @@ LAB_0047036e:
             target_4eb[0] = *(float *)(owner_4eb + 0x10);
             target_4eb[1] = *(float *)(owner_4eb + 0x14);
             target_4eb[2] = *(float *)(owner_4eb + 0x18) + 120.0f;
-            FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), target_4eb, 10.0f);
+            MoveHumming(pfVar15, (float *)(param_1 + 0x28), target_4eb, 10.0f);
         }
         const float fade_4eb = (float)(12 - lifetime_4eb) * 0.1f;
         if (subtype_4eb == 1) {
@@ -1129,10 +1129,10 @@ LAB_0047036e:
         if (subtype_4eb == 6 && lifetime_4eb <= 10) {
             const float pulse_4eb = (float)(6 - abs(lifetime_4eb - 6)) * 0.15f;
             float light_4eb[3] = { pulse_4eb, pulse_4eb, pulse_4eb };
-            FUN_004795c0(1231, target_4eb, (float)(rand() % 8 + 8) * 0.05f,
+            CreateSprite(1231, target_4eb, (float)(rand() % 8 + 8) * 0.05f,
                           light_4eb, *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
         } else if (subtype_4eb != 7 && lifetime_4eb == 1) {
-            FUN_004795c0(1231, target_4eb, (float)(rand() % 8 + 8) * 0.2f,
+            CreateSprite(1231, target_4eb, (float)(rand() % 8 + 8) * 0.2f,
                           (float *)(param_1 + 0x34), *(int *)(param_1 + 0x40), (float)(rand() % 360), 0);
         }
         goto switchD_caseD_4ef;
@@ -1147,7 +1147,7 @@ LAB_0047036e:
 
         const float horizontalDistance = sqrtf(local_e4_f * local_e4_f + local_dc_f * local_dc_f);
         const float turnStep = 3000.0f / horizontalDistance;
-        FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44), turnStep);
+        MoveHumming(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44), turnStep);
 
         if (*(unsigned char *)(param_1 + 0x9bc) == 0 &&
             *(float *)(param_1 + 0x9c0) * 2.0f >= horizontalDistance) {
@@ -1161,7 +1161,7 @@ LAB_0047036e:
 
         const float terrainLight = (float)(rand() % 4 + 4) * -0.01f;
         float light[3] = { terrainLight, terrainLight, terrainLight };
-        FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light, 4, (int)&DAT_081cb608[0]);
+        AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)light, 4, (float*)&DAT_081cb608[0]);
         goto switchD_caseD_4ef;
     }
 
@@ -1182,7 +1182,7 @@ LAB_0047036e:
                 *(float *)(param_1 + 0x4c) = targetDistance;
             }
 
-            FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44), 25.0f);
+            MoveHumming(pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x44), 25.0f);
             *(float *)(param_1 + 0x9c4) = ((float)(rand() % 256 - 128) / *(float *)(param_1 + 0x0c) + *(float *)(param_1 + 0x9c4)) * 0.8f;
             *(float *)(param_1 + 0x9c8) *= 0.8f;
             *(float *)(param_1 + 0x9cc) = ((float)(rand() % 256 - 128) / *(float *)(param_1 + 0x0c) + *(float *)(param_1 + 0x9cc)) * 0.8f;
@@ -1192,7 +1192,7 @@ LAB_0047036e:
                                *(float *)(param_1 + 0x30) + *(float *)(param_1 + 0x9cc) };
             float matrix[12], rotated[3];
             Matrix_BuildFromEuler(angle, matrix);
-            FUN_0046fe90((int)param_1, matrix);
+            Joint_SegmentTick((int)param_1, matrix);
 
             if (*(float *)(param_1 + 0x9c0) * 2.0f >= targetDistance) {
                 if ((rand() & 1) == 0) {
@@ -1218,7 +1218,7 @@ LAB_0047036e:
                 light[1] = intensity * 0.1f;
                 light[2] = intensity * 0.2f;
             }
-            FUN_004f76c0(*pfVar15, *(float *)(param_1 + 0x14), (int)light, 2, (int)&DAT_081cb608[0]);
+            AddTerrainLight(*pfVar15, *(float *)(param_1 + 0x14), (float*)light, 2, (float*)&DAT_081cb608[0]);
 
             float step[3] = { 0.0f, -*(float *)(param_1 + 0x9c0), 0.0f };
             Vector_Rotate(step, matrix, rotated);
@@ -1250,7 +1250,7 @@ LAB_0047036e:
                 *(float *)(param_1 + 0x18) = rotated[2] + *(float *)(param_1 + 0x4c);
 
                 Matrix_BuildFromEuler((float *)(param_1 + 0x28), matrix);
-                FUN_0046fe90((int)param_1, matrix);
+                Joint_SegmentTick((int)param_1, matrix);
                 *(float *)(param_1 + 0x9cc) -= 11.0f;
                 if ((rand() & 1) == 0) {
                     Particle_Spawn(1195, (float *)(param_1 + 0x10),
@@ -1262,7 +1262,7 @@ LAB_0047036e:
                               (float *)(param_1 + 0x28), 3, 0, (float)(rand() % 8) + 4.0f, 5, 10);
             }
             if (*(int *)(param_1 + 0x40) == (int)Hero && *(int *)(param_1 + 0x9b8) > 18 && (i % 5) == 0) {
-                FUN_0045fec0(*(unsigned char *)(param_1 + 0x9d2), (float *)(param_1 + 0x10), 150.0f,
+                Entity_FindNearby_SendPacket(*(unsigned char *)(param_1 + 0x9d2), (float *)(param_1 + 0x10), 150.0f,
                               *(unsigned char *)(param_1 + 0x9d3), *(unsigned short *)(param_1 + 0x9d0));
             }
         }
@@ -1311,7 +1311,7 @@ LAB_0047036e:
         else {
             *(float *)(param_1 + 0x14) -= _DAT_005524f0;
         }
-        FUN_0046fe90((int)param_1, local_30);
+        Joint_SegmentTick((int)param_1, local_30);
         goto switchD_caseD_4ef;
     }
 
@@ -1449,7 +1449,7 @@ switchD_caseD_4fd:
                 *jposX                     += *(float *)(param_1 + 0x1c);
                 *(float *)(param_1 + 0x14) += *(float *)(param_1 + 0x20);
                 *(float *)(param_1 + 0x18) += *(float *)(param_1 + 0x24);
-                FUN_0046fe90((int)param_1, jointMatrix_v304);
+                Joint_SegmentTick((int)param_1, jointMatrix_v304);
             }
             goto switchD_caseD_4ef;
         }
@@ -1575,16 +1575,16 @@ switchD_caseD_4fd:
                     *(int *)(jowner + 16) = *(int *)(param_1 + 0x10);
                     *(int *)(jowner + 20) = *(int *)(param_1 + 0x14);
                     *(int *)(jowner + 24) = *(int *)(param_1 + 0x18);
-                    FUN_00466440(jowner);
+                    Effect_CollisionCheck(jowner);
                 }
             }
             {
                 float *ppos = (float *)(param_1 + 0x10);
-                FUN_004795c0(1231, ppos, (float)(_rand() % 2 + 8) * 0.1f,
+                CreateSprite(1231, ppos, (float)(_rand() % 2 + 8) * 0.1f,
                              jangles, jowner, (float)(_rand() % 360), 0);
-                FUN_004795c0(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
+                CreateSprite(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
                              jangles, jowner, (float)(_rand() % 360), 0);
-                FUN_004795c0(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
+                CreateSprite(1150, ppos, (float)(_rand() % 2 + 8) * 0.18000001f,
                              jangles, jowner, (float)(_rand() % 360), 0);
                 if (jsub != 11 && *(int *)(param_1 + 0x9b8) == 1) {
                     float jzero[3]  = { 0.0f, 0.0f, 0.0f };
@@ -1599,7 +1599,7 @@ switchD_caseD_4fd:
     // 2026-09-01 — PORTADA la cola real de LABEL_301 (IDA L1706-1724 ->
     // LABEL_438 -> LABEL_439).  Aca habia una "orbita pseudo-aleatoria"
     // INVENTADA (sembrada con el indice de slot y unos globals de ruido) que
-    // ademas llamaba `FUN_0046fe90` de mas: el epilogo LABEL_487 ya lo llama,
+    // ademas llamaba `Joint_SegmentTick` de mas: el epilogo LABEL_487 ya lo llama,
     // asi que se scrolleaba la historia de segmentos DOS veces por tick — el
     // anillo avanzaba al doble y quedaban segmentos duplicados/entrelazados.
     //
@@ -1673,7 +1673,7 @@ _skipLabel182:;
         ((iVar16 != 0x4ee) &&
          ((iVar16 != 0x4e7) || (10 < *(int *)(param_1 + 0x9b8)))))
     {
-        FUN_0046fe90((int)param_1, local_30);
+        Joint_SegmentTick((int)param_1, local_30);
     }
 
     // Decrement lifetime counter
@@ -1684,7 +1684,7 @@ _skipLabel182:;
         const int subtype = *(int *)(param_1 + 8);
         if ((remainingLife % 12) != 0 && (type == 1249 || type == 1277) &&
             (subtype == 4 || subtype == 12)) {
-            return FUN_00470030(param_1, param_2);
+            return MoveJoint(param_1, param_2);
         }
         return (char *)(intptr_t)remainingLife;
     }
@@ -1704,7 +1704,7 @@ _skipLabel182:;
             ((pcVar12 = *(char **)(param_1 + 8),
               (pcVar12 == (char *)0x4) || (pcVar12 == (char *)0xc))))
         {
-            pcVar12 = FUN_00470030(param_1, param_2);
+            pcVar12 = MoveJoint(param_1, param_2);
         }
         return pcVar12;
     }
@@ -1715,4 +1715,4 @@ _skipLabel182:;
 #endif
 }
 
-// end of FUN_00470030
+// end of MoveJoint

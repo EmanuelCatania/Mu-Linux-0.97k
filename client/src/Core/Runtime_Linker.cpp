@@ -5,15 +5,15 @@
 #include "functions.h"
 #include "structs.h"
 
-extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
-extern void __cdecl FUN_0054158c(void* ptr);
-extern void FUN_004fa5a0(void);
+extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
+extern void __cdecl operator_delete(void* ptr);
+extern void ClearActionObject(void);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -42,7 +42,7 @@ extern void FUN_004fa5a0(void);
 // Selects animation based on equipment, class, terrain. Most bulk is anti-tamper hash ops.
 // 2026-08-08 BUG-FIX (el MG se renderizaba como Dark Wizard, con casco y con
 // rayas): este stub coexistía con el port REAL de SetPlayerStop
-// (`FUN_004430c0`, Net/SecondPassword.cpp). `FUN_0045c720` llamaba a ESTE, y el
+// (`SetPlayerStop`, Net/SecondPassword.cpp). `Character_UpdateEquipSlotAnimations` llamaba a ESTE, y el
 // stub hacía:
 //     *(BYTE*)(entity + 0x1bc) &= ~0x07;   // "clear movement bits"
 // pero **0x1BC NO son move flags: es el byte de CLASE/skin** (lo leen
@@ -55,12 +55,6 @@ extern void FUN_004fa5a0(void);
 //     MG  0x03 -> 0x00   ✗
 // Cazado con las sondas CLSPROBE: F(post-45c130)=3 → G(post-45c720)=0.
 // Delegamos al port real; el stub no debe existir.
-void __cdecl FUN_004430c0(int c);
-void __cdecl SetPlayerStop(void *entity) {
-    if (!entity) return;
-    FUN_004430c0((int)(uintptr_t)entity);
-}
-
 // CErrorReport__Write @ 0x00405540 (12 lines) — Variadic error log writer
 // Formats message via wvsprintfA then passes to debug info string writer.
 void __cdecl CErrorReport__Write(unsigned long ctx, char *fmt, ...) {
@@ -74,10 +68,10 @@ void __cdecl CErrorReport__Write(unsigned long ctx, char *fmt, ...) {
     (void)ctx;
 }
 
-// FUN_005414ce @ 0x005414CE (11 lines) — CRT atexit wrapper
+// crt_atexit @ 0x005414CE (11 lines) — CRT atexit wrapper
 // Registers a function pointer for cleanup at program exit.
-void __cdecl FUN_005414ce(void *addr) {
-    // Original calls FUN_00541450 (_onexit internal registration)
+void __cdecl crt_atexit(void *addr) {
+    // Original calls crt_onexit (_onexit internal registration)
     // In our build, use standard atexit
     if (addr) atexit((void (__cdecl *)(void))addr);
 }
@@ -104,17 +98,17 @@ void __cdecl StopMp3(char *cmd, int param) {
 }
 
 
-// FUN_00543839 @ 0x00543839 (4 lines) — CRT _cinit wrapper
+// crt_exit @ 0x00543839 (4 lines) — CRT _cinit wrapper
 // Forwards to internal CRT initializer with default params.
-void __cdecl FUN_00543839(int param) {
-    // Original: FUN_0054385b(param, 0, 0) — CRT initialization dispatch
+void __cdecl crt_exit(int param) {
+    // Original: crt_doexit(param, 0, 0) — CRT initialization dispatch
     // In our build, no-op (CRT initializes through normal startup)
     (void)param;
 }
 
-// FUN_00543d81 @ 0x00543D81 (~45 lines) — MSVC CRT _tmpfile()
+// crt_tmpfile @ 0x00543D81 (~45 lines) — MSVC CRT _tmpfile()
 // Creates a temporary file using CRT file table. Returns stream pointer.
-void *__cdecl FUN_00543d81(void) {
+void *__cdecl crt_tmpfile(void) {
     // Original: acquires CRT lock, attempts tmpnam + open with O_CREAT|O_RDWR|O_BINARY,
     // retries on EEXIST, returns FILE* stream.
     // In our build, delegate to standard tmpfile
@@ -126,8 +120,8 @@ void __cdecl _strncpy(char *dst, char *src, int n) {
     if (dst && src && n > 0) strncpy(dst, src, n);
 }
 
-// FUN_005436a6 @ 0x005436A6 (17 lines) — CRT fflush
+// crt_fflush @ 0x005436A6 (17 lines) — CRT fflush
 // NULL → flushall; non-NULL → lock, flush, unlock.
-void __cdecl FUN_005436a6(int *fp) {
+void __cdecl crt_fflush(int *fp) {
     fflush((FILE *)fp);
 }

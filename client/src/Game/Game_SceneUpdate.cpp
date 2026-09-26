@@ -10,7 +10,7 @@
 //   2   CredentialInput — username/password dialog
 //   3   AwaitLoginResp  — packet sent; waiting for server response
 //   4   LoginFailed     — error dialog
-//   8   CharSelectInit  — Input_ClearState(1); char select setup
+//   8   CharSelectInit  — ClearInput(1); char select setup
 //  12   Error/Timeout   — retry path (up to 4 retries)
 //
 // ── SERVER RESPONSE CODE (DAT_05826cb0) ──────────────────────────────────────
@@ -47,14 +47,14 @@ static const BYTE s_LoginKey[32] = {
 
 static void LoginScene_ApplySafeObjectAnim()
 {
-    if (!(DAT_005615c0 == 2 || DAT_005615c0 == 4))
+    if (!(SceneFlag == 2 || SceneFlag == 4))
         return;
 
     extern float DAT_05826e08;  // WorldTime
-    extern void __cdecl FUN_004fa5f0(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
-    extern int __cdecl FUN_004faa70(int param_1, char param_2, int param_3);  // Calc_RenderObject
-    extern float* __cdecl FUN_004fc070(int param_1);  // Entity_SpawnEffects / login ship fire
-    extern void __stdcall MoveBugs_stub(void);  // butterfly/helper owner-follow update
+    extern void __cdecl MoveObject_Special(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
+    extern int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3);  // Calc_RenderObject
+    extern float* __cdecl Entity_SpawnEffects(int param_1);  // Entity_SpawnEffects / login ship fire
+    extern void __stdcall MoveBugs(void);  // butterfly/helper owner-follow update
 
     for (int i = 0; i < 9; ++i) {
         char* obj = (char*)g_LoginSceneObjects[i];
@@ -63,7 +63,7 @@ static void LoginScene_ApplySafeObjectAnim()
 
         // Match the original order more closely: Alpha(o) runs before the
         // animation tick and can early-out nearly invisible objects.
-        FUN_004fa5f0((int)obj);
+        MoveObject_Special((int)obj);
         if (*(float*)(obj + 0x168) < 0.01f)
             continue;
 
@@ -71,7 +71,7 @@ static void LoginScene_ApplySafeObjectAnim()
         char* model = (char*)(DAT_05828d58 + type * 0xbc);
         if (model) {
             model[0xa0] = *(char*)(obj + 0x105);
-            FUN_00440aa0((void*)model,
+            BMD__PlayAnimation((void*)model,
                 (float*)(obj + 0x108),
                 (float*)(obj + 0x10c),
                 (void*)(obj + 0x106),
@@ -94,8 +94,8 @@ static void LoginScene_ApplySafeObjectAnim()
 
         // BUG-FIX 2026-07-13: NO spawnear efectos aquí. Este call site duplicaba
         // el spawn de Entity_SpawnEffects: los barcos/objetos ya lo reciben desde
-        // el pass de render (Terrain_Render.cpp:149, tras FUN_004fc030 que computa
-        // los bones world-space frescos). Aquí, FUN_004faa70 NO refresca bien el
+        // el pass de render (Terrain_Render.cpp:149, tras Entity_PrepareRender que computa
+        // los bones world-space frescos). Aquí, Calc_RenderObject NO refresca bien el
         // bone scratch → los 2 flares del barco salían con bones stale (mismo valor
         // para los 3 barcos) → aparecían flotando en el centro/al lado. El original
         // llama Entity_SpawnEffects UNA vez por entidad, desde el render. Removido.
@@ -105,8 +105,8 @@ static void LoginScene_ApplySafeObjectAnim()
     // created by CreateBug(0x330). Spawning it without the pool tick leaves
     // it frozen at its randomized birth offset; run the safe pool follower
     // update here so it tracks the elf preview like the original scene.
-    if (DAT_005615c0 == 2) {
-        MoveBugs_stub();
+    if (SceneFlag == 2) {
+        MoveBugs();
     }
 }
 
@@ -156,7 +156,7 @@ static void Pkt_XorRange(BYTE* pkt, int start, int end)
 // results in a "Protocol header error" immediate disconnect.
 int Net_SendBuf(const char* buf, int len)
 {
-    if (DAT_055ca168 == 0xffffffff) return 0;
+    if (SocketClientSocket == 0xffffffff) return 0;
 
     // Copy to a mutable scratch buffer so we can encrypt in place without
     // clobbering caller state (some callers reuse `buf` across retries).
@@ -168,26 +168,26 @@ int Net_SendBuf(const char* buf, int len)
     int sent = 0;
     int rem  = len;
     do {
-        int n = send(DAT_055ca168, (const char*)s_scratch + sent, rem, 0);
+        int n = send(SocketClientSocket, (const char*)s_scratch + sent, rem, 0);
         if (n == -1) {
             int err = WSAGetLastError();
             if (err == WSAEWOULDBLOCK) {
-                if (DAT_055cc16c + (len - sent) < 0x2001) {
+                if (SocketClientSendBufferLength + (len - sent) < 0x2001) {
                     // Queue the still-unsent ENCRYPTED tail — never re-queue
                     // plaintext or the prefix we already transmitted.
-                    memcpy(DAT_055ca16c + DAT_055cc16c,
+                    memcpy(SocketClientSendBuffer + SocketClientSendBufferLength,
                            s_scratch + sent, (len - sent));
-                    DAT_055cc16c += (len - sent);
+                    SocketClientSendBufferLength += (len - sent);
                 } else {
-                    Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                    Net_Disconnect(((int)(uintptr_t)SocketClient));
                 }
             } else {
-                Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                Net_Disconnect(((int)(uintptr_t)SocketClient));
             }
             return -1;
         }
         if (n == 0) break;
-        if (DAT_055ce174) FUN_0043de60();
+        if (SocketClientLogPrint) FUN_0043de60();
         sent += n;
         rem  -= n;
     } while (rem > 0);
@@ -258,11 +258,11 @@ static void Net_SendFrameC3(const BYTE* pkt, int totalLen)
 
     plain[1] = DAT_05826ceb++;           // el byte de tamano pasa a ser el serial
     int  bodyLen = totalLen - 1;
-    int  encLen  = FUN_0053cc30(0, plain + 1, bodyLen);
+    int  encLen  = CSimpleModulus_Encode(0, plain + 1, bodyLen);
     int  total   = encLen + 2;
     buf[0] = (char)0xC3;
     buf[1] = (char)total;
-    FUN_0053cc30((int)(buf + 2), plain + 1, bodyLen);
+    CSimpleModulus_Encode((int)(buf + 2), plain + 1, bodyLen);
     Net_SendBuf(buf, total);
 }
 
@@ -342,12 +342,12 @@ void Net_SendLargePacket(const BYTE* pkt, int totalLen)
 
     ((BYTE*)pkt)[1] = DAT_05826ceb++;    // replace size byte with serial
     int  bodyLen = totalLen - 1;
-    int  encLen  = FUN_0053cc30(0, (unsigned char*)(pkt + 1), bodyLen);
+    int  encLen  = CSimpleModulus_Encode(0, (unsigned char*)(pkt + 1), bodyLen);
     int  total   = encLen + 3;
     buf[0] = (char)0xC4;
     buf[1] = (char)((total + ((total >> 31) & 0xff)) >> 8);
     buf[2] = (char)total;
-    FUN_0053cc30((int)(buf + 3), (unsigned char*)(pkt + 1), bodyLen);
+    CSimpleModulus_Encode((int)(buf + 3), (unsigned char*)(pkt + 1), bodyLen);
     Net_SendBuf(buf, total);
 }
 
@@ -358,19 +358,19 @@ int Game_SceneUpdate(void)
     // ── ONE-TIME INIT ─────────────────────────────────────────────────────────
     if (DAT_083a7c49 == '\0') {
         DAT_083a7c49 = 1;
-        DAT_0055a7ac  = 0xffffffff;
+        World  = 0xffffffff;
         DAT_05826cb0  = 0;
 
         // NOTE: the canonical IDA init at 0x0051F900 lines 220-289 does NOT
         // call Net_Connect here. The socket is opened only when the user
         // picks a server in the ServerSelect UI (state 0 → 1 transition),
         // which is how the login scene gets its connecting-progressbar.
-        // Calling FUN_00423920 at scene-init bypasses ServerSelect entirely
+        // Calling CreateSocket at scene-init bypasses ServerSelect entirely
         // (the server responds with JoinServer before the user ever sees the
         // list), so we leave it commented out. See IDA line 238+ — only the
         // state/UI globals are initialized here.
-        // FUN_00423920(PTR_s_connect_muonline_co_kr_005615b8,
-        //              (unsigned)(0 | (DAT_005615bc)));
+        // CreateSocket(PTR_s_connect_muonline_co_kr_005615b8,
+        //              (unsigned)(0 | (g_ServerPort)));
         DAT_083a7c48 = 1;
         DAT_083a7c40 = 0;
 
@@ -395,12 +395,12 @@ int Game_SceneUpdate(void)
             // MuEmu del GameServer). Desactivamos la capa MuEmu mientras hablamos
             // con el CS; Recv_Redirect la reactiva al saltar al GameServer.
             MuEmu::SetActive(false);
-            extern void Net_ConnectServer(const char *server, unsigned int port);
-            Net_ConnectServer(PTR_s_connect_muonline_co_kr_005615b8, (unsigned)DAT_005615bc);
+            extern void CreateSocket(const char *server, unsigned int port);
+            CreateSocket(PTR_s_connect_muonline_co_kr_005615b8, (unsigned)g_ServerPort);
         }
 
         // Load login-scene resources (sounds, textures)
-        Scene_LoadAccountResources(); // FUN_0050fcf0 (IDA)
+        Scene_LoadAccountResources(); // OpenLogoSceneData (IDA)
 
         // Clear 8 entity slots at base entity array + 0x168 (stride 0x394)
         {
@@ -422,8 +422,8 @@ int Game_SceneUpdate(void)
         {
             // ── VALORES CANÓNICOS (2026-04-21) ─────────────────────────────
             // Restaurados desde Ghidra/IDA @ 0x0051F900 líneas 150-235.
-            // CreateObject (FUN_004ff5a0) aplica scale override vía
-            // byte_4FFAA4[type-60] cuando g_GameState==2||4:
+            // CreateObject aplica scale override vía
+            // byte_4FFAA4[type-60] cuando SceneFlag==2||4:
             //   type 60  (ship)    → scale 0.8
             //   type 160 (sky)     → scale 0.0438
             //   type 161 (wave)    → scale 0.8
@@ -438,38 +438,38 @@ int Game_SceneUpdate(void)
             // Sky 0xA0 @ (0, -520, 0) — rot (0,0,0)
             rot[0] = 0.0f; rot[1] = 0.0f; rot[2] = 0.0f;
             pos[0] = 0.0f; pos[1] = -520.0f; pos[2] = 0.0f;
-            g_LoginSceneObjects[0] = FUN_004ff5a0(0xa0, pos, rot, scale);
+            g_LoginSceneObjects[0] = CreateObject(0xa0, pos, rot, scale);
 
             // Ships + Waves: rot (0, 0, 180) canónico.
             float rotShip[3] = { 0.0f, 0.0f, 180.0f };
 
             // Ship 1 + wave 1 @ (-700, 700, 0)
             pos[0] = -700.0f; pos[1] = 700.0f; pos[2] = 0.0f;
-            g_LoginSceneObjects[1] = FUN_004ff5a0(0x3c, pos, rotShip, scale);
-            g_LoginSceneObjects[2] = FUN_004ff5a0(0xa1, pos, rotShip, scale);
+            g_LoginSceneObjects[1] = CreateObject(0x3c, pos, rotShip, scale);
+            g_LoginSceneObjects[2] = CreateObject(0xa1, pos, rotShip, scale);
 
             // Ship 2 + wave 2 @ (400, 400, 0)
             pos[0] = 400.0f; pos[1] = 400.0f; pos[2] = 0.0f;
-            g_LoginSceneObjects[3] = FUN_004ff5a0(0x3c, pos, rotShip, scale);
-            g_LoginSceneObjects[4] = FUN_004ff5a0(0xa1, pos, rotShip, scale);
+            g_LoginSceneObjects[3] = CreateObject(0x3c, pos, rotShip, scale);
+            g_LoginSceneObjects[4] = CreateObject(0xa1, pos, rotShip, scale);
 
             // Ship 3 + wave 3 @ (-200, -400, 0)
             pos[0] = -200.0f; pos[1] = -400.0f; pos[2] = 0.0f;
-            g_LoginSceneObjects[5] = FUN_004ff5a0(0x3c, pos, rotShip, scale);
-            g_LoginSceneObjects[6] = FUN_004ff5a0(0xa1, pos, rotShip, scale);
+            g_LoginSceneObjects[5] = CreateObject(0x3c, pos, rotShip, scale);
+            g_LoginSceneObjects[6] = CreateObject(0xa1, pos, rotShip, scale);
 
             // Mu banner 0xA2 @ (0, -600, 480)
             rot[0] = 0.0f; rot[1] = 0.0f; rot[2] = 0.0f;
             pos[0] = 0.0f; pos[1] = -600.0f; pos[2] = 480.0f;
-            g_LoginSceneObjects[7] = FUN_004ff5a0(0xa2, pos, rot, scale);
+            g_LoginSceneObjects[7] = CreateObject(0xa2, pos, rot, scale);
 
             // Sun 0xA3 @ (-110, 1600, 50)
             pos[0] = -110.0f; pos[1] = 1600.0f; pos[2] = 50.0f;
-            g_LoginSceneObjects[8] = FUN_004ff5a0(0xa3, pos, rot, scale);
+            g_LoginSceneObjects[8] = CreateObject(0xa3, pos, rot, scale);
         }
 
         // Spawn 3 background characters (entity id, class, 0, 0, 0)
-        unsigned char* loginPreview1 = FUN_0045f930(1, 1, 0, 0.0f, 0.0f, 0.0f);
+        unsigned char* loginPreview1 = CreateHero(1, 1, 0, 0.0f, 0.0f, 0.0f);
         LoginScene_ClearPreviewEquipmentMeta(loginPreview1);
         {
             int base = DAT_07abf5d0;
@@ -483,7 +483,7 @@ int Game_SceneUpdate(void)
             *(float*)(base + 0x3ac) = 250.0f;
         }
 
-        unsigned char* loginPreview2 = FUN_0045f930(2, 0, 0, 0.0f, 0.0f, 0.0f);
+        unsigned char* loginPreview2 = CreateHero(2, 0, 0, 0.0f, 0.0f, 0.0f);
         LoginScene_ClearPreviewEquipmentMeta(loginPreview2);
         {
             int base = DAT_07abf5d0;
@@ -498,7 +498,7 @@ int Game_SceneUpdate(void)
             *(float*)(base + 0x740) = 250.0f;
         }
 
-        unsigned char* loginPreview3 = FUN_0045f930(3, 2, 0, 0.0f, 0.0f, 0.0f);
+        unsigned char* loginPreview3 = CreateHero(3, 2, 0, 0.0f, 0.0f, 0.0f);
         LoginScene_ClearPreviewEquipmentMeta(loginPreview3);
         {
             int base  = DAT_07abf5d0;
@@ -510,7 +510,7 @@ int Game_SceneUpdate(void)
             *(float*)(base + 0xacc) = 400.0f;
             *(float*)(base + 0xad0) = 50.0f;
             *(float*)(base + 0xad4) = 250.0f;
-            FUN_004fffd0(0x330, (void*)(base + 0xacc), (void*)slot3, 0);
+            CreateBug(0x330, (void*)(base + 0xacc), (void*)slot3, 0);
         }
 
         // Initialize state variables
@@ -518,14 +518,14 @@ int Game_SceneUpdate(void)
         DAT_083a7c18 = 0;
         DAT_005616a4 = 0x1e0;   // dialog Y start
         DAT_005616a8 = (int)0xffffff38;
-        DAT_00561694 = -1;      // no server selected
-        DAT_00561698 = -1;      // no channel selected
+        ServerSelectHi = -1;      // no server selected
+        ServerSelectLo = -1;      // no channel selected
         DAT_083a7c44 = 0;
-        DAT_07e11d70 = 0;
+        GuildInputEnable = 0;
         DAT_07e11d71 = 0;
-        DAT_07e11d72 = 0;
+        GoldInputEnable = 0;
         DAT_00559c84 = 1;
-        Input_ClearState(1);        // CharSelect_Init
+        ClearInput(1);        // CharSelect_Init
 
         // Copy version string → username buffer
         {
@@ -534,9 +534,9 @@ int Game_SceneUpdate(void)
             // InputTextMax is a per-slot array. IDA canonical init sets BOTH
             // slots so password accepts input too; only setting slot 0 used to
             // silently reject every keystroke in the password field.
-            ((int*)&_DAT_00559c94)[0] = 10;  // InputTextMax[0] = username max
-            ((int*)&_DAT_00559c94)[1] = 10;  // InputTextMax[1] = password max
-            DAT_00559c88 = 2;
+            ((int*)&InputTextMax)[0] = 10;  // InputTextMax[0] = username max
+            ((int*)&InputTextMax)[1] = 10;  // InputTextMax[1] = password max
+            InputNumber = 2;
             DAT_07e113d9 = 1;
             *(DWORD*)DAT_07d780a8 = vlen;
             DAT_07e11d78 = (vlen != 0) ? 1 : 0;
@@ -544,7 +544,7 @@ int Game_SceneUpdate(void)
 
         // Populate server list UI (120 × Widget_Draw)
         for (int i = 0x78; i > 0; i--)
-            FUN_00480620((const char*)&DAT_083a7c70, (const char*)&DAT_083a7c6c, 0);
+            UIChatLogWindow_AddText((const char*)&DAT_083a7c70, (const char*)&DAT_083a7c6c, 0);
 
         // En el binario original el check es `if (Hero == NULL)` donde Hero es
         // la base del array de personajes (constante, nunca NULL). Ghidra lo
@@ -584,18 +584,18 @@ int Game_SceneUpdate(void)
         // frame from the contiguous CameraWalk_005615ec[] waypoint table.
         DbgLogPublic("init: using static CameraWalk table + PE camera defaults");
 
-        FUN_00405540(&DAT_055c9bf0, "> Login Scene init success");
+        CErrorReport_Write(&DAT_055c9bf0, "> Login Scene init success");
     }
 
     // ── PER-FRAME UPDATES ─────────────────────────────────────────────────────
     Object_MoveUpdate();
     // IDA Game_SceneUpdate (0x51F900) llama MoveParticles() cada frame. Nuestro
     // Particle_Update() es en realidad Trail_RenderAll (0x46C3E0, mal nombrado) y
-    // NO decrementa el lifetime de las partículas. MoveParticles_stub (0x477090)
+    // NO decrementa el lifetime de las partículas. MoveParticles (0x477090)
     // sí las tickea/expira. Faltaba acá → las partículas del hada (Particle_Spawn
     // 1175 + sparkle 1150) se acumulaban forever additive → whiteout dorado en el
     // server-select. Mismo fix que Game_EnterWorldTick.
-    MoveParticles_stub();
+    MoveParticles();
     Character_UpdateAll();
 
     // ── Per-character animation tick (login scene) ────────────────────────────
@@ -608,7 +608,7 @@ int Game_SceneUpdate(void)
         for (int s = 0; s < 8; ++s) {
             int e = (int)(uintptr_t)DAT_07abf5d0 + s * 0x394;
             if (*(char*)e != '\0') {
-                FUN_004520c0(e);            // model.action ← entity.action
+                MoveCharacterVisual(e);            // model.action ← entity.action
                 CharacterAnimation(e, e);   // advance entity[+0x108]
             }
         }
@@ -619,7 +619,7 @@ int Game_SceneUpdate(void)
     // MoveCamera @ 0x0051E4E0 — login scene camera fly-through. Reads
     // CameraWalk_005615ec[] and writes CameraAngle/CameraPosition each frame.
     // Missing this call left the camera at (0,0,0) with angles (0,0,0).
-    MoveCamera_stub();
+    MoveCamera();
     LoginScene_ApplySafeObjectAnim();
 
     // Random preview-character action changes (IDA 0x0051F900):
@@ -641,11 +641,11 @@ int Game_SceneUpdate(void)
 
     // Optional UI scene load if DAT_083a7af4 == 1 && no server selected
     if (DAT_083a7af4 == 1 && DAT_005615e8 == 0)
-        FUN_00404bc0(4, 0, 0);
+        PlayBuffer(4, 0, 0);
 
     // ── STATE 0: SERVER SELECT ────────────────────────────────────────────────
     if (DAT_083a7c14 == 0) {
-        FUN_0051e7e0();  // Scene_Login_ServerSelect
+        CServerSelWin_UpdateWhileActive();  // Scene_Login_ServerSelect
     }
 
     // ── STATE 1 / 12: CONNECTING / ERROR ─────────────────────────────────────
@@ -669,8 +669,8 @@ int Game_SceneUpdate(void)
                     Net_SendBuf((char*)pkt, 6);
                     // IDA 0x0051F900 L445-446: these are GlobalText[470]/[471],
                     // not independent empty buffers.  Same fix as L612-613.
-                    FUN_00480620((const char*)&DAT_083a7c74, GlobalText[470], 1);
-                    FUN_00480620((const char*)&DAT_083a7c78, GlobalText[471], 1);
+                    UIChatLogWindow_AddText((const char*)&DAT_083a7c74, GlobalText[470], 1);
+                    UIChatLogWindow_AddText((const char*)&DAT_083a7c78, GlobalText[471], 1);
                 }
             }
         } else if (DAT_083a7c14 == 1) {
@@ -699,10 +699,10 @@ int Game_SceneUpdate(void)
                 }
                 DAT_083a7c14 = 0;
                 DAT_083a7c44 = 0;
-                Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                Net_Disconnect(((int)(uintptr_t)SocketClient));
                 DAT_05826cb0 = 0;
-                Net_ConnectServer(PTR_s_connect_muonline_co_kr_005615b8,
-                             (unsigned)DAT_005615bc);
+                CreateSocket(PTR_s_connect_muonline_co_kr_005615b8,
+                             (unsigned)g_ServerPort);
             }
         }
         goto LAB_00520fd8;
@@ -715,7 +715,7 @@ int Game_SceneUpdate(void)
         // Account list click: entries at Y = dialogY+0x32, stride 0x14
         {
             int entryY = dialogY + 0x32;
-            for (int i = 0; i < DAT_00559c88; i++, entryY += 0x14) {
+            for (int i = 0; i < InputNumber; i++, entryY += 0x14) {
                 if (DAT_083a427c > 0x124 && DAT_083a427c < 0x1a1 &&
                     DAT_083a4278 >= entryY && DAT_083a4278 < entryY + 0x14 &&
                     IsClickPushed())
@@ -753,7 +753,7 @@ int Game_SceneUpdate(void)
             // Reset slot selection
             DAT_083a7c24 = DAT_083a7c28;
             DAT_083a7c28 = 0;
-            FUN_00404bc0(0x19, 0, 0);
+            PlayBuffer(0x19, 0, 0);
 
             // Check username empty
             int ulen = (int)strlen((char*)DAT_07db8710);
@@ -779,16 +779,16 @@ int Game_SceneUpdate(void)
             bool validCode = (code == 2 || code == 0xb || code == 0xc || code == 0xd ||
                               (code > 0x14 && code < 0x22));
             if (validCode) {
-                FUN_00405540(&DAT_055c9bf0, "> Login Request");
+                CErrorReport_Write(&DAT_055c9bf0, "> Login Request");
                 DAT_083a7ac8 = GetTickCount();
                 DAT_083a4320 = 0;
-                FUN_00405540(&DAT_055c9bf0, "> Try to Login ... %s",
+                CErrorReport_Write(&DAT_055c9bf0, "> Try to Login ... %s",
                              (char*)DAT_07db8710);
 
                 // Copy username to packet staging buffer
                 int ulen = (int)strlen((char*)DAT_07db8710) + 1;
-                memcpy(DAT_05826cd4, DAT_07db8710, ulen);
-                DAT_05826cf8 = 1;
+                memcpy(LogInID, DAT_07db8710, ulen);
+                LogIn = 1;
                 DAT_05826cb0 = 0x13;
 
                 // Build login packet [0xC1][0xF1] + user(10) + pass(10) + tick(4) + 5 obf + 16 raw
@@ -798,7 +798,7 @@ int Game_SceneUpdate(void)
                 // NOTE: companion client (Mu-linux-97K/Source/Client/Main/Reconnect.cpp:222-224)
                 // does NOT pre-process account/password — they're fed RAW into
                 // PacketArgumentEncrypt (the 3-byte XOR below).  We used to call
-                // Buffer_XorKey3 (FUN_00423c40) here, which mangled the strings
+                // Buffer_XorKey3 (Buffer_XorKey3) here, which mangled the strings
                 // (server saw 'emap...' for input "emanuel...") and the server
                 // silently dropped the packet.  Removed.
 
@@ -846,12 +846,12 @@ int Game_SceneUpdate(void)
 
                 // ClientVersion[5] — obfuscated as (v[i] - i - 1), plaintext after.
                 for (int i = 0; i < 5; i++) {
-                    pkt[pos + i] = (BYTE)(DAT_0055961c[i] - (char)i - 1);
+                    pkt[pos + i] = (BYTE)(Version[i] - (char)i - 1);
                 }
                 pos += 5;
 
                 // ClientSerial[16] — raw copy, plaintext.
-                memcpy(pkt + pos, DAT_00559624, 16);
+                memcpy(pkt + pos, Serial, 16);
                 pos += 16;
                 // pkt[1] := serial is set later by Net_SendSmallPacket
 
@@ -866,7 +866,7 @@ int Game_SceneUpdate(void)
                 int totalLen = pos;
 
                 // Compute CRC and build final send buffer
-                int crc = FUN_0053cc30(0, pkt + 1, totalLen - 1);
+                int crc = CSimpleModulus_Encode(0, pkt + 1, totalLen - 1);
                 if (crc < 0x100) {
                     Net_SendSmallPacket(pkt, totalLen);
                 } else {
@@ -897,8 +897,8 @@ int Game_SceneUpdate(void)
                 // independent empty buffers DAT_07d4c644 / DAT_07d4c770, which
                 // is why the user saw "cartel sin texto".  Read the real
                 // localized strings directly from the GlobalText[] pool.
-                FUN_00480620((const char*)&DAT_083a7c7c, GlobalText[472], 1);
-                FUN_00480620((const char*)&DAT_083a7c80, GlobalText[473], 1);
+                UIChatLogWindow_AddText((const char*)&DAT_083a7c7c, GlobalText[472], 1);
+                UIChatLogWindow_AddText((const char*)&DAT_083a7c80, GlobalText[473], 1);
                 DAT_083a7c14 = 3;
                 DAT_083a7c18 = 0xc;
             } else {
@@ -908,7 +908,7 @@ int Game_SceneUpdate(void)
             DAT_083a7c14 = 3;
             DAT_083a7c18 = 2;
         }
-        FUN_00404bc0(0x1b, 0, 0);
+        PlayBuffer(0x1b, 0, 0);
         } // end if (loginTrigger && DAT_05826cb0 != 0)
     }
 
@@ -934,18 +934,18 @@ int Game_SceneUpdate(void)
             DAT_083a4278 >= dialogY + 0xb4 && DAT_083a4278 < dialogY + 200 &&
             IsClickPushed())
         {
-            FUN_00405540(&DAT_055c9bf0, "> Login Scene - Exit");
+            CErrorReport_Write(&DAT_055c9bf0, "> Login Scene - Exit");
             DbgLogPublic("ExitClick: fired!");
             DAT_083a4124 = '\0';
             DAT_083a7c24 = DAT_083a7c28;
             DAT_083a7c28 = 0;
-            FUN_00404bc0(0x19, 0, 0);
+            PlayBuffer(0x19, 0, 0);
             DAT_083a7c14 = 3;
             DAT_083a7c18 = 0x1d;
             DAT_083a7c1c = 1;
             DAT_083a7c20 = 0x32;
-            Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
-            FUN_00404bc0(0x1b, 0, 0);
+            Net_Disconnect(((int)(uintptr_t)SocketClient));
+            PlayBuffer(0x1b, 0, 0);
         }
     }
 
@@ -981,7 +981,7 @@ LAB_00520fd8:
             case 0x0b: // Login OK
                 DAT_083a7c14 = 2;
                 DAT_07e11d78 = 0;
-                DAT_00559c88 = 2;
+                InputNumber = 2;
                 if (respCode == 0) {
                     DAT_083a7c28 = 0; DAT_05826cb0 = 2; DAT_083a7c24 = slotB;
                 } else if (slotA == 0) {
@@ -1013,8 +1013,8 @@ state_fail_common:
                 break;
 
             case 0x14: // Character list ready
-                FUN_00405540(&DAT_055c9bf0, "> Request Character list");
-                DAT_005615c0 = 4;
+                CErrorReport_Write(&DAT_055c9bf0, "> Request Character list");
+                SceneFlag = 4;
                 DAT_05826cb0 = 0x32;
                 {
                     // Send 0xC1/0xF3/0x00 char-list request (4 bytes).
@@ -1043,27 +1043,27 @@ state_fail_common:
                     pkt[3] ^= pkt[2] ^ s_LoginKey[3 & 0x1f];
                     MuEmu::EncryptSend(pkt, 4);
                     int iVar14 = 0, uVar12 = 4;
-                    if (DAT_055ca168 != 0xffffffff) {
+                    if (SocketClientSocket != 0xffffffff) {
                         do {
-                            int n = send(DAT_055ca168, (char*)pkt + iVar14, uVar12 - iVar14, 0);
+                            int n = send(SocketClientSocket, (char*)pkt + iVar14, uVar12 - iVar14, 0);
                             if (n == -1) {
                                 int err = WSAGetLastError();
-                                if (err == WSAEWOULDBLOCK && DAT_055cc16c + 4 < 0x2001) {
-                                    memcpy(DAT_055ca16c + DAT_055cc16c, pkt, 4);
-                                    DAT_055cc16c += 4;
+                                if (err == WSAEWOULDBLOCK && SocketClientSendBufferLength + 4 < 0x2001) {
+                                    memcpy(SocketClientSendBuffer + SocketClientSendBufferLength, pkt, 4);
+                                    SocketClientSendBufferLength += 4;
                                 } else {
-                                    Net_Disconnect(((int)(uintptr_t)DAT_055ca160));
+                                    Net_Disconnect(((int)(uintptr_t)SocketClient));
                                 }
                                 break;
                             }
                             if (n == 0) break;
-                            if (DAT_055ce174) FUN_0043de60();
+                            if (SocketClientLogPrint) FUN_0043de60();
                             uVar12 -= n; iVar14 += n;
                         } while (uVar12 > 0);
                     }
                 }
-                FUN_00406f50((CHAR*)DAT_05826cd4);
-                Scene_UnloadAccountResources(); // FUN_0050ff10 (IDA)
+                Resource_LoadOrFatal((CHAR*)LogInID);
+                Scene_UnloadAccountResources(); // ReleaseLogoSceneData (IDA)
                 return 0;
 
             // Login error codes 0x13-0x24: show error, back to CredentialInput
@@ -1090,11 +1090,11 @@ state_fail_common:
             case 0x3c: // 0x3e
                 DAT_05826cb0 = 2;
                 DAT_083a7c14 = 8;
-                FUN_00404bc0(0x1b, 0, 0);
-                Input_ClearState(1);
-                DAT_00559c88 = 2;
+                PlayBuffer(0x1b, 0, 0);
+                ClearInput(1);
+                InputNumber = 2;
                 DAT_00559c90 = 1;
-                _DAT_00559c94 = 0x1e;
+                InputTextMax = 0x1e;
                 _DAT_00559c98 = 0xe;
                 DAT_07e113d9 = 2;
                 return 0;
@@ -1116,15 +1116,15 @@ state_fail_common:
                 }
                 DAT_05826cb0 = 2;
                 DAT_083a7c14 = 2;
-                FUN_00404bc0(0x1b, 0, 0);
-                Input_ClearState(1);
+                PlayBuffer(0x1b, 0, 0);
+                ClearInput(1);
                 {
                     int vlen = (int)strlen((char*)lpData_055c9ba0);
                     memcpy(DAT_07db8710, lpData_055c9ba0, vlen + 1);
                     DAT_07e113d9 = 1;
-                    DAT_00559c88 = 2;
+                    InputNumber = 2;
                     *(DWORD*)DAT_07d780a8 = vlen;
-                    _DAT_00559c94 = 10;
+                    InputTextMax = 10;
                     _DAT_00559c98 = 10;
                     DAT_07e11d78 = (vlen != 0) ? 1 : 0;
                 }
@@ -1144,7 +1144,7 @@ state_alt_error:
                 break;
             }
 
-            FUN_00404bc0(0x1b, 0, 0);
+            PlayBuffer(0x1b, 0, 0);
             break;
 
         case 0:  // state 2

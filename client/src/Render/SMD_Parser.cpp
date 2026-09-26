@@ -19,13 +19,13 @@
 #include "Party/Party.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 
 #ifndef LODWORD
@@ -58,78 +58,80 @@ extern "C" bool __cdecl OpenSMDFile(const char* FileName, int Type, char Flip) {
 extern "C" void __cdecl FixupSMD(void) { /* SMD post-process — not ported */ }
 extern "C" void __cdecl SMD2BMDModel(int /*ID*/, int /*Actions*/) { /* convert — not ported */ }
 extern "C" void __cdecl SMD2BMDAnimation(int /*ID*/, char /*LockPosition*/) { /* convert anim — not ported */ }
-// FUN_00506050 @ 0x00506050 — OpenModels(Model, FileName, i)
+// OpenModels @ 0x00506050 — OpenModels(Model, FileName, i)
 // Port FIEL del IDA: construye "prefix01.smd" (i<10) o "prefix11.smd" (i>=10),
 // llama OpenSMDModel + OpenSMDAnimation. Mismo no-op silencioso si SMD no
 // existe en filesystem.
-void __cdecl FUN_00506050(int Model, const char* FileName, int i) {
+void __cdecl OpenModels(int Model, const char* FileName, int i) {
     char Buffer[256];
     if (i >= 10) {
         crt_sprintf(Buffer, "%s%d.smd", FileName, i);
     } else {
         crt_sprintf(Buffer, "%s0%d.smd", FileName, i);
     }
-    FUN_0040b280(Model, Buffer, 1, 0);
-    FUN_0040b310(Model, Buffer, 0);
+    OpenSMDModel(Model, Buffer, 1, 0);
+    OpenSMDAnimation(Model, Buffer, 0);
 }
 
 // CRT file helpers
-FILE* __cdecl FUN_0054173f(const char* path, const void* mode) {
+FILE* __cdecl crt_fopen(const char* path, const void* mode) {
     return fopen(path, (const char*)mode);
 }
-void __cdecl FUN_0054150f(FILE* f) {
+void __cdecl crt_fclose(FILE* f) {
     if (f) fclose(f);
 }
-void __cdecl FUN_00543264(int ch, int *fp) {
+void __cdecl putc(int ch, int *fp) {
     if (fp) fputc(ch, (FILE*)fp);
 }
 
-// FUN_00529740 (Texture_Load OZJ), FUN_00529bd0 (OpenTGA), FUN_0052a050 (Texture_FreeSlot)
+// OpenJPG (Texture_Load OZJ), OpenTGA (OpenTGA), UnloadImage (Texture_FreeSlot)
 // moved to src/Render/Texture/Texture.cpp (B3 refactor 2026-05-07, 395 lines).
 
-// FUN_0043db30 @ 0x0043DB30 — Net_WSAStartup(__fastcall int param_1)
+// CWsctlc_Startup @ 0x0043DB30 — Net_WSAStartup(__fastcall int param_1)
 // Initialises WinSock 2.2. On success: stores wVersion low-word at param_1+4,
 // clears param_1+8, returns 1. On failure: logs error, shows MessageBox, returns 0.
-void __cdecl FUN_0043db30(int param_1) {
+// IDA: CWsctlc::Startup (0x0043DB30)
+void __cdecl CWsctlc_Startup(int param_1) {
     WSADATA wsaData;
     int r = WSAStartup(0x202, &wsaData);
     if (r != 0) {
-        FUN_00405540(&DAT_055c9bf0, "Winsock DLL Initialize error");
+        CErrorReport_Write(&DAT_055c9bf0, "Winsock DLL Initialize error");
         MessageBoxA(NULL, "Winsock error", "IError", 0);
         return;
     }
     if (((char)wsaData.wVersion == '\x02') && ((char)(wsaData.wVersion >> 8) == '\x02')) {
         *(unsigned int*)(param_1 + 8) = 0;
         *(unsigned int*)(param_1 + 4) = wsaData.wVersion & 0xffff;
-        FUN_00403a30();
+        CWsctlc__LogPrintOn();
     } else {
         WSACleanup();
-        FUN_00405540(&DAT_055c9bf0, "Winsock version low");
+        CErrorReport_Write(&DAT_055c9bf0, "Winsock version low");
         MessageBoxA(NULL, "Winsock version error", "IError", 0);
     }
 }
 
-// FUN_0043dbf0 @ 0x0043DBF0 — Net_CreateSocket(__thiscall void *this, int param_1)
+// CWsctlc_Create @ 0x0043DBF0 — Net_CreateSocket(__thiscall void *this, int param_1)
 // Creates TCP socket, stores in *(this+8). Logs and shows MessageBox on failure.
-void __cdecl FUN_0043dbf0(void* ctx, int param_1) {
+// IDA: CWsctlc::Create (0x0043DBF0)
+void __cdecl CWsctlc_Create(void* ctx, int param_1) {
     SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
     *(SOCKET*)((char*)ctx + 8) = s;
-    DAT_05826cf0 = 0;
+    g_bGameServerConnected = 0;
     if (s == INVALID_SOCKET) {
         char buf[128];
         int err = WSAGetLastError();
         wsprintfA(buf, "Socket error: %d", err);
-        FUN_00405540(&DAT_055c9bf0, buf);
+        CErrorReport_Write(&DAT_055c9bf0, buf);
         MessageBoxA(NULL, buf, "IError", 0);
         return;
     }
     *(DWORD*)ctx = (DWORD)param_1;
 }
 
-// FUN_0045c050 @ 0x0045C050 — Entity_SetMoveSpeed(entity_ptr)
+// IDA: SetCharacterScale (0x0045C050)
 // Sets entity speed (+0x0c) based on move_type_flags (+0x1bc) and swim flag (+0x1bd).
 // Also sets +0x1e0 to anim speed table index for vehicle entities.
-void __cdecl FUN_0045c050(int param_1) {
+void __cdecl SetCharacterScale(int param_1) {
     if (*(char*)(param_1 + 0x34f) == '\0') {
         short sVar1 = *(short*)(param_1 + 0x1f8);
         if (((sVar1 == 0x270) || (sVar1 == 0x272)) || ((0x279 < sVar1 && (sVar1 < 0x27e)))) {
@@ -156,20 +158,20 @@ void __cdecl FUN_0045c050(int param_1) {
     }
 }
 
-// FUN_00543274 @ 0x00543274 — fprintf wrapper.
+// crt_fprintf @ 0x00543274 — fprintf wrapper.
 // IDA: int fprintf(FILE* Stream, const char* Format, ...). Original wraps
 // _lock_file/_stbuf/_output/_ftbuf/_unlock_file. Equivalent to plain fprintf.
 // Only call site (line ~1835) passes 2 args (file, format string with no
 // variadic args), so the simple 2-arg form is safe.
-void __cdecl FUN_00543274(void* param_1, void* param_2) {
+void __cdecl crt_fprintf(void* param_1, void* param_2) {
     if (!param_1 || !param_2) return;
     fprintf((FILE*)param_1, "%s", (const char*)param_2);
 }
 
-// FUN_00442090 @ 0x00442090 — BMD_FreeModel(model_ptr)
+// BMD__Release @ 0x00442090 — BMD_FreeModel(model_ptr)
 // Frees all bone mesh/action/texture data from a model slot at param_1.
 // Bones: stride 0x8c, sub-meshes: stride 0x28, actions: stride 0x10, textures via Texture_Unload.
-void __cdecl FUN_00442090(int param_1) {
+void __cdecl BMD__Release(int param_1) {
     short numBones   = *(short*)(param_1 + 0x22);
     short numMeshes  = *(short*)(param_1 + 0x26);
     short numActions = *(short*)(param_1 + 0x24);
@@ -209,7 +211,7 @@ void __cdecl FUN_00442090(int param_1) {
         }
         int texId = (int)*(short*)(*(int*)(param_1 + 0x38) + *(short*)(mBase + 2) * 2);
         if (texId != 0x12d)
-            FUN_0052a050(texId);
+            UnloadImage(texId);
     }
     if (*(void**)(param_1 + 0x28) != nullptr) { operator_delete(*(void**)(param_1 + 0x28)); *(DWORD*)(param_1 + 0x28) = 0; }
     if (*(void**)(param_1 + 0x2c) != nullptr) { operator_delete(*(void**)(param_1 + 0x2c)); *(DWORD*)(param_1 + 0x2c) = 0; }
@@ -221,14 +223,14 @@ void __cdecl FUN_00442090(int param_1) {
     *(short*)(param_1 + 0x24) = 0;
 }
 
-// FUN_004ffd50 @ 0x004FFD50 — Terrain_ResetObjects
+// DeleteObjects @ 0x004FFD50 — Terrain_ResetObjects
 // Calls BMD_FreeModel on every model slot (stride 0xbc, count 0x7580/0xbc).
-// Then walks the 16x16 scene-entity grid (DAT_083a0218, stride 0x10) freeing nodes via FUN_004ffcc0.
+// Then walks the 16x16 scene-entity grid (DAT_083a0218, stride 0x10) freeing nodes via Entity_GridUnlink.
 // Finally unloads tile textures 0x23-0x67, clears particle/effect/entity pools.
-void __cdecl FUN_004ffd50(void) {
+void __cdecl DeleteObjects(void) {
     // free all model slots
     for (int i = 0; i < 0x7580; i += 0xbc)
-        FUN_00442090(i + DAT_05828d58);
+        BMD__Release(i + DAT_05828d58);
 
     // free scene entity grid (16x16, stride 0x10)
     // Original binary terminated when puVar5 > 0x83a1217 (grid_base 0x83a0218 + 0xFFF).
@@ -240,7 +242,7 @@ void __cdecl FUN_004ffd50(void) {
             char* head = (char*)*(DWORD*)(puVar5 + 8);
             while (head != nullptr) {
                 char* next = (char*)*(DWORD*)(head + 0x1b4);
-                FUN_004ffcc0((void*)head, (int)puVar5);
+                Entity_GridUnlink((void*)head, (int)puVar5);
                 head = next;
             }
             *(DWORD*)(puVar5 + 4) = 0;
@@ -249,7 +251,7 @@ void __cdecl FUN_004ffd50(void) {
         }
         if (gridEnd < puVar5) {
             // unload tile textures
-            for (int ti = 0x23; ti < 0x68; ti++) FUN_0052a050(ti);
+            for (int ti = 0x23; ti < 0x68; ti++) UnloadImage(ti);
             // ── Pool zero-clear loops (DESACTIVADOS) ─────────────────────────────
             // El binario original limpiaba 9 pools de partículas/efectos/entidades
             // usando direcciones ABSOLUTAS del .bss original (rangos 0x07c85890..0x83a3fe8).
@@ -278,18 +280,18 @@ void __cdecl FUN_004ffd50(void) {
     } while (true);
 }
 
-// FUN_0045abb0 @ 0x0045ABB0 — Entity_ClearByType(map_id)
+// ClearCharacters @ 0x0045ABB0 — Entity_ClearByType(map_id)
 // Loops over entity array (base DAT_07abf5d0, stride 0x394).
 // For each active entity whose type (+0x1dc) != map_id: clears active flag,
 // also clears matching emitter pool entries (DAT_083a1218, stride 0x1bc).
-// Then calls FUN_00449840 on every slot.
+// Then calls DeleteCloth on every slot.
 //
 // Inner loop bound: el binario original usaba el literal 0x83a2370 (= DAT_083a1218
 // + 0x1158, fin del array Butterfles). En nuestro port DAT_083a1218 es un array
 // real (10 × 0x1bc = 0x1158 bytes) pero el linker lo coloca en otra dirección,
 // así que el literal es basura — pcVar2 sigue iterando hasta crashear.
 // Se reemplaza por DAT_083a1218 + 0x1158 (end-pointer real).
-void __cdecl FUN_0045abb0(int param_1) {
+void __cdecl ClearCharacters(int param_1) {
     char* butterflesEnd = DAT_083a1218 + 0x1158;
     for (int i = 0; i < 0x59740; i += 0x394) {
         char* puVar1 = (char*)(i + DAT_07abf5d0);
@@ -302,7 +304,7 @@ void __cdecl FUN_0045abb0(int param_1) {
                 pcVar2 += 0x1bc;
             } while (pcVar2 < butterflesEnd);
         }
-        FUN_00449840((int)puVar1, (int)puVar1, 0);
+        DeleteCloth((int)puVar1, (int)puVar1, 0);
     }
 
     // Gate/map transition removes the viewport but not Party membership.
@@ -310,12 +312,12 @@ void __cdecl FUN_0045abb0(int param_1) {
 }
 
 // Effect/particle
-// FUN_00466ad0 @ 0x00466AD0 — MoveEffect: implemented in Render/MoveEffect.cpp
+// MoveEffect @ 0x00466AD0 — MoveEffect: implemented in Render/MoveEffect.cpp
 // Effect_SpawnSmokeBurst @ 0x004660F0 — Effect_SmokeBurst: implemented in Render/MoveEffect_Helpers.cpp
 // Effect_SpawnSmokeExplosion @ 0x004661F0 — Effect_SmokeExplosion: implemented in Render/MoveEffect_Helpers.cpp
 // Effect_SpawnLightningBurst @ 0x00460C30 — Effect_LightningBurst: implemented in Render/MoveEffect_Helpers.cpp
 // Effect_SpawnProximityHit @ 0x00465E60 — Effect_OnHitProximity: implemented in Render/MoveEffect_Helpers.cpp
-// FUN_00473d90 @ 0x00473D90 — Ring_ComputeOrbit: implemented in Render/MoveEffect_Helpers.cpp
+// Ring_ComputeOrbit @ 0x00473D90 — Ring_ComputeOrbit: implemented in Render/MoveEffect_Helpers.cpp
 // STUB: Effect_AutoAttack — proximity-check all entities against param_1, fire
 // attack effect (CreateBomb/CreateJoint 0x4E1) at nearby targets.
 // Real logic: iterates CharactersClient[0..399], distance check <= DAT_005524f0,
@@ -341,7 +343,7 @@ void __cdecl FUN_0045abb0(int param_1) {
 // Effect_SpawnSmokeBurst declared in functions.h as (float*, char). Using through normal
 // linkage (no extern decl needed here).
 
-void __cdecl FUN_00466440(int Target) {
+void __cdecl Effect_CollisionCheck(int Target) {
     char* T = (char*)(uintptr_t)Target;
     if (!T) return;
     DWORD ca = (DWORD)DAT_07cf1ff4;  // CharacterAttribute
@@ -377,7 +379,7 @@ void __cdecl FUN_00466440(int Target) {
             }
         }
         float* posPtr = (float*)(T + 16);
-        if (FUN_0045fec0((unsigned int)skillIdx, posPtr, 100.0f,
+        if (Entity_FindNearby_SendPacket((unsigned int)skillIdx, posPtr, 100.0f,
                          *(unsigned char*)(T + 136),
                          *(short*)(T + 134))) {
             short type = *(short*)(T + 2);
@@ -462,29 +464,29 @@ void __cdecl FUN_00466440(int Target) {
     }
 }
 
-// FUN_00470030 @ 0x00470030 — MoveJoint(entity_ptr, frame_id)    [Kayito: MoveJoint]
+// MoveJoint @ 0x00470030 — MoveJoint(entity_ptr, frame_id)    [Kayito: MoveJoint]
 // Implemented in Render/MoveJoint.cpp
 
-// FUN_00511bf0 @ 0x00511BF0 — sets *param_1 = param_2, param_1[1] = (DWORD)param_3
+// TEXCOORD @ 0x00511BF0 — sets *param_1 = param_2, param_1[1] = (DWORD)param_3
 // Signature from decompile: (undefined4 *param_1, undefined4 param_2, undefined4 param_3)
-void __cdecl FUN_00511bf0(float* param_1, float param_2, int param_3) {
+void __cdecl TEXCOORD(float* param_1, float param_2, int param_3) {
     // Match Ghidra: *param_1 = param_2; param_1[1] = param_3
     *param_1 = param_2;
     *(int*)(param_1 + 1) = param_3;
 }
 
-// FUN_004f9e90 — implemented below (EulerToMatrix)
-// FUN_00465fe0 @ 0x00465FE0 — Joint_BoneOffsetApply(entity_ptr, flag)
+// EulerToMatrix — implemented below (EulerToMatrix)
+// Joint_BoneOffsetApply @ 0x00465FE0 — Joint_BoneOffsetApply(entity_ptr, flag)
 // If flag != 0: builds rotation matrix from euler (+0x1c..0x24), transforms +0xc0 offset,
 //   adds result to world pos (+0x10/+0x14/+0x18).
 // If flag == 0: directly adds +0xc0/+0xc4/+0xc8 to world pos.
-void __cdecl FUN_00465fe0(int param_1, int param_2) {
+void __cdecl Joint_BoneOffsetApply(int param_1, int param_2) {
     // PORT FIX: Ghidra decompile split a contiguous float[3] output buffer into
     // three separate locals (local_3c/38/34). MSVC does not guarantee they're
     // adjacent in memory, so Vector_Rotate (which writes 3 contiguous floats)
     // only landed in local_3c and the other two reads picked up uninitialised
     // stack. Use a proper array to guarantee contiguity. Same pattern as the
-    // Terrain_Light.cpp FUN_004fa930 fix.
+    // Terrain_Light.cpp Entity_GetLightScale fix.
     float out[3] = {0.0f, 0.0f, 0.0f};
     float local_30[12];
     if (param_2 != 0) {
@@ -502,36 +504,41 @@ void __cdecl FUN_00465fe0(int param_1, int param_2) {
     }
 }
 
-// FUN_004f76c0 @ 0x004F76C0 — Terrain_BlendLightSphere(cx, cy, src3f, radius, dst_buf)
-// Blends a spherical gradient from a 3-float source colour into dst_buf
-// (indexed as [row&0xff * 0x100 + col&0xff] * 0xc, i.e. 3×float per tile).
-void __cdecl FUN_004f76c0(float param_1, float param_2, int param_3, int param_4, int param_5) {
-    float cx   = param_1 * _DAT_00552594;
-    float cy   = param_2 * _DAT_00552594;
+// AddTerrainLight @ 0x004F76C0 — suma una esfera de luz al buffer de luz del
+// terreno.  dst se indexa como [(row & 0xff) * 0x100 + (col & 0xff)] * 3 floats.
+//
+// A diferencia de AddTerrainLightClip (0x004F7800) esta NO clampea a 1.0: solo
+// evita valores negativos, que es lo que produce el resplandor del fuego.
+//
+// 2026-09-25: se llamaba AddTerrainLight y convivia con un wrapper inline
+// AddTerrainLight en structs.h que solo existia para castear los punteros --
+// Ghidra los habia tipado como int.  Ahora la firma es la real y el wrapper se
+// elimino, asi que hay un unico simbolo para esta direccion.
+void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float *Buffer) {
+    float cx   = xf * _DAT_00552594;
+    float cy   = yf * _DAT_00552594;
     int   icx  = (int)cx;
     int   icy  = (int)cy;
-    int   rMin = icy - param_4,  rMax = icy + param_4;
+    int   rMin = icy - Range,  rMax = icy + Range;
     if (rMin > rMax) return;
     unsigned int uRow = (unsigned int)rMin;
     for (int row = rMin; row <= rMax; row++, uRow++) {
         float fRow = (float)row;
         float fDy  = cy - fRow;
-        int   cMin = icx - param_4, cMax = param_4 + icx;
+        int   cMin = icx - Range, cMax = Range + icx;
         for (int col = cMin; col <= cMax; col++) {
             float fDx  = cx - (float)col;
-            float fVal = ((float)param_4 - sqrtf(fDx * fDx + fDy * fDy)) / (float)param_4;
+            float fVal = ((float)Range - sqrtf(fDx * fDx + fDy * fDy)) / (float)Range;
             if (_DAT_00552580 >= fVal) continue;
-            float *dst = (float*)(param_5 + ((int)((uRow & 0xff) * 0x100 + ((unsigned int)col & 0xff))) * 0xc);
-            int   off  = param_3 - (int)dst;
+            float *dst = Buffer + ((uRow & 0xff) * 0x100 + ((unsigned int)col & 0xff)) * 3;
             for (int k = 0; k < 3; k++) {
-                float fv = fVal * *(float*)((int)dst + off) + *dst;
-                *dst = (fv < _DAT_00552580) ? 0.0f : fv;
-                dst++;
+                float fv = fVal * Light[k] + dst[k];
+                dst[k] = (fv < _DAT_00552580) ? 0.0f : fv;
             }
         }
     }
 }
-// FUN_0045fec0 @ 0x0045FEC0 — Entity_FindNearby_SendPacket
+// Entity_FindNearby_SendPacket @ 0x0045FEC0 — Entity_FindNearby_SendPacket
 // Scans up to 400 entities for those within radius param_3 of world pos param_2.
 // Collects up to 5 entity IDs matching type/team filter (param_4/param_5).
 // If any found, sends C1-0x1d packet with entity list XOR-encrypted.
@@ -541,7 +548,7 @@ void __cdecl FUN_004f76c0(float param_1, float param_2, int param_3, int param_4
 // param_4  = zone/flag byte written into packet
 // param_5  = team/guild ID (for player-type entity matching)
 // Returns 0 on no entities, 1 on packet sent or send error.
-float* __cdecl FUN_0045fec0(unsigned int param_1, float* param_2, float param_3, int param_4, short param_5)
+float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2, float param_3, int param_4, short param_5)
 {
     static const BYTE xorKey[32] = {
         0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
@@ -659,11 +666,11 @@ float* __cdecl FUN_0045fec0(unsigned int param_1, float* param_2, float param_3,
     return (float*)(uintptr_t)1;
 }
 
-// FUN_0046fe90 @ 0x0046FE90 — Joint_SegmentTick(joint_ptr, mat)
+// Joint_SegmentTick @ 0x0046FE90 — Joint_SegmentTick(joint_ptr, mat)
 // Pushes all existing vertex segments one position forward (scroll back),
 // then computes 4 new billboard vertices (at ±half-width perpendicular offsets)
 // using Vector_Rotate and the weapon-scale constants _DAT_00552a14/_DAT_00552504.
-void __cdecl FUN_0046fe90(int param_1, float *param_2) {
+void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
     // PORT FIX: Ghidra decompile produced `float local_18[4], local_8, local_4;`
     // and wrote Vector_Rotate's 3-float output at `local_18 + 3`, expecting
     // local_18[4]==local_8 and local_18[5]==local_4. MSVC doesn't guarantee that
@@ -735,7 +742,7 @@ void __cdecl FUN_0046fe90(int param_1, float *param_2) {
     #undef local_4
 }
 
-// FUN_0043e4a0 @ 0x0043E4A0 — MoveHumming(Position, Angle, TargetPosition, Turn)
+// MoveHumming @ 0x0043E4A0 — MoveHumming(Position, Angle, TargetPosition, Turn)
 // Gira Angle hacia el target y **devuelve la distancia** al target.
 // NO mueve la posicion (de eso se encarga el tick generico del joint).
 //
@@ -750,12 +757,12 @@ void __cdecl FUN_0046fe90(int param_1, float *param_2) {
 // Sin el retorno, `MoveJoint` case 0x4ea comparaba la Z ABSOLUTA del target
 // (ownerZ + 120, siempre > 35) → las esferas de EXP nunca se absorbian y
 // quedaban orbitando al personaje acumulandose.
-float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float param_4)
+float __cdecl MoveHumming(float *param_1, float *param_2, float *param_3, float param_4)
 {
     // Horizontal angle: from (pos.x, pos.y) to (target.x, target.y)
-    float horizAngle = FUN_0043e050(param_1[0], param_1[1], param_3[0], param_3[1]);
+    float horizAngle = CreateAngle(param_1[0], param_1[1], param_3[0], param_3[1]);
     // Interpolate rot[2] (yaw) toward horizontal angle
-    param_2[2] = FUN_0043e1b0(param_2[2], horizAngle, param_4);
+    param_2[2] = TurnAngle2(param_2[2], horizAngle, param_4);
 
     // Compute delta vector for vertical angle
     float dx = param_1[0] - param_3[0];
@@ -764,19 +771,19 @@ float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float
     float horizDist = sqrtf(dx * dx + dy * dy);
 
     // Vertical angle: from (pos.z, horizDist) to (target.z, 0)
-    float vertAngle = FUN_0043e050(param_1[2], horizDist, param_3[2], 0.0f);
+    float vertAngle = CreateAngle(param_1[2], horizDist, param_3[2], 0.0f);
     // Interpolate rot[0] (pitch) toward (360 - vertAngle)
-    param_2[0] = FUN_0043e1b0(param_2[0], _DAT_0055286c - vertAngle, param_4);
+    param_2[0] = TurnAngle2(param_2[0], _DAT_0055286c - vertAngle, param_4);
 
     // VectorLength(Range) — el valor de retorno de la funcion.
     float local[3] = { dx, dy, dz };
-    return FUN_004f9c40(local);
+    return Vec3_Length(local);
 }
 
-// FUN_004e1be0 @ 0x004E1BE0 — RenderItem3D
+// RenderItem3D @ 0x004E1BE0 — RenderItem3D
 //
 // 2026-04-30: la versión anterior estaba MAL identificada como
-// `ItemDrop_SpawnEffect` y llamaba `FUN_004e13a0(type+400, ...)` (RenderObjectScreen)
+// `ItemDrop_SpawnEffect` y llamaba `RenderObjectScreen(type+400, ...)` (RenderObjectScreen)
 // con effect-ids inventados.  Para items "normales" (helmet=0x4E1, etc.) eso
 // resolvía a un BMD inexistente y crasheaba en BMD_Animation con AV.
 //
@@ -799,16 +806,7 @@ float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float
 //
 // Per IDA: pasamos raw Level. Entity_DrawSetup (línea 52 de su archivo)
 // hace el shift una sola vez (la cadena solo shifteaba después).
-void __cdecl FUN_004e1be0(float param_1, float param_2, float param_3, float param_4,
-                          int param_5, unsigned int param_6, unsigned char param_7, char param_8)
-{
-    // Forward to RenderItem3D with RAW Level — downstream extracts the
-    // ItemLevel via (Level >> 3) & 0xF in RenderObjectScreen / Entity_DrawSetup.
-    RenderItem3D(param_1, param_2, param_3, param_4,
-                 param_5, (int)param_6, (int)param_7, 0, param_8 != 0);
-}
-
-// FUN_00441e00 @ 0x00441E00 — BMD::RenderBodyTranslate
+// BMD__RenderBody @ 0x00441E00 — BMD::RenderBodyTranslate
 // Signature IDA: __thiscall(this, Flag, Alpha, BlendMesh, BlendMeshLight,
 //                           BlendMeshTexCoordU, BlendMeshTexCoordV, HiddenMesh, Texture8)
 // BlendMesh y HiddenMesh son INT pero los callers nuestros pasan como float
@@ -818,9 +816,9 @@ void __cdecl FUN_004e1be0(float param_1, float param_2, float param_3, float par
 // BUG-FIX 2026-04-28: lógica del branch NULL estaba INVERTIDA (skipping cuando
 // debería render). IDA: `if (NULL && i != HiddenMesh) goto render;`. Y la
 // comparación `i != HiddenMesh` debe ser INT, no float (NaN para -1, etc.).
-void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba) {
+void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba) {
     // BUG-FIX 2026-04-29: validar model + meshBase antes de iterar. Crash AV en
-    // glPopMatrix con stack KernelBase+opengl32 venía de un FUN_00440d50 que
+    // glPopMatrix con stack KernelBase+opengl32 venía de un BMD__RenderMesh que
     // dereferenciaba un mesh pointer wild (VBO inválido).
     // BUG-FIX 2026-05-01: range check del pointer model. Algún caller pasa
     // direcciones tipo 0xE5E90005 (kernel space) → AV en glDrawElements / lectura
@@ -830,7 +828,7 @@ void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, fl
     if (*(short*)((char*)model + 0x24) == 0) return;
     int meshBase_check = *(int*)((char*)model + 0x28);
     if (meshBase_check == 0 || (uintptr_t)meshBase_check < 0x100000) return;
-    FUN_00440d30();
+    BMD__BeginRender();
     if (*(char*)((char*)model + 0x44) == '\0') {
         // BUG-FIX 2026-04-26: IDA usa < 0.99f (_DAT_00552544), no < 1.0f.
         if (f1 < _DAT_00552544) glColor4f(*(float*)((char*)model+0x48),*(float*)((char*)model+0x4c),*(float*)((char*)model+0x50),f1);
@@ -856,13 +854,13 @@ void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, fl
         }
         // else: skip (mesh marked hidden or has [1]!='\0')
         if (render) {
-            FUN_00440d50(model, (float)i, flags, f1, fVar3, f3, f4, f5, (unsigned int)rgba);
+            BMD__RenderMesh(model, (float)i, flags, f1, fVar3, f3, f4, f5, (unsigned int)rgba);
         }
     }
     glPopMatrix();
 }
 
-// FUN_00509810 @ 0x00509810 — Model_SetAnimationSlots(slot_idx, s0, s1, s2, s3, s4)
+// SetMonsterSound @ 0x00509810 — Model_SetAnimationSlots(slot_idx, s0, s1, s2, s3, s4)
 // Writes 5 shorts into model slot at DAT_05828d58 + slot_idx * 0xbc + 0xaa.
 void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int param_4, int param_5, int param_6) {
     int base = param_1 * 0xbc + DAT_05828d58;
@@ -873,16 +871,14 @@ void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int 
     *(short*)(base + 0xb2) = (short)param_6;
 }
 
-// FUN_0045bfa0 (CreateCharacter), FUN_0045ccf0 (CreateMonster) moved to
+// CreateCharacter, CreateMonster moved to
 // src/Monster/Monster.cpp (B3 refactor 2026-05-07, 925 lines).
 
-// Sound
-// FUN_00404bb0 @ 0x00404BB0 — returns 1 (Sound_BufferUnlock helper)
-// Ghidra: undefined4 FUN_00404bb0(void) { return 1; }
-// signature in functions.h: void (void) — no return used at call site, treat as void.
-void __cdecl FUN_00404bb0(void) { /* NOP — original returns 1 but callers ignore it */ }
+// SetHall (0x00404BB0) vive en src/Sound/Sound_DS3D.cpp.  Aca habia una segunda
+// copia bajo el nombre FUN_00404bb0, sin callers: las dos son fieles (en el
+// binario la funcion es un stub que devuelve 1), asi que solo sobraba el nombre.
 
-// FUN_00483160 @ 0x00483160 — CheckAttack.
+// IDA: CheckAttack (0x00483160)
 //
 // This is deliberately a boolean predicate, despite the historical unsigned
 // return type in functions.h.  Every caller uses it as one: the combat paths
@@ -890,7 +886,7 @@ void __cdecl FUN_00404bb0(void) { /* NOP — original returns 1 but callers igno
 // cursor.  The guild-war branch is controlled by EnableGuildWar and the
 // entity's relation byte at +745 (2 = current war opponent), exactly as in
 // the original client.
-unsigned int __cdecl FUN_00483160(void) {
+unsigned int __cdecl CheckAttack(void) {
     if (SelectedCharacter == -1) {
         return 0;
     }
@@ -931,7 +927,7 @@ unsigned int __cdecl FUN_00483160(void) {
 
     return targetPkLevel;
 }
-// FUN_004cb520 @ 0x004CB520 — `GetScreenWidth` per IDA companion (Offsets.h).
+// GetScreenWidth @ 0x004CB520 — `GetScreenWidth` per IDA companion (Offsets.h).
 // Returns the "logical width" of the 3D world viewport based on which UI
 // panel is open: 260 (right pane open) / 450 (right pane open, narrower
 // content) / 640 (no panel — full width).
@@ -945,13 +941,8 @@ unsigned int __cdecl FUN_00483160(void) {
 //
 // Body kept verbatim to original IDA decompile (matches the safe path
 // of the anti-tamper hash-table-decorated original).
-extern "C" int __cdecl GetScreenWidth(void);
-int __cdecl FUN_004cb520(void) {
-    return GetScreenWidth();
-}
-
 // Net PacketSession helpers
-// SecondPassword screens (FUN_004e93a0 / 004df410 / 004e4760-004ec330) moved to
+// SecondPassword screens (SecondPassword_Handler / 004df410 / 004e4760-004ec330) moved to
 // src/Net/SecondPassword.cpp (B3 refactor 2026-05-07, ~1535 lines).
 
 // Net_Connect @ 0x0043DC70 — connect socket to server (TCP) + arm WSAAsyncSelect.
@@ -969,18 +960,18 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
         if (h == nullptr || h->h_addr_list == nullptr || h->h_addr_list[0] == nullptr) {
             char buf[160];
             wsprintfA(buf, "gethostbyname failed for %.64s (WSA=%d)", ip, WSAGetLastError());
-            FUN_00405540(&DAT_055c9bf0, buf);
+            CErrorReport_Write(&DAT_055c9bf0, buf);
             return 0;
         }
         addr = *(unsigned long*)h->h_addr_list[0];
     }
 
-    // 2. Ensure socket exists (FUN_0043dbf0 already created one into ctx+8)
+    // 2. Ensure socket exists (CWsctlc_Create already created one into ctx+8)
     SOCKET s = *(SOCKET*)((char*)ctx + 8);
     if (s == INVALID_SOCKET || s == 0) {
         s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (s == INVALID_SOCKET) {
-            FUN_00405540(&DAT_055c9bf0, "socket() failed");
+            CErrorReport_Write(&DAT_055c9bf0, "socket() failed");
             return 0;
         }
         *(SOCKET*)((char*)ctx + 8) = s;
@@ -1006,7 +997,7 @@ int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int w
         if (err != WSAEWOULDBLOCK) {
             char buf[160];
             wsprintfA(buf, "connect(%.64s:%u) failed (WSA=%d)", ip, (unsigned)port, err);
-            FUN_00405540(&DAT_055c9bf0, buf);
+            CErrorReport_Write(&DAT_055c9bf0, buf);
             return 0;
         }
         // WSAEWOULDBLOCK = connect in progress; FD_CONNECT will fire later.

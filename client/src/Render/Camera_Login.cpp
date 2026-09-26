@@ -15,7 +15,7 @@
 // DAT_07EEB228/DAT_07EEB218 (login camera world positions).
 // Stub kept void() until Scene_Login.cpp callers are updated.
 void __cdecl Login_CameraUpdate(void) {
-    // Wrapper: calls FUN_004f8eb0 with login-scene entity[0] world position (+0x10).
-    FUN_004f8eb0((float *)(DAT_07abf5d0 + 0x10));
+    // Wrapper: calls CreateFrustrum2D with login-scene entity[0] world position (+0x10).
+    CreateFrustrum2D((float *)(DAT_07abf5d0 + 0x10));
 }
 

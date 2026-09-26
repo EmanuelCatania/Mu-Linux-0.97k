@@ -7,20 +7,20 @@
 
 // ── Bone / 3D sound helpers ───────────────────────────────────────────────────
 // BMD_TransformPosition — implemented in src/Math/Math_3D.cpp (Bone_TransformPos)
-float __fastcall FUN_00407b50(void *a, int b, float *c);
-void  __fastcall FUN_00407ac0(void *a, float x, float y, float z);
-void  __fastcall FUN_00407af0(void *a, float v);
-void  __fastcall FUN_004079b0(void *node, float x, float y, float z, int pinned);
-void  __cdecl    FUN_004079e0(int _this, int a2, short a3);
+float __fastcall SpringNode_Delta(void *a, int b, float *c);
+void  __fastcall VerletNode_AddAccel(void *a, float x, float y, float z);
+void  __fastcall ClothNode_Integrate(void *a, float v);
+void  __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
+void  __cdecl    ClothNode_ApplyForces(int _this, int a2, short a3);
 
-// FUN_00408780 @ 0x00408780 — Cloth_PinTopRow (slot 1 de off_552520).
+// Cloth_PinTopRow @ 0x00408780 — Cloth_PinTopRow (slot 1 de off_552520).
 // Reposiciona los W nodos de la FILA SUPERIOR sobre la matriz del hueso al que
 // está atada la tela y los marca como fijados. Éste es el enganche que hace que
 // la capa siga al personaje: `sub_408CB0` lo invoca con
 // `BoneTransform + 48 * boneIdx` en cada tick.
 // Port FIEL de IDA `sub_408780`. Layout: +0x14 flags, +0x18/+0x1C origen Y/Z,
 // +0x20 ancho, +0x28 W, +0x34 nodes, +0x40 paso horizontal.
-void __cdecl FUN_00408780(int _this, float (*Matrix)[4])
+void __cdecl Cloth_PinTopRow(int _this, float (*Matrix)[4])
 {
   float Position[3];
   float WorldPosition[3];
@@ -63,20 +63,20 @@ void __cdecl FUN_00408780(int _this, float (*Matrix)[4])
         Position,
         WorldPosition,
         1);
-    FUN_004079b0((void *)(v6 + *(int *)(_this + 52)),
+    SpringNode_SetPos((void *)(v6 + *(int *)(_this + 52)),
                  WorldPosition[0], WorldPosition[1], WorldPosition[2], 1);
     v4 = *(int *)(_this + 40);
   }
 }
 
-// FUN_004089b0 @ 0x004089B0 — Cloth_Wind (slot 2 de off_552520).
+// Cloth_Wind @ 0x004089B0 — Cloth_Wind (slot 2 de off_552520).
 // Elige un nodo "epicentro" que rota con el contador de frames y aplica las
 // fuerzas a cada nodo con un peso que cae con la distancia Manhattan al
 // epicentro (ráfagas que recorren la tela).
 // Port de IDA `sub_4089B0`: ~85% del decompile es ruido de hash-table
 // (ref-count sobre MoveSceneFrame + scrambling XOR), omitido per política del
 // proyecto. Lo que queda es el cálculo de arriba, tal cual.
-void __cdecl FUN_004089b0(DWORD *_this)
+void __cdecl Cloth_Wind(DWORD *_this)
 {
   int frame = (int)DAT_083a7c00;              // MoveSceneFrame
   int v17   = (int)_this[12];                 // nodeCount
@@ -91,11 +91,11 @@ void __cdecl FUN_004089b0(DWORD *_this)
   for (int v18 = 0; v18 < (int)_this[12]; ++v18)
   {
     int dist = abs(v20 / W - v18 / W) + abs(v20 % W - v18 % W);
-    FUN_004079e0((int)(_this[13] + 60 * v18), dist, (short)_this[5]);
+    ClothNode_ApplyForces((int)(_this[13] + 60 * v18), dist, (short)_this[5]);
   }
 }
 
-// FUN_00408cb0 @ 0x00408CB0 — Cloth_Integrate: medio tick de simulación.
+// Cloth_Integrate @ 0x00408CB0 — Cloth_Integrate: medio tick de simulación.
 //   1. vtable[2] — reparte viento/gravedad sobre la aceleración de cada nodo.
 //   2. Springs marcados con flag 2: si el par está estirado más allá del
 //      reposo, aplica una fuerza de restitución a AMBOS extremos
@@ -104,12 +104,12 @@ void __cdecl FUN_004089b0(DWORD *_this)
 //   4. Integra todos los nodos.
 // Port FIEL de IDA `sub_408CB0`. El `a2@<st0>` del decompile es el retorno de
 // `sub_407B50` (la distancia), no un parámetro: reconstruido.
-void __fastcall FUN_00408cb0(int *param_1, float a3)
+void __fastcall Cloth_Integrate(int *param_1, float a3)
 {
   DWORD *a1 = (DWORD *)param_1;
   float v25[3];
 
-  // Mismo guard que en FUN_00408e30: la vtable[1] (Cloth_PinTopRow) deferencia
+  // Mismo guard que en Cloth_Solve: la vtable[1] (Cloth_PinTopRow) deferencia
   // `BoneTransform + 48*boneIdx` sin validarlo.
   if (!a1 || !a1[1] || !*(DWORD *)(a1[1] + 276))
     return;
@@ -126,7 +126,7 @@ void __fastcall FUN_00408cb0(int *param_1, float a3)
     char  *v7 = (char  *)(v6 + 60 * *(short *)v5);
     float *v8 = (float *)(v6 + 60 * *((short *)v5 + 1));
 
-    double d = FUN_00407b50(v7, (int)v8, v25);
+    double d = SpringNode_Delta(v7, (int)v8, v25);
     if (d < 0.001)
       d = 0.001;
 
@@ -142,15 +142,15 @@ void __fastcall FUN_00408cb0(int *param_1, float a3)
         if (v10 == 256)
           f[i] = (float)(v12 * 3.0);
       }
-      FUN_00407ac0((float *)v7, -f[0], -f[1], -f[2]);
-      FUN_00407ac0(v8, f[0], f[1], f[2]);
+      VerletNode_AddAccel((float *)v7, -f[0], -f[1], -f[2]);
+      VerletNode_AddAccel(v8, f[0], f[1], f[2]);
     }
   }
 
   (*(void (__cdecl **)(DWORD *, int))(*a1 + 4))(a1, 48 * a1[2] + *(int *)(a1[1] + 276));
 
   for (int v15 = 0, v16 = 0; v15 < (int)a1[12]; ++v15, v16 += 60)
-    FUN_00407af0((float *)(v16 + a1[13]), a3);
+    ClothNode_Integrate((float *)(v16 + a1[13]), a3);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -176,15 +176,15 @@ void __fastcall FUN_00408cb0(int *param_1, float a3)
 // parámetro de entrada. Los ports reconstruyen la distancia real.
 // ═══════════════════════════════════════════════════════════════════════════
 
-float __fastcall FUN_00407b50(void *a, int b, float *c);          // delta + |delta|
-char  __fastcall FUN_00407d10(int a1);                            // aplica corrección
-void  __cdecl    FUN_00407c60(int a1, int a3, float rest);        // spring de igualdad
-int   __cdecl    FUN_00407b90(int a1, int a3, const float *range);// spring de rango
+float __fastcall SpringNode_Delta(void *a, int b, float *c);          // delta + |delta|
+char  __fastcall VerletSystem_Flush(int a1);                            // aplica corrección
+void  __cdecl    Cloth_SpringEqual(int a1, int a3, float rest);        // spring de igualdad
+int   __cdecl    Cloth_SpringRange(int a1, int a3, const float *range);// spring de rango
 
-// FUN_004f9c40 @ 0x004f9c40 — Vec3_Length: returns sqrt(dot(v,v)), does NOT modify v.
+// Vec3_Length @ 0x004f9c40 — Vec3_Length: returns sqrt(dot(v,v)), does NOT modify v.
 // (Ghidra shows return as float10 left in x87 ST0; callers use the return value as distance.)
-// FUN_004f9c40 (IDA-activated, was Ghidra stub)
-float __cdecl FUN_004f9c40(float *a1)
+// Vec3_Length (IDA-activated, was Ghidra stub)
+float __cdecl Vec3_Length(float *a1)
 {
   long double v1; // st7
   int v3; // ecx
@@ -204,22 +204,22 @@ float __cdecl FUN_004f9c40(float *a1)
 }
 
 
-// FUN_00407ac0 @ 0x00407ac0 — VerletNode_AddAccel: accumulates acceleration at +4/+8/+C
-void __fastcall FUN_00407ac0(void *a, float x, float y, float z) {
+// VerletNode_AddAccel @ 0x00407ac0 — VerletNode_AddAccel: accumulates acceleration at +4/+8/+C
+void __fastcall VerletNode_AddAccel(void *a, float x, float y, float z) {
     char *p = (char*)a;
     *(float*)(p+4)  += x;
     *(float*)(p+8)  += y;
     *(float*)(p+0xc)+= z;
 }
 
-// FUN_00407af0 @ 0x00407AF0 — ClothNode_Integrate: paso de Euler semi-implícito.
+// ClothNode_Integrate @ 0x00407AF0 — ClothNode_Integrate: paso de Euler semi-implícito.
 // Layout: +0x04 accel[3], +0x10 vel[3], +0x1C pos[3], +0x28 pinned(byte).
 // _DAT_00559070 = 400.0 (leído del binario). Port FIEL de IDA `sub_407AF0`.
 //
 // 2026-08-11: el port limpiaba la aceleración al final. Eso NO está en IDA —
 // la aceleración la reescribe entera `sub_4079E0` (gravedad + viento) al
 // principio de cada tick, así que el clear extra era inofensivo pero falso.
-void __fastcall FUN_00407af0(void *a, float v) {
+void __fastcall ClothNode_Integrate(void *a, float v) {
     char *p = (char*)a;
     if (*(BYTE*)(p+0x28) & 1) return;  // nodo fijado — no se integra
     for (int i = 0; i < 3; i++) {
@@ -230,7 +230,7 @@ void __fastcall FUN_00407af0(void *a, float v) {
     }
 }
 
-// FUN_004079e0 @ 0x004079E0 — ClothNode_ApplyForces: reescribe la aceleración
+// ClothNode_ApplyForces @ 0x004079E0 — ClothNode_ApplyForces: reescribe la aceleración
 // del nodo con viento + arrastre, y le suma la gravedad.
 //   a2 = distancia Manhattan al nodo "epicentro" de la ráfaga (la calcula
 //        `sub_4089B0`); a 5 celdas la ráfaga no llega (peso 0).
@@ -238,7 +238,7 @@ void __fastcall FUN_00407af0(void *a, float v) {
 // Port FIEL de IDA `sub_4079E0`. El bucle sobre `&flt_590AF4 .. &unk_590B00`
 // son los 3 componentes del viento; en nuestro build esos globals no son
 // contiguos, así que se despliega explícitamente.
-void __cdecl FUN_004079e0(int _this, int a2, short a3)
+void __cdecl ClothNode_ApplyForces(int _this, int a2, short a3)
 {
   if ((*(BYTE *)(_this + 40) & 1) != 0)
   {
@@ -273,24 +273,24 @@ void __cdecl FUN_004079e0(int _this, int a2, short a3)
     *(float *)(_this + 12) = (float)(*(float *)(_this + 12) - v9 * 100.0);
 }
 
-// FUN_00407b50 @ 0x00407b50 — SpringNode_Delta: out = posA - posB; returns distance (length of delta).
+// SpringNode_Delta @ 0x00407b50 — SpringNode_Delta: out = posA - posB; returns distance (length of delta).
 // param_1=nodeA_ptr (this), param_2=nodeB_ptr (as int), param_3=float[3] output.
 // Does NOT normalize; caller uses return value as rest-length distance.
-float __fastcall FUN_00407b50(void *a, int b, float *c) {
+float __fastcall SpringNode_Delta(void *a, int b, float *c) {
     float *posA = (float*)((char*)a + 0x1c);
     float *posB = (float*)(b + 0x1c);
     c[0] = posA[0] - posB[0];
     c[1] = posA[1] - posB[1];
     c[2] = posA[2] - posB[2];
-    return FUN_004f9c40(c);
+    return Vec3_Length(c);
 }
 
-// FUN_00407b90 @ 0x00407B90 — Cloth_SpringRange: mantiene |a1-a3| dentro de
+// Cloth_SpringRange @ 0x00407B90 — Cloth_SpringRange: mantiene |a1-a3| dentro de
 // [range[0], range[1]]. Devuelve 0 sólo si el spring está "roto" (estirado más
 // de 20x el máximo) — eso corta la iteración del solver en `sub_408E30`.
 // Port FIEL de IDA `sub_407B90` (el `a2@<st0>` es el retorno de sub_407B50).
 // Corrige SÓLO la posición de a1 (+0x1C..+0x24), no la del partner.
-int __cdecl FUN_00407b90(int a1, int a3, const float *range)
+int __cdecl Cloth_SpringRange(int a1, int a3, const float *range)
 {
   float v9[3];
   double diff;
@@ -298,7 +298,7 @@ int __cdecl FUN_00407b90(int a1, int a3, const float *range)
   if ((*(BYTE *)(a1 + 40) & 1) != 0)
     return 1;                                   // nodo fijado
 
-  double d = FUN_00407b50((void *)a1, a3, v9);
+  double d = SpringNode_Delta((void *)a1, a3, v9);
   if (d < 0.001)
     d = 0.001;
 
@@ -322,15 +322,15 @@ int __cdecl FUN_00407b90(int a1, int a3, const float *range)
   return 1;
 }
 
-// FUN_00407c60 @ 0x00407C60 — Cloth_SpringEqual: corrección simétrica hacia la
+// Cloth_SpringEqual @ 0x00407C60 — Cloth_SpringEqual: corrección simétrica hacia la
 // longitud de reposo. NO toca la posición: acumula en el buffer de corrección
 // (+0x30..+0x38) e incrementa el contador (+0x2C); `sub_407D10` promedia y
 // aplica. Port FIEL de IDA `sub_407C60` (verificado contra el disasm).
-void __cdecl FUN_00407c60(int a1, int a3, float rest)
+void __cdecl Cloth_SpringEqual(int a1, int a3, float rest)
 {
   float v8[3];
 
-  double d = FUN_00407b50((void *)a1, a3, v8);
+  double d = SpringNode_Delta((void *)a1, a3, v8);
   if (d < 0.001)
     d = 0.001;
 
@@ -349,9 +349,9 @@ void __cdecl FUN_00407c60(int a1, int a3, float rest)
   ++*(DWORD *)(a3 + 44);
 }
 
-// FUN_00407d10 @ 0x00407d10 — VerletSystem_Flush: apply accumulated position corrections, zero buffer
-// FUN_00407d10 (IDA-activated, was Ghidra stub)
-char __fastcall FUN_00407d10(int a1)
+// VerletSystem_Flush @ 0x00407d10 — VerletSystem_Flush: apply accumulated position corrections, zero buffer
+// VerletSystem_Flush (IDA-activated, was Ghidra stub)
+char __fastcall VerletSystem_Flush(int a1)
 {
   int v1; // eax
   float *v2; // esi
@@ -398,26 +398,26 @@ char __fastcall FUN_00407d10(int a1)
 }
 
 
-// FUN_00407e10 @ 0x00407e10 — VerletNode_SetTarget: stores vec3 at +0x14..+0x1c
-void __fastcall FUN_00407e10(void *a, float b, int c, int d) {
+// VerletNode_SetTarget @ 0x00407e10 — VerletNode_SetTarget: stores vec3 at +0x14..+0x1c
+void __fastcall VerletNode_SetTarget(void *a, float b, int c, int d) {
     char *p = (char*)a;
     *(float*)(p + 0x14) = b;
     *(float*)(p + 0x18) = *(float*)&c;
     *(float*)(p + 0x1c) = *(float*)&d;
 }
 
-// FUN_00407e30 @ 0x00407e30 — VerletNode_GetPos: reads vec3 from +0x04..+0x0c into out[]
-void __fastcall FUN_00407e30(void *a, float *b) {
+// VerletNode_GetPos @ 0x00407e30 — VerletNode_GetPos: reads vec3 from +0x04..+0x0c into out[]
+void __fastcall VerletNode_GetPos(void *a, float *b) {
     char *p = (char*)a;
     b[0] = *(float*)(p + 0x04);
     b[1] = *(float*)(p + 0x08);
     b[2] = *(float*)(p + 0x0c);
 }
 
-// ── SpringNode helpers (FUN_00407950 family) ──────────────────────────────
+// ── SpringNode helpers (SpringNode_Ctor family) ──────────────────────────────
 
-// FUN_00407980 @ 0x00407980 — SpringNode_ZeroFields: zeroes accel/vel/pos/pinned in 0x3c stride node.
-void __fastcall FUN_00407980(int param_1) {
+// SpringNode_ZeroFields @ 0x00407980 — SpringNode_ZeroFields: zeroes accel/vel/pos/pinned in 0x3c stride node.
+void __fastcall SpringNode_ZeroFields(int param_1) {
     *(int *)(param_1 + 0x2c) = 0;
     for (int i = 0; i < 3; i++) {
         *(int *)(param_1 + 0x1c + i*4) = 0;   // pos[i]
@@ -428,18 +428,18 @@ void __fastcall FUN_00407980(int param_1) {
     *(BYTE *)(param_1 + 0x28) = 0;
 }
 
-// FUN_00407950 @ 0x00407950 — SpringNode_Ctor: set vtable + zero fields.
-// FUN_00407950 (IDA-activated, was Ghidra stub)
-void __fastcall FUN_00407950(void *_this)
+// SpringNode_Ctor @ 0x00407950 — SpringNode_Ctor: set vtable + zero fields.
+// SpringNode_Ctor (IDA-activated, was Ghidra stub)
+void __fastcall SpringNode_Ctor(void *_this)
 {
   extern void *g_ClothNodeVTable[1];
   *(DWORD *)_this = (DWORD)g_ClothNodeVTable;
-  FUN_00407980((int)_this);
+  SpringNode_ZeroFields((int)_this);
 }
 
 
-// FUN_004079b0 @ 0x004079B0 — SpringNode_SetPos: write position and pinned flag.
-void __fastcall FUN_004079b0(void *node, float x, float y, float z, int pinned) {
+// SpringNode_SetPos @ 0x004079B0 — SpringNode_SetPos: write position and pinned flag.
+void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned) {
     char *p = (char*)node;
     *(float *)(p + 0x1c) = x;
     *(float *)(p + 0x20) = y;
@@ -448,17 +448,17 @@ void __fastcall FUN_004079b0(void *node, float x, float y, float z, int pinned) 
         *(BYTE *)(p + 0x28) |= 1;
 }
 
-// FUN_00407b30 @ 0x00407B30 — SpringNode_GetPos: copy position (+0x1c..+0x24) to out[3].
-void __fastcall FUN_00407b30(void *node, float *out) {
+// SpringNode_GetPos @ 0x00407B30 — SpringNode_GetPos: copy position (+0x1c..+0x24) to out[3].
+void __fastcall SpringNode_GetPos(void *node, float *out) {
     float *src = (float *)((char*)node + 0x1c);
     out[0] = src[0];
     out[1] = src[1];
     out[2] = src[2];
 }
 
-// FUN_004088b0 @ 0x004088B0 — Spring_StoreEdge: write spring entry (stride 0x10) into spring array.
+// Spring_StoreEdge @ 0x004088B0 — Spring_StoreEdge: write spring entry (stride 0x10) into spring array.
 // Entry layout: [ushort na][ushort nb][float rest_scaled][float dist][byte flags][3 bytes pad]
-void __fastcall FUN_004088b0(void *sys, int idx, short na, short nb,
+void __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb,
                               float rest_scaled, float dist, BYTE edge_flags) {
     char *arr = *(char **)((char*)sys + 0x3c);
     int off = idx * 0x10;
@@ -469,10 +469,10 @@ void __fastcall FUN_004088b0(void *sys, int idx, short na, short nb,
     *(BYTE   *)(arr + off + 0x0c) = edge_flags;
 }
 
-// ── VerletNode helpers (FUN_00407da0 family) ─────────────────────────────
+// ── VerletNode helpers (VerletNode_CtorBase family) ─────────────────────────────
 
-// FUN_00407df0 @ 0x00407DF0 — VerletNode_ZeroFields: zero +4..+1c (7 dwords).
-void __fastcall FUN_00407df0(int param_1) {
+// VerletNode_ZeroFields @ 0x00407DF0 — VerletNode_ZeroFields: zero +4..+1c (7 dwords).
+void __fastcall VerletNode_ZeroFields(int param_1) {
     *(int *)(param_1 + 0x04) = 0;
     *(int *)(param_1 + 0x08) = 0;
     *(int *)(param_1 + 0x0c) = 0;
@@ -482,19 +482,19 @@ void __fastcall FUN_00407df0(int param_1) {
     *(int *)(param_1 + 0x1c) = 0;
 }
 
-// FUN_00407da0 @ 0x00407DA0 — VerletNode_CtorBase: set vtable (skipped) + zero fields.
-void* __fastcall FUN_00407da0(void *param_1) {
-    FUN_00407df0((int)param_1);
+// VerletNode_CtorBase @ 0x00407DA0 — VerletNode_CtorBase: set vtable (skipped) + zero fields.
+void* __fastcall VerletNode_CtorBase(void *param_1) {
+    VerletNode_ZeroFields((int)param_1);
     return param_1;
 }
 
-// FUN_00407ed0 @ 0x00407ED0 — VerletNode_CtorExt: zero fields + clear +0x20.
-// FUN_00407ed0 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_00407ed0(DWORD *_this)
+// VerletNode_CtorExt @ 0x00407ED0 — VerletNode_CtorExt: zero fields + clear +0x20.
+// VerletNode_CtorExt (IDA-activated, was Ghidra stub)
+int __cdecl VerletNode_CtorExt(DWORD *_this)
 {
   int result; // eax
 
-  FUN_00407df0((int)_this);
+  VerletNode_ZeroFields((int)_this);
   result = (int)_this;
   _this[8] = 0;
   return result;
@@ -510,7 +510,7 @@ int __cdecl FUN_00407ed0(DWORD *_this)
 // para resolver la colisión con la esfera del cuerpo. 0x40DB50/0x410AE0/
 // 0x410D80 no están portadas y ningún call site de este build las usa: van
 // como no-ops para que el objeto sea válido.
-void __cdecl FUN_00407f20(float *_this, int *node);
+void __cdecl ClothAnchor_Collide(float *_this, int *node);
 void __fastcall FUN_00407ea0(int ecx, int edx, BYTE param_1);
 // Adaptador: el dtor está portado como __fastcall (this en ECX, `edx` dummy) y
 // los call sites de este build invocan la vtable como `__cdecl (this, flags)`.
@@ -519,27 +519,27 @@ static void __cdecl ClothAnchor_VSlot1(void *a) { (void)a; }   // 0x410D80 — s
 void *g_ClothAnchorVTable[3] = {
     (void *)ClothAnchor_VSlot0,
     (void *)ClothAnchor_VSlot1,
-    (void *)FUN_00407f20
+    (void *)ClothAnchor_Collide
 };
 
 // vtable del NODO de tela (DAT_005524e8 del binario) = { 0x00408680 }.
 void __cdecl FUN_00408680(void *_this, char flags);
 void *g_ClothNodeVTable[1] = { (void *)FUN_00408680 };
 
-// FUN_00407e50 @ 0x00407E50 — ClothAnchor_Ctor: full constructor (base + ext).
-// FUN_00407e50 (IDA-activated, was Ghidra stub)
-DWORD *__cdecl FUN_00407e50(DWORD *_this)
+// ClothAnchor_Ctor @ 0x00407E50 — ClothAnchor_Ctor: full constructor (base + ext).
+// ClothAnchor_Ctor (IDA-activated, was Ghidra stub)
+DWORD *__cdecl ClothAnchor_Ctor(DWORD *_this)
 {
-  FUN_00407da0(_this);
+  VerletNode_CtorBase(_this);
   *_this = (DWORD)g_ClothAnchorVTable;
-  FUN_00407ed0(_this);
+  VerletNode_CtorExt(_this);
   return _this;
 }
 
-// FUN_00407d70 @ 0x00407D70 — ClothNode_AddCorrection: acumula una corrección
+// ClothNode_AddCorrection @ 0x00407D70 — ClothNode_AddCorrection: acumula una corrección
 // de posición en el buffer (+0x30..+0x38) e incrementa el contador (+0x2C).
 // Port FIEL de IDA `sub_407D70`.
-void __cdecl FUN_00407d70(int _this, const float *a2)
+void __cdecl ClothNode_AddCorrection(int _this, const float *a2)
 {
   *(float *)(_this + 48) = a2[0] + *(float *)(_this + 48);
   *(float *)(_this + 52) = a2[1] + *(float *)(_this + 52);
@@ -548,21 +548,21 @@ void __cdecl FUN_00407d70(int _this, const float *a2)
   *(float *)(_this + 56) = (float)v3;
 }
 
-// FUN_00407f20 @ 0x00407F20 — ClothAnchor_Collide (slot 2 de off_552514).
+// ClothAnchor_Collide @ 0x00407F20 — ClothAnchor_Collide (slot 2 de off_552514).
 // Esfera de colisión: si el nodo está DENTRO del radio (+0x20) del ancla, lo
 // empuja hacia afuera. `_this[5..7]` (+0x14..+0x1C) es la posición de MUNDO
 // del ancla, que `sub_408E30` refresca cada iteración desde el hueso.
 // Port FIEL de IDA `sub_407F20`.
-void __cdecl FUN_00407f20(float *_this, int *node)
+void __cdecl ClothAnchor_Collide(float *_this, int *node)
 {
   float v[3];
 
-  FUN_00407b30(node, v);
+  SpringNode_GetPos(node, v);
   v[0] = v[0] - _this[5];
   v[1] = v[1] - _this[6];
   v[2] = v[2] - _this[7];
 
-  double v3 = FUN_004f9c40(v);
+  double v3 = Vec3_Length(v);
   if (v3 < 0.0099999998)
   {
     v3   = 0.0099999998;
@@ -576,16 +576,16 @@ void __cdecl FUN_00407f20(float *_this, int *node)
     v[0] = (float)(v4 * v[0]);
     v[1] = (float)(v4 * v[1]);
     v[2] = (float)(v4 * v[2]);
-    FUN_00407d70((int)node, v);
+    ClothNode_AddCorrection((int)node, v);
   }
 }
 
-// FUN_00409310 @ 0x00409310 — Cloth_CollideAnchors: para cada ancla de la
+// Cloth_CollideAnchors @ 0x00409310 — Cloth_CollideAnchors: para cada ancla de la
 // lista, invoca su vtable[2] contra los `nodeCount` nodos de la grilla, y
 // después hace flush de las correcciones acumuladas.
 // Port FIEL de IDA `sub_409310`. Ojo: todo el bloque está gateado por
 // `this[18] > 0` (cantidad de anclas), así que sin anclas es un no-op.
-int __cdecl FUN_00409310(DWORD *_this)
+int __cdecl Cloth_CollideAnchors(DWORD *_this)
 {
   int result = _this[18];
   if (result <= 0)
@@ -612,14 +612,14 @@ int __cdecl FUN_00409310(DWORD *_this)
   result = _this[12];
   for (int v7 = 0, v8 = 0; v7 < result; ++v7, v8 += 60)
   {
-    FUN_00407d10(v8 + _this[13]);
+    VerletSystem_Flush(v8 + _this[13]);
     result = _this[12];
   }
   return result;
 }
 
 
-// FUN_00407ef0 @ 0x00407EF0 — ClothAnchor_SetParams.
+// ClothAnchor_SetParams @ 0x00407EF0 — ClothAnchor_SetParams.
 // Fields: +4/+8/+0xc = posición LOCAL, +0x20 = radio, +0x10 = índice de HUESO.
 //
 // 2026-08-11: el último parámetro era `float`. En IDA (`sub_407EF0`) es
@@ -628,7 +628,7 @@ int __cdecl FUN_00409310(DWORD *_this)
 // float, `v5[4]` valía 0x41880000 y el índice se iba a 52 GB del arranque
 // de la tabla. Los call sites de IDA lo confirman: los 5 primeros args son
 // bits de float y el 6º un entero chico (2, 10, 17, 18, 19).
-void __fastcall FUN_00407ef0(void *node, float p1, float p2, float p3, float radius, int boneIdx) {
+void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx) {
     char *p = (char*)node;
     *(float *)(p + 0x04) = p1;
     *(float *)(p + 0x08) = p2;
@@ -1024,8 +1024,8 @@ MeshCloth* FindSlot(int part) {
 
 } // namespace
 
-// Llamada desde RenderPartObject (FUN_00505a10) entre la transformacion de
-// los vertices (FUN_004404e0) y el dibujado (FUN_00504b50).
+// Llamada desde RenderPartObject entre la transformacion de
+// los vertices (Skeleton_Transform) y el dibujado (RenderPartObjectEffect).
 void __cdecl DivineSkirt_Apply(int entity, int modelType, int part, void *model)
 {
     if (modelType != kDivinePantsModel || !part || !model || !entity) return;

@@ -28,7 +28,7 @@ int __cdecl Net_Disconnect(int ctx);
 
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -38,7 +38,7 @@ extern void __cdecl FUN_0054158c(void* ptr);
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 
 // IDA Hex-Rays intrinsic shims (mirror of stubs.cpp shims).
@@ -110,7 +110,7 @@ uint __fastcall CSQuest_CheckActCondition(void *pThis, short *param_1)
             in_EAX = pbVar4 + (uint)*(BYTE *)((int)pThis + 4) + (-0x28 - (int)param_1);
             if (((in_EAX + 0x2c)[(int)param_1] == 1) &&
                 ((in_EAX = (BYTE *)(pbVar4[-1] - 1), in_EAX == (BYTE *)0x0))) {
-                int iVar2 = FUN_00482dd0(
+                int iVar2 = CSQuest_FindQuestItemsInInven(
                     (uint)pbVar4[1] + (uint)*pbVar4 * 0x20,
                     (uint)pbVar4[2], 0xffffffff);
                 if (iVar2 != 0) {
@@ -220,9 +220,9 @@ uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char 
 // Math utilities
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00512a10 @ 0x00512A10 — Math_Fmin(a, b) → min(a,b)
-// FUN_00512a10 (IDA-activated, was Ghidra stub)
-double __cdecl FUN_00512a10(float a1, float a2)
+// Math_Fmin @ 0x00512A10 — Math_Fmin(a, b) → min(a,b)
+// Math_Fmin (IDA-activated, was Ghidra stub)
+double __cdecl Math_Fmin(float a1, float a2)
 {
   if ( a1 <= (double)a2 )
   {
@@ -235,9 +235,9 @@ double __cdecl FUN_00512a10(float a1, float a2)
 }
 
 
-// FUN_00512a30 @ 0x00512A30 — Math_Fmax(a, b) → max(a,b)
-// FUN_00512a30 (IDA-activated, was Ghidra stub)
-double __cdecl FUN_00512a30(float a1, float a2)
+// Math_Fmax @ 0x00512A30 — Math_Fmax(a, b) → max(a,b)
+// Math_Fmax (IDA-activated, was Ghidra stub)
+double __cdecl Math_Fmax(float a1, float a2)
 {
   if ( a1 <= (double)a2 )
   {
@@ -254,16 +254,16 @@ double __cdecl FUN_00512a30(float a1, float a2)
 // Vec3 math helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004f9cb0 @ 0x004F9CB0 — Vec3_Multiply(a, b, out) — component-wise multiply
-void __cdecl FUN_004f9cb0(float *param_1, float *param_2, float *param_3)
+// Vec3_Multiply @ 0x004F9CB0 — Vec3_Multiply(a, b, out) — component-wise multiply
+void __cdecl Vec3_Multiply(float *param_1, float *param_2, float *param_3)
 {
     *param_3     = *param_1 * *param_2;
     param_3[1]   = param_1[1] * param_2[1];
     param_3[2]   = param_1[2] * param_2[2];
 }
 
-// FUN_004f9d20 @ 0x004F9D20 — Vec3_Cross(a, b, out) — standard cross product
-void __cdecl FUN_004f9d20(float *param_1, float *param_2, float *param_3)
+// Vec3_Cross @ 0x004F9D20 — Vec3_Cross(a, b, out) — standard cross product
+void __cdecl Vec3_Cross(float *param_1, float *param_2, float *param_3)
 {
     *param_3     = param_2[2] * param_1[1] - param_1[2] * param_2[1];
     param_3[1]   = param_1[2] * *param_2  - *param_1  * param_2[2];
@@ -274,12 +274,12 @@ void __cdecl FUN_004f9d20(float *param_1, float *param_2, float *param_3)
 // GuildMark helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004fa5a0 @ 0x004FA5A0 - ClearActionObject (NO es "GuildMark_ResetTarget",
+// ClearActionObject @ 0x004FA5A0 - ClearActionObject (NO es "GuildMark_ResetTarget",
 // esa etiqueta era un mismap del port).  Deja los tres parametros de
 // SetActionObject en -1 y el acumulador de velocidad en -1.0f, o sea desarma la
 // animacion de derrumbe de la puerta del evento.  La llama MoveObject_Special
 // (0x4FA5F0) cuando el contador llega a 0.
-void FUN_004fa5a0(void)
+void ClearActionObject(void)
 {
     _DAT_0055a7bc = -1.0f;  // 0xbf800000 in IEEE 754
     DAT_0055a7b0  = 0xffffffff;
@@ -291,7 +291,7 @@ void FUN_004fa5a0(void)
 // Entity / Character helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00444b30 @ 0x00444B30 - SetPlayerTeleport (nombre confirmado contra el
+// SetPlayerTeleport @ 0x00444B30 - SetPlayerTeleport (nombre confirmado contra el
 // source de MU 5.2, ZzzCharacter.cpp:1243; alli toma CHARACTER* y usa &c->Object,
 // que en el 0.97k es el mismo puntero).
 // Anima el casteo de teleport: jugador (tipo 0x186 = MODEL_PLAYER) -> accion 0x57
@@ -299,20 +299,20 @@ void FUN_004fa5a0(void)
 // Su unico caller en el binario es Attack (0x0049CBF0), en las colas de los
 // skills 6 (teleport propio) y 15 (recall de party).
 // El nombre viejo ("Entity_SetIdleAction", "DK") era una suposicion del port.
-void __cdecl FUN_00444b30(int param_1)
+void __cdecl SetPlayerTeleport(int param_1)
 {
     if (*(short *)(param_1 + 2) == 0x186) {
-        FUN_0043e820(param_1, 0x57);
+        SetAction(param_1, 0x57);
     } else {
-        FUN_0043e820(param_1, 5);
+        SetAction(param_1, 5);
     }
 }
 
-// FUN_0047e350 @ 0x0047E350 — CharData_CalcNextLevelExp
+// IDA: FUN_0047E350 (0x0047E350)
 // Calcula la experiencia que falta para el nivel siguiente y la guarda en
 // el struct de datos del personaje, en el offset +0x34.
 // Formula: (lvl+9)*lvl²*10, plus cubic correction term if lvl > 255.
-void __fastcall FUN_0047e350(int param_1)
+void __fastcall CalculateNextExperince(int param_1)
 {
     uint uVar1 = (uint)*(ushort *)(param_1 + 0xe);
     int  iVar2 = (uVar1 + 9) * uVar1 * uVar1 * 10;
@@ -323,11 +323,11 @@ void __fastcall FUN_0047e350(int param_1)
     }
 }
 
-// FUN_0047e3a0 @ 0x0047E3A0 — HotkeyBar_FindFreeSlot
+// HotkeyBar_FindFreeSlot @ 0x0047E3A0 — HotkeyBar_FindFreeSlot
 // Scans 12 hotkey bar slots (stride 0x44) starting at CharData+0x232.
 // Returns slot index with low byte = 1 on success, or raw index (no flag) if full.
-// FUN_0047e3a0 (IDA-activated, was Ghidra stub)
-char __cdecl FUN_0047e3a0(char *_this)
+// HotkeyBar_FindFreeSlot (IDA-activated, was Ghidra stub)
+char __cdecl HotkeyBar_FindFreeSlot(char *_this)
 {
   int v1; // eax
   BYTE *i; // ecx
@@ -344,12 +344,12 @@ char __cdecl FUN_0047e3a0(char *_this)
 }
 
 
-// FUN_0045acc0 @ 0x0045ACC0 — Character_FindByKey_WithClear
+// Character_FindByKey_WithClear @ 0x0045ACC0 — Character_FindByKey_WithClear
 // Scans entity array (stride 0x394, 400 entries) for an entity whose
 // la clave (short en +0x1dc) coincide con param_1. Limpia el byte +0x2e8 de cada
 // entidad durante el escaneo. Devuelve el índice coincidente, o 400 si no lo encontró.
-// FUN_0045acc0 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_0045acc0(int a1)
+// Character_FindByKey_WithClear (IDA-activated, was Ghidra stub)
+int __cdecl Character_FindByKey_WithClear(int a1)
 {
   int v1; // esi
   int result; // eax
@@ -373,11 +373,11 @@ int __cdecl FUN_0045acc0(int a1)
 }
 
 
-// FUN_0045ad10 @ 0x0045AD10 — Characters_SetActionAll
+// Characters_SetActionAll @ 0x0045AD10 — Characters_SetActionAll
 // Setea la acción dada en todas las entidades vivas de tipo DK (0x186).
 // Resetea el Angle a (0, 0, 180°) antes de aplicar la acción.
-// FUN_0045ad10 (IDA-activated, was Ghidra stub)
-void __cdecl FUN_0045ad10(int Action)
+// Characters_SetActionAll (IDA-activated, was Ghidra stub)
+void __cdecl Characters_SetActionAll(int Action)
 {
   int i; // esi
   DWORD v2; // eax
@@ -401,11 +401,11 @@ void __cdecl FUN_0045ad10(int Action)
 }
 
 
-// FUN_0045ad60 @ 0x0045AD60 — Characters_FreeAllBMDBuffers
+// Characters_FreeAllBMDBuffers @ 0x0045AD60 — Characters_FreeAllBMDBuffers
 // Libera los buffers de heap de BMD por entidad (puntero en entity+0x114) de todo el array,
 // y después libera el buffer BMD extra compartido (DAT_07abf164).
-// FUN_0045ad60 (IDA-activated, was Ghidra stub)
-void FUN_0045ad60()
+// Characters_FreeAllBMDBuffers (IDA-activated, was Ghidra stub)
+void Characters_FreeAllBMDBuffers()
 {
   int i; // edi
   LPVOID *v1; // esi
@@ -427,11 +427,11 @@ void FUN_0045ad60()
 }
 
 
-// FUN_0045c720 @ 0x0045C720 — Character_UpdateEquipSlotAnimations
+// Character_UpdateEquipSlotAnimations @ 0x0045C720 — Character_UpdateEquipSlotAnimations
 // Para personajes de tipo DK: valida el estado de animación y actualiza los cinco
 // equipment-slot model indices, selecting the correct animated variant based
 // on move_type_flags (bits 0-2 = weapon style, bits 3+ = sub-variant offset).
-void __cdecl FUN_0045c720(int param_1)
+void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
 {
     if (*(short *)(param_1 + 2) != 0x186) return;
 
@@ -441,7 +441,7 @@ void __cdecl FUN_0045c720(int param_1)
         v2 = false;
     }
     if ((v1 < 0x22u || v1 > 0x5Bu) && v2) {
-        SetPlayerStop((void *)param_1);
+        SetPlayerStop((int)(uintptr_t)param_1);
     }
 
     int v3 = *(BYTE *)(param_1 + 0x1bc) & 7;
@@ -478,14 +478,14 @@ void __cdecl FUN_0045c720(int param_1)
 // Sound
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00451a90 @ 0x00451A90 — Sound_PlayFootstep
+// Sound_PlayFootstep @ 0x00451A90 — Sound_PlayFootstep
 // Plays a terrain-appropriate footstep sound.
 //   World 2 (Lost Tower): tile < 10 and != 3 → snd 10
 //   World 0 or 3 (Lorencia/Devias): tile == 0 → snd 9
 //   World 7 (Devil Square), alive → snd 11
 //   Default → snd 8
-// FUN_00451a90 (IDA-activated, was Ghidra stub)
-char FUN_00451a90()
+// Sound_PlayFootstep (IDA-activated, was Ghidra stub)
+char Sound_PlayFootstep()
 {
   char result; // al
 
@@ -520,10 +520,10 @@ char FUN_00451a90()
 // Network helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_0043daf0 @ 0x0043DAF0 — NetContext_ClearSendBuffer
+// NetContext_ClearSendBuffer @ 0x0043DAF0 — NetContext_ClearSendBuffer
 // Pone en cero la cola grande de paquetes de envío (0x96258 DWORDs = ~600 KB) y resetea
 // los dos contadores de longitud en los offsets +0x4014 y +0x4018.
-int __fastcall FUN_0043daf0(int param_1)
+int __fastcall NetContext_ClearSendBuffer(int param_1)
 {
     DWORD *puVar2 = (DWORD *)(param_1 + 0x401c);
     for (int i = 0x96258; i != 0; i--) *puVar2++ = 0;
@@ -532,11 +532,12 @@ int __fastcall FUN_0043daf0(int param_1)
     return param_1;
 }
 
-// FUN_0043ddd0 @ 0x0043DDD0 — Net_FlushSendBuffer
+// CWsctlc_FDWriteSend @ 0x0043DDD0 — Net_FlushSendBuffer
 // Manda la cola de salida pendiente vía send(); maneja WSAEWOULDBLOCK
-// con elegancia (devuelve 1). Llama a FUN_0043dc90 ante errores fatales de socket (devuelve 0).
+// con elegancia (devuelve 1). Llama a CWsctlc_Close ante errores fatales de socket (devuelve 0).
 // Devuelve 1 si tuvo éxito o si el bloqueo no es fatal.
-int __fastcall FUN_0043ddd0(int param_1)
+// IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
+int __fastcall CWsctlc_FDWriteSend(int param_1)
 {
     int iVar2 = 0;
     if (0 < *(int *)(param_1 + 0x200c)) {
@@ -548,10 +549,10 @@ int __fastcall FUN_0043ddd0(int param_1)
             if (iVar1 == -1) {
                 int err = WSAGetLastError();
                 if (err == WSAEWOULDBLOCK) return 1;
-                FUN_0043dc90(param_1);
+                CWsctlc_Close(param_1);
                 return 0;
             }
-            if (iVar1 < 1) { FUN_0043dc90(param_1); return 0; }
+            if (iVar1 < 1) { CWsctlc_Close(param_1); return 0; }
             if (*(int *)(param_1 + 0x4014) != 0) FUN_0043de60();
             iVar2 += iVar1;
             iVar1 = *(int *)(param_1 + 0x200c) - iVar1;
@@ -561,12 +562,13 @@ int __fastcall FUN_0043ddd0(int param_1)
     return 1;
 }
 
-// FUN_0043de70 @ 0x0043DE70 — Net_Recv
+// CWsctlc_nRecv @ 0x0043DE70 — Net_Recv
 // Lee los datos entrantes del socket al buffer de recepción del contexto, y después despacha
-// todos los paquetes completos vía FUN_0043df90. Los paquetes parciales los maneja corriendo
+// todos los paquetes completos vía CPacketQueue_PushPacket. Los paquetes parciales los maneja corriendo
 // los bytes restantes al frente del buffer.
 // Returns 0 on clean dispatch, 1 on no data / WSAEWOULDBLOCK, 3 on incomplete header.
-int __fastcall FUN_0043de70(void *param_1)
+// IDA: sub_43DE70; 5.2: CWsctlc::nRecv (0x0043DE70)
+int __fastcall CWsctlc_nRecv(void *param_1)
 {
     int iVar2 = recv(*(SOCKET *)((int)param_1 + 8),
                      (char *)(*(int *)((int)param_1 + 0x4010) + 0x2010 + (int)param_1),
@@ -631,7 +633,7 @@ int __fastcall FUN_0043de70(void *param_1)
             wsprintfA(dbg, "NET: Net_Recv enqueue hdr=%02X len=%u", hdr, uLen);
             DbgLogPublic(dbg);
         }
-        FUN_0043df90((int)param_1, (int)pPkt, uLen);
+        CPacketQueue_PushPacket((int)param_1, (int)pPkt, uLen);
         if (*(int *)((int)param_1 + 0x4014) != 0) FUN_0043de60();
         iOff += uLen;
         int rem = *(int *)((int)param_1 + 0x4010) - uLen;
@@ -653,11 +655,12 @@ int __fastcall FUN_0043de70(void *param_1)
     return 0;
 }
 
-// FUN_0043e010 @ 0x0043E010 — NetContext_AllocSlot
+// CWsctlc_GetReadMsg @ 0x0043E010 — NetContext_AllocSlot
 // Scans 300 packet slots (stride 0x2008) looking for a free slot (flag==1).
 // Si tiene éxito lo marca como usado (flag=0) y devuelve el puntero a su región de datos (+0x4024).
 // Returns NULL if no free slot is available.
-int __fastcall FUN_0043e010(int param_1)
+// IDA: CWsctlc::GetReadMsg (0x0043E010)
+int __fastcall CWsctlc_GetReadMsg(int param_1)
 {
     int iVar1 = 0;
     int *piVar2 = (int *)(param_1 + 0x401c);
@@ -677,12 +680,12 @@ int __fastcall FUN_0043e010(int param_1)
 // Effect physics
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_0046ca00 @ 0x0046CA00 — Effect_PhysicsTick
+// Effect_PhysicsTick @ 0x0046CA00 — Effect_PhysicsTick
 // Actualización física por frame de una partícula de efecto a nivel del piso (p.ej. una moneda o un drop).
 // Si el héroe está atacando y el efecto está en rango, lo atrae hacia
 // el héroe con una velocidad proporcional al delta y un factor de fricción que decae.
-// FUN_0046ca00 (IDA-activated, was Ghidra stub)
-void __cdecl FUN_0046ca00(DWORD Object)
+// Effect_PhysicsTick (IDA-activated, was Ghidra stub)
+void __cdecl Effect_PhysicsTick(DWORD Object)
 {
   unsigned char v2; // al
   double v3; // st7
@@ -736,14 +739,14 @@ void __cdecl FUN_0046ca00(DWORD Object)
 // Floating labels
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004793f0 @ 0x004793F0 — FloatingLabel_Add
+// FloatingLabel_Add @ 0x004793F0 — FloatingLabel_Add
 // Agrega al pool una etiqueta flotante de daño/curación (base DAT_07c82cd0, stride 0x70,
 // hasta el límite del pool en 0x7c8588f). Elige el slot con la "edad" más chica
 // value. Special range 0x4b5–0x4d8 gets a randomised lifetime (50+rand%32).
 // param_1 = label text or ID, param_2 = world position (float[3]),
 // param_3 = color/type, param_4 = screen offset (float[3]), param_5 = extra data.
-// FUN_004793f0 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_004793f0(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
+// FloatingLabel_Add (IDA-activated, was Ghidra stub)
+int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
 {
   BYTE *v5; // edx
   int v6; // ecx
@@ -793,10 +796,10 @@ int __cdecl FUN_004793f0(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
 // SkillAttribute loaders
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004797b0 @ 0x004797B0 — SkillAttribute_LoadNames (text file)
+// SkillAttribute_LoadNames @ 0x004797B0 — SkillAttribute_LoadNames (text file)
 // Parsea un archivo de texto: lee pares de índice de skill + nombre vía GetToken y guarda
 // cada string de nombre en SkillAttribute[index*300 + 4].
-void __cdecl FUN_004797b0(const char *param_1)
+void __cdecl SkillAttribute_LoadNames(const char *param_1)
 {
     DAT_07d7806c = (FILE *)fopen(param_1, (const char *)DAT_005580ac);
     if (DAT_07d7806c == NULL) return;
@@ -818,21 +821,21 @@ void __cdecl FUN_004797b0(const char *param_1)
     }
 }
 
-// FUN_00479830 @ 0x00479830 — LoadGlobalTextBin (NOT SkillAttribute_LoadBin!)
+// LoadGlobalTextBin @ 0x00479830 — LoadGlobalTextBin (NOT SkillAttribute_LoadBin!)
 // Mal nombrada por Ghidra. IDA confirma que es el loader del pool de strings localizados:
 // lee Data\Local\Text.bmd (300000 bytes), lo desencripta con BuxConvert_0 y llena
 // el array GlobalText[] de 1000 × 300 bytes. La implementación real vive en
 // src/Local/Text_Data.cpp como LoadTextData_Bin(); acá ruteamos el nombre FUN_ hacia allá
 // para que cualquier cosa enlazada contra el símbolo del decompile funcione.
-void __cdecl FUN_00479830(const char *param_1)
+void __cdecl LoadGlobalTextBin(const char *param_1)
 {
     LoadTextData_Bin(param_1);
 }
 
-// FUN_00479950 @ 0x00479950 — SkillAttribute_SaveBin (binary file)
+// SkillAttribute_SaveBin @ 0x00479950 — SkillAttribute_SaveBin (binary file)
 // Guarda la tabla SkillAttribute a un archivo binario, encriptando con XOR cada
 // entrada de 300 bytes con BuxConvert_0 antes de escribirla.
-void __cdecl FUN_00479950(const char *param_1)
+void __cdecl SkillAttribute_SaveBin(const char *param_1)
 {
     return;  // AUTO-SKIP: absolute end-bound loop (Ghidra artifact — pool not populated in our build).
     FILE *pFile = fopen(param_1, (const char *)&DAT_005597d4);
@@ -846,7 +849,7 @@ void __cdecl FUN_00479950(const char *param_1)
         for (int i = 0x4b; i != 0; i--, pcVar4 += 4, pBuf += 4)
             *(DWORD *)pBuf = *(DWORD *)pcVar4;
         BuxConvert_0((int)Buffer, 300);
-        FUN_005430f0((char *)Buffer, 300, 1, (int *)pFile);
+        crt_fwrite((char *)Buffer, 300, 1, (int *)pFile);
         pcVar3 += 300;
         // 2026-09-08: el bound era `< 0x7d73104`, direccion absoluta del binario.
         // La base es `&SkillAttribute + 4` = 0x07D29D24 = GlobalText[0], y
@@ -863,10 +866,10 @@ void __cdecl FUN_00479950(const char *param_1)
 // Terrain helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004f7060 @ 0x004F7060 — Terrain_SpawnAmbientObjects
+// Terrain_SpawnAmbientObjects @ 0x004F7060 — Terrain_SpawnAmbientObjects
 // Itera la tabla de atributos del terreno (base DAT_081cb2ed, stride 8) y
 // spawns ambient world objects (type 8) at non-zero flag positions.
-void FUN_004f7060(void)
+void Terrain_SpawnAmbientObjects(void)
 {
     // BUG-FIX 2026-06-27: el while original usaba el bound de DIRECCIÓN ABSOLUTA
     // literal del binario fuente (136099341 = 0x081CB60D). En nuestro build
@@ -878,17 +881,17 @@ void FUN_004f7060(void)
     for (int i = 0; i < 100; i++, pbVar1 += 8) {
         if (pbVar1[-5] != 0) {
             float scale = (float)((double)pbVar1[1] * 1.4117647);
-            FUN_004f8980(8, (int)pbVar1[-1], (int)*pbVar1, scale);
+            RenderTerrainBitmap(8, (int)pbVar1[-1], (int)*pbVar1, scale);
         }
     }
 }
 
-// FUN_004f9a30 @ 0x004F9A30 — Terrain_WaterWaveUpdate
+// Terrain_WaterWaveUpdate @ 0x004F9A30 — Terrain_WaterWaveUpdate
 // Simulación de olas de agua por frame: mezcla los valores de altura adyacentes del
 // buffer de olas anterior en el buffer actual, para una grilla de terreno de 256×256.
 // param_1 selects between the two ping-pong buffers (0 or 1).
-// FUN_004f9a30 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_004f9a30(int a1)
+// Terrain_WaterWaveUpdate (IDA-activated, was Ghidra stub)
+int __cdecl Terrain_WaterWaveUpdate(int a1)
 {
   char *v1; // ebx
   int v2; // esi
@@ -934,14 +937,14 @@ int __cdecl FUN_004f9a30(int a1)
 // Collision / intersection helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00512a50 @ 0x00512A50 — Collision_PointInPolygon
+// Collision_PointInPolygon @ 0x00512A50 — Collision_PointInPolygon
 // Tests whether a 3D point (param_1,param_2,param_3) lies inside the polygon
 // formado por param_4 vértices (los punteros están en el array param_5..param_8).
 // param_9 elige el plano de proyección (1=YZ, 2=XZ, 4=XY y las variantes en sentido horario).
 // Umbral param_10: si es > _DAT_00552580 (0.0f), param_9 se corre 3 bits a la izquierda.
 // Devuelve 1 si está adentro, 0 si está afuera.
-// FUN_00512a50 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_00512a50(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10)
+// Collision_PointInPolygon (IDA-activated, was Ghidra stub)
+int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10)
 {
   int v10; // esi
   int v11; // edx
@@ -1123,8 +1126,8 @@ int __cdecl FUN_005130f0(float *param_1, float *param_2, float *param_3,
 {
     float fVar2 = *param_1 * *param_2 + param_2[2] * param_1[2] + param_2[1] * param_1[1];
     float fVar3 = *param_1 * *param_3 + param_3[2] * param_1[2] + param_3[1] * param_1[1];
-    float fMax  = FUN_00512a30(fVar2, fVar3);
-    float fMin  = FUN_00512a10(fVar2, fVar3);
+    float fMax  = Math_Fmax(fVar2, fVar3);
+    float fMin  = Math_Fmin(fVar2, fVar3);
 
     float fV3 = param_6  * param_1[2] + param_4  * *param_1 + param_5  * param_1[1];
     float fV5 = param_9  * param_1[2] + param_7  * *param_1 + param_8  * param_1[1];
@@ -1147,7 +1150,7 @@ int __cdecl FUN_005130f0(float *param_1, float *param_2, float *param_3,
 // ── 10-byte: simple wrappers & field ops ────────────────────────────────────
 
 // IDA: FUN_00401010 @ 0x00401010 — calls quest table init
-void Quest_InitializeStaticState(void) { FUN_00403ea0((void *)&DAT_00567500); }
+void Quest_InitializeStaticState(void) { Quest_FullInit((void *)&DAT_00567500); }
 
 // ── FUN_00401020 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 12-byte: CRT atexit wrappers ────────────────────────────────────────────
@@ -1159,12 +1162,12 @@ void Quest_InitializeStaticState(void) { FUN_00403ea0((void *)&DAT_00567500); }
 // FUN_00401020 @ 0x00401020 (12 bytes)
 void FUN_00401020(void) {}
 
-// BuxConvert @ 0x00401120 (IDA: FUN_00401120; name from 5.2).
-// 3-byte repeating XOR key at DAT_00558090.
-void __cdecl BuxConvert(void* buffer, int size) {
+// BuxConvert_1 @ 0x00401120 (IDA: BuxConvert_1; name from 5.2).
+// 3-byte repeating XOR key at bBuxCode.
+void __cdecl BuxConvert_1(void* buffer, int size) {
     const int buf = (int)(uintptr_t)buffer;
     for (int i = 0; i < size; i++)
-        *(byte *)(buf + i) ^= (byte)DAT_00558090[i % 3];
+        *(byte *)(buf + i) ^= (byte)bBuxCode[i % 3];
 }
 
 // ── CSQuest_ShowDialogText — movida desde stubs_helpers.cpp (refactor B3) ──
@@ -1236,13 +1239,13 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
 // Declaraciones adelantadas de los helpers definidos más abajo en este archivo
 void __fastcall CSQuest_clearQuest(int);
 void __fastcall FUN_00401af0(void*);
-void __fastcall FUN_00408cb0(int*, float);
+void __fastcall Cloth_Integrate(int*, float);
 
-// FUN_00402f40 @ 0x00402F40 — Packet_ParseType2 (char-select click handler type 2)
+// Packet_ParseType2 @ 0x00402F40 — Packet_ParseType2 (char-select click handler type 2)
 // Variante más simple: actualiza el flag de hover, llama a FUN_00401af0 para procesar el click en el personaje,
 // y después chequea un hotspot secundario para el envío de keepalive / reintento.
 // El tipo de retorno es undefined4, según la declaración de functions.h.
-unsigned int __cdecl FUN_00402f40(void *param_1) {
+unsigned int __cdecl Packet_ParseType2(void *param_1) {
     if ((0x1c1 < DAT_083a427c) && (DAT_083a427c < 0x280) &&
         (-1 < DAT_083a4278) && (DAT_083a4278 < 0x1b1))
         DAT_07d78094 = 1;
@@ -1366,7 +1369,7 @@ void __fastcall FUN_00401af0(void *param_1)
     }
 
 done:
-    FUN_00404bc0(0x1c, 0, 0);
+    PlayBuffer(0x1c, 0, 0);
     // m_iLinkForAnswer[slot] = indice del dialogo siguiente (IDA sub_401AF0
     // L387: `v64 = g_DialogScript[g_iCurrentDialogScript].m_iLinkForAnswer[v100];`
     // y solo encadena `if (v64 > 0 && !v98)`).
@@ -1379,7 +1382,7 @@ done:
     }
 }
 
-// ── FUN_0043ce50 — movida desde stubs_game.cpp (refactor B3) ──
+// ── Send_ActionRequest — movida desde stubs_game.cpp (refactor B3) ──
 // ═══════════════════════════════════════════════════════════════════════════════
 // END BATCH 16
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1388,14 +1391,14 @@ done:
 // BATCH 17 — Other addresses: entity, combat, rendering, IME, chat, particles
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// FUN_0043ce50 @ 0x0043CE50 (~217 lines) — builds C1 packet opcode 0x81 (action request)
-void __cdecl FUN_0043ce50(unsigned char param_1, int param_2) {
+// Send_ActionRequest @ 0x0043CE50 (~217 lines) — builds C1 packet opcode 0x81 (action request)
+void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
     // 0x0043CE50 — Build and send C1 packet opcode 0x81 (action request)
     // param_1 = action sub-type (unused in payload beyond opcode), param_2 = 4-byte payload data
     // Packet format: [C1][len][01][81][...payload XOR-encrypted...]
     // Usa la clave XOR de 32 bytes (la misma que la encriptación del login).
     // Anti-tamper: local_d58[0..0x1f] re-initialized repeatedly — compiler artifact, skipped.
-    // Envío por socket vía DAT_055ca168, con cola de WSAEWOULDBLOCK en DAT_055ca16c.
+    // Envío por socket vía SocketClientSocket, con cola de WSAEWOULDBLOCK en SocketClientSendBuffer.
 
     static const unsigned char xorKey[32] = {
         0xe7, 0x6d, 0x3a, 0x89, 0xbc, 0xb2, 0x9f, 0x73,
@@ -1441,18 +1444,18 @@ void __cdecl FUN_0043ce50(unsigned char param_1, int param_2) {
     Net_SendSmallPacket(pktBuf, payloadLen);
 }
 
-// ── FUN_0043d1d0 — movida desde stubs_externs.cpp (refactor B3) ──
-void* __cdecl FUN_0043d1d0(void *ctx, void *chardata) { return nullptr; }
+// IDA: STRUCT_ENCRYPT (0x0043D1D0)
+void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata) { return nullptr; }
 
 // ── FUN_0043d3e0 — movida desde stubs_helpers.cpp (refactor B3) ──
 // FUN_0043d3e0 @ 0x0043D3E0 — HashTable_LockRead (3-arg: ctx, key, *out)
 // STUB: HashTable obfuscation helper.
 void __cdecl FUN_0043d3e0(int a, int* b) { (void)a; (void)b; }
 
-// ── FUN_0043d8a0 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_0043d8a0 @ 0x0043D8A0 — HashTable_Insert_Short (__thiscall this, param_1)
+// ── HashTable_Insert_Short — movida desde stubs_externs.cpp (refactor B3) ──
+// HashTable_Insert_Short @ 0x0043D8A0 — HashTable_Insert_Short (__thiscall this, param_1)
 // STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl FUN_0043d8a0(void *ctx, void *out) {
+void __cdecl HashTable_Insert_Short(void *ctx, void *out) {
     // STUB: HashTable insert (1-byte value) with obfuscation — cannot implement safely
     (void)ctx; (void)out;
 }
@@ -1462,15 +1465,16 @@ void __cdecl FUN_0043d8a0(void *ctx, void *out) {
 // IDA live/raw: nullsub_2 (`retn 8`), not a send-queue drain.
 void FUN_0043de60(void) {}
 
-// ── FUN_0043df90 — movida desde stubs_linker.cpp (refactor B3) ──
+// ── CPacketQueue_PushPacket — movida desde stubs_linker.cpp (refactor B3) ──
 // ═════════════════════════════════════════════════════════════════════════════
 // Tanda 20 — stubs para el linker (cuerpos vacíos de funciones que se llaman pero todavía no están decompiladas)
 // ═════════════════════════════════════════════════════════════════════════════
 
-// FUN_0043df90 @ 0x0043DF90 (38 lines) — Net_EnqueuePacket: copies packet into 300-slot queue
+// CPacketQueue_PushPacket @ 0x0043DF90 (38 lines) — Net_EnqueuePacket: copies packet into 300-slot queue
 // Cola en this+0x401c, cada slot = 0x2008 bytes (flag de 4 bytes, largo de 4 bytes, 0x2000 de datos).
 // Returns: 0=success, 1=queue full, 2=packet too large.
-void __cdecl FUN_0043df90(int param_1, int param_2, int param_3) {
+// IDA: sub_43DF90; 5.2: CPacketQueue::PushPacket (0x0043DF90)
+void __cdecl CPacketQueue_PushPacket(int param_1, int param_2, int param_3) {
     // param_1 = net context ptr, param_2 = packet data ptr, param_3 = packet length
     if ((int)param_3 > 0x2000) return; // packet too large
 
@@ -1496,16 +1500,16 @@ void __cdecl FUN_0043df90(int param_1, int param_2, int param_3) {
     // queue full — packet dropped
 }
 
-// ── FUN_0043e050 — movida desde stubs_externs.cpp (refactor B3) ──
+// ── CreateAngle — movida desde stubs_externs.cpp (refactor B3) ──
 // ── Missing function stubs (all LNK2019 unresolved externals) ─────────────────
 // Movement / pathfinding
-// FUN_0043e050 @ 0x0043E050 — CreateAngle(x1, y1, x2, y2)
+// IDA: Movement_Tick (0x0043E050)
 // Calcula el ángulo (en grados, 0..360) del punto (x1,y1) al (x2,y2).
 // Usa atan2 para el caso general; trata aparte los casos de dx o dy cercanos a cero.
 // Constants: _DAT_00552868 ~ 0.0001 (epsilon), _DAT_00552860 = 57.29578 (180/pi),
 //            _DAT_00552848 = 90.0, _DAT_005524ec = 180.0, _DAT_0055286c = 360.0,
 //            _DAT_00552580 = 0.0, _DAT_00552864 = 270.0
-float __cdecl FUN_0043e050(float x1, float y1, float x2, float y2)
+float __cdecl CreateAngle(float x1, float y1, float x2, float y2)
 {
     float dx = x2 - x1;
     float dy = y2 - y1;
@@ -1536,11 +1540,11 @@ float __cdecl FUN_0043e050(float x1, float y1, float x2, float y2)
     return _DAT_00552848; // 90 degrees
 }
 
-// ── FUN_0043e120 — movida desde stubs_misc2.cpp (refactor B3) ──
-// FUN_0043e120 @ 0x0043E120 — Angle_Clamp(current, target, maxDelta)
+// ── Angle_Clamp — movida desde stubs_misc2.cpp (refactor B3) ──
+// Angle_Clamp @ 0x0043E120 — Angle_Clamp(current, target, maxDelta)
 // Clampea la diferencia angular entre el ángulo actual y el objetivo a ±maxDelta,
 // y la devuelve como el ángulo nuevo módulo 360. Todos los ángulos en unidades del juego (0..0x167).
-int __cdecl FUN_0043e120(int param_1, int param_2, int param_3) {
+int __cdecl Angle_Clamp(int param_1, int param_2, int param_3) {
     unsigned int uVar5 = (unsigned int)(param_1 - param_2);
     int iVar3 = (int)((uVar5 ^ ((int)uVar5 >> 0x1f)) - ((int)uVar5 >> 0x1f)); // abs
     int iVar2 = param_1;
@@ -1570,8 +1574,7 @@ int __cdecl FUN_0043e120(int param_1, int param_2, int param_3) {
     return (iVar2 + 0x168 + param_1) % 0x168;
 }
 
-// ── FUN_0043e1b0 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_0043e1b0 @ 0x0043E1B0 — TurnAngle2(curAngle, tgtAngle, step)
+// IDA: TurnAngle2 (0x0043E1B0)
 // Avanza curAngle hacia tgtAngle a lo sumo 'step' grados, manejando la vuelta de 360.
 // Devuelve tgtAngle directo si está dentro del rango de step; si no, curAngle +/- step.
 //
@@ -1580,7 +1583,7 @@ int __cdecl FUN_0043e120(int param_1, int param_2, int param_3) {
 // math estándar "smooth turn-toward with 360° wrap", preservando la semántica
 // observable: snap si |delta| <= step, sino avanzar `step` grados por el camino
 // más corto (con wrap 0/360 respetado).
-float __cdecl FUN_0043e1b0(float a1, float a2, float a3)
+float __cdecl TurnAngle2(float a1, float a2, float a3)
 {
   if ( a1 < 0.0f ) a1 += 360.0f;
   if ( a2 < 0.0f ) a2 += 360.0f;
@@ -1607,17 +1610,18 @@ float __cdecl FUN_0043e1b0(float a1, float a2, float a3)
   }
 }
 
-// ── FUN_00444410 — movida desde stubs_game.cpp (refactor B3) ──
+// ── SetPlayerAttack — movida desde stubs_game.cpp (refactor B3) ──
 // SetPlayerAttack @ 0x00444410 (1627 bytes) — port FIEL desde IDA (2026-05-02).
 // Setea la animación de ataque + el sonido de la entidad según:
 //   - Entity type (c+2): non-player (39/40/51/302/default) vs player (390)
 //   - Para el jugador: helper (c+696)=818/819 → a distancia, si no las armas izquierda/derecha
 //     (c+624 LH, c+648 RH) determine animation 34..89.
-// Calls: SetAction (FUN_0043e820), CreateEffect (Effect_Create), PlayBuffer,
-//   SetAttackSpeed (FUN_00443e70). All implemented.
+// Calls: SetAction, CreateEffect, PlayBuffer,
+//   SetAttackSpeed. All implemented.
 //
 // functions.h declara 4 argumentos pero IDA usa sólo 1 (DWORD c). Los extra se ignoran.
-void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*/) {
+// IDA: SetPlayerAttack (0x00444410)
+void __cdecl SetPlayerAttack(int c_entity, int /*type*/, int /*flag*/, int /*extra*/) {
     DWORD c = (DWORD)c_entity;
     if (c == 0) return;
     short v1 = *(short*)(c + 2);
@@ -1626,33 +1630,33 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
         // Non-player entities
         switch (v1) {
         case 39:
-            Effect_Create(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            CreateEffect(209, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(16, c, 0);
             break;
         case 40:
-            FUN_0043e820((int)c, 1);
+            SetAction((int)c, 1);
             PlayBuffer(16, c, 0);
             break;
         case 51:
-            Effect_Create(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
+            CreateEffect(1196, (float*)(c + 16), (float*)(c + 28), (float*)(c + 232),
                          nullptr, nullptr, (float*)(uintptr_t)-1, nullptr, 0);
             PlayBuffer(91, 0, 0);
             break;
         case 302: {
             int r = rand() % 8;
             if (r <= 2) {
-                FUN_0043e820((int)c, (r <= 0) ? 9 : 8);
+                SetAction((int)c, (r <= 0) ? 9 : 8);
             } else {
-                FUN_0043e820((int)c, rand() % 2 + 3);
+                SetAction((int)c, rand() % 2 + 3);
             }
             break;
         }
         default:
             if (*(unsigned char*)(c + 771) % 3) {
-                FUN_0043e820((int)c, 4);
+                SetAction((int)c, 4);
             } else {
-                FUN_0043e820((int)c, 3);
+                SetAction((int)c, 3);
             }
             ++*(unsigned char*)(c + 771);
             break;
@@ -1661,7 +1665,7 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
     }
 
     // Player path
-    FUN_00443e70();  // SetAttackSpeed
+    SetAttackSpeed();  // SetAttackSpeed
     short v2 = *(short*)(c + 696);  // Helper.Type
 
     // Helper path (818/819 = pet/fairy ranged)
@@ -1673,20 +1677,20 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
             if (v5 >= 400 && v5 < 496) {
                 if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
                     if (v5 == 431) {
-                        FUN_0043e820((int)c, 81);
+                        SetAction((int)c, 81);
                     } else {
-                        FUN_0043e820((int)c, *(unsigned char*)(c + 771) % 3 + 39);
+                        SetAction((int)c, *(unsigned char*)(c + 771) % 3 + 39);
                     }
                 } else {
                     short v6 = *(short*)(c + 648);
                     if (v6 < 400 || v6 >= 496) {
-                        FUN_0043e820((int)c, (*(unsigned char*)(c + 771) & 1) + 35);
+                        SetAction((int)c, (*(unsigned char*)(c + 771) & 1) + 35);
                     } else {
                         switch (*(unsigned char*)(c + 771) & 3) {
-                        case 0: FUN_0043e820((int)c, 35); break;
-                        case 1: FUN_0043e820((int)c, 37); break;
-                        case 2: FUN_0043e820((int)c, 36); break;
-                        case 3: FUN_0043e820((int)c, 38); break;
+                        case 0: SetAction((int)c, 35); break;
+                        case 1: SetAction((int)c, 37); break;
+                        case 2: SetAction((int)c, 36); break;
+                        case 3: SetAction((int)c, 38); break;
                         }
                     }
                 }
@@ -1694,39 +1698,39 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
             }
             short v7 = *(short*)(c + 648);
             if (v7 >= 400 && v7 < 496) {
-                FUN_0043e820((int)c, rand() % 2 + 37);
+                SetAction((int)c, rand() % 2 + 37);
                 goto LABEL_85;
             }
             // Spear (560-591)
             if (v5 >= 560 && v5 < 592) {
                 if (*((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v5 - 399] - 34)) {
-                    FUN_0043e820((int)c, rand() % 2 + 84);
+                    SetAction((int)c, rand() % 2 + 84);
                 } else {
-                    FUN_0043e820((int)c, rand() % 2 + 35);
+                    SetAction((int)c, rand() % 2 + 35);
                 }
                 goto LABEL_85;
             }
             // Mace 497/498
             if (v5 == 497 || v5 == 498) {
-                FUN_0043e820((int)c, 42);
+                SetAction((int)c, 42);
                 goto LABEL_85;
             }
             // Mace/staff (496-527)
             if (v5 >= 496 && v5 < 528) {
-                FUN_0043e820((int)c, *(unsigned char*)(c + 771) % 3 + 43);
+                SetAction((int)c, *(unsigned char*)(c + 771) % 3 + 43);
                 goto LABEL_85;
             }
             // Bow/crossbow type detection on right hand
             if ((v7 >= 528 && v7 < 535) || v7 == 545) {
-                FUN_0043e820((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 46 : 48);
+                SetAction((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 46 : 48);
                 goto LABEL_85;
             }
             if ((v5 >= 536 && v5 < 543) || (v5 >= 544 && v5 < 545) || v5 == 546) {
-                FUN_0043e820((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 47 : 49);
+                SetAction((int)c, (*(unsigned short*)(c + 672) == 0xFFFF) ? 47 : 49);
                 goto LABEL_85;
             }
         }
-        FUN_0043e820((int)c, 34);
+        SetAction((int)c, 34);
         goto LABEL_85;
     }
 
@@ -1736,25 +1740,25 @@ void __cdecl FUN_00444410(int c_entity, int /*type*/, int /*flag*/, int /*extra*
         if (v3 < 496) {
             // fall through to LABEL_11 (right-hand weapon check)
         } else if (v3 < 501) {
-            FUN_0043e820((int)c, 52);
+            SetAction((int)c, 52);
             goto LABEL_85;
         } else if (v3 >= 528) {
             // continue to LABEL_11
         } else {
-            FUN_0043e820((int)c, 53);
+            SetAction((int)c, 53);
             goto LABEL_85;
         }
         // LABEL_11: weapon checks
         short v4 = *(short*)(c + 648);
         if ((v4 >= 528 && v4 < 535) || v4 == 545) {
-            FUN_0043e820((int)c, 54);
+            SetAction((int)c, 54);
         } else if ((v3 >= 536 && v3 < 543) || (v3 >= 544 && v3 < 545) || v3 == 546) {
-            FUN_0043e820((int)c, 55);
+            SetAction((int)c, 55);
         } else if (v3 != -1 &&
                    *((unsigned char*)&((ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068)[v3 - 399] - 34)) {
-            FUN_0043e820((int)c, 51);
+            SetAction((int)c, 51);
         } else {
-            FUN_0043e820((int)c, 50);
+            SetAction((int)c, 50);
         }
     }
 
@@ -1804,12 +1808,13 @@ LABEL_85:
     ++*(unsigned char*)(c + 771);
 }
 
-// ── FUN_00444a80 — movida desde stubs_game.cpp (refactor B3) ──
+// ── SetPlayerMagic — movida desde stubs_game.cpp (refactor B3) ──
 // SetPlayerMagic @ 0x00444a80 (38 líneas) — setea la animación de casteo en la entidad del héroe
 // Si el tipo de entidad != 0x186: alterna la acción 3/4 según el contador de combo % 3
 // If entity type == 0x186 (special): SetAttackSpeed, class-specific action (0x52/0x53 random, 0x56 swim, 0x5b certain classes)
-// Declarada en functions.h como FUN_00444a80(int param_1)
-void __cdecl FUN_00444a80(int param_1) {
+// Declarada en functions.h como SetPlayerMagic(int param_1)
+// IDA: SetPlayerMagic (0x00444A80)
+void __cdecl SetPlayerMagic(int param_1) {
     DWORD c = (DWORD)param_1;
     if (c == 0) return;
     short entityType = *(short*)(c + 2);
@@ -1820,20 +1825,20 @@ void __cdecl FUN_00444a80(int param_1) {
         } else {
             action = 4;
         }
-        // SetAction(entity, action) — FUN_0043e820
-        FUN_0043e820((int)c, action);
+        // SetAction(entity, action) — SetAction
+        SetAction((int)c, action);
         *(char*)(c + 0x303) = *(char*)(c + 0x303) + 1;
         return;
     }
     // Special entity type 0x186: SetAttackSpeed then class-based action
-    FUN_00443e70();  // SetAttackSpeed
+    SetAttackSpeed();  // SetAttackSpeed
     short charClass = *(short*)(c + 0x2b8);
     if ((charClass == 0x332 || charClass == 0x333) && *(char*)(c + 0x34e) == '\0') {
-        FUN_0043e820((int)c, 0x5b);
+        SetAction((int)c, 0x5b);
         return;
     }
     if ((*(BYTE*)(c + 0x1bc) & 7) == 2) {
-        FUN_0043e820((int)c, 0x56);
+        SetAction((int)c, 0x56);
         return;
     }
     int r = rand();
@@ -1841,11 +1846,11 @@ void __cdecl FUN_00444a80(int param_1) {
     if ((int)v < 0) {
         v = (v - 1 | 0xFFFFFFFE) + 1;
     }
-    FUN_0043e820((int)c, (int)(v + 0x52));
+    SetAction((int)c, (int)(v + 0x52));
 }
 
-// ── FUN_00444b60 — movida desde stubs_misc2.cpp (refactor B3) ──
-// FUN_00444b60 @ 0x00444B60 — SetPlayerShock(DWORD c, int Hit)
+// ── SetPlayerShock — movida desde stubs_misc2.cpp (refactor B3) ──
+// SetPlayerShock @ 0x00444B60 — SetPlayerShock(DWORD c, int Hit)
 // Reproduce la reacción de "me pegaron" (anim 130 para el jugador, anim 5 para los monstruos) más
 // a hit-grunt sound (PlayBuffer). Port FIEL desde IDA decompile (546 bytes).
 //
@@ -1866,10 +1871,11 @@ void __cdecl FUN_00444a80(int param_1) {
 //   +0x2EC byte   alive_flag        (se limpia en el shock del jugador, per IDA)
 //   +0x2FD byte   dead_flag         (set ⇒ skip)
 // Forward decls (signatures match functions.h / existing impls — return type
-// de FUN_0043e820 en algunos headers es `void*`, así que delegamos vía el global
+// de SetAction en algunos headers es `void*`, así que delegamos vía el global
 // header rather than re-declaring locally).
 
-void __cdecl FUN_00444b60(int c, int Hit)
+// IDA: SetPlayerShock (0x00444B60)
+void __cdecl SetPlayerShock(int c, int Hit)
 {
     if (!c) return;
     if (*(BYTE*)(c + 765)) return;            // already dead
@@ -1881,11 +1887,11 @@ void __cdecl FUN_00444b60(int c, int Hit)
     short etype = *(short*)(c + 2);
     if (etype == 390) {
         // Player: shock anim, clear alive flag
-        (void)FUN_0043e820(c, 130);
+        (void)SetAction(c, 130);
         *(BYTE*)(c + 748) = 0;
     } else if (v3 < 3 || v3 > 4) {
         // Monstruos/NPCs (que no estén en las anims de caminar/correr 3-4): anim de shock genérica
-        (void)FUN_0043e820(c, 5);
+        (void)SetAction(c, 5);
     }
 
     // Sonido: sólo cuando no está a mitad de una animación (frame == 0)
@@ -1896,17 +1902,17 @@ void __cdecl FUN_00444b60(int c, int Hit)
                 if ((*(BYTE*)(c + 444) & 7) == 2) {
                     // Swimming: alternate splash sound 79 or 80
                     int v7 = rand() % 2;
-                    FUN_00404bc0(v7 + 79, c, 0);
+                    PlayBuffer(v7 + 79, c, 0);
                     goto label_26;
                 }
                 int v6 = rand() % 3 + 75;     // generic player hit grunt
-                FUN_00404bc0(v6, c, 0);
+                PlayBuffer(v6, c, 0);
                 goto label_26;
             }
         }
         int v8 = *(int*)(c + 4);
         if (v8 >= 206 && v8 <= 208) {
-            FUN_00404bc0(93, c, 0);           // Lorencia skeleton-NPC hit sound
+            PlayBuffer(93, c, 0);           // Lorencia skeleton-NPC hit sound
             goto label_26;
         }
         if (etype != 284) {
@@ -1915,7 +1921,7 @@ void __cdecl FUN_00444b60(int c, int Hit)
             short* sndTbl = (short*)(modelsBase + 188 * etype + 174);
             if ((unsigned short)*sndTbl != 0xFFFF) {
                 int v6 = sndTbl[rand() % 2] + 170;
-                FUN_00404bc0(v6, c, 0);
+                PlayBuffer(v6, c, 0);
             }
         }
     }
@@ -1935,14 +1941,13 @@ label_26:
                 Particle_Spawn(1221, pos, (float*)(c + 28), (float*)(c + 232), 0, 1.0f, 0);
             }
         }
-        FUN_00404bc0(105, 0, 0);
+        PlayBuffer(105, 0, 0);
     }
 }
 
-// ── FUN_0045ac80 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_0045ac80 @ 0x0045AC80 — Entity_GetIndex: search entity array by network ID
+// IDA: FindCharacterIndex (0x0045AC80)
 // Devuelve el índice de slot 0-399, o 400 si no lo encontró.
-int __cdecl FUN_0045ac80(int param_1)
+int __cdecl FindCharacterIndex(int param_1)
 {
     char *pcVar2 = (char*)(uintptr_t)DAT_07abf5d0;
     for (int iVar1 = 0; iVar1 <= 399; iVar1++, pcVar2 += 0x394) {
@@ -1952,8 +1957,7 @@ int __cdecl FUN_0045ac80(int param_1)
     return 400;
 }
 
-// ── FUN_0045c8c0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
-// ChangeCharacterExt @ 0x0045C8C0 (1063 bytes) — apply equipment visuals to char-select preview.
+// IDA: ChangeCharacterExt (0x0045C8C0)
 // Decodes a 10-byte CharSet[] payload (helmet/armor/pants/gloves/boots type+level packed bits) and
 // escribe campos WORD/BYTE repartidos por el slot de entidad en +624..+651 (slots de cabeza/alas) y
 // +504..+603 (5 body parts × 24-byte stride: type, lvl, exc-flag).
@@ -1965,7 +1969,8 @@ int __cdecl FUN_0045ac80(int param_1)
 // (writes -1/0 sentinel). Bit-pattern (Equipment[2/3/4]>>4) + ((Equipment[8] >> N) & 1) == 31
 // indica un set "antiguo/especial", que usa entity+444 (el nibble de skin de clase) como ID de sprite.
 // Ported verbatim from IDA reference 0045C8C0_ChangeCharacterExt.c.
-void __cdecl FUN_0045c8c0(int Key, BYTE *Equipment) {
+// IDA: ChangeCharacterExt (0x0045C8C0)
+void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     // DAT_07abf5d0 guarda la dirección base del array de entidades como entero.
     // 916 (0x394) = entity stride. Slot at DAT_07abf5d0 + 916*Key.
     DWORD c = DAT_07abf5d0 + 916 * Key;
@@ -1999,13 +2004,13 @@ void __cdecl FUN_0045c8c0(int Key, BYTE *Equipment) {
     }
 
     // Wings: clear class-FX, then spawn type-specific
-    FUN_004fffa0(c);  // DeleteBug
+    DeleteBug(c);  // DeleteBug
     Type = Equipment[4] & 3;
     if (Type == 3) {
         if ((Equipment[9] & 1) == 1) {
             *(WORD*)(c + 696) = 819;
             float* pos = (float*)(c + 16);
-            FUN_004fffd0(267, (void*)pos, (void*)(uintptr_t)c, 0);
+            CreateBug(267, (void*)pos, (void*)(uintptr_t)c, 0);
         } else {
             *(WORD*)(c + 696) = (WORD)-1;
             *(BYTE*)(c + 699) = 0;
@@ -2014,12 +2019,12 @@ void __cdecl FUN_0045c8c0(int Key, BYTE *Equipment) {
         *(WORD*)(c + 696) = (WORD)(Type + 816);
         float* pos = (float*)(c + 16);
         if (Type == 0) {
-            FUN_004fffd0(816, (void*)pos, (void*)(uintptr_t)c, 0);
+            CreateBug(816, (void*)pos, (void*)(uintptr_t)c, 0);
         } else if (Type == 2) {
-            FUN_004fffd0(195, (void*)pos, (void*)(uintptr_t)c, 0);
+            CreateBug(195, (void*)pos, (void*)(uintptr_t)c, 0);
         } else if (Type == 3) {
             // inalcanzable — ya se atrapó arriba; se deja por paridad con IDA
-            FUN_004fffd0(267, (void*)pos, (void*)(uintptr_t)c, 0);
+            CreateBug(267, (void*)pos, (void*)(uintptr_t)c, 0);
         }
     }
 
@@ -2146,7 +2151,7 @@ void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4
         float Light[3] = { v10, v10 * 0.60000002f, v10 * 0.40000001f };
         if ((rand() % 2) == 0)
             Particle_Spawn(1195, out, v5, Light, rand() % 4, 1.0f, 0);
-        AddTerrainLight(out[0], out[1], Light, 4, PrimaryTerrainLight[0]);
+        AddTerrainLight(out[0], out[1], (float*)Light, 4, (float*)PrimaryTerrainLight[0]);
     } else if (param_1 == 1) {
         if ((rand() % 2) == 0)
             Particle_Spawn(1220, out, v5, a2 + 58, 0, 1.0f, 0);   // o+232 = Light
@@ -2156,12 +2161,12 @@ void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4
     }
 }
 
-// ── FUN_00479790 — movida desde stubs_misc2.cpp (refactor B3) ──
-// FUN_00479790 @ 0x00479790 — Effect_UpdateAll
+// ── CheckSprites — movida desde stubs_misc2.cpp (refactor B3) ──
+// CheckSprites @ 0x00479790 — Effect_UpdateAll
 // Marca todos los slots activos del pool de personajes/efectos (DAT_07c85890, stride 0x1BC)
 // para el tick de render, poniendo el byte [+0x160] = 1 en cada entrada activa (flag de activo distinto de cero).
 // Se llama una vez por frame antes del loop de render, para que cada slot se procese exactamente una vez.
-void FUN_00479790(void)
+void CheckSprites(void)
 {
     // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba el dirty-mark.
     char *pcVar1 = DAT_07c85890;
@@ -2171,15 +2176,15 @@ void FUN_00479790(void)
     }
 }
 
-// ── FUN_00479910 — movida desde stubs_misc2.cpp (refactor B3) ──
+// ── BuxConvert_0 — movida desde stubs_misc2.cpp (refactor B3) ──
 // ── Item data helper stubs ────────────────────────────────────────────────────
-// FUN_00479910 @ 0x00479910 — XOR-cipher buffer in-place (3-byte key: FC CF AB)
-void __cdecl FUN_00479910(int buf, int len) {
+// BuxConvert_0 @ 0x00479910 — XOR-cipher buffer in-place (3-byte key: FC CF AB)
+void __cdecl BuxConvert_0(int buf, int len) {
     for (int i = 0; i < len; i++)
         *(BYTE *)(buf + i) ^= (BYTE)DAT_00559bb4[i % 3];
 }
 
-// ── FUN_0047dae0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_CalcMagicDmgRange — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DAE0 @ 0x0047DAE0 (618 bytes) — Stats_CalcMagicDmgRange.
 // Calcula el daño mágico mínimo/máximo en this[+70]/this[+72]:
 //   min = Energy/9
@@ -2189,7 +2194,7 @@ void __cdecl FUN_00479910(int buf, int len) {
 //   + special 75 (flat add) on WeaponL
 //   + special 76 (percent +2%) on WeaponL
 //   + el special 75 + el special 76 (2%) del Ring1 (this+1148)
-int __cdecl FUN_0047dae0(int param_1) {
+int __cdecl Stats_CalcMagicDmgRange(int param_1) {
     unsigned short energy = *(unsigned short*)(param_1 + 26);
     unsigned short *minPtr = (unsigned short*)(param_1 + 70);
     unsigned short *maxPtr = (unsigned short*)(param_1 + 72);
@@ -2232,8 +2237,8 @@ int __cdecl FUN_0047dae0(int param_1) {
             *maxPtr += (unsigned short)(maxBonus - (unsigned short)((double)maxBonus * (double)durP));
             PlusSpecial(minPtr, 75, weaponL);
             PlusSpecial(maxPtr, 75, weaponL);
-            FUN_0047cf40((short*)minPtr, 76, (int)weaponL, 2);
-            FUN_0047cf40((short*)maxPtr, 76, (int)weaponL, 2);
+            PlusSpecialPercent((short*)minPtr, 76, (int)weaponL, 2);
+            PlusSpecialPercent((short*)maxPtr, 76, (int)weaponL, 2);
         }
     }
 
@@ -2242,8 +2247,8 @@ int __cdecl FUN_0047dae0(int param_1) {
         if (*(unsigned char*)(itemRing1 + 26) != 0) {
             PlusSpecial(minPtr, 75, itemRing1);
             PlusSpecial(maxPtr, 75, itemRing1);
-            FUN_0047cf40((short*)minPtr, 76, (int)itemRing1, 2);
-            return FUN_0047cf40((short*)maxPtr, 76, (int)itemRing1, 2);
+            PlusSpecialPercent((short*)minPtr, 76, (int)itemRing1, 2);
+            return PlusSpecialPercent((short*)maxPtr, 76, (int)itemRing1, 2);
         }
     }
     return (int)itemRing1;
@@ -2260,12 +2265,12 @@ void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* p
     *piMaxDamage = (damage >> 1) + damage + *(unsigned short*)(This + 72);
 }
 
-// ── FUN_0047dd50 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_CalcAddStrength — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DD50 @ 0x0047DD50 (39 bytes) — Stats_CalcAddStrength (or similar).
 // Computes a derived stat from CharacterMachine fields:
 //   this[29] = 5*this[7] + (this[10] >> 2) + (this[11] * 3) / 2
 // donde this es un puntero WORD; los offsets +14, +20, +22 y +58 van en bytes.
-int __cdecl FUN_0047dd50(short *param_1) {
+int __cdecl Stats_CalcAddStrength(short *param_1) {
     int v = 5 * (unsigned short)param_1[7]
           + ((unsigned short)param_1[10] >> 2)
           + ((unsigned short)param_1[11] * 3) / 2;
@@ -2273,7 +2278,7 @@ int __cdecl FUN_0047dd50(short *param_1) {
     return v;
 }
 
-// ── FUN_0047dd80 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// IDA: CHARACTER_MACHINE::CalculateAttackSpeed (0x0047DD80)
 // CHARACTER_MACHINE::CalculateAttackSpeed @ 0x0047DD80 (598 bytes).
 // Calcula la velocidad de ataque/magia en this[+0x38] / this[+0x44] (o +56/+68
 // for non-class-1/2/3 = elf/etc).
@@ -2285,7 +2290,7 @@ int __cdecl FUN_0047dd50(short *param_1) {
 //   Pants (slot 5 = this+876) speed bonus.
 //   Flag de estado (this+40 bit 0): +20 a los dos.
 //   PlusSpecial(77) on WeaponL/R, Ring1, Helmet/byte 1080.
-int __cdecl FUN_0047dd80(int param_1) {
+int __cdecl CalculateAttackSpeed(int param_1) {
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
@@ -2370,14 +2375,14 @@ int __cdecl FUN_0047dd80(int param_1) {
     return 0;
 }
 
-// ── FUN_0047dfe0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_CalcDefense — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DFE0 @ 0x0047DFE0 (369 bytes) — Stats_CalcDefense.
 // Calcula el stat de defensa en this[+76]:
 //   class==2 (Wizard): defense = Vit/4 (this[+22]>>2)
 //   else: defense = Vit/3
 //   + el Escudo (this+604), con la defensa escalada por durabilidad
 //   + los bonus porcentuales de cada slot de equipo (special 70)
-int __cdecl FUN_0047dfe0(int param_1) {
+int __cdecl Stats_CalcDefense(int param_1) {
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
@@ -2407,20 +2412,20 @@ int __cdecl FUN_0047dfe0(int param_1) {
             PlusSpecial(&Value, 62, (DWORD)(uintptr_t)(param_1 + 604));
             *defPtr += (unsigned short)(Value - (unsigned short)((double)Value * (double)durP));
 
-            FUN_0047cf40((short*)defPtr, 70, param_1 + 604, 10);
+            PlusSpecialPercent((short*)defPtr, 70, param_1 + 604, 10);
         }
     }
     // Apply percent defense bonuses from all equipment slots
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 672,  10);  // Pendant
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 740,  10);  // Armor
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 808,  10);  // Pants
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 876,  10);  // Gloves
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 944,  10);  // Boots
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 1284, 10);  // Necklace
-    return FUN_0047cf40((short*)defPtr, 70, param_1 + 1216, 10);  // Ring2
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 672,  10);  // Pendant
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 740,  10);  // Armor
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 808,  10);  // Pants
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 876,  10);  // Gloves
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 944,  10);  // Boots
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 1284, 10);  // Necklace
+    return PlusSpecialPercent((short*)defPtr, 70, param_1 + 1216, 10);  // Ring2
 }
 
-// ── FUN_0047e160 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_CalcDefenseRate — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47E160 @ 0x0047E160 (383 bytes) — Stats_CalcCritBase / DefRate.
 // Calcula el stat de tasa de defensa en this[+78]:
 //   class 0 (Knight): Vit/4   (>>2)
@@ -2429,7 +2434,7 @@ int __cdecl FUN_0047dfe0(int param_1) {
 //   class 3+ (DL?):   Vit/5
 // Then iterates 7 equipment slots checking durability-scaled rate bonus.
 // Más un +5% / +10% si g_bAddDefense y EquipmentLevelSet == 10/11.
-int __cdecl FUN_0047e160(int param_1) {
+int __cdecl Stats_CalcDefenseRate(int param_1) {
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
@@ -2500,13 +2505,13 @@ int __cdecl FUN_0047e160(int param_1) {
     return *(short*)(param_1 + 78);
 }
 
-// ── FUN_0047e2e0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_ExtraOptionEquip6 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47E2E0 @ 0x0047E2E0 (46 bytes) — Stats_CalcExtraOption1.
 // Iterates 6 equipment slots (CharacterMachine + 672 .. + 1012, stride 68
 // bytes = tamaño de ITEM). Por cada slot con Option1 (byte +26) seteado, llama a
 // FUN_0047cfe0 (accesor de item +0x14). Guarda el último resultado válido en
 // CharacterMachine + 80 (this[40] si es puntero WORD).
-int __cdecl FUN_0047e2e0(short *param_1) {
+int __cdecl Stats_ExtraOptionEquip6(short *param_1) {
     short *slot = param_1 + 336;  // CharacterMachine + 672 (Pendant)
     short last = 0;
     for (int n = 0; n < 6; ++n) {
@@ -2519,13 +2524,13 @@ int __cdecl FUN_0047e2e0(short *param_1) {
     return (int)(unsigned char)last;
 }
 
-// ── FUN_0047e310 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_ExtraOptionGlovesWings — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47E310 @ 0x0047E310 (63 bytes) — Stats_CalcExtraOption2.
 // Lee el Option1 (byte +26 dentro de ITEM) de los slots de Guantes y Alas. Por cada uno:
 //   Guantes (Option1 en +970, ITEM en +944): this+82 = FUN_0047d000(guantes)
 //   Alas    (Option1 en +1038, ITEM en +1012): this+82 += FUN_0047d000(alas)
 // Orden: primero los guantes (reemplaza), después las alas (suma).
-int __cdecl FUN_0047e310(int param_1) {
+int __cdecl Stats_ExtraOptionGlovesWings(int param_1) {
     short v = 0;
     if (*(unsigned char*)(param_1 + 970)) {
         *(short*)(param_1 + 82) = FUN_0047d000((short*)(param_1 + 944));
@@ -2537,11 +2542,11 @@ int __cdecl FUN_0047e310(int param_1) {
     return (int)(unsigned char)v;
 }
 
-// ── FUN_004f9c70 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_004f9c70 @ 0x004F9C70 — Terrain_QuadEqual(ptr1, ptr2_int) → compares 4 floats within epsilon.
+// ── Terrain_QuadEqual — movida desde stubs_externs.cpp (refactor B3) ──
+// Terrain_QuadEqual @ 0x004F9C70 — Terrain_QuadEqual(ptr1, ptr2_int) → compares 4 floats within epsilon.
 // Firma de Ghidra: (int param_1, float *param_2) pero en functions.h está declarada como (int,int,int,int).
 // Callers pass two int args (the float ptr pair). Match declared signature.
-int __cdecl FUN_004f9c70(int param_1, int param_2, int param_3, int param_4) {
+int __cdecl Terrain_QuadEqual(int param_1, int param_2, int param_3, int param_4) {
     // Sólo se usan los dos primeros parámetros: ptr1 = param_1, ptr2 = param_2
     float *p2 = (float*)param_2;
     int iVar1 = 0;
@@ -2558,28 +2563,28 @@ int __cdecl FUN_004f9c70(int param_1, int param_2, int param_3, int param_4) {
     return 1;
 }
 
-// ── FUN_004f9ce0 — movida desde stubs_helpers.cpp (refactor B3) ──
-// FUN_004f9ce0 @ 0x004F9CE0 — VectorMA(va, scale, vb, vc): vc = va + scale*vb
+// ── VectorMA — movida desde stubs_helpers.cpp (refactor B3) ──
+// VectorMA @ 0x004F9CE0 — VectorMA(va, scale, vb, vc): vc = va + scale*vb
 // IDA-ported: 3-vector multiply-add (Quake-style). Was stub copying in_rel.
-void __cdecl FUN_004f9ce0(float *va, float scale, float *vb, float *vc) {
+void __cdecl VectorMA(float *va, float scale, float *vb, float *vc) {
     vc[0] = scale * vb[0] + va[0];
     vc[1] = scale * vb[1] + va[1];
     vc[2] = scale * vb[2] + va[2];
 }
 
-// ── FUN_004f9d60 — movida desde stubs_helpers.cpp (refactor B3) ──
-// FUN_004f9d60 @ 0x004F9D60 — Vec3_Normalize(vec[3])
+// ── Vec3_Normalize — movida desde stubs_helpers.cpp (refactor B3) ──
+// Vec3_Normalize @ 0x004F9D60 — Vec3_Normalize(vec[3])
 // Normalises a 3-component float vector in-place.
-void __cdecl FUN_004f9d60(float *vec) {
+void __cdecl Vec3_Normalize(float *vec) {
     float len = sqrtf(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
     if (len > 0.0f) { vec[0] /= len; vec[1] /= len; vec[2] /= len; }
 }
 
-// ── FUN_00513260 — movida desde stubs_mouse_hover.cpp (refactor B3) ──
-// FUN_00513260 @ 0x00513260 — Entity_ViewportCheck(viewport, projection)
+// ── Collision_SegmentToOBB — movida desde stubs_mouse_hover.cpp (refactor B3) ──
+// Collision_SegmentToOBB @ 0x00513260 — Entity_ViewportCheck(viewport, projection)
 // Testea si la entidad descrita por 12 dwords (que el llamador copió de entity+0x130) está dentro
 // del viewport actual, usando los punteros de matriz dados. Devuelve 1 si es visible, 0 si se descarta.
-// FUN_00513260 @ 0x00513260 - test de interseccion SEGMENTO vs OBB por ejes
+// Collision_SegmentToOBB @ 0x00513260 - test de interseccion SEGMENTO vs OBB por ejes
 // separadores (SAT).  El "OBB" son los 12 floats que `Calc_RenderObject` deja en
 // `objeto + 0x130` via `sub_4404E0`: centro (box[0..2]) y tres semi-ejes
 // (box[3..5], box[6..8], box[9..11]).
@@ -2592,7 +2597,7 @@ void __cdecl FUN_004f9d60(float *vec) {
 // 2026-09-04: antes era `return 1` con el comentario "STUB: frustum cull" -- o
 // sea CUALQUIER objeto daba hit, y como el unico consumidor real
 // (SpecialObject_HoverTest) estaba neutralizado, no se notaba.
-bool __cdecl FUN_00513260(float *rayOrigin, float *rayTarget, const float *box)
+bool __cdecl Collision_SegmentToOBB(float *rayOrigin, float *rayTarget, const float *box)
 {
     if (!rayOrigin || !rayTarget || !box) return false;
 
@@ -2601,9 +2606,9 @@ bool __cdecl FUN_00513260(float *rayOrigin, float *rayTarget, const float *box)
                      rayTarget[2] - rayOrigin[2] };
 
     float n0[3], n1[3], n2[3];
-    FUN_004f9d20(dir, (float *)(box + 3), n0);
-    FUN_004f9d20(dir, (float *)(box + 6), n1);
-    FUN_004f9d20(dir, (float *)(box + 9), n2);
+    Vec3_Cross(dir, (float *)(box + 3), n0);
+    Vec3_Cross(dir, (float *)(box + 6), n1);
+    Vec3_Cross(dir, (float *)(box + 9), n2);
 
     float *axes[6] = { n0, n1, n2,
                        (float *)(box + 3), (float *)(box + 6), (float *)(box + 9) };

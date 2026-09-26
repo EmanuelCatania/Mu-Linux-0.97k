@@ -13,10 +13,10 @@
 //     +0x4024  ...    usable data area   (start of recv payload)
 //
 //   Connection globals:
-//     DAT_055ca168  = SOCKET handle (also at context+8)
-//     DAT_05826cf0  = connected flag (1=connected, 0=disconnected)
+//     SocketClientSocket  = SOCKET handle (also at context+8)
+//     g_bGameServerConnected  = connected flag (1=connected, 0=disconnected)
 //     PTR_005615b8  = server IP string
-//     DAT_005615bc  = server port (ushort)
+//     g_ServerPort  = server port (ushort)
 //
 //   Packet format (Mu "C1" protocol):
 //     byte[0] = 0xC1   (header type)
@@ -58,7 +58,7 @@ int Net_Recv(void* ctx);
 int Net_Send(int ctx);
 
 // Close socket and mark as disconnected.
-// Sets DAT_05826cf0 = 0, closesocket(), socket = 0xFFFFFFFF.
+// Sets g_bGameServerConnected = 0, closesocket(), socket = 0xFFFFFFFF.
 // @ 0x0043DC90
 int Net_Disconnect(int ctx);
 

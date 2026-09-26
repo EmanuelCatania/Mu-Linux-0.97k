@@ -1,23 +1,23 @@
 // Scene_MapTick.cpp
 // Per-frame map/tile update and walk-mode tile dispatch.
 //
-// FUN_004f64d0 @ 0x004f64d0 — Scene_MapTick
+// Scene_MapTick @ 0x004f64d0 — Scene_MapTick
 //
 // Manages the map-tile hash table for the current player position.
-// Uses HashTable at DAT_055c9bc8 and player position at DAT_07cf1ffc.
+// Uses HashTable at MAIN_HASH_CLASS and player position at DAT_07cf1ffc.
 // Dispatches to RenderItemInfo (walk map) or RenderRepairInfo (alt map)
 // based on boundary conditions.
 
 #include "stdafx.h"
 
 
-// FUN_004f64d0 — Scene_MapTick
+// Scene_MapTick — Scene_MapTick
 // Updates the tile hash table entry for the local player's tile position.
 // If the player has moved outside the current map tile bounds, reloads the map:
 //   - Checks bounds: x in [DAT_07ea5284..0x27f], y in [DAT_07ea5288..0x1df]
 //   - Calls RenderItemInfo or RenderRepairInfo to reload walk/alt map
 // Also handles DAT_0055a3e4 as a pending map-change request.
-void FUN_004f64d0(void)
+void Scene_MapTick(void)
 {
   char cVar1;
   uint uVar2;
@@ -41,29 +41,29 @@ void FUN_004f64d0(void)
     if ((((DAT_07eaa13c == 1) && (_DAT_00552cac <= (float)DAT_083a427c)) &&
         ((float)DAT_083a427c < _DAT_00552c24)) &&
        ((_DAT_00552c14 <= (float)DAT_083a4278 && ((float)DAT_083a4278 < _DAT_00552ca8)))) {
-      uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
+      uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
       if (uVar2 == 0xffffffff) {
         pvVar3 = operator_new(0x585);
         *(undefined1 *)((int)pvVar3 + 0x584) = 1;
-        FUN_00403f80(&DAT_055c9bc8,pvVar3,puVar5);
+        HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
       }
       else {
-        puVar4 = (undefined4 *)FUN_00404280(&DAT_055c9bc8,puVar5);
+        puVar4 = (undefined4 *)HashTable_GetNode(&MAIN_HASH_CLASS,puVar5);
         cVar1 = *(char *)(puVar4 + 0x161);
         *(byte *)(puVar4 + 0x161) = cVar1 + 1U;
         if ((byte)(cVar1 + 1U) < 2) {
-          FUN_00404370(puVar5,puVar4);
+          Packet_DecryptBuffer(puVar5,puVar4);
         }
       }
       RenderItemInfo((void*)0x109,(void*)0x78,DAT_07e91350,'\0');
       puVar5 = (undefined4*)DAT_07cf1ffc;
-      uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
+      uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
       if (uVar2 != 0xffffffff) {
-        puVar4 = (undefined4 *)FUN_00404280(&DAT_055c9bc8,puVar5);
+        puVar4 = (undefined4 *)HashTable_GetNode(&MAIN_HASH_CLASS,puVar5);
         cVar1 = *(char *)(puVar4 + 0x161);
         *(char *)(puVar4 + 0x161) = cVar1 + -1;
         if ((char)(cVar1 + -1) == '\0') {
-          FUN_00404400(puVar4,puVar5);
+          Packet_EncryptBuffer(puVar4,puVar5);
         }
       }
     }
@@ -71,14 +71,14 @@ void FUN_004f64d0(void)
   }
   if (((DAT_083a427c < DAT_07ea5288) || (0x27f < DAT_083a427c)) ||
      ((DAT_083a4278 < DAT_07ea5284 || ((0x1df < DAT_083a4278 || (DAT_07eaa134 == 0)))))) {
-    uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
+    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) {
       pvVar3 = operator_new(0x585);
       *(undefined1 *)((int)pvVar3 + 0x584) = 1;
-      FUN_00403f80(&DAT_055c9bc8,pvVar3,puVar5);
+      HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }
     else {
-      uVar2 = HashTable_GetIndex(&DAT_055c9bc8,puVar5);
+      uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,puVar5);
       if (uVar2 == 0xffffffff) {
         puVar4 = (undefined4 *)0x0;
       }
@@ -88,26 +88,26 @@ void FUN_004f64d0(void)
       cVar1 = *(char *)(puVar4 + 0x161);
       *(byte *)(puVar4 + 0x161) = cVar1 + 1U;
       if ((byte)(cVar1 + 1U) < 2) {
-        FUN_00404370(puVar5,puVar4);
+        Packet_DecryptBuffer(puVar5,puVar4);
       }
     }
     RenderItemInfo((void*)(uintptr_t)DAT_07ea840c,(void*)(uintptr_t)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160,(int)DAT_07ea9844);
     puVar5 = (undefined4*)DAT_07cf1ffc;
-    uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
+    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) goto LAB_004f6824;
-    uVar2 = HashTable_GetIndex(&DAT_055c9bc8,puVar5);
+    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,puVar5);
     if (uVar2 == 0xffffffff) goto LAB_004f6614;
     puVar4 = *(undefined4 **)(DAT_055c9bcc + uVar2 * 4);
   }
   else {
-    uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
+    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) {
       pvVar3 = operator_new(0x585);
       *(undefined1 *)((int)pvVar3 + 0x584) = 1;
-      FUN_00403f80(&DAT_055c9bc8,pvVar3,puVar5);
+      HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }
     else {
-      uVar2 = HashTable_GetIndex(&DAT_055c9bc8,puVar5);
+      uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,puVar5);
       if (uVar2 == 0xffffffff) {
         puVar4 = (undefined4 *)0x0;
       }
@@ -117,14 +117,14 @@ void FUN_004f64d0(void)
       cVar1 = *(char *)(puVar4 + 0x161);
       *(byte *)(puVar4 + 0x161) = cVar1 + 1U;
       if ((byte)(cVar1 + 1U) < 2) {
-        FUN_00404370(puVar5,puVar4);
+        Packet_DecryptBuffer(puVar5,puVar4);
       }
     }
     RenderRepairInfo((void*)(uintptr_t)DAT_07ea840c,(int)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160);
     puVar5 = (undefined4*)DAT_07cf1ffc;
-    uVar2 = HashTable_GetIndex(&DAT_055c9bc8,DAT_07cf1ffc);
+    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) goto LAB_004f6824;
-    uVar2 = HashTable_GetIndex(&DAT_055c9bc8,puVar5);
+    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,puVar5);
     if (uVar2 == 0xffffffff) {
 LAB_004f6614:
       puVar4 = (undefined4 *)0x0;
@@ -136,7 +136,7 @@ LAB_004f6614:
   cVar1 = *(char *)(puVar4 + 0x161);
   *(char *)(puVar4 + 0x161) = cVar1 + -1;
   if ((char)(cVar1 + -1) == '\0') {
-    FUN_00404400(puVar4,puVar5);
+    Packet_EncryptBuffer(puVar4,puVar5);
   }
 LAB_004f6824:
   // 2026-05-05: clamp DAT_0055a3e4 to valid skill slot range (0..19) before

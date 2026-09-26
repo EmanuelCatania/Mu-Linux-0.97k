@@ -6,10 +6,10 @@
 //   2. Determine which entity/item is under the cursor and store hover targets.
 //
 // ── Cursor billboard ──────────────────────────────────────────────────────────
-// FUN_004f8480(DAT_080ab288, DAT_080ab28c, screenX, screenY, 1.0f, 1, 1):
+// RenderTerrainTile(DAT_080ab288, DAT_080ab28c, screenX, screenY, 1.0f, 1, 1):
 //   Returns nonzero if cursor is visible/active.
 // If visible, calls GL_SetBlendAdditive() (hide char anim sprite for cursor area),
-// then FUN_004f8bb0(type=8, x, y, sx, sy, color, 0, alpha) to draw the quad.
+// then RenderTerrainAlphaBitmap(type=8, x, y, sx, sy, color, 0, alpha) to draw the quad.
 //   - States 2/4/5 (login/charselect/ingame): fixed size based on DAT_07e11d5c
 //   - States 1/3 (intro/loading): animated size using DAT_07e11d5c oscillation
 //
@@ -19,7 +19,7 @@
 //   SelectedNpc = NPC / shop entity (-1=none)
 //   SelectedCharacter = mob or player entity (-1=none)
 //   SelectedOperate = special object (-1=none)
-//   DAT_00559c58 = secondary hover (cleared if SelectedCharacter resets)
+//   Attacking = secondary hover (cleared if SelectedCharacter resets)
 //
 // Priority with Alt held (VK_MENU):
 //   item-ground (ItemOnGround_HoverTest, IDA: FUN_004afa40) → NPC type 4 → mob type 0x22 → player type 1 → special
@@ -32,7 +32,7 @@
 //   char-data buffer). Per CLAUDE.md policy, hash table operations are
 //   reference-count obfuscation — not game logic. Omitted from implementation.
 //
-// After hover detection: if hover target found and DAT_00559c58 != -1,
+// After hover detection: if hover target found and Attacking != -1,
 //   calls FUN_004afb00() to process the pending click action.
 
 #include "stdafx.h"
@@ -51,29 +51,29 @@ void Mouse_UpdateHoverTargets(void)
     // ── 1. Cursor billboard render ────────────────────────────────────────────
     // 2026-04-29 DISABLED: el cursor billboard 3D (sprite en el suelo del tile
     // hovered) requiere DAT_07eab24c (BackTerrainHeight) que no se inicializa
-    // en nuestro port. Crash AV en FUN_004f8740 al acceder al buffer null.
+    // en nuestro port. Crash AV en Terrain_RenderQuad al acceder al buffer null.
     // El cursor 2D (Cursor_Render) sigue funcionando normalmente.
     #if 0
-    if (DAT_005615c0 == 2 || DAT_005615c0 == 4 || DAT_005615c0 == 5)
+    if (SceneFlag == 2 || SceneFlag == 4 || SceneFlag == 5)
     {
         float color[3] = { 1.0f, 0.766f, 0.0f };
-        char visible = FUN_004f8480(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
+        char visible = RenderTerrainTile(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
         if (visible != '\0') {
             GL_SetBlendAdditive();
-            int frame = (DAT_005615c0 == 2) ? 1 : (DAT_07e11d5c + 1);
+            int frame = (SceneFlag == 2) ? 1 : (DAT_07e11d5c + 1);
             float sz = (float)frame;
-            FUN_004f8bb0(8, DAT_083a4130, DAT_083a4134, sz, sz, color, 0, 1.0f);
+            RenderTerrainAlphaBitmap(8, DAT_083a4130, DAT_083a4134, sz, sz, color, 0, 1.0f);
         }
     }
-    if (DAT_005615c0 == 1 || DAT_005615c0 == 3) {
+    if (SceneFlag == 1 || SceneFlag == 3) {
         float color[3] = { 1.0f, 0.766f, 0.0f };
-        char visible = FUN_004f8480(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
+        char visible = RenderTerrainTile(DAT_080ab288, DAT_080ab28c, 0, 0, 1.0f, 1, 1);
         if (visible != '\0') {
             GL_SetBlendAdditive();
             float base = (float)DAT_07e11d5c + (float)DAT_07e11d5c + _DAT_0055256c;
             float szX = ((int)base / 100) * 100 + _DAT_00552598;
             float szY = ((int)base / 100) * 100 + _DAT_00552598;
-            FUN_004f8bb0(8, szX, szY, base, base, color, 0, 1.0f);
+            RenderTerrainAlphaBitmap(8, szX, szY, base, base, color, 0, 1.0f);
         }
     }
     #endif
@@ -83,10 +83,10 @@ void Mouse_UpdateHoverTargets(void)
     // 2026-05-06: añadido guard `c50 >= 0` para evitar OOB read cuando
     // SelectedCharacter == -1 (initial state). Antes se leía entity[+0x2fd] con
     // c50=-1 → puntero negativo → crash latente.
-    if (DAT_00559c5c == '\0' || DAT_0055a7ac == 6) {
+    if (m_bAutoAttack == '\0' || World == 6) {
         // Cursor disabled or spectator state
         SelectedCharacter = -1;
-        DAT_00559c58 = -1;
+        Attacking = -1;
     } else if (SelectedCharacter >= 0 &&
                *(char *)(DAT_07abf5d0 + 0x2fd + SelectedCharacter * 0x394) == '\0' &&
                *(char *)(DAT_07abf5d0 + SelectedCharacter * 0x394 + 0x84) == '\x02') {
@@ -115,22 +115,22 @@ void Mouse_UpdateHoverTargets(void)
         // objetivo sigue al mouse en el original.
         //
         // El port tenia SOLO los dos flags del boton DERECHO
-        // (DAT_083a42ac / DAT_083a42d0), asi que clickeando con el IZQUIERDO el
+        // (DAT_083a42ac / MouseRButtonPush), asi que clickeando con el IZQUIERDO el
         // target nunca se limpiaba: quedaba pegado el primer mob que hubiera
         // pasado por debajo del cursor.  Direcciones confirmadas con
         // ida_xrefs_to:  MouseLButton = 0x083A42C4 · MouseLButtonPush = 0x083A4124
         //                MouseRButton = 0x083A42AC · MouseRButtonPush = 0x083A42D0
         //                m_bAutoAttack = 0x00559C5C · Attacking = 0x00559C58
-        if (DAT_00559c58 == -1 ||
+        if (Attacking == -1 ||
             DAT_083a42c4 != '\0' || DAT_083a4124 != 0 ||
-            DAT_083a42ac != '\0' || DAT_083a42d0 != '\0' ||
+            DAT_083a42ac != '\0' || MouseRButtonPush != '\0' ||
             *(char *)(DAT_07abf5d8 + 0x2fd) != '\0')
         {
             SelectedCharacter = -1;
         }
     } else if (SelectedCharacter >= 0) {
         // Current target is no longer valid (died or kind changed).
-        DAT_00559c58 = -1;
+        Attacking = -1;
         SelectedCharacter = -1;
     }
 
@@ -179,7 +179,7 @@ void Mouse_UpdateHoverTargets(void)
         }
 
         // ── Secondary hover without second password ───────────────────────────
-        if (FUN_004e5980() == '\0') {
+        if (Party_HPBar_HoverCheck() == '\0') {
             // IDA sub_4B0310 L315-351 (Alt SIN apretar): cadena de descarte
             // estricta, personaje -> personaje -> NPC -> ITEM -> mobiliario.  El
             // item solo se elige si el cursor no esta sobre ningun personaje ni NPC.
@@ -220,14 +220,14 @@ void Mouse_UpdateHoverTargets(void)
                     goto check_click;
                 }
             }
-            if (DAT_00559c58 != -1) goto process_click;
+            if (Attacking != -1) goto process_click;
         }
         else goto process_click;
     }
 
 check_click:
     if (SelectedCharacter == -1) {
-        DAT_00559c58 = -1;
+        Attacking = -1;
     }
     goto done;
 
@@ -236,17 +236,18 @@ process_click:
 
 done:
     if (SelectedCharacter == -1)
-        DAT_00559c58 = -1;
+        Attacking = -1;
 
 }
 
 // ── Additional helpers extracted from stubs_mouse_hover.cpp ─────────────────
 // ── Mouse hover helpers ────────────────────────────────────────────────────────
-// FUN_004f8480 @ 0x004F8480 — Terrain_TilePick(x,y,row,col,unused,stride,flag)
+// RenderTerrainTile @ 0x004F8480 — Terrain_TilePick(x,y,row,col,unused,stride,flag)
 // Stores world coords + tile index, optionally renders a debug outline (GL_LINE_STRIP).
 // For state 3 (combat target select), draws a filled quad and does mouse-ray intersection.
 // Returns 1 if mouse ray intersects tile, 0 otherwise.
-int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, float param_5, int param_6, int param_7) {
+// IDA: RenderTerrainTile (0x004F8480)
+int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param_4, float param_5, int param_6, int param_7) {
     float param_1 = *(float*)&iparam_1;
     float param_2 = *(float*)&iparam_2;
     *(float*)&DAT_07feb258 = param_1 * _DAT_005524f0;
@@ -267,7 +268,7 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
     _DAT_07feb280 = _DAT_07feb274;
     if (param_7 == 0) {
         if (((unsigned char)DAT_0838bc70[DAT_07eab1ec] & 8) != 8)
-            FUN_004f7fb0(param_1, param_2, param_3, param_4, param_5);   // RenderTerrainFace(xf,yf,xi,yi,lodf)
+            RenderTerrainFace(param_1, param_2, param_3, param_4, param_5);   // RenderTerrainFace(xf,yf,xi,yi,lodf)
         return 0;
     }
     char cVar1 = '\0';
@@ -302,13 +303,13 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
     }
     float local_c[3];
     Triangle_ComputeNormal((float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270, local_c);
-    unsigned int uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
+    unsigned int uVar2 = CollisionDetectLineToFace((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                                        (float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270,
                                        &_DAT_07feb27c, local_c, '\x01');
     cVar1 = (char)uVar2;
     if (cVar1 == '\0') {
         Triangle_ComputeNormal((float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c, local_c);
-        uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
+        uVar2 = CollisionDetectLineToFace((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                               (float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c,
                               &_DAT_07feb264, local_c, '\x01');
         cVar1 = (char)uVar2;
@@ -345,11 +346,11 @@ int __cdecl FUN_004f8480(int iparam_1, int iparam_2, int param_3, int param_4, f
     return (int)(unsigned char)cVar1;
 }
 
-// FUN_00512d30 @ 0x00512D30 — Map_InitRayCast: init ray t_max to ~1.03e7
+// Map_InitRayCast @ 0x00512D30 — Map_InitRayCast: init ray t_max to ~1.03e7
 // IDA-ported: single store. DAT_083a4120 is the raycast t_max sentinel
-// used by FUN_00512d40 (CollisionDetectLineToFace) to accept nearer hits only.
+// used by CollisionDetectLineToFace (CollisionDetectLineToFace) to accept nearer hits only.
 // Original binary stores raw bits 0x4B1DCD65 (= 10367333.0f) into the float.
-void FUN_00512d30()
+void Map_InitRayCast()
 {
     *(DWORD*)&DAT_083a4120 = 0x4B1DCD65;  // ≈ 1.0367e7f — far-plane sentinel
 }
@@ -363,7 +364,7 @@ void FUN_00512d30()
 int __cdecl Entity_SelectNearest(int param_1_int)
 {
     byte param_1 = (byte)param_1_int;
-    bool bVar17 = (DAT_005615c0 == 4);  // g_GameState == CharSelect
+    bool bVar17 = (SceneFlag == 4);  // SceneFlag == CharSelect
 
     // Pass 1: set highlight flags and color tints for visible entities
     byte *pbVar4 = (byte *)(DAT_07abf5d0 + 0x84);
@@ -388,7 +389,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     }
 
     // Pass 2: find nearest entity to MOUSE-RAY (perpendicular distance), not camera.
-    // Antes: usábamos distancia a cámara con FUN_00513260 stub → siempre return 1
+    // Antes: usábamos distancia a cámara con Collision_SegmentToOBB stub → siempre return 1
     // → ganaba el más cercano a cámara siempre, que es slot 1 (elfa) por geometría.
     // Ahora: gana el char cuyo centro de masa está más cerca del ray del mouse.
     float best_perp = 1e12f;
@@ -396,7 +397,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     int   ent_idx   = 0;
     // DIAG: rate-limited per slot, log filter rejection reasons
     static DWORD s_lastFilt[5] = {0,0,0,0,0};
-    bool diagFilt = (DAT_005615c0 == 4);
+    bool diagFilt = (SceneFlag == 4);
 
     for (int ofs = 0; ofs < 0x59740; ofs += 0x394, ent_idx++) {
         char *ent = (char *)(ofs + DAT_07abf5d0);
@@ -450,12 +451,12 @@ int __cdecl Entity_SelectNearest(int param_1_int)
         // px).  Apuntando a la parte alta del cuerpo, o con el mob inclinado en
         // su animacion, el cursor quedaba fuera de esos circulos y el click caia
         // al suelo (SelectedCharacter = -1): los "clicks que no atacan".  El
-        // motivo por el que se habia reemplazado (FUN_00513260 era un stub que
+        // motivo por el que se habia reemplazado (Collision_SegmentToOBB era un stub que
         // devolvia 1) ya no aplica: quedo portado el 2026-09-04.
         {
             float box[12];
             memcpy(box, (const void*)(ent + 0x130), sizeof(box));
-            if (!FUN_00513260((float*)&CameraRayOriginX, (float*)&DAT_083a4110, box))
+            if (!Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, box))
                 continue;
 
             const float dy = *(float*)(ent + 0x14) - _DAT_083a42d8;   // CameraPosition[1]
@@ -467,16 +468,16 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             // Filtro de techos (IDA L~115-131): en Lorencia (World 0) una entidad
             // sobre un tile 4, y en Devias (World 2) sobre un tile 3, solo se
             // puede elegir si el heroe esta en ese mismo tipo de tile.
-            // `DAT_0055a7ac` es el indice de mapa (el macro `World` que lo
-            // nombraba g_GameSubState mentia; la nota vieja que deshabilito este
+            // `World` es el indice de mapa (el macro `World` que lo
+            // nombraba World mentia; la nota vieja que deshabilito este
             // filtro partia de esa etiqueta).
-            const int map = (int)DAT_0055a7ac;
+            const int map = (int)World;
             if (map == 0 || map == 2) {
                 int tx = (int)*(float*)(ent + 0x10) / 100;
                 int ty = (int)*(float*)(ent + 0x14) / 100;
                 if (tx < 0) tx = 0; if (tx > 255) tx = 255;
                 if (ty < 0) ty = 0; if (ty > 255) ty = 255;
-                const unsigned char tile = DAT_080bb2b4[tx + (ty << 8)];   // TerrainMappingLayer1
+                const unsigned char tile = TerrainMappingLayer1[tx + (ty << 8)];   // TerrainMappingLayer1
                 const unsigned char roof = (map == 0) ? 4 : 3;
                 if (tile == roof && (DWORD)tile != DAT_07e118e8)           // HeroTile
                     continue;
@@ -516,9 +517,9 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 //   El path fiel (sub_4AFA40) hace un test de rayo contra la OBB del item con
 //   `sub_513260`; aca se usa proximidad world-space -- se compara el tile del item
 //   con el tile del terreno bajo el mouse (el mismo picker del click-to-move,
-//   FUN_004f9ac0 -> DAT_080ab288/28c).
+//   RenderTerrain -> DAT_080ab288/28c).
 //
-//   El motivo que se anotaba para no portarlo ("FUN_00513260 depende de macros
+//   El motivo que se anotaba para no portarlo ("Collision_SegmentToOBB depende de macros
 //   Hex-Rays sin portar") YA NO APLICA: ese test quedo portado el 2026-09-04 al
 //   arreglar el pick de objetos interactuables.  Si algun dia el hover de items se
 //   comporta distinto al original, ese es el cambio a hacer -- pero hoy funciona y
@@ -533,10 +534,10 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 int __cdecl ItemOnGround_HoverTest(void)
 {
     // 2026-07-27: hover de items en el suelo. El path FIEL (sub_4AFA40) usa un
-    // point-in-quad screen-space (FUN_00513260, 12-arg) que depende de macros
+    // point-in-quad screen-space (Collision_SegmentToOBB, 12-arg) que depende de macros
     // Hex-Rays sin portar. En su lugar usamos proximidad world-space: comparar
     // el tile del item con el tile del terreno bajo el mouse (el mismo picker
-    // que usa el click-to-move, FUN_004f9ac0 → DAT_080ab288/28c).
+    // que usa el click-to-move, RenderTerrain → DAT_080ab288/28c).
     // El pool DAT_07e12840 es 1000×0x204; layout por slot (base = pool+i*0x204):
     //   base+72   active flag
     //   base+424  visible flag (lo setea el render)
@@ -622,7 +623,7 @@ int __cdecl SpecialObject_HoverTest(void)
         float box[12];
         memcpy(box, (const void *)(obj + 0x130), sizeof(box));
 
-        if (FUN_00513260((float *)&CameraRayOriginX, (float *)&DAT_083a4110, box)) {
+        if (Collision_SegmentToOBB((float *)&CameraRayOriginX, (float *)&DAT_083a4110, box)) {
             *(DWORD *)(obj + 0xe8) = 0x3fc00000;         // 1.5f -- resalte
             *(DWORD *)(obj + 0xec) = 0x3fc00000;
             *(DWORD *)(obj + 0xf0) = 0x3fc00000;
@@ -632,13 +633,13 @@ int __cdecl SpecialObject_HoverTest(void)
     return -1;
 }
 // FUN_004afb00 — implemented in src/Game/Party_NameMatch.cpp (Party_MatchEntityNames)
-// FUN_004e5980 @ 0x004E5980 — Party_HPBar_HoverCheck(void)
+// Party_HPBar_HoverCheck @ 0x004E5980 — Party_HPBar_HoverCheck(void)
 // Iterates the party HP bar array (DAT_07e11e9c, stride 0x24 = 9 uints) and checks
 // if the mouse cursor (DAT_083a427c, DAT_083a4278) is within any party member's
 // screen rect. Sets SelectedCharacter (hover entity index) and returns 1 if hovering.
 // SecondPassword UI state flags (DAT_07eaa115..130) control which X position band is used.
 // Anti-tamper HashTable blocks in the loop are skipped — only position comparison kept.
-char __cdecl FUN_004e5980(void)
+char __cdecl Party_HPBar_HoverCheck(void)
 {
     if (DAT_07eaa115 != '\0') return 0;
 
@@ -660,8 +661,8 @@ char __cdecl FUN_004e5980(void)
         // All clear: check if all flags inactive
         if ((DAT_07eaa116 == '\0') && (DAT_07eaa115 == '\0') &&
             (DAT_07eaa114 == '\0') && (DAT_07eaa124 == 0) &&
-            (DAT_07eaa128 == 0) && (*(char*)((uintptr_t)DAT_00583d8c + 0x1c87f) == '\0') &&
-            (DAT_07eaa130 == '\0')) {
+            (GoldenArcherOpenType == 0) && (*(char*)((uintptr_t)DAT_00583d8c + 0x1c87f) == '\0') &&
+            (ServerDivisionOpened == '\0')) {
             local_20 = 0x280;
         } else {
             local_20 = 0x1c2;

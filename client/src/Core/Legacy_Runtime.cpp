@@ -28,15 +28,15 @@ DWORD g_LocalEntity   = 0;        // DAT_07abf5d8
 // Texture.cpp
 int g_bound_texture_id = 0;   // DAT_00561574
 int g_screen_height    = 480; // DAT_00561570
-int g_vram_used        = 0;   // DAT_083bb9d0
+int g_vram_used        = 0;   // m_dwUsedTextureMemory
 
 // Party.cpp
 BYTE* g_PartyHPTable   = nullptr; // DAT_07e11e98
 
 // ── CRT wrappers (these are real implementations) ────────────────────────────
 
-// FUN_005416bc — crt_sprintf (MSVC CRT sprintf stub)
-int __cdecl FUN_005416bc(char* buf, const char* fmt, ...) {
+// IDA: crt_sprintf (0x005416BC)
+int __cdecl crt_sprintf(char* buf, const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
     int r = vsprintf(buf, fmt, args);
@@ -44,29 +44,29 @@ int __cdecl FUN_005416bc(char* buf, const char* fmt, ...) {
     return r;
 }
 
-// FUN_0054158c — operator_delete (free)
-void __cdecl FUN_0054158c(void* ptr) {
+// IDA: operator_delete (0x0054158C)
+void __cdecl operator_delete(void* ptr) {
     free(ptr);
 }
 
 
 // ── FUN_ stubs (void returning) ───────────────────────────────────────────────
-// FUN_00403a30 @ 0x00403A30 — NOP (empty function in original binary).
-void __cdecl FUN_00403a30(void) {}
+// CWsctlc__LogPrintOn @ 0x00403A30 — NOP (empty function in original binary).
+void __cdecl CWsctlc__LogPrintOn(void) {}
 
 // ── CRT wrappers (forwarded to real CRT) ─────────────────────────────────────
-// FUN_00543037 — CRT fseek wrapper
-void __cdecl FUN_00543037(int *fp, int offset, int whence) {
+// crt_fseek — CRT fseek wrapper
+void __cdecl crt_fseek(int *fp, int offset, int whence) {
     fseek((FILE*)fp, offset, whence);
 }
 
-// FUN_00542eb4 — CRT ftell wrapper
-int __cdecl FUN_00542eb4(char *fp) {
+// crt_ftell — CRT ftell wrapper
+int __cdecl crt_ftell(char *fp) {
     return (int)ftell((FILE*)fp);
 }
 
-// FUN_00541597 — CRT fread wrapper
-int __cdecl FUN_00541597(void *dst, int size, int count, int *fp) {
+// crt_fread — CRT fread wrapper
+int __cdecl crt_fread(void *dst, int size, int count, int *fp) {
     return (int)fread(dst, (size_t)size, (size_t)count, (FILE*)fp);
 }
 

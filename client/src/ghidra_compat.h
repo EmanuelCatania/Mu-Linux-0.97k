@@ -39,6 +39,6 @@
 
 // `delete__` es el `operator delete` del binario original (0x0054158C).
 #ifndef delete__
-extern void __cdecl FUN_0054158c(void* ptr);
-#define delete__(p)  FUN_0054158c((unsigned char*)(p))
+extern void __cdecl operator_delete(void* ptr);
+#define delete__(p)  operator_delete((unsigned char*)(p))
 #endif

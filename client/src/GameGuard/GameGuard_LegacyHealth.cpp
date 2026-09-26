@@ -5,15 +5,15 @@
 #include "functions.h"
 #include "structs.h"
 
-extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
-extern void __cdecl FUN_0054158c(void* ptr);
-extern void FUN_004fa5a0(void);
+extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
+extern void __cdecl operator_delete(void* ptr);
+extern void ClearActionObject(void);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -48,10 +48,10 @@ void __cdecl FUN_0053d430(unsigned char *buf) {
     // installs TopLevelExceptionFilter, calls FUN_0053d890.
 }
 
-// FUN_0053ea90 @ 0x0053EA90 (44 lines) — GameGuard per-tick health check
+// GameGuard_HealthCheck @ 0x0053EA90 (44 lines) — GameGuard per-tick health check
 // Checks GG process status, heartbeat event, returns error codes.
 // In our build, GameGuard is disabled — return 0x755 (OK/running).
-int __cdecl FUN_0053ea90(void *param) {
+int __cdecl GameGuard_HealthCheck(void *param) {
     (void)param;
     return 0x755; // GG status OK
 }

@@ -6,7 +6,7 @@
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 1180-2577 (1398 lines).
 //
 // "Mouse hover helpers" section + neutralized stubs:
-//   FUN_004f8480 — Terrain_TilePick
+//   RenderTerrainTile — Terrain_TilePick
 //   FUN_004afa40 — ItemOnGround_HoverTest (NEUTRALIZED, returns -1)
 //   FUN_004b0240 — SpecialObject_HoverTest (NEUTRALIZED)
 //   FUN_004afdc0 — Entity_SelectNearest
@@ -17,7 +17,7 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 // ── [DIAG FORGE] TEMPORAL — identificar quién dibuja el cubo cyan (Lorencia) ──
 // Loguea draw/spawn calls cuyo centro (pos mundial) esté dentro de ~6 tiles del
@@ -25,10 +25,10 @@ extern void __cdecl FUN_0054158c(void* ptr);
 // REMOVER cuando se identifique el renderable.
 //   fn    = punto del pipeline (RenderObject/RenderMesh/RenderSprite/...)
 //   type  = entity type / particle-bitmap type (-1 si N/A)
-//   model = model index (-1 si N/A)
+//   model index (-1 si N/A)
 //   bmp   = bitmap id solicitado (-1 si N/A)
 //   glTex = GL texture handle (-1 si N/A)
-//   mesh  = mesh index (-1 si N/A)
+//   mesh index (-1 si N/A)
 //   blend = flags/Components de blend (-1 si N/A)
 // [DIAG FORGE] — trazado selectivo del pipeline de habilidades.  No modifica
 // pools ni estado GL: sólo registra los tipos visuales de combate, limitado

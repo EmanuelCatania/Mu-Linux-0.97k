@@ -42,91 +42,19 @@ void __cdecl Effect_SpawnBombRing(float *a1)
     out[2] = out[2] + a1[2];
     CreateBomb(out, 1);
     v2 = rand() % 2;
-    void *r197 = Effect_Create(v2 + 197, out, Angle, Light, (float*)1, (float*)0, (float*)-1, (float*)0, 0);
+    void *r197 = CreateEffect(v2 + 197, out, Angle, Light, (float*)1, (float*)0, (float*)-1, (float*)0, 0);
     v3 = rand() % 2;
-    void *r198 = Effect_Create(v3 + 197, out, Angle, Light, (float*)0, (float*)0, (float*)-1, (float*)0, 0);
+    void *r198 = CreateEffect(v3 + 197, out, Angle, Light, (float*)0, (float*)0, (float*)-1, (float*)0, 0);
     v4 = ++v1;
   }
   while ( v1 < 8 );
 }
 
 
-// RenderWheelWeapon @ 0x0046B7C0 (~101 lines) — renders spinning weapon effect
-// Saves object position/rotation, modifies Z + rotation for spinning effect,
-// sets up BMD model, animates, RequestTerrainLight, RenderPartObject, restores original.
-void __cdecl RenderWheelWeapon_stub(DWORD o) {
-    // Save original position and rotation
-    float save_posX = *(float*)(o + 0x10);
-    float save_posY = *(float*)(o + 0x14);
-    float save_posZ = *(float*)(o + 0x18);
-    float save_angX = *(float*)(o + 0x1C);
-    float save_angY = *(float*)(o + 0x20);
-    float save_angZ = *(float*)(o + 0x24);
-
-    // Modify rotation: subtract _DAT_0055284c from Z height offset (o+0xC8)
-    float fRot = *(float*)(o + 0xC8) - _DAT_0055284c;
-    *(float*)(o + 0xC8) = fRot;
-
-    // Apply rotation offset to angle Z, set angle Y to 90.0f (0x42b40000)
-    *(float*)(o + 0x24) = fRot + save_angZ;
-    *(float*)(o + 0x20) = 90.0f;
-
-    // Raise Z position by one terrain unit
-    *(float*)(o + 0x18) = save_posZ + _DAT_005524f0;
-
-    // Compute model Type from weapon item attribute byte
-    BYTE weaponByte = *(BYTE*)(*(int*)(o + 0xFC) + 0x88);
-    int Type = (int)weaponByte + 400;
-
-    // Set up BMD model data
-    int modelBase = DAT_05828d58 + Type * 0xBC;
-    BYTE heroClass = *(BYTE*)(Hero + 0x2B8) & 7;  // Hero->Class & 7
-    BYTE animState = *(BYTE*)(o + 0x105);
-
-    *(float*)(modelBase + 0x6C) = *(float*)(o + 0x10);
-    *(float*)(modelBase + 0x70) = *(float*)(o + 0x14);
-    *(float*)(modelBase + 0x74) = *(float*)(o + 0x18);
-    *(BYTE*)(modelBase + 0x98) = heroClass;
-    *(BYTE*)(modelBase + 0xA0) = animState;
-
-    // Save and set object type
-    short origType = *(short*)(o + 2);
-    *(short*)(o + 2) = (short)Type;
-
-    // ItemObjectAttribute — sets up object render attributes
-    FUN_00502ba0(o);
-
-    // BMD::Animation — Ghidra shows phantom register params (unaff_EBX/ESI/EDI/EBP);
-    // the real call sets up bone matrices for the weapon model.
-    // Parameters that depend on phantom regs are passed as zero/defaults.
-    // (Animation is driven by the bone matrix pointer at o+0x108 and frame at o+0x10C)
-
-    // RequestTerrainLight — sample terrain lighting at object position
-    float terrainLight[3] = { 0.0f, 0.0f, 0.0f };
-    FUN_004f7960(*(float*)(o + 0x10), *(float*)(o + 0x14), terrainLight);
-
-    // Add object's own light contribution
-    terrainLight[0] += *(float*)(o + 0xE8);
-    terrainLight[1] += *(float*)(o + 0xEC);
-    terrainLight[2] += *(float*)(o + 0xF0);
-
-    // Light level from item attribute byte
-    int lightLevel = (int)(*(BYTE*)(*(int*)(o + 0xFC) + 0x89)) << 3;
-
-    // RenderPartObject(o, Type, NULL, light, alpha=0.0, level=1, opt=1, globalTrans=true, hideSkin=false, translate=true, select, renderType)
-    FUN_00505a10(o, Type, 0, terrainLight, 0.0f, 1, 1, 1, 0, 1, 0, 0);
-
-    // Restore original type
-    *(short*)(o + 2) = origType;
-
-    // Restore original position and rotation
-    *(float*)(o + 0x10) = save_posX;
-    *(float*)(o + 0x14) = save_posY;
-    *(float*)(o + 0x18) = save_posZ;
-    *(float*)(o + 0x1C) = save_angX;
-    *(float*)(o + 0x20) = save_angY;
-    *(float*)(o + 0x24) = save_angZ;
-}
+// RenderWheelWeapon vive en Render_WorldHelpers.cpp.
+//
+// 2026-09-26: aca habia una copia bajo el nombre RenderWheelWeapon.  Las dos
+// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.
 
 // ItemDrop_RenderGroundWeapon @ 0x0046B980 (~82 lines) — renders grounded weapon model
 // If object's height offset (o+0x60) > _DAT_00552488 threshold:
@@ -158,12 +86,12 @@ void __cdecl ItemDrop_RenderGroundWeapon(int param_1) {
 
     // Set up object render attributes
     DWORD save_d8 = *(DWORD*)(param_1 + 0xD8);
-    FUN_00502ba0(param_1);  // ItemObjectAttribute
+    ItemObjectAttribute(param_1);  // ItemObjectAttribute
     *(DWORD*)(param_1 + 0xD8) = save_d8;  // restore overwritten field
 
     // RequestTerrainLight — sample terrain lighting at object position
     float terrainLight[3] = { 0.0f, 0.0f, 0.0f };
-    FUN_004f7960(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14), terrainLight);
+    RequestTerrainLight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14), terrainLight);
 
     // Add object's own light contribution
     terrainLight[0] += *(float*)(param_1 + 0xE8);
@@ -179,7 +107,7 @@ void __cdecl ItemDrop_RenderGroundWeapon(int param_1) {
     // RenderPartObject below handles the actual render.
 
     // RenderPartObject
-    FUN_00505a10(param_1, Type, 0, terrainLight, 0.0f, 1, 1, 1, 0, 1, 0, 0);
+    RenderPartObject(param_1, Type, 0, terrainLight, 0.0f, 1, 1, 1, 0, 1, 0, 0);
 
     // Restore original type
     *(short*)(param_1 + 2) = (short)(int)origTypeF;
@@ -241,7 +169,7 @@ void __cdecl FUN_0046c5a0(int param_1, int param_2, float* param_3, float* param
 // Others: BMD bone transform to position blood at hit location.
 // Models base = DAT_05828d58, stride 0xbc. OBJECT struct (Ghidra): Type@+0x02, Live@+0x00,
 // Position@+0x10, Angle@+0x1C, Light@+0xE8, BoneTransform2@+0x114.
-void __cdecl CreateBlood_stub(DWORD o) {
+void __cdecl CreateBlood(DWORD o) {
     WORD wType = *(WORD*)(o + 0x02);  // o->Type
     // Models[type].Data + 0x54 = bone index for blood attachment point
     int boneIdx = *(int*)(DAT_05828d58 + (short)wType * 0xbc + 0x54);
@@ -258,7 +186,7 @@ void __cdecl CreateBlood_stub(DWORD o) {
             float pos[3] = { *(float*)(o + 0x10), *(float*)(o + 0x14), *(float*)(o + 0x18) };
             float ang[3] = { *(float*)(o + 0x1C), *(float*)(o + 0x20), *(float*)(o + 0x24) };
             float lit[3] = { *(float*)(o + 0xE8), *(float*)(o + 0xEC), *(float*)(o + 0xF0) };
-            Effect_Create(199, pos, ang, lit, NULL, NULL, NULL, NULL, 0);
+            CreateEffect(199, pos, ang, lit, NULL, NULL, NULL, NULL, 0);
             count = count - 1;
         } while (count != 0);
         return;

@@ -7,7 +7,7 @@
 
 // IDA: FUN_0043E890 @ 0x0043E890 — LookAtTarget (~38 lines), rotates entity head toward target character.
 // Computes angle between entity and target, sets HeadTargetAngle if within threshold.
-void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
+void __cdecl LookAtTarget(DWORD o, DWORD TargetCharacter) {
     // 0x0043E890 — Rotates entity head toward target character
     // o = OBJECT* (entity), TargetCharacter = CHARACTER* (target, OBJECT at offset 0)
     // OBJECT struct (from Ghidra, size 0x1BC):
@@ -28,12 +28,12 @@ void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
     float tY = *(float*)(TargetCharacter + 0x14);  // target->Object.Position[1]
     float tZ = *(float*)(TargetCharacter + 0x18);  // target->Object.Position[2]
 
-    // CreateAngle @ 0x0043e050: declared as FUN_0043e050 with wrong sig; cast to correct prototype
+    // CreateAngle @ 0x0043e050: declared as CreateAngle with wrong sig; cast to correct prototype
     typedef float (__cdecl *CreateAngleFn)(float, float, float, float);
-    float angle = ((CreateAngleFn)&FUN_0043e050)(oX, oY, tX, tY);
+    float angle = ((CreateAngleFn)&CreateAngle)(oX, oY, tX, tY);
 
     // FarAngle(oFacing, angle, 1) — angular distance
-    double deltaAngle = (double)Angle_GetDifference(oFacing, angle, '\x01');
+    double deltaAngle = (double)FarAngle(oFacing, angle, '\x01');
 
     float* headTarget = (float*)(o + 0x34);  // o->HeadTargetAngle[3]
 
@@ -56,7 +56,7 @@ void __cdecl LookAtTarget_stub(DWORD o, DWORD TargetCharacter) {
 }
 
 // IDA: FUN_0043E940 @ 0x0043E940 — MoveHead (~56 lines), random/tracked head movement for entities.
-void __cdecl MoveHead_stub(int param_1) {
+void __cdecl MoveHead(int param_1) {
     char anim = *(char*)(param_1 + 0x105);
     if (anim == '\x06') return; // dead — no head movement
 
@@ -95,7 +95,7 @@ void __cdecl MoveHead_stub(int param_1) {
         // del struct de la entidad 0: LookAtTarget leia su "posicion" de campos
         // arbitrarios y el angulo de cabeza salia disparado a cualquier lado.
         // 916 = 0x394 es el stride del array de entidades.
-        LookAtTarget_stub((DWORD)param_1,
+        LookAtTarget((DWORD)param_1,
                           CharactersClient + 916 * (int)*(short*)(param_1 + 0x310));
         return;
     }

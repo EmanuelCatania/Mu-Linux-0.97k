@@ -5,14 +5,14 @@
 #include "functions.h"
 #include "structs.h"
 
-extern "C" DWORD DAT_07eaa128;
-extern void __cdecl FUN_0054158c(void* ptr);
-extern void FUN_004fa5a0(void);
+extern "C" DWORD GoldenArcherOpenType;
+extern void __cdecl operator_delete(void* ptr);
+extern void ClearActionObject(void);
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y) (0)
@@ -67,33 +67,44 @@ void __cdecl EnableAlphaTest(bool enable) {
 // These are placeholders until the actual implementations are decompiled.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// 2026-05-05: AccessModel era stub vacío → ningún BMD de NPC se cargaba.
+// AccessModelWithTextures - DESVIACION DEL PORT, no existe en IDA.
+//
+// Envuelve a AccessModel (0x005060B0, el loader BMD crudo) y le agrega los dos
+// pasos que el port necesita para que un NPC quede utilizable: cargar su
+// textura y sembrar las velocidades de animacion.  Los ~42 call sites que la
+// usan son los que antes llamaban al nombre AccessModel cuando el loader crudo
+// todavia se llamaba FUN_005060b0.
+//
+// 2026-09-25: hasta el renombrado esta funcion SE llamaba AccessModel y convivia
+// con FUN_005060b0.  Al renombrar el loader crudo a AccessModel las dos quedaron
+// como sobrecargas (char* vs const char*), functions.h solo declaro la del loader
+// y este puente quedo muerto: los NPC cargaban su BMD pero sin velocidades de
+// animacion, o sea congelados -- y el herrero, cuyo sonido se dispara por rango
+// de frame, lo reproducia en loop.  Ver [[simbolo-duplicado-patron]].
+//
+// 2026-05-05: AccessModel era stub vacio -> ningun BMD de NPC se cargaba.
 // Solo el guardia (type=249) renderizaba porque usa player model 390 ya
-// cargado. Los demás NPCs (Storage, Smith, Wizard, etc.) llamaban a
-// AccessModel("Data\\Npc\\", "Storage", 1) etc pero el modelo nunca se
-// cargaba → invisible.
+// cargado. Los demas NPCs (Storage, Smith, Wizard, etc.) llamaban a
+// AccessModel(0x149, "Data\\Npc\\", "Storage", 1) etc pero el modelo nunca
+// cargaba -> invisible.
 //
-// FUN_005060b0 es la impl real del BMD loader (Monster_LoadModel) — ya
-// usado por OpenWorld para cargar Object1, Object11, etc. Misma signatura
-// (id, path, name, idx). Delegamos directamente.
-//
-// 2026-05-05 (followup): además llamar FUN_00505c80 (OpenTexture) post-BMD
-// load. Sin esto los NPCs cargaban geometría pero las texturas no se
-// resolvían en los slots (IndexTexture[]) → render en blanco. El cliente
-// original sí hace este paso después del BMD load para NPCs.
-void __cdecl AccessModel(int id, char* path, char* name, int param) {
-    FUN_005060b0(id, path, name, param);
+// 2026-05-05 (followup): ademas llamar OpenTexture post-BMD load. Sin esto los
+// NPCs cargaban geometria pero las texturas no se resolvian en los slots
+// (IndexTexture[]) -> render en blanco. El cliente original si hace este paso
+// despues del BMD load para NPCs.
+void __cdecl AccessModelWithTextures(int id, char* path, char* name, int param) {
+    AccessModel(id, path, name, param);
     // Path para OpenTexture: typically "Npc\" sin "Data\" prefijo (los
-    // path-strippers en FUN_00529bd0/740 ya lo manejan si viene completo).
+    // path-strippers en OpenTGA/740 ya lo manejan si viene completo).
     if (path) {
-        FUN_00505c80(id, path, 0x2600, '\x01');
+        OpenTexture(id, path, 0x2600, '\x01');
     }
     // 2026-05-05: setup de animation speeds (idéntico al patrón que
-    // FUN_005098c0 hace para monsters). Sin esto, los NPCs cargan
+    // OpenMonsterModel hace para monsters). Sin esto, los NPCs cargan
     // geometry/textures pero entity[+0x105] action speed = 0 →
     // CharacterAnimation no avanza el frame → NPCs estáticos.
     //
-    // CharacterAnimation lee de model+48 (=bones table per FUN_004423e0
+    // CharacterAnimation lee de model+48 (=bones table per BMD__Open
     // alloc) con stride 16 bytes. Esa tabla tiene `numBones` entries de 0x10
     // bytes c/u. Para evitar buffer overflow (crashes vimos con NPCs de
     // pocos bones), solo escribir speeds hasta el límite de bones disponibles.
@@ -117,11 +128,11 @@ void __cdecl AccessModel(int id, char* path, char* name, int param) {
     }
 }
 
-// OpenTexture @ 0x00505C80 — forward al símbolo FUN_00505c80 (implementado arriba).
+// OpenTexture @ 0x00505C80 — forward al símbolo OpenTexture (implementado arriba).
 // functions.h lo declara con esta firma (void*, bool); en x86 cdecl los tipos
 // son binariamente compatibles con (const char*, char).
 void __cdecl OpenTexture(int id, void* path, int flags, bool param) {
-    FUN_00505c80(id, (const char*)path, flags, (char)param);
+    OpenTexture(id, (const char*)path, flags, (char)param);
 }
 
 // LoadWaveFile @ 0x00404A10 — real implementation in src/Sound/Sound.cpp.
@@ -134,7 +145,7 @@ void __cdecl OpenModel(int id, char* path, ...) {
 // Camera_BuildMouseRay is CreateScreenVector.  RenderObjectScreen lives in
 // BMD_LegacyDraw.cpp and owns the native BMD animation/draw path.
 extern void __cdecl Camera_BuildMouseRay(int sx, int sy, float* out);
-extern void __cdecl FUN_004e13a0(int param_1, unsigned int param_2,
+extern void __cdecl RenderObjectScreen(int param_1, unsigned int param_2,
                                    unsigned char param_3, unsigned char param_4,
                                    float* param_5, int param_6, char param_7);
 
@@ -149,6 +160,7 @@ extern void __cdecl FUN_004e13a0(int param_1, unsigned int param_2,
 //      modelId = Type + 400 (default), o IDs específicos para items 459/457/469/435 según Level.
 //
 // Esto reemplaza el placeholder que pintaba quads coloreados por grupo.
+// IDA: RenderItem3D (0x004E1BE0)
 void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
                            int Type, int Level, int Option1, int ExtOption, bool PickUp)
 {
@@ -366,7 +378,7 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
         }
 
     // Guard contra modelo no cargado o pointer corrupto. RenderObjectScreen
-    // (FUN_004e13a0) deferenciaría el modelEntry → libjpeg crash si meshBase
+    // (RenderObjectScreen) deferenciaría el modelEntry → libjpeg crash si meshBase
     // o numMesh están en garbage. Retornar silencioso si modelo no listo.
     {
         if (modelId < 0 || modelId >= 1200) return;
@@ -383,13 +395,13 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
 
     // IDA 0x004E1BE0 calls RenderObjectScreen(Type+400, Level, Option1, Position, Success, PickUp).
     // The original path does not forward ExtOption here.
-    FUN_004e13a0(modelId, (unsigned int)levelArg, (unsigned char)Option1,
+    RenderObjectScreen(modelId, (unsigned int)levelArg, (unsigned char)Option1,
                  0, Position, Success ? 1 : 0, PickUp ? 1 : 0);
 }
 
 // Batch 21 — helper function stubs (called by MoveObjects, CollisionDetectLineToMesh, CheckMixRecipe)
-// FUN_004fa5f0 (IDA-activated, was Ghidra stub)
-void __cdecl FUN_004fa5f0(int a1)
+// MoveObject_Special (IDA-activated, was Ghidra stub)
+void __cdecl MoveObject_Special(int a1)
 {
   int v1; // edi
   short v2; // ax
@@ -476,7 +488,7 @@ LABEL_9:
       {
         *(DWORD *)(a1 + 88) = -2;
         *v3 = 90.0;
-        FUN_004fa5a0();
+        ClearActionObject();
         AddTerrainAttributeRange(13, 70, 3, 6, 8u, 0);
       }
       --DAT_0055a7b8;

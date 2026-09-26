@@ -17,14 +17,14 @@
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -182,29 +182,29 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     *(BYTE*)(c + 0x2EC) = 0;
 
     if (*(short*)(o + 2) == 390) {
-        FUN_00443e70(); // SetAttackSpeed
+        SetAttackSpeed(); // SetAttackSpeed
         if (skillType == 43) {
-            FUN_0043e820(o, 67);
+            SetAction(o, 67);
         } else if (skillType == 47) {
-            FUN_0043e820(o, 66);
+            SetAction(o, 66);
         } else if (skillType == 49) {
-            if (g_GameSubState == 8 || g_GameSubState == 10) {
-                FUN_0043e820(o, 65);
+            if (World == 8 || World == 10) {
+                SetAction(o, 65);
             } else {
-                FUN_0043e820(o, 64);
+                SetAction(o, 64);
             }
         } else {
             // IDA intentionally uses the selected slot here, not v317.
-            FUN_0043e820(o, selectedSlot + 37);
+            SetAction(o, selectedSlot + 37);
         }
     } else {
-        FUN_00444410(c, 0, 0, 0);
+        SetPlayerAttack(c, 0, 0, 0);
     }
 
     // IDA L597-601:
     //   Light[0] = Light[1] = Light[2] = 1.0;
     //   Particle_Spawn(1232, (float *)(o + 16), (float *)(o + 28), Light, 0, 0.0, o);
-    // El port llamaba `Effect_Create(0x4D0, ...)` (= CreateEffect @0x00460DC0),
+    // El port llamaba `CreateEffect(0x4D0, ...)` (= CreateEffect @0x00460DC0),
     // que es OTRA funcion, y ademas pasaba `o+0xE8` como luz en vez del {1,1,1}
     // local.  1232 = 0x4D0 es un tipo de PARTICULA, no de efecto.
     float Light[3] = { 1.0f, 1.0f, 1.0f };            // IDA: Light[3]
@@ -213,7 +213,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     // Play random sword sound (0x28 or 0x29)
     PlayBuffer((_rand() & 1) + 0x28, 0, 0);
 
-    int targetIdx = (int)DAT_07d780a0; // IDA: MovementSkillTarget @ 0x07D780A0
+    int targetIdx = (int)MovementSkillTarget; // IDA: MovementSkillTarget @ 0x07D780A0
     // Native code indexes CharactersClient directly at 0x4859A9.  Attack and
     // Action establish this index before entering this helper; adding a local
     // rejection here changes the original tail (state + C1:11 confirmation).
@@ -222,7 +222,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
     *(float*)(c + 0x318) = *(float*)(targetEntity + 0x14); // TargetPosition.y
     *(float*)(c + 0x31C) = *(float*)(targetEntity + 0x18); // TargetPosition.z
 
-    *(float*)(o + 36) = FUN_0043e050(
+    *(float*)(o + 36) = CreateAngle(
         *(float*)(o + 0x10), *(float*)(o + 0x14),
         *(float*)(c + 0x314), *(float*)(c + 0x318));
     const WORD targetKey = *(WORD*)(targetEntity + 476); // IDA: v285
@@ -242,7 +242,7 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             float centre[3] = { *(float*)(o + 16) + step[0],
                                 *(float*)(o + 20) + step[1],
                                 *(float*)(o + 24) + step[2] }; // IDA: Angle after first loop pass
-            DAT_05826d10 = 43;                        // IDA L680: dword_5826D10 = 0x2B
+            CurrentSkill = 43;                        // IDA L680: dword_5826D10 = 0x2B
             // IDA L687-690 / L738 / L780: los dos bytes de grilla salen de
             // `c + 904` y `c + 908` (la grilla del HEROE), no de la posicion de
             // mundo del objetivo (c+788/792) que usaba el port.
@@ -280,14 +280,14 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
             int skillIndex = 0;
             if (attributes) for (; skillIndex < 20 && attributes[skillIndex + 87] != 56; ++skillIndex) {}
             for (int part = 0; part < 5; ++part) {
-                Effect_Create(203, (float*)(o + 16), angle, (float*)(o + 232),
+                CreateEffect(203, (float*)(o + 16), angle, (float*)(o + 232),
                               (float*)(intptr_t)2, (float*)o,
                               (float*)(intptr_t)*(WORD*)(o + 134),
                               (float*)(intptr_t)skillIndex, 0);
                 angle[2] += 20.0f;
             }
-    } else if ((DWORD)(GetTickCount() - DAT_05826cf4) > 300) {
-            DAT_05826cf4 = GetTickCount();
+    } else if ((DWORD)(GetTickCount() - g_dwLatestMagicTick) > 300) {
+            g_dwLatestMagicTick = GetTickCount();
             Warrior_SendSkill19(skillType, targetKey);
     }
 
@@ -318,14 +318,14 @@ void __cdecl Combat_UseWarriorSkill(int c /* IDA: c */, int o /* IDA: o */)
 // Hit reaction: Entity_SetAnimation(0x57), clear +0x164, set +0x7C=1,
 // spawn effect 0x498 at entity pos, play sound 0x58.
 void __cdecl Entity_WeaponHit(int param_1) {
-    FUN_00443e70();
-    FUN_0043e820(param_1, 0x57);
+    SetAttackSpeed();
+    SetAction(param_1, 0x57);
     *(DWORD *)(param_1 + 0x164) = 0;
     *(BYTE  *)(param_1 + 0x7c)  = 1;
-    Effect_Create(0x498,
+    CreateEffect(0x498,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
         (float*)0, (float*)0, (float*)0xffffffff, (float*)0, 0);
-    FUN_00404bc0(0x58, 0, 0);
+    PlayBuffer(0x58, 0, 0);
 }
 
 // IDA: FUN_0042BC00 is named SetPlayerBow in the reference notes; `Entity_ResetToWalk`
@@ -340,11 +340,11 @@ void __cdecl Entity_ResetToWalk(int param_1) {
     if (((sVar1 < 0x210) || (0x216 < sVar1)) && (sVar1 != 0x221)) {
         sVar1 = *(short*)(param_1 + 0x270);
         if (((0x217 < sVar1) && (sVar1 < 0x21f)) || (sVar1 == 0x220)) {
-            FUN_0043e820(param_1, (swimming && has_water) ? 0x31 : 0x2f);
+            SetAction(param_1, (swimming && has_water) ? 0x31 : 0x2f);
         }
         return;
     }
-    FUN_0043e820(param_1, (swimming && has_water) ? 0x30 : 0x2e);
+    SetAction(param_1, (swimming && has_water) ? 0x30 : 0x2e);
 }
 
 // IDA: SetPlayerMagic @ 0x00444A80 (el nombre real del binario; el alias
@@ -354,23 +354,23 @@ void __cdecl Entity_ResetToWalk(int param_1) {
 void __cdecl Entity_SelectTarget_Player(int param_1, int /*target*/) {
     if (*(short*)(param_1 + 2) != 0x186) {
         UINT uVar1 = (*(BYTE*)(param_1 + 0x303) % 3 == 0) ? 3 : 4;
-        FUN_0043e820(param_1, uVar1);
+        SetAction(param_1, uVar1);
         *(char*)(param_1 + 0x303) = *(char*)(param_1 + 0x303) + 1;
         return;
     }
-    FUN_00443e70();
+    SetAttackSpeed();
     if (((*(short*)(param_1 + 0x2b8) == 0x332) || (*(short*)(param_1 + 0x2b8) == 0x333)) &&
          (*(char*)(param_1 + 0x34e) == '\0')) {
-        FUN_0043e820(param_1, 0x5b); // death anim for special class
+        SetAction(param_1, 0x5b); // death anim for special class
         return;
     }
     if ((*(BYTE*)(param_1 + 0x1bc) & 7) == 2) {
-        FUN_0043e820(param_1, 0x56); // swim idle
+        SetAction(param_1, 0x56); // swim idle
         return;
     }
     UINT uVar1 = rand() & 0x80000001;
     if ((int)uVar1 < 0) uVar1 = (uVar1 - 1 | 0xfffffffe) + 1; // parity correction
-    FUN_0043e820(param_1, uVar1 + 0x52); // 0x52 or 0x53 random idle
+    SetAction(param_1, uVar1 + 0x52); // 0x52 or 0x53 random idle
 }
 
 // Legacy helper only; no canonical FUN mapping retained here. `FUN_00444D90` is
@@ -395,35 +395,35 @@ void __cdecl Entity_TeleportEnd(int entity_idx) {
     if (sVar2 == 0x186) {
         int sub_id = *(int*)(puVar3 + 4);
         if (sub_id < 0xce || sub_id > 0xd0) {
-            FUN_0043e820(entity_idx, 0x83);
+            SetAction(entity_idx, 0x83);
             goto LAB_00445110;
         }
         *puVar3 = 0;
-        Effect_Create(0xd2, (float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+        CreateEffect(0xd2, (float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                      (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
         for (int i = 0; i < 10; i++)
-            Effect_Create(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+            CreateEffect(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
     } else if (sVar2 == 0x127) {
         *puVar3 = 0;
         for (int i = 0; i < 8; i++) {
-            Effect_Create(0xe2,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+            CreateEffect(0xe2,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
-            Effect_Create(0xe3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+            CreateEffect(0xe3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
         }
     } else if (sVar2 == 300) {
         *puVar3 = 0;
-        Effect_Create(0xd2,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+        CreateEffect(0xd2,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                      (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
         for (int i = 0; i < 10; i++)
-            Effect_Create(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
+            CreateEffect(0xd3,(float*)(puVar3+0x10),(float*)(puVar3+0x1c),(float*)(puVar3+0xe8),
                          (float*)0,(float*)0,(float*)0xffffffff,(float*)0, 0);
     } else {
-        FUN_0043e820(entity_idx, 6);
+        SetAction(entity_idx, 6);
         goto LAB_00445110;
     }
-    FUN_00404bc0(0x5e, (int)entity_idx, 0);
+    PlayBuffer(0x5e, (int)entity_idx, 0);
 
 LAB_00445110:
     // Post-teleport footstep sound: only if anim speed == _DAT_00552580 (ground landed)
@@ -431,15 +431,15 @@ LAB_00445110:
         if ((sVar2 == 0x186) && (*(int*)(puVar3+4) < 0xce || *(int*)(puVar3+4) > 0xd0)) {
             // DarkWizard swimming vs walking footstep
             if ((puVar3[0x1bc] & 7) == 2)
-                FUN_00404bc0(0x50, (int)entity_idx, 0);
+                PlayBuffer(0x50, (int)entity_idx, 0);
             else
-                FUN_00404bc0(0x4e, (int)entity_idx, 0);
+                PlayBuffer(0x4e, (int)entity_idx, 0);
             return;
         }
         // General: look up footstep sound from entity-class table at DAT_05828d58+0xb2
         short sfx = *(short*)((char*)DAT_05828d58 + 0xb2 + sVar2 * 0xbc);
         if (sfx != -1)
-            FUN_00404bc0(sfx + 0xaa, (int)entity_idx, 0);
+            PlayBuffer(sfx + 0xaa, (int)entity_idx, 0);
     }
 }
 
@@ -480,15 +480,15 @@ void __cdecl Entity_TeleportAnim(float* world_pos, float entity_id, float* dst_p
 // Melee attack initiation: anim 0x57, set speed=5.0f (+0x108), mode=3 (+0x7C),
 // scale=1.0f (+0x164), spawn effect 0x498, play sound 0x58.
 void __cdecl Entity_MeleeAttackStart(int param_1) {
-    FUN_00443e70();
-    FUN_0043e820(param_1, 0x57);
+    SetAttackSpeed();
+    SetAction(param_1, 0x57);
     *(float*)(param_1 + 0x108) = 5.0f;   // 0x40A00000
     *(BYTE *)(param_1 + 0x7c)  = 3;      // melee attack mode
     *(float*)(param_1 + 0x164) = 1.0f;   // 0x3F800000
-    Effect_Create(0x498,
+    CreateEffect(0x498,
         (float*)(param_1+0x10), (float*)(param_1+0x1c), (float*)(param_1+0xe8),
         (float*)0, (float*)0, (float*)0xffffffff, (float*)0, 0);
-    FUN_00404bc0(0x58, 0, 0);
+    PlayBuffer(0x58, 0, 0);
 }
 
-// FUN_00479330 @ 0x00479330 — RenderPoints (damage popup renderer)
+// RenderPoints @ 0x00479330 — RenderPoints (damage popup renderer)

@@ -11,11 +11,11 @@
 //   - Name string from TextParserTokenString copied into NPC name table
 //
 // NPC name table layout:
-//   Base: &DAT_07cf2000  (actually byte array; DAT_07d78078 = current count)
+//   Base: &DAT_07cf2000  (actually byte array; EditMonsterNumber = current count)
 //   Each entry: stride 0x36 (54 bytes)
 //     [0x00] = type_id (char from first float read before loop)
 //     [0x01..] = name string (memcpy from TextParserTokenString)
-// Count (DAT_07d78078) incremented after each entry write.
+// Count (EditMonsterNumber) incremented after each entry write.
 //
 // Sentinel: when TextParser_GetToken returns 0, compare TextParserTokenString with DAT_00559088
 //   (the "END" marker); if equal, break inner loop and process next section.
@@ -28,17 +28,17 @@
 // GetToken (TextParser_GetToken) saltea el header "//..." y las comillas.
 void __cdecl NPCName_LoadTextData(const char *path)
 {
-    DAT_07d7806c = (FILE *)FUN_0054173f(path, DAT_005580ac);
+    DAT_07d7806c = (FILE *)crt_fopen(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
 
     while (1) {
         int tok = TextParser_GetToken();                    // GetToken → Type token
         if (tok == 2) break;                          // EOF
         if (tok == 0 && strcmp("end", TokenString) == 0) break;  // sentinel
-        if (DAT_07d78078 >= 512) break;               // tabla llena
+        if (EditMonsterNumber >= 512) break;               // tabla llena
 
-        BYTE *m = &MonsterScript[DAT_07d78078 * 0x36];
-        DAT_07d78078++;
+        BYTE *m = &MonsterScript[EditMonsterNumber * 0x36];
+        EditMonsterNumber++;
         m[0] = (BYTE)(int)ParserTokenNumber;              // Type = (int)TokenNumber
 
         TextParser_GetToken();                               // skip columna 2 (idx)
@@ -50,5 +50,5 @@ void __cdecl NPCName_LoadTextData(const char *path)
         while (src[n] != '\0' && n < 31) { dst[n] = src[n]; n++; }
         dst[n] = '\0';
     }
-    FUN_0054150f(DAT_07d7806c);
+    crt_fclose(DAT_07d7806c);
 }

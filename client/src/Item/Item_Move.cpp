@@ -19,7 +19,7 @@
 //   1. Chain XOR con s_LoginKey (i=3..len)
 //   2. Stomp pkt[1] = DAT_05826ceb++ (serial counter — server valida que sea
 //      monotónico vía CSerialCheck::CheckSerial)
-//   3. CSimpleModulus encrypt vía FUN_0053cc30
+//   3. CSimpleModulus encrypt vía CSimpleModulus_Encode
 //   4. C3 wrap: [C3][outerLen][encryptedBlob]
 //   5. Send vía socket con WSAEWOULDBLOCK queue
 //
@@ -67,7 +67,7 @@ static void InventoryMove_SetPendingPools(const BYTE* sourcePoolBase,
     g_ItemMoveTargetPool = (DWORD)(uintptr_t)targetPoolBase;
 }
 
-void __cdecl SendRequestEquipmentItem_stub(int srcFlag, int iSrcIndex, ITEM* pItem,
+void __cdecl SendRequestEquipmentItem(int srcFlag, int iSrcIndex, ITEM* pItem,
                                            int dstFlag, int iDstIndex) {
     if (!pItem) return;
 
@@ -101,7 +101,7 @@ void __cdecl SendRequestEquipmentItem_stub(int srcFlag, int iSrcIndex, ITEM* pIt
     // (inventario <-> Trade o Trade <-> Trade) bloquea la confirmación durante
     // 150 ticks cuando todavía no estaba confirmada. FUN_004EB7F0 descuenta
     // m_nMyTradeWait y RenderTrade tiñe la lámpara de rojo mientras dure.
-    if ((srcFlag == 1 || dstFlag == 1) && DAT_07eaa0fd == 0) {
+    if ((srcFlag == 1 || dstFlag == 1) && m_bMyConfirm == 0) {
         TradeMyWait = 150;
     }
 }

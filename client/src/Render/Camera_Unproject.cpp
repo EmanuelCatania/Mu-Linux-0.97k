@@ -34,10 +34,10 @@ void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
     };
 
     // Step 1: transform negated view-translation by view rotation → camera world pos
-    Vector_InverseRotate(cam_fwd_neg, (float*)&DAT_083a4140, (float*)&CameraRayOriginX);
+    Vector_InverseRotate(cam_fwd_neg, (float*)&CameraMatrix, (float*)&CameraRayOriginX);
     // Step 2: transform view-space direction by view rotation → world-space direction
     float world_dir[3];
-    Vector_InverseRotate(view_dir,    (float*)&DAT_083a4140, world_dir);
+    Vector_InverseRotate(view_dir,    (float*)&CameraMatrix, world_dir);
 
     // Endpoint = camera position + world-space direction
     param_3[0] = _CameraRayOriginX + world_dir[0];
@@ -55,6 +55,6 @@ void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
 // GL_Begin2D — implemented in src/Render/GL_2D.cpp
 // GL_End2D — implemented in src/Render/GL_2D.cpp
 // GL_DrawRect — implemented in src/Render/GL_2D.cpp
-// FUN_005142d0 — implemented in src/Render/GL_State.cpp
+// SetErrorMessage — implemented in src/Render/GL_State.cpp
 // UI_InGameMenu — implemented in src/UI/UI_InGameMenu.cpp (UI_InGameMenu state machine)
 

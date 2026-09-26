@@ -22,12 +22,12 @@
 //       C1: byte[2] = opcode,  byte[3..] = payload
 //       C2: byte[3] = opcode,  byte[4..] = payload
 //
-//   Decryption: FUN_0053cca0(&DAT_05826c58, ...) — RC4-like stream cipher for C3/C4
+//   Decryption: CSimpleModulus_Decode(&g_SimpleModulusSC, ...) — RC4-like stream cipher for C3/C4
 //
 // ── BUFFER POOL ───────────────────────────────────────────────────────────────
 //
 //   Net_GetFreeBuffer @ 0x0043E010
-//     Pool base: DAT_055ca160 (300 entries, stride 0x2008)
+//     Pool base: SocketClient (300 entries, stride 0x2008)
 //     Status flag: entry+0x401C (0 = free)
 //     Returns: entry+0x4024 (packet data start), or NULL
 //
@@ -35,21 +35,21 @@
 //   puVar9   = packet length (ushort)
 //   param_1  = opcode (main switch key)
 //
-//   DAT_07e11dcc += byte[opcode] each packet (running byte counter)
+//   TotalPacketSize += byte[opcode] each packet (running byte counter)
 //
 // ── MAIN OPCODE SWITCH (param_1 = opcode byte) ────────────────────────────────
 //
 //   case 0x00:  Net_SendPacket(puVar8)         — re-queue/echo packet
 //
-//   case 0x01:  entity = FUN_0045ac80(byte[3]*256 + byte[2])
+//   case 0x01:  entity = FindCharacterIndex(byte[3]*256 + byte[2])
 //               CreateChat(entity+0x1c1, puVar8+5, entity, 0, -1)
 //               → entity name/class update (entity stride 0x394 at DAT_07abf5d0)
 //
 //   case 0x02:  World-enter / spawn position:
 //               Copies position payload into locals (0xf dwords)
 //               FUN_004801c0()           — world state init
-//               if DAT_07e11d80: FUN_00404bc0(0x26, 0, 0)
-//               FUN_00480620(posData, nameData, 0)
+//               if m_bWhisperSound: PlayBuffer(0x26, 0, 0)
+//               UIChatLogWindow_AddText(posData, nameData, 0)
 //
 //   case 0x03:  XOR handshake:
 //               32-byte key = {0xe7,0x6d,0x3a,0x89,...} (same global key)
@@ -57,7 +57,7 @@
 //               Builds response + send() with full WSAEWOULDBLOCK retry path
 //
 //   case 0x07:  Entity flag update:
-//               entity = FUN_0045ac80(byte[3]*256 + byte[7])
+//               entity = FindCharacterIndex(byte[3]*256 + byte[7])
 //               if byte[3]==1 && !(entity->flags & byte[2]): FUN_0043bde0(byte[2], entity)
 //               else: FUN_0043c070(flags, entity)
 //
@@ -66,7 +66,7 @@
 //               Guarda puVar8 en DAT_07e016c8[slot], copia los datos a DAT_07e109cc[slot*0x100]
 //               FUN_00500a80()           — process buffered data
 //
-//   case 0x0c:  if byte[3]==0: FUN_00480620(DAT_05826cb4, DAT_07d4d1fc, 2)
+//   case 0x0c:  if byte[3]==0: UIChatLogWindow_AddText(ChatWhisperID, DAT_07d4d1fc, 2)
 //                              → draw login/char-select widget
 //
 //   case 0x0d:  FUN_00427a00(puVar8)
@@ -81,16 +81,16 @@
 //               FUN_00429690(puVar8, puVar9)
 //
 //   case 0x13:  FUN_0042a230(puVar8, ..., puVar9)
-//   case 0x14:  Loop FUN_0045ac20(entityId) por la cantidad en byte[3] — lista de destrucción del viewport
+//   case 0x14:  Loop DeleteCharacter(entityId) por la cantidad en byte[3] — lista de destrucción del viewport
 //   case 0x15:  FUN_0042acc0(puVar8)
 //   case 0x16:  FUN_0042db60(puVar8, iVar20)
 //   case 0x17:  FUN_0042f030(puVar8)
 //   case 0x18:  FUN_0042b4f0(puVar8)
-//   case 0x19:  FUN_0042bca0(puVar8, puVar9, iVar20)
+//   case 0x19:  Skills_PacketHandler(puVar8, puVar9, iVar20)
 //   case 0x1a:  FUN_0042d780(puVar8)
 //
 //   case 0x1b:  Entity state switch on byte[3]:
-//               entity = FUN_0045ac80(entityId)
+//               entity = FindCharacterIndex(entityId)
 //               1  → FUN_0043c070(flag_1, entity)
 //               7  → FUN_0043c070(flag_2, entity)
 //               0x10→ FUN_0043c070(0x100, entity)
@@ -129,25 +129,25 @@
 //   case 0x30:  FUN_004301b0(puVar8, iVar20)
 //   case 0x31:  FUN_00427560(puVar8)
 //
-//   case 0x32:  FUN_004cc660(&DAT_07ea8410, 8, 8, byte[3], puVar8+2, 0)
-//               FUN_00404bc0(0x1d, 0, 0)    — inventory update + UI refresh
+//   case 0x32:  InsertInventoryItem(&DAT_07ea8410, 8, 8, byte[3], puVar8+2, 0)
+//               PlayBuffer(0x1d, 0, 0)    — inventory update + UI refresh
 //
 //   case 0x33:  if byte[3] != 0:
 //                 DAT_07e91388 = 0
-//                 FUN_00423040(&DAT_055c9bc8, DAT_07cf1ffc)  — decode g_CharData
+//                 STRUCT_DECRYPT(&MAIN_HASH_CLASS, DAT_07cf1ffc)  — decode g_CharData
 //                 DAT_07cf1ffc[0x152] = *(puVar8+2)
-//                 FUN_0043d1d0(&DAT_055c9bc8, puVar23)       — re-encode g_CharData
-//                 FUN_00404bc0(0x1d, 0, 0)
+//                 STRUCT_ENCRYPT(&MAIN_HASH_CLASS, puVar23)       — re-encode g_CharData
+//                 PlayBuffer(0x1d, 0, 0)
 //
 //   case 0x34:  if packet[2] != 0:
-//                 FUN_00423040; DAT_07cf1ffc[0x152] = *(puVar8+2)
-//                 FUN_0047e3c0(puVar23)
-//                 FUN_0043d1d0; FUN_00404bc0(0x25, 0, 0)
+//                 STRUCT_DECRYPT; DAT_07cf1ffc[0x152] = *(puVar8+2)
+//                 CalculateAll(puVar23)
+//                 STRUCT_ENCRYPT; PlayBuffer(0x25, 0, 0)
 //
 //   case 0x36:  Server-triggered re-login:
 //               Stores PIN buffer: DAT_07ea9834/38/3c ← puVar8[3/7/0xb]
 //               DAT_07ea983e = 0
-//               FUN_005142d0(0x79)  — ShowErrorDialog(0x79)
+//               SetErrorMessage(0x79)  — ShowErrorDialog(0x79)
 //               Después (si DAT_07e91388 >= 1) corta, si no: cae al 0x37
 //               NOTA: el bloque XOR de envío de acá (líneas 655-840) es el camino de
 //               respuesta al NACK de re-login del server — misma clave de 32 bytes, mismo loop de reintento.
@@ -155,29 +155,29 @@
 //   case 0x37:  FUN_004332e0(puVar8)
 //
 //   case 0x38:  FUN_004cce00(byte[3], &DAT_07ea5298, 8)
-//               FUN_00404bc0(0x1d, 0, 0)   — secondary inventory (bag/warehouse?)
+//               PlayBuffer(0x1d, 0, 0)   — secondary inventory (bag/warehouse?)
 //
-//   case 0x39:  FUN_004cc660(&DAT_07ea5298, 8, 4, byte[3], puVar8+2, 1)
-//               FUN_00404bc0(0x1d, 0, 0)
+//   case 0x39:  InsertInventoryItem(&DAT_07ea5298, 8, 4, byte[3], puVar8+2, 1)
+//               PlayBuffer(0x1d, 0, 0)
 //
-//   case 0x3a:  DAT_07eaa0f4 = -(byte[3]!=0) & DAT_05826c9c   — toggle effect bit
+//   case 0x3a:  DAT_07eaa0f4 = -(byte[3]!=0) & m_nTempMyTradeGold — toggle effect bit
 //
 //   case 0x3b:  DAT_07eaa0f0 = *(puVar8+2)   — 4-byte misc update
 //
 //   case 0x3c:  PIN/SecondPassword UI control:
-//               0 → DAT_07eaa0fc = 0
-//               1 → DAT_07eaa0fc = 1; UI_SetScene(0x19)
-//               2 → DAT_07eaa0fd = 0; UI_SetScene(0x19)
+//               0 → m_bYourConfirm = 0
+//               1 → m_bYourConfirm = 1; UI_SetScene(0x19)
+//               2 → m_bMyConfirm = 0; UI_SetScene(0x19)
 //               * → UI_SetScene(0x19)
 //
 //   case 0x3d:  FUN_004337f0(puVar8)
 //
 //   case 0x40:  DAT_07eaa0e4 = byte[3]*0x100 + byte[2]
-//               FUN_005142d0(0x78)   — ShowErrorDialog(0x78)
+//               SetErrorMessage(0x78)   — ShowErrorDialog(0x78)
 //
 //   case 0x41:  Shop slot display — inner switch byte[3] (0-5):
 //               pcVar21/pcVar26 → Widget_Draw(pcVar21, pcVar26, 2)
-//               FUN_005142d0(0)
+//               SetErrorMessage(0)
 //
 //   case 0x42:  FUN_00434660(puVar8)
 //
@@ -192,7 +192,7 @@
 //   case 0x46:  FUN_00436d60(puVar8)
 //
 //   case 0x50:  DAT_07eaa0d8 = byte[3]*0x100 + byte[2]
-//               FUN_005142d0(0x77)   — ShowErrorDialog(0x77)
+//               SetErrorMessage(0x77)   — ShowErrorDialog(0x77)
 //
 //   case 0x51:  FUN_00434780(puVar8)
 //   case 0x52:  FUN_004348b0(puVar8)
@@ -200,15 +200,15 @@
 //
 //   case 0x54:  Second password / PIN full reset:
 //               DAT_07eaa114-117 = 0
-//               FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa118); DAT_07eaa118=0
-//               FUN_00404040; DAT_07eaa119=0; DAT_00559f5f=0; DAT_07eaa14c=0
-//               FUN_0043d8a0(&DAT_055c9bc8, &DAT_07eaa11b); DAT_07eaa11b=0
-//               FUN_00404040; DAT_07eaa124=1; DAT_07eaa144=0
+//               HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118); DAT_07eaa118=0
+//               PACKET_ENCRYPT; DAT_07eaa119=0; DAT_00559f5f=0; DAT_07eaa14c=0
+//               HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b); DAT_07eaa11b=0
+//               PACKET_ENCRYPT; DAT_07eaa124=1; DAT_07eaa144=0
 //
 //   case 0x55:  Character list change (delete/create result):
-//               DAT_07eaa124=1; DAT_07eaa144=1; DAT_07e11d70=1
-//               DAT_00559c84=0; Input_ClearState(0)
-//               _DAT_00559c94=8; DAT_00559c88=0
+//               DAT_07eaa124=1; DAT_07eaa144=1; GuildInputEnable=1
+//               DAT_00559c84=0; ClearInput(0)
+//               InputTextMax=8; InputNumber=0
 //               *(DAT_07abf5d8+0x1da) = 999
 //
 //   case 0x56:  FUN_00435280(puVar8)
@@ -220,12 +220,12 @@
 //   case 0x5b:  FUN_00435110(puVar8)
 //
 //   case 0x5c:  Entity trade/duel update:
-//               entity = FUN_0045ac80(byte[3]*256 + byte[2])
+//               entity = FindCharacterIndex(byte[3]*256 + byte[2])
 //               iVar20 = FUN_00434dc0(0xffffffff, puVar8+5, puVar8+0xd)
 //               entity[0x1da] = (short)iVar20
-//               FUN_00423ce0(entity)
+//               GuildWar_UpdateEntityRelation(entity)
 //
-//   case 0x5d:  entity = FUN_0045ac80(byte[3]*256 + byte[2])
+//   case 0x5d:  entity = FindCharacterIndex(byte[3]*256 + byte[2])
 //               DAT_07eaa114 = 0
 //               *(DAT_07abf5d0 + entity*0x394 + 0x1da) = 0xffff
 //               DAT_07eaa0d0 = 0xffffffff
@@ -237,7 +237,7 @@
 //
 //   case 0x64:  DAT_05826ca4 = byte[3]; DAT_05826ca8 = byte[2]; DAT_05826d30 = 1
 //
-//   case 0x71:  FUN_00433900()
+//   case 0x71:  Party_PacketHandler()
 //   case 0x73:  FUN_00433a80(puVar8, iVar20)
 //   case 0x81:  FUN_00434170(puVar8)
 //   case 0x82:  FUN_00434400()
@@ -246,7 +246,7 @@
 //   case 0x87:  FUN_004367d0()
 //   case 0x90:  FUN_00436820(puVar8)
 //   case 0x91:  FUN_00436cb0(puVar8)
-//   case 0x92:  FUN_0047ec00(byte[3] + 1)
+//   case 0x92:  StartMatchCountDown(byte[3] + 1)
 //   case 0x93:  FUN_00436a80(puVar8)
 //   case 0x94:  FUN_004372c0(puVar8)
 //   case 0x95:  FUN_00437380(puVar8)
@@ -269,13 +269,13 @@
 //
 //   F1/01: Login result — inner switch on byte[2]:
 //     0x00 → DAT_05826cb0=0x15, state=3  (login rejected)
-//     0x01 → DAT_05826cb0=0x14, DAT_05826cf8=2, FUN_00412a70(), state=3
+//     0x01 → DAT_05826cb0=0x14, LogIn=2, FUN_00412a70(), state=3
 //                                        (login OK, request char list)
 //     0x02 → DAT_05826cb0=0x16, state=3  (wrong password)
 //     0x03 → DAT_05826cb0=0x17, state=3  (account banned)
 //     0x04 → DAT_05826cb0=0x18, state=3
 //     0x05 → DAT_05826cb0=0x19, state=3
-//     0x06 → DAT_05826cb0=0x1a, state=3; FUN_00405540("Version_dismatch")
+//     0x06 → DAT_05826cb0=0x1a, state=3; CErrorReport_Write("Version_dismatch")
 //     0x07 → DAT_05826cb0=0x1b (default), state=3
 //     0x08 → DAT_05826cb0=0x1c, state=3
 //     0x09 → DAT_05826cb0=0x25, state=3
@@ -292,7 +292,7 @@
 //
 //   F1/03: Character list result:
 //     byte[2]==0 → DAT_05826cb0=0x3f
-//     byte[2]==1 → XOR decrypt 30 bytes with DAT_00559678[i%3]
+//     byte[2]==1 → XOR decrypt 30 bytes with PacketXorKey3[i%3]
 //                  DAT_05826cb0=0x3e; copy decrypted name → DAT_05826bdc
 //
 //   F1/04: Version/token result:
@@ -324,15 +324,15 @@
 //   F3/05: FUN_00431180()
 //   F3/06: FUN_00431480(puVar8)
 //   F3/07: EXP update:
-//          XOR decode puVar8+2 (3-byte key DAT_00559678[i%3])
-//          FUN_00423040 → decode g_CharData; g_CharData[0x1c] -= decoded_exp
-//          FUN_0043d1d0 → re-encode g_CharData
+//          XOR decode puVar8+2 (3-byte key PacketXorKey3[i%3])
+//          STRUCT_DECRYPT → decode g_CharData; g_CharData[0x1c] -= decoded_exp
+//          STRUCT_ENCRYPT → re-encode g_CharData
 //   F3/08: FUN_00431dc0(puVar8)
 //   F3/10: FUN_00426cf0(puVar8, iVar20)
 //   F3/11: FUN_004269f0(puVar8)
-//   F3/13: entity=FUN_0045ac80(byte[2]*256+byte[5]); FUN_0045c8c0(entity, puVar8+7)
-//   F3/14: DAT_07e91388=0; FUN_004cc660(&DAT_07ea8410,8,8,byte[2],puVar8+5,0)
-//          FUN_00404bc0(0x31, 0, 0)
+//   F3/13: entity=FindCharacterIndex(byte[2]*256+byte[5]); ChangeCharacterExt(entity, puVar8+7)
+//   F3/14: DAT_07e91388=0; InsertInventoryItem(&DAT_07ea8410,8,8,byte[2],puVar8+5,0)
+//          PlayBuffer(0x31, 0, 0)
 //   F3/20: DAT_05826d24 = byte[2]
 //   F3/22: DAT_05826c08 = puVar8[2]
 //   F3/23: Server info block:
@@ -350,9 +350,9 @@
 //
 //   F4/02: FUN_00423e10(puVar8)          — reconecta a otro puerto/IP
 //   F4/03: Server redirect:
-//          Parse IP from puVar8+2; Net_Disconnect(DAT_055ca160)
-//          FUN_00423920(ip, port) — connect to new server
-//          if result != 0: DAT_05826cf0 = 1
+//          Parse IP from puVar8+2; Net_Disconnect(SocketClient)
+//          CreateSocket(ip, port) — connect to new server
+//          if result != 0: g_bGameServerConnected = 1
 //          crt_sprintf + Widget_Draw — show "connecting" UI
 //   F4/05: DAT_05826cb0=1; DAT_083a7c14=1   — back to Connecting state
 //
@@ -363,20 +363,20 @@
 // ── C2 / ENCRYPTED PACKET PATH ───────────────────────────────────────────────
 //
 //   if (byte[0] == 0xC2):  puVar9 = byte[1]*256+byte[2]; opcode = byte[3]
-//   if (byte[0] == 0xC3):  FUN_0053cca0 → decrypt 1-byte-len; goto LAB_00439505
-//   if (byte[0] == 0xC4):  FUN_0053cca0 → decrypt 2-byte-len; goto LAB_00439505
+//   if (byte[0] == 0xC3):  CSimpleModulus_Decode → decrypt 1-byte-len; goto LAB_00439505
+//   if (byte[0] == 0xC4):  CSimpleModulus_Decode → decrypt 2-byte-len; goto LAB_00439505
 //   Los dos caminos desencriptados vuelven al mismo LAB_00439505 → switch de opcodes
 //
 //   Packet sequence tracking (anti-replay / dedup):
-//     DAT_05826cec = rolling sequence counter
+//     g_byPacketSerialRecv = rolling sequence counter
 //     HashTable_GetIndex / operator_new(2) / HashTable_Insert / HashTable_Remove
 //     → trackea los IDs de secuencia de paquetes en vuelo, manda NACK si no coinciden
 //
 // ── FUNCTION CROSS-REFERENCE ─────────────────────────────────────────────────
 //
 //   FUN_0043E010  → Net_GetFreeBuffer(pool)
-//   FUN_0045ac80  → Entity_GetIndex(entityId)  — returns 0-based entity slot
-//   FUN_0045ac20  → Entity_Spawn(entityId)     — create or update entity slot
+//   FindCharacterIndex  → Entity_GetIndex(entityId)  — returns 0-based entity slot
+//   DeleteCharacter  → Entity_Spawn(entityId)     — create or update entity slot
 //   CreateChat  → Entity_UpdateNameData(name, data, entity, 0, -1)
 //   FUN_004801c0  → World_StateInit()          — inicializa el estado in-world después del 0x02
 //   FUN_00412de0  → Auth_ProcessChallenge(byte) — handshake response for opcode 0x03
@@ -393,7 +393,7 @@
 //   FUN_0042db60  → PacketHandler_0x16(puVar8, iVar20)
 //   FUN_0042f030  → PacketHandler_0x17(puVar8)
 //   FUN_0042b4f0  → PacketHandler_0x18(puVar8)
-//   FUN_0042bca0  → PacketHandler_0x19(puVar8, puVar9, iVar20)
+//   Skills_PacketHandler  → PacketHandler_0x19(puVar8, puVar9, iVar20)
 //   FUN_0042d780  → PacketHandler_0x1a(puVar8)
 //   FUN_0042cd10  → PacketHandler_0x1e(puVar8, puVar9, iVar20)
 //   FUN_0042a530  → PacketHandler_0x1f(puVar8)
@@ -410,26 +410,26 @@
 //   FUN_00437f10  → PacketHandler_0x2c(puVar8)
 //   FUN_004301b0  → PacketHandler_0x30(puVar8, iVar20)
 //   FUN_00427560  → PacketHandler_0x31(puVar8)
-//   FUN_004cc660  → ItemTable_UpdateSlot(table, stride, size, slot, data, flag)
-//   FUN_00423040  → CharData_Decode(ctx, g_CharData)  — XOR-decode g_CharData
-//   FUN_0047e3c0  → CharData_RecalcStats(charData)
-//   FUN_0043d1d0  → CharData_Encode(ctx, g_CharData)  — XOR-encode g_CharData
+//   InsertInventoryItem  → ItemTable_UpdateSlot(table, stride, size, slot, data, flag)
+//   STRUCT_DECRYPT  → CharData_Decode(ctx, g_CharData)  — XOR-decode g_CharData
+//   CalculateAll  → CharData_RecalcStats(charData)
+//   STRUCT_ENCRYPT  → CharData_Encode(ctx, g_CharData)  — XOR-encode g_CharData
 //   FUN_004332e0  → PacketHandler_0x37(puVar8)
 //   FUN_004337f0  → PacketHandler_0x3d(puVar8)
 //   FUN_00434660  → PacketHandler_0x42(puVar8)
 //   FUN_00434780  → PacketHandler_0x51(puVar8)
 //   FUN_004348b0  → PacketHandler_0x52(puVar8)
 //   FUN_00434950  → PacketHandler_0x53(puVar8)
-//   FUN_0043d8a0  → HashTable_RefDecrement(ctx, key)
+//   HashTable_Insert_Short  → HashTable_RefDecrement(ctx, key)
 //   FUN_00435280  → PacketHandler_0x56(puVar8)
 //   FUN_00434dc0  → Trade_GetItemData(entityId, data, extraData)
 //   FUN_00435110  → PacketHandler_0x5b(puVar8)
-//   FUN_00423ce0  → Entity_UpdateMisc(entity)
+//   GuildWar_UpdateEntityRelation  → Entity_UpdateMisc(entity)
 //   FUN_004353e0  → PacketHandler_0x60(puVar8)
 //   FUN_00435390  → PacketHandler_0x61(puVar8)
 //   FUN_004354f0  → PacketHandler_0x62(puVar8)
 //   FUN_00435aa0  → PacketHandler_0x63(puVar8)
-//   FUN_00433900  → PacketHandler_0x71()
+//   Party_PacketHandler  → PacketHandler_0x71()
 //   FUN_00433a80  → PacketHandler_0x73(puVar8, iVar20)
 //   FUN_00434170  → PacketHandler_0x81(puVar8)
 //   FUN_00434400  → PacketHandler_0x82()
@@ -438,7 +438,7 @@
 //   FUN_004367d0  → PacketHandler_0x87()
 //   FUN_00436820  → PacketHandler_0x90(puVar8)
 //   FUN_00436cb0  → PacketHandler_0x91(puVar8)
-//   FUN_0047ec00  → CharSelect_SetSlotCount(count)
+//   StartMatchCountDown  → CharSelect_SetSlotCount(count)
 //   FUN_00436a80  → PacketHandler_0x93(puVar8)
 //   FUN_004372c0  → PacketHandler_0x94(puVar8)
 //   FUN_00437380  → PacketHandler_0x95(puVar8)
@@ -463,25 +463,25 @@
 //   FUN_00431dc0  → PacketHandler_F3_08(puVar8)
 //   FUN_00426cf0  → PacketHandler_F3_10(puVar8, iVar20)
 //   FUN_004269f0  → PacketHandler_F3_11(puVar8)
-//   FUN_0045c8c0  → Entity_SetExtraData(entity, data)
+//   ChangeCharacterExt  → Entity_SetExtraData(entity, data)
 //   FUN_00436fb0  → PacketHandler_F3_30()
 //   FUN_00436550  → PacketHandler_F3_40(puVar8)
 //   FUN_00423e10  → Net_RecvRedirect(puVar8)        — F4/02
-//   FUN_00423920  → Net_Connect(ip, port)
-//   FUN_0053cca0  → Packet_Decrypt(ctx, outBuf, data, len)  — C3/C4 cipher
-//   FUN_0053cc30  → Packet_Encode / CRC_Compute
+//   CreateSocket  → Net_Connect(ip, port)
+//   CSimpleModulus_Decode  → Packet_Decrypt(ctx, outBuf, data, len)  — C3/C4 cipher
+//   CSimpleModulus_Encode  → Packet_Encode / CRC_Compute
 //   FUN_00412a70  → FUN_00412a70()  — se llama al login OK (F1/01/01)
-//   FUN_00405540  → Log_SetString(buf, str)
-//   FUN_00404bc0  → UI_SetScene(id, 0, 0)
-//   FUN_00480620  → Widget_Draw(element, textureData, flag)
-//   FUN_005142d0  → ShowErrorDialog(id)
+//   CErrorReport_Write  → Log_SetString(buf, str)
+//   PlayBuffer  → UI_SetScene(id, 0, 0)
+//   UIChatLogWindow_AddText  → Widget_Draw(element, textureData, flag)
+//   SetErrorMessage  → ShowErrorDialog(id)
 //   Item_ReturnPickedItem  → Packet_Unknown_Log()
-//   FUN_00422df0  → HashTable_GetOrInsert
-//   FUN_00404040  → HashTable_Decrement
-//   FUN_00403f80  → HashTable_Insert
-//   FUN_00404330  → HashTable_Remove
-//   FUN_00404280  → HashTable_Get
-//   FUN_00423710  → HashTable_Free(entry, key)
+//   PACKET_DECRYPT → HashTable_GetOrInsert
+//   PACKET_ENCRYPT  → HashTable_Decrement
+//   HashTable_Insert  → HashTable_Insert
+//   Packet_DecryptByte  → HashTable_Remove
+//   HashTable_GetNode  → HashTable_Get
+//   Packet_EncryptByte  → HashTable_Free(entry, key)
 //   HashTable_GetIndex → Item_ReturnPickedItem area (addr in binary)
 //   FUN_0043de60  → Net_Throttle()
 //   Net_Disconnect at 0043dc90
@@ -503,11 +503,11 @@
 //   0x0043db30  Net_WSAInit(int ctx)   __fastcall
 //     WSAStartup(0x0202, &local_190)
 //     Si error: log "Winsock_DLL_Initialize_error" + MessageBoxA("IError") → return 0
-//     Si versión OK (2.2): ctx+8=0; ctx+4=wVersion; FUN_00403a30(); return 1
+//     Si versión OK (2.2): ctx+8=0; ctx+4=wVersion; CWsctlc__LogPrintOn(); return 1
 //
 //   0x0043dbf0  Net_CreateSocket(void* this, HWND hWnd)   __thiscall
 //     socket(AF_INET=2, SOCK_STREAM=1, IPPROTO_TCP=0) → this+8
-//     DAT_05826cf0 = 0  (connected flag)
+//     g_bGameServerConnected = 0  (connected flag)
 //     Si INVALID_SOCKET: log error + MessageBoxA → return 0
 //     *this = hWnd  (guarda HWND para WSAAsyncSelect)
 //     return 1
@@ -520,7 +520,7 @@
 //
 //   0x0043e050  Entity_GetDirCode(float x1,y1, float x2,y2) → ushort
 //     dx = x2-x1; dy = y2-y1
-//     FUN_005129f0(dx) = abs o sqrt
+//     Math_Fabs(dx) = abs o sqrt
 //     Si |dx| < _DAT_00552868: retorna código de dirección vertical (N/S)
 //     Else: calcula atan2 → código de dirección ushort (8 direcciones)
 //
@@ -587,7 +587,7 @@
 //     operator_delete para cada buffer no-NULL
 //
 //   0x0043f3e0  PacketQueue_Enqueue(uint id, float param2, uint p3, uint p4, void* data, float p6)
-//     Wrapper: llama FUN_0043f500(DAT_05826df4, id, param2, p3, p4, 1, 2, p6)
+//     Wrapper: llama PATH_FindPath(DAT_05826df4, id, param2, p3, p4, 1, 2, p6)
 //     local_4 = 2 (prioridad/tipo)
 //
 //   0x0043f500  ActionQueue_Insert(void* this, int id, float t, int p3, int p4, int p5, int p6, float p7)
@@ -682,7 +682,7 @@ extern "C" void __cdecl CreatePoint(float Position[3], int Value,
 // inicial ConnectServer → cliente solo envía/recibe C1/C2.
 // ============================================================================
 
-extern int __fastcall FUN_0043e010(int poolBase);   // GetReadMsg (stubs.cpp) — returns ptr as int
+extern int __fastcall CWsctlc_GetReadMsg(int poolBase);   // GetReadMsg (stubs.cpp) — returns ptr as int
 
 // Forward decls for inventory packet handlers (Item/Item_Inventory.cpp).
 extern "C" void __cdecl Recv_Inventory     (const BYTE* Msg);   // F3/10
@@ -706,10 +706,6 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base,
 extern "C" int  pPickedItem;
 extern "C" int  Level;
 extern "C" BYTE byte_7E9136B;
-extern void __cdecl FUN_004cc660(BYTE* Inv, int W, int H, int Index,
-                                 BYTE* Item, int First);
-extern "C" void __cdecl InsertInventoryItem(BYTE* Inv, int Width, int Height,
-                                             int Index, BYTE* Item, int First);
 extern "C" int __cdecl ConvertItemType(BYTE* Item);
 extern "C" void ChaosBoxCloseAck(void);
 
@@ -810,7 +806,7 @@ static void ItemMove_RestoreSlot(BYTE* pool, int slot, const BYTE* item68)
         int first = (pool == OffsetInventoryItems) ? 0 : 1;
         // 2026-07-27 FIX "el item se transforma en otro al moverlo":
         // item68 es el ITEM struct de 68 bytes copiado del slot al hacer pickup,
-        // NO formato wire. FUN_004cc660/InsertInventoryItem espera 4-5 bytes wire
+        // NO formato wire. InsertInventoryItem/InsertInventoryItem espera 4-5 bytes wire
         // [typeLo][optByte][dur][hi][ext]; pasarle el struct crudo reinterpretaba
         // Type-high/Level-int/etc como opciones → el item restaurado quedaba con
         // type/opciones equivocadas. Se disparaba en CADA move denegado (server
@@ -824,7 +820,7 @@ static void ItemMove_RestoreSlot(BYTE* pool, int slot, const BYTE* item68)
         wire[2] = item68[26];   // Durability
         wire[3] = item68[60];   // Unkown (= byteHi, incluye bit8 de type + exc)
         wire[4] = item68[61];   // byColorState (extByte)
-        FUN_004cc660(pool, 8, ItemMove_GetGridH(pool), slotIndex, wire, first);
+        InsertInventoryItem(pool, 8, ItemMove_GetGridH(pool), slotIndex, wire, first);
     }
 }
 
@@ -848,7 +844,7 @@ static void ItemMove_ApplyServerSlot(BYTE* pool, int slot, const BYTE* itemWire1
         memcpy(item12, item68, 12);
         memcpy(item12, itemWire12, 12);
         int first = (pool == OffsetInventoryItems) ? 0 : 1;
-        FUN_004cc660(pool, 8, ItemMove_GetGridH(pool), slotIndex, item12, first);
+        InsertInventoryItem(pool, 8, ItemMove_GetGridH(pool), slotIndex, item12, first);
     }
 }
 
@@ -1082,7 +1078,8 @@ static int GuildMark_FindRecordByName(const char* name)
 }
 
 // IDA: FUN_00423CE0 — recalcula la relación local, aliada o enemiga de una entidad.
-void __cdecl FUN_00423ce0(int entityAddress, int, int, int)
+// IDA: FUN_00423CE0 (0x00423CE0)
+void __cdecl GuildWar_UpdateEntityRelation(int entityAddress, int, int, int)
 {
     BYTE* entity = (BYTE*)(uintptr_t)entityAddress;
     BYTE* hero = (BYTE*)(uintptr_t)Hero;
@@ -1109,7 +1106,7 @@ static void GuildWar_RefreshEntityRelations()
 
     for (int i = 0; i < 400; ++i) {
         BYTE* entity = entities + i * 916;
-        FUN_00423ce0((int)(uintptr_t)entity, 0, 0, 0);
+        GuildWar_UpdateEntityRelation((int)(uintptr_t)entity, 0, 0, 0);
     }
 }
 
@@ -1200,7 +1197,7 @@ static void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
     if (encrypted) {
         if (size >= 8) {
             char* resource = *(char**)(packet + 4);
-            if (resource) FUN_0053d5c0(resource);
+            if (resource) Pipe_QueryResource(resource);
         }
         return;
     }
@@ -1323,7 +1320,7 @@ static void ApplySkillKeyMap(void)
 //    defensa          <- MagicDmgRate       (53)
 //    tasa de defensa  <- AttackSuccessRate  (42652)
 // Los tres numeros de la captura cuadran exactos.  Antes de subir de nivel se
-// veian bien porque venian del recalculo local (FUN_0047e3c0); el server manda
+// veian bien porque venian del recalculo local (CalculateAll); el server manda
 // el E1 al subir, y ahi se pisaban.
 static void Recv_NewCharacterCalc(const BYTE* Msg, int Size)
 {
@@ -1395,7 +1392,7 @@ static void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
     if (state == 1) {
         if ((effect & 0x10) != 0) {
             DeleteEffect(1150, (DWORD)(uintptr_t)entity, 1);
-            Effect_Create(1150, (float*)(entity + 16), (float*)(entity + 28),
+            CreateEffect(1150, (float*)(entity + 16), (float*)(entity + 28),
                          (float*)(entity + 232), (float*)1, (float*)entity,
                          (float*)-1, nullptr, 0);
         }
@@ -1403,23 +1400,23 @@ static void ApplyPersistentSkillEffect97k(BYTE* entity, WORD effect, BYTE state)
             DeleteEffect(190, (DWORD)(uintptr_t)entity, 1);
             float angle[3] = { *(float*)(entity + 28), *(float*)(entity + 32),
                                *(float*)(entity + 36) };
-            Effect_Create(190, (float*)(entity + 16), angle, (float*)(entity + 232),
+            CreateEffect(190, (float*)(entity + 16), angle, (float*)(entity + 232),
                          (float*)1, (float*)entity, (float*)-1, nullptr, 0);
             angle[2] += 180.0f;
-            Effect_Create(190, (float*)(entity + 16), angle, (float*)(entity + 232),
+            CreateEffect(190, (float*)(entity + 16), angle, (float*)(entity + 232),
                          (float*)2, (float*)entity, (float*)-1, nullptr, 0);
         }
         if ((effect & 0x40) != 0 && (physicalEffects & 0x40) == 0) {
             DeleteEffect(1274, (DWORD)(uintptr_t)entity, 0);
             float light[3] = { 1.0f, 1.0f, 1.0f };
-            Effect_Create(1274, (float*)(entity + 16), (float*)(entity + 28),
+            CreateEffect(1274, (float*)(entity + 16), (float*)(entity + 28),
                          light, nullptr, (float*)entity, (float*)-1, nullptr, 0);
             PlayBuffer(104, (DWORD)(uintptr_t)entity, 0);
         }
         if ((effect & 0x80) != 0 && (physicalEffects & 0x80) == 0) {
             DeleteEffect(1274, (DWORD)(uintptr_t)entity, 3);
             float light[3] = { 1.0f, 1.0f, 1.0f };
-            Effect_Create(1274, (float*)(entity + 16), (float*)(entity + 28),
+            CreateEffect(1274, (float*)(entity + 16), (float*)(entity + 28),
                          light, (float*)3, (float*)entity, (float*)-1, nullptr, 0);
         }
         if ((effect & 0x100) != 0 && (physicalEffects & 0x100) == 0 &&
@@ -1469,8 +1466,8 @@ static void CreateMagicShiny97k(BYTE* entity, int hand)
     // CreateSprite(1231, Position, 1.0, Light, Hand, 0.0, Character).
     // El quinto argumento es el owner y el último es el subtipo; esto
     // preserva el orden exacto de parámetros de 004741E0_CreateMagicShiny.c.
-    FUN_004795c0(1231, position, 1.0f, light, hand, 0.0f, (int)(uintptr_t)entity);
-    FUN_004795c0(1231, position, 1.0f, light, hand + 2, 0.0f, (int)(uintptr_t)entity);
+    CreateSprite(1231, position, 1.0f, light, hand, 0.0f, (int)(uintptr_t)entity);
+    CreateSprite(1231, position, 1.0f, light, hand + 2, 0.0f, (int)(uintptr_t)entity);
 }
 
 // ── Globals del state machine de login (mapping IDA → nuestro codebase) ────
@@ -1499,13 +1496,13 @@ static void Recv_JoinServer(const BYTE* Msg)
 {
     if (Msg[4] == 1) {
         g_HeroKey      = (unsigned short)(Msg[6] | (Msg[5] << 8));
-        // FIX 2026-07-24: DAT_05826cac (HeroKey que usa ClearCharacters vía
+        // FIX 2026-07-24: HeroKey (HeroKey que usa ClearCharacters vía
         // OpenWorld) NUNCA se seteaba → quedaba en 0.  Con eso, al entrar al
         // mundo ClearCharacters(0) conservaba las entidades con Key==0 (incluida
         // la del Hero stale del slot 0 que quedaba de antes del join) → fantasma
         // renderizado + hover pegado.  Ahora lleva el HeroKey real.
-        DAT_05826cac   = g_HeroKey;
-        DAT_05826cb0   = 2;          // CurrentProtocolState = 2
+        HeroKey   = g_HeroKey;
+        CurrentProtocolState   = 2;
         DAT_083a7c14   = 2;          // login sub-state = CredentialInput
         PlayBuffer(27, 0, 0);
         NetLog("NET:    JoinServer OK: HeroKey=%d state→2/2", g_HeroKey);
@@ -1654,7 +1651,7 @@ static void Recv_CharList(const BYTE* Msg, int Size)
         float y        = (float)slot * 50.0f - 50.0f;
         float rotate   = (float)((int)slot - 1) * 15.0f;
 
-        unsigned char* c = FUN_0045f930((int)slot, klass, 0, x, y, rotate);
+        unsigned char* c = CreateHero((int)slot, klass, 0, x, y, rotate);
         if (!c) {
             NetLog("NET:    F3/00 slot=%d CreateHero FAILED", slot);
             continue;
@@ -1677,13 +1674,13 @@ static void Recv_CharList(const BYTE* Msg, int Size)
 
         // Equipment visuals: CharSet[1..10] = rec[16..25] (10 bytes packed).
         // Pipeline ya completo (LevelConvert + DeleteBug + CreateBug + ChangeCharacterExt).
-        FUN_0045c8c0((int)slot, (BYTE*)&rec[16]);
+        ChangeCharacterExt((int)slot, (BYTE*)&rec[16]);
 
         // CreateHero llamó SetPlayerStop con las alas todavía en -1, así que
         // dejó action=1 (idle pegado al piso). Re-llamamos ahora que las alas
         // están equipadas para que action pase a 9 (float-idle) y los chars
         // con alas aparezcan flotando como en el cliente original.
-        FUN_004430c0((int)(uintptr_t)c);
+        SetPlayerStop((int)(uintptr_t)c);
     }
 
     // CurrentProtocolState = 51 → Scene_CharSelect lo usa como gate de render
@@ -1717,7 +1714,7 @@ static void Recv_CreateChar(const BYTE* Msg)
         // dword_7ABF20C: low byte = class, high byte = skin
         int klass = (int)(DAT_07abf20c & 0xFF);
         int skin  = (int)((DAT_07abf20c >> 8) & 0xFF);
-        unsigned char* c = FUN_0045f930((int)slot, klass, skin, x, y, 0.0f);
+        unsigned char* c = CreateHero((int)slot, klass, skin, x, y, 0.0f);
         DAT_05826cb0 = 53;  // CurrentProtocolState — char created OK
         if (!c) {
             NetLog("NET:    F3/01 slot=%d CreateHero FAILED", slot);
@@ -1923,9 +1920,9 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // BUG-FIX 2026-04-28: leer class + body-part slots del char-select entity
     // ANTES de OpenWorld (que llama ClearCharacters y borra los entities).
     // Body parts (helm/armor/pant/glove/boot) son lo que efectivamente renderiza
-    // el cuerpo del hero — sin esto FUN_00456770 entra pero no dibuja nada.
+    // el cuerpo del hero — sin esto RenderCharacter entra pero no dibuja nada.
     // (3) World setup: mapa, terreno, tiles.
-    DAT_0055a7ac = world;
+    World = world;
 
     // 2026-05-07: WIPE entity pool de slots stale del CharSelect ANTES de
     // OpenWorld + hero spawn. Sin esto, los slots de chars del CharSelect
@@ -1951,7 +1948,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         DAT_07abf5d8 = nullptr;
     }
 
-    // BUG-FIX 2026-04-29: FUN_0050e5a0 (OpenWorld) bloquea ~2 segundos cargando
+    // BUG-FIX 2026-04-29: OpenWorld bloquea ~2 segundos cargando
     // BMDs. Durante ese tiempo el server manda ~3KB de packets post-JoinMapServer,
     // pero como nuestro message pump está bloqueado no hacemos recv → server's
     // IoSideBuffer overflows o WSASend falla con WSAENOBUFS → CloseClient.
@@ -1970,7 +1967,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
 
     // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
     // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
-    // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+    // AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
     // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
     // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
     // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
@@ -1982,7 +1979,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
     // cola y se procesan al terminar la carga.
     ++g_WorldLoading;
-    FUN_0050e5a0();              // OpenWorld(World) — BMD load (~2s)
+    OpenWorld();              // OpenWorld(World) — BMD load (~2s)
     --g_WorldLoading;
 
     // Pump messages POST-load para drenar lo que llegó durante el bloqueo.
@@ -1995,13 +1992,13 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     }
 
     // (4-5) Random hero slot + spawn at packet position.
-    DAT_05826ca0 = (DWORD)(_rand() % 400);    // HeroIndex
-    unsigned int heroIndex = DAT_05826ca0;
+    HeroIndex = (DWORD)(_rand() % 400);
+    unsigned int heroIndex = HeroIndex;
     unsigned char* heroPtr = (unsigned char*)(uintptr_t)DAT_07abf5d0 + (heroIndex * 0x394);
     float Rotation = ((float)direction - 1.0f) * 45.0f;
-    FUN_0045adc0(heroPtr, 390, PosX, PosY, Rotation);
+    CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
-    // BUG-FIX 2026-04-28: FUN_0045adc0 setea cached_wp (+0x388/0x38c) pero NO
+    // BUG-FIX 2026-04-28: CreateCharacterPointer setea cached_wp (+0x388/0x38c) pero NO
     // target_grid (+0x306/0x307). El per-frame walker Entity_AdvancePath en
     // Player_InputTick lee target_grid → como inicialmente está en 0,0, el
     // hero camina automáticamente a la esquina del mapa.
@@ -2043,7 +2040,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
         *(short*)(heroPtr + 474) = s_PendingHeroGuildMarkRow;
         s_HasPendingHeroGuildMark = false;
         s_PendingHeroGuildMarkRow = -1;
-        FUN_00423ce0((int)(uintptr_t)heroPtr, 0, 0, 0);
+        GuildWar_UpdateEntityRelation((int)(uintptr_t)heroPtr, 0, 0, 0);
     }
     s_IsRebuildingHero = false;
     HeroEquipWatchdog((int)(uintptr_t)heroPtr);
@@ -2072,7 +2069,7 @@ static void Recv_JoinMapServer(const BYTE* Msg, int bEncrypted)
     DAT_05826cb0 = 61;           // CurrentProtocolState → enter-world fade
     // IDA ReceiveJoinMapServer L380: LockInputStatus = 0 (0x07E11D6F, el gate
     // del IME que WndProc pone en 1 al abrir el chat).  CheckIME_Status(1, 0)
-    // queda pendiente: nuestro CheckIME_Status_stub no reproduce todavia el
+    // queda pendiente: nuestro CheckIME_Status no reproduce todavia el
     // guardado/restaurado del estado de conversion.
     DAT_07e11d6f = 0;            // LockInputStatus
 
@@ -2168,7 +2165,7 @@ static void Recv_Revival(const BYTE* Msg, int Size)
 
     // (1) Reset de input + estado de teleport, y baja del slot del héroe viejo.
     DAT_083a42c4 = 0;                                  // MouseLButton = 0
-    DAT_05826d14 = 0;                                  // Teleport = 0
+    Teleport = 0;                                  // Teleport = 0
     if (DAT_07abf5d8) *(BYTE*)DAT_07abf5d8 = 0;        // *(BYTE *)Hero = 0
 
     // (2) Stats desde el paquete.
@@ -2201,9 +2198,9 @@ static void Recv_Revival(const BYTE* Msg, int Size)
 
     // (5) Re-crea al héroe EN EL MISMO SLOT (HeroIndex no cambia).
     unsigned char* heroPtr =
-        (unsigned char*)(uintptr_t)DAT_07abf5d0 + (DAT_05826ca0 * 0x394);
+        (unsigned char*)(uintptr_t)DAT_07abf5d0 + (HeroIndex * 0x394);
     const float Rotation = ((float)direction - 1.0f) * 45.0f;
-    FUN_0045adc0(heroPtr, 390, PosX, PosY, Rotation);
+    CreateCharacterPointer(heroPtr, 390, PosX, PosY, Rotation);
 
     *(WORD*)(heroPtr + 476) = g_HeroKey;
 
@@ -2220,9 +2217,9 @@ static void Recv_Revival(const BYTE* Msg, int Size)
 
     // (7) Reconstruye el cuerpo desde CharacterMachine y corta la animación
     //     de muerte; después el efecto visual de aparición.
-    FUN_0045c130((int)(uintptr_t)heroPtr);             // SetCharacterClass
-    FUN_004430c0((int)(uintptr_t)heroPtr);             // SetPlayerStop
-    Effect_Create(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
+    SetCharacterClass((int)(uintptr_t)heroPtr);             // SetCharacterClass
+    SetPlayerStop((int)(uintptr_t)heroPtr);             // SetPlayerStop
+    CreateEffect(1265, (float*)(heroPtr + 16), (float*)(heroPtr + 28),
                  (float*)(heroPtr + 232), nullptr, (float*)heroPtr,
                  (float*)-1, nullptr, 0);              // CreateEffect(1265)
 
@@ -2236,15 +2233,15 @@ static void Recv_Revival(const BYTE* Msg, int Size)
     ClearCharacters(g_HeroKey);
 
     // (9) Cambio de mapa (respawn en otro mapa) + altura del terreno.
-    if ((int)DAT_0055a7ac == (int)map) {
+    if ((int)World == (int)map) {
         DAT_05826d24 = 0;   // SummonLife = 0
         return;
     }
 
-    DAT_0055a7ac = map;
+    World = map;
     // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
     // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
-    // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+    // AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
     // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
     // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
     // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
@@ -2256,18 +2253,18 @@ static void Recv_Revival(const BYTE* Msg, int Size)
     // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
     // cola y se procesan al terminar la carga.
     ++g_WorldLoading;
-    FUN_0050e5a0();                                    // OpenWorld(World)
+    OpenWorld();                                    // OpenWorld(World)
     --g_WorldLoading;
 
     float z;
-    if ((int)DAT_0055a7ac == -1 ||
+    if ((int)World == -1 ||
         *(const WORD*)(heroPtr + 696) != 819 ||        // sin Dinorant
         heroPtr[846] != 0) {
-        z = FUN_004f7500(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20));
-    } else if (DAT_0055a7ac == 8 || DAT_0055a7ac == 10) {
-        z = FUN_004f7500(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 90.0f;
+        z = RequestTerrainHeight(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20));
+    } else if (World == 8 || World == 10) {
+        z = RequestTerrainHeight(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 90.0f;
     } else {
-        z = FUN_004f7500(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 30.0f;
+        z = RequestTerrainHeight(*(float*)(heroPtr + 16), *(float*)(heroPtr + 20)) + 30.0f;
     }
     *(float*)(heroPtr + 24) = z;
     DAT_05826d24 = 0;       // SummonLife = 0
@@ -2311,8 +2308,6 @@ static void Recv_Revival(const BYTE* Msg, int Size)
 // ---------------------------------------------------------------------------
 // CharData_CalcNextLevelExp (0x0047E350) — definida en Scene/Scene_CharSelect_Nav.cpp
 // y sin entrada en functions.h.
-void __fastcall FUN_0047e350(int param_1);
-
 static void Recv_LevelUp(const BYTE* Msg, int Size)
 {
     // El paquete sin los View* mide 22 bytes (header 4 + hasta +20 inclusive).
@@ -2368,7 +2363,7 @@ static void Recv_LevelUp(const BYTE* Msg, int Size)
         *(WORD*)(CA + 28) = *(WORD*)(CA + 32);   // Life = MaxLife (full al subir)
         *(WORD*)(CA + 30) = *(WORD*)(CA + 34);   // Mana = MaxMana
     } else {
-        FUN_0047e350((int)(uintptr_t)CharacterMachine);
+        CalculateNextExperince((int)(uintptr_t)CharacterMachine);
     }
 
     NetLog("NET:  -> F3/05 LevelUp lvl=%u pts=%u HP=%u MP=%u BP=%u next=%u",
@@ -2384,7 +2379,7 @@ static void Recv_LevelUp(const BYTE* Msg, int Size)
                          (float*)(hero + 28), 0, (int)(uintptr_t)hero,
                          40.0f, 2, 0);
         }
-        Effect_Create(1264, (float*)(hero + 16), (float*)(hero + 28),
+        CreateEffect(1264, (float*)(hero + 16), (float*)(hero + 28),
                      (float*)(hero + 232), nullptr, (float*)hero,
                      (float*)-1, nullptr, 0);
     }
@@ -2438,7 +2433,7 @@ static void Recv_ChangePlayer(const BYTE* Msg, int Size)
     if (Size < 9 || !DAT_07abf5d0) return;
 
     const int key = Msg[4] + (Msg[3] << 8);
-    const int idx = FUN_0045ac80(key);
+    const int idx = FindCharacterIndex(key);
     if (idx < 0 || idx >= 400) {
         NetLog("NET:  -> 0x25 ChangePlayer key=%d (entidad ausente)", key);
         return;
@@ -2500,14 +2495,14 @@ static void Recv_ChangePlayer(const BYTE* Msg, int Size)
         case 8: {  // helper / mascota
             if (empty) {
                 *(WORD*)(c + 696) = (WORD)-1;
-                FUN_004fffa0((DWORD)(uintptr_t)c);        // DeleteBug
+                DeleteBug((DWORD)(uintptr_t)c);        // DeleteBug
             } else {
                 *(WORD*)(c + 696) = (WORD)(type + 400);
                 c[698] = 0;
                 float* pos = (float*)(c + 16);
-                if (type == 416)      FUN_004fffd0(816, (void*)pos, (void*)c, 0);
-                else if (type == 418) FUN_004fffd0(195, (void*)pos, (void*)c, 0);
-                else if (type == 419) FUN_004fffd0(267, (void*)pos, (void*)c, 0);
+                if (type == 416)      CreateBug(816, (void*)pos, (void*)c, 0);
+                else if (type == 418) CreateBug(195, (void*)pos, (void*)c, 0);
+                else if (type == 419) CreateBug(267, (void*)pos, (void*)c, 0);
             }
             break;
         }
@@ -2515,7 +2510,7 @@ static void Recv_ChangePlayer(const BYTE* Msg, int Size)
             break;
     }
 
-    FUN_0045c050((int)(uintptr_t)c);   // SetCharacterScale
+    SetCharacterScale((int)(uintptr_t)c);   // SetCharacterScale
 }
 
 // ---------------------------------------------------------------------------
@@ -2524,8 +2519,8 @@ static void Recv_ChangePlayer(const BYTE* Msg, int Size)
 // (botones Salir / Ir-a-otro-server / Ir-a-otro-char).  Sub-byte Msg[4]:
 //   0 = Exit:   WM_DESTROY (cierra el proceso).
 //   1 = JoinChar (volver a char-select sin reconectar): mantiene socket,
-//       g_GameState=4, descarga in-game scene, pide F3/00 char list.
-//   2 = JoinSrv (volver a server-select): cierra socket, g_GameState=2,
+//       SceneFlag=4, descarga in-game scene, pide F3/00 char list.
+//   2 = JoinSrv (volver a server-select): cierra socket, SceneFlag=2,
 //       reset login init flags, vuelve a Scene_Login_ServerSelect.
 //
 // IDA hace además un ack-resend del packet cuando bEncrypted=false (echo),
@@ -2534,7 +2529,7 @@ static void Recv_ChangePlayer(const BYTE* Msg, int Size)
 static void Recv_LogOut(const BYTE* Msg)
 {
     BYTE sub = Msg[4];
-    NetLog("NET:    F1/02 LogOut sub=%d gs=%d", sub, (int)DAT_005615c0);
+    NetLog("NET:    F1/02 LogOut sub=%d gs=%d", sub, (int)SceneFlag);
 
     if (sub == 0) {
         // Exit: WM_DESTROY → WndProc cleanup → PostQuitMessage
@@ -2544,13 +2539,13 @@ static void Recv_LogOut(const BYTE* Msg)
 
     if (sub == 1) {
         // JoinChar — back to char-select, keep connection open
-        if (DAT_005615c0 == 5) {
+        if (SceneFlag == 5) {
             StopMusic();
             AllStopSound();
             Item_ReturnPickedItem();              // CharPreview_Refresh
             ReleaseMainData();
         }
-        DAT_005615c0 = 4;                // g_GameState = CharSelect
+        SceneFlag = 4;                // SceneFlag = CharSelect
         DAT_083a7c14 = 0;                // sub-state reset (will be set to 0x14/0x15 by EnterWorldTick init)
         DAT_083a7c18 = 0;
         DAT_05826cb0 = 50;               // CurrentProtocolState
@@ -2580,9 +2575,9 @@ static void Recv_LogOut(const BYTE* Msg)
         // ── BUG-FIX 2026-08-17: faltaba la cola de ReceiveLogOut ──────────────
         // IDA 0x4247D0 LABEL_117: DESPUÉS del send, la rama sub==1 hace
         // `CurrentProtocolState = 0` e `InitGame()`, igual que la rama sub==2.
-        // Sin el InitGame quedaba `World` (DAT_0055a7ac) con el mapa anterior.
+        // Sin el InitGame quedaba `World` (World) con el mapa anterior.
         // Eso importa porque nuestro RequestTerrainHeight (Terrain_Utils.cpp:49)
-        // gatea con `World < 0` en vez del `g_GameState != 5` del original — una
+        // gatea con `World < 0` en vez del `SceneFlag != 5` del original — una
         // desviación deliberada por el orden del JoinMapServer. Con World=7
         // (Atlans) heredado y su heightmap todavía cargado, CreateCharacterPointer
         // le daba a cada personaje del char-select la altura del terreno de
@@ -2596,15 +2591,15 @@ static void Recv_LogOut(const BYTE* Msg)
 
     if (sub == 2) {
         // JoinSrv — back to login/server-select, close socket
-        if (DAT_005615c0 == 5) {
+        if (SceneFlag == 5) {
             StopMusic();
             AllStopSound();
             Item_ReturnPickedItem();
             ReleaseMainData();
         }
-        FUN_0043dc90((int)(uintptr_t)DAT_055ca160);  // Net_Disconnect (close socket)
-        Scene_UnloadCharSelectResources(); // FUN_005102c0 (IDA) — ReleaseCharacterSceneData
-        DAT_005615c0 = 2;                // g_GameState = Login
+        CWsctlc_Close((int)(uintptr_t)SocketClient);  // Net_Disconnect (close socket)
+        ReleaseCharacterSceneData(); // IDA: ReleaseCharacterSceneData (0x005102C0)
+        SceneFlag = 2;                // SceneFlag = Login
         DAT_083a7c14 = 0;                // sub-state = ServerSelect
         DAT_083a7c18 = 0;
         DAT_05826cb0 = 0;                // CurrentProtocolState
@@ -2626,21 +2621,21 @@ static void Recv_LogOut(const BYTE* Msg)
 // ---------------------------------------------------------------------------
 void CS_SendPlain(const BYTE* data, int len)
 {
-    if (DAT_055ca168 == 0xffffffff) return;
+    if (SocketClientSocket == 0xffffffff) return;
     unsigned int remain = (unsigned int)len;
     int off = 0;
     while ((int)remain > 0) {
-        int r = ::send(DAT_055ca168, (const char*)data + off, (int)remain, 0);
+        int r = ::send(SocketClientSocket, (const char*)data + off, (int)remain, 0);
         if (r == -1) {
             if (WSAGetLastError() == WSAEWOULDBLOCK) {
-                if (DAT_055cc16c + (int)remain < 0x2001) {
-                    memcpy((char*)DAT_055ca16c + DAT_055cc16c, data + off, remain);
-                    DAT_055cc16c += (int)remain;
+                if (SocketClientSendBufferLength + (int)remain < 0x2001) {
+                    memcpy((char*)SocketClientSendBuffer + SocketClientSendBufferLength, data + off, remain);
+                    SocketClientSendBufferLength += (int)remain;
                 } else {
-                    Net_Disconnect((int)(uintptr_t)DAT_055ca160);
+                    Net_Disconnect((int)(uintptr_t)SocketClient);
                 }
             } else {
-                Net_Disconnect((int)(uintptr_t)DAT_055ca160);
+                Net_Disconnect((int)(uintptr_t)SocketClient);
             }
             return;
         }
@@ -2738,9 +2733,9 @@ static void Recv_Redirect(const BYTE* Msg)
     g_ConnectServerMode      = 0;
     g_ConnectServerRequested = 0;
     MuEmu::SetActive(true);
-    FUN_0043dc90((int)(uintptr_t)DAT_055ca160);   // Net_Disconnect
-    Net_ConnectServer(IpAddr, port);                   // Net_Connect
-    DAT_05826cf0 = 1;                              // g_bGameServerConnected
+    CWsctlc_Close((int)(uintptr_t)SocketClient);   // Net_Disconnect
+    CreateSocket(IpAddr, port);                   // Net_Connect
+    g_bGameServerConnected = 1;                              // g_bGameServerConnected
 }
 
 // ---------------------------------------------------------------------------
@@ -2800,8 +2795,8 @@ static void ReceiveTradeExit97k(const BYTE* Msg, int Size)
     DAT_07eaa165 = 0;
     DAT_07eaa0f0 = 0;
     DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
-    DAT_07eaa0fc = 0;
-    DAT_07eaa0fd = 0;
+    m_bYourConfirm = 0;
+    m_bMyConfirm = 0;
     TradeYourWait = 0;
     TradeMyWait = 0;
     TradeRemoteGuildKey = 0;
@@ -2810,15 +2805,15 @@ static void ReceiveTradeExit97k(const BYTE* Msg, int Size)
     EnableUse = 0;
     g_ItemMoveSourcePool = 0;
     g_ItemMoveTargetPool = 0;
-    FUN_00423db0();
+    InitGuildWar();
     DAT_07eaa117 = 0;   // InventoryOpened (IDA ReceiveTradeExit: cierra el inventario)
     CloseInventoryRelatedWindows();
 
     if (DAT_083a7c24 == 116) {
         SetErrorMessage(0);
-        Input_ClearState(0);
+        ClearInput(0);
         _InputTextMaxArr[0] = 42;
-        DAT_00559c88 = 2;
+        InputNumber = 2;
         InputEnable = 0;
     }
 }
@@ -2829,7 +2824,7 @@ static void ReceiveTradeExit97k(const BYTE* Msg, int Size)
 void Net_ProcessPacket(void)
 {
     while (true) {
-        BYTE* Msg = (BYTE*)FUN_0043e010((int)(uintptr_t)DAT_055ca160);
+        BYTE* Msg = (BYTE*)CWsctlc_GetReadMsg((int)(uintptr_t)SocketClient);
         if (!Msg) return;
 
         int HeadCode, Size;
@@ -2838,7 +2833,7 @@ void Net_ProcessPacket(void)
 
         // 2026-09-03 -- COPIA DEL PAQUETE ANTES DE PROCESARLO.
         //
-        // `FUN_0043e010` (GetReadMsg) devuelve un puntero DENTRO del buffer de
+        // `CWsctlc_GetReadMsg` (GetReadMsg) devuelve un puntero DENTRO del buffer de
         // recepcion del socket, que es compartido.  Handlers que tardan --
         // sobre todo los de viewport, porque `CreateMonster` carga el BMD del
         // monstruo -- dejan que se bombee la cola de mensajes en el medio, entra
@@ -2873,14 +2868,14 @@ void Net_ProcessPacket(void)
         //   C3 [encLen] [enc body...]   →   C1 [plainLen] [plain body...]
         //   C4 [hi][lo] [enc body...]   →   C2 [hi][lo]   [plain body...]
         //
-        // FUN_0053cca0(dst, src, srcLen, ?) escribe 8 bytes por cada 11 bytes encriptados.
+        // CSimpleModulus_Decode(dst, src, srcLen, ?) escribe 8 bytes por cada 11 bytes encriptados.
         BYTE  scratch[0x800];
         if (hdr == 0xC3 || hdr == 0xC4) {
             bEncrypted = true;
             int hdrSz = (hdr == 0xC3) ? 2 : 3;
             int wireLen = (hdr == 0xC3) ? Msg[1] : ((Msg[1] << 8) | Msg[2]);
             int encLen  = wireLen - hdrSz;
-            int outLen  = FUN_0053cca0((int)scratch, (int)(Msg + hdrSz), encLen, 0);
+            int outLen  = CSimpleModulus_Decode((int)scratch, (int)(Msg + hdrSz), encLen, 0);
             if (outLen <= 0) {
                 NetLog("NET: C%c decode FAILED encLen=%d outLen=%d",
                        (hdr == 0xC3) ? '3' : '4', encLen, outLen);
@@ -3077,7 +3072,7 @@ void Net_ProcessPacket(void)
                         // IDA ReceiveAddPoint (0x431480) termina con sub_47E3C0
                         // (CharData_RecalcStats).  Sin esto dano, defensa y
                         // velocidad quedaban viejos hasta cambiar el equipo.
-                        FUN_0047e3c0((int)(uintptr_t)CharacterMachine, 0, 0);
+                        CalculateAll((int)(uintptr_t)CharacterMachine, 0, 0);
                         break;
                     }
 
@@ -3115,7 +3110,7 @@ void Net_ProcessPacket(void)
                         // (Entity_UpdateRender: `>= 6`).
                         if (Size < 7 || !DAT_07abf5d0) break;
                         const int pkKey = Msg[5] + (Msg[4] << 8);
-                        const int pkIdx = FUN_0045ac80(pkKey);
+                        const int pkIdx = FindCharacterIndex(pkKey);
                         if (pkIdx < 0 || pkIdx >= 400) break;
                         BYTE* pkEnt = (BYTE*)(uintptr_t)DAT_07abf5d0 + (size_t)pkIdx * 0x394;
                         const BYTE pkLevel = Msg[6];
@@ -3155,10 +3150,10 @@ void Net_ProcessPacket(void)
                         // con el layout del server.
                         if (Size < 17) break;
                         const int eqKey = Msg[5] + (Msg[4] << 8);
-                        const int eqIdx = FUN_0045ac80(eqKey);
+                        const int eqIdx = FindCharacterIndex(eqKey);
                         NetLog("NET:  -> F3/13 ItemEquipment key=%d idx=%d", eqKey, eqIdx);
                         if (eqIdx < 0 || eqIdx >= 400) break;
-                        FUN_0045c8c0(eqIdx, (BYTE*)Msg + 7);
+                        ChangeCharacterExt(eqIdx, (BYTE*)Msg + 7);
                         break;
                     }
 
@@ -3169,7 +3164,7 @@ void Net_ProcessPacket(void)
                         if (Size < 6) break;
                         NetLog("NET:  -> F3/14 ItemModify slot=%d", Msg[4]);
                         DAT_07e91388 = 0;            // suelta el item agarrado
-                        FUN_004cc660(OffsetInventoryItems, 8, 8, Msg[4],
+                        InsertInventoryItem(OffsetInventoryItems, 8, 8, Msg[4],
                                      (BYTE*)Msg + 5, 0);
                         PlayBuffer(49, 0, 0);
                         break;
@@ -3232,8 +3227,8 @@ void Net_ProcessPacket(void)
                                 float Light[3] = { 1.0f, 1.0f, 1.0f };
                                 Position[0] = ((float)Msg[5] + 0.5f) * 100.0f;
                                 Position[1] = ((float)Msg[6] + 0.5f) * 100.0f;
-                                Position[2] = FUN_004f7500(Position[0], Position[1]);
-                                Effect_Create(1248, Position, Angle, Light,
+                                Position[2] = RequestTerrainHeight(Position[0], Position[1]);
+                                CreateEffect(1248, Position, Angle, Light,
                                              nullptr, nullptr, (float*)-1, nullptr, 0);
                                 break;
                             }
@@ -3257,7 +3252,7 @@ void Net_ProcessPacket(void)
                             }
                             case 5:
                                 if (Size < 6) break;
-                                FUN_0051d840(Msg[5]);      // avanza el dialogo
+                                ItemList_Select(Msg[5]);      // avanza el dialogo
                                 break;
                             case 6:
                                 if (GlobalText[449] && GlobalText[449][0])
@@ -3426,7 +3421,7 @@ void Net_ProcessPacket(void)
 
                         // 2) Opciones de juego.
                         DAT_07e11e18 = ((p[10] & 1) == 1);          // m_bAutoAttack
-                        DAT_07e11d80 = (char)((p[10] & 4) == 4);    // m_bWhisperSound (0x07E11D80); antes un DAT_07e11e26 sin xrefs en IDA
+                        m_bWhisperSound = (char)((p[10] & 4) == 4);    // m_bWhisperSound (0x07E11D80); antes un DAT_07e11e26 sin xrefs en IDA
                         DAT_00559c60 = p[11] + 448;                 // QKey  (item type)
                         DAT_00559c64 = p[12] + 448;                 // WKey
                         DAT_00559c68 = p[13] + 448;                 // EKey
@@ -3438,7 +3433,7 @@ void Net_ProcessPacket(void)
                         int chatLines = 3 * (cw >> 4);
                         int transp    = cw & 0x0F;
                         if (chatLines) {
-                            DAT_005590ac = 1;
+                            g_bUseChatListBox = 1;
                             if (DAT_055c9ff0) {          // vtable +56 = setVisibleCnt (slot 14)
                                 DWORD* cobj = (DWORD*)DAT_055c9ff0;
                                 void** cvt  = (void**)*cobj;
@@ -3448,7 +3443,7 @@ void Net_ProcessPacket(void)
                                 }
                             }
                         } else {
-                            DAT_005590ac = 0;            // sin recuadro (modo clásico)
+                            g_bUseChatListBox = 0;            // sin recuadro (modo clásico)
                         }
                         if (DAT_055c9ff0)
                             *(float*)((BYTE*)DAT_055c9ff0 + 188) = (float)transp * 0.1f;
@@ -3462,13 +3457,13 @@ void Net_ProcessPacket(void)
                         // los mensajes salían abajo en vez de arriba-izquierda.
                         if (DAT_055c9ff0) {
                             DWORD* cobj = (DWORD*)DAT_055c9ff0;
-                            if (DAT_005590ac) { cobj[11] = 186;          cobj[12] = 420; }
+                            if (g_bUseChatListBox) { cobj[11] = 186;          cobj[12] = 420; }
                             else              { cobj[11] = (DWORD)(-10); cobj[12] = 81;  }
                         }
 
                         NetLog("NET:    F3/30 opt=%02X Q=%d W=%d E=%d chatWin=%02X lines=%d transp=%d listbox=%d",
                                p[10], DAT_00559c60, DAT_00559c64, DAT_00559c68,
-                               cw, chatLines, transp, (int)DAT_005590ac);
+                               cw, chatLines, transp, (int)g_bUseChatListBox);
                         break;
                     }
 
@@ -3561,7 +3556,7 @@ void Net_ProcessPacket(void)
                     BYTE* ent = (BYTE*)(uintptr_t)DAT_07abf5d0 + (uintptr_t)entIdx * 0x394;
                     if (ent[0] != 0) {
                         // CreateChat(nombre, texto, entidad, 0, -1) — igual que el
-                        // path de NPC hover (FUN_004cb6f0).
+                        // path de NPC hover (RenderMonsterName).
                         CreateChat((char*)(ent + 0x1C1), cmsg, (DWORD)(uintptr_t)ent, 0, -1);
                     }
                 }
@@ -3602,7 +3597,7 @@ void Net_ProcessPacket(void)
                     // pueda contestar (ver FUN_0047fed0) — y el sonido SOLO con
                     // m_bWhisperSound (0x07E11D80).
                     RegistWhisperID(10, wname);
-                    if (DAT_07e11d80)
+                    if (m_bWhisperSound)
                         PlayBuffer(0x26, 0, 0);
                     UIChatLogWindow_AddText(wname, wmsg, 0);
                 }
@@ -3735,12 +3730,12 @@ void Net_ProcessPacket(void)
                                 // para el tipo 322. Al resto de las entidades remotas las
                                 // cambia MoveMonsterClient antes de MovePath.
                                 if (*(WORD*)(h + 2) == 322) {
-                                    FUN_00443930((int)(uintptr_t)h);
+                                    SetPlayerWalk((int)(uintptr_t)h);
                                     h[773] = 1;
                                 }
                             } else {
                                 h[748] = 0;
-                                SetPlayerStop(h);
+                                SetPlayerStop((int)(uintptr_t)h);
                             }
                         }
                     }
@@ -3764,7 +3759,7 @@ void Net_ProcessPacket(void)
                 // Net_SendSmallPacket wrap correcto: chain-XOR + serial counter
                 // + SimpleModulus + envelope C3.
                 NetLog("NET:  → op=0x03 MainCheck challenge size=%d, sending ACK (C3)", Size);
-                if (DAT_055ca168 != 0xffffffff && Size >= 3) {
+                if (SocketClientSocket != 0xffffffff && Size >= 3) {
                     BYTE ack[16];
                     int ackSize = Size > (int)sizeof(ack) ? (int)sizeof(ack) : Size;
                     ack[0] = 0xC1;
@@ -3930,7 +3925,7 @@ void Net_ProcessPacket(void)
                             // slot), asi que replicamos solo la restauracion.
                             if (*(short*)(hero + 2) != 390) {
                                 const float rot = ((float)dir - 1.0f) * 45.0f;
-                                FUN_0045adc0(hero, 390, x, y, rot);
+                                CreateCharacterPointer(hero, 390, x, y, rot);
                                 *(WORD*)(hero + 0x1DC) = g_HeroKey;
                                 if (CharacterAttribute)
                                     hero[444] = *((const BYTE*)CharacterAttribute + 11);
@@ -3939,7 +3934,7 @@ void Net_ProcessPacket(void)
                                 hero[132]   = 1;
                                 hero[0x306] = tx;
                                 hero[0x307] = ty;
-                                FUN_0045c130((int)(uintptr_t)hero);   // SetCharacterClass
+                                SetCharacterClass((int)(uintptr_t)hero);   // SetCharacterClass
                                 NetLog("NET:    0x12 heroe restaurado de transformacion");
                             }
 
@@ -3959,7 +3954,7 @@ void Net_ProcessPacket(void)
                             // reproducimos los dos resets visuales que necesita
                             // esta fila del protocolo.
                             *(DWORD*)(hero + 120) = 0;       // CreateCharacterPointer
-                            FUN_0045c8c0((int)DAT_05826ca0, (BYTE*)e + 5);
+                            ChangeCharacterExt((int)HeroIndex, (BYTE*)e + 5);
                             ApplyPersistentSkillEffect97k(hero, viewSkillState, 1);
                         }
                         NetLog("NET:    0x12 own HeroKey=%u synchronized, no viewport clone",
@@ -3983,7 +3978,7 @@ void Net_ProcessPacket(void)
                     //     inactivo, asi que la capa (cloth) de la entidad
                     //     anterior quedaba colgada.
                     //
-                    // `FUN_0045bfa0` ya hace las dos cosas y es el port fiel
+                    // `CreateCharacter` ya hace las dos cosas y es el port fiel
                     // (Monster.cpp:526). Delegar en el elimina la divergencia:
                     // una sola implementacion de "buscar slot por Key, si no
                     // reusar uno inactivo".
@@ -3993,7 +3988,7 @@ void Net_ProcessPacket(void)
                     // y el offset random inicial se come a lo sumo 127, o sea
                     // quedan 402 utiles.
                     float rot = ((float)dir - 1.0f) * 45.0f;
-                    BYTE* slot = (BYTE*)(uintptr_t)FUN_0045bfa0(entityId, 390, x, y, rot);
+                    BYTE* slot = (BYTE*)(uintptr_t)CreateCharacter(entityId, 390, x, y, rot);
                     int spawnSlot = (int)(((uintptr_t)slot - (uintptr_t)basePtr) / 0x394);
                     if (slot) {
                         *(WORD*)(slot + 0x1dc) = entityId;
@@ -4010,21 +4005,21 @@ void Net_ProcessPacket(void)
                             CreateTeleportEnd((unsigned int)(uintptr_t)slot);
                             break;
                         case 2:
-                            FUN_0043e820((int)(uintptr_t)slot,
+                            SetAction((int)(uintptr_t)slot,
                                          (slot[0x1bc] & 7) == 2 ? 135 : 133);
                             break;
                         case 3:
-                            FUN_0043e820((int)(uintptr_t)slot,
+                            SetAction((int)(uintptr_t)slot,
                                          (slot[0x1bc] & 7) == 2 ? 140 : 139);
                             break;
                         case 4:
-                            FUN_0043e820((int)(uintptr_t)slot,
+                            SetAction((int)(uintptr_t)slot,
                                          (slot[0x1bc] & 7) == 2 ? 138 : 137);
                             break;
                         default:
                             break;
                         }
-                        FUN_0045c8c0(spawnSlot, (BYTE*)e + 5);
+                        ChangeCharacterExt(spawnSlot, (BYTE*)e + 5);
                         memcpy(slot + 449, name, 10);  // Character.Name (+0x1C1)
                         slot[0x84] = 1;     // type: player (1)
                         slot[0x160] = 1;    // visible flag — sin esto Entity_RenderAll_3D skip
@@ -4040,7 +4035,7 @@ void Net_ProcessPacket(void)
                             // CreateFlag branch in Combat_PacketDispatch:
                             // la posición llegue de forma autoritativa, y recién ahí emitir el
                             // standard player teleport-in effect (1265).
-                            Effect_Create(1265, (float*)(slot + 16), (float*)(slot + 28),
+                            CreateEffect(1265, (float*)(slot + 16), (float*)(slot + 28),
                                          (float*)(slot + 232), nullptr, (float*)slot,
                                          (float*)-1, nullptr, 0);
                             *(DWORD*)(slot + 360) = 0;
@@ -4090,7 +4085,7 @@ void Net_ProcessPacket(void)
                     const BYTE skin = e[4];
                     const WORD viewSkillState = (WORD)(e[6] | (e[7] << 8));
 
-                    BYTE* const entity = (BYTE*)FUN_0045ccf0(skin, e[2], e[3], entityId, 0);
+                    BYTE* const entity = (BYTE*)CreateMonster(skin, e[2], e[3], entityId, 0);
                     if (!entity) continue;
 
                     // Campos de estado exactos de 00429C50, adaptados sólo para el
@@ -4115,10 +4110,10 @@ void Net_ProcessPacket(void)
                     if ((e[0] & 0x80) != 0) {
                         // Rama CreateFlag: efecto de transformación 233 más su
                         // partícula 1191, exactamente como el handler original.
-                        Effect_Create(233, (float*)(entity + 16), (float*)(entity + 28),
+                        CreateEffect(233, (float*)(entity + 16), (float*)(entity + 28),
                                      (float*)(entity + 232), nullptr, (float*)entity,
                                      (float*)-1, nullptr, 0);
-                        FUN_004795c0(1191, (float*)(entity + 16), 1.0f,
+                        CreateSprite(1191, (float*)(entity + 16), 1.0f,
                                      (float*)(entity + 232), (int)(uintptr_t)entity,
                                      0.0f, 0);
                         *(DWORD*)(entity + 360) = 0;
@@ -4186,15 +4181,15 @@ void Net_ProcessPacket(void)
                     BYTE dirpk = e[10];
                     BYTE dir = (dirpk >> 4) & 0x0F;
                     const WORD viewSkillState = (WORD)(e[4] | (e[5] << 8));
-                    // 2026-05-04: usar CreateMonster (FUN_0045ccf0) en vez de
-                    // FUN_0045adc0 (CreateCharacterPointer). El primero ADEMÁS
+                    // 2026-05-04: usar CreateMonster en vez de
+                    // CreateCharacterPointer. El primero ADEMÁS
                     // carga el BMD model via OpenMonsterModel/OpenNpc, que es
                     // lo que faltaba — antes los slots se creaban "vacíos"
                     // sin modelo → no rendían en pantalla.
-                    extern char* __cdecl FUN_0045ccf0(unsigned int Type, int PosX,
+                    extern char* __cdecl CreateMonster(unsigned int Type, int PosX,
                                                      int PosY, int Key, int);
                     float rot = ((float)dir - 1.0f) * 45.0f;
-                    char* slotChar = FUN_0045ccf0((unsigned int)type, x, y,
+                    char* slotChar = CreateMonster((unsigned int)type, x, y,
                                                   (int)entityId, 0);
                     if (slotChar) {
                         BYTE* slot = (BYTE*)slotChar;
@@ -4202,7 +4197,7 @@ void Net_ProcessPacket(void)
                         *(float*)(slot + 0x24) = rot;
                         *(WORD*)(slot + 0x1dc) = entityId;
                         // FIX 2026-07-25: NO sobrescribir +0x84 (kind).  CreateMonster
-                        // (FUN_0045ccf0) ya lo setea correcto por Type: 2=monster,
+                        // (CreateMonster) ya lo setea correcto por Type: 2=monster,
                         // 4=NPC (type>200), 8=ground-item.  El override a 2 forzaba a
                         // TODOS los NPCs (blacksmith, mage, etc) a kind=2 → Target_Render
                         // los mostraba como banner de monstruo (RenderCenteredText arriba)
@@ -4225,7 +4220,7 @@ void Net_ProcessPacket(void)
                         *(float*)(slot + 0x168) = 1.0f;
                         // 2026-05-05: init move speed (+0x2FA = +762 word).
                         // CreateMonster solo setea esto para case 11. Resto de
-                        // los tipos quedan en 0 → FUN_00454b00 retorna 0 →
+                        // los tipos quedan en 0 → CharacterMoveSpeed retorna 0 →
                         // sin movimiento. O queda en basura → mobs acelerados.
                         // 4 = "slow walk" baseline para mobs/NPCs (vs player ~12).
                         if (*(unsigned short*)(slot + 0x2FA) == 0) {
@@ -4374,8 +4369,8 @@ void Net_ProcessPacket(void)
                 // SetPlayerShock con `!stunFlag`, o sea no hacia nada justo cuando
                 // el original aturde incondicionalmente.
                 if (stunFlag) {
-                    extern void __cdecl FUN_00444b60(int c, int Hit);
-                    FUN_00444b60((int)tgtSlot, (int)damage);
+                    extern void __cdecl SetPlayerShock(int c, int Hit);
+                    SetPlayerShock((int)tgtSlot, (int)damage);
                     float pos[3] = { *(float*)(tgtSlot + 0x10),
                                      *(float*)(tgtSlot + 0x14),
                                      *(float*)(tgtSlot + 0x18) };
@@ -4408,12 +4403,12 @@ void Net_ProcessPacket(void)
                     basePtr && AttackPlayer >= 0 && AttackPlayer < 400)
                 {
                     const float* cm = (const float*)(basePtr + 916 * AttackPlayer);
-                    const float fAngle = FUN_0043e050(cm[4], cm[5],
+                    const float fAngle = CreateAngle(cm[4], cm[5],
                                                       *(float*)(tgtSlot + 16),
                                                       *(float*)(tgtSlot + 20));
                     if (fabsf(fAngle - cm[9]) < 10.0f) {
                         float ang[3] = { 0.0f, 0.0f, fAngle + 180.0f };
-                        FUN_00460dc0(259, (float*)(tgtSlot + 16), ang,
+                        CreateEffect(259, (float*)(tgtSlot + 16), ang,
                                      (float*)(tgtSlot + 232),
                                      (float*)0, (float*)tgtSlot,
                                      (float*)(intptr_t)-1, (float*)0, 0);
@@ -4449,8 +4444,8 @@ void Net_ProcessPacket(void)
                                 (((int)r < 0) &&
                                  ((((char)r - 1) | (int)0xFFFFFFFE) == -1));
                     if (fire) {
-                        extern void __cdecl FUN_00444b60(int c, int Hit);
-                        FUN_00444b60((int)tgtSlot, (int)damage);
+                        extern void __cdecl SetPlayerShock(int c, int Hit);
+                        SetPlayerShock((int)tgtSlot, (int)damage);
                     }
                 }
 
@@ -4590,9 +4585,9 @@ void Net_ProcessPacket(void)
                     break;
                 case 100: case 101: {
                     // Ataque despachado — llama a SetPlayerAttack para animar por
-                    // weapon equipped. FUN_00444410 is SetPlayerAttack.
-                    extern void __cdecl FUN_00444410(int, int, int, int);
-                    FUN_00444410((int)slot, 0, 0, 0);
+                    // weapon equipped. SetPlayerAttack is SetPlayerAttack.
+                    extern void __cdecl SetPlayerAttack(int, int, int, int);
+                    SetPlayerAttack((int)slot, 0, 0, 0);
                     AttackPlayer = slotIdx;      // IDA: AttackPlayer = Index
                     slot[0x2F5] = 1;             // c+757=1 attack pending
                     *(int*)(slot + 0x108) = 0;   // reset frame
@@ -4600,8 +4595,8 @@ void Net_ProcessPacket(void)
                     break;
                 }
                 case 102: case 103: {
-                    extern void __cdecl FUN_004430c0(int);  // SetPlayerStop
-                    FUN_004430c0((int)slot);
+                    extern void __cdecl SetPlayerStop(int);  // SetPlayerStop
+                    SetPlayerStop((int)slot);
                     break;
                 }
                 case 108: SetAnim(slot, walking ? 135 : 133); break;
@@ -4720,7 +4715,7 @@ void Net_ProcessPacket(void)
                     const BYTE x = e[6], y = e[7];
                     const BYTE tx = e[8], ty = e[9];
                     const BYTE dirPk = e[10];
-                    BYTE* summon = (BYTE*)FUN_0045ccf0(type, x, y, key, 0);
+                    BYTE* summon = (BYTE*)CreateMonster(type, x, y, key, 0);
                     if (!summon) {
                         NetLog("NET:    0x1F SKIP - CreateMonster NULL type=%d", type);
                         continue;
@@ -4799,21 +4794,21 @@ void Net_ProcessPacket(void)
 
                 if (*(WORD*)(caster + 2) == 390) {
                     switch (skill) {
-                    case 10: FUN_0043e820((int)caster, 90); break;
-                    case 12: FUN_0043e820((int)caster, 88); break;
-                    case 14: FUN_0043e820((int)caster, 89); break;
+                    case 10: SetAction((int)caster, 90); break;
+                    case 12: SetAction((int)caster, 88); break;
+                    case 14: SetAction((int)caster, 89); break;
                     case 24:
-                    case 52: FUN_00444410((int)caster, 0, 0, 0); break;
+                    case 52: SetPlayerAttack((int)caster, 0, 0, 0); break;
                     case 41:
-                    case 55: FUN_0043e820((int)caster, 61); break;
-                    case 42: FUN_0043e820((int)caster, 62); break;
-                    case 43: FUN_0043e820((int)caster, 67); break;
-                    case 47: FUN_0043e820((int)caster, 66); break;
-                    case 56: FUN_0043e820((int)caster, 81); break;
-                    default: FUN_00444a80((int)caster); break;
+                    case 55: SetAction((int)caster, 61); break;
+                    case 42: SetAction((int)caster, 62); break;
+                    case 43: SetAction((int)caster, 67); break;
+                    case 47: SetAction((int)caster, 66); break;
+                    case 56: SetAction((int)caster, 81); break;
+                    default: SetPlayerMagic((int)caster); break;
                     }
                 } else {
-                    FUN_00444410((int)caster, 0, 0, 0);
+                    SetPlayerAttack((int)caster, 0, 0, 0);
                 }
                 *(DWORD*)(caster + 264) = 0;
                 caster[757] = 1;
@@ -4889,7 +4884,7 @@ void Net_ProcessPacket(void)
                     const int   key   = Msg[4] + (Msg[3] << 8);
                     const DWORD exp   = (DWORD)(Msg[6] + (Msg[5] << 8));
                     const int   dmg   = Msg[8] + (Msg[7] << 8);
-                    const int   index = FUN_0045ac80(key & 0x7FFF);
+                    const int   index = FindCharacterIndex(key & 0x7FFF);
 
                     NetLog("NET:  → 0x16 DieExp key=%04X idx=%d exp=%u dmg=%d",
                            key & 0x7FFF, index, exp, dmg);
@@ -4898,8 +4893,8 @@ void Net_ProcessPacket(void)
                     if (index >= 0 && index < 400 && DAT_07abf5d0) {
                         BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
                         if (key & 0xFFFF8000) {
-                            extern void __cdecl FUN_00444d90(int c_in);   // SetPlayerDie
-                            FUN_00444d90((int)(intptr_t)c);
+                            extern void __cdecl SetPlayerDie(int c_in);   // SetPlayerDie
+                            SetPlayerDie((int)(intptr_t)c);
                         } else if (DAT_07abf5d8) {
                             BYTE* hero = (BYTE*)DAT_07abf5d8;
                             *(BYTE*) (hero + 756) = 2;        // gate de las esferas de EXP
@@ -4997,7 +4992,7 @@ void Net_ProcessPacket(void)
                         *(float*)(entity + 200) = (float)(spin % 45);
                     }
                     if (DAT_07abf5d8 && entity == (BYTE*)DAT_07abf5d8) {
-                        FUN_0047eb80();   // clearMatchInfo
+                        clearMatchInfo();   // clearMatchInfo
                     }
                 }
 
@@ -5072,16 +5067,16 @@ void Net_ProcessPacket(void)
                         }
 
                         if (ItemMove_IsInventoryEquipSlot(targetPool, (int)targetSlot)) {
-                            // Equip slot: FUN_004cc660 rutea a WriteEquipmentSlot
+                            // Equip slot: InsertInventoryItem rutea a WriteEquipmentSlot
                             // internamente cuando slotIdx < 12 y pool = main inv.
-                            FUN_004cc660(OffsetInventoryItems, 8, 8,
+                            InsertInventoryItem(OffsetInventoryItems, 8, 8,
                                          (int)targetSlot, itembytes, 1);
                         } else {
                             int slotIndex = (targetPool == OffsetInventoryItems) ? (int)targetSlot : ItemMove_ToGridSlot(targetPool, (int)targetSlot);
                             int slotMax = (targetPool == OffsetInventoryItems) ? 76 : (8 * ItemMove_GetGridH(targetPool));
                             if (slotIndex >= 0 && slotIndex < slotMax) {
                                 int first = (targetPool == OffsetInventoryItems) ? 0 : 1;
-                                FUN_004cc660(targetPool, 8, ItemMove_GetGridH(targetPool), slotIndex, itembytes, first);
+                                InsertInventoryItem(targetPool, 8, ItemMove_GetGridH(targetPool), slotIndex, itembytes, first);
                             }
                         }
                     }
@@ -5156,7 +5151,7 @@ void Net_ProcessPacket(void)
                     }
 
                     // Recalcula damage/defense/velocidades con los stats nuevos.
-                    FUN_0047e3c0((int)(uintptr_t)CA, 0, 0);
+                    CalculateAll((int)(uintptr_t)CA, 0, 0);
 
                     char buf[300];
                     // GlobalText[377] = texto de suma, [379] = texto de resta.
@@ -5267,7 +5262,7 @@ void Net_ProcessPacket(void)
 
                         BYTE itemInfo[6] = { 0, 0, 0, 0, 0, 0 };
                         memcpy(itemInfo, record + 1, 4);
-                        FUN_004cc660(OffsetMixItems, 8, 4, (int)slot,
+                        InsertInventoryItem(OffsetMixItems, 8, 4, (int)slot,
                                      itemInfo, 1);
                     }
 
@@ -5343,7 +5338,7 @@ void Net_ProcessPacket(void)
                         for (int i = 0; i < listCount && (6 + i * 5 + 5) <= Size; ++i, rec += 5) {
                             BYTE itembytes[6] = { 0, 0, 0, 0, 0, 0 };
                             memcpy(itembytes, rec + 1, 4);
-                            FUN_004cc660(OffsetWarehouseItems, 8, 15, (int)rec[0], itembytes, 1);
+                            InsertInventoryItem(OffsetWarehouseItems, 8, 15, (int)rec[0], itembytes, 1);
                             placed++;
                         }
                         NetLog("NET:    0x31 WAREHOUSE populated %d/%d items", placed, listCount);
@@ -5385,7 +5380,7 @@ void Net_ProcessPacket(void)
                     for (int i = 0; i < count && cursor + 13 <= Size; ++i) {
                         BYTE slot = Msg[cursor];
                         if (slot < 32) {
-                            FUN_004cc660(OffsetMixItems, 8, 4, (int)slot, (BYTE*)Msg + cursor + 1, 1);
+                            InsertInventoryItem(OffsetMixItems, 8, 4, (int)slot, (BYTE*)Msg + cursor + 1, 1);
                         }
                         cursor += 13;
                     }
@@ -5397,7 +5392,7 @@ void Net_ProcessPacket(void)
                     for (int i = 0; i < count && cursor + 13 <= Size; ++i) {
                         BYTE slot = Msg[cursor];
                         if (slot < 120) {
-                            FUN_004cc660(OffsetWarehouseItems, 8, 15, (int)slot, (BYTE*)Msg + cursor + 1, 1);
+                            InsertInventoryItem(OffsetWarehouseItems, 8, 15, (int)slot, (BYTE*)Msg + cursor + 1, 1);
                         }
                         cursor += 13;
                     }
@@ -5418,7 +5413,7 @@ void Net_ProcessPacket(void)
                 // (12 bytes) → NUNCA insertaba el item comprado (Size real = 8).
                 // Ahora reusa InsertInventoryItem, el mismo path fiel que el
                 // snapshot F3/10 (stride 5 = slot + 4 bytes) que sí funciona.
-                // IDA ProtocolCore L826: FUN_004cc660(&Inv, 8, 8, byte[3],
+                // IDA ProtocolCore L826: InsertInventoryItem(&Inv, 8, 8, byte[3],
                 // body+2, 0).
                 BYTE result = Msg[3];
                 NetLog("NET:  → 0x32 BuyResult slot=%d size=%d", result, Size);
@@ -5431,7 +5426,7 @@ void Net_ProcessPacket(void)
                     // Item[4] extByte; lo dejamos en 0 para no leer basura).
                     BYTE itembytes[6] = { 0, 0, 0, 0, 0, 0 };
                     memcpy(itembytes, (BYTE*)Msg + 4, 4);
-                    FUN_004cc660(OffsetInventoryItems, 8, 8,
+                    InsertInventoryItem(OffsetInventoryItems, 8, 8,
                                  (int)result, itembytes, 1);
                     ItemMove_ClearPickedState();
                     PlayBuffer(29, 0, 0);
@@ -5443,7 +5438,7 @@ void Net_ProcessPacket(void)
                 // los dos cooldowns compartian byte funcionaba de casualidad, y
                 // al separarlos (0x05826D18 vs 0x05826D1C) el de compra quedo sin
                 // quien lo bajara → sólo se podía comprar UNA vez por sesión.
-                DAT_05826d18 = 0;
+                BuyCost = 0;
                 // El reset de DAT_05826d1c (EnableUse) en este case es un add-on
                 // del port —IDA no lo hace acá—, pero hoy es lo que evita que
                 // equipar/usar se trabe.  Se conserva hasta portar sus writers
@@ -5504,7 +5499,7 @@ void Net_ProcessPacket(void)
                     DWORD gold = *(DWORD*)(Msg + 4);
                     if (gold != 0) {
                         *(DWORD*)((BYTE*)DAT_07cf1ffc + 1352) = gold;
-                        FUN_0047e3c0((int)(uintptr_t)DAT_07cf1ffc, 0, 0);   // sub_47E3C0
+                        CalculateAll((int)(uintptr_t)DAT_07cf1ffc, 0, 0);   // sub_47E3C0
                         PlayBuffer(37, 0, 0);
                     }
                 }
@@ -5543,8 +5538,8 @@ void Net_ProcessPacket(void)
                     DAT_07eaa0e8 = 0;
                     DAT_07eaa0f0 = 0;
                     DAT_07eaa0f4 = 0; // IDA: m_nMyTradeGold
-                    DAT_07eaa0fc = 0;
-                    DAT_07eaa0fd = 0;
+                    m_bYourConfirm = 0;
+                    m_bMyConfirm = 0;
                     TradeYourWait = 0;
                     TradeMyWait = 0;
                     DAT_00559684 = 0xFFFFFFFF;
@@ -5579,7 +5574,7 @@ void Net_ProcessPacket(void)
                        Msg[3], Size);
                 if (Size >= 8) {
                     // IDA 004389A0: C1:39 inserta en la misma grilla remota.
-                    FUN_004cc660(Inventory, 8, 4,
+                    InsertInventoryItem(Inventory, 8, 4,
                                  (int)Msg[3], (BYTE*)Msg + 4, 1);
                     PlayBuffer(29, 0, 0);
                 }
@@ -5589,8 +5584,8 @@ void Net_ProcessPacket(void)
             case 0x3A: {
                 // IDA: ProtocolCore 0x43B3D0 — ACK del importe propio. El
                 // servidor sólo devuelve un resultado; el valor está en el
-                // temporal DAT_05826C9C que UI_InGameMenu guardó antes del envío.
-                DAT_07eaa0f4 = (Msg[3] != 0) ? DAT_05826c9c : 0;
+                // temporal m_nTempMyTradeGold que UI_InGameMenu guardó antes del envío.
+                DAT_07eaa0f4 = (Msg[3] != 0) ? m_nTempMyTradeGold : 0;
                 break;
             }
 
@@ -5609,15 +5604,15 @@ void Net_ProcessPacket(void)
                 // confirmación, no estado de la segunda contraseña.
                 const BYTE sub = Msg[3];
                 if (sub == 0) {
-                    DAT_07eaa0fc = 0;
+                    m_bYourConfirm = 0;
                 } else if (sub == 1) {
-                    DAT_07eaa0fc = 1;
-                    FUN_00404bc0(0x19, 0, 0);
+                    m_bYourConfirm = 1;
+                    PlayBuffer(0x19, 0, 0);
                 } else {
                     if (sub == 2) {
-                        DAT_07eaa0fd = 0;
+                        m_bMyConfirm = 0;
                     }
-                    FUN_00404bc0(0x19, 0, 0);
+                    PlayBuffer(0x19, 0, 0);
                 }
                 break;
             }
@@ -5831,12 +5826,12 @@ void Net_ProcessPacket(void)
                         // retiro de zen), se completa ahora.
                         if (DAT_00559f5f && !DAT_07eaa148) {
                             if ((int)DAT_07ea9804 == -1) {
-                                FUN_0043ce50((unsigned char)DAT_07ea9808, (int)DAT_07ea980c);
+                                Send_ActionRequest((unsigned char)DAT_07ea9808, (int)DAT_07ea980c);
                             } else {
                                 DAT_07eaa165 = 1;   // EquipmentItem
                                 g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetWarehouseItems[0];
                                 g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-                                SendRequestEquipmentItem_stub((int)DAT_07ea9804, (int)DAT_07ea9808,
+                                SendRequestEquipmentItem((int)DAT_07ea9804, (int)DAT_07ea9808,
                                     (ITEM*)DAT_07e91350, (int)DAT_07ea980c, (int)DAT_07ea9810);
                             }
                         }
@@ -6031,7 +6026,7 @@ void Net_ProcessPacket(void)
                     case 0:
                         // Arranca el evento: todos los jugadores a la anim 128
                         // y BGM del castillo en loop.
-                        FUN_0045ad10(128);
+                        Characters_SetActionAll(128);
                         PlayBuffer(110, 0, 1);
                         // fallthrough  (IDA: `goto LABEL_3`)
                     case 1:
@@ -6041,7 +6036,7 @@ void Net_ProcessPacket(void)
                         // LIMPIA el flag +744 en todas las entidades antes de
                         // devolver el indice, o sea el portador es unico.
                         if (itemOwner != -1 && itemLevel != 0xFF && itemLevel != 0) {
-                            const int idx = FUN_0045acc0(itemOwner & 0x7FFF);
+                            const int idx = Character_FindByKey_WithClear(itemOwner & 0x7FFF);
                             if (DAT_07abf5d0 && idx >= 0 && idx < 400) {
                                 BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * idx;
                                 *(BYTE*)(c + 744) = itemLevel;
@@ -6056,19 +6051,19 @@ void Net_ProcessPacket(void)
                             // `sub_45ACC0` limpia el flag en TODAS las entidades antes
                             // de buscar, asi que llamarla con una key imposible es
                             // exactamente "que no lo lleve nadie".
-                            FUN_0045acc0(0xFFFF);
+                            Character_FindByKey_WithClear(0xFFFF);
                         }
                         break;
                     }
                     case 2:
-                        FUN_0047eb80();          // clearMatchInfo
+                        clearMatchInfo();          // clearMatchInfo
                         StopBuffer(110, 1);
                         break;
                     case 3:
                         // Puerta destruida: dispara la animacion de derrumbe
                         // sobre el objeto tipo 36 del mapa actual
                         // (la consume MoveObject_Special / sub_4FA5F0).
-                        FUN_004fa5c0((int)World, 36, 20, 1);
+                        SetActionObject((int)World, 36, 20, 1);
                         break;
                     default:
                         break;
@@ -6114,7 +6109,7 @@ void Net_ProcessPacket(void)
                     const DWORD exp   = (DWORD)(*(WORD*)(Msg + 8))
                                       + ((DWORD)(*(WORD*)(Msg + 6)) << 16);
                     const int   dmg   = Msg[11] + (Msg[10] << 8);
-                    const int   index = FUN_0045ac80(key & 0x7FFF);
+                    const int   index = FindCharacterIndex(key & 0x7FFF);
 
                     NetLog("NET:  → 0x9C DieExp key=%04X idx=%d exp=%u dmg=%d",
                            key & 0x7FFF, index, exp, dmg);
@@ -6124,8 +6119,8 @@ void Net_ProcessPacket(void)
                         BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * index;
                         if (key & 0xFFFF8000) {
                             // Murio un PLAYER (PvP): anim de muerte, sin EXP.
-                            extern void __cdecl FUN_00444d90(int c_in);
-                            FUN_00444d90((int)(intptr_t)c);
+                            extern void __cdecl SetPlayerDie(int c_in);
+                            SetPlayerDie((int)(intptr_t)c);
                         } else if (DAT_07abf5d8) {
                             BYTE* hero = (BYTE*)DAT_07abf5d8;
                             *(BYTE*) (hero + 756) = 2;        // gate de las esferas
@@ -6206,7 +6201,7 @@ void Net_ProcessPacket(void)
                         const bool shock = (r == 0) ||
                                            ((int)r < 0 &&
                                             ((((char)r - 1) | (int)0xFFFFFFFE) == -1));
-                        if (shock) FUN_00444b60((int)(uintptr_t)tgt, dmg);
+                        if (shock) SetPlayerShock((int)(uintptr_t)tgt, dmg);
                         if (dmg) {
                             float pos[3];
                             pos[0] = *(float*)(tgt + 0x10);
@@ -6258,7 +6253,7 @@ void Net_ProcessPacket(void)
                 // el tile autorizado por el server. Su rama de montado/zona segura
                 // preserva el offset vertical original antes de terminar el
                 // teleport animation.
-                float worldZ = FUN_004f7500(worldX, worldY);
+                float worldZ = RequestTerrainHeight(worldX, worldY);
                 if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
                     worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
                 *(float*)(hero + 24) = worldZ;
@@ -6275,13 +6270,13 @@ void Net_ProcessPacket(void)
                     // no llaman a CreateTeleportEnd; recargan el mundo
                     // cuando hace falta y esperan los paquetes de viewport nuevos.
                     ClearItems();
-                    ClearCharacters((int)DAT_05826cac);
+                    ClearCharacters((int)HeroKey);
 
                     if (map != (BYTE)World) {
                         World = map;
                         // 2026-09-02 (monstruos que "cargan mal" al entrar a un mapa): OpenWorld
                         // tarda ~2 s cargando BMDs y, para que el server no cierre por backpressure,
-                        // FUN_005060b0 pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
+                        // AccessModel pumpea la cola de mensajes cada 8 modelos.  Ese pump entrega
                         // WM_USER -> Net_Recv -> **Net_ProcessPacket**, o sea los handlers corren
                         // RE-ENTRANTES en mitad de la carga: el `0x13 ViewportMonster` creaba
                         // monstruos cuyo modelo todavia no estaba abierto (visto en debug.log: el
@@ -6293,12 +6288,12 @@ void Net_ProcessPacket(void)
                         // evita el backpressure) pero suspende el dispatch: los paquetes quedan en la
                         // cola y se procesan al terminar la carga.
                         ++g_WorldLoading;
-                        FUN_0050e5a0();
+                        OpenWorld();
                         --g_WorldLoading;
 
                         // OpenWorld replaces terrain data, so IDA evaluates
                         // la altura de aterrizaje una segunda vez contra el mapa nuevo.
-                        worldZ = FUN_004f7500(worldX, worldY);
+                        worldZ = RequestTerrainHeight(worldX, worldY);
                         if (World != -1 && *(short*)(hero + 696) == 819 && !hero[846])
                             worldZ += (World == 8 || World == 10) ? 90.0f : 30.0f;
                         *(float*)(hero + 24) = worldZ;
@@ -6367,7 +6362,7 @@ void Net_ProcessPacket(void)
                     DAT_00559f5f = 0;
                     DAT_07eaa14c = 0;
                     EventWindowOpened = 0;
-                    Effect_Create(1265, (float*)(hero + 16), (float*)(hero + 28),
+                    CreateEffect(1265, (float*)(hero + 16), (float*)(hero + 28),
                                  (float*)(hero + 232), nullptr, (float*)hero,
                                  (float*)-1, nullptr, 0);
                     *(DWORD*)(hero + 0x168) = 0;
@@ -6376,7 +6371,7 @@ void Net_ProcessPacket(void)
                     SelectedNpc = -1;                 // SelectedNpc
                     SelectedCharacter = -1;                 // SelectedCharacter
                     SelectedOperate = -1;                 // SelectedOperate
-                    DAT_00559c58 = -1;                 // Attacking
+                    Attacking = -1;                 // Attacking
                     DAT_00559c6d = -1;
                     // IDA hace un store de DWORD en 07EAA134. En este port de C++
                     // sólo está representado su byte vivo RepairEnable_0; no
@@ -6387,12 +6382,12 @@ void Net_ProcessPacket(void)
                     // El server usa gate=0 para el teleport de skill. IDA
                     // completa ese efecto visual y limpia Teleport acá.
                     CreateTeleportEnd((unsigned int)(uintptr_t)hero);
-                    DAT_05826d14 = 0;                 // IDA L508: Teleport = 0 (0x05826D14)
+                    Teleport = 0;                 // IDA L508: Teleport = 0 (0x05826D14)
                 }
 
                 // Este store es común a las dos ramas en el original.
                 hero[748] = 0;
-                FUN_004430c0((int)(uintptr_t)hero);
+                SetPlayerStop((int)(uintptr_t)hero);
                 break;
             }
 
@@ -6472,7 +6467,7 @@ void Net_ProcessPacket(void)
                     if (Size >= 8 && slot < 76) {
                         BYTE itembytes[6] = { 0, 0, 0, 0, 0, 0 };
                         memcpy(itembytes, (BYTE*)Msg + 4, 4);
-                        FUN_004cc660(OffsetInventoryItems, 8, 8, (int)slot, itembytes, 1);
+                        InsertInventoryItem(OffsetInventoryItems, 8, 8, (int)slot, itembytes, 1);
                     }
                     if (Size >= 8) Item = (const BYTE*)Msg + 4;   // ConvertItemType lee hasta Item[3]
                 }
@@ -6591,11 +6586,11 @@ void Net_ProcessPacket(void)
                 *(WORD*)(ca + 42 + 2 * number) = (WORD)(24 * *(const WORD*)(Msg + 4));
                 if (number == 0) {
                     ca[40] |= 1;
-                    FUN_0047dd80((int)(uintptr_t)CharacterMachine);   // CalculateAttackSpeed
+                    CalculateAttackSpeed((int)(uintptr_t)CharacterMachine);   // CalculateAttackSpeed
                 } else if (number == 1) {
                     ca[40] |= 2;
-                    FUN_0047d410((int)(uintptr_t)CharacterMachine);   // Stats_CalcBase
-                    FUN_0047dae0((int)(uintptr_t)CharacterMachine);   // Stats_CalcMagicDmgRange
+                    Stats_CalcBase((int)(uintptr_t)CharacterMachine);   // Stats_CalcBase
+                    Stats_CalcMagicDmgRange((int)(uintptr_t)CharacterMachine);   // Stats_CalcMagicDmgRange
                 }
                 EnableUse = 0;
                 break;
@@ -6685,13 +6680,13 @@ void Net_ProcessPacket(void)
                            (unsigned)entityKey, row);
                     break;
                 }
-                const int entitySlot = FUN_0045ac80(entityKey);
+                const int entitySlot = FindCharacterIndex(entityKey);
                 BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
                 if (base && entitySlot >= 0 && entitySlot < 400) {
                     BYTE* entity = base + entitySlot * 916;
                     *(short*)(entity + 474) = (short)row;
                     // IDA: FUN_00423CE0 recibe la entidad después de actualizar Character+474.
-                    FUN_00423ce0((int)(uintptr_t)entity, 0, 0, 0);
+                    GuildWar_UpdateEntityRelation((int)(uintptr_t)entity, 0, 0, 0);
                     GuildWar_RefreshEntityRelations();
                 }
                 NetLog("NET: GuildMark entity=%u row=%d", (unsigned)entityKey, row);
@@ -6702,7 +6697,7 @@ void Net_ProcessPacket(void)
                 // el estado de la lista de miembros de Guild. No es un paquete Trade.
                 if (Size < 5) break;
                 const WORD entityKey = (WORD)((Msg[3] << 8) | Msg[4]);
-                const int entitySlot = FUN_0045ac80(entityKey);
+                const int entitySlot = FindCharacterIndex(entityKey);
                 BYTE* base = (BYTE*)(uintptr_t)DAT_07abf5d0;
                 if (base && entitySlot >= 0 && entitySlot < 400)
                     *(short*)(base + entitySlot * 916 + 474) = -1;
@@ -6766,7 +6761,7 @@ void Net_ProcessPacket(void)
                     const BYTE* e = Msg + 5 + i * 4;
                     WORD entityId = (WORD)((e[0] << 8) | e[1]) & 0x7FFF;
                     const int guildKey = (e[2] << 8) | e[3];
-                    const int entitySlot = FUN_0045ac80(entityId);
+                    const int entitySlot = FindCharacterIndex(entityId);
                     BYTE* slot = (basePtr && entitySlot >= 0 && entitySlot < 400)
                         ? basePtr + entitySlot * 916 : nullptr;
                     if (slot) {
@@ -6841,7 +6836,7 @@ void Net_ProcessPacket(void)
                 //     if (!ReceiveBuffer[3]) UIChatLogWindow_AddText(ChatWhisperID, GlobalText[482], 2);
                 // 2026-09-12: el opcode no tenia handler.
                 if (Size >= 4 && Msg[3] == 0)
-                    UIChatLogWindow_AddText(DAT_05826cb4, GlobalText[482], 2);
+                    UIChatLogWindow_AddText(ChatWhisperID, GlobalText[482], 2);
                 break;
             }
 
@@ -6954,7 +6949,7 @@ void Net_ProcessPacket(void)
                 // GUARDA 2026-07-19: el server manda `C1 04 00 xx` (4 bytes) como
                 // ping/handshake. ReceiveChat lee name@+3 y mensaje hasta +72, así que
                 // con 4 bytes sobre-lee. El IDA solo ACKea esos en estado login
-                // (g_GameState==2) y cae al parseo de chat en el resto → mismo
+                // (SceneFlag==2) y cae al parseo de chat en el resto → mismo
                 // sobre-lectura. Procesamos como chat solo si el paquete tiene el
                 // tamaño de PMSG_CHAT_SEND (3 hdr + 10 name + 60 msg = 73).
                 extern void __cdecl ReceiveChat(BYTE* ReceiveBuffer);
@@ -6968,7 +6963,7 @@ void Net_ProcessPacket(void)
                 // Mínimo real = 3 (hdr) + 10 (name) + 1 (al menos un char) = 14.
                 // El server null-termina el mensaje, así que la lectura de 60 bytes
                 // que hace ReceiveChat (fiel a IDA) se corta sola en el NUL.
-                if (Size >= 14 || DAT_005615c0 == 2) {
+                if (Size >= 14 || SceneFlag == 2) {
                     ReceiveChat(Msg);
                 } else {
                     NetLog("NET:    0x00 too short (%d) — ping/handshake, no chat parse", Size);
@@ -6980,7 +6975,7 @@ void Net_ProcessPacket(void)
             // Port FIEL del IDA ReceiveCreateItemViewport @ 0x0042F240.
             // Per-entry stride 8 bytes (o 9 si Jewel of Chaos = type 0x1CF).
             // Spawnea cada item en DAT_07e12840 pool; el render lo hace
-            // FUN_005038e0 (Entity_Render) que itera el pool por slots activos.
+            // Entity_Render (Entity_Render) que itera el pool por slots activos.
             case 0x20: {
                 int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 int count = Msg[3 + hdrOff];
@@ -6992,8 +6987,8 @@ void Net_ProcessPacket(void)
                 // con la base correcta el active queda en ip+72 = DAT_07e12840+0,
                 // que es donde Entity_Render lo lee.
                 BYTE* itemPool = (BYTE*)&DAT_07e12840[0];
-                extern int  __cdecl FUN_00502ba0(int);   // ItemObjectAttribute
-                extern void __cdecl FUN_005030c0(int);   // ItemAngle
+                extern int  __cdecl ItemObjectAttribute(int);   // ItemObjectAttribute
+                extern void __cdecl ItemAngle(int);   // ItemAngle
                 // 2026-07-27: este server (MuEmu) manda PMSG_VIEWPORT_ITEM =
                 // index[2]+x+y+ItemInfo[MAX_ITEM_INFO+1] = 2+1+1+5 = 9 bytes por
                 // item SIEMPRE (Viewport.h). El port usaba stride 8 (0.97k) salvo
@@ -7082,7 +7077,7 @@ void Net_ProcessPacket(void)
                     // ItemObjectAttribute (CreateItem LABEL_33): setea atributos
                     // de render del objeto (ip+72). Sin esto el modelo puede
                     // quedar sin scale/flags → invisible.
-                    FUN_00502ba0((int)(ip + 72));
+                    ItemObjectAttribute((int)(ip + 72));
 
                     // BoundingBox del objeto (IDA CreateItem L129-134):
                     // min = (-30,-30,-30), max = (30,30,30).
@@ -7099,8 +7094,8 @@ void Net_ProcessPacket(void)
                     *(float*)(ip + 88) = ((float)gx + 0.5f) * 100.0f;
                     *(float*)(ip + 92) = ((float)gy + 0.5f) * 100.0f;
                     // Z: terrain height (RequestTerrainHeight 0x004F7500).
-                    extern float __cdecl FUN_004f7500(float, float);
-                    float terrainH = FUN_004f7500(*(float*)(ip + 88), *(float*)(ip + 92));
+                    extern float __cdecl RequestTerrainHeight(float, float);
+                    float terrainH = RequestTerrainHeight(*(float*)(ip + 88), *(float*)(ip + 92));
 
                     // Caída del item recién dropeado (IDA CreateItem L139-172):
                     // nace por encima del suelo con velocidad Z en ip+288 y
@@ -7124,7 +7119,7 @@ void Net_ProcessPacket(void)
 
                     // ItemAngle (CreateItem final): setea rotación del item en
                     // el suelo según el terreno.
-                    FUN_005030c0((int)(ip + 72));
+                    ItemAngle((int)(ip + 72));
 
                     NetLog("NET:    0x20 item[%d] key=%u type=%d mine=%d pos=(%d,%d)",
                            i, key, itemType, createFlag, gx, gy);
@@ -7224,7 +7219,7 @@ void Net_ProcessPacket(void)
             case 0xA3: {
                 if (Size < 7) break;
                 int key = ((Msg[4] + (Msg[3] << 8)) & 0x7FFF);
-                int idx = FUN_0045ac80(key);
+                int idx = FindCharacterIndex(key);
                 NetLog("NET:  → 0xA3 QuestPrize sub=0x%02X key=%d idx=%d val=%d",
                        Msg[5], key, idx, Msg[6]);
                 if (idx < 0 || idx >= 400) break;
@@ -7251,7 +7246,7 @@ void Net_ProcessPacket(void)
                         Joint_Create(1249, (float*)(c + 16), (float*)(c + 16),
                                      (float*)(c + 28), 0, (int)(uintptr_t)c,
                                      40.0f, 2, 0);
-                    Effect_Create(1264, (float*)(c + 16), (float*)(c + 28),
+                    CreateEffect(1264, (float*)(c + 16), (float*)(c + 28),
                                  (float*)(c + 232), nullptr, (float*)c,
                                  (float*)-1, nullptr, 0);
                     PlayBuffer(71, 0, 0);
@@ -7284,11 +7279,11 @@ void Net_ProcessPacket(void)
                                      (float*)(c + 28), 10, (int)(uintptr_t)c,
                                      40.0f, 2, 0);
                     }
-                    Effect_Create(1264, (float*)(c + 16), (float*)(c + 28),
+                    CreateEffect(1264, (float*)(c + 16), (float*)(c + 28),
                                  (float*)(c + 232), nullptr, (float*)c,
                                  (float*)-1, nullptr, 0);
-                    FUN_0045c720((int)(uintptr_t)c);   // rebuild de body-parts
-                    FUN_0043e820((int)(uintptr_t)c, 124);
+                    Character_UpdateEquipSlotAnimations((int)(uintptr_t)c);   // rebuild de body-parts
+                    SetAction((int)(uintptr_t)c, 124);
                     PlayBuffer(72, 0, 0);
                 }
                 break;

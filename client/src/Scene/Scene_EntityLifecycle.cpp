@@ -8,7 +8,7 @@
 // SaveMacro @ 0x0050F700 -- guarda Data\Macro.txt (10 lineas de hasta 256).
 //
 // 2026-09-24: estaba portada como "Map_Load" y ademas ROTA: abria con
-// DAT_00559b74 ("rb") y llamaba `FUN_00543274(fp, &DAT_00560694)` diez veces
+// DAT_00559b74 ("rb") y llamaba `crt_fprintf(fp, &DAT_00560694)` diez veces
 // sin pasarle el texto, o sea vaciaba el archivo de macros cada vez que
 // corriera.  IDA (0x50F700) es sencilla:
 //
@@ -27,11 +27,11 @@ void __cdecl FUN_0050f700(const char* map_name)
     FILE* fp = fopen(map_name, "wt");
     if (!fp) return;
     for (int i = 0; i < 10; ++i)
-        fprintf(fp, "%s\n", &DAT_07e0ffc8[i * 0x100]);
+        fprintf(fp, "%s\n", &MacroText[i * 0x100]);
     fclose(fp);
 }
 
-// FUN_004ff5a0 @ 0x004ff5a0 — Entity_New (scene entity allocator)
+// IDA: CreateObject (0x004FF5A0)
 // Allocates 0x1BC-byte entity node, zeroes it, links into doubly-linked list
 // at DAT_083A021C[cell]/DAT_083A0220[cell] (16x16 grid, 4-DWORD stride).
 //
@@ -42,7 +42,7 @@ void __cdecl FUN_0050f700(const char* map_name)
 // __ftol usa el modo de redondeo actual (por defecto nearest-even), no
 // truncate-toward-zero. Para los mocks del login todos caen en (0,0)/(0,1).
 // Rechaza si grid_x<0 || grid_y<0 || grid_x>15 || grid_y>15.
-void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float param_4) {
+void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float param_4) {
     // BUG-FIX 2026-04-26 (audit #12): __ftol implementa truncate-toward-zero
     // (semántica de cast C de float→int), no nearest-even. lrintf redondeaba al
     // más cercano y divergía en negativos (lrintf(-1.5)=-2 vs __ftol(-1.5)=-1).
@@ -109,8 +109,8 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
     puVar3[0x4a] = 0x42200000;                     // bbox_max_y 40f  (+0x128)
     puVar3[0x4b] = 0x42a00000;                     // bbox_max_z 80f  (+0x12c)
 
-    // login/char-select scene type overrides (g_GameState 2 or 4)
-    if (DAT_005615c0 == 2 || DAT_005615c0 == 4) {
+    // login/char-select scene type overrides (SceneFlag 2 or 4)
+    if (SceneFlag == 2 || SceneFlag == 4) {
         switch (param_1) {
         case 0x3c:
             puVar3[3]=0x3f4ccccd; puVar3[0x3a]=puVar3[0x3b]=puVar3[0x3c]=0x3e4ccccd;
@@ -139,9 +139,9 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
         }
     }
 
-    // game-substate overrides; some cases return directly (skipping FUN_004ff580),
+    // game-substate overrides; some cases return directly (skipping Entity_InitRenderState),
     // others call it and return; fall-through also calls it.
-    switch (DAT_0055a7ac) {
+    switch (World) {
     case 0:
         switch (param_1) {
         default: goto lbl_skip_init;
@@ -156,7 +156,7 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
         case 0x75: case 0x7a: puVar3[0x19]=4; return puVar3;
         case 0x76: puVar3[0x19]=8; return puVar3;
         case 0x85:
-            FUN_004ff580(puVar3);
+            Entity_InitRenderState(puVar3);
             puVar3[0x49]=0x42200000; puVar3[0x4a]=0x42200000; puVar3[0x4b]=0x43200000;
             puVar3[0x16]=0xfffffffe; return puVar3;
         }
@@ -164,7 +164,7 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
     case 1:
         if (param_1==0x3b) break;
         if (param_1==0x3c) {
-            FUN_004ff580(puVar3);
+            Entity_InitRenderState(puVar3);
             puVar3[0x49]=0x42200000; puVar3[0x4a]=0x42200000; puVar3[0x4b]=0x43200000;
             puVar3[0x16]=0xfffffffe;
         }
@@ -199,7 +199,7 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
         case 0x36: case 0x38: puVar3[0x19]=1; return puVar3;
         case 0x4e: puVar3[0x19]=3; return puVar3;
         case 0x5b:
-            FUN_004ff580(puVar3);
+            Entity_InitRenderState(puVar3);
             puVar3[0x49]=0x42200000; puVar3[0x4a]=0x42200000; puVar3[0x4b]=0x43200000;
             puVar3[0x16]=0xfffffffe; return puVar3;
         case 100: puVar3[0x16]=0xfffffffe; return puVar3;
@@ -220,7 +220,7 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
         case 9: puVar3[0x19]=3; return puVar3;
         case 0x11: case 0x13: case 0x25: puVar3[0x19]=0; return puVar3;
         case 0x12: puVar3[0x19]=2; return puVar3;
-        case 0x26: FUN_004ff580(puVar3); puVar3[0x16]=0xfffffffe; return puVar3;
+        case 0x26: Entity_InitRenderState(puVar3); puVar3[0x16]=0xfffffffe; return puVar3;
         }
         // 2026-09-04 FIX: idem, IDA cierra el case 3 con `break` (L292).  Con el
         // fallthrough el tipo 8 de Noria (sentarse) no llegaba al registro.
@@ -228,22 +228,22 @@ void* __cdecl FUN_004ff5a0(int param_1, float* param_2, float* param_3, float pa
     default:
         goto lbl_skip_init;
     case 7:
-        if (param_1==0x27) { FUN_004ff580(puVar3); puVar3[0x16]=0xfffffffe; return puVar3; }
+        if (param_1==0x27) { Entity_InitRenderState(puVar3); puVar3[0x16]=0xfffffffe; return puVar3; }
         return puVar3;
     case 8:
-        if (param_1==0x4e) { FUN_004ff580(puVar3); goto lbl_skip_init; }
+        if (param_1==0x4e) { Entity_InitRenderState(puVar3); goto lbl_skip_init; }
         return puVar3;
     }
-    FUN_004ff580(puVar3);
+    Entity_InitRenderState(puVar3);
 lbl_skip_init:
     return puVar3;
 }
-// FUN_004FFFA0 @ 0x004FFFA0 — DeleteBug(Owner).
+// IDA: DeleteBug (0x004FFFA0)
 // Walk butterfly slot array (10 entries × 0x1BC stride at DAT_083a1218..DAT_083a1218+0x1158),
 // clear active flag (slot[0]=0) on every slot whose owner field (slot+0xFC = DWORD index 63)
 // matches `Owner`. Each slot occupies 111 DWORDs (= 0x1BC bytes); we step in DWORD units.
 // Ported verbatim from IDA reference 0045C8C0_ChangeCharacterExt's helper.
-void __cdecl FUN_004fffa0(DWORD Owner) {
+void __cdecl DeleteBug(DWORD Owner) {
     DWORD* Butterflies = (DWORD*)DAT_083a1218;
     DWORD* End         = (DWORD*)(DAT_083a1218 + 0x1158);
     do {
@@ -256,7 +256,7 @@ void __cdecl FUN_004fffa0(DWORD Owner) {
     } while ((int)(uintptr_t)Butterflies < (int)(uintptr_t)End);
 }
 
-// FUN_004FFFD0 @ 0x004FFFD0 — CreateBug(Type, Position[3], Owner, SubType[, LinkBone]).
+// IDA: CreateBug (0x004FFFD0)
 // Allocates a free slot in butterfly/effect array at DAT_083A1218 (stride 0x1BC, 10 entries up
 // to DAT_083A1218+0x1158). Initialises slot from owner entity (param_3) and world_pos (param_2).
 // Per IDA: only spawns when owner class==390 OR Type==816.
@@ -264,7 +264,7 @@ void __cdecl FUN_004fffa0(DWORD Owner) {
 //                type 0xC3(195)/0x10B(267)  → set bug-color tint to 0.9 (0x3F666666 = "fff?").
 // Note: original IDA signature has 5th `LinkBone` param but it's never read; our 4-arg form
 // is functionally identical. The Ghidra decompile labelled this Entity_Spawn — that was wrong.
-void __cdecl FUN_004fffd0(int param_1, void *param_2_v, void *param_3_v, int param_4) {
+void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_4) {
     DWORD *param_2 = (DWORD*)param_2_v;
     int param_3 = (int)(uintptr_t)param_3_v;
     if ((*(short*)(param_3 + 2) == 0x186) || (param_1 == 0x330)) {
@@ -310,17 +310,17 @@ void __cdecl FUN_004fffd0(int param_1, void *param_2_v, void *param_3_v, int par
             u=_rand()&0x8000007f; if((int)u<0)u=(u-1|0xffffff80)+1; *(float*)(pcVar5+0x10)=(float)(int)(u-0x40)+*(float*)(param_3+0x10);
             u=_rand()&0x8000007f; if((int)u<0)u=(u-1|0xffffff80)+1; *(float*)(pcVar5+0x14)=(float)(int)(u-0x40)+*(float*)(param_3+0x14);
             *(DWORD*)(pcVar5+0x18)=*(DWORD*)(param_3+0x18);
-            *(float*)(pcVar5+0x18)=(float)(_rand()%100)+FUN_004f7500(*(float*)(pcVar5+0x10), *(float*)(pcVar5+0x14));
+            *(float*)(pcVar5+0x18)=(float)(_rand()%100)+RequestTerrainHeight(*(float*)(pcVar5+0x10), *(float*)(pcVar5+0x14));
         } else if ((sVar4==0xc3)||(sVar4==0x10b)) {
             strncpy(pcVar5+0x0c,"fff?",4);
         }
     }
 }
-// FUN_00500970 — implemented in src/Render/Entity_Render.cpp
-// FUN_00500e80 — implemented in src/Render/Weather.cpp (Weather_Update)
-// AmbientParticles_Update (IDA: FUN_00502320) — implemented in src/Render/Ambient_Particles.cpp
-// FUN_00503760 — implemented in src/Util/Misc.cpp
-// FUN_00503830 — implemented in src/Render/Entity_Render.cpp
-// FUN_00504b50 — implemented in src/Render/Entity_DrawSetup.cpp (Entity_SetColorAndRender)
-// FUN_00505970 — implemented in src/Render/Entity_Render.cpp
-// FUN_00505a10 — implemented in src/Render/Entity_Render.cpp
+// RenderBugs — implemented in src/Render/Entity_Render.cpp
+// Weather_Update — implemented in src/Render/Weather.cpp (Weather_Update)
+// AmbientParticles_Update (IDA: Ambient_ParticleUpdate) — implemented in src/Render/Ambient_Particles.cpp
+// MoveItems — implemented in src/Util/Misc.cpp
+// Entity_SetGravity — implemented in src/Render/Entity_Render.cpp
+// RenderPartObjectEffect — implemented in src/Render/Entity_DrawSetup.cpp (Entity_SetColorAndRender)
+// Entity_RenderSlotWith — implemented in src/Render/Entity_Render.cpp
+// RenderPartObject — implemented in src/Render/Entity_Render.cpp

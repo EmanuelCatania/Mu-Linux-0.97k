@@ -5,15 +5,15 @@
 #include "functions.h"
 #include "structs.h"
 
-extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
-extern void __cdecl FUN_0054158c(void* ptr);
-extern void FUN_004fa5a0(void);
+extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
+extern void __cdecl operator_delete(void* ptr);
+extern void ClearActionObject(void);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -38,14 +38,14 @@ extern void FUN_004fa5a0(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// FUN_004f8740 @ 0x004F8740 (79 lines) — Terrain_RenderTileQuad
+// Terrain_RenderQuad @ 0x004F8740 (79 lines) — Terrain_RenderTileQuad
 // Renders a single terrain quad as GL_TRIANGLE_FAN with per-vertex lighting.
 // p1/p2 = grid X/Y, p3 = tile size, p4 = index step, p5 = texcoord array ptr,
 // p6 = enable lighting, p7 = alpha value.
-void __cdecl FUN_004f8740(float p1, float p2, float p3, int p4, int p5, char p6, float p7) {
+void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, char p6, float p7) {
     // BUG-FIX 2026-04-29: guard contra DAT_07eab24c (BackTerrainHeight) no
     // inicializado. Crash AV en
-    // 0x410E4597 venía de cursor billboard FUN_004f8bb0 dereferenciando
+    // 0x410E4597 venía de cursor billboard RenderTerrainAlphaBitmap dereferenciando
     // el buffer NULL.
     if (DAT_07eab24c == 0 || (uintptr_t)DAT_07eab24c < 0x100000) return;
     int iX = (int)p1;
@@ -95,7 +95,7 @@ void __cdecl FUN_004f8740(float p1, float p2, float p3, int p4, int p5, char p6,
         }
         // IDA 0x004F8740 walks `a5` as 4 records of 3 floats each (stride 12),
         // consuming the first two components as UVs. Callers such as
-        // FUN_004f8980/FUN_004f8bb0 pass rotated quad data in that layout.
+        // RenderTerrainBitmap/RenderTerrainAlphaBitmap pass rotated quad data in that layout.
         const float *tc = (const float *)(p5 + i * 12);
         glTexCoord2f(tc[0], tc[1]);
         glVertex3fv((GLfloat *)&verts[i]);
@@ -103,14 +103,14 @@ void __cdecl FUN_004f8740(float p1, float p2, float p3, int p4, int p5, char p6,
     glEnd();
 }
 
-// FUN_004f8980 @ 0x004F8980 (116 lines) — Terrain_RenderTexturedObject
+// RenderTerrainBitmap @ 0x004F8980 (116 lines) — Terrain_RenderTexturedObject
 // Renders a rotated textured object on terrain by tiling into sub-quads.
 // p1 = texture index, p2/p3 = grid position, p4 = rotation angle.
 // Uses AngleMatrix + VectorRotate to rotate sub-tile corners, then draws each
-// with FUN_004f8740 (Particle_DrawTile).
+// with Terrain_RenderQuad (Particle_DrawTile).
 // Bitmaps[idx * 0xE + 8] = width, Bitmaps[idx * 0xE + 9] = height.
 // _DAT_00552b9c = 1/64 (UV step), _DAT_0055256c = 1.0 (tile step).
-void __cdecl FUN_004f8980(int p1, int p2, int p3, float p4)
+void __cdecl RenderTerrainBitmap(int p1, int p2, int p3, float p4)
 {
     glColor3f(1.0f, 1.0f, 1.0f);
 
@@ -159,7 +159,7 @@ void __cdecl FUN_004f8980(int p1, int p2, int p3, float p4)
                 uvRot[i][2] = out[2];
             }
 
-            FUN_004f8740((float)p2 + fx, (float)p3 + fy, 1.0f, 1, (int)uvRot, '\x01', 1.0f);
+            Terrain_RenderQuad((float)p2 + fx, (float)p3 + fy, 1.0f, 1, (int)uvRot, '\x01', 1.0f);
             fx += _DAT_0055256c;
         }
         fy += _DAT_0055256c;
@@ -167,16 +167,10 @@ void __cdecl FUN_004f8980(int p1, int p2, int p3, float p4)
 }
 
 
-// RenderTerrainAlphaBitmap @ 0x004F8BB0 (~105 lines) — Terrain decal overlay
-// Renders rotated alpha texture on terrain (spell circles, shadows, blood splats).
-void __cdecl RenderTerrainAlphaBitmap(int tex, float x, float y, float sx, float sy, float *light, float alpha, float size) {
-    (void)tex; (void)x; (void)y; (void)sx; (void)sy; (void)light; (void)alpha; (void)size;
-    // Full implementation requires:
-    //   1. glColor3fv(light) or glColor4f(light[0..2], alpha)
-    //   2. AngleMatrix from 'size' (rotation angle)
-    //   3. BindTexture(tex)
-    //   4. 2D tile loop over bounding area based on max(sx,sy)
-    //   5. Per-tile: compute UV + VectorRotate for rotation
-    //   6. Call FUN_004f8740 (terrain quad renderer) per tile
-    // Documented at 0x004F8BB0 — terrain decal system
-}
+// RenderTerrainAlphaBitmap (0x004F8BB0) vive en Render/Render_LegacyBillboards.cpp.
+//
+// 2026-09-25: aca habia un STUB NO-OP con el mismo nombre y un TODO de 6 pasos,
+// mientras la implementacion completa ya existia bajo el nombre RenderTerrainAlphaBitmap.
+// Los 6 call sites que llamaban por el nombre real -- las particulas de terreno
+// (tipos 1191/1200/1264), el reflejo del agua y los decals -- ejecutaban el
+// no-op; solo el cursor del mouse, que llamaba al FUN_, veia la implementacion.

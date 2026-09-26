@@ -28,7 +28,7 @@ static void InventoryMove_SetPendingPools(const BYTE* sourcePoolBase,
 }
 
 // ConvertGold64 @ 0x004C3E10 (~23 lines) — formats gold with thousand separators
-int __cdecl ConvertGold64_stub(int Zen, char* Buffer) {
+int __cdecl ConvertGold64(int Zen, char* Buffer) {
     if (Zen > 999999999)
         return sprintf(Buffer, "%d,%03d,%03d,%03d", Zen / 1000000000, (Zen / 1000000) % 1000, (Zen / 1000) % 1000, Zen % 1000);
     if (Zen > 999999)
@@ -66,7 +66,7 @@ int __cdecl ConvertGold64_stub(int Zen, char* Buffer) {
 //
 // Desviación: donde IDA hace `sprintf(String, GlobalText[N])` (una cadena de
 // datos usada como formato) nosotros usamos `sprintf(String, "%s", GlobalText[N])`.
-void __cdecl RenderItemName_stub(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort) {
+void __cdecl RenderItemName(int i, DWORD o, int ItemLevel, int ItemOption, bool Sort) {
     (void)i;
 
     const int v5 = ItemLevel;
@@ -248,7 +248,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                                             BYTE* invBase, int gridW,
                                             int gridH, int slotType);
 
-unsigned int __stdcall Inventory_DropItem_stub(void) {
+unsigned int __stdcall Inventory_DropItem(void) {
     BYTE* invBase = (BYTE*)(uintptr_t)DAT_07ea9800;
     int gridW = 8;
     int gridH = (invBase == &OffsetMixItems[0]) ? 4 : 8;
@@ -294,8 +294,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     //     original binary. Our re-implementation reads them as globals instead.
     //   - Repeated XOR key init (0x893a6de7/0x739fb2bc/0xb6fea823) + single-iteration loops
     //     around every packet byte — compiler artifact / anti-tamper padding.
-    //   - Hash table operations (FUN_00403f80, FUN_004041e0, FUN_004042b0, FUN_00404280,
-    //     FUN_00404330, FUN_00404400) interspersed around every packet send — anti-tamper
+    //   - Hash table operations (HashTable_Insert, FUN_004041e0, FUN_004042b0, HashTable_GetNode,
+    //     Packet_DecryptByte, Packet_EncryptBuffer) interspersed around every packet send — anti-tamper
     //     hash table, skipped.
     //
     // The caller (Inventory_DropDispatch @ 0x004DF410) calls this up to 4 times per frame,
@@ -404,7 +404,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         // gridX = (MouseX - 1)*0.05 ≈ 30 → fuera del grid → emptyCount=0 →
         // spaceFree=0 SIEMPRE. Esto es por qué el drop nunca encontraba slots
         // libres aún con el watchdog de attr.
-        unsigned long long result = CheckInventorySpace_stub(
+        unsigned long long result = CheckInventorySpace(
             origin_x, origin_y,
             (unsigned short*)invBase,
             gridWidth, gridHeight
@@ -499,7 +499,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                     UIChatLogWindow_AddText((const char*)&DAT_07eaa190, GlobalText[474], 2);
                 } else {
                     // 2026-08-24 FIX (issue #15, "las jewels no se consumen"):
-                    // aca se mandaba `SendRequestEquipmentItem_stub`, o sea
+                    // aca se mandaba `SendRequestEquipmentItem`, o sea
                     // 0x24 PMSG_ITEM_MOVE_RECV (11 bytes). El server trata eso
                     // como MOVER la jewel a una celda ocupada -> lo rechaza y
                     // el cliente la devuelve al inventario. IDA (sub_4D6470
@@ -619,7 +619,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         if (DAT_07eaa165 != '\0') goto drop_done;
         DAT_07eaa165 = '\x01';
         InventoryMove_SetPendingPools(sourceInvBase, invBase);
-        SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
+        SendRequestEquipmentItem(sourceMoveFlag, (int)DAT_07ea5b18,
             (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
         actionTaken = true;
         goto drop_done;
@@ -635,7 +635,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     if (slotType == 1 && sourceInvBase == &OffsetInventoryItems[0]) {
         // IDA L5158-5163: del inventario al trade primero se retira la
         // confirmacion propia (0x3C con 0), ANTES del guard de EquipmentItem.
-        DAT_07eaa0fd = 0;                               // m_bMyConfirm
+        m_bMyConfirm = 0;                               // m_bMyConfirm
         BYTE unconfirm[4] = { 0xC1, 0x04, 0x3C, 0x00 };
         Net_SendSmallPacket(unconfirm, 4);
     }
@@ -643,7 +643,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     if (DAT_07eaa165 != '\0') goto drop_done;
     DAT_07eaa165 = '\x01';
     InventoryMove_SetPendingPools(sourceInvBase, invBase);
-    SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
+    SendRequestEquipmentItem(sourceMoveFlag, (int)DAT_07ea5b18,
         (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
     actionTaken = true;
 

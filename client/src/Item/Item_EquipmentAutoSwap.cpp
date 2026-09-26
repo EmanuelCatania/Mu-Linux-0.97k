@@ -85,7 +85,7 @@ void __cdecl Item_AutoEquipAmmo(int /*unused*/) {
     const int encodedSourceSlot = inventorySlot + 12;
     UI_Main(encodedSourceSlot, (short*)OffsetInventoryItems, 8);
     DAT_07e11e78 = (DWORD)targetEquipmentSlot;
-    SendRequestEquipmentItem_stub(0, encodedSourceSlot, (ITEM*)DAT_07e91350,
+    SendRequestEquipmentItem(0, encodedSourceSlot, (ITEM*)DAT_07e91350,
                                   0, targetEquipmentSlot);
     UIChatLogWindow_AddText(chatId, GlobalText[250], 1);
 }

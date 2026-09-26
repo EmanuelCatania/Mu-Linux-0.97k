@@ -9,9 +9,9 @@
 #include "Render/Camera.h"
 
 // ── Terrain tile outline / ray-triangle intersection stubs ───────────────────
-// FUN_004f7fb0 (RenderTerrainFace) — PORTADO 1:1 en src/Terrain/Terrain_RenderFace.cpp
+// RenderTerrainFace (RenderTerrainFace) — PORTADO 1:1 en src/Terrain/Terrain_RenderFace.cpp
 // (antes era un no-op stub de 4 args; la firma real es 5 args con lodf).
-// FUN_00512d40 @ 0x00512D40 — CollisionDetectLineToFace (a.k.a. Ray_TriIntersect)
+// CollisionDetectLineToFace @ 0x00512D40 — CollisionDetectLineToFace (a.k.a. Ray_TriIntersect)
 // BUG-FIX 2026-04-26 (audit #7): activated full IDA port.  Old stub returned 0
 // always, so terrain triangle picking *never* registered a hit — click-to-move
 // would only land on whatever fallback path remained.  The dormant gated port
@@ -19,7 +19,7 @@
 //   xf → DAT_083a4130  (cursor billboard screen X / picked world X)
 //   yf → DAT_083a4134  (cursor billboard screen Y / picked world Y)
 //   DAT_083a4120 is the running closest-hit ray parameter (float, not DWORD).
-unsigned int __cdecl FUN_00512d40(float *Position, float *Target, int Polygon,
+unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, int Polygon,
     float *v1, float *v2, float *v3, float *v4, float *Normal, char Collision)
 {
     float v24 = Target[0] - Position[0];
@@ -41,28 +41,28 @@ unsigned int __cdecl FUN_00512d40(float *Position, float *Target, int Polygon,
     float Positiona = v20 * v25 + Position[1];
     float Normala   = v20 * v26 + Position[2];
 
-    float v17 = (float)FUN_005129f0(v26);
-    float v15 = (float)FUN_005129f0(v25);
-    float v14 = (float)FUN_005129f0(v24);
-    float v16 = (float)FUN_00512a10(v14, v15);
-    float v21 = (float)FUN_00512a10(v16, v17);
+    float v17 = (float)Math_Fabs(v26);
+    float v15 = (float)Math_Fabs(v25);
+    float v14 = (float)Math_Fabs(v24);
+    float v16 = (float)Math_Fmin(v14, v15);
+    float v21 = (float)Math_Fmin(v16, v17);
 
-    if ( (float)FUN_005129f0(v24) == v21 ) {
-        if ( !((float)FUN_00512a10(Position[1], Target[1]) <= Positiona
-            && (float)FUN_00512a30(Position[1], Target[1]) >= Positiona
-            && (float)FUN_00512a10(Position[2], Target[2]) <= Normala
-            && (float)FUN_00512a30(Position[2], Target[2]) >= Normala) )
+    if ( (float)Math_Fabs(v24) == v21 ) {
+        if ( !((float)Math_Fmin(Position[1], Target[1]) <= Positiona
+            && (float)Math_Fmax(Position[1], Target[1]) >= Positiona
+            && (float)Math_Fmin(Position[2], Target[2]) <= Normala
+            && (float)Math_Fmax(Position[2], Target[2]) >= Normala) )
             return 0;
-    } else if ( (float)FUN_005129f0(v25) == v21 ) {
-        if ( (float)FUN_00512a10(Position[2], Target[2]) > Normala
-          || (float)FUN_00512a30(Position[2], Target[2]) < Normala
-          || (float)FUN_00512a10(Position[0], Target[0]) > Targeta
-          || (float)FUN_00512a30(Position[0], Target[0]) < Targeta )
+    } else if ( (float)Math_Fabs(v25) == v21 ) {
+        if ( (float)Math_Fmin(Position[2], Target[2]) > Normala
+          || (float)Math_Fmax(Position[2], Target[2]) < Normala
+          || (float)Math_Fmin(Position[0], Target[0]) > Targeta
+          || (float)Math_Fmax(Position[0], Target[0]) < Targeta )
             return 0;
-    } else if ( (float)FUN_00512a10(Position[0], Target[0]) > Targeta
-             || (float)FUN_00512a30(Position[0], Target[0]) < Targeta
-             || (float)FUN_00512a10(Position[1], Target[1]) > Positiona
-             || (float)FUN_00512a30(Position[1], Target[1]) < Positiona ) {
+    } else if ( (float)Math_Fmin(Position[0], Target[0]) > Targeta
+             || (float)Math_Fmax(Position[0], Target[0]) < Targeta
+             || (float)Math_Fmin(Position[1], Target[1]) > Positiona
+             || (float)Math_Fmax(Position[1], Target[1]) < Positiona ) {
         return 0;
     }
 
@@ -79,7 +79,7 @@ unsigned int __cdecl FUN_00512d40(float *Position, float *Target, int Polygon,
         v18 = 4;
     }
 
-    if ( !FUN_00512a50(Targeta, Positiona, Normala, Polygon,
+    if ( !Collision_PointInPolygon(Targeta, Positiona, Normala, Polygon,
                        (int)v1, (int)v2, (int)v3, (int)v4, v18, v19) )
         return 0;
 

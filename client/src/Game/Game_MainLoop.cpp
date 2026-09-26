@@ -1,7 +1,7 @@
 // Game_MainLoop.cpp
 // Game_MainLoop @ 0x00525D40
 //
-// Main frame loop for g_GameState 2/4/5 (Login/CharSelect/InGame).
+// Main frame loop for SceneFlag 2/4/5 (Login/CharSelect/InGame).
 // Called every frame from Scene_Dispatch.
 // Handles: 25fps frame limiter, game logic tick, render, audio, BGM state machine.
 //
@@ -17,8 +17,8 @@
 //   7. Window title updates
 //
 // Globals:
-//   DAT_005615c0  — g_GameState
-//   DAT_0055a7ac  — g_GameSubState
+//   SceneFlag  — SceneFlag
+//   World  — World
 //   DAT_005616b8  — frame budget accumulator (adds actual frame ms each frame)
 //   DAT_083a7c54  — total frame counter
 //   DAT_083a7c00  — anti-tamper tick counter
@@ -29,7 +29,7 @@
 //   DAT_07e118e8  — world/map type
 //   DAT_07c74ae4  — BGM track 1 enable flag
 //   DAT_07abf5d8  — local player entity pointer
-//   DAT_05826d08  — countdown counter A
+//   ChatTime  — countdown counter A
 //   DAT_07e11d7c  — countdown counter B
 //   DAT_0839bc8c  — frame index mod 32
 
@@ -80,12 +80,12 @@ void __cdecl Game_MainLoop(HDC param_1)
         static int s_lastEnterState = -1;
         static DWORD s_lastEnterT = 0;
         DWORD now = GetTickCount();
-        if (DAT_005615c0 != s_lastEnterState || now - s_lastEnterT > 2000) {
+        if (SceneFlag != s_lastEnterState || now - s_lastEnterT > 2000) {
             char b[80];
             _snprintf_s(b, sizeof(b), _TRUNCATE, "ML enter state=%d tickCnt=%d",
-                (int)DAT_005615c0, (int)DAT_005616b8);
+                (int)SceneFlag, (int)DAT_005616b8);
             DbgLogPublic(b);
-            s_lastEnterState = DAT_005615c0;
+            s_lastEnterState = SceneFlag;
             s_lastEnterT = now;
         }
     }
@@ -130,7 +130,7 @@ void __cdecl Game_MainLoop(HDC param_1)
                     DWORD key = ((DWORD*)old_bd0)[i];
                     DWORD val = ((DWORD*)old_bcc)[i];
                     // HashTable_Insert equivalent
-                    unsigned h = (**(unsigned(__cdecl**)(DWORD))(DAT_055c9bc8 + 0xc))(key);
+                    unsigned h = (**(unsigned(__cdecl**)(DWORD))(MAIN_HASH_CLASS + 0xc))(key);
                     while (((DWORD*)DAT_055c9bd0)[h] != 0 && ((DWORD*)DAT_055c9bd0)[h] != key)
                         h = (h + 1) % DAT_055c9bd4;
                     ((DWORD*)DAT_055c9bcc)[h] = val;
@@ -145,9 +145,9 @@ void __cdecl Game_MainLoop(HDC param_1)
 
         CHK("ML/pre_tick");
         // Dispatch per-state game logic
-        if (DAT_005615c0 == 2) { Game_SceneUpdate();     CHK("ML/post_SceneUpdate"); }
-        if (DAT_005615c0 == 4) { Game_EnterWorldTick();  CHK("ML/post_EnterWorld"); }
-        if (DAT_005615c0 == 5) { Game_CharSelectTick();  CHK("ML/post_CharSelectTick"); }
+        if (SceneFlag == 2) { Game_SceneUpdate();     CHK("ML/post_SceneUpdate"); }
+        if (SceneFlag == 4) { Game_EnterWorldTick();  CHK("ML/post_EnterWorld"); }
+        if (SceneFlag == 5) { Game_CharSelectTick();  CHK("ML/post_CharSelectTick"); }
 
         // IDA 0x52626B: cinco pasos de fisica por frame con fTime = 0.005
         // (0x3BA3D70A).  Ademas del recorrido de la lista (vacia en el 0.97k:
@@ -160,11 +160,11 @@ void __cdecl Game_MainLoop(HDC param_1)
         Chat_TickMessageTimer();   CHK("ML/post_00480950");
 
         // F12 → toggle screenshot mode
-        if (Input_IsKeyJustPressed(0x2c) & 0xff)
+        if (PressKey(0x2c) & 0xff)
             DAT_083a42ec ^= 1;
 
         // Decrement countdown counters
-        if (DAT_05826d08 > 0) DAT_05826d08--;
+        if (ChatTime > 0) ChatTime--;
         if (DAT_07e11d7c > 0) DAT_07e11d7c--;
 
         // Frame index mod 32
@@ -172,23 +172,23 @@ void __cdecl Game_MainLoop(HDC param_1)
 
         // Anti-tamper: track DAT_083a7c00 ref-count, then increment
         {
-            unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_083a7c00);
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
             if (idx == 0xffffffff) {
                 void* node = operator_new(5); *((BYTE*)node + 4) = 1;
-                FUN_00403f80(&DAT_055c9bc8, node, &DAT_083a7c00);
+                HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_083a7c00);
             } else {
                 BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
                 node[4]++;
-                if (node[4] < 2) FUN_00409e20(&DAT_083a7c00, node);
+                if (node[4] < 2) Packet_DecryptDword(&DAT_083a7c00, node);
             }
         }
         DAT_083a7c00++;
         {
-            unsigned idx = HashTable_GetIndex(&DAT_055c9bc8, &DAT_083a7c00);
+            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
             if (idx != 0xffffffff) {
-                BYTE* node = (BYTE*)FUN_00404280(&DAT_055c9bc8, &DAT_083a7c00);
+                BYTE* node = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_083a7c00);
                 node[4]--;
-                if (node[4] == 0) FUN_00423760(node, &DAT_083a7c00);
+                if (node[4] == 0) Packet_EncryptDword(node, &DAT_083a7c00);
             }
         }
 
@@ -212,7 +212,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         //
         // El port tenia "Screen %02d %02d %02d %02d - %04d" con st.wYear. Dos
         // bugs: (a) sin la extension .jpg, y el archivo lo escribe WriteJpeg
-        // (FUN_00529000, calidad 100), asi que quedaba un JPEG sin extension
+        // (WriteJpeg, calidad 100), asi que quedaba un JPEG sin extension
         // que el explorador no reconocia; (b) con el ANO en vez de GrabScreen
         // el nombre solo cambiaba por minuto, asi que dos capturas en el mismo
         // minuto se pisaban. GrabScreen (DAT_083a42f0) lo incrementa
@@ -240,7 +240,7 @@ void __cdecl Game_MainLoop(HDC param_1)
             if (s_dirReady == 1) shotDir = "Screenshots/";
         }
 #endif
-        crt_sprintf((char*)&DAT_083a4174, "%sScreen(%02d_%02d-%02d_%02d)-%04d.jpg",
+        crt_sprintf((char*)&GrabFileName, "%sScreen(%02d_%02d-%02d_%02d)-%04d.jpg",
                     shotDir, (int)st.wMonth, (int)st.wDay, (int)st.wHour,
                     (int)st.wMinute, (int)DAT_083a42f0);
     }
@@ -248,15 +248,15 @@ void __cdecl Game_MainLoop(HDC param_1)
     // GlobalText[459] es "%s: La captura fue guardada." -- lleva un %s con el
     // nombre del archivo. El port no pasaba el argumento, asi que el %s
     // consumia un valor cualquiera de la pila.
-    crt_sprintf(nameBuf, (const char*)&DAT_07d4b708, (const char*)&DAT_083a4174);
+    crt_sprintf(nameBuf, (const char*)&DAT_07d4b708, (const char*)&GrabFileName);
 
     // Build window title: serverName + " " + charName
     {
-        // DAT_00561694 es signed en el original (Game_SceneUpdate lo setea a -1
+        // ServerSelectHi es signed en el original (Game_SceneUpdate lo setea a -1
         // cuando "no server selected"). Tratarlo como unsigned haría si=0x1e y
         // leer OOB de DAT_083a45d8[0x3600] → strlen de basura → overflow del
         // titleBuf[64] → /GS cookie fail al retornar Game_MainLoop.
-        int idx = (int)DAT_00561694;
+        int idx = (int)ServerSelectHi;
         int si  = (idx < 0x1e) ? idx : 0x1e;
         if (si < 0) si = 0;
         const char* serverName = (const char*)&DAT_083a45d8 + si * 0x21e;
@@ -278,10 +278,10 @@ void __cdecl Game_MainLoop(HDC param_1)
         shiftHeld = 1 - shiftHeld;
 
     if (DAT_083a42ec != '\0' && shiftHeld == 1)
-        FUN_00480620((const char*)&DAT_083a7c94, nameBuf, 1);
+        UIChatLogWindow_AddText((const char*)&DAT_083a7c94, nameBuf, 1);
 
     // ── GL CLEAR ──────────────────────────────────────────────────────────────
-    if (DAT_0055a7ac == 10) {
+    if (World == 10) {
         // Sub-state 10: teal clear color
         glClearColor(*(float*)"\x00\x00\x40\x3c",  // 0.047f
                      *(float*)"\x00\x00\xc8\x3d",  // 0.098f
@@ -334,9 +334,9 @@ void __cdecl Game_MainLoop(HDC param_1)
     renderFlag  = 0;
 
     // ── SCENE RENDER ──────────────────────────────────────────────────────────
-    if (DAT_005615c0 == 2) { renderFlag = (char)Scene_Login();      CHK("ML/post_Scene_Login"); }
-    if (DAT_005615c0 == 4) { renderFlag = (char)Scene_CharSelect(); CHK("ML/post_Scene_CharSelect"); }
-    if (DAT_005615c0 == 5) { renderFlag = (char)Game_RenderTick();  CHK("ML/post_RenderTick"); }
+    if (SceneFlag == 2) { renderFlag = (char)Scene_Login();      CHK("ML/post_Scene_Login"); }
+    if (SceneFlag == 4) { renderFlag = (char)Scene_CharSelect(); CHK("ML/post_Scene_CharSelect"); }
+    if (SceneFlag == 5) { renderFlag = (char)Game_RenderTick();  CHK("ML/post_RenderTick"); }
 
     // (renderFlag=1 forzado para state==2 removido: Scene_Login ya devuelve
     //  bool correctamente ahora que el init-loop no se repite por frame y el
@@ -351,7 +351,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
 
     if (DAT_083a42ec != '\0' && shiftHeld == 0)
-        FUN_00480620((const char*)&DAT_083a7c98, nameBuf, 1);
+        UIChatLogWindow_AddText((const char*)&DAT_083a7c98, nameBuf, 1);
 
     DAT_083a42ec = '\0';
 
@@ -375,22 +375,22 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
 
     // ── CONNECTION CHECK ──────────────────────────────────────────────────────
-    // BUG-FIX 2026-04-28: este check leía *(int*)(DAT_055ca160 + 8) y comparaba
-    // con -1. En el original DAT_055ca160 era un Object* con un Type field en
-    // +8; en nuestro port DAT_055ca160 es un buffer estático sin esa estructura
+    // BUG-FIX 2026-04-28: este check leía *(int*)(SocketClient + 8) y comparaba
+    // con -1. En el original SocketClient era un Object* con un Type field en
+    // +8; en nuestro port SocketClient es un buffer estático sin esa estructura
     // → el read devolvía garbage que a veces == -1 → disparaba 0x71 ConnLost
     // 100ms después de JoinMapServer, anulando todos los menús.
     // Real disconnect detection: WSA FD_CLOSE event en WinMain; ese path setea
     // DAT_055ca018 que ya bloquea Game_MainLoop al inicio.
     #if 0
-    if (DAT_083a7c48 != '\0' && DAT_005615c0 == 5) {
-        if (FUN_0043dcc0(((int)(uintptr_t)DAT_055ca160)) == -1) {
+    if (DAT_083a7c48 != '\0' && SceneFlag == 5) {
+        if (CWsctlc_GetSocket(((int)(uintptr_t)SocketClient)) == -1) {
             if (DAT_083a7c58 == 0) {
                 DAT_083a7c58 = 1;
-                FUN_00405540(&DAT_055c9bf0, "> Connection closed...");
+                CErrorReport_Write(&DAT_055c9bf0, "> Connection closed...");
                 CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
             }
-            FUN_005142d0(0x71);
+            SetErrorMessage(0x71);
         }
     }
     #endif
@@ -410,8 +410,8 @@ void __cdecl Game_MainLoop(HDC param_1)
     // sub=0 transición), 5+ s de silencio del cliente. Ahora keepalive
     // empieza desde char-select (state=4) y sigue mientras carga el mapa.
     #if 1
-    if (DAT_055ca168 != 0xffffffff &&
-        (DAT_005615c0 == 4 || DAT_005615c0 == 5 || DAT_0055a7ac == 7)) {
+    if (SocketClientSocket != 0xffffffff &&
+        (SceneFlag == 4 || SceneFlag == 5 || World == 7)) {
         static DWORD s_lastLive = 0;
         DWORD now = GetTickCount();
         if (now - s_lastLive >= 1000) {
@@ -429,60 +429,60 @@ void __cdecl Game_MainLoop(HDC param_1)
     #endif
 
     // Login BGM
-    if (DAT_005615c0 == 2)
+    if (SceneFlag == 2)
         Music_PlayTrack(PTR_DAT_005615c8, 0);
 
-    if (DAT_005615c0 != 5) return;
+    if (SceneFlag != 5) return;
 
-    // ── BGM STATE MACHINE (g_GameSubState) ───────────────────────────────────
-    switch (DAT_0055a7ac) {
+    // ── BGM STATE MACHINE (World) ───────────────────────────────────
+    switch (World) {
     case 0:  // Connecting
         if (DAT_07e118e8 == 4) {
             Sound_StopBuffer(0); Sound_StopBuffer(1);
         } else {
-            FUN_00404bc0(0, 0, 1);
+            PlayBuffer(0, 0, 1);
             if (DAT_07c74ae4 > 0)
-                FUN_00404bc0(1, 0, 1);
+                PlayBuffer(1, 0, 1);
         }
         break;
     case 1:  // Entering world
-        FUN_00404bc0(3, 0, 1);
+        PlayBuffer(3, 0, 1);
         break;
     case 2:  // In-world
         if (DAT_07e118e8 == 3 || DAT_07e118e8 > 9)
             Sound_StopBuffer(0);
         else
-            FUN_00404bc0(0, 0, 1);
+            PlayBuffer(0, 0, 1);
         break;
     case 3:  // Outdoor
-        FUN_00404bc0(0, 0, 1);
+        PlayBuffer(0, 0, 1);
         if ((_rand() & 0x1ff) == 0)
-            FUN_00404bc0(2, 0, 0);  // ambient rare
+            PlayBuffer(2, 0, 0);  // ambient rare
         break;
     case 4:
-        FUN_00404bc0(5, 0, 1); break;
+        PlayBuffer(5, 0, 1); break;
     case 7:
-        FUN_00404bc0(6, 0, 1); break;
+        PlayBuffer(6, 0, 1); break;
     case 8:
-        FUN_00404bc0(7, 0, 1); break;
+        PlayBuffer(7, 0, 1); break;
     case 10:
-        FUN_00404bc0(0x14, 0, 1);
+        PlayBuffer(0x14, 0, 1);
         if (_rand() % 100 != 0) _rand();
         break;
     }
 
     // Stop tracks not active in this sub-state
-    if (DAT_0055a7ac != 0 && DAT_0055a7ac != 2 && DAT_0055a7ac != 3) Sound_StopBuffer(0);
-    if (DAT_0055a7ac != 0 && DAT_0055a7ac != 9)                       Sound_StopBuffer(1);
-    if (DAT_0055a7ac != 1)                                             Sound_StopBuffer(3);
-    if (DAT_0055a7ac != 3)                                             Sound_StopBuffer(2);
-    if (DAT_0055a7ac != 4)                                             Sound_StopBuffer(5);
-    if (DAT_0055a7ac != 7)                                             Sound_StopBuffer(6);
-    if (DAT_0055a7ac != 8)                                             Sound_StopBuffer(7);
-    if (DAT_0055a7ac != 10)                                            Sound_StopBuffer(0x14);
+    if (World != 0 && World != 2 && World != 3) Sound_StopBuffer(0);
+    if (World != 0 && World != 9)                       Sound_StopBuffer(1);
+    if (World != 1)                                             Sound_StopBuffer(3);
+    if (World != 3)                                             Sound_StopBuffer(2);
+    if (World != 4)                                             Sound_StopBuffer(5);
+    if (World != 7)                                             Sound_StopBuffer(6);
+    if (World != 8)                                             Sound_StopBuffer(7);
+    if (World != 10)                                            Sound_StopBuffer(0x14);
 
     // ── WINDOW TITLE (sub-state 0) ────────────────────────────────────────────
-    if (DAT_0055a7ac == 0) {
+    if (World == 0) {
         char dead = *(char*)(DAT_07abf5d8 + 0x34e);
         if (dead != '\0') {
             if (DAT_07e118e8 == 4)
@@ -500,7 +500,7 @@ void __cdecl Game_MainLoop(HDC param_1)
     // The chain: if val > 0xCC → check again; if < 0xD7 → check 0x38C;
     // if 0x38C value < 0x20 → BGM_Play(track_cc,0) (login BGM?)
     // Otherwise BGM_Play(track_d0,0). This is anti-cheat, not game logic.
-    if (DAT_0055a7ac == 2) {
+    if (World == 2) {
         char dead = *(char*)(DAT_07abf5d8 + 0x34e);
         if (dead != '\0') {
             int val388 = *(int*)(DAT_07abf5d8 + 0x388);
@@ -526,7 +526,7 @@ void __cdecl Game_MainLoop(HDC param_1)
 
 LAB_00527402:
     // Sub-state 3 window title
-    if (DAT_0055a7ac == 3) {
+    if (World == 3) {
         if (*(char*)(DAT_07abf5d8 + 0x34e) != '\0')
             Music_PlayTrack(PTR_DAT_005615d4, 0);
     } else {
@@ -534,7 +534,7 @@ LAB_00527402:
     }
 
     // Sub-states 1/5 window title
-    if (DAT_0055a7ac == 1 || DAT_0055a7ac == 5)
+    if (World == 1 || World == 5)
         Music_PlayTrack(PTR_DAT_005615d8, 0);
     else
         Music_StopTrack(PTR_DAT_005615d8, 0);

@@ -194,15 +194,15 @@ LABEL_57:
       if ( *v6 )
       {
         v7 = (void *)CharacterMachine;
-        if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
         {
           v11 = operator_new(0x585u);
           *(BYTE *)(v11 + 1412) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v11, (int)v7);
+          HashTable_Insert(&MAIN_HASH_CLASS, v11, (int)v7);
         }
         else
         {
-          v8 = FUN_004041e0(&DAT_055c9bc8, (int)v7);
+          v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v7);
           if ( v8 == -1 )
           {
             v9 = 0;
@@ -215,20 +215,20 @@ LABEL_57:
           v9[1412] = v10;
           if ( v10 < 2u )
           {
-            FUN_00404370(v7, v9);
+            Packet_DecryptBuffer(v7, v9);
           }
         }
         v12 = (const void *)CharacterMachine;
         v13 = *(WORD *)(CharacterAttribute + 14);
-        if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
         {
-          v14 = FUN_004041e0(&DAT_055c9bc8, (int)v12);
+          v14 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v12);
           v15 = v14 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v14);
           v16 = v15[1412] - 1;
           v15[1412] = v16;
           if ( !v16 )
           {
-            FUN_00404400(v15, v12);
+            Packet_EncryptBuffer(v15, v12);
           }
         }
         if ( (unsigned short)*v6 > v13 )
@@ -242,15 +242,15 @@ LABEL_57:
       if ( v6[1] )
       {
         v17 = (void *)CharacterMachine;
-        if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
         {
           v21 = operator_new(0x585u);
           *(BYTE *)(v21 + 1412) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v21, (int)v17);
+          HashTable_Insert(&MAIN_HASH_CLASS, v21, (int)v17);
         }
         else
         {
-          v18 = FUN_004041e0(&DAT_055c9bc8, (int)v17);
+          v18 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v17);
           if ( v18 == -1 )
           {
             v19 = 0;
@@ -263,20 +263,20 @@ LABEL_57:
           v19[1412] = v20;
           if ( v20 < 2u )
           {
-            FUN_00404370(v17, v19);
+            Packet_DecryptBuffer(v17, v19);
           }
         }
         v22 = (const void *)CharacterMachine;
         v23 = *(WORD *)(CharacterAttribute + 14);
-        if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
         {
-          v24 = FUN_004041e0(&DAT_055c9bc8, (int)v22);
+          v24 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v22);
           v25 = v24 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v24);
           v26 = v25[1412] - 1;
           v25[1412] = v26;
           if ( !v26 )
           {
-            FUN_00404400(v25, v22);
+            Packet_EncryptBuffer(v25, v22);
           }
         }
         if ( (unsigned short)v6[1] < v23 )
@@ -309,15 +309,15 @@ LABEL_55:
     goto LABEL_55;
   }
   v28 = (void *)CharacterMachine;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
   {
     v32 = operator_new(0x585u);
     *(BYTE *)(v32 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v32, (int)v28);
+    HashTable_Insert(&MAIN_HASH_CLASS, v32, (int)v28);
   }
   else
   {
-    v29 = FUN_004041e0(&DAT_055c9bc8, (int)v28);
+    v29 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v28);
     if ( v29 == -1 )
     {
       v30 = 0;
@@ -330,19 +330,19 @@ LABEL_55:
     v30[1412] = v31;
     if ( v31 < 2u )
     {
-      FUN_00404370(v28, v30);
+      Packet_DecryptBuffer(v28, v30);
     }
   }
   v33 = (const void *)CharacterMachine;
   v34 = *(DWORD *)(CharacterMachine + 1352);
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
   {
-    v35 = (BYTE *)FUN_00404280(&DAT_055c9bc8, v33);
+    v35 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, v33);
     v36 = v35[1412] - 1;
     v35[1412] = v36;
     if ( !v36 )
     {
-      FUN_00404400(v35, v33);
+      Packet_EncryptBuffer(v35, v33);
     }
   }
   v37 = *((DWORD *)v6 + 1);
@@ -565,7 +565,7 @@ void __cdecl CSQuest::clearQuest(DWORD This)
       }
       if ( v3 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2(&buf[2], v3);
         }
@@ -578,10 +578,10 @@ void __cdecl CSQuest::clearQuest(DWORD This)
       }
       return;
     }
-    if ( WSAGetLastError() == 10035 && DAT_055cc16c + 3 <= 0x2000 )
+    if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + 3 <= 0x2000 )
     {
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[2], v2);
-      DAT_055cc16c += v2;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[2], v2);
+      SocketClientSendBufferLength += v2;
     }
     else
     {
@@ -842,37 +842,37 @@ void __cdecl FUN_00401af0(DWORD This)
           qmemcpy(v111, &v103[2], *(unsigned short *)v103);
           v111[v10] = rand();
           v11 = (v111[0] != -63) + 2;
-          if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+          if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
           {
             v14 = operator_new(2u);
             *(BYTE *)(v14 + 1) = 1;
-            FUN_00403f80(&DAT_055c9bc8, v14, (int)&g_byPacketSerialSend);
+            HashTable_Insert(&MAIN_HASH_CLASS, v14, (int)&g_byPacketSerialSend);
           }
           else
           {
-            v12 = FUN_00404280(&DAT_055c9bc8, &g_byPacketSerialSend);
+            v12 = HashTable_GetNode(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
             v13 = *(BYTE *)(v12 + 1) + 1;
             *(BYTE *)(v12 + 1) = v13;
             if ( v13 < 2u )
             {
-              FUN_00404330(&g_byPacketSerialSend, v12);
+              Packet_DecryptByte(&g_byPacketSerialSend, v12);
             }
           }
           v15 = g_byPacketSerialSend;
           v110[v11 + 1024] = g_byPacketSerialSend;
           g_byPacketSerialSend = v15 + 1;
-          PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+          PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
           v16 = v11 - 1;
           v17 = v10 - v16;
           v18 = &v111[v16];
-          v19 = FUN_0053cc30(0, (int)&v111[v16], v17);
+          v19 = CSimpleModulus_Encode(0, (int)&v111[v16], v17);
           if ( v19 >= 256 )
           {
             v26 = v19 + 3;
             v107 = -60;
             v109 = v19 + 3;
             v108 = (v19 + 3) / 256;
-            FUN_0053cc30((int)v110, (int)v18, v17);
+            CSimpleModulus_Encode((int)v110, (int)v18, v17);
             v27 = 0;
             v28 = v26;
             if ( s != -1 )
@@ -887,7 +887,7 @@ void __cdecl FUN_00401af0(DWORD This)
                 }
                 if ( v29 )
                 {
-                  if ( DAT_055ce174 )
+                  if ( SocketClientLogPrint )
                   {
                     nullsub_2(&v107, v29);
                   }
@@ -900,10 +900,10 @@ void __cdecl FUN_00401af0(DWORD This)
                 }
                 goto LABEL_52;
               }
-              if ( WSAGetLastError() == 10035 && DAT_055cc16c + v26 <= 0x2000 )
+              if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v26 <= 0x2000 )
               {
-                qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v107, v28);
-                v25 = v28 + DAT_055cc16c;
+                qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v107, v28);
+                v25 = v28 + SocketClientSendBufferLength;
                 goto LABEL_51;
               }
 LABEL_49:
@@ -919,7 +919,7 @@ LABEL_106:
             v101 = v19 + 2;
             buf = -61;
             v105 = v19 + 2;
-            FUN_0053cc30((int)v106, (int)&v111[v16], v17);
+            CSimpleModulus_Encode((int)v106, (int)&v111[v16], v17);
             v20 = v101;
             v21 = 0;
             v22 = v101;
@@ -935,7 +935,7 @@ LABEL_106:
                 }
                 if ( v23 )
                 {
-                  if ( DAT_055ce174 )
+                  if ( SocketClientLogPrint )
                   {
                     nullsub_2(&buf, v23);
                   }
@@ -948,12 +948,12 @@ LABEL_106:
                 }
                 goto LABEL_52;
               }
-              if ( WSAGetLastError() == 10035 && DAT_055cc16c + v20 <= 0x2000 )
+              if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v20 <= 0x2000 )
               {
-                qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, v22);
-                v25 = v22 + DAT_055cc16c;
+                qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, v22);
+                v25 = v22 + SocketClientSendBufferLength;
 LABEL_51:
-                DAT_055cc16c = v25;
+                SocketClientSendBufferLength = v25;
                 goto LABEL_52;
               }
               goto LABEL_49;
@@ -1089,15 +1089,15 @@ LABEL_107:
         qmemcpy(v111, &v103[2], *(unsigned short *)v103);
         v111[v36] = rand();
         v37 = (v111[0] != -63) + 2;
-        if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
         {
           v41 = operator_new(2u);
           *(BYTE *)(v41 + 1) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v41, (int)&g_byPacketSerialSend);
+          HashTable_Insert(&MAIN_HASH_CLASS, v41, (int)&g_byPacketSerialSend);
         }
         else
         {
-          v38 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v38 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
           if ( v38 == -1 )
           {
             v39 = 0;
@@ -1110,34 +1110,34 @@ LABEL_107:
           *(BYTE *)(v39 + 1) = v40;
           if ( v40 < 2u )
           {
-            FUN_00404330(&g_byPacketSerialSend, v39);
+            Packet_DecryptByte(&g_byPacketSerialSend, v39);
           }
         }
         v42 = g_byPacketSerialSend;
         v110[v37 + 1024] = g_byPacketSerialSend;
         g_byPacketSerialSend = v42 + 1;
-        if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
         {
-          v43 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v43 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
           v44 = v43 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v43);
           v45 = v44[1] - 1;
           v44[1] = v45;
           if ( !v45 )
           {
-            FUN_00423710(v44, &g_byPacketSerialSend);
+            Packet_EncryptByte(v44, &g_byPacketSerialSend);
           }
         }
         v46 = v37 - 1;
         v47 = v36 - v46;
         v48 = &v111[v46];
-        v49 = FUN_0053cc30(0, (int)&v111[v46], v36 - v46);
+        v49 = CSimpleModulus_Encode(0, (int)&v111[v46], v36 - v46);
         if ( v49 >= 256 )
         {
           v59 = v49 + 3;
           v107 = -60;
           v109 = v49 + 3;
           v108 = (v49 + 3) / 256;
-          FUN_0053cc30((int)v110, (int)v48, v47);
+          CSimpleModulus_Encode((int)v110, (int)v48, v47);
           v60 = 0;
           v52 = v59;
           if ( s != -1 )
@@ -1152,7 +1152,7 @@ LABEL_107:
               }
               if ( v61 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2(&v107, v61);
                 }
@@ -1165,10 +1165,10 @@ LABEL_107:
               }
               goto LABEL_105;
             }
-            if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v59) <= 0x2000 )
+            if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v59) <= 0x2000 )
             {
-              v63 = (char *)&DAT_055ca16c + DAT_055cc16c;
-              qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v107, 4 * (v52 >> 2));
+              v63 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+              qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v107, 4 * (v52 >> 2));
               v57 = &v107 + 4 * (v52 >> 2);
               v56 = &v63[4 * (v52 >> 2)];
               v58 = v52;
@@ -1182,7 +1182,7 @@ LABEL_107:
           v50 = v49 + 2;
           buf = -61;
           v105 = v49 + 2;
-          FUN_0053cc30((int)v106, (int)&v111[v46], v47);
+          CSimpleModulus_Encode((int)v106, (int)&v111[v46], v47);
           v51 = 0;
           v52 = v50;
           if ( s != -1 )
@@ -1197,7 +1197,7 @@ LABEL_107:
               }
               if ( v53 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2(&buf, v53);
                 }
@@ -1210,16 +1210,16 @@ LABEL_107:
               }
               goto LABEL_105;
             }
-            if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v50) <= 0x2000 )
+            if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v50) <= 0x2000 )
             {
-              v55 = (char *)&DAT_055ca16c + DAT_055cc16c;
-              qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, 4 * (v52 >> 2));
+              v55 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+              qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, 4 * (v52 >> 2));
               v57 = &buf + 4 * (v52 >> 2);
               v56 = &v55[4 * (v52 >> 2)];
               v58 = v52;
 LABEL_104:
               qmemcpy(v56, v57, v58 & 3);
-              DAT_055cc16c += v52;
+              SocketClientSendBufferLength += v52;
               goto LABEL_105;
             }
 LABEL_102:
@@ -1589,7 +1589,7 @@ void __cdecl FUN_00403a40(unsigned char *This)
 }
 #endif
 
-// ── FUN_00403ea0 (IDA-only, gated) ──
+// ── Quest_FullInit (IDA-only, gated) ──
 #if defined(IDA_PORT_00403EA0)
 void __cdecl FUN_00403a40(unsigned char *This)
 {
@@ -1750,7 +1750,7 @@ LABEL_6:
 
 // ── FUN_004042b0 (IDA-only, gated) ──
 #if defined(IDA_PORT_004042B0)
-int __cdecl FUN_00404280(int *_this, int a2)
+int __cdecl HashTable_GetNode(int *_this, int a2)
 {
   int v3; // edx
   int v4; // eax
@@ -1797,7 +1797,7 @@ LABEL_5:
 }
 #endif
 
-// ── FUN_00404e40 (IDA-only, gated) ──
+// ── waveIO__dtor (IDA-only, gated) ──
 #if defined(IDA_PORT_00404E40)
 DWORD __cdecl waveIO::_waveIO(DWORD This, bool IO)
 {
@@ -1810,7 +1810,7 @@ DWORD __cdecl waveIO::_waveIO(DWORD This, bool IO)
 }
 #endif
 
-// ── FUN_00404e60 (IDA-only, gated) ──
+// ── waveIO__CloseWaveFile (IDA-only, gated) ──
 #if defined(IDA_PORT_00404E60)
 bool __cdecl waveIO::CloseWaveFile(DWORD This)
 {
@@ -2010,7 +2010,7 @@ char *__stdcall FUN_00405420(char *Str, int a2)
 }
 #endif
 
-// ── FUN_00405500 (IDA-only, gated) ──
+// ── CErrorReport__WriteDebugInfoStr (IDA-only, gated) ──
 #if defined(IDA_PORT_00405500)
 void __cdecl CErrorReport::WriteDebugInfoStr(DWORD This, char *lpszToWrite)
 {
@@ -2024,7 +2024,7 @@ void __cdecl CErrorReport::WriteDebugInfoStr(DWORD This, char *lpszToWrite)
 }
 #endif
 
-// ── FUN_00405590 (IDA-only, gated) ──
+// ── CErrorReport__WriteLogBegin (IDA-only, gated) ──
 #if defined(IDA_PORT_00405590)
 void __cdecl CErrorReport::WriteLogBegin(DWORD This)
 {
@@ -2032,7 +2032,7 @@ void __cdecl CErrorReport::WriteLogBegin(DWORD This)
 }
 #endif
 
-// ── FUN_00405620 (IDA-only, gated) ──
+// ── CErrorReport__WriteSystemInfo (IDA-only, gated) ──
 #if defined(IDA_PORT_00405620)
 void __cdecl CErrorReport::WriteSystemInfo(DWORD This, DWORD si)
 {
@@ -2045,7 +2045,7 @@ void __cdecl CErrorReport::WriteSystemInfo(DWORD This, DWORD si)
 }
 #endif
 
-// ── FUN_004056b0 (IDA-only, gated) ──
+// ── CErrorReport__WriteOpenGLInfo (IDA-only, gated) ──
 #if defined(IDA_PORT_004056B0)
 void __cdecl CErrorReport::WriteOpenGLInfo(DWORD This)
 {
@@ -2066,7 +2066,7 @@ void __cdecl CErrorReport::WriteOpenGLInfo(DWORD This)
 }
 #endif
 
-// ── FUN_00405760 (IDA-only, gated) ──
+// ── CErrorReport__WriteImeInfo (IDA-only, gated) ──
 #if defined(IDA_PORT_00405760)
 void __cdecl CErrorReport::WriteImeInfo(DWORD This, HWND hWnd)
 {
@@ -2621,15 +2621,15 @@ LABEL_55:
       qmemcpy(v74, &v69[2], *(unsigned short *)v69);
       v74[v6] = rand();
       v7 = (v74[0] != -63) + 2;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
       {
         v11 = operator_new(2u);
         *(BYTE *)(v11 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v11, (int)&g_byPacketSerialSend);
+        HashTable_Insert(&MAIN_HASH_CLASS, v11, (int)&g_byPacketSerialSend);
       }
       else
       {
-        v8 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         if ( v8 == -1 )
         {
           v9 = 0;
@@ -2642,33 +2642,33 @@ LABEL_55:
         v9[1] = v10;
         if ( (unsigned char)v10 < 2u )
         {
-          FUN_00404330(&g_byPacketSerialSend, v9);
+          Packet_DecryptByte(&g_byPacketSerialSend, v9);
         }
       }
       v12 = g_byPacketSerialSend;
       v73[v7 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v12 + 1;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
       {
-        v13 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v13 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v14 = v13[1] - 1;
         v13[1] = v14;
         if ( !v14 )
         {
-          FUN_00423710(v13, &g_byPacketSerialSend);
+          Packet_EncryptByte(v13, &g_byPacketSerialSend);
         }
       }
       v15 = v7 - 1;
       v16 = v6 - v15;
       v17 = &v74[v15];
-      v18 = FUN_0053cc30(0, (int)&v74[v15], v6 - v15);
+      v18 = CSimpleModulus_Encode(0, (int)&v74[v15], v6 - v15);
       if ( v18 >= 256 )
       {
         v28 = v18 + 3;
         v72[0] = -60;
         v72[2] = v18 + 3;
         v72[1] = (v18 + 3) / 256;
-        FUN_0053cc30((int)v73, (int)v17, v16);
+        CSimpleModulus_Encode((int)v73, (int)v17, v16);
         v29 = 0;
         v21 = v28;
         if ( s != -1 )
@@ -2683,7 +2683,7 @@ LABEL_55:
             }
             if ( v30 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2(v72, v30);
               }
@@ -2696,10 +2696,10 @@ LABEL_55:
             }
             return 1;
           }
-          if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v28) <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v28) <= 0x2000 )
           {
-            v33 = (char *)&DAT_055ca16c + DAT_055cc16c;
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, v72, 4 * (v21 >> 2));
+            v33 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, v72, 4 * (v21 >> 2));
             v26 = &v72[4 * (v21 >> 2)];
             v25 = &v33[4 * (v21 >> 2)];
             v27 = v21;
@@ -2716,7 +2716,7 @@ LABEL_45:
         v19 = v18 + 2;
         buf[0] = -61;
         buf[1] = v18 + 2;
-        FUN_0053cc30((int)v71, (int)&v74[v15], v34);
+        CSimpleModulus_Encode((int)v71, (int)&v74[v15], v34);
         v20 = 0;
         v21 = v19;
         if ( s != -1 )
@@ -2731,7 +2731,7 @@ LABEL_45:
             }
             if ( v22 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2(buf, v22);
               }
@@ -2744,16 +2744,16 @@ LABEL_45:
             }
             return 1;
           }
-          if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v19) <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v19) <= 0x2000 )
           {
-            v24 = (char *)&DAT_055ca16c + DAT_055cc16c;
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, buf, 4 * (v21 >> 2));
+            v24 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, buf, 4 * (v21 >> 2));
             v26 = &buf[4 * (v21 >> 2)];
             v25 = &v24[4 * (v21 >> 2)];
             v27 = v21;
 LABEL_47:
             qmemcpy(v25, v26, v27 & 3);
-            DAT_055cc16c += v21;
+            SocketClientSendBufferLength += v21;
             return 1;
           }
           goto LABEL_45;
@@ -2766,9 +2766,9 @@ LABEL_47:
 }
 #endif
 
-// ── FUN_00407980 (IDA-only, gated) ──
+// ── SpringNode_ZeroFields (IDA-only, gated) ──
 #if defined(IDA_PORT_00407980)
-DWORD *__cdecl FUN_00407980(int _this)
+DWORD *__cdecl SpringNode_ZeroFields(int _this)
 {
   DWORD *result; // eax
   int v2; // esi
@@ -2791,9 +2791,9 @@ DWORD *__cdecl FUN_00407980(int _this)
 }
 #endif
 
-// ── FUN_004079b0 (IDA-only, gated) ──
+// ── SpringNode_SetPos (IDA-only, gated) ──
 #if defined(IDA_PORT_004079B0)
-int __cdecl FUN_004079b0(int _this, int a2, int a3, int a4, int a5)
+int __cdecl SpringNode_SetPos(int _this, int a2, int a3, int a4, int a5)
 {
   int result; // eax
 
@@ -2809,9 +2809,9 @@ int __cdecl FUN_004079b0(int _this, int a2, int a3, int a4, int a5)
 }
 #endif
 
-// ── FUN_00407ac0 (IDA-only, gated) ──
+// ── VerletNode_AddAccel (IDA-only, gated) ──
 #if defined(IDA_PORT_00407AC0)
-void __cdecl FUN_00407ac0(float *_this, float a2, float a3, float a4)
+void __cdecl VerletNode_AddAccel(float *_this, float a2, float a3, float a4)
 {
   _this[1] = a2 + _this[1];
   _this[2] = a3 + _this[2];
@@ -2819,9 +2819,9 @@ void __cdecl FUN_00407ac0(float *_this, float a2, float a3, float a4)
 }
 #endif
 
-// ── FUN_00407af0 (IDA-only, gated) ──
+// ── ClothNode_Integrate (IDA-only, gated) ──
 #if defined(IDA_PORT_00407AF0)
-void __cdecl FUN_00407af0(float *_this, float a2)
+void __cdecl ClothNode_Integrate(float *_this, float a2)
 {
   float *v2; // eax
   int v3; // ecx
@@ -2846,9 +2846,9 @@ void __cdecl FUN_00407af0(float *_this, float a2)
 }
 #endif
 
-// ── FUN_00407b30 (IDA-only, gated) ──
+// ── SpringNode_GetPos (IDA-only, gated) ──
 #if defined(IDA_PORT_00407B30)
-int *__cdecl FUN_00407b30(int *_this, DWORD *a2)
+int *__cdecl SpringNode_GetPos(int *_this, DWORD *a2)
 {
   int *result; // eax
   int v4; // ecx
@@ -2867,9 +2867,9 @@ int *__cdecl FUN_00407b30(int *_this, DWORD *a2)
 }
 #endif
 
-// ── FUN_00407b50 (IDA-only, gated) ──
+// ── SpringNode_Delta (IDA-only, gated) ──
 #if defined(IDA_PORT_00407B50)
-void __cdecl FUN_00407b50(char *_this, int a2, int a3)
+void __cdecl SpringNode_Delta(char *_this, int a2, int a3)
 {
   float *v3; // eax
   char *v4; // ecx
@@ -2890,13 +2890,13 @@ void __cdecl FUN_00407b50(char *_this, int a2, int a3)
     *(float *)(v5 - 4) = v7;
   }
   while ( v6 );
-  FUN_004f9c40(a3);
+  Vec3_Length(a3);
 }
 #endif
 
-// ── FUN_00407b90 (IDA-only, gated) ──
+// ── Cloth_SpringRange (IDA-only, gated) ──
 #if defined(IDA_PORT_00407B90)
-int __cdecl FUN_00407b90(int a1, double a2, int a3, float *a4)
+int __cdecl Cloth_SpringRange(int a1, double a2, int a3, float *a4)
 {
   double v6; // st6
   double v7; // st7
@@ -2909,10 +2909,10 @@ int __cdecl FUN_00407b90(int a1, double a2, int a3, float *a4)
   {
     return 1;
   }
-  FUN_00407b50((char *)a1, a3, (int)&v9);
+  SpringNode_Delta((char *)a1, a3, (int)&v9);
   if ( a2 >= 0.001 )
   {
-    FUN_00407b50((char *)a1, a3, (int)&v9);
+    SpringNode_Delta((char *)a1, a3, (int)&v9);
   }
   else
   {
@@ -2944,9 +2944,9 @@ LABEL_11:
 }
 #endif
 
-// ── FUN_00407c60 (IDA-only, gated) ──
+// ── Cloth_SpringEqual (IDA-only, gated) ──
 #if defined(IDA_PORT_00407C60)
-int __cdecl FUN_00407c60(int a1, double a2, int a3, float a4)
+int __cdecl Cloth_SpringEqual(int a1, double a2, int a3, float a4)
 {
   double v5; // st7
   double v6; // st7
@@ -2955,10 +2955,10 @@ int __cdecl FUN_00407c60(int a1, double a2, int a3, float a4)
   float v9; // [esp+Ch] [ebp-8h]
   float v10; // [esp+10h] [ebp-4h]
 
-  FUN_00407b50((char *)a1, a3, (int)&v8);
+  SpringNode_Delta((char *)a1, a3, (int)&v8);
   if ( a2 >= 0.001 )
   {
-    FUN_00407b50((char *)a1, a3, (int)&v8);
+    SpringNode_Delta((char *)a1, a3, (int)&v8);
   }
   else
   {
@@ -2981,12 +2981,12 @@ int __cdecl FUN_00407c60(int a1, double a2, int a3, float a4)
 }
 #endif
 
-// ── FUN_00407da0 (IDA-only, gated) ──
+// ── VerletNode_CtorBase (IDA-only, gated) ──
 #if defined(IDA_PORT_00407DA0)
-DWORD *__cdecl FUN_00407da0(DWORD *_this)
+DWORD *__cdecl VerletNode_CtorBase(DWORD *_this)
 {
   *_this = (DWORD)&DAT_00552508;
-  FUN_00407df0((int)_this);
+  VerletNode_ZeroFields((int)_this);
   return _this;
 }
 #endif
@@ -3004,9 +3004,9 @@ LPVOID __cdecl FUN_00407dc0(LPVOID lpMem, char a2)
 }
 #endif
 
-// ── FUN_00407df0 (IDA-only, gated) ──
+// ── VerletNode_ZeroFields (IDA-only, gated) ──
 #if defined(IDA_PORT_00407DF0)
-int __cdecl FUN_00407df0(DWORD *_this)
+int __cdecl VerletNode_ZeroFields(DWORD *_this)
 {
   int result; // eax
 
@@ -3022,9 +3022,9 @@ int __cdecl FUN_00407df0(DWORD *_this)
 }
 #endif
 
-// ── FUN_00407e10 (IDA-only, gated) ──
+// ── VerletNode_SetTarget (IDA-only, gated) ──
 #if defined(IDA_PORT_00407E10)
-int __cdecl FUN_00407e10(DWORD *_this, int a2, int a3, int a4)
+int __cdecl VerletNode_SetTarget(DWORD *_this, int a2, int a3, int a4)
 {
   int result; // eax
 
@@ -3036,9 +3036,9 @@ int __cdecl FUN_00407e10(DWORD *_this, int a2, int a3, int a4)
 }
 #endif
 
-// ── FUN_00407e30 (IDA-only, gated) ──
+// ── VerletNode_GetPos (IDA-only, gated) ──
 #if defined(IDA_PORT_00407E30)
-DWORD *__cdecl FUN_00407e30(DWORD *_this, DWORD *a2)
+DWORD *__cdecl VerletNode_GetPos(DWORD *_this, DWORD *a2)
 {
   DWORD *result; // eax
   DWORD *v3; // ecx
@@ -3065,9 +3065,9 @@ LPVOID __cdecl FUN_00407ea0(LPVOID lpMem, char a2)
 }
 #endif
 
-// ── FUN_00407ef0 (IDA-only, gated) ──
+// ── ClothAnchor_SetParams (IDA-only, gated) ──
 #if defined(IDA_PORT_00407EF0)
-int __cdecl FUN_00407ef0(DWORD *_this, int a2, int a3, int a4, int a5, int a6)
+int __cdecl ClothAnchor_SetParams(DWORD *_this, int a2, int a3, int a4, int a5, int a6)
 {
   int result; // eax
 
@@ -3117,9 +3117,9 @@ void __cdecl FUN_00408070(void *_this)
 }
 #endif
 
-// ── FUN_004080f0 (IDA-only, gated) ──
+// ── Widget_NodeInit (IDA-only, gated) ──
 #if defined(IDA_PORT_004080F0)
-int __cdecl FUN_004080f0(DWORD *_this)
+int __cdecl Widget_NodeInit(DWORD *_this)
 {
   int result; // eax
 
@@ -3145,9 +3145,9 @@ int __cdecl FUN_004080f0(DWORD *_this)
 }
 #endif
 
-// ── FUN_004088b0 (IDA-only, gated) ──
+// ── Spring_StoreEdge (IDA-only, gated) ──
 #if defined(IDA_PORT_004088B0)
-int __cdecl FUN_004088b0(DWORD *_this, int a2, short a3, short a4, float a5, float a6, char a7)
+int __cdecl Spring_StoreEdge(DWORD *_this, int a2, short a3, short a4, float a5, float a6, char a7)
 {
   int result; // eax
 
@@ -3161,9 +3161,9 @@ int __cdecl FUN_004088b0(DWORD *_this, int a2, short a3, short a4, float a5, flo
 }
 #endif
 
-// ── FUN_00408cb0 (IDA-only, gated) ──
+// ── Cloth_Integrate (IDA-only, gated) ──
 #if defined(IDA_PORT_00408CB0)
-int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
+int __cdecl Cloth_Integrate(DWORD *a1, double a2, float a3)
 {
   int v4; // esi
   float *v5; // esi
@@ -3202,10 +3202,10 @@ int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
         v6 = a1[13];
         v7 = (char *)(v6 + 60 * *(short *)v5);
         v8 = (float *)(v6 + 60 * *((short *)v5 + 1));
-        FUN_00407b50(v7, (int)v8, (int)v25);
+        SpringNode_Delta(v7, (int)v8, (int)v25);
         if ( a2 >= 0.001 )
         {
-          FUN_00407b50(v7, (int)v8, (int)v25);
+          SpringNode_Delta(v7, (int)v8, (int)v25);
         }
         else
         {
@@ -3228,8 +3228,8 @@ int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
           v18 = -v23;
           a2 = -v22;
           v17 = a2;
-          FUN_00407ac0((float *)v7, v17, v18, v19);
-          FUN_00407ac0(v8, v22, v23, v24);
+          VerletNode_AddAccel((float *)v7, v17, v18, v19);
+          VerletNode_AddAccel(v8, v22, v23, v24);
         }
       }
       v4 = v21 + 16;
@@ -3246,7 +3246,7 @@ int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
     v16 = 0;
     do
     {
-      FUN_00407af0((float *)(v16 + a1[13]), a3);
+      ClothNode_Integrate((float *)(v16 + a1[13]), a3);
       result = a1[12];
       ++v15;
       v16 += 60;
@@ -3257,9 +3257,9 @@ int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
 }
 #endif
 
-// ── FUN_00408e30 (IDA-only, gated) ──
+// ── Cloth_Solve (IDA-only, gated) ──
 #if defined(IDA_PORT_00408E30)
-int __cdecl FUN_00408e30(DWORD *a1, double a2)
+int __cdecl Cloth_Solve(DWORD *a1, double a2)
 {
   int v3; // ebx
   int i; // ebp
@@ -3284,7 +3284,7 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
   for ( i = *(DWORD *)(a1[19] + 8); a1[20] != i && i; i = *(DWORD *)(i + 8) )
   {
     v5 = *(DWORD **)i;
-    FUN_00407e30(*(DWORD **)i, Position);
+    VerletNode_GetPos(*(DWORD **)i, Position);
     v19 = Position[1];
     v18 = Position[0];
     v6 = Position[0];
@@ -3299,9 +3299,9 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
       Position,
       WorldPosition,
       1);
-    FUN_00407e10(v5, SLODWORD(WorldPosition[0]), SLODWORD(WorldPosition[1]), SLODWORD(WorldPosition[2]));
+    VerletNode_SetTarget(v5, SLODWORD(WorldPosition[0]), SLODWORD(WorldPosition[1]), SLODWORD(WorldPosition[2]));
   }
-  FUN_00409310(a1);
+  Cloth_CollideAnchors(a1);
   v7 = 0;
   if ( (int)a1[14] > 0 )
   {
@@ -3311,7 +3311,7 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
       v9 = (float *)(a1[15] + v8);
       if ( ((BYTE)v9[3] & 1) != 0 )
       {
-        FUN_00407c60(a1[13] + 60 * *(short *)v9, a2, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
+        Cloth_SpringEqual(a1[13] + 60 * *(short *)v9, a2, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
       }
       ++v7;
       v8 += 16;
@@ -3323,7 +3323,7 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
     v11 = a1[10];
     for ( k = 0; k < v11; ++k )
     {
-      FUN_00407d10(a1[13] + 60 * (k + j * v11));
+      VerletSystem_Flush(a1[13] + 60 * (k + j * v11));
       v11 = a1[10];
     }
   }
@@ -3338,7 +3338,7 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
     v14 = *((short *)v13 + 1);
     if ( v14 >= a1[10]
       && ((BYTE)v13[3] & 4) != 0
-      && !FUN_00407b90(a1[13] + 60 * v14, a2, a1[13] + 60 * *(short *)v13, v13 + 1) )
+      && !Cloth_SpringRange(a1[13] + 60 * v14, a2, a1[13] + 60 * *(short *)v13, v13 + 1) )
     {
       break;
     }
@@ -3367,7 +3367,7 @@ void __cdecl FUN_00408ff0(int _this, int a2)
     v5 = *(DWORD *)(_this + 40);
     for ( j = 0; j < v5; ++j )
     {
-      FUN_00407b30((int *)(*(DWORD *)(_this + 52) + 60 * (j + i * v5)), &v3[3 * j + 3 * i * v5]);
+      SpringNode_GetPos((int *)(*(DWORD *)(_this + 52) + 60 * (j + i * v5)), &v3[3 * j + 3 * i * v5]);
       v5 = *(DWORD *)(_this + 40);
     }
   }
@@ -3465,9 +3465,9 @@ void __cdecl FUN_004091d0(DWORD *_this, int a2, int a3, GLfloat t)
 }
 #endif
 
-// ── FUN_00409310 (IDA-only, gated) ──
+// ── Cloth_CollideAnchors (IDA-only, gated) ──
 #if defined(IDA_PORT_00409310)
-int __cdecl FUN_00409310(DWORD *_this)
+int __cdecl Cloth_CollideAnchors(DWORD *_this)
 {
   int result; // eax
   DWORD *v3; // eax
@@ -3514,7 +3514,7 @@ int __cdecl FUN_00409310(DWORD *_this)
       v8 = 0;
       do
       {
-        FUN_00407d10(v8 + _this[13]);
+        VerletSystem_Flush(v8 + _this[13]);
         result = _this[12];
         ++v7;
         v8 += 60;
@@ -3575,7 +3575,7 @@ DWORD *__cdecl FUN_00409ad0(DWORD *This)
 }
 #endif
 
-// ── FUN_00409b60 (IDA-only, gated) ──
+// ── scalar_deleting_destructor_locale (IDA-only, gated) ──
 #if defined(IDA_PORT_00409B60)
 std::locale::_Locimp *__cdecl std::locale::_Locimp::`scalar deleting destructor'(
         std::locale::_Locimp *_this,
@@ -3590,7 +3590,7 @@ std::locale::_Locimp *__cdecl std::locale::_Locimp::`scalar deleting destructor'
 }
 #endif
 
-// ── FUN_00409b80 (IDA-only, gated) ──
+// ── Locimp_dtor (IDA-only, gated) ──
 #if defined(IDA_PORT_00409B80)
 void __cdecl std::locale::_Locimp::~_Locimp(std::locale::_Locimp *_this)
 {
@@ -3638,7 +3638,7 @@ int __cdecl FUN_00409d20(DWORD *_this)
 
   for ( i = *(int **)(_this[2] + 8); (int *)_this[3] != i && i; i = (int *)i[2] )
   {
-    FUN_004086e0(*i);
+    Widget_Release(*i);
     if ( *i )
     {
       (**(void (__cdecl ***)(int, int))*i)(*i, 1);
@@ -3662,7 +3662,7 @@ int __cdecl FUN_00409d20(DWORD *_this)
 }
 #endif
 
-// ── FUN_00409db0 (IDA-only, gated) ──
+// ── LinkedList_DestroyAll (IDA-only, gated) ──
 #if defined(IDA_PORT_00409DB0)
 int __cdecl FUN_00409d20(DWORD *_this)
 {
@@ -3673,7 +3673,7 @@ int __cdecl FUN_00409d20(DWORD *_this)
 
   for ( i = *(int **)(_this[2] + 8); (int *)_this[3] != i && i; i = (int *)i[2] )
   {
-    FUN_004086e0(*i);
+    Widget_Release(*i);
     if ( *i )
     {
       (**(void (__cdecl ***)(int, int))*i)(*i, 1);
@@ -3775,12 +3775,12 @@ DWORD *FUN_00409eb0()
 }
 #endif
 
-// ── FUN_00409ed0 (IDA-only, gated) ──
+// ── WidgetB_Ctor (IDA-only, gated) ──
 #if defined(IDA_PORT_00409ED0)
-DWORD *__cdecl FUN_00409ed0(DWORD *_this)
+DWORD *__cdecl WidgetB_Ctor(DWORD *_this)
 {
   *_this = &DAT_00552574;
-  FUN_00409f20();
+  WidgetB_ZeroFields();
   return _this;
 }
 #endif
@@ -3789,7 +3789,7 @@ DWORD *__cdecl FUN_00409ed0(DWORD *_this)
 #if defined(IDA_PORT_00409EF0)
 LPVOID __cdecl FUN_00409ef0(LPVOID lpMem, char a2)
 {
-  FUN_00409f10();
+  WidgetB_SetVtable();
   if ( (a2 & 1) != 0 )
   {
     delete__(lpMem);
@@ -3798,17 +3798,17 @@ LPVOID __cdecl FUN_00409ef0(LPVOID lpMem, char a2)
 }
 #endif
 
-// ── FUN_00409f10 (IDA-only, gated) ──
+// ── WidgetB_SetVtable (IDA-only, gated) ──
 #if defined(IDA_PORT_00409F10)
-void __cdecl FUN_00409f10(DWORD *_this)
+void __cdecl WidgetB_SetVtable(DWORD *_this)
 {
   *_this = &DAT_00552574;
 }
 #endif
 
-// ── FUN_00409f20 (IDA-only, gated) ──
+// ── WidgetB_ZeroFields (IDA-only, gated) ──
 #if defined(IDA_PORT_00409F20)
-int __cdecl FUN_00409f20(int _this)
+int __cdecl WidgetB_ZeroFields(int _this)
 {
   int result; // eax
 
@@ -3916,7 +3916,7 @@ void __cdecl FUN_0040a0a0(int a1, int a2, int a3, int a4, int a5, char a6)
   *(DWORD *)(a1 + 16) = 1022739087;
   *(DWORD *)(a1 + 20) = -1082130432;
   *(DWORD *)(a1 + 12) = -1082130432;
-  FUN_004f9d60(a1 + 12);
+  Vec3_Normalize(a1 + 12);
   if ( FUN_00409f30(a1, a2, a3, a4, a5, a6) )
   {
     FUN_0040a300(a3);
@@ -4089,7 +4089,7 @@ int __cdecl FUN_0040a300(int _this, int a2)
 }
 #endif
 
-// ── FUN_0040a600 (IDA-only, gated) ──
+// ── LinkedList_InitSentinels (IDA-only, gated) ──
 #if defined(IDA_PORT_0040A600)
 int __cdecl FUN_0040a300(int _this, int a2)
 {
@@ -4190,7 +4190,7 @@ LPVOID __cdecl FUN_0040a6c0(LPVOID lpMem, char a2)
 void __cdecl FUN_0040a6e0(DWORD *_this)
 {
   *_this = &DAT_00552588;
-  FUN_00409f10(_this);
+  WidgetB_SetVtable(_this);
 }
 #endif
 
@@ -4254,7 +4254,7 @@ void __cdecl FUN_0040a8f0(char *_this, int a2, GLfloat a3, int a4, int a5)
   v27 = *(float *)LODWORD(a3) - *(float *)a2;
   v28 = *(float *)(LODWORD(a3) + 4) - *(float *)(a2 + 4);
   v29 = *(float *)(LODWORD(a3) + 8) - *(float *)(a2 + 8);
-  v6 = FUN_004f9c40(&v27);
+  v6 = Vec3_Length(&v27);
   v7 = *(float *)(a2 + 4);
   v8 = *(float *)(a2 + 8);
   v30 = *(float *)LODWORD(a3);
@@ -4279,8 +4279,8 @@ void __cdecl FUN_0040a8f0(char *_this, int a2, GLfloat a3, int a4, int a5)
   glColor3f(1.0, 1.0, 1.0);
   BindTexture(494);
   EnableAlphaBlendMinus();
-  FUN_004f9d20(_this + 12, &v27, &v24);
-  FUN_004f9d60(&v24);
+  Vec3_Cross(_this + 12, &v27, &v24);
+  Vec3_Normalize(&v24);
   v24 = v24 * 10.0;
   v25 = v25 * 10.0;
   v26 = v26 * 10.0;
@@ -4450,7 +4450,7 @@ LABEL_25:
 }
 #endif
 
-// ── FUN_0040c170 (IDA-only, gated) ──
+// ── TextureScript_setScript (IDA-only, gated) ──
 #if defined(IDA_PORT_0040C170)
 void __cdecl TextureScript::setScript(DWORD This, DWORD That)
 {
@@ -4461,7 +4461,7 @@ void __cdecl TextureScript::setScript(DWORD This, DWORD That)
 }
 #endif
 
-// ── FUN_0040c190 (IDA-only, gated) ──
+// ── TextureScriptParsing_parsingTScript (IDA-only, gated) ──
 #if defined(IDA_PORT_0040C190)
 bool __cdecl TextureScriptParsing::parsingTScript(DWORD This, char *filename)
 {
@@ -4661,9 +4661,9 @@ int __cdecl FUN_0040c500(DWORD *_this, int a2, int a3, int a4)
 }
 #endif
 
-// ── FUN_0040c580 (IDA-only, gated) ──
+// ── ChatListBox_DequeueFront (IDA-only, gated) ──
 #if defined(IDA_PORT_0040C580)
-int __cdecl FUN_0040c580(int _this)
+int __cdecl ChatListBox_DequeueFront(int _this)
 {
   int result; // eax
   DWORD *v3; // eax
@@ -4705,7 +4705,7 @@ int __cdecl FUN_0040c5d0(int _this)
   *(DWORD *)(_this + 32) = 0;
   FUN_0040c670(0);
   *(DWORD *)(_this + 40) = 0;
-  FUN_0040c690((DWORD *)_this, 0, 0);
+  Object_SetRectFields((DWORD *)_this, 0, 0);
   FUN_0040c6b0(100, 100);
   FUN_0040c6d0(0, 0, 0);
   FUN_0040c6f0(0, 0, 0);
@@ -4775,7 +4775,7 @@ int __cdecl FUN_0040c710(DWORD *_this, int a2)
 
   while ( _this[3] )
   {
-    FUN_0040c580((int)_this);
+    ChatListBox_DequeueFront((int)_this);
     if ( !(*(int (__cdecl **)(DWORD *))(*_this + 36))(_this) )
     {
       (*(void (__cdecl **)(DWORD *))(*_this + 32))(_this);
@@ -5154,7 +5154,7 @@ int __cdecl FUN_0040e400(float *_this)
     }
     if ( FUN_0040c490((__int64)(ChatListBox_TabButtonSpacing + ChatListBox_TabButtonsX), (__int64)ChatListBox_TabButtonsY, 16, 16, 1) )
     {
-      FUN_0040e330(_this);
+      ChatListBox_ScrollByN(_this);
       PlayBuffer(25, 0, 0);
       MouseLButtonPush = 0;
     }
@@ -5417,7 +5417,7 @@ DWORD *__cdecl FUN_0040f540(DWORD *_this)
 }
 #endif
 
-// ── FUN_0040f650 (IDA-only, gated) ──
+// ── CUIRenderText_SetFont (IDA-only, gated) ──
 #if defined(IDA_PORT_0040F650)
 int __cdecl CUIRenderText::SetFont(DWORD **_this, int a2)
 {
@@ -5643,7 +5643,7 @@ void __cdecl FUN_0040f950(DWORD *_this)
   {
     do
     {
-      v10 = (DWORD *)FUN_004117c0(v25, 0);
+      v10 = (DWORD *)BSTIterator_PostIncrement(v25, 0);
       FUN_00410e50(v27, *v10);
     }
     while ( v23 != v5 );
@@ -5680,7 +5680,7 @@ void __cdecl FUN_0040f950(DWORD *_this)
   {
     do
     {
-      v21 = (DWORD *)FUN_004117c0(v27, 0);
+      v21 = (DWORD *)BSTIterator_PostIncrement(v27, 0);
       FUN_00410e50(v25, *v21);
     }
     while ( v23 != v16 );
@@ -5875,7 +5875,7 @@ void __cdecl FUN_0040fcd0(char *_this, char *Source, int a3, int a4, int x, int 
         v13 = 256;
       }
       FUN_004105f0(Bitmaps[0].Buffer, i << 8, v13, v36);
-      v14 = FUN_00410270(_this);
+      v14 = Pool_AllocNextSlot(_this);
       glBindTexture(0xDE1u, v14);
       glPixelStorei(0xCF5u, 1);
       glTexEnvf(0x2300u, 0x2200u, 8448.0);
@@ -7788,28 +7788,28 @@ int *FUN_00412780()
   unsigned int v5; // edx
   int v6; // eax
 
-  DAT_055c9bc8 = (int)&DAT_005524c8;
-  FUN_00406d20(&DAT_055c9bc8);
-  if ( *(&DAT_055c9bc8 + 6) )
+  MAIN_HASH_CLASS = (int)&DAT_005524c8;
+  FUN_00406d20(&MAIN_HASH_CLASS);
+  if ( *(&MAIN_HASH_CLASS + 6) )
   {
-    delete__((LPVOID)*(&DAT_055c9bc8 + 6));
+    delete__((LPVOID)*(&MAIN_HASH_CLASS + 6));
   }
   v0 = rand();
-  *(&DAT_055c9bc8 + 6) = operator_new(v0 % 3271 + 345);
-  *(&DAT_055c9bc8 + 3) = 1024;
+  *(&MAIN_HASH_CLASS + 6) = operator_new(v0 % 3271 + 345);
+  *(&MAIN_HASH_CLASS + 3) = 1024;
   v1 = operator_new(0x1000u);
-  v2 = *(&DAT_055c9bc8 + 3);
-  *(&DAT_055c9bc8 + 1) = v1;
+  v2 = *(&MAIN_HASH_CLASS + 3);
+  *(&MAIN_HASH_CLASS + 1) = v1;
   v3 = operator_new(4 * v2);
-  v4 = (void *)*(&DAT_055c9bc8 + 1);
-  v5 = 4 * *(&DAT_055c9bc8 + 3);
-  *(&DAT_055c9bc8 + 2) = v3;
+  v4 = (void *)*(&MAIN_HASH_CLASS + 1);
+  v5 = 4 * *(&MAIN_HASH_CLASS + 3);
+  *(&MAIN_HASH_CLASS + 2) = v3;
   memset(v4, 0, v5);
-  memset((void *)*(&DAT_055c9bc8 + 2), 0, 4 * *(&DAT_055c9bc8 + 3));
-  v6 = *(&DAT_055c9bc8 + 1);
-  *(&DAT_055c9bc8 + 9) = *(&DAT_055c9bc8 + 2);
-  *(&DAT_055c9bc8 + 8) = v6;
-  return &DAT_055c9bc8;
+  memset((void *)*(&MAIN_HASH_CLASS + 2), 0, 4 * *(&MAIN_HASH_CLASS + 3));
+  v6 = *(&MAIN_HASH_CLASS + 1);
+  *(&MAIN_HASH_CLASS + 9) = *(&MAIN_HASH_CLASS + 2);
+  *(&MAIN_HASH_CLASS + 8) = v6;
+  return &MAIN_HASH_CLASS;
 }
 #endif
 
@@ -7826,28 +7826,28 @@ int *FUN_00412790()
   unsigned int v5; // edx
   int v6; // eax
 
-  DAT_055c9bc8 = (int)&DAT_005524c8;
-  FUN_00406d20(&DAT_055c9bc8);
-  if ( *(&DAT_055c9bc8 + 6) )
+  MAIN_HASH_CLASS = (int)&DAT_005524c8;
+  FUN_00406d20(&MAIN_HASH_CLASS);
+  if ( *(&MAIN_HASH_CLASS + 6) )
   {
-    delete__((LPVOID)*(&DAT_055c9bc8 + 6));
+    delete__((LPVOID)*(&MAIN_HASH_CLASS + 6));
   }
   v0 = rand();
-  *(&DAT_055c9bc8 + 6) = operator_new(v0 % 3271 + 345);
-  *(&DAT_055c9bc8 + 3) = 1024;
+  *(&MAIN_HASH_CLASS + 6) = operator_new(v0 % 3271 + 345);
+  *(&MAIN_HASH_CLASS + 3) = 1024;
   v1 = operator_new(0x1000u);
-  v2 = *(&DAT_055c9bc8 + 3);
-  *(&DAT_055c9bc8 + 1) = v1;
+  v2 = *(&MAIN_HASH_CLASS + 3);
+  *(&MAIN_HASH_CLASS + 1) = v1;
   v3 = operator_new(4 * v2);
-  v4 = (void *)*(&DAT_055c9bc8 + 1);
-  v5 = 4 * *(&DAT_055c9bc8 + 3);
-  *(&DAT_055c9bc8 + 2) = v3;
+  v4 = (void *)*(&MAIN_HASH_CLASS + 1);
+  v5 = 4 * *(&MAIN_HASH_CLASS + 3);
+  *(&MAIN_HASH_CLASS + 2) = v3;
   memset(v4, 0, v5);
-  memset((void *)*(&DAT_055c9bc8 + 2), 0, 4 * *(&DAT_055c9bc8 + 3));
-  v6 = *(&DAT_055c9bc8 + 1);
-  *(&DAT_055c9bc8 + 9) = *(&DAT_055c9bc8 + 2);
-  *(&DAT_055c9bc8 + 8) = v6;
-  return &DAT_055c9bc8;
+  memset((void *)*(&MAIN_HASH_CLASS + 2), 0, 4 * *(&MAIN_HASH_CLASS + 3));
+  v6 = *(&MAIN_HASH_CLASS + 1);
+  *(&MAIN_HASH_CLASS + 9) = *(&MAIN_HASH_CLASS + 2);
+  *(&MAIN_HASH_CLASS + 8) = v6;
+  return &MAIN_HASH_CLASS;
 }
 #endif
 
@@ -8152,18 +8152,18 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
   v274 = &v8;
   v275 = 0;
   FUN_00406af0();
-  v103 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+  v103 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
   if ( v103 == -1 )
   {
     v101 = operator_new(5u);
     v239 = v101;
     v240 = v101;
     *(BYTE *)(v101 + 4) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v240, (int)&DAT_055ca01c);
+    HashTable_Insert(&MAIN_HASH_CLASS, v240, (int)&DAT_055ca01c);
   }
   else
   {
-    v102 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+    v102 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
     v237 = v102;
     if ( v102 == -1 )
     {
@@ -8176,13 +8176,13 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
     }
     if ( (unsigned char)++*(BYTE *)(v241 + 4) < 2u )
     {
-      FUN_00409e20(&DAT_055ca01c, v241);
+      Packet_DecryptDword(&DAT_055ca01c, v241);
     }
   }
-  v100 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+  v100 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
   if ( v100 != -1 )
   {
-    v99 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+    v99 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
     v234 = v99;
     if ( v99 == -1 )
     {
@@ -8195,7 +8195,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
     }
     if ( !--*(BYTE *)(v236 + 4) )
     {
-      FUN_00423760(v236, &DAT_055ca01c);
+      Packet_EncryptDword(v236, &DAT_055ca01c);
     }
   }
   OpenTextData();
@@ -8316,7 +8316,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
   CErrorReport::Write((DWORD)&g_ErrorReport, aGgInitSuccess);
   CErrorReport::WriteImeInfo((DWORD)&g_ErrorReport, g_hWnd);
   CErrorReport::AddSeparator((DWORD)&g_ErrorReport);
-  FUN_00406db0(&DAT_055c9bc8, (int)g_hWnd, 1025);// Esta función no aparece en el S5
+  FUN_00406db0(&MAIN_HASH_CLASS, (int)g_hWnd, 1025);// Esta función no aparece en el S5
   Width = WindowWidth;
   if ( WindowWidth > 1024 )
   {
@@ -8492,25 +8492,25 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
   {
     while ( !PeekMessageA(&msg, 0, 0, 0, 0) )
     {
-      v74 = FUN_004041e0(&DAT_055c9bc8, (int)&g_iNoMouseTime);
+      v74 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_iNoMouseTime);
       if...
       if ( ++g_iNoMouseTime > 30 )
       {
-        v71 = FUN_004041e0(&DAT_055c9bc8, (int)&g_iNoMouseTime);
+        v71 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_iNoMouseTime);
         if...
-        v69 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca024);
+        v69 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca024);
         if...
         if...
         if...
-        v31 = FUN_004041e0(&DAT_055c9bc8, (int)&g_iNoMouseTime);
+        v31 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_iNoMouseTime);
         if...
       }
-      v28 = FUN_004041e0(&DAT_055c9bc8, (int)&g_iNoMouseTime);
+      v28 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_iNoMouseTime);
       if...
-      v26 = FUN_004041e0(&DAT_055c9bc8, (int)&g_bWndActive);
+      v26 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_bWndActive);
       if...
       (BYTE)(v127) = g_bWndActive;
-      PACKET_ENCRYPT(&DAT_055c9bc8, &g_bWndActive);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_bWndActive);
       if ( (BYTE)v127 )
       {
         Scene_Dispatch(g_hDC);
@@ -8519,18 +8519,18 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
       {
         SetForegroundWindow(g_hWnd);
         SetFocus(g_hWnd);
-        v23 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+        v23 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
         if ( v23 == -1 )
         {
           v21 = operator_new(5u);
           v121 = v21;
           v122 = v21;
           *(BYTE *)(v21 + 4) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v122, (int)&DAT_055ca02c);
+          HashTable_Insert(&MAIN_HASH_CLASS, v122, (int)&DAT_055ca02c);
         }
         else
         {
-          v22 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+          v22 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
           v119 = v22;
           if ( v22 == -1 )
           {
@@ -8543,16 +8543,16 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
           }
           if ( (unsigned char)++*(BYTE *)(v123 + 4) < 2u )
           {
-            FUN_00409e20(&DAT_055ca02c, v123);
+            Packet_DecryptDword(&DAT_055ca02c, v123);
           }
         }
         if ( DAT_055ca02c <= 1 )
         {
           ++DAT_055ca02c;
-          v18 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+          v18 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
           if ( v18 != -1 )
           {
-            v17 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+            v17 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
             v113 = v17;
             if ( v17 == -1 )
             {
@@ -8565,21 +8565,21 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             }
             if ( !--*(BYTE *)(v115 + 4) )
             {
-              FUN_00423760(v115, &DAT_055ca02c);
+              Packet_EncryptDword(v115, &DAT_055ca02c);
             }
           }
-          v16 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+          v16 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
           if ( v16 == -1 )
           {
             v14 = operator_new(5u);
             v110 = v14;
             v111 = v14;
             *(BYTE *)(v14 + 4) = 1;
-            FUN_00403f80(&DAT_055c9bc8, v111, (int)&DAT_055ca01c);
+            HashTable_Insert(&MAIN_HASH_CLASS, v111, (int)&DAT_055ca01c);
           }
           else
           {
-            v15 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+            v15 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
             v108 = v15;
             if ( v15 == -1 )
             {
@@ -8592,50 +8592,50 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             }
             if ( (unsigned char)++*(BYTE *)(v112 + 4) < 2u )
             {
-              FUN_00409e20(&DAT_055ca01c, v112);
+              Packet_DecryptDword(&DAT_055ca01c, v112);
             }
           }
           DAT_055ca01c = 1;
-          v13 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+          v13 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
           if ( v13 != -1 )
           {
-            v12 = FUN_00404280(&DAT_055c9bc8, &DAT_055ca01c);
+            v12 = HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_055ca01c);
             v107 = v12;
             if ( !--*(BYTE *)(v107 + 4) )
             {
-              FUN_00423760(v107, &DAT_055ca01c);
+              Packet_EncryptDword(v107, &DAT_055ca01c);
             }
           }
           ShowWindow(g_hWnd, 6);
-          v11 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca01c);
+          v11 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca01c);
           if ( v11 == -1 )
           {
             v9 = operator_new(5u);
             v104 = v9;
             v105 = v9;
             *(BYTE *)(v9 + 4) = 1;
-            FUN_00403f80(&DAT_055c9bc8, v105, (int)&DAT_055ca01c);
+            HashTable_Insert(&MAIN_HASH_CLASS, v105, (int)&DAT_055ca01c);
           }
           else
           {
-            v10 = FUN_00404280(&DAT_055c9bc8, &DAT_055ca01c);
+            v10 = HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_055ca01c);
             v106 = v10;
             ++*(BYTE *)(v10 + 4);
             if ( *(unsigned char *)(v106 + 4) < 2u )
             {
-              FUN_00409e20(&DAT_055ca01c, v106);
+              Packet_DecryptDword(&DAT_055ca01c, v106);
             }
           }
           DAT_055ca01c = 0;
-          FUN_004233e0(&DAT_055c9bc8, &DAT_055ca01c);
+          FUN_004233e0(&MAIN_HASH_CLASS, &DAT_055ca01c);
           ShowWindow(g_hWnd, 3);
         }
         else
         {
-          v20 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+          v20 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
           if ( v20 != -1 )
           {
-            v19 = FUN_004041e0(&DAT_055c9bc8, (int)&DAT_055ca02c);
+            v19 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&DAT_055ca02c);
             v116 = v19;
             if ( v19 == -1 )
             {
@@ -8648,7 +8648,7 @@ int __stdcall FUN_00422074(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR sz
             }
             if ( !--*(BYTE *)(v118 + 4) )
             {
-              FUN_00423760(v118, &DAT_055ca02c);
+              Packet_EncryptDword(v118, &DAT_055ca02c);
             }
           }
           SetTimer(g_hWnd, 0x3E9u, 0x3E8u, 0);
@@ -8723,12 +8723,12 @@ void __cdecl FUN_00422c50(int _this)
   lpMem = v2;
   if ( v2[2] )
   {
-    FUN_004235d0(v2[2]);
+    CBTree_RemoveFrom(v2[2]);
     v2 = (LPVOID *)lpMem;
   }
   if ( v2[3] )
   {
-    FUN_004235d0(v2[3]);
+    CBTree_RemoveFrom(v2[3]);
     v2 = (LPVOID *)lpMem;
   }
   v11 = 0;
@@ -8790,7 +8790,7 @@ LABEL_27:
   while ( v4 );
   v6 = *v5;
   v7 = v5[1];
-  FUN_004232f0(&v11);
+  CBTree_RemoveNode(&v11);
   *(DWORD *)lpMem = v6;
   *((DWORD *)lpMem + 1) = v7;
   v3[2] = 0;
@@ -9128,7 +9128,7 @@ LABEL_6:
 LABEL_24:
     v22 = operator_new(5u);
     *(BYTE *)(v22 + 4) = 1;
-    FUN_00403f80(_this, v22, (int)v3);
+    HashTable_Insert(_this, v22, (int)v3);
   }
   v15 = *_this;
   v27 = *(DWORD *)v3;
@@ -9159,7 +9159,7 @@ LABEL_24:
           *(BYTE *)(v24 + 4) = v25;
           if ( !v25 )
           {
-            FUN_00423760((DWORD *)v24, a2);
+            Packet_EncryptDword((DWORD *)v24, a2);
           }
         }
         return v27;
@@ -9183,9 +9183,9 @@ LABEL_22:
 }
 #endif
 
-// ── FUN_0043daf0 (IDA-only, gated) ──
+// ── NetContext_ClearSendBuffer (IDA-only, gated) ──
 #if defined(IDA_PORT_0043DAF0)
-DWORD *__cdecl FUN_0043daf0(DWORD *_this)
+DWORD *__cdecl NetContext_ClearSendBuffer(DWORD *_this)
 {
   memset(_this + 4103, 0, 0x258960u);
   _this[4101] = 0;
@@ -9194,7 +9194,7 @@ DWORD *__cdecl FUN_0043daf0(DWORD *_this)
 }
 #endif
 
-// ── FUN_0043dc90 (IDA-only, gated) ──
+// ── CWsctlc_Close (IDA-only, gated) ──
 #if defined(IDA_PORT_0043DC90)
 BOOL __cdecl CWsctlc::Close(DWORD This)
 {
@@ -9205,9 +9205,9 @@ BOOL __cdecl CWsctlc::Close(DWORD This)
 }
 #endif
 
-// ── FUN_0043ddd0 (IDA-only, gated) ──
+// ── CWsctlc_FDWriteSend (IDA-only, gated) ──
 #if defined(IDA_PORT_0043DDD0)
-int __cdecl FUN_0043ddd0(const char *This)
+int __cdecl CWsctlc_FDWriteSend(const char *This)
 {
   int v2; // ebx
   const char *v3; // ebp
@@ -9255,9 +9255,9 @@ LABEL_10:
 }
 #endif
 
-// ── FUN_0043de70 (IDA-only, gated) ──
+// ── CWsctlc_nRecv (IDA-only, gated) ──
 #if defined(IDA_PORT_0043DE70)
-int __cdecl FUN_0043de70(SOCKET *_this)
+int __cdecl CWsctlc_nRecv(SOCKET *_this)
 {
   int v2; // eax
   int v4; // edx
@@ -9316,7 +9316,7 @@ int __cdecl FUN_0043de70(SOCKET *_this)
           }
           return 0;
         }
-        FUN_0043df90((char *)_this + v5 + 8208, v7);
+        CPacketQueue_PushPacket((char *)_this + v5 + 8208, v7);
         if ( _this[4101] )
         {
           nullsub_2((int)_this + v5 + 8208, v7);
@@ -9336,7 +9336,7 @@ int __cdecl FUN_0043de70(SOCKET *_this)
 }
 #endif
 
-// ── FUN_00442260 (IDA-only, gated) ──
+// ── BMD__FindNearTriangle (IDA-only, gated) ──
 #if defined(IDA_PORT_00442260)
 void __cdecl BMD::FindNearTriangle(DWORD This)
 {
@@ -9385,7 +9385,7 @@ void __cdecl BMD::FindNearTriangle(DWORD This)
 }
 #endif
 
-// ── FUN_004422f0 (IDA-only, gated) ──
+// ── BMD__FindTriangleForEdge (IDA-only, gated) ──
 #if defined(IDA_PORT_004422F0)
 void __cdecl BMD::FindTriangleForEdge(DWORD This, int iMesh, int iTri1, int iIndex11)
 {
@@ -9446,7 +9446,7 @@ LABEL_10:
 }
 #endif
 
-// ── FUN_00442e00 (IDA-only, gated) ──
+// ── BMD__Init (IDA-only, gated) ──
 #if defined(IDA_PORT_00442E00)
 void __cdecl BMD::Init(DWORD This, bool Dummy)
 {
@@ -9476,9 +9476,9 @@ void __cdecl BMD::Init(DWORD This, bool Dummy)
 }
 #endif
 
-// ── FUN_00444b30 (IDA-only, gated) ──
+// ── SetPlayerTeleport (IDA-only, gated) ──
 #if defined(IDA_PORT_00444B30)
-void __cdecl FUN_00444b30(DWORD o)
+void __cdecl SetPlayerTeleport(DWORD o)
 {
   if ( *(WORD *)(o + 2) == 390 )
   {
@@ -9491,7 +9491,7 @@ void __cdecl FUN_00444b30(DWORD o)
 }
 #endif
 
-// ── FUN_00445230 (IDA-only, gated) ──
+// ── AttackEffect (IDA-only, gated) ──
 #if defined(IDA_PORT_00445230)
 extern "C" void DbgLogPublic(const char* msg);   // probe AEDBG (temporal)
 
@@ -9522,7 +9522,7 @@ static DWORD      g_ErrorReport = 0;
 static BYTE g_AE_HashScratch[16];
 static inline DWORD AE_new(size_t)            { return (DWORD)(uintptr_t)g_AE_HashScratch; }
 static inline void  AE_delete(DWORD)          {}
-// Reemplaza el dispatch inline `(*(int(**)(int*,DWORD))(DAT_055c9bc8+12))(...)`.
+// Reemplaza el dispatch inline `(*(int(**)(int*,DWORD))(MAIN_HASH_CLASS+12))(...)`.
 // En nuestro build ese slot es HashFn_Sentinel (globals.cpp) y devuelve 0; el
 // shim evita el deref de vtable sin cambiar el comportamiento.
 static inline int AE_ht_hash(DWORD) { return 0; }
@@ -9536,37 +9536,37 @@ static inline unsigned char AE_SkillRead(const void* ctx, const void* p)
 // float*/void*. Se castea aca en vez de tocar los ~50 call sites.
 static inline float* AE_CreateEffect(int type, float* p1, float* p2, float* p3,
                                      int a4, int a5, int a6, int a7, int flag)
-{ return FUN_00460dc0(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
+{ return CreateEffect(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
                       (float*)(intptr_t)a6, (float*)(intptr_t)a7, (byte)flag); }
 static inline float* AE_CreateEffect(int type, float* p1, float* p2, float* p3,
                                      int a4, int a5, float* a6, int a7, int flag)
-{ return FUN_00460dc0(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
+{ return CreateEffect(type, p1, p2, p3, (float*)(intptr_t)a4, (float*)(intptr_t)a5,
                       a6, (float*)(intptr_t)a7, (byte)flag); }
 static inline void* AE_CreateJoint(int type, float* p1, float* p2, float* p3,
                                    int sub, int owner, double scale, int a, int b)
-{ return FUN_0046d840(type, p1, p2, p3, (unsigned int)sub, owner, (float)scale,
+{ return CreateJoint(type, p1, p2, p3, (unsigned int)sub, owner, (float)scale,
                       (short)a, (unsigned char)b); }
 static inline void AE_TransformPosition(DWORD model, const void* mat,
                                         float* pos, float* out, int flag)
-{ FUN_004409a0((void*)(uintptr_t)model, (float*)mat, pos, out, (char)flag); }
+{ BMD_TransformPosition((void*)(uintptr_t)model, (float*)mat, pos, out, (char)flag); }
 
 #define Models                        DAT_05828d58
 #define Matrix                        DAT_07abf444   // IDA `Matrix` @ 0x07ABF444
 #define operator_new(n)               AE_new((size_t)(n))
 #define delete__(p)                   AE_delete((DWORD)(uintptr_t)(p))
 #define FUN_004041e0(ctx, key)        AE_ht_index((const void*)(ctx), (DWORD)(key))
-#define FUN_00403f80(ctx, node, key)  AE_ht_noop3((const void*)(ctx), (DWORD)(uintptr_t)(node), (DWORD)(key))
-#define FUN_00423710(node, key)       AE_ht_noop2((const void*)(uintptr_t)(node), (DWORD)(uintptr_t)(key))
+#define HashTable_Insert(ctx, node, key)  AE_ht_noop3((const void*)(ctx), (DWORD)(uintptr_t)(node), (DWORD)(key))
+#define Packet_EncryptByte(node, key)       AE_ht_noop2((const void*)(uintptr_t)(node), (DWORD)(uintptr_t)(key))
 #define PACKET_ENCRYPT(ctx, key)      AE_ht_noop2((const void*)(ctx), (DWORD)(uintptr_t)(key))
 #define FUN_0045fae0(ctx, p)          AE_SkillRead((const void*)(ctx), (const void*)(p))
 #define FUN_00466300(pos)             FUN_00466300((float*)(uintptr_t)(pos))
 #define CreateJoint                   AE_CreateJoint
 #define TransformPosition(a,b,c,d,e)  AE_TransformPosition((DWORD)(uintptr_t)(a), (const void*)(b), (c), (d), (e))
-#define PlayBuffer(a,b,c)             FUN_00404bc0((a), (DWORD)(b), (BOOL)(c))
+#define PlayBuffer(a,b,c)             PlayBuffer((a), (DWORD)(b), (BOOL)(c))
 #undef  CreateEffect
 #define CreateEffect                  AE_CreateEffect
 
-void __cdecl FUN_00445230(int Owner)
+void __cdecl AttackEffect(int Owner)
 {
   // Guard de port (no esta en IDA): si la tabla de modelos todavia no esta
   // cargada, `Models + 188*type` seria un puntero basura que TransformPosition
@@ -9881,7 +9881,7 @@ void __cdecl FUN_00445230(int Owner)
             {
               break;
             }
-            v175 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v175 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v175 == -1 )
             {
               v176 = 0;
@@ -9920,7 +9920,7 @@ LABEL_263:
       }
       v174 = operator_new(2u);
       *(BYTE *)(v174 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v174, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v174, Owner + 770);
 LABEL_265:
       Ownert = *v171;
       v244 = (const char *)(Owner + 770);
@@ -9935,7 +9935,7 @@ LABEL_265:
           {
             if ( v242 != -1 )
             {
-              v181 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v181 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v182 = v181 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v181);
               v183 = v182[1] - 1;
               v182[1] = v183;
@@ -9998,7 +9998,7 @@ LABEL_269:
               break;
             }
             v189 = (char *)(Owner + 770);
-            v192 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v192 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v192 == -1 )
             {
               v193 = 0;
@@ -10039,10 +10039,10 @@ LABEL_291:
       v188 = operator_new(2u);
       v189 = (char *)(Owner + 770);
       *(BYTE *)(v188 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v188, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v188, Owner + 770);
 LABEL_293:
       v190 = *v189;
-      PACKET_ENCRYPT(&DAT_055c9bc8, v189);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, v189);
       if ( v190 == 50 )
       {
         if ( *(BYTE *)(Owner + 757) == 1 )
@@ -10081,7 +10081,7 @@ LABEL_293:
             {
               break;
             }
-            v156 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v156 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v156 == -1 )
             {
               v157 = 0;
@@ -10120,7 +10120,7 @@ LABEL_236:
       }
       v155 = operator_new(2u);
       *(BYTE *)(v155 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v155, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v155, Owner + 770);
 LABEL_238:
       Ownerr = *v152;
       v244 = (const char *)(Owner + 770);
@@ -10135,7 +10135,7 @@ LABEL_238:
           {
             if ( v241 != -1 )
             {
-              v162 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v162 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v163 = v162 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v162);
               v164 = v163[1] - 1;
               v163[1] = v164;
@@ -10236,7 +10236,7 @@ LABEL_242:
             {
               break;
             }
-            v135 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v135 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v135 == -1 )
             {
               v136 = 0;
@@ -10275,7 +10275,7 @@ LABEL_208:
       }
       v134 = operator_new(2u);
       *(BYTE *)(v134 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v134, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v134, Owner + 770);
 LABEL_210:
       Ownerp = *v131;
       v244 = (const char *)(Owner + 770);
@@ -10290,7 +10290,7 @@ LABEL_210:
           {
             if ( v240 != -1 )
             {
-              v141 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v141 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v142 = v141 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v141);
               v143 = v142[1] - 1;
               v142[1] = v143;
@@ -10370,7 +10370,7 @@ LABEL_214:
               {
                 break;
               }
-              v119 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v119 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               if ( v119 == -1 )
               {
                 v120 = 0;
@@ -10410,7 +10410,7 @@ LABEL_179:
         }
         v118 = operator_new(2u);
         *(BYTE *)(v118 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v118, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v118, Owner + 770);
 LABEL_181:
         Ownerm = *v117;
         v244 = (const char *)(Owner + 770);
@@ -10425,13 +10425,13 @@ LABEL_181:
             {
               if ( v239 != -1 )
               {
-                v125 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+                v125 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
                 v126 = v125 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v125);
                 v127 = v126[1] - 1;
                 v126[1] = v127;
                 if ( !v127 )
                 {
-                  FUN_00423710(v126, (BYTE *)(Owner + 770));
+                  Packet_EncryptByte(v126, (BYTE *)(Owner + 770));
                 }
               }
               break;
@@ -10524,7 +10524,7 @@ LABEL_185:
               {
                 break;
               }
-              v84 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v84 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               if ( v84 == -1 )
               {
                 v85 = 0;
@@ -10563,7 +10563,7 @@ LABEL_114:
         }
         v83 = operator_new(2u);
         *(BYTE *)(v83 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v83, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v83, Owner + 770);
 LABEL_116:
         Ownerh = *v80;
         v244 = (const char *)(Owner + 770);
@@ -10578,7 +10578,7 @@ LABEL_116:
             {
               if ( v237 != -1 )
               {
-                v90 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+                v90 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
                 v91 = v90 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v90);
                 v92 = v91[1] - 1;
                 v91[1] = v92;
@@ -10663,7 +10663,7 @@ LABEL_120:
             {
               break;
             }
-            v102 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v102 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v102 == -1 )
             {
               v103 = 0;
@@ -10702,7 +10702,7 @@ LABEL_146:
       }
       v101 = operator_new(2u);
       *(BYTE *)(v101 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v101, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v101, Owner + 770);
 LABEL_148:
       Ownerk = *v98;
       v244 = (const char *)(Owner + 770);
@@ -10717,7 +10717,7 @@ LABEL_148:
           {
             if ( v238 != -1 )
             {
-              v108 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v108 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v109 = v108 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v108);
               v110 = v109[1] - 1;
               v109[1] = v110;
@@ -10798,7 +10798,7 @@ LABEL_152:
             {
               break;
             }
-            v31 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v31 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v31 == -1 )
             {
               v32 = 0;
@@ -10837,7 +10837,7 @@ LABEL_44:
       }
       v30 = operator_new(2u);
       *(BYTE *)(v30 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v30, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v30, Owner + 770);
 LABEL_46:
       Ownerd = *v27;
       v244 = (const char *)(Owner + 770);
@@ -10852,7 +10852,7 @@ LABEL_46:
           {
             if ( v235 != -1 )
             {
-              v37 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v37 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v38 = v37 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v37);
               v39 = v38[1] - 1;
               v38[1] = v39;
@@ -11004,7 +11004,7 @@ LABEL_50:
             {
               break;
             }
-            v65 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v65 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v65 == -1 )
             {
               v66 = 0;
@@ -11043,7 +11043,7 @@ LABEL_82:
       }
       v64 = operator_new(2u);
       *(BYTE *)(v64 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v64, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v64, Owner + 770);
 LABEL_84:
       Ownerf = *v61;
       v244 = (const char *)(Owner + 770);
@@ -11058,7 +11058,7 @@ LABEL_84:
           {
             if ( v236 != -1 )
             {
-              v71 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v71 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v72 = v71 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v71);
               v73 = v72[1] - 1;
               v72[1] = v73;
@@ -11133,7 +11133,7 @@ LABEL_88:
             {
               break;
             }
-            v8 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v8 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v8 == -1 )
             {
               v9 = 0;
@@ -11173,7 +11173,7 @@ LABEL_6:
       }
       v7 = operator_new(2u);
       *(BYTE *)(v7 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v7, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v7, Owner + 770);
 LABEL_8:
       Ownerb = *v4;
       v245 = Owner + 770;
@@ -11188,7 +11188,7 @@ LABEL_8:
           {
             if ( v234 != -1 )
             {
-              v14 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v14 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v15 = v14 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v14);
               v16 = v15[1] - 1;
               v15[1] = v16;
@@ -11244,7 +11244,7 @@ LABEL_30:
       }
       break;
     case 103:
-      if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 50 )
+      if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 50 )
       {
         TargetPosition[0] = (double)(rand() % 1024) + *(float *)(Owner + 16) - 512.0;
         v198 = (double)(rand() % 1024) + *(float *)(Owner + 20);
@@ -11265,7 +11265,7 @@ LABEL_75:
   if ( v202 >= 0 && v202 < 400 && CharactersClient )
   {
     v203 = CharactersClient + 916 * v202;
-    if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 17 )
+    if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 17 )
     {
       switch ( *(BYTE *)(Owner + 747) )
       {
@@ -11482,7 +11482,7 @@ LABEL_75:
           return;
       }
     }
-    else if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 3 )
+    else if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 3 )
     {
       switch ( *(BYTE *)(Owner + 747) )
       {
@@ -11637,8 +11637,8 @@ LABEL_75:
 #undef operator_new
 #undef delete__
 #undef FUN_004041e0
-#undef FUN_00403f80
-#undef FUN_00423710
+#undef HashTable_Insert
+#undef Packet_EncryptByte
 #undef PACKET_ENCRYPT
 #undef FUN_0045fae0
 #undef FUN_00466300
@@ -11646,7 +11646,7 @@ LABEL_75:
 #undef TransformPosition
 #undef PlayBuffer
 #undef CreateEffect
-#define CreateEffect FUN_00460dc0
+#define CreateEffect CreateEffect
 #endif
 
 // ── FUN_004454fc (IDA-only, gated) ──
@@ -11961,7 +11961,7 @@ void __cdecl FUN_004454fc(DWORD Owner)
             {
               break;
             }
-            v175 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v175 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v175 == -1 )
             {
               v176 = 0;
@@ -12000,7 +12000,7 @@ LABEL_263:
       }
       v174 = operator_new(2u);
       *(BYTE *)(v174 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v174, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v174, Owner + 770);
 LABEL_265:
       Ownert = *v171;
       v244 = (const char *)(Owner + 770);
@@ -12015,7 +12015,7 @@ LABEL_265:
           {
             if ( v242 != -1 )
             {
-              v181 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v181 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v182 = v181 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v181);
               v183 = v182[1] - 1;
               v182[1] = v183;
@@ -12078,7 +12078,7 @@ LABEL_269:
               break;
             }
             v189 = (char *)(Owner + 770);
-            v192 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v192 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v192 == -1 )
             {
               v193 = 0;
@@ -12119,10 +12119,10 @@ LABEL_291:
       v188 = operator_new(2u);
       v189 = (char *)(Owner + 770);
       *(BYTE *)(v188 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v188, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v188, Owner + 770);
 LABEL_293:
       v190 = *v189;
-      PACKET_ENCRYPT(&DAT_055c9bc8, v189);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, v189);
       if ( v190 == 50 )
       {
         if ( *(BYTE *)(Owner + 757) == 1 )
@@ -12161,7 +12161,7 @@ LABEL_293:
             {
               break;
             }
-            v156 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v156 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v156 == -1 )
             {
               v157 = 0;
@@ -12200,7 +12200,7 @@ LABEL_236:
       }
       v155 = operator_new(2u);
       *(BYTE *)(v155 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v155, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v155, Owner + 770);
 LABEL_238:
       Ownerr = *v152;
       v244 = (const char *)(Owner + 770);
@@ -12215,7 +12215,7 @@ LABEL_238:
           {
             if ( v241 != -1 )
             {
-              v162 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v162 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v163 = v162 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v162);
               v164 = v163[1] - 1;
               v163[1] = v164;
@@ -12316,7 +12316,7 @@ LABEL_242:
             {
               break;
             }
-            v135 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v135 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v135 == -1 )
             {
               v136 = 0;
@@ -12355,7 +12355,7 @@ LABEL_208:
       }
       v134 = operator_new(2u);
       *(BYTE *)(v134 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v134, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v134, Owner + 770);
 LABEL_210:
       Ownerp = *v131;
       v244 = (const char *)(Owner + 770);
@@ -12370,7 +12370,7 @@ LABEL_210:
           {
             if ( v240 != -1 )
             {
-              v141 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v141 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v142 = v141 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v141);
               v143 = v142[1] - 1;
               v142[1] = v143;
@@ -12450,7 +12450,7 @@ LABEL_214:
               {
                 break;
               }
-              v119 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v119 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               if ( v119 == -1 )
               {
                 v120 = 0;
@@ -12490,7 +12490,7 @@ LABEL_179:
         }
         v118 = operator_new(2u);
         *(BYTE *)(v118 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v118, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v118, Owner + 770);
 LABEL_181:
         Ownerm = *v117;
         v244 = (const char *)(Owner + 770);
@@ -12505,13 +12505,13 @@ LABEL_181:
             {
               if ( v239 != -1 )
               {
-                v125 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+                v125 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
                 v126 = v125 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v125);
                 v127 = v126[1] - 1;
                 v126[1] = v127;
                 if ( !v127 )
                 {
-                  FUN_00423710(v126, (BYTE *)(Owner + 770));
+                  Packet_EncryptByte(v126, (BYTE *)(Owner + 770));
                 }
               }
               break;
@@ -12604,7 +12604,7 @@ LABEL_185:
               {
                 break;
               }
-              v84 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v84 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               if ( v84 == -1 )
               {
                 v85 = 0;
@@ -12643,7 +12643,7 @@ LABEL_114:
         }
         v83 = operator_new(2u);
         *(BYTE *)(v83 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v83, Owner + 770);
+        HashTable_Insert(&MAIN_HASH_CLASS, v83, Owner + 770);
 LABEL_116:
         Ownerh = *v80;
         v244 = (const char *)(Owner + 770);
@@ -12658,7 +12658,7 @@ LABEL_116:
             {
               if ( v237 != -1 )
               {
-                v90 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+                v90 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
                 v91 = v90 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v90);
                 v92 = v91[1] - 1;
                 v91[1] = v92;
@@ -12743,7 +12743,7 @@ LABEL_120:
             {
               break;
             }
-            v102 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v102 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v102 == -1 )
             {
               v103 = 0;
@@ -12782,7 +12782,7 @@ LABEL_146:
       }
       v101 = operator_new(2u);
       *(BYTE *)(v101 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v101, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v101, Owner + 770);
 LABEL_148:
       Ownerk = *v98;
       v244 = (const char *)(Owner + 770);
@@ -12797,7 +12797,7 @@ LABEL_148:
           {
             if ( v238 != -1 )
             {
-              v108 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v108 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v109 = v108 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v108);
               v110 = v109[1] - 1;
               v109[1] = v110;
@@ -12878,7 +12878,7 @@ LABEL_152:
             {
               break;
             }
-            v31 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v31 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v31 == -1 )
             {
               v32 = 0;
@@ -12917,7 +12917,7 @@ LABEL_44:
       }
       v30 = operator_new(2u);
       *(BYTE *)(v30 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v30, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v30, Owner + 770);
 LABEL_46:
       Ownerd = *v27;
       v244 = (const char *)(Owner + 770);
@@ -12932,7 +12932,7 @@ LABEL_46:
           {
             if ( v235 != -1 )
             {
-              v37 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v37 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v38 = v37 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v37);
               v39 = v38[1] - 1;
               v38[1] = v39;
@@ -13084,7 +13084,7 @@ LABEL_50:
             {
               break;
             }
-            v65 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v65 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v65 == -1 )
             {
               v66 = 0;
@@ -13123,7 +13123,7 @@ LABEL_82:
       }
       v64 = operator_new(2u);
       *(BYTE *)(v64 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v64, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v64, Owner + 770);
 LABEL_84:
       Ownerf = *v61;
       v244 = (const char *)(Owner + 770);
@@ -13138,7 +13138,7 @@ LABEL_84:
           {
             if ( v236 != -1 )
             {
-              v71 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v71 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v72 = v71 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v71);
               v73 = v72[1] - 1;
               v72[1] = v73;
@@ -13213,7 +13213,7 @@ LABEL_88:
             {
               break;
             }
-            v8 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+            v8 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
             if ( v8 == -1 )
             {
               v9 = 0;
@@ -13253,7 +13253,7 @@ LABEL_6:
       }
       v7 = operator_new(2u);
       *(BYTE *)(v7 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v7, Owner + 770);
+      HashTable_Insert(&MAIN_HASH_CLASS, v7, Owner + 770);
 LABEL_8:
       Ownerb = *v4;
       v245 = Owner + 770;
@@ -13268,7 +13268,7 @@ LABEL_8:
           {
             if ( v234 != -1 )
             {
-              v14 = FUN_004041e0(&DAT_055c9bc8, Owner + 770);
+              v14 = FUN_004041e0(&MAIN_HASH_CLASS, Owner + 770);
               v15 = v14 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v14);
               v16 = v15[1] - 1;
               v15[1] = v16;
@@ -13324,7 +13324,7 @@ LABEL_30:
       }
       break;
     case 103:
-      if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 50 )
+      if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 50 )
       {
         TargetPosition[0] = (double)(rand() % 1024) + *(float *)(Owner + 16) - 512.0;
         v198 = (double)(rand() % 1024) + *(float *)(Owner + 20);
@@ -13345,7 +13345,7 @@ LABEL_75:
   if ( v202 >= 0 && v202 < 400 && CharactersClient )
   {
     v203 = CharactersClient + 916 * v202;
-    if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 17 )
+    if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 17 )
     {
       switch ( *(BYTE *)(Owner + 747) )
       {
@@ -13562,7 +13562,7 @@ LABEL_75:
           return;
       }
     }
-    else if ( FUN_0045fae0(&DAT_055c9bc8, (BYTE *)(Owner + 770)) == 3 )
+    else if ( FUN_0045fae0(&MAIN_HASH_CLASS, (BYTE *)(Owner + 770)) == 3 )
     {
       switch ( *(BYTE *)(Owner + 747) )
       {
@@ -13743,9 +13743,9 @@ void __cdecl FUN_00452030(int a1)
 }
 #endif
 
-// ── FUN_0045c720 (IDA-only, gated) ──
+// ── Character_UpdateEquipSlotAnimations (IDA-only, gated) ──
 #if defined(IDA_PORT_0045C720)
-void __cdecl FUN_0045c720(DWORD c)
+void __cdecl Character_UpdateEquipSlotAnimations(DWORD c)
 {
   unsigned char v1; // al
   char v2; // cl
@@ -13899,7 +13899,7 @@ LABEL_6:
 LABEL_20:
     v22 = operator_new(2u);
     *(BYTE *)(v22 + 1) = 1;
-    FUN_00403f80(_this, v22, (int)v3);
+    HashTable_Insert(_this, v22, (int)v3);
   }
   v15 = *_this;
   v26 = *v3;
@@ -13930,7 +13930,7 @@ LABEL_20:
           v24[1] = v25;
           if ( !v25 )
           {
-            FUN_00423710(v24, a2);
+            Packet_EncryptByte(v24, a2);
           }
         }
         return v26;
@@ -14134,14 +14134,14 @@ void __cdecl FUN_0046c7f0(int a1, float *a2, float a3, float a4, float a5)
       v13 = rand() % 4;
       Particle_Spawn(1195, out, v5, Light, v13, 1.0, 0);
     }
-    AddTerrainLight(out[0], out[1], Light, 4, PrimaryTerrainLight[0]);
+    AddTerrainLight(out[0], out[1], (float*)Light, 4, (float*)PrimaryTerrainLight[0]);
   }
 }
 #endif
 
-// ── FUN_004797b0 (IDA-only, gated) ──
+// ── SkillAttribute_LoadNames (IDA-only, gated) ──
 #if defined(IDA_PORT_004797B0)
-FILE *__cdecl FUN_004797b0(char *FileName)
+FILE *__cdecl SkillAttribute_LoadNames(char *FileName)
 {
   FILE *result; // eax
   int v2; // esi
@@ -14169,9 +14169,9 @@ FILE *__cdecl FUN_004797b0(char *FileName)
 }
 #endif
 
-// ── FUN_00479830 (IDA-only, gated) ──
+// ── LoadGlobalTextBin (IDA-only, gated) ──
 #if defined(IDA_PORT_00479830)
-int __cdecl FUN_00479830(char *FileName)
+int __cdecl LoadGlobalTextBin(char *FileName)
 {
   FILE *v1; // ebp
   void *v3; // ebx
@@ -14207,9 +14207,9 @@ int __cdecl FUN_00479830(char *FileName)
 }
 #endif
 
-// ── FUN_00479950 (IDA-only, gated) ──
+// ── SkillAttribute_SaveBin (IDA-only, gated) ──
 #if defined(IDA_PORT_00479950)
-int __cdecl FUN_00479950(FILE *Stream)
+int __cdecl SkillAttribute_SaveBin(FILE *Stream)
 {
   char (*v1)[300]; // ebx
   char (*v2)[300]; // ebp
@@ -14222,7 +14222,7 @@ int __cdecl FUN_00479950(FILE *Stream)
   {
     qmemcpy(v1, v2, sizeof(char[300]));
     BuxConvert_0((BYTE *)v1, 300);
-    FUN_005430f0(v1, 0x12Cu, 1u, Streama);
+    crt_fwrite(v1, 0x12Cu, 1u, Streama);
     ++v2;
   }
   while ( (int)v2 < (int)DAT_07d73104 );
@@ -14231,9 +14231,9 @@ int __cdecl FUN_00479950(FILE *Stream)
 }
 #endif
 
-// ── FUN_00479a50 (IDA-only, gated) ──
+// ── Filter_SaveBMD (IDA-only, gated) ──
 #if defined(IDA_PORT_00479A50)
-int __cdecl FUN_00479a50(char *FileName)
+int __cdecl Filter_SaveBMD(char *FileName)
 {
   char *v1; // ebx
   char *v2; // ebp
@@ -14277,16 +14277,16 @@ int __cdecl FUN_00479a50(char *FileName)
     }
   }
   Buffer = v3;
-  FUN_005430f0(FileNamea, 0x4E20u, 1u, Stream);
-  FUN_005430f0(&Buffer, 4u, 1u, Stream);
+  crt_fwrite(FileNamea, 0x4E20u, 1u, Stream);
+  crt_fwrite(&Buffer, 4u, 1u, Stream);
   delete__(FileNamea);
   return fclose(Stream);
 }
 #endif
 
-// ── FUN_00479b30 (IDA-only, gated) ──
+// ── OpenFilterFile (IDA-only, gated) ──
 #if defined(IDA_PORT_00479B30)
-void __cdecl FUN_00479b30(char *FileName)
+void __cdecl OpenFilterFile(char *FileName)
 {
   FILE *v1; // esi
   char *v2; // ebp
@@ -14370,9 +14370,9 @@ LABEL_18:
 }
 #endif
 
-// ── FUN_00479cf0 (IDA-only, gated) ──
+// ── FilterName_LoadData (IDA-only, gated) ──
 #if defined(IDA_PORT_00479CF0)
-FILE *__cdecl FUN_00479cf0(char *FileName)
+FILE *__cdecl FilterName_LoadData(char *FileName)
 {
   FILE *result; // eax
   int v2; // edx
@@ -14393,9 +14393,9 @@ FILE *__cdecl FUN_00479cf0(char *FileName)
 }
 #endif
 
-// ── FUN_00479d70 (IDA-only, gated) ──
+// ── FilterName_SaveBMD (IDA-only, gated) ──
 #if defined(IDA_PORT_00479D70)
-int __cdecl FUN_00479d70(char *FileName)
+int __cdecl FilterName_SaveBMD(char *FileName)
 {
   char *v1; // ebx
   char *v2; // ebp
@@ -14439,16 +14439,16 @@ int __cdecl FUN_00479d70(char *FileName)
     }
   }
   Buffer = v3;
-  FUN_005430f0(FileNamea, 0x4E20u, 1u, Stream);
-  FUN_005430f0(&Buffer, 4u, 1u, Stream);
+  crt_fwrite(FileNamea, 0x4E20u, 1u, Stream);
+  crt_fwrite(&Buffer, 4u, 1u, Stream);
   delete__(FileNamea);
   return fclose(Stream);
 }
 #endif
 
-// ── FUN_00479e50 (IDA-only, gated) ──
+// ── OpenNameFilterFile (IDA-only, gated) ──
 #if defined(IDA_PORT_00479E50)
-void __cdecl FUN_00479e50(char *FileName)
+void __cdecl OpenNameFilterFile(char *FileName)
 {
   FILE *v1; // esi
   char *v2; // ebp
@@ -14581,9 +14581,9 @@ short __cdecl FUN_0047d000(WORD *a1)
 }
 #endif
 
-// ── FUN_0047e350 (IDA-only, gated) ──
+// ── CalculateNextExperince (IDA-only, gated) ──
 #if defined(IDA_PORT_0047E350)
-int __cdecl FUN_0047e350(int _this)
+int __cdecl CalculateNextExperince(int _this)
 {
   unsigned short v1; // di
   int result; // eax
@@ -14602,7 +14602,7 @@ int __cdecl FUN_0047e350(int _this)
 }
 #endif
 
-// ── FUN_0047e4f0 (IDA-only, gated) ──
+// ── CHARACTER_MACHINE_GetMagicSkillDamage (IDA-only, gated) ──
 #if defined(IDA_PORT_0047E4F0)
 void __cdecl CHARACTER_MACHINE::GetMagicSkillDamage(DWORD This, int iType, int *piMinDamage, int *piMaxDamage)
 {
@@ -14637,7 +14637,7 @@ void __cdecl CHARACTER_MACHINE::GetMagicSkillDamage(DWORD This, int iType, int *
   iTypea = &SkillAttribute[40 * iType];
   v5 = (int)iTypea;
   v25 = iTypea;
-  v6 = (*(int (__cdecl **)(int *, BYTE *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, iTypea);
+  v6 = (*(int (__cdecl **)(int *, BYTE *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, iTypea);
   v24 = 0;
   v23 = 0;
   if...
@@ -14647,7 +14647,7 @@ void __cdecl CHARACTER_MACHINE::GetMagicSkillDamage(DWORD This, int iType, int *
   *piMaxDamage = (*v17 >> 1) + *v17 + *(unsigned short *)(v16 + 72);
   v18 = (int *)&SkillAttribute[v4];
   piMaxDamage = v18;
-  v19 = (*(int (__cdecl **)(int *, int *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, v18);
+  v19 = (*(int (__cdecl **)(int *, int *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, v18);
   piMinDamage = 0;
   iTypeb = 0;
   if...
@@ -14774,7 +14774,7 @@ char __cdecl FUN_0047fed0(int a1, const char *a2)
 
   v2 = (void *)CharacterMachine;
   v22 = CharacterMachine;
-  v3 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v3 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v21 = 0;
   v19 = 0;
   if ( DAT_055c9bd4 )
@@ -14787,7 +14787,7 @@ char __cdecl FUN_0047fed0(int a1, const char *a2)
         {
           break;
         }
-        v8 = FUN_004041e0(&DAT_055c9bc8, (int)v2);
+        v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v2);
         if ( v8 == -1 )
         {
           v9 = 0;
@@ -14835,12 +14835,12 @@ LABEL_5:
   }
   v5 = operator_new(0x585u);
   *(BYTE *)(v5 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v5, (int)v2);
+  HashTable_Insert(&MAIN_HASH_CLASS, v5, (int)v2);
 LABEL_7:
   v6 = (const void *)CharacterMachine;
   v23 = *(unsigned short *)(CharacterAttribute + 14);
   v21 = CharacterMachine;
-  v7 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v7 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v22 = 0;
   v20 = 0;
   if ( DAT_055c9bd4 )
@@ -14851,7 +14851,7 @@ LABEL_7:
       {
         if ( v7 != -1 )
         {
-          v14 = FUN_004041e0(&DAT_055c9bc8, (int)v6);
+          v14 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v6);
           if ( v14 == -1 )
           {
             v15 = 0;
@@ -14864,7 +14864,7 @@ LABEL_7:
           v15[1412] = v16;
           if ( !v16 )
           {
-            FUN_00404400(v15, v6);
+            Packet_EncryptBuffer(v15, v6);
           }
         }
         break;
@@ -15631,7 +15631,7 @@ int FUN_004824c0()
 
   v0 = (void *)CharacterMachine;
   v26 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v25 = 0;
   v23 = 0;
   if ( DAT_055c9bd4 )
@@ -15644,12 +15644,12 @@ int FUN_004824c0()
         {
           break;
         }
-        v3 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v0);
+        v3 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v0);
         v4 = v3[1412] + 1;
         v3[1412] = v4;
         if ( v4 < 2u )
         {
-          FUN_00404370(v0, v3);
+          Packet_DecryptBuffer(v0, v3);
         }
         goto LABEL_9;
       }
@@ -15668,7 +15668,7 @@ LABEL_5:
   }
   v8 = operator_new(0x585u);
   *(BYTE *)(v8 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v8, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v8, (int)v0);
 LABEL_9:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
   {
@@ -15677,7 +15677,7 @@ LABEL_9:
     v28 = *(short *)(CharacterMachine + 604);
     v24 = v6;
     v27 = CharacterMachine;
-    v7 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v7 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v26 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -15688,13 +15688,13 @@ LABEL_9:
         {
           if ( v7 != -1 )
           {
-            v9 = FUN_004041e0(&DAT_055c9bc8, (int)v5);
+            v9 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v5);
             v10 = v9 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v9);
             v11 = v10[1412] - 1;
             v10[1412] = v11;
             if ( !v11 )
             {
-              FUN_00404400(v10, v5);
+              Packet_EncryptBuffer(v10, v5);
             }
           }
           break;
@@ -15753,7 +15753,7 @@ LABEL_35:
   {
     v18 = (const void *)CharacterMachine;
     v27 = CharacterMachine;
-    v19 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v19 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v28 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -15764,13 +15764,13 @@ LABEL_35:
         {
           if ( v19 != -1 )
           {
-            v20 = FUN_004041e0(&DAT_055c9bc8, (int)v18);
+            v20 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v18);
             v21 = v20 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v20);
             v22 = v21[1412] - 1;
             v21[1412] = v22;
             if ( !v22 )
             {
-              FUN_00404400(v21, v18);
+              Packet_EncryptBuffer(v21, v18);
             }
           }
           return -1;
@@ -15831,7 +15831,7 @@ int FUN_004824c0()
 
   v0 = (void *)CharacterMachine;
   v26 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v25 = 0;
   v23 = 0;
   if ( DAT_055c9bd4 )
@@ -15844,12 +15844,12 @@ int FUN_004824c0()
         {
           break;
         }
-        v3 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v0);
+        v3 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v0);
         v4 = v3[1412] + 1;
         v3[1412] = v4;
         if ( v4 < 2u )
         {
-          FUN_00404370(v0, v3);
+          Packet_DecryptBuffer(v0, v3);
         }
         goto LABEL_9;
       }
@@ -15868,7 +15868,7 @@ LABEL_5:
   }
   v8 = operator_new(0x585u);
   *(BYTE *)(v8 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v8, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v8, (int)v0);
 LABEL_9:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
   {
@@ -15877,7 +15877,7 @@ LABEL_9:
     v28 = *(short *)(CharacterMachine + 604);
     v24 = v6;
     v27 = CharacterMachine;
-    v7 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v7 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v26 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -15888,13 +15888,13 @@ LABEL_9:
         {
           if ( v7 != -1 )
           {
-            v9 = FUN_004041e0(&DAT_055c9bc8, (int)v5);
+            v9 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v5);
             v10 = v9 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v9);
             v11 = v10[1412] - 1;
             v10[1412] = v11;
             if ( !v11 )
             {
-              FUN_00404400(v10, v5);
+              Packet_EncryptBuffer(v10, v5);
             }
           }
           break;
@@ -15953,7 +15953,7 @@ LABEL_35:
   {
     v18 = (const void *)CharacterMachine;
     v27 = CharacterMachine;
-    v19 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v19 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v28 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -15964,13 +15964,13 @@ LABEL_35:
         {
           if ( v19 != -1 )
           {
-            v20 = FUN_004041e0(&DAT_055c9bc8, (int)v18);
+            v20 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v18);
             v21 = v20 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v20);
             v22 = v21[1412] - 1;
             v21[1412] = v22;
             if ( !v22 )
             {
-              FUN_00404400(v21, v18);
+              Packet_EncryptBuffer(v21, v18);
             }
           }
           return -1;
@@ -16030,7 +16030,7 @@ int FUN_00482850()
 
   v0 = (void *)CharacterMachine;
   v26 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v25 = 0;
   v23 = 0;
   if ( DAT_055c9bd4 )
@@ -16043,12 +16043,12 @@ int FUN_00482850()
         {
           break;
         }
-        v7 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v0);
+        v7 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v0);
         v8 = v7[1412] + 1;
         v7[1412] = v8;
         if ( v8 < 2u )
         {
-          FUN_00404370(v0, v7);
+          Packet_DecryptBuffer(v0, v7);
         }
         goto LABEL_7;
       }
@@ -16067,7 +16067,7 @@ LABEL_5:
   }
   v3 = operator_new(0x585u);
   *(BYTE *)(v3 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v3, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v3, (int)v0);
 LABEL_7:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
   {
@@ -16076,7 +16076,7 @@ LABEL_7:
     v28 = *(short *)(CharacterMachine + 604);
     v24 = v5;
     v27 = CharacterMachine;
-    v6 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v6 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v26 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -16087,13 +16087,13 @@ LABEL_7:
         {
           if ( v6 != -1 )
           {
-            v9 = FUN_004041e0(&DAT_055c9bc8, (int)v4);
+            v9 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v4);
             v10 = v9 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v9);
             v11 = v10[1412] - 1;
             v10[1412] = v11;
             if ( !v11 )
             {
-              FUN_00404400(v10, v4);
+              Packet_EncryptBuffer(v10, v4);
             }
           }
           break;
@@ -16150,7 +16150,7 @@ LABEL_13:
   {
     v18 = (const void *)CharacterMachine;
     v27 = CharacterMachine;
-    v19 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v19 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v28 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -16161,13 +16161,13 @@ LABEL_13:
         {
           if ( v19 != -1 )
           {
-            v20 = FUN_004041e0(&DAT_055c9bc8, (int)v18);
+            v20 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v18);
             v21 = v20 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v20);
             v22 = v21[1412] - 1;
             v21[1412] = v22;
             if ( !v22 )
             {
-              FUN_00404400(v21, v18);
+              Packet_EncryptBuffer(v21, v18);
             }
           }
           return 0;
@@ -16227,7 +16227,7 @@ LABEL_2:
 }
 #endif
 
-// ── FUN_00482dd0 (IDA-only, gated) ──
+// ── CSQuest_FindQuestItemsInInven (IDA-only, gated) ──
 #if defined(IDA_PORT_00482DD0)
 int __cdecl CSQuest::FindQuestItemsInInven(DWORD This, int nType, int nCount, int nLevel)
 {
@@ -16300,9 +16300,9 @@ int __cdecl FUN_00482ff0(int iType, int iLevel)
 }
 #endif
 
-// ── FUN_00485780 (IDA-only, gated) ──
+// ── UseSkillWarrior (IDA-only, gated) ──
 #if defined(IDA_PORT_00485780)
-void __cdecl FUN_00485780(DWORD c, DWORD o)
+void __cdecl UseSkillWarrior(DWORD c, DWORD o)
 {
   void *v2; // esi
   unsigned int v3; // eax
@@ -16639,15 +16639,15 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
   int v334; // [esp+DCCh] [ebp-4h]
 
   v2 = (void *)CharacterMachine;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
   {
     v6 = operator_new(0x585u);
     *(BYTE *)(v6 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v6, (int)v2);
+    HashTable_Insert(&MAIN_HASH_CLASS, v6, (int)v2);
   }
   else
   {
-    v3 = FUN_004041e0(&DAT_055c9bc8, (int)v2);
+    v3 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v2);
     if ( v3 == -1 )
     {
       v4 = 0;
@@ -16660,7 +16660,7 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
     v4[1412] = v5;
     if ( v5 < 2u )
     {
-      FUN_00404370(v2, v4);
+      Packet_DecryptBuffer(v2, v4);
     }
   }
   if ( (BYTE)DAT_07d78098 )
@@ -16672,22 +16672,22 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
     v317 = DAT_07d7809c;
   }
   v7 = (const void *)CharacterMachine;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
   {
-    v8 = FUN_004041e0(&DAT_055c9bc8, (int)v7);
+    v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v7);
     v9 = v8 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v8);
     v10 = v9[1412] - 1;
     v9[1412] = v10;
     if ( !v10 )
     {
-      FUN_00404400(v9, v7);
+      Packet_EncryptBuffer(v9, v7);
     }
   }
   v11 = (char *)(Hero + 904);
-  FUN_0043d3e0(&DAT_055c9bc8, (DWORD *)(Hero + 904));
+  FUN_0043d3e0(&MAIN_HASH_CLASS, (DWORD *)(Hero + 904));
   *(float *)SkillIndex = *(float *)v11;
-  FUN_004233e0(&DAT_055c9bc8, v11);
-  v12 = FUN_0043d670(&DAT_055c9bc8, (char *)(Hero + 908));
+  FUN_004233e0(&MAIN_HASH_CLASS, v11);
+  v12 = FUN_0043d670(&MAIN_HASH_CLASS, (char *)(Hero + 908));
   v324 = &DAT_00552460;
   v13 = *(float *)(Hero + 36);
   buf[1] = 0x1C1;
@@ -16837,7 +16837,7 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
       }
       if ( v22 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&buf[1], v22);
         }
@@ -16850,10 +16850,10 @@ void __cdecl FUN_00485780(DWORD c, DWORD o)
       }
       goto LABEL_44;
     }
-    if ( WSAGetLastError() == 10035 && DAT_055cc16c + v20 <= 0x2000 )
+    if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v20 <= 0x2000 )
     {
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[1], Position);
-      DAT_055cc16c += Position;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[1], Position);
+      SocketClientSendBufferLength += Position;
     }
     else
     {
@@ -16928,9 +16928,9 @@ LABEL_44:
     v320 = v33 - Angle[0];
     v321 = *(float *)(c + 792) - v34;
     v322 = *(float *)(c + 796) - v35;
-    if ( FUN_004f9c40(&v320) >= 1.0 )
+    if ( Vec3_Length(&v320) >= 1.0 )
     {
-      v36 = FUN_004f9c40(&v320);
+      v36 = Vec3_Length(&v320);
     }
     else
     {
@@ -16942,12 +16942,12 @@ LABEL_44:
     v322 = v37 * v322;
     v38 = (char *)(c + 908);
     LODWORD(x2) = (__int64)(*(float *)(c + 788) * 0.0099999998);
-    FUN_0043d3e0(&DAT_055c9bc8, (DWORD *)(c + 908));
-    FUN_004233e0(&DAT_055c9bc8, (char *)(c + 908));
+    FUN_0043d3e0(&MAIN_HASH_CLASS, (DWORD *)(c + 908));
+    FUN_004233e0(&MAIN_HASH_CLASS, (char *)(c + 908));
     v39 = (char *)(c + 904);
-    FUN_0043d3e0(&DAT_055c9bc8, (DWORD *)(c + 904));
+    FUN_0043d3e0(&MAIN_HASH_CLASS, (DWORD *)(c + 904));
     Positionj = *(float **)(c + 904);
-    FUN_004233e0(&DAT_055c9bc8, (char *)(c + 904));
+    FUN_004233e0(&MAIN_HASH_CLASS, (char *)(c + 904));
     v316 = (16 * ((BYTE)(x2) - (BYTE)Positionj + 8)) | ((BYTE)(x2) - (BYTE)Positionj - 8) & 0xF;
     v284 = Hero + 449;
     v40 = 0;
@@ -16977,18 +16977,18 @@ LABEL_44:
       }
       while ( SLODWORD(x2) <= (int)(v43 - v41) );
     }
-    DAT_05826d10 = 0x2B;
+    CurrentSkill = 0x2B;
     v324 = &DAT_00552460;
     buf[1] = 0x1C1;
     v334 = 1;
     (BYTE)(buf[2]) = 0x1E;
     buf[0] = 3;
-    FUN_0043d3e0(&DAT_055c9bc8, v38);
+    FUN_0043d3e0(&MAIN_HASH_CLASS, v38);
     x2 = *(float *)v38;
-    FUN_004233e0(&DAT_055c9bc8, v38);
-    FUN_0043d3e0(&DAT_055c9bc8, v39);
+    FUN_004233e0(&MAIN_HASH_CLASS, v38);
+    FUN_0043d3e0(&MAIN_HASH_CLASS, v39);
     *(DWORD *)v318 = *(DWORD *)v39;
-    FUN_004233e0(&DAT_055c9bc8, v39);
+    FUN_004233e0(&MAIN_HASH_CLASS, v39);
     if ( buf[0] + 1 <= 1024 )
     {
       v219 = -25;
@@ -17254,22 +17254,22 @@ LABEL_44:
     qmemcpy(v333, &buf[1], buf[0]);
     v333[v57] = rand();
     v58 = (v333[0] != -63) + 2;
-    PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v59 = g_byPacketSerialSend;
     v332[v58 + 1024] = g_byPacketSerialSend;
     g_byPacketSerialSend = v59 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     --v58;
     v60 = v57 - v58;
     v61 = &v333[v58];
-    v62 = FUN_0053cc30(0, (int)v61, v60);
+    v62 = CSimpleModulus_Encode(0, (int)v61, v60);
     if ( v62 >= 256 )
     {
       v68 = (float *)(v62 + 3);
       v329 = -60;
       v331 = v62 + 3;
       v330 = (v62 + 3) / 256;
-      FUN_0053cc30((int)v332, (int)v61, v60);
+      CSimpleModulus_Encode((int)v332, (int)v61, v60);
       v69 = 0;
       Positiond = v68;
       if ( s != -1 )
@@ -17284,7 +17284,7 @@ LABEL_44:
           }
           if ( v70 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&v329, v70);
             }
@@ -17297,10 +17297,10 @@ LABEL_44:
           }
           goto LABEL_120;
         }
-        if ( WSAGetLastError() == 10035 && (int)v68 + DAT_055cc16c <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && (int)v68 + SocketClientSendBufferLength <= 0x2000 )
         {
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v329, (unsigned int)Positiond);
-          v67 = (int)Positiond + DAT_055cc16c;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v329, (unsigned int)Positiond);
+          v67 = (int)Positiond + SocketClientSendBufferLength;
           goto LABEL_119;
         }
         goto LABEL_117;
@@ -17311,7 +17311,7 @@ LABEL_44:
       Positionc = (float *)(v62 + 2);
       v326 = -61;
       v327 = v62 + 2;
-      FUN_0053cc30((int)v328, (int)v61, v60);
+      CSimpleModulus_Encode((int)v328, (int)v61, v60);
       v63 = (signed int)Positionc;
       v64 = 0;
       if ( s != -1 )
@@ -17326,7 +17326,7 @@ LABEL_44:
           }
           if ( v65 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&v326, v65);
             }
@@ -17339,12 +17339,12 @@ LABEL_44:
           }
           goto LABEL_120;
         }
-        if ( WSAGetLastError() == 10035 && (int)Positionc + DAT_055cc16c <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && (int)Positionc + SocketClientSendBufferLength <= 0x2000 )
         {
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v326, v63);
-          v67 = v63 + DAT_055cc16c;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v326, v63);
+          v67 = v63 + SocketClientSendBufferLength;
 LABEL_119:
-          DAT_055cc16c = v67;
+          SocketClientSendBufferLength = v67;
           goto LABEL_120;
         }
 LABEL_117:
@@ -17368,15 +17368,15 @@ LABEL_121:
     }
     while ( v72 );
     v74 = (void *)CharacterMachine;
-    if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
     {
       v78 = operator_new(0x585u);
       *(BYTE *)(v78 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v78, (int)v74);
+      HashTable_Insert(&MAIN_HASH_CLASS, v78, (int)v74);
     }
     else
     {
-      v75 = FUN_004041e0(&DAT_055c9bc8, (int)v74);
+      v75 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v74);
       if ( v75 == -1 )
       {
         v76 = 0;
@@ -17389,7 +17389,7 @@ LABEL_121:
       v76[1412] = v77;
       if ( v77 < 2u )
       {
-        FUN_00404370(v74, v76);
+        Packet_DecryptBuffer(v74, v76);
       }
     }
     LODWORD(x2) = *(unsigned char *)(*(unsigned char *)(Hero + 913) + CharacterAttribute + 87);
@@ -17398,15 +17398,15 @@ LABEL_121:
     v207 = CharacterMachine;
     *(BYTE *)(o + 136) = v80;
     v79[1408] = v80 + 1;
-    if ( FUN_004041e0(&DAT_055c9bc8, v207) != -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, v207) != -1 )
     {
-      v81 = FUN_004041e0(&DAT_055c9bc8, (int)v79);
+      v81 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v79);
       v82 = v81 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v81);
       v83 = v82[1412] - 1;
       v82[1412] = v83;
       if ( !v83 )
       {
-        FUN_00404400(v82, v79);
+        Packet_EncryptBuffer(v82, v79);
       }
     }
     v84 = Hero + 449;
@@ -17760,36 +17760,36 @@ LABEL_121:
     qmemcpy(v333, &buf[1], buf[0]);
     v333[v110] = rand();
     v111 = (v333[0] != -63) + 2;
-    if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
     {
       v114 = operator_new(2u);
       *(BYTE *)(v114 + 1) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v114, (int)&g_byPacketSerialSend);
+      HashTable_Insert(&MAIN_HASH_CLASS, v114, (int)&g_byPacketSerialSend);
     }
     else
     {
-      v112 = (char *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+      v112 = (char *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
       v113 = v112[1] + 1;
       v112[1] = v113;
       if ( (unsigned char)v113 < 2u )
       {
-        FUN_00404330(&g_byPacketSerialSend, v112);
+        Packet_DecryptByte(&g_byPacketSerialSend, v112);
       }
     }
     v115 = g_byPacketSerialSend;
     v332[v111 + 1024] = g_byPacketSerialSend;
     g_byPacketSerialSend = v115 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v116 = v111 - 1;
     v117 = v110 - v116;
     v118 = &v333[v116];
-    v119 = FUN_0053cc30(0, (int)&v333[v116], v117);
+    v119 = CSimpleModulus_Encode(0, (int)&v333[v116], v117);
     if ( v119 < 256 )
     {
       Positione = (float *)(v119 + 2);
       v326 = -61;
       v327 = v119 + 2;
-      FUN_0053cc30((int)v328, (int)&v333[v116], v117);
+      CSimpleModulus_Encode((int)v328, (int)&v333[v116], v117);
       v120 = (signed int)Positione;
       v121 = 0;
       if ( s != -1 )
@@ -17804,7 +17804,7 @@ LABEL_121:
           }
           if ( v122 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&v326, v122);
             }
@@ -17817,13 +17817,13 @@ LABEL_121:
           }
           goto LABEL_304;
         }
-        if ( WSAGetLastError() == 10035 && (int)Positione + DAT_055cc16c <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && (int)Positione + SocketClientSendBufferLength <= 0x2000 )
         {
 LABEL_194:
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v326, v120);
-          v124 = v120 + DAT_055cc16c;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v326, v120);
+          v124 = v120 + SocketClientSendBufferLength;
 LABEL_303:
-          DAT_055cc16c = v124;
+          SocketClientSendBufferLength = v124;
           goto LABEL_304;
         }
         goto LABEL_300;
@@ -17836,7 +17836,7 @@ LABEL_304:
     v329 = -60;
     v331 = v119 + 3;
     v330 = (v119 + 3) / 256;
-    FUN_0053cc30((int)v332, (int)v118, v117);
+    CSimpleModulus_Encode((int)v332, (int)v118, v117);
     v126 = 0;
     Positionf = v125;
     if ( s == -1 )
@@ -17853,7 +17853,7 @@ LABEL_304:
       }
       if ( v127 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&v329, v127);
         }
@@ -17866,7 +17866,7 @@ LABEL_304:
       }
       goto LABEL_304;
     }
-    if ( WSAGetLastError() != 10035 || (v129 = DAT_055cc16c, (int)v125 + DAT_055cc16c > 0x2000) )
+    if ( WSAGetLastError() != 10035 || (v129 = SocketClientSendBufferLength, (int)v125 + SocketClientSendBufferLength > 0x2000) )
     {
 LABEL_300:
       CWsctlc::Close((DWORD)&SocketClient);
@@ -17885,20 +17885,20 @@ LABEL_300:
     Angle[1] = v133;
     *(float *)SkillIndex = 0.0;
     Angle[2] = v134;
-    if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
     {
       v137 = operator_new(0x585u);
       *(BYTE *)(v137 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v137, (int)v132);
+      HashTable_Insert(&MAIN_HASH_CLASS, v137, (int)v132);
     }
     else
     {
-      v135 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v132);
+      v135 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v132);
       v136 = v135[1412] + 1;
       v135[1412] = v136;
       if ( v136 < 2u )
       {
-        FUN_00404370(v132, v135);
+        Packet_DecryptBuffer(v132, v135);
       }
     }
     v138 = 0.0;
@@ -17912,26 +17912,26 @@ LABEL_300:
     }
     *(float *)SkillIndex = v138;
 LABEL_216:
-    STRUCT_ENCRYPT(&DAT_055c9bc8, (const void *)CharacterMachine);
+    STRUCT_ENCRYPT(&MAIN_HASH_CLASS, (const void *)CharacterMachine);
     (WORD)(v139) = *(WORD *)(o + 134);
     CreateEffect(203, Positiona, Angle, (float *)(o + 232), 2, o, v139, *(int *)SkillIndex, 0);
     v140 = (void *)CharacterMachine;
     *(DWORD *)v318 = 0;
     Angle[2] = Angle[2] + 20.0;
-    if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
     {
       v143 = operator_new(0x585u);
       *(BYTE *)(v143 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v143, (int)v140);
+      HashTable_Insert(&MAIN_HASH_CLASS, v143, (int)v140);
     }
     else
     {
-      v141 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v140);
+      v141 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v140);
       v142 = v141[1412] + 1;
       v141[1412] = v142;
       if ( v142 < 2u )
       {
-        FUN_00404370(v140, v141);
+        Packet_DecryptBuffer(v140, v141);
       }
     }
     v144 = 0;
@@ -17945,12 +17945,12 @@ LABEL_216:
     }
     v145 = v144;
 LABEL_225:
-    STRUCT_ENCRYPT(&DAT_055c9bc8, (const void *)CharacterMachine);
+    STRUCT_ENCRYPT(&MAIN_HASH_CLASS, (const void *)CharacterMachine);
     (WORD)(v146) = *(WORD *)(o + 134);
     CreateEffect(203, Positiona, Angle, (float *)(o + 232), 2, o, v146, v145, 0);
     v147 = 0;
     Angle[2] = Angle[2] + 20.0;
-    STRUCT_DECRYPT(&DAT_055c9bc8, (void *)CharacterMachine);
+    STRUCT_DECRYPT(&MAIN_HASH_CLASS, (void *)CharacterMachine);
     v148 = 0;
     while ( *(BYTE *)(CharacterAttribute + v148 + 87) != 56 )
     {
@@ -17962,22 +17962,22 @@ LABEL_225:
     v147 = v148;
 LABEL_230:
     *(float *)SkillIndex = *(float *)&CharacterMachine;
-    v149 = (BYTE *)FUN_004041e0(&DAT_055c9bc8, CharacterMachine);
+    v149 = (BYTE *)FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine);
     if ( v149 != (BYTE *)-1 )
     {
-      v149 = (BYTE *)FUN_00404280(&DAT_055c9bc8, *(int *)SkillIndex);
+      v149 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, *(int *)SkillIndex);
       v150 = v149[1412] - 1;
       v149[1412] = v150;
       if ( !v150 )
       {
-        FUN_00404400(v149, *(const void **)SkillIndex);
+        Packet_EncryptBuffer(v149, *(const void **)SkillIndex);
       }
     }
     (WORD)(v149) = *(WORD *)(o + 134);
     CreateEffect(203, Positiona, Angle, (float *)(o + 232), 2, o, (int)v149, v147, 0);
     v151 = 0;
     Angle[2] = Angle[2] + 20.0;
-    STRUCT_DECRYPT(&DAT_055c9bc8, (void *)CharacterMachine);
+    STRUCT_DECRYPT(&MAIN_HASH_CLASS, (void *)CharacterMachine);
     v152 = 0;
     while ( *(BYTE *)(CharacterAttribute + v152 + 87) != 56 )
     {
@@ -17989,22 +17989,22 @@ LABEL_230:
     v151 = v152;
 LABEL_238:
     *(float *)SkillIndex = *(float *)&CharacterMachine;
-    v153 = (BYTE *)FUN_004041e0(&DAT_055c9bc8, CharacterMachine);
+    v153 = (BYTE *)FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine);
     if ( v153 != (BYTE *)-1 )
     {
-      v153 = (BYTE *)FUN_00404280(&DAT_055c9bc8, *(int *)SkillIndex);
+      v153 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, *(int *)SkillIndex);
       v154 = v153[1412] - 1;
       v153[1412] = v154;
       if ( !v154 )
       {
-        FUN_00404400(v153, *(const void **)SkillIndex);
+        Packet_EncryptBuffer(v153, *(const void **)SkillIndex);
       }
     }
     (WORD)(v153) = *(WORD *)(o + 134);
     CreateEffect(203, Positiona, Angle, (float *)(o + 232), 2, o, (int)v153, v151, 0);
     *(float *)SkillIndex = 0.0;
     Angle[2] = Angle[2] + 20.0;
-    STRUCT_DECRYPT(&DAT_055c9bc8, (void *)CharacterMachine);
+    STRUCT_DECRYPT(&MAIN_HASH_CLASS, (void *)CharacterMachine);
     v155 = 0.0;
     while ( *(BYTE *)(CharacterAttribute + LODWORD(v155) + 87) != 56 )
     {
@@ -18017,14 +18017,14 @@ LABEL_238:
     *(float *)SkillIndex = v155;
 LABEL_246:
     v156 = (const void *)CharacterMachine;
-    if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+    if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
     {
-      v158 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v156);
+      v158 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v156);
       v159 = v158[1412] - 1;
       v158[1412] = v159;
       if ( !v159 )
       {
-        FUN_00404400(v158, v156);
+        Packet_EncryptBuffer(v158, v156);
       }
     }
     (WORD)(v157) = *(WORD *)(o + 134);
@@ -18190,36 +18190,36 @@ LABEL_258:
       qmemcpy(v333, &buf[1], buf[0]);
       v333[v176] = rand();
       v177 = (v333[0] != -63) + 2;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
       {
         v180 = operator_new(2u);
         *(BYTE *)(v180 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v180, (int)&g_byPacketSerialSend);
+        HashTable_Insert(&MAIN_HASH_CLASS, v180, (int)&g_byPacketSerialSend);
       }
       else
       {
-        v178 = (char *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v178 = (char *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v179 = v178[1] + 1;
         v178[1] = v179;
         if ( (unsigned char)v179 < 2u )
         {
-          FUN_00404330(&g_byPacketSerialSend, v178);
+          Packet_DecryptByte(&g_byPacketSerialSend, v178);
         }
       }
       v181 = g_byPacketSerialSend;
       v332[v177 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v181 + 1;
-      PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       v182 = v177 - 1;
       v183 = v176 - v182;
       v184 = &v333[v182];
-      v185 = FUN_0053cc30(0, (int)&v333[v182], v183);
+      v185 = CSimpleModulus_Encode(0, (int)&v333[v182], v183);
       if ( v185 < 256 )
       {
         Positiong = (float *)(v185 + 2);
         v326 = -61;
         v327 = v185 + 2;
-        FUN_0053cc30((int)v328, (int)&v333[v182], v183);
+        CSimpleModulus_Encode((int)v328, (int)&v333[v182], v183);
         v120 = (signed int)Positiong;
         v186 = 0;
         if ( s == -1 )
@@ -18236,7 +18236,7 @@ LABEL_258:
           }
           if ( v187 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&v326, v187);
             }
@@ -18249,7 +18249,7 @@ LABEL_258:
           }
           goto LABEL_304;
         }
-        if ( WSAGetLastError() == 10035 && (int)Positiong + DAT_055cc16c <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && (int)Positiong + SocketClientSendBufferLength <= 0x2000 )
         {
           goto LABEL_194;
         }
@@ -18259,7 +18259,7 @@ LABEL_258:
       v329 = -60;
       v331 = v185 + 3;
       v330 = (v185 + 3) / 256;
-      FUN_0053cc30((int)v332, (int)v184, v183);
+      CSimpleModulus_Encode((int)v332, (int)v184, v183);
       v190 = 0;
       Positionh = v189;
       if ( s == -1 )
@@ -18276,7 +18276,7 @@ LABEL_258:
         }
         if ( v191 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v329, v191);
           }
@@ -18293,16 +18293,16 @@ LABEL_258:
       {
         goto LABEL_300;
       }
-      v129 = DAT_055cc16c;
-      if ( (int)v189 + DAT_055cc16c > 0x2000 )
+      v129 = SocketClientSendBufferLength;
+      if ( (int)v189 + SocketClientSendBufferLength > 0x2000 )
       {
         goto LABEL_300;
       }
       v130 = Positionh;
       v131 = (unsigned int)Positionh;
 LABEL_302:
-      qmemcpy((char *)&DAT_055ca16c + v129, &v329, v131);
-      v124 = (int)v130 + DAT_055cc16c;
+      qmemcpy((char *)&SocketClientSendBuffer + v129, &v329, v131);
+      v124 = (int)v130 + SocketClientSendBufferLength;
       goto LABEL_303;
     }
     v164 = 0;
@@ -18497,7 +18497,7 @@ LABEL_318:
           }
           if ( v205 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&buf[1], v205);
             }
@@ -18510,10 +18510,10 @@ LABEL_318:
           }
           return;
         }
-        if ( WSAGetLastError() == 10035 && DAT_055cc16c + v202 <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v202 <= 0x2000 )
         {
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[1], v204);
-          DAT_055cc16c += v204;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[1], v204);
+          SocketClientSendBufferLength += v204;
         }
         else
         {
@@ -18565,7 +18565,7 @@ void __cdecl FUN_0048b680(int a1)
   {
     v1 = (void *)CharacterMachine;
     v27 = CharacterMachine;
-    v2 = (*(int (__cdecl **)(int *, DWORD, int))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine, a1);
+    v2 = (*(int (__cdecl **)(int *, DWORD, int))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine, a1);
     v26 = 0;
     v25 = 0;
     if ( DAT_055c9bd4 )
@@ -18578,7 +18578,7 @@ void __cdecl FUN_0048b680(int a1)
           {
             break;
           }
-          v7 = FUN_004041e0(&DAT_055c9bc8, (int)v1);
+          v7 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v1);
           if ( v7 == -1 )
           {
             v8 = 0;
@@ -18591,7 +18591,7 @@ void __cdecl FUN_0048b680(int a1)
           v8[1412] = v9;
           if ( v9 < 2u )
           {
-            FUN_00404370(v1, v8);
+            Packet_DecryptBuffer(v1, v8);
           }
           goto LABEL_8;
         }
@@ -18611,7 +18611,7 @@ LABEL_6:
     }
     v4 = operator_new(0x585u);
     *(BYTE *)(v4 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v4, (int)v1);
+    HashTable_Insert(&MAIN_HASH_CLASS, v4, (int)v1);
 LABEL_8:
     v5 = (const void *)CharacterMachine;
     if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 && !DAT_07e91388 )
@@ -18620,7 +18620,7 @@ LABEL_8:
       retaddr = (void *)(CharacterMachine + 604);
     }
     v29 = (short *)CharacterMachine;
-    v6 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v6 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v27 = 0;
     v23 = 0;
     if ( DAT_055c9bd4 )
@@ -18631,7 +18631,7 @@ LABEL_8:
         {
           if ( v6 != -1 )
           {
-            v10 = FUN_004041e0(&DAT_055c9bc8, (int)v5);
+            v10 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v5);
             if ( v10 == -1 )
             {
               v24 = 0;
@@ -18780,7 +18780,7 @@ void FUN_004c4080()
   v0 = (void *)CharacterMachine;
   DAT_07eaa0f8 = 0;
   v41 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v39 = 0;
   v40 = 0;
   if ( DAT_055c9bd4 )
@@ -18793,7 +18793,7 @@ void FUN_004c4080()
         {
           break;
         }
-        v16 = FUN_004041e0(&DAT_055c9bc8, (int)v0);
+        v16 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v0);
         if ( v16 == -1 )
         {
           v17 = 0;
@@ -18841,7 +18841,7 @@ LABEL_5:
   }
   v3 = operator_new(0x585u);
   *(BYTE *)(v3 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v3, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v3, (int)v0);
 LABEL_7:
   v4 = 0;
   for ( i = 0; i < 816; i += 68 )
@@ -18908,7 +18908,7 @@ LABEL_7:
   while ( (int)v10 < (int)&DAT_07ea9510 );
   v39 = (char *)CharacterMachine;
   v40 = (char *)CharacterMachine;
-  v15 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v15 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v41 = 0;
   if ( DAT_055c9bd4 )
   {
@@ -18919,7 +18919,7 @@ LABEL_7:
         if ( v15 != -1 )
         {
           v40 = v39;
-          v22 = (*(int (__cdecl **)(int *, char *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, v39);
+          v22 = (*(int (__cdecl **)(int *, char *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, v39);
           v23 = 0;
           v41 = 0;
           if ( DAT_055c9bd4 )
@@ -19347,15 +19347,15 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
   v6 = (char *)(InventoryStartY + (__int64)a2);
   v7 = (void *)CharacterMachine;
   v306 = v6;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
   {
     v11 = operator_new(0x585u);
     *(BYTE *)(v11 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v11, (int)v7);
+    HashTable_Insert(&MAIN_HASH_CLASS, v11, (int)v7);
   }
   else
   {
-    v8 = FUN_004041e0(&DAT_055c9bc8, (int)v7);
+    v8 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v7);
     if ( v8 == -1 )
     {
       v9 = 0;
@@ -19368,7 +19368,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
     v9[1412] = v10;
     if ( v10 < 2u )
     {
-      FUN_00404370(v7, v9);
+      Packet_DecryptBuffer(v7, v9);
     }
   }
   v12 = (WORD *)(CharacterMachine + 68 * a5 + 536);
@@ -19504,15 +19504,15 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
       qmemcpy(v323, &v314, v313);
       v323[v238] = rand();
       v239 = (v323[0] != -63) + 2;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
       {
         v243 = operator_new(2u);
         *(BYTE *)(v243 + 1) = 1;
-        FUN_00403f80(&DAT_055c9bc8, v243, (int)&g_byPacketSerialSend);
+        HashTable_Insert(&MAIN_HASH_CLASS, v243, (int)&g_byPacketSerialSend);
       }
       else
       {
-        v240 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v240 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         if ( v240 == -1 )
         {
           v241 = 0;
@@ -19525,33 +19525,33 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
         v241[1] = v242;
         if ( (unsigned char)v242 < 2u )
         {
-          FUN_00404330(&g_byPacketSerialSend, v241);
+          Packet_DecryptByte(&g_byPacketSerialSend, v241);
         }
       }
       v244 = g_byPacketSerialSend;
       v322[v239 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v244 + 1;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
       {
-        v245 = FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v245 = FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v246 = v245 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v245);
         v247 = v246[1] - 1;
         v246[1] = v247;
         if ( !v247 )
         {
-          FUN_00423710(v246, &g_byPacketSerialSend);
+          Packet_EncryptByte(v246, &g_byPacketSerialSend);
         }
       }
       v248 = v239 - 1;
       v249 = v238 - v248;
       v250 = &v323[v248];
-      v251 = FUN_0053cc30(0, (int)&v323[v248], v238 - v248);
+      v251 = CSimpleModulus_Encode(0, (int)&v323[v248], v238 - v248);
       if ( v251 < 256 )
       {
         v252 = v251 + 2;
         buf = -61;
         v317 = v251 + 2;
-        FUN_0053cc30((int)v318, (int)&v323[v248], v249);
+        CSimpleModulus_Encode((int)v318, (int)&v323[v248], v249);
         v253 = 0;
         v124 = v252;
         if ( s != -1 )
@@ -19566,7 +19566,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
             }
             if ( v254 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)&buf, v254);
               }
@@ -19579,7 +19579,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
             }
             goto LABEL_574;
           }
-          if ( WSAGetLastError() == 10035 && DAT_055cc16c + v252 <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v252 <= 0x2000 )
           {
             goto LABEL_561;
           }
@@ -19591,7 +19591,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
       v319 = -60;
       v321 = v251 + 3;
       v320 = (v251 + 3) / 256;
-      FUN_0053cc30((int)v322, (int)v250, v249);
+      CSimpleModulus_Encode((int)v322, (int)v250, v249);
       v257 = 0;
       v129 = v256;
       if ( s == -1 )
@@ -19608,7 +19608,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
         }
         if ( v258 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v319, v258);
           }
@@ -19621,7 +19621,7 @@ void __cdecl FUN_004cdc70(float a1, float a2, float a3, float a4, int a5)
         }
         goto LABEL_574;
       }
-      if ( WSAGetLastError() != 10035 || DAT_055cc16c + v256 > 0x2000 )
+      if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v256 > 0x2000 )
       {
         goto LABEL_571;
       }
@@ -19671,15 +19671,15 @@ LABEL_515:
   }
   v13 = (void *)CharacterMachine;
   (BYTE)((v305) >> 8) = 1;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) == -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) == -1 )
   {
     v17 = operator_new(0x585u);
     *(BYTE *)(v17 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v17, (int)v13);
+    HashTable_Insert(&MAIN_HASH_CLASS, v17, (int)v13);
   }
   else
   {
-    v14 = FUN_004041e0(&DAT_055c9bc8, (int)v13);
+    v14 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v13);
     if ( v14 == -1 )
     {
       v15 = 0;
@@ -19692,7 +19692,7 @@ LABEL_515:
     v15[1412] = v16;
     if ( v16 < 2u )
     {
-      FUN_00404370(v13, v15);
+      Packet_DecryptBuffer(v13, v15);
     }
   }
   v18 = CharacterMachine;
@@ -19700,15 +19700,15 @@ LABEL_515:
   v20 = *(short *)(CharacterMachine + 604);
   v311 = v19;
   v308 = v20;
-  if ( FUN_004041e0(&DAT_055c9bc8, CharacterMachine) != -1 )
+  if ( FUN_004041e0(&MAIN_HASH_CLASS, CharacterMachine) != -1 )
   {
-    v21 = FUN_004041e0(&DAT_055c9bc8, v18);
+    v21 = FUN_004041e0(&MAIN_HASH_CLASS, v18);
     v22 = v21 == -1 ? 0 : *(BYTE **)(DAT_055c9bcc + 4 * v21);
     v23 = v22[1412] - 1;
     v22[1412] = v23;
     if ( !v23 )
     {
-      FUN_00404400(v22, (const void *)v18);
+      Packet_EncryptBuffer(v22, (const void *)v18);
     }
   }
   (WORD)(v18) = (WORD)pPickedItem;
@@ -19767,7 +19767,7 @@ LABEL_118:
       }
       v51 = (void *)CharacterMachine;
       v310 = CharacterMachine;
-      v52 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v52 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v307 = 0;
       v306 = 0;
       if ( DAT_055c9bd4 )
@@ -19826,12 +19826,12 @@ LABEL_118:
             {
               break;
             }
-            v71 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v51);
+            v71 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v51);
             v72 = v71[1412] + 1;
             v71[1412] = v72;
             if ( v72 < 2u )
             {
-              FUN_00404370(v51, v71);
+              Packet_DecryptBuffer(v51, v71);
             }
             goto LABEL_136;
           }
@@ -19849,7 +19849,7 @@ LABEL_134:
       }
       v61 = operator_new(0x585u);
       *(BYTE *)(v61 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v61, (int)v51);
+      HashTable_Insert(&MAIN_HASH_CLASS, v61, (int)v51);
 LABEL_136:
       if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 2
         && v308 == 135
@@ -19859,7 +19859,7 @@ LABEL_136:
       }
       v39 = (const void *)CharacterMachine;
       v307 = (BYTE *)CharacterMachine;
-      v62 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v62 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v308 = 0;
       v306 = 0;
       if ( DAT_055c9bd4 )
@@ -19918,7 +19918,7 @@ LABEL_136:
             {
               goto LABEL_163;
             }
-            v49 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v39);
+            v49 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v39);
             v73 = v49[1412] - 1;
             v49[1412] = v73;
             if ( v73 )
@@ -19946,7 +19946,7 @@ LABEL_163:
     }
     v26 = (void *)CharacterMachine;
     v307 = (BYTE *)CharacterMachine;
-    v27 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v27 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v310 = 0;
     v306 = 0;
     if ( DAT_055c9bd4 )
@@ -20005,12 +20005,12 @@ LABEL_163:
           {
             break;
           }
-          v37 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v26);
+          v37 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v26);
           v38 = v37[1412] + 1;
           v37[1412] = v38;
           if ( v38 < 2u )
           {
-            FUN_00404370(v26, v37);
+            Packet_DecryptBuffer(v26, v37);
           }
           goto LABEL_77;
         }
@@ -20028,7 +20028,7 @@ LABEL_75:
     }
     v36 = operator_new(0x585u);
     *(BYTE *)(v36 + 1412) = 1;
-    FUN_00403f80(&DAT_055c9bc8, v36, (int)v26);
+    HashTable_Insert(&MAIN_HASH_CLASS, v36, (int)v26);
 LABEL_77:
     if ( (*(BYTE *)(CharacterAttribute + 11) & 7) == 0 || (*(BYTE *)(CharacterAttribute + 11) & 7) == 2 )
     {
@@ -20055,7 +20055,7 @@ LABEL_98:
     }
     v39 = (const void *)CharacterMachine;
     v310 = CharacterMachine;
-    v40 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+    v40 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
     v307 = 0;
     v306 = 0;
     if ( DAT_055c9bd4 )
@@ -20112,13 +20112,13 @@ LABEL_98:
         {
           if ( v40 != -1 )
           {
-            v49 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v39);
+            v49 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v39);
             v50 = v49[1412] - 1;
             v49[1412] = v50;
             if ( !v50 )
             {
 LABEL_162:
-              FUN_00404400(v49, v39);
+              Packet_EncryptBuffer(v49, v39);
             }
           }
           goto LABEL_163;
@@ -20143,7 +20143,7 @@ LABEL_164:
   }
   v74 = (void *)CharacterMachine;
   v307 = (BYTE *)CharacterMachine;
-  v75 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v75 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v308 = 0;
   v306 = 0;
   if ( DAT_055c9bd4 )
@@ -20202,12 +20202,12 @@ LABEL_164:
         {
           break;
         }
-        v95 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v74);
+        v95 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v74);
         v96 = v95[1412] + 1;
         v95[1412] = v96;
         if ( v96 < 2u )
         {
-          FUN_00404370(v74, v95);
+          Packet_DecryptBuffer(v74, v95);
         }
         goto LABEL_183;
       }
@@ -20225,7 +20225,7 @@ LABEL_181:
   }
   v84 = operator_new(0x585u);
   *(BYTE *)(v84 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v84, (int)v74);
+  HashTable_Insert(&MAIN_HASH_CLASS, v84, (int)v74);
 LABEL_183:
   if ( (unsigned short)DAT_07e9136c > *(WORD *)(CharacterAttribute + 20) )
   {
@@ -20250,7 +20250,7 @@ LABEL_183:
   }
   v85 = (const void *)CharacterMachine;
   v307 = (BYTE *)CharacterMachine;
-  v86 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v86 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v308 = 0;
   v306 = 0;
   if ( DAT_055c9bd4 )
@@ -20307,12 +20307,12 @@ LABEL_183:
       {
         if ( v86 != -1 )
         {
-          v97 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)v85);
+          v97 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)v85);
           v98 = v97[1412] - 1;
           v97[1412] = v98;
           if ( !v98 )
           {
-            FUN_00404400(v97, v85);
+            Packet_EncryptBuffer(v97, v85);
           }
         }
         break;
@@ -20779,21 +20779,21 @@ LABEL_231:
     qmemcpy(v323, &v314, v313);
     v323[v116] = rand();
     v117 = (v323[0] != -63) + 2;
-    PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v118 = g_byPacketSerialSend;
     v322[v117 + 1024] = g_byPacketSerialSend;
     g_byPacketSerialSend = v118 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     --v117;
     v119 = v116 - v117;
     v120 = &v323[v117];
-    v121 = FUN_0053cc30(0, (int)v120, v119);
+    v121 = CSimpleModulus_Encode(0, (int)v120, v119);
     if ( v121 < 256 )
     {
       v122 = v121 + 2;
       buf = -61;
       v317 = v121 + 2;
-      FUN_0053cc30((int)v318, (int)v120, v119);
+      CSimpleModulus_Encode((int)v318, (int)v120, v119);
       v123 = 0;
       v124 = v122;
       if ( s != -1 )
@@ -20808,7 +20808,7 @@ LABEL_231:
           }
           if ( v125 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&buf, v125);
             }
@@ -20821,11 +20821,11 @@ LABEL_231:
           }
           goto LABEL_574;
         }
-        if ( WSAGetLastError() == 10035 && DAT_055cc16c + v122 <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v122 <= 0x2000 )
         {
 LABEL_561:
-          qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, v124);
-          v199 = v124 + DAT_055cc16c;
+          qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, v124);
+          v199 = v124 + SocketClientSendBufferLength;
           goto LABEL_573;
         }
 LABEL_571:
@@ -20839,7 +20839,7 @@ LABEL_571:
     v319 = -60;
     v321 = v121 + 3;
     v320 = (v121 + 3) / 256;
-    FUN_0053cc30((int)v322, (int)v120, v119);
+    CSimpleModulus_Encode((int)v322, (int)v120, v119);
     v128 = 0;
     v129 = v127;
     if ( s == -1 )
@@ -20856,7 +20856,7 @@ LABEL_571:
       }
       if ( v130 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&v319, v130);
         }
@@ -20869,7 +20869,7 @@ LABEL_571:
       }
       goto LABEL_574;
     }
-    if ( WSAGetLastError() != 10035 || DAT_055cc16c + v127 > 0x2000 )
+    if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v127 > 0x2000 )
     {
       goto LABEL_571;
     }
@@ -21247,31 +21247,31 @@ LABEL_571:
       qmemcpy(v323, &v314, v313);
       v323[v181] = rand();
       v182 = (v323[0] != -63) + 2;
-      PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       v183 = g_byPacketSerialSend;
       v322[v182 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v183 + 1;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
       {
-        v184 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v184 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v185 = v184[1] - 1;
         v184[1] = v185;
         if ( !v185 )
         {
-          FUN_00423710(v184, &g_byPacketSerialSend);
+          Packet_EncryptByte(v184, &g_byPacketSerialSend);
         }
       }
       v186 = v182 - 1;
       v187 = v181 - v186;
       v188 = &v323[v186];
-      v189 = FUN_0053cc30(0, (int)&v323[v186], v181 - v186);
+      v189 = CSimpleModulus_Encode(0, (int)&v323[v186], v181 - v186);
       if ( v189 < 256 )
       {
         v273 = v181 - v186;
         v190 = v189 + 2;
         buf = -61;
         v317 = v189 + 2;
-        FUN_0053cc30((int)v318, (int)&v323[v186], v273);
+        CSimpleModulus_Encode((int)v318, (int)&v323[v186], v273);
         v191 = 0;
         v124 = v190;
         if ( s != -1 )
@@ -21286,7 +21286,7 @@ LABEL_571:
             }
             if ( v192 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)&buf, v192);
               }
@@ -21299,7 +21299,7 @@ LABEL_571:
             }
             goto LABEL_574;
           }
-          if ( WSAGetLastError() == 10035 && DAT_055cc16c + v190 <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v190 <= 0x2000 )
           {
             goto LABEL_561;
           }
@@ -21311,7 +21311,7 @@ LABEL_571:
       v319 = -60;
       v321 = v189 + 3;
       v320 = (v189 + 3) / 256;
-      FUN_0053cc30((int)v322, (int)v188, v187);
+      CSimpleModulus_Encode((int)v322, (int)v188, v187);
       v195 = 0;
       v196 = v194;
       if ( s == -1 )
@@ -21328,7 +21328,7 @@ LABEL_571:
         }
         if ( v197 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v319, v197);
           }
@@ -21341,7 +21341,7 @@ LABEL_571:
         }
         goto LABEL_574;
       }
-      if ( WSAGetLastError() != 10035 || DAT_055cc16c + v194 > 0x2000 )
+      if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v194 > 0x2000 )
       {
         goto LABEL_571;
       }
@@ -21720,31 +21720,31 @@ LABEL_571:
       qmemcpy(v323, &v314, v313);
       v323[v215] = rand();
       v216 = (v323[0] != -63) + 2;
-      PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       v217 = g_byPacketSerialSend;
       v322[v216 + 1024] = g_byPacketSerialSend;
       g_byPacketSerialSend = v217 + 1;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
       {
-        v218 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+        v218 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
         v219 = v218[1] - 1;
         v218[1] = v219;
         if ( !v219 )
         {
-          FUN_00423710(v218, &g_byPacketSerialSend);
+          Packet_EncryptByte(v218, &g_byPacketSerialSend);
         }
       }
       v220 = v216 - 1;
       v221 = v215 - v220;
       v222 = &v323[v220];
-      v223 = FUN_0053cc30(0, (int)&v323[v220], v215 - v220);
+      v223 = CSimpleModulus_Encode(0, (int)&v323[v220], v215 - v220);
       if ( v223 < 256 )
       {
         v274 = v215 - v220;
         v224 = v223 + 2;
         buf = -61;
         v317 = v223 + 2;
-        FUN_0053cc30((int)v318, (int)&v323[v220], v274);
+        CSimpleModulus_Encode((int)v318, (int)&v323[v220], v274);
         v225 = 0;
         v124 = v224;
         if ( s != -1 )
@@ -21759,7 +21759,7 @@ LABEL_571:
             }
             if ( v226 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)&buf, v226);
               }
@@ -21772,7 +21772,7 @@ LABEL_571:
             }
             goto LABEL_574;
           }
-          if ( WSAGetLastError() == 10035 && DAT_055cc16c + v224 <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v224 <= 0x2000 )
           {
             goto LABEL_561;
           }
@@ -21784,7 +21784,7 @@ LABEL_571:
       v319 = -60;
       v321 = v223 + 3;
       v320 = (v223 + 3) / 256;
-      FUN_0053cc30((int)v322, (int)v222, v221);
+      CSimpleModulus_Encode((int)v322, (int)v222, v221);
       v229 = 0;
       v196 = v228;
       if ( s == -1 )
@@ -21801,7 +21801,7 @@ LABEL_571:
         }
         if ( v230 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v319, v230);
           }
@@ -21814,15 +21814,15 @@ LABEL_571:
         }
         goto LABEL_574;
       }
-      if ( WSAGetLastError() != 10035 || DAT_055cc16c + v228 > 0x2000 )
+      if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v228 > 0x2000 )
       {
         goto LABEL_571;
       }
     }
-    qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v319, v196);
-    v199 = v196 + DAT_055cc16c;
+    qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v319, v196);
+    v199 = v196 + SocketClientSendBufferLength;
 LABEL_573:
-    DAT_055cc16c = v199;
+    SocketClientSendBufferLength = v199;
     goto LABEL_574;
   }
   if ( !DAT_00559f5f || DAT_07eaa148 )
@@ -22195,21 +22195,21 @@ LABEL_573:
     qmemcpy(v323, &v314, v313);
     v323[v152] = rand();
     v153 = (v323[0] != -63) + 2;
-    PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v154 = g_byPacketSerialSend;
     v322[v153 + 1024] = g_byPacketSerialSend;
     g_byPacketSerialSend = v154 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     --v153;
     v155 = v152 - v153;
     v156 = &v323[v153];
-    v157 = FUN_0053cc30(0, (int)v156, v155);
+    v157 = CSimpleModulus_Encode(0, (int)v156, v155);
     if ( v157 < 256 )
     {
       v158 = v157 + 2;
       buf = -61;
       v317 = v157 + 2;
-      FUN_0053cc30((int)v318, (int)v156, v155);
+      CSimpleModulus_Encode((int)v318, (int)v156, v155);
       v159 = 0;
       v124 = v158;
       if ( s != -1 )
@@ -22224,7 +22224,7 @@ LABEL_573:
           }
           if ( v160 )
           {
-            if ( DAT_055ce174 )
+            if ( SocketClientLogPrint )
             {
               nullsub_2((int)&buf, v160);
             }
@@ -22237,7 +22237,7 @@ LABEL_573:
           }
           goto LABEL_574;
         }
-        if ( WSAGetLastError() == 10035 && DAT_055cc16c + v158 <= 0x2000 )
+        if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v158 <= 0x2000 )
         {
           goto LABEL_561;
         }
@@ -22251,7 +22251,7 @@ LABEL_574:
     v319 = -60;
     v321 = v157 + 3;
     v320 = (v157 + 3) / 256;
-    FUN_0053cc30((int)v322, (int)v156, v155);
+    CSimpleModulus_Encode((int)v322, (int)v156, v155);
     v163 = 0;
     v129 = v162;
     if ( s == -1 )
@@ -22268,7 +22268,7 @@ LABEL_574:
       }
       if ( v164 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&v319, v164);
         }
@@ -22281,13 +22281,13 @@ LABEL_574:
       }
       goto LABEL_574;
     }
-    if ( WSAGetLastError() != 10035 || DAT_055cc16c + v162 > 0x2000 )
+    if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v162 > 0x2000 )
     {
       goto LABEL_571;
     }
 LABEL_572:
-    qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v319, v129);
-    v199 = v129 + DAT_055cc16c;
+    qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v319, v129);
+    v199 = v129 + SocketClientSendBufferLength;
     goto LABEL_573;
   }
   DAT_07ea9810 = v100;
@@ -22323,7 +22323,7 @@ LABEL_572:
 LABEL_576:
   v309 = (BYTE *)CharacterMachine;
   v307 = (BYTE *)CharacterMachine;
-  v260 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v260 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v261 = 0;
   v308 = 0;
   if ( DAT_055c9bd4 )
@@ -22335,7 +22335,7 @@ LABEL_576:
         if ( v260 != -1 )
         {
           v307 = v309;
-          v262 = (*(int (__cdecl **)(int *, BYTE *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, v309);
+          v262 = (*(int (__cdecl **)(int *, BYTE *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, v309);
           v263 = 0;
           v308 = 0;
           if ( DAT_055c9bd4 )
@@ -22443,7 +22443,7 @@ void FUN_004d1fc0()
   FUN_004cdc70(115.0, 46.0, 60.0, 40.0, 7);
   v0 = (void *)CharacterMachine;
   v21 = CharacterMachine;
-  v1 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v1 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v20 = 0;
   v17 = 0;
   if ( DAT_055c9bd4 )
@@ -22456,7 +22456,7 @@ void FUN_004d1fc0()
         {
           break;
         }
-        v6 = FUN_004041e0(&DAT_055c9bc8, (int)v0);
+        v6 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v0);
         if ( v6 == -1 )
         {
           v7 = 0;
@@ -22469,7 +22469,7 @@ void FUN_004d1fc0()
         v7[1412] = v8;
         if ( v8 < 2u )
         {
-          FUN_00404370(v0, v7);
+          Packet_DecryptBuffer(v0, v7);
         }
         goto LABEL_7;
       }
@@ -22488,7 +22488,7 @@ LABEL_5:
   }
   v3 = operator_new(0x585u);
   *(BYTE *)(v3 + 1412) = 1;
-  FUN_00403f80(&DAT_055c9bc8, v3, (int)v0);
+  HashTable_Insert(&MAIN_HASH_CLASS, v3, (int)v0);
 LABEL_7:
   if ( (*(BYTE *)(CharacterAttribute + 11) & 7) != 3 )
   {
@@ -22496,7 +22496,7 @@ LABEL_7:
   }
   v4 = (const void *)CharacterMachine;
   v20 = CharacterMachine;
-  v5 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+  v5 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
   v21 = 0;
   v18 = 0;
   if ( DAT_055c9bd4 )
@@ -22507,7 +22507,7 @@ LABEL_7:
       {
         if ( v5 != -1 )
         {
-          v9 = FUN_004041e0(&DAT_055c9bc8, (int)v4);
+          v9 = FUN_004041e0(&MAIN_HASH_CLASS, (int)v4);
           if ( v9 == -1 )
           {
             v19 = 0;
@@ -22977,13 +22977,13 @@ LABEL_87:
         return;
       }
       MouseLButtonPush = 0;
-      if ( DAT_05826d18 )
+      if ( BuyCost )
       {
         return;
       }
       v47 = *((unsigned char *)v285 + 62) + a4 * *((unsigned char *)v285 + 63);
       v283 = ItemValue((int)&a3[34 * v47], 0);
-      if ( DAT_05826d18 )
+      if ( BuyCost )
       {
         return;
       }
@@ -23033,22 +23033,22 @@ LABEL_87:
       qmemcpy(v304, &v295, v294);
       v304[v49] = rand();
       v50 = (v304[0] != -63) + 2;
-      PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       v51 = g_byPacketSerialSend;
       v304[v50 - 1] = g_byPacketSerialSend;
       g_byPacketSerialSend = v51 + 1;
-      PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
       --v50;
       v52 = v49 - v50;
       v53 = &v304[v50];
-      v54 = FUN_0053cc30(0, (int)v53, v52);
+      v54 = CSimpleModulus_Encode(0, (int)v53, v52);
       if ( v54 >= 256 )
       {
         v64 = v54 + 3;
         v300[0] = -60;
         v300[2] = v54 + 3;
         v300[1] = (v54 + 3) / 256;
-        FUN_0053cc30((int)&v300[3], (int)v53, v52);
+        CSimpleModulus_Encode((int)&v300[3], (int)v53, v52);
         v65 = 0;
         v57 = v64;
         if ( s != -1 )
@@ -23063,7 +23063,7 @@ LABEL_87:
             }
             if ( v66 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)v300, v66);
               }
@@ -23076,10 +23076,10 @@ LABEL_87:
             }
             goto LABEL_123;
           }
-          if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v64) <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v64) <= 0x2000 )
           {
-            v68 = (char *)&DAT_055ca16c + DAT_055cc16c;
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, v300, 4 * (v57 >> 2));
+            v68 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, v300, 4 * (v57 >> 2));
             v62 = &v300[4 * (v57 >> 2)];
             v61 = &v68[4 * (v57 >> 2)];
             v63 = v57;
@@ -23087,7 +23087,7 @@ LABEL_87:
           }
 LABEL_120:
           CWsctlc::Close((DWORD)&SocketClient);
-          DAT_05826d18 = v283;
+          BuyCost = v283;
           return;
         }
       }
@@ -23096,7 +23096,7 @@ LABEL_120:
         v55 = v54 + 2;
         buf = -61;
         v298 = v54 + 2;
-        FUN_0053cc30((int)v299, (int)v53, v52);
+        CSimpleModulus_Encode((int)v299, (int)v53, v52);
         v56 = 0;
         v57 = v55;
         if ( s != -1 )
@@ -23111,7 +23111,7 @@ LABEL_120:
             }
             if ( v58 )
             {
-              if ( DAT_055ce174 )
+              if ( SocketClientLogPrint )
               {
                 nullsub_2((int)&buf, v58);
               }
@@ -23124,23 +23124,23 @@ LABEL_120:
             }
             goto LABEL_123;
           }
-          if ( WSAGetLastError() == 10035 && (int)(DAT_055cc16c + v55) <= 0x2000 )
+          if ( WSAGetLastError() == 10035 && (int)(SocketClientSendBufferLength + v55) <= 0x2000 )
           {
-            v60 = (char *)&DAT_055ca16c + DAT_055cc16c;
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, 4 * (v57 >> 2));
+            v60 = (char *)&SocketClientSendBuffer + SocketClientSendBufferLength;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, 4 * (v57 >> 2));
             v62 = &buf + 4 * (v57 >> 2);
             v61 = &v60[4 * (v57 >> 2)];
             v63 = v57;
 LABEL_122:
             qmemcpy(v61, v62, v63 & 3);
-            DAT_055cc16c += v57;
+            SocketClientSendBufferLength += v57;
             goto LABEL_123;
           }
           goto LABEL_120;
         }
       }
 LABEL_123:
-      DAT_05826d18 = v283;
+      BuyCost = v283;
       return;
     }
     if ( *(DWORD *)&RepairEnable_0 )
@@ -23246,31 +23246,31 @@ LABEL_123:
         qmemcpy(v304, &v295, v294);
         v304[v25] = rand();
         v26 = (v304[0] != -63) + 2;
-        PACKET_DECRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+        PACKET_DECRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
         v27 = g_byPacketSerialSend;
         v304[v26 - 1] = g_byPacketSerialSend;
         g_byPacketSerialSend = v27 + 1;
-        if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) != -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) != -1 )
         {
-          v28 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v28 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
           v29 = v28[1] - 1;
           v28[1] = v29;
           if ( !v29 )
           {
-            FUN_00423710(v28, &g_byPacketSerialSend);
+            Packet_EncryptByte(v28, &g_byPacketSerialSend);
           }
         }
         v30 = v26 - 1;
         v31 = v25 - v30;
         v32 = &v304[v30];
-        v33 = FUN_0053cc30(0, (int)&v304[v30], v31);
+        v33 = CSimpleModulus_Encode(0, (int)&v304[v30], v31);
         if ( v33 >= 256 )
         {
           v40 = v33 + 3;
           v300[0] = -60;
           v300[2] = v33 + 3;
           v300[1] = (v33 + 3) / 256;
-          FUN_0053cc30((int)&v300[3], (int)v32, v31);
+          CSimpleModulus_Encode((int)&v300[3], (int)v32, v31);
           v41 = 0;
           v42 = v40;
           if ( s != -1 )
@@ -23285,7 +23285,7 @@ LABEL_123:
               }
               if ( v43 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2((int)v300, v43);
                 }
@@ -23298,14 +23298,14 @@ LABEL_123:
               }
               goto LABEL_74;
             }
-            if ( WSAGetLastError() != 10035 || DAT_055cc16c + v40 > 0x2000 )
+            if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v40 > 0x2000 )
             {
               goto LABEL_71;
             }
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, v300, v42);
-            v39 = v42 + DAT_055cc16c;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, v300, v42);
+            v39 = v42 + SocketClientSendBufferLength;
 LABEL_73:
-            DAT_055cc16c = v39;
+            SocketClientSendBufferLength = v39;
           }
         }
         else
@@ -23313,7 +23313,7 @@ LABEL_73:
           v34 = v33 + 2;
           buf = -61;
           v298 = v33 + 2;
-          FUN_0053cc30((int)v299, (int)&v304[v30], v31);
+          CSimpleModulus_Encode((int)v299, (int)&v304[v30], v31);
           v35 = 0;
           v36 = v34;
           if ( s != -1 )
@@ -23328,7 +23328,7 @@ LABEL_73:
               }
               if ( v37 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2((int)&buf, v37);
                 }
@@ -23341,10 +23341,10 @@ LABEL_73:
               }
               goto LABEL_74;
             }
-            if ( WSAGetLastError() == 10035 && DAT_055cc16c + v34 <= 0x2000 )
+            if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v34 <= 0x2000 )
             {
-              qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, v36);
-              v39 = v36 + DAT_055cc16c;
+              qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, v36);
+              v39 = v36 + SocketClientSendBufferLength;
               goto LABEL_73;
             }
 LABEL_71:
@@ -23373,16 +23373,16 @@ LABEL_74:
       *(DWORD *)&Inventory[32].Type = v71;
       UI_Main(v71, a3, a4);
       CheckInventory = 0;
-      FUN_0043d8a0(&DAT_055c9bc8, &TradeOpened);
+      HashTable_Insert_Short(&MAIN_HASH_CLASS, &TradeOpened);
       v72 = TradeOpened;
-      if ( FUN_004041e0(&DAT_055c9bc8, (int)&TradeOpened) != -1 )
+      if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&TradeOpened) != -1 )
       {
-        v73 = (BYTE *)FUN_00404280(&DAT_055c9bc8, (int)&TradeOpened);
+        v73 = (BYTE *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&TradeOpened);
         v74 = v73[1] - 1;
         v73[1] = v74;
         if ( !v74 )
         {
-          FUN_00423710(v73, &TradeOpened);
+          Packet_EncryptByte(v73, &TradeOpened);
         }
       }
       if ( v72 && m_bMyConfirm && a3 == OffsetTradeItems )
@@ -23434,37 +23434,37 @@ LABEL_74:
         qmemcpy(v304, &v295, v294);
         v304[v76] = rand();
         v77 = (v304[0] != -63) + 2;
-        if ( FUN_004041e0(&DAT_055c9bc8, (int)&g_byPacketSerialSend) == -1 )
+        if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend) == -1 )
         {
           v80 = operator_new(2u);
           *(BYTE *)(v80 + 1) = 1;
-          FUN_00403f80(&DAT_055c9bc8, v80, (int)&g_byPacketSerialSend);
+          HashTable_Insert(&MAIN_HASH_CLASS, v80, (int)&g_byPacketSerialSend);
         }
         else
         {
-          v78 = (char *)FUN_00404280(&DAT_055c9bc8, (int)&g_byPacketSerialSend);
+          v78 = (char *)HashTable_GetNode(&MAIN_HASH_CLASS, (int)&g_byPacketSerialSend);
           v79 = v78[1] + 1;
           v78[1] = v79;
           if ( (unsigned char)v79 < 2u )
           {
-            FUN_00404330(&g_byPacketSerialSend, v78);
+            Packet_DecryptByte(&g_byPacketSerialSend, v78);
           }
         }
         v81 = g_byPacketSerialSend;
         v304[v77 - 1] = g_byPacketSerialSend;
         g_byPacketSerialSend = v81 + 1;
-        PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+        PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
         v82 = v77 - 1;
         v83 = v76 - v82;
         v84 = &v304[v82];
-        v85 = FUN_0053cc30(0, (int)&v304[v82], v83);
+        v85 = CSimpleModulus_Encode(0, (int)&v304[v82], v83);
         if ( v85 >= 256 )
         {
           v92 = v85 + 3;
           v300[0] = -60;
           v300[2] = v85 + 3;
           v300[1] = (v85 + 3) / 256;
-          FUN_0053cc30((int)&v300[3], (int)v84, v83);
+          CSimpleModulus_Encode((int)&v300[3], (int)v84, v83);
           v93 = 0;
           v94 = v92;
           if ( s != -1 )
@@ -23479,7 +23479,7 @@ LABEL_74:
               }
               if ( v95 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2((int)v300, v95);
                 }
@@ -23492,14 +23492,14 @@ LABEL_74:
               }
               goto LABEL_166;
             }
-            if ( WSAGetLastError() != 10035 || DAT_055cc16c + v92 > 0x2000 )
+            if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + v92 > 0x2000 )
             {
               goto LABEL_163;
             }
-            qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, v300, v94);
-            v91 = v94 + DAT_055cc16c;
+            qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, v300, v94);
+            v91 = v94 + SocketClientSendBufferLength;
 LABEL_165:
-            DAT_055cc16c = v91;
+            SocketClientSendBufferLength = v91;
           }
         }
         else
@@ -23507,7 +23507,7 @@ LABEL_165:
           v86 = v85 + 2;
           buf = -61;
           v298 = v85 + 2;
-          FUN_0053cc30((int)v299, (int)&v304[v82], v83);
+          CSimpleModulus_Encode((int)v299, (int)&v304[v82], v83);
           v87 = 0;
           v88 = v86;
           if ( s != -1 )
@@ -23522,7 +23522,7 @@ LABEL_165:
               }
               if ( v89 )
               {
-                if ( DAT_055ce174 )
+                if ( SocketClientLogPrint )
                 {
                   nullsub_2((int)&buf, v89);
                 }
@@ -23535,10 +23535,10 @@ LABEL_165:
               }
               goto LABEL_166;
             }
-            if ( WSAGetLastError() == 10035 && DAT_055cc16c + v86 <= 0x2000 )
+            if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v86 <= 0x2000 )
             {
-              qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf, v88);
-              v91 = v88 + DAT_055cc16c;
+              qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf, v88);
+              v91 = v88 + SocketClientSendBufferLength;
               goto LABEL_165;
             }
 LABEL_163:
@@ -23696,7 +23696,7 @@ LABEL_85:
         }
         if ( v137 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&v301[2], v137);
           }
@@ -23709,7 +23709,7 @@ LABEL_85:
         }
         return;
       }
-      if ( WSAGetLastError() == 10035 && DAT_055cc16c + v134 <= 0x2000 )
+      if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v134 <= 0x2000 )
       {
         goto LABEL_239;
       }
@@ -23754,11 +23754,11 @@ LABEL_85:
       v136 = *(unsigned short *)v301;
       if...
       while...
-      if ( WSAGetLastError() == 10035 && DAT_055cc16c + v143 <= 0x2000 )
+      if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v143 <= 0x2000 )
       {
 LABEL_239:
-        qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &v301[2], v136);
-        DAT_055cc16c += v136;
+        qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &v301[2], v136);
+        SocketClientSendBufferLength += v136;
         return;
       }
 LABEL_260:
@@ -23773,7 +23773,7 @@ LABEL_260:
       }
       if...
       v151 = TradeOpened;
-      PACKET_ENCRYPT(&DAT_055c9bc8, &TradeOpened);
+      PACKET_ENCRYPT(&MAIN_HASH_CLASS, &TradeOpened);
       if ( v151 )
       {
 LABEL_322:
@@ -23827,7 +23827,7 @@ LABEL_322:
       v163 = v156 - 1;
       v164 = v155 - v163;
       v165 = &v304[v163];
-      v166 = FUN_0053cc30(0, (int)&v304[v163], v164);
+      v166 = CSimpleModulus_Encode(0, (int)&v304[v163], v164);
       if...
       CWsctlc::Close((DWORD)&SocketClient);
       goto LABEL_318;
@@ -23836,13 +23836,13 @@ LABEL_322:
     {
       v178 = (void *)CharacterMachine;
       v284 = (WORD *)CharacterMachine;
-      v179 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v179 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v283 = 0;
       v286 = 0;
       if...
       v181 = operator_new(0x585u);
       *(BYTE *)(v181 + 1412) = 1;
-      FUN_00403f80(&DAT_055c9bc8, v181, (int)v178);
+      HashTable_Insert(&MAIN_HASH_CLASS, v181, (int)v178);
 LABEL_335:
       if ( (unsigned int)*(WORD *)(CharacterAttribute + 14) < ItemAttribute[*v285].RequireLevel
         || *(WORD *)(CharacterAttribute + 26) < (unsigned short)v285[16]
@@ -23910,7 +23910,7 @@ LABEL_417:
       v209 = v200 - 1;
       v210 = v199 - v209;
       v211 = &v304[v209];
-      v212 = FUN_0053cc30(0, (int)&v304[v209], v199 - v209);
+      v212 = CSimpleModulus_Encode(0, (int)&v304[v209], v199 - v209);
       if...
 LABEL_411:
       v224 = *(&OffsetInventoryItems.Type + 34 * v287);
@@ -23926,7 +23926,7 @@ LABEL_411:
 LABEL_418:
       v286 = (char *)CharacterMachine;
       v284 = (WORD *)CharacterMachine;
-      v225 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v225 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v226 = 0;
       v283 = 0;
       if...
@@ -23936,14 +23936,14 @@ LABEL_418:
     {
       v285 = (short *)CharacterMachine;
       v284 = (WORD *)CharacterMachine;
-      v238 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v238 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v239 = 0;
       v283 = 0;
       if...
       v286 = (char *)operator_new(0x585u);
       v286[1412] = 1;
       v283 = (int)v285;
-      v240 = (*(int (__cdecl **)(int *, short *))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, v285);
+      v240 = (*(int (__cdecl **)(int *, short *))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, v285);
       v241 = 0;
       v284 = 0;
       if...
@@ -23951,7 +23951,7 @@ LABEL_466:
       v290 = *(unsigned short *)(CharacterAttribute + 14);
       v286 = (char *)CharacterMachine;
       v284 = (WORD *)CharacterMachine;
-      v249 = (*(int (__cdecl **)(int *, DWORD))(DAT_055c9bc8 + 12))(&DAT_055c9bc8, CharacterMachine);
+      v249 = (*(int (__cdecl **)(int *, DWORD))(MAIN_HASH_CLASS + 12))(&MAIN_HASH_CLASS, CharacterMachine);
       v250 = 0;
       v283 = 0;
       if...
@@ -24016,7 +24016,7 @@ LABEL_498:
   }
   if...
   v104 = TradeOpened;
-  PACKET_ENCRYPT(&DAT_055c9bc8, &TradeOpened);
+  PACKET_ENCRYPT(&MAIN_HASH_CLASS, &TradeOpened);
   if ( v104 )
   {
 LABEL_217:
@@ -24067,11 +24067,11 @@ LABEL_217:
     v113 = g_byPacketSerialSend;
     v304[v109 - 1] = g_byPacketSerialSend;
     g_byPacketSerialSend = v113 + 1;
-    PACKET_ENCRYPT(&DAT_055c9bc8, &g_byPacketSerialSend);
+    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &g_byPacketSerialSend);
     v114 = v109 - 1;
     v115 = v108 - v114;
     v116 = &v304[v114];
-    v117 = FUN_0053cc30(0, (int)&v304[v114], v115);
+    v117 = CSimpleModulus_Encode(0, (int)&v304[v114], v115);
     if...
 LABEL_215:
     v129 = *(&OffsetInventoryItems.Type + 34 * v287);
@@ -24090,9 +24090,9 @@ LABEL_319:
 }
 #endif
 
-// ── FUN_004e13a0 (IDA-only, gated) ──
+// ── RenderObjectScreen (IDA-only, gated) ──
 #if defined(IDA_PORT_004E13A0)
-void __cdecl FUN_004e13a0(int Type, int ItemLevel, int Option1, float Target[3], int Select, bool PickUp)
+void __cdecl RenderObjectScreen(int Type, int ItemLevel, int Option1, float Target[3], int Select, bool PickUp)
 {
   int Level; // edi
   short v9; // ax
@@ -24254,7 +24254,7 @@ LABEL_51:
     *(float *)&DAT_07ea9530 = WorldTime * 0.44999999;
   }
   v9 = Type;
-  DAT_07ea9512 = Type;
+  ObjectSelect_Type = Type;
   if ( (short)Type < 624 || (short)Type >= 784 )
   {
     if ( (WORD)Type == 860 )
@@ -24265,25 +24265,25 @@ LABEL_51:
         {
           v9 = 948;
           Type = 948;
-          DAT_07ea9512 = 948;
+          ObjectSelect_Type = 948;
         }
       }
       else
       {
         v9 = 947;
         Type = 947;
-        DAT_07ea9512 = 947;
+        ObjectSelect_Type = 947;
       }
     }
   }
   else
   {
     v9 = 390;
-    DAT_07ea9512 = 390;
+    ObjectSelect_Type = 390;
   }
-  DAT_07ea9618 = 0;
-  DAT_07ea961c = 0;
-  DAT_07ea9616 = 0;
+  ObjectSelect_AnimationFrame = 0;
+  ObjectSelect_PriorAnimationFrame = 0;
+  ObjectSelect_PriorAction = 0;
   v10 = Models + 188 * v9;
   *(BYTE *)(v10 + 160) = 0;
   if ( Type >= 624 )
@@ -24459,7 +24459,7 @@ LABEL_104:
   }
   v11 = 0x3B23D70A;
 LABEL_142:
-  BMD_Animation(v10, (float (*)[3][4])BoneMatrix, 0.0, 0.0, 0, Angle, DAT_07ea9538, 0, 0);
+  BMD_Animation(v10, (float (*)[3][4])BoneMatrix, 0.0, 0.0, 0, Angle, ObjectSelect_HeadAngle, 0, 0);
   (WORD)((o) >> 16) = Type;
   ItemObjectAttribute((DWORD)&o);
   v17 = Position[0];
@@ -24475,9 +24475,9 @@ LABEL_142:
 }
 #endif
 
-// ── FUN_004f6850 (IDA-only, gated) ──
+// ── SecondPassword_CancelReturn (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6850)
-char FUN_004f6850()
+char SecondPassword_CancelReturn()
 {
   char v0; // dl
   ITEM *v1; // eax
@@ -24526,7 +24526,7 @@ char FUN_004f6850()
         }
         if ( v5 )
         {
-          if ( DAT_055ce174 )
+          if ( SocketClientLogPrint )
           {
             nullsub_2((int)&buf[2], v5);
           }
@@ -24539,13 +24539,13 @@ char FUN_004f6850()
         }
         return 1;
       }
-      if ( WSAGetLastError() != 10035 || DAT_055cc16c + 3 > 0x2000 )
+      if ( WSAGetLastError() != 10035 || SocketClientSendBufferLength + 3 > 0x2000 )
       {
         CWsctlc::Close((DWORD)&SocketClient);
         return 1;
       }
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[2], v4);
-      DAT_055cc16c += v4;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[2], v4);
+      SocketClientSendBufferLength += v4;
     }
     return 1;
   }
@@ -24557,9 +24557,9 @@ char FUN_004f6850()
 }
 #endif
 
-// ── FUN_004f6a70 (IDA-only, gated) ──
+// ── Net_Disconnect_Clean (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6A70)
-char __cdecl FUN_004f6a70(int a1, int a2)
+char __cdecl Net_Disconnect_Clean(int a1, int a2)
 {
   int v3; // edi
   signed int v4; // ebx
@@ -24597,7 +24597,7 @@ char __cdecl FUN_004f6a70(int a1, int a2)
       }
       if ( v5 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&buf[2], v5);
         }
@@ -24610,10 +24610,10 @@ char __cdecl FUN_004f6a70(int a1, int a2)
       }
       return 1;
     }
-    if ( WSAGetLastError() == 10035 && DAT_055cc16c + 3 <= 0x2000 )
+    if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + 3 <= 0x2000 )
     {
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[2], v4);
-      DAT_055cc16c += v4;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[2], v4);
+      SocketClientSendBufferLength += v4;
     }
     else
     {
@@ -24624,18 +24624,18 @@ char __cdecl FUN_004f6a70(int a1, int a2)
 }
 #endif
 
-// ── FUN_004f6cb0 (IDA-only, gated) ──
+// ── ExitProgram (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6CB0)
-void __cdecl FUN_004f6cb0()
+void __cdecl ExitProgram()
 {
   MessageBoxA(g_hWnd, GlobalText[11], 0, 0);
   SendMessageA(g_hWnd, 2u, 0, 0);
 }
 #endif
 
-// ── FUN_004f6ce0 (IDA-only, gated) ──
+// ── OpenTerrainAttribute (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6CE0)
-int __cdecl FUN_004f6ce0(char *FileName)
+int __cdecl OpenTerrainAttribute(char *FileName)
 {
   FILE *fp; // eax MAPDST
   int result; // eax
@@ -24654,7 +24654,7 @@ int __cdecl FUN_004f6ce0(char *FileName)
     if ( iSize == 65539 )
     {
       fread(&byBuffer, 65539u, 1u, fp);
-      BuxConvert((BYTE *)&byBuffer, 65539);
+      BuxConvert_1((BYTE *)&byBuffer, 65539);
       qmemcpy(TerrainWall, (char *)&byBuffer + 3, sizeof(TerrainWall));
       Error = 0;
       if ( (BYTE)byBuffer || *(WORD *)((char *)&byBuffer + 1) != 0xFFFF )
@@ -24737,9 +24737,9 @@ LABEL_19:
 }
 #endif
 
-// ── FUN_004f6eb0 (IDA-only, gated) ──
+// ── BuxConvert (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6EB0)
-void __cdecl FUN_004f6eb0(BYTE *Buffer, int Size)
+void __cdecl BuxConvert(BYTE *Buffer, int Size)
 {
   int i; // ecx
 
@@ -24750,9 +24750,9 @@ void __cdecl FUN_004f6eb0(BYTE *Buffer, int Size)
 }
 #endif
 
-// ── FUN_004f7250 (IDA-only, gated) ──
+// ── OpenTerrainLight (IDA-only, gated) ──
 #if defined(IDA_PORT_004F7250)
-void __cdecl FUN_004f7250(char *FileName)
+void __cdecl OpenTerrainLight(char *FileName)
 {
   OpenJpegBuffer(FileName, &TerrainLight);
   CreateTerrainNormal();
@@ -24852,9 +24852,9 @@ int __cdecl FUN_004f98c0(int a1, int a2, int a3, int a4, int a5)
   return result;
 }
 
-// ── FUN_004f9c20 (IDA-only, gated) ──
+// ── Terrain_SetupCulling (IDA-only, gated) ──
 #if defined(IDA_PORT_004F9C20)
-void __cdecl FUN_004f9c20(bool EditFlag)
+void __cdecl Terrain_SetupCulling(bool EditFlag)
 {
   double v1; // st7
   double v2; // st7
@@ -24878,7 +24878,7 @@ void __cdecl FUN_004f9c20(bool EditFlag)
   if ( EditFlag )
   {
     SelectFlag = 0;
-    FUN_00512d30();
+    Map_InitRayCast();
   }
   else
   {
@@ -24901,20 +24901,20 @@ void __cdecl FUN_004f9c20(bool EditFlag)
       TerrainFlag = 2;
       RenderTerrainFrustrum(0);
     }
-    FUN_004f7060();
+    Terrain_SpawnAmbientObjects();
     DisableDepthTest();
     EnableCullFace();
-    FUN_00479540();
+    RenderTerrainAlphaBitmaps();
     EnableDepthTest();
   }
   DAT_0839bc88 ^= 1u;
-  FUN_004f9a30(DAT_0839bc88);
+  Terrain_WaterWaveUpdate(DAT_0839bc88);
 }
 #endif
 
-// ── FUN_004f9cb0 (IDA-only, gated) ──
+// ── Vec3_Multiply (IDA-only, gated) ──
 #if defined(IDA_PORT_004F9CB0)
-float *__cdecl FUN_004f9cb0(float *a1, float *a2, float *a3)
+float *__cdecl Vec3_Multiply(float *a1, float *a2, float *a3)
 {
   float *result; // eax
 
@@ -24926,9 +24926,9 @@ float *__cdecl FUN_004f9cb0(float *a1, float *a2, float *a3)
 }
 #endif
 
-// ── FUN_004f9ce0 (IDA-only, gated) ──
+// ── VectorMA (IDA-only, gated) ──
 #if defined(IDA_PORT_004F9CE0)
-void __cdecl FUN_004f9ce0(float va[3], float scale, float vb[3], float vc[3])
+void __cdecl VectorMA(float va[3], float scale, float vb[3], float vc[3])
 {
   *vc = scale * *vb + *va;
   vc[1] = scale * vb[1] + va[1];
@@ -24936,9 +24936,9 @@ void __cdecl FUN_004f9ce0(float va[3], float scale, float vb[3], float vc[3])
 }
 #endif
 
-// ── FUN_004f9d20 (IDA-only, gated) ──
+// ── Vec3_Cross (IDA-only, gated) ──
 #if defined(IDA_PORT_004F9D20)
-float *__cdecl FUN_004f9d20(float *a1, float *a2, float *a3)
+float *__cdecl Vec3_Cross(float *a1, float *a2, float *a3)
 {
   float *result; // eax
 
@@ -24950,9 +24950,9 @@ float *__cdecl FUN_004f9d20(float *a1, float *a2, float *a3)
 }
 #endif
 
-// ── FUN_004fa5a0 (IDA-only, gated) ──
+// ── ClearActionObject (IDA-only, gated) ──
 #if defined(IDA_PORT_004FA5A0)
-int FUN_004fa5a0()
+int ClearActionObject()
 {
   int result; // eax
 
@@ -24971,7 +24971,7 @@ int FUN_004fa5a0()
 #define LODWORD(x)  (*(unsigned int*)&(x))
 #define Models      DAT_05828d58
 #define EditFlag    DAT_07e11d30
-extern void __cdecl FUN_0046ca00(DWORD Object);   // World-4 gate FX (stubs_game.cpp)
+extern void __cdecl Effect_PhysicsTick(DWORD Object);   // World-4 gate FX (stubs_game.cpp)
 extern "C" void DbgLogPublic(const char*);        // [DIAG activación temporal]
 void __cdecl FUN_004fdc00(float o)
 {
@@ -25018,7 +25018,7 @@ void __cdecl FUN_004fdc00(float o)
       Light[2] = v1 * 0.5;
       yf = (double)(rand() % 1200) + *(float *)(Hero + 20) - 600.0;
       xf = (double)(rand() % 1200) + *(float *)(Hero + 16) - 600.0;
-      AddTerrainLight(xf, yf, Light, 12, PrimaryTerrainLight[0]);
+      AddTerrainLight(xf, yf, (float*)Light, 12, (float*)PrimaryTerrainLight[0]);
     }
     PlayBuffer(1, 0, 1);
   }
@@ -25068,12 +25068,12 @@ LABEL_22:
   }
   v6 = (float *)(LODWORD(o) + 28);
   v7 = (float *)(LODWORD(o) + 16);
-  // NOTA: nuestro FUN_00440aa0 (BMD_Anim.cpp) es la variante de 5 args (avanza
+  // NOTA: nuestro BMD__PlayAnimation (BMD_Anim.cpp) es la variante de 5 args (avanza
   // el frame). El IDA sub_440AA0 toma 7 (los 2 últimos = pos/vel para root-motion
   // de la animación). Los omitimos: el avance de frame —lo que faltaba— funciona.
-  FUN_00440aa0((void*)v5, (float*)(LODWORD(o) + 264), (float*)(LODWORD(o) + 268),
+  BMD__PlayAnimation((void*)v5, (float*)(LODWORD(o) + 264), (float*)(LODWORD(o) + 268),
                (void*)(LODWORD(o) + 262), oa);
-  if ( g_GameState == 2 || g_GameState == 4 )
+  if ( SceneFlag == 2 || SceneFlag == 4 )
   {
     if ( *(WORD *)(LODWORD(o) + 2) == 160 )
     {
@@ -25216,7 +25216,7 @@ LABEL_38:
             ob = v16;
             if ( v16 >= 200.0 )
             {
-              *(float *)(LODWORD(o) + 36) = FUN_0043e1b0(*(float *)(LODWORD(o) + 36), *(float *)(LODWORD(o) + 48), 10.0);
+              *(float *)(LODWORD(o) + 36) = TurnAngle2(*(float *)(LODWORD(o) + 36), *(float *)(LODWORD(o) + 48), 10.0);
               *v7 = (*(float *)(LODWORD(o) + 52) - *v7) * 0.2 + *v7;
               *(float *)(LODWORD(o) + 20) = (*(float *)(LODWORD(o) + 56) - *(float *)(LODWORD(o) + 20)) * 0.2
                                           + *(float *)(LODWORD(o) + 20);
@@ -25334,7 +25334,7 @@ LABEL_92:
           goto LABEL_132;
         case 0x26:
         case 0x27:
-          FUN_0046ca00(LODWORD(o));
+          Effect_PhysicsTick(LODWORD(o));
           break;
         default:
           return;
@@ -25504,9 +25504,9 @@ LABEL_132:
 #undef EditFlag
 #endif
 
-// ── FUN_004ffcc0 (IDA-only, gated) ──
+// ── Entity_GridUnlink (IDA-only, gated) ──
 #if defined(IDA_PORT_004FFCC0)
-void __cdecl FUN_004ffcc0(DWORD *lpMem, int a2)
+void __cdecl Entity_GridUnlink(DWORD *lpMem, int a2)
 {
   int v2; // eax
   int v3; // ecx
@@ -25543,9 +25543,9 @@ void __cdecl FUN_004ffcc0(DWORD *lpMem, int a2)
 }
 #endif
 
-// ── FUN_00502b80 (IDA-only, gated) ──
+// ── ClearItems (IDA-only, gated) ──
 #if defined(IDA_PORT_00502B80)
-void __cdecl FUN_00502b80()
+void __cdecl ClearItems()
 {
   BYTE *v0; // eax
 
@@ -25559,9 +25559,9 @@ void __cdecl FUN_00502b80()
 }
 #endif
 
-// ── FUN_00503fe0 (IDA-only, gated) ──
+// ── Weapon_SetColorAlt (IDA-only, gated) ──
 #if defined(IDA_PORT_00503FE0)
-int __cdecl FUN_00503fe0(int a1, float a2, float a3, int a4)
+int __cdecl Weapon_SetColorAlt(int a1, float a2, float a3, int a4)
 {
   int result; // eax
   int v5; // ecx
@@ -25666,9 +25666,9 @@ LABEL_17:
 }
 #endif
 
-// ── FUN_00509190 (IDA-only, gated) ──
+// ── DeleteNpcs (IDA-only, gated) ──
 #if defined(IDA_PORT_00509190)
-void __cdecl FUN_00509190()
+void __cdecl DeleteNpcs()
 {
   int i; // esi
   int j; // esi
@@ -25684,9 +25684,9 @@ void __cdecl FUN_00509190()
 }
 #endif
 
-// ── FUN_00509880 (IDA-only, gated) ──
+// ── DeleteMonsters (IDA-only, gated) ──
 #if defined(IDA_PORT_00509880)
-void __cdecl FUN_00509880()
+void __cdecl DeleteMonsters()
 {
   int i; // esi
   int j; // esi
@@ -25702,9 +25702,9 @@ void __cdecl FUN_00509880()
 }
 #endif
 
-// ── FUN_0050c4d0 (IDA-only, gated) ──
+// ── OpenWorldModels (IDA-only, gated) ──
 #if defined(IDA_PORT_0050C4D0)
-void __cdecl FUN_0050c4d0()
+void __cdecl OpenWorldModels()
 {
   int i; // eax
   int v1; // esi
@@ -26340,7 +26340,7 @@ int __cdecl FUN_0050f700(char *FileName)
   const char *v2; // esi
 
   v1 = fopen(FileName, aWt);
-  v2 = (const char *)&DAT_07e0ffc8;
+  v2 = (const char *)&MacroText;
   do
   {
     fprintf(v1, "%s\n", v2);
@@ -26351,7 +26351,7 @@ int __cdecl FUN_0050f700(char *FileName)
 }
 #endif
 
-// FUN_00512d40 (IDA port) is now active above — see L11220+ block.
+// CollisionDetectLineToFace (IDA port) is now active above — see L11220+ block.
 
 // ── FUN_005130f0 (IDA-only, gated) ──
 #if defined(IDA_PORT_005130F0)
@@ -26390,8 +26390,8 @@ bool __cdecl FUN_005130f0(
   v22 = *(float *)(a3 + 4) * *(float *)(LODWORD(a1) + 4)
       + *(float *)(a3 + 8) * *(float *)(LODWORD(a1) + 8)
       + *(float *)LODWORD(a1) * *(float *)a3;
-  v21 = FUN_00512a30(v24, v22);
-  v20 = FUN_00512a10(v24, v22);
+  v21 = Math_Fmax(v24, v22);
+  v20 = Math_Fmin(v24, v22);
   v16 = a5 * *(float *)(LODWORD(a1) + 4) + a4 * *(float *)LODWORD(a1) + a6 * *(float *)(LODWORD(a1) + 8);
   v19 = v16;
   v23 = a8 * *(float *)(LODWORD(a1) + 4) + a7 * *(float *)LODWORD(a1) + a9 * *(float *)(LODWORD(a1) + 8);
@@ -26427,12 +26427,12 @@ bool __cdecl FUN_005130f0(
 }
 #endif
 
-// ── FUN_00513260 (IDA-only, gated) ──
-// Usa macros Hex-Rays sin portar (LODWORD/qmemcpy/FUN_004f9d20); queda gated.
+// ── Collision_SegmentToOBB (IDA-only, gated) ──
+// Usa macros Hex-Rays sin portar (LODWORD/qmemcpy/Vec3_Cross); queda gated.
 // El hover de items del suelo (FUN_004afa40) usa proximidad world-space en su
 // lugar (ver stubs_mouse_hover.cpp).
 #if defined(IDA_PORT_00513260)
-bool __cdecl FUN_00513260(
+bool __cdecl Collision_SegmentToOBB(
         float a1,
         int a2,
         char a3,
@@ -26463,9 +26463,9 @@ bool __cdecl FUN_00513260(
   LODWORD(v15[9]) = v16;
   v16[1] = v13;
   v16[2] = *(float *)(a2 + 8) - *(float *)(LODWORD(a1) + 8);
-  FUN_004f9d20(v16, &a6, v17);
-  FUN_004f9d20(v16, &a9, v18);
-  FUN_004f9d20(v16, &a12, v19);
+  Vec3_Cross(v16, &a6, v17);
+  Vec3_Cross(v16, &a9, v18);
+  Vec3_Cross(v16, &a12, v19);
   qmemcpy(v15, &a3, sizeof(v15));
   result = FUN_005130f0(
              COERCE_FLOAT(v17),
@@ -26860,7 +26860,7 @@ void FUN_00513c10()
       }
       if ( v17 )
       {
-        if ( DAT_055ce174 )
+        if ( SocketClientLogPrint )
         {
           nullsub_2((int)&buf[1], v17);
         }
@@ -26873,10 +26873,10 @@ void FUN_00513c10()
       }
       goto LABEL_32;
     }
-    if ( WSAGetLastError() == 10035 && DAT_055cc16c + v14 <= 0x2000 )
+    if ( WSAGetLastError() == 10035 && SocketClientSendBufferLength + v14 <= 0x2000 )
     {
-      qmemcpy((char *)&DAT_055ca16c + DAT_055cc16c, &buf[1], v16);
-      DAT_055cc16c += v16;
+      qmemcpy((char *)&SocketClientSendBuffer + SocketClientSendBufferLength, &buf[1], v16);
+      SocketClientSendBufferLength += v16;
     }
     else
     {
@@ -26947,9 +26947,9 @@ void __cdecl FUN_0051d780(int a1, char a2)
 }
 #endif
 
-// ── FUN_00529360 (IDA-only, gated) ──
+// ── OpenJpegBuffer (IDA-only, gated) ──
 #if defined(IDA_PORT_00529360)
-bool __cdecl FUN_00529360(char *filename, float *BufferFloat)
+bool __cdecl OpenJpegBuffer(char *filename, float *BufferFloat)
 {
   char *v2; // ebx
   const char *v3; // edi
@@ -27225,9 +27225,9 @@ int __cdecl FUN_0053ce30(DWORD *_this, DWORD *a2, int a3)
   v25 = 4;
   do
   {
-    FUN_0053cf90(v5, 0, a3, v4, 16);
+    CSimpleModulus_AddBits(v5, 0, a3, v4, 16);
     v6 = v4 + 16;
-    FUN_0053cf90(v5, 22, a3, v6, 2);
+    CSimpleModulus_AddBits(v5, 22, a3, v6, 2);
     v4 = v6 + 2;
     ++v5;
     --v25;
@@ -27267,7 +27267,7 @@ int __cdecl FUN_0053ce30(DWORD *_this, DWORD *a2, int a3)
   }
   while ( !v20 );
   (WORD)(v24) = 0;
-  FUN_0053cf90(&v24, 0, a3, v4, 16);
+  CSimpleModulus_AddBits(&v24, 0, a3, v4, 16);
   v21 = -8;
   (BYTE)(v24) = v24 ^ ((BYTE)((v24) >> 8)) ^ 0x3D;
   for ( i = 0; i < 8; ++i )
@@ -27285,9 +27285,9 @@ int __cdecl FUN_0053ce30(DWORD *_this, DWORD *a2, int a3)
 }
 #endif
 
-// ── FUN_0053cf90 (IDA-only, gated) ──
+// ── CSimpleModulus_AddBits (IDA-only, gated) ──
 #if defined(IDA_PORT_0053CF90)
-int __stdcall FUN_0053cf90(int a1, int a2, int a3, int a4, int a5)
+int __stdcall CSimpleModulus_AddBits(int a1, int a2, int a3, int a4, int a5)
 {
   int v5; // ebx
   unsigned int v6; // ebx
@@ -27297,20 +27297,20 @@ int __stdcall FUN_0053cf90(int a1, int a2, int a3, int a4, int a5)
   int v10; // ecx
   char *lpMem; // [esp+10h] [ebp-8h]
 
-  v5 = FUN_0053d170(a4 + a5 - 1);
-  v6 = 1 - FUN_0053d170(a4) + v5;
+  v5 = CSimpleModulus_GetByteOfBit(a4 + a5 - 1);
+  v6 = 1 - CSimpleModulus_GetByteOfBit(a4) + v5;
   lpMem = (char *)operator_new(v6 + 1);
   memset(lpMem, 0, v6 + 1);
-  qmemcpy(lpMem, (const void *)(a3 + FUN_0053d170(a4)), v6);
+  qmemcpy(lpMem, (const void *)(a3 + CSimpleModulus_GetByteOfBit(a4)), v6);
   v7 = (a4 + a5) % 8;
   if ( v7 )
   {
     lpMem[v6 - 1] &= -1 << (8 - v7);
   }
-  FUN_0053d0d0(lpMem, v6, -(a4 % 8));
-  FUN_0053d0d0(lpMem, v6 + 1, a2 % 8);
+  CSimpleModulus_Shift(lpMem, v6, -(a4 % 8));
+  CSimpleModulus_Shift(lpMem, v6 + 1, a2 % 8);
   v8 = v6 + (a2 % 8 > a4 % 8);
-  v9 = (BYTE *)(a1 + FUN_0053d170(a2));
+  v9 = (BYTE *)(a1 + CSimpleModulus_GetByteOfBit(a2));
   if ( v8 > 0 )
   {
     v10 = lpMem - v9;
@@ -27327,9 +27327,9 @@ int __stdcall FUN_0053cf90(int a1, int a2, int a3, int a4, int a5)
 }
 #endif
 
-// ── FUN_0053d0d0 (IDA-only, gated) ──
+// ── CSimpleModulus_Shift (IDA-only, gated) ──
 #if defined(IDA_PORT_0053D0D0)
-char __stdcall FUN_0053d0d0(BYTE *a1, int a2, int a3)
+char __stdcall CSimpleModulus_Shift(BYTE *a1, int a2, int a3)
 {
   char result; // al
   BYTE *v4; // ecx
@@ -27386,9 +27386,9 @@ char __stdcall FUN_0053d0d0(BYTE *a1, int a2, int a3)
 }
 #endif
 
-// ── FUN_0053d1c0 (IDA-only, gated) ──
+// ── CSimpleModulus_LoadKey (IDA-only, gated) ──
 #if defined(IDA_PORT_0053D1C0)
-int __cdecl FUN_0053d1c0(DWORD *_this, LPCSTR lpFileName, short a3, int a4, int a5, int a6, int a7)
+int __cdecl CSimpleModulus_LoadKey(DWORD *_this, LPCSTR lpFileName, short a3, int a4, int a5, int a6, int a7)
 {
   HANDLE FileA; // eax
   void *v9; // esi
@@ -27594,13 +27594,13 @@ int __cdecl FUN_0053d580(char a1)
 }
 #endif
 
-// ── FUN_0053d5a0 (IDA-only, gated) ──
+// ── Resource_Load (IDA-only, gated) ──
 #if defined(IDA_PORT_0053D5A0)
-char __cdecl FUN_0053d5a0(LPCSTR lpString)
+char __cdecl Resource_Load(LPCSTR lpString)
 {
   if ( lpParameter )
   {
-    return FUN_0053ed30((char *)lpParameter, lpString);
+    return Pipe_SetTarget((char *)lpParameter, lpString);
   }
   else
   {
@@ -27714,7 +27714,7 @@ int __cdecl FUN_0053d7d0(int a1, char a2, const CHAR *lpString)
   {
     v11 = a2;
     *(DWORD *)(a1 + 704) = lpString;
-    FUN_005404a0(2225, 1554, lpString);
+    Pipe_Write(2225, 1554, lpString);
     if ( *(DWORD *)(a1 + 4) )
     {
       v9 = *(DWORD *)(a1 + 4);
@@ -27781,7 +27781,7 @@ BYTE *__cdecl FUN_0053e8c0(BYTE *a1)
 }
 #endif
 
-// ── FUN_0053ea90 (IDA-only, gated) ──
+// ── GameGuard_HealthCheck (IDA-only, gated) ──
 #if defined(IDA_PORT_0053EA90)
 BYTE *__cdecl FUN_0053e8c0(BYTE *a1)
 {
@@ -27822,16 +27822,16 @@ BYTE *__cdecl FUN_0053e8c0(BYTE *a1)
 }
 #endif
 
-// ── FUN_0053ed30 (IDA-only, gated) ──
+// ── Pipe_SetTarget (IDA-only, gated) ──
 #if defined(IDA_PORT_0053ED30)
-char __cdecl FUN_0053ed30(char *_this, LPCSTR lpString)
+char __cdecl Pipe_SetTarget(char *_this, LPCSTR lpString)
 {
   if ( !*_this )
   {
     return 0;
   }
   strcpy(_this + 752, lpString);
-  return FUN_005404a0(2225, 1555, lpString);
+  return Pipe_Write(2225, 1555, lpString);
 }
 #endif
 
@@ -28538,9 +28538,9 @@ LABEL_10:
 }
 #endif
 
-// ── FUN_005403a0 (IDA-only, gated) ──
+// ── Pipe_WriteFile (IDA-only, gated) ──
 #if defined(IDA_PORT_005403A0)
-bool __cdecl FUN_005403a0(int a1, int a2, LPCSTR lpString)
+bool __cdecl Pipe_WriteFile(int a1, int a2, LPCSTR lpString)
 {
   bool result; // al
   int v4; // eax
@@ -28611,7 +28611,7 @@ char __cdecl FUN_005406f0(HANDLE *_this)
   {
     return 0;
   }
-  FUN_005404a0(2225, 1552, 0);
+  Pipe_Write(2225, 1552, 0);
   if ( hEvent )
   {
     SetEvent(hEvent);
@@ -28710,7 +28710,7 @@ int __cdecl FUN_00540ac0(void *_this)
 }
 #endif
 
-// ── FUN_00541450 (IDA-only, gated) ──
+// ── crt_onexit (IDA-only, gated) ──
 #if defined(IDA_PORT_00541450)
 _onexit_t __cdecl _onexit(_onexit_t Func)
 {
@@ -28749,17 +28749,17 @@ LABEL_6:
 }
 #endif
 
-// ── FUN_005414ce (IDA-only, gated) ──
+// ── crt_atexit (IDA-only, gated) ──
 #if defined(IDA_PORT_005414CE)
-int __cdecl FUN_005414ce(void (__cdecl *Func)())
+int __cdecl crt_atexit(void (__cdecl *Func)())
 {
   return (_onexit((_onexit_t)Func) != 0) - 1;
 }
 #endif
 
-// ── FUN_005416bc (IDA-only, gated) ──
+// ── crt_sprintf (IDA-only, gated) ──
 #if defined(IDA_PORT_005416BC)
-int FUN_005416bc(char *const Buffer, const char *const Format, ...)
+int crt_sprintf(char *const Buffer, const char *const Format, ...)
 {
   int v2; // eax
   bool v3; // sf
@@ -28787,9 +28787,9 @@ int FUN_005416bc(char *const Buffer, const char *const Format, ...)
 }
 #endif
 
-// ── FUN_005420dd (IDA-only, gated) ──
+// ── crt_isspace (IDA-only, gated) ──
 #if defined(IDA_PORT_005420DD)
-int __cdecl FUN_005420dd(int C)
+int __cdecl crt_isspace(int C)
 {
   if ( (int)SrcSizeInBytes <= 1 )
   {
@@ -28802,9 +28802,9 @@ int __cdecl FUN_005420dd(int C)
 }
 #endif
 
-// ── FUN_00542133 (IDA-only, gated) ──
+// ── crt_atof (IDA-only, gated) ──
 #if defined(IDA_PORT_00542133)
-double __cdecl FUN_00542133(const char *String)
+double __cdecl crt_atof(const char *String)
 {
   char v4[24]; // [esp+4h] [ebp-18h] BYREF
 
@@ -28819,9 +28819,9 @@ double __cdecl FUN_00542133(const char *String)
 }
 #endif
 
-// ── FUN_0054218a (IDA-only, gated) ──
+// ── crt_fgetc (IDA-only, gated) ──
 #if defined(IDA_PORT_0054218A)
-int __cdecl FUN_0054218a(FILE *Stream)
+int __cdecl crt_fgetc(FILE *Stream)
 {
   int v2; // edi
 
@@ -28839,9 +28839,9 @@ int __cdecl FUN_0054218a(FILE *Stream)
 }
 #endif
 
-// ── FUN_00542eb4 (IDA-only, gated) ──
+// ── crt_ftell (IDA-only, gated) ──
 #if defined(IDA_PORT_00542EB4)
-int __cdecl FUN_00542eb4(FILE *Stream)
+int __cdecl crt_ftell(FILE *Stream)
 {
   int v1; // edi
 
@@ -28852,17 +28852,17 @@ int __cdecl FUN_00542eb4(FILE *Stream)
 }
 #endif
 
-// ── FUN_00543264 (IDA-only, gated) ──
+// ── putc (IDA-only, gated) ──
 #if defined(IDA_PORT_00543264)
-int __cdecl FUN_00543264(int Character, FILE *Stream)
+int __cdecl putc(int Character, FILE *Stream)
 {
   return fputc(Character, Stream);
 }
 #endif
 
-// ── FUN_0054337b (IDA-only, gated) ──
+// ── fscanf (IDA-only, gated) ──
 #if defined(IDA_PORT_0054337B)
-int FUN_0054337b(FILE *const Stream, const char *const Format, ...)
+int fscanf(FILE *const Stream, const char *const Format, ...)
 {
   int v2; // esi
   va_list va; // [esp+14h] [ebp+10h] BYREF
@@ -28886,9 +28886,9 @@ double __cdecl _CIsin(double x)
 }
 #endif
 
-// ── FUN_005436a6 (IDA-only, gated) ──
+// ── crt_fflush (IDA-only, gated) ──
 #if defined(IDA_PORT_005436A6)
-int __cdecl FUN_005436a6(FILE *Stream)
+int __cdecl crt_fflush(FILE *Stream)
 {
   int v2; // edi
 
@@ -28903,17 +28903,17 @@ int __cdecl FUN_005436a6(FILE *Stream)
 }
 #endif
 
-// ── FUN_00543839 (IDA-only, gated) ──
+// ── exit (IDA-only, gated) ──
 #if defined(IDA_PORT_00543839)
-void __cdecl  FUN_00543839(int Code)
+void __cdecl  exit(int Code)
 {
   doexit(Code, 0, 0);
 }
 #endif
 
-// ── FUN_0054385b (IDA-only, gated) ──
+// ── crt_doexit (IDA-only, gated) ──
 #if defined(IDA_PORT_0054385B)
-int __cdecl FUN_0054385b(UINT uExitCode, int a2, int a3)
+int __cdecl crt_doexit(UINT uExitCode, int a2, int a3)
 {
   HANDLE CurrentProcess; // eax
   void (**v4)(void); // esi
@@ -28956,7 +28956,7 @@ int __cdecl FUN_0054385b(UINT uExitCode, int a2, int a3)
 }
 #endif
 
-// ── FUN_005439e8 (IDA-only, gated) ──
+// ── lock_file (IDA-only, gated) ──
 #if defined(IDA_PORT_005439E8)
 void __cdecl _lock_file(FILE *Stream)
 {
@@ -28971,7 +28971,7 @@ void __cdecl _lock_file(FILE *Stream)
 }
 #endif
 
-// ── FUN_00543a3a (IDA-only, gated) ──
+// ── unlock_file (IDA-only, gated) ──
 #if defined(IDA_PORT_00543A3A)
 void __cdecl _unlock_file(FILE *Stream)
 {
@@ -28986,9 +28986,9 @@ void __cdecl _unlock_file(FILE *Stream)
 }
 #endif
 
-// ── FUN_00543a8c (IDA-only, gated) ──
+// ── crt_sscanf (IDA-only, gated) ──
 #if defined(IDA_PORT_00543A8C)
-int FUN_00543a8c(const char *const Buffer, const char *const Format, ...)
+int crt_sscanf(const char *const Buffer, const char *const Format, ...)
 {
   FILE Stream; // [esp+0h] [ebp-20h] BYREF
   va_list va; // [esp+30h] [ebp+10h] BYREF
@@ -29073,9 +29073,9 @@ LABEL_11:
 }
 #endif
 
-// ── FUN_00543d81 (IDA-only, gated) ──
+// ── crt_tmpfile (IDA-only, gated) ──
 #if defined(IDA_PORT_00543D81)
-FILE *__cdecl FUN_00543d81()
+FILE *__cdecl crt_tmpfile()
 {
   FILE *v0; // esi
   int v1; // ebp
@@ -29144,7 +29144,7 @@ LABEL_15:
 }
 #endif
 
-// ── FUN_00546a50 (IDA-only, gated) ──
+// ── stbuf (IDA-only, gated) ──
 #if defined(IDA_PORT_00546A50)
 int __cdecl _stbuf(int a1)
 {
@@ -29195,7 +29195,7 @@ int __cdecl _stbuf(int a1)
 }
 #endif
 
-// ── FUN_00546add (IDA-only, gated) ──
+// ── ftbuf (IDA-only, gated) ──
 #if defined(IDA_PORT_00546ADD)
 int __cdecl _ftbuf(int a1, int a2)
 {
@@ -29216,7 +29216,7 @@ int __cdecl _ftbuf(int a1, int a2)
 }
 #endif
 
-// ── FUN_00549ae8 (IDA-only, gated) ──
+// ── checkTOS_withFB (IDA-only, gated) ──
 #if defined(IDA_PORT_00549AE8)
 int __cdecl _checkTOS_withFB(int a1, int a2)
 {

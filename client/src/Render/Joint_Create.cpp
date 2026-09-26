@@ -11,7 +11,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-// IDA: FUN_0046d840
+// IDA: CreateJoint
 void * __cdecl
 Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4 param_5,int param_6
             ,float param_7,short param_8,byte param_9)
@@ -499,7 +499,7 @@ switchD_0046db06_default:
             *pfVar1 = *pfVar1 + *(float *)(pcVar14 + 0x1c);
             *(float *)(pcVar14 + 0x14) = *(float *)(pcVar14 + 0x14) + *(float *)(pcVar14 + 0x20);
             *(float *)(pcVar14 + 0x18) = *(float *)(pcVar14 + 0x24) + *(float *)(pcVar14 + 0x18);
-            FUN_0046fe90((int)pcVar14,local_6c);
+            Joint_SegmentTick((int)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
           } while (iVar6 < *(int *)(pcVar14 + 0x54));
         }
@@ -527,7 +527,7 @@ switchD_0046dd50_default:
       case 0:
         local_98 = (byte*)DAT_07cf1ffc;
         local_80 = (byte*)DAT_07cf1ffc;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
         local_98 = (byte *)0x0;
         local_88 = (byte*)0x0;
         if (DAT_055c9bd4 != 0) {
@@ -572,7 +572,7 @@ switchD_0046dd50_default:
             if (iVar11 == 0) {
               if (uVar9 == 0xffffffff) goto LAB_0046e550;
               local_80 = pbVar10;
-              uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(pbVar10);
+              uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
               local_88 = (byte*)0x0;
               local_8c = (byte*)0x0;
               if (DAT_055c9bd4 != 0) goto LAB_0046e62c;
@@ -582,11 +582,11 @@ switchD_0046dd50_default:
             local_88 = local_88 + 1;
           } while ((uint)(uintptr_t)local_88 < DAT_055c9bd4);
         }
-        FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+        CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046e550:
         local_98 = (byte*)operator_new(0x585);
         local_98[0x584] = 1;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(pbVar10);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
         local_84 = (byte *)0x0;
         local_8c = (byte*)0x0;
         if (DAT_055c9bd4 != 0) {
@@ -637,7 +637,7 @@ LAB_0046e742:
             local_8c = local_8c + 1;
           } while ((uint)(uintptr_t)local_8c < DAT_055c9bd4);
         }
-        FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+        CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
         goto LAB_0046e76a;
       case 1:
         pcVar14[0x9c0] = '\0';
@@ -653,7 +653,7 @@ LAB_0046e742:
         pcVar14[0x55] = '\0';
         pcVar14[0x56] = '\0';
         pcVar14[0x57] = '\0';
-        FUN_00404bc0(0x2a,0,0);
+        PlayBuffer(0x2a,0,0);
         break;
       case 2:
         pcVar14[0x9c0] = '\0';
@@ -705,7 +705,7 @@ LAB_0046e742:
         pcVar14[0x3d] = -0x34;
         pcVar14[0x3e] = -0x34;
         pcVar14[0x3f] = '=';
-        FUN_00404bc0(0x49,0,0);
+        PlayBuffer(0x49,0,0);
         break;
       case 4:
         *pfVar2 = 0.0;
@@ -756,7 +756,7 @@ LAB_0046e742:
             *pfVar1 = local_90 + *pfVar1;
             *(float *)(pcVar14 + 0x14) = local_8cf + *(float *)(pcVar14 + 0x14);
             *(float *)(pcVar14 + 0x18) = local_88f + *(float *)(pcVar14 + 0x18);
-            FUN_0046fe90((int)pcVar14,local_6c);
+            Joint_SegmentTick((int)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
             *pfVar1 = (*pfVar1 - local_90) + *(float *)(pcVar14 + 0x1c);
             *(float *)(pcVar14 + 0x14) =
@@ -767,7 +767,7 @@ LAB_0046e742:
       case 5:
         local_84 = (byte*)DAT_07cf1ffc;
         local_7c = (byte*)DAT_07cf1ffc;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(DAT_07cf1ffc);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(DAT_07cf1ffc);
         local_98 = (byte *)0x0;
         if (DAT_055c9bd4 != 0) {
           do {
@@ -810,7 +810,7 @@ LAB_0046e742:
             if (iVar11 == 0) {
               if (uVar9 == 0xffffffff) goto LAB_0046ea53;
               local_84 = pbVar10;
-              uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(pbVar10);
+              uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
               pbVar10 = (byte *)0x0;
               if (DAT_055c9bd4 != 0) goto LAB_0046eb2f;
               goto LAB_0046eb8a;
@@ -819,11 +819,11 @@ LAB_0046e742:
             local_98 = local_98 + 1;
           } while ((uint)(uintptr_t)local_98 < DAT_055c9bd4);
         }
-        FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+        CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046ea53:
         local_88 = (byte*)operator_new(0x585);
         local_88[0x584] = 1;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))(pbVar10);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
         local_84 = (byte *)0x0;
         pbVar26 = (byte *)0x0;
         if (DAT_055c9bd4 != 0) {
@@ -874,7 +874,7 @@ LAB_0046ec45:
             pbVar26 = pbVar26 + 1;
           } while ((uint)(uintptr_t)pbVar26 < DAT_055c9bd4);
         }
-        FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
+        CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______Insert_005580e8);
         goto LAB_0046ec6d;
       }
       goto switchD_0046dee7_default;
@@ -1034,7 +1034,7 @@ LAB_0046ec45:
       pcVar14[0x3f] = '?';
       *(undefined4 *)(pcVar14 + 0x20) = *(undefined4 *)(pcVar14 + 0x14);
       *(undefined4 *)(pcVar14 + 0x24) = *(undefined4 *)(pcVar14 + 0x18);
-      FUN_0043e4a0(pfVar1,pfVar2,(float *)(pcVar14 + 0x44),360.0);
+      MoveHumming(pfVar1,pfVar2,(float *)(pcVar14 + 0x44),360.0);
       break;
     case 8:
       pcVar14[0xc] = '\0';
@@ -1133,7 +1133,7 @@ LAB_0046e043:
           *pfVar1 = local_90 + *pfVar1;
           *(float *)(pcVar14 + 0x14) = local_8cf + *(float *)(pcVar14 + 0x14);
           *(float *)(pcVar14 + 0x18) = local_88f + *(float *)(pcVar14 + 0x18);
-          FUN_0046fe90((int)pcVar14,local_6c);
+          Joint_SegmentTick((int)pcVar14,local_6c);
           iVar6 = iVar6 + 1;
           *pfVar1 = (*pfVar1 - local_90) + *(float *)(pcVar14 + 0x1c);
           *(float *)(pcVar14 + 0x14) =
@@ -1240,7 +1240,7 @@ LAB_0046e043:
           *pfVar1 = local_90 + *pfVar1;
           *(float *)(pcVar14 + 0x14) = local_8cf + *(float *)(pcVar14 + 0x14);
           *(float *)(pcVar14 + 0x18) = local_88f + *(float *)(pcVar14 + 0x18);
-          FUN_0046fe90((int)pcVar14,local_6c);
+          Joint_SegmentTick((int)pcVar14,local_6c);
           iVar6 = iVar6 + 1;
           *pfVar1 = (*pfVar1 - local_90) + *(float *)(pcVar14 + 0x1c);
           *(float *)(pcVar14 + 0x14) =
@@ -1759,7 +1759,7 @@ LAB_0046f55a:
           uVar9 = (uVar9 - 1 | 0xfffffff8) + 1;
         }
         local_98 = (byte *)(uVar9 + 8);
-        FUN_004795c0(0x4cf,pfVar1,(float)(int)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
+        CreateSprite(0x4cf,pfVar1,(float)(int)local_98 * _DAT_005528b8,pfVar22,uVar23,fVar24,uVar25)
         ;
         fVar24 = *pfVar2 * _DAT_005526d8;
         *pfVar3 = 1.0;
@@ -1964,7 +1964,7 @@ LAB_0046f55a:
             *pfVar1 = *pfVar1 + *(float *)(pcVar14 + 0x1c);
             *(float *)(pcVar14 + 0x14) = *(float *)(pcVar14 + 0x14) + *(float *)(pcVar14 + 0x20);
             *(float *)(pcVar14 + 0x18) = *(float *)(pcVar14 + 0x24) + *(float *)(pcVar14 + 0x18);
-            FUN_0046fe90((int)pcVar14,local_6c);
+            Joint_SegmentTick((int)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
           } while (iVar6 < *(int *)(pcVar14 + 0x54));
         }
@@ -2144,7 +2144,7 @@ LAB_0046eb2f:
     }
   }
 LAB_0046eb8a:
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046eb9c:
   puVar13 = (undefined4 *)0x0;
 LAB_0046eb9e:
@@ -2186,7 +2186,7 @@ LAB_0046eb9e:
   }
 LAB_0046ec6d:
   pbVar10 = (byte*)DAT_07cf1ffc;
-  iVar6 = DAT_055c9bc8;
+  iVar6 = MAIN_HASH_CLASS;
   local_8c = (byte*)DAT_07cf1ffc;
   local_88 = (byte*)DAT_07cf1ffc;
   pcVar14[0x9d3] = ((byte*)DAT_07cf1ffc)[0x580];
@@ -2232,7 +2232,7 @@ LAB_0046ec6d:
       if (iVar6 == 0) {
         if (uVar9 == 0xffffffff) goto LAB_0046ee73;
         local_8c = (byte*)(uintptr_t)(int)local_90;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))((void*)(uintptr_t)(int)local_90);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))((void*)(uintptr_t)(int)local_90);
         pbVar10 = (byte *)0x0;
         if (DAT_055c9bd4 != 0) goto LAB_0046ed54;
         goto LAB_0046edb0;
@@ -2241,7 +2241,7 @@ LAB_0046ec6d:
       pbVar10 = pbVar10 + 1;
     } while ((uint)(uintptr_t)pbVar10 < DAT_055c9bd4);
   }
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
   goto LAB_0046ee73;
   while( true ) {
     uVar9 = (uVar9 + 1) % (uint)DAT_055c9bd4;
@@ -2290,7 +2290,7 @@ LAB_0046ed54:
     }
   }
 LAB_0046edb0:
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046edc2:
   puVar13 = (undefined4 *)0x0;
 LAB_0046edc4:
@@ -2346,7 +2346,7 @@ LAB_0046ee73:
     // que es el PUNTERO al vec3 de angulos -- una direccion de pila.  El campo
     // es la **Scale** del joint (+0x0C).  Confirmado con MU 5.2 CreateJoint,
     // case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70; LifeTime = 49;
-    // Scale = Scale; MaxTails = 6  -- los otros tres valores de este mismo
+    // Scale; MaxTails = 6  -- los otros tres valores de este mismo
     // bloque coinciden exacto.  Medido con la sonda ESPIRIT JOINT:
     // `scaleBits=001AF32C` (una direccion de stack) en vez de 42A00000 (80.0f).
     *(float *)(pcVar14 + 0xc) = param_7;
@@ -2402,7 +2402,7 @@ LAB_0046e62c:
     }
   }
 LAB_0046e687:
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046e699:
   puVar13 = (undefined4 *)0x0;
 LAB_0046e69b:
@@ -2443,7 +2443,7 @@ LAB_0046e69b:
   }
 LAB_0046e76a:
   pbVar10 = (byte*)DAT_07cf1ffc;
-  iVar6 = DAT_055c9bc8;
+  iVar6 = MAIN_HASH_CLASS;
   local_8c = (byte*)DAT_07cf1ffc;
   local_88 = (byte*)DAT_07cf1ffc;
   pcVar14[0x9d3] = ((byte*)DAT_07cf1ffc)[0x580];
@@ -2489,7 +2489,7 @@ LAB_0046e76a:
       if (iVar6 == 0) {
         if (uVar9 == 0xffffffff) goto LAB_0046e970;
         local_8c = (byte*)(uintptr_t)(int)local_90;
-        uVar9 = (**(code **)(DAT_055c9bc8 + 0xc))((void*)(uintptr_t)(int)local_90);
+        uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))((void*)(uintptr_t)(int)local_90);
         pbVar10 = (byte *)0x0;
         if (DAT_055c9bd4 != 0) goto LAB_0046e851;
         goto LAB_0046e8ad;
@@ -2498,7 +2498,7 @@ LAB_0046e76a:
       pbVar10 = pbVar10 + 1;
     } while ((uint)(uintptr_t)pbVar10 < DAT_055c9bd4);
   }
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
   goto LAB_0046e970;
   while( true ) {
     uVar9 = (uVar9 + 1) % (uint)DAT_055c9bd4;
@@ -2547,7 +2547,7 @@ LAB_0046e851:
     }
   }
 LAB_0046e8ad:
-  FUN_00405540(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
+  CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046e8bf:
   puVar13 = (undefined4 *)0x0;
 LAB_0046e8c1:
@@ -2603,7 +2603,7 @@ LAB_0046e970:
     // que es el PUNTERO al vec3 de angulos -- una direccion de pila.  El campo
     // es la **Scale** del joint (+0x0C).  Confirmado con MU 5.2 CreateJoint,
     // case 0 de BITMAP_JOINT_SPIRIT:  Velocity = 70; LifeTime = 49;
-    // Scale = Scale; MaxTails = 6  -- los otros tres valores de este mismo
+    // Scale; MaxTails = 6  -- los otros tres valores de este mismo
     // bloque coinciden exacto.  Medido con la sonda ESPIRIT JOINT:
     // `scaleBits=001AF32C` (una direccion de stack) en vez de 42A00000 (80.0f).
     *(float *)(pcVar14 + 0xc) = param_7;
@@ -2615,7 +2615,7 @@ LAB_0046e970:
 }
 
 // IDA compatibility bridge: stubs_IDA_ports.cpp intentionally retains this ABI name.
-void* __cdecl FUN_0046d840(int type, float* p1, float* p2, float* p3, unsigned int subType,
+void* __cdecl CreateJoint(int type, float* p1, float* p2, float* p3, unsigned int subType,
                             int owner, float scale, short link, unsigned char flag)
 {
   return Joint_Create(type, p1, p2, p3, subType, owner, scale, link, flag);

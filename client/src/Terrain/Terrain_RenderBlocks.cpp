@@ -20,7 +20,7 @@
 //
 // Diferencia entre las dos: esta clampea a [0, 1]; 0x4F76C0 solo evita negativos
 // y deja que la luz supere 1.0 (que es lo que produce el resplandor del fuego).
-void __cdecl AddTerrainLightClip_stub(float xf, float yf, float Light[3], int Range, float Buffer[3]) {
+void __cdecl AddTerrainLightClip(float xf, float yf, float Light[3], int Range, float Buffer[3]) {
     // 0x004F7800 — Add clamped light to terrain light buffer.
     // Iterates a square region of radius Range around (xf,yf) in grid coords.
     // Per cell: falloff = (Range - dist) / Range. Adds Light * falloff to Buffer, clamps [0,1].
@@ -77,12 +77,12 @@ void __cdecl AddTerrainLightClip_stub(float xf, float yf, float Light[3], int Ra
 }
 
 // RenderTerrainBlock @ 0x004F9720 (~33 lines) — renders a 4x4 terrain tile block
-void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool EditFlag) {
+void __cdecl RenderTerrainBlock(float xf, float yf, int xi, int yi, bool EditFlag) {
     // 0x004F9720 — renders a 4x4 terrain tile block
     // _DAT_00552504 = 0.5f (half-tile center), _DAT_0055256c = 1.0f (tile stride)
     // CameraTopViewEnable = CameraTopViewEnabled
-    // RenderTerrainTile = FUN_004f8480 (declared with int params but actually takes floats via stack)
-    // TestFrustrum2D = FUN_004f8ff0
+    // RenderTerrainTile (declared with int params but actually takes floats via stack)
+    // TestFrustrum2D = TestFrustrum2D
     float startX = xf;
     int row = 0;
     do {
@@ -90,11 +90,11 @@ void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool Ed
         int col = 0;
         xf = startX;
         do {
-            unsigned short visible = FUN_004f8ff0(xf + _DAT_00552504, centerY, 0.0f);
+            unsigned short visible = TestFrustrum2D(xf + _DAT_00552504, centerY, 0.0f);
             if (visible || CameraTopViewEnabled != 0) {
                 // RenderTerrainTile(xf, yf, col+xi, row+yi, 1.0f, 1, EditFlag)
                 // functions.h declares first 2 params as int; reinterpret float bits
-                FUN_004f8480(*(int*)&xf, *(int*)&yf, col + xi, row + yi, 1.0f, 1, (int)EditFlag);
+                RenderTerrainTile(*(int*)&xf, *(int*)&yf, col + xi, row + yi, 1.0f, 1, (int)EditFlag);
             }
             xf = xf + _DAT_0055256c;  // 1.0f
             col++;
@@ -105,33 +105,33 @@ void __cdecl RenderTerrainBlock_stub(float xf, float yf, int xi, int yi, bool Ed
 }
 
 // RenderTerrainFrustrum @ 0x004F97E0 (~42 lines) — iterates visible terrain blocks
-void __cdecl RenderTerrainFrustrum_stub(bool EditFlag) {
+void __cdecl RenderTerrainFrustrum(bool EditFlag) {
     // 0x004F97E0 — iterates visible terrain blocks in frustum bounds
-    // FrustrumBoundMinX_1 = DAT_0839bc90, FrustrumBoundMinY_1 = DAT_0839bc94
-    // FrustrumBoundMaxX_1 = DAT_0055a774, FrustrumBoundMaxY_1 = DAT_0055a778
+    // FrustrumBoundMinX_1 = FrustrumBoundMinX_1, FrustrumBoundMinY_1 = FrustrumBoundMinY_1
+    // FrustrumBoundMaxX_1 = FrustrumBoundMaxX_1, FrustrumBoundMaxY_1 = FrustrumBoundMaxY_1
     // _DAT_0055264c = 2.0f (block center offset), _DAT_00552650 = 4.0f (block stride)
-    // TestFrustrum2D = FUN_004f8ff0, CameraTopViewEnable = CameraTopViewEnabled
-    int yi = (int)DAT_0839bc94;  // FrustrumBoundMinY_1
-    if (yi <= (int)DAT_0055a778) {  // FrustrumBoundMaxY_1
+    // TestFrustrum2D = TestFrustrum2D, CameraTopViewEnable = CameraTopViewEnabled
+    int yi = (int)FrustrumBoundMinY_1;  // FrustrumBoundMinY_1
+    if (yi <= (int)FrustrumBoundMaxY_1) {  // FrustrumBoundMaxY_1
         float blockY = (float)yi;
         do {
-            int maxX = (int)DAT_0055a774;  // FrustrumBoundMaxX_1
-            if ((int)DAT_0839bc90 <= maxX) {
+            int maxX = (int)FrustrumBoundMaxX_1;  // FrustrumBoundMaxX_1
+            if ((int)FrustrumBoundMinX_1 <= maxX) {
                 float centerY = blockY + _DAT_0055264c;  // 2.0f
-                int xi = (int)DAT_0839bc90;  // FrustrumBoundMinX_1
+                int xi = (int)FrustrumBoundMinX_1;  // FrustrumBoundMinX_1
                 float blockX = (float)xi;
                 do {
-                    unsigned short visible = FUN_004f8ff0(blockX + _DAT_0055264c, centerY, -40.0f);
+                    unsigned short visible = TestFrustrum2D(blockX + _DAT_0055264c, centerY, -40.0f);
                     if (visible || CameraTopViewEnabled != 0) {
-                        RenderTerrainBlock_stub(blockX, blockY, xi, yi, EditFlag);
+                        RenderTerrainBlock(blockX, blockY, xi, yi, EditFlag);
                     }
                     blockX = blockX + _DAT_00552650;  // 4.0f
                     xi += 4;
-                    maxX = (int)DAT_0055a774;
+                    maxX = (int)FrustrumBoundMaxX_1;
                 } while (xi <= maxX);
             }
             blockY = blockY + _DAT_00552650;  // 4.0f
             yi += 4;
-        } while (yi <= (int)DAT_0055a778);
+        } while (yi <= (int)FrustrumBoundMaxY_1);
     }
 }

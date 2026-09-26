@@ -5,15 +5,15 @@
 #include "functions.h"
 #include "structs.h"
 
-extern "C" DWORD DAT_07eaa128;   // Golden Archer panel flag (globals.cpp)
-extern void __cdecl FUN_0054158c(void* ptr);
-extern void FUN_004fa5a0(void);
+extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
+extern void __cdecl operator_delete(void* ptr);
+extern void ClearActionObject(void);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -42,7 +42,7 @@ extern void FUN_004fa5a0(void);
 // Cierra tienda / baul / chaos / trade / eventos y vacia sus pools.
 //
 // 2026-09-11: unica implementacion de 0x4CBA60.  Habia dos ports vivos y
-// distintos: esta y `FUN_004cba60` (UI_LegacyGameHelpers.cpp, que ahora delega
+// distintos: esta y `CloseInventoryRelatedWindows` (UI_LegacyGameHelpers.cpp, que ahora delega
 // aca).  La lista de flags es la del disassembly (0x4CBB46..0x4CBD2F):
 //   ShopOpened, byte_7EAA132, RepairEnable_0 (DWORD en 0x07EAA134),
 //   WarehouseOpened, byte_559F5F, dword_7EAA14C, ChaosMixOpened, TradeOpened,
@@ -50,7 +50,7 @@ extern void FUN_004fa5a0(void);
 //   g_shEventChipCount (0x07EAA12C), g_bServerDivisionEnable/Accept.
 // Esta version limpiaba antes DAT_07e11d14 como "RepairEnable" y dos alias del
 // panel del Golden Archer (DAT_07e5ba80 / DAT_07e11e1c): ninguno de los tres
-// tiene xrefs en IDA.  La anterior "desviacion" DAT_07eaa128 = 0 era en
+// tiene xrefs en IDA.  La anterior "desviacion" GoldenArcherOpenType = 0 era en
 // realidad g_bEventChipDialogEnable, o sea parte del original.
 //
 // Pools (0x4CBD36..0x4CBD9C), Type = -1 y Key (+0x38) = 0:
@@ -81,8 +81,8 @@ void __cdecl CloseInventoryRelatedWindows(void) {
     ChaosMixOpened          = 0;   // 0x07EAA11A
     TradeOpened             = 0;   // 0x07EAA11B
     EventWindowOpened       = 0;   // 0x07EAA11C
-    DAT_07eaa128            = 0;   // g_bEventChipDialogEnable
-    DAT_07eaa12c            = 0;   // g_shEventChipCount
+    GoldenArcherOpenType            = 0;   // g_bEventChipDialogEnable
+    GoldenArcherItemCount            = 0;   // g_shEventChipCount
     g_bServerDivisionEnable = 0;   // 0x07EAA130
     g_bServerDivisionAccept = 0;   // 0x07EAA131
 
@@ -184,7 +184,7 @@ int __cdecl Item_FindQuickSlotByCategory(int a1) {
     }
 
     // IDA sub_482BE0 L98: con el teleport en curso no se usa el Town Portal.
-    if (DAT_05826d14 && v1 == 458 && v2 == 458) {
+    if (Teleport && v1 == 458 && v2 == 458) {
         return -1;
     }
     if (v1 < v2) {

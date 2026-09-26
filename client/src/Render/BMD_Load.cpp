@@ -3,12 +3,12 @@
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 12147-12807 (661 lines).
 //
 // BMD (Mu Online 3D model format) loaders:
-//   FUN_004423e0 (BMD::Open)              — load compressed BMD file into model slot
-//   FUN_004422f0 (BMD_BuildAdjacentFaceTable)
-//   FUN_00442260 (BMD_InitAdjFaceTable)
-//   FUN_00442e60 (BMD_ComputeBounds)
-//   FUN_00442e00 (BMD_ResetAnimState)
-//   FUN_00442a60 (BMD_SaveToFile)
+//   BMD__Open (BMD::Open)              — load compressed BMD file into model slot
+//   BMD__FindTriangleForEdge (BMD_BuildAdjacentFaceTable)
+//   BMD__FindNearTriangle (BMD_InitAdjFaceTable)
+//   BMD_CreateBoundingBox (BMD_ComputeBounds)
+//   BMD__Init (BMD_ResetAnimState)
+//   BMD__Save (BMD_SaveToFile)
 
 #include "stdafx.h"
 #include "globals.h"
@@ -17,7 +17,7 @@
 extern "C" void DbgLogPublic(const char* msg);
 
 // ── BMD loaders ──────────────────────────────────────────────────────────────
-// FUN_004423e0 @ 0x004423E0 — BMD::Open (load compressed BMD file into model slot)
+// BMD__Open @ 0x004423E0 — BMD::Open (load compressed BMD file into model slot)
 // param_1 = this (model object), param_2 = path string, param_3 = filename string, param_4 = unused
 // Reescrito contra Ghidra 97k (verbatim de "Main 97K", confirmado). Layout 97k:
 //   Buffer: [ver@3][name@4..0x23 (32B)][numMeshes@0x24][numActions@0x26]
@@ -44,7 +44,7 @@ extern "C" void DbgLogPublic(const char* msg);
 //           +0x34   TexNames[nM] stride 0x20 (char[32] por mesh)
 //           +0x38   TexIdx  [nM] stride 2
 // Loop order: Mesh → FindNearTriangle → Bone → Action
-void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
+void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
 {
     (void)param_4;
     void *thisPtr = (void *)param_1;
@@ -72,7 +72,7 @@ void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
         }
     }
 
-    FILE *fp = FUN_0054173f(local_4c, DAT_005580ac);
+    FILE *fp = crt_fopen(local_4c, DAT_005580ac);
     if (!fp) {
         char diag[200];
         _snprintf_s(diag, sizeof(diag), _TRUNCATE, "BMD::Open fopen FAIL: %s", local_4c);
@@ -163,7 +163,7 @@ void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
     }
 
     *(char *)((int)thisPtr + 0x20) = verByte;
-    // El nombre se lee de Buffer+4 (Ghidra: puVar7 = puVar7+1 antes del body).
+    // El nombre se lee de Buffer+4 (Ghidra: puVar7+1 antes del body).
     memcpy(thisPtr, Buffer + 4, 32);
 
     // EARLY defensive BodyLight init: write (1,1,1) BEFORE any parsing path that
@@ -322,7 +322,7 @@ void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
         }
     }
 
-    FUN_00442260(thisPtr);
+    BMD__FindNearTriangle(thisPtr);
 
     // ============ BONE loop ============
     // Bone (stride 0x10):
@@ -379,7 +379,7 @@ void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
                 memcpy((void *)*(int *)(entry + 4), Buffer + cursor, rotSz); cursor += rotSz;
 
                 for (int k = 0; k < mV; k++) {
-                    FUN_004fa1d0(*(int *)(entry + 4) + k * 0xc,
+                    EulerToQuat(*(int *)(entry + 4) + k * 0xc,
                                  *(int *)(entry + 8) + k * 0x10, 0, 0);
                 }
             }
@@ -387,12 +387,12 @@ void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
     }
 
     // Defensive BodyLight init: BMD_SetupRenderByType's default path calls
-    // FUN_00441e00 without writing +0x48..+0x50, so they'd read whatever was
+    // BMD__RenderBody without writing +0x48..+0x50, so they'd read whatever was
     // left in memory (observed: R=1.0, G/B=-1.69e37 garbage → negative alpha
     // triangles). Default to white (1,1,1) so BMD_DrawMesh reads sane color
     // for models that never go through a type-specific colorization branch
     // (ships, logos, UI items, etc.). Callers that need colored models will
-    // overwrite these fields before FUN_00441e00 as in BMD_SetupRender.cpp.
+    // overwrite these fields before BMD__RenderBody as in BMD_SetupRender.cpp.
     *(float *)((int)thisPtr + 0x48) = 1.0f;
     *(float *)((int)thisPtr + 0x4c) = 1.0f;
     *(float *)((int)thisPtr + 0x50) = 1.0f;
@@ -422,13 +422,13 @@ void __cdecl FUN_004423e0(int param_1, int param_2, int param_3, int param_4)
     }
 
     operator_delete(Buffer);
-    FUN_00442e00(thisPtr, '\0');
+    BMD__Init(thisPtr, '\0');
 }
 
-// FUN_004422f0 @ 0x004422F0 — BMD_BuildAdjacentFaceTable
+// BMD__FindTriangleForEdge @ 0x004422F0 — BMD_BuildAdjacentFaceTable
 // For each face in bone param_1, and each edge param_3 (0-2): finds the adjacent face sharing
 // the flipped edge and stores the adjacency index in psVar1[faceIdx*0x12 + edgeIdx + 0xd].
-void __cdecl FUN_004422f0(void *pThis, int param_1, int param_2, int param_3)
+void __cdecl BMD__FindTriangleForEdge(void *pThis, int param_1, int param_2, int param_3)
 {
     short *psVar1 = *(short **)(*(int *)((int)pThis + 0x28) + 0x1c + param_1 * 0x28);
     if (psVar1[param_2 * 0x12 + param_3 + 0xd] == -1) {
@@ -460,9 +460,9 @@ void __cdecl FUN_004422f0(void *pThis, int param_1, int param_2, int param_3)
     }
 }
 
-// FUN_00442260 @ 0x00442260 — BMD_InitAdjFaceTable
-// For each action/bone, resets adjacency table to -1, then calls FUN_004422f0 on each face×edge.
-void __cdecl FUN_00442260(void *param_1)
+// BMD__FindNearTriangle @ 0x00442260 — BMD_InitAdjFaceTable
+// For each action/bone, resets adjacency table to -1, then calls BMD__FindTriangleForEdge on each face×edge.
+void __cdecl BMD__FindNearTriangle(void *param_1)
 {
     int iVar3 = 0;
     if (0 < *(short *)((int)param_1 + 0x24)) {
@@ -484,9 +484,9 @@ void __cdecl FUN_00442260(void *param_1)
             int iVar1_ = 0;
             if (0 < iVar4) {
                 do {
-                    FUN_004422f0(param_1, iVar3, iVar1_, 0);
-                    FUN_004422f0(param_1, iVar3, iVar1_, 1);
-                    FUN_004422f0(param_1, iVar3, iVar1_, 2);
+                    BMD__FindTriangleForEdge(param_1, iVar3, iVar1_, 0);
+                    BMD__FindTriangleForEdge(param_1, iVar3, iVar1_, 1);
+                    BMD__FindTriangleForEdge(param_1, iVar3, iVar1_, 2);
                     iVar1_++;
                 } while (iVar1_ < iVar4);
             }
@@ -496,9 +496,9 @@ void __cdecl FUN_00442260(void *param_1)
     }
 }
 
-// FUN_00442e60 @ 0x00442E60 — BMD_ComputeBounds
+// BMD_CreateBoundingBox @ 0x00442E60 — BMD_ComputeBounds
 // Computes per-bone bounding boxes by scanning vertex positions; stores into bbox arrays.
-void __cdecl FUN_00442e60(int param_1)
+void __cdecl BMD_CreateBoundingBox(int param_1)
 {
     int iVar3 = 0;
     if (0 < *(short *)(param_1 + 0x22)) {
@@ -589,10 +589,10 @@ void __cdecl FUN_00442e60(int param_1)
     }
 }
 
-// FUN_00442e00 @ 0x00442E00 — BMD_ResetAnimState
+// BMD__Init @ 0x00442E00 — BMD_ResetAnimState
 // If flag!=0: scan action array (stride 0x8c), mark entries Du/non-Du;
-// then reset frame index and call FUN_00442e60 (BMD_ComputeBounds).
-void __cdecl FUN_00442e00(void *pThis, char param_1)
+// then reset frame index and call BMD_CreateBoundingBox (BMD_ComputeBounds).
+void __cdecl BMD__Init(void *pThis, char param_1)
 {
     char *pcVar1;
     int iVar2, iVar3;
@@ -607,13 +607,13 @@ void __cdecl FUN_00442e00(void *pThis, char param_1)
     }
     *(unsigned int *)((int)pThis + 0x54) = 0xffffffff;
     *(unsigned char *)((int)pThis + 0x88) = 0xff;
-    FUN_00442e60((int)pThis);
+    BMD_CreateBoundingBox((int)pThis);
 }
 
-// FUN_00442a60 @ 0x00442A60 — BMD_SaveToFile
+// BMD__Save @ 0x00442A60 — BMD_SaveToFile
 // Writes BMD model structure to binary file param_1+param_2 (concatenated paths).
-// Writes header 'B'/'M'/'D', then mesh/bone/action data via FUN_005430f0 (fwrite).
-undefined4 __cdecl FUN_00442a60(int thisModel, char *param_1, char *param_2)
+// Writes header 'B'/'M'/'D', then mesh/bone/action data via crt_fwrite (fwrite).
+undefined4 __cdecl BMD__Save(int thisModel, char *param_1, char *param_2)
 {
     char local_40[64];
     // concatenate param_1 + param_2
@@ -622,17 +622,17 @@ undefined4 __cdecl FUN_00442a60(int thisModel, char *param_1, char *param_2)
     strncpy(local_40 + len1, param_2, sizeof(local_40)-len1-1);
     local_40[63] = '\0';
 
-    FILE *pFVar4 = (FILE *)FUN_0054173f(local_40, &DAT_005597d4);
+    FILE *pFVar4 = (FILE *)crt_fopen(local_40, &DAT_005597d4);
     if (!pFVar4) return 0;
 
-    FUN_00543264(0x42, (int *)pFVar4);  // 'B'
-    FUN_00543264(0x4d, (int *)pFVar4);  // 'M'
-    FUN_00543264(0x44, (int *)pFVar4);  // 'D'
-    FUN_005430f0((char *)(thisModel + 0x20), 1, 1, (int *)pFVar4);
-    FUN_005430f0((char *)thisModel, 0x20, 1, (int *)pFVar4);
-    FUN_005430f0((char *)(thisModel + 0x24), 2, 1, (int *)pFVar4);
-    FUN_005430f0((char *)(thisModel + 0x22), 2, 1, (int *)pFVar4);
-    FUN_005430f0((char *)(thisModel + 0x26), 2, 1, (int *)pFVar4);
+    putc(0x42, (int *)pFVar4);  // 'B'
+    putc(0x4d, (int *)pFVar4);  // 'M'
+    putc(0x44, (int *)pFVar4);  // 'D'
+    crt_fwrite((char *)(thisModel + 0x20), 1, 1, (int *)pFVar4);
+    crt_fwrite((char *)thisModel, 0x20, 1, (int *)pFVar4);
+    crt_fwrite((char *)(thisModel + 0x24), 2, 1, (int *)pFVar4);
+    crt_fwrite((char *)(thisModel + 0x22), 2, 1, (int *)pFVar4);
+    crt_fwrite((char *)(thisModel + 0x26), 2, 1, (int *)pFVar4);
 
     // Write mesh data
     int param_1i = 0;
@@ -640,25 +640,25 @@ undefined4 __cdecl FUN_00442a60(int thisModel, char *param_1, char *param_2)
         int local_50 = 0, local_48 = 0;
         do {
             int iVar8 = *(int *)(thisModel + 0x28) + local_50;
-            FUN_005430f0((char *)(iVar8 + 4), 2, 1, (int *)pFVar4);
-            FUN_005430f0((char *)(iVar8 + 6), 2, 1, (int *)pFVar4);
-            FUN_005430f0((char *)(iVar8 + 8), 2, 1, (int *)pFVar4);
+            crt_fwrite((char *)(iVar8 + 4), 2, 1, (int *)pFVar4);
+            crt_fwrite((char *)(iVar8 + 6), 2, 1, (int *)pFVar4);
+            crt_fwrite((char *)(iVar8 + 8), 2, 1, (int *)pFVar4);
             short *psVar1 = (short *)(iVar8 + 10);
-            FUN_005430f0((char *)psVar1, 2, 1, (int *)pFVar4);
-            FUN_005430f0((char *)(iVar8 + 2), 2, 1, (int *)pFVar4);
-            FUN_005430f0(*(char **)(iVar8 + 0x10), (int)*(short *)(iVar8 + 4) << 4, 1, (int *)pFVar4);
-            FUN_005430f0(*(char **)(iVar8 + 0x14), *(short *)(iVar8 + 6) * 0x14, 1, (int *)pFVar4);
-            FUN_005430f0(*(char **)(iVar8 + 0x18), (int)*(short *)(iVar8 + 8) << 3, 1, (int *)pFVar4);
+            crt_fwrite((char *)psVar1, 2, 1, (int *)pFVar4);
+            crt_fwrite((char *)(iVar8 + 2), 2, 1, (int *)pFVar4);
+            crt_fwrite(*(char **)(iVar8 + 0x10), (int)*(short *)(iVar8 + 4) << 4, 1, (int *)pFVar4);
+            crt_fwrite(*(char **)(iVar8 + 0x14), *(short *)(iVar8 + 6) * 0x14, 1, (int *)pFVar4);
+            crt_fwrite(*(char **)(iVar8 + 0x18), (int)*(short *)(iVar8 + 8) << 3, 1, (int *)pFVar4);
             int local_4c = 0;
             if (0 < *psVar1) {
                 char *param_2p = (char *)0;
                 do {
-                    FUN_005430f0(param_2p + *(int *)(iVar8 + 0x1c), 0x40, 1, (int *)pFVar4);
+                    crt_fwrite(param_2p + *(int *)(iVar8 + 0x1c), 0x40, 1, (int *)pFVar4);
                     param_2p += 0x24;
                     local_4c++;
                 } while (local_4c < *psVar1);
             }
-            FUN_005430f0((char *)(*(int *)(thisModel + 0x34) + local_48), 0x20, 1, (int *)pFVar4);
+            crt_fwrite((char *)(*(int *)(thisModel + 0x34) + local_48), 0x20, 1, (int *)pFVar4);
             local_50 += 0x28;
             param_1i++;
             local_48 += 0x20;
@@ -670,10 +670,10 @@ undefined4 __cdecl FUN_00442a60(int thisModel, char *param_1, char *param_2)
         char *param_2p = (char *)0;
         do {
             int iVar8 = *(int *)(thisModel + 0x30);
-            FUN_005430f0(param_2p + iVar8 + 8, 2, 1, (int *)pFVar4);
-            FUN_005430f0(param_2p + iVar8 + 10, 1, 1, (int *)pFVar4);
+            crt_fwrite(param_2p + iVar8 + 8, 2, 1, (int *)pFVar4);
+            crt_fwrite(param_2p + iVar8 + 10, 1, 1, (int *)pFVar4);
             if (*(param_2p + iVar8 + 10) != '\0')
-                FUN_005430f0(*(char **)(param_2p + iVar8 + 0xc), *(short *)(param_2p + iVar8 + 8) * 0xc, 1, (int *)pFVar4);
+                crt_fwrite(*(char **)(param_2p + iVar8 + 0xc), *(short *)(param_2p + iVar8 + 8) * 0xc, 1, (int *)pFVar4);
             param_1i++;
             param_2p += 0x10;
         } while (param_1i < (int)*(short *)(thisModel + 0x26));
@@ -684,17 +684,17 @@ undefined4 __cdecl FUN_00442a60(int thisModel, char *param_1, char *param_2)
         int local_50 = 0;
         do {
             char *pcVar11 = (char *)(local_50 + *(int *)(thisModel + 0x2c));
-            FUN_005430f0(pcVar11 + 0x22, 1, 1, (int *)pFVar4);
+            crt_fwrite(pcVar11 + 0x22, 1, 1, (int *)pFVar4);
             if (pcVar11[0x22] == '\0') {
-                FUN_005430f0(pcVar11, 0x20, 1, (int *)pFVar4);
-                FUN_005430f0(pcVar11 + 0x20, 2, 1, (int *)pFVar4);
+                crt_fwrite(pcVar11, 0x20, 1, (int *)pFVar4);
+                crt_fwrite(pcVar11 + 0x20, 2, 1, (int *)pFVar4);
                 int iVar8 = 0, local_48 = 0;
                 if (0 < *(short *)(thisModel + 0x26)) {
                     char *param_2p = (char *)0;
                     do {
                         int iVar3 = *(int *)(pcVar11 + 0x24);
-                        FUN_005430f0(*(char **)(param_2p + iVar3), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
-                        FUN_005430f0(*(char **)(param_2p + iVar3 + 4), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
+                        crt_fwrite(*(char **)(param_2p + iVar3), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
+                        crt_fwrite(*(char **)(param_2p + iVar3 + 4), *(short *)(*(int *)(thisModel + 0x30) + 8 + iVar8) * 0xc, 1, (int *)pFVar4);
                         param_2p += 0xc;
                         local_48++;
                         iVar8 += 0x10;
@@ -705,6 +705,6 @@ undefined4 __cdecl FUN_00442a60(int thisModel, char *param_1, char *param_2)
             param_1i++;
         } while (param_1i < (int)*(short *)(thisModel + 0x22));
     }
-    FUN_0054150f(pFVar4);
+    crt_fclose(pFVar4);
     return 1;
 }

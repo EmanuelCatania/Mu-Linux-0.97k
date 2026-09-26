@@ -1,13 +1,13 @@
 // Effect_Tick.cpp
 // Per-frame tick dispatchers for effect, joint, and particle pools.
 //
-// FUN_0046b790 @ 0x0046b790 — Effect_TickAll
-// FUN_004736e0 @ 0x004736e0 — Joint_TickAll
-// FUN_00473ea0 @ 0x00473ea0 — Effect_DrawRing
-// FUN_00474f90 @ 0x00474f90 — Effect_DrawQuad
-// FUN_00475090 @ 0x00475090 — Effect_TickFade
-// FUN_004794a0 @ 0x004794a0 — Effect_TickFlare
-// FUN_00479380 @ 0x00479380 — Effect_TickSpark
+// MoveEffects @ 0x0046b790 — Effect_TickAll
+// MoveJoints @ 0x004736e0 — Joint_TickAll
+// Effect_DrawRing @ 0x00473ea0 — Effect_DrawRing
+// RenderPlane @ 0x00474f90 — Effect_DrawQuad
+// MovePlanes @ 0x00475090 — Effect_TickFade
+// MovePointers @ 0x004794a0 — Effect_TickFlare
+// MovePoints @ 0x00479380 — Effect_TickSpark
 //
 // Effect pool:  DAT_07b11670, stride 0x1bc bytes (0x6f * sizeof(float))
 // Joint pool:   DAT_07b27150, stride 0x9d8 bytes
@@ -16,10 +16,10 @@
 extern "C" void DbgLogPublic(const char* msg);   // OWNERDBG (temporal)
 
 
-// FUN_0046b790 — Effect_TickAll
+// MoveEffects — Effect_TickAll
 // Iterates the effect pool (base DAT_07b11670, stride 0x1bc, end 0x7b27150).
-// For each active slot (first byte != 0), calls FUN_00466ad0(slot, index).
-// IDA: FUN_0046b790
+// For each active slot (first byte != 0), calls MoveEffect(slot, index).
+// IDA: MoveEffects
 void Effect_TickAll(void)
 {
   // BUG-FIX 2026-04-28: pool real DAT_07b11670[200 × 0x1bc] (2026-08-15: era 124).
@@ -39,7 +39,7 @@ void Effect_TickAll(void)
       // loguea su Type/SubType UNA vez por tipo — ese dato identifica al
       // culpable sin tener que reproducir con debugger.
       __try {
-        FUN_00466ad0(pfVar1,iVar2);
+        MoveEffect(pfVar1,iVar2);
       }
       __except (EXCEPTION_EXECUTE_HANDLER) {
         const int   type    = (int)*(short*)((char*)pfVar1 + 2);
@@ -62,10 +62,10 @@ void Effect_TickAll(void)
 }
 
 
-// FUN_004736e0 — Joint_TickAll
+// MoveJoints — Joint_TickAll
 // Iterates the joint pool (base DAT_07b27150, stride 0x9d8, end 0x7c5ab30).
-// For each active slot (first byte != 0), calls FUN_00470030(slot, index).
-// IDA: FUN_004736e0
+// For each active slot (first byte != 0), calls MoveJoint(slot, index).
+// IDA: MoveJoints
 void Joint_TickAll(void)
 {
   // BUG-FIX 2026-04-28: pool real DAT_07b27150[500 × 0x9d8] (2026-08-15: era 200).
@@ -74,7 +74,7 @@ void Joint_TickAll(void)
   uint uVar2 = 0;
   do {
     if (*pcVar1 != '\0') {
-      FUN_00470030((undefined1 *)pcVar1, (uint)uVar2);
+      MoveJoint((undefined1 *)pcVar1, (uint)uVar2);
     }
     pcVar1 = pcVar1 + 0x9d8;
     uVar2 = uVar2 + 1;
@@ -82,9 +82,9 @@ void Joint_TickAll(void)
 }
 
 
-// FUN_00473ea0 — Effect_DrawRing
+// Effect_DrawRing — Effect_DrawRing
 // Draws a cylindrical ring effect by emitting GL_QUADS segments along a helical
-// arc. Uses FUN_004f9e90 to build rotation matrix from Euler angles, and
+// arc. Uses EulerToMatrix to build rotation matrix from Euler angles, and
 // Vector_Rotate (EulerToMatrix3x4) to transform each ring-segment midpoint.
 // param_1: texture slot
 // param_2: center position float[3]
@@ -103,7 +103,7 @@ void Joint_TickAll(void)
 // personaje. Reemplazado por arrays float[4][3] explícitos.
 // Mismo patrón que Camera_BuildMouseRay (mouse-ray) y FUN_004f70b0 (terrain normals).
 void __cdecl
-FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,undefined4 param_5,
+Effect_DrawRing(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,undefined4 param_5,
             float param_6,undefined4 param_7,float param_8)
 {
   // 4 quad vertices: positions (12 contiguous floats), colors (12), UVs (8 = 4×2).
@@ -129,19 +129,19 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
     fVar2 = t + _DAT_0055256c;
     float fVar3 = fVar2 * _DAT_00552aac;
 
-    // UV ramp — FUN_00511bf0(dest, U-float, V-bits) writes [U as float][V as int-bits]
-    FUN_00511bf0(&uv[0][0], fVar1, 0x3f800000);
-    FUN_00511bf0(&uv[1][0], fVar3, 0x3f800000);
-    FUN_00511bf0(&uv[2][0], fVar3, 0);
-    FUN_00511bf0(&uv[3][0], fVar1, 0);
+    // UV ramp — TEXCOORD(dest, U-float, V-bits) writes [U as float][V as int-bits]
+    TEXCOORD(&uv[0][0], fVar1, 0x3f800000);
+    TEXCOORD(&uv[1][0], fVar3, 0x3f800000);
+    TEXCOORD(&uv[2][0], fVar3, 0);
+    TEXCOORD(&uv[3][0], fVar1, 0);
 
     // Two rotation matrices around Z at angle1 / angle2.
     angles[0] = 0.0f;
     angles[1] = 0.0f;
     angles[2] = t * _DAT_0055284c + param_6;
-    FUN_004f9e90(angles, matA);
+    EulerToMatrix(angles, matA);
     angles[2] = fVar2 * _DAT_0055284c + param_6;
-    FUN_004f9e90(angles, matB);
+    EulerToMatrix(angles, matB);
 
     // Vert 0: matA * (0, param_3, 0) + center
     input_vec[0] = 0.0f;
@@ -192,11 +192,11 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
 }
 
 
-// FUN_00474f90 — Effect_DrawQuad
+// RenderPlane — Effect_DrawQuad
 // Draws a world-space textured quad (GL_QUADS) at param_2 position,
 // rotated by param_4 around Z axis, with half-size param_3.
 // Uses GL_SetBlendAdditive to set blend mode.
-void __cdecl FUN_00474f90(int param_1,undefined4 *param_2,float param_3,undefined4 param_4)
+void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined4 param_4)
 {
   float local_30;
   float local_2c;
@@ -247,11 +247,11 @@ void __cdecl FUN_00474f90(int param_1,undefined4 *param_2,float param_3,undefine
 }
 
 
-// FUN_00475090 — Effect_TickFade
+// MovePlanes — Effect_TickFade
 // Iterates the fade-effect pool (base DAT_07c74ec8, stride 0x6f*4=0x1bc,
 // end 0x7c7fc38). For active slots: decrements lifetime counter; if
 // counter < 10 fades colour toward black; subtracts counter from Z velocity.
-// IDA: FUN_00475090
+// IDA: MovePlanes
 void Effect_TickFade(void)
 {
   // BUG-FIX 2026-04-28: pool real DAT_07c74ec8[40 × 0x1bc].
@@ -267,7 +267,7 @@ void Effect_TickFade(void)
       if (iVar1 + -1 < 1) {
         *(undefined1 *)(piVar3 + -0x18) = 0;
       }
-      FUN_00465fe0((int)(piVar3 + -0x18),1);
+      Joint_BoneOffsetApply((int)(piVar3 + -0x18),1);
       iVar1 = *piVar3;
       if (iVar1 < 10) {
         fVar2 = (float)iVar1 * _DAT_005524f4;
@@ -282,11 +282,11 @@ void Effect_TickFade(void)
 }
 
 
-// FUN_004794a0 — Effect_TickFlare
+// MovePointers — Effect_TickFlare
 // Iterates the flare-effect pool (base DAT_07c82cdc, stride 0x1c*4=0x70,
 // end 0x7c8589b). Per-tick: decrement life counter; handle sub-type state
 // machine for position and alpha.
-// IDA: FUN_004794a0
+// IDA: MovePointers
 void Effect_TickFlare(void)
 {
   float fVar1;
@@ -343,7 +343,7 @@ LAB_004794f9:
 }
 
 
-// FUN_00479380 — Effect_TickSpark
+// MovePoints — Effect_TickSpark
 // = IDA `MovePoints` @0x479380: tick de los NÚMEROS DE DAÑO. Por slot activo:
 // decrementa el contador de delay; cuando dispara, sube el número (pos.z +=
 // lifetime), decae el lifetime 0.3, lo desactiva al llegar a 0, y encoge la
@@ -357,7 +357,7 @@ LAB_004794f9:
 // abordan desde offsets distintos del slot y usan índices relativos.
 // Al tocar otra memoria, el tick corría sobre un pool siempre vacío: los
 // números nacían y nadie los movía ni los expiraba.
-// IDA: FUN_00479380
+// IDA: MovePoints
 void DamageNumbers_Tick(void)
 {
   // Mismo pool que CreatePoint/RenderPoints, desplazado +0x18 como en IDA.

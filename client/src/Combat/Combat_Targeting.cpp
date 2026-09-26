@@ -7,7 +7,7 @@
 
 // IDA: FUN_0049CAE0 @ 0x0049CAE0 — CheckTarget (~51 lines), validates attack target.
 // If SelectedCharacter!=-1: use character position. Otherwise: terrain pick.
-bool __cdecl CheckTarget_stub(DWORD c) {
+bool __cdecl CheckTarget(DWORD c) {
     // 0x0049CAE0 — Validates attack target
     // If SelectedCharacter != -1: use selected character's position as target.
     // Otherwise: do terrain ray pick to find target position.
@@ -22,8 +22,8 @@ bool __cdecl CheckTarget_stub(DWORD c) {
         // Position at Object.Position: +0x10 (x), +0x14 (y), +0x18 (z)
         // 0049CAE0 stores target *grid* coordinates, not world coordinates.
         // The native calculation is `(int)(world * 0.01f)`.
-        DAT_07e016c0 = (DWORD)(int)(*(float*)(selEntity + 0x10) * 0.01f);
-        DAT_07e016c4 = (DWORD)(int)(*(float*)(selEntity + 0x14) * 0.01f);
+        TargetX = (DWORD)(int)(*(float*)(selEntity + 0x10) * 0.01f);
+        TargetY = (DWORD)(int)(*(float*)(selEntity + 0x14) * 0.01f);
         // Copy selected character position to entity's TargetPosition
         // TargetPosition at some offset in CHARACTER struct
         float posX = *(float*)(selEntity + 0x10);
@@ -44,11 +44,11 @@ bool __cdecl CheckTarget_stub(DWORD c) {
     }
 
     // Terrain pick path
-    FUN_004f9ac0('\x01');  // RenderTerrain(true) — init ray cast
+    RenderTerrain('\x01');  // RenderTerrain(true) — init ray cast
 
     int gridX = (int)*(float*)&DAT_080ab288;     // SelectXF
     int gridY = (int)*(float*)&DAT_080ab28c;     // SelectYF
-    bool hit = (bool)FUN_004f8480(
+    bool hit = (bool)RenderTerrainTile(
         *(int*)&DAT_080ab288,  // SelectXF as int (float bits)
         *(int*)&DAT_080ab28c,  // SelectYF as int (float bits)
         // 0049CAE0: RenderTerrainTile(SelectXF, SelectYF,
@@ -62,8 +62,8 @@ bool __cdecl CheckTarget_stub(DWORD c) {
         *(float*)(c + 788) = DAT_083a4130;
         *(float*)(c + 792) = DAT_083a4134;
         *(float*)(c + 796) = DAT_083a4138;
-        DAT_07e016c0 = (DWORD)(int)(DAT_083a4130 * 0.01f);
-        DAT_07e016c4 = (DWORD)(int)(DAT_083a4134 * 0.01f);
+        TargetX = (DWORD)(int)(DAT_083a4130 * 0.01f);
+        TargetY = (DWORD)(int)(DAT_083a4134 * 0.01f);
         return true;
     }
     return false;

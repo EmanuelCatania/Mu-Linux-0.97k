@@ -17,7 +17,7 @@
 //   * Render_HotbarItems3D — sub_4BFDE0, the 3D-projected inventory hotbar
 //                            items abajo y al centro de la pantalla.
 //
-// El helper sub_480C60 (FUN_00480c60) también está portado acá — calcula las dimensiones
+// El helper sub_480C60 (FloatingLabel_MeasureText) también está portado acá — calcula las dimensiones
 // del texto de las etiquetas de números flotantes.
 //
 // =============================================================================
@@ -37,13 +37,13 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text);
 
 static bool HUD_IsGoldenArcherPanelRuntime(void)
 {
-    return (DAT_07eaa128 != 0 && DAT_07eaa128 != 3);
+    return (GoldenArcherOpenType != 0 && GoldenArcherOpenType != 3);
 }
 
 // Referencias externas a helpers que ya existen en nuestro build.
 // (Camera_ProjectWorldToScreen = Projection, GL_DrawTexture = RenderBitmap, GL_DrawRect = RenderColor,
 //  UI_DrawText = RenderText_1, Camera_BuildMouseRay = CreateScreenVector,
-//  FUN_004e1be0 = RenderItem3D, GL_Begin2D = BeginBitmap, GL_End2D = EndBitmap,
+//  RenderItem3D, GL_Begin2D = BeginBitmap, GL_End2D = EndBitmap,
 //  GL_ResetState = DisableAlphaBlend, EnableAlphaBlend / EnableAlphaTest exist.)
 //
 // Helpers de hash-table — ya declarados en functions.h con linkage C++; acá no
@@ -75,24 +75,24 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 #define PerspectiveY         _DAT_083a42a8
 
 #define byte_7E11D6E         DAT_07e11d6e
-#define dword_55C9BC8        DAT_055c9bc8
+#define dword_55C9BC8        MAIN_HASH_CLASS
 #define dword_55C9BCC        DAT_055c9bcc
 #define dword_55C9BD0        DAT_055c9bd0
 #define dword_55C9BD4        DAT_055c9bd4
 
 // =============================================================================
-// FUN_00480c60 — port de sub_480C60. Calcula las dimensiones del texto de una
+// FloatingLabel_MeasureText — port de sub_480C60. Calcula las dimensiones del texto de una
 // etiqueta de número flotante y escribe el cx/cy del bounding box en los slots
 // [+144]/[+145] del struct de la entrada. El layout de la entrada incluye 4 strings
 // distintos (encabezado en +0, valor en +44, valor secundario en +300, remitente en
 // +24) y sub_480C60 elige el caso de layout según los flags de cantidad de líneas
 // at [+139] / [+140].
 // =============================================================================
-// functions.h la declara como `void __cdecl FUN_00480c60(int,int,int)`.
+// functions.h la declara como `void __cdecl FloatingLabel_MeasureText(int,int,int)`.
 // Respetamos esa firma; el original de IDA devuelve int pero el único llamador
 // (sub_4BD090 → RenderBooleans) no usa el valor de retorno para nada — el int
 // va a una variable que se descarta. Devolver void es correcto.
-void __cdecl FUN_00480c60(int p1, int p2, int p3)
+void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
 {
     // La firma de IDA es `int sub_480C60(LPCSTR lpString)` pero nuestra
     // declaración adelantada en functions.h:409 es `void(int,int,int)`, para coincidir con la
@@ -277,7 +277,7 @@ void RenderBooleans_(void)
             } else {
                 Projection(v0 + 5, &sx, &sy);
             }
-            FUN_00480c60((int)((LPCSTR)v0 - 564), 0, 0);
+            FloatingLabel_MeasureText((int)((LPCSTR)v0 - 564), 0, 0);
             *((DWORD*)v0 + 1) = (DWORD)(sx - 640 * (int)*((DWORD*)v0 + 3) / (int)WindowWidth / 2);
             *((DWORD*)v0 + 2) = (DWORD)(sy - 36);
         }
@@ -317,7 +317,7 @@ void RenderBooleans_(void)
     // Pasada 3: renderiza cada entrada activa vía RenderBoolean.
     for (int* v10 = (int*)(base + 0x000); v10 < v3_end; v10 += 149) {
         if (*(v10 - 129) > 0 || *v10 > 0) {
-            FUN_00480e00(v10[3], v10[4], (int)(v10 - 139));
+            RenderBoolean(v10[3], v10[4], (DWORD)(uintptr_t)(v10 - 139));
         }
     }
 }
@@ -364,7 +364,7 @@ void RenderMainFrameWindow_(void)
     // dword_55C9BC8 como corresponde, la estructura coincide byte a byte con IDA.
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v6 = HashTable_GetIndex(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
+        UINT  v6 = HashTable_GetIndex(&MAIN_HASH_CLASS, /*edx*/ 0, (DWORD)v0);
         if (v6 != 0xFFFFFFFFu && DAT_055c9bd4) {
             // Encontrado: toma el puntero al valor del array de valores
             // (dword_55C9BCC[v6]) e incrementa su byte de ref-count [+1412].
@@ -399,7 +399,7 @@ void RenderMainFrameWindow_(void)
             // round-trip elsewhere).
             BYTE* fresh = new BYTE[0x585]();
             fresh[1412] = 1;
-            FUN_00403f80(&DAT_055c9bc8, fresh, v0);
+            HashTable_Insert(&MAIN_HASH_CLASS, fresh, v0);
         }
     }
 
@@ -417,19 +417,19 @@ void RenderMainFrameWindow_(void)
 
     // ── Anti-tamper #2: symmetric ref-count decrement ───────────────────────
     // Vuelve a buscar el mismo buffer, decrementa [+1412] y, al llegar a cero, llama a
-    // FUN_00404400 para sacar la entrada (lo que en el original dispara la
+    // Packet_EncryptBuffer para sacar la entrada (lo que en el original dispara la
     // vuelta de re-encriptado XOR vía sub_404370). Cuando la tabla está vacía
     // this no-ops, matching IDA's "table full" error-report fallback.
     if (CharacterMachine) {
         void* v0 = CharacterMachine;
-        UINT  v12 = HashTable_GetIndex(&DAT_055c9bc8, /*edx*/ 0, (DWORD)v0);
+        UINT  v12 = HashTable_GetIndex(&MAIN_HASH_CLASS, /*edx*/ 0, (DWORD)v0);
         if (v12 != 0xFFFFFFFFu && DAT_055c9bd4) {
             BYTE* v13 = *(BYTE**)((BYTE*)DAT_055c9bcc + 4 * v12);
             if (v13) {
                 BYTE v14 = (BYTE)(v13[1412] - 1);
                 v13[1412] = v14;
                 if (!v14) {
-                    FUN_00404400(v13, v0);
+                    Packet_EncryptBuffer(v13, v0);
                 }
             }
         }
@@ -461,12 +461,12 @@ void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
 //   EndBitmap / BeginBitmap (GL_End2D / GL_Begin2D)
 //   sub_482BE0(slot)        — devuelve el índice de OffsetInventoryItems del slot de la barra
 //   OffsetInventoryItems    — array of {Type, Level, ...}
-//   RenderItem3D            — FUN_004e1be0
+//   RenderItem3D            — RenderItem3D
 //   CreateScreenVector      — Camera_BuildMouseRay
 //   CameraPosition[]        — float[3] world-space camera
 //   CameraMatrix[]          — 4x4 GL matrix (already in our globals)
 // =============================================================================
-// Item_FindQuickSlotByCategory, FUN_004e1be0 y Camera_BuildMouseRay ya están declaradas en
+// Item_FindQuickSlotByCategory, RenderItem3D y Camera_BuildMouseRay ya están declaradas en
 // functions.h (que entra vía stdafx.h). FUN_004f5ce0 / FUN_004f6420 están
 // declaradas pero sin implementar en nuestro build — acá dejamos stubs para que
 // enlacen los call sites del render de la barra. Son renderers de efectos de
@@ -515,7 +515,7 @@ void Render_HotbarItems3D_(void)
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    GL_GetModelViewMatrix((unsigned int*)DAT_083a4140);
+    GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
     GL_EnableDepthTest();
     GL_EnableDepthWrites();
     // IDA sub_4BFDE0 L31: `sub_403150(g_csQuest, 1, 0)`.
@@ -547,9 +547,9 @@ void Render_HotbarItems3D_(void)
                 BYTE* slotBase = OffsetInventoryItems + v2 * 0x44;
                 short itemType = *(short*)(slotBase + 0);
                 int   itemLvl  = *(int*)(slotBase + 4);
-                FUN_004e1be0((float)slot_x, 454.0f, 20.0f, 20.0f,
+                RenderItem3D((float)slot_x, 454.0f, 20.0f, 20.0f,
                              (int)itemType, itemLvl,
-                             0, 0);
+                             0, 0, 0);
             }
             slot_x += 31;
         }
@@ -559,7 +559,7 @@ void Render_HotbarItems3D_(void)
 
     glLoadIdentity();
     glTranslatef(-CameraPosition[0], -CameraPosition[1], -CameraPosition[2]);
-    GL_GetModelViewMatrix((unsigned int*)DAT_083a4140);
+    GL_GetModelViewMatrix((unsigned int*)CameraMatrix);
 
     float Target[3] = {0, 0, 0};
     Camera_BuildMouseRay(100, 100, Target);

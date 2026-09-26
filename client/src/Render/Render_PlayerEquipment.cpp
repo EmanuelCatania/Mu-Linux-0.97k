@@ -30,11 +30,11 @@
 //   Actions[N].PlaySpeed @ +4 dentro del struct (16 bytes/action)
 //
 // API mapping IDA → nuestra:
-//   CreateSprite(type, pos, scale, color, owner, alpha, mode) → FUN_004795c0
+//   CreateSprite(type, pos, scale, color, owner, alpha, mode) → CreateSprite
 //   CreateJoint(type, p0, p1, color, flag, owner, scale, ?, mode) → Joint_Create
 //   Particle_Spawn(type, pos, size, color, flag, alpha, mode) → Particle_Spawn
 //   TransformPosition(model, mat3x4, pos_in, pos_out, translate) → BMD_TransformPosition
-//   sub_4553C0(model, type, bone, scale, color, owner) → FUN_004553c0
+//   sub_4553C0(model, type, bone, scale, color, owner) → Model_BoneParticle
 //
 // Anti-tamper hash-table operations (líneas IDA 1290-1505) elididas — pure
 // obfuscation por CLAUDE.md, no afectan render.
@@ -52,7 +52,7 @@ extern "C" void DbgLogPublic(const char*);
 int EquipmentLevelSet = 0;
 
 // g_bAddDefense — global escrita SÓLO por CheckFullSet (IDA L77/L158), leída
-// por sub_47E160 (nuestro FUN_0047e160) para el bonus de defensa de set
+// por sub_47E160 (nuestro Stats_CalcDefenseRate) para el bonus de defensa de set
 // completo (+5% con set +10, +10% con set +11).
 //
 // Semántica IDA (rara pero fiel): se pone en 1 en LABEL_15, al que se llega
@@ -63,7 +63,7 @@ int EquipmentLevelSet = 0;
 // gatea con EquipmentLevelSet (que estos caminos dejan en 0).
 int g_bAddDefense = 0;
 
-// ── FUN_00451b20  CheckFullSet  ───────────────────────────────────────────────
+// IDA: CheckFullSet (0x00451B20)
 // Determina si el char tiene un "full set" (5 armaduras del mismo set, todas
 // con level >= 9). Devuelve 1 si full set, 0 si no. Setea EquipmentLevelSet
 // al MIN level de las piezas si match, 0 si no match.
@@ -93,7 +93,7 @@ static bool CheckFullSet_Tail(int c, bool v26) {
     return v26;
 }
 
-bool __cdecl FUN_00451b20(int c) {
+bool __cdecl CheckFullSet(int c) {
     int v1 = ((*(unsigned char*)(c + 444) & 7) == 3) ? 2 : 1;  // MG=2, otros=1
     int v2 = 5;
     EquipmentLevelSet = 0;
@@ -201,7 +201,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -110.0f;
             WorldPosition[2] = 5.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            FUN_004795c0(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            CreateSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
             break;
 
         case 0x197: case 0x19A:
@@ -209,7 +209,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -110.0f;
             WorldPosition[2] = 0.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            FUN_004795c0(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            CreateSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
             break;
 
         case 0x198: case 0x199:
@@ -217,7 +217,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -110.0f;
             WorldPosition[2] = -5.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            FUN_004795c0(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            CreateSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
             break;
 
         case 0x19B: case 0x19E:
@@ -225,7 +225,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -150.0f;
             WorldPosition[2] = 0.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            FUN_004795c0(1150, v242, 1.4f, Light, o, 0.0f, 0);
+            CreateSprite(1150, v242, 1.4f, Light, o, 0.0f, 0);
             break;
 
         case 0x19C: {
@@ -234,7 +234,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[1] = -160.0f;
             WorldPosition[2] = 0.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            FUN_004795c0(1150, v242, 1.4f, L2, o, 0.0f, 0);
+            CreateSprite(1150, v242, 1.4f, L2, o, 0.0f, 0);
             break;
         }
 
@@ -261,7 +261,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             TransformPos(model, boneMat, WorldPosition, v242);
             float L2[3] = { Scalel * 0.2f, Scalel * 0.2f, Scalel };
             float v210 = Scalel + 1.0f;
-            FUN_004795c0(1231, v242, v210, L2, o, 0.0f, 0);
+            CreateSprite(1231, v242, v210, L2, o, 0.0f, 0);
             // Three joint sparkles
             WorldPosition[0] = 0.0f; WorldPosition[1] = -133.0f; WorldPosition[2] = 7.0f;
             TransformPos(model, boneMat, WorldPosition, WorldPosition);
@@ -283,7 +283,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                     WorldPosition[2] = 0.0f;
                     float* mat3 = BoneMat16(entity_o, bone);
                     TransformPos(model, mat3, WorldPosition, v242);
-                    FUN_004795c0(1150, v242, 1.0f, L2, o, 0.0f, 0);
+                    CreateSprite(1150, v242, 1.0f, L2, o, 0.0f, 0);
                 }
                 v172 -= 20;
                 Scaleh = (float)v172;
@@ -297,19 +297,19 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             TransformPos(model, boneMat, WorldPosition, v242);
             float L2[3] = { Scalei, Scalei * 0.2f, Scalei * 0.1f };
             float v211 = Scalei + 1.5f;
-            FUN_004795c0(1231, v242, v211, L2, o, 0.0f, 0);
+            CreateSprite(1231, v242, v211, L2, o, 0.0f, 0);
             int v178 = 0;
             do {
                 WorldPosition[0] = 0.0f;
                 WorldPosition[1] = (float)v178 * 20.0f - 10.0f;
                 WorldPosition[2] = 0.0f;
                 TransformPos(model, boneMat, WorldPosition, v242);
-                FUN_004795c0(1231, v242, 1.0f, L2, o, 0.0f, 0);
+                CreateSprite(1231, v242, 1.0f, L2, o, 0.0f, 0);
                 v178--;
             } while (v178 > -5);
             float L3[3] = { Scalei * 0.5f, Scalei * 0.1f, Scalei * 0.050000001f };
-            FUN_004553c0(model, 1231, 2, 1.0f, L3, o);
-            FUN_004553c0(model, 1231, 6, 1.0f, L3, o);
+            Model_BoneParticle(model, 1231, 2, 1.0f, L3, o);
+            Model_BoneParticle(model, 1231, 6, 1.0f, L3, o);
             break;
         }
 
@@ -332,7 +332,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                 WorldPosition[2] = Scalej;
                 float* mat3 = BoneMat16(entity_o, bone);
                 TransformPos(model, mat3, WorldPosition, v242);
-                FUN_004795c0(1150, v242, 2.0f, L2, o, 0.0f, 0);
+                CreateSprite(1150, v242, 2.0f, L2, o, 0.0f, 0);
                 v184 -= 20;
                 Scalej = (float)v184;
             } while (v184 > -120);
@@ -349,7 +349,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                 WorldPosition[2] = Scaleg * 20.0f;
                 float* mat3 = BoneMat16(entity_o, bone);
                 TransformPos(model, mat3, WorldPosition, v242);
-                FUN_004795c0(1150, v242, 2.0f, L2, o, 0.0f, 0);
+                CreateSprite(1150, v242, 2.0f, L2, o, 0.0f, 0);
                 Scaleg = (float)(--v168);
             } while (v168 > -6);
             break;
@@ -359,7 +359,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[0] = 0.0f; WorldPosition[1] = -90.0f; WorldPosition[2] = 0.0f;
             float L2[3] = { Targetj * 0.40000001f, Targetj * 0.80000001f, Targetj * 0.60000002f };
             TransformPos(model, boneMat, WorldPosition, v242);
-            FUN_004795c0(1231, v242, 2.0f, L2, o, 0.0f, 0);
+            CreateSprite(1231, v242, 2.0f, L2, o, 0.0f, 0);
             break;
         }
 
@@ -368,8 +368,8 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[0] = 0.0f; WorldPosition[1] = -145.0f; WorldPosition[2] = 0.0f;
             float* mat3 = BoneMat16(entity_o, bone);
             TransformPos(model, mat3, WorldPosition, v242);
-            FUN_004795c0(1231, v242, 1.5f, L2, o, 0.0f, 0);
-            FUN_004795c0(1191, v242, 0.30000001f, L2, o, 0.0f, 0);
+            CreateSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
+            CreateSprite(1191, v242, 0.30000001f, L2, o, 0.0f, 0);
             break;
         }
 
@@ -377,8 +377,8 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[0] = 0.0f; WorldPosition[1] = -145.0f; WorldPosition[2] = 0.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
             float L2[3] = { Targetj, Targetj * 0.60000002f, Targetj * 0.40000001f };
-            FUN_004795c0(1175, v242, 3.0f, L2, o, 0.0f, 0);
-            FUN_004795c0(1232, v242, 1.5f, L2, o, 0.0f, 0);
+            CreateSprite(1175, v242, 3.0f, L2, o, 0.0f, 0);
+            CreateSprite(1232, v242, 1.5f, L2, o, 0.0f, 0);
             int v160 = 4;
             do {
                 WorldPosition[0] = (float)(rand() % 20 - 10);
@@ -397,7 +397,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                     WorldPosition[1] = Scalef + 60.0f;
                     WorldPosition[2] = 0.0f;
                     TransformPos(model, boneMat, WorldPosition, v242);
-                    FUN_004795c0(1150, v242, 1.0f, L3, o, 0.0f, 0);
+                    CreateSprite(1150, v242, 1.0f, L3, o, 0.0f, 0);
                 }
                 v164 -= 20;
                 Scalef = (float)v164;
@@ -407,9 +407,9 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
 
         case 0x237: { // Multi-bone sparkle (bones 27-37)
             float L2[3] = { Targetj * 0.40000001f, Targetj * 0.60000002f, Targetj };
-            FUN_004553c0(model, 1231, 27, 2.0f, L2, o);
+            Model_BoneParticle(model, 1231, 27, 2.0f, L2, o);
             for (int j = 28; j <= 37; ++j) {
-                FUN_004553c0(model, 1150, j, 1.5f, L2, o);
+                Model_BoneParticle(model, 1150, j, 1.5f, L2, o);
             }
             break;
         }
@@ -418,12 +418,12 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             float L2[3] = { Targetj * 0.60000002f, Targetj * 0.60000002f, Targetj + Targetj };
             WorldPosition[0] = 0.0f; WorldPosition[1] = -120.0f; WorldPosition[2] = 5.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            FUN_004795c0(1231, v242, 1.5f, L2, o, 0.0f, 0);
+            CreateSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
             float Scalen = Targetj + 1.0f;
-            FUN_004795c0(1150, v242, Scalen, L2, o, 0.0f, 0);
+            CreateSprite(1150, v242, Scalen, L2, o, 0.0f, 0);
             WorldPosition[0] = 0.0f; WorldPosition[1] = 100.0f; WorldPosition[2] = 10.0f;
             TransformPos(model, boneMat, WorldPosition, v242);
-            FUN_004795c0(1150, v242, Scalen, L2, o, 0.0f, 0);
+            CreateSprite(1150, v242, Scalen, L2, o, 0.0f, 0);
             break;
         }
 
@@ -432,7 +432,7 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
             WorldPosition[0] = 20.0f; WorldPosition[1] = 0.0f; WorldPosition[2] = 0.0f;
             float* mat3 = BoneMat16(entity_o, bone);
             TransformPos(model, mat3, WorldPosition, v242);
-            FUN_004795c0(1231, v242, 1.5f, L2, o, 0.0f, 0);
+            CreateSprite(1231, v242, 1.5f, L2, o, 0.0f, 0);
             break;
         }
 
@@ -450,7 +450,7 @@ extern "C" BYTE OffsetInventoryItems[];
 // Restaura equipment slots si fueron borrados.
 extern "C" void HeroEquipWatchdog(int c)
 {
-    if (DAT_005615c0 != 5) return;
+    if (SceneFlag != 5) return;
     if (!DAT_07abf5d8 || c != (int)(uintptr_t)DAT_07abf5d8) return;
     unsigned char* be = (unsigned char*)c;
     static const int kBodyOff[6] = { 0x1e0, 0x1f8, 0x210, 0x228, 0x240, 0x258 };
@@ -541,8 +541,8 @@ extern "C" void HeroEquipWatchdog(int c)
                 s_prevSig  = sig;
                 s_prevHero = c;
                 s_have     = true;
-                FUN_0045c130(c);
-                FUN_0045c720(c);
+                SetCharacterClass(c);
+                Character_UpdateEquipSlotAnimations(c);
             }
         }
         return;
@@ -565,7 +565,7 @@ static bool IsBackItem(int iType)
 }
 
 // Mano cuyo item se esta colgando (0 = Weapon[0], 1 = Weapon[1]).  La lee la
-// tabla de poses de FUN_00455430; equivale al `SecondWeaponFixVal` del DLL.
+// tabla de poses de RenderLinkObject; equivale al `SecondWeaponFixVal` del DLL.
 extern "C" int g_BackItemHand = 0;
 
 extern "C" int RenderCharacterBackItem(int c, int o)
@@ -580,12 +580,12 @@ extern "C" int RenderCharacterBackItem(int c, int o)
 
     // DESVIACION DEL PORT (2026-05-04, conservada): gate por state=5 (in-game).
     // IDA no lo tiene.  Sin el, char-select dibujaba el arma dos veces.
-    if (DAT_005615c0 != 5)
+    if (SceneFlag != 5)
         return 0;
 
-    // `World` es macro a DAT_0055a7ac (structs.h:389): usar otro nombre o el
+    // `World` es macro a World (structs.h:389): usar otro nombre o el
     // local se sombrearia a si mismo.
-    const int iWorld = (int)DAT_0055a7ac;
+    const int iWorld = (int)World;
     const unsigned char anim = *(unsigned char*)(o + 0x105);
 
     // Bind = SafeZone || saludo (93..124) || (Atlans && nadando (21|29)).
@@ -620,7 +620,7 @@ extern "C" int RenderCharacterBackItem(int c, int o)
     // RenderLinkObject ademas tiene un parametro `bRightHandItem` que el de
     // 0.97k no tiene) y parchea 0x0045568B con una tabla de poses por tipo de
     // escudo mas un offset para el segundo item.  Portado: el bucle aca, la
-    // tabla en FUN_00455430.
+    // tabla en RenderLinkObject.
     //
     // Weapon[0] = c+624 (0x270), Weapon[1] = c+648 (0x288).
     bool bBack = false;
@@ -679,8 +679,8 @@ extern "C" int RenderCharacterBackItem(int c, int o)
                 *(unsigned int*)(c + 0x2B0) = *(unsigned int*)(actions + 20);
         }
 
-        g_BackItemHand = i;      // lo lee la tabla de poses de FUN_00455430
-        FUN_00455430(0.0f, 0.0f, 15.0f, c, c + 0x2A0,
+        g_BackItemHand = i;      // lo lee la tabla de poses de RenderLinkObject
+        RenderLinkObject(0.0f, 0.0f, 15.0f, c, c + 0x2A0,
                      iType, (char)iLevel, (unsigned int)iOption1,
                      Link, '\x01', 0);
         g_BackItemHand = 0;
@@ -704,7 +704,7 @@ extern "C" void Render_PlayerHelper(int c, int o)
     unsigned char v215 = *(unsigned char*)(c + 0x2BB);   // Option1
     *(unsigned char*)(c + 0x2BC) = 34;                   // LinkBone = 34
     *(int*)(c + 0x2C8) = 0x3F000000;                     // PlaySpeed = 0.5f
-    FUN_00455430(20.0f, 0.0f, 0.0f, c, c + 0x2B8,
+    RenderLinkObject(20.0f, 0.0f, 0.0f, c, c + 0x2B8,
                  817, (char)v101, (unsigned int)v215, '\0', '\x01', 0);
 
     // Sprite glow at transformed position (20, 0, 15) in bone[34]
@@ -717,7 +717,7 @@ extern "C" void Render_PlayerHelper(int c, int o)
     float WorldPos[3];
     TransformPos(model, boneMat, Pos, WorldPos);
     float Light[3] = { Targetj * 0.5f, 0.0f, 0.0f };
-    FUN_004795c0(1150, WorldPos, 1.5f, Light, o, 0.0f, 0);
+    CreateSprite(1150, WorldPos, 1.5f, Light, o, 0.0f, 0);
 }
 
 
@@ -803,7 +803,7 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
 
 
         // ── DIAG: log weapon render attempt for char-select ─────────────────
-        if (DAT_005615c0 == 4) {
+        if (SceneFlag == 4) {
             int csSlot = (int)(((uintptr_t)c - (uintptr_t)DAT_07abf5d0) / 0x394);
             if (csSlot >= 0 && csSlot < 5) {
                 static DWORD s_lastWP[5][2] = {{0,0},{0,0},{0,0},{0,0},{0,0}};
@@ -827,7 +827,7 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
         // Translate/RenderType en nuestro 9-arg port, pero con los fixes
         // previos en RenderLinkObject ahora son Level/Option1 reales).
         // 9th arg ('\0') = Link flag → non-Link path → renderiza al bone.
-        FUN_00455430(0.0f, 0.0f, 0.0f, c, v121,
+        RenderLinkObject(0.0f, 0.0f, 0.0f, c, v121,
                      v120,
                      *(unsigned char*)(v121 + 2),
                      *(unsigned char*)(v121 + 3),
@@ -859,7 +859,7 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
 
         // ── Weapon-specific FX (sólo en world bajo 6 y level != 4) ──────────
         unsigned char v126 = *(unsigned char*)(c + 746);
-        if (DAT_005615c0 == 4 || (v126 < 6 && *(short*)(c + 446) != 4)) {
+        if (SceneFlag == 4 || (v126 < 6 && *(short*)(c + 446) != 4)) {
             RenderWeaponFX(c, o, v121, Targetj, Light);
         }
         }

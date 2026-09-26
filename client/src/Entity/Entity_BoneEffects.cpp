@@ -18,13 +18,13 @@
 #include "functions.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -46,10 +46,10 @@ extern void __cdecl FUN_0054158c(void* ptr);
 #endif
 
 
-// FUN_00456590 @ 0x00456590 — Entity_SpawnBoneEffect(entity, effectType, scale, bone, x, flags, yOff)
+// Entity_SpawnBoneEffect @ 0x00456590 — Entity_SpawnBoneEffect(entity, effectType, scale, bone, x, flags, yOff)
 // Transforms an offset vector through the entity's bone matrix, then spawns a particle
 // effect at the resulting world position with a pulsing light color.
-void* __cdecl FUN_00456590(int entity, int effectType, float scale, int bone, float x, int flags, float yOff)
+void* __cdecl Entity_SpawnBoneEffect(int entity, int effectType, float scale, int bone, float x, int flags, float yOff)
 {
     // offset vector at bone position + x/yOff
     // BUG-FIX 2026-08-18 (A): el vector de offset se pasaba desde `&offset[3]`,
@@ -77,13 +77,13 @@ void* __cdecl FUN_00456590(int entity, int effectType, float scale, int bone, fl
     // sub_456590: CreateSprite(Type, Position, Scale, Light, Owner, 0.0, 0).
     // Con eso el quad media 152448 unidades y, pintado con Light=(v, v*0.6,
     // v*0.4) = salmon, tapaba la pantalla entera en Atlans.
-    FUN_004795c0((unsigned short)effectType, outPos, scale, light, entity, 0.0f, 0);
+    CreateSprite((unsigned short)effectType, outPos, scale, light, entity, 0.0f, 0);
     return (void *)entity;
 }
 
-// FUN_00456650 @ 0x00456650 — Entity_SpawnBoneRangeEffect(entity, bone1, bone2, scale)
+// Entity_SpawnBoneRangeEffect @ 0x00456650 — Entity_SpawnBoneRangeEffect(entity, bone1, bone2, scale)
 // Spawns beam effects between two bones of the entity, and writes bone2 world pos to entity+0x40.
-void* __cdecl FUN_00456650(int entity, int bone1, int bone2, float scale)
+void* __cdecl Entity_SpawnBoneRangeEffect(int entity, int bone1, int bone2, float scale)
 {
     float sinVal = (float)fsin((double)DAT_05826e08 * (double)_DAT_005528e0);
     void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * 0xbc);
@@ -95,13 +95,13 @@ void* __cdecl FUN_00456650(int entity, int bone1, int bone2, float scale)
     float vec1[4] = { 5.0f, 0.0f, 0.0f, 0.0f };
     float outPos1[4];
     BMD_TransformPosition(modelPtr, (float *)(bone1 * 0x30 + *(int *)(entity + 0x114)), vec1, outPos1, '\x01');
-    FUN_004795c0(0x4d1, outPos1, scale, light, 0, 0.0f, 0);
+    CreateSprite(0x4d1, outPos1, scale, light, 0, 0.0f, 0);
 
     // Bone2: offset {-5, 0, 0} → spawn at world pos, write result to entity+0x40
     vec1[0] = -5.0f;
     float outPos2[4];
     BMD_TransformPosition(modelPtr, (float *)(bone2 * 0x30 + *(int *)(entity + 0x114)), vec1, outPos2, '\x01');
-    FUN_004795c0(0x4d1, outPos2, scale, light, 0, 0.0f, 0);
+    CreateSprite(0x4d1, outPos2, scale, light, 0, 0.0f, 0);
 
     *(float *)(entity + 0x40) = outPos2[0];
     *(float *)(entity + 0x44) = outPos2[1];

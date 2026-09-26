@@ -10,13 +10,13 @@
 //
 // ── MAPEO FUN_XXXX → nombre real IDA ──────────────────────────────────────────
 //   GL_BeginViewport → BeginOpengl(x,y,w,h)          — setup 3D: push PROJ+MV, persp, rota cam
-//   FUN_004fd800 → Terrain_Render()
-//   FUN_0045ab00 → Entity_RenderAll_3D()
-//   FUN_00500970 → RenderBugs()                  — (no era Entity_Render_Sprites)
+//   Terrain_Render → Terrain_Render()
+//   Entity_RenderAll_3D → Entity_RenderAll_3D()
+//   RenderBugs → RenderBugs()                  — (no era Entity_Render_Sprites)
 //   FUN_0046c3e0 → Trail_RenderAll()             — (no era Particle_Render)
 //   GL_BeginSprite → BeginSprite()                 — sólo push MV + loadIdentity
 //   Render_DrawSpritePool → RenderSprites()               — (no era Portal_Render)
-//   FUN_00478c00 → RenderParticles()             — (no era ItemDrop_Render_2)
+//   RenderParticles → RenderParticles()             — (no era ItemDrop_Render_2)
 //   GL_Begin2D → BeginBitmap()                 — setup 2D ortho
 //   GL_SetBlendSrcOver → EnableAlphaTest(flag)         — (no era GL_SetMode)
 //   GL_DrawTexture → RenderBitmap(id,x,y,w,h,u0,v0,u1,v1,fx,fy)
@@ -25,13 +25,13 @@
 //   GL_SetBlendAdditive → EnableAlphaBlend()            — (no era Frame_UpdateTimer)
 //   GL_ResetState → DisableAlphaBlend()           — (no era GL_ResetBlend)
 //   RenderErrorMessage → RenderErrorMessage()          — (no era Chat_Render)
-//   FUN_004f64d0 → Scene_MapTick()               — (no era UI_Render)
+//   Scene_MapTick → Scene_MapTick()               — (no era UI_Render)
 //   UI_RenderNotices → RenderNotices()               — (no era StatusBar_Render)
-//   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — DAT_005590ac=g_bUseChatListBox
+//   UI_RenderChatLogOverlay → sub_480980 (chat log render)  — g_bUseChatListBox
 //   UI_UpdateFpsCounter → RenderDebugWindow()
 //   RenderHelpWindow → RenderHelpWindow()
 //   Cursor_Render → RenderCursor()                — (no era Minimap_Render)
-//   FUN_0051e0c0 → RenderInfomation3D()          — (no era Cursor_Render)
+//   RenderInfomation3D → RenderInfomation3D()          — (no era Cursor_Render)
 //   GL_End2D → EndBitmap()                   — 2x glPopMatrix (balancea BeginBitmap+BeginSprite)
 //   GL_EndOpenGL → EndOpengl()                   — pop MV + pop PROJ (balancea BeginOpengl)
 //
@@ -42,7 +42,7 @@
 //   DAT_07e11d6e   — byte flag reset
 //   DAT_00559c8c   — InputTextWidth
 //   DAT_00559c78   — m_dwTextColor
-//   DAT_00559c80   — m_dwBackColor
+//   SetBackgroundTextColor   — m_dwBackColor
 //   DAT_055c9fec   — m_hFontDC (HDC usado para GetTextExtentPointA)
 //   DAT_055ca00c   — g_hFont
 //   DAT_005616a4   — base Y panel credenciales
@@ -51,8 +51,8 @@
 //   DAT_083a7af4   — fade state
 //   DAT_005615e8   — fade counter
 //   DAT_0056156c   — WindowWidth
-//   DAT_005590ac   — g_bUseChatListBox
-//   DAT_005615c0   — g_GameState
+//   g_bUseChatListBox   — g_bUseChatListBox
+//   SceneFlag   — SceneFlag
 //   DAT_083a4320   — retry counter
 
 #include "stdafx.h"
@@ -82,13 +82,13 @@ uint Scene_Login(void)
     GL_BeginViewport(0, 0x50, 0x280, 0x140);   // BeginOpengl(0, 80, 640, 320)
 
     // ── 3D background render (orden exacto de IDA) ───────────────────────────
-    FUN_004fd800();    // Terrain_Render
-    FUN_0045ab00();    // Entity_RenderAll_3D
-    FUN_00500970();    // RenderBugs
-    FUN_0046c3e0();    // Trail_RenderAll
+    Terrain_Render();    // Terrain_Render
+    Entity_RenderAll_3D();
+    RenderBugs();    // RenderBugs
+    Trail_RenderAll();
     GL_BeginSprite();    // BeginSprite — push MV, loadIdentity
     Render_DrawSpritePool();    // RenderSprites
-    FUN_00478c00();    // RenderParticles
+    RenderParticles();    // RenderParticles
     glPopMatrix();     // balancea BeginSprite
     GL_Begin2D();    // BeginBitmap — setup 2D ortho
 
@@ -97,7 +97,7 @@ uint Scene_Login(void)
     GL_SetBlendSrcOver('\x01');                 // EnableAlphaTest(1)
     glColor3f(1.0f, 1.0f, 1.0f);
     DAT_00559c78 = 0xffd2e6ff;            // m_dwTextColor
-    DAT_00559c80 = 0;                     // m_dwBackColor
+    SetBackgroundTextColor = 0;                     // m_dwBackColor
     SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
 
     // ── Credential input panel (sub-states 2..3) ─────────────────────────────
@@ -166,7 +166,7 @@ uint Scene_Login(void)
         *(undefined4 *)pcVar9 = *(undefined4 *)pcVar8;
         pcVar8 += 4; pcVar9 += 4;
     }
-    DAT_00559c80 = 0x80000000;
+    SetBackgroundTextColor = 0x80000000;
     for (uVar6 = uVar6 & 3; uVar6 != 0; uVar6--) {
         *pcVar9 = *pcVar8; pcVar8++; pcVar9++;
     }
@@ -255,7 +255,7 @@ uint Scene_Login(void)
 
         GL_SetBlendSrcOver('\x01');
         ptVar10 = &tStack_74;
-        DAT_00559c80 = 0x80000000;
+        SetBackgroundTextColor = 0x80000000;
         // IDA 0x00521630 L134-136: these reference GlobalText[471] (localized
         // "Conectando..." status string), not the standalone empty buffer
         // lpString_07d4c518 that Ghidra emitted.
@@ -279,14 +279,14 @@ uint Scene_Login(void)
 
     // ── Final subsystems (nombres corregidos desde IDA) ──────────────────────
     RenderErrorMessage();    // RenderErrorMessage
-    FUN_004f64d0();    // Scene_MapTick
+    Scene_MapTick();    // Scene_MapTick
     UI_RenderNotices();    // RenderNotices
-    if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
+    if ((g_bUseChatListBox == 1) || (SceneFlag != 5))
         UI_RenderChatLogOverlay();   // sub_480980 — chat log render
     UI_UpdateFpsCounter();    // RenderDebugWindow
     RenderHelpWindow();    // RenderHelpWindow
     Cursor_Render();    // RenderCursor
-    FUN_0051e0c0();    // RenderInfomation3D
+    RenderInfomation3D();    // RenderInfomation3D
 
     // ── Teardown (port exacto de IDA: EndBitmap + EndOpengl) ─────────────────
     GL_End2D();    // EndBitmap  — 2x glPopMatrix

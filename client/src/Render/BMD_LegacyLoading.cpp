@@ -17,14 +17,14 @@
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -47,12 +47,14 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 // Monster_LoadScriptTable — implemented in src/Monster/Monster_Data.cpp
 // Monster_ParseSetBase2 — implemented in src/Monster/Monster_Data.cpp
-// FUN_00505bd0 @ 0x00505BD0 — Model_SetSlotIndex(index): sets active model slot index.
-void __cdecl FUN_00505bd0(int param_1) {
-    DAT_083a4104 = 0;
-    DAT_083a4108 = param_1;
+// IDA: SetMaxTextures (0x00505BD0)
+// SetMaxTextures / Model_SetSlotIndex(index): sets active model slot index.
+void __cdecl SetMaxTextures(int param_1) {
+    TextureBegin = 0;
+    TextureCurrent = param_1;
 }
-// FUN_00505e90 @ 0x00505E90 — OpenModel(Type, Dir, ModelFileName, ...).
+// IDA: OpenModel (0x00505E90)
+// OpenModel(Type, Dir, ModelFileName, ...).
 // Port FIEL del IDA (raw 0x505E90):
 //   1. FileName = Dir + ModelFileName
 //   2. Itera variadic args (extra animation .smd paths) hasta NULL o "end"
@@ -63,22 +65,22 @@ void __cdecl FUN_00505bd0(int param_1) {
 //
 // NOTA 2026-05-01: los archivos Data2/Item/<class>/<file>.smd NO existen en el
 // filesystem distribuido (solo Data/Item/<file>.bmd está). Las llamadas a
-// fopen dentro de FUN_0040b280/FUN_0040b310 retornarán NULL → early return →
-// no-op silencioso. El path BMD (FUN_005060b0) cubre la carga real de items.
-// (FUN_0040b280, FUN_0040b310 — declared via functions.h.
+// fopen dentro de OpenSMDModel/OpenSMDAnimation retornarán NULL → early return →
+// no-op silencioso. El path BMD (AccessModel) cubre la carga real de items.
+// (OpenSMDModel, OpenSMDAnimation — declared via functions.h.
 //  DAT_083a4100 — declared in globals.h.)
 
 // Note: la signature original es variadic (`...` para extra anim paths) pero
 // TODOS los call sites en nuestro source pasan exactamente 3 args (sin anims
 // extras). Mantener 3 args para compat con functions.h.
-void __cdecl FUN_00505e90(int Type, const char* Dir, const char* ModelFileName) {
+void __cdecl OpenModel(int Type, const char* Dir, const char* ModelFileName) {
     char FileName[200];
     // Build base FileName = Dir + ModelFileName
     crt_sprintf(FileName, "%s%s", Dir ? Dir : "", ModelFileName ? ModelFileName : "");
     // Sin variadic args, v11=0 → call OpenSMDModel + OpenSMDAnimation con
     // FileName base solamente.
-    FUN_0040b280(Type, FileName, 1, (char)DAT_083a4100);
-    FUN_0040b310(Type, FileName, 0);
+    OpenSMDModel(Type, FileName, 1, (char)DAT_083a4100);
+    OpenSMDAnimation(Type, FileName, 0);
     DAT_083a4100 = 0;
 
     // BUG-FIX 2026-05-04: el cliente 0.97k distribuido NO tiene Data2/Object*/
@@ -141,7 +143,7 @@ void __cdecl FUN_00505e90(int Type, const char* Dir, const char* ModelFileName) 
     };
     for (size_t i = 0; i < sizeof(remaps)/sizeof(remaps[0]); ++i) {
         if (_stricmp(baseName, remaps[i].smd) == 0) {
-            FUN_005060b0(Type, bmdDir, remaps[i].bmd, -1);
+            AccessModel(Type, bmdDir, remaps[i].bmd, -1);
             meshCount = *(short*)(slot + 0x22);
             if (meshCount > 0) return;
             break;
@@ -188,15 +190,15 @@ void __cdecl FUN_00505e90(int Type, const char* Dir, const char* ModelFileName) 
         cand[2][j] = 0;
     }
 
-    // Try each variant. FUN_005060b0 with idx=-1 appends ".bmd" → "<name>.bmd".
+    // Try each variant. AccessModel with idx=-1 appends ".bmd" → "<name>.bmd".
     // After each attempt check mesh count; bail when slot is populated.
     for (int v = 0; v < 3; ++v) {
-        FUN_005060b0(Type, bmdDir, cand[v], -1);
+        AccessModel(Type, bmdDir, cand[v], -1);
         meshCount = *(short*)(slot + 0x22);
         if (meshCount > 0) return;
     }
 }
-// FUN_005098c0 — implemented in src/Monster/Monster_Data.cpp
+// OpenMonsterModel — implemented in src/Monster/Monster_Data.cpp
 // FUN_0047A1F0 @ 0x0047A1F0 — TextParser_GetToken: tokenizer for all game data files
 // (Monster.txt / Item.txt / Skill.txt / NPC.txt / Gate.txt / Filter.txt).
 //
@@ -311,23 +313,23 @@ int __cdecl TextParser_GetToken(void)
     return result;
 }
 
-// FUN_0047ea70 @ 0x0047EA70 — Skill_HashTable_SerializeEntry: encode 0x28-byte
+// Skill_HashTable_SerializeEntry @ 0x0047EA70 — Skill_HashTable_SerializeEntry: encode 0x28-byte
 // entry via rolling XOR/sub cipher and insert into hash table.
-void __cdecl FUN_0047ea70(void *dst, void *src) { /* hash table serialize stub */ }
-// FUN_0047eaf0 @ 0x0047EAF0 — Skill_HashTable_FreeEntry: decode entry and remove.
-void __cdecl FUN_0047eaf0(void *entry, void *key) { /* hash table free stub */ }
-// FUN_005430f0 @ 0x005430F0 — fwrite wrapper (with lock).
-uint __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp) {
+void __cdecl Skill_HashTable_SerializeEntry(void *dst, void *src) { /* hash table serialize stub */ }
+// Skill_HashTable_FreeEntry @ 0x0047EAF0 — Skill_HashTable_FreeEntry: decode entry and remove.
+void __cdecl Skill_HashTable_FreeEntry(void *entry, void *key) { /* hash table free stub */ }
+// crt_fwrite @ 0x005430F0 — fwrite wrapper (with lock).
+uint __cdecl crt_fwrite(char *buf, uint size, uint count, int *fp) {
     return (uint)fwrite(buf, size, count, (FILE *)fp);
 }
-// FUN_005060b0 @ 0x005060B0 — Model_LoadBMD_ByIdx(slot, dir, basename, idx): loads BMD file at slot.
+// AccessModel @ 0x005060B0 — Model_LoadBMD_ByIdx(slot, dir, basename, idx): loads BMD file at slot.
 // Construye leafname "basename.bmd" (idx==-1), "basename0N.bmd" (idx<10) o
 // "basenameNN.bmd" (idx>=10), usando param_3 (BASENAME) — NO param_2 (directorio).
 // param_2 (directorio "Data/Logo/") se pasa aparte al loader BMD.
 // BUG PREVIO: el sprintf pasaba param_2 en vez de param_3 → el filename quedaba
 // "Data/Logo/01.bmd" en vez de "Logo01.bmd", los modelos de login/select nunca
 // cargaban y el fondo 3D del server select quedaba vacío.
-void __cdecl FUN_005060b0(int param_1, const char *param_2, const char *param_3, int param_4) {
+void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, int param_4) {
     // BUG-FIX 2026-04-29: pump message queue cada N llamadas para evitar que
     // OpenWorld (que llama esta func ~hundreds de veces) bloquee el message
     // pump por 2+ segundos. El server MuEmu nos kickea por backpressure si
@@ -354,22 +356,22 @@ void __cdecl FUN_005060b0(int param_1, const char *param_2, const char *param_3,
     {
         char diag[200];
         _snprintf_s(diag, sizeof(diag), _TRUNCATE,
-            "FUN_005060b0: slot=0x%x dir='%s' leaf='%s' idx=%d bones=%d hqMode=%d",
+            "AccessModel: slot=0x%x dir='%s' leaf='%s' idx=%d bones=%d hqMode=%d",
             param_1, param_2 ? param_2 : "(null)", local_40, param_4,
             numBonesInSlot, (int)(DAT_0055a7c4 == '\0'));
         DbgLogPublic(diag);
     }
     if (DAT_0055a7c4 == '\0') {
-        // HQ path original: si el SMD ya cargó bones, FUN_00442a60 agrega la anim BMD.
-        // PORT FALLBACK: como nuestro SMD loader (FUN_00505e90) es stub y nunca
-        // popula bones, caemos al loader completo FUN_004423e0 para al menos traer
+        // HQ path original: si el SMD ya cargó bones, BMD__Save agrega la anim BMD.
+        // PORT FALLBACK: como nuestro SMD loader (OpenModel) es stub y nunca
+        // popula bones, caemos al loader completo BMD__Open para al menos traer
         // la geometría BMD y ver algo del background 3D.
         if (numBonesInSlot > 0)
-            FUN_00442a60((int)(DAT_05828d58 + param_1 * 0xbc), (char*)param_2, local_40);
+            BMD__Save((int)(DAT_05828d58 + param_1 * 0xbc), (char*)param_2, local_40);
         else
-            FUN_004423e0((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
+            BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
     } else {
-        FUN_004423e0((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
+        BMD__Open((int)(DAT_05828d58 + param_1 * 0xbc), (int)param_2, (int)local_40, 0);
     }
 
     // Post-load defensive init: ensure bodyLight is (1,1,1) even if the BMD
@@ -386,7 +388,8 @@ void __cdecl FUN_005060b0(int param_1, const char *param_2, const char *param_3,
 // Forward-declare FindTextureByName (real implementation at ~line 12786 below).
 int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
 
-// ── FUN_00505c80 @ 0x00505C80 — OpenTexture (Model_LoadTextures) ────────────
+// IDA: OpenTexture (0x00505C80)
+// ── OpenTexture (Model_LoadTextures) ────────────────────────────────────────
 // Para cada mesh del modelo en slot [Model]:
 //   1) Lee el nombre de textura (32 bytes) desde pBMD->Data[+0x34] + i*0x20.
 //   2) FindTextureByName — si ya está cargada, reusa e incrementa ref-count.
@@ -402,12 +405,12 @@ int __cdecl FindTextureByName(char *Name, DWORD *dwTexture);
 //
 // Globals:
 //   Models            = DAT_05828d58 (BMD table, stride 0xBC; Data ptr at +0x00)
-//   TextureBegin      = DAT_083a4104 (int, lower bound del scan)
-//   TextureCurrent    = DAT_083a4108 (int, next-free slot)
+//   TextureBegin      = TextureBegin (int, lower bound del scan)
+//   TextureCurrent    = TextureCurrent (int, next-free slot)
 //   Bitmaps[]         = g_BitmapsRaw (stride 0x38; filename en [+0x00..+0x1F])
 //   DAT_0055a7a4      = base path "Data2\"   (Data2/pak mode)
 //   DAT_0055a79c      = base path "Data\"    (Data mode)
-void __cdecl FUN_00505c80(int Model, const char* SubFolder, int Type, char Check) {
+void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check) {
     // ── BUG fix (crash 0xC0000005 @ 0x61746168 "ataH"): el Model slot ES la
     //    estructura BMD completa (stride 0xBC), NO un puntero a datos. Los
     //    primeros 32 bytes del slot son el Name (string), no un data ptr.
@@ -415,7 +418,7 @@ void __cdecl FUN_00505c80(int Model, const char* SubFolder, int Type, char Check
     //       slot +0x24 short  numMeshes
     //       slot +0x34 char*  texNameTable (char[n][0x20])
     //       slot +0x38 short* indexTexture (short[n])
-    //    Verificado en Ghidra FUN_004423e0 (BMD::Open): this[0x24]=numMeshes,
+    //    Verificado en Ghidra BMD__Open (BMD::Open): this[0x24]=numMeshes,
     //    this[0x34]=texName[] y this[0x38]=indexTex[] se asignan directamente.
     char* slot = (char*)(DAT_05828d58 + Model * 0xBC);
     short numMeshes = *(short*)(slot + 0x24);
@@ -425,8 +428,8 @@ void __cdecl FUN_00505c80(int Model, const char* SubFolder, int Type, char Check
         if (s_oc_any < 8) {
             char b[160];
             _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "FUN_00505c80 CALL Model=0x%x sub='%s' nMesh=%d TextureCurrent=0x%x",
-                Model, SubFolder ? SubFolder : "(null)", (int)numMeshes, (unsigned)DAT_083a4108);
+                "OpenTexture CALL Model=0x%x sub='%s' nMesh=%d TextureCurrent=0x%x",
+                Model, SubFolder ? SubFolder : "(null)", (int)numMeshes, (unsigned)TextureCurrent);
             DbgLogPublic(b);
             s_oc_any++;
         }
@@ -447,7 +450,7 @@ void __cdecl FUN_00505c80(int Model, const char* SubFolder, int Type, char Check
             _snprintf_s(b, sizeof(b), _TRUNCATE,
                 "OpenTex ENTER Model=0x%x sub='%s' nMesh=%d texNames=%p idxTex=%p firstName='%s' TextureCurrent=0x%x",
                 Model, SubFolder, (int)numMeshes, texNameTable0, indexTexture0,
-                firstName, (unsigned)DAT_083a4108);
+                firstName, (unsigned)TextureCurrent);
             DbgLogPublic(b);
             s_oc++;
         }
@@ -501,11 +504,11 @@ void __cdecl FUN_00505c80(int Model, const char* SubFolder, int Type, char Check
 
             // Dispatch by extension character (tolower'd)
             int extChar = (dotPos + 1 < nameLen) ? tolower((unsigned char)Name[dotPos + 1]) : 'j';
-            int slot = (int)DAT_083a4108;  // TextureCurrent
+            int slot = (int)TextureCurrent;  // TextureCurrent
             if (extChar == 't')
-                FUN_00529bd0(local_40, slot, 0x2600, 0x2901, 0, Check);   // OpenTGA
+                OpenTGA(local_40, slot, 0x2600, 0x2901, 0, Check);   // OpenTGA
             else
-                FUN_00529740(local_40, slot, Type,   0x2901, 0, Check);   // OpenJPG/OZJ
+                OpenJPG(local_40, slot, Type,   0x2901, 0, Check);   // OpenJPG/OZJ
 
             // Store filename into the Bitmaps slot (first 32 bytes)
             char* slotBase = &g_BitmapsRaw[slot * 0x38];
@@ -514,7 +517,7 @@ void __cdecl FUN_00505c80(int Model, const char* SubFolder, int Type, char Check
             if (fnLen < 32) memset(slotBase + fnLen, 0, 32 - fnLen);
 
             resolvedIdx = slot;
-            DAT_083a4108 = slot + 1;   // TextureCurrent++
+            TextureCurrent = slot + 1;   // TextureCurrent++
         } else {
             // Hit: reuse existing slot, bump ref count at +0x30
             if (pSlot != 0) {
@@ -567,7 +570,7 @@ extern "C" void __cdecl FixupSMD(void);
 extern "C" void __cdecl SMD2BMDModel(int ID, int Actions);
 extern "C" void __cdecl SMD2BMDAnimation(int ID, char LockPosition);
 
-// FUN_0040b280 @ 0x0040b280 — OpenSMDModel(ID, FileName, Actions, Flip)
+// OpenSMDModel @ 0x0040b280 — OpenSMDModel(ID, FileName, Actions, Flip)
 // Port FIEL del IDA (raw 0x40B280):
 //   if (Models[id].numMesh <= 0) {
 //     if (OpenSMDFile(FileName, 0, Flip)) {
@@ -577,7 +580,7 @@ extern "C" void __cdecl SMD2BMDAnimation(int ID, char LockPosition);
 //       SMD2BMDModel(ID, Actions);
 //     }
 //   }
-void __cdecl FUN_0040b280(int ID, const char* FileName, int Actions, char Flip) {
+void __cdecl OpenSMDModel(int ID, const char* FileName, int Actions, char Flip) {
     char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);  // stride 188 = 0xbc
     if (*(short*)(slot + 36) > 0) return;  // already loaded
     if (!OpenSMDFile(FileName, 0, Flip)) return;
@@ -588,13 +591,13 @@ void __cdecl FUN_0040b280(int ID, const char* FileName, int Actions, char Flip) 
     SMD2BMDModel(ID, Actions);
 }
 
-// FUN_0040b310 @ 0x0040b310 — OpenSMDAnimation(ID, FileName, LockPosition)
+// OpenSMDAnimation @ 0x0040b310 — OpenSMDAnimation(ID, FileName, LockPosition)
 // Port FIEL del IDA (raw 0x40B310):
 //   if (Models[id].numAnims > 0) {
 //     OpenSMDFile(FileName, 1, 0);
 //     SMD2BMDAnimation(ID, LockPosition);
 //   }
-void __cdecl FUN_0040b310(int ID, const char* FileName, char LockPosition) {
+void __cdecl OpenSMDAnimation(int ID, const char* FileName, char LockPosition) {
     char* slot = (char*)((uintptr_t)DAT_05828d58 + 0xbcLL * ID);
     if (*(short*)(slot + 34) <= 0) return;  // mesh slot not initialized
     OpenSMDFile(FileName, 1, 0);

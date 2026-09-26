@@ -25,6 +25,7 @@
 //   +0x10C..+0x10F  type DWORD
 //
 // Called from Trade.cpp (mode=2), Sound_Countdown2 (mode=0), GM messages, etc.
+// IDA: UIChatLogWindow_AddText (0x00480620)
 void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mode) {
     // IDA 0x480620 no descarta los mensajes vacíos: las 120 llamadas con texto
     // vacío que hacen Game_SceneUpdate y Game_CharSelectTick al cambiar de
@@ -90,7 +91,7 @@ void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mod
     // UI_RenderChatLogOverlay (chat renderer) reads slots DAT_00559CE0 + 0..5. In the
     // original binary dword_559CE0 only advances when the user presses Enter
     // to send chat (WndProc LABEL_589, line 2508). But the login scene's
-    // 120× FUN_00480620 init loop at Game_SceneUpdate fills the ring counter
+    // 120× UIChatLogWindow_AddText init loop at Game_SceneUpdate fills the ring counter
     // to 119 BEFORE the user ever sends chat — so scroll stays at 0 and the
     // countdown text (written to slot 118/119 after memmove shift) never
     // appears on screen. Force-follow the tail so newly added messages are

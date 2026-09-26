@@ -93,7 +93,7 @@ static bool HUD_IsQuestPanelOpenRuntime(void)
 
 static bool HUD_IsGoldenArcherPanelRuntime(void)
 {
-    return (DAT_07eaa128 != 0 && DAT_07eaa128 != 3);
+    return (GoldenArcherOpenType != 0 && GoldenArcherOpenType != 3);
 }
 
 static bool HUD_IsInventorySidePairOpen(void)
@@ -108,7 +108,7 @@ static bool HUD_IsAnyRightPanelOpen(void)
            GuildOpened || GuildCreatorOpened ||
            HUD_IsGoldenArcherPanelRuntime() ||
            HUD_IsQuestPanelOpenRuntime() ||
-           (DAT_07eaa130 != '\0');
+           (ServerDivisionOpened != '\0');
 }
 
 // ── Helper PORTS ─────────────────────────────────────────────────────────────
@@ -119,9 +119,9 @@ static bool HUD_IsAnyRightPanelOpen(void)
 // Uses g_pRenderText vtable (CUIRenderText::RenderText, slot ?? in our build);
 // our codebase doesn't expose g_pRenderText so we route through RenderText_1
 // (UI_DrawText) which is the same engine path with default style flags.
-extern "C" SIZE* __cdecl FUN_0047f6f0(int x, int y, const char* lpString,
+extern "C" SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
                                       int boxWidth, char style, int extraSize);
-SIZE* __cdecl FUN_0047f6f0(int x, int y, const char* lpString,
+SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
                             int boxWidth, char style, int extraSize)
 {
     if (!lpString) return NULL;
@@ -205,6 +205,7 @@ double __cdecl RenderNumber2D(float x, float y, int Num,
 // dance every other render does (refs ShopOpened / TradeOpened).  We skip
 // it: the path is benign in our build.
 extern "C" int __cdecl GetScreenWidth(void);
+// IDA: GetScreenWidth (0x004CB520)
 int __cdecl GetScreenWidth(void)
 {
     if (InventoryOpened) {
@@ -425,7 +426,7 @@ int RenderEquipedHelperLife_(bool a2)
     const BYTE* hero = (const BYTE*)DAT_07abf5d8;
     const WORD helperType = hero ? *(const WORD*)(hero + 0x2B8) : 0;
 
-    DWORD backupBgTextColor = DAT_00559c80;
+    DWORD backupBgTextColor = SetBackgroundTextColor;
     DWORD backupTextColor   = DAT_00559c78;
 
     if (helperType >= 816 && helperType <= 819) {
@@ -453,7 +454,7 @@ int RenderEquipedHelperLife_(bool a2)
 
         SelectObject(m_hFontDC, g_hFont);
         EnableAlphaTest(true);
-        DAT_00559c80 = 0x80000000u;
+        SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
 
         // IDA centra el texto en el rango [x, x+50] (sub_47F6F0 recibe x en st0
@@ -464,7 +465,7 @@ int RenderEquipedHelperLife_(bool a2)
         ts.cx = (LONG)((double)ts.cx / g_fScreenRate_x);
         int textX = (int)x + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
-        FUN_0047f6f0(textX, (int)posY, text, 0, 0, 0);
+        Text_MeasureBox(textX, (int)posY, text, 0, 0, 0);
 
         RenderBar(x, posY + 12.0f, 50.0f, 2.0f, (float)bar, false, true);
         glColor3f(1.0f, 1.0f, 1.0f);
@@ -480,7 +481,7 @@ int RenderEquipedHelperLife_(bool a2)
 
         SelectObject(m_hFontDC, g_hFont);
         EnableAlphaTest(true);
-        DAT_00559c80 = 0x80000000u;
+        SetBackgroundTextColor = 0x80000000u;
         DAT_00559c78 = 0xFFFFFFFFu;
 
         const char* summonText = GlobalText[356] ? GlobalText[356] : "";
@@ -489,13 +490,13 @@ int RenderEquipedHelperLife_(bool a2)
         ts.cx = (LONG)((double)ts.cx / g_fScreenRate_x);
         int textX = (int)xs + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
-        FUN_0047f6f0(textX, 4, summonText, 0, 0, 0);
+        Text_MeasureBox(textX, 4, summonText, 0, 0, 0);
 
         RenderBar(xs, 16.0f, 50.0f, 2.0f, (float)(50 * (int)SummonLife / 100), false, true);
         glColor3f(1.0f, 1.0f, 1.0f);
     }
 
-    DAT_00559c80 = backupBgTextColor;
+    SetBackgroundTextColor = backupBgTextColor;
     DAT_00559c78 = backupTextColor;
     return retY;
 }
@@ -608,7 +609,7 @@ void RenderBrokenItem_(int a1)
                 }
                 wsprintfA(Buffer, "%s (%d/%d)", nameLocal, v21, v30);
                 byte_7E11D6E = 1;
-                FUN_0047f6f0((int)v38, v34 + (int)v37, Buffer, 0, 0, 0);
+                Text_MeasureBox((int)v38, v34 + (int)v37, Buffer, 0, 0, 0);
                 v34 += 12;
             }
         }

@@ -72,7 +72,7 @@ extern "C" {
     // que este archivo nunca veia lo que escribia el resto del cliente.
     //
     //   InputIndex = DAT_07e11d78 — indice del campo de input activo. Lo rota el
-    //     Tab en WndProc (`DAT_07e11d78 = (DAT_07e11d78 + 1) % DAT_00559c88`) y
+    //     Tab en WndProc (`DAT_07e11d78 = (DAT_07e11d78 + 1) % InputNumber`) y
     //     lo lee `RenderInputText` (Chat.cpp) para saber en que campo va el
     //     caret. Con la copia local clavada en 0, el `_` se dibujaba SIEMPRE en
     //     el campo de chat aunque se estuviera escribiendo en el de whisper.
@@ -86,7 +86,7 @@ extern "C" {
     // Guild mark colour palette (16 entries × DWORD ARGB).
     // 2026-08-25: esto era una copia LOCAL del array. El global real es
     // 0x7E11F34 (= DAT_07e11f34), que es el que lee `RenderGuildMark`
-    // (0x4F02F0, nuestro RenderGuildMark_stub): `CreateGuildMark` llenaba esta
+    // (0x4F02F0, nuestro RenderGuildMark): `CreateGuildMark` llenaba esta
     // copia y el render leia el global, que quedaba en ceros — y encima estaba
     // declarado como UN DWORD, asi que indexarlo 0..15 desbordaba.
     // Ver [[global-partido-en-dos]].
@@ -112,7 +112,7 @@ extern "C" void GuildMark_InitializePalette(bool blend);
 // External symbols already defined elsewhere.
 // (UI flags are now #defined in globals.h to DAT_07eaa11x bytes.)
 extern "C" int  GetScreenWidth(void);
-extern "C" SIZE* __cdecl FUN_0047f6f0(int, int, const char*, int, char, int);
+extern "C" SIZE* __cdecl Text_MeasureBox(int, int, const char*, int, char, int);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
 extern "C" void   __cdecl RenderBar(float, float, float, float, float, bool, bool);
 extern "C" SIZE*  __cdecl RenderCenteredText(int, int, const char*);
@@ -145,6 +145,11 @@ static bool HUD_IsCharacterInfoRuntime(void)
 // Constants.
 static const char aMacroTime[] = "Macro Time";
 
+// Implementaciones reales de los tres modos de blend (ver el bloque de abajo).
+void GL_EnableLightMap(void);
+void GL_SetBlendSrcAlpha(void);
+void __stdcall GL_SetBlendInvSrcColor(void);
+
 // All 9 sub-panels are implemented in src/Render/HUD_Pass6.cpp.  sub_5126E0
 // is also there.  Forward-declare the ones called from this TU.
 extern "C" {
@@ -158,11 +163,18 @@ extern "C" {
     void __cdecl RenderEventWindow(void);
     void __cdecl RenderGoldenArcherWindow(void);
     void __cdecl RenderServerDivision(void);
-    // GL state helpers — minor stubs, the real pipeline doesn't drive these
-    // distinct alpha-blend modes in our build yet.
-    void __cdecl EnableLightMap(void) {}
-    void __cdecl EnableAlphaBlendMinus(void) {}
-    void __cdecl EnableAlphaBlend2(void) {}
+    // Modos de blend que usa la cola de RenderTipText (sub_47F7F0) para dejar
+    // el estado GL como estaba.  Los tres eran cuerpos VACIOS con el comentario
+    // "the real pipeline doesn't drive these modes yet" -- falso: las tres
+    // implementaciones existen y el port duplicado de UI_Tooltip.cpp ya las
+    // usaba.  Con los cuerpos vacios, un tooltip dibujado sobre blend 1, 4 o 5
+    // dejaba el estado GL sin restaurar.
+    //   EnableLightMap        0x00511890 -> GL_EnableLightMap    (GL_State.cpp)
+    //   EnableAlphaBlendMinus 0x00511790 -> GL_SetBlendSrcAlpha  (GL_State.cpp)
+    //   EnableAlphaBlend2     0x00511810 -> GL_SetBlendInvSrcColor (Render_SpriteHelpers.cpp)
+    void __cdecl EnableLightMap(void)        { GL_EnableLightMap(); }
+    void __cdecl EnableAlphaBlendMinus(void) { GL_SetBlendSrcAlpha(); }
+    void __cdecl EnableAlphaBlend2(void)     { GL_SetBlendInvSrcColor(); }
 }
 
 // =============================================================================
@@ -325,7 +337,7 @@ void Render_QuickButtons_(void)
         // creador a `g_GuildCreatorScratchX/Y` (Inventory[32] es el slot 0 del pool
         // de la tienda y lo estaba pisando). Quedo en 0, asi que los botones se
         // dibujaban en (0+20, 0+350) absoluto — abajo a la izquierda — mientras los
-        // El hit-test FUN_004e4760 ya usaba el origen bueno: se dibujaban en un
+        // El hit-test SecondPassword_Screen1 ya usaba el origen bueno: se dibujaban en un
         // lado y se clickeaban en otro.
         // Los tres offsets coinciden con esos hit-tests: +20/+350 y +100 el segundo.
         // Es el tercer hermano del fix del 2026-08-08 b (GuildList y CharacterInfo
@@ -428,7 +440,7 @@ void Render_QuickButtons_(void)
     // for in-world. Gated internally on dword_7E91388 > 0 (= player carrying
     // an item picked up via FUN_004d23b0 inside RenderInventoryWindow). This
     // is the function that builds and SENDS the 0x24 PMSG_ITEM_MOVE_RECV
-    // packet via SendRequestEquipmentItem_stub → Net_SendSmallPacket (C3).
+    // packet via SendRequestEquipmentItem → Net_SendSmallPacket (C3).
     // 2026-09-16: este llamado es un DUPLICADO del port — en IDA el dispatcher
     // (sub_4DF410) solo lo llama UpdateWindowsMouse (0x4ECB00), que corta antes
     // mientras el teclado del PIN esta abierto (SecondPassword_Handler devuelve
@@ -505,9 +517,9 @@ int __cdecl sub_4E38B0(float a1, float a2, float x_param, int a4,
                                 ITEM_ATTRIBUTE* v8 = &ItemAttribute[v7];
                                 float Height = (float)((double)v8->Height * 20.0);
                                 float Width  = (float)((double)v8->Width  * 20.0);
-                                FUN_004e1be0(sxa, sy, Width, Height, v7,
+                                RenderItem3D(sxa, sy, Width, Height, v7,
                                              *(int*)(v6_addr + 4),
-                                             *(unsigned char*)(v6_addr + 27), 0);
+                                             *(unsigned char*)(v6_addr + 27), 0, 0);
                             }
                             ++v23;
                         }

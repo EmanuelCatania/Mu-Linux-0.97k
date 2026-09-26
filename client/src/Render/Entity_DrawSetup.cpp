@@ -1,12 +1,12 @@
 // Entity_DrawSetup.cpp
-// FUN_00504b50 @ 0x00504b50
+// IDA: RenderPartObjectEffect (0x00504B50)
 //
 // Entity_SetColorAndRender — resolves anim-mode, sets model color from light
-// array, dispatches to FUN_00504130 / FUN_00504960 / FUN_00504ac0, applies
+// array, dispatches to BMD_SetupRenderByType / RenderPartObjectBodyColor / Entity_SetModelColorAlt, applies
 // optional "flashing" effect on buffed entities.
 //
 // Signature (faithful Ghidra port):
-//   void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
+//   void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
 //                              float param_4, uint param_5, byte param_6,
 //                              undefined4 param_7, uint param_8)
 //
@@ -21,10 +21,10 @@
 //
 // ── BUG-FIX (2026-04-20) ───────────────────────────────────────────────────────
 // La port anterior pasaba `(int)(uintptr_t)param_3` (puntero heap) como 2do
-// argumento `int flags` de FUN_00441e00. Resultado en log:
+// argumento `int flags` de BMD__RenderBody. Resultado en log:
 //   BMD_Draw flags=0xa0b5790 bodyLight=(0,0,0)
-// La función real de Ghidra NO llama FUN_00441e00 en el default path — sólo
-// FUN_00504130. Además FUN_00504130 toma 5 args (this, entity, model_slot,
+// La función real de Ghidra NO llama BMD__RenderBody en el default path — sólo
+// BMD_SetupRenderByType. Además BMD_SetupRenderByType toma 5 args (this, entity, model_slot,
 // scale, flags), no 3. Esta re-port arregla ambos.
 //
 // ── Entity-type switches (Ghidra) ──────────────────────────────────────────────
@@ -39,7 +39,7 @@
 #include "stdafx.h"
 extern "C" { void DbgLogPublic(const char* msg); }
 
-void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
+void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                            float param_4, uint param_5, byte param_6,
                            undefined4 param_7, uint param_8)
 {
@@ -154,7 +154,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
 
     // ─── Dead/dying entity (+0x8c != 0): black tint, special shadow draw ──────────────────
     if (*(char *)(param_1 + 0x8c) != '\0') {
-        if (DAT_0055a7ac == 7) {
+        if (World == 7) {
             GL_SetBlendSrcOver('\x01');
             glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
         }
@@ -162,8 +162,8 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
             GL_ResetState();
             glColor3f(0.0f, 0.0f, 0.0f);
         }
-        if (DAT_0055a7ac == 10) return;
-        FUN_00441f00(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 0x58));
+        if (World == 10) return;
+        BMD__RenderBodyShadow(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 0x58));
         return;
     }
 
@@ -172,7 +172,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x4c) = 0.5f;
         *(float *)((int)this_ + 0x50) = 1.5f;
         *(char *)((int)this_ + 0x88) = 0;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1170);
         *(char *)((int)this_ + 0x88) = -1;
@@ -198,10 +198,10 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
             *(float *)((int)this_ + 0x4c) = 0.8f;
             *(float *)((int)this_ + 0x50) = 0.4f;
         }
-        FUN_00441e00(this_, 8, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 8, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1171);
-        FUN_00441e00(this_, 0x44, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 0x44, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1171);
         return;
@@ -210,10 +210,10 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x48) = 1.0f;
         *(float *)((int)this_ + 0x4c) = 1.0f;
         *(float *)((int)this_ + 0x50) = 1.0f;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), -1, -1);
-        FUN_00441e00(this_, 0x44, 0.5f, *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 0x44, 0.5f, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), -1, 1171);
         return;
@@ -229,14 +229,14 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         *(float *)(param_1 + 0x6c) = rotU;
         *(float *)(param_1 + 0x70) = (float)WorldTime * -0.0005f;
         *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = 0;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1170);
         *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = -1;
         *(float *)((int)this_ + 0x48) = 1.0f;
         *(float *)((int)this_ + 0x4c) = 1.0f;
         *(float *)((int)this_ + 0x50) = 1.0f;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), -1);
         return;
@@ -247,7 +247,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x4c) = 0.8f;
         *(float *)((int)this_ + 0x50) = 0.8f;
         pulse = sinf((float)WorldTime * 0.002f) * 0.3f + 0.7f;
-        FUN_00441e00(this_, 0x42, 1.0f, 0, pulse,
+        BMD__RenderBody(this_, 0x42, 1.0f, 0, pulse,
                      *(float *)(param_1 + 0x6c), *(float *)(param_1 + 0x70),
                      *(int *)(param_1 + 0x58), -1);
         return;
@@ -278,12 +278,12 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         targetPos[0] += *(float *)(param_1 + 0x10);
         targetPos[1] += *(float *)(param_1 + 0x14);
         targetPos[2] += *(float *)(param_1 + 0x18);
-        FUN_004795c0(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
+        CreateSprite(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
         BMD__TransformPosition(this_, (float (*)[4])&DAT_06970afc, zeroPos, targetPos, false);
         targetPos[0] += *(float *)(param_1 + 0x10);
         targetPos[1] += *(float *)(param_1 + 0x14);
         targetPos[2] += *(float *)(param_1 + 0x18);
-        FUN_004795c0(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
+        CreateSprite(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
     }
     else if (effectType == 867) {
         float zeroPos[3] = { 0.0f, 0.0f, 0.0f };
@@ -300,12 +300,12 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         targetPos[0] += *(float *)(param_1 + 0x10);
         targetPos[1] += *(float *)(param_1 + 0x14);
         targetPos[2] += *(float *)(param_1 + 0x18);
-        FUN_004795c0(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
+        CreateSprite(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
         BMD__TransformPosition(this_, (float (*)[4])&DAT_06970c7c, zeroPos, targetPos, false);
         targetPos[0] += *(float *)(param_1 + 0x10);
         targetPos[1] += *(float *)(param_1 + 0x14);
         targetPos[2] += *(float *)(param_1 + 0x18);
-        FUN_004795c0(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
+        CreateSprite(1176, targetPos, scale, fxLight, param_1, 0.0f, 0);
     }
     else if (effectType == 869) {
         float fxLight[3];
@@ -314,7 +314,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         fxLight[0] = lum;
         fxLight[1] = lum * 0.5f;
         fxLight[2] = 0.0f;
-        FUN_004795c0(1176, (float *)(param_1 + 0x10), 2.5f, fxLight, param_1, 0.0f, 0);
+        CreateSprite(1176, (float *)(param_1 + 0x10), 2.5f, fxLight, param_1, 0.0f, 0);
     }
     else if (effectType == 789) {
         *(float *)(param_1 + 104) = (sinf((float)WorldTime * 0.001f) + 1.0f) * 0.25f;
@@ -356,7 +356,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
                 zeroPos, worldPos, true);
             Joint_Create(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, param_1, targetScale, -1, 0);
             Joint_Create(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, param_1, scale2, -1, 0);
-            FUN_004795c0(1277, targetPos, spriteScale, fxLight, param_1, 0.0f, 0);
+            CreateSprite(1277, targetPos, spriteScale, fxLight, param_1, 0.0f, 0);
         }
 
         for (i = 0; i < 5; ++i) {
@@ -368,7 +368,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
                 zeroPos, worldPos, true);
             Joint_Create(1254, worldPos, targetPos, (float *)(param_1 + 28), 14, param_1, targetScale, -1, 0);
             Joint_Create(1253, targetPos, worldPos, (float *)(param_1 + 28), 4, param_1, scale2, -1, 0);
-            FUN_004795c0(1277, targetPos, spriteScale, fxLight, param_1, 0.0f, 0);
+            CreateSprite(1277, targetPos, spriteScale, fxLight, param_1, 0.0f, 0);
         }
     }
     bVar4 = (byte)*(uint *)(param_1 + 0x78);
@@ -388,7 +388,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
         // ── BUG-FIX 2026-04-27: PORT del +N item-level glow logic IDA ───────
         // (Antes solo copiaba light directo y hacía UN render — el +9/+11 glow
         // visible del Mu Online viene de DOBLE render via RenderPartObjectBodyColor
-        // con flags 0x44 + 0x48). Ver FUN_00504b50 IDA lines 415-510.
+        // con flags 0x44 + 0x48). Ver RenderPartObjectEffect IDA lines 415-510.
         //
         // ItemLevel se extrae de param_5 (flags con level en bits 3-6).
         // BUG-FIX: línea 52 ya hizo `param_5 = ((int)param_5 >> 3) & 0xf;` así que
@@ -408,7 +408,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
                 *(float*)((int)this_ + 0x48) = mixR * param_3[0];
                 *(float*)((int)this_ + 0x4c) = mixG * param_3[1];
                 *(float*)((int)this_ + 0x50) = mixB * param_3[2];
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 didExtraRender = true;
             }
             else if (ItemLevel < 7) {
@@ -420,7 +420,7 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
                 *(float*)((int)this_ + 0x48) = mixR * param_3[0];
                 *(float*)((int)this_ + 0x4c) = mixG * param_3[1];
                 *(float*)((int)this_ + 0x50) = mixB * param_3[2];
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 didExtraRender = true;
             }
             else if (ItemLevel < 8) {
@@ -428,8 +428,8 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.80000001f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.80000001f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.80000001f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
-                FUN_00504960(this_, param_1, param_2, param_4, 0x44, 1.0f, 0xffffffff);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
+                RenderPartObjectBodyColor(this_, param_1, param_2, param_4, 0x44, 1.0f, 0xffffffff);
                 didExtraRender = true;
             }
             else if (ItemLevel == 8) {
@@ -437,8 +437,8 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.80000001f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.80000001f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.80000001f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
-                FUN_00504960(this_, param_1, param_2, param_4, 0x44, 1.0f, 0xffffffff);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
+                RenderPartObjectBodyColor(this_, param_1, param_2, param_4, 0x44, 1.0f, 0xffffffff);
                 didExtraRender = true;
             }
             else if (ItemLevel < 10) {
@@ -446,10 +446,10 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
-                FUN_00504960(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
-                FUN_00504960(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
+                RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
+                RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
                 didExtraRender = true;
             }
             else if (ItemLevel < 11) {
@@ -457,22 +457,22 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
-                FUN_00504960(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
-                FUN_00504960(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
+                RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
+                RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
                 didExtraRender = true;
             }
             else if (ItemLevel < 12) {
-                // +11 — además FUN_00504ac0 con flag 0x240 (extra mesh)
+                // +11 — además Entity_SetModelColorAlt con flag 0x240 (extra mesh)
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
-                FUN_00504ac0(this_, param_1, param_2, param_4, extraFlag | 0x240, 1.0f, 0xffffffff);
-                FUN_00504960(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
-                FUN_00504960(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
+                Entity_SetModelColorAlt(this_, param_1, param_2, param_4, extraFlag | 0x240, 1.0f, 0xffffffff);
+                RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
+                RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
                 didExtraRender = true;
             }
         }
@@ -482,21 +482,21 @@ void __cdecl FUN_00504b50(int param_1, int param_2, float *param_3,
             *(float *)((int)this_ + 0x48) = param_3[0];
             *(float *)((int)this_ + 0x4c) = param_3[1];
             *(float *)((int)this_ + 0x50) = param_3[2];
-            FUN_00504130(this_, param_1, param_2, param_4, param_8);
+            BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
         }
-        // skip the unconditional FUN_00504130 below (we already called it)
+        // skip the unconditional BMD_SetupRenderByType below (we already called it)
         goto LAB_after_render;
     }
 
     // ── Main dispatch: setup + render ────────────────────────────────────────
-    // Ghidra/IDA: FUN_00504130(this, entity, model_type, alpha, draw_flags)
-    FUN_00504130(this_, param_1, param_2, param_4, param_8);
+    // Ghidra/IDA: BMD_SetupRenderByType(this, entity, model_type, alpha, draw_flags)
+    BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
 LAB_after_render: ;
 
     // ── Optional flashing tint for buffed entities ───────────────────────────
     // Aplica sólo si param_6 tiene bits 0..5 activos y el tipo no está en el
     // rango de skill-FX (0x310..0x316). Genera un pulso sinusoidal que pinta
-    // por encima con FUN_00441e00 flags=0x42.
+    // por encima con BMD__RenderBody flags=0x42.
     short pulseType = *(short*)(param_1 + 2);
     if (((param_6 & 0x3f) != 0) && ((pulseType < 0x310) || (0x316 < pulseType))) {
         fVar10 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005528e0);
@@ -506,7 +506,7 @@ LAB_after_render: ;
         *(float *)((int)this_ + 0x50) = (float)((float10)_DAT_0055256c - fVar10);
 
         // flags=0x42 (int flags, NOT a pointer!), f1=1.0, then anim data
-        FUN_00441e00(this_, 0x42, 1.0f,
+        BMD__RenderBody(this_, 0x42, 1.0f,
                      *(int *)(param_1 + 100),
                      *(float*)(param_1 + 0x68),
                      *(float*)(param_1 + 0x6c),

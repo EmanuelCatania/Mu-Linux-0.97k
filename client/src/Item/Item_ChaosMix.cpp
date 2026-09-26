@@ -569,16 +569,7 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
     return 0;
 }
 
-void __cdecl RenderInventoryInterface_stub(int StartX, int StartY, int Flag) {
-    // 0x004ECBA0 — renders inventory background bitmaps
-    float x = (float)StartX;
-    float y = (float)StartY;
-    // Top half of inventory panel
-    GL_DrawTexture(0x104, x, y, 190.0f, 256.0f, 0.0f, 0.0f, 0.7421875f, 1.0f, true, true);
-    // Bottom half (y + 256.0f)
-    GL_DrawTexture(0x105, x, y + 256.0f, 190.0f, 177.0f, 0.0f, 0.0f, 0.7421875f, 0.69140625f, true, true);
-    // Separator line when Flag is set (y + 225.0f)
-    if (Flag != 0) {
-        GL_DrawTexture(0x117, x, y + 225.0f, 190.0f, 10.0f, 0.0f, 0.0f, 0.7421875f, 0.625f, true, true);
-    }
-}
+// RenderInventoryInterface vive en Render/HUD_Pass6.cpp.
+//
+// 2026-09-26: aca habia una copia bajo el nombre RenderInventoryInterface.  Las dos
+// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.

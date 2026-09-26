@@ -38,7 +38,7 @@
 //
 //   DAT_00561574   int   g_bound_texture_id   last texture bound (avoids redundant calls)
 //   DAT_00561570   int   g_screen_height      used in Texture_Draw2D for Y-flip
-//   DAT_083bb9d0   int   g_vram_used          running tally of texture memory (bpp*w*h bytes)
+//   m_dwUsedTextureMemory   int   g_vram_used          running tally of texture memory (bpp*w*h bytes)
 //
 // ── FILE FORMAT ───────────────────────────────────────────────────────────────
 //
@@ -47,7 +47,7 @@
 //         (jpeg_create_decompress, jpeg_read_header, jpeg_start_decompress,
 //          jpeg_read_scanlines, jpeg_finish_decompress / destroy)
 //
-//   OZT = alternate format, processed with FUN_00543037(file_ptr, 0x18, 0)
+//   OZT = alternate format, processed with crt_fseek(file_ptr, 0x18, 0)
 //         (likely a Webzen proprietary compressed texture, possibly zlib or RLE)
 //
 //   Both decode to: width × height × 3 bytes (GL_RGB, GL_UNSIGNED_BYTE)
@@ -58,7 +58,7 @@
 //
 //   DAT_0055a7c4 == 0  →  Standard mode:
 //       Full path = DAT_0055a7a4 (base dir) + param_1 (filename)
-//       FUN_00529130(id, extension, path, NULL, 0) handles the actual I/O.
+//       SaveImage(id, extension, path, NULL, 0) handles the actual I/O.
 //
 //   DAT_0055a7c4 != 0  →  Extension-swap mode (OZJ ↔ OZT):
 //       Strips extension from filename up to the last '.'.
@@ -122,7 +122,7 @@ static TexSlot* TexTable = (TexSlot*)g_BitmapsRaw;
 
 extern int  g_bound_texture_id;   // DAT_00561574
 extern int  g_screen_height;      // DAT_00561570
-extern int  g_vram_used;          // DAT_083bb9d0
+extern int  g_vram_used;          // m_dwUsedTextureMemory
 // g_tex_ext_mode is declared via #define in globals.h as DAT_0055a7c4 (char)
 extern char g_tex_base_dir[];     // DAT_0055a7a4  base directory string
 extern char g_tex_ext_hq[];       // DAT_0055a79c  high-quality extension (e.g. ".OZJ")
@@ -215,9 +215,9 @@ void Texture_Unload(int id)
 //     Append g_tex_ext_hq or g_tex_ext_lq based on current quality mode.
 //
 // Decode pipeline:
-//   g_tex_ext_mode == 0: FUN_00529130(0x18, g_tex_ext_lq, path, NULL, 0)
+//   g_tex_ext_mode == 0: SaveImage(0x18, g_tex_ext_lq, path, NULL, 0)
 //                        — inner loader, re-opens file internally
-//   g_tex_ext_mode != 0: FUN_00543037(file_ptr, 0x18, 0)
+//   g_tex_ext_mode != 0: crt_fseek(file_ptr, 0x18, 0)
 //                        — alternate format decoder (OZT / proprietary)
 //   Both eventually call libjpeg-style functions to produce RGB scanlines.
 //
@@ -542,16 +542,16 @@ void Texture_Draw2D(int id,
 
 // =============================================================================
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 4805-5199 (395 lines)
-// FUN_00529740 (Texture_Load OZJ/JPEG raw), FUN_00529bd0 (OpenTGA), FUN_0052a050 (Texture_FreeSlot)
+// OpenJPG (Texture_Load OZJ/JPEG raw), OpenTGA (OpenTGA), UnloadImage (Texture_FreeSlot)
 // =============================================================================
-// ── FUN_00529740 @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
+// ── OpenJPG @ 0x00529740 — Texture_Load (OZJ/JPEG) ─────────────────────
 // Loads JPEG or OZJ texture from disk, decompresses with libjpeg, uploads to GL.
 // Path mode:
 //   DAT_0055a7c4 == 0 → full_path = g_tex_base_dir + filename
 //   DAT_0055a7c4 != 0 → strip extension, try g_tex_ext_hq then g_tex_ext_lq
 // OZJ files: fseek(f, 24, SEEK_SET) to skip 24-byte Webzen header before JPEG data.
 // Limits: 256x256 max, rounds to power-of-2 before GL upload.
-int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int flags, char show_err)
+int __cdecl OpenJPG(const char* path, int id, int filter, int wrap, int flags, char show_err)
 {
     // --- Path construction ---
     char full_path[256];
@@ -643,7 +643,7 @@ int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int fla
     while (pow2_h < (int)img_h && pow2_h < 1024) pow2_h *= 2;
 
     // --- Setup texture slot (Bitmaps macro from structs.h) ---
-    FUN_0052a050(id);  // Unload any existing texture in this slot
+    UnloadImage(id);  // Unload any existing texture in this slot
 
     BITMAP_t* slot = &Bitmaps[id];
     slot->Components = 3;          // RGB
@@ -677,8 +677,8 @@ int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int fla
     memset(pixels, 0, (size_t)pow2_w * pow2_h * 3);
     slot->Buffer = pixels;
 
-    // Track VRAM usage (DAT_083bb9d0)
-    *(int*)&DAT_083bb9d0 += 3 * pow2_w * pow2_h;
+    // Track VRAM usage (m_dwUsedTextureMemory)
+    *(int*)&m_dwUsedTextureMemory += 3 * pow2_w * pow2_h;
 
     // --- Read scanlines ---
     int row_stride = components * img_w;
@@ -712,7 +712,7 @@ int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int fla
     return 1;
 }
 
-// ── FUN_00529bd0 @ 0x00529BD0 — OpenTGA ──────────────────────────────────────
+// ── OpenTGA @ 0x00529BD0 — OpenTGA ──────────────────────────────────────
 // Loads a custom TGA variant (32-bpp, 6-byte mini-header) from disk,
 // performs BGR→RGB swap, uploads to GL, and stores metadata in the texture slot
 // table (stride 0x38 bytes / 0xe floats, base DAT_083a7ca0).
@@ -726,7 +726,7 @@ int __cdecl FUN_00529740(const char* path, int id, int filter, int wrap, int fla
 //
 // hdrOff = 0x0C when DAT_0055a7c4 == 0 (Data2 / pak mode)
 //        = 0x10 when DAT_0055a7c4 != 0 (Data  / plain mode)
-int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
+int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
                          int uiFilter, int uiWrapMode, int bFullPath, char bCheck)
 {
     char local_200[256];
@@ -793,9 +793,9 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
     }
 
     // ── Read entire file into buffer ──────────────────────────────────────────
-    FUN_00543037((int*)Stream, 0, 2);            // fseek SEEK_END
-    unsigned int uVar5 = (unsigned int)FUN_00542eb4((char*)Stream); // ftell
-    FUN_00543037((int*)Stream, 0, 0);            // fseek SEEK_SET
+    crt_fseek((int*)Stream, 0, 2);            // fseek SEEK_END
+    unsigned int uVar5 = (unsigned int)crt_ftell((char*)Stream); // ftell
+    crt_fseek((int*)Stream, 0, 0);            // fseek SEEK_SET
     BYTE* PakBuffer = (BYTE*)operator_new(uVar5);
     fread(PakBuffer, 1, uVar5, Stream);
     fclose(Stream);
@@ -831,7 +831,7 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
         int ph = 1; while (ph < height) ph <<= 1;
 
         // ── Unload existing slot ──────────────────────────────────────────────
-        FUN_0052a050(uiTextureIndex);
+        UnloadImage(uiTextureIndex);
 
         // ── Write slot metadata (stride 0x38 bytes = 0xe floats) ─────────────
         float* texWidth  = (float*) &DAT_083a7cc0;
@@ -848,11 +848,11 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
 
         BYTE* pixBuf = (BYTE*)operator_new(pw * ph * 4);
         // DESVIACION CONSCIENTE vs IDA: idem OpenJPG (ver el bloque largo en
-        // FUN_00529740). El original (OpenTGA 0x529BD0) tampoco inicializa:
+        // OpenJPG). El original (OpenTGA 0x529BD0) tampoco inicializa:
         // `operator_new(4 * v21 * v22)` y luego rellena solo width x height.
         memset(pixBuf, 0, (size_t)pw * ph * 4);
         texPix[uiTextureIndex * 0xe] = (UINT)(uintptr_t)pixBuf;
-        *(int*)&DAT_083bb9d0 += 4 * pw * ph;
+        *(int*)&m_dwUsedTextureMemory += 4 * pw * ph;
 
         // ── BGR(A) → RGBA copy, TGA row-0 = bottom → flip vertically ─────────
         BYTE* src = PakBuffer + hdrOff + 6;
@@ -923,10 +923,11 @@ int __cdecl FUN_00529bd0(const char* szFileName, int uiTextureIndex,
 }
 
 // Scene/render helpers
-// FUN_0052a050 @ 0x0052A050 — Texture_FreeSlot
+// UnloadImage @ 0x0052A050 — Texture_FreeSlot
 // Decrements ref-count at slot (stride 0x38); when reaches 0, calls glDeleteTextures
 // and operator_delete on the pixel buffer.
-void __cdecl FUN_0052a050(int param_1)
+// IDA: UnloadImage (0x0052A050)
+void __cdecl UnloadImage(int param_1)
 {
     int iVar1 = param_1 * 0x38;
     DWORD *texArr_cd4 = (DWORD*)&DAT_083a7cd4;
@@ -948,7 +949,7 @@ void __cdecl FUN_0052a050(int param_1)
             texArr_ca0[param_1 * 0xe] = 0;  // approximated from (&DAT_083a7ca0)[iVar1]
             operator_delete((unsigned char*)pixels);
             texArr_cd4[param_1 * 0xe] = 0;
-            (void)cVar2; // used in original for DAT_083bb9d0 -= cVar2 * w * h
+            (void)cVar2; // used in original for m_dwUsedTextureMemory -= cVar2 * w * h
         }
     }
 }

@@ -8,23 +8,23 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "functions.h"
 
 // -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// FUN_00408cb0 vive ahora en Scene/Scene_CharSelect_Nav.cpp y FUN_00408e30 en
+// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
 // Net/Crypto.cpp; antes se definian en este archivo.
-void __fastcall FUN_00408cb0(int*, float);
-int  __cdecl    FUN_00408e30(DWORD *a1);
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
-extern void __cdecl FUN_0054158c(void* ptr);
+extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
 #ifndef delete__
-#define delete__(p) FUN_0054158c((unsigned char*)(p))
+#define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 #ifndef __OFSUB__
 #define __OFSUB__(x,y)       (0)
@@ -48,20 +48,20 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // RenderItemInfo and RenderRepairInfo — implemented in src/UI/RenderItemInfo.cpp
 
 // RenderSkillTooltip @ 0x004C9730 — UI_CommandPanel_BuildEntry(chardata, slot)
-// Real logic: calls FUN_0047e4f0 (GetMagicSkillDamage) and GetSkillInformation for the
+// Real logic: calls CHARACTER_MACHINE_GetMagicSkillDamage (GetMagicSkillDamage) and GetSkillInformation for the
 // skill in CharacterAttribute->Skill[param_2+4], then sprintf's skill name, damage, mana cost,
 // distance, and class-specific descriptions into the Items[999] text buffer (stride 100 bytes).
 // Class 0 (Dark Wizard): skill 0x10 gets 3 extra stat lines (MaxMana, Energy, Dexterity).
 // Class 2 (Fairy Elf): skills 0x1A/0x1B/0x1C get special description lines.
 // Class 1 (Dark Knight): skill 0x2F gets extra combo line.
-// Finally calls FUN_004c2420 (CharMenu_RenderTextList) with unaff_retaddr as Y position.
+// Finally calls CharMenu_RenderTextList (CharMenu_RenderTextList) with unaff_retaddr as Y position.
 // STUB: unaff_retaddr carries screen Y position from caller — cannot resolve without
 // call-site disassembly. Also uses CharacterAttribute (undeclared typed struct).
 // RenderSkillTooltip @ 0x004C9730 — Skill_RenderTooltip(float a1, int a2, int hoveredSkillIdx)
 // Ported from IDA `sub_4C9730` decompile (1844 bytes).
 //
 // Builds a tooltip text-list for the hovered skill (TextList[0..n]) describing
-// name / damage / distance / mana / skillMana, then calls FUN_004c2420
+// name / damage / distance / mana / skillMana, then calls CharMenu_RenderTextList
 // (CharMenu_RenderTextList) to draw it at (a1, a2).
 //
 // Skipped (per anti-tamper policy):
@@ -74,7 +74,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //   3. GetSkillInformation → szName, piMana, piDistance, piSkillMana
 //   4. Class-specific damage formulas (DW skill 16 / Elf 0x1A/0x1B/0x1C / DK 47)
 //   5. Distance / Mana / SkillMana lines
-//   6. FUN_004c2420 with computed Y / count
+//   6. CharMenu_RenderTextList with computed Y / count
 extern "C++" {
 extern char    GlobalText[GLOBALTEXT_ROWS][300];   // ver globals.h
 extern char    lpString_07e90798[];
@@ -165,7 +165,7 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     int  piMana = 0, piDistance = 0, piSkillMana = 0;
     (void)piMinDamage; (void)piMaxDamage; (void)piMana; (void)piDistance; (void)piSkillMana;
 
-    // Get min/max damage range — FUN_0047e4f0 (GetMagicSkillDamage, ~700 bytes, IDA-only
+    // Get min/max damage range — CHARACTER_MACHINE_GetMagicSkillDamage (GetMagicSkillDamage, ~700 bytes, IDA-only
     // and gated behind IDA_PORT_0047E4F0). Without it we leave piMin/piMaxDamage at 0;
     // the damage line will show "0~0" until the helper is unconditionally ported.
 
@@ -277,10 +277,10 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     int v31 = 3 * sz.cy / 2 + sz.cy * (v16 - 3);
     float yPos = (float)v31 / _DAT_055c9b74;
 
-    // Render. Our FUN_004c2420 has 6-int signature (mode, startIdx, count, x, layout, border).
+    // Render. Our CharMenu_RenderTextList has 6-int signature (mode, startIdx, count, x, layout, border).
     // Best-effort mapping of IDA's 7-arg float-mixed call:
     //   mode=2 (boxed), startIdx=0, count=v16, x=a2-yPos, layout=0, border=1
-    FUN_004c2420(2, 0, v16, a2 - (int)yPos, 0, 1);
+    CharMenu_RenderTextList(2, 0, v16, a2 - (int)yPos, 0, 1);
     (void)a1;  // a1 (float Y) not used by our simplified render path
 #endif
 }
@@ -352,7 +352,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     //
     // 2026-08-18: antes esto pintaba su PROPIA caja (cuarta reimplementacion
     // inventada del tooltip, con colores ARGB y textos en ingles hardcodeados).
-    // Ahora usa lpString_07e90798 + FUN_004c2420, que es lo que hace el binario
+    // Ahora usa lpString_07e90798 + CharMenu_RenderTextList, que es lo que hace el binario
     // — misma rutina que el tooltip de item y el menu de personaje.
     auto  TextListN     = [](int i) -> char* { return lpString_07e90798 + i * 100; };
     auto  GlobalTextOr  = [](int idx, const char* fallback) -> const char* {
@@ -435,7 +435,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
         GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
         int v31 = (idx - 3) * sz.cy + (3 * sz.cy) / 2;
         int yBox = a2 - (int)((float)v31 / _DAT_055c9b74);
-        FUN_004c2420(skillTipX, yBox, idx, 0, 2, 1);
+        CharMenu_RenderTextList(skillTipX, yBox, idx, 0, 2, 1);
     }
 }
 
@@ -495,7 +495,7 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
     //
     //   param_4  -> pixel -> / g_fScreenRate_x -> logico
     //   textW    -> logico (Text_MeasureOrthoWidth ya divide)
-    //   x        -> logico + logico = logico  -> lo convierte CUIRenderText_RenderText
+    //   x        -> logico + logico  -> lo convierte CUIRenderText_RenderText
     if (param_5 >= 2 && param_4 > 0 && DAT_055c9fec) {
         const float rateX  = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
         const int   boxLog = (int)((float)param_4 / rateX);
@@ -509,11 +509,10 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
                  (const char*)param_3, (DWORD)param_4);
 }
 
-// FUN_004977f0 @ 0x004977F0 — String_FindSubstr(str, pattern, from_start)
+// IDA: FindText (0x004977F0)
 // DBCS-aware strstr. param_3!=0 forces search from position 0 only.
 // Returns 1 if found, 0 otherwise.
-unsigned int __cdecl FUN_004977f0(char *param_1, void *param_2, char param_3) {
-    char *pat = (char*)param_2;
+bool __cdecl FindTextA(char *param_1, char *pat, bool param_3) {
     int iVar5 = (int)strlen(pat);
     // BUG-FIX 2026-07-17: patrón vacío = no-match. El IDA devuelve 1 para patrón
     // vacío, pero eso solo es "correcto" porque en el original los strings de filtro
@@ -531,7 +530,7 @@ unsigned int __cdecl FUN_004977f0(char *param_1, void *param_2, char param_3) {
         while ((param_1 + iVar8)[iVar2] == pat[iVar2]) {
             if (++iVar2 >= iVar5) return 1;
         }
-        char c = FUN_00541eab((byte*)(param_1 + iVar8));
+        char c = mbclen((byte*)(param_1 + iVar8));
         iVar8 += (unsigned int)(unsigned char)c;
     }
     return 0;
@@ -550,7 +549,7 @@ void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4)
             uVar3 = uVar4;
             if ((param_4/2 - 2 <= (int)uVar4 && param_1[uVar4] == ' ') ||
                 (param_4/2 + 2 <= (int)uVar4)) break;
-            char c = FUN_00541eab((byte*)(param_1 + uVar4));
+            char c = mbclen((byte*)(param_1 + uVar4));
             uVar4 += (unsigned int)(unsigned char)c;
             uVar3 = 0;
         } while ((int)uVar4 < param_4);
@@ -720,7 +719,7 @@ static void Text_StyleColors(char style, DWORD *fg, DWORD *bg)
         case -9:  v4 = (DWORD)-16777116; break;                 // 0xFF000064
         case -8:
             v4 = (DWORD)-3613466;                               // 0xFFC8DCE6
-            if (!DAT_005590ac /* g_bUseChatListBox */)
+            if (!g_bUseChatListBox /* g_bUseChatListBox */)
                 result = (DWORD)-1778384896;                    // 0x96000000
             break;
         default:  v4 = 0xFFFFFFFFu; break;
@@ -1055,7 +1054,7 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
             if (endChar <= startChar) continue;
 
             DWORD fg    = (run == 0) ? DAT_00559c78 : markers[run - 1].fg;
-            DWORD bc    = (run == 0) ? DAT_00559c80 : markers[run - 1].bg;
+            DWORD bc    = (run == 0) ? SetBackgroundTextColor : markers[run - 1].bg;
             int   runPx = (run == 0) ? 0            : markers[run - 1].pixelStart;
             float runX  = (float)x + (float)runPx;   // pixel + pixel
 

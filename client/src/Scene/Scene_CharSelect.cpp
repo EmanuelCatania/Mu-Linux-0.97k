@@ -38,8 +38,8 @@
 //     GL_SetBlendAdditive();   → Frame_UpdateTimer()
 //     local_6c = ftol() % 0xe10;   // modulo 3600
 //     local_70 = (float)local_6c * _DAT_00552a00;   // ángulo en radianes
-//     FUN_00473ea0(0x4f1, pos, 0x420c0000, 0x425c0000, 0x43160000, +local_70, 0, 0.0);
-//     FUN_00473ea0(0x4f1, pos, 0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0);
+//     Effect_DrawRing(0x4f1, pos, 0x420c0000, 0x425c0000, 0x43160000, +local_70, 0, 0.0);
+//     Effect_DrawRing(0x4f1, pos, 0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0);
 //     // 0x4f1 = tipo partícula orbital, ±ángulo = dos partículas en órbita opuesta
 //   }
 //
@@ -48,17 +48,17 @@
 //   glClearColor(0,0,0,1.0);
 //   GL_BeginViewport(0, 0, 0x280, 0x1e0);
 //   Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, &DAT_083a4110); → Camera_Update(mx,my,mat)
-//   FUN_004fd800();     → Terrain_Render()
+//   Terrain_Render();     → Terrain_Render()
 //   _DAT_07abf138 = 1.0; _DAT_07abf13c = 0.9; _DAT_07abf140 = 0.8;
 //   if (DAT_005616b0 == -1): Mouse_UpdateHoverTargets(); → CharPreview_Render()
-//   FUN_0045ab00();     → Entity_RenderAll_3D()
-//   FUN_00500970();     → Entity_Render_Sprites()
+//   Entity_RenderAll_3D();     → Entity_RenderAll_3D()
+//   RenderBugs();     → Entity_Render_Sprites()
 //   FUN_0046c3e0();     → Particle_Render()
 //   GL_SetBlendSrcOver('\x01'); GL_SetMode(1)
 //   GL_BindTextureSlot(0x15); glColor4f(1,1,1,0.8);
 //   GL_BeginSprite();     → SkillEffect_Render_2()
 //   Render_DrawSpritePool();     → Portal_Render()
-//   FUN_00478c00();     → ItemDrop_Render_2()
+//   RenderParticles();     → ItemDrop_Render_2()
 //   glPopMatrix();
 //   GL_Begin2D();     → GL_SetupOrtho2D()
 //
@@ -110,7 +110,7 @@
 //   _DAT_083a42d4 = screenPt.x + _DAT_07abf060;
 //   _DAT_083a42d8 = screenPt.y + _DAT_07abf064;
 //   GL_BeginViewport(0x11d, iVar9+0x5a, 0x4a, 0x4f);
-//   FUN_00456770(&entity, &entity, NULL);   → Entity_UpdateRender()
+//   RenderCharacter(&entity, &entity, NULL);   → Entity_UpdateRender()
 //   GL_PopMatrixAll();
 //
 // ── PANEL SERVER SELECT (DAT_005616b0 == -1, bottom) ─────────────────────────
@@ -129,7 +129,7 @@
 //
 //   FUN_005239a0()  → CharSelect_UpdateInput()
 //   RenderErrorMessage()  → Chat_Render()
-//   FUN_004f64d0()  → UI_Render()
+//   Scene_MapTick()  → UI_Render()
 //   UI_RenderNotices()  → StatusBar_Render()
 //   UI_RenderChatLogOverlay()  → Mouse_Render()
 //   UI_UpdateFpsCounter/4c3530/4bffa0/0051e0c0/5124b0 → UI finalizadores
@@ -161,16 +161,16 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_004fd800   → Terrain_Render()
-//   FUN_0045ab00   → Entity_RenderAll_3D()
-//   FUN_00500970   → Entity_Render_Sprites()
+//   Terrain_Render   → Terrain_Render()
+//   Entity_RenderAll_3D   → Entity_RenderAll_3D()
+//   RenderBugs   → Entity_Render_Sprites()
 //   FUN_0046c3e0   → Particle_Render()
-//   FUN_00473ea0   → Particle_Spawn(type, pos, r0, r1, r2, angle, ?, z)
+//   Effect_DrawRing   → Particle_Spawn(type, pos, r0, r1, r2, angle, ?, z)
 //   Camera_BuildMouseRay   → Camera_Update(mx, my, mat)
 //   Camera_ProjectWorldToScreen   → World_ToScreen(pos, &x, &y)
 //   Mouse_UpdateHoverTargets   → CharPreview_Render()
 //   FUN_005239a0   → CharSelect_UpdateInput()
-//   FUN_00456770   → Entity_UpdateRender(entity, entity, is_local)
+//   RenderCharacter   → Entity_UpdateRender(entity, entity, is_local)
 //   Vector_InverseRotate   → Matrix_TransformVec(pos, mat, out)
 //   Matrix_BuildFromEuler   → Matrix_FromEuler(angles, out)
 //   GL_BindTextureSlot   → Particle_SetTexture(type)
@@ -232,7 +232,7 @@ int Scene_CharSelect(void)
             *(float *)(iVar9 + 0x68) = local_70;
         }
 
-        FUN_004fd800();   // Terrain_Render
+        Terrain_Render();   // Terrain_Render
 
         _DAT_07abf138 = 1.0f;
         _DAT_07abf13c = 0.9f;
@@ -303,7 +303,7 @@ int Scene_CharSelect(void)
                 DbgLogPublic(b);
             }
         }
-        FUN_0045ab00();   // Entity_RenderAll_3D
+        Entity_RenderAll_3D();
 
         // Orbital particles for selected char
         if ((DAT_005616ac != -1) && (((char*)DAT_07abf5d0)[DAT_005616ac * 0x394] != '\0')) {
@@ -311,25 +311,25 @@ int Scene_CharSelect(void)
             uVar12  = (unsigned int)(*(float*)&DAT_05826e08);
             local_6c = (int)((longlong)((ulonglong)(uint)((int)uVar12 >> 0x1f) << 0x20 | uVar12 & 0xffffffff) % 0xe10);
             local_70 = (float)local_6c * _DAT_00552a00;
-            FUN_00473ea0(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000,  local_70, 0, 0.0f);
-            FUN_00473ea0(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0f);
         }
 
-        FUN_00500970();                    // Entity_Render_Sprites
+        RenderBugs();                    // Entity_Render_Sprites
         // MEJORA DEL DLL (no esta en IDA): el binario solo llama RenderBlurs en
         // 0x00523D80; el DLL (Patchs.cpp RenderBlurs_RenderCharacterScene)
         // agrega RenderJoints + RenderEffects para dibujar el efecto de las alas.
-        FUN_00473710();                    // RenderJoints  (0x00473710)
+        ItemDrop_Render();
         EffectPool_RenderAll();            // RenderEffects (0x0046BBA0)
-        FUN_0046c3e0();                    // RenderBlurs (Trail_RenderAll)
+        Trail_RenderAll();
         GL_SetBlendSrcOver('\x01');              // GL_SetMode(1)
         GL_BindTextureSlot(0x15);
         glColor4f(1.0f, 1.0f, 1.0f, 0.8f);
         GL_BeginSprite();                    // SkillEffect_Render_2
         Render_DrawSpritePool();                    // Portal_Render
-        FUN_00478c00();                    // ItemDrop_Render_2
+        RenderParticles();                    // ItemDrop_Render_2
         glPopMatrix();
         GL_Begin2D();                    // GL_SetupOrtho2D
         glColor3f(1.0f, 1.0f, 1.0f);
@@ -377,7 +377,7 @@ int Scene_CharSelect(void)
                             s_lastNI[slotIdx] = now2;
                             char b[400];
                             const char* nm = (const char*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1c1);
-                            float* M = (float*)&DAT_083a4140;
+                            float* M = (float*)&CameraMatrix;
                             _snprintf_s(b, sizeof(b), _TRUNCATE,
                                 "NAME_PRE slot=%d name='%s' world=(%.1f,%.1f,%.1f) zoff=%.1f "
                                 "M=(%.3f,%.3f,%.3f,%.3f|%.3f,%.3f,%.3f,%.3f|%.3f,%.3f,%.3f,%.3f) "
@@ -414,11 +414,11 @@ int Scene_CharSelect(void)
                     }
                     bVar2 = ((byte*)DAT_07abf5d0)[iVar9 + 0x1c0];
                     // Color by class/flags
-                    if      (bVar2 & 1)    { DAT_00559c80 = 0x8000ffff; DAT_00559c78 = 0xff000000; }
-                    else if (bVar2 & 0x12) { DAT_00559c80 = 0x80ffff00; DAT_00559c78 = 0xff000000; }
-                    else if (bVar2 & 4)    { DAT_00559c80 = 0x80ffffff; DAT_00559c78 = 0xff000000; }
-                    else if (bVar2 & 8)    { DAT_00559c80 = 0x80ff0000; DAT_00559c78 = 0xff000000; }
-                    else                   { DAT_00559c80 = 0x80000000; DAT_00559c78 = 0xffffc8b4; }
+                    if      (bVar2 & 1)    { SetBackgroundTextColor = 0x8000ffff; DAT_00559c78 = 0xff000000; }
+                    else if (bVar2 & 0x12) { SetBackgroundTextColor = 0x80ffff00; DAT_00559c78 = 0xff000000; }
+                    else if (bVar2 & 4)    { SetBackgroundTextColor = 0x80ffffff; DAT_00559c78 = 0xff000000; }
+                    else if (bVar2 & 8)    { SetBackgroundTextColor = 0x80ff0000; DAT_00559c78 = 0xff000000; }
+                    else                   { SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xffffc8b4; }
                     // Name (top, bold font) — IDA L194-198: sprintf(String, "%s", entity+449)
                     SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca010);
                     {
@@ -435,7 +435,7 @@ int Scene_CharSelect(void)
                     //           ClassNameTable + 300 * ((klass & 7) + 4 * (klass >> 3)),
                     //           level)
                     // klass byte at entity+0x1bc (444): DW=0, DK=1, ELF=2, MG=3, SM=8, BK=9, ME=10
-                    DAT_00559c80 = 0x80000000; DAT_00559c78 = 0xffffffff;
+                    SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xffffffff;
                     SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
                     {
                         BYTE klass = ((BYTE*)DAT_07abf5d0)[iVar9 + 0x1bc];
@@ -468,7 +468,7 @@ int Scene_CharSelect(void)
 
         // ── Warning text ──────────────────────────────────────────────────────
         if (DAT_083a7c4d != '\0') {
-            DAT_00559c80 = 0x80ffff00; DAT_00559c78 = 0xff000000;
+            SetBackgroundTextColor = 0x80ffff00; DAT_00559c78 = 0xff000000;
             SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
             iVar9 = lstrlenA((LPCSTR)lpString_07d49c14);
             GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)lpString_07d49c14, iVar9, &tStack_68);
@@ -481,7 +481,7 @@ int Scene_CharSelect(void)
         }
 
         // ── Server info text (bottom right, blue) ─────────────────────────────
-        DAT_00559c80 = 0x80000000; DAT_00559c78 = 0xff67bfdf;
+        SetBackgroundTextColor = 0x80000000; DAT_00559c78 = 0xff67bfdf;
         SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a3c);
         GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a3c, iVar9, &tStack_68);
@@ -625,7 +625,7 @@ int Scene_CharSelect(void)
                 // asignar 0x40a00000 / 0x3f800000 hace int→float (1e9), no 5.0f / 1.0f
                 _DAT_07abf06c = 0.0f; _DAT_07abf070 = 5.0f; _DAT_07abf05c = 1.0f;
                 _DAT_07abf138 = 0.8f; _DAT_07abf13c = 0.8f; _DAT_07abf140 = 0.8f;
-                FUN_00456770((undefined4 *)&DAT_07abf050, (undefined4 *)&DAT_07abf050, (undefined4 *)0x0);
+                RenderCharacter((undefined4 *)&DAT_07abf050, (undefined4 *)&DAT_07abf050, (undefined4 *)0x0);
                 GL_PopMatrixAll();
                 DAT_005597c4 = 1;
             }
@@ -707,14 +707,14 @@ int Scene_CharSelect(void)
         // ── Final subsystems ──────────────────────────────────────────────────
         FUN_005239a0();   // CharSelect_UpdateInput
         RenderErrorMessage();   // Chat_Render
-        FUN_004f64d0();   // UI_Render
+        Scene_MapTick();   // UI_Render
         UI_RenderNotices();   // StatusBar_Render
-        if ((DAT_005590ac == 1) || (DAT_005615c0 != 5))
+        if ((g_bUseChatListBox == 1) || (SceneFlag != 5))
             UI_RenderChatLogOverlay();   // Mouse_Render
         UI_UpdateFpsCounter();
         RenderHelpWindow();
         Cursor_Render();
-        FUN_0051e0c0();
+        RenderInfomation3D();
         GL_End2D();
         uVar13 = GL_PopMatrixAll();
         return ((uint)uVar13 & 0xFFFFFF00u) | 1u;

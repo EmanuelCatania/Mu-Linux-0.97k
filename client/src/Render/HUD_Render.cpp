@@ -20,8 +20,8 @@
 //
 //   void Render_GameFrame(void)
 //   {
-//     // g_GameSubState == 8: map-loading screen scrolling textures
-//     if (DAT_0055a7ac == 8) {
+//     // World == 8: map-loading screen scrolling textures
+//     if (World == 8) {
 //       GL_SetBlendSrcOver('\x01');
 //       glColor4f(1.0, 1.0, 1.0, 0.5);
 //       GL_SetBlendAdditive();                 // Frame_UpdateTimer()
@@ -63,12 +63,12 @@
 //   void Render_CharInfoPanel(void)
 //   {
 //     GL_ResetState();   // GL_ResetBlend()
-//     DAT_00559c80 = 0x80000000;
+//     SetBackgroundTextColor = 0x80000000;
 //
 //     // BLOQUE 1: buff activo (DAT_05826d30 != '\0' && entity[0x1da] != -1)
 //     if (DAT_05826d30 != '\0' && *(short*)(DAT_07abf5d8+0x1da) != -1) {
 //       GL_SetBlendSrcOver('\x01');   // GL_SetMode(1)
-//       iVar3 = FUN_004cb520(); // Screen_GetWidth()
+//       iVar3 = GetScreenWidth(); // Screen_GetWidth()
 //       fVar2 = (float)iVar3 * 0.5f - _DAT_005524fc;   // X centrado
 //       SelectObject(DC, font_small);
 //       // Color según DAT_05826d32:
@@ -174,7 +174,7 @@
 //     GL_SetMode(1);
 //     DAT_07e11d6e = 0;
 //     DAT_00559c78 = 0xffffffff;
-//     DAT_00559c80 = 0xff000000;
+//     SetBackgroundTextColor = 0xff000000;
 //     // Esquinas del HUD inferior
 //     Texture_Draw2D(0xe9, 0,   387, 108, 45, 0,0,0.844,0.703, '\x01', '\x01');  // izq
 //     Texture_Draw2D(0xe9, 532, 387, 108, 45, 0.844,0,-0.844,0.703, '\x01', '\x01'); // der (flip)
@@ -217,7 +217,7 @@
 //       DrawInputCaret(0x178, 0x1a6, 1);
 //       DAT_00559c8c = 0x100;
 //       DAT_00559c78 = 0xffc8c8c8;   // gris claro
-//       DAT_00559c80 = 0x64000000;   // transparente
+//       SetBackgroundTextColor = 0x64000000;   // transparente
 //       // Iterar historial de chat (array en &DAT_07e113e4, stride 0x100)
 //       iVar2 = 0;
 //       lpString = &DAT_07e113e4;
@@ -270,7 +270,7 @@
 //         DAT_07e11d8c = 0; return;
 //       GL_ResetBlend();
 //       GL_SetMode('\0');
-//       DAT_00559c80 = 0x80000000;
+//       SetBackgroundTextColor = 0x80000000;
 //       DAT_00559c78 = 0xffff8080;   // rojo claro
 //       // Skill name por índice (0..3 y 8+: &DAT_07d589f8, 4..7: &DAT_07d65e14, stride 300)
 //       if (DAT_07e11d8c < 4 || DAT_07e11d8c > 7):
@@ -313,7 +313,7 @@
 //           pos.x = entity[+0x10]; pos.y = entity[+0x14];
 //           pos.z = entity[+300] + entity[+0x18] + _DAT_0055290c;
 //         Camera_ProjectWorldToScreen(pfVar5, &screenX, &screenY);  // World_ToScreen
-//         FUN_00480c60((LPCSTR)(piVar7-0x8d));       // MeasureText(str)
+//         FloatingLabel_MeasureText((LPCSTR)(piVar7-0x8d));       // MeasureText(str)
 //         piVar7[1] = screenX - (piVar7[3]*640/screen_w)/2;  // X centrado
 //         piVar7[2] = screenY - 0x24;                         // Y elevado
 //       piVar7 += 0x95;
@@ -336,7 +336,7 @@
 //   Offsets: [-0x83]=timer activo, [-2]=?, [0]=entity ptr, [1]=screenX, [2]=screenY
 //            [3]=text width, [4]=display Y (ajustado), [5..7]=pos fija
 //            [-0x8d]=string label, [-0x8b]=display string
-//   FUN_00480c60   → MeasureText(str) → escribe en piVar7[3]
+//   FloatingLabel_MeasureText   → MeasureText(str) → escribe en piVar7[3]
 //   FUN_00480e00   → DrawFloatLabel(x, y, str)
 //
 // ══════════════════════════════════════════════════════════════════════════════
@@ -428,13 +428,13 @@
 //     glMatrixMode(GL_MODELVIEW);
 //     glPushMatrix();
 //     glLoadIdentity();
-//     GL_GetModelViewMatrix(&DAT_083a4140);   // LoadCameraMatrix(mat_4x4)
+//     GL_GetModelViewMatrix(&CameraMatrix);   // LoadCameraMatrix(mat_4x4)
 //     GL_EnableDepthTest();                // EnableDepthTest()
 //     GL_EnableDepthWrites();                // EnableDepthWrite()
 //     FUN_00403150(DAT_00583d8c, '\x01', '\0');  // ObjPool_SetFlag(pool, true, false)
 //
-//     // Según modo de vista (DAT_07eaa128):
-//     if (DAT_07eaa128 == 0 || DAT_07eaa128 == 3):
+//     // Según modo de vista (GoldenArcherOpenType):
+//     if (GoldenArcherOpenType == 0 || GoldenArcherOpenType == 3):
 //       FUN_004f5ce0();    // Skill_RenderEffects()
 //       if (DAT_07e91388 > 0 && DAT_07eaa13c == 0):
 //         FUN_004f6420();  // TeleportEffect_Render()
@@ -442,7 +442,7 @@
 //       for i in 0..N:
 //         iVar1 = Item_FindQuickSlotByCategory(i);   // GetHotbarItem(i)
 //         if iVar1 != -1:
-//           FUN_004e1be0((float)local_14, 454.0, 20.0, 20.0,
+//           RenderItem3D((float)local_14, 454.0, 20.0, 20.0,
 //                        (&DAT_07ea8410)[iVar1*0x22], (&DAT_07ea8414)[iVar1*0x11], 0, '\0');
 //                        // DrawItemIcon(x, y, w, h, item_id, count, ?, ?)
 //         local_14 += 0x1f;   // siguiente slot (X+31)
@@ -453,7 +453,7 @@
 //     // Reset camera para 2D
 //     glLoadIdentity();
 //     glTranslatef(-_DAT_083a42d4, -_DAT_083a42d8, -_DAT_083a42dc);
-//     GL_GetModelViewMatrix(&DAT_083a4140);
+//     GL_GetModelViewMatrix(&CameraMatrix);
 //     Camera_BuildMouseRay(100, 100, local_c);   // Camera_SetupHUD(x,y,out)
 //     glPopMatrix();
 //     glPopMatrix();
@@ -461,18 +461,18 @@
 //   }
 //
 //   Globals:
-//   DAT_083a4140   — camera matrix (4×4 floats)
+//   CameraMatrix   — camera matrix (4×4 floats)
 //   DAT_0056156c   — screen_width
 //   DAT_00561570   — screen_height
 //   DAT_0056154c   — near_clip
 //   DAT_00561550   — far_clip
 //   DAT_083a42d4/d8/dc — camera world position (X/Y/Z)
-//   DAT_07eaa128   — view mode (0=normal, 3=?, otras=PvP?)
+//   GoldenArcherOpenType   — view mode (0=normal, 3=?, otras=PvP?)
 //   DAT_07e91388   — teleport effect active
 //   DAT_07eaa13c   — teleport flag
 //   DAT_07ea8410   — hotbar item array (stride 0x22*2 = item_id)
 //   DAT_07ea8414   — hotbar count array (stride 0x11*4)
-//   FUN_004e1be0   → DrawItemIcon(x,y,w,h,item_id,count,?,shadow)
+//   RenderItem3D   → DrawItemIcon(x,y,w,h,item_id,count,?,shadow)
 //   FUN_004f5ce0   → Skill_RenderEffects()
 //   FUN_004f6420   → TeleportEffect_Render()
 //   Item_FindQuickSlotByCategory   → GetHotbarItem(slot_idx) → item_idx
@@ -495,7 +495,7 @@
 //     // Guard: jugador en modo party  (entity[0x2b8] ∈ 0x330..0x333)
 //     if (0x32f < *(short*)(DAT_07abf5d8 + 0x2b8) < 0x334) {
 //
-//       int   sw     = FUN_004cb520();   // Screen_GetWidth()
+//       int   sw     = GetScreenWidth();   // Screen_GetWidth()
 //       float base_x = ((float)sw - _DAT_00552598) - hpOff - _DAT_00552834;
 //
 //       // [HashTable anti-tamper ~60 líneas — omitido]
@@ -510,7 +510,7 @@
 //                      (char*)((subMode - 400) * 0x40 + DAT_07d78068);  // sprite
 //
 //       // lstrlenA(name) + GetTextExtentPointA(g_hDC, name, len, &sz)
-//       // FUN_0047f6f0(ftol()+0x32, ftol(), name, 0, '\0', 0)
+//       // Text_MeasureBox(ftol()+0x32, ftol(), name, 0, '\0', 0)
 //       //   → DrawText(x+50, y, name, shadow=0, italic=0, flags=0)
 //
 //       // FUN_004bbdd0(base_x, (bHP*50/255)+_DAT_00552664, 50.0, 2.0, pct, 0, 1)
@@ -521,11 +521,11 @@
 //
 //     // Bloque secundario: barra de party global (DAT_05826d24 = nro de miembros)
 //     if (DAT_05826d24 != 0) {
-//       int sw2     = FUN_004cb520();
+//       int sw2     = GetScreenWidth();
 //       int bar_w   = DAT_05826d24 * 0x32;   // member_count × 50
 //       float base2 = ((float)sw2 - _DAT_00552598) - _DAT_0055297c;
 //       GL_SetBlendSrcOver('\x01');
-//       // FUN_0047f6f0(ftol()+0x32, 4, &DAT_07d43e54, 0, '\0', 0)  // label "Party"
+//       // Text_MeasureBox(ftol()+0x32, 4, &DAT_07d43e54, 0, '\0', 0)  // label "Party"
 //       // FUN_004bbdd0(base2, 16.0, 50.0, 2.0, bar_w/100, 0, 1)    // barra HP party
 //     }
 //     return retY;
@@ -543,9 +543,9 @@
 //   DAT_07d43d28          — nombre para modo guild (subMode 0x332)
 //   DAT_07d43bfc          — nombre para modo trade (subMode 0x333)
 //   DAT_07d43e54          — label "Party"
-//   FUN_004cb520          → Screen_GetWidth()
+//   GetScreenWidth          → Screen_GetWidth()
 //   FUN_004bbdd0          → DrawHPBar(x, y, w, h, fill_pct, mirror, color)
-//   FUN_0047f6f0          → DrawText(x, y, str, unk, italic, flags)
+//   Text_MeasureBox          → DrawText(x, y, str, unk, italic, flags)
 //
 // ══════════════════════════════════════════════════════════════════════════════
 // Render_CharNameTags @ 0x004BE710  (264 líneas, COMPLETO)
@@ -564,7 +564,7 @@
 //       float hpOff  = (DAT_07eaa0e0 > 0) ? 50.0f : 0.0f;
 //       glColor3f(1.0, 1.0, 1.0);
 //       GL_SetBlendSrcOver('\x01');        // SetBlendMode(alpha)
-//       int sw      = FUN_004cb520();
+//       int sw      = GetScreenWidth();
 //       float rightX = (float)sw - hpOff - _DAT_00552488;  // límite X derecho
 //       float idx    = 0.0f;    // offset de byte en lista on-screen (stride 0x44)
 //       int   textY  = 0;       // desplazamiento Y acumulado entre textos
@@ -582,7 +582,7 @@
 //           if (entType != 0x87 && entType != 0x8f &&
 //               !(0x1a0 <= entType && entType <= 0x1a3)) {
 //
-//             int level = FUN_004c45c0(psVar1, entType*0x40+DAT_07d78068, field>>3&0xf);
+//             int level = CalcMaxDurability(psVar1, entType*0x40+DAT_07d78068, field>>3&0xf);
 //             level &= 0xffff;
 //             if (*psVar1 == 0x1aa) level = 200;  // GM: nivel forzado a 200
 //
@@ -591,7 +591,7 @@
 //             if (hp == 0) {
 //               entity[+0x20] = 8;           // muerto
 //               DAT_00559c78  = 0x800a0aff;  // rojo oscuro
-//               DAT_00559c80  = 0x800a0aff;
+//               SetBackgroundTextColor  = 0x800a0aff;
 //             } else {
 //               float hpF = (float)hp;
 //               if      (hpF > (float)level * _DAT_005526e4) { entity[+0x20]=7; DAT_00559c78=0xff0a0aff; }  // rojo
@@ -602,14 +602,14 @@
 //
 //             // Formatear nombre + HP:  crt_sprintf(buf, "%s %d/%d", name, hp, maxhp)
 //             // DAT_07e11d6e = 1  (flag texto visible)
-//             // FUN_0047f6f0(ftol()+textY, ftol(), buf, 0, '\0', 0)
+//             // Text_MeasureBox(ftol()+textY, ftol(), buf, 0, '\0', 0)
 //             textY += 0x0c;   // siguiente nombre 12px más abajo
 //           }
 //         }
 //         idx = (float)((int)idx + 0x44);   // siguiente ranura
 //       } while ((int)idx < 0x330);
 //
-//       DAT_00559c80 = 0x80000000;   // reset blend
+//       SetBackgroundTextColor = 0x80000000;   // reset blend
 //     }
 //   }
 //
@@ -621,31 +621,31 @@
 //   entity[+0x20]         — estado visual del name tag (5..8)
 //   DAT_07e11d6e          — flag "texto visible"
 //   DAT_00559c78          — color texto ABGR
-//   DAT_00559c80          — blend color
+//   SetBackgroundTextColor          — blend color
 //   _DAT_00552488         — margen X derecho
 //   _DAT_005526e4/_DAT_005528b8/_DAT_00552504 — umbrales HP (alto/medio/bajo)
 //   Tipos excluidos de name tags: 0x87=NPC-A, 0x8f=NPC-B, 0x1a0..0x1a3=map objects
-//   FUN_004cb520          → Screen_GetWidth()
-//   FUN_004c45c0          → GetEntityLevel(ptr, spriteData, field) → int
-//   FUN_0047f6f0          → DrawText(x, y, str, unk, italic, flags)
+//   GetScreenWidth          → Screen_GetWidth()
+//   CalcMaxDurability          → GetEntityLevel(ptr, spriteData, field) → int
+//   Text_MeasureBox          → DrawText(x, y, str, unk, italic, flags)
 //
 // ══════════════════════════════════════════════════════════════════════════════
 // Render_MapLoadText @ 0x004BF2D0  (142 líneas, COMPLETO)
 // ══════════════════════════════════════════════════════════════════════════════
 //
-//   Overlay de carga de mapa/dungeon, visible cuando g_GameSubState ∈ [10..16].
+//   Overlay de carga de mapa/dungeon, visible cuando World ∈ [10..16].
 //   Retorna DAT_07e11d88 (tipo de texto activo, 0=off).
 //
 //   uint Render_MapLoadText(void)
 //   {
 //     uint type = DAT_07e11d88;  // 0=off, 1=dungeon, 2=PvP, 5=instancia especial
 //
-//     if (DAT_07e11d88 != 0 && 10 < DAT_0055a7ac && DAT_0055a7ac < 0x11) {
+//     if (DAT_07e11d88 != 0 && 10 < World && World < 0x11) {
 //
 //       GL_ResetState();            // GL_ResetBlend()
 //       GL_SetBlendSrcOver('\0');        // SetBlendMode(none)
 //       glColor3f(1.0, 1.0, 1.0);
-//       DAT_00559c80 = 0;
+//       SetBackgroundTextColor = 0;
 //       DAT_00559c78 = 0xff0096ff; // azul inicial
 //
 //       // Para tipos 1 (dungeon), 2 (PvP) y 5 (especial):
@@ -691,7 +691,7 @@
 //
 //   Globals:
 //   DAT_07e11d88   — tipo de overlay (0=off, 1=dungeon, 2=PvP, 5=especial)
-//   DAT_0055a7ac   — g_GameSubState (10..16 = loading overlay activo)
+//   World   — World (10..16 = loading overlay activo)
 //   DAT_00559ccc   — segundos restantes (int)
 //   DAT_00559cd0   — límite jugadores (0xffff = sin límite)
 //   DAT_00559cd4   — jugadores actuales

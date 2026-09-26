@@ -100,7 +100,7 @@ void __cdecl FUN_00407ec0(DWORD *_this)
 // FUN_0040a6e0 @ 0x0040A6E0 (11 bytes)
 void __fastcall FUN_0040a6e0(void *This) {
     *(int *)This = (int)&PTR_LAB_005524e8;
-    FUN_00409f10(This);
+    WidgetB_SetVtable(This);
 }
 
 
@@ -158,7 +158,7 @@ void __fastcall FUN_00406de0_impl(int *param_1) {
 // FUN_0053d580 @ 0x0053D580 (18 bytes) — GameGuard query wrapper
 int __stdcall FUN_0053d580(void) {
     if (lpParameter == NULL) return 0;
-    return FUN_0053ea90(lpParameter);
+    return GameGuard_HealthCheck(lpParameter);
 }
 
 
@@ -237,7 +237,7 @@ extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level,
 // sub_47CF40 @ 0x0047CF40 (104 bytes) — Stats_ApplyBonus2 (percentage).
 // Like PlusSpecial but multiplies: *a1 += a4 * (*a1) / 100 if any special
 // matches `a2`. Used for percentage-based stat bonuses (defense %, etc).
-int __cdecl FUN_0047cf40(short *a1, int a2, int a3, unsigned short a4) {
+int __cdecl PlusSpecialPercent(short *a1, int a2, int a3, unsigned short a4) {
     int result = a3;
     if (*(unsigned short*)a3 == 0xFFFF) return result;
     int count = *(unsigned char*)(a3 + 36);
@@ -265,7 +265,7 @@ int __cdecl FUN_0047cf40(short *a1, int a2, int a3, unsigned short a4) {
 // Then per-slot bonuses (Wings/WeaponL/WeaponR/Ring1) with durability scaling.
 // Bow+arrows + crossbow+bolts synergy: special level boost based on arrow type.
 // dword_7E91388/pPickedItem preview path skipped (hover-time UI).
-int __fastcall FUN_0047d410(int a1) {
+int __fastcall Stats_CalcBase(int a1) {
     // GUARDA 2026-07-19 (CRASH 0xC0000005 @ +0xA3): se validaba `ca`
     // (CharacterAttribute) pero NO `a1` (CharacterMachine). Abajo se hace
     // `*(short*)(a1 + 536)` / `(a1 + 604)` (slots de arma) sin chequear, así que
@@ -391,8 +391,8 @@ skip_wings: ;
             }
             PlusSpecial(atkMinL, 73, wp_L);
             PlusSpecial(atkMaxL, 73, wp_L);
-            FUN_0047cf40((short*)atkMinL, 74, (int)wp_L, 2);
-            FUN_0047cf40((short*)atkMaxL, 74, (int)wp_L, 2);
+            PlusSpecialPercent((short*)atkMinL, 74, (int)wp_L, 2);
+            PlusSpecialPercent((short*)atkMaxL, 74, (int)wp_L, 2);
         }
     }
 
@@ -422,8 +422,8 @@ skip_wings: ;
             }
             PlusSpecial(atkMinR, 73, wp_R);
             PlusSpecial(atkMaxR, 73, wp_R);
-            FUN_0047cf40((short*)atkMinR, 74, (int)wp_R, 2);
-            FUN_0047cf40((short*)atkMaxR, 74, (int)wp_R, 2);
+            PlusSpecialPercent((short*)atkMinR, 74, (int)wp_R, 2);
+            PlusSpecialPercent((short*)atkMaxR, 74, (int)wp_R, 2);
         }
     }
 
@@ -431,12 +431,12 @@ skip_wings: ;
     if (*(unsigned short*)ring1 != 0xFFFF && *(unsigned char*)(ring1 + 26)) {
         PlusSpecial(atkMinL, 73, ring1);
         PlusSpecial(atkMaxL, 73, ring1);
-        FUN_0047cf40((short*)atkMinL, 74, (int)ring1, 2);
-        FUN_0047cf40((short*)atkMaxL, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMinL, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMaxL, 74, (int)ring1, 2);
         PlusSpecial(atkMinR, 73, ring1);
         PlusSpecial(atkMaxR, 73, ring1);
-        FUN_0047cf40((short*)atkMinR, 74, (int)ring1, 2);
-        FUN_0047cf40((short*)atkMaxR, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMinR, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMaxR, 74, (int)ring1, 2);
     }
 
     // Bow + arrows synergy (Type 135 with arrows option) / Crossbow + bolts (Type 143)
@@ -468,8 +468,8 @@ skip_wings: ;
 // ClearWhisperID @ 0x004804D0 (19 bytes) — rep stosd 0x1B + stosw = 0x6E bytes del anillo
 void __cdecl ClearWhisperID(void) { memset(WhisperRegistID, 0, 0x6e); }
 
-// FUN_0040f650 @ 0x0040F650 (20 bytes) — thiscall: call vtable method on sub-object
-void __fastcall FUN_0040f650(int ecx, int /*edx*/, int param_1) {
+// CUIRenderText_SetFont @ 0x0040F650 (20 bytes) — thiscall: call vtable method on sub-object
+void __fastcall CUIRenderText_SetFont(int ecx, int /*edx*/, int param_1) {
     if (param_1 != 0) {
         // Call release method: (*(this+4))->vtable[2](param_1)
         typedef void (__cdecl *ReleaseFunc)(int);
@@ -540,7 +540,7 @@ void __cdecl ReleaseMainData(void) {
 
 
 
-// FUN_00404e60 @ 0x00404E60 — CWaveFile deinit (set vtable, close MMIO)
+// waveIO__CloseWaveFile @ 0x00404E60 — CWaveFile deinit (set vtable, close MMIO)
 
 
 // FUN_00406cb0 @ 0x00406CB0 — HashWidget ~dtor
@@ -813,7 +813,8 @@ void __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster,
 // OJO: `functions.h` tenia esto mapeado a FUN_004827a0, que es una direccion
 // EN MEDIO de sub_4824C0 (el scan de flechas del inventario) -- por eso el stub
 // vacio.  La direccion real es 0x0047EB80.
-void __cdecl FUN_0047eb80(void) {
+// IDA: clearMatchInfo (0x0047EB80)
+void __cdecl clearMatchInfo(void) {
     m_byMatchType     = 0;
     m_iMatchTimeMax   = -1;
     m_iMatchTime      = -1;
@@ -827,9 +828,9 @@ void __cdecl FUN_0047eb80(void) {
 // RE-ACTIVADO 2026-07-24: la tabla ahora esta bien dimensionada (512 × 0x36) y
 // la carga NPCName_Load con Type[0]/Name[1].  IDA: `mov dl,[eax]` (Type es un
 // BYTE en [0]), stride 0x36, hasta GateAttribute.  Aca acotamos por el contador
-// real (DAT_07d78078 = EditMonsterNumber) en vez del literal 0x7cf5600.
+// real (EditMonsterNumber = EditMonsterNumber) en vez del literal 0x7cf5600.
 char *__cdecl getMonsterName(int type) {
-    int n = DAT_07d78078;
+    int n = EditMonsterNumber;
     if (n > 512) n = 512;
     for (int i = 0; i < n; ++i) {
         BYTE *m = &MonsterScript[i * 0x36];

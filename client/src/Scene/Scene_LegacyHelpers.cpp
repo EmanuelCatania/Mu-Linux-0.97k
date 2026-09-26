@@ -5,23 +5,23 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_0040a660 @ 0x0040A660 — WidgetB_CtorFull: construct two linked WidgetB objects.
-// Calls FUN_00409ed0 on self, sets vtable, then constructs a local WidgetB and copies it.
-void* __fastcall FUN_0040a660(void *param_1)
+// WidgetB_CtorFull @ 0x0040A660 — WidgetB_CtorFull: construct two linked WidgetB objects.
+// Calls WidgetB_Ctor on self, sets vtable, then constructs a local WidgetB and copies it.
+void* __fastcall WidgetB_CtorFull(void *param_1)
 {
-    FUN_00409ed0(param_1);
+    WidgetB_Ctor(param_1);
     // vtable = &PTR_FUN_00552588 — skipped
 
     // local_2c is a stack-local WidgetB (0x20 bytes, 8 dwords)
     int local_2c[8] = {};
-    FUN_00409ed0(local_2c);
-    FUN_00409f10(local_2c);
+    WidgetB_Ctor(local_2c);
+    WidgetB_SetVtable(local_2c);
     return param_1;
 }
 
-// FUN_0040a860 @ 0x0040A860 — VTable_Release
+// VTable_Release @ 0x0040A860 — VTable_Release
 // Iterates object->edge_list and calls FUN_0040a8f0 on each edge.
-void __cdecl FUN_0040a860(void *obj, int param_1)
+void __cdecl VTable_Release(void *obj, int param_1)
 {
     char *this_ = (char*)obj;
     int count = *(int*)(this_ + 0x18);
@@ -36,9 +36,9 @@ void __cdecl FUN_0040a860(void *obj, int param_1)
 }
 
 // ── Scene entity grid helpers ─────────────────────────────────────────────────
-// FUN_004ffcc0 @ 0x004FFCC0 — Entity_GridUnlink(node, cell_ptr)
+// Entity_GridUnlink @ 0x004FFCC0 — Entity_GridUnlink(node, cell_ptr)
 // Unlinks node from its doubly-linked list in the 16x16 scene grid.
-void __cdecl FUN_004ffcc0(void *param_1_v, int param_2) {
+void __cdecl Entity_GridUnlink(void *param_1_v, int param_2) {
     char *param_1 = (char*)param_1_v;
     if (!param_1) return;
     int iVar1 = *(int*)(param_1 + 0x1b8); // next

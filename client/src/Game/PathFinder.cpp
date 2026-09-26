@@ -1,12 +1,12 @@
 // PathFinder.cpp
 // A* pathfinder and BST priority-queue helpers.
 //
-// FUN_0043fd30 @ 0x0043FD30  — BinTree_UpdateRange   (21 lines)
-// FUN_0043fea0 @ 0x0043FEA0  — BinTree_Insert        (56 lines)
-// FUN_004232f0 @ 0x004232F0  — BinTree_PopMin        (77 lines)
-// FUN_004235d0 @ 0x004235D0  — BinTree_DeleteNode    (79 lines)
-// FUN_0043ff60 @ 0x0043FF60  — BinTree_ClearHead     (91 lines)
-// FUN_0043f500 @ 0x0043F500  — PathFinder2_Solve     (340 lines)
+// IDA: PATH_AddClearPos (0x0043FD30)
+// IDA: CBTree_Add (0x0043FEA0)
+// IDA: CBTree_RemoveNode (0x004232F0)
+// IDA: CBTree_RemoveFrom (0x004235D0)
+// IDA: CBTree_RemoveAll (0x0043FF60)
+// PATH_FindPath @ 0x0043F500  — PathFinder2_Solve     (340 lines)
 //
 // BST node layout (20 bytes each):
 //   [0] data/node-id   [1] cost(key)   [2] left*   [3] right*   [4] parent*
@@ -43,10 +43,10 @@ static const int s_astar_dirs[16] = {
 #define ASTAR_DIR_END    (s_astar_dirs + 16)
 
 
-// FUN_0043fd30 — BinTree_UpdateRange
+// PATH::AddClearPos de ZzzPath.h.
 // Updates the min/max dirty-range [this+0x400..this+0x404] to include param_1.
 // Returns CONCAT31((int3)(param_1>>8), 1) on success, (param_1 & ~0xFF) on out-of-range.
-undefined4 __cdecl FUN_0043fd30(void *_this, int param_1)
+undefined4 __cdecl PATH_AddClearPos(void *_this, int param_1)
 {
   int iVar1;
 
@@ -66,10 +66,10 @@ undefined4 __cdecl FUN_0043fd30(void *_this, int param_1)
 }
 
 
-// FUN_0043fea0 — BinTree_Insert
+// Add de CBTree, usado por PATH::FindPath.
 // Inserts a (data, cost) pair into the BST keyed by cost (param_2).
 // this+0x8 = root, this+0x4 = count.
-void __cdecl FUN_0043fea0(void *_this, undefined4 param_1, int param_2)
+void __cdecl CBTree_Add(void *_this, undefined4 param_1, int param_2)
 {
   int iVar1;
   int iVar2;
@@ -124,10 +124,10 @@ void __cdecl FUN_0043fea0(void *_this, undefined4 param_1, int param_2)
 }
 
 
-// FUN_004232f0 — BinTree_PopMin
+// RemoveNode de CBTree, usado por PATH::FindPath.
 // Removes and returns the minimum-key node from the BST.
 // param_1 is a pointer-to-pointer to the root or a subtree root.
-undefined4 __cdecl FUN_004232f0(void *_this, int *param_1)
+undefined4 __cdecl CBTree_RemoveNode(void *_this, int *param_1)
 {
   undefined4 *puVar1;
   undefined4 uVar2;
@@ -175,7 +175,7 @@ undefined4 __cdecl FUN_004232f0(void *_this, int *param_1)
       } while ((int *)param_1[3] != (int *)0x0);
       iVar4 = *param_1;
       iVar3 = param_1[1];
-      FUN_004232f0(_this, (int *)&param_1);
+      CBTree_RemoveNode(_this, (int *)&param_1);
       *(int *)*piVar5 = iVar4;
       *(int *)(*piVar5 + 4) = iVar3;
       return uVar2;
@@ -203,9 +203,9 @@ LAB_0042337f:
 }
 
 
-// FUN_004235d0 — BinTree_DeleteNode
+// CBTree::RemoveFrom de BaseCls.h.
 // Recursively deletes a node and all its children from the BST.
-void __cdecl FUN_004235d0(void *_this, undefined4 *param_1)
+void __cdecl CBTree_RemoveFrom(void *_this, undefined4 *param_1)
 {
   int iVar1;
   undefined4 uVar2;
@@ -215,10 +215,10 @@ void __cdecl FUN_004235d0(void *_this, undefined4 *param_1)
 
   puVar4 = param_1;
   if ((undefined4 *)param_1[2] != (undefined4 *)0x0) {
-    FUN_004235d0(_this, (undefined4 *)param_1[2]);
+    CBTree_RemoveFrom(_this, (undefined4 *)param_1[2]);
   }
   if ((undefined4 *)puVar4[3] != (undefined4 *)0x0) {
-    FUN_004235d0(_this, (undefined4 *)puVar4[3]);
+    CBTree_RemoveFrom(_this, (undefined4 *)puVar4[3]);
   }
   puVar5 = (undefined4 *)puVar4[2];
   param_1 = (undefined4 *)0x0;
@@ -255,7 +255,7 @@ void __cdecl FUN_004235d0(void *_this, undefined4 *param_1)
       } while ((undefined4 *)param_1[3] != (undefined4 *)0x0);
       uVar2 = *param_1;
       uVar3 = param_1[1];
-      FUN_004232f0(_this, (int *)&param_1);
+      CBTree_RemoveNode(_this, (int *)&param_1);
       *puVar4 = uVar2;
       puVar4[1] = uVar3;
       return;
@@ -283,9 +283,9 @@ LAB_00423627:
 }
 
 
-// FUN_0043ff60 — BinTree_ClearHead
-// Removes the BST root node, rebalancing children via FUN_004235d0/FUN_004232f0.
-void __fastcall FUN_0043ff60(undefined4 *param_1)
+// RemoveAll de CBTree, usado por PATH::FindPath.
+// Removes the BST root node, rebalancing children via CBTree_RemoveFrom/CBTree_RemoveNode.
+void __fastcall CBTree_RemoveAll(undefined4 *param_1)
 {
   undefined4 *puVar1;
   int iVar2;
@@ -302,10 +302,10 @@ LAB_00440054:
   }
   local_4 = param_1;
   if ((undefined4 *)puVar1[2] != (undefined4 *)0x0) {
-    FUN_004235d0(param_1, (undefined4 *)puVar1[2]);
+    CBTree_RemoveFrom(param_1, (undefined4 *)puVar1[2]);
   }
   if ((undefined4 *)puVar1[3] != (undefined4 *)0x0) {
-    FUN_004235d0(param_1, (undefined4 *)puVar1[3]);
+    CBTree_RemoveFrom(param_1, (undefined4 *)puVar1[3]);
   }
   puVar5 = (undefined4 *)puVar1[2];
   local_4 = (undefined4 *)0x0;
@@ -343,7 +343,7 @@ LAB_00440054:
       } while ((undefined4 *)local_4[3] != (undefined4 *)0x0);
       uVar3 = *local_4;
       uVar4 = local_4[1];
-      FUN_004232f0(param_1, (int *)&local_4);
+      CBTree_RemoveNode(param_1, (int *)&local_4);
       *puVar1 = uVar3;
       puVar1[1] = uVar4;
       param_1[2] = 0;
@@ -375,7 +375,7 @@ LAB_0043ffbf:
 }
 
 
-// FUN_0043f500 — PathFinder2_Solve  (__cdecl)
+// IDA: PATH_FindPath (0x0043F500)
 // A* pathfinder on a tile grid. Writes path into this->path_x/path_y arrays.
 // param_1 = start tile X       param_2 = start tile Y (float)
 // param_3 = target tile X      param_4 = target tile Y
@@ -383,7 +383,7 @@ LAB_0043ffbf:
 // param_7 = radius (0.0 = single target cell; else circle pre-mark)
 // Returns: CONCAT31((len>>8),1) on success, 0 on failure.
 uint __cdecl
-FUN_0043f500(void *_this, int param_1, float param_2, int param_3, int param_4,
+PATH_FindPath(void *_this, int param_1, float param_2, int param_3, int param_4,
              int param_5, int param_6, float param_7)
 {
   void *this_00;
@@ -466,21 +466,21 @@ FUN_0043f500(void *_this, int param_1, float param_2, int param_3, int param_4,
           for (iVar5 = iVar13; local_14 = fVar11, iVar5 < 1; iVar5 = iVar5 + 1) {
             iVar6 = iVar12 * *(int *)_this + iVar5 + param_3;
             if ((iVar6 < 0) || (*(int *)((int)_this + 8) <= iVar6)) {
-              FUN_00405540(&DAT_055c9bf0, &DAT_005597a0);
+              CErrorReport_Write(&DAT_055c9bf0, &DAT_005597a0);
             }
             else if (((char)param_5 == '\0') ||
                     ((int)(uint)*(byte *)(*(int *)((int)_this + 0xc) + iVar6) < param_6)) {
               *(undefined1 *)(*(int *)((int)_this + 0x3fc) + iVar6) = 4;
-              FUN_0043fd30(_this, iVar6);
+              PATH_AddClearPos(_this, iVar6);
             }
             iVar6 = (iVar12 * *(int *)_this - iVar5) + param_3;
             if ((iVar6 < 0) || (*(int *)((int)_this + 8) <= iVar6)) {
-              FUN_00405540(&DAT_055c9bf0, &DAT_005597a0);
+              CErrorReport_Write(&DAT_055c9bf0, &DAT_005597a0);
             }
             else if (((char)param_5 == '\0') ||
                     ((int)(uint)*(byte *)(*(int *)((int)_this + 0xc) + iVar6) < param_6)) {
               *(undefined1 *)(*(int *)((int)_this + 0x3fc) + iVar6) = 4;
-              FUN_0043fd30(_this, iVar6);
+              PATH_AddClearPos(_this, iVar6);
             }
             fVar11 = local_14;
           }
@@ -491,21 +491,21 @@ FUN_0043f500(void *_this, int param_1, float param_2, int param_3, int param_4,
               if (SQRT((float)local_1c) < param_7) {
                 iVar5 = iVar12 * *(int *)_this + (int)fVar11 + param_3;
                 if ((iVar5 < 0) || (*(int *)((int)_this + 8) <= iVar5)) {
-                  FUN_00405540(&DAT_055c9bf0, &DAT_005597a0);
+                  CErrorReport_Write(&DAT_055c9bf0, &DAT_005597a0);
                 }
                 else if (((char)param_5 == '\0') ||
                         ((int)(uint)*(byte *)(*(int *)((int)_this + 0xc) + iVar5) < param_6)) {
                   *(undefined1 *)(*(int *)((int)_this + 0x3fc) + iVar5) = 4;
-                  FUN_0043fd30(_this, iVar5);
+                  PATH_AddClearPos(_this, iVar5);
                 }
                 iVar5 = (iVar12 * *(int *)_this - (int)fVar11) + param_3;
                 if ((iVar5 < 0) || (*(int *)((int)_this + 8) <= iVar5)) {
-                  FUN_00405540(&DAT_055c9bf0, &DAT_005597a0);
+                  CErrorReport_Write(&DAT_055c9bf0, &DAT_005597a0);
                 }
                 else if (((char)param_5 == '\0') ||
                         ((int)(uint)*(byte *)(*(int *)((int)_this + 0xc) + iVar5) < param_6)) {
                   *(undefined1 *)(*(int *)((int)_this + 0x3fc) + iVar5) = 4;
-                  FUN_0043fd30(_this, iVar5);
+                  PATH_AddClearPos(_this, iVar5);
                 }
               }
               fVar11 = (float)((int)fVar11 + 1);
@@ -522,7 +522,7 @@ FUN_0043f500(void *_this, int param_1, float param_2, int param_3, int param_4,
     local_18 = param_1;
     local_20 = 1950000000;
     local_14 = param_2;
-    FUN_0043fea0((undefined4 *)((int)_this + 0x414), iVar12, 0);
+    CBTree_Add((undefined4 *)((int)_this + 0x414), iVar12, 0);
     pbVar4 = (byte *)(*(int *)((int)_this + 0x3fc) + iVar12);
     *pbVar4 = *(byte *)(*(int *)((int)_this + 0x3fc) + iVar12) | 1;
     if ((-1 < iVar12) && (iVar12 < *(int *)((int)_this + 8))) {
@@ -549,7 +549,7 @@ FUN_0043f500(void *_this, int param_1, float param_2, int param_3, int param_4,
           local_24 = iVar13;
           iVar5 = *(int *)(iVar13 + 8);
         }
-        iStack_4 = FUN_004232f0((void *)((int)_this + 0x414), &local_24);
+        iStack_4 = CBTree_RemoveNode((void *)((int)_this + 0x414), &local_24);
         iVar5 = iStack_4 % *(int *)_this;
         param_7 = (float)(iStack_4 / *(int *)_this);
         *(uint *)(*(int *)((int)_this + 0x408) + iStack_4 * 4) =
@@ -589,12 +589,12 @@ FUN_0043f500(void *_this, int param_1, float param_2, int param_3, int param_4,
           this_00 = (void *)((int)_this + 0x414);
           if (param_5 != 0) {
             if (*(undefined4 **)(param_5 + 8) != (undefined4 *)0x0) {
-              FUN_004235d0(this_00, *(undefined4 **)(param_5 + 8));
+              CBTree_RemoveFrom(this_00, *(undefined4 **)(param_5 + 8));
             }
             if (*(undefined4 **)(param_5 + 0xc) != (undefined4 *)0x0) {
-              FUN_004235d0(this_00, *(undefined4 **)(param_5 + 0xc));
+              CBTree_RemoveFrom(this_00, *(undefined4 **)(param_5 + 0xc));
             }
-            FUN_004232f0(this_00, &param_5);
+              CBTree_RemoveNode(this_00, &param_5);
             *(undefined4 *)((int)_this + 0x41c) = 0;
           }
           *(undefined4 *)((int)_this + 0x418) = 0;
@@ -646,7 +646,7 @@ LAB_0043fa38:
               }
               uVar8 = iVar12 - iVar13 >> 0x1f;
               iVar12 = ((iVar12 - iVar13 ^ uVar8) - uVar8) * 0xf + 3 + iVar9 * 0x15;
-              FUN_0043fea0((void *)((int)_this + 0x414), iVar6,
+              CBTree_Add((void *)((int)_this + 0x414), iVar6,
                            ((int)(iVar12 + (iVar12 >> 0x1f & 3U)) >> 2) +
                            *(int *)(*(int *)((int)_this + 0x408) + iStack_4 * 4));
               pbVar4 = (byte *)(*(int *)((int)_this + 0x3fc) + iVar6);
@@ -702,12 +702,12 @@ LAB_0043fb32:
         param_5 = *(int *)((int)_this + 0x41c);
         if (param_5 != 0) {
           if (*(undefined4 **)(param_5 + 8) != (undefined4 *)0x0) {
-            FUN_004235d0(puVar10, *(undefined4 **)(param_5 + 8));
+            CBTree_RemoveFrom(puVar10, *(undefined4 **)(param_5 + 8));
           }
           if (*(undefined4 **)(param_5 + 0xc) != (undefined4 *)0x0) {
-            FUN_004235d0(puVar10, *(undefined4 **)(param_5 + 0xc));
+            CBTree_RemoveFrom(puVar10, *(undefined4 **)(param_5 + 0xc));
           }
-          FUN_004232f0(puVar10, &param_5);
+          CBTree_RemoveNode(puVar10, &param_5);
           *(undefined4 *)((int)_this + 0x41c) = 0;
         }
         *(undefined4 *)((int)_this + 0x418) = 0;
@@ -730,7 +730,7 @@ LAB_0043fc4d:
         *(int *)((int)_this + 0x10) = iVar12;
         return CONCAT31((int3)((uint)iVar12 >> 8), 1);
       }
-      FUN_0043ff60((undefined4 *)puVar10);
+      CBTree_RemoveAll((undefined4 *)puVar10);
       pbVar4 = nullptr;
     }
   }
@@ -743,7 +743,7 @@ LAB_0043fd21:
 //
 // Hasta ahora el contexto (DAT_05826df4) se reservaba en WinMain con
 // `malloc(0x420)` + memset, y por eso el vtable de la cola de prioridad en
-// +0x414 quedaba NULL: FUN_0043f500 (PATH::FindPath) crashea al llamarlo, y de
+// +0x414 quedaba NULL: PATH_FindPath (PATH::FindPath) crashea al llamarlo, y de
 // ahi venia el `pfReady = false` forzado en stubs_externs.cpp, que obliga a usar
 // el A* sustituto. Estas dos funciones portan lo que faltaba.
 //
@@ -811,5 +811,5 @@ void __cdecl PathContext_Create(void)
 }
 
 // ZzzAI::InitPath (0x0043F2D0) NO va aca: ya estaba portada, y correctamente,
-// en stubs_externs.cpp (PathFinder_ResetContext). La llama FUN_0050f690 (World_Init) desde
+// en stubs_externs.cpp (PathFinder_ResetContext). La llama OpenFont (World_Init) desde
 // Scene_Intro, igual que en el binario. Definirla de nuevo aca daba LNK2005.

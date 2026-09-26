@@ -65,7 +65,7 @@
 // Bitmaps height: g_BitmapsRaw + type * 0x38 + 0x24 = height field per bitmap slot
 #define BMP_HEIGHT(t)  (*(float*)(g_BitmapsRaw + (t) * 0x38 + 0x24))
 
-void __stdcall MoveParticles_stub(void)
+void __stdcall MoveParticles(void)
 {
     float fVar15, fVar19, fVar3;
     float10 fVar11, fVar12;
@@ -125,7 +125,7 @@ void __stdcall MoveParticles_stub(void)
         float* pPos = &P_POSX(iVar9);
         float* pDir = &P_DIRX(iVar9);
         float* pVel = &P_VELX(iVar9);
-        FUN_0043e570(pPos, pDir, pVel);
+        Vector_AddRotated(pPos, pDir, pVel);
 
         fVar15 = _DAT_0055256c;
         iVar5 = P_TYPE(iVar9);
@@ -165,7 +165,7 @@ void __stdcall MoveParticles_stub(void)
                 P_VELX(iVar9) *= _DAT_005526e8;
                 P_VELY(iVar9) *= _DAT_005526e8;
                 P_VELZ(iVar9) *= _DAT_005526e8;
-                fVar15 = FUN_004f7500(P_POSX(iVar9), P_POSY(iVar9));
+                fVar15 = RequestTerrainHeight(P_POSX(iVar9), P_POSY(iVar9));
                 P_POSZ(iVar9) = BMP_HEIGHT(P_TYPE(iVar9)) * P_SCALE(iVar9) * _DAT_00552504 + fVar15;
                 break;
             }
@@ -227,11 +227,11 @@ void __stdcall MoveParticles_stub(void)
                     fVar11 = (float10)_DAT_00552660;
                     P_SCALE(iVar9) = (float)(fVar12 * fVar11);
                     if (P_SUB(iVar9) < 2) {
-                        FUN_00475170((int)(P_BASE + iVar9));
+                        ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
                     } else {
                         P_SCALE(iVar9) = (float)(fVar12 * fVar11 * (float10)_DAT_00552adc);
                         P_ROT(iVar9) -= _DAT_00552664;
-                        FUN_00475170((int)(P_BASE + iVar9));
+                        ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
                     }
                 }
                 break;
@@ -240,7 +240,7 @@ void __stdcall MoveParticles_stub(void)
             case 0x4d0: {
                 fVar11 = (float10)fsin((float10)P_LIFE(iVar9) * (float10)_DAT_00552ae0);
                 P_SCALE(iVar9) = (float)(fVar11 * (float10)_DAT_00552540);
-                FUN_00475170((int)(P_BASE + iVar9));
+                ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
                 break;
             }
 
@@ -290,7 +290,7 @@ void __stdcall MoveParticles_stub(void)
                     P_POSY(iVar9) += P_VELY(iVar9);
                     P_POSZ(iVar9) += P_VELZ(iVar9);
                 }
-                fVar15 = FUN_004f7500(P_POSX(iVar9), P_POSY(iVar9));
+                fVar15 = RequestTerrainHeight(P_POSX(iVar9), P_POSY(iVar9));
                 if (P_POSZ(iVar9) < fVar15) {
                     P_POSZ(iVar9) = fVar15;
                     P_FRAME(iVar9) = 1;
@@ -698,7 +698,7 @@ void __stdcall MoveParticles_stub(void)
                     lt0[0] = lightF;  // placeholder
                     lt0[1] = lightF;
                     lt0[2] = lightF;
-                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt0, 6, (int)&DAT_081cb608[0]);
+                    AddTerrainLight(P_POSX(iVar9), P_POSY(iVar9), (float*)lt0, 6, (float*)&DAT_081cb608[0]);
                 }
                 // AddTerrainLight — second call with color modulation
                 {
@@ -706,7 +706,7 @@ void __stdcall MoveParticles_stub(void)
                     lt1[0] = lightF * _DAT_005526e4;
                     lt1[1] = lightF * _DAT_005528b4;
                     lt1[2] = lightF;
-                    FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt1, 4, (int)&DAT_081cb608[0]);
+                    AddTerrainLight(P_POSX(iVar9), P_POSY(iVar9), (float*)lt1, 4, (float*)&DAT_081cb608[0]);
                 }
                 continue;
             }
@@ -772,7 +772,7 @@ void __stdcall MoveParticles_stub(void)
                 P_LB(iVar9) = fVar15;
                 P_POSZ(iVar9) += P_GRAV(iVar9);
                 P_GRAV(iVar9) -= _DAT_0055264c;
-                fVar15 = FUN_004f7500(P_POSX(iVar9), P_POSY(iVar9));
+                fVar15 = RequestTerrainHeight(P_POSX(iVar9), P_POSY(iVar9));
                 if (P_POSZ(iVar9) < fVar15) {
                     P_POSZ(iVar9) = fVar15;
                     fVar15 = P_GRAV(iVar9) * _DAT_00552b50;
@@ -936,7 +936,7 @@ void __stdcall MoveParticles_stub(void)
             float ltA2 = lightA * _DAT_00552530;
             {
                 float ltBuf[3] = { ltA0, ltA1, ltA2 };
-                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)ltBuf, 3, (int)&DAT_081cb608[0]);
+                AddTerrainLight(P_POSX(iVar9), P_POSY(iVar9), (float*)ltBuf, 3, (float*)&DAT_081cb608[0]);
             }
             if (P_SUB(iVar9) == 2) {
                 int entPtr = P_ENT(iVar9);
@@ -1081,7 +1081,7 @@ void __stdcall MoveParticles_stub(void)
             if (P_SUB(iVar9) != 1) {
                 float ltBF = (float)P_LIFE(iVar9) * _DAT_00552a10;
                 float lt4[3] = { ltBF * _DAT_00552504, ltBF * _DAT_005528b8, ltBF * _DAT_005524f4 };
-                FUN_004f76c0(P_POSX(iVar9), P_POSY(iVar9), (int)lt4, 4, (int)&DAT_081cb608[0]);
+                AddTerrainLight(P_POSX(iVar9), P_POSY(iVar9), (float*)lt4, 4, (float*)&DAT_081cb608[0]);
             }
             break;
         }
