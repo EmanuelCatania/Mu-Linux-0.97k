@@ -2629,7 +2629,11 @@ float  _DAT_00552aa4  = 0.025f;  // MoveJoint HP-bar scale factor
 float  _DAT_00552a9c  = 0.0613f;  // Ring_ComputeOrbit ring trig scale X
 float  _DAT_00552aa0  = 0.048f;  // Ring_ComputeOrbit ring trig scale Y
 float  _DAT_00552aa8  = 0.1113f;  // Ring_ComputeOrbit ring trig scale Z
-// Tabla de escalas de MoveEffect: dato del binario que el port dejo en ceros.
+// Tabla de HUESOS del aura de Swell Life: dato del binario que el port dejo
+// en ceros.  No son escalas -- MoveEffect los pasa como 'Scale' a
+// Particle_Spawn(0x47e, ..., sub 4, Scale, owner), que los guarda en el
+// campo +0x40 del slot, y MoveParticles los usa como indice de hueso para
+// re-anclar la particula al dueño en cada tick.
 // Leida de 0x00559B78: 19 1a 1b 14 22 23 24 00.
 // Unico consumidor: MoveEffect (0x0046A3D1), que la lee en las DOS direcciones:
 // hacia adelante desde 0x559B78 y hacia ATRAS desde 0x559B7F
