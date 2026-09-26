@@ -24904,7 +24904,7 @@ void __cdecl Terrain_SetupCulling(bool EditFlag)
     Terrain_SpawnAmbientObjects();
     DisableDepthTest();
     EnableCullFace();
-    FUN_00479540();
+    RenderTerrainAlphaBitmaps();
     EnableDepthTest();
   }
   DAT_0839bc88 ^= 1u;
@@ -26427,12 +26427,12 @@ bool __cdecl FUN_005130f0(
 }
 #endif
 
-// ── FUN_00513260 (IDA-only, gated) ──
+// ── Collision_SegmentToOBB (IDA-only, gated) ──
 // Usa macros Hex-Rays sin portar (LODWORD/qmemcpy/Vec3_Cross); queda gated.
 // El hover de items del suelo (FUN_004afa40) usa proximidad world-space en su
 // lugar (ver stubs_mouse_hover.cpp).
 #if defined(IDA_PORT_00513260)
-bool __cdecl FUN_00513260(
+bool __cdecl Collision_SegmentToOBB(
         float a1,
         int a2,
         char a3,

@@ -171,8 +171,8 @@ void *__cdecl Entity_InitRenderState(void *a1)
   return result;
 }
 
-// FUN_005129f0 @ 0x005129F0 — fabs(float) → double; was lying stub returning v unchanged.
-long double   __cdecl FUN_005129f0(float v)                                  { return (long double)(v >= 0.0f ? v : -v); }
+// Math_Fabs @ 0x005129F0 — fabs(float) → double; was lying stub returning v unchanged.
+long double   __cdecl Math_Fabs(float v)                                  { return (long double)(v >= 0.0f ? v : -v); }
 // Vector_AddRotated @ 0x0043E570 — Vector_AddRotated(pos, angle_ptr, offset_ptr)
 // Builds rotation matrix from angle_ptr, rotates offset_ptr through it,
 // then adds the result to pos[0..2].

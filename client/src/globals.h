@@ -1568,7 +1568,7 @@ extern BYTE    DAT_083a7af8[GUILD_MEMBER_TABLE_BYTES];
 #define DAT_083a7b0c  (*(DWORD*)&DAT_083a7af8[0x14])
 // Columnas de datos de miembro de guild (parte del mismo array de stride 0x18 que arranca en DAT_083a7af8):
 
-// Guild leaderboard UI strings (FUN_0051ddf0 / GuildOverview_Render):
+// Guild leaderboard UI strings (RenderMatchScore / GuildOverview_Render):
 // extern char    DAT_07d59358;           // guild panel title string ("Guild War Score" etc.)   // -> alias a GlobalText, ver el final del archivo
 extern char    param_2_07d59484;       // format string for current player name ("%s")
 // extern char    DAT_07d5ba04;           // column headers array (stride 300, ~5 entries, ends at 0x7d5bfe0)   // -> alias a GlobalText, ver el final del archivo
@@ -1940,7 +1940,7 @@ extern float   _DAT_00552988;
 extern float   _DAT_0055298c;
 // ── Weather particle pool (40 slots × 0x1bc bytes = 0x4560 bytes) ────────────
 // BUG-FIX 2026-05-04: antes los 30+ globals DAT_0839bc?? eran chars sueltos
-// en BSS, pero Weather_Update y FUN_0043e680 los acceden con stride 0x1bc
+// en BSS, pero Weather_Update y Particle_PathUpdate los acceden con stride 0x1bc
 // (slot stride) o 0x6f (int stride = 0x1bc/4). Sin un buffer contiguo, escribir
 // a slot 1+ corrompe globals adyacentes; leer slot 1+ leía garbage o causaba AV
 // (visible como crash en RenderNumArrow al entrar al mundo, addr=0x004BF712,

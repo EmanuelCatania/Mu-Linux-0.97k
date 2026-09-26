@@ -703,7 +703,7 @@ extern "C" void ChaosBoxCloseAck(void) {
 }
 
 
-// FUN_004CB6F0 @ 0x004CB6F0 — Target_Render (sub_4CB6F0)
+// RenderMonsterName @ 0x004CB6F0 — Target_Render (sub_4CB6F0)
 // 2026-05-07: port FIEL desde IDA mu97k-src-IDA/raw/004CB6F0_sub_4CB6F0.c.
 // Renderiza el nombre del target hovered (NPC/mob/item) sobre la HUD 2D.
 //
@@ -720,7 +720,7 @@ extern "C" void ChaosBoxCloseAck(void) {
 // Anti-tamper hash table noise (PACKET_ENCRYPT etc) skipped per project policy.
 extern "C" SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText);
 extern "C" int __cdecl GetScreenWidth(void);
-void __cdecl FUN_004cb6f0(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
+void __cdecl RenderMonsterName(int /*unused*/, int /*unused*/, int /*unused*/, int /*unused*/)
 {
     DAT_07e11d6e = 1;
     glColor3f(1.0f, 1.0f, 1.0f);

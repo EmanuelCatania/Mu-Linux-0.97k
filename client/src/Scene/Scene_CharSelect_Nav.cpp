@@ -2184,7 +2184,7 @@ void __cdecl BuxConvert_0(int buf, int len) {
         *(BYTE *)(buf + i) ^= (BYTE)DAT_00559bb4[i % 3];
 }
 
-// ── FUN_0047dae0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_CalcMagicDmgRange — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DAE0 @ 0x0047DAE0 (618 bytes) — Stats_CalcMagicDmgRange.
 // Calcula el daño mágico mínimo/máximo en this[+70]/this[+72]:
 //   min = Energy/9
@@ -2194,7 +2194,7 @@ void __cdecl BuxConvert_0(int buf, int len) {
 //   + special 75 (flat add) on WeaponL
 //   + special 76 (percent +2%) on WeaponL
 //   + el special 75 + el special 76 (2%) del Ring1 (this+1148)
-int __cdecl FUN_0047dae0(int param_1) {
+int __cdecl Stats_CalcMagicDmgRange(int param_1) {
     unsigned short energy = *(unsigned short*)(param_1 + 26);
     unsigned short *minPtr = (unsigned short*)(param_1 + 70);
     unsigned short *maxPtr = (unsigned short*)(param_1 + 72);
@@ -2237,8 +2237,8 @@ int __cdecl FUN_0047dae0(int param_1) {
             *maxPtr += (unsigned short)(maxBonus - (unsigned short)((double)maxBonus * (double)durP));
             PlusSpecial(minPtr, 75, weaponL);
             PlusSpecial(maxPtr, 75, weaponL);
-            FUN_0047cf40((short*)minPtr, 76, (int)weaponL, 2);
-            FUN_0047cf40((short*)maxPtr, 76, (int)weaponL, 2);
+            PlusSpecialPercent((short*)minPtr, 76, (int)weaponL, 2);
+            PlusSpecialPercent((short*)maxPtr, 76, (int)weaponL, 2);
         }
     }
 
@@ -2247,8 +2247,8 @@ int __cdecl FUN_0047dae0(int param_1) {
         if (*(unsigned char*)(itemRing1 + 26) != 0) {
             PlusSpecial(minPtr, 75, itemRing1);
             PlusSpecial(maxPtr, 75, itemRing1);
-            FUN_0047cf40((short*)minPtr, 76, (int)itemRing1, 2);
-            return FUN_0047cf40((short*)maxPtr, 76, (int)itemRing1, 2);
+            PlusSpecialPercent((short*)minPtr, 76, (int)itemRing1, 2);
+            return PlusSpecialPercent((short*)maxPtr, 76, (int)itemRing1, 2);
         }
     }
     return (int)itemRing1;
@@ -2265,12 +2265,12 @@ void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* p
     *piMaxDamage = (damage >> 1) + damage + *(unsigned short*)(This + 72);
 }
 
-// ── FUN_0047dd50 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_CalcAddStrength — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DD50 @ 0x0047DD50 (39 bytes) — Stats_CalcAddStrength (or similar).
 // Computes a derived stat from CharacterMachine fields:
 //   this[29] = 5*this[7] + (this[10] >> 2) + (this[11] * 3) / 2
 // donde this es un puntero WORD; los offsets +14, +20, +22 y +58 van en bytes.
-int __cdecl FUN_0047dd50(short *param_1) {
+int __cdecl Stats_CalcAddStrength(short *param_1) {
     int v = 5 * (unsigned short)param_1[7]
           + ((unsigned short)param_1[10] >> 2)
           + ((unsigned short)param_1[11] * 3) / 2;
@@ -2375,14 +2375,14 @@ int __cdecl CalculateAttackSpeed(int param_1) {
     return 0;
 }
 
-// ── FUN_0047dfe0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_CalcDefense — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DFE0 @ 0x0047DFE0 (369 bytes) — Stats_CalcDefense.
 // Calcula el stat de defensa en this[+76]:
 //   class==2 (Wizard): defense = Vit/4 (this[+22]>>2)
 //   else: defense = Vit/3
 //   + el Escudo (this+604), con la defensa escalada por durabilidad
 //   + los bonus porcentuales de cada slot de equipo (special 70)
-int __cdecl FUN_0047dfe0(int param_1) {
+int __cdecl Stats_CalcDefense(int param_1) {
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
@@ -2412,20 +2412,20 @@ int __cdecl FUN_0047dfe0(int param_1) {
             PlusSpecial(&Value, 62, (DWORD)(uintptr_t)(param_1 + 604));
             *defPtr += (unsigned short)(Value - (unsigned short)((double)Value * (double)durP));
 
-            FUN_0047cf40((short*)defPtr, 70, param_1 + 604, 10);
+            PlusSpecialPercent((short*)defPtr, 70, param_1 + 604, 10);
         }
     }
     // Apply percent defense bonuses from all equipment slots
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 672,  10);  // Pendant
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 740,  10);  // Armor
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 808,  10);  // Pants
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 876,  10);  // Gloves
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 944,  10);  // Boots
-    FUN_0047cf40((short*)defPtr, 70, param_1 + 1284, 10);  // Necklace
-    return FUN_0047cf40((short*)defPtr, 70, param_1 + 1216, 10);  // Ring2
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 672,  10);  // Pendant
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 740,  10);  // Armor
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 808,  10);  // Pants
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 876,  10);  // Gloves
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 944,  10);  // Boots
+    PlusSpecialPercent((short*)defPtr, 70, param_1 + 1284, 10);  // Necklace
+    return PlusSpecialPercent((short*)defPtr, 70, param_1 + 1216, 10);  // Ring2
 }
 
-// ── FUN_0047e160 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_CalcDefenseRate — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47E160 @ 0x0047E160 (383 bytes) — Stats_CalcCritBase / DefRate.
 // Calcula el stat de tasa de defensa en this[+78]:
 //   class 0 (Knight): Vit/4   (>>2)
@@ -2434,7 +2434,7 @@ int __cdecl FUN_0047dfe0(int param_1) {
 //   class 3+ (DL?):   Vit/5
 // Then iterates 7 equipment slots checking durability-scaled rate bonus.
 // Más un +5% / +10% si g_bAddDefense y EquipmentLevelSet == 10/11.
-int __cdecl FUN_0047e160(int param_1) {
+int __cdecl Stats_CalcDefenseRate(int param_1) {
     DWORD ca = (DWORD)DAT_07cf1ff4;
     if (ca == 0) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
@@ -2505,13 +2505,13 @@ int __cdecl FUN_0047e160(int param_1) {
     return *(short*)(param_1 + 78);
 }
 
-// ── FUN_0047e2e0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_ExtraOptionEquip6 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47E2E0 @ 0x0047E2E0 (46 bytes) — Stats_CalcExtraOption1.
 // Iterates 6 equipment slots (CharacterMachine + 672 .. + 1012, stride 68
 // bytes = tamaño de ITEM). Por cada slot con Option1 (byte +26) seteado, llama a
 // FUN_0047cfe0 (accesor de item +0x14). Guarda el último resultado válido en
 // CharacterMachine + 80 (this[40] si es puntero WORD).
-int __cdecl FUN_0047e2e0(short *param_1) {
+int __cdecl Stats_ExtraOptionEquip6(short *param_1) {
     short *slot = param_1 + 336;  // CharacterMachine + 672 (Pendant)
     short last = 0;
     for (int n = 0; n < 6; ++n) {
@@ -2524,13 +2524,13 @@ int __cdecl FUN_0047e2e0(short *param_1) {
     return (int)(unsigned char)last;
 }
 
-// ── FUN_0047e310 — movida desde stubs_bulk_small.cpp (refactor B3) ──
+// ── Stats_ExtraOptionGlovesWings — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47E310 @ 0x0047E310 (63 bytes) — Stats_CalcExtraOption2.
 // Lee el Option1 (byte +26 dentro de ITEM) de los slots de Guantes y Alas. Por cada uno:
 //   Guantes (Option1 en +970, ITEM en +944): this+82 = FUN_0047d000(guantes)
 //   Alas    (Option1 en +1038, ITEM en +1012): this+82 += FUN_0047d000(alas)
 // Orden: primero los guantes (reemplaza), después las alas (suma).
-int __cdecl FUN_0047e310(int param_1) {
+int __cdecl Stats_ExtraOptionGlovesWings(int param_1) {
     short v = 0;
     if (*(unsigned char*)(param_1 + 970)) {
         *(short*)(param_1 + 82) = FUN_0047d000((short*)(param_1 + 944));
@@ -2580,11 +2580,11 @@ void __cdecl Vec3_Normalize(float *vec) {
     if (len > 0.0f) { vec[0] /= len; vec[1] /= len; vec[2] /= len; }
 }
 
-// ── FUN_00513260 — movida desde stubs_mouse_hover.cpp (refactor B3) ──
-// FUN_00513260 @ 0x00513260 — Entity_ViewportCheck(viewport, projection)
+// ── Collision_SegmentToOBB — movida desde stubs_mouse_hover.cpp (refactor B3) ──
+// Collision_SegmentToOBB @ 0x00513260 — Entity_ViewportCheck(viewport, projection)
 // Testea si la entidad descrita por 12 dwords (que el llamador copió de entity+0x130) está dentro
 // del viewport actual, usando los punteros de matriz dados. Devuelve 1 si es visible, 0 si se descarta.
-// FUN_00513260 @ 0x00513260 - test de interseccion SEGMENTO vs OBB por ejes
+// Collision_SegmentToOBB @ 0x00513260 - test de interseccion SEGMENTO vs OBB por ejes
 // separadores (SAT).  El "OBB" son los 12 floats que `Calc_RenderObject` deja en
 // `objeto + 0x130` via `sub_4404E0`: centro (box[0..2]) y tres semi-ejes
 // (box[3..5], box[6..8], box[9..11]).
@@ -2597,7 +2597,7 @@ void __cdecl Vec3_Normalize(float *vec) {
 // 2026-09-04: antes era `return 1` con el comentario "STUB: frustum cull" -- o
 // sea CUALQUIER objeto daba hit, y como el unico consumidor real
 // (SpecialObject_HoverTest) estaba neutralizado, no se notaba.
-bool __cdecl FUN_00513260(float *rayOrigin, float *rayTarget, const float *box)
+bool __cdecl Collision_SegmentToOBB(float *rayOrigin, float *rayTarget, const float *box)
 {
     if (!rayOrigin || !rayTarget || !box) return false;
 

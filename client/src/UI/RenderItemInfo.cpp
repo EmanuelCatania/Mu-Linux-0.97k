@@ -1879,7 +1879,7 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     const int h = sz.cy * DAT_07eaa158 / 2 + sz.cy * (DAT_07eaa154 - DAT_07eaa158);
     int y = sy - (int)((float)h / g_fScreenRate_y);
     if (y < 0) y = sy + 20 * p->Height;
-    FUN_004c2420(sx, y, DAT_07eaa154 < 30 ? DAT_07eaa154 : 30, 0, 2, 1);
+    CharMenu_RenderTextList(sx, y, DAT_07eaa154 < 30 ? DAT_07eaa154 : 30, 0, 2, 1);
 }
 #undef RII_ADD
 #undef RII_TXT
@@ -2209,7 +2209,7 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
     //   if (y < 0) y = sy + ItemAttr.Height * 0x14;      // debajo del item
     //   DrawItemInfoBox(sx, y, TextNum, 0, 2, 1);
     //
-    // El recuadro se CENTRA en sx (lo hace FUN_004c2420) y cada linea va
+    // El recuadro se CENTRA en sx (lo hace CharMenu_RenderTextList) y cada linea va
     // centrada dentro de el (iSort = 2).
     {
         SIZE tStack_6c;
@@ -2232,7 +2232,7 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
             iVar15 = (int)(uintptr_t)param_2 +
                      (int)((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK)[itemType].Height * 0x14;
         }
-        FUN_004c2420((int)(uintptr_t)param_1, iVar15, iVar21, 0, 2, 1);
+        CharMenu_RenderTextList((int)(uintptr_t)param_1, iVar15, iVar21, 0, 2, 1);
     }
 }
 
@@ -2398,6 +2398,6 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
             yBox = param_2 +
                    (int)((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK_)[itemType].Height * 0x14;
         }
-        FUN_004c2420((int)(uintptr_t)param_1, yBox, DAT_07eaa154, 0, 2, 1);
+        CharMenu_RenderTextList((int)(uintptr_t)param_1, yBox, DAT_07eaa154, 0, 2, 1);
     }
 }

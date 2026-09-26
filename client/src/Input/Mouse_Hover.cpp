@@ -51,7 +51,7 @@ void Mouse_UpdateHoverTargets(void)
     // ── 1. Cursor billboard render ────────────────────────────────────────────
     // 2026-04-29 DISABLED: el cursor billboard 3D (sprite en el suelo del tile
     // hovered) requiere DAT_07eab24c (BackTerrainHeight) que no se inicializa
-    // en nuestro port. Crash AV en FUN_004f8740 al acceder al buffer null.
+    // en nuestro port. Crash AV en Terrain_RenderQuad al acceder al buffer null.
     // El cursor 2D (Cursor_Render) sigue funcionando normalmente.
     #if 0
     if (SceneFlag == 2 || SceneFlag == 4 || SceneFlag == 5)
@@ -389,7 +389,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
     }
 
     // Pass 2: find nearest entity to MOUSE-RAY (perpendicular distance), not camera.
-    // Antes: usábamos distancia a cámara con FUN_00513260 stub → siempre return 1
+    // Antes: usábamos distancia a cámara con Collision_SegmentToOBB stub → siempre return 1
     // → ganaba el más cercano a cámara siempre, que es slot 1 (elfa) por geometría.
     // Ahora: gana el char cuyo centro de masa está más cerca del ray del mouse.
     float best_perp = 1e12f;
@@ -451,12 +451,12 @@ int __cdecl Entity_SelectNearest(int param_1_int)
         // px).  Apuntando a la parte alta del cuerpo, o con el mob inclinado en
         // su animacion, el cursor quedaba fuera de esos circulos y el click caia
         // al suelo (SelectedCharacter = -1): los "clicks que no atacan".  El
-        // motivo por el que se habia reemplazado (FUN_00513260 era un stub que
+        // motivo por el que se habia reemplazado (Collision_SegmentToOBB era un stub que
         // devolvia 1) ya no aplica: quedo portado el 2026-09-04.
         {
             float box[12];
             memcpy(box, (const void*)(ent + 0x130), sizeof(box));
-            if (!FUN_00513260((float*)&CameraRayOriginX, (float*)&DAT_083a4110, box))
+            if (!Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, box))
                 continue;
 
             const float dy = *(float*)(ent + 0x14) - _DAT_083a42d8;   // CameraPosition[1]
@@ -519,7 +519,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 //   con el tile del terreno bajo el mouse (el mismo picker del click-to-move,
 //   RenderTerrain -> DAT_080ab288/28c).
 //
-//   El motivo que se anotaba para no portarlo ("FUN_00513260 depende de macros
+//   El motivo que se anotaba para no portarlo ("Collision_SegmentToOBB depende de macros
 //   Hex-Rays sin portar") YA NO APLICA: ese test quedo portado el 2026-09-04 al
 //   arreglar el pick de objetos interactuables.  Si algun dia el hover de items se
 //   comporta distinto al original, ese es el cambio a hacer -- pero hoy funciona y
@@ -534,7 +534,7 @@ int __cdecl Entity_SelectNearest(int param_1_int)
 int __cdecl ItemOnGround_HoverTest(void)
 {
     // 2026-07-27: hover de items en el suelo. El path FIEL (sub_4AFA40) usa un
-    // point-in-quad screen-space (FUN_00513260, 12-arg) que depende de macros
+    // point-in-quad screen-space (Collision_SegmentToOBB, 12-arg) que depende de macros
     // Hex-Rays sin portar. En su lugar usamos proximidad world-space: comparar
     // el tile del item con el tile del terreno bajo el mouse (el mismo picker
     // que usa el click-to-move, RenderTerrain → DAT_080ab288/28c).
@@ -623,7 +623,7 @@ int __cdecl SpecialObject_HoverTest(void)
         float box[12];
         memcpy(box, (const void *)(obj + 0x130), sizeof(box));
 
-        if (FUN_00513260((float *)&CameraRayOriginX, (float *)&DAT_083a4110, box)) {
+        if (Collision_SegmentToOBB((float *)&CameraRayOriginX, (float *)&DAT_083a4110, box)) {
             *(DWORD *)(obj + 0xe8) = 0x3fc00000;         // 1.5f -- resalte
             *(DWORD *)(obj + 0xec) = 0x3fc00000;
             *(DWORD *)(obj + 0xf0) = 0x3fc00000;

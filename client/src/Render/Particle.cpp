@@ -5,7 +5,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
                          int mesh, int blend, float wx, float wy, float wz,
                          float r, float g, float b, float a);   // [DIAG FORGE]
 // IDA: Alpha (0x0043E5C0)
-// FUN_0043e680 @ 0x0043e680  — Particle_PathUpdate
+// Particle_PathUpdate @ 0x0043e680  — Particle_PathUpdate
 // SetAction @ 0x0043e820  — Particle_SetAnimation
 //
 // Particle_FinalizeAlpha (Alpha):
@@ -15,7 +15,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 //     non-zero — step toward target by _DAT_00552874; clamp to [0,1]
 //   Clamps display alpha (+0x68) to the computed value.
 //
-// Particle_PathUpdate (FUN_0043e680):
+// Particle_PathUpdate (Particle_PathUpdate):
 //   Steers a particle toward the average direction of nearby active
 //   particles in the pool (stride 0x1bc = 0x6f*4).  Uses a proximity
 //   threshold (_DAT_00552850) and a half-way distance (_DAT_00552878).
@@ -76,7 +76,7 @@ void __cdecl Alpha(int param_1)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl FUN_0043e680(int param_1,int param_2,int param_3,int param_4)
+void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4)
 
 {
   float fVar1;

@@ -343,7 +343,7 @@ void __cdecl ClearCharacters(int param_1) {
 // Effect_SpawnSmokeBurst declared in functions.h as (float*, char). Using through normal
 // linkage (no extern decl needed here).
 
-void __cdecl FUN_00466440(int Target) {
+void __cdecl Effect_CollisionCheck(int Target) {
     char* T = (char*)(uintptr_t)Target;
     if (!T) return;
     DWORD ca = (DWORD)DAT_07cf1ff4;  // CharacterAttribute

@@ -101,7 +101,7 @@
 //                         usa HashTable + SHORT tipo + floats; función ~40 líneas
 //   GL_Begin2D()    → GL_SetupOrtho2D()           — establece proyección ortográfica 2D
 //                         glPushMatrix + glMatrixMode + glLoadIdentity + glViewport(0,0,w,h)
-//   FUN_004cb6f0()    → Target_Render()             — info de entidad seleccionada
+//   RenderMonsterName()    → Target_Render()             — info de entidad seleccionada
 //                         DAT_07e11d6e=1; entity lookup via DAT_07abf5d0+idx*0x394
 //                         GetTextExtentPointA + texto nombre + HP
 //
@@ -191,7 +191,7 @@
 //   RenderPoints  → Sign_RenderAll()               — letreros pool DAT_07c80158 stride 0x70
 //   Mouse_UpdateHoverTargets  → EntityInfo_Overlay()           — overlay info entidades (HashTable)
 //   GL_Begin2D  → GL_SetupOrtho2D()              — glPushMatrix+glMatrixMode+glViewport
-//   FUN_004cb6f0  → Target_Render()               — info entidad seleccionada (entity lookup)
+//   RenderMonsterName  → Target_Render()               — info entidad seleccionada (entity lookup)
 //   RenderErrorMessage  → CharInfo_TextRender()          — texto stats panel (~40+ líneas)
 //   Scene_MapTick  → TeleportUI_Update()            — hit-test teleport UI + GL reset
 //   UI_RenderNotices  → PlayerName_Render()           — nombres jugadores con parpadeo
@@ -659,7 +659,7 @@ void Render_Scene3D(void)
     // 2026-05-07: sub_4CB6F0 (Target_Render) — port FIEL desde IDA
     // Game_RenderTick:143. Renderiza nombre del NPC/mob/player hovered.
     // Sin esto el user no ve qué está hovereando.
-    FUN_004cb6f0(0, 0, 0, 0);
+    RenderMonsterName(0, 0, 0, 0);
 
     // IDA Render_Scene3D always enters the HUD 2D pass once the ortho layer
     // is active.  `topView` was a Ghidra-era misread of an unrelated dialog

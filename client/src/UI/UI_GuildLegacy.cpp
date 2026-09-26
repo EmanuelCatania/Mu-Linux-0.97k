@@ -57,7 +57,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //
 // Registro (24 bytes, = PMSG_DEVIL_SQUARE_SCORE del server, con el padding del
 // DWORD): +0 name[10] · +12 score · +16 RewardExperience · +20 RewardMoney.
-int __cdecl FUN_0051ddf0(void)
+int __cdecl RenderMatchScore(void)
 {
     // Columnas: puesto, personaje, puntos, experiencia, recompensa.
     static const int kCol[5] = { 219, 235, 287, 345, 383 };

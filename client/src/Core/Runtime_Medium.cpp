@@ -391,9 +391,9 @@ void __cdecl FUN_00451ea0(int param_1, void *param_2, int param_3) {
         Position, WorldPosition, false);
 }
 
-// FUN_00479540 @ 0x00479540 (120 bytes) — render terrain alpha bitmaps
-// FUN_00479540 (IDA-activated, was Ghidra stub)
-void FUN_00479540()
+// RenderTerrainAlphaBitmaps @ 0x00479540 (120 bytes) — render terrain alpha bitmaps
+// RenderTerrainAlphaBitmaps (IDA-activated, was Ghidra stub)
+void RenderTerrainAlphaBitmaps()
 {
   float *v0; // esi
   float Rotation; // [esp+0h] [ebp-10h]

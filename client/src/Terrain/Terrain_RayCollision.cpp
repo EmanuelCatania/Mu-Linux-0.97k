@@ -41,19 +41,19 @@ unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, i
     float Positiona = v20 * v25 + Position[1];
     float Normala   = v20 * v26 + Position[2];
 
-    float v17 = (float)FUN_005129f0(v26);
-    float v15 = (float)FUN_005129f0(v25);
-    float v14 = (float)FUN_005129f0(v24);
+    float v17 = (float)Math_Fabs(v26);
+    float v15 = (float)Math_Fabs(v25);
+    float v14 = (float)Math_Fabs(v24);
     float v16 = (float)Math_Fmin(v14, v15);
     float v21 = (float)Math_Fmin(v16, v17);
 
-    if ( (float)FUN_005129f0(v24) == v21 ) {
+    if ( (float)Math_Fabs(v24) == v21 ) {
         if ( !((float)Math_Fmin(Position[1], Target[1]) <= Positiona
             && (float)Math_Fmax(Position[1], Target[1]) >= Positiona
             && (float)Math_Fmin(Position[2], Target[2]) <= Normala
             && (float)Math_Fmax(Position[2], Target[2]) >= Normala) )
             return 0;
-    } else if ( (float)FUN_005129f0(v25) == v21 ) {
+    } else if ( (float)Math_Fabs(v25) == v21 ) {
         if ( (float)Math_Fmin(Position[2], Target[2]) > Normala
           || (float)Math_Fmax(Position[2], Target[2]) < Normala
           || (float)Math_Fmin(Position[0], Target[0]) > Targeta

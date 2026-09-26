@@ -874,7 +874,7 @@ LAB_0051c13d:
     glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
     return 0;
   case 0x8c:
-    iVar3 = FUN_0051ddf0();
+    iVar3 = RenderMatchScore();
     return iVar3;
   case 0x8f:
     DAT_00559c78 = 0xff0080ff;

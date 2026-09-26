@@ -521,10 +521,10 @@ LAB_FUN_004e4760_end:
         }
     }
 }
-// FUN_004e5500 @ 0x004E5500 — Party panel input.
+// Party_MemberClickHandler @ 0x004E5500 — Party panel input.
 // The Party row action is gated by leader/self name matching and emits the
 // server-owned delete request.  The close button only closes the panel.
-void __cdecl FUN_004e5500(void) {
+void __cdecl Party_MemberClickHandler(void) {
     if (DAT_07eaa115 == '\0' || DAT_07ea5b24 == 0) return;
 
     if ((int)DAT_083a427c >= (int)DAT_07ea5b24 &&
@@ -2332,7 +2332,7 @@ void __cdecl MoveCharacterPosition(int param_1) {
     // Keep this model gate and phase ordering identical to the original.
     if (*(short*)(param_1 + 2) == 272) {
         const float bob = (float)sin(*(float*)(param_1 + 0x80));
-        (void)FUN_005129f0(bob); // IDA calls sub_5129F0 (fabs); result is unused.
+        (void)Math_Fabs(bob); // IDA calls sub_5129F0 (fabs); result is unused.
         *(float*)(param_1 + 0x18) = *(float*)(param_1 + 0x18) - bob * 70.0f + 70.0f;
     }
     *(float*)(param_1 + 0x80) = *(float*)(param_1 + 0x80) + _DAT_00552934;
@@ -2494,14 +2494,14 @@ int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
 
     // Anti-tamper hash table — skipped per project policy
 
-    FUN_0047d410(this_);            // Stats_CalcBase (attack damage)
-    FUN_0047dae0(this_);            // Stats_CalcMagicDmgRange
-    FUN_0047dd50((short*)this_);    // Stats_CalcAddStrength
+    Stats_CalcBase(this_);            // Stats_CalcBase (attack damage)
+    Stats_CalcMagicDmgRange(this_);            // Stats_CalcMagicDmgRange
+    Stats_CalcAddStrength((short*)this_);    // Stats_CalcAddStrength
     CalculateAttackSpeed(this_);            // CalculateAttackSpeed
-    FUN_0047dfe0(this_);            // Stats_CalcDefense
-    FUN_0047e160(this_);            // Stats_CalcCritBase / DefRate
-    FUN_0047e2e0((short*)this_);    // Stats_CalcExtraOption1
-    FUN_0047e310(this_);            // Stats_CalcExtraOption2
+    Stats_CalcDefense(this_);            // Stats_CalcDefense
+    Stats_CalcDefenseRate(this_);            // Stats_CalcCritBase / DefRate
+    Stats_ExtraOptionEquip6((short*)this_);    // Stats_CalcExtraOption1
+    Stats_ExtraOptionGlovesWings(this_);            // Stats_CalcExtraOption2
 
     // Derived stats: max-min ranges
     unsigned short v2 = *(unsigned short*)(this_ + 1390);
@@ -2704,7 +2704,7 @@ void __cdecl RenderTerrain(char EditFlag) {
         Terrain_SpawnAmbientObjects();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
         GL_DisableDepthTest();                   // DisableDepthTest
         GL_EnableCullFace();                   // EnableCullFace
-        FUN_00479540();                   // RenderTerrainAlphaBitmaps (sub_479540)
+        RenderTerrainAlphaBitmaps();                   // RenderTerrainAlphaBitmaps (sub_479540)
         GL_EnableDepthTest();                   // EnableDepthTest
     }
 
@@ -2892,8 +2892,8 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 // es `void __cdecl MoveCharacter(int p1)`; los dos argumentos son la misma entidad.
 //
 // Dependencias (todas ya en el árbol como FUN_xxxxxxxx):
-//   FUN_0047d410   Stats_CalcBase (sub_47D410)
-//   FUN_0047dae0   Stats_CalcMagicDmgRange (sub_47DAE0)
+//   Stats_CalcBase   Stats_CalcBase (sub_47D410)
+//   Stats_CalcMagicDmgRange   Stats_CalcMagicDmgRange (sub_47DAE0)
 //   CalculateAttackSpeed   CHARACTER_MACHINE::CalculateAttackSpeed
 //   RequestTerrainHeight   RequestTerrainHeight
 //   Particle_Spawn   Particle_Spawn
@@ -2914,7 +2914,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //   VectorRotate   = Vector_InverseRotate
 //   FUN_004b1170   FindHotKey
 //   CreateArrows
-//   FUN_005129f0   fabs
+//   Math_Fabs   fabs
 //   FUN_0046fe40   Joint_Find
 //   FUN_004451c0   AngleVectorOffset
 //   Effect_SpawnBombRing   bomb-ring effect
@@ -3218,8 +3218,8 @@ void __cdecl MoveCharacter(int p1)
             if (*t2) (*t2)--;
             if (!*t2) {
                 *((BYTE*)CharacterAttribute + 40) &= ~2u;
-                FUN_0047d410((int)(uintptr_t)CharacterMachine);  // Stats_CalcBase
-                FUN_0047dae0((int)(uintptr_t)CharacterMachine);  // Stats_CalcMagicDmgRange
+                Stats_CalcBase((int)(uintptr_t)CharacterMachine);  // Stats_CalcBase
+                Stats_CalcMagicDmgRange((int)(uintptr_t)CharacterMachine);  // Stats_CalcMagicDmgRange
             }
         }
     }
@@ -3932,8 +3932,8 @@ void __cdecl MoveCharacter(int p1)
         *(float*)(o + 20) += v385f;
         float v33f = RequestTerrainHeight(*(float*)(o + 16), *(float*)(o + 20));
         *(float*)(o + 24) = v33f;
-        if ((float)FUN_005129f0(v384f) < 1.0f) {
-            if ((float)FUN_005129f0(v385f) < 1.0f) {
+        if ((float)Math_Fabs(v384f) < 1.0f) {
+            if ((float)Math_Fabs(v385f) < 1.0f) {
                 *(BYTE*)(c + 912) = 0;
                 *(int*)(o + 100) = -1;
             }

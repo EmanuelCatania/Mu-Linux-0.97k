@@ -1487,7 +1487,7 @@ DWORD    MouseRButtonPush  = 0;
 // alias en globals.h.
 char     DAT_083a2370[0x960]  = {};   // 200 x 0xc (0x083A2370..0x083A2CD0)
 // 2026-04-28: pool de boids (fish/butterfly/bird flocking).
-// FUN_0043e680 itera 10 entries × stride 0x1bc = 0x1180 bytes. Antes era una
+// Particle_PathUpdate itera 10 entries × stride 0x1bc = 0x1180 bytes. Antes era una
 // dirección absoluta del binario original (0x083a2e90); declarada como array
 // real para que el flocking algoritmo funcione 1:1 con el original.
 char     DAT_083a2e90[10 * 0x1bc] = {};

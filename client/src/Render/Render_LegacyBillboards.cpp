@@ -310,7 +310,7 @@ void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
 }
 // RenderTerrainAlphaBitmap @ 0x004F8BB0 — Particle_DrawBillboard: draws a tiled billboard quad in world space.
 // Loads texture (param_1), sets GL color, computes tile grid from scale/position,
-// transforms each tile corner via Vector_Rotate (bone matrix), calls FUN_004f8740 per tile.
+// transforms each tile corner via Vector_Rotate (bone matrix), calls Terrain_RenderQuad per tile.
 // Uses __ftol for int grid coords from float positions.
 void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, float sy, float *col, float angle, float alpha)
 {
@@ -358,7 +358,7 @@ void __cdecl RenderTerrainAlphaBitmap(int type, float x, float y, float sx, floa
                 corners[k][1] = out[1] + _DAT_00552504;
                 corners[k][2] = out[2];
             }
-            FUN_004f8740((float)icx + ti, (float)icy + tj, 1.0f, 1,
+            Terrain_RenderQuad((float)icx + ti, (float)icy + tj, 1.0f, 1,
                          (int)corners, '\0', alpha);
         }
     }

@@ -237,7 +237,7 @@ extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level,
 // sub_47CF40 @ 0x0047CF40 (104 bytes) — Stats_ApplyBonus2 (percentage).
 // Like PlusSpecial but multiplies: *a1 += a4 * (*a1) / 100 if any special
 // matches `a2`. Used for percentage-based stat bonuses (defense %, etc).
-int __cdecl FUN_0047cf40(short *a1, int a2, int a3, unsigned short a4) {
+int __cdecl PlusSpecialPercent(short *a1, int a2, int a3, unsigned short a4) {
     int result = a3;
     if (*(unsigned short*)a3 == 0xFFFF) return result;
     int count = *(unsigned char*)(a3 + 36);
@@ -265,7 +265,7 @@ int __cdecl FUN_0047cf40(short *a1, int a2, int a3, unsigned short a4) {
 // Then per-slot bonuses (Wings/WeaponL/WeaponR/Ring1) with durability scaling.
 // Bow+arrows + crossbow+bolts synergy: special level boost based on arrow type.
 // dword_7E91388/pPickedItem preview path skipped (hover-time UI).
-int __fastcall FUN_0047d410(int a1) {
+int __fastcall Stats_CalcBase(int a1) {
     // GUARDA 2026-07-19 (CRASH 0xC0000005 @ +0xA3): se validaba `ca`
     // (CharacterAttribute) pero NO `a1` (CharacterMachine). Abajo se hace
     // `*(short*)(a1 + 536)` / `(a1 + 604)` (slots de arma) sin chequear, así que
@@ -391,8 +391,8 @@ skip_wings: ;
             }
             PlusSpecial(atkMinL, 73, wp_L);
             PlusSpecial(atkMaxL, 73, wp_L);
-            FUN_0047cf40((short*)atkMinL, 74, (int)wp_L, 2);
-            FUN_0047cf40((short*)atkMaxL, 74, (int)wp_L, 2);
+            PlusSpecialPercent((short*)atkMinL, 74, (int)wp_L, 2);
+            PlusSpecialPercent((short*)atkMaxL, 74, (int)wp_L, 2);
         }
     }
 
@@ -422,8 +422,8 @@ skip_wings: ;
             }
             PlusSpecial(atkMinR, 73, wp_R);
             PlusSpecial(atkMaxR, 73, wp_R);
-            FUN_0047cf40((short*)atkMinR, 74, (int)wp_R, 2);
-            FUN_0047cf40((short*)atkMaxR, 74, (int)wp_R, 2);
+            PlusSpecialPercent((short*)atkMinR, 74, (int)wp_R, 2);
+            PlusSpecialPercent((short*)atkMaxR, 74, (int)wp_R, 2);
         }
     }
 
@@ -431,12 +431,12 @@ skip_wings: ;
     if (*(unsigned short*)ring1 != 0xFFFF && *(unsigned char*)(ring1 + 26)) {
         PlusSpecial(atkMinL, 73, ring1);
         PlusSpecial(atkMaxL, 73, ring1);
-        FUN_0047cf40((short*)atkMinL, 74, (int)ring1, 2);
-        FUN_0047cf40((short*)atkMaxL, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMinL, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMaxL, 74, (int)ring1, 2);
         PlusSpecial(atkMinR, 73, ring1);
         PlusSpecial(atkMaxR, 73, ring1);
-        FUN_0047cf40((short*)atkMinR, 74, (int)ring1, 2);
-        FUN_0047cf40((short*)atkMaxR, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMinR, 74, (int)ring1, 2);
+        PlusSpecialPercent((short*)atkMaxR, 74, (int)ring1, 2);
     }
 
     // Bow + arrows synergy (Type 135 with arrows option) / Crossbow + bolts (Type 143)

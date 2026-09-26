@@ -52,7 +52,7 @@ extern "C" void DbgLogPublic(const char*);
 int EquipmentLevelSet = 0;
 
 // g_bAddDefense — global escrita SÓLO por CheckFullSet (IDA L77/L158), leída
-// por sub_47E160 (nuestro FUN_0047e160) para el bonus de defensa de set
+// por sub_47E160 (nuestro Stats_CalcDefenseRate) para el bonus de defensa de set
 // completo (+5% con set +10, +10% con set +11).
 //
 // Semántica IDA (rara pero fiel): se pone en 1 en LABEL_15, al que se llega

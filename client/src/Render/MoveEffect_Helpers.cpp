@@ -7,7 +7,7 @@
 // Effect_SpawnProximityHit @ 0x00465E60  — Effect_OnHitProximity (proximity hit fx by entity type)
 // Ring_ComputeOrbit @ 0x00473D90  — Ring_ComputeOrbit    (Lissajous ring position calculator)
 //
-// NOTE: FUN_00466440 @ 0x00466440 — NOT implemented here.
+// NOTE: Effect_CollisionCheck @ 0x00466440 — NOT implemented here.
 //   Uses unaff_retaddr + unaff_EBP (phantom return-address / frame-pointer params)
 //   and heavy HashTable reference-count obfuscation — cannot be ported safely.
 //   Kept as empty stub in stubs.cpp.

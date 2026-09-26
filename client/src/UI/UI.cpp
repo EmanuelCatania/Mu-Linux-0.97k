@@ -214,13 +214,13 @@
 //
 //   int CharData_RecalcStats(int chardata_ptr):
 //     Stats_CalcBase(param_1);       // 0x0047d410 — ataque base (ver abajo)
-//     FUN_0047dae0(param_1);         // Stats_CalcDefense
-//     FUN_0047dd50(param_1);         // Stats_CalcHP_Max
+//     Stats_CalcMagicDmgRange(param_1);         // Stats_CalcDefense
+//     Stats_CalcAddStrength(param_1);         // Stats_CalcHP_Max
 //     CalculateAttackSpeed(param_1);         // Stats_CalcMP_Max
-//     FUN_0047dfe0(param_1);         // Stats_CalcAttackSpeed
-//     FUN_0047e160(param_1);         // Stats_CalcCritBase
-//     FUN_0047e2e0(param_1);         // Stats_CalcDodgeBase
-//     FUN_0047e310(param_1);         // Stats_CalcFinal
+//     Stats_CalcDefense(param_1);         // Stats_CalcAttackSpeed
+//     Stats_CalcDefenseRate(param_1);         // Stats_CalcCritBase
+//     Stats_ExtraOptionEquip6(param_1);         // Stats_CalcDodgeBase
+//     Stats_ExtraOptionGlovesWings(param_1);         // Stats_CalcFinal
 //
 //     // Attack speed neto:
 //     chardata[+0x574] = chardata[+0x56c] - chardata[+0x562]
@@ -275,7 +275,7 @@
 //   FUN_0047cef0 (Stats_ApplyBonus, @ 0x0047cef0):
 //     Aplica bonus de stat con opcode 0x3C (add) o 0x49 (set).
 //
-//   FUN_0047cf40 (Stats_ApplyBonus2, @ 0x0047cf40):
+//   PlusSpecialPercent (Stats_ApplyBonus2, @ 0x0047cf40):
 //     Aplica bonus con opcode 0x4A y divisor 2.
 //
 // ── MOUNT_UPDATESLOT (0x00451b20) ─────────────────────────────────────────────

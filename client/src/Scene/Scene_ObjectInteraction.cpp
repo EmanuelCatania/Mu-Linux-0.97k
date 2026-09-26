@@ -167,7 +167,7 @@ char* __stdcall PickObject_Mouse(void) {
                     memcpy(obb, obj + 0x130, 48);
 
                     // Check ray intersection with bounding volume
-                    bool hit = FUN_00513260((float*)&CameraRayOriginX, (float*)&DAT_083a4110, obb);
+                    bool hit = Collision_SegmentToOBB((float*)&CameraRayOriginX, (float*)&DAT_083a4110, obb);
                     if ((char)hit != '\0') {
                         // CollisionDetectLineToMesh — precise line-mesh test
                         // Phantom regs in Ghidra; approximate call:

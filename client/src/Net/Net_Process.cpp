@@ -520,7 +520,7 @@
 //
 //   0x0043e050  Entity_GetDirCode(float x1,y1, float x2,y2) → ushort
 //     dx = x2-x1; dy = y2-y1
-//     FUN_005129f0(dx) = abs o sqrt
+//     Math_Fabs(dx) = abs o sqrt
 //     Si |dx| < _DAT_00552868: retorna código de dirección vertical (N/S)
 //     Else: calcula atan2 → código de dirección ushort (8 direcciones)
 //
@@ -3556,7 +3556,7 @@ void Net_ProcessPacket(void)
                     BYTE* ent = (BYTE*)(uintptr_t)DAT_07abf5d0 + (uintptr_t)entIdx * 0x394;
                     if (ent[0] != 0) {
                         // CreateChat(nombre, texto, entidad, 0, -1) — igual que el
-                        // path de NPC hover (FUN_004cb6f0).
+                        // path de NPC hover (RenderMonsterName).
                         CreateChat((char*)(ent + 0x1C1), cmsg, (DWORD)(uintptr_t)ent, 0, -1);
                     }
                 }
@@ -6589,8 +6589,8 @@ void Net_ProcessPacket(void)
                     CalculateAttackSpeed((int)(uintptr_t)CharacterMachine);   // CalculateAttackSpeed
                 } else if (number == 1) {
                     ca[40] |= 2;
-                    FUN_0047d410((int)(uintptr_t)CharacterMachine);   // Stats_CalcBase
-                    FUN_0047dae0((int)(uintptr_t)CharacterMachine);   // Stats_CalcMagicDmgRange
+                    Stats_CalcBase((int)(uintptr_t)CharacterMachine);   // Stats_CalcBase
+                    Stats_CalcMagicDmgRange((int)(uintptr_t)CharacterMachine);   // Stats_CalcMagicDmgRange
                 }
                 EnableUse = 0;
                 break;

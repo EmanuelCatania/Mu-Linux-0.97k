@@ -1575,7 +1575,7 @@ switchD_caseD_4fd:
                     *(int *)(jowner + 16) = *(int *)(param_1 + 0x10);
                     *(int *)(jowner + 20) = *(int *)(param_1 + 0x14);
                     *(int *)(jowner + 24) = *(int *)(param_1 + 0x18);
-                    FUN_00466440(jowner);
+                    Effect_CollisionCheck(jowner);
                 }
             }
             {

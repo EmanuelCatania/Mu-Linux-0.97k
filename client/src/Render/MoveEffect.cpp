@@ -50,7 +50,7 @@
 //   CreateSprite (Flare_Spawn?)
 //   Joint_BoneOffsetApply (effect color update)
 //   Effect_SpawnProximityHit (effect deactivate?)
-//   FUN_00466440 (effect helper)
+//   Effect_CollisionCheck (effect helper)
 //   Effect_SpawnSmokeBurst (effect helper2)
 //   Effect_SpawnSmokeExplosion (effect helper3)
 //   FUN_0046c3e0 = Trail_RenderAll?
@@ -1514,7 +1514,7 @@ switchD_00466b93_caseD_c7:
       AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
       pfVar10 = param_1 + 7;
       Particle_Spawn(0x4ab,param_1 + 4,pfVar10,&local_368,0,1.0,0);
-      FUN_00466440((int)param_1);
+      Effect_CollisionCheck((int)param_1);
       if (*(int*)&param_1[1] == 3) {
         fVar13 = *pfVar10 + _DAT_00552488;
         *pfVar10 = fVar13;
@@ -1675,7 +1675,7 @@ switchD_00466b93_caseD_c7:
       local_364 = local_36c * _DAT_00552530;
       local_360 = local_364;
       AddTerrainLight(param_1[4],param_1[5], (float*)&local_368,2, (float*)DAT_081cb608);
-      FUN_00466440((int)param_1);
+      Effect_CollisionCheck((int)param_1);
       break;
     case 0xe1:
       pcVar11 = (char *)*(int*)&param_1[0x3f];
@@ -1940,7 +1940,7 @@ LAB_00466e5e:
       local_368 = local_36c * _DAT_005526e4;
       local_364 = local_36c * _DAT_005528b4;
       AddTerrainLight(local_344,local_348, (float*)&local_368,2, (float*)DAT_081cb608);
-      FUN_00466440((int)param_1);
+      Effect_CollisionCheck((int)param_1);
       break;
     case 0xf3:
       local_360 = local_36c;

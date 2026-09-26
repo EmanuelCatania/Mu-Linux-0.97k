@@ -227,7 +227,7 @@ float __cdecl TurnAngle2(float curAngle, float tgtAngle, float t); // IDA: TurnA
 void  __cdecl Vector_AddRotated(float *pos, float *dir, float *vel); // Vector3_Normalize (cross/normalize vel from pos+dir)
 void* __cdecl SetAction(int entity_ptr, int anim_id); // IDA: SetAction (0x0043E820)
 void  __cdecl Alpha(int entity_ptr); // IDA: Alpha (0x0043E5C0)
-void  __cdecl FUN_0043e680(int entity_ptr, int slot_idx, int table_base, int stride); // Particle_PathUpdate
+void  __cdecl Particle_PathUpdate(int entity_ptr, int slot_idx, int table_base, int stride); // Particle_PathUpdate
 // Pathfind(src_cached_x, src_cached_y, tgt_x, tgt_y, path_buf, reserved) → 1=ok 0=fail
 unsigned int __cdecl Path_FindRoute(int src_x, int src_y, int tgt_x, int tgt_y, unsigned char *path, float reserved); // IDA: PathFinding2
 // PathFinder2_Solve: A* grid search — implemented in Game/PathFinder.cpp
@@ -308,7 +308,7 @@ void  __cdecl RenderLinkObject(float ox, float oy, float oz, int entity, int wea
 void  __cdecl DeleteCloth(int entity_a, int entity_b, int flags); // IDA: DeleteCloth (0x00449840)
 bool  __cdecl CheckFullSet(int entity); // IDA: CheckFullSet (0x00451B20)
 extern int EquipmentLevelSet;                                         // 0=no glow, 9-11=lightning tier
-extern int g_bAddDefense;                                             // set completo → bonus de defensa en FUN_0047e160
+extern int g_bAddDefense;                                             // set completo → bonus de defensa en Stats_CalcDefenseRate
 float __cdecl RequestTerrainHeight(float xf, float yf); // IDA: RequestTerrainHeight (0x004F7500)
 void  __cdecl RequestTerrainLight(float grid_x, float grid_y, float *rgb_out); // IDA: RequestTerrainLight (0x004F7960)
 void  __cdecl Model_BoneParticle(void *model, int type, int bone_idx, float scale, float *color, int entity); // Model_BoneParticle
@@ -345,7 +345,7 @@ void  __cdecl Effect_SpawnSmokeBurst(float *, char); // IDA: FUN_004660f0
 void  __cdecl Effect_SpawnSmokeExplosion(undefined4 *, char); // IDA: FUN_004661f0
 void  __cdecl Effect_SpawnLightningBurst(int); // IDA: FUN_00460c30
 void  __cdecl Effect_SpawnProximityHit(int); // IDA: FUN_00465e60
-void  __cdecl FUN_00466440(int);                        // STUB: HashTable obfuscation — not portable
+void  __cdecl Effect_CollisionCheck(int);                        // STUB: HashTable obfuscation — not portable
 void  __cdecl Ring_ComputeOrbit(int, float *, float);        // Ring_ComputeOrbit
 
 // ── Particle / effect system ──────────────────────────────────────────────────
@@ -382,17 +382,17 @@ void  __cdecl Effect_TickFlare(void); // IDA: MovePointers
 int   __cdecl CreateSprite(unsigned short, float *, float, float *, int, float, int); // IDA: CreateSprite (0x004795C0)
 // Render_DrawSprite / Render_DrawSpritePool / CheckSprites — implemented in src/stubs.cpp (Character/Effect pool)
 void  __cdecl ItemConvert(int, int, int);
-int   __cdecl FUN_0047cf40(short* a1, int a2, int a3, unsigned short a4);  // Stats_ApplyBonus2
+int   __cdecl PlusSpecialPercent(short* a1, int a2, int a3, unsigned short a4);  // Stats_ApplyBonus2
 void  __cdecl CHARACTER_MACHINE_Init(int, int, int);   // IDA: CHARACTER_MACHINE_Init (0x0047D3D0)
 // Stat helpers — ported 2026-05-02. Signatures match IDA decompile.
-int   __fastcall FUN_0047d410(int characterMachine);                // Stats_CalcBase (attack damage)
-int   __cdecl    FUN_0047dae0(int characterMachine);                // Stats_CalcMagicDmgRange
-int   __cdecl    FUN_0047dd50(short* characterMachine_words);       // Stats_CalcAddStrength
+int   __fastcall Stats_CalcBase(int characterMachine);                // Stats_CalcBase (attack damage)
+int   __cdecl    Stats_CalcMagicDmgRange(int characterMachine);                // Stats_CalcMagicDmgRange
+int   __cdecl    Stats_CalcAddStrength(short* characterMachine_words);       // Stats_CalcAddStrength
 int   __cdecl    CalculateAttackSpeed(int characterMachine); // IDA: CHARACTER_MACHINE::CalculateAttackSpeed (0x0047DD80)
-int   __cdecl    FUN_0047dfe0(int characterMachine);                // Stats_CalcDefense
-int   __cdecl    FUN_0047e160(int characterMachine);                // Stats_CalcCritBase
-int   __cdecl    FUN_0047e2e0(short* characterMachine_words);       // Stats_CalcExtraOption1
-int   __cdecl    FUN_0047e310(int characterMachine);                // Stats_CalcExtraOption2
+int   __cdecl    Stats_CalcDefense(int characterMachine);                // Stats_CalcDefense
+int   __cdecl    Stats_CalcDefenseRate(int characterMachine);                // Stats_CalcCritBase
+int   __cdecl    Stats_ExtraOptionEquip6(short* characterMachine_words);       // Stats_CalcExtraOption1
+int   __cdecl    Stats_ExtraOptionGlovesWings(int characterMachine);                // Stats_CalcExtraOption2
 int   __cdecl    CalculateAll(int characterMachine, int, int); // IDA: FUN_0047E3C0 (0x0047E3C0)
 void  __fastcall CalculateNextExperince(int characterMachine); // IDA: FUN_0047E350 (0x0047E350)
 void  __cdecl StartMatchCountDown(int, int, int); // IDA: StartMatchCountDown (0x0047EC00)
@@ -453,7 +453,7 @@ unsigned int __cdecl Item_CalculateMaxDurability(void* item, int attrBase, int l
 int          __cdecl Item_CalculateValue(void* item, int sellMode);                    // IDA: FUN_0047C690
 unsigned int __cdecl Item_CalculateRepairCost(int Gold, int Durability, int MaxDurability, short Type, char* Text); // IDA: FUN_004C3EF0
 // GetScreenWidth — declared above as int(void) GetLoginAnimTime
-void  __cdecl FUN_004cb6f0(int, int, int, int);
+void  __cdecl RenderMonsterName(int, int, int, int);
 void  __cdecl CloseInventoryRelatedWindows(void); // IDA: CloseInventoryRelatedWindows (0x004CBA60)
 char  __cdecl Connection_Check(void *ctx, int p1, int p2);              // Connection_Check → '\0'=ok else error
 // IDA sub_494520(texto, 1): valida/consume el buffer de texto; 0 = seguir.
@@ -483,7 +483,7 @@ int   __cdecl Terrain_GetTileIndex(unsigned int, unsigned int);            // ID
 void  __cdecl Terrain_SetTileAttributeBits(int, int, int); // IDA: FUN_004f6ef0
 void  __cdecl Terrain_ClearTileAttributeBits(int, int, int); // IDA: SubTerrainAttribute
 void  __cdecl Terrain_UpdateTileAttributeRect(int, int, int, int, int, int); // IDA: FUN_004f6f30
-void  __cdecl FUN_004f8740(float x, float y, float scale, int flags, int corners_ptr, char blend, float alpha); // Particle_DrawTile
+void  __cdecl Terrain_RenderQuad(float x, float y, float scale, int flags, int corners_ptr, char blend, float alpha); // Particle_DrawTile
 void  __cdecl FUN_004f8980(int, int, int, float);  // Terrain_SpawnObject(type, x, y, height)
 // RenderTerrainAlphaBitmap — Particle_Draw (see declaration above in Entity render section)
 void  __cdecl CreateFrustrum2D(float *cam_pos); // IDA: CreateFrustrum2D (0x004F8EB0)
@@ -605,7 +605,7 @@ void  __cdecl GL_BindTextureSlot(int texture_type);                      // Part
 void  __cdecl GL_EnableDepthTest(void);  // GL_Setup2D (no args)
 void  __cdecl GL_EnableDepthWrites(void);
 void  __cdecl GL_ResetState(void);
-bool __cdecl FUN_00513260(float *rayOrigin, float *rayTarget, const float *box12); // 0x513260 SAT segmento-vs-OBB (box = objeto+0x130)
+bool __cdecl Collision_SegmentToOBB(float *rayOrigin, float *rayTarget, const float *box12); // 0x513260 SAT segmento-vs-OBB (box = objeto+0x130)
 void  __cdecl GL_SetBlendSrcOver(char mode);                             // GL_SetMode(1=blend)
 void  __cdecl GL_SetBlendAdditive(void);                                  // Frame_UpdateTimer
 void  __cdecl GL_SetBlendSrcAlpha(void);
@@ -626,7 +626,7 @@ void  __cdecl GL_Begin2D(void);                                  // GL_SetupOrth
 void  __cdecl GL_End2D(void);                                  // GL_End2D
 void  __cdecl GL_DrawRect(float, float, float, float);  // FillRect(x,y,w,h)
 void  __cdecl GL_DrawRotatedRect(int id, float x, float y, float w, float h, undefined4 color); // GL_DrawColoredRect
-int   __cdecl FUN_0051ddf0(void);   // GuildLeaderboard_Render
+int   __cdecl RenderMatchScore(void);   // GuildLeaderboard_Render
 int   __cdecl GuildOverview_Render(void);   // GuildMemberList_Render2
 void  __cdecl GL_DrawTexture(int id, float x, float y, float w,     // Texture_Draw2D
                             float h, float u0, float v0,
@@ -637,7 +637,7 @@ void  __cdecl GL_DrawTexture(int id, float x, float y, float w,     // Texture_D
 //   Implementada en Render/Render_Frame.cpp (static).  NO es intercambiable con
 //   RenderBitmap (0x5125A0): esta mapea un cuadrilatero SESGADO en V, aquella un
 //   rectangulo.
-float10 __cdecl FUN_005129f0(float angle);  // |a| (abs)
+float10 __cdecl Math_Fabs(float angle);  // |a| (abs)
 double  __cdecl Math_Fmin(float a, float b); // min(a,b)
 double  __cdecl Math_Fmax(float a, float b); // max(a,b)
 int     __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10); // PointInPolygon
@@ -711,9 +711,9 @@ void  __cdecl Party_MatchEntityNames(void); // IDA: FUN_004afb00
 char  __cdecl Party_HPBar_HoverCheck(void);        // SecondPassword_IsActive
 
 // ── Char menu builder helpers (RenderHelpWindow) ──────────────────────────────────
-void  __cdecl FUN_004c2420(int, int, int, int, int, int);  // DrawItemInfoBox(x, y, count, fixedWidth, iSort, drawBox)
+void  __cdecl CharMenu_RenderTextList(int, int, int, int, int, int);  // DrawItemInfoBox(x, y, count, fixedWidth, iSort, drawBox)
 void  __cdecl ItemHelp_RequireClass(int class_data_ptr);            // build class info block
-void  __cdecl FUN_004c2c10(int column, unsigned char *format, int *value, const char *widthRef, int y, int kind); // IDA: sub_4C2C10 columna de valores de la ayuda F1
+void  __cdecl CharMenu_RenderStatRow(int column, unsigned char *format, int *value, const char *widthRef, int y, int kind); // IDA: sub_4C2C10 columna de valores de la ayuda F1
 void  __cdecl CharMenu_AppendSkillDesc(int row, int value, int col_width); // draw value column
 void  __cdecl CharMenu_BuildStatRequirements(int class_id);                  // prepare class data
 
@@ -795,7 +795,7 @@ void  __cdecl crt_fprintf(void*, void*);  // fprintf-like helper
 // ── Net_PacketSession helpers ─────────────────────────────────────────────────
 void  __cdecl Inventory_DropDispatch(undefined4, uint);  // packet handler with ECX/EDX args
 void  __cdecl SecondPassword_Screen1(void);
-void  __cdecl FUN_004e5500(void);
+void  __cdecl Party_MemberClickHandler(void);
 void  __cdecl SecondPassword_Screen3(void);
 void  __cdecl SecondPassword_Screen4(void);
 void  __cdecl SecondPassword_Screen5(void);
@@ -863,7 +863,7 @@ void  __cdecl OpenJpegBuffer(char *path, int dst); // Texture_LoadToBuf
 void  __cdecl Map_InitRayCast(void);   // Map_InitRayCast
 int   __cdecl FUN_004f98c0(int, int, int, int, int); // RayCast_Setup / terrain light setup (sub_4F98C0)
 void  __cdecl Terrain_SpawnAmbientObjects(void);   // Terrain_SpawnAmbientObjects (sub_4F7060)
-void  __cdecl FUN_00479540(void);   // RenderTerrainAlphaBitmaps (sub_479540)
+void  __cdecl RenderTerrainAlphaBitmaps(void);   // RenderTerrainAlphaBitmaps (sub_479540)
 int   __cdecl Terrain_WaterWaveUpdate(int a1); // Terrain light double-buffer commit (sub_4F9A30)
 float10 __cdecl CharacterMoveSpeed(int entity_ptr); // IDA: CharacterMoveSpeed (0x00454B00)
 

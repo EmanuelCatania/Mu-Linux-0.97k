@@ -38,11 +38,11 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// FUN_004f8740 @ 0x004F8740 (79 lines) — Terrain_RenderTileQuad
+// Terrain_RenderQuad @ 0x004F8740 (79 lines) — Terrain_RenderTileQuad
 // Renders a single terrain quad as GL_TRIANGLE_FAN with per-vertex lighting.
 // p1/p2 = grid X/Y, p3 = tile size, p4 = index step, p5 = texcoord array ptr,
 // p6 = enable lighting, p7 = alpha value.
-void __cdecl FUN_004f8740(float p1, float p2, float p3, int p4, int p5, char p6, float p7) {
+void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, char p6, float p7) {
     // BUG-FIX 2026-04-29: guard contra DAT_07eab24c (BackTerrainHeight) no
     // inicializado. Crash AV en
     // 0x410E4597 venía de cursor billboard RenderTerrainAlphaBitmap dereferenciando
@@ -107,7 +107,7 @@ void __cdecl FUN_004f8740(float p1, float p2, float p3, int p4, int p5, char p6,
 // Renders a rotated textured object on terrain by tiling into sub-quads.
 // p1 = texture index, p2/p3 = grid position, p4 = rotation angle.
 // Uses AngleMatrix + VectorRotate to rotate sub-tile corners, then draws each
-// with FUN_004f8740 (Particle_DrawTile).
+// with Terrain_RenderQuad (Particle_DrawTile).
 // Bitmaps[idx * 0xE + 8] = width, Bitmaps[idx * 0xE + 9] = height.
 // _DAT_00552b9c = 1/64 (UV step), _DAT_0055256c = 1.0 (tile step).
 void __cdecl FUN_004f8980(int p1, int p2, int p3, float p4)
@@ -159,7 +159,7 @@ void __cdecl FUN_004f8980(int p1, int p2, int p3, float p4)
                 uvRot[i][2] = out[2];
             }
 
-            FUN_004f8740((float)p2 + fx, (float)p3 + fy, 1.0f, 1, (int)uvRot, '\x01', 1.0f);
+            Terrain_RenderQuad((float)p2 + fx, (float)p3 + fy, 1.0f, 1, (int)uvRot, '\x01', 1.0f);
             fx += _DAT_0055256c;
         }
         fy += _DAT_0055256c;

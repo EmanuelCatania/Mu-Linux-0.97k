@@ -89,14 +89,14 @@
 //   _DAT_00552d24  — far distance (despawn)
 //   _DAT_00552d28  — orbit angle step
 //   Alpha   — commit particle / advance state
-//   FUN_0043e680   — particle path update
+//   Particle_PathUpdate   — particle path update
 //   SetAction   — set particle animation
 //   BMD__PlayAnimation   — BMD_Animation tick
 //   AddTerrainLight   — spawn ground ripple
 //   Matrix_BuildFromEuler   — Vec3_Normalize or direction update
 //   Vector_Rotate   — Vec3_Scale (multiply direction by speed)
 //   OpenMonsterModel   — play thunder sound
-//   FUN_005129f0   — terrain height at angle
+//   Math_Fabs   — terrain height at angle
 
 #include "stdafx.h"
 
@@ -622,7 +622,7 @@ LAB_00501cb5:
                     fVar22 = RequestTerrainHeight(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
                     WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)fVar22;
                     fVar22 = (float10)fsin((float10)WSF(DAT_0839bd30, iVar14*0x6f));
-                    fVar22 = FUN_005129f0((float)fVar22);
+                    fVar22 = Math_Fabs((float)fVar22);
                     WSF(DAT_0839bcc8, iVar14 * 0x6f) = (float)
                         ((float10)WSF(DAT_0839bcc8, iVar14*0x6f) - fVar22*(float10)_DAT_0055297c
                          + (float10)_DAT_00552ca4);
@@ -678,9 +678,9 @@ LAB_00501cb5:
                     if ((&DAT_0839bcb2)[iVar14*0xde] != 0xaf) {
                         // BUG-FIX 2026-05-04: era literal `0x839bcb0` (dirección absoluta del binario
                         // fuente). En nuestro build DAT_0839bcb0 vive en otra dirección; pasar el
-                        // literal hacía que FUN_0043e680 leyera memoria random → AV at 0x004BF712 al
+                        // literal hacía que Particle_PathUpdate leyera memoria random → AV at 0x004BF712 al
                         // entrar al mundo (param0=0 read, param1=0x0839BCB0).
-                        FUN_0043e680((int)pcVar3, iVar14, (int)(uintptr_t)&DAT_0839bcb0, 0x28);
+                        Particle_PathUpdate((int)pcVar3, iVar14, (int)(uintptr_t)&DAT_0839bcb0, 0x28);
                     }
                     Matrix_BuildFromEuler((float *)(&DAT_0839bccc + iVar14*0x6f), (float *)(&DAT_0839bd40 + iVar2));
 
@@ -802,7 +802,7 @@ LAB_00501cb5:
                 fVar22 = RequestTerrainHeight(WSF(DAT_0839bcc0, iVar14*0x6f), WSF(DAT_0839bcc4, iVar14*0x6f));
                 WSF(DAT_0839bcc8, iVar14*0x6f) = (float)(fVar22 + (float10)_DAT_00552900);
                 fVar22 = (float10)fsin((float10)WSF(DAT_0839bd30, iVar14*0x6f));
-                fVar23 = FUN_005129f0((float)fVar22);
+                fVar23 = Math_Fabs((float)fVar22);
                 fVar22 = (float10)_DAT_005524f0;
                 iVar12 = (&DAT_0839bd10)[iVar14*0x6f];
                 (&DAT_0839bd10)[iVar14*0x6f] = iVar12 - 1;

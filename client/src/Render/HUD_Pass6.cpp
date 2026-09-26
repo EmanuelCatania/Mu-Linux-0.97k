@@ -51,7 +51,7 @@ extern "C" void Net_SendNpcTalkClose(void);
 // y los hit-tests de cierre (SecondPassword_Screen1 / SecondPassword_Screen3 en Net/SecondPassword,
 // port de sub_4E4760 L617-629 y sub_4E5DE0 L336-357) leían los globals reales,
 // que quedaban en 0 → el rect de la X caía en (25..49, 395..419) de PANTALLA en
-// vez de (panelX+25, panelY+395), y encima SecondPassword_Screen3/FUN_004e5500 hacen
+// vez de (panelX+25, panelY+395), y encima SecondPassword_Screen3/Party_MemberClickHandler hacen
 // early-return cuando el origen es 0, así que el hit-test ni corría.
 // El inventario funcionaba porque InventoryStartX/Y sí es el global real.
 #define CharacterInfoStartX  (*(int*)&DAT_07ea982c)

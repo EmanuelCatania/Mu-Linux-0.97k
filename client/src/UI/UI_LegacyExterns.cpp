@@ -54,14 +54,14 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Class 0 (Dark Wizard): skill 0x10 gets 3 extra stat lines (MaxMana, Energy, Dexterity).
 // Class 2 (Fairy Elf): skills 0x1A/0x1B/0x1C get special description lines.
 // Class 1 (Dark Knight): skill 0x2F gets extra combo line.
-// Finally calls FUN_004c2420 (CharMenu_RenderTextList) with unaff_retaddr as Y position.
+// Finally calls CharMenu_RenderTextList (CharMenu_RenderTextList) with unaff_retaddr as Y position.
 // STUB: unaff_retaddr carries screen Y position from caller — cannot resolve without
 // call-site disassembly. Also uses CharacterAttribute (undeclared typed struct).
 // RenderSkillTooltip @ 0x004C9730 — Skill_RenderTooltip(float a1, int a2, int hoveredSkillIdx)
 // Ported from IDA `sub_4C9730` decompile (1844 bytes).
 //
 // Builds a tooltip text-list for the hovered skill (TextList[0..n]) describing
-// name / damage / distance / mana / skillMana, then calls FUN_004c2420
+// name / damage / distance / mana / skillMana, then calls CharMenu_RenderTextList
 // (CharMenu_RenderTextList) to draw it at (a1, a2).
 //
 // Skipped (per anti-tamper policy):
@@ -74,7 +74,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //   3. GetSkillInformation → szName, piMana, piDistance, piSkillMana
 //   4. Class-specific damage formulas (DW skill 16 / Elf 0x1A/0x1B/0x1C / DK 47)
 //   5. Distance / Mana / SkillMana lines
-//   6. FUN_004c2420 with computed Y / count
+//   6. CharMenu_RenderTextList with computed Y / count
 extern "C++" {
 extern char    GlobalText[GLOBALTEXT_ROWS][300];   // ver globals.h
 extern char    lpString_07e90798[];
@@ -277,10 +277,10 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     int v31 = 3 * sz.cy / 2 + sz.cy * (v16 - 3);
     float yPos = (float)v31 / _DAT_055c9b74;
 
-    // Render. Our FUN_004c2420 has 6-int signature (mode, startIdx, count, x, layout, border).
+    // Render. Our CharMenu_RenderTextList has 6-int signature (mode, startIdx, count, x, layout, border).
     // Best-effort mapping of IDA's 7-arg float-mixed call:
     //   mode=2 (boxed), startIdx=0, count=v16, x=a2-yPos, layout=0, border=1
-    FUN_004c2420(2, 0, v16, a2 - (int)yPos, 0, 1);
+    CharMenu_RenderTextList(2, 0, v16, a2 - (int)yPos, 0, 1);
     (void)a1;  // a1 (float Y) not used by our simplified render path
 #endif
 }
@@ -352,7 +352,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
     //
     // 2026-08-18: antes esto pintaba su PROPIA caja (cuarta reimplementacion
     // inventada del tooltip, con colores ARGB y textos en ingles hardcodeados).
-    // Ahora usa lpString_07e90798 + FUN_004c2420, que es lo que hace el binario
+    // Ahora usa lpString_07e90798 + CharMenu_RenderTextList, que es lo que hace el binario
     // — misma rutina que el tooltip de item y el menu de personaje.
     auto  TextListN     = [](int i) -> char* { return lpString_07e90798 + i * 100; };
     auto  GlobalTextOr  = [](int idx, const char* fallback) -> const char* {
@@ -435,7 +435,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
         GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
         int v31 = (idx - 3) * sz.cy + (3 * sz.cy) / 2;
         int yBox = a2 - (int)((float)v31 / _DAT_055c9b74);
-        FUN_004c2420(skillTipX, yBox, idx, 0, 2, 1);
+        CharMenu_RenderTextList(skillTipX, yBox, idx, 0, 2, 1);
     }
 }
 
