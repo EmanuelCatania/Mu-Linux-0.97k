@@ -51,7 +51,7 @@ static void LoginScene_ApplySafeObjectAnim()
         return;
 
     extern float DAT_05826e08;  // WorldTime
-    extern void __cdecl FUN_004fa5f0(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
+    extern void __cdecl MoveObject_Special(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
     extern int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3);  // Calc_RenderObject
     extern float* __cdecl Entity_SpawnEffects(int param_1);  // Entity_SpawnEffects / login ship fire
     extern void __stdcall MoveBugs(void);  // butterfly/helper owner-follow update
@@ -63,7 +63,7 @@ static void LoginScene_ApplySafeObjectAnim()
 
         // Match the original order more closely: Alpha(o) runs before the
         // animation tick and can early-out nearly invisible objects.
-        FUN_004fa5f0((int)obj);
+        MoveObject_Special((int)obj);
         if (*(float*)(obj + 0x168) < 0.01f)
             continue;
 

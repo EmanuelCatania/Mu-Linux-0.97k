@@ -554,7 +554,7 @@ void __stdcall MoveObjects(void) {
     // 0x004FF260 — Per-frame object update dispatcher.
     // World 10: calls MoveHeavenThunder. World 11..16: spawn ambient particles.
     // Then iterates all object bucket lists (16 buckets per block, from DAT_083a021c)
-    // calling FUN_004fa5f0 (Object_AnimUpdate) or FUN_004fdc00 (Object_RenderUpdate).
+    // calling MoveObject_Special (Object_AnimUpdate) or FUN_004fdc00 (Object_RenderUpdate).
     // In World 10 with thunder active, spawns lightning joints on random objects.
 
     float Scale = 0.0f;
@@ -611,7 +611,7 @@ void __stdcall MoveObjects(void) {
                 while (pcVar6 != NULL && MOV_OBJ_VALID_PTR(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0') {
-                        FUN_004fa5f0((int)pcVar6);
+                        MoveObject_Special((int)pcVar6);
                     }
                     pcVar6[0x160] = '\0';
                     pcVar6 = *(char**)(pcVar6 + 0x1B8);
@@ -697,7 +697,7 @@ void __stdcall MoveObjects(void) {
                                 DAT_083a3fec--;
                             }
                         }
-                        FUN_004fa5f0((int)pcVar6);
+                        MoveObject_Special((int)pcVar6);
                     }
                     pcVar6 = *(char**)(pcVar6 + 0x1B8);
                 } // end while linked list

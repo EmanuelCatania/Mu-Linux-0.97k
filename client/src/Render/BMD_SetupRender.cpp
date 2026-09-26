@@ -10,9 +10,9 @@
 // param_5: flags / blend mode
 //
 // Uses:
-//   BMD__RenderMesh — BMD_SetAnimFrame (model, frame_type, action, scale, phase, x, y, z, color)
-//   BMD__RenderBody — BMD_SetColorAnim (model, flags, f1..f6, color_mask)
-//   BMD__BeginRender — glPushMatrix wrapper
+//   BMD__RenderMesh  (0x00440D50) — dibuja una malla del modelo
+//   BMD__RenderBody  (0x00441E00) — recorre las mallas y llama a RenderMesh
+//   BMD__BeginRender (0x00440D30) — glPushMatrix
 
 #include "stdafx.h"
 

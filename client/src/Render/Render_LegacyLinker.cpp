@@ -400,8 +400,8 @@ void __cdecl RenderItem3D(float sx, float sy, float Width, float Height,
 }
 
 // Batch 21 — helper function stubs (called by MoveObjects, CollisionDetectLineToMesh, CheckMixRecipe)
-// FUN_004fa5f0 (IDA-activated, was Ghidra stub)
-void __cdecl FUN_004fa5f0(int a1)
+// MoveObject_Special (IDA-activated, was Ghidra stub)
+void __cdecl MoveObject_Special(int a1)
 {
   int v1; // edi
   short v2; // ax
