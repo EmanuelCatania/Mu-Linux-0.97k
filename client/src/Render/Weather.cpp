@@ -91,7 +91,7 @@
 //   Alpha   — commit particle / advance state
 //   FUN_0043e680   — particle path update
 //   SetAction   — set particle animation
-//   FUN_00440aa0   — BMD_Animation tick
+//   BMD__PlayAnimation   — BMD_Animation tick
 //   AddTerrainLight   — spawn ground ripple
 //   Matrix_BuildFromEuler   — Vec3_Normalize or direction update
 //   Vector_Rotate   — Vec3_Scale (multiply direction by speed)
@@ -536,7 +536,7 @@ LAB_00501734:
             if ((DAT_083a3ff0 == 0) || (sVar5 != 0x12d)) {
                 pfVar1 = (float *)(&DAT_0839bcc0 + iVar14 * 0x6f);
                 *(unsigned char *)((int)pvVar9 + 0xa0) = (&DAT_0839bdb5)[iVar2];
-                FUN_00440aa0(pvVar9,
+                BMD__PlayAnimation(pvVar9,
                              (float *)(&DAT_0839bdb8 + iVar2),
                              (float *)(&DAT_0839bdbc + iVar2),
                              &DAT_0839bdb6 + iVar2, fVar25);
@@ -788,7 +788,7 @@ LAB_00501cb5:
                 // DAT_083a3ff0 != 0 && type == 0x12d: thunder cloud — full animation
                 SetAction((int)pcVar3, 7);
                 *(unsigned char *)((int)pvVar9 + 0xa0) = (&DAT_0839bdb5)[iVar2];
-                FUN_00440aa0(pvVar9,
+                BMD__PlayAnimation(pvVar9,
                              (float *)(&DAT_0839bdb8 + iVar2),
                              (float *)(&DAT_0839bdbc + iVar2),
                              &DAT_0839bdb6 + iVar2, fVar25);

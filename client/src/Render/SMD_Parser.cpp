@@ -806,7 +806,7 @@ float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float
 //
 // Per IDA: pasamos raw Level. Entity_DrawSetup (línea 52 de su archivo)
 // hace el shift una sola vez (la cadena solo shifteaba después).
-// FUN_00441e00 @ 0x00441E00 — BMD::RenderBodyTranslate
+// BMD__RenderBody @ 0x00441E00 — BMD::RenderBodyTranslate
 // Signature IDA: __thiscall(this, Flag, Alpha, BlendMesh, BlendMeshLight,
 //                           BlendMeshTexCoordU, BlendMeshTexCoordV, HiddenMesh, Texture8)
 // BlendMesh y HiddenMesh son INT pero los callers nuestros pasan como float
@@ -816,9 +816,9 @@ float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float
 // BUG-FIX 2026-04-28: lógica del branch NULL estaba INVERTIDA (skipping cuando
 // debería render). IDA: `if (NULL && i != HiddenMesh) goto render;`. Y la
 // comparación `i != HiddenMesh` debe ser INT, no float (NaN para -1, etc.).
-void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba) {
+void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba) {
     // BUG-FIX 2026-04-29: validar model + meshBase antes de iterar. Crash AV en
-    // glPopMatrix con stack KernelBase+opengl32 venía de un FUN_00440d50 que
+    // glPopMatrix con stack KernelBase+opengl32 venía de un BMD__RenderMesh que
     // dereferenciaba un mesh pointer wild (VBO inválido).
     // BUG-FIX 2026-05-01: range check del pointer model. Algún caller pasa
     // direcciones tipo 0xE5E90005 (kernel space) → AV en glDrawElements / lectura
@@ -828,7 +828,7 @@ void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, fl
     if (*(short*)((char*)model + 0x24) == 0) return;
     int meshBase_check = *(int*)((char*)model + 0x28);
     if (meshBase_check == 0 || (uintptr_t)meshBase_check < 0x100000) return;
-    FUN_00440d30();
+    BMD__BeginRender();
     if (*(char*)((char*)model + 0x44) == '\0') {
         // BUG-FIX 2026-04-26: IDA usa < 0.99f (_DAT_00552544), no < 1.0f.
         if (f1 < _DAT_00552544) glColor4f(*(float*)((char*)model+0x48),*(float*)((char*)model+0x4c),*(float*)((char*)model+0x50),f1);
@@ -854,7 +854,7 @@ void __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, fl
         }
         // else: skip (mesh marked hidden or has [1]!='\0')
         if (render) {
-            FUN_00440d50(model, (float)i, flags, f1, fVar3, f3, f4, f5, (unsigned int)rgba);
+            BMD__RenderMesh(model, (float)i, flags, f1, fVar3, f3, f4, f5, (unsigned int)rgba);
         }
     }
     glPopMatrix();

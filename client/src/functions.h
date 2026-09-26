@@ -242,14 +242,14 @@ void  __cdecl Timer_UpdateFrameTiming(void); // IDA: CalcFPS
 
 // ── Model render helpers (FUN_004400xx / FUN_004410xx / FUN_004414xx) ─────────
 // Called on model context pointer (this = DAT_05828d58 + type*0xbc).
-void  __cdecl FUN_00440d30(void);                                  // Model_PushMatrix (glPushMatrix-like setup)
+void  __cdecl BMD__BeginRender(void);                                  // Model_PushMatrix (glPushMatrix-like setup)
 // Model_RenderLayer(model, layer, anim_id, scale, height, x, y, z, color)
-void  __cdecl FUN_00440d50(void *model, float layer, int anim_id, float scale, int height,
+void  __cdecl BMD__RenderMesh(void *model, float layer, int anim_id, float scale, int height,
                             float x, float y, float z, unsigned int color);
 // Model_Render(model, param2, param3, anim_mode, flags, extra)  — 6-arg form used in Entity_DrawSetup
-void  __cdecl FUN_00441e00(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba);
-void  __cdecl FUN_00441be0(void *model, int a, int b);             // Model_KillAnim(model, 0, anim_slot)
-void  __cdecl FUN_00441f00(void *model, int height_int, int anim); // Model_RenderShadow(model, height, anim)
+void  __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba);
+void  __cdecl BMD__RenderMeshEffect(void *model, int a, int b);             // Model_KillAnim(model, 0, anim_slot)
+void  __cdecl BMD__RenderBodyShadow(void *model, int height_int, int anim); // Model_RenderShadow(model, height, anim)
 void  __cdecl BMD__Release(int model_ptr);                         // Model_Unload (free BMD model data)
 void  __cdecl BMD__FindNearTriangle(void *model);                           // BMD_PostActionsInit (post-load action setup)
 void  __cdecl BMD__Init(void *model, char flag);                // BMD_PostLoadInit (post-load finalize)
@@ -270,7 +270,7 @@ void  __cdecl BMD_Animation(void *model, int flags, float rot, unsigned int pos_
                             char a, char b);
 void  __cdecl FUN_004404e0(void *model, int bone, float *anim1, float *anim2, float *anim3, char blend); // Sprite_DrawBone
 void  __cdecl BMD_TransformPosition(void *model, float *bone_data, float *out_pos, float *out_col, char flag); // IDA: TransformPosition (0x004409A0)
-void  __cdecl FUN_00440a30(void *model, float *bone_mat, float *pos_in, float *pos_out); // BoneTransformOffset — implemented in Render/BMD_SetupRender.cpp
+void  __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, float *pos_out); // BoneTransformOffset — implemented in Render/BMD_SetupRender.cpp
 int   __cdecl ItemObjectAttribute(int param_1); // IDA: ItemObjectAttribute (0x00502BA0)
 void  __cdecl BMD__Open(int, int, int, int);   // IDA: BMD__Open (0x004423E0)
 undefined4 __cdecl BMD__Save(int thisModel, char *pathDir, char *pathFile);  // BMD_SaveToFile
@@ -721,7 +721,7 @@ void  __cdecl FUN_004c2e20(int class_id);                  // prepare class data
 unsigned int  __cdecl SecondPassword_Handler(void); // IDA: SecondPassword_Handler (0x004E93A0)
 
 // ── Weather / BMD animation helpers ──────────────────────────────────────────
-bool  __cdecl FUN_00440aa0(void* pvVar9, float* rot, float* scale, void* extra, float fVar); // BMD_AnimTick
+bool  __cdecl BMD__PlayAnimation(void* pvVar9, float* rot, float* scale, void* extra, float fVar); // BMD_AnimTick
 extern "C" bool __cdecl CharacterAnimation(int c, int o);    // 0x00448600 — per-char anim tick
 // ── CreateEffect helpers ─────────────────────────────────────────────────────
 void  __cdecl AddTerrainLight(float, float, float*, int, float*);          // AddTerrainLight(0x4F76C0)
@@ -921,7 +921,7 @@ void  __cdecl Packet_DecryptDword(void*, void*); // IDA: FUN_00409E20 (0x00409E2
 void  __cdecl Packet_EncryptDword(void*, void*); // IDA: Packet_EncryptDword (0x00423760)
 
 // ── BMD bone-draw helper ──────────────────────────────────────────────────────
-void  __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
+void  __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, int flags,
                             float f3, int f4, float f5, float f6, float f7, unsigned int rgba);
                             // BMD_DrawBoneSlot_Anim (animated variant, 11 args)
 

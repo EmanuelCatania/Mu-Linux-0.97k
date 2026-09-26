@@ -53,8 +53,8 @@ extern void __cdecl operator_delete(void* ptr);
 // a7 = BlendMesh, a8 = BlendMeshLight, a9 = U, a10 = V, a11 = textura).  El
 // port usa (model, a, b, frame = malla, flags, f3 = alpha, f4 = BlendMesh,
 // f5 = U, f6 = V, f7 = BlendMeshLight, rgba = textura), o sea U/V van antes
-// que la luz.  El unico caller (FUN_00440d50) ya pasa en este orden.
-void __cdecl FUN_004414d0(void *model, char a, int b, float frame, int flags,
+// que la luz.  El unico caller (BMD__RenderMesh) ya pasa en este orden.
+void __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, int flags,
                            float f3, int f4, float f5, float f6, float f7, unsigned int rgba)
 {
     (void)b;

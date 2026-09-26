@@ -85,10 +85,10 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
         animSpeed = animSpeed * _DAT_00552650;  // slow down lava objects
     }
 
-    // Play animation — FUN_00440aa0(model, frame*, scale*, extra, speed)
+    // Play animation — BMD__PlayAnimation(model, frame*, scale*, extra, speed)
     // Ghidra sig: BMD::PlayAnimation(this, frame*, priorFrame*, priorAction*, speed, pos*, angle*)
     // Our declaration has 5 params; pass what fits
-    FUN_00440aa0((void*)model, (float*)(objPtr + 0x108), (float*)(objPtr + 0x10c),
+    BMD__PlayAnimation((void*)model, (float*)(objPtr + 0x108), (float*)(objPtr + 0x10c),
                  (void*)(objPtr + 0x106), animSpeed);
 
     // ── Escena de login / char-select (IDA sub_4FDC00, bloque previo al switch)
@@ -868,7 +868,7 @@ void __stdcall MoveBugs(void) {
         {
         float* v28 = (float*)(e + 0x10);
         *(BYTE*)(v40 + 160) = *(BYTE*)(e + 0x105);          // model.CurrentAction
-        FUN_00440aa0((void*)v40, (float*)(e + 0x108), (float*)(e + 0x10C),
+        BMD__PlayAnimation((void*)v40, (float*)(e + 0x108), (float*)(e + 0x10C),
                      (void*)(e + 0x106), *(float*)(e + 0xCC));   // sub_440AA0 (a6/a7 unused)
 
         short v29 = *(short*)(e + 2);

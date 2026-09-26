@@ -1,5 +1,5 @@
 // BMD_DrawMesh.cpp
-// FUN_00440d50 @ 0x00440D50  [Kayito: unnamed; S6 equivalent = BMD::RenderMesh]
+// BMD__RenderMesh @ 0x00440D50  [Kayito: unnamed; S6 equivalent = BMD::RenderMesh]
 //
 // Draws one mesh slot of a BMD (Bone Mesh Data) model using OpenGL.
 // Called __thiscall in binary; reconstructed as __cdecl with explicit bmd_obj.
@@ -54,7 +54,7 @@
 //   0x041  (65) = BITMAP_WATER → use animated water texture
 //
 // Render flag bits:
-//   0x400 = animated variant → delegate to FUN_004414d0
+//   0x400 = animated variant → delegate to BMD__RenderMeshTranslate
 //   0x001 = RENDER_COLOR (no texture, flat color)
 //     0x040 = RENDER_BRIGHT (additive blend)
 //     0x080 = RENDER_DARK (subtractive blend)
@@ -121,7 +121,7 @@ static int DecodeMeshIndex(float meshIdx)
     return (int)meshIdx;
 }
 
-void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
+void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                            float alpha, int blendMesh, float blendLight,
                            float uvU, float uvV, unsigned int texOverride)
 {
@@ -249,12 +249,12 @@ void __cdecl FUN_00440d50(void *bmd_obj, float meshIdx, int flags,
     // Animated variant: delegate to BMD_DrawBoneSlot_Anim
     if ((flags & 0x400) != 0) {
         // El indice de malla llega como BIT-PATTERN (denormal): los callers usan
-        // 1.4013e-45f para la malla 1, y FUN_004414d0 lo consume con `(int)frame`
+        // 1.4013e-45f para la malla 1, y BMD__RenderMeshTranslate lo consume con `(int)frame`
         // -> (int)1.4013e-45f == 0, o sea dibujaba SIEMPRE la malla 0.
         // Se le pasa el indice ya decodificado. Sintoma: Queen Rainer (ModelID
         // 321) oculta su malla 1 en el pase principal y la redibuja por aca; al
         // dibujarse la 0 en su lugar, el vestido no aparecia nunca.
-        FUN_004414d0(bmd_obj, '\x01', 0, (float)meshIndex, flags, alpha, blendMesh, uvU, uvV, blendLight, texOverride);
+        BMD__RenderMeshTranslate(bmd_obj, '\x01', 0, (float)meshIndex, flags, alpha, blendMesh, uvU, uvV, blendLight, texOverride);
         return;
     }
 

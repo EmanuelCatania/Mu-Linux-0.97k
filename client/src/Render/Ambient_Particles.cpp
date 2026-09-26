@@ -55,7 +55,7 @@
 //
 // Update logic:
 //   If slot is active:
-//     - FUN_00440aa0 = BMD_Animation update on the particle model
+//     - BMD__PlayAnimation = BMD_Animation update on the particle model
 //     - Animate type-specific motion (rain falls, petal spins, firefly orbits)
 //     - Move: pos += velocity * speed
 //     - Kill if out of range from player (_DAT_00552d24 = max dist)
@@ -262,7 +262,7 @@ switchD_caseD_2:
 
             // Animate model
             *(unsigned char *)((int)this_model + 0xa0) = *(unsigned char *)((int)puVar9 + 0x1d);
-            FUN_00440aa0(this_model,
+            BMD__PlayAnimation(this_model,
                          (float *)(puVar9 + 8),
                          (float *)(puVar9 + 9),
                          (unsigned char *)((int)puVar9 + 0x1e),

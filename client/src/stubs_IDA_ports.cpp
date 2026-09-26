@@ -25068,10 +25068,10 @@ LABEL_22:
   }
   v6 = (float *)(LODWORD(o) + 28);
   v7 = (float *)(LODWORD(o) + 16);
-  // NOTA: nuestro FUN_00440aa0 (BMD_Anim.cpp) es la variante de 5 args (avanza
+  // NOTA: nuestro BMD__PlayAnimation (BMD_Anim.cpp) es la variante de 5 args (avanza
   // el frame). El IDA sub_440AA0 toma 7 (los 2 últimos = pos/vel para root-motion
   // de la animación). Los omitimos: el avance de frame —lo que faltaba— funciona.
-  FUN_00440aa0((void*)v5, (float*)(LODWORD(o) + 264), (float*)(LODWORD(o) + 268),
+  BMD__PlayAnimation((void*)v5, (float*)(LODWORD(o) + 264), (float*)(LODWORD(o) + 268),
                (void*)(LODWORD(o) + 262), oa);
   if ( SceneFlag == 2 || SceneFlag == 4 )
   {

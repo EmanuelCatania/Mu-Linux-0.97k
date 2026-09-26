@@ -3,7 +3,7 @@
 // BMD animation tick + per-character animation dispatch.
 // Moved from stubs.cpp lines 14074-14176 (B3 refactor 2026-05-07).
 //
-//   FUN_00440aa0 @ 0x00440AA0 — BMD::PlayAnimation (a.k.a. BMD_AnimTick).
+//   BMD__PlayAnimation @ 0x00440AA0 — BMD::PlayAnimation (a.k.a. BMD_AnimTick).
 //                                Advances frame counter on a model's current
 //                                action. Wraps for looping actions, clamps for
 //                                non-looping. Called by CharacterAnimation +
@@ -11,14 +11,14 @@
 //   CharacterAnimation @ 0x00448600 — per-character per-frame animation tick.
 //                                Reads model action speed, applies multipliers
 //                                (fast-walk + action-63 slowdown), then calls
-//                                FUN_00440aa0. Without this, character entities
+//                                BMD__PlayAnimation. Without this, character entities
 //                                stay frozen in their initial frame.
 
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
 
-// FUN_00440aa0 @ 0x00440AA0 — BMD::PlayAnimation (__thiscall, 7 args in original)
+// BMD__PlayAnimation @ 0x00440AA0 — BMD::PlayAnimation (__thiscall, 7 args in original)
 // Advances animation frame counter (*AnimationFrame) by Speed each call. If the frame
 // crosses an integer boundary, saves PriorAction/PriorFrame. Wraps or clamps based on
 // the action's loop flag (byte at action+0). Returns true if still playing, false when
@@ -35,7 +35,7 @@
 //
 // NOTE: original is __thiscall with extra Origin[3]/Angle[3] params that are unused in
 // the body. Our forward-decl in functions.h takes 5 args (__cdecl, this passed as arg1).
-bool __cdecl FUN_00440aa0(void *This, float *AnimationFrame, float *PriorAnimationFrame,
+bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorAnimationFrame,
                           void *PriorAction, float Speed) {
     // 00440AA0 initializes its return to true and changes it to false only
     // when the frame reaches a terminal/loop boundary.
@@ -87,7 +87,7 @@ bool __cdecl FUN_00440aa0(void *This, float *AnimationFrame, float *PriorAnimati
 
 // ── CharacterAnimation @ 0x00448600 (port of IDA decomp, anti-tamper stripped) ─
 // Per-character animation tick: reads model action speed, applies multipliers,
-// then calls FUN_00440aa0 (BMD_AnimTick) which advances entity[+0x108] (frame).
+// then calls BMD__PlayAnimation (BMD_AnimTick) which advances entity[+0x108] (frame).
 // Without this, character entities stay frozen in their initial frame.
 //
 // IDA original (sub_448600): hash-table reference-count of `c+770` on entry/exit
@@ -121,9 +121,9 @@ extern "C" bool __cdecl CharacterAnimation(int c, int o)
         if (*(BYTE*)(o + 261) == 63 && *(float*)(o + 264) > 6.0f) speed *= 0.5f;
     }
 
-    // FUN_00440aa0(model, &frame, &priorFrame, &priorAction, speed) — advances frame.
+    // BMD__PlayAnimation(model, &frame, &priorFrame, &priorAction, speed) — advances frame.
     // (IDA passes 7 args incl. Pos=o+16, HeadAngle=o+28; our 5-arg variant ignores them.)
-    bool bPlaying = FUN_00440aa0((void*)model, (float*)(o + 264), (float*)(o + 268),
+    bool bPlaying = BMD__PlayAnimation((void*)model, (float*)(o + 264), (float*)(o + 268),
                         (void*)(o + 262), speed);
 
     return bPlaying;

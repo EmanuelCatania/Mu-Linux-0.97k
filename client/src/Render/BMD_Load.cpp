@@ -387,12 +387,12 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
     }
 
     // Defensive BodyLight init: BMD_SetupRenderByType's default path calls
-    // FUN_00441e00 without writing +0x48..+0x50, so they'd read whatever was
+    // BMD__RenderBody without writing +0x48..+0x50, so they'd read whatever was
     // left in memory (observed: R=1.0, G/B=-1.69e37 garbage → negative alpha
     // triangles). Default to white (1,1,1) so BMD_DrawMesh reads sane color
     // for models that never go through a type-specific colorization branch
     // (ships, logos, UI items, etc.). Callers that need colored models will
-    // overwrite these fields before FUN_00441e00 as in BMD_SetupRender.cpp.
+    // overwrite these fields before BMD__RenderBody as in BMD_SetupRender.cpp.
     *(float *)((int)thisPtr + 0x48) = 1.0f;
     *(float *)((int)thisPtr + 0x4c) = 1.0f;
     *(float *)((int)thisPtr + 0x50) = 1.0f;

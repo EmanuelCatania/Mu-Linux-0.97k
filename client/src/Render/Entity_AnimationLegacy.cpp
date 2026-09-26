@@ -48,7 +48,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 // FUN_004FAA70 @ 0x004FAA70 — Entity_PrepareRenderData(entity_ptr, shadow_pass, lod).
 // Copies entity data into the class render struct at DAT_05828D58 + entity_type*0xBC.
 // Guards on entity visibility (entity+0x168 >= DAT_005524F8).
-// Calls Sprite_Draw (BMD_Animation) and shadow/bone pass (FUN_004404E0, FUN_00441E00).
+// Calls Sprite_Draw (BMD_Animation) and shadow/bone pass (FUN_004404E0, BMD__RenderBody).
 // Returns 1 on success, 0 if out of range.
 // IDA: Calc_RenderObject (0x004FAA70)
 int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
@@ -112,7 +112,7 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
             // IDA pasa `Translate` tal cual a sub_4404E0 (BMD_Animation recibe !Translate).
             FUN_004404e0(this_, (int)puVar3, (float*)(param_1+0x118),
                          (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
-            FUN_00441e00(this_, 0x40,
+            BMD__RenderBody(this_, 0x40,
                          *(float*)(param_1+0x168), *(int *)(param_1+100),
                          *(float*)(param_1+0x68),  *(float*)(param_1+0x6c),
                          *(float*)(param_1+0x70),  *(int *)(param_1+0x58), 0xffffffff);

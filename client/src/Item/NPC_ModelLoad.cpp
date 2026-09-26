@@ -142,7 +142,7 @@ void __cdecl OpenNpc(int Type) {
     // ── Post-switch: carga de la textura base del NPC (bloque común del original) ──
     // IDA OpenNpc @ 0x005091D0, tras el switch: `if (NumMeshes>0) OpenTexture(Type,"Npc\\",GL_NEAREST,1)`.
     // NumMeshes vive en Models[Type].Data+0x24 (stride 0xBC) — validado contra
-    // BMD_Load.cpp:223 (escribe numMeshes en +0x24) y SMD_Parser FUN_00441e00 (guard de mesh).
+    // BMD_Load.cpp:223 (escribe numMeshes en +0x24) y SMD_Parser BMD__RenderBody (guard de mesh).
     // Sin esto, los NPCs cuyo `case` no llama OpenTexture explícitamente (Smith 338,
     // Wizard 339, SnowMerchant/Smith/Wizard 340-342, ElfMerchant 344, Master 345,
     // Storage 346, Tournament 347, MixNpc 348, DevilNpc 349) cargan su geometría

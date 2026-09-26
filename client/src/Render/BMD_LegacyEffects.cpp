@@ -5,12 +5,12 @@
 #include "globals.h"
 #include "functions.h"
 
-// FUN_00440d30 @ 0x00440D30 — BMD_PushMatrix: calls glPushMatrix().
-void __cdecl FUN_00440d30(void) { glPushMatrix(); }
-// FUN_00440d50 @ 0x00440D50 — BMD_DrawMesh: implemented in Render/BMD_DrawMesh.cpp
-// FUN_00441be0 @ 0x00441BE0 — Model_KillAnim
+// BMD__BeginRender @ 0x00440D30 — BMD_PushMatrix: calls glPushMatrix().
+void __cdecl BMD__BeginRender(void) { glPushMatrix(); }
+// BMD__RenderMesh @ 0x00440D50 — BMD_DrawMesh: implemented in Render/BMD_DrawMesh.cpp
+// BMD__RenderMeshEffect @ 0x00441BE0 — Model_KillAnim
 // Iterates bone meshes; for each vertex in bone 'b', spawns kill/death particle effects.
-void __cdecl FUN_00441be0(void *model, int param_1, int param_2)
+void __cdecl BMD__RenderMeshEffect(void *model, int param_1, int param_2)
 {
     // 2026-09-04 -- BUG-FIX: el port recorria TODAS las mallas del modelo.
     // IDA (sub_441BE0) trabaja sobre UNA sola, la de indice `a2`:
@@ -52,7 +52,7 @@ void __cdecl FUN_00441be0(void *model, int param_1, int param_2)
     }
 }
 
-// FUN_00441f00 @ 0x00441F00 — Model_RenderShadow
+// BMD__RenderBodyShadow @ 0x00441F00 — Model_RenderShadow
 // Proyecta la silueta del modelo sobre el terreno como sombra.
 //
 // Port fiel de sub_441F00 (398 B). Por cada mesh (salvo dos que se saltean) emite
@@ -77,7 +77,7 @@ void __cdecl FUN_00441be0(void *model, int param_1, int param_2)
 // param_1 (a2): se saltea el mesh cuyo campo +2 coincide  -> los callers pasan BlendMesh.
 // param_2 (a3): se saltea el mesh cuyo INDICE coincide     -> los callers pasan HiddenMesh.
 // Ojo que no son el mismo criterio: uno compara un campo y el otro el indice.
-void __cdecl FUN_00441f00(void *model, int param_1, int param_2)
+void __cdecl BMD__RenderBodyShadow(void *model, int param_1, int param_2)
 {
     char *this_ = (char*)model;
     if (*(short*)(this_ + 0x24) == 0) return;
@@ -87,7 +87,7 @@ void __cdecl FUN_00441f00(void *model, int param_1, int param_2)
     // NO confundir con 0x511680 EnableAlphaTest.
     GL_SetAlphaTest('\0');
     GL_DisableDepthWrites();       // 0x511530
-    FUN_00440d30();                // thunk -> glPushMatrix()
+    BMD__BeginRender();                // thunk -> glPushMatrix()
 
     const float ox = *(float*)(this_ + 0x6c);
     const float oy = *(float*)(this_ + 0x70);

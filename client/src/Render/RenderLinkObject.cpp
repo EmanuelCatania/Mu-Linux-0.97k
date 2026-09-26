@@ -112,14 +112,14 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     #define local_248 afStack_264[7]
     #define local_244 afStack_264[8]
     // BUGFIX 2026-04-27: local_240/_23c_f/_238_f eran 3 vars separadas (void* +
-    // float + float). FUN_00440a30 escribe 3 floats consecutivos a través de
+    // float + float). BMD__RotationPosition escribe 3 floats consecutivos a través de
     // (float*)&local_240. Si el compilador NO ubica las 3 vars contiguas (no
     // está obligado), los writes 4-11 caen en stack canary u otros locales →
     // comportamiento NO determinístico entre builds (flicker variable, locales
     // pisados). Ahora un solo array contiguo. local_23c_f/_238_f redirigidos
     // vía macro al uso "como float", local_240 mantiene su uso "as void*" en
     // el bloque hash-table (lee/escribe los 4 bytes como pointer).
-    float local_240_buf[3];  // pos_out: [0]=x, [1]=y, [2]=z (FUN_00440a30 target)
+    float local_240_buf[3];  // pos_out: [0]=x, [1]=y, [2]=z (BMD__RotationPosition target)
     #define local_240 (*(void**)&local_240_buf[0])
     #define local_23c_f local_240_buf[1]
     #define local_238_f local_240_buf[2]
@@ -191,8 +191,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         void* ownerModel = (void*)(DAT_05828d58
                                    + (int)*(short*)(param_4 + 2) * 0xbc);
 
-        // FUN_00440a30 = RotationPosition: transforms pos_in through bone → pos_out
-        FUN_00440a30(ownerModel, pBoneMat, afStack_264 + 6, (float*)&local_240);
+        // BMD__RotationPosition = RotationPosition: transforms pos_in through bone → pos_out
+        BMD__RotationPosition(ownerModel, pBoneMat, afStack_264 + 6, (float*)&local_240);
 
         // BodyOrigin = TransformedPosition + entity world position
         // BUGFIX 2026-04-26: era `(float)(int)local_240` que tomaba la
@@ -647,9 +647,9 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // Condition: Link==0 OR Type not in BOW range 0x210..0x22f (excl. 0x238 exception)
     if ((param_9 == '\0') || (param_6 < 0x210) || (param_6 > 0x22f))
     {
-        // FUN_00440aa0 = BMD_AnimTick: advance animation frame
+        // BMD__PlayAnimation = BMD_AnimTick: advance animation frame
         // Args: (model, AnimFrame*, PriorAnimFrame*, PriorAction*, PlaySpeed, Position, Angle)
-        FUN_00440aa0((void*)iVar7,
+        BMD__PlayAnimation((void*)iVar7,
                      (float*)((int)param_5 + 0x08),  // AnimationFrame
                      (float*)((int)param_5 + 0x0c),  // PriorAnimationFrame
                      (unsigned char*)((int)param_5 + 0x06),  // PriorAction

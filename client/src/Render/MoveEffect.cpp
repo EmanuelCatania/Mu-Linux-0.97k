@@ -54,7 +54,7 @@
 //   Effect_SpawnSmokeBurst (effect helper2)
 //   Effect_SpawnSmokeExplosion (effect helper3)
 //   FUN_0046c3e0 = Trail_RenderAll?
-//   FUN_00440aa0 = BMD_SetAnim?
+//   BMD__PlayAnimation = BMD_SetAnim?
 //   FUN_0045fec0 = Entity_SpawnImpact?
 //   PlayBuffer = Sound_Play(id, slot, flag)
 //   FUN_00473d90 (ring?)
@@ -2546,7 +2546,7 @@ switchD_00466b93_caseD_c1:
         pvVar1 = (void *)(DAT_05828d58 + sVar3 * 0xbc);
         fVar13 = param_1[0x33];
         *(undefined1 *)((int)pvVar1 + 0xa0) = *(undefined1 *)((int)param_1 + 0x105);
-        FUN_00440aa0(pvVar1,param_1 + 0x42,param_1 + 0x43,(undefined1 *)((int)param_1 + 0x106),fVar13);
+        BMD__PlayAnimation(pvVar1,param_1 + 0x42,param_1 + 0x43,(undefined1 *)((int)param_1 + 0x106),fVar13);
       }
       sVar3 = *(short *)((int)param_1 + 2);
       if ((sVar3 < 0x4ba) || (0x4bc < sVar3)) {

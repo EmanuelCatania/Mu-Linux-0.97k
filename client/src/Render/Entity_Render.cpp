@@ -372,7 +372,7 @@ LAB_0050386e:
 
 // FUN_00505970 — Entity_RenderSlotWith
 // Sets up render parameters for one entity from entity data at param_2,
-// then delegates to FUN_004404e0 (model-matrix setup) and FUN_00441e00 (draw).
+// then delegates to FUN_004404e0 (model-matrix setup) and BMD__RenderBody (draw).
 // param_1: render object (void*)
 // param_2: entity data ptr
 // param_3: LOD/flag
@@ -396,7 +396,7 @@ void __cdecl FUN_00505970(void *param_1,void *param_2_v,int param_3,char param_4
   }
   FUN_004404e0(param_1,(int)puVar1,(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
                (float *)(param_2 + 0x130),param_4);
-  FUN_00441e00(param_1,(uint)param_3,*(float *)(param_2 + 0x168),*(int *)(param_2 + 100),
+  BMD__RenderBody(param_1,(uint)param_3,*(float *)(param_2 + 0x168),*(int *)(param_2 + 100),
                *(float *)(param_2 + 0x68),*(float *)(param_2 + 0x6c),*(float *)(param_2 + 0x70),
                *(int *)(param_2 + 0x58),0xffffffff);
   _DAT_005597c8 = 1.0f;   // reset LOD scale

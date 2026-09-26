@@ -71,7 +71,7 @@ static void LoginScene_ApplySafeObjectAnim()
         char* model = (char*)(DAT_05828d58 + type * 0xbc);
         if (model) {
             model[0xa0] = *(char*)(obj + 0x105);
-            FUN_00440aa0((void*)model,
+            BMD__PlayAnimation((void*)model,
                 (float*)(obj + 0x108),
                 (float*)(obj + 0x10c),
                 (void*)(obj + 0x106),

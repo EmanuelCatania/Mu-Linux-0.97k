@@ -21,9 +21,9 @@
 //
 // ── BUG-FIX (2026-04-20) ───────────────────────────────────────────────────────
 // La port anterior pasaba `(int)(uintptr_t)param_3` (puntero heap) como 2do
-// argumento `int flags` de FUN_00441e00. Resultado en log:
+// argumento `int flags` de BMD__RenderBody. Resultado en log:
 //   BMD_Draw flags=0xa0b5790 bodyLight=(0,0,0)
-// La función real de Ghidra NO llama FUN_00441e00 en el default path — sólo
+// La función real de Ghidra NO llama BMD__RenderBody en el default path — sólo
 // FUN_00504130. Además FUN_00504130 toma 5 args (this, entity, model_slot,
 // scale, flags), no 3. Esta re-port arregla ambos.
 //
@@ -163,7 +163,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             glColor3f(0.0f, 0.0f, 0.0f);
         }
         if (World == 10) return;
-        FUN_00441f00(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 0x58));
+        BMD__RenderBodyShadow(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 0x58));
         return;
     }
 
@@ -172,7 +172,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x4c) = 0.5f;
         *(float *)((int)this_ + 0x50) = 1.5f;
         *(char *)((int)this_ + 0x88) = 0;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1170);
         *(char *)((int)this_ + 0x88) = -1;
@@ -198,10 +198,10 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             *(float *)((int)this_ + 0x4c) = 0.8f;
             *(float *)((int)this_ + 0x50) = 0.4f;
         }
-        FUN_00441e00(this_, 8, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 8, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1171);
-        FUN_00441e00(this_, 0x44, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 0x44, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1171);
         return;
@@ -210,10 +210,10 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x48) = 1.0f;
         *(float *)((int)this_ + 0x4c) = 1.0f;
         *(float *)((int)this_ + 0x50) = 1.0f;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), -1, -1);
-        FUN_00441e00(this_, 0x44, 0.5f, *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 0x44, 0.5f, *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), -1, 1171);
         return;
@@ -229,14 +229,14 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         *(float *)(param_1 + 0x6c) = rotU;
         *(float *)(param_1 + 0x70) = (float)WorldTime * -0.0005f;
         *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = 0;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), 1170);
         *(char *)(DAT_05828d58 + effectType * 0xbc + 0x88) = -1;
         *(float *)((int)this_ + 0x48) = 1.0f;
         *(float *)((int)this_ + 0x4c) = 1.0f;
         *(float *)((int)this_ + 0x50) = 1.0f;
-        FUN_00441e00(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
+        BMD__RenderBody(this_, 2, *(float *)(param_1 + 0x168), *(int *)(param_1 + 100),
                      *(float *)(param_1 + 0x68), *(float *)(param_1 + 0x6c),
                      *(float *)(param_1 + 0x70), *(int *)(param_1 + 0x58), -1);
         return;
@@ -247,7 +247,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
         *(float *)((int)this_ + 0x4c) = 0.8f;
         *(float *)((int)this_ + 0x50) = 0.8f;
         pulse = sinf((float)WorldTime * 0.002f) * 0.3f + 0.7f;
-        FUN_00441e00(this_, 0x42, 1.0f, 0, pulse,
+        BMD__RenderBody(this_, 0x42, 1.0f, 0, pulse,
                      *(float *)(param_1 + 0x6c), *(float *)(param_1 + 0x70),
                      *(int *)(param_1 + 0x58), -1);
         return;
@@ -496,7 +496,7 @@ LAB_after_render: ;
     // ── Optional flashing tint for buffed entities ───────────────────────────
     // Aplica sólo si param_6 tiene bits 0..5 activos y el tipo no está en el
     // rango de skill-FX (0x310..0x316). Genera un pulso sinusoidal que pinta
-    // por encima con FUN_00441e00 flags=0x42.
+    // por encima con BMD__RenderBody flags=0x42.
     short pulseType = *(short*)(param_1 + 2);
     if (((param_6 & 0x3f) != 0) && ((pulseType < 0x310) || (0x316 < pulseType))) {
         fVar10 = (float10)fsin((float10)DAT_05826e08 * (float10)_DAT_005528e0);
@@ -506,7 +506,7 @@ LAB_after_render: ;
         *(float *)((int)this_ + 0x50) = (float)((float10)_DAT_0055256c - fVar10);
 
         // flags=0x42 (int flags, NOT a pointer!), f1=1.0, then anim data
-        FUN_00441e00(this_, 0x42, 1.0f,
+        BMD__RenderBody(this_, 0x42, 1.0f,
                      *(int *)(param_1 + 100),
                      *(float*)(param_1 + 0x68),
                      *(float*)(param_1 + 0x6c),

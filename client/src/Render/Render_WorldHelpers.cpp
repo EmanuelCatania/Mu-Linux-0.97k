@@ -57,7 +57,7 @@ extern void __cdecl operator_delete(void* ptr);
 //   v0[+0]                  scale
 //   v0[+48..50]             color RGB
 // Externs ya en functions.h: TestFrustrum2D, Entity_PrepareRender, Particle_Spawn,
-// RequestTerrainHeight, BMD_TransformPosition, PartObjectColor, FUN_00441f00
+// RequestTerrainHeight, BMD_TransformPosition, PartObjectColor, BMD__RenderBodyShadow
 
 void __cdecl RenderBoids(void)
 {
@@ -162,7 +162,7 @@ void __cdecl RenderBoids(void)
                     *(float*)(model + 108) = wx;
                     *(float*)(model + 112) = wy;
                     *(float*)(model + 116) = wz;
-                    FUN_00441f00(model, -1, -1);
+                    BMD__RenderBodyShadow(model, -1, -1);
                 }
             }
         }
@@ -881,7 +881,7 @@ void __cdecl RenderFishs(int /*unused*/, int /*unused*/, int /*unused*/, int /*u
                         modelData[29] = RequestTerrainHeight(posX, posY);  // height
                         modelData[27] = posX;
                         modelData[28] = posY;
-                        FUN_00441f00((void*)modelData, -1, -1);    // shadow draw
+                        BMD__RenderBodyShadow((void*)modelData, -1, -1);    // shadow draw
                     }
                 }
             }
@@ -1210,7 +1210,7 @@ void __cdecl FUN_00406f50(char* param_1) {
 }
 
 
-// FUN_00440a30 @ 0x00440a30 — implemented in Render/BMD_SetupRender.cpp
+// BMD__RotationPosition @ 0x00440a30 — implemented in Render/BMD_SetupRender.cpp
 // ItemObjectAttribute @ 0x00502ba0 — implemented in Entity/Entity_Reset.cpp
 // FUN_004553c0 @ 0x004553c0 — implemented in Render/BMD_SetupRender.cpp
 // MoveCharacterClient — implemented in src/Render/Entity_Render.cpp

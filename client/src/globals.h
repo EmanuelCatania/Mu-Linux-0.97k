@@ -2390,7 +2390,7 @@ extern int     DAT_00559f84;   // level threshold array upper (index by slot)
 // DAT_07ea7b88 — declared above as DWORD (line 1474)
 extern char    DAT_07ea5b30;   // second-password char-slot list base
 
-// BMD_DrawMesh / BMD_DrawBoneSlot_Anim (FUN_00440d50 / FUN_004414d0) buffers
+// BMD_DrawMesh / BMD_DrawBoneSlot_Anim (BMD__RenderMesh / BMD__RenderMeshTranslate) buffers
 // LightTransform pool (see globals.cpp). Backed by g_BoneLightBuf.
 // DAT_060db65c es un lvalue char en el offset 0 del buffer; &DAT_060db65c + k avanza
 // k bytes (aritmética de bytes) — lo exigen los accesos de BMD_DrawMesh.cpp.
@@ -2410,8 +2410,8 @@ extern char    g_BoneChromeNormalBuf[32 * 15000 * 12];
 // _DAT_ float constants missing from earlier declarations
 extern float   _DAT_00552544;  // alpha threshold (alpha < this → use alpha channel path)
 extern float   _DAT_005528c0;  // chrome U scale factor
-extern float   _DAT_005528c4;  // sin period scale for vertex deformation (FUN_004414d0)
-extern float   _DAT_00552644;  // sin amplitude for vertex deformation (FUN_004414d0)
+extern float   _DAT_005528c4;  // sin period scale for vertex deformation (BMD__RenderMeshTranslate)
+extern float   _DAT_00552644;  // sin amplitude for vertex deformation (BMD__RenderMeshTranslate)
 
 // ── MoveEffect constants (0x005524a8–0x00552a20 range) ─────────
 extern float   _DAT_005524a8;  // move effect float constant
