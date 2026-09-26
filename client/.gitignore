@@ -90,3 +90,6 @@ Scene_Dispatch.obj
 stdafx.obj
 stubs.obj
 Terrain_Render.obj
+
+# Notas de trabajo del port (Codex): utiles en local, no van al repo.
+doc-port/
