@@ -1330,11 +1330,19 @@ switchD_caseD_4fd:
     //     Position.y = TargetPos.y - sin(a) * 40
     //     Position.z += riseSpeed
     //
-    // Se portan las ramas verificables 1:1 contra IDA (0, 10, 2, 3, 5, 13). Los
-    // subtipos 4/6/7/8/9/11/12 quedan en el cuerpo viejo de abajo: su decompile
-    // está entrelazado con ruido de hash-table (LABEL_438/439) y no se puede
-    // leer limpio todavía. NO se tocan para no cambiar comportamiento que el
-    // usuario no reportó. TODO: portarlos cuando se pueda aislar ese bloque.
+    // 2026-09-26: TODOS los subtipos estan portados y verificados contra IDA.
+    //
+    // El comentario anterior decia que 4/6/7/8/9/11/12 quedaban sin portar porque
+    // su decompile "esta entrelazado con ruido de hash-table (LABEL_438/439)".
+    // Las dos cosas eran falsas: MoveJoint no tiene ruido anti-tamper (6 lineas
+    // de 2244, o sea 0%), y LABEL_438/439 no es anti-tamper sino la cola comun a
+    // la que saltan varios subtipos.  Lo que despista es que el switch de IDA
+    // (L1085) solo lleva los cases 0/2/3/10/14 y NO tiene default: el resto se
+    // resuelve con ifs encadenados desde L1162, asi que no aparecen como `case`.
+    //
+    // De los que el comentario daba por pendientes, 6/7/8/9/11/12 ya estaban
+    // portados (y verificados ahora termino a termino); el unico que faltaba de
+    // verdad era el 4.
     {
         const int  jsub  = *(int *)(param_1 + 8);
         float     *jposX = (float *)(param_1 + 0x10);   // Position.x  (IDA v2)
@@ -1395,13 +1403,27 @@ switchD_caseD_4fd:
             *(float *)(param_1 + 0x0c)  = (float)(_rand() % 4) + 6.0f;
             goto switchD_caseD_4ef;
         }
-        if (jsub == 6 || jsub == 12) {
-            // 00470030 LABEL_301 cases 6 and 12, converging at LABEL_438/439.
+        if (jsub == 4 || jsub == 6 || jsub == 12) {
+            // 00470030 LABEL_301 subtipos 4, 6 y 12: los tres convergen en
+            // LABEL_438/439 y solo cambian como calculan lateral/vertical.
+            //
+            // 2026-09-26: el 4 faltaba.  En IDA llega aca por el `if (v168 != 4)`
+            // de L1162, que SALTEA todo el bloque de los demas subtipos, asi que
+            // cae junto al 12 en L1681 (`v16 = v168 == 12`).  Su rama es la del
+            // else de L1702.
             const int life = *(int *)(param_1 + 0x9b8);
             const float phase = *(float *)(param_1 + 0x9c4);
             float lateral;
             float vertical;
-            if (jsub == 6) {
+            if (jsub == 4) {
+                // IDA L1702-1717: radio = clamp(life + 40, min 10) * 0.65
+                int c = life + 40;
+                if (c <= 10) c = 10;
+                const double r = (double)c * 0.64999998;
+                const double a = ((double)life + (double)phase) * 0.1;
+                lateral  = (float)(-fcos(a) * r);
+                vertical = (float)( fsin(a) * r);
+            } else if (jsub == 6) {
                 const float radius = (float)((life <= 1) ? 1 : life);
                 const double a = (double)life * 0.5 + (double)phase;
                 lateral = (float)(-fcos(a) * ((double)radius + (double)radius));
