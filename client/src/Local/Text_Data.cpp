@@ -4,7 +4,7 @@
 //   sub_479830     @ 0x00479830  (binary Text.bmd loader)
 //
 // The binary Text.bmd is 300000 bytes = 1000 entries × 300 bytes, XOR'd with
-// the 3-byte key {0xFC, 0xCF, 0xAB} (BuxConvert_0 / FUN_00479910).
+// the 3-byte key {0xFC, 0xCF, 0xAB} (BuxConvert_0 / BuxConvert_0).
 //
 // Call tree:
 //   WinMain → OpenTextData() → LoadTextData_Bin("Data\\Local\\Text.bmd")
@@ -60,7 +60,7 @@ int __cdecl LoadTextData_Bin(const char *FileName)
     }
 
     // XOR-decrypt in place with the 3-byte rolling key (BuxConvert_0).
-    FUN_00479910((int)buf, (int)poolBytes);
+    BuxConvert_0((int)buf, (int)poolBytes);
 
     // Copy decrypted pool into GlobalText.  Each 300-byte row is already a
     // null-terminated string in the file; we don't truncate or reformat.

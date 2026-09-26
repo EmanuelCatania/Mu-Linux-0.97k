@@ -496,7 +496,7 @@ int   __cdecl Terrain_Water(void);  // IDA: Terrain_Water (0x004F95E0)
 void  __cdecl RenderTerrain(char flag); // IDA: RenderTerrain (0x004F9AC0)
 int   __cdecl FUN_004f9c70(int, int, int, int);
 float __cdecl FUN_004f9c40(float *vec);  // Vec3_Length (physics variant — returns length, does NOT normalize)
-void  __cdecl FUN_004f9ce0(float *cam_pos, float factor, float *in_rel, float *out_pos); // Camera_ProjectRelative
+void  __cdecl VectorMA(float *cam_pos, float factor, float *in_rel, float *out_pos); // Camera_ProjectRelative
 void  __cdecl R_ConcatTransforms(float *parent, float *rot, float *out);  // Bone_CombineMatrices
 void  __cdecl Matrix_BuildFromEuler(float *angles, float *out_mat12);       // Matrix_FromEuler
 float* __cdecl Vector_Rotate(float *pt, float *mat12, float *out);    // Matrix_TransformPoint
@@ -514,7 +514,7 @@ void  __cdecl Draw_RenderObject(void *, int, int, char); // Entity_SetupGL
 // ── Entity render pipeline ────────────────────────────────────────────────────
 void Entity_PrepareRender(void *entity, int slot, int flag, char mode);  // IDA: Entity_PrepareRender (0x004FC030) — firma identica a Render/Entity_PrepareRender.h
 float* __cdecl Entity_SpawnEffects(int entity); // IDA: Entity_SpawnEffects (0x004FC070)
-void  __cdecl FUN_004fd800(void);              // Terrain_Render
+void  __cdecl Terrain_Render(void);              // Terrain_Render
 void *__cdecl CreateObject(int type, float *world_pos, float *target_pos, float extra); // IDA: CreateObject (0x004FF5A0)
 void *__cdecl FUN_004ff580(void *entity);                           // Entity_InitRenderState
 void  __cdecl DeleteBug(DWORD Owner); // IDA: DeleteBug (0x004FFFA0)
@@ -735,10 +735,10 @@ void  __cdecl Monster_ParseSetBase2(LPCSTR param_1); // FUN_0047d020 — parses 
 void  __cdecl SetMaxTextures(int count); // IDA: SetMaxTextures (0x00505BD0)
 void  __cdecl OpenMonsterModel(int monster_idx);                    // Monster_SetupSoundAnim
 int   __cdecl TextParser_GetToken(void);                         // FUN_0047A1F0 — text-data tokenizer (returns record type)
-void  __cdecl FUN_00479910(int buf, int len);                   // XOR-cipher buffer in-place (key: FC CF AB, 3-byte cycle)
+void  __cdecl BuxConvert_0(int buf, int len);   // IDA: BuxConvert_0 (0x00479910) -- clave FC CF AB en DAT_00559bb4
 void  __cdecl FUN_0047ea70(void *dst, void *src);               // Skill_HashTable_SerializeEntry (encode + insert)
 void  __cdecl FUN_0047eaf0(void *entry, void *key);             // Skill_HashTable_FreeEntry (decode + remove)
-void  __cdecl BuxConvert(void* buffer, int size);               // IDA: BuxConvert_1; 5.2: BuxConvert
+void  __cdecl BuxConvert_1(void* buffer, int size);               // IDA: BuxConvert_1 (0x00401120)
 uint  __cdecl FUN_005430f0(char *buf, uint size, uint count, int *fp); // fwrite-wrapper (locked)
 void  __cdecl putc(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
 void  __cdecl crt_fclose(FILE* fp);                           // fclose-wrapper
@@ -848,13 +848,13 @@ HRESULT __cdecl Sound_ReleaseBuffer(int buffer); // IDA: FUN_00404AD0; 5.2: Rele
 // ── File I/O CRT helpers ──────────────────────────────────────────────────────
 void  __cdecl crt_fseek(int *fp, int offset, int whence);  // CRT fseek wrapper
 int   __cdecl crt_ftell(char *fp);                         // CRT ftell wrapper
-int   __cdecl FUN_00541597(void *dst, int size, int count, int *fp); // CRT fread wrapper
+int   __cdecl crt_fread(void *dst, int size, int count, int *fp); // CRT fread wrapper
 int   __cdecl mbclen(const unsigned char *str);         // IsLeadByte — already in stubs.cpp
 
 // ── Terrain helpers ───────────────────────────────────────────────────────────
 void  __cdecl Terrain_Clear(void);  // InitTerrainMappingLayer (IDA) — resets terrain tile buffers
 void  __cdecl ExitProgram(void);   // Terrain_ReadFallback
-void  __cdecl FUN_004f6eb0(int data, int size); // Terrain_ProcessBlock
+void  __cdecl BuxConvert(int data, int size);   // IDA: BuxConvert (0x004F6EB0) -- clave en CERO a proposito, ver globals.cpp
 void  __cdecl CreateTerrainNormal(void); // FUN_004f70b0 (IDA)
 void  __cdecl CreateTerrainLight(void); // IDA: CreateTerrainLight (0x004F71C0)
 uint  __cdecl OpenTerrainHeight(char *path); // FUN_004f7290 (IDA)
@@ -939,8 +939,6 @@ int   __cdecl CHARACTER_MACHINE_GetMagicSkillDamage(int machinePtr, int skillTyp
 HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped); // IDA: PlayBuffer (0x00404BC0)
 
 // ── Cipher / XOR aliases ──────────────────────────────────────────────────────
-// BuxConvert_0 = FUN_00479910  (XOR-cipher, (int buf, int len), 3-byte key FC CF AB)
-#define BuxConvert_0 FUN_00479910
 
 // ── Token parser aliases ──────────────────────────────────────────────────────
 // GetToken = TextParser_GetToken — lee el proximo token del archivo abierto y lo deja en

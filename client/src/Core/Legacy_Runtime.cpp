@@ -65,8 +65,8 @@ int __cdecl crt_ftell(char *fp) {
     return (int)ftell((FILE*)fp);
 }
 
-// FUN_00541597 — CRT fread wrapper
-int __cdecl FUN_00541597(void *dst, int size, int count, int *fp) {
+// crt_fread — CRT fread wrapper
+int __cdecl crt_fread(void *dst, int size, int count, int *fp) {
     return (int)fread(dst, (size_t)size, (size_t)count, (FILE*)fp);
 }
 

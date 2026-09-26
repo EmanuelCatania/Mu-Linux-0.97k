@@ -1913,7 +1913,7 @@ char    DAT_005580ac[] = "rb";  // binary read mode string at 0x005580ac
 // bBuxCode @ 0x00558090 — la clave XOR de 3 bytes de BuxConvert_1 (0x401120),
 // la que descifra Quest.bmd.  Leida del binario: FC CF AB — la misma que usa
 // BuxConvert_0 (DAT_00559bb4), pero es otra copia en otra direccion.
-// 2026-08-21: estaba declarada como UN char = 0, asi que BuxConvert
+// 2026-08-21: estaba declarada como UN char = 0, asi que BuxConvert_1
 // (IDA: BuxConvert_1) hacia
 // `(&bBuxCode)[i % 3]` sobre un cero y dos bytes de globals vecinos: el
 // script de quests quedaba sin descifrar.  De ahi que el nombre del NPC saliera
@@ -2500,7 +2500,7 @@ int     EditMonsterNumber    = 0;       // NPC name count (EditMonsterNumber)
 void   *ppvBits_055c9e4c = nullptr; // DIB bitmap pointer
 DWORD   DAT_01c5e200    = 0x01c5e200;  // item BMD checksum seed A (literal = su propia dirección original)
 DWORD   DAT_00b43000    = 0x00b43000;  // skill BMD checksum seed B
-// FUN_00479910 (BuxConvert_0) indexes (&DAT_00559bb4)[i % 3] — so this must be
+// BuxConvert_0 (BuxConvert_0) indexes (&DAT_00559bb4)[i % 3] — so this must be
 // a 3-byte array, not a scalar.  Previously declared as a single char, which
 // made the XOR cipher pick up whatever two bytes happened to be adjacent in
 // memory, scrambling every Text.bmd / Filter.bmd / Dialog.bmd decode.
@@ -2688,7 +2688,7 @@ DWORD  DAT_007cfa00       = 0x007cfa00;  // word-filter BMD checksum seed (liter
 DWORD  DAT_00578200       = 0x00578200;  // name-filter BMD checksum seed (literal)
 char   lpText_07d2aa08[256] = {};  // fatal-error message string (shown by ExitProgram)
 
-// ── BuxConvert XOR key and misc ───────────────────────────────────────────────
+// ── BuxConvert_1 XOR key and misc ───────────────────────────────────────────────
 BYTE   DAT_0055a76c       = 1;    // unk_55A76C — gate de la 2da pasada del terreno
                                   // (TerrainFlag=2, la capa de billboards de
                                   // pasto/arena que se mueve con el viento).
@@ -2699,7 +2699,23 @@ BYTE   DAT_0055a76c       = 1;    // unk_55A76C — gate de la 2da pasada del te
                                   // en el binario vale 1 (ida_get_bytes
                                   // 0x0055A76C -> 01 00 00 00).  Con 0 el
                                   // overlay no se dibujaba en ningun mapa.
-BYTE   DAT_0055a770       = 0;    // BuxConvert key byte [0]  (+1, +2 are adjacent bytes)
+// bBuxCode de BuxConvert_1 (0x004F6EB0) -- la copia que usa OpenTerrainAttribute.
+//
+// En el binario esta direccion vale FC CF AB (ida_get_bytes 0x0055A770), igual
+// que las otras dos copias.  ACA VA EN CERO A PROPOSITO, y hay que dejarlo asi:
+// nuestro OpenTerrainAttribute carga `Data/<mundo>/Terrain%d.att`, que viene SIN
+// cifrar (empieza con 00 FF FF, el header ya descifrado), y no el EncTerrain%d.att
+// cifrado -- ese mide 131076 bytes y usa otro formato, ver Scene_OpenWorld.cpp.
+// Con la clave real el XOR convertiria el archivo en claro en basura y la
+// validacion del header lo rechazaria: terreno sin atributos, o sea sin zonas
+// seguras, sin colisiones y sin agua.
+//
+// 2026-09-26: era UN solo byte, y la funcion indexa [i % 3] -- los otros dos
+// salian de los globals vecinos en BSS.  Hoy son cero y por eso el XOR queda
+// neutro, pero cualquier cambio de layout los volveria basura y romperia el
+// terreno de golpe (el patron del diff de .map).  Ahora son tres bytes propios.
+// IDA: bBuxCode (0x0055A770)
+BYTE   DAT_0055a770[3]    = { 0, 0, 0 };
 
 // ── SkillAttribute table ──────────────────────────────────────────────────────
 // DAT_07e118e8 (HeroTile) already defined as DWORD above (~line 495)

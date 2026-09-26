@@ -1162,9 +1162,9 @@ void Quest_InitializeStaticState(void) { FUN_00403ea0((void *)&DAT_00567500); }
 // FUN_00401020 @ 0x00401020 (12 bytes)
 void FUN_00401020(void) {}
 
-// BuxConvert @ 0x00401120 (IDA: BuxConvert_1; name from 5.2).
+// BuxConvert_1 @ 0x00401120 (IDA: BuxConvert_1; name from 5.2).
 // 3-byte repeating XOR key at bBuxCode.
-void __cdecl BuxConvert(void* buffer, int size) {
+void __cdecl BuxConvert_1(void* buffer, int size) {
     const int buf = (int)(uintptr_t)buffer;
     for (int i = 0; i < size; i++)
         *(byte *)(buf + i) ^= (byte)bBuxCode[i % 3];
@@ -2176,10 +2176,10 @@ void CheckSprites(void)
     }
 }
 
-// ── FUN_00479910 — movida desde stubs_misc2.cpp (refactor B3) ──
+// ── BuxConvert_0 — movida desde stubs_misc2.cpp (refactor B3) ──
 // ── Item data helper stubs ────────────────────────────────────────────────────
-// FUN_00479910 @ 0x00479910 — XOR-cipher buffer in-place (3-byte key: FC CF AB)
-void __cdecl FUN_00479910(int buf, int len) {
+// BuxConvert_0 @ 0x00479910 — XOR-cipher buffer in-place (3-byte key: FC CF AB)
+void __cdecl BuxConvert_0(int buf, int len) {
     for (int i = 0; i < len; i++)
         *(BYTE *)(buf + i) ^= (BYTE)DAT_00559bb4[i % 3];
 }
@@ -2563,10 +2563,10 @@ int __cdecl FUN_004f9c70(int param_1, int param_2, int param_3, int param_4) {
     return 1;
 }
 
-// ── FUN_004f9ce0 — movida desde stubs_helpers.cpp (refactor B3) ──
-// FUN_004f9ce0 @ 0x004F9CE0 — VectorMA(va, scale, vb, vc): vc = va + scale*vb
+// ── VectorMA — movida desde stubs_helpers.cpp (refactor B3) ──
+// VectorMA @ 0x004F9CE0 — VectorMA(va, scale, vb, vc): vc = va + scale*vb
 // IDA-ported: 3-vector multiply-add (Quake-style). Was stub copying in_rel.
-void __cdecl FUN_004f9ce0(float *va, float scale, float *vb, float *vc) {
+void __cdecl VectorMA(float *va, float scale, float *vb, float *vc) {
     vc[0] = scale * vb[0] + va[0];
     vc[1] = scale * vb[1] + va[1];
     vc[2] = scale * vb[2] + va[2];

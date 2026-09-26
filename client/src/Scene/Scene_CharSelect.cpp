@@ -48,7 +48,7 @@
 //   glClearColor(0,0,0,1.0);
 //   GL_BeginViewport(0, 0, 0x280, 0x1e0);
 //   Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, &DAT_083a4110); → Camera_Update(mx,my,mat)
-//   FUN_004fd800();     → Terrain_Render()
+//   Terrain_Render();     → Terrain_Render()
 //   _DAT_07abf138 = 1.0; _DAT_07abf13c = 0.9; _DAT_07abf140 = 0.8;
 //   if (DAT_005616b0 == -1): Mouse_UpdateHoverTargets(); → CharPreview_Render()
 //   Entity_RenderAll_3D();     → Entity_RenderAll_3D()
@@ -161,7 +161,7 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_004fd800   → Terrain_Render()
+//   Terrain_Render   → Terrain_Render()
 //   Entity_RenderAll_3D   → Entity_RenderAll_3D()
 //   RenderBugs   → Entity_Render_Sprites()
 //   FUN_0046c3e0   → Particle_Render()
@@ -232,7 +232,7 @@ int Scene_CharSelect(void)
             *(float *)(iVar9 + 0x68) = local_70;
         }
 
-        FUN_004fd800();   // Terrain_Render
+        Terrain_Render();   // Terrain_Render
 
         _DAT_07abf138 = 1.0f;
         _DAT_07abf13c = 0.9f;

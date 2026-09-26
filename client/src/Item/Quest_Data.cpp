@@ -13,7 +13,7 @@
 // Layout:
 //   this+8 onward = 0x7210 DWORDs (zeroed first), then filled with quest data.
 //   File contains 200 records × 0x248 bytes each.
-//   Each record is XOR-decrypted by BuxConvert(buf, 0x248) before copy
+//   Each record is XOR-decrypted by BuxConvert_1(buf, 0x248) before copy
 //   (IDA: BuxConvert_1).
 //   Copy: 0x92 DWORDs (0x248 bytes) per record into this+8 (sequential).
 // IDA: CSQuest::OpenQuestScript (0x00401040)
@@ -35,8 +35,8 @@ uint __cdecl CSQuest_OpenQuestScript(int handle, const char *path)
     int   cnt = 200;
     arr = (DWORD *)(handle + 8);
     do {
-        FUN_00541597(buf, 0x248, 1, (int *)fp);
-        BuxConvert(buf, 0x248);
+        crt_fread(buf, 0x248, 1, (int *)fp);
+        BuxConvert_1(buf, 0x248);
         const char *src = buf;
         DWORD      *dst = arr;
         for (int j = 0x92; j != 0; j--) {

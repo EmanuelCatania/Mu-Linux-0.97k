@@ -62,7 +62,7 @@
 // ── 3D RENDER PASSES (in order) ──────────────────────────────────────────────
 //
 //   if World != 10: RenderTerrain('\0') → GL_DepthTest(false)
-//   FUN_004fd800()    → Terrain_Render()          — tile grid terrain + objects
+//   Terrain_Render()    → Terrain_Render()          — tile grid terrain + objects
 //   Particle_RenderAll() (IDA: FUN_0046be40)       — particle system draw
 //   RenderBoids()    → Entity_UpdatePositions()   — avanza timers/pos de entidades
 //                         itera DAT_0839be18, campo -0x5a=active, -0x51=pos float
@@ -172,7 +172,7 @@
 //   GL_BeginViewport  → GL_SetViewport(x,y,w,h)       — glViewport wrapper
 //   FUN_004f9050  → Camera_SetupFrustum(fov_w, cam_pos)
 //   RenderTerrain  → GL_DepthTest(enable)           — glEnable/Disable(GL_DEPTH_TEST)
-//   FUN_004fd800  → Terrain_Render()
+//   Terrain_Render  → Terrain_Render()
 //   Particle_RenderAll (IDA: FUN_0046be40) → particle system draw
 //   RenderBoids  → Entity_UpdatePositions()       — timer/pos update pool DAT_0839be18
 //   Entity_RenderAll_3D  → Entity_RenderAll_3D()
@@ -508,7 +508,7 @@ void Render_HPBars_OLD(void)
 //   GL_BeginViewport  → BeginOpengl (viewport setup + perspective)
 //   FUN_004f9050  → Camera_SetupFrustum
 //   Camera_BuildMouseRay  → CreateScreenVector (mouse ray)
-//   FUN_004fd800  → Terrain_Render
+//   Terrain_Render  → Terrain_Render
 //   RenderBoids  → Entity_UpdatePositions / RenderObjects
 //   Entity_RenderAll_3D  → Entity_RenderAll_3D / RenderCharactersClient
 //   Entity_Render  → RenderItems / Entity_Render_Sprites
@@ -614,7 +614,7 @@ void Render_Scene3D(void)
     if (worldId != 10) {
         RenderTerrain('\0');                      // RenderTerrain(EditFlag=0) — tile mesh
     }
-    FUN_004fd800();                              // Terrain_Render — UNCONDICIONAL en IDA (object walker)
+    Terrain_Render();                              // Terrain_Render — UNCONDICIONAL en IDA (object walker)
     // 2026-05-07: Particle_Render (FUN_0046BE40) — port FIEL desde IDA
     // Game_RenderTick:113. Itera el effect pool y renderiza partículas
     // (gate sparks, magic glow, etc). ANTES no estaba wireado.

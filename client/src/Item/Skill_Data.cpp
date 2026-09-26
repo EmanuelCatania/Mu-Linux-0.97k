@@ -40,7 +40,7 @@ void __cdecl Skill_LoadTextData(const char *path)
 // IDA: FUN_0047A970
 // Writes skill data table to a binary .bmd file.
 // Allocates 0xa00-byte buffer (40 skill entries × 0x28 bytes each).
-// For each entry: copies from DAT_07d29d20, XOR-encrypts via FUN_00479910,
+// For each entry: copies from DAT_07d29d20, XOR-encrypts via BuxConvert_0,
 // writes to file. After all entries, computes a rolling checksum
 // (seed: DAT_00b43000, constant 0x5a18) and appends 4 bytes.
 // Hash table operations (FUN_0047ea70 / FUN_0047eaf0) manage in-memory index.
@@ -52,7 +52,7 @@ void __cdecl Skill_SaveBMD(const char *path)
     char *p = buf;
     for (const char *end = src + 0xa00; src < end; src += 0x28, p += 0x28) {
         memcpy(p, src, 0x28);
-        FUN_00479910((int)p, 0x28);
+        BuxConvert_0((int)p, 0x28);
     }
     FUN_005430f0(buf, 0xa00, 1, (int *)fp);
     DWORD cs = DAT_00b43000;
@@ -88,9 +88,9 @@ void __cdecl Skill_LoadBMD(const char *path)
     }
     char *buf0 = (char *)operator_new(0xa00);
     char *buf  = buf0;
-    FUN_00541597(buf, 0xa00, 1, (int *)fp);
+    crt_fread(buf, 0xa00, 1, (int *)fp);
     DWORD stored_cs;
-    FUN_00541597((char *)&stored_cs, 4, 1, (int *)fp);
+    crt_fread((char *)&stored_cs, 4, 1, (int *)fp);
     crt_fclose(fp);
 
     DWORD cs = DAT_00b43000;
@@ -126,7 +126,7 @@ void __cdecl Skill_LoadBMD(const char *path)
     // ("Jewel"), y el primer %s salia vacio.
     int off = 0;
     do {
-        FUN_00479910((int)buf, 0x28);
+        BuxConvert_0((int)buf, 0x28);
         if (off + 0x28 <= (int)sizeof(SkillAttribute.Raw))
             memcpy(SkillAttribute.Raw + off, buf, 0x28);
         memcpy((char *)DAT_07cf1ff8 + off, buf, 0x28);

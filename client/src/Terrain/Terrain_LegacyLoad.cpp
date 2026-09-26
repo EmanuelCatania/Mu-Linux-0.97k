@@ -52,10 +52,10 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // next 0x4000×4 bytes to TerrainMappingLayer2 (alt-tile), then 0x10000 height bytes → TerrainMappingAlpha as float.
 //
 // BUG-FIX 2026-05-01: el archivo `EncTerrain%d.map` está ENCRIPTADO con el mismo
-// BuxConvert (3-byte XOR rolling) que usa OpenTerrainAttribute (.att). Sin
+// BuxConvert_1 (3-byte XOR rolling) que usa OpenTerrainAttribute (.att). Sin
 // descifrarlo, los bytes raw del file se interpretaban como tile-texture-IDs
 // y heights → suelo render como mosaico de UI textures con quads de altura
-// infinity (causa el triángulo cyan gigante). Aplicar BuxConvert antes de parsear.
+// infinity (causa el triángulo cyan gigante). Aplicar BuxConvert_1 antes de parsear.
 void __cdecl OpenTerrainMapping(const char *path) {
     Terrain_Clear(); // InitTerrainMappingLayer (IDA)
     FILE *f = crt_fopen(path, DAT_005580ac);
@@ -69,7 +69,7 @@ void __cdecl OpenTerrainMapping(const char *path) {
     crt_fseek((int*)f, 0, 0);
     char *buf = (char*)operator_new(sz);
     if (!buf) { crt_fclose(f); return; }
-    FUN_00541597(buf, 1, sz, (int*)f);
+    crt_fread(buf, 1, sz, (int*)f);
     crt_fclose(f);
 
     // Decrypt with MapFileDecrypt (16-byte rolling key + running counter).
@@ -95,7 +95,7 @@ void __cdecl OpenTerrainMapping(const char *path) {
 // OpenTerrainAttribute @ 0x004F6CE0 — OpenTerrainAttribute(FileName)
 // Per IDA decompile (raw/004F6CE0_OpenTerrainAttribute.c, 442 bytes).
 //
-// Reads a 65539-byte .att file into a temp buffer, runs BuxConvert (XOR
+// Reads a 65539-byte .att file into a temp buffer, runs BuxConvert_1 (XOR
 // descrambler with 3-byte key at DAT_0055a770), then memcpy bytes [+3..+65539]
 // into the terrain wall array DAT_0838bc70 (256×256). First byte must be 0,
 // next short must be 0xFFFF (file marker). Per-world magic-byte check at
@@ -130,7 +130,7 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
 
     static unsigned char attBuf[65539];
     fread(attBuf, 65539, 1, fp);
-    FUN_004f6eb0((int)attBuf, 65539);   // BuxConvert (3-byte XOR key)
+    BuxConvert((int)attBuf, 65539);   // BuxConvert_1 (3-byte XOR key)
 
     memcpy(TerrainWall, attBuf + 3, 65536);
 
@@ -174,7 +174,7 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
 // Reads .obj file: 2-byte count, then count×0x1e entries → calls CreateObject for each.
 //
 // BUG-FIX 2026-05-01: el archivo `EncTerrain%d.obj` está ENCRIPTADO (mismo
-// BuxConvert 3-byte XOR rolling key que .att). Sin descifrar, count y posiciones
+// BuxConvert_1 3-byte XOR rolling key que .att). Sin descifrar, count y posiciones
 // son basura → no se spawnean instancias de objetos del mundo (casas, NPCs
 // estáticos, props) → mapa renderiza solo terreno + hero.
 void __cdecl OpenObjectsEnc(const char *path) {
@@ -197,7 +197,7 @@ void __cdecl OpenObjectsEnc(const char *path) {
     unsigned int sz = (unsigned int)crt_ftell((char*)f);
     crt_fseek((int*)f, 0, 0);
     char *buf = (char*)operator_new(sz);
-    FUN_00541597(buf, 1, sz, (int*)f);
+    crt_fread(buf, 1, sz, (int*)f);
     crt_fclose(f);
 
     // Decrypt with MapFileDecrypt; format Enc post-decrypt: byte 0 = magic,

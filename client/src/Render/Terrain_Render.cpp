@@ -22,7 +22,7 @@ extern void __cdecl HashTable_Insert(void *ctx, void *obj, void *key);
 // la cámara final, NO un fix de bug del port.
 static const float OBJECT_CULL_EXTRA_MARGIN = 270.0f;   // -30 - 270 = Range ≈ -300
 
-void FUN_004fd800(void)
+void Terrain_Render(void)
 {
     float z_offset = 0.0f;
     if (World == 10) {

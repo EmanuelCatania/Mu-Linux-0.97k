@@ -10,7 +10,7 @@
 //
 // ── MAPEO FUN_XXXX → nombre real IDA ──────────────────────────────────────────
 //   GL_BeginViewport → BeginOpengl(x,y,w,h)          — setup 3D: push PROJ+MV, persp, rota cam
-//   FUN_004fd800 → Terrain_Render()
+//   Terrain_Render → Terrain_Render()
 //   Entity_RenderAll_3D → Entity_RenderAll_3D()
 //   RenderBugs → RenderBugs()                  — (no era Entity_Render_Sprites)
 //   FUN_0046c3e0 → Trail_RenderAll()             — (no era Particle_Render)
@@ -82,7 +82,7 @@ uint Scene_Login(void)
     GL_BeginViewport(0, 0x50, 0x280, 0x140);   // BeginOpengl(0, 80, 640, 320)
 
     // ── 3D background render (orden exacto de IDA) ───────────────────────────
-    FUN_004fd800();    // Terrain_Render
+    Terrain_Render();    // Terrain_Render
     Entity_RenderAll_3D();
     RenderBugs();    // RenderBugs
     Trail_RenderAll();

@@ -5,7 +5,7 @@
 // IDA: FUN_0047B020
 // Reads binary .bmd dialog data file into DAT_07cf5608.
 // Allocates 0x400-byte scratch buffer, reads and decrypts records in blocks:
-//   - Each iteration: fread 0x400 bytes, XOR-decrypt via FUN_00479910,
+//   - Each iteration: fread 0x400 bytes, XOR-decrypt via BuxConvert_0,
 //     then copy 0x100 DWORD entries into the dialog table.
 // Loop runs while the write pointer < 0x7d27608 (upper bound of dialog array).
 // Starting base: DAT_07cf5608 (dialog data array; 4 bytes per entry × 0x100
@@ -25,8 +25,8 @@ void __cdecl Dialog_LoadBMD(const char *path)
     DWORD *dst = DAT_07cf5608;
     DWORD *end = DAT_07cf5608 + (0x32000 / 4);   // 200KB array end (era literal 0x7d27608 en binario original)
     do {
-        FUN_00541597(buf, 0x400, 1, (int *)fp);
-        FUN_00479910((int)buf, 0x400);
+        crt_fread(buf, 0x400, 1, (int *)fp);
+        BuxConvert_0((int)buf, 0x400);
         DWORD *next = dst + 0x100;
         const char *src = buf;
         for (int i = 0x100; i != 0; i--) {

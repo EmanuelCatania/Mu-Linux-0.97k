@@ -671,7 +671,7 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
 
     float outPos[3];
     float camPos[3] = { _CameraRayOriginX, _CameraRayOriginY, _CameraRayOriginZ };
-    FUN_004f9ce0(camPos, param_7 ? 0.07f : 0.1f, direction, outPos);
+    VectorMA(camPos, param_7 ? 0.07f : 0.1f, direction, outPos);
 
     // ── Posición fiel a IDA (2026-08-26) ────────────────────────────────────
     // En `RenderObjectScreen` (0x4E13A0) la posición se calcula UNA sola vez,
@@ -1766,7 +1766,7 @@ void __cdecl RenderObjectScreen(int Type, unsigned int ItemLevel, unsigned char 
         Target[0] - camera[0], Target[1] - camera[1], Target[2] - camera[2]
     };
     float position[3];
-    FUN_004f9ce0(camera, PickUp ? 0.07f : 0.1f, direction, position);
+    VectorMA(camera, PickUp ? 0.07f : 0.1f, direction, position);
 
     const int level = ((int)ItemLevel >> 3) & 0x0F;
     float angle[3];

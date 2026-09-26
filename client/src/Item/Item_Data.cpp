@@ -71,7 +71,7 @@ LAB_loop:
 // IDA: FUN_0047B650
 // Writes item data table to a binary .bmd file with checksum.
 // Allocates 0x8000-byte buffer, copies 0x200 item slots (stride 0x40) from
-// DAT_07d78068, XOR-encrypts each 0x40-byte block via FUN_00479910,
+// DAT_07d78068, XOR-encrypts each 0x40-byte block via BuxConvert_0,
 // writes the buffer (fwrite via FUN_005430f0), then computes a rolling
 // checksum and appends 4 bytes (checksum seed: DAT_01c5e200 = 0x01c5e200).
 void __cdecl Item_SaveBMD(const char *path)
@@ -84,7 +84,7 @@ void __cdecl Item_SaveBMD(const char *path)
         // copy 0x40 bytes from item table slot
         void *src = (void *)(DAT_07d78068 + off);
         memcpy(p, src, 0x40);
-        FUN_00479910((int)p, 0x40);  // XOR-encrypt
+        BuxConvert_0((int)p, 0x40);  // XOR-encrypt
         off += 0x40;
         p   += 0x40;
     } while (off < 0x8000);
@@ -122,9 +122,9 @@ void __cdecl Item_LoadBMD(const char *path)
         return;
     }
     char *buf = (char *)operator_new(0x8000);
-    FUN_00541597(buf, 0x8000, 1, (int *)fp);
+    crt_fread(buf, 0x8000, 1, (int *)fp);
     DWORD stored_cs;
-    FUN_00541597((char *)&stored_cs, 4, 1, (int *)fp);
+    crt_fread((char *)&stored_cs, 4, 1, (int *)fp);
     crt_fclose(fp);
 
     // validate checksum
@@ -149,7 +149,7 @@ void __cdecl Item_LoadBMD(const char *path)
     int  off = 0;
     char *p  = buf;
     do {
-        FUN_00479910((int)p, 0x40);  // XOR-decrypt
+        BuxConvert_0((int)p, 0x40);  // XOR-decrypt
         // copy to raw table
         memcpy((char *)DAT_07d78068 + off, p, 0x40);
         // copy to shadow table

@@ -274,7 +274,7 @@ extern DWORD   DAT_0055a3e4;
 extern BYTE    DAT_0055a76c;    // unk_55A76C — gate de la 2da pasada del terreno
                                 // (capa de billboards de pasto/arena).  Constante
                                 // de .data: vale 1 en el binario.
-extern BYTE    DAT_0055a770;    // BuxConvert 3-byte XOR key [0] (key spans +0,+1,+2)
+extern BYTE    DAT_0055a770[3]; // clave XOR de BuxConvert_1 (0x004F6EB0) -- en CERO a proposito, ver globals.cpp
 extern DWORD   FrustrumBoundMaxX_1;   // IDA: DAT_0055a774 (0x0055A774)
 extern DWORD   FrustrumBoundMaxY_1;   // IDA: DAT_0055a778 (0x0055A778)
 extern DWORD   FrustrumBoundMaxX_2;   // IDA: DAT_0055a77c (0x0055A77C)
@@ -2328,7 +2328,7 @@ extern int     EditMonsterNumber;       // NPC name count  [IDA 0x07D78078]
 extern void   *ppvBits_055c9e4c;   // DIB section bitmap pointer (Font_BuildLayout)
 extern DWORD   DAT_01c5e200;       // item/skill BMD checksum seed A
 extern DWORD   DAT_00b43000;       // item/skill BMD checksum seed B
-extern char    DAT_00559bb4[3];    // XOR cipher key for FUN_00479910 (0xFC,0xCF,0xAB)
+extern char    DAT_00559bb4[3];    // XOR cipher key for BuxConvert_0 (0xFC,0xCF,0xAB)
 // Error message format strings
 extern char    s__s___File_not_exist__00558094[];  // "%s - File not exist."
 extern char    s__s___File_corrupted__00559bd4[];  // "%s - File corrupted."

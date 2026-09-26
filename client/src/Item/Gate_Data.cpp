@@ -38,7 +38,7 @@ EOF_done:
 // IDA: FUN_0047A170
 // Writes gate data table to a binary .bmd file (no checksum).
 // Allocates 9-byte scratch buffer, iterates 100 entries (stride 9),
-// XOR-encrypts each 9-byte record via FUN_00479910, writes via FUN_005430f0.
+// XOR-encrypts each 9-byte record via BuxConvert_0, writes via FUN_005430f0.
 void __cdecl Gate_SaveBMD(const char *path)
 {
     FILE *fp  = (FILE *)crt_fopen(path, DAT_005597d4);  // "wb"
@@ -49,7 +49,7 @@ void __cdecl Gate_SaveBMD(const char *path)
         *(DWORD *)buf          = *(DWORD *)((char *)GateAttribute + off);
         *(DWORD *)(buf + 4)    = *(DWORD *)((char *)GateAttribute + off + 4);
         buf[8]                 = *((char *)GateAttribute + off + 8);
-        FUN_00479910((int)buf, 9);
+        BuxConvert_0((int)buf, 9);
         FUN_005430f0(buf, 9, 1, (int *)fp);
         off += 9;
     } while (off < 900);
@@ -60,7 +60,7 @@ void __cdecl Gate_SaveBMD(const char *path)
 // IDA: FUN_0047A4D0
 // Reads binary .bmd gate data (counterpart to FUN_0047a170).
 // Allocates 9-byte scratch buffer, reads 100 records sequentially,
-// XOR-decrypts each via FUN_00479910, copies into GateAttribute (stride 9).
+// XOR-decrypts each via BuxConvert_0, copies into GateAttribute (stride 9).
 void __cdecl Gate_LoadBMD(const char *path)
 {
     CHAR msg[256];
@@ -75,8 +75,8 @@ void __cdecl Gate_LoadBMD(const char *path)
     char *buf = (char *)operator_new(9);
     int off   = 0;
     do {
-        FUN_00541597(buf, 9, 1, (int *)fp);
-        FUN_00479910((int)buf, 9);
+        crt_fread(buf, 9, 1, (int *)fp);
+        BuxConvert_0((int)buf, 9);
         DWORD *dst = (DWORD *)((char *)GateAttribute + off);
         off += 9;
         dst[0] = *(DWORD *)buf;

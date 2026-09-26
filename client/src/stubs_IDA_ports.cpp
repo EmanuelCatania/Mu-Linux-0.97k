@@ -24654,7 +24654,7 @@ int __cdecl OpenTerrainAttribute(char *FileName)
     if ( iSize == 65539 )
     {
       fread(&byBuffer, 65539u, 1u, fp);
-      BuxConvert((BYTE *)&byBuffer, 65539);
+      BuxConvert_1((BYTE *)&byBuffer, 65539);
       qmemcpy(TerrainWall, (char *)&byBuffer + 3, sizeof(TerrainWall));
       Error = 0;
       if ( (BYTE)byBuffer || *(WORD *)((char *)&byBuffer + 1) != 0xFFFF )
@@ -24737,9 +24737,9 @@ LABEL_19:
 }
 #endif
 
-// ── FUN_004f6eb0 (IDA-only, gated) ──
+// ── BuxConvert (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6EB0)
-void __cdecl FUN_004f6eb0(BYTE *Buffer, int Size)
+void __cdecl BuxConvert(BYTE *Buffer, int Size)
 {
   int i; // ecx
 
@@ -24926,9 +24926,9 @@ float *__cdecl FUN_004f9cb0(float *a1, float *a2, float *a3)
 }
 #endif
 
-// ── FUN_004f9ce0 (IDA-only, gated) ──
+// ── VectorMA (IDA-only, gated) ──
 #if defined(IDA_PORT_004F9CE0)
-void __cdecl FUN_004f9ce0(float va[3], float scale, float vb[3], float vc[3])
+void __cdecl VectorMA(float va[3], float scale, float vb[3], float vc[3])
 {
   *vc = scale * *vb + *va;
   vc[1] = scale * vb[1] + va[1];
