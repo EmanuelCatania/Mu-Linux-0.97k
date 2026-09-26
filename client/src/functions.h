@@ -896,8 +896,11 @@ void  __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf);
 unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, int Polygon, float *v1, float *v2, float *v3, float *v4, float *Normal, char Collision); // IDA: CollisionDetectLineToFace (0x00512D40)
 
 // ── Item inventory helpers (from Offsets.h) ───────────────────────────────────
-#define FUN_00482ff0 GetItemCount
-#define FUN_00482d70 GetItemSlot
+// GetItemCount (0x00482FF0) y GetItemSlot (0x00482D70) se implementan en
+// Item/Item_LegacyHelpers.cpp.  Aca habia dos #define que mapeaban sus FUN_ a
+// esos nombres; nadie los usaba y eran una trampa: los bloques IDA-only de
+// stubs_IDA_ports.cpp DEFINEN esos FUN_, asi que al activar su gate el define
+// los convertia en una redefinicion de la funcion real.
 int   __cdecl GetItemCount(int siType, int iLevel);  // 0x00482FF0
 int   __cdecl GetItemSlot(int siType, int iLevel);   // 0x00482D70
 
