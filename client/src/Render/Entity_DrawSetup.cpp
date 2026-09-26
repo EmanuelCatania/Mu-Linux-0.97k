@@ -37,7 +37,6 @@
 // Called from: Entity_DrawAt @ 0x00505A10
 
 #include "stdafx.h"
-extern "C" { void DbgLogPublic(const char* msg); }
 
 void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                            float param_4, uint param_5, byte param_6,

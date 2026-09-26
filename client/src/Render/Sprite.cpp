@@ -48,10 +48,6 @@
 //   _DAT_00552580 — float 0.0
 
 #include "stdafx.h"
-extern "C" { void DbgLogPublic(const char* msg); }
-extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
-                         int mesh, int blend, float wx, float wy, float wz,
-                         float r, float g, float b, float a);   // [DIAG FORGE]
 
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */

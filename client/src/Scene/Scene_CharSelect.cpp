@@ -180,7 +180,6 @@
 #include "stdafx.h"
 #include "Scene/Scene_CharSelect.h"
 
-extern "C" { void DbgLogPublic(const char*); }
 
 // Scene_CharSelect @ 0x00523B30
 // Renders the character selection screen (3D world + 2D UI).
@@ -269,20 +268,6 @@ int Scene_CharSelect(void)
                 s_lastDiag = now;
                 for (int s = 0; s < 5; ++s) {
                     BYTE* e = (BYTE*)(DAT_07abf5d0 + s * 0x394);
-                    char buf[260];
-                    _snprintf_s(buf, sizeof(buf), _TRUNCATE,
-                        "CSEL slot=%d act=%d cls=%d lvl=%d name='%s' "
-                        "pos=(%.1f,%.1f,%.1f) vis@160=%d flags@1c0=0x%x "
-                        "color=(%.2f,%.2f,%.2f) y_off@b0=%.1f "
-                        "wing=0x%x",
-                        s, e[0], e[0x1bc], *(WORD*)(e+0x1be),
-                        (const char*)(e+0x1c1),
-                        *(float*)(e+0x10), *(float*)(e+0x14), *(float*)(e+0x18),
-                        e[0x160], e[0x1c0],
-                        *(float*)(e+0xe8), *(float*)(e+0xec), *(float*)(e+0xf0),
-                        *(float*)(e+0xb0),
-                        *(WORD*)(e+0x2a0));
-                    DbgLogPublic(buf);
                 }
             }
         }
@@ -292,15 +277,6 @@ int Scene_CharSelect(void)
             DWORD now = GetTickCount();
             if (now - s_lastCAM > 1000) {
                 s_lastCAM = now;
-                char b[260];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "CAM pos=(%.1f,%.1f,%.1f) ang=(%.2f,%.2f,%.2f) "
-                    "curpos=(%.1f,%.1f,%.1f) curang=(%.2f,%.2f,%.2f)",
-                    CameraPosition[0], CameraPosition[1], CameraPosition[2],
-                    CameraAngle[0], CameraAngle[1], CameraAngle[2],
-                    CurrentCameraPosition[0], CurrentCameraPosition[1], CurrentCameraPosition[2],
-                    CurrentCameraAngle[0], CurrentCameraAngle[1], CurrentCameraAngle[2]);
-                DbgLogPublic(b);
             }
         }
         Entity_RenderAll_3D();
@@ -342,12 +318,6 @@ int Scene_CharSelect(void)
             DWORD now = GetTickCount();
             if (now - s_lastNL > 1000) {
                 s_lastNL = now;
-                char b[200];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "NAMES_GUARD DAT_005616b0=%d (will %s)",
-                    (int)DAT_005616b0,
-                    (DAT_005616b0 == -1) ? "RENDER NAMES" : "SKIP");
-                DbgLogPublic(b);
             }
         }
         if (DAT_005616b0 == -1) {
@@ -378,18 +348,6 @@ int Scene_CharSelect(void)
                             char b[400];
                             const char* nm = (const char*)((BYTE*)DAT_07abf5d0 + iVar9 + 0x1c1);
                             float* M = (float*)&CameraMatrix;
-                            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                                "NAME_PRE slot=%d name='%s' world=(%.1f,%.1f,%.1f) zoff=%.1f "
-                                "M=(%.3f,%.3f,%.3f,%.3f|%.3f,%.3f,%.3f,%.3f|%.3f,%.3f,%.3f,%.3f) "
-                                "ScrCtr=(%d,%d) Persp=(%.6f,%.6f) Win=(%d,%d)",
-                                slotIdx, nm,
-                                fStack_5c, *(float*)&uStack_58, fStack_54,
-                                _DAT_00552974,
-                                M[0],M[1],M[2],M[3], M[4],M[5],M[6],M[7], M[8],M[9],M[10],M[11],
-                                (int)ViewportCenterX, (int)ViewportCenterY,
-                                _DAT_083a42a4, _DAT_083a42a8,
-                                (int)DAT_0056156c, (int)DAT_00561570);
-                            DbgLogPublic(b);
                         }
                     }
                     // ── BUG-FIX: local_70 está declarado float (línea 202) pero
@@ -405,11 +363,6 @@ int Scene_CharSelect(void)
                         DWORD now3 = GetTickCount();
                         if (slotIdx2 >= 0 && slotIdx2 < 5 && now3 - s_lastNO[slotIdx2] > 1000) {
                             s_lastNO[slotIdx2] = now3;
-                            char b2[160];
-                            _snprintf_s(b2, sizeof(b2), _TRUNCATE,
-                                "NAME_POST slot=%d proj=(%d,%d)",
-                                slotIdx2, (int)local_6c, nameProjY);
-                            DbgLogPublic(b2);
                         }
                     }
                     bVar2 = ((byte*)DAT_07abf5d0)[iVar9 + 0x1c0];

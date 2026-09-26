@@ -1373,7 +1373,6 @@ static void NetLog(const char* fmt, ...)
     int n = _vsnprintf_s(buf, sizeof(buf), _TRUNCATE, fmt, ap);
     va_end(ap);
     if (n < 0) buf[0] = 0;
-    DbgLogPublic(buf);
 }
 
 // Insert/ClearBuffPhysicalEffect @ 0043BDE0/0043C070.  The 0x07 effect-state
@@ -5291,10 +5290,6 @@ void Net_ProcessPacket(void)
                     // Dump en chunks de 32 bytes: NetLog trunca a 256 y devuelve
                     // -1 → salía vacío. DbgLogPublic no trunca.
                     for (int off = 0; off < Size && off < 128; off += 32) {
-                        char b[200]; int p = wsprintfA(b, "0x31 RAW[%02d] hdr=%02X: ", off, hdr);
-                        for (int i = off; i < off + 32 && i < Size; ++i)
-                            p += wsprintfA(b + p, "%02X ", Msg[i]);
-                        DbgLogPublic(b);
                     }
                 }
 

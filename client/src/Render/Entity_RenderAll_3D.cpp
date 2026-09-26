@@ -80,7 +80,6 @@
 #include "stdafx.h"
 #include "Render/Entity_RenderAll_3D.h"
 
-extern "C" { void DbgLogPublic(const char*); }
 
 // IDA: Entity_RenderAll_3D (0x0045AB00)
 // Iterates entity array, resets the local player's velocity fields if in InGame,
@@ -93,13 +92,6 @@ void Entity_RenderAll_3D(void)
     int         iVar3;   // byte offset
     undefined4 *puVar4;
 
-    // ── DIAG: dump first 5 slots' render-relevant fields (once/sec, char-select only)
-    static DWORD s_lastERA = 0;
-    bool diag = false;
-    if (SceneFlag == 4) {
-        DWORD now = GetTickCount();
-        if (now - s_lastERA > 1000) { s_lastERA = now; diag = true; }
-    }
 
     iVar3 = 0;
     DAT_07abf5d4 = 0;
@@ -109,17 +101,6 @@ void Entity_RenderAll_3D(void)
     do {
         pcVar1 = (char *)(DAT_07abf5d0 + iVar3);
 
-        if (diag && iVar2 < 5) {
-            char b[200];
-            BYTE* e = (BYTE*)pcVar1;
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "ERA slot=%d act=%d vis=%d type@2=%d cls=%d isLocal=%d "
-                "(slot==%d/559c50 || slot==%d/559c4c) hero@5d8=%p ptr=%p",
-                iVar2, e[0], e[0x160], *(short*)(e+2), e[0x1bc],
-                (iVar2 == SelectedCharacter) || (iVar2 == SelectedNpc),
-                SelectedCharacter, SelectedNpc, DAT_07abf5d8, e);
-            DbgLogPublic(b);
-        }
 
         // BUG-FIX 2026-04-28: el IDA original tiene branches con conditions
         // que en nuestro build nunca matchean (flag bit 2, visibility flag).
@@ -149,19 +130,7 @@ void Entity_RenderAll_3D(void)
             // is_local_player = (slot == SelectedCharacter || slot == SelectedNpc)
             puVar4 = ((iVar2 == SelectedCharacter) || (iVar2 == SelectedNpc))
                      ? (undefined4 *)0x1 : (undefined4 *)0x0;
-            if (diag && iVar2 < 5) {
-                char b[120];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "ERA slot=%d -> RenderCharacter(local=%d)", iVar2, (int)(uintptr_t)puVar4);
-                DbgLogPublic(b);
-            }
             RenderCharacter((undefined4 *)pcVar1, (undefined4 *)pcVar1, puVar4);
-        } else if (diag && iVar2 < 5) {
-            char b[120];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "ERA slot=%d SKIPPED (act=%d vis@160=%d hero==%p)",
-                iVar2, *pcVar1, pcVar1[0x160], DAT_07abf5d8);
-            DbgLogPublic(b);
         }
 
         iVar3 += 0x394;

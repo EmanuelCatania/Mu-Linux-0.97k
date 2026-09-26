@@ -161,12 +161,6 @@ int __cdecl OpenTerrainAttribute(const char *FileName) {
         return 0;
     }
     fclose(fp);
-    {
-        char dbg[160];
-        wsprintfA(dbg, "OpenTerrainAttribute OK '%s' (loaded %d bytes into TerrainWall)",
-                  FileName, 65536);
-        DbgLogPublic(dbg);
-    }
     return 1;
 }
 
@@ -705,12 +699,6 @@ void __cdecl OpenWorldModels(void) {
             short nMesh   = *(short*)(slotPtr + 0x24);
             short nAction = *(short*)(slotPtr + 0x22);
             short nBone   = *(short*)(slotPtr + 0x26);
-            char dbg[160];
-            _snprintf_s(dbg, sizeof(dbg), _TRUNCATE,
-                "Lorencia BMD slot=0x%02x '%s.bmd' nMesh=%d nAction=%d nBone=%d %s",
-                slotIdx, lorenciaSlots[i].bmd, (int)nMesh, (int)nAction, (int)nBone,
-                (nMesh > 0 ? "OK" : "FAIL"));
-            DbgLogPublic(dbg);
         }
 
         // Register all Object1 slots 0..0x9f

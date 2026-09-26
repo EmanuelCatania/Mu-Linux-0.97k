@@ -16,7 +16,6 @@
 #include "functions.h"
 #include "Net/Net.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
@@ -353,14 +352,6 @@ void __cdecl AccessModel(int param_1, const char *param_2, const char *param_3, 
         crt_sprintf(local_40, pcVar1, param_3, param_4);
     }
     int numBonesInSlot = *(short*)(DAT_05828d58 + 0x22 + param_1 * 0xbc);
-    {
-        char diag[200];
-        _snprintf_s(diag, sizeof(diag), _TRUNCATE,
-            "AccessModel: slot=0x%x dir='%s' leaf='%s' idx=%d bones=%d hqMode=%d",
-            param_1, param_2 ? param_2 : "(null)", local_40, param_4,
-            numBonesInSlot, (int)(DAT_0055a7c4 == '\0'));
-        DbgLogPublic(diag);
-    }
     if (DAT_0055a7c4 == '\0') {
         // HQ path original: si el SMD ya cargó bones, BMD__Save agrega la anim BMD.
         // PORT FALLBACK: como nuestro SMD loader (OpenModel) es stub y nunca
@@ -426,11 +417,6 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
     {
         static int s_oc_any = 0;
         if (s_oc_any < 8) {
-            char b[160];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "OpenTexture CALL Model=0x%x sub='%s' nMesh=%d TextureCurrent=0x%x",
-                Model, SubFolder ? SubFolder : "(null)", (int)numMeshes, (unsigned)TextureCurrent);
-            DbgLogPublic(b);
             s_oc_any++;
         }
     }
@@ -446,12 +432,6 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
                 memcpy(firstName, texNameTable0, 32);
                 firstName[32] = 0;
             }
-            char b[300];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "OpenTex ENTER Model=0x%x sub='%s' nMesh=%d texNames=%p idxTex=%p firstName='%s' TextureCurrent=0x%x",
-                Model, SubFolder, (int)numMeshes, texNameTable0, indexTexture0,
-                firstName, (unsigned)TextureCurrent);
-            DbgLogPublic(b);
             s_oc++;
         }
     }
@@ -551,14 +531,6 @@ void __cdecl OpenTexture(int Model, const char* SubFolder, int Type, char Check)
                 if (safe[q] && (safe[q] < 0x20 || safe[q] > 0x7e)) safe[q] = '?';
             }
             BITMAP_t* b = &Bitmaps[indexTexture[i]];
-            char m[320];
-            _snprintf_s(m, sizeof(m), _TRUNCATE,
-                "Ship mesh[%d] name='%s' foundIdx=%d resolvedIdx=0x%x idxTex=0x%x "
-                "BMP: W=%.0f H=%.0f Comp=%d GL=%u Ref=%u Buf=%p",
-                i, safe, foundIdx, (unsigned)resolvedIdx, indexTexture[i],
-                (double)b->Width, (double)b->Height, (int)b->Components,
-                (unsigned)b->TextureNumber, (unsigned)b->Ref, b->Buffer);
-            DbgLogPublic(m);
         }
     }
 }

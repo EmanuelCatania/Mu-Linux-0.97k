@@ -374,7 +374,6 @@ extern "C" void __cdecl RenderServerDivision(void)
 // =============================================================================
 // RenderInventoryWindow — sub_4F0A50.
 // =============================================================================
-extern "C" void DbgLogPublic(const char* msg);
 extern "C" void __cdecl RenderInventoryWindow(void)
 {
     if (!InventoryOpened) return;

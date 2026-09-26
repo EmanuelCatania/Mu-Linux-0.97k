@@ -41,10 +41,6 @@
 #include <GL/gl.h>
 #include <math.h>
 
-extern "C" void DbgLogPublic(const char*);   // [DIAG TEMP #4]
-extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
-                         int mesh, int blend, float wx, float wy, float wz,
-                         float r, float g, float b, float a);   // [DIAG FORGE]
 
 // fsin is an x87 FPU intrinsic declared in math.h — no separate extern needed
 

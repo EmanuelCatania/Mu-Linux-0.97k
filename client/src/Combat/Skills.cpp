@@ -62,7 +62,6 @@
 #include "stdafx.h"
 #include "../Combat/Skills.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 
 // Forward declarations for functions identified in decompilation
 extern "C" void __cdecl CreateTeleportBegin(unsigned int entity); // 0x004742b0
@@ -144,10 +143,6 @@ void PacketHandler_0x19(BYTE* pkt)
 
     // Trace at the same point as IDA's LABEL_81, before queue state changes.
     if (skill_type == 3 || skill_type == 7) {
-        char trace[160];
-        wsprintfA(trace, "SKILL19 RX skill=%d casterKey=%d caster=%d targetKey=%d target=%d pvp=%d",
-                  skill_type, caster_id, caster_idx, target_id, target_idx, skill_ok);
-        DbgLogPublic(trace);
     }
 
     if (caster_idx >= 400 || target_idx >= 400)
@@ -180,10 +175,6 @@ void PacketHandler_0x19(BYTE* pkt)
     *(BYTE*) (caster + 0x301) = (BYTE)(skill_ok != 0);
 
     if (skill_type == 3 || skill_type == 7) {
-        char trace[128];
-        wsprintfA(trace, "SKILL19 QUEUE skill=%d caster=%d targetSlot=%d stage=%u",
-                  skill_type, caster_idx, target_idx, (unsigned)caster[757]);
-        DbgLogPublic(trace);
     }
 
     BYTE* target = (target_idx < 400) ? ENTITY(target_idx) : nullptr;

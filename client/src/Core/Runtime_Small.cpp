@@ -16,7 +16,6 @@
 #include "globals.h"
 #include "functions.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 
 // IDA `qmemcpy` is just memcpy with size_t hint.

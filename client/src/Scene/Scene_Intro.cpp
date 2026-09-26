@@ -119,8 +119,6 @@
 #include "Scene/Scene_Intro.h"
 
 // Debug trace (defined in WinMain.cpp)
-extern "C" { void DbgLogPublic(const char* msg); }
-#define DBG(s) DbgLogPublic(s)
 
 // Scene_Intro @ 0x005137A0
 // Splash: Webzen logo + ESRB badge. Transitions to Login (normal) or InGame (bypass/debug).
@@ -143,7 +141,6 @@ void __cdecl Scene_Intro(HDC param_1)
     DWORD       stack_ec;   // local hash-compare buffer (4 bytes at EBP-0x14)
     DWORD       stack_e8;   // local hash-compare buffer (4 bytes at EBP-0x18)
 
-    DBG("Scene_Intro: memset bitmaps");
     // Reset Bitmaps table (stride 0x38, ~1414 entries = 0x13D30 bytes)
     puVar3 = (undefined1*)&DAT_083a7cd0;
     {
@@ -156,17 +153,12 @@ void __cdecl Scene_Intro(HDC param_1)
         } while (puVar3 + 0x38 <= endPtr);
     }
 
-    DBG("Scene_Intro: before Font_Init");
     OpenFont();    // World_Init
-    DBG("Scene_Intro: after Font_Init, before ClearInput");
     ClearInput(1);   // CharList_Init(1)
-    DBG("Scene_Intro: after ClearInput, before Texture_Load Webzenlogo");
 
     // Load splash textures
     OpenJPG(s_Local_Webzenlogo_jpg_00561774, 0xc, 0x2600, 0x2900, 0, '\x01');
-    DBG("Scene_Intro: after Webzenlogo load");
     OpenJPG(s_Local_Everyone_jpg_0056178c,   0xd, 0x2600, 0x2900, 0, '\x01');
-    DBG("Scene_Intro: after Everyone load");
 
     DAT_083a42ea = 0;
     // Nota: el iTitle.wav (id 4) lo dispara el original con PlayBuffer(4,...)
@@ -176,7 +168,6 @@ void __cdecl Scene_Intro(HDC param_1)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     GL_Begin2D();                       // GL_SetupOrtho2D
     glColor3f(1.0f, 1.0f, 1.0f);
-    DBG("Scene_Intro: after GL_SetupOrtho2D");
 
     // Webzen logo — centered
     uStack_4 = 0;
@@ -199,12 +190,10 @@ void __cdecl Scene_Intro(HDC param_1)
         UI_RenderText(0, 0, (LPCSTR)&DAT_005617a0, (LPSIZE)0x0, '\0', 0);
     }
 
-    DBG("Scene_Intro: before swap");
     GL_End2D();           // GL_End2D
     GL_PopMatrixAll();
     glFlush();
     SwapBuffers(param_1);
-    DBG("Scene_Intro: after swap");
 
     // Unload splash textures immediately after display
     UnloadImage(0xd);   // Texture_Unload(Everyone)
@@ -212,11 +201,9 @@ void __cdecl Scene_Intro(HDC param_1)
 
     // Normal path → Login
     if (DAT_083a410c == '\0') {
-        DBG("Scene_Intro: entering normal path, calling OpenBasicData");
         CErrorReport_Write(&DAT_055c9bf0, "> Loading ok...");
         SceneFlag = 2;   // SceneFlag = Login
         Scene_LoadGameAssets();
-        DBG("Scene_Intro: OpenBasicData returned");
         return;
     }
 

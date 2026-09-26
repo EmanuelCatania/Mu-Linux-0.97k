@@ -493,26 +493,8 @@ void Game_EnterWorldTick(void)
                         pendingB  = 0;
                         DAT_005616ac = i;
                         DAT_083a7c24 = pendingB;
-                        {
-                            char dbg[160];
-                            wsprintfA(dbg,
-                                "SLOT-DBLCLK i=%d c50=%d clk=%d mx=%d my=%d s=%X",
-                                i, (int)SelectedCharacter, (int)DAT_083a4124,
-                                (int)DAT_083a427c, (int)DAT_083a4278,
-                                (unsigned)DAT_083a7c14);
-                            DbgLogPublic(dbg);
-                        }
                     } else if (IsClickPushed()) {
                         // ── DIAGNOSTIC: capture state at slot-click trigger ──
-                        {
-                            char dbg[160];
-                            wsprintfA(dbg,
-                                "SLOT-CLICK FIRED i=%d c50=%d clk=%d mx=%d my=%d s=%X t=%u",
-                                i, (int)SelectedCharacter, (int)DAT_083a4124,
-                                (int)DAT_083a427c, (int)DAT_083a4278,
-                                (unsigned)DAT_083a7c14, GetTickCount());
-                            DbgLogPublic(dbg);
-                        }
                         DAT_083a4124 = '\0';
                         DAT_083a7c28 = 0;
                         DAT_005616ac = i;
@@ -696,15 +678,6 @@ void Game_EnterWorldTick(void)
         static int s_lastDialogY  = -999999;
         static int s_lastCamX     = -999999;
         if ((int)DAT_083a7c14 != s_lastSubState) {
-            char dbg[160];
-            wsprintfA(dbg,
-                "EnterWorld substate %X -> %X  (sel=%d sel2=%d code=%X dY=%d cX=%d hasFree=%d)",
-                (unsigned)s_lastSubState, (unsigned)DAT_083a7c14,
-                (int)DAT_005616ac, (int)DAT_005616b0,
-                (unsigned)DAT_05826cb0,
-                (int)DAT_005616a4, (int)DAT_005616a8,
-                hasFreeSlot ? 1 : 0);
-            DbgLogPublic(dbg);
             s_lastSubState = (int)DAT_083a7c14;
         }
         // Also log dialog Y / camera X every ~32 frames if state is steady so we
@@ -712,12 +685,6 @@ void Game_EnterWorldTick(void)
         static int s_frameCtr = 0;
         if ((++s_frameCtr & 0x1f) == 0) {
             if ((int)DAT_005616a4 != s_lastDialogY || (int)DAT_005616a8 != s_lastCamX) {
-                char dbg[128];
-                wsprintfA(dbg,
-                    "EnterWorld pos s=%X dY=%d cX=%d",
-                    (unsigned)DAT_083a7c14,
-                    (int)DAT_005616a4, (int)DAT_005616a8);
-                DbgLogPublic(dbg);
                 s_lastDialogY = (int)DAT_005616a4;
                 s_lastCamX    = (int)DAT_005616a8;
             }

@@ -54,7 +54,6 @@
 #include "Net/Net.h"
 #include <winsock2.h>
 
-extern "C" void DbgLogPublic(const char* msg);
 
 // ── Globals referenced (declared elsewhere) ──────────────────────────────────
 extern "C" {
@@ -683,40 +682,12 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
 void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                           int grid_w, int grid_h, char mode_flag)
 {
-    // ── DIAG (2026-05-08): loguea la entrada cada vez que hay un pulso de click, para
-    // poder ver si la función se alcanza y qué estado ve.
-    if (DAT_083a4124 != 0 || MouseRButtonPush != 0) {
-        char b[400];
-        int p = wsprintfA(b,
-            "FUN_004d23b0 CLICK ENTRY: pool=%08X origX=%d origY=%d gw=%d gh=%d mf=%d "
-            "EnableUse=%d Eq=%d picked=%d  Lpush=%d Rpush=%d  mouse=(%d,%d)\n",
-            (unsigned)(uintptr_t)inv_base, (int)(uintptr_t)origin_x, origin_y,
-            grid_w, grid_h, (int)mode_flag,
-            (int)EnableUse, (int)DAT_07eaa165, (int)dword_7E91388,
-            (int)DAT_083a4124, (int)MouseRButtonPush,
-            (int)DAT_083a427c, (int)DAT_083a4278);
-        // Calcula la celda bajo el mouse y vuelca los primeros 4 shorts de ese slot.
-        int mx = (int)DAT_083a427c;
-        int my = (int)DAT_083a4278;
-        int gx = (mx - (int)(uintptr_t)origin_x) / 20;
-        int gy = (my - origin_y) / 20;
-        if (gx >= 0 && gx < grid_w && gy >= 0 && gy < grid_h) {
-            int slotIdx = gy * grid_w + gx;
-            short* slot = inv_base + 34 * slotIdx;
-            p += wsprintfA(b + p,
-                "  hover slot=%d (gx=%d gy=%d) types[0..3]=%04hX %04hX %04hX %04hX  xy=(%d,%d)",
-                slotIdx, gx, gy,
-                slot[0], slot[1], slot[2], slot[3],
-                ((BYTE*)slot)[62], ((BYTE*)slot)[63]);
-        }
-        DbgLogPublic(b);
-    }
 
     // ── Guards (IDA lines 307-318) ──────────────────────────────────────────
     bool wasClick = (DAT_083a4124 != 0);
 
 
-    if (grid_h <= 0)                { if (wasClick) DbgLogPublic("FUN_004d23b0 EXIT: gh<=0"); return; }
+    if (grid_h <= 0)                { return; }
 
     // (2026-09-11: aca habia una pre-pasada que ponia Color = 0 en todo el
     //  pool.  El reset lo hace sub_4E6550 una vez por frame, antes de esta
@@ -724,7 +695,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
     //  funcion tambien se llama desde el RENDER, despues del marcado del drop,
     //  y la pre-pasada borraba esas marcas: por eso no se veia la silueta.)
 
-    if ((int)EnableUse > 0)         { if (wasClick) DbgLogPublic("FUN_004d23b0 EXIT: EnableUse>0"); return; }
+    if ((int)EnableUse > 0)         { return; }
     // 2026-07-27 FIX (baúl: no se puede meter ni sacar nada): DAT_07eaa165 es el
     // guard "item-move en vuelo" — se setea al mandar el 0x24 y sólo lo limpia
     // la RESPUESTA del server (ItemMove_ClearPickedState). Si un move se pierde
@@ -740,13 +711,12 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             DAT_07eaa165 = 0;
         }
         if (DAT_07eaa165 != 0) {
-            if (wasClick) DbgLogPublic("FUN_004d23b0 EXIT: EquipmentItem!=0");
             return;
         }
     } else {
         static DWORD s_guardReset = 0; (void)s_guardReset;
     }
-    if (dword_7E91388 > 0)          { if (wasClick) DbgLogPublic("FUN_004d23b0 EXIT: already-picked"); return; }
+    if (dword_7E91388 > 0)          { return; }
 
     int rowStride = 68 * grid_w;              // bytes per row in the inv array
 
@@ -773,12 +743,6 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             }
             // DIAG: cell passed hit-test
             if (DAT_083a4124 != 0) {
-                char db2[160];
-                wsprintfA(db2,
-                    "FUN_004d23b0 HIT row=%d col=%d type=%04X Lpush=%d",
-                    row, col, (unsigned short)rowSlot[0],
-                    (int)DAT_083a4124);
-                DbgLogPublic(db2);
             }
 
             // ── Hovered cell with item: highlight footprint (color=2) ──────
@@ -789,18 +753,15 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             //   * `type` fuera de rango (rowSlot apuntando a basura)
             // Los dos están acotados ahora.
             ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
-            if (!attr) { if (DAT_083a4124) DbgLogPublic("FUN_004d23b0 SKIP: attr=NULL"); continue; }
+            if (!attr) { continue; }
             // Reject implausible attr base.
             if ((uintptr_t)attr < 0x100000 || (uintptr_t)attr >= 0x80000000) {
                 if (DAT_083a4124) {
-                    char dbsk[160];
-                    wsprintfA(dbsk, "FUN_004d23b0 SKIP: attr-bogus DAT_07d78068=%08X", (unsigned)DAT_07d78068);
-                    DbgLogPublic(dbsk);
                 }
                 continue;
             }
             short typeRaw   = rowSlot[0];
-            if (typeRaw < 0 || typeRaw >= 1024) { if (DAT_083a4124) DbgLogPublic("FUN_004d23b0 SKIP: typeRaw OOB"); continue; }
+            if (typeRaw < 0 || typeRaw >= 1024) { continue; }
             int   type      = (int)(unsigned short)typeRaw;
             BYTE  slotX     = ((BYTE*)rowSlot)[62];
             BYTE  slotY     = ((BYTE*)rowSlot)[63];
@@ -827,25 +788,16 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             int   itemH     = attr[type].Height;
             if (itemW <= 0 || itemW > 8 || itemH <= 0 || itemH > 8) {
                 if (DAT_083a4124) {
-                    char dbsk[120];
-                    wsprintfA(dbsk, "FUN_004d23b0 SKIP: itemWH bad type=%d W=%d H=%d", type, itemW, itemH);
-                    DbgLogPublic(dbsk);
                 }
                 continue;
             }
             if ((int)slotX + itemW > grid_w) {
                 if (DAT_083a4124) {
-                    char dbsk[120];
-                    wsprintfA(dbsk, "FUN_004d23b0 SKIP: slotX+W>gw slotX=%d W=%d gw=%d", (int)slotX, itemW, grid_w);
-                    DbgLogPublic(dbsk);
                 }
                 continue;
             }
             if ((int)slotY + itemH > grid_h) {
                 if (DAT_083a4124) {
-                    char dbsk[120];
-                    wsprintfA(dbsk, "FUN_004d23b0 SKIP: slotY+H>gh slotY=%d H=%d gh=%d", (int)slotY, itemH, grid_h);
-                    DbgLogPublic(dbsk);
                 }
                 continue;
             }
@@ -912,26 +864,11 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 BYTE pkt[4];
                 pkt[0] = 0x32;              // CGItemBuyRecv
                 pkt[1] = (BYTE)slotIdx;     // shop slot 0..119
-                {
-                    char db[96];
-                    wsprintfA(db, "SHOP BUY (C3): slot=%d price=%d", slotIdx, (int)dword_5826D18);
-                    DbgLogPublic(db);
-                }
                 SendC3Packet(pkt, 2);
                 return;
             }
 
             // ── DIAG: loguea el estado del dispatch justo antes de las ramas ──
-            {
-                char db[200];
-                wsprintfA(db,
-                    "FUN_004d23b0 DISPATCH type=%d slotXY=(%d,%d) Lpush=%d Rpush=%d "
-                    "RepairEnable_0=%d mode=%d",
-                    (int)typeRaw, (int)slotX, (int)slotY,
-                    (int)DAT_083a4124, (int)MouseRButtonPush,
-                    (int)DAT_07eaa134, (int)mode_flag);
-                DbgLogPublic(db);
-            }
 
             // ── BRANCH C: RepairEnable mode (NPC repair UI active) ─────────
             // 2026-05-09 FIX: per IDA xrefs `RepairEnable_0` = address
@@ -980,14 +917,6 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
             // ── BRANCH D: Left-click → PICKUP ──────────────────────────────
             if (DAT_083a4124 != 0) {     // MouseLButtonPush
-                {
-                    char b[160];
-                    wsprintfA(b,
-                        "FUN_004d23b0 PICKUP type=%d slotX=%d slotY=%d gw=%d pool=%08X",
-                        (int)typeRaw, (int)slotX, (int)slotY, grid_w,
-                        (unsigned)(uintptr_t)inv_base);
-                    DbgLogPublic(b);
-                }
                 int sx = ((BYTE*)rowSlot)[62];
                 int sy = ((BYTE*)rowSlot)[63];
                 int abs = grid_w * sy + sx;

@@ -65,18 +65,11 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
     // reach this function for those slots and know what thisPtr they use.
     {
         if (strstr(local_4c, "Logo") || strstr(local_4c, "Ship")) {
-            char line[200];
-            _snprintf_s(line, sizeof(line), _TRUNCATE,
-                "BMD::Open ENTER '%s' thisPtr=%p", local_4c, thisPtr);
-            DbgLogPublic(line);
         }
     }
 
     FILE *fp = crt_fopen(local_4c, DAT_005580ac);
     if (!fp) {
-        char diag[200];
-        _snprintf_s(diag, sizeof(diag), _TRUNCATE, "BMD::Open fopen FAIL: %s", local_4c);
-        DbgLogPublic(diag);
         return;
     }
 
@@ -210,12 +203,6 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         // 2026-05-04: temporarily upped limit from 30 to 200 to debug Lorencia
         // BMD load (slots 0..0xa0). Will revert when validated.
         if (!isPlayer && s_parsed < 200) {
-            char line[192];
-            _snprintf_s(line, sizeof(line), _TRUNCATE,
-                "BMD_Parsed #%d '%s' v=0x%02x fileSize=%d  nMesh=%d nAction=%d nBone=%d  thisPtr=%p",
-                s_parsed, local_4c, (unsigned)verByte, fileSize,
-                (int)numMeshes, (int)numActions, (int)numBones, thisPtr);
-            DbgLogPublic(line);
             s_parsed++;
         }
     }
@@ -412,11 +399,6 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
             float r = *(float *)((int)thisPtr + 0x48);
             float g = *(float *)((int)thisPtr + 0x4c);
             float b = *(float *)((int)thisPtr + 0x50);
-            _snprintf_s(line, sizeof(line), _TRUNCATE,
-                "BMD_OpenEnd #%d '%s' thisPtr=%p bodyLight=(%.3f,%.3f,%.3f)%s",
-                s_end, local_4c, thisPtr, r, g, b,
-                isLoginScene ? " [LOGIN]" : "");
-            DbgLogPublic(line);
             s_end++;
         }
     }

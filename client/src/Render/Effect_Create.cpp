@@ -5,9 +5,6 @@
 
 #include "stdafx.h"
 
-extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
-                         int mesh, int blend, float wx, float wy, float wz,
-                         float r, float g, float b, float a);   // [DIAG FORGE]
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -54,12 +51,6 @@ CreateEffect(int param_1,float *param_2,float *param_3,float *param_4,float *par
             float *param_7,float *param_8,byte param_9)
 
 {
-  // [DIAG FORGE] entry-point CreateEffect (param_4 = Light/color)
-  if (param_2)
-      DbgForge("CreateEffect", param_1, -1, -1, -1, -1, -1,
-               param_2[0], param_2[1], param_2[2],
-               param_4 ? param_4[0] : 0.0f, param_4 ? param_4[1] : 0.0f,
-               param_4 ? param_4[2] : 0.0f, -1.0f);
   byte bVar1;
   float fVar2;
   float *pfVar3;

@@ -92,7 +92,6 @@
 #include "stdafx.h"
 #include "Render/Particle_Render.h"
 
-extern "C" void DbgLogPublic(const char*);   // [DIAG TEMP #4]
 
 // =============================================================================
 // 2026-05-07 B3 refactor — moved from stubs.cpp lines 648-789 (142 lines)

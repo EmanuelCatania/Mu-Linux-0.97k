@@ -15,7 +15,6 @@ int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);
@@ -823,11 +822,6 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
         DWORD now = GetTickCount();
         if (now - s_lastTxt > 1000) {
             s_lastTxt = now;
-            char b[200];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "TEXT call x=%d y=%d str='%s' color=0x%08X",
-                x, y, text ? text : "(null)", (unsigned)DAT_00559c78);
-            DbgLogPublic(b);
         }
     }
 

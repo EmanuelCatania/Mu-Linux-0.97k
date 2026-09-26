@@ -29,7 +29,6 @@
 #include <gl/GL.h>
 #include <gl/GLU.h>
 
-extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];     // src/Render/HUD_Pass3.cpp
 extern "C" void __cdecl SeedQuickPotionTypesFromInventory(void);
 extern "C" int __cdecl sub_482E40(int a1);

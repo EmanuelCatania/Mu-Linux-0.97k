@@ -8,7 +8,6 @@
 
 #include "stdafx.h"
 
-extern "C" { void DbgLogPublic(const char*); }
 
 // OpenLogoSceneData — Scene_LoadAccountResources
 // Loads textures and 3D models for the Account Creation / New Character screens.
@@ -37,7 +36,6 @@ void Scene_LoadAccountResources(void)
     OpenModel(0xa2,s_Data2_Logo__005606dc,s_mu_smd_005606c8);
     OpenModel(0xa3,s_Data2_Logo__005606dc,s_sun_smd_005606b4);
   }
-  DbgLogPublic("Scene_LoadAccount: canary-A (before AccessModel Ship+Logos)");
   AccessModel(0x3c,s_Data_Object1__0055f360,(const char*)&DAT_0055e834,1);
   iVar2 = 0xa0;
   do {
@@ -45,17 +43,13 @@ void Scene_LoadAccountResources(void)
     iVar1 = iVar2 + -0x9f;
     iVar2 = iVar2 + 1;
   } while (iVar1 < 4);
-  DbgLogPublic("Scene_LoadAccount: canary-B (after AccessModel, before SetMaxTextures)");
   SetMaxTextures(0x56a);
-  DbgLogPublic("Scene_LoadAccount: canary-C (after SetMaxTextures, before OpenTexture Ship)");
   OpenTexture(0x3c,s_Object1__0055f354,0x2601,'\x01');
-  DbgLogPublic("Scene_LoadAccount: canary-D (after OpenTexture Ship, before Logos)");
   iVar2 = 0;
   do {
     OpenTexture(iVar2 + 0xa0,s_Logo__00560698,0x2601,'\x01');
     iVar2 = iVar2 + 1;
   } while (iVar2 < 4);
-  DbgLogPublic("Scene_LoadAccount: canary-E (after OpenTexture Logos, returning)");
   return;
 }
 

@@ -17,7 +17,6 @@
 //   Math_DegreesToRadians — degrees-to-radians constant (π/180)
 
 #include "stdafx.h"
-extern "C" { void DbgLogPublic(const char* msg); }
 
 
 float* __cdecl Vector_Rotate(float *param_1,float *param_2,float *param_3)
@@ -171,16 +170,6 @@ void __cdecl BMD_TransformPosition(void *this_,float *param_1,float *param_2,flo
       DWORD now = GetTickCount();
       if (now - s_lastTP > 1000) {
         s_lastTP = now;
-        char b[200];
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-          "TP this=%p scale=%.3f m6c=(%.1f,%.1f,%.1f) in=(%.1f,%.1f,%.1f) "
-          "matT=(%.2f,%.2f,%.2f) matResult=(%.2f,%.2f,%.2f)",
-          this_, scale,
-          *(float*)((int)this_+0x6c), *(float*)((int)this_+0x70), *(float*)((int)this_+0x74),
-          param_2[0], param_2[1], param_2[2],
-          param_1[3], param_1[7], param_1[11],
-          local_buf[0], local_buf[1], local_buf[2]);
-        DbgLogPublic(b);
       }
     }
     param_3[0] = scale * local_buf[0] + *(float *)((int)this_ + 0x6c);

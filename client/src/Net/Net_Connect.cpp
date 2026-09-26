@@ -39,12 +39,6 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
   local_4[1] = 0;
   local_4[2] = 0;
   local_4[3] = 0;
-  {
-    char dbg[160];
-    wsprintfA(dbg, "NET: CreateSocket connect_req ip=%.64s port=%u",
-              param_1 ? param_1 : "(null)", (unsigned)(param_2 & 0xFFFF));
-    DbgLogPublic(dbg);
-  }
   if (First == '\0') {
     First = '\x01';
     CWsctlc_Startup(((int)(uintptr_t)SocketClient));

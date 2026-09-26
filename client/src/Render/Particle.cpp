@@ -1,9 +1,6 @@
 // Particle.cpp
 #include "stdafx.h"
 extern "C" { void DbgLogPublic(const char* msg); }
-extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
-                         int mesh, int blend, float wx, float wy, float wz,
-                         float r, float g, float b, float a);   // [DIAG FORGE]
 // IDA: Alpha (0x0043E5C0)
 // Particle_PathUpdate @ 0x0043e680  — Particle_PathUpdate
 // SetAction @ 0x0043e820  — Particle_SetAnimation
@@ -166,12 +163,6 @@ int __cdecl
 CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param_4,
              int param_5, float param_6, int param_7)
 {
-  // [DIAG FORGE] entry-point CreateSprite (a = scale param_3)
-  if (param_2)
-      DbgForge("CreateSprite", (int)param_1, -1, (int)param_1, -1, -1, -1,
-               param_2[0], param_2[1], param_2[2],
-               param_4 ? param_4[0] : 0.0f, param_4 ? param_4[1] : 0.0f,
-               param_4 ? param_4[2] : 0.0f, param_3);
   // Pool fix 2026-04-27: el AUTO-SKIP previo (return 0 al inicio) bloqueaba
   // TODOS los efectos (glow +9 set, wing FX, weapon sparkles, lightning).
   // Ahora con DAT_07c85890[1002*0x1bc] correctamente dimensionado, iteramos

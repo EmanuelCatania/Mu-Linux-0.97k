@@ -8,7 +8,6 @@
 
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
-extern "C" void DbgLogPublic(const char*);
 extern "C" int __cdecl GetScreenWidth(void);
 extern "C" void Net_SendNpcTalkClose(void);
 extern "C" BOOL ChaosBoxRequestClose(void);
@@ -353,15 +352,6 @@ static void ClampChatModeIME(const char* tag)
     if (chat > 1 || ime > 1) {
         if (s_logs < 8) {
             s_logs++;
-            // Muestrea el primer/último byte de cada canario para saber por qué lado desbordó.
-            char b[260];
-            wsprintfA(b,
-                "ChatMode/IME CORRUPT[%s]: chat=%02X ime=%02X  "
-                "padBefore[0]=%02X padBefore[63]=%02X  padAfter[0]=%02X padAfter[63]=%02X",
-                tag, chat, ime,
-                (BYTE)g_PadBeforeChatMode[0], (BYTE)g_PadBeforeChatMode[63],
-                (BYTE)g_PadAfterChatMode[0],  (BYTE)g_PadAfterChatMode[63]);
-            DbgLogPublic(b);
         }
         if (chat > 1) GuildInputEnable = 0;
         if (ime  > 1) DAT_07e11d71 = 0;
@@ -380,11 +370,6 @@ static void ClampChatModeIME(const char* tag)
             static int s_onLogs = 0;
             if (s_onLogs < 12) {
                 s_onLogs++;
-                char b[160];
-                wsprintfA(b, "CHATMODE ON [%s]  ime=%02X shop=%d inv=%d",
-                          tag, (BYTE)DAT_07e11d71, (int)DAT_07eaa118,
-                          (int)DAT_07eaa117);
-                DbgLogPublic(b);
             }
         }
         s_prevChat = now;
@@ -929,10 +914,6 @@ void __cdecl Player_ProcessInput(void)
                             ::send(SocketClientSocket, (const char*)pkt, 7, 0);
                         }
                         SetPlayerAttack((int)ent, 0, 0, 0);
-                        char ab[96];
-                        wsprintfA(ab, "PIT ATTACK IN-RANGE: tgtIdx=%d tgtId=%d dir=%d cheb=%d",
-                                  targetIdx, (int)targetId, dirCode, cheb);
-                        DbgLogPublic(ab);
                     }
                 }
             }

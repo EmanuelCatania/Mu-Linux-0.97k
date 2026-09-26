@@ -2930,7 +2930,6 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //
 // Declaraciones externas locales a esta unidad de traducción:
 extern "C" bool __cdecl CharacterAnimation(int c, int o);
-extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl DeleteCloth(int c, int o, int flag);   // DeleteCloth
 extern bool __cdecl AttackStage(DWORD c, DWORD o);
 extern void __cdecl CreateBlood(DWORD o);
@@ -3524,11 +3523,6 @@ void __cdecl MoveCharacter(int p1)
         // ref-count + XOR; we use direct byte read since no encryption in our build).
         unsigned char v328 = *(BYTE*)(c + 770);
         if (v328 == 3 || v328 == 7) {
-            char trace[128];
-            wsprintfA(trace, "SKILL19 DISPATCH skill=%u hero=%d targetSlot=%d stage=%u",
-                      (unsigned)v328, c == (DWORD)Hero,
-                      (int)*(short*)(c + 784), (unsigned)*(BYTE*)(c + 757));
-            DbgLogPublic(trace);
         }
 
         switch ((char)v328)
@@ -3688,12 +3682,6 @@ void __cdecl MoveCharacter(int p1)
             Owner = v390;
 
             if (v328 == 3 || v328 == 7) {
-                char trace[128];
-                wsprintfA(trace, "SKILL19 TARGET skill=%u slot=%d key=%u ownerType=%d",
-                          (unsigned)v328, (int)*(short*)(c + 784),
-                          (unsigned)*(unsigned short*)(Owner + 476),
-                          (int)*(short*)(Owner + 2));
-                DbgLogPublic(trace);
             }
 
             // L2107-2197: bow/crossbow arrow path (player only)

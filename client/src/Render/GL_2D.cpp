@@ -15,7 +15,6 @@
 
 #include "stdafx.h"
 
-extern "C" { void DbgLogPublic(const char*); }
 
 // FUN_005123C0 @ 0x005123C0 — GL_Begin2D
 // Sets up a 2D orthographic projection over the current viewport.
@@ -156,11 +155,6 @@ GL_DrawTexture(int param_1,float param_2,float param_3,float param_4,float param
   {
       static int s_q = 0;
       if (s_q < 40) {
-          char m[160];
-          _snprintf_s(m, sizeof(m), _TRUNCATE,
-              "UI_Quad[%d] tex=0x%x xy=(%.0f,%.0f) wh=(%.0f,%.0f)",
-              s_q, param_1, param_2, param_3, param_4, param_5);
-          DbgLogPublic(m); s_q++;
       }
   }
   local_40[10] = param_2;

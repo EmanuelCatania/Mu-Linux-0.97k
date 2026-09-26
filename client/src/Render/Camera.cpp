@@ -382,7 +382,6 @@ void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_
 // param_1/2/3/4: logical tile coordinates mapped from the 640x480 grid.
 // Sets perspective, camera rotation (yaw/pitch/roll), translation, enables
 // depth test, blending, fog; saves modelview matrix to CameraMatrix.
-extern "C" { void DbgLogPublic(const char* msg); }
 void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
 {
   uint uVar1;

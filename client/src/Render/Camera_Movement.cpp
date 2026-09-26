@@ -7,7 +7,6 @@
 #include "globals.h"
 #include "functions.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 // FUN_0051E4E0 @ 0x0051E4E0 — MoveCamera; intro/login camera walk animation
 // Drives camera walk paths using CameraWalk[] waypoints (6 floats each: pos+angle).
 // Two modes: lerp (type 0) or linear delta (type 1).
@@ -50,14 +49,6 @@ void __stdcall MoveCamera(void) {
         for (int i = 0; i < 3; i++) {
             CurDelta[i]     = (CamWalk[6 + i] - CurPos[i]) * _DAT_00552d44;
             CurDelta[i + 3] = (CamWalk[9 + i] - CurAngle[i]) * _DAT_00552d44;
-        }
-        {
-            char m[200];
-            _snprintf_s(m, sizeof(m), _TRUNCATE,
-                "MoveCamera INIT: CamWalk[0..5]=(%.1f,%.1f,%.1f,%.1f,%.1f,%.1f) CurAngle=(%.1f,%.1f,%.1f)",
-                CamWalk[0],CamWalk[1],CamWalk[2],CamWalk[3],CamWalk[4],CamWalk[5],
-                CurAngle[0],CurAngle[1],CurAngle[2]);
-            DbgLogPublic(m);
         }
     }
 
@@ -144,19 +135,6 @@ void __stdcall MoveCamera(void) {
     {
         static int s_f = 0;
         if ((s_f % 20) == 0) {
-            char m[240];
-            _snprintf_s(m, sizeof(m), _TRUNCATE,
-                "Cam#%d wpN=%d wT=%d advCnt=%d cur=(%.1f,%.1f,%.1f) ang=(%.1f,%.1f,%.1f) Tgt=wp[%d]=(%.1f,%.1f,%.1f) Delta=(%.3f,%.3f,%.3f) | CamPos=(%.1f,%.1f,%.1f) CamAng=(%.1f,%.1f,%.1f) step=%f lerp=%f",
-                s_f, (int)DAT_083a7c3c, (int)DAT_083a7c38, (int)DAT_005615e8,
-                CurPos[0], CurPos[1], CurPos[2],
-                CurAngle[0], CurAngle[1], CurAngle[2],
-                (int)DAT_083a7c3c,
-                CamWalk[(int)DAT_083a7c3c*6+0], CamWalk[(int)DAT_083a7c3c*6+1], CamWalk[(int)DAT_083a7c3c*6+2],
-                CurDelta[0], CurDelta[1], CurDelta[2],
-                CameraPosition[0], CameraPosition[1], CameraPosition[2],
-                CameraAngle[0], CameraAngle[1], CameraAngle[2],
-                Ff(_DAT_00552d44), Ff(_DAT_00552a30));
-            DbgLogPublic(m);
         }
         s_f++;
     }

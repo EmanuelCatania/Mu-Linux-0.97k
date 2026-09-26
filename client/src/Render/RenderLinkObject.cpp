@@ -81,7 +81,6 @@
 #include "functions.h"
 #include <math.h>   // fsin
 
-extern "C" void DbgLogPublic(const char*);
 extern "C" int g_BackItemHand;   // 0/1: mano del item colgado en la espalda
 
 // ─────────────────────────────────────────────────────────────────────────────
