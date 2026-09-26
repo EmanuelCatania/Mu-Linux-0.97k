@@ -1394,7 +1394,15 @@ int      DAT_07d78068 = 0;
 // 2026-05-08: backup MOVED to Render_Frame.cpp — adjacent placement next to
 // DAT_07d78068 caused the corruption writer (2 consecutive int writes
 // 0x00000001 + 0x00000000) to clobber both. Now lives in a different .obj.
-int      DAT_07d78080 = 0;       // font height (set by resolution in WinMain)
+// FontHeight — alto de la fuente, lo calcula WinMain segun la resolucion
+// (12 en 640x480, 13 en 800, 14 en 1024, 15 en 1280+) y lo leen RenderBoolean
+// (0x00480E00) y sub_480C60.
+//
+// 2026-09-26: era FontHeight y convivia con una variable FontHeight aparte
+// fijada en 14.  WinMain escribia esta y TODO el render leia la otra, asi que
+// el tamano calculado por resolucion no llegaba a ningun lado.
+// IDA: FontHeight (0x07D78080)
+int      FontHeight = 0;
 // DAT_07e91530/534/53c/540 pasaron a ser macros sobre DAT_07e91528 (ver globals.h):
 // en el binario son COLUMNAS de la misma tabla, no globals sueltos.
 // UI text strings
@@ -3012,7 +3020,9 @@ char   SoccerTeamName[2][80] = {{0}, {0}};
 // dibujaba nada. Ahora es una macro sobre el pool unico (ver globals.h).
 
 // g_hFont es ahora un alias de DAT_055ca0xx (ver globals.h).
-int    FontHeight            = 14;
+// FontHeight vive ahora en la direccion que le corresponde (0x07D78080), mas
+// arriba en este archivo.  Aca habia una SEGUNDA variable con el mismo nombre
+// inicializada en 14: WinMain escribia una y el render leia la otra.
 SIZE   TextSize              = {0, 0};
 
 // dword_55C9BC8 hash-table state lives in g_HashTableCtx[4] (line ~438);

@@ -1325,7 +1325,7 @@ static __forceinline unsigned int ItemAttribute_Base(void) {
     if (p < 0x100000u || p >= 0x80000000u) return 0;
     return p;
 }
-extern int     DAT_07d78080;        // font height (set by resolution in WinMain step 15)
+extern int     FontHeight;          // IDA: FontHeight (0x07D78080) — lo setea WinMain por resolucion
 // DAT_07e91530/534/53c/540 — columnas 2/3/5/6 de la fila 0 de DAT_07e91528
 // (ver la declaracion de la tabla mas abajo).
 #define DAT_07e91530   (DAT_07e91528[2])
@@ -2925,7 +2925,7 @@ extern char    SoccerTeamName[2][80];// team names
 // Globals de fuente / medición de texto que consumen sub_480C60 y el HUD
 // renderers (HFONT object handles + DC + computed dimensions).
 #define g_hFont      ((HFONT)(uintptr_t)DAT_055ca00c)              // primary plain font handle
-extern int     FontHeight;           // pixel height of g_hFont
+// FontHeight se declara mas arriba (0x07D78080).
 extern SIZE    TextSize;             // shared scratch SIZE for text extent
 
 // Anti-tamper hash-table state — already declared above as g_HashTableCtx[4]

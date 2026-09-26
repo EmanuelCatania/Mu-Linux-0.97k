@@ -354,7 +354,7 @@ static void GameGuard_TickCheck(void)
 //  12.  Window_Create(hInst)   → DAT_055c9ffc = hWnd
 //  13.  OpenGL_Init()          → si retorna 0: abort
 //  14.  GameGuard_Init((CHAR*)hWnd)   ← nota: HWND casteado a CHAR*
-//  15.  Font size por resolución (DAT_07d78080):
+//  15.  Font size por resolución (FontHeight):
 //         0x280 (640)  → 0x0c
 //         0x320 (800)  → 0x0d
 //         0x400 (1024) → 0x0e
@@ -812,7 +812,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         if (DAT_0056156c == 0x320) fontSize = 0x0d;       // 800
         else if (DAT_0056156c == 0x400) fontSize = 0x0e;   // 1024
         else if (DAT_0056156c >= 0x500) fontSize = 0x0f;   // 1280+
-        DAT_07d78080 = fontSize;
+        FontHeight = fontSize;
         // CHARSET — DESVIACIÓN DELIBERADA del binario (2026-07-20).
         // Acá había 129 = HANGEUL_CHARSET, que es lo que usa el cliente coreano
         // original porque su Text.bmd es coreano.  El nuestro es ESPAÑOL en
