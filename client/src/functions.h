@@ -800,7 +800,7 @@ void  __cdecl SecondPassword_Screen3(void);
 void  __cdecl SecondPassword_Screen4(void);
 void  __cdecl SecondPassword_Screen5(void);
 void  __cdecl CheckGoldenArcherWindow(void); // IDA: CheckGoldenArcherWindow (0x004E7AC0)
-void  __cdecl FUN_004e8b70(void);
+void  __cdecl ServerTransfer_HitTest(void);
 void  __cdecl SecondPassword_Screen8(void);
 void  __cdecl SecondPassword_Screen9(void);
 void  __cdecl FUN_004eb7f0(void);
@@ -834,7 +834,7 @@ UINT  __cdecl Resource_Load(char* filename);  // Resource_Load — loads a resou
 // ── Misc/Util helpers ─────────────────────────────────────────────────────────
 void  __cdecl ItemAngle(int); // IDA: ItemAngle (0x005030C0)
 void  __cdecl Entity_UpdateSparkleEffect(int); // FUN_00503650 — updates periodic entity sparkle particles
-int   __cdecl FUN_00402850(void *);  // Packet_ParseType1
+int   __cdecl CSQuest_ProceedButton(void *);  // Packet_ParseType1
 undefined4 __cdecl Packet_ParseType2(void *);  // Packet_ParseType2
 void  __cdecl ChatListBox_ScrollByN(DWORD);   // (undocumented)
 int   __cdecl Sound_UpdateChannel3D_Tick(int *, float);   // cloth: paso de simulación (0x408940)
@@ -977,7 +977,7 @@ void  __fastcall FUN_0040f680(void *This);                           // StreamBa
 void  __fastcall FUN_0040f690(void *This);                           // StreamBase vtable set
 void  __fastcall PacketCipher_Initialize(void *This);                // IDA: FUN_00406bd0
 void  __fastcall FUN_00405240_init(void *This);                      // ErrorReport_GlobalInit
-void  __fastcall FUN_00403ea0(void *This);                           // Quest table init
+void  __fastcall Quest_FullInit(void *This);                           // Quest table init
 void  __fastcall LinkedList_InitSentinels(void *This);                           // Sound device init B
 
 // Destructor chains (virtual ~dtor pattern: call deinit, conditional delete)
@@ -1232,7 +1232,7 @@ void  __cdecl Combat_UseWizardSkill(DWORD c, DWORD o);                  // 0x004
 bool  __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem);           // 0x0048BD70
 
 // Batch 17 — Entity, combat, rendering, IME, chat, particles
-void  __cdecl FUN_0043ce50(unsigned char param_1, int param_2);          // action request packet (0x0043CE50)
+void  __cdecl Send_ActionRequest(unsigned char param_1, int param_2);          // action request packet (0x0043CE50)
 void  __cdecl LookAtTarget(DWORD o, DWORD TargetCharacter);         // 0x0043E890
 void  __cdecl MoveHead(int param_1);                                // 0x0043E940
 bool  __cdecl BMD__CollisionDetectLineToMesh(DWORD pThis, float Position[3], float Target[3], bool Collision, int Mesh, int Triangle); // 0x00440BE0

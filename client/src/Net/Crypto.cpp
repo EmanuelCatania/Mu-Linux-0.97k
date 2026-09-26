@@ -698,9 +698,9 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
     return (int)xorSeed;          // 1..8 = number of valid plaintext bytes
 }
 
-// ── FUN_00403ea0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
-// FUN_00403ea0 @ 0x00403EA0 (73 bytes) — Quest class full init
-void __fastcall FUN_00403ea0(void *param_1_raw) {
+// ── Quest_FullInit — movida desde stubs_bulk_med.cpp (refactor B3) ──
+// Quest_FullInit @ 0x00403EA0 (73 bytes) — Quest class full init
+void __fastcall Quest_FullInit(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
     *param_1 = (int)&PTR_LAB_005524b8;
     if (g_csQuest == 0) g_csQuest = (DWORD)param_1;
@@ -796,7 +796,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 // dibuja en (485,355) 120x24 con GlobalText[699] ("Proceder con la quest").
 // O sea el botón se veía y hasta se pintaba al pasar el mouse (ese feedback
 // está en sub_403320), pero el click no mandaba nada y la quest no avanzaba.
-int __cdecl FUN_00402850(void *param_1) {
+int __cdecl CSQuest_ProceedButton(void *param_1) {
     if ((0x1c1 < DAT_083a427c) && (DAT_083a427c < 0x280) &&
         (-1 < DAT_083a4278) && (DAT_083a4278 < 0x1b1))
         DAT_07d78094 = 1;                       // MouseOnWindow
@@ -1225,9 +1225,9 @@ void __fastcall FUN_00409d20(int param_1) {
     // Re-link head<->tail, count=0
 }
 
-// ── FUN_00409db0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
-// FUN_00409db0 @ 0x00409DB0 (110 bytes) — LinkedList: destroy all nodes + sentinels
-void __fastcall FUN_00409db0(int *param_1) {
+// ── LinkedList_DestroyAll — movida desde stubs_bulk_med.cpp (refactor B3) ──
+// LinkedList_DestroyAll @ 0x00409DB0 (110 bytes) — LinkedList: destroy all nodes + sentinels
+void __fastcall LinkedList_DestroyAll(int *param_1) {
     *(int *)(*(int *)(param_1[2] + 4) + 8) = 0;
     void *pvVar1 = *(void **)(param_1[1] + 8);
     while (pvVar1 != NULL) {

@@ -154,7 +154,7 @@ void __cdecl Object_ClearMembers(int param_1)
 
 // Packet_ParseReceived — Packet_ParseReceived
 // Dispatches an incoming packet from param_1 based on the sub-type byte
-// at param_1+0x1c87f. Type 1: FUN_00402850. Type 2: Packet_ParseType2.
+// at param_1+0x1c87f. Type 1: CSQuest_ProceedButton. Type 2: Packet_ParseType2.
 // Returns 1 (non-zero) on both paths.
 undefined4 __cdecl Packet_ParseReceived(void *param_1)
 {
@@ -162,7 +162,7 @@ undefined4 __cdecl Packet_ParseReceived(void *param_1)
   undefined4 uVar2;
 
   if (*(byte *)((int)param_1 + 0x1c87f) == 1) {
-    iVar1 = FUN_00402850(param_1);
+    iVar1 = CSQuest_ProceedButton(param_1);
     (void)iVar1;
   }
   else {

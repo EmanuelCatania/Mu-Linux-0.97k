@@ -506,9 +506,9 @@ void __cdecl FUN_00411420_impl(int *param_1) {
 
 
 
-// FUN_004117c0 @ 0x004117C0 (95 bytes) — BST iterator: post-increment (return old, advance)
-// FUN_004117c0 (IDA-activated, was Ghidra stub)
-DWORD *__cdecl FUN_004117c0(int *_this, DWORD *a2, int a3)
+// BSTIterator_PostIncrement @ 0x004117C0 (95 bytes) — BST iterator: post-increment (return old, advance)
+// BSTIterator_PostIncrement (IDA-activated, was Ghidra stub)
+DWORD *__cdecl BSTIterator_PostIncrement(int *_this, DWORD *a2, int a3)
 {
   int v3; // edi
   DWORD **v4; // edx
@@ -640,9 +640,9 @@ void __fastcall FUN_00410d90_impl(int param_1) {
     *(int *)(param_1 + 8) = 0;
 }
 
-// FUN_00410270 @ 0x00410270 (88 bytes) — allocate next free slot in pool
-// FUN_00410270 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_00410270(DWORD *_this)
+// Pool_AllocNextSlot @ 0x00410270 (88 bytes) — allocate next free slot in pool
+// Pool_AllocNextSlot (IDA-activated, was Ghidra stub)
+int __cdecl Pool_AllocNextSlot(DWORD *_this)
 {
   int v1; // edx
   int v2; // eax

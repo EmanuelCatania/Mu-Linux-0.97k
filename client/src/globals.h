@@ -2340,7 +2340,7 @@ extern DWORD   DAT_07e11e80;   // char-select entity name table base (stride 0x2
 extern DWORD   DAT_07ea5b24;   // Screen2 panel origin X
 extern DWORD   DAT_07ea5b28;   // Screen2 panel origin Y
 
-// ── SecondPassword UI sub-handler globals (FUN_004e8b70 / 004e9050 / 004eb5d0 / 004e6550) ──
+// ── SecondPassword UI sub-handler globals (ServerTransfer_HitTest / 004e9050 / 004eb5d0 / 004e6550) ──
 extern DWORD   DAT_07eaa0c8;   // SecondPassword dialog origin X (pixel)
 extern DWORD   DAT_07eaa0cc;   // SecondPassword dialog origin Y (pixel)
 extern DWORD   DAT_07eaa140;   // MixState (ver el alias mas arriba). La etiqueta
@@ -2762,7 +2762,7 @@ extern BYTE    g_byPacketSerialSend; // IDA: g_byPacketSerialSend (0x07DB8600)
 extern BYTE    DAT_05826cfc;       // SendCheck first-call flag
 extern DWORD   DAT_05826d00;       // SendCheck first-call tickCount
 
-// Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, FUN_0043ce50, LookAtTarget
+// Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, Send_ActionRequest, LookAtTarget
 // Sólo los globals realmente nuevos (los que no estaban declarados arriba):
 extern float   _DAT_005524a0;      // equip pendant X offset
 extern float   _DAT_00552c18;      // equip slot Y offset (helm row)

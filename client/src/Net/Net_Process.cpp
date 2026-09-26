@@ -5826,7 +5826,7 @@ void Net_ProcessPacket(void)
                         // retiro de zen), se completa ahora.
                         if (DAT_00559f5f && !DAT_07eaa148) {
                             if ((int)DAT_07ea9804 == -1) {
-                                FUN_0043ce50((unsigned char)DAT_07ea9808, (int)DAT_07ea980c);
+                                Send_ActionRequest((unsigned char)DAT_07ea9808, (int)DAT_07ea980c);
                             } else {
                                 DAT_07eaa165 = 1;   // EquipmentItem
                                 g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetWarehouseItems[0];

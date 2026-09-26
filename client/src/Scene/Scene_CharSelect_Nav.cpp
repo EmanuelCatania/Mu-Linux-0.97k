@@ -1150,7 +1150,7 @@ int __cdecl FUN_005130f0(float *param_1, float *param_2, float *param_3,
 // ── 10-byte: simple wrappers & field ops ────────────────────────────────────
 
 // IDA: FUN_00401010 @ 0x00401010 — calls quest table init
-void Quest_InitializeStaticState(void) { FUN_00403ea0((void *)&DAT_00567500); }
+void Quest_InitializeStaticState(void) { Quest_FullInit((void *)&DAT_00567500); }
 
 // ── FUN_00401020 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 12-byte: CRT atexit wrappers ────────────────────────────────────────────
@@ -1382,7 +1382,7 @@ done:
     }
 }
 
-// ── FUN_0043ce50 — movida desde stubs_game.cpp (refactor B3) ──
+// ── Send_ActionRequest — movida desde stubs_game.cpp (refactor B3) ──
 // ═══════════════════════════════════════════════════════════════════════════════
 // END BATCH 16
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1391,8 +1391,8 @@ done:
 // BATCH 17 — Other addresses: entity, combat, rendering, IME, chat, particles
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// FUN_0043ce50 @ 0x0043CE50 (~217 lines) — builds C1 packet opcode 0x81 (action request)
-void __cdecl FUN_0043ce50(unsigned char param_1, int param_2) {
+// Send_ActionRequest @ 0x0043CE50 (~217 lines) — builds C1 packet opcode 0x81 (action request)
+void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
     // 0x0043CE50 — Build and send C1 packet opcode 0x81 (action request)
     // param_1 = action sub-type (unused in payload beyond opcode), param_2 = 4-byte payload data
     // Packet format: [C1][len][01][81][...payload XOR-encrypted...]

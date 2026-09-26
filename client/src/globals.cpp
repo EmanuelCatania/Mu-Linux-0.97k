@@ -2874,7 +2874,7 @@ BYTE   g_byPacketSerialSend       = 0; // IDA: g_byPacketSerialSend (0x07DB8600)
 BYTE   DAT_05826cfc       = 0;
 DWORD  DAT_05826d00       = 0;
 
-// Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, FUN_0043ce50, LookAtTarget
+// Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, Send_ActionRequest, LookAtTarget
 // Only truly new globals:
 float  _DAT_005524a0      = 55.0f;  // equip pendant X offset
 float  _DAT_00552c18      = 46.0f;  // equip slot Y offset (helm row)

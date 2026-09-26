@@ -1012,11 +1012,11 @@ void __cdecl SecondPassword_Screen5(void) {
 // CheckGoldenArcherWindow vive en UI/GoldenArcher.cpp.
 extern "C" int g_GoldenArcherCustom;
 extern "C" bool __cdecl GoldenArcher_CustomNpcIdle(int c, int action);
-// FUN_004e8b70 @ 0x004E8B70 -- IDA: sub_4E8B70, clicks de la ventana de
+// ServerTransfer_HitTest @ 0x004E8B70 -- IDA: sub_4E8B70, clicks de la ventana de
 // transferencia de server (la etiqueta vieja "SecondPassword_Screen7" era falsa).
 // Los dos `__ftol()` que el port no habia resuelto son `InventoryStartX + 35.0`:
 // el hit-test de Aceptar y Cancelar estaba 35 px a la izquierda del boton.
-void __cdecl FUN_004e8b70(void) {
+void __cdecl ServerTransfer_HitTest(void) {
     if (!g_bServerDivisionEnable) return;
 
     int mx = (int)DAT_083a427c;   // MouseX

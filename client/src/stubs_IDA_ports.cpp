@@ -1589,7 +1589,7 @@ void __cdecl FUN_00403a40(unsigned char *This)
 }
 #endif
 
-// ── FUN_00403ea0 (IDA-only, gated) ──
+// ── Quest_FullInit (IDA-only, gated) ──
 #if defined(IDA_PORT_00403EA0)
 void __cdecl FUN_00403a40(unsigned char *This)
 {
@@ -3662,7 +3662,7 @@ int __cdecl FUN_00409d20(DWORD *_this)
 }
 #endif
 
-// ── FUN_00409db0 (IDA-only, gated) ──
+// ── LinkedList_DestroyAll (IDA-only, gated) ──
 #if defined(IDA_PORT_00409DB0)
 int __cdecl FUN_00409d20(DWORD *_this)
 {
@@ -5643,7 +5643,7 @@ void __cdecl FUN_0040f950(DWORD *_this)
   {
     do
     {
-      v10 = (DWORD *)FUN_004117c0(v25, 0);
+      v10 = (DWORD *)BSTIterator_PostIncrement(v25, 0);
       FUN_00410e50(v27, *v10);
     }
     while ( v23 != v5 );
@@ -5680,7 +5680,7 @@ void __cdecl FUN_0040f950(DWORD *_this)
   {
     do
     {
-      v21 = (DWORD *)FUN_004117c0(v27, 0);
+      v21 = (DWORD *)BSTIterator_PostIncrement(v27, 0);
       FUN_00410e50(v25, *v21);
     }
     while ( v23 != v16 );
@@ -5875,7 +5875,7 @@ void __cdecl FUN_0040fcd0(char *_this, char *Source, int a3, int a4, int x, int 
         v13 = 256;
       }
       FUN_004105f0(Bitmaps[0].Buffer, i << 8, v13, v36);
-      v14 = FUN_00410270(_this);
+      v14 = Pool_AllocNextSlot(_this);
       glBindTexture(0xDE1u, v14);
       glPixelStorei(0xCF5u, 1);
       glTexEnvf(0x2300u, 0x2200u, 8448.0);

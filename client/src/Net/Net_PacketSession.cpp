@@ -52,7 +52,7 @@ void ClearInventory(void)
 //   SecondPassword_Screen1, Party_MemberClickHandler, SecondPassword_Screen3 (always)
 //   SecondPassword_Screen4..FUN_004ec330 (if DAT_07eaa117 != 0 — extended scene)
 //   Inventory_DropDispatch (if DAT_07eaa164 == 0 — not in special mode)
-//   CheckGoldenArcherWindow, FUN_004e8b70 (always)
+//   CheckGoldenArcherWindow, ServerTransfer_HitTest (always)
 void UpdateWindowsMouse(void)
 {
   undefined4 uVar1;
@@ -92,6 +92,6 @@ void UpdateWindowsMouse(void)
     Inventory_DropDispatch(uVar1,uVar2);
   }
   CheckGoldenArcherWindow();
-  FUN_004e8b70();
+  ServerTransfer_HitTest();
   return;
 }
