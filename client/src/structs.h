@@ -476,7 +476,17 @@ extern char g_BitmapsRaw[];
 // resetea DAT_081cb608 por frame, que es lo que acota la acumulacion.
 #define PrimaryTerrainLight  ((float(*)[3])&DAT_081cb608[0])  // float[256*256][3]
 // Functions (map companion-project names → FUN_ addresses from functions.h):
-#define VectorRotate         Vector_InverseRotate
+// 2026-09-26 FIX (origen del Aqua Beam detras del pj): este alias apuntaba a
+// Vector_InverseRotate, que es el port de VectorIRotate (0x4FA110) -- la
+// TRANSPUESTA, o sea la rotacion INVERSA.  El VectorRotate del binario es
+// 0x4FA0B0 y es row-major:
+//     0x4FA0B0 VectorRotate   out[i] = m[4i+0]*x + m[4i+1]*y + m[4i+2]*z
+//     0x4FA110 VectorIRotate  out[i] = m[i]*x + m[4+i]*y + m[8+i]*z
+// Con el alias mal, todo offset calculado con VectorRotate se rotaba por -yaw:
+// sub_4451C0 (el origen del Aqua Beam, MoveCharacter case 12) lo ponia espejado
+// respecto del frente del personaje.  Los otros 113 call sites del arbol llaman
+// Vector_Rotate directo y por eso siempre estuvieron bien.
+#define VectorRotate         Vector_Rotate
 // 2026-08-23 FIX (el fuego no iluminaba): esto aliaseaba `AddTerrainLight` a
 // `AddTerrainLightClip`, que es OTRA funcion del binario.
 //   AddTerrainLight     0x004F76C0  sin clamp superior  · decenas de callers
