@@ -1981,10 +1981,16 @@ LAB_00466e5e:
         local_348 = local_328 + param_1[4];
         pfVar10 = param_1 + 0x5c;
         *pfVar10 = local_348;
-        local_35c = (float *)(int)(local_324 + param_1[5]);
-        param_1[0x5d] = (float)(int)local_35c;
+        // 2026-09-26 (Rageful Blow): dos errores en el punto de impacto.
+        //  - Y se truncaba a int.  IDA: `v355 = TargetPosition[1] + *(float*)(o+20)`
+        //    es float; el `(int)` venia del slot SLODWORD que Ghidra reusa.
+        //  - RequestTerrainHeight recibia la posicion ORIGINAL del efecto en vez
+        //    del punto YA rotado (IDA usa v60/v299, o sea o+368 y o+372), asi que
+        //    el golpe al suelo muestreaba el terreno bajo los pies del caster y no
+        //    donde cae, 80 unidades adelante.
+        param_1[0x5d] = local_324 + param_1[5];
         param_1[0x5e] = local_320 + param_1[6];
-        fVar17 = RequestTerrainHeight(param_1[4], param_1[5]);
+        fVar17 = RequestTerrainHeight(param_1[0x5c], param_1[0x5d]);
         param_1[0x5e] = (float)(fVar17 + (float10)_DAT_00552464);
         Particle_Spawn(0x4bf,pfVar10,&local_340,&local_20c,0,0.5,0);
         iVar9 = 0;
