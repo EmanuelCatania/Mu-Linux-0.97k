@@ -2971,8 +2971,11 @@ static inline void mc_DeleteJoint(int Type, DWORD Owner, int SubType)
 static inline void mc_CreateBlur(DWORD c, float* p1, float* p2,
                                  float* color, int type, int flag)
 {
-    // 0x0046C300 — CreateBlur (estela del arma). El pool no está alocado; se saltea per
-    // Portado abajo desde IDA 0046C320; ahora respalda el pool de Trail_RenderAll.
+    // CreateBlur (0x0046C320) — la estela que sigue la hoja del arma.  Busca un
+    // slot del pool ya asignado a este owner y le agrega el par de puntos
+    // (punta/base de la hoja); si no hay, toma el primero libre.  El pool es
+    // g_RenderPool_07c608a8 (100 slots x 0x2f0), compartido con Trail_RenderAll,
+    // que es quien lo dibuja.  Vida 15 (interpolado) o 30, tope de 29 segmentos.
     BYTE* const base = (BYTE*)g_RenderPool_07c608a8;
     constexpr int slotSize = 0x2f0;
     constexpr int slotCount = 100;
@@ -4060,16 +4063,24 @@ void __cdecl MoveCharacter(int p1)
                 float PriorFrame = *(float*)(o + 268);
                 float v370f = *(float*)(*(int*)(v422 + 48) + 16 * (*(BYTE*)(v422 + 160)) + 4) / 10.0f;
                 for (int kk = 0; kk < (int)v368f; ++kk) {
-                    unsigned int colorPack[3] = { 0, 0, 0 };
+                    // 2026-09-26 FIX (no se veia la estela de la hoja): el 6to
+                    // argumento de BMD_Animation es el Angle de la entidad, no un
+                    // buffer de salida.  El port pasaba un array de CEROS, asi que
+                    // los huesos se posaban con facing (0,0,0) en vez del real y los
+                    // dos extremos de la hoja salian en una orientacion fija.
                     BMD_Animation((void*)v422, (int)BoneMatrix, AnimationFrame,
                                  *(unsigned int*)&PriorFrame,
-                                 *(BYTE*)(o + 262), colorPack,
+                                 *(BYTE*)(o + 262), (unsigned int*)(o + 28),
                                  (float*)(o + 40), 0, 1);
+                    // IDA indexa `BoneMatrix[3 * bone]` sobre filas de float[4], o
+                    // sea 48 bytes por hueso.  Aca el array es [200][3][4], donde
+                    // cada elemento YA son esos 48 bytes: multiplicar por 3 otra vez
+                    // daba 144*bone y leia la matriz de otro hueso.
                     BMD_TransformPosition((void*)v422,
-                                 (float*)BoneMatrix[3 * (*(BYTE*)(c + 24 * v377 + 628))],
+                                 (float*)BoneMatrix[*(BYTE*)(c + 24 * v377 + 628)],
                                  v372, p1f, 0);
                     BMD_TransformPosition((void*)v422,
-                                 (float*)BoneMatrix[3 * (*(BYTE*)(c + 24 * v377 + 628))],
+                                 (float*)BoneMatrix[*(BYTE*)(c + 24 * v377 + 628)],
                                  v371, p2f, 0);
                     mc_CreateBlur(c, p1f, p2f, v373, Type, 1);
                     AnimationFrame += v370f;
