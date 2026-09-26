@@ -54,7 +54,7 @@ static void LoginScene_ApplySafeObjectAnim()
     extern void __cdecl FUN_004fa5f0(int pObj);  // Object_AnimUpdate safe subset: Alpha + login writes
     extern int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3);  // Calc_RenderObject
     extern float* __cdecl Entity_SpawnEffects(int param_1);  // Entity_SpawnEffects / login ship fire
-    extern void __stdcall MoveBugs_stub(void);  // butterfly/helper owner-follow update
+    extern void __stdcall MoveBugs(void);  // butterfly/helper owner-follow update
 
     for (int i = 0; i < 9; ++i) {
         char* obj = (char*)g_LoginSceneObjects[i];
@@ -106,7 +106,7 @@ static void LoginScene_ApplySafeObjectAnim()
     // it frozen at its randomized birth offset; run the safe pool follower
     // update here so it tracks the elf preview like the original scene.
     if (SceneFlag == 2) {
-        MoveBugs_stub();
+        MoveBugs();
     }
 }
 
@@ -591,11 +591,11 @@ int Game_SceneUpdate(void)
     Object_MoveUpdate();
     // IDA Game_SceneUpdate (0x51F900) llama MoveParticles() cada frame. Nuestro
     // Particle_Update() es en realidad Trail_RenderAll (0x46C3E0, mal nombrado) y
-    // NO decrementa el lifetime de las partículas. MoveParticles_stub (0x477090)
+    // NO decrementa el lifetime de las partículas. MoveParticles (0x477090)
     // sí las tickea/expira. Faltaba acá → las partículas del hada (Particle_Spawn
     // 1175 + sparkle 1150) se acumulaban forever additive → whiteout dorado en el
     // server-select. Mismo fix que Game_EnterWorldTick.
-    MoveParticles_stub();
+    MoveParticles();
     Character_UpdateAll();
 
     // ── Per-character animation tick (login scene) ────────────────────────────
@@ -619,7 +619,7 @@ int Game_SceneUpdate(void)
     // MoveCamera @ 0x0051E4E0 — login scene camera fly-through. Reads
     // CameraWalk_005615ec[] and writes CameraAngle/CameraPosition each frame.
     // Missing this call left the camera at (0,0,0) with angles (0,0,0).
-    MoveCamera_stub();
+    MoveCamera();
     LoginScene_ApplySafeObjectAnim();
 
     // Random preview-character action changes (IDA 0x0051F900):

@@ -1838,7 +1838,7 @@ extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int s
     g_ItemMoveSourcePool = DAT_07ea9800 ? DAT_07ea9800
                                         : (DWORD)(uintptr_t)&OffsetInventoryItems[0];
     g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-    SendRequestEquipmentItem_stub(srcFlag, (int)DAT_07ea5b18, picked, 0, (int)DAT_07e11e78);
+    SendRequestEquipmentItem(srcFlag, (int)DAT_07ea5b18, picked, 0, (int)DAT_07e11e78);
 }
 
 void __cdecl FUN_004d1fc0(void) {
@@ -2663,7 +2663,7 @@ int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + 
 //     en todos sus sitios justamente por eso.
 //   - unk_55A76C: único xref es el read de abajo (sin writer en el binario) → el
 //     2º pass overlay (TerrainFlag=2) es inerte también en el original.
-//   - Callees aún fallback (a portar en esta cadena): RenderTerrainFrustrum_stub
+//   - Callees aún fallback (a portar en esta cadena): RenderTerrainFrustrum
 //     (#2, 0x004F97E0), RenderTerrainTile RenderTerrainTile (#3, 0x004F8480).
 void __cdecl RenderTerrain(char EditFlag) {
     FUN_004f98c0(
@@ -2686,7 +2686,7 @@ void __cdecl RenderTerrain(char EditFlag) {
     }
 
     DAT_0838bc44 = 0;                     // TerrainFlag = 0
-    RenderTerrainFrustrum_stub(EditFlag != 0);
+    RenderTerrainFrustrum(EditFlag != 0);
 
     if (EditFlag) {
         if (DAT_07eab1fc) {               // SelectFlag → render del tile pickeado
@@ -2699,7 +2699,7 @@ void __cdecl RenderTerrain(char EditFlag) {
         GL_SetBlendSrcOver('\x01');             // EnableAlphaTest(1)
         if (DAT_0055a76c && World != 7) { // overlay (inerte: unk_55A76C nunca seteado)
             DAT_0838bc44 = 2;             // TerrainFlag = 2
-            RenderTerrainFrustrum_stub(false);
+            RenderTerrainFrustrum(false);
         }
         FUN_004f7060();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
         GL_DisableDepthTest();                   // DisableDepthTest

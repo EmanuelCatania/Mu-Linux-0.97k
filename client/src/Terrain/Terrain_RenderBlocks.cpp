@@ -105,7 +105,7 @@ void __cdecl RenderTerrainBlock(float xf, float yf, int xi, int yi, bool EditFla
 }
 
 // RenderTerrainFrustrum @ 0x004F97E0 (~42 lines) — iterates visible terrain blocks
-void __cdecl RenderTerrainFrustrum_stub(bool EditFlag) {
+void __cdecl RenderTerrainFrustrum(bool EditFlag) {
     // 0x004F97E0 — iterates visible terrain blocks in frustum bounds
     // FrustrumBoundMinX_1 = FrustrumBoundMinX_1, FrustrumBoundMinY_1 = FrustrumBoundMinY_1
     // FrustrumBoundMaxX_1 = FrustrumBoundMaxX_1, FrustrumBoundMaxY_1 = FrustrumBoundMaxY_1

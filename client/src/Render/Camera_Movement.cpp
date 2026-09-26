@@ -12,7 +12,7 @@ extern "C" void DbgLogPublic(const char* msg);
 // Drives camera walk paths using CameraWalk[] waypoints (6 floats each: pos+angle).
 // Two modes: lerp (type 0) or linear delta (type 1).
 // SceneFlag==2: random waypoint selection. Otherwise: fixed waypoint 5.
-void __stdcall MoveCamera_stub(void) {
+void __stdcall MoveCamera(void) {
     // 0x0051E4E0 — Intro/login camera walk animation
     // CameraWalk[] = DAT_005615ec (waypoints: 6 floats per entry = pos[3] + angle[3])
     // CurrentCameraCount = DAT_005615e8, CurrentCameraNumber = DAT_083a7c3c

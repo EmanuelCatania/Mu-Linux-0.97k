@@ -1193,7 +1193,7 @@ void  Game_DestroyWindow(void);                                          // Full
 // WinMain @ 0x0041E8A0 — already documented in WinMain.cpp
 
 // Batch 16 — Inventory, equipment, item management, skills, chat, terrain, NPC, GL
-void  __cdecl SendRequestEquipmentItem_stub(int iSrcType, int iSrcIndex, ITEM *pItem, int iDstType, int iDstIndex); // 0x0043C250
+void  __cdecl SendRequestEquipmentItem(int iSrcType, int iSrcIndex, ITEM *pItem, int iDstType, int iDstIndex); // 0x0043C250
 int   __stdcall FindHotKey(int Skill);                              // 0x004B1170
 void  __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float height); // 0x004BB940
 void  __cdecl SendChat(char *Text);                                      // 0x004C1B90
@@ -1211,25 +1211,25 @@ void  __cdecl InventoryColor(ITEM *p);                              // 0x004E242
 void  __stdcall RenderEquipmentBox(void);                           // 0x004E25A0
 void  __cdecl RenderEquipmentPart3D(int Index, float sx, float sy, float Width, float Height); // 0x004E2E40
 void  __stdcall RenderEquipment3D(void);                            // 0x004E3100
-void  __cdecl RenderItemsBoxes_stub(float fPosX, float fPosY, DWORD Inventory, int iMaxWidth, int iMaxHeight); // 0x004E37B0
+extern "C" void __cdecl RenderItemsBoxes(float fPosX, float fPosY, DWORD Inventory, int iMaxWidth, int iMaxHeight); // IDA: RenderItemsBoxes (0x004E37B0)
 void  __cdecl RenderItems3D(float p1, float p2, short *p3, int p4, int p5, char p6); // 0x004E38B0
 int   __cdecl CheckMixRecipe(short *p1, int p2, int p3);                // 0x004E40F0
-void  __cdecl RenderInventoryInterface_stub(int StartX, int StartY, int Flag); // 0x004ECBA0
+extern "C" void __cdecl RenderInventoryInterface(int StartX, int StartY, int Flag); // IDA: RenderInventoryInterface (0x004ECBA0)
 void  __cdecl RenderGuildMark(float p1, float p2, float p3, float p4, int p5); // 0x004F02F0
 void  __cdecl AddTerrainLightClip(float xf, float yf, float Light[3], int Range, float Buffer[3]); // 0x004F7800
 void  __cdecl RenderTerrainBlock(float xf, float yf, int xi, int yi, bool EditFlag); // 0x004F9720
-void  __cdecl RenderTerrainFrustrum_stub(bool EditFlag);                 // 0x004F97E0
+void  __cdecl RenderTerrainFrustrum(bool EditFlag);                 // 0x004F97E0
 void  __cdecl MoveObject_Special(int param_1); // legacy alias of FUN_004fa5f0 (0x004FA5F0)
 char* __stdcall PickObject_Mouse(void);                             // 0x004FA7C0
 float* __cdecl MoveObject_PerWorld(float param_1);                       // 0x004FDC00
 int   __stdcall MoveHeavenThunder(void);                            // 0x004FED90
 void  __stdcall MoveObjects(void);                                  // 0x004FF260
-void  __stdcall MoveBugs_stub(void);                                     // 0x005001F0
+void  __stdcall MoveBugs(void);                                     // 0x005001F0
 void  __cdecl OpenNpc(int Type);                                    // 0x005091D0
 void  __stdcall GL_SetBlendInvSrcColor(void);                            // 0x00511810
 void  __cdecl RenderSpriteUV(int Texture, float Position[3], float Width, float Height, float (*UV)[2], float Light[3][4], float Alpha); // 0x00511FB0
-double __cdecl RenderNumber2D_stub(float x, float y, int Num, float Width, float Height); // 0x005122F0
-void  __stdcall MoveCamera_stub(void);                                   // 0x0051E4E0
+extern "C" double __cdecl RenderNumber2D(float x, float y, int Num, float Width, float Height); // IDA: RenderNumber2D (0x005122F0)
+void  __stdcall MoveCamera(void);                                   // 0x0051E4E0
 void  __cdecl Combat_UseWizardSkill(DWORD c, DWORD o);                  // 0x004889D0
 bool  __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem);           // 0x0048BD70
 
@@ -1248,7 +1248,6 @@ unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char *param_1);   // hash
 void  __cdecl Effect_SpawnBombRing(float *param_1); // IDA: FUN_00466300
 // Compatibility bridge used only by stubs_IDA_ports.cpp.
 void  __cdecl FUN_00466300(float *param_1); // IDA: FUN_00466300
-void  __cdecl RenderWheelWeapon_stub(DWORD o);                           // 0x0046B7C0
 void  __cdecl ItemDrop_RenderGroundWeapon(int param_1); // IDA: FUN_0046b980
 // Compatibility bridge used only by stubs_IDA_ports.cpp.
 void  __cdecl FUN_0046b980(int param_1); // IDA: FUN_0046b980
@@ -1258,7 +1257,7 @@ void  __cdecl CreateBlood(DWORD o);                                 // 0x0046C68
 void  __cdecl FUN_0046c7f0(int p1, int p2, float p3, float p4, float p5); // directional blood (0x0046C7F0)
 void  __cdecl CreateArrow(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474370
 void  __cdecl CreateArrows(DWORD c, DWORD o, DWORD to, WORD SkillIndex, WORD Skill, WORD SKKey); // 0x00474BD0
-void  __stdcall MoveParticles_stub(void);                                // 0x00477090
+void  __stdcall MoveParticles(void);                                // 0x00477090
 unsigned int __cdecl Item_GetDefenseWithSpecial(DWORD ecx, short *param_1);            // item special option (0x0047CFB0)
 void  __stdcall SetPositionIME_Wnd(float x, float y);              // 0x0047ECAF
 bool  __cdecl CheckIME_Status(bool change, int mode);              // 0x0047EDC0
@@ -1267,7 +1266,7 @@ void  __stdcall RenderIME_Status(void);                             // 0x0047EE5
 void  __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, int p6, int p7, int p8, LPCSTR p9);
 // FUN_0047f4c0 @ 0x0047F4C0 (IDA)
 void  __cdecl Font_RenderBitmapText(int p1, int p2, float p3, float p4, int p5, int p6, float p7, int p8);
-void  __cdecl RenderTipText_stub(int sx, int sy, char *Text);           // 0x0047F7F0
+extern "C" void __cdecl RenderTipText(int sx, int sy, const char *Text);   // IDA: RenderTipText (0x0047F7F0)
 int   __cdecl FUN_0047fed0(int lvl, const char* name);                 // IDA: sub_47FED0 (0x0047FED0) — gate de envio de susurro
 void  __cdecl RegistWhisperID(int lvl, const char* text);              // IDA: RegistWhisperID (0x004801C0)
 void  __cdecl FUN_00481a40(int param_1, char *param_2, int param_3);    // assign chat text (0x00481A40)

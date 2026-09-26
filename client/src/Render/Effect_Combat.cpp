@@ -51,82 +51,10 @@ void __cdecl Effect_SpawnBombRing(float *a1)
 }
 
 
-// RenderWheelWeapon @ 0x0046B7C0 (~101 lines) — renders spinning weapon effect
-// Saves object position/rotation, modifies Z + rotation for spinning effect,
-// sets up BMD model, animates, RequestTerrainLight, RenderPartObject, restores original.
-void __cdecl RenderWheelWeapon_stub(DWORD o) {
-    // Save original position and rotation
-    float save_posX = *(float*)(o + 0x10);
-    float save_posY = *(float*)(o + 0x14);
-    float save_posZ = *(float*)(o + 0x18);
-    float save_angX = *(float*)(o + 0x1C);
-    float save_angY = *(float*)(o + 0x20);
-    float save_angZ = *(float*)(o + 0x24);
-
-    // Modify rotation: subtract _DAT_0055284c from Z height offset (o+0xC8)
-    float fRot = *(float*)(o + 0xC8) - _DAT_0055284c;
-    *(float*)(o + 0xC8) = fRot;
-
-    // Apply rotation offset to angle Z, set angle Y to 90.0f (0x42b40000)
-    *(float*)(o + 0x24) = fRot + save_angZ;
-    *(float*)(o + 0x20) = 90.0f;
-
-    // Raise Z position by one terrain unit
-    *(float*)(o + 0x18) = save_posZ + _DAT_005524f0;
-
-    // Compute model Type from weapon item attribute byte
-    BYTE weaponByte = *(BYTE*)(*(int*)(o + 0xFC) + 0x88);
-    int Type = (int)weaponByte + 400;
-
-    // Set up BMD model data
-    int modelBase = DAT_05828d58 + Type * 0xBC;
-    BYTE heroClass = *(BYTE*)(Hero + 0x2B8) & 7;  // Hero->Class & 7
-    BYTE animState = *(BYTE*)(o + 0x105);
-
-    *(float*)(modelBase + 0x6C) = *(float*)(o + 0x10);
-    *(float*)(modelBase + 0x70) = *(float*)(o + 0x14);
-    *(float*)(modelBase + 0x74) = *(float*)(o + 0x18);
-    *(BYTE*)(modelBase + 0x98) = heroClass;
-    *(BYTE*)(modelBase + 0xA0) = animState;
-
-    // Save and set object type
-    short origType = *(short*)(o + 2);
-    *(short*)(o + 2) = (short)Type;
-
-    // ItemObjectAttribute — sets up object render attributes
-    ItemObjectAttribute(o);
-
-    // BMD::Animation — Ghidra shows phantom register params (unaff_EBX/ESI/EDI/EBP);
-    // the real call sets up bone matrices for the weapon model.
-    // Parameters that depend on phantom regs are passed as zero/defaults.
-    // (Animation is driven by the bone matrix pointer at o+0x108 and frame at o+0x10C)
-
-    // RequestTerrainLight — sample terrain lighting at object position
-    float terrainLight[3] = { 0.0f, 0.0f, 0.0f };
-    RequestTerrainLight(*(float*)(o + 0x10), *(float*)(o + 0x14), terrainLight);
-
-    // Add object's own light contribution
-    terrainLight[0] += *(float*)(o + 0xE8);
-    terrainLight[1] += *(float*)(o + 0xEC);
-    terrainLight[2] += *(float*)(o + 0xF0);
-
-    // Light level from item attribute byte
-    int lightLevel = (int)(*(BYTE*)(*(int*)(o + 0xFC) + 0x89)) << 3;
-
-    // RenderPartObject(o, Type, NULL, light, alpha=0.0, level=1, opt=1, globalTrans=true, hideSkin=false, translate=true, select, renderType)
-    RenderPartObject(o, Type, 0, terrainLight, 0.0f, 1, 1, 1, 0, 1, 0, 0);
-
-    // Restore original type
-    *(short*)(o + 2) = origType;
-
-    // Restore original position and rotation
-    *(float*)(o + 0x10) = save_posX;
-    *(float*)(o + 0x14) = save_posY;
-    *(float*)(o + 0x18) = save_posZ;
-    *(float*)(o + 0x1C) = save_angX;
-    *(float*)(o + 0x20) = save_angY;
-    *(float*)(o + 0x24) = save_angZ;
-}
+// RenderWheelWeapon vive en Render_WorldHelpers.cpp.
+//
+// 2026-09-26: aca habia una copia bajo el nombre RenderWheelWeapon.  Las dos
+// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.
 
 // ItemDrop_RenderGroundWeapon @ 0x0046B980 (~82 lines) — renders grounded weapon model
 // If object's height offset (o+0x60) > _DAT_00552488 threshold:

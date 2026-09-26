@@ -336,10 +336,10 @@ void Game_EnterWorldTick(void)
     // posiciona/anima las MONTURAS (Uniria bug=195 / Dinorant bug=267). Sin él,
     // el alpha del mount queda en 0 → Calc_RenderObject cullea → no se dibuja.
     // (La sesión previa lo puso en Game_CharSelectTick, que es el tick de state 5.)
-    { extern void __stdcall MoveBugs_stub(void); MoveBugs_stub(); }
+    { extern void __stdcall MoveBugs(void); MoveBugs(); }
     CLK_WATCH("after-MoveBugs");
     Object_MoveUpdate();         CLK_WATCH("after-Object_MoveUpdate");
-    // ── BUG-FIX 2026-04-27: MoveParticles_stub (MoveParticles) decrementa
+    // ── BUG-FIX 2026-04-27: MoveParticles (MoveParticles) decrementa
     // lifetime de cada particle del pool DAT_07abf5f0. Sin esta llamada los
     // particles spawneados (lightning ELS=11, fire/smoke, etc.) se acumulan
     // forever → whiteout. Per IDA/5.2 RenderBlurs_RenderCharacterScene este
@@ -350,7 +350,7 @@ void Game_EnterWorldTick(void)
     // char-select.  Sin el tick de joints los de vida 0 no morian nunca aca.
     Effect_TickAll();            // MoveEffects (0x0046B790)
     Joint_TickAll();             // MoveJoints  (0x004736E0)
-    MoveParticles_stub();        CLK_WATCH("after-MoveParticles");
+    MoveParticles();        CLK_WATCH("after-MoveParticles");
     Character_UpdateAll();       CLK_WATCH("after-Character_UpdateAll");
     MoveCharacterClient((float*)&DAT_07abf050); CLK_WATCH("after-MoveCharacterClient");
 
@@ -386,7 +386,7 @@ void Game_EnterWorldTick(void)
     // Sin esta llamada la cámara queda anclada donde la dejó el login (~0,-1100,500)
     // y char-select se ve sin pitch correcto, los 5 personajes fuera de cuadro.
     // En IDA Game_EnterWorldTick (00521D80) llama MoveCamera() después de MoveParticles().
-    MoveCamera_stub();           CLK_WATCH("after-MoveCamera");
+    MoveCamera();           CLK_WATCH("after-MoveCamera");
 
     // Delete entity if server confirmed (0x39 = delete ack)
     if (DAT_05826cb0 == 0x39) {

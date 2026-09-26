@@ -276,8 +276,8 @@ void Game_CharSelectTick(void)
     // al owner. Sin él, el alpha del mount queda en 0 → Calc_RenderObject lo
     // cullea (alpha < 0.01) → la montura nunca se dibuja. Verificado por diag:
     // el bug 267 existía en el pool pero Calc devolvía 0.
-    extern void __stdcall MoveBugs_stub(void);
-    MoveBugs_stub();
+    extern void __stdcall MoveBugs(void);
+    MoveBugs();
 
     // (2026-09-12: aca habia un `Character_UpdateAll()` = 0x479730, que es
     //  RenderSprites -- dibuja el pool de sprites y LES LIMPIA el flag.  En IDA
@@ -296,8 +296,8 @@ void Game_CharSelectTick(void)
     // acumulaban con blend aditivo → haces dorados saliendo de los bordes de la
     // pantalla, intensificándose progresivamente. El tick in-world
     // (Game_EnterWorldTick L310) sí lo llama; el de char-select no lo tenía.
-    extern void __stdcall MoveParticles_stub(void);
-    MoveParticles_stub();   // MoveParticles (0x477090)
+    extern void __stdcall MoveParticles(void);
+    MoveParticles();   // MoveParticles (0x477090)
     // (Tambien habia un `Effect_UpdateAll()` = 0x479790 = CheckSprites; su unico
     //  caller en IDA es Game_RenderTick, que ya lo llama antes de RenderSprites.)
     Effect_TickFlare();

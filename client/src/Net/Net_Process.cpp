@@ -5831,7 +5831,7 @@ void Net_ProcessPacket(void)
                                 DAT_07eaa165 = 1;   // EquipmentItem
                                 g_ItemMoveSourcePool = (DWORD)(uintptr_t)&OffsetWarehouseItems[0];
                                 g_ItemMoveTargetPool = (DWORD)(uintptr_t)&OffsetInventoryItems[0];
-                                SendRequestEquipmentItem_stub((int)DAT_07ea9804, (int)DAT_07ea9808,
+                                SendRequestEquipmentItem((int)DAT_07ea9804, (int)DAT_07ea9808,
                                     (ITEM*)DAT_07e91350, (int)DAT_07ea980c, (int)DAT_07ea9810);
                             }
                         }

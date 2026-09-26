@@ -734,7 +734,7 @@ void __stdcall MoveObjects(void) {
 //   +0x108 frame +0x10C priorFrame        +0x168 alpha-target
 // Owner (CharactersClient) offsets: +0x10/14/18 pos, +0x1c/20/24 ang,
 //   +0x7c(124) state, +0x84(132) Kind, +0x105(261) CurrentAction.
-void __stdcall MoveBugs_stub(void) {
+void __stdcall MoveBugs(void) {
     extern unsigned char* TerrainWall;
 
     char*  base = (char*)DAT_083a1218;

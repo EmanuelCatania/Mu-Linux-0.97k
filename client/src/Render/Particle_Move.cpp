@@ -65,7 +65,7 @@
 // Bitmaps height: g_BitmapsRaw + type * 0x38 + 0x24 = height field per bitmap slot
 #define BMP_HEIGHT(t)  (*(float*)(g_BitmapsRaw + (t) * 0x38 + 0x24))
 
-void __stdcall MoveParticles_stub(void)
+void __stdcall MoveParticles(void)
 {
     float fVar15, fVar19, fVar3;
     float10 fVar11, fVar12;

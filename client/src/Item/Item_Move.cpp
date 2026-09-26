@@ -67,7 +67,7 @@ static void InventoryMove_SetPendingPools(const BYTE* sourcePoolBase,
     g_ItemMoveTargetPool = (DWORD)(uintptr_t)targetPoolBase;
 }
 
-void __cdecl SendRequestEquipmentItem_stub(int srcFlag, int iSrcIndex, ITEM* pItem,
+void __cdecl SendRequestEquipmentItem(int srcFlag, int iSrcIndex, ITEM* pItem,
                                            int dstFlag, int iDstIndex) {
     if (!pItem) return;
 

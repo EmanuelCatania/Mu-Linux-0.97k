@@ -151,7 +151,7 @@ void __fastcall FUN_00403320(void* param_1) {
 
     glColor3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    RenderInventoryInterface_stub(450, 0, 1);
+    RenderInventoryInterface(450, 0, 1);
     m_dwTextColor = 0xFFD2E6FFu;
     m_dwBackColor = 0;
 
@@ -257,7 +257,7 @@ UINT __fastcall FUN_00403700(void* ecx, void* /*edx*/, UINT param_1) {
 void __fastcall FUN_00403a40(void* param_1) {
     glColor3f(1.0f, 1.0f, 1.0f);
     EnableAlphaTest(true);
-    RenderInventoryInterface_stub(0x1c2, 0, 1);
+    RenderInventoryInterface(0x1c2, 0, 1);
     m_dwTextColor = 0xffd2e6ff;
     m_dwBackColor = 0;
     // SelectObject(m_hFontDC, g_hFont); // globals not yet declared

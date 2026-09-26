@@ -336,54 +336,10 @@ void __stdcall RenderEquipment3D(void) {
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
-// RenderItemsBoxes @ 0x004E37B0 (~49 lines) — render 2D item grid boxes
-void __cdecl RenderItemsBoxes_stub(float fPosX, float fPosY, DWORD Inventory, int iMaxWidth, int iMaxHeight) {
-    // 0x004E37B0 — render 2D item grid boxes
-    // For each cell: InventoryColor sets GL color, then RenderBitmap draws the cell background.
-    // Empty cell (Type==-1) uses texture 0x115 with UV 1.0x1.0.
-    // Occupied cell uses texture 0x116 with UV 0.625x0.667.
-    // Cell size: 20x20 px, stride 0x14 (20) px per cell.
-    // Row stride in Inventory: each row is iMaxWidth ITEMs = iMaxWidth * sizeof(ITEM).
-    // Ghidra shows Inventory += 0x220 per row => sizeof(ITEM)*iMaxWidth varies but Ghidra
-    // hardcodes 0x220 based on a specific grid width. We use pointer arithmetic from ITEM*.
-
-    if (iMaxHeight <= 0) return;
-
-    int pixelY = 0;
-    int rowsLeft = iMaxHeight;
-    do {
-        if (0 < iMaxWidth) {
-            int pixelX = 0;
-            int colsLeft = iMaxWidth;
-            ITEM* p = (ITEM*)Inventory;
-            int gridCol = 0;
-            do {
-                int Texture;
-                float uWidth, vHeight;
-                if (p->Type == -1) {
-                    InventoryColor(p);
-                    vHeight = 1.0f;
-                    uWidth = 1.0f;
-                    Texture = 0x115;
-                } else {
-                    InventoryColor(p);
-                    vHeight = 0.6666667f;
-                    uWidth = 0.625f;
-                    Texture = 0x116;
-                }
-                GL_DrawTexture(Texture, (float)pixelX + fPosX, (float)pixelY + fPosY,
-                             20.0f, 20.0f, 0.0f, 0.0f, uWidth, vHeight, '\x01', '\x01');
-                p = p + 1;
-                ++gridCol;
-                pixelX = pixelX + 0x14;
-                colsLeft = colsLeft - 1;
-            } while (colsLeft != 0);
-        }
-        pixelY = pixelY + 0x14;
-        Inventory = Inventory + (iMaxWidth * (int)sizeof(ITEM));
-        rowsLeft = rowsLeft - 1;
-    } while (rowsLeft != 0);
-}
+// RenderItemsBoxes vive en Render/HUD_Pass6.cpp.
+//
+// 2026-09-26: aca habia una copia bajo el nombre RenderItemsBoxes.  Las dos
+// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.
 
 // RenderItems3D @ 0x004E38B0 (~130 lines) — render 3D item models in inventory grid
 // For each non-empty cell: call RenderItem3D with item dimensions from ItemAttribute.
@@ -431,7 +387,7 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
                             if (p6 != '\0' && itemType > 0x1bf && itemType < 0x1c9 &&
                                 cell->Durability > 1) {
                                 glColor3f(1.0f, 0.9f, 0.7f);
-                                RenderNumber2D_stub(x + _DAT_005527dc, y,
+                                RenderNumber2D(x + _DAT_005527dc, y,
                                     (unsigned int)cell->Durability, 9.0f, 10.0f);
                             }
                         }

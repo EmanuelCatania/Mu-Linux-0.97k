@@ -1420,7 +1420,7 @@ static void __fastcall ChatLB_renderFooter(DWORD* self)
         char* tip = GlobalText[750 + (hovered - 1)];
         float tipX = bx + (float)(hovered - 1) * gap;
         int   tipY = (int)(by - 10.0f);
-        RenderTipText_stub((int)(tipX - 16.0f), tipY, tip);
+        RenderTipText((int)(tipX - 16.0f), tipY, tip);
     }
 
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);

@@ -499,7 +499,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                     UIChatLogWindow_AddText((const char*)&DAT_07eaa190, GlobalText[474], 2);
                 } else {
                     // 2026-08-24 FIX (issue #15, "las jewels no se consumen"):
-                    // aca se mandaba `SendRequestEquipmentItem_stub`, o sea
+                    // aca se mandaba `SendRequestEquipmentItem`, o sea
                     // 0x24 PMSG_ITEM_MOVE_RECV (11 bytes). El server trata eso
                     // como MOVER la jewel a una celda ocupada -> lo rechaza y
                     // el cliente la devuelve al inventario. IDA (sub_4D6470
@@ -619,7 +619,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         if (DAT_07eaa165 != '\0') goto drop_done;
         DAT_07eaa165 = '\x01';
         InventoryMove_SetPendingPools(sourceInvBase, invBase);
-        SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
+        SendRequestEquipmentItem(sourceMoveFlag, (int)DAT_07ea5b18,
             (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
         actionTaken = true;
         goto drop_done;
@@ -643,7 +643,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     if (DAT_07eaa165 != '\0') goto drop_done;
     DAT_07eaa165 = '\x01';
     InventoryMove_SetPendingPools(sourceInvBase, invBase);
-    SendRequestEquipmentItem_stub(sourceMoveFlag, (int)DAT_07ea5b18,
+    SendRequestEquipmentItem(sourceMoveFlag, (int)DAT_07ea5b18,
         (ITEM*)DAT_07e91350, targetMoveFlag, (int)DAT_07e11e78);
     actionTaken = true;
 

@@ -768,7 +768,7 @@ float    _DAT_07abf5e8 = 0.0f;
 DWORD    DAT_07abf5e8  = 0;
 // Particle pool — 3000 slots × 0x70 (112) bytes = 336000 bytes total.
 // Original binary: 0x07abf5f0..0x07b11670 = 0x52080 bytes. /0x70 = 47999 slots.
-// Pero MoveParticles_stub itera 3000 slots; usamos ese tamaño que ya existe en stubs.
+// Pero MoveParticles itera 3000 slots; usamos ese tamaño que ya existe en stubs.
 // Antes era 1 byte → CreateParticle (Particle_Spawn) tenía un overflow guard que
 // retornaba 0 inmediatamente → NUNCA spawneaba lightning ELS=10/11, fire/smoke
 // effects, weather particles, etc. — todo silenciado.
