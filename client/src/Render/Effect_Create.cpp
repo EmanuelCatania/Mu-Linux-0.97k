@@ -1513,7 +1513,11 @@ LAB_004625aa:
     pfVar17[0x5e] = pfVar17[6];
     pfVar17[0x18] = 2.8026e-44;
     iVar9 = _rand();
-    pfVar17[1] = (float)(iVar9 % 100);
+    // IDA: `*((_DWORD *)i + 1) = rand() % 100;` -- el SubType es un DWORD.
+    // Guardarlo con una conversion a float dejaba los BITS del float en el
+    // campo, y MoveEffect lo lee por bits: el angulo de las grietas del
+    // suelo (IDA L2095) salia ~1.1e9 en vez de 0..99.
+    *(DWORD *)(pfVar17 + 1) = (DWORD)(iVar9 % 100);
     pfVar17[9] = pfVar17[9] + _DAT_00552978;
     pfVar17[10] = pfVar17[10] + _DAT_00552878;
     pfVar17[0xc] = pfVar17[0xc] + _DAT_005524ec;
