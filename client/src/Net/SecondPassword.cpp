@@ -1042,7 +1042,7 @@ void __cdecl FUN_004e8b70(void) {
             DAT_083a42c4 = 0;
             DAT_07eaa13c = 4;
             DAT_00559f5e = (char)0xff;
-            FUN_0051e240(1, 448, 151);
+            ShowCheckBox(1, 448, 151);
             mx = (int)DAT_083a427c;
             my = (int)DAT_083a4278;
         }
@@ -1084,7 +1084,7 @@ void __cdecl FUN_004e8b70(void) {
 //   1,2,3,4,5,6,7,8,0xb → FUN_004e3db0(0x7ea8410, 8, 8, iVar1, iVar3) — send auth
 //     sub-switch: cases 1,7,0xb → iVar1=5 iVar3=4; case 8 → iVar1=2 iVar3=2; else → iVar1=DAT_0055a3f8 iVar3=DAT_0055a3fc
 //     si tiene éxito (retorno distinto de cero) y DAT_07e91388 < 1: setea DAT_07eaa13c=2, DAT_00559f5e=0xff,
-//     call FUN_0051e240(1, 0x21b, 0x97)
+//     call ShowCheckBox(1, 0x21b, 0x97)
 //   0xfffffff8, 0xfffffffe → UIChatLogWindow_AddText(&DAT_07eaa19c, &DAT_07d55c44, 2) — show error message
 // After switch: PlayBuffer(0x19,0,0).
 // "Back" button: [DAT_07ea5288+0x19,DAT_07ea5288+0x31) x [DAT_07ea5284+0x18b,DAT_07ea5284+0x1a3)
@@ -1128,7 +1128,7 @@ void __cdecl FUN_004e9050(void) {
                 if ((int)DAT_07e91388 < 1) {
                     DAT_07eaa13c = 2;
                     DAT_00559f5e = 0xff;
-                    FUN_0051e240(1, 0x21b, 0x97);
+                    ShowCheckBox(1, 0x21b, 0x97);
                 }
             }
             break;
@@ -1296,7 +1296,7 @@ void __cdecl FUN_004eb7f0(void) {
             if (m_bMyConfirm == '\0') {
                 DAT_07eaa13c = 3;
                 DAT_00559f5e = (char)0xff;
-                FUN_0051e240(4, 0x173, 0x97);
+                ShowCheckBox(4, 0x173, 0x97);
                 return;
             }
             m_bMyConfirm = '\0';
@@ -1410,75 +1410,15 @@ void __cdecl FUN_004ec330(void) {
     }
 }
 
-// =============================================================================
-// 2026-05-07 B3 refactor — SecondPassword UI helper stubs
-// moved from stubs.cpp lines 5297-7762 (2466 lines).
-// =============================================================================
-// ── SecondPassword UI helper stubs (bodies in original binary) ────────────────
-// FUN_0051e240 @ 0x0051E240 — ShowCheckBox
-// param_1=count, param_2=índice base de GlobalText (stride 300),
-// param_3=mensaje de destino (0x99 activa el rótulo especial de ítem).
-// Copia las líneas al buffer del panel DAT_083a44c4 (stride 0x26) y configura el descriptor.
-undefined4 __cdecl FUN_0051e240(int param_1, int param_2, int param_3)
-{
-    int iVar3 = param_1;
-    if (param_3 != 0x99) {
-        if (0 < param_1) {
-            char *dst = (char *)&DAT_083a44c4;
-            for (int i = 0; i < param_1; ++i) {
-                // IDA: ShowCheckBox 0x51E240 copia desde
-                // GlobalText[index + i] (slots de 300 bytes). En Trade el
-                // caller FUN_004EB7F0 usa (4, 371, 151): GlobalText[371..374].
-                strncpy_s(dst, 0x26, GlobalText[param_2 + i], _TRUNCATE);
-                dst += 0x26;
-            }
-        }
-        goto LAB_0051e377;
-    }
-    // mode 0x99: build item class label for current item (DAT_07ea5240)
-    {
-        char local_34[0x34] = {};
-        if (*(short*)DAT_07ea5240 == 0x1af) {
-            byte *pbVar13 = nullptr;
-            switch (DAT_07ea5244 >> 3 & 0xf) {
-            case 0: pbVar13 = &DAT_005618b8; break;
-            case 1: pbVar13 = &DAT_005618bc; break;
-            case 2: pbVar13 = &DAT_005618c0; break;
-            case 3: pbVar13 = &DAT_005618c4; break;
-            default: goto switchD_default;
-            }
-            crt_sprintf(local_34, (const char*)pbVar13);
-        }
-switchD_default:
-        crt_sprintf((char *)&DAT_083a44c4, s____s___005618c8);
-        iVar3 = param_1 + 1;
-        if (1 < iVar3) {
-            char *puVar9 = &DAT_083a44ea;
-            do {
-                crt_sprintf(puVar9, &DAT_07d29d24 + param_2 * 300);
-                puVar9 += 0x26;
-                param_1--;
-            } while (param_1 != 0);
-        }
-    }
-LAB_0051e377:
-    {
-        static const unsigned int local_5c[10] = {1,0x15,0x5a,0x46,0x15, 3,0x78,0x5a,0x46,0x15};
-        DAT_083a4324 = (DWORD)iVar3;
-        memset(&DAT_083a42f8[0], 0, 10*4);
-        for (int i = 0; i < 5; i++) DAT_083a42f8[i] = local_5c[i];
-        unsigned int uVar2 = DAT_083a7c28;
-        for (int i = 0; i < 5; i++) DAT_083a430c[i] = local_5c[i+5];
-        if (param_3 != 0) {
-            if (DAT_083a7c24 == 0) { DAT_083a7c24 = (undefined4)param_3; return 1; }
-            DAT_083a7c28 = (undefined4)param_3;
-            return 1;
-        }
-        DAT_083a7c28 = (undefined4)param_3;
-        DAT_083a7c24 = (undefined4)uVar2;
-        return 1;
-    }
-}
+// ShowCheckBox (0x0051E240) vive en src/Item/Item_ClickHandler.cpp.
+//
+// 2026-09-26: aca habia una SEGUNDA implementacion bajo el nombre ShowCheckBox.
+// Las dos portan la misma funcion, pero difieren en la rama del mensaje 153
+// (0x99): IDA arma el rotulo con GlobalText[166..169] segun el tipo de huevo de
+// mascota (item 431), y esta copia usaba unos strings sueltos DAT_005618b8..c4.
+// La de Item_ClickHandler.cpp coincide termino por termino con el decompile
+// -- incluidos los descriptores de boton {1,21,90,70,21} y {3,120,90,70,21} --
+// asi que se queda esa y sus 3 call sites pasan a llamarla.
 
 // FUN_004e3db0 @ 0x004E3DB0 — SecondPassword_GridSlotAvail
 // Escanea una grilla 2D (param_3×param_2 filas/columnas) en el array de inventario en param_1,

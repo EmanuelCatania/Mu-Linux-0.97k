@@ -303,13 +303,13 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
     }
     float local_c[3];
     Triangle_ComputeNormal((float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270, local_c);
-    unsigned int uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
+    unsigned int uVar2 = CollisionDetectLineToFace((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                                        (float*)&DAT_07feb258, &_DAT_07feb264, &_DAT_07feb270,
                                        &_DAT_07feb27c, local_c, '\x01');
     cVar1 = (char)uVar2;
     if (cVar1 == '\0') {
         Triangle_ComputeNormal((float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c, local_c);
-        uVar2 = FUN_00512d40((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
+        uVar2 = CollisionDetectLineToFace((float*)&CameraRayOriginX, (float*)&DAT_083a4110, 3,
                               (float*)&DAT_07feb258, &_DAT_07feb270, &_DAT_07feb27c,
                               &_DAT_07feb264, local_c, '\x01');
         cVar1 = (char)uVar2;
@@ -348,7 +348,7 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
 
 // FUN_00512d30 @ 0x00512D30 — Map_InitRayCast: init ray t_max to ~1.03e7
 // IDA-ported: single store. DAT_083a4120 is the raycast t_max sentinel
-// used by FUN_00512d40 (CollisionDetectLineToFace) to accept nearer hits only.
+// used by CollisionDetectLineToFace (CollisionDetectLineToFace) to accept nearer hits only.
 // Original binary stores raw bits 0x4B1DCD65 (= 10367333.0f) into the float.
 void FUN_00512d30()
 {

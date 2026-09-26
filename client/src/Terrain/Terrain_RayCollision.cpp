@@ -11,7 +11,7 @@
 // ── Terrain tile outline / ray-triangle intersection stubs ───────────────────
 // RenderTerrainFace (RenderTerrainFace) — PORTADO 1:1 en src/Terrain/Terrain_RenderFace.cpp
 // (antes era un no-op stub de 4 args; la firma real es 5 args con lodf).
-// FUN_00512d40 @ 0x00512D40 — CollisionDetectLineToFace (a.k.a. Ray_TriIntersect)
+// CollisionDetectLineToFace @ 0x00512D40 — CollisionDetectLineToFace (a.k.a. Ray_TriIntersect)
 // BUG-FIX 2026-04-26 (audit #7): activated full IDA port.  Old stub returned 0
 // always, so terrain triangle picking *never* registered a hit — click-to-move
 // would only land on whatever fallback path remained.  The dormant gated port
@@ -19,7 +19,7 @@
 //   xf → DAT_083a4130  (cursor billboard screen X / picked world X)
 //   yf → DAT_083a4134  (cursor billboard screen Y / picked world Y)
 //   DAT_083a4120 is the running closest-hit ray parameter (float, not DWORD).
-unsigned int __cdecl FUN_00512d40(float *Position, float *Target, int Polygon,
+unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, int Polygon,
     float *v1, float *v2, float *v3, float *v4, float *Normal, char Collision)
 {
     float v24 = Target[0] - Position[0];

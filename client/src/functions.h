@@ -806,7 +806,7 @@ void  __cdecl FUN_004eb5d0(void);
 void  __cdecl FUN_004eb7f0(void);
 void  __cdecl FUN_004ec330(void);
 // SecondPassword UI helper calls
-undefined4 __cdecl FUN_0051e240(int mode, int param_2, int param_3);  // UI_OpenDialog (open named dialog by id)
+void  __cdecl ShowCheckBox(int num, int index, int message);  // IDA: ShowCheckBox (0x0051E240)
 uint  __cdecl FUN_004e3db0(int ctx, int p1, int p2, int p3, int p4);   // SecondPassword_AuthSend — returns non-zero on success
 undefined4 __cdecl FUN_004f6850(void);        // SecondPassword_CancelReturn (nav back, clear state)
 uint  __cdecl FUN_004f6a70(void);             // Net_Disconnect_Clean (sends disconnect + returns)
@@ -893,7 +893,7 @@ void  __cdecl OpenModels(int model_id, const char *prefix, int index); // IDA: O
 
 // ── Terrain tile pick helpers ─────────────────────────────────────────────────
 void  __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf); // RenderTerrainFace (0x004F7FB0)
-unsigned int __cdecl FUN_00512d40(float *Position, float *Target, int Polygon, float *v1, float *v2, float *v3, float *v4, float *Normal, char Collision); // CollisionDetectLineToFace — IDA-activated 2026-04-26 audit #7
+unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, int Polygon, float *v1, float *v2, float *v3, float *v4, float *Normal, char Collision); // IDA: CollisionDetectLineToFace (0x00512D40)
 
 // ── Item inventory helpers (from Offsets.h) ───────────────────────────────────
 #define FUN_00482ff0 GetItemCount
@@ -1320,8 +1320,9 @@ void  __fastcall FUN_00410a90(int* param_1);                               // Si
 void  __cdecl FUN_004fa5f0(int pObj);                                      // Object_AnimUpdate (per-frame anim tick)
 void  __cdecl FUN_004fdc00(float pObj);                                    // Object_RenderUpdate (terrain render per object)
 void  __cdecl FaceNormalize(float v[3], float out[3], float v2[3], float normal[3]); // 0x00440A60 approx
-bool  __cdecl CollisionDetectLineToFace(float pos[3], float target[3], int normalIdx,
-              float localC[3], float* posZ, float* v3, float* v4, float normal[3], char flag); // 0x00440C90 approx
+// CollisionDetectLineToFace se declara mas arriba (0x00512D40).  Aca habia una
+// SEGUNDA declaracion, la del stub, que decia ser "0x00440C90 approx" -- esa
+// direccion cae DENTRO de sub_440BE0, que es su caller, no ella misma.
 int   __cdecl ItemValue(ITEM* ip, unsigned int goldType);                  // 0x0047C690
 
 // ── SkillElf dependencies ────────────────────────────────────────────────────

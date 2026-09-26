@@ -1741,7 +1741,7 @@ void __cdecl Player_ProcessInput(void)
                 bool shiftHeld = ((char)((unsigned short)shift >> 8) == -0x80);
                 if (!shiftHeld) {
                     // BUG-FIX 2026-04-29: reset closest-hit sentinel ANTES de
-                    // cada scan. Sin esto, FUN_00512d40 rechaza todos los hits
+                    // cada scan. Sin esto, CollisionDetectLineToFace rechaza todos los hits
                     // si DAT_083a4120 (t_max) quedó stale de un frame previo.
                     extern void FUN_00512d30(void);
                     FUN_00512d30();

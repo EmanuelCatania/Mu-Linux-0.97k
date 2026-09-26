@@ -26351,7 +26351,7 @@ int __cdecl FUN_0050f700(char *FileName)
 }
 #endif
 
-// FUN_00512d40 (IDA port) is now active above — see L11220+ block.
+// CollisionDetectLineToFace (IDA port) is now active above — see L11220+ block.
 
 // ── FUN_005130f0 (IDA-only, gated) ──
 #if defined(IDA_PORT_005130F0)

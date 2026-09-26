@@ -1221,7 +1221,7 @@ extern float   DAT_06f42a5c[200*3];    // bbox min, 3 floats por hueso
 #define DAT_06f42a60   (*(DWORD*)((char*)&DAT_06f42a5c[0] + 4))
 #define DAT_06f42a64   (*(DWORD*)((char*)&DAT_06f42a5c[0] + 8))
 
-// ── UI name-list panel data (FUN_0051e240) ────────────────────────────────────
+// ── UI name-list panel data (ShowCheckBox) ────────────────────────────────────
 // DAT_083a430c  — macro alias dentro de DAT_083a42f8 (ver bloque de dialog button rects)
 // 2026-05-08: alias por macro que proyecta en el offset +0x26 (line[1]) dentro del
 // properly-sized DAT_083a44c4 buffer (g_lpszMessageBoxCustom).

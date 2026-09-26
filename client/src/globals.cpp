@@ -710,7 +710,7 @@ short    DAT_077d87fc[200]    = {0};   // contador de vertices por hueso
 float    DAT_05827a98[200*3]  = {0};   // bbox max, 3 floats por hueso
 float    DAT_06f42a5c[200*3]  = {0};   // bbox min, 3 floats por hueso
 
-// UI name-list panel data (FUN_0051e240)
+// UI name-list panel data (ShowCheckBox)
 // DAT_083a430c — ahora macro dentro de DAT_083a42f8 (dialog button rects)
 // 2026-05-08: DAT_083a44c4 IS g_lpszMessageBoxCustom — a 7-line × 0x26 byte
 // dialog/message buffer used by CreateOkMessageBox, RenderErrorMessage,

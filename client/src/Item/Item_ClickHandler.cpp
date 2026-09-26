@@ -219,7 +219,7 @@ unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
     return ItemMove_SnapMouseToEmptySlot(origin_x, origin_y, grid_base, grid_w, grid_h);
 }
 
-// ── ShowCheckBox (FUN_0051E240, 506 bytes) — port FIEL desde IDA ────────────
+// ── ShowCheckBox (ShowCheckBox, 506 bytes) — port FIEL desde IDA ────────────
 // Opens a 2-button (Yes/No) confirmation dialog. The dialog uses the same
 // `g_lpszMessageBoxCustom` 7×38 buffer as `CreateOkMessageBox`, plus 2
 // button-rect descriptors for the Yes/No clickable areas.
