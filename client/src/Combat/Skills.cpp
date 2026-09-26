@@ -49,7 +49,8 @@
 //   0x18 / 0x34  Cancel / reset        — Entity_ResetToWalk(caster)
 //   0x1A..0x24   Magic variants        — same as 0x10 (magic_channel_flag check)
 //   0x2B         Skill anim 0x43
-//   0x30         Poison buff on target — Particle 0x47E, target[+0x1E]|=0x10, anim=0x3F
+//   0x30 (48)    Greater Life (Swell Life) — efecto 1150/sub1 con owner sobre
+//                el objetivo (aura dorada), target[+120]|=0x10, anim=63
 //   0x31         Anim 0x40 or 0x41     — depends on World
 //   0x33         Ice buff on target    — Particle 0xBE×2, target[+0x2BC_byte=0xBB]=0, target[+0x1E]|=0x20
 //   0x37         Lightning buff        — Particle 0x4FA, UI 0x68, target[+0x1E]|=0x40
@@ -204,12 +205,12 @@ void PacketHandler_0x19(BYTE* pkt)
     {
     // IDA LABEL_107: these six projectile/magic IDs share the exact
     // SetPlayerMagic/SetPlayerAttack path before the common active tail.
-    case 0x01:  // Poison
-    case 0x02:  // Meteorite
-    case 0x04:  // Fire Ball
-    case 0x07:  // Ice
-    case 0x0B:  // Power Wave
-    case 0x11:  // Energy Ball
+    case 0x01:  // 1 Poison
+    case 0x02:  // 2 Meteorite
+    case 0x04:  // 4 Fire Ball
+    case 0x07:  // 7 Ice
+    case 0x0B:  // 11 Power Wave
+    case 0x11:  // 17 Energy Ball
     {
         // UI event 0x3C = ranged hit indicator
         // FUN_00413900(0x3C, caster_idx) — UI dispatch
@@ -228,7 +229,7 @@ void PacketHandler_0x19(BYTE* pkt)
         goto common_tail;
     }
 
-    case 0x03:  // Ranged with extra anim reset
+    case 0x03:  // 3 Lightning
     {
         // IDA plays sound 60, then interrupts the four hit/recoil actions on
         // the target before entering LABEL_107 (the shared magic path).
@@ -244,7 +245,7 @@ void PacketHandler_0x19(BYTE* pkt)
         goto common_tail;
     }
 
-    case 0x06:  // Teleport
+    case 0x06:  // 6 Teleport
     {
         // Unlike the other cases, IDA returns immediately after the
         // teleport-begin animation rather than marking the common skill tail.
@@ -252,7 +253,7 @@ void PacketHandler_0x19(BYTE* pkt)
         return;
     }
 
-    case 0x0F:  // Melee + ranged combined hit
+    case 0x0F:  // 15 Teleport Party
     {
         if (target != nullptr)
             CreateTeleportBegin((unsigned int)(uintptr_t)target);
@@ -266,7 +267,7 @@ void PacketHandler_0x19(BYTE* pkt)
         return;
     }
 
-    case 0x10:
+    case 0x10:  // 16 Mana Shield
     {
         // Case 0x10 enters LABEL_98 directly: remote magic animation, with
         // no magic-hit sound.  It is deliberately separate from 0x1A..0x24.
@@ -274,16 +275,16 @@ void PacketHandler_0x19(BYTE* pkt)
         goto common_tail;
     }
 
-    case 0x1A:
-    case 0x1B:
-    case 0x1C:
-    case 0x1E:
-    case 0x1F:
-    case 0x20:
-    case 0x21:
-    case 0x22:
-    case 0x23:
-    case 0x24:
+    case 0x1A:  // 26 Heal
+    case 0x1B:  // 27 Greater Defense
+    case 0x1C:  // 28 Greater Damage
+    case 0x1E:  // 30 Summon Goblin
+    case 0x1F:  // 31 Summon Stone Golem
+    case 0x20:  // 32 Summon Assassin
+    case 0x21:  // 33 Summon Elite Yeti
+    case 0x22:  // 34 Summon Dark Knight
+    case 0x23:  // 35 Summon Bali
+    case 0x24:  // 36 Summon Soldier
     {
         // 0042BCA0 first plays 81 unless the channel state is 77, then
         // enters LABEL_98 for the remote caster animation.
@@ -299,28 +300,28 @@ void PacketHandler_0x19(BYTE* pkt)
         goto common_tail;
     }
 
-    case 0x13:  // Skill anim 0x38 (class-specific)
+    case 0x13:  // 19 Falling Slash
     {
         SetAction((int)(intptr_t)caster, skill_type + 37);
         PlayBuffer(82, 0, 0);
         goto common_tail;
     }
 
-    case 0x14:  // Skill anim 0x39
+    case 0x14:  // 20 Lunge
     {
         SetAction((int)(intptr_t)caster, skill_type + 37);
         PlayBuffer(83, 0, 0);
         goto common_tail;
     }
 
-    case 0x15:  // Skill anim 0x3A
+    case 0x15:  // 21 Uppercut
     {
         SetAction((int)(intptr_t)caster, skill_type + 37);
         PlayBuffer(84, 0, 0);
         goto common_tail;
     }
 
-    case 0x16:  // Mana Shield
+    case 0x16:  // 22 Cyclone
     {
         // ReceiveMagic case 0x16: SetAction(sc, 0x16 + 37), then sound 85.
         SetAction((int)(intptr_t)caster, skill_type + 37);
@@ -328,7 +329,7 @@ void PacketHandler_0x19(BYTE* pkt)
         goto common_tail;
     }
 
-    case 0x17:  // Combo hit
+    case 0x17:  // 23 Slash
     {
         // The alternating action is controlled by the caster-local counter
         // at +771, not by the current map/state.
@@ -339,14 +340,14 @@ void PacketHandler_0x19(BYTE* pkt)
         goto common_tail;
     }
 
-    case 0x18:  // Triple Shot
-    case 0x34:  // Penetration
+    case 0x18:  // 24 Triple Shot
+    case 0x34:  // 52 Penetration
     {
         SetPlayerBow97k(caster);
         goto common_tail;
     }
 
-    case 0x2B:  // Skill anim 0x43
+    case 0x2B:  // 43 Death Stab
     {
         SetAction((int)(intptr_t)caster, 67);
         if (caster != (BYTE*)DAT_07abf5d8 && *(WORD*)(caster + 2) == 390)
@@ -354,18 +355,20 @@ void PacketHandler_0x19(BYTE* pkt)
         goto common_tail;
     }
 
-    case 0x2F:  // Death Stab
+    case 0x2F:  // 47 Impale
     {
         SetAction((int)(intptr_t)caster, 66);
         goto common_tail;
     }
 
-    case 0x30:  // Poison buff on target
+    case 0x30:  // 48 Greater Life (Swell Life)
     {
         if (target != nullptr)
         {
-            // Original first checks the status mask.  Only a new poison
-            // builds effect 1150; a refreshed one keeps the existing effect.
+            // Solo un buff NUEVO crea el efecto 1150/sub1; si ya estaba
+            // bufado se refresca el flag y se conserva el efecto vivo.
+            // Ese efecto es el que spawnea cada tick las particulas 1150/sub4
+            // que se cuelgan de los huesos del personaje (MoveParticles).
             if ((*(DWORD*)(target + 120) & 0x10) != 0x10) {
                 DeleteEffect(1150, (DWORD)(uintptr_t)target, 1);
                 CreateEffect(1150, (float*)(target + 16),
@@ -378,17 +381,17 @@ void PacketHandler_0x19(BYTE* pkt)
         goto common_tail;
     }
 
-    case 0x31:  // Anim by game state
+    case 0x31:  // 49 Fire Breath
     {
         SetAction((int)(intptr_t)caster,
                      (World == 8 || World == 10) ? 65 : 64);
         goto common_tail;
     }
 
-    case 0x32:
+    case 0x32:  // 50 Monster Area Attack
         goto common_tail;
 
-    case 0x33:  // Ice Arrow
+    case 0x33:  // 51 Ice Arrow
     {
         SetPlayerBow97k(caster);
         if (target != nullptr && caster[769])
@@ -411,7 +414,7 @@ void PacketHandler_0x19(BYTE* pkt)
         goto common_tail;
     }
 
-    case 0x37:  // Lightning
+    case 0x37:  // 55 Fire Slash
     {
         if (target != nullptr && caster[769])
         {
@@ -426,7 +429,7 @@ void PacketHandler_0x19(BYTE* pkt)
         return;
     }
 
-    case 0x38:  // Power Slash
+    case 0x38:  // 56 Power Slash
     {
         SetAction((int)(intptr_t)caster, 81);
         PlayBuffer(85, 0, 0);
