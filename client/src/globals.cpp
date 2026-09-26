@@ -1573,7 +1573,7 @@ char     DAT_07d5391c  = 0;
 // char     DAT_07d3d3b0  = 0;
 // 2026-09-07: era un buffer aparte; en realidad es GlobalText[260]. Ver el bloque de alias al final de globals.h.
 // char     DAT_07d3cdd4  = 0;
-// Chat command parser name buffers (FUN_004942e0)
+// Chat command parser name buffers (Chat_ValidateCommandName)
 // 2026-09-07: era un buffer aparte; en realidad es GlobalText[258]. Ver el bloque de alias al final de globals.h.
 // char     DAT_07d3cb7c  = 0;
 // 2026-09-07: era un buffer aparte; en realidad es GlobalText[259]. Ver el bloque de alias al final de globals.h.

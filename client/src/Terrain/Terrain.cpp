@@ -298,7 +298,7 @@
 //     obj_ptr = &DAT_081cb2ed
 //     while (obj_ptr < 0x81cb60d):
 //       if obj_ptr[-5] != 0:    // is_visible flag
-//         FUN_004f8980(
+//         RenderTerrainBitmap(
 //           8,                  // tipo de objeto (8 = static prop)
 //           obj_ptr[-1],        // object_type
 //           *obj_ptr,           // object_subtype

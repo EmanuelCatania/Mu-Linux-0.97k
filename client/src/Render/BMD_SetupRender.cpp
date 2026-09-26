@@ -1,5 +1,5 @@
 // BMD_SetupRender.cpp
-// FUN_00504130 @ 0x00504130 — BMD_SetupRenderByType
+// BMD_SetupRenderByType @ 0x00504130 — BMD_SetupRenderByType
 // Sets up bone color and animation state for BMD models based on effect/entity type.
 // Called from entity rendering pipeline to apply type-specific color/anim overrides.
 //
@@ -17,7 +17,7 @@
 #include "stdafx.h"
 
 
-void __cdecl FUN_00504130(void *param_1, int param_2, int param_3, float param_4, uint param_5)
+void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, float param_4, uint param_5)
 {
   int iVar1;
   float10 fVar2;

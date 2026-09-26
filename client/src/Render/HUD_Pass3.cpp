@@ -161,7 +161,7 @@ extern "C" int  GetScreenWidth(void);
 void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, int a5, int a6, float a7, int a8);
 
 // Forward decl for the helper defined in HUD_Pass2.cpp.
-extern "C" SIZE* __cdecl FUN_0047f6f0(int x, int y, const char* lpString,
+extern "C" SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
                                       int boxWidth, char style, int extraSize);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
 extern "C" void   __cdecl RenderTipText(int, int, const char*);
@@ -302,7 +302,7 @@ bool __cdecl RenderNumArrow_(void)
             int n = lstrlenA(String);
             SIZE sz = {0,0};
             GetTextExtentPointA(m_hFontDC, String, n, &sz);
-            FUN_0047f6f0((int)v25, baseY, String, 0, 0, 0);
+            Text_MeasureBox((int)v25, baseY, String, 0, 0, 0);
             drewSomething = true;
         }
     }
@@ -319,7 +319,7 @@ bool __cdecl RenderNumArrow_(void)
             int n = lstrlenA(String);
             SIZE sz = {0,0};
             GetTextExtentPointA(m_hFontDC, String, n, &sz);
-            FUN_0047f6f0((int)v26, baseY + 12, String, 0, 0, 0);
+            Text_MeasureBox((int)v26, baseY + 12, String, 0, 0, 0);
             drewSomething = true;
         }
     }

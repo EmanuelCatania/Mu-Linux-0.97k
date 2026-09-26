@@ -1421,7 +1421,7 @@ extern char    DAT_07d5391c;           // current in-game text input buffer (cha
 // extern char    DAT_07d3d284;           // "/whisper" command string   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d3d3b0;           // "/pvp" command string   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d3cdd4;           // GM command string   // -> alias a GlobalText, ver el final del archivo
-// Chat command parser name buffers (FUN_004942e0)
+// Chat command parser name buffers (Chat_ValidateCommandName)
 // extern char    DAT_07d3cb7c;           // player name buffer 1 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d3cca8;           // player name buffer 2 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo
 // extern char    DAT_07d3c924;           // player name buffer 3 (chat cmd parser)   // -> alias a GlobalText, ver el final del archivo

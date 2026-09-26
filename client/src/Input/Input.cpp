@@ -388,7 +388,7 @@ void Input_ProcessFunctionKeys(void)
     return;
   }
   DAT_07e11ab8 = 1;
-  FUN_0040e330(DAT_055c9ff0);
+  ChatListBox_ScrollByN(DAT_055c9ff0);
   if (g_bUseChatListBox != 1) {
     uVar7 = 0x51;
     uVar6 = 0xfffffff6;

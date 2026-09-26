@@ -38,8 +38,8 @@
 //     GL_SetBlendAdditive();   → Frame_UpdateTimer()
 //     local_6c = ftol() % 0xe10;   // modulo 3600
 //     local_70 = (float)local_6c * _DAT_00552a00;   // ángulo en radianes
-//     FUN_00473ea0(0x4f1, pos, 0x420c0000, 0x425c0000, 0x43160000, +local_70, 0, 0.0);
-//     FUN_00473ea0(0x4f1, pos, 0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0);
+//     Effect_DrawRing(0x4f1, pos, 0x420c0000, 0x425c0000, 0x43160000, +local_70, 0, 0.0);
+//     Effect_DrawRing(0x4f1, pos, 0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0);
 //     // 0x4f1 = tipo partícula orbital, ±ángulo = dos partículas en órbita opuesta
 //   }
 //
@@ -165,7 +165,7 @@
 //   Entity_RenderAll_3D   → Entity_RenderAll_3D()
 //   RenderBugs   → Entity_Render_Sprites()
 //   FUN_0046c3e0   → Particle_Render()
-//   FUN_00473ea0   → Particle_Spawn(type, pos, r0, r1, r2, angle, ?, z)
+//   Effect_DrawRing   → Particle_Spawn(type, pos, r0, r1, r2, angle, ?, z)
 //   Camera_BuildMouseRay   → Camera_Update(mx, my, mat)
 //   Camera_ProjectWorldToScreen   → World_ToScreen(pos, &x, &y)
 //   Mouse_UpdateHoverTargets   → CharPreview_Render()
@@ -311,9 +311,9 @@ int Scene_CharSelect(void)
             uVar12  = (unsigned int)(*(float*)&DAT_05826e08);
             local_6c = (int)((longlong)((ulonglong)(uint)((int)uVar12 >> 0x1f) << 0x20 | uVar12 & 0xffffffff) % 0xe10);
             local_70 = (float)local_6c * _DAT_00552a00;
-            FUN_00473ea0(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000,  local_70, 0, 0.0f);
-            FUN_00473ea0(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
+            Effect_DrawRing(0x4f1, (float *)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x10),
                          0x420c0000, 0x425c0000, 0x43160000, -local_70, 0, 0.0f);
         }
 

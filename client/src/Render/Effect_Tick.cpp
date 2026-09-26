@@ -3,7 +3,7 @@
 //
 // MoveEffects @ 0x0046b790 — Effect_TickAll
 // MoveJoints @ 0x004736e0 — Joint_TickAll
-// FUN_00473ea0 @ 0x00473ea0 — Effect_DrawRing
+// Effect_DrawRing @ 0x00473ea0 — Effect_DrawRing
 // RenderPlane @ 0x00474f90 — Effect_DrawQuad
 // MovePlanes @ 0x00475090 — Effect_TickFade
 // MovePointers @ 0x004794a0 — Effect_TickFlare
@@ -82,7 +82,7 @@ void Joint_TickAll(void)
 }
 
 
-// FUN_00473ea0 — Effect_DrawRing
+// Effect_DrawRing — Effect_DrawRing
 // Draws a cylindrical ring effect by emitting GL_QUADS segments along a helical
 // arc. Uses EulerToMatrix to build rotation matrix from Euler angles, and
 // Vector_Rotate (EulerToMatrix3x4) to transform each ring-segment midpoint.
@@ -103,7 +103,7 @@ void Joint_TickAll(void)
 // personaje. Reemplazado por arrays float[4][3] explícitos.
 // Mismo patrón que Camera_BuildMouseRay (mouse-ray) y FUN_004f70b0 (terrain normals).
 void __cdecl
-FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,undefined4 param_5,
+Effect_DrawRing(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,undefined4 param_5,
             float param_6,undefined4 param_7,float param_8)
 {
   // 4 quad vertices: positions (12 contiguous floats), colors (12), UVs (8 = 4×2).

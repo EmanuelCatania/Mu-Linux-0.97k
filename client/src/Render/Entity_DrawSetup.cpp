@@ -2,7 +2,7 @@
 // IDA: RenderPartObjectEffect (0x00504B50)
 //
 // Entity_SetColorAndRender — resolves anim-mode, sets model color from light
-// array, dispatches to FUN_00504130 / RenderPartObjectBodyColor / Entity_SetModelColorAlt, applies
+// array, dispatches to BMD_SetupRenderByType / RenderPartObjectBodyColor / Entity_SetModelColorAlt, applies
 // optional "flashing" effect on buffed entities.
 //
 // Signature (faithful Ghidra port):
@@ -24,7 +24,7 @@
 // argumento `int flags` de BMD__RenderBody. Resultado en log:
 //   BMD_Draw flags=0xa0b5790 bodyLight=(0,0,0)
 // La función real de Ghidra NO llama BMD__RenderBody en el default path — sólo
-// FUN_00504130. Además FUN_00504130 toma 5 args (this, entity, model_slot,
+// BMD_SetupRenderByType. Además BMD_SetupRenderByType toma 5 args (this, entity, model_slot,
 // scale, flags), no 3. Esta re-port arregla ambos.
 //
 // ── Entity-type switches (Ghidra) ──────────────────────────────────────────────
@@ -408,7 +408,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 *(float*)((int)this_ + 0x48) = mixR * param_3[0];
                 *(float*)((int)this_ + 0x4c) = mixG * param_3[1];
                 *(float*)((int)this_ + 0x50) = mixB * param_3[2];
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 didExtraRender = true;
             }
             else if (ItemLevel < 7) {
@@ -420,7 +420,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 *(float*)((int)this_ + 0x48) = mixR * param_3[0];
                 *(float*)((int)this_ + 0x4c) = mixG * param_3[1];
                 *(float*)((int)this_ + 0x50) = mixB * param_3[2];
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 didExtraRender = true;
             }
             else if (ItemLevel < 8) {
@@ -428,7 +428,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.80000001f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.80000001f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.80000001f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, 0x44, 1.0f, 0xffffffff);
                 didExtraRender = true;
             }
@@ -437,7 +437,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.80000001f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.80000001f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.80000001f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, 0x44, 1.0f, 0xffffffff);
                 didExtraRender = true;
             }
@@ -446,7 +446,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
@@ -457,7 +457,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
@@ -468,7 +468,7 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
-                FUN_00504130(this_, param_1, param_2, param_4, param_8);
+                BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
                 Entity_SetModelColorAlt(this_, param_1, param_2, param_4, extraFlag | 0x240, 1.0f, 0xffffffff);
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
@@ -482,15 +482,15 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             *(float *)((int)this_ + 0x48) = param_3[0];
             *(float *)((int)this_ + 0x4c) = param_3[1];
             *(float *)((int)this_ + 0x50) = param_3[2];
-            FUN_00504130(this_, param_1, param_2, param_4, param_8);
+            BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
         }
-        // skip the unconditional FUN_00504130 below (we already called it)
+        // skip the unconditional BMD_SetupRenderByType below (we already called it)
         goto LAB_after_render;
     }
 
     // ── Main dispatch: setup + render ────────────────────────────────────────
-    // Ghidra/IDA: FUN_00504130(this, entity, model_type, alpha, draw_flags)
-    FUN_00504130(this_, param_1, param_2, param_4, param_8);
+    // Ghidra/IDA: BMD_SetupRenderByType(this, entity, model_type, alpha, draw_flags)
+    BMD_SetupRenderByType(this_, param_1, param_2, param_4, param_8);
 LAB_after_render: ;
 
     // ── Optional flashing tint for buffed entities ───────────────────────────

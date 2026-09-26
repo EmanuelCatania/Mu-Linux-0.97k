@@ -162,7 +162,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // BUGFIX 2026-04-27: zero local_1ec antes de ItemObjectAttribute. La stack
     // tiene garbage cada llamada → ItemObjectAttribute no escribe TODOS los
     // campos del OBJECT struct, sólo los que le importan. Los bytes uninit
-    // pueden cambiar comportamiento de RenderPartObjectEffect / FUN_00504130 entre frames
+    // pueden cambiar comportamiento de RenderPartObjectEffect / BMD_SetupRenderByType entre frames
     // → flicker visible en weapons.
     memset(local_1ec, 0, sizeof(local_1ec));
     local_1ea = (unsigned short)param_6;  // OBJECT.Type = item type index

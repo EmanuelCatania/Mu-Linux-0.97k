@@ -1025,7 +1025,7 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
 // flt_55265C / flt_552654 / flt_552658 / flt_552660 de la
 // engine.  Those are 1-byte border thicknesses (typical: 1.0, 2.0, 3.0).
 // Las aproximamos con literales suficientemente cercanos a los valores de IDA.
-extern "C" SIZE* __cdecl FUN_0047f6f0(int x, int y, const char* lpString,
+extern "C" SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
                                       int boxWidth, char style, int extraSize);
 static int __fastcall ChatLB_renderBg(DWORD* self)
 {
@@ -1519,7 +1519,7 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
 
         // Botón 2 — cicla el tamaño del historial (mismo que la tecla F4).
         if (FUN_0040c490(bx + gap, by, bw, bh, 1)) {
-            FUN_0040e330((int)(uintptr_t)self);
+            ChatListBox_ScrollByN((int)(uintptr_t)self);
             PlayBuffer(25, 0, 0);
             DAT_083a4124 = 0;
         }

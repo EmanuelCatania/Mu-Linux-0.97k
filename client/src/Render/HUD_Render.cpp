@@ -313,7 +313,7 @@
 //           pos.x = entity[+0x10]; pos.y = entity[+0x14];
 //           pos.z = entity[+300] + entity[+0x18] + _DAT_0055290c;
 //         Camera_ProjectWorldToScreen(pfVar5, &screenX, &screenY);  // World_ToScreen
-//         FUN_00480c60((LPCSTR)(piVar7-0x8d));       // MeasureText(str)
+//         FloatingLabel_MeasureText((LPCSTR)(piVar7-0x8d));       // MeasureText(str)
 //         piVar7[1] = screenX - (piVar7[3]*640/screen_w)/2;  // X centrado
 //         piVar7[2] = screenY - 0x24;                         // Y elevado
 //       piVar7 += 0x95;
@@ -336,7 +336,7 @@
 //   Offsets: [-0x83]=timer activo, [-2]=?, [0]=entity ptr, [1]=screenX, [2]=screenY
 //            [3]=text width, [4]=display Y (ajustado), [5..7]=pos fija
 //            [-0x8d]=string label, [-0x8b]=display string
-//   FUN_00480c60   → MeasureText(str) → escribe en piVar7[3]
+//   FloatingLabel_MeasureText   → MeasureText(str) → escribe en piVar7[3]
 //   FUN_00480e00   → DrawFloatLabel(x, y, str)
 //
 // ══════════════════════════════════════════════════════════════════════════════
@@ -510,7 +510,7 @@
 //                      (char*)((subMode - 400) * 0x40 + DAT_07d78068);  // sprite
 //
 //       // lstrlenA(name) + GetTextExtentPointA(g_hDC, name, len, &sz)
-//       // FUN_0047f6f0(ftol()+0x32, ftol(), name, 0, '\0', 0)
+//       // Text_MeasureBox(ftol()+0x32, ftol(), name, 0, '\0', 0)
 //       //   → DrawText(x+50, y, name, shadow=0, italic=0, flags=0)
 //
 //       // FUN_004bbdd0(base_x, (bHP*50/255)+_DAT_00552664, 50.0, 2.0, pct, 0, 1)
@@ -525,7 +525,7 @@
 //       int bar_w   = DAT_05826d24 * 0x32;   // member_count × 50
 //       float base2 = ((float)sw2 - _DAT_00552598) - _DAT_0055297c;
 //       GL_SetBlendSrcOver('\x01');
-//       // FUN_0047f6f0(ftol()+0x32, 4, &DAT_07d43e54, 0, '\0', 0)  // label "Party"
+//       // Text_MeasureBox(ftol()+0x32, 4, &DAT_07d43e54, 0, '\0', 0)  // label "Party"
 //       // FUN_004bbdd0(base2, 16.0, 50.0, 2.0, bar_w/100, 0, 1)    // barra HP party
 //     }
 //     return retY;
@@ -545,7 +545,7 @@
 //   DAT_07d43e54          — label "Party"
 //   GetScreenWidth          → Screen_GetWidth()
 //   FUN_004bbdd0          → DrawHPBar(x, y, w, h, fill_pct, mirror, color)
-//   FUN_0047f6f0          → DrawText(x, y, str, unk, italic, flags)
+//   Text_MeasureBox          → DrawText(x, y, str, unk, italic, flags)
 //
 // ══════════════════════════════════════════════════════════════════════════════
 // Render_CharNameTags @ 0x004BE710  (264 líneas, COMPLETO)
@@ -602,7 +602,7 @@
 //
 //             // Formatear nombre + HP:  crt_sprintf(buf, "%s %d/%d", name, hp, maxhp)
 //             // DAT_07e11d6e = 1  (flag texto visible)
-//             // FUN_0047f6f0(ftol()+textY, ftol(), buf, 0, '\0', 0)
+//             // Text_MeasureBox(ftol()+textY, ftol(), buf, 0, '\0', 0)
 //             textY += 0x0c;   // siguiente nombre 12px más abajo
 //           }
 //         }
@@ -627,7 +627,7 @@
 //   Tipos excluidos de name tags: 0x87=NPC-A, 0x8f=NPC-B, 0x1a0..0x1a3=map objects
 //   GetScreenWidth          → Screen_GetWidth()
 //   CalcMaxDurability          → GetEntityLevel(ptr, spriteData, field) → int
-//   FUN_0047f6f0          → DrawText(x, y, str, unk, italic, flags)
+//   Text_MeasureBox          → DrawText(x, y, str, unk, italic, flags)
 //
 // ══════════════════════════════════════════════════════════════════════════════
 // Render_MapLoadText @ 0x004BF2D0  (142 líneas, COMPLETO)

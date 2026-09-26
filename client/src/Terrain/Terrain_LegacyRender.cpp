@@ -95,7 +95,7 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, ch
         }
         // IDA 0x004F8740 walks `a5` as 4 records of 3 floats each (stride 12),
         // consuming the first two components as UVs. Callers such as
-        // FUN_004f8980/RenderTerrainAlphaBitmap pass rotated quad data in that layout.
+        // RenderTerrainBitmap/RenderTerrainAlphaBitmap pass rotated quad data in that layout.
         const float *tc = (const float *)(p5 + i * 12);
         glTexCoord2f(tc[0], tc[1]);
         glVertex3fv((GLfloat *)&verts[i]);
@@ -103,14 +103,14 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, ch
     glEnd();
 }
 
-// FUN_004f8980 @ 0x004F8980 (116 lines) — Terrain_RenderTexturedObject
+// RenderTerrainBitmap @ 0x004F8980 (116 lines) — Terrain_RenderTexturedObject
 // Renders a rotated textured object on terrain by tiling into sub-quads.
 // p1 = texture index, p2/p3 = grid position, p4 = rotation angle.
 // Uses AngleMatrix + VectorRotate to rotate sub-tile corners, then draws each
 // with Terrain_RenderQuad (Particle_DrawTile).
 // Bitmaps[idx * 0xE + 8] = width, Bitmaps[idx * 0xE + 9] = height.
 // _DAT_00552b9c = 1/64 (UV step), _DAT_0055256c = 1.0 (tile step).
-void __cdecl FUN_004f8980(int p1, int p2, int p3, float p4)
+void __cdecl RenderTerrainBitmap(int p1, int p2, int p3, float p4)
 {
     glColor3f(1.0f, 1.0f, 1.0f);
 

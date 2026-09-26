@@ -48,10 +48,10 @@ void __cdecl FUN_0053d430(unsigned char *buf) {
     // installs TopLevelExceptionFilter, calls FUN_0053d890.
 }
 
-// FUN_0053ea90 @ 0x0053EA90 (44 lines) — GameGuard per-tick health check
+// GameGuard_HealthCheck @ 0x0053EA90 (44 lines) — GameGuard per-tick health check
 // Checks GG process status, heartbeat event, returns error codes.
 // In our build, GameGuard is disabled — return 0x755 (OK/running).
-int __cdecl FUN_0053ea90(void *param) {
+int __cdecl GameGuard_HealthCheck(void *param) {
     (void)param;
     return 0x755; // GG status OK
 }

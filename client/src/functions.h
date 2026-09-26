@@ -301,7 +301,7 @@ void* __cdecl Entity_SpawnBoneRangeEffect(int entity, int bone_start, int bone_e
 void  __cdecl Entity_RenderAll_3D(void); // IDA: Entity_RenderAll_3D (0x0045AB00)
 
 // ── Entity render helpers (used by RenderCharacter / Entity_UpdateRender) ───────
-void  __cdecl FUN_00504130(void *model, int entity, int type, float alpha, uint draw_flags); // Entity_DrawSetupBase — implemented in Render/BMD_SetupRender.cpp
+void  __cdecl BMD_SetupRenderByType(void *model, int entity, int type, float alpha, uint draw_flags); // Entity_DrawSetupBase — implemented in Render/BMD_SetupRender.cpp
 void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int entity_type, float scale, int flags, float alpha, int rgba); // IDA: RenderPartObjectBodyColor (0x00504960)
 void* __cdecl Entity_SetModelColorAlt(void *model, int entity, int entity_type, float scale, int flags, float alpha, int rgba); // Model_RenderSkeleton2
 void  __cdecl RenderLinkObject(float ox, float oy, float oz, int entity, int weapon_slot_ptr, int anim_id, char level, unsigned int option1, char link, char translate, unsigned int render_type); // IDA: RenderLinkObject (0x00455430)
@@ -314,8 +314,8 @@ void  __cdecl RequestTerrainLight(float grid_x, float grid_y, float *rgb_out); /
 void  __cdecl Model_BoneParticle(void *model, int type, int bone_idx, float scale, float *color, int entity); // Model_BoneParticle
 void  __cdecl PartObjectColor(int weapon_id, float scale, float half_scale, float *color, char flag); // IDA: PartObjectColor (0x00503CF0)
 void  __cdecl Weapon_SetColorAlt(int weapon_id, float scale, float half_scale, float *color);           // Weapon_SetColorAlt: simpler version (no flag)
-// IDA: FUN_004552C0 — compone la matriz del emblema de guild sobre un jugador visible.
-void  __cdecl FUN_004552c0(int entity, int shield_id);
+// IDA: RenderGuildMarkOnShield — compone la matriz del emblema de guild sobre un jugador visible.
+void  __cdecl RenderGuildMarkOnShield(int entity, int shield_id);
 // IDA: FUN_004F0100 — CreateGuildMark, compone la textura 34 desde la tabla compartida de marks.
 extern "C" void __cdecl CreateGuildMark(int mark_index, bool blend);
 void  __cdecl RenderTerrainAlphaBitmap(int Texture, float xf, float yf, float SizeX, float SizeY, float *Light, float Rotation, float Alpha); // IDA: RenderTerrainAlphaBitmap (0x004F8BB0)
@@ -365,7 +365,7 @@ void* __cdecl CreateJoint(int, float *, float *, float *, unsigned int, int, flo
 // ── Item drop render ──────────────────────────────────────────────────────────
 void  __cdecl Joint_TickAll(void); // IDA: MoveJoints
 void  __cdecl ItemDrop_Render(void); // IDA: ItemDrop_Render (0x00473710)
-void  __cdecl FUN_00473ea0(int, float *, unsigned int, unsigned int, unsigned int, float, unsigned int, float); // Particle_Spawn
+void  __cdecl Effect_DrawRing(int, float *, unsigned int, unsigned int, unsigned int, float, unsigned int, float); // Particle_Spawn
 void  __cdecl CreateMagicShiny(int, int, int, int);   // IDA: CreateMagicShiny (0x004741E0)
 
 // ── Player render ─────────────────────────────────────────────────────────────
@@ -402,7 +402,7 @@ void  __cdecl ClearInput(int mode); // IDA: ClearInput (0x0047EC60)
 void  __cdecl UI_RenderInputField(int, unsigned int, int);
 // FUN_0047F650 @ 0x0047F650
 undefined8  __cdecl UI_RenderText(undefined4 x, undefined4 y, LPCSTR str, LPSIZE max_w, char bold, undefined4 extra);
-void  __cdecl FUN_0047f6f0(int, int, int);
+void  __cdecl Text_MeasureBox(int, int, int);
 // FUN_0047F7A0 @ 0x0047F7A0
 void  __cdecl UI_DrawText(int x, int y, char* text, int max_width, int style, int extra);
 // FUN_0047FAE0 @ 0x0047FAE0
@@ -415,7 +415,7 @@ void  __cdecl UIChatLogWindow_AddText(const char* strID, const char* strText, in
 void  __cdecl Chat_TickMessageTimer(void);               // IDA: FUN_00480950
 // FUN_00480980 @ 0x00480980
 void  __cdecl UI_RenderChatLogOverlay(void);
-void  __cdecl FUN_00480c60(int, int, int);
+void  __cdecl FloatingLabel_MeasureText(int, int, int);
 void  __cdecl RenderBoolean(int x, int y, DWORD c);   // IDA: RenderBoolean (0x00480E00)
 void  __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetColor); // CreateChat
 // FUN_004821A0 @ 0x004821A0
@@ -484,7 +484,7 @@ void  __cdecl Terrain_SetTileAttributeBits(int, int, int); // IDA: FUN_004f6ef0
 void  __cdecl Terrain_ClearTileAttributeBits(int, int, int); // IDA: SubTerrainAttribute
 void  __cdecl Terrain_UpdateTileAttributeRect(int, int, int, int, int, int); // IDA: FUN_004f6f30
 void  __cdecl Terrain_RenderQuad(float x, float y, float scale, int flags, int corners_ptr, char blend, float alpha); // Particle_DrawTile
-void  __cdecl FUN_004f8980(int, int, int, float);  // Terrain_SpawnObject(type, x, y, height)
+void  __cdecl RenderTerrainBitmap(int, int, int, float);  // Terrain_SpawnObject(type, x, y, height)
 // RenderTerrainAlphaBitmap (0x004F8BB0) se declara mas arriba.
 void  __cdecl CreateFrustrum2D(float *cam_pos); // IDA: CreateFrustrum2D (0x004F8EB0)
 unsigned short __cdecl TestFrustrum2D(float x, float y, float z);    // Frustum_IsVisible
@@ -836,7 +836,7 @@ void  __cdecl ItemAngle(int); // IDA: ItemAngle (0x005030C0)
 void  __cdecl Entity_UpdateSparkleEffect(int); // FUN_00503650 — updates periodic entity sparkle particles
 int   __cdecl FUN_00402850(void *);  // Packet_ParseType1
 undefined4 __cdecl Packet_ParseType2(void *);  // Packet_ParseType2
-void  __cdecl FUN_0040e330(DWORD);   // (undocumented)
+void  __cdecl ChatListBox_ScrollByN(DWORD);   // (undocumented)
 int   __cdecl Sound_UpdateChannel3D_Tick(int *, float);   // cloth: paso de simulación (0x408940)
 
 // ── Scene-entity grid helpers ─────────────────────────────────────────────────
@@ -961,7 +961,7 @@ void  __cdecl CErrorReport__Write(DWORD This, char *lpszFormat, ...); // 0x00405
 void  __cdecl crt_atexit(void *pFunc);                             // CRT atexit registration
 void  __cdecl FUN_00543c98(void *ptr);                               // CRT free wrapper
 void  __cdecl FUN_0053d430(BYTE *ptr);                               // GameGuard string cleanup
-int   __cdecl FUN_0053ea90(void *ptr);                               // GameGuard query
+int   __cdecl GameGuard_HealthCheck(void *ptr);                               // GameGuard query
 
 // Vtable init / class chains (thiscall emulated as fastcall)
 int   __cdecl    FUN_00405280(HANDLE *This);                         // CErrorReport vtable+init
@@ -978,7 +978,7 @@ void  __fastcall FUN_0040f690(void *This);                           // StreamBa
 void  __fastcall PacketCipher_Initialize(void *This);                // IDA: FUN_00406bd0
 void  __fastcall FUN_00405240_init(void *This);                      // ErrorReport_GlobalInit
 void  __fastcall FUN_00403ea0(void *This);                           // Quest table init
-void  __fastcall FUN_0040a600(void *This);                           // Sound device init B
+void  __fastcall LinkedList_InitSentinels(void *This);                           // Sound device init B
 
 // Destructor chains (virtual ~dtor pattern: call deinit, conditional delete)
 void  __fastcall FUN_00406cd0(void *This);                           // HashWidget deinit
@@ -1155,7 +1155,7 @@ void  __fastcall FUN_0053d620(DWORD param_1);                           // GameG
 int   __cdecl FUN_0053d7d0(void *self, char *param_1);               // GameGuard main check
 // FUN_0053d890 — implemented in GameGuard_Init2.cpp
 void* __cdecl FUN_0053e8c0(void *param_1);                              // GG encrypted string decoder
-// FUN_0053ea90 — already declared above (GameGuard query)
+// GameGuard_HealthCheck — already declared above (GameGuard query)
 void  __cdecl FUN_0053eba0(int *param_1, void *param_2);                // GG encrypted log writer
 int   __fastcall FUN_0053ed80(char *param_1);                           // GG full shutdown
 int   __cdecl FUN_0053efa0(void *self, int param_1);                    // GG DLL loader + thread launcher
@@ -1273,7 +1273,7 @@ int   __stdcall Item_FindElfWeaponInventorySlot(void);                   // IDA:
 int   __stdcall Item_CountElfWeaponInventorySlots(void);                 // IDA: FUN_00482850
 int   __cdecl Item_CountWeaponGroupItems(int param_1);                   // IDA: FUN_00482e40
 void  __cdecl Item_AutoEquipAmmo(int weaponType);                              // elf weapon validation/swap (0x0048B680)
-unsigned int __cdecl FUN_004942e0(int param_1);                          // chat command parser (0x004942E0)
+unsigned int __cdecl Chat_ValidateCommandName(int param_1);                          // chat command parser (0x004942E0)
 bool  __cdecl CheckTarget(DWORD c);                                 // 0x0049CAE0
 
 // Missing forward declarations (compilation fixes)

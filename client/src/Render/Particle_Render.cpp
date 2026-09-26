@@ -62,8 +62,8 @@
 //       if piVar2[0] < 0xb: size = 1.0 - (10-count)*1.0
 //       else: local_18 = (0x14-count) * some_scale; size = 1.0
 //     else:
-//       FUN_00473ea0(0x4f1, pos, 360, 520, 600, +fVar6, 0, 0.0)  → Orbit+
-//       FUN_00473ea0(0x4f1, pos, 360, 520, 600, -fVar6, 0, 0.0)  → Orbit-
+//       Effect_DrawRing(0x4f1, pos, 360, 520, 600, +fVar6, 0, 0.0)  → Orbit+
+//       Effect_DrawRing(0x4f1, pos, 360, 520, 600, -fVar6, 0, 0.0)  → Orbit-
 //     → RenderTerrainAlphaBitmap(0x4f0, x, y, size, size, &local_c, z_neg, 1.0)
 //
 //   default (0x4a8 and all others):
@@ -83,7 +83,7 @@
 //
 //   RenderTerrainAlphaBitmap  → Particle_Draw(type, x, y, w, h, color, z, alpha)
 //   GL_SetBlendAdditive  → Frame_GetTime() or Frame_UpdateCounter()
-//   FUN_00473ea0  → Particle_SpawnOrbit(type, pos, r_min, r_mid, r_max, angle, flag, param)
+//   Effect_DrawRing  → Particle_SpawnOrbit(type, pos, r_min, r_mid, r_max, angle, flag, param)
 //   _rand         → MSVC rand()
 //   DAT_005526e4  → g_DeltaTime (float, seconds per frame)
 //   DAT_005524f4  → g_TileScale (float, world units per tile)
@@ -118,7 +118,7 @@ extern "C" void DbgLogPublic(const char*);   // [DIAG TEMP #4]
 //   +36    rotation (float, NEGATED on render)
 //   +96    lifetime counter (int at v1+0)
 //   +352   visible flag (byte at v1+256)
-// (RenderTerrainAlphaBitmap declared in functions.h; FUN_00473ea0 too)
+// (RenderTerrainAlphaBitmap declared in functions.h; Effect_DrawRing too)
 void __cdecl Particle_RenderAll(void)
 {
     char* base = (char*)&DAT_07b11670[0];
@@ -220,10 +220,10 @@ void __cdecl Particle_RenderAll(void)
                 // Per functions.h:350 sig is (int, float*, uint, uint, uint,
                 // float, uint, float) — we pass slot pos pointer.
                 float* slotPosPtr = (float*)(slot + 16);
-                FUN_00473ea0(1265, slotPosPtr,
+                Effect_DrawRing(1265, slotPosPtr,
                              0x42B40000u, 0x43020000u, 0x43340000u,
                              v24, 0u, 0.0f);
-                FUN_00473ea0(1265, slotPosPtr,
+                Effect_DrawRing(1265, slotPosPtr,
                              0x42B40000u, 0x43020000u, 0x43340000u,
                              -v24, 0u, 0.0f);
                 if (counter >= 5) v5 = 1.0f;

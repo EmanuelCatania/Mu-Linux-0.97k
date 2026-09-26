@@ -57,7 +57,7 @@ void __cdecl PACKET_DECRYPT(void *ctx, void *counter) {
     // STUB: HashTable insert (ptr) with obfuscation — cannot implement safely
     (void)ctx; (void)counter;
 }
-// FUN_0040e330 @ 0x0040E330 — NO es "Timer_Advance": es el ciclador del TAMAÑO
+// ChatListBox_ScrollByN @ 0x0040E330 — NO es "Timer_Advance": es el ciclador del TAMAÑO
 // del historial del ChatListBox (tecla F4 y botón 2 del popup del chat).
 // Cicla this[35] (visible row count, +0x8C): 3 → 6 → 30 → 6 …, alternando
 // g_bUseChatListBox, y después re-scrollea.
@@ -80,7 +80,7 @@ static void ChatLB_ScrollBy0(int* self)
     ((FnScrollByN)vt[12])(self, 0, 0);
 }
 
-void __cdecl FUN_0040e330(unsigned long val) {
+void __cdecl ChatListBox_ScrollByN(unsigned long val) {
     int *param_1 = (int*)(uintptr_t)val;
     if (!param_1 || !*(int*)param_1) return;   // objeto sin construir / vtable nula
     switch (param_1[0x23]) {

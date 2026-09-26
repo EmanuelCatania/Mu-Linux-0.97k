@@ -36,7 +36,7 @@
 
 // External helpers ported in earlier passes.
 extern "C" int    GetScreenWidth(void);
-extern "C" SIZE*  __cdecl FUN_0047f6f0(int, int, const char*, int, char, int);
+extern "C" SIZE*  __cdecl Text_MeasureBox(int, int, const char*, int, char, int);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
 extern "C" void   __cdecl RenderTipText(int, int, const char*);
 extern "C" void   __cdecl SeedQuickPotionTypesFromInventory(void);

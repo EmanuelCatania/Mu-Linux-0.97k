@@ -17,7 +17,7 @@
 //   * Render_HotbarItems3D — sub_4BFDE0, the 3D-projected inventory hotbar
 //                            items abajo y al centro de la pantalla.
 //
-// El helper sub_480C60 (FUN_00480c60) también está portado acá — calcula las dimensiones
+// El helper sub_480C60 (FloatingLabel_MeasureText) también está portado acá — calcula las dimensiones
 // del texto de las etiquetas de números flotantes.
 //
 // =============================================================================
@@ -81,18 +81,18 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 #define dword_55C9BD4        DAT_055c9bd4
 
 // =============================================================================
-// FUN_00480c60 — port de sub_480C60. Calcula las dimensiones del texto de una
+// FloatingLabel_MeasureText — port de sub_480C60. Calcula las dimensiones del texto de una
 // etiqueta de número flotante y escribe el cx/cy del bounding box en los slots
 // [+144]/[+145] del struct de la entrada. El layout de la entrada incluye 4 strings
 // distintos (encabezado en +0, valor en +44, valor secundario en +300, remitente en
 // +24) y sub_480C60 elige el caso de layout según los flags de cantidad de líneas
 // at [+139] / [+140].
 // =============================================================================
-// functions.h la declara como `void __cdecl FUN_00480c60(int,int,int)`.
+// functions.h la declara como `void __cdecl FloatingLabel_MeasureText(int,int,int)`.
 // Respetamos esa firma; el original de IDA devuelve int pero el único llamador
 // (sub_4BD090 → RenderBooleans) no usa el valor de retorno para nada — el int
 // va a una variable que se descarta. Devolver void es correcto.
-void __cdecl FUN_00480c60(int p1, int p2, int p3)
+void __cdecl FloatingLabel_MeasureText(int p1, int p2, int p3)
 {
     // La firma de IDA es `int sub_480C60(LPCSTR lpString)` pero nuestra
     // declaración adelantada en functions.h:409 es `void(int,int,int)`, para coincidir con la
@@ -277,7 +277,7 @@ void RenderBooleans_(void)
             } else {
                 Projection(v0 + 5, &sx, &sy);
             }
-            FUN_00480c60((int)((LPCSTR)v0 - 564), 0, 0);
+            FloatingLabel_MeasureText((int)((LPCSTR)v0 - 564), 0, 0);
             *((DWORD*)v0 + 1) = (DWORD)(sx - 640 * (int)*((DWORD*)v0 + 3) / (int)WindowWidth / 2);
             *((DWORD*)v0 + 2) = (DWORD)(sy - 36);
         }

@@ -54,10 +54,10 @@ extern "C" {
     void HeroEquipWatchdog(int c);
 }
 
-// IDA: FUN_004552C0 — dibuja la textura 34 ya compuesta por CreateGuildMark
+// IDA: RenderGuildMarkOnShield — dibuja la textura 34 ya compuesta por CreateGuildMark
 // sobre el hueso 26 del modelo de jugador. El segundo parámetro es el escudo
 // equipado; sólo modifica el desplazamiento vertical del emblema.
-void __cdecl FUN_004552c0(int entity, int shield_id)
+void __cdecl RenderGuildMarkOnShield(int entity, int shield_id)
 {
     BYTE* object = (BYTE*)(uintptr_t)entity;
 
@@ -924,14 +924,14 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             }
             piVar16 += 6;   // advance to next slot (+0x18 bytes)
         }
-        // IDA: RenderCharacter llama CreateGuildMark/FUN_004552C0 después de
+        // IDA: RenderCharacter llama CreateGuildMark/RenderGuildMarkOnShield después de
         // renderizar las seis piezas, sólo para modelos de jugador visibles.
         const short guildMarkIndex = *(short*)((BYTE*)param_1 + 474);
         if (guildMarkIndex >= 0 &&
             *(short*)((BYTE*)puVar13 + 2) == 390 &&
             *(float*)((BYTE*)puVar13 + 360) != 0.0f) {
             CreateGuildMark(guildMarkIndex, true);
-            FUN_004552c0((int)(uintptr_t)puVar13,
+            RenderGuildMarkOnShield((int)(uintptr_t)puVar13,
                           *(short*)((BYTE*)param_1 + 528));
         }
     }

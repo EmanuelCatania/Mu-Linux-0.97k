@@ -4089,7 +4089,7 @@ int __cdecl FUN_0040a300(int _this, int a2)
 }
 #endif
 
-// ── FUN_0040a600 (IDA-only, gated) ──
+// ── LinkedList_InitSentinels (IDA-only, gated) ──
 #if defined(IDA_PORT_0040A600)
 int __cdecl FUN_0040a300(int _this, int a2)
 {
@@ -5154,7 +5154,7 @@ int __cdecl FUN_0040e400(float *_this)
     }
     if ( FUN_0040c490((__int64)(ChatListBox_TabButtonSpacing + ChatListBox_TabButtonsX), (__int64)ChatListBox_TabButtonsY, 16, 16, 1) )
     {
-      FUN_0040e330(_this);
+      ChatListBox_ScrollByN(_this);
       PlayBuffer(25, 0, 0);
       MouseLButtonPush = 0;
     }
@@ -27781,7 +27781,7 @@ BYTE *__cdecl FUN_0053e8c0(BYTE *a1)
 }
 #endif
 
-// ── FUN_0053ea90 (IDA-only, gated) ──
+// ── GameGuard_HealthCheck (IDA-only, gated) ──
 #if defined(IDA_PORT_0053EA90)
 BYTE *__cdecl FUN_0053e8c0(BYTE *a1)
 {

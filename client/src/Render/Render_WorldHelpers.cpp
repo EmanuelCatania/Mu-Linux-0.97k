@@ -1223,7 +1223,7 @@ void __cdecl Resource_LoadOrFatal(char* param_1) {
 // FUN_0046c3e0 — implemented in src/Render/Joint_Render.cpp
 // WeatherParticles_Update (IDA: MoveLeaves) — implemented in src/Render/Weather_Particles.cpp
 // Joint_TickAll (IDA: MoveJoints) — implemented in src/Render/Effect_Tick.cpp
-// FUN_00473ea0 — implemented in src/Render/Effect_Tick.cpp
+// Effect_DrawRing — implemented in src/Render/Effect_Tick.cpp
 // RenderPlane — implemented in src/Render/Effect_Tick.cpp
 // Effect_TickFade (IDA: MovePlanes) — implemented in src/Render/Effect_Tick.cpp
 // RenderParticles — implemented in src/Render/ItemDrop_Render2.cpp (sprite pool render, 244 lines)

@@ -881,7 +881,7 @@ void Terrain_SpawnAmbientObjects(void)
     for (int i = 0; i < 100; i++, pbVar1 += 8) {
         if (pbVar1[-5] != 0) {
             float scale = (float)((double)pbVar1[1] * 1.4117647);
-            FUN_004f8980(8, (int)pbVar1[-1], (int)*pbVar1, scale);
+            RenderTerrainBitmap(8, (int)pbVar1[-1], (int)*pbVar1, scale);
         }
     }
 }

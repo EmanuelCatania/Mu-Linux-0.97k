@@ -158,7 +158,7 @@ void __fastcall FUN_00406de0_impl(int *param_1) {
 // FUN_0053d580 @ 0x0053D580 (18 bytes) — GameGuard query wrapper
 int __stdcall FUN_0053d580(void) {
     if (lpParameter == NULL) return 0;
-    return FUN_0053ea90(lpParameter);
+    return GameGuard_HealthCheck(lpParameter);
 }
 
 

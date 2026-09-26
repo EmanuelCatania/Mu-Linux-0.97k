@@ -112,7 +112,7 @@ extern "C" void GuildMark_InitializePalette(bool blend);
 // External symbols already defined elsewhere.
 // (UI flags are now #defined in globals.h to DAT_07eaa11x bytes.)
 extern "C" int  GetScreenWidth(void);
-extern "C" SIZE* __cdecl FUN_0047f6f0(int, int, const char*, int, char, int);
+extern "C" SIZE* __cdecl Text_MeasureBox(int, int, const char*, int, char, int);
 extern "C" double __cdecl RenderNumber2D(float, float, int, float, float);
 extern "C" void   __cdecl RenderBar(float, float, float, float, float, bool, bool);
 extern "C" SIZE*  __cdecl RenderCenteredText(int, int, const char*);

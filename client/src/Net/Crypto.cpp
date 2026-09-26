@@ -1244,7 +1244,7 @@ void __fastcall FUN_00409db0(int *param_1) {
 
 // ── FUN_00409ea0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00409ea0 @ 0x00409EA0 (10 bytes) — calls sound device init
-void FUN_00409ea0(void) { FUN_0040a600((void *)&DAT_00590b00); }
+void FUN_00409ea0(void) { LinkedList_InitSentinels((void *)&DAT_00590b00); }
 
 // ── FUN_00409eb0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00409eb0 @ 0x00409EB0 (12 bytes)

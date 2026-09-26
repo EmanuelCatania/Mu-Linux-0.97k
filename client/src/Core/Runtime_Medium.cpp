@@ -239,8 +239,8 @@ void __cdecl FUN_00406d40(int param_1) {
     *(int *)(param_1 + 0xc) = 0;
 }
 
-// FUN_0040a600 @ 0x0040A600 (82 bytes) — LinkedList: alloc head+tail sentinel nodes
-void __fastcall FUN_0040a600(void *param_1_raw) {
+// LinkedList_InitSentinels @ 0x0040A600 (82 bytes) — LinkedList: alloc head+tail sentinel nodes
+void __fastcall LinkedList_InitSentinels(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
     void *n1 = operator_new(0xc);
     if (n1 != NULL) { *(int *)((int)n1 + 8) = 0; *(int *)((int)n1 + 4) = 0; }
