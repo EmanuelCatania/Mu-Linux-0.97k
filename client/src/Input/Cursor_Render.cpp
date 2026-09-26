@@ -9,7 +9,7 @@
 // Draws the in-game mouse cursor sprite. Sprite ID selected by:
 //   game_substate, hovered entity type, cursor-mode flags (DAT_00559C48/4C/50/54).
 // Uses FUN_005125A0(sprite_id, x, y, 24, 24, u, v, 1, 1) for fixed sprites,
-// or FUN_005126E0 for animated/colored variants.
+// or GL_DrawRotatedRect for animated/colored variants.
 // Cursor offset = _DAT_0055264C from mouse pos (DAT_083A427C/78).
 // Reescrito 1:1 con IDA `RenderCursor` (004BFFA0_RenderCursor.c, 152 líneas).
 // Decisión de sprite por prioridad:
@@ -117,11 +117,11 @@ void __cdecl Cursor_Render(void) {
     if (DAT_07eaa134 == 2) {
         float10 fv = fsin((float10)(long long)DAT_05826e08 * (float10)_DAT_00552914);
         if (fv <= (float10)FloatZero) {
-            FUN_005126e0(7, (float)(int)DAT_083a427c + _DAT_00552660,
+            GL_DrawRotatedRect(7, (float)(int)DAT_083a427c + _DAT_00552660,
                             (float)(int)DAT_083a4278 + _DAT_005529fc,
                          24.0f, 24.0f, 0x42340000);
         } else {
-            FUN_005126e0(7, (float)(int)DAT_083a427c + _DAT_00552488,
+            GL_DrawRotatedRect(7, (float)(int)DAT_083a427c + _DAT_00552488,
                             (float)(int)DAT_083a4278 + _DAT_00552488,
                          24.0f, 24.0f, 0);
         }

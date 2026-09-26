@@ -924,7 +924,7 @@ extern unsigned char  TerrainMappingLayer1[0x10000];   // TileTex1[256*256] tile
 extern float   DAT_080cb2cc[0x10000];          // BackTerrainHeight[256*256] tile height
 extern float   DAT_0810b2cc[0x10000];          // TerrainNoise[256*256] random noise init
 extern DWORD   DAT_0814b2dc;
-// Ambient terrain-object table — sub_4F7060 (FUN_004f7060) walks 100 records de
+// Ambient terrain-object table — sub_4F7060 (Terrain_SpawnAmbientObjects) walks 100 records de
 // stride 8 leyendo campos en [-5..+1].  Backing zeroado con prefijo de 5 bytes
 // para que las lecturas [-5] queden in-bounds; vacío en nuestro build (el loader
 // de objetos .obj no está wireado) → el loop no spawnea nada.
@@ -1186,7 +1186,7 @@ extern char    g_BitmapsRaw[0x13D30];
 #define DAT_083a7cd4  (*(DWORD*) &g_BitmapsRaw[0x34])
 extern DWORD   m_dwUsedTextureMemory;   // IDA: DAT_083bb9d0 (0x083BB9D0)
 extern DWORD   DAT_083bbb14;
-extern char    lpBuffer_083bbb60[0x400]; // named pipe write buffer (FUN_005403a0)
+extern char    lpBuffer_083bbb60[0x400]; // named pipe write buffer (Pipe_WriteFile)
 extern DWORD   DAT_083bbb64;             // named pipe bytes written count
 extern DWORD   DAT_083bbb68;
 extern DWORD   DAT_083bbb6c;
@@ -1205,7 +1205,7 @@ extern void*   DAT_06f42a58;   // model memory pool base (allocated once in Mode
 extern char    g_BoneVertexBuf[32 * 15000 * 12];
 #define DAT_0584621c  (*(DWORD*)(g_BoneVertexBuf + 0))
 // DAT_05846224 es una etiqueta de Ghidra 8 bytes adentro del mismo buffer (el inicio de pfOut
-// de FUN_004404e0: pfDst = pfOut - 2 = &DAT_0584621c + local_64). Las escrituras abarcan 12 bytes desde pfDst.
+// de Skeleton_Transform: pfDst = pfOut - 2 = &DAT_0584621c + local_64). Las escrituras abarcan 12 bytes desde pfDst.
 #define DAT_05846224  (*(DWORD*)(g_BoneVertexBuf + 8))
 
 // ── BMD bounding-box scratch arrays (BMD_CreateBoundingBox — BMD_ComputeBounds) ────────
@@ -1449,7 +1449,7 @@ extern DWORD   lpDefault_00583d88;     // default context for UIChatLogWindow_Ad
 // extern char    DAT_07d55410;           // error/info message for UIChatLogWindow_AddText   // -> alias a GlobalText, ver el final del archivo
 
 // Connection-check context
-extern DWORD   DAT_07ea9848;           // connection context for FUN_004e3d60
+extern DWORD   DAT_07ea9848;           // connection context for Connection_Check
 
 // DAT_05826ceb — rolling packet counter byte (declared above near 0x05826xxx block)
 
@@ -1568,7 +1568,7 @@ extern BYTE    DAT_083a7af8[GUILD_MEMBER_TABLE_BYTES];
 #define DAT_083a7b0c  (*(DWORD*)&DAT_083a7af8[0x14])
 // Columnas de datos de miembro de guild (parte del mismo array de stride 0x18 que arranca en DAT_083a7af8):
 
-// Guild leaderboard UI strings (FUN_0051ddf0 / FUN_0051db00):
+// Guild leaderboard UI strings (FUN_0051ddf0 / GuildOverview_Render):
 // extern char    DAT_07d59358;           // guild panel title string ("Guild War Score" etc.)   // -> alias a GlobalText, ver el final del archivo
 extern char    param_2_07d59484;       // format string for current player name ("%s")
 // extern char    DAT_07d5ba04;           // column headers array (stride 300, ~5 entries, ends at 0x7d5bfe0)   // -> alias a GlobalText, ver el final del archivo
@@ -1774,7 +1774,7 @@ extern float   _DAT_00552580;  // 0.0f guard constant
 extern float   _DAT_00552850;  // particle proximity threshold (squared)
 extern float   _DAT_00552878;  // particle half-way distance
 extern float   Math_DegreesToRadians;  // degrees-to-radians (π/180 = 0.017453f)
-extern float   _DAT_00552ce0;  // half-angle factor 0.5 (used in FUN_004fa1d0 EulerToQuat; input already radians)
+extern float   _DAT_00552ce0;  // half-angle factor 0.5 (used in EulerToQuat EulerToQuat; input already radians)
 extern float   _DAT_00552cf0;  // 1.0f (used in quaternion→matrix)
 extern float   _DAT_00552cf8;  // π/2 (used in SLERP degenerate case)
 extern float   _DAT_00552d00;  // SLERP near-parallel threshold (~1e-3)
@@ -2358,7 +2358,7 @@ extern char    DAT_07eaa1a0;   // UI message label A (UIChatLogWindow_AddText ar
 extern char    DAT_07eaa198;   // UI message label B
 // extern char    DAT_07d55c44;   // error string for case 0xfffffff8/0xfffffffe   // -> alias a GlobalText, ver el final del archivo
 extern char    DAT_07eaa19c;   // UI message label C
-// DAT_0055a3f8 / DAT_0055a3fc — iVar1/iVar3 defaults for FUN_004e3db0 non-1/7/0xb/8 cases
+// DAT_0055a3f8 / DAT_0055a3fc — iVar1/iVar3 defaults for SecondPassword_GridSlotAvail non-1/7/0xb/8 cases
 extern int     DAT_0055a3f8;   // auth mode param A
 extern int     DAT_0055a3fc;   // auth mode param B
 
@@ -2375,7 +2375,7 @@ extern float  _DAT_00552c20;   // Screen5 button X upper bound
 extern float  _DAT_00552c1c;   // Screen5 button height
 extern float  _DAT_00552c28;   // Screen5 button Y base
 // extern char    DAT_07d6b724;   // Error message: "no item in slot"   // -> alias a GlobalText, ver el final del archivo
-// extern char    DAT_07d685ec;   // Error message: "invalid slot" (FUN_004e6c40)   // -> alias a GlobalText, ver el final del archivo
+// extern char    DAT_07d685ec;   // Error message: "invalid slot" (SecondPassword_Screen5)   // -> alias a GlobalText, ver el final del archivo
 extern short   DAT_00559f5a;   // second-password level check B (short)
 extern int     DAT_00559f80;   // level threshold array base (index by slot)
 extern int     DAT_00559f84;   // level threshold array upper (index by slot)
@@ -2383,7 +2383,7 @@ extern int     DAT_00559f84;   // level threshold array upper (index by slot)
 // Verificado con ida_get_function: m_iDevilSquareLimitLevel = 0x00559F60 y
 // m_iBloodCastleLimitLevel = 0x00559F80 (32 bytes despues = 4 niveles x 2 int).
 // Estaban partidos en dos: el handler del 0x8E llenaba el array C y
-// `FUN_004e6c40` leia `(&DAT_00559f60)[i*2]`, un int suelto -> el chequeo de
+// `SecondPassword_Screen5` leia `(&DAT_00559f60)[i*2]`, un int suelto -> el chequeo de
 // nivel del Devil Square comparaba contra basura de los globals vecinos.
 #define DAT_00559f60   (m_iDevilSquareLimitLevel[0][0])
 #define DAT_00559f64   (m_iDevilSquareLimitLevel[0][1])
@@ -2445,9 +2445,9 @@ extern float   _DAT_00552a90;  // MoveJoint color fade rate B
 extern float   _DAT_00552a94;  // MoveJoint trig freq A
 extern float   _DAT_00552a98;  // MoveJoint trig scale B
 extern float   _DAT_00552aa4;  // MoveJoint HP-bar scale factor
-extern float   _DAT_00552a9c;  // FUN_00473d90 ring trig scale X
-extern float   _DAT_00552aa0;  // FUN_00473d90 ring trig scale Y
-extern float   _DAT_00552aa8;  // FUN_00473d90 ring trig scale Z
+extern float   _DAT_00552a9c;  // Ring_ComputeOrbit ring trig scale X
+extern float   _DAT_00552aa0;  // Ring_ComputeOrbit ring trig scale Y
+extern float   _DAT_00552aa8;  // Ring_ComputeOrbit ring trig scale Z
 extern char    DAT_00559b78[8];
 #define DAT_00559b7f (DAT_00559b78 + 7)   // alias: mismo buffer, offset 7
 

@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-// FUN_00408130 guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
+// GridSpring_Create guarda su 2do arg con `*(float*)(thiz+4) = entity` y después lo
 // RELEE como puntero (`*(int*)(thiz+4)`). Convertir el puntero a float lo
 // destruye (float tiene 24 bits de mantisa), así que hay que pasar los BITS.
 // IDA aloca los widgets de tela con el prefijo de count del `eh vector
@@ -166,9 +166,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             *(int *)puVar8 = 1;                    // count del eh vector ctor
             void *clothObj = (char *)puVar8 + 4;   // el objeto vive en +4
             L_YGXPAXIHP6EX0_Z1_Z(clothObj, 0x60, 1, (void *)Widget_Ctor);
-            FUN_004093e0(clothObj, (int)param_1, (short *)2, 0x12, 0x400, -1);
-            FUN_00409250(clothObj, 0.0f,   0.0f, 0.0f, 50.0f, 18);
-            FUN_00409250(clothObj, 0.0f, -20.0f, 0.0f, 30.0f, 18);
+            SpringMesh_Create(clothObj, (int)param_1, (short *)2, 0x12, 0x400, -1);
+            VerletNode_AddToSystem(clothObj, 0.0f,   0.0f, 0.0f, 50.0f, 18);
+            VerletNode_AddToSystem(clothObj, 0.0f, -20.0f, 0.0f, 30.0f, 18);
             param_1[0x61] = (int)clothObj;
             *(char *)(param_1 + 0x60) = 1;
         }
@@ -275,7 +275,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             // El port tenia 240.0 / 500.0 — mal decodificados de los enteros del
             // decompile (1106247680 = 0x41F00000 = 30.0, no 240; 1133903872 =
             // 0x43960000 = 300.0, no 500). La capa salia 8x mas ancha.
-            FUN_00408130(puVar8, PtrAsFloatBits(param_1), 0x13, 10.0f, 0.0f,
+            GridSpring_Create(puVar8, PtrAsFloatBits(param_1), 0x13, 10.0f, 0.0f,
                          5, 0xf, 30.0f, 300.0f, iType, iType, 0x1100);
             param_1[0x61] = (int)puVar8;
             *(char *)(param_1 + 0x60) = 1;
@@ -323,7 +323,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // El segundo es RenderPartObjectBodyColorAlt (sub_504AC0, flags 592).
         RenderPartObjectBodyColor(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), 0x44, 1.0f, 0xffffffff);
-        FUN_00504ac0(model, (int)puVar13, entity_type,
+        Entity_SetModelColorAlt(model, (int)puVar13, entity_type,
                      *(float *)(puVar13 + 0x5a), 0x250, 1.0f, 0xffffffff);
     }
     else if (bVar7 == 0x4b) {
@@ -369,9 +369,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             void *puVar8 = ClothNew();
             // IDA L598: sub_408130(v27, o, 10, -10.0, 0, 5, 12, 15.0, 240.0, 1275, 1275, 0x1100)
             // El ancho era 60.0; 1097859072 = 0x41700000 = 15.0.
-            FUN_00408130(puVar8, PtrAsFloatBits(puVar13), 10, -10.0f, 0.0f,
+            GridSpring_Create(puVar8, PtrAsFloatBits(puVar13), 10, -10.0f, 0.0f,
                          5, 0xc, 15.0f, 240.0f, 0x4fb, 0x4fb, 0x1100);
-            FUN_00409250(puVar8, 0.0f, 0.0f, 40.0f, 30.0f, 10);
+            VerletNode_AddToSystem(puVar8, 0.0f, 0.0f, 40.0f, 30.0f, 10);
             param_1[0x61] = (int)puVar8;
             *(char *)(param_1 + 0x60) = 1;
         }
@@ -904,10 +904,10 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                         void *cloth = Widget_CtorBase(operator_new(0x54));
                         // sub_408130(obj, c, 2, 10.0, 10.0, 5, 15, 45.0, 85.0,
                         //            1276, 1276, 0x1400)
-                        FUN_00408130(cloth, PtrAsFloatBits(param_1), 2, 10.0f, 10.0f,
+                        GridSpring_Create(cloth, PtrAsFloatBits(param_1), 2, 10.0f, 10.0f,
                                      5, 15, 45.0f, 85.0f, 1276, 1276, 0x1400);
                         // sub_409250(obj, 0, -15.0, -20.0, 30.0, 2)
-                        FUN_00409250(cloth, 0.0f, -15.0f, -20.0f, 30.0f, 2);
+                        VerletNode_AddToSystem(cloth, 0.0f, -15.0f, -20.0f, 30.0f, 2);
                         *piVar16 = (int)cloth;
                     }
                     if (*piVar16) {
@@ -963,7 +963,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // If weapon anim state == 1 (armed standing) or type == 300: sail effect
         if (((sVar2 == 0x10e) && (*(short *)((int)param_1 + 0x1be) == 1)) ||
             (sVar2 == 300)) {
-            puVar13 = (int *)FUN_00456650((int)puVar13, 0x16, 0x17, 1.0f);
+            puVar13 = (int *)Entity_SpawnBoneRangeEffect((int)puVar13, 0x16, 0x17, 1.0f);
             return puVar13;
         }
         break;
@@ -1003,42 +1003,42 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     }
 
     case 0x12f:  // Entity 303 — dual smoke/fire column
-        FUN_00456590((int)puVar13, 0x497, 4.0f, 9, 0.0f, 0, 5.0f);
-        puVar13 = (int *)FUN_00456590((int)puVar13, 0x4d0, 3.0f, 9, 0.0f, 0, 5.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x497, 4.0f, 9, 0.0f, 0, 5.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 3.0f, 9, 0.0f, 0, 5.0f);
         return puVar13;
 
     case 0x130:  // Entity 304 — six-point smoke/fire/magic
-        FUN_00456590((int)puVar13, 0x4a7, 0.5f, 0x1e, 0.0f, 0, -5.0f);
-        FUN_00456590((int)puVar13, 0x4a7, 0.5f, 0x27, 0.0f, 0, -5.0f);
-        FUN_00456590((int)puVar13, 0x497, 4.0f, 0x1e, 0.0f, 0, -5.0f);
-        FUN_00456590((int)puVar13, 0x497, 4.0f, 0x27, 0.0f, 0, -5.0f);
-        FUN_00456590((int)puVar13, 0x4d0, 2.0f, 0x1e, 0.0f, 0, -5.0f);
-        puVar13 = (int *)FUN_00456590((int)puVar13, 0x4d0, 2.0f, 0x27, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x4a7, 0.5f, 0x1e, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x4a7, 0.5f, 0x27, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x497, 4.0f, 0x1e, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x497, 4.0f, 0x27, 0.0f, 0, -5.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 2.0f, 0x1e, 0.0f, 0, -5.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 2.0f, 0x27, 0.0f, 0, -5.0f);
         return puVar13;
 
     case 0x132:  // Entity 306 — claw/spider: beam + 8 effect bones
-        FUN_00456650((int)puVar13, 0x2a, 0x2b, 1.0f);
-        FUN_00456590((int)puVar13, 0x497, 2.0f, 0x1a, 0.0f, 0, 0.0f);
-        FUN_00456590((int)puVar13, 0x497, 2.0f, 0x1f, 0.0f, 0, 0.0f);
-        FUN_00456590((int)puVar13, 0x497, 2.0f, 0x24, 0.0f, 0, 0.0f);
-        FUN_00456590((int)puVar13, 0x497, 2.0f, 0x29, 0.0f, 0, 0.0f);
-        FUN_00456590((int)puVar13, 0x4d0, 1.0f, 0x1a, 0.0f, 0, 0.0f);
-        FUN_00456590((int)puVar13, 0x4d0, 1.0f, 0x1f, 0.0f, 0, 0.0f);
-        FUN_00456590((int)puVar13, 0x4d0, 1.0f, 0x24, 0.0f, 0, 0.0f);
-        puVar13 = (int *)FUN_00456590((int)puVar13, 0x4d0, 1.0f, 0x29, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneRangeEffect((int)puVar13, 0x2a, 0x2b, 1.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x1a, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x1f, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x24, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x497, 2.0f, 0x29, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x1a, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x1f, 0.0f, 0, 0.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x24, 0.0f, 0, 0.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 1.0f, 0x29, 0.0f, 0, 0.0f);
         return puVar13;
 
     case 0x133:  // Entity 307 — large fire/smoke at bone 0x3f
-        FUN_00456590((int)puVar13, 0x4a7, 1.0f, 0x3f, 0.0f, 0, 20.0f);
-        puVar13 = (int *)FUN_00456590((int)puVar13, 0x4d0, 4.0f, 0x3f, 0.0f, 0, 20.0f);
+        Entity_SpawnBoneEffect((int)puVar13, 0x4a7, 1.0f, 0x3f, 0.0f, 0, 20.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x4d0, 4.0f, 0x3f, 0.0f, 0, 20.0f);
         return puVar13;
 
     case 0x142:  // Entity 322 — dual beam bones 0x1a/0x1b  scale=2
-        puVar13 = (int *)FUN_00456650((int)puVar13, 0x1a, 0x1b, 2.0f);
+        puVar13 = (int *)Entity_SpawnBoneRangeEffect((int)puVar13, 0x1a, 0x1b, 2.0f);
         return puVar13;
 
     case 0x15c:  // Entity 348 — soft sparkle at bone 0x20
-        puVar13 = (int *)FUN_00456590((int)puVar13, 0x47e, 1.5f, 0x20, 0.0f, 0, 0.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x47e, 1.5f, 0x20, 0.0f, 0, 0.0f);
         return puVar13;
 
     case 0x15d:  // Entity 349 — sin-wave orb cloud + occasional lightning joint
@@ -1066,7 +1066,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     }
 
     case 0x176:  // Entity 374 — sparkle at bone 6  scale=2
-        puVar13 = (int *)FUN_00456590((int)puVar13, 0x47e, 2.0f, 6, 0.0f, 0, 0.0f);
+        puVar13 = (int *)Entity_SpawnBoneEffect((int)puVar13, 0x47e, 2.0f, 6, 0.0f, 0, 0.0f);
         return puVar13;
 
     case 0x186:  // Entity 390 (Player) — port completo IDA case 390 (líneas 2111-2269)
@@ -1128,18 +1128,18 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                 if (param_1[0x61] == 0) {
                     void* cloth = ClothNew();
                     if (cb[747] == 55) {
-                        FUN_00408130(cloth, PtrAsFloatBits(puVar13), 19, 10.0f, 0.0f,
+                        GridSpring_Create(cloth, PtrAsFloatBits(puVar13), 19, 10.0f, 0.0f,
                                      10, 10, 55.0f, 140.0f, 492, 492, 4097);
-                        FUN_00409250(cloth, -10.0f, -10.0f, -10.0f, 35.0f, 17);
-                        FUN_00409250(cloth,  10.0f, -10.0f, -10.0f, 35.0f, 17);
-                        FUN_00409250(cloth,   0.0f, -10.0f, -20.0f, 50.0f, 19);
+                        VerletNode_AddToSystem(cloth, -10.0f, -10.0f, -10.0f, 35.0f, 17);
+                        VerletNode_AddToSystem(cloth,  10.0f, -10.0f, -10.0f, 35.0f, 17);
+                        VerletNode_AddToSystem(cloth,   0.0f, -10.0f, -20.0f, 50.0f, 19);
                     } else {
-                        FUN_00408130(cloth, PtrAsFloatBits(puVar13), 19, 10.0f, 0.0f,
+                        GridSpring_Create(cloth, PtrAsFloatBits(puVar13), 19, 10.0f, 0.0f,
                                      10, 10, 75.0f, 120.0f, 490, 491, 1029);
-                        FUN_00409250(cloth, -10.0f, -10.0f, -10.0f, 25.0f, 17);
-                        FUN_00409250(cloth,  10.0f, -10.0f, -10.0f, 25.0f, 17);
-                        FUN_00409250(cloth, -10.0f, -10.0f,  20.0f, 27.0f, 17);
-                        FUN_00409250(cloth,  10.0f, -10.0f,  20.0f, 27.0f, 17);
+                        VerletNode_AddToSystem(cloth, -10.0f, -10.0f, -10.0f, 25.0f, 17);
+                        VerletNode_AddToSystem(cloth,  10.0f, -10.0f, -10.0f, 25.0f, 17);
+                        VerletNode_AddToSystem(cloth, -10.0f, -10.0f,  20.0f, 27.0f, 17);
+                        VerletNode_AddToSystem(cloth,  10.0f, -10.0f,  20.0f, 27.0f, 17);
                     }
                     param_1[0x61] = (int)cloth;
                     *(char *)(param_1 + 0x60) = 1;

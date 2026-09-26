@@ -575,8 +575,8 @@ void __cdecl SaveImage(int mode, int ext, int path, int buf)
     (void)mode; (void)ext; (void)path; (void)buf;
 }
 
-// FUN_004f9c20 @ 0x004F9C20 — Terrain_SetupCulling: initialises raycast/frustum globals.
-void __cdecl FUN_004f9c20(void) {
+// Terrain_SetupCulling @ 0x004F9C20 — Terrain_SetupCulling: initialises raycast/frustum globals.
+void __cdecl Terrain_SetupCulling(void) {
     _DAT_0838b60a = 0x47e;                  // short: horizon value
     *(DWORD*)&_DAT_0838b614 = 0x41000000u;  // float bits: 8.0f
     *(DWORD*)&_DAT_0838b710 = 0x3f800000u;  // float bits: 1.0f
@@ -722,12 +722,12 @@ LABEL_12:
 // ported from IDA raw/0040A8F0_sub_40A8F0.c
 // Draws one edge of a physics/collision hull as a textured glBegin(GL_QUADS) strip,
 // using texture 494 and alpha-blend-minus. Widens the edge into a thin billboard
-// quad by jittering perpendicular via FUN_004f9d20/FUN_004f9d60 (cross+normalize).
-// Caller FUN_0040a860 passes 3 args (obj, p1, p2); IDA disassembled with 5 where
+// quad by jittering perpendicular via Vec3_Cross/Vec3_Normalize (cross+normalize).
+// Caller VTable_Release passes 3 args (obj, p1, p2); IDA disassembled with 5 where
 // a4/a5 were unreferenced stack slots — safely omitted here.
 void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     // Forward-declares (defined later in this TU, not in functions.h).
-    extern void __cdecl FUN_004f9d20(float *a, float *b, float *out);
+    extern void __cdecl Vec3_Cross(float *a, float *b, float *out);
     char *this_ = (char *)obj;
     float v27, v28, v29, v30, v31, v32, v33, v34, v35;
     float v24, v25, v26;
@@ -742,7 +742,7 @@ void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     v29 = p2[2] - p1[2];
     {
         float tmp[3] = { v27, v28, v29 };
-        v6 = (double)FUN_004f9c40(tmp);
+        v6 = (double)Vec3_Length(tmp);
     }
     float p1y = p1[1];
     float p1z = p1[2];
@@ -770,13 +770,13 @@ void __cdecl FUN_0040a8f0(void *obj, float *p1, float *p2) {
     GL_SetBlendSrcAlpha();                // EnableAlphaBlendMinus
     {
         float d[3] = { v27, v28, v29 };
-        float cross[3] = { 0.0f, 0.0f, 0.0f };   // FUN_004f9d20 lo escribe (out param);
+        float cross[3] = { 0.0f, 0.0f, 0.0f };   // Vec3_Cross lo escribe (out param);
                                                  // inicializarlo saca el C4700 que tapaba
                                                  // los avisos reales.
-        FUN_004f9d20((float *)(this_ + 12), d, cross);
+        Vec3_Cross((float *)(this_ + 12), d, cross);
         v24 = cross[0]; v25 = cross[1]; v26 = cross[2];
         float nrm[3] = { v24, v25, v26 };
-        FUN_004f9d60(nrm);
+        Vec3_Normalize(nrm);
         v24 = nrm[0]; v25 = nrm[1]; v26 = nrm[2];
     }
     v24 = v24 * 10.0f;

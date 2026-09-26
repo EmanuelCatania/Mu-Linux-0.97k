@@ -179,7 +179,7 @@ void Mouse_UpdateHoverTargets(void)
         }
 
         // ── Secondary hover without second password ───────────────────────────
-        if (FUN_004e5980() == '\0') {
+        if (Party_HPBar_HoverCheck() == '\0') {
             // IDA sub_4B0310 L315-351 (Alt SIN apretar): cadena de descarte
             // estricta, personaje -> personaje -> NPC -> ITEM -> mobiliario.  El
             // item solo se elige si el cursor no esta sobre ningun personaje ni NPC.
@@ -346,11 +346,11 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
     return (int)(unsigned char)cVar1;
 }
 
-// FUN_00512d30 @ 0x00512D30 — Map_InitRayCast: init ray t_max to ~1.03e7
+// Map_InitRayCast @ 0x00512D30 — Map_InitRayCast: init ray t_max to ~1.03e7
 // IDA-ported: single store. DAT_083a4120 is the raycast t_max sentinel
 // used by CollisionDetectLineToFace (CollisionDetectLineToFace) to accept nearer hits only.
 // Original binary stores raw bits 0x4B1DCD65 (= 10367333.0f) into the float.
-void FUN_00512d30()
+void Map_InitRayCast()
 {
     *(DWORD*)&DAT_083a4120 = 0x4B1DCD65;  // ≈ 1.0367e7f — far-plane sentinel
 }
@@ -633,13 +633,13 @@ int __cdecl SpecialObject_HoverTest(void)
     return -1;
 }
 // FUN_004afb00 — implemented in src/Game/Party_NameMatch.cpp (Party_MatchEntityNames)
-// FUN_004e5980 @ 0x004E5980 — Party_HPBar_HoverCheck(void)
+// Party_HPBar_HoverCheck @ 0x004E5980 — Party_HPBar_HoverCheck(void)
 // Iterates the party HP bar array (DAT_07e11e9c, stride 0x24 = 9 uints) and checks
 // if the mouse cursor (DAT_083a427c, DAT_083a4278) is within any party member's
 // screen rect. Sets SelectedCharacter (hover entity index) and returns 1 if hovering.
 // SecondPassword UI state flags (DAT_07eaa115..130) control which X position band is used.
 // Anti-tamper HashTable blocks in the loop are skipped — only position comparison kept.
-char __cdecl FUN_004e5980(void)
+char __cdecl Party_HPBar_HoverCheck(void)
 {
     if (DAT_07eaa115 != '\0') return 0;
 

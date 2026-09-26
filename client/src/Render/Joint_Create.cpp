@@ -499,7 +499,7 @@ switchD_0046db06_default:
             *pfVar1 = *pfVar1 + *(float *)(pcVar14 + 0x1c);
             *(float *)(pcVar14 + 0x14) = *(float *)(pcVar14 + 0x14) + *(float *)(pcVar14 + 0x20);
             *(float *)(pcVar14 + 0x18) = *(float *)(pcVar14 + 0x24) + *(float *)(pcVar14 + 0x18);
-            FUN_0046fe90((int)pcVar14,local_6c);
+            Joint_SegmentTick((int)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
           } while (iVar6 < *(int *)(pcVar14 + 0x54));
         }
@@ -756,7 +756,7 @@ LAB_0046e742:
             *pfVar1 = local_90 + *pfVar1;
             *(float *)(pcVar14 + 0x14) = local_8cf + *(float *)(pcVar14 + 0x14);
             *(float *)(pcVar14 + 0x18) = local_88f + *(float *)(pcVar14 + 0x18);
-            FUN_0046fe90((int)pcVar14,local_6c);
+            Joint_SegmentTick((int)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
             *pfVar1 = (*pfVar1 - local_90) + *(float *)(pcVar14 + 0x1c);
             *(float *)(pcVar14 + 0x14) =
@@ -1133,7 +1133,7 @@ LAB_0046e043:
           *pfVar1 = local_90 + *pfVar1;
           *(float *)(pcVar14 + 0x14) = local_8cf + *(float *)(pcVar14 + 0x14);
           *(float *)(pcVar14 + 0x18) = local_88f + *(float *)(pcVar14 + 0x18);
-          FUN_0046fe90((int)pcVar14,local_6c);
+          Joint_SegmentTick((int)pcVar14,local_6c);
           iVar6 = iVar6 + 1;
           *pfVar1 = (*pfVar1 - local_90) + *(float *)(pcVar14 + 0x1c);
           *(float *)(pcVar14 + 0x14) =
@@ -1240,7 +1240,7 @@ LAB_0046e043:
           *pfVar1 = local_90 + *pfVar1;
           *(float *)(pcVar14 + 0x14) = local_8cf + *(float *)(pcVar14 + 0x14);
           *(float *)(pcVar14 + 0x18) = local_88f + *(float *)(pcVar14 + 0x18);
-          FUN_0046fe90((int)pcVar14,local_6c);
+          Joint_SegmentTick((int)pcVar14,local_6c);
           iVar6 = iVar6 + 1;
           *pfVar1 = (*pfVar1 - local_90) + *(float *)(pcVar14 + 0x1c);
           *(float *)(pcVar14 + 0x14) =
@@ -1964,7 +1964,7 @@ LAB_0046f55a:
             *pfVar1 = *pfVar1 + *(float *)(pcVar14 + 0x1c);
             *(float *)(pcVar14 + 0x14) = *(float *)(pcVar14 + 0x14) + *(float *)(pcVar14 + 0x20);
             *(float *)(pcVar14 + 0x18) = *(float *)(pcVar14 + 0x24) + *(float *)(pcVar14 + 0x18);
-            FUN_0046fe90((int)pcVar14,local_6c);
+            Joint_SegmentTick((int)pcVar14,local_6c);
             iVar6 = iVar6 + 1;
           } while (iVar6 < *(int *)(pcVar14 + 0x54));
         }

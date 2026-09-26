@@ -48,7 +48,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 // FUN_004FAA70 @ 0x004FAA70 — Entity_PrepareRenderData(entity_ptr, shadow_pass, lod).
 // Copies entity data into the class render struct at DAT_05828D58 + entity_type*0xBC.
 // Guards on entity visibility (entity+0x168 >= DAT_005524F8).
-// Calls Sprite_Draw (BMD_Animation) and shadow/bone pass (FUN_004404E0, BMD__RenderBody).
+// Calls Sprite_Draw (BMD_Animation) and shadow/bone pass (Skeleton_Transform, BMD__RenderBody).
 // Returns 1 on success, 0 if out of range.
 // IDA: Calc_RenderObject (0x004FAA70)
 int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
@@ -58,7 +58,7 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
     void* this_ = (void*)(DAT_05828d58 + *(short*)(param_1 + 2) * 0xbc);
     *(DWORD*)((int)this_ + 0x84) = 0;
     *(BYTE *)((int)this_ + 0x45) = *(BYTE*)(param_1 + 0xe4);
-    FUN_004fa930(param_1, (int)this_);
+    Entity_GetLightScale(param_1, (int)this_);
     *(DWORD*)((int)this_ + 0x68) = *(DWORD*)(param_1 + 0x0c);
     *(BYTE *)((int)this_ + 0xa0) = *(BYTE*)(param_1 + 0x105);
     *(DWORD*)((int)this_ + 0x6c) = *(DWORD*)(param_1 + 0x10);
@@ -110,18 +110,18 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
             *(float*)((int)this_+0x50) = 0.0f;
             puVar3 = (*(char*)(param_1+0x110)=='\0') ? &DAT_06970a9c : *(void**)(param_1+0x114);
             // IDA pasa `Translate` tal cual a sub_4404E0 (BMD_Animation recibe !Translate).
-            FUN_004404e0(this_, (int)puVar3, (float*)(param_1+0x118),
+            Skeleton_Transform(this_, (int)puVar3, (float*)(param_1+0x118),
                          (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
             BMD__RenderBody(this_, 0x40,
                          *(float*)(param_1+0x168), *(int *)(param_1+100),
                          *(float*)(param_1+0x68),  *(float*)(param_1+0x6c),
                          *(float*)(param_1+0x70),  *(int *)(param_1+0x58), 0xffffffff);
         }
-        FUN_004fa930(param_1, (int)this_);
+        Entity_GetLightScale(param_1, (int)this_);
         _DAT_005597c8 = 1.0f;
     }
     puVar3 = (*(char*)(param_1+0x110)=='\0') ? (void*)&DAT_06970a9c : *(void**)(param_1+0x114);
-    FUN_004404e0(this_, (int)puVar3, (float*)(param_1+0x118),
+    Skeleton_Transform(this_, (int)puVar3, (float*)(param_1+0x118),
                  (float*)(param_1+0x124), (float*)(param_1+0x130), param_2);
     return 1;
 }
@@ -183,9 +183,9 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
                 float quatA[4], quatB[4];
                 if (boneIdx == *(int*)((char*)this_ + 0x54)) {
                     // root bone: leer Euler angles (3 floats, stride 0xc) y
-                    // convertir a quat via FUN_004fa1d0 (EulerToQuat).
+                    // convertir a quat via EulerToQuat (EulerToQuat).
                     // BUG-FIX: antes faltaba el componente Y (posA[1]/posB[1]).
-                    // FUN_004fa1d0 lee los 3 componentes (línea 25: v5 = a1[1]*0.5)
+                    // EulerToQuat lee los 3 componentes (línea 25: v5 = a1[1]*0.5)
                     // → con Y=stack garbage el quat salía arbitrario.
                     // IDA: v43[1] = *(_DWORD *)(v21 + 4); (Y sin ajuste HeadAngle)
                     float posA[4], posB[4];
@@ -196,8 +196,8 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
                     posB[0] = *(float*)(animPtrB[1] + curFrameB * 0xc)     - param_6[0] * _DAT_005528b0;
                     posB[1] = *(float*)(animPtrB[1] + curFrameB * 0xc + 4);
                     posB[2] = *(float*)(animPtrB[1] + curFrameB * 0xc + 8) - param_6[1] * _DAT_005528b0;
-                    FUN_004fa1d0((int)&posA[0], (int)&quatA[0], 0, 0);
-                    FUN_004fa1d0((int)&posB[0], (int)&quatB[0], 0, 0);
+                    EulerToQuat((int)&posA[0], (int)&quatA[0], 0, 0);
+                    EulerToQuat((int)&posB[0], (int)&quatB[0], 0, 0);
                 } else {
                     // regular bone: read quaternion from anim table
                     int frameOff = v39 * 0x10;
@@ -217,18 +217,18 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
                 int quatBone = boneIdx;
                 if (quatBone < 0 || quatBone >= 200) quatBone = 0;   // guard: la tabla es de 200 huesos
                 float* outQuat = (float*)(DAT_05826e18 + quatBone * 0x10);
-                int same = FUN_004f9c70((int)&quatA, (int)&quatB, 0, 0);
+                int same = Terrain_QuadEqual((int)&quatA, (int)&quatB, 0, 0);
                 if (!same)
-                    FUN_004fa350((int)&quatA, (int)&quatB, *(int*)&fFrac, (int)outQuat); // BUG-FIX: pass float bits, not truncated int
+                    QuatSlerp((int)&quatA, (int)&quatB, *(int*)&fFrac, (int)outQuat); // BUG-FIX: pass float bits, not truncated int
                 else { outQuat[0]=quatA[0]; outQuat[1]=quatA[1]; outQuat[2]=quatA[2]; outQuat[3]=quatA[3]; }
                 // quaternion to 3x3 rotation matrix, embedded in a 3x4.
-                // BUG-FIX: FUN_004fa270 solo escribe posiciones [0,1,2,4,5,6,8,9,10]
+                // BUG-FIX: QuatToMatrix solo escribe posiciones [0,1,2,4,5,6,8,9,10]
                 // (9 floats de 3x3). Las posiciones 3,7,11 (columna de translación)
                 // quedaban sin inicializar. R_ConcatTransforms las lee como translation,
                 // así que generaba bone matrices con translate = stack garbage →
                 // vértices astronómicos. Zero-init + inyectar tX/tY/tZ abajo.
                 float rot33[12] = {0};
-                FUN_004fa270((int)outQuat, (int)rot33, 0, 0);
+                QuatToMatrix((int)outQuat, (int)rot33, 0, 0);
                 // get translation from frame keys (3 floats × priorFrameInt)
                 float* ptransA = (float*)(*animPtrA + v39 * 0xc);
                 float* ptransB = (float*)(*animPtrB + *(short*)((char*)this_ + 0xa8) * 0xc);
@@ -297,7 +297,7 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
     }
 }
 
-// FUN_004404e0 @ 0x004404e0 — Skeleton_Transform (thiscall: bone→vertex pipeline)
+// Skeleton_Transform @ 0x004404e0 — Skeleton_Transform (thiscall: bone→vertex pipeline)
 // Applies bone matrices from param_1 to all mesh vertices; stores results in
 // DAT_05846224 (vertex buffer, stride 3 floats per vertex, indexed by sub-mesh).
 // param_1  = bone transform array (param_1[bone*0x30] = 3x4 matrix)
@@ -305,7 +305,7 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
 // param_4  = AABB output ptr [12 floats: min.xyz, size.xyz, 3 zeros, size.w]
 // param_5  = if non-zero: also applies entity scale+offset (this+0x68/6c/70/74)
 // Uses _DAT_005597c8 scale flag: if != 1.0 → calls Vector_Rotate (scaled transform).
-void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param_3,
+void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float* param_3,
                            float* param_4, char param_5) {
     // [0-2]=AABB min, [3-5]=AABB max / work dir, [6..8]=transformed dir.
     // In the Ghidra decompile local_54[7]/[8] appear as adjacent stack slots
@@ -368,7 +368,7 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
     int meshCount = (int)(short)*(short*)((char*)this_ + 0x24);
     // GUARD 2026-07-16: si el modelo (this_) tiene el puntero Meshs (+0x28) NULL/
     // garbage o un meshCount insano (preview char del panel crear-personaje sin
-    // modelo válido), abortar antes de deferenciar → evita crash en FUN_004404e0.
+    // modelo válido), abortar antes de deferenciar → evita crash en Skeleton_Transform.
     {
         unsigned int meshsPtr = (unsigned int)*(int*)((char*)this_ + 0x28);
         if (meshsPtr < 0x10000u || meshsPtr >= 0x80000000u || meshCount < 0 || meshCount > 200) {
@@ -389,7 +389,7 @@ void __cdecl FUN_004404e0(void* this_, int param_1, float* param_2, float* param
         int vertCount = (int)(short)*(short*)(meshPtr + 4);
         // GUARD 2026-07-16: el preview char del panel crear-personaje puede quedar
         // con una malla cuyo array de vértices/normales es NULL (modelo sin cargar)
-        // → deref de near-null en el loop → crash 0x5A3797 en FUN_004404e0. Si la
+        // → deref de near-null en el loop → crash 0x5A3797 en Skeleton_Transform. Si la
         // malla es inválida, se saltea (avanzando los offsets per-mesh) para no
         // crashear. Loguea una vez el entity_type para diagnosticar la raíz.
         {

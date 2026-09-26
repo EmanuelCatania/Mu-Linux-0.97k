@@ -8,10 +8,10 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "functions.h"
 
 // -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// FUN_00408cb0 vive ahora en Scene/Scene_CharSelect_Nav.cpp y FUN_00408e30 en
+// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
 // Net/Crypto.cpp; antes se definian en este archivo.
-void __fastcall FUN_00408cb0(int*, float);
-int  __cdecl    FUN_00408e30(DWORD *a1);
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
@@ -45,11 +45,11 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// FUN_004e3d60 @ 0x004E3D60 — Connection_Check(ctx, cols, rows)
+// Connection_Check @ 0x004E3D60 — Connection_Check(ctx, cols, rows)
 // Scans a 2D grid of short-based structs (stride 0x22 each element).
 // Returns 1 (clear) if every entry is -1 or has ≤0 at offset+0x1c.
 // Returns 0 (busy) if any entry has ≠-1 AND int at +0x1c > 0.
-char __cdecl FUN_004e3d60(void *ctx, int p1, int p2) {
+char __cdecl Connection_Check(void *ctx, int p1, int p2) {
     char uVar1 = 1;
     short *psVar2 = (short*)ctx;
     for (int row = 0; row < p2; row++) {
@@ -71,11 +71,11 @@ char __cdecl FUN_004e3d60(void *ctx, int p1, int p2) {
 // STUB: SEH + unaff_ESI pattern prevent safe implementation.
 unsigned long __cdecl FUN_00494520(void*, char) { return 0; } // STUB: sub_494520 (SEH+RC4, anti-tamper)
 
-// FUN_00513440 @ 0x00513440 — Chat_Validate(buf)
+// Chat_Validate @ 0x00513440 — Chat_Validate(buf)
 // Returns 1 if buf (after stripping spaces) matches any word in the
 // banned-keyword table at DAT_07d73104 (stride 0x14, count DAT_07d78070).
 // Returns 0 if buf starts with '/' or no match found.
-char __cdecl FUN_00513440(char *param_1) {
+char __cdecl Chat_Validate(char *param_1) {
     if (*param_1 == '/') return 0;
     // strip spaces into local buf
     int len = (int)strlen(param_1);
@@ -96,11 +96,11 @@ char __cdecl FUN_00513440(char *param_1) {
 }
 // 0x00497C70 no es un key schedule: es CheckChatText (gestos por texto del
 // chat). Portado en src/UI/Chat_Gestures.cpp.
-// FUN_004e9250 @ 0x004E9250 — SecondPassword_Shuffle(mode)
+// SecondPassword_Shuffle @ 0x004E9250 — SecondPassword_Shuffle(mode)
 // Initializes a 10-element short array at DAT_07e91394 with values 0..9,
 // then performs 20 random XOR swaps. Stores mode in DAT_07eaa14c.
 // Returns last randomly-computed iVar4 (ignore value — callers discard).
-int __cdecl FUN_004e9250(int mode) {
+int __cdecl SecondPassword_Shuffle(int mode) {
     // Fill 0..9
     short* arr = (short*)&DAT_07e91394;
     for (int i = 0; i < 10; i++) arr[i] = (short)i;

@@ -8,10 +8,10 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "functions.h"
 
 // -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// FUN_00408cb0 vive ahora en Scene/Scene_CharSelect_Nav.cpp y FUN_00408e30 en
+// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
 // Net/Crypto.cpp; antes se definian en este archivo.
-void __fastcall FUN_00408cb0(int*, float);
-int  __cdecl    FUN_00408e30(DWORD *a1);
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
@@ -122,12 +122,12 @@ int __cdecl FUN_0051ddf0(void)
     return DAT_083a7c30;
 }
 
-// FUN_0051db00 @ 0x0051DB00 — GuildOverview_Render
+// GuildOverview_Render @ 0x0051DB00 — GuildOverview_Render
 // Renders guild war overview panel: win/draw title, total score, kills, deaths.
 // Uses GetTextExtentPointA for centering. unaff_EDI is the text width from
 // the last GetTextExtentPointA call — approximated via lstrlenA * pixel_per_char.
 // DAT_083a7c30=0 → "draw" strings; !=0 → "win/loss" strings.
-int __cdecl FUN_0051db00(void)
+int __cdecl GuildOverview_Render(void)
 {
     glColor3f(0.5f, 0.5f, 0.5f);
     const char *title, *subtitle;
@@ -203,9 +203,9 @@ void __cdecl CreateOkMessageBox(char *msg)
         DAT_083a7c24 = 0x8b;
 }
 
-// FUN_0051d9e0 @ 0x0051D9E0 — GuildMemberList_Update
+// GuildMemberList_Update @ 0x0051D9E0 — GuildMemberList_Update
 // Sets UI state 0x8c, stores count/param2, copies menu descriptor and member list data.
-void __cdecl FUN_0051d9e0(int count, int p2, void *data)
+void __cdecl GuildMemberList_Update(int count, int p2, void *data)
 {
     if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x8c;
     else                   DAT_083a7c28 = 0x8c;
@@ -228,9 +228,9 @@ void __cdecl FUN_0051d9e0(int count, int p2, void *data)
     for (unsigned int i = 0; i < dwords; i++) *dst++ = *src++;
 }
 
-// FUN_0051da80 @ 0x0051DA80 — GuildMemberList_Add (single member record)
+// GuildMemberList_Add @ 0x0051DA80 — GuildMemberList_Add (single member record)
 // Sets UI state 0x9a, stores param_1 as member count, copies 5-entry menu desc + 6 DWORDs data.
-void __cdecl FUN_0051da80(int p1, void *data)
+void __cdecl GuildMemberList_Add(int p1, void *data)
 {
     if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x9a;
     else                   DAT_083a7c28 = 0x9a;
@@ -242,7 +242,7 @@ void __cdecl FUN_0051da80(int p1, void *data)
     for (int i = 0; i < 6; i++) *dst++ = *src++;
 }
 
-// FUN_0051d840 @ 0x0051D840 — ItemList_Select(slot)
+// ItemList_Select @ 0x0051D840 — ItemList_Select(slot)
 // Selects character slot `slot` for the in-game item/skill list display.
 // Sets DAT_005615dc, populates DAT_083a4324 and skill/item display arrays,
 // then transitions UI state to 0x8e.
@@ -251,7 +251,7 @@ void __cdecl FUN_0051da80(int p1, void *data)
 // en globals.h), asi que ahora es el port fiel de sub_51D840: arma el cuadro de
 // dialogo desde g_DialogScript[a1] igual que CSQuest::ShowDialogText, mas el
 // memset de los rects de boton y ErrorMessage = 142.
-int __cdecl FUN_0051d840(int param_1) {
+int __cdecl ItemList_Select(int param_1) {
     char szText[72];
 
     if (param_1 < 0 || param_1 >= DIALOG_SCRIPT_COUNT) return 1;   // guard de port

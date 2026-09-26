@@ -1,22 +1,22 @@
 // Misc.cpp
 // Miscellaneous utility and validation functions.
 //
-// FUN_00406b10 @ 0x00406b10 — Packet_IsValidSockType
+// Packet_IsValidSockType @ 0x00406b10 — Packet_IsValidSockType
 // CheckSpecialText @ 0x00406B30 (IDA: FUN_00406B30; name from 5.2).
 // CPhysicsManager::Move @ 0x00409C40 (IDA: FUN_00409C40).
 // CPhysicsManager::Render @ 0x00409CF0 (IDA: FUN_00409CF0).
-// FUN_0040c690 @ 0x0040c690 — Object_SetRectFields
-// FUN_0040e590 @ 0x0040e590 — Object_ClearMembers
-// FUN_00402fd0 @ 0x00402fd0 — Packet_ParseReceived
+// Object_SetRectFields @ 0x0040c690 — Object_SetRectFields
+// Object_ClearMembers @ 0x0040e590 — Object_ClearMembers
+// Packet_ParseReceived @ 0x00402fd0 — Packet_ParseReceived
 // MoveItems @ 0x00503760 — Entity_UpdateGravity
 
 #include "stdafx.h"
 
 
-// FUN_00406b10 — Packet_IsValidSockType
+// Packet_IsValidSockType — Packet_IsValidSockType
 // Returns 1 if param_2 is socket type 1 (TCP) or 0xf (UDP-compatible),
 // otherwise returns 0.
-int __cdecl FUN_00406b10(int param_1,int param_2)
+int __cdecl Packet_IsValidSockType(int param_1,int param_2)
 {
   if ((param_2 != 1) && (param_2 != 0xf)) {
     return 0;
@@ -74,7 +74,7 @@ LAB_00406bbe:
 // CPhysicsManager::Move — advances every registered physics object.
 // Updates the floating-point random key _DAT_00590af0 with a random delta
 // in ±0.1 range, clamped to [-0.2, 1.0].
-// Then iterates a linked list from *(param_1+8)+8, calling FUN_00408940
+// Then iterates a linked list from *(param_1+8)+8, calling Sound_UpdateChannel3D_Tick
 // on each node until sentinel *(param_1+0xc) is reached.
 void __cdecl CPhysicsManager_Move(void* physics_manager, float fTime)
 {
@@ -96,7 +96,7 @@ void __cdecl CPhysicsManager_Move(void* physics_manager, float fTime)
       if (puVar1 == (undefined4 *)0x0) {
         return;
       }
-      FUN_00408940((int *)*puVar1, fTime);
+      Sound_UpdateChannel3D_Tick((int *)*puVar1, fTime);
       puVar1 = (undefined4 *)puVar1[2];
     } while (*(undefined4 **)(param_1 + 0xc) != puVar1);
   }
@@ -126,9 +126,9 @@ void __cdecl CPhysicsManager_Render(void* physics_manager)
 }
 
 
-// FUN_0040c690 — Object_SetRectFields
+// Object_SetRectFields — Object_SetRectFields
 // Sets two consecutive fields at this+0x2c and this+0x30.
-void __cdecl FUN_0040c690(void *this_,undefined4 param_1,undefined4 param_2)
+void __cdecl Object_SetRectFields(void *this_,undefined4 param_1,undefined4 param_2)
 {
   *(undefined4 *)((int)this_ + 0x2c) = param_1;
   *(undefined4 *)((int)this_ + 0x30) = param_2;
@@ -136,9 +136,9 @@ void __cdecl FUN_0040c690(void *this_,undefined4 param_1,undefined4 param_2)
 }
 
 
-// FUN_0040e590 — Object_ClearMembers
+// Object_ClearMembers — Object_ClearMembers
 // Zeroes 0x140 dwords (1280 bytes) starting at param_1 + 200 (0xc8).
-void __cdecl FUN_0040e590(int param_1)
+void __cdecl Object_ClearMembers(int param_1)
 {
   int iVar1;
   undefined4 *puVar2;
@@ -152,11 +152,11 @@ void __cdecl FUN_0040e590(int param_1)
 }
 
 
-// FUN_00402fd0 — Packet_ParseReceived
+// Packet_ParseReceived — Packet_ParseReceived
 // Dispatches an incoming packet from param_1 based on the sub-type byte
-// at param_1+0x1c87f. Type 1: FUN_00402850. Type 2: FUN_00402f40.
+// at param_1+0x1c87f. Type 1: FUN_00402850. Type 2: Packet_ParseType2.
 // Returns 1 (non-zero) on both paths.
-undefined4 __cdecl FUN_00402fd0(void *param_1)
+undefined4 __cdecl Packet_ParseReceived(void *param_1)
 {
   int iVar1;
   undefined4 uVar2;
@@ -168,7 +168,7 @@ undefined4 __cdecl FUN_00402fd0(void *param_1)
   else {
     iVar1 = *(byte *)((int)param_1 + 0x1c87f) - 2;
     if (iVar1 == 0) {
-      uVar2 = FUN_00402f40(param_1);
+      uVar2 = Packet_ParseType2(param_1);
       (void)uVar2;
       return 1;
     }

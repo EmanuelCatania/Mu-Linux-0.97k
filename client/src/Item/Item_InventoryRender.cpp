@@ -410,10 +410,10 @@ void __cdecl RenderItems3D(float p1, float p2, short* p3, int p4, int p5, char p
                             float fy = (float)(r5 % 0x14) + y;
                             float mixRot = (float)((__int64)DAT_05826e08 % 100) * 20.0f;
                             glColor3f(colorR, colorG, 0.2f);
-                            FUN_005126e0(0x4ce, fx, fy, sparkSize, sparkSize, 0);
-                            FUN_005126e0(0x4ce, fx, fy, sparkSize, sparkSize, mixRot);
-                            FUN_005126e0(0x4cf, fx, fy, sparkSize * _DAT_00552540, sparkSize * _DAT_00552540, mixRot);
-                            FUN_005126e0(0x47e, fx, fy, sparkSize * _DAT_005527d0, sparkSize * _DAT_005527d0, 0);
+                            GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, 0);
+                            GL_DrawRotatedRect(0x4ce, fx, fy, sparkSize, sparkSize, mixRot);
+                            GL_DrawRotatedRect(0x4cf, fx, fy, sparkSize * _DAT_00552540, sparkSize * _DAT_00552540, mixRot);
+                            GL_DrawRotatedRect(0x47e, fx, fy, sparkSize * _DAT_005527d0, sparkSize * _DAT_005527d0, 0);
                             GL_ResetState();  // DisableAlphaBlend
                         }
                     }

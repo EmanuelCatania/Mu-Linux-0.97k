@@ -44,25 +44,25 @@ unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, i
     float v17 = (float)FUN_005129f0(v26);
     float v15 = (float)FUN_005129f0(v25);
     float v14 = (float)FUN_005129f0(v24);
-    float v16 = (float)FUN_00512a10(v14, v15);
-    float v21 = (float)FUN_00512a10(v16, v17);
+    float v16 = (float)Math_Fmin(v14, v15);
+    float v21 = (float)Math_Fmin(v16, v17);
 
     if ( (float)FUN_005129f0(v24) == v21 ) {
-        if ( !((float)FUN_00512a10(Position[1], Target[1]) <= Positiona
-            && (float)FUN_00512a30(Position[1], Target[1]) >= Positiona
-            && (float)FUN_00512a10(Position[2], Target[2]) <= Normala
-            && (float)FUN_00512a30(Position[2], Target[2]) >= Normala) )
+        if ( !((float)Math_Fmin(Position[1], Target[1]) <= Positiona
+            && (float)Math_Fmax(Position[1], Target[1]) >= Positiona
+            && (float)Math_Fmin(Position[2], Target[2]) <= Normala
+            && (float)Math_Fmax(Position[2], Target[2]) >= Normala) )
             return 0;
     } else if ( (float)FUN_005129f0(v25) == v21 ) {
-        if ( (float)FUN_00512a10(Position[2], Target[2]) > Normala
-          || (float)FUN_00512a30(Position[2], Target[2]) < Normala
-          || (float)FUN_00512a10(Position[0], Target[0]) > Targeta
-          || (float)FUN_00512a30(Position[0], Target[0]) < Targeta )
+        if ( (float)Math_Fmin(Position[2], Target[2]) > Normala
+          || (float)Math_Fmax(Position[2], Target[2]) < Normala
+          || (float)Math_Fmin(Position[0], Target[0]) > Targeta
+          || (float)Math_Fmax(Position[0], Target[0]) < Targeta )
             return 0;
-    } else if ( (float)FUN_00512a10(Position[0], Target[0]) > Targeta
-             || (float)FUN_00512a30(Position[0], Target[0]) < Targeta
-             || (float)FUN_00512a10(Position[1], Target[1]) > Positiona
-             || (float)FUN_00512a30(Position[1], Target[1]) < Positiona ) {
+    } else if ( (float)Math_Fmin(Position[0], Target[0]) > Targeta
+             || (float)Math_Fmax(Position[0], Target[0]) < Targeta
+             || (float)Math_Fmin(Position[1], Target[1]) > Positiona
+             || (float)Math_Fmax(Position[1], Target[1]) < Positiona ) {
         return 0;
     }
 
@@ -79,7 +79,7 @@ unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, i
         v18 = 4;
     }
 
-    if ( !FUN_00512a50(Targeta, Positiona, Normala, Polygon,
+    if ( !Collision_PointInPolygon(Targeta, Positiona, Normala, Polygon,
                        (int)v1, (int)v2, (int)v3, (int)v4, v18, v19) )
         return 0;
 

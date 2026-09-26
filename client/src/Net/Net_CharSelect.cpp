@@ -126,4 +126,4 @@ void __cdecl CharSelect_SendSelectPacket(void)
 // CServerSelWin_UpdateWhileActive — implemented in src/Scene/Scene_ServerSelect_Input.cpp (server select hit-test, 337 lines)
 // FUN_005239a0 — implemented in src/Render/Scene_CharPreview.cpp
 // UnloadImage — implemented in src/Render/Texture.cpp
-// FUN_0053d5c0 — implemented in src/Render/Texture.cpp
+// Pipe_QueryResource — implemented in src/Render/Texture.cpp

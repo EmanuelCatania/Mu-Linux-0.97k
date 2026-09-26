@@ -420,7 +420,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
                 continue;
             }
 
-            // anti-tamper hash table — skipped (FUN_0043d8a0 + TradeOpened check)
+            // anti-tamper hash table — skipped (HashTable_Insert_Short + TradeOpened check)
             if (DAT_07eaa11b != '\0') {  // TradeOpened
                 UIChatLogWindow_AddText((const char*)&DAT_07e11dfc, (const char*)&DAT_07d4c89c, 2);
                 continue;

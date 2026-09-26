@@ -798,7 +798,7 @@ int Game_SceneUpdate(void)
                 // NOTE: companion client (Mu-linux-97K/Source/Client/Main/Reconnect.cpp:222-224)
                 // does NOT pre-process account/password — they're fed RAW into
                 // PacketArgumentEncrypt (the 3-byte XOR below).  We used to call
-                // Buffer_XorKey3 (FUN_00423c40) here, which mangled the strings
+                // Buffer_XorKey3 (Buffer_XorKey3) here, which mangled the strings
                 // (server saw 'emap...' for input "emanuel...") and the server
                 // silently dropped the packet.  Removed.
 

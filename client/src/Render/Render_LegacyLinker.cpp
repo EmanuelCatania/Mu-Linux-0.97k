@@ -7,7 +7,7 @@
 
 extern "C" DWORD GoldenArcherOpenType;
 extern void __cdecl operator_delete(void* ptr);
-extern void FUN_004fa5a0(void);
+extern void ClearActionObject(void);
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
@@ -488,7 +488,7 @@ LABEL_9:
       {
         *(DWORD *)(a1 + 88) = -2;
         *v3 = 90.0;
-        FUN_004fa5a0();
+        ClearActionObject();
         AddTerrainAttributeRange(13, 70, 3, 6, 8u, 0);
       }
       --DAT_0055a7b8;

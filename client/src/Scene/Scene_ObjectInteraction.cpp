@@ -7,7 +7,7 @@
 #include "globals.h"
 #include "functions.h"
 
-extern void FUN_004fa5a0(void);
+extern void ClearActionObject(void);
 // MoveObject_Special @ 0x004FA5F0 (~93 lines) — castle gate destruction animation
 // Gate objects in castle siege world. Decrements counter, plays sound 0x6c,
 // spawns 10 dust particles at height 80, clears terrain on completion.
@@ -85,7 +85,7 @@ void __cdecl MoveObject_Special(int param_1) {
         if (DAT_0055a7b8 == 0) {
             *(DWORD*)(param_1 + 0x58) = 0xFFFFFFFE;  // -2 (fully destroyed)
             *pHeight = 90.0f;
-            FUN_004fa5a0();  // GuildMark_ResetTarget
+            ClearActionObject();  // GuildMark_ResetTarget
             // AddTerrainAttributeRange(0xd, 0x46, 3, 6, 8, 0) — clear walkable zone
             Terrain_UpdateTileAttributeRect(0x0d, 0x46, 3, 6, 0x08, 0x00);
         }
@@ -117,7 +117,7 @@ char* __stdcall PickObject_Mouse(void) {
 
     char* result = NULL;
 
-    FUN_00512d30();  // Map_InitRayCast — sets up MousePosition/MouseTarget ray
+    Map_InitRayCast();  // Map_InitRayCast — sets up MousePosition/MouseTarget ray
 
     DWORD* pCell = (DWORD*)&DAT_083a021c;
     do {

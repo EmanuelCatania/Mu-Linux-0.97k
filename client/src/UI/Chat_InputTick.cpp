@@ -396,9 +396,9 @@ extern "C" void Chat_SendChatLine(const char* text)
 
 // Sequence called on every class-tab click.
 // After the first 3-byte packet, does the hash-table check then optionally
-// calls CloseInventoryRelatedWindows or FUN_004e3d60 + sends a second 3-byte packet.
+// calls CloseInventoryRelatedWindows or Connection_Check + sends a second 3-byte packet.
 // pkt0/pkt1/pkt2 = first 3-byte packet bytes.
-// pkt_b0/b1/b2 = second 3-byte packet (FUN_004e3d60 branch).
+// pkt_b0/b1/b2 = second 3-byte packet (Connection_Check branch).
 // pkt_c0/c1/c2 = second 3-byte packet (DAT_07eaa165 branch).
 
 // ---------------------------------------------------------------------------
@@ -541,7 +541,7 @@ void __cdecl Chat_InputTick(void)
     //   DAT_083a7c24 not 0x7e/0x98, GoldenArcherOpenType==0,
     //   *(DAT_00583d8c+0x1c87f)==0, ServerDivisionOpened==0
     {
-        FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
+        HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
         char bVar4 = DAT_07eaa11b;
         PACKET_ENCRYPT(&MAIN_HASH_CLASS, (char *)&DAT_07eaa11b);
 
@@ -681,7 +681,7 @@ void __cdecl Chat_InputTick(void)
             // ── 7. Chat input — 9 channels ───────────────────────────────────
             // Channels 0-8 each have a 0x100-byte input buffer at MacroText+ch*0x100.
             // FUN_00494520 reads a key press into the buffer, returns ch != '\0' if Enter.
-            // FUN_00513440 validates the text (profanity/length); '\0' = ok.
+            // Chat_Validate validates the text (profanity/length); '\0' = ok.
             // Rate-limit: ChatTime starts at 0x46, counts down each frame.
             //             If > 0x32, reject (too fast). Resets to 0x46 on send.
             // Duplicate check: compare buffer vs DAT_05826adc (last sent).
@@ -714,7 +714,7 @@ void __cdecl Chat_InputTick(void)
                              (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
                             CheckChatText((char *)chBuf);   // IDA: sub_497C70
 
-                        if ((char)FUN_00513440((char *)chBuf) != '\0')
+                        if ((char)Chat_Validate((char *)chBuf) != '\0')
                             continue;  // invalid text
 
                         // Rate-limit and duplicate check
@@ -810,7 +810,7 @@ void __cdecl Chat_InputTick(void)
                              (*(char *)(DAT_07abf5d8 + 0x34e) != '\0'))
                             CheckChatText(&DAT_07e108c8);   // IDA: sub_497C70
 
-                        if ((char)FUN_00513440(&DAT_07e108c8) == '\0') {
+                        if ((char)Chat_Validate(&DAT_07e108c8) == '\0') {
                             if (ChatTime < 0x33) {
                                 bool bDupWhisper = (ChatTime > 0) &&
                                                    (strcmp(&DAT_07e108c8, &DAT_05826adc[0]) == 0);

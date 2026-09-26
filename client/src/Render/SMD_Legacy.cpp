@@ -74,7 +74,7 @@ int __stdcall FUN_0040b350(void) {
 // Large function — summary stub only.
 void __stdcall FixupSMD_stub(void) {
     // For each node (DAT_00590c10):
-    //   if parent == -1: AngleMatrix(rotation, matrix), FUN_004f9e90(matrix, output), copy position
+    //   if parent == -1: AngleMatrix(rotation, matrix), EulerToMatrix(matrix, output), copy position
     //   else: AngleMatrix(rotation, local), R_ConcatTransforms(parent, local, result)
     // For each triangle vertex:
     //   Transform position by bone matrix

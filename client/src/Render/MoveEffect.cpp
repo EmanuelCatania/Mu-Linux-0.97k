@@ -48,16 +48,16 @@
 //   RequestTerrainHeight(x, y)
 //   AddTerrainLight = RequestTerrainLight(x, y, light_ptr, mode, addr)
 //   CreateSprite (Flare_Spawn?)
-//   FUN_00465fe0 (effect color update)
+//   Joint_BoneOffsetApply (effect color update)
 //   Effect_SpawnProximityHit (effect deactivate?)
 //   FUN_00466440 (effect helper)
 //   Effect_SpawnSmokeBurst (effect helper2)
 //   Effect_SpawnSmokeExplosion (effect helper3)
 //   FUN_0046c3e0 = Trail_RenderAll?
 //   BMD__PlayAnimation = BMD_SetAnim?
-//   FUN_0045fec0 = Entity_SpawnImpact?
+//   Entity_FindNearby_SendPacket = Entity_SpawnImpact?
 //   PlayBuffer = Sound_Play(id, slot, flag)
-//   FUN_00473d90 (ring?)
+//   Ring_ComputeOrbit (ring?)
 //   Terrain_GetTileIndex = Terrain_GetTileAttr(x, y)
 //   TERRAIN_INDEX (terrain helper)
 
@@ -427,7 +427,7 @@ void MoveEffect(float *param_1, int param_2)
           local_360 = 0.0;
           AddTerrainLight(*pfVar10,param_1[5], (float*)&local_368,3, (float*)DAT_081cb608);
           if (((char *)*(int*)&param_1[0x3f] == DAT_07abf5d8) && ((*(int*)&param_1[0x18]) % 0x14 == 0)) {
-            FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),pfVar10,150.0,
+            Entity_FindNearby_SendPacket((uint)*(byte *)((int)param_1 + 0x85),pfVar10,150.0,
                          *(byte *)(param_1 + 0x22),*(short *)((int)param_1 + 0x86));
           }
         }
@@ -1188,7 +1188,7 @@ LAB_00469ab9:
           Particle_Spawn(0x4ab,pfVar10,param_1 + 7,&local_368,0,1.0,0);
         }
         else if (*(int*)&param_1[1] == 3) {
-          FUN_00473d90(param_2 * 0x14fb,&local_2f8,1.0);
+          Ring_ComputeOrbit(param_2 * 0x14fb,&local_2f8,1.0);
           local_2f8 = local_2f8 * _DAT_00552598;
           local_2f4 = local_2f4 * _DAT_00552598;
           local_334 = 0.0;
@@ -1416,7 +1416,7 @@ LAB_00468772:
       local_360 = local_36c * _DAT_00552570;
       AddTerrainLight(*pfVar15,param_1[5], (float*)&local_368,5, (float*)DAT_081cb608);
       if (((*(int*)&param_1[0x18]) % 0xf == 0) && ((char *)*(int*)&param_1[0x3f] == DAT_07abf5d8)) {
-        FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),pfVar15,150.0,*(byte *)(param_1 + 0x22),
+        Entity_FindNearby_SendPacket((uint)*(byte *)((int)param_1 + 0x85),pfVar15,150.0,*(byte *)(param_1 + 0x22),
                      *(short *)((int)param_1 + 0x86));
       }
       break;
@@ -1667,7 +1667,7 @@ switchD_00466b93_caseD_c7:
         }
         if ((*(int*)&param_1[0x18] == 1) &&
            (Effect_SpawnSmokeBurst(pfVar10,'\x01'), (char *)*(int*)&param_1[0x3f] == DAT_07abf5d8)) {
-          FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),pfVar10,100.0,*(byte *)(param_1 + 0x22),
+          Entity_FindNearby_SendPacket((uint)*(byte *)((int)param_1 + 0x85),pfVar10,100.0,*(byte *)(param_1 + 0x22),
                        *(short *)((int)param_1 + 0x86));
         }
       }
@@ -1842,7 +1842,7 @@ switchD_00466b93_caseD_c7:
           bVar16 = (uVar8 - 1 | 0xfffffff8) == 0xffffffff;
         }
         if ((bVar16) && ((char *)*(int*)&param_1[0x3f] == DAT_07abf5d8)) {
-          FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),pfVar15,150.0,*(byte *)(param_1 + 0x22),
+          Entity_FindNearby_SendPacket((uint)*(byte *)((int)param_1 + 0x85),pfVar15,150.0,*(byte *)(param_1 + 0x22),
                        *(short *)((int)param_1 + 0x86));
         }
       }
@@ -1882,7 +1882,7 @@ switchD_00466b93_caseD_c7:
         bVar16 = (char *)*(int*)&param_1[0x3f] == DAT_07abf5d8;
         *(undefined1 *)param_1 = 0;
         if (bVar16) {
-          FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),pfVar10,150.0,*(byte *)(param_1 + 0x22),
+          Entity_FindNearby_SendPacket((uint)*(byte *)((int)param_1 + 0x85),pfVar10,150.0,*(byte *)(param_1 + 0x22),
                        *(short *)((int)param_1 + 0x86));
         }
       }
@@ -2136,7 +2136,7 @@ LAB_00466e5e:
         bVar16 = (char *)*(int*)&param_1[0x3f] == DAT_07abf5d8;
         param_1[0x18] = 0.0;
         if (bVar16) {
-          FUN_0045fec0((uint)*(byte *)((int)param_1 + 0x85),param_1 + 0x5c,300.0,
+          Entity_FindNearby_SendPacket((uint)*(byte *)((int)param_1 + 0x85),param_1 + 0x5c,300.0,
                        *(byte *)(param_1 + 0x22),*(short *)((int)param_1 + 0x86));
         }
       }
@@ -2569,7 +2569,7 @@ LAB_0046b3bf:
           if (sVar3 == 0x10a) goto LAB_0046b3bf;
           iVar9 = 1;
         }
-        FUN_00465fe0((int)param_1,iVar9);
+        Joint_BoneOffsetApply((int)param_1,iVar9);
       }
     }
 LAB_0046b3ca:

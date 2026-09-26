@@ -8,10 +8,10 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "functions.h"
 
 // -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// FUN_00408cb0 vive ahora en Scene/Scene_CharSelect_Nav.cpp y FUN_00408e30 en
+// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
 // Net/Crypto.cpp; antes se definian en este archivo.
-void __fastcall FUN_00408cb0(int*, float);
-int  __cdecl    FUN_00408e30(DWORD *a1);
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
@@ -251,7 +251,7 @@ void __cdecl OpenTerrainLight(const char *path) {
 void __cdecl CreateTerrain(const char *path) {
     DAT_0839bc84 = 1;
     OpenTerrainHeight((char*)path); // FUN_004f7290 (IDA)
-    FUN_004f9c20();
+    Terrain_SetupCulling();
 }
 
 // ClearItems @ 0x00502B80 — ClearItems / Map_InitEntities

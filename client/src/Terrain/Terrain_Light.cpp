@@ -2,7 +2,7 @@
 // Terrain light map computation and per-entity light colour lookup.
 //
 // RequestTerrainLight @ 0x004f7960 — Terrain_GetLightColor
-// FUN_004fa930 @ 0x004fa930 — Entity_GetLightScale
+// Entity_GetLightScale @ 0x004fa930 — Entity_GetLightScale
 // Terrain_Water @ 0x004f95e0 — Terrain_ComputeLightMap
 //
 // Terrain light map:
@@ -76,7 +76,7 @@ void __cdecl RequestTerrainLight(float param_1,float param_2,float *param_3)
 }
 
 
-// FUN_004fa930 — Entity_GetLightScale
+// Entity_GetLightScale — Entity_GetLightScale
 // Reads the terrain light at entity param_1's world position and writes the
 // RGB scale into render object param_2 at offsets +0x48/+0x4c/+0x50.
 // Special cases:
@@ -84,7 +84,7 @@ void __cdecl RequestTerrainLight(float param_1,float param_2,float *param_3)
 //   type 0xe1 with flag 0x200 → animated sine wave brightness
 //   dark-map flag at param_1+0xdc → full light from map
 //   otherwise → map light * 0.2 scale
-void __cdecl FUN_004fa930(int param_1,int param_2)
+void __cdecl Entity_GetLightScale(int param_1,int param_2)
 {
   float10 fVar1;
   // PORT FIX: Ghidra decompile produced three separate locals (local_c/8/4)

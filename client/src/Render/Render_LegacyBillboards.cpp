@@ -8,10 +8,10 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "functions.h"
 
 // -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// FUN_00408cb0 vive ahora en Scene/Scene_CharSelect_Nav.cpp y FUN_00408e30 en
+// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
 // Net/Crypto.cpp; antes se definian en este archivo.
-void __fastcall FUN_00408cb0(int*, float);
-int  __cdecl    FUN_00408e30(DWORD *a1);
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
@@ -45,11 +45,11 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// FUN_00475170 @ 0x00475170 — ItemDrop_SetupRenderRef(slot_ptr)
+// ItemDrop_SetupRenderRef @ 0x00475170 — ItemDrop_SetupRenderRef(slot_ptr)
 // Resolves the entity reference at slot+0x3c, copies its world position to the
 // model render slot, selects the target bone via equip-flags, then calls
 // BMD_TransformPosition to animate/position it.
-void __cdecl FUN_00475170(int param_1) {
+void __cdecl ItemDrop_SetupRenderRef(int param_1) {
     int iVar1 = *(int*)(param_1 + 0x3c);
     float local_c[3] = {0.0f, 0.0f, 0.0f};
     void *this_ = (void*)(DAT_05828d58 + *(short*)(iVar1 + 2) * 0xbc);
@@ -160,9 +160,9 @@ apply:;
     }
 }
 
-// FUN_00503fe0 @ 0x00503FE0 — Weapon_SetColorAlt: simpler color selector, no flag param.
+// Weapon_SetColorAlt @ 0x00503FE0 — Weapon_SetColorAlt: simpler color selector, no flag param.
 // Scales existing color[3] in place by (scale * half_scale).
-void __cdecl FUN_00503fe0(int param_1, float param_2, float param_3, float *param_4)
+void __cdecl Weapon_SetColorAlt(int param_1, float param_2, float param_3, float *param_4)
 {
     int iVar4 = 0;
     if ((param_1==0x215)||(param_1==0x21d)||(param_1==0x19e)||(param_1==0x235)) { iVar4=2; }
@@ -245,16 +245,16 @@ void* __cdecl RenderPartObjectBodyColor(void *model, int entity, int etype, floa
     return nullptr;
 }
 
-// FUN_00504ac0 @ 0x00504AC0 — Entity_SetModelColorAlt: simpler version.
-// No special type 0x144 path; uses FUN_00503fe0 instead of PartObjectColor.
-void* __cdecl FUN_00504ac0(void *model, int entity, int etype, float scale,
+// Entity_SetModelColorAlt @ 0x00504AC0 — Entity_SetModelColorAlt: simpler version.
+// No special type 0x144 path; uses Weapon_SetColorAlt instead of PartObjectColor.
+void* __cdecl Entity_SetModelColorAlt(void *model, int entity, int etype, float scale,
                              int flags, float alpha, int rgba)
 {
     float *color = (float *)((char*)model + 0x48);
     if ((flags & 0x10) == 0x10) {
         color[0] = 1.0f; color[1] = 1.0f; color[2] = 1.0f;
     } else {
-        FUN_00503fe0(etype, scale, alpha, color);
+        Weapon_SetColorAlt(etype, scale, alpha, color);
     }
     int fVar1 = (etype == 0x235) ? 1 : -1;   // HiddenMesh: malla 1 / ninguna
     BMD__RenderBody(model, (uint)flags, scale,
@@ -266,10 +266,10 @@ void* __cdecl FUN_00504ac0(void *model, int entity, int etype, float scale,
 // Implemented in src/Render/RenderLinkObject.cpp
 // DeleteCloth @ 0x00449840 — Entity_ClearBoneLinks(param1, param2, param3)
 // Clears bone/widget link arrays on entity objects.
-// For param2: iterates (+0x184, count at +0x180), calls FUN_004086e0 + vtable[0](3) per entry.
-// For param1: iterates 6 weapon/equip slots (stride 0x18 at +0x1f4), calls FUN_004086e0 + vtable[0](1).
-// For param3: clears one link at +0x14 via FUN_004086e0 + vtable[0](1).
-// FUN_004086e0 signature: (int, int, int) — called here as (ptr, 0, 0) (3-arg form, per functions.h).
+// For param2: iterates (+0x184, count at +0x180), calls Widget_Release + vtable[0](3) per entry.
+// For param1: iterates 6 weapon/equip slots (stride 0x18 at +0x1f4), calls Widget_Release + vtable[0](1).
+// For param3: clears one link at +0x14 via Widget_Release + vtable[0](1).
+// Widget_Release signature: (int, int, int) — called here as (ptr, 0, 0) (3-arg form, per functions.h).
 // IDA: DeleteCloth (0x00449840)
 void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
 {
@@ -277,7 +277,7 @@ void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
         int count = (int)(unsigned char)*(char*)(param_2 + 0x180);
         int *puVar1 = (int*)*(int*)(param_2 + 0x184);
         for (int i = 0; i < count; i++) {
-            FUN_004086e0((int)puVar1, 0, 0);
+            Widget_Release((int)puVar1, 0, 0);
             puVar1 += 0x15;
         }
         int *base = (int*)*(int*)(param_2 + 0x184);
@@ -292,7 +292,7 @@ void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
         for (int i = 0; i < 6; i++) {
             int *puVar1 = (int*)*piVar4;
             if (puVar1 != nullptr) {
-                FUN_004086e0((int)puVar1, 0, 0);
+                Widget_Release((int)puVar1, 0, 0);
                 // IDA: (**v8)(v8, 1) -- dtor thiscall de la vtable (sub_45AAA0).
                 // El port lo llamaba como cdecl sin `this`.
                 FUN_0045aaa0_impl(puVar1, 1);
@@ -303,7 +303,7 @@ void __cdecl DeleteCloth(int param_1, int param_2, int param_3)
     }
     if ((param_3 != 0) && (*(int*)(param_3 + 0x14) != 0)) {
         int *puVar1 = (int*)*(int*)(param_3 + 0x14);
-        FUN_004086e0((int)puVar1, 0, 0);
+        Widget_Release((int)puVar1, 0, 0);
         FUN_0045aaa0_impl(puVar1, 1);   // IDA: (**v9)(v9, 1)
         *(int*)(param_3 + 0x14) = 0;
     }

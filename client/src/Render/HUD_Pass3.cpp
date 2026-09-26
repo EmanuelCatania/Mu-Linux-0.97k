@@ -34,7 +34,7 @@ static float PointerBitsAsFloat(const void* pointer)
 extern "C" int __cdecl sub_4E9300_(void);
 #define sub_4E9300 sub_4E9300_
 // Alias a los globales reales (IDA): el teclado del PIN los comparte con
-// FUN_004eb5d0 (boton del candado), el drop del baul y el manejador 0x4E93A0.
+// SecondPassword_Screen9 (boton del candado), el drop del baul y el manejador 0x4E93A0.
 #define dword_7EAA14C  DAT_07eaa14c
 #define byte_7EAA1A4   DAT_07eaa1a4
 #define byte_7EAA179   DAT_07eaa179

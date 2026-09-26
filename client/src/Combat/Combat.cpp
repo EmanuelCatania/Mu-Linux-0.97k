@@ -506,7 +506,7 @@ static void SendMove_CloseWindows97k(void)
             Net_SendC1Packet(pkt, sizeof(pkt));
         }
     } else if (ChaosMixOpened) {
-        if (!FUN_004e3d60(OffsetMixItems, 8, 4) || (int)DAT_07e91388 > 0) {
+        if (!Connection_Check(OffsetMixItems, 8, 4) || (int)DAT_07e91388 > 0) {
             UIChatLogWindow_AddText("", GlobalText[593], 2);
         } else {
             const BYTE pkt[3] = { 0xC1, 0x03, 0x87 };        // cerrar Chaos Machine
@@ -1370,7 +1370,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
         // IDA L9682 LABEL_1762 -> LABEL_1763: sub_444B30(c) = SetPlayerTeleport,
         // o sea la animacion de casteo (accion 87) sobre el propio heroe.
         // MU 5.2 ZzzInterface.cpp:6130 hace lo mismo tras SendRequestMagicTeleport.
-        FUN_00444b30((int)(uintptr_t)entity);
+        SetPlayerTeleport((int)(uintptr_t)entity);
         return;
     }
 
@@ -1430,7 +1430,7 @@ static void Attack_Label1585_97k(char* entity, int iType, bool hasTarget)
             // o+2: un iType chico seria un puntero salvaje. MU 5.2 desambigua el
             // argumento (ZzzInterface.cpp:6065): en el recall de party la animacion
             // va sobre el ALIADO (`SetPlayerTeleport(tc)`), no sobre el heroe.
-            FUN_00444b30((int)(uintptr_t)target);
+            SetPlayerTeleport((int)(uintptr_t)target);
             return;
         }
     }
@@ -2086,7 +2086,7 @@ void __cdecl Action(DWORD c, DWORD o)
         // que es simplemente: 1 para esos tres tipos, 0 para el resto.
         // 243 = Craftsman, 246 = Weapon Merchant, 251 = Blacksmith (Monster.txt):
         // los tres NPC que reparan.  Este byte es el gate del checkbox de
-        // reparacion (lo leen FUN_004e6550 y Chat_InputTick), asi que sin este
+        // reparacion (lo leen SecondPassword_Screen4 y Chat_InputTick), asi que sin este
         // write el panel del herrero salia sin poder tildar nada.
         DAT_07eaa132 = (npcType == 243 || npcType == 246 || npcType == 251) ? 1 : 0;
 

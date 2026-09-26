@@ -57,7 +57,7 @@
 //     Purpose: re-send character authentication sync (used when joining party).
 //
 //   param_2 != 0  →  BGM notification:
-//     FUN_0053d5c0(*(CHAR**)(param_1 + 4))
+//     Pipe_QueryResource(*(CHAR**)(param_1 + 4))
 //     Passes string pointer from packet to background music player.
 //     Purpose: server instructs client to play a specific BGM track.
 //
@@ -89,8 +89,8 @@
 //
 // ── Guild member list (opcode 0x93, FUN_00436a80) ────────────────────────────
 //   Dispatch on packet[4]:
-//     ==0xFF: FUN_0051da80(packet[3], packet+5) — add one member record (0x18 bytes).
-//     else:   FUN_0051d9e0(packet[4], packet[3], packet+5) — full list update
+//     ==0xFF: GuildMemberList_Add(packet[3], packet+5) — add one member record (0x18 bytes).
+//     else:   GuildMemberList_Update(packet[4], packet[3], packet+5) — full list update
 //             (packet[4] = member count, packet[3] = param, packet+5 = data array).
 //   Guild member list table at DAT_083a7af8, stride 0x18 per member.
 //   UI sub-state: 0x8c (member list panel) or 0x9a (single add).
@@ -401,9 +401,9 @@ void Guild_AddMemberResult(BYTE* pkt)
 // Guild_MemberList  @ 0x00436a80  (opcode 0x93)
 // Server sends guild member list (full update or single add).
 //
-// pkt[4]==0xFF → FUN_0051da80(pkt[3], pkt+5)
+// pkt[4]==0xFF → GuildMemberList_Add(pkt[3], pkt+5)
 //   Add one member record (0x18 bytes at pkt+5).
-// pkt[4]!=0xFF → FUN_0051d9e0(pkt[4], pkt[3], pkt+5)
+// pkt[4]!=0xFF → GuildMemberList_Update(pkt[4], pkt[3], pkt+5)
 //   Full member list: pkt[4]=count, pkt[3]=param, pkt+5=data array.
 // Guild member list at DAT_083a7af8, stride 0x18 per entry.
 // UI sub-state: 0x9a (add) or 0x8c (full list).
@@ -411,9 +411,9 @@ void Guild_AddMemberResult(BYTE* pkt)
 void Guild_MemberList(BYTE* pkt)
 {
     if (pkt[4] == 0xFF)
-        FUN_0051da80((UINT)pkt[3], pkt + 5);
+        GuildMemberList_Add((UINT)pkt[3], pkt + 5);
     else
-        FUN_0051d9e0((int)pkt[4], (int)pkt[3], pkt + 5);
+        GuildMemberList_Update((int)pkt[4], (int)pkt[3], pkt + 5);
 }
 
 

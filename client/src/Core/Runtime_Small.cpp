@@ -100,7 +100,7 @@ void __cdecl FUN_00407ec0(DWORD *_this)
 // FUN_0040a6e0 @ 0x0040A6E0 (11 bytes)
 void __fastcall FUN_0040a6e0(void *This) {
     *(int *)This = (int)&PTR_LAB_005524e8;
-    FUN_00409f10(This);
+    WidgetB_SetVtable(This);
 }
 
 

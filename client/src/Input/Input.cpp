@@ -401,7 +401,7 @@ LAB_004c06d6:
   }
   else {
     if (DAT_07eaa116 == '\0') {
-      FUN_0043d8a0(&MAIN_HASH_CLASS,&DAT_07eaa11b);
+      HashTable_Insert_Short(&MAIN_HASH_CLASS,&DAT_07eaa11b);
       cVar2 = DAT_07eaa11b;
       uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa11b);
       if (uVar4 != 0xffffffff) {
@@ -414,7 +414,7 @@ LAB_004c06d6:
       }
       if ((((cVar2 == '\0') && (DAT_07eaa119 == '\0')) && (DAT_07eaa11a == '\0')) &&
          (DAT_07eaa11c == '\0')) {
-        FUN_0043d8a0(&MAIN_HASH_CLASS,&DAT_07eaa118);
+        HashTable_Insert_Short(&MAIN_HASH_CLASS,&DAT_07eaa118);
         cVar2 = DAT_07eaa118;
         uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa118);
         if (uVar4 != 0xffffffff) {
@@ -432,7 +432,7 @@ LAB_004c06d6:
     uVar6 = 0;
   }
 LAB_004c06e6:
-  FUN_0040c690((void*)(uintptr_t)DAT_055c9ff0,uVar6,uVar7);
+  Object_SetRectFields((void*)(uintptr_t)DAT_055c9ff0,uVar6,uVar7);
   PlayBuffer(0x19,0,0);
   return;
 }

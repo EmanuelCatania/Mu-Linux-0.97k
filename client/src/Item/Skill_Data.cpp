@@ -16,7 +16,7 @@
 //         [0x27] = range
 //       Inserts/updates entry in hash table at MAIN_HASH_CLASS.
 //       Hash table ops use HashTable_Insert (insert), HashTable_GetIndex,
-//       FUN_0047ea70 (serialize+insert), FUN_0047eaf0 (free+remove).
+//       Skill_HashTable_SerializeEntry (serialize+insert), Skill_HashTable_FreeEntry (free+remove).
 //   2 = EOF — close file, return
 //
 // Hash table context: MAIN_HASH_CLASS (vtable), DAT_055c9bd0 (bucket array),
@@ -43,7 +43,7 @@ void __cdecl Skill_LoadTextData(const char *path)
 // For each entry: copies from DAT_07d29d20, XOR-encrypts via BuxConvert_0,
 // writes to file. After all entries, computes a rolling checksum
 // (seed: DAT_00b43000, constant 0x5a18) and appends 4 bytes.
-// Hash table operations (FUN_0047ea70 / FUN_0047eaf0) manage in-memory index.
+// Hash table operations (Skill_HashTable_SerializeEntry / Skill_HashTable_FreeEntry) manage in-memory index.
 void __cdecl Skill_SaveBMD(const char *path)
 {
     FILE *fp   = (FILE *)crt_fopen(path, DAT_005597d4);  // "wb"
@@ -73,7 +73,7 @@ void __cdecl Skill_SaveBMD(const char *path)
 // Reads binary .bmd skill data file (counterpart to FUN_0047a970).
 // Reads 0xa00 bytes + 4-byte checksum, validates, XOR-decrypts each 0x28-byte
 // record, and writes into DAT_07cf1ff8 (skill shadow table, stride 0x28).
-// Hash table entries are rebuilt via FUN_0047ea70 / FUN_0047eaf0.
+// Hash table entries are rebuilt via Skill_HashTable_SerializeEntry / Skill_HashTable_FreeEntry.
 // [+0x26] field in shadow table is left-shifted by 1 after copy.
 void __cdecl Skill_LoadBMD(const char *path)
 {

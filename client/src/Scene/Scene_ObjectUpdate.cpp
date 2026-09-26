@@ -7,7 +7,7 @@
 #include "globals.h"
 #include "functions.h"
 
-extern void __cdecl FUN_0046ca00(DWORD Object);
+extern void __cdecl Effect_PhysicsTick(DWORD Object);
 // MoveObject_PerWorld @ 0x004FDC00 (~608 lines) — SUMMARY STUB
 // Per-world object animation. Per-frame for each visible scene object.
 // World 9: random terrain lights. World 0: toggle objects by HeroTile.
@@ -132,7 +132,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
     //          types 0x2a,0x2b → WorldTime scale
     // World 4: types 3,4 → WorldTime rotation
     //          type 0x18 → CreateEffect(0x4b0) on 1/64 chance
-    //          types 0x26,0x27 → FUN_0046ca00
+    //          types 0x26,0x27 → Effect_PhysicsTick
     // World 5: type 2 → SubType=0, type 3 → random scale
     // World 6: type 0x15 → WorldTime rotation, type 0x26 → SubType=-2
     // World 7: type 0x16 → pulsing scale with CreateParticle
@@ -318,7 +318,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
             *(int*)(objPtr + 88) = -2;
             break;
         case 0x26:
-        case 0x27: FUN_0046ca00(objPtr); return (float*)0;
+        case 0x27: Effect_PhysicsTick(objPtr); return (float*)0;
         }
         break;
 

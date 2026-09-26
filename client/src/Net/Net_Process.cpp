@@ -200,9 +200,9 @@
 //
 //   case 0x54:  Second password / PIN full reset:
 //               DAT_07eaa114-117 = 0
-//               FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa118); DAT_07eaa118=0
+//               HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118); DAT_07eaa118=0
 //               PACKET_ENCRYPT; DAT_07eaa119=0; DAT_00559f5f=0; DAT_07eaa14c=0
-//               FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b); DAT_07eaa11b=0
+//               HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b); DAT_07eaa11b=0
 //               PACKET_ENCRYPT; DAT_07eaa124=1; DAT_07eaa144=0
 //
 //   case 0x55:  Character list change (delete/create result):
@@ -420,7 +420,7 @@
 //   FUN_00434780  → PacketHandler_0x51(puVar8)
 //   FUN_004348b0  → PacketHandler_0x52(puVar8)
 //   FUN_00434950  → PacketHandler_0x53(puVar8)
-//   FUN_0043d8a0  → HashTable_RefDecrement(ctx, key)
+//   HashTable_Insert_Short  → HashTable_RefDecrement(ctx, key)
 //   FUN_00435280  → PacketHandler_0x56(puVar8)
 //   FUN_00434dc0  → Trade_GetItemData(entityId, data, extraData)
 //   FUN_00435110  → PacketHandler_0x5b(puVar8)
@@ -1197,7 +1197,7 @@ static void ReceiveGGAuth97k(BYTE* packet, int size, bool encrypted)
     if (encrypted) {
         if (size >= 8) {
             char* resource = *(char**)(packet + 4);
-            if (resource) FUN_0053d5c0(resource);
+            if (resource) Pipe_QueryResource(resource);
         }
         return;
     }
@@ -3252,7 +3252,7 @@ void Net_ProcessPacket(void)
                             }
                             case 5:
                                 if (Size < 6) break;
-                                FUN_0051d840(Msg[5]);      // avanza el dialogo
+                                ItemList_Select(Msg[5]);      // avanza el dialogo
                                 break;
                             case 6:
                                 if (GlobalText[449] && GlobalText[449][0])
@@ -6026,7 +6026,7 @@ void Net_ProcessPacket(void)
                     case 0:
                         // Arranca el evento: todos los jugadores a la anim 128
                         // y BGM del castillo en loop.
-                        FUN_0045ad10(128);
+                        Characters_SetActionAll(128);
                         PlayBuffer(110, 0, 1);
                         // fallthrough  (IDA: `goto LABEL_3`)
                     case 1:
@@ -6036,7 +6036,7 @@ void Net_ProcessPacket(void)
                         // LIMPIA el flag +744 en todas las entidades antes de
                         // devolver el indice, o sea el portador es unico.
                         if (itemOwner != -1 && itemLevel != 0xFF && itemLevel != 0) {
-                            const int idx = FUN_0045acc0(itemOwner & 0x7FFF);
+                            const int idx = Character_FindByKey_WithClear(itemOwner & 0x7FFF);
                             if (DAT_07abf5d0 && idx >= 0 && idx < 400) {
                                 BYTE* c = (BYTE*)(uintptr_t)DAT_07abf5d0 + 916 * idx;
                                 *(BYTE*)(c + 744) = itemLevel;
@@ -6051,7 +6051,7 @@ void Net_ProcessPacket(void)
                             // `sub_45ACC0` limpia el flag en TODAS las entidades antes
                             // de buscar, asi que llamarla con una key imposible es
                             // exactamente "que no lo lleve nadie".
-                            FUN_0045acc0(0xFFFF);
+                            Character_FindByKey_WithClear(0xFFFF);
                         }
                         break;
                     }
@@ -7282,7 +7282,7 @@ void Net_ProcessPacket(void)
                     CreateEffect(1264, (float*)(c + 16), (float*)(c + 28),
                                  (float*)(c + 232), nullptr, (float*)c,
                                  (float*)-1, nullptr, 0);
-                    FUN_0045c720((int)(uintptr_t)c);   // rebuild de body-parts
+                    Character_UpdateEquipSlotAnimations((int)(uintptr_t)c);   // rebuild de body-parts
                     SetAction((int)(uintptr_t)c, 124);
                     PlayBuffer(72, 0, 0);
                 }

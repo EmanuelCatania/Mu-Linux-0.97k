@@ -8,11 +8,11 @@
 // ── Filter BMD helpers ────────────────────────────────────────────────────────
 // Checksum is computed by walking the encrypted blob 4 bytes at a time, XOR/ADD
 // alternating on a seed pointer, with a rotate-mix every 16th iteration.
-// FUN_00479a50 @ 0x00479A50 — Filter_SaveBMD
+// Filter_SaveBMD @ 0x00479A50 — Filter_SaveBMD
 // Copies 1000 word-filter entries (stride 0x14) from DAT_07d73104 into a
 // 20000-byte heap buffer, BuxConvert_0-encrypts each entry, computes the
 // checksum starting from &DAT_007cfa00, then writes buffer + checksum to file.
-void __cdecl FUN_00479a50(const char* path)
+void __cdecl Filter_SaveBMD(const char* path)
 {
     // Port of IDA sub_479A50 (Filter_SaveBMD).  Not called in the .bmd branch
     // (DAT_0055a7c4==1), only in the txt-source branch.  Kept for parity.
@@ -98,10 +98,10 @@ void __cdecl OpenFilterFile(const char* path)
     operator_delete(Buffer);
 }
 
-// FUN_00479cf0 @ 0x00479CF0 — FilterName_LoadData
+// FilterName_LoadData @ 0x00479CF0 — FilterName_LoadData
 // Reads word tokens from a text file via GetToken(); stores each into
 // DAT_07d27610 (stride 0x14), incrementing DAT_07d78074 per token.
-void __cdecl FUN_00479cf0(const char* path)
+void __cdecl FilterName_LoadData(const char* path)
 {
     DAT_07d7806c = (FILE*)fopen(path, DAT_005580ac);
     if (!DAT_07d7806c) return;
@@ -115,10 +115,10 @@ void __cdecl FUN_00479cf0(const char* path)
     fclose(DAT_07d7806c);
 }
 
-// FUN_00479d70 @ 0x00479D70 — FilterName_SaveBMD
-// Mirror of FUN_00479a50 for the name filter (DAT_07d27610, seed DAT_00578200,
+// FilterName_SaveBMD @ 0x00479D70 — FilterName_SaveBMD
+// Mirror of Filter_SaveBMD for the name filter (DAT_07d27610, seed DAT_00578200,
 // magic 0x2bc1).
-void __cdecl FUN_00479d70(const char* path)
+void __cdecl FilterName_SaveBMD(const char* path)
 {
     // Port of IDA sub_479D70 (FilterName_SaveBMD).  Not called in the .bmd
     // branch (DAT_0055a7c4==1), only in the txt-source branch.  Kept for parity.

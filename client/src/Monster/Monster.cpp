@@ -151,7 +151,7 @@
 //     if (param2 != 0 && entity[+0x184] != NULL):
 //       count = entity[+0x180]              // número de sub-meshes
 //       for i in 0..count-1:
-//         FUN_004086e0(entity[+0x184][i * 0x15])  // release sub-mesh i
+//         Widget_Release(entity[+0x184][i * 0x15])  // release sub-mesh i
 //       release(entity[+0x184])            // release pointer array
 //       entity[+0x184] = NULL
 //       entity[+0x180] = 0
@@ -160,11 +160,11 @@
 //       ptr = entity + 500                  // offset 0x1F4
 //       for i in 0..5:                      // 6 attach points
 //         if ptr[i*6] != NULL:
-//           FUN_004086e0(ptr[i*6])           // release attach mesh
+//           Widget_Release(ptr[i*6])           // release attach mesh
 //           ptr[i*6] = NULL
 //
 //     if (param3 != 0 && entity[+0x14] != NULL):
-//       FUN_004086e0(entity[+0x14])          // release extra mesh
+//       Widget_Release(entity[+0x14])          // release extra mesh
 //       entity[+0x14] = NULL
 //
 //   entity[+0x180] (byte)  = sub-mesh count

@@ -48,17 +48,17 @@
 //       piVar3 = bone[+0x24] + this[+0xa0] * 0xc (anim data para slot B)
 //
 //       if bone_idx == this[+0x54] (root/special bone):
-//         // Frame-to-frame interpolation (quaternion slerp via FUN_004fa350)
+//         // Frame-to-frame interpolation (quaternion slerp via QuatSlerp)
 //         iVar7 = piVar2[1] + frame * 0xc       (frame A keyframe offset)
 //         iVar4 = piVar3[1] + sVar10 * 0xc      (frame B keyframe offset)
 //         local_68 = *(float*)(iVar7)    - *param_6 * _DAT_005528b0
 //         local_5c = *(float*)(iVar4)    - *param_6 * _DAT_005528b0
 //         local_60 = *(float*)(iVar7+8)  - param_6[1] * _DAT_005528b0
 //         local_54 = *(float*)(iVar4+8)  - param_6[1] * _DAT_005528b0
-//         FUN_004fa1d0(&local_68, &local_50)   → Quat_Normalize(q_A, out)
-//         FUN_004fa1d0(&local_5c, &local_40)   → Quat_Normalize(q_B, out)
-//         iVar11 = FUN_004f9c70(&local_50, &local_40)  → Quat_Dot(A, B)
-//         if iVar11 == 0: FUN_004fa350(&local_50, &local_40, fVar8, pfVar13) → Quat_Slerp
+//         EulerToQuat(&local_68, &local_50)   → Quat_Normalize(q_A, out)
+//         EulerToQuat(&local_5c, &local_40)   → Quat_Normalize(q_B, out)
+//         iVar11 = Terrain_QuadEqual(&local_50, &local_40)  → Quat_Dot(A, B)
+//         if iVar11 == 0: QuatSlerp(&local_50, &local_40, fVar8, pfVar13) → Quat_Slerp
 //         else: pfVar13 = &DAT_05826e18 + bone_idx*0x10; *pfVar13 = local_50 (copy)
 //       else:
 //         // Sample directly from keyframe arrays (no slerp for non-root bones)
@@ -66,15 +66,15 @@
 //         local_40 = piVar3[2][sVar10*0x10]    (quat B)
 //
 //       // Blend result stored in DAT_05826e18 (bone result table, stride 0x10)
-//       FUN_004fa270(pfVar13, local_30)     → Quat_ToMatrix(quat, mat3x3)
+//       QuatToMatrix(pfVar13, local_30)     → Quat_ToMatrix(quat, mat3x3)
 //
 //       pfVar13 = piVar2[0] + local_78 * 0xc   (translation keyframe A)
 //       ... (lerp translation)
 //
 // ── DRAW FINAL ────────────────────────────────────────────────────────────────
 //
-//   FUN_004fa930(entity, this) → Sprite_SetupTransform (aplica bone results a model)
-//   FUN_004404e0(this, bone_ptr, anim_A, anim_B, anim_C, blend) → Sprite_DrawPass
+//   Entity_GetLightScale(entity, this) → Sprite_SetupTransform (aplica bone results a model)
+//   Skeleton_Transform(this, bone_ptr, anim_A, anim_B, anim_C, blend) → Sprite_DrawPass
 //
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 //
@@ -92,12 +92,12 @@
 //
 // ── FUNCIÓN CROSS-REFERENCE ───────────────────────────────────────────────────
 //
-//   FUN_004f9c70  → Quat_Dot(A, B) — retorna 0 si quats paralelos (skip slerp)
-//   FUN_004fa350  → Quat_Slerp(A, B, t, out)
-//   FUN_004fa1d0  → Quat_Normalize(quat, out)
-//   FUN_004fa270  → Quat_ToMatrix(quat, out_mat3x3)
-//   FUN_004fa930  → Sprite_SetupTransform(entity, model)
-//   FUN_004404e0  → Sprite_DrawPass(model, bone, anim_A, anim_B, anim_C, blend)
+//   Terrain_QuadEqual  → Quat_Dot(A, B) — retorna 0 si quats paralelos (skip slerp)
+//   QuatSlerp  → Quat_Slerp(A, B, t, out)
+//   EulerToQuat  → Quat_Normalize(quat, out)
+//   QuatToMatrix  → Quat_ToMatrix(quat, out_mat3x3)
+//   Entity_GetLightScale  → Sprite_SetupTransform(entity, model)
+//   Skeleton_Transform  → Sprite_DrawPass(model, bone, anim_A, anim_B, anim_C, blend)
 
 #include "stdafx.h"
 #include "Render/Sprite_Draw.h"

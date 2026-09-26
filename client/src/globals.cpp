@@ -1326,11 +1326,11 @@ DWORD    DAT_07d52c38  = 0;
 // Model data table base + entity vtable
 // (DAT_05828d58 and DAT_05826e08 are defined above in their original sections)
 // ── BoneVertex pool ──────────────────────────────────────────────────────────
-// Transformed-vertex buffer used by Sprite_DrawBone (FUN_004404e0), BMD_DrawMesh
+// Transformed-vertex buffer used by Sprite_DrawBone (Skeleton_Transform), BMD_DrawMesh
 // and related paths. Layout: [mesh * 15000 + vert] * float[3] = 12 bytes stride.
 // Capacity: 32 mesh/frame slots × 15000 verts × 12 B = 5.76 MB.
 // DAT_0584621c is the base (slot 0, vert 0). DAT_05846224 is a Ghidra label at
-// +8 B (the output start used by FUN_004404e0's pfOut). Both resolve via macros
+// +8 B (the output start used by Skeleton_Transform's pfOut). Both resolve via macros
 // (see globals.h) to DWORD lvalues at the correct offsets within this buffer.
 char     g_BoneVertexBuf[32 * 15000 * 12] = {0};  // 5,760,000 bytes
 char     lpString_05826bfc[0x50] = {0};
@@ -1893,7 +1893,7 @@ float   _DAT_00552580 = 0.0f;
 float   _DAT_00552850 = 400.0f;
 float   _DAT_00552878 = 80.0f;
 float   Math_DegreesToRadians = 0.017453292f;  // π/180
-float   _DAT_00552ce0 = 0.5f;          // half-angle factor for EulerToQuat (FUN_004fa1d0).
+float   _DAT_00552ce0 = 0.5f;          // half-angle factor for EulerToQuat (EulerToQuat).
                                        // IDA sub_4FA1D0 shows literal `a1[k] * 0.5` — quaternion
                                        // half-angle. Input Euler angles are already in RADIANS
                                        // (AngleMatrix path uses Math_DegreesToRadians=π/180, different const).
@@ -2585,7 +2585,7 @@ char    g_BoneLightBuf[32 * 15000 * 12] = {0};  // 5,760,000 bytes
 // Written + read within the same mesh by BMD_DrawMesh chrome pre-loop / tri loop.
 float   g_ChromeUVBuf[15000 * 2] = {0};   // 120,000 bytes
 // Transformed-normal buffer for chrome env-map (3 floats/normal, 180000 B/mesh,
-// 32 mesh slots — parallel to g_BoneVertexBuf). Written by FUN_004404e0's normal
+// 32 mesh slots — parallel to g_BoneVertexBuf). Written by Skeleton_Transform's normal
 // loop, read by BMD_DrawMesh chrome pre-loop. Sin esto, las normales quedaban en
 // cero → el env-map chrome colapsaba a un texel → armas/glow chrome como barra.
 char    g_BoneChromeNormalBuf[32 * 15000 * 12] = {0};  // 5,760,000 bytes
@@ -2626,9 +2626,9 @@ float  _DAT_00552a90  = 0.7692308f;  // MoveJoint color fade rate B
 float  _DAT_00552a94  = 0.03065f;  // MoveJoint trig freq A
 float  _DAT_00552a98  = 0.024f;  // MoveJoint trig scale B
 float  _DAT_00552aa4  = 0.025f;  // MoveJoint HP-bar scale factor
-float  _DAT_00552a9c  = 0.0613f;  // FUN_00473d90 ring trig scale X
-float  _DAT_00552aa0  = 0.048f;  // FUN_00473d90 ring trig scale Y
-float  _DAT_00552aa8  = 0.1113f;  // FUN_00473d90 ring trig scale Z
+float  _DAT_00552a9c  = 0.0613f;  // Ring_ComputeOrbit ring trig scale X
+float  _DAT_00552aa0  = 0.048f;  // Ring_ComputeOrbit ring trig scale Y
+float  _DAT_00552aa8  = 0.1113f;  // Ring_ComputeOrbit ring trig scale Z
 // Tabla de escalas de MoveEffect: dato del binario que el port dejo en ceros.
 // Leida de 0x00559B78: 19 1a 1b 14 22 23 24 00.
 // Unico consumidor: MoveEffect (0x0046A3D1), que la lee en las DOS direcciones:

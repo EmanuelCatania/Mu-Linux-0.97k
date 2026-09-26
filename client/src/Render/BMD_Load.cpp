@@ -379,7 +379,7 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
                 memcpy((void *)*(int *)(entry + 4), Buffer + cursor, rotSz); cursor += rotSz;
 
                 for (int k = 0; k < mV; k++) {
-                    FUN_004fa1d0(*(int *)(entry + 4) + k * 0xc,
+                    EulerToQuat(*(int *)(entry + 4) + k * 0xc,
                                  *(int *)(entry + 8) + k * 0x10, 0, 0);
                 }
             }

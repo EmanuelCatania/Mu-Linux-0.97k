@@ -5,7 +5,7 @@
 // Effect_SpawnSmokeExplosion @ 0x004661F0  — Effect_SmokeExplosion (int-coord variant)
 // Effect_SpawnLightningBurst @ 0x00460C30  — Effect_LightningBurst (3 random lightning beams)
 // Effect_SpawnProximityHit @ 0x00465E60  — Effect_OnHitProximity (proximity hit fx by entity type)
-// FUN_00473d90 @ 0x00473D90  — Ring_ComputeOrbit    (Lissajous ring position calculator)
+// Ring_ComputeOrbit @ 0x00473D90  — Ring_ComputeOrbit    (Lissajous ring position calculator)
 //
 // NOTE: FUN_00466440 @ 0x00466440 — NOT implemented here.
 //   Uses unaff_retaddr + unaff_EBP (phantom return-address / frame-pointer params)
@@ -282,7 +282,7 @@ void __cdecl Effect_SpawnProximityHit(int param_1)
 }
 
 
-// FUN_00473d90 — Ring_ComputeOrbit
+// Ring_ComputeOrbit — Ring_ComputeOrbit
 // Computes a point on a 3-axis Lissajous orbit curve for ring/trail effects.
 // Uses three independent sin/cos pairs with different frequency scales
 // (_DAT_00552a9c, _DAT_00552aa0, _DAT_00552aa8) to produce smooth 3D orbital motion.
@@ -293,7 +293,7 @@ void __cdecl Effect_SpawnProximityHit(int param_1)
 // NOTE: The HashTable block at entry (FUN_0043d3e0/HashTable_GetIndex/HashTable_GetNode)
 // reads a frame counter (DAT_083a7c00) used as a phase seed — it's anti-tamper
 // ref-count obfuscation around the real value. Here we use DAT_083a7c00 directly.
-void __cdecl FUN_00473d90(int param_1, float *param_2, float param_3)
+void __cdecl Ring_ComputeOrbit(int param_1, float *param_2, float param_3)
 {
   // 00473D90: the hash-table operations only protect the scene-frame read.
   // The visual orbit itself is the following direct trigonometric sequence.

@@ -84,7 +84,7 @@ void Joint_TickAll(void)
 
 // FUN_00473ea0 — Effect_DrawRing
 // Draws a cylindrical ring effect by emitting GL_QUADS segments along a helical
-// arc. Uses FUN_004f9e90 to build rotation matrix from Euler angles, and
+// arc. Uses EulerToMatrix to build rotation matrix from Euler angles, and
 // Vector_Rotate (EulerToMatrix3x4) to transform each ring-segment midpoint.
 // param_1: texture slot
 // param_2: center position float[3]
@@ -139,9 +139,9 @@ FUN_00473ea0(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,un
     angles[0] = 0.0f;
     angles[1] = 0.0f;
     angles[2] = t * _DAT_0055284c + param_6;
-    FUN_004f9e90(angles, matA);
+    EulerToMatrix(angles, matA);
     angles[2] = fVar2 * _DAT_0055284c + param_6;
-    FUN_004f9e90(angles, matB);
+    EulerToMatrix(angles, matB);
 
     // Vert 0: matA * (0, param_3, 0) + center
     input_vec[0] = 0.0f;
@@ -267,7 +267,7 @@ void Effect_TickFade(void)
       if (iVar1 + -1 < 1) {
         *(undefined1 *)(piVar3 + -0x18) = 0;
       }
-      FUN_00465fe0((int)(piVar3 + -0x18),1);
+      Joint_BoneOffsetApply((int)(piVar3 + -0x18),1);
       iVar1 = *piVar3;
       if (iVar1 < 10) {
         fVar2 = (float)iVar1 * _DAT_005524f4;

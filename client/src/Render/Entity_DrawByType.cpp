@@ -61,7 +61,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 // el objeto (el metodo [2] solo libera sus buffers), y llama a los metodos por
 // la vtable.  Aca el objeto vive en el stack y los metodos se llaman directo:
 // mismo resultado, sin la fuga.  2026-09-18: antes el port llamaba por una
-// vtable que nunca se instalaba (FUN_0040a660 la saltea) y sin `this`.
+// vtable que nunca se instalaba (WidgetB_CtorFull la saltea) y sin `this`.
 // ─────────────────────────────────────────────────────────────────────────────
 struct MoltSilhouette {
     void          *vtable;
@@ -123,7 +123,7 @@ static void MoltSilhouette_Build(MoltSilhouette *s, unsigned char *verts,
     s->dir[0] = *(float *)(hero + 16) - _DAT_083a42d4;   // CameraPosition
     s->dir[1] = *(float *)(hero + 20) - _DAT_083a42d8;
     s->dir[2] = *(float *)(hero + 24) - _DAT_083a42dc;
-    FUN_004f9d60(s->dir);
+    Vec3_Normalize(s->dir);
     if (!(*(float *)(o + 360) >= 0.0099999998f)) return;
     const short hidden = *(short *)(o + 88);
     const short blend  = *(short *)(o + 100);

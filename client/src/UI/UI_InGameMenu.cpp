@@ -461,7 +461,7 @@ void __cdecl UI_InGameMenu(void)
     }
 
     // ── Zen input dialog (ErrorMessage 116) — baúl / trade ─────────────────
-    // 2026-08-08 PORT (antes: rama inventada que llamaba FUN_004e9250, o sea el
+    // 2026-08-08 PORT (antes: rama inventada que llamaba SecondPassword_Shuffle, o sea el
     // shuffle del teclado numérico del PIN, y hacía `goto tail` INCONDICIONAL →
     // el cartel se auto-dismisseaba el frame siguiente y nunca se enviaba nada).
     //
@@ -660,8 +660,8 @@ void __cdecl UI_InGameMenu(void)
     //
     // Los tres estados son message boxes, no una lista de tienda:
     //   0x8b (139) — CreateOkMessageBox      (0x0051D6F0)
-    //   0x8c (140) — FUN_0051d9e0            (ranking de Devil Square, lista)
-    //   0x9a (154) — FUN_0051da80            (ranking de Devil Square, 1 fila)
+    //   0x8c (140) — GuildMemberList_Update            (ranking de Devil Square, lista)
+    //   0x9a (154) — GuildMemberList_Add            (ranking de Devil Square, 1 fila)
     //
     // Y el switch de IDA (raw 00514310) NO tiene case para ninguno: 139, 140,
     // 141, 142 y 154 se agrupan en una rama propia (L1381) que sólo dismissea
@@ -778,7 +778,7 @@ void __cdecl UI_InGameMenu(void)
                     //
                     // 2026-08-21: el port decidia si cerrar comparando el TEXTO
                     // de la respuesta contra GlobalText[609] (invencion), y le
-                    // pasaba a FUN_0051d840 el indice de RESPUESTA en vez del
+                    // pasaba a ItemList_Select el indice de RESPUESTA en vez del
                     // link.  Con la tabla ya reconciliada se puede hacer lo que
                     // hace el binario.
                     int cur  = g_iCurrentDialogScript;
@@ -793,7 +793,7 @@ void __cdecl UI_InGameMenu(void)
                     } else {
                         DAT_083a7c24 = DAT_083a7c28;
                         DAT_083a7c28 = 0;
-                        FUN_0051d840(link);
+                        ItemList_Select(link);
                     }
                 }
             }
@@ -877,7 +877,7 @@ void __cdecl UI_InGameMenu(void)
 
     // ── Yes/No checkbox (sell/drop confirm) — ErrorMessage 151 ─────────────
     // 2026-07-27 FIX: el port anterior trataba 0x97 como una lista de respuestas
-    // de NPC (FUN_0051d840), que dismisseaba el cartel al instante sin setear la
+    // de NPC (ItemList_Select), que dismisseaba el cartel al instante sin setear la
     // respuesta → el sell-confirm quedaba colgado con el item agarrado (tooltip
     // pegado, "todo raro"). ErrorMessage 151 es un cartel Yes/No. Port IDA
     // UI_InGameMenu L1798-1856: hit-test de los 2 botones (DAT_083a42f8, stride
@@ -1118,7 +1118,7 @@ void __cdecl UI_InGameMenu(void)
                 // IDA L1786 `case 144`: igual que el default, mas sub_4E9250(6)
                 // (re-baraja el teclado del segundo password, modo 6).
                 if (state == 0x90)
-                    FUN_004e9250(6);
+                    SecondPassword_Shuffle(6);
                 goto tail;            // dismiss: shift ErrorMessage + PlayBuffer(25)
             }
         }

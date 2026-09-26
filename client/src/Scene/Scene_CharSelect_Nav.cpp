@@ -220,9 +220,9 @@ uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char 
 // Math utilities
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00512a10 @ 0x00512A10 — Math_Fmin(a, b) → min(a,b)
-// FUN_00512a10 (IDA-activated, was Ghidra stub)
-double __cdecl FUN_00512a10(float a1, float a2)
+// Math_Fmin @ 0x00512A10 — Math_Fmin(a, b) → min(a,b)
+// Math_Fmin (IDA-activated, was Ghidra stub)
+double __cdecl Math_Fmin(float a1, float a2)
 {
   if ( a1 <= (double)a2 )
   {
@@ -235,9 +235,9 @@ double __cdecl FUN_00512a10(float a1, float a2)
 }
 
 
-// FUN_00512a30 @ 0x00512A30 — Math_Fmax(a, b) → max(a,b)
-// FUN_00512a30 (IDA-activated, was Ghidra stub)
-double __cdecl FUN_00512a30(float a1, float a2)
+// Math_Fmax @ 0x00512A30 — Math_Fmax(a, b) → max(a,b)
+// Math_Fmax (IDA-activated, was Ghidra stub)
+double __cdecl Math_Fmax(float a1, float a2)
 {
   if ( a1 <= (double)a2 )
   {
@@ -254,16 +254,16 @@ double __cdecl FUN_00512a30(float a1, float a2)
 // Vec3 math helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004f9cb0 @ 0x004F9CB0 — Vec3_Multiply(a, b, out) — component-wise multiply
-void __cdecl FUN_004f9cb0(float *param_1, float *param_2, float *param_3)
+// Vec3_Multiply @ 0x004F9CB0 — Vec3_Multiply(a, b, out) — component-wise multiply
+void __cdecl Vec3_Multiply(float *param_1, float *param_2, float *param_3)
 {
     *param_3     = *param_1 * *param_2;
     param_3[1]   = param_1[1] * param_2[1];
     param_3[2]   = param_1[2] * param_2[2];
 }
 
-// FUN_004f9d20 @ 0x004F9D20 — Vec3_Cross(a, b, out) — standard cross product
-void __cdecl FUN_004f9d20(float *param_1, float *param_2, float *param_3)
+// Vec3_Cross @ 0x004F9D20 — Vec3_Cross(a, b, out) — standard cross product
+void __cdecl Vec3_Cross(float *param_1, float *param_2, float *param_3)
 {
     *param_3     = param_2[2] * param_1[1] - param_1[2] * param_2[1];
     param_3[1]   = param_1[2] * *param_2  - *param_1  * param_2[2];
@@ -274,12 +274,12 @@ void __cdecl FUN_004f9d20(float *param_1, float *param_2, float *param_3)
 // GuildMark helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004fa5a0 @ 0x004FA5A0 - ClearActionObject (NO es "GuildMark_ResetTarget",
+// ClearActionObject @ 0x004FA5A0 - ClearActionObject (NO es "GuildMark_ResetTarget",
 // esa etiqueta era un mismap del port).  Deja los tres parametros de
 // SetActionObject en -1 y el acumulador de velocidad en -1.0f, o sea desarma la
 // animacion de derrumbe de la puerta del evento.  La llama MoveObject_Special
 // (0x4FA5F0) cuando el contador llega a 0.
-void FUN_004fa5a0(void)
+void ClearActionObject(void)
 {
     _DAT_0055a7bc = -1.0f;  // 0xbf800000 in IEEE 754
     DAT_0055a7b0  = 0xffffffff;
@@ -291,7 +291,7 @@ void FUN_004fa5a0(void)
 // Entity / Character helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00444b30 @ 0x00444B30 - SetPlayerTeleport (nombre confirmado contra el
+// SetPlayerTeleport @ 0x00444B30 - SetPlayerTeleport (nombre confirmado contra el
 // source de MU 5.2, ZzzCharacter.cpp:1243; alli toma CHARACTER* y usa &c->Object,
 // que en el 0.97k es el mismo puntero).
 // Anima el casteo de teleport: jugador (tipo 0x186 = MODEL_PLAYER) -> accion 0x57
@@ -299,7 +299,7 @@ void FUN_004fa5a0(void)
 // Su unico caller en el binario es Attack (0x0049CBF0), en las colas de los
 // skills 6 (teleport propio) y 15 (recall de party).
 // El nombre viejo ("Entity_SetIdleAction", "DK") era una suposicion del port.
-void __cdecl FUN_00444b30(int param_1)
+void __cdecl SetPlayerTeleport(int param_1)
 {
     if (*(short *)(param_1 + 2) == 0x186) {
         SetAction(param_1, 0x57);
@@ -323,11 +323,11 @@ void __fastcall CalculateNextExperince(int param_1)
     }
 }
 
-// FUN_0047e3a0 @ 0x0047E3A0 — HotkeyBar_FindFreeSlot
+// HotkeyBar_FindFreeSlot @ 0x0047E3A0 — HotkeyBar_FindFreeSlot
 // Scans 12 hotkey bar slots (stride 0x44) starting at CharData+0x232.
 // Returns slot index with low byte = 1 on success, or raw index (no flag) if full.
-// FUN_0047e3a0 (IDA-activated, was Ghidra stub)
-char __cdecl FUN_0047e3a0(char *_this)
+// HotkeyBar_FindFreeSlot (IDA-activated, was Ghidra stub)
+char __cdecl HotkeyBar_FindFreeSlot(char *_this)
 {
   int v1; // eax
   BYTE *i; // ecx
@@ -344,12 +344,12 @@ char __cdecl FUN_0047e3a0(char *_this)
 }
 
 
-// FUN_0045acc0 @ 0x0045ACC0 — Character_FindByKey_WithClear
+// Character_FindByKey_WithClear @ 0x0045ACC0 — Character_FindByKey_WithClear
 // Scans entity array (stride 0x394, 400 entries) for an entity whose
 // la clave (short en +0x1dc) coincide con param_1. Limpia el byte +0x2e8 de cada
 // entidad durante el escaneo. Devuelve el índice coincidente, o 400 si no lo encontró.
-// FUN_0045acc0 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_0045acc0(int a1)
+// Character_FindByKey_WithClear (IDA-activated, was Ghidra stub)
+int __cdecl Character_FindByKey_WithClear(int a1)
 {
   int v1; // esi
   int result; // eax
@@ -373,11 +373,11 @@ int __cdecl FUN_0045acc0(int a1)
 }
 
 
-// FUN_0045ad10 @ 0x0045AD10 — Characters_SetActionAll
+// Characters_SetActionAll @ 0x0045AD10 — Characters_SetActionAll
 // Setea la acción dada en todas las entidades vivas de tipo DK (0x186).
 // Resetea el Angle a (0, 0, 180°) antes de aplicar la acción.
-// FUN_0045ad10 (IDA-activated, was Ghidra stub)
-void __cdecl FUN_0045ad10(int Action)
+// Characters_SetActionAll (IDA-activated, was Ghidra stub)
+void __cdecl Characters_SetActionAll(int Action)
 {
   int i; // esi
   DWORD v2; // eax
@@ -401,11 +401,11 @@ void __cdecl FUN_0045ad10(int Action)
 }
 
 
-// FUN_0045ad60 @ 0x0045AD60 — Characters_FreeAllBMDBuffers
+// Characters_FreeAllBMDBuffers @ 0x0045AD60 — Characters_FreeAllBMDBuffers
 // Libera los buffers de heap de BMD por entidad (puntero en entity+0x114) de todo el array,
 // y después libera el buffer BMD extra compartido (DAT_07abf164).
-// FUN_0045ad60 (IDA-activated, was Ghidra stub)
-void FUN_0045ad60()
+// Characters_FreeAllBMDBuffers (IDA-activated, was Ghidra stub)
+void Characters_FreeAllBMDBuffers()
 {
   int i; // edi
   LPVOID *v1; // esi
@@ -427,11 +427,11 @@ void FUN_0045ad60()
 }
 
 
-// FUN_0045c720 @ 0x0045C720 — Character_UpdateEquipSlotAnimations
+// Character_UpdateEquipSlotAnimations @ 0x0045C720 — Character_UpdateEquipSlotAnimations
 // Para personajes de tipo DK: valida el estado de animación y actualiza los cinco
 // equipment-slot model indices, selecting the correct animated variant based
 // on move_type_flags (bits 0-2 = weapon style, bits 3+ = sub-variant offset).
-void __cdecl FUN_0045c720(int param_1)
+void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
 {
     if (*(short *)(param_1 + 2) != 0x186) return;
 
@@ -478,14 +478,14 @@ void __cdecl FUN_0045c720(int param_1)
 // Sound
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00451a90 @ 0x00451A90 — Sound_PlayFootstep
+// Sound_PlayFootstep @ 0x00451A90 — Sound_PlayFootstep
 // Plays a terrain-appropriate footstep sound.
 //   World 2 (Lost Tower): tile < 10 and != 3 → snd 10
 //   World 0 or 3 (Lorencia/Devias): tile == 0 → snd 9
 //   World 7 (Devil Square), alive → snd 11
 //   Default → snd 8
-// FUN_00451a90 (IDA-activated, was Ghidra stub)
-char FUN_00451a90()
+// Sound_PlayFootstep (IDA-activated, was Ghidra stub)
+char Sound_PlayFootstep()
 {
   char result; // al
 
@@ -520,10 +520,10 @@ char FUN_00451a90()
 // Network helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_0043daf0 @ 0x0043DAF0 — NetContext_ClearSendBuffer
+// NetContext_ClearSendBuffer @ 0x0043DAF0 — NetContext_ClearSendBuffer
 // Pone en cero la cola grande de paquetes de envío (0x96258 DWORDs = ~600 KB) y resetea
 // los dos contadores de longitud en los offsets +0x4014 y +0x4018.
-int __fastcall FUN_0043daf0(int param_1)
+int __fastcall NetContext_ClearSendBuffer(int param_1)
 {
     DWORD *puVar2 = (DWORD *)(param_1 + 0x401c);
     for (int i = 0x96258; i != 0; i--) *puVar2++ = 0;
@@ -680,12 +680,12 @@ int __fastcall CWsctlc_GetReadMsg(int param_1)
 // Effect physics
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_0046ca00 @ 0x0046CA00 — Effect_PhysicsTick
+// Effect_PhysicsTick @ 0x0046CA00 — Effect_PhysicsTick
 // Actualización física por frame de una partícula de efecto a nivel del piso (p.ej. una moneda o un drop).
 // Si el héroe está atacando y el efecto está en rango, lo atrae hacia
 // el héroe con una velocidad proporcional al delta y un factor de fricción que decae.
-// FUN_0046ca00 (IDA-activated, was Ghidra stub)
-void __cdecl FUN_0046ca00(DWORD Object)
+// Effect_PhysicsTick (IDA-activated, was Ghidra stub)
+void __cdecl Effect_PhysicsTick(DWORD Object)
 {
   unsigned char v2; // al
   double v3; // st7
@@ -739,14 +739,14 @@ void __cdecl FUN_0046ca00(DWORD Object)
 // Floating labels
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004793f0 @ 0x004793F0 — FloatingLabel_Add
+// FloatingLabel_Add @ 0x004793F0 — FloatingLabel_Add
 // Agrega al pool una etiqueta flotante de daño/curación (base DAT_07c82cd0, stride 0x70,
 // hasta el límite del pool en 0x7c8588f). Elige el slot con la "edad" más chica
 // value. Special range 0x4b5–0x4d8 gets a randomised lifetime (50+rand%32).
 // param_1 = label text or ID, param_2 = world position (float[3]),
 // param_3 = color/type, param_4 = screen offset (float[3]), param_5 = extra data.
-// FUN_004793f0 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_004793f0(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
+// FloatingLabel_Add (IDA-activated, was Ghidra stub)
+int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
 {
   BYTE *v5; // edx
   int v6; // ecx
@@ -796,10 +796,10 @@ int __cdecl FUN_004793f0(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
 // SkillAttribute loaders
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004797b0 @ 0x004797B0 — SkillAttribute_LoadNames (text file)
+// SkillAttribute_LoadNames @ 0x004797B0 — SkillAttribute_LoadNames (text file)
 // Parsea un archivo de texto: lee pares de índice de skill + nombre vía GetToken y guarda
 // cada string de nombre en SkillAttribute[index*300 + 4].
-void __cdecl FUN_004797b0(const char *param_1)
+void __cdecl SkillAttribute_LoadNames(const char *param_1)
 {
     DAT_07d7806c = (FILE *)fopen(param_1, (const char *)DAT_005580ac);
     if (DAT_07d7806c == NULL) return;
@@ -821,21 +821,21 @@ void __cdecl FUN_004797b0(const char *param_1)
     }
 }
 
-// FUN_00479830 @ 0x00479830 — LoadGlobalTextBin (NOT SkillAttribute_LoadBin!)
+// LoadGlobalTextBin @ 0x00479830 — LoadGlobalTextBin (NOT SkillAttribute_LoadBin!)
 // Mal nombrada por Ghidra. IDA confirma que es el loader del pool de strings localizados:
 // lee Data\Local\Text.bmd (300000 bytes), lo desencripta con BuxConvert_0 y llena
 // el array GlobalText[] de 1000 × 300 bytes. La implementación real vive en
 // src/Local/Text_Data.cpp como LoadTextData_Bin(); acá ruteamos el nombre FUN_ hacia allá
 // para que cualquier cosa enlazada contra el símbolo del decompile funcione.
-void __cdecl FUN_00479830(const char *param_1)
+void __cdecl LoadGlobalTextBin(const char *param_1)
 {
     LoadTextData_Bin(param_1);
 }
 
-// FUN_00479950 @ 0x00479950 — SkillAttribute_SaveBin (binary file)
+// SkillAttribute_SaveBin @ 0x00479950 — SkillAttribute_SaveBin (binary file)
 // Guarda la tabla SkillAttribute a un archivo binario, encriptando con XOR cada
 // entrada de 300 bytes con BuxConvert_0 antes de escribirla.
-void __cdecl FUN_00479950(const char *param_1)
+void __cdecl SkillAttribute_SaveBin(const char *param_1)
 {
     return;  // AUTO-SKIP: absolute end-bound loop (Ghidra artifact — pool not populated in our build).
     FILE *pFile = fopen(param_1, (const char *)&DAT_005597d4);
@@ -866,10 +866,10 @@ void __cdecl FUN_00479950(const char *param_1)
 // Terrain helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_004f7060 @ 0x004F7060 — Terrain_SpawnAmbientObjects
+// Terrain_SpawnAmbientObjects @ 0x004F7060 — Terrain_SpawnAmbientObjects
 // Itera la tabla de atributos del terreno (base DAT_081cb2ed, stride 8) y
 // spawns ambient world objects (type 8) at non-zero flag positions.
-void FUN_004f7060(void)
+void Terrain_SpawnAmbientObjects(void)
 {
     // BUG-FIX 2026-06-27: el while original usaba el bound de DIRECCIÓN ABSOLUTA
     // literal del binario fuente (136099341 = 0x081CB60D). En nuestro build
@@ -886,12 +886,12 @@ void FUN_004f7060(void)
     }
 }
 
-// FUN_004f9a30 @ 0x004F9A30 — Terrain_WaterWaveUpdate
+// Terrain_WaterWaveUpdate @ 0x004F9A30 — Terrain_WaterWaveUpdate
 // Simulación de olas de agua por frame: mezcla los valores de altura adyacentes del
 // buffer de olas anterior en el buffer actual, para una grilla de terreno de 256×256.
 // param_1 selects between the two ping-pong buffers (0 or 1).
-// FUN_004f9a30 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_004f9a30(int a1)
+// Terrain_WaterWaveUpdate (IDA-activated, was Ghidra stub)
+int __cdecl Terrain_WaterWaveUpdate(int a1)
 {
   char *v1; // ebx
   int v2; // esi
@@ -937,14 +937,14 @@ int __cdecl FUN_004f9a30(int a1)
 // Collision / intersection helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// FUN_00512a50 @ 0x00512A50 — Collision_PointInPolygon
+// Collision_PointInPolygon @ 0x00512A50 — Collision_PointInPolygon
 // Tests whether a 3D point (param_1,param_2,param_3) lies inside the polygon
 // formado por param_4 vértices (los punteros están en el array param_5..param_8).
 // param_9 elige el plano de proyección (1=YZ, 2=XZ, 4=XY y las variantes en sentido horario).
 // Umbral param_10: si es > _DAT_00552580 (0.0f), param_9 se corre 3 bits a la izquierda.
 // Devuelve 1 si está adentro, 0 si está afuera.
-// FUN_00512a50 (IDA-activated, was Ghidra stub)
-int __cdecl FUN_00512a50(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10)
+// Collision_PointInPolygon (IDA-activated, was Ghidra stub)
+int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10)
 {
   int v10; // esi
   int v11; // edx
@@ -1126,8 +1126,8 @@ int __cdecl FUN_005130f0(float *param_1, float *param_2, float *param_3,
 {
     float fVar2 = *param_1 * *param_2 + param_2[2] * param_1[2] + param_2[1] * param_1[1];
     float fVar3 = *param_1 * *param_3 + param_3[2] * param_1[2] + param_3[1] * param_1[1];
-    float fMax  = FUN_00512a30(fVar2, fVar3);
-    float fMin  = FUN_00512a10(fVar2, fVar3);
+    float fMax  = Math_Fmax(fVar2, fVar3);
+    float fMin  = Math_Fmin(fVar2, fVar3);
 
     float fV3 = param_6  * param_1[2] + param_4  * *param_1 + param_5  * param_1[1];
     float fV5 = param_9  * param_1[2] + param_7  * *param_1 + param_8  * param_1[1];
@@ -1239,13 +1239,13 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
 // Declaraciones adelantadas de los helpers definidos más abajo en este archivo
 void __fastcall CSQuest_clearQuest(int);
 void __fastcall FUN_00401af0(void*);
-void __fastcall FUN_00408cb0(int*, float);
+void __fastcall Cloth_Integrate(int*, float);
 
-// FUN_00402f40 @ 0x00402F40 — Packet_ParseType2 (char-select click handler type 2)
+// Packet_ParseType2 @ 0x00402F40 — Packet_ParseType2 (char-select click handler type 2)
 // Variante más simple: actualiza el flag de hover, llama a FUN_00401af0 para procesar el click en el personaje,
 // y después chequea un hotspot secundario para el envío de keepalive / reintento.
 // El tipo de retorno es undefined4, según la declaración de functions.h.
-unsigned int __cdecl FUN_00402f40(void *param_1) {
+unsigned int __cdecl Packet_ParseType2(void *param_1) {
     if ((0x1c1 < DAT_083a427c) && (DAT_083a427c < 0x280) &&
         (-1 < DAT_083a4278) && (DAT_083a4278 < 0x1b1))
         DAT_07d78094 = 1;
@@ -1452,10 +1452,10 @@ void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata) { return nullptr; }
 // STUB: HashTable obfuscation helper.
 void __cdecl FUN_0043d3e0(int a, int* b) { (void)a; (void)b; }
 
-// ── FUN_0043d8a0 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_0043d8a0 @ 0x0043D8A0 — HashTable_Insert_Short (__thiscall this, param_1)
+// ── HashTable_Insert_Short — movida desde stubs_externs.cpp (refactor B3) ──
+// HashTable_Insert_Short @ 0x0043D8A0 — HashTable_Insert_Short (__thiscall this, param_1)
 // STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl FUN_0043d8a0(void *ctx, void *out) {
+void __cdecl HashTable_Insert_Short(void *ctx, void *out) {
     // STUB: HashTable insert (1-byte value) with obfuscation — cannot implement safely
     (void)ctx; (void)out;
 }
@@ -1540,11 +1540,11 @@ float __cdecl CreateAngle(float x1, float y1, float x2, float y2)
     return _DAT_00552848; // 90 degrees
 }
 
-// ── FUN_0043e120 — movida desde stubs_misc2.cpp (refactor B3) ──
-// FUN_0043e120 @ 0x0043E120 — Angle_Clamp(current, target, maxDelta)
+// ── Angle_Clamp — movida desde stubs_misc2.cpp (refactor B3) ──
+// Angle_Clamp @ 0x0043E120 — Angle_Clamp(current, target, maxDelta)
 // Clampea la diferencia angular entre el ángulo actual y el objetivo a ±maxDelta,
 // y la devuelve como el ángulo nuevo módulo 360. Todos los ángulos en unidades del juego (0..0x167).
-int __cdecl FUN_0043e120(int param_1, int param_2, int param_3) {
+int __cdecl Angle_Clamp(int param_1, int param_2, int param_3) {
     unsigned int uVar5 = (unsigned int)(param_1 - param_2);
     int iVar3 = (int)((uVar5 ^ ((int)uVar5 >> 0x1f)) - ((int)uVar5 >> 0x1f)); // abs
     int iVar2 = param_1;
@@ -2542,11 +2542,11 @@ int __cdecl FUN_0047e310(int param_1) {
     return (int)(unsigned char)v;
 }
 
-// ── FUN_004f9c70 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_004f9c70 @ 0x004F9C70 — Terrain_QuadEqual(ptr1, ptr2_int) → compares 4 floats within epsilon.
+// ── Terrain_QuadEqual — movida desde stubs_externs.cpp (refactor B3) ──
+// Terrain_QuadEqual @ 0x004F9C70 — Terrain_QuadEqual(ptr1, ptr2_int) → compares 4 floats within epsilon.
 // Firma de Ghidra: (int param_1, float *param_2) pero en functions.h está declarada como (int,int,int,int).
 // Callers pass two int args (the float ptr pair). Match declared signature.
-int __cdecl FUN_004f9c70(int param_1, int param_2, int param_3, int param_4) {
+int __cdecl Terrain_QuadEqual(int param_1, int param_2, int param_3, int param_4) {
     // Sólo se usan los dos primeros parámetros: ptr1 = param_1, ptr2 = param_2
     float *p2 = (float*)param_2;
     int iVar1 = 0;
@@ -2572,10 +2572,10 @@ void __cdecl VectorMA(float *va, float scale, float *vb, float *vc) {
     vc[2] = scale * vb[2] + va[2];
 }
 
-// ── FUN_004f9d60 — movida desde stubs_helpers.cpp (refactor B3) ──
-// FUN_004f9d60 @ 0x004F9D60 — Vec3_Normalize(vec[3])
+// ── Vec3_Normalize — movida desde stubs_helpers.cpp (refactor B3) ──
+// Vec3_Normalize @ 0x004F9D60 — Vec3_Normalize(vec[3])
 // Normalises a 3-component float vector in-place.
-void __cdecl FUN_004f9d60(float *vec) {
+void __cdecl Vec3_Normalize(float *vec) {
     float len = sqrtf(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
     if (len > 0.0f) { vec[0] /= len; vec[1] /= len; vec[2] /= len; }
 }
@@ -2606,9 +2606,9 @@ bool __cdecl FUN_00513260(float *rayOrigin, float *rayTarget, const float *box)
                      rayTarget[2] - rayOrigin[2] };
 
     float n0[3], n1[3], n2[3];
-    FUN_004f9d20(dir, (float *)(box + 3), n0);
-    FUN_004f9d20(dir, (float *)(box + 6), n1);
-    FUN_004f9d20(dir, (float *)(box + 9), n2);
+    Vec3_Cross(dir, (float *)(box + 3), n0);
+    Vec3_Cross(dir, (float *)(box + 6), n1);
+    Vec3_Cross(dir, (float *)(box + 9), n2);
 
     float *axes[6] = { n0, n1, n2,
                        (float *)(box + 3), (float *)(box + 6), (float *)(box + 9) };

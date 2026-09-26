@@ -218,7 +218,7 @@ static void MoveJoint_GenericTail(unsigned char *o)
         Angle[1] = *(float *)(o + 44) + *(float *)(o + 2504);
         Angle[2] = *(float *)(o + 48) + *(float *)(o + 2508);
         Matrix_BuildFromEuler(Angle, v305);
-        FUN_0046fe90((int)(uintptr_t)o, v305);
+        Joint_SegmentTick((int)(uintptr_t)o, v305);
 
         const int sub3 = *(int *)(o + 8);
         if (sub3 == 3) {
@@ -363,7 +363,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             FUN_0043e4a0(pfVar15, (float *)(param_1 + 0x28), pfVar14, 0.0f);
         float matrix_4e8[12];
         Matrix_BuildFromEuler((float *)(param_1 + 0x28), matrix_4e8);
-        FUN_0046fe90((int)param_1, matrix_4e8);
+        Joint_SegmentTick((int)param_1, matrix_4e8);
         if (dist_4e8 > *(float *)(param_1 + 0x9c0)) {
             const float brightness = (float)(rand() % 4 + 4) * 0.1f;
             float light_4e8[3] = { brightness, brightness * 0.6f, brightness * 0.2f };
@@ -390,7 +390,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
         // using *(float*)(param_1+0x9c0) vs the 3D distance already computed above.
         local_e4_f = sqrtf(local_dc_f * local_dc_f + local_e4_f * local_e4_f);
         Matrix_BuildFromEuler(pfVar26, local_a8 + 6);
-        FUN_0046fe90((int)param_1, local_a8 + 6);
+        Joint_SegmentTick((int)param_1, local_a8 + 6);
         if (*(float *)(param_1 + 0x9c0) < local_e4_f) {
             uVar7 = _rand();
             uVar7 = uVar7 & 0x80000003;
@@ -457,7 +457,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
                 *(float *)(param_1 + 0x14) = rotated_4e2[1] + *(float *)(param_1 + 0x48);
                 *(float *)(param_1 + 0x18) = rotated_4e2[2] + *(float *)(param_1 + 0x4c);
                 if (*(int *)(param_1 + 0x50) < *(int *)(param_1 + 0x54) - 1 || *(unsigned char *)(param_1 + 0x9d2) != 0)
-                    FUN_0046fe90((int)param_1, jointMatrix_4e2);
+                    Joint_SegmentTick((int)param_1, jointMatrix_4e2);
             }
             if (*(int *)(param_1 + 0x9b8) < 15) {
                 *(float *)(param_1 + 0x34) *= 2.0f / 3.0f;
@@ -505,7 +505,7 @@ char * __cdecl MoveJoint(undefined1 *param_1, uint param_2)
             if ((*(int *)(param_1 + 0x50) < *(int *)(param_1 + 0x54) + -1) ||
                 (*(char *)(param_1 + 0x9d2) != '\0'))
             {
-                FUN_0046fe90((int)param_1, local_60);
+                Joint_SegmentTick((int)param_1, local_60);
             }
             iVar16--;
         } while (iVar16 != 0);
@@ -564,7 +564,7 @@ LAB_00473578_498:
                     t = 0.0f;
                 }
                 float inv_t = _DAT_0055256c - t;
-                FUN_00473d90(param_2 * 0x4539, local_d8, 1.4f);
+                Ring_ComputeOrbit(param_2 * 0x4539, local_d8, 1.4f);
                 iVar16 = *(int *)(param_1 + 0x40);
                 local_d8[0] = local_d8[0] * _DAT_00552900 + *pfVar14;
                 local_d8[1] = local_d8[1] * _DAT_00552900 + *(float *)(param_1 + 0x48);
@@ -821,7 +821,7 @@ LAB_0047036e:
         if (subtype_4e5 == 3) {
             float orbit_4e5_3[3];
             float light_4e5_3[3] = { 1.0f, 0.5f, 0.1f };
-            FUN_00473d90((int)param_2, orbit_4e5_3, 1.0f);
+            Ring_ComputeOrbit((int)param_2, orbit_4e5_3, 1.0f);
             *pfVar15 += orbit_4e5_3[0] * 50.0f;
             *(float *)(param_1 + 0x14) += orbit_4e5_3[1] * 50.0f;
             *(float *)(param_1 + 0x18) += orbit_4e5_3[2] * 50.0f;
@@ -865,7 +865,7 @@ LAB_0047036e:
                 CreateEffect(205, pfVar15, (float *)(param_1 + 0x28), (float *)(param_1 + 0x34),
                              (float *)(subtype_4e5 == 5 ? 3 : 0), 0, (float *)-1, 0, 0);
                 if ((*(int *)(param_1 + 0x9b8) % 15) == 0 && *(int *)(param_1 + 0x40) == (int)Hero) {
-                    FUN_0045fec0(*(unsigned char *)(param_1 + 0x9d2), pfVar15, 150.0f,
+                    Entity_FindNearby_SendPacket(*(unsigned char *)(param_1 + 0x9d2), pfVar15, 150.0f,
                                   *(unsigned char *)(param_1 + 0x9d3), *(unsigned short *)(param_1 + 0x9d0));
                 }
             }
@@ -963,7 +963,7 @@ LAB_0047036e:
                 };
                 float matrix_4e7[12], step_4e7[3] = { 0.0f, -speed_4e7, 0.0f }, rotated_4e7[3];
                 Matrix_BuildFromEuler(angle_4e7, matrix_4e7);
-                FUN_0046fe90((int)param_1, matrix_4e7);
+                Joint_SegmentTick((int)param_1, matrix_4e7);
                 Vector_Rotate(step_4e7, matrix_4e7, rotated_4e7);
                 *pfVar15 += rotated_4e7[0];
                 *(float *)(param_1 + 0x14) += rotated_4e7[1];
@@ -1192,7 +1192,7 @@ LAB_0047036e:
                                *(float *)(param_1 + 0x30) + *(float *)(param_1 + 0x9cc) };
             float matrix[12], rotated[3];
             Matrix_BuildFromEuler(angle, matrix);
-            FUN_0046fe90((int)param_1, matrix);
+            Joint_SegmentTick((int)param_1, matrix);
 
             if (*(float *)(param_1 + 0x9c0) * 2.0f >= targetDistance) {
                 if ((rand() & 1) == 0) {
@@ -1250,7 +1250,7 @@ LAB_0047036e:
                 *(float *)(param_1 + 0x18) = rotated[2] + *(float *)(param_1 + 0x4c);
 
                 Matrix_BuildFromEuler((float *)(param_1 + 0x28), matrix);
-                FUN_0046fe90((int)param_1, matrix);
+                Joint_SegmentTick((int)param_1, matrix);
                 *(float *)(param_1 + 0x9cc) -= 11.0f;
                 if ((rand() & 1) == 0) {
                     Particle_Spawn(1195, (float *)(param_1 + 0x10),
@@ -1262,7 +1262,7 @@ LAB_0047036e:
                               (float *)(param_1 + 0x28), 3, 0, (float)(rand() % 8) + 4.0f, 5, 10);
             }
             if (*(int *)(param_1 + 0x40) == (int)Hero && *(int *)(param_1 + 0x9b8) > 18 && (i % 5) == 0) {
-                FUN_0045fec0(*(unsigned char *)(param_1 + 0x9d2), (float *)(param_1 + 0x10), 150.0f,
+                Entity_FindNearby_SendPacket(*(unsigned char *)(param_1 + 0x9d2), (float *)(param_1 + 0x10), 150.0f,
                               *(unsigned char *)(param_1 + 0x9d3), *(unsigned short *)(param_1 + 0x9d0));
             }
         }
@@ -1311,7 +1311,7 @@ LAB_0047036e:
         else {
             *(float *)(param_1 + 0x14) -= _DAT_005524f0;
         }
-        FUN_0046fe90((int)param_1, local_30);
+        Joint_SegmentTick((int)param_1, local_30);
         goto switchD_caseD_4ef;
     }
 
@@ -1449,7 +1449,7 @@ switchD_caseD_4fd:
                 *jposX                     += *(float *)(param_1 + 0x1c);
                 *(float *)(param_1 + 0x14) += *(float *)(param_1 + 0x20);
                 *(float *)(param_1 + 0x18) += *(float *)(param_1 + 0x24);
-                FUN_0046fe90((int)param_1, jointMatrix_v304);
+                Joint_SegmentTick((int)param_1, jointMatrix_v304);
             }
             goto switchD_caseD_4ef;
         }
@@ -1599,7 +1599,7 @@ switchD_caseD_4fd:
     // 2026-09-01 — PORTADA la cola real de LABEL_301 (IDA L1706-1724 ->
     // LABEL_438 -> LABEL_439).  Aca habia una "orbita pseudo-aleatoria"
     // INVENTADA (sembrada con el indice de slot y unos globals de ruido) que
-    // ademas llamaba `FUN_0046fe90` de mas: el epilogo LABEL_487 ya lo llama,
+    // ademas llamaba `Joint_SegmentTick` de mas: el epilogo LABEL_487 ya lo llama,
     // asi que se scrolleaba la historia de segmentos DOS veces por tick — el
     // anillo avanzaba al doble y quedaban segmentos duplicados/entrelazados.
     //
@@ -1673,7 +1673,7 @@ _skipLabel182:;
         ((iVar16 != 0x4ee) &&
          ((iVar16 != 0x4e7) || (10 < *(int *)(param_1 + 0x9b8)))))
     {
-        FUN_0046fe90((int)param_1, local_30);
+        Joint_SegmentTick((int)param_1, local_30);
     }
 
     // Decrement lifetime counter

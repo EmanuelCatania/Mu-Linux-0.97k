@@ -113,7 +113,7 @@
 //  crt_sprintf(buf,fmt) — sprintf-like into stack buffer
 //  GL_DrawTexture(tex,x,y,w,h,u0,v0,u1,v1,f1,f2) — draw textured quad
 //  UI_RenderText(x,y,str,sizeOut,center,shadow)   — draw text string
-//  FUN_00406b10(a,b)     — lookup/flag check (returns 0 or non-zero → PVP type)
+//  Packet_IsValidSockType(a,b)     — lookup/flag check (returns 0 or non-zero → PVP type)
 
 #include "stdafx.h"
 #include "Scene.h"
@@ -198,7 +198,7 @@ int Scene_Login_ServerSelect(void)
                 iVar10 = 0;
                 do {
                     int chNum = (int)((unsigned)*(unsigned short *)(pbVar11 - 2) % 0x14 + 1);
-                    int isPvp = FUN_00406b10(iStack00000004, chNum);
+                    int isPvp = Packet_IsValidSockType(iStack00000004, chNum);
                     const char* status;
                     if ((*pbVar11 & 0x80) == 0x80)        status = STATUS_FULL;
                     else if ((*pbVar11 & 0x7f) < 100)     status = STATUS_LOW;

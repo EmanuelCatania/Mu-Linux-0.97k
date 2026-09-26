@@ -20,7 +20,7 @@ extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex
 //   particles in the pool (stride 0x1bc = 0x6f*4).  Uses a proximity
 //   threshold (_DAT_00552850) and a half-way distance (_DAT_00552878).
 //   Writes the resulting steering angle to field +0x24 via
-//   Math_GetAngleFromPoints (IDA: FUN_0043e430) / FUN_0043e120.
+//   Math_GetAngleFromPoints (IDA: FUN_0043e430) / Angle_Clamp.
 //
 // Particle_SetAnimation (SetAction):
 //   Sets the current animation index (+0x105) for a particle/entity.
@@ -124,7 +124,7 @@ void __cdecl FUN_0043e680(int param_1,int param_2,int param_3,int param_4)
       iVar7 = (int)lVar9;
       iVar8 = Math_GetAngleFromPoints(fVar1,fVar2,fVar3 / (float)iVar8 + fVar1,fVar5 / (float)iVar8 + fVar2);
       lVar9 = (longlong)(*(float *)(param_1 + 0x24));   // IDA sub_43E680: (__int64)*(float*)(a1+36)
-      iVar7 = FUN_0043e120((int)lVar9,iVar8,iVar7);
+      iVar7 = Angle_Clamp((int)lVar9,iVar8,iVar7);
       *(float *)(param_1 + 0x24) = (float)iVar7;
       return;
     }

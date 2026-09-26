@@ -94,7 +94,7 @@ void Game_CharSelectTick(void)
             void** vt  = (void**)*obj;
             typedef void (__fastcall *FnClear)(DWORD*);
             ((FnClear)vt[10])(obj);
-            FUN_0040e590((int)DAT_055c9ff0);
+            Object_ClearMembers((int)DAT_055c9ff0);
         }
         CErrorReport_Write(&DAT_055c9bf0, "> Main Scene init success");
         CErrorReport_WriteCurrentTime(1); // IDA: FUN_004055A0
@@ -135,7 +135,7 @@ void Game_CharSelectTick(void)
             ((FnTick)vt[5])(obj, 0, 0);
         }
         Bisect_ChatMode("CST_post_chatLB");        UpdateWindowsMouse();
-        Bisect_ChatMode("CST_post_4ecb00");        FUN_00402fd0((void*)(uintptr_t)DAT_00583d8c);
+        Bisect_ChatMode("CST_post_4ecb00");        Packet_ParseReceived((void*)(uintptr_t)DAT_00583d8c);
         Bisect_ChatMode("CST_post_402fd0");        Chat_InputTick();
         Bisect_ChatMode("CST_post_4b14f0_ChatInputTick");
         // ── Reposición per-frame del ChatListBox ────────────────────────────
@@ -197,11 +197,11 @@ void Game_CharSelectTick(void)
                 }
             }
             if (DAT_055c9ff0) {
-                FUN_0040c690((void*)(uintptr_t)DAT_055c9ff0, x, y);
+                Object_SetRectFields((void*)(uintptr_t)DAT_055c9ff0, x, y);
             }
         } else if (DAT_055c9ff0) {
             // ChatListBox apagado: historial como overlay arriba-izquierda.
-            FUN_0040c690((void*)(uintptr_t)DAT_055c9ff0, (int)0xfffffff6, 0x51);
+            Object_SetRectFields((void*)(uintptr_t)DAT_055c9ff0, (int)0xfffffff6, 0x51);
         }
     }
 

@@ -144,10 +144,10 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     // offset +2 dentro del buffer (campo Type según IDA `o[1]`).
     unsigned char local_1ec[0x1c0];     // local OBJECT — ItemObjectAttribute target
     #define local_1ea (*(unsigned short*)(local_1ec + 2))
-    float afStack_1dc[3];    // position scratch (passed to BMD_Animation/FUN_004404e0)
+    float afStack_1dc[3];    // position scratch (passed to BMD_Animation/Skeleton_Transform)
 
     float local_1c8;         // boss-head BoneHead flag
-    float afStack_3c[15];    // BoneTransform output scratch (passed to FUN_004404e0)
+    float afStack_3c[15];    // BoneTransform output scratch (passed to Skeleton_Transform)
 
     int   local_22c;         // cached model pointer = DAT_05828d58 + param_6*0xbc
     int   iVar7;             // model pointer (same as local_22c for most of fn)
@@ -668,8 +668,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                  afStack_1dc, '\x01', '\x01');
 
     // ── 9. BMD_Transform (compute world-space vertices) ──────────────────────
-    // FUN_004404e0: (model, BoneTransformBase, anim1, anim2, bbox, Translate)
-    FUN_004404e0(pModel, (int)&DAT_06970a9c,
+    // Skeleton_Transform: (model, BoneTransformBase, anim1, anim2, bbox, Translate)
+    Skeleton_Transform(pModel, (int)&DAT_06970a9c,
                  afStack_204, afStack_204, afStack_3c, param_10);
 
     // ── 10. RenderPartObject ─────────────────────────────────────────────────
@@ -841,7 +841,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
             Light[2] = fLum * _DAT_00552530;
             Light[1] = fLum;
             do {
-                FUN_004553c0(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
+                Model_BoneParticle(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
                 iVar8++;
             } while (iVar8 < 0x13);
             return;
@@ -853,12 +853,12 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
             Light[2] = fLum * _DAT_00552530;
             Light[1] = Light[0];
             do {
-                FUN_004553c0(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
+                Model_BoneParticle(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
                 iVar8++;
             } while (iVar8 < 0x13);
             iVar8 = 5;
             do {
-                FUN_004553c0(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
+                Model_BoneParticle(pModel2, 0x4cf, iVar8, 1.0f, Light, param_4);
                 iVar8++;
             } while (iVar8 < 9);
             return;
@@ -867,8 +867,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         Light[1] = fLum * _DAT_00552534;
         Light[2] = fLum * _DAT_005526e4;
         Light[0] = fLum;
-        FUN_004553c0(pModel2, 0x4cf, 2, 1.0f, Light, param_4);
-        FUN_004553c0(pModel2, 0x4cf, 6, 1.0f, Light, param_4);
+        Model_BoneParticle(pModel2, 0x4cf, 2, 1.0f, Light, param_4);
+        Model_BoneParticle(pModel2, 0x4cf, 6, 1.0f, Light, param_4);
         return;
     }
 

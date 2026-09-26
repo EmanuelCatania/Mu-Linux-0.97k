@@ -48,10 +48,10 @@ extern "C" void Net_SendNpcTalkClose(void);
 // sí anda)": esto eran DOS `static int` de este .cpp, o sea una SEGUNDA copia
 // de globals que sí existen (CharacterInfoStartX/Y = DAT_07ea982c/30,
 // GuildListStartX/Y = DAT_07e91788/84). El render escribía las copias locales
-// y los hit-tests de cierre (FUN_004e4760 / FUN_004e5de0 en Net/SecondPassword,
+// y los hit-tests de cierre (SecondPassword_Screen1 / SecondPassword_Screen3 en Net/SecondPassword,
 // port de sub_4E4760 L617-629 y sub_4E5DE0 L336-357) leían los globals reales,
 // que quedaban en 0 → el rect de la X caía en (25..49, 395..419) de PANTALLA en
-// vez de (panelX+25, panelY+395), y encima FUN_004e5de0/FUN_004e5500 hacen
+// vez de (panelX+25, panelY+395), y encima SecondPassword_Screen3/FUN_004e5500 hacen
 // early-return cuando el origen es 0, así que el hit-test ni corría.
 // El inventario funcionaba porque InventoryStartX/Y sí es el global real.
 #define CharacterInfoStartX  (*(int*)&DAT_07ea982c)
@@ -675,7 +675,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
 
 // 2026-08-25: esto era un `static` propio del archivo, o sea una SEGUNDA copia
 // del flag. El global real es 0x7EAA144 (= DAT_07eaa144), que es el que lee el
-// hit-test de la creacion de guild en `FUN_004e4760`: el handler del 0x55
+// hit-test de la creacion de guild en `SecondPassword_Screen1`: el handler del 0x55
 // seteaba esta copia y el hit-test leia la otra, que nunca pasaba de 0.
 // Ver [[global-partido-en-dos]].
 #define g_iKeyPadEnable DAT_07eaa144
@@ -708,7 +708,7 @@ extern "C" void GuildCreator_OpenFromServer(void)
 //
 // IDA: ProtocolCore 0x54. Cierra las ventanas de NPC y abre el creador con el
 // keypad APAGADO; así ambos botones responden con 0x54 en vez de 0x55/0x57
-// (ver el hit-test en FUN_004e4760).
+// (ver el hit-test en SecondPassword_Screen1).
 extern "C" void GuildCreator_OpenQuestionFromServer(void)
 {
     GuildOpened     = 0;
@@ -826,7 +826,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         DWORD srvIdx = ServerSelectHi;
         DWORD channel = ServerLocalSelect;
         const char* srvName = (const char*)&DAT_083a45d8 + srvIdx * 0x21e;
-        const char* fmt = FUN_00406b10((int)srvIdx, (int)channel)
+        const char* fmt = Packet_IsValidSockType((int)srvIdx, (int)channel)
                           ? GlobalText[460]
                           : GlobalText[461];
         if (fmt && fmt[0]) {
@@ -922,7 +922,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     //     y ∈ [CharacterInfoStartY+115+60*row, +24)
     // Gate: LevelUpPoint = *(WORD*)(CharacterAttribute+0x54) != 0.
     //   Sprite 0x120 (288): normal   0x121 (289): hover/pressed
-    // El click y el envío del F3/06 los hace FUN_004e5de0 — acá sólo se dibuja.
+    // El click y el envío del F3/06 los hace SecondPassword_Screen3 — acá sólo se dibuja.
     int availPts = (int)*(unsigned short*)(CA + 84);
     auto draw_plus_button = [&](int row, int statSlot) {
         if (availPts <= 0) return;
@@ -937,7 +937,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         // clicks.  Player_InputTick already gates on g_MouseOnWindow so it
         // won't double-fire ground walk.
         // 2026-08-08: SOLO render + highlight. El CLICK (y el envío del
-        // F3/06) lo maneja `FUN_004e5de0` (port de sub_4E5DE0 L85-244), que es
+        // F3/06) lo maneja `SecondPassword_Screen3` (port de sub_4E5DE0 L85-244), que es
         // donde el binario original tiene el hit-test de estos botones — mismo
         // rect (+125..+149 × +115+60*row ..+24) y mismo gate (LevelUpPoint).
         // Tener el send acá TAMBIÉN mandaba el paquete dos veces por click.
@@ -1645,7 +1645,7 @@ extern "C" void __cdecl RenderChaosMix(void)
 // 2026-08-08: port completo. Antes era un esqueleto (interfaz + grid + un botón
 // suelto 280) al que le faltaba TODA la fila inferior: el zen guardado, el
 // impuesto de retiro y los 3 botones (guardar zen / sacar zen / candado).
-// El hit-test de esos botones ya estaba portado (FUN_004eb5d0, mal llamado
+// El hit-test de esos botones ya estaba portado (SecondPassword_Screen9, mal llamado
 // "SecondPassword_Screen9" en Net/SecondPassword.cpp) pero no se veía nada,
 // así que había que adivinar dónde clickear.
 //

@@ -34,7 +34,7 @@
 //   CreateJoint(type, p0, p1, color, flag, owner, scale, ?, mode) → Joint_Create
 //   Particle_Spawn(type, pos, size, color, flag, alpha, mode) → Particle_Spawn
 //   TransformPosition(model, mat3x4, pos_in, pos_out, translate) → BMD_TransformPosition
-//   sub_4553C0(model, type, bone, scale, color, owner) → FUN_004553c0
+//   sub_4553C0(model, type, bone, scale, color, owner) → Model_BoneParticle
 //
 // Anti-tamper hash-table operations (líneas IDA 1290-1505) elididas — pure
 // obfuscation por CLAUDE.md, no afectan render.
@@ -308,8 +308,8 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
                 v178--;
             } while (v178 > -5);
             float L3[3] = { Scalei * 0.5f, Scalei * 0.1f, Scalei * 0.050000001f };
-            FUN_004553c0(model, 1231, 2, 1.0f, L3, o);
-            FUN_004553c0(model, 1231, 6, 1.0f, L3, o);
+            Model_BoneParticle(model, 1231, 2, 1.0f, L3, o);
+            Model_BoneParticle(model, 1231, 6, 1.0f, L3, o);
             break;
         }
 
@@ -407,9 +407,9 @@ static void RenderWeaponFX(int c, int o, int v121, float Targetj, float* Light)
 
         case 0x237: { // Multi-bone sparkle (bones 27-37)
             float L2[3] = { Targetj * 0.40000001f, Targetj * 0.60000002f, Targetj };
-            FUN_004553c0(model, 1231, 27, 2.0f, L2, o);
+            Model_BoneParticle(model, 1231, 27, 2.0f, L2, o);
             for (int j = 28; j <= 37; ++j) {
-                FUN_004553c0(model, 1150, j, 1.5f, L2, o);
+                Model_BoneParticle(model, 1150, j, 1.5f, L2, o);
             }
             break;
         }
@@ -542,7 +542,7 @@ extern "C" void HeroEquipWatchdog(int c)
                 s_prevHero = c;
                 s_have     = true;
                 SetCharacterClass(c);
-                FUN_0045c720(c);
+                Character_UpdateEquipSlotAnimations(c);
             }
         }
         return;

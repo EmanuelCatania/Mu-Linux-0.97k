@@ -337,7 +337,7 @@ void Render_QuickButtons_(void)
         // creador a `g_GuildCreatorScratchX/Y` (Inventory[32] es el slot 0 del pool
         // de la tienda y lo estaba pisando). Quedo en 0, asi que los botones se
         // dibujaban en (0+20, 0+350) absoluto — abajo a la izquierda — mientras los
-        // El hit-test FUN_004e4760 ya usaba el origen bueno: se dibujaban en un
+        // El hit-test SecondPassword_Screen1 ya usaba el origen bueno: se dibujaban en un
         // lado y se clickeaban en otro.
         // Los tres offsets coinciden con esos hit-tests: +20/+350 y +100 el segundo.
         // Es el tercer hermano del fix del 2026-08-08 b (GuildList y CharacterInfo

@@ -125,7 +125,7 @@ void __stdcall MoveParticles(void)
         float* pPos = &P_POSX(iVar9);
         float* pDir = &P_DIRX(iVar9);
         float* pVel = &P_VELX(iVar9);
-        FUN_0043e570(pPos, pDir, pVel);
+        Vector_AddRotated(pPos, pDir, pVel);
 
         fVar15 = _DAT_0055256c;
         iVar5 = P_TYPE(iVar9);
@@ -227,11 +227,11 @@ void __stdcall MoveParticles(void)
                     fVar11 = (float10)_DAT_00552660;
                     P_SCALE(iVar9) = (float)(fVar12 * fVar11);
                     if (P_SUB(iVar9) < 2) {
-                        FUN_00475170((int)(P_BASE + iVar9));
+                        ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
                     } else {
                         P_SCALE(iVar9) = (float)(fVar12 * fVar11 * (float10)_DAT_00552adc);
                         P_ROT(iVar9) -= _DAT_00552664;
-                        FUN_00475170((int)(P_BASE + iVar9));
+                        ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
                     }
                 }
                 break;
@@ -240,7 +240,7 @@ void __stdcall MoveParticles(void)
             case 0x4d0: {
                 fVar11 = (float10)fsin((float10)P_LIFE(iVar9) * (float10)_DAT_00552ae0);
                 P_SCALE(iVar9) = (float)(fVar11 * (float10)_DAT_00552540);
-                FUN_00475170((int)(P_BASE + iVar9));
+                ItemDrop_SetupRenderRef((int)(P_BASE + iVar9));
                 break;
             }
 

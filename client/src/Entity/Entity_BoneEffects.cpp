@@ -46,10 +46,10 @@ extern void __cdecl operator_delete(void* ptr);
 #endif
 
 
-// FUN_00456590 @ 0x00456590 — Entity_SpawnBoneEffect(entity, effectType, scale, bone, x, flags, yOff)
+// Entity_SpawnBoneEffect @ 0x00456590 — Entity_SpawnBoneEffect(entity, effectType, scale, bone, x, flags, yOff)
 // Transforms an offset vector through the entity's bone matrix, then spawns a particle
 // effect at the resulting world position with a pulsing light color.
-void* __cdecl FUN_00456590(int entity, int effectType, float scale, int bone, float x, int flags, float yOff)
+void* __cdecl Entity_SpawnBoneEffect(int entity, int effectType, float scale, int bone, float x, int flags, float yOff)
 {
     // offset vector at bone position + x/yOff
     // BUG-FIX 2026-08-18 (A): el vector de offset se pasaba desde `&offset[3]`,
@@ -81,9 +81,9 @@ void* __cdecl FUN_00456590(int entity, int effectType, float scale, int bone, fl
     return (void *)entity;
 }
 
-// FUN_00456650 @ 0x00456650 — Entity_SpawnBoneRangeEffect(entity, bone1, bone2, scale)
+// Entity_SpawnBoneRangeEffect @ 0x00456650 — Entity_SpawnBoneRangeEffect(entity, bone1, bone2, scale)
 // Spawns beam effects between two bones of the entity, and writes bone2 world pos to entity+0x40.
-void* __cdecl FUN_00456650(int entity, int bone1, int bone2, float scale)
+void* __cdecl Entity_SpawnBoneRangeEffect(int entity, int bone1, int bone2, float scale)
 {
     float sinVal = (float)fsin((double)DAT_05826e08 * (double)_DAT_005528e0);
     void *modelPtr = (void *)(DAT_05828d58 + *(short *)(entity + 2) * 0xbc);

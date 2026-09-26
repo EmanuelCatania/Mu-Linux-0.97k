@@ -2,7 +2,7 @@
 // IDA: RenderPartObjectEffect (0x00504B50)
 //
 // Entity_SetColorAndRender — resolves anim-mode, sets model color from light
-// array, dispatches to FUN_00504130 / RenderPartObjectBodyColor / FUN_00504ac0, applies
+// array, dispatches to FUN_00504130 / RenderPartObjectBodyColor / Entity_SetModelColorAlt, applies
 // optional "flashing" effect on buffed entities.
 //
 // Signature (faithful Ghidra port):
@@ -464,13 +464,13 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
                 didExtraRender = true;
             }
             else if (ItemLevel < 12) {
-                // +11 — además FUN_00504ac0 con flag 0x240 (extra mesh)
+                // +11 — además Entity_SetModelColorAlt con flag 0x240 (extra mesh)
                 *(float *)((int)this_ + 0x48) = param_3[0] * 0.89999998f;
                 *(float *)((int)this_ + 0x4c) = param_3[1] * 0.89999998f;
                 *(float *)((int)this_ + 0x50) = param_3[2] * 0.89999998f;
                 FUN_00504130(this_, param_1, param_2, param_4, param_8);
                 uint extraFlag = param_8 & 0x100u;
-                FUN_00504ac0(this_, param_1, param_2, param_4, extraFlag | 0x240, 1.0f, 0xffffffff);
+                Entity_SetModelColorAlt(this_, param_1, param_2, param_4, extraFlag | 0x240, 1.0f, 0xffffffff);
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x48, 1.0f, 0xffffffff);
                 RenderPartObjectBodyColor(this_, param_1, param_2, param_4, extraFlag | 0x44, 1.0f, 0xffffffff);
                 didExtraRender = true;

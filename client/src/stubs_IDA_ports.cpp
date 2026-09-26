@@ -2766,9 +2766,9 @@ LABEL_47:
 }
 #endif
 
-// ── FUN_00407980 (IDA-only, gated) ──
+// ── SpringNode_ZeroFields (IDA-only, gated) ──
 #if defined(IDA_PORT_00407980)
-DWORD *__cdecl FUN_00407980(int _this)
+DWORD *__cdecl SpringNode_ZeroFields(int _this)
 {
   DWORD *result; // eax
   int v2; // esi
@@ -2791,9 +2791,9 @@ DWORD *__cdecl FUN_00407980(int _this)
 }
 #endif
 
-// ── FUN_004079b0 (IDA-only, gated) ──
+// ── SpringNode_SetPos (IDA-only, gated) ──
 #if defined(IDA_PORT_004079B0)
-int __cdecl FUN_004079b0(int _this, int a2, int a3, int a4, int a5)
+int __cdecl SpringNode_SetPos(int _this, int a2, int a3, int a4, int a5)
 {
   int result; // eax
 
@@ -2809,9 +2809,9 @@ int __cdecl FUN_004079b0(int _this, int a2, int a3, int a4, int a5)
 }
 #endif
 
-// ── FUN_00407ac0 (IDA-only, gated) ──
+// ── VerletNode_AddAccel (IDA-only, gated) ──
 #if defined(IDA_PORT_00407AC0)
-void __cdecl FUN_00407ac0(float *_this, float a2, float a3, float a4)
+void __cdecl VerletNode_AddAccel(float *_this, float a2, float a3, float a4)
 {
   _this[1] = a2 + _this[1];
   _this[2] = a3 + _this[2];
@@ -2819,9 +2819,9 @@ void __cdecl FUN_00407ac0(float *_this, float a2, float a3, float a4)
 }
 #endif
 
-// ── FUN_00407af0 (IDA-only, gated) ──
+// ── ClothNode_Integrate (IDA-only, gated) ──
 #if defined(IDA_PORT_00407AF0)
-void __cdecl FUN_00407af0(float *_this, float a2)
+void __cdecl ClothNode_Integrate(float *_this, float a2)
 {
   float *v2; // eax
   int v3; // ecx
@@ -2846,9 +2846,9 @@ void __cdecl FUN_00407af0(float *_this, float a2)
 }
 #endif
 
-// ── FUN_00407b30 (IDA-only, gated) ──
+// ── SpringNode_GetPos (IDA-only, gated) ──
 #if defined(IDA_PORT_00407B30)
-int *__cdecl FUN_00407b30(int *_this, DWORD *a2)
+int *__cdecl SpringNode_GetPos(int *_this, DWORD *a2)
 {
   int *result; // eax
   int v4; // ecx
@@ -2867,9 +2867,9 @@ int *__cdecl FUN_00407b30(int *_this, DWORD *a2)
 }
 #endif
 
-// ── FUN_00407b50 (IDA-only, gated) ──
+// ── SpringNode_Delta (IDA-only, gated) ──
 #if defined(IDA_PORT_00407B50)
-void __cdecl FUN_00407b50(char *_this, int a2, int a3)
+void __cdecl SpringNode_Delta(char *_this, int a2, int a3)
 {
   float *v3; // eax
   char *v4; // ecx
@@ -2890,13 +2890,13 @@ void __cdecl FUN_00407b50(char *_this, int a2, int a3)
     *(float *)(v5 - 4) = v7;
   }
   while ( v6 );
-  FUN_004f9c40(a3);
+  Vec3_Length(a3);
 }
 #endif
 
-// ── FUN_00407b90 (IDA-only, gated) ──
+// ── Cloth_SpringRange (IDA-only, gated) ──
 #if defined(IDA_PORT_00407B90)
-int __cdecl FUN_00407b90(int a1, double a2, int a3, float *a4)
+int __cdecl Cloth_SpringRange(int a1, double a2, int a3, float *a4)
 {
   double v6; // st6
   double v7; // st7
@@ -2909,10 +2909,10 @@ int __cdecl FUN_00407b90(int a1, double a2, int a3, float *a4)
   {
     return 1;
   }
-  FUN_00407b50((char *)a1, a3, (int)&v9);
+  SpringNode_Delta((char *)a1, a3, (int)&v9);
   if ( a2 >= 0.001 )
   {
-    FUN_00407b50((char *)a1, a3, (int)&v9);
+    SpringNode_Delta((char *)a1, a3, (int)&v9);
   }
   else
   {
@@ -2944,9 +2944,9 @@ LABEL_11:
 }
 #endif
 
-// ── FUN_00407c60 (IDA-only, gated) ──
+// ── Cloth_SpringEqual (IDA-only, gated) ──
 #if defined(IDA_PORT_00407C60)
-int __cdecl FUN_00407c60(int a1, double a2, int a3, float a4)
+int __cdecl Cloth_SpringEqual(int a1, double a2, int a3, float a4)
 {
   double v5; // st7
   double v6; // st7
@@ -2955,10 +2955,10 @@ int __cdecl FUN_00407c60(int a1, double a2, int a3, float a4)
   float v9; // [esp+Ch] [ebp-8h]
   float v10; // [esp+10h] [ebp-4h]
 
-  FUN_00407b50((char *)a1, a3, (int)&v8);
+  SpringNode_Delta((char *)a1, a3, (int)&v8);
   if ( a2 >= 0.001 )
   {
-    FUN_00407b50((char *)a1, a3, (int)&v8);
+    SpringNode_Delta((char *)a1, a3, (int)&v8);
   }
   else
   {
@@ -2981,12 +2981,12 @@ int __cdecl FUN_00407c60(int a1, double a2, int a3, float a4)
 }
 #endif
 
-// ── FUN_00407da0 (IDA-only, gated) ──
+// ── VerletNode_CtorBase (IDA-only, gated) ──
 #if defined(IDA_PORT_00407DA0)
-DWORD *__cdecl FUN_00407da0(DWORD *_this)
+DWORD *__cdecl VerletNode_CtorBase(DWORD *_this)
 {
   *_this = (DWORD)&DAT_00552508;
-  FUN_00407df0((int)_this);
+  VerletNode_ZeroFields((int)_this);
   return _this;
 }
 #endif
@@ -3004,9 +3004,9 @@ LPVOID __cdecl FUN_00407dc0(LPVOID lpMem, char a2)
 }
 #endif
 
-// ── FUN_00407df0 (IDA-only, gated) ──
+// ── VerletNode_ZeroFields (IDA-only, gated) ──
 #if defined(IDA_PORT_00407DF0)
-int __cdecl FUN_00407df0(DWORD *_this)
+int __cdecl VerletNode_ZeroFields(DWORD *_this)
 {
   int result; // eax
 
@@ -3022,9 +3022,9 @@ int __cdecl FUN_00407df0(DWORD *_this)
 }
 #endif
 
-// ── FUN_00407e10 (IDA-only, gated) ──
+// ── VerletNode_SetTarget (IDA-only, gated) ──
 #if defined(IDA_PORT_00407E10)
-int __cdecl FUN_00407e10(DWORD *_this, int a2, int a3, int a4)
+int __cdecl VerletNode_SetTarget(DWORD *_this, int a2, int a3, int a4)
 {
   int result; // eax
 
@@ -3036,9 +3036,9 @@ int __cdecl FUN_00407e10(DWORD *_this, int a2, int a3, int a4)
 }
 #endif
 
-// ── FUN_00407e30 (IDA-only, gated) ──
+// ── VerletNode_GetPos (IDA-only, gated) ──
 #if defined(IDA_PORT_00407E30)
-DWORD *__cdecl FUN_00407e30(DWORD *_this, DWORD *a2)
+DWORD *__cdecl VerletNode_GetPos(DWORD *_this, DWORD *a2)
 {
   DWORD *result; // eax
   DWORD *v3; // ecx
@@ -3065,9 +3065,9 @@ LPVOID __cdecl FUN_00407ea0(LPVOID lpMem, char a2)
 }
 #endif
 
-// ── FUN_00407ef0 (IDA-only, gated) ──
+// ── ClothAnchor_SetParams (IDA-only, gated) ──
 #if defined(IDA_PORT_00407EF0)
-int __cdecl FUN_00407ef0(DWORD *_this, int a2, int a3, int a4, int a5, int a6)
+int __cdecl ClothAnchor_SetParams(DWORD *_this, int a2, int a3, int a4, int a5, int a6)
 {
   int result; // eax
 
@@ -3117,9 +3117,9 @@ void __cdecl FUN_00408070(void *_this)
 }
 #endif
 
-// ── FUN_004080f0 (IDA-only, gated) ──
+// ── Widget_NodeInit (IDA-only, gated) ──
 #if defined(IDA_PORT_004080F0)
-int __cdecl FUN_004080f0(DWORD *_this)
+int __cdecl Widget_NodeInit(DWORD *_this)
 {
   int result; // eax
 
@@ -3145,9 +3145,9 @@ int __cdecl FUN_004080f0(DWORD *_this)
 }
 #endif
 
-// ── FUN_004088b0 (IDA-only, gated) ──
+// ── Spring_StoreEdge (IDA-only, gated) ──
 #if defined(IDA_PORT_004088B0)
-int __cdecl FUN_004088b0(DWORD *_this, int a2, short a3, short a4, float a5, float a6, char a7)
+int __cdecl Spring_StoreEdge(DWORD *_this, int a2, short a3, short a4, float a5, float a6, char a7)
 {
   int result; // eax
 
@@ -3161,9 +3161,9 @@ int __cdecl FUN_004088b0(DWORD *_this, int a2, short a3, short a4, float a5, flo
 }
 #endif
 
-// ── FUN_00408cb0 (IDA-only, gated) ──
+// ── Cloth_Integrate (IDA-only, gated) ──
 #if defined(IDA_PORT_00408CB0)
-int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
+int __cdecl Cloth_Integrate(DWORD *a1, double a2, float a3)
 {
   int v4; // esi
   float *v5; // esi
@@ -3202,10 +3202,10 @@ int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
         v6 = a1[13];
         v7 = (char *)(v6 + 60 * *(short *)v5);
         v8 = (float *)(v6 + 60 * *((short *)v5 + 1));
-        FUN_00407b50(v7, (int)v8, (int)v25);
+        SpringNode_Delta(v7, (int)v8, (int)v25);
         if ( a2 >= 0.001 )
         {
-          FUN_00407b50(v7, (int)v8, (int)v25);
+          SpringNode_Delta(v7, (int)v8, (int)v25);
         }
         else
         {
@@ -3228,8 +3228,8 @@ int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
           v18 = -v23;
           a2 = -v22;
           v17 = a2;
-          FUN_00407ac0((float *)v7, v17, v18, v19);
-          FUN_00407ac0(v8, v22, v23, v24);
+          VerletNode_AddAccel((float *)v7, v17, v18, v19);
+          VerletNode_AddAccel(v8, v22, v23, v24);
         }
       }
       v4 = v21 + 16;
@@ -3246,7 +3246,7 @@ int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
     v16 = 0;
     do
     {
-      FUN_00407af0((float *)(v16 + a1[13]), a3);
+      ClothNode_Integrate((float *)(v16 + a1[13]), a3);
       result = a1[12];
       ++v15;
       v16 += 60;
@@ -3257,9 +3257,9 @@ int __cdecl FUN_00408cb0(DWORD *a1, double a2, float a3)
 }
 #endif
 
-// ── FUN_00408e30 (IDA-only, gated) ──
+// ── Cloth_Solve (IDA-only, gated) ──
 #if defined(IDA_PORT_00408E30)
-int __cdecl FUN_00408e30(DWORD *a1, double a2)
+int __cdecl Cloth_Solve(DWORD *a1, double a2)
 {
   int v3; // ebx
   int i; // ebp
@@ -3284,7 +3284,7 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
   for ( i = *(DWORD *)(a1[19] + 8); a1[20] != i && i; i = *(DWORD *)(i + 8) )
   {
     v5 = *(DWORD **)i;
-    FUN_00407e30(*(DWORD **)i, Position);
+    VerletNode_GetPos(*(DWORD **)i, Position);
     v19 = Position[1];
     v18 = Position[0];
     v6 = Position[0];
@@ -3299,9 +3299,9 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
       Position,
       WorldPosition,
       1);
-    FUN_00407e10(v5, SLODWORD(WorldPosition[0]), SLODWORD(WorldPosition[1]), SLODWORD(WorldPosition[2]));
+    VerletNode_SetTarget(v5, SLODWORD(WorldPosition[0]), SLODWORD(WorldPosition[1]), SLODWORD(WorldPosition[2]));
   }
-  FUN_00409310(a1);
+  Cloth_CollideAnchors(a1);
   v7 = 0;
   if ( (int)a1[14] > 0 )
   {
@@ -3311,7 +3311,7 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
       v9 = (float *)(a1[15] + v8);
       if ( ((BYTE)v9[3] & 1) != 0 )
       {
-        FUN_00407c60(a1[13] + 60 * *(short *)v9, a2, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
+        Cloth_SpringEqual(a1[13] + 60 * *(short *)v9, a2, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
       }
       ++v7;
       v8 += 16;
@@ -3323,7 +3323,7 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
     v11 = a1[10];
     for ( k = 0; k < v11; ++k )
     {
-      FUN_00407d10(a1[13] + 60 * (k + j * v11));
+      VerletSystem_Flush(a1[13] + 60 * (k + j * v11));
       v11 = a1[10];
     }
   }
@@ -3338,7 +3338,7 @@ int __cdecl FUN_00408e30(DWORD *a1, double a2)
     v14 = *((short *)v13 + 1);
     if ( v14 >= a1[10]
       && ((BYTE)v13[3] & 4) != 0
-      && !FUN_00407b90(a1[13] + 60 * v14, a2, a1[13] + 60 * *(short *)v13, v13 + 1) )
+      && !Cloth_SpringRange(a1[13] + 60 * v14, a2, a1[13] + 60 * *(short *)v13, v13 + 1) )
     {
       break;
     }
@@ -3367,7 +3367,7 @@ void __cdecl FUN_00408ff0(int _this, int a2)
     v5 = *(DWORD *)(_this + 40);
     for ( j = 0; j < v5; ++j )
     {
-      FUN_00407b30((int *)(*(DWORD *)(_this + 52) + 60 * (j + i * v5)), &v3[3 * j + 3 * i * v5]);
+      SpringNode_GetPos((int *)(*(DWORD *)(_this + 52) + 60 * (j + i * v5)), &v3[3 * j + 3 * i * v5]);
       v5 = *(DWORD *)(_this + 40);
     }
   }
@@ -3465,9 +3465,9 @@ void __cdecl FUN_004091d0(DWORD *_this, int a2, int a3, GLfloat t)
 }
 #endif
 
-// ── FUN_00409310 (IDA-only, gated) ──
+// ── Cloth_CollideAnchors (IDA-only, gated) ──
 #if defined(IDA_PORT_00409310)
-int __cdecl FUN_00409310(DWORD *_this)
+int __cdecl Cloth_CollideAnchors(DWORD *_this)
 {
   int result; // eax
   DWORD *v3; // eax
@@ -3514,7 +3514,7 @@ int __cdecl FUN_00409310(DWORD *_this)
       v8 = 0;
       do
       {
-        FUN_00407d10(v8 + _this[13]);
+        VerletSystem_Flush(v8 + _this[13]);
         result = _this[12];
         ++v7;
         v8 += 60;
@@ -3638,7 +3638,7 @@ int __cdecl FUN_00409d20(DWORD *_this)
 
   for ( i = *(int **)(_this[2] + 8); (int *)_this[3] != i && i; i = (int *)i[2] )
   {
-    FUN_004086e0(*i);
+    Widget_Release(*i);
     if ( *i )
     {
       (**(void (__cdecl ***)(int, int))*i)(*i, 1);
@@ -3673,7 +3673,7 @@ int __cdecl FUN_00409d20(DWORD *_this)
 
   for ( i = *(int **)(_this[2] + 8); (int *)_this[3] != i && i; i = (int *)i[2] )
   {
-    FUN_004086e0(*i);
+    Widget_Release(*i);
     if ( *i )
     {
       (**(void (__cdecl ***)(int, int))*i)(*i, 1);
@@ -3775,12 +3775,12 @@ DWORD *FUN_00409eb0()
 }
 #endif
 
-// ── FUN_00409ed0 (IDA-only, gated) ──
+// ── WidgetB_Ctor (IDA-only, gated) ──
 #if defined(IDA_PORT_00409ED0)
-DWORD *__cdecl FUN_00409ed0(DWORD *_this)
+DWORD *__cdecl WidgetB_Ctor(DWORD *_this)
 {
   *_this = &DAT_00552574;
-  FUN_00409f20();
+  WidgetB_ZeroFields();
   return _this;
 }
 #endif
@@ -3789,7 +3789,7 @@ DWORD *__cdecl FUN_00409ed0(DWORD *_this)
 #if defined(IDA_PORT_00409EF0)
 LPVOID __cdecl FUN_00409ef0(LPVOID lpMem, char a2)
 {
-  FUN_00409f10();
+  WidgetB_SetVtable();
   if ( (a2 & 1) != 0 )
   {
     delete__(lpMem);
@@ -3798,17 +3798,17 @@ LPVOID __cdecl FUN_00409ef0(LPVOID lpMem, char a2)
 }
 #endif
 
-// ── FUN_00409f10 (IDA-only, gated) ──
+// ── WidgetB_SetVtable (IDA-only, gated) ──
 #if defined(IDA_PORT_00409F10)
-void __cdecl FUN_00409f10(DWORD *_this)
+void __cdecl WidgetB_SetVtable(DWORD *_this)
 {
   *_this = &DAT_00552574;
 }
 #endif
 
-// ── FUN_00409f20 (IDA-only, gated) ──
+// ── WidgetB_ZeroFields (IDA-only, gated) ──
 #if defined(IDA_PORT_00409F20)
-int __cdecl FUN_00409f20(int _this)
+int __cdecl WidgetB_ZeroFields(int _this)
 {
   int result; // eax
 
@@ -3916,7 +3916,7 @@ void __cdecl FUN_0040a0a0(int a1, int a2, int a3, int a4, int a5, char a6)
   *(DWORD *)(a1 + 16) = 1022739087;
   *(DWORD *)(a1 + 20) = -1082130432;
   *(DWORD *)(a1 + 12) = -1082130432;
-  FUN_004f9d60(a1 + 12);
+  Vec3_Normalize(a1 + 12);
   if ( FUN_00409f30(a1, a2, a3, a4, a5, a6) )
   {
     FUN_0040a300(a3);
@@ -4190,7 +4190,7 @@ LPVOID __cdecl FUN_0040a6c0(LPVOID lpMem, char a2)
 void __cdecl FUN_0040a6e0(DWORD *_this)
 {
   *_this = &DAT_00552588;
-  FUN_00409f10(_this);
+  WidgetB_SetVtable(_this);
 }
 #endif
 
@@ -4254,7 +4254,7 @@ void __cdecl FUN_0040a8f0(char *_this, int a2, GLfloat a3, int a4, int a5)
   v27 = *(float *)LODWORD(a3) - *(float *)a2;
   v28 = *(float *)(LODWORD(a3) + 4) - *(float *)(a2 + 4);
   v29 = *(float *)(LODWORD(a3) + 8) - *(float *)(a2 + 8);
-  v6 = FUN_004f9c40(&v27);
+  v6 = Vec3_Length(&v27);
   v7 = *(float *)(a2 + 4);
   v8 = *(float *)(a2 + 8);
   v30 = *(float *)LODWORD(a3);
@@ -4279,8 +4279,8 @@ void __cdecl FUN_0040a8f0(char *_this, int a2, GLfloat a3, int a4, int a5)
   glColor3f(1.0, 1.0, 1.0);
   BindTexture(494);
   EnableAlphaBlendMinus();
-  FUN_004f9d20(_this + 12, &v27, &v24);
-  FUN_004f9d60(&v24);
+  Vec3_Cross(_this + 12, &v27, &v24);
+  Vec3_Normalize(&v24);
   v24 = v24 * 10.0;
   v25 = v25 * 10.0;
   v26 = v26 * 10.0;
@@ -4705,7 +4705,7 @@ int __cdecl FUN_0040c5d0(int _this)
   *(DWORD *)(_this + 32) = 0;
   FUN_0040c670(0);
   *(DWORD *)(_this + 40) = 0;
-  FUN_0040c690((DWORD *)_this, 0, 0);
+  Object_SetRectFields((DWORD *)_this, 0, 0);
   FUN_0040c6b0(100, 100);
   FUN_0040c6d0(0, 0, 0);
   FUN_0040c6f0(0, 0, 0);
@@ -9183,9 +9183,9 @@ LABEL_22:
 }
 #endif
 
-// ── FUN_0043daf0 (IDA-only, gated) ──
+// ── NetContext_ClearSendBuffer (IDA-only, gated) ──
 #if defined(IDA_PORT_0043DAF0)
-DWORD *__cdecl FUN_0043daf0(DWORD *_this)
+DWORD *__cdecl NetContext_ClearSendBuffer(DWORD *_this)
 {
   memset(_this + 4103, 0, 0x258960u);
   _this[4101] = 0;
@@ -9476,9 +9476,9 @@ void __cdecl BMD::Init(DWORD This, bool Dummy)
 }
 #endif
 
-// ── FUN_00444b30 (IDA-only, gated) ──
+// ── SetPlayerTeleport (IDA-only, gated) ──
 #if defined(IDA_PORT_00444B30)
-void __cdecl FUN_00444b30(DWORD o)
+void __cdecl SetPlayerTeleport(DWORD o)
 {
   if ( *(WORD *)(o + 2) == 390 )
   {
@@ -13743,9 +13743,9 @@ void __cdecl FUN_00452030(int a1)
 }
 #endif
 
-// ── FUN_0045c720 (IDA-only, gated) ──
+// ── Character_UpdateEquipSlotAnimations (IDA-only, gated) ──
 #if defined(IDA_PORT_0045C720)
-void __cdecl FUN_0045c720(DWORD c)
+void __cdecl Character_UpdateEquipSlotAnimations(DWORD c)
 {
   unsigned char v1; // al
   char v2; // cl
@@ -14139,9 +14139,9 @@ void __cdecl FUN_0046c7f0(int a1, float *a2, float a3, float a4, float a5)
 }
 #endif
 
-// ── FUN_004797b0 (IDA-only, gated) ──
+// ── SkillAttribute_LoadNames (IDA-only, gated) ──
 #if defined(IDA_PORT_004797B0)
-FILE *__cdecl FUN_004797b0(char *FileName)
+FILE *__cdecl SkillAttribute_LoadNames(char *FileName)
 {
   FILE *result; // eax
   int v2; // esi
@@ -14169,9 +14169,9 @@ FILE *__cdecl FUN_004797b0(char *FileName)
 }
 #endif
 
-// ── FUN_00479830 (IDA-only, gated) ──
+// ── LoadGlobalTextBin (IDA-only, gated) ──
 #if defined(IDA_PORT_00479830)
-int __cdecl FUN_00479830(char *FileName)
+int __cdecl LoadGlobalTextBin(char *FileName)
 {
   FILE *v1; // ebp
   void *v3; // ebx
@@ -14207,9 +14207,9 @@ int __cdecl FUN_00479830(char *FileName)
 }
 #endif
 
-// ── FUN_00479950 (IDA-only, gated) ──
+// ── SkillAttribute_SaveBin (IDA-only, gated) ──
 #if defined(IDA_PORT_00479950)
-int __cdecl FUN_00479950(FILE *Stream)
+int __cdecl SkillAttribute_SaveBin(FILE *Stream)
 {
   char (*v1)[300]; // ebx
   char (*v2)[300]; // ebp
@@ -14231,9 +14231,9 @@ int __cdecl FUN_00479950(FILE *Stream)
 }
 #endif
 
-// ── FUN_00479a50 (IDA-only, gated) ──
+// ── Filter_SaveBMD (IDA-only, gated) ──
 #if defined(IDA_PORT_00479A50)
-int __cdecl FUN_00479a50(char *FileName)
+int __cdecl Filter_SaveBMD(char *FileName)
 {
   char *v1; // ebx
   char *v2; // ebp
@@ -14370,9 +14370,9 @@ LABEL_18:
 }
 #endif
 
-// ── FUN_00479cf0 (IDA-only, gated) ──
+// ── FilterName_LoadData (IDA-only, gated) ──
 #if defined(IDA_PORT_00479CF0)
-FILE *__cdecl FUN_00479cf0(char *FileName)
+FILE *__cdecl FilterName_LoadData(char *FileName)
 {
   FILE *result; // eax
   int v2; // edx
@@ -14393,9 +14393,9 @@ FILE *__cdecl FUN_00479cf0(char *FileName)
 }
 #endif
 
-// ── FUN_00479d70 (IDA-only, gated) ──
+// ── FilterName_SaveBMD (IDA-only, gated) ──
 #if defined(IDA_PORT_00479D70)
-int __cdecl FUN_00479d70(char *FileName)
+int __cdecl FilterName_SaveBMD(char *FileName)
 {
   char *v1; // ebx
   char *v2; // ebp
@@ -16928,9 +16928,9 @@ LABEL_44:
     v320 = v33 - Angle[0];
     v321 = *(float *)(c + 792) - v34;
     v322 = *(float *)(c + 796) - v35;
-    if ( FUN_004f9c40(&v320) >= 1.0 )
+    if ( Vec3_Length(&v320) >= 1.0 )
     {
-      v36 = FUN_004f9c40(&v320);
+      v36 = Vec3_Length(&v320);
     }
     else
     {
@@ -23373,7 +23373,7 @@ LABEL_74:
       *(DWORD *)&Inventory[32].Type = v71;
       UI_Main(v71, a3, a4);
       CheckInventory = 0;
-      FUN_0043d8a0(&MAIN_HASH_CLASS, &TradeOpened);
+      HashTable_Insert_Short(&MAIN_HASH_CLASS, &TradeOpened);
       v72 = TradeOpened;
       if ( FUN_004041e0(&MAIN_HASH_CLASS, (int)&TradeOpened) != -1 )
       {
@@ -24475,9 +24475,9 @@ LABEL_142:
 }
 #endif
 
-// ── FUN_004f6850 (IDA-only, gated) ──
+// ── SecondPassword_CancelReturn (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6850)
-char FUN_004f6850()
+char SecondPassword_CancelReturn()
 {
   char v0; // dl
   ITEM *v1; // eax
@@ -24557,9 +24557,9 @@ char FUN_004f6850()
 }
 #endif
 
-// ── FUN_004f6a70 (IDA-only, gated) ──
+// ── Net_Disconnect_Clean (IDA-only, gated) ──
 #if defined(IDA_PORT_004F6A70)
-char __cdecl FUN_004f6a70(int a1, int a2)
+char __cdecl Net_Disconnect_Clean(int a1, int a2)
 {
   int v3; // edi
   signed int v4; // ebx
@@ -24852,9 +24852,9 @@ int __cdecl FUN_004f98c0(int a1, int a2, int a3, int a4, int a5)
   return result;
 }
 
-// ── FUN_004f9c20 (IDA-only, gated) ──
+// ── Terrain_SetupCulling (IDA-only, gated) ──
 #if defined(IDA_PORT_004F9C20)
-void __cdecl FUN_004f9c20(bool EditFlag)
+void __cdecl Terrain_SetupCulling(bool EditFlag)
 {
   double v1; // st7
   double v2; // st7
@@ -24878,7 +24878,7 @@ void __cdecl FUN_004f9c20(bool EditFlag)
   if ( EditFlag )
   {
     SelectFlag = 0;
-    FUN_00512d30();
+    Map_InitRayCast();
   }
   else
   {
@@ -24901,20 +24901,20 @@ void __cdecl FUN_004f9c20(bool EditFlag)
       TerrainFlag = 2;
       RenderTerrainFrustrum(0);
     }
-    FUN_004f7060();
+    Terrain_SpawnAmbientObjects();
     DisableDepthTest();
     EnableCullFace();
     FUN_00479540();
     EnableDepthTest();
   }
   DAT_0839bc88 ^= 1u;
-  FUN_004f9a30(DAT_0839bc88);
+  Terrain_WaterWaveUpdate(DAT_0839bc88);
 }
 #endif
 
-// ── FUN_004f9cb0 (IDA-only, gated) ──
+// ── Vec3_Multiply (IDA-only, gated) ──
 #if defined(IDA_PORT_004F9CB0)
-float *__cdecl FUN_004f9cb0(float *a1, float *a2, float *a3)
+float *__cdecl Vec3_Multiply(float *a1, float *a2, float *a3)
 {
   float *result; // eax
 
@@ -24936,9 +24936,9 @@ void __cdecl VectorMA(float va[3], float scale, float vb[3], float vc[3])
 }
 #endif
 
-// ── FUN_004f9d20 (IDA-only, gated) ──
+// ── Vec3_Cross (IDA-only, gated) ──
 #if defined(IDA_PORT_004F9D20)
-float *__cdecl FUN_004f9d20(float *a1, float *a2, float *a3)
+float *__cdecl Vec3_Cross(float *a1, float *a2, float *a3)
 {
   float *result; // eax
 
@@ -24950,9 +24950,9 @@ float *__cdecl FUN_004f9d20(float *a1, float *a2, float *a3)
 }
 #endif
 
-// ── FUN_004fa5a0 (IDA-only, gated) ──
+// ── ClearActionObject (IDA-only, gated) ──
 #if defined(IDA_PORT_004FA5A0)
-int FUN_004fa5a0()
+int ClearActionObject()
 {
   int result; // eax
 
@@ -24971,7 +24971,7 @@ int FUN_004fa5a0()
 #define LODWORD(x)  (*(unsigned int*)&(x))
 #define Models      DAT_05828d58
 #define EditFlag    DAT_07e11d30
-extern void __cdecl FUN_0046ca00(DWORD Object);   // World-4 gate FX (stubs_game.cpp)
+extern void __cdecl Effect_PhysicsTick(DWORD Object);   // World-4 gate FX (stubs_game.cpp)
 extern "C" void DbgLogPublic(const char*);        // [DIAG activación temporal]
 void __cdecl FUN_004fdc00(float o)
 {
@@ -25334,7 +25334,7 @@ LABEL_92:
           goto LABEL_132;
         case 0x26:
         case 0x27:
-          FUN_0046ca00(LODWORD(o));
+          Effect_PhysicsTick(LODWORD(o));
           break;
         default:
           return;
@@ -25504,9 +25504,9 @@ LABEL_132:
 #undef EditFlag
 #endif
 
-// ── FUN_004ffcc0 (IDA-only, gated) ──
+// ── Entity_GridUnlink (IDA-only, gated) ──
 #if defined(IDA_PORT_004FFCC0)
-void __cdecl FUN_004ffcc0(DWORD *lpMem, int a2)
+void __cdecl Entity_GridUnlink(DWORD *lpMem, int a2)
 {
   int v2; // eax
   int v3; // ecx
@@ -25559,9 +25559,9 @@ void __cdecl ClearItems()
 }
 #endif
 
-// ── FUN_00503fe0 (IDA-only, gated) ──
+// ── Weapon_SetColorAlt (IDA-only, gated) ──
 #if defined(IDA_PORT_00503FE0)
-int __cdecl FUN_00503fe0(int a1, float a2, float a3, int a4)
+int __cdecl Weapon_SetColorAlt(int a1, float a2, float a3, int a4)
 {
   int result; // eax
   int v5; // ecx
@@ -26390,8 +26390,8 @@ bool __cdecl FUN_005130f0(
   v22 = *(float *)(a3 + 4) * *(float *)(LODWORD(a1) + 4)
       + *(float *)(a3 + 8) * *(float *)(LODWORD(a1) + 8)
       + *(float *)LODWORD(a1) * *(float *)a3;
-  v21 = FUN_00512a30(v24, v22);
-  v20 = FUN_00512a10(v24, v22);
+  v21 = Math_Fmax(v24, v22);
+  v20 = Math_Fmin(v24, v22);
   v16 = a5 * *(float *)(LODWORD(a1) + 4) + a4 * *(float *)LODWORD(a1) + a6 * *(float *)(LODWORD(a1) + 8);
   v19 = v16;
   v23 = a8 * *(float *)(LODWORD(a1) + 4) + a7 * *(float *)LODWORD(a1) + a9 * *(float *)(LODWORD(a1) + 8);
@@ -26428,7 +26428,7 @@ bool __cdecl FUN_005130f0(
 #endif
 
 // ── FUN_00513260 (IDA-only, gated) ──
-// Usa macros Hex-Rays sin portar (LODWORD/qmemcpy/FUN_004f9d20); queda gated.
+// Usa macros Hex-Rays sin portar (LODWORD/qmemcpy/Vec3_Cross); queda gated.
 // El hover de items del suelo (FUN_004afa40) usa proximidad world-space en su
 // lugar (ver stubs_mouse_hover.cpp).
 #if defined(IDA_PORT_00513260)
@@ -26463,9 +26463,9 @@ bool __cdecl FUN_00513260(
   LODWORD(v15[9]) = v16;
   v16[1] = v13;
   v16[2] = *(float *)(a2 + 8) - *(float *)(LODWORD(a1) + 8);
-  FUN_004f9d20(v16, &a6, v17);
-  FUN_004f9d20(v16, &a9, v18);
-  FUN_004f9d20(v16, &a12, v19);
+  Vec3_Cross(v16, &a6, v17);
+  Vec3_Cross(v16, &a9, v18);
+  Vec3_Cross(v16, &a12, v19);
   qmemcpy(v15, &a3, sizeof(v15));
   result = FUN_005130f0(
              COERCE_FLOAT(v17),
@@ -27594,13 +27594,13 @@ int __cdecl FUN_0053d580(char a1)
 }
 #endif
 
-// ── FUN_0053d5a0 (IDA-only, gated) ──
+// ── Resource_Load (IDA-only, gated) ──
 #if defined(IDA_PORT_0053D5A0)
-char __cdecl FUN_0053d5a0(LPCSTR lpString)
+char __cdecl Resource_Load(LPCSTR lpString)
 {
   if ( lpParameter )
   {
-    return FUN_0053ed30((char *)lpParameter, lpString);
+    return Pipe_SetTarget((char *)lpParameter, lpString);
   }
   else
   {
@@ -27714,7 +27714,7 @@ int __cdecl FUN_0053d7d0(int a1, char a2, const CHAR *lpString)
   {
     v11 = a2;
     *(DWORD *)(a1 + 704) = lpString;
-    FUN_005404a0(2225, 1554, lpString);
+    Pipe_Write(2225, 1554, lpString);
     if ( *(DWORD *)(a1 + 4) )
     {
       v9 = *(DWORD *)(a1 + 4);
@@ -27822,16 +27822,16 @@ BYTE *__cdecl FUN_0053e8c0(BYTE *a1)
 }
 #endif
 
-// ── FUN_0053ed30 (IDA-only, gated) ──
+// ── Pipe_SetTarget (IDA-only, gated) ──
 #if defined(IDA_PORT_0053ED30)
-char __cdecl FUN_0053ed30(char *_this, LPCSTR lpString)
+char __cdecl Pipe_SetTarget(char *_this, LPCSTR lpString)
 {
   if ( !*_this )
   {
     return 0;
   }
   strcpy(_this + 752, lpString);
-  return FUN_005404a0(2225, 1555, lpString);
+  return Pipe_Write(2225, 1555, lpString);
 }
 #endif
 
@@ -28538,9 +28538,9 @@ LABEL_10:
 }
 #endif
 
-// ── FUN_005403a0 (IDA-only, gated) ──
+// ── Pipe_WriteFile (IDA-only, gated) ──
 #if defined(IDA_PORT_005403A0)
-bool __cdecl FUN_005403a0(int a1, int a2, LPCSTR lpString)
+bool __cdecl Pipe_WriteFile(int a1, int a2, LPCSTR lpString)
 {
   bool result; // al
   int v4; // eax
@@ -28611,7 +28611,7 @@ char __cdecl FUN_005406f0(HANDLE *_this)
   {
     return 0;
   }
-  FUN_005404a0(2225, 1552, 0);
+  Pipe_Write(2225, 1552, 0);
   if ( hEvent )
   {
     SetEvent(hEvent);

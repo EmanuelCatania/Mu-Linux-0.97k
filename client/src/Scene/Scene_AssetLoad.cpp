@@ -121,13 +121,13 @@ void __cdecl Scene_LoadGameAssets(void) {
         Gate_SaveBMD("Data/Gate.bmd");
         crt_sprintf(local_64, "Data2/Local/Filter_%s.txt", (char*)DAT_0055a7a4);
         Filter_LoadTextFile(local_64);
-        FUN_00479a50("Data/Local/Filter.bmd");
+        Filter_SaveBMD("Data/Local/Filter.bmd");
         crt_sprintf(local_64, "Data2/Local/FilterName_%s.txt", (char*)DAT_0055a7a4);
-        FUN_00479cf0(local_64);
-        FUN_00479d70("Data/Local/FilterName.bmd");
+        FilterName_LoadData(local_64);
+        FilterName_SaveBMD("Data/Local/FilterName.bmd");
         crt_sprintf(local_64, "Data2/Local/Dialog_%s.txt", (char*)DAT_0055a7a4);
-        FUN_00479cf0(local_64);
-        FUN_00479d70("Data/Local/FilterName.bmd");
+        FilterName_LoadData(local_64);
+        FilterName_SaveBMD("Data/Local/FilterName.bmd");
     } else {
         Item_LoadBMD("Data/Local/Item.bmd");
         Skill_LoadBMD("Data/Local/Skill.bmd");

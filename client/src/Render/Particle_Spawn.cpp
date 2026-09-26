@@ -627,7 +627,7 @@ switchD_4ab:
             pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
             fVar5 = (float)(iVar7 % 0x50) * fVar4 * _DAT_00552594;
             *(float *)(pcVar11 + 0x50) = fVar5;
-            FUN_0043e570(pfVar1, pfVar2, pfVar3);
+            Vector_AddRotated(pfVar1, pfVar2, pfVar3);
             fVar4 = *param_4; *pfVar3 = 0.0f;
             fVar4 = (fVar4 - fVar5) * _DAT_00552a48;
             pcVar11[0x54] = '\0'; pcVar11[0x55] = '\0'; pcVar11[0x56] = '\0'; pcVar11[0x57] = '\0';
@@ -770,12 +770,12 @@ switchD_4ab:
     case 0x4cf:
         pcVar11[0x38] = '$'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
         *pfVar2 = 45.0f;
-        if (param_5 != 99) FUN_00475170((int)pcVar11);
+        if (param_5 != 99) ItemDrop_SetupRenderRef((int)pcVar11);
         return iVar6;
 
     case 0x4d0:
         pcVar11[0x38] = '\x12'; pcVar11[0x39] = '\0'; pcVar11[0x3a] = '\0'; pcVar11[0x3b] = '\0';
-        FUN_00475170((int)pcVar11);
+        ItemDrop_SetupRenderRef((int)pcVar11);
         return iVar6;
 
     case 0x4d2:

@@ -29,7 +29,7 @@ void BMD_SkinUpdate(void)
             if (*psVar16 == -1) {
                 // Root bone: apply global rotation only
                 Matrix_BuildFromEuler(&local_48, pfVar14 - 0xc);
-                FUN_004f9e90(&local_48, pfVar14);
+                EulerToMatrix(&local_48, pfVar14);
                 // Copy pre-baked normal from source stream
                 float fVar2 = pfVar11[-600];
                 float fVar3 = pfVar11[-599];
@@ -41,7 +41,7 @@ void BMD_SkinUpdate(void)
                 int iBone = (int)*psVar16;
                 Matrix_BuildFromEuler(&local_48, local_30);
                 R_ConcatTransforms((float *)(&DAT_055c4038 + iBone * 0x6c), local_30, pfVar14 - 0xc);
-                FUN_004f9e90(&local_48, local_30);
+                EulerToMatrix(&local_48, local_30);
                 R_ConcatTransforms(local_30, (float *)(&DAT_055c4068 + iBone * 0x6c), pfVar14);
                 // Transform normal by bone matrix, add bone world-space origin
                 Vector_Transform(pfVar11 - 0x259, (float *)(&DAT_055c4038 + iBone * 0x6c), &local_3c);
@@ -81,7 +81,7 @@ void BMD_SkinUpdate(void)
                              (float *)(&DAT_055c4068 + *(short *)((BYTE*)pfVar11 - 2) * 0x6c),
                              pfVar11 + 3);
                 // Normalize the output normal
-                FUN_004f9d60(pfVar11 + 3);
+                Vec3_Normalize(pfVar11 + 3);
                 pfVar11 += 9;   // 9 floats per vertex: bone,x,y,z,nx,ny,nz,u,v
                 iVar12--;
             } while (iVar12 != 0);

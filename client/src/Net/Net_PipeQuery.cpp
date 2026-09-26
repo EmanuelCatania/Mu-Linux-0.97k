@@ -10,6 +10,6 @@
 uint __cdecl Pipe_SendQuery(void* mgr, char* name)
 {
     if (mgr == NULL || *(char *)mgr == '\0') return 0;
-    FUN_005404a0((LPCVOID)0x8b1, 0x616, name);
+    Pipe_Write((LPCVOID)0x8b1, 0x616, name);
     return 1;
 }

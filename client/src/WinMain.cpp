@@ -911,7 +911,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // notificaciones, esquina superior derecha). El WinMain de IDA llama
     // operator_new(0xBC) + sub_40E990 (hermana de sub_40C7D0, con nodo de lista
     // más chico, 0x18, y 24 filas visibles). Sin construirlo bien la vtable
-    // quedaba nula → el dispatch vtable[+0x14] desde FUN_004e4760 crasheaba leyendo 0x14.
+    // quedaba nula → el dispatch vtable[+0x14] desde SecondPassword_Screen1 crasheaba leyendo 0x14.
     DAT_055c9ff4 = (DWORD)ChatListBox_ConstructWhisper();
 
     // 2026-04-30: los slots vacíos del inventario tienen que tener Type=0xFFFF, no 0.

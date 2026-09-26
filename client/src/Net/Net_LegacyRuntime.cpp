@@ -11,8 +11,8 @@
 extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 extern void __cdecl operator_delete(void* ptr);
-extern void FUN_004fa5a0(void);
-extern void __cdecl FUN_0046ca00(DWORD Object);
+extern void ClearActionObject(void);
+extern void __cdecl Effect_PhysicsTick(DWORD Object);
 extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx);
 
 // 2026-05-08 BUG-FIX MAYÚSCULO: en el binario original `OffsetInventoryItems`

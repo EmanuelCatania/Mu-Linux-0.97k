@@ -77,7 +77,7 @@
 //     this[+0x70] = puVar9[-0xf1]   (world Y)
 //     this[+0x74] = puVar9[-0xed]   (world Z)
 //
-//     FUN_00503830(class, this) → Sprite_SetupAnimation(class, model)
+//     Entity_SetGravity(class, this) → Sprite_SetupAnimation(class, model)
 //     BMD_Animation(this, 0x6970a9c, rot, pos, scale, ptr1, ptr2, '\0', '\0')
 //         → Sprite_Draw(model, flags=0x6970a9c, rot, pos, scale, ...) — main draw call
 //
@@ -141,7 +141,7 @@
 // ── FUNCTION CROSS-REFERENCE ─────────────────────────────────────────────────
 //
 //   Frustum_TestSphere  → FrustumCull_2D(float *pos, float max_dist) — returns short
-//   FUN_00503830  → Sprite_SetupAnimation(class, model_ptr)
+//   Entity_SetGravity  → Sprite_SetupAnimation(class, model_ptr)
 //   BMD_Animation  → Sprite_Draw(model, flags, rot, pos_ptr, scale_ptr, anim_ptr, dir_ptr, a, b)
 //   RenderPartObject  → Entity_DrawAt(entity, class, slot, angle_ptr, rot, state, byte, a, b, c, d, e)
 //   RequestTerrainLight  → Terrain_GetAngle(world_x, world_y, out_angle_xyz)
@@ -336,10 +336,10 @@ uint RenderBugs(void)
 }
 
 
-// FUN_00503830 — Entity_SetGravity
+// Entity_SetGravity — Entity_SetGravity
 // Sets the gravity value at param_2+0x84 based on entity type param_1.
 // Maps specific type ranges to negative float constants (gravity strengths).
-void __cdecl FUN_00503830(int param_1,int param_2)
+void __cdecl Entity_SetGravity(int param_1,int param_2)
 {
   if (param_1 < 0x270) {
     if (param_1 < 0x290) goto LAB_0050386e;
@@ -370,15 +370,15 @@ LAB_0050386e:
 }
 
 
-// FUN_00505970 — Entity_RenderSlotWith
+// Entity_RenderSlotWith — Entity_RenderSlotWith
 // Sets up render parameters for one entity from entity data at param_2,
-// then delegates to FUN_004404e0 (model-matrix setup) and BMD__RenderBody (draw).
+// then delegates to Skeleton_Transform (model-matrix setup) and BMD__RenderBody (draw).
 // param_1: render object (void*)
 // param_2: entity data ptr
 // param_3: LOD/flag
 // param_4: alpha param (char)
 // param_5: alpha scale global override
-void __cdecl FUN_00505970(void *param_1,void *param_2_v,int param_3,char param_4,int param_5)
+void __cdecl Entity_RenderSlotWith(void *param_1,void *param_2_v,int param_3,char param_4,int param_5)
 {
   undefined *puVar1;
   int param_2 = (int)(uintptr_t)param_2_v;
@@ -394,7 +394,7 @@ void __cdecl FUN_00505970(void *param_1,void *param_2_v,int param_3,char param_4
     param_4 = '\0';
     puVar1 = (undefined*)&DAT_06970a9c;
   }
-  FUN_004404e0(param_1,(int)puVar1,(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
+  Skeleton_Transform(param_1,(int)puVar1,(float *)(param_2 + 0x118),(float *)(param_2 + 0x124),
                (float *)(param_2 + 0x130),param_4);
   BMD__RenderBody(param_1,(uint)param_3,*(float *)(param_2 + 0x168),*(int *)(param_2 + 100),
                *(float *)(param_2 + 0x68),*(float *)(param_2 + 0x6c),*(float *)(param_2 + 0x70),
@@ -453,7 +453,7 @@ RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float
         *(undefined4 *)((int)this_ + 0x4c) = 0x3cf5c28f;
       }
       *(undefined4 *)((int)this_ + 0x50) = 0;
-      FUN_00505970(this_,(void*)param_1,0x40,param_10,0x3f99999a);
+      Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f99999a);
       if (*(char *)(param_1 + 0x84) == '\x04') {
         *(undefined4 *)((int)this_ + 0x48) = 0x3e23d70a;
         *(undefined4 *)((int)this_ + 0x4c) = 0x3f333333;
@@ -463,16 +463,16 @@ RenderPartObject(int param_1,int param_2,undefined4 param_3,float *param_4,float
         *(undefined4 *)((int)this_ + 0x4c) = 0x3e4ccccd;
       }
       *(undefined4 *)((int)this_ + 0x50) = 0;
-      FUN_00505970(this_,(void*)param_1,0x40,param_10,0x3f8a3d71);
+      Entity_RenderSlotWith(this_,(void*)param_1,0x40,param_10,0x3f8a3d71);
     }
-    FUN_004fa930(param_1,(int)this_);
+    Entity_GetLightScale(param_1,(int)this_);
     if (param_8 == '\0') {
       puVar2 = *(undefined **)(param_1 + 0x114);
     }
     else {
       puVar2 = (undefined*)&DAT_06970a9c;
     }
-    FUN_004404e0(this_,(int)puVar2,(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
+    Skeleton_Transform(this_,(int)puVar2,(float *)(param_1 + 0x118),(float *)(param_1 + 0x124),
                  (float *)(param_1 + 0x130),param_10);
     // DESVIACION: falda de los pants Divine del 0.99 (ver Physics/Cloth_Simulation.cpp).
     // Va aca, entre la transformacion y el dibujado, igual que en 5.2.

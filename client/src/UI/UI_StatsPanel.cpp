@@ -253,7 +253,7 @@ LAB_0051c08c:
           glColor3f(0.5f, 0.5f, 0.5f);  // BUG-FIX bits → float
           DAT_083a4124 = '\0';
         }
-        FUN_005126e0(9,253.0,210.0,25.0,16.0,0x43870000);
+        GL_DrawRotatedRect(9,253.0,210.0,25.0,16.0,0x43870000);
         glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
         if (DAT_083a7c08 == DAT_083a7c09) {
           uVar16 = 0x3e4ccccd;
@@ -273,7 +273,7 @@ LAB_0051c13d:
           glColor3f(0.5f, 0.5f, 0.5f);  // BUG-FIX bits → float
           DAT_083a4124 = '\0';
         }
-        FUN_005126e0(9,383.0,210.0,25.0,16.0,0x42b40000);
+        GL_DrawRotatedRect(9,383.0,210.0,25.0,16.0,0x42b40000);
         glColor3f(1.0f, 1.0f, 1.0f);  // BUG-FIX: 0x3f800000 son los bits de 1.0f
       }
     }
@@ -983,7 +983,7 @@ LAB_0051ca70:
                          (LPCSTR)ppCVar11,(LPSIZE)0x0,'\0',0);
     return (int)uVar9;
   case 0x9a:
-    uVar9 = FUN_0051db00();
+    uVar9 = GuildOverview_Render();
     return (int)uVar9;
   }
   uVar9 = UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)pCVar6,

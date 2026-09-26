@@ -225,7 +225,7 @@ void __cdecl BMD__Release(int param_1) {
 
 // DeleteObjects @ 0x004FFD50 — Terrain_ResetObjects
 // Calls BMD_FreeModel on every model slot (stride 0xbc, count 0x7580/0xbc).
-// Then walks the 16x16 scene-entity grid (DAT_083a0218, stride 0x10) freeing nodes via FUN_004ffcc0.
+// Then walks the 16x16 scene-entity grid (DAT_083a0218, stride 0x10) freeing nodes via Entity_GridUnlink.
 // Finally unloads tile textures 0x23-0x67, clears particle/effect/entity pools.
 void __cdecl DeleteObjects(void) {
     // free all model slots
@@ -242,7 +242,7 @@ void __cdecl DeleteObjects(void) {
             char* head = (char*)*(DWORD*)(puVar5 + 8);
             while (head != nullptr) {
                 char* next = (char*)*(DWORD*)(head + 0x1b4);
-                FUN_004ffcc0((void*)head, (int)puVar5);
+                Entity_GridUnlink((void*)head, (int)puVar5);
                 head = next;
             }
             *(DWORD*)(puVar5 + 4) = 0;
@@ -317,7 +317,7 @@ void __cdecl ClearCharacters(int param_1) {
 // Effect_SpawnSmokeExplosion @ 0x004661F0 — Effect_SmokeExplosion: implemented in Render/MoveEffect_Helpers.cpp
 // Effect_SpawnLightningBurst @ 0x00460C30 — Effect_LightningBurst: implemented in Render/MoveEffect_Helpers.cpp
 // Effect_SpawnProximityHit @ 0x00465E60 — Effect_OnHitProximity: implemented in Render/MoveEffect_Helpers.cpp
-// FUN_00473d90 @ 0x00473D90 — Ring_ComputeOrbit: implemented in Render/MoveEffect_Helpers.cpp
+// Ring_ComputeOrbit @ 0x00473D90 — Ring_ComputeOrbit: implemented in Render/MoveEffect_Helpers.cpp
 // STUB: Effect_AutoAttack — proximity-check all entities against param_1, fire
 // attack effect (CreateBomb/CreateJoint 0x4E1) at nearby targets.
 // Real logic: iterates CharactersClient[0..399], distance check <= DAT_005524f0,
@@ -379,7 +379,7 @@ void __cdecl FUN_00466440(int Target) {
             }
         }
         float* posPtr = (float*)(T + 16);
-        if (FUN_0045fec0((unsigned int)skillIdx, posPtr, 100.0f,
+        if (Entity_FindNearby_SendPacket((unsigned int)skillIdx, posPtr, 100.0f,
                          *(unsigned char*)(T + 136),
                          *(short*)(T + 134))) {
             short type = *(short*)(T + 2);
@@ -475,18 +475,18 @@ void __cdecl TEXCOORD(float* param_1, float param_2, int param_3) {
     *(int*)(param_1 + 1) = param_3;
 }
 
-// FUN_004f9e90 — implemented below (EulerToMatrix)
-// FUN_00465fe0 @ 0x00465FE0 — Joint_BoneOffsetApply(entity_ptr, flag)
+// EulerToMatrix — implemented below (EulerToMatrix)
+// Joint_BoneOffsetApply @ 0x00465FE0 — Joint_BoneOffsetApply(entity_ptr, flag)
 // If flag != 0: builds rotation matrix from euler (+0x1c..0x24), transforms +0xc0 offset,
 //   adds result to world pos (+0x10/+0x14/+0x18).
 // If flag == 0: directly adds +0xc0/+0xc4/+0xc8 to world pos.
-void __cdecl FUN_00465fe0(int param_1, int param_2) {
+void __cdecl Joint_BoneOffsetApply(int param_1, int param_2) {
     // PORT FIX: Ghidra decompile split a contiguous float[3] output buffer into
     // three separate locals (local_3c/38/34). MSVC does not guarantee they're
     // adjacent in memory, so Vector_Rotate (which writes 3 contiguous floats)
     // only landed in local_3c and the other two reads picked up uninitialised
     // stack. Use a proper array to guarantee contiguity. Same pattern as the
-    // Terrain_Light.cpp FUN_004fa930 fix.
+    // Terrain_Light.cpp Entity_GetLightScale fix.
     float out[3] = {0.0f, 0.0f, 0.0f};
     float local_30[12];
     if (param_2 != 0) {
@@ -538,7 +538,7 @@ void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float 
         }
     }
 }
-// FUN_0045fec0 @ 0x0045FEC0 — Entity_FindNearby_SendPacket
+// Entity_FindNearby_SendPacket @ 0x0045FEC0 — Entity_FindNearby_SendPacket
 // Scans up to 400 entities for those within radius param_3 of world pos param_2.
 // Collects up to 5 entity IDs matching type/team filter (param_4/param_5).
 // If any found, sends C1-0x1d packet with entity list XOR-encrypted.
@@ -548,7 +548,7 @@ void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float 
 // param_4  = zone/flag byte written into packet
 // param_5  = team/guild ID (for player-type entity matching)
 // Returns 0 on no entities, 1 on packet sent or send error.
-float* __cdecl FUN_0045fec0(unsigned int param_1, float* param_2, float param_3, int param_4, short param_5)
+float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2, float param_3, int param_4, short param_5)
 {
     static const BYTE xorKey[32] = {
         0xe7,0x6d,0x3a,0x89,0xbc,0xb2,0x9f,0x73,0x23,0xa8,0xfe,0xb6,0x49,0x5d,0x39,0x5d,
@@ -666,11 +666,11 @@ float* __cdecl FUN_0045fec0(unsigned int param_1, float* param_2, float param_3,
     return (float*)(uintptr_t)1;
 }
 
-// FUN_0046fe90 @ 0x0046FE90 — Joint_SegmentTick(joint_ptr, mat)
+// Joint_SegmentTick @ 0x0046FE90 — Joint_SegmentTick(joint_ptr, mat)
 // Pushes all existing vertex segments one position forward (scroll back),
 // then computes 4 new billboard vertices (at ±half-width perpendicular offsets)
 // using Vector_Rotate and the weapon-scale constants _DAT_00552a14/_DAT_00552504.
-void __cdecl FUN_0046fe90(int param_1, float *param_2) {
+void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
     // PORT FIX: Ghidra decompile produced `float local_18[4], local_8, local_4;`
     // and wrote Vector_Rotate's 3-float output at `local_18 + 3`, expecting
     // local_18[4]==local_8 and local_18[5]==local_4. MSVC doesn't guarantee that
@@ -777,7 +777,7 @@ float __cdecl FUN_0043e4a0(float *param_1, float *param_2, float *param_3, float
 
     // VectorLength(Range) — el valor de retorno de la funcion.
     float local[3] = { dx, dy, dz };
-    return FUN_004f9c40(local);
+    return Vec3_Length(local);
 }
 
 // RenderItem3D @ 0x004E1BE0 — RenderItem3D

@@ -227,7 +227,7 @@ void __cdecl Entity_Render(void)
                 *(DWORD*)(model + 112) = *(DWORD*)(v0 - 241);
                 *(DWORD*)(model + 116) = *(DWORD*)(v0 - 237);
 
-                FUN_00503830(type, (int)model);
+                Entity_SetGravity(type, (int)model);
 
                 // BMD_Animation
                 float angles_in[3]  = { *(float*)(v0 - 233), *(float*)(v0 - 229), *(float*)(v0 - 225) };
@@ -1187,11 +1187,11 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 
 
 // FUN_00406f50 @ 0x00406F50 — Resource_LoadOrFatal(filename).
-// Original: calls FUN_0053D5A0 (Resource_Load). On failure: shows "IError"
+// Original: calls Resource_Load (Resource_Load). On failure: shows "IError"
 // MessageBox + Window_FatalError to terminate.
 //
 // PORT FIX (2026-04-25): the resource manager context (DAT_083bbb14) is never
-// initialized in our port — FUN_0053d5a0 always returns 0, which would make
+// initialized in our port — Resource_Load always returns 0, which would make
 // every caller fatal-error. The most visible offender is Game_SceneUpdate.cpp
 // case 0x14 (post-login Character list ready) which passes the username
 // "tester" as a filename → IError MessageBox blocks user from ever reaching
@@ -1201,7 +1201,7 @@ void __cdecl StopBuffer(int Buffer, int /*Object*/) { Sound_StopBuffer(Buffer); 
 // once the manager is wired up) but suppresses the modal + fatal exit. Once
 // resource loading is fully ported this guard can be removed.
 void __cdecl FUN_00406f50(char* param_1) {
-    (void)FUN_0053d5a0(param_1);
+    (void)Resource_Load(param_1);
     // Suppressed:
     // if ((char)uVar1 == '\0') {
     //     MessageBoxA((HWND)0, (LPCSTR)&lpText_07d63aec, "IError", 0);
@@ -1212,7 +1212,7 @@ void __cdecl FUN_00406f50(char* param_1) {
 
 // BMD__RotationPosition @ 0x00440a30 — implemented in Render/BMD_SetupRender.cpp
 // ItemObjectAttribute @ 0x00502ba0 — implemented in Entity/Entity_Reset.cpp
-// FUN_004553c0 @ 0x004553c0 — implemented in Render/BMD_SetupRender.cpp
+// Model_BoneParticle @ 0x004553c0 — implemented in Render/BMD_SetupRender.cpp
 // MoveCharacterClient — implemented in src/Render/Entity_Render.cpp
 // RenderCharacter — implemented in src/Render/Entity_UpdateRender.cpp (Entity_UpdateRender, 2195 lines)
 // Entity_RenderAll_3D — implemented in src/Render/Entity_Render.cpp

@@ -4,7 +4,7 @@
 // Packet_DecryptByte @ 0x00404330 — Packet_DecryptByte
 // Packet_EncryptByte @ 0x00423710 — Packet_EncryptByte
 // Packet_EncryptDword @ 0x00423760 — Packet_EncryptDword
-// FUN_00423c40 @ 0x00423c40 — Buffer_XorKey3
+// Buffer_XorKey3 @ 0x00423c40 — Buffer_XorKey3
 // Packet_EncryptBuffer @ 0x00404400 — Packet_EncryptBuffer (0x584 bytes)
 // Packet_DecryptDword @ 0x00409e20 — Packet_DecryptDword
 // HashTable_Insert @ 0x00403f80 — HashTable_Insert
@@ -17,12 +17,12 @@
 #include "stdafx.h"
 
 void __fastcall FUN_00401af0(void*);
-void  __fastcall FUN_00407950(void *node);
-int   __cdecl    FUN_00407b90(int a1, int a3, const float *range);
-void  __cdecl    FUN_00407c60(int a1, int a3, float rest);
-char  __fastcall FUN_00407d10(int a1);
-DWORD* __cdecl   FUN_00407e50(DWORD *node);
-void  __fastcall FUN_004088b0(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
+void  __fastcall SpringNode_Ctor(void *node);
+int   __cdecl    Cloth_SpringRange(int a1, int a3, const float *range);
+void  __cdecl    Cloth_SpringEqual(int a1, int a3, float rest);
+char  __fastcall VerletSystem_Flush(int a1);
+DWORD* __cdecl   ClothAnchor_Ctor(DWORD *node);
+void  __fastcall Spring_StoreEdge(void *sys, int idx, short na, short nb, float rest_scaled, float dist, BYTE flags);
 extern void __cdecl operator_delete(void* ptr);
 #ifndef delete__
 #define delete__(p) operator_delete((unsigned char*)(p))
@@ -31,10 +31,10 @@ extern void __cdecl operator_delete(void* ptr);
 // Agregadas por el refactor B3: se declaraban localmente en el archivo del
 // que se movieron estas funciones. Migrar a functions.h mas adelante.
 void __fastcall CSQuest_clearQuest(int param_1);
-void __fastcall FUN_004079b0(void *node, float x, float y, float z, int pinned);
-void __fastcall FUN_00407b30(void *node, float *out);
-float __fastcall FUN_00407b50(void *a, int b, float *c);
-void __fastcall FUN_00407ef0(void *node, float p1, float p2, float p3, float radius, int boneIdx);
+void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
+void __fastcall SpringNode_GetPos(void *node, float *out);
+float __fastcall SpringNode_Delta(void *a, int b, float *c);
+void __fastcall ClothAnchor_SetParams(void *node, float p1, float p2, float p3, float radius, int boneIdx);
 void __fastcall FUN_0053cbf0(int *param_1);
 void __cdecl FUN_0053cc00_impl(int param_1);
 
@@ -132,9 +132,9 @@ void __cdecl Packet_EncryptDword(void *param_1_v,void *param_2_v)
 }
 
 
-// FUN_00423c40 — Buffer_XorKey3
+// Buffer_XorKey3 — Buffer_XorKey3
 // Aplica XOR a cada byte de param_1[0..param_2-1] con PacketXorKey3[i % 3].
-void __cdecl FUN_00423c40(int param_1,int param_2)
+void __cdecl Buffer_XorKey3(int param_1,int param_2)
 {
   int iVar1;
 
@@ -771,8 +771,8 @@ void __cdecl Packet_DecryptBuffer(void *vparam_1, void *vparam_2) {
     operator_delete((unsigned char*)puVar2);
 }
 
-// ── FUN_00408e30 — movida desde stubs_externs.cpp (refactor B3) ──
-int  __cdecl    FUN_00408e30(DWORD *a1);
+// ── Cloth_Solve — movida desde stubs_externs.cpp (refactor B3) ──
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
@@ -846,7 +846,7 @@ int __cdecl FUN_00402850(void *param_1) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // FUN_00408ff0 @ 0x00408FF0 (~43 lines) — BMD mesh render: prepare vertices + draw front/back faces
-// __fastcall(ecx=meshObj). Aloca un buffer temporal de vértices (count*0xC), llama a FUN_00407b30 para transformar
+// __fastcall(ecx=meshObj). Aloca un buffer temporal de vértices (count*0xC), llama a SpringNode_GetPos para transformar
 // cada vértice, setea el modo de alpha según los flags de obj+0x14 (0=deshabilitar, 0x1000=alphaTest),
 // y después llama dos veces a FUN_004090b0, para la cara frontal (textura obj+0xC) y la trasera (textura obj+0x10).
 void __fastcall FUN_00408ff0(void* param_1) {
@@ -865,7 +865,7 @@ void __fastcall FUN_00408ff0(void* param_1) {
 
     for (int r = 0; r < rows; ++r)
         for (int c = 0; c < cols; ++c)
-            FUN_00407b30((void *)(nodes + 60 * (c + r * cols)),   // stride 0x3C
+            SpringNode_GetPos((void *)(nodes + 60 * (c + r * cols)),   // stride 0x3C
                          &verts[3 * (c + r * cols)]);
 
     unsigned flags = (unsigned)thiz[5] & 0x3000u;                 // +0x14
@@ -944,17 +944,17 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2,
     glVertex3f(vert[0], vert[1], vert[2]);
 }
 
-// ── FUN_00409250 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_00409250 @ 0x00409250 — VerletNode_AddToSystem: allocate node, init, insert into doubly-linked list.
+// ── VerletNode_AddToSystem — movida desde stubs_externs.cpp (refactor B3) ──
+// VerletNode_AddToSystem @ 0x00409250 — VerletNode_AddToSystem: allocate node, init, insert into doubly-linked list.
 // La cabeza de la lista está en this+0x50 (nodo de 0xc bytes: [0]=datos, [4]=next, [8]=prev). El contador en this+0x48.
 // La entrada nueva se inserta justo después del centinela de cabecera.
-void __cdecl FUN_00409250(void *widget, float p1, float p2, float p3, float radius, int boneIdx)
+void __cdecl VerletNode_AddToSystem(void *widget, float p1, float p2, float p3, float radius, int boneIdx)
 {
     char *thiz = (char*)widget;
     // allocate and construct VerletNode (0x24 bytes)
     void *node_raw = operator_new(0x24);
-    void *node = (node_raw == NULL) ? NULL : (void *)FUN_00407e50((DWORD *)node_raw);
-    FUN_00407ef0(node, p1, p2, p3, radius, boneIdx);
+    void *node = (node_raw == NULL) ? NULL : (void *)ClothAnchor_Ctor((DWORD *)node_raw);
+    ClothAnchor_SetParams(node, p1, p2, p3, radius, boneIdx);
 
     // aloca la entrada de la lista enlazada (0xc bytes: [+0]=node_ptr, [+4]=next, [+8]=prev)
     int *entry = (int *)operator_new(0xc);
@@ -988,13 +988,13 @@ void __cdecl FUN_00409250(void *widget, float p1, float p2, float p3, float radi
     }
 }
 
-// ── FUN_00409310 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-int   __cdecl    FUN_00409310(DWORD *thiz);                       // colisión con anclas
-void  __fastcall FUN_00407e10(void *a, float b, int c, int d);
-void  __fastcall FUN_00407e30(void *a, float *b);
-void  __fastcall FUN_00407b30(void *node, float *out);
+// ── Cloth_CollideAnchors — movida desde stubs_misc_helpers.cpp (refactor B3) ──
+int   __cdecl    Cloth_CollideAnchors(DWORD *thiz);                       // colisión con anclas
+void  __fastcall VerletNode_SetTarget(void *a, float b, int c, int d);
+void  __fastcall VerletNode_GetPos(void *a, float *b);
+void  __fastcall SpringNode_GetPos(void *node, float *out);
 
-// FUN_00408e30 @ 0x00408E30 — Cloth_Solve: una iteración del solver.
+// Cloth_Solve @ 0x00408E30 — Cloth_Solve: una iteración del solver.
 // Port FIEL de IDA `sub_408E30`.
 //   1. Recorre la lista de anclas y refresca su posición de MUNDO desde el
 //      hueso al que están atadas (`TransformPosition`). Ese es el bucle que
@@ -1004,7 +1004,7 @@ void  __fastcall FUN_00407b30(void *node, float *out);
 //   4. Flush de correcciones acumuladas (`sub_407D10`) sobre toda la grilla.
 //   5. Springs de rango (flags & 4): si alguno no converge, devuelve 0 para
 //      que `sub_408900` vuelva a iterar.
-int __cdecl FUN_00408e30(DWORD *a1)
+int __cdecl Cloth_Solve(DWORD *a1)
 {
   float Position[3];
   float WorldPosition[3];
@@ -1019,7 +1019,7 @@ int __cdecl FUN_00408e30(DWORD *a1)
   for (int i = *(int *)(a1[19] + 8); (int)a1[20] != i && i; i = *(int *)(i + 8))
   {
     DWORD *v5 = *(DWORD **)i;
-    FUN_00407e30(v5, Position);
+    VerletNode_GetPos(v5, Position);
     // IDA: rota el vector local (x,y,z) → (z,-y,x) antes de transformar.
     float v6 = Position[0];
     Position[1] = -Position[1];
@@ -1031,17 +1031,17 @@ int __cdecl FUN_00408e30(DWORD *a1)
         Position,
         WorldPosition,
         1);
-    FUN_00407e10(v5, WorldPosition[0], *(int *)&WorldPosition[1], *(int *)&WorldPosition[2]);
+    VerletNode_SetTarget(v5, WorldPosition[0], *(int *)&WorldPosition[1], *(int *)&WorldPosition[2]);
   }
 
-  FUN_00409310(a1);
+  Cloth_CollideAnchors(a1);
 
   // ── 2. springs de igualdad ────────────────────────────────────────────
   for (int v7 = 0, v8 = 0; v7 < (int)a1[14]; ++v7, v8 += 16)
   {
     float *v9 = (float *)(a1[15] + v8);
     if ((*(BYTE *)&v9[3] & 1) != 0)
-      FUN_00407c60(a1[13] + 60 * *(short *)v9, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
+      Cloth_SpringEqual(a1[13] + 60 * *(short *)v9, a1[13] + 60 * *((short *)v9 + 1), v9[2]);
   }
 
   // ── 3. flush de correcciones ──────────────────────────────────────────
@@ -1050,7 +1050,7 @@ int __cdecl FUN_00408e30(DWORD *a1)
     int v11 = a1[10];
     for (int k = 0; k < v11; ++k)
     {
-      FUN_00407d10(a1[13] + 60 * (k + j * v11));
+      VerletSystem_Flush(a1[13] + 60 * (k + j * v11));
       v11 = a1[10];
     }
   }
@@ -1062,7 +1062,7 @@ int __cdecl FUN_00408e30(DWORD *a1)
     int v14 = *((short *)v13 + 1);
     if (v14 >= (int)a1[10]
         && (*(BYTE *)&v13[3] & 4) != 0
-        && !FUN_00407b90(a1[13] + 60 * v14, a1[13] + 60 * *(short *)v13, v13 + 1))
+        && !Cloth_SpringRange(a1[13] + 60 * v14, a1[13] + 60 * *(short *)v13, v13 + 1))
     {
       return 0;
     }
@@ -1087,14 +1087,14 @@ void __fastcall FUN_004093c0(void *This) {
     FUN_00408070(This);
 }
 
-// ── FUN_004093e0 — movida desde stubs_externs.cpp (refactor B3) ──
-// FUN_004093e0 @ 0x004093E0 — SpringMesh_Create: builds triangle-mesh spring system from BMD face data.
+// ── SpringMesh_Create — movida desde stubs_externs.cpp (refactor B3) ──
+// SpringMesh_Create @ 0x004093E0 — SpringMesh_Create: builds triangle-mesh spring system from BMD face data.
 // Por cada vértice de cara: inicializa la posición del nodo desde el buffer de vértices de huesos (DAT_0584621c), lo marca como fijo si el tipo coincide.
-// Por cada arista de cara (3 por triángulo): calcula el largo de reposo vía FUN_00407b50, marca si es horizontal/vertical,
-// y agrega el resorte vía FUN_004088b0 a this->springs (stride 0x10; na,nb,rest_scaled,rest,flags).
+// Por cada arista de cara (3 por triángulo): calcula el largo de reposo vía SpringNode_Delta, marca si es horizontal/vertical,
+// y agrega el resorte vía Spring_StoreEdge a this->springs (stride 0x10; na,nb,rest_scaled,rest,flags).
 // Layout: this+4=entity, +8=type, +0x14=flags, +0x30=node_count, +0x34=node_array*, +0x38=spring_count,
 //         +0x3c=spring_array*, +0x54=slot_index, +0x5c=model_type.
-void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int radius, int flags)
+void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, int radius, int flags)
 {
     char *thiz = (char*)widget;
     *(int *)(thiz + 8)  = type;
@@ -1122,7 +1122,7 @@ void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int r
     } else {
         nodes = raw + 1;
         *raw  = node_count;
-        L_YGXPAXIHP6EX0_Z1_Z(nodes, 0x3c, node_count, (void*)FUN_00407950);
+        L_YGXPAXIHP6EX0_Z1_Z(nodes, 0x3c, node_count, (void*)SpringNode_Ctor);
     }
     *(int **)(thiz + 0x34) = nodes;
 
@@ -1146,7 +1146,7 @@ void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int r
         float y = verts[vi * 3 + 1];
         float z = verts[vi * 3 + 2];
         int pinned = ((int)*(short *)(vert_indices + i * 4) == type) ? 1 : 0;
-        FUN_004079b0((char*)nodes + i * 0x3c, x, y, z, pinned);
+        SpringNode_SetPos((char*)nodes + i * 0x3c, x, y, z, pinned);
     }
 
     // build springs from face triangle edges
@@ -1160,12 +1160,12 @@ void __cdecl FUN_004093e0(void *widget, int entity, short *slot, int type, int r
             int pA = (int)nodes + na * 0x3c;
             int pB = (int)nodes + nb * 0x3c;
             float delta[3];
-            float dist = FUN_00407b50((void*)pA, pB, delta);
+            float dist = SpringNode_Delta((void*)pA, pB, delta);
             float posA[3], posB[3];
-            FUN_00407b30((void*)pA, posA);
-            FUN_00407b30((void*)pB, posB);
+            SpringNode_GetPos((void*)pA, posA);
+            SpringNode_GetPos((void*)pB, posB);
             BYTE edge_flags = (BYTE)(2 | (fabsf(posA[0] - posB[0]) <= _DAT_00552560 ? 4 : 1));
-            FUN_004088b0(widget, (int)sp, na, nb, dist * _DAT_00552504, dist, edge_flags);
+            Spring_StoreEdge(widget, (int)sp, na, nb, dist * _DAT_00552504, dist, edge_flags);
             sp++;
         }
     }
@@ -1215,11 +1215,11 @@ void __fastcall Locimp_dtor(void* param_1) {
 
 // ── FUN_00409d20 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00409d20 @ 0x00409D20 (~34 lines) — CSQuest: clear all quest nodes from linked list
-// __fastcall(ecx=questObj). Itera desde head->next hasta tail, llama a FUN_004086e0 sobre los datos
+// __fastcall(ecx=questObj). Itera desde head->next hasta tail, llama a Widget_Release sobre los datos
 // de cada nodo y después invoca el destructor vía la vtable. Libera todos los nodos intermedios.
 void __fastcall FUN_00409d20(int param_1) {
     // Recorre desde (param_1+8)->next hasta llegar al centinela (param_1+0xC):
-    //   FUN_004086e0(*node) — cleanup node data
+    //   Widget_Release(*node) — cleanup node data
     //   (*node->vtable[0])(1) — destructor with free
     // Free all intermediate nodes
     // Re-link head<->tail, count=0
@@ -1250,11 +1250,11 @@ void FUN_00409ea0(void) { FUN_0040a600((void *)&DAT_00590b00); }
 // FUN_00409eb0 @ 0x00409EB0 (12 bytes)
 void FUN_00409eb0(void) {}
 
-// ── FUN_00409ed0 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-// FUN_00409ed0 @ 0x00409ED0 — WidgetB_Ctor: set vtable + zero fields.
-void* __fastcall FUN_00409ed0(void *param_1)
+// ── WidgetB_Ctor — movida desde stubs_misc_helpers.cpp (refactor B3) ──
+// WidgetB_Ctor @ 0x00409ED0 — WidgetB_Ctor: set vtable + zero fields.
+void* __fastcall WidgetB_Ctor(void *param_1)
 {
-    FUN_00409f20((int)param_1);
+    WidgetB_ZeroFields((int)param_1);
     // vtable set skipped
     return param_1;
 }
@@ -1262,23 +1262,23 @@ void* __fastcall FUN_00409ed0(void *param_1)
 // ── FUN_00409ef0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00409ef0 @ 0x00409EF0 — WidgetC ~dtor
 void __fastcall FUN_00409ef0(int ecx, int /*edx*/, BYTE param_1) {
-    FUN_00409f10((void *)ecx);
+    WidgetB_SetVtable((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00409f10 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-// FUN_00409f10 @ 0x00409F10 — WidgetB_SetVtable: sólo setea el puntero de vtable.
-void __fastcall FUN_00409f10(void *param_1)
+// ── WidgetB_SetVtable — movida desde stubs_misc_helpers.cpp (refactor B3) ──
+// WidgetB_SetVtable @ 0x00409F10 — WidgetB_SetVtable: sólo setea el puntero de vtable.
+void __fastcall WidgetB_SetVtable(void *param_1)
 {
     // vtable = &PTR_FUN_00552574 — skipped in re-impl
     (void)param_1;
 }
 
-// ── FUN_00409f20 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-// ── FUN_00409f20/ed0/f10/0040a660 — second widget type ctor chain ────────────
+// ── WidgetB_ZeroFields — movida desde stubs_misc_helpers.cpp (refactor B3) ──
+// ── WidgetB_ZeroFields/ed0/f10/0040a660 — second widget type ctor chain ────────────
 
-// FUN_00409f20 @ 0x00409F20 — WidgetB_ZeroFields: clear 4 fields (+4,+8,+0x18,+0x1c).
-void __fastcall FUN_00409f20(int param_1)
+// WidgetB_ZeroFields @ 0x00409F20 — WidgetB_ZeroFields: clear 4 fields (+4,+8,+0x18,+0x1c).
+void __fastcall WidgetB_ZeroFields(int param_1)
 {
     *(short *)(param_1 + 4) = 0;
     *(int *)(param_1 + 8)   = 0;
@@ -1310,7 +1310,7 @@ void __fastcall FUN_0040a0a0(void *This, int /*edx*/, int param_1, int param_2, 
     *(DWORD *)((int)This + 0x10) = 0x3cf5c28f;
     *(DWORD *)((int)This + 0x14) = 0xbf800000;
     *(float *)((int)This + 0xc) = -1.0f;
-    FUN_004f9d60((float *)((int)This + 0xc));
+    Vec3_Normalize((float *)((int)This + 0xc));
     int iVar1 = FUN_00409f30(This, NULL, param_1, param_2, param_3, param_4);
     if (iVar1 != 0) {
         FUN_0040a300(This, NULL, param_1);

@@ -3846,7 +3846,7 @@ LAB_00465641:
     *param_2 = local_48 + *param_2;
     param_2[1] = local_44 + param_2[1];
     param_2[2] = local_40 + param_2[2];
-    pfVar12 = (float *)FUN_0045fec0((uint)bVar1,param_2,150.0,bVar6,sVar28);
+    pfVar12 = (float *)Entity_FindNearby_SendPacket((uint)bVar1,param_2,150.0,bVar6,sVar28);
     iVar9 = iVar9 + -1;
   } while (iVar9 != 0);
   return pfVar12;
@@ -4066,7 +4066,7 @@ LAB_00461ce3:
   bVar6 = *(byte *)(pfVar17 + 0x22);
   fVar27 = 400.0;
 LAB_00463ca2:
-  pfVar12 = (float *)FUN_0045fec0((uint)*(byte *)((int)pfVar17 + 0x85),pfVar17 + 4,fVar27,bVar6,
+  pfVar12 = (float *)Entity_FindNearby_SendPacket((uint)*(byte *)((int)pfVar17 + 0x85),pfVar17 + 4,fVar27,bVar6,
                                   sVar28);
   return pfVar12;
   while( true ) {

@@ -1743,8 +1743,8 @@ void __cdecl Player_ProcessInput(void)
                     // BUG-FIX 2026-04-29: reset closest-hit sentinel ANTES de
                     // cada scan. Sin esto, CollisionDetectLineToFace rechaza todos los hits
                     // si DAT_083a4120 (t_max) quedó stale de un frame previo.
-                    extern void FUN_00512d30(void);
-                    FUN_00512d30();
+                    extern void Map_InitRayCast(void);
+                    Map_InitRayCast();
                     DAT_07eab1fc = 0;             // reset hit flag
                     RenderTerrain('\x01');         // iterate tiles + raycast
 

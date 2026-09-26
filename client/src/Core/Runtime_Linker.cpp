@@ -7,7 +7,7 @@
 
 extern "C" DWORD GoldenArcherOpenType;   // Golden Archer panel flag (globals.cpp)
 extern void __cdecl operator_delete(void* ptr);
-extern void FUN_004fa5a0(void);
+extern void ClearActionObject(void);
 
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
@@ -42,7 +42,7 @@ extern void FUN_004fa5a0(void);
 // Selects animation based on equipment, class, terrain. Most bulk is anti-tamper hash ops.
 // 2026-08-08 BUG-FIX (el MG se renderizaba como Dark Wizard, con casco y con
 // rayas): este stub coexistía con el port REAL de SetPlayerStop
-// (`SetPlayerStop`, Net/SecondPassword.cpp). `FUN_0045c720` llamaba a ESTE, y el
+// (`SetPlayerStop`, Net/SecondPassword.cpp). `Character_UpdateEquipSlotAnimations` llamaba a ESTE, y el
 // stub hacía:
 //     *(BYTE*)(entity + 0x1bc) &= ~0x07;   // "clear movement bits"
 // pero **0x1BC NO son move flags: es el byte de CLASE/skin** (lo leen

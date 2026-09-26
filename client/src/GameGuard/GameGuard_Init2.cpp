@@ -66,7 +66,7 @@ extern "C" {
     int   __cdecl FUN_00540520(void *ctx);                       // GG_Check32Bit
     int   __cdecl FUN_00540660(void *ctx);                       // GG_Check64Bit
     int   __cdecl FUN_0053efa0(void *ctx, int val);              // GG_ValidateNP
-    void  __cdecl FUN_005404a0(int a, int b, char *c);           // GG_Report
+    void  __cdecl Pipe_Write(int a, int b, char *c);           // GG_Report
     char  __cdecl mbsrchr(char *str, char ch);              // GG_StrRChr
 }
 
@@ -475,7 +475,7 @@ int __cdecl FUN_0053d890(void *gg_ctx, unsigned char *param_1)
                     }
                 }
                 FUN_0053eba0(piLog, &DAT_00562f5c);
-                FUN_005404a0(0x8b1, 0x611, *(char **)((int)gg_ctx + 0x2c4));
+                Pipe_Write(0x8b1, 0x611, *(char **)((int)gg_ctx + 0x2c4));
                 FUN_0053fdd0();
                 FUN_0053feb0();
                 unsigned char *sok = (unsigned char *)FUN_0053e8c0(&DAT_00562f3c);

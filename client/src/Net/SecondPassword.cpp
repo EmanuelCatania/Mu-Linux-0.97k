@@ -155,7 +155,7 @@ extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetWarehouseItems[];
 extern "C" BYTE OffsetMixItems[];
 
-// 2026-05-07: B3 refactor — SecondPassword screens (FUN_004e4760 .. FUN_004ec330)
+// 2026-05-07: B3 refactor — SecondPassword screens (SecondPassword_Screen1 .. FUN_004ec330)
 // moved from stubs.cpp lines 6961-8495 (1535 lines). Full implementation below.
 
 // IDA: SecondPassword_Handler (0x004E93A0)
@@ -220,7 +220,7 @@ unsigned int __cdecl SecondPassword_Handler(void)
                 if (mode == 4) {
                     // Guarda el PIN y pide repetirlo con el teclado rebarajado.
                     const unsigned int typed = *(unsigned int*)&DAT_07ea9814[0];
-                    FUN_004e9250(5);                  // baraja + DAT_07eaa14c = 5
+                    SecondPassword_Shuffle(5);                  // baraja + DAT_07eaa14c = 5
                     memset(DAT_07ea9814, 0, sizeof(DAT_07ea9814));
                     DAT_07ea981f = typed;
                 } else if (mode == 5) {
@@ -291,13 +291,13 @@ static bool GetGuildCreatorOrigin(int& originX, int& originY)
     return (originX != 0 || originY != 0);
 }
 
-// FUN_004e4760 @ 0x004E4760 — SecondPassword_Screen1 (727 lines)
+// SecondPassword_Screen1 @ 0x004E4760 — SecondPassword_Screen1 (727 lines)
 //   - Chequea DAT_07eaa124 (hover habilitado). Si DAT_07eaa144==1: grilla de click para 8 botones
 //     (8×0x0F tiles con origen en DAT_07ea5b1c/20+100), escribe el array DAT_07ea51f5 con DAT_07eaa0dc.
 //   - Segunda pasada: itera los pasos de DAT_07ea5b18 (+0x32 cada uno), los compara con la posición del mouse para encontrar
 //     hovered button index, sets DAT_07ea51ed.
 //   - SEH + llamadas a UI_SetScene(0x19/0x1c). Implementado en SecondPassword_UI.cpp.
-void __cdecl FUN_004e4760(void) {
+void __cdecl SecondPassword_Screen1(void) {
     // 2026-05-04: BUG-FIX del sonido de click fantasma del lado izquierdo. El sub_4E4760 de IDA es
     // el hit-test del diálogo GuildCreator (gatea con GuildCreatorOpened, usa
     // Inventory[32].Level/Part as panel origin). Our port had wrong gate
@@ -320,7 +320,7 @@ void __cdecl FUN_004e4760(void) {
     }
 
     if (DAT_07eaa144 == 1) {
-        // IDA: FUN_004E4760. La grilla de edición tiene 8 filas de 8 celdas;
+        // IDA: SecondPassword_Screen1. La grilla de edición tiene 8 filas de 8 celdas;
         // cada celda conserva un índice de color completo en DAT_07ea51f5.
         // La compresión a 32 bytes ocurre únicamente al enviar el paquete 0x55.
         *(DWORD*)(DAT_07abf5d8 + 0x24) = 0x42e10000;
@@ -339,7 +339,7 @@ void __cdecl FUN_004e4760(void) {
             }
         }
 
-        // IDA: FUN_004E4760 — paleta 2×8, índice lineal fila*8+col.
+        // IDA: SecondPassword_Screen1 — paleta 2×8, índice lineal fila*8+col.
         for (int row = 0; row < 2; ++row) {
             const int colorY = originY + 260 + row * 20;
             for (int col = 0; col < 8; ++col) {
@@ -430,7 +430,7 @@ void __cdecl FUN_004e4760(void) {
                         memcpy(pkt + 11, mark, 32);
                         Net_SendC1Packet(pkt, 43);
 
-                        // IDA: FUN_004E4760 cae al cierre común inmediatamente
+                        // IDA: SecondPassword_Screen1 cae al cierre común inmediatamente
                         // después de encolar 0x55: limpia el input, cierra el
                         // editor y reinicia el intervalo de mouse 0/6.
                         GuildCreator_CloseFromResult();
@@ -568,7 +568,7 @@ void __cdecl FUN_004e5500(void) {
         DAT_00559bec = 6;
     }
 }
-// FUN_004e5de0 @ 0x004E5DE0 — SecondPassword_Screen3 (443 lines)
+// SecondPassword_Screen3 @ 0x004E5DE0 — SecondPassword_Screen3 (443 lines)
 // Envío del paquete de selección de personaje: por cada uno de los hasta 0x10 botones de personaje de la columna,
 // chequea si el mouse clickeó en el área de la fila [DAT_07ea982c+0x7d,+0x95) x [DAT_07ea9830+0x73+row*15, +0x18).
 // Guard de entrada: DAT_07eaa116 tiene que ser distinto de cero. También chequea *(short*)(DAT_07cf1ff4+0x54) != 0.
@@ -580,7 +580,7 @@ void __cdecl FUN_004e5500(void) {
 // HashTable ref-count noise around DAT_07cf1ffc is anti-tamper, skipped.
 // Back button [DAT_07ea982c+0x19,+0x31) x [DAT_07ea9830+0x18b,+0x1a3):
 //   → clear DAT_07eaa116, PlayBuffer(0x19/0x1c), DAT_07e11d28=0, DAT_00559bec=6.
-void __cdecl FUN_004e5de0(void) {
+void __cdecl SecondPassword_Screen3(void) {
     // 2026-05-04: BUG-FIX phantom click. IDA sub_4E5DE0 = Character panel
     // hit-test, usa CharacterInfoStartX/Y como base. Nuestro port usa
     // uninitialized DAT_07ea982c/30 (=0) → fake hit-tests at left side fire
@@ -663,13 +663,13 @@ void __cdecl FUN_004e5de0(void) {
         DAT_00559bec = 6;
     }
 }
-// FUN_004e6550 @ 0x004E6550 — SecondPassword_Screen4 (257 lines)
+// SecondPassword_Screen4 @ 0x004E6550 — SecondPassword_Screen4 (257 lines)
 //   - Wrong-password error handler: displays SetErrorMessage error dialog for various
 //     server error codes. Resets PIN buffer (DAT_07ea9814/18/1c = 0).
 //   - Contiene una llamada a __ftol() (FPU ST0 → long) para el límite Y del botón, con origen float desconocido.
 //     Casi toda la lógica (ruido de ref-count de HashTable + zonas de hover) está limpia, pero el origen del FPU
 //     unresolvable without call-site context. STUB: __ftol() button region.
-void __cdecl FUN_004e6550(void) {
+void __cdecl SecondPassword_Screen4(void) {
     // SecondPassword_Screen4 — wrong-password error handler + char-list item visibility reset
     // Setea DAT_07d78094=1 si el mouse está sobre el panel principal, resetea los arrays de visibilidad por personaje,
     // y llama a FUN_004d1fc0 o FUN_004d23b0 para renderizar la grilla.
@@ -682,7 +682,7 @@ void __cdecl FUN_004e6550(void) {
         DAT_07d78094 = 1;
     }
 
-    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa118);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118);
     char sv1 = DAT_07eaa118;
     {
         uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
@@ -715,7 +715,7 @@ void __cdecl FUN_004e6550(void) {
         DAT_07d78094 = 1;
     }
 
-    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv2 = DAT_07eaa11b;
     {
         uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
@@ -817,11 +817,11 @@ void __cdecl FUN_004e6550(void) {
 
     DAT_07eaa138 = 0;
     // Char-count check and back-button
-    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv3 = DAT_07eaa11b;
     PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     if (sv3 == '\0') {
-        FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa118);
+        HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118);
         char sv4 = DAT_07eaa118;
         PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
         if (sv4 == '\0' && DAT_07eaa119 == '\0' && DAT_07eaa11a == '\0' && GoldenArcherOpenType == 0) {
@@ -852,7 +852,7 @@ void __cdecl FUN_004e6550(void) {
         }
     }
 
-    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv5 = DAT_07eaa11b;
     PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     if (sv5 != '\0') {
@@ -875,7 +875,7 @@ void __cdecl FUN_004e6550(void) {
     // Sincronizamos el global con los valores del render para que coincidan.
     DAT_07eaa0c8 = 260;
     DAT_07eaa0cc = 0;
-    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa118);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118);
     char sv6 = DAT_07eaa118;
     PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (sv6 != '\0') {
@@ -900,11 +900,11 @@ void __cdecl FUN_004e6550(void) {
                      (short*)OffsetMixItems, 8, 4, '\0');
     }
 }
-// FUN_004e6c40 @ 0x004E6C40 — SecondPassword_Screen5 (783 lines)
+// SecondPassword_Screen5 @ 0x004E6C40 — SecondPassword_Screen5 (783 lines)
 //   - Main second-password entry UI: draws 10-button numeric keypad, handles click
 //     (appends digit to DAT_07ea9814 buffer), Enter → sends packet, ESC → cancel.
 //   - SEH. Implemented in SecondPassword_UI.cpp.
-void __cdecl FUN_004e6c40(void) {
+void __cdecl SecondPassword_Screen5(void) {
     // Click del selector de nivel del evento.  El binario NO tiene aca ningun
     // teclado de PIN: son 4 filas (Devil Square) o 6 (Blood Castle) alineadas
     // con las que dibuja `RenderEventWindow` (0x4F3C50).
@@ -1081,14 +1081,14 @@ void __cdecl FUN_004e8b70(void) {
 // DAT_07eaa140 must be 0 (no timeout in progress), DAT_083a4124 must be non-zero (click pending).
 // Switch on MixType:
 //   0         → UIChatLogWindow_AddText(&DAT_07eaa1a0, &DAT_07d544d4, 2) — show wrong-PIN message
-//   1,2,3,4,5,6,7,8,0xb → FUN_004e3db0(0x7ea8410, 8, 8, iVar1, iVar3) — send auth
+//   1,2,3,4,5,6,7,8,0xb → SecondPassword_GridSlotAvail(0x7ea8410, 8, 8, iVar1, iVar3) — send auth
 //     sub-switch: cases 1,7,0xb → iVar1=5 iVar3=4; case 8 → iVar1=2 iVar3=2; else → iVar1=DAT_0055a3f8 iVar3=DAT_0055a3fc
 //     si tiene éxito (retorno distinto de cero) y DAT_07e91388 < 1: setea DAT_07eaa13c=2, DAT_00559f5e=0xff,
 //     call ShowCheckBox(1, 0x21b, 0x97)
 //   0xfffffff8, 0xfffffffe → UIChatLogWindow_AddText(&DAT_07eaa19c, &DAT_07d55c44, 2) — show error message
 // After switch: PlayBuffer(0x19,0,0).
 // "Back" button: [DAT_07ea5288+0x19,DAT_07ea5288+0x31) x [DAT_07ea5284+0x18b,DAT_07ea5284+0x1a3)
-//   → FUN_004f6850(); DAT_07e11d28=0; DAT_00559bec=6; PlayBuffer(0x19,0,0).
+//   → SecondPassword_CancelReturn(); DAT_07e11d28=0; DAT_00559bec=6; PlayBuffer(0x19,0,0).
 void __cdecl FUN_004e9050(void) {
     if (DAT_07eaa11a == '\0') return;
 
@@ -1121,7 +1121,7 @@ void __cdecl FUN_004e9050(void) {
             // 004E3DB0 comprueba que exista espacio en el inventario normal
             // para el resultado; en el binario el primer argumento era la
             // dirección absoluta de ese pool, no un literal portable.
-            uint uVar2 = FUN_004e3db0((int)(uintptr_t)OffsetInventoryItems, 8, 8, iVar1, iVar3);
+            uint uVar2 = SecondPassword_GridSlotAvail((int)(uintptr_t)OffsetInventoryItems, 8, 8, iVar1, iVar3);
             if ((char)uVar2 == '\0') {
                 UIChatLogWindow_AddText(&DAT_07eaa198, &DAT_07d54600, 2);
             } else {
@@ -1149,13 +1149,13 @@ void __cdecl FUN_004e9050(void) {
         IsClickPushed()) {
 
         DAT_083a4124 = '\0';
-        FUN_004f6850();
+        SecondPassword_CancelReturn();
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         PlayBuffer(0x19, 0, 0);
     }
 }
-// FUN_004eb5d0 @ 0x004EB5D0 — SecondPassword_Screen9 (102 lines)
+// SecondPassword_Screen9 @ 0x004EB5D0 — SecondPassword_Screen9 (102 lines)
 // Detección de fila del teclado numérico del diálogo de segunda contraseña.
 // Chequea 4 filas de botones en los offsets x {0x1a, 0x4c, 0x7e, 0xd7} (0x18 de ancho cada uno)
 // y los offsets y {0x186, 0x186, 0x186, 0x18b} relativos a DAT_07eaa0c8/0cc.
@@ -1165,8 +1165,8 @@ void __cdecl FUN_004e9050(void) {
 //   2 → shuffle/new-PIN: shuffle DAT_07e91394 short[10] via Fisher-Yates (20 passes),
 //        reset _DAT_07ea9814=0, DAT_07ea9818=0, DAT_07eaa14c = 4 - DAT_00559f5f,
 //        DAT_07ea981c=0, DAT_07ea981e=0
-//   3 → exit: FUN_004f6a70(); DAT_07e11d28=0; DAT_00559bec=6
-void __cdecl FUN_004eb5d0(void) {
+//   3 → exit: Net_Disconnect_Clean(); DAT_07e11d28=0; DAT_00559bec=6
+void __cdecl SecondPassword_Screen9(void) {
     if (DAT_07eaa119 == '\0') return;
 
     static const int xOff[4] = { 0x1a, 0x4c, 0x7e, 0xd7 };
@@ -1229,7 +1229,7 @@ void __cdecl FUN_004eb5d0(void) {
         break;
     }
     case 3:
-        FUN_004f6a70();
+        Net_Disconnect_Clean();
         DAT_07e11d28 = 0;
         DAT_00559bec = 6;
         break;
@@ -1241,7 +1241,7 @@ void __cdecl FUN_004eb5d0(void) {
 void __cdecl FUN_004eb7f0(void) {
     // IDA: el guard lee TradeOpened; se omite únicamente el ruido de HashTable.
 
-    FUN_0043d8a0(&MAIN_HASH_CLASS, &DAT_07eaa11b);
+    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char cGuard = DAT_07eaa11b;
     {
         uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
@@ -1420,11 +1420,11 @@ void __cdecl FUN_004ec330(void) {
 // -- incluidos los descriptores de boton {1,21,90,70,21} y {3,120,90,70,21} --
 // asi que se queda esa y sus 3 call sites pasan a llamarla.
 
-// FUN_004e3db0 @ 0x004E3DB0 — SecondPassword_GridSlotAvail
+// SecondPassword_GridSlotAvail @ 0x004E3DB0 — SecondPassword_GridSlotAvail
 // Escanea una grilla 2D (param_3×param_2 filas/columnas) en el array de inventario en param_1,
 // con stride 0x44 por celda; devuelve 1 si alguna celda de la ventana está libre (slot==-1), si no 0.
-// FUN_004e3db0 (IDA-activated, was Ghidra stub)
-uint __cdecl FUN_004e3db0(int a1, int a2, int a3, int a4, int a5)
+// SecondPassword_GridSlotAvail (IDA-activated, was Ghidra stub)
+uint __cdecl SecondPassword_GridSlotAvail(int a1, int a2, int a3, int a4, int a5)
 {
   int v5; // ebp
   int v6; // eax
@@ -1508,10 +1508,10 @@ LABEL_16:
 }
 
 
-// FUN_004f6850 @ 0x004F6850 — SecondPassword_CancelReturn
+// SecondPassword_CancelReturn @ 0x004F6850 — SecondPassword_CancelReturn
 // Chequea si hay slots de entidad de segunda contraseña ocupados; si los hay, muestra el diálogo.
 // Otherwise sends a cancel packet (C1 03 87) over the socket.
-undefined4 __cdecl FUN_004f6850(void)
+undefined4 __cdecl SecondPassword_CancelReturn(void)
 {
     if (!ChaosMixOpened) return 0;
     return ChaosBoxRequestClose() ? 1 : 0;
@@ -1558,9 +1558,9 @@ undefined4 __cdecl FUN_004f6850(void)
 #endif
 }
 
-// FUN_004f6a70 @ 0x004F6A70 — Net_Disconnect_Clean
+// Net_Disconnect_Clean @ 0x004F6A70 — Net_Disconnect_Clean
 // Limpia el estado de la UI y después manda un paquete de desconexión (C1 03 82) por el socket.
-uint __cdecl FUN_004f6a70(void)
+uint __cdecl Net_Disconnect_Clean(void)
 {
     if (DAT_07eaa165 != '\0') return 0;
     DAT_07eaa117 = 0;
@@ -2311,7 +2311,7 @@ label_119:
 void __cdecl MoveCharacterPosition(int param_1) {
     float local_30[12];
     float vel[3] = { 0.0f, -(float)CharacterMoveSpeed(param_1), 0.0f };
-    // PORT FIX: el mismo artefacto de float[3] partido por Ghidra que en Terrain_Light FUN_004fa930.
+    // PORT FIX: el mismo artefacto de float[3] partido por Ghidra que en Terrain_Light Entity_GetLightScale.
     // local_3c/local_38/local_34 eran el buffer de salida contiguo de 3 floats que
     // esperaba Vector_Rotate, pero MSVC no garantiza el layout de los locales.
     float out[3] = {0.0f, 0.0f, 0.0f};
@@ -2680,7 +2680,7 @@ void __cdecl RenderTerrain(char EditFlag) {
 
     if (EditFlag) {
         DAT_07eab1fc = 0;                 // SelectFlag = 0
-        FUN_00512d30();                   // Map_InitRayCast (sub_512D30)
+        Map_InitRayCast();                   // Map_InitRayCast (sub_512D30)
     } else {
         GL_ResetState();                   // DisableAlphaBlend
     }
@@ -2701,7 +2701,7 @@ void __cdecl RenderTerrain(char EditFlag) {
             DAT_0838bc44 = 2;             // TerrainFlag = 2
             RenderTerrainFrustrum(false);
         }
-        FUN_004f7060();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
+        Terrain_SpawnAmbientObjects();                   // Terrain_SpawnAmbientObjects (sub_4F7060)
         GL_DisableDepthTest();                   // DisableDepthTest
         GL_EnableCullFace();                   // EnableCullFace
         FUN_00479540();                   // RenderTerrainAlphaBitmaps (sub_479540)
@@ -2709,7 +2709,7 @@ void __cdecl RenderTerrain(char EditFlag) {
     }
 
     DAT_0839bc88 ^= 1u;                   // terrain-light double-buffer toggle
-    FUN_004f9a30((int)DAT_0839bc88);
+    Terrain_WaterWaveUpdate((int)DAT_0839bc88);
 }
 
 #if 0
@@ -4225,7 +4225,7 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         }
 
         extern void __cdecl AddTerrainLight(float x, float y, float* light, int range, float* buffer);
-        extern int __cdecl FUN_004793f0(int a1, DWORD *a2, int a3, DWORD *a4, int a5);
+        extern int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5);
         // 004520C0 L697-725: equipped-item terrain light.  The two item
         // los registros arrancan en c+624 y c+648 (stride de 24 bytes).
         if (*(unsigned char *)(entity_ptr + 746) < 6) {
@@ -4527,12 +4527,12 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
             }
             break;
         }
-        // 0x13E — IDA raw L1118-1128; sub_4793F0 == FUN_004793f0 (verificado en IDA).
+        // 0x13E — IDA raw L1118-1128; sub_4793F0 == FloatingLabel_Add (verificado en IDA).
         case 0x13E:
             if (!(rand() % 5)) {
                 float p[3] = {(float)(rand() % 21 - 10) * 3.6571429f + *(float *)(entity_ptr + 16),
                               (float)(rand() % 21 - 10) * 3.6571429f + *(float *)(entity_ptr + 20), 0.0f};
-                FUN_004793f0(1205, (DWORD *)p, *(int *)(entity_ptr + 28), (DWORD *)(entity_ptr + 232), 0x3F266666);
+                FloatingLabel_Add(1205, (DWORD *)p, *(int *)(entity_ptr + 28), (DWORD *)(entity_ptr + 232), 0x3F266666);
             }
             break;
 
@@ -4670,14 +4670,14 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
         const unsigned char action = *(unsigned char *)(entity_ptr + 261);
         if ((action >= 13 && action <= 33) || action == 79 || action == 80) {
             const float frame = *(float *)(entity_ptr + 264);
-            extern char FUN_00451a90();
+            extern char Sound_PlayFootstep();
             if (frame >= 1.5f && !*(unsigned char *)(entity_ptr + 844)) {
                 *(unsigned char *)(entity_ptr + 844) = 1;
-                FUN_00451a90();
+                Sound_PlayFootstep();
             }
             if (frame >= 4.5f && !*(unsigned char *)(entity_ptr + 845)) {
                 *(unsigned char *)(entity_ptr + 845) = 1;
-                FUN_00451a90();
+                Sound_PlayFootstep();
             }
         }
     }

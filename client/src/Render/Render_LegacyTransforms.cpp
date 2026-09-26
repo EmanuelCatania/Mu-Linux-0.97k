@@ -8,10 +8,10 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "functions.h"
 
 // -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// FUN_00408cb0 vive ahora en Scene/Scene_CharSelect_Nav.cpp y FUN_00408e30 en
+// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
 // Net/Crypto.cpp; antes se definian en este archivo.
-void __fastcall FUN_00408cb0(int*, float);
-int  __cdecl    FUN_00408e30(DWORD *a1);
+void __fastcall Cloth_Integrate(int*, float);
+int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
@@ -45,10 +45,10 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// FUN_004f9e90 @ 0x004F9E90 — EulerToMatrix(angles[3], out_mat[12])
+// EulerToMatrix @ 0x004F9E90 — EulerToMatrix(angles[3], out_mat[12])
 // Converts Euler angles (in game units × π/180) to 3×4 rotation matrix.
 // Row-major: out[0..2]=X-row, out[4..6]=Y-row, out[8..10]=Z-row; out[3,7,11]=0.
-void __cdecl FUN_004f9e90(float *param_1, float *param_2) {
+void __cdecl EulerToMatrix(float *param_1, float *param_2) {
     float sz = sinf(param_1[2] * Math_DegreesToRadians);
     float cz = cosf(param_1[2] * Math_DegreesToRadians);
     float sy = sinf(param_1[1] * Math_DegreesToRadians);
@@ -86,10 +86,10 @@ void __cdecl R_ConcatTransforms(float *p, float *r, float *o) {
     o[11] = r[3]*p[8]  + p[9]*r[7]  + p[10]*r[11] + p[11];
 }
 
-// FUN_004fa1d0 @ 0x004FA1D0 — EulerToQuat(angles[3], out_quat[4])
+// EulerToQuat @ 0x004FA1D0 — EulerToQuat(angles[3], out_quat[4])
 // Converts Euler XYZ (game angle units) to quaternion (x,y,z,w).
 // Declared as (int,int,int,int) in functions.h; callers pass float* cast to int.
-void __cdecl FUN_004fa1d0(int ia, int ib, int ic, int id) {
+void __cdecl EulerToQuat(int ia, int ib, int ic, int id) {
     float *param_1 = (float*)ia;
     float *param_2 = (float*)ib;
     (void)ic; (void)id;
@@ -105,9 +105,9 @@ void __cdecl FUN_004fa1d0(int ia, int ib, int ic, int id) {
     param_2[3] = (float)(cx * cy * cz + sxsy * sz);
 }
 
-// FUN_004fa270 @ 0x004FA270 — QuatToMatrix(quat[4], out_mat[12])
+// QuatToMatrix @ 0x004FA270 — QuatToMatrix(quat[4], out_mat[12])
 // Converts unit quaternion to 3×3 rotation matrix (stored in [0,1,2,4,5,6,8,9,10]).
-void __cdecl FUN_004fa270(int ia, int ib, int ic, int id) {
+void __cdecl QuatToMatrix(int ia, int ib, int ic, int id) {
     float *q = (float*)ia;
     float *m = (float*)ib;
     (void)ic; (void)id;
@@ -125,9 +125,9 @@ void __cdecl FUN_004fa270(int ia, int ib, int ic, int id) {
     m[10] = _DAT_00552cf0 - (y2+y2) - (x2+x2);
 }
 
-// FUN_004fa350 @ 0x004FA350 — QuatSlerp(q1[4], q2[4], t, out[4])
+// QuatSlerp @ 0x004FA350 — QuatSlerp(q1[4], q2[4], t, out[4])
 // Spherical linear interpolation between two quaternions.
-void __cdecl FUN_004fa350(int ia, int ib, int ic, int id) {
+void __cdecl QuatSlerp(int ia, int ib, int ic, int id) {
     float *q1  = (float*)ia;
     float *q2  = (float*)ib;
     float  t   = *(float*)&ic;
@@ -149,11 +149,11 @@ void __cdecl FUN_004fa350(int ia, int ib, int ic, int id) {
 }
 
 
-// FUN_004ff580 @ 0x004FF580 — Entity_InitRenderState(entity)
+// Entity_InitRenderState @ 0x004FF580 — Entity_InitRenderState(entity)
 // Scans render-state pool at DAT_083a2370 (stride 0xc, 128 slots).
 // Finds first free slot (byte[0]==0), marks it active and stores entity ptr.
-// FUN_004ff580 (IDA-activated, was Ghidra stub)
-void *__cdecl FUN_004ff580(void *a1)
+// Entity_InitRenderState (IDA-activated, was Ghidra stub)
+void *__cdecl Entity_InitRenderState(void *a1)
 {
   DWORD *result; // eax
 
@@ -173,10 +173,10 @@ void *__cdecl FUN_004ff580(void *a1)
 
 // FUN_005129f0 @ 0x005129F0 — fabs(float) → double; was lying stub returning v unchanged.
 long double   __cdecl FUN_005129f0(float v)                                  { return (long double)(v >= 0.0f ? v : -v); }
-// FUN_0043e570 @ 0x0043E570 — Vector_AddRotated(pos, angle_ptr, offset_ptr)
+// Vector_AddRotated @ 0x0043E570 — Vector_AddRotated(pos, angle_ptr, offset_ptr)
 // Builds rotation matrix from angle_ptr, rotates offset_ptr through it,
 // then adds the result to pos[0..2].
-void __cdecl FUN_0043e570(float *param_1, float *param_2, float *param_3) {
+void __cdecl Vector_AddRotated(float *param_1, float *param_2, float *param_3) {
     float out[3], mat[12];
     Matrix_BuildFromEuler(param_2, mat);
     Vector_Rotate(param_3, mat, out);

@@ -139,7 +139,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
         }
     }
 
-    // game-substate overrides; some cases return directly (skipping FUN_004ff580),
+    // game-substate overrides; some cases return directly (skipping Entity_InitRenderState),
     // others call it and return; fall-through also calls it.
     switch (World) {
     case 0:
@@ -156,7 +156,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
         case 0x75: case 0x7a: puVar3[0x19]=4; return puVar3;
         case 0x76: puVar3[0x19]=8; return puVar3;
         case 0x85:
-            FUN_004ff580(puVar3);
+            Entity_InitRenderState(puVar3);
             puVar3[0x49]=0x42200000; puVar3[0x4a]=0x42200000; puVar3[0x4b]=0x43200000;
             puVar3[0x16]=0xfffffffe; return puVar3;
         }
@@ -164,7 +164,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     case 1:
         if (param_1==0x3b) break;
         if (param_1==0x3c) {
-            FUN_004ff580(puVar3);
+            Entity_InitRenderState(puVar3);
             puVar3[0x49]=0x42200000; puVar3[0x4a]=0x42200000; puVar3[0x4b]=0x43200000;
             puVar3[0x16]=0xfffffffe;
         }
@@ -199,7 +199,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
         case 0x36: case 0x38: puVar3[0x19]=1; return puVar3;
         case 0x4e: puVar3[0x19]=3; return puVar3;
         case 0x5b:
-            FUN_004ff580(puVar3);
+            Entity_InitRenderState(puVar3);
             puVar3[0x49]=0x42200000; puVar3[0x4a]=0x42200000; puVar3[0x4b]=0x43200000;
             puVar3[0x16]=0xfffffffe; return puVar3;
         case 100: puVar3[0x16]=0xfffffffe; return puVar3;
@@ -220,7 +220,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
         case 9: puVar3[0x19]=3; return puVar3;
         case 0x11: case 0x13: case 0x25: puVar3[0x19]=0; return puVar3;
         case 0x12: puVar3[0x19]=2; return puVar3;
-        case 0x26: FUN_004ff580(puVar3); puVar3[0x16]=0xfffffffe; return puVar3;
+        case 0x26: Entity_InitRenderState(puVar3); puVar3[0x16]=0xfffffffe; return puVar3;
         }
         // 2026-09-04 FIX: idem, IDA cierra el case 3 con `break` (L292).  Con el
         // fallthrough el tipo 8 de Noria (sentarse) no llegaba al registro.
@@ -228,13 +228,13 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
     default:
         goto lbl_skip_init;
     case 7:
-        if (param_1==0x27) { FUN_004ff580(puVar3); puVar3[0x16]=0xfffffffe; return puVar3; }
+        if (param_1==0x27) { Entity_InitRenderState(puVar3); puVar3[0x16]=0xfffffffe; return puVar3; }
         return puVar3;
     case 8:
-        if (param_1==0x4e) { FUN_004ff580(puVar3); goto lbl_skip_init; }
+        if (param_1==0x4e) { Entity_InitRenderState(puVar3); goto lbl_skip_init; }
         return puVar3;
     }
-    FUN_004ff580(puVar3);
+    Entity_InitRenderState(puVar3);
 lbl_skip_init:
     return puVar3;
 }
@@ -320,7 +320,7 @@ void __cdecl CreateBug(int param_1, void *param_2_v, void *param_3_v, int param_
 // Weather_Update — implemented in src/Render/Weather.cpp (Weather_Update)
 // AmbientParticles_Update (IDA: Ambient_ParticleUpdate) — implemented in src/Render/Ambient_Particles.cpp
 // MoveItems — implemented in src/Util/Misc.cpp
-// FUN_00503830 — implemented in src/Render/Entity_Render.cpp
+// Entity_SetGravity — implemented in src/Render/Entity_Render.cpp
 // RenderPartObjectEffect — implemented in src/Render/Entity_DrawSetup.cpp (Entity_SetColorAndRender)
-// FUN_00505970 — implemented in src/Render/Entity_Render.cpp
+// Entity_RenderSlotWith — implemented in src/Render/Entity_Render.cpp
 // RenderPartObject — implemented in src/Render/Entity_Render.cpp

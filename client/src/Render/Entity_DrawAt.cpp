@@ -17,7 +17,7 @@
 //     byte  param_7,   // misc byte
 //     char  param_8,   // bone select flag: '\0' → use entity's own bone ptr, else use DAT_06970a9c
 //     byte  param_9,   // extra byte → this[+0x99]
-//     char  param_10,  // passed to FUN_004404e0 and FUN_00505970
+//     char  param_10,  // passed to Skeleton_Transform and Entity_RenderSlotWith
 //     int   param_11,  // scale mode: 0=1.0, 1=shadow, 2=0.8, 3=1.4
 //     uint  param_12   // extra uint → RenderPartObjectEffect
 //   )
@@ -55,12 +55,12 @@
 //     else:
 //       this[+0x48] = 0.1f,  this[+0x4c] = 0.025f  (shadow color medium)
 //     this[+0x50] = 0
-//     FUN_00505970(this, entity, 0x40, param_10, 0.8f)  → Sprite_DrawShadow(model, e, 64, ...)
+//     Entity_RenderSlotWith(this, entity, 0x40, param_10, 0.8f)  → Sprite_DrawShadow(model, e, 64, ...)
 //     (segundo pass con colores invertidos)
 //
 // ── SETUP ANIMACIÓN ──────────────────────────────────────────────────────────
 //
-//   FUN_004fa930(entity, this)   → Sprite_SetupAnim(entity, model)
+//   Entity_GetLightScale(entity, this)   → Sprite_SetupAnim(entity, model)
 //                                  Copia datos de animación desde entidad al modelo
 //
 // ── BONE POINTER ──────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@
 //
 // ── DRAW CALL ─────────────────────────────────────────────────────────────────
 //
-//   FUN_004404e0(this, puVar2, entity+0x118, entity+0x124, entity+0x130, param_10)
+//   Skeleton_Transform(this, puVar2, entity+0x118, entity+0x124, entity+0x130, param_10)
 //     → Sprite_DrawBone(model, bone, anim_A, anim_B, anim_C, blend_factor)
 //
 //   RenderPartObjectEffect(entity, class, angle_ptr, rot, state_flags, misc_byte, scale_mode, extra)
@@ -82,9 +82,9 @@
 //   DAT_05828d58  → sprite model table (stride 0xbc por clase)
 //   DAT_005524f8  → g_TileScale (culling threshold)
 //   DAT_005597c8  → global sprite scale factor
-//   FUN_004fa930  → Sprite_SetupAnim(entity, model)
-//   FUN_00505970  → Sprite_DrawShadow(model, entity, param, blend, alpha)
-//   FUN_004404e0  → Sprite_DrawBone(model, bone, anim[3], blend)
+//   Entity_GetLightScale  → Sprite_SetupAnim(entity, model)
+//   Entity_RenderSlotWith  → Sprite_DrawShadow(model, entity, param, blend, alpha)
+//   Skeleton_Transform  → Sprite_DrawBone(model, bone, anim[3], blend)
 //   RenderPartObjectEffect  → Entity_DrawSprite(entity, class, angle_ptr, rot, flags, byte, mode, extra)
 //   DAT_06970a9c  → root bone data (pose matrix, usado como fallback)
 
@@ -141,7 +141,7 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
             *(undefined4 *)((int)pModel + 0x4c) = 0x3cf5c28f;  // 0.03
         }
         *(undefined4 *)((int)pModel + 0x50) = 0;
-        FUN_00505970(pModel, (void*)param_1, 0x40, param_10, 0x3f99999a);  // Sprite_DrawShadow pass 1
+        Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f99999a);  // Sprite_DrawShadow pass 1
 
         if (*(char *)(param_1 + 0x84) == '\x04') {
             *(undefined4 *)((int)pModel + 0x48) = 0x3e23d70a;  // 0.16
@@ -151,10 +151,10 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
             *(undefined4 *)((int)pModel + 0x4c) = 0x3e4ccccd;  // 0.2
         }
         *(undefined4 *)((int)pModel + 0x50) = 0;
-        FUN_00505970(pModel, (void*)param_1, 0x40, param_10, 0x3f8a3d71);  // Sprite_DrawShadow pass 2
+        Entity_RenderSlotWith(pModel, (void*)param_1, 0x40, param_10, 0x3f8a3d71);  // Sprite_DrawShadow pass 2
     }
 
-    FUN_004fa930(param_1, (int)pModel);   // Sprite_SetupAnim
+    Entity_GetLightScale(param_1, (int)pModel);   // Sprite_SetupAnim
 
     // Bone selection: param_8 = use entity's bone ptr or fallback to root
     if (param_8 == '\0')
@@ -162,7 +162,7 @@ void __cdecl Entity_DrawAt(int param_1, int param_2, undefined4 param_3, float *
     else
         puVar2 = (undefined*)&DAT_06970a9c;
 
-    FUN_004404e0(pModel, (int)puVar2,
+    Skeleton_Transform(pModel, (int)puVar2,
                  (float *)(param_1 + 0x118),
                  (float *)(param_1 + 0x124),
                  (float *)(param_1 + 0x130),
