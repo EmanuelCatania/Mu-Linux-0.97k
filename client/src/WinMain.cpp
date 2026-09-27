@@ -118,6 +118,22 @@ extern int g_Borderless;
 // escritorio del usuario al salir (es el FixDisplaySettingsOnClose del DLL).
 static bool s_DisplayModeChanged = false;
 
+// Devuelve el escritorio a su modo original, si fuimos nosotros los que lo
+// cambiamos.  Tiene que ser idempotente y llamable desde un filtro de
+// excepciones: la llama OpenGL_Release en el cierre normal Y
+// DbgUnhandledException al crashear.
+//
+// Lo segundo NO es de adorno (reporte de 2026-09-27): en pantalla completa el
+// filtro termina el proceso con EXCEPTION_EXECUTE_HANDLER, asi que
+// OpenGL_Release no corre y al usuario le quedaba el escritorio clavado en la
+// resolucion del juego hasta reiniciar.
+static void Display_RestoreIfChanged(void)
+{
+    if (!s_DisplayModeChanged) return;
+    s_DisplayModeChanged = false;
+    ChangeDisplaySettingsA(NULL, 0);
+}
+
 // -- Display_ApplyFullscreen -------------------------------------------------
 //
 // DESVIACION DELIBERADA respecto de IDA (WinMain 0x41E8A0 L394-418).
@@ -353,10 +369,7 @@ void OpenGL_Release(void)
     // Solo se restaura el modo de video si lo cambiamos nosotros.  En modo
     // ventana nunca se toco, y llamarlo igual hace parpadear el escritorio
     // (es el FixDisplaySettingsOnClose del DLL, que hookea justo este call).
-    if (s_DisplayModeChanged) {
-        ChangeDisplaySettingsA(NULL, 0);
-        s_DisplayModeChanged = false;
-    }
+    Display_RestoreIfChanged();
     ShowCursor(1);
 }
 
@@ -727,6 +740,11 @@ static LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
             DbgLog("MINIDUMP: no se pudo escribir (dbghelp.dll?)");
         }
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
+
+    // Antes del cartel: si estabamos en pantalla completa hay que devolverle el
+    // escritorio al usuario, o el MessageBox sale en la resolucion del juego y,
+    // peor, queda asi despues de que el proceso muere.
+    __try { Display_RestoreIfChanged(); } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
     __try {
         if (dumpOk) {
