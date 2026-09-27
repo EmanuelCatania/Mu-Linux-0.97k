@@ -27,6 +27,7 @@
 //   buffer de envío @ 0x055ca16c  (máx 0x2001, cola de WSAEWOULDBLOCK)
 
 #include "stdafx.h"
+#include "resource.h"
 #include "Net/HWID.h"
 #include "Scene/Scene.h"
 #ifdef _DEBUG
@@ -184,7 +185,11 @@ static void Window_Create(HINSTANCE hInst)
     wc.style         = 0x2B;            // CS_OWNDC|CS_HREDRAW|CS_VREDRAW|CS_DBLCLKS
     wc.lpfnWndProc   = WndProc;
     wc.hInstance     = hInst;
-    wc.hIcon         = LoadIconA(NULL, "IDI_ICON1");
+    // Icono grande (Alt+Tab, barra de tareas).  Antes era
+    // LoadIconA(NULL, "IDI_ICON1"): con hInstance NULL la API busca entre los
+    // iconos PREDEFINIDOS del sistema, que son ordinales, asi que un nombre
+    // propio nunca matchea y devolvia NULL.
+    wc.hIcon         = LoadIconA(hInst, MAKEINTRESOURCEA(IDI_MAIN_ICON));
     wc.hCursor       = LoadCursorA(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszClassName = "Dialog";        // lo usa el FindWindowA de instancia unica
@@ -244,6 +249,20 @@ static void Window_Create(HINSTANCE hInst)
             x, y, w, h,
             NULL, NULL, hInst, NULL
         );
+    }
+
+    // El .ico trae una sola imagen de 48x48, asi que para la barra de titulo
+    // Windows tiene que reducirla.  El escalado que hace GDI sobre el icono de
+    // clase es de baja calidad; LoadImage pidiendo directamente el tamano de
+    // icono chico del sistema da un resultado mucho mas limpio.  Es lo mismo
+    // que hace el DLL en CWindow::ChangeWindowState.
+    if (g_hWnd) {
+        HICON hSmall = (HICON)LoadImageA(hInst, MAKEINTRESOURCEA(IDI_MAIN_ICON),
+                                         IMAGE_ICON,
+                                         GetSystemMetrics(SM_CXSMICON),
+                                         GetSystemMetrics(SM_CYSMICON),
+                                         LR_DEFAULTCOLOR);
+        if (hSmall) SendMessageA(g_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hSmall);
     }
     // g_hWnd -> DAT_055c9ffc
 }

@@ -411,6 +411,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="src\resource.h" />
     <ResourceCompile Include="src\resource.rc" />
   </ItemGroup>
 
