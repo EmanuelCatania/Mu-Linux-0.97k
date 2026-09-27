@@ -94,22 +94,41 @@ int Config_Load(void)
     }
     strcat_s(configPath, MAX_PATH, "config.ini");
 
-    // --- 2. Read [LOGIN] Version from config.ini ---
-    //   GetPrivateProfileStringA("LOGIN", "Version", "", m_ExeVersion, 11, configPath)
-    //   Result: 10-char version string (e.g. "1.00h") at m_ExeVersion
-    GetPrivateProfileStringA("LOGIN", "Version", "", ConfigLoginVersion, 11, configPath);
+    // --- 2/3. Version que muestra el pie del login (m_ExeVersion) ---
+    //
+    // IDA 0x41E0A0 L38-75.  El valor del ini es SOLO el fallback: la fuente
+    // real es el recurso VERSIONINFO del propio exe.
+    //
+    //   GetPrivateProfileStringA("LOGIN","Version", "", m_Version, 11, ini);
+    //   if (!GetFileNameOfFilePath(lpszFile, GetCommandLineA()))
+    //        m_ExeVersion = m_Version;
+    //   else if (GetFileVersion(lpszFile, wVersion)) {
+    //        sprintf(m_ExeVersion, "%d.%02d", wVersion[0], wVersion[1]);
+    //        if (wVersion[2])
+    //            strcat(m_ExeVersion, (char)(word_559470 + wVersion[2] - 1));
+    //   } else m_ExeVersion = m_Version;
+    //
+    // word_559470 = 'a' (0x61, leido del binario).  El main.exe original
+    // declara FileVersion 0.97.11.0, asi que sale "0.97" + la letra 11 = 'k':
+    // de ahi viene el nombre "0.97k".  El port calculaba versionWords y lo
+    // descartaba, y leia el ini directo sobre m_ExeVersion.
+    char m_Version[12] = {};   // IDA: m_Version (solo lo usa este bloque)
+    GetPrivateProfileStringA("LOGIN", "Version", "", m_Version, 11, configPath);
 
-    // --- 3. Extract exe name + read PE version ---
-    //   Path_GetBasename(exeNameBuf, GetCommandLineA())
-    //     → strips path prefix and delimiters → "main.exe"
-    //   FileVersion_Get("main.exe", versionWords[4])
-    //     → GetFileVersionInfoA + VerQueryValueA("\\")
-    //     → versionWords = [FileVer.MajorHi, MajorLo, MinorHi, MinorLo]
-    //   Result presumably stored in a global for the version check at login
     char  exeNameBuf[MAX_PATH] = {};
     unsigned short versionWords[4] = {};
-    Path_GetBasename(exeNameBuf, GetCommandLineA());
-    FileVersion_Get(exeNameBuf, versionWords);
+    if (!Path_GetBasename(exeNameBuf, GetCommandLineA())) {
+        lstrcpynA(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
+    } else if (FileVersion_Get(exeNameBuf, versionWords)) {
+        wsprintfA(ConfigLoginVersion, "%d.%02d", versionWords[0], versionWords[1]);
+        if (versionWords[2]) {
+            const char kLetterBase = 'a';   // IDA: word_559470
+            char suffix[2] = { (char)(kLetterBase + versionWords[2] - 1), '\0' };
+            strcat_s(ConfigLoginVersion, sizeof(ConfigLoginVersion), suffix);
+        }
+    } else {
+        lstrcpynA(ConfigLoginVersion, m_Version, sizeof(ConfigLoginVersion));
+    }
 
     // --- 4. Registry: HKCU\SOFTWARE\Webzen\Mu\Config ---
     HKEY hKey = NULL;
