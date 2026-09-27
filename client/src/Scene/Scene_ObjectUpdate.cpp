@@ -916,3 +916,544 @@ next_bug:
         v0 += 111;                              // +0x1BC bytes
     } while ((int)(uintptr_t)v0 < (int)(uintptr_t)endp);
 }
+
+// === FUN_004fdc00 / MoveObjects (0x004FDC00) — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
+// Estaba gateada por IDA_PORT_004FDC00, que esta definida: el gate era ruido.
+// Es la copia VIVA: el `MoveObject_PerWorld` de mas arriba en este archivo es
+// el resumen viejo y no tiene llamadores (su unico call site, en
+// Scene_ObjectLegacy.cpp, esta bajo `#ifndef IDA_PORT_004FDC00`).
+// Macros IDA locales para este port. #undef al final del bloque.
+#define LODWORD(x)  (*(unsigned int*)&(x))
+#define Models      DAT_05828d58
+#define EditFlag    DAT_07e11d30
+extern void __cdecl Effect_PhysicsTick(DWORD Object);   // World-4 gate FX (stubs_game.cpp)
+extern "C" void DbgLogPublic(const char*);        // [DIAG activación temporal]
+void __cdecl FUN_004fdc00(float o)
+{
+  double v1; // st7
+  short v3; // ax
+  short v4; // ax
+  int v5; // ecx
+  float *v6; // ebp
+  float *v7; // edi
+  double v8; // st7
+  double v9; // st7
+  double v10; // st7
+  long double v11; // st7
+  long double v12; // st7
+  short v13; // cx
+  double v14; // st6
+  double v15; // st4
+  long double v16; // st7
+  int v17; // eax
+  bool v18; // zf
+  signed int v19; // eax
+  int v20; // eax
+  double v21; // st7
+  long double v22; // st7
+  long double v23; // st7
+  double v24; // st7
+  double v25; // st7
+  long double v26; // st7
+  int v27; // eax
+  float xf; // [esp+0h] [ebp-40h]
+  float yf; // [esp+4h] [ebp-3Ch]
+  float v30[3]; // [esp+28h] [ebp-18h] BYREF
+  float Light[3]; // [esp+34h] [ebp-Ch] BYREF
+  float oa; // [esp+44h] [ebp+4h]
+  float ob; // [esp+44h] [ebp+4h]
+
+  if ( World == 9 )
+  {
+    if ( (__int64)WorldTime % 4000 < 1000 && !(rand() % 100) )
+    {
+      v1 = (double)(rand() % 12 + 4) * 0.1;
+      Light[0] = v1 * 0.2;
+      Light[1] = v1 * 0.30000001;
+      Light[2] = v1 * 0.5;
+      yf = (double)(rand() % 1200) + *(float *)(Hero + 20) - 600.0;
+      xf = (double)(rand() % 1200) + *(float *)(Hero + 16) - 600.0;
+      AddTerrainLight(xf, yf, (float*)Light, 12, (float*)PrimaryTerrainLight[0]);
+    }
+    PlayBuffer(1, 0, 1);
+  }
+  if ( !World )
+  {
+    v3 = *(WORD *)(LODWORD(o) + 2);
+    if ( v3 != 125 && v3 != 126 )
+    {
+      goto LABEL_22;
+    }
+    if ( HeroTile == 4 )
+    {
+      *(DWORD *)(LODWORD(o) + 356) = 0;
+    }
+    else
+    {
+      *(DWORD *)(LODWORD(o) + 356) = 1065353216;
+    }
+  }
+  if ( World == 2 )
+  {
+    v4 = *(WORD *)(LODWORD(o) + 2);
+    if ( v4 == 81 || v4 == 82 || v4 == 96 || v4 == 98 || v4 == 99 )
+    {
+      if ( HeroTile == 3 || HeroTile >= 10 )
+      {
+        *(DWORD *)(LODWORD(o) + 356) = 0;
+      }
+      else
+      {
+        *(DWORD *)(LODWORD(o) + 356) = 1065353216;
+      }
+    }
+  }
+LABEL_22:
+  Alpha(LODWORD(o));
+  if ( *(float *)(LODWORD(o) + 360) < 0.0099999998 )
+  {
+    return;
+  }
+  v5 = Models + 188 * *(short *)(LODWORD(o) + 2);
+  *(BYTE *)(v5 + 160) = *(BYTE *)(LODWORD(o) + 261);
+  oa = *(float *)(LODWORD(o) + 204);
+  if ( World == 8 && *(WORD *)(LODWORD(o) + 2) == 8 )
+  {
+    oa = oa * 4.0;
+  }
+  v6 = (float *)(LODWORD(o) + 28);
+  v7 = (float *)(LODWORD(o) + 16);
+  // NOTA: nuestro BMD__PlayAnimation (BMD_Anim.cpp) es la variante de 5 args (avanza
+  // el frame). El IDA sub_440AA0 toma 7 (los 2 últimos = pos/vel para root-motion
+  // de la animación). Los omitimos: el avance de frame —lo que faltaba— funciona.
+  BMD__PlayAnimation((void*)v5, (float*)(LODWORD(o) + 264), (float*)(LODWORD(o) + 268),
+               (void*)(LODWORD(o) + 262), oa);
+  if ( SceneFlag == 2 || SceneFlag == 4 )
+  {
+    if ( *(WORD *)(LODWORD(o) + 2) == 160 )
+    {
+      v9 = (double)((__int64)WorldTime % 4000);
+    }
+    else
+    {
+      if ( *(WORD *)(LODWORD(o) + 2) != 161 )
+      {
+        if ( *(WORD *)(LODWORD(o) + 2) == 162 )
+        {
+          if ( CameraWalkCut )
+          {
+            v8 = 1.5;
+          }
+          else
+          {
+            v8 = (double)CurrentCameraCount * 0.0020000001;
+          }
+          *(float *)(LODWORD(o) + 232) = v8;
+          *(float *)(LODWORD(o) + 236) = v8;
+          *(float *)(LODWORD(o) + 240) = v8;
+          *(float *)(LODWORD(o) + 104) = v8;
+        }
+        goto LABEL_38;
+      }
+      v9 = (double)((__int64)WorldTime % 4000);
+    }
+    *(float *)(LODWORD(o) + 112) = -(v9 * 0.00025000001);
+  }
+LABEL_38:
+  switch ( World )
+  {
+    case 0:
+      switch ( *(WORD *)(LODWORD(o) + 2) )
+      {
+        case 0x32:
+          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 200.0);
+          break;
+        case 0x33:
+          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, -30.0, 60.0);
+          break;
+        case 0x34:
+          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 60.0);
+          *(float *)(LODWORD(o) + 104) = (double)(rand() % 6 + 4) * 0.1;
+          break;
+        case 0x37:
+          FUN_0046c7f0(0, (int)LODWORD(o), -150.0, -150.0, 140.0);
+          FUN_0046c7f0(0, (int)LODWORD(o), 150.0, -150.0, 140.0);
+          break;
+        case 0x50:
+          FUN_0046c7f0(0, (int)LODWORD(o), 90.0, -200.0, 30.0);
+          FUN_0046c7f0(0, (int)LODWORD(o), 90.0, 200.0, 30.0);
+          break;
+        case 0x5A:
+          v10 = (double)(rand() % 2 + 6) * 0.1;
+          v30[0] = v10;
+          v30[1] = v10 * 0.80000001;
+          v11 = v10 * 0.60000002;
+          goto LABEL_116;
+        case 0x75:
+        case 0x7A:
+          goto LABEL_59;
+        case 0x76:
+        case 0x77:
+          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          break;
+        case 0x82:
+          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 0.0);
+          *(DWORD *)(LODWORD(o) + 88) = -2;
+          break;
+        case 0x83:
+          FUN_0046c7f0(1, (int)LODWORD(o), 0.0, 0.0, 0.0);
+          *(DWORD *)(LODWORD(o) + 88) = -2;
+          break;
+        case 0x84:
+          FUN_0046c7f0(2, (int)LODWORD(o), 0.0, 0.0, 0.0);
+          *(DWORD *)(LODWORD(o) + 88) = -2;
+          break;
+        case 0x96:
+          v12 = (double)(rand() % 4 + 3) * 0.1;
+          goto LABEL_51;
+        default:
+          return;
+      }
+      break;
+    case 1:
+      switch ( *(WORD *)(LODWORD(o) + 2) )
+      {
+        case 0x16:
+        case 0x17:
+        case 0x18:
+          *(BYTE *)(Models + 188 * *(short *)(LODWORD(o) + 2) + 136) = 1;
+          *(float *)(LODWORD(o) + 112) = (double)((__int64)WorldTime % 1000) * -0.001;
+          break;
+        case 0x27:
+        case 0x28:
+        case 0x33:
+          goto LABEL_132;
+        case 0x29:
+          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, -30.0, 240.0);
+          break;
+        case 0x2A:
+          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 190.0);
+          break;
+        case 0x34:
+          if ( rand() % 3 )
+          {
+            goto LABEL_132;
+          }
+          CreateEffect(
+            215,
+            (float *)(LODWORD(o) + 16),
+            (float *)(LODWORD(o) + 28),
+            (float *)(LODWORD(o) + 232),
+            0,
+            0,
+            (float *)-1,
+            0,
+            0);
+          *(DWORD *)(LODWORD(o) + 88) = -2;
+          break;
+        default:
+          return;
+      }
+      break;
+    case 2:
+      v13 = *(WORD *)(LODWORD(o) + 2);
+      switch ( v13 )
+      {
+        case 20:
+        case 65:
+        case 86:
+        case 88:
+          if ( !EditFlag )
+          {
+            v14 = *(float *)(Hero + 20) - *(float *)(LODWORD(o) + 56);
+            v15 = *(float *)(Hero + 16) - *(float *)(LODWORD(o) + 52);
+            v16 = sqrt(v14 * v14 + v15 * v15);
+            ob = v16;
+            if ( v16 >= 200.0 )
+            {
+              *(float *)(LODWORD(o) + 36) = TurnAngle2(*(float *)(LODWORD(o) + 36), *(float *)(LODWORD(o) + 48), 10.0);
+              *v7 = (*(float *)(LODWORD(o) + 52) - *v7) * 0.2 + *v7;
+              *(float *)(LODWORD(o) + 20) = (*(float *)(LODWORD(o) + 56) - *(float *)(LODWORD(o) + 20)) * 0.2
+                                          + *(float *)(LODWORD(o) + 20);
+            }
+            else if ( v13 == 86 )
+            {
+              if ( *(DWORD *)(LODWORD(o) + 36) == 1119092736 )
+              {
+                *(float *)(LODWORD(o) + 20) = 200.0 - ob + 200.0 - ob + *(float *)(LODWORD(o) + 56);
+              }
+              if ( *(DWORD *)(LODWORD(o) + 36) == 1132920832 )
+              {
+                *(float *)(LODWORD(o) + 20) = *(float *)(LODWORD(o) + 56) - (200.0 - ob + 200.0 - ob);
+              }
+              if ( *(float *)(LODWORD(o) + 36) == 0.0 )
+              {
+                *v7 = 200.0 - ob + 200.0 - ob + *(float *)(LODWORD(o) + 52);
+              }
+              if ( *(DWORD *)(LODWORD(o) + 36) == 1127481344 )
+              {
+                *v7 = *(float *)(LODWORD(o) + 52) - (200.0 - ob + 200.0 - ob);
+              }
+              PlayBuffer(18, 0, 0);
+            }
+            else
+            {
+              if ( *(DWORD *)(LODWORD(o) + 48) == 1119092736 )
+              {
+                *(float *)(LODWORD(o) + 36) = 30.0 - (200.0 - ob) * 0.5;
+              }
+              if ( *(DWORD *)(LODWORD(o) + 48) == 1132920832 )
+              {
+                *(float *)(LODWORD(o) + 36) = (200.0 - ob) * 0.5 + 330.0;
+              }
+              if ( *(float *)(LODWORD(o) + 48) == 0.0 )
+              {
+                *(float *)(LODWORD(o) + 36) = 300.0 - (200.0 - ob) * 0.5;
+              }
+              if ( *(DWORD *)(LODWORD(o) + 48) == 1127481344 )
+              {
+                *(float *)(LODWORD(o) + 36) = (200.0 - ob) * 0.5 + 240.0;
+              }
+              PlayBuffer(17, 0, 0);
+            }
+          }
+          break;
+        case 30:
+        case 66:
+          FUN_0046c7f0(0, (int)LODWORD(o), 0.0, 0.0, 50.0);
+          break;
+        case 78:
+LABEL_59:
+          *(float *)(LODWORD(o) + 104) = (double)(rand() % 4 + 4) * 0.1;
+          break;
+        default:
+          return;
+      }
+      break;
+    case 3:
+      v17 = *(short *)(LODWORD(o) + 2);
+      switch ( *(WORD *)(LODWORD(o) + 2) )
+      {
+        case 0x12:
+          *(float *)(LODWORD(o) + 112) = (double)((__int64)WorldTime % 1000) * 0.001;
+          break;
+        case 0x27:
+          goto LABEL_92;
+        case 0x29:
+          *(DWORD *)(LODWORD(o) + 100) = 0;
+          *(float *)(LODWORD(o) + 112) = (double)((__int64)WorldTime % 2000) * 0.00050000002;
+          break;
+        case 0x2A:
+          *(BYTE *)(Models + 188 * v17 + 136) = 0;
+          *(float *)(LODWORD(o) + 108) = (double)((__int64)WorldTime % 500) * -0.0020000001;
+          break;
+        case 0x2B:
+          *(BYTE *)(Models + 188 * v17 + 136) = 0;
+          *(float *)(LODWORD(o) + 108) = (double)((__int64)WorldTime % 500) * 0.0020000001;
+          break;
+        default:
+          return;
+      }
+      break;
+    case 4:
+      switch ( *(WORD *)(LODWORD(o) + 2) )
+      {
+        case 3:
+        case 4:
+          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          break;
+        case 0x12:
+        case 0x17:
+LABEL_92:
+          *(DWORD *)(LODWORD(o) + 100) = 1;
+          break;
+        case 0x13:
+        case 0x14:
+          *(DWORD *)(LODWORD(o) + 100) = 4;
+          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          break;
+        case 0x18:
+          *(DWORD *)(LODWORD(o) + 88) = -2;
+          v19 = rand() & 0x8000003F;
+          v18 = v19 == 0;
+          if ( v19 < 0 )
+          {
+            v18 = (((BYTE)v19 - 1) | 0xFFFFFFC0) == -1;
+          }
+          if ( v18 )
+          {
+            CreateEffect(1200, v7, v6, (float *)(LODWORD(o) + 232), 0, 0, (float *)-1, 0, 0);
+          }
+          break;
+        case 0x19:
+          goto LABEL_132;
+        case 0x26:
+        case 0x27:
+          Effect_PhysicsTick(LODWORD(o));
+          break;
+        default:
+          return;
+      }
+      break;
+    case 5:
+      if ( *(WORD *)(LODWORD(o) + 2) == 2 )
+      {
+LABEL_111:
+        *(DWORD *)(LODWORD(o) + 100) = 0;
+      }
+      else if ( *(WORD *)(LODWORD(o) + 2) == 3 )
+      {
+        *(DWORD *)(LODWORD(o) + 100) = 0;
+        *(float *)(LODWORD(o) + 104) = (double)(rand() % 4 + 6) * 0.1;
+      }
+      break;
+    case 6:
+      v20 = *(short *)(LODWORD(o) + 2);
+      if ( v20 == 21 )
+      {
+        *(DWORD *)(LODWORD(o) + 100) = 3;
+        *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+      }
+      else if ( v20 == 38 )
+      {
+        *(DWORD *)(LODWORD(o) + 88) = -2;
+      }
+      break;
+    case 7:
+      switch ( *(WORD *)(LODWORD(o) + 2) )
+      {
+        case 0x16:
+          v21 = *(float *)(LODWORD(o) + 128) + 0.1;
+          *(DWORD *)(LODWORD(o) + 88) = -2;
+          *(float *)(LODWORD(o) + 128) = v21;
+          if ( v21 > 10.0 )
+          {
+            *(DWORD *)(LODWORD(o) + 128) = 0;
+          }
+          if ( *(float *)(LODWORD(o) + 128) > 5.0 )
+          {
+            Particle_Spawn(1241, v7, v6, (float *)(LODWORD(o) + 232), 0, 1.0, 0);
+          }
+          break;
+        case 0x17:
+          *(DWORD *)(LODWORD(o) + 100) = 0;
+          *(float *)(LODWORD(o) + 104) = sin(WorldTime * 0.0020000001) * 0.30000001 + 0.5;
+          break;
+        case 0x20:
+        case 0x22:
+          *(DWORD *)(LODWORD(o) + 100) = 1;
+          *(float *)(LODWORD(o) + 104) = (sin(WorldTime * 0.0040000002) + 1.0) * 0.5;
+          break;
+        case 0x26:
+          goto LABEL_111;
+        case 0x28:
+          *(DWORD *)(LODWORD(o) + 100) = 0;
+          v22 = WorldTime * 0.0040000002;
+          *(DWORD *)(LODWORD(o) + 204) = 1028443341;
+          *(float *)(LODWORD(o) + 104) = sin(v22) * 0.30000001 + 0.5;
+          break;
+        default:
+          return;
+      }
+      break;
+    case 8:
+      switch ( *(WORD *)(LODWORD(o) + 2) )
+      {
+        case 2:
+          *(DWORD *)(LODWORD(o) + 100) = 0;
+          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 1000) * 0.001;
+          return;
+        case 4:
+          v23 = WorldTime * 0.0020000001;
+          *(DWORD *)(LODWORD(o) + 100) = 0;
+          v11 = sin(v23) * 0.34999999 + 0.64999998;
+          *(float *)(LODWORD(o) + 104) = v11;
+          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.000099999997;
+          v30[0] = v11;
+          v30[1] = v11;
+          goto LABEL_116;
+        case 7:
+          v24 = *(float *)(LODWORD(o) + 36) * 100.0 + WorldTime;
+          *(DWORD *)(LODWORD(o) + 100) = 0;
+          v12 = sin(v24 * 0.0020000001) * 0.34999999 + 0.64999998;
+          *(float *)(LODWORD(o) + 104) = v12;
+LABEL_51:
+          v30[0] = v12;
+          v30[1] = v12 * 0.60000002;
+          v11 = v12 * 0.2;
+LABEL_116:
+          v30[2] = v11;
+          AddTerrainLight(*v7, *(float *)(LODWORD(o) + 20), v30, 3, PrimaryTerrainLight[0]);
+          return;
+        case 0xB:
+          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          return;
+        case 0xC:
+          *(float *)(LODWORD(o) + 108) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
+          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 50000) * 0.000049999999;
+          return;
+        case 0xD:
+          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          return;
+        case 0x3D:
+          *(DWORD *)(LODWORD(o) + 100) = 1;
+          v25 = (double)(-(__int64)WorldTime % 1000);
+          goto LABEL_123;
+        case 0x3F:
+        case 0x40:
+          goto LABEL_132;
+        case 0x41:
+        case 0x42:
+          *(DWORD *)(LODWORD(o) + 100) = 1;
+          v25 = (double)(-(__int64)WorldTime % 1000);
+LABEL_123:
+          *(float *)(LODWORD(o) + 112) = v25 * 0.001;
+          v26 = sin(WorldTime * 0.0020000001) * 0.34999999 + 0.64999998;
+          v30[0] = v26;
+          v30[1] = v26 * 0.60000002;
+          v30[2] = v26 * 0.2;
+          AddTerrainLight(*v7, *(float *)(LODWORD(o) + 20), v30, 2, PrimaryTerrainLight[0]);
+          break;
+        case 0x48:
+          *(DWORD *)(LODWORD(o) + 100) = 0;
+          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          break;
+        case 0x49:
+          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          break;
+        case 0x4B:
+          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          break;
+        case 0x4F:
+          *(float *)(LODWORD(o) + 112) = (double)(-(__int64)WorldTime % 10000) * 0.00019999999;
+          break;
+        case 0x52:
+          *(DWORD *)(LODWORD(o) + 100) = 0;
+          *(DWORD *)(LODWORD(o) + 232) = 1065353216;
+          *(DWORD *)(LODWORD(o) + 236) = 1065353216;
+          *(DWORD *)(LODWORD(o) + 240) = 1065353216;
+          break;
+        default:
+          return;
+      }
+      break;
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
+    case 16:
+      v27 = *(short *)(LODWORD(o) + 2);
+      if ( v27 >= 9 && v27 <= 10 && *(WORD *)(LODWORD(o) + 134) != 4 )
+      {
+LABEL_132:
+        *(DWORD *)(LODWORD(o) + 88) = -2;
+      }
+      break;
+    default:
+      return;
+  }
+}
+#undef LODWORD
+#undef Models
+#undef EditFlag

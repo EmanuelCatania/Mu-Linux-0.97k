@@ -244,7 +244,7 @@
     <ClCompile Include="src\Render\Camera_Login.cpp" />
     <ClCompile Include="src\UI\Chat_Log.cpp" />
     <ClCompile Include="src\Terrain\Terrain_RayCollision.cpp" />
-    <ClCompile Include="src\stubs_IDA_ports.cpp" />
+    <ClCompile Include="src\Combat\Combat_AttackEffect.cpp" />
     <ClCompile Include="src\Core\Runtime_Small.cpp" />
     <ClCompile Include="src\Core\Runtime_Medium.cpp" />
     <ClCompile Include="src\UI\Quest_Legacy.cpp" />
