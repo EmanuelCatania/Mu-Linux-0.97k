@@ -176,7 +176,7 @@ uint Scene_Login(void)
                  0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
                  acStack_64, (LPSIZE)0x0, '\0', 0);
 
-    // Version string 2
+    // GlobalText[455] = ' Todos los derechos reservados.' (arranca en x=335)
     uVar6  = 0xffffffff;
     pcVar8 = &DAT_07d4b258;
     do {
@@ -200,15 +200,24 @@ uint Scene_Login(void)
     ptVar10 = &tStack_6c;
     iVar3   = lstrlenA(acStack_64);
     GetTextExtentPointA(DAT_055c9fec, acStack_64, iVar3, ptVar10);
-    UI_RenderText(0, 0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
+    // IDA 0x521630 L92: `RenderText(335, 479 - 640*cy/WindowWidth, String, 0,0,0)`.
+    // Estaba en x=0 y la de abajo en 335, o sea cruzadas: el copyright y la
+    // version salian pegados en el centro.
+    UI_RenderText(0x14f, 0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
                  acStack_64, (LPSIZE)0x0, '\0', 0);
 
-    // Footer center text (copyright)
-    crt_sprintf(acStack_64, &DAT_07d4b384);
+    // GlobalText[456] = 'Version: %s - by kayito' (borde izquierdo)
+    // IDA 0x521630 L93: `sprintf(String, GlobalText[456], m_ExeVersion)`.
+    // Faltaba el segundo argumento, asi que el %s de
+    // "Version: %s - by kayito" tomaba basura del stack.  m_ExeVersion es
+    // ConfigLoginVersion, que Config_Load llena desde config.ini [LOGIN]/Version;
+    // si esa clave no existe queda vacio, que es lo fiel.
+    crt_sprintf(acStack_64, &DAT_07d4b384, ConfigLoginVersion);
     ptVar10 = &tStack_6c;
     iVar3   = lstrlenA(acStack_64);
     GetTextExtentPointA(DAT_055c9fec, acStack_64, iVar3, ptVar10);
-    UI_RenderText(0x14f, 0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
+    // IDA 0x521630 L96: esta va en x=0.
+    UI_RenderText(0, 0x1df - (uint)(tStack_6c.cy * 0x280) / DAT_0056156c,
                  acStack_64, (LPSIZE)0x0, '\0', 0);
 
     // ── Sub-state dispatch ────────────────────────────────────────────────────
