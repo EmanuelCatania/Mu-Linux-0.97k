@@ -1,3 +1,5 @@
+#include "resource.h"
+
 IDI_MAIN_ICON ICON "icon.ico"
 
 // VERSIONINFO: el cliente ARMA con esto la version que muestra el pie del

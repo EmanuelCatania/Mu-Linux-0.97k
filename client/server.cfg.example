@@ -51,3 +51,18 @@ ClientVersion=0.97.11
 #MusicOnOff=0
 #SoundOnOff=1
 #Resolution=640x480
+
+# --- Modo ventana (desviacion deliberada) ------------------------------------
+# El 0.97k solo corre a pantalla completa: WinMain busca un modo de video de 16
+# bits de color y, como en Windows 10/11 no existe ninguno, el cambio de modo
+# falla en silencio y la ventana queda como un recuadro sin bordes pegado a la
+# esquina del escritorio. Se porto el modo ventana del DLL de inyeccion.
+#
+#   WindowMode   1 = en ventana (default), 0 = pantalla completa
+#   Borderless   1 = sin barra de titulo ni borde (solo aplica en modo ventana)
+#
+# El tamano lo sigue dando Resolution. Con WindowMode=0 el cliente cambia el
+# modo de video del escritorio y lo restaura al salir; si el proceso se mata
+# sin pasar por el cierre normal, el modo queda cambiado hasta reiniciar.
+#WindowMode=1
+#Borderless=0

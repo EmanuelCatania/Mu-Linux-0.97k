@@ -1458,8 +1458,11 @@ extern int     DAT_00559cdc;           // system-message scroll timer (reset to 
 extern int     DAT_00559ce4;           // player-chat scroll timer   (reset to 0x96 on UI_ShowDialog)
 // Strings que Sound_Countdown1 / Sound_Countdown2 vuelven a mostrar al vencer el timer:
 extern char    DAT_07e11dd0[256];      // byte_7E11DD0: texto del aviso periódico (MoveNotices/CreateNotice)
-extern char    DAT_07e11dd8;           // player-chat periodic refresh msg  (arg2 of UIChatLogWindow_AddText)
-extern char    DAT_07e11ddc;           // player-chat periodic refresh label (arg1 of UIChatLogWindow_AddText)
+// Siempre vacios: nadie los escribe en todo el binario (un xref cada uno, la
+// lectura de Chat_TickMessageTimer).  Son buffers y no char sueltos porque se
+// leen como cadenas -- ver la nota en globals.cpp.
+extern char    DAT_07e11dd8[4];        // strText          (arg2 de UIChatLogWindow_AddText)
+extern char    DAT_07e11ddc[12];       // byte_7E11DDC     (arg1 de UIChatLogWindow_AddText)
 
 // ── Chat ring buffers ─────────────────────────────────────────────────────────
 // System message buffer (UI_AddNotice / Chat_DrawMessages)
