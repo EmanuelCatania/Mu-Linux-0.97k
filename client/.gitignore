@@ -13,6 +13,9 @@ bin/Client/main.pdb
 bin/Client/main.map
 bin/Client/main.ilk
 bin/Client/*.log
+# Volcados de crash del cliente (Debug/MiniDump.cpp).
+*.dmp
+
 
 # Herramienta de trazado de OpenGL (se baja aparte, no es del proyecto)
 bin/Client/opengl32.dll.apitrace

@@ -28,6 +28,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
+#include "Debug/MiniDump.h"
 #include "Net/HWID.h"
 #include "Scene/Scene.h"
 #ifdef _DEBUG
@@ -627,6 +628,17 @@ static LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
     if (s_handlerDepth > 0) return EXCEPTION_CONTINUE_SEARCH;
     s_handlerDepth++;
 
+    // El .dmp se escribe PRIMERO, antes de loguear nada.  Todo lo que sigue
+    // (recorrido de frames, escaneo de stack) puede fallar por su cuenta si la
+    // memoria quedo hecha un desastre, y en ese caso igual queremos el volcado.
+    // Ver Debug/MiniDump.h: no esta en el binario original, se agrega con el
+    // enfoque del MuServer.
+    char dumpPath[MAX_PATH] = {};
+    bool dumpOk = false;
+    __try {
+        dumpOk = CMiniDump::Write(ep, dumpPath, sizeof(dumpPath));
+    } __except (EXCEPTION_EXECUTE_HANDLER) { dumpOk = false; }
+
     char line1[256], line2[256], full[600];
     __try {
         _snprintf_s(line1, sizeof(line1), _TRUNCATE,
@@ -707,7 +719,22 @@ static LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
     __try {
-        _snprintf_s(full, sizeof(full), _TRUNCATE, "%s\n%s", line1, line2);
+        if (dumpOk) {
+            char b[MAX_PATH + 32];
+            _snprintf_s(b, sizeof(b), _TRUNCATE, "MINIDUMP: %s", dumpPath);
+            DbgLog(b);
+        } else {
+            DbgLog("MINIDUMP: no se pudo escribir (dbghelp.dll?)");
+        }
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+
+    __try {
+        if (dumpOk) {
+            _snprintf_s(full, sizeof(full), _TRUNCATE,
+                        "%s\n%s\n\nVolcado guardado en:\n%s", line1, line2, dumpPath);
+        } else {
+            _snprintf_s(full, sizeof(full), _TRUNCATE, "%s\n%s", line1, line2);
+        }
         MessageBoxA(NULL, full, "Crash", MB_OK | MB_ICONERROR);
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
@@ -781,6 +808,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         }
     }
     _set_invalid_parameter_handler(SilentInvalidParameterHandler);
+    // SEM_FAILCRITICALERRORS: sin esto Windows puede interponer su propio
+    // dialogo de error critico y matar el proceso antes de que corra nuestro
+    // filtro, o sea sin .dmp.  Es lo mismo que hace CMiniDump::Start del server.
+    SetErrorMode(SEM_FAILCRITICALERRORS);
     SetUnhandledExceptionFilter(DbgUnhandledException);
 #ifdef _DEBUG
     // DIAG: CRT debug heap con guard bytes. La corrupción se detecta en el
