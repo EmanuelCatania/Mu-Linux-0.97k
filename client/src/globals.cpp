@@ -1611,8 +1611,21 @@ int      DAT_00559ce4  = 0x96;
 // se porte el handler que lo llena (probablemente el F3/E6 periódico del server,
 // que trae los textos de evento tipo "Devil Square").
 char     DAT_07e11dd0[256] = {0};
-char     DAT_07e11dd8  = 0;
-char     DAT_07e11ddc  = 0;
+// DAT_07e11dd8 = strText (0x07E11DD8) y DAT_07e11ddc = byte_7E11DDC: los dos
+// argumentos de la llamada periodica de Chat_TickMessageTimer (0x480950).
+// En TODO el binario cada uno tiene UN SOLO xref, que es justamente esa
+// lectura: nadie los escribe nunca, o sea son cadenas vacias permanentes.
+// Eso es a proposito -- ver la nota en Chat_TickMessageTimer.
+//
+// Tienen que ser BUFFERS, no un char suelto: se pasan como `const char*` y se
+// recorren con strlen, asi que un unico byte no garantiza terminador propio y
+// la lectura se mete en el global que el linker haya puesto al lado.  De ahi
+// salia el mensaje fantasma con un caracter raro que se vio en 2026-07-27.
+// Es el mismo bug que ya se habia corregido en DAT_07e11dd0 (aviso dorado con
+// una sola letra), aca sin corregir.  Los tamanos son los huecos reales del
+// binario: dd8..ddc = 4 bytes, ddc..de8 = 12.
+char     DAT_07e11dd8[4]  = {0};
+char     DAT_07e11ddc[12] = {0};
 // Event NPC admission limits.  Populated by the server's C1:8E / C1:8F
 // packets; the arrays mirror the original client layout used by
 // RenderEventWindow (0x004F3C50).

@@ -149,23 +149,31 @@ void Chat_TickMessageTimer(void)
   // linea vacia que hace scrollear el historial superior-izquierdo.
   if (bVar1) {
     DAT_00559ce4 = 0x96;
-    // 2026-07-27 FIX (mensajes "whisper" fantasma cada ~6s): este tick re-emite
-    // un mensaje periódico guardado en DAT_07e11dd8 (texto) / DAT_07e11ddc
-    // (sender) con mode=0 (estilo whisper). En nuestro build NADA puebla esos
-    // buffers, así que contenían basura → cada 150 frames aparecía un mensaje
-    // con un carácter no-ASCII suelto arriba a la izquierda (confirmado por el
-    // diag: "CHATADD mode=0 ret=004E5E13 msg='?'" cada 6.4 s, ret =
-    // Chat_TickMessageTimer+0x63). Sólo re-emitimos si el buffer tiene texto imprimible.
-    const char* pMsg = (const char*)&DAT_07e11dd8;
-    bool bValid = false;
-    for (int i = 0; i < 32; ++i) {
-      unsigned char ch = (unsigned char)pMsg[i];
-      if (ch == 0) break;                 // fin de string
-      if (ch >= 0x20 && ch < 0x7F) { bValid = true; break; }  // ASCII imprimible
-    }
-    if (bValid) {
-      UIChatLogWindow_AddText(&DAT_07e11ddc,&DAT_07e11dd8,0);
-    }
+    // Este es el ENVEJECEDOR del historial de chat, no un "mensaje periodico".
+    //
+    // IDA 0x480950 llama incondicionalmente con strText (0x07E11DD8) y
+    // byte_7E11DDC (0x07E11DDC), y a esos dos globals NO LOS ESCRIBE NADIE en
+    // todo el binario: tienen un unico xref cada uno, que es esta misma
+    // lectura.  O sea son cadenas VACIAS siempre, y ese es el punto.
+    //
+    // El primer branch de ChatLB_AddText (sub_40C940) es justamente
+    // `if (!*src && !*msg)`: recorre la lista y hace ++nodo[+0x114] en cada
+    // entrada.  El render de la linea (slot 23) lee ese contador y empuja la
+    // fila hacia arriba, dejando de dibujarla cuando pasa el tope de filas
+    // visibles.  O sea la caducidad del historial la produce esta llamada,
+    // cada 150 frames.  MoveNotices (0x47FCB0) es el mismo patron para los
+    // avisos: CreateNotice(byte_7E11DD0, 0) cada 300, con otro buffer que
+    // tampoco escribe nadie.
+    //
+    // 2026-07-27 esto se habia gateado con un chequeo de "texto imprimible"
+    // para tapar un mensaje fantasma con un caracter raro.  El sintoma era
+    // real pero la causa era otra: DAT_07e11dd8/ddc estaban declarados como un
+    // char suelto, y leerlos como cadena se iba a los globals vecinos.  Con el
+    // gate puesto, el caso normal (buffers vacios) no llama nunca y el
+    // historial deja de avanzar: solo se movia cuando llegaban mensajes
+    // nuevos.  Los buffers ya estan bien dimensionados en globals.cpp, asi que
+    // la llamada vuelve a ser incondicional como en IDA.
+    UIChatLogWindow_AddText(DAT_07e11ddc, DAT_07e11dd8, 0);
   }
   return;
 }
