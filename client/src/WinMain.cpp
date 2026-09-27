@@ -1109,6 +1109,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         }
     }
 
+    // IDA WinMain 0x42207B: la limpieza de salida va aca, despues del bucle de
+    // mensajes.  Lo importante es que cierra MuPlayer.exe, que es un proceso
+    // externo y si no seguiria sonando despues de que el cliente termino.
+    Game_DestroyWindow();
+
     return (int)msg.wParam;
 }
 

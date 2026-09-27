@@ -283,13 +283,64 @@ DWORD __cdecl GenerateCheckSum(BYTE* pbyBuffer, DWORD dwSize, WORD wKey) {
     return uVar5;
 }
 
-// DestroyWindow @ 0x004145C0 (~262 lines) — Full cleanup: deletes fonts (g_hFont/Bold/Big),
-// frees entity data, hash-table entries (SkillAttribute, CharacterMachine), releases all
-// BMD models, unloads all textures, destroys COM objects (DAT_055c9ff0/f4, g_pRenderText),
-// kills MuPlayer.exe, restores system parameters (screensaver etc).
+// Game_DestroyWindow @ 0x004145C0 (IDA `DestroyWindow`, 1039 bytes) — la limpieza
+// de salida.  Su unico llamador es el final de WinMain (0x42207B), despues del
+// bucle de mensajes.
+//
+// Se porta SOLO lo que tiene efecto observable o es trivialmente seguro.  Lo
+// que sigue queda fuera A PROPOSITO:
+//
+//  - Los dos bloques de hash-table (re-encriptado de SkillAttribute y de
+//    CharacterMachine): anti-tamper, fuera por politica del proyecto.
+//
+//  - `SystemParametersInfoA(SPI_SETSCREENSAVEACTIVE, g_iScreenSaverOldValue, 0, 0)`
+//    y el `SystemParametersInfoA(0x61, 0, ...)`.  **Portarlos seria un bug, no
+//    una mejora**: el lado de ARRANQUE que guarda el valor viejo vive bajo
+//    `IDA_PORT_00422074`, que no esta definido, asi que nunca desactivamos el
+//    salvapantallas y `g_iScreenSaverOldValue` vale 0.  Restaurar ese 0 le
+//    DESACTIVARIA el salvapantallas al usuario de forma permanente.  Si algun
+//    dia se activa ese gate, estas dos lineas vuelven junto con el.
+//
+//  - Los frees masivos (`BMD::Release` de los modelos 160..962, `UnloadImage`
+//    de las 1450 texturas, ModelsDump, RendomMemoryDump, SkillAttribute,
+//    CharacterMachine, GateAttribute).  El proceso termina inmediatamente
+//    despues, asi que el SO los reclama igual; y nuestros pools no tienen los
+//    mismos tamanos que el binario, con lo cual un recorrido a ciegas puede
+//    crashear al cerrar.  Un crash de salida es peor que una limpieza que no
+//    hace falta.
+//
+//  - `g_pRenderText`: en este arbol es un objeto stub (`g_RenderTextStubObj`),
+//    no un objeto con vtable real, asi que no tiene destructor que llamar.
 void Game_DestroyWindow(void) {
-    // Stub — real impl deletes fonts, entity data, hash table entries,
-    // BMD models, textures, COM objects, kills MuPlayer, restores SystemParametersInfo.
+    // Fuentes GDI (IDA L1-12).
+    if (g_hFont)     DeleteObject(g_hFont);
+    if (g_hFontBold) DeleteObject(g_hFontBold);
+    if (g_hFontBig)  DeleteObject(g_hFontBig);
+
+    // Los dos widgets de lista, por el slot 0 de su vtable con flag 1
+    // ("scalar deleting destructor": ademas libera la memoria).  IDA L~200.
+    typedef void (__fastcall *FnDtor)(DWORD*, int /*edx*/, char);
+    if (DAT_055c9ff0) {
+        DWORD* obj = (DWORD*)DAT_055c9ff0;
+        void** vt  = (void**)*obj;
+        if (vt && vt[0]) ((FnDtor)vt[0])(obj, 0, 1);
+        DAT_055c9ff0 = 0;
+    }
+    if (DAT_055c9ff4) {
+        DWORD* obj = (DWORD*)DAT_055c9ff4;
+        void** vt  = (void**)*obj;
+        if (vt && vt[0]) ((FnDtor)vt[0])(obj, 0, 1);
+        DAT_055c9ff4 = 0;
+    }
+
+    // Mata el reproductor de musica.  ESTA es la parte con efecto observable:
+    // MuPlayer.exe es un proceso EXTERNO, asi que si no se cierra la musica
+    // sigue sonando despues de que el cliente termino.  IDA manda WM_DESTROY
+    // (2); Music.cpp usa WM_CLOSE para lo mismo desde StopMp3.
+    {
+        HWND hPlayer = FindWindowA(NULL, s_MuPlayer_00559110);
+        if (hPlayer) SendMessageA(hPlayer, WM_DESTROY, 0, 0);
+    }
 }
 
 // WinMain @ 0x0041E8A0 (~1493 lines) — This is the ACTUAL WinMain entry point.
