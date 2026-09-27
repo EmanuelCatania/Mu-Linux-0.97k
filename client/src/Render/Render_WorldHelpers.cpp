@@ -12,7 +12,6 @@
 #include "globals.h"
 #include "functions.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy

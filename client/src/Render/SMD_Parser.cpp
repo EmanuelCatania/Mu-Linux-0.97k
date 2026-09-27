@@ -18,7 +18,6 @@
 #include "Net/Net.h"
 #include "Party/Party.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy

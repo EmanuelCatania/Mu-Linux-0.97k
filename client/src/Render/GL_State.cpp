@@ -32,7 +32,6 @@
 //   0x301 = GL_SRC_ALPHA
 
 #include "stdafx.h"
-extern "C" void DbgLogPublic(const char* msg);
 
 void GL_SetBlendAdditive(void)
 
@@ -106,14 +105,6 @@ void __cdecl GL_BindTextureSlot(int param_1)
         DWORD now = GetTickCount();
         if (now - lastWindow >= 1000) { lastWindow = now; count = 0; }
         if (count++ < 80) {
-          char line[160];
-          _snprintf_s(line, sizeof(line), _TRUNCATE,
-                      "VIS Bind type=%d gl=%u size=(%.0f,%.0f) comp=%u",
-                      param_1, (unsigned)texture,
-                      *(float *)((char *)&DAT_083a7cc0 + param_1 * 0x38),
-                      *(float *)((char *)&DAT_083a7cc4 + param_1 * 0x38),
-                      (unsigned)(unsigned char)(&DAT_083a7cc8)[param_1 * 0x38]);
-          DbgLogPublic(line);
         }
       }
       glBindTexture(0xde1, texture);

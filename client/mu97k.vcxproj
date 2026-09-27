@@ -317,7 +317,6 @@
     <ClCompile Include="src\Net\Net_CharSelect.cpp" />
     <ClCompile Include="src\Net\Net_PipeQuery.cpp" />
     <ClCompile Include="src\GameGuard\GameGuard_InitTrampoline.cpp" />
-    <ClCompile Include="src\Debug\Debug_Forge.cpp" />
     <ClCompile Include="src\Render\Render_WorldHelpers.cpp" />
     <ClCompile Include="src\Render\BMD_Load.cpp" />
     <ClCompile Include="src\globals.cpp" />

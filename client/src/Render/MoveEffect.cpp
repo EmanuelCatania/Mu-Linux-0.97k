@@ -1960,13 +1960,25 @@ LAB_00466e5e:
       }
       break;
     case 0xf4:
+      // 2026-09-26 (Rageful Blow): las cuatro ramas de abajo comparaban
+      // `*(int*)&fVar13` -- un valor FILTRADO de otro case, porque en este
+      // no hay ningun `fVar13 = param_1[1]` previo.  En IDA la variable es
+      // `v4 = *(int *)(o + 96)` (L419), o sea el LIFETIME, que aca es
+      // `__cnt`.  El efecto nace con vida 20 y va bajando:
+      //   15     -> invierte el signo del termino vertical (o+216)
+      //   13     -> estela de efectos 254 + sonido 89
+      //   10..15 -> el arma DESCIENDE (-8/frame)
+      //    3     -> impacto en el suelo (grietas, chispas, 247/245/246)
+      //    2     -> reporte de blancos (sub_45FEC0) y muerte del efecto
+      // Ninguna se cumplia: el arma solo subia y no habia ni impacto ni
+      // dano multi-objetivo.  El test `9 < __cnt < 16` ya estaba bien.
       local_340 = 0.0;
       local_33c = 0.0;
       local_338 = 0.0;
       local_310 = 0.0;
       local_30c = 0.0;
       local_308 = 0;
-      if (*(int*)&fVar13 == 3) {
+      if (__cnt == 3) {
         local_20c = 1.0;
         local_208 = 0x3f800000;
         local_204 = 0x3f800000;
@@ -1981,10 +1993,16 @@ LAB_00466e5e:
         local_348 = local_328 + param_1[4];
         pfVar10 = param_1 + 0x5c;
         *pfVar10 = local_348;
-        local_35c = (float *)(int)(local_324 + param_1[5]);
-        param_1[0x5d] = (float)(int)local_35c;
+        // 2026-09-26 (Rageful Blow): dos errores en el punto de impacto.
+        //  - Y se truncaba a int.  IDA: `v355 = TargetPosition[1] + *(float*)(o+20)`
+        //    es float; el `(int)` venia del slot SLODWORD que Ghidra reusa.
+        //  - RequestTerrainHeight recibia la posicion ORIGINAL del efecto en vez
+        //    del punto YA rotado (IDA usa v60/v299, o sea o+368 y o+372), asi que
+        //    el golpe al suelo muestreaba el terreno bajo los pies del caster y no
+        //    donde cae, 80 unidades adelante.
+        param_1[0x5d] = local_324 + param_1[5];
         param_1[0x5e] = local_320 + param_1[6];
-        fVar17 = RequestTerrainHeight(param_1[4], param_1[5]);
+        fVar17 = RequestTerrainHeight(param_1[0x5c], param_1[0x5d]);
         param_1[0x5e] = (float)(fVar17 + (float10)_DAT_00552464);
         Particle_Spawn(0x4bf,pfVar10,&local_340,&local_20c,0,0.5,0);
         iVar9 = 0;
@@ -2059,7 +2077,7 @@ LAB_00466e5e:
           local_358 = (float)((int)local_358 + 1);
         } while ((int)local_358 < 5);
       }
-      else if (*(int*)&fVar13 == 2) {
+      else if (__cnt == 2) {
         pfVar10 = local_38;
         local_1b8 = 0.0;
         local_1b4 = 0;
@@ -2146,11 +2164,11 @@ LAB_00466e5e:
         if ((9 < __cnt) && (__cnt < 0x10)) {
           local_358 = 12.5;
           local_2e0 = 18.0;
-          if (*(int*)&fVar13 == 15) {
+          if (__cnt == 15) {
             param_1[0x36] = param_1[0x36] * _DAT_005526d8;
           }
         }
-        if (*(int*)&fVar13 == 13) {
+        if (__cnt == 13) {
           local_340 = 0.0;
           local_33c = 0.0;
           local_338 = 0.0;

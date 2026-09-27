@@ -42,7 +42,6 @@ static inline float PtrAsFloatBits(const void *p) {
 
 // ── RenderCharacter  Entity_UpdateRender ──────────────────────────────────────
 extern "C" {
-    void DbgLogPublic(const char*);
     // From Render_PlayerEquipment.cpp
     void Render_PlayerHelper(int c, int o);
     void Render_PlayerWeaponLoop(int c, int o);
@@ -861,14 +860,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                             s_lastDA[csSlot] = now;
                             void* bm = (void*)(DAT_05828d58 + iVar9 * 0xbc);
                             float fScale = *(float *)(puVar13 + 0x5a);
-                            char b[200];
-                            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                                "DA slot=%d part_idx=%d (0x%X) scale=%.4f thresh=%.4f cull=%d "
-                                "bm=%p anims@26=%d",
-                                csSlot, iVar9, iVar9, fScale, _DAT_005524f8,
-                                (_DAT_005524f8 >= fScale) ? 1 : 0,
-                                bm, *(short*)((char*)bm + 0x26));
-                            DbgLogPublic(b);
                         }
                     }
                 }

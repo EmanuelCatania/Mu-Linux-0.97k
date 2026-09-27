@@ -22,7 +22,6 @@
 
 int __cdecl ItemStack_GetMaxStack(int index, int level);
 
-extern "C" void DbgLogPublic(const char* msg);
 
 namespace {
 

@@ -3,7 +3,6 @@
 #include "stdafx.h"
 #include "Input/Input.h"
 
-extern "C" { void DbgLogPublic(const char* msg); }
 //
 // Cubre: mouse (WM_MOUSE*), teclado (GetAsyncKeyState + WM_CHAR), IME/DBCS,
 //        tabla de edge-detection de teclas, y la función de hit-test del numpad.

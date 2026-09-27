@@ -15,7 +15,6 @@ int  __cdecl    Cloth_Solve(DWORD *a1);
 
 #include "Net/Net.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern "C" BYTE OffsetInventoryItems[];
 extern void __cdecl operator_delete(void* ptr);
 extern void MapFileDecrypt(BYTE* buf, int size);

@@ -77,7 +77,6 @@
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-extern "C" { void DbgLogPublic(const char*); }
 
 // IDA: CreateCharacterPointer (0x0045ADC0)
 void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
@@ -86,11 +85,6 @@ void __cdecl CreateCharacterPointer(unsigned char *param_1, int Type,
     // DIAG: trace first 6 calls
     static int s_spawn_dbg = 0;
     if (s_spawn_dbg < 6) {
-        char b[160];
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "CreateCharacterPointer #%d ptr=%p Type=0x%x PosX=%d PosY=%d Rot=%.2f",
-            s_spawn_dbg, param_1, Type, PositionX, PositionY, Rotation);
-        DbgLogPublic(b);
         s_spawn_dbg++;
     }
 

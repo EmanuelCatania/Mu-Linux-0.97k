@@ -1,9 +1,6 @@
 // Entity_Render.cpp
 // Entity_Render_Sprites @ 0x005038E0  (147 lines, 26 basic blocks)
 //
-// (forward decls)
-// extern "C" void DbgLogPublic(const char*);
-//
 // Renders all active entities as 2D sprites (billboard quads) in the 3D world.
 // Called from Game_RenderTick after Terrain_Render (and only in normal view mode).
 // This is the "2D-in-3D" character/NPC sprite pass — distinct from the 3D geometry
@@ -157,7 +154,6 @@
 #include "Render/Entity_Render.h"
 #include <math.h>
 
-extern "C" void DbgLogPublic(const char* msg);
 
 // Entity_Render (0x005038E0) vive en src/Render/Render_WorldHelpers.cpp.
 //

@@ -16,7 +16,6 @@
 #include "functions.h"
 #include "Net/Net.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
@@ -60,20 +59,10 @@ void __cdecl GL_DisableDepthTest(void) {
     s_call++;
     GLenum err_before = glGetError();
     if (err_before != 0) {
-        char b[160];
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "GL_DisableDepthTest #%d ENTER  glGetError(pre)=0x%x  cache=%d",
-            s_call, (int)err_before, (int)DAT_083a411e);
-        DbgLogPublic(b);
     }
     if (DAT_083a411e != '\0') { DAT_083a411e = '\0'; glDisable(0x0b71); }
     GLenum err_after = glGetError();
     if (err_after != 0) {
-        char b[160];
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "GL_DisableDepthTest #%d EXIT   glGetError(post)=0x%x",
-            s_call, (int)err_after);
-        DbgLogPublic(b);
     }
 }
 // EnableDepthMask @ 0x00511510 — GL_EnableDepthWrites

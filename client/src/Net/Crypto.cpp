@@ -586,7 +586,6 @@ static void CsmTrace(const char *fmt, ...) {
     va_list ap; va_start(ap, fmt);
     _vsnprintf_s(buf, sizeof(buf), _TRUNCATE, fmt, ap);
     va_end(ap);
-    DbgLogPublic(buf);
 }
 
 // Watchdog: detects ANY future trample of g_SimpleModulusSC (Dec2 keys).
@@ -1580,45 +1579,21 @@ int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic
     }
 
     DWORD buf[4];
-    char dbg[256];
-    _snprintf_s(dbg, sizeof(dbg), _TRUNCATE,
-        "CSM load %s: XORkey=[%08X %08X %08X %08X] thisAddr=%p",
-        filename, DAT_00562e48[0], DAT_00562e48[1], DAT_00562e48[2], DAT_00562e48[3], _this);
-    DbgLogPublic(dbg);
     if (a4) {  // ModKey → this+4
         ReadFile(hFile, buf, 16, &nRead, NULL);
-        _snprintf_s(dbg, sizeof(dbg), _TRUNCATE,
-            "  ModKey raw=[%08X %08X %08X %08X]", buf[0],buf[1],buf[2],buf[3]);
-        DbgLogPublic(dbg);
         for (int i = 0; i < 4; ++i) _this[1 + i] = buf[i] ^ DAT_00562e48[i];
-        _snprintf_s(dbg, sizeof(dbg), _TRUNCATE,
-            "  ModKey dec=[%08X %08X %08X %08X]",
-            _this[1],_this[2],_this[3],_this[4]);
-        DbgLogPublic(dbg);
     }
     if (a5) {  // EncKey → this+20
         ReadFile(hFile, buf, 16, &nRead, NULL);
         for (int i = 0; i < 4; ++i) _this[5 + i] = buf[i] ^ DAT_00562e48[i];
-        _snprintf_s(dbg, sizeof(dbg), _TRUNCATE,
-            "  EncKey dec=[%08X %08X %08X %08X]",
-            _this[5],_this[6],_this[7],_this[8]);
-        DbgLogPublic(dbg);
     }
     if (a6) {  // DecKey → this+36
         ReadFile(hFile, buf, 16, &nRead, NULL);
         for (int i = 0; i < 4; ++i) _this[9 + i] = buf[i] ^ DAT_00562e48[i];
-        _snprintf_s(dbg, sizeof(dbg), _TRUNCATE,
-            "  DecKey dec=[%08X %08X %08X %08X]",
-            _this[9],_this[10],_this[11],_this[12]);
-        DbgLogPublic(dbg);
     }
     if (a7) {  // XorKey → this+52
         ReadFile(hFile, buf, 16, &nRead, NULL);
         for (int i = 0; i < 4; ++i) _this[13 + i] = buf[i] ^ DAT_00562e48[i];
-        _snprintf_s(dbg, sizeof(dbg), _TRUNCATE,
-            "  XorKey dec=[%08X %08X %08X %08X]",
-            _this[13],_this[14],_this[15],_this[16]);
-        DbgLogPublic(dbg);
     }
     CloseHandle(hFile);
     return 1;

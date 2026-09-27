@@ -24,7 +24,6 @@
 #include "structs.h"        // ITEM, ITEM_ATTRIBUTE (también en GameStructs.h — usar uno solo)
 #include "functions.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern "C" int __cdecl ConvertItemType(BYTE* Item);
 
 // ── External handles -─────────────────────────────────────────────────────────
@@ -398,26 +397,7 @@ extern "C" void __cdecl Recv_Inventory(const BYTE* Msg)
     int  itemsStart = bodyStart + 1;                 // first item byte
     int  stride     = 5;                             // mu-emu 0.97D stride
 
-    {
-        char b[160];
-        wsprintfA(b, "NET:    F3/10 Inventory count=%d totalLen=%d stride=%d hdrLen=%d isC2=%d",
-                  (int)count, totalLen, stride, hdrLen, (int)isC2);
-        DbgLogPublic(b);
-    }
 
-    // [DIAG] Raw packet hex dump (first 64 bytes) to figure out actual server layout.
-    {
-        char b[400];
-        int p = 0;
-        int dumpLen = totalLen > 64 ? 64 : totalLen;
-        if (dumpLen > 0) {
-            p += wsprintfA(b + p, "NET:    F3/10 RAW: ");
-            for (int i = 0; i < dumpLen && p < 380; ++i) {
-                p += wsprintfA(b + p, "%02X ", Msg[i]);
-            }
-            DbgLogPublic(b);
-        }
-    }
 
     if (count == 0) return;
 
@@ -436,11 +416,6 @@ extern "C" void __cdecl Recv_Inventory(const BYTE* Msg)
         HeroEquipWatchdog((int)(uintptr_t)DAT_07abf5d8);
     }
 
-    // Ahora que el grid está poblado, abrir la ventana lógicamente: el
-    // cliente original setea InventoryOpened=1 al recibir este packet (el
-    // server lo manda solo cuando el server lo decide).  Lo dejamos OFF —
-    // el user abre con V/I keys.  Solo logueamos para confirmar arrival.
-    DbgLogPublic("NET:    F3/10 done - inventory populated");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -459,11 +434,9 @@ extern "C" void __cdecl Recv_Inventory(const BYTE* Msg)
 extern "C" void __cdecl Recv_InventoryOpen(const BYTE* /*Msg*/)
 {
     DAT_07eaa117 = 1;                               // InventoryOpened = true
-    DbgLogPublic("NET:    0x55 server requested Inventory_Open");
 }
 
 extern "C" void __cdecl Recv_InventoryClose(const BYTE* /*Msg*/)
 {
     DAT_07eaa117 = 0;                               // InventoryOpened = false
-    DbgLogPublic("NET:    0x54 server requested Inventory_Close");
 }

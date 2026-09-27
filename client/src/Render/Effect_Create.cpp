@@ -5,9 +5,6 @@
 
 #include "stdafx.h"
 
-extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
-                         int mesh, int blend, float wx, float wy, float wz,
-                         float r, float g, float b, float a);   // [DIAG FORGE]
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -54,12 +51,6 @@ CreateEffect(int param_1,float *param_2,float *param_3,float *param_4,float *par
             float *param_7,float *param_8,byte param_9)
 
 {
-  // [DIAG FORGE] entry-point CreateEffect (param_4 = Light/color)
-  if (param_2)
-      DbgForge("CreateEffect", param_1, -1, -1, -1, -1, -1,
-               param_2[0], param_2[1], param_2[2],
-               param_4 ? param_4[0] : 0.0f, param_4 ? param_4[1] : 0.0f,
-               param_4 ? param_4[2] : 0.0f, -1.0f);
   byte bVar1;
   float fVar2;
   float *pfVar3;
@@ -1513,7 +1504,11 @@ LAB_004625aa:
     pfVar17[0x5e] = pfVar17[6];
     pfVar17[0x18] = 2.8026e-44;
     iVar9 = _rand();
-    pfVar17[1] = (float)(iVar9 % 100);
+    // IDA: `*((_DWORD *)i + 1) = rand() % 100;` -- el SubType es un DWORD.
+    // Guardarlo con una conversion a float dejaba los BITS del float en el
+    // campo, y MoveEffect lo lee por bits: el angulo de las grietas del
+    // suelo (IDA L2095) salia ~1.1e9 en vez de 0..99.
+    *(DWORD *)(pfVar17 + 1) = (DWORD)(iVar9 % 100);
     pfVar17[9] = pfVar17[9] + _DAT_00552978;
     pfVar17[10] = pfVar17[10] + _DAT_00552878;
     pfVar17[0xc] = pfVar17[0xc] + _DAT_005524ec;

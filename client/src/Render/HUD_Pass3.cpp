@@ -52,7 +52,6 @@ extern "C" int __cdecl sub_4E9300_(void);
 // field (offset 0, WORD) to 0xFFFF so empty inventory cells aren't
 // misinterpreted as type-0 matches by Item_FindQuickSlotByCategory and similar scanners.
 extern "C" BYTE  Inventory[];
-extern "C" void  DbgLogPublic(const char*);
 extern "C" BYTE  OffsetInventoryItems[];
 extern "C" BYTE  OffsetTradeItems[];
 extern "C" BYTE  OffsetMixItems[];

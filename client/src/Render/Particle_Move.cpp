@@ -840,19 +840,42 @@ void __stdcall MoveParticles(void)
                         P_POSZ(iVar9) += fVar15;
                         continue;
                     } else if (iVar5 == 4) {
+                        // Subtipo 4: la particula se RE-ANCLA cada tick a un hueso
+                        // del dueño.  Es lo que hace que el aura de Swell Life
+                        // (efecto 0x47e/1, que spawnea estas particulas) siga al
+                        // personaje en vez de quedarse donde se casteo.
+                        //
+                        // IDA 0x477090:
+                        //   TransformPosition(Models + 188*ownerType, boneMatrix,
+                        //                     Position, (float*)v5 + 4, 0);
+                        //   *v8             = *(float*)(v14+16) + *v8;
+                        //   *((float*)v5+5) = *(float*)(v14+20) + ...;
+                        //   *((float*)v5+6) = *(float*)(v14+24) + ...;
+                        //
+                        // El indice de hueso vive en +0x40 (P_ROT): lo escribe
+                        // Particle_Spawn case 4 con su parametro Scale, que el
+                        // caller toma de la tabla DAT_00559b78 {25,26,27,20,34,
+                        // 35,36,0}.  El +0x0C del slot queda fijo en 2.0f, asi
+                        // que leer el hueso de ahi daba siempre el mismo.
                         int entPtr = P_ENT(iVar9);
                         if (entPtr != 0) {
-                            // BMD::TransformPosition — get bone position from entity model
-                            // Uses __thiscall on BMD* (Models + entity_type * 0xBC)
-                            // Ghidra: phantom register args present; result updates particle pos
                             float localP[3] = { 0.0f, 0.0f, 0.0f };
-                            float worldP[3];
                             void* mdl = (void*)((char*)DAT_05828d58 + *(short*)(entPtr + 2) * 0xBC);
-                            long long lFrame = (long long)(double)P_SCALE(iVar9); // __ftol analog
-                            // BMD__TransformPosition(this, BoneMatrix, Pos, WorldPos, Translate)
-                            BMD_TransformPosition(mdl,
-                                (float*)((int)lFrame * 0x30 + *(int*)(entPtr + 0x114)),
-                                localP, worldP, 0);
+                            int boneTab = *(int*)(entPtr + 0x114);
+                            long long lBone = (long long)(double)P_ROT(iVar9); // __ftol analog
+                            // Guard del port (IDA no lo tiene): sin tabla de huesos
+                            // el deref cae fuera de todo lo mapeado, y un indice
+                            // mayor que numBones (model+34) lee pasado el alloc.
+                            int nBones = (boneTab != 0) ? (int)*(short*)((char*)mdl + 34) : 0;
+                            if (boneTab != 0 && lBone >= 0 && (int)lBone < nBones) {
+                                // BMD__TransformPosition(this, BoneMatrix, Pos, WorldPos, Translate)
+                                BMD_TransformPosition(mdl,
+                                    (float*)((int)lBone * 0x30 + boneTab),
+                                    localP, &P_POSX(iVar9), 0);
+                                P_POSX(iVar9) += *(float*)(entPtr + 0x10);
+                                P_POSY(iVar9) += *(float*)(entPtr + 0x14);
+                                P_POSZ(iVar9) += *(float*)(entPtr + 0x18);
+                            }
                         }
                         iVar5 = _rand();
                         P_GRAV(iVar9) += (float)(iVar5 % 0x28 + 0x3c) * _DAT_00552b3c;

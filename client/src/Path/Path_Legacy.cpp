@@ -316,11 +316,6 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
     {
         static int s_pflog = 0;
         if (s_pflog++ < 30) {
-            char b[176];
-            wsprintfA(b, "A* OK #%d: src=(%d,%d) dst=(%d,%d) iWall=%d rad=%d wp=%d explored=%d%s",
-                      s_pflog, sx, sy, tx, ty, iWall, (int)fDistance, validSteps, explored,
-                      found ? "" : " [parcial]");
-            DbgLogPublic(b);
         }
     }
     return 1;
@@ -372,9 +367,6 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
             if (pfCtx && (uintptr_t)pfCtx >= 0x100000) {
                 vtbl = ((DWORD*)pfCtx)[0x105];
             }
-            wsprintfA(b, "pfCtx check #%d: pfCtx=%p vtbl@0x414=0x%x pfReady=%d",
-                      s_dbg_pf, pfCtx, (unsigned)vtbl, (int)pfReady);
-            DbgLogPublic(b);
         }
     }
     if (!pfReady) {

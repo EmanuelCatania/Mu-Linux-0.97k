@@ -2430,9 +2430,9 @@ extern float   _DAT_005529c4;  // move effect float constant
 extern float   _DAT_005529cc;  // move effect float constant
 extern float   _DAT_005529d0;  // move effect float constant
 extern float   _DAT_005529d4;  // move effect float constant
-extern float   _DAT_005529d8;  // move effect float constant
-extern float   _DAT_005529e8;  // move effect float constant
-extern float   _DAT_005529f0;  // move effect float constant
+extern double  _DAT_005529d8;  // 12.5   (double de 8 bytes en el binario)
+extern double  _DAT_005529e8;  // 1/180  (double de 8 bytes en el binario)
+extern double  _DAT_005529f0;  // PI     (double de 8 bytes en el binario)
 extern float   _DAT_005529f8;  // move effect float constant
 extern float   _DAT_00552a04;  // move effect float constant
 extern float   _DAT_00552a0c;  // move effect float constant

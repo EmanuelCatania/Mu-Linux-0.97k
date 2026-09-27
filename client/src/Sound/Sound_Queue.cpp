@@ -34,7 +34,6 @@
 // del pool (glow +9 set, wing FX, weapon FX, particles, etc.)
 // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba TODO el render — ahora itera
 // por índice acotado a 1002 slots.
-extern "C" void DbgLogPublic(const char*);
 // IDA: RenderSprites
 void __cdecl Render_DrawSpritePool(void)
 {

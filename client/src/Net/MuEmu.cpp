@@ -94,10 +94,6 @@ static void DumpHex(const char* tag, const BYTE* buf, int len)
         char t[8]; wsprintfA(t, "%02X ", buf[i]);
         lstrcatA(hex, t);
     }
-    char line[1280];
-    wsprintfA(line, "MuEmu: %s len=%d [%s%s]",
-              tag, len, hex, (len > 256) ? "..." : "");
-    DbgLogPublic(line);
 #else
     (void)tag; (void)buf; (void)len;
 #endif
@@ -172,19 +168,6 @@ extern "C" int __stdcall MuEmu_send_hook(SOCKET s, const char* buf, int len, int
         BYTE first = (BYTE)buf[0];
         // Plain MuEmu header? → not yet encrypted.
         if (first == 0xC1 || first == 0xC2 || first == 0xC3 || first == 0xC4) {
-            {
-                // DIAG 2026-07-19: volcar los bytes PLANOS (pre-encrypt) para
-                // identificar qué paquete manda el cliente. Se está buscando un
-                // C1 de 4 bytes que precede a un FD_CLOSE del server.
-                char dbg[256];
-                int p = wsprintfA(dbg, "MuEmu_send_hook: AUTO-ENCRYPT C%X len=%d plain=[",
-                                  (first & 0xF), len);
-                int dumpN = len > 24 ? 24 : len;
-                for (int i = 0; i < dumpN && p < 220; ++i)
-                    p += wsprintfA(dbg + p, "%02X ", (BYTE)buf[i]);
-                wsprintfA(dbg + p, "]");
-                DbgLogPublic(dbg);
-            }
             MuEmu::EncryptSend((BYTE*)(uintptr_t)buf, len);
         }
     }

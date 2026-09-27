@@ -209,7 +209,6 @@
 #include "Render/Render.h"
 #include "Render/Camera.h"
 #include "Render/Player_Render.h"
-extern "C" { void DbgLogPublic(const char* msg); }
 // 2026-05-08: backup of DAT_07d78068 — defined here (not in globals.cpp) so
 // it lives in a different .obj's BSS, NOT adjacent to DAT_07d78068. The
 // unknown writer that sets DAT_07d78068=0x1 also clobbers the next 4 bytes
@@ -543,14 +542,6 @@ void Render_Scene3D(void)
             float hx = hero ? *(float*)(hero + 0x10) : 0.0f;
             float hy = hero ? *(float*)(hero + 0x14) : 0.0f;
             float hz = hero ? *(float*)(hero + 0x18) : 0.0f;
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "R3D state=%d sub=%d d11d1c=%u hero=%p heroPos=(%.1f,%.1f,%.1f) "
-                "CamPos=(%.1f,%.1f,%.1f) CamAng=(%.1f,%.1f,%.1f)",
-                (int)SceneFlag, (int)World, DAT_07e11d1c,
-                hero, hx, hy, hz,
-                CameraPosition[0], CameraPosition[1], CameraPosition[2],
-                CameraAngle[0], CameraAngle[1], CameraAngle[2]);
-            DbgLogPublic(b);
         }
     }
 

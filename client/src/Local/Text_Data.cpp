@@ -69,9 +69,6 @@ int __cdecl LoadTextData_Bin(const char *FileName)
     free(buf);
     fclose(fp);
 
-    char msg[128];
-    wsprintfA(msg, "OpenTextData: loaded %s (1000 x 300)", FileName);
-    DbgLogPublic(msg);
     return 1;
 }
 

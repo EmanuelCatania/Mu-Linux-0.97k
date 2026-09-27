@@ -676,7 +676,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         DbgLog("CRT heap debug: ALLOC_MEM + CHECK_EVERY_1024 habilitados (LEAK_CHECK off)");
     }
 #endif
-    DbgLog("== WinMain entry ==");
     g_hInst = hInst;
 
     // 1-5: anti-tamper init, world pre-init, integrity check
@@ -694,15 +693,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         if (Config_ReadServerAddr(NULL, lpCmdLine, g_ServerIPBuf, &cfgPort)) {
             szServerIpAddress = g_ServerIPBuf;
             g_ServerPort = cfgPort;
-            DbgLog("server.cfg: overrode server IP/port");
-        }
-        {
-            char b[160];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "CS-DIAG WinMain: g_HasConnectServer=%d line1=%s:%d gsIP=%s gsPort=%d",
-                g_HasConnectServer, g_ServerIPBuf, (int)g_ServerPort,
-                g_GameServerIP, (int)g_GameServerPort);
-            DbgLog(b);
         }
     }
 
@@ -717,48 +707,24 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // FD_CLOSE (el síntoma del diálogo vacío que vuelve al login de la corrida del 2026-04-24).
     extern BOOL __cdecl CSimpleModulus_LoadEncryptionKey(DWORD *self, const char *fn);
     extern BOOL __cdecl CSimpleModulus_LoadDecryptionKey(DWORD *self, const char *fn);
-    DbgLog("before CSimpleModulus::LoadEncryptionKey");
     BOOL okEnc = CSimpleModulus_LoadEncryptionKey(g_SimpleModulusCS, "Data\\Enc1.dat");
     BOOL okDec = CSimpleModulus_LoadDecryptionKey(g_SimpleModulusSC, "Data\\Dec2.dat");
-    {
-        char b[256];
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "CSimpleModulus load: Enc1=%d Dec2=%d", okEnc, okDec);
-        DbgLog(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "POST-LOAD Dec2 mod=[%08X %08X %08X %08X] addr=%p",
-                    g_SimpleModulusSC[1], g_SimpleModulusSC[2], g_SimpleModulusSC[3], g_SimpleModulusSC[4],
-                    (void*)g_SimpleModulusSC);
-        DbgLog(b);
-    }
 
-    // 10: config
-    DbgLog("before Config_Load");
     if (!Config_Load()) { DbgLog("Config_Load FAILED"); return 0; }
-    DbgLog("after Config_Load");
 
     // 10b: localized string pool — Data/Local/Text.bmd → GlobalText[1000][300].
     // El WinMain original llama OpenTextData() antes del chequeo de versión/integridad
     // (ver el port de IDA en stubs.cpp:33019). Lo invocamos acá para que todo camino
     // de UI que lea GlobalText[N] (mensajes de error, confirmaciones, cuentas regresivas...)
     // datos reales en vez de vacíos.
-    DbgLog("before OpenTextData");
     OpenTextData();
-    DbgLog("after OpenTextData");
 
     // 11: modo de video — pone los valores por defecto si no está configurado
     if (DAT_0056156c == 0) DAT_0056156c = 640;
     if (DAT_00561570 == 0) DAT_00561570 = 480;
-    // ChangeDisplaySettings completo omitido (por ahora corre en ventana)
-
-    // 12-13: window + OpenGL
-    DbgLog("before Window_Create");
     Window_Create(hInst);
     if (!g_hWnd) { DbgLog("Window_Create FAILED"); return 0; }
-    DbgLog("after Window_Create");
-    DbgLog("before OpenGL_Init");
     if (!OpenGL_Init()) { DbgLog("OpenGL_Init FAILED"); return 0; }
-    DbgLog("after OpenGL_Init");
 
     // 14: GameGuard — HWND casteado a CHAR*
     GameGuard_Init((CHAR*)g_hWnd);
@@ -803,7 +769,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         // render (Scene_Login_ServerSelect Pass 4) dibuja load/5 cuadros llenos:
         // 0 → 0 llenos + 20 vacíos = barra vacía, igual que el binario original.
         srv0[0x2e] = 0;                                      // channel[0] load = 0 (vacío)
-        DbgLog("Static server list populated: MuServer [1 ch]");
     }
 
     // 15: fuentes — el tamaño depende de la resolución
@@ -948,11 +913,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
             lstrcpynA(DAT_07d2b494 + i * 300, kCN[i], 300);
     }
 
-    // 23: mouse speed
-    // SystemParametersInfoA(0x61, 1, NULL, 0);  // SPI_SETMOUSESPEED
-
-    // 24: Set initial game state → Intro (Webzen logo)
-    DbgLog("allocs done, entering message loop");
     SceneFlag = 1;  // SceneFlag: 1=Intro, 2=Login, 3=Loading, 4=CharSelect, 5=InGame
 
     // ── MESSAGE LOOP ─────────────────────────────────────────────────────────
@@ -988,10 +948,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
                 static unsigned s_corruptCnt = 0;
                 if (s_corruptCnt < 30) {
                     s_corruptCnt++;
-                    char dbg[120];
-                    wsprintfA(dbg, "CLK-CLAMP: DAT_083a4124=0x%08X t=%u",
-                        (unsigned)DAT_083a4124, GetTickCount());
-                    DbgLogPublic(dbg);
                 }
                 DAT_083a4124 = 0;
             }
@@ -1003,7 +959,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         }
     }
 
-    DbgLog("message loop exit");
 
     // ── Cola de DestroyWindow (0x004145C0) ──────────────────────────────────
     // El binario cierra el reproductor externo al salir; sin esto MuPlayer.exe
@@ -1017,7 +972,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         HWND hMuPlayer = FindWindowA(NULL, "MuPlayer");
         if (hMuPlayer) {
             SendMessageA(hMuPlayer, WM_CLOSE, 0, 0);
-            DbgLog("MuPlayer cerrado");
         }
     }
 
@@ -1107,12 +1061,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // El código anterior hacía el switch sobre wParam, que está mal; va lParam.event.
         WORD evt = LOWORD(lParam);
         WORD err = HIWORD(lParam);
-        {
-            char dbg[96];
-            wsprintfA(dbg, "NET: WM_USER wParam=0x%X lParam=0x%X evt=0x%X err=%u",
-                      (unsigned)wParam, (unsigned)lParam, (unsigned)evt, (unsigned)err);
-            DbgLog(dbg);
-        }
         // Compatibilidad MuEmu: tras F4/03 redirect podemos reconectar a un
         // socket nuevo antes de que Windows entregue el FD_CLOSE del socket
         // viejo. Si procesamos ese evento tardío como si fuera del socket
@@ -1142,11 +1090,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 BYTE req[4] = { 0xC1, 0x04, 0xF4, 0x02 };
                 CS_SendPlain(req, 4);
                 g_ConnectServerRequested = 1;
-                DbgLog("NET: CS mode (FD_WRITE) → sent C1 04 F4 02 (server-list request)");
             }
         }
         if (evt & 0x10) { // FD_CONNECT
-            DbgLog("NET: FD_CONNECT fired (socket ready for I/O)");
             extern void CS_SendPlain(const BYTE* data, int len);
             extern void CreateSocket(const char* server, unsigned int port);
             if (err == 0 && g_ConnectServerMode && !g_ConnectServerRequested) {
@@ -1155,11 +1101,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 BYTE req[4] = { 0xC1, 0x04, 0xF4, 0x02 };
                 CS_SendPlain(req, 4);
                 g_ConnectServerRequested = 1;
-                DbgLog("NET: CS mode → sent C1 04 F4 02 (server-list request)");
             }
         }
         if (evt & 0x20) { // FD_CLOSE
-            DbgLog("NET: FD_CLOSE fired (remote closed socket)");
             // IDA WndProc @ 0x004149D0 case FD_CLOSE (original behaviour):
             //   UIChatLogWindow_AddText(strID, GlobalText[3], 1);
             //   CWsctlc::Close(&SocketClient);
@@ -1197,13 +1141,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_LBUTTONDOWN:   // 0x201
-        {
-            char dbg[96];
-            wsprintfA(dbg, "WM_LBUTTONDOWN @ (%d,%d) c4_pending=%d t=%u",
-                (int)DAT_083a427c, (int)DAT_083a4278,
-                (int)DAT_083a42c4, GetTickCount());
-            DbgLogPublic(dbg);
-        }
         DAT_083a413c = 0;                    // cancelar "dialog close" anterior
         if (DAT_083a42c4 == 0) {
             DAT_083a4124 = 1;                // g_ClickFlag = 1
@@ -1214,12 +1151,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_LBUTTONUP:     // 0x202
-        {
-            char dbg[96];
-            wsprintfA(dbg, "WM_LBUTTONUP   @ (%d,%d) t=%u",
-                (int)DAT_083a427c, (int)DAT_083a4278, GetTickCount());
-            DbgLogPublic(dbg);
-        }
         DAT_083a4124 = 0;                    // g_ClickFlag = 0
         // Si no hubo drag desde el down, marcar "dialog close / click confirmado"
         if (DAT_055ca03c == DAT_083a427c && DAT_055ca040 == DAT_083a4278) {
@@ -1233,12 +1164,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_LBUTTONDBLCLK: // 0x203
-        {
-            char dbg[96];
-            wsprintfA(dbg, "WM_LBUTTONDBLCLK @ (%d,%d) t=%u",
-                (int)DAT_083a427c, (int)DAT_083a4278, GetTickCount());
-            DbgLogPublic(dbg);
-        }
         DAT_083a4299 = 1;                    // g_DblClickFlag
         break;
 
@@ -1250,13 +1175,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             MouseRButtonPush = 1;                // MouseRButtonPush
         }
         DAT_083a42ac = 1;                    // MouseRButton
-        {
-            char dbg[128];
-            wsprintfA(dbg, "INPUT RMB down @ (%d,%d) push=%u held=%u",
-                (int)DAT_083a427c, (int)DAT_083a4278,
-                (unsigned)MouseRButtonPush, (unsigned)DAT_083a42ac);
-            DbgLogPublic(dbg);
-        }
         break;
 
     case WM_RBUTTONUP:     // 0x205
@@ -1264,7 +1182,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // Pop aparte, que hoy ningún camino de gameplay compilado lee).
         MouseRButtonPush = 0;
         DAT_083a42ac = 0;
-        DbgLogPublic("INPUT RMB up");
         break;
 
     case WM_MOUSEWHEEL:    // 0x20A
@@ -1300,21 +1217,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // Diagnóstico: confirma que WM_CHAR está llegando a la ventana y loguea
         // el estado de los flags del subsistema de input, para poder distinguir
         // "la tecla se perdió" de "la tecla se ignoró".
-        {
-            char dbg[128];
-            // 2026-05-04: leer MaxLen como el int crudo de _InputTextMaxArr[slot]
-            // — `(int)InputTextMax` castearía el VALOR float (siempre 0 para
-            // patrones de bits de enteros chicos), en vez de reinterpretar los bits.
-            wsprintfA(dbg,
-                "WM_CHAR: wParam=0x%02X slot=%u len=%u InputEnable=%u InputNumber=%u MaxLen=%d",
-                (unsigned)wParam,
-                (unsigned)DAT_07e11d78,
-                (unsigned)((DWORD*)DAT_07d780a8)[DAT_07e11d78 & 0x0F],
-                (unsigned)DAT_00559c84,
-                (unsigned)InputNumber,
-                _InputTextMaxArr[DAT_07e11d78 & 0x0F]);
-            DbgLog(dbg);
-        }
 
         // Clampea el slot a [0,9] para evitar OOB si el índice por slot es basura.
         DWORD  slot = DAT_07e11d78 & 0x0F;

@@ -814,10 +814,6 @@ extern "C" void Render_PlayerWeaponLoop(int c, int o)
                     BYTE linkBone = *(unsigned char*)(v121 + 4);
                     BYTE curAct   = *(unsigned char*)(v121 + 5);
                     float ps      = *(float*)(v121 + 16);
-                    _snprintf_s(b, sizeof(b), _TRUNCATE,
-                        "WP slot=%d hand=%d type=%d link=%d act=%d ps=%.3f anim=%d",
-                        csSlot, v234, (int)v120, linkBone, curAct, ps, v118);
-                    DbgLogPublic(b);
                 }
             }
         }

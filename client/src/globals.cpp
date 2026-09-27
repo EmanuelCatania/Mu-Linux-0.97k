@@ -2611,9 +2611,18 @@ float  _DAT_005529c4  = 700.0f;
 float  _DAT_005529cc  = 0.015f;
 float  _DAT_005529d0  = -0.01f;
 float  _DAT_005529d4  = 0.333333343f;
-float  _DAT_005529d8  = 0.0f;
-float  _DAT_005529e8  = 3.1249046e-25f;
-float  _DAT_005529f0  = -5773911433377342244919403216988274688.0f;
+// 2026-09-26: los tres son DOUBLES de 8 bytes en el binario y estaban
+// declarados como float, o sea se leian los 4 bytes bajos de cada uno.
+// Bytes reales (ida_get_bytes 0x5529D8, 32): la region intercala
+//   0x5529D8 double 12.5 | 0x5529E0 float 260.0 | 0x5529E4 padding
+//   0x5529E8 double 1/180 | 0x5529F0 double PI
+// Los usa MoveEffect case 244 (Rageful Blow): el producto PI*(1/180) daba
+// -1.8e12 en vez de 0.01745, asi que el seno del arco del arma era basura,
+// y el 12.5 en 0 hacia que el test `v356 != 12.5` fuera SIEMPRE cierto -> el
+// arma solo subia (+8/frame) y nunca bajaba.
+double _DAT_005529d8  = 12.5;
+double _DAT_005529e8  = 0.005555555555555556;
+double _DAT_005529f0  = 3.141592;
 float  _DAT_005529f8  = 72.0f;
 float  _DAT_00552a04  = 24.0f;
 float  _DAT_00552a0c  = 0.04f;
@@ -2629,7 +2638,11 @@ float  _DAT_00552aa4  = 0.025f;  // MoveJoint HP-bar scale factor
 float  _DAT_00552a9c  = 0.0613f;  // Ring_ComputeOrbit ring trig scale X
 float  _DAT_00552aa0  = 0.048f;  // Ring_ComputeOrbit ring trig scale Y
 float  _DAT_00552aa8  = 0.1113f;  // Ring_ComputeOrbit ring trig scale Z
-// Tabla de escalas de MoveEffect: dato del binario que el port dejo en ceros.
+// Tabla de HUESOS del aura de Swell Life: dato del binario que el port dejo
+// en ceros.  No son escalas -- MoveEffect los pasa como 'Scale' a
+// Particle_Spawn(0x47e, ..., sub 4, Scale, owner), que los guarda en el
+// campo +0x40 del slot, y MoveParticles los usa como indice de hueso para
+// re-anclar la particula al dueño en cada tick.
 // Leida de 0x00559B78: 19 1a 1b 14 22 23 24 00.
 // Unico consumidor: MoveEffect (0x0046A3D1), que la lee en las DOS direcciones:
 // hacia adelante desde 0x559B78 y hacia ATRAS desde 0x559B7F

@@ -443,7 +443,6 @@
 #include "globals.h"
 #include "functions.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 
 static BYTE Combat_ResolveQueuedSkillId97k();
 static int Combat_GetSkillRange97k(int skillType);

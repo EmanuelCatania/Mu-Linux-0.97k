@@ -17,7 +17,6 @@
 #include "globals.h"
 #include "functions.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 extern void __cdecl operator_delete(void* ptr);
 
 #ifndef qmemcpy
@@ -716,15 +715,6 @@ void __cdecl RenderObjectScreen(int param_1, unsigned int param_2, unsigned char
             int tx = 0, ty = 0, px = 0, py = 0;
             Camera_ProjectWorldToScreen(param_5, &tx, &ty);   // Target  → pantalla
             Camera_ProjectWorldToScreen(outPos,  &px, &py);   // Position→ pantalla
-            char ib[240];
-            _snprintf_s(ib, sizeof(ib), _TRUNCATE,
-                "ITEM3D type=%d cam=(%.1f,%.1f,%.1f) tgt=(%.1f,%.1f,%.1f) "
-                "pos=(%.1f,%.1f,%.1f) proj_tgt=(%d,%d) proj_pos=(%d,%d) d=(%d,%d)",
-                (int)param_1, camPos[0], camPos[1], camPos[2],
-                param_5[0], param_5[1], param_5[2],
-                outPos[0], outPos[1], outPos[2],
-                tx, ty, px, py, px - tx, py - ty);
-            DbgLogPublic(ib);
         }
     }
 #endif

@@ -291,14 +291,6 @@ static int tex_load_ozj(const char* fullPath, int id, int min_filt, int wrap)
     int h = tex_next_pow2((int)cinfo.output_height, 1024);
 
     // DIAG: log actual dimensions and decode success
-    {
-        char dbg[256];
-        _snprintf_s(dbg, sizeof(dbg), _TRUNCATE,
-            "OZJ_Decode id=0x%x file='%s' jpg=%dx%d pow2=%dx%d components=%d",
-            id, fullPath, (int)cinfo.output_width, (int)cinfo.output_height,
-            w, h, (int)cinfo.output_components);
-        DbgLogPublic(dbg);
-    }
 
     TexSlot* slot = &TexTable[id];
     Texture_Unload(id);   // free any previous slot pixels + GL handle
@@ -779,11 +771,6 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
         bool isAcct = (uiTextureIndex == 0xc || uiTextureIndex == 0x10 ||
                        uiTextureIndex == 0x11);
         if (s_tga < 200 || isAcct) {
-            char m[512];
-            _snprintf_s(m, sizeof(m), _TRUNCATE,
-                "TGA_Load[%d] id=0x%x '%s' → %s",
-                s_tga, uiTextureIndex, local_200, (Stream ? "OK-open" : "FAIL-fopen"));
-            DbgLogPublic(m); s_tga++;
         }
     }
     if (!Stream) {
@@ -813,11 +800,6 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
     {
         static int s_tgahdr = 0;
         if (s_tgahdr < 250) { s_tgahdr++;
-            char m[256];
-            _snprintf_s(m, sizeof(m), _TRUNCATE,
-                "TGA_Hdr id=0x%x w=%d h=%d depth=0x%x mode=%d hdrOff=0x%x",
-                uiTextureIndex, width, height, depth, (int)g_tex_ext_mode, hdrOff);
-            DbgLogPublic(m);
         }
     }
     // [FIX #4 2026-06-30] Límite de tamaño <=256 removido — match companion-DLL
@@ -898,16 +880,12 @@ int __cdecl OpenTGA(const char* szFileName, int uiTextureIndex,
                 char m[256];
                 GLenum e = glGetError();
                 BYTE* cp = pixBuf + (4 * (ph/2) * pw) + 4*(pw/2);
-                _snprintf_s(m, sizeof(m), _TRUNCATE,
-                    "TGA_Up id=0x%x gl=0x%x pw=%d ph=%d centerPix=(%d,%d,%d,%d) glErr=0x%x",
-                    uiTextureIndex, glHandle, pw, ph, cp[0], cp[1], cp[2], cp[3], e);
-                DbgLogPublic(m);
             }
         }
         return 1;
     }
 
-    // [DIAG TEMP #4] ungate: cualquier textura aún rechazada (ej. depth!=0x20). REMOVER al cerrar #4.
+    // Reporte de textura rechazada (dimensiones o profundidad no soportadas).
     {
         static int s_tgafail = 0;
         if (s_tgafail < 60) { s_tgafail++;

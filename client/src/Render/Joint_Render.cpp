@@ -37,7 +37,6 @@
 
 #include "stdafx.h"
 
-extern "C" void DbgLogPublic(const char* msg);
 
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -59,15 +58,6 @@ void Trail_RenderAll(void)
   for (int slotIdx = 0; slotIdx < 100; ++slotIdx, piVar2 += 0xbc) {
     if ((char)piVar2[-3] != '\0') {
       iVar3 = piVar2[-2];
-      {
-        char trailLog[192];
-        wsprintfA(trailLog,
-                  "TRAIL slot=%d owner=%08X type=%d seg=%d base=%08X hero=%08X chars=%08X",
-                  slotIdx, (unsigned)*piVar2, iVar3, piVar2[1],
-                  (unsigned)(uintptr_t)g_RenderPool_07c608a8,
-                  (unsigned)(uintptr_t)DAT_07abf5d8, (unsigned)DAT_07abf5d0);
-        DbgLogPublic(trailLog);
-      }
       if ((*(short *)(*piVar2 + 0x1be) == 0) && (iVar3 < 3)) {
         GL_SetBlendAdditive();
       }

@@ -56,61 +56,64 @@ void __cdecl Effect_SpawnBombRing(float *a1)
 // 2026-09-26: aca habia una copia bajo el nombre RenderWheelWeapon.  Las dos
 // implementaciones son equivalentes; se deja una sola, con el nombre de IDA.
 
-// ItemDrop_RenderGroundWeapon @ 0x0046B980 (~82 lines) — renders grounded weapon model
-// If object's height offset (o+0x60) > _DAT_00552488 threshold:
-// set up BMD model data, ItemObjectAttribute, RequestTerrainLight, RenderPartObject.
-// Similar to RenderWheelWeapon but without position save/restore (static ground item).
-// IDA: FUN_0046b980
-void __cdecl ItemDrop_RenderGroundWeapon(int param_1) {
-    // Only render if height above threshold
-    if (_DAT_00552488 >= (float)*(int*)(param_1 + 0x60)) return;
+// ItemDrop_RenderGroundWeapon @ 0x0046B980 (sub_46B980, 377 bytes)
+// Renderer propio del efecto 244 (Rageful Blow): RenderEffects lo aparta del
+// rango generico y lo dibuja por aca.  Toma el slot del efecto, le cambia el
+// Type por el modelo del ARMA del dueno (owner[136] + 400), lo posa con la
+// animacion del efecto y lo restaura.  Hermana de RenderWheelWeapon (0x46B7C0),
+// pero sin el save/restore de posicion: este no mueve el slot.
+//
+// 2026-09-26: la version anterior de este port estaba rota en cuatro puntos y
+// por eso el Rageful Blow no mostraba el arma:
+//   - el byte de clase se leia de Hero+0x2B8 (helper/pet) en vez de Hero+444;
+//   - alpha se pasaba como 0.0f, y RenderPartObject (0x505A10) sale temprano
+//     con `if (_DAT_005524f8 < param_5)` -> con 0 no dibujaba NADA;
+//   - los argumentos 6..12 de RenderPartObject estaban corridos;
+//   - faltaba BMD_Animation, o sea el arma nunca se posaba.
+void __cdecl ItemDrop_RenderGroundWeapon(int o) {
+    // IDA: if ((double)*(int *)(o + 96) > 10.0)  -- o+96 es la vida del efecto.
+    if (_DAT_00552488 >= (float)*(int*)(o + 96)) return;
 
-    // Compute model Type from weapon item attribute byte
-    BYTE weaponByte = *(BYTE*)(*(int*)(param_1 + 0xFC) + 0x88);
-    int Type = (int)weaponByte + 400;
+    const DWORD owner = *(DWORD*)(o + 252);
+    if (!owner || !DAT_05828d58 || !DAT_07abf5d8) return;
 
-    // Set up BMD model data
-    int modelBase = DAT_05828d58 + Type * 0xBC;
-    BYTE heroClass = *(BYTE*)(Hero + 0x2B8) & 7;
-    BYTE animState = *(BYTE*)(param_1 + 0x105);
+    const int model_id = *(unsigned char*)(owner + 136) + 400;
+    if (model_id < 0 || model_id >= 1024) return;
 
-    *(float*)(modelBase + 0x6C) = *(float*)(param_1 + 0x10);
-    *(float*)(modelBase + 0x70) = *(float*)(param_1 + 0x14);
-    *(float*)(modelBase + 0x74) = *(float*)(param_1 + 0x18);
-    *(BYTE*)(modelBase + 0x98) = heroClass;
-    *(BYTE*)(modelBase + 0xA0) = animState;
+    const float alpha = *(float*)(o + 360);
+    BYTE* mdl = (BYTE*)(uintptr_t)DAT_05828d58 + 188 * model_id;
 
-    // Save and set object type
-    float origTypeF = (float)*(short*)(param_1 + 2);
-    *(short*)(param_1 + 2) = (short)Type;
+    // Volcar posicion / accion / clase al slot del modelo compartido.
+    *(int*) (mdl + 108) = *(int*)(o + 16);
+    *(int*) (mdl + 112) = *(int*)(o + 20);
+    *(int*) (mdl + 116) = *(int*)(o + 24);
+    *(BYTE*)(mdl + 152) = (BYTE)(*(BYTE*)((uintptr_t)DAT_07abf5d8 + 444) & 7);
+    *(BYTE*)(mdl + 160) = *(BYTE*)(o + 261);
 
-    // Set up object render attributes
-    DWORD save_d8 = *(DWORD*)(param_1 + 0xD8);
-    ItemObjectAttribute(param_1);  // ItemObjectAttribute
-    *(DWORD*)(param_1 + 0xD8) = save_d8;  // restore overwritten field
+    const short savedType = *(short*)(o + 2);
+    *(short*)(o + 2) = (short)model_id;
 
-    // RequestTerrainLight — sample terrain lighting at object position
-    float terrainLight[3] = { 0.0f, 0.0f, 0.0f };
-    RequestTerrainLight(*(float*)(param_1 + 0x10), *(float*)(param_1 + 0x14), terrainLight);
+    const DWORD saved216 = *(DWORD*)(o + 216);
+    ItemObjectAttribute(o);
+    *(DWORD*)(o + 216) = saved216;   // ItemObjectAttribute lo pisa
 
-    // Add object's own light contribution
-    terrainLight[0] += *(float*)(param_1 + 0xE8);
-    terrainLight[1] += *(float*)(param_1 + 0xEC);
-    terrainLight[2] += *(float*)(param_1 + 0xF0);
+    float Light[3];
+    RequestTerrainLight(*(float*)(o + 16), *(float*)(o + 20), Light);
+    Light[0] += *(float*)(o + 232);
+    Light[1] += *(float*)(o + 236);
+    Light[2] += *(float*)(o + 240);
 
-    // Light level from item attribute
-    int lightLevel = (int)(*(BYTE*)(*(int*)(param_1 + 0xFC) + 0x89)) << 3;
+    float Angle[3] = { *(float*)(o + 28), *(float*)(o + 32), *(float*)(o + 36) };
+    BMD_Animation(mdl, (int)&DAT_06970a9c,
+                  *(float*)(o + 264), *(unsigned int*)(o + 268),
+                  *(BYTE*)(o + 262),
+                  (unsigned int*)Angle, (float*)(o + 40), 0, 0);
 
-    // BMD::Animation — Ghidra shows phantom register params (unaff_EBX/ESI/EDI);
-    // driven by bone matrix pointer at o+0x108 and frame at o+0x10C.
-    // Skipping direct call due to __thiscall convention + phantom regs;
-    // RenderPartObject below handles the actual render.
+    RenderPartObject(o, model_id, 0, Light, alpha,
+                     (unsigned int)(8 * *(unsigned char*)(owner + 137)),
+                     0, 1, 1, 1, 0, 2);
 
-    // RenderPartObject
-    RenderPartObject(param_1, Type, 0, terrainLight, 0.0f, 1, 1, 1, 0, 1, 0, 0);
-
-    // Restore original type
-    *(short*)(param_1 + 2) = (short)(int)origTypeF;
+    *(short*)(o + 2) = savedType;
 }
 
 // IDA compatibility bridges: stubs_IDA_ports.cpp intentionally retains these ABI names.

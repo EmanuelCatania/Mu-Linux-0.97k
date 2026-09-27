@@ -23,7 +23,6 @@ extern "C" BOOL ChaosBoxRequestClose(void);
 
 
 extern "C" {
-    void DbgLogPublic(const char* msg);
     // IDA FUN_00423DB0: clear only Guild War state and restore the normal
     // guild relation markers.  It is deliberately not the legacy Trade reset
     // that still carries the same historical label elsewhere in the port.
@@ -108,11 +107,6 @@ static void SaveOptionsToServer97k(void)
     Net_SendC1Packet(pkt, sizeof(pkt));
 
     {   // queda en el log: es el unico rastro de que las opciones se guardaron
-        char line[120];
-        wsprintfA(line, "NET:  <- F3/30 Option enviado: keys=%d%d%d%d%d%d%d%d%d%d Q=%d W=%d E=%d",
-                  opt[0], opt[1], opt[2], opt[3], opt[4], opt[5], opt[6], opt[7],
-                  opt[8], opt[9], opt[11], opt[12], opt[13]);
-        DbgLogPublic(line);
     }
 }
 
@@ -378,7 +372,6 @@ void __cdecl UI_InGameMenu(void)
                             //   6. Cliente Recv_CharList puebla slots 0-4
                             SaveOptionsToServer97k();       // IDA L1080: sub_50F7A0()
                             FUN_0050f700("Data\\Macro.txt");  // IDA L1081
-                            DbgLogPublic("JoinChar: send F1/02/01 (waiting for server ack)");
                             BYTE pkt[5] = { 0xC1, 0x05, 0xF1, 0x02, 0x01 };
                             Net_SendSmallPacket(pkt, 5);
                             // NO transición local. NO F3/00 send. Dejamos

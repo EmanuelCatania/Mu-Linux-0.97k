@@ -118,7 +118,6 @@
 #include "stdafx.h"
 #include "Scene.h"
 
-extern "C" { void DbgLogPublic(const char*); }
 
 // Scene_Login_ServerSelect @ 0x0051F020
 // Renders the server-group + channel selection panel inside the login screen.

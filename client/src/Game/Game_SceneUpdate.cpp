@@ -282,13 +282,6 @@ static void Net_SendResolved(const BYTE* pkt, int totalLen, bool chosenC3, const
     if (want == PACKETFRAME_PLAIN || want == PACKETFRAME_ENCRYPTED) {
         const bool serverWantsC3 = (want == PACKETFRAME_ENCRYPTED);
         if (serverWantsC3 != chosenC3) {
-            char line[192];
-            wsprintfA(line,
-                      "PacketFrame: %s mando 0x%02X/%02X como %s pero el server pide %s "
-                      "-> corregido (HackPacketCheck Encrypt=%d)",
-                      who, opcode, subop, chosenC3 ? "C3" : "C1",
-                      serverWantsC3 ? "C3" : "C1", want);
-            DbgLogPublic(line);
             useC3 = serverWantsC3;
         }
     }
@@ -382,12 +375,6 @@ int Game_SceneUpdate(void)
         // con F4/04 (nombres) + F4/02 (load). Al elegir server mandamos F4/03 y
         // el redirect nos lleva al GameServer. Si NO hay línea 2, queda el flujo
         // directo clásico (conectar al elegir server).
-        {
-            char b[96];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "CS-DIAG SceneInit(one-time): g_HasConnectServer=%d", g_HasConnectServer);
-            DbgLogPublic(b);
-        }
         if (g_HasConnectServer) {
             g_ConnectServerMode      = 1;
             g_ConnectServerRequested = 0;
@@ -579,10 +566,10 @@ int Game_SceneUpdate(void)
         DAT_083a42c0 = 0;
         DAT_005615e8 = -1;
 
-        // Camera defaults (FOV/Near/Far) now come from globals.cpp (PE .data
-        // values 55.0 / 20.0 / 2000.0) and MoveCamera drives pose+angle each
-        // frame from the contiguous CameraWalk_005615ec[] waypoint table.
-        DbgLogPublic("init: using static CameraWalk table + PE camera defaults");
+        // Los defaults de camara (FOV/Near/Far) salen de globals.cpp (valores
+        // del .data del PE: 55.0 / 20.0 / 2000.0) y MoveCamera arma pose+angulo
+        // cada frame desde la tabla contigua CameraWalk_005615ec[].
+
 
         CErrorReport_Write(&DAT_055c9bf0, "> Login Scene init success");
     }
@@ -883,12 +870,6 @@ int Game_SceneUpdate(void)
                 {
                     static int s_loginAttempt = 0;
                     s_loginAttempt++;
-                    char b[160];
-                    _snprintf_s(b, sizeof(b), _TRUNCATE,
-                        "LOGIN-SEND attempt#%d userLen=%d passLen=%d totalLen=%d crc=%d serialNext=%u (t=%lu)",
-                        s_loginAttempt, ulen - 1, (int)strlen((char*)DAT_07db8810),
-                        totalLen, crc, (unsigned)DAT_05826ceb, (unsigned long)GetTickCount());
-                    DbgLogPublic(b);
                 }
 
                 // Post-login status dialog.  In the original binary (IDA
@@ -920,22 +901,11 @@ int Game_SceneUpdate(void)
         // getting eaten by something earlier.
         if (IsClickPushed() &&
             DAT_083a427c > 0x100 && DAT_083a427c < 0x180)
-        {
-            char dbg[160];
-            wsprintfA(dbg,
-                "ExitCheck: mx=%d my=%d dY=%d state=%d flag=%d "
-                "expX=(284,355) expY=[%d,%d)",
-                (int)DAT_083a427c, (int)DAT_083a4278,
-                dialogY, (int)DAT_083a7c14, (int)DAT_083a4124,
-                dialogY + 0xb4, dialogY + 200);
-            DbgLogPublic(dbg);
-        }
         if (DAT_083a427c > 0x11c && DAT_083a427c < 0x163 &&
             DAT_083a4278 >= dialogY + 0xb4 && DAT_083a4278 < dialogY + 200 &&
             IsClickPushed())
         {
             CErrorReport_Write(&DAT_055c9bf0, "> Login Scene - Exit");
-            DbgLogPublic("ExitClick: fired!");
             DAT_083a4124 = '\0';
             DAT_083a7c24 = DAT_083a7c28;
             DAT_083a7c28 = 0;

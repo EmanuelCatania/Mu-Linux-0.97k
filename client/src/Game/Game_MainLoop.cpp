@@ -46,7 +46,6 @@
 #include <stdlib.h>
 // (_rand ya está definido como `_rand() rand()` en stdafx.h)
 
-extern "C" { void DbgLogPublic(const char* msg); void ChkHeapPublic(const char* tag); }
 
 // 2026-08-17 — FRENO DE RENDIMIENTO, no es parte del port.
 // ChkHeapPublic() llama _CrtCheckMemory(), que recorre TODO el heap de debug
@@ -81,10 +80,6 @@ void __cdecl Game_MainLoop(HDC param_1)
         static DWORD s_lastEnterT = 0;
         DWORD now = GetTickCount();
         if (SceneFlag != s_lastEnterState || now - s_lastEnterT > 2000) {
-            char b[80];
-            _snprintf_s(b, sizeof(b), _TRUNCATE, "ML enter state=%d tickCnt=%d",
-                (int)SceneFlag, (int)DAT_005616b8);
-            DbgLogPublic(b);
             s_lastEnterState = SceneFlag;
             s_lastEnterT = now;
         }

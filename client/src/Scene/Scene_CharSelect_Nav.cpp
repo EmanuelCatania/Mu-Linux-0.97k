@@ -597,8 +597,6 @@ int __fastcall CWsctlc_nRecv(void *param_1)
             char tmp[8]; wsprintfA(tmp, "%02X ", p[hi]);
             lstrcatA(hexbuf, tmp);
         }
-        wsprintfA(dbg, "NET: Net_Recv got %d bytes (post-decrypt) [%s]", iVar2, hexbuf);
-        DbgLogPublic(dbg);
     }
 
     iVar2 = *(int *)((int)param_1 + 0x4010) + iVar2;
@@ -628,11 +626,6 @@ int __fastcall CWsctlc_nRecv(void *param_1)
         if (uLen == 0) return 0;
         if (*(int *)((int)param_1 + 0x4010) < (int)uLen) break;
 
-        {
-            char dbg[80];
-            wsprintfA(dbg, "NET: Net_Recv enqueue hdr=%02X len=%u", hdr, uLen);
-            DbgLogPublic(dbg);
-        }
         CPacketQueue_PushPacket((int)param_1, (int)pPkt, uLen);
         if (*(int *)((int)param_1 + 0x4014) != 0) FUN_0043de60();
         iOff += uLen;
@@ -2494,12 +2487,6 @@ int __cdecl Stats_CalcDefenseRate(int param_1) {
             defBefore != s_before || defAfter != s_after) {
             s_add = g_bAddDefense; s_els = EquipmentLevelSet;
             s_before = defBefore;  s_after = defAfter;
-            char db[160];
-            _snprintf_s(db, sizeof(db), _TRUNCATE,
-                "DEFRATE addDef=%d EquipLevelSet=%d defRate %d -> %d (bonus %+d)",
-                g_bAddDefense, EquipmentLevelSet, defBefore, defAfter,
-                (int)defAfter - (int)defBefore);
-            DbgLogPublic(db);
         }
     }
     return *(short*)(param_1 + 78);

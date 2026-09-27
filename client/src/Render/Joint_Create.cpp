@@ -5,9 +5,6 @@
 
 #include "stdafx.h"
 
-extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
-                         int mesh, int blend, float wx, float wy, float wz,
-                         float r, float g, float b, float a);   // [DIAG FORGE]
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -17,10 +14,6 @@ Joint_Create(int param_1,float *param_2,float *param_3,float *param_4,undefined4
             ,float param_7,short param_8,byte param_9)
 
 {
-  // [DIAG FORGE] entry-point CreateJoint (a = param_7)
-  if (param_2)
-      DbgForge("CreateJoint", param_1, -1, -1, -1, -1, param_6,
-               param_2[0], param_2[1], param_2[2], 0.0f, 0.0f, 0.0f, param_7);
   float *pfVar1;
   float *pfVar2;
   float *pfVar3;

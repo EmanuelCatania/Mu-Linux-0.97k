@@ -25,20 +25,11 @@
 #include "globals.h"
 #include "functions.h"
 
-extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
-                         int mesh, int blend, float wx, float wy, float wz,
-                         float r, float g, float b, float a);   // [DIAG FORGE]
 
 // IDA: FUN_00475220
 int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *param_4,
                          int param_5, float param_6, int param_7)
 {
-    // [DIAG FORGE] entry-point CreateParticle (mesh field = subtype param_5, a = scale)
-    if (param_2)
-        DbgForge("CreateParticle", param_1, -1, param_1, -1, param_5, -1,
-                 param_2[0], param_2[1], param_2[2],
-                 param_4 ? param_4[0] : 0.0f, param_4 ? param_4[1] : 0.0f,
-                 param_4 ? param_4[2] : 0.0f, param_6);
     float *pfVar1;
     float *pfVar2;
     float *pfVar3;

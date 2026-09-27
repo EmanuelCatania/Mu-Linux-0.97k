@@ -40,7 +40,6 @@
 #include "functions.h"
 #include <windows.h>
 
-extern "C" void DbgLogPublic(const char* msg);
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -281,12 +280,6 @@ int __cdecl RenderTerrainTile(int iparam_1, int iparam_2, int param_3, int param
             s_lastTilePick = now;
             float* eye = (float*)&CameraRayOriginX_arr[0];
             float* tgt = (float*)&DAT_083a4110_arr[0];
-            char d[256];
-            wsprintfA(d, "TilePick(%d,%d) eye=(%d,%d,%d) tgt=(%d,%d,%d)",
-                param_3, param_4,
-                (int)eye[0], (int)eye[1], (int)eye[2],
-                (int)tgt[0], (int)tgt[1], (int)tgt[2]);
-            DbgLogPublic(d);
         }
     }
     if (DAT_07e11d30 != 5) {
@@ -405,13 +398,6 @@ int __cdecl Entity_SelectNearest(int param_1_int)
             DWORD now = GetTickCount();
             if (now - s_lastFilt[ent_idx] > 1000) {
                 s_lastFilt[ent_idx] = now;
-                char b[200];
-                _snprintf_s(b, sizeof(b), _TRUNCATE,
-                    "FILT slot=%d mask=%d act=%d vis@160=%d dist@168=%.3f thr@552580=%.3f flag@2fd=%d flag@84=%d",
-                    ent_idx, (int)param_1, (int)*ent, (int)ent[0x160],
-                    *(float*)(ent+0x168), _DAT_00552580,
-                    (int)ent[0x2fd], (int)ent[0x84]);
-                DbgLogPublic(b);
             }
         }
         if ((*ent == '\0') || (ent[0x160] == '\0') ||

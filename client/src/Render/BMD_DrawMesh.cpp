@@ -105,10 +105,6 @@ extern float   _DAT_00552530;  // blend tex factor
 #define DisableTexture(x)       GL_SetAlphaTest(x)
 #define DisableDepthMask()      GL_DisableDepthWrites()
 
-extern "C" { void DbgLogPublic(const char*); }
-extern "C" void DbgForge(const char* fn, int type, int model, int bmp, int glTex,
-                         int mesh, int blend, float wx, float wy, float wz,
-                         float r, float g, float b, float a);   // [DIAG FORGE]
 
 
 static int DecodeMeshIndex(float meshIdx)
@@ -152,92 +148,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     int renderMode = MODE_NONE;
     uVar6 = flags;
 
-    // [DIAG FORGE] entry-point RenderMesh — world pos del modelo en +0x6c/0x70/0x74
-    if (bmd_obj) {
-        char* __m = (char*)bmd_obj;
-        DbgForge("RenderMesh", -1, -1, -1, -1, meshIndex, flags,
-                 *(float *)(__m + 0x6c), *(float *)(__m + 0x70), *(float *)(__m + 0x74),
-                 *(float *)(__m + 0x48), *(float *)(__m + 0x4c), *(float *)(__m + 0x50), alpha);
-    }
 
-    // ── DIAG: log mesh/flags/tex for first calls ────────────────────────
-    static int s_dm_dbg = 0;
-    int dm_diag = s_dm_dbg;
-    // Raised 24→80 para capturar TODOS los meshes del primer frame de login:
-    // sky(4)+ship(10)+wave(1)+shipA(10)+waveA(1)+shipB(10)+waveB(1)+mu(2)+sky4(1) ≈ 40
-    bool should_log = (s_dm_dbg < 80);
-    if (should_log) s_dm_dbg++;
-
-    // ── DIAG one-shot: dump matrices + viewport + GL error al primer draw ─
-    // Si los logos empujan triángulos pero no se ven, el culpable probablemente
-    // es la cámara (proyección/modelview) o el viewport. Volcamos TODO una vez.
-    static int s_mat_dbg = 0;
-    if (s_mat_dbg == 0) {
-        s_mat_dbg = 1;
-        GLfloat mv[16], pr[16];
-        GLint vp[4];
-        glGetFloatv(GL_MODELVIEW_MATRIX, mv);
-        glGetFloatv(GL_PROJECTION_MATRIX, pr);
-        glGetIntegerv(GL_VIEWPORT, vp);
-        GLenum err = glGetError();
-        GLboolean depthTest, cullFace, depthMask, blend, alphaTest, tex2d, lighting;
-        glGetBooleanv(GL_DEPTH_TEST, &depthTest);
-        glGetBooleanv(GL_CULL_FACE, &cullFace);
-        glGetBooleanv(GL_DEPTH_WRITEMASK, &depthMask);
-        glGetBooleanv(GL_BLEND, &blend);
-        glGetBooleanv(GL_ALPHA_TEST, &alphaTest);
-        glGetBooleanv(GL_TEXTURE_2D, &tex2d);
-        glGetBooleanv(GL_LIGHTING, &lighting);
-        GLint frontFace, cullMode, depthFunc;
-        glGetIntegerv(GL_FRONT_FACE, &frontFace);
-        glGetIntegerv(GL_CULL_FACE_MODE, &cullMode);
-        glGetIntegerv(GL_DEPTH_FUNC, &depthFunc);
-        GLfloat clearColor[4];
-        glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColor);
-        char b[512];
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "GL_STATE @first BMD draw: err=0x%x  viewport=(%d,%d,%dx%d)  clearColor=(%.2f,%.2f,%.2f,%.2f)",
-            (unsigned)err, vp[0], vp[1], vp[2], vp[3],
-            clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
-        DbgLogPublic(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "GL_STATE: depthTest=%d depthMask=%d depthFunc=0x%x cull=%d cullMode=0x%x frontFace=0x%x blend=%d alphaTest=%d tex2d=%d light=%d",
-            depthTest, depthMask, depthFunc, cullFace, cullMode, frontFace,
-            blend, alphaTest, tex2d, lighting);
-        DbgLogPublic(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "PROJ row0: %.3f %.3f %.3f %.3f",
-            pr[0], pr[4], pr[8], pr[12]);
-        DbgLogPublic(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "PROJ row1: %.3f %.3f %.3f %.3f",
-            pr[1], pr[5], pr[9], pr[13]);
-        DbgLogPublic(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "PROJ row2: %.3f %.3f %.3f %.3f",
-            pr[2], pr[6], pr[10], pr[14]);
-        DbgLogPublic(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "PROJ row3: %.3f %.3f %.3f %.3f",
-            pr[3], pr[7], pr[11], pr[15]);
-        DbgLogPublic(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "MV   row0: %.3f %.3f %.3f %.3f",
-            mv[0], mv[4], mv[8], mv[12]);
-        DbgLogPublic(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "MV   row1: %.3f %.3f %.3f %.3f",
-            mv[1], mv[5], mv[9], mv[13]);
-        DbgLogPublic(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "MV   row2: %.3f %.3f %.3f %.3f",
-            mv[2], mv[6], mv[10], mv[14]);
-        DbgLogPublic(b);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "MV   row3: %.3f %.3f %.3f %.3f",
-            mv[3], mv[7], mv[11], mv[15]);
-        DbgLogPublic(b);
-    }
     // Get mesh slot pointer: Meshs[meshIdx] (stride 0x28)
     pcVar1 = (char *)(*(int *)((int)bmd_obj + 0x28) + meshIndex * 0x28);
 
@@ -497,49 +408,6 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         }
     }
 
-    // ── DIAG: dump resolved tex/mode/flags/alpha before triangle loop ───
-    // 2026-07-27: furniture_diag (tex 0x346-0x348) disparaba en CADA draw →
-    // miles de líneas/frame inundando debug.log y tapando el resto de diags
-    // (paquete de compra, HEROLIGHT, etc.). Desactivado.
-    bool furniture_diag = false;
-    if (should_log || furniture_diag) {
-        char b[256];
-        float bL0 = *(float*)((char*)bmd_obj + 0x48);
-        float bL1 = *(float*)((char*)bmd_obj + 0x4c);
-        float bL2 = *(float*)((char*)bmd_obj + 0x50);
-        int modelId = -1;
-        if ((unsigned int)bmd_obj >= DAT_05828d58) {
-            modelId = ((int)bmd_obj - DAT_05828d58) / 0xbc;
-        }
-        int modeTag = renderMode;
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "BMD_Draw #%d  model=0x%x meshIdx=%d flags=0x%03x tex=0x%03x mode=%d alpha=%.2f bodyLight=(%.2f,%.2f,%.2f) lightEnable=%d texSlot=%d triCount=%d%s",
-            dm_diag, modelId, meshIndex, flags, local_10, modeTag, alpha, bL0, bL1, bL2,
-            (int)param_2_b0, (int)*(short *)(pcVar1 + 2), (int)*(short *)(pcVar1 + 0x0a),
-            furniture_diag ? " [FURNITURE06?]" : "");
-        DbgLogPublic(b);
-        if (furniture_diag) {
-            static int s_furn_face_dbg = 0;
-            if (s_furn_face_dbg < 24) {
-                char bf[256];
-                char *face0 = (char *)(*(int *)(pcVar1 + 0x1c));
-                short *light0 = face0 ? (short *)(face0 + 10) : 0;
-                short *pos0 = face0 ? (short *)(face0 + 2) : 0;
-                short *uv0 = face0 ? (short *)(face0 + 18) : 0;
-                _snprintf_s(bf, sizeof(bf), _TRUNCATE,
-                    "FURN_FACE model=0x%x mesh=%d face0_nv=%d tex0=%d vIdx=(%d,%d,%d,%d) uvIdx=(%d,%d,%d,%d)",
-                    modelId, meshIndex,
-                    face0 ? (int)(unsigned char)face0[0] : -1,
-                    *(short *)(pcVar1 + 2),
-                    pos0 ? (int)pos0[0] : -1, pos0 ? (int)pos0[1] : -1,
-                    pos0 ? (int)pos0[2] : -1, pos0 ? (int)pos0[3] : -1,
-                    uv0 ? (int)uv0[0] : -1, uv0 ? (int)uv0[1] : -1,
-                    uv0 ? (int)uv0[2] : -1, uv0 ? (int)uv0[3] : -1);
-                DbgLogPublic(bf);
-                s_furn_face_dbg++;
-            }
-        }
-    }
 
     // Triangle render loop — estructura verbatim del binario original
     // (Ghidra @ 0x00440D50): glBegin(GL_TRIANGLES) UNA sola vez antes del
@@ -588,10 +456,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
 
     glBegin(GL_TRIANGLES);
     texOverride = 0;
-    int _diag_vert_push = 0;  // DIAG: vertices realmente empujados a GL
-    // DIAG: bounding box of pushed vertices (world-space)
-    float _diag_xmin =  1e30f, _diag_ymin =  1e30f, _diag_zmin =  1e30f;
-    float _diag_xmax = -1e30f, _diag_ymax = -1e30f, _diag_zmax = -1e30f;
+
     if (0 < *(short *)(pcVar1 + 0x0a)) {
         float param_5_f = 0.0f;  // face byte offset
         do {
@@ -646,14 +511,7 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                     {
                         const float *_v = (const float*)(&DAT_0584621c + ((int)sVar3 + meshIndex * 15000) * 3);
                         glVertex3fv((const GLfloat *)_v);
-                        if (_v[0] < _diag_xmin) _diag_xmin = _v[0];
-                        if (_v[1] < _diag_ymin) _diag_ymin = _v[1];
-                        if (_v[2] < _diag_zmin) _diag_zmin = _v[2];
-                        if (_v[0] > _diag_xmax) _diag_xmax = _v[0];
-                        if (_v[1] > _diag_ymax) _diag_ymax = _v[1];
-                        if (_v[2] > _diag_zmax) _diag_zmax = _v[2];
                     }
-                    _diag_vert_push++;
 
                     iVar12++;
                     psVar14++;
@@ -664,22 +522,6 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         } while ((int)texOverride < (int)*(short *)(pcVar1 + 0x0a));
     }
     glEnd();
-    if (should_log) {
-        char b2[256];
-        short nFaces = *(short *)(pcVar1 + 0x0a);
-        if (_diag_vert_push > 0) {
-            _snprintf_s(b2, sizeof(b2), _TRUNCATE,
-                "BMD_Draw #%d  DRAWN v=%d f=%d  AABB x=[%.1f..%.1f] y=[%.1f..%.1f] z=[%.1f..%.1f] sz=(%.1f,%.1f,%.1f)",
-                dm_diag, _diag_vert_push, (int)nFaces,
-                _diag_xmin, _diag_xmax, _diag_ymin, _diag_ymax, _diag_zmin, _diag_zmax,
-                _diag_xmax-_diag_xmin, _diag_ymax-_diag_ymin, _diag_zmax-_diag_zmin);
-        } else {
-            _snprintf_s(b2, sizeof(b2), _TRUNCATE,
-                "BMD_Draw #%d  DRAWN v=0 f=%d (no verts pushed)",
-                dm_diag, (int)nFaces);
-        }
-        DbgLogPublic(b2);
-    }
     // BUG-FIX: restaurar depth-mask al salir. El path chrome (flag&0x40) llama
     // DisableDepthMask() arriba pero nunca lo restauraba dentro de la función,
     // causando que los siguientes meshes del mismo frame dibujaran sin depth-

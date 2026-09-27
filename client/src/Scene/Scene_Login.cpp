@@ -59,7 +59,6 @@
 #include "Scene/Scene_Login.h"
 #include "Scene/Scene_Login_ServerSelect.h"
 
-extern "C" { void DbgLogPublic(const char*); }
 
 // Scene_Login @ 0x00521630
 uint Scene_Login(void)

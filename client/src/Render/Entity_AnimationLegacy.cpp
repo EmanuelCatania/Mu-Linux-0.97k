@@ -343,10 +343,6 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
         float py = *(float*)((char*)this_ + 0x70);
         float pz = *(float*)((char*)this_ + 0x74);
         short nm = *(short*)((char*)this_ + 0x24);
-        _snprintf_s(b, sizeof(b), _TRUNCATE,
-            "BMD_Xform #%d  translate=%d  scale=%.3f  pos=(%.1f,%.1f,%.1f)  numMesh=%d  _DAT_5597c8=%.3f",
-            s_xform_dbg, (int)(unsigned char)param_5, sc, px, py, pz, (int)nm, _DAT_005597c8);
-        DbgLogPublic(b);
     }
 
     // optional lighting direction compute
@@ -514,11 +510,6 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
         // ── DIAG: dump first transformed vertex of mesh 0 on first call ──
         if (diagInGame && diag_this_call < 200 && local_58 == 0 && vertCount > 0) {
             float* pfFirst = (float*)((char*)&DAT_05846224 + 0);
-            char b[200];
-            _snprintf_s(b, sizeof(b), _TRUNCATE,
-                "BMD_Xform #%d  mesh0_vert0=(%.1f,%.1f,%.1f)  vertCount=%d",
-                diag_this_call, pfFirst[-2], pfFirst[-1], pfFirst[0], vertCount);
-            DbgLogPublic(b);
         }
         local_6c += 0x28;
         // FIX: avanzar la BASE del mesh 15000 floats (60000 bytes)

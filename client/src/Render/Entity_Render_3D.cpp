@@ -111,7 +111,6 @@
 
 #include "stdafx.h"
 #include <stdio.h>
-extern "C" { void DbgLogPublic(const char* msg); }
 #include "Render/Entity_Render_3D.h"
 
 // IDA: Entity_SpawnEffects (0x004FC070)
