@@ -710,7 +710,14 @@ void __fastcall Quest_FullInit(void *param_1_raw) {
     *(BYTE *)((int)param_1 + 0x1c87e) = 0;
     *(BYTE *)((int)param_1 + 0x1c87f) = 0;
     *(short *)(param_1 + 0x7220) = 0;
-    // *param_1 = (int)&PTR_FUN_005524b4; // final vtable
+    // IDA cierra con `unk_567500 = off_5524B4`, el segundo tramo del swap de
+    // vtable del ctor (0x5524B4 = {0x403F10 ~dtor, 0x403F50, ...}; el primer
+    // store usa &0x5524B8, o sea la entrada siguiente).  Queda SIN portar a
+    // proposito: en todo el binario no hay un solo despacho virtual sobre el
+    // objeto de quest -- los nueve consumidores llaman directo
+    // (CSQuest__setQuestLists, __ShowQuestNpcWindow, __clearQuest...), asi que
+    // el puntero de +0 nunca se deferencia.  Si algun dia aparece una llamada
+    // por vtable, esto hay que restaurarlo.
 }
 
 // ── FUN_00403ef0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
