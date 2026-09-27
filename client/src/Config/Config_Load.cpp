@@ -64,6 +64,10 @@ DWORD g_TextOut    = 0;      // DAT_?? (default 0)
 int g_CfgMusicOnOff = -1;
 int g_CfgSoundOnOff = -1;
 int g_CfgResolution = -1;
+// Modo ventana (ver Config.h).  El DLL usa el mismo default: ventana on,
+// bordes on.  El binario original no tiene estas opciones.
+int g_WindowMode = 1;
+int g_Borderless = 0;
 // g_fScreenRate_x / _y — escala pixel -> layout 640x480. Las calcula
 // Config_Load desde WindowWidth/WindowHeight; el 1.0f es solo el valor
 // previo a esa llamada (y el correcto para 640x480).
@@ -460,6 +464,25 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
                         wsprintfA(line, "server.cfg: ClientVersion='%s'", v5);
                         DbgLogPublic(line);
                     }
+                }
+                else if (_stricmp(key, "WindowMode") == 0 ||
+                         _stricmp(key, "Borderless") == 0) {
+                    // DESVIACION DELIBERADA (2026-09-27): modo ventana, portado
+                    // del DLL.  Ver la nota en Config.h.  Se aplican directo
+                    // (no hay valor en el registro que respetar).
+                    int parsed = -1;
+                    if      (_stricmp(val, "on")  == 0) parsed = 1;
+                    else if (_stricmp(val, "off") == 0) parsed = 0;
+                    else if (val[0] == '0' || val[0] == '1') parsed = val[0] - '0';
+                    if (parsed >= 0) {
+                        if (_stricmp(key, "WindowMode") == 0) g_WindowMode = parsed;
+                        else                                  g_Borderless = parsed;
+                    }
+
+                    char line[96];
+                    if (parsed >= 0) wsprintfA(line, "server.cfg: %s=%d", key, parsed);
+                    else             wsprintfA(line, "server.cfg: %s='%s' IGNORADO (valor invalido)", key, val);
+                    DbgLogPublic(line);
                 }
                 else if (_stricmp(key, "MusicOnOff") == 0 ||
                          _stricmp(key, "SoundOnOff") == 0 ||

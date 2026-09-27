@@ -105,6 +105,67 @@ static int  GameGuard_GetStatus(void);
 static void GameGuard_TickCheck(void);
 int  Config_Load(void);  // see Config/Config_Load.cpp
 
+// Modo ventana - ver la nota larga en Config/Config.h.
+extern "C" void DbgLogPublic(const char* msg);   // se re-declara mas abajo
+extern int g_WindowMode;
+extern int g_Borderless;
+
+// true cuando Display_ApplyFullscreen() logro cambiar el modo de video.  Solo
+// entonces OpenGL_Release tiene que restaurarlo: llamar
+// ChangeDisplaySettingsA(NULL,0) sin haberlo cambiado hace parpadear el
+// escritorio del usuario al salir (es el FixDisplaySettingsOnClose del DLL).
+static bool s_DisplayModeChanged = false;
+
+// -- Display_ApplyFullscreen -------------------------------------------------
+//
+// DESVIACION DELIBERADA respecto de IDA (WinMain 0x41E8A0 L394-418).
+//
+// El original enumera los modos de video y se queda con el primero que cumpla
+// las TRES condiciones ancho == WindowWidth, alto == WindowHeight y
+// dmBitsPerPel == 16.  En Windows 10/11 no se expone ningun modo de 16 bits,
+// asi que ese bucle no encuentra nada, no se llama a ChangeDisplaySettings y
+// el "pantalla completa" del 0.97k queda en la practica como una ventana
+// WS_POPUP del tamano pedido pegada a la esquina del escritorio.
+//
+// Se adopta el criterio del DLL (CWindow::ChangeDisplaySettingsFunction):
+// primero se busca la mayor profundidad de color que ofrezca el sistema y
+// recien despues se compara contra ancho/alto.  A cambio se pierde el 16 bits
+// del original, que hoy no existe de todos modos.
+// ---------------------------------------------------------------------------
+static void Display_ApplyFullscreen(void)
+{
+    DEVMODEA dm = {};
+    dm.dmSize = sizeof(dm);
+
+    DWORD bestBpp = 0;
+    for (int i = 0; EnumDisplaySettingsA(NULL, i, &dm); ++i) {
+        if (dm.dmBitsPerPel > bestBpp) bestBpp = dm.dmBitsPerPel;
+    }
+
+    for (int i = 0; EnumDisplaySettingsA(NULL, i, &dm); ++i) {
+        if (dm.dmPelsWidth  == DAT_0056156c &&
+            dm.dmPelsHeight == DAT_00561570 &&
+            dm.dmBitsPerPel == bestBpp) {
+            if (ChangeDisplaySettingsA(&dm, 0) == DISP_CHANGE_SUCCESSFUL) {
+                s_DisplayModeChanged = true;
+                DbgLogPublic("Display: pantalla completa OK");
+            } else {
+                DbgLogPublic("Display: ChangeDisplaySettings FALLO, sigo en ventana");
+            }
+            return;
+        }
+    }
+
+    // Igual que el DLL: el modo pedido no existe.  No se aborta - la ventana
+    // se crea de todas formas y queda como un popup del tamano pedido.
+    {
+        char line[128];
+        wsprintfA(line, "Display: no hay modo %ux%u a %u bpp, sigo en ventana",
+                  DAT_0056156c, DAT_00561570, bestBpp);
+        DbgLogPublic(line);
+    }
+}
+
 // ── Window_Create @ 0x0041DFF0 ───────────────────────────────────────────────
 //
 // Registra WNDCLASSA y crea la ventana principal.
@@ -113,6 +174,9 @@ int  Config_Load(void);  // see Config/Config_Load.cpp
 //   class name: "Dialog" (s_Dialog_005595e0)
 //   window style: WS_POPUP (0x80000000)
 //   Dimensions: DAT_0056156c × DAT_00561570 (de ChangeDisplaySettings)
+//
+// 2026-09-27: se agrego el modo ventana (ver Config/Config.h).  Lo de
+// arriba describe la rama `!g_WindowMode`, que es la del binario.
 // ─────────────────────────────────────────────────────────────────────────────
 static void Window_Create(HINSTANCE hInst)
 {
@@ -123,20 +187,65 @@ static void Window_Create(HINSTANCE hInst)
     wc.hIcon         = LoadIconA(NULL, "IDI_ICON1");
     wc.hCursor       = LoadCursorA(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wc.lpszClassName = "Dialog";
+    wc.lpszClassName = "Dialog";        // lo usa el FindWindowA de instancia unica
     RegisterClassA(&wc);
 
-    // DAT_0056156c / DAT_00561570 los setean EnumDisplaySettings + ChangeDisplaySettingsA
-    // (declarados en globals.h como DWORD)
-    g_hWnd = CreateWindowExA(
-        0x40008,                         // WS_EX_APPWINDOW|WS_EX_TOPMOST
-        "Dialog",
-        "Mu Online",
-        WS_POPUP,
-        0, 0, DAT_0056156c, DAT_00561570,
-        NULL, NULL, hInst, NULL
-    );
-    // g_hWnd → DAT_055c9ffc
+    if (!g_WindowMode) {
+        // Pantalla completa, como el original: WS_POPUP en (0,0) del tamano
+        // configurado.  El cambio de modo va ANTES de crear la ventana, igual
+        // que en IDA (el bucle de EnumDisplaySettings precede a StartWindow).
+        Display_ApplyFullscreen();
+        g_hWnd = CreateWindowExA(
+            WS_EX_APPWINDOW,
+            "Dialog",
+            "Mu Online",
+            WS_POPUP | WS_VISIBLE,
+            0, 0, DAT_0056156c, DAT_00561570,
+            NULL, NULL, hInst, NULL
+        );
+    } else {
+        // Modo ventana (DLL, CWindow::StartWindow).  Tres diferencias con la
+        // rama de pantalla completa:
+        //   - sin WS_EX_TOPMOST: en ventana es una molestia tener el cliente
+        //     siempre encima de todo.
+        //   - AdjustWindowRect convierte el area de cliente pedida en el
+        //     tamano exterior, para que el viewport 3D mida exactamente
+        //     WindowWidth x WindowHeight y no se coma pixeles la barra de
+        //     titulo.  El DLL hace esto mismo pero pasa rc.right y
+        //     rc.bottom + 26 en vez de los anchos reales; aca se usan
+        //     rc.right - rc.left / rc.bottom - rc.top, que es la forma
+        //     correcta (y la que el propio DLL usa en ChangeWindowState).
+        //   - sin WS_THICKFRAME ni WS_MAXIMIZEBOX: la ventana no se puede
+        //     redimensionar.  g_fScreenRate_x/y se calculan una sola vez en
+        //     Config_Load y el WndProc no maneja WM_SIZE, asi que un resize
+        //     descuadraria todo el layout.
+        const DWORD style = g_Borderless
+            ? (WS_POPUP | WS_VISIBLE)
+            : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE);
+
+        RECT rc = { 0, 0, (LONG)DAT_0056156c, (LONG)DAT_00561570 };
+        AdjustWindowRect(&rc, style, FALSE);
+        const int w = rc.right  - rc.left;
+        const int h = rc.bottom - rc.top;
+
+        // Centrada en el escritorio.  Con una resolucion mas grande que la
+        // pantalla el resultado seria negativo; se clampea a 0 para que la
+        // barra de titulo quede alcanzable.
+        int x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
+        int y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+
+        g_hWnd = CreateWindowExA(
+            WS_EX_APPWINDOW | WS_EX_WINDOWEDGE,
+            "Dialog",
+            "Mu Online",
+            style,
+            x, y, w, h,
+            NULL, NULL, hInst, NULL
+        );
+    }
+    // g_hWnd -> DAT_055c9ffc
 }
 
 // ── OpenGL_Init @ 0x0041DE30 (completo, ~50 líneas) ─────────────────────────
@@ -221,7 +330,13 @@ void OpenGL_Release(void)
         // CErrorReport_Write(DAT_055c9bf0, "GL - Release Device Context Failed");
     }
     ReleaseDC(g_hWnd, g_hDC);
-    ChangeDisplaySettingsA(NULL, 0);
+    // Solo se restaura el modo de video si lo cambiamos nosotros.  En modo
+    // ventana nunca se toco, y llamarlo igual hace parpadear el escritorio
+    // (es el FixDisplaySettingsOnClose del DLL, que hookea justo este call).
+    if (s_DisplayModeChanged) {
+        ChangeDisplaySettingsA(NULL, 0);
+        s_DisplayModeChanged = false;
+    }
     ShowCursor(1);
 }
 

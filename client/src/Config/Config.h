@@ -48,3 +48,20 @@ extern DWORD g_TextOut;    // lpData_055ca044
 extern int g_CfgMusicOnOff;
 extern int g_CfgSoundOnOff;
 extern int g_CfgResolution;
+
+// -- Modo ventana (DESVIACION DELIBERADA, 2026-09-27) ------------------------
+// El 0.97k solo corre a pantalla completa: WinMain busca un modo de video con
+// dmBitsPerPel == 16 y StartWindow crea la ventana WS_POPUP en (0,0).  En
+// Windows 10/11 no existe ningun modo de 16 bits, asi que ese
+// ChangeDisplaySettings NO ENCUENTRA NADA y el cliente queda como un popup sin
+// bordes del tamano configurado, pegado a la esquina, sobre el escritorio.
+//
+// Se porta el modo ventana del DLL de inyeccion (Source/Client/Main/Window.cpp,
+// CWindow::StartWindow + ChangeDisplaySettingsFunction), que ademas elige el
+// modo de video por la mayor profundidad de color disponible en vez de exigir
+// 16 bits.
+//   WindowMode=0|1   (1 = ventana, default;  0 = pantalla completa)
+//   Borderless=0|1   (solo en modo ventana: sin barra de titulo ni borde)
+// Las dos salen de server.cfg, como el resto de los overrides de arriba.
+extern int g_WindowMode;   // 1 = ventana
+extern int g_Borderless;   // 1 = ventana sin bordes
