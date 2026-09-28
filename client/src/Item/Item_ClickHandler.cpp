@@ -1438,7 +1438,22 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
                 && (int)DAT_083a4278 >= (int)(DAT_07eaa0cc + 50)
                 && (int)DAT_083a4278 <  (int)(DAT_07eaa0cc + 370))
             {
-                // Items that need confirmation (jewels, special weapons, level>4):
+                // Items que piden confirmacion al venderlos (joyas, armas
+                // especiales, +5 o mas, y EXCELLENT).  Lista 1:1 con IDA
+                // sub_4DF410 L753-766.
+                //
+                // 2026-09-27: faltaba el ultimo termino, el de excellent.  Sin
+                // el, un Excellent solo disparaba el cartel si ademas caia en
+                // otro termino de la lista -- en la practica el de
+                // `pickLevel > 4 && pickType < 384`.  Los anillos y pendants
+                // son tipo >= 384, asi que para ELLOS no habia ningun termino
+                // que matchear y se vendian directo, sin aviso.  Reportado como
+                // "no sale el mensaje al vender Rings/Pendants Excellent".
+                //
+                // El byte de excellent es byte_7E9136B, los 6 bits bajos.  Se
+                // lee con la misma expresion que la rama de tirar-al-piso de
+                // mas abajo, que si lo tenia.
+                const BYTE sellExcByte = *((BYTE*)pPickedItem + 0x6b - 0x44);
                 bool needConfirm =
                     (pickType >= 416 && pickType <= 419) ||
                     pickType == 461 || pickType == 462 || pickType == 464 ||
@@ -1446,7 +1461,8 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
                     (pickType >= 384 && pickType <= 390) ||
                     pickType == 19  || pickType == 170 || pickType == 146 ||
                     pickType == 399 || pickType == 430 || pickType == 431 ||
-                    (pickLevel > 4 && pickType < 384);
+                    (pickLevel > 4 && pickType < 384) ||
+                    ((sellExcByte & 0x3F) != 0);
 
                 if (needConfirm) {
                     DAT_07eaa13c = 1;

@@ -748,3 +748,10 @@ static char *__cdecl FUN_00543ac0_impl(BYTE *name) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // END BATCH 9
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// === FUN_0052f4d0 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
+// ── FUN_0052f4d0 (IDA-activated, absent in Ghidra) ──
+int __cdecl FUN_0052f4d0(int a1, int a2, int a3, int a4)
+{
+  return *(DWORD *)(*(DWORD *)(a1 + 4) + 44) - a4;
+}

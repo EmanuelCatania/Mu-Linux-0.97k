@@ -28,6 +28,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
+#include "Debug/MiniDump.h"
 #include "Net/HWID.h"
 #include "Scene/Scene.h"
 #ifdef _DEBUG
@@ -116,6 +117,22 @@ extern int g_Borderless;
 // ChangeDisplaySettingsA(NULL,0) sin haberlo cambiado hace parpadear el
 // escritorio del usuario al salir (es el FixDisplaySettingsOnClose del DLL).
 static bool s_DisplayModeChanged = false;
+
+// Devuelve el escritorio a su modo original, si fuimos nosotros los que lo
+// cambiamos.  Tiene que ser idempotente y llamable desde un filtro de
+// excepciones: la llama OpenGL_Release en el cierre normal Y
+// DbgUnhandledException al crashear.
+//
+// Lo segundo NO es de adorno (reporte de 2026-09-27): en pantalla completa el
+// filtro termina el proceso con EXCEPTION_EXECUTE_HANDLER, asi que
+// OpenGL_Release no corre y al usuario le quedaba el escritorio clavado en la
+// resolucion del juego hasta reiniciar.
+static void Display_RestoreIfChanged(void)
+{
+    if (!s_DisplayModeChanged) return;
+    s_DisplayModeChanged = false;
+    ChangeDisplaySettingsA(NULL, 0);
+}
 
 // -- Display_ApplyFullscreen -------------------------------------------------
 //
@@ -352,10 +369,7 @@ void OpenGL_Release(void)
     // Solo se restaura el modo de video si lo cambiamos nosotros.  En modo
     // ventana nunca se toco, y llamarlo igual hace parpadear el escritorio
     // (es el FixDisplaySettingsOnClose del DLL, que hookea justo este call).
-    if (s_DisplayModeChanged) {
-        ChangeDisplaySettingsA(NULL, 0);
-        s_DisplayModeChanged = false;
-    }
+    Display_RestoreIfChanged();
     ShowCursor(1);
 }
 
@@ -627,6 +641,17 @@ static LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
     if (s_handlerDepth > 0) return EXCEPTION_CONTINUE_SEARCH;
     s_handlerDepth++;
 
+    // El .dmp se escribe PRIMERO, antes de loguear nada.  Todo lo que sigue
+    // (recorrido de frames, escaneo de stack) puede fallar por su cuenta si la
+    // memoria quedo hecha un desastre, y en ese caso igual queremos el volcado.
+    // Ver Debug/MiniDump.h: no esta en el binario original, se agrega con el
+    // enfoque del MuServer.
+    char dumpPath[MAX_PATH] = {};
+    bool dumpOk = false;
+    __try {
+        dumpOk = CMiniDump::Write(ep, dumpPath, sizeof(dumpPath));
+    } __except (EXCEPTION_EXECUTE_HANDLER) { dumpOk = false; }
+
     char line1[256], line2[256], full[600];
     __try {
         _snprintf_s(line1, sizeof(line1), _TRUNCATE,
@@ -707,7 +732,27 @@ static LONG WINAPI DbgUnhandledException(EXCEPTION_POINTERS* ep)
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
     __try {
-        _snprintf_s(full, sizeof(full), _TRUNCATE, "%s\n%s", line1, line2);
+        if (dumpOk) {
+            char b[MAX_PATH + 32];
+            _snprintf_s(b, sizeof(b), _TRUNCATE, "MINIDUMP: %s", dumpPath);
+            DbgLog(b);
+        } else {
+            DbgLog("MINIDUMP: no se pudo escribir (dbghelp.dll?)");
+        }
+    } __except (EXCEPTION_EXECUTE_HANDLER) {}
+
+    // Antes del cartel: si estabamos en pantalla completa hay que devolverle el
+    // escritorio al usuario, o el MessageBox sale en la resolucion del juego y,
+    // peor, queda asi despues de que el proceso muere.
+    __try { Display_RestoreIfChanged(); } __except (EXCEPTION_EXECUTE_HANDLER) {}
+
+    __try {
+        if (dumpOk) {
+            _snprintf_s(full, sizeof(full), _TRUNCATE,
+                        "%s\n%s\n\nVolcado guardado en:\n%s", line1, line2, dumpPath);
+        } else {
+            _snprintf_s(full, sizeof(full), _TRUNCATE, "%s\n%s", line1, line2);
+        }
         MessageBoxA(NULL, full, "Crash", MB_OK | MB_ICONERROR);
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
@@ -781,6 +826,10 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         }
     }
     _set_invalid_parameter_handler(SilentInvalidParameterHandler);
+    // SEM_FAILCRITICALERRORS: sin esto Windows puede interponer su propio
+    // dialogo de error critico y matar el proceso antes de que corra nuestro
+    // filtro, o sea sin .dmp.  Es lo mismo que hace CMiniDump::Start del server.
+    SetErrorMode(SEM_FAILCRITICALERRORS);
     SetUnhandledExceptionFilter(DbgUnhandledException);
 #ifdef _DEBUG
     // DIAG: CRT debug heap con guard bytes. La corrupción se detecta en el
@@ -1108,6 +1157,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
             SendMessageA(hMuPlayer, WM_CLOSE, 0, 0);
         }
     }
+
+    // IDA WinMain 0x42207B: la limpieza de salida va aca, despues del bucle de
+    // mensajes.  Lo importante es que cierra MuPlayer.exe, que es un proceso
+    // externo y si no seguiria sonando despues de que el cliente termino.
+    Game_DestroyWindow();
 
     return (int)msg.wParam;
 }

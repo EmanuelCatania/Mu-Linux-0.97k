@@ -842,3 +842,86 @@ char *__cdecl getMonsterName(int type) {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // END BATCH: ~80 functions implemented (1-52 bytes range)
+
+// === FUN_00405240 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
+// ── FUN_00405240 (IDA-activated, absent in Ghidra) ──
+int __cdecl FUN_00405240(void *lpBuffer, int iSize, int iKey)
+{
+  int iConvertSize; // esi
+  int v4; // edi
+  BYTE *v5; // ebx
+  unsigned int v7; // esi
+
+  iConvertSize = (16 - iKey) % 16;
+  if ( iConvertSize >= iSize )
+  {
+    iConvertSize = iSize;
+  }
+  Xor_ConvertBlock((BYTE *)lpBuffer, iConvertSize, iKey);
+  v4 = iSize - iConvertSize;
+  v5 = (BYTE *)lpBuffer + iConvertSize;
+  if ( iSize - iConvertSize <= 0 )
+  {
+    return iConvertSize + iKey;
+  }
+  if ( v4 >= 16 )
+  {
+    v7 = (unsigned int)v4 >> 4;
+    v4 += -16 * ((unsigned int)v4 >> 4);
+    do
+    {
+      Xor_ConvertBlock(v5, 16, 0);
+      v5 += 16;
+      --v7;
+    }
+    while ( v7 );
+  }
+  Xor_ConvertBlock(v5, v4, 0);
+  return v4;
+}
+
+// === FUN_00405290 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
+// ── FUN_00405290 (IDA-activated, absent in Ghidra) ──
+int __cdecl FUN_00405290(int _this)
+{
+  int result; // eax
+
+  result = 0;
+  *(DWORD *)(_this + 4) = -1;
+  *(BYTE *)(_this + 8) = 0;
+  *(DWORD *)(_this + 268) = 0;
+  return result;
+}
+
+// === FUN_0053ad80 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
+// ── FUN_0053ad80 (IDA-activated, absent in Ghidra) ──
+void FUN_0053ad80()
+{
+  ;
+}
+
+// === FUN_0053cc00 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
+// ── FUN_0053cc00 (IDA-activated, absent in Ghidra) ──
+int __cdecl FUN_0053cc00(DWORD *_this)
+{
+  int result; // eax
+  DWORD *v2; // edx
+  DWORD *v3; // ecx
+
+  result = 0;
+  _this[5] = 0;
+  _this[6] = 0;
+  _this[7] = 0;
+  _this[8] = 0;
+  v2 = _this + 1;
+  v3 = _this + 9;
+  *v2 = 0;
+  v2[1] = 0;
+  v2[2] = 0;
+  v2[3] = 0;
+  *v3 = 0;
+  v3[1] = 0;
+  v3[2] = 0;
+  v3[3] = 0;
+  return result;
+}

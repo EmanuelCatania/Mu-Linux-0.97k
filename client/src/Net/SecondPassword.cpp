@@ -4805,3 +4805,96 @@ void __cdecl CreateFrustrum2D(float *param_1)
         *(float*)((char*)&FrustrumY + j) = pfVar1[1] * _DAT_005524f8;  // Y
     }
 }
+
+// === FUN_004f98c0 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
+// ── FUN_004f98c0 (IDA-activated, absent in Ghidra) ──
+int __cdecl FUN_004f98c0(int a1, int a2, int a3, int a4, int a5)
+{
+  int v5; // esi
+  int v6; // edi
+  int v7; // ebx
+  int v8; // ecx
+  int result; // eax
+  int v10; // ebp
+  int v11; // edx
+  int v12; // ebx
+  int v13; // esi
+  int v14; // ebp
+  __int64 v15; // rax
+  char *v16; // [esp+0h] [ebp-10h]
+  float v17; // [esp+8h] [ebp-8h]
+  int v18; // [esp+Ch] [ebp-4h]
+  int v19; // [esp+14h] [ebp+4h]
+  int v20; // [esp+18h] [ebp+8h]
+  int v21; // [esp+24h] [ebp+14h]
+
+  v5 = a3;
+  v6 = a1;
+  v16 = (char *)&DAT_0814b2e0 + 0x40000 * a5;
+  v17 = 1024.0 / (double)a3 * (1024.0 / (double)a3);
+  if ( a1 < 0 )
+  {
+    v6 = rand() % (255 - 2 * a3) + a3 + 1;
+  }
+  v7 = a2;
+  if ( a2 < 0 )
+  {
+    v7 = rand() % (255 - 2 * a3) + a3 + 1;
+  }
+  v8 = a3 * a3;
+  v18 = a3 * a3;
+  result = -a3;
+  v10 = -a3;
+  v21 = -a3;
+  v19 = a3;
+  if ( v6 - a3 < 1 )
+  {
+    v21 = 1 - v6;
+    v10 = 1 - v6;
+  }
+  if ( v7 - a3 < 1 )
+  {
+    result = 1 - v7;
+  }
+  if ( v6 + a3 > 255 )
+  {
+    a3 = 255 - v6;
+  }
+  if ( v7 + v5 > 255 )
+  {
+    v19 = 255 - v7;
+  }
+  v11 = result;
+  v20 = result;
+  if ( result < v19 )
+  {
+    v12 = v6 + ((result + v7) << 8);
+    do
+    {
+      v13 = v10;
+      if ( v10 < a3 )
+      {
+        v14 = v11 * v11;
+        do
+        {
+          if ( v14 + v13 * v13 < v8 )
+          {
+            v15 = (__int64)((cos(sqrt((double)(v14 + v13 * v13) * v17)) + 65535.0) * (double)a4);
+            v11 = v20;
+            *(DWORD *)&v16[4 * v12 + 4 * v13] += (int)v15 >> 19;
+            v8 = v18;
+          }
+          ++v13;
+        }
+        while ( v13 < a3 );
+        v10 = v21;
+      }
+      result = v19;
+      ++v11;
+      v12 += 256;
+      v20 = v11;
+    }
+    while ( v11 < v19 );
+  }
+  return result;
+}

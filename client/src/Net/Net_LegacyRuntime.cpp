@@ -97,7 +97,21 @@ void __stdcall InitGame(void)
                           // Antes escribia DAT_07e11984, que es el debounce de
                           // la flecha arriba del chat.
     m_bAutoAttack = 1;     // m_bAutoAttack (IDA InitGame L39, 0x00559C5C)
-    DAT_07e11d24 = 0;     // _CheckInventory
+    // IDA InitGame L40 es `CheckInventory = 0`, y CheckInventory vive en
+    // 0x07EAA160 -- es el puntero al ITEM bajo el mouse que Scene_MapTick le
+    // pasa a RenderItemInfo para dibujar el tooltip.  El port limpiaba
+    // DAT_07E11D24, que es otro global (el tipo de item de la ventana F1, el
+    // que indexa sub_4C2E20).  Es el mismo error de alias que ya se habia
+    // corregido en Item_ClickHandler.cpp en 2026-08-22, aca sin corregir.
+    //
+    // Efecto: al salir del mundo el tooltip NO se limpiaba y se quedaba
+    // dibujado encima del char-select y del select-server (reportado
+    // 2026-09-27: "un tooltip llego hasta el login").
+    DAT_07eaa160 = 0;     // CheckInventory
+
+    // IDA InitGame tiene ADEMAS esta linea, sobre otro global (ojo: D20, no
+    // D24).  Es el modo de la ventana de ayuda F1.
+    DAT_07e11d20 = 0;
     // IDA InitGame L41 es `World = -1`, y World es 0x0055A7AC (World).
     // El port escribia DAT_005615c4, que es g_lpszMp3[0] — el puntero al mp3 de
     // la taberna — asi que cada InitGame lo dejaba en -1 y PlayMp3 recibia (char*)-1.
