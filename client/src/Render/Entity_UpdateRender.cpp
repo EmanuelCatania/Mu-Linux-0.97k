@@ -469,29 +469,27 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         local_58 = terrainLight[2];
     }
 
-    if (*(BYTE *)((int)param_1 + 0x2ea) < 6) {
-        // Blend bone world position into entity light slots
-        *(float *)(param_1 + 200) = local_60 + *(float *)(puVar13 + 0x3a);
-        *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
-        *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
-
-        // Sub-state zone-scale override (World - 9 in [1..7])
-        int iSub = World - 9;
-        BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
-        bool bInRange = (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
-                        (0x72 < bv2 && bv2 < 0x77) || (0x78 < bv2 && bv2 < 0x7d) ||
-                        (0x7e < bv2 && bv2 < 0x83) || (0x84 < bv2 && bv2 < 0x89);
-        if ((0 < iSub) && (iSub < 8) && bInRange && ((iSub / 3) != 0)) {
-            *(float *)(param_1 + 200) = (float)(iSub / 3) * _DAT_00552504;
-            goto LAB_004582b2;
-        }
-    }
-    else {
-        *(float *)(param_1 + 200) = 1.0f;
-    LAB_004582b2:
-        *(float *)(param_1 + 0xc9) = 0.1f;
-        *(float *)(param_1 + 0xca) = 0.1f;
-    }
+    // Luz base del cuerpo, desde el terreno + el ColorOffset del objeto.
+    // IDA RenderCharacter L775-779.
+    //
+    // 2026-09-27 -- ACA ESTABA MEZCLADO EL TINTE DE PK, y ese era el bug.
+    // El binario escribe la luz del cuerpo en DOS momentos distintos:
+    //
+    //   L775-779   c+800 = Light[] + ColorOffset      <- luz base (aca)
+    //   L786       if (c == Hero) -> (1,1,1) x bebida
+    //   L1020-1057 RenderPartObject ...................  el CUERPO usa esa luz
+    //   L2310-2317 PK: si >= 6 -> (1.0, 0.1, 0.1)     <- segunda escritura
+    //   L2342      RenderLinkObject(c + 672) .........  las ALAS usan el rojo
+    //
+    // O sea el rojo del PK se escribe DESPUES de dibujar el cuerpo, asi que en
+    // el original solo alcanza a lo que se dibuja despues: las alas.  El port
+    // habia fusionado las dos escrituras en esta sola, que corre ANTES del
+    // render del cuerpo, y por eso el personaje PK salia rojo entero en vez de
+    // con el cuerpo normal y las alas rojas.  La segunda escritura ahora vive
+    // mas abajo, justo antes del bloque de armas y alas.
+    *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
+    *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
+    *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
 
     // IDA RenderCharacter: ModelID 325 (Phoenix of Darkness) overrides the
     // final terrain-derived BodyLight before the body and attachment passes.
@@ -512,6 +510,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // Todo lo que IDA tiene entre el gate y estas tres escrituras es el ruido
     // de hash-table que descifra CharacterMachine para leer el byte (omitido
     // por policy, ver CLAUDE.md).
+    //
+    // Va ANTES del render del cuerpo y ANTES de la segunda escritura de luz
+    // (la del PK, mas abajo), igual que en IDA: L786 el heroe, L2310 el PK.
     if ((void *)param_1 == DAT_07abf5d8) {
         float L0 = 1.0f, L1 = 1.0f, L2 = 1.0f;
         const unsigned char drink = CharacterAttribute
@@ -618,6 +619,52 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                                          Rotation, 1.0f);
                 *(int *)((char *)puVar13 + 0x58) = -1;   // HiddenMesh = -1
             }
+        }
+    }
+
+    // ── Tinte de PK / de zona (IDA RenderCharacter L2310-2317) ──────────────
+    //
+    // SEGUNDA escritura de la luz del cuerpo.  Va aca a proposito: el cuerpo y
+    // sus partes ya se dibujaron mas arriba con la luz base, asi que esto solo
+    // afecta a lo que se renderiza DESPUES -- el bloque de armas y alas que
+    // sigue (RenderLinkObject sobre c + 672).  De ahi que un PK se vea con el
+    // cuerpo normal y las ALAS rojas, y no rojo entero.
+    //
+    // El `goto` del decompile (que saltaba de la rama de zona al cuerpo del
+    // else) se reescribe con un flag: las dos ramas terminan poniendo 0.1 en
+    // verde y azul, solo cambia el rojo.
+    {
+        const BYTE pkLevel = *(BYTE *)((int)param_1 + 0x2ea);
+        bool bTint = false;
+        if (pkLevel < 6) {
+            // IDA L1137-1139: la rama `< 6` REESCRIBE la luz base.  No es un
+            // duplicado de la escritura de mas arriba: es el reset que separa
+            // lo ya dibujado de lo que viene.  En el binario borra aca el
+            // tinte de las bebidas que dejo el bloque del heroe, de modo que
+            // el CUERPO (L1020, antes) lo tiene y las ALAS (L1239, despues) no.
+            // Sacarlo hacia que el Ale tinara tambien las alas (2026-09-27).
+            *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
+            *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
+            *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
+
+            // Override de escala por zona (World - 9 en [1..7])
+            const int iSub = (int)World - 9;
+            const BYTE bv2 = *(BYTE *)((int)param_1 + 0x2eb);
+            const bool bInRange =
+                (0x55 < bv2 && bv2 < 0x5a) || (0x5b < bv2 && bv2 < 0x60) ||
+                (0x72 < bv2 && bv2 < 0x77) || (0x78 < bv2 && bv2 < 0x7d) ||
+                (0x7e < bv2 && bv2 < 0x83) || (0x84 < bv2 && bv2 < 0x89);
+            if ((0 < iSub) && (iSub < 8) && bInRange && ((iSub / 3) != 0)) {
+                *(float *)(param_1 + 200) = (float)(iSub / 3) * _DAT_00552504;
+                bTint = true;
+            }
+        } else {
+            *(float *)(param_1 + 200) = 1.0f;   // PKLVL_KILLER: rojo
+            bTint = true;
+        }
+        if (bTint) {
+            *(float *)(param_1 + 0xc9) = 0.1f;
+            *(float *)(param_1 + 0xca) = 0.1f;
         }
     }
 
@@ -783,6 +830,34 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // the shared two-slot renderer.
     if (!bSkipWeaponLoop)
         Render_PlayerWeaponLoop((int)param_1, (int)puVar13);
+
+    // ── Restaurar la luz base antes de las partes del cuerpo ────────────────
+    //
+    // DESVIACION FORZADA por el orden de este port.  En el binario las partes
+    // del cuerpo se dibujan ANTES que las alas (L1020 vs L1239/L2342), asi que
+    // el tinte de PK -- que se escribe entre medio, en L2310 -- alcanza solo a
+    // las alas.  Aca el orden esta invertido: alas arriba, cuerpo abajo, con
+    // lo cual una sola escritura no puede dejar las alas rojas y el cuerpo
+    // normal: lo que tinta las alas tinta tambien el cuerpo.  Era el sintoma
+    // reportado el 2026-09-27 ("el rojo continua al personaje").
+    //
+    // Se vuelve a poner la luz base justo antes del loop de partes.  El efecto
+    // final es el del binario (alas rojas, cuerpo con su luz normal) sin tener
+    // que reordenar los dos bloques de render, que estan muy anidados.
+    *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
+    *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
+    *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
+    if ((void *)param_1 == DAT_07abf5d8) {
+        // El heroe no usa la luz del terreno (ver el bloque de mas arriba).
+        float L0 = 1.0f, L1 = 1.0f, L2 = 1.0f;
+        const unsigned char drink = CharacterAttribute
+            ? *((unsigned char *)(uintptr_t)CharacterAttribute + 40) : 0;
+        if (drink & 1) { L0 = 0.9f;   L1 = 0.5f;   L2 = 0.5f;   }
+        if (drink & 2) { L0 *= 0.5f;  L1 *= 0.9f;  L2 *= 0.5f;  }
+        *(float *)(param_1 + 200)  = L0;
+        *(float *)(param_1 + 0xc9) = L1;
+        *(float *)(param_1 + 0xca) = L2;
+    }
 
     // ── 7b. Body-part render loop (Ghidra RenderCharacter lines 1622-1700) ──────
     // Missing in previous port — this is what actually draws player geometry.
