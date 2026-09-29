@@ -1163,7 +1163,25 @@ void __cdecl Player_ProcessInput(void)
         // Sin alguna de esas, bail (= no attack/action).
         //
         bool bHoverActive = false;
-        if ((bClickHeld || bClickLatched) && !s_clickCycleConsumed) {
+        // 2026-09-29: sacado el `&& !s_clickCycleConsumed`.  IDA
+        // Player_InputTick L590-598 no tiene ningun concepto de "ciclo
+        // consumido":
+        //     v32 = 0;
+        //     if ( MouseLButtonPush ) { MouseLButtonPush = 0; v32 = 1; }
+        //     if ( MouseLButton )     { v32 = 1; }      // MANTENIDO
+        // o sea con el boton apretado el click se procesa en CADA apertura
+        // del gate, y el throttle es el propio MouseUpdateTimeMax -- que ya
+        // gatea todo este bloque.  El guard era redundante con el gate y
+        // ademas rompia su auto-regulado: como `MouseUpdateTime = 0` vive en
+        // el camino de procesar el click, al bloquearse el contador no se
+        // reseteaba nunca.
+        //
+        // Medido con sonda, caminando con el boton mantenido: al agotarse el
+        // camino MouseUpdateTime valia 27/33/43 contra un MouseUpdateTimeMax
+        // de 19/22/25.  O sea el gate se abria a tiempo (3*wp+4 < 4*wp) pero
+        // el click no se procesaba, el camino no se encadenaba y se llegaba a
+        // SetPlayerStop -- un frame con la pose de parado cada ~1.08 s.
+        if (bClickHeld || bClickLatched) {
             bHoverActive = true;
             s_clickCycleConsumed = true;
             // 2026-05-04: NO consumir DAT_083a4124 cuando el mouse está sobre
