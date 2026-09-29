@@ -119,6 +119,7 @@ int __cdecl Item_CountWeaponGroupItems(int a1)
         case 456:
           goto LABEL_17;
         case 457:
+        case 458:   // IDA 0x482E40 L26-27 lo tiene y faltaba
         case 468:
           goto LABEL_16;
         default:
@@ -132,7 +133,9 @@ int __cdecl Item_CountWeaponGroupItems(int a1)
     if ( a1 == 2 )
     {
       v2 = DAT_00559c68;
-      if ( DAT_00559c68 == 457 || DAT_00559c68 == 468 )
+      // IDA: `dword_559C68 >= 457 && (dword_559C68 <= 458 || dword_559C68 == 468)`
+      // o sea {457, 458, 468}; el port se habia comido el 458.
+      if ( DAT_00559c68 >= 457 && (DAT_00559c68 <= 458 || DAT_00559c68 == 468) )
       {
         v3 = DAT_00559c68;
         v1 = 1;
