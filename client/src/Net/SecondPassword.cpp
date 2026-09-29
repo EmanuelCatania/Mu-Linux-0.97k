@@ -2139,7 +2139,7 @@ void __cdecl SetPlayerWalk(int param_1) {
         if (!bSafeZone && wings != -1) {
             // Wings flying: action 30 (no spear) or 31 (spear 536-543, 544, 546).
             if (LH >= 536 && LH < 543) { SetAction(param_1, 31); goto label_119; }
-            if (LH == 545 || LH == 546)    { SetAction(param_1, 31); goto label_119; }
+            if (LH == 544 || LH == 546)    { SetAction(param_1, 31); goto label_119; }
             SetAction(param_1, 30);
             goto label_119;
         }
@@ -2205,7 +2205,7 @@ void __cdecl SetPlayerWalk(int param_1) {
                     SetAction(param_1, 19);
                     goto label_119;
                 }
-                if ((LH >= 536 && LH < 543) || LH == 545 || LH == 546) {
+                if ((LH >= 536 && LH < 543) || LH == 544 || LH == 546) {
                     SetAction(param_1, 20);
                     goto label_119;
                 }
@@ -2248,7 +2248,7 @@ void __cdecl SetPlayerWalk(int param_1) {
             SetAction(param_1, 27);
             goto label_119;
         }
-        if ((LH >= 536 && LH < 543) || LH == 545 || LH == 546) {
+        if ((LH >= 536 && LH < 543) || LH == 544 || LH == 546) {
             SetAction(param_1, 28);
             goto label_119;
         }
