@@ -1269,7 +1269,30 @@ void __cdecl Player_ProcessInput(void)
             if (act == 0x82 || st == 1 || st == 2 ||
                 *(float*)(ent + 360) < 0.69999999f ||
                 (act >= 0x22 && act <= 0x5B)) {
-                if (act < 0x4E || act > 0x50)
+                // DESVIACION DELIBERADA: la excepcion de IDA es 0x4E..0x50
+                // (78..80 = stop/walk/run_TwoHandTwo).  La extendemos a
+                // 0x4C (76) para cubrir tambien 76 y 77, Pegasus_fly y
+                // Pegasus_fly_weapon -- el Dinorant volando en Tarkan e
+                // Icarus.
+                //
+                // El rango bloqueante 0x22..0x5B empieza en attack_fist (34),
+                // o sea esta pensado para no aceptar clicks durante un ataque.
+                // Las acciones de caminar quedan debajo (las de montura son 32
+                // y 33), y las tres de TwoHandTwo caen dentro solo por quedar
+                // numeradas despues de los ataques -- de ahi que las exceptuen
+                // a mano.  Con 76/77 se olvidaron, y son del mismo tipo:
+                // animaciones de desplazamiento, no de ataque.
+                //
+                // Medido con sonda volando en Icarus: con la accion 77 el
+                // click queda bloqueado (hover=16 pero reset=1), no se pide el
+                // camino siguiente, el actual se agota y SetPlayerStop pasa un
+                // frame por la pose de parado.  Ese frame es el salto que se
+                // ve, y el ciclo se repite cada ~1.08 s.  Es el mismo artefacto
+                // que Webzen describe en 5.2 ("애니메이션 튀는거", la animacion
+                // salta) y que alla resolvieron dejando de usar 76/77.
+                // Extender la excepcion es mas acotado: conserva la eleccion de
+                // accion de SetPlayerWalk y solo destraba el input.
+                if (act < 0x4C || act > 0x50)
                     goto end_tick_inc;                 // IDA: goto LABEL_390
             }
         }
