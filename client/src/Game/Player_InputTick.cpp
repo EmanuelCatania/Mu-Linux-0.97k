@@ -801,6 +801,13 @@ void __cdecl Player_ProcessInput(void)
                     // sin esto isIdle queda false → walker sigue ejecutando
                     // SetPlayerWalk cada frame → action=walk persistente.
                     *(unsigned char*)(ent + 0x2ec) = 0;
+                    // IDA Player_InputTick L399: `*(_BYTE *)(v0 + 748) = 0;`
+                    // Es la UNICA escritura a +748 que tiene esa funcion en el
+                    // binario y faltaba.  Sin ella el walker nunca se apaga: el
+                    // flag queda en 1 para siempre y el camino se regenera sin
+                    // pasar por idle (medido: 22 fines de camino contra 2
+                    // arranques).
+                    *(unsigned char*)(ent + 748) = 0;
                     SetPlayerStop((int)ent);
                     // IDA L401: `dword_7E11DBC = (__int64)*(float *)(v0 + 36);`
                     // — es el FACING del héroe, no un timestamp. El port tenía
