@@ -42,15 +42,35 @@ ClientVersion=0.97.11
 # hay launcher, se aceptan tambien desde este archivo y, cuando estan, ganan
 # sobre el registro. Comentalas para volver al comportamiento original.
 #
-#   MusicOnOff   0 = sin musica (default del binario), 1 = con musica
-#   SoundOnOff   0 = sin efectos de sonido, 1 = con (default del binario)
-#   Resolution   indice 0..4 del binario, o directamente "ANCHOxALTO":
-#                0=640x480  1=800x600  2=1024x768  3=1280x1024  4=1600x1200
+# Se aceptan como 0/1 o como on/off. Lo que se aplico queda registrado en
+# debug.log ("server.cfg: MusicOnOff=1"); un valor invalido se ignora y se
+# registra como IGNORADO.
+
+# 1 = con musica, 0 = sin musica.
+# El default del binario es 0 (apagada), asi que si comentas esta linea no vas a
+# escuchar BGM y no es un bug. El cliente no decodifica el mp3: lanza
+# MuPlayer.exe, que ya viene en bin/Client junto a los .mp3.
+MusicOnOff=1
+
+# 1 = con efectos de sonido (DirectSound), 0 = sin. Es el default del binario.
+SoundOnOff=1
+
+# Indice 0..4 del binario, o directamente "ANCHOxALTO". Estas cinco y nada mas:
+#   0 = 640x480     1 = 800x600     2 = 1024x768     3 = 1280x1024     4 = 1600x1200
 #
-# Lo que se aplico queda registrado en debug.log ("server.cfg: MusicOnOff=0").
-#MusicOnOff=0
-#SoundOnOff=1
-#Resolution=640x480
+# Cualquier otra (1920x1080, por ejemplo) se IGNORA y el cliente arranca en
+# 640x480; el rechazo queda en debug.log. No es una limitacion de este archivo:
+# el binario tiene esas cinco resoluciones y nada mas.
+#
+# Si queres una que no este contemplada hay que tocar dos lugares de
+# src/Config/Config_Load.cpp:
+#   1. el parser de "Resolution", que mapea ANCHOxALTO al indice; y
+#   2. el switch de la seccion 5, que es el que escribe WindowWidth/WindowHeight.
+# Con eso alcanza para que el render escale, porque las escalas de layout
+# (g_fScreenRate_x/y) se derivan de esas dos variables. Ojo que nada del cliente
+# esta probado fuera de las cinco originales: una resolucion ancha puede
+# destapar cosas en los paneles y en los hit-tests.
+Resolution=640x480
 
 # --- Modo ventana (desviacion deliberada) ------------------------------------
 # El 0.97k solo corre a pantalla completa: WinMain busca un modo de video de 16

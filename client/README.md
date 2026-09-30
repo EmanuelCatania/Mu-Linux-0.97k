@@ -49,10 +49,10 @@ el movimiento de NPCs y monstruos.
 
 El código portado está distribuido por dominio (`Render/`, `Terrain/`, `UI/`,
 `Item/`, `Entity/`, `Combat/`, `Net/`, `Scene/`, etc.); ya no existe un depósito
-general de `stubs_*.cpp` pendiente de repartir. El árbol actual contiene 247
-archivos `.cpp` y 53 headers bajo `src/`.
+general de `stubs_*.cpp` pendiente de repartir. El árbol actual contiene 251
+archivos `.cpp` y 55 headers bajo `src/`.
 
-`stubs_IDA_ports.cpp` es la excepción intencional: contiene 28.722 líneas de
+`stubs_IDA_ports.cpp` es la excepción intencional: contiene 26.431 líneas de
 decompilados crudos de IDA, cada uno protegido por `IDA_PORT_*`. Se preserva
 como referencia canónica del decompile y como mecanismo de compatibilidad o
 activación selectiva mientras se valida un port. **No refactorizar, renombrar
@@ -164,6 +164,29 @@ server.cfg: ClientVersion='09711'
 
 Si el cliente se queda colgado conectando, esa línea es lo primero que hay que
 mirar: comparala con el `CustomerName` del server.
+
+**Opciones del cliente.** El 0.97k las lee del registro de Windows, que es donde
+las deja el launcher oficial. Acá no hay launcher, así que también se aceptan en
+`server.cfg` y, cuando están, ganan sobre el registro — la idea es poder
+distribuir el cliente ya configurado. Se aceptan como `0`/`1` o `on`/`off`, y lo
+que se aplicó queda en `debug.log`; un valor inválido se ignora y se registra
+como `IGNORADO`.
+
+| Clave | Default del binario | Notas |
+|---|---|---|
+| `MusicOnOff` | `0` (apagada) | El `server.cfg.example` la trae en `1`. Si la comentás no vas a escuchar BGM y **no es un bug**: es el default original. El cliente no decodifica el mp3, lanza `MuPlayer.exe` (incluido en `bin/Client/`). |
+| `SoundOnOff` | `1` | Efectos de sonido (DirectSound). |
+| `Resolution` | `0` (640x480) | Índice `0..4` o `ANCHOxALTO`, pero **sólo las cinco del binario**: 640x480, 800x600, 1024x768, 1280x1024, 1600x1200. Cualquier otra se ignora y el cliente arranca en 640x480. |
+| `WindowMode` | — (desviación) | `1` = en ventana, `0` = pantalla completa. Portado del DLL: el 0.97k sólo corre fullscreen y busca un modo de video de 16 bits que en Windows 10/11 no existe, así que el cambio falla en silencio y la ventana queda sin bordes en una esquina. |
+| `Borderless` | — (desviación) | `1` = sin barra de título ni borde. Sólo aplica en modo ventana. |
+
+Para agregar una resolución que no esté en esas cinco hay que tocar dos lugares de
+`src/Config/Config_Load.cpp`: el parser de `Resolution`, que mapea `ANCHOxALTO` al
+índice, y el `switch` de la sección 5, que es el que escribe
+`WindowWidth`/`WindowHeight`. Con eso alcanza para que el render escale — las
+escalas de layout (`g_fScreenRate_x/y`) se derivan de esas dos variables — pero
+nada del cliente está probado fuera de las cinco originales, así que una
+resolución ancha puede destapar cosas en los paneles y en los hit-tests.
 
 ---
 
