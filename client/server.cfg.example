@@ -70,6 +70,13 @@ SoundOnOff=1
 # (g_fScreenRate_x/y) se derivan de esas dos variables. Ojo que nada del cliente
 # esta probado fuera de las cinco originales: una resolucion ancha puede
 # destapar cosas en los paneles y en los hit-tests.
+#
+# Las cinco que acepta el cliente original. Descomenta la que quieras:
+#Resolution=640x480
+#Resolution=800x600
+#Resolution=1024x768
+#Resolution=1280x1024
+#Resolution=1600x1200
 Resolution=640x480
 
 # --- Modo ventana (desviacion deliberada) ------------------------------------
