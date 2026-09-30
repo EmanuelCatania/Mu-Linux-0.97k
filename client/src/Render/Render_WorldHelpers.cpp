@@ -101,11 +101,46 @@ void __cdecl RenderBoids(void)
                 // Standard render path
                 Entity_PrepareRender((unsigned char*)(v0 - 90), 1, 0, 0);
 
-                // Type 301: special action — render hero body + secondary at pose offsets.
+                // Tipo 301 con SubType 1: el DRAGON DORADO de las invasiones.
+                //
+                // Los boids 301 son los dragones decorativos que sobrevuelan
+                // Lorencia/Devias/Noria para anunciar el evento.  El campo
+                // +4 (SubType) decide la variante: 0 = rojo comun, 1 = dorado.
+                //
+                // IDA RenderBoids (0x500AA0 L44-53) lo dibuja con DOS pases de
+                // RenderPartObjectBodyColor -- flags 72 (0x48) y 68 (0x44) --
+                // que es el mismo mecanismo con el que RenderCharacter tinta a
+                // los monstruos Golden (78..83):
+                //
+                //   RenderPartObjectBodyColor(Models + 56588, o, 301, *v0, 72, 1.0, -1);
+                //   RenderPartObjectBodyColor(Models + 188*type, o, type, *v0, 68, 1.0, -1);
+                //
+                // (56588 = 188 * 301, o sea el modelo del dragon.)
+                //
+                // El port llamaba en su lugar a PartObjectColor (0x503CF0),
+                // que es OTRA funcion, con otra firma y otra semantica -- el
+                // comentario decia "Hero body color".  Resultado: el pase 0x48
+                // nunca corria y el dragon dorado salia con el render normal,
+                // o sea rojo.  Reportado 2026-09-29: "no aparecen dorados ni
+                // con la textura correcta".
                 if (entType == 301 && *((int*)v0 - 89) == 1) {
-                    float light[3] = { 1.0f, 1.0f, 1.0f };
-                    PartObjectColor(301, *v0, 1.0f, light, true);  // Hero body color
+                    void* mdl301 = (void*)((uintptr_t)DAT_05828d58 + 188 * 301);
+                    void* mdlEnt = (void*)((uintptr_t)DAT_05828d58 + 188 * entType);
+                    RenderPartObjectBodyColor(mdl301, (int)(uintptr_t)(v0 - 90),
+                                              301, *v0, 0x48, 1.0f, -1);
+                    RenderPartObjectBodyColor(mdlEnt, (int)(uintptr_t)(v0 - 90),
+                                              entType, *v0, 0x44, 1.0f, -1);
                 }
+
+                // TODO(pendiente): IDA L55-72 tiene ademas, gateado por
+                // `EnableEvent && type == 301`, el aliento del dragon durante
+                // el evento -- CreateSprite(1191) rojo + Particle_Spawn(1195)
+                // sobre el hueso flt_6970CAC (= g_BoneScratch + 0x210).  Falta
+                // entero.  No se porta aca porque necesita un macro de hueso
+                // que no existe y la firma real de Particle_Spawn (en este
+                // arbol esta aliaseada como Effect_DrawRing), y este archivo ya
+                // tuvo dos crashes por pasarle a TransformPosition una matriz
+                // nula (ver los casos 175 y 184 de mas abajo).
 
                 // Type 175: random fire-cloud sparkle.
                 //
