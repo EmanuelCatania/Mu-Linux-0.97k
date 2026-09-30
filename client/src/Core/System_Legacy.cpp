@@ -20,6 +20,42 @@ UINT __fastcall HashTable_GetIndex(void* ecx, void* /*edx*/, DWORD param_1) {
     return 0xFFFFFFFF;
 }
 
+// ── Nodo de la hash-table anti-tamper: buffer UNICO compartido ────────────
+//
+// El binario hace, en 17 sitios, el mismo patron:
+//
+//     if ( HashTable_GetIndex(ctx, key) == -1 ) {
+//         node = operator_new(0x585);
+//         *(BYTE *)(node + 0x584) = 1;
+//         HashTable_Insert(ctx, node, key);
+//     }
+//
+// Por politica del proyecto la hash-table es anti-tamper y esta neutralizada:
+// GetIndex (aca arriba) devuelve -1 siempre y la capacidad de la tabla es 0,
+// asi que el Insert no guarda nada.  Resultado: la rama de allocacion corre en
+// CADA pasada y el puntero se pierde en el acto.
+//
+// Eso es un LEAK, y de los grandes, porque varios de esos sitios estan en
+// caminos per-frame.  El de SecondPassword_Screen4 aloca 12 nodos por frame
+// (un bucle de 0x330 con paso 0x44): 12 * 1413 = ~17 KB por frame, ~1,5 GB por
+// hora a 25 fps.  Un cliente de 32 bits agota su espacio de usuario en poco mas
+// de una hora y operator new tira std::bad_alloc, que nadie captura -> crash
+// 0xE06D7363.  Reportado 2026-09-30 con el proceso corriendo 62,5 minutos.
+//
+// Como la tabla esta muerta nadie LEE esos nodos -- lo unico que se hace con
+// el puntero es escribirle el byte +0x584 y pasarlo al Insert, que lo tira.
+// Asi que devolvemos siempre el mismo buffer: la memoria sigue siendo valida y
+// escribible, y el leak desaparece.  Es completar la neutralizacion que ya
+// estaba a medias, no una desviacion nueva.
+//
+// Si algun dia se activa la hash-table de verdad, hay que volver a alocar por
+// nodo (y entonces tambien habria que liberarlos).
+void* AntiTamper_HashNode(void)
+{
+    static unsigned char s_node[0x585];
+    return s_node;
+}
+
 // InitDirectSound @ 0x004044A0 — real implementation in src/Sound/Sound.cpp.
 
 // FUN_00405340 @ 0x00405340 — CErrorReport_RotateLog (215 bytes IDA, port FIEL).

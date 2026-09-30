@@ -831,6 +831,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // filtro, o sea sin .dmp.  Es lo mismo que hace CMiniDump::Start del server.
     SetErrorMode(SEM_FAILCRITICALERRORS);
     SetUnhandledExceptionFilter(DbgUnhandledException);
+    // dbghelp.dll y la reserva de emergencia, ANTES de que haga falta: si el
+    // crash es por falta de memoria, durante el filtro ya no se puede cargar.
+    CMiniDump::Preload();
 #ifdef _DEBUG
     // DIAG: CRT debug heap con guard bytes. La corrupción se detecta en el
     // siguiente alloc/free que toque el bloque dañado — rápido sin O(n^2) de

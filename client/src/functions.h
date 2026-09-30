@@ -37,6 +37,8 @@ typedef long double float10;
 // These are scattered throughout as anti-tamper; not game logic.
 // Note: all args are void* to accept any pointer without cast errors.
 void  __cdecl HashTable_Insert(void *ctx, void *obj, void *key); // IDA: HashTable_Insert (0x00403F80)
+void* AntiTamper_HashNode(void);
+extern "C" void EquipWipe_Tick(int op, int sub);  // diagnostico: ver Render_PlayerEquipment.cpp  // nodo compartido: la hash-table esta neutralizada (ver System_Legacy.cpp)
 void  __cdecl Packet_DecryptByte(void *a, void *b); // IDA: Packet_DecryptByte (0x00404330)
 void* __cdecl HashTable_GetNode(void *ctx, void *key); // IDA: HashTable_GetNode (0x00404280)
 uint  __cdecl HashTable_GetIndex(void *ctx, void *key);       // Returns slot index (0xffffffff = not found)

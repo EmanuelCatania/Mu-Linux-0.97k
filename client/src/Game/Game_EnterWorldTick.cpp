@@ -254,7 +254,7 @@ void Game_EnterWorldTick(void)
         {
             unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, DAT_07cf1ffc);
             if (idx == 0xffffffff) {
-                void* node = operator_new(0x585);
+                void* node = AntiTamper_HashNode();
                 *((BYTE*)node + 0x584) = 1;
                 HashTable_Insert(&MAIN_HASH_CLASS, node, DAT_07cf1ffc);
             } else {
@@ -277,7 +277,7 @@ void Game_EnterWorldTick(void)
         {
             unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, DAT_07cf1ffc);
             if (idx == 0xffffffff) {
-                void* node = operator_new(0x585);
+                void* node = AntiTamper_HashNode();
                 *((BYTE*)node + 0x584) = 1;
                 HashTable_Insert(&MAIN_HASH_CLASS, node, DAT_07cf1ffc);
             }

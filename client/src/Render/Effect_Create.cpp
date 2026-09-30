@@ -1491,7 +1491,7 @@ switchD_00461001_caseD_c7:
     }
     CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_004625aa:
-    pvVar7 = operator_new(0x585);
+    pvVar7 = AntiTamper_HashNode();
     *(undefined1 *)((int)pvVar7 + 0x584) = 1;
     HashTable_Insert(&MAIN_HASH_CLASS,pvVar7,pfVar14);
     goto LAB_004625ca;
@@ -1602,7 +1602,7 @@ LAB_00465011:
 LAB_00465082:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00465094:
-  param_4 = (float*)operator_new(0x585);
+  param_4 = (float*)AntiTamper_HashNode();
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar4;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar4);
@@ -2144,7 +2144,7 @@ LAB_00461eee:
 LAB_00461f5f:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00461f71:
-  param_4 = (float*)operator_new(0x585);
+  param_4 = (float*)AntiTamper_HashNode();
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar12;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
@@ -2666,7 +2666,7 @@ LAB_0046115a:
 LAB_004611cb:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_004611dd:
-  param_4 = (float*)operator_new(0x585);
+  param_4 = (float*)AntiTamper_HashNode();
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar12;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);
@@ -3013,7 +3013,7 @@ LAB_004636ad:
 LAB_0046371e:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00463730:
-  pvVar7 = operator_new(0x585);
+  pvVar7 = AntiTamper_HashNode();
   *(undefined1 *)((int)pvVar7 + 0x584) = 1;
   HashTable_Insert(&MAIN_HASH_CLASS,pvVar7,pfVar4);
   goto LAB_00463750;
@@ -3308,7 +3308,7 @@ LAB_004631b2:
 LAB_0046320b:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046321d:
-  param_4 = (float*)operator_new(0x585);
+  param_4 = (float*)AntiTamper_HashNode();
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = param_7;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(param_7);
@@ -3942,7 +3942,7 @@ LAB_004617d3:
 LAB_00461843:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00461855:
-  param_4 = (float*)operator_new(0x585);
+  param_4 = (float*)AntiTamper_HashNode();
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar8;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar8);
@@ -4117,7 +4117,7 @@ LAB_00462b8a:
 LAB_00462bfb:
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00462c0d:
-  param_4 = (float*)operator_new(0x585);
+  param_4 = (float*)AntiTamper_HashNode();
   *(undefined1 *)(param_4 + 0x161) = 1;
   param_8 = pfVar12;
   uVar10 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pfVar12);

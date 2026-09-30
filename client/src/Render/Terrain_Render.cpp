@@ -77,7 +77,7 @@ void Terrain_Render(void)
                             // Per-frame object animation/update belongs to MoveObjects.
                             if (World == 2 && *(short*)(entity + 2) == 100)
                             {
-                                void *pvSlot = operator_new(0x585);
+                                void *pvSlot = AntiTamper_HashNode();
                                 *(unsigned char*)((char*)pvSlot + 0x584) = 1;
                                 HashTable_Insert(&MAIN_HASH_CLASS, pvSlot, DAT_07cf1ffc);
                             }

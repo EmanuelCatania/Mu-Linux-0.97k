@@ -42,6 +42,46 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
+
+extern "C" void DbgLogPublic(const char*);
+
+// ── Diagnostico EQUIPWIPE, version dirigida ───────────────────────────────
+//
+// El detector que vive mas abajo (en HeroEquipWatchdog) avisa QUE los 12 wear
+// slots de CharacterMachine pasaron a -1 de golpe, pero no QUIEN lo hizo: corre
+// en el render, frames despues del escritor.  Como los wipes observados caen
+// junto a cambios de mapa, el sospechoso es un handler de red, asi que esto se
+// llama una vez por paquete desde Net_ProcessPacket y nombra el paquete que
+// estaba en curso.
+//
+// Reporta el opcode de la pasada ANTERIOR a proposito: si el wipe lo produce el
+// paquete N, esta funcion lo ve recien en la pasada N+1.
+//
+// Es barato (12 lecturas por paquete) y queda permanente hasta encontrar al
+// escritor -- lleva sin aparecer desde 2026-08-08.
+extern "C" void EquipWipe_Tick(int op, int sub)
+{
+    static int s_prevOccupied = -1;
+    static int s_prevOp = -1, s_prevSub = -1;
+
+    const int cm = (int)(uintptr_t)DAT_07cf1ffc;
+    if (cm) {
+        int occupied = 0;
+        for (int i = 0; i < 12; ++i) {
+            if (*(short*)(cm + 536 + 68 * i) != -1) ++occupied;
+        }
+        if (s_prevOccupied > 0 && occupied == 0) {
+            char b[192];
+            _snprintf_s(b, sizeof(b), _TRUNCATE,
+                "EQUIPWIPE: los 12 wear slots pasaron a -1 durante el paquete "
+                "op=%02X sub=%02X (el siguiente fue op=%02X sub=%02X)",
+                s_prevOp, s_prevSub, op, sub);
+            DbgLogPublic(b);
+        }
+        s_prevOccupied = occupied;
+    }
+    s_prevOp = op; s_prevSub = sub;
+}
 #include <math.h>
 
 extern "C" void DbgLogPublic(const char*);
