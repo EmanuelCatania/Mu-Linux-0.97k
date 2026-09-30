@@ -45,6 +45,7 @@ mais incompleta hoje é a movimentação de NPCs e monstros.
 | Chat, party, guild | Funcional |
 | Som (DirectSound) | Funcional |
 | Música (BGM) | o original executa `MuPlayer.exe` |
+| Textos e idioma | UI em espanhol. O port abre `Text.bmd` fixo, que aqui é a variante `_Spn`; as variantes `_Eng`/`_Por` vêm em `Data/Local/`, mas o seletor de idioma vem da DLL e não está portado |
 | Combate | `Attack`, `Action` e `MoveCharacterVisual` auditadas 1:1 contra o IDA, junto com suas cadeias de executores |
 | Movimentação de NPCs / monstros | Parcial |
 

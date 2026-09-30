@@ -45,6 +45,7 @@ is NPC and monster movement.
 | Chat, party, guild | Working |
 | Sound (DirectSound) | Working |
 | Music (BGM) | the original launches `MuPlayer.exe` |
+| Text and language | UI in Spanish. The port opens a fixed `Text.bmd`, which here is the `_Spn` variant; the `_Eng`/`_Por` variants do ship in `Data/Local/`, but the language selector comes from the DLL and is not ported |
 | Combat | `Attack`, `Action` and `MoveCharacterVisual` audited 1:1 against IDA, together with their executor chains |
 | NPC / monster movement | Partial |
 
