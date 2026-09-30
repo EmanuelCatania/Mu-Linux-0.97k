@@ -43,7 +43,7 @@ void Scene_MapTick(void)
        ((_DAT_00552c14 <= (float)DAT_083a4278 && ((float)DAT_083a4278 < _DAT_00552ca8)))) {
       uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
       if (uVar2 == 0xffffffff) {
-        pvVar3 = operator_new(0x585);
+        pvVar3 = AntiTamper_HashNode();
         *(undefined1 *)((int)pvVar3 + 0x584) = 1;
         HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
       }
@@ -73,7 +73,7 @@ void Scene_MapTick(void)
      ((DAT_083a4278 < DAT_07ea5284 || ((0x1df < DAT_083a4278 || (DAT_07eaa134 == 0)))))) {
     uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) {
-      pvVar3 = operator_new(0x585);
+      pvVar3 = AntiTamper_HashNode();
       *(undefined1 *)((int)pvVar3 + 0x584) = 1;
       HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }
@@ -102,7 +102,7 @@ void Scene_MapTick(void)
   else {
     uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     if (uVar2 == 0xffffffff) {
-      pvVar3 = operator_new(0x585);
+      pvVar3 = AntiTamper_HashNode();
       *(undefined1 *)((int)pvVar3 + 0x584) = 1;
       HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }

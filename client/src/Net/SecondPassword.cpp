@@ -746,7 +746,7 @@ void __cdecl SecondPassword_Screen4(void) {
         void* puVar8 = DAT_07cf1ffc;
         uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, (void*)DAT_07cf1ffc);
         if (uVar4 == 0xffffffff) {
-            void* pvVar10 = operator_new(0x585);
+            void* pvVar10 = AntiTamper_HashNode();
             *(unsigned char*)((int)pvVar10 + 0x584) = 1;
             HashTable_Insert(&MAIN_HASH_CLASS, pvVar10, puVar8);
         } else {

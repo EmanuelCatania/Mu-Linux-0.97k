@@ -577,7 +577,7 @@ switchD_0046dd50_default:
         }
         CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046e550:
-        local_98 = (byte*)operator_new(0x585);
+        local_98 = (byte*)AntiTamper_HashNode();
         local_98[0x584] = 1;
         uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
         local_84 = (byte *)0x0;
@@ -814,7 +814,7 @@ LAB_0046e742:
         }
         CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_0046ea53:
-        local_88 = (byte*)operator_new(0x585);
+        local_88 = (byte*)AntiTamper_HashNode();
         local_88[0x584] = 1;
         uVar9 = (**(code **)(MAIN_HASH_CLASS + 0xc))(pbVar10);
         local_84 = (byte *)0x0;
