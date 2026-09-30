@@ -153,8 +153,17 @@ void __fastcall FUN_00412610(DWORD* param_1) {
 }
 
 // ── FUN_00412700 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// FUN_00412700 @ 0x00412700 (12 bytes) — GameGuard string cleanup
-void FUN_00412700(void) { FUN_0053d430((BYTE *)&lpWindowName_0055910c); }
+// FUN_00412700 @ 0x00412700 (12 bytes) — NO es "string cleanup": es el wrapper que
+// arranca GameGuard, `return PreInitNPGameMon("Mu")`.
+//
+// En el binario NO lo llama nadie desde codigo: su unico xref es de DATOS, desde la
+// tabla de inicializadores dinamicos del CRT en 0x00558010. O sea corre ANTES de
+// WinMain, via el thunk FUN_004126F0, que ademas registra el release con atexit.
+// Por eso el splash de nProtect aparecia antes de que existiera la ventana del juego.
+//
+// Nuestro build no replica esa tabla, asi que esta funcion queda sin callers y
+// GameGuard nunca arranca — que es lo que queremos (ver CLAUDE.md).
+void FUN_00412700(void) { FUN_0053d430((BYTE *)&g_GameGuardGameName); }
 
 // ── FUN_00412710 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00412710 @ 0x00412710 (12 bytes)

@@ -38,14 +38,22 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// FUN_0053d430 @ 0x0053D430 (67 lines) — GameGuard encrypted log init
-// Allocates 0x34c-byte context, inits crypto via CryptAcquireContext,
-// installs exception filter, opens log file. Singleton (returns if already init).
-void __cdecl FUN_0053d430(unsigned char *buf) {
-    (void)buf;
-    // GameGuard is disabled in this build — no-op.
-    // Original: allocates crypto context, sets up encrypted log file,
-    // installs TopLevelExceptionFilter, calls FUN_0053d890.
+// FUN_0053d430 @ 0x0053D430 (325 bytes) — PreInitNPGameMon(gameName)
+//
+// Arranca nProtect GameGuard. Singleton: sale si lpParameter ya esta seteado.
+// Aloca el contexto de 0x34C bytes, instala su propio TopLevelExceptionFilter,
+// llama FUN_0053d890 (el init grande, 4130 bytes) y restaura el filtro anterior.
+//
+// FUN_0053d890 lanza DOS procesos de nProtect y es donde se veia el splash:
+//   1. GameGuard.des  — CreateProcess + WaitForSingleObject(INFINITE), espera exit 1877
+//   2. GameMon.des    — CreateProcess(CREATE_SUSPENDED) + ResumeThread
+// El banner lo dibujan ESOS procesos; el cliente no tiene codigo de splash.
+//
+// Desactivada a proposito: los .des son binarios propietarios de nProtect que no
+// estan (ni pueden estar) en el repo, y sin ellos la cadena real aborta el arranque.
+// Ver CLAUDE.md, seccion GameGuard, para la cadena completa y que haria falta.
+void __cdecl FUN_0053d430(unsigned char *gameName) {
+    (void)gameName;
 }
 
 // GameGuard_HealthCheck @ 0x0053EA90 (44 lines) — GameGuard per-tick health check

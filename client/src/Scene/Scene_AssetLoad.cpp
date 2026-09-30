@@ -125,6 +125,13 @@ void __cdecl Scene_LoadGameAssets(void) {
         crt_sprintf(local_64, "Data2/Local/FilterName_%s.txt", (char*)DAT_0055a7a4);
         FilterName_LoadData(local_64);
         FilterName_SaveBMD("Data/Local/FilterName.bmd");
+        // OJO: copy-paste sin corregir — esto carga Dialog_%s.txt con el loader
+        // de FilterName y lo guarda encima de FilterName.bmd, o sea pisa el
+        // archivo anterior y nunca produce Dialog.bmd.  Ademas IDA usa
+        // "Data2\\Local\\Dialog(%s).txt" (parentesis, no guion bajo).  No se
+        // corrige porque no existen Dialog_LoadData/Dialog_SaveBMD y toda esta
+        // rama es codigo muerto: DAT_0055a7c4 ya vale 1 (igual que en el
+        // binario), asi que el convertidor Data2 -> .bmd no corre nunca.
         crt_sprintf(local_64, "Data2/Local/Dialog_%s.txt", (char*)DAT_0055a7a4);
         FilterName_LoadData(local_64);
         FilterName_SaveBMD("Data/Local/FilterName.bmd");
@@ -134,7 +141,12 @@ void __cdecl Scene_LoadGameAssets(void) {
         Gate_LoadBMD("Data/Gate.bmd");
         OpenFilterFile("Data/Local/Filter.bmd");
         OpenNameFilterFile("Data/Local/FilterName.bmd");
-        Dialog_LoadBMD("Data/Local/Dialog_Spn.bmd");  // cliente traducido: solo Dialog_{Eng,Por,Spn}.bmd
+        // IDA abre "Data\\Local\\Dialog.bmd" (string en 0x560B4C), igual que
+        // Text.bmd.  El comentario anterior decia que solo existian las
+        // variantes Dialog_{Eng,Por,Spn}.bmd y no es cierto: Dialog.bmd esta en
+        // Data/Local y es byte por byte identico a Dialog_Spn.bmd, asi que esto
+        // no cambia nada hoy — solo deja de hardcodear el idioma.
+        Dialog_LoadBMD("Data/Local/Dialog.bmd");
         CSQuest_OpenQuestScript((int)(uintptr_t)DAT_00583d8c, "Data/Local/Quest.bmd");
     }
     crt_sprintf(local_64, "Data/Local/NPCName.txt");   // cliente: archivo sin sufijo de locale
