@@ -18,16 +18,45 @@ typedef BOOL(WINAPI* PFN_MiniDumpWriteDump)(
     PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
     PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
 
+// Resueltos en el arranque por Preload(): ver el porque en MiniDump.h.
+static HMODULE               s_hDbgHelp  = nullptr;
+static PFN_MiniDumpWriteDump s_pWriteDump = nullptr;
+
+// Reserva que se libera al entrar al filtro, para que MiniDumpWriteDump tenga
+// heap con el que trabajar aunque el crash haya sido por quedarse sin memoria.
+static void*                 s_emergency = nullptr;
+
+void CMiniDump::Preload()
+{
+    if (!s_hDbgHelp) {
+        s_hDbgHelp = LoadLibraryA("dbghelp.dll");
+        if (s_hDbgHelp) {
+            s_pWriteDump = (PFN_MiniDumpWriteDump)
+                GetProcAddress(s_hDbgHelp, "MiniDumpWriteDump");
+        }
+    }
+    if (!s_emergency) s_emergency = malloc(4 * 1024 * 1024);
+}
+
 bool CMiniDump::Write(_EXCEPTION_POINTERS* info, char* outPath, unsigned int outPathSize)
 {
     if (outPath && outPathSize) outPath[0] = '\0';
 
-    HMODULE hDbgHelp = LoadLibraryA("dbghelp.dll");
-    if (!hDbgHelp) return false;
+    // Liberar la reserva de emergencia ANTES de nada: si llegamos aca por un
+    // bad_alloc, MiniDumpWriteDump necesita algo de heap para sus buffers.
+    if (s_emergency) { free(s_emergency); s_emergency = nullptr; }
 
-    PFN_MiniDumpWriteDump pWrite =
-        (PFN_MiniDumpWriteDump)GetProcAddress(hDbgHelp, "MiniDumpWriteDump");
-    if (!pWrite) { FreeLibrary(hDbgHelp); return false; }
+    // Preferimos lo precargado en el arranque.  Con el espacio de direcciones
+    // agotado LoadLibrary falla, asi que este fallback casi nunca sirve en el
+    // caso que importa -- pero no cuesta nada dejarlo por si Preload no corrio.
+    PFN_MiniDumpWriteDump pWrite = s_pWriteDump;
+    if (!pWrite) {
+        HMODULE h = LoadLibraryA("dbghelp.dll");
+        if (!h) return false;
+        pWrite = (PFN_MiniDumpWriteDump)GetProcAddress(h, "MiniDumpWriteDump");
+        if (!pWrite) return false;
+        s_hDbgHelp = h;
+    }
 
     // Nombre con fecha y hora, como los del server.  Se le antepone "MuClient_"
     // para poder distinguirlos de los del GameServer cuando se juntan los dos
@@ -41,7 +70,7 @@ bool CMiniDump::Write(_EXCEPTION_POINTERS* info, char* outPath, unsigned int out
 
     HANDLE hFile = CreateFileA(path, GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
                                CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE) { FreeLibrary(hDbgHelp); return false; }
+    if (hFile == INVALID_HANDLE_VALUE) return false;
 
     MINIDUMP_EXCEPTION_INFORMATION mdei;
     mdei.ThreadId          = GetCurrentThreadId();
@@ -59,7 +88,6 @@ bool CMiniDump::Write(_EXCEPTION_POINTERS* info, char* outPath, unsigned int out
                      type, info ? &mdei : NULL, NULL, NULL);
 
     CloseHandle(hFile);
-    FreeLibrary(hDbgHelp);
 
     if (!ok) {
         // Sin dump util: no dejar un archivo vacio dando vueltas.
