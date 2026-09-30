@@ -49,6 +49,13 @@ mais incompleta hoje é a movimentação de NPCs e monstros.
 | Combate | `Attack`, `Action` e `MoveCharacterVisual` auditadas 1:1 contra o IDA, junto com suas cadeias de executores |
 | Movimentação de NPCs / monstros | Parcial |
 
+> **Enquanto o seletor não estiver portado**, para jogar em outro idioma basta
+> substituir os arquivos base em `bin/Client/Data/Local/` pela variante que você
+> quiser: copiar `Text_Por.bmd` sobre `Text.bmd` e `Dialog_Por.bmd` sobre
+> `Dialog.bmd` (ou os `_Eng`). Guarde uma cópia dos originais antes. Os nomes de
+> itens, skills e quests **já estão em inglês** e não têm variante, então esses
+> não mudam de qualquer forma.
+
 ### Arquitetura e dívida técnica
 
 O código portado está distribuído por domínio (`Render/`, `Terrain/`, `UI/`,

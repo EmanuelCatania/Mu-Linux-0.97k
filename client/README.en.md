@@ -49,6 +49,13 @@ is NPC and monster movement.
 | Combat | `Attack`, `Action` and `MoveCharacterVisual` audited 1:1 against IDA, together with their executor chains |
 | NPC / monster movement | Partial |
 
+> **While the selector is not ported**, playing in another language is just a
+> matter of replacing the base files in `bin/Client/Data/Local/` with the
+> variant you want: copy `Text_Eng.bmd` over `Text.bmd` and `Dialog_Eng.bmd`
+> over `Dialog.bmd` (or the `_Por` ones). Keep a copy of the originals first.
+> Item, skill and quest names are **already in English** and have no variants,
+> so those do not change either way.
+
 ### Architecture and technical debt
 
 The ported code is laid out by domain (`Render/`, `Terrain/`, `UI/`, `Item/`,

@@ -50,6 +50,13 @@ el movimiento de NPCs y monstruos.
 | Combate | `Attack`, `Action` y `MoveCharacterVisual` auditadas 1:1 contra IDA, con sus cadenas de ejecutores |
 | Movimiento de NPCs / monstruos | Parcial |
 
+> **Mientras el selector no esté portado**, para jugar en otro idioma alcanza
+> con reemplazar los archivos base de `bin/Client/Data/Local/` por la variante
+> que quieras: copiar `Text_Eng.bmd` sobre `Text.bmd` y `Dialog_Eng.bmd` sobre
+> `Dialog.bmd` (o los `_Por`). Guardá una copia de los originales antes. Los
+> nombres de items, skills y quests **ya están en inglés** y no tienen variante,
+> así que esos no cambian en ningún caso.
+
 ### Arquitectura y deuda técnica
 
 El código portado está distribuido por dominio (`Render/`, `Terrain/`, `UI/`,
