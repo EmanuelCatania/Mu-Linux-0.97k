@@ -2946,6 +2946,8 @@ void Net_ProcessPacket(void)
                hdr, HeadCode, sub, Size);
 
         // ── dispatch on opcode ───────────────────────────────────────────
+        EquipWipe_Tick(HeadCode, sub);   // diagnostico del wipe de equipo
+
         switch (HeadCode) {
             case 0xF1: {
                 switch (sub) {
