@@ -2607,8 +2607,13 @@ extern DWORD   DAT_07e11e54;       // _PartyKey
 
 extern HANDLE  lpTargetHandle_00563b5c; // GameGuard pipe handle B
 extern HANDLE  hEvent;                  // GameGuard sync event
-extern LPVOID  lpParameter;             // GameGuard thread param
-extern char    lpWindowName_0055910c[]; // GameGuard window class name
+extern LPVOID  lpParameter;             // IDA: lpParameter (0x083BBAE8) — contexto de
+                                        // GameGuard (0x34C bytes) que aloca el pre-init;
+                                        // != 0 significa "ya inicializado".
+extern char    g_GameGuardGameName[];   // IDA: aMu (0x0055910C) — el nombre de juego que
+                                        // recibe PreInitNPGameMon: "Mu". NO es un nombre de
+                                        // ventana: el cliente no crea ninguna ventana de
+                                        // GameGuard (ver CLAUDE.md, seccion GameGuard).
 
 extern DWORD   g_csQuest;         // Quest system state (0=inactive)
 

@@ -962,7 +962,7 @@ void  __cdecl CErrorReport__Write(DWORD This, char *lpszFormat, ...); // 0x00405
 // CRT internals
 void  __cdecl crt_atexit(void *pFunc);                             // CRT atexit registration
 void  __cdecl FUN_00543c98(void *ptr);                               // CRT free wrapper
-void  __cdecl FUN_0053d430(BYTE *ptr);                               // GameGuard string cleanup
+void  __cdecl FUN_0053d430(BYTE *gameName);                          // GameGuard: PreInitNPGameMon(gameName)
 int   __cdecl GameGuard_HealthCheck(void *ptr);                               // GameGuard query
 
 // Vtable init / class chains (thiscall emulated as fastcall)
@@ -1152,9 +1152,11 @@ unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param
 int   __stdcall CSimpleModulus_AddBits(int param_1, unsigned int param_2, int param_3, unsigned int param_4, int param_5); // IDA: FUN_0053CF90 (0x0053CF90)
 void  __stdcall CSimpleModulus_Shift(unsigned char *param_1, int param_2, int param_3); // IDA: FUN_0053D0D0 (0x0053D0D0)
 int   __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic, int k0, int k1, int k2, int k3); // IDA: FUN_0053D1C0 (0x0053D1C0)
-// FUN_0053d430 — already declared above (GameGuard init)
+// FUN_0053d430 — declarada arriba (PreInitNPGameMon)
 void  __fastcall FUN_0053d620(DWORD param_1);                           // GameGuard cleanup
-int   __cdecl FUN_0053d7d0(void *self, char *param_1);               // GameGuard main check
+int   __cdecl FUN_0053d7d0(void *self, char *param_1);               // GameGuard: InitNPGameMon(hWnd) —
+                                                                     // registra hWnd + callback y devuelve
+                                                                     // el resultado que guardo el pre-init
 // FUN_0053d890 — implemented in GameGuard_Init2.cpp
 void* __cdecl FUN_0053e8c0(void *param_1);                              // GG encrypted string decoder
 // GameGuard_HealthCheck — already declared above (GameGuard query)

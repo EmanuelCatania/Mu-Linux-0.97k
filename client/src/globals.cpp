@@ -2812,7 +2812,7 @@ DWORD  DAT_0055389c = 0;
 HANDLE lpTargetHandle_00563b5c = INVALID_HANDLE_VALUE;
 HANDLE hEvent             = NULL;
 LPVOID lpParameter        = NULL;
-char   lpWindowName_0055910c[64] = {};
+char   g_GameGuardGameName[64] = "Mu";  // IDA: aMu (0x0055910C)
 DWORD  g_csQuest          = 0;
 
 BYTE   m_byMatchType      = 0;
