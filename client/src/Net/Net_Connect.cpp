@@ -135,7 +135,7 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
   }
   CErrorReport_Write(&DAT_055c9bf0,s_Hash_table_full______GetIndex_00558108);
 LAB_00423a34:
-  pvVar4 = operator_new(2);
+  pvVar4 = AntiTamper_HashNode();
   *(undefined1 *)((int)pvVar4 + 1) = 1;
   HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&DAT_05826ceb);
 LAB_00423a52:
@@ -198,7 +198,7 @@ LAB_00423a52:
 LAB_00423b59:
   uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
   if (uVar3 == 0xffffffff) {
-    pvVar4 = operator_new(2);
+    pvVar4 = AntiTamper_HashNode();
     *(undefined1 *)((int)pvVar4 + 1) = 1;
     HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&g_byPacketSerialRecv);
   }

@@ -164,7 +164,7 @@ void Game_CharSelectTick(void)
                     // Anti-tamper: track DAT_07eaa11b ref-count
                     unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
                     if (idx == 0xffffffff) {
-                        void* node = operator_new(2); *((BYTE*)node+1)=1;
+                        void* node = AntiTamper_HashNode(); *((BYTE*)node+1)=1;
                         HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_07eaa11b);
                     } else {
                         BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);

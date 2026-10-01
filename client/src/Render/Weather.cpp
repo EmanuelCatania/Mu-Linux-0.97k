@@ -223,7 +223,7 @@ uint __cdecl Weather_Update(void)
     }
     CErrorReport_Write(&DAT_055c9bf0, s_Hash_table_full______GetIndex_00558108);
 LAB_00500f16:
-    pvVar9 = operator_new(5);
+    pvVar9 = AntiTamper_HashNode();
     *(unsigned char *)((int)pvVar9 + 4) = 1;
     HashTable_Insert(&MAIN_HASH_CLASS, pvVar9, &DAT_083a7c00);
 LAB_00500f34:

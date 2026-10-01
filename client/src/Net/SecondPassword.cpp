@@ -1336,7 +1336,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 void __cdecl FUN_004ec330(void) {
     uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (uVar3 == 0xffffffff) {
-        void* pv = operator_new(2);
+        void* pv = AntiTamper_HashNode();
         *(unsigned char*)((int)pv + 1) = 1;
         HashTable_Insert(&MAIN_HASH_CLASS, pv, &DAT_07eaa118);
     } else {

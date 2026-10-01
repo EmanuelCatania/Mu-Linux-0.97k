@@ -396,7 +396,7 @@ void RenderMainFrameWindow_(void)
             // No encontrado / tabla vacía — inserta una entrada nueva marcada con
             // ref-count = 1 (así el decremento siguiente dispara el encriptado XOR
             // round-trip elsewhere).
-            BYTE* fresh = new BYTE[0x585]();
+            BYTE* fresh = (BYTE*)AntiTamper_HashNode();
             fresh[1412] = 1;
             HashTable_Insert(&MAIN_HASH_CLASS, fresh, v0);
         }
