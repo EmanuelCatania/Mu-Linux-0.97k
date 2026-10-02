@@ -31,9 +31,12 @@ UINT __fastcall HashTable_GetIndex(void* ecx, void* /*edx*/, DWORD param_1) {
 //     }
 //
 // Por politica del proyecto la hash-table es anti-tamper y esta neutralizada:
-// GetIndex (aca arriba) devuelve -1 siempre y la capacidad de la tabla es 0,
-// asi que el Insert no guarda nada.  Resultado: la rama de allocacion corre en
-// CADA pasada y el puntero se pierde en el acto.
+// GetIndex (aca arriba) devuelve -1 siempre, asi que la rama de allocacion corre
+// en CADA pasada y el puntero se pierde en el acto -- el Insert no lo guarda.
+//
+// (Ojo: la capacidad NO es 0.  g_HashTableCtx la deja en 1 con un slot centinela,
+// asi que el early-out de HashTable_Insert no dispara y el Insert llega a correr
+// su sondeo; simplemente no hace nada util con el nodo.)
 //
 // Eso es un LEAK, y de los grandes, porque varios de esos sitios estan en
 // caminos per-frame.  El de SecondPassword_Screen4 aloca 12 nodos por frame
@@ -48,8 +51,15 @@ UINT __fastcall HashTable_GetIndex(void* ecx, void* /*edx*/, DWORD param_1) {
 // escribible, y el leak desaparece.  Es completar la neutralizacion que ya
 // estaba a medias, no una desviacion nueva.
 //
+// Los sitios escriben su flag en offsets distintos segun el tipo de nodo (+1, +4,
+// +0x161, +0x584), asi que al compartir el buffer esas marcas se pisan entre si.
+// Es inocuo: nadie LEE los nodos, y las dos unicas salidas de HashTable_Insert
+// son escribir en un array muerto de 1 slot o llamar a CErrorReport_Write, que en
+// este build es un stub vacio.  Ninguna rama es observable.
+//
 // Si algun dia se activa la hash-table de verdad, hay que volver a alocar por
-// nodo (y entonces tambien habria que liberarlos).
+// nodo (y entonces tambien habria que liberarlos), y ademas separar los tipos de
+// nodo en vez de compartir un buffer.
 void* AntiTamper_HashNode(void)
 {
     static unsigned char s_node[0x585];

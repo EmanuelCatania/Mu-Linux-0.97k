@@ -65,7 +65,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
     {
         unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &g_iNoMouseTime);
         if (idx == 0xffffffff) {
-            void* node = operator_new(5);
+            void* node = AntiTamper_HashNode();
             *((BYTE*)node + 4) = 1;
             HashTable_Insert(&MAIN_HASH_CLASS, node, &g_iNoMouseTime);
         } else {
@@ -117,7 +117,7 @@ void __cdecl Scene_Dispatch(HDC param_1)
         {
             unsigned idx2 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_05826ceb);
             if (idx2 == 0xffffffff) {
-                void* node = operator_new(2);
+                void* node = AntiTamper_HashNode();
                 *((BYTE*)node + 1) = 1;
                 HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_05826ceb);
             } else {

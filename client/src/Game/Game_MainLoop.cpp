@@ -169,7 +169,7 @@ void __cdecl Game_MainLoop(HDC param_1)
         {
             unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
             if (idx == 0xffffffff) {
-                void* node = operator_new(5); *((BYTE*)node + 4) = 1;
+                void* node = AntiTamper_HashNode(); *((BYTE*)node + 4) = 1;
                 HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_083a7c00);
             } else {
                 BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
