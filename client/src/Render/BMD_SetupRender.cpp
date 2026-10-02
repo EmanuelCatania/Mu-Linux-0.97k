@@ -106,7 +106,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
         BMD__BeginRender();
-        // BUG-FIX: glColor3f espera float; *(undefined4*) lee bits y los pasa como int → C castea int→float = basura.
+        // glColor3f espera float: leer como float, no como undefined4 (int → float = basura).
         glColor3f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                   *(float *)((int)param_1 + 0x50));
         BMD__RenderMesh(param_1, 4.2039e-45f, 2, 1.0f, -1,
@@ -169,7 +169,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
             *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
             *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
             BMD__BeginRender();
-            // BUG-FIX: leer como float, no como undefined4 (int). Alpha 0x3f4ccccd=0.8f, 0x3f000000=0.5f.
+            // Leer como float, no como undefined4 (int). Alpha 0x3f4ccccd=0.8f, 0x3f000000=0.5f.
             glColor4f(*(float *)((int)param_1 + 0x48), *(float *)((int)param_1 + 0x4c),
                       *(float *)((int)param_1 + 0x50), 0.8f);
             BMD__RenderMesh(param_1, 1.4013e-45f, 2, 0.8f, -1,
@@ -208,7 +208,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         *(undefined4 *)((int)param_1 + 0x48) = 0x3e99999a;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3e99999a;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3e99999a;
-        // BUG-FIX: 0x3e99999a = bits de 0.3f (≈ gris oscuro)
+        // 0x3e99999a = bits de 0.3f (≈ gris oscuro)
         glColor3f(0.3f, 0.3f, 0.3f);
         BMD__RenderMesh(param_1, 2.8026e-45f, 1, 1.0f, -1,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
@@ -216,7 +216,7 @@ void __cdecl BMD_SetupRenderByType(void *param_1, int param_2, int param_3, floa
         *(undefined4 *)((int)param_1 + 0x48) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x4c) = 0x3f800000;
         *(undefined4 *)((int)param_1 + 0x50) = 0x3f800000;
-        // BUG-FIX: 0x3f800000 = bits de 1.0f (blanco)
+        // 0x3f800000 = bits de 1.0f (blanco)
         glColor3f(1.0f, 1.0f, 1.0f);
         BMD__RenderMesh(param_1, 2.8026e-45f, 0x44, 1.0f, 2,
                      *(float *)(param_2 + 0x68), *(float *)(param_2 + 0x6c),
@@ -291,9 +291,8 @@ LAB_00504925:
 //       memcpy(matrix, in2, 0x30);                    // copy 12 floats
 //   }
 //
-// BUGFIX 2026-04-26: el Ghidra port había stripped tanto el escalado como
-// (crítico) la copia de matriz. Sin la copia, las alas/armas renderizaban
-// en (entity_pos + rotated_offset_de_15) ≈ pies del char en lugar del back.
+// Sin la copia de matriz, las alas/armas se dibujarían en
+// (entity_pos + rotated_offset_de_15) ≈ pies del char en lugar de la espalda.
 void __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, float *pos_out)
 {
   // 1. Rotate-only transform: pos_out = bone_rotation_3x3 * pos_in (no translation)
@@ -317,25 +316,18 @@ void __cdecl BMD__RotationPosition(void *model, float *bone_mat, float *pos_in, 
 // scale: particle scale, color: float[3] RGB, entity: entity index
 void __cdecl Model_BoneParticle(void *model, int type, int bone_idx, float scale, float *color, int entity)
 {
-  // 2026-09-04 FIX -- dos errores, y esta funcion la usan nueve sitios (el
-  // brillo de arcos y bastones de RenderLinkObject, el equipo del jugador y
-  // AttackEffect), asi que el radio es amplio.  IDA 0x004553C0:
+  // IDA 0x004553C0 (la usan nueve sitios: brillo de arcos y bastones de
+  // RenderLinkObject, el equipo del jugador y AttackEffect):
   //
   //   memset(v7, 0, sizeof(v7));
   //   TransformPosition(This, (float (*)[4])BoneMatrix[3 * a3], v7, Position, 1);
   //   return CreateSprite(Type, Position, Scale, Light, Owner, 0.0, 0);
   //
-  // 1) La matriz salia de `model + bone_idx*0x30`, o sea del principio del
-  //    struct del BMD, cuando el original indexa el buffer global de huesos
-  //    (`BoneMatrix` = 0x06970A9C, confirmado por xrefs).  `BoneMatrix[3*a3]`
-  //    con filas de float[4] son 48 bytes por hueso = bone_idx * 0x30.
-  // 2) Los argumentos 3 y 4 de TransformPosition son ENTRADA y SALIDA.  El port
-  //    pasaba `world_pos` (sin inicializar) como entrada, recogia el resultado
-  //    en `world_col` y despues emitia el sprite con `world_pos` -- o sea con
-  //    la entrada basura, nunca con la posicion transformada.
-  //
-  // Se notaba sobre todo en el Celestial Bow (Type 545), que es el unico case
-  // que llama diez veces a esta funcion (huesos 13-18 y 5-8).
+  // 1) La matriz sale del buffer global de huesos (`BoneMatrix` = 0x06970A9C,
+  //    confirmado por xrefs), no del struct del BMD.  `BoneMatrix[3*a3]` con
+  //    filas de float[4] son 48 bytes por hueso = bone_idx * 0x30.
+  // 2) Los argumentos 3 y 4 de TransformPosition son ENTRADA y SALIDA: el sprite
+  //    se emite con la posición transformada, no con la entrada.
   float in[3]  = { 0.0f, 0.0f, 0.0f };
   float world_pos[3];
   BMD_TransformPosition(model,

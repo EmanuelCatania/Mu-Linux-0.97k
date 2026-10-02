@@ -22,22 +22,18 @@ extern "C" void DbgLogPublic(const char* msg);   // OWNERDBG (temporal)
 // IDA: MoveEffects
 void Effect_TickAll(void)
 {
-  // BUG-FIX 2026-04-28: pool real DAT_07b11670[200 × 0x1bc] (2026-08-15: era 124).
+  // Pool real DAT_07b11670[200 × 0x1bc].
   float *pfVar1 = (float *)DAT_07b11670;
   const uintptr_t poolEnd = (uintptr_t)DAT_07b11670 + sizeof(DAT_07b11670);
   int iVar2 = 0;
   do {
     if (*(char *)pfVar1 != '\0') {
-      // ── OWNERDBG (temporal, 2026-08-16) — red de seguridad + diagnostico ───
-      // Tras corregir la lectura del owner (slot+252, se leia como float y daba
-      // ~0 en 39 sitios), las ramas que comparan `owner == Hero` por fin se
-      // ejecutan — y ahi aparecio un AV `0xC0000005 param1=0x10`, o sea un
-      // deref de `owner + 0x10` con **owner NULL**: algun caller crea el efecto
-      // sin dueno. En el binario eso no pasa (el owner siempre es valido para
-      // los tipos que lo deref), asi que el original no valida nada.
-      // Hasta ubicar al caller, contenemos el crash: se desactiva ese slot y se
-      // loguea su Type/SubType UNA vez por tipo — ese dato identifica al
-      // culpable sin tener que reproducir con debugger.
+      // ── OWNERDBG — red de seguridad + diagnostico (DESVIACION) ───────────────
+      // Algun caller crea el efecto sin dueno y MoveEffect deref `owner + 0x10` con
+      // owner NULL (AV `0xC0000005 param1=0x10`). En el binario eso no pasa (el
+      // owner siempre es valido para los tipos que lo deref), asi que el original
+      // no valida nada. Hasta ubicar al caller, se contiene el crash: se desactiva
+      // ese slot y se loguea su Type/SubType UNA vez por tipo.
       __try {
         MoveEffect(pfVar1,iVar2);
       }
@@ -68,7 +64,7 @@ void Effect_TickAll(void)
 // IDA: MoveJoints
 void Joint_TickAll(void)
 {
-  // BUG-FIX 2026-04-28: pool real DAT_07b27150[500 × 0x9d8] (2026-08-15: era 200).
+  // Pool real DAT_07b27150[500 × 0x9d8].
   char *pcVar1 = DAT_07b27150;
   const uintptr_t poolEnd = (uintptr_t)DAT_07b27150 + sizeof(DAT_07b27150);
   uint uVar2 = 0;
@@ -93,15 +89,12 @@ void Joint_TickAll(void)
 // param_7: alpha channel param (color for inner verts, packed bits)
 // param_8: V-coord offset
 //
-// BUG-FIX 2026-04-26: el Ghidra-decomp original tenía decenas de variables
-// `local_<N>` declaradas escalares pero usadas como vec3 contiguos pasados a
-// Vector_Rotate (matrix×vector) y luego leídos en bloque por glVertex3fv con
-// `((int)&local_f0 + iVar5)` y stride de 12. MSVC no preserva ese layout →
-// las posiciones de los 4 vértices del quad eran basura → en char-select el
-// efecto rojo del char seleccionado se renderizaba como una línea horizontal
-// en el suelo (mile-of-vertices) en vez de un anillo vertical alrededor del
-// personaje. Reemplazado por arrays float[4][3] explícitos.
-// Mismo patrón que Camera_BuildMouseRay (mouse-ray) y FUN_004f70b0 (terrain normals).
+// El decompile de Ghidra tiene decenas de variables `local_<N>` declaradas
+// escalares pero usadas como vec3 contiguos pasados a Vector_Rotate y luego
+// leídos en bloque por glVertex3fv con `((int)&local_f0 + iVar5)` y stride de
+// 12. MSVC no preserva ese layout, así que se usan arrays float[4][3]
+// explícitos. Mismo patrón que Camera_BuildMouseRay (mouse-ray) y
+// FUN_004f70b0 (terrain normals).
 void __cdecl
 Effect_DrawRing(int param_1,float *param_2,undefined4 param_3,undefined4 param_4,undefined4 param_5,
             float param_6,undefined4 param_7,float param_8)
@@ -215,9 +208,8 @@ void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined
   GL_SetBlendAdditive();
   glPushMatrix();
   glTranslatef(*(float*)&param_2[0],*(float*)&param_2[1],*(float*)&param_2[2]);
-  // BUG-FIX: 0x3f800000 son los bits de 1.0f. Pasarlos como int → C
-  // los castea int→float = 1065353216.0f → eje Z mal definido +
-  // glRotatef tira basura. Idem para los UVs (0x3f800000 → 1.06e9).
+  // 0x3f800000 son los bits de 1.0f: pasarlos como int haría int→float
+  // (1065353216.0f) en el eje Z y en los UVs. Van como floats.
   glRotatef(*(float*)&param_4, 0.0f, 0.0f, 1.0f);
   local_30 = -param_3;
   local_28 = 0;
@@ -254,7 +246,7 @@ void __cdecl RenderPlane(int param_1,undefined4 *param_2,float param_3,undefined
 // IDA: MovePlanes
 void Effect_TickFade(void)
 {
-  // BUG-FIX 2026-04-28: pool real DAT_07c74ec8[40 × 0x1bc].
+  // Pool real DAT_07c74ec8[40 × 0x1bc].
   int *piVar3 = (int*)DAT_07c74ec8;
   const uintptr_t poolEnd = (uintptr_t)DAT_07c74ec8 + sizeof(DAT_07c74ec8);
   int iVar1;
@@ -293,18 +285,15 @@ void Effect_TickFlare(void)
   float fVar2;
   float *pfVar3;
 
-  // BUG-FIX 2026-04-28: pool real DAT_07c82cdc[63 × 0x70].
+  // Pool real DAT_07c82cdc[63 × 0x70].
   pfVar3 = (float *)DAT_07c82cdc;
   const uintptr_t poolEnd = (uintptr_t)DAT_07c82cdc + sizeof(DAT_07c82cdc);
   do {
     if (*(char *)(pfVar3 + -3) != '\0') {
-      // 2026-09-02: IDA MovePointers (0x004794A0) L20-21 -> `v1 = v0[11] - 1;
-      // v0[11] = v1;` con `v0` = _DWORD*: el contador y el TIPO del slot son
-      // ENTEROS, no floats.  El port los leia con `(int)float`, o sea convertia
-      // numericamente un bit-pattern -> casi siempre 0: el contador nunca bajaba,
-      // el efecto no moria nunca y el ramp de alpha (+40) quedaba clavado en 0.
-      // La mezcla dentro de la misma funcion delata el bug: dos lineas mas abajo
-      // el MISMO campo se lee bien con `*(int*)&fVar1 == 7` / `== 1205`.
+      // IDA MovePointers (0x004794A0) L20-21 -> `v1 = v0[11] - 1; v0[11] = v1;` con
+      // `v0` = _DWORD*: el contador y el TIPO del slot son ENTEROS, no floats.
+      // Leerlos con `(int)float` convertiría numéricamente un bit-pattern (casi
+      // siempre 0) y el contador nunca bajaría.
       const int __pcnt = *(int*)&pfVar3[0xb] - 1;
       *(int*)&pfVar3[0xb] = __pcnt;
       fVar2 = pfVar3[0xb];
@@ -349,14 +338,10 @@ LAB_004794f9:
 // lifetime), decae el lifetime 0.3, lo desactiva al llegar a 0, y encoge la
 // escala 5.0 por tick con piso en 15.
 //
-// 2026-08-15 BUG-FIX (los números salían pero quedaban FIJOS en pantalla y no
-// desaparecían): esto iteraba `DAT_07c80128`, declarado en globals.cpp como un
-// global PROPIO de 100×0x70 ("spark-effect pool"). En el binario `unk_7C80128`
-// no es un pool aparte: es `DAT_07c80110 + 0x18` — el MISMO pool de números que
-// llena `CreatePoint` y recorre `RenderPoints`, sólo que las tres funciones lo
-// abordan desde offsets distintos del slot y usan índices relativos.
-// Al tocar otra memoria, el tick corría sobre un pool siempre vacío: los
-// números nacían y nadie los movía ni los expiraba.
+// En el binario `unk_7C80128` no es un pool aparte: es `DAT_07c80110 + 0x18`
+// — el MISMO pool de números que llena `CreatePoint` y recorre `RenderPoints`,
+// sólo que las tres funciones lo abordan desde offsets distintos del slot y
+// usan índices relativos.
 // IDA: MovePoints
 void DamageNumbers_Tick(void)
 {

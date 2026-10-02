@@ -21,11 +21,10 @@
 // Calls GL_DisableDepthTest to configure GL state for 2D (disable depth, etc.).
 void GL_Begin2D(void)
 {
-  // BUG-FIX: DAT_00561554/4c/50 son DWORDs que ALMACENAN bits de float (FOV/near/far).
-  // El decompile de Ghidra los castea como (double)DWORD (interpretando como int) →
-  // 45.0f bit-pattern (0x42340000 = 1110704128) se convierte en FOV=1.1e9 → matriz
-  // degenerada (NaN) → el driver NVIDIA crashea en la siguiente llamada GL de estado.
-  // Leer correctamente como float via puntero float*.
+  // DAT_00561554/4c/50 son DWORDs que ALMACENAN bits de float (FOV/near/far).
+  // El decompile de Ghidra los castea como (double)DWORD (interpretando como int)
+  // → 45.0f bit-pattern (0x42340000 = 1110704128) daría FOV=1.1e9 → matriz
+  // degenerada (NaN). Leer como float via puntero float*.
   float fov  = *(float*)&DAT_00561554;
   float near_ = *(float*)&DAT_0056154c;
   float far_ = *(float*)&DAT_00561550;
@@ -36,11 +35,11 @@ void GL_Begin2D(void)
   DWORD vw = DAT_0056156c ? DAT_0056156c : 640;
   DWORD vh = DAT_00561570 ? DAT_00561570 : 480;
 
-  // BUG-FIX 2026-06-28 (5.2 source ZzzOpenglUtil.cpp:1117): el 0.97k empuja la
-  // 1ª matriz sobre el modo de ENTRADA (no explícito) y la 2ª sobre PROJECTION,
-  // dejando el balance dependiente del modo actual.  5.2 empuja explícitamente
-  // PROJECTION luego MODELVIEW.  Combinado con el fix de EndBitmap, balancea
-  // exacto (1 PROJECTION + 1 MODELVIEW) y elimina el leak de PROJECTION.
+  // Desviación (como el 5.2, ZzzOpenglUtil.cpp:1117): el 0.97k empuja la 1ª
+  // matriz sobre el modo de ENTRADA (no explícito) y la 2ª sobre PROJECTION,
+  // dejando el balance dependiente del modo actual.  Acá se empuja explícitamente
+  // PROJECTION luego MODELVIEW; junto con GL_End2D balancea exacto
+  // (1 PROJECTION + 1 MODELVIEW).
   glMatrixMode(GL_PROJECTION);
   glPushMatrix();
   glLoadIdentity();
@@ -61,12 +60,11 @@ void GL_Begin2D(void)
 // Pops both matrix stacks pushed by GL_Begin2D.
 void GL_End2D(void)
 {
-  // BUG-FIX 2026-06-28 (5.2 source ZzzOpenglUtil.cpp:1136): el 0.97k original
-  // hacía `glPopMatrix(); glPopMatrix();` SIN cambiar de modo → ambos pops caían
-  // sobre MODELVIEW (el modo activo al salir de BeginBitmap).  Resultado: nunca
-  // se popeaba PROJECTION (que BeginBitmap había empujado) → PROJECTION acumula
-  // +1/frame → GL_STACK_OVERFLOW (0x503); y EndOpengl, al popear MODELVIEW de
-  // nuevo, generaba GL_STACK_UNDERFLOW (0x504).  Corrige popeando explícito
+  // Desviación (5.2 source ZzzOpenglUtil.cpp:1136): el 0.97k original hace
+  // `glPopMatrix(); glPopMatrix();` SIN cambiar de modo → ambos pops caen sobre
+  // MODELVIEW y PROJECTION (que BeginBitmap empujó) nunca se popea → acumula
+  // +1/frame → GL_STACK_OVERFLOW (0x503), y EndOpengl, al popear MODELVIEW de
+  // nuevo, genera GL_STACK_UNDERFLOW (0x504).  Acá se popea explícito
   // 1 PROJECTION + 1 MODELVIEW, balanceando exacto con BeginBitmap.
   // NOTA vs 5.2: 5.2 popea MODELVIEW→PROJECTION (queda en modo PROJECTION).
   // Acá popeamos PROJECTION→MODELVIEW para DEJAR el modo en MODELVIEW, porque
@@ -87,14 +85,10 @@ void GL_End2D(void)
 // Coordinates are in screen pixels; Y is flipped relative to viewport height.
 // param_1: x,  param_2: y,  param_3: width,  param_4: height
 //
-// 2026-05-04 BUG-FIX: Ghidra decompile splittered the original contiguous
-// stack array of 8 floats into `local_20[5] + local_c + local_8 + local_4`.
-// The walker `for(i=0;i<4;i++) { glVertex2f(*p, p[1]); p+=2; }` assumed
-// 8 contiguous floats, but MSVC is free to reorder/separate the named
-// locals → vertex 4 (and possibly 3) read garbage from stack → 4th corner
-// degenerated → rect renders as a triangle (visible as the yellow EXP bar
-// and hover highlights showing as triangles instead of bars).
-// Fix: explicit contiguous float[8].
+// El original usa un array contiguo de 8 floats en stack, que Ghidra partió en
+// `local_20[5] + local_c + local_8 + local_4`; el walker
+// `for(i=0;i<4;i++) { glVertex2f(*p, p[1]); p+=2; }` asume contigüidad, así
+// que acá es un float[8] explícito.
 void __cdecl GL_DrawRect(float param_1,float param_2,float param_3,float param_4)
 {
   float verts[8];   // 4 vertices × 2 floats = 8
@@ -173,10 +167,9 @@ GL_DrawTexture(int param_1,float param_2,float param_3,float param_4,float param
   local_40[0xd] = local_40[0xb];
   local_40[0xe] = local_40[0xc];
   local_40[0xf] = local_40[9];
-  // BUG-FIX: la decompile original usaba *(undefined4*) = *(unsigned int*) lo
-  // cual al pasar a glTexCoord2f/glVertex2f hacia conversion int→float,
-  // corrompiendo las coords (0x3f800000 → 1065353216.0f en vez de 1.0f).
-  // Leer como float via puntero float*.
+  // Leer como float via puntero float*: el decompile usa *(undefined4*) =
+  // *(unsigned int*), que al pasar a glTexCoord2f/glVertex2f haría conversión
+  // int→float (0x3f800000 → 1065353216.0f en vez de 1.0f).
   glBegin(6);   // GL_TRIANGLE_FAN
   iVar1 = 0;
   do {
@@ -198,16 +191,14 @@ GL_DrawTexture(int param_1,float param_2,float param_3,float param_4,float param
 // Emits GL_QUADS (glBegin(7)) with UV corners (0,1), (1,1), (1,0), (0,0).
 void __cdecl GL_DrawBillboard(float param_1,float param_2,float *param_3)
 {
-  // ── 2026-08-16: patron [[locales-contiguos-ghidra]] (5ta instancia) ────────
+  // ── Patron de locales contiguos de Ghidra ───────────────────────────────────
   // IDA `sub_511C10` recorre `in1[0..11]` y `v[0..11]` como 4 vec3 cada uno:
   //     for (i = 0; i < 12; i += 3) VectorTransform(&in1[i], in2, &v[i]);
   // Ghidra emitio ese frame como escalares SUELTOS (local_60[4] + local_50,
   // local_4c, local_48, local_44, local_40, local_3c, local_38, local_34 /
   // local_30[3] + local_24 + local_18 + local_c). MSVC no garantiza que queden
-  // contiguos, asi que los vertices 2, 3 y 4 salian de memoria basura y se
-  // escribian en lugares arbitrarios => quads desbocados = los CUADROS BLANCOS
-  // de los efectos de skill (este es el billboard 3D que usa SkillEffect_Render
-  // en todos los mapas salvo World 2).
+  // contiguos, asi que son arrays reales (este es el billboard 3D que usa
+  // SkillEffect_Render en todos los mapas salvo World 2).
   // Mapeo por offset de frame (ebp):
   //   in1[0..2]  = -0x60,-0x5c,-0x58   in1[3..5]  = -0x54,-0x50,-0x4c
   //   in1[6..8]  = -0x48,-0x44,-0x40   in1[9..11] = -0x3c,-0x38,-0x34

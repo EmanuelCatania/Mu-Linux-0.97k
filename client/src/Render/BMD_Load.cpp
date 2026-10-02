@@ -1,7 +1,5 @@
 // BMD_Load.cpp
 //
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 12147-12807 (661 lines).
-//
 // BMD (Mu Online 3D model format) loaders:
 //   BMD__Open (BMD::Open)              — load compressed BMD file into model slot
 //   BMD__FindTriangleForEdge (BMD_BuildAdjacentFaceTable)
@@ -200,8 +198,6 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         bool isPlayer = (strstr(local_4c, "Player\\") != NULL) ||
                         (strstr(local_4c, "Player/") != NULL);
         static int s_parsed = 0;
-        // 2026-05-04: temporarily upped limit from 30 to 200 to debug Lorencia
-        // BMD load (slots 0..0xa0). Will revert when validated.
         if (!isPlayer && s_parsed < 200) {
             s_parsed++;
         }
@@ -275,9 +271,6 @@ void __cdecl BMD__Open(int param_1, int param_2, int param_3, int param_4)
         //   R→script[0] (blend aditivo/glow)   H→script[1] (hidden)
         //   S→script[2] (wave/scroll)          N→script[3] (no-depth)
         // parsingTScript aborta (sin script) si tras '_' hay algún char no R/H/S/N.
-        // BUG-FIX: el port previo alocaba un script en cero SIN parsear → todas las
-        // meshes aditivas (glows, auras, alas) de todos los modelos renderizaban
-        // opacas → recuadros negros. Ahora se parsea el nombre como el binario.
         {
             unsigned char ts0 = 0, ts1 = 0, ts2 = 0, ts3 = 0, ts4 = 0;
             char nameCopy[33];

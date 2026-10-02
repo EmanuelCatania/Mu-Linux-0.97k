@@ -1,5 +1,5 @@
 // BMD_Collision.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
+// Colisión línea/malla de los modelos BMD (BMD__CollisionDetectLineToMesh).
 
 #include "stdafx.h"
 #include "globals.h"

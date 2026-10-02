@@ -1,15 +1,5 @@
-// Extracted from stubs_misc2.cpp; IDA provenance comments are retained.
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 2578-4345 (1768 lines).
-//
-// Mixed sections:
-//   "FUN_ stubs (non-void returning)" — non-void function stubs
-//   "Screen coordinate converters"    — Screen_ToGLx / Screen_ToGLy
-//   "AttackEffect / UseSkillWarrior"  — combat helpers
-//   "Entity action stubs"             — Skills.cpp / Combat.cpp externs
-//   "Missing stubs added for linker fix" — GL helpers, screen converters
-//   "Item data helper stubs"
-//   "OpenTexture (Model_LoadTextures)"
+// Animación de modelos (Calc_RenderObject, BMD_Animation, Skeleton_Transform)
+// y algunos helpers sueltos (CIsin, Screen_ToGLx/y).
 
 #include "stdafx.h"
 #include "globals.h"
@@ -89,9 +79,8 @@ int __cdecl Calc_RenderObject(int param_1, char param_2, int param_3) {
         // Contorno de seleccion (hover sobre monstruo/NPC).  IDA 0x4FAA70
         // case 1: DOS pasadas en RENDER_COLOR (flag 64), primero un contorno
         // ancho y oscuro y despues uno mas fino y claro, con un color por
-        // pasada que depende de Kind (4 = NPC).  2026-09-18: el port hacia
-        // una sola pasada, con dos colores mal (0.4 y 0.02 en vez de 0.1 y
-        // 0.01) y sin el caso Kind == 4 del factor de escala.
+        // pasada que depende de Kind (4 = NPC), y el caso Kind == 4 en el
+        // factor de escala.
         *(BYTE *)((int)this_+0x44) = 0;
         const bool npc = (*(char*)(param_1+0x84) == '\x04');
         for (int pass = 0; pass < 2; ++pass) {
@@ -154,13 +143,11 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
     *(short*)((char*)this_ + 0xa8) = curFrame;
     float fFrac = param_2 - (float)(int)curFrame;
     float fFrac2 = _DAT_0055256c - fFrac;
-    // BUG-FIX CRÍTICO: param_3 es realmente `float PriorFrame` (IDA firma),
-    // no un entero. La firma C nuestra lo declara `unsigned int` porque el
-    // caller en Calc_RenderObject lo carga con *(DWORD*)(entity+0x10c) y los bits
-    // del float caben en un DWORD. Hay que reinterpretar las bits → float
-    // y truncar a int (== IDA: v12 = (__int64)PriorFrame; v39 = v12).
-    // Antes calculábamos v39 = (int)(1.0 - fFrac) que es 0 ó 1 siempre →
-    // cada bone muestreaba el MISMO keyframe → geometría explotada.
+    // param_3 es realmente `float PriorFrame` (IDA firma), no un entero. La firma
+    // C nuestra lo declara `unsigned int` porque el caller en Calc_RenderObject lo
+    // carga con *(DWORD*)(entity+0x10c) y los bits del float caben en un DWORD.
+    // Hay que reinterpretar las bits → float y truncar a int
+    // (== IDA: v12 = (__int64)PriorFrame; v39 = v12).
     float priorFrame;
     memcpy(&priorFrame, &param_3, 4);
     int v39 = (int)priorFrame;
@@ -183,10 +170,8 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
                 float quatA[4], quatB[4];
                 if (boneIdx == *(int*)((char*)this_ + 0x54)) {
                     // root bone: leer Euler angles (3 floats, stride 0xc) y
-                    // convertir a quat via EulerToQuat (EulerToQuat).
-                    // BUG-FIX: antes faltaba el componente Y (posA[1]/posB[1]).
-                    // EulerToQuat lee los 3 componentes (línea 25: v5 = a1[1]*0.5)
-                    // → con Y=stack garbage el quat salía arbitrario.
+                    // convertir a quat via EulerToQuat (EulerToQuat), con los 3 componentes:
+                    // EulerToQuat lee también Y (línea 25: v5 = a1[1]*0.5).
                     // IDA: v43[1] = *(_DWORD *)(v21 + 4); (Y sin ajuste HeadAngle)
                     float posA[4], posB[4];
                     int   curFrameB = *(short*)((char*)this_ + 0xa8);
@@ -219,14 +204,12 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
                 float* outQuat = (float*)(DAT_05826e18 + quatBone * 0x10);
                 int same = Terrain_QuadEqual((int)&quatA, (int)&quatB, 0, 0);
                 if (!same)
-                    QuatSlerp((int)&quatA, (int)&quatB, *(int*)&fFrac, (int)outQuat); // BUG-FIX: pass float bits, not truncated int
+                    QuatSlerp((int)&quatA, (int)&quatB, *(int*)&fFrac, (int)outQuat); // pass float bits, not truncated int
                 else { outQuat[0]=quatA[0]; outQuat[1]=quatA[1]; outQuat[2]=quatA[2]; outQuat[3]=quatA[3]; }
                 // quaternion to 3x3 rotation matrix, embedded in a 3x4.
-                // BUG-FIX: QuatToMatrix solo escribe posiciones [0,1,2,4,5,6,8,9,10]
-                // (9 floats de 3x3). Las posiciones 3,7,11 (columna de translación)
-                // quedaban sin inicializar. R_ConcatTransforms las lee como translation,
-                // así que generaba bone matrices con translate = stack garbage →
-                // vértices astronómicos. Zero-init + inyectar tX/tY/tZ abajo.
+                // QuatToMatrix solo escribe posiciones [0,1,2,4,5,6,8,9,10] (9 floats de
+                // 3x3). Las posiciones 3,7,11 (columna de translación) las lee
+                // R_ConcatTransforms: zero-init + inyectar tX/tY/tZ abajo.
                 float rot33[12] = {0};
                 QuatToMatrix((int)outQuat, (int)rot33, 0, 0);
                 // get translation from frame keys (3 floats × priorFrameInt)
@@ -256,17 +239,12 @@ void __cdecl BMD_Animation(void* this_, int param_1, float param_2, unsigned int
                     if (param_7 == '\0') {
                         Matrix_BuildFromEuler((float*)((char*)this_ + 0x78), &DAT_06989c9c);
                         if (param_8 != '\0') {
-                            // BUG-FIX 2026-05-03 (cross-ref con 5.2 ZzzBMD.cpp:153-159):
-                            // El IDA decompile mostraba solo 3 escalas de diagonales
-                            // (matrix[0][0], [1][1], [2][2] = offsets 0/5/10) — eso
-                            // se LEÍA mal. El source 5.2 limpio muestra que se
-                            // escalan los 9 elementos rotacionales (3x3 completa):
+                            // Se escalan los 9 elementos rotacionales (3x3 completa), no sólo la
+                            // diagonal (cross-ref con 5.2 ZzzBMD.cpp:153-159; el decompile de IDA se lee
+                            // mal ahí):
                             //   for (y=0; y<3; y++)
                             //     for (x=0; x<3; x++)
                             //       ParentMatrix[y][x] *= BodyScale;
-                            // Sin escalar los 6 off-diagonal, la rotación queda
-                            // deformada → bone matrices torcidas → vertices con
-                            // posiciones distorsionadas → "imp-like" body parts.
                             // Translate flag escribe BodyOrigin en columna [3].
                             float sc = *(float*)((char*)this_ + 0x68);
                             float* pm = &DAT_06989c9c_matrix[0];
@@ -317,21 +295,17 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     float local_30[12];
     int   local_58 = 0;
     int   local_64 = 0, local_6c = 0;
-    // BUG-FIX: el original (IDA sub_4404E0 lines 84/172/206) mantiene DOS
-    // punteros — v37 es la BASE del mesh actual y v35 = v37 al entrar a
-    // cada mesh, para que ++v35 itere por normales y v37 += 15000 al
-    // final del mesh avance a la base del siguiente mesh ABSOLUTAMENTE.
-    // Usar un único puntero (como hacía el port anterior) acumulaba el
-    // offset de normales a la suma de bases, desalineando los slots que
-    // BMD_DrawMesh lee en DAT_077e298c + meshIdx*15000. Resultado: mesh 0
-    // OK, mesh 1+ leía basura (ceros) → per-vertex intensity=0 → vertex
-    // colors=0 → velas del ship y otros meshes se ven NEGROS.
+    // El original (IDA sub_4404E0 lines 84/172/206) mantiene DOS punteros — v37
+    // es la BASE del mesh actual y v35 = v37 al entrar a cada mesh, para que ++v35
+    // itere por normales y v37 += 15000 al final del mesh avance a la base del
+    // siguiente mesh ABSOLUTAMENTE. Con un único puntero se acumularía el offset
+    // de normales y se desalinearían los slots que BMD_DrawMesh lee en
+    // DAT_077e298c + meshIdx*15000.
     float* local_68_base = (float*)&DAT_077e298c;  // base del mesh actual
     float* local_68      = local_68_base;          // puntero de trabajo
     int   local_74;
 
     // ── DIAG: log Translate flag + scale + world offset for first N calls ────
-    // 2026-05-03 bumped 16→200 to capture in-game frames after login.
     // Restrict to in-game and Lorencia-area entities to avoid log flood.
     static int s_xform_dbg = 0;
     int  diag_this_call = s_xform_dbg;
@@ -362,9 +336,9 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     }
     // per-sub-mesh bone transform loop
     int meshCount = (int)(short)*(short*)((char*)this_ + 0x24);
-    // GUARD 2026-07-16: si el modelo (this_) tiene el puntero Meshs (+0x28) NULL/
-    // garbage o un meshCount insano (preview char del panel crear-personaje sin
-    // modelo válido), abortar antes de deferenciar → evita crash en Skeleton_Transform.
+    // GUARD (desviación): si el modelo (this_) tiene el puntero Meshs (+0x28)
+    // NULL/basura o un meshCount insano (preview char del panel crear-personaje sin
+    // modelo válido), abortar antes de deferenciar.
     {
         unsigned int meshsPtr = (unsigned int)*(int*)((char*)this_ + 0x28);
         if (meshsPtr < 0x10000u || meshsPtr >= 0x80000000u || meshCount < 0 || meshCount > 200) {
@@ -383,11 +357,10 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
     for (local_58 = 0; local_58 < meshCount; local_58++) {
         int meshPtr = *(int*)((char*)this_ + 0x28) + local_6c;
         int vertCount = (int)(short)*(short*)(meshPtr + 4);
-        // GUARD 2026-07-16: el preview char del panel crear-personaje puede quedar
-        // con una malla cuyo array de vértices/normales es NULL (modelo sin cargar)
-        // → deref de near-null en el loop → crash 0x5A3797 en Skeleton_Transform. Si la
-        // malla es inválida, se saltea (avanzando los offsets per-mesh) para no
-        // crashear. Loguea una vez el entity_type para diagnosticar la raíz.
+        // GUARD (desviación): el preview char del panel crear-personaje puede quedar
+        // con una malla cuyo array de vértices/normales es NULL (modelo sin cargar).
+        // Si la malla es inválida, se saltea (avanzando los offsets per-mesh) y se
+        // loguea una vez el entity_type.
         {
             unsigned int vArr = (unsigned int)*(int*)(meshPtr + 0x10);
             unsigned int nArr = (unsigned int)*(int*)(meshPtr + 0x14);
@@ -415,13 +388,11 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
         }
         local_74 = -((int)(char*)&DAT_0584621c + local_64);
         float* pfOut = (float*)((char*)&DAT_05846224 + local_64);
-        // GUARD 2026-09-07: el indice de hueso del vertice (`*vs`) indexa
+        // GUARD (desviación): el indice de hueso del vertice (`*vs`) indexa
         // `BoneTransform` con stride 0x30, y ese bloque lo aloca
         // CreateCharacterPointer como `operator_new(48 * numBones)`.  Un vertice
-        // que referencie un hueso fuera de rango lee cientos de KB despues del
-        // bloque -> AV dentro de Vector_Transform (crash reportado al romper la
-        // puerta de Blood Castle: addr 0x00505B72 = Vector_Transform+0x112,
-        // param1=0x02B71000, page-aligned = tipico de salirse de una alocacion).
+        // que referencie un hueso fuera de rango lee fuera del bloque -> AV dentro de
+        // Vector_Transform.
         //
         // El original no acota; aca se saltea el vertice y se loguea UNA vez con
         // el tipo de entidad, el modelo y los dos numeros, para poder atacar la
@@ -478,17 +449,13 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
             pfOut += 3;
         }
         // normal transform + per-vertex lighting (IDA sub_4404E0 L172-206).
-        // BUG-FIX 2026-07-15: son DOS buffers separados —
+        // Son DOS buffers separados:
         //   • normal transformada → NORMAL buffer (DAT_06f433bc + local_64,
         //     stride 3 floats), que lee el chrome env-map en BMD_DrawMesh.
         //   • intensidad de luz (dot con la dir de luz) → LIGHT buffer
         //     (DAT_077e298c, stride 1 float).
-        // El port anterior escribía la normal al LIGHT buffer (local_68) y la
-        // sobreescribía con la luz → la luz salía bien pero el NORMAL buffer
-        // quedaba en cero → todos los UV chrome colapsaban a un texel → armas
-        // y sets con glow chrome se veían como barra/relleno sólido dorado.
-        // Ahora `v20 = &unk_6F433BC + v9` (normal) y `v35 = v37` (light) son
-        // punteros independientes, fiel a IDA.
+        // `v20 = &unk_6F433BC + v9` (normal) y `v35 = v37` (light) son punteros
+        // independientes, fiel a IDA.
         local_68 = local_68_base;   // v35 — light buffer (1 float/vertex)
         float* pfNrmBase = (float*)((char*)&DAT_06f433bc + local_64);  // v20 — normal buffer (3 floats/normal)
         int normCount = (int)(short)*(short*)(meshPtr + 6);
@@ -512,7 +479,7 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
             float* pfFirst = (float*)((char*)&DAT_05846224 + 0);
         }
         local_6c += 0x28;
-        // FIX: avanzar la BASE del mesh 15000 floats (60000 bytes)
+        // Avanzar la BASE del mesh 15000 floats (60000 bytes)
         // ABSOLUTAMENTE — equivale a `v37 += 15000` en IDA line 206.
         local_68_base += 15000;
         local_64 += 180000;
@@ -551,8 +518,8 @@ void __cdecl Skeleton_Transform(void* this_, int param_1, float* param_2, float*
 // OpenJPG — implemented in src/Render/Texture/Texture.cpp (Texture_Load)
 // ═════════════════════════════════════════════════════════════════════════════
 
-// CSimpleModulus crypto (CSimpleModulus_Encode/cd20/cca0/ce30 + helpers) moved to
-// src/Net/Crypto.cpp (B3 refactor 2026-05-07, 282 lines).
+// CSimpleModulus crypto (CSimpleModulus_Encode/cd20/cca0/ce30 + helpers) vive en
+// src/Net/Crypto.cpp.
 
 // Chat_ValidateInputCommand — implemented in src/UI/Chat.cpp
 // GL_DrawTexture — implemented in src/Render/GL_2D.cpp

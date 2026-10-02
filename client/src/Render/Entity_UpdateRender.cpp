@@ -35,7 +35,7 @@ static inline float PtrAsFloatBits(const void *p) {
 // param_3  — zone-id or context param (treated as int for zone-scale calc)
 //
 // Anti-tamper: ~30 HashTable_GetIndex / HashTable_Insert / XOR-encode blocks are
-// interspersed throughout; per CLAUDE.md those are pure obfuscation and are omitted.
+// interspersed throughout; those are pure obfuscation and are omitted.
 
 // All FUN_* prototypes and DAT_* globals come from stdafx.h → functions.h / globals.h
 
@@ -45,10 +45,10 @@ extern "C" {
     // From Render_PlayerEquipment.cpp
     void Render_PlayerHelper(int c, int o);
     void Render_PlayerWeaponLoop(int c, int o);
-    // 2026-05-04: back-weapon render decision. Returns 1 if weapon was rendered
+    // Back-weapon render decision. Returns 1 if weapon was rendered
     // on back (LinkBone 47). When 1, Render_PlayerWeaponLoop should be skipped.
     int  RenderCharacterBackItem(int c, int o);
-    // 2026-05-04: per-frame watchdog que restaura wings/weapons/pendant del
+    // Watchdog por frame que restaura wings/weapons/pendant del
     // hero si fueron reseteados a -1 después de F3/03.
     void HeroEquipWatchdog(int c);
 }
@@ -104,10 +104,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     if (*(short *)((char *)model + 0x26) == 0)
         return (void *)entity_type;
 
-    // ── BUG-FIX 2026-04-27: declarar como arrays contiguos para que `&local_X`
-    // pasado a funciones que leen/escriben 3 floats consecutivos (CreateSprite,
-    // BMD_TransformPosition, etc.) no caiga en stack slots aleatorios. Mismo patrón ya
-    // arreglado en Sprite/Math_3D/Scene_CharSelect.
+    // Arrays contiguos: `&local_X` se pasa a funciones que leen/escriben 3 floats
+    // consecutivos (CreateSprite, BMD_TransformPosition, etc.).
     float local_60_buf[3] = { 1.0f, 1.0f, 1.0f }; // RGB color tint
     float local_48_buf[3] = { 0.0f, 0.0f, 0.0f }; // position offset
     float local_54_buf[3] = { 0.0f, 0.0f, 0.0f }; // transformed world pos
@@ -133,8 +131,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     void *local_74 = NULL;  // dead/anim flag
 
     // ── 2. Switch por TIPO DE MONSTRUO (+0x2EB) ──────────────────────────────
-    // (2026-08-22: se llamaba "magic_channel_flag"; es el tipo que escribe
-    //  CreateMonster.  La logica ya comparaba contra tipos, solo mentia el nombre.)
     char cVar6 = *(char *)((int)param_1 + 0x2eb);  // tipo de monstruo
     switch (cVar6) {
     case 'Y': case '_': case 'p': case 'v': case '|':
@@ -143,24 +139,21 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // Skill channel active — beam/barrier widget path
         unsigned int uVar11 = (unsigned int)(size_t)Calc_RenderObject((int)puVar13, '\x01', (int)param_3);
         if (param_1[0x61] == 0) {
-            // 2026-09-04 FIX (crash 0xC0000005 param1=0xCDCDCDD5 al romper la
-            // puerta de Blood Castle).  IDA 0x456770 L308-323:
+            // IDA 0x456770 L308-323:
             //     v9 = (float *)(block + 4);
             //     *(_DWORD *)block = 1;                  // prefijo de count
             //     eh_vector_ctor(block + 4, 0x60, 1, sub_4093A0, sub_4093C0);
             //     sub_4093E0(v9, ...); sub_409250(v9, ...); sub_409250(v9, ...);
             //     *(_DWORD *)(c + 388) = v9;             // guarda el OBJETO
             //
-            // El port construia en `block + 4` (bien) pero guardaba `block` en
-            // c+388.  El tick de la tela (`sub_408CB0`) arranca con una llamada
-            // por vtable -- `(*(void(**)(_DWORD*))(*a1 + 8))(a1)` -- asi que leia
-            // el prefijo de count como si fuera la vtable.  Sin inicializar, el
-            // CRT debug lo deja en 0xCDCDCDCD y `*(0xCDCDCDCD + 8)` da
-            // 0xCDCDCDD5, que es exactamente el param1 del crash.
+            // En c+388 va el objeto (`block + 4`), no `block`: el tick de la tela
+            // (`sub_408CB0`) arranca con una llamada por vtable --
+            // `(*(void(**)(_DWORD*))(*a1 + 8))(a1)` -- y leeria el prefijo de count como
+            // si fuera la vtable.
             //
             // Los tipos de monstruo de este case (+0x2EB: 89, 95, 112, 118, 124,
             // 130, 136) incluyen el 130 = "Magic Skeleton", que es el que aparece
-            // al caer la puerta del evento.
+            // al caer la puerta del evento de Blood Castle.
             void *puVar8 = operator_new(100);
             *(int *)puVar8 = 1;                    // count del eh vector ctor
             void *clothObj = (char *)puVar8 + 4;   // el objeto vive en +4
@@ -189,27 +182,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, cVar6);
         break;
     }
-    // -- 3. (bloque removido 2026-09-04) --------------------------------------
-    // Aca habia una "LOD / sparkle (distance check)" que NO existe en IDA: era
-    // una copia mal leida del gate del render de cuerpo (RenderCharacter
-    // L346-380), que ya esta portado completo mas abajo en la seccion 7a.
-    // Confundia dos campos del objeto:
-    //     puVar13 + 0x5a  = +360 -> NO es "distancia en pantalla", es el ALPHA
-    //                       (por eso el umbral era _DAT_005528b8 = 0.3, que es
-    //                       el `alpha >= 0.3` de IDA)
-    //     puVar13 + 6     = +24  -> Position.Z
-    // y hacia `if (World 11..16 && alpha < Z) Z = alpha;`, o sea clavaba la Z de
-    // TODA entidad no-jugador de Blood Castle en ~1.0 -- los monstruos y el
-    // Archangel quedaban por debajo del piso.  El heroe no, porque el gate
-    // `entity_type != 390` lo excluye: de ahi que se viera al pj sobre el puente
-    // y a todo lo demas hundido.
-    // Lo que IDA hace en ese punto es
-    //     if (World 11..16 && o->m_bActionStart && c->Dead) {
-    //         th = RequestTerrainHeight(o->Position[0], o->Position[1]);
-    //         if (th < o->Position[2]) o->Position[2] = th;
-    //     }
-    // que es exactamente lo que ya hace la seccion 7a.  Ademas llamaba
-    // `GL_SetBlendAdditive()` suelto para cada entidad, ensuciando el estado GL.
 
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
     BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
@@ -271,9 +243,8 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             int iType = (bVar7 == 0x47) ? 0x1ed : 0x1ef;
             void *puVar8 = ClothNew();
             // IDA L493: sub_408130(v33, c, 19, 10.0, 0, 5, 15, 30.0, 300.0, tex, tex, 0x1100)
-            // El port tenia 240.0 / 500.0 — mal decodificados de los enteros del
-            // decompile (1106247680 = 0x41F00000 = 30.0, no 240; 1133903872 =
-            // 0x43960000 = 300.0, no 500). La capa salia 8x mas ancha.
+            // (los enteros del decompile: 1106247680 = 0x41F00000 = 30.0;
+            // 1133903872 = 0x43960000 = 300.0).
             GridSpring_Create(puVar8, PtrAsFloatBits(param_1), 0x13, 10.0f, 0.0f,
                          5, 0xf, 30.0f, 300.0f, iType, iType, 0x1100);
             param_1[0x61] = (int)puVar8;
@@ -472,7 +443,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // Luz base del cuerpo, desde el terreno + el ColorOffset del objeto.
     // IDA RenderCharacter L775-779.
     //
-    // 2026-09-27 -- ACA ESTABA MEZCLADO EL TINTE DE PK, y ese era el bug.
     // El binario escribe la luz del cuerpo en DOS momentos distintos:
     //
     //   L775-779   c+800 = Light[] + ColorOffset      <- luz base (aca)
@@ -482,11 +452,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     //   L2342      RenderLinkObject(c + 672) .........  las ALAS usan el rojo
     //
     // O sea el rojo del PK se escribe DESPUES de dibujar el cuerpo, asi que en
-    // el original solo alcanza a lo que se dibuja despues: las alas.  El port
-    // habia fusionado las dos escrituras en esta sola, que corre ANTES del
-    // render del cuerpo, y por eso el personaje PK salia rojo entero en vez de
-    // con el cuerpo normal y las alas rojas.  La segunda escritura ahora vive
-    // mas abajo, justo antes del bloque de armas y alas.
+    // el original solo alcanza a lo que se dibuja despues: las alas.  Por eso
+    // aca va solo la luz base; la segunda escritura (PK) vive mas abajo, justo
+    // antes del bloque de armas y alas.
     *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
     *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
     *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
@@ -509,7 +477,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     //   bit 1 -> Remedy of Love  multiplica (0.5, 0.9, 0.5)
     // Todo lo que IDA tiene entre el gate y estas tres escrituras es el ruido
     // de hash-table que descifra CharacterMachine para leer el byte (omitido
-    // por policy, ver CLAUDE.md).
+    // por ser anti-tamper).
     //
     // Va ANTES del render del cuerpo y ANTES de la segunda escritura de luz
     // (la del PK, mas abajo), igual que en IDA: L786 el heroe, L2310 el PK.
@@ -538,26 +506,18 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             local_74 = (void *)0;
     }
 
-    // ── 2026-05-04: re-apply equipment stash si está reseteado ──────────────
+    // ── Re-aplicar el stash de equipo si está reseteado ─────────────────────
     if (SceneFlag == 5 && param_1_ == DAT_07abf5d8) {
         HeroEquipWatchdog((int)(uintptr_t)param_1_);
 
 
-        // 2026-08-10 — WATCHDOG REMOVIDO. Ya no hace falta: no había ningún
-        // "escritor misterioso" del flag. +0x34E es **SafeZone**, no dead_flag,
-        // así que valía 1 legítimamente con el héroe vivo parado en el pueblo;
-        // el que estaba mal era el lector de abajo (bDead), que ahora usa el
-        // dead real (+0x2FD, IDA ReceiveDie L18). El watchdog además forzaba
-        // SafeZone=0 en cada frame, matando la música de pueblo, el bind del
-        // arma a la espalda y el gate de "no atacar en zona segura".
+        // +0x34E es SafeZone (no dead_flag): vale 1 con el héroe vivo en el pueblo.
+        // No forzarlo a 0: mataría la música de pueblo, el bind del arma a la
+        // espalda y el gate de "no atacar en zona segura".
     }
 
 
     // ── 7a. NPC / monster body render (IDA L347-401) ─────────────────────────
-    // 2026-05-08: missing port — sin esto NPCs/monsters renderean SOLO efectos
-    // especiales (entity-type switch al final) pero nunca su BODY geometry.
-    // Resultado visual: monsters invisibles excepto por sparkles/particles.
-    //
     // Gate: entity_type != 390 (player) && kind != 8 (KIND_TRAP).
     // Tipos de monstruo excluidos (+0x2EB):
     //   25 (cloth-cape variants) / 22 (frost) / 42 (special-weapon dual-axe)
@@ -642,7 +602,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
             // lo ya dibujado de lo que viene.  En el binario borra aca el
             // tinte de las bebidas que dejo el bloque del heroe, de modo que
             // el CUERPO (L1020, antes) lo tiene y las ALAS (L1239, despues) no.
-            // Sacarlo hacia que el Ale tinara tambien las alas (2026-09-27).
+            // Sacarlo hace que el Ale tina tambien las alas.
             *(float *)(param_1 + 200)  = local_60 + *(float *)(puVar13 + 0x3a);
             *(float *)(param_1 + 0xc9) = local_5c + *(float *)(puVar13 + 0x3b);
             *(float *)(param_1 + 0xca) = local_58 + *(float *)(puVar13 + 0x3c);
@@ -676,10 +636,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // Para char-select (SceneFlag == 4) Bind siempre = 0 → este bloque
         // NO debe disparar y dejar el render de armas al `Render_PlayerWeaponLoop`
         // (líneas finales de este case 0x186) que las pone en la mano.
-        //
-        // BUGFIX 2026-04-27: antes este bloque corría incondicionalmente y
-        // duplicaba el render del crossbow del Elf — render en espalda Y en mano
-        // → flicker visible cuando ambos paths competían por DAT_06989c9c.
         //
         // Bind detection (port simplificado IDA líneas 1140-1153):
         //   Bind = (World in 10..16) && (anim < 93 || anim > 124) &&
@@ -763,12 +719,9 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         // param_1 como int*), que escribe el handler del 0x9B con el
         // EventItemLevel que manda el server.
         //
-        // 2026-09-07: estaba DENTRO de `if (Bind)`, o sea sujeto a la rama de
-        // "arma en la espalda".  En IDA vive en la rama contraria (`!Back ||
+        // No va dentro de `if (Bind)`: en IDA vive en la rama contraria (`!Back ||
         // Type == -1`) y ademas Bind se fuerza a 0 en Blood Castle, asi que
-        // siempre se alcanza.  Sintoma: el arco de la estatua no se dibujaba en
-        // la espalda al levantarlo.  Verificado en el log del cliente: el server
-        // manda `0x9B ... owner=9001 lvl=3` (3 = Bow) durante 80 paquetes.
+        // siempre se alcanza.
         if ((World >= 11) && (World <= 16) &&
             (*(char *)(param_1 + 0xba) != 0)) {
             *(BYTE *)(param_1 + 0xa9) = 0x2f;   // LinkBone = 47
@@ -818,7 +771,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         Render_PlayerHelper((int)param_1, (int)puVar13);
 
         // ── Back-render decision (port WeaponView.cpp:49) ───────────────────
-        // 2026-05-04: si bBindBack=1, renderiza armas en la espalda (LinkBone
+        // Si bBindBack=1, renderiza armas en la espalda (LinkBone
         // 47) y se SALTA Render_PlayerWeaponLoop. Caso típico: safe-zone.
         int bBindBack = RenderCharacterBackItem((int)param_1, (int)puVar13);
 
@@ -838,8 +791,7 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // el tinte de PK -- que se escribe entre medio, en L2310 -- alcanza solo a
     // las alas.  Aca el orden esta invertido: alas arriba, cuerpo abajo, con
     // lo cual una sola escritura no puede dejar las alas rojas y el cuerpo
-    // normal: lo que tinta las alas tinta tambien el cuerpo.  Era el sintoma
-    // reportado el 2026-09-27 ("el rojo continua al personaje").
+    // normal: lo que tinta las alas tinta tambien el cuerpo.
     //
     // Se vuelve a poner la luz base justo antes del loop de partes.  El efecto
     // final es el del binario (alas rojas, cuerpo con su luz normal) sin tener
@@ -860,7 +812,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     }
 
     // ── 7b. Body-part render loop (Ghidra RenderCharacter lines 1622-1700) ──────
-    // Missing in previous port — this is what actually draws player geometry.
     // Player.bmd is skeleton-only (numMesh=0); body geometry lives in separate
     // BMD models (HelmClass##/ArmorClass##/PantClass##/GloveClass##/BootClass##)
     // referenced by entity equipment slots and rendered here via RenderPartObject
@@ -879,13 +830,13 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     //   +0x03 byte   option
     // Gate: *(param_1 + 0x34f) == 0 (not hide-equipment state).
     // ── 7a-bis. NPC con modelo de jugador + SubType propio (IDA L1012-1042) ──
-    // 2026-08-08 PORT FALTANTE — "el Golden Archer / esqueleto de Lorencia no se
-    // dibuja". CreateMonster case 236 (0x45CCF0 L803) crea la entidad como
+    // Caso del Golden Archer / esqueleto de Lorencia. CreateMonster case 236
+    // (0x45CCF0 L803) crea la entidad como
     //     OpenNpc(390); c = CreateCharacter(Key, 390, ...);
     //     o->SubType (o+4) = 207;  o->Kind (o+132) = 4;  c+446 = 8;
     // o sea Type = 390 = MODEL_PLAYER. Con Type 390 el render cae en el loop de
     // body-parts de abajo, pero este NPC no tiene NINGUNA parte equipada
-    // (+0x1e0…+0x258 todos -1) → no se dibujaba nada.
+    // (+0x1e0…+0x258 todos -1) → no se dibujaría nada.
     //
     // El original tiene una rama previa: si Type == 390 y SubType está en
     // [206, 208] (MODEL_SKELETON1..3 — Data\Skill\Bones_Warrior / Bone_A /
@@ -1017,8 +968,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     // pvVar23 / local_78 is resolved from the model object in the hash-table
     // section above (skipped).  In the port we use el model lookup directo
     // (DAT_05828d58 + entity_type * 0xbc) que ya teníamos calculado al inicio.
-    // Antes era `pvVar23 = local_78` (= NULL) → TODOS los BMD_TransformPosition con
-    // pvVar23 dereferenciaban NULL y crasheaban en model+0x68.
     pvVar23 = model;
     local_78 = model;
 
@@ -1144,11 +1093,10 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         local_48 = 0.0f; local_44 = 0.0f; local_40 = 0.0f;
 
         // ── Capa del Magic Gladiator (IDA RenderCharacter L667-743) ───────────
-        // 2026-08-11: bloque que faltaba portar. La capa NO es una malla del
-        // modelo: es un objeto de **tela** (cloth/verlet) construido con
-        // `sub_408130`, texturizado con Robe01.jpg/Robe02.jpg = slots 490/491
-        // (`OpenPlayerTextures` 0x507610 los carga y nuestro Model_Monsters.cpp
-        // ya lo hacía; sólo faltaba el consumidor).
+        // La capa NO es una malla del modelo: es un objeto de **tela**
+        // (cloth/verlet) construido con `sub_408130`, texturizado con
+        // Robe01.jpg/Robe02.jpg = slots 490/491 (los carga `OpenPlayerTextures`
+        // 0x507610, en Model/Model_Monsters.cpp).
         //
         //   Targetd = 0;
         //   if ((c[444] & 7) == 3 && o->Type == 390) Targetd = 1;   // clase 3 = MG
@@ -1218,14 +1166,11 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
                     } else {
                         // IDA: `(*(void (__thiscall **)(int,_DWORD))(*(_DWORD *)v49 + 12))(v49, 0);`
                         // La vtable `off_552520` no está portada (Widget_CtorBase
-                        // tiene el vtable-set saltado), así que la indirección
-                        // saltaba a basura → crash por ejecución (param0=8).
-                        // 2026-08-11: leí la vtable del binario original
-                        // (`Cliente armado/main.exe`, MD5 eb95ac…):
+                        // tiene el vtable-set saltado), así que se llama directo al destino real.
+                        // Vtable leída del binario original (`Cliente armado/main.exe`, MD5 eb95ac…):
                         //     off_552520 = { 0x0045AAA0, 0x00408780,
                         //                    0x004089B0, 0x00408FF0 }
-                        // o sea **+0xC = sub_408FF0**. Llamada directa al destino
-                        // real en vez de la indirección.
+                        // o sea **+0xC = sub_408FF0**.
                         FUN_00408ff0((void *)pCloth);
                     }
                 }

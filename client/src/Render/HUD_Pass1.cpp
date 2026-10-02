@@ -1,14 +1,10 @@
 // HUD_Pass1.cpp — primera tanda de funciones de render del HUD in-world, portadas 1:1
 // del mu.exe original (sub_4BCA20, sub_4BD090, sub_4BD2B0, sub_4BFDE0).
 //
-// Estas cuatro faltaban por completo en nuestro build o estaban stubeadas vacías
-// en src/Render/Render_Frame.cpp. Traerlas restaura:
+// Contenido:
 //   * RenderPartyHP        — las barritas de HP sobre los miembros del party en el mundo
-//   * RenderBooleans       — floating-numbers iterator (damage/heal popups)
-//                            Nota: la llamada a RenderBoolean por entrada (0x480E00,
-//                            ~3000 bytes) todavía NO está portada; el iterador
-//                            does its layout/de-overlap work but then falls
-//                            por un RenderBoolean stubeado por ahora.
+//   * RenderBooleans       — floating-numbers iterator (damage/heal popups); cada
+//                            entrada la dibuja RenderBoolean (0x480E00, HUD_Pass3.cpp).
 //   * RenderMainFrameWindow — el marco inferior del HUD (5 llamadas a RenderBitmap + el
 //                            anti-tamper CharacterMachine encrypt/decrypt
 //                            block).  Anti-tamper is preserved structurally
@@ -58,16 +54,11 @@ static bool HUD_IsGoldenArcherPanelRuntime(void)
 // ── Globals que el original referencia por nombre simbólico ─────────────────
 // Definimos #defines para que los nombres estilo IDA coincidan con el storage que
 // ya tenemos, y el código portado quede visualmente cerca del decompile.
-// 2026-08-22 FIX: estos cuatro apuntaban a 0x00561558..0x00561564 con el
-// comentario "already in our build (assumed)" — una suposición que nunca se
-// verificó y que estaba mal.  `ida_xrefs_to` da las direcciones reales, las
-// cuatro escritas por `gluPerspective2` (0x511220):
+// Direcciones reales según `ida_xrefs_to`, las cuatro escritas por
+// `gluPerspective2` (0x511220), que es lo que escribe nuestro GL_SetPerspective:
 //     ScreenCenterX 0x083A429C · ScreenCenterY 0x083A42A0
 //     PerspectiveX  0x083A42A4 · PerspectiveY  0x083A42A8
-// 0x00561558 es otra cosa (la escribe `BeginOpengl`, 0x5119B0).
-// Nadie usaba estos nombres todavía, así que el bug nunca se disparó — pero eran
-// cuatro trampas armadas para el próximo port que los usara, porque nuestro
-// `GL_SetPerspective` sí escribe en los DAT_083a42xx.
+// OJO: 0x00561558..0x00561564 es otra cosa (la escribe `BeginOpengl`, 0x5119B0).
 #define ScreenCenterX        ViewportCenterX
 #define ScreenCenterY        ViewportCenterY
 #define PerspectiveX         _DAT_083a42a4
@@ -234,7 +225,7 @@ void RenderPartyHP_(void)
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
-// Entrada pública — reemplaza al stub vacío que antes estaba en Render_Frame.cpp.
+// Entrada pública (la llama Render_Frame.cpp).
 void Render_HPBars(void) { RenderPartyHP_(); }
 
 
@@ -245,7 +236,7 @@ void Render_HPBars(void) { RenderPartyHP_(); }
 //      compute label dimensions (sub_480C60).
 //   2. De-overlap pass: for every pair of active entries, shift one out of
 //      la otra si sus rectángulos de bbox se superponen.
-//   3. Pasada de render: llama a RenderBoolean por entrada (hoy stubeada).
+//   3. Pasada de render: llama a RenderBoolean por entrada (HUD_Pass3.cpp).
 //
 // El original usa el vecino de la lista enlazada de las entradas (`*v0` es el puntero al dueño,
 // non-zero means alive).  Our port preserves the exact pointer-arithmetic
@@ -414,11 +405,7 @@ void Render_BottomHUD(void) { RenderMainFrameWindow_(); }
 //   CameraMatrix[]          — 4x4 GL matrix (already in our globals)
 // =============================================================================
 // Item_FindQuickSlotByCategory, RenderItem3D y Camera_BuildMouseRay ya están declaradas en
-// functions.h (que entra vía stdafx.h). FUN_004f5ce0 / FUN_004f6420 están
-// declaradas pero sin implementar en nuestro build — acá dejamos stubs para que
-// enlacen los call sites del render de la barra. Son renderers de efectos de
-// skill / teleport; que no tengan cuerpo sólo significa que esos overlays no se dibujan, lo cual es
-// fine until they get their own port.
+// functions.h (que entra vía stdafx.h).
 extern "C" DWORD DAT_07e91388;
 extern "C" DWORD DAT_07eaa13c;
 
