@@ -208,7 +208,7 @@ LAB_00423b59:
 
 // =============================================================================
 // IDA: CWsctlc::Connect (0x0043DCD0)
-// (251 bytes per IDA decompile raw/0043DCD0_CWsctlc_Connect.c).
+// (251 bytes).
 //
 // Lower-level TCP connect helper used by CWsctlc socket sessions. The `This`
 // pointer is a CWsctlc instance with layout:
@@ -227,12 +227,10 @@ LAB_00423b59:
 //   2 = host name resolution failure
 //   0 = hWnd null OR connect failed -> closesocket
 //
-// 2026-05-08: ported as part of the companion-DLL Offsets.h cross-reference.
-// Our existing Net_Connect_Server (CreateSocket) handles the higher-level
-// connect flow including hash-table bootstrap; CWsctlc::Connect is the inner
-// connect+select helper.  Currently no caller in our build references it
-// directly (we connect via different code paths) but the symbol is exported
-// for completeness.
+// Net_Connect_Server (CreateSocket) hace el connect de alto nivel, incluido el
+// bootstrap de la hash-table; CWsctlc::Connect es el helper interno de
+// connect+select.  Hoy ningún llamador del build lo usa directamente; el
+// símbolo queda exportado.
 // =============================================================================
 // IDA: CWsctlc::Connect (0x0043DCD0)
 extern "C" int __cdecl CWsctlc_Connect(DWORD This, const char* ip_addr,

@@ -78,11 +78,9 @@ void InitKeys(const char* customerName, const char* serverSerial)
 // -----------------------------------------------------------------------------
 // Hex/ASCII dump helper for diagnostics (first/last N bytes of a buffer).
 //
-// 2026-04-29: gated behind MUEMU_TRACE.  When debugging under VS the high
-// volume of hex bytes flowing through DbgLog → WriteFile → debug.log was
-// triggering first-chance KernelBase AVs (ImePadServer-style) and flooding
-// the log file (300 KB+ of recv/send dumps per minute).  Define
-// MUEMU_TRACE in the project for opt-in tracing during net-protocol work.
+// Sólo compila con MUEMU_TRACE definido: el volumen de bytes hex por DbgLog
+// inundaba debug.log y disparaba AVs first-chance bajo el debugger de VS.
+// Definir MUEMU_TRACE en el proyecto para tracear el protocolo de red.
 // -----------------------------------------------------------------------------
 static void DumpHex(const char* tag, const BYTE* buf, int len)
 {
