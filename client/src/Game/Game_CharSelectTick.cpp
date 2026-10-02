@@ -63,10 +63,6 @@ void Game_CharSelectTick(void)
         // Init in-game subsystems
         Monster_LoadStartupData();
         // IDA 0x525384: mov [CameraAngle+8], 0xC2340000 (= float -45.0).
-        // BUG-FIX 2026-06-28: DAT_083a42c0 es DWORD& → `= -45.0f` convertía el
-        // float a ENTERO -45 (0xFFFFFFD3) que leído como float es NaN. El yaw
-        // NaN propagaba a AngleMatrix→VectorIRotate→CameraPosition (escena negra).
-        // Escribir el float directamente (bit-pattern 0xC2340000), igual a IDA.
         CameraAngle[2] = -45.0f;  // yaw = -45° (iso rotation around Z)
         ClearInput(1);
         DAT_00559c84 = 0;
@@ -139,21 +135,15 @@ void Game_CharSelectTick(void)
         Bisect_ChatMode("CST_post_402fd0");        Chat_InputTick();
         Bisect_ChatMode("CST_post_4b14f0_ChatInputTick");
         // ── Reposición per-frame del ChatListBox ────────────────────────────
-        // FIX 2026-07-20: faltaba el `else` del `g_bUseChatListBox == 1`, y el caso
-        // (-10, 81) estaba metido en la rama equivocada.
         //
         // Las 3 posiciones (verificadas en el binario en 0x5258D8: tres pares
         // de `push` que convergen en el mismo `call sub_40C690`) son:
         //     (186, 420)  sin paneles abiertos
         //     (  0, 420)  con inventario/character/trade/shop/etc. abiertos
         //     (-10,  81)  con el ChatListBox APAGADO → historial arriba-izquierda
-        // La estructura es idéntica a CheckFunctionButtons (0x4C04A0), que sí
-        // está bien portada en src/Input/Input.cpp:388-433; me guié por esa.
+        // La estructura es idéntica a CheckFunctionButtons (0x4C04A0).
         //
-        // Sin el `else`, al apagar el recuadro (botón 2 del popup o F4) el
-        // widget se quedaba clavado en (186, 420) y los mensajes seguían
-        // dibujándose ahí abajo en vez de volver arriba a la izquierda: las
-        // filas se posicionan SIEMPRE en `this[11]+10, this[12]-13*n-16`
+        // Las filas se posicionan SIEMPRE en `this[11]+10, this[12]-13*n-16`
         // (IDA sub_40D610), así que mover el widget es lo único que las mueve.
         if (g_bUseChatListBox == 1) {
             int y, x;
@@ -209,9 +199,7 @@ void Game_CharSelectTick(void)
     //   else if ( HeroTile == 4 ) goto LABEL_108;
     //   MoveLeaves();
     //
-    // O sea LABEL_108 es SALTEAR. El port tenia las condiciones de World 0 y
-    // World 2 INVERTIDAS: corria solo en los casos en que IDA saltea, asi que
-    // las hojas de Lorencia y Devias estaban al reves.
+    // O sea LABEL_108 es SALTEAR.
     bool doLeaves;
     if (World == 0)
         doLeaves = (DAT_07e118e8 != 4);
@@ -224,25 +212,15 @@ void Game_CharSelectTick(void)
     Bisect_ChatMode("CST_post_skillFX");
     // Full world pipeline
     Weather_Update();           Bisect_ChatMode("CST_post_500e80");    AmbientParticles_Update(); Bisect_ChatMode("CST_post_502320");    Object_MoveUpdate();      Bisect_ChatMode("CST_post_ObjMove");    UI_TickHoverBubbles();           Bisect_ChatMode("CST_post_4821a0");    Player_ProcessInput();    Bisect_ChatMode("CST_post_PlayerInput");
-    // 2026-05-03: per-entity animation tick RE-ENABLED. La concern de stack
-    // corruption original venía de NULL-deref en hash table (HashTable_GetNode
-    // returning NULL on key-mismatch). Con el sentinel hash setup ahora hay
-    // un buffer válido siempre, y HashTable_GetIndex retorna -1 para que los
-    // callers skip el deref.
-    //
-    // 2026-05-05: Wire MoveCharactersClient (per-frame entity tick que
-    // llama MoveCharacterClient → MoveMonsterClient path-walker para cada entidad). Sin
-    // esto los monsters/NPCs llegaban con packet 0x10 (target_grid set) pero
-    // nunca se invocaba el path-walker, así quedaban quietos en su pos
-    // inicial. El path-walker SÍ existe y funciona — solo faltaba wirear.
-    // 2026-05-05: per-frame entity tick.
+    // Tick por entidad: MoveCharactersClient (MoveCharacterClient →
+    // MoveMonsterClient, el path-walker de cada entidad).
     //   MoveMonsterClient — path tick: pathfind (+0x306/7 target ≠ cached) y
     //                  advance waypoint cuando arrived. NO se llama para el
     //                  hero (Player_InputTick maneja su propio path/motion).
     //   MoveCharacterVisual — copia entity.action y world pos al model. SÍ para
-    //                  todos los entities (incl hero). Sin esto el model
-    //                  queda en posición inicial.
+    //                  todos los entities (incl hero).
     //   CharacterAnimation — avanza entity[+0x108] (frame counter). Para todos.
+    // El loop manual de abajo está desactivado (`false &&`).
     {
         int heroEnt = (int)(uintptr_t)DAT_07abf5d8;
         int base = (int)(uintptr_t)DAT_07abf5d0;
@@ -258,33 +236,22 @@ void Game_CharSelectTick(void)
         }
     }
 
-    // ── BUG-FIX 2026-07-16: MoveBugs FALTABA en char-select ─────────────────
-    // IDA Game_CharSelectTick (00524E30 L531) llama MoveBugs(). Es el update que
-    // hace fade-in del alpha de las entidades "bug" (Alpha() en MoveBugs L72) y
-    // posiciona/anima las MONTURAS (Uniria bug=195 / Dinorant bug=267) siguiendo
-    // al owner. Sin él, el alpha del mount queda en 0 → Calc_RenderObject lo
-    // cullea (alpha < 0.01) → la montura nunca se dibuja. Verificado por diag:
-    // el bug 267 existía en el pool pero Calc devolvía 0.
+    // IDA Game_CharSelectTick (00524E30 L531) llama MoveBugs(): hace fade-in del
+    // alpha de las entidades "bug" y posiciona/anima las MONTURAS (Uniria bug=195 /
+    // Dinorant bug=267) siguiendo al owner. Sin él la montura queda con alpha 0 y
+    // Calc_RenderObject la cullea.
     extern void __stdcall MoveBugs(void);
     MoveBugs();
 
-    // (2026-09-12: aca habia un `Character_UpdateAll()` = 0x479730, que es
-    //  RenderSprites -- dibuja el pool de sprites y LES LIMPIA el flag.  En IDA
-    //  solo lo llaman Game_RenderTick, Scene_Login y Scene_CharSelect; el tick
-    //  del mundo (0x524E30) no.  Llamado aca dibujaba fuera del pase 3D y
-    //  borraba los sprites antes del render real.  Game_RenderTick ya lo llama.)
+    // No llamar acá a RenderSprites (0x479730): dibuja el pool de sprites y les
+    // limpia el flag. En IDA sólo lo llaman Game_RenderTick, Scene_Login y
+    // Scene_CharSelect; el tick del mundo (0x524E30) no.
     DamageNumbers_Tick();
     Effect_TickFade();
     Effect_TickAll();
     Joint_TickAll();
-    // ── BUG-FIX 2026-07-15: MoveParticles (0x477090) FALTABA en char-select ──
-    // IDA Game_CharSelectTick (00524E30 L539) llama MoveParticles() acá. Es el
-    // update que decrementa el lifetime de las partículas y las despawnea. Sin
-    // él, las partículas que spawnean las wings/armas/efectos de los personajes
-    // se renderizaban cada frame (RenderParticles) pero NUNCA morían → se
-    // acumulaban con blend aditivo → haces dorados saliendo de los bordes de la
-    // pantalla, intensificándose progresivamente. El tick in-world
-    // (Game_EnterWorldTick L310) sí lo llama; el de char-select no lo tenía.
+    // IDA Game_CharSelectTick (00524E30 L539) llama MoveParticles() acá: decrementa
+    // el lifetime de las partículas y las despawnea.
     extern void __stdcall MoveParticles(void);
     MoveParticles();   // MoveParticles (0x477090)
     // (Tambien habia un `Effect_UpdateAll()` = 0x479790 = CheckSprites; su unico
