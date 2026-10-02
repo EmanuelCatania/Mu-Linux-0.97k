@@ -1,5 +1,4 @@
-// Extracted from stubs_linker.cpp during the linker-stub domain refactor.
-// Original IDA/address comments are retained with each implementation.
+// UI_LegacyText.cpp
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -41,26 +40,14 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
 // SeparateTextIntoLines @ 0x0051D600 -- corta un texto en lineas de ancho fijo.
 //
-// 2026-09-20: reescrita 1:1 contra el raw.  La anterior era una aproximacion
-// con dos reglas propias:
-//   (a) rebobinaba al ultimo espacio si caia en la mitad final de la linea
-//       (`lastSpace > maxChars/2`).  El binario rebobina solo si el espacio
-//       esta dentro de los ultimos min(iLineSize/2, 10) caracteres, o sea es
-//       mas estricto: parte un poco antes y las lineas salen mas cortas.
-//   (b) cuando no rebobinaba, cortaba a los 10 caracteres.  El binario no
-//       corta ahi: parte a lo ancho de la linea, sin rebobinar.
-//
-// Medido: para prosa normal las dos dan el mismo resultado, porque siempre hay
-// un espacio en la mitad final y la rama (b) no llega a correr.  La diferencia
-// aparece con palabras largas sin espacios (URLs, nombres pegados), donde la
-// version vieja cortaba a 10 caracteres.  O sea esto es fidelidad, no el
-// arreglo de ningun sintoma reportado.
+// Port 1:1 contra el raw: rebobina al ultimo espacio solo si esta dentro de
+// los ultimos min(iLineSize/2, 10) caracteres de la linea; si no, parte a lo
+// ancho de la linea, sin rebobinar.
 //
 // Detalles fieles que importan: avanza por caracteres MBCS (_mbclen; con el
-// locale "C" que usa este build devuelve siempre 1, igual que la version por
-// bytes), el terminador de cada linea se escribe ANTES de saltar al slot
-// siguiente, y el retorno es `indiceDeLinea + 1` -- nunca 0 para texto no
-// vacio, cosa que la version vieja si podia devolver.
+// locale "C" que usa este build devuelve siempre 1), el terminador de cada
+// linea se escribe ANTES de saltar al slot siguiente, y el retorno es
+// `indiceDeLinea + 1` -- nunca 0 para texto no vacio.
 int __cdecl SeparateTextIntoLines(const char *lpszText, char *lpszSeparated, int iMaxLine, int iLineSize) {
     if (!lpszText || !lpszSeparated || iMaxLine <= 0 || iLineSize <= 0) return 0;  // guard de port
 

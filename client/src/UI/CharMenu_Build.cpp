@@ -7,17 +7,15 @@
 #include "globals.h"
 #include "functions.h"
 
-// 2026-09-03 -- GUARDA DE RANGO (no esta en IDA).
+// GUARDA DE RANGO (no esta en IDA).
 // `DAT_07eaa154` es el numero de linea del panel y se usa como indice de TRES
 // arrays de 30 entradas: `lpString_07e90798` (30 x 100 bytes), `DAT_07e91708`
 // (color) y `DAT_07ea7b10` (negrita).  Aca se incrementa dentro de bucles cuya
 // cantidad depende de los datos (skills del personaje, filas de stats), sin
-// ningun tope, asi que un personaje con muchas entradas escribia mas alla de
-// los 3000 bytes del buffer y sobre los globals vecinos.
-// `RenderItemInfo` -- que llena las mismas tablas -- ya corta en 28; se replica
-// ese criterio: al llegar al tope las lineas extra se pisan sobre la ultima en
-// vez de desbordar.  El original no lo necesita porque alli el hueco de memoria
-// que sigue al buffer es de relleno.
+// ningun tope.  Se replica el criterio de `RenderItemInfo` (corta en 28): al
+// llegar al tope las lineas extra se pisan sobre la ultima en vez de
+// desbordar.  El original no lo necesita porque alli el hueco de memoria que
+// sigue al buffer es de relleno.
 #define CHARMENU_ROW_MAX 28
 
 
@@ -41,8 +39,8 @@ static void HelpWindow_BuildTextList(int title, int firstLine, int endLine)
     crt_sprintf(TextList + row * 100, "\n");
     row++;
     // IDA recorre el bloque de GlobalText con un puntero de a 300 bytes hasta
-    // GlobalText[endLine]; el port lo hacia contra la direccion absoluta del
-    // binario (0x7D34134), que en este build no existe y se leia fuera.
+    // GlobalText[endLine]; aca se indexa GlobalText[i] (la direccion absoluta del
+    // binario, 0x7D34134, no existe en este build).
     for (int i = firstLine; i < endLine; ++i, ++row) {
         TextListColor[row] = 0;
         TextBold[row]      = 0;
@@ -239,29 +237,13 @@ static const DWORD DrawItemInfoBox_TextColor[7] = {
 // TextOutA desplazado fVar4 px dentro de ella (0x0040FCD0).  Nosotros pintamos
 // glifos directo en unidades del ortho, así que el desplazamiento se aplica
 // sobre la x, convertido de píxeles a ortho con Text_GetOrthoScaleX().
-// OJO (armadilla 1 de CLAUDE.md): stubs_bulk_misc.cpp ya define un
-// `FUN_0040fb70` __fastcall que es un stub vacio (return 0.0f) y no lo llama
-// nadie.  Para no crear dos simbolos con el mismo nombre y distinta firma,
-// esta copia lleva otro nombre; el canonico va en el comentario.
-// 2026-08-18 — FIX del ancho del recuadro.
-//
-// Este archivo convertia anchos de texto con g_fScreenRate_x, copiando la
-// formula de IDA. En el binario eso es correcto porque su CUIRenderText recibe
-// un ancho de referencia (640) y reescala la x internamente. NUESTRO stack de
-// texto no hace eso: CUIRenderText_RenderText dibuja los glifos en unidades del ortho,
-// convirtiendo con viewport/ortho (Text_PixelToOrthoScale).
-//
-// Al mezclar los dos factores, la CAJA quedaba dimensionada con un divisor y el
-// TEXTO dibujado con otro: con 788 px de ancho la caja salia a 640/788 = 81%
-// del texto y las lineas largas se desbordaban por la derecha.
-//
-// La altura no tenia el problema porque usa _DAT_055c9b74 en los dos lados
-// (caja y avance por linea), asi que el factor se cancela.
-//
-// Es el mismo desvio ya documentado en HUD_Pass4.cpp:512 para el caret del
-// input. Usamos la escala real del pipeline en todo lo que convierta anchos de
-// TEXTO entre pixeles y layout.
-extern "C" float Text_GetOrthoScaleX(void);   // src/stubs_externs.cpp
+// Todo ancho de TEXTO que pase entre píxeles y layout (la caja y el texto) se
+// convierte con esa misma escala, para que no queden a escalas distintas.
+// OJO: UI_LegacyWidgets.cpp ya define un `FUN_0040fb70` __fastcall que es un
+// stub vacio (return 0.0f) y no lo llama nadie.  Para no crear dos simbolos
+// con el mismo nombre y distinta firma, esta copia lleva otro nombre; el
+// canonico va en el comentario.
+extern "C" float Text_GetOrthoScaleX(void);   // UI/UI_LegacyExterns.cpp
 
 static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
                           int iBoxWidth, int iSort, int iMaxWidth)
@@ -483,11 +465,6 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
 // Increments DAT_07eaa154 per entry.
 
 // IDA: RequireClass (0x004C2880)
-// 2026-09-12: reescrita contra IDA.  La version anterior era inventada: leia
-// `*(int*)(&DAT_07abf5d8 + 0x1bc)` (la direccion del PUNTERO al heroe + 0x1BC,
-// no el heroe), trataba +0x38 como 4 "slots" de int y formateaba con
-// DAT_0055a400/404, que estan vacios.
-//
 // pItem es la fila de ItemAttribute; +56..+59 = RequireClass[DW, DK, Elf, MG]
 // (0 = no la usa, 1 = clase base, 2 = segunda clase).  El nombre de clase es
 // GlobalText[4*r + 16 + c]: 20..23 = clases base, 24..26 = segundas clases.
@@ -569,8 +546,6 @@ void __cdecl ItemHelp_RequireClass(int param_1)
 // ints; con kind 5 solo la primera), color 0 si la fila cumple (columna 1 == 1)
 // y 2 si no, la dibuja en x = *value y despues corre *value por el ancho de
 // `widthRef` (o de la ultima linea si es NULL).
-// 2026-09-17: el port anterior usaba el patron de ancho como formato y el
-// formato como tabla de colores, y salteaba las filas en cero.
 void __cdecl CharMenu_RenderStatRow(int column, unsigned char *format, int *value,
                             const char *widthRef, int y, int kind)
 {
@@ -599,9 +574,8 @@ void __cdecl CharMenu_RenderStatRow(int column, unsigned char *format, int *valu
 // DAT_07d359d0...DAT_07d36204. Formats into text buffer, calls CharMenu_RenderTextList.
 
 // IDA: sub_4C2D50 (0x004C2D50)
-// 2026-09-12: era un no-op (la tabla vieja tenia direcciones literales del
-// binario).  IDA usa GlobalText directamente: una linea por tipo, color 1, la
-// dibuja con sub_4C2420(x, y, n, 0, 3, 0) y vuelve TextNum a 0.
+// Usa GlobalText directamente: una linea por tipo, color 1, la dibuja con
+// sub_4C2420(x, y, n, 0, 3, 0) y vuelve TextNum a 0.
 void __cdecl CharMenu_AppendSkillDesc(int param_1, int param_2, int param_3)
 {
     const char* text = "";
@@ -639,7 +613,6 @@ void __cdecl CharMenu_BuildStatRequirements(int param_1)
     // IDA: sub_4C2E20 (0x004C2E20), tabla de la ventana F1 para el item
     // dword_7E11D24: 12 filas (+0..+11) x 10 columnas.  Fórmulas tomadas del
     // desensamblado (el decompile mezcla las variables del chequeo de stats).
-    // El port anterior era una aproximacion con campos inventados.
     //   [0] nivel   [1] cumple Fue/Agi/Ene   [2] dano min   [3] dano max
     //   [4] (tipos 160..191) dano min/2 + 2*nivel          [5] defensa
     //   [6] tasa de defensa   [7] Fue req   [8] Agi req   [9] Ene req

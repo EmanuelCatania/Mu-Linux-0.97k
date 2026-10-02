@@ -1,5 +1,4 @@
 // UI_GuildLegacy.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos ------------------
+// Cloth_Integrate esta en Physics/Cloth_Simulation.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -49,10 +48,6 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Blood Castle.  Lo dispara `RenderErrorMessage` con `case 140: sub_51DDF0()`,
 // tras `sub_51D9E0` (opcode 0x93) que deja ErrorMessage = 140 y copia las
 // entradas a DAT_083a7af8.
-//
-// 2026-09-07: estaba neutralizada con un `return 0` al entrar ("AUTO-SKIP:
-// absolute end-bound loop"), asi que el cartel salia con el marco y el boton OK
-// pero VACIO.  Reescrita contra IDA con los bucles acotados por contador.
 //
 // Registro (24 bytes, = PMSG_DEVIL_SQUARE_SCORE del server, con el padding del
 // DWORD): +0 name[10] · +12 score · +16 RewardExperience · +20 RewardMoney.
@@ -214,7 +209,7 @@ void __cdecl GuildMemberList_Update(int count, int p2, void *data)
     DWORD desc[5] = { 1, 0x47, 0x104, 0x46, 0x15 };
     for (int i = 0; i < 5; i++) DAT_083a42f8[i] = desc[i];
     // Copy member list data: count * 0x18 bytes into DAT_083a7af8
-    // 2026-09-03: la tabla tiene 11 registros (0x108 bytes, ver globals.h).
+    // La tabla tiene 11 registros (0x108 bytes, ver globals.h).
     // IDA no acota `count` porque alli el hueco es exactamente ese; aca el
     // clamp evita que un `count` grande escriba sobre los globals vecinos.
     int nMembers = count;
@@ -245,10 +240,8 @@ void __cdecl GuildMemberList_Add(int p1, void *data)
 // Selects character slot `slot` for the in-game item/skill list display.
 // Sets DAT_005615dc, populates DAT_083a4324 and skill/item display arrays,
 // then transitions UI state to 0x8e.
-// 2026-08-21: era un stub que salteaba el texto ("requires DAT_07cf5608 char
-// data arrays not yet mapped").  La tabla ya esta reconciliada (DIALOG_SCRIPT
-// en globals.h), asi que ahora es el port fiel de sub_51D840: arma el cuadro de
-// dialogo desde g_DialogScript[a1] igual que CSQuest::ShowDialogText, mas el
+// Port fiel de sub_51D840: arma el cuadro de dialogo desde g_DialogScript[a1]
+// (DIALOG_SCRIPT en globals.h) igual que CSQuest::ShowDialogText, mas el
 // memset de los rects de boton y ErrorMessage = 142.
 int __cdecl ItemList_Select(int param_1) {
     char szText[72];

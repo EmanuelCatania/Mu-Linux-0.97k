@@ -1,5 +1,4 @@
 // Quest_Legacy.cpp
-// Extracted from stubs_bulk_misc.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -54,7 +53,7 @@ int __cdecl FUN_004c3dd0(int param_1);
 //   a2 = estado esperado (se compara contra This + 0x1C882)
 //   a3 = 0 -> dibuja los items en 3D;  != 0 -> dibuja "Nombre x N" como texto
 //
-// 2026-08-22: portada desde el DISASSEMBLY, no desde el decompile.  Hex-Rays
+// Portada desde el DISASSEMBLY, no desde el decompile.  Hex-Rays
 // emite "positive sp value has been detected, the output may be wrong" para
 // esta funcion y pierde los parametros (lee Buffer[92] y v18 sin inicializar),
 // asi que el decompile no sirve.  El disassembly, en cambio, sale limpio.
@@ -111,7 +110,7 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
             crt_sprintf(buf, "%s x %d", name, nCount);
             RenderText(510, (int)sy, buf, 0, 0, nullptr);
         } else {
-            // DESVIACION DELIBERADA (pedido del usuario, 2026-09-20).
+            // DESVIACION DELIBERADA.
             //
             // IDA pasa Level = -1 aca (`push 0FFFFFFFFh` en 0x004032A5).  Rio
             // abajo, RenderObjectScreen extrae el +N con `(Level >> 3) & 0xF`,
@@ -133,18 +132,9 @@ char __fastcall FUN_00403150(void *pThis, int /*edx*/, char a2, char a3)
 }
 
 // FUN_00403320 @ 0x00403320 (955 bytes) — ventana de quest del NPC
-// Port fiel del decompile.  2026-08-21: acá había un resumen que sólo dibujaba
-// el fondo y dejaba el resto como comentarios ("stub: full render logic
-// omitted"); ni siquiera llamaba a FUN_00402ff0, que es la que dibuja el texto
-// del diálogo y las respuestas.  Con el flag del panel prendido, GetScreenWidth
-// angostaba el viewport a 450 y esa franja quedaba en negro.
-//
-// Desviación: la llamada a sub_403150 (que dibuja la lista de items pedidos por
-// la quest y devuelve si están todos en el inventario) queda pendiente — su
-// decompile sale con "positive sp value has been detected, the output may be
-// wrong" y Hex-Rays perdió los parámetros.  Acá se asume "cumple" para el color
-// del botón; lo único que cambia es que el botón sale habilitado y la lista de
-// items no se dibuja.
+// Port fiel del decompile.  Dibuja el texto del dialogo y las respuestas con
+// FUN_00402ff0, y la lista de items pedidos con FUN_00403150 (que tambien
+// decide el color del boton).
 void __fastcall FUN_00403320(void* param_1) {
     char Buffer[100];
     int  This = (int)(uintptr_t)param_1;
@@ -209,8 +199,8 @@ void __fastcall FUN_00403320(void* param_1) {
     int questIdx  = *(unsigned char*)(This + 116858);   // +0x1C87A
     int questBase = This + 584 * questIdx;
     int nameW = 120 * (int)WindowWidth / 0x280;
-    // getMonsterName devuelve NULL mientras MonsterScript no esté parseada
-    // (ver la nota de CLAUDE.md); el original no lo contempla.
+    // getMonsterName devuelve NULL mientras MonsterScript no esté parseada; el
+    // original no lo contempla.
     char* npcName = getMonsterName(*(unsigned char*)(questBase + 12));
     if (npcName) RenderText(485, 12, npcName, nameW, 1, (void*)3);
 
@@ -223,9 +213,8 @@ void __fastcall FUN_00403320(void* param_1) {
 }
 
 // FUN_00403f30 @ 0x00403F30 (30 bytes) — dispatcher del render de quest.
-// 2026-08-21: no existía y nadie lo llamaba.  sub_4F5820 (Render_QuickButtons_)
-// lo invoca entre RenderGoldenArcherWindow y RenderServerDivision; sin eso el
-// panel de quest nunca se dibujaba aunque su flag estuviera prendido.
+// sub_4F5820 (Render_QuickButtons_) lo invoca entre RenderGoldenArcherWindow
+// y RenderServerDivision (aca lo llama HUD_Pass4).
 void __fastcall FUN_00403a40(void* param_1);
 char __fastcall FUN_00403f30(void* param_1) {
     if (param_1 == nullptr) return 1;
@@ -274,7 +263,7 @@ void __fastcall FUN_00403a40(void* param_1) {
     } else if (cVar1 == '\x02') {
         CWsctlc__LogPrintOn();
     }
-    // 2026-08-21: faltaba el render del texto del dialogo + respuestas.
+    // Texto del dialogo + respuestas.
     FUN_00402ff0((int)(uintptr_t)param_1);
     glColor3f(1.0f, 1.0f, 1.0f);
 }

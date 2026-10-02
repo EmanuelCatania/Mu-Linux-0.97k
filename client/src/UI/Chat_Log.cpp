@@ -1,5 +1,4 @@
 // Chat_Log.cpp
-// Extracted from stubs.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -35,15 +34,11 @@ void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mod
     // mensaje en 0, y acá el slot se limpia con memset antes de copiar.
     if (!msg) msg = "";
 
-    // BUG-FIX 2026-08-17: el dispatch de abajo estaba gateado con `&& label`, y
-    // el handler del notice 0x0D type=1 (Net_Process) llama con label = nullptr.
-    // Resultado: los mensajes del server (incluido el contador "You will quit
-    // game in N second(s)") nunca entraban a la lista del listbox, así que
-    // in-game no se veían — sólo aparecían al pasar a char-select, donde los
-    // dibuja el otro sink (sub_480980, gateado a g_bUseChatListBox||state!=5).
-    // En IDA 0x480620 el dispatch es la PRIMERA sentencia y es incondicional;
-    // el original nunca pasa NULL (usa cadena vacía). Normalizamos acá, que
-    // además evita el lstrcpynA con origen NULL de más abajo.
+    // En IDA 0x480620 el dispatch al listbox es la PRIMERA sentencia y es
+    // incondicional; el original nunca pasa NULL (usa cadena vacía).  Algunos
+    // callers nuestros (p.ej. el notice 0x0D type=1 de Net_Process) llaman con
+    // label = nullptr: se normaliza acá, lo que además evita el lstrcpynA con
+    // origen NULL de más abajo.
     if (!label) label = "";
 
     // ── 1. Engine vtable dispatch (slot +0x70) ────────────────────────────────
@@ -64,9 +59,6 @@ void __cdecl UIChatLogWindow_AddText(const char* label, const char* msg, int mod
     // ── Gate ring write — 1:1 con IDA 0x480620:
     //   escribe cuando `!label || (mode && mode!=3 && mode!=4 && mode!=5)`.
     //   → SKIP solo cuando label NO-vacío Y mode ∈ {0,3,4,5}.
-    // FIX 2026-07-19: estaba INVERTIDO (skipeaba mode ∈ {1,2,6,...}). El ring lo
-    // consume sub_480980 (notificaciones login/char-select); con el gate invertido
-    // los mensajes de sistema/GM/whisper con sender iban al ring equivocado.
     char firstID = label ? *label : 0;
     if (firstID && (mode == 0 || mode == 3 || mode == 4 || mode == 5)) {
         return;

@@ -9,12 +9,12 @@
 #include "functions.h"
 
 #include "Net/MuEmu.h"
-#include "Net/Net.h"  // 2026-05-05: Net_SendSmallPacket (proper C3 wrap with serial)
+#include "Net/Net.h"  // Net_SendSmallPacket (proper C3 wrap with serial)
 
 // byte_7EA5249: slot de inventario del item que abrio ShowCheckBox.  Vive
 // dentro del buffer DAT_07ea5240 (0x44 bytes) que copia el click derecho.
 #define DAT_07ea5249_byte  (DAT_07ea5240[9])
-// 2026-08-25: los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
+// Los opcodes del trade con Encrypt=0 necesitan C1 PLANO.
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" char byte_7E91790[];   // tabla de miembros del guild (stride 13)
 extern "C" int  dword_5615E4;     // indice del miembro elegido para expulsar
@@ -27,7 +27,7 @@ extern "C" {
     // guild relation markers.  It is deliberately not the legacy Trade reset
     // that still carries the same historical label elsewhere in the port.
     void GuildWar_ResetClientState(void);
-    // 0x81 PMSG_WAREHOUSE_MONEY_RECV (stubs_render_helpers.cpp)
+    // 0x81 PMSG_WAREHOUSE_MONEY_RECV (Render/Render_WorldHelpers.cpp)
     void Net_SendWarehouseMoney(BYTE type, DWORD money);
 }
 // g_iCurrentDialogScript es un macro sobre DAT_005615dc (globals.h)
@@ -47,12 +47,6 @@ static const BYTE s_xorKey[32] = {
 };
 
 // IDA: sub_50F7A0 (0x0050F7A0) -- guarda las opciones del personaje en el server.
-//
-// 2026-09-21: faltaba entera.  `functions.h` la tenia declarada como
-// "Map_Unload" (mal identificada) y ni estaba definida ni la llamaba nadie, asi
-// que el cliente NUNCA mandaba el F3/30: las teclas de skill (Ctrl+numero) se
-// perdian al volver a entrar.  El handler de entrada (F3/30, ReceiveOption) ya
-// estaba y era fiel; faltaba esta mitad.
 //
 // PMSG_OPTION_DATA_RECV (Protocol.h:134 del server, #pragma pack(1)), 19 bytes:
 //   +4..13    SkillKey[10]  numero de tecla -> tipo de skill
@@ -160,10 +154,6 @@ void __cdecl UI_InGameMenu(void)
     // }
     // DAT_083a7c24 ≡ ErrorMessage, estado 0x6e (110) = menu abierto.
     // EquipmentItem (0x07EAA165) = movimiento de equipo pendiente con el server.
-    // IDA UI_InGameMenu (0x514310) L534-572.  2026-09-18: fiel.  El port
-    // cerraba primero los paneles abiertos (y mandaba 0x31), cancelaba los
-    // carteles Si/No 151/153 y abria el menu sobre los carteles de desconexion;
-    // nada de eso esta en el binario.
     int escHit = PressKey(27);  // PressKey(27)
     if (escHit && !DAT_07eaa165) {            // EquipmentItem
         if (DAT_083a7c24) {                   // ErrorMessage
@@ -216,7 +206,7 @@ void __cdecl UI_InGameMenu(void)
     // 0x70/0x71 (fallo de conexión). El IDA (0x514310 L1396-1414) muestra el
     // cartel y SOLO hace SendMessageA(WM_DESTROY) cuando hacés click en el botón
     // OK (rect 284-354 × 98-119) — no cierra directo. El cartel persiste hasta
-    // el click. BUG-FIX 2026-07-14: gateamos el WM_DESTROY al click en OK.
+    // el click.
     case 0x1a:
     case 0x1c:
     case 0x70:
@@ -324,12 +314,6 @@ void __cdecl UI_InGameMenu(void)
                             // regresiva (avisos de 5 s) y contesta F1/02/02, y es
                             // ReceiveLogOut (Recv_LogOut sub 2) quien libera el
                             // mundo, cierra el socket y vuelve al login.
-                            //
-                            // 2026-09-16: el port hacia toda la transicion aca en
-                            // el acto (el comentario decia que MuEmu no contesta
-                            // F1/02/02, y es falso: User.cpp:2347
-                            // GCCloseClientSend(2) tras CloseCount).  Por eso no
-                            // habia cuenta regresiva.
                             if (SceneFlag == 5)                      // IDA L1070: sub_50F7A0()
                                 SaveOptionsToServer97k();
                                 FUN_0050f700("Data\\Macro.txt");  // IDA L1071
@@ -349,16 +333,13 @@ void __cdecl UI_InGameMenu(void)
                     case 2:
                     {
                         if (SceneFlag == 5) {
-                            // 2026-05-05 (final): JoinChar — back to char-select.
+                            // JoinChar — volver a char-select.
                             //
-                            // Análisis del pcap+server log: server tarda ~5
-                            // segundos en procesar el F1/02/01 (tick async).
-                            // Durante ese delay Connected sigue OBJECT_ONLINE, y
-                            // CGCharacterListRecv early-returns. Por eso el flow
-                            // viejo (mandar F1/02/01 + F3/00 en mismo tick)
-                            // hacía que server ignorara nuestro F3/00.
+                            // El server tarda ~5 s en procesar el F1/02/01 (tick async); mientras tanto
+                            // Connected sigue OBJECT_ONLINE y CGCharacterListRecv hace early-return, asi
+                            // que NO se manda F3/00 en el mismo tick.
                             //
-                            // Flow correcto:
+                            // Flujo:
                             //   1. Cliente manda F1/02/01 (C3-wrapped)
                             //   2. ESPERAMOS sin transition local
                             //   3. Server tick procesa CloseCount=1 →
@@ -407,9 +388,6 @@ void __cdecl UI_InGameMenu(void)
     // nivel < 40, con InputText[0] capturando el codigo personal.
     // IDA UI_InGameMenu L1383: el 114 comparte el gate de 126/152 (LABEL_494),
     // Si = [323,363) -> sub_513C10; No = [373,413) o Esc -> L2183.
-    // Antes este case corria SIN gate de click: el cartel se cerraba solo en
-    // el frame siguiente y nunca se mandaba el borrado (no habia ningun envio
-    // de F3/02 en el arbol).
     case 0x72:
     {
         const bool yes = mouseX >= 323 && mouseX < 363 &&
@@ -454,10 +432,6 @@ void __cdecl UI_InGameMenu(void)
     }
 
     // ── Zen input dialog (ErrorMessage 116) — baúl / trade ─────────────────
-    // 2026-08-08 PORT (antes: rama inventada que llamaba SecondPassword_Shuffle, o sea el
-    // shuffle del teclado numérico del PIN, y hacía `goto tail` INCONDICIONAL →
-    // el cartel se auto-dismisseaba el frame siguiente y nunca se enviaba nada).
-    //
     // Per IDA 0x514310 L1400-1406: para ErrorMessage==116 el rect del botón OK
     // NO cuenta — la única confirmación es Enter (byte_55CA038). Y L1420-1432:
     // si InputGold > 50.000.000 se muestra el cartel 118 y se resetea el input.
@@ -583,12 +557,9 @@ void __cdecl UI_InGameMenu(void)
     }
 
     // ── 126 — confirmar salida/expulsión/disolución de Guild ──────────────
-    // 2026-08-15: acá había un bloque que limpiaba los buffers de usuario y
-    // password (`DAT_07db8710`/`DAT_07db8810`).  Eso NO es lo que hace el
-    // binario: IDA `UI_InGameMenu` L3343 `case 126:` arma y envía el paquete de
-    // expulsión, y NUNCA toca InputText[1] en toda la función (grep sobre el
-    // decompile: 0 ocurrencias).  El limpiar-input es la rama de CANCELAR
-    // (`case 126: case 152:` del segundo switch, L2706), que ya está más abajo.
+    // IDA `UI_InGameMenu` L3343 `case 126:` arma y envía el paquete de expulsión,
+    // y NUNCA toca InputText[1].  Limpiar el input es la rama de CANCELAR
+    // (`case 126: case 152:` del segundo switch, L2706), que está más abajo.
     //
     // PMSG_GUILD_DELETE_RECV (MuEmu Guild.h:205):
     //     [C1][0x17][0x53][name:10][PersonalCode:10]      sizeof = 23
@@ -598,8 +569,7 @@ void __cdecl UI_InGameMenu(void)
     // otro miembro o la propia. El servidor decide si corresponde expulsar,
     // abandonar o disolver. `PersonalCode` es el valor de InputText[0].
     //
-    // HackPacketCheck índice 83 → Encrypt = 0 ⇒ frame C1 + chain-XOR, SIN
-    // serial (ver "Desconexiones: serial de packets y Encrypt=1" en CLAUDE.md).
+    // HackPacketCheck índice 83 → Encrypt = 0 ⇒ frame C1 + chain-XOR, SIN serial.
     // El original hace el XOR en dos pasadas (3..12 y 13..22) porque appendea el
     // PersonalCode después; como la cadena es secuencial y los rangos son
     // disjuntos y contiguos, una sola pasada 3..22 da el mismo resultado.
@@ -645,34 +615,10 @@ void __cdecl UI_InGameMenu(void)
         goto tail;
     }
 
-    // ── 0x8b / 0x8c / 0x9a — REMOVIDO 2026-08-26 ─────────────────────────
-    // Acá había un case agrupado etiquetado "NPC shop item list" que terminaba
-    // en `goto tail` INCONDICIONAL. `tail` hace `ErrorMessage = NextErrorMessage`,
-    // o sea limpiaba el estado en el mismo frame, antes de que
-    // `RenderInformation -> RenderErrorMessage` alcanzara a dibujarlo.
-    //
-    // Los tres estados son message boxes, no una lista de tienda:
-    //   0x8b (139) — CreateOkMessageBox      (0x0051D6F0)
-    //   0x8c (140) — GuildMemberList_Update            (ranking de Devil Square, lista)
-    //   0x9a (154) — GuildMemberList_Add            (ranking de Devil Square, 1 fila)
-    //
-    // Y el switch de IDA (raw 00514310) NO tiene case para ninguno: 139, 140,
-    // 141, 142 y 154 se agrupan en una rama propia (L1381) que sólo dismissea
-    // al clickear un botón. Sin case, caen al `default` de abajo, que ya
-    // persiste hasta el click en OK o Enter — que es el comportamiento fiel.
-    //
-    // Sintoma que tenia: el cartel del tiempo de los eventos (click derecho
-    // sobre "Devil's Invitation" / "Cloak of Invisibility") no aparecia nunca,
-    // aunque el paquete iba y el server respondia bien.
-    //
-    // La geometria que usaba tampoco salia de ningun lado: filas de 16 px desde
-    // y=0x2c entre x=0x6a y x=0x16a, contra las dos filas de 35 px en y=180/265
-    // (x 245-395) que el original usa para el estado 143.
-
     // IDA UI_InGameMenu (0x514310) L3857-3963: carteles 139 (CreateOkMessageBox),
-    // 140, 141 (CreateDialogInterface, con paginas) y 154.  2026-09-18: fiel.
-    // El port terminaba el 141 con un `goto tail` incondicional, que cierra el
-    // cartel en el primer frame (boton Explicacion del Golden Archer).
+    // 140, 141 (CreateDialogInterface, con paginas) y 154.  No cerrarlos con un
+    // `goto tail` incondicional: `tail` hace ErrorMessage = NextErrorMessage y el
+    // cartel se cerraria en el primer frame.
     case 0x8b:
     case 0x8c:
     case 0x8d:
@@ -768,12 +714,6 @@ void __cdecl UI_InGameMenu(void)
                     //   else { sub_51D840(m_iLinkForAnswer[v355]); }
                     // `<< 8` son 256 ints = 0x400 bytes = el stride de entrada,
                     // o sea `g_DialogScript[curScript].m_iLinkForAnswer[v353]`.
-                    //
-                    // 2026-08-21: el port decidia si cerrar comparando el TEXTO
-                    // de la respuesta contra GlobalText[609] (invencion), y le
-                    // pasaba a ItemList_Select el indice de RESPUESTA en vez del
-                    // link.  Con la tabla ya reconciliada se puede hacer lo que
-                    // hace el binario.
                     int cur  = g_iCurrentDialogScript;
                     int link = -1;
                     if (cur >= 0 && cur < DIALOG_SCRIPT_COUNT && v353 < 10)
@@ -869,13 +809,10 @@ void __cdecl UI_InGameMenu(void)
     }
 
     // ── Yes/No checkbox (sell/drop confirm) — ErrorMessage 151 ─────────────
-    // 2026-07-27 FIX: el port anterior trataba 0x97 como una lista de respuestas
-    // de NPC (ItemList_Select), que dismisseaba el cartel al instante sin setear la
-    // respuesta → el sell-confirm quedaba colgado con el item agarrado (tooltip
-    // pegado, "todo raro"). ErrorMessage 151 es un cartel Yes/No. Port IDA
-    // UI_InGameMenu L1798-1856: hit-test de los 2 botones (DAT_083a42f8, stride
-    // 5 ints [id][x][y][w][h]; Yes=btn0 id1, No=btn1 id3, render en +213/+100) y
-    // seteo de DAT_00559f5e = 1 (Yes) / 2 (No), que el drop-dispatcher
+    // ErrorMessage 151 es un cartel Yes/No. Port IDA UI_InGameMenu L1798-1856:
+    // hit-test de los 2 botones (DAT_083a42f8, stride 5 ints [id][x][y][w][h];
+    // Yes=btn0 id1, No=btn1 id3, render en +213/+100) y seteo de
+    // DAT_00559f5e = 1 (Yes) / 2 (No), que el drop-dispatcher
     // (Inventory_DropDispatch) consume para enviar/cancelar el sell.
     case 0x97:
     {
@@ -919,11 +856,9 @@ void __cdecl UI_InGameMenu(void)
         const WORD partyKey = (WORD)DAT_07eaa0e4;
         BYTE pkt[6] = { 0xC1, 0x06, 0x41, (BYTE)(accept ? 1 : 0),
                         (BYTE)(partyKey >> 8), (BYTE)partyKey };
-        // 2026-08-25 FIX: la rama de RECHAZO mandaba el paquete con `::send`
-        // crudo — C1 sin encriptar — cuando el 0x41 pide Encrypt=1
-        // (HackPacketCheck.txt indice 65). El server lo rechaza con "Packet
-        // encryption error" y CIERRA la conexion, o sea rechazar una invitacion
-        // de party desconectaba. Aceptar ya iba bien por C3.
+        // El 0x41 pide Encrypt=1 (HackPacketCheck.txt indice 65): aceptar y rechazar
+        // van por C3 (Net_SendSmallPacket).  Un C1 crudo hace que el server responda
+        // "Packet encryption error" y cierre la conexion.
         //
         //   struct PMSG_PARTY_REQUEST_RESULT_RECV {   // Party.h:19
         //       PBMSG_HEAD header;   // C1 : 6 : 0x41
@@ -967,7 +902,6 @@ void __cdecl UI_InGameMenu(void)
     // [C1][16][83][type=1][WORD password][PersonalCode:10] (MuEmu Warehouse.h:19)
     // con password = atoi(dword_7EA9814); despues limpia InputText[0].
     // No = [373,413) o Esc -> solo limpia el input (L2706).
-    // Antes corria sin gate: el cartel se cerraba solo y nunca se mandaba nada.
     case 0x98:
     {
         const bool yes = mouseX >= 323 && mouseX < 363 &&
@@ -1001,12 +935,6 @@ void __cdecl UI_InGameMenu(void)
 
     // Confirmacion Si/No de ShowCheckBox (usar fruta / renombrar mascota).
     // IDA 0x514310 L1798-1824 (hit-test) + L1862-2135 (accion).
-    //
-    // ANTES: este case estaba portado como "multi-select item list" y terminaba
-    // en un `goto tail` INCONDICIONAL.  `tail` hace ErrorMessage =
-    // NextErrorMessage, asi que el cartel se cerraba al frame siguiente de
-    // abrirse y la fruta nunca se podia usar.  Mismo patron que el case
-    // 0x8b/0x8c/0x9a que se removio el 2026-08-26.
     //
     // Lo abre `FUN_004d23b0` con ShowCheckBox(1, 376, 153) al hacer click
     // derecho sobre el item 431 (Fruit) con Level >= 10.
@@ -1063,16 +991,13 @@ void __cdecl UI_InGameMenu(void)
     }
 
     default:
-        // BUG-FIX 2026-07-14: los estados no manejados (incluidos los códigos de
-        // ErrorMessage del login — 0x16 wrong-pass, 0x65 sin-pass, etc., que
-        // comparten el global DAT_083a7c24) NO deben caer al `tail` cada frame.
-        // El `tail` hace `DAT_083a7c24 = DAT_083a7c28` (dismissea el cartel) +
-        // PlayBuffer(25) — antes corría incondicionalmente → el cartel de error
-        // del login se borraba 1 frame después de aparecer (con el "sonido de
-        // click" que reportó el usuario). El dismiss debe pasar SOLO al click en
-        // el botón OK, que RenderErrorMessage (RenderErrorMessage default box path)
-        // dibuja en (284,98)-(354,119). Con click → tail (dismiss). Sin click →
-        // el cartel persiste, fiel al original.
+        // Los estados no manejados (incluidos los códigos de ErrorMessage del login
+        // — 0x16 wrong-pass, 0x65 sin-pass, etc., que comparten el global
+        // DAT_083a7c24) NO deben caer al `tail` cada frame: el `tail` hace
+        // `DAT_083a7c24 = DAT_083a7c28` (dismissea el cartel) + PlayBuffer(25).  El
+        // dismiss pasa SOLO con el click en el botón OK, que RenderErrorMessage
+        // dibuja en (284,98)-(354,119), o con Enter.  Sin eso el cartel persiste,
+        // fiel al original.
         {
             // OK vía click en el botón O tecla Enter (DAT_055ca038). El Enter se
             // consume acá para que el login-trigger de Game_SceneUpdate no lo
@@ -1081,18 +1006,15 @@ void __cdecl UI_InGameMenu(void)
             bool okClick = (mouseX >= 284 && mouseX < 354 &&
                             mouseY >= 98 && mouseY < 119 && IsClickPushed());
 
-            // 2026-08-26: el rect fijo de arriba sirve para los carteles del
-            // login, pero no para los que arma `CreateOkMessageBox` (139) y
-            // compania: esos traen su propio descriptor de boton en
-            // DAT_083a42f8 (5 ints por entrada: bitmapId-240, x, y, w, h) y
+            // El rect fijo de arriba sirve para los carteles del login, pero los que
+            // arma `CreateOkMessageBox` (139) y compania traen su propio descriptor de
+            // boton en DAT_083a42f8 (5 ints por entrada: bitmapId-240, x, y, w, h) y
             // `RenderErrorMessage` los dibuja en (x + _DAT_00552d40, y + _DAT_0055290c)
-            // = (x+213, y+60). Para el 139 el descriptor es {1, 71, 140, 70, 21},
-            // o sea el OK cae en (284..354, 200..221) — 100 px mas abajo que el
-            // rect fijo, asi que con el mouse no se podia cerrar (solo con Enter).
+            // = (x+213, y+60). Para el 139 el descriptor es {1, 71, 140, 70, 21}: el OK
+            // cae en (284..354, 200..221).
             //
-            // Se aceptan los dos rects en vez de reemplazar uno por el otro: el
-            // original usa el descriptor, pero el rect fijo cubre los estados
-            // del login que hoy dependen de el.
+            // Se aceptan los dos rects: el original usa el descriptor, pero el rect fijo
+            // cubre los estados del login que hoy dependen de el.
             if (!okClick && IsClickPushed()) {
                 const int* desc = (const int*)&DAT_083a42f8[0];
                 for (int b = 0; b < 2 && !okClick; ++b, desc += 5) {

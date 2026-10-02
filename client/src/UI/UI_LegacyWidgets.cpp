@@ -1,5 +1,4 @@
 // UI_LegacyWidgets.cpp
-// Extracted from stubs_bulk_misc.cpp.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -28,16 +27,13 @@ void __cdecl SMD2BMDAnimation_stub(int ID, bool LockPosition) {
 // FUN_0040dba0 @ 0x0040DBA0 (~62 lines) — UI widget destructor (type A, vtable 0x552668)
 void __fastcall FUN_0040dba0(void* param_1) { (void)param_1; }
 
-// ╔══════════════════════════════════════════════════════════════════════════╗
-// ║ STUBS FANTASMA — NO SON LA IMPLEMENTACIÓN VIVA (2026-07-20)              ║
-// ║ FUN_0040dce0 / FUN_0040def0 son el render de los 3 botones popup del     ║
-// ║ ChatListBox.  Están PORTADOS en src/UI/ChatListBox.cpp como              ║
-// ║ ChatLB_DrawButton / ChatLB_renderFooter (slot 24 de la vtable, al que    ║
-// ║ IDA llega por el thunk sub_40D600).  Estos dos cuerpos quedan vacíos     ║
-// ║ porque no los llama nadie: los únicos xrefs en IDA son sub_40DEF0 y      ║
-// ║ sub_40CE20 (slot 22, el frame/BG, todavía stub).  Si algún día se        ║
-// ║ portea slot 22, que llame al helper de ChatListBox.cpp — no a esto.      ║
-// ╚══════════════════════════════════════════════════════════════════════════╝
+// STUBS FANTASMA — NO SON LA IMPLEMENTACIÓN VIVA.
+// FUN_0040dce0 / FUN_0040def0 son el render de los 3 botones popup del
+// ChatListBox.  Están PORTADOS en src/UI/ChatListBox.cpp como
+// ChatLB_DrawButton / ChatLB_renderFooter (slot 24 de la vtable, al que IDA
+// llega por el thunk sub_40D600); el slot 22 (sub_40CE20, ChatLB_renderBg)
+// también usa ChatLB_DrawButton.  Estos dos cuerpos quedan vacíos porque no
+// los llama nadie.
 void __stdcall FUN_0040dce0(int p1, int p2, float p3, float p4, float p5, float p6, DWORD p7, int p8) {
     (void)p1; (void)p2; (void)p3; (void)p4; (void)p5; (void)p6; (void)p7; (void)p8;
 }
@@ -105,7 +101,7 @@ void __cdecl FUN_004102e0(void* self, int param_1, unsigned char param_2) {
 // escape codes, builds segment table (up to 0x11 segments) at this+0x24, strips markup
 // bytes from output, measures each segment via GetTextExtentPointA. Calls FUN_004102e0
 // per segment.
-// FUN_004104b0 (IDA-activated, was Ghidra stub)
+// FUN_004104b0 (IDA-activated)
 void __cdecl FUN_004104b0(LONG _this, char *Source)
 {
   DWORD *cx; // edx
@@ -295,11 +291,13 @@ DWORD __cdecl GenerateCheckSum(BYTE* pbyBuffer, DWORD dwSize, WORD wKey) {
 //
 //  - `SystemParametersInfoA(SPI_SETSCREENSAVEACTIVE, g_iScreenSaverOldValue, 0, 0)`
 //    y el `SystemParametersInfoA(0x61, 0, ...)`.  **Portarlos seria un bug, no
-//    una mejora**: el lado de ARRANQUE que guarda el valor viejo vive bajo
-//    `IDA_PORT_00422074`, que no esta definido, asi que nunca desactivamos el
-//    salvapantallas y `g_iScreenSaverOldValue` vale 0.  Restaurar ese 0 le
-//    DESACTIVARIA el salvapantallas al usuario de forma permanente.  Si algun
-//    dia se activa ese gate, estas dos lineas vuelven junto con el.
+//    una mejora**: el lado de ARRANQUE que guarda el valor viejo es el port de
+//    IDA gated por `IDA_PORT_00422074`, que nunca se compila (quedo en
+//    docs/codigo-muerto/ida-ports/FUN_00422074.cpp), asi que nunca
+//    desactivamos el salvapantallas y `g_iScreenSaverOldValue` vale 0.
+//    Restaurar ese 0 le DESACTIVARIA el salvapantallas al usuario de forma
+//    permanente.  Si algun dia se porta ese arranque, estas dos lineas vuelven
+//    junto con el.
 //
 //  - Los frees masivos (`BMD::Release` de los modelos 160..962, `UnloadImage`
 //    de las 1450 texturas, ModelsDump, RendomMemoryDump, SkillAttribute,
@@ -353,7 +351,7 @@ void Game_DestroyWindow(void) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sistema de tela (capa del MG) — destructores. Port 2026-08-11.
+// Sistema de tela (capa del MG) — destructores.
 //
 // Las vtables se leyeron del binario original (`Cliente armado/main.exe`,
 // MD5 eb95ac0785e40a7ad60c9ddb5d8bef34), porque su contenido es data y no

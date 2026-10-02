@@ -106,7 +106,7 @@ void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
   if (DAT_07e113d8[param_3] == '\x01') {
     iVar3 = -1;
     uVar5 = 0;
-    pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // 2026-05-04: cast first — DAT_07db8710 ahora es char[10][256], aritmética de puntero estridaba 65536 bytes
+    pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // cast a char* antes de sumar: DAT_07db8710 es char[10][256]
     do {
       if (iVar3 == 0) break;
       iVar3 = iVar3 + -1;
@@ -118,7 +118,7 @@ void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
         *(undefined1 *)((int)&local_100 + uVar5) = 0x2a;
         uVar4 = 0xffffffff;
         uVar5 = uVar5 + 1;
-        pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // 2026-05-04: cast first — DAT_07db8710 ahora es char[10][256], aritmética de puntero estridaba 65536 bytes
+        pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // cast a char* antes de sumar: DAT_07db8710 es char[10][256]
         do {
           if (uVar4 == 0) break;
           uVar4 = uVar4 - 1;
@@ -130,7 +130,7 @@ void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
     *(undefined1 *)((int)&local_100 + uVar5) = 0;
   }
   else if (DAT_07e113d8[param_3] == '\x02') {
-    pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // 2026-05-04: cast first — DAT_07db8710 ahora es char[10][256], aritmética de puntero estridaba 65536 bytes
+    pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // cast a char* antes de sumar: DAT_07db8710 es char[10][256]
     local_100 = *(undefined4 *)pcVar6;
     uVar5 = 0xffffffff;
     local_fc = *(undefined2 *)(&DAT_07db8714 + param_3 * 0x100);
@@ -161,7 +161,7 @@ void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
   }
   else {
     uVar5 = 0xffffffff;
-    pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // 2026-05-04: cast first — DAT_07db8710 ahora es char[10][256], aritmética de puntero estridaba 65536 bytes
+    pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // cast a char* antes de sumar: DAT_07db8710 es char[10][256]
     do {
       pcVar7 = pcVar6;
       if (uVar5 == 0) break;
@@ -191,14 +191,12 @@ void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
   if ((0 < (int)ptVar2) && ((int)ptVar2 < (int)lpsz_07e113d0)) {
     lpsz_07e113d0 = ptVar2;
   }
-  // BUG-FIX 2026-07-19 (el cursor `_` no se movía al escribir): acá había
-  // `lVar9 = __ftol();` — llamada SIN argumentos, artefacto de Ghidra que lee
-  // basura del tope de la pila x87. El IDA hace:
+  // IDA:
   //   TextSize.cx = (__int64)((double)TextSize.cx / g_fScreenRate_x);
   //   TextSize.cy = (__int64)((double)TextSize.cy / g_fScreenRate_y);
+  // (Ghidra lo decompila como un `__ftol()` sin argumentos.)
   // `lpsz_07e113d0` guarda el ANCHO del texto y es lo que posiciona el caret
-  // más abajo (`(int)&lpsz_07e113d0->cx + param_1`). Con basura, el ancho
-  // quedaba en 0/garbage → el `_` se dibujaba siempre al principio.
+  // más abajo (`(int)&lpsz_07e113d0->cx + param_1`).
   ScaleGlobalTextSize();
   if (param_3 == DAT_07e11d78) {
     uVar5 = DAT_07e11d2c & 0x80000001;
@@ -254,8 +252,7 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
     // IDA: CreateNotice (0x0047FAE0).  Aviso azul del centro: 6 slots de 264
     // bytes (texto en +0, color en +260).  Si el texto mide 256 px o mas se
     // parte con CutText: la primera mitad va al slot actual y la segunda al
-    // siguiente, los dos con el mismo color.  (Antes se truncaba a 255 bytes
-    // sin partir.)
+    // siguiente, los dos con el mismo color.
     if (!param_1) return;
     char *notice = (char *)&DAT_07db80d8[0];
 
@@ -462,9 +459,8 @@ void __cdecl UI_AddNotice(char *param_1,unsigned char param_2)
 // IDA: FUN_0047FCE0
 void UI_RenderNotices(void)
 {
-  // 2026-05-04: AUTO-SKIP removed. DAT_07db80d8 ahora propiamente sized
-  // (6 slots × 0x108). Reemplazo el bound literal `< 0x7db8708` con count
-  // explícito de 6 iteraciones.
+  // DAT_07db80d8 tiene 6 slots × 0x108: se recorre con un contador explícito
+  // de 6 iteraciones, no con el bound literal del binario (`< 0x7db8708`).
   int iVar1;
   LPCSTR lpString;
   int iVar2;
@@ -531,20 +527,17 @@ void UI_RenderChatLogOverlay(void)
   tagSIZE local_108;
   CHAR local_100 [256];
 
-  // BUG-FIX: 0x3f800000 son los bits de 1.0f. Como int → 1065353216.0f.
+  // 0x3f800000 (IDA) son los bits de 1.0f, no el int 1065353216.
   glColor3f(1.0f, 1.0f, 1.0f);
   SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
   iVar7 = 0;
   local_10c = 0;
   do {
     iVar5 = DAT_00559ce0 + local_10c;
-    // BUG-FIX Ghidra: stride real del ring buffer = 280 bytes = 0x118 (confirmado
-    // vs IDA sub_480980 y UIChatLogWindow_AddText). Ghidra decompiló el acceso
-    // byte con *0x46 (= 70) porque el dword_7DF948C está tipado int[] — los
-    // accesos DWORD con índice 0x46 sí dan 280 bytes, pero los accesos byte
-    // necesitan *0x118.  Sin este fix, el renderer lee names/msgs del slot
-    // equivocado (0, 70, 140, ...) en vez de (0, 280, 560, ...) y el texto
-    // nunca aparece en pantalla (lo que pasaba con el countdown de Exit).
+    // Stride real del ring buffer = 280 bytes = 0x118 (IDA sub_480980 y
+    // UIChatLogWindow_AddText). Ghidra decompila el acceso byte con *0x46 (= 70)
+    // porque dword_7DF948C está tipado int[]: los accesos DWORD con índice 0x46
+    // sí dan 280 bytes, pero los accesos byte necesitan *0x118.
     pbVar6 = (byte *)(DAT_07df9380 + iVar5 * 0x118);
     if ((*(char *)(&DAT_07df938b + iVar5 * 0x118) != '\0') &&
        ((DAT_00559bf1 != '\0' || ((&DAT_07df948c)[iVar5 * 0x46] != 3)))) {
@@ -573,7 +566,7 @@ void UI_RenderChatLogOverlay(void)
         DAT_00559c78 = 0xff000000;
         SetBackgroundTextColor = 0xc896ff00;
       }
-      // BUG-FIX Ghidra: perdió los varargs de sprintf.  Port exacto de IDA:
+      // Port exacto de IDA (Ghidra pierde los varargs de sprintf):
       //   name  @ DAT_07df9380 + slot*280       (offset 0)
       //   msg   @ DAT_07df9380 + slot*280 + 11  (offset 0x0B)
       //   - Si los primeros 2 bytes del slot son 0x20 0x20 → "%s%s"  (sin dos puntos)
@@ -598,7 +591,7 @@ void UI_RenderChatLogOverlay(void)
       GetTextExtentPointA(DAT_055c9fec,local_100,iVar3,lpsz);
       iVar3 = DAT_083a427c;
       bVar8 = -1 < DAT_083a427c;
-      // BUG-FIX pointer-arith: &DAT_07df9494 ahora es int* (alias a offset
+      // &DAT_07df9494 es int* (alias a offset
       // 0x114 del buffer), sumarle iVar5*0x118 como int* avanzaría 4x. Casteo
       // a char* antes de sumar el stride-en-bytes 0x118 para que el LONG
       // aterrice en el slot correcto.
@@ -668,7 +661,7 @@ void UI_TickHoverBubbles(void)
   char *pcVar9;
   bool bVar10;
 
-  // BUG-FIX 2026-04-28: pool real = DAT_07e01720[26 × 0x254].
+  // Pool real = DAT_07e01720[26 × 0x254].
   // Bounds end calculados a partir del array, no de la dirección absoluta.
   piVar7 = (int*)DAT_07e01720;
   const uintptr_t poolEnd = (uintptr_t)DAT_07e016f8 + sizeof(DAT_07e016f8);
