@@ -78,8 +78,8 @@ add_subdirectory(lib/libjpeg)
 
 # ── Fuentes ─────────────────────────────────────────────────────────────
 # Copiadas de los <ClCompile> del .vcxproj, en el mismo orden. NO usar glob:
-# hay .cpp en src/ que no se compilan a propósito (GameGuard_Init2.cpp,
-# UI/UI.cpp, stubs_IDA_ports.cpp).
+# la lista explícita es la que se compara contra el .vcxproj
+# (tools/check_cmake_sources.py).
 set(MU_SOURCES
     src/stdafx.cpp
     src/WinMain.cpp

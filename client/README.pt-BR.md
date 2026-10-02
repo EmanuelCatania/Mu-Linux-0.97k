@@ -61,17 +61,15 @@ mais incompleta hoje é a movimentação de NPCs e monstros.
 O código portado está distribuído por domínio (`Render/`, `Terrain/`, `UI/`,
 `Item/`, `Entity/`, `Combat/`, `Net/`, `Scene/`, etc.); já não existe um
 depósito geral de `stubs_*.cpp` esperando ser distribuído. A árvore atual tem
-251 arquivos `.cpp` e 55 headers em `src/`.
+249 arquivos `.cpp` e 58 headers em `src/`.
 
-`stubs_IDA_ports.cpp` é a exceção intencional: contém 26.431 linhas de
-decompilados crus do IDA, cada um protegido por `IDA_PORT_*`. É preservado como
-referência canônica do decompile e como mecanismo de compatibilidade ou de
-ativação seletiva enquanto um port é validado. **Não refatorar, renomear nem
-distribuir este arquivo entre módulos.** Seus aliases e bridges de ABI também
-não são dívida de nomenclatura: existem para que os ports seletivos mantenham o
-contrato original.
+Os decompilados crus do IDA que nunca foram ativados (antes em
+`src/stubs_IDA_ports.cpp`) estão arquivados em `docs/codigo-muerto/`, fora do
+build, como referência do decompile. Os aliases e bridges de ABI que restam em
+`functions.h`/`globals.h` não são dívida de nomenclatura: mantêm o contrato
+original dos ports que os usam.
 
-Os `FUN_*` e `DAT_*` que ainda aparecem fora desse arquivo não são, por si sós,
+Os `FUN_*` e `DAT_*` que ainda aparecem no código não são, por si sós,
 dívida de renomeação. Alguns descrevem infraestrutura, CRT, GameGuard, layouts
 binários, pools ou compatibilidade; outros precisam de investigação ou de um
 port futuro antes de receber um nome semântico seguro.
@@ -221,11 +219,7 @@ mu97k-src/
     │
     ├── Combat/  Config/  Core/    Entity/  Game/     GameGuard/ Input/ Item/
     ├── Local/   Math/    Model/   Monster/ Net/       Party/     Path/  Physics/
-    ├── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
-    │
-    └── stubs_IDA_ports.cpp
-                         decompilados crus do IDA atrás de IDA_PORT_*;
-                         infraestrutura preservada, não refatorar
+    └── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
 ```
 
 Os módulos agrupam por responsabilidade. O endereço no binário continua sendo

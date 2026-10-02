@@ -61,18 +61,16 @@ el movimiento de NPCs y monstruos.
 
 El código portado está distribuido por dominio (`Render/`, `Terrain/`, `UI/`,
 `Item/`, `Entity/`, `Combat/`, `Net/`, `Scene/`, etc.); ya no existe un depósito
-general de `stubs_*.cpp` pendiente de repartir. El árbol actual contiene 251
-archivos `.cpp` y 55 headers bajo `src/`.
+general de `stubs_*.cpp` pendiente de repartir. El árbol actual contiene 249
+archivos `.cpp` y 58 headers bajo `src/`.
 
-`stubs_IDA_ports.cpp` es la excepción intencional: contiene 26.431 líneas de
-decompilados crudos de IDA, cada uno protegido por `IDA_PORT_*`. Se preserva
-como referencia canónica del decompile y como mecanismo de compatibilidad o
-activación selectiva mientras se valida un port. **No refactorizar, renombrar
-ni distribuir este archivo entre módulos.** Sus aliases o bridges ABI tampoco
-son deuda de nomenclatura: existen para que los puertos selectivos mantengan
-su contrato original.
+Los decompilados crudos de IDA que nunca se activaron (antes en
+`src/stubs_IDA_ports.cpp`) están archivados en `docs/codigo-muerto/`, fuera
+del build, como referencia del decompile. Los aliases o bridges ABI que
+quedan en `functions.h`/`globals.h` no son deuda de nomenclatura: mantienen el
+contrato original de los ports que los usan.
 
-Los `FUN_*` y `DAT_*` que todavía aparecen fuera de ese archivo no son, por sí
+Los `FUN_*` y `DAT_*` que todavía aparecen en el código no son, por sí
 solos, deuda de renombrado. Algunos describen infraestructura, CRT, GameGuard,
 layouts binarios, pools o compatibilidad; otros requieren investigación o un
 port futuro antes de poder recibir un nombre semántico seguro.
@@ -219,11 +217,7 @@ mu97k-src/
     │
     ├── Combat/  Config/  Core/    Entity/  Game/     GameGuard/ Input/ Item/
     ├── Local/   Math/    Model/   Monster/ Net/       Party/     Path/  Physics/
-    ├── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
-    │
-    └── stubs_IDA_ports.cpp
-                         decompilados crudos IDA detrás de IDA_PORT_*;
-                         infraestructura preservada, no refactorizar
+    └── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
 ```
 
 Los módulos agrupan por responsabilidad. La dirección en el binario sigue
