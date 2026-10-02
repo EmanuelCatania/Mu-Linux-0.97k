@@ -159,25 +159,31 @@ jobs:
 
       - uses: microsoft/setup-msbuild@v2
 
-      - name: Compilar la base del PR
-        shell: pwsh
-        run: |
-          git worktree add ../base ${{ github.event.pull_request.base.sha }}
-          msbuild ../base/mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Copy-Item ../base/bin/Client/main.map base.map
-
+      # Base y head se compilan en el MISMO directorio: los símbolos de
+      # JustMyCode, del PCH y de los namespaces anónimos llevan un hash de la
+      # ruta del archivo, así que compilar en otra carpeta da falsos cambios.
       - name: Compilar el head del PR
         shell: pwsh
         run: |
+          Copy-Item tools/compare_map_symbols.py $env:RUNNER_TEMP/
           msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Copy-Item bin/Client/main.map head.map
+          Copy-Item bin/Client/main.map $env:RUNNER_TEMP/head.map
+
+      - name: Compilar la base del PR
+        shell: pwsh
+        run: |
+          git clean -xdfq
+          git checkout -q --force ${{ github.event.pull_request.base.sha }}
+          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item bin/Client/main.map $env:RUNNER_TEMP/base.map
 
       - name: Comparar símbolos
         shell: pwsh
         run: |
-          python tools/compare_map_symbols.py base.map head.map | Tee-Object -FilePath map-diff.txt
+          Set-Location $env:RUNNER_TEMP
+          python compare_map_symbols.py base.map head.map | Tee-Object -FilePath map-diff.txt
           $rc = $LASTEXITCODE
           "### main.map ${{ matrix.config }}: base vs head" >> $env:GITHUB_STEP_SUMMARY
           '```' >> $env:GITHUB_STEP_SUMMARY
@@ -190,6 +196,6 @@ jobs:
         with:
           name: map-symbols-${{ matrix.config }}
           path: |
-            base.map
-            head.map
-            map-diff.txt
+            ${{ runner.temp }}/base.map
+            ${{ runner.temp }}/head.map
+            ${{ runner.temp }}/map-diff.txt
