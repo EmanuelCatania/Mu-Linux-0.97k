@@ -1,5 +1,4 @@
 // Net_Disconnect.cpp
-// Extracted from stubs.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"

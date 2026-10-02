@@ -1,10 +1,10 @@
 // MuEmu.h
-// MuEmu-compat layer. Strictly isolated from the reversed vanilla-0.97k code.
+// Capa de compatibilidad con MuEmu, aislada del código revertido del 0.97k.
 //
-// What this server actually does
-// ------------------------------
-// This Linux MuEmu port enables server-side "HackCheck" encryption
-// (ENCRYPT_STATE=1 in GameServer/stdafx.h) which wraps EVERY outbound byte with:
+// Qué hace el server
+// ------------------
+// El server MuEmu activa el cifrado "HackCheck" (ENCRYPT_STATE=1 en
+// GameServer/stdafx.h), que envuelve TODO byte saliente con:
 //
 //     enc[n] = (plain[n] + K) ^ K1   (mod 256, all 8-bit arithmetic)
 //
@@ -12,27 +12,18 @@
 //
 //     plain[n] = (enc[n] ^ K1) - K   (mod 256)
 //
-// The key is derived from gServerInfo.m_CustomerName XOR m_ServerSerial at
-// server init time, so it's a per-install constant.  For this specific server
-// (ServerSerial="TbYehR2hFUPBKgZj") we reverse-engineered the effective key
-// empirically from the observed handshake:
-//
-//     Expected plaintext : C1 0C F1 00 01 23 XX 30 39 37 31 31   (C1:F1:00 connect-client)
-//     Observed ciphertext: 41 0C 71 00 01 27 YY 30 39 3B 31 31
-//
-// The only key that makes every byte match under `(x^K)-K` is K1=K=0x42
-// (equivalent class {0x42,0xC2} — both produce identical bytes under the
-// symmetric transform).
+// La clave sale de CustomerName y ServerSerial del server (ver InitKeys abajo).
 //
 // Architecture
 // ------------
-// Net_Recv (stubs.cpp CWsctlc_nRecv) calls MuEmu::DecryptRecv on every fresh
-// chunk returned by recv(), BEFORE any C1/C2/C3/C4 parsing. Likewise any
-// outbound send site that talks to a MuEmu server should encrypt with
-// MuEmu::EncryptSend just before calling ::send().
+// CWsctlc_nRecv (Scene/Scene_CharSelect_Nav.cpp) llama a MuEmu::DecryptRecv
+// sobre cada chunk recién devuelto por recv(), ANTES de parsear C1/C2/C3/C4.
+// Del lado de envío, los sitios llaman a MuEmu::EncryptSend antes de ::send(),
+// y el hook de send() de MuEmu.cpp cifra cualquier buffer que todavía empiece
+// con un header plano.
 //
-// The old "0x41 preamble intake" approach was WRONG — the 0x41 wasn't a
-// special preamble, it was a regular C1 header with encryption applied.
+// Ojo: el 0x41 del principio del stream no es un preámbulo especial: es un
+// header C1 normal ya cifrado.
 
 #pragma once
 #include <windows.h>
@@ -40,21 +31,16 @@
 namespace MuEmu {
 
 // -----------------------------------------------------------------------------
-// Clave efectiva, derivada en runtime (2026-08-26)
+// Clave efectiva, derivada en runtime
 // -----------------------------------------------------------------------------
-// Antes estas dos constantes estaban HARDCODEADAS en 0x42/0x42, que es lo que
-// da la formula del server para CustomerName="MuLinux" + ServerSerial=
-// "TbYehR2hFUPBKgZj". Contra cualquier otro CustomerName el cliente conectaba
-// pero desencriptaba basura y nunca reconocia el JoinServer (F1/00): se quedaba
-// en "conectando al GameServer" para siempre.
-//
-// Ahora `InitKeys` reproduce la derivacion del server y `server.cfg` puede
-// traer CustomerName/ServerSerial. Sin esas lineas quedan los valores de abajo,
-// asi que los server.cfg viejos siguen funcionando igual.
+// `InitKeys` reproduce la derivacion del server y `server.cfg` puede traer
+// CustomerName/ServerSerial. Sin esas lineas quedan los valores de abajo, que
+// son los que da la formula del server para CustomerName="MuLinux" +
+// ServerSerial="TbYehR2hFUPBKgZj".
 //
 // Equivalencia util al comparar contra el binario: sumar 0x80 mod 256 es lo
 // mismo que XOR 0x80, asi que (K1,K)=(0x42,0x42) y (0xC2,0xC2) producen bytes
-// identicos. La formula da 0xC2; el valor historico de este archivo era 0x42.
+// identicos. La formula da 0xC2; aca se usa 0x42.
 constexpr BYTE kEncKey1Default   = 0x42;   // EncDecKey1            (mascara XOR)
 constexpr BYTE kEncKeyAddDefault = 0x42;   // EncDecKey2*EncDecKey1 (offset +/-)
 

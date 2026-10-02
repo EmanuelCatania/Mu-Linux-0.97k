@@ -141,7 +141,7 @@
 #include "functions.h"
 #include "Net/Net.h"
 
-// 2026-08-25: el rango de guild pide C1 plano (Encrypt=0).
+// El rango de guild pide C1 plano (Encrypt=0).
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 extern "C" void GuildCreator_CloseFromResult(void);
 
@@ -155,9 +155,6 @@ extern "C" BYTE OffsetTradeItems[];
 extern "C" BYTE OffsetWarehouseItems[];
 extern "C" BYTE OffsetMixItems[];
 
-// 2026-05-07: B3 refactor — SecondPassword screens (SecondPassword_Screen1 .. FUN_004ec330)
-// moved from stubs.cpp lines 6961-8495 (1535 lines). Full implementation below.
-
 // IDA: SecondPassword_Handler (0x004E93A0)
 // Teclado numerico del PIN del baul.  Lo llama UpdateWindowsMouse (0x4ECB00)
 // antes que el resto de los hit-tests, y lo dibuja sub_4EB070.  El modo lo fija
@@ -169,10 +166,6 @@ extern "C" BYTE OffsetMixItems[];
 //   6 = cerrar la ventana del NPC
 // Los modos 1, 2 y 3 mandan PMSG_WAREHOUSE_PASSWORD_RECV con type = modo - 1
 // (0 abrir, 1 poner, 2 sacar), igual que IDA (case 2, case 3 y el default).
-//
-// 2026-09-16: era `return 0`, o sea el teclado no respondia a nada; y el render
-// leia variables propias de HUD_Pass3 en vez de estos globales, asi que tampoco
-// se dibujaba.  Por eso el boton del candado no hacia nada.
 //
 // Ruido anti-tamper omitido por policy (la clave XOR y la hash-table que
 // envuelven cada envio).
@@ -272,20 +265,15 @@ unsigned int __cdecl SecondPassword_Handler(void)
     DAT_083a42c4 = 0;
     return 1;
 }
-// Inventory_DropDispatch @ 0x004DF410 — Inventory drop dispatcher.
-// 2026-05-08: port FIEL completo movido a `Item/Item_ClickHandler.cpp`
-// (~150 líneas). Antes era stub vacío bloqueando toda la cadena drag-drop.
-// Misnamed previously as "SecondPassword_NetTick" — IDA confirma que es
-// el dispatcher de drop sobre las 4 inventories abiertas + sell-to-shop +
-// drop-on-ground.
-// Sub-handlers de SecondPassword (todos usan frame SEH de Windows — sólo stubs)
-// Son las funciones de render/tick por frame del subsistema del diálogo de 2da contraseña.
-// Cada una tiene entre 80 y 854 líneas decompiladas. Las implementaciones completas están en src/Net/SecondPassword_UI.cpp.
-//
+// Inventory_DropDispatch @ 0x004DF410 — dispatcher de drop sobre las 4
+// inventories abiertas + sell-to-shop + drop-on-ground. Vive en
+// `Item/Item_ClickHandler.cpp`.
+// Sub-handlers de SecondPassword: funciones de render/tick por frame del
+// subsistema del diálogo de 2da contraseña, implementadas a continuación.
 static bool GetGuildCreatorOrigin(int& originX, int& originY)
 {
-    // 2026-07-27: el scratch ya no vive en Inventory[32] (= slot 0 del pool de
-    // la tienda, lo pisaba); ahora tiene globals propios.
+    // El scratch del GuildCreator tiene globals propios (no vive en
+    // Inventory[32], que es el slot 0 del pool de la tienda del original).
     originX = g_GuildCreatorScratchX;
     originY = g_GuildCreatorScratchY;
     return (originX != 0 || originY != 0);
@@ -296,17 +284,14 @@ static bool GetGuildCreatorOrigin(int& originX, int& originY)
 //     (8×0x0F tiles con origen en DAT_07ea5b1c/20+100), escribe el array DAT_07ea51f5 con DAT_07eaa0dc.
 //   - Segunda pasada: itera los pasos de DAT_07ea5b18 (+0x32 cada uno), los compara con la posición del mouse para encontrar
 //     hovered button index, sets DAT_07ea51ed.
-//   - SEH + llamadas a UI_SetScene(0x19/0x1c). Implementado en SecondPassword_UI.cpp.
+//   - SEH + llamadas a UI_SetScene(0x19/0x1c).
 void __cdecl SecondPassword_Screen1(void) {
-    // 2026-05-04: BUG-FIX del sonido de click fantasma del lado izquierdo. El sub_4E4760 de IDA es
-    // el hit-test del diálogo GuildCreator (gatea con GuildCreatorOpened, usa
-    // Inventory[32].Level/Part as panel origin). Our port had wrong gate
-    // (DAT_07eaa124) Y con la base equivocada (DAT_07ea5b1c/20 = 0 → los tests disparan en
-    // left-side x=0..190 → phantom click sfx).
-    // Hasta que cableemos el storage de Inventory[32] y el camino de render correcto, gateamos
-    // además con `DAT_07ea5b1c != 0` para que los hit-tests fantasma del lado izquierdo
-    // no disparen nunca. El código de la fase de render en HUD_Pass6 maneja los clicks reales
-    // for Char/Party/Guild panels.
+    // El sub_4E4760 de IDA es el hit-test del diálogo GuildCreator (gatea con
+    // GuildCreatorOpened, usa Inventory[32].Level/Part como origen del panel).
+    // Acá el gate es DAT_07eaa124 (= GuildCreatorOpened) y el origen sale de
+    // GetGuildCreatorOrigin (globals propios); sin origen no se hace el
+    // hit-test, para que no disparen clicks fantasma del lado izquierdo
+    // (x=0..190) con su sonido.
     int originX = 0, originY = 0;
     if (DAT_07eaa124 == '\0' || !GetGuildCreatorOrigin(originX, originY))
         goto LAB_FUN_004e4760_end;
@@ -364,11 +349,9 @@ void __cdecl SecondPassword_Screen1(void) {
             (int)DAT_083a4278 < originY + 0x173 &&
             IsClickPushed()) {
             DAT_083a4124 = '\0';
-            // 2026-08-25 PORT (no se podia crear un guild): este boton — el izquierdo,
-            // rect [+20,+90) x [+350,+371) — es el de CREAR, y mandaba el opcode
-            // equivocado. IDA `sub_4E4760` L210 manda aca el **0x55**
-            // (PMSG_GUILD_CREATE_RECV); el 0x54 es el del boton derecho, que ya esta
-            // bien abajo.
+            // Este boton — el izquierdo, rect [+20,+90) x [+350,+371) — es el de CREAR:
+            // IDA `sub_4E4760` L210 manda aca el **0x55** (PMSG_GUILD_CREATE_RECV); el
+            // 0x54 es el del boton derecho.
             //
             //   struct PMSG_GUILD_CREATE_RECV {   // Guild.h:218
             //       PBMSG_HEAD header;   // C1 : 43 : 0x55
@@ -386,12 +369,7 @@ void __cdecl SecondPassword_Screen1(void) {
             //     izquierdo: modo 0 -> 0x54 result=1   |  modo 1 -> 0x55 CREAR
             //     derecho:   modo 0 -> 0x54            |  modo 1 -> 0x57 cancelar
             //
-            // El `== 0` de este gate era correcto: es la rama del dialogo previo,
-            // que ya mandaba bien su 0x54. Lo que faltaba era la OTRA rama.
-            //
-            // Nota aparte: el flag estaba partido en dos — `HUD_Pass6.cpp` tenia un
-            // `static int g_iKeyPadEnable` homonimo que el handler del 0x55 seteaba
-            // mientras este hit-test leia el global. Unificados.
+            // La rama `== 0` de este gate es la del dialogo previo (manda su 0x54).
             if (DAT_07eaa144) {
                 if (Chat_ValidateInputCommand()) {
                     // nombre invalido / vacio
@@ -474,10 +452,9 @@ void __cdecl SecondPassword_Screen1(void) {
                 *(short*)(DAT_07abf5d8 + 0x1da) = (short)0xffff;
             }
             PlayBuffer(0x19, 0, 0);
-            // 2026-05-04: DAT_07db8710 ahora es char[10][256] — escribimos el primer byte
-            // del slot 0 explícitamente. (Los globals 8714/8718 son símbolos separados
-            // preexistentes — los limpiamos como antes para terminar en NUL lo que haya quedado
-            // username data.)
+            // DAT_07db8710 es char[10][256] — escribimos el primer byte del slot 0
+            // explícitamente. (Los globals 8714/8718 son símbolos separados: también se
+            // limpian, para terminar en NUL lo que haya quedado del username.)
             DAT_07db8710[0][0] = 0;
             DAT_07db8714 = 0;
             DAT_07db8718 = 0;
@@ -495,12 +472,9 @@ void __cdecl SecondPassword_Screen1(void) {
 LAB_FUN_004e4760_end:
     // DAT_07eaa114 NPC-window close button
     if (DAT_07eaa114 != '\0') {
-        // 2026-04-30 BUG-FIX: vtable[+0x14] = slot 5 = ChatLB_tick (__fastcall
-        // toma esto en ECX + argumento). El dispatch cdecl estilo Ghidra anterior
-        // con el argumento `(0)` dejaba ECX = basura → ChatLB_tick leía memoria random
-        // como `self[3]` (contador de list1), entraba al loop de desencolado, y
-        // ChatListBox_DequeueFront deferenciaba un puntero-atrás de nodo que eran bytes de código
-        // (0x83EC8B5D = pop ebp; mov ebp, esp; ...).
+        // vtable[+0x14] = slot 5 = ChatLB_tick, __fastcall (this en ECX +
+        // argumento). Despacharlo como cdecl dejaría ECX con basura y ChatLB_tick
+        // leería memoria random como `self[3]` (contador de list1).
         if (DAT_055c9ff4 && *(int*)DAT_055c9ff4) {
             DWORD* obj = (DWORD*)DAT_055c9ff4;
             void** vt  = (void**)*obj;
@@ -581,12 +555,9 @@ void __cdecl Party_MemberClickHandler(void) {
 // Back button [DAT_07ea982c+0x19,+0x31) x [DAT_07ea9830+0x18b,+0x1a3):
 //   → clear DAT_07eaa116, PlayBuffer(0x19/0x1c), DAT_07e11d28=0, DAT_00559bec=6.
 void __cdecl SecondPassword_Screen3(void) {
-    // 2026-05-04: BUG-FIX phantom click. IDA sub_4E5DE0 = Character panel
-    // hit-test, usa CharacterInfoStartX/Y como base. Nuestro port usa
-    // uninitialized DAT_07ea982c/30 (=0) → fake hit-tests at left side fire
-    // PlayBuffer click sfx whenever Character is open. Skip until
-    // CharacterInfoStartX también se cablea acá; el RenderCharacterInfoWindow de HUD_Pass6
-    // already handles [+] stat-add and other panel clicks.
+    // IDA sub_4E5DE0 = hit-test del panel Character, con CharacterInfoStartX/Y
+    // (DAT_07ea982c/30) como base. Mientras el origen no esté escrito (== 0) se
+    // sale, para no disparar hit-tests fantasma del lado izquierdo.
     if (DAT_07eaa116 == '\0' || DAT_07ea982c == 0) return;
 
     // Mouse hover zone
@@ -610,21 +581,14 @@ void __cdecl SecondPassword_Screen3(void) {
     int iY = DAT_083a4278;
 
     // ── Botones [+] de stats ─────────────────────────────────────────────────
-    // 2026-08-08 FIX (subir un punto DESCONECTABA): esta rama estaba mal portada
-    // en tres cosas y sólo no se notaba porque el early-return por
-    // `DAT_07ea982c == 0` la mantenía muerta (CharacterInfoStartX nunca se
-    // escribía). Al arreglar el origen del panel, la rama despertó y mandó un
-    // paquete basura → el server ve `size < 3` ("Protocol size error") y cierra
-    // el socket. En el log: `AUTO-ENCRYPT C1 len=5 plain=[C1 01 00 34 03]`
-    // seguido de FD_CLOSE 62 ms después.
-    // Lo que estaba mal vs IDA sub_4E5DE0 L85-244:
-    //   1. Paso de fila 15 px y 16 filas → son **60 px y 4 filas** (`v8 += 60;
-    //      while (v8 < 240)`) = Fuerza / Agilidad / Vitalidad / Energía.
-    //   2. El paquete se armaba a mano como `[C1][01][00][xor][row]`. El
-    //      original arma `[C1][len][F3][06][statIdx]` (buf[2]=0xC1, buf[4]=0xF3,
+    // Fiel a IDA sub_4E5DE0 L85-244:
+    //   1. Paso de fila **60 px y 4 filas** (`v8 += 60; while (v8 < 240)`) =
+    //      Fuerza / Agilidad / Vitalidad / Energía.
+    //   2. El paquete es `[C1][len][F3][06][statIdx]` (buf[2]=0xC1, buf[4]=0xF3,
     //      el subcode 6 y el índice al final) = PMSG_LEVEL_UP_POINT_RECV
     //      (Protocol.h:128) — y sale por el camino C3 con serial.
-    //   3. Se mandaba con `send()` crudo, sin serial ni CSM.
+    //   3. No usar `send()` crudo: sin serial ni CSM el server cierra el socket
+    //      ("Protocol size error").
     // Gate `*(short*)(CharacterAttribute + 0x54) != 0` = LevelUpPoint, fiel.
     if (*(short *)((BYTE*)DAT_07cf1ff4 + 0x54) != 0) {
         while (iRowAccum < 240) {
@@ -763,18 +727,14 @@ void __cdecl SecondPassword_Screen4(void) {
 
     // IDA sub_4E6550 L232-240: por debajo de InventoryStartY + 200 esta la
     // grilla (sub_4D23B0); por arriba, los casilleros de equipo (sub_4D1FC0).
-    // 2026-09-17: faltaba el +200, asi que los casilleros nunca se procesaban.
     DAT_07eaa164 = 0;
     int lVal = (int)((double)(int)DAT_07ea5284 + 200.0);
     if ((int)DAT_083a4278 < lVal) {
         FUN_004d1fc0();
     } else {
-        // 2026-05-08: bug-fix — el inv_base era `&DAT_07ea8410` (DWORD de 4
-        // bytes en globals.cpp) heredado del IDA. En el binario original,
-        // DAT_07ea8410 ES la base del pool de inventario; en nuestro build
-        // OffsetInventoryItems es ese pool. Sin este fix el click handler
-        // walkeaba 4 bytes de DAT_07ea8410 + globals adyacentes random como
-        // si fueran items → "inventario lleno de fantasmas" + sin tooltip.
+        // inv_base = OffsetInventoryItems: en el binario original DAT_07ea8410 ES la
+        // base del pool de inventario; en nuestro build es un DWORD de 4 bytes en
+        // globals.cpp y el pool es OffsetInventoryItems.
         FUN_004d23b0((char*)(uintptr_t)(DAT_07ea5288 + 0xf),
                      (int)(DAT_07ea5284 + 200),
                      (short*)OffsetInventoryItems, 8, 8, '\0');
@@ -815,7 +775,7 @@ void __cdecl SecondPassword_Screen4(void) {
 
     char sv5 = DAT_07eaa11b;
     if (sv5 != '\0') {
-        // 2026-05-08: trade — DAT_07ea5298 / DAT_07ea7b88 son DWORDs (4 bytes)
+        // Trade — DAT_07ea5298 / DAT_07ea7b88 son DWORDs (4 bytes)
         // en globals.cpp pero en el binario original son las bases de los
         // pools de trade. Tal como 004D23B0: Inventory es la oferta remota
         // de sólo lectura (arriba) y OffsetTradeItems la oferta local
@@ -827,20 +787,16 @@ void __cdecl SecondPassword_Screen4(void) {
                      (int)(DAT_07ea528c + 0x10e),
                      (short*)OffsetTradeItems, 8, 4, '\0');
     }
-    // FIX 2026-07-25: el render de shop/warehouse/chaos (RenderShopInterface
-    // HUD_Pass6:1358) usa DAT_07eaa0c8=260 / DAT_07eaa0cc=0 (símbolo separado
-    // del global DAT_07eaa0c8 en el port). El hover de abajo usa DAT_07eaa0c8,
-    // que valía 0 → el tooltip caía en top-left (sx=35) en vez de sobre el item.
-    // Sincronizamos el global con los valores del render para que coincidan.
+    // El render de shop/warehouse/chaos (RenderShopInterface, HUD_Pass6.cpp) usa
+    // 260 / 0 como origen (DAT_07eaa0c8 / DAT_07eaa0cc).  El hover de abajo lee
+    // DAT_07eaa0c8, así que se sincroniza el global con los valores del render
+    // para que coincidan.
     DAT_07eaa0c8 = 260;
     DAT_07eaa0cc = 0;
     char sv6 = DAT_07eaa118;
     if (sv6 != '\0') {
-        // FIX 2026-07-25: era copy-paste del branch de Warehouse (usaba
-        // OffsetWarehouseItems → el hover leía un slot basura y el tooltip
-        // mostraba un item que no está en la tienda, ej "Kris"). El pool de
-        // TIENDA es el overlay &Inventory[32].WalkSpeed (offset +24), el mismo
-        // que usa el render (HUD_Pass3:382 sub_4E38B0). Grid 8×15.
+        // Pool de TIENDA: ShopItems (en el original, el overlay
+        // &Inventory[32].WalkSpeed, offset +24), el mismo que usa el render. Grid 8×15.
         FUN_004d23b0((char*)(uintptr_t)(DAT_07eaa0c8 + 0xf),
                      (int)(DAT_07eaa0cc + 0x32),
                      (short*)ShopItems, 8, 0xf, '\x01');
@@ -858,22 +814,17 @@ void __cdecl SecondPassword_Screen4(void) {
     }
 }
 // SecondPassword_Screen5 @ 0x004E6C40 — SecondPassword_Screen5 (783 lines)
-//   - Main second-password entry UI: draws 10-button numeric keypad, handles click
-//     (appends digit to DAT_07ea9814 buffer), Enter → sends packet, ESC → cancel.
-//   - SEH. Implemented in SecondPassword_UI.cpp.
+//   - Click del selector de nivel de la ventana de evento (Devil Square /
+//     Blood Castle); ver el detalle abajo.
 void __cdecl SecondPassword_Screen5(void) {
     // Click del selector de nivel del evento.  El binario NO tiene aca ningun
     // teclado de PIN: son 4 filas (Devil Square) o 6 (Blood Castle) alineadas
     // con las que dibuja `RenderEventWindow` (0x4F3C50).
     //
-    // 2026-09-07: reescrita contra IDA.  Lo que estaba antes eran rects
-    // aproximados con globals que no correspondian, y los dos paquetes de
-    // entrada armados con la CLAVE XOR anti-tamper que Hex-Rays emite inline
-    // (`v59 = -25; v60 = 109; ...` = E7 6D 3A 89 ...) tomada por bytes del
-    // paquete -> el slot terminaba valiendo siempre key[4] = 0xBC.  Ademas el
-    // chequeo de nivel leia `(&DAT_00559f60)[i*2]`, un int suelto partido en dos
-    // respecto de `m_iDevilSquareLimitLevel` (ver globals.h), asi que rechazaba
-    // por nivel aun con la entrada correcta.
+    // Ojo con la CLAVE XOR anti-tamper que Hex-Rays emite inline
+    // (`v59 = -25; v60 = 109; ...` = E7 6D 3A 89 ...): no son bytes del
+    // paquete.  El chequeo de nivel usa `m_iDevilSquareLimitLevel` (ver
+    // globals.h), no `(&DAT_00559f60)[i*2]`.
     if (!EventWindowOpened) return;
 
     // ── Blood Castle ────────────────────────────────────────────────────────
@@ -1321,8 +1272,6 @@ void __cdecl FUN_004ec330(void) {
             // IDA sub_4EC330: boton "reparar todo" (x+115, y+365).  Manda
             // C1:05:34:FF:00 (slot 0xFF = todo, 0 = reparacion en NPC).  Si no
             // se clickea, LABEL_71 recalcula el costo (sub_4C4080) cada frame.
-            // 2026-09-12: estaba portado como un "paquete de PIN" con header de
-            // largo 1 que el server no podia interpretar.
             int iX3 = (int)DAT_07eaa0c8 + 0x73;
             if (iX3 <= (int)DAT_083a427c && (int)DAT_083a427c < iX3 + 0x18 &&
                 iY1 <= (int)DAT_083a4278 && (int)DAT_083a4278 < iY1 + 0x18 &&
@@ -1353,20 +1302,13 @@ void __cdecl FUN_004ec330(void) {
     }
 }
 
-// ShowCheckBox (0x0051E240) vive en src/Item/Item_ClickHandler.cpp.
-//
-// 2026-09-26: aca habia una SEGUNDA implementacion bajo el nombre ShowCheckBox.
-// Las dos portan la misma funcion, pero difieren en la rama del mensaje 153
-// (0x99): IDA arma el rotulo con GlobalText[166..169] segun el tipo de huevo de
-// mascota (item 431), y esta copia usaba unos strings sueltos DAT_005618b8..c4.
-// La de Item_ClickHandler.cpp coincide termino por termino con el decompile
-// -- incluidos los descriptores de boton {1,21,90,70,21} y {3,120,90,70,21} --
-// asi que se queda esa y sus 3 call sites pasan a llamarla.
+// ShowCheckBox (0x0051E240) vive en src/Item/Item_ClickHandler.cpp (port
+// fiel, con GlobalText[166..169] en la rama del mensaje 153); no duplicarla acá.
 
 // SecondPassword_GridSlotAvail @ 0x004E3DB0 — SecondPassword_GridSlotAvail
 // Escanea una grilla 2D (param_3×param_2 filas/columnas) en el array de inventario en param_1,
 // con stride 0x44 por celda; devuelve 1 si alguna celda de la ventana está libre (slot==-1), si no 0.
-// SecondPassword_GridSlotAvail (IDA-activated, was Ghidra stub)
+// SecondPassword_GridSlotAvail (IDA-activated)
 uint __cdecl SecondPassword_GridSlotAvail(int a1, int a2, int a3, int a4, int a5)
 {
   int v5; // ebp
@@ -1460,7 +1402,7 @@ undefined4 __cdecl SecondPassword_CancelReturn(void)
     return ChaosBoxRequestClose() ? 1 : 0;
 #if 0
     bool bVar1 = true;
-    // 2026-09-08: el bound `< 0x7eaa0c8` es una direccion absoluta del binario
+    // El bound `< 0x7eaa0c8` es una direccion absoluta del binario
     // fuente.  Es el mismo pool de 32 slots de 0x44 que resetea Net_PacketSession
     // (DAT_07ea9880), abordado 0x38 antes: (0x7EAA0C8 - 0x7EA9848) / 0x44 = 32,
     // o sea 4 vueltas del bucle externo por 8 del interno.
@@ -1537,29 +1479,6 @@ uint __cdecl Net_Disconnect_Clean(void)
     return CONCAT31((int3)(SVar2 >> 8), 1);
 }
 
-// FUN_004d1fc0 @ 0x004D1FC0 — SecondPassword_WidgetGrid_Init
-// Inicializa la grilla del widget de segunda contraseña insertando / actualizando entradas en la
-// hash-table global (MAIN_HASH_CLASS) con clave DAT_07cf1ffc, y después llama a FUN_004cdc70 para
-// place 12 grid-slot widgets at fixed screen positions:
-//   slot 0-1 : (700,184)  (380,184) size 40×40 / 60×40
-//   slot 2-4 : (300,360)  (300,400) (180,360)
-//   slot 5-6 : (390,400)  (198,400) size 40×40
-//   slot 7   : checkbox (190,360)   wait (190,400)
-//   slot 8-10: (350,360)  (350,400) (380,400) size 20×20
-//   slot 11  : (180,400)
-// Usa HashTable_GetIndex / HashTable_Insert / Packet_DecryptBuffer con el ref-count ofuscado por XOR
-// sobre el blob de widget de 0x584 bytes. La clave XOR sale de DAT_00559050 (tabla de 16 bytes).
-// STUB: la lógica real son 12 llamadas a FUN_004cdc70 (función de render de inventario de 3554 líneas, sin declarar)
-// setting up second-password widget grid at fixed screen coordinates.
-// No se puede implementar hasta que FUN_004cdc70 esté declarada en functions.h.
-// Widget positions (hex float → decimal):
-//   slot 8: (15.0, 46.0) 40×40    slot 7: (115.0, 46.0) 60×40
-//   slot 2: (75.0, 46.0) 40×40    slot 3: (75.0, 89.0) 40×60
-//   slot 4: (75.0, 152.0) 40×40   slot 0: (15.0, 89.0) 40×60
-//   slot 1: (134.0, 89.0) 40×60   slot 5: (15.0, 152.0) 40×40
-//   slot 6: (134.0, 152.0) 40×40  slot 9: (55.0, 89.0) 20×20
-//   slot10: (55.0, 152.0) 20×20   slot11: (115.0, 152.0) 20×20
-// Anti-tamper hash table blocks (MAIN_HASH_CLASS) interspersed — skipped.
 // FUN_004d1fc0 @ 0x004D1FC0 — Render Character Equipment Slots (12 slots).
 // Port FIEL del IDA: 12 llamadas a sub_4CDC70(x, y, w, h, slotIdx) renderizando
 // los slots del Character panel. STRUCT_DECRYPT/ENCRYPT (HashTable obfuscation)
@@ -1586,9 +1505,6 @@ uint __cdecl Net_Disconnect_Clean(void)
 //   * Con item levantado: valida si se puede equipar en este casillero (clase,
 //     dos manos, flechas, stats, nivel, restricciones de mapa), pinta la casilla
 //     (Color 2 = valido, 3 = invalido) y con click manda el 0x24.
-// 2026-09-17: antes esta funcion dibujaba el item y la logica la hacia un
-// hit-test inventado en HUD_Pass6 (InventoryEquipmentHitTest), sin la
-// validacion ni el color de la casilla.
 extern "C" void __cdecl SyncPickedItemVisualState(void);
 extern "C" void __cdecl FUN_004cdc70(float sx, float sy, float w, float h, int slotIdx)
 {
@@ -1805,18 +1721,9 @@ void __cdecl FUN_004d1fc0(void) {
 }
 
 // FUN_004d23b0 @ 0x004D23B0 — Inventory grid render + click dispatcher.
-// 2026-05-08: port FIEL completo movido a `Item/Item_ClickHandler.cpp`
-// (~600 líneas). Antes era stub vacío bloqueando toda la cadena de
-// interacción con items (pickup, drop, sell, use, hotkey).
-//
-// La signatura real (per IDA `004D23B0_sub_4D23B0.c`) es:
+// Vive en `Item/Item_ClickHandler.cpp`. Signatura real (per IDA):
 //   void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 //                             int grid_w, int grid_h, char mode_flag);
-//
-// Caller sites en este archivo (SecondPassword.cpp:712-782) ya pasan los
-// argumentos correctos como esa signatura — el stub anterior tenía una
-// signatura errónea pero la convención de llamada __cdecl + tamaños
-// compatibles hicieron que linkeara sin warning.
 
 // Player input helpers
 // SetPlayerStop @ 0x004430C0 — SetPlayerStop(entity_ptr)
@@ -1863,16 +1770,10 @@ void __cdecl SetPlayerStop(int c) {
     // muestra TwoHand en offset +30 dentro de ITEM_ATTRIBUTE. La expresión
     // `&arr[i] - 34` con sizeof=64 == (i-1)*64 + 30, o sea TwoHand del item
     // anterior. Mantenemos el cálculo idéntico al IDA para preservar semántica.
-    // 2026-08-08 CRASH-FIX (0xC0000005 al cerrar el inventario con V):
-    // stack = Game_CharSelectTick → MoveMonsterClient → SetPlayerStop → este lambda,
-    // leyendo `[base + 0x1A00 - 0x21]` con base ≈ 0 (log: addr=0x005D4E95,
-    // param1=0x000019DF, eax=0x1A00, edi=0).
-    // Dos agujeros: (a) el guard sólo miraba `== 0`, pero DAT_07d78068 se
-    // corrompe a valores CHICOS (ver el watchdog de ItemAttribute en
-    // Render_Frame.cpp / Item_GetAttribute), y (b) `type` llega como 0xFFFF
-    // cuando la mano está vacía — justo lo que pasa al desequiparse todo — y
-    // `(0xFFFF-399)*64` indexa ~4 MB después de la tabla.
-    // Validamos base y rango igual que el resto de los accesos a ItemAttribute.
+    // Se valida la base (DAT_07d78068 puede corromperse a valores CHICOS, ver
+    // Item_GetAttribute en Item/Item_Inventory.cpp) y el rango de `type` (llega
+    // como 0xFFFF con la mano vacía), igual que el resto de los accesos a
+    // ItemAttribute.
     auto ItemTwoHand = [](int type) -> unsigned char {
         unsigned int base = (unsigned int)(uintptr_t)DAT_07d78068;
         if (base < 0x100000u || base >= 0x80000000u) return 0;
@@ -2016,14 +1917,9 @@ LABEL_129:
 //   32-33     = wings stand/walk
 //   2         = non-player default (NPC/monster)
 //   0x20/0x21 = DarkLord stand/walk (legacy)
-//
-// 2026-05-04: REEMPLAZA stub que devolvía hardcoded `uVar8 = 2` para todo
-// non-DarkLord. Por eso el player caminaba sin animación (action=2 es la
-// pose idle del modelo). Port faithful from IDA L62-227.
 // IDA: SetPlayerWalk (0x00443930)
 void __cdecl SetPlayerWalk(int param_1) {
     // +0x34E (=846) es **SafeZone**, NO dead (el dead real es +0x2FD).
-    // Ver CLAUDE.md 2026-08-10; el nombre viejo `dead` mentía.
     char bSafeZone0 = *(char *)(param_1 + 0x34e);
 
     // Tick de stamina (IDA L27-56). El campo en +768 (= +0x300) es el contador de stamina.
@@ -2111,7 +2007,7 @@ void __cdecl SetPlayerWalk(int param_1) {
             goto label_119;
         }
         // Tiene armas, está vivo, no es Atlans, no está exhausto:
-        // 2026-05-07: TwoHand approximation reemplazado por lookup REAL en
+        // TwoHand: lookup REAL en
         // ItemAttribute table (DAT_07d78068, stride 64). IDA hace
         // *((BYTE*)&ItemAttribute[N-399] - 34) — stride 64, byte-offset 30
         // dentro del item anterior. Mantener idéntico para preservar semántica.
@@ -2230,15 +2126,12 @@ label_119:
         if (*(int *)(param_1 + 4) > 0xcd && *(int *)(param_1 + 4) < 0xd1)
             PlayBuffer(0x5d, param_1, 0);
         if (*(short *)(DAT_05828d58 + 0xaa + etype * 0xbc) != -1) {
-            // BUG-FIX 2026-08-18: el indice de la tabla de sonidos era el action ID
-            // actual del entity (+0x105 anim_state). IDA 0x443930 L288-289 es:
+            // IDA 0x443930 L288-289:
             //     v19 = rand() % 2;
             //     PlayBuffer(*(short*)(Models + 2*(v19 + 94*type) + 170) + 170, c, 0);
             // o sea la tabla tiene SOLO 2 entradas (los dos sonidos de paso del
-            // modelo) y se elige una al azar. Con el action ID (13..33 al caminar)
-            // el indice se iba muy lejos de esas 2 entradas y leia campos ajenos
-            // del struct de modelo -> ids basura: 136 -> mBaliAttack2 (sonido de
-            // ATAQUE sonando al caminar) y 104 -> slot 274, que ni existe.
+            // modelo) y se elige una al azar. Indexarla con el action ID (+0x105)
+            // leería campos ajenos del struct de modelo.
             int v19 = rand() % 2;
             int iVar9 = 0;
             PlayBuffer(*(short *)(DAT_05828d58 + 0xaa + (v19 + etype * 0x5e) * 2) + 0xaa,
@@ -2254,7 +2147,7 @@ label_119:
 void __cdecl MoveCharacterPosition(int param_1) {
     float local_30[12];
     float vel[3] = { 0.0f, -(float)CharacterMoveSpeed(param_1), 0.0f };
-    // PORT FIX: el mismo artefacto de float[3] partido por Ghidra que en Terrain_Light Entity_GetLightScale.
+    // El mismo artefacto de float[3] partido por Ghidra que en Terrain_Light Entity_GetLightScale.
     // local_3c/local_38/local_34 eran el buffer de salida contiguo de 3 floats que
     // esperaba Vector_Rotate, pero MSVC no garantiza el layout de los locales.
     float out[3] = {0.0f, 0.0f, 0.0f};
@@ -2283,9 +2176,7 @@ void __cdecl MoveCharacterPosition(int param_1) {
 
 // SetCharacterClass @ 0x0045C130 — SetCharacterClass(entity)
 //
-// IDA-ported 2026-04-26 (audit #5). Antes era un stub parcial mal-llamado
-// "Entity_CancelTarget" que sólo copiaba el cluster primario con offsets
-// incorrectos. Reescrito completo per `0045C130_SetCharacterClass.c`:
+// Port completo del decompile de IDA:
 //
 //   1. Sólo opera sobre entity_type == 390 (= 0x186, local player).
 //   2. Copia cluster primario (4 slots: 624/648/672/696) con +400 offset.
@@ -2309,7 +2200,7 @@ void __cdecl SetCharacterClass(int c) {
         short v = *(short*)(v7 + srcOff);
         *(short*)(c + eOff) = (v == -1) ? (short)-1 : (short)(v + 400);
     };
-    // 2026-08-24: valor previo del helper, para detectar el CAMBIO abajo.
+    // Valor previo del helper, para detectar el CAMBIO abajo.
     const short prevHelper = *(short*)(c + 696);
     writeSlot(0,   624);
     writeSlot(68,  648);
@@ -2328,9 +2219,7 @@ void __cdecl SetCharacterClass(int c) {
     // char-select (ReceiveCharacterList L68), otros jugadores del viewport
     // (Combat_PacketDispatch L317) y el F3/13 (ProtocolCore L1629). El equipo
     // del HEROE in-world no viene por ahi sino de CharacterMachine, o sea pasa
-    // por esta funcion — que setea el tipo pero nunca creaba el bug. Medido con
-    // sonda: todos los `CreateBug type=816` salian con `isHero=0`, y el pet
-    // propio no se dibujaba nunca (el de otros jugadores si).
+    // por esta funcion.
     //
     // DESVIACION documentada: IDA no crea el bug en SetCharacterClass. No
     // encontre el camino por el que el original se lo da al heroe; puede estar
@@ -2421,7 +2310,7 @@ void __cdecl SetCharacterClass(int c) {
 }
 
 // sub_47E3C0 @ 0x0047E3C0 (293 bytes) — CharData_RecalcStats wrapper.
-// Port FIEL desde IDA decompile (2026-05-02). Calls 8 stat helpers in order
+// Port FIEL desde IDA decompile. Calls 8 stat helpers in order
 // then computes derived stats:
 //   - this[+1396] = this[+1388] - this[+1378]   (rango de stat máx - mín)
 //   - this[+1398] = this[+1390] - this[+1378]
@@ -2477,7 +2366,7 @@ int __cdecl CalculateAll(int characterMachine, int /*p2*/, int /*p3*/) {
 // gate destino, direccion, nivel minimo).  Si el heroe pisa el rectangulo pide
 // al server el gate con C1:06:1C:<gate>:00:00.
 //
-// Detalles fieles a IDA que el port anterior no tenia:
+// Detalles fieles a IDA:
 //  - el recorrido NO corta al encontrar un gate: cada rama termina en
 //    LABEL_121 y sigue con el siguiente registro;
 //  - `LoadingWorld = 50` al rechazar por nivel (antirrebote del aviso) y
@@ -2578,9 +2467,8 @@ void __cdecl CheckGate(void)
 }
 
 // Combat_SendMovePathPacket (Send_MovePacket), Combat_DispatchHeroSkillAttack (Attack), Combat_CheckArrowRequirement (CheckArrow),
-// Combat_UseElfSkill (UseSkillElf), Action (Action big switch),
-// movidos a src/Combat/Combat.cpp
-// (B3 refactor 2026-05-07, 1216 lines).
+// Combat_UseElfSkill (UseSkillElf), Action (Action big switch):
+// viven en src/Combat/Combat.cpp.
 
 // IDA: TERRAIN_INDEX (0x004F6C30)
 int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + param_1; }
@@ -2600,7 +2488,7 @@ int  __cdecl TERRAIN_INDEX(int param_1, int param_2) { return param_2 * 0x100 + 
 //   TerrainFlag=0x0838bc44, toggle=0x0839bc88, unk_55A76C=0x0055a76c.
 //   - WorldTime: en el binario es float ((float)timeGetTime() en CalcFPS 0x43FD70);
 //     en nuestro codebase es int g_AnimTick y todos sus readers lo usan como int.
-//     2026-09-03: se lee `(long long)WorldTime % N`, NO `(int)`.  `timeGetTime()`
+//     Se lee `(long long)WorldTime % N`, NO `(int)`.  `timeGetTime()`
 //     pasa de 2^31 ms a las ~24.8 dias de uptime y ahi el cast a int satura, con
 //     lo que la animacion de agua queda congelada.  IDA usa `(__int64)WorldTime`
 //     en todos sus sitios justamente por eso.
@@ -2808,7 +2696,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 // Tick de entidad por frame. Decompile de IDA: 2773 líneas / 32793 bytes; ~70% es
 // anti-tamper hash-table noise (dword_55C9BC8/BCC/BD0/BD4 + sub_403F80/04280/
 // 04330/0423710/0404400 ref-count + XOR encryption around CharacterMachine
-// lecturas). Per la política del proyecto (CLAUDE.md) todas las operaciones de hash-table se saltean
+// lecturas). Per la política del proyecto todas las operaciones de hash-table se saltean
 // — son ofuscación, no lógica de juego.
 //
 // El llamador pasa la misma entidad como `c` y como `o` (MoveCharacterClient → cc, cc).
@@ -2847,7 +2735,7 @@ static void RenderTerrain_FallbackUnused(char EditFlag) {
 //   CreateBlood
 //   DeleteCloth   DeleteCloth
 //   AttackStage
-//   AttackEffect   AttackEffect (existing port at line 3083)
+//   AttackEffect   AttackEffect
 //   CreateEffect   CreateEffect
 //   Joint_Create   CreateJoint
 //   Effect_SpawnSmokeBurst   CreateBomb
@@ -2893,18 +2781,11 @@ static inline void mc_AngleVectorOffset(float *origin7, float ax, float ay, floa
     out[2] += origin7[6];
 }
 
-// 2026-08-24 FIX (Soul Barrier: arcos gruesos y "dobles"): esto era un NO-OP,
-// con el comentario "no-op until joint pool wired" — pero el pool esta cableado
-// desde 2026-05-08, cuando se porto `DeleteJoint` (0x0046FE00). Quedo el stub
-// local y `MoveCharacter` siguio llamandolo, o sea el borrado nunca ocurria.
-//
-// Efecto medido: el skill 16 spawnea 5 joints 266 con Scale 20 y ANTES hace
-// `DeleteJoint(266, Owner, 0)` para sacar los que ya hubiera. Los de Scale 50
-// que deja `InsertBuffPhysicalEffect` (0x43BDE0, el camino de viewport cuando la
-// entidad aparece con el buff ya activo) nunca se borraban, asi que convivian
-// los dos grupos: censo del pool `quads20=3190 quads50=3190`, exactamente 50/50,
-// ~10 joints donde el original tiene 5. De ahi que los arcos se vieran mas
-// gruesos y cargados que en el cliente original.
+// `DeleteJoint` real (0x0046FE00): el skill 16 spawnea 5 joints 266 con
+// Scale 20 y ANTES hace `DeleteJoint(266, Owner, 0)` para sacar los que ya
+// hubiera — p.ej. los de Scale 50 que deja `InsertBuffPhysicalEffect`
+// (0x43BDE0, el camino de viewport cuando la entidad aparece con el buff ya
+// activo).  Si esto fuera un no-op convivirían los dos grupos (arcos dobles).
 extern "C" void __cdecl DeleteJoint(int Type, DWORD Target, int SubType);
 static inline void mc_DeleteJoint(int Type, DWORD Owner, int SubType)
 {
@@ -2969,12 +2850,6 @@ static inline char mc_JointFind(int Type, DWORD Owner, int flag)
     //     *v3              = +0x40 Owner
     //     *(v3 - 14)       = +0x08 SubType   (se ignora si flag == -1)
     // El paso es 630 DWORDs = 0x9D8, el stride del slot.
-    //
-    // 2026-09-04: antes era un stub `return 0` con el comentario "el pool no
-    // esta alocado".  Eso quedo viejo -- DAT_07b27150 esta dimensionado desde
-    // 2026-05-08.  Con el stub, MoveCharacter case 27 (Greater Defense) creaba
-    // 5 joints nuevos cada vez que le re-aplicaban el buff en vez de reusar los
-    // que ya estaban girando.
     const int stride = 0x9d8;
     const int slots  = (int)(sizeof(DAT_07b27150) / stride);
     for (int i = 0; i < slots; ++i) {
@@ -2988,10 +2863,8 @@ static inline char mc_JointFind(int Type, DWORD Owner, int flag)
     return 0;
 }
 
-// SetPlayerDie @ 0x00444D90 — SetPlayerDie (1057 bytes IDA, port FIEL 2026-05-07).
+// SetPlayerDie @ 0x00444D90 — SetPlayerDie (1057 bytes IDA, port FIEL).
 // Real signature: void __cdecl SetPlayerDie(DWORD c).
-// (functions.h declaró SetPlayerDie como "Entity_TeleportEnd" — eso es un
-// mismap del port-time. La función AT 0x00444D90 ES SetPlayerDie per IDA.)
 //
 // Differentiation:
 //   - Player (type 390), normal class (NOT 206-208): SetAction(c, 131)  ← death anim
@@ -3077,32 +2950,21 @@ LABEL_41:
 }
 
 // mc_SetPlayerDie — wrapper que usa la lógica de envejecimiento del ragdoll de MoveCharacter.
-// El SetPlayerDie de IDA NO toca dead_flag (lo hace el llamador, ReceiveDie).
-// Acá agregamos los efectos secundarios del flag porque el camino del ragdoll de MoveCharacter
-// espera que la entidad quede marcada como muerta después de esta llamada.
+// El SetPlayerDie de IDA NO toca dead_flag (lo hace el llamador, ReceiveDie), y
+// este wrapper tampoco: sólo llama a SetPlayerDie.
 static inline void mc_SetPlayerDie(DWORD c)
 {
     if (!c) return;
     SetPlayerDie((int)c);
-    // 2026-09-02: REMOVIDA la escritura `*(char*)(c + 0x2FD) = 1;`.  Era una
-    // invencion del port: SetPlayerDie (0x00444D90, 1057 bytes) no toca +765 en
-    // ninguna de sus lineas — el unico writer del dead_flag es ReceiveDie.
+    // NO escribir acá +0x2FD (+765), ni dead_flag (0x34e), ni alive_flag (0x2EC):
+    // SetPlayerDie (0x00444D90) no los toca; la transición de estado de vida es
+    // sólo de ReceiveDie.
     // El bloque que llama aca (LABEL_195, IDA L796-806) usa +765 como CONTADOR:
     //     if ( *(_BYTE *)(c + 765) )
     //         if ( (unsigned __int8)++*(_BYTE *)(c + 765) >= 0xFu )  SetPlayerDie(c);
-    // Al re-escribir 1 desde el wrapper, el contador nunca podia pasar de 15 y
-    // el flag quedaba clavado en != 0 para siempre.  Eso importa porque +765 es
-    // el filtro de "vivo" del barrido de sub_45FEC0 (IDA L168 `!v16[18]`), que es
-    // quien reporta los blancos al server con el 0x1D.
-    // 2026-07-27 FIX (alas rojas "PK"): NO setear dead_flag (0x34e) aquí. El
-    // IDA SetPlayerDie NO lo toca — sólo ReceiveDie (el packet de muerte real)
-    // lo setea. Este mc_SetPlayerDie lo llama el ragdoll-aging (c+765 counter);
-    // si ese counter se activa espuriamente sobre el héroe VIVO, el dead_flag
-    // quedaba stuck en 1 → el render (bDead = c+0x34e) lo trataba como muerto →
-    // body light rojo (1.0,0.1,0.1) = el bug de "alas rojas PK" intermitente.
-    // Confirmado por el diag HEROLIGHT (34e=1 con el pj vivo caminando).
-    // Removidos también el clear de alive_flag (0x2EC) — sólo ReceiveDie maneja
-    // la transición de estado de vida.
+    // y +765 es el filtro de "vivo" del barrido de sub_45FEC0 (IDA L168
+    // `!v16[18]`), que reporta los blancos al server con el 0x1D.  Con 0x34e=1 el
+    // render (bDead = c+0x34e) trata al héroe como muerto (body light rojo).
 }
 
 void __cdecl MoveCharacter(int p1)
@@ -3130,10 +2992,8 @@ void __cdecl MoveCharacter(int p1)
     float in1[3], in2[3][4];
     // La estela del arma usa el buffer GLOBAL de huesos (0x06970A9C), igual que
     // IDA: `BMD_Animation(v422, (float (*)[3][4])BoneMatrix, ...)` y despues
-    // `BoneMatrix[3 * bone]`.  Antes esto era un `float[200][3][4]` LOCAL y sin
-    // inicializar: los huesos que BMD_Animation no escribe quedaban con basura de
-    // stack, asi que los dos extremos de la hoja salian en un punto fijo cualquiera
-    // -- la estela aparecia pero despegada del arma.
+    // `BoneMatrix[3 * bone]`.  No usar un buffer local: los huesos que
+    // BMD_Animation no escribe quedarian con basura de stack.
     float (* const BoneMatrix)[3][4] = (float (*)[3][4])g_BoneScratch;
     int   v422 = 188 * (*(short*)(o + 2)) + (int)DAT_05828d58;  // model slot
     bool  bEventNpc = false;
@@ -3583,8 +3443,8 @@ void __cdecl MoveCharacter(int p1)
             }
             // L1664: seteo de flag sólo para el Hero (anti-tamper removido)
             // salteado — era una ronda de hash-encrypt sobre CharacterMachine
-            // 2026-08-23: faltaba el sonido del skill (IDA L1817, justo despues
-            // del bloque de hash-encrypt que se omite por policy).
+            // Sonido del skill: IDA L1817, justo despues del bloque de hash-encrypt
+            // que se omite por policy.
             PlayBuffer(97, 0, 0);
             break;
         }
@@ -4012,11 +3872,9 @@ void __cdecl MoveCharacter(int p1)
                 float PriorFrame = *(float*)(o + 268);
                 float v370f = *(float*)(*(int*)(v422 + 48) + 16 * (*(BYTE*)(v422 + 160)) + 4) / 10.0f;
                 for (int kk = 0; kk < (int)v368f; ++kk) {
-                    // 2026-09-26 FIX (no se veia la estela de la hoja): el 6to
-                    // argumento de BMD_Animation es el Angle de la entidad, no un
-                    // buffer de salida.  El port pasaba un array de CEROS, asi que
-                    // los huesos se posaban con facing (0,0,0) en vez del real y los
-                    // dos extremos de la hoja salian en una orientacion fija.
+                    // El 6to argumento de BMD_Animation es el Angle de la entidad, no un
+                    // buffer de salida: con ceros los huesos se posarían con facing (0,0,0) y
+                    // los dos extremos de la hoja saldrían en una orientacion fija.
                     BMD_Animation((void*)v422, (int)BoneMatrix, AnimationFrame,
                                  *(unsigned int*)&PriorFrame,
                                  *(BYTE*)(o + 262), (unsigned int*)(o + 28),
@@ -4087,12 +3945,11 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
     *(unsigned int *)((int)model + 0x68) = *(unsigned int *)(entity_ptr + 0x0c);
     *(unsigned char *)((int)model + 0xa0) = *(unsigned char *)(entity_ptr + 0x105);
 
-    // 2026-08-10 — SafeZone update por frame (IDA MoveCharacterVisual L614):
+    // SafeZone update por frame (IDA MoveCharacterVisual L614):
     //     *(BYTE*)(c + 846) = (TerrainWall[Terrain_Load(x, y)] & 1) == 1;
     // +0x34E (846) es **SafeZone**, NO dead_flag (el dead real es +0x2FD, ver
-    // IDA ReceiveDie L18). Sin este write el flag quedaba pegado en su valor de
-    // spawn: nunca se activaba la música de pueblo, ni el bind del arma a la
-    // espalda, ni el gate de "no atacar en zona segura".
+    // IDA ReceiveDie L18). Lo usan la música de pueblo, el bind del arma a la
+    // espalda y el gate de "no atacar en zona segura".
     //
     // Hex-Rays perdió los args de Terrain_Load acá (los slots de stack `x`/`yg`
     // los reusó el ruido de hash-table), así que usamos la posición de mundo
@@ -4109,11 +3966,10 @@ void __cdecl MoveCharacterVisual(int entity_ptr)
     }
 
     // -- switch por tipo de entidad (IDA MoveCharacterVisual L764) --------
-    // Efectos ambientales por NPC/monstruo.  2026-09-02: los **31** cases del
+    // Efectos ambientales por NPC/monstruo.  Los **31** cases del
     // binario estan portados (0x10E 0x110 0x111 0x113 0x114 0x119 0x11A 0x11B
     // 0x11D 0x122 0x128 0x129 0x12B 0x12E 0x12F 0x133 0x135 0x137 0x138 0x139
-    // 0x13A 0x13B 0x13E 0x141 0x142 0x145 0x152 0x157 0x15C 0x179 0x186).  El
-    // comentario viejo decia que solo estaba el del herrero y quedo obsoleto.
+    // 0x13A 0x13B 0x13E 0x141 0x142 0x145 0x152 0x157 0x15C 0x179 0x186).
     //
     // Lo unico del cuerpo que NO se porto es el bloque `if (c[836] > 0)` de
     // IDA L713-754 (los tipos de aura 1251 y 1252): **es codigo muerto en el
@@ -4702,8 +4558,7 @@ void __cdecl UI_OpenWindow(char* title, int mode) {
 }
 
 // IDA: CreateFrustrum2D (0x004F8EB0)
-// CORRECCIÓN 2026-05-04: la decompilación previa de Ghidra confundió los
-// nombres. GetScreenWidth NO es un frame counter — es GetScreenWidth(). Los
+// GetScreenWidth NO es un frame counter — es GetScreenWidth(). Los
 // constants `_DAT_00552cbc=1190.0` y `_DAT_00552cb8=540.0` son las half-widths
 // de la frustum quad (en view-space units), NO velocidades de rotación.
 // _DAT_0055283c = 1/640 (= screen pixel→aspect ratio).
@@ -4749,7 +4604,6 @@ void __cdecl CreateFrustrum2D(float *param_1)
     }
 }
 
-// === FUN_004f98c0 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
 // ── FUN_004f98c0 (IDA-activated, absent in Ghidra) ──
 int __cdecl FUN_004f98c0(int a1, int a2, int a3, int a4, int a5)
 {

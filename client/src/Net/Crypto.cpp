@@ -28,8 +28,6 @@ extern void __cdecl operator_delete(void* ptr);
 #define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 // -- Declaraciones de funciones que viven en otros modulos --------------
-// Agregadas por el refactor B3: se declaraban localmente en el archivo del
-// que se movieron estas funciones. Migrar a functions.h mas adelante.
 void __fastcall CSQuest_clearQuest(int param_1);
 void __fastcall SpringNode_SetPos(void *node, float x, float y, float z, int pinned);
 void __fastcall SpringNode_GetPos(void *node, float *out);
@@ -264,7 +262,7 @@ void __cdecl HashTable_Insert(void *this_,void *param_1_v,void *param_2_v)
   byte abStack_8 [8];
 
   // Ofuscación por HashTable: si la tabla no fue construida (vtable==NULL
-  // or capacity==0) treat as no-op. CLAUDE.md marks these ops as non-game logic.
+  // o capacity==0) no hace nada (anti-tamper, no es lógica de juego).
   if (this_ == nullptr || *(int *)this_ == 0 || *(int *)((int)this_ + 0xc) == 0) return;
   uVar1 = (**(code **)(*(int *)this_ + 0xc))(&param_2);
   abStack_8[0] = 0;
@@ -410,11 +408,6 @@ int __fastcall CWsctlc_GetSocket(int param_1)
   return *(int *)(param_1 + 8);
 }
 
-// =============================================================================
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 3155-3436 (282 lines)
-// CSimpleModulus encrypt/decrypt: CSimpleModulus_Encode, FUN_0053cd20, CSimpleModulus_Decode, FUN_0053ce30
-// + helpers: CSimpleModulus_EncryptBlock, CSimpleModulus_DecryptBlock, CsmTrace, CsmWatchdog
-// =============================================================================
 // CSimpleModulus encryption (Mu Online client→server) — ported from IDA
 // ═════════════════════════════════════════════════════════════════════════════
 // Three-level function tree (all reachable from CSimpleModulus_Encode):
@@ -697,7 +690,6 @@ static int CSimpleModulus_DecryptBlock(DWORD *ctx, BYTE *dst, BYTE *src)
     return (int)xorSeed;          // 1..8 = number of valid plaintext bytes
 }
 
-// ── Quest_FullInit — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // Quest_FullInit @ 0x00403EA0 (73 bytes) — Quest class full init
 void __fastcall Quest_FullInit(void *param_1_raw) {
     int *param_1 = (int *)param_1_raw;
@@ -720,17 +712,11 @@ void __fastcall Quest_FullInit(void *param_1_raw) {
     // por vtable, esto hay que restaurarlo.
 }
 
-// ── FUN_00403ef0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// ── 17-byte ─────────────────────────────────────────────────────────────────
-
 // FUN_00403ef0 @ 0x00403EF0 (17 bytes) — quest vtable init
 void __fastcall FUN_00403ef0(int *param_1) {
     *param_1 = (int)&PTR_LAB_005524b8;
     g_csQuest = 0;
 }
-
-// ── FUN_00403f10 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// ── 30-byte: virtual destructors (deinit + conditional delete) ──────────────
 
 // FUN_00403f10 @ 0x00403F10 — Quest ~dtor
 void __fastcall FUN_00403f10(int ecx, int /*edx*/, BYTE param_1) {
@@ -738,7 +724,6 @@ void __fastcall FUN_00403f10(int ecx, int /*edx*/, BYTE param_1) {
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── Packet_DecryptBuffer — movida desde stubs_externs.cpp (refactor B3) ──
 // Packet_DecryptBuffer @ 0x00404370 — HashTable_CopyEncrypt(param_1, param_2)
 // Copia 0x584 bytes de param_2 a un buffer nuevo, lo codifica con XOR (resta 0x23,
 // XOR con la tabla DAT_00559050, suma 0xb9) y copia el resultado de vuelta a param_1.
@@ -768,7 +753,6 @@ void __cdecl Packet_DecryptBuffer(void *vparam_1, void *vparam_2) {
     operator_delete((unsigned char*)puVar2);
 }
 
-// ── Cloth_Solve — movida desde stubs_externs.cpp (refactor B3) ──
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
 extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
@@ -787,12 +771,6 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 //       CSQuest::clearQuest(This);
 //   }
 //   result = MouseLButtonPop;  if (MouseLButtonPop) MouseLButtonPop = 0;
-//
-// 2026-08-22: acá había un resumen con SÓLO la rama del botón de cerrar.
-// Faltaba la del botón de aceptar/continuar la quest — el que sub_403320
-// dibuja en (485,355) 120x24 con GlobalText[699] ("Proceder con la quest").
-// O sea el botón se veía y hasta se pintaba al pasar el mouse (ese feedback
-// está en sub_403320), pero el click no mandaba nada y la quest no avanzaba.
 int __cdecl CSQuest_ProceedButton(void *param_1) {
     if ((0x1c1 < DAT_083a427c) && (DAT_083a427c < 0x280) &&
         (-1 < DAT_083a4278) && (DAT_083a4278 < 0x1b1))
@@ -832,11 +810,6 @@ int __cdecl CSQuest_ProceedButton(void *param_1) {
     if (DAT_083a413c != 0) DAT_083a413c = 0;
     return 1;
 }
-
-// ── FUN_00408ff0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// ═══════════════════════════════════════════════════════════════════════════════
-// END BATCH 10
-// ═══════════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BATCH 11 — BMD/SMD model loading + mesh rendering + linked list + quest init
@@ -879,7 +852,6 @@ void __fastcall FUN_00408ff0(void* param_1) {
     operator_delete((unsigned char *)verts);
 }
 
-// ── FUN_004090b0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_004090b0 @ 0x004090B0 (~54 lines) — BMD mesh: emit quads for one face side
 // __thiscall(this=meshObj, param_1=windingOrder, param_2=textureId, param_3=vertexBuf).
 // Binds texture, glBegin(GL_QUADS=7), nested loop over rows/cols emitting 4 vertices per quad
@@ -918,7 +890,6 @@ void __fastcall FUN_004090b0(void* ecx, void* /*edx*/, int param_1, float param_
     glEnd();
 }
 
-// ── FUN_004091d0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_004091d0 @ 0x004091D0 (~21 lines) — BMD mesh: emit single vertex with texcoord
 // __thiscall. Calcula la UV desde la posición en la grilla: u = col/(cols-1), v = row/(rows-1), clampeado a 0.99.
 // Emite glTexCoord2f + glVertex3f desde el buffer de vértices en param_1 + (row*cols+col)*0xC.
@@ -941,10 +912,9 @@ void __fastcall FUN_004091d0(void* ecx, void* /*edx*/, int param_1, int param_2,
     glVertex3f(vert[0], vert[1], vert[2]);
 }
 
-// ── VerletNode_AddToSystem — movida desde stubs_externs.cpp (refactor B3) ──
 // VerletNode_AddToSystem @ 0x00409250 — VerletNode_AddToSystem: allocate node, init, insert into doubly-linked list.
-// La cabeza de la lista está en this+0x50 (nodo de 0xc bytes: [0]=datos, [4]=next, [8]=prev). El contador en this+0x48.
-// La entrada nueva se inserta justo después del centinela de cabecera.
+// En this+0x50 está el puntero al centinela de COLA (nodos de 0xc bytes: [0]=datos, [4]=prev, [8]=next). El contador en this+0x48.
+// La entrada nueva se inserta al final, justo antes del centinela de cola.
 void __cdecl VerletNode_AddToSystem(void *widget, float p1, float p2, float p3, float radius, int boneIdx)
 {
     char *thiz = (char*)widget;
@@ -953,7 +923,7 @@ void __cdecl VerletNode_AddToSystem(void *widget, float p1, float p2, float p3, 
     void *node = (node_raw == NULL) ? NULL : (void *)ClothAnchor_Ctor((DWORD *)node_raw);
     ClothAnchor_SetParams(node, p1, p2, p3, radius, boneIdx);
 
-    // aloca la entrada de la lista enlazada (0xc bytes: [+0]=node_ptr, [+4]=next, [+8]=prev)
+    // aloca la entrada de la lista enlazada (0xc bytes: [+0]=node_ptr, [+4]=prev, [+8]=next)
     int *entry = (int *)operator_new(0xc);
     if (entry != NULL) {
         entry[0] = 0;
@@ -961,10 +931,6 @@ void __cdecl VerletNode_AddToSystem(void *widget, float p1, float p2, float p3, 
         entry[2] = 0;
         entry[0] = (int)node;
 
-        // 2026-08-11 FIX (crash 0xC0000005 escribiendo a 0xCDCDCDD5 = heap sin
-        // inicializar + 8, al crear la capa del MG): esta rutina trataba
-        // `thiz + 0x50` como si el centinela estuviera EMBEBIDO ahí, y además
-        // asumía `+4 = next / +8 = prev`. Las dos cosas están al revés.
         // IDA `sub_409250` L27-32:
         //     result[1] = *(_DWORD *)(this[20] + 4);
         //     *(_DWORD *)(*(_DWORD *)(this[20] + 4) + 8) = result;
@@ -972,9 +938,9 @@ void __cdecl VerletNode_AddToSystem(void *widget, float p1, float p2, float p3, 
         //     *(_DWORD *)(this[20] + 4) = result;
         //     this[18] = this[18] + 1;
         // `this[20]` es el VALOR del puntero al centinela de cola que guardó
-        // `sub_407FE0` en +0x50, y el layout es **+4 = prev, +8 = next**
-        // (coherente con el ctor: `head[8] = tail`, `tail[4] = head`).
-        // Se inserta al FINAL, antes de la cola.
+        // `sub_407FE0` en +0x50 (el centinela NO está embebido ahí), y el layout es
+        // **+4 = prev, +8 = next** (coherente con el ctor: `head[8] = tail`,
+        // `tail[4] = head`). Se inserta al FINAL, antes de la cola.
         int tail = *(int *)(thiz + 0x50);      // this[20]
         int prev = *(int *)(tail + 4);         // tail->prev
         entry[1] = prev;                       // entry->prev = tail->prev
@@ -985,7 +951,6 @@ void __cdecl VerletNode_AddToSystem(void *widget, float p1, float p2, float p3, 
     }
 }
 
-// ── Cloth_CollideAnchors — movida desde stubs_misc_helpers.cpp (refactor B3) ──
 int   __cdecl    Cloth_CollideAnchors(DWORD *thiz);                       // colisión con anclas
 void  __fastcall VerletNode_SetTarget(void *a, float b, int c, int d);
 void  __fastcall VerletNode_GetPos(void *a, float *b);
@@ -1067,7 +1032,6 @@ int __cdecl Cloth_Solve(DWORD *a1)
   return 1;
 }
 
-// ── Widget_Ctor — movida desde stubs_externs.cpp (refactor B3) ──
 // IDA: Widget_Ctor (0x004093A0)
 // Widget_Ctor llama a Widget_CtorBase y después setea la vtable.
 void* __fastcall Widget_Ctor(void *param_1)
@@ -1077,14 +1041,12 @@ void* __fastcall Widget_Ctor(void *param_1)
     return param_1;
 }
 
-// ── FUN_004093c0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_004093c0 @ 0x004093C0 (11 bytes)
 void __fastcall FUN_004093c0(void *This) {
     *(int *)This = (int)&PTR_LAB_005524e8;
     FUN_00408070(This);
 }
 
-// ── SpringMesh_Create — movida desde stubs_externs.cpp (refactor B3) ──
 // SpringMesh_Create @ 0x004093E0 — SpringMesh_Create: builds triangle-mesh spring system from BMD face data.
 // Por cada vértice de cara: inicializa la posición del nodo desde el buffer de vértices de huesos (DAT_0584621c), lo marca como fijo si el tipo coincide.
 // Por cada arista de cara (3 por triángulo): calcula el largo de reposo vía SpringNode_Delta, marca si es horizontal/vertical,
@@ -1169,10 +1131,8 @@ void __cdecl SpringMesh_Create(void *widget, int entity, short *slot, int type, 
     *(unsigned int *)(thiz + 0x38) = sp;
 }
 
-// ── FUN_00409ad0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // IDA: sub_409AD0 (0x00409AD0) -- constructor de CPhysicsManager.
 // Lo llama el inicializador estatico sub_5133F0 sobre g_PhysicsManager.
-// La etiqueta vieja ("CSQuest constructor") era incorrecta.
 // Arma una lista doble con dos nodos centinela de 0xC bytes (+4 prev,
 // +8 next): This[2] = cabeza, This[3] = cola, cabeza->next = cola,
 // cola->prev = cabeza, This[1] = 0 (cantidad).  La vtable (off_552568) no se
@@ -1191,29 +1151,29 @@ void* __fastcall FUN_00409ad0(void* param_1) {
     return param_1;
 }
 
-// ── scalar_deleting_destructor_locale — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// scalar_deleting_destructor_locale @ 0x00409B60 — SoundWidgetB ~dtor
+// scalar_deleting_destructor_locale @ 0x00409B60 — ~dtor de CPhysicsManager (llama a Locimp_dtor)
 void __fastcall scalar_deleting_destructor_locale(int ecx, int /*edx*/, BYTE param_1) {
     Locimp_dtor((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── Locimp_dtor — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// Locimp_dtor @ 0x00409B80 (~39 lines) — CSQuest destructor: clear list + free sentinels
-// __fastcall(ecx=questObj). Setea la vtable, llama a FUN_00409d20 (limpia todos los nodos),
+// Locimp_dtor @ 0x00409B80 (~39 lines) — destructor de CPhysicsManager (misma vtable
+// 0x552568 que FUN_00409ad0): vacía la lista y libera los centinelas.
+// __fastcall(ecx=this). Setea la vtable, llama a FUN_00409d20 (limpia todos los nodos),
 // y después libera la cadena de nodos entre la cabeza y la cola, y los propios centinelas.
+// Sin portar: el cuerpo de abajo está vacío.
 void __fastcall Locimp_dtor(void* param_1) {
     // *param_1 = &PTR_FUN_00552568 (vtable)
-    // FUN_00409d20(param_1) — clear all quest nodes
+    // FUN_00409d20(param_1) — clear all nodes
     // Recorre la cadena head->next y borra cada nodo
     // Re-link head<->tail, count=0
     // delete tail, delete head
 }
 
-// ── FUN_00409d20 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
-// FUN_00409d20 @ 0x00409D20 (~34 lines) — CSQuest: clear all quest nodes from linked list
-// __fastcall(ecx=questObj). Itera desde head->next hasta tail, llama a Widget_Release sobre los datos
+// FUN_00409d20 @ 0x00409D20 (~34 lines) — CPhysicsManager: vacía la lista de nodos
+// __fastcall(ecx=this). Itera desde head->next hasta tail, llama a Widget_Release sobre los datos
 // de cada nodo y después invoca el destructor vía la vtable. Libera todos los nodos intermedios.
+// Sin portar: el cuerpo de abajo está vacío.
 void __fastcall FUN_00409d20(int param_1) {
     // Recorre desde (param_1+8)->next hasta llegar al centinela (param_1+0xC):
     //   Widget_Release(*node) — cleanup node data
@@ -1222,7 +1182,6 @@ void __fastcall FUN_00409d20(int param_1) {
     // Re-link head<->tail, count=0
 }
 
-// ── LinkedList_DestroyAll — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // LinkedList_DestroyAll @ 0x00409DB0 (110 bytes) — LinkedList: destroy all nodes + sentinels
 void __fastcall LinkedList_DestroyAll(int *param_1) {
     *(int *)(*(int *)(param_1[2] + 4) + 8) = 0;
@@ -1239,15 +1198,12 @@ void __fastcall LinkedList_DestroyAll(int *param_1) {
     if ((void *)param_1[1] != NULL) operator_delete((void *)param_1[1]);
 }
 
-// ── FUN_00409ea0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00409ea0 @ 0x00409EA0 (10 bytes) — calls sound device init
 void FUN_00409ea0(void) { LinkedList_InitSentinels((void *)&DAT_00590b00); }
 
-// ── FUN_00409eb0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00409eb0 @ 0x00409EB0 (12 bytes)
 void FUN_00409eb0(void) {}
 
-// ── WidgetB_Ctor — movida desde stubs_misc_helpers.cpp (refactor B3) ──
 // WidgetB_Ctor @ 0x00409ED0 — WidgetB_Ctor: set vtable + zero fields.
 void* __fastcall WidgetB_Ctor(void *param_1)
 {
@@ -1256,14 +1212,12 @@ void* __fastcall WidgetB_Ctor(void *param_1)
     return param_1;
 }
 
-// ── FUN_00409ef0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00409ef0 @ 0x00409EF0 — WidgetC ~dtor
 void __fastcall FUN_00409ef0(int ecx, int /*edx*/, BYTE param_1) {
     WidgetB_SetVtable((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── WidgetB_SetVtable — movida desde stubs_misc_helpers.cpp (refactor B3) ──
 // WidgetB_SetVtable @ 0x00409F10 — WidgetB_SetVtable: sólo setea el puntero de vtable.
 void __fastcall WidgetB_SetVtable(void *param_1)
 {
@@ -1271,7 +1225,6 @@ void __fastcall WidgetB_SetVtable(void *param_1)
     (void)param_1;
 }
 
-// ── WidgetB_ZeroFields — movida desde stubs_misc_helpers.cpp (refactor B3) ──
 // ── WidgetB_ZeroFields/ed0/f10/0040a660 — second widget type ctor chain ────────────
 
 // WidgetB_ZeroFields @ 0x00409F20 — WidgetB_ZeroFields: clear 4 fields (+4,+8,+0x18,+0x1c).
@@ -1283,7 +1236,6 @@ void __fastcall WidgetB_ZeroFields(int param_1)
     *(int *)(param_1 + 0x1c) = 0;
 }
 
-// ── FUN_00409f30 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00409f30 @ 0x00409F30 (~64 lines) — BMD: build visible triangle list for mesh part
 // __thiscall(this=renderCtx, param_1=vertBuf, param_2=meshData, param_3=entityPtr, param_4=skipAlpha).
 // Checks entity visibility distance (param_3+0x168 >= threshold). Skips mesh parts at indices
@@ -1301,7 +1253,6 @@ int __fastcall FUN_00409f30(void* ecx, void* /*edx*/, int param_1, int param_2, 
     return 0;
 }
 
-// ── FUN_0040a0a0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // FUN_0040a0a0 @ 0x0040A0A0 (100 bytes) — sound object init + open file
 void __fastcall FUN_0040a0a0(void *This, int /*edx*/, int param_1, int param_2, int param_3, char param_4) {
     *(DWORD *)((int)This + 0x10) = 0x3cf5c28f;
@@ -1315,7 +1266,6 @@ void __fastcall FUN_0040a0a0(void *This, int /*edx*/, int param_1, int param_2, 
     }
 }
 
-// ── FUN_0040a110 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_0040a110 @ 0x0040A110 (~25 lines) — BMD: add triangle edge to shadow volume
 // __thiscall(this=shadowCtx). Chequea la adyacencia en param_6 + param_4*0x24 + param_5*2 + 0x1A.
 // Si la arista es de borde (adj == -1 o la cara adyacente mira hacia atrás), appendea un registro de arista (10 bytes)
@@ -1333,7 +1283,6 @@ void __fastcall FUN_0040a110(void* ecx, void* /*edx*/, short param_1, short para
     //   this->shadowCount++
 }
 
-// ── FUN_0040a1c0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_0040a1c0 @ 0x0040A1C0 (~70 lines) — BMD: backface cull + edge extraction for shadow volume
 // __thiscall(this=shadowCtx, param_1=meshPartIdx, param_2=vertBuf, param_3=triCount, param_4=triData).
 // Por cada triángulo: calcula la normal de la cara vía FaceNormalize y el producto punto con la dirección de la luz (this+0xC..0x14).
@@ -1350,7 +1299,6 @@ void __fastcall FUN_0040a1c0(void* ecx, void* /*edx*/, short param_1, int param_
     //   FUN_0040a110(edge0), FUN_0040a110(edge1), FUN_0040a110(edge2)
 }
 
-// ── FUN_0040a300 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_0040a300 @ 0x0040A300 (~110 lines) — BMD: build shadow volume geometry from silhouette edges
 // __thiscall(this=shadowCtx, param_1=vertBuf). Allocates output vertex buffer (count * 0x48).
 // Por cada arista de silueta: extruye los vértices de la arista en la dirección -luz (VectorMA),
@@ -1368,7 +1316,6 @@ void __fastcall FUN_0040a300(void* ecx, void* /*edx*/, int param_1) {
     //   Emit 6 vertices: v0, extrude0, v1, v1, extrude0, extrude1
 }
 
-// ── FUN_004236c0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // FUN_004236c0 @ 0x004236C0 (90 bytes) — BST node remove (unlink + delete)
 void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
     int iVar1 = *(int *)(*param_1 + 0x10);
@@ -1386,11 +1333,9 @@ void __fastcall FUN_004236c0(void *This, int /*edx*/, int *param_1) {
     *param_1 = 0;
 }
 
-// ── FUN_00423c30 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00423c30 @ 0x00423C30 (10 bytes) — disconnect socket context
 void FUN_00423c30(void) { CWsctlc_Close(((int)(uintptr_t)SocketClient)); }
 
-// ── InitGuildWar — movida desde stubs_externs.cpp (refactor B3) ──
 // InitGuildWar @ 0x00423DB0 — Net_ResetTrade: clears trade/shop globals, re-enables party markers.
 // IDA: FUN_00423DB0 (0x00423DB0)
 void __cdecl InitGuildWar(void) {
@@ -1413,7 +1358,6 @@ void __cdecl InitGuildWar(void) {
     } while (iVar4 != 0);
 }
 
-// ── CWsctlc_Close — movida desde stubs_linker.cpp (refactor B3) ──
 // CWsctlc_Close @ 0x0043DC90 (11 lines) — NetContext_Disconnect
 // Clears connected flag, closes socket, invalidates handle.
 // IDA: CWsctlc::Close (0x0043DC90)
@@ -1423,25 +1367,21 @@ void __cdecl CWsctlc_Close(int ctx) {
     *(int *)(ctx + 8) = -1; // INVALID_SOCKET
 }
 
-// ── FUN_0053cbb0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_0053cbb0 @ 0x0053CBB0 (18 bytes) — GameGuard class init
 void __fastcall FUN_0053cbb0(int *param_1) {
     *param_1 = (int)&PTR_FUN_0055389c;
     FUN_0053cc00_impl((int)param_1);
 }
 
-// ── FUN_0053cbd0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_0053cbd0 @ 0x0053CBD0 — GameGuard ~dtor
 void __fastcall FUN_0053cbd0(int ecx, int /*edx*/, BYTE param_1) {
     FUN_0053cbf0((int *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_0053cbf0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_0053cbf0 @ 0x0053CBF0 (7 bytes)
 void __fastcall FUN_0053cbf0(int *param_1) { *param_1 = (int)&PTR_FUN_0055389c; }
 
-// ── FUN_0053ce30 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_0053ce30 @ 0x0053CE30 (350 bytes) — Packet crypto decrypt block
 // 4-round Feistel cipher: extracts 16-bit + 2-bit fields via CSimpleModulus_AddBits,
 // applies reverse XOR chain using context keys (this+0x04..0x3c),
@@ -1453,7 +1393,6 @@ unsigned int __cdecl FUN_0053ce30(void *self, unsigned short *param_1, int param
 }
 
 // IDA: FUN_0053CF90 (0x0053CF90)
-// ── CSimpleModulus_AddBits — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // CSimpleModulus_AddBits @ 0x0053CF90 (305 bytes) — bit-field insert.
 // Copia el rango de bits [a4..a4+a5) del buffer de origen (a3) al destino (a1)
 // en el offset de bit a2. Usa un buffer temporal + CSimpleModulus_Shift para el corrimiento entre bytes.
@@ -1495,7 +1434,6 @@ int __stdcall CSimpleModulus_AddBits(int a1, unsigned int a2, int a3, unsigned i
 }
 
 // IDA: FUN_0053D0D0 (0x0053D0D0)
-// ── CSimpleModulus_Shift — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // CSimpleModulus_Shift @ 0x0053D0D0 (155 bytes) — Byte-array bitwise shift for crypto.
 // Positive a3 → right-shift; negative a3 → left-shift.  Shifts bits across
 // adjacent bytes (1-byte ripple).  Ported from IDA sub_53D0D0.
@@ -1533,18 +1471,16 @@ void __stdcall CSimpleModulus_Shift(unsigned char *a1, int a2, int a3)
 }
 
 // IDA: FUN_0053D170 (0x0053D170)
-// ── CSimpleModulus_GetByteOfBit — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 10-byte: CSimpleModulus_GetByteOfBit — shift right 3 ───────────────────────────────────
 
 // CSimpleModulus_GetByteOfBit @ 0x0053D170 (10 bytes)
-// CSimpleModulus_GetByteOfBit (IDA-activated, was Ghidra stub)
+// CSimpleModulus_GetByteOfBit (IDA-activated)
 int __cdecl CSimpleModulus_GetByteOfBit(int a1)
 {
   return a1 >> 3;
 }
 
 // IDA: FUN_0053D1C0 (0x0053D1C0)
-// ── CSimpleModulus_LoadKey — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // CSimpleModulus_LoadKey @ 0x0053D1C0 (381 bytes) — Crypto key file loader.
 // Reads a CSimpleModulus key file:
 //   header = [int16 magic][int32 expected_size]
@@ -1597,7 +1533,7 @@ int __cdecl CSimpleModulus_LoadKey(void *self, const char *filename, short magic
     return 1;
 }
 
-// -- FUN_0053cc00_impl: helper local, movido desde stubs_bulk_small.cpp (B3) --
+// -- FUN_0053cc00_impl: helper local --
 static void __cdecl FUN_0053cc00_impl(int param_1) {
     *(int *)(param_1 + 0x14) = 0; *(int *)(param_1 + 0x18) = 0;
     *(int *)(param_1 + 0x1c) = 0; *(int *)(param_1 + 0x20) = 0;

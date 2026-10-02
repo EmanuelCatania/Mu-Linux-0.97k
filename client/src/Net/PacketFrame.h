@@ -15,13 +15,8 @@
 // se desconecta ~1 s despues de la accion, sin ningun mensaje. Y si el opcode
 // no figura en el archivo: "Packet unknown error" -> CloseClient tambien.
 //
-// Hasta 2026-08-26 el cliente elegia el frame A MANO en cada call site (74
-// repartidos entre 5 helpers de envio), asi que cada opcode nuevo era una
-// chance de repetir el bug. Ya paso varias veces: reparar (0x34),
-// trade-unconfirm (0x3C), guild (0x50/0x51/0x52/0x57) y los botones [+] de
-// stats (F3/06) se mandaban con el frame equivocado y desconectaban.
-//
-// Ahora los helpers consultan esta tabla y corrigen el frame solos.
+// Los helpers de envio consultan esta tabla y corrigen el frame solos: no
+// elegir el frame a mano en cada call site.
 #pragma once
 #include <windows.h>
 
