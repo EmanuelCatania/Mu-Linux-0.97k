@@ -1,7 +1,5 @@
 // Scene_CharSelect_Nav.cpp
 //
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 13751-14826 (1076 lines).
-//
 // Char-select slot navigation helpers:
 //   CSQuest_FindQuestContext (IDA: FUN_004011D0)
 //   CSQuest_CheckActCondition (IDA: FUN_00401650)
@@ -20,8 +18,7 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 extern "C" float __cdecl CalcDurabilityPercent(BYTE dur, BYTE maxDur, int Level, int option);
 extern "C" void __cdecl PlusSpecial(unsigned short *Value, int Special, DWORD Item);
 // -- Declaraciones de funciones que viven en otros modulos --------------
-// Agregadas por el refactor B3: se declaraban localmente en el archivo del
-// que se movieron estas funciones. Migrar a functions.h mas adelante.
+// Migrar a functions.h mas adelante.
 int __cdecl LevelConvert(BYTE Level);
 int __cdecl Net_Disconnect(int ctx);
 
@@ -41,7 +38,7 @@ extern void __cdecl operator_delete(void* ptr);
 #define delete__(p) operator_delete((unsigned char*)(p))
 #endif
 
-// IDA Hex-Rays intrinsic shims (mirror of stubs.cpp shims).
+// IDA Hex-Rays intrinsic shims.
 #ifndef LODWORD
 #define LODWORD(x)           (*((DWORD*)&(x)))
 #define HIDWORD(x)           (*(((DWORD*)&(x))+1))
@@ -221,7 +218,7 @@ uint __fastcall CSQuest_CheckRequestCondition(void *pThis, short *param_1, char 
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Math_Fmin @ 0x00512A10 — Math_Fmin(a, b) → min(a,b)
-// Math_Fmin (IDA-activated, was Ghidra stub)
+// Math_Fmin (IDA-activated)
 double __cdecl Math_Fmin(float a1, float a2)
 {
   if ( a1 <= (double)a2 )
@@ -236,7 +233,7 @@ double __cdecl Math_Fmin(float a1, float a2)
 
 
 // Math_Fmax @ 0x00512A30 — Math_Fmax(a, b) → max(a,b)
-// Math_Fmax (IDA-activated, was Ghidra stub)
+// Math_Fmax (IDA-activated)
 double __cdecl Math_Fmax(float a1, float a2)
 {
   if ( a1 <= (double)a2 )
@@ -326,7 +323,7 @@ void __fastcall CalculateNextExperince(int param_1)
 // HotkeyBar_FindFreeSlot @ 0x0047E3A0 — HotkeyBar_FindFreeSlot
 // Scans 12 hotkey bar slots (stride 0x44) starting at CharData+0x232.
 // Returns slot index with low byte = 1 on success, or raw index (no flag) if full.
-// HotkeyBar_FindFreeSlot (IDA-activated, was Ghidra stub)
+// HotkeyBar_FindFreeSlot (IDA-activated)
 char __cdecl HotkeyBar_FindFreeSlot(char *_this)
 {
   int v1; // eax
@@ -348,7 +345,7 @@ char __cdecl HotkeyBar_FindFreeSlot(char *_this)
 // Scans entity array (stride 0x394, 400 entries) for an entity whose
 // la clave (short en +0x1dc) coincide con param_1. Limpia el byte +0x2e8 de cada
 // entidad durante el escaneo. Devuelve el índice coincidente, o 400 si no lo encontró.
-// Character_FindByKey_WithClear (IDA-activated, was Ghidra stub)
+// Character_FindByKey_WithClear (IDA-activated)
 int __cdecl Character_FindByKey_WithClear(int a1)
 {
   int v1; // esi
@@ -376,7 +373,7 @@ int __cdecl Character_FindByKey_WithClear(int a1)
 // Characters_SetActionAll @ 0x0045AD10 — Characters_SetActionAll
 // Setea la acción dada en todas las entidades vivas de tipo DK (0x186).
 // Resetea el Angle a (0, 0, 180°) antes de aplicar la acción.
-// Characters_SetActionAll (IDA-activated, was Ghidra stub)
+// Characters_SetActionAll (IDA-activated)
 void __cdecl Characters_SetActionAll(int Action)
 {
   int i; // esi
@@ -404,7 +401,7 @@ void __cdecl Characters_SetActionAll(int Action)
 // Characters_FreeAllBMDBuffers @ 0x0045AD60 — Characters_FreeAllBMDBuffers
 // Libera los buffers de heap de BMD por entidad (puntero en entity+0x114) de todo el array,
 // y después libera el buffer BMD extra compartido (DAT_07abf164).
-// Characters_FreeAllBMDBuffers (IDA-activated, was Ghidra stub)
+// Characters_FreeAllBMDBuffers (IDA-activated)
 void Characters_FreeAllBMDBuffers()
 {
   int i; // edi
@@ -484,7 +481,7 @@ void __cdecl Character_UpdateEquipSlotAnimations(int param_1)
 //   World 0 or 3 (Lorencia/Devias): tile == 0 → snd 9
 //   World 7 (Devil Square), alive → snd 11
 //   Default → snd 8
-// Sound_PlayFootstep (IDA-activated, was Ghidra stub)
+// Sound_PlayFootstep (IDA-activated)
 char Sound_PlayFootstep()
 {
   char result; // al
@@ -677,7 +674,7 @@ int __fastcall CWsctlc_GetReadMsg(int param_1)
 // Actualización física por frame de una partícula de efecto a nivel del piso (p.ej. una moneda o un drop).
 // Si el héroe está atacando y el efecto está en rango, lo atrae hacia
 // el héroe con una velocidad proporcional al delta y un factor de fricción que decae.
-// Effect_PhysicsTick (IDA-activated, was Ghidra stub)
+// Effect_PhysicsTick (IDA-activated)
 void __cdecl Effect_PhysicsTick(DWORD Object)
 {
   unsigned char v2; // al
@@ -738,7 +735,7 @@ void __cdecl Effect_PhysicsTick(DWORD Object)
 // value. Special range 0x4b5–0x4d8 gets a randomised lifetime (50+rand%32).
 // param_1 = label text or ID, param_2 = world position (float[3]),
 // param_3 = color/type, param_4 = screen offset (float[3]), param_5 = extra data.
-// FloatingLabel_Add (IDA-activated, was Ghidra stub)
+// FloatingLabel_Add (IDA-activated)
 int __cdecl FloatingLabel_Add(int a1, DWORD *a2, int a3, DWORD *a4, int a5)
 {
   BYTE *v5; // edx
@@ -844,8 +841,8 @@ void __cdecl SkillAttribute_SaveBin(const char *param_1)
         BuxConvert_0((int)Buffer, 300);
         crt_fwrite((char *)Buffer, 300, 1, (int *)pFile);
         pcVar3 += 300;
-        // 2026-09-08: el bound era `< 0x7d73104`, direccion absoluta del binario.
-        // La base es `&SkillAttribute + 4` = 0x07D29D24 = GlobalText[0], y
+        // IDA usa la dirección absoluta 0x7d73104 como bound. La base es
+        // `&SkillAttribute + 4` = 0x07D29D24 = GlobalText[0], y
         // (0x7D73104 - 0x7D29D24) / 300 = 1000 -- las 1000 filas de GlobalText.
         // (Confirma que esta funcion escribe GlobalText, no SkillAttribute.)
         if (++nRowGT >= 1000) break;
@@ -864,12 +861,9 @@ void __cdecl SkillAttribute_SaveBin(const char *param_1)
 // spawns ambient world objects (type 8) at non-zero flag positions.
 void Terrain_SpawnAmbientObjects(void)
 {
-    // BUG-FIX 2026-06-27: el while original usaba el bound de DIRECCIÓN ABSOLUTA
-    // literal del binario fuente (136099341 = 0x081CB60D). En nuestro build
-    // &DAT_081cb2ed vive en otra dirección, así que el loop caminaba memoria
-    // ajena hasta una página no mapeada → AV (crash @0x005762E6, addr 0x021FA007),
-    // disparado al wirear sub_4F7060 dentro del port 1:1 de RenderTerrain.
-    // IDA: base 0x081CB2ED, bound 0x081CB60D → (0x320)/8 = 100 iteraciones.
+    // IDA: base 0x081CB2ED, bound 0x081CB60D → (0x320)/8 = 100 iteraciones. El
+    // bound es un contador: la dirección absoluta del binario no sirve en nuestro
+    // build.
     BYTE *pbVar1 = (BYTE *)&DAT_081cb2ed;
     for (int i = 0; i < 100; i++, pbVar1 += 8) {
         if (pbVar1[-5] != 0) {
@@ -883,7 +877,7 @@ void Terrain_SpawnAmbientObjects(void)
 // Simulación de olas de agua por frame: mezcla los valores de altura adyacentes del
 // buffer de olas anterior en el buffer actual, para una grilla de terreno de 256×256.
 // param_1 selects between the two ping-pong buffers (0 or 1).
-// Terrain_WaterWaveUpdate (IDA-activated, was Ghidra stub)
+// Terrain_WaterWaveUpdate (IDA-activated)
 int __cdecl Terrain_WaterWaveUpdate(int a1)
 {
   char *v1; // ebx
@@ -936,7 +930,7 @@ int __cdecl Terrain_WaterWaveUpdate(int a1)
 // param_9 elige el plano de proyección (1=YZ, 2=XZ, 4=XY y las variantes en sentido horario).
 // Umbral param_10: si es > _DAT_00552580 (0.0f), param_9 se corre 3 bits a la izquierda.
 // Devuelve 1 si está adentro, 0 si está afuera.
-// Collision_PointInPolygon (IDA-activated, was Ghidra stub)
+// Collision_PointInPolygon (IDA-activated)
 int __cdecl Collision_PointInPolygon(float a1, float a2, float a3, int a4, int a5, int a6, int a7, int a8, int a9, float a10)
 {
   int v10; // esi
@@ -1139,18 +1133,11 @@ int __cdecl FUN_005130f0(float *param_1, float *param_2, float *param_3,
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── FUN_00401010 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// ── 10-byte: simple wrappers & field ops ────────────────────────────────────
-
 // IDA: FUN_00401010 @ 0x00401010 — calls quest table init
 void Quest_InitializeStaticState(void) { Quest_FullInit((void *)&DAT_00567500); }
 
-// ── FUN_00401020 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// ── 12-byte: CRT atexit wrappers ────────────────────────────────────────────
-// 2026-05-07: these registered shutdown callbacks at literal source-binary
-// direcciones (0x004XXXXX). En nuestro build el linker coloca el código en
-// offsets distintos, así que dispararlas con atexit crashearía al cerrar el programa.
-// Since the registered targets were stubs/no-ops anyway, neuter the wrappers.
+// Los wrappers de atexit registraban callbacks en direcciones literales del
+// binario (0x004XXXXX), que en nuestro build no son código: quedan neutralizados.
 
 // FUN_00401020 @ 0x00401020 (12 bytes)
 void FUN_00401020(void) {}
@@ -1163,17 +1150,13 @@ void __cdecl BuxConvert_1(void* buffer, int size) {
         *(byte *)(buf + i) ^= (byte)bBuxCode[i % 3];
 }
 
-// ── CSQuest_ShowDialogText — movida desde stubs_helpers.cpp (refactor B3) ──
 // CSQuest::ShowDialogText @ 0x004017E0 (IDA: FUN_004017E0).
 void __fastcall CSQuest_ShowDialogText(int param_1)
 {
     char local_48[72];
 
-    // 2026-08-21: los accesos a la tabla de dialogos ahora van por la struct
-    // DIALOG_SCRIPT (ver globals.h).  Antes eran cuatro globals escalares
-    // sueltos indexados con aritmetica de puntero tipado -> lecturas fuera de
-    // rango.  El de m_lpszText acertaba de casualidad: `DAT_07cf5608` es
-    // DWORD* y `+ param_1 * 0x100` da los 0x400 bytes correctos.
+    // Los accesos a la tabla de dialogos van por la struct DIALOG_SCRIPT (ver
+    // globals.h).
     if (param_1 < 0 || param_1 >= DIALOG_SCRIPT_COUNT) return;   // guard de port
     const DIALOG_SCRIPT *dlg = &g_DialogScript[param_1];
 
@@ -1212,7 +1195,6 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
     if (charCount == 0) {
         // Sin respuestas: el binario ofrece la de cerrar, GlobalText[609]
         // (disasm 0x4018B9: `push offset GlobalText+2C9Ah`, y 0x2C9AC/300 = 609).
-        // 2026-08-21: el port usaba &DAT_07d566d0, que no sale de IDA.
         wsprintfA((LPSTR)local_48, s__d___s_005580b0, iVar3 + 1, GlobalText[609]);
         // Copy string to DAT_083a4348
         uint uVar4 = (uint)strlen(local_48) + 1;
@@ -1228,7 +1210,6 @@ void __fastcall CSQuest_ShowDialogText(int param_1)
     SetErrorMessage(0);
 }
 
-// ── CSQuest_clearQuest — movida desde stubs_externs.cpp (refactor B3) ──
 // Declaraciones adelantadas de los helpers definidos más abajo en este archivo
 void __fastcall CSQuest_clearQuest(int);
 void __fastcall FUN_00401af0(void*);
@@ -1254,11 +1235,9 @@ unsigned int __cdecl Packet_ParseType2(void *param_1) {
     return 1;
 }
 
-// ── FUN_00401af0 — movida desde stubs_misc_helpers.cpp (refactor B3) ──
-// FUN_00401af0 @ 0x00401AF0 — CSQuest: click sobre las respuestas del dialogo.
-// NO es char-select (el comentario anterior decia eso y era un mal-guess del
-// port): hit-test sobre las lineas de respuesta del panel de quest, y despacho
-// por m_iReturnForAnswer del dialogo activo.
+// FUN_00401af0 @ 0x00401AF0 — CSQuest: click sobre las respuestas del dialogo
+// (NO es char-select): hit-test sobre las lineas de respuesta del panel de
+// quest, y despacho por m_iReturnForAnswer del dialogo activo.
 //   1 = aceptar la quest  -> CheckRequestCondition(bLastCheck=1); si falla,
 //                            muestra el dialogo de rechazo y no manda nada.
 //   2 = cerrar            -> CSQuest::clearQuest
@@ -1276,10 +1255,7 @@ unsigned int __cdecl Packet_ParseType2(void *param_1) {
 // da Encrypt = 1 para el indice 162 (0xA2), o sea C3/C4 con serial.
 // El server (Protocol.cpp case 0xA2 -> CGQuestStateRecv) sólo lee QuestIndex y
 // avanza el estado él mismo; el byte 1 del final lo ignora.
-//
-// 2026-08-21: el port armaba `{0xC1,1,0,0xA2,0}` con un XOR a mano y lo mandaba
-// por un sendPkt propio — ni el opcode quedaba en su lugar ni el indice de
-// quest viajaba.  Ahora usa el sender estandar del proyecto.
+// Se manda con el sender estandar del proyecto.
 static void Quest_SendState(void *pThis)
 {
     BYTE pkt[5];
@@ -1375,11 +1351,6 @@ done:
     }
 }
 
-// ── Send_ActionRequest — movida desde stubs_game.cpp (refactor B3) ──
-// ═══════════════════════════════════════════════════════════════════════════════
-// END BATCH 16
-// ═══════════════════════════════════════════════════════════════════════════════
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // BATCH 17 — Other addresses: entity, combat, rendering, IME, chat, particles
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1440,15 +1411,9 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
 // IDA: STRUCT_ENCRYPT (0x0043D1D0)
 void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata) { return nullptr; }
 
-// ── FUN_0043de60 — movida desde stubs_render_helpers.cpp (refactor B3) ──
 // FUN_0043de60 @ 0x0043DE60 — NOP (empty function in original binary).
 // IDA live/raw: nullsub_2 (`retn 8`), not a send-queue drain.
 void FUN_0043de60(void) {}
-
-// ── CPacketQueue_PushPacket — movida desde stubs_linker.cpp (refactor B3) ──
-// ═════════════════════════════════════════════════════════════════════════════
-// Tanda 20 — stubs para el linker (cuerpos vacíos de funciones que se llaman pero todavía no están decompiladas)
-// ═════════════════════════════════════════════════════════════════════════════
 
 // CPacketQueue_PushPacket @ 0x0043DF90 (38 lines) — Net_EnqueuePacket: copies packet into 300-slot queue
 // Cola en this+0x401c, cada slot = 0x2008 bytes (flag de 4 bytes, largo de 4 bytes, 0x2000 de datos).
@@ -1480,8 +1445,6 @@ void __cdecl CPacketQueue_PushPacket(int param_1, int param_2, int param_3) {
     // queue full — packet dropped
 }
 
-// ── CreateAngle — movida desde stubs_externs.cpp (refactor B3) ──
-// ── Missing function stubs (all LNK2019 unresolved externals) ─────────────────
 // Movement / pathfinding
 // IDA: Movement_Tick (0x0043E050)
 // Calcula el ángulo (en grados, 0..360) del punto (x1,y1) al (x2,y2).
@@ -1520,7 +1483,6 @@ float __cdecl CreateAngle(float x1, float y1, float x2, float y2)
     return _DAT_00552848; // 90 degrees
 }
 
-// ── Angle_Clamp — movida desde stubs_misc2.cpp (refactor B3) ──
 // Angle_Clamp @ 0x0043E120 — Angle_Clamp(current, target, maxDelta)
 // Clampea la diferencia angular entre el ángulo actual y el objetivo a ±maxDelta,
 // y la devuelve como el ángulo nuevo módulo 360. Todos los ángulos en unidades del juego (0..0x167).
@@ -1558,11 +1520,10 @@ int __cdecl Angle_Clamp(int param_1, int param_2, int param_3) {
 // Avanza curAngle hacia tgtAngle a lo sumo 'step' grados, manejando la vuelta de 360.
 // Devuelve tgtAngle directo si está dentro del rango de step; si no, curAngle +/- step.
 //
-// BUG-FIX 2026-04-26 (audit #1): el decomp IDA original tenía 5 flags FPU x87
-// sin reconstruir (`v5/v7/v9/v12/v14`) → branches indefinidos. Reescrito con
-// math estándar "smooth turn-toward with 360° wrap", preservando la semántica
-// observable: snap si |delta| <= step, sino avanzar `step` grados por el camino
-// más corto (con wrap 0/360 respetado).
+// El decomp de IDA deja 5 flags FPU x87 sin reconstruir (`v5/v7/v9/v12/v14`):
+// esto es la reconstrucción con matemática estándar ("smooth turn-toward con
+// wrap de 360°"): snap si |delta| <= step, si no avanzar `step` grados por el
+// camino más corto.
 float __cdecl TurnAngle2(float a1, float a2, float a3)
 {
   if ( a1 < 0.0f ) a1 += 360.0f;
@@ -1590,8 +1551,7 @@ float __cdecl TurnAngle2(float a1, float a2, float a3)
   }
 }
 
-// ── SetPlayerAttack — movida desde stubs_game.cpp (refactor B3) ──
-// SetPlayerAttack @ 0x00444410 (1627 bytes) — port FIEL desde IDA (2026-05-02).
+// SetPlayerAttack @ 0x00444410 (1627 bytes) — port FIEL desde IDA.
 // Setea la animación de ataque + el sonido de la entidad según:
 //   - Entity type (c+2): non-player (39/40/51/302/default) vs player (390)
 //   - Para el jugador: helper (c+696)=818/819 → a distancia, si no las armas izquierda/derecha
@@ -1788,7 +1748,6 @@ LABEL_85:
     ++*(unsigned char*)(c + 771);
 }
 
-// ── SetPlayerMagic — movida desde stubs_game.cpp (refactor B3) ──
 // SetPlayerMagic @ 0x00444a80 (38 líneas) — setea la animación de casteo en la entidad del héroe
 // Si el tipo de entidad != 0x186: alterna la acción 3/4 según el contador de combo % 3
 // If entity type == 0x186 (special): SetAttackSpeed, class-specific action (0x52/0x53 random, 0x56 swim, 0x5b certain classes)
@@ -1829,16 +1788,15 @@ void __cdecl SetPlayerMagic(int param_1) {
     SetAction((int)c, (int)(v + 0x52));
 }
 
-// ── SetPlayerShock — movida desde stubs_misc2.cpp (refactor B3) ──
 // SetPlayerShock @ 0x00444B60 — SetPlayerShock(DWORD c, int Hit)
 // Reproduce la reacción de "me pegaron" (anim 130 para el jugador, anim 5 para los monstruos) más
 // a hit-grunt sound (PlayBuffer). Port FIEL desde IDA decompile (546 bytes).
 //
-// 2026-05-08: portada como parte de la importación de bugfixes del DLL companion. El parche
-// `IgnoreRandomStuck` (Patchs.cpp:291) saltea el *shock aleatorio del 50%* que se tira en
-// ReceiveAttackDamage cuando la entidad es el jugador (tipo 390) — ése es un
-// arreglo de gameplay, no de esta función. Los llamadores que quieran el comportamiento
-// IgnoreRandom deberían gatear con `*(WORD*)(c+2) != 390` antes de llamar.
+// El parche `IgnoreRandomStuck` del DLL companion (Patchs.cpp:291) saltea el
+// *shock aleatorio del 50%* que se tira en ReceiveAttackDamage cuando la
+// entidad es el jugador (tipo 390) — ése es un arreglo de gameplay, no de esta
+// función. Los llamadores que quieran el comportamiento IgnoreRandom deberían
+// gatear con `*(WORD*)(c+2) != 390` antes de llamar.
 //
 // Entity offsets:
 //   +2    short  entity_type        (390 = player)
@@ -2081,12 +2039,6 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
     SetCharacterScale((int)c);
 }
 
-// ── FUN_0046c7f0 — movida desde stubs_game.cpp (refactor B3) ──
-// FUN_0046c7f0 @ 0x0046C7F0 (~176 lines) — directional hit particles with blood
-// AngleMatrix + VectorRotate para la dirección del impacto. Offset aleatorio por eje.
-// param_1: 0=blood (red/green, type 0x4AB + AddTerrainLight), 1=hit spark (type 0x4C4), 2=hit spark variant
-// param_2: puntero base de la entidad (posición en +0x10/+0x14/+0x18, ángulos en +0x1C, luz en +0xE8)
-// param_3/4/5: direction angles for AngleMatrix
 // FUN_0046c7f0 @ 0x0046C7F0 — Object_SpawnAmbientFX(kind, o, dx, dy, dz)
 // Port FIEL de IDA `sub_46C7F0`. Es el spawner de fuego/humo de los objetos
 // del mundo: lo llama `MoveObjects` (0x4FDC00) para los braseros, la forja del
@@ -2101,12 +2053,6 @@ void __cdecl ChangeCharacterExt(int Key, BYTE *Equipment) {
 // (`o+28`) — así el efecto sale del punto correcto del modelo (la boca de la
 // chimenea, la punta del farol). Luego se le suma la posición del objeto
 // (`o+16`) y un jitter de ±8 por eje.
-//
-// 2026-08-11: la versión anterior era una reinterpretación como "blood/spark"
-// que (a) construía la matriz con (dx,dy,dz) COMO SI FUERAN ÁNGULOS y rotaba
-// un offset (0,0,0) — o sea el desplazamiento se perdía y todo salía en el
-// origen del objeto — y (b) usaba tipos de partícula 0x4AB/0x4C4 en lugar de
-// 1195/1220. Resultado: ningún humo en el mundo.
 void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4, float param_5) {
     float *a2 = (float *)param_2;
     if (!a2) return;
@@ -2141,14 +2087,12 @@ void __cdecl FUN_0046c7f0(int param_1, int param_2, float param_3, float param_4
     }
 }
 
-// ── CheckSprites — movida desde stubs_misc2.cpp (refactor B3) ──
 // CheckSprites @ 0x00479790 — Effect_UpdateAll
 // Marca todos los slots activos del pool de personajes/efectos (DAT_07c85890, stride 0x1BC)
 // para el tick de render, poniendo el byte [+0x160] = 1 en cada entrada activa (flag de activo distinto de cero).
 // Se llama una vez por frame antes del loop de render, para que cada slot se procese exactamente una vez.
 void CheckSprites(void)
 {
-    // Pool fix 2026-04-27: AUTO-SKIP previo bloqueaba el dirty-mark.
     char *pcVar1 = DAT_07c85890;
     for (int i = 0; i < 1002; ++i, pcVar1 += 0x1bc) {
         if (*pcVar1 != '\0')
@@ -2156,15 +2100,12 @@ void CheckSprites(void)
     }
 }
 
-// ── BuxConvert_0 — movida desde stubs_misc2.cpp (refactor B3) ──
-// ── Item data helper stubs ────────────────────────────────────────────────────
 // BuxConvert_0 @ 0x00479910 — XOR-cipher buffer in-place (3-byte key: FC CF AB)
 void __cdecl BuxConvert_0(int buf, int len) {
     for (int i = 0; i < len; i++)
         *(BYTE *)(buf + i) ^= (BYTE)DAT_00559bb4[i % 3];
 }
 
-// ── Stats_CalcMagicDmgRange — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DAE0 @ 0x0047DAE0 (618 bytes) — Stats_CalcMagicDmgRange.
 // Calcula el daño mágico mínimo/máximo en this[+70]/this[+72]:
 //   min = Energy/9
@@ -2245,7 +2186,6 @@ void __cdecl GetMagicSkillDamage(DWORD This, int iType, int* piMinDamage, int* p
     *piMaxDamage = (damage >> 1) + damage + *(unsigned short*)(This + 72);
 }
 
-// ── Stats_CalcAddStrength — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DD50 @ 0x0047DD50 (39 bytes) — Stats_CalcAddStrength (or similar).
 // Computes a derived stat from CharacterMachine fields:
 //   this[29] = 5*this[7] + (this[10] >> 2) + (this[11] * 3) / 2
@@ -2355,7 +2295,6 @@ int __cdecl CalculateAttackSpeed(int param_1) {
     return 0;
 }
 
-// ── Stats_CalcDefense — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47DFE0 @ 0x0047DFE0 (369 bytes) — Stats_CalcDefense.
 // Calcula el stat de defensa en this[+76]:
 //   class==2 (Wizard): defense = Vit/4 (this[+22]>>2)
@@ -2405,7 +2344,6 @@ int __cdecl Stats_CalcDefense(int param_1) {
     return PlusSpecialPercent((short*)defPtr, 70, param_1 + 1216, 10);  // Ring2
 }
 
-// ── Stats_CalcDefenseRate — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47E160 @ 0x0047E160 (383 bytes) — Stats_CalcCritBase / DefRate.
 // Calcula el stat de tasa de defensa en this[+78]:
 //   class 0 (Knight): Vit/4   (>>2)
@@ -2479,7 +2417,6 @@ int __cdecl Stats_CalcDefenseRate(int param_1) {
     return *(short*)(param_1 + 78);
 }
 
-// ── Stats_ExtraOptionEquip6 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47E2E0 @ 0x0047E2E0 (46 bytes) — Stats_CalcExtraOption1.
 // Iterates 6 equipment slots (CharacterMachine + 672 .. + 1012, stride 68
 // bytes = tamaño de ITEM). Por cada slot con Option1 (byte +26) seteado, llama a
@@ -2498,7 +2435,6 @@ int __cdecl Stats_ExtraOptionEquip6(short *param_1) {
     return (int)(unsigned char)last;
 }
 
-// ── Stats_ExtraOptionGlovesWings — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // sub_47E310 @ 0x0047E310 (63 bytes) — Stats_CalcExtraOption2.
 // Lee el Option1 (byte +26 dentro de ITEM) de los slots de Guantes y Alas. Por cada uno:
 //   Guantes (Option1 en +970, ITEM en +944): this+82 = FUN_0047d000(guantes)
@@ -2516,7 +2452,6 @@ int __cdecl Stats_ExtraOptionGlovesWings(int param_1) {
     return (int)(unsigned char)v;
 }
 
-// ── Terrain_QuadEqual — movida desde stubs_externs.cpp (refactor B3) ──
 // Terrain_QuadEqual @ 0x004F9C70 — Terrain_QuadEqual(ptr1, ptr2_int) → compares 4 floats within epsilon.
 // Firma de Ghidra: (int param_1, float *param_2) pero en functions.h está declarada como (int,int,int,int).
 // Callers pass two int args (the float ptr pair). Match declared signature.
@@ -2537,16 +2472,14 @@ int __cdecl Terrain_QuadEqual(int param_1, int param_2, int param_3, int param_4
     return 1;
 }
 
-// ── VectorMA — movida desde stubs_helpers.cpp (refactor B3) ──
 // VectorMA @ 0x004F9CE0 — VectorMA(va, scale, vb, vc): vc = va + scale*vb
-// IDA-ported: 3-vector multiply-add (Quake-style). Was stub copying in_rel.
+// IDA-ported: 3-vector multiply-add (Quake-style).
 void __cdecl VectorMA(float *va, float scale, float *vb, float *vc) {
     vc[0] = scale * vb[0] + va[0];
     vc[1] = scale * vb[1] + va[1];
     vc[2] = scale * vb[2] + va[2];
 }
 
-// ── Vec3_Normalize — movida desde stubs_helpers.cpp (refactor B3) ──
 // Vec3_Normalize @ 0x004F9D60 — Vec3_Normalize(vec[3])
 // Normalises a 3-component float vector in-place.
 void __cdecl Vec3_Normalize(float *vec) {
@@ -2554,10 +2487,6 @@ void __cdecl Vec3_Normalize(float *vec) {
     if (len > 0.0f) { vec[0] /= len; vec[1] /= len; vec[2] /= len; }
 }
 
-// ── Collision_SegmentToOBB — movida desde stubs_mouse_hover.cpp (refactor B3) ──
-// Collision_SegmentToOBB @ 0x00513260 — Entity_ViewportCheck(viewport, projection)
-// Testea si la entidad descrita por 12 dwords (que el llamador copió de entity+0x130) está dentro
-// del viewport actual, usando los punteros de matriz dados. Devuelve 1 si es visible, 0 si se descarta.
 // Collision_SegmentToOBB @ 0x00513260 - test de interseccion SEGMENTO vs OBB por ejes
 // separadores (SAT).  El "OBB" son los 12 floats que `Calc_RenderObject` deja en
 // `objeto + 0x130` via `sub_4404E0`: centro (box[0..2]) y tres semi-ejes
@@ -2567,10 +2496,6 @@ void __cdecl Vec3_Normalize(float *vec) {
 //     cross(dir, eje0), cross(dir, eje1), cross(dir, eje2), eje0, eje1, eje2
 // con `dir = rayTarget - rayOrigin`.  La proyeccion de cada uno la hace
 // `sub_5130F0` (FUN_005130f0), que ya estaba portada fiel mas arriba.
-//
-// 2026-09-04: antes era `return 1` con el comentario "STUB: frustum cull" -- o
-// sea CUALQUIER objeto daba hit, y como el unico consumidor real
-// (SpecialObject_HoverTest) estaba neutralizado, no se notaba.
 bool __cdecl Collision_SegmentToOBB(float *rayOrigin, float *rayTarget, const float *box)
 {
     if (!rayOrigin || !rayTarget || !box) return false;

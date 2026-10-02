@@ -211,7 +211,7 @@ int Scene_CharSelect(void)
     if (0x32 < DAT_05826cb0) {
         DAT_083a42ea = 0;
         DAT_07e11d6e = 0;
-        // BUG-FIX: 0x3f800000 son los bits de 1.0f, no la magnitud.
+        // 0x3f800000 son los bits de 1.0f, no la magnitud.
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL_BeginViewport(0, 0, 0x280, 0x1e0);
         Camera_BuildMouseRay(DAT_083a427c, DAT_083a4278, (float *)&DAT_083a4110);
@@ -327,11 +327,9 @@ int Scene_CharSelect(void)
             pcVar5 = (char*)DAT_07abf5d0;
             do {
                 if (pcVar5[iVar9] != '\0') {
-                    // ── BUG-FIX: fStack_5c/uStack_58/fStack_54 son 3 variables LOCALES
-                    // separadas. MSVC no garantiza que estén contiguas en stack, así que
-                    // pasar &fStack_5c a Camera_ProjectWorldToScreen (que lee [0]/[1]/[2]) producía
-                    // proyecciones erráticas (TPos[2] no matcheaba con M*input).
-                    // Usamos un array contiguo posBuf[3] para garantizar layout.
+                    // ── fStack_5c/uStack_58/fStack_54 del decomp son 3 locales separadas que MSVC
+                    // no garantiza contiguas; Camera_ProjectWorldToScreen lee [0]/[1]/[2], así que
+                    // se usa un array contiguo posBuf[3].
                     float posBuf[3];
                     posBuf[0] = *(float *)(pcVar5 + iVar9 + 0x10);
                     posBuf[1] = *(float *)(pcVar5 + iVar9 + 0x14);
@@ -350,11 +348,8 @@ int Scene_CharSelect(void)
                             float* M = (float*)&CameraMatrix;
                         }
                     }
-                    // ── BUG-FIX: local_70 está declarado float (línea 202) pero
-                    // Camera_ProjectWorldToScreen escribe un int en él vía cast pointer. La lectura
-                    // posterior `(int)local_70` hace conversión FPU float→int sobre
-                    // el bit-pattern denormal, dando ~0 y poniendo los nombres en
-                    // y=-15. Usamos un int local separado para la proyección.
+                    // ── Camera_ProjectWorldToScreen escribe un int: se usa un int local para la
+                    // proyección (en el decomp local_70 era float y se leía como float→int).
                     int nameProjY = 0;
                     Camera_ProjectWorldToScreen(posBuf, &local_6c, &nameProjY);
                     {
@@ -483,7 +478,7 @@ int Scene_CharSelect(void)
                 GL_DrawTexture(0x1a, 363.0f, (float)(int)fVar1, 20.0f, 19.0f, 0.0f, 0.0f, 0.625f, 0.59375f, '\x01', '\x01');
             }
             if ((char)DAT_07abf20c == '\0') {
-                // BUG-FIX: 0x3f4ccccd = 0.8f bits, pasado como int → 1062836429.0f.
+                // 0x3f4ccccd son los bits de 0.8f (pasado como int sería 1062836429.0f).
                 glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
                 GL_DrawRect(364.0f, (float)(int)local_70, 20.0f, 19.0f);
                 glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -495,10 +490,8 @@ int Scene_CharSelect(void)
                 GL_DrawTexture(0x1b, 384.0f, (float)(int)fVar1, 20.0f, 19.0f, 0.0f, 0.0f, 0.625f, 0.59375f, '\x01', '\x01');
             }
             if (uVar8 <= (DAT_07abf20c & 0xff)) {
-                // BUG-FIX 2026-07-17: la Y del overlay de "flecha derecha bloqueada" era
-                // 0.0f (se dibujaba fuera de la flecha) → la flecha no se veía bloqueada
-                // al llegar al máximo de clase disponible (ej: Fairy Elf sin poder ir a MG).
-                // IDA RenderColor(384, dialogY+196, ...) → usa la misma Y que la izquierda.
+                // IDA RenderColor(384, dialogY+196, ...): el overlay de "flecha derecha
+                // bloqueada" usa la misma Y que la izquierda.
                 glColor4f(0.0f, 0.0f, 0.0f, 0.8f);
                 GL_DrawRect(384.0f, (float)(int)local_70, 20.0f, 19.0f);
                 glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -537,9 +530,8 @@ int Scene_CharSelect(void)
 
             SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
             DAT_00559c8c = 0x49;
-            // BUG-FIX 2026-07-17: DAT_005616b0 es DWORD (unsigned); `-1 < DAT_005616b0`
-            // convertía -1 a 0xFFFFFFFF → comparación SIEMPRE falsa → RenderInputText
-            // (el campo del nombre) nunca se dibujaba. IDA: `if (dword_5616B0 >= 0)`.
+            // IDA: `if (dword_5616B0 >= 0)`. DAT_005616b0 es DWORD (unsigned): comparar
+            // con signo, `-1 < DAT_005616b0` sería siempre falso.
             if ((int)DAT_005616b0 >= 0)
                 UI_RenderInputField(0x11d, iVar9 + 0xb4, 0);
             UI_RenderText(0x11d, iVar9 + 200, DAT_07d2b494 + (DAT_07abf20c & 0xff) * 300, (LPSIZE)0x0, '\0', 0);
@@ -558,12 +550,8 @@ int Scene_CharSelect(void)
                 _DAT_07abf13c = (float)(fVar11 * (float10)_DAT_00552530);
                 _DAT_07abf140 = (float)(fVar11 * (float10)_DAT_00552504);
                 Matrix_BuildFromEuler((float *)&DAT_083a42b8, afStack_30);   // AngleMatrix(CameraAngle, matrix)
-                // BUG-FIX 2026-07-17: la entrada in1={-8,-800,79} y la salida de
-                // VectorIRotate estaban en locals SEPARADOS no contiguos (fStack_5c/
-                // uStack_58/fStack_54 y tStack_68.cx/cy + fStack_60), y la salida se leía
-                // con (float)cast (convert) en vez de reinterpret de los bits float →
-                // CameraPosition del preview quedaba en una posición basura → el char se
-                // renderizaba fuera del viewport (recuadro vacío). Arrays contiguos + IDA-fiel.
+                // La entrada in1={-8,-800,79} y la salida de VectorIRotate van en arrays
+                // contiguos y la salida se lee reinterpretando los bits float (IDA-fiel).
                 {
                     float camIn[3]  = { -8.0f, -800.0f, 79.0f };   // in1
                     float camOut[3];                                // VectorIRotate out
@@ -574,8 +562,8 @@ int Scene_CharSelect(void)
                     _DAT_083a42dc = camOut[2] + _DAT_07abf068;      // CameraPosition[2]
                 }
                 GL_BeginViewport(0x11d, iVar9 + 0x5a, 0x4a, 0x4f);
-                // BUG-FIX 2026-04-20: _DAT_07abf0?? están tipados `float`;
-                // asignar 0x40a00000 / 0x3f800000 hace int→float (1e9), no 5.0f / 1.0f
+                // _DAT_07abf0?? están tipados `float`: se asignan los valores (5.0f / 1.0f),
+                // no los bit-patterns 0x40a00000 / 0x3f800000.
                 _DAT_07abf06c = 0.0f; _DAT_07abf070 = 5.0f; _DAT_07abf05c = 1.0f;
                 _DAT_07abf138 = 0.8f; _DAT_07abf13c = 0.8f; _DAT_07abf140 = 0.8f;
                 RenderCharacter((undefined4 *)&DAT_07abf050, (undefined4 *)&DAT_07abf050, (undefined4 *)0x0);
@@ -605,10 +593,8 @@ int Scene_CharSelect(void)
             } while (--iVar9 != 0);
 
             // Create button brightness
-            // BUG-FIX (2026-04-21): uVar* are uint holding bit-patterns 0x3f800000 (1.0f)
-            // / 0x3f000000 (0.5f). glColor3f expects GLfloat → int→float conv gives
-            // 1065353216.0f / 1056964608.0f → OpenGL clamps to 1.0 → always white
-            // regardless of empty-slot state. Use float literals.
+            // Los uVar* del decomp eran uint con bit-patterns (0x3f800000 = 1.0f,
+            // 0x3f000000 = 0.5f); glColor3f espera floats: se usan literales float.
             float fR, fG, fB;
             if (bVar10) { fR = fG = fB = 1.0f; }
             else         { fR = fG = fB = 0.5f; }
@@ -618,11 +604,8 @@ int Scene_CharSelect(void)
             local_6c = DAT_005616a4;
             GL_DrawTexture(0x10, 221.0f, (float)DAT_005616a4, 199.0f, 109.0f, 0.0f, 0.0f, 0.77734375f, 0.8515625f, '\x01', '\x01');
             local_70 = (float)(iVar9 + 0x4b);
-            // BUG-FIX 2026-04-26: el hover-text "NEW CHARACTER" (sprite 0x11) se
-            // mostraba aunque la cuenta tuviera los 5 slots ocupados. El brightness
-            // del botón base (sprite 0x10) ya gateaba en `bVar10` (hay slot vacío),
-            // pero el render del label hover faltaba el mismo guard. Original solo
-            // muestra hover si quedaba algún slot libre.
+            // Como el original, el hover-text "NEW CHARACTER" (sprite 0x11) sólo se muestra
+            // si queda algún slot libre (`bVar10`, el mismo gate del botón base 0x10).
             if (bVar10 && ((0x11d < DAT_083a427c) && (DAT_083a427c < 0x164)) &&
                 (((int)local_70 <= DAT_083a4278) && (DAT_083a4278 < iVar9 + 100)))
             {
@@ -630,7 +613,7 @@ int Scene_CharSelect(void)
             }
 
             bVar10 = (DAT_005616ac == -1);
-            // Delete char button brightness (same BUG-FIX as above — bit-pattern→float conv)
+            // Delete char button brightness (literales float, igual que arriba)
             if (bVar10) { fR = fG = fB = 0.5f; }
             else         { fR = fG = fB = 1.0f; }
             glColor3f(fR, fG, fB);

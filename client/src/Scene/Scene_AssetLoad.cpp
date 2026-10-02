@@ -1,5 +1,4 @@
 // Scene_AssetLoad.cpp
-// Extracted from stubs_mouse_hover.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"

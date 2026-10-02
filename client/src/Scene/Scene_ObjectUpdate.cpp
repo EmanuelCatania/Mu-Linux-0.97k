@@ -1,14 +1,14 @@
 // Scene_ObjectUpdate.cpp
 //
-// Extracted from stubs_game.cpp.  Owns per-frame update/render dispatch for
-// world scene objects and ambient bugs.  Function comments retain IDA provenance.
+// Update/render por frame de los objetos de la escena y de los bugs ambientales.
 
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
 
 extern void __cdecl Effect_PhysicsTick(DWORD Object);
-// MoveObject_PerWorld @ 0x004FDC00 (~608 lines) — SUMMARY STUB
+// MoveObject_PerWorld @ 0x004FDC00 (~608 lines) — SUMMARY STUB, sin llamadores:
+// la copia viva es el port de FUN_004fdc00 más abajo en este archivo.
 // Per-world object animation. Per-frame for each visible scene object.
 // World 9: random terrain lights. World 0: toggle objects by HeroTile.
 // Then: Alpha(), BMD setup, animate, render via RenderPartObject.
@@ -92,9 +92,7 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
                  (void*)(objPtr + 0x106), animSpeed);
 
     // ── Escena de login / char-select (IDA sub_4FDC00, bloque previo al switch)
-    // Este bloque vivía en la copia mínima de `FUN_004fdc00` (stubs_linker.cpp),
-    // que era la que realmente se llamaba. Al unificar las dos copias se trae
-    // acá, en el orden del binario: después de PlayAnimation, antes del switch.
+    // En el orden del binario: después de PlayAnimation, antes del switch.
     //   160 = Logo01 (cielo) y 161 = Logo02 (olas): scroll de la V de textura.
     //   162 = Logo03 (banner MU): rampa de Light + alpha-scalar. Sin esto el
     //         banner queda con bodyLight=(0,0,0) → rectángulo negro.
@@ -442,16 +440,13 @@ float* __cdecl MoveObject_PerWorld(float param_1) {
 int __stdcall MoveHeavenThunder(void) {
     // Port fiel de IDA MoveHeavenThunder (0x004FED90).
     //
-    // Antes era un ESQUELETO: calculaba la probabilidad y devolvia 1/0, pero las
-    // dos llamadas que hacen el trabajo estaban solo como comentario
-    // ("In original: complex phantom-register-based call"). La que faltaba y se
-    // nota es `CreateEffect(182, ...)`: el tipo 182 es el modelo `cloud`
+    // `CreateEffect(182, ...)`: el tipo 182 es el modelo `cloud`
     // (`OpenWorldModels` case 10 hace `AccessModelWithTextures(182, "Data\Object11", "cloud", -1)`
     // + `OpenJPG("Effect\clouds.jpg", 1268)`), y `RenderEffects` lo dibuja por su
     // `case 182:`. O sea ESTE es el generador de las nubes de Icarus.
     //
     // Devuelve `objectCount` — un indice de objeto al azar que MoveObjects usa
-    // para elegir a cual colgarle el rayo. El esqueleto devolvia 1 fijo.
+    // para elegir a cual colgarle el rayo.
     int objectCount = 0;
 
     if (rand() % 50) return 0;
@@ -549,7 +544,7 @@ int __stdcall MoveHeavenThunder(void) {
 
 // MoveObjects @ 0x004FF260 (~169 lines) — per-frame object update dispatcher
 // World 10: MoveHeavenThunder. World 11..16: ambient particles.
-// Iterates all object lists calling MoveObject_Special or MoveObject_PerWorld.
+// Iterates all object lists calling MoveObject_Special or FUN_004fdc00 (el tick por objeto).
 void __stdcall MoveObjects(void) {
     // 0x004FF260 — Per-frame object update dispatcher.
     // World 10: calls MoveHeavenThunder. World 11..16: spawn ambient particles.
@@ -593,12 +588,9 @@ void __stdcall MoveObjects(void) {
             char* pcVar6;
             char bucketFlag = *(char*)(puVar4 + 2);  // +8 bytes: bucket type flag
 
-            // 2026-05-07: guard against corrupt linked-list pointers.
-            // The bucket grid's `next` field (+0x1B8) is sometimes garbage
-            // (some unidentified path leaves a dangling pointer in a slot).
-            // Wrap the deref in SEH so an AV reading the corrupt node terminates
-            // the bucket walk instead of taking down the process. Range check +
-            // iteration cap on top, to avoid loops that don't actually fault.
+            // Guard contra punteros corruptos en la lista de buckets: el deref va dentro de
+            // SEH, así un AV corta el recorrido del bucket en vez de tirar el proceso. Más
+            // range check + tope de iteraciones para los loops que no fallan.
             #define MOV_OBJ_VALID_PTR(p) \
                 ((uintptr_t)(p) >= 0x00010000u && (uintptr_t)(p) < 0x80000000u)
             int bucketIter = 0;
@@ -623,24 +615,11 @@ void __stdcall MoveObjects(void) {
                 while (pcVar6 != NULL && MOV_OBJ_VALID_PTR(pcVar6) &&
                        ++bucketIter < kBucketIterMax) {
                     if (*pcVar6 != '\0' && pcVar6[0x160] != '\0') {
-                        // 2026-08-12 — BUG DE CONVERSIÓN, causa raíz de que
-                        // NINGÚN objeto del mundo ejecutara su tick.
-                        //
-                        // `FUN_004fdc00` tiene la firma `(float o)` — un
-                        // artefacto de Hex-Rays: el parámetro es un PUNTERO y
-                        // adentro se usa siempre como `LODWORD(o)`, o sea por
-                        // sus BITS. El call site hacía `(float)(DWORD)pcVar6`,
-                        // que convierte el puntero NUMÉRICAMENTE: 0x12E37C8C
-                        // (317752972) pasaba a 3.1775e8f, cuyos bits son
-                        // 0x4D9749BE. `LODWORD(o)` recuperaba esa basura y la
-                        // deferenciaba → AV que el `__except` de abajo se
-                        // tragaba en silencio, abortando el walk del bucket.
-                        // (El comentario "corrupt linked-list pointers" de ese
-                        // SEH describía justamente ESTE puntero, no la lista.)
-                        //
-                        // Mismo primo del patrón `(float)(uintptr_t)` que
-                        // corrompía los joints (ver CLAUDE.md 2026-08-10).
-                        // El fix es reinterpretar los bits, no convertir.
+                        // `FUN_004fdc00` tiene la firma `(float o)` — un artefacto de Hex-Rays: el
+                        // parámetro es un PUNTERO y adentro se usa siempre como `LODWORD(o)`, o sea
+                        // por sus BITS. Hay que reinterpretar los bits del puntero, no convertirlo
+                        // numéricamente (`(float)(DWORD)p` deja basura que el `__except` de abajo se
+                        // tragaría en silencio).
                         {
                             float __o;
                             DWORD __p = (DWORD)(uintptr_t)pcVar6;
@@ -649,12 +628,8 @@ void __stdcall MoveObjects(void) {
                         }
                         DAT_083a3fec++;
 
-                        // 2026-09-03 -- RESTAURADO.  Otro agente removio este
-                        // bloque concluyendo que "IDA 0x004FDC00 no tiene rama
-                        // para World 10".  Eso es cierto para `sub_4FDC00` (el
-                        // tick por objeto) pero el bloque NO vive ahi: vive en
-                        // **MoveObjects (0x004FF260)**, la funcion que contiene
-                        // este mismo loop, y ahi si esta, literal:
+                        // Este bloque vive en **MoveObjects (0x004FF260)**, la funcion que contiene
+                        // este mismo loop (no en `sub_4FDC00`, el tick por objeto), literal:
                         //
                         //   if ( World == 10 && objCount ) {
                         //     if ( rand() % 10 || (v5 = *(_WORD *)(v4 + 2), v5 < 0) || v5 > 5 )
@@ -669,9 +644,7 @@ void __stdcall MoveObjects(void) {
                         //     }
                         //   }
                         //
-                        // Son los rayos de tormenta que caen sobre los objetos
-                        // del mapa en Icarus; el usuario confirmo en runtime que
-                        // funcionaban ("ahi probe los truenos y aparecieron").
+                        // Son los rayos de tormenta que caen sobre los objetos del mapa en Icarus.
                         if (World == 10 && Scale != 0.0f) {
                             int r2 = rand();
                             if (r2 % 10 == 0 &&
@@ -710,19 +683,16 @@ void __stdcall MoveObjects(void) {
             bucketsLeft--;
         } while (bucketsLeft != 0);
 
-        // BUG-FIX 2026-04-28: bound era abs addr 0x083a121b (= DAT_083a121c en
-        // el binario original = end of g_ObjectBucketGrid[0x1000]). Cambiamos
-        // a comparación contra el array end real.
+        // El bound es el final real de g_ObjectBucketGrid (en el binario, la dirección
+        // absoluta 0x083a121b).
         if ((char*)puVar4 >= ((char*)&g_ObjectBucketGrid[0]) + 0x1000) {
             return;
         }
     } while (true);
 }
 
-// MoveBugs @ 0x005001F0 — PORT FIEL 1:1 desde IDA (2026-07-16).
-// Reemplaza el SUMMARY STUB previo (que omitía la rama LABEL_16 de las monturas
-// e inventaba un "hover acotado" para el hada). Este es traducción directa de
-// IDA sub_5001F0. Butterfly/mount/ambient update: chequea owner vivo, fade de
+// MoveBugs @ 0x005001F0 — PORT FIEL 1:1 desde IDA (sub_5001F0).
+// Butterfly/mount/ambient update: chequea owner vivo, fade de
 // alpha, copia pos del owner, dispatch de acción por CurrentAction del owner,
 // avanza el BMD, y para el hada/uniria-helper (816/817) hace el follow-movement.
 //
@@ -881,7 +851,7 @@ void __stdcall MoveBugs(void) {
                 float v41 = CreateAngle(x1, v30, x2, y2);   // Movement_Tick (CreateAngle)
                 *(float*)(e + 0x24) = TurnAngle2(*(float*)(e + 0x24), v41, 20.0f);
             }
-            // PORT FIEL 1:1 (2026-07-18): el ASM (0x5007DB) escribe la matriz de
+            // PORT FIEL 1:1: el ASM (0x5007DB) escribe la matriz de
             // AngleMatrix en `[esi+0x90]` (campo scratch), NO en 0x24. Hex-Rays lo
             // decompiló como `(float*)v1+9`=0x24 pero es un artefacto: el disasm real
             // es `lea ebx,[esi+90h]`. angleZ (0x24) queda intacto → TurnAngle acumula
@@ -917,8 +887,8 @@ next_bug:
     } while ((int)(uintptr_t)v0 < (int)(uintptr_t)endp);
 }
 
-// === FUN_004fdc00 / MoveObjects (0x004FDC00) — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
-// Estaba gateada por IDA_PORT_004FDC00, que esta definida: el gate era ruido.
+// === FUN_004fdc00 / MoveObjects (0x004FDC00) ===
+// Gateada por IDA_PORT_004FDC00, que esta definida.
 // Es la copia VIVA: el `MoveObject_PerWorld` de mas arriba en este archivo es
 // el resumen viejo y no tiene llamadores (su unico call site, en
 // Scene_ObjectLegacy.cpp, esta bajo `#ifndef IDA_PORT_004FDC00`).
@@ -926,7 +896,7 @@ next_bug:
 #define LODWORD(x)  (*(unsigned int*)&(x))
 #define Models      DAT_05828d58
 #define EditFlag    DAT_07e11d30
-extern void __cdecl Effect_PhysicsTick(DWORD Object);   // World-4 gate FX (stubs_game.cpp)
+extern void __cdecl Effect_PhysicsTick(DWORD Object);   // World-4 gate FX (Scene_CharSelect_Nav.cpp)
 extern "C" void DbgLogPublic(const char*);        // [DIAG activación temporal]
 void __cdecl FUN_004fdc00(float o)
 {

@@ -1,7 +1,6 @@
 // Scene_ObjectInteraction.cpp
 //
-// Extracted from stubs_game.cpp.  Owns special scene-object updates and
-// mouse picking.  Entry-point comments retain their IDA symbols/addresses.
+// Updates de objetos especiales de la escena y mouse picking.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -12,11 +11,6 @@ extern void ClearActionObject(void);
 // Gate objects in castle siege world. Decrements counter, plays sound 0x6c,
 // spawns 10 dust particles at height 80, clears terrain on completion.
 // MoveObject_Special (0x004FA5F0) vive en Render/Render_LegacyLinker.cpp.
-//
-// 2026-09-26: aca habia un puente con ese nombre cuyo cuerpo era
-//     MoveObject_Special(param_1); return;   + 80 lineas despues del return
-// o sea delegaba y dejaba la version vieja como codigo inalcanzable.  Nadie
-// lo llamaba: los cuatro call sites van al FUN_ directo.  Eliminado.
 
 // PickObject_Mouse @ 0x004FA7C0 (~90 lines) — mouse-picking scene objects
 // Iterates 0x10 * 0x10 object lists. Per visible object:
@@ -41,8 +35,8 @@ char* __stdcall PickObject_Mouse(void) {
         int cellCount = 0x10;
         do {
             char* obj = (char*)(DWORD)*pCell;
-            // 2026-05-07: SEH-wrap to survive corrupt next pointers in the
-            // bucket linked list (same root cause as the MoveObjects guard).
+            // SEH alrededor del recorrido de la lista de buckets (punteros next corruptos),
+            // igual que el guard de MoveObjects.
             __try {
             int pickIter = 0;
             while (obj != NULL && pickIter++ < 4096 &&

@@ -58,8 +58,8 @@ void CServerSelWin_UpdateWhileActive(void)
     int iVar10 = 0;   // group2 count
 
     // IDA: for ( i = 0; i < 13550; i += 542 )  — 25 iterations (0x34ee / 0x21e).
-    // BUG-FIX: `(&DAT_083a45ec)[i]` es DWORD* (scale 4). IDA usa byte arith:
-    //   `*((_BYTE*)&unk_83A45EC + i)`. Sin el cast leíamos memoria equivocada.
+    // `(&DAT_083a45ec)[i]` sería DWORD* (scale 4); IDA usa byte arith:
+    //   `*((_BYTE*)&unk_83A45EC + i)`.
     for (int iVar12 = 0; iVar12 < 0x34ee; iVar12 += 0x21e) {
         if (*((unsigned char*)&DAT_083a45ec + iVar12) != '\0') {
             // Check if server name ends with '2' → group 2
@@ -82,9 +82,8 @@ void CServerSelWin_UpdateWhileActive(void)
     if (iVar12 > 0xdc) iVar12 = 0xdc;
     int iVar4 = ((iVar8 - iVar10) - 1) * 0x10 + iVar12;
 
-    // BUG-FIX: guardar Y base ANTES de que Pass 2 mute iVar12/iVar4.
+    // Y base guardada ANTES de que Pass 2 mute iVar12/iVar4.
     // IDA: v38 = v3 (non-PVP base), v40 = v7 (PVP base) — usadas en Pass 3.
-    // Antes Pass 3 leía iVar12/iVar4 post-Pass-2 → hit-area 16px debajo del render.
     const int iYNonPvpBase = iVar12;
     const int iYPvpBase    = iVar4;
 
@@ -172,11 +171,9 @@ void CServerSelWin_UpdateWhileActive(void)
         }
         local_830 += 0x21e;
         local_834++;
-    // BUG-FIX: bound absoluto 0x83a7adb era la dirección ORIGINAL del binario
-    // (0x083a45ed + 0x34ee). En nuestro build DAT_083a45d8 está en otra
-    // dirección asignada por el linker → el loop nunca terminaba y walking
-    // memoria inválida. IDA: `while ((int)v6 < 138050267)` = mismo bug.
-    // Fix: bound relativo al base del array.
+    // IDA compara contra la dirección absoluta del binario: `while ((int)v6 <
+    // 138050267)` = 0x83a7adb (0x083a45ed + 0x34ee). Acá el bound es relativo a
+    // la base del array.
     } while ((int)local_830 < (int)((const char*)&DAT_083a45ed + 0x34ee));
 
     // ── Pass 3: hit-test individual server entries in selected group ──────────
@@ -201,7 +198,7 @@ void CServerSelWin_UpdateWhileActive(void)
             iVar8b = cnt * 0x10 + (int)numCh * -10 + 8 + iYPvpBase;
         }
 
-        int server_count = (int)numCh;   // BUG-FIX: reuse byte-correct numCh from above
+        int server_count = (int)numCh;   // reuse byte-correct numCh from above
         if (server_count == 0) goto done;
 
         // Max Y extent check
@@ -217,11 +214,9 @@ void CServerSelWin_UpdateWhileActive(void)
             if (0xe5 <= (int)DAT_083a427c && (int)DAT_083a427c < 0x16c &&
                 iVar8b <= (int)DAT_083a4278 && (int)DAT_083a4278 < iVar8b + 0x14)
             {
-                // BUG-FIX byte-arith: DAT_083a4604 es *(DWORD*) y DAT_083a4606
-                // *(WORD*) lvalues → `&DAT + i` / `(&DAT)[i]` escalan el offset
-                // ×4/×2. Con el server en slot 23 (CS) eso leía FUERA del array.
-                // Igual que en el render (Scene_Login_ServerSelect), castear a
-                // char*/unsigned char* para aritmética de bytes.
+                // Byte arith: DAT_083a4604 es *(DWORD*) y DAT_083a4606 *(WORD*) lvalues →
+                // `&DAT + i` / `(&DAT)[i]` escalarían el offset ×4/×2. Igual que en el render
+                // (Scene_Login_ServerSelect), se castea a char*/unsigned char*.
                 ServerLocalSelect = (unsigned int)
                     *(unsigned short *)((char*)&DAT_083a4604 + iVar10b + local_830b) % 0x14 + 1;
                 ServerSelectLo = local_834b;

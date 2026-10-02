@@ -1,16 +1,11 @@
 // Scene_EntityLifecycle.cpp
-// Extracted from stubs_mouse_hover.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
 
 // SaveMacro @ 0x0050F700 -- guarda Data\Macro.txt (10 lineas de hasta 256).
-//
-// 2026-09-24: estaba portada como "Map_Load" y ademas ROTA: abria con
-// DAT_00559b74 ("rb") y llamaba `crt_fprintf(fp, &DAT_00560694)` diez veces
-// sin pasarle el texto, o sea vaciaba el archivo de macros cada vez que
-// corriera.  IDA (0x50F700) es sencilla:
+// IDA (0x50F700):
 //
 //   v1 = fopen(FileName, "wt");
 //   v2 = &unk_7E0FFC8;
@@ -43,9 +38,8 @@ void __cdecl FUN_0050f700(const char* map_name)
 // truncate-toward-zero. Para los mocks del login todos caen en (0,0)/(0,1).
 // Rechaza si grid_x<0 || grid_y<0 || grid_x>15 || grid_y>15.
 void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float param_4) {
-    // BUG-FIX 2026-04-26 (audit #12): __ftol implementa truncate-toward-zero
-    // (semántica de cast C de float→int), no nearest-even. lrintf redondeaba al
-    // más cercano y divergía en negativos (lrintf(-1.5)=-2 vs __ftol(-1.5)=-1).
+    // __ftol implementa truncate-toward-zero (semántica de cast C de float→int),
+    // no nearest-even: no usar lrintf (diverge en negativos).
     int igx = (int)(param_2[0] * _DAT_00552d20);
     int igy = (int)(param_2[1] * _DAT_00552d20);
     if (igx < 0 || igy < 0 || igx > 15 || igy > 15) return nullptr;
@@ -126,8 +120,7 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
             // IDA-faithful MODEL_MUGAME (case 3 en byte_4FFAA4[Type-60]):
             //   scale=0.6, [0x64]=1, [0xDC]=0. No escribe offsets 58/59/60
             //   (bodyLight). memset(0) previo deja bodyLight=0, pero lightEnable=0
-            //   → nunca se lee. Revertido el "PORT FIX" previo porque el tint
-            //   (1,1,1) no tenía efecto visual (lightEnable==0) y divergía de IDA.
+            //   → nunca se lee.
             puVar3[3]=0x3f19999a; puVar3[0x19]=1;
             *(BYTE*)(puVar3+0x37)=0; break;
         case 0xa3:
@@ -179,16 +172,9 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
             //   HeadAngle[0..2]       (+40,+44,+48) = Angle[0..2]
             //   HeadTargetAngle[0..2] (+52,+56,+60) = Position[0..2]
             // y normaliza el giro:  Angle[2] = HeadAngle[2] = (int)Angle[2] % 360.
-            //
-            // 2026-09-04 FIX: el `% 360` se hacia sobre los BITS del float, no
-            // sobre su valor -- IDA es `(__int64)*((float *)v6 + 9) % 360`, o sea
-            // truncar el float a entero y despues el modulo.  Leyendo los bits,
-            // 90.0f (0x42B40000 = 1119092736) daba 336, 180.0f daba 224 y 270.0f
-            // daba 112.  Consecuencia doble: la puerta quedaba girada un angulo
-            // arbitrario (de ahi que se vieran mal puestas) y ademas los tests
-            // `HeadAngle[2] == 90/270/0/180` del tick nunca matcheaban, asi que no
-            // se abria.  Las unicas que funcionaban eran las de angulo 0, porque
-            // los bits de 0.0f tambien son 0.
+            // El `% 360` es sobre el VALOR truncado, no sobre los bits del float (IDA:
+            // `(__int64)*((float *)v6 + 9) % 360`); el tick compara HeadAngle[2] con
+            // 90/270/0/180.
             puVar3[0xb]=puVar3[8]; puVar3[0xf]=puVar3[6]; puVar3[0xd]=puVar3[4];
             puVar3[0xa]=puVar3[7]; puVar3[0xe]=puVar3[5];
             { float angZ = *(float*)&puVar3[9];
@@ -204,13 +190,11 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
             puVar3[0x16]=0xfffffffe; return puVar3;
         case 100: puVar3[0x16]=0xfffffffe; return puVar3;
         }
-        // 2026-09-04 FIX: aca habia un `[[fallthrough]]`.  IDA cierra el case 2
-        // con `break` (0x4FF5A0 L292), y esa salida del switch exterior es la que
-        // llega al `sub_4FF580` del final -- el LABEL_43 del decompile, o sea el
-        // REGISTRO del objeto en la lista `Operates`.  Con el fallthrough los
-        // tipos 22/25/40/45/55/73 de Devias caian en el `default: goto
-        // lbl_skip_init` del case 3 y nunca se registraban, asi que no eran
-        // clickeables (no hay silla donde sentarse).
+        // IDA cierra el case 2 con `break` (0x4FF5A0 L292), y esa salida del switch
+        // exterior es la que llega al `sub_4FF580` del final -- el LABEL_43 del
+        // decompile, o sea el REGISTRO del objeto en la lista `Operates` (los tipos
+        // 22/25/40/45/55/73 de Devias tienen que quedar clickeables). No poner
+        // `[[fallthrough]]`.
         break;
     case 3:
         switch (param_1) {
@@ -222,8 +206,8 @@ void* __cdecl CreateObject(int param_1, float* param_2, float* param_3, float pa
         case 0x12: puVar3[0x19]=2; return puVar3;
         case 0x26: Entity_InitRenderState(puVar3); puVar3[0x16]=0xfffffffe; return puVar3;
         }
-        // 2026-09-04 FIX: idem, IDA cierra el case 3 con `break` (L292).  Con el
-        // fallthrough el tipo 8 de Noria (sentarse) no llegaba al registro.
+        // Idem: IDA cierra el case 3 con `break` (L292), así el tipo 8 de Noria
+        // (sentarse) llega al registro.
         break;
     default:
         goto lbl_skip_init;
