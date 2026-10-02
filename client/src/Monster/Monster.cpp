@@ -483,10 +483,6 @@
 #include "stdafx.h"
 #include "Monster/Monster.h"
 
-// =============================================================================
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 5239-6163 (925 lines)
-// CreateCharacter, CreateMonster (CreateMonster — big switch)
-// =============================================================================
 // CreateMonster @ 0x0045CCF0 — CreateMonster(Type, PositionX, PositionY, Key, [phantom])
 // Ported from IDA Hex-Rays decompile (10619 bytes).
 //
@@ -504,12 +500,10 @@
 // MonsterScript scan overrides the name field anyway, and the original byte_5599xx
 // addresses are Korean strings in the data segment we don't reproduce.
 //
-// CreateCharacter is also implemented here (was a 3-arg stub).
-//
 // Helpers used (all already implemented in our codebase):
 //   OpenMonsterModel (OpenMonsterModel)  — Monster_Data.cpp
 //   CreateCharacterPointer — Entity_Spawn.cpp
-//   DeleteCloth (DeleteCloth/Entity_ClearBoneLinks) — stubs.cpp
+//   DeleteCloth (DeleteCloth/Entity_ClearBoneLinks) — Render/Render_LegacyBillboards.cpp
 //   SetCharacterScale — alias macro
 //   SetAction
 //   Joint_Create (CreateJoint)
@@ -1392,12 +1386,9 @@ char* __cdecl CreateMonster(unsigned int Type_, int PositionX, int PositionY,
     }
 
     if (c) {
-        // RE-ACTIVADO 2026-07-24: copiar el nombre desde la tabla MonsterScript/
-        // NPCName (getMonsterName por Type).  Antes se salteaba porque la tabla
-        // era un global de 1 byte; ahora esta bien dimensionada y cargada desde
-        // NPCName.txt.  El nombre va a c+0x1c1 (449) — lo lee Target_Render al
-        // hacer hover sobre el NPC/mob.  Usa el Type ORIGINAL del packet (el
-        // blacksmith es 251), no el model type resuelto.
+        // Copia el nombre desde la tabla MonsterScript/NPCName (getMonsterName por
+        // Type) a c+0x1c1 (449), que lee Target_Render al hacer hover sobre el NPC/mob.
+        // Usa el Type ORIGINAL del packet (el blacksmith es 251), no el model type resuelto.
         {
             char* mname = getMonsterName(Type);
             char* dst = (char*)(uintptr_t)(c + 0x1c1);
