@@ -416,16 +416,21 @@ target_include_directories(mu97k PRIVATE
 )
 
 # CharacterSet=MultiByte -> _MBCS. NO se define UNICODE/_UNICODE.
-# Sólo para C++: el .vcxproj no le pasa estos defines a rc.exe.
-target_compile_definitions(mu97k PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:WIN32>"
-    "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Debug>>:_DEBUG>"
-    "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Release>>:NDEBUG>"
-    "$<$<COMPILE_LANGUAGE:CXX>:_WINDOWS>"
-    "$<$<COMPILE_LANGUAGE:CXX>:_CRT_SECURE_NO_WARNINGS>"
-    "$<$<COMPILE_LANGUAGE:CXX>:_CRT_NONSTDC_NO_WARNINGS>"
-    "$<$<COMPILE_LANGUAGE:CXX>:_WINSOCK_DEPRECATED_NO_WARNINGS>"
-    "$<$<COMPILE_LANGUAGE:CXX>:_MBCS>"
+# Van como opciones /D y no con target_compile_definitions porque el
+# generador de Visual Studio ignora $<COMPILE_LANGUAGE> en las definiciones y
+# se las pasaría también a rc.exe; el .vcxproj no le pasa defines al .rc.
+set(MU_DEFINES
+    /DWIN32
+    $<$<CONFIG:Debug>:/D_DEBUG>
+    $<$<CONFIG:Release>:/DNDEBUG>
+    /D_WINDOWS
+    /D_CRT_SECURE_NO_WARNINGS
+    /D_CRT_NONSTDC_NO_WARNINGS
+    /D_WINSOCK_DEPRECATED_NO_WARNINGS
+    /D_MBCS
+)
+target_compile_options(mu97k PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:${MU_DEFINES}>"
 )
 
 # BasicRuntimeChecks=Default y SDLCheck=false en Debug: sin /RTC, con /sdl-.
