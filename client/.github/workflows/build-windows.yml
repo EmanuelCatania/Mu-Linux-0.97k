@@ -1,0 +1,136 @@
+# Build del cliente en Windows (Win32 / v143).
+#
+# - cmake:   configura con CMake (-A Win32 -T v143) y compila Debug y Release.
+#            Sube main.exe + main.map como artefacto.
+# - msbuild: compila mu97k.sln con msbuild, para comparar contra CMake.
+# - compare: compara las líneas de comando de cl/link/lib de los dos builds
+#            (tools/compare_build_flags.py), por configuración.
+
+name: build-windows
+
+on:
+  push:
+    branches: [ "fase/*", "main" ]
+  pull_request:
+    branches: [ "fase/*", "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cmake:
+    name: cmake (${{ matrix.config }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fuentes de CMake == .vcxproj
+        run: python tools/check_cmake_sources.py
+
+      - name: Configurar
+        run: cmake -S . -B build -A Win32 -T v143
+
+      - name: Compilar
+        run: cmake --build build --config ${{ matrix.config }} --parallel -- /v:minimal
+
+      - name: Juntar tlogs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force tlogs | Out-Null
+          Get-ChildItem build -Recurse -Filter *.tlog |
+            Where-Object { $_.FullName -notmatch 'CMakeFiles' -and $_.Name -match 'command' } |
+            ForEach-Object {
+              $rel = $_.FullName.Substring((Resolve-Path build).Path.Length + 1)
+              $dst = Join-Path tlogs $rel
+              New-Item -ItemType Directory -Force (Split-Path $dst) | Out-Null
+              Copy-Item $_.FullName $dst
+            }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mu97k-cmake-${{ matrix.config }}
+          path: |
+            bin/Client/main.exe
+            bin/Client/main.map
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tlogs-cmake-${{ matrix.config }}
+          path: tlogs
+
+  msbuild:
+    name: msbuild (${{ matrix.config }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Compilar mu97k.sln
+        run: msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+
+      - name: Juntar tlogs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force tlogs | Out-Null
+          foreach ($root in @('obj', 'lib/libjpeg/obj')) {
+            if (-not (Test-Path $root)) { continue }
+            Get-ChildItem $root -Recurse -Filter *.tlog |
+              Where-Object { $_.Name -match 'command' } |
+              ForEach-Object {
+                $rel = $_.FullName.Substring((Resolve-Path .).Path.Length + 1)
+                $dst = Join-Path tlogs $rel
+                New-Item -ItemType Directory -Force (Split-Path $dst) | Out-Null
+                Copy-Item $_.FullName $dst
+              }
+          }
+
+      # El .vcxproj sólo genera main.map en Debug.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mu97k-msbuild-${{ matrix.config }}
+          path: |
+            bin/Client/main.exe
+            bin/Client/main.map
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tlogs-msbuild-${{ matrix.config }}
+          path: tlogs
+
+  compare:
+    name: comparar flags (${{ matrix.config }})
+    needs: [ cmake, msbuild ]
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tlogs-msbuild-${{ matrix.config }}
+          path: tlogs-msbuild
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tlogs-cmake-${{ matrix.config }}
+          path: tlogs-cmake
+
+      - name: Comparar líneas de comando cl/link/lib
+        run: python tools/compare_build_flags.py tlogs-msbuild tlogs-cmake
