@@ -1,5 +1,4 @@
-// Extracted from stubs_linker.cpp during the linker-stub domain refactor.
-// Original IDA/address comments are retained with each implementation.
+// Math_LegacyTransforms.cpp — AngleMatrix, VectorIRotate, BMD__TransformPosition y FaceNormalize.
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -42,14 +41,9 @@ extern void ClearActionObject(void);
 //   angles[0] = PITCH (rotation around Y)
 //   angles[1] = YAW   (rotation around Z)
 //   angles[2] = ROLL  (rotation around X)
-// BUG-FIX (CRÍTICO, 2026-04-20):
-//   El port previo intercambiaba las etiquetas: calculaba las entradas con
-//   sp=sin(angles[0]), sy=sin(angles[1]), sr=sin(angles[2]) PERO las
-//   combinaba como si fueran de un orden distinto (fórmulas no-Quake). El
-//   resultado: para rot=(0,0,180) (ships, chars login) producía Rx(180)
-//   (patas arriba) en vez de Rz(180) (mirando al revés en pie) → todos los
-//   modelos volteados. Re-verificado byte-exact contra Ghidra decompile de
-//   0x004F9DB0. Mapeo correcto sP→A[0], sY→A[1], sR→A[2].
+// Mapeo sP→angles[0], sY→angles[1], sR→angles[2] (verificado contra 0x004F9DB0).
+// Ojo: combinarlos con otra convencion deja rot=(0,0,180) como Rx(180) (modelo
+// patas arriba) en vez de Rz(180).
 void __cdecl AngleMatrix(float *angles, float (*matrix)[4]) {
     float deg2rad = 0.017453292f; // pi/180 = DAT_00552ce8
     float sP = sinf(angles[0] * deg2rad), cP = cosf(angles[0] * deg2rad); // pitch
@@ -101,7 +95,7 @@ void __fastcall BMD__TransformPosition(void *This, float (*BoneMatrix)[4], float
 
 
 // IDA: FaceNormalize (0x004FA4D0).  Normal de la cara (v1,v2,v3), normalizada.
-// Si el largo es 0 no toca Normal.  2026-09-18: era un stub vacio.
+// Si el largo es 0 no toca Normal.
 void __cdecl FaceNormalize(float v1[3], float v2[3], float v3[3], float Normal[3]) {
     const double ay = v2[1] - v1[1];
     const double bz = v3[2] - v1[2];
@@ -121,10 +115,3 @@ void __cdecl FaceNormalize(float v1[3], float v2[3], float v3[3], float Normal[3
 }
 
 // CollisionDetectLineToFace (0x00512D40) vive en Terrain/Terrain_RayCollision.cpp.
-//
-// 2026-09-26: aca habia un STUB que devolvia false con el nombre real, mientras
-// la implementacion completa estaba bajo el nombre CollisionDetectLineToFace.  Su unico
-// consumidor es BMD__CollisionDetectLineToMesh (sub_440BE0), o sea el picking
-// por triangulo de los objetos del mundo: con el stub nunca detectaba impacto.
-// El comentario del stub ademas decia "0x00440C90 approx", que no es esta
-// funcion sino un punto DENTRO de sub_440BE0, su propio caller.

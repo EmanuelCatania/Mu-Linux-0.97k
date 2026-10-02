@@ -1,5 +1,4 @@
 // Path_Legacy.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,7 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// Definidas en Physics/Cloth_Simulation.cpp (Cloth_Integrate) y Net/Crypto.cpp (Cloth_Solve).
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -47,22 +44,15 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 
 // ── PF_AStar — sustituto del PATH::FindPath original (0x0043F500) ────────────
 //
-// 2026-08-17 — CRITERIO DE BLOQUEO CORREGIDO CONTRA EL BINARIO.
-//
-// El A* de este port decidía el bloqueo con una MÁSCARA DE BITS inventada:
-//     return (a & 0x0e) != 0;      // "mask correcto verificado contra Terrain1.att"
-// El original NO usa máscara. `PATH::FindPath` @ 0x0043F500 hace una COMPARACIÓN
-// NUMÉRICA contra el parámetro `iWall`, restando antes el bit 0x20 si está puesto:
+// Criterio de bloqueo del binario: COMPARACIÓN NUMÉRICA contra `iWall`, restando
+// antes el bit 0x20 si está puesto (no una máscara de bits):
 //
 //     uVar5 = TerrainWall[idx];
 //     if ((TerrainWall[idx] & 0x20) == 0x20) uVar5 - 0x20;
 //     if (((visited[idx] & 1) == 0) && ((int)uVar5 < iWall)) { ...expandir vecino... }
 //
-// Con iWall=2 ambos criterios coinciden para los attrs comunes (0,1 pasan; 2,3,4,5
-// bloquean), y por eso el bug pasó desapercibido — pero DIVERGEN en los bits altos:
-// 0x10, 0x40 y 0x80 pasan la máscara 0x0e (`a & 0x0e == 0` → "libre") y en cambio
-// el original los bloquea (0x10 < 2 es falso). De ahí que el héroe caminara por
-// encima de terreno prohibido.
+// Ojo: una máscara como `a & 0x0e` coincide con iWall=2 para los attrs comunes,
+// pero deja pasar 0x10, 0x40 y 0x80, que el original bloquea.
 //
 // El chequeo del destino cuando bErrorCheck=true también es del binario, y ahí el
 // attr va CRUDO (sin restar 0x20), exigiendo que el bit 0x20 no esté puesto:
@@ -75,22 +65,19 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 //     dx=|x-xEnd|, dy=|y-yEnd|; m = (dx==1 && dy==1) ? 0 : min(dx,dy);
 //     coste = (|dx-dy| * 0xf + 3 + m * 0x15) >> 2;
 //
-// Se elimina de paso la búsqueda de "walkable más cercano en radio 3" que había
-// aquí: era invención del port. El original falla y deja que PathFinding2 reintente
-// con otro iWall, que es lo que se replica en Path_FindRoute.
+// Si no hay camino, el original falla y deja que PathFinding2 reintente con otro
+// iWall (lo replica Path_FindRoute): no se busca un "walkable más cercano".
 //
-// 2026-08-17 (b) — `fDistance` (el `radius` de PathFinding2) TAMPOCO se usaba.
-// En el binario ese parámetro llega a FindPath como `Value` y parte la función en
-// dos ramas bien distintas:
+// `fDistance` (el `radius` de PathFinding2) llega a FindPath como `Value` y parte
+// la función en dos ramas bien distintas:
 //     if (_Value == 0.0) { ...un único destino: marca[dst] = 4... }
 //     else               { ...recorre el DISCO de radio Value alrededor del destino
 //                            y marca = 4 toda celda con SQRT(dx*dx+dy*dy) < Value... }
 // y la búsqueda termina al alcanzar CUALQUIER celda marcada con 4. O sea: con
 // fDistance > 0 basta con acercarse al destino, no hace falta pisarlo.
-// El combate (Combat.cpp:1053 y siguientes) llama siempre con `skillRange`, así que
-// ignorar el parámetro hacía que el héroe intentara pisar la casilla exacta del
-// objetivo — la que suele estar ocupada por el propio mob. Nótese además que el
-// chequeo estricto del destino sólo existe en la rama `_Value == 0.0`.
+// El combate llama siempre con `skillRange`: ignorar el parámetro haría que el
+// héroe intentara pisar la casilla exacta del objetivo (la que ocupa el propio
+// mob). El chequeo estricto del destino sólo existe en la rama `_Value == 0.0`.
 static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
                     unsigned char* path, float fDistance)
 {
@@ -108,16 +95,15 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
         return (int)a < iWall;
     };
     // Métrica de cercanía al destino del original (para el mejor esfuerzo).
-    // IDA sub_43F500 (L~226-236 del raw):
+    // IDA sub_43F500 (L~226-236):
     //   v56 = |x - tx|; v57 = |y - ty|;
     //   if (v56 == 1 && v57 == 1) { v57 = 0; v58 = v57; }   // diagonal pegada
     //   else v58 = min(v56, v57);
     //   costo = (15 * |v56 - v57| + 21 * v58 + 3) / 4;
     // El `v57 = 0` se hace ANTES de |v56 - v57|, asi que una celda pegada en
-    // diagonal cuesta 4, igual que una pegada en recto.  El port calculaba la
-    // diferencia con el dy original (0) y le daba costo 0: con el mob pegado en
-    // linea recta una celda en diagonal le ganaba al origen, se armaba un paso
-    // y el heroe caminaba en vez de atacar.
+    // diagonal cuesta 4, igual que una pegada en recto.  Con costo 0 en diagonal,
+    // con el mob pegado en linea recta una celda en diagonal le ganaria al origen
+    // y el heroe caminaria en vez de atacar.
     auto origCost = [&](int x, int y) -> int {
         int dx = x > tx ? x - tx : tx - x;
         int dy = y > ty ? y - ty : ty - y;
@@ -148,11 +134,9 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
     struct AstarNode { unsigned short f; unsigned short idx; };
     const int HEAP_CAP = 8192;
     static AstarNode s_heap[HEAP_CAP];
-    // 2026-08-17 — tope de iteraciones tomado del binario. FindPath hace:
+    // Tope de iteraciones del binario. FindPath hace:
     //     iVar10 = (-(uint)(bErrorCheck != false) & 0x1c2) + 0x32;
-    // o sea 0x1c2+0x32 = 500 con bErrorCheck, y 0x32 = 50 sin él. Acá había 4096
-    // fijo para ambos: contra una pared el A* barría 4096 nodos POR TICK
-    // (visible en debug.log como "explored=4096" repetido).
+    // o sea 0x1c2+0x32 = 500 con bErrorCheck, y 0x32 = 50 sin él.
     const int MAX_NODES = bErrorCheck ? 500 : 50;
 
     memset(s_cameDir, 0xFF, sizeof(s_cameDir));
@@ -251,12 +235,12 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
                       s_pflogF, sx, sy, tx, ty, iWall, (int)fDistance, (int)bErrorCheck, explored);
             DbgLogPublic(b);
         }
-        // 2026-08-17 (c) — NO tocar `path` al fallar. Ver nota de abajo.
+        // NO tocar `path` al fallar. Ver nota de abajo.
         return 0;
     }
 
-    // Backtrack COMPLETO destino → origen (ver BUG-FIX del truncado, abajo el
-    // bucle de emisión se queda con los 15 primeros contados desde el origen).
+    // Backtrack COMPLETO destino → origen; el bucle de emisión de abajo se queda
+    // con los 15 primeros contados desde el origen.
     static unsigned char wpX[4096], wpY[4096];
     int wpCount = 0;
     int curIdx = endIdx;
@@ -272,30 +256,13 @@ static int PF_AStar(int sx, int sy, int tx, int ty, int iWall, bool bErrorCheck,
         curIdx = prevY * 256 + prevX;
     }
 
-    // 2026-08-17 (c) — CAUSA RAÍZ de "atraviesa la pared y no para".
-    //
-    // Este bloque escribía directo sobre `path` (= entidad+0x354) y, en los
-    // caminos de fallo, lo dejaba en cero: `path[0]=0; path[1]=0; path[2]=0;`.
-    // path[2] es PATH_t.PathNum — o sea que un pathfind fallido BORRABA el
-    // camino que la entidad ya venía siguiendo, sin tocar Movement (+0x2EC).
-    //
-    // Y ese estado (Movement=1, PathNum=0) es una deriva infinita, también en el
-    // original: MovePath @ 0x0043EA20 abre con
-    //     if ((c->Path).PathNum <= (c->Path).CurrentPath) return false;
-    // y MoveHero, ante ese false, llama MoveCharacterPosition, que avanza la
-    // posición en línea recta según el Angle actual — sin mirar terreno ni path.
-    // Nunca se alcanza el `if (MovePath(...))` que hace Movement=0 + SetPlayerStop.
-    //
-    // El original NUNCA cae ahí porque PathFinding2 @ 0x0043F3E0 no toca el buffer
-    // cuando falla: `a` sólo se escribe pasado LAB_0043f483, en la rama de éxito;
-    // los dos `return false` salen con el camino anterior intacto.
-    //
-    // Se hizo visible al arreglar el hold: el recálculo por tick contra una pared
-    // falla una y otra vez, y cada fallo borraba el PathNum del camino en curso.
-    // Evidencia en debug.log: `wp=0/2 2ec=1` y al tick siguiente `wp=0/0 2ec=1`,
-    // con la posición avanzando en línea recta a paso constante.
-    //
-    // Ahora se arma todo en un temporal y `path` sólo se escribe si hay éxito.
+    // `path` (= entidad+0x354) sólo se escribe si hay éxito: se arma todo en un
+    // temporal.  Ojo: si un fallo dejara path[2] (PATH_t.PathNum) en 0 con
+    // Movement (+0x2EC) = 1, MovePath @ 0x0043EA20 devuelve false
+    // (`PathNum <= CurrentPath`) y MoveHero llama MoveCharacterPosition, que avanza
+    // en línea recta según el Angle sin mirar terreno: deriva infinita a través de
+    // las paredes.  El original (PathFinding2 @ 0x0043F3E0) tampoco toca el buffer
+    // al fallar: `a` sólo se escribe pasado LAB_0043f483, en la rama de éxito.
     unsigned char tmpX[16], tmpY[16];
     tmpX[0] = (unsigned char)sx;
     tmpY[0] = (unsigned char)sy;
@@ -330,30 +297,21 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
                                    unsigned char* path, float radius)
 {
     int filterMode = 2;
-    // BUG-FIX 2026-04-26 (audit #4): _this debe ser el contexto del pathfinder
-    // (DAT_05826df4), no `sx`. Net_Process.cpp documenta el wrapper:
+    // _this es el contexto del pathfinder (DAT_05826df4), como en el wrapper que
+    // documenta Net_Process.cpp:
     //   PATH_FindPath(DAT_05826df4, id, t, x, y, 1, 2, t)
-    // Antes pasábamos `(void*)sx` → la función deref-eaba un coord como ptr.
     void* pfCtx = (void*)(intptr_t)DAT_05826df4;
 
-    // 2026-08-17: el contexto YA se construye completo. Antes se reservaba en
-    // WinMain con `malloc(0x420)` + memset y el vtable de la cola de prioridad
-    // (+0x414) quedaba NULL, así que PATH_FindPath (PATH::FindPath) crasheaba al
-    // dereferenciarlo — de ahí el `pfReady = false` forzado desde 2026-05-03.
-    // Ahora PathContext_Create() (src/Game/PathFinder.cpp, llamada desde WinMain)
-    // replica el ctor del binario: 0x0043F280..0x0043F2C7, reserva de 0x424 bytes
-    // -no 0x420- y vtable en +0x414. InitPath (PathFinder_ResetContext, mas abajo en este
-    // mismo archivo) ya estaba portada y la llama OpenFont (World_Init), igual
-    // que en el binario; corre despues del ctor, que es el orden correcto.
+    // El contexto lo construye PathContext_Create() (src/Game/PathFinder.cpp,
+    // llamada desde WinMain), que replica el ctor del binario: 0x0043F280..0x0043F2C7,
+    // reserva de 0x424 bytes y vtable de la cola de prioridad en +0x414.  InitPath
+    // (PathFinder_ResetContext, en Path/Path_LegacyReset.cpp) la llama OpenFont
+    // despues del ctor, igual que en el binario.
     //
-    // El camino original queda detrás de un switch porque PATH_FindPath todavía
-    // no se ejercitó en runtime: nuestro A* sustituto sigue siendo el default.
-    // Poner PF_USE_ORIGINAL en 1 para usar el algoritmo del binario.
-    // 2026-08-17: probado en runtime con 1 → CRASH inmediato en la primera llamada
-    // (0xC0000005 leyendo 0x63082BFC). El contexto se construye bien -el log
-    // muestra `pfCtx check #1: vtbl@0x414=0x6960b4 pfReady=1`-, asi que el ctor
-    // esta ok y el problema esta dentro de la propia portacion de PATH_FindPath.
-    // Queda en 0 hasta auditar esa funcion contra el decompile. Ver DESCOBERTAS.md.
+    // El camino original queda detrás de un switch: con PF_USE_ORIGINAL en 1 hay un
+    // AV en la primera llamada, dentro de la portación de PATH_FindPath (el ctor está
+    // bien).  Queda en 0 —nuestro A* sustituto— hasta auditar esa función contra el
+    // decompile.
     #define PF_USE_ORIGINAL 0
     bool pfReady = false;
 #if PF_USE_ORIGINAL
@@ -371,8 +329,8 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     }
     if (!pfReady) {
         // Replica de ZzzAI::PathFinding2 @ 0x0043F3E0, con nuestro A* (PF_AStar)
-        // en lugar de PATH::FindPath (0x0043F500), cuyo ctor de PriorityQueue no
-        // esta portado.  El original hace:
+        // en lugar de PATH::FindPath (0x0043F500), cuya portación todavía crashea
+        // (ver PF_USE_ORIGINAL arriba).  El original hace:
         //
         //   local_4 = 2;
         //   if (PATH__FindPath(sx,sy,tx,ty, true, 2, ...)) goto ok;
@@ -411,12 +369,10 @@ unsigned int __cdecl Path_FindRoute(int sx, int sy, int tx, int ty,
     {
         int srcAttr = Terrain_GetTileIndex((unsigned int)sx, (unsigned int)sy);
         int dstAttr = Terrain_GetTileIndex((unsigned int)tx, (unsigned int)ty);
-        // 2026-08-17: estaba INVERTIDO respecto del binario. En PathFinding2 el
-        // filtro sube a 4 cuando origen/destino tienen el bit 0, y vuelve a 2 sólo
-        // si el destino tiene además el bit 1:
+        // Como en PathFinding2: el filtro sube a 4 cuando origen/destino tienen el
+        // bit 0, y vuelve a 2 sólo si el destino tiene además el bit 1:
         //     iVar3 = 4;  if ((TerrainWall[dst] & 2) == 2) iVar3 = local_4 /*2*/;
-        // Acá se hacía al revés (subía a 4 justo cuando el bit 1 estaba puesto).
-        // Camino muerto hoy (pfReady siempre false), pero queda alineado.
+        // Camino muerto hoy (pfReady siempre false).
         if ((DAT_0838bc70[srcAttr] & 1) == 1 || (DAT_0838bc70[dstAttr] & 1) == 1) {
             int dstAttr2 = Terrain_GetTileIndex((unsigned int)tx, (unsigned int)ty);
             filterMode = 4;
@@ -453,11 +409,10 @@ success:
 // Returns signed angular difference between two angles, handling wrap-around at 360.
 // If mode==1, returns absolute value (unsigned distance).
 //
-// BUG-FIX 2026-04-26 (audit #1): la decompilación IDA emitió `if (v6)` con `v6`
-// como flag FPU x87 (`c0`) sin reconstruir → undefined branch. El asm hace
-// `fcom a2, a1` (comparando a2 con a1) ANTES del `fsub` → v6 representa
-// `a2 > a1`, no el signo del result. Reescrito preservando exactamente las
-// asignaciones del decomp (`360 - a2 + a1` y `360 - a1 + a2`) en cada rama.
+// Ojo: el `if (v6)` del decompile es un flag FPU x87 (`c0`) sin reconstruir.  El
+// asm hace `fcom a2, a1` ANTES del `fsub`, así que v6 = `a2 > a1`, no el signo
+// del resultado.  Las asignaciones de cada rama (`360 - a2 + a1` y
+// `360 - a1 + a2`) son las del decompile.
 float __cdecl FarAngle(float a1, float a2, char a3)
 {
   if ( a1 < 0.0f ) a1 += 360.0f;
@@ -659,12 +614,10 @@ unsigned int __cdecl Entity_AdvancePath(void *entity, char flag)
 // Nombres: tile = v4 · err = v5 · dx = v6 · dy = v7 · xStep = v8 · yStep = v9
 //          major = v10 · minorDelta = y · minorInc = v11 · steps = x
 //
-// 2026-09-01 FIX: el port tenia `major` y `minorDelta` INTERCAMBIADOS respecto
-// de IDA en las dos ramas del if (los dos incrementos si estaban bien).  El
-// efecto era brutal en lineas casi axiales: con dy == 0 quedaba major == 0, o
-// sea el bucle probaba UN solo tile en vez de |dx|+1 y la funcion devolvia 1
-// casi siempre.  La usan Attack (3 sitios, uno de ellos el gate del bucle de
-// manos), Action (2) y Player_InputTick (1).
+// Ojo con `major` y `minorDelta` en las dos ramas del if: intercambiados, una
+// linea axial (dy == 0) daria major == 0 y el bucle probaria UN solo tile.
+// La usan Attack (3 sitios, uno de ellos el gate del bucle de manos),
+// Action (2) y Player_InputTick (1).
 char __cdecl Path_IsLineClear(int sx1, int sy1, int sx2, int sy2) {
     int tile = Terrain_GetTileIndex((unsigned int)sx1, (unsigned int)sy1);   // IDA: v4
     int err  = 0;                                                    // IDA: v5
@@ -698,5 +651,3 @@ char __cdecl Path_IsLineClear(int sx1, int sy1, int sx2, int sy2) {
     } while (steps <= major);
     return 1;
 }
-
-// Net / packet — all use HashTable obfuscation; stubs preserve observable side effects.

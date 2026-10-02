@@ -1,5 +1,4 @@
 // Entity_HeadMotion.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -86,14 +85,8 @@ void __cdecl MoveHead(int param_1) {
     }
     else if ((anim == '\x02') && (*(short*)(param_1 + 0x310) != -1)) {
         // Combat: mirar al blanco del ataque.
-        //
-        // 2026-09-04 FIX (cabezas de los monstruos girando como locas / sin
-        // cabeza): faltaba el STRIDE.  IDA (0x43E940) hace
-        //     sub_43E890(a1, COERCE_FLOAT(CharactersClient + 916 * v7))
+        // IDA (0x43E940): sub_43E890(a1, COERCE_FLOAT(CharactersClient + 916 * v7)),
         // con `v7 = *(_WORD *)(a1 + 784)` = el indice de la entidad objetivo.
-        // Aca se pasaba `CharactersClient + indice`, o sea un puntero al medio
-        // del struct de la entidad 0: LookAtTarget leia su "posicion" de campos
-        // arbitrarios y el angulo de cabeza salia disparado a cualquier lado.
         // 916 = 0x394 es el stride del array de entidades.
         LookAtTarget((DWORD)param_1,
                           CharactersClient + 916 * (int)*(short*)(param_1 + 0x310));

@@ -73,20 +73,12 @@ void __cdecl Model_LoadSkillEffectAssets(void)
     AccessModel(199,   "Data\\Skill\\", "Ice",   2);
     AccessModel(0xbf,  "Data\\Skill\\", "Fire",  1);
     AccessModel(0xc0,  "Data\\Skill\\", "Poison",1);
-    // 2026-09-02 (Inferno sin fuego / "solo un pedazo del circulo"): estos
-    // bucles venian con la BASE de la condicion tomada del argumento en vez del
-    // valor inicial.  IDA los escribe asi (OpenSkills 0x0050B710 L91-97):
+    // IDA usa en la condicion el valor INICIAL y en el argumento otra base
+    // (OpenSkills 0x0050B710 L91-97):
     //     v1 = 206;
     //     do { AccessModelWithTextures(v1, ..., v1 - 205); ++v1; } while ( v1 - 206 < 3 );
-    // o sea la condicion usa el INICIO (206) y el argumento otra base (205).
-    // El port usaba la del argumento en los dos lados, asi que cada bucle
-    // cargaba (N - (inicio - base)) modelos en vez de N.
-    //
-    // Efecto medido con la sonda INFERNO: `mdl197=1 mdl198=0`, o sea Stone02
-    // nunca se abria.  Effect_SpawnBombRing elige `rand()%2 + 197` en cada una
-    // de las 8 posiciones del anillo, asi que ~la mitad de los efectos apuntaba
-    // a un modelo vacio: de ahi "solo carga un pedazo del circulo".
-    // Habia 17 bucles con el mismo error (ver Model_Players.cpp).
+    // Ojo al copiar estos bucles: la condicion va con el inicio, no con la base
+    // del argumento (si no, se cargan menos modelos de los que corresponde).
     for (int i = 0xc5; i-0xc5 < 2; i++)
         AccessModel(i, "Data\\Skill\\", "Stone", i - 0xc4);
     AccessModel(200,   "Data\\Skill\\", "Circle",1);

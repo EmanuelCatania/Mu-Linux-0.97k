@@ -1,5 +1,4 @@
-// Extracted from stubs_linker.cpp during the linker-stub domain refactor.
-// Original IDA/address comments are retained with each implementation.
+// GameGuard_LegacyHealth.cpp — arranque de nProtect (desactivado) y GameGuard_HealthCheck.
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -51,7 +50,6 @@ extern void ClearActionObject(void);
 //
 // Desactivada a proposito: los .des son binarios propietarios de nProtect que no
 // estan (ni pueden estar) en el repo, y sin ellos la cadena real aborta el arranque.
-// Ver CLAUDE.md, seccion GameGuard, para la cadena completa y que haria falta.
 void __cdecl FUN_0053d430(unsigned char *gameName) {
     (void)gameName;
 }

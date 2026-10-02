@@ -103,9 +103,8 @@ extern int   g_cached_shop_slot;       // DAT_00559684
 extern BYTE* g_EntityBase;             // DAT_07abf5d0 (legacy alias, may be null)
 extern DWORD g_LocalEntity;            // DAT_07abf5d8 (player entity ptr)
 
-// 2026-05-07: g_EntityBase is never wired to the actual entity array — the real
-// base lives in DAT_07abf5d0 (set by WinMain). Use that directly so the ENTITY
-// macro doesn't yield a NULL deref.
+// g_EntityBase nunca apunta al array de entidades: la base real es DAT_07abf5d0
+// (la setea WinMain), y ENTITY la usa directo.
 #define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * 0x394)
 
 
@@ -238,9 +237,8 @@ void Shop_EntitySlots(BYTE* pkt)
         // 2-byte name key from bytes[-1..0]
         WORD name_key = ((BYTE)entry[-1] << 8) | (BYTE)entry[0];
 
-        // BUG-FIX 2026-05-03: shop table is at literal `0x07e919b8` (unmapped in
-        // our build) and the bound `0x7ea51e8` is also a literal. Until the
-        // 1238-slot shop table is properly allocated, leave slot = -1 (no match).
+        // La tabla de tiendas del binario (literal 0x07e919b8, 1238 slots) no está
+        // alocada en el port: slot queda en -1 (sin match).
         SHORT slot = -1;
         *(SHORT*)(ent + 0x1da) = slot;
 
@@ -287,9 +285,8 @@ void PacketHandler_0x5d(BYTE* pkt)
     if (!ent) return;
 
     *(SHORT*)(ent + 0x1da) = (SHORT)0xFFFF;
-    // BUG-FIX 2026-05-03: was writing to literal source-binary addresses
-    // 0x07eaa114 and 0x07eaa0d0 — random memory in our build. Use the symbols
-    // that the linker actually placed those values at.
+    // Símbolos del linker para 0x07eaa114 y 0x07eaa0d0 (no las direcciones
+    // literales del binario).
     DAT_07eaa114 = 0;
     DAT_07eaa0d0 = 0xFFFFFFFF;
 }
@@ -368,10 +365,9 @@ static void LegacyMisclassified_TradeRequestResult(BYTE* pkt)
 {
     BYTE result = pkt[3];
 
-    // BUG-FIX 2026-05-03: previous tables held literal source-binary addresses
-    // (msg_table 0x07d4fd58.., label_table 0x05826dc8..) — unmapped in our
-    // build → AV the moment a 0x60 response arrived. Until the localized text
-    // pool is wired through GlobalText[], use ASCII placeholders.
+    // DESVIACION: el binario toma los textos de direcciones absolutas (msg_table
+    // 0x07d4fd58.., label_table 0x05826dc8..).  Hasta cablear GlobalText[], se usan
+    // placeholders ASCII.
     static const char* msg_table[] = {
         "Player is busy",
         "Trade accepted",
@@ -449,13 +445,10 @@ static void LegacyMisclassified_TradeIncomingReq(BYTE* pkt)
 // ============================================================
 static void LegacyMisclassified_TradeOpen(BYTE* pkt)
 {
-    // BUG-FIX 2026-05-03: function originally read format strings from absolute
-    // source-binary addresses (`(char*)0x07d5058c`, `(char*)0x07d50dc0`) that are
-    // unmapped memory in our build, and walked a shop table at literal
-    // `0x07e919bc` (also unmapped). Both would AV the moment a trade/duel
-    // packet arrived. Until proper format-string globals are added and the
-    // shop table is properly allocated, fall back to plain ASCII titles +
-    // skip the slot scan so the rest of the trade UI can still open.
+    // DESVIACION: el binario lee los formatos de direcciones absolutas
+    // (0x07d5058c, 0x07d50dc0) y recorre la tabla de tiendas en 0x07e919bc, que no
+    // existen en el port.  Se usan títulos ASCII y no se recorre la tabla, hasta que
+    // existan esos globals.
     char window_title[100];
 
     g_trade_accepted = 0;
@@ -518,9 +511,9 @@ static void LegacyMisclassified_TradeItemUpdate(BYTE* pkt)
     char msg_buf[132];
     int ack_type = 0;  // 0=send(0x6b+0x75), 1=special, 2=send(0x71+0x79)
 
-    // BUG-FIX 2026-05-03: result_table held literal source-binary addresses
-    // (0x07d506b8..0x07d4cfa4) for result strings — unmapped in our build.
-    // Replace with ASCII placeholders until proper text-pool wiring exists.
+    // DESVIACION: la result_table del binario apunta a textos en direcciones
+    // absolutas (0x07d506b8..0x07d4cfa4); placeholders ASCII hasta cablear el pool
+    // de textos.
     static const struct { const char* str; int ack; } result_table[] = {
         { "Trade complete",          0 },  // 0
         { "Other player canceled",   2 },  // 1

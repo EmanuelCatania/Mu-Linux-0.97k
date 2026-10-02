@@ -28,18 +28,15 @@ class CMiniDump
 {
 public:
 
-    // Escribe el .dmp en el directorio de trabajo.  Devuelve true si lo logro y
-    // deja la ruta en outPath.  Es seguro llamarla desde dentro de un filtro de
-    // excepciones: no aloca ni usa la CRT mas alla de wsprintf.
-    // Carga dbghelp.dll y resuelve MiniDumpWriteDump POR ADELANTADO, y aparta
-    // una reserva de memoria de emergencia.  Hay que llamarla al arrancar,
-    // junto a SetUnhandledExceptionFilter.
+    // Preload: carga dbghelp.dll y resuelve MiniDumpWriteDump POR ADELANTADO, y
+    // aparta una reserva de memoria de emergencia.  Hay que llamarla al arrancar,
+    // junto a SetUnhandledExceptionFilter.  No es una optimizacion: si el crash es
+    // por falta de memoria (p.ej. un std::bad_alloc tras un leak), LoadLibrary ya no
+    // puede mapear un modulo nuevo y el dump no se escribiria.
     //
-    // No es una optimizacion: si el crash es por falta de memoria -- que es
-    // justo el caso del reporte del 2026-09-30, un std::bad_alloc tras una hora
-    // de leak -- LoadLibrary no puede mapear un modulo nuevo y el dump no se
-    // escribe nunca.  Se perdia el .dmp precisamente en el crash donde mas
-    // falta hacia.
+    // Write: escribe el .dmp en el directorio de trabajo.  Devuelve true si lo logro
+    // y deja la ruta en outPath.  Es seguro llamarla desde dentro de un filtro de
+    // excepciones: no aloca ni usa la CRT mas alla de wsprintf.
     static void Preload();
 
     static bool Write(_EXCEPTION_POINTERS* info, char* outPath, unsigned int outPathSize);

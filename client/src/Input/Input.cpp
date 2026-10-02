@@ -262,14 +262,10 @@ int NumPad_HitTest(void);
 // IDA: PressKey (0x0047EC20)
 // Returns 1 on the first frame a key goes down (edge trigger), 0 otherwise.
 //
-// BUG-FIX CRÍTICO (ESC-flicker): la versión de Ghidra terminaba con
-//   `return uVar2 & 0xffffff00;`
-// donde `uVar2 = CONCAT22(extraout_var, SVar1)` — y `extraout_var` nunca se
-// inicializa (warning C4700). Cuando la tecla estaba UP, el valor devuelto
-// era basura de EAX (restos del `MOV AX, <GAK>`), a veces ≠0 → el llamador
-// lo interpretaba como "tecla recién presionada" y el menú ESC flipeaba
-// ~16 veces/seg sin tocar nada. IDA (`PressKey`) siempre devuelve 0 en
-// cualquier path que no sea el edge-trigger.
+// Ojo: el decompile de Ghidra terminaba con `return uVar2 & 0xffffff00;` sobre
+// un `extraout_var` sin inicializar (basura de EAX): con la tecla UP devolvia a
+// veces != 0 y el menu ESC parpadeaba.  IDA devuelve 0 en todo camino que no
+// sea el edge-trigger.
 // IDA: PressKey
 int __cdecl PressKey(int param_1)
 {
