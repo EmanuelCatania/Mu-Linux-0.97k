@@ -1,5 +1,6 @@
 // BMD_LegacyEffects.cpp
-// Extracted from stubs_misc_helpers.cpp; IDA provenance comments retained.
+// Efectos sobre mallas BMD: BMD__RenderMeshEffect y la sombra del cuerpo
+// (BMD__RenderBodyShadow).
 
 #include "stdafx.h"
 #include "globals.h"
@@ -12,13 +13,12 @@ void __cdecl BMD__BeginRender(void) { glPushMatrix(); }
 // Iterates bone meshes; for each vertex in bone 'b', spawns kill/death particle effects.
 void __cdecl BMD__RenderMeshEffect(void *model, int param_1, int param_2)
 {
-    // 2026-09-04 -- BUG-FIX: el port recorria TODAS las mallas del modelo.
-    // IDA (sub_441BE0) trabaja sobre UNA sola, la de indice `a2`:
+    // IDA (sub_441BE0) trabaja sobre UNA sola malla, la de indice `a2`:
     //     result = this[10] + 40 * a2;        // this + 0x28 = array de mallas
     //     if ( *(__int16 *)(result + 10) > 0 ) ...
     // y el mismo `a2` es el que elige el bloque de 15000 vertices del pool
-    // BoneVertex.  Los dos call sites pasan a2 = 0.  Con el bucle sobre todas
-    // las mallas se spawneaban varias veces mas efectos de los que corresponde.
+    // BoneVertex.  Los dos call sites pasan a2 = 0.  No recorrer todas las mallas:
+    // se spawnearian varias veces mas efectos de los que corresponde.
     char *this_ = (char*)model;
     const int meshIdx = param_1;
     if (meshIdx < 0 || meshIdx >= *(short*)(this_ + 0x24)) return;

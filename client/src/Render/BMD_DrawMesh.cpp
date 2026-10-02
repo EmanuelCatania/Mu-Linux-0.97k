@@ -170,15 +170,11 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     }
 
     // WorldTime wave value (for animated texcoords)
-    // ── BUG-FIX 2026-07-15: `__ftol()` leía el tope de la pila x87 (ST0), NO
-    // WorldTime — el C no garantiza que WorldTime esté cargado ahí → fase BASURA.
-    // IDA sub_440D50: `v42 = (__int64)WorldTime % 10000 * 0.0001`. Con la fase
-    // basura, el scroll de texcoords del glow +N (chrome, textura 1170) mapeaba
-    // coords random → el glow salía sólido/dorado que NO seguía la forma de la
-    // malla (la espada del BK se veía como un recuadro/flama dorada) y con fase
-    // distinta por-parte cada frame → las piezas del set +11 brillaban
-    // desincronizadas. WorldTime = DAT_05826e08 (la misma que usan las
-    // animaciones sin de char-select).
+    // IDA sub_440D50: `v42 = (__int64)WorldTime % 10000 * 0.0001`. Hay que leer
+    // WorldTime = DAT_05826e08 explícitamente: `__ftol()` lee el tope de la pila
+    // x87 (ST0), que no tiene por qué ser WorldTime, y con una fase basura el
+    // scroll de texcoords del glow +N (chrome, textura 1170) sale sólido y
+    // desincronizado entre partes.
     long long worldTime = (long long)DAT_05826e08;
     float fVar16 = (float)(int)(worldTime % 10000) * _DAT_00552868;
 
@@ -282,22 +278,16 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             fVar11 = (float)(int)(worldTime % 5000) * _DAT_005528c0 - _DAT_005528b4;
 
             if (0 < *(short *)(pcVar1 + 6)) {
-                // BUG-FIX CRÍTICO: Ghidra decompiló mal la base.
+                // Ojo: Ghidra decompiló mal la base.
                 // Disasm @ 0x00441194:  MOV ECX,0x5828d60   (NO 0x5828d58)
                 // Layout real del array: d5c=U0, d60=V0, d64=U1, d68=V1, ...
-                // Con el base mal puesto en d58, pfVar10[-1] escribía en
-                // DAT_05828d54 y *pfVar10 en DAT_05828d58.
-                // **DAT_05828d58 es el puntero base a la tabla de modelos**
-                // (extern DWORD DAT_05828d58 → g_Models). El write lo pisaba con
-                // un float aleatorio cada frame que renderizaba chrome → todo
-                // acceso posterior a Models[type*0xbc] punteaba memoria basura
-                // → heap corruption + render colapsado a wireframe.
+                // Con la base en d58, pfVar10[-1] escribiría en DAT_05828d54 y *pfVar10 en
+                // DAT_05828d58, que es el puntero base a la tabla de modelos (g_Models).
                 pfVar10 = ((float *)&DAT_05828d5c) + 1;   // = &DAT_05828d60 (V0 slot)
-                // BUG-FIX: DAT_06f433c0 está declarado como `float`, así que
-                // &DAT_06f433c0 + meshIdx*180000 hace aritmética float* (=
-                // +meshIdx*720000 bytes). El stride real per-mesh son 180000
-                // BYTES (verificado en disasm @ 0x004411a8: ADD EAX,0x6f433c0
-                // tras EBP*180000). Castear a char* para que el +N sea byte arith.
+                // DAT_06f433c0 está declarado como `float`, así que &DAT_06f433c0 +
+                // meshIdx*180000 sería aritmética float* (= +meshIdx*720000 bytes). El stride
+                // real per-mesh son 180000 BYTES (disasm @ 0x004411a8: ADD EAX,0x6f433c0
+                // tras EBP*180000). Se castea a char* para que el +N sea byte arith.
                 pfVar8  = (float *)((char*)&DAT_06f433c0 + meshIndex * 180000);  // source normals
                 do {
                     if ((uVar6 & 0x200) == 0x200) {
@@ -347,7 +337,6 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             BindTexture(local_10);
 
         } else if (
-            // BUG-FIX CRÍTICO 2 (banner MU Logo03 backdrop):
             // El binario original compara como INT, no float. IDA sub_440D50:
             //   else if ( a5 <= -2 || *(__int16 *)(v40 + 2) == a5 )
             // `a5` llega como `*(_DWORD *)(obj+100)` → bits raw del entero
@@ -362,8 +351,8 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
             // Sentinel alt: caller pasa float -1.0f → bits 0xBF800000 (int ~ -1.1e9)
             //   - cond1 `<= -2` = TRUE → dispara blend, IDA también (`-1.1e9 <= -2`).
             //   - En IDA real original: a5=-1 integer → cond1 FALSE, cond2 mesh_tex==-1 FALSE.
-            //   - Acá divergía pre-fix. Aceptamos la divergencia pues el sentinel
-            //     real que los callers usan es 0xffffffff (ver Entity_DrawByType.cpp).
+            //   - Divergencia aceptada: el sentinel real que usan los callers es
+            //     0xffffffff (ver Entity_DrawByType.cpp).
             // MUGAME type 0xa2: obj+100 = DWORD 1 → como int == mesh.Texture=1 (backdrop)
             //   → cond2 TRUE → EnableAlphaBlend (aditivo) sobre backdrop naranja.
             blendMesh <= -2 || (int)*(short *)(pcVar1 + 2) == blendMesh
@@ -410,24 +399,14 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
 
 
     // Triangle render loop — estructura verbatim del binario original
-    // (Ghidra @ 0x00440D50): glBegin(GL_TRIANGLES) UNA sola vez antes del
+    // (IDA @ 0x00440D50): glBegin(GL_TRIANGLES) UNA sola vez antes del
     // face loop, glEnd() UNA vez después. Las BMD 97k están pre-trianguladas
-    // (nv==3 para todas las faces, confirmado via diag _dbgTris/_dbgQuads).
-    // El "fix" previo a GL_TRIANGLE_FAN por face divergía del binario real.
+    // (nv==3 para todas las faces).
 
-    // SAFETY NET para caso lightEnable=0 sin StreamMesh + RENDER_MODE_TEXTURE:
-    // si el triangle loop no setea glColor per-vertex, el color previo de
-    // GL puede ser (0,0,0) → mesh invisible. Forzamos el bodyLight flat
-    // (con boost) justo antes de glBegin como última línea de defensa.
+    // No se toca glColor antes de glBegin: cada rama del switch ya dejó el suyo
+    // (la rama blend-mesh del banner Mu, type 0xA2, setea
+    // glColor3f(blendLight * OBJECT.Light[0..2]) y pisarlo rompería su ramp).
     //
-    // NOTA banner Mu (type 0xA2): la rama blend-mesh (línea ~440 arriba) ya
-    // setea glColor3f(blendLight * OBJECT.Light[0..2]) correctamente y deja
-    // param_2_b0 = '\0'. Si acá volviéramos a pisar glColor con boostedBL
-    // (que viene de `bodyLight` combinado de terrain + tint), romperíamos
-    // el ramp del MUGAME. Por eso NO se toca glColor en este safety-net:
-    // confiamos en el glColor que cada rama del switch ya dejó puesto.
-    // El "rectangulo negro" que intentaba prevenir este bloque se resolvió
-    // correctamente vía el fix integer del blend-mesh + FUN_004fdc00 ramp.
     // Helper1 (modelo 816) — el "hada"/Guardian Angel. Su BMD tiene 2 meshes:
     //   mesh 0 = fairy.jpg   (el cuerpo, 46 triangulos)
     //   mesh 1 = fairy2.jpg  (el glow, 4 triangulos = 2 quads)
@@ -436,20 +415,13 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
     // `TextureScriptParsing::parsingTScript` (0x40C190 — reconoce R/H/S/N tras
     // un `_`) no las marca como bright y el mesh del glow queda RENDER_TEXTURE
     // opaco: el fondo negro del JPG se dibuja como un recuadro negro.
-    //
-    // 2026-08-24: antes esto se gateaba por ESCENA (`SceneFlag == 2 || == 4`),
-    // dejando in-world afuera a proposito "porque ahi el 816 puede renderizarse
-    // como pet-item de inventario (opaco)". Consecuencia: con el Guardian Angel
-    // equipado, en el mundo se veia el recuadro negro (reportado sobre el pet de
-    // otro jugador). El gate correcto no es la escena sino la MESH: solo el glow
-    // (mesh 1) necesita el aditivo; el cuerpo (mesh 0) debe seguir opaco. Asi
-    // vale igual en el mundo y en el inventario, donde el glow tambien es glow.
+    // El gate es por MESH, no por escena: solo el glow (mesh 1) lleva aditivo y el
+    // cuerpo (mesh 0) sigue opaco, igual en el mundo y en el inventario.
     //
     // DESVIACION documentada: no encontre en IDA el mecanismo por el que el
     // original decide este blend — no sale del asset (el BMD v10 no tiene campo
     // de RenderType; se deriva del nombre de textura) ni de `RenderLinkObject`
-    // (0x455430), que no toca BlendMesh. Queda como forzado explicito, igual que
-    // el gate por escena que reemplaza.
+    // (0x455430), que no toca BlendMesh. Queda como forzado explicito.
     if (bmd_obj == (void*)(DAT_05828d58 + 816 * 0xbc) && meshIndex == 1) {
         EnableAlphaBlend();
     }
@@ -495,14 +467,12 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
                         } else {
                             glColor3fv((const GLfloat *)((int)bmd_obj + 0x48));
                         }
-                        // BUG-FIX: Ghidra emitió `(&DAT_05828d5c + 4)[idx*2]` que
-                        // es aritmética float* (+4 = +16 bytes), leyendo
-                        // V de d6c+idx*8 en vez del correcto d60+idx*8.
+                        // Ghidra emitió `(&DAT_05828d5c + 4)[idx*2]`, que es aritmética float*
+                        // (+4 = +16 bytes) y leería V de d6c+idx*8 en vez de d60+idx*8.
                         // Disasm @ 0x004413bd-c4:
                         //   MOV ECX,[EAX*0x8 + 0x5828d60]   ; V
                         //   MOV EDX,[EAX*0x8 + 0x5828d5c]   ; U
-                        // El array es {U,V,U,V,...} contiguo desde d5c → V está
-                        // en idx*2+1, no idx*2+4.
+                        // El array es {U,V,U,V,...} contiguo desde d5c → V está en idx*2+1.
                         glTexCoord2f((&DAT_05828d5c)[*psVar14 * 2 + 0],
                                      (&DAT_05828d5c)[*psVar14 * 2 + 1]);
                     }
@@ -522,12 +492,10 @@ void __cdecl BMD__RenderMesh(void *bmd_obj, float meshIdx, int flags,
         } while ((int)texOverride < (int)*(short *)(pcVar1 + 0x0a));
     }
     glEnd();
-    // BUG-FIX: restaurar depth-mask al salir. El path chrome (flag&0x40) llama
-    // DisableDepthMask() arriba pero nunca lo restauraba dentro de la función,
-    // causando que los siguientes meshes del mismo frame dibujaran sin depth-
-    // write → efecto "ghost" (se ven las caras traseras a través de las
-    // frontales, y cada mesh sucesivo blendea sobre el anterior). El binario
-    // original hace EnableDepthMask en los setters de estado entre meshes,
-    // pero en nuestra versión el cache DAT_083a42e8 quedaba desincronizado.
+    // Restaurar el depth-mask al salir: el path chrome (flag&0x40) llama
+    // DisableDepthMask() arriba y, si no se restaura, los meshes siguientes del
+    // mismo frame se dibujan sin depth-write (efecto "ghost"). El binario lo hace
+    // en los setters de estado entre meshes, pero acá el cache DAT_083a42e8 puede
+    // quedar desincronizado.
     GL_EnableDepthWrites();  // EnableDepthMask
 }

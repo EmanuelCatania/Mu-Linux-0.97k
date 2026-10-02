@@ -1,5 +1,5 @@
 // Camera_Unproject.cpp
-// Extracted from stubs_mouse_hover.cpp; IDA provenance comments retained.
+// Rayo del mouse en coordenadas de mundo (Camera_BuildMouseRay).
 
 #include "stdafx.h"
 #include "globals.h"
@@ -11,15 +11,10 @@
 // projection scale (DAT_083A42A4/A8), z-depth DAT_00561550, and view matrix DAT_083A4140.
 // FUN_005112F0
 void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
-    // BUG-FIX 2026-04-26 (deeper audit): el original usaba locals contiguas
-    // en stack (local_18/14/10 era un vec3, local_c/8/4 era otro). El port
-    // Ghidra los declaró como floats separados — el compilador C++ los puede
-    // reubicar en CUALQUIER orden o slot, así que `&local_18` NO apuntaba a
-    // un vec3 contiguo. Vector_InverseRotate leía/escribía 3 floats secuenciales
-    // desde esa dirección, leyendo basura y stompeando otros locals.
-    // Síntoma: CameraRayOriginX (camera pos) y el endpoint del ray quedaban en
-    // valores de miles de millones, hit-test contra entidades nunca pasaba.
-    // Logueado en HT slot=N rayO=(-79771616,...) rayT=(779717248,...).
+    // El original usa locals contiguas en stack (local_18/14/10 es un vec3,
+    // local_c/8/4 es otro). Ghidra los declaró como floats separados, y el
+    // compilador C++ los puede reubicar en cualquier orden, así que tienen que ser
+    // arrays reales: Vector_InverseRotate lee/escribe 3 floats secuenciales.
     float view_dir[3];
     view_dir[0] =  (float)(int)((UINT)(DAT_0056156c * param_1) / 0x280 - ViewportCenterX)
                  * _DAT_083a42a4 * Ff(DAT_00561550);

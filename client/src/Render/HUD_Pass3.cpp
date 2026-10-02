@@ -70,21 +70,10 @@ extern "C" void HUD_InitInventoryPools(void)
     initPool(OffsetTradeItems,      64 * 0x44);
     initPool(OffsetMixItems,        64 * 0x44);
     initPool(ShopItems,             120 * 0x44);
-    // 2026-07-27 FIX (baúl abre "lleno" de Kris sin data): OffsetWarehouseItems
-    // era el ÚNICO pool que no se inicializaba → quedaba todo en ceros, y Type=0
-    // es un item válido (Kris) en vez del marcador de celda vacía (0xFFFF) → las
-    // 120 celdas del baúl mostraban un Kris fantasma con durabilidad 0/20.
+    // OffsetWarehouseItems también se inicializa: en ceros, Type=0 es un item
+    // válido (Kris) en vez del marcador de celda vacía (0xFFFF).
     initPool(OffsetWarehouseItems,  120 * 0x44);
-    // 2026-08-22: acá se estampaba Type=0xFFFF sobre `g_InventoryGridPool`, otro
-    // buffer suelto que nadie llenaba.  Sus consumidores ya leen el inventario
-    // real, así que no hace falta.
 
-    // 2026-08-22: acá se estampaba Type=0xFFFF sobre un `g_EquipGridBuf` suelto
-    // para que sus celdas vacías no dieran falso positivo.  Ese buffer no existía
-    // en el binario: unk_7EA9504 / unk_7EA9328 son posiciones dentro del
-    // inventario real (ver globals.cpp).  Con los punteros ya reenraizados, este
-    // loop escribiría 0xFFFF encima del Type de slots REALES.  Removido — el
-    // inventario ya lo inicializa initPool() unas líneas más arriba.
 }
 
 extern "C" {
@@ -105,43 +94,30 @@ extern "C" {
     BYTE  byte_7E11DE0           = 0;
     DWORD dword_7E11DA8          = 0;
 
-    // SetTextColor_0 (= 0x00559C7C) YA NO se define acá.  2026-08-15: estaba
-    // duplicado — esta copia era la que escribían RenderBoolean_IDA y
-    // RenderPartyHP, mientras que el LECTOR real (FUN_0047f360, stubs_game.cpp)
-    // leía `DAT_00559c7c`, otro global distinto que quedaba en 0.  Resultado: el
-    // prefijo de guild de la burbuja de chat se pintaba con color 0x00000000
-    // (transparente/negro).  Ahora vive en globals.cpp y `DAT_00559c7c` es un
-    // alias del mismo símbolo (ver globals.h).  Verificado en IDA:
-    // xrefs de 0x559C7C = { sub_47F360 (lee), RenderBoolean ×3 (escribe),
+    // SetTextColor_0 (= 0x00559C7C) NO se define acá: vive en globals.cpp y
+    // `DAT_00559c7c` es un alias del mismo símbolo (ver globals.h).  Verificado en
+    // IDA: xrefs de 0x559C7C = { sub_47F360 (lee), RenderBoolean ×3 (escribe),
     // RenderPartyHP (escribe) } — o sea UNA sola memoria.
 
     // Inventory pools.
-    // 2026-07-25 (#2 shops): Inventory era [64*68] pero el pool de TIENDA es un
-    // overlay 8×15 (120 slots) que arranca en &Inventory[32].WalkSpeed y llega
-    // hasta ~Inventory+10348 (HUD_Pass3:382 sub_4E38B0 + Net_Process ShopInsert).
-    // Con 64 slots el render leía OOB (shop salía vacío) y poblarlo corrompería
-    // memoria. Agrandado a 160 slots (10880 bytes) para cubrir el grid completo.
+    // Inventory tiene 160 slots (10880 bytes): el tamaño viene de cuando la tienda
+    // era un overlay 8×15 dentro de Inventory (desde &Inventory[32].WalkSpeed);
+    // hoy la tienda usa su propio pool (ShopItems).
     BYTE  Inventory[160 * 68]            = {0};
     BYTE  OffsetInventoryItems[64 * 68]   = {0};
     BYTE  OffsetTradeItems[64 * 68]       = {0};
     BYTE  OffsetMixItems[64 * 68]         = {0};
-    // 2026-05-08: warehouse grid is 8x15 = 120 slots * 0x44 = 8160 bytes.
+    // Warehouse grid is 8x15 = 120 slots * 0x44 = 8160 bytes.
     // Used by FUN_004d23b0 (Inventory click handler) when WarehouseOpened.
     BYTE  OffsetWarehouseItems[120 * 68]  = {0};
-    // 2026-07-27: pool de la TIENDA (8×15 = 120 slots). ANTES era un overlay
-    // dentro de Inventory (&Inventory[32].WalkSpeed) — como en el binario
-    // original esas direcciones son distintas, en nuestro build el overlay
-    // colisionaba con otros usos de Inventory[32] (scratch de coords de paneles,
-    // loops de trade, etc.) que lo pisaban cada frame → "tienda abre vacía"
-    // intermitente (diag SHOPREND: populate 15/15 y 1s después occ=0 SIN ningún
-    // paquete de red). Con array propio el pool es inmune a ese aliasing.
+    // Pool de la TIENDA (8×15 = 120 slots), con array propio: en el binario
+    // original son direcciones distintas, y como overlay dentro de Inventory
+    // (&Inventory[32].WalkSpeed) colisionaría con otros usos de Inventory[32]
+    // (scratch de coords de paneles, loops de trade, etc.).
     BYTE  ShopItems[120 * 68]             = {0};
 
-    // 2026-04-30: Inventory/Trade panel origin globals — unified with the
-    // IDA-side DAT_ addresses that RenderEquipment3D / RenderItem3D
-    // already read.  The Ghidra-era phantoms (InventoryStartX = 380 etc.)
-    // were independent of DAT_07ea5288 → equipment items rendered at
-    // x≈0 while the panel frame rendered at x=450.
+    // Inventory/Trade panel origin globals — unificados con las direcciones DAT_
+    // del lado IDA que ya leen RenderEquipment3D / RenderItem3D.
     int   dword_7EAA0CC          = 0;
     int   dword_7EAA0C8          = 0;
 
@@ -215,7 +191,7 @@ SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText)
 //   }
 //   return count.
 // =============================================================================
-extern "C" int __cdecl FUN_00482850_(void);   // we prefix to avoid clash with stubs.cpp
+extern "C" int __cdecl FUN_00482850_(void);   // sufijo `_` para no chocar con otros FUN_00482850
 int __cdecl FUN_00482850_(void)
 {
     if (!CharacterMachine || !CharacterAttribute) return 0;
@@ -238,11 +214,8 @@ int __cdecl FUN_00482850_(void)
 
     int count = 0;
     // Recorre la grilla 8x8 del inventario hacia atras, igual que IDA.
-    // 2026-08-22: esto caminaba `g_InventoryGridPool`, otro buffer suelto que
-    // nadie llenaba (mismo caso que g_EquipGridBuf).  unk_7EA9328 y unk_7EA9504
-    // son posiciones dentro de OffsetInventoryItems — ver la derivacion en
-    // globals.cpp.  Encima, con la base equivocada el `cell -= 136` (544 bytes)
-    // se iba 3876 bytes por DEBAJO del buffer.
+    // unk_7EA9328 y unk_7EA9504 son posiciones dentro de OffsetInventoryItems — ver
+    // la derivacion en globals.cpp.
     int* base = &DAT_07ea9328;      // slot 56, campo Key
     int* row  = &DAT_07ea9504;      // slot 63, campo Key  (= base + 119 dwords)
     while (row >= base) {
@@ -344,7 +317,7 @@ void Render_HudPass_4BCD20_(void)
 {
     if (!CharacterMachine || !CharacterAttribute) return;
 
-    // 2026-09-04 -- DESVIACION NECESARIA (barra de AG invisible).
+    // DESVIACION NECESARIA (barra de AG).
     // `sub_4BCD20` dibuja con RenderBitmap / RenderNumber2D / RenderTipText, que
     // no arman matrices propias: dependen de la ortho de `BeginBitmap`.  Y el
     // pase anterior (`sub_4BD650`) TERMINA con `EndBitmap`.
@@ -353,13 +326,9 @@ void Render_HudPass_4BCD20_(void)
     // `glPopMatrix` seguidos SIN cambiar de modo, o sea los dos caen sobre
     // MODELVIEW y la PROJECTION ortho que empujo `BeginBitmap` queda activa (a
     // costa de desbordar esa pila, que es el GL_STACK_OVERFLOW 0x503 conocido).
-    // Nuestro `GL_End2D` esta balanceado a proposito (fix 2026-06-28), asi que
-    // al salir de sub_4BD650 la proyeccion vuelve a la perspectiva 3D y todo lo
-    // que dibuja esta funcion cae fuera de pantalla.
-    //
-    // Sonda AGBAR (2026-09-04): confirmaba `x=551 y=437 h=36 blend=1 tex=1
-    // texsz=(16,64) gl257=47 glerr=0`, o sea el draw se emitia perfecto y no se
-    // veia -- ni la barra, ni el numero, ni el tooltip.
+    // Nuestro `GL_End2D` esta balanceado a proposito, asi que al salir de
+    // sub_4BD650 la proyeccion vuelve a la perspectiva 3D y todo lo que dibuja
+    // esta funcion caeria fuera de pantalla.
     GL_Begin2D();
 
     // Anti-tamper #1 — skipped.
@@ -402,15 +371,11 @@ void AntiTamper_HashMaintain_D(void) { Render_HudPass_4BCD20_(); }
 // The IDA decomp interleaves heavy hash-table ref-count noise on
 // ShopOpened / TradeOpened — those serve only to satisfy anti-tamper hash
 // tracking and are skipped here.
-//
-// Without sub_4E38B0 ported the panels won't show inventory items, but the
-// rest of the HUD is unaffected.
 // =============================================================================
-// 2026-05-08 NOTE: previously had FUN_004d23b0/Inventory_DropDispatch hook here.
-// That was wrong — sub_4F6050 (this fn) is NOT called in-world. The actual
-// per-frame in-world inventory render is RenderInventoryWindow (sub_4F0A50)
-// invoked from Render_QuickButtons_ (sub_4F5820), HUD_Pass4.cpp:246. The
-// click-handler hook lives there now (HUD_Pass6.cpp:RenderInventoryWindow).
+// sub_4F6050 (esta función) NO se llama in-world: el render por frame del
+// inventario in-world es RenderInventoryWindow (sub_4F0A50), invocado desde
+// Render_QuickButtons_ (sub_4F5820, HUD_Pass4.cpp). El hook del click-handler
+// (FUN_004d23b0) vive en HUD_Pass6.cpp:RenderInventoryWindow.
 
 extern "C" void __cdecl Render_HudPass_4F6050_(void);
 void Render_HudPass_4F6050_(void)
@@ -607,14 +572,7 @@ void Render_HudPass_4EB070(void) { Render_HudPass_4EB070_(); }
 
 
 // =============================================================================
-// RenderBoolean — sub_480E00.  La copia VIVA es la de mas abajo.
-//
-// 2026-09-25: aca habia una SEGUNDA implementacion de la misma direccion (90
-// lineas) que su propio comentario ya daba por muerta -- "0 callers de codigo:
-// solo la referencian comentarios" -- y quedaba como candidata a borrar.  Se
-// borro: el simbolo que corre es el de abajo, al que llegaba el unico caller
-// (HUD_Pass1) pasando por un wrapper llamado FUN_00480e00 que tambien se
-// elimino.  Ver [[simbolo-duplicado-patron]].
+// RenderBoolean — sub_480E00.
 // =============================================================================
 
 void __cdecl RenderBoolean(int x, int y, DWORD c)
@@ -634,8 +592,8 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     while (texW < cx && texW < 256) texW *= 2;
     while (texH < cy && texH < 256) texH *= 2;
 
-    // 2026-08-15: los 6 colores estaban mal transcritos (el decompile los muestra
-    // como decimales con signo).  Valores de IDA RenderBoolean L121-144:
+    // Colores de IDA RenderBoolean L121-144 (el decompile los muestra como
+    // decimales con signo):
     //   -983146=0xFFF0FF96  -34716=0xFFFF7864  -19316=0xFFFFB48C
     //   -9016=0xFFFFDCC8  -12806401=0xFF3C96FF  -14790401=0xFF1E50FF
     //   default -16776961=0xFF0000FF
@@ -667,7 +625,7 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     };
     ClearFontRows(FontHeight);
 
-    // 2026-08-15: constantes corregidas contra IDA RenderBoolean L180-195.
+    // Constantes de IDA RenderBoolean L180-195.
     //   mode 0: back=-1773129196=0x96503214  SetTextColor_0=-14116=0xFFFFC8DC
     //   mode 1: back=-1778359236=0x9600643C  SetTextColor_0=-16711736=0xFF00FFC8
     //   otros : back=-1778384796=0x96000064  SetTextColor_0=-16776961=0xFF0000FF

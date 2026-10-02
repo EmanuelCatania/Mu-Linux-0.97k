@@ -156,13 +156,6 @@
 
 
 // Entity_Render (0x005038E0) vive en src/Render/Render_WorldHelpers.cpp.
-//
-// 2026-09-25: aca habia una SEGUNDA copia de 183 lineas, marcada desde hacia
-// tiempo como CODIGO MUERTO (nadie llamaba a Entity_Render()) y con un bug
-// propio: caminaba el pool con el ancla equivocada, leyendo el flag `active` en
-// Items+0 en vez de Items+72.  Se dejaba porque documentaba la funcion, pero una
-// copia muerta con un bug adentro es una trampa -- el proximo arreglo podia caer
-// ahi.  Borrada; la viva quedo con el nombre de IDA.
 
 
 // Entity_PrepareRender @ 0x004fc030
@@ -200,8 +193,8 @@ void __cdecl MoveCharacterClient(float *param_1)
 }
 
 
-// Entity_RenderAll_3D — Entity_TickAll  (DISABLED 2026-04-26: duplicate definition;
-// active version is in src/Render/Entity_RenderAll_3D.cpp with diag tracers)
+// Entity_RenderAll_3D — Entity_TickAll  (desactivada: definición duplicada;
+// la versión activa está en src/Render/Entity_RenderAll_3D.cpp)
 #if 0
 void Entity_RenderAll_3D(void)
 {
@@ -257,10 +250,8 @@ void Entity_RenderAll_3D(void)
 // Por cada entry activo: frustum test, si visible y (owner es player o type==0x330)
 // llama a Entity_PrepareRender (render). Type 0x330 además spawnea sparkle.
 //
-// BUGFIX 2026-04-26: tenía AUTO-SKIP early-return. Reactivado y reescrito para
-// usar nuestro DAT_083a1218 array (stride 0x1bc, 10 entries). El layout original
-// usaba pcVar4 = pool_base + 0x160 con índices negativos (-0x160 = +0); aquí
-// indexamos directo desde el base del entry.
+// El original usa pcVar4 = pool_base + 0x160 con índices negativos
+// (-0x160 = +0); aquí se indexa directo desde el base del entry.
 //
 // Entry layout (offsets desde base):
 //   +0x000  byte   active flag
@@ -272,9 +263,7 @@ void Entity_RenderAll_3D(void)
 //   +0x160  byte   visibility flag (escrito por frustum test)
 uint RenderBugs(void)
 {
-    // 2026-05-07: re-habilitado. Antes estaba TEMP DISABLED por flicker en
-    // char-select. Ahora gated por SceneFlag == 5 (in-world) para evitar
-    // ese path. Port FIEL desde IDA mu97k-src-IDA/raw/00500970_RenderBugs.c.
+    // Port FIEL de IDA RenderBugs (0x00500970).
     //
     // Pool: DAT_083a1218 (10 entries × 0x1BC = 4440 bytes).
     // Slot layout:
@@ -287,11 +276,11 @@ uint RenderBugs(void)
     //
     // Logic per IDA: if active → frustum test → if visible AND (owner is
     // player [type 390] or type==816) → PrepareRender + sparkle for type 816.
-    // BUG-FIX 2026-07-16: se gateaba a state 5/2, EXCLUYENDO char-select (state 4).
-    // Eso rompía el render de las monturas (Uniria bug=195 / Dinorant bug=267) que
-    // se crean con CreateBug y se dibujan acá vía Entity_PrepareRender → Draw_RenderObject.
-    // El IDA no tiene gate interno — Scene_CharSelect (0x523B30 L142) llama RenderBugs
-    // directamente. Se agrega state 4.
+    // DESVIACION: el IDA no tiene gate interno de escena (Scene_CharSelect
+    // 0x523B30 L142 la llama directo); acá se limita a SceneFlag 5/4/2. El 4
+    // (char-select) tiene que estar: las monturas (Uniria bug=195 / Dinorant
+    // bug=267) se crean con CreateBug y se dibujan acá vía Entity_PrepareRender →
+    // Draw_RenderObject.
     if (!(SceneFlag == 5 || SceneFlag == 4 || SceneFlag == 2)) return 0;
 
     char* base = (char*)&DAT_083a1218[0];

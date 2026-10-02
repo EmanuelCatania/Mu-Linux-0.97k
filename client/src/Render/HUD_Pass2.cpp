@@ -8,16 +8,14 @@
 //   * RenderBrokenItem        (sub_4BE710)  — durability warnings (right side)
 //   * RenderExperience        (sub_4BF990)  — XP bar + tooltip on hover
 //
-// Helpers ported here (because no callers existed yet):
+// Helpers ported here:
 //   * RenderBar       (sub_4BBDD0) — border + filled bar (used by 3 funcs)
 //   * RenderNumber2D  (sub_5122F0) — bitmap-glyph integer renderer
-//   * sub_47F6F0      — RenderText with shadow style (returns SIZE*)
+//   * sub_47F6F0      — RenderText with shadow style (Text_MeasureBox, returns SIZE*)
 //   * GetScreenWidth  (sub_4CB520) — UI panel-aware screen-width
 //
-// Helper STUBS (the real bodies are 600+ bytes each, port follow-up):
-//   * RenderInputText (sub_47F0B0)
-//   * RenderTipText   (sub_47F7F0)
-//   * CreateGuildMark (sub_4F0100)
+// RenderInputText (sub_47F0B0), RenderTipText (sub_47F7F0) y CreateGuildMark
+// (sub_4F0100) viven en HUD_Pass4.cpp.
 //
 // =============================================================================
 
@@ -43,15 +41,10 @@ extern "C" {
     // (so IDA-ported toggle code and render gates share the same byte).
 }
 
-// 2026-08-22: `SummonLife` NO es DAT_07e11d28.  Una nota vieja lo aliaseaba
-// ahí y colisionaba con el contador de debounce del walker
-// (Player_InputTick.cpp), que lo incrementa cada frame — por eso la barra de HP
-// del monstruo invocado se dibujaba siempre (el triángulo cyan).  El parche de
-// entonces fue una variable local nueva, o sea el global quedó partido en dos.
-// `ida_xrefs_to("SummonLife")` da la dirección real: **0x05826D24**
-// (= DAT_05826d24), escrita por InitGame, ReceiveRevival (3 sitios) y el
-// F3/0x20 de ProtocolCore, y leída por RenderEquipedHelperLife.  Ahora el alias
-// apunta ahí, así que el reset de Recv_Revival lo ve este render.
+// `SummonLife` es DAT_05826d24 (`ida_xrefs_to("SummonLife")` = 0x05826D24),
+// escrita por InitGame, ReceiveRevival (3 sitios) y el F3/0x20 de
+// ProtocolCore, y leída por RenderEquipedHelperLife.  NO es DAT_07e11d28, que
+// es el contador de debounce del walker (Player_InputTick.cpp).
 // (Pendiente: portar el F3/0x20 `SummonLife = ReceiveBuffer[4]`, el único
 //  productor del valor; hasta entonces queda en 0 y la barra no se dibuja.)
 #define SummonLife               DAT_05826d24
@@ -84,10 +77,8 @@ extern "C" void __cdecl CreateGuildMark(int markIndex, bool blend);
 static bool HUD_IsQuestPanelOpenRuntime(void)
 {
     return (g_csQuest != 0) &&
-           // 2026-08-21: era 0x1C8FF.  El flag "panel de quest abierto" esta en
-           // g_csQuest + 116863 (0x1C87F) — IDA lo usa asi en 9 sitios, uno de
-           // ellos este mismo GetScreenWidth (0x4CB520 L103).  Con 0x1C8FF se
-           // leia un byte 0x80 mas adelante.
+           // El flag "panel de quest abierto" esta en g_csQuest + 116863 (0x1C87F) — IDA
+           // lo usa asi en 9 sitios, uno de ellos este mismo GetScreenWidth (0x4CB520 L103).
            (*(BYTE*)((BYTE*)(uintptr_t)g_csQuest + 0x1C87F) != 0);
 }
 
@@ -288,13 +279,11 @@ void Render_ChatBox(void) { Render_ChatBox_(); }
 // 100-name (8000-byte) bound — see DWORD_7EA51EC_LIMIT.
 // =============================================================================
 
-// 2026-08-22: `SoccerTime` y `SoccerObserver` NO son DAT_07e11e10 / DAT_07e11e14.
-// `ida_xrefs_to` da 0x05826C08 y 0x05826D33; de 0x07E11E10 el unico xref en todo
-// el binario es sub_494520 (el bloque anti-tamper de IME/RC4), o sea el alias
-// viejo era inventado.  Mientras estuvo mal, los escritores (InitGame y ahora
-// los handlers F3/22 y F3/23) y este lector estaban en memorias distintas, asi
-// que el reloj del evento y el marcador nunca se dibujaban.  Ver
-// [[global-partido-en-dos]].
+// `SoccerTime` y `SoccerObserver` son 0x05826C08 y 0x05826D33 (`ida_xrefs_to`),
+// NO DAT_07e11e10 / DAT_07e11e14: de 0x07E11E10 el unico xref en todo el
+// binario es sub_494520 (el bloque anti-tamper de IME/RC4).  Los escritores
+// (InitGame y los handlers F3/22 y F3/23) y este lector tienen que usar la
+// misma memoria.
 #define DAT_07e11e10_alias  DAT_05826c08   // SoccerTime
 #define DAT_07e11e14_alias  DAT_05826d33   // SoccerObserver
 
@@ -409,18 +398,14 @@ extern "C" int __cdecl RenderEquipedHelperLife_(bool a2);
 
 int RenderEquipedHelperLife_(bool a2)
 {
-    // 2026-08-22 FIX (la barra del pet no se dibujaba): el gate leia el SLOT DE
-    // ITEM (`CharacterMachine + 536 + 68*8`) a traves de una cadena de fallbacks
-    // inventada por el port.  IDA (0x4BEC00, verificado en el disassembly del
-    // prologo) lee la ENTIDAD del heroe:
+    // El gate lee la ENTIDAD del heroe, no el slot de item.  IDA (0x4BEC00,
+    // verificado en el disassembly del prologo):
     //     mov ax, [eax+2B8h]   ; Hero + 696 = tipo del helper
     //     cmp ax, 330h / 333h  ; 816..819
     // Ese campo lo escriben SetCharacterClass, ChangeCharacterExt y el handler
-    // 0x25.  El slot de item se usa SOLO para la vida y para el nombre por
-    // defecto.
-    //
-    // (`+0x2B8` esta etiquetado como `char_class` en la tabla de offsets de
-    //  CLAUDE.md — es falso, es el tipo del helper/pet equipado.)
+    // 0x25.  El slot de item (`CharacterMachine + 536 + 68*8`) se usa SOLO para la
+    // vida y para el nombre por defecto.  `+0x2B8` es el tipo del helper/pet
+    // equipado, no `char_class`.
     int retY = 15;                       // `mov esi, 0Fh` del prologo
 
     const BYTE* hero = (const BYTE*)DAT_07abf5d8;
@@ -434,7 +419,7 @@ int RenderEquipedHelperLife_(bool a2)
 
         // x = GetScreenWidth() - 50.0 - (PartyNumber > 0 ? 50.0 : 0.0) - 15.0
         // (flt_552598 = 50.0 y flt_552834 = 15.0, leidos del binario).  Queda
-        // arriba a la DERECHA; el port anterior la centraba en pantalla.
+        // arriba a la DERECHA.
         const float x = (float)GetScreenWidth()
                       - 50.0f
                       - ((PartyNumber > 0) ? 50.0f : 0.0f)
@@ -548,8 +533,7 @@ void RenderBrokenItem_(int a1)
         DWORD v13 = (DWORD)((BYTE*)CharacterMachine + v33 + 536);
 
         if (v12 != 0xFFFF) {
-            // 2026-05-08: usar ItemAttribute_Base() para recuperar de
-            // corrupción de DAT_07d78068 a 0x1.
+            // Usar ItemAttribute_Base() para recuperar de corrupción de DAT_07d78068 a 0x1.
             unsigned int attrBase = ItemAttribute_Base();
             if (attrBase == 0) { v33 += 68; continue; }
             ITEM_ATTRIBUTE* v19 = (ITEM_ATTRIBUTE*)(attrBase + (unsigned)v12 * 64);
@@ -585,10 +569,8 @@ void RenderBrokenItem_(int a1)
                 }
 
                 CHAR Buffer[100];
-                // 2026-05-08: defensive — v19->Name is `char[30]` inline,
-                // address = v19. Crash at addr 0x74F3DBCC param1=0x2A01 came
-                // from wsprintfA reading bogus v19->Name. Validate v19 is in
-                // heap range before reading.
+                // Guarda propia: v19->Name es `char[30]` inline (address = v19) y wsprintfA
+                // lo lee; validar que v19 esté en rango de heap antes de leerlo.
                 if ((uintptr_t)v19 < 0x100000 || (uintptr_t)v19 >= 0x80000000) {
                     v33 += 68; continue;   // bogus pointer — skip slot
                 }

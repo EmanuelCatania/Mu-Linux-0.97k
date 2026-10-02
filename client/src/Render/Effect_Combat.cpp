@@ -1,5 +1,5 @@
 // Effect_Combat.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
+// Efectos de combate: anillo de bombas, arma del Rageful Blow, sangre.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -52,9 +52,6 @@ void __cdecl Effect_SpawnBombRing(float *a1)
 
 
 // RenderWheelWeapon vive en Render_WorldHelpers.cpp.
-//
-// 2026-09-26: aca habia una copia bajo el nombre RenderWheelWeapon.  Las dos
-// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.
 
 // ItemDrop_RenderGroundWeapon @ 0x0046B980 (sub_46B980, 377 bytes)
 // Renderer propio del efecto 244 (Rageful Blow): RenderEffects lo aparta del
@@ -62,14 +59,6 @@ void __cdecl Effect_SpawnBombRing(float *a1)
 // Type por el modelo del ARMA del dueno (owner[136] + 400), lo posa con la
 // animacion del efecto y lo restaura.  Hermana de RenderWheelWeapon (0x46B7C0),
 // pero sin el save/restore de posicion: este no mueve el slot.
-//
-// 2026-09-26: la version anterior de este port estaba rota en cuatro puntos y
-// por eso el Rageful Blow no mostraba el arma:
-//   - el byte de clase se leia de Hero+0x2B8 (helper/pet) en vez de Hero+444;
-//   - alpha se pasaba como 0.0f, y RenderPartObject (0x505A10) sale temprano
-//     con `if (_DAT_005524f8 < param_5)` -> con 0 no dibujaba NADA;
-//   - los argumentos 6..12 de RenderPartObject estaban corridos;
-//   - faltaba BMD_Animation, o sea el arma nunca se posaba.
 void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     // IDA: if ((double)*(int *)(o + 96) > 10.0)  -- o+96 es la vida del efecto.
     if (_DAT_00552488 >= (float)*(int*)(o + 96)) return;
@@ -116,7 +105,8 @@ void __cdecl ItemDrop_RenderGroundWeapon(int o) {
     *(short*)(o + 2) = savedType;
 }
 
-// IDA compatibility bridges: stubs_IDA_ports.cpp intentionally retains these ABI names.
+// Puentes de compatibilidad con IDA: se conservan estos nombres ABI FUN_*
+// porque otros call sites los usan.
 void __cdecl FUN_00466300(float* position)
 {
     Effect_SpawnBombRing(position);

@@ -1,7 +1,6 @@
 // BMD_Anim.cpp
 //
 // BMD animation tick + per-character animation dispatch.
-// Moved from stubs.cpp lines 14074-14176 (B3 refactor 2026-05-07).
 //
 //   BMD__PlayAnimation @ 0x00440AA0 — BMD::PlayAnimation (a.k.a. BMD_AnimTick).
 //                                Advances frame counter on a model's current
@@ -45,9 +44,9 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
     if (*(short*)(self + 0x26) == 0) return true;  // model has no animations
     BYTE action = *(BYTE*)(self + 0xa0);
     int actionsBase = *(int*)(self + 0x30);
-    // BUG-FIX 2026-04-28: actionsBase puede ser garbage si el slot fue
-    // parcialmente inicializado (ej. particle pool con stale data). Sanity-
-    // check del rango: ptr válido en el address space del proceso (heap).
+    // Guarda propia: actionsBase puede ser basura si el slot fue parcialmente
+    // inicializado (ej. particle pool con stale data). Sanity-check del rango:
+    // ptr válido en el address space del proceso (heap).
     if (actionsBase < 0x100000 || actionsBase > 0x7FFFFFFF) return true;
     short* pAction = (short*)(actionsBase + action * 0x10);
     if ((uintptr_t)pAction < 0x100000 || (uintptr_t)pAction > 0x7FFFFFFF) return true;
@@ -91,7 +90,7 @@ bool __cdecl BMD__PlayAnimation(void *This, float *AnimationFrame, float *PriorA
 // Without this, character entities stay frozen in their initial frame.
 //
 // IDA original (sub_448600): hash-table reference-count of `c+770` on entry/exit
-// — pure obfuscation per CLAUDE.md, omitted here. Real work is the speed calc
+// — pure anti-tamper obfuscation, omitted here. Real work is the speed calc
 // and the sub_440AA0 call.
 extern "C" bool __cdecl CharacterAnimation(int c, int o)
 {

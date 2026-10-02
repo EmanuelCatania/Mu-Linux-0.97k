@@ -1,5 +1,5 @@
 // Camera_Login.cpp
-// Extracted from stubs.cpp; IDA provenance comments retained.
+// Cámara de la escena de login (Login_CameraUpdate).
 
 #include "stdafx.h"
 #include "globals.h"
@@ -13,7 +13,7 @@
 // timer-driven rotation (FUN_004CB520 * DAT_0055283C * cos/sin constants),
 // applies rotation matrix (FUN_004F9DB0 + FUN_004FA0B0) and writes to
 // DAT_07EEB228/DAT_07EEB218 (login camera world positions).
-// Stub kept void() until Scene_Login.cpp callers are updated.
+// Se mantiene void(): los callers (Game_SceneUpdate / Game_EnterWorldTick) no pasan la posición.
 void __cdecl Login_CameraUpdate(void) {
     // Wrapper: calls CreateFrustrum2D with login-scene entity[0] world position (+0x10).
     CreateFrustrum2D((float *)(DAT_07abf5d0 + 0x10));
