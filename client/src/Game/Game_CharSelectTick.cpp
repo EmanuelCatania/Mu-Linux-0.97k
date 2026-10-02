@@ -166,17 +166,6 @@ void Game_CharSelectTick(void)
                     if (idx == 0xffffffff) {
                         void* node = AntiTamper_HashNode(); *((BYTE*)node+1)=1;
                         HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_07eaa11b);
-                    } else {
-                        BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
-                        node[1]++;
-                        if (node[1] < 2) Packet_DecryptByte(&DAT_07eaa11b, node);
-                    }
-                    // Decrement
-                    idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
-                    if (idx != 0xffffffff) {
-                        BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
-                        node[1]--;
-                        if (node[1] == 0) Packet_EncryptByte(node, &DAT_07eaa11b);
                     }
                     // TradeOpened (11b) + Warehouse (119) + ChaosMix (11a) +
                     // EventWindow (11c); después ShopOpened (118).  Per IDA,
