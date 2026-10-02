@@ -900,12 +900,10 @@ LAB_00463e3d:
     if ((float*)(uintptr_t)*(int*)&pfVar17[0x3f] != pfVar3) {
       return (float*)(uintptr_t)*(int*)&pfVar17[0x3f];
     }
-    STRUCT_DECRYPT(&MAIN_HASH_CLASS,DAT_07cf1ffc);
     pfVar12 = (float*)DAT_07cf1ffc;
     cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
     *(char *)(pfVar17 + 0x22) = cVar5;
     *(char *)(pfVar12 + 0x160) = cVar5 + '\x01';
-    STRUCT_ENCRYPT(&MAIN_HASH_CLASS,pfVar12);
     sVar28 = *(short *)((int)pfVar17 + 0x86);
     bVar6 = *(byte *)(pfVar17 + 0x22);
     fVar27 = 300.0;
@@ -1520,7 +1518,6 @@ LAB_004625aa:
     pfVar17[0x19] = 0.0;
     return pfVar8;
   }
-  STRUCT_DECRYPT(&MAIN_HASH_CLASS,DAT_07cf1ffc);
   pfVar12 = (float*)DAT_07cf1ffc;
   cVar5 = *(char *)((char*)DAT_07cf1ffc + 0x160);
   *(char *)(pfVar17 + 0x22) = cVar5;
