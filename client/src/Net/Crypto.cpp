@@ -738,15 +738,6 @@ void __fastcall FUN_00403f10(int ecx, int /*edx*/, BYTE param_1) {
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── PACKET_ENCRYPT — movida desde stubs_externs.cpp (refactor B3) ──
-// PACKET_ENCRYPT @ 0x00404040 — HashTable_Remove (__thiscall this, char *key)
-// STUB: uses unaff_retaddr phantom param — cannot implement safely.
-// IDA: PACKET_ENCRYPT (0x00404040)
-void __cdecl PACKET_ENCRYPT(void *ctx, void *key) {
-    // STUB: HashTable remove with obfuscation — cannot implement safely
-    (void)ctx; (void)key;
-}
-
 // ── Packet_DecryptBuffer — movida desde stubs_externs.cpp (refactor B3) ──
 // Packet_DecryptBuffer @ 0x00404370 — HashTable_CopyEncrypt(param_1, param_2)
 // Copia 0x584 bytes de param_2 a un buffer nuevo, lo codifica con XOR (resta 0x23,
