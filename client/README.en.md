@@ -60,18 +60,16 @@ is NPC and monster movement.
 
 The ported code is laid out by domain (`Render/`, `Terrain/`, `UI/`, `Item/`,
 `Entity/`, `Combat/`, `Net/`, `Scene/`, and so on); there is no longer a general
-`stubs_*.cpp` dumping ground waiting to be split up. The current tree holds 251
-`.cpp` files and 55 headers under `src/`.
+`stubs_*.cpp` dumping ground waiting to be split up. The current tree holds 249
+`.cpp` files and 58 headers under `src/`.
 
-`stubs_IDA_ports.cpp` is the intentional exception: it holds 26,431 lines of raw
-IDA decompiles, each one guarded by `IDA_PORT_*`. It is preserved as the
-canonical reference for the decompile and as a compatibility or
-selective-activation mechanism while a port is being validated. **Do not
-refactor, rename, or spread this file across modules.** Its aliases and ABI
-bridges are not naming debt either: they exist so that selective ports keep
-their original contract.
+The raw IDA decompiles that were never activated (formerly in
+`src/stubs_IDA_ports.cpp`) are archived in `docs/codigo-muerto/`, outside the
+build, as a reference for the decompile. The aliases and ABI bridges left in
+`functions.h`/`globals.h` are not naming debt: they keep the original contract
+of the ports that use them.
 
-The `FUN_*` and `DAT_*` names that still appear outside that file are not, on
+The `FUN_*` and `DAT_*` names that still appear in the code are not, on
 their own, renaming debt. Some describe infrastructure, the CRT, GameGuard,
 binary layouts, pools, or compatibility; others need research or a future port
 before they can safely be given a semantic name.
@@ -221,11 +219,7 @@ mu97k-src/
     │
     ├── Combat/  Config/  Core/    Entity/  Game/     GameGuard/ Input/ Item/
     ├── Local/   Math/    Model/   Monster/ Net/       Party/     Path/  Physics/
-    ├── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
-    │
-    └── stubs_IDA_ports.cpp
-                         raw IDA decompiles behind IDA_PORT_*;
-                         preserved infrastructure, do not refactor
+    └── Render/  Scene/   Sound/   Terrain/ Trade/     UI/        Util/
 ```
 
 Modules group by responsibility. The address in the binary is still an important
