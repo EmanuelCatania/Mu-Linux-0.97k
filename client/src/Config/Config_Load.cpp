@@ -50,10 +50,8 @@ extern "C" void DbgLogPublic(const char* msg);
 
 // Globals set by Config_Load
 //
-// g_ScreenW / g_ScreenH ELIMINADAS (2026-08-26): eran variables propias que
-// duplicaban WindowWidth / WindowHeight (DAT_0056156c/70) sin sincronizarse con
-// ellas. Ver la nota en el switch de resolucion, mas abajo. Config_Load ahora
-// escribe los globals reales, igual que el binario.
+// La resolucion se escribe en WindowWidth / WindowHeight (DAT_0056156c/70),
+// igual que el binario; ver el switch de resolucion, mas abajo.
 DWORD g_SoundOn    = 1;      // DAT_?? (default 1 = sound on)
 // g_MusicOn NO se define aca: es un macro-alias de m_MusicOnOff (0x055C9E3C),
 // que vive en globals.cpp. Ver la nota en Config.h.
@@ -114,8 +112,7 @@ int Config_Load(void)
     //
     // word_559470 = 'a' (0x61, leido del binario).  El main.exe original
     // declara FileVersion 0.97.11.0, asi que sale "0.97" + la letra 11 = 'k':
-    // de ahi viene el nombre "0.97k".  El port calculaba versionWords y lo
-    // descartaba, y leia el ini directo sobre m_ExeVersion.
+    // de ahi viene el nombre "0.97k".
     char m_Version[12] = {};   // IDA: m_Version (solo lo usa este bloque)
     GetPrivateProfileStringA("LOGIN", "Version", "", m_Version, 11, configPath);
 
@@ -144,7 +141,6 @@ int Config_Load(void)
         // Ghidra @ 0x0041e272: RegQueryValueExA(hKey, lpValueName_00559450, NULL, NULL,
         //                       (LPBYTE)0x055c9ba0, &DStack_330=0xb)
         // Usado luego por MoveLogInScene para prefilear DAT_07db8710 (InputText[0]=username).
-        // ¡OJO! En el port anterior se escribía a m_ExeVersion pisando la versión de config.ini.
         DWORD dwSize = 11;
         RegQueryValueExA(hKey, "ID", NULL, NULL, (LPBYTE)lpData_055c9ba0, &dwSize);
 
@@ -178,17 +174,9 @@ int Config_Load(void)
 
     // --- 5. Resolution -> screen dimensions ---
     //
-    // 2026-08-26: esto escribia `g_ScreenW`/`g_ScreenH`, que eran DOS VARIABLES
-    // PROPIAS de este archivo (el comentario decia "DAT_0056156c/70" y no lo
-    // eran). El render entero — ventana, viewport, ortho, proyeccion, mouse —
-    // lee `WindowWidth`/`WindowHeight` (DAT_0056156c/70), con 169 y 50
-    // lecturas respectivamente, y nada copiaba un par al otro: `g_ScreenH` no
-    // tenia ni un solo lector y `g_ScreenW` solo alimentaba la escala de abajo.
-    // O sea el valor del registro se calculaba y se tiraba, y cambiar
-    // `Resolution` no tenia ningun efecto.
-    //
-    // IDA escribe WindowWidth/WindowHeight aca mismo (0041E0A0 L121-138), asi
-    // que esto no es una unificacion inventada: es restaurar el original.
+    // IDA escribe WindowWidth/WindowHeight (DAT_0056156c/70) aca mismo
+    // (0041E0A0 L121-138); el render entero (ventana, viewport, ortho,
+    // proyeccion, mouse) lee esos dos.
     switch (g_Resolution)
     {
     default:
@@ -204,13 +192,6 @@ int Config_Load(void)
     // IDA (0041E0A0 L144-145):
     //     g_fScreenRate_x = (double)WindowWidth  * 0.0015625;      // = /640
     //     g_fScreenRate_y = (double)WindowHeight * 0.0020833334;   // = /480
-    //
-    // El port solo tenia la X, y calculada desde `g_ScreenW` (la variable
-    // muerta). La Y no se calculaba en ningun lado: quedaba en su valor de
-    // inicializacion, 1.0f, con 18 lectores dividiendo por ella. A 640x480 no
-    // se notaba porque la escala real ES 1.0; a cualquier otra resolucion el
-    // texto se mezclaba con el layout 640x480 sin corregir y el error crecia
-    // en proporcion.
     //
     // Lifecycle: se calculan UNA vez, aca. Es lo que hace el binario — el
     // unico escritor de estas dos variables en todo el decompile es esta
@@ -354,7 +335,7 @@ static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
 //     127.0.0.1:44405
 //
 // Además acepta líneas `clave=valor` con la identidad del server, que es de
-// donde sale la clave de encriptación de MuEmu (2026-08-26):
+// donde sale la clave de encriptación de MuEmu:
 //     CustomerName=MuLinux
 //     ServerSerial=TbYehR2hFUPBKgZj
 // Tienen que coincidir con `GameServerInfo - StartUp.dat` del GameServer; si
@@ -467,7 +448,7 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
                 }
                 else if (_stricmp(key, "WindowMode") == 0 ||
                          _stricmp(key, "Borderless") == 0) {
-                    // DESVIACION DELIBERADA (2026-09-27): modo ventana, portado
+                    // DESVIACION DELIBERADA: modo ventana, portado
                     // del DLL.  Ver la nota en Config.h.  Se aplican directo
                     // (no hay valor en el registro que respetar).
                     int parsed = -1;
@@ -487,10 +468,8 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
                 else if (_stricmp(key, "MusicOnOff") == 0 ||
                          _stricmp(key, "SoundOnOff") == 0 ||
                          _stricmp(key, "Resolution") == 0) {
-                    // DESVIACION DOCUMENTADA (2026-09-24): el 0.97k lee estas
-                    // tres del registro y nada mas.  Sin launcher que las deje
-                    // escritas no hay forma de distribuir el cliente ya
-                    // configurado, asi que se aceptan tambien aca y Config_Load
+                    // DESVIACION DOCUMENTADA: el 0.97k lee estas tres del
+                    // registro y nada mas; se aceptan tambien aca y Config_Load
                     // las aplica DESPUES del registro (ver 4b).
                     int parsed = -1;
                     if (_stricmp(key, "Resolution") == 0) {
@@ -566,8 +545,7 @@ int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned 
     fclose(fp);
 
     // Derivar la clave de MuEmu si server.cfg trajo la identidad del server.
-    // Sin esas líneas quedan los valores por defecto (CustomerName="MuLinux"),
-    // que es el comportamiento que tenía el cliente antes de esto.
+    // Sin esas líneas quedan los valores por defecto (CustomerName="MuLinux").
     if (cfgCustomerName[0] != 0 || cfgServerSerial[0] != 0)
         MuEmu::InitKeys(cfgCustomerName, cfgServerSerial);
 

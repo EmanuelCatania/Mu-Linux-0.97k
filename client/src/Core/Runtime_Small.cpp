@@ -1,10 +1,6 @@
 // Runtime_Small.cpp
 //
-// Extracted from stubs_bulk_small.cpp (B3: stubs.cpp lines 14828-16129).
-//
 // BATCH: Small unmapped functions (1-60 bytes), sorted by size.
-// Decompiled from Ghidra in bulk — closes ~3KB of the binary gap.
-// ~80 functions implemented (1-52 bytes range).
 //
 // These are mostly:
 //   - CRT/STL/runtime stubs (constructors, destructors, accessors)
@@ -25,17 +21,14 @@ extern void __cdecl Xor_ConvertBlock(BYTE *lpBuffer, int iSize, int iKey);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BATCH: Small unmapped functions (1-60 bytes), sorted by size
-// Decompiled from Ghidra in bulk — closes ~3KB of the binary gap
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Forward declarations for functions defined later in this batch
 static void __cdecl FUN_00405320_impl(int param_1);
-// (FUN_00405290_impl_fwd: forward decl muerto removido — la def real es
-//  FUN_00405290_impl @ ~line 13553, __cdecl, sin necesidad de fwd separado)
 
 // ── 1-byte: nop ──────────────────────────────────────────────────────────────
 
-// FUN_0053ad80 — see proper definition at ~line 15177 (codec noop start_pass)
+// FUN_0053ad80 — definida al final de este archivo (codec noop start_pass)
 
 // ── 3-byte: stub returning 0 ────────────────────────────────────────────────
 
@@ -50,7 +43,7 @@ HRESULT __cdecl FillBuffer(int Buffer, int MaxChannel, BOOL Enable) { return 0; 
 void __fastcall FUN_00403310(int *param_1) { *param_1 = (int)&PTR_LAB_00552460; }
 
 // FUN_00407970 @ 0x00407970 (7 bytes)
-// FUN_00407970 (IDA-activated, was Ghidra stub)
+// FUN_00407970 (IDA-activated)
 void __cdecl FUN_00407970(void *_this)
 {
   extern void *g_ClothNodeVTable[1];
@@ -59,7 +52,7 @@ void __cdecl FUN_00407970(void *_this)
 
 
 // FUN_00407de0 @ 0x00407DE0 (7 bytes)
-// FUN_00407de0 (IDA-activated, was Ghidra stub)
+// FUN_00407de0 (IDA-activated)
 void __cdecl FUN_00407de0(DWORD *_this)
 {
   *_this = (DWORD)&DAT_00552508;
@@ -86,7 +79,7 @@ void __fastcall FUN_0040f680(void *This) { *(int *)This = (int)&PTR_LAB_005527e4
 
 
 // FUN_00407ec0 @ 0x00407EC0 (11 bytes)
-// FUN_00407ec0 (IDA-activated, was Ghidra stub)
+// FUN_00407ec0 (IDA-activated)
 void __cdecl FUN_00407ec0(DWORD *_this)
 {
   extern void *g_ClothAnchorVTable[3];
@@ -139,8 +132,8 @@ void __fastcall CErrorReport__AddSeparator(DWORD This) {
 
 
 // ClearNotice @ 0x0047FAC0 (17 bytes) — zero-fill notice text array
-// 2026-09-16: borraba DAT_083a2370 + 0x10, que es la lista de objetos
-// interactuables (Operates).  Notice vive en 0x07DB80D8 (= DAT_07db80d8, 6 x 0x108).
+// Notice vive en 0x07DB80D8 (= DAT_07db80d8, 6 x 0x108).  DAT_083a2370 + 0x10
+// es otra cosa (la lista de objetos interactuables, Operates).
 void __cdecl ClearNotice(void) { memset(DAT_07db80d8, 0, 0x630); }
 
 // ── 18-byte ─────────────────────────────────────────────────────────────────
@@ -265,11 +258,8 @@ int __cdecl PlusSpecialPercent(short *a1, int a2, int a3, unsigned short a4) {
 // Bow+arrows + crossbow+bolts synergy: special level boost based on arrow type.
 // dword_7E91388/pPickedItem preview path skipped (hover-time UI).
 int __fastcall Stats_CalcBase(int a1) {
-    // GUARDA 2026-07-19 (CRASH 0xC0000005 @ +0xA3): se validaba `ca`
-    // (CharacterAttribute) pero NO `a1` (CharacterMachine). Abajo se hace
-    // `*(short*)(a1 + 536)` / `(a1 + 604)` (slots de arma) sin chequear, así que
-    // con a1 nulo o basura reventaba. Se disparaba al abrir el inventario /
-    // mostrar el tooltip de un item, que fuerza un recálculo de stats.
+    // Guarda de a1: abajo se lee `*(short*)(a1 + 536)` /
+    // `(a1 + 604)` (slots de arma) sin chequear.
     if (a1 == 0 || (uintptr_t)a1 < 0x100000 || (uintptr_t)a1 >= 0x80000000) return 0;
 
     DWORD ca = (DWORD)DAT_07cf1ff4;
@@ -277,14 +267,8 @@ int __fastcall Stats_CalcBase(int a1) {
     if ((uintptr_t)ca < 0x100000 || (uintptr_t)ca >= 0x80000000) return 0;
     char* charAttr = (char*)(uintptr_t)ca;
 
-    // GUARDA 2026-07-20 (CRASH 0xC0000005 read @ 0x612A = 388*0x40 + 42):
-    // esta funcion indexaba `ItemAttribute[tipo]` leyendo DAT_07d78068 CRUDO,
-    // ignorando el helper ItemAttribute_Base() de globals.h que existe
-    // justamente porque ese puntero se pisa a 0x1 en runtime (ver la nota de
-    // 2026-05-08 sobre tooltip / RenderBrokenItem). Con la tabla en 0, el
-    // indexado daba una direccion chica y reventaba.
-    // Se disparaba al cerrar el inventario con un tooltip de item abierto,
-    // porque ese camino fuerza un recalculo de stats.
+    // Usar ItemAttribute_Base() (globals.h) y no DAT_07d78068 crudo: ese
+    // puntero se pisa a 0x1 en runtime.
     ITEM_ATTRIBUTE* ITEM_ATTR = (ITEM_ATTRIBUTE*)(uintptr_t)ItemAttribute_Base();
     if (ITEM_ATTR == nullptr) return 0;
 
@@ -503,11 +487,6 @@ void __fastcall FUN_00406d20(int param_1) {
 
 // FUN_004cbdd0 @ 0x004CBDD0 (29 bytes) — clear one of the item-slot tables.
 //
-// BUG-FIX 2026-05-03: original port used absolute source-binary addresses
-// (`0x07e11fb0` literal start, `0x7e12830` literal end) — in our build the
-// linker places `&DAT_07e11fb0` somewhere completely different so the
-// dereference and bound were both garbage.
-//
 // In the source binary, the IDA decompile reads as:
 //   result = dword_7E11FB0;
 //   *(WORD*)((char*)result - 56) = -1;   // type field at -56 from result
@@ -629,9 +608,8 @@ WORD __cdecl DecryptCheckSumKey(WORD wSource) {
 // StopMusic @ 0x00513420 (32 bytes) — corta los 6 BGM de la tabla.
 //
 // IDA:  v0 = g_lpszMp3;  do { StopMp3(*v0++, 0); } while ((int)v0 < (int)&g_iCurrentDialogScript);
-// El bound `< 0x5615DC` es &g_lpszMp3[6], asi que son 6 iteraciones. Antes esto
-// era un StopMp3 unico "best-effort" porque g_lpszMp3 era un DWORD = 0 y no
-// habia tabla; ahora la tabla existe (ver globals.cpp) y el loop es el de IDA.
+// El bound `< 0x5615DC` es &g_lpszMp3[6], asi que son 6 iteraciones (la tabla
+// está en globals.cpp).
 void __cdecl StopMusic(void) {
     for (int i = 0; i < 6; i++)
         StopMp3(g_lpszMp3[i], 0);
@@ -764,8 +742,8 @@ void __fastcall FUN_00406db0(int ecx, int /*edx*/, int param_1, int param_2) {
 
 // MoveBlurs @ 0x0046C3B0 (48 bytes) — tick blur pool, decrement counters.
 //
-// 2026-05-03: AUTO-SKIP removed. The blur/joint/trail shared pool is now
-// allocated as `g_RenderPool_07c608a8[100 * 0x2f0]` in globals.cpp.
+// The blur/joint/trail shared pool is allocated as
+// `g_RenderPool_07c608a8[100 * 0x2f0]` in globals.cpp.
 // DAT_07c608b8 is the +16 anchor (= +4 from DAT_07c608b4). The walker reads
 // fields at piVar2[-4..-2..0] which map to slot offsets 0..4..8..16 — all
 // inside the 100-slot pool. Iteration count is 100 (matches IDA bound
@@ -791,15 +769,8 @@ void __cdecl MoveBlurs(void) {
 
 // SetMatchInfo @ 0x0047EBA0 (49 bytes) - parametros del panel de evento
 // (Devil Square / Blood Castle).  Los lee `sub_4BF2D0` (Render_MapLoadText).
-//
-// 2026-09-04 FIX: la segunda linea escribia `m_iMatchTimeMax` otra vez, con el
-// comentario "double-assign (original code bug)".  No hay tal bug -- IDA dice
-//     m_byMatchType = byType; m_iMatchTimeMax = iMaxTime;
-//     m_iMatchTime  = iTime;  m_iMaxKillMonster = iMaxMonster;
-//     m_iKillMonster = iKillMonster;
-// `m_iMatchTime` es un global aparte (0x00559CCC).  Como nadie lo escribia, el
-// gate `m_iMatchTime > 0` del renderer era siempre falso y el cartel del evento
-// (tiempo + contador de monstruos) no se dibujaba nunca.
+// `m_iMatchTime` es un global aparte de `m_iMatchTimeMax` (0x00559CCC); no es
+// una doble asignacion.
 void __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster, int iKillMonster_p) {
     m_byMatchType = byType;
     m_iMatchTimeMax = iMaxTime;
@@ -809,9 +780,8 @@ void __cdecl SetMatchInfo(BYTE byType, int iMaxTime, int iTime, int iMaxMonster,
 }
 
 // clearMatchInfo @ 0x0047EB80 (31 bytes).
-// OJO: `functions.h` tenia esto mapeado a FUN_004827a0, que es una direccion
-// EN MEDIO de sub_4824C0 (el scan de flechas del inventario) -- por eso el stub
-// vacio.  La direccion real es 0x0047EB80.
+// OJO: no es FUN_004827a0, que cae en medio de sub_4824C0 (el scan de flechas
+// del inventario).
 // IDA: clearMatchInfo (0x0047EB80)
 void __cdecl clearMatchInfo(void) {
     m_byMatchType     = 0;
@@ -824,8 +794,8 @@ void __cdecl clearMatchInfo(void) {
 // ── 50-byte ─────────────────────────────────────────────────────────────────
 
 // getMonsterName @ 0x0047D200 — lookup name by type en la tabla MonsterScript.
-// RE-ACTIVADO 2026-07-24: la tabla ahora esta bien dimensionada (512 × 0x36) y
-// la carga NPCName_Load con Type[0]/Name[1].  IDA: `mov dl,[eax]` (Type es un
+// La tabla es de 512 × 0x36 y la carga NPCName_Load con Type[0]/Name[1].
+// IDA: `mov dl,[eax]` (Type es un
 // BYTE en [0]), stride 0x36, hasta GateAttribute.  Aca acotamos por el contador
 // real (EditMonsterNumber = EditMonsterNumber) en vez del literal 0x7cf5600.
 char *__cdecl getMonsterName(int type) {
@@ -843,7 +813,6 @@ char *__cdecl getMonsterName(int type) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // END BATCH: ~80 functions implemented (1-52 bytes range)
 
-// === FUN_00405240 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
 // ── FUN_00405240 (IDA-activated, absent in Ghidra) ──
 int __cdecl FUN_00405240(void *lpBuffer, int iSize, int iKey)
 {
@@ -880,7 +849,6 @@ int __cdecl FUN_00405240(void *lpBuffer, int iSize, int iKey)
   return v4;
 }
 
-// === FUN_00405290 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
 // ── FUN_00405290 (IDA-activated, absent in Ghidra) ──
 int __cdecl FUN_00405290(int _this)
 {
@@ -893,14 +861,12 @@ int __cdecl FUN_00405290(int _this)
   return result;
 }
 
-// === FUN_0053ad80 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
 // ── FUN_0053ad80 (IDA-activated, absent in Ghidra) ──
 void FUN_0053ad80()
 {
   ;
 }
 
-// === FUN_0053cc00 — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
 // ── FUN_0053cc00 (IDA-activated, absent in Ghidra) ──
 int __cdecl FUN_0053cc00(DWORD *_this)
 {
