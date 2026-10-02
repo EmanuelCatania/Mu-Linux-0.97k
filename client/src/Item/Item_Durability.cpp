@@ -540,7 +540,3 @@ void __cdecl Item_RecalculateRepairCost(void)
     }
     // (Second HashTable ref-decrement + unaff_EBP block skipped — anti-tamper)
 }
-
-// FUN_004233e0 @ 0x004233E0 — HashTable_Unlock (2-arg, release read lock)
-// STUB: HashTable obfuscation helper.
-void __cdecl FUN_004233e0(int a, int b) { (void)a; (void)b; }

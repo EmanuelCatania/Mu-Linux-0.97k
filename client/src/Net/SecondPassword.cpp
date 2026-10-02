@@ -682,17 +682,7 @@ void __cdecl SecondPassword_Screen4(void) {
         DAT_07d78094 = 1;
     }
 
-    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118);
     char sv1 = DAT_07eaa118;
-    {
-        uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa118);
-        if (uVar4 != 0xffffffff) {
-            BYTE* pbVar5 = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa118);
-            BYTE bVar1 = pbVar5[1];
-            pbVar5[1] = bVar1 - 1;
-            if ((BYTE)(bVar1 - 1) == 0) Packet_EncryptByte(pbVar5, &DAT_07eaa118);
-        }
-    }
     if ((sv1 != '\0') &&
         (int)DAT_07eaa0c8 <= (int)DAT_083a427c &&
         (int)DAT_083a427c < (int)(DAT_07eaa0c8 + 0xbe) &&
@@ -715,17 +705,7 @@ void __cdecl SecondPassword_Screen4(void) {
         DAT_07d78094 = 1;
     }
 
-    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv2 = DAT_07eaa11b;
-    {
-        uint uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
-        if (uVar4 != 0xffffffff) {
-            BYTE* pbVar5 = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa11b);
-            BYTE bVar1 = pbVar5[1];
-            pbVar5[1] = bVar1 - 1;
-            if ((BYTE)(bVar1 - 1) == 0) Packet_EncryptByte(pbVar5, &DAT_07eaa11b);
-        }
-    }
     if (sv2 != '\0' &&
         (int)DAT_07ea5290 <= (int)DAT_083a427c &&
         (int)DAT_083a427c < (int)(DAT_07ea5290 + 0xbe) &&
@@ -749,27 +729,12 @@ void __cdecl SecondPassword_Screen4(void) {
             void* pvVar10 = AntiTamper_HashNode();
             *(unsigned char*)((int)pvVar10 + 0x584) = 1;
             HashTable_Insert(&MAIN_HASH_CLASS, pvVar10, puVar8);
-        } else {
-            uint uVar4b = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar8);
-            void* puVar9 = (uVar4b == 0xffffffff) ? nullptr : *(void**)(DAT_055c9bcc + uVar4b * 4);
-            char cVar2 = *(char*)((int)puVar9 + 0x584);
-            *(BYTE*)((int)puVar9 + 0x584) = (BYTE)(cVar2 + 1);
-            if ((BYTE)(cVar2 + 1) < 2) Packet_DecryptBuffer(puVar8, puVar9);
         }
         // Update slot visibility based on item type == -1
         if (*(short*)((int)DAT_07cf1ffc + 0x218 + i) == -1)
             *(BYTE*)((int)DAT_07cf1ffc + 0x258 + i) = 0;
         else
             *(BYTE*)((int)DAT_07cf1ffc + 0x258 + i) = 1;
-
-        uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar8);
-        if (uVar4 != 0xffffffff) {
-            uint uVar4b = HashTable_GetIndex(&MAIN_HASH_CLASS, puVar8);
-            void* puVar9 = (uVar4b == 0xffffffff) ? nullptr : *(void**)(DAT_055c9bcc + uVar4b * 4);
-            char cVar2 = *(char*)((int)puVar9 + 0x584);
-            *(char*)((int)puVar9 + 0x584) = cVar2 - 1;
-            if ((char)(cVar2 - 1) == '\0') Packet_EncryptBuffer(puVar9, puVar8);
-        }
     }
 
     // IDA sub_4E6550 L160-231: reset por frame del byte ITEM.Color (+0x40) de
@@ -817,13 +782,9 @@ void __cdecl SecondPassword_Screen4(void) {
 
     DAT_07eaa138 = 0;
     // Char-count check and back-button
-    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv3 = DAT_07eaa11b;
-    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     if (sv3 == '\0') {
-        HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118);
         char sv4 = DAT_07eaa118;
-        PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
         if (sv4 == '\0' && DAT_07eaa119 == '\0' && DAT_07eaa11a == '\0' && GoldenArcherOpenType == 0) {
             ushort uVar3 = *(ushort*)((int)DAT_07cf1ff4 + 0xe);
             if (0x31 < uVar3) {
@@ -852,9 +813,7 @@ void __cdecl SecondPassword_Screen4(void) {
         }
     }
 
-    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char sv5 = DAT_07eaa11b;
-    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     if (sv5 != '\0') {
         // 2026-05-08: trade — DAT_07ea5298 / DAT_07ea7b88 son DWORDs (4 bytes)
         // en globals.cpp pero en el binario original son las bases de los
@@ -875,9 +834,7 @@ void __cdecl SecondPassword_Screen4(void) {
     // Sincronizamos el global con los valores del render para que coincidan.
     DAT_07eaa0c8 = 260;
     DAT_07eaa0cc = 0;
-    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa118);
     char sv6 = DAT_07eaa118;
-    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
     if (sv6 != '\0') {
         // FIX 2026-07-25: era copy-paste del branch de Warehouse (usaba
         // OffsetWarehouseItems → el hover leía un slot basura y el tooltip
@@ -1241,16 +1198,7 @@ void __cdecl SecondPassword_Screen9(void) {
 void __cdecl FUN_004eb7f0(void) {
     // IDA: el guard lee TradeOpened; se omite únicamente el ruido de HashTable.
 
-    HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
     char cGuard = DAT_07eaa11b;
-    {
-        uint uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_07eaa11b);
-        if (uVar3 != 0xffffffff) {
-            BYTE* pb = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa11b);
-            BYTE b = pb[1]; pb[1] = b - 1;
-            if ((BYTE)(b-1) == 0) Packet_EncryptByte(pb, &DAT_07eaa11b);
-        }
-    }
     if (cGuard == '\0') return;
 
     // Botón Zen: [x+26,x+50) × [y+390,y+414).
@@ -1339,13 +1287,8 @@ void __cdecl FUN_004ec330(void) {
         void* pv = AntiTamper_HashNode();
         *(unsigned char*)((int)pv + 1) = 1;
         HashTable_Insert(&MAIN_HASH_CLASS, pv, &DAT_07eaa118);
-    } else {
-        BYTE* pb = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_07eaa118);
-        BYTE b = pb[1]; pb[1] = b + 1;
-        if ((BYTE)(b+1) < 2) Packet_DecryptByte((BYTE*)&DAT_07eaa118, pb);
     }
     char cGuard = DAT_07eaa118;
-    PACKET_ENCRYPT(&MAIN_HASH_CLASS, &DAT_07eaa118);
 
     if (cGuard != '\0') {
         if (DAT_07eaa132 != '\0') {

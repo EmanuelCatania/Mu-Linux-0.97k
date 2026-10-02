@@ -202,36 +202,7 @@ LAB_00423b59:
     *(undefined1 *)((int)pvVar4 + 1) = 1;
     HashTable_Insert(&MAIN_HASH_CLASS,pvVar4,&g_byPacketSerialRecv);
   }
-  else {
-    uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
-    if (uVar3 == 0xffffffff) {
-      pbVar5 = (byte *)0x0;
-    }
-    else {
-      pbVar5 = *(byte **)(DAT_055c9bcc + uVar3 * 4);
-    }
-    bVar1 = pbVar5[1];
-    pbVar5[1] = bVar1 + 1;
-    if ((byte)(bVar1 + 1) < 2) {
-      Packet_DecryptByte(&g_byPacketSerialRecv,pbVar5);
-    }
-  }
   g_byPacketSerialRecv = 0;
-  uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
-  if (uVar3 != 0xffffffff) {
-    uVar3 = HashTable_GetIndex(&MAIN_HASH_CLASS,&g_byPacketSerialRecv);
-    if (uVar3 == 0xffffffff) {
-      pbVar5 = (byte *)0x0;
-    }
-    else {
-      pbVar5 = *(byte **)(DAT_055c9bcc + uVar3 * 4);
-    }
-    bVar1 = pbVar5[1];
-    pbVar5[1] = bVar1 - 1;
-    if ((byte)(bVar1 - 1) == 0) {
-      Packet_EncryptByte(pbVar5,&g_byPacketSerialRecv);
-    }
-  }
   return;
 }
 

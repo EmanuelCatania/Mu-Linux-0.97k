@@ -47,25 +47,8 @@ void Scene_MapTick(void)
         *(undefined1 *)((int)pvVar3 + 0x584) = 1;
         HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
       }
-      else {
-        puVar4 = (undefined4 *)HashTable_GetNode(&MAIN_HASH_CLASS,puVar5);
-        cVar1 = *(char *)(puVar4 + 0x161);
-        *(byte *)(puVar4 + 0x161) = cVar1 + 1U;
-        if ((byte)(cVar1 + 1U) < 2) {
-          Packet_DecryptBuffer(puVar5,puVar4);
-        }
-      }
       RenderItemInfo((void*)0x109,(void*)0x78,DAT_07e91350,'\0');
       puVar5 = (undefined4*)DAT_07cf1ffc;
-      uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
-      if (uVar2 != 0xffffffff) {
-        puVar4 = (undefined4 *)HashTable_GetNode(&MAIN_HASH_CLASS,puVar5);
-        cVar1 = *(char *)(puVar4 + 0x161);
-        *(char *)(puVar4 + 0x161) = cVar1 + -1;
-        if ((char)(cVar1 + -1) == '\0') {
-          Packet_EncryptBuffer(puVar4,puVar5);
-        }
-      }
     }
     goto LAB_004f6824;
   }

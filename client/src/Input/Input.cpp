@@ -325,11 +325,8 @@ void __cdecl ClearInput(int param_1)
 // IDA: CheckFunctionButtons
 void Input_ProcessFunctionKeys(void)
 {
-  byte bVar1;
   char cVar2;
   SHORT SVar3;
-  uint uVar4;
-  byte *pbVar5;
   undefined4 uVar6;
   undefined4 uVar7;
 
@@ -400,30 +397,10 @@ LAB_004c06d6:
   }
   else {
     if (DAT_07eaa116 == '\0') {
-      HashTable_Insert_Short(&MAIN_HASH_CLASS,&DAT_07eaa11b);
       cVar2 = DAT_07eaa11b;
-      uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa11b);
-      if (uVar4 != 0xffffffff) {
-        pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_07eaa11b);
-        bVar1 = pbVar5[1];
-        pbVar5[1] = bVar1 - 1;
-        if ((byte)(bVar1 - 1) == 0) {
-          Packet_EncryptByte(pbVar5,&DAT_07eaa11b);
-        }
-      }
       if ((((cVar2 == '\0') && (DAT_07eaa119 == '\0')) && (DAT_07eaa11a == '\0')) &&
          (DAT_07eaa11c == '\0')) {
-        HashTable_Insert_Short(&MAIN_HASH_CLASS,&DAT_07eaa118);
         cVar2 = DAT_07eaa118;
-        uVar4 = HashTable_GetIndex(&MAIN_HASH_CLASS,&DAT_07eaa118);
-        if (uVar4 != 0xffffffff) {
-          pbVar5 = (byte *)HashTable_GetNode(&MAIN_HASH_CLASS,&DAT_07eaa118);
-          bVar1 = pbVar5[1];
-          pbVar5[1] = bVar1 - 1;
-          if ((byte)(bVar1 - 1) == 0) {
-            Packet_EncryptByte(pbVar5,&DAT_07eaa118);
-          }
-        }
         if (cVar2 == '\0') goto LAB_004c06d6;
       }
     }

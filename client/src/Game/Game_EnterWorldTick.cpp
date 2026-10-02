@@ -257,11 +257,6 @@ void Game_EnterWorldTick(void)
                 void* node = AntiTamper_HashNode();
                 *((BYTE*)node + 0x584) = 1;
                 HashTable_Insert(&MAIN_HASH_CLASS, node, DAT_07cf1ffc);
-            } else {
-                void* node = HashTable_GetNode(&MAIN_HASH_CLASS, DAT_07cf1ffc);
-                ((char*)node)[0x161]--;
-                if (((char*)node)[0x161] == '\0')
-                    Packet_EncryptBuffer(node, DAT_07cf1ffc);
             }
         }
 

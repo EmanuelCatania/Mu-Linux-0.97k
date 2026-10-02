@@ -68,11 +68,6 @@ void __cdecl Scene_Dispatch(HDC param_1)
             void* node = AntiTamper_HashNode();
             *((BYTE*)node + 4) = 1;
             HashTable_Insert(&MAIN_HASH_CLASS, node, &g_iNoMouseTime);
-        } else {
-            BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
-            node[4]++;
-            if (node[4] < 2)
-                Packet_DecryptDword(&g_iNoMouseTime, node);
         }
     }
 
@@ -207,35 +202,6 @@ send_done:
         OpenGL_Release();
     }
     #endif  // re-auth packet block disabled for MuEmu
-
-    // ── KEEPALIVE COUNTER DECREMENT + RE-RANDOMIZE ────────────────────────────
-    // Decrements g_iNoMouseTime ref-count; when it hits 0 re-randomizes it
-    // using a 16-byte XOR key (DAT_00559050). This is anti-tamper obfuscation.
-    {
-        // Look up the value in the hash table (two lookups: one for zero key, one for value)
-        // Simplified: decrement the tracked ref-count
-        unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &g_iNoMouseTime);
-        if (idx != 0xffffffff) {
-            int* node = *(int**)(DAT_055c9bcc + idx * 4);
-            ((char*)node)[4]--;
-            if (((char*)node)[4] == '\0') {
-                // Re-randomize g_iNoMouseTime with: (+0x47) ^ key[i&0xf] + 0x23 ^ next_byte
-                int* tmp = (int*)operator_new(4);
-                *tmp = g_iNoMouseTime;
-                for (unsigned i = 0; i < 4; i++) {
-                    char* b = (char*)tmp + i;
-                    *b = *b + 'G';
-                    *b = (char)(*b ^ PacketXorKey16[i & 0xf]);
-                    *b = *b + '#';
-                    if (i < 3)
-                        *(BYTE*)b ^= *((BYTE*)tmp + i + 1);
-                    ((char*)&g_iNoMouseTime)[i] = (char)_rand();
-                }
-                *node = *tmp;
-                operator_delete((BYTE*)tmp);
-            }
-        }
-    }
 
     DAT_055ca038 = 0;
 }

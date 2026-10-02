@@ -43,18 +43,6 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 #endif
 
 
-// IDA: STRUCT_DECRYPT (0x00423040)
-// STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl STRUCT_DECRYPT(void *ctx, void *chardata) {
-    // STUB: HashTable insert with obfuscation — cannot implement safely (unaff_retaddr)
-    (void)ctx; (void)chardata;
-}
-// IDA: FUN_00422DF0 (0x00422DF0)
-// STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl PACKET_DECRYPT(void *ctx, void *counter) {
-    // STUB: HashTable insert (ptr) with obfuscation — cannot implement safely
-    (void)ctx; (void)counter;
-}
 // ChatListBox_ScrollByN @ 0x0040E330 — NO es "Timer_Advance": es el ciclador del TAMAÑO
 // del historial del ChatListBox (tecla F4 y botón 2 del popup del chat).
 // Cicla this[35] (visible row count, +0x8C): 3 → 6 → 30 → 6 …, alternando
