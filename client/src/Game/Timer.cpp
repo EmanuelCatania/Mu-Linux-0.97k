@@ -38,7 +38,7 @@ void Timer_UpdateFrameTiming(void)
   DAT_05826e10 = DAT_05826e10 + 1;
   DAT_05826e14 = DAT_05826e14 + 1;
   DVar2 = timeGetTime();
-  // DESVIACION DELIBERADA (2026-09-08).  El binario hace
+  // DESVIACION DELIBERADA.  El binario hace
   // `fild qword [timeGetTime()]; fstp dword WorldTime`, o sea guarda los ms
   // DESDE EL ARRANQUE DE WINDOWS en un float de 4 bytes.  Pasadas ~13 horas de
   // uptime el ULP del float supera 1 ms y WorldTime deja de poder representar

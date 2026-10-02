@@ -739,13 +739,6 @@ LAB_0043fd21:
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONSTRUCCION E INICIALIZACION DEL CONTEXTO PATH  (2026-08-17)
-//
-// Hasta ahora el contexto (DAT_05826df4) se reservaba en WinMain con
-// `malloc(0x420)` + memset, y por eso el vtable de la cola de prioridad en
-// +0x414 quedaba NULL: PATH_FindPath (PATH::FindPath) crashea al llamarlo, y de
-// ahi venia el `pfReady = false` forzado en stubs_externs.cpp, que obliga a usar
-// el A* sustituto. Estas dos funciones portan lo que faltaba.
 //
 // ── Layout del contexto, leido del binario ───────────────────────────────────
 //   indice DWORD (byte)      contenido
@@ -810,6 +803,6 @@ void __cdecl PathContext_Create(void)
     DAT_05826df4 = (DWORD)(uintptr_t)p;
 }
 
-// ZzzAI::InitPath (0x0043F2D0) NO va aca: ya estaba portada, y correctamente,
-// en stubs_externs.cpp (PathFinder_ResetContext). La llama OpenFont (World_Init) desde
-// Scene_Intro, igual que en el binario. Definirla de nuevo aca daba LNK2005.
+// ZzzAI::InitPath (0x0043F2D0) no va acá: es PathFinder_ResetContext, que la
+// llama OpenFont (World_Init) desde Scene_Intro, igual que en el binario.
+// Definirla de nuevo daría LNK2005.

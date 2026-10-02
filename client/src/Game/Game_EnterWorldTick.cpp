@@ -111,29 +111,9 @@ static void Pkt_Send(const BYTE* pkt_in, int len)
 // Send the character-enter-world packet:
 // [0xC1][len][0xF3] + username(10B, XOR) + padding(zeros, XOR) + slot_byte(XOR)
 //
-// BUG-FIX 2026-04-28: pkt[] era stack-buffer sin inicializar.  El loop XOR
-// del slot byte hace `pkt[13] ^= key[13] ^ pkt[14]` y pkt[14] estaba en garbage
-// stack-residual → cada call producía un cipher distinto del slot byte → el
-// server descifraba un slot inválido y NO respondía con F3/03 (silent drop).
-// Forzamos memset a 0 para que pkt[14] sea determinista (0) y el XOR final
-// del slot byte sea estable.  Mismo fix aplicado al duplicado en case 0x19.
-// 2026-05-05 BUG-FIX server kick post-F3/03 select-char:
-// El encoding viejo usaba `pkt[i] ^= key[i] ^ pkt[i+1]` (NEXT byte) — pero
-// el server (PacketManager.cpp::XorData) descifra con `pkt[n] ^= pkt[n-1]
-// ^ key[n]` (PREVIOUS byte) iterando backward. Eso significa el encoding
-// correcto del cliente es FORWARD usando `pkt[i-1]` (previous, que ya
-// quedó encoded en el step anterior). Mismo patrón que la duplicate
-// version en Game_CharSelectTick.cpp:108 y que Net_SendSmallPacket.
-//
-// Bug visible: server al recibir F3/03 select-char descifraba garbage,
-// CGCharacterInfoRecv leía un nombre corrupto, GDCharacterInfoSend al
-// DataServer fallaba (Char no existe), DataServer respondía DGCharacterInfoRecv
-// con result=0 → CloseClient (DSProtocol.cpp:630). Eso es el FD_CLOSE.
-//
-// El flow alternativo es que el server SÍ procese el F3/03 con el nombre
-// correcto (caso "mago" que se loguea OK) pero al final algún check
-// secundario falla y kickea. La fórmula correcta abajo elimina la
-// posibilidad de garbage en el descifrado.
+// El buffer arranca en 0 y el XOR encadena con el byte ANTERIOR ya codificado
+// (`pkt[i] ^= pkt[i-1] ^ key[i]`), que es como lo descifra el server (XorData,
+// recorriendo hacia atrás). Mismo patrón que Net_SendSmallPacket.
 static void Send_CharSelectPacket(void)
 {
     BYTE pkt[32];
@@ -163,10 +143,8 @@ static void Send_CharSelectPacket(void)
     Pkt_Send(pkt, 15);
 }
 
-// Send the character-CREATE packet (2026-07-17):
+// Send the character-CREATE packet:
 //   [0xC1][15][0xF3][0x01][name(10)][Class] — server PMSG_CHARACTER_CREATE_RECV.
-// Antes el OK de crear mandaba Send_CharSelectPacket (F3/03 = seleccionar char
-// existente) → el server recibía un select de un char inexistente → FD_CLOSE.
 // Class = page*16 (DB_CLASS_DW=0, DK=16, FE=32, MG=48) — la fórmula
 // `page*0x10 + byte1` del IDA da ese valor.
 static void Send_CharCreatePacket(void)
@@ -210,15 +188,9 @@ void Game_EnterWorldTick(void)
     if (CharSelectSceneInitialized == '\0') {
         CharSelectSceneInitialized = 1;
 
-        // ── BUG-FIX 2026-04-25 ──────────────────────────────────────────────
-        // Limpiar flags de click "stale" heredadas de la escena anterior.
-        // En login/serverselect el usuario hace clicks rápidos para conectar;
-        // si dos LBUTTONDOWNs caen <500ms aparte, Windows manda WM_LBUTTONDBLCLK
-        // setteando DAT_083a4299=1.  Ese flag persiste hasta char-select y
-        // cuando Mouse_Hover marca SelectedCharacter=0 (slot 0 hovered) la rama
-        // DBLCLK del slot loop dispara → confirmed=true → state salta de 0x14
-        // directo a 0x19 → entrada al mundo sin que el usuario haya clickeado
-        // un slot.  Limpiamos también DAT_083a4124 por las dudas.
+        // Limpia flags de click heredados de la escena anterior: un doble click en
+        // login/server-select deja DAT_083a4299=1 y en char-select dispararía la
+        // entrada al mundo sin elegir slot. También se limpia DAT_083a4124.
         DAT_083a4299 = 0;   // double-click flag
         DAT_083a4124 = 0;   // single-click flag
         Clk_Watch("scene-init");
@@ -304,11 +276,8 @@ void Game_EnterWorldTick(void)
         }
 
         // Set camera to char-select world position (slot 5 of CameraWalk).
-        // BUG FIX (igual que Game_SceneUpdate): DAT_00561664..0056167b son
-        // aliases DWORD& sobre el storage float de CameraWalk_005615ec[30..35].
-        // Si los asignamos a float& (DAT_083a7ad0/4/8, _DAT_083a4334) MSVC
-        // hace int→float conversion. Forzamos lectura como float reinterpretando
-        // el storage (mismo offset, distinto tipo).
+        // DAT_00561664..0056167b son aliases DWORD& sobre el storage float de
+        // CameraWalk_005615ec[30..35]: se leen como float para no convertir int→float.
         DAT_083a7ad0  = *(float*)&DAT_00561670;
         DAT_083a7ad4  = *(float*)&DAT_00561674;
         DAT_083a7ad8  = *(float*)&DAT_00561678;
@@ -324,21 +293,14 @@ void Game_EnterWorldTick(void)
 
     // ── PER-FRAME UPDATES ─────────────────────────────────────────────────────
     CLK_WATCH("frame-start");
-    // ── BUG-FIX 2026-07-16: MoveBugs FALTABA en el tick de char-select ──────────
-    // Este ES el tick de char-select (Game_MainLoop dispatch state 4 → esta fn,
-    // pese al nombre "EnterWorldTick"). IDA 0x521D80 L401 llama MoveBugs() acá,
-    // primero. Hace el fade-in del alpha de las entidades "bug" (Alpha()) y
-    // posiciona/anima las MONTURAS (Uniria bug=195 / Dinorant bug=267). Sin él,
-    // el alpha del mount queda en 0 → Calc_RenderObject cullea → no se dibuja.
-    // (La sesión previa lo puso en Game_CharSelectTick, que es el tick de state 5.)
+    // Este es el tick de char-select (Game_MainLoop state 4 → esta fn, pese al
+    // nombre "EnterWorldTick"). IDA 0x521D80 L401 llama MoveBugs() acá, primero:
+    // fade-in del alpha de las entidades "bug" y posición/animación de las
+    // MONTURAS (Uniria bug=195 / Dinorant bug=267).
     { extern void __stdcall MoveBugs(void); MoveBugs(); }
     CLK_WATCH("after-MoveBugs");
     Object_MoveUpdate();         CLK_WATCH("after-Object_MoveUpdate");
-    // ── BUG-FIX 2026-04-27: MoveParticles (MoveParticles) decrementa
-    // lifetime de cada particle del pool DAT_07abf5f0. Sin esta llamada los
-    // particles spawneados (lightning ELS=11, fire/smoke, etc.) se acumulan
-    // forever → whiteout. Per IDA/5.2 RenderBlurs_RenderCharacterScene este
-    // call se hace per-frame en MoveCharactersClient/MoveCharacterScene path.
+    // MoveParticles decrementa el lifetime de cada particle del pool DAT_07abf5f0.
     // MEJORA DEL DLL (no esta en IDA): el binario solo llama MoveParticles en
     // 0x005223EE; el DLL (Patchs.cpp MoveParticles_MoveCharacterScene) agrega
     // MoveEffects + MoveJoints para que el efecto de las alas se vea en
@@ -456,20 +418,12 @@ void Game_EnterWorldTick(void)
             PlayBuffer(0x19, 0, 0);
         }
 
-        // ── BUG-FIX 2026-07-17: las flechas de cambio de clase se MOVIERON al
-        // bloque `else if (DAT_005616b0 != -1)` (create/name view). IDA
-        // Game_EnterWorldTick: el input del create-panel (flechas de clase,
+        // Las flechas de cambio de clase van en el bloque `else if (DAT_005616b0 != -1)`
+        // (create/name view): en IDA el input del create-panel (flechas de clase,
         // OK/Cancel, nombre) corre cuando `dword_5616B0 >= 0`, no en la lista.
-        // Antes vivían acá (== -1) → tras clickear NEW CHARACTER (que setea
-        // 5616B0>=0) este bloque se saltea → las flechas nunca corrían.
 
-        // ── BUG-FIX 2026-04-27 ────────────────────────────────────────────
-        // IDA original (00521D80) tiene el bloque "back/delete/Enter" dentro
-        // de `if (DAT_005616b0 != -1)` (rama name-input), NO dentro de
-        // `if (DAT_005616b0 == -1)` (rama lista). Estaba mal ubicado y eso
-        // hacía que Enter en la lista (sin slot abierto para nombre) gatillara
-        // el flujo de creación nuevo personaje incluso con slots llenos.
-        // El bloque ahora vive en el `else if (DAT_005616b0 != -1)` más abajo.
+        // El bloque "back/delete/Enter" va en el `else if (DAT_005616b0 != -1)` más
+        // abajo (rama name-input), como en IDA (00521D80), no en la rama lista.
 
         // Entity slot click detection (5 slots)
         {
@@ -506,19 +460,12 @@ void Game_EnterWorldTick(void)
                 pendingB = DAT_083a7c28;
             }
 
-            // ── BUG-FIX 2026-04-25 ───────────────────────────────────────
             // IDA original (00521D80) gates the dword_83A7C14 = 25 path with:
             //   if (!v103) goto LABEL_117;     // v103 = (SelectedHero != -1)
             //   if (!ErrorMessage && byte_55CA038) v40 = 1;
             //   if (selectButtonClicked) { ... fall through to flag check }
             //   else { LABEL_117: if (!v40) goto LABEL_124; }
             //   // flag check → state = 25
-            //
-            // Port previo perdía AMBOS guards (`if (!v103)` y `if (!v40)`):
-            // el bloque que setea state=0x19 corría cada frame, y con
-            // SelectedHero=-1 leía garbage memory (selSlot*0x394+0x1c0 con
-            // selSlot=-1 cae en -0x1d4 desde la base) → triggeraba world-entry
-            // sin click del usuario → char-select desaparecía tras 1s.
 
             bool selectClicked = false;
             if (DAT_005616ac != -1) {
@@ -536,9 +483,6 @@ void Game_EnterWorldTick(void)
                 // Boton OK / entrar al juego (IDA 0x521D80 L556):
                 //   MouseX >= 441 - dword_5616A8 && MouseX < 441 - dword_5616A8 + 70
                 //   && MouseY >= 148 && MouseY < 167
-                // 2026-09-12: el port sumaba el desplazamiento del panel en vez de
-                // restarlo y dejaba el rect en 6 px de ancho -> el OK no respondia
-                // (el Enter si, porque va por el otro camino).
                 if (mouseX >= 441 - (int)DAT_005616a8 &&
                     mouseX < 441 - (int)DAT_005616a8 + 70 &&
                     DAT_083a4278 >= 148 && DAT_083a4278 < 167 &&
@@ -570,9 +514,7 @@ void Game_EnterWorldTick(void)
     // ── NAME-INPUT VIEW (slot reservado para nuevo char): b0 != -1 ────────────
     // IDA: `if (-1 < DAT_005616b0)`. Aquí Enter (DAT_055ca038) y los botones
     // back (mouseX 0xea..0x133) / OK (mouseX 0x14f..0x196) operan sobre el
-    // diálogo de nombre del nuevo personaje. Antes de este fix vivían dentro
-    // de `if (DAT_005616b0 == -1)` y disparaban con Enter en la pantalla de
-    // lista, generando el bug "Enter activa New Character con slots llenos".
+    // diálogo de nombre del nuevo personaje.
     else if ((int)DAT_005616b0 != -1) {
         int dialogY = DAT_005616a4;
 
@@ -658,7 +600,7 @@ void Game_EnterWorldTick(void)
                         DAT_083a7c24 = DAT_083a7c28;
                         DAT_083a7c28 = 0;
                         DAT_05826cb0 = 0x34;
-                        Send_CharCreatePacket();   // BUG-FIX 2026-07-17: F3/01 crear (no F3/03 select)
+                        Send_CharCreatePacket();   // F3/01 crear (no F3/03 select)
                     } else {
                         if (DAT_083a7c24 == 0) DAT_083a7c24 = 0x73; else DAT_083a7c28 = 0x73;
                     }
@@ -751,12 +693,8 @@ void Game_EnterWorldTick(void)
                 }
 
                 // ── WORLD ENTRY: copy char data → transition to Loading ──────
-                // (BUG-FIX 2026-04-25: en el port original este bloque estaba
-                //  FUERA del switch → se ejecutaba cada frame → state 4→3→5
-                //  cíclicamente, disparando Game_CharSelectTick que envía un
-                //  F3 char-name packet sin MuEmu wrap → server FD_CLOSE.
-                //  IDA original 0x00521D80:1150 pone esto DENTRO de case 25
-                //  después del Pkt_Send y check de validCode.)
+                // Va DENTRO de case 25, tras el Pkt_Send y el check de validCode (IDA
+                // 0x00521D80:1150); fuera del switch correría cada frame.
                 {
                     char* charName = (char*)(DAT_07abf5d0 + DAT_005616ac * 0x394 + 0x1c1);
                     char* charData = (char*)DAT_07cf1ff4;
@@ -814,11 +752,4 @@ void Game_EnterWorldTick(void)
         // Fall through — default animation stop
         break;
     }
-  // 2026-07-16 DIAG: bracket la sección UI de char-select
-    // (NB: the world-entry transition block — SceneFlag=3, FUN_005102c0,
-    //  FUN_00404c60(5) — used to live here, OUTSIDE the switch.  Eso era un
-    //  port-bug: en el binario original ese código está DENTRO de case 25
-    //  (= nuestro case 0x19), tras el Pkt_Send y el check de validCode.
-    //  Al estar afuera, se ejecutaba cada frame → state 4→3→5 cíclico →
-    //  Game_CharSelectTick disparaba unencrypted F3 → server FD_CLOSE.)
 }
