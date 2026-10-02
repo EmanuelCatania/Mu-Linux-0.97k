@@ -41,10 +41,9 @@
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-// 2026-05-03: AUTO-SKIP removed. Pool now properly sized in globals.cpp
-// (g_RenderPool_07c608a8 = 100 slots × 0x2f0). DAT_07c608b4 is the +12
-// anchor inside slot[0]. Walk replaced with explicit count.
 // IDA: Trail_RenderAll (0x0046C3E0)
+// Pool g_RenderPool_07c608a8 (100 slots × 0x2f0, en globals.cpp); DAT_07c608b4
+// es el ancla +12 dentro del slot[0]. Se itera por cuenta explícita.
 void Trail_RenderAll(void)
 
 {
@@ -78,14 +77,11 @@ void Trail_RenderAll(void)
             if (*(short *)(*piVar2 + 0x1be) == 0) {
               fVar1 = (float)(piVar2[1] - local_8) / (float)piVar2[1];
             }
-            // BUG-FIX 2026-07-15: IDA Trail_RenderAll lee el color como FLOAT
-            // (`*((float*)v0+2)`). Leerlo como `(float)piVar2[N]` (cast int de
-            // los bits float, ej. 0.1f=0x3DCCCCCD → 1.03e9) hacía glColor clampear
-            // a 1.0 → los beams/crackles salían a brillo MÁXIMO dorado en vez del
-            // color tenue → haz dorado brillante sobre la espada del +11 set.
+            // IDA Trail_RenderAll lee el color como FLOAT (`*((float*)v0+2)`):
+            // reinterpretar los bits, no convertir int→float.
             glColor3f(fVar1 * *(float*)&piVar2[2],fVar1 * *(float*)&piVar2[3],fVar1 * *(float*)&piVar2[4]);
             iVar3 = piVar2[1];
-            glTexCoord2f((float)local_8 / (float)iVar3,1.0f);   // BUG-FIX: era 0x3f800000 (int=1e9), IDA usa 1.0
+            glTexCoord2f((float)local_8 / (float)iVar3,1.0f);
             glVertex3fv((const GLfloat*)(piVar4 + -0x5a));
             glTexCoord2f((float)local_8 / (float)iVar3,0);
             glVertex3fv((const GLfloat*)piVar4);
@@ -93,17 +89,14 @@ void Trail_RenderAll(void)
             if (*(short *)(*piVar2 + 0x1be) == 0) {
               fVar1 = (float)((piVar2[1] - local_8) + -1) / (float)piVar2[1];
             }
-            // BUG-FIX 2026-07-15: IDA Trail_RenderAll lee el color como FLOAT
-            // (`*((float*)v0+2)`). Leerlo como `(float)piVar2[N]` (cast int de
-            // los bits float, ej. 0.1f=0x3DCCCCCD → 1.03e9) hacía glColor clampear
-            // a 1.0 → los beams/crackles salían a brillo MÁXIMO dorado en vez del
-            // color tenue → haz dorado brillante sobre la espada del +11 set.
+            // IDA Trail_RenderAll lee el color como FLOAT (`*((float*)v0+2)`):
+            // reinterpretar los bits, no convertir int→float.
             glColor3f(fVar1 * *(float*)&piVar2[2],fVar1 * *(float*)&piVar2[3],fVar1 * *(float*)&piVar2[4]);
             local_8 = local_8 + 1;
             iVar3 = piVar2[1];
             glTexCoord2f((float)local_8 / (float)iVar3,0);
             glVertex3fv((const GLfloat*)(piVar4 + 3));
-            glTexCoord2f((float)local_8 / (float)iVar3,1.0f);   // BUG-FIX: era 0x3f800000 (int=1e9), IDA usa 1.0
+            glTexCoord2f((float)local_8 / (float)iVar3,1.0f);
             glVertex3fv((const GLfloat*)(piVar4 + -0x57));
             glEnd();
             piVar4 = piVar4 + 3;

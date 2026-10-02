@@ -1,15 +1,5 @@
-// Extracted from stubs_misc2.cpp; IDA provenance comments are retained.
-//
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 2578-4345 (1768 lines).
-//
-// Mixed sections:
-//   "FUN_ stubs (non-void returning)" — non-void function stubs
-//   "Screen coordinate converters"    — Screen_ToGLx / Screen_ToGLy
-//   "AttackEffect / UseSkillWarrior"  — combat helpers
-//   "Entity action stubs"             — Skills.cpp / Combat.cpp externs
-//   "Missing stubs added for linker fix" — GL helpers, screen converters
-//   "Item data helper stubs"
-//   "OpenTexture (Model_LoadTextures)"
+// Render_LegacyDamageNumbers.cpp
+// Números de daño flotantes: RenderNumber (0x005120C0) y RenderPoints (0x00479330).
 
 #include "stdafx.h"
 #include "globals.h"
@@ -45,12 +35,11 @@ extern void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 
 
 // RenderPoints @ 0x00479330 — RenderPoints (damage popup renderer)
-// 2026-05-06: ported from IDA mu97k-src-IDA/raw/00479330_RenderPoints.c.
 //
 // Itera el pool DAT_07c80110[100 × 0x70] de damage popups (poblado por
 // CreatePoint en Net_Process case 0x15 / ReceiveAttackDamage). Para cada
-// slot activo proyecta su world position a screen via gluProject y
-// renderiza el número con RenderNumber2D usando el color del slot.
+// slot activo llama a RenderNumber con la posición de mundo, el valor, el
+// color del slot y alpha = lifetime * 0.4.
 //
 // Slot layout (per IDA CreatePoint):
 //   +0x00 byte  active (1 if displayed)
@@ -71,17 +60,6 @@ extern void __cdecl Camera_ProjectWorldToScreen(float*, int*, int*);   // World_
 extern "C" // ─────────────────────────────────────────────────────────────────────────────
 // RenderNumber  @ 0x005120C0  — dibuja un número de daño en el MUNDO.
 // RenderPoints  @ 0x00479330  — recorre el pool y llama al anterior.
-//
-// 2026-08-15 — REESCRITO FIEL A IDA. La versión anterior era una invención en
-// dos fases (project con `gluProject` + draw con `RenderNumber2D` en ortho 2D).
-// Tres síntomas venían de ahí:
-//   · nada se veía — se proyectaba con la matriz MODELVIEW leída de GL, que en
-//     ese punto del frame es la IDENTIDAD (el call site corre después de
-//     `GL_BeginSprite`/BeginSprite);
-//   · los dígitos salían invertidos — `RenderNumber2D` usa V de 0.0→0.5 y el
-//     original usa 0.5→0.0;
-//   · los MISS salían como barras blancas — el original tiene un sprite propio
-//     para `Num == -1`, no dibuja dígitos.
 //
 // El binario no proyecta a mano: `RenderNumber` emite el número como sprites 3D
 // con `RenderSpriteUV` (0x511FB0), que ya transforma por la CameraMatrix. Por
@@ -163,8 +141,3 @@ void __cdecl RenderPoints(int, int, int, int)
                      *(float*)(slot + 0x0c));    // scale
     }
 }
-
-
-// ── Missing stubs added for linker fix ───────────────────────────────────────
-
-// GL helpers — cached OpenGL state wrappers

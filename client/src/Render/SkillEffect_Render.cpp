@@ -36,7 +36,7 @@
 //     pfVar1 = &DAT_07c5ab3c;
 //     do {
 //       if (pfVar1[-3] != '\0') {             // efecto activo
-//         BindTexture(*((_DWORD *)v0 - 2));    ← DWORD, no float (ver fix 2026-08-15)
+//         BindTexture(*((_DWORD *)v0 - 2));    ← DWORD, no float
 //
 //         if (World == 2) {
 //           // Modo en-mundo: draw 2D en espacio mundo
@@ -86,7 +86,7 @@
 // SkillEffect_Render @ 0x0046CB70 (44 lines)
 // Renders all active skill effects. In sub-states 2/7/10 uses timer-driven mode;
 // otherwise sets GL blend mode. Each effect: bind texture, then draw 2D or billboard.
-// BUG-FIX 2026-04-28: AUTO-SKIP removed — pool DAT_07c5ab3c ahora es array
+// Pool DAT_07c5ab3c: array
 // de 200 × 0x70 bytes en globals.cpp. Loop bound count-based.
 //
 // Pool layout per slot (start at +0x0c offset from pfVar1, so pfVar1[-3] = +0):
@@ -102,17 +102,12 @@ void SkillEffect_Render(void)
     if ((World == 2) || (World == 7) || (World == 10))
         GL_SetBlendAdditive();       // EnableAlphaBlend (0x511710) — NO es un timer
     else
-        // ── 2026-08-16: CAUSA REAL DE LOS CUADROS BLANCOS ────────────────────
-        // IDA llama `EnableAlphaTest(1)` = **0x00511680**. El port llamaba
-        // `GL_SetAlphaTest`, que es **DisableTexture(bool)** (0x00511590) y termina
-        // con `glDisable(GL_TEXTURE_2D)` incondicional. Con el texturizado
-        // apagado, cada quad se pinta con el `glColor3f(1,1,1)` de abajo = un
-        // CUADRADO BLANCO. Y como el estado GL es global y queda "pegado",
-        // contaminaba todo lo que se dibujara después (de ahí los cuadros
-        // blancos sobre los mobs al atacar, y el Inferno "verde" del principio).
-        // Por eso el probe TEXDBG dio 0 hits: la textura se bindeaba bien, sólo
-        // que GL_TEXTURE_2D estaba deshabilitado.
-        // Ojo con esta familia (3ra vez que muerde, ver CLAUDE.md 2026-08-10):
+        // IDA llama `EnableAlphaTest(1)` = **0x00511680** (GL_SetBlendSrcOver). No
+        // confundir con `GL_SetAlphaTest` = **DisableTexture(bool)** (0x00511590),
+        // que termina con `glDisable(GL_TEXTURE_2D)` incondicional: cada quad se
+        // pinta con el `glColor3f(1,1,1)` de abajo (cuadrado blanco) y el estado GL,
+        // que es global, contamina todo lo que se dibuja después.
+        // Ojo con esta familia:
         //   0x00511590 DisableTexture   0x00511680 EnableAlphaTest
         //   0x00511710 EnableAlphaBlend 0x00511790 EnableAlphaBlendMinus
         GL_SetBlendSrcOver('\x01');
@@ -124,18 +119,9 @@ void SkillEffect_Render(void)
         float *pfVar1 = (float*)(DAT_07c5ab3c + slot * 0x70 + 0x0c);
         if (*(char *)(pfVar1 + -3) == '\0') continue;   // not active
 
-        // ── 2026-08-15: CAUSA DE LOS "CUADROS BLANCOS" DE LOS SKILLS ─────────
         // IDA lee este campo como **DWORD**: `BindTexture(*((_DWORD *)v0 - 2))`.
-        // El port hacía `(int)pfVar1[-2]`, o sea lo leía como FLOAT y lo
-        // convertía NUMÉRICAMENTE. El campo guarda un entero (el id de textura),
-        // así que p.ej. 102 leído como float da 1.43e-43 y `(int)` de eso es 0
-        // → se bindeaba el slot 0 (sin textura) y el sprite salía blanco.
-        // Afecta a TODOS los efectos de skill: esta función dibuja sus sprites.
-        // Nótese que la comparación `== 102` de más abajo ya leía bien el campo
-        // (`*(int*)(pfVar1 - 2)`): el mismo campo se leía de dos formas
-        // distintas dentro de la misma función.
-        // Mismo primo del patrón `(float)(uintptr_t)` que corrompía los joints
-        // (ver CLAUDE.md 2026-08-10).
+        // Guarda un entero (el id de textura): leerlo como float y convertirlo
+        // numéricamente da 0 → slot 0 (sin textura) → sprite blanco.
         const int texId = *(int*)(pfVar1 - 2);
         GL_BindTextureSlot(texId);             // BindTexture
 

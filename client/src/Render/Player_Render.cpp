@@ -67,11 +67,10 @@
 // renders each active player sprite with its stored color + transform.
 void Player_Render(void)
 {
-    // 2026-05-07: UN-SKIPPED. El pool ahora se aloca propiamente como
-    // g_PlayerRenderPool[100 × 0x1BC] (per IDA bound 0xAD70 = 100 × 444), con
+    // Pool g_PlayerRenderPool[100 × 0x1BC] (IDA bound 0xAD70 = 100 × 444), con
     // DAT_07c74f54 apuntando a g_PlayerRenderPool + 0xEC (= v1 anchor del
-    // slot 0). Los reads negativos (puVar1 - 0x3b = -0xEC bytes) ahora caen
-    // dentro del buffer.
+    // slot 0). Los reads negativos (puVar1 - 0x3b = -0xEC bytes) caen dentro del
+    // buffer.
     //
     // Walker iter: v1 starts at DAT_07c74f54 (= slot 0 + 0xEC), advances 0x6F
     // floats (= 0x1BC bytes) per iter. Total 100 slots.

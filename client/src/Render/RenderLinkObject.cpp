@@ -91,56 +91,39 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
                           char param_7, unsigned int param_8, char param_9,
                           char param_10, unsigned int param_11)
 {
-    // BUGFIX 2026-04-26: el `return;` AUTO-SKIP estaba mal copiado del template
-    // de Player_Render. Esta función NO tiene end-bound loop — es el render de
-    // items linked al hueso (alas, armas, helper, escudo). Sin esto las alas
-    // (model_idx=0x313..0x316) y armas no se dibujan en char-select ni in-game.
-    // Ghidra emitía 642 líneas válidas que sí están en el cuerpo abajo.
     // ── local storage ─────────────────────────────────────────────────────────
     // afStack_264 layout used for various vec3/matrix temps throughout:
     //   [0..2]  = Light color vec3
     //   [3..5]  = Angle vec3  (input to Matrix_BuildFromEuler / BMD_TransformPosition)
     //   [6..8]  = Position vec3 (world pos scratch / BodyOrigin temp)
     //   [9..11] = extra (matches IDA `Position[3]` at ebp-240h)
-    // BUGFIX 2026-04-26: era float[7] pero los callees (BMD_TransformPosition,
-    // CreateSprite, Joint_Create) leen/escriben 3 floats desde
-    // `afStack_264 + 6` → [6][7][8] OOB. /GS canary check tripeaba al return.
-    // local_248/local_244 eran las falsas vars que Ghidra emitió por las
-    // posiciones [7] y [8].
+    // Los callees (BMD_TransformPosition, CreateSprite, Joint_Create) leen/escriben
+    // 3 floats desde `afStack_264 + 6`: el array tiene que cubrir [6..8].
     float afStack_264[12];
     #define local_248 afStack_264[7]
     #define local_244 afStack_264[8]
-    // BUGFIX 2026-04-27: local_240/_23c_f/_238_f eran 3 vars separadas (void* +
-    // float + float). BMD__RotationPosition escribe 3 floats consecutivos a través de
-    // (float*)&local_240. Si el compilador NO ubica las 3 vars contiguas (no
-    // está obligado), los writes 4-11 caen en stack canary u otros locales →
-    // comportamiento NO determinístico entre builds (flicker variable, locales
-    // pisados). Ahora un solo array contiguo. local_23c_f/_238_f redirigidos
-    // vía macro al uso "como float", local_240 mantiene su uso "as void*" en
-    // el bloque hash-table (lee/escribe los 4 bytes como pointer).
+    // local_240/_23c_f/_238_f son UN array contiguo: BMD__RotationPosition escribe
+    // 3 floats consecutivos a través de (float*)&local_240. local_23c_f/_238_f se
+    // redirigen vía macro al uso "como float"; local_240 mantiene su uso "as void*"
+    // en el bloque hash-table (lee/escribe los 4 bytes como pointer).
     float local_240_buf[3];  // pos_out: [0]=x, [1]=y, [2]=z (BMD__RotationPosition target)
     #define local_240 (*(void**)&local_240_buf[0])
     #define local_23c_f local_240_buf[1]
     #define local_238_f local_240_buf[2]
 
-    // BUGFIX 2026-04-26: era float[3] con local_21c/20c/1fc separadas; pero
-    // Matrix_BuildFromEuler escribe 12 floats (matriz 3×4 [0..0xb]) → overflow masivo
-    // dentro del propio buffer. Ahora declarado como matriz completa y los
+    // Matriz completa 3×4: Matrix_BuildFromEuler escribe 12 floats [0..0xb]. Los
     // accesos legacy local_21c/20c/1fc redirigen vía macro.
     float local_228[12];     // AngleMatrix output: 3×4 matrix, row-major
     #define local_21c local_228[3]   // matrix[0][3] — translation X
     #define local_20c local_228[7]   // matrix[1][3] — translation Y
     #define local_1fc local_228[11]  // matrix[2][3] — translation Z
 
-    // BUGFIX 2026-04-26: afStack_204 era float[2], pero IDA `v70[3]` y los
-    // callees (sub_4404E0 anim1/anim2) leen 3 floats. → OOB read garbage.
+    // IDA `v70[3]`: los callees (sub_4404E0 anim1/anim2) leen 3 floats.
     float afStack_204[3];    // = IDA v70[3] — anim param scratch
-    // BUGFIX 2026-04-26: el OBJECT local era unsigned char[2] + un short suelto.
-    // `ItemObjectAttribute` (ItemObjectAttribute) escribe hasta offset 0x168 (360 bytes)
-    // → smasheaba TODO el frame, devolvía a Entity_RenderAll con param_1
-    // corrupto a la siguiente lectura (+0xae). Ahora dimensionado al stride
-    // del effect-entity pool (0x1bc = 444 bytes) y `local_1ea` redirigido al
-    // offset +2 dentro del buffer (campo Type según IDA `o[1]`).
+    // OBJECT local: `ItemObjectAttribute` escribe hasta offset 0x168 (360 bytes).
+    // Dimensionado al stride del effect-entity pool (0x1bc = 444 bytes) y
+    // `local_1ea` redirigido al offset +2 dentro del buffer (campo Type según IDA
+    // `o[1]`).
     unsigned char local_1ec[0x1c0];     // local OBJECT — ItemObjectAttribute target
     #define local_1ea (*(unsigned short*)(local_1ec + 2))
     float afStack_1dc[3];    // position scratch (passed to BMD_Animation/Skeleton_Transform)
@@ -158,11 +141,9 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     *(unsigned char*)(iVar7 + 0xa0) = *(unsigned char*)(param_5 + 5);     // CurrentAction from PART
     *(unsigned int* )(iVar7 + 0x84) = 0;                                   // BodyHeight = 0
 
-    // BUGFIX 2026-04-27: zero local_1ec antes de ItemObjectAttribute. La stack
-    // tiene garbage cada llamada → ItemObjectAttribute no escribe TODOS los
-    // campos del OBJECT struct, sólo los que le importan. Los bytes uninit
-    // pueden cambiar comportamiento de RenderPartObjectEffect / BMD_SetupRenderByType entre frames
-    // → flicker visible en weapons.
+    // Se limpia local_1ec antes de ItemObjectAttribute: no escribe TODOS los
+    // campos del OBJECT, y los bytes sin inicializar cambiarían el comportamiento
+    // de RenderPartObjectEffect / BMD_SetupRenderByType entre frames (flicker).
     memset(local_1ec, 0, sizeof(local_1ec));
     local_1ea = (unsigned short)param_6;  // OBJECT.Type = item type index
     local_22c = iVar7;
@@ -194,11 +175,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         BMD__RotationPosition(ownerModel, pBoneMat, afStack_264 + 6, (float*)&local_240);
 
         // BodyOrigin = TransformedPosition + entity world position
-        // BUGFIX 2026-04-26: era `(float)(int)local_240` que tomaba la
-        // representación entera de los bits del float y la convertía a float
-        // (devolvía 1065353216.0f para un 1.0f real). Ghidra había tipado
-        // local_240 como void* y aplicó el cast equivocado. IDA línea 173
-        // usa `Position[0]` directo. Reinterpretamos correctamente.
+        // IDA usa `Position[0]` directo: reinterpretar los bits de local_240 (Ghidra
+        // lo tipó como void*), no convertir el entero.
         *(float*)(iVar7 + 0x6c) = *(float*)&local_240 + *(float*)(param_4 + 0x10);
         *(float*)(iVar7 + 0x70) = local_23c_f         + *(float*)(param_4 + 0x14);
         *(float*)(iVar7 + 0x74) = local_238_f         + *(float*)(param_4 + 0x18);
@@ -255,7 +233,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
             else
             {
                 // ── Tabla de poses de escudo / segundo item ─────────────────
-                // PORT DEL DLL (CWeaponView::SecondWeaponViewFix), 2026-09-01.
+                // PORT DEL DLL (CWeaponView::SecondWeaponViewFix).
                 // El DLL engancha en 0x0045568B (la rama generica de abajo, que
                 // vanilla resuelve con trans (-20, 5, 40)) y salta de vuelta a
                 // 0x004556AA.  Constantes decodificadas de su bloque _asm:
@@ -345,7 +323,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         // (the isMagicChannel path falls through without angle init for other types)
 
         // Translation column already written via local_21c/20c/1fc macros, which
-        // alias local_228[3]/[7]/[11] (BUGFIX 2026-04-26 — see decl block).
+        // alias local_228[3]/[7]/[11] (see decl block).
         // R_ConcatTransforms takes: (bone_mat, angle_mat_12, out_parentmat)
 
         // BoneTransform for LinkBone
@@ -373,7 +351,7 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     }
 
     // ── 4. Hash-table ref-count block on param_4+0x302 (anti-tamper) ─────────
-    // This is the obfuscation pattern (see CLAUDE.md). It manipulates a reference
+    // This is the obfuscation pattern. It manipulates a reference
     // count stored at param_4+0x302 via a hash table keyed on the pointer.
     // The block is transcribed faithfully; net game effect = zero.
     {
@@ -690,13 +668,9 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
     void* pModel2 = (void*)iVar7;
     // Luminosity = (float)(rand()%30 + 70) * _DAT_00552940
     float fLum = (float)(iVar_rand % 0x1e + 0x46) * _DAT_00552940;
-    // BUGFIX 2026-09-01: locales no contiguos que Ghidra separo.  Los 9 cases
-    // del switch de abajo construian el `Light[3]` de IDA como TRES escalares
-    // sueltos (ebp-270h / -26Ch / -268h) y pasaban `&pbStack_270_f` como vec3.
-    // MSVC no garantiza ese layout, asi que CreateSprite leia G y B de basura:
-    // el brillo de cada arma/escudo salia con color arbitrario.  El Grand Soul
-    // Shield (tipo 607) deberia tirar a azul (Light[2] = fLum*2, ~3x el R/G) y
-    // se veia blanco.
+    // `Light[3]` de IDA como array real: los 9 cases del switch de abajo lo pasan
+    // como vec3 a CreateSprite (Ghidra lo había separado en TRES escalares
+    // ebp-270h / -26Ch / -268h).
     float Light[3] = { 0.0f, 0.0f, 0.0f };
 
 
@@ -712,15 +686,8 @@ void __cdecl RenderLinkObject(float param_1, float param_2, float param_3,
         afStack_264[4] = 0.0f;
         afStack_264[5] = 0.0f;
         Light[2] = fLum * _DAT_005524f4;
-        // 2026-09-08: el bound era `< 0x6970c4c`, una direccion ABSOLUTA del
-        // binario fuente (IDA: `while ((int)v43 < (int)flt_6970C4C)`).  En este
-        // build g_BoneScratch vive muy por debajo de esa direccion, asi que el
-        // bucle recorria ~100 MB de memoria transformando basura y spawneando
-        // sprites en posiciones arbitrarias -- los "circulitos volando" -- hasta
-        // pegar en una pagina no mapeada.  Ese era el crash de Blood Castle:
-        // `Vector_Transform <- BMD_TransformPosition <- RenderLinkObject`.
-        // Solo se disparaba con la ESPADA del evento (Type 419), por eso con el
-        // arco el evento terminaba bien.
+        // IDA: `while ((int)v43 < (int)flt_6970C4C)` es una direccion ABSOLUTA del
+        // binario fuente; aca se usa el rango real dentro de g_BoneScratch:
         //   base = flt_6970AFC = g_BoneScratch + 0x60 = hueso 2
         //   fin  = flt_6970C4C                        = hueso 9
         //   (0xC4C - 0xAFC) / 0x30 = 7 iteraciones -> huesos 2..8
