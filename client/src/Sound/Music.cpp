@@ -24,8 +24,8 @@
 
 #include "stdafx.h"
 
-// NOTA(refactor B3): `qmemcpy` viene del decompile de Ghidra y el proyecto lo
-// define suelto en 14 archivos. Conviene centralizarlo en un header comun.
+// `qmemcpy` viene del decompile de Ghidra; el proyecto lo define suelto en
+// varios archivos. Conviene centralizarlo en un header común.
 #ifndef qmemcpy
 #define qmemcpy(dst,src,sz) memcpy((dst),(src),(size_t)(sz))
 #endif
@@ -103,7 +103,6 @@ void __cdecl Music_PlayTrack(DWORD param_1_d, int bEnforce)
 }
 
 
-// ── FUN_00412180 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00412180 @ 0x00412180 (~66 lines) — ListBox_HandleInput2: identical structure to
 // FUN_00411a20 (key 7/0xC/0xD/0xE dispatch, scroll adjust, selection tracking).
 // Separate vtable variant for a different list widget class.
@@ -112,9 +111,8 @@ int __fastcall FUN_00412180(int* param_1) {
     return 0;
 }
 
-// ── FUN_004124d0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_004124d0 @ 0x004124D0 (24 bytes) — memcpy 0x4a dwords (296 bytes)
-// FUN_004124d0 (IDA-activated, was Ghidra stub)
+// FUN_004124d0 (IDA-activated)
 void __cdecl FUN_004124d0(void *a1, const void *a2)
 {
   if ( a1 )
@@ -123,14 +121,12 @@ void __cdecl FUN_004124d0(void *a1, const void *a2)
   }
 }
 
-// ── FUN_004124f0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_004124f0 @ 0x004124F0 — GG module ~dtor
 void __fastcall FUN_004124f0(int ecx, int /*edx*/, BYTE param_1) {
     FUN_00412510((DWORD *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00412510 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00412510 @ 0x00412510 (~45 lines) — ListBox_Destructor_A: clears item linked list
 // via FUN_00411360 loop, frees list sentinel nodes, resets counts, then delegates to
 // base class destructor (FUN_00410de0 + FUN_00410d90). Sets vtable to PTR_FUN_00552668.
@@ -138,49 +134,40 @@ void __fastcall FUN_00412510(DWORD* param_1) {
     (void)param_1;
 }
 
-// ── FUN_004125f0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_004125f0 @ 0x004125F0 — GG module2 ~dtor
 void __fastcall FUN_004125f0(int ecx, int /*edx*/, BYTE param_1) {
     FUN_00412610((DWORD *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00412610 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00412610 @ 0x00412610 (~45 lines) — ListBox_Destructor_B: same structure as
 // FUN_00412510 but sets vtable to PTR_FUN_00552760. Second list-box class variant.
 void __fastcall FUN_00412610(DWORD* param_1) {
     (void)param_1;
 }
 
-// ── FUN_00412700 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00412700 @ 0x00412700 (12 bytes) — NO es "string cleanup": es el wrapper que
 // arranca GameGuard, `return PreInitNPGameMon("Mu")`.
 //
 // En el binario NO lo llama nadie desde codigo: su unico xref es de DATOS, desde la
 // tabla de inicializadores dinamicos del CRT en 0x00558010. O sea corre ANTES de
 // WinMain, via el thunk FUN_004126F0, que ademas registra el release con atexit.
-// Por eso el splash de nProtect aparecia antes de que existiera la ventana del juego.
 //
 // Nuestro build no replica esa tabla, asi que esta funcion queda sin callers y
-// GameGuard nunca arranca — que es lo que queremos (ver CLAUDE.md).
+// GameGuard nunca arranca, que es lo buscado.
 void FUN_00412700(void) { FUN_0053d430((BYTE *)&g_GameGuardGameName); }
 
-// ── FUN_00412710 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00412710 @ 0x00412710 (12 bytes)
 void FUN_00412710(void) {}
 
-// ── FUN_00412780 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00412780 @ 0x00412780 (10 bytes) — cleanup hash class
 void FUN_00412780(void) { PacketCipher_Initialize((void *)0x055ca0a0); }
 
-// ── FUN_00412790 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00412790 @ 0x00412790 (12 bytes)
 void FUN_00412790(void) {}
 
-// ── FUN_004127c0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_004127c0 @ 0x004127C0 (10 bytes) — init error report
 void FUN_004127c0(void) { FUN_00405240_init((void *)0x055c9bf0); }
 
-// ── FUN_004127d0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_004127d0 @ 0x004127D0 (12 bytes)
 void FUN_004127d0(void) {}

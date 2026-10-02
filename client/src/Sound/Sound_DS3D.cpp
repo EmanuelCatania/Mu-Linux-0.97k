@@ -137,7 +137,6 @@ void Sound_Update3DPositions(void)
     }
 }
 
-// ── FUN_00404e60_impl — helper local movido desde stubs_bulk_small.cpp (refactor B3) ──
 static void __cdecl FUN_00404e60_impl(int param_1) {
     *(int *)param_1 = (int)&PTR_FUN_005524c0;
     if (*(HANDLE *)(param_1 + 4) != NULL) {
@@ -158,25 +157,20 @@ void __cdecl Sound_StopBuffer(int Buffer) {
     }
 }
 
-// ── waveIO__dtor — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // waveIO__dtor @ 0x00404E40 — CWaveFile ~dtor (calls waveIO__CloseWaveFile)
 void __fastcall waveIO__dtor(int ecx, int /*edx*/, BYTE param_1) {
     FUN_00404e60_impl(ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00405260 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00405260 @ 0x00405260 — CErrorReport ~dtor
 void __fastcall FUN_00405260(int ecx, int /*edx*/, BYTE param_1) {
     FUN_00405280((HANDLE *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00405280 — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// ── 11-byte: vtable + chain ─────────────────────────────────────────────────
-
 // FUN_00405280 @ 0x00405280 (11 bytes)
-// FUN_00405280 (IDA-activated, was Ghidra stub)
+// FUN_00405280 (IDA-activated)
 int __cdecl FUN_00405280(HANDLE *_this)
 {
   *_this = (HANDLE)DAT_005524c4;
@@ -184,7 +178,6 @@ int __cdecl FUN_00405280(HANDLE *_this)
   return FUN_00405290((int)_this);
 }
 
-// ── FUN_00405340 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // IDA signature is __thiscall(this); function.h decl is __stdcall(void).
 // No live callers in our build (vtable dispatch via CErrorReport disabled),
 // so this is a NOP placeholder. The truncation logic ported below as
@@ -192,9 +185,6 @@ int __cdecl FUN_00405280(HANDLE *_this)
 void __stdcall FUN_00405340(void) {
     // No-op — CErrorReport vtable not yet active.
 }
-
-// ── CErrorReport_WriteDebugInfoStr — movida desde stubs_bulk_small.cpp (refactor B3) ──
-// ── 52-byte ─────────────────────────────────────────────────────────────────
 
 // CErrorReport::WriteDebugInfoStr @ 0x00405500 (IDA: CErrorReport__WriteDebugInfoStr).
 // (declared in Ghidra as CErrorReport::WriteDebugInfoStr — writes debug string)
@@ -204,7 +194,6 @@ void __cdecl CErrorReport_WriteDebugInfoStr(DWORD This, char *fmt) {
     CErrorReport__Write(This, fmt);
 }
 
-// ── CErrorReport_Write — movida desde stubs_render_helpers.cpp (refactor B3) ──
 // IDA: CErrorReport::Write (0x00405540)
 void __cdecl CErrorReport_Write(void*,const char*,...)            {} // debug log — kept as stub
 
