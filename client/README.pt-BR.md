@@ -337,3 +337,78 @@ interno entre colaboradores.
 
 `lib/libjpeg/jpeg-6b` é do Independent JPEG Group, sob a própria licença
 permissiva (`lib/libjpeg/jpeg-6b/README`, seção "LEGAL ISSUES").
+
+---
+
+## Roteiro
+
+A tag `0.97.00` encerra a etapa de reconstrução fiel: o cliente se comporta como o
+binário original. A partir daí o trabalho segue por fases, e cada fase encerrada é uma
+versão.
+
+```mermaid
+flowchart TD
+    F0["0.97.00 · Reconstrução fiel (base)"] --> F1
+    F1["0.97.10 · Fase 1: base de engenharia<br/>CMake, CI, limpeza de código e comentários, espelho de protocolo"] --> F2
+    F2["0.97.20 · Fase 2: integração nativa do Main.dll + modularização<br/>CWindow, CFont, CSound, CNetwork, CMapManager; customs integrados à lógica base"] --> F3
+    F3["0.97.30 · Fase 3: otimização do código herdado<br/>switches e defines da Webzen → tabelas e enums"] --> F4
+    F4["0.97.40 · Fase 4: abstração de plataforma + Linux"] --> F5
+    F5["0.97.50 · Fase 5: timing real<br/>simulação separada do render, fps altos sem acelerar o jogo"] --> F6
+    F6["0.97.60 · Fase 6: renderer moderno (OpenGL 3.3) e x64"] --> F7
+    F7["0.97.70 · Fase 7: conteúdo compartilhado cliente + server"] --> F8
+    F8["0.97.80 · Fase 8: autoridade do server + segurança"] --> F9
+    F9["0.97.90 · Fase 9+: launcher/updater, web, Android"]
+```
+
+Os números de cada fase são a versão prevista ao encerrá-la; o escopo de cada uma
+pode ser ajustado no caminho.
+
+### Versionamento
+
+As versões são `0.97.FH`, sempre com dois dígitos: **F** é a fase e **H** o
+hotfix.
+
+| Tag | O que é |
+|---|---|
+| `0.97.00` | base da reconstrução fiel |
+| `0.97.01`, `0.97.02`… | correções sobre a base |
+| `0.97.10` | encerramento da Fase 1 |
+| `0.97.11`, `0.97.12`… | correções sobre a Fase 1 |
+| `0.97.20` | encerramento da Fase 2, e assim por diante |
+
+O cliente e o [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) usam a
+mesma numeração: a mesma tag nos dois repositórios indica que funcionam juntos. Cada
+Season terá sua própria linha (`0.99.FH`, …).
+
+### Branches
+
+```mermaid
+gitGraph
+    commit id: "base" tag: "0.97.00"
+    branch fase/1
+    checkout fase/1
+    commit id: "PR tema A"
+    commit id: "PR tema B"
+    checkout main
+    branch hotfix
+    checkout hotfix
+    commit id: "fix"
+    checkout main
+    merge hotfix tag: "0.97.01"
+    checkout fase/1
+    merge main id: "traz o fix"
+    checkout main
+    merge fase/1 tag: "0.97.10"
+    branch fase/2
+    checkout fase/2
+    commit id: "PR tema C"
+```
+
+- `main` só recebe encerramentos de fase e correções; cada merge leva sua tag e sua
+  Release.
+- Cada fase é trabalhada em `fase/N`. As branches de tema (`fix/…`, `feat/…`, `chore/…`)
+  saem de `fase/N` e voltam por PR.
+- Uma correção sobre uma versão publicada sai da tag afetada, é mergeada em `main`
+  com sua nova tag e também na fase em andamento.
+- As Releases publicam só o código-fonte: cada uma compila o cliente com os dados
+  do seu server.
