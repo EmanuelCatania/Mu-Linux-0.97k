@@ -171,21 +171,9 @@ void __cdecl Game_MainLoop(HDC param_1)
             if (idx == 0xffffffff) {
                 void* node = AntiTamper_HashNode(); *((BYTE*)node + 4) = 1;
                 HashTable_Insert(&MAIN_HASH_CLASS, node, &DAT_083a7c00);
-            } else {
-                BYTE* node = *(BYTE**)(DAT_055c9bcc + idx * 4);
-                node[4]++;
-                if (node[4] < 2) Packet_DecryptDword(&DAT_083a7c00, node);
             }
         }
         DAT_083a7c00++;
-        {
-            unsigned idx = HashTable_GetIndex(&MAIN_HASH_CLASS, &DAT_083a7c00);
-            if (idx != 0xffffffff) {
-                BYTE* node = (BYTE*)HashTable_GetNode(&MAIN_HASH_CLASS, &DAT_083a7c00);
-                node[4]--;
-                if (node[4] == 0) Packet_EncryptDword(node, &DAT_083a7c00);
-            }
-        }
 
         // Consume 40ms of budget, count frame
         DAT_005616b8  -= 0x28;
