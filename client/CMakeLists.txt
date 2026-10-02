@@ -44,14 +44,21 @@ foreach(kind EXE STATIC SHARED MODULE)
 endforeach()
 
 # Opciones de compilación comunes a mu97k y libjpeg, equivalentes a los defaults
-# de v143 que el .vcxproj no pisa:
+# de v143 que el .vcxproj no pisa (msbuild las pasa explícitas a cl):
 #   /EHsc  ExceptionHandling=Sync          /FC  UseFullPaths (afecta a __FILE__)
+#   /Gd /Gm- /GS /Zc:forScope /Zc:inline /Zc:wchar_t   defaults de v143
 #   /JMC   SupportJustMyCode (Debug)       /Od  Optimization=Disabled (Debug)
 #   /O2 /Oi /Gy /GL  MaxSpeed + IntrinsicFunctions + FunctionLevelLinking +
 #                    WholeProgramOptimization (Release)
 set(MU_COMMON_COMPILE_OPTIONS
     /EHsc
     /FC
+    /Gd
+    /Gm-
+    /GS
+    /Zc:forScope
+    /Zc:inline
+    /Zc:wchar_t
     $<$<CONFIG:Debug>:/JMC>
     $<$<CONFIG:Debug>:/Od>
     $<$<CONFIG:Release>:/O2>
@@ -409,20 +416,23 @@ target_include_directories(mu97k PRIVATE
 )
 
 # CharacterSet=MultiByte -> _MBCS. NO se define UNICODE/_UNICODE.
+# Sólo para C++: el .vcxproj no le pasa estos defines a rc.exe.
 target_compile_definitions(mu97k PRIVATE
-    WIN32
-    $<$<CONFIG:Debug>:_DEBUG>
-    $<$<CONFIG:Release>:NDEBUG>
-    _WINDOWS
-    _CRT_SECURE_NO_WARNINGS
-    _CRT_NONSTDC_NO_WARNINGS
-    _WINSOCK_DEPRECATED_NO_WARNINGS
-    _MBCS
+    "$<$<COMPILE_LANGUAGE:CXX>:WIN32>"
+    "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Debug>>:_DEBUG>"
+    "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Release>>:NDEBUG>"
+    "$<$<COMPILE_LANGUAGE:CXX>:_WINDOWS>"
+    "$<$<COMPILE_LANGUAGE:CXX>:_CRT_SECURE_NO_WARNINGS>"
+    "$<$<COMPILE_LANGUAGE:CXX>:_CRT_NONSTDC_NO_WARNINGS>"
+    "$<$<COMPILE_LANGUAGE:CXX>:_WINSOCK_DEPRECATED_NO_WARNINGS>"
+    "$<$<COMPILE_LANGUAGE:CXX>:_MBCS>"
 )
 
+# BasicRuntimeChecks=Default y SDLCheck=false en Debug: sin /RTC, con /sdl-.
 target_compile_options(mu97k PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:/W3>"
     "$<$<COMPILE_LANGUAGE:CXX>:${MU_COMMON_COMPILE_OPTIONS}>"
+    "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:Debug>>:/sdl->"
 )
 
 # PCH: stdafx.cpp lo crea (/Yc), el resto lo usa (/Yu). No se usa

@@ -20,8 +20,6 @@ PATH_ARGS = ("/FO", "/FD", "/FP", "/FA", "/FR", "/FS", "/I", "/OUT:", "/PDB:",
              "/ILK:", "/MAP:", "/MANIFESTFILE:", "/IMPLIB:", "/PGD:",
              "/LTCGOUT:", "/LIBPATH:", "/TLBOUT:", "/MANIFESTINPUT:",
              "/EXTERNAL:I", "/DEF:", "/PROFILE")
-# Defines que CMake agrega por su cuenta y no cambian el código.
-IGNORED = {'/D CMAKE_INTDIR="DEBUG"', '/D CMAKE_INTDIR="RELEASE"'}
 
 
 def read_tlog(path):
@@ -55,7 +53,16 @@ def parse_tlog(path, per_file):
     return entries
 
 
+# Diferencias conocidas y aceptadas (sólo en el build de CMake):
+#   /MAP  El .vcxproj sólo genera main.map en Debug; CMake lo pide también en
+#         Release. /MAP no cambia el contenido del exe.
+EXPECTED_ONLY_CMAKE = {"/MAP"}
+
+
 def normalize(cmd):
+    # CMake agrega /D CMAKE_INTDIR="<Config>" a cl y rc; no cambia el código.
+    cmd = cmd.replace('\\"', "")
+    cmd = re.sub(r'/D\s*"?CMAKE_INTDIR=[^\s"]*"?', "", cmd, flags=re.I)
     try:
         toks = shlex.split(cmd, posix=False)
     except ValueError:
@@ -74,6 +81,9 @@ def normalize(cmd):
             out.append(up + " " + nxt.upper())
             continue
         i += 1
+        if up == "/MAP" or up.startswith("/MAP:"):
+            out.append("/MAP")
+            continue
         if up.startswith(PATH_ARGS):
             continue
         if re.search(r"\.(CPP|C|OBJ|LIB|RES|RC|PCH)$", up) and ("\\" in up or "/" in up[1:] or not up.startswith("/")):
@@ -83,7 +93,7 @@ def normalize(cmd):
         if up.startswith("/D") and len(up) > 2:
             up = "/D " + up[2:]
         out.append(up)
-    return sorted(set(o for o in out if o not in IGNORED))
+    return sorted(set(out))
 
 
 def find_tlogs(root, kind):
@@ -131,7 +141,12 @@ def main():
             if na != nb:
                 only_a = tuple(x for x in na if x not in nb)
                 only_b = tuple(x for x in nb if x not in na)
-                groups.setdefault((only_a, only_b), []).append(k)
+                expected = tuple(x for x in only_b if x in EXPECTED_ONLY_CMAKE)
+                only_b = tuple(x for x in only_b if x not in EXPECTED_ONLY_CMAKE)
+                if expected:
+                    print("  %s: diferencia esperada, sólo en cmake: %s" % (k, " ".join(expected)))
+                if only_a or only_b:
+                    groups.setdefault((only_a, only_b), []).append(k)
         for (only_a, only_b), keys in groups.items():
             diffs += len(keys)
             sample = ", ".join(keys[:3]) + (" ..." if len(keys) > 3 else "")

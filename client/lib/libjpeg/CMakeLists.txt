@@ -93,6 +93,8 @@ target_compile_options(jpeg PRIVATE
     /wd4244
     /wd4018
     ${MU_COMMON_COMPILE_OPTIONS}
+    # libjpeg.vcxproj no desactiva BasicRuntimeChecks: en Debug queda /RTC1.
+    $<$<CONFIG:Debug>:/RTC1>
 )
 
 # WholeProgramOptimization en Release: la .lib se arma con /LTCG.
