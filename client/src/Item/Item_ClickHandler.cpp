@@ -109,11 +109,11 @@ extern DWORD DAT_07eaa160;                     // IDA `CheckInventory`
 // los mensajes se mandan con ID vacío porque la UI del chat lo acepta así.
 
 // ── Declaraciones adelantadas de los helpers que usamos ──────────────────────
-void __cdecl ShowCheckBox(int mode, int x, int y);   // declared in stubs
+void __cdecl ShowCheckBox(int mode, int x, int y);   // definida más abajo
 void __cdecl CreateOkMessageBox(char* strMsg);
 void __cdecl DeleteBug(int Owner);
 
-// PressKey/sub_4D6020: los provee Input.cpp/stubs — no siempre están expuestos
+// PressKey/sub_4D6020: los provee Input.cpp — no siempre están expuestos
 // por un header. Los declaramos acá inline. Los dos tienen que ser `__cdecl` sin
 // mangling, igual que las implementaciones que ya existen.
 extern int  __cdecl PressKey(int vk);

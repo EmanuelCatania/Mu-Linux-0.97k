@@ -25,6 +25,13 @@ dónde estaba en `fase/1` antes de esta limpieza.
 
 ## `src/Item/Item_ClickHandler.cpp`
 
+### Referencias a `stubs` (líneas 112 y 116)
+
+```cpp
+void __cdecl ShowCheckBox(int mode, int x, int y);   // declared in stubs
+// PressKey/sub_4D6020: los provee Input.cpp/stubs — no siempre están expuestos
+```
+
 ### Línea 1 — antes de `#include "stdafx.h"`
 
 ```cpp
