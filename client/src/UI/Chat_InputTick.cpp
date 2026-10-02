@@ -541,9 +541,7 @@ void __cdecl Chat_InputTick(void)
     //   DAT_083a7c24 not 0x7e/0x98, GoldenArcherOpenType==0,
     //   *(DAT_00583d8c+0x1c87f)==0, ServerDivisionOpened==0
     {
-        HashTable_Insert_Short(&MAIN_HASH_CLASS, &DAT_07eaa11b);
         char bVar4 = DAT_07eaa11b;
-        PACKET_ENCRYPT(&MAIN_HASH_CLASS, (char *)&DAT_07eaa11b);
 
         if ((bVar4 == 0) &&
             (DAT_07eaa124 == '\0') &&
@@ -634,7 +632,6 @@ void __cdecl Chat_InputTick(void)
                                         int key = k % 10;          // 1..9, despues 0
                                         if (((unsigned short)GetAsyncKeyState(0x30 + key) >> 8) == 0)
                                             continue;
-                                        STRUCT_DECRYPT(&MAIN_HASH_CLASS, DAT_07cf1ffc);
                                         int charRow = (int)DAT_005616ac;
                                         for (int j = 0; j < 0x14; ++j) {
                                             char *slot_ptr = (char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + j;
@@ -644,7 +641,6 @@ void __cdecl Chat_InputTick(void)
                                             }
                                         }
                                         *((char *)DAT_07cf1ff4 + charRow * 0x40 + 0xd7 + (int)uVar14) = (char)key;
-                                        STRUCT_ENCRYPT(&MAIN_HASH_CLASS, (void *)DAT_07cf1ffc);
                                     }
                                 }
                                 break;
