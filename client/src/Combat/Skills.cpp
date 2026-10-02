@@ -111,7 +111,7 @@ extern BYTE* g_EntityBase;   // DAT_07abf5d0  legacy alias (may be NULL)
 extern int   World; // World
 extern BYTE* g_CharData;     // DAT_07cf1ffc
 
-// 2026-05-07: g_EntityBase is never wired to the actual entity array — the real
+// g_EntityBase is never wired to the actual entity array — the real
 // base lives in DAT_07abf5d0 (set by WinMain).
 #define ENTITY(idx)  ((BYTE*)DAT_07abf5d0 + (idx) * 0x394)
 #define STRIDE       0x394
@@ -164,14 +164,11 @@ void PacketHandler_0x19(BYTE* pkt)
     *(BYTE*) (caster + 770) = (BYTE)skill_type;
 
     *(short*)(caster + 0x310) = (short)target_idx;
-    // 2026-09-04 FIX: aca habia `(BYTE)(is_pvp == 0)`, o sea el valor INVERTIDO.
     // IDA 0x42BCA0 escribe `sc->SkillSuccess = (TargetKey >> 15) != 0`, y el
     // server MuEmu pone ese bit justamente cuando el skill tuvo exito
-    // (`pMsg.target[0] = SET_NUMBERHB(idx) | (type * 0x80)`).
-    // Consecuencia: los tres consumidores del flag quedaban al reves --
-    // el aura de Greater Defense (MoveCharacter case 27 -> 5x joint 266/sub4)
-    // no se creaba nunca, ni el buff de Greater Damage (case 28), ni el
-    // congelamiento del Ice Arrow (case 0x33) ni el de Lightning (0x37).
+    // (`pMsg.target[0] = SET_NUMBERHB(idx) | (type * 0x80)`). Lo consumen el aura
+    // de Greater Defense (MoveCharacter case 27), el buff de Greater Damage
+    // (case 28) y el congelamiento del Ice Arrow (0x33) y de Lightning (0x37).
     *(BYTE*) (caster + 0x301) = (BYTE)(skill_ok != 0);
 
     if (skill_type == 3 || skill_type == 7) {
@@ -206,16 +203,10 @@ void PacketHandler_0x19(BYTE* pkt)
         // UI event 0x3C = ranged hit indicator
         // FUN_00413900(0x3C, caster_idx) — UI dispatch
         //
-        // 2026-08-23 CRASH-FIX: aca habia
-        //     if (*(BYTE*)(caster + 0x7C) != 0) Entity_ResetToWalk(caster_idx);
-        // con DOS errores.  (1) IDA no llama a esa funcion en este camino:
-        // `LABEL_107` (0042BCA0 L178-184) solo hace `SetPlayerMagic(sc)` para las
-        // entidades que no son el heroe.  La unica que la llama es
-        // `SetPlayerBow` en los cases 0x18/0x34/0x33, que ya la invocan bien.
-        // (2) le pasaba el INDICE (`caster_idx`) donde la funcion espera el
-        // PUNTERO: adentro hace `*(short*)(param_1 + 0x288)`, asi que con
-        // idx=124 deferenciaba 124 + 0x288 = 0x304 -> AV.  Verificado contra los
-        // registros del crash (`eax=0000007C`, `param1=0x00000304`).
+        // No llamar acá a Entity_ResetToWalk: `LABEL_107` (0042BCA0 L178-184) solo
+        // hace `SetPlayerMagic(sc)` para las entidades que no son el heroe; la llama
+        // `SetPlayerBow` en los cases 0x18/0x34/0x33. (Además espera un PUNTERO de
+        // entidad, no el índice.)
         AnimateRemoteSkillCaster97k(caster);
         goto common_tail;
     }
@@ -439,33 +430,15 @@ common_tail:
 
 
 // ============================================================
-// PacketHandler_0x16  @ 0x0042db60
-// Server → Client: kill confirm + EXP gain
-// Packet: [C1][len][16][caster_hi][caster_lo][target_hi][target_lo][exp_bytes...][flags]
+// PacketHandler_0x16 — CÓDIGO MUERTO, sin callers.
 //
-// NOTE: Lines 0–480 are the standard XOR handshake / ACK boilerplate.
-//       Real logic begins at decompile offset ~480.
+// No es un port de 0x0042DB60: el raw `0042DB60_ReceiveDieExp.c` es la
+// variante chica del 0x9C (Key/Exp/Damage en +3..+8, SetPlayerDie o esferas
+// de EXP, y el aviso GlobalText[486]); esta función interpretaba el 0x16 como
+// "teleport begin/end + kill confirm", que no existe en el binario.
+// Además escribe `*(BYTE*)(target + 0x2FD) = 1` (dead_flag) sobre un índice
+// sin validar por abajo: no reconectarla.
 //
-// Two modes (byte[3] bit 7):
-//   bit7 == 0 → TeleportStart: animate entity moving toward target
-//   bit7 == 1 → TeleportEnd:   snap entity to final position
-//
-// Kill + EXP logic runs for the local player:
-//   g_CharData[+0x10] += exp_gained
-//   UIChatLogWindow_AddText(exp_gained)  → floating "+EXP" overlay
-// ============================================================
-// CODIGO MUERTO desde 2026-09-02 — sin callers.
-//
-// Esta funcion NO era un port de 0x0042DB60.  Interpretaba el 0x16 como
-// "teleport begin/end + kill confirm", que no existe en el binario: el raw
-// `0042DB60_ReceiveDieExp.c` es la variante chica del 0x9C (Key/Exp/Damage en
-// +3..+8, SetPlayerDie o esferas de EXP, y el aviso GlobalText[486]).
-//
-// Era ademas una landmine: al final hacia `*(BYTE*)(target + 0x2FD) = 1` sobre
-// un indice sin validar por abajo, y +0x2FD es el dead_flag — el mismo campo
-// que usa como filtro de "vivo" el barrido de sub_45FEC0 (IDA L168 `!v16[18]`),
-// o sea marcaba entidades vivas como muertas y las volvia invisibles para el
-// reporte de blancos del 0x1D.
-//
-// El port fiel vive ahora inline en `Net_Process.cpp`, case 0x16.
+// El port fiel vive inline en `Net_Process.cpp`, case 0x16.
 // (MuEmu no manda este opcode: usa el 0x9C / PMSG_REWARD_EXPERIENCE_SEND.)
+// ============================================================

@@ -1,7 +1,6 @@
 // Skills_WizardElf.cpp
 //
-// Extracted from stubs_game.cpp.  Owns wizard/elf skill dispatch helpers.
-// Public entry points retain IDA provenance in their leading comments.
+// Helpers de despacho de skills de wizard/elf.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -233,12 +232,12 @@ static void SendSkillPacket19_Local(BYTE skillId, WORD targetKey)
 // cliente 5.2 en source/wsclientinline.h:615): nibble alto = delta X, nibble
 // bajo = delta Y, ambos clampeados a [-8, 7].
 //
-// 2026-09-02: NO se unifico con Combat_GetDestValue97k (Combat.cpp), que si se
-// paso a la forma del binario.  Motivo: de este sitio no hay expresion que
-// comparar -- el decompile de SkillElf (0x0048BD70 LABEL_68) llega plegado
-// (`if...`) y no muestra los appends del payload.  Lo unico seguro es que el
-// hook que reemplaza este sitio, CPatchs::SendContinueTripleShot
-// (Patchs.cpp:1394-1444), pasa `dest = GetDestValue(x, y, TargetX, TargetY)`.
+// NO se unifica con Combat_GetDestValue97k (Combat.cpp), que tiene la forma
+// del binario: de este sitio no hay expresion que comparar -- el decompile de
+// SkillElf (0x0048BD70 LABEL_68) llega plegado (`if...`) y no muestra los
+// appends del payload.  Lo unico seguro es que el hook que reemplaza este
+// sitio, CPatchs::SendContinueTripleShot (Patchs.cpp:1394-1444), pasa
+// `dest = GetDestValue(x, y, TargetX, TargetY)`.
 // Da igual funcionalmente: MuEmu no lee `dis` (SkillManager.cpp:2047 solo
 // propaga x, y, dir, angle e index[]).  Se deja como esta hasta poder leer los
 // appends en el disassembly.
@@ -326,12 +325,9 @@ void __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piM
 //     validates range, computes facing angle, builds C1 skill packet with
 //     XOR encryption, sends it, then calls SetPlayerAttack + CreateArrows
 //
-// CORRECCION DE TRAZABILIDAD (2026-09-01): este bloque decia
-// "IDA: FUN_0048A180 @ 0x0048A180 — SkillElf", y 0x0048A180 es **UseSkillElf**
-// (portada como Combat_UseElfSkill en Combat.cpp).  La funcion que se reconstruye
-// aca es **SkillElf @ 0x0048BD70**, que es la que Attack llama como
-// `SkillElf(c, i + CharacterMachine + 536)` en L1464.  functions.h ya la declaraba
-// con la direccion correcta.
+// No confundir con UseSkillElf (0x0048A180, portada como Combat_UseElfSkill en
+// Combat.cpp): esta es SkillElf, la que Attack llama como
+// `SkillElf(c, i + CharacterMachine + 536)` en L1464.
 // Correspondencia con el decompile de 0x0048BD70:
 //   charAttr / pItem        (ITEM* equipado)
 //   skillCount         = *(BYTE *)(pItem + 36)     = ITEM::SpecialNum
@@ -373,12 +369,8 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
     if (skillCount == 0) {
         return false;
     }
-    // 2026-09-04 FIX (Triple Shot solo se podia lanzar despues de targetear):
-    // aca habia un `if (MovementSkillTarget < 0 || >= 400) return false;`.
-    // `MovementSkillTarget` (DAT_07D780A0) es el indice de la entidad apuntada:
-    // sin blanco vale -1 y el skill no salia; despues de targetear quedaba
-    // pegado y por eso funcionaba "un rato" hasta que el indice envejecia.
-    // IDA (SkillElf 0x48BD70) no consulta ese global en ningun momento.
+    // IDA (SkillElf 0x48BD70) no consulta `MovementSkillTarget` (DAT_07D780A0,
+    // el indice de la entidad apuntada): el skill sale con o sin blanco.
 
     // The same offsets are used by Attack at 49D278: current mana +0x1e
     // and current AG +0x24.
@@ -429,9 +421,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             if ((int)EnableUse >= 1) continue;  // item use cooldown active
             EnableUse = 10;  // set cooldown
 
-            // 2026-07-19: era 6 bytes. PMSG_ITEM_USE_RECV (ItemManager.h) mide
-            // 5: header(3) + SourceSlot + TargetSlot. El byte extra dejaba el
-            // paquete fuera de spec.
+            // PMSG_ITEM_USE_RECV (ItemManager.h) mide 5: header(3) + SourceSlot + TargetSlot.
             BYTE usePkt[6];
             usePkt[0] = 0xC1;
             usePkt[1] = 5;
@@ -441,9 +431,7 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             Net_SendSmallPacket(usePkt, 5);
 
             // Play sound based on item type
-            // 2026-08-21: leía DAT_07ea8410, que es un DWORD suelto de 4 bytes —
-            // no el pool del inventario (mismo error que ya estaba documentado
-            // para FUN_004d23b0).  El grid vive en OffsetInventoryItems, stride 0x44.
+            // El grid vive en OffsetInventoryItems, stride 0x44.
             short itemType = *(short*)(OffsetInventoryItems + (size_t)slot * 0x44);
             int soundId;
             if (itemType == 0x1c0) {
@@ -487,12 +475,10 @@ bool __stdcall Combat_UseElfSkillItem(DWORD c, DWORD pItem) {
             float heroPosX = *(float*)(heroEntity + 0x10);  // Object.Position[0]
             float heroPosY = *(float*)(heroEntity + 0x14);  // Object.Position[1]
 
-            // 2026-09-04: se restaura el chequeo de IDA L197-199, que compara
-            // contra los globales `TargetX`/`TargetY` -- las coordenadas de
-            // GRILLA que deja `CheckTarget` (0x49CAE0).  Ese helper funciona con
-            // o sin blanco seleccionado: si `SelectedCharacter == -1` cae al pick
-            // de terreno bajo el cursor.  La version anterior tomaba la posicion
-            // de la entidad apuntada, que sin blanco no existe.
+            // Chequeo de IDA L197-199, que compara contra los globales `TargetX`/`TargetY`
+            // -- las coordenadas de GRILLA que deja `CheckTarget` (0x49CAE0).  Ese helper
+            // funciona con o sin blanco seleccionado: si `SelectedCharacter == -1` cae al
+            // pick de terreno bajo el cursor.
             //     v35 = c.y - (TargetY * 100.0 + 50.0);
             //     v36 = c.x - (TargetX * 100.0 + 50.0);
             //     if (sqrt(v35*v35 + v36*v36) > Distance * 100.0) -> no dispara
