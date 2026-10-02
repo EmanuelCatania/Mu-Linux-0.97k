@@ -1440,19 +1440,6 @@ void __cdecl Send_ActionRequest(unsigned char param_1, int param_2) {
 // IDA: STRUCT_ENCRYPT (0x0043D1D0)
 void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata) { return nullptr; }
 
-// ── FUN_0043d3e0 — movida desde stubs_helpers.cpp (refactor B3) ──
-// FUN_0043d3e0 @ 0x0043D3E0 — HashTable_LockRead (3-arg: ctx, key, *out)
-// STUB: HashTable obfuscation helper.
-void __cdecl FUN_0043d3e0(int a, int* b) { (void)a; (void)b; }
-
-// ── HashTable_Insert_Short — movida desde stubs_externs.cpp (refactor B3) ──
-// HashTable_Insert_Short @ 0x0043D8A0 — HashTable_Insert_Short (__thiscall this, param_1)
-// STUB: uses unaff_retaddr phantom param — cannot implement safely.
-void __cdecl HashTable_Insert_Short(void *ctx, void *out) {
-    // STUB: HashTable insert (1-byte value) with obfuscation — cannot implement safely
-    (void)ctx; (void)out;
-}
-
 // ── FUN_0043de60 — movida desde stubs_render_helpers.cpp (refactor B3) ──
 // FUN_0043de60 @ 0x0043DE60 — NOP (empty function in original binary).
 // IDA live/raw: nullsub_2 (`retn 8`), not a send-queue drain.
