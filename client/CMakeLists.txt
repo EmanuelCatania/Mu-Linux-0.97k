@@ -395,10 +395,17 @@ set(MU_RESOURCES
     src/resource.rc
 )
 
-add_executable(mu97k WIN32 ${MU_SOURCES} ${MU_HEADERS} ${MU_RESOURCES})
+# El .rc va en una librería OBJECT aparte: el generador de Visual Studio copia
+# los defines de C++ al ResourceCompile del mismo target, y el .vcxproj no le
+# pasa ningún define a rc.exe. El .res resultante se enlaza igual en main.exe.
+add_library(mu97k_res OBJECT ${MU_RESOURCES})
+set_target_properties(mu97k_res PROPERTIES FOLDER lib)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src" FILES ${MU_RESOURCES})
+
+add_executable(mu97k WIN32 ${MU_SOURCES} ${MU_HEADERS} $<TARGET_OBJECTS:mu97k_res>)
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "src"
-    FILES ${MU_SOURCES} ${MU_HEADERS} ${MU_RESOURCES})
+    FILES ${MU_SOURCES} ${MU_HEADERS})
 
 set_target_properties(mu97k PROPERTIES
     OUTPUT_NAME main
