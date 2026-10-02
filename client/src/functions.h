@@ -42,7 +42,6 @@ extern "C" void EquipWipe_Tick(int op, int sub);  // diagnostico: ver Render_Pla
 void  __cdecl Packet_DecryptByte(void *a, void *b); // IDA: Packet_DecryptByte (0x00404330)
 void* __cdecl HashTable_GetNode(void *ctx, void *key); // IDA: HashTable_GetNode (0x00404280)
 uint  __cdecl HashTable_GetIndex(void *ctx, void *key);       // Returns slot index (0xffffffff = not found)
-void  __cdecl PACKET_ENCRYPT(void *ctx, void *key); // IDA: PACKET_ENCRYPT (0x00404040)
 void  __cdecl FUN_00403f30(void *a, void *b);
 void  __cdecl CWsctlc__LogPrintOn(void);   // IDA: CWsctlc__LogPrintOn (0x00403A30)
 void  __cdecl Packet_DecryptBuffer(void *node, void *key); // IDA: Packet_DecryptBuffer (0x00404370)
@@ -114,8 +113,6 @@ void  __cdecl CheckHack(int, int, int); // IDA: CheckHack (0x00412A70)
 void  __cdecl GetCheckSum(int, int, int, int); // IDA: GetCheckSum (0x00412DE0)
 
 // ── Combat / Entity interaction ───────────────────────────────────────────────
-void  __cdecl PACKET_DECRYPT(void *ctx, void *counter); // IDA: FUN_00422DF0 (0x00422DF0)
-void  __cdecl STRUCT_DECRYPT(void *ctx, void *chardata); // IDA: STRUCT_DECRYPT (0x00423040)
 void  __cdecl Packet_EncryptByte(void *a, void *b); // IDA: Packet_EncryptByte (0x00423710)
 void  __cdecl Packet_EncryptDword(void* node, void* key); // IDA: Packet_EncryptDword (0x00423760)
 void  __cdecl CreateSocket(const char* ip, unsigned int port); // IDA: CreateSocket (0x00423920)
@@ -214,8 +211,6 @@ void  __cdecl ReceiveUseStateItem(int, int, int); // IDA: ReceiveUseStateItem (0
 void  __cdecl InsertBuffPhysicalEffect(int, int, int); // IDA: InsertBuffPhysicalEffect (0x0043BDE0)
 void  __cdecl ClearBuffPhysicalEffect(int, int, int); // IDA: ClearBuffPhysicalEffect (0x0043C070)
 void* __cdecl STRUCT_ENCRYPT(void *ctx, void *chardata); // IDA: STRUCT_ENCRYPT (0x0043D1D0)
-// FUN_0043d3e0: 2-arg form — (HashTable*, int*) used in Ring_ComputeOrbit (see line 840)
-void  __cdecl HashTable_Insert_Short(void *ctx, void *out);  // HashTable_Timer — updates out from ctx
 int   __fastcall CWsctlc_GetSocket(int);   // IDA: CWsctlc::GetSocket (0x0043DCC0)
 int   __fastcall CWsctlc_FDWriteSend(int); // IDA: sub_43DDD0; 5.2: CWsctlc::FDWriteSend (0x0043DDD0)
 void  __cdecl FUN_0043de60(void);  // Net_FlushQueue (no args)
@@ -738,8 +733,6 @@ void  __cdecl SetMaxTextures(int count); // IDA: SetMaxTextures (0x00505BD0)
 void  __cdecl OpenMonsterModel(int monster_idx);                    // Monster_SetupSoundAnim
 int   __cdecl TextParser_GetToken(void);                         // FUN_0047A1F0 — text-data tokenizer (returns record type)
 void  __cdecl BuxConvert_0(int buf, int len);   // IDA: BuxConvert_0 (0x00479910) -- clave FC CF AB en DAT_00559bb4
-void  __cdecl Skill_HashTable_SerializeEntry(void *dst, void *src);               // Skill_HashTable_SerializeEntry (encode + insert)
-void  __cdecl Skill_HashTable_FreeEntry(void *entry, void *key);             // Skill_HashTable_FreeEntry (decode + remove)
 void  __cdecl BuxConvert_1(void* buffer, int size);               // IDA: BuxConvert_1 (0x00401120)
 uint  __cdecl crt_fwrite(char *buf, uint size, uint count, int *fp); // fwrite-wrapper (locked)
 void  __cdecl putc(int ch, int *fp);                     // fputc-wrapper (writes single byte to file)
@@ -909,7 +902,6 @@ int   __cdecl GetItemSlot(int siType, int iLevel);   // 0x00482D70
 // ── SecondPassword Screen6/7 helpers ─────────────────────────────────────────
 void  __cdecl CreateDialogInterface(int a, int b);  // UI_ShowBitmapMsg (bitmap message overlay, 2 args)
 void  __cdecl Item_RecalculateRepairCost(void); // IDA: FUN_004C4080
-void  __cdecl FUN_004233e0(int, int);      // HashTable_Unlock (2-arg variant, release lock)
 
 // ── Map / Scene helpers ───────────────────────────────────────────────────────
 int   __cdecl ParseNextToken(void);        // FUN_0050E2C0 — reads next token from ParserFileHandle into ParserTokenString; returns token type (2=EOF)
@@ -918,7 +910,6 @@ int   __cdecl ParseNextToken(void);        // FUN_0050E2C0 — reads next token 
 void  __cdecl Vec3_Normalize(float *vec);    // Vec3_Normalize — normalises a 3-float vector in-place
 
 // ── NPC Script helpers ────────────────────────────────────────────────────────
-void  __cdecl FUN_0043d3e0(int, int*);     // HashTable_LockRead (lock + read value into *out)
 void  __cdecl Packet_DecryptDword(void*, void*); // IDA: FUN_00409E20 (0x00409E20)
 void  __cdecl Packet_EncryptDword(void*, void*); // IDA: Packet_EncryptDword (0x00423760)
 
