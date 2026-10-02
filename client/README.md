@@ -256,6 +256,17 @@ Lo único que se saltea deliberadamente es el ruido anti-tamper: las
 operaciones de hash-table intercaladas, los bloques inalcanzables y el
 scrambling XOR de la versión protegida. No son lógica de juego.
 
+### Comentarios en el código
+
+Los comentarios describen **el código actual**: la referencia a IDA
+(`// IDA: <nombre> (<dirección>)`), el layout de un struct o paquete, las
+desviaciones vigentes respecto del binario y las advertencias que evitan romper
+algo. La historia de cómo se llegó a un fix (fechas, sondas, intentos
+descartados, lo que hacía el port viejo) no va en el código: va en el mensaje
+del commit o en `docs/`. Los comentarios de desarrollo que ya estaban en el
+código se movieron a [`docs/historial-comentarios/`](docs/historial-comentarios/README.md);
+el texto completo original sigue en el tag `0.97.00`.
+
 ### Trampas conocidas
 
 Estas costaron sesiones enteras de depuración. Todas volvieron a aparecer
