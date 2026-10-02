@@ -3,8 +3,9 @@
 #include "../functions.h"
 
 // Map_LoadObjectModels — port alternativo de 0x0050c4d0
-// La versión activa (linkeada) vive en stubs.cpp:8626. Este port tiene strings
-// distintos (ej. "SeaCreature" vs "SummonMonster") y quedó fuera del build.
+// La versión activa (linkeada) es OpenWorldModels, en
+// Terrain/Terrain_LegacyLoad.cpp. Este port tiene strings distintos (ej.
+// "SeaCreature" vs "SummonMonster") y quedó fuera del build.
 // Se deja como documentación / referencia.
 #if 0
 void Map_LoadObjectModels(void)
@@ -148,12 +149,9 @@ section2:
         } while (iVar3 < 9);
         // Load water tile textures into DAT_083a8ad8 array (32 entries × 0x38 stride).
         //
-        // BUG-FIX 2026-05-03: bounds were absolute source-binary addresses
-        // (`0x83a8d08`, `0x83a91d8`). DAT_083a8ad8 is now sized as `char[32*0x38]`
-        // (was 1 byte → 32 strings of 0x38 bytes each = 1792 bytes of heap stomp
-        // every time Icarus map loaded). Use indexed access; the first 10 entries
-        // (offset 0..9 = bytes 0..560 = `< 0x230 from start`) get "wt0_%d.jpg"
-        // (matching IDA literal 0x83a8d08 - 0x83a8ad8 = 0x230 = 10 × 0x38).
+        // Acceso indexado (IDA usa las direcciones absolutas `0x83a8d08`/`0x83a91d8`
+        // como bounds). Las primeras 10 entradas (0x83a8d08 - 0x83a8ad8 = 0x230 =
+        // 10 × 0x38) llevan "wt0_%d.jpg".
         for (int texIdx = 0; texIdx < 32; ++texIdx) {
             char* pEntry = &DAT_083a8ad8[texIdx * 0x38];
             const char* fmtPath = (texIdx < 10) ? "Object8/wt0_%d.jpg" : "Object8/wt_%d.jpg";

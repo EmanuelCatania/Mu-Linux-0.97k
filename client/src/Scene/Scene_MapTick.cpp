@@ -24,16 +24,13 @@ void Scene_MapTick(void)
   void *pvVar3;
   undefined4 *puVar4;
   undefined4 *puVar5;
-  // (was: int iStack0000000c — phantom outgoing-stack arg slot; resolved into RenderSkillTooltip 3rd param)
 
   GL_ResetState();
   puVar5 = (undefined4*)DAT_07cf1ffc;
   DAT_07e11d6e = 0;
   // IDA Scene_MapTick L32-38: RepairEnable_0 sólo se NORMALIZA a 1; nunca se
-  // apaga acá.  El port tenía (2026-05-08) un "fix" que lo ponía en 0 cada
-  // frame si RepairEnable (0x07EAA138) valía 0 -- y RepairEnable vale 0
-  // siempre que la tienda está abierta (sub_4E6550), así que el modo reparación
-  // del herrero duraba un frame y el click levantaba el item.
+  // apaga acá (RepairEnable, 0x07EAA138, vale 0 siempre que la tienda está
+  // abierta, y apagarlo cortaría el modo reparación del herrero).
   if (DAT_07eaa134 != 0) {
     DAT_07eaa134 = 1;
   }
@@ -122,9 +119,8 @@ LAB_004f6614:
     Packet_EncryptBuffer(puVar4,puVar5);
   }
 LAB_004f6824:
-  // 2026-05-05: clamp DAT_0055a3e4 to valid skill slot range (0..19) before
-  // calling tooltip. Otherwise garbage values like 0x2A2A cause OOB reads
-  // inside the tooltip code that crash on hover.
+  // Clamp de DAT_0055a3e4 al rango de slots de skill (0..19) antes de llamar al
+  // tooltip: un valor basura haría lecturas fuera de rango.
   if ((int)DAT_0055a3e4 >= 0 && (int)DAT_0055a3e4 < 20) {
     // Skill tooltip render. Args resolved from IDA: (float Y, int X, int hoveredSkillIdx).
     // Ghidra mis-decoded the 3rd arg as a stack write; it is the real 3rd param.

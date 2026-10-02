@@ -73,20 +73,11 @@ void __cdecl Scene_Dispatch(HDC param_1)
 
     // ── RE-AUTH PACKET SEND (when keepalive counter > 0x1f) ──────────────────
     //
-    // DISABLED for MuEmu compat (2026-04-25):
-    //   Original 0.97 client sends a raw [C3][len][crc payload] re-auth packet
-    //   every frame after Net_Connect via raw send() (no MuEmu cipher wrap).
-    //   The packet body is XOR-encrypted with the login key, then CRC-wrapped.
-    //
-    //   Symptom: server FD_CLOSEs ~656 ms after F3/00 charlist arrives.  Login
-    //   itself works because we wrap the F1/01 send through MuEmu::EncryptSend
-    //   explicitly — but THIS path bypasses it, so once g_iNoMouseTime (re-auth
-    //   keepalive counter) randomizes >0x1f, every frame leaks an unencrypted
-    //   C3 onto the wire that MuEmu can't decode → server kills the socket.
-    //
-    //   Original target server expected this re-auth (it's a GameGuard ping).
-    //   MuEmu doesn't, so we just skip the entire block.  The hash-table
-    //   bookkeeping below still runs (anti-tamper ref-count, harmless).
+    // Desactivado para MuEmu: el 0.97 original manda un re-auth [C3][len][crc
+    // payload] crudo por send() (sin el cifrado MuEmu) cuando g_iNoMouseTime
+    // pasa de 0x1f (es un ping de GameGuard); MuEmu no lo espera, no lo puede
+    // decodificar y cierra el socket. El bookkeeping de hash-table de abajo sigue
+    // corriendo (ref-count anti-tamper, inofensivo).
     #if 0
     if (g_iNoMouseTime > 0x1f) {
         // Build a 6-byte re-auth packet: [0xC1, len, 0xF1, b3, b2, b0]
