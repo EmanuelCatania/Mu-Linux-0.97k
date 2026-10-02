@@ -1,5 +1,4 @@
 // System_Legacy.cpp
-// Extracted from stubs_bulk_misc.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -32,30 +31,15 @@ UINT __fastcall HashTable_GetIndex(void* ecx, void* /*edx*/, DWORD param_1) {
 //
 // Por politica del proyecto la hash-table es anti-tamper y esta neutralizada:
 // GetIndex (aca arriba) devuelve -1 siempre, asi que la rama de allocacion corre
-// en CADA pasada y el puntero se pierde en el acto -- el Insert no lo guarda.
-//
-// (Ojo: la capacidad NO es 0.  g_HashTableCtx la deja en 1 con un slot centinela,
-// asi que el early-out de HashTable_Insert no dispara y el Insert llega a correr
-// su sondeo; simplemente no hace nada util con el nodo.)
-//
-// Eso es un LEAK, y de los grandes, porque varios de esos sitios estan en
-// caminos per-frame.  El de SecondPassword_Screen4 aloca 12 nodos por frame
-// (un bucle de 0x330 con paso 0x44): 12 * 1413 = ~17 KB por frame, ~1,5 GB por
-// hora a 25 fps.  Un cliente de 32 bits agota su espacio de usuario en poco mas
-// de una hora y operator new tira std::bad_alloc, que nadie captura -> crash
-// 0xE06D7363.  Reportado 2026-09-30 con el proceso corriendo 62,5 minutos.
-//
-// Como la tabla esta muerta nadie LEE esos nodos -- lo unico que se hace con
-// el puntero es escribirle el byte +0x584 y pasarlo al Insert, que lo tira.
-// Asi que devolvemos siempre el mismo buffer: la memoria sigue siendo valida y
-// escribible, y el leak desaparece.  Es completar la neutralizacion que ya
-// estaba a medias, no una desviacion nueva.
+// en CADA pasada (la capacidad es 1 con un slot centinela, no 0: el Insert corre
+// su sondeo pero no guarda el nodo).  Alocar por nodo seria un leak de ~17 KB por
+// frame (SecondPassword_Screen4 aloca 12 nodos por frame), asi que se devuelve
+// siempre el mismo buffer: nadie LEE los nodos.
 //
 // Los sitios escriben su flag en offsets distintos segun el tipo de nodo (+1, +4,
-// +0x161, +0x584), asi que al compartir el buffer esas marcas se pisan entre si.
-// Es inocuo: nadie LEE los nodos, y las dos unicas salidas de HashTable_Insert
-// son escribir en un array muerto de 1 slot o llamar a CErrorReport_Write, que en
-// este build es un stub vacio.  Ninguna rama es observable.
+// +0x161, +0x584) y al compartir el buffer se pisan entre si.  Es inocuo: las
+// unicas salidas de HashTable_Insert son un array muerto de 1 slot o
+// CErrorReport_Write, que en este build es un stub vacio.
 //
 // Si algun dia se activa la hash-table de verdad, hay que volver a alocar por
 // nodo (y entonces tambien habria que liberarlos), y ademas separar los tipos de

@@ -1,5 +1,4 @@
 // String_ResourceLegacy.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos -------------------
+// Cloth_Integrate vive en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -56,7 +55,6 @@ int __cdecl mbclen(const byte *param_1) {
 // Resource_Load @ 0x0053D5A0 — Resource_Load(filename)
 // Calls Pipe_SetTarget(DAT_083bbb14, filename) if resource manager is initialized.
 // Returns non-zero on success. DAT_083bbb14 is the resource manager context pointer.
-// Pipe_SetTarget not implemented — returning 0 (no-op stub).
 unsigned int  __cdecl Resource_Load(char *path)
 {
     if (DAT_083bbb14 == 0) return 0;

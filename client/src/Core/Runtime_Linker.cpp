@@ -1,5 +1,3 @@
-// Extracted from stubs_linker.cpp during the linker-stub domain refactor.
-// Original IDA/address comments are retained with each implementation.
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -38,23 +36,8 @@ extern void ClearActionObject(void);
 #define ITEM_OPTION_ADD_DEFENSE_RATE_CODE     62
 #define ITEM_OPTION_ADD_DEFENSE_CODE          63
 #define ITEM_OPTION_ADD_EXCELLENT_DAMAGE_CODE 72
-// SetPlayerStop @ 0x004430C0 (504 lines) — Set player entity to idle/stop animation
-// Selects animation based on equipment, class, terrain. Most bulk is anti-tamper hash ops.
-// 2026-08-08 BUG-FIX (el MG se renderizaba como Dark Wizard, con casco y con
-// rayas): este stub coexistía con el port REAL de SetPlayerStop
-// (`SetPlayerStop`, Net/SecondPassword.cpp). `Character_UpdateEquipSlotAnimations` llamaba a ESTE, y el
-// stub hacía:
-//     *(BYTE*)(entity + 0x1bc) &= ~0x07;   // "clear movement bits"
-// pero **0x1BC NO son move flags: es el byte de CLASE/skin** (lo leen
-// `SetCharacterClass` como `skin`, `CheckFullSet` como `(c+444)&7`, y
-// `RenderEquipmentBox` vía `CA[11]`). O sea el stub borraba la clase:
-//     DW  0x00 -> 0x00   (sin cambio, por eso nunca se notó)
-//     SM  0x08 -> 0x08   (sin cambio)
-//     DK  0x01 -> 0x00   ✗ pasa a Dark Wizard
-//     FE  0x02 -> 0x00   ✗
-//     MG  0x03 -> 0x00   ✗
-// Cazado con las sondas CLSPROBE: F(post-45c130)=3 → G(post-45c720)=0.
-// Delegamos al port real; el stub no debe existir.
+// SetPlayerStop @ 0x004430C0: el port real está en Net/SecondPassword.cpp.
+// No agregar un stub acá: entity+0x1BC es el byte de CLASE/skin, no move flags.
 // CErrorReport__Write @ 0x00405540 (12 lines) — Variadic error log writer
 // Formats message via wvsprintfA then passes to debug info string writer.
 void __cdecl CErrorReport__Write(unsigned long ctx, char *fmt, ...) {
@@ -84,15 +67,10 @@ void __cdecl FUN_00543c98(void *ptr) {
 }
 
 
-// StopBuffer @ 0x00404C60 — real implementation at stubs.cpp:275 (forwards to FUN_00404c60).
+// StopBuffer @ 0x00404C60 — implementado en Render/Render_WorldHelpers.cpp (delega a Sound_StopBuffer).
 
 // StopMp3 @ 0x004127F0 — delega al port fiel (Music_StopTrack, src/Sound/Music.cpp).
-//
-// Esta era una SEGUNDA implementacion del mismo simbolo del binario, y es la que
-// usaba StopMusic. Estaba mal en tres cosas: ignoraba `cmd` (cerraba el
-// reproductor aunque estuviera sonando otro track), mandaba WM_DESTROY en vez de
-// WM_CLOSE, y no limpiaba Mp3FileName — asi que el siguiente PlayMp3 creia que
-// el track viejo seguia en curso. Ver [[simbolo-duplicado-patron]].
+// No reimplementarlo acá: es el mismo símbolo del binario.
 void __cdecl StopMp3(char *cmd, int param) {
     Music_StopTrack((DWORD)(uintptr_t)cmd, param);
 }
