@@ -19,10 +19,8 @@
 // Also handles DAT_0055a3e4 as a pending map-change request.
 void Scene_MapTick(void)
 {
-  char cVar1;
   uint uVar2;
   void *pvVar3;
-  undefined4 *puVar4;
   undefined4 *puVar5;
   // (was: int iStack0000000c — phantom outgoing-stack arg slot; resolved into RenderSkillTooltip 3rd param)
 
@@ -60,27 +58,8 @@ void Scene_MapTick(void)
       *(undefined1 *)((int)pvVar3 + 0x584) = 1;
       HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }
-    else {
-      uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,puVar5);
-      if (uVar2 == 0xffffffff) {
-        puVar4 = (undefined4 *)0x0;
-      }
-      else {
-        puVar4 = *(undefined4 **)(DAT_055c9bcc + uVar2 * 4);
-      }
-      cVar1 = *(char *)(puVar4 + 0x161);
-      *(byte *)(puVar4 + 0x161) = cVar1 + 1U;
-      if ((byte)(cVar1 + 1U) < 2) {
-        Packet_DecryptBuffer(puVar5,puVar4);
-      }
-    }
     RenderItemInfo((void*)(uintptr_t)DAT_07ea840c,(void*)(uintptr_t)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160,(int)DAT_07ea9844);
     puVar5 = (undefined4*)DAT_07cf1ffc;
-    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
-    if (uVar2 == 0xffffffff) goto LAB_004f6824;
-    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,puVar5);
-    if (uVar2 == 0xffffffff) goto LAB_004f6614;
-    puVar4 = *(undefined4 **)(DAT_055c9bcc + uVar2 * 4);
   }
   else {
     uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
@@ -89,37 +68,8 @@ void Scene_MapTick(void)
       *(undefined1 *)((int)pvVar3 + 0x584) = 1;
       HashTable_Insert(&MAIN_HASH_CLASS,pvVar3,puVar5);
     }
-    else {
-      uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,puVar5);
-      if (uVar2 == 0xffffffff) {
-        puVar4 = (undefined4 *)0x0;
-      }
-      else {
-        puVar4 = *(undefined4 **)(DAT_055c9bcc + uVar2 * 4);
-      }
-      cVar1 = *(char *)(puVar4 + 0x161);
-      *(byte *)(puVar4 + 0x161) = cVar1 + 1U;
-      if ((byte)(cVar1 + 1U) < 2) {
-        Packet_DecryptBuffer(puVar5,puVar4);
-      }
-    }
     RenderRepairInfo((void*)(uintptr_t)DAT_07ea840c,(int)DAT_07ea8408,(void*)(uintptr_t)DAT_07eaa160);
     puVar5 = (undefined4*)DAT_07cf1ffc;
-    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,DAT_07cf1ffc);
-    if (uVar2 == 0xffffffff) goto LAB_004f6824;
-    uVar2 = HashTable_GetIndex(&MAIN_HASH_CLASS,puVar5);
-    if (uVar2 == 0xffffffff) {
-LAB_004f6614:
-      puVar4 = (undefined4 *)0x0;
-    }
-    else {
-      puVar4 = *(undefined4 **)(DAT_055c9bcc + uVar2 * 4);
-    }
-  }
-  cVar1 = *(char *)(puVar4 + 0x161);
-  *(char *)(puVar4 + 0x161) = cVar1 + -1;
-  if ((char)(cVar1 + -1) == '\0') {
-    Packet_EncryptBuffer(puVar4,puVar5);
   }
 LAB_004f6824:
   // 2026-05-05: clamp DAT_0055a3e4 to valid skill slot range (0..19) before
