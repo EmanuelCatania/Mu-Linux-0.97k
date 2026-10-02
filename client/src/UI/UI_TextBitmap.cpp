@@ -1,5 +1,4 @@
 // UI_TextBitmap.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -16,11 +15,10 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
     (void)p4; (void)p5; (void)p7;
 
     int bmpWidth = p1;
-    // FIDELIDAD 2026-08-15: IDA inicializa `sz.cx = a1` ANTES del check de '\n'
-    // (sub_47F360 L21-23).  Si el texto empieza en '\n' la función saltea todo el
-    // TextOut y sz.cx queda en a1, así que el split de color nunca se cruza y la
-    // fila entera se pinta con SetTextColor_0.  Antes arrancábamos en 0 (=todo
-    // m_dwTextColor), que es el caso opuesto.
+    // IDA inicializa `sz.cx = a1` ANTES del check de '\n' (sub_47F360 L21-23).
+    // Si el texto empieza en '\n' la función saltea todo el TextOut y sz.cx
+    // queda en a1, así que el split de color nunca se cruza y la fila entera se
+    // pinta con SetTextColor_0.
     int prefixWidth = bmpWidth;
 
     if (*p3 != '\n') {
@@ -64,14 +62,10 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
     DWORD* dstRow = (DWORD*)(uintptr_t)DAT_083a7cd4;
     char*  srcRow = (char*)ppvBits_055c9e4c;
 
-    // BUG-FIX 2026-07-19 (CRASH 0xC0000005 addr=FUN_0047f360+0x14B, param1=0):
-    // el loop leía `*src` con `srcRow = ppvBits_055c9e4c` en NULL. `ppvBits` es
-    // el puntero a los bits del DIB de la fuente (lo crea Font_BuildLayout vía
-    // CreateDIBSection, Font_Layout.cpp:39); si esa init no corrió todavía queda
-    // en nullptr. Hasta ahora no se notaba porque esta función solo se alcanza
-    // desde RenderBoolean (burbujas de chat), que era código muerto — el pool
-    // estaba partido en 3 globals y nunca tenía slots activos.
-    // Mismo guard que ya usa HUD_Pass4.cpp:663 para este idéntico pixel-copy.
+    // Guard (no está en IDA): `srcRow = ppvBits_055c9e4c` es el puntero a los
+    // bits del DIB de la fuente (lo crea Font_BuildLayout vía CreateDIBSection,
+    // en Render/Font_Layout.cpp); si esa init no corrió todavía queda en nullptr.
+    // Mismo guard que usa HUD_Pass4.cpp para este idéntico pixel-copy.
     if (!dstRow || !srcRow) {
         return;
     }
@@ -92,12 +86,8 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
                     } else {
                         // Text pixel: use prefix color if col < prefixWidth, else m_dwTextColor
                         if (col < prefixWidth) {
-                            // 0x00559C7C — IDA `SetTextColor_0`: color del prefijo
-                            // (nombre de guild).  2026-08-15: esto leía el global
-                            // `DAT_00559c7c`, que en nuestro build era una memoria
-                            // SEPARADA de `SetTextColor_0` (la que sí escriben
-                            // RenderBoolean/RenderPartyHP) y quedaba en 0 → el
-                            // [guild] salía transparente.  Unificados en globals.h.
+                            // 0x00559C7C — IDA `SetTextColor_0`: color del prefijo (nombre de guild).
+                            // DAT_00559c7c y SetTextColor_0 son la misma memoria (unificados en globals.h).
                             color = SetTextColor_0;
                         } else {
                             color = DAT_00559c78;  // m_dwTextColor
@@ -118,7 +108,7 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
 
 // FUN_0047f4c0 @ 0x0047F4C0 — Font_RenderBitmapText (~64 lines)
 // glTexImage2D uploads Bitmaps[0xd]. Clamps to screen bounds. RenderBitmap.
-// Font_RenderBitmapText (IDA-activated, was Ghidra stub)
+// Font_RenderBitmapText (IDA-activated)
 void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, int a5, int a6, float a7, int a8)
 {
   int v8; // ecx
@@ -197,4 +187,4 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
 }
 
 
-extern "C" int Text_MeasureOrthoWidth(const char* text);   // stubs_externs.cpp
+extern "C" int Text_MeasureOrthoWidth(const char* text);   // UI/UI_LegacyExterns.cpp

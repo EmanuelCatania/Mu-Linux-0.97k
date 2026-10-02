@@ -4,13 +4,11 @@
 // ------------
 // Port del objeto C++ que el mu.exe original crea con
 //   operator new(0x5C8) → sub_40C7D0(this) → dword_55C9FF0 = this
-// en WinMain @ 0x41F416-0x41F481. La identificación previa de
-// dword_55C9FF0 como `HGLRC` era ERRÓNEA; es un objeto de widget de UI derivado
+// en WinMain @ 0x41F416-0x41F481. Es un objeto de widget de UI derivado
 // cuya vtable vive en off_5525CC y cuyo constructor encadena a través
-// del ctor base sub_40C5D0. Sin este objeto bien
-// construido, los dispatches de Render_GameFrame (vtable+0x10) y de
-// UIChatLogWindow_AddText (vtable+0x70) crasheaban en silencio y el
-// HUD never appeared.
+// del ctor base sub_40C5D0. Los dispatches de Render_GameFrame (vtable+0x10)
+// y de UIChatLogWindow_AddText (vtable+0x70) dependen de que esté bien
+// construido.
 //
 // Vtable layout (off_5525CC, 30 slots, all __thiscall)
 // ----------------------------------------------------
@@ -30,7 +28,7 @@
 //                                                  build (deps stubbed)
 //    8    +20  0x403A30   nullsub                 full
 //    9    +24  0x411A20   key-handler            re-uses FUN_00411a20
-//                                                  already in stubs.cpp
+//                                                  (al final de este archivo)
 //   10    +28  0x4118D0   clear list             full
 //   11    +2C  0x410D70   nullsub                 full
 //   12    +30  0x40CC50   scroll by N            full
@@ -43,13 +41,8 @@
 //   19    +4C  0x40CD80   count visible          full
 //   20    +50  0x40CDD0   advance cursor         full
 //   21    +54  0x40E230   hit-test del input     *usa sub_40C490 + globals
-//   22    +58  0x40CE20   render del fondo del marco (ENORME) STUB — sólo delega a
-//                                                  the counter increment;
-//                                                  full GL render needs
-//                                                  CUIRenderText + RenderBitmap
-//                                                  port, que es su propio
-//                                                  session.
-//   23    +5C  0x40D610   render de línea (ENORME)     STUB — misma razón que el #22
+//   22    +58  0x40CE20   render del fondo del marco (ENORME) full
+//   23    +5C  0x40D610   render de línea (ENORME)     full
 //   24    +60  0x40D600   render footer thunk    full (thunk to sub_40DEF0)
 //   25    +64  0x40E810   hover/click por línea   *completo (usa sub_40C490)
 //   26    +68  0x40E400   per-frame button input *full
@@ -91,8 +84,8 @@ extern "C" int g_ChatLB_MouseOnWindow;       // latch para Player_InputTick
 static void ChatLB_DrawButton(int Texture, int hover, float x, float y,
                               float Width, float Height, float alpha, DWORD flipBits);
 
-// External helpers already implemented elsewhere in our build.  Linkage
-// coincide con las definiciones que ya existen en stubs.cpp (C++, no extern "C").
+// Helpers definidos más abajo en este mismo archivo.  Linkage C++ (no
+// extern "C").
 int  __cdecl    ChatListBox_GetFocusState(DWORD* self);                // IDA: FUN_0040c680
 void __fastcall ChatListBox_DequeueFront(int self); // IDA: ChatListBox_DequeueFront (0x0040C580)
 int  __cdecl    FUN_00411a20(DWORD* self);                            // key-handler (slot 9)
@@ -100,10 +93,8 @@ int  __cdecl    FUN_004119a0(DWORD* self, int v);                     // scroll-
 int  __cdecl    FUN_0040c930(int slot);                               // ++[slot+0x114]
 
 // FUN_0040c490 — hit-test de bbox, port de sub_40C490 de IDA (lo referencian
-// muchos helpers de UI). Vive acá porque stubs.cpp lo define detrás de
-// bloques #if IDA_PORT_xxx que no están activados; volverlo
-// siempre-activo chocaría con ésos, así que lo proveemos bajo una implementación única
-// name and alias.
+// muchos helpers de UI). Se define con nombre propio (Chat_BBoxHit) y se
+// expone con el nombre de IDA mediante el #define de abajo.
 static int Chat_BBoxHit(int x, int y, int w, int h, int mode)
 {
     if (mode == 2) {
@@ -141,7 +132,7 @@ BYTE  g_ChatStagingBuf[0x118] = {0}; // mirror of byte_55C95F8 staging buffer
 #define dword_55C9708  (*(DWORD*)&g_ChatStagingBuf[0x110])
 #define dword_55C970C  (*(DWORD*)&g_ChatStagingBuf[0x114])
 
-// En nuestro build dword_55C9B80 ya estaba declarado en globals.cpp (línea 423).
+// En nuestro build dword_55C9B80 ya estaba declarado en globals.cpp (DAT_055c9b80).
 // Para no redefinirlo, tratamos el g_ChatListBox_FocusID_B local como un
 // slot separado — los dos arrancan en 0, así que el comportamiento es idéntico para
 // nuestro código, que no lee el original.
@@ -170,8 +161,8 @@ static void __fastcall ChatLB_recalcScroll  (DWORD* self);                      
 static int  __fastcall ChatLB_countVisible  (DWORD* self);                                 // slot 19
 static int  __fastcall ChatLB_advanceCursor (DWORD* self);                                 // slot 20
 static int  __fastcall ChatLB_hitTestInput  (DWORD* self);                                 // slot 21
-static int  __fastcall ChatLB_renderBg      (DWORD* self);                                 // slot 22 (stub)
-static int  __fastcall ChatLB_renderLine    (DWORD* self, int /*edx*/, int   row);   // slot 23 (stub)
+static int  __fastcall ChatLB_renderBg      (DWORD* self);                                 // slot 22
+static int  __fastcall ChatLB_renderLine    (DWORD* self, int /*edx*/, int   row);   // slot 23
 static void __fastcall ChatLB_renderFooter  (DWORD* self);                                 // slot 24
 static int  __fastcall ChatLB_lineHover     (DWORD* self, int /*edx*/, int   row);   // slot 25
 static int  __fastcall ChatLB_perFrameInput (DWORD* self);                                 // slot 26
@@ -235,9 +226,8 @@ static DWORD* ChatLB_NewListHead(size_t bytes)
 
 // ---------------------------------------------------------------------------
 // Construct — port 1:1 completo de sub_40C7D0(this), que primero llama a sub_40C5D0(this).
-// Entrada pública: produce el objeto ya construido, listo para asignar a
-// dword_55C9FF0. Reemplaza al `malloc(0x5c8)+memset` que hacía antes WinMain y
-// left the vtable null.
+// Entrada pública: produce el objeto ya construido (con su vtable), listo para
+// asignar a dword_55C9FF0.
 // ---------------------------------------------------------------------------
 extern "C" void* ChatListBox_Construct(void)
 {
@@ -322,11 +312,9 @@ extern "C" void* ChatListBox_Construct(void)
 //   * position (460, 387), size (170, 250)
 //   * vtable off_5526EC — 13 de los 30 slots DIFIEREN de off_5525CC.
 //
-// 2026-08-15: acá se instalaba `s_ChatLB_VTable` (la del chat).  Ese objeto es
-// el que `RenderGuildList` usa para dibujar los miembros, así que el dispatch
-// del slot 4 terminaba corriendo los métodos del CHAT sobre este objeto → AV.
-// Ahora se instala `s_GuildLB_VTable` (definida al final del archivo, con los
-// slots propios portados de IDA).
+// Instala la vtable propia del guild (`s_GuildLB_VTable`, definida al final
+// del archivo): `RenderGuildList` usa este objeto para dibujar los miembros, y
+// con la vtable del chat el slot 4 correría los métodos del CHAT sobre él.
 // ===========================================================================
 extern "C" void* ChatListBox_ConstructWhisper(void)
 {
@@ -580,12 +568,10 @@ static int __fastcall ChatLB_handleScrollIn(DWORD* self)
     }
 
     // ── el slot 21 (hit-test del input) decide si el mouse está sobre este widget ──
-    // IDA: `(*(...)(*(_DWORD *)this + 84))(this)` → +84 BYTES = entrada 21.
-    // Corregido 2026-07-20: acá había vt[20] (= +80, advanceCursor).  Como
-    // slot 21 es el ÚNICO que escribe self[48] (el flag "mouse cerca de la
-    // barra de chat"), con el índice mal ese flag nunca se prendía y por lo
-    // tanto ni el render (slot 24) ni el input (slot 26) de los 3 botones
-    // popup llegaban a correr.
+    // IDA: `(*(...)(*(_DWORD *)this + 84))(this)` → +84 BYTES = entrada 21 (no la
+    // 20, advanceCursor).  El slot 21 es el ÚNICO que escribe self[48] (el flag
+    // "mouse cerca de la barra de chat"), del que dependen el render (slot 24) y
+    // el input (slot 26) de los 3 botones popup.
     if (((FnInt)vt[21])(self)) {
         // Wheel-scroll accumulator drains here.
         if (g_ChatLB_WheelAccum) {
@@ -728,9 +714,8 @@ LABEL_53:
 
     // IDA sub_411B60 LABEL_76: `(*(...)(*(_DWORD *)this + 80))(this)`.
     // +80 BYTES = entrada 20 de la vtable = sub_40CDD0 (advanceCursor), NO la
-    // 18 (+72 = recalcScroll).  Corregido 2026-07-20: advanceCursor es la que
-    // deja self[25] apuntando al inicio de la ventana visible, que es lo que
-    // consume el loop de abajo.
+    // 18 (+72 = recalcScroll): advanceCursor es la que deja self[25] apuntando al
+    // inicio de la ventana visible, que es lo que consume el loop de abajo.
     ((FnVoid)vt[20])(self);
 
     // ── Per-row hit-test loop (slot 25 = lineHover) ─────────────────────────
@@ -754,7 +739,7 @@ LABEL_53:
     return v17;
 }
 
-// slot 9 — sub_411A20 — reusa el stub ya activado desde IDA que está en stubs.cpp.
+// slot 9 — sub_411A20 — reusa FUN_00411a20, definida al final de este archivo.
 static int __fastcall ChatLB_keyHandler(DWORD* self) { return FUN_00411a20(self); }
 
 // slot 10 — sub_4118D0 — wipe entire list, decrement count per node.
@@ -958,11 +943,9 @@ static int __fastcall ChatLB_advanceCursor(DWORD* self)
 //     (el botón de cerrar del borde derecho) O sobre una de las 3
 //     bandas de toggle de canal de abajo (cuando está activo).
 //
-// 2026-07-20: flt_5590B0/B4/B8 YA tienen storage propio (ChatListBox_TabButtonsX/b4/b8 en
-// globals.cpp, leídos del binario = 295 / 417 / 18).  El comentario anterior
-// decía que "no existen en nuestro build" y por eso el segundo return usaba un
-// rect inventado (160,420,60,16) que no cubría los botones — ver abajo.
-// 2026-05-04: InputText/InputLength now alias DAT_07db8710 / DAT_07d780a8
+// flt_5590B0/B4/B8 son ChatListBox_TabButtonsX/Y/Spacing (globals.cpp, leídos
+// del binario = 295 / 417 / 18).
+// InputText/InputLength alias DAT_07db8710 / DAT_07d780a8
 // (ver HUD_Pass4.cpp). Usamos los mismos #define acá para compartir el storage
 // with WM_CHAR + RenderInputText.
 #define InputText   DAT_07db8710
@@ -996,10 +979,6 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
     //   this[48] == 1 && sub_40C490((__int64)flt_5590B0, (__int64)flt_5590B4,
     //                               (__int64)(flt_5590B8 * 3.0), 16, 1)
     // = la franja COMPLETA de los 3 botones: x∈[295, 349), y∈[417, 433).
-    // Acá había un rect inventado (160, 420, 60, 16) de cuando no teníamos las
-    // constantes.  Como no cubría x=295..349, al clickear un botón este hit-test
-    // devolvía 0, slot 7 nunca despachaba el slot 26 y el click se perdía:
-    // los botones se veían pero no respondían.
     if (self[48] == 1 && FUN_0040c490((int)ChatListBox_TabButtonsX, (int)ChatListBox_TabButtonsY,
                                       (int)(ChatListBox_TabButtonSpacing * 3.0f), 16, 1)) {
         return 1;
@@ -1021,23 +1000,13 @@ static int __fastcall ChatLB_hitTestInput(DWORD* self)
 //     build).
 // Incrementa self[46] (contador de frames) al final, para el parpadeo del cursor del slot 23.
 //
-// Casi todo este render depende de las constantes flt_55264C / flt_55256C / flt_552648 /
-// flt_55265C / flt_552654 / flt_552658 / flt_552660 de la
-// engine.  Those are 1-byte border thicknesses (typical: 1.0, 2.0, 3.0).
-// Las aproximamos con literales suficientemente cercanos a los valores de IDA.
+// Las constantes de borde (flt_552644..flt_552664 y flt_55256C) son las del
+// binario; ver la tabla dentro de la función.
 extern "C" SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
                                       int boxWidth, char style, int extraSize);
 static int __fastcall ChatLB_renderBg(DWORD* self)
 {
-    // ── PORT FIEL de IDA sub_40CE20 (2026-07-20) ────────────────────────────
-    // La versión anterior era una APROXIMACIÓN: su comentario decía "we
-    // approximate with literals close enough to the IDA values".  De ahí venían
-    // los 3 síntomas reportados: el recuadro salía casi transparente (alto del
-    // fondo sin el +12 y sin el tope correcto), no había barra de desplazamiento
-    // (nunca se llamaba a recalcScroll, así que self[36..40] quedaban en 0 y la
-    // barra se dibujaba con geometría nula) y faltaban las flechas y el botón de
-    // redimensionar (nunca se portaron).
-    //
+    // ── PORT FIEL de IDA sub_40CE20 ──────────────────────────────────────────
     // Constantes leídas del binario en 0x552644..0x552664 y 0x55256C:
     //   flt_552644=28  552648=7  55264C=2  552650=4  552654=21
     //   552658=8       55265C=22 552660=5  552664=12 55256C=1.0
@@ -1170,10 +1139,8 @@ static int __fastcall ChatLB_renderBg(DWORD* self)
         GL_ResetState();
     }
 
-    // BUG-FIX 2026-05-01: header SOLO renderea cuando hay whisper target
-    // activo (per IDA sub_40CE20 LABEL_37: chequea v40[0] tras sub_40E780).
-    // Antes renderizaba siempre con string vacío → mostraba "palabra filtrada: "
-    // (= GlobalText[754]) sin contexto.
+    // El header SOLO se renderiza cuando hay whisper target activo (IDA
+    // sub_40CE20 LABEL_37: chequea v40[0] tras sub_40E780).
     //
     // sub_40E780 (IDA): si this[200] (= self[50]) flag activo, concatena los
     // 5 whisper target names con separador. Sin flag → buffer queda vacío.
@@ -1486,10 +1453,9 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
     }
 
     // ── Los 3 botones popup del chat — PORT FIEL de IDA sub_40E400 ──────────
-    // 2026-07-19: antes se salteaban por no tener las constantes de layout.
-    // Leídas del binario en 0x5590B0..0x5590B8 (3 floats) → ahora viven en
-    // globals.cpp como ChatListBox_TabButtonsX/b4/b8 = 295.0 / 417.0 / 18.0, compartidas
-    // con el RENDER (slot 24 = ChatLB_renderFooter / IDA sub_40DEF0).
+    // Constantes leídas del binario en 0x5590B0..0x5590B8 (3 floats): en
+    // globals.cpp como ChatListBox_TabButtonsX/Y/Spacing = 295.0 / 417.0 / 18.0,
+    // compartidas con el RENDER (slot 24 = ChatLB_renderFooter / IDA sub_40DEF0).
     // → tres rects de 16×16 en (295,417), (313,417) y (331,417). Caen en la
     // misma franja donde sub_4BE4F0 dibuja el input box (y≈415-422), por eso
     // el gate `!InputEnable` los oculta al abrir el recuadro de escribir.
@@ -1497,8 +1463,7 @@ static int __fastcall ChatLB_perFrameInput(DWORD* self)
     // Gate de IDA: `if ( *((_DWORD *)this + 48) && !InputEnable )`
     //   self[48] (+192) NO es un puntero a método: es el flag "mouse cerca de
     //   la barra de chat" que escribe el slot 21 (ChatLB_hitTestInput) y que
-    //   maneja el fade de los botones en sub_40DEF0.  El comentario anterior
-    //   ("puntero a método / widget inicializado") era incorrecto.
+    //   maneja el fade de los botones en sub_40DEF0.
     if (self[48] != 0 && DAT_00559c84 == 0) {
         const int bx  = (int)ChatListBox_TabButtonsX, by = (int)ChatListBox_TabButtonsY;
         const int bw  = 16, bh = 16;
@@ -1567,7 +1532,7 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
             // coinciden (por remitente o por texto) con la lista del widget
             // (this+200, hasta 5 entradas de 256).  sub_40E730 devuelve 1 si la
             // lista esta vacia.  Con lista y m_bWhisperSound (0x07E11D80) suena
-            // el aviso 38.  2026-09-12: estaba salteado ("soft-skipped").
+            // el aviso 38.
             extern int __fastcall FUN_0040e730(void* This, int edx, char* param_1);
             if (!FUN_0040e730(self, 0, src) && !FUN_0040e730(self, 0, msg))
                 return;
@@ -1607,7 +1572,7 @@ static void __fastcall ChatLB_AddText(DWORD* self, int /*edx*/,
     } else {
         // IDA sub_40C940 L96-150: mensaje largo.  sub_40C2A0 lo parte en hasta
         // dos lineas de 180 px (buffers de 0x100); la primera va con el
-        // remitente y la segunda con el nombre vacio.  Antes se truncaba a una.
+        // remitente y la segunda con el nombre vacio.
         extern int __cdecl FUN_0040c2a0(LPCSTR, int, int, int, size_t, UINT, int);
         char lines[2][0x100];
         memset(lines, 0, sizeof(lines));
@@ -1669,22 +1634,19 @@ static int __stdcall ChatLB_isRowVisible(int rowData)
 // Globals compartidos con el resto del build.
 // ===========================================================================
 
-// g_bUseChatListBox ya está definido en globals.cpp:192.
+// g_bUseChatListBox ya está definido en globals.cpp.
 // En el original, /chatlistbox lo invierte en runtime. Nosotros sólo lo consumimos.
 
-// MouseOnWindow — GLOBAL PARTIDO, corregido 2026-07-20.
-// Este archivo definía su propio `MouseOnWindow` y lo escribía en el slot 7,
-// pero NADIE lo leía: el flag que consume el resto del build (y en particular
-// Player_InputTick, para no mandar al personaje a caminar cuando el click cae
-// sobre una ventana) es `g_MouseOnWindow`, definido en Game/Player_InputTick.cpp.
-// Resultado: clickear dentro del recuadro del chat hacía caminar al personaje.
+// MouseOnWindow: el slot 7 escribe este `MouseOnWindow` local y al final lo
+// publica en el latch `g_ChatLB_MouseOnWindow`.  El flag que consume el resto
+// del build (Player_InputTick, para no mandar al personaje a caminar cuando el
+// click cae sobre una ventana) es `g_MouseOnWindow` (alias de DAT_07d78094 en
+// Game/Player_InputTick.cpp).
 //
 // No se puede escribir g_MouseOnWindow directo desde acá: Player_InputTick lo
 // resetea a 0 al principio de su propio tick (MouseOnWindow_Update), que corre
-// DESPUÉS del tick del ChatListBox (Game_CharSelectTick: slot 5 en la línea 217,
-// Player_InputTick en la 298).  Así que el slot 7 deja el resultado en este latch y
-// MouseOnWindow_Update lo consulta.  El latch se reescribe entero en cada tick
-// del widget, así que no se queda pegado.
+// DESPUÉS del tick del ChatListBox.  Así que MouseOnWindow_Update consulta el
+// latch, que se reescribe entero en cada tick del widget (no se queda pegado).
 extern "C" int MouseOnWindow = 0;
 extern "C" int g_ChatLB_MouseOnWindow = 0;
 
@@ -1692,8 +1654,8 @@ extern "C" int g_ChatLB_MouseOnWindow = 0;
 // ===  WIDGET DE LISTA DE GUILD (dword_55C9FF4, vtable off_5526EC)         ===
 // ===========================================================================
 //
-// 2026-08-15.  El objeto de `dword_55C9FF4` (el que construye `sub_40E990`) NO
-// comparte vtable con el chat principal: son DOS vtables distintas.
+// El objeto de `dword_55C9FF4` (el que construye `sub_40E990`) NO comparte
+// vtable con el chat principal: son DOS vtables distintas.
 //
 //   slot  off   off_5525CC (chat)  off_5526EC (guild)   ¿igual?
 //    0    +00   0x40DB80           0x40EAC0             NO  dtor
@@ -1711,11 +1673,10 @@ extern "C" int g_ChatLB_MouseOnWindow = 0;
 //   29    +74   0x40CD30           0x4125F0             NO
 //   (el resto coincide byte a byte)
 //
-// Nuestro `ChatListBox_ConstructWhisper` instalaba `s_ChatLB_VTable` en los dos
-// objetos, asi que `RenderGuildList` -> slot 4 -> slots 20/22/23/24 corria los
-// metodos del CHAT sobre el objeto de GUILD (otros offsets, otro layout de
-// nodo) — de ahi el AV al abrir el panel teniendo miembros.  Aca esta la vtable
-// propia, con los slots de la ruta de render y de datos portados 1:1.
+// Con la vtable del chat, `RenderGuildList` -> slot 4 -> slots 20/22/23/24
+// correría los métodos del CHAT sobre el objeto de GUILD (otros offsets, otro
+// layout de nodo).  Aca esta la vtable propia, con los slots de la ruta de
+// render y de datos portados 1:1.
 //
 // Nodo de la lista (0x18 bytes), tal como lo arma sub_40EC20:
 //   +0x00 next . +0x04 prev
@@ -2200,7 +2161,6 @@ extern "C" void GuildList_AddMember(const char* name, char connected, char party
     ((FnAdd)((void**)*obj)[28])(obj, 0, name, connected, partyNumber);
 }
 
-// ── TextureScript_setScript — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 29-byte ─────────────────────────────────────────────────────────────────
 
 // TextureScript_setScript @ 0x0040C170 (29 bytes) — thiscall: copia 4 bytes del parámetro a this
@@ -2211,7 +2171,6 @@ void __fastcall TextureScript_setScript(int ecx, int /*edx*/, BYTE *param_1) {
     *(BYTE *)(ecx + 3) = param_1[3];
 }
 
-// ── TextureScriptParsing_parsingTScript — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // TextureScriptParsing_parsingTScript @ 0x0040C190 (~77 lines) — Parse mesh flags from material name suffix
 char __fastcall TextureScriptParsing_parsingTScript(void* ecx, void* /*edx*/, DWORD* param_1) {
     (void)ecx; (void)param_1;
@@ -2219,13 +2178,12 @@ char __fastcall TextureScriptParsing_parsingTScript(void* ecx, void* /*edx*/, DW
     return 0;
 }
 
-// ── FUN_0040c2a0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // IDA: sub_40C2A0 (0x0040C2A0) — parte un texto en hasta `maxLines` lineas de
 // `width` px (espacio 640).  Cada linea va a `dst + n*lineSize` (con
 // `reverse == 1` se llenan de la ultima a la primera).  `firstIndent` le resta
 // ancho solo a la primera.  Busca el corte por biseccion sobre la cantidad de
 // caracteres y lo alinea a caracter multibyte con _mbclen.  Devuelve la
-// cantidad de lineas escritas.  Antes era un stub `return 0`.
+// cantidad de lineas escritas.
 int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
                          size_t lineSize, UINT firstIndent, int reverse) {
     const char* cur = text;                        // IDA: v7
@@ -2281,22 +2239,19 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
     return lines + 1;
 }
 
-// ── FUN_0040c480 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_0040c480 @ 0x0040C480 (12 bytes) — increment ref counter
-// FUN_0040c480 (IDA-activated, was Ghidra stub)
+// FUN_0040c480 (IDA-activated)
 int FUN_0040c480()
 {
   return ++DAT_055c9b78;
 }
 
-// ── FUN_0040c500 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_0040c500 @ 0x0040C500 (~36 lines) — UI widget: insert child node into linked list
 void __fastcall FUN_0040c500(void* ecx, void* /*edx*/, int param_1, int param_2, int param_3) {
     (void)ecx; (void)param_1; (void)param_2; (void)param_3;
 }
 
 // IDA: ChatListBox_DequeueFront (0x0040C580)
-// ── ChatListBox_DequeueFront — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // ChatListBox_DequeueFront @ 0x0040C580 (71 bytes) — dequeue front from linked list + copy 3 fields
 // IDA: ChatListBox_DequeueFront
 void __fastcall ChatListBox_DequeueFront(int param_1) {
@@ -2313,44 +2268,40 @@ void __fastcall ChatListBox_DequeueFront(int param_1) {
     }
 }
 
-// ── FUN_0040c5d0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_0040c5d0 @ 0x0040C5D0 (~38 lines) — UI widget constructor (base class)
 void* __fastcall FUN_0040c5d0(void* param_1) {
     return param_1;
 }
 
-// ── FUN_0040c670 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_0040c670 @ 0x0040C670 (10 bytes) — thiscall setter field_0x24
 void __fastcall FUN_0040c670(int ecx, int /*edx*/, int param_1) {
     *(int *)(ecx + 0x24) = param_1;
 }
 
-// ── FUN_0040c680 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 4-5 byte: trivial field access ──────────────────────────────────────────
 
 // FUN_0040c680 @ 0x0040C680 (4 bytes) — getter thiscall: devuelve this->field_0x24
-// FUN_0040c680 (IDA-activated, was Ghidra stub)
+// FUN_0040c680 (IDA-activated)
 // IDA: FUN_0040c680
 int __cdecl ChatListBox_GetFocusState(DWORD *_this)
 {
   return _this[9];
 }
 
-// Compatibility entry point retained solely for stubs_IDA_ports.cpp.
+// Alias con el nombre de IDA.  Sin callers en el código compilado (lo usaban
+// los ports gated que ahora están en docs/codigo-muerto/ida-ports/).
 // IDA: FUN_0040c680
 int __cdecl FUN_0040c680(DWORD *_this)
 {
   return ChatListBox_GetFocusState(_this);
 }
 
-// ── FUN_0040c6b0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_0040c6b0 @ 0x0040C6B0 (17 bytes) — thiscall: setea dos campos en +0x34 y +0x38
 void __fastcall FUN_0040c6b0(int ecx, int /*edx*/, int param_1, int param_2) {
     *(int *)(ecx + 0x34) = param_1;
     *(int *)(ecx + 0x38) = param_2;
 }
 
-// ── FUN_0040c6d0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 24-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_0040c6d0 @ 0x0040C6D0 (24 bytes) — thiscall: setea 3 campos en +0x3c, +0x44 y +0x48
@@ -2360,7 +2311,6 @@ void __fastcall FUN_0040c6d0(int ecx, int /*edx*/, int p1, int p2, int p3) {
     *(int *)(ecx + 0x48) = p3;
 }
 
-// ── FUN_0040c6f0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_0040c6f0 @ 0x0040C6F0 (24 bytes) — thiscall: setea 3 campos en +0x40, +0x4c y +0x50
 void __fastcall FUN_0040c6f0(int ecx, int /*edx*/, int p1, int p2, int p3) {
     *(int *)(ecx + 0x40) = p1;
@@ -2368,16 +2318,14 @@ void __fastcall FUN_0040c6f0(int ecx, int /*edx*/, int p1, int p2, int p3) {
     *(int *)(ecx + 0x50) = p3;
 }
 
-// ── FUN_0040c710 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_0040c710 @ 0x0040C710 (~41 lines) — UI widget: recursive input processing
 int __fastcall FUN_0040c710(void* ecx, void* /*edx*/, int param_1) {
     (void)ecx; (void)param_1;
     return 0;
 }
 
-// ── FUN_0040c930 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_0040c930 @ 0x0040C930 (11 bytes) — refcount increment at +0x114
-// FUN_0040c930 (IDA-activated, was Ghidra stub)
+// FUN_0040c930 (IDA-activated)
 int __cdecl FUN_0040c930(int a1)
 {
   int result; // eax
@@ -2387,9 +2335,8 @@ int __cdecl FUN_0040c930(int a1)
   return result;
 }
 
-// ── FUN_0040cdd0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // FUN_0040cdd0 @ 0x0040CDD0 (71 bytes) — skip ahead in linked list
-// FUN_0040cdd0 (IDA-activated, was Ghidra stub)
+// FUN_0040cdd0 (IDA-activated)
 int __cdecl FUN_0040cdd0(DWORD *_this)
 {
   int v2; // edi
@@ -2419,32 +2366,27 @@ int __cdecl FUN_0040cdd0(DWORD *_this)
   return result;
 }
 
-// ── FUN_0040d550 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_0040d550 @ 0x0040D550 (~45 lines) — UI widget list: destructor helper
 void __fastcall FUN_0040d550(void* param_1) { (void)param_1; }
 
-// ── FUN_00410a90 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00410a90 @ 0x00410A90 (18 bytes)
 void __fastcall FUN_00410a90(int *param_1) {
     FUN_0040f680(param_1);
     *param_1 = (int)&PTR_LAB_00552810;
 }
 
-// ── FUN_00410ab0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00410ab0 @ 0x00410AB0 — StreamBase2 ~dtor
 void __fastcall FUN_00410ab0(int ecx, int /*edx*/, BYTE param_1) {
     FUN_00410ad0((void *)ecx);
     if (param_1 & 1) operator_delete((void *)ecx);
 }
 
-// ── FUN_00410ad0 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00410ad0 @ 0x00410AD0 (11 bytes)
 void __fastcall FUN_00410ad0(void *This) {
     *(int *)This = (int)&PTR_LAB_00552810;
     FUN_0040f690(This);
 }
 
-// ── FUN_00410de0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // FUN_00410de0 @ 0x00410DE0 (62 bytes) — list: erase range [param_2, param_3)
 void __fastcall FUN_00410de0(void *This, int /*edx*/, int *param_1, int *param_2, int *param_3) {
     while (param_2 != param_3) {
@@ -2458,7 +2400,6 @@ void __fastcall FUN_00410de0(void *This, int /*edx*/, int *param_1, int *param_2
     *param_1 = (int)param_2;
 }
 
-// ── FUN_00410e30 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00410e30 @ 0x00410E30 (15 bytes) — thiscall: pop front from singly-linked list
 void __fastcall FUN_00410e30(int ecx, int /*edx*/, int *param_1) {
     int *puVar1 = *(int **)ecx;
@@ -2466,7 +2407,6 @@ void __fastcall FUN_00410e30(int ecx, int /*edx*/, int *param_1) {
     *param_1 = (int)puVar1;
 }
 
-// ── FUN_00410e40 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // ── 14-byte ─────────────────────────────────────────────────────────────────
 
 // FUN_00410e40 @ 0x00410E40 (14 bytes) — thiscall: copia el valor de *(this+4)->first
@@ -2474,7 +2414,6 @@ void __fastcall FUN_00410e40(int ecx, int /*edx*/, int *param_1) {
     *param_1 = **(int **)(ecx + 4);
 }
 
-// ── FUN_00410e50 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00410e50 @ 0x00410E50 (~295 lines) — BST_EraseNode: red-black tree node removal with
 // full rebalancing (left/right rotations, color fixup). Frees node via delete, decrements
 // el tamaño del árbol en this+0xC. Internals estándar estilo map::erase de la STL.
@@ -2482,14 +2421,12 @@ void __cdecl FUN_00410e50(void* self, DWORD* param_1, int* param_2) {
     (void)self; (void)param_1; (void)param_2;
 }
 
-// ── FUN_00411360 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00411360 @ 0x00411360 (~16 lines) — BST_UnlinkNode: unlinks doubly-linked node
 // (punteros prev/next en [0]/[1]), llama a delete sobre el nodo, decrementa el contador en this+8.
 void __cdecl FUN_00411360(void* self, int* param_1, int* param_2) {
     (void)self; (void)param_1; (void)param_2;
 }
 
-// ── FUN_004113a0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // ── BST / STL map operations ────────────────────────────────────────────────
 
 // FUN_004113a0 @ 0x004113A0 (62 bytes) — BST lower_bound (find >= key)
@@ -2511,7 +2448,6 @@ void __fastcall FUN_004113a0(void *This, int /*edx*/, int *param_1, int *param_2
     *param_1 = (int)puVar3;
 }
 
-// ── FUN_004113e0 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // FUN_004113e0 @ 0x004113E0 (62 bytes) — BST upper_bound (find > key)
 void __fastcall FUN_004113e0(void *This, int /*edx*/, int *param_1, int *param_2) {
     int *puVar3 = *(int **)((int)This + 4);
@@ -2531,7 +2467,6 @@ void __fastcall FUN_004113e0(void *This, int /*edx*/, int *param_1, int *param_2
     *param_1 = (int)puVar3;
 }
 
-// ── FUN_00411460 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00411460 @ 0x00411460 (~164 lines) — BST_InsertNode: allocates 0x138-byte node,
 // copia la clave vía FUN_004124d0, inserta en el árbol rojo-negro con rebalanceo completo
 // (rotaciones vía FUN_00411700/FUN_00411760). Incrementa el contador en this+0xC.
@@ -2539,7 +2474,6 @@ void __cdecl FUN_00411460(void* self, DWORD* param_1, int param_2, int* param_3,
     (void)self; (void)param_1; (void)param_2; (void)param_3; (void)param_4;
 }
 
-// ── FUN_00411700 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // FUN_00411700 @ 0x00411700 (96 bytes) — BST left-rotate
 void __fastcall FUN_00411700(void *This, int /*edx*/, int param_1) {
     int *piVar1 = *(int **)(param_1 + 8);
@@ -2566,7 +2500,6 @@ void __fastcall FUN_00411700(void *This, int /*edx*/, int param_1) {
     *(int **)(param_1 + 4) = (int *)piVar1;
 }
 
-// ── FUN_00411760 — movida desde stubs_bulk_med.cpp (refactor B3) ──
 // FUN_00411760 @ 0x00411760 (96 bytes) — BST right-rotate
 void __fastcall FUN_00411760(void *This, int /*edx*/, int *param_1) {
     int iVar1 = *param_1;
@@ -2593,14 +2526,12 @@ void __fastcall FUN_00411760(void *This, int /*edx*/, int *param_1) {
     param_1[1] = iVar1;
 }
 
-// ── FUN_00411820 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00411820 @ 0x00411820 (22 bytes) — thiscall: copy two values
 void __fastcall FUN_00411820(int ecx, int /*edx*/, int *param_1, BYTE *param_2) {
     *(int *)ecx = *param_1;
     *(BYTE *)(ecx + 4) = *param_2;
 }
 
-// ── FUN_00411840 — movida desde stubs_bulk_small.cpp (refactor B3) ──
 // FUN_00411840 @ 0x00411840 (33 bytes) — allocate 0x138 block, set two fields
 void __cdecl FUN_00411840(int param_1, int param_2) {
     void *pvVar1 = operator_new(0x138);
@@ -2608,7 +2539,6 @@ void __cdecl FUN_00411840(int param_1, int param_2) {
     *(int *)((int)pvVar1 + 0x134) = param_2;
 }
 
-// ── FUN_00411920 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00411920 @ 0x00411920 (~31 líneas) — ListBox_RenderItems: llama a métodos de la vtable para
 // empezar el render, después itera los ítems llamando a vtable[0x5C](índice) por cada fila visible,
 // ajustando el índice según el retorno negativo/cero. Llama a vtable[0x60] para terminar el render.
@@ -2616,11 +2546,10 @@ void __fastcall FUN_00411920(int* param_1) {
     (void)param_1;
 }
 
-// ── FUN_004119a0 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_004119a0 @ 0x004119A0 (~29 lines) — ListBox_ScrollUp: decrements scroll offset
 // (this+0x88) en param_1, clampeado a [0, itemCount - visibleCount]. Chequea la capacidad
 // en this+0x80 o this+0x60 según el flag de modo en this+0x74.
-// FUN_004119a0 (IDA-activated, was Ghidra stub)
+// FUN_004119a0 (IDA-activated)
 int __cdecl FUN_004119a0(DWORD *_this, int a2)
 {
   int result; // eax
@@ -2659,11 +2588,10 @@ int __cdecl FUN_004119a0(DWORD *_this, int a2)
   return result;
 }
 
-// ── FUN_00411a20 — movida desde stubs_bulk_misc.cpp (refactor B3) ──
 // FUN_00411a20 @ 0x00411A20 (~66 lines) — ListBox_HandleInput: processes key events
 // (7=click, 0xC=page-scroll, 0xD/0xE=selection up/down) on a doubly-linked item list.
 // Ajusta la posición del scroll vía vtable[0x30] y actualiza el puntero al ítem seleccionado en this[0x1C].
-// FUN_00411a20 (IDA-activated, was Ghidra stub)
+// FUN_00411a20 (IDA-activated)
 int __cdecl FUN_00411a20(DWORD *_this)
 {
   int v2; // ecx

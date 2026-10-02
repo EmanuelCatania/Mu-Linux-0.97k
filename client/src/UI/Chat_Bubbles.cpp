@@ -1,5 +1,4 @@
 // Chat_Bubbles.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -22,7 +21,6 @@ static int Whisper_HeroLevel() {
 // (L2079) con lvl 6: con el heroe por debajo de ese nivel solo se le puede
 // escribir a alguien que ya te susurro (quedo anotado por RegistWhisperID); si
 // no, avisa con GlobalText[479] y devuelve 0.
-// Antes era un stub `return 1` sin parametros y sin callers.
 int __cdecl FUN_0047fed0(int lvl, const char* name) {
     if (Whisper_HeroLevel() < lvl) {
         for (int row = 0; row < 10; row++) {
@@ -106,8 +104,7 @@ void __cdecl FUN_00481a40(int param_1, char* param_2, int param_3) {
 // IDA: CreateChat (0x00481BA0)
 void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetColor) {
     // Guard: entity must be alive and visible
-    // BUG-FIX 2026-07-19: offsets de entidad equivocados (mismo problema que
-    // AssignChat). IDA CreateChat @0x481BA0:
+    // IDA CreateChat @0x481BA0:
     //     if ( *(_BYTE *)Owner && *(_BYTE *)(Owner + 352) )
     //     v5 = *(unsigned __int8 *)(Owner + 746);          // PK
     //     if ( *(_BYTE *)(Owner + 132) == 4 ) v5 = 0;      // Kind
@@ -122,13 +119,8 @@ void __cdecl CreateChat(char* ID, char* Text, DWORD entity, int Flag, int SetCol
         }
     }
 
-    // BUG-FIX 2026-07-19 (CRASH 0xC0000005 en CreateChat+0x86): el bound era
-    // la dirección LITERAL del binario original (`POOL_END = 0x7e0ffc8`) y la
-    // base era `&DAT_07e016f8`, que estaba declarado como un char de 1 BYTE.
-    // El walk se paseaba por memoria ajena hasta reventar en
-    // `*(DWORD*)(slot + 0x234)`. Hasta ahora no se notaba porque AssignChat
-    // nunca matcheaba (offsets de entidad mal) → CreateChat era código muerto.
     // Pool real: base 0x7E016F8, stride 596, fin 0x7E0FFC8 → (0xE8D0)/596 = 100.
+    // Se recorre por cantidad de slots, no hasta la dirección LITERAL del binario.
     char *pool_base = DAT_07e016f8;
     const int STRIDE = 0x254;
     const int POOL_SLOTS = 100;
@@ -186,13 +178,10 @@ found_new:
     return;
 
 found_existing:
-    // PORT FIEL a IDA CreateChat @0x481BA0 found-existing path (2026-07-25):
-    // Antes hacíamos el shift text1→text2, re-seteábamos owner y limpiábamos
-    // text1 INCONDICIONALMENTE.  Pero Target_Render llama esto cada frame con
-    // Text="" mientras hacés hover sobre un NPC → el manoseo per-frame de las
-    // líneas hacía que el nombre se dibujara solapado varias veces.
-    // IDA: para Text vacío hace SOLO `v6[10]=10` (refresca timer); el shift +
-    // owner + set-text SOLO ocurren cuando Text NO está vacío.
+    // PORT FIEL a IDA CreateChat @0x481BA0, camino "ya existe": para Text vacío
+    // hace SOLO `v6[10]=10` (refresca timer); el shift text1→text2 + owner +
+    // set-text SOLO ocurren cuando Text NO está vacío.  Target_Render llama esto
+    // cada frame con Text="" durante el hover sobre un NPC.
 
     // Copy ID (name) — siempre
     strcpy(slot, ID);
@@ -234,14 +223,10 @@ found_existing:
 void __cdecl AssignChat(char* ID, char* Text, int Flag) {
     // 0x00482090 — Find character by ID, create chat bubble
     //
-    // BUG-FIX 2026-07-19 (LA BURBUJA NUNCA APARECÍA): los offsets estaban mal.
     // IDA AssignChat @0x482090:
     //     if ( *(_BYTE *)v4 && *(_BYTE *)(v4 + 132) == 1 )
     //   → activo en **+0** (byte), kind en **+132 (0x84)** (byte).
-    // Nosotros leíamos activo en +0x04 y kind como SHORT en +0x02 — pero +0x02
-    // es `entity_type` (390 para jugadores, per CLAUDE.md), así que
-    // `*(short*)(c+2) == 1` NUNCA era cierto → el pass 1 no matcheaba jamás y
-    // no se creaba ninguna burbuja.
+    // (+0x02 es `entity_type`, 390 para jugadores: no es el kind.)
     // Entity stride 0x394 (=916, coincide con IDA). ID string en +0x1C1 (=449).
 
     DWORD base = DAT_07abf5d0;  // CharactersClient

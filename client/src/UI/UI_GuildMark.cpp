@@ -1,5 +1,4 @@
 // UI_GuildMark.cpp
-// Extraído de stubs_game.cpp; se conserva la trazabilidad IDA en los comentarios de las funciones.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -82,9 +81,7 @@ void __cdecl RenderGuildMark(float p1, float p2, float p3, float p4, int p5) {
     const int iVar3 = (int)Bitmaps[34].Height;
 
     DWORD* pixelBuf = (DWORD*)Bitmaps[0x22].Buffer;
-    // 2026-08-25: `DAT_07e11f34` ahora es el array de 16 que realmente es, asi
-    // que se indexa directo (antes `(&DAT_07e11f34)[p5]` sobre un unico DWORD
-    // leia hasta 60 bytes del vecino).
+    // `DAT_07e11f34` es un array de 16: se indexa directo.
     if (p5 < 0 || p5 > 15) return;
     DWORD color = DAT_07e11f34[p5];  // MarkColor[p5]
 

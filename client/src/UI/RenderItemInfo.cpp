@@ -4,12 +4,10 @@
 // Populates the item info tooltip string buffer (lpString_07e90798, stride 100, ~0x18 slots)
 // and the color-flag array (DAT_07e91708). Called from inventory/shop tooltip draw path.
 
-// 2026-05-08: SEH wrapper. Múltiples crashes recurrentes en este path
-// (addr=0x74F3DBCC en ucrtbase.dll desde snprintf con `%s` reading bogus
-// itemName pointer). Aunque agregamos guards extensivos, hay paths
-// internos que pueden seguir tropezando con punteros corruptos. SEH
-// silencia cualquier AV interno en lugar de matar el proceso — la
-// tooltip simplemente no aparece esa frame.
+// SEH wrapper (desviación): RenderItemInfo / RenderRepairInfo envuelven el
+// port en __try/__except para que un AV interno (p.ej. snprintf con `%s`
+// sobre un puntero de nombre corrupto) no mate el proceso: el tooltip
+// simplemente no aparece ese frame.
 extern "C" void __cdecl RenderItemInfo_impl(void*, void*, void*, int);
 extern "C" void __cdecl RenderRepairInfo_impl(void*, int, void*);
 extern "C" void DbgLogPublic(const char* msg);
@@ -201,12 +199,8 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         case 12:
             snprintf(dst, dstSize, "%s +%u", GlobalText[115], level - 7);
             break;
-        // El switch del binario (0x004C4DB2) llega hasta el case 0xC (12).
-        // El case 13 -> GlobalText[117] era un injerto de version posterior.
-        // levels 14/15 REMOVIDOS 2026-07-20: variantes de Box of Luck de
-        // versiones posteriores; usaban GlobalText[1650]/[1651], fuera de las
-        // 1000 filas.  Los niveles 0..12 (hasta "Box of Kundun +5") son validos
-        // y quedan intactos.
+        // El switch del binario (0x004C4DB2) llega hasta el case 0xC (12): niveles
+        // 0..12 (hasta "Box of Kundun +5").
         default: snprintf(dst, dstSize, "%s", p->Name); break;
         }
         return true;
@@ -256,9 +250,6 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         return true;
     }
 
-    // REMOVIDO 2026-07-21 — HELPER+20 (type 436) no existe en el item.bmd del
-    // 0.97k (slot vacio): rama muerta, nunca disparaba.  Graft de version nueva.
-    // REMOVIDO 2026-07-21 — HELPER+107 (type 523 >=512): tipo imposible.
     if (type == ITEM_POTION_BASE + 9) {
         if (level == 1) snprintf(dst, dstSize, "%s", GlobalText[108]);
         else snprintf(dst, dstSize, "%s", p->Name);
@@ -268,8 +259,7 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
     if (type == ITEM_WING_BASE + 11) {
         // IDA (RenderItemInfo case 395): `v315 = 8 * (5 * Level + 150);`
         // → entrada 30+Level de SkillAttribute, que tiene stride 40, con el
-        // nombre en el offset 0.  2026-08-21: el port usaba stride 300 + 4 y
-        // leía hasta 10 KB fuera de la tabla (que son 2560 bytes en total).
+        // nombre en el offset 0.
         const char* skillName = (const char*)((char*)&SkillAttribute + 8 * (5 * (int)level + 150));
         if ((uintptr_t)skillName > 0x100000 && (uintptr_t)skillName < 0x80000000 && skillName[0]) {
             snprintf(dst, dstSize, "%s %s", skillName, GlobalText[102]);
@@ -297,9 +287,6 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
         return true;
     }
 
-    // REMOVIDO 2026-07-21 — HELPER+4/+5 (types 420/421) son slots vacios.
-    // REMOVIDO 2026-07-21 — HELPER+30 (type 446) es slot vacio.
-    // REMOVIDO 2026-07-21 — POTION+28 (type 476) es slot vacio.
     if (type == ITEM_WING_BASE + 32 || type == ITEM_WING_BASE + 33 || type == ITEM_WING_BASE + 34 || type == ITEM_WING_BASE + 35 ||
         (type >= ITEM_POTION_BASE + 45 && type <= ITEM_POTION_BASE + 50)) {
         snprintf(dst, dstSize, "%s", p->Name);
@@ -366,12 +353,8 @@ static bool BuildInventorySpecialNameLine(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned 
 
 // Color del NOMBRE del item (slot 1) — port literal de RenderItemInfo
 // @0x004C4650, bloque 0x004C4750..0x004C4820 (variable `local_8c` del decompile).
-//
-// 2026-08-18: lo que habia aca era una invencion de ~110 lineas con listas de
-// tipos de versiones POSTERIORES del MU (Chaos Card, Ancient sets, alas de
-// 3er nivel...), y ademas devolvia un color 9 que NO EXISTE: DrawItemInfoBox
-// solo mapea 0..6, cualquier otro valor cae al `default` del switch y HEREDA
-// el color de la linea anterior.  El binario 0.97k es mucho mas corto:
+// DrawItemInfoBox solo mapea los colores 0..6 (cualquier otro valor hereda el
+// color de la linea anterior).
 //
 //   Type in {0x1CD, 0x1CE, 0x18F, 0x1D0, 0x1D6}   -> 3 (dorado)
 //   Type in {0xAA, 0x13, 0x92}                    -> 6 (magenta)
@@ -441,27 +424,6 @@ static int GetInventorySpecialNameColor(ITEM* ip)
 
     return local_8c;
 }
-// REMOVIDA 2026-07-20 — GetInventoryTooltipAddOptionData, junto con sus 5
-// callers.  Pertenecia al sistema de items por PERIODO de versiones
-// posteriores (mismo bloque que FormatInventoryTooltipTime, ya removida):
-//   · su switch solo cubria tipos 520..535, imposibles en una tabla de 512;
-//   · su fuente de datos, GetInventoryItemAddOption, lee
-//     Data\Local\ItemAddOption.bmd, archivo que NO EXISTE en el 0.97k —
-//     verificado en todo el proyecto.  Sin el, s_loaded queda en false y la
-//     funcion devolvia false siempre.
-// La struct INVENTORY_ITEM_ADD_OPTION lleva un campo m_Time (vencimiento),
-// que es la firma de ese sistema.
-
-// AUDITORIA 2026-07-20 — FormatInventoryTooltipTime REMOVIDA (10 sitios).
-// Formateaba "tiempo restante" (dia/hora/minuto/segundo) para items con
-// vencimiento, una feature MUY posterior al 0.97k.  Tres pruebas de que es
-// injerto:
-//   1. NO tenia un solo caller — ya era codigo muerto.
-//   2. Usaba GlobalText[2298..2301] y [2308], fuera de las 1000 filas del
-//      Text.bmd (o sea que el original no tiene esas etiquetas siquiera).
-//   3. La tabla que la alimentaba (GetInventoryTooltipAddOptionData) solo
-//      matchea tipos 520..535, y el item.bmd del 0.97k tiene 512 entradas:
-//      esos tipos no existen ni pueden existir.
 
 // Formatea un entero con separador de miles ("4700" -> "4,700"), que es lo que
 // esperan los strings de precio de GlobalText ([62]/[63], ambos con %s).
@@ -558,78 +520,28 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
 
 
     switch (type) {
-    // AUDITORIA 2026-07-20 — case ITEM_HELPER_BASE + 38 (type 454, Large Mana
-    // Potion) REMOVIDO.  Usaba GlobalText[926], que en el Text.bmd del 0.97k es
-    // "Antilag" (un string del MENU DE OPCIONES: 924 "Reiniciar fuente",
-    // 925 "Volver", 926 "Antilag", 927 "Eliminar Sombras"), y GlobalText[2207],
-    // que esta fuera de las 1000 filas del archivo.
-    // El item existe, pero el case entero es de otra version: sin el, el tipo
-    // cae al camino generico de pociones y muestra "Numero de items" como debe.
-    // REMOVIDOS 2026-07-20 (4 sitios) — cases HELPER+49..53, types 465..469:
-    // Devil's Eye, Devil's Key, Devil's Invitation, Remedy of Love y Rena.
-    // Los cuatro bloques emitian UNICAMENTE indices fuera de las 1000 filas del
-    // Text.bmd ([2397]/[2398]/[2399]/[1665]) y cortaban con `return`: no
-    // dibujaban nada y ademas tapaban lo que hubiera mas abajo, igual que los
-    // interceptores de las joyas.
-    // REMOVIDO 2026-07-20 — case HELPER+40 (type 456, Antidote).  Emitia solo
-    // GlobalText[2232] y [3088], ambos fuera de las 1000 filas del Text.bmd,
-    // y cortaba con `return`.
     case ITEM_HELPER_BASE + 41:
-        // [2248]/[3088] removidos 2026-07-21: fuera de rango.  Se conservan
-        // las lineas de buff [88]/[89] (Ale da daño adicional al consumirse).
+        // Ale: lineas de buff [88]/[89] (daño adicional al consumirse).
         addFmt(GlobalText[88], 20, C_BLUE);
         addFmt(GlobalText[89], 20, C_BLUE);
         return;
-    // REMOVIDOS 2026-07-20 (8 sitios) — cases HELPER+43 y +44 (types 459 Box
-    // of Luck y 460 Heart).  Cuatro indices cada uno ([2256]/[2257]/[2297]/
-    // [2567]/[2568]), TODOS fuera de las 1000 filas, y cortaban con `return`:
-    // no dibujaban nada y ademas tapaban lo de mas abajo.
-    // REMOVIDO 2026-07-20 — case HELPER+45 (type 461, Jewel of Bless).  Segundo
-    // interceptor del mismo tipo que el de 462..464: cortaba con `return` antes
-    // de que Bless llegara a su descripcion real ([572]).  Sus tres indices
-    // ([2258]/[2297]/[2566]) estan fuera de las 1000 filas → salia vacio.
-    // ── SCROLLS: descripciones REMOVIDAS 2026-07-21 ──────────────────────────
-    // Bloques HELPER+64..76/+69/+70/+71..75 y POTION+42..44: emitian
-    // descripciones con GlobalText>=1000 (verificado: RenderItemInfo 0x4C4650
-    // NO referencia ninguno; los reales [571]/[69] SI tienen xref).  +69/+70
-    // tenian ademas logica de PORTAL (coords del Hero), pero en 0.97k son
-    // spells de mago (Ice/Teleport), no warp scrolls.  Sin estos bloques los
-    // scrolls muestran nombre + requisitos + linea de clase (RequireClass, ya
-    // funcional).  Si el cliente de referencia mostrara la skill que enseña el
-    // scroll, es feature aparte (lookup a SkillAttribute como WING+11).
+    // Scrolls (HELPER+64..76, POTION+42..44): sin descripcion propia; muestran
+    // nombre + requisitos + linea de clase (RequireClass).
     default:
         break;
     }
 
-    // REMOVIDO 2026-07-20 (3 sitios) — ESTE bloque era el que dejaba mudas a las
-    // joyas.  Interceptaba los tipos 462..464 (Jewel of Soul, Zen, Jewel of
-    // Life) y cortaba con `return` ANTES de que llegaran a sus descripciones
-    // reales, mas abajo en esta misma funcion ([573] Soul, [621] Life).
-    // Y lo que emitia salia vacio: GlobalText[2259] y [2270] estan fuera de
-    // las 1000 filas del Text.bmd.  Resultado: solo el nombre.
+    // Las joyas 462..464 no se interceptan aca: sus descripciones reales
+    // ([573] Soul, [621] Life) se emiten mas abajo en esta misma funcion.
 
     switch (type) {
     case ITEM_HELPER_BASE + 10:
         addFmt(GlobalText[95], (int)ip->Durability, C_WHITE);
-        return;  // [3088] removido 2026-07-21: fuera de rango
-    // AUDITORIA 2026-07-20 — REMOVIDOS los cases de las pociones 448..452
-    // (Apple, Small/Medium/Large Healing, Small Mana).  Son items REALES, pero
-    // los cinco usaban GlobalText[1181]/[1917]/[1918]/[1919], todos fuera de las
-    // 1000 filas del Text.bmd → cadena vacia, y el `return` cortaba el resto.
-    // Por eso la Large Healing no mostraba NADA.  Sin estos cases caen al camino
-    // generico de conteo, igual que el resto de las pociones.
-    // AUDITORIA 2026-07-20 — case ITEM_HELPER_BASE + 37 (type 453, Medium
-    // Mana Potion) REMOVIDO: mezclaba GlobalText[70] ("Vida", incorrecto en
-    // una pocion de mana) con 10 indices fuera de las 1000 filas del Text.bmd
-    // ([1860]/[1861]/[1867]..[1870]...).  Cae al camino generico como sus
-    // hermanas Small (452) y Large (454).
-    // RESTAURADO 2026-07-20 — items de la quest de evolucion: 471 Scroll of
-    // Emperor, 472 Broken Sword, 473 Tear of Elf, 474 Soul Shard of Wizard.
-    // No se venden ni se depositan.  El binario emite este par CONSECUTIVO:
-    // en 0x4C5D42 el push de GlobalText[733] va inmediatamente despues del
-    // sprintf de GlobalText[731] — mismo run de lineas.
-    // (Antes [733] colgaba por error del bloque de Box of Luck, donde el
-    //  cliente de referencia no la muestra en ninguna de sus 11 variantes.)
+        return;
+    // Items de la quest de evolucion: 471 Scroll of Emperor, 472 Broken Sword,
+    // 473 Tear of Elf, 474 Soul Shard of Wizard.  No se venden ni se depositan.
+    // El binario emite este par CONSECUTIVO: en 0x4C5D42 el push de
+    // GlobalText[733] va inmediatamente despues del sprintf de GlobalText[731].
     case ITEM_HELPER_BASE + 55:
     case ITEM_HELPER_BASE + 56:
     case ITEM_HELPER_BASE + 57:
@@ -637,18 +549,11 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         addLine(GlobalText[731], C_RED);
         addLine(GlobalText[733], C_RED);
         return;
-    // REMOVIDO 2026-07-20 — cases HELPER+54..58 (types 470..474).  El 470 es
-    // Jewel of Creation: este bloque lo interceptaba y cortaba antes de su
-    // descripcion real ([619]).  Usaba GlobalText[2511]/[2510], fuera de rango.
+    // HELPER+54 (470, Jewel of Creation) no va aca: su descripcion real ([619])
+    // se emite mas abajo.
     default:
         break;
     }
-
-    // (switch vacio removido 2026-07-21: sus cases eran grafts inexistentes)
-
-    // REMOVIDO 2026-07-20: colgaba de los tipos 513..516, que NO EXISTEN — el
-    // item.bmd del 0.97k tiene 512 entradas.  Los indices ([730]/[731]/[732])
-    // son validos, pero estaban aplicados a items imposibles.
 
     if (type >= ITEM_POTION_BASE + 70 && type <= ITEM_POTION_BASE + 71) {
         addFmt(GlobalText[69], (int)ip->Durability, C_BLUE);
@@ -677,7 +582,6 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
     }
 
     if (type == ITEM_POTION_BASE + 21) {
-        // levels 2/3 ([1099]/[1291]) removidos 2026-07-21: fuera de rango.
         if (level == 1)
             addLine(GlobalText[813], C_WHITE);
         return;
@@ -692,14 +596,6 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         } else {
             addLine(GlobalText[571], C_WHITE);
         }
-        // REMOVIDA 2026-07-20 — GlobalText[733] "No puede ser vendido." se emitia
-        // INCONDICIONALMENTE para todas las variantes de Box of Luck.  Probadas
-        // las 11 contra el cliente de referencia: ninguna la muestra.
-        //
-        // OJO / PENDIENTE: la cadena NO es un injerto — el binario la usa en
-        // RenderItemInfo, en UN solo sitio (0x4C5D42).  O sea que pertenece a
-        // otro item y nos quedamos sin emitirla en ningun lado.  Falta ubicar su
-        // guard real desasmando alrededor de 0x4C5D42 y re-colgarla ahi.
         if (level == 13)
             addLine(GlobalText[731], C_RED);
         return;
@@ -736,14 +632,6 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         return;
     }
 
-    // REMOVIDO 2026-07-21 — bloque escrito como "alas" (384+32..34) pero que en
-    // realidad cae sobre los tipos 416, 417 y 418: Guardian Angel, Imp y Horn
-    // of Uniria.  Les emitia GlobalText[571] ("Tiralo al suelo y podras recibir
-    // zen o items"), que es la descripcion de la Box of Luck, y cortaba con
-    // `return` antes del bloque propio de los pets que viene justo abajo
-    // (`if (type == ITEM_HELPER_BASE + 0)` etc.).
-    // Las alas de verdad son 384..390; 384+32 ya se pasa de ese rango.
-
     if (type == ITEM_HELPER_BASE + 0) {
         // Guardian Angel: keep these lines explicit instead of depending on
         // shifted GlobalText indices from newer/custom text tables.
@@ -757,9 +645,6 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         return;
     }
 
-    // SIMPLIFICADO 2026-07-21 — quitado HELPER+30 (type 446, slot vacio); solo
-    // queda 433 (Blood Bone), item real.  El absorb del 446 (10+level) era
-    // codigo muerto.
     if (type == 433) {
         addFmt(GlobalText[577], 20 + level * 2, C_WHITE);
         addFmt(GlobalText[578], 10 + level * 2, C_WHITE);
@@ -800,18 +685,14 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
     }
 
     if (type == ITEM_HELPER_BASE + 14) {
-        // level 1 ([1236]) removido 2026-07-21: fuera de rango (sin Dark Lord
-        // en 0.97k, Loch's Feather no tiene tier).
         if (level == 0)
             addLine(GlobalText[748], C_WHITE);
         return;
     }
 
     if (type == ITEM_HELPER_BASE + 15) {
-        // Fruit (431): descripcion = stat que sube + "Incrementa 1~3 puntos".
-        // Removidos 2026-07-21: 2do switch ([1910]), linea [1908], caso level 4
-        // ([1900]) y el bloque "equipable por Soul Master" — grafts (el 0.97k
-        // solo tiene 4 stats: Ene/Vit/Agi/Fue = levels 0..3).
+        // Fruit (431): descripcion = stat que sube + "Incrementa 1~3 puntos" (el
+        // 0.97k solo tiene 4 stats: Ene/Vit/Agi/Fue = levels 0..3).
         char line[256];
         switch (level) {
         case 0: snprintf(line, sizeof(line), "%s %s", GlobalText[168], GlobalText[636]); addLine(line, C_WHITE); break;
@@ -822,10 +703,6 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         }
         return;
     }
-
-    // REMOVIDO 2026-07-20: emitia GlobalText[69] ("Numero de items") para los
-    // mismos rangos que ya cubre AppendInventoryDurabilityTooltipLines, asi que
-    // la linea salia DOS VECES (visible en Large Mana Potion).
 
     if (type == ITEM_HELPER_BASE + 16 || type == ITEM_HELPER_BASE + 17) {
         addLine(GlobalText[816], C_WHITE);
@@ -864,24 +741,8 @@ static void AppendInventorySpecialTooltipLines(ITEM* ip)
         return;
     }
 
-    // REMOVIDO 2026-07-21 — WING+130..135 (types 514..519 >=512): tipos
-    // imposibles.  "Absorb wings" de una version con mas de 512 items.
-    // REMOVIDO 2026-07-21 — HELPER+42 (type 458, Town Portal Scroll).  Emitia 7
-    // lineas de GlobalText[976..982] (filas VACIAS en el Text.bmd) + [3088]
-    // graft.  Confirmado contra el cliente de referencia: Town Portal NO tiene
-    // descripcion (las filas 974..985 quedaron vacias para completar a futuro).
-
-    // Aca habia un `switch (type)` con los cases HELPER+110..113 (types 526..529),
-    // removidos 2026-07-20 por inexistentes (la tabla del item.bmd tiene 512
-    // entradas).  El switch quedaba solo con `default: break;` — warning C4065.
 }
 
-// ── RESTAURADA 2026-07-21 ────────────────────────────────────────────────────
-// Esta funcion se perdio por una edicion POR NUMERO DE LINEA que borro su
-// definicion dejando vivas las 2 llamadas (error C3861 en 1786 y 1921).
-// Recuperada del backup del hilo paralelo y con las correcciones de la sesion
-// 2026-07-20 REAPLICADAS, esta vez ancladas por texto.
-// LECCION: en este archivo, editar por numero de linea es una bomba.
 static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, unsigned int level, int attrBase)
 {
     if (!ip || !p || DAT_07eaa154 >= 28)
@@ -964,17 +825,6 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
             (type >= ITEM_POTION_BASE + 153 && type <= ITEM_POTION_BASE + 156)) {
             addFmt(GlobalText[69], (int)ip->Durability, C_WHITE);
             success = true;
-        // REMOVIDAS 2026-07-20 (2 sitios): ramas INALCANZABLES.  Cubrian los tipos
-        // 448/449/450 (Apple, Small y Medium Healing Potion), que ya matchean la
-        // PRIMERA condicion de esta cadena else-if (448..456).  Encima usaban
-        // GlobalText[1181], fuera de las 1000 filas del Text.bmd.
-        //
-        // REMOVIDA tambien la rama HELPER+37 (453, Medium Mana Potion): le ponia
-        // GlobalText[70] = "Vida: %d".  En el binario [70] tiene UNA sola
-        // referencia en RenderItemInfo (0x4C6875) y [175] ("Mana: %d") NO la usa
-        // RenderItemInfo — solo el tooltip de skills (sub_4C9730).  La pocion de
-        // mana no lleva ninguna de las dos lineas; ademas la Small (452) y la
-        // Large (454) tampoco la mostraban.
         } else if (type >= ITEM_HELPER_BASE && type <= ITEM_HELPER_BASE + 7) {
             addFmt(GlobalText[70], (int)ip->Durability, C_WHITE);
             success = true;
@@ -988,15 +838,6 @@ static void AppendInventoryDurabilityTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p, u
                    type == ITEM_HELPER_BASE + 106 || type == ITEM_HELPER_BASE + 123) {
             addFmt(GlobalText[70], (int)ip->Durability, C_WHITE);
             success = true;
-        // REMOVIDAS 2026-07-20 (6 sitios):
-        //  · tipos 462..464 (Jewel of Soul, Zen, Jewel of Life): usaban
-        //    GlobalText[2260], fuera de rango.  Las joyas NO se acumulan en el
-        //    0.97k — verificado contra el cliente de referencia, que no muestra
-        //    conteo en ninguna.  Su texto es la DESCRIPCION, que ya emite
-        //    AppendInventorySpecialTooltipLines ([572]/[573]/[621]/[619]/[574]).
-        //  · tipos 541..543, 501, 477 y 537: no existen en el item.bmd del 0.97k
-        //    (541/543/537 pasan las 512 entradas de la tabla; 501 y 477 son
-        //    slots vacios).  Usaban [2260]/[2296]/[3105]/[3106], fuera de rango.
         } else if (type == ITEM_POTION_BASE + 100) {
             addFmt(GlobalText[69], (int)ip->Durability, C_WHITE);
             success = true;
@@ -1080,11 +921,6 @@ static void AppendInventoryLateBonusTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* p)
         addFmt(GlobalText[textIndex], (int)p->MagicPower, C_BLUE, true);
     }
 
-    // REMOVIDO 2026-07-20: emisor DUPLICADO de GlobalText[574] para el tipo 399
-    // (Jewel of Chaos).  La descripcion ya la emite el bloque de joyas de
-    // AppendInventorySpecialTooltipLines (junto a [572] Bless, [573] Soul,
-    // [621] Life, [619] Creation), que ademas corta con `return`.  Al estar
-    // tambien aca, la linea "Es utilizado para combinar items" salia DOS VECES.
 }
 
 static bool GetInventorySpecialOptionText(short type, BYTE option, BYTE value, int mana, char* dst, size_t dstSize)
@@ -1285,25 +1121,20 @@ static void AppendInventorySpecialOptionLines(ITEM* ip, ITEM_ATTRIBUTE* p)
 
 // Requisitos de stat del tooltip.
 //
-// 2026-08-22 FIX ("las Leather Gloves piden 80 de fuerza"): estas lineas leian
-// `pAttr->Require*`, o sea el valor CRUDO de la fila de ItemAttribute, que NO es
-// el requisito final — es el coeficiente que escala `ItemConvert` (0x0047B910
-// L227-234) con el nivel del item:
+// Se leen de la INSTANCIA — `ip->RequireStrength` L1459, `ip->RequireDexterity`
+// L1684, `ip->RequireLevel` L1906, `ip->RequireEnergy` L2353 — que es donde
+// `ItemConvert` (0x0047B910 L227-234) deja el valor ya escalado con el nivel
+// del item:
 //
 //     Require = 3 * attr.Require * (attr.Level + 3 * itemLevel) / 100 + 20
 //
 // (en el decompile la division sale como la constante magica 4123168605 >> 37,
 //  que es exactamente `* 3 / 100`; la forma legible esta en sub_4C2E20 L188).
-// Para las Leather Gloves +0 eso da 20, no 80.  IDA lee los CUATRO requisitos de
-// la INSTANCIA — `ip->RequireStrength` L1459, `ip->RequireDexterity` L1684,
-// `ip->RequireLevel` L1906, `ip->RequireEnergy` L2353 — que es donde
-// `ItemConvert` deja el valor ya escalado.
-//
-// La nota vieja (2026-08-18) decia que leer de `ip` no mostraba ninguna linea;
-// eso ya no aplica: `ItemData_FillStats` siembra la instancia con el crudo antes
-// de que `ItemConvert` la recalcule, asi que el campo nunca queda en 0.
-// Los indices de GlobalText ya estaban bien: 0x49=73 fuerza, 0x4B=75 agilidad,
-// 0x4C=76 nivel, 0x4D=77 energia (verificado en 0x004C6xxx).
+// `pAttr->Require*` es el coeficiente CRUDO de la fila de ItemAttribute, no el
+// requisito final.  `ItemData_FillStats` siembra la instancia con el crudo
+// antes de que `ItemConvert` la recalcule, asi que el campo nunca queda en 0.
+// Indices de GlobalText: 0x49=73 fuerza, 0x4B=75 agilidad, 0x4C=76 nivel,
+// 0x4D=77 energia (verificado en 0x004C6xxx).
 static void AppendInventoryRequirementTooltipLines(ITEM* ip, ITEM_ATTRIBUTE* pAttr)
 {
     if (!ip || DAT_07eaa154 >= 28)
@@ -1391,13 +1222,10 @@ static void AppendInventoryRequireClassLines(ITEM_ATTRIBUTE* pItem)
         char line[100] = {};
         switch (i) {
         case CLASS_DARK_WIZARD:
-            // FIX 2026-07-20 — los nombres de tier 2 estaban CORRIDOS UNO.
-            // Volcado del Text.bmd desencriptado:
+            // Nombres de clase (Text.bmd desencriptado):
             //   20 Dark Wizard   21 Dark Knight  22 Fairy Elf  23 Magic Gladiator
             //   24 Soul Master   25 Blade Knight 26 Muse Elf
             //   27/28 "Reservation: job"  (el MG no tiene tier 2)
-            // Se usaba 25 para el mago evolucionado, y por eso un Grand Soul
-            // Armor decia "Blade Knight" en lugar de "Soul Master".
             //
             // Los tier 3 (1668..1671) NO existen en 0.97k y ademas caen FUERA
             // de GlobalText[1000][300]: leerlos es un desborde del array.
@@ -1435,7 +1263,7 @@ static void AppendInventoryRequireClassLines(ITEM_ATTRIBUTE* pItem)
 
 // IDA: RenderItemInfo (0x004C4650)
 // ═════════════════════════════════════════════════════════════════════════════
-// RenderItemInfo — port fiel de IDA (0x004C4650), 2026-09-12.
+// RenderItemInfo — port fiel de IDA (0x004C4650).
 //
 // Reescrita en el orden exacto del decompile (raw 004C4650, ~2800 lineas de
 // las que ~60 % es hash-table anti-tamper).  La version anterior
@@ -1920,10 +1748,9 @@ void __cdecl RenderRepairInfo(void* param_1, int param_2, void* param_3_v)
 // IDA: RenderItemInfo (0x004C4650)
 extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* param_3_v, int param_4)
 {
-    // 2026-05-08: defensive — si nos llaman antes de que WinMain initialice
-    // el ItemAttribute table (DAT_07d78068), o si DAT_07d78068 fue clobbered
-    // a 0x1 por un writer desconocido, ItemAttribute_Base() recupera del
-    // backup. Si tampoco es válido, saltamos.
+    // Defensivo: si nos llaman antes de que WinMain inicialice la tabla
+    // ItemAttribute (DAT_07d78068), o si quedó pisada, ItemAttribute_Base() la
+    // recupera del backup. Si tampoco es válida, saltamos.
     unsigned int attrBaseOK = ItemAttribute_Base();
     if (attrBaseOK == 0) return;
     if (param_3_v == nullptr || (uintptr_t)param_3_v < 0x100000) return;
@@ -1944,8 +1771,6 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
         DAT_07e91708[i] = 0;
 
     // Clear string table (each slot = 100 bytes, 30 slots = 3000-byte buffer).
-    // BUG-FIX 2026-05-03: was `< 0x7e91350` (absolute end bound from source binary).
-    // In our build lpString_07e90798 is linker-placed; literal address is junk.
     for (int i = 0; i < 30; ++i)
         lpString_07e90798[i * 100] = 0;
 
@@ -1979,23 +1804,13 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
         tier = (level < 7) ? (unsigned int)((char)param_3[0x12] != '\0') : 3;
     }
 
-    // REMOVIDO 2026-07-21 — bloque de "repair gold" dentro de RenderItemInfo.
-    // Llamaba a ConvertRepairGold escribiendo en `lpString_07e90798` = SLOT 0,
-    // o sea la linea que va ARRIBA del nombre del item.  Sintoma: cualquier
-    // item con curDur < maxDur mostraba un numero suelto encima del nombre
-    // ("1" en Guardian Angel/Imp, "5,200" en Horn of Dinorant), y los que
-    // estaban full (Horn of Uniria, 255/255) no mostraban nada.
-    //
-    // NO ES DEL ORIGINAL: ConvertRepairGold (0x4C3EF0) tiene exactamente 3
-    // xrefs en el binario — dos en sub_4C4080 (0x4C4206 y 0x4C42D2) y uno en
-    // RenderRepairInfo (0x4C8F28).  NINGUNO en RenderItemInfo (0x4C4650).
-    // El precio de reparacion lo calcula RenderRepairInfo, que es la otra rama
-    // del dispatch de Scene_MapTick.
+    // ConvertRepairGold NO se llama desde RenderItemInfo (sus xrefs son
+    // sub_4C4080 y RenderRepairInfo): el precio de reparacion lo calcula
+    // RenderRepairInfo, la otra rama del dispatch de Scene_MapTick.
     // ── Slot: item NAME line (with +N suffix when level > 0) ────────────────
     // ── Precio (bloque LAB_004c4a61, 0x004C4A61..0x004C4CED) ────────────────
-    // 2026-08-18: este bloque estaba AL FINAL del tooltip y con color/negrita
-    // propios.  En el binario va ACA, entre el separador del slot 0 y el nombre
-    // del item, y hereda el MISMO color que el nombre (local_8c) con negrita.
+    // En el binario va ACA, entre el separador del slot 0 y el nombre del item,
+    // y hereda el MISMO color que el nombre (local_8c) con negrita.
     //
     //   if (ShopOpened) {
     //       precio = ItemValue(ip, Sell);
@@ -2007,11 +1822,9 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
     //   }
     //
     // El gate real es ShopOpened (en el decompile aparece como `cStack_71`, que
-    // es su valor desofuscado tras el bloque de hash-table anti-tamper).  El
-    // port usaba `param_4` (bSell) como gate y ademas deducia compra-vs-venta
-    // comparando el puntero del item contra el rango del pool de la tienda;
-    // el binario lo decide con `Sell` a secas.
-    // 2026-09-12: el modo de ItemValue estaba invertido.  IDA L522-557:
+    // es su valor desofuscado tras el bloque de hash-table anti-tamper), y
+    // compra-vs-venta se decide con `Sell` a secas.
+    // Modo de ItemValue (IDA L522-557):
     //   if (Sell) { ItemValue(ip, 0) ... GlobalText[62] }
     //   else      { ItemValue(ip, 1) ... GlobalText[63] }
     // El segundo argumento NO es `Sell`: 0 = precio completo (el mismo que se
@@ -2097,13 +1910,9 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
         ITEM_ATTRIBUTE* p = (ITEM_ATTRIBUTE*)(uintptr_t)attrBase;
         BYTE excFlags = it->Option1 & 0x3F;
 
-        // 2026-08-18: TODAS las stats de abajo se leian de `it` (la INSTANCIA
-        // del item), pero viven en `p` — la fila de ItemAttribute indexada por
-        // tipo.  `p` estaba declarado aca y no se usaba.  Resultado: Defense,
-        // DamageMin/Max, MagicDefense y las velocidades salian 0 y sus lineas
-        // NO se emitian; en el tooltip solo sobrevivia la durabilidad.
-        // De `it` solo salen los campos de la instancia (Option1, Level,
-        // SpecialNum, Durability actual).
+        // Las stats de abajo viven en `p` (la fila de ItemAttribute indexada por
+        // tipo), no en `it`.  De `it` solo salen los campos de la instancia
+        // (Option1, Level, SpecialNum, Durability actual).
 
         // ── Damage range — for weapons (slot+0x18 = DamageMin, +0x1C = Max).
         int damageMin = (int)p->DamageMin;
@@ -2191,10 +2000,9 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
 
         AppendInventorySpecialTooltipLines(it);
         AppendInventoryDurabilityTooltipLines(it, p, level, attrBase);
-        // ORDEN 2026-07-20: la línea "Puede ser equipado por X" va JUSTO DESPUÉS
-        // de los requisitos, ANTES del bloque de opciones excellent.  Antes se
-        // emitía última.  Verificado contra la salida del cliente de referencia
-        // (mismo binario que tenemos en IDA): requisitos → clase → excellent.
+        // ORDEN: la línea "Puede ser equipado por X" va JUSTO DESPUÉS de los
+        // requisitos, ANTES del bloque de opciones excellent (verificado contra el
+        // cliente de referencia: requisitos → clase → excellent).
         AppendInventoryRequirementTooltipLines(it, p);
         AppendInventoryRequireClassLines(p);
         AppendInventoryLateBonusTooltipLines(it, p);
@@ -2243,7 +2051,7 @@ static const char DAT_0055a63c[] = "\n";
 
 extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* param_3_v) // RenderRepairInfo
 {
-    // 2026-05-08: same defensive guards as RenderItemInfo (sibling function).
+    // Same defensive guards as RenderItemInfo_impl (sibling function).
     // Use the backup-aware accessor to recover DAT_07d78068 if clobbered.
     unsigned int attrBaseOK_ = ItemAttribute_Base();
     if (attrBaseOK_ == 0) return;
@@ -2268,7 +2076,6 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
     DAT_07eaa154 = 0;
     DAT_07eaa158 = 0;
 
-    // BUG-FIX 2026-05-03: was `< 0x7e91350` (absolute end bound from source binary).
     for (int i = 0; i < 30; ++i)
         lpString_07e90798[i * 100] = 0;
 
@@ -2304,19 +2111,14 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
     unsigned int curDur = (unsigned int)*(unsigned char*)((char*)param_3 + 0x1a);
     // IDA RenderRepairInfo: RepairEnable_0 = 1 con el item sano y = 2 con el
     // item dañado; el 2 es el martillo animado de RenderCursor, y Scene_MapTick
-    // lo vuelve a 1 cada frame.  Estas escrituras se habian quitado el
-    // 2026-05-08 porque el "fix" de Scene_MapTick de entonces las trababa;
-    // desde que Scene_MapTick normaliza como IDA (2026-09-12) no hace falta.
+    // lo vuelve a 1 cada frame.
     // IDA L133-150: la linea del costo es sprintf(GlobalText[238], Buffer), con
     // Buffer = ConvertRepairGold(...) si el item esta danado y "0" (0x55A5F8)
     // si esta sano; color = tier (v12), en negrita.
-    // 2026-09-12: el port formateaba GlobalText[238] ("Costo de reparacion: %s",
-    // alias DAT_07d3b40c) SIN argumento -- de ahi el "%s" en basura -- y
-    // escribia el precio en lpString+64, en medio de la linea anterior.
     char repairGold[64] = "0";
     if (curDur < maxDur) {
         DAT_07eaa134 = 2;
-        // BUG-FIX 2026-04-26 (audit #3): same ItemValue/ConvertRepairGold pair.
+        // Same ItemValue/ConvertRepairGold pair.
         int gold = Item_CalculateValue((void*)param_3, 2);
         Item_CalculateRepairCost(gold, (int)curDur, (int)maxDur, (short)itemType, repairGold);
     } else {

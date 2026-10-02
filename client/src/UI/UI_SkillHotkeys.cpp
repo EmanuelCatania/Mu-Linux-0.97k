@@ -1,5 +1,4 @@
 // UI_SkillHotkeys.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -7,7 +6,7 @@
 
 // FindHotKey @ 0x004B1170 (~202 lines)
 // Looks up a skill ID in the CharacterMachine hotkey table via MAIN_HASH_CLASS.
-// Returns hotkey slot index (0..19), or -1 if not found.
+// Returns hotkey slot index (0..19), or 0 if not found (igual que IDA).
 // Original wraps access in anti-tamper encrypt/decrypt; we skip that.
 // Ghidra: CharacterAttribute->Skill[iVar5+4] == unaff_retaddr (phantom param = Skill)
 // Real access: *(BYTE*)(DAT_07cf1ff4 + 0x57 + iVar5) == Skill
@@ -20,21 +19,13 @@
 // LABEL_22:
 //   return v17;
 //
-// 2026-09-01 FIX — devolvia **-1** cuando el skill no esta en los 20 slots;
-// IDA devuelve **0** (el inicializador de v17, que el camino de no-encontrado
-// nunca pisa).  Consecuencia real medida en el path de flechas:
-//   MoveCharacter (6 sitios) -> CreateArrows(c, o, 0, FindHotKey(skill), ...)
-//   -> CreateArrow -> CreateEffect(..., SkillIndex, Skill)
-//   -> CreateEffect prologo: `i[133] = (BYTE)SkillIndex`  (= 0xFF con -1)
-//   -> sub_466440 (0x00466440, llamado por MoveEffect en cada tick del
-//      proyectil) hace `CharacterAttribute[ i[133] + 87 ]`, o sea
-//      CharacterAttribute[342] — FUERA del array de 20 skills (87..106).
-// Ese byte basura se compara contra 51/52 y, cuando cae en 52, dispara
-// `CreateJoint(1249, ..., SubType 6, ...)` (la espiral de Penetration) en CADA
-// flecha, de cualquier skill de Elf.  Tambien envenena
-// `sub_45FEC0(i[133], ...)`.  Con 0 el indice vuelve a caer dentro del array.
-// Ningun caller del arbol distingue -1 (verificado): nadie compara el retorno
-// contra -1 ni contra < 0.
+// OJO: no devolver -1 en el camino de no-encontrado.  El retorno termina en
+// CreateEffect (MoveCharacter -> CreateArrows(c, o, 0, FindHotKey(skill), ...)
+// -> CreateArrow -> `i[133] = (BYTE)SkillIndex`) y sub_466440 (MoveEffect, en
+// cada tick del proyectil) lee `CharacterAttribute[ i[133] + 87 ]`: con 0xFF
+// sale del array de 20 skills (87..106) y puede disparar
+// `CreateJoint(1249, ...)` (la espiral de Penetration) en cada flecha.
+// Ningun caller del arbol compara el retorno contra -1 ni contra < 0.
 // IDA: FindHotKey (0x004B1170)
 int __stdcall FindHotKey(int Skill) {
     // anti-tamper hash table — skipped (encrypt CharacterMachine before read)
@@ -65,12 +56,11 @@ void __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float he
 
     // anti-tamper hash table — skipped (encrypt CharacterMachine before read)
 
-    // Read skill ID from CharacterAttribute->Skill[iIndex + 4]
-    // CharacterAttribute = DAT_07cf1ff4, Skill array starts at offset +0x57
-    // Actually the Ghidra accesses Skill[unaff_retaddr + 4] where unaff_retaddr = iIndex
-    // 2026-05-05: bounds check on iIndex (passed by caller, can be Hero[913]
-    // garbage). Without this, reading CA[0x57+iIndex] overflows CA buffer
-    // → garbage skillId → OOB on subsequent SkillAttribute reads → crash.
+    // Skill ID = CharacterAttribute->Skill[iIndex] (CharacterAttribute = DAT_07cf1ff4,
+    // el array Skill arranca en +0x57; Ghidra lo muestra como Skill[unaff_retaddr + 4]).
+    // Se acota iIndex (puede venir de Hero[913] con basura): sin eso
+    // CA[0x57+iIndex] se sale del buffer y el skillId basura indexa
+    // SkillAttribute fuera de rango.
     if (iIndex < 0 || iIndex >= 60) return;
     char* charAttr = (char*)DAT_07cf1ff4;
     if (!charAttr) return;
@@ -81,11 +71,9 @@ void __cdecl RenderSkillIcon(int iIndex, float x, float y, float width, float he
         return;
     }
 
-    // If skill is 0x2f (Helper summon) and helper type is not Dark Horse (0x332) or Dark Spirit (0x333),
-    // tint the icon reddish
-    // IDA sub_4BB940 L91-97: el skill 47 (se usa montado) sale rojizo si el
-    // heroe no tiene Uniria (818) ni Dinorant (819) en el slot de helper
-    // (Hero + 696 = c+0x2B8).  2026-09-12: estaba comentado como "cosmetico".
+    // Skill 0x2f (47, se usa montado): IDA sub_4BB940 L91-97 tiñe el icono
+    // rojizo si el heroe no tiene Uniria (818) ni Dinorant (819) en el slot de
+    // helper (Hero + 696 = c+0x2B8).
     if (skillId == 0x2f) {
         const BYTE* hero = (const BYTE*)(uintptr_t)DAT_07abf5d8;
         const short helperType = hero ? *(const short*)(hero + 696) : -1;
