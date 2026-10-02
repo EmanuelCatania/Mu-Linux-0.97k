@@ -1,7 +1,6 @@
 // NPC_ModelLoad.cpp
 //
-// Extracted from stubs_game.cpp.  Owns runtime NPC model/texture loading.
-// The original IDA symbol/address remains in the function comment.
+// Carga en runtime de modelos/texturas de NPC.
 
 #include "stdafx.h"
 #include "globals.h"

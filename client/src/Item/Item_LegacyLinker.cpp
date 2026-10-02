@@ -1,5 +1,3 @@
-// Extracted from stubs_linker.cpp during the linker-stub domain refactor.
-// Original IDA/address comments are retained with each implementation.
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -41,17 +39,13 @@ extern void ClearActionObject(void);
 // IDA: CloseInventoryRelatedWindows (0x004CBA60)
 // Cierra tienda / baul / chaos / trade / eventos y vacia sus pools.
 //
-// 2026-09-11: unica implementacion de 0x4CBA60.  Habia dos ports vivos y
-// distintos: esta y `CloseInventoryRelatedWindows` (UI_LegacyGameHelpers.cpp, que ahora delega
-// aca).  La lista de flags es la del disassembly (0x4CBB46..0x4CBD2F):
+// Unica implementacion de 0x4CBA60 (`CloseInventoryRelatedWindows` de
+// UI_LegacyGameHelpers.cpp delega aca). La lista de flags es la del
+// disassembly (0x4CBB46..0x4CBD2F):
 //   ShopOpened, byte_7EAA132, RepairEnable_0 (DWORD en 0x07EAA134),
 //   WarehouseOpened, byte_559F5F, dword_7EAA14C, ChaosMixOpened, TradeOpened,
 //   EventWindowOpened, g_bEventChipDialogEnable (0x07EAA128),
 //   g_shEventChipCount (0x07EAA12C), g_bServerDivisionEnable/Accept.
-// Esta version limpiaba antes DAT_07e11d14 como "RepairEnable" y dos alias del
-// panel del Golden Archer (DAT_07e5ba80 / DAT_07e11e1c): ninguno de los tres
-// tiene xrefs en IDA.  La anterior "desviacion" GoldenArcherOpenType = 0 era en
-// realidad g_bEventChipDialogEnable, o sea parte del original.
 //
 // Pools (0x4CBD36..0x4CBD9C), Type = -1 y Key (+0x38) = 0:
 //   120 registros de la tienda, 32 de la Chaos Machine, 32 de `Inventory` y
@@ -242,21 +236,13 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     ip->SpecialNum = 0;
     ip->Color = 0;
 
-    // AUDITORIA 2026-07-20 — itemExcel ahora es FIEL a IDA ItemConvert (0x47B910).
-    // El original hace exactamente esto y nada mas:
+    // itemExcel es FIEL a IDA ItemConvert (0x47B910), que hace exactamente esto
+    // y nada mas (el DLL de inyeccion, Source/Client/Main/Item.cpp, tampoco agrega
+    // nada):
     //     iItemExcel = Attribute2 & 63;
     //     if (Type 387..390 || 19 || 146 || 170) iItemExcel = 0;
-    // Aca habia DOS lineas de mas que no existen ni en IDA ni en el DLL de
-    // inyeccion (verificado en Source/Client/Main/Item.cpp, que reemplaza
-    // ItemConvert entero y tampoco las tiene):
     //
-    //   1) `if (bExtOption) itemExcel = 1;`  ← la peor: forzaba el flag excellent,
-    //      y de ahi `levelAddValue += 25`, inflando RequireStrength/Dexterity/
-    //      Energy y los bonus excellent de damage/defense de CUALQUIER item con
-    //      el ext-byte puesto.
-    //   2) `if (Type 416..423 || >= 448) itemExcel = 0;`  ← ceroeaba de mas.
-    //
-    // `bExtOption` se conserva: NO alimenta la matematica de stats, pero si el
+    // `bExtOption` NO alimenta la matematica de stats, pero si el
     // color del item (ip->Color / byColorState), que lo consumen
     // Render_PlayerEquipment y HUD_Pass4.  Ese bloque es otro injerto de origen
     // distinto y se audita aparte.
@@ -509,10 +495,7 @@ void __cdecl ItemConvert(int pItem, int Attribute1, int Attribute2) {
     ip->Color = bExtOption ? 4 : (itemExcel > 0 ? 3 : 0);
 }
 
-// 2026-05-08: ItemValue delegates to Item_CalculateValue. Previously
-// returned 0 unconditionally → all sell-price calculations in Item_Click
-// Handler / RenderItemInfo / shop UI yielded zero gold. Delegate to the real
-// impl in stubs_helpers.cpp.
+// ItemValue delega en Item_CalculateValue (Item_Durability.cpp).
 int __cdecl ItemValue(ITEM* ip, unsigned int goldType) {
     return Item_CalculateValue((void*)ip, (int)goldType);
 }

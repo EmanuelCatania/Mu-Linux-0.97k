@@ -1,5 +1,4 @@
 // Item_Display.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -49,16 +48,8 @@ int __cdecl ConvertGold64(int Zen, char* Buffer) {
 //   ItemLevel  = Items+8        → para el Zen (modelo 863) es la CANTIDAD
 //   ItemOption = Items+31
 //
-// 2026-08-21: antes era un resumen escrito a ojo.  Divergencias que tenía y que
-// este port corrige:
-//   · Zen (863): hacía `sprintf(buf, DAT_0055a608, name)` con DAT_0055a608 = ""
-//     → cadena vacía, o sea el Zen del suelo no mostraba NADA.  IDA es
-//     `sprintf(String, "%s %d", name, ItemLevel)` = "Zen <cantidad>".
-//   · Los colores de nivel 3-4 y de la rama (v5 & 0x87) estaban invertidos en
-//     RGB (IDA llena v38[2],v38[1],v38[0] y llama glColor3f(v38[0],v38[1],v38[2])).
-//   · Faltaban por completo las ramas 860 (Event), 831 (alas), 951-958
-//     (flechas/bolts), 795 (pergamino de skill), 826 (piedra de invocación) y
-//     los sufijos Excellent/Luck/Skill (GlobalText[176..179]).
+// Zen (863): `sprintf(String, "%s %d", name, ItemLevel)` = "Zen <cantidad>".
+// Los colores: IDA llena v38[2],v38[1],v38[0] y llama glColor3f(v38[0],v38[1],v38[2]).
 //
 // Ruido anti-tamper omitido por policy: las ramas 795 y 826 del binario están
 // envueltas en lookups de hash-table (ref-count + XOR sobre la entrada de
@@ -343,27 +334,18 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
     int itemHeight = (int)pAttr[pickedType].Height;
     if (itemWidth <= 0 || itemHeight <= 0) return 0;
 
-    // Use the args directly (FIX 2026-05-08).
+    // Use the args directly.
     BYTE* sourceInvBase = (BYTE*)(uintptr_t)DAT_07ea9800;
     BYTE  sourceMoveFlag = InventoryPoolToMoveFlag(sourceInvBase);
     BYTE  targetMoveFlag = InventoryPoolToMoveFlag(invBase);
     int   gridWidth  = gridW;
     int   gridHeight = gridH;
 
-    // 2026-08-08 FIX "mover items DENTRO del baul los hacia desaparecer":
-    // aca habia un `DAT_07ea9800 = invBase` ("update para downstream readers")
-    // que es una INVENCION del port — IDA sub_4D6470 SOLO LEE dword_7EA9800,
-    // nunca lo escribe (los unicos writers son sub_4D23B0 L798/L1401 y
-    // Player_InputTick L711, todos en el PICKUP). dword_7EA9800 es el pool de
-    // ORIGEN del item agarrado, y el dispatcher sub_4DF410 llama a esta funcion
-    // hasta 4 veces por frame (main inv, trade, baul, mix). La primera llamada
-    // (main inv) pisaba el origen con OffsetInventoryItems, asi que en la
-    // llamada del baul `sourceMoveFlag` salia 0 (=inventario) en vez de 2
-    // (=baul) -> el server recibia SourceFlag=0 con SourceSlot=101 (fuera del
-    // rango de inventario) -> INVENTORY_RANGE falla -> result=0xFF y el item
-    // quedaba solo borrado localmente = "desaparecio".
-    // Sintoma cruzado en el log: baul->inventario (resuelto en la 1er llamada,
-    // antes del clobber) SI mandaba srcF=2 y funcionaba.
+    // No escribir DAT_07ea9800 acá: IDA sub_4D6470 SOLO LEE dword_7EA9800 (los
+    // unicos writers son sub_4D23B0 L798/L1401 y Player_InputTick L711, todos en
+    // el PICKUP). Es el pool de ORIGEN del item agarrado, y el dispatcher
+    // sub_4DF410 llama a esta funcion hasta 4 veces por frame (main inv, trade,
+    // baul, mix): pisarlo cambiaría el SourceFlag que se manda al server.
 
     // ── Mouse-to-grid conversion (per IDA L595-597) ─────────────────────────
     //   gridX = (MouseX - origin_x) * 0.05 - itemW * 0.5 + 0.5  →  __ftol
@@ -397,13 +379,8 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
         spaceFree = false;
     } else {
         // Call CheckInventorySpace to validate placement.
-        // 2026-05-09 BUG-FIX: ANTES pasábamos `mouseGridX, mouseGridY` (= grid
-        // coords ya calculadas como 0..7) como p1, p2. Pero la función espera
-        // SCREEN OFFSETS (origin_x, origin_y) para hacer la conversión interna
-        // mouseX-p1 → relative pixel → grid. Pasar grid coords daba
-        // gridX = (MouseX - 1)*0.05 ≈ 30 → fuera del grid → emptyCount=0 →
-        // spaceFree=0 SIEMPRE. Esto es por qué el drop nunca encontraba slots
-        // libres aún con el watchdog de attr.
+        // Recibe SCREEN OFFSETS (origin_x, origin_y), no grid coords: hace la
+        // conversión mouseX-p1 → pixel relativo → grid internamente.
         unsigned long long result = CheckInventorySpace(
             origin_x, origin_y,
             (unsigned short*)invBase,
@@ -421,7 +398,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
             if (gx >= 0 && gy >= 0 && gx < gridWidth && gy < gridHeight) {
                 int cellIdx = gy * gridWidth + gx;
                 BYTE* cellBase = (BYTE*)(invBase + cellIdx * 0x44);  // stride 0x22 words = 0x44 bytes
-                // IDA sub_4D6470 L630-642.  El port tenia las ramas cruzadas:
+                // IDA sub_4D6470 L630-642:
                 //   entra                     -> 2 (azul, InventoryColor)
                 //   no entra, jewel 461/462/464 -> 4 (verde: se aplica al item)
                 //   no entra                  -> 3 (rojo)
@@ -489,8 +466,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
 
                 // Con el baul o el trade abiertos no se puede aplicar la
                 // jewel: IDA salta a LABEL_807, que muestra el mensaje. Por eso
-                // `canStack` queda en false en esos dos casos (antes se ponia
-                // en true al final incondicionalmente y el aviso no salia).
+                // `canStack` queda en false en esos dos casos.
                 if (DAT_07eaa119 != '\0' || DAT_07eaa11b != '\0') {
                     // IDA LABEL_807: jewel sobre un item con el baul o el trade
                     // abiertos.  Es el UNICO sitio de sub_4D6470 que muestra
@@ -498,15 +474,9 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                     // silencio (LABEL_808).
                     UIChatLogWindow_AddText((const char*)&DAT_07eaa190, GlobalText[474], 2);
                 } else {
-                    // 2026-08-24 FIX (issue #15, "las jewels no se consumen"):
-                    // aca se mandaba `SendRequestEquipmentItem`, o sea
-                    // 0x24 PMSG_ITEM_MOVE_RECV (11 bytes). El server trata eso
-                    // como MOVER la jewel a una celda ocupada -> lo rechaza y
-                    // el cliente la devuelve al inventario. IDA (sub_4D6470
-                    // L5919-5931) manda 0x26 PMSG_ITEM_USE_RECV, que es el que
-                    // dispara CharacterUseJewelOfBles/Soul/Life en el server
-                    // (ItemManager.cpp:2753+) y contesta con GCItemDeleteSend +
-                    // GCItemModifySend (F3/14).
+                    // Aplicar una jewel es 0x26 PMSG_ITEM_USE_RECV, como IDA (sub_4D6470
+                    // L5919-5931), no 0x24 (mover): dispara CharacterUseJewelOfBles/Soul/Life en
+                    // el server, que contesta con GCItemDeleteSend + GCItemModifySend (F3/14).
                     //
                     //   struct PMSG_ITEM_USE_RECV {   // ItemManager.h:49
                     //       PBMSG_HEAD header;        // C1 : 5 : 0x26
@@ -520,7 +490,7 @@ unsigned int __stdcall Inventory_DropItemEx(int origin_x, int origin_y,
                     // previo al encriptador, no el frame que viaja.
                     if ((int)EnableUse < 1) {
                         // IDA: `if (EnableUse > 0) goto LABEL_808;` — durante el
-                        // cooldown NO se manda nada. Antes se mandaba igual.
+                        // cooldown NO se manda nada.
                         EnableUse = 10;
 
                         BYTE pkt[8];

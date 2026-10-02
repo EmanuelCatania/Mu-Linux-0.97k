@@ -1,5 +1,4 @@
 // Item_EquipmentQueries.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -12,17 +11,11 @@ int __stdcall Item_FindElfWeaponInventorySlot(void) {
     // 0x004824C0 — Get equipped weapon type (primary hand)
     // anti-tamper hash table — skipped (encrypt/decrypt CharacterMachine)
 
-    // IDA sub_4824C0 L41-88.  Los tres accesos estaban mal:
-    //
-    //   IDA                                        port anterior
-    //   CharacterAttribute + 11                    ca + 0x00
-    //   v6  = *(__int16 *)(CharacterMachine + 536) cm + 0x86*2 = +268
-    //   v28 = *(__int16 *)(CharacterMachine + 604) cm + 0x97*2 = +302
-    //
-    // 268 y 302 son los INDICES de short (536/2 y 604/2) usados como offset de
-    // BYTE: los dos accesos leian a la mitad de la direccion correcta, asi que
-    // el tipo de arma salia basura, el scan no encontraba nada y la funcion
-    // devolvia -1 siempre — por eso la municion no se auto-equipaba.
+    // IDA sub_4824C0 L41-88:
+    //   CharacterAttribute + 11
+    //   v6  = *(__int16 *)(CharacterMachine + 536)
+    //   v28 = *(__int16 *)(CharacterMachine + 604)
+    // (offsets en BYTES; 268/302 serían los índices de short).
     //
     // Reparto de slots (confirmado por sub_4824C0 y por CreateArrow 0x474370):
     //   CharacterMachine + 536 (slot 0) -> BALLESTA (136-142, 144, 146)
@@ -52,12 +45,9 @@ int __stdcall Item_FindElfWeaponInventorySlot(void) {
     // Scan equipment table from DAT_07ea9504 downward (stride 0x11 dwords = 0x44 bytes per slot)
     // 8 rows x 8 columns, looking for first slot matching weaponGroup with durability > 0
     //
-    // BUG-FIX 2026-05-03: el original usa `if ((int)piRow < 0x7ea9328) return -1;`
-    // — una direccion absoluta del binario fuente, que en nuestro build no
-    // significa nada.  Reemplazado por un contador explicito.
-    // 2026-08-22: ese contador era de 7 y son 8 columnas
-    // ((0x7EA9504 - 0x7EA9328) / 68 + 1 = 8).  Se nota tambien en `col`, que
-    // arranca en 7 y tiene que llegar hasta 0.
+    // El original corta con `if ((int)piRow < 0x7ea9328) return -1;` (dirección
+    // absoluta del binario); acá es un contador explícito de 8 columnas
+    // ((0x7EA9504 - 0x7EA9328) / 68 + 1 = 8), con `col` de 7 a 0.
     int* piRow = &DAT_07ea9504;
     int col = 7;
     for (int outer = 0; outer < 8; ++outer) {
