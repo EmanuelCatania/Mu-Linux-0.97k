@@ -1,19 +1,14 @@
 #pragma once
 
-// 2026-09-25: se borraron 40 declaraciones FUN_ huerfanas de este header --
-// sin definicion, sin un solo call site y casi todas con la firma generica
-// inventada (int, int, int, int).  Sus direcciones ya tienen su funcion real
-// declarada con el nombre de IDA (RenderParty, RenderGuildList, RenderTrade,
-// Camera_SetupFrustum, OpenTextData, ...), asi que lo unico que hacian era
-// ofrecer un SEGUNDO simbolo C++ para la misma direccion del binario: la forma
-// exacta en que quedo muerto el puente de AccessModel.
+// No agregar declaraciones FUN_ sin definición para direcciones que ya tienen su
+// función declarada con el nombre de IDA: un segundo símbolo C++ para la misma
+// dirección del binario termina en puentes muertos.
 #include <intrin.h>   // _ReturnAddress (used por HashTable_GetIndex defensive log)
 #include <stdio.h>    // _snprintf_s (used por HashTable_GetIndex defensive log)
 // float10 = Ghidra name for x87 80-bit extended float; MSVC uses long double (64-bit) as closest match
 typedef long double float10;
 // functions.h — Prototypes for all FUN_ (unresolved) functions.
 //
-// Kayito canonical name index (from main.exe.idb, 2026-01-03):
 // Nombres del port que NO coinciden con el de IDA (el resto ya se renombro
 // al nombre de IDA y la equivalencia es trivial):
 //   MoveJoint = MoveJoint     MoveJoints = MoveJoints     Entity_AdvancePath = MovePath
@@ -47,23 +42,17 @@ void  __cdecl CWsctlc__LogPrintOn(void);   // IDA: CWsctlc__LogPrintOn (0x00403A
 void  __cdecl Packet_DecryptBuffer(void *node, void *key); // IDA: Packet_DecryptBuffer (0x00404370)
 void  __cdecl Packet_EncryptBuffer(void *a, void *b); // IDA: Packet_EncryptBuffer (0x00404400)
 void  __cdecl Packet_DecryptDword(void *key, void *node); // IDA: FUN_00409E20 (0x00409E20)
-// HashTable_GetIndex — dispatch via vtable at (MAIN_HASH_CLASS+0xC)
-// Returns slot index, or 0xFFFFFFFF if not found.
+// HashTable_GetIndex — en el binario, dispatch via vtable at (MAIN_HASH_CLASS+0xC);
+// devuelve el índice del slot, o 0xFFFFFFFF si no lo encuentra.
 //
-// DEFENSIVE (silencioso): anti-tamper invocado desde sistemas per-frame.  Un
-// ctx/vtable corrupto producía un fn() a basura imposible de rastrear.
-// Validamos y retornamos 0xFFFFFFFF (== "no encontrado") en lugar de morir.
-// NO se loggea desde acá — hacerlo re-entra DbgLog cuando Windows bombea
-// mensajes durante la escritura, y termina en stack smash.  Si se sospecha
-// que la tabla hash está rota, mirar MAIN_HASH_CLASS en el debugger.
-// 2026-05-03: SAFE STUB. Always return 0xFFFFFFFF (= "not found") so all
-// callers' `if (idx != 0xffffffff) ...` guards skip the subsequent deref.
-// Previously this called the vtable's hash function (g_FakeHashVtable[3] =
-// HashFn_Sentinel returning 0) — but HashTable_GetNode (HashTable_GetValue) then
-// did its own key-match check and returned NULL when the slot's key didn't
-// match the lookup key, causing NULL deref in callers like Game_MainLoop:158.
-// Returning -1 here makes the table appear empty to callers, which IS our
-// desired semantics (no anti-tamper data is actually stored).
+// SAFE STUB: siempre devuelve 0xFFFFFFFF ("no encontrado"), así los guards
+// `if (idx != 0xffffffff) ...` de los callers saltean el deref y la tabla aparece
+// vacía, que es la semántica buscada (no se guarda ningún dato anti-tamper).
+// No llamar a la función hash del vtable (HashFn_Sentinel, devuelve 0):
+// HashTable_GetNode (HashTable_GetValue) devolvería NULL al no coincidir la key
+// y el caller haría un NULL deref.
+// NO se loggea desde acá: hacerlo re-entra DbgLog cuando Windows bombea
+// mensajes durante la escritura, y termina en stack smash.
 inline unsigned int HashTable_GetIndex(void* /*ctx_ptr*/, void* /*key*/) {
     return 0xffffffff;
 }
@@ -98,7 +87,7 @@ void  __cdecl Widget_NodeInit(int);           // Widget_BaseRelease — releases
 void  __cdecl Widget_Release(int, int, int); // Widget_Release — releases linked list + widget base
 void  __cdecl CPhysicsManager_Move(void* physics_manager, float fTime);   // IDA: CPhysicsManager::Move (0x00409C40)
 void  __cdecl CPhysicsManager_Render(void* physics_manager); // IDA: FUN_00409CF0
-// Packet_DecryptDword signature — canonical (void*,void*) at line 25 above
+// Packet_DecryptDword signature — canonical (void*,void*) above
 void  __cdecl Object_SetRectFields(void*, undefined4, undefined4);  // Object_SetRectFields
 void  __cdecl FUN_0040c7d0(int, int);
 void  __cdecl Object_ClearMembers(int);
@@ -348,15 +337,15 @@ void  __cdecl Ring_ComputeOrbit(int, float *, float);        // Ring_ComputeOrbi
 // ── Particle / effect system ──────────────────────────────────────────────────
 void  __cdecl Effect_TickAll(void); // IDA: MoveEffects
 void  __cdecl EffectPool_RenderAll(void); // IDA: RenderEffects
-// 2026-05-07: Particle_Render real es void per IDA mu97k-src-IDA/raw/
-// 0046BE40_Particle_Render.c. La firma anterior (6 args) era erronea — el
-// llamador en Game_RenderTick lo invoca sin args.
+// Particle_Render real es void (IDA 0x0046BE40): el llamador en Game_RenderTick
+// lo invoca sin args.
 void  __cdecl Particle_RenderAll(void); // IDA: FUN_0046be40
 void  __cdecl Trail_RenderAll(void); // IDA: Trail_RenderAll (0x0046C3E0)
 void  __cdecl SkillEffects_RenderAll(void); // IDA: FUN_0046cb70
 void  __cdecl WeatherParticles_Update(void); // IDA: MoveLeaves
 void* __cdecl Joint_Create(int, float *, float *, float *, unsigned int, int, float, short, unsigned char); // IDA: CreateJoint
-// Compatibility bridge used only by stubs_IDA_ports.cpp.
+// Puente de compatibilidad (nombre de IDA) sobre Joint_Create; lo usa
+// Combat/Combat_AttackEffect.cpp.
 void* __cdecl CreateJoint(int, float *, float *, float *, unsigned int, int, float, short, unsigned char); // IDA: CreateJoint
 
 // ── Item drop render ──────────────────────────────────────────────────────────
@@ -377,11 +366,12 @@ void  __cdecl RenderPoints(int, int, int, int);   // IDA: RenderPoints (0x004793
 void  __cdecl DamageNumbers_Tick(void); // IDA: MovePoints
 void  __cdecl Effect_TickFlare(void); // IDA: MovePointers
 int   __cdecl CreateSprite(unsigned short, float *, float, float *, int, float, int); // IDA: CreateSprite (0x004795C0)
-// Render_DrawSprite / Render_DrawSpritePool / CheckSprites — implemented in src/stubs.cpp (Character/Effect pool)
+// Render_DrawSprite / Render_DrawSpritePool: implementadas en Sound/Sound_Queue.cpp;
+// CheckSprites (declarada más arriba): en Scene/Scene_CharSelect_Nav.cpp.
 void  __cdecl ItemConvert(int, int, int);
 int   __cdecl PlusSpecialPercent(short* a1, int a2, int a3, unsigned short a4);  // Stats_ApplyBonus2
 void  __cdecl CHARACTER_MACHINE_Init(int, int, int);   // IDA: CHARACTER_MACHINE_Init (0x0047D3D0)
-// Stat helpers — ported 2026-05-02. Signatures match IDA decompile.
+// Stat helpers — las firmas coinciden con el decompile de IDA.
 int   __fastcall Stats_CalcBase(int characterMachine);                // Stats_CalcBase (attack damage)
 int   __cdecl    Stats_CalcMagicDmgRange(int characterMachine);                // Stats_CalcMagicDmgRange
 int   __cdecl    Stats_CalcAddStrength(short* characterMachine_words);       // Stats_CalcAddStrength
@@ -434,7 +424,7 @@ void  __cdecl Combat_DispatchHeroSkillAttack(void *entity);                     
 char  __cdecl Combat_CheckArrowRequirement(void);                                  // validates arrow/bolt availability
 // IDA: Action (0x0048D640)
 // Despachador real de acciones (pickup/equip/attack/skill/walk) basado en
-// `*(c+749)` queue. Implementación en stubs.cpp.
+// `*(c+749)` queue. Implementación en Combat/Combat.cpp.
 // IDA: FUN_0048d640
 void  __cdecl Action(DWORD c, DWORD o);
 unsigned int __cdecl CheckAttack(void); // IDA: CheckAttack (0x00483160)
@@ -454,8 +444,7 @@ void  __cdecl RenderMonsterName(int, int, int, int);
 void  __cdecl CloseInventoryRelatedWindows(void); // IDA: CloseInventoryRelatedWindows (0x004CBA60)
 char  __cdecl Connection_Check(void *ctx, int p1, int p2);              // Connection_Check → '\0'=ok else error
 // IDA sub_494520(texto, 1): valida/consume el buffer de texto; 0 = seguir.
-// 2026-09-24: la firma tenia un tercer parametro inventado (el estado de
-// Enter); los dos unicos call sites son el tick de macros y pasan 2 args.
+// Los dos únicos call sites (el tick de macros) pasan 2 args.
 DWORD __cdecl FUN_00494520(void *buf, char flag);
 char  __cdecl Chat_Validate(char *buf);                               // Chat_Validate — validate text buf; '\0'=ok
 void  __cdecl CheckChatText(char* text);                             // IDA: sub_497C70 (0x00497C70) gestos por texto del chat
@@ -549,7 +538,7 @@ void  __cdecl PathFinder_ResetContext(void);                                  //
 void  __cdecl FUN_0050f700(const char *FileName);                  // SaveMacro (Data/Macro.txt)
 void  __cdecl OpenMacro(char *FileName);                            // 0x0050F750
 // FUN_0050f7a0 NO es "Map_Unload": es sub_50F7A0, el envio de opciones F3/30.
-// Portada como SaveOptionsToServer97k en UI/UI_InGameMenu.cpp (2026-09-21).
+// Portada como SaveOptionsToServer97k en UI/UI_InGameMenu.cpp.
 // FUN_0050f5f0 @ 0x0050F5F0 (IDA)
 void  __cdecl Font_CreateTextDib(int dc);
 // FUN_0040f570 @ 0x0040F570 (IDA)
@@ -806,8 +795,8 @@ uint  __cdecl SecondPassword_GridSlotAvail(int ctx, int p1, int p2, int p3, int 
 undefined4 __cdecl SecondPassword_CancelReturn(void);        // SecondPassword_CancelReturn (nav back, clear state)
 uint  __cdecl Net_Disconnect_Clean(void);             // Net_Disconnect_Clean (sends disconnect + returns)
 void  __cdecl FUN_004d1fc0(void);             // SecondPassword_RenderGrid_Empty
-// 2026-05-08: real signature per IDA `004D23B0_sub_4D23B0.c` (Inventory grid
-// render + click dispatcher). See Item/Item_ClickHandler.cpp for the port.
+// Firma real per IDA sub_4D23B0 (Inventory grid render + click dispatcher).
+// See Item/Item_ClickHandler.cpp for the port.
 void  __cdecl FUN_004d23b0(char *origin_x, int origin_y, short *inv_base,
                             int grid_w, int grid_h, char mode_flag);
 
@@ -844,7 +833,7 @@ HRESULT __cdecl Sound_ReleaseBuffer(int buffer); // IDA: FUN_00404AD0; 5.2: Rele
 void  __cdecl crt_fseek(int *fp, int offset, int whence);  // CRT fseek wrapper
 int   __cdecl crt_ftell(char *fp);                         // CRT ftell wrapper
 int   __cdecl crt_fread(void *dst, int size, int count, int *fp); // CRT fread wrapper
-int   __cdecl mbclen(const unsigned char *str);         // IsLeadByte — already in stubs.cpp
+int   __cdecl mbclen(const unsigned char *str);         // IsLeadByte — definida en Core/String_ResourceLegacy.cpp
 
 // ── Terrain helpers ───────────────────────────────────────────────────────────
 void  __cdecl Terrain_Clear(void);  // InitTerrainMappingLayer (IDA) — resets terrain tile buffers
@@ -865,7 +854,7 @@ float10 __cdecl CharacterMoveSpeed(int entity_ptr); // IDA: CharacterMoveSpeed (
 // ── Scene_MapTick helpers ─────────────────────────────────────────────────────
 
 // ── Model/BGM loader helpers ──────────────────────────────────────────────────
-// OpenModel — same as Monster_RegisterBMD above (int first arg), see line 653
+// OpenModel — same as Monster_RegisterBMD above (int first arg)
 void  __cdecl SetMaxTextures(int slot); // IDA: SetMaxTextures (0x00505BD0)
 
 // ── Model mesh/anim loaders (used by Model_Load* functions) ──────────────────
@@ -892,10 +881,9 @@ unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, i
 
 // ── Item inventory helpers (from Offsets.h) ───────────────────────────────────
 // GetItemCount (0x00482FF0) y GetItemSlot (0x00482D70) se implementan en
-// Item/Item_LegacyHelpers.cpp.  Aca habia dos #define que mapeaban sus FUN_ a
-// esos nombres; nadie los usaba y eran una trampa: los bloques IDA-only de
-// stubs_IDA_ports.cpp DEFINEN esos FUN_, asi que al activar su gate el define
-// los convertia en una redefinicion de la funcion real.
+// Item/Item_LegacyHelpers.cpp.  No agregar #define que mapeen sus FUN_ a esos
+// nombres: un port de IDA que DEFINA esos FUN_ los convertiria en una
+// redefinicion de la funcion real.
 int   __cdecl GetItemCount(int siType, int iLevel);  // 0x00482FF0
 int   __cdecl GetItemSlot(int siType, int iLevel);   // 0x00482D70
 
@@ -918,8 +906,8 @@ void  __cdecl BMD__RenderMeshTranslate(void *model, char a, int b, float frame, 
                             float f3, int f4, float f5, float f6, float f7, unsigned int rgba);
                             // BMD_DrawBoneSlot_Anim (animated variant, 11 args)
 
-// ── Character animation/attack helpers (Kayito names, called from large stubs) ──
-// SetPlayerAttack — already declared above (line 266) with 4 args: (int, int, int, int)
+// ── Character animation/attack helpers (nombres de Kayito) ──
+// SetPlayerAttack — ya declarado más arriba con 4 args: (int, int, int, int)
 void  __cdecl SetPlayerShock(int entity, int type); // IDA: SetPlayerShock (0x00444B60)
 void  __cdecl AttackEffect(int entity); // IDA: AttackEffect (0x00445230)
 // IDA: UseSkillWarrior
@@ -936,8 +924,7 @@ HRESULT __cdecl PlayBuffer(int Buffer, DWORD Object, BOOL bLooped); // IDA: Play
 // ── Token parser aliases ──────────────────────────────────────────────────────
 // GetToken = TextParser_GetToken — lee el proximo token del archivo abierto y lo deja en
 // TokenString (= TextParserTokenString, IDA @0x07CF1EF0).
-// OJO: hay DOS tokenizers con buffers DISTINTOS y el arbol los tenia mezclados
-// (corregido 2026-08-22):
+// OJO: hay DOS tokenizers con buffers DISTINTOS, no mezclarlos:
 //   GetToken        0x0047A1F0 -> TokenString    0x07CF1EF0  (Item/Monster/Skill/
 //                                                             NPC/Gate/Filter.txt)
 //   Parse_NextToken 0x0050E2C0 -> ParserTokenString   0x083A3FF4  (OpenWorldModels)
@@ -980,8 +967,8 @@ void  __fastcall FUN_0040dba0(void *This);                           // DSBuffer
 void  __fastcall FUN_0040eae0(void *This);                           // DSBufferB deinit
 void  __fastcall FUN_0040f540(void *This);                           // Stream deinit+release
 void  __fastcall FUN_0040f950(void *This);                           // StreamB deinit
-// void  __fastcall FUN_00412510(void *This);                           // GG module deinit — duplicate, correct DWORD* version at line 1276
-// void  __fastcall FUN_00412610(void *This);                           // GG module2 deinit — duplicate, correct DWORD* version at line 1277
+// void  __fastcall FUN_00412510(void *This);                           // GG module deinit — duplicate, correct DWORD* version
+// void  __fastcall FUN_00412610(void *This);                           // GG module2 deinit — duplicate, correct DWORD* version
 void  __fastcall FUN_0040d550(void *This);                           // DSDevice deinit
 
 // Sound system
@@ -1060,8 +1047,8 @@ void  __fastcall BMD__TransformPosition(void *This, float (*BoneMatrix)[4], floa
 
 // Sound helpers (FUN_0040a0a0 chain)
 void  __cdecl Vec3_Normalize(float *param);                            // float init
-// int   __fastcall FUN_00409f30(void *This, int p1, int p2, int p3, char p4); // open file — duplicate, correct 6-param version at line 1156
-// void  __fastcall FUN_0040a300(void *This, int p1);                   // cleanup after open — duplicate, correct 3-param version at line 1159
+// int   __fastcall FUN_00409f30(void *This, int p1, int p2, int p3, char p4); // open file — duplicate, correct 6-param version
+// void  __fastcall FUN_0040a300(void *This, int p1);                   // cleanup after open — duplicate, correct 3-param version
 
 // Render helpers
 void  __cdecl EnableAlphaBlend(void);                                // 0x004f8830
@@ -1148,7 +1135,8 @@ void  __fastcall FUN_0053d620(DWORD param_1);                           // GameG
 int   __cdecl FUN_0053d7d0(void *self, char *param_1);               // GameGuard: InitNPGameMon(hWnd) —
                                                                      // registra hWnd + callback y devuelve
                                                                      // el resultado que guardo el pre-init
-// FUN_0053d890 — implemented in GameGuard_Init2.cpp
+// FUN_0053d890 — sin port en el código compilado (el port de IDA está archivado
+// en docs/codigo-muerto/, ver PR #76).
 void* __cdecl FUN_0053e8c0(void *param_1);                              // GG encrypted string decoder
 // GameGuard_HealthCheck — already declared above (GameGuard query)
 void  __cdecl FUN_0053eba0(int *param_1, void *param_2);                // GG encrypted log writer
@@ -1239,10 +1227,12 @@ void  __cdecl Combat_SpawnIdleAmbientParticle(int entity);
 void  __stdcall MoveCharactersClient(void);                         // 0x00455010
 unsigned char __cdecl FUN_0045fae0(DWORD ecx, unsigned char *param_1);   // hash read 1-byte (0x0045FAE0)
 void  __cdecl Effect_SpawnBombRing(float *param_1); // IDA: FUN_00466300
-// Compatibility bridge used only by stubs_IDA_ports.cpp.
+// Puente de compatibilidad (nombre de IDA) sobre Effect_SpawnBombRing; lo usa
+// Combat/Combat_AttackEffect.cpp.
 void  __cdecl FUN_00466300(float *param_1); // IDA: FUN_00466300
 void  __cdecl ItemDrop_RenderGroundWeapon(int param_1); // IDA: FUN_0046b980
-// Compatibility bridge used only by stubs_IDA_ports.cpp.
+// Puente de compatibilidad (nombre de IDA) sobre ItemDrop_RenderGroundWeapon;
+// sin usos en el código compilado (lo usaban ports de IDA ya retirados).
 void  __cdecl FUN_0046b980(int param_1); // IDA: FUN_0046b980
 void  __cdecl RenderWheelWeapon(DWORD o); // IDA: RenderWheelWeapon (0x0046B7C0)
 void  __cdecl FUN_0046c5a0(int p1, int p2, float *p3, float *p4);       // skill impact particles (0x0046C5A0)
@@ -1296,16 +1286,16 @@ void  __cdecl RenderText(int x, int y, char *text, int p1, int p2, void *p3); //
 
 // Batch 20 — OpenNpc, MoveCamera, RenderEquipment3D, RenderItems3D, LookAtTarget
 void  __cdecl OpenTexture(int id, void *path, int flags, bool param);   // 0x00505C80
-// LoadWaveFile declared above (line 1088) with real signature — real impl in src/Sound/Sound.cpp.
+// LoadWaveFile declared above with real signature — real impl in src/Sound/Sound.cpp.
 void  __cdecl OpenModel(int id, char *path, ...);                       // 0x00505E90 (varargs: texName, normName, etc.)
 void  __cdecl RenderItem3D(float sx, float sy, float w, float h, int Type, int Level, int Option1, int ExtOption, bool PickUp); // IDA: RenderItem3D (0x004E1BE0)
-// InventoryColor = InventoryColor (declared at line 1301)
-// RenderEquipmentPart3D = RenderEquipmentPart3D (declared at line 1303)
+// InventoryColor = InventoryColor
+// RenderEquipmentPart3D = RenderEquipmentPart3D
 void  __cdecl RenderNumber2D_fn(float x, float y, int Num, float Width, float Height); // 0x005122F0
-// DisableAlphaBlend = GL_ResetState (declared at line 578)
+// DisableAlphaBlend = GL_ResetState
 // CreateAngle (4 floats → float). Line 207 has wrong sig; cast in callers.
 // FarAngle está declarado arriba con su dirección IDA.
-// RenderBitmap = GL_DrawTexture (declared at line 601)
+// RenderBitmap = GL_DrawTexture
 
 // Missing function stubs (linker fix)
 void* __fastcall FUN_0040f730(void* param_1);                              // UI widget constructor (0x2C4 bytes)
@@ -1324,4 +1314,4 @@ int   __cdecl ItemValue(ITEM* ip, unsigned int goldType);                  // 0x
 void  __cdecl GetSkillInformation(int iType, int iLevel, char* lpszName, int* piMana, int* piDistance, int* piSkillMana); // IDA: GetSkillInformation (0x0047E7A0)
 // CheckArrow = Combat_CheckArrowRequirement (already declared as char __cdecl Combat_CheckArrowRequirement(void))
 // SetPlayerAttack (already declared; Ghidra shows 1-arg DWORD — cast in caller)
-// CreateAngle (already declared line 207; Ghidra shows 4 floats → float — cast in caller)
+// CreateAngle (already declared; Ghidra shows 4 floats → float — cast in caller)

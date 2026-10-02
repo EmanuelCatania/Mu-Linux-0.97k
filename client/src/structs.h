@@ -428,7 +428,7 @@ struct SERVER_LIST_t
 
 // Connection: g_bGameServerConnected is declared in globals.h.
 #define ServerList          (*(SERVER_LIST_t(*)[MAX_SERVER_HI])&DAT_083a45d8)
-// 2026-08-22: `ServerNumber` es un nombre INVENTADO del port y describe mal el
+// `ServerNumber` es un nombre INVENTADO del port y describe mal el
 // campo.  `0x083A7C40` es la **cantidad de servidores** que trajo el F4/02
 // (`ReceiveServerList` L15: `unk_83A7C40 = ReceiveBuffer[5]`), y `Game_SceneUpdate`
 // lo pone en 0 al entrar al login.  Nadie lo LEE — se guarda y no se consume.
@@ -462,41 +462,24 @@ extern char g_BitmapsRaw[];
 #define DAT_07eaa138         RepairEnable         // IDA: DAT_07eaa138 (0x07EAA138)
 #define DAT_07e11998         SendGetItem          // IDA: DAT_07e11998 (0x07E11998)
 #define Teleport         Teleport             // IDA: Teleport (0x05826D14)
-// 2026-08-23 FIX: esto apuntaba a `DAT_07eab250`, que es un DWORD de 4 bytes.
-// El propio `globals.h:837` ya documentaba el mislabel ("NO es
-// PrimaryTerrainLight (ese es DAT_081cb608)") pero el macro nunca se corrigio.
-// Consecuencias, las dos graves:
-//   1. Los 23 call sites de `AddTerrainLight(..., PrimaryTerrainLight[0])`
-//      escribian la luz dinamica en un global muerto, asi que el fuego, las
-//      antorchas y los efectos NUNCA iluminaban — el render lee DAT_081cb608.
-//   2. `AddTerrainLight` indexa `Buffer[768*y + 3*x]` con x,y hasta 255, o sea
-//      escribia hasta ~786 KB pasado un DWORD: desborde masivo sobre BSS.
-// Y como nadie resetea el buffer muerto, la luz se acumulaba sin techo (medido:
-// el tile del fuego llego a 64.0 y subiendo). `Terrain_Water` (0x4F95E0) si
-// resetea DAT_081cb608 por frame, que es lo que acota la acumulacion.
+// PrimaryTerrainLight es DAT_081cb608 (el buffer que lee el render y que
+// `Terrain_Water` (0x4F95E0) resetea por frame), NO `DAT_07eab250` (un DWORD
+// muerto). `AddTerrainLight` indexa `Buffer[768*y + 3*x]` con x,y hasta 255, asi
+// que el destino tiene que ser el array completo.
 #define PrimaryTerrainLight  ((float(*)[3])&DAT_081cb608[0])  // float[256*256][3]
 // Functions (map companion-project names → FUN_ addresses from functions.h):
-// 2026-09-26 FIX (origen del Aqua Beam detras del pj): este alias apuntaba a
-// Vector_InverseRotate, que es el port de VectorIRotate (0x4FA110) -- la
-// TRANSPUESTA, o sea la rotacion INVERSA.  El VectorRotate del binario es
-// 0x4FA0B0 y es row-major:
+// El VectorRotate del binario es 0x4FA0B0 (row-major); NO confundirlo con
+// Vector_InverseRotate, el port de VectorIRotate (0x4FA110), que es la TRANSPUESTA:
 //     0x4FA0B0 VectorRotate   out[i] = m[4i+0]*x + m[4i+1]*y + m[4i+2]*z
 //     0x4FA110 VectorIRotate  out[i] = m[i]*x + m[4+i]*y + m[8+i]*z
-// Con el alias mal, todo offset calculado con VectorRotate se rotaba por -yaw:
-// sub_4451C0 (el origen del Aqua Beam, MoveCharacter case 12) lo ponia espejado
-// respecto del frente del personaje.  Los otros 113 call sites del arbol llaman
-// Vector_Rotate directo y por eso siempre estuvieron bien.
+// Con el alias equivocado, todo offset calculado con VectorRotate rota por -yaw
+// (p.ej. el origen del Aqua Beam en sub_4451C0 queda espejado).
 #define VectorRotate         Vector_Rotate
-// 2026-08-23 FIX (el fuego no iluminaba): esto aliaseaba `AddTerrainLight` a
-// `AddTerrainLightClip`, que es OTRA funcion del binario.
+// `AddTerrainLight` NO es `AddTerrainLightClip`: son dos funciones del binario.
 //   AddTerrainLight     0x004F76C0  sin clamp superior  · decenas de callers
 //   AddTerrainLightClip 0x004F7800  clampea a 1.0       · UN caller (0x4C0E59)
-// Con el alias, toda la luz dinamica (fuego, antorchas, efectos) quedaba cortada
-// en 1.0 y no llegaba a saturar — de ahi que el fuego se dibujara pero sin
-// resplandor.  El port correcto de 0x4F76C0 ya existia como `AddTerrainLight`
-// (Render/SMD_Parser.cpp), mal etiquetado en functions.h como "Terrain_SetHeight
-// or similar"; ese nombre inventado es lo que llevo a crear este alias.
-//
+// Con el clamp, la luz dinamica (fuego, antorchas, efectos) no llega a saturar.
+// El port de 0x4F76C0 es `AddTerrainLight` (Render/SMD_Parser.cpp).
 void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float *Buffer);   // decl local: structs.h no incluye functions.h
 #define AngleMatrix          AngleMatrix
 #define CreateEffect         CreateEffect
