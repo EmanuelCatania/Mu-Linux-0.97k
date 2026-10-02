@@ -236,6 +236,7 @@ set(MU_SOURCES
     src/Render/Camera_Unproject.cpp
     src/Net/Net_CharSelect.cpp
     src/Net/Net_PipeQuery.cpp
+    src/Net/Protocol/Protocol_Check.cpp
     src/GameGuard/GameGuard_InitTrampoline.cpp
     src/Render/Render_WorldHelpers.cpp
     src/Render/BMD_Load.cpp
@@ -385,6 +386,9 @@ set(MU_HEADERS
     src/Game/GameStructs.h
     src/Debug/MiniDump.h
     src/resource.h
+    src/Net/Protocol/ProtocolBase.h
+    src/Net/Protocol/GameServerProtocol.h
+    src/Net/Protocol/ConnectServerProtocol.h
 )
 
 set(MU_RESOURCES
