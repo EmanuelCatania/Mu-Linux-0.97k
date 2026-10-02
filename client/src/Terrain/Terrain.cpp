@@ -392,19 +392,9 @@
 #include "stdafx.h"
 #include "Terrain/Terrain.h"
 
-// =============================================================================
-// 2026-05-07 B3 refactor — Terrain helpers
-// moved from stubs.cpp lines 9775-10173 (399 lines).
-// =============================================================================
-// ── Terrain helpers ───────────────────────────────────────────────────────────
 // InitTerrainMappingLayer @ 0x004F6C60 — Terrain_Clear: resets tile/height/noise arrays.
-//
-// BUG-FIX 2026-04-28: el decomp Ghidra usaba `(int)&DAT_xxxx + iVar2` y
-// `*(float*)(iVar2 * 4 + 0x810b2c8)` — accesos por dirección absoluta /
-// pointer-arith fuera del símbolo. Los símbolos eran DWORDs de 4 bytes en
-// nuestra globals.cpp, así que escribir [65535] desbordaba a globals
-// adyacentes y eventualmente AV en el último write (0x810B2CC). Cambiamos
-// los símbolos a arrays reales (globals.cpp) y este loop a indexación normal.
+// Los símbolos son arrays reales en globals.cpp (el decomp accedía por dirección
+// absoluta, fuera del símbolo) y el loop indexa normal.
 //
 // Layout (256x256 tile grid = 65536 entries):
 //   TerrainMappingLayer1[i] = 0     (TileTex1 byte)
@@ -427,15 +417,9 @@ void __cdecl Terrain_Clear(void) {
 // 3 adjacent height samples; output is DAT_07feb288 (TerrainNormal, vec3 per
 // vertex, 65536 vertices).
 //
-// BUG-FIX 2026-04-26: el Ghidra-decomp declaraba 9 locals separadas (local_c..
-// local_24) y las pasaba como `&local_c, &local_18, &local_24` asumiendo
-// contigüidad de stack — MSVC no garantiza ese layout. Reemplazado por arrays
-// vec3 reales. Mismo patrón que Camera_BuildMouseRay / FUN_004fad60.
-//
-// BUG-FIX 2026-04-28: el bound original `pfVar5 < 0x80ab288` era una dirección
-// absoluta del binario (en IDA = &SelectXF, símbolo siguiente a TerrainNormal).
-// En nuestro proceso esa addr no aplica → loop corría fuera del array → AV.
-// Cambiado a un loop count-based (256 outer × 256 inner = 65536 vertices).
+// Desviaciones del decomp: los 9 locals sueltos son arrays vec3 (MSVC no
+// garantiza contigüidad en el stack) y el loop cuenta 256×256 vértices en vez de
+// comparar contra la dirección absoluta 0x80ab288 (&SelectXF en el binario).
 // IDA: FUN_004F70B0
 void __cdecl CreateTerrainNormal(void) {
     float *pfVar5 = DAT_07feb288;
@@ -495,7 +479,7 @@ void __cdecl CreateTerrainLight(void) {
 }
 
 // FUN_004f7290 @ 0x004F7290 — OpenTerrainHeight(filename)
-// Per IDA decomp (raw/004F7290_OpenTerrainHeight.c, 611 bytes).
+// Per IDA decomp (611 bytes).
 //
 // Lee TerrainHeight.bmp (66616 bytes = 1080-byte BMP header + 256x256 pixel
 // bytes = 65536 bytes; total con padding = 66616). Convierte cada byte en
@@ -504,11 +488,6 @@ void __cdecl CreateTerrainLight(void) {
 // Modos:
 //   - DAT_0055a7c4 == 0 (plain):     "Data2/<filename>"  ej "Data2/World3/TerrainHeight.bmp"
 //   - DAT_0055a7c4 != 0 (compressed): "Data/<name_no_ext>.ozb"
-//
-// BUG-FIX 2026-04-28: el port previo construía paths con globals incorrectas
-// (DAT_0055a7a4/79c/98 son otros símbolos), así que fopen siempre fallaba.
-// Y el sprintf de error olvidaba pasar `FileName` como arg → MessageBox
-// mostraba bytes de stack ("é)] file not found"). Reescrito siguiendo IDA.
 // IDA: FUN_004F7290
 uint __cdecl OpenTerrainHeight(char *filename)
 {

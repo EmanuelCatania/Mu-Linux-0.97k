@@ -45,10 +45,8 @@ void __cdecl RequestTerrainLight(float param_1,float param_2,float *param_3)
     if ((-1 < iVar4) && (((-1 < iVar9 && (iVar4 < 0xff)) && (iVar9 < 0xff)))) {
       iVar6 = iVar9 * 0x100 + iVar4;
       fVar2 = fVar2 - (float)iVar9;
-      // BUG-FIX: DAT_081cb608 es DWORD → &DAT_081cb608 + N*0xc hace aritmética
-      // DWORD* (= +N*0xc*4 = +N*48 bytes). Disasm @ 0x004f7a13-28 muestra
-      //   LEA <reg>,[<idx>*0x4 + 0x81cb608]  donde <idx> ya viene * 3
-      // → byte offset = idx*3*4 = idx*12. Castear base a char* para byte arith.
+      // DAT_081cb608 es DWORD: la aritmética va sobre char* para que el offset sea en
+      // bytes (idx*3*4; disasm @ 0x004f7a13-28).
       pfVar5 = (float *)((char*)&DAT_081cb608 + ((iVar9 + 1) * 0x100 + iVar4) * 0xc);
       iVar9 = 3;
       pfVar7 = (float *)((char*)&DAT_081cb608 + iVar6 * 0xc);
@@ -87,16 +85,9 @@ void __cdecl RequestTerrainLight(float param_1,float param_2,float *param_3)
 void __cdecl Entity_GetLightScale(int param_1,int param_2)
 {
   float10 fVar1;
-  // PORT FIX: Ghidra decompile produced three separate locals (local_c/8/4)
-  // where the original binary had a contiguous float[3] on the stack.
-  // RequestTerrainLight writes 3 floats starting at its output pointer, so the
-  // locals MUST be contiguous. In MSVC, separate `float` declarations are
-  // NOT guaranteed to be adjacent — so local_8/local_4 ended up reading
-  // uninitialised stack slots, producing huge/subnormal values that were
-  // added to the entity tint (+0xe8/+0xec/+0xf0) and written to the model's
-  // bodyLight (+0x48/+0x4c/+0x50). Logo01/Logo03 at the login scene rendered
-  // as corrupted coloured triangles because of this.  Using a proper float[3]
-  // array guarantees contiguity and eliminates the uninitialised reads.
+  // float[3] contiguo: RequestTerrainLight escribe 3 floats seguidos desde el
+  // puntero de salida (Ghidra lo había partido en tres locals sueltos, que MSVC
+  // no garantiza contiguos).
   float rgb[3] = {0.0f, 0.0f, 0.0f};
   float &local_c = rgb[0];
   float &local_8 = rgb[1];

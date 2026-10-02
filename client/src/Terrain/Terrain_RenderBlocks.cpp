@@ -1,7 +1,6 @@
 // Terrain_RenderBlocks.cpp
 //
-// Extracted from stubs_game.cpp.  Owns terrain block culling/render and the
-// clipped dynamic-light variant.  Function comments retain IDA provenance.
+// Culling/render de bloques de terreno y la variante de luz dinámica clampeada.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -11,11 +10,8 @@
 // Adds Light * falloff to Buffer, clamps to [0.0, 1.0].
 // AddTerrainLightClip (0x004F7800).
 //
-// 2026-08-23: quedo SIN CALLERS en nuestro arbol, y es correcto que asi sea — no
-// es codigo muerto para borrar.  Hasta hoy `structs.h` aliaseaba
-// `AddTerrainLight` (0x4F76C0) a esta funcion, y por eso toda la luz dinamica
-// quedaba clampeada a 1.0.  En el binario esta variante tiene UN solo caller
-// (0x4C0E59, dentro de una funcion que todavia no portamos); cuando se porte,
+// No tiene callers en nuestro árbol y no es código muerto: en el binario la
+// llama 0x4C0E59, dentro de una función todavía no portada; cuando se porte,
 // debe llamar a esta y no a AddTerrainLight.
 //
 // Diferencia entre las dos: esta clampea a [0, 1]; 0x4F76C0 solo evita negativos

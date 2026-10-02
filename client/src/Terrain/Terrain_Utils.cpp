@@ -29,23 +29,12 @@ int __cdecl Terrain_GetTileIndex(uint param_1,uint param_2)
 
 
 // IDA: RequestTerrainHeight (0x004F7500)
-// Per IDA decomp (raw/004F7500_RequestTerrainHeight.c, 177 bytes).
-//
 // Bilinear interpolation of terrain height at world (xf, yf).
-//
-// BUG-FIX 2026-04-28: el Ghidra decomp inferiría argumentos vía x87 FPU stack
-// (`__ftol()` lee ST0/ST1) — eso solo funciona si el caller compiló con x87,
-// pero MSVC en Release usa SSE/SSE2 → ftol leía basura → return 0 → todos los
-// hero/entity quedaban con z=0 (heroPos.z=0.0 en el log). Cambiamos la firma a
-// (xf, yf) explícitos como el IDA original y actualizamos los call-sites.
 float __cdecl RequestTerrainHeight(float xf, float yf)
 {
-    // BUG-FIX 2026-04-28: el IDA original tiene guard `if (SceneFlag != 5)`
-    // pero Recv_JoinMapServer llama CreateCharacterPointer ANTES de que el state
-    // pase a 5 (en MuEmu el F3/03 llega rápido y el state machine está aún en 3
-    // o 4). Resultado: hero.z spawn = 0. Relajamos el guard — ahora es seguro
-    // mientras el world esté cargado (World válido y DAT_080cb2cc con
-    // height map real). Si el array está en 0 retornamos 0 (mismo resultado).
+    // Desviación: IDA retorna si SceneFlag != 5, pero Recv_JoinMapServer llama a
+    // CreateCharacterPointer antes de que la escena pase a 5. Acá alcanza con que
+    // el mundo esté cargado (World válido y DAT_080cb2cc con el height map).
     if ((int)World < 0) return 0.0f;
 
     float gx = xf * 0.01f;

@@ -1,5 +1,3 @@
-// Extracted from stubs_linker.cpp during the linker-stub domain refactor.
-// Original IDA/address comments are retained with each implementation.
 #include "stdafx.h"
 #include "globals.h"
 #include "functions.h"
@@ -43,10 +41,7 @@ extern void ClearActionObject(void);
 // p1/p2 = grid X/Y, p3 = tile size, p4 = index step, p5 = texcoord array ptr,
 // p6 = enable lighting, p7 = alpha value.
 void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, char p6, float p7) {
-    // BUG-FIX 2026-04-29: guard contra DAT_07eab24c (BackTerrainHeight) no
-    // inicializado. Crash AV en
-    // 0x410E4597 venía de cursor billboard RenderTerrainAlphaBitmap dereferenciando
-    // el buffer NULL.
+    // Guard contra BackTerrainHeight (DAT_07eab24c) sin inicializar.
     if (DAT_07eab24c == 0 || (uintptr_t)DAT_07eab24c < 0x100000) return;
     int iX = (int)p1;
     int iY = (int)p2;
@@ -76,9 +71,8 @@ void __cdecl Terrain_RenderQuad(float p1, float p2, float p3, int p4, int p5, ch
     if (p6 != '\0') {
         int indices[4] = { idx0, idx1, idx2, idx3 };
         for (int v = 0; v < 4; v++) {
-            // 2026-08-23: leia DAT_07eab250, que es un DWORD muerto y NO es
-            // PrimaryTerrainLight (ver globals.h:837).  El buffer real es
-            // DAT_081cb608, el mismo que resetea Terrain_Water por frame.
+            // PrimaryTerrainLight es DAT_081cb608, el mismo buffer que Terrain_Water
+            // resetea por frame; DAT_07eab250 es un DWORD muerto.
             float *src = &DAT_081cb608[indices[v] * 3];
             light[v][0] = src[0]; light[v][1] = src[1]; light[v][2] = src[2];
         }
@@ -168,9 +162,3 @@ void __cdecl RenderTerrainBitmap(int p1, int p2, int p3, float p4)
 
 
 // RenderTerrainAlphaBitmap (0x004F8BB0) vive en Render/Render_LegacyBillboards.cpp.
-//
-// 2026-09-25: aca habia un STUB NO-OP con el mismo nombre y un TODO de 6 pasos,
-// mientras la implementacion completa ya existia bajo el nombre RenderTerrainAlphaBitmap.
-// Los 6 call sites que llamaban por el nombre real -- las particulas de terreno
-// (tipos 1191/1200/1264), el reflejo del agua y los decals -- ejecutaban el
-// no-op; solo el cursor del mouse, que llamaba al FUN_, veia la implementacion.

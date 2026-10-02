@@ -1,10 +1,7 @@
-// Terrain_RenderFace.cpp — port 1:1 desde IDA (2026-06-27)
+// Terrain_RenderFace.cpp — port 1:1 desde IDA
 // Cadena de dibujo de tiles texturados del terreno (eslabón #4-#5 de RenderTerrain):
 //   RenderTerrainTile → RenderTerrainFace (RenderTerrainFace) →
 //   FaceTexture (UVs) + RenderFace / RenderFaceAlpha / RenderFaceBlend (draw).
-//
-// Antes: RenderTerrainFace era un no-op stub (stubs.cpp) y las 4 primitivas no existían,
-// por eso el dev previo escribió una fallback flat-shaded en RenderTerrain.
 //
 // Direcciones/buffers verificados por bytes de operando en IDA:
 //   FaceTexture        0x004F7DF0   RenderFace        0x004F7A90
@@ -16,7 +13,7 @@
 //   TerrainMappingLayer2 = TerrainMappingLayer2 (BYTE[256²])
 //   PrimaryTerrainLight  = DAT_081cb608 (float[256²][3])  ← 0x081CB608 (NO 0x07eab250;
 //                          el macro PrimaryTerrainLight de structs.h apunta mal a
-//                          0x07eab250 — buffer muerto. Lo leímos directo de DAT_081cb608,
+//                          0x07eab250 — buffer muerto. Se lee directo de DAT_081cb608,
 //                          que Terrain_Water puebla per-frame desde BackTerrainLight 0x0828b608).
 //   TerrainVertex        = g_TilePickBuf[12]   (4 corners contiguos)
 //   TerrainTextureCoord  = g_TerrainTexCoord[8] (4 UV pairs)
@@ -134,10 +131,8 @@ void __cdecl RenderTerrainFace(float xf, float yf, int xi, int yi, float lodf)
 
     if (TER_FLAG == 2) {
         // ── capa de billboards de pasto/arena, movida por el viento ────────
-        // 2026-08-23: estuvo inerte porque `unk_55A76C` (DAT_0055a76c) estaba
-        // inicializado en 0.  Nadie lo escribe, pero es constante de .data y en
-        // el binario vale 1 — con 0 esta pasada no corria en ningun mapa y se
-        // perdia el pasto de Lorencia/Noria y la arena volando de Tarkan.
+        // Depende de unk_55A76C (DAT_0055a76c): nadie lo escribe, pero es una
+        // constante de .data que en el binario vale 1.
         if (TER_ALPHA[TER_IDX1] <= 0.0f && TER_ALPHA[TER_IDX2] <= 0.0f &&
             TER_ALPHA[TER_IDX3] <= 0.0f && TER_ALPHA[TER_IDX4] <= 0.0f &&
             !DAT_0814b2dc && (World < 11 || World > 16))   // CurrentLayer
