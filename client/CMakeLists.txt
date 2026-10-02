@@ -30,9 +30,10 @@ endif()
 # Sólo existen Debug y Release, como en el .sln.
 set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE STRING "" FORCE)
 
-# Se vacían los flags por defecto de CMake (/RTC1, /Ob0, /Ob2, /DNDEBUG, /W1...)
-# para que sólo queden los que pone cada target, igual que en el .vcxproj.
-foreach(lang C CXX)
+# Se vacían los flags por defecto de CMake (/RTC1, /Ob0, /Ob2, /DNDEBUG, /W1...,
+# y -DWIN32/-D_DEBUG de rc.exe) para que sólo queden los que pone cada target,
+# igual que en el .vcxproj.
+foreach(lang C CXX RC)
     set(CMAKE_${lang}_FLAGS "")
     set(CMAKE_${lang}_FLAGS_DEBUG "")
     set(CMAKE_${lang}_FLAGS_RELEASE "")
