@@ -116,14 +116,6 @@ void __cdecl Skill_LoadBMD(const char *path)
     //     qmemcpy(&SkillAttribute[j],  <registro>, 40u);
     //     qmemcpy(&SkillAttribute2[j], <registro>, 40u);
     //     SkillAttribute2[j - 2] *= 2;        // el byte +0x26 de la sombra
-    //
-    // 2026-08-22: aca solo se llenaba SkillAttribute2 (= DAT_07cf1ff8, 0x7CF1FF8,
-    // confirmado por xrefs de IDA).  SkillAttribute (0x07D29D20) quedaba en
-    // ceros, y es la que leen TODOS los consumidores: RenderItemName case 795,
-    // RenderItemInfo y GetSkillInformation.  Por eso el nombre de los orbes en
-    // el suelo salia solo como "Jewel" — el sprintf es
-    // `"%s %s"` con `&SkillAttribute[8*(5*Level+150)]` y GlobalText[102]
-    // ("Jewel"), y el primer %s salia vacio.
     int off = 0;
     do {
         BuxConvert_0((int)buf, 0x28);

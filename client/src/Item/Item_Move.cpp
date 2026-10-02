@@ -1,5 +1,4 @@
 // Item_Move.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -8,14 +7,10 @@
 
 // SendRequestEquipmentItem @ 0x0043C250 — Equipment move / item drag
 //
-// 2026-05-08 BUG-FIX MAYÚSCULO (round 2): la versión anterior mandaba C1
-// plano. El servidor exige Encrypt=1 para opcode 0x24 (HackPacketCheck.txt
-// línea 38: "36 * 1 0 0 0"), así que cualquier packet 0x24 que llegue como
-// C1 es kickeado por `CHackPacketCheck::CheckPacketHack` → CloseClient →
-// "Has sido desconectado del servidor".
-//
-// La solución correcta es usar `Net_SendSmallPacket` (Game_SceneUpdate.cpp:112),
-// que es el mismo helper que login (F1/01) y combat usan. Hace:
+// El servidor exige Encrypt=1 para el opcode 0x24 (HackPacketCheck.txt:
+// "36 * 1 0 0 0"); como C1 plano lo desconecta. Por eso va por
+// `Net_SendSmallPacket` (Game_SceneUpdate.cpp), el mismo helper que login
+// (F1/01) y combat. Hace:
 //   1. Chain XOR con s_LoginKey (i=3..len)
 //   2. Stomp pkt[1] = DAT_05826ceb++ (serial counter — server valida que sea
 //      monotónico vía CSerialCheck::CheckSerial)
@@ -44,7 +39,7 @@
 //
 // `iSrcType` mapeo: 0=inventory, 1=trade, 2=warehouse, 3=equipment-direct-equip.
 // `iDstIndex` codifica destino: para inventario es slot index puro (0..63);
-// los callers en stubs_game.cpp:1296/1320 ya pasan el slot encoded.
+// los callers ya pasan el slot encoded.
 // C++-linkage forward decl matching Net.h:89.
 void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 

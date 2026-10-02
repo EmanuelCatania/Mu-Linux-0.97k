@@ -1,8 +1,6 @@
 // Item_InventoryRender.cpp
 //
-// Extracted from stubs_game.cpp.  Owns the inventory/equipment render passes.
-// Every entry point retains its original IDA symbol/address in its leading
-// comment; this is a file reorganization only.
+// Pases de render del inventario y del equipo.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -34,15 +32,9 @@ static int GetEquipmentSlotOffsetBytes(int index)
     return 536 + 68 * index;
 }
 
-// 2026-08-08: devolvía `((ITEM*)OffsetInventoryItems) + index` — la QUINTA copia
-// del mismo error. `OffsetInventoryItems` es el pool del grid 8×8 y su índice de
-// celda es `slot - 12` (AddItemToGrid:396): `[0..11]` son las CELDAS 0..11 del
-// inventario visible, NO los wear slots. Los 12 slots de equipo viven sólo en
-// `CharacterMachine + 536 + 68*slot`.
-// Era el fallback de `GetPanelEquipmentSourceItem`, así que se disparaba justo
-// al desequipar (slot de CM en -1) y dibujaba en la caja lo que el jugador
-// tuviera en las primeras celdas del inventario — la poción en los pants, un
-// casco en los anillos, etc.
+// Los 12 slots de equipo viven sólo en `CharacterMachine + 536 + 68*slot`;
+// `OffsetInventoryItems` es el pool del grid 8×8 (índice de celda = slot - 12),
+// no sirve como fallback para los wear slots.
 static ITEM* GetEquippedInventoryItem(int /*index*/)
 {
     return nullptr;
@@ -142,12 +134,12 @@ static void SetEquipmentSlotPlaceholderColorForIndex(int slotIdx)
     }
 }
 
-// RenderEquipmentBox @ 0x004E25A0 — port FIEL desde IDA (2026-05-02 v2).
+// RenderEquipmentBox @ 0x004E25A0 — port FIEL desde IDA.
 //
 // Renders los slot decoration backgrounds (placeholder icons como helmet
 // outline, weapon outline, etc.) en la INVENTORY panel. Cada slot dibuja
 // un bitmap a la posición correcta. Las posiciones y texturas vienen del
-// IDA decompile de RenderEquipmentBox.
+// IDA decompile de RenderEquipmentBox, como literales.
 //
 // Layout verificado contra IDA (mismas posiciones que RenderEquipment3D):
 //   byte 1080 → (15, 46)   40×40   tex 275  (Pendant)
@@ -162,11 +154,6 @@ static void SetEquipmentSlotPlaceholderColorForIndex(int slotIdx)
 //   byte 1148 → (55, 89)   20×20   tex 269  (Ring1)
 //   byte 1216 → (55, 152)  20×20   tex 270  (Ring2)
 //   byte 1284 → (115, 152) 20×20   tex 270  (Necklace, same tex as Ring2)
-//
-// FIX 2026-05-02 v2: la versión vieja usaba `_DAT_00552c04/c10/...` globals
-// que no estaban inicializados con los valores correctos → boxes se pintaban
-// en posiciones equivocadas (cuadro gris al lado de armor que el user reportó).
-// Ahora todas las posiciones son hardcoded literales matching IDA exactamente.
 void __stdcall RenderEquipmentBox(void) {
     EnableAlphaTest(true);
 
@@ -188,9 +175,7 @@ void __stdcall RenderEquipmentBox(void) {
     SetEquipmentSlotPlaceholderColorForIndex(7);
     GL_DrawTexture(0x112, colPendant, rowTop, 60.0f, 40.0f, 0.0f, 0.0f, 0.9375f, 0.625f, 1, 1);
 
-    // 2026-08-08 FIX (el MG seguía mostrando la caja del casco): el gate leía
-    // `*(short*)CharacterAttribute` — o sea un SHORT en el offset 0 — en vez del
-    // byte de clase. Per IDA RenderEquipmentBox (0x4E25A0 L178) es
+    // Per IDA RenderEquipmentBox (0x4E25A0 L178), el gate es el byte de clase:
     //     if ( (*(BYTE *)(CharacterAttribute + 11) & 7) != 3 )
     // Mismo campo que usa RenderEquipment3D para saltear el ITEM del casco.
     if (!CharacterAttribute ||
@@ -199,14 +184,11 @@ void __stdcall RenderEquipmentBox(void) {
         GL_DrawTexture(0x107, colBody, rowTop, 40.0f, 40.0f, 0.0f, 0.0f, 0.625f, 0.625f, 1, 1);
     }
 
-    // 2026-08-08 FIX (el recuadro de la armadura salía 10 px más arriba y las
-    // pants parecían caerse por debajo): acá se restaba `_DAT_00552488` (=10) a
-    // la Y de la CAJA. Ese -10 es del ITEM, no del recuadro:
+    // La caja va en +89 y el item se dibuja 10 px más arriba dentro de ella:
     //   RenderEquipmentBox  (0x4E25A0 L248-252): `v57 = v49 + 89.0;`
     //                                            RenderBitmap(264, v56, v57, 40, 60)
     //   RenderEquipment3D   (0x4E3100):          `syc = v45 + 89.0 - 10.0;`
-    // O sea la caja va en +89 y el item se dibuja 10 px más arriba dentro de
-    // ella (que es lo que hace RenderEquipmentPart3D, y eso queda igual).
+    // El -10 (`_DAT_00552488`) es del ITEM (RenderEquipmentPart3D), no del recuadro.
     SetEquipmentSlotPlaceholderColorForIndex(3);
     GL_DrawTexture(0x108, colBody, rowMid, 40.0f, 60.0f, 0.0f, 0.0f, 0.625f, 0.9375f, 1, 1);
 
@@ -257,30 +239,25 @@ void __cdecl RenderEquipmentPart3D(int Index, float sx, float sy, float Width, f
     glColor3f(1.0f, 1.0f, 1.0f);
 }
 
-// RenderEquipment3D @ 0x004E3100 — port FIEL desde IDA decompile (2026-05-01).
+// RenderEquipment3D @ 0x004E3100 — port FIEL desde IDA decompile.
 //
 // Layout en CharacterMachine (byte offsets verificados contra IDA + capturas
-// del cliente original 2026-05-01 v2 — labels corregidos):
+// del cliente original):
 //   536  WeaponL    (15, 89)  40×60
 //   604  WeaponR    (134,89)  40×60
-//   672  HELMET     (75, 46)  40×40   ← antes mal-labeled "Pendant"
+//   672  HELMET     (75, 46)  40×40
 //   740  Armor      (75, 79)  40×60   ← y = 89-10 = 79
-//   808  PANTS      (75,152)  40×40   ← antes mal-labeled "Boots"
-//   876  GLOVES     (15,152)  40×40   ← antes mal-labeled "Pants"
-//   944  BOOTS      (134,152) 40×40   ← antes mal-labeled "Gloves"
+//   808  PANTS      (75,152)  40×40
+//   876  GLOVES     (15,152)  40×40
+//   944  BOOTS      (134,152) 40×40
 //   1012 Wings      (115,46)  60×40
-//   1080 PENDANT/Pet (15, 46) 40×40   ← antes mal-labeled "Helmet"
+//   1080 PENDANT/Pet (15, 46) 40×40
 //   1148 Ring1      (55, 89)  20×20   via RenderEquipmentPart3D(9)
 //   1216 Ring2      (55,152)  20×20   via RenderEquipmentPart3D(10)
 //   1284 Necklace   (115,152) 20×20   via RenderEquipmentPart3D(11)
 //
 // Cada ITEM (68 bytes) en CM:
 //   +0  Type (short),  +4 Level (DWORD),  +27 Option (byte),  +56 Durability (int)
-//
-// Nota: la versión previa tenía labels mezclados (decía "Armor 0xfd" pero leía
-// byte 1012 = Wings real, etc) y screen positions desde DAT_ globals con valores
-// distintos a los de IDA. Esto causaba que en la pantalla aparecieran items en
-// posiciones equivocadas (helmet apilado con rings, pendant donde casco, etc).
 void __stdcall RenderEquipment3D(void) {
     if (!CharacterAttribute) return;
 
@@ -337,9 +314,6 @@ void __stdcall RenderEquipment3D(void) {
 }
 
 // RenderItemsBoxes vive en Render/HUD_Pass6.cpp.
-//
-// 2026-09-26: aca habia una copia bajo el nombre RenderItemsBoxes.  Las dos
-// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.
 
 // RenderItems3D @ 0x004E38B0 (~130 lines) — render 3D item models in inventory grid
 // For each non-empty cell: call RenderItem3D with item dimensions from ItemAttribute.

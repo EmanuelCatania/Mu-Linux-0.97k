@@ -1,10 +1,7 @@
 // Item_InventoryGrid.cpp
 //
-// Extracted from stubs_game.cpp.  This module owns the item-grid operations
-// used by inventory, warehouse, trade, and chaos-mix panels.
-//
-// Every entry point retains its original IDA symbol/address in its leading
-// comment.  No 5.2 logic was imported during this extraction.
+// Operaciones de grilla de items que usan los paneles de inventario, baúl,
+// trade y chaos mix.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -191,8 +188,6 @@ int __cdecl CompareItems(short param_1, int param_2, int param_3) {
 // footprint queda en 99 (color de advertencia) y byte_7EAA0E8 = 1; si es igual
 // o mejor, en 1.  Los tipos que empataron (resultado 0) vuelven a 1 en todas
 // sus celdas al final.
-// (El port anterior llamaba a CompareItems con tipo/nivel/durabilidad en
-// vez de los dos registros, asi que la comparacion era basura.)
 extern "C" int __cdecl Item_CompareForTradeHistory(const BYTE* p, const BYTE* n);
 void __cdecl SortInventory(short* param_1) {
     BYTE* const pool = (BYTE*)param_1;
@@ -282,14 +277,11 @@ unsigned long long __cdecl CheckInventorySpace(int p1, int p2, unsigned short* p
                     if (gx >= 0 && gy >= 0 && gx < p4 && gy < p5) {
                         // Check if cell is empty (-1)
                         BYTE* cell = (BYTE*)p3 + (rowOffset + gx) * 0x44;
-                        // 2026-08-24 FIX (issue #15, "la jewel solo aplicaba en la 1er celda"):
-                        // aca decia `|| *(int*)(cell + 0x38) <= 0`, o sea contaba la celda como
-                        // VACIA cuando su Key era 0. Pero AddItemToGrid deja Key=0 en todas las
-                        // celdas NO primarias de un item multi-celda (usa Key=1 solo para marcar
-                        // la primaria), asi que de un item 2x2 tres de sus cuatro celdas se
-                        // reportaban libres. IDA sub_4D5D70 L47 mira UNICAMENTE el Type:
+                        // IDA sub_4D5D70 L47 mira UNICAMENTE el Type para decidir si la celda está
+                        // libre:
                         //     if ( a3[34 * v13 + 34 * v14] == -1 )  ++v20;
-                        // El campo Key solo gatea el RENDER (sub_4E38B0 L60), no la ocupacion.
+                        // No usar Key: AddItemToGrid deja Key=0 en las celdas NO primarias de un item
+                        // multi-celda. El campo Key solo gatea el RENDER (sub_4E38B0 L60).
                         if (*(short*)cell == -1) {
                             emptyCount++;
                         }
@@ -456,8 +448,7 @@ long long __fastcall CalculateInventoryValue(int p1, unsigned int p2, short* p3,
                         } else if (itemType == 0x1d6) {
                             totalValue += 450000;
                         } else {
-                            // BUG-FIX 2026-04-26 (audit #3): ItemValue(item, sellMode=0).
-                            // Antes el stub recibía (durability, 0, item, 0) → arg order roto.
+                            // ItemValue(item, sellMode=0).
                             int itemVal = Item_CalculateValue((void*)pCell, 0);
                             totalValue += itemVal;
                             (void)durability;

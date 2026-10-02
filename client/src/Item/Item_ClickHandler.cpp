@@ -5,7 +5,7 @@
 // items** del cliente: render del grid + hit-test + click handlers para
 // pickup / drop / sell / right-click-use / hotkey-assign / pet-renaming.
 //
-// Llamada por SecondPassword.cpp:712-782 (4-7 sitios) per scene tick:
+// La llaman los paneles de SecondPassword.cpp (4-7 sitios) en cada tick:
 //   - Main inventory: `FUN_004d23b0(InventoryStartX+15, InventoryStartY+200,
 //     OffsetInventoryItems, 8, 8, 0)`
 //   - Trade slots (own/peer): grids 8x4
@@ -42,10 +42,8 @@
 //   - Right-click default: pickup with WarehouseOpened auto-drop logic
 //   - Ctrl+Q/W/E hotkey assignment: dword_559C60[slot] = item type
 //
-// 2026-05-08: port completo desde IDA (sustituye al stub no-op anterior en
-// SecondPassword.cpp:2027). Habilita la cadena entera:
-//   FUN_004d23b0 → pPickedItem set → Inventory_DropDispatch (drop dispatcher,
-//   también stub — port pendiente) → SendRequestEquipmentItem.
+// Cadena: FUN_004d23b0 → pPickedItem set → Inventory_DropDispatch (drop
+// dispatcher) → SendRequestEquipmentItem.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -77,30 +75,15 @@ static BYTE* const g_InventoryPoolForClickGuard = Inventory;
 #define byte_7EA9844       (*((BYTE*)&DAT_07ea9844))   // first byte of dword_7EA9844 = mode flag
 #define byte_83A42EB       DAT_083a42eb        // auto-drop trigger flag
 #define dword_55CC16C      SocketClientSendBufferLength        // queued send buffer cursor
-// 2026-08-22 FIX: este alias apuntaba a DAT_05826d1c, que es OTRO global.
-// `ida_xrefs_to` los separa: 0x05826D18 lo escribe ProtocolCore y lo lee
-// sub_4D23B0 (cooldown de COMPRA), mientras 0x05826D1C lo escriben InitGame,
-// ReceiveLife y ReceiveDurability (cooldown de equipar/usar, `EnableUse`).
-// Compartiendo el mismo byte, comprar bloqueaba el equipar y viceversa.
-// Las dos direcciones están a ~4 bytes; acá las tratamos como el mismo concepto.
+// IDA separa 0x05826D18 (lo escribe ProtocolCore y lo lee sub_4D23B0: cooldown
+// de COMPRA) de 0x05826D1C (InitGame, ReceiveLife, ReceiveDurability: cooldown
+// de equipar/usar, `EnableUse`). No unificarlos: comprar bloquearía el equipar.
 #define dword_5826D18      BuyCost
 
 // CheckInventory: aliasa el puntero al ITEM del slot bajo el mouse que usa Scene_MapTick
-// to dispatch RenderItemInfo (tooltip).
-//
-// 2026-05-08: BUG-FIX MAYÚSCULO. Antes apuntaba a `DAT_07e11d24` que IDA
-// llama `dword_7E11D24` (= un global completamente distinto, usado por
-// sub_494520 IME/text input). El símbolo correcto es `DAT_07eaa160` —
-// confirmado por Ghidra-decompiled Scene_MapTick línea 35/89 que lee
-// `DAT_07eaa160` como el item pointer y línea 89 lo pasa como 3er arg
-// a `RenderItemInfo` (RenderItemInfo).
-//
-// Sin este fix:
-//   * Hover loop seteaba DAT_07e11d24 (wrong global) → Scene_MapTick leía
-//     DAT_07eaa160 (= 0) → no entraba a la rama de tooltip → nunca se
-//     renderizaba RenderItemInfo.
-//   * Y peor: estábamos contaminando dword_7E11D24 que es input-buffer-state
-//     → bugs latentes en chat input.
+// to dispatch RenderItemInfo (tooltip). El símbolo es `DAT_07eaa160` (Scene_MapTick
+// lo pasa como 3er arg a RenderItemInfo), no `dword_7E11D24`, que es estado del
+// input de texto (sub_494520).
 extern DWORD DAT_07eaa160;                     // IDA `CheckInventory`
 #define CheckInventory     DAT_07eaa160
 
@@ -187,9 +170,7 @@ unsigned int __cdecl ItemMove_SnapMouseToEmptySlot(int origin_x, int origin_y,
                                  ((y + dy) * grid_w + (x + dx)));
                     // IDA sub_4D6020: libre = Type == 0xFFFF, nada mas.  Key
                     // vale 0 en las celdas NO primarias de un item multi-celda,
-                    // asi que el `|| Key <= 0` que habia aca daba por libres
-                    // celdas ocupadas y el quick-move soltaba encima de otro
-                    // item (ver [[celda-ocupada-se-decide-por-type]]).
+                    // asi que no agregar `|| Key <= 0`.
                     if (*(short*)cell == (short)0xFFFF) {
                         ++empty;
                     }
@@ -233,17 +214,13 @@ unsigned int __cdecl FUN_004d6020(int origin_x, int origin_y,
 //                 3 = generic NPC sell confirm
 //
 // Returns: TRUE always (matches IDA — never errors out).
-//
-// 2026-05-08: port completo, reemplaza al placeholder que llamaba a
-// CreateOkMessageBox. Maneja la máquina de estados del diálogo en la que
-// Inventory_DropDispatch se apoya para los flujos de confirmación de venta/drop/renombrar mascota.
 extern char DAT_083a44c4[7 * 0x26];      // g_lpszMessageBoxCustom (266 bytes)
 // DAT_083a42f8 (2 entradas × 5 ints) y su alias DAT_083a430c (= entrada 1)
 // vienen de globals.h — NO redeclarar aca: DAT_083a430c es un macro que
 // proyecta dentro de DAT_083a42f8, y declararlo como array independiente
 // dejaba los botones Yes/No escritos en memoria que el render no lee.
 
-// NextErrorMessage vive en DAT_083a7c28, según las notas de la máquina de estados de CLAUDE.md.
+// NextErrorMessage vive en DAT_083a7c28.
 extern DWORD DAT_083a7c24;               // ErrorMessage (currently-shown dialog)
 extern DWORD DAT_083a7c28;               // NextErrorMessage (queued)
 #define ErrorMessage      DAT_083a7c24
@@ -296,11 +273,9 @@ void __cdecl ShowCheckBox(int num, int index, int message)
         numLines = num;
     }
     g_iNumLineMessageBoxCustom = numLines;
-    // 2026-07-27 FIX (cartel de confirmación vacío): el render de las líneas del
-    // message box (UI_StatsPanel case 0x97/0x99) usa DAT_083a4324 como count del
-    // loop, pero ShowCheckBox sólo seteaba g_iNumLineMessageBoxCustom. En el
-    // binario original son la MISMA dirección; en nuestro build están separados
-    // → el render iteraba 0 líneas → cartel en blanco. Seteamos ambos.
+    // El render de las líneas del message box (UI_StatsPanel case 0x97/0x99) usa
+    // DAT_083a4324 como count del loop; en el binario es la misma dirección que
+    // g_iNumLineMessageBoxCustom, en nuestro build están separados: se setean ambos.
     extern DWORD DAT_083a4324;
     DAT_083a4324 = (DWORD)numLines;
 
@@ -371,34 +346,17 @@ static void SendPacketBytes(const void* data, int size)
 
 // Build & send a C1-header packet [C1][size][header...payload].
 //
-// 2026-08-08 FIX MAYÚSCULO (desconexiones "de la nada" + al subir stats):
-// esto incrementaba `DAT_05826ceb` (g_byPacketSerialSend) en CADA envío C1.
-// Pero el serial SÓLO viaja en los frames C3/C4: el server lee
-// `QueueInfo.serial = DecSerial` para C3/C4 y `serial = -1` para C1/C2
-// (SocketManagerLinux.cpp:248-316), y sólo entonces avanza su `m_RecvSerial`
-// (CSerialCheck::CheckSerial exige `m_RecvSerial + 1 == serial`).
-// O sea: cada packet C1 que salía por acá corría NUESTRO contador sin que el
-// server corriera el suyo → el siguiente packet C3 llegaba con el serial
-// adelantado → `CheckPacketHack` loguea "Packet serial error" y hace
-// CloseClient. Como el keep-alive 0x0E es C3 y sale cada segundo, la
-// desconexión llegaba ~1 s después de cualquier click que mandara un C1
-// (de ahí el "me desconectó estando quieto" tras usar el diálogo de venta).
-// El bump lo hace Net_SendSmallPacket, que es quien realmente escribe el
-// serial en el frame.
+// No incrementar acá `DAT_05826ceb` (g_byPacketSerialSend): el serial sólo
+// viaja en los frames C3/C4 y el server sólo avanza su contador con esos
+// (CSerialCheck::CheckSerial). El bump lo hace Net_SendSmallPacket, que es
+// quien escribe el serial en el frame.
 extern void Net_SendC1Packet(const BYTE* pkt, int totalLen);
 
 // SendC1Packet — envuelve un payload en frame C1 y lo manda.
 //
-// 2026-08-26: antes construia el frame a mano y lo pasaba a SendPacketBytes,
-// que llama a ::send directo — o sea SIN el chain-XOR. Pero el server aplica
-// `XorData` a TODO frame C1 (`ExtractPacket` -> `XorData(size-1, 2)`), asi que
-// des-XOR-eaba un paquete que nunca fue XOR-eado y veia basura de pkt[3] en
-// adelante. Solo se salvaban los de 3 bytes, donde el bucle del server no
-// itera. Los dos call sites que quedan (scrolls 467/434, opcode 0x49/0x91, 7
-// bytes) caian de lleno en el bug.
-//
-// Ahora delega en Net_SendC1Packet, que aplica el chain-XOR y ademas resuelve
-// el frame contra la tabla de HackPacketCheck.
+// Delega en Net_SendC1Packet, que aplica el chain-XOR (el server aplica
+// `XorData` a TODO frame C1) y resuelve el frame contra la tabla de
+// HackPacketCheck.
 static void SendC1Packet(BYTE* payload, int payloadSize)
 {
     if (payloadSize <= 0 || payloadSize > 250) return;
@@ -410,12 +368,11 @@ static void SendC1Packet(BYTE* payload, int payloadSize)
     Net_SendC1Packet(pkt, payloadSize + 2);
 }
 
-// 2026-07-27: envío C3 (CSimpleModulus + serial) para los opcodes de tienda
+// Envío C3 (CSimpleModulus + serial) para los opcodes de tienda
 // que el server exige con Encrypt=1 (HackPacketCheck.txt): 0x32 buy, 0x33 sell,
-// 0x23 drop. Enviarlos como C1 (SendC1Packet) → el server los rechaza en
-// HackPacketCheck ("Packet encryption error") → CloseClient (desconexión al
-// clickear un item de la tienda). Net_SendSmallPacket arma [C1][len][head]...,
-// pisa len con el serial, aplica chain-XOR + CSM y emite el frame C3 final.
+// 0x23 drop; como C1 el server los rechaza y cierra la conexión.
+// Net_SendSmallPacket arma [C1][len][head]..., pisa len con el serial,
+// aplica chain-XOR + CSM y emite el frame C3 final.
 void Net_SendSmallPacket(const BYTE* pkt, int totalLen);
 static void SendC3Packet(BYTE* payload, int payloadSize)
 {
@@ -427,15 +384,8 @@ static void SendC3Packet(BYTE* payload, int payloadSize)
     Net_SendSmallPacket(pkt, payloadSize + 2);
 }
 
-// 2026-07-27: tile del terreno donde dropear un item al suelo. El server
-// (CGItemDropRecv) usa x/y como TILE del mapa y valida cercanía al player —
-// mandar pixels de mouse (lo que hacía el port) daba un tile off-map →
-// gMap.ItemDrop rechazaba → result=0 → el item nunca se dropeaba. Usamos el
-// tile actual del héroe (ent+0x306/0x307 = target_grid_x/y), siempre válido y
-// pegado al player.
-// 2026-09-09: devolvia `hero[0x306]/[0x307]`, que NO es la posicion del heroe
-// sino su GRILLA DESTINO (a donde esta caminando).  El item caia en cualquier
-// lado -- ni donde estaba el jugador ni donde soltaba el mouse.
+// Tile del terreno donde dropear un item al suelo. El server (CGItemDropRecv)
+// usa x/y como TILE del mapa y valida cercanía al player.
 //
 // IDA (sub_4DF410) manda `(int)(xf * 0.0099999998)` y `(int)(yf * ...)`, donde
 // xf/yf son CollisionPosition, el punto del terreno bajo el CURSOR:
@@ -448,8 +398,7 @@ static void SendC3Packet(BYTE* payload, int payloadSize)
 //                                   (int)(CollisionPosition[1] / TERRAIN_SCALE));
 // o sea el pick de terreno se valida ANTES de mandar.
 // Devuelve false si el cursor no esta sobre terreno: IDA hace `return` en ese
-// caso (sub_4DF410 L1070-1073) y el item queda en la mano.  Antes caia a la
-// celda del heroe, que no es lo que hace el original.
+// caso (sub_4DF410 L1070-1073) y el item queda en la mano.
 static bool GetHeroDropTile(BYTE* outX, BYTE* outY)
 {
     *outX = 0; *outY = 0;
@@ -468,9 +417,8 @@ static bool GetHeroDropTile(BYTE* outX, BYTE* outY)
 
 extern "C" void __cdecl SyncPickedItemVisualState(void);
 
-// 2026-07-27: devuelve el item agarrado a su slot de origen y suelta el cursor.
-// Se usa al cancelar los diálogos de confirmación (venta / drop al suelo); sin
-// esto el item quedaba pegado al mouse y no había forma de soltarlo.
+// Devuelve el item agarrado a su slot de origen y suelta el cursor.
+// Se usa al cancelar los diálogos de confirmación (venta / drop al suelo).
 // No es `static`: la usa tambien el handler del 0x33 (venta rechazada por el
 // server) en Net/Net_Process.cpp.
 void RestorePickedItemToSource(void)
@@ -629,20 +577,11 @@ extern "C" void __cdecl UI_Main(int slot_idx, short* inv_base, unsigned int grid
     if (CM == nullptr) return;
     BYTE* wearSlot = CM + 68 * slot_idx + 536;
     if (*(WORD*)wearSlot != 0xFFFF) {
-        // 2026-08-08 FIX (glow dorado pegado al desequiparse):
-        // este clear era PARCIAL — ponía Type=-1, Key=-1 y el byte +27, pero
-        // dejaba el campo **Level** (+4) con el valor del item que se acababa de
-        // sacar. El diagnóstico SETGLOW lo mostró:
-        //   cmT=242/-1/-1/338/370   cmL=11/11/11/11/11
-        // o sea los slots vaciados seguían con nivel 11. Después
-        // `SetCharacterClass` copia ese nivel al body-part por defecto
-        //   *(BYTE*)(c+530) = (*(int*)(CM_armor + 4) >> 3) & 0xF
-        // → lvlE=11 sobre el cuerpo desnudo (partsE=923/930 = modelos default)
-        // → `Entity_DrawSetup` le aplica el glow de +11 al cuerpo desnudo.
-        // Por eso el pj quedaba dorado aunque `CheckFullSet` ya devolvía 0.
-        // Dejamos el slot en el MISMO estado que produce
-        // `WriteEquipmentSlot(slot, -1, …)` (memset + Type=-1), que es también
-        // el que manda el server en el snapshot F3/10.
+        // El slot queda en el MISMO estado que produce `WriteEquipmentSlot(slot, -1, …)`
+        // (memset + Type=-1), que es también el que manda el server en el snapshot
+        // F3/10. Un clear parcial dejaría el campo Level (+4) del item sacado, y
+        // SetCharacterClass lo copiaría al body-part por defecto (glow sobre el
+        // cuerpo desnudo).
         memset(wearSlot, 0, sizeof(ITEM));
         *(WORD*)(wearSlot + 0) = 0xFFFF;
         *(DWORD*)(wearSlot + 56) = 0xFFFFFFFFu;
@@ -689,19 +628,15 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
 
     if (grid_h <= 0)                { return; }
 
-    // (2026-09-11: aca habia una pre-pasada que ponia Color = 0 en todo el
-    //  pool.  El reset lo hace sub_4E6550 una vez por frame, antes de esta
-    //  funcion y de sub_4DF410 — ver el port en SecondPassword.cpp.  Esta
-    //  funcion tambien se llama desde el RENDER, despues del marcado del drop,
-    //  y la pre-pasada borraba esas marcas: por eso no se veia la silueta.)
+    // No poner Color = 0 en todo el pool acá: el reset lo hace sub_4E6550 una vez
+    // por frame, antes de esta funcion y de sub_4DF410. Esta funcion tambien se
+    // llama desde el RENDER, despues del marcado del drop, y borraria esas marcas.
 
     if ((int)EnableUse > 0)         { return; }
-    // 2026-07-27 FIX (baúl: no se puede meter ni sacar nada): DAT_07eaa165 es el
-    // guard "item-move en vuelo" — se setea al mandar el 0x24 y sólo lo limpia
-    // la RESPUESTA del server (ItemMove_ClearPickedState). Si un move se pierde
-    // o el server no responde, el guard queda pegado en 1 y ESTE early-return
-    // bloquea TODO el manejo de inventario/baúl para siempre. Timeout de
-    // seguridad: si lleva >2 s seteado, lo liberamos.
+    // DAT_07eaa165 es el guard "item-move en vuelo": se setea al mandar el 0x24 y
+    // sólo lo limpia la RESPUESTA del server (ItemMove_ClearPickedState).
+    // Desviación: timeout de seguridad, si lleva >2 s seteado se libera (si no, un
+    // move perdido bloquearía el inventario/baúl para siempre).
     if (DAT_07eaa165 != 0) {
         static DWORD s_guardSince = 0;
         DWORD now = GetTickCount();
@@ -746,12 +681,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             }
 
             // ── Hovered cell with item: highlight footprint (color=2) ──────
-            // 2026-05-08: defensive guards. Crash reported with addr=0x21
-            // (= offset de ITEM_ATTRIBUTE.Height) al pasar sobre un item, que
-            // means `attr + type*64` reduced to NULL. Possible causes:
-            //   * DAT_07d78068 not yet initialized (loader race)
-            //   * `type` fuera de rango (rowSlot apuntando a basura)
-            // Los dos están acotados ahora.
+            // Guards defensivos: DAT_07d78068 sin inicializar (loader race) o `type` fuera
+            // de rango darían `attr + type*64` inválido.
             ITEM_ATTRIBUTE* attr = (ITEM_ATTRIBUTE*)(uintptr_t)DAT_07d78068;
             if (!attr) { continue; }
             // Reject implausible attr base.
@@ -817,10 +748,9 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             CheckInventory     = (int)(uintptr_t)rowSlot;
             byte_7EA9844       = (BYTE)mode_flag;
 
-            // ── 2026-05-08: escribe los globals de posición del tooltip (sx/sy en IDA) ──
+            // ── Escribe los globals de posición del tooltip (sx/sy en IDA) ──
             // Scene_MapTick los lee en cada frame y se los pasa a
-            // RenderItemInfo. Sin estas escrituras el tooltip no aparece nunca
-            // (o aparece en 0,0). Per IDA L388-395:
+            // RenderItemInfo. Per IDA L388-395:
             //   sx = origin_x + 20*slotX + 20*ItemAttribute[type].Width / 2
             //   sy = origin_y + 20*slotY
             extern DWORD DAT_07ea840c;   // tooltip X (= IDA `sx`)
@@ -843,15 +773,10 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             }
 
             // ── BRANCH B: mode_flag != 0 → SHOP BUY (click en item de tienda) ──
-            // 2026-07-27 FIX: esta rama sólo la alcanza el shop (único caller con
-            // mode_flag=1, SecondPassword.cpp:818). NO es sell — es BUY: clickeás
-            // un item del grid de la tienda para comprarlo. El port anterior:
-            //   (1) lo etiquetó "sell" y mandó `0x32 0x01 slot 0` (sub-byte que el
-            //       server 0.97k/MuEmu NO usa → leía slot=0x01), y
-            //   (2) lo envió como C1, pero PMSG_ITEM_BUY_RECV (0x32) exige C3
-            //       (HackPacketCheck Encrypt=1) → CloseClient = la desconexión que
-            //       el usuario veía al tocar un item de la tienda.
-            // Server espera: [C1][04][32][slot], C3-encrypted (ItemManager.h:63).
+            // Esta rama sólo la alcanza el shop (único caller con mode_flag=1). Es BUY:
+            // clickeás un item del grid de la tienda para comprarlo.
+            // Server espera: [C1][04][32][slot], C3-encrypted (PMSG_ITEM_BUY_RECV,
+            // HackPacketCheck Encrypt=1; ItemManager.h:63).
             if (mode_flag != 0) {
                 if (!DAT_083a4124) return;   // no LMB push — wait
                 if ((int)dword_5826D18 != 0) return;  // buy cooldown activo
@@ -871,17 +796,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
             // ── DIAG: loguea el estado del dispatch justo antes de las ramas ──
 
             // ── BRANCH C: RepairEnable mode (NPC repair UI active) ─────────
-            // 2026-05-09 FIX: per IDA xrefs `RepairEnable_0` = address
-            // 0x07EAA134 (= our DAT_07eaa134, the B-key/repair-mode flag).
-            // Antes usábamos `DAT_07e11d18` que es OTRO global no relacionado;
-            // pero como siempre vale 0, no era el bug. Lo dejamos al lado por
-            // si un day el reading DWORD del IDA picks up DAT_07e11d18+...
-            // bytes adyacentes. Lo importante: *ambos* deben ser 0 para que
-            // pickup dispare. Si DAT_07eaa134 está pegado en 1 (porque
-            // Scene_MapTick lo mantiene en 1 cuando DAT_07eaa138 != 0), nunca
-            // hay pickup. Usar el OR para detectar el bug.
-            // IDA: RepairEnable_0 (0x07EAA134).  `DAT_07e11d18` era un global
-            // sin xrefs en IDA; se quito el 2026-09-11.
+            // IDA: RepairEnable_0 (0x07EAA134).
             if (DAT_07eaa134 != 0) {
                 // Tipos de item que SE PUEDEN reparar (= armas/armaduras con
                 // durability), excluding stackables like potions/jewels.
@@ -894,10 +809,7 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 {
                     DAT_083a4124 = 0;
 
-                    // 2026-08-08 FIX: el port mandaba `[0x35][0x01][slot][flag]`
-                    // — opcode inventado. El server MuEmu no tiene case 0x35
-                    // (Protocol.cpp) así que el paquete se descartaba y reparar
-                    // nunca hacía nada. Per IDA sub_4D23B0 L588-640 el paquete es
+                    // Per IDA sub_4D23B0 L588-640 el paquete es
                     //   [C1][05][34][slot][RepairEnable]
                     // = PMSG_ITEM_REPAIR_RECV (ItemManager.h:75), con
                     // RepairEnable = 0 (reparar en NPC) / 1 (auto-reparar).
@@ -1004,17 +916,9 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                 // La respuesta (mismo opcode 0x91) la atiende
                 // `Recv_EventZoneOpenTime` en src/Net/Net_Events.cpp.
                 //
-                // 2026-08-26: el port anterior mandaba
-                //     [C1][07][49][91][subtype][slot][level]
-                // o sea con un opcode 0x49 inexistente, un byte de mas y el
-                // slot que el server no espera; el server lo ignoraba en
-                // silencio y por eso el click derecho no hacia nada. El 0x49
-                // salio de leer mal el decompile: en `sub_4D23B0` (raw
-                // L1032-1053) `v275 = 73` es el byte 12 de la CLAVE XOR (0x49),
-                // no un opcode — aparece 10 veces en la funcion porque la clave
-                // se re-arma antes de cada envio. El opcode real es
-                // `v301[4] = -111` = 0x91, y el EventType es `v302` (1 para el
-                // 467, 2 para el 434).
+                // En el decompile de `sub_4D23B0` (raw L1032-1053) `v275 = 73` (0x49) es el
+                // byte 12 de la CLAVE XOR, no un opcode; el opcode real es `v301[4] = -111` =
+                // 0x91, y el EventType es `v302` (1 para el 467, 2 para el 434).
                 if (type == 467 || type == 434) {
                     int level = (((int*)rowSlot)[1] >> 3) & 0xF;
                     BYTE pkt[3];
@@ -1141,13 +1045,8 @@ void __cdecl FUN_004d23b0(char* origin_x, int origin_y, short* inv_base,
                     }
                 } else {
                     // Pickup from warehouse / mix / trade
-                    // 2026-07-27 FIX (no se podían sacar items del baúl): se
-                    // pasaba `&InventoryStartX` (la DIRECCIÓN del global) como
-                    // origen X del grid destino en vez de su VALOR → el scan de
-                    // slot libre en el inventario devolvía 0 → byte_83A42EB=0 →
-                    // el pickup nunca se completaba. El origen del grid del
-                    // inventario es (InventoryStartX+15, InventoryStartY+200),
-                    // igual que en el resto de los call sites.
+                    // El origen del grid del inventario es (InventoryStartX+15,
+                    // InventoryStartY+200) — los VALORES, igual que en el resto de los call sites.
                     if (DAT_07eaa119 != 0) {
                         byte_83A42EB = (char)sub_4D6020(
                             (int)(InventoryStartX + 15),
@@ -1208,7 +1107,7 @@ extern "C" void __cdecl Inventory_RenderAndClick(char* origin_x, int origin_y,
 // Inventory_DropDispatch — port FIEL desde IDA `004DF410_sub_4DF410.c` (8067 bytes).
 //
 // Dispatcher de drop del inventario: punto de entrada por frame que llama el tick
-// PacketUpdate de la escena (Net_PacketSession.cpp:284). Cuando el jugador tiene
+// PacketUpdate de la escena (Net_PacketSession.cpp). Cuando el jugador tiene
 // un item levantado (dword_7E91388 > 0), esta función llama a
 // `Inventory_DropItem` (FUN_004D6470 = sub_4D6470) up to four times — once
 // por cada contexto de inventario visible: principal, trade, baúl y mix. Cada
@@ -1225,9 +1124,6 @@ extern "C" void __cdecl Inventory_RenderAndClick(char* origin_x, int origin_y,
 // Anti-tamper: cada envío de paquete pasa por la misma encriptación XOR /
 // hash-table noise pattern documented in Item_ClickHandler.cpp's main
 // dispatcher. Skipped per project policy.
-//
-// 2026-05-08: port completo. Reemplaza al stub no-op anterior en
-// Net/SecondPassword.cpp:153 que decía "STUB: SEH + HashTable".
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Inventory_DropItemEx: real entry point with explicit screen origin/grid
@@ -1271,19 +1167,14 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
     if (DAT_07eaa13c == 1) {
         if (DAT_00559f5e == 1) {
             // User confirmed sell-to-NPC. Server: [C1][04][33][slot], C3
-            // (PMSG_ITEM_SELL_RECV, Encrypt=1). Antes: sub-byte 0x01 + C1 →
-            // desconexión.
+            // (PMSG_ITEM_SELL_RECV, Encrypt=1).
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
             BYTE pkt[4];
             pkt[0] = 0x33;
             pkt[1] = (BYTE)DAT_07ea5b18;
             SendC3Packet(pkt, 2);
         } else if (DAT_00559f5e == 2) {
-            // 2026-07-27 FIX (item pegado al mouse): al CANCELAR el confirm se
-            // limpiaban los flags del diálogo pero el item quedaba "en la mano"
-            // (dword_7E91388=1) y sin volver a su slot → arrastrado por el cursor
-            // para siempre, y cualquier movimiento re-disparaba el cartel.
-            // Ahora lo devolvemos al slot de origen y soltamos el cursor.
+            // Al CANCELAR el confirm, el item vuelve al slot de origen y se suelta el cursor.
             DAT_07eaa13c = 0; DAT_00559f5e = 0;
             RestorePickedItemToSource();
         }
@@ -1297,9 +1188,6 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             // Machine (SecondPassword_Screen8, unico writer de dword_7EAA13C = 2).  El
             // original pone MixState = 1 y manda C1:03:86 sin mas; para MuEmu
             // se agrega el tipo de receta reconocido localmente.
-            // 2026-09-11: se quito una rama que, con una receta no
-            // reconocida, TIRABA AL SUELO el item de la mano (0x23): el
-            // original no tiene confirmacion de drop al suelo.
             DAT_07eaa140 = 1;
             Net_SendChaosBoxMix((BYTE)MixType);
         } else if (DAT_00559f5e == 2) {
@@ -1355,9 +1243,6 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             (int)(DAT_07eaa0cc + 50),
             &OffsetWarehouseItems[0], 8, 15, 2);
     }
-    // (diag WHDROP removido 2026-08-08 — ya cumplió: el drop sobre el baúl
-    //  funciona y el bug de mover DENTRO del baúl era el clobber de
-    //  dword_7EA9800 en Inventory_DropItemEx, no la conversión mouse→celda.)
 
     // Grilla de mezcla del caos (8x4) si está abierta y la mezcla no se está procesando
     unsigned int dropMix = 0;
@@ -1399,20 +1284,12 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
             return;
         }
 
-        // 2026-08-08 FIX ("No tienes permitido tirar este item costoso" al
-        // mover un item EQUIPADO): soltar sobre una casilla de equipo caía en
-        // la rama de tirar-al-suelo.
-        //
-        // CORRECCION 2026-09-13: `sub_4D6470` NO maneja las casillas de equipo
-        // (su raw sólo llama a sub_4D5D70 y sub_4CD3B0; cubre las 4 grillas).
-        // Devuelve 0 apenas la celda calculada da negativa — que es justo lo
-        // que pasa arriba del grid (mouseY < InventoryStartY+200), o sea toda
-        // la zona de equipo. En el binario ese click lo atiende el hit-test de
-        // equipo del render antes de este dispatcher.
-        // Esa región la maneja sub_4CDC70 (FUN_004cdc70, desde sub_4E6550),
-        // así que acá salimos SIN consumir el click para que le
-        // llegue. Sin esto: mensaje rojo + `RestorePickedItemToSource`, y el
-        // item nunca se equipaba/desequipaba.
+        // Soltar sobre una casilla de equipo no es tirar al suelo: `sub_4D6470` no
+        // maneja las casillas de equipo (cubre las 4 grillas) y devuelve 0 apenas la
+        // celda calculada da negativa, que es toda la zona arriba del grid
+        // (mouseY < InventoryStartY+200). Esa región la maneja sub_4CDC70
+        // (FUN_004cdc70, desde sub_4E6550), así que acá se sale SIN consumir el click
+        // para que le llegue.
         if (!dropMain && !dropTrade && !dropWH && !dropMix &&
             InventoryOpened != 0 &&
             (int)DAT_083a427c >= (int)InventoryStartX &&
@@ -1442,17 +1319,9 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
                 // especiales, +5 o mas, y EXCELLENT).  Lista 1:1 con IDA
                 // sub_4DF410 L753-766.
                 //
-                // 2026-09-27: faltaba el ultimo termino, el de excellent.  Sin
-                // el, un Excellent solo disparaba el cartel si ademas caia en
-                // otro termino de la lista -- en la practica el de
-                // `pickLevel > 4 && pickType < 384`.  Los anillos y pendants
-                // son tipo >= 384, asi que para ELLOS no habia ningun termino
-                // que matchear y se vendian directo, sin aviso.  Reportado como
-                // "no sale el mensaje al vender Rings/Pendants Excellent".
-                //
                 // El byte de excellent es byte_7E9136B, los 6 bits bajos.  Se
                 // lee con la misma expresion que la rama de tirar-al-piso de
-                // mas abajo, que si lo tenia.
+                // mas abajo.
                 const BYTE sellExcByte = *((BYTE*)pPickedItem + 0x6b - 0x44);
                 bool needConfirm =
                     (pickType >= 416 && pickType <= 419) ||
@@ -1486,13 +1355,10 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
                 return;
             }
 
-            // 2026-07-27 FIX: tirar al PISO un item valioso NO abre un Yes/No
-            // (ese cartel es de la TIENDA, para confirmar una venta). Per IDA
-            // sub_4DF410 L950-964 el original sólo muestra un mensaje rojo que
-            // lo prohíbe y NO suelta el item:
+            // Tirar al PISO un item valioso NO abre un Yes/No (ese cartel es de la TIENDA,
+            // para confirmar una venta). Per IDA sub_4DF410 L950-964 el original sólo
+            // muestra un mensaje rojo que lo prohíbe y NO suelta el item:
             //     UIChatLogWindow_AddText(byte_7EAA194, GlobalText[269], 2)
-            // Nuestro port abría ShowCheckBox(2,...) → cartel de venta al soltar
-            // en el suelo + item pegado al cursor esperando una respuesta.
             // Lista de tipos 1:1 con IDA (incluye 435 y el gate de excellent).
             {
                 BYTE excByte = *((BYTE*)pPickedItem + 0x6b - 0x44);  // byte_7E9136B
@@ -1515,33 +1381,25 @@ void __cdecl Inventory_DropDispatch(unsigned int a1, unsigned int /*a2*/)
                 }
             }
 
-            // 2026-08-08: guard `v144` de IDA (sub_4DF410 L966-969) que faltaba
+            // Guard `v144` de IDA (sub_4DF410 L966-969):
             //   v144 = 1; if (InventoryOpened && MouseX >= InventoryStartX) v144 = 0;
             // Con el inventario abierto, un click sobre su panel NUNCA tira el
             // item al suelo (la zona de abajo del grid son la barra de zen y los
-            // botones).
-            //
-            // 2026-09-11: el item NO queda agarrado.  En IDA, con v144 = 0 el
-            // bloque del suelo no corre y la ejecucion cae en LABEL_301:
-            // `sub_4CD3B0(1, 0)`, que devuelve el item a su celda.  (Confirmado
-            // contra el cliente original: soltar un item sobre otro lo devuelve.)
+            // botones). Con v144 = 0 el bloque del suelo no corre y la ejecucion cae en
+            // LABEL_301: `sub_4CD3B0(1, 0)`, que devuelve el item a su celda.
             if (InventoryOpened != 0 && (int)DAT_083a427c >= (int)InventoryStartX) {
                 Item_ReturnPickedItem();
                 return;
             }
 
-            // 2026-09-09: el guard de arriba solo cubre el panel del INVENTARIO.
-            // Soltar sobre el panel del BAUL o el de la CHAOS MACHINE (que van a
-            // la izquierda, en dword_7EAA0C8) pero fuera de sus celdas caia al
-            // fallback de "tirar al suelo": de ahi salia "No tienes permitido
-            // tirar este item costoso" al querer guardar un item Excellent.
-            //
+            // Desviación: soltar sobre el panel del BAUL o el de la CHAOS MACHINE (que van a
+            // la izquierda, en dword_7EAA0C8) pero fuera de sus celdas no tira al suelo.
             // En IDA no hace falta porque el drop sobre esos paneles lo consume
             // `sub_4D6470` entero (36 KB, maneja los cuatro grids Y sus zonas
             // muertas).  Nuestro port partio esa responsabilidad entre
             // `Inventory_DropItemEx` (solo las celdas) y este dispatcher, asi
-            // que el hueco hay que taparlo aca -- mismo criterio y misma
-            // desviacion que el guard de las casillas de equipo (2026-09-04).
+            // que el hueco hay que taparlo aca, con el mismo criterio que el guard de las
+            // casillas de equipo.
             if ((DAT_07eaa119 != 0 || DAT_07eaa11a != 0)) {
                 const int px = (int)DAT_083a427c, py = (int)DAT_083a4278;
                 const int ox = (int)DAT_07eaa0c8, oy = (int)DAT_07eaa0cc;

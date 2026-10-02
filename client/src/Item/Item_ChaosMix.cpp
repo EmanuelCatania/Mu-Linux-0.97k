@@ -1,7 +1,6 @@
 // Item_ChaosMix.cpp
 //
-// Extracted from stubs_game.cpp.  Owns chaos-mix recipe validation and its
-// inventory-panel helper.  IDA provenance remains in the function comments.
+// Validación de recetas del chaos mix y su helper del panel de inventario.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -570,6 +569,3 @@ int __cdecl CheckMixRecipe(short* param_1, int param_2, int param_3) {
 }
 
 // RenderInventoryInterface vive en Render/HUD_Pass6.cpp.
-//
-// 2026-09-26: aca habia una copia bajo el nombre RenderInventoryInterface.  Las dos
-// implementaciones son equivalentes; se deja una sola, con el nombre de IDA.
