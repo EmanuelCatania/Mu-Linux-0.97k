@@ -23,6 +23,12 @@
 *.gitignore text
 .gitattributes text
 
+# ── Build (CMake / CI) ──
+CMakeLists.txt text eol=lf
+*.cmake        text eol=lf
+*.yml          text
+*.py           text
+
 # ── Assets del juego — BINARIOS, no tocar ──
 *.bmd  binary
 *.ozj  binary

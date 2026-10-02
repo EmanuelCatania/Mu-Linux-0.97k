@@ -8,6 +8,10 @@
 obj/
 .vs/
 
+# Directorios de build de CMake (cmake -B build; "out/" es el default de VS).
+/build/
+/out/
+
 bin/Client/main.exe
 bin/Client/main.pdb
 bin/Client/main.map
