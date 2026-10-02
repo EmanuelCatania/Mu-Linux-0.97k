@@ -101,6 +101,8 @@ def find_tlogs(root, kind):
     for d, _, files in os.walk(root):
         if "CMakeFiles" in d:
             continue  # builds de prueba de CMake (detección del compilador)
+        if "mu97k_res" in d and kind.lower().startswith("lib"):
+            continue  # la librería OBJECT del .rc: su "lib" no existe en el .vcxproj
         for f in files:
             if f.lower() == kind.lower():
                 found[os.path.join(d, f)] = parse_tlog(os.path.join(d, f),
