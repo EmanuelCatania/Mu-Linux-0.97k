@@ -130,12 +130,9 @@ void __cdecl Particle_PathUpdate(int param_1,int param_2,int param_3,int param_4
 }
 
 
-// SetAction @ 0x0043E820 — DEFINICION UNICA en stubs_externs.cpp.
-// 2026-08-16: acá había una segunda definición con firma (int, uint). Como C++
-// las trata como sobrecargas distintas, ambas compilaban y cada caller elegía
-// por el tipo de sus argumentos — el mismo patrón que causó el bug del Magic
-// Gladiator con SetPlayerStop. Las dos eran equivalentes al binario, así que
-// consolidar no cambia comportamiento; sólo elimina la trampa.
+// SetAction @ 0x0043E820 — definicion unica en Entity/Entity_ActionLegacy.cpp.
+// No agregar otra con firma distinta: C++ las trata como sobrecargas y cada
+// caller elegiria una segun el tipo de sus argumentos.
 
 
 // IDA: CreateSprite (0x004795C0)
@@ -163,16 +160,12 @@ int __cdecl
 CreateSprite(unsigned short param_1, float *param_2, float param_3, float *param_4,
              int param_5, float param_6, int param_7)
 {
-  // Pool fix 2026-04-27: el AUTO-SKIP previo (return 0 al inicio) bloqueaba
-  // TODOS los efectos (glow +9 set, wing FX, weapon sparkles, lightning).
-  // Ahora con DAT_07c85890[1002*0x1bc] correctamente dimensionado, iteramos
-  // por índice acotado por 1002 slots en vez de la dirección absoluta original.
+  // El pool DAT_07c85890 (1002 slots × 0x1bc) se itera por índice acotado, no
+  // por la dirección absoluta del binario.
 
-  // BUG-FIX 2026-05-01: null pointer guard. El binary original asume que
-  // param_2 (pos) y param_4 (dir) siempre son pointers válidos, pero algún
-  // caller en el char-select pipeline pasa NULL → AV en char-select crash.
-  // Loguear UNA vez para identificar al caller y eventualmente arreglar la
-  // raíz. Por ahora, retornar 0 (slot inválido) para evitar el AV.
+  // DESVIACION: guard de NULL en param_2 (pos) y param_4 (dir); el binario no lo
+  // tiene. Algún caller del char-select pasaba NULL. Se loguea una vez y se
+  // devuelve 0 (slot inválido).
   if (!param_2 || !param_4) {
     static bool s_logged = false;
     if (!s_logged) {

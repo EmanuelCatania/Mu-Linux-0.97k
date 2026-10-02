@@ -78,12 +78,10 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
   float local_74;
   undefined4 local_70;
   float local_6c [3];
-  // ── BUG-FIX 2026-04-27: las 12 vars (local_60[0..4] + local_4c..local_34)
-  // se iteraban como 12 floats consecutivos vía pfVar4 = local_60; pfVar4 += 3
-  // 4× para emitir glVertex3fv. MSVC no garantiza contigüidad → corners 1-3
-  // leían stack basura → sprites se veían como streaks horizontales en lugar
-  // de quads. Fix: declarar como UN SOLO array de 12 floats con macros para
-  // mantener nombres originales como aliases.
+  // Las 12 vars (local_60[0..4] + local_4c..local_34) se iteran como 12 floats
+  // consecutivos vía pfVar4 = local_60; pfVar4 += 3 (4× glVertex3fv). MSVC no
+  // garantiza contigüidad: UN SOLO array de 12 floats con macros para mantener
+  // los nombres originales como aliases.
   float local_corners_buf[12];
   #define local_60 local_corners_buf
   #define local_4c (*(undefined4*)&local_corners_buf[5])
@@ -96,11 +94,8 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
   float local_30 [12];
 
   GL_BindTextureSlot(param_1);
-  // ── BUG-FIX 2026-04-27: local_ac/_a8/_a4 son 3 variables locales separadas;
-  // MSVC no garantiza layout contiguo. Pasar &local_ac a Vector_Transform (que
-  // escribe 3 floats consecutivos) puede dejar TPos[1]/TPos[2] en memoria
-  // unrelated → sprite quad corner depth basura → sprites invisibles o
-  // mal-clipeados. Usamos un array TPos_buf[3] contiguo y copiamos a las vars.
+  // local_ac/_a8/_a4: Vector_Transform escribe 3 floats consecutivos, así que se
+  // usa un array TPos_buf[3] contiguo y se copia a las vars.
   float TPos_buf[3];
   Vector_Transform(param_2,(float *)&CameraMatrix, TPos_buf);
   local_ac = TPos_buf[0];
@@ -109,12 +104,8 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
   local_9c[3] = param_3 * _DAT_00552504;
   local_a0 = local_a8;
   local_80 = param_4 * _DAT_00552504;
-  // ── BUG-FIX 2026-04-27: local_a4 está declarado `undefined4` (int32). El
-  // decompile original hace `(float)local_a4` que es CAST int→float (NO
-  // reinterpret-bits). Como almacenamos el bit-pattern de TPos[2] (e.g.
-  // -290.0f → 0xC3910000), el cast int→float lo lee como -1.01e9 → quad
-  // corners con depth astronómica → fuera del frustum → invisible.
-  // Usamos directamente el bit-pattern almacenado vía reinterpret.
+  // local_a4 guarda el bit-pattern de TPos[2]: reinterpretar los bits (el
+  // decompile hace `(float)local_a4`, que sería un CAST int→float).
   float depth_eye = *(float*)&local_a4;
   if (param_6 == _DAT_00552580) {
     local_60[0] = local_ac - local_9c[3];
@@ -131,13 +122,8 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
     local_38 = local_44;
   }
   else {
-    // ── BUG-FIX 2026-07-15: el caso ROTADO (param_6 != 0) leía los offsets de
-    // las 4 esquinas de local_9c[0..4] + local_88/84/80/7c/78/74/70 — locales
-    // SEPARADOS — como 12 floats contiguos vía `(float*)((int)local_9c+iVar1)`.
-    // MSVC NO garantiza ese layout → esquinas 2-4 leían stack basura → el sprite
-    // rotado se estiraba a posiciones random (haces/beams saliendo de los bordes
-    // de la pantalla). Mismo patrón que los corners axis-aligned y los texcoords
-    // (ya arreglados). Fix: array contiguo con los 4 offsets en el orden de IDA:
+    // Caso ROTADO (param_6 != 0): los offsets de las 4 esquinas se leen como 12
+    // floats contiguos; array contiguo con los 4 offsets en el orden de IDA:
     //   BL(-hw,-hh) BR(+hw,-hh) TR(+hw,+hh) TL(-hw,+hh), z = depth_eye.
     // TODOS los sprites/flares/glows con rotación pasan por acá (partículas
     // 0x4e1 con frame≠0, weapon glow, etc.), no solo el char-select.
@@ -171,13 +157,8 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
   local_9c[0] = param_7;
   local_9c[3] = local_9c[1];
   local_9c[4] = local_9c[2];
-  // ── BUG-FIX 2026-07-12: los 8 texcoords (local_9c[0..4] + local_80/84/88)
-  // se iteraban como 8 floats consecutivos vía pfVar3 = local_9c; pfVar3 += 2
-  // 4× para emitir glTexCoord2f. Igual que los corners, MSVC NO garantiza que
-  // local_80/84/88 sigan contiguos a local_9c[4] → los texcoords de los corners
-  // 3-4 leían stack basura → la textura del sprite muestreaba coords fuera de
-  // rango (parte negra) → sprites/flares/glows INVISIBLES (samplean negro).
-  // Fix: array contiguo de 8 floats con el layout correcto del IDA:
+  // Los 8 texcoords se iteran como 8 floats consecutivos vía pfVar3 += 2
+  // (4× glTexCoord2f): array contiguo con el layout de IDA:
   //   corner BL=(u, v+vH), BR=(u+uW, v+vH), TR=(u+uW, v), TL=(u, v)
   float local_tex[8] = {
       param_7,              // BL u
@@ -215,7 +196,7 @@ RenderSprite_0(int param_1,float *param_2,float param_3,float param_4,float *par
     glColor4f(fVar5,fVar6,fVar7,fVar8);
   }
   pfVar4 = local_60;
-  pfVar3 = local_tex;   // BUG-FIX: array contiguo (era local_9c → texcoords basura)
+  pfVar3 = local_tex;
   iVar1 = 4;
   do {
     glTexCoord2f(*pfVar3,pfVar3[1]);

@@ -188,19 +188,16 @@ newLife:
 // IDA: MoveEffect (0x00466AD0)
 void MoveEffect(float *param_1, int param_2)
 {
-  // 2026-08-23 FIX [[locales-contiguos-ghidra]]: el codigo pasa `&local_XXX` a
-  // funciones que leen 3 floats consecutivos (Position, Light, matrices), o sea
-  // depende de que los locales queden contiguos y en el orden del frame
-  // original.  MSVC no lo garantiza.  Se reconstruye el frame como UN bloque y
-  // cada `local_XXX` es una referencia a su offset real (idx = 0x36c - offset),
-  // asi las direcciones relativas son las del binario.
+  // Locales contiguos: el codigo pasa `&local_XXX` a funciones que leen 3 floats
+  // consecutivos (Position, Light, matrices), o sea depende de que los locales
+  // queden contiguos y en el orden del frame original.  MSVC no lo garantiza:
+  // se reconstruye el frame como UN bloque y cada `local_XXX` es una referencia
+  // a su offset real (idx = 0x36c - offset).
   alignas(16) unsigned char __mfr[0x374];
 
-  // 2026-08-23: `param_1[0x3f]` es el PUNTERO al owner del efecto.  El port lo
-  // leia como float y despues hacia `(int)`, que convierte NUMERICAMENTE: los
-  // bits de una direccion dan ~1e-27 y `(int)` de eso es 0, o sea se
-  // deferenciaba NULL+offset.  IDA lo lee como DWORD:
-  // `*((_DWORD *)param_1 + 63)`.  Son los efectos que siguen a su entidad duena.
+  // `param_1[0x3f]` es el PUNTERO al owner del efecto: IDA lo lee como DWORD
+  // (`*((_DWORD *)param_1 + 63)`), no como float.  Son los efectos que siguen a
+  // su entidad duena.
   int __owner_fVar13 = 0;
   int __owner_fVar4 = 0;
   int __owner_fVar5 = 0;
@@ -366,9 +363,8 @@ void MoveEffect(float *param_1, int param_2)
       uVar8 = (uVar8 - 1 | 0xfffffffc) + 1;
     }
     local_35c = (float *)(uVar8 + 7);
-    // 2026-08-15: el counter (+96) es un DWORD. IDA: `v4 = *(int *)(o + 96)`
-    // y compara `v4`; `v356 = *(float *)&v4` es solo la copia de los BITS.
-    // El port hacia `(int)fVar13`, o sea convertia el float numericamente -> 0.
+    // El counter (+96) es un DWORD. IDA: `v4 = *(int *)(o + 96)` y compara `v4`;
+    // `v356 = *(float *)&v4` es solo la copia de los BITS.
     const int __cnt = *(int*)&param_1[0x18];
     fVar13 = param_1[0x18];
     local_36c = (float)(int)local_35c * _DAT_005524f4;
@@ -1960,18 +1956,14 @@ LAB_00466e5e:
       }
       break;
     case 0xf4:
-      // 2026-09-26 (Rageful Blow): las cuatro ramas de abajo comparaban
-      // `*(int*)&fVar13` -- un valor FILTRADO de otro case, porque en este
-      // no hay ningun `fVar13 = param_1[1]` previo.  En IDA la variable es
-      // `v4 = *(int *)(o + 96)` (L419), o sea el LIFETIME, que aca es
-      // `__cnt`.  El efecto nace con vida 20 y va bajando:
+      // Rageful Blow: las cuatro ramas de abajo comparan `v4 = *(int *)(o + 96)`
+      // (IDA L419), o sea el LIFETIME, que aca es `__cnt`.  El efecto nace con
+      // vida 20 y va bajando:
       //   15     -> invierte el signo del termino vertical (o+216)
       //   13     -> estela de efectos 254 + sonido 89
       //   10..15 -> el arma DESCIENDE (-8/frame)
       //    3     -> impacto en el suelo (grietas, chispas, 247/245/246)
       //    2     -> reporte de blancos (sub_45FEC0) y muerte del efecto
-      // Ninguna se cumplia: el arma solo subia y no habia ni impacto ni
-      // dano multi-objetivo.  El test `9 < __cnt < 16` ya estaba bien.
       local_340 = 0.0;
       local_33c = 0.0;
       local_338 = 0.0;
@@ -1993,13 +1985,11 @@ LAB_00466e5e:
         local_348 = local_328 + param_1[4];
         pfVar10 = param_1 + 0x5c;
         *pfVar10 = local_348;
-        // 2026-09-26 (Rageful Blow): dos errores en el punto de impacto.
-        //  - Y se truncaba a int.  IDA: `v355 = TargetPosition[1] + *(float*)(o+20)`
-        //    es float; el `(int)` venia del slot SLODWORD que Ghidra reusa.
-        //  - RequestTerrainHeight recibia la posicion ORIGINAL del efecto en vez
-        //    del punto YA rotado (IDA usa v60/v299, o sea o+368 y o+372), asi que
-        //    el golpe al suelo muestreaba el terreno bajo los pies del caster y no
-        //    donde cae, 80 unidades adelante.
+        // Rageful Blow, punto de impacto (IDA):
+        //  - Y es float: `v355 = TargetPosition[1] + *(float*)(o+20)` (sin truncar).
+        //  - RequestTerrainHeight recibe el punto YA rotado (v60/v299, o sea o+368 y
+        //    o+372), no la posicion original del efecto: el golpe cae donde cae el
+        //    arma, 80 unidades adelante.
         param_1[0x5d] = local_324 + param_1[5];
         param_1[0x5e] = local_320 + param_1[6];
         fVar17 = RequestTerrainHeight(param_1[0x5c], param_1[0x5d]);

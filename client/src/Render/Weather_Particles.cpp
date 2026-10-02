@@ -62,10 +62,7 @@ void WeatherParticles_Update(void)
     else if ((int)DAT_07c74ae4 > (int)DAT_07c74ae0) DAT_07c74ae4--;
 
     // ── Per-frame wind / oscillation globals ─────────────────────────────────
-    // BUG-FIX 2026-07-19: acá había un bloque con `__ftol()` sin argumentos
-    // (artefacto de Ghidra) y debajo una "aproximación" que OMITÍA el sin()
-    // por completo — o sea RainSpeed/RainAngle crecían monótonamente con
-    // WorldTime en vez de oscilar. IDA MoveLeaves (0x46CC80) es explícito:
+    // IDA MoveLeaves (0x46CC80):
     //   RainSpeed = 10 * ((__int64)sin(WorldTime * 0.001) + 3);
     //   RainAngle = 20 * (__int64)sin(WorldTime * 0.00050000002 + 50.0);
     // (_DAT_00559b9c = RainSpeed, DAT_07c74ae8 = RainAngle.)
@@ -76,16 +73,13 @@ void WeatherParticles_Update(void)
     DAT_07c74aec  = iVar1 % 2000;
 
     // ── Compute active particle count ─────────────────────────────────────────
-    // sub-state 9 (snow/logout): 200; others: 0x88 (136) unless sub-state is 9
-    // IDA: iMaxLeaves = World != 9 ? 80 : 200;  (el port tenia 0x88 = 136)
+    // IDA: iMaxLeaves = World != 9 ? 80 : 200;
     int iVar9 = (iVar7 != 9) ? 80 : 200;
     if (iVar9 < 1) return;
 
     // ── Main particle loop ────────────────────────────────────────────────────
     // IDA: for ( i = (float *)&unk_7C5AB5C; ; i += 28 )
-    // El port sumaba 0x44 bytes de mas sobre un alias que ya estaba corrido 12,
-    // asi que escribia el flag de activo 56 bytes fuera de donde lo lee
-    // SkillEffect_Render: el pool quedaba siempre vacio (medido: active=0).
+    // SkillEffect_Render lee el flag de activo desde esta misma base.
     float *pfVar10 = (float *)&DAT_07c5ab5c;
     int local_d4 = 0;
 

@@ -44,21 +44,12 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
     long double fVar12;
     long double fVar13;
     unsigned long long uVar14;
-    // 2026-09-02 -- patron [[locales-contiguos-ghidra]] (otra instancia).
-    // IDA Particle_Spawn (0x00475220) declara `float in1[3]` en [ebp-3Ch] y lo
-    // pasa entero a VectorRotate.  Ghidra lo emitio como TRES escalares
-    // sueltos (local_3c/38/34 = ebp-0x3C/-0x38/-0x34) y los seis call sites de
-    // esta funcion hacen `Vector_Rotate(&local_3c, ...)`, o sea leen 3 floats
-    // contiguos desde el primero.  MSVC no garantiza ese layout: las
-    // componentes Y/Z salian de pila basura.
-    //
-    // Sintoma (sonda FXQUAD, 2026-09-02): la particula de SANGRE (tipo 1206,
-    // Effect/blood.tga) se dibujaba con la posicion en NaN -- el log mostraba
-    // `pos=(-2147483648,...)`, que es `(int)NaN`.  La velocidad basura entra
-    // en el slot (+19) y `MoveParticles` case 0x4B6 la suma a la posicion en
-    // cada frame.  Con vertices NaN el quad se estira sin limite; en los mundos
-    // 2, 7 y 10 `SkillEffect_Render` usa blending ADITIVO, asi que se ve como
-    // un haz brillante (de ahi el reporte en Icarus).
+    // Locales contiguos: IDA Particle_Spawn (0x00475220) declara `float in1[3]`
+    // en [ebp-3Ch] y lo pasa entero a VectorRotate.  Ghidra lo emitio como TRES
+    // escalares sueltos (local_3c/38/34 = ebp-0x3C/-0x38/-0x34) y los seis call
+    // sites de esta funcion hacen `Vector_Rotate(&local_3c, ...)`, o sea leen 3
+    // floats contiguos desde el primero.  MSVC no garantiza ese layout, asi que
+    // se usa un array real.
     float in1_3c[3];
     float &local_3c = in1_3c[0];
     float &local_38 = in1_3c[1];
@@ -66,10 +57,8 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
     float local_30[12];
 
     // ── scan pool for free slot ────────────────────────────────────────────────
-    // Pool fix 2026-04-27: era end-bound absoluto 0x7b1166f. Con DAT_07abf5f0
-    // como 1 byte el primer slot estaba "ocupado" (basura) y el guard
-    // retornaba 0 inmediatamente → NUNCA spawneaba particles. Ahora pool real
-    // de 3000 slots, iteramos por índice.
+    // Pool real de 3000 slots: se itera por índice, no por el end-bound absoluto
+    // 0x7b1166f del binario.
     iVar6 = 0;
     pcVar11 = DAT_07abf5f0;
     while (*pcVar11 != '\0') {
@@ -129,12 +118,6 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
                 iVar7 = _rand();
                 *pfVar2 = (float)(iVar7 % 0x168);
                 // IDA: `*((float *)v8 + 16) = (float)((__int64)WorldTime % 360);`
-                // 2026-08-11: acá había un `__ftol()` sin argumentos (el artefacto
-                // de Ghidra para la conversión x87 de WorldTime) cuyo resultado
-                // alimentaba el shift/OR de abajo — o sea el ángulo inicial de la
-                // partícula salía de basura. Es el mismo patrón ya barrido en los
-                // otros 47 sitios; éste sobrevivió porque el tipo 1220 (humo)
-                // nunca llegaba a spawnearse.
                 *(float *)(pcVar11 + 0x40) = (float)(int)((__int64)WorldTime % 360);
                 return iVar6;
             case 1:
@@ -415,14 +398,8 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
                     ((float)(iVar7 % 0x32) + _DAT_00552598) * param_6 * _DAT_00552594;
                 return iVar6;
             }
-            // 2026-09-12: aca estaba el cuerpo de 0x47f (vida rand%8+20) SUELTO,
-            // sin condicion: atrapaba todos los tipos entre 0x498 y 0x4a5 y los
-            // devolvia con vida 20-27 antes de llegar a sus case de abajo.  Con
-            // eso 0x498 (1176, Teleport) nunca sorteaba angulos ni recibia
-            // velocidad -- la columna del teleport quedaba recta -- y las
-            // particulas del Energy Ball (1180/1176) vivian 20-27 ticks en vez
-            // de 2.  IDA: esos tipos van a su case o salen por el default con
-            // la vida por defecto.
+            // IDA: los tipos entre 0x498 y 0x4a5 van a su case o salen por el default con
+            // la vida por defecto; el cuerpo de 0x47f (vida rand%8+20) no va aca.
         }
 
         if (param_1 == 0x498) {
@@ -469,19 +446,12 @@ int __cdecl Particle_Spawn(int param_1, float *param_2, float *param_3, float *p
             *(float *)(pcVar11 + 0x40) = (float)(iVar7 % 0x168);
             return iVar6;
         }
-        // 2026-08-23 FIX: aca habia un `return iVar6;` que se tragaba TODOS los
-        // tipos entre 0x49c y 0x4c4 sin case propio en este arbol — o sea 9 tipos
-        // de particula que SI tienen su inicializacion en el switch de mas abajo:
+        // Sin `return` aca: los tipos entre 0x49c y 0x4c4 sin case propio en este
+        // arbol tienen su inicializacion en el switch de mas abajo:
         //   0x4a7, 0x4ab (fuego), 0x4ac, 0x4ad, 0x4b0 (Flame01), 0x4b5, 0x4b6,
         //   0x4bf, 0x4c0.
-        // Quedaban con el `life` en el default 2 (en vez de 24 para el fuego) y
-        // sin escala/rotacion propias: se creaban ~150 por segundo y morian a los
-        // 2 frames, asi que en pantalla habia ~10 a la vez y el fuego se veia como
-        // un puntito en vez de una masa.
-        //
         // El `if (param_1 < 0x4c5)` de arriba NO es un rango real: es el arbol
-        // binario de busqueda que genera Ghidra para un switch disperso, y el port
-        // lo convirtio en un if/else con `return` que corta el fall-through.
+        // binario de busqueda que genera Ghidra para un switch disperso.
         goto particleSpawn_outerSwitch;
 
         // 0x4b5/0x4b6 shared path

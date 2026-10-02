@@ -1,5 +1,4 @@
 // Render_LegacyRotatedRect.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,9 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// -- Declaraciones de funciones definidas en otros modulos -----------------
+// Cloth_Integrate vive en Physics/Cloth_Simulation.cpp y Cloth_Solve en
+// Net/Crypto.cpp.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -65,9 +64,7 @@ void __cdecl GL_DrawRotatedRect(int id, float x, float y, float w, float h, unsi
     Matrix_BuildFromEuler(bvec, mat);
 
     // IDA sub_5126E0: esquinas (-w/2, h/2), (-w/2, -h/2), (w/2, -h/2),
-    // (w/2, h/2) con UV (0,0), (0,1), (1,1), (1,0).  2026-09-12: el port las
-    // tenia en orden cruzado (+,+ / +,- / -,+ / -,-), asi que el TRIANGLE_FAN
-    // salia como un mono y el martillo animado del cursor se veia roto.
+    // (w/2, h/2) con UV (0,0), (0,1), (1,1), (1,0), en ese orden (TRIANGLE_FAN).
     static const float uvs[8] = { 0.0f, 0.0f,  0.0f, 1.0f,  1.0f, 1.0f,  1.0f, 0.0f };
     const float hw = fSinW * 0.5f, hh = fCosW * 0.5f;
     float corners[4][3] = {

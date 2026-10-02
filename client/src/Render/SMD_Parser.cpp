@@ -1,16 +1,10 @@
 // SMD_Parser.cpp
 //
-// 2026-05-07 B3 refactor — moved from stubs.cpp lines 4346-5298 (953 lines).
-//
-// SMD (Half-Life skeletal model format) parsers and SMD2BMD converters.
-// El cliente 0.97k usa BMD compresado para distribución, pero el código
-// de loader SMD original está aquí como referencia + fallback path.
-//
-//   ParseNodes / ParseSkeleton / ParseTriangles — SMD section parsers
-//   FUN_0040b350 — SMD tokenizer (read next token)
-//   FixupSMD     — post-process skeleton + triangles
-//   SMD2BMDModel / SMD2BMDAnimation — convert SMD parsed data to BMD slots
-//   OpenSMDFile (probe stub)
+// Pese al nombre, es un módulo heterogéneo: el puente OpenSMDFile y los stubs
+// de conversión SMD (FixupSMD, SMD2BMDModel, SMD2BMDAnimation; el 0.97k sólo
+// trae .bmd), OpenModels, y helpers sueltos de render/efectos/red
+// (ClearCharacters, Effect_CollisionCheck, AddTerrainLight, Joint_SegmentTick,
+// MoveHumming, BMD__RenderBody, CheckAttack, Net_Connect, ...).
 
 #include "stdafx.h"
 #include "globals.h"
@@ -42,15 +36,10 @@ extern void __cdecl operator_delete(void* ptr);
 #endif
 
 // ── SMD parser stubs ─────────────────────────────────────────────────────────
-// Los archivos SMD (Half-Life skeletal model format) NO se distribuyen con el
-// BUG-FIX 2026-05-03: previously this stub returned false unconditionally,
-// shadowing the real implementation at line 18532 which has the parser logic.
-// The shadow happened because both definitions exist (C-linkage here +
-// C++-linkage further below); call sites in this file resolve to the
-// extern "C" stub via the forward decl at line 3943 → SMD models never load.
-// Now we delegate to the parser proper. Cast the const-char arg since the
-// real impl mutates the input via fopen handle but signature is `char*`.
-extern bool __cdecl OpenSMDFile(char *FileName, int Type, bool Flip);  // C++ impl, line 18532
+// Puente C-linkage hacia OpenSMDFile (C++), implementado en
+// Core/Runtime_Medium.cpp (devuelve false: los SMD no se distribuyen con el
+// 0.97k).  Se castea el const char* porque la firma real es `char*`.
+extern bool __cdecl OpenSMDFile(char *FileName, int Type, bool Flip);  // impl C++ en Core/Runtime_Medium.cpp
 extern "C" bool __cdecl OpenSMDFile(const char* FileName, int Type, char Flip) {
     return OpenSMDFile(const_cast<char*>(FileName), Type, (bool)Flip);
 }
@@ -84,7 +73,7 @@ void __cdecl putc(int ch, int *fp) {
 }
 
 // OpenJPG (Texture_Load OZJ), OpenTGA (OpenTGA), UnloadImage (Texture_FreeSlot)
-// moved to src/Render/Texture/Texture.cpp (B3 refactor 2026-05-07, 395 lines).
+// viven en src/Render/Texture/Texture.cpp.
 
 // CWsctlc_Startup @ 0x0043DB30 — Net_WSAStartup(__fastcall int param_1)
 // Initialises WinSock 2.2. On success: stores wVersion low-word at param_1+4,
@@ -251,21 +240,14 @@ void __cdecl DeleteObjects(void) {
         if (gridEnd < puVar5) {
             // unload tile textures
             for (int ti = 0x23; ti < 0x68; ti++) UnloadImage(ti);
-            // ── Pool zero-clear loops (DESACTIVADOS) ─────────────────────────────
-            // El binario original limpiaba 9 pools de partículas/efectos/entidades
-            // usando direcciones ABSOLUTAS del .bss original (rangos 0x07c85890..0x83a3fe8).
-            // En nuestro port:
-            //   • DAT_07c85890, _0839bcb0, _07abf5f0, _07c80110, _07b27150, _07b11670
-            //     son `char = 0` stubs de 1 byte — iterar con stride 0x1bc/0x70 escribe
-            //     cientos de KB hacia globals adyacentes y luego en memoria no mapeada.
-            //   • Los loops `(char*)0x83a2e90` y `(char*)0x7c5ab30` arrancan en literal
-            //     pointers que en nuestro binario están sin commit → segfault inmediato.
-            //   • DAT_083a2370 sí es un array real (0x960 bytes) pero el bound 0x83a3ae0
-            //     también es absoluto.
-            // Estas pools están vacías (no se llenan en login/char-select) así que
-            // saltearlas es seguro hasta que migremos cada uno a símbolos con tamaño.
+            // ── Pool zero-clear loops (DESACTIVADOS, salvo Operates) ─────────────────
+            // DESVIACION: el binario limpia acá 9 pools de partículas/efectos/entidades
+            // recorriendo direcciones ABSOLUTAS de su .bss (0x07c85890..0x83a3fe8, más
+            // literales como `(char*)0x83a2e90` y `(char*)0x7c5ab30`), que en este build
+            // no son válidas.  Esos clears no se portaron; si se portan, acotar con el
+            // sizeof de cada símbolo.
             //
-            // 2026-09-04: la de `Operates` (DAT_083a2370) SI hay que limpiarla.
+            // La de `Operates` (DAT_083a2370) SI hay que limpiarla.
             // IDA la borra aca (`v12 = &unk_83A2370; do { *v12 = 0; v12 += 12; }`)
             // y es la lista de objetos interactuables que arma `sub_4FF580` desde
             // CreateObject.  Sin el clear, al cambiar de mapa quedan punteros a
@@ -285,11 +267,9 @@ void __cdecl DeleteObjects(void) {
 // also clears matching emitter pool entries (DAT_083a1218, stride 0x1bc).
 // Then calls DeleteCloth on every slot.
 //
-// Inner loop bound: el binario original usaba el literal 0x83a2370 (= DAT_083a1218
-// + 0x1158, fin del array Butterfles). En nuestro port DAT_083a1218 es un array
-// real (10 × 0x1bc = 0x1158 bytes) pero el linker lo coloca en otra dirección,
-// así que el literal es basura — pcVar2 sigue iterando hasta crashear.
-// Se reemplaza por DAT_083a1218 + 0x1158 (end-pointer real).
+// Cota del bucle interno: el binario usa el literal 0x83a2370 (= DAT_083a1218
+// + 0x1158, fin del array Butterfles); acá el array vive en otra dirección,
+// así que se usa DAT_083a1218 + 0x1158 (end-pointer real).
 void __cdecl ClearCharacters(int param_1) {
     char* butterflesEnd = DAT_083a1218 + 0x1158;
     for (int i = 0; i < 0x59740; i += 0x394) {
@@ -317,12 +297,10 @@ void __cdecl ClearCharacters(int param_1) {
 // Effect_SpawnLightningBurst @ 0x00460C30 — Effect_LightningBurst: implemented in Render/MoveEffect_Helpers.cpp
 // Effect_SpawnProximityHit @ 0x00465E60 — Effect_OnHitProximity: implemented in Render/MoveEffect_Helpers.cpp
 // Ring_ComputeOrbit @ 0x00473D90 — Ring_ComputeOrbit: implemented in Render/MoveEffect_Helpers.cpp
-// STUB: Effect_AutoAttack — proximity-check all entities against param_1, fire
-// attack effect (CreateBomb/CreateJoint 0x4E1) at nearby targets.
-// Real logic: iterates CharactersClient[0..399], distance check <= DAT_005524f0,
+//
 // sub_466440 @ 0x00466440 — Effect/projectile collision/trigger handler.
-// Port FIEL desde IDA decompile (2026-05-02). Anti-tamper hash table noise
-// (CharacterMachine encrypt/decrypt wrappers) skipped per project policy.
+// Port fiel del decompile de IDA; se omite el ruido anti-tamper de hash-table
+// (wrappers encrypt/decrypt de CharacterMachine).
 //
 // Called per-frame from MoveEffect (3 sites) and MoveJoint (1 site) when
 // a projectile/effect entity is moving. Two paths:
@@ -480,12 +458,8 @@ void __cdecl TEXCOORD(float* param_1, float param_2, int param_3) {
 //   adds result to world pos (+0x10/+0x14/+0x18).
 // If flag == 0: directly adds +0xc0/+0xc4/+0xc8 to world pos.
 void __cdecl Joint_BoneOffsetApply(int param_1, int param_2) {
-    // PORT FIX: Ghidra decompile split a contiguous float[3] output buffer into
-    // three separate locals (local_3c/38/34). MSVC does not guarantee they're
-    // adjacent in memory, so Vector_Rotate (which writes 3 contiguous floats)
-    // only landed in local_3c and the other two reads picked up uninitialised
-    // stack. Use a proper array to guarantee contiguity. Same pattern as the
-    // Terrain_Light.cpp Entity_GetLightScale fix.
+    // Ghidra separó un float[3] de salida en tres locales (local_3c/38/34) y
+    // Vector_Rotate escribe 3 floats contiguos: se usa un array real.
     float out[3] = {0.0f, 0.0f, 0.0f};
     float local_30[12];
     if (param_2 != 0) {
@@ -508,11 +482,6 @@ void __cdecl Joint_BoneOffsetApply(int param_1, int param_2) {
 //
 // A diferencia de AddTerrainLightClip (0x004F7800) esta NO clampea a 1.0: solo
 // evita valores negativos, que es lo que produce el resplandor del fuego.
-//
-// 2026-09-25: se llamaba AddTerrainLight y convivia con un wrapper inline
-// AddTerrainLight en structs.h que solo existia para castear los punteros --
-// Ghidra los habia tipado como int.  Ahora la firma es la real y el wrapper se
-// elimino, asi que hay un unico simbolo para esta direccion.
 void __cdecl AddTerrainLight(float xf, float yf, float *Light, int Range, float *Buffer) {
     float cx   = xf * _DAT_00552594;
     float cy   = yf * _DAT_00552594;
@@ -634,14 +603,11 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
     //                                           BYTE x; BYTE y; BYTE serial; BYTE count; };
     //     struct PMSG_MULTI_SKILL_ATTACK      { BYTE index[2]; };
     //
-    // El port anterior mandaba [rand][serial++][a4][count][id>>8 ...]: los cinco
-    // campos corridos y UN solo byte por entidad en vez de dos.  El server leia
-    // `skill` = rand() -> `GetSkill()` devolvia 0 y salia por
-    // CGMultiSkillAttackRecv sin aplicar dano.  Este es el paquete que cierra
-    // los skills multi-objetivo (Penetration, Twisting Slash, Rageful Blow,
-    // Death Stab, Hell Fire, Twister, Evil Spirit, Aqua Beam, Blast, Inferno,
-    // Flame, Fire Slash): el C3:1E solo arma `MultiSkillIndex` y es el 0x1D el
-    // que trae la lista de blancos y dispara gAttack.Attack().
+    // Este es el paquete que cierra los skills multi-objetivo (Penetration,
+    // Twisting Slash, Rageful Blow, Death Stab, Hell Fire, Twister, Evil Spirit,
+    // Aqua Beam, Blast, Inferno, Flame, Fire Slash): el C3:1E solo arma
+    // `MultiSkillIndex` y es el 0x1D el que trae la lista de blancos y dispara
+    // gAttack.Attack().
     BYTE pkt[3 + 5 + 5 * 2];
     int len = 0;
     pkt[len++] = 0xC1;
@@ -670,11 +636,9 @@ float* __cdecl Entity_FindNearby_SendPacket(unsigned int param_1, float* param_2
 // then computes 4 new billboard vertices (at ±half-width perpendicular offsets)
 // using Vector_Rotate and the weapon-scale constants _DAT_00552a14/_DAT_00552504.
 void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
-    // PORT FIX: Ghidra decompile produced `float local_18[4], local_8, local_4;`
-    // and wrote Vector_Rotate's 3-float output at `local_18 + 3`, expecting
-    // local_18[4]==local_8 and local_18[5]==local_4. MSVC doesn't guarantee that
-    // layout, so local_8/local_4 reads picked up uninitialised stack. Expanding
-    // the array to 6 elements makes the 3 output slots genuinely contiguous.
+    // Ghidra produjo `float local_18[4], local_8, local_4;` y escribía la salida
+    // de Vector_Rotate en `local_18 + 3`, esperando local_18[4]==local_8 y
+    // local_18[5]==local_4: se expande el array a 6 para que sea contiguo.
     // Slots used: local_18[0..2] = input vec, local_18[3..5] = output vec.
     float local_18[6] = {0};
     #define local_8 local_18[4]
@@ -686,17 +650,12 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
     if (iVar1 < iVar4) *(int*)(param_1 + 0x50) = iVar1;
     iVar1 = *(int*)(param_1 + 0x50);
     if (0 <= iVar1 - 1) {
-        // 2026-08-10 FIX (haces oscuros saliendo del personaje): el port había
-        // COLAPSADO los dos punteros del IDA en uno solo. El original lleva
-        // `v6` = base de la fila (retrocede 0x30 por segmento) y `v7` = cursor
-        // que camina esa fila; `v7` se RE-INICIALIZA desde `v6` en cada vuelta:
+        // IDA lleva DOS punteros: `v6` = base de la fila (retrocede 0x30 por
+        // segmento) y `v7` = cursor que camina esa fila; `v7` se RE-INICIALIZA desde
+        // `v6` en cada vuelta:
         //     v6 = 48*(count-1) + a1 + 136;
         //     do { v7 = v6; <4 × copiar vec3, v7 += 3>; v6 -= 48; } while(--v5);
-        // Nosotros hacíamos `puVar3 += 48` en el inner y después `-= 0x78`,
-        // o sea un paso neto de -72 en vez de -48: el cursor se corría 24 bytes
-        // por vuelta y terminaba escribiendo POR DEBAJO del array de segmentos
-        // (0x58), encima de la cabecera — segCount (0x50) y segMax (0x54)
-        // quedaban con floats, y el render dibujaba vértices basura = los haces.
+        // No colapsarlos en uno: el paso neto por vuelta tiene que ser -48.
         char* rowBase = (char*)param_1 + 0x88 + (iVar1 - 1) * 0x30;
         do {
             unsigned int* puVar3 = (unsigned int*)rowBase;
@@ -745,17 +704,13 @@ void __cdecl Joint_SegmentTick(int param_1, float *param_2) {
 // Gira Angle hacia el target y **devuelve la distancia** al target.
 // NO mueve la posicion (de eso se encarga el tick generico del joint).
 //
-// 2026-08-16: el retorno FALTABA. Hex-Rays la tipa `void` porque el valor sale
-// en st0 y no lo detecta — el mismo artefacto de FPU que ya mordio antes. El
-// source original de MU 5.2 (ZzzAI.cpp:131) lo deja explicito:
+// Hex-Rays la tipa `void` porque el valor sale en st0. El source original de
+// MU 5.2 (ZzzAI.cpp:131) lo deja explicito:
 //     float MoveHumming(...) { ...; return VectorLength(Range); }
 // y el consumidor lo usa como distancia (ZzzEffectJoint.cpp:3368):
 //     Distance = MoveHumming(...);
 //     if (Distance <= 35.f)  { o->Live = false; ... }        // absorber
 //     else if (Distance <= 70.f && ...) { Velocity -= 10; }  // frenar
-// Sin el retorno, `MoveJoint` case 0x4ea comparaba la Z ABSOLUTA del target
-// (ownerZ + 120, siempre > 35) → las esferas de EXP nunca se absorbian y
-// quedaban orbitando al personaje acumulandose.
 float __cdecl MoveHumming(float *param_1, float *param_2, float *param_3, float param_4)
 {
     // Horizontal angle: from (pos.x, pos.y) to (target.x, target.y)
@@ -779,49 +734,18 @@ float __cdecl MoveHumming(float *param_1, float *param_2, float *param_3, float 
     return Vec3_Length(local);
 }
 
-// RenderItem3D @ 0x004E1BE0 — RenderItem3D
-//
-// 2026-04-30: la versión anterior estaba MAL identificada como
-// `ItemDrop_SpawnEffect` y llamaba `RenderObjectScreen(type+400, ...)` (RenderObjectScreen)
-// con effect-ids inventados.  Para items "normales" (helmet=0x4E1, etc.) eso
-// resolvía a un BMD inexistente y crasheaba en BMD_Animation con AV.
-//
-// El IDA companion confirma 0x004E1BE0 = RenderItem3D
-// `(float sx, sy, Width, Height, int Type, Level, Option1, bool PickUp)`.
-//
-// Mientras no portemos el render 3D real con BMD models, redirigimos al
-// placeholder 2D que vive en RenderItem3D (línea 26253 abajo) — dibuja un
-// quad texturado con el icono del item type en la posición pasada.
-// RenderItem3D forward decl already in functions.h (non-extern-C C++ linkage).
+// RenderItem3D @ 0x004E1BE0 vive en src/Render/Render_LegacyLinker.cpp.
 
-// 2026-05-08 BUG-FIX (item +N glow): el wrapper estaba pre-shifting `Level`
-// con `>> 3 & 0x0F` antes de llamar `RenderItem3D`, pero per IDA
-// `RenderItem3D` (0x004E1BE0) toma el RAW Level byte y lo pasa así a
-// `RenderObjectScreen` (0x004E13A0) que internamente hace `Level = (ItemLevel
-// >> 3) & 0xF`. Pre-shifting acá producía un DOUBLE-shift → para items +9
-// (Level byte = 0x48), el valor llegaba a Entity_DrawSetup como 1 en vez
-// de 9 → ItemLevel<3 → no entra en la rama de glow +9/+11 → items en
-// inventario sin halo dorado/azul.
-//
-// Per IDA: pasamos raw Level. Entity_DrawSetup (línea 52 de su archivo)
-// hace el shift una sola vez (la cadena solo shifteaba después).
 // BMD__RenderBody @ 0x00441E00 — BMD::RenderBodyTranslate
 // Signature IDA: __thiscall(this, Flag, Alpha, BlendMesh, BlendMeshLight,
 //                           BlendMeshTexCoordU, BlendMeshTexCoordV, HiddenMesh, Texture8)
-// BlendMesh y HiddenMesh son INT pero los callers nuestros pasan como float
-// (bit-pattern reinterpreted). Por eso usamos union para reinterpretar bits sin
-// romper signatures.
-//
-// BUG-FIX 2026-04-28: lógica del branch NULL estaba INVERTIDA (skipping cuando
-// debería render). IDA: `if (NULL && i != HiddenMesh) goto render;`. Y la
-// comparación `i != HiddenMesh` debe ser INT, no float (NaN para -1, etc.).
+// Port parcial: valida el modelo, hace BMD__BeginRender y fija el color
+// (glColor4f si Alpha < 0.99); NO recorre ni dibuja las mallas.  En IDA el
+// loop de mallas hace `if (NULL && i != HiddenMesh) goto render;`, con la
+// comparación `i != HiddenMesh` como INT (no float).
 void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3, float f4, float f5, int f6, int rgba) {
-    // BUG-FIX 2026-04-29: validar model + meshBase antes de iterar. Crash AV en
-    // glPopMatrix con stack KernelBase+opengl32 venía de un BMD__RenderMesh que
-    // dereferenciaba un mesh pointer wild (VBO inválido).
-    // BUG-FIX 2026-05-01: range check del pointer model. Algún caller pasa
-    // direcciones tipo 0xE5E90005 (kernel space) → AV en glDrawElements / lectura
-    // de model+0x24. User-space address válido es < 0x80000000 y > 0x100000.
+    // DESVIACION: validar el puntero model (rango user-space 0x100000..0x80000000)
+    // y meshBase antes de usarlo; algunos callers pasaban punteros inválidos.
     if (model == nullptr) return;
     if ((uintptr_t)model < 0x100000 || (uintptr_t)model >= 0x80000000) return;
     if (*(short*)((char*)model + 0x24) == 0) return;
@@ -829,7 +753,7 @@ void __cdecl BMD__RenderBody(void *model, int flags, float f1, int f2, float f3,
     if (meshBase_check == 0 || (uintptr_t)meshBase_check < 0x100000) return;
     BMD__BeginRender();
     if (*(char*)((char*)model + 0x44) == '\0') {
-        // BUG-FIX 2026-04-26: IDA usa < 0.99f (_DAT_00552544), no < 1.0f.
+        // IDA usa < 0.99f (_DAT_00552544), no < 1.0f.
         if (f1 < _DAT_00552544) glColor4f(*(float*)((char*)model+0x48),*(float*)((char*)model+0x4c),*(float*)((char*)model+0x50),f1);
         else glColor3fv((GLfloat*)((char*)model + 0x48));
     }
@@ -870,8 +794,7 @@ void __cdecl Model_SetAnimationSlots(int param_1, int param_2, int param_3, int 
     *(short*)(base + 0xb2) = (short)param_6;
 }
 
-// CreateCharacter, CreateMonster moved to
-// src/Monster/Monster.cpp (B3 refactor 2026-05-07, 925 lines).
+// CreateCharacter, CreateMonster viven en src/Monster/Monster.cpp.
 
 // SetHall (0x00404BB0) vive en src/Sound/Sound_DS3D.cpp.  Aca habia una segunda
 // copia bajo el nombre FUN_00404bb0, sin callers: las dos son fieles (en el
@@ -926,28 +849,14 @@ unsigned int __cdecl CheckAttack(void) {
 
     return targetPkLevel;
 }
-// GetScreenWidth @ 0x004CB520 — `GetScreenWidth` per IDA companion (Offsets.h).
-// Returns the "logical width" of the 3D world viewport based on which UI
-// panel is open: 260 (right pane open) / 450 (right pane open, narrower
-// content) / 640 (no panel — full width).
-//
-// 2026-04-30: Ghidra labelled this `SecondPassword_GetAnimFrame` because
-// it reads DAT_07eaa117/116/118/119/11a/11b/11c — but per IDA's
-// Offsets.h:59-69 those addresses ARE the UI-panel flags
-// (InventoryOpened / CharacterOpened / ShopOpened / WarehouseOpened /
-//  ChaosMixOpened / TradeOpened / EventWindowOpened). The magic values
-// 0x280=640, 0x1c2=450, 0x104=260 confirm screen-width semantics.
-//
-// Body kept verbatim to original IDA decompile (matches the safe path
-// of the anti-tamper hash-table-decorated original).
-// Net PacketSession helpers
-// SecondPassword screens (SecondPassword_Handler / 004df410 / 004e4760-004ec330) moved to
-// src/Net/SecondPassword.cpp (B3 refactor 2026-05-07, ~1535 lines).
+// GetScreenWidth @ 0x004CB520 vive en src/Render/HUD_Pass2.cpp.
+// SecondPassword screens (SecondPassword_Handler / 004df410 / 004e4760-004ec330)
+// viven en src/Net/SecondPassword.cpp.
 
 // Net_Connect @ 0x0043DC70 — connect socket to server (TCP) + arm WSAAsyncSelect.
 // ctx layout:  +0x00 = HWND (msg target)   +0x08 = SOCKET
 // wMsg        = Windows message ID for WSAAsyncSelect (WinMain/0x423920 pass 0x400 = WM_USER)
-// Returns: 1 on success, 0 on failure (matches caller in Net_Connect.cpp:46).
+// Returns: 1 on success, 0 on failure (matches caller in Net/Net_Connect.cpp).
 int __cdecl Net_Connect(void* ctx, char* ip, unsigned short port, unsigned int wMsg)
 {
     if (ctx == nullptr || ip == nullptr) return 0;
