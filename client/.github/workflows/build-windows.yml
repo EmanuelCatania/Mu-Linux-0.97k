@@ -5,6 +5,8 @@
 # - msbuild: compila mu97k.sln con msbuild, para comparar contra CMake.
 # - compare: compara las líneas de comando de cl/link/lib de los dos builds
 #            (tools/compare_build_flags.py), por configuración.
+# - map-symbols (sólo PRs): compara los símbolos de main.map entre la base y
+#            el head del PR (tools/compare_map_symbols.py).
 
 name: build-windows
 
@@ -134,3 +136,60 @@ jobs:
 
       - name: Comparar líneas de comando cl/link/lib
         run: python tools/compare_build_flags.py tlogs-msbuild tlogs-cmake
+
+  # Sólo en PRs: compila la base y el head del PR con msbuild y compara los
+  # símbolos de main.map (tools/compare_map_symbols.py). El .vcxproj sólo pide
+  # el .map en Debug; acá se fuerza en las dos configs con _LINK_=/MAP. No
+  # bloquea el PR: el resultado queda en el log y en el resumen del job.
+  map-symbols:
+    name: símbolos del .map vs base (${{ matrix.config }})
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [ Debug, Release ]
+    env:
+      _LINK_: /MAP
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Compilar la base del PR
+        shell: pwsh
+        run: |
+          git worktree add ../base ${{ github.event.pull_request.base.sha }}
+          msbuild ../base/mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item ../base/bin/Client/main.map base.map
+
+      - name: Compilar el head del PR
+        shell: pwsh
+        run: |
+          msbuild mu97k.sln /m /v:minimal /p:Configuration=${{ matrix.config }} /p:Platform=Win32
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item bin/Client/main.map head.map
+
+      - name: Comparar símbolos
+        shell: pwsh
+        run: |
+          python tools/compare_map_symbols.py base.map head.map | Tee-Object -FilePath map-diff.txt
+          $rc = $LASTEXITCODE
+          "### main.map ${{ matrix.config }}: base vs head" >> $env:GITHUB_STEP_SUMMARY
+          '```' >> $env:GITHUB_STEP_SUMMARY
+          Get-Content map-diff.txt >> $env:GITHUB_STEP_SUMMARY
+          '```' >> $env:GITHUB_STEP_SUMMARY
+          exit $rc
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: map-symbols-${{ matrix.config }}
+          path: |
+            base.map
+            head.map
+            map-diff.txt
