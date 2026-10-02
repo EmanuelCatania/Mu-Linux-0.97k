@@ -312,11 +312,6 @@ int __cdecl TextParser_GetToken(void)
     return result;
 }
 
-// Skill_HashTable_SerializeEntry @ 0x0047EA70 — Skill_HashTable_SerializeEntry: encode 0x28-byte
-// entry via rolling XOR/sub cipher and insert into hash table.
-void __cdecl Skill_HashTable_SerializeEntry(void *dst, void *src) { /* hash table serialize stub */ }
-// Skill_HashTable_FreeEntry @ 0x0047EAF0 — Skill_HashTable_FreeEntry: decode entry and remove.
-void __cdecl Skill_HashTable_FreeEntry(void *entry, void *key) { /* hash table free stub */ }
 // crt_fwrite @ 0x005430F0 — fwrite wrapper (with lock).
 uint __cdecl crt_fwrite(char *buf, uint size, uint count, int *fp) {
     return (uint)fwrite(buf, size, count, (FILE *)fp);
