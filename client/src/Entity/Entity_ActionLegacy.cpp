@@ -1,5 +1,4 @@
 // Entity_ActionLegacy.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,7 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
+// Definidas en Physics/Cloth_Simulation.cpp (Cloth_Integrate) y Net/Crypto.cpp (Cloth_Solve).
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -57,8 +54,6 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // El offset 0x26 en el slot BMD es nBones (no nActions); el original valida
 // el action_id contra ese campo igualmente — replicamos sin reinterpretar.
 //
-// BUG previo: agregábamos un deref *(DWORD*)slot que leía los primeros 4 bytes
-// del modelName ("Play"=0x79616C50) como puntero y crasheaba en *(short*)(0x79616C50+38).
 // IDA: SetAction (0x0043E820)
 void* __cdecl SetAction(int entity_ptr, int anim_id)
 {

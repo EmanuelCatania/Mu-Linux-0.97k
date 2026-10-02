@@ -83,7 +83,7 @@ int __cdecl LoadTextData_Bin(const char *FileName)
 //       sub_4797B0("Data2\\Local\\Text(%s).txt", dword_55C9E50);   // text form
 //       sub_479950(...);
 //
-// DAT_0055a7c4 == 1 in our build (see globals.cpp:1248), so we take the
+// DAT_0055a7c4 == 1 in our build (see globals.cpp), so we take the
 // binary-file branch.
 void __cdecl OpenTextData(void)
 {

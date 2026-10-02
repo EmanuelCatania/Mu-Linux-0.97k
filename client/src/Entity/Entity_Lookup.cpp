@@ -1,5 +1,4 @@
 // Entity_Lookup.cpp
-// Extracted from stubs.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -13,9 +12,6 @@
 // Returns slot index (0-399), or 400 if not found.  Per IDA FindCharacterIndex
 // (50-byte original): also requires the active flag at +0 to be non-zero, AND
 // returns 400 (sentinel) on not-found — NOT 0 (slot 0 is the local player).
-// 2026-05-07: fixed to match IDA — previously returned 0 on miss + ignored the
-// active flag, which caused PacketHandler_0x5c writes for unknown entities to
-// land on (potentially NULL or player) slot 0.
 int __cdecl Entity_FindById(int entity_id) {
     BYTE* base = (BYTE*)DAT_07abf5d0;
     if (!base) return 400;

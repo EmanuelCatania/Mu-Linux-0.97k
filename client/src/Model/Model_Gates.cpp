@@ -6,7 +6,7 @@
 //
 // Firma: LoadWaveFile(id, path, nChannels, b3D)
 //
-// DESVIACION DELIBERADA (2026-08-17) — nombres de archivo.
+// DESVIACION DELIBERADA — nombres de archivo.
 // En el binario la mayoria de estos paths estan en coreano (cp949):
 // "Data\\Sound\\p걷기(땅).wav", "Data\\Sound\\e타격1.wav", etc.  Nuestro pack de
 // assets viene renombrado al ingles (pWalk(Soil).wav, eBlow1.wav, ...), igual
@@ -15,12 +15,7 @@
 // poder re-cruzarlo.
 //
 // El mapeo se reconstruyo parseando OpenSounds directamente del `.text` del
-// binario original (MD5 eb95ac0785e40a7ad60c9ddb5d8bef34): los literales que
-// tenia el port estaban CORRUPTOS — casi todos eran "a\xBD\xBA.wav" /
-// "p\xBD\xBA.wav" / "e\xBD\xBA.wav" ("스" repetido como placeholder), o sea
-// archivos inexistentes.  Por eso no sonaban pasos, golpes, armas, skills de
-// guerrero, magias, gritos, beber pocion ni levantar items: solo funcionaban
-// los ~20 ids cuyo nombre ya estaba en ingles en el binario.
+// binario original (MD5 eb95ac0785e40a7ad60c9ddb5d8bef34).
 //
 // NOTA: el orden 82..85 -> sKnightSkill1..4 es la correspondencia secuencial
 // entre los 4 ataques de guerrero del binario (내려찍기 / 찌르기 / 올려치기 /

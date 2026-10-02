@@ -152,12 +152,8 @@ void __cdecl Vector_Transform(float *param_1,float *param_2,float *param_3)
 // If param_4 != 0: applies scale (this->+0x68) + offset (this->+0x6c/70/74).
 // Otherwise: pure transform, result in param_3.
 //
-// BUG-FIX 2026-04-27: el decompile original usaba `float local_c; float local_8;
-// float local_4;` como 3 vars separadas y pasaba `&local_c` a Vector_Transform que
-// escribe 3 floats contiguos. MSVC no garantiza contigüidad → TPos[1]/[2] iban
-// a stack slots non-relacionados → sprite spawn positions basura → glow +9,
-// wing FX, particles invisibles porque proyectaban fuera del frustum. Mismo
-// patrón ya corregido en Names/RenderLinkObject/Sprite_DrawTexturedQuad.
+// Ojo: Vector_Transform escribe 3 floats contiguos: el destino tiene que ser un
+// array, no tres locales sueltas (MSVC no garantiza que queden contiguas).
 void __cdecl BMD_TransformPosition(void *this_,float *param_1,float *param_2,float *param_3,char param_4)
 {
   if (param_4 != '\0') {

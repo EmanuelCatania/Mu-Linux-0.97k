@@ -1,5 +1,4 @@
 // Cursor_Render.cpp
-// Extracted from stubs_mouse_hover.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -11,7 +10,7 @@
 // Uses FUN_005125A0(sprite_id, x, y, 24, 24, u, v, 1, 1) for fixed sprites,
 // or GL_DrawRotatedRect for animated/colored variants.
 // Cursor offset = _DAT_0055264C from mouse pos (DAT_083A427C/78).
-// Reescrito 1:1 con IDA `RenderCursor` (004BFFA0_RenderCursor.c, 152 líneas).
+// Port 1:1 de IDA `RenderCursor`.
 // Decisión de sprite por prioridad:
 //   SelectedItem       → bitmap 5   (item ground)
 //   SelectedNpc        → bitmap 6   (NPC, animación 3×2 uv via u/v)
@@ -35,13 +34,9 @@ void __cdecl Cursor_Render(void) {
 
     int u_bits = 0, v_bits = 0;
     // Frame = (int64)(WorldTime * 0.01) % 6  — IDA lo emite con __int64 cast explícito.
-    // 2026-09-03 -- ANIMACION DEL CURSOR CONGELADA (y de todo lo que depende
-    // de WorldTime).  IDA: `Frame = (int)(__int64)(WorldTime * 0.0099999998) % 6;`
-    // -- multiplica el FLOAT y recien despues convierte a __int64.  El port
-    // castea a `int` ANTES, y WorldTime = timeGetTime() pasa de 2^31 ms a las
-    // ~24.8 dias de uptime de la maquina: el cast satura y el frame queda
-    // clavado.  Por eso el cursor sobre NPC se ve estatico en una maquina con
-    // mucho uptime y normal en una recien reiniciada.  Habia 9 sitios iguales.
+    // Ojo: se multiplica el FLOAT y recien despues se convierte a __int64.  Castear
+    // a `int` antes satura cuando WorldTime (timeGetTime) pasa 2^31 ms (~24.8 dias
+    // de uptime de la maquina) y el frame queda clavado.
     int frame = (int)(long long)((double)DAT_05826e08 * 0.0099999998) % 6;
     if (frame == 1 || frame == 3 || frame == 5) u_bits = 0x3F000000;  // 0.5f
     if (frame == 2 || frame == 3 || frame == 4) v_bits = 0x3F000000;  // 0.5f

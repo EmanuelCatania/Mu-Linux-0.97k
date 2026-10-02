@@ -178,27 +178,15 @@ undefined4 __cdecl Packet_ParseReceived(void *param_1)
 
 
 // IDA: MoveItems (0x00503760)
-// Iterates the entity-gravity pool (per-slot offset +0x18 inside the
-// 1000-slot ground-items pool DAT_07e12840, stride 0x204). Per active slot:
-// advances Z by velocity, decays velocity by _DAT_005527d0. Checks terrain
+// Recorre el pool de items en el suelo DAT_07e12840 (1000 slots, stride 0x204).
+// Per active slot: advances Z by velocity, decays velocity by _DAT_005527d0. Checks terrain
 // height via RequestTerrainHeight; if entity is above terrain + offset, adjusts Y or
 // Z velocity. Calls ItemAngle and Entity_UpdateSparkleEffect (FUN_00503650).
-//
-// 2026-05-08: AUTO-SKIP removed. Walker now uses the properly-sized pool
-// `DAT_07e12840` (1000 × 0x204) with an explicit slot count instead of the
-// literal end-bound `< 0x7e907f8`. Per-slot pfVar2 = slot_base + 0x18 (the
-// gravity-field anchor that the orphan DAT_07e12858 used to alias).
 void MoveItems(void)
 {
-  // 2026-08-21: el walker estaba corrido 72 bytes.  Tomaba `DAT_07e12840` como
-  // si fuera `Items + 72` (leía el flag activo en slot+0), pero en nuestro build
-  // ese símbolo ES la base del item — es lo que asumen Net_Process (0x20) y
-  // Entity_Render (que escriben/leen active en ip+72).  Resultado: el flag activo
-  // salía siempre 0 y la función no hacía NADA: los items no caían al suelo, no
-  // giraban al caer y no soltaban destellos.
-  //
-  // IDA MoveItems (0x503760) trabaja sobre `v0 = &Items[0][96]` (la Z), así que
-  // los offsets equivalentes desde la base del item son:
+  // IDA MoveItems (0x503760) trabaja sobre `v0 = &Items[0][96]` (la Z).  En nuestro
+  // build DAT_07e12840 ES la base del item (como asumen Net_Process y
+  // Entity_Render), así que los offsets equivalentes desde la base son:
   //   ip+72  active   ·  ip+74  modelo  ·  ip+88/92  X,Y  ·  ip+96  Z
   //   ip+100/104  Angle[0]/Angle[1]     ·  ip+288  velocidad Z
   for (int slotIdx = 0; slotIdx < 1000; ++slotIdx) {

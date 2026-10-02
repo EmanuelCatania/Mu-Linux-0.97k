@@ -219,9 +219,7 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     }
 
     // Class2 SMD (only in Korean locale)
-    // BUGFIX 2026-04-26: era `i+4 < 7` (=i<3, 2 iter); IDA 0x00506170 línea 57
-    // `while (v6 + 3 < 7)` = 3 iter (v6=1,2,3) — sin i=3 nunca se carga
-    // HelmClass23/ArmorClass23/etc → ME (cls=10) class-default invisible.
+    // IDA 0x00506170 L57: `while (v6 + 3 < 7)` = 3 iteraciones (v6=1,2,3).
     if (DAT_0055a7c4 == '\0') {
         for (int i = 1; i+3 < 7; i++) {
             OpenModels((int)(i + 0x393), "Data2\\Player\\Helm\\class2_",  i);
@@ -232,7 +230,7 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
         }
     }
 
-    // Class2 BMD (classes 1-3) — same off-by-one fix as SMD path
+    // Class2 BMD (classes 1-3) — 3 iteraciones, igual que el SMD
     for (int i = 1; i+3 < 7; i++) {
         AccessModel(i + 0x393, "Data\\Player\\", "HelmClass2",  i);
         AccessModel(i + 0x39a, "Data\\Player\\", "ArmorClass2", i);
@@ -296,12 +294,7 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
     }
 
     // Final slot range (0x12-0x15 suffix) — includes helm only for first 3
-    // BUGFIX 2026-04-26: el guard era `i-0x11 < 4` (= i < 0x15), perdía la
-    // iteración i=0x15 → ArmorMale21/PantMale21/GloveMale21/BootMale21 (idx
-    // 0x2A4/0x2C4/0x2E4/0x304) NO se registraban → MG (class=3) con armor
-    // tier=20 (Equipment[2]&0xF=4 + bit40 → +16 = 20) renderizaba sólo la
-    // cabeza porque los cinco body slots apuntaban a model_idx vacío. IDA
-    // 0x00506170 línea 104: `while (v9 - 18 < 4)` = 4 iteraciones (v9=18..21).
+    // IDA 0x00506170 L104: `while (v9 - 18 < 4)` = 4 iteraciones (v9=18..21).
     for (int i = 0x12; i-0x12 < 4; i++) {
         if (i - 0x12 < 3)
             AccessModel(i + 0x26f, "Data\\Player\\", "HelmMale",  i);
@@ -353,41 +346,13 @@ void __cdecl Model_LoadPlayerAndItemMeshes(void)
                 *(DWORD*)(A + i - 12) = 0x3E99999A;   // 0.30f
             }
 
-            // ── DESVIACION DELIBERADA: accion 33 (2026-09-28) ────────────
-            // El bucle de arriba es 1:1 con el binario (verificado en el
-            // codigo maquina de 0x5073E0: `mov eax,208 / add eax,16 /
-            // cmp eax,528 / mov [ecx+eax-0Ch],esi / jle`), y corta en la
-            // accion 32.  La 33 queda SIN PlaySpeed, y no la escribe nadie
-            // mas: de las cuatro funciones que tocan `Models + 73368`,
-            // SetAttackSpeed cubre 34..54/56..67/81..91, AttackStage solo la
-            // 61 y RenderCharacter unicamente lee.
-            //
-            // Las dos son el par de la montura, y salen del orden de
-            // OpenSMDAnimation en esta misma funcion:
-            //     11 uniconp_stop.smd          12 uniconp_stop_weapon.smd
-            //     32 uniconp_run.smd           33 uniconp_run_weapon.smd
-            //     34 attack_fist.smd  <- ancla: SetAttackSpeed escribe el
-            //                            offset 548 = 16*34 + 4
-            //
-            // O sea la 33 es "montado y caminando CON arma equipada".  Como
-            // BMD::Open no lee PlaySpeed del archivo (escribe action+8/+10/
-            // +12, nunca +4) y `operator_new` no limpia, en el original ese
-            // float queda en memoria sin inicializar: no es una decision del
-            // binario sino UB, y el resultado depende del allocator.  En
-            // release suele ser 0 (paginas frescas del OS) y en nuestro build
-            // Debug el relleno del CRT es 0xCDCDCDCD, que como float es
-            // negativo y CharacterAnimation lo clampea a 0.  Por los dos
-            // caminos el frame no avanza y el jinete queda congelado en el
-            // frame 0 mientras la montura si se anima.
-            //
-            // Medido con sonda (helper=818, arma en LH): `act=33 spd=0.0000
-            // f=0.000->0.000 nF=7` — la animacion existe y tiene 7 frames,
-            // asi que la intencion era incluirla; el bucle tendria que haber
-            // cortado en 544.  Le damos el mismo 0.30f que al resto del
-            // bloque de walk/run, y en particular que a su par la 32.
-            //
-            // Misma clase que el buffer de huesos sin inicializar de
-            // CreateCharacterPointer: reproducir la UB no es ser fiel.
+            // ── DESVIACION DELIBERADA: accion 33 ─────────────────────────
+            // El bucle de arriba es 1:1 con el binario (0x5073E0) y corta en la accion 32.
+            // La 33 (uniconp_run_weapon.smd: montado y caminando CON arma) no la escribe
+            // nadie (SetAttackSpeed cubre 34..54/56..67/81..91, AttackStage solo la 61):
+            // en el original ese PlaySpeed queda sin inicializar (UB: 0 en release, 0xCD en
+            // Debug, clampeado a 0) y el jinete queda congelado en el frame 0.  Le damos el
+            // 0.30f de su par, la 32.
             //
             // Sin tocar quedan las otras acciones que ningun writer cubre
             // (0, 55 y 68..77): no hay sintoma reportado ni forma de saber

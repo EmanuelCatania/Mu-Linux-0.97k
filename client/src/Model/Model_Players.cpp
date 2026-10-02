@@ -131,11 +131,8 @@ void __cdecl Model_LoadItemMeshes(void)
     }
 
     // ── BMD compressed asset loads (always run) ───────────────────────────────
-    // BUGFIX 2026-04-27: TODOS los loops de items tenían off-by-one Ghidra
-    // (`i-(start-1)<N` en vez de `i-start<N`), así que el último índice de cada
-    // tipo de arma quedaba sin cargar. SM (Staff 568) y DK (Spear 505) crasheaban
-    // silenciosamente al renderizar arma → invisibles. Mismo patrón que los
-    // wing/armor loaders que ya fixeamos. Ver IDA 0x005079D0_OpenItems.
+    // Bounds de IDA (0x005079D0 OpenItems): `i-start<N`.  Ojo: el decompile de
+    // Ghidra los mostraba como `i-(start-1)<N`, que pierde el ultimo indice.
     //
     // Swords (0x190-0x1a0) — 17 iter (400-416)
     for (int i = 400; i-400 < 17; i++)
@@ -290,10 +287,6 @@ void __cdecl Model_LoadItemMeshes(void)
         OpenModel((int)0x33f, "Data2\\Item\\ETC\\", "\xBD\xBA\xC5\xC0.smd");
     }
     AccessModel(0x366, "Data\\Item\\", "jewel", 0x16);
-    // BUGFIX 2026-09-01: el bound era `i-0x33d < 2` (base 829) -> UNA sola
-    // vuelta, asi que el modelo 0x33f (831 = Fruit, Quest05.bmd) nunca se
-    // cargaba: la fruta quedaba invisible en el grid del inventario y por eso
-    // no habia nada que hoverear para que saliera su tooltip.
     // IDA 0x5079D0 L203-209:
     //   v30 = 830; do { AccessModelWithTextures(v30, ..., "Quest", v30 - 826); ++v30; }
     //   while (v30 - 830 < 2);      // -> 830 (Quest04) y 831 (Quest05)
@@ -301,8 +294,7 @@ void __cdecl Model_LoadItemMeshes(void)
         AccessModel(i, "Data\\Item\\", "Quest", i - 0x33a);
 
     // Wings BMD (0x310-0x312)
-    // BUGFIX 2026-04-26: era `i-0x30f < 3` → 2 iter (perdía Wing03 idx 0x312).
-    // IDA 0x005079D0 línea 216: `while (v31 - 784 < 3)` con v31=784 → 3 iter.
+    // IDA 0x005079D0 L216: `while (v31 - 784 < 3)` con v31=784 → 3 iteraciones.
     for (int i = 0x310; i-0x310 < 3; i++)
         AccessModel(i, "Data\\Item\\", "Wing", i - 0x30f);
 
@@ -315,8 +307,7 @@ void __cdecl Model_LoadItemMeshes(void)
     }
 
     // Wings BMD extended (0x313-0x316) — Wing04..Wing07
-    // BUGFIX 2026-04-26: era `i-0x312 < 4` → 3 iter (perdía Wing07 idx 0x316,
-    // ala que usa MG/0x316). IDA línea 224: `while (v32 - 787 < 4)` con v32=787 → 4 iter.
+    // IDA L224: `while (v32 - 787 < 4)` con v32=787 → 4 iteraciones.
     for (int i = 0x313; i-0x313 < 4; i++)
         AccessModel(i, "Data\\Item\\", "Wing", i - 0x30f);
 
@@ -338,7 +329,7 @@ void __cdecl Model_LoadItemMeshes(void)
     for (int i = 0x370; i <= 0x37f; i++)
         AccessModel(i, "Data\\Item\\", "Book", i - 0x36f);
 
-    // NoneBlendMesh flags — RE-HABILITADO 2026-07-16 (fix del filo glowing).
+    // NoneBlendMesh flags.
     // Marca el mesh del FILO (emisivo) de estas armas como NoneBlendMesh=1 (mesh+0),
     // que BMD_DrawMesh saltea en el path chrome/oil/blur (línea "if (*pcVar1) return").
     // Efecto: el glow +N chrome NO se pinta sobre el filo (que conserva su luz propia);
@@ -346,8 +337,8 @@ void __cdecl Model_LoadItemMeshes(void)
     //
     // Fiel a IDA OpenItems (0x005079D0 L245-249). Los offsets son BYTES dentro del
     // array de modelos (Models = DAT_05828d58, stride 0xBC, campo Meshs en +0x28), NO
-    // direcciones absolutas ni índices ×4 — una sesión previa les agregó un ×4 espurio
-    // y comentó todo. `Models + 0x16c68` = Model[496].Meshs; `+0x28` = mesh[1].
+    // direcciones absolutas ni índices ×4.
+    // `Models + 0x16c68` = Model[496].Meshs; `+0x28` = mesh[1].
     //   0x16c68 = 496*0xBC+0x28 → Light Spear (MODEL_SPEAR)    mesh[1]
     //   0x12d40 = 410*0xBC+0x28 → Light Saber (MODEL_SWORD+10) mesh[1]
     //   0x19fd0 = 566*0xBC+0x28 → Staff+6                      mesh[2] (+0x50)
