@@ -1,5 +1,4 @@
 // Terrain_RayCollision.cpp
-// Extracted from stubs.cpp; IDA provenance comments retained.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -8,14 +7,7 @@
 #include "Net/Net.h"
 #include "Render/Camera.h"
 
-// ── Terrain tile outline / ray-triangle intersection stubs ───────────────────
-// RenderTerrainFace (RenderTerrainFace) — PORTADO 1:1 en src/Terrain/Terrain_RenderFace.cpp
-// (antes era un no-op stub de 4 args; la firma real es 5 args con lodf).
 // CollisionDetectLineToFace @ 0x00512D40 — CollisionDetectLineToFace (a.k.a. Ray_TriIntersect)
-// BUG-FIX 2026-04-26 (audit #7): activated full IDA port.  Old stub returned 0
-// always, so terrain triangle picking *never* registered a hit — click-to-move
-// would only land on whatever fallback path remained.  The dormant gated port
-// (formerly behind IDA_PORT_00512D40) is now the live implementation.
 //   xf → DAT_083a4130  (cursor billboard screen X / picked world X)
 //   yf → DAT_083a4134  (cursor billboard screen Y / picked world Y)
 //   DAT_083a4120 is the running closest-hit ray parameter (float, not DWORD).
@@ -92,10 +84,4 @@ unsigned int __cdecl CollisionDetectLineToFace(float *Position, float *Target, i
     return 1;
 }
 
-
-// ════════════════════════════════════════════════════════════════════
-// IDA HEX-RAYS PORTS reference block (307 IDA-only gated functions, ~29k lines)
-// moved to src/stubs_IDA_ports.cpp (B3 refactor 2026-05-07).
-// All functions there are gated by IDA_PORT_xxxxxxxx macros; none are
-// active in the default build.
-// ════════════════════════════════════════════════════════════════════
+
