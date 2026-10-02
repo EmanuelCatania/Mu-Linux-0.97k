@@ -1,3 +1,4 @@
+// 0x00412180 FUN_00412180 — nunca compilado: src/stubs_IDA_ports.cpp no estaba en el .vcxproj; la versión viva es FUN_00412180 en src/Sound/Music.cpp (__fastcall(int*)). Archivo copiado entero.
 // stubs_IDA_ports.cpp
 //
 // IDA Hex-Rays ports — reference / inactive code.

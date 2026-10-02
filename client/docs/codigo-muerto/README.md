@@ -1,4 +1,18 @@
-# Código muerto: ports de IDA nunca activados
+# Código muerto
+
+Código que estaba en `src/` pero nunca se compilaba. Se guarda acá, tal cual,
+para poder consultarlo; cada archivo empieza con una línea que dice qué es y por
+qué no se compilaba.
+
+## Archivos enteros que no estaban en `mu97k.vcxproj`
+
+| Archivo | Origen | Contenido |
+|---|---|---|
+| [stubs_IDA_ports_FUN_00412180.cpp](stubs_IDA_ports_FUN_00412180.cpp) | `src/stubs_IDA_ports.cpp` | Lo que quedó del archivo tras quitar los bloques `IDA_PORT_*` (ver abajo): `FUN_00412180` sin gate. La versión viva es `FUN_00412180` en `src/Sound/Music.cpp`. |
+| [GameGuard_Init2_FUN_0053d890.cpp](GameGuard_Init2_FUN_0053d890.cpp) | `src/GameGuard/GameGuard_Init2.cpp` | `FUN_0053d890`, el init grande de GameGuard. Nadie lo llama: GameGuard está desactivado (`FUN_0053de60` y `FUN_0053d430` son no-op). |
+| [UI_UI.cpp](UI_UI.cpp) | `src/UI/UI.cpp` | Sin código: sólo comentarios con layouts de inventario/CharData y un `#include "UI/UI.h"`. Los layouts pueden estar desactualizados. |
+
+## Ports de IDA nunca activados (`ida-ports/`)
 
 Bloques que vivían en `src/stubs_IDA_ports.cpp` envueltos en
 `#if defined(IDA_PORT_XXXXXXXX)`. Ninguna de esas macros estaba definida (las

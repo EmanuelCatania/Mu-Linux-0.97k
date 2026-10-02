@@ -1,3 +1,4 @@
+// 0x0053D890 FUN_0053d890 (init de GameGuard) — nunca compilado (no estaba en el .vcxproj) y sin llamadores: GameGuard está desactivado (FUN_0053de60 y FUN_0053d430 son no-op). Archivo copiado entero.
 // GameGuard_Init2.cpp — FUN_0053d890 (entry point FUN_0053de60) @ 0x0053d890
 // GameGuard initializer — __thiscall on GameGuard context object.
 //

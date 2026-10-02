@@ -1,3 +1,4 @@
+// src/UI/UI.cpp — nunca compilado (no estaba en el .vcxproj) y sin código: sólo comentarios de layout de inventario/CharData y #include "UI/UI.h". Archivo copiado entero.
 // UI.cpp
 // Sistema de UI — Inventario, Equipamiento, Stats, Items
 //
