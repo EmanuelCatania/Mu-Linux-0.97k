@@ -1,5 +1,4 @@
 // Combat_LegacyAnimation.cpp
-// Extracted from stubs_externs.cpp; IDA function comments are retained.
 
 #include "stdafx.h"
 void __fastcall FUN_0045aaa0_impl(void *_this, char flags);
@@ -7,9 +6,6 @@ void __cdecl    FUN_00408680(void *_this, char flags);
 #include "globals.h"
 #include "functions.h"
 
-// -- Declaraciones de funciones movidas a otros modulos (refactor B3) -------
-// Cloth_Integrate vive ahora en Scene/Scene_CharSelect_Nav.cpp y Cloth_Solve en
-// Net/Crypto.cpp; antes se definian en este archivo.
 void __fastcall Cloth_Integrate(int*, float);
 int  __cdecl    Cloth_Solve(DWORD *a1);
 
@@ -49,12 +45,8 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // SetAction — replaced by full implementation above (line ~6057)
 
 // IDA: SetAttackSpeed (0x00443E70)
-// Real logic (after anti-tamper hash table blocks):
-//   1. Reads CharacterAttribute->MagicDamageMax and AttackDamageMinRight
-//   2. Computes animation speed: fVar2 = AttackDamageMinRight * _DAT_005524bc
-//      fStack_8 = MagicDamageMax * _DAT_005524bc, local_18 = MagicDamageMax * _DAT_005528e0
 // SetAttackSpeed @ 0x00443E70 — set player animation speeds based on
-// CharacterAttribute stats. Port FIEL desde IDA decompile (2026-05-02).
+// CharacterAttribute stats. Port FIEL desde IDA decompile.
 //
 // Reads CharacterAttribute[+0x38] (AttackSpeed) and [+0x44] (MagicSpeed),
 // computes scale factors, then writes per-animation speed floats into the
@@ -63,12 +55,7 @@ extern void MapFileDecrypt(BYTE* buf, int size);
 // Anti-tamper hash table operations (sub_403F80/sub_4041E0/sub_404370/etc
 // wrapping CharacterMachine encrypt/decrypt) are skipped per project policy.
 //
-// Note: IDA decompile shows v33 and v38 as uninitialized stack locals used
-// for FIST/SWORD/RIDE-attack speeds. The disasm doesn't show explicit
-// assignments visible in hex-rays output — treating as 0 (stack default).
-// For attack-speed stat scaling on melee, this means baseline speeds are
-// used. Magic skills (which use v34 = AttackSpeed*0.004 and v35/v39 from
-// MagicSpeed) DO scale per-stat correctly.
+// v33 = AttackSpeed*0.004 y v38 = MagicSpeed*0.004 (ver la nota en el cuerpo).
 //
 // Animation table layout (from Models[390]+0x30 base, P):
 //   P+548   FIST          v33 + 0.6
@@ -108,20 +95,13 @@ void __cdecl SetAttackSpeed(void) {
     float v39 = (float)magicSpeed  * _DAT_005524bc;  // = MagicSpeed  * 0.004
     float v35 = (float)magicSpeed  * _DAT_005528e0;  // = MagicSpeed  * 0.002
 
-    // 2026-08-24 FIX (animaciones largas terminaban tarde): aca decia
-    //     float v33 = 0.0f;  float v38 = 0.0f;
-    // con el comentario "uninitialized in IDA decompile", asi que TODA la tabla
-    // de velocidades quedaba en su valor base (0.6, 0.25, 0.30...) sin escalar
-    // por los stats del personaje. Con AttackSpeed alto la diferencia es del
-    // orden del doble: el original terminaba la animacion y el nuestro seguia.
-    //
-    // Que v33/v38 aparezcan sin inicializar es un artefacto de Hex-Rays, no del
-    // binario: `v34` (= AttackSpeed*0.004) y `v39` (= MagicSpeed*0.004) SI se
-    // calculan y despues no se usan para nada, mientras v33/v38 se usan sin
-    // origen. Los slots intermedios (v34/v35/v36) estan declarados BYREF porque
-    // se los pasa al hash-table anti-tamper — o sea el valor real se guarda,
-    // pasa por el encrypt/decrypt y se recupera, y el decompile perdio el
-    // vinculo entre el que se guarda y el que se lee.
+    // Que v33/v38 aparezcan sin inicializar en el decompile es un artefacto de
+    // Hex-Rays, no del binario: `v34` (= AttackSpeed*0.004) y `v39` (=
+    // MagicSpeed*0.004) SI se calculan y despues no se usan para nada, mientras
+    // v33/v38 se usan sin origen. Los slots intermedios (v34/v35/v36) estan
+    // declarados BYREF porque se los pasa al hash-table anti-tamper — o sea el
+    // valor real se guarda, pasa por el encrypt/decrypt y se recupera, y el
+    // decompile perdio el vinculo entre el que se guarda y el que se lee.
     //
     // El emparejamiento se confirma por el USO: v33 alimenta todas las anims de
     // ATAQUE (FIST +0.6, SWORD +0.25, SKILL_SWORD3 +0.27...) y v38 la de

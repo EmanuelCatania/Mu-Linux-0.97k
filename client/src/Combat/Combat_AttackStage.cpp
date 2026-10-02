@@ -1,5 +1,4 @@
 // Combat_AttackStage.cpp
-// Extracted from stubs_game.cpp. IDA provenance remains in function comments.
 
 #include "stdafx.h"
 #include "globals.h"
@@ -321,7 +320,7 @@ static bool __cdecl AttackStage_legacy_mismatched(DWORD c, DWORD o) {
 // When entity is dead (anim==6) and animation frame is in range [_DAT_00552658, _DAT_00552830),
 // spawn 20 dust particles (type 0x4c5) at random offsets (-32..+31) from entity position.
 // Sets entity light to (1.0, 1.0, 1.0) before each particle spawn.
-// Combat_SpawnDeathDustParticles (IDA-activated, was Ghidra stub)
+// Combat_SpawnDeathDustParticles (IDA-activated)
 // 00448930 AttackStage — direct IDA switch (raw/00448930_AttackStage.c).
 // The older AttackStage_legacy_mismatched above is intentionally not called.
 bool __cdecl AttackStage(DWORD c, DWORD o)
@@ -368,15 +367,10 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
     // pone `c+757 = 15` -- o sea deja que el skill dispare -- cuando el frame de
     // la animacion llega a 5.0 con la accion en 0x22..0x5B.
     //
-    // PROBLEMA MEDIDO (2026-09-03, sonda ANIMSPD): `SetAttackSpeed` (0x00443E70)
-    // le da a las acciones de casteo (82-85) una PlaySpeed de
-    //     AttackSpeed * 0.004 + 0.29
-    // Con el AttackSpeed de este server eso da 3.97 frames por tick y la accion
-    // tiene 6 frames, asi que el frame tras avanzar va 3.97 -> 0.97 -> 3.97 ...
-    // y NUNCA cae en [5, 6).  La condicion no se cumple, `c+757` no llega a 15 y
-    // el efecto del skill no se crea; ademas cada eco `0x1E` del server lo
-    // resetea a 1.  Sintoma: manteniendo el click derecho no aparece animacion ni
-    // efecto hasta soltar, y sale una sola vez.
+    // Con un AttackSpeed alto, `SetAttackSpeed` (0x00443E70) le da a las acciones
+    // de casteo (82-85) una PlaySpeed (AttackSpeed * 0.004 + 0.29) que puede saltar
+    // el rango [5, 6) del frame; entonces `c+757` no llega a 15 y el efecto del
+    // skill no se crea mientras se mantiene el click.
     //
     // LO QUE HACE EL DLL (Source/Client/Main/Patchs.cpp, CPatchs::AttackStage,
     // enganchado con SetCompleteHook(0xE9, 0x00448930)): agrega un grupo de cases
@@ -393,13 +387,8 @@ bool __cdecl AttackStage(DWORD c, DWORD o)
     // Para implementarlo aca alcanza con un `else if` sobre esos 13 ids ANTES
     // del default, poniendo `*(BYTE*)(c+757) = 15`.  Queda como mejora del DLL
     // pendiente de decision (politica del proyecto: IDA manda, las mejoras del
-    // DLL van al final).
-    //
-    // Dato del usuario para tener en cuenta al implementarlo: en versiones
-    // viejas de MU este mismo problema de velocidad de ataque se evita usando
-    // MONTURA, que cambia el set de acciones del casteo (y por lo tanto su
-    // cuenta de frames).  Conviene verificar el caso montado antes de dar el
-    // fix por completo.
+    // DLL van al final). Verificar tambien el caso montado (cambia el set de
+    // acciones del casteo y su cuenta de frames).
     else if((*(float*)(o+264)>=1.0f && type==390 && *(BYTE*)(o+261)==62) || (*(float*)(o+264)>=5.0f && ((type==390 && *(BYTE*)(o+261)>=34 && *(BYTE*)(o+261)<=91) || (type>=270 && type<335 && *(BYTE*)(o+261)>=3 && *(BYTE*)(o+261)<=4)))) *(BYTE*)(c+757)=15;
     return true;
 }

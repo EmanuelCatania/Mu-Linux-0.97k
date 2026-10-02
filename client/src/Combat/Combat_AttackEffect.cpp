@@ -1,10 +1,8 @@
 // Combat_AttackEffect.cpp
 //
 // AttackEffect (IDA 0x00445230) -- los efectos visuales del ataque de los
-// MONSTRUOS.  Movida desde src/stubs_IDA_ports.cpp el 2026-09-27: vivia dentro
-// de un `#if defined(IDA_PORT_00445230)` en el archivo-archivo de ports de IDA,
-// pero esa macro SI esta definida, asi que era codigo vivo escondido en un
-// archivo que por convencion "no se toca".
+// MONSTRUOS.  Es el port crudo del decompile (la macro IDA_PORT_00445230 está
+// definida en globals.h, así que este código está vivo).
 //
 // El selector del switch es `Owner+747`, el TIPO DE MONSTRUO de Monster.txt.
 // Para el heroe ese byte vale 0xFF, asi que no matchea ningun case: la funcion
@@ -19,12 +17,12 @@
 #include "functions.h"
 
 
-// === AttackEffect (0x00445230) — movida desde stubs_IDA_ports.cpp (2026-09-27) ===
-// Estaba gateada por IDA_PORT_00445230, que esta definida: el gate era ruido.
+// === AttackEffect (0x00445230) ===
+// Gateada por IDA_PORT_00445230, que esta definida.
 extern "C" void DbgLogPublic(const char* msg);   // probe AEDBG (temporal)
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shims de compatibilidad para el port crudo de AttackEffect (2026-08-16).
+// Shims de compatibilidad para el port crudo de AttackEffect.
 //
 // El decompile de IDA trae el ruido anti-tamper tal cual (hash-table +
 // CErrorReport + operator_new/delete alrededor de CADA lectura del byte de
@@ -98,7 +96,7 @@ void __cdecl AttackEffect(int Owner)
 {
   // Guard de port (no esta en IDA): si la tabla de modelos todavia no esta
   // cargada, `Models + 188*type` seria un puntero basura que TransformPosition
-  // deferenciaria. La version parcial de stubs_misc2.cpp tenia el mismo guard.
+  // deferenciaria. La version parcial de Combat_LegacyAttackEffects.cpp tenia el mismo guard.
   if (!Owner || !DAT_05828d58) return;
 
   DWORD v2; // edi
@@ -1897,7 +1895,7 @@ LABEL_75:
         case 0x45:
           if ( *(BYTE *)(Owner + 757) == 1 )
           {
-            // 2026-09-04 -- DESVIACION DOCUMENTADA (bug del binario original).
+            // DESVIACION DOCUMENTADA (bug del binario original).
             // Este case (Alquamos, MonsterID 69) usa `TargetPosition` y `v246`
             // SIN inicializarlos: son locales del frame que en IDA arrastran lo
             // que dejo un case anterior.  En nuestro build el CRT de Debug los
