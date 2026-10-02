@@ -11,6 +11,13 @@ Sale con código 1 si desaparece algún símbolo.
 import re
 import sys
 
+# Estáticos locales de función: el decorado lleva el número de scope del bloque
+# (`?s_x@?DF@??Func@@...`), que cambia si se agrega o quita un bloque antes en la
+# misma función aunque la variable sea la misma. Se normaliza ese número.
+STATIC_SCOPE = re.compile(r"@\?[0-9A-Z]{1,4}@\?\?")
+# Etiquetas internas del compilador ($LN123): no son símbolos del programa.
+INTERNAL = re.compile(r"^\$LN\d+$")
+
 LINE = re.compile(r"^\s*[0-9a-fA-F]{4}:[0-9a-fA-F]{8}\s+(\S+)\s+[0-9a-fA-F]{8}\s+(.*)$")
 
 
@@ -35,6 +42,9 @@ def symbols(path):
             if not m:
                 continue
             name = m.group(1)
+            if INTERNAL.match(name):
+                continue
+            name = STATIC_SCOPE.sub("@?#@??", name)
             rest = m.group(2).split()
             obj = rest[-1] if rest else ""
             syms.setdefault(name, set()).add(obj)
