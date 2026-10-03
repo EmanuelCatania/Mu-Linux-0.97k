@@ -7,7 +7,7 @@
 
 // MoveParticles @ 0x00477090 (~1130 lines) — FULL IMPLEMENTATION
 // Per-frame particle system update.
-// 1. Random camera shake with clamping
+// 1. Random particle drift with clamping (not the camera's EarthQuake)
 // 2. Per active particle: decrement lifetime, MovePosition,
 //    switch on type for gravity/terrain snap/fade/scale/color
 //
@@ -72,9 +72,9 @@ void __stdcall MoveParticles(void)
     int iVar4, iVar5, iVar6, iVar9;
     unsigned int uVar7;
 
-    // ── 1. Camera shake: random perturbation + clamping ──────────────────────
+    // ── 1. Particle drift: random perturbation + clamping ───────────────────
     // Velocity array: DAT_07c80104 (X), DAT_07c80108 (Y) — two floats
-    float* shakeVel = &DAT_07c80104;
+    float* shakeVel = g_ParticleDriftVelocity;
     for (int s = 0; s < 2; s++) {
         iVar4 = _rand();
         fVar19 = (float)(iVar4 % 0x7d1 - 1000) * _DAT_00552b54 + shakeVel[s];
@@ -92,7 +92,7 @@ void __stdcall MoveParticles(void)
 
     // Accumulate shake velocity into position, clamp
     // DAT_07c800f8 (X), DAT_07c800fc (Y) — two floats
-    float* shakePos = &DAT_07c800f8;
+    float* shakePos = g_ParticleDriftPosition;
     for (int s = 0; s < 2; s++) {
         fVar19 = shakeVel[s] + shakePos[s];
         shakePos[s] = fVar19;
