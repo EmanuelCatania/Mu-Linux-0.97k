@@ -1482,8 +1482,9 @@ extern int     DAT_07e11d9c;           // system message count (max 5, i.e. 6 en
 extern int     DAT_07e11da4;           // player chat entry count (max 0x77 = 119 entries)
 
 // ── Chat text-extent work variables (Chat_DrawField / Chat_DrawEntry) ─────────
-extern LPSIZE  lpsz_07e113d0;          // last GetTextExtentPointA result (cx)
-extern int    _DAT_07e113d4;           // last GetTextExtentPointA result (cy)
+extern SIZE    g_TextExtent07E113D0;   // IDA TextSize: one contiguous cx/cy pair
+extern LPSIZE& lpsz_07e113d0;          // last GetTextExtentPointA result (cx)
+extern int&   _DAT_07e113d4;           // last GetTextExtentPointA result (cy)
 extern DWORD   DAT_07e11d2c;           // char-index/step counter (draw-field loop)
 extern char    DAT_07e11cec[10 * 4];   // 10 slots x 4 bytes; WinMain escribe con slot*4 (slot 0..9)
 
@@ -2811,12 +2812,15 @@ extern char    DAT_00559db4;       // GM name check string (part of "webzen" pat
 extern char    DAT_07e11dfc;       // chat log widget ID string (for AddText)
 // extern char    DAT_07d4c89c;       // "Not enough mana" message string   // -> alias a GlobalText, ver el final del archivo
 
-// ── MoveParticles camera shake globals (0x07c800f8..0x07c8010c) ─────────────
-extern float   DAT_07c800f8;       // camera shake accumulator X
-extern float   DAT_07c800fc;       // camera shake accumulator Y
-extern float   DAT_07c80100;       // camera shake accumulator Z
-extern float   DAT_07c80104;       // camera shake velocity X
-extern float   DAT_07c80108;       // camera shake velocity Y (DAT_07c80104+4, loop end 0x7c8010c)
+// MoveParticles drift vectors, independent of EarthQuake (0x083A0210).
+// IDA 0x47709A..0x477193 indexes the first two components of each vector.
+extern float g_ParticleDriftPosition[3]; // 0x07C800F8..0x07C80103
+extern float g_ParticleDriftVelocity[2]; // 0x07C80104..0x07C8010B
+#define DAT_07c800f8 (g_ParticleDriftPosition[0])
+#define DAT_07c800fc (g_ParticleDriftPosition[1])
+#define DAT_07c80100 (g_ParticleDriftPosition[2])
+#define DAT_07c80104 (g_ParticleDriftVelocity[0])
+#define DAT_07c80108 (g_ParticleDriftVelocity[1])
 
 // ── MoveParticles float constants ────────────────────────────────────────────
 extern float  _DAT_00552a60;       // particle damping factor (type 0x4ab sub 9)

@@ -525,9 +525,28 @@ static void* g_FakeHashVtable[8] = {
     nullptr, nullptr, nullptr, nullptr
 };
 
-// 0x584-byte sentinel buffer. Anti-tamper paths read/write [+0x161] and the
-// XOR pass mutates the entire buffer. Aligned to 4 so DWORD reads are clean.
-__declspec(align(4)) static unsigned char g_HashSentinelNode[0x584] = {0};
+// Buffer centinela del nodo anti-tamper.  Mide 0x585, NO 0x584.
+//
+// DESBORDE (2026-10-02, issue #75): estaba en 0x584 (indices 0..0x583) pero el
+// protocolo escribe el byte de refcount en el indice 0x584 -- ver los ~20 sitios
+// de `*(BYTE*)(node + 0x584) = ...`.  Ese byte caia JUSTO sobre g_HashValueArr,
+// que el linker pone pegado:
+//
+//     g_HashSentinelNode  0x0256A800 .. +0x584
+//     g_HashValueArr      0x0256AD84          <- 0x0256A800 + 0x584
+//
+// y g_HashValueArr[0] guarda el puntero AL PROPIO NODO.  Al pisarle el byte bajo,
+// el acceso siguiente usa un puntero corrido y el `memcpy(v9, v7, 0x584)` de la
+// rama "found" lee memoria arbitraria y la vuelca sobre CharacterMachine -- de
+// ahi los saltos a direcciones que son texto ("Vers" = 0x73726556).
+//
+// En Debug el layout deja padding entre los dos globals y el byte perdido no
+// molestaba; en Release quedan pegados y la corrupcion es directa.  Por eso el
+// sintoma era "Debug anda, Release no".
+//
+// AntiTamper_HashNode() (System_Legacy.cpp) ya usaba 0x585; al centinela se le
+// habia pasado.
+__declspec(align(4)) static unsigned char g_HashSentinelNode[0x585] = {0};
 
 // Single-slot hash arrays. Both point into static storage so we don't need
 // to allocate. Slot 0 of g_HashValueArr is initialized to &sentinel; slot 0
@@ -1640,8 +1659,18 @@ char     DAT_07db80d8[6 * 0x108]  = {0};   // system chat buffer (6 slots × 0x1
 int      DAT_07e11d9c  = 0;
 int      DAT_07e11da4  = 0;
 // Text-extent work vars
-LPSIZE   lpsz_07e113d0 = NULL;
-int     _DAT_07e113d4  = 0;
+// GLOBAL PARTIDO EN DOS (2026-10-03, issue #75): en el binario esto es UN
+// `SIZE TextSize` (0x07E113D0).  El port lo habia partido en dos globals, y
+// `UI_RenderInputField` llama GetTextExtentPointA con `(LPSIZE)&lpsz_07e113d0`,
+// o sea escribe 8 bytes desde ahi.  El linker los coloco al reves
+// (_DAT_07e113d4 en 0x...108 y lpsz_07e113d0 en 0x...10C), asi que el `cy`
+// caia sobre el global SIGUIENTE -- `WhisperID_Num`, que quedaba con la altura
+// del texto y luego indexaba WhisperRegistID (10 entradas) fuera de rango.
+// Pasaba en cada render del campo de login: de ahi que el cliente muriera
+// siempre en el primer frame con el panel de credenciales.
+SIZE     g_TextExtent07E113D0 = {0, 0};
+LPSIZE&  lpsz_07e113d0 = *reinterpret_cast<LPSIZE*>(&g_TextExtent07E113D0.cx);
+int&    _DAT_07e113d4  = *reinterpret_cast<int*>(&g_TextExtent07E113D0.cy);
 DWORD    DAT_07e11d2c  = 0;
 // 2026-09-03: tabla de 10 punteros del buffer de composicion del IME.
 // Era un `char` suelto y WinMain lo escribia con `slot * 4` (slot clampeado a
@@ -2953,11 +2982,10 @@ char   DAT_07e11dfc       = 0;     // chat log widget ID string (for AddText)
 // char   DAT_07d4c89c       = 0;     // "Not enough mana" message string
 
 // ── MoveParticles camera shake globals ──────────────────────────────────────
-float  DAT_07c800f8       = 0.0f;  // camera shake accumulator X
-float  DAT_07c800fc       = 0.0f;  // camera shake accumulator Y
-float  DAT_07c80100       = 0.0f;  // camera shake accumulator Z
-float  DAT_07c80104       = 0.0f;  // camera shake velocity X
-float  DAT_07c80108       = 0.0f;  // camera shake velocity Y
+// IDA MoveParticles 0x477090 walks contiguous floats. Separate scalars let
+// velocity[1] overwrite EarthQuake in Release (hardware watchpoint confirmed).
+float g_ParticleDriftPosition[3] = {};
+float g_ParticleDriftVelocity[2] = {};
 
 // ── MoveParticles float constants ───────────────────────────────────────────
 float  _DAT_00552a60      = 0.0111111114f;
@@ -3064,3 +3092,5 @@ void  *CharacterMachine      = nullptr;
 // de la TIENDA → lo pisaban cada frame (tienda vacía intermitente).
 int g_PartyPanelScratchX = 0, g_PartyPanelScratchY = 0;
 int g_GuildCreatorScratchX = 0, g_GuildCreatorScratchY = 0;
+
+
