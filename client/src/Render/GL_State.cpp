@@ -265,14 +265,14 @@ void GL_EnableLightMap(void) {
     GL_EnableDepthWrites();
     if (DAT_083a411d != '\0') {
         DAT_083a411d = '\0';
-        glDisable(GL_FOG);
+        glDisable(GL_ALPHA_TEST);  // IDA EnableLightMap 0x511890
     }
     if (DAT_083a4125 == '\0') {
         DAT_083a4125 = '\x01';
         glEnable(GL_TEXTURE_2D);
     }
     if (DAT_083a42ea != '\0') {
-        glEnable(GL_LIGHTING);
+        glEnable(GL_FOG);         // FogEnable does not enable fixed-function lighting
     }
 }
 

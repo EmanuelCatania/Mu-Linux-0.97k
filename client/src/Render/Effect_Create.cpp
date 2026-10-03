@@ -1798,6 +1798,17 @@ LAB_0046520b:
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
     puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
     for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
       *puStack_4 = *puVar19;
       puVar19 = puVar19 + 1;
@@ -1973,6 +1984,17 @@ LAB_00462736:
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
     puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    unaff_retaddr = (undefined4 *)AntiTamper_HashNode();
     for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
       *unaff_retaddr = *puVar19;
       puVar19 = puVar19 + 1;
@@ -2340,6 +2362,17 @@ LAB_004620e8:
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
     puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
     for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
       *puStack_4 = *puVar19;
       puVar19 = puVar19 + 1;
@@ -2516,6 +2549,17 @@ LAB_004619cc:
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
     puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
     for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
       *puStack_4 = *puVar19;
       puVar19 = puVar19 + 1;
@@ -2861,6 +2905,17 @@ LAB_00461354:
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
     puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
     for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
       *puStack_4 = *puVar19;
       puVar19 = puVar19 + 1;
@@ -3095,6 +3150,9 @@ LAB_004638bc:
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
     puVar19 = puVar11;
+    // ESCRITURA SALVAJE (2026-10-02, issue #75): mismo caso que los otros 7
+    // sitios -- destino sin asignar, 1412 bytes a direccion arbitraria.
+    unaff_retaddr = (undefined4 *)AntiTamper_HashNode();
     for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {      *unaff_retaddr = *puVar19;
       puVar19 = puVar19 + 1;
       unaff_retaddr = unaff_retaddr + 1;
@@ -3681,6 +3739,17 @@ LAB_00462d84:
       iVar9 = iVar9 + -1;
     } while (iVar9 != 0);
     puVar19 = puVar11;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    puStack_4 = (undefined4 *)AntiTamper_HashNode();
     for (iVar9 = 0x161; iVar9 != 0; iVar9 = iVar9 + -1) {
       *puStack_4 = *puVar19;
       puVar19 = puVar19 + 1;

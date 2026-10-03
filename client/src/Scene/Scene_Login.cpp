@@ -61,6 +61,8 @@
 
 
 // Scene_Login @ 0x00521630
+
+
 uint Scene_Login(void)
 {
     char     cVar1;
@@ -106,10 +108,15 @@ uint Scene_Login(void)
         GL_DrawTexture(0xc, 195.0f, (float)DAT_005616a4, 250.0f, 216.0f,
                      0.0f, 0.0f, 0.9765625f, 0.84375f, '\x01', '\x01');
         // Username field
-        UI_RenderText(0xe3, iVar3 + 0x32, (LPCSTR)DAT_07d4ac7c, (LPSIZE)0x0, '\0', 0);
+        // IDA 0x521630 L57-60: RenderText(227, y, GlobalText[450]) y [451] son
+        // las etiquetas "Cuenta"/"Contrasena".  El port pasaba (LPCSTR)DAT_07d4ac7c,
+        // o sea el VALOR del global como puntero en vez de la direccion del buffer
+        // (DAT_07d4ac7c = GlobalText[450]; DAT_07d4b4b0 = [457] ya estaba mapeado y
+        // 0x07d4b4b0 - 0x07d4ac7c = 2100 = 7*300).
+        UI_RenderText(0xe3, iVar3 + 0x32, GlobalText[450], (LPSIZE)0x0, '\0', 0);
         UI_RenderInputField(0x127, iVar3 + 0x32, 0);
         // Password field
-        UI_RenderText(0xe3, iVar3 + 0x48, (LPCSTR)DAT_07d4ada8, (LPSIZE)0x0, '\0', 0);
+        UI_RenderText(0xe3, iVar3 + 0x48, GlobalText[451], (LPSIZE)0x0, '\0', 0);
         UI_RenderInputField(0x127, iVar3 + 0x48, 1);
 
         // OK button hit-test

@@ -58,6 +58,22 @@ void __cdecl Font_RenderTextToBitmap(int p1, int p2, LPCSTR p3, int p4, int p5, 
         height = maxH;
     }
 
+    // DESBORDE (2026-10-02, issue #75): IDA sub_47F360 clampea el ALTO contra
+    // Bitmaps[0].Height pero NO el ancho -- su loop corre `v16 < v10` con v10 = a1
+    // crudo.  El destino es Bitmaps[0].Buffer, 256x32 DWORDs (stride 1024 B), asi
+    // que el original se apoya en un invariante: que el texto nunca sea mas ancho
+    // que el bitmap de fuente.  Nuestro port rompe ese invariante por dos motivos
+    // propios -- el Text.bmd en espanol tiene filas de hasta 266 bytes, y
+    // GetTextExtentPointA devuelve pixeles de VENTANA, asi que por encima de
+    // 640x480 los anchos escalan.  Con eso cada linea larga escribia DWORDs fuera
+    // del buffer y corrompia el heap; la victima cambiaba con el layout (de ahi
+    // los crash en direcciones distintas, incluso dentro de gdi32 con handles
+    // validos).  Desviacion deliberada: acotamos igual que el alto.
+    const int maxW = (int)(*(float*)(&DAT_083a7cc0));
+    if (maxW > 0 && bmpWidth > maxW) {
+        bmpWidth = maxW;
+    }
+
     // Pixel-copy loop: read 3-byte pixels from ppvBits, write 4-byte DWORD to Bitmaps[0] buffer
     // Bitmaps[0] buffer stride = 0x100 DWORDs per row (256 pixels * 4 bytes)
     // ppvBits stride = 0x600 bytes per row (512 pixels * 3 bytes, or 256 * 6 — double-height?)
