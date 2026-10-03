@@ -152,8 +152,18 @@ int Scene_Login_ServerSelect(void)
     int         iStack0000001c, iStack00000020;
     LPSIZE      ptVar19;
     undefined1 *puStack00000010;
-    // 24 server groups × 20 channels × 100 bytes per name string
-    char        chan_buf[24 * 20 * 100];
+    // Grupos de servidor x canales x 100 bytes por nombre.
+    //
+    // DESBORDE (2026-10-02): estaba en 24 grupos, pero el loop de Pass 1 recorre
+    // 25 -- su cota es `DAT_083a45d8 + 0x34ee` y 0x34ee/0x21e = 25, y el array
+    // global da para eso (0x3600 = 13824 >= 25*0x21e).  El grupo 24 escribia en
+    // chan_buf + 24*20*100 = 48000, o sea el primer byte DESPUES del buffer.
+    // En Debug el padding del frame se lo comia; en Release reventaba la cookie
+    // de /GS -- y como esta funcion se inlinea dentro de Scene_Login, la cookie
+    // que saltaba era la de Scene_Login (de ahi el stack confuso).
+    // El slot 24 lo usa el protocolo: Recv_ServerList manda ahi al grupo 12.
+    enum { SRV_GROUPS = 25, SRV_CHANS = 20, SRV_NAMELEN = 100 };
+    char        chan_buf[SRV_GROUPS * SRV_CHANS * SRV_NAMELEN];
     SIZE        text_size;
 
     /* __chkstk_probe(); */  // MSVC stack-frame allocator stub, not game logic
@@ -184,6 +194,11 @@ int Scene_Login_ServerSelect(void)
             puStack00000010 = puVar9;
             const char* serverName = (const char*)puVar12;    // +0x00 = name (null-term)
             unsigned char numCh    = (unsigned char)puVar12[0x14];
+            // numCh sale crudo del paquete F4/02 (un byte, hasta 255) mientras
+            // que chan_buf reserva SRV_CHANS por grupo: sin este clamp un server
+            // que reporte mas canales escribe sobre el grupo siguiente y, en el
+            // ultimo, fuera del buffer.
+            if (numCh > SRV_CHANS) numCh = SRV_CHANS;
 
             if (numCh == 1) {
                 // Single-channel entry
@@ -435,15 +450,22 @@ LAB_0051f44c:
                              0.0f, 0.0f, 0.5234375f, 0.9375f, '\x01', '\x01');
 
                 // Channel name text
-                ptVar19 = &text_size;
-                iVar8 = lstrlenA(chan_buf + (iVar5 + ServerSelectHi * 0x14) * 100);
-                GetTextExtentPointA(DAT_055c9fec,
-                                    chan_buf + (iVar5 + ServerSelectHi * 0x14) * 100,
-                                    iVar8, ptVar19);
-                UI_RenderText(0x129 - ((uint)(text_size.cx * 0x280) / DAT_0056156c >> 1),
-                             iStack00000004 + 1,
-                             chan_buf + (iVar5 + ServerSelectHi * 0x14) * 100,
-                             (LPSIZE)0x0, '\0', 0);
+                // El indice sale de ServerSelectHi (grupo elegido) y iVar5
+                // (canal).  Con el flujo ConnectServer el server cae en el slot
+                // 23, o sea pegado al borde del buffer, asi que se acota antes
+                // de leer en vez de confiar en los dos valores.
+                {
+                    int chanIdx = iVar5 + ServerSelectHi * SRV_CHANS;
+                    if (chanIdx < 0) chanIdx = 0;
+                    if (chanIdx >= SRV_GROUPS * SRV_CHANS) chanIdx = SRV_GROUPS * SRV_CHANS - 1;
+                    char* chanName = chan_buf + chanIdx * SRV_NAMELEN;
+
+                    ptVar19 = &text_size;
+                    iVar8 = lstrlenA(chanName);
+                    GetTextExtentPointA(DAT_055c9fec, chanName, iVar8, ptVar19);
+                    UI_RenderText(0x129 - ((uint)(text_size.cx * 0x280) / DAT_0056156c >> 1),
+                                 iStack00000004 + 1, chanName, (LPSIZE)0x0, '\0', 0);
+                }
 
                 // Load bar (only for non-full servers)
                 // BUG-FIX (idem): WORD lvalue → necesita byte arith (char* cast)
