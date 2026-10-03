@@ -156,7 +156,8 @@ static int  __fastcall ChatLB_setColor1     (DWORD* self, int /*edx*/, int a, in
 static int  __fastcall ChatLB_setColor2     (DWORD* self, int /*edx*/, int a, int b, int c); // slot 3
 static void __fastcall ChatLB_renderScroll  (DWORD* self);                                 // slot 4
 static int  __fastcall ChatLB_tick          (DWORD* self, int /*edx*/, int   v);     // slot 5
-static void __fastcall ChatLB_nullsub       (DWORD* self);                                 // slot 6, 8
+static void __fastcall ChatLB_tickHook      (DWORD* self, int /*edx*/, int v);              // slot 6: nullsub_6, ret 4
+static void __fastcall ChatLB_nullsub       (DWORD* self);                                 // slot 8: ret 0
 static int  __fastcall ChatLB_handleScrollIn(DWORD* self);                                 // slot 7
 static int  __fastcall ChatLB_keyHandler    (DWORD* self);                                 // slot 9
 static void __fastcall ChatLB_clearList     (DWORD* self);                                 // slot 10
@@ -195,7 +196,7 @@ static ChatLB_VTable s_ChatLB_VTable = { {
     /*0x0C*/ (void*)ChatLB_setColor2,
     /*0x10*/ (void*)ChatLB_renderScroll,
     /*0x14*/ (void*)ChatLB_tick,
-    /*0x18*/ (void*)ChatLB_nullsub,
+    /*0x18*/ (void*)ChatLB_tickHook,
     /*0x1C*/ (void*)ChatLB_handleScrollIn,
     /*0x20*/ (void*)ChatLB_nullsub,
     /*0x24*/ (void*)ChatLB_keyHandler,
@@ -504,7 +505,12 @@ static int __fastcall ChatLB_tick(DWORD* self, int, int v)
     return 0;
 }
 
-// slots 6, 8, 11, 27 — nullsub_6 / nullsub_5 / sub_403A30 (CWsctlc::LogPrintOn empty)
+// IDA 0x40DB40 (slot 6) is `retn 4`; 0x403A30 (slot 8) is `retn`.
+// ChatLB_tick passes one stack argument to slot 6. Sharing the zero-argument
+// stub left it on the stack; the optimized tick epilogue then returned to its
+// saved EBP instead of its caller (Release crash on entering the world).
+static void __fastcall ChatLB_tickHook(DWORD* /*self*/, int /*edx*/, int /*v*/) {}
+// slots 8, 11, 27 — no stack arguments.
 static void __fastcall ChatLB_nullsub (DWORD* /*self*/) {}
 static void __fastcall ChatLB_nullsub2(DWORD* /*self*/) {}
 
@@ -2151,7 +2157,7 @@ static ChatLB_VTable s_GuildLB_VTable = { {
     /*0x0C*/ (void*)ChatLB_setColor2,
     /*0x10*/ (void*)ChatLB_renderScroll,    // sub_411920 — compartido
     /*0x14*/ (void*)ChatLB_tick,
-    /*0x18*/ (void*)ChatLB_nullsub,
+    /*0x18*/ (void*)ChatLB_tickHook,
     /*0x1C*/ (void*)ChatLB_handleScrollIn,
     /*0x20*/ (void*)ChatLB_nullsub,
     /*0x24*/ (void*)GuildLB_keyHandler,     // sub_412180
