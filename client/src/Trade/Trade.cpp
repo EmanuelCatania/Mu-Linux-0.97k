@@ -465,10 +465,14 @@ static void LegacyMisclassified_TradeOpen(BYTE* pkt)
     g_trade_active = 1;
 
     if (pkt[0xb] == 0)
-        crt_sprintf(window_title, (char*)"Trade with %s");   // placeholder
+        // El placeholder llevaba "%s" y se llamaba SIN argumento: printf tomaba
+        // un slot de la pila como char* -> AV de lectura en ucrtbase.  El nombre
+        // del socio no esta disponible (pkt+3 y pkt+7 son DWORDs, no un nombre),
+        // asi que el titulo queda sin nombre hasta cablear los GlobalText reales.
+        crt_sprintf(window_title, (char*)"Trade");
     else
     {
-        crt_sprintf(window_title, (char*)"Duel with %s");    // placeholder
+        crt_sprintf(window_title, (char*)"Duel");   // idem: sin %s sin argumento
         g_duel_mode = 1;
     }
 
