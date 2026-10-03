@@ -2874,6 +2874,26 @@ void Net_ProcessPacket(void)
             int hdrSz = (hdr == 0xC3) ? 2 : 3;
             int wireLen = (hdr == 0xC3) ? Msg[1] : ((Msg[1] << 8) | Msg[2]);
             int encLen  = wireLen - hdrSz;
+            // DESBORDE DE PILA (2026-10-02, issue #75): `encLen` sale del CABLE
+            // (hasta 65532 en un C4) y CSimpleModulus_Decode escribe 8 bytes por
+            // cada 11 de entrada dentro de `scratch[0x800]`.  La validacion de
+            // tamaño estaba MAS ABAJO, o sea despues de que la escritura ya ocurrio.
+            // Con el server mandando su primer paquete encriptado eso pisaba la
+            // cookie /GS y MSVC mataba el proceso con __fastfail: sin excepcion, sin
+            // handler, sin cartel y sin linea de log.
+            //
+            // Decode con dst==0 devuelve solo el tamaño, asi que se valida primero.
+            if (encLen <= 0) {
+                NetLog("NET: C%c encLen invalido (%d) — descarto",
+                       (hdr == 0xC3) ? '3' : '4', encLen);
+                continue;
+            }
+            int needLen = CSimpleModulus_Decode(0, (int)(Msg + hdrSz), encLen, 0);
+            if (needLen <= 0 || needLen > (int)sizeof(scratch)) {
+                NetLog("NET: C%c decode no entra: encLen=%d needLen=%d > scratch=%d — descarto",
+                       (hdr == 0xC3) ? '3' : '4', encLen, needLen, (int)sizeof(scratch));
+                continue;
+            }
             int outLen  = CSimpleModulus_Decode((int)scratch, (int)(Msg + hdrSz), encLen, 0);
             if (outLen <= 0) {
                 NetLog("NET: C%c decode FAILED encLen=%d outLen=%d",
