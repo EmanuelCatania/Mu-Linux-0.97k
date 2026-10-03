@@ -151,21 +151,6 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
     sVar3 = *(short *)(param_1 + 2);
     effectType = sVar3;
 
-    // ─── Dead/dying entity (+0x8c != 0): black tint, special shadow draw ──────────────────
-    if (*(char *)(param_1 + 0x8c) != '\0') {
-        if (World == 7) {
-            GL_SetBlendSrcOver('\x01');
-            glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
-        }
-        else {
-            GL_ResetState();
-            glColor3f(0.0f, 0.0f, 0.0f);
-        }
-        if (World == 10) return;
-        BMD__RenderBodyShadow(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 0x58));
-        return;
-    }
-
     if (effectType == 505) {
         *(float *)((int)this_ + 0x48) = 0.5f;
         *(float *)((int)this_ + 0x4c) = 0.5f;
@@ -370,6 +355,22 @@ void __cdecl RenderPartObjectEffect(int param_1, int param_2, float *param_3,
             CreateSprite(1277, targetPos, spriteScale, fxLight, param_1, 0.0f, 0);
         }
     }
+    // IDA RenderPartObjectEffect 0x504B50: after the type-specific effects,
+    // o+140 chooses a projected shadow, not another opaque body pass.
+    // RenderCharacter already drew the body through Entity_PrepareRender.
+    if (*(BYTE *)(param_1 + 140) != 0) {
+        if (World == 7) {
+            EnableAlphaTest(true);
+            glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
+        } else {
+            GL_ResetState();
+            glColor3f(0.0f, 0.0f, 0.0f);
+        }
+        if (World != 10)
+            BMD__RenderBodyShadow(this_, *(int *)(param_1 + 100), *(int *)(param_1 + 88));
+        return;
+    }
+
     bVar4 = (byte)*(uint *)(param_1 + 0x78);
     if ((*(uint *)(param_1 + 0x78) & 1) == 1) {
         // bit 0 set → poisoned/slowed color (green-tinted)
