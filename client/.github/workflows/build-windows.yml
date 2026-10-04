@@ -5,7 +5,7 @@
 # - msbuild: compila mu97k.sln con msbuild, para comparar contra CMake.
 # - compare: compara las líneas de comando de cl/link/lib de los dos builds
 #            (tools/compare_build_flags.py), por configuración.
-# - map-symbols (sólo PRs): compara los símbolos de main.map entre la base y
+# - map-symbols (sólo PRs, informativo): compara los símbolos de main.map entre la base y
 #            el head del PR (tools/compare_map_symbols.py).
 
 name: build-windows
@@ -189,7 +189,12 @@ jobs:
           '```' >> $env:GITHUB_STEP_SUMMARY
           Get-Content map-diff.txt >> $env:GITHUB_STEP_SUMMARY
           '```' >> $env:GITHUB_STEP_SUMMARY
-          exit $rc
+          # Informativo: un renombre o un borrado a propósito no debe poner el PR en
+          # rojo. Si desaparecen símbolos queda un aviso y la lista en el resumen.
+          if ($rc -ne 0) {
+            "::warning title=main.map ${{ matrix.config }}::Desaparecen símbolos respecto de la base; revisar la lista en el resumen del job."
+          }
+          exit 0
 
       - uses: actions/upload-artifact@v4
         if: always()

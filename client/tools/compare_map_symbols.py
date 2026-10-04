@@ -17,6 +17,8 @@ import sys
 STATIC_SCOPE = re.compile(r"@\?[0-9A-Z]{1,4}@\?\?")
 # Etiquetas internas del compilador ($LN123): no son símbolos del programa.
 INTERNAL = re.compile(r"^\$LN\d+$")
+# Símbolo del PCH: lleva la ruta de stdafx.obj codificada, cambia con el directorio.
+PCHSYM = re.compile(r"^___@@_PchSym_")
 
 LINE = re.compile(r"^\s*[0-9a-fA-F]{4}:[0-9a-fA-F]{8}\s+(\S+)\s+[0-9a-fA-F]{8}\s+(.*)$")
 
@@ -42,7 +44,7 @@ def symbols(path):
             if not m:
                 continue
             name = m.group(1)
-            if INTERNAL.match(name):
+            if INTERNAL.match(name) or PCHSYM.match(name):
                 continue
             name = STATIC_SCOPE.sub("@?#@??", name)
             rest = m.group(2).split()
