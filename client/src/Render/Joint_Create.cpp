@@ -2399,6 +2399,17 @@ LAB_0046e69b:
       iVar6 = iVar6 + -1;
     } while (iVar6 != 0);
     puVar13 = puVar7;
+      // ESCRITURA SALVAJE (2026-10-02, issue #75): el destino de esta copia
+      // es un registro que Ghidra perdio y el port dejo como variable SIN
+      // asignar nunca -- solo se deferencia y se incrementa.  Son 0x161
+      // DWORDs = 1412 bytes (0x584, el tamano del nodo anti-tamper) escritos
+      // a una direccion arbitraria.  En Debug el local vale 0xCCCCCCCC y falla
+      // temprano; en Release trae basura de pila que apunta a memoria viva, y
+      // de ahi la corrupcion que reventaba en gdi32 / opengl32 / sprintf y las
+      // cookies /GS.  Estos bloques son el XOR anti-tamper de CharacterMachine,
+      // que este port neutraliza por policy, asi que la copia se redirige al
+      // scratch del nodo: queda inocua y acotada.
+    unaff_EBX = (undefined4 *)AntiTamper_HashNode();
     for (iVar6 = 0x161; iVar6 != 0; iVar6 = iVar6 + -1) {
       *unaff_EBX = *puVar13;
       puVar13 = puVar13 + 1;

@@ -167,7 +167,17 @@ void __cdecl RenderBoids(void)
                 // World != 10: render shadow on terrain.
                 if (World != 10) {
                     BYTE* model = (BYTE*)((uintptr_t)DAT_05828d58 + 188 * entType);
+                    // DESINCRONIZACION DE CACHE (2026-10-03): este glEnable crudo no
+                    // tocaba DAT_083a412c, asi que el GL quedaba con blending ENCENDIDO
+                    // y el cache diciendo apagado.  Como GL_ResetState/DisableAlphaBlend
+                    // hacen `if (cache != 0)` antes del glDisable, a partir de aca TODAS
+                    // las entidades siguientes se dibujaban mezcladas y con el color
+                    // negro de la sombra pegado: los monstruos de Atlans se veian
+                    // traslucidos y oscuros aunque su alpha, BlendMesh y HiddenMesh
+                    // estuvieran perfectos (medido con glGetBooleanv: blend=1 real
+                    // contra cache=0).
                     glEnable(GL_BLEND);
+                    DAT_083a412c = 1;   // mantener el cache en sync
                     glColor4f(0.0f, 0.0f, 0.0f, 0.2f);
                     float wx = v0[-86];
                     float wy = v0[-85];
@@ -176,6 +186,8 @@ void __cdecl RenderBoids(void)
                     *(float*)(model + 112) = wy;
                     *(float*)(model + 116) = wz;
                     BMD__RenderBodyShadow(model, -1, -1);
+                    // El color negro tambien se filtraba al resto del frame.
+                    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
                 }
             }
         }

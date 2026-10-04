@@ -81,10 +81,20 @@ void __stdcall InitGame(void)
     DAT_05826d24 = 0;     // SummonLife
     DAT_05826c08 = 0;     // SoccerTime    (IDA InitGame @0x4244B4)
     DAT_05826d33 = 0;     // SoccerObserver (IDA InitGame @0x4244BA)
-    DAT_07e11994 = -1;    // SelectedNpc
-    DAT_07e11990 = -1;    // SelectedOperate
-    DAT_07e1198c = -1;    // SelectedCharacter
-    DAT_07e11988 = -1;    // SelectedItem
+    // IDA InitGame L36-39 resetea los globals NOMBRADOS
+    //   SelectedNpc / SelectedOperate / SelectedCharacter / SelectedItem,
+    // que viven en 0x00559C4C / 54 / 50 / 48.  El port escribia DAT_07E11988..94,
+    // que es memoria distinta: el mismo error de alias que esta funcion ya tenia
+    // en SummonLife, Attacking, CheckInventory y World.
+    //
+    // Efecto visible: al volver del mundo al select-server, SelectedCharacter
+    // quedaba con el slot hovereado in-game y Entity_RenderAll_3D le dibujaba el
+    // contorno de seleccion al personaje del barco que cayera en ese indice
+    // (reportado 2026-10-03: el DK aparecia con el borde de seleccionado).
+    SelectedNpc       = -1;
+    SelectedOperate   = -1;
+    SelectedCharacter = -1;
+    SelectedItem      = -1;
     Attacking = -1;    // Attacking (IDA InitGame L38, global 0x00559C58).
                           // Antes escribia DAT_07e11984, que es el debounce de
                           // la flecha arriba del chat.

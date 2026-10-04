@@ -182,6 +182,66 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
         Entity_PrepareRender((unsigned char *)puVar13, 1, (int)param_3, cVar6);
         break;
     }
+    // IDA RenderCharacter 0x456770: draw the projected shadow immediately
+    // after Entity_PrepareRender and BEFORE monster glow/equipment passes.
+    // o+140 selects the shadow branch in RenderPartObjectEffect (0x504B50).
+    // A late opaque body pass here would cover Silver Valkyrie's glow.
+    if (sVar2 != 0x186 && *(BYTE *)((char *)puVar13 + 0x84) != 8) {
+        BYTE v11 = *(BYTE *)((char *)param_1 + 747);   // *(c + 747)
+        // Use the global World; a same-name local here was self-initialized.
+        float alpha = *(float *)((char *)puVar13 + 0x168);   // o + 360
+
+        if (v11 != 25 && v11 != 22 && v11 != 42 && v11 != (BYTE)-14 &&
+            v11 != 59 && v11 != 63 &&
+            World != 10 && alpha >= 0.3f)
+        {
+            // Blood Castle (11..16): clamp Z to terrain height when
+            // entity is dead+action-start (Blood Castle special case).
+            if (World >= 11 && World <= 16) {
+                if (*(BYTE *)((char *)puVar13 + 0x195) != 0 &&     // o+405 m_bActionStart
+                    *(BYTE *)((char *)param_1 + 0x2FD) != 0) {     // c+765 Dead>0 byte
+                    float wx = *(float *)((char *)puVar13 + 0x10);
+                    float wy = *(float *)((char *)puVar13 + 0x14);
+                    float th = RequestTerrainHeight(wx, wy);
+                    if (th < *(float *)((char *)puVar13 + 0x18)) {
+                        *(float *)((char *)puVar13 + 0x18) = th;
+                    }
+                }
+            }
+
+            // Special status -24/-23 (=232/233 unsigned) → set HiddenMesh=2
+            if (v11 == (BYTE)-24 || v11 == (BYTE)-23) {
+                *(int *)((char *)puVar13 + 0x58) = 2;
+            }
+
+            short v15 = sVar2;
+            if (v15 != 330 && v15 != 331) {
+                *(BYTE *)((char *)puVar13 + 0x8C) = 1;       // EnableShadow = 1
+                RenderPartObject((int)param_1,
+                             (int)v15,
+                             0,
+                             (float *)(param_1 + 200),       // c+800 Light
+                             alpha,
+                             0, 0, '\0', 0, '\x01',
+                             0, 2);
+                *(BYTE *)((char *)puVar13 + 0x8C) = 0;       // EnableShadow = 0
+            }
+
+            // Status -24/-23 → render alpha bitmap on terrain (water reflection)
+            if (v11 == (BYTE)-24 || v11 == (BYTE)-23) {
+                EnableAlphaBlend();
+                float wx = *(float *)((char *)puVar13 + 0x10);
+                float wy = *(float *)((char *)puVar13 + 0x14);
+                double t  = (double)DAT_05826e08 * 0.0015;
+                float lum = (float)(sin(t) * 0.30000001 + 0.80000001);
+                float Light[3] = { lum * 0.5f, lum * 0.5f, lum };
+                float Rotation = -*(float *)((char *)puVar13 + 0x24);
+                RenderTerrainAlphaBitmap(1264, wx, wy, 2.7f, 2.7f, Light,
+                                         Rotation, 1.0f);
+                *(int *)((char *)puVar13 + 0x58) = -1;   // HiddenMesh = -1
+            }
+        }
+    }
 
     // ── 4. Skill-state / anim-state particle effects ─────────────────────────
     BYTE bVar7 = *(BYTE *)((int)param_1 + 0x2eb);   // tipo de monstruo
@@ -517,71 +577,6 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
     }
 
 
-    // ── 7a. NPC / monster body render (IDA L347-401) ─────────────────────────
-    // Gate: entity_type != 390 (player) && kind != 8 (KIND_TRAP).
-    // Tipos de monstruo excluidos (+0x2EB):
-    //   25 (cloth-cape variants) / 22 (frost) / 42 (special-weapon dual-axe)
-    //   -14 = 242 (reserved) / 59 (charge state) / 63 (reserved)
-    // Excluded World == 10 (heaven map — different render path)
-    // Excluded alpha < 0.3 (entity fading out / invisible)
-    // Excluded entity_type 330/331 (terrain decorations rendered elsewhere)
-    if (sVar2 != 0x186 && *(BYTE *)((char *)puVar13 + 0x84) != 8) {
-        BYTE v11 = bVar7;   // *(c + 747)
-        int  World = (int)World;
-        float alpha = *(float *)((char *)puVar13 + 0x168);   // o + 360
-
-        if (v11 != 25 && v11 != 22 && v11 != 42 && v11 != (BYTE)-14 &&
-            v11 != 59 && v11 != 63 &&
-            World != 10 && alpha >= 0.3f)
-        {
-            // Atlans/Tarkan worlds (11..16): clamp Z to terrain height when
-            // entity is dead+action-start (Blood Castle special case).
-            if (World >= 11 && World <= 16) {
-                if (*(BYTE *)((char *)puVar13 + 0x195) != 0 &&     // o+405 m_bActionStart
-                    *(BYTE *)((char *)param_1 + 0x2FD) != 0) {     // c+765 Dead>0 byte
-                    float wx = *(float *)((char *)puVar13 + 0x10);
-                    float wy = *(float *)((char *)puVar13 + 0x14);
-                    float th = RequestTerrainHeight(wx, wy);
-                    if (th < *(float *)((char *)puVar13 + 0x18)) {
-                        *(float *)((char *)puVar13 + 0x18) = th;
-                    }
-                }
-            }
-
-            // Special status -24/-23 (=232/233 unsigned) → set HiddenMesh=2
-            if (v11 == (BYTE)-24 || v11 == (BYTE)-23) {
-                *(int *)((char *)puVar13 + 0x58) = 2;
-            }
-
-            short v15 = sVar2;
-            if (v15 != 330 && v15 != 331) {
-                *(BYTE *)((char *)puVar13 + 0x8C) = 1;       // EnableShadow = 1
-                RenderPartObject((int)param_1,
-                             (int)v15,
-                             0,
-                             (float *)(param_1 + 200),       // c+800 Light
-                             alpha,
-                             0, 0, '\0', 0, '\x01',
-                             0, 2);
-                *(BYTE *)((char *)puVar13 + 0x8C) = 0;       // EnableShadow = 0
-            }
-
-            // Status -24/-23 → render alpha bitmap on terrain (water reflection)
-            if (v11 == (BYTE)-24 || v11 == (BYTE)-23) {
-                EnableAlphaBlend();
-                float wx = *(float *)((char *)puVar13 + 0x10);
-                float wy = *(float *)((char *)puVar13 + 0x14);
-                double t  = (double)DAT_05826e08 * 0.0015;
-                float lum = (float)(sin(t) * 0.30000001 + 0.80000001);
-                float Light[3] = { lum * 0.5f, lum * 0.5f, lum };
-                float Rotation = -*(float *)((char *)puVar13 + 0x24);
-                RenderTerrainAlphaBitmap(1264, wx, wy, 2.7f, 2.7f, Light,
-                                         Rotation, 1.0f);
-                *(int *)((char *)puVar13 + 0x58) = -1;   // HiddenMesh = -1
-            }
-        }
-    }
-
     // ── Tinte de PK / de zona (IDA RenderCharacter L2310-2317) ──────────────
     //
     // SEGUNDA escritura de la luz del cuerpo.  Va aca a proposito: el cuerpo y
@@ -630,87 +625,12 @@ void* __cdecl RenderCharacter(void *param_1_, void *param_2_, void *param_3)
 
     bool bSkipWeaponLoop = false;
     if (sVar2 == 0x186) {
-        // ── BACK weapon render (IDA 1166-1239: gated por Bind=1) ────────────
-        // Renderiza arma en la espalda cuando es bow/crossbow + Bind activo.
-        // Bind = 1 sólo en in-game con World en 10-16, fuera de greeting anims.
-        // Para char-select (SceneFlag == 4) Bind siempre = 0 → este bloque
-        // NO debe disparar y dejar el render de armas al `Render_PlayerWeaponLoop`
-        // (líneas finales de este case 0x186) que las pone en la mano.
-        //
-        // Bind detection (port simplificado IDA líneas 1140-1153):
-        //   Bind = (World in 10..16) && (anim < 93 || anim > 124) &&
-        //          !c+0x34E && !(c+747 in special-skill ranges)
-        bool Bind = false;
-        if (SceneFlag == 5) {  // in-game
-            const int __world = (int)World;   // `World` es macro de World: nombrar
-                                                    // la local `World` la volvia una
-                                                    // auto-inicializacion con basura.
-            if (__world >= 10 && __world <= 16) {
-                BYTE anim = *(BYTE*)((int)puVar13 + 0x105);
-                if ((anim < 93 || anim > 124) && *(char*)((int)param_1 + 0x34E) == 0) {
-                    Bind = 1;
-                }
-            }
-            // IDA L1162-1165 (LABEL_272): en Blood Castle el arma NUNCA va a la
-            // espalda -- `if (World >= 11 && World <= 16) Bind = 0;`.  Faltaba, y
-            // por eso el arma del evento (EtcPart) quedaba atrapada dentro de la
-            // rama de "arma en la espalda" en vez de renderizarse.
-            if (__world >= 11 && __world <= 16) {
-                Bind = 0;
-            }
-        }
-
-        if (Bind) {
-            // Determine which weapon slot to render based on equipped items
-            int  iVar9 = 0;
-            void *param_3b = NULL;
-            short sA  = *(short *)(param_1 + 0xa2);
-            short sB  = *(short *)(param_1 + 0x9c);
-            char  cLv = *(char *)((int)param_1 + 0x272);
-            UINT  uOp = *(BYTE *)((int)param_1 + 0x273);
-
-            if (local_74 == (void *)0) {
-                // Dead / hidden: only show specific weapon types
-                if      (sA == 0x217) { param_3b = (void *)1; iVar9 = 1; }
-                else if (sB == 0x21f) { param_3b = (void *)1; }
-            } else {
-                param_3b = (void *)1;
-                if (!((sA >= 0x210 && sA <= 0x216) || sA == 0x221)) {
-                    if (!((sB >= 0x218 && sB <= 0x21e) || sB == 0x220 || sB == 0x222)) {
-                        if (sA == 0x217) iVar9 = 1;
-                        else param_3b = NULL;
-                    } else {
-                        iVar9 = 0;
-                    }
-                } else {
-                    iVar9 = 1;
-                }
-            }
-
-            int iVar18 = (int)*(short *)(param_1 + (iVar9 * 3 + 0x4e) * 2);
-            cLv = *(char *)((int)param_1 + iVar9 * 0x18 + 0x272);
-            uOp = *(BYTE *)((int)param_1 + iVar9 * 0x18 + 0x273);
-
-            // Overridden by zone state
-            bool zoneOverride = false;
-            if ((*(char *)((int)puVar13 + 0x21) == '\x04') &&
-                (World == 0) &&
-                (puVar13[1] > 0xcd) && (puVar13[1] < 0xd1)) {
-                iVar18 = 0x219;
-                cLv = '\b';
-                zoneOverride = true;
-            }
-            if (zoneOverride || (param_3b != NULL && iVar18 != -1)) {
-                void *local_68 = (void *)param_1[0xaa];
-                *(BYTE *)(param_1 + 0xa9) = 0x2f;
-                BYTE bAnim = *(BYTE *)((int)puVar13 + 0x105);
-                param_1[0xac] = ((bAnim == 0x1e) || (bAnim == 0x1f)) ? 0x3f800000 : 0x3e800000;
-                RenderLinkObject(0.0f, 0.0f, 15.0f, (int)param_1, (int)(param_1 + 0xa8),
-                             iVar18, cLv, uOp, (char)(size_t)(zoneOverride ? (void*)1 : param_3b), '\x01', 0);
-                param_1[0xaa] = (int)local_68;
-            }
-
-        }
+        // Equipped back items are rendered once by RenderCharacterBackItem below.
+        // IDA 0x4582BC..0x45830A: Bind = SafeZone || greeting (93..124) ||
+        // (World == 7 && swimming (21/29)), then cleared in Blood Castle.
+        // Icarus (World == 10) does NOT set Bind. The duplicate block here used
+        // World 10..16 + !SafeZone, drawing the elf's bow on bone 47 as well
+        // as the normal hand attachment while flying in Icarus.
 
         // -- Arma del evento de Blood Castle sobre la espalda (EtcPart) -------
         // IDA LABEL_308: `if (World >= 11 && World <= 16 && c->EtcPart)`, con

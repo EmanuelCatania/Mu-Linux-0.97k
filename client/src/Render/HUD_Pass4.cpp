@@ -555,13 +555,25 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
 
     CHAR Text[260] = {0};
     BYTE hide = InputTextHide[Index];
+    // DESBORDE DE PILA (2026-10-02, issue #75): estas dos ramas copiaban
+    // strlen(InputText[Index]) bytes en Text[260] SIN cota -- la tercera rama ya
+    // usaba strncpy, o sea el limite estaba contemplado y faltaba aca.
+    // InputText es [10][256] contiguo, asi que un slot que quede sin NUL (p.ej.
+    // strncpy(InputText[1], src, 0x100) con origen de 256 bytes) hace que strlen
+    // siga hacia los slots siguientes y devuelva hasta 2560.  Como esta funcion
+    // se inlinea dentro de Scene_Login con /O2, el desborde pisaba la cookie /GS
+    // de Scene_Login: MSVC reporta eso con __fastfail, que mata el proceso sin
+    // pasar por el filtro de excepciones -- de ahi los cierres sin cartel ni log.
+    const size_t kMaxText = sizeof(Text) - 1;
     if (hide == 1) {
         size_t len = strlen(InputText[Index]);
+        if (len > kMaxText) len = kMaxText;
         for (size_t i = 0; i < len; ++i) Text[i] = '*';
         Text[len] = 0;
     } else if (hide == 2) {
         const char* src = InputText[Index];
         size_t len = strlen(src);
+        if (len > kMaxText) len = kMaxText;
         size_t i = 0;
         for (; i < 7 && i < len; ++i) Text[i] = src[i];
         for (; i < len; ++i) Text[i] = '*';
@@ -644,7 +656,11 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     GL_DrawRect(boxX + 1.0f, boxY + 1.0f, W - 2.0f, H - 2.0f);
 
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    glEnable(GL_TEXTURE_2D);
+    // CACHE (2026-10-03): este glEnable no tocaba DAT_083a4125, asi que el GL
+    // quedaba texturado con el cache diciendo lo contrario y el proximo
+    // DisableTexture salteaba su glDisable.  Mismo patron que la fuga de blend
+    // que volvia traslucidos a los monstruos de Atlans.
+    glEnable(GL_TEXTURE_2D);   DAT_083a4125 = 1;
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFFFFFFFu;
     UI_DrawText(sx, sy, (char*)Text, 0, 1, 0);
@@ -736,6 +752,20 @@ extern "C" int __cdecl sub_47F360(int a1, int a2, LPCSTR a3, int a4, int a5,
     if (!a8) a8 = v10;
     int Height = (int)Bitmaps[0].Height;
     if (v9 > Height) v9 = Height;
+
+    // DESBORDE (2026-10-02, issue #75): IDA sub_47F360 clampea el ALTO contra
+    // Bitmaps[0].Height pero NO el ancho -- su loop corre `v16 < v10` con v10 = a1
+    // crudo.  El destino es Bitmaps[0].Buffer, 256x32 DWORDs (stride 1024 B), asi
+    // que el original se apoya en un invariante: que el texto nunca sea mas ancho
+    // que el bitmap de fuente.  Nuestro port rompe ese invariante por dos motivos
+    // propios -- el Text.bmd en espanol tiene filas de hasta 266 bytes, y
+    // GetTextExtentPointA devuelve pixeles de VENTANA, asi que por encima de
+    // 640x480 los anchos escalan.  Con eso cada linea larga escribia DWORDs fuera
+    // del buffer y corrompia el heap; la victima cambiaba con el layout (de ahi
+    // los crash en direcciones distintas, incluso dentro de gdi32 con handles
+    // validos).  Desviacion deliberada: acotamos igual que el alto.
+    const int MaxW = (int)Bitmaps[0].Width;
+    if (MaxW > 0 && v10 > MaxW) v10 = MaxW;
 
     if (v9 > 0 && Bitmaps[0].Buffer && ppvBits_055c9e4c) {
         BYTE* dst = Bitmaps[0].Buffer;
