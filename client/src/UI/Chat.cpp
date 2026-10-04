@@ -80,162 +80,53 @@ UI_RenderText(undefined4 param_1,undefined4 param_2,LPCSTR param_3,LPSIZE param_
 // Draws an input field character at (param_1, param_2) for field index param_3.
 // Masks characters with '*' if field type is password (DAT_07e113d8[param_3]==1).
 // Shows partial mask (first 7 chars visible) for type 2.
-// Also draws a caret '|' after the last character when cursor is on this field.
+// Also draws a blinking '_' or IME composition after the active field.
 // IDA: FUN_0047F0B0
-void __cdecl UI_RenderInputField(int param_1,undefined4 param_2,int param_3)
+void __cdecl UI_RenderInputField(int x, undefined4 y, int index)
 {
-  char cVar1;
-  LPSIZE ptVar2;
-  int iVar3;
-  uint uVar4;
-  uint uVar5;
-  char *pcVar6;
-  char *pcVar7;
-  LPCSTR *ppCVar8;
-  longlong lVar9;
-  LPCSTR *lpString;
-  LPSIZE *pptVar10;
-  undefined4 local_100;
-  undefined2 local_fc;
-  undefined1 local_fa;
-  undefined1 auStack_f9 [249];
+    // IDA 0x47F0B0: sub esp,100h; Text starts at [esp+10h] after
+    // four register pushes. This is ONE 256-byte array, not independent
+    // local_100/local_fc/local_fa/auStack_f9 variables whose order MSVC can change.
+    char text[256];
+    const char* input = DAT_07db8710[index];
+    const char hide = DAT_07e113d8[index];
+    DAT_00559c78 = 0xffd2e6ff;
+    SetBackgroundTextColor = 0;
 
-  ptVar2 = (LPSIZE)(uintptr_t)DAT_00559c8c;
-  DAT_00559c78 = 0xffd2e6ff;
-  SetBackgroundTextColor = 0;
-  if (DAT_07e113d8[param_3] == '\x01') {
-    iVar3 = -1;
-    uVar5 = 0;
-    pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // cast a char* antes de sumar: DAT_07db8710 es char[10][256]
-    do {
-      if (iVar3 == 0) break;
-      iVar3 = iVar3 + -1;
-      cVar1 = *pcVar6;
-      pcVar6 = pcVar6 + 1;
-    } while (cVar1 != '\0');
-    if (iVar3 != -2) {
-      do {
-        *(undefined1 *)((int)&local_100 + uVar5) = 0x2a;
-        uVar4 = 0xffffffff;
-        uVar5 = uVar5 + 1;
-        pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // cast a char* antes de sumar: DAT_07db8710 es char[10][256]
-        do {
-          if (uVar4 == 0) break;
-          uVar4 = uVar4 - 1;
-          cVar1 = *pcVar6;
-          pcVar6 = pcVar6 + 1;
-        } while (cVar1 != '\0');
-      } while (uVar5 < ~uVar4 - 1);
+    if (hide == 1 || hide == 2) {
+        size_t i = 0;
+        if (hide == 2) {
+            // IDA 0x47F12A..0x47F144: copy bytes 0..6 from this slot.
+            memcpy(text, input, 7);
+            i = 7;
+        }
+        const size_t length = strlen(input);
+        for (; i < length; ++i) text[i] = '*';
+        text[i] = 0;
+    } else {
+        strcpy(text, input);
     }
-    *(undefined1 *)((int)&local_100 + uVar5) = 0;
-  }
-  else if (DAT_07e113d8[param_3] == '\x02') {
-    pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // cast a char* antes de sumar: DAT_07db8710 es char[10][256]
-    local_100 = *(undefined4 *)pcVar6;
-    uVar5 = 0xffffffff;
-    local_fc = *(undefined2 *)(&DAT_07db8714 + param_3 * 0x100);
-    uVar4 = 7;
-    local_fa = (&DAT_07db8716)[param_3 * 0x100];
-    pcVar7 = pcVar6;
-    do {
-      if (uVar5 == 0) break;
-      uVar5 = uVar5 - 1;
-      cVar1 = *pcVar7;
-      pcVar7 = pcVar7 + 1;
-    } while (cVar1 != '\0');
-    if (7 < ~uVar5 - 1) {
-      do {
-        *(undefined1 *)((int)&local_100 + uVar4) = 0x2a;
-        uVar5 = 0xffffffff;
-        uVar4 = uVar4 + 1;
-        pcVar7 = pcVar6;
-        do {
-          if (uVar5 == 0) break;
-          uVar5 = uVar5 - 1;
-          cVar1 = *pcVar7;
-          pcVar7 = pcVar7 + 1;
-        } while (cVar1 != '\0');
-      } while (uVar4 < ~uVar5 - 1);
+
+    const int width = (int)DAT_00559c8c;
+    UI_DrawText(x, y, text, width, 1, 0);
+    GetTextExtentPointA(DAT_055c9fec, text, lstrlenA(text), &g_TextExtent07E113D0);
+    if (width > 0 && g_TextExtent07E113D0.cx > width)
+        g_TextExtent07E113D0.cx = width;
+    ScaleGlobalTextSize();
+
+    if (index == DAT_07e11d78) {
+        const DWORD frame = DAT_07e11d2c++;
+        if ((frame & 1) == 0) {
+            // IDA 0x47F25B: lea esi, InputTextIME[index*4]. Taking
+            // &DAT_07e11cec would multiply by the whole 40-byte array again.
+            const char* cursor = DAT_07e11cec + index * 4;
+            if (*cursor == 0) cursor = "_";
+            else if (hide == 1) cursor = "**";
+            UI_DrawText(x + g_TextExtent07E113D0.cx, y, (char*)cursor, 0, 1, 0);
+            GetTextExtentPointA(DAT_055c9fec, cursor, lstrlenA(cursor), &g_TextExtent07E113D0);
+            ScaleGlobalTextSize();
+        }
     }
-    *(undefined1 *)((int)&local_100 + uVar4) = 0;
-  }
-  else {
-    uVar5 = 0xffffffff;
-    pcVar6 = (char *)DAT_07db8710 + param_3 * 0x100;  // cast a char* antes de sumar: DAT_07db8710 es char[10][256]
-    do {
-      pcVar7 = pcVar6;
-      if (uVar5 == 0) break;
-      uVar5 = uVar5 - 1;
-      pcVar7 = pcVar6 + 1;
-      cVar1 = *pcVar6;
-      pcVar6 = pcVar7;
-    } while (cVar1 != '\0');
-    uVar5 = ~uVar5;
-    pcVar6 = pcVar7 + -uVar5;
-    pcVar7 = (char *)&local_100;
-    for (uVar4 = uVar5 >> 2; uVar4 != 0; uVar4 = uVar4 - 1) {
-      *(undefined4 *)pcVar7 = *(undefined4 *)pcVar6;
-      pcVar6 = pcVar6 + 4;
-      pcVar7 = pcVar7 + 4;
-    }
-    for (uVar5 = uVar5 & 3; uVar5 != 0; uVar5 = uVar5 - 1) {
-      *pcVar7 = *pcVar6;
-      pcVar6 = pcVar6 + 1;
-      pcVar7 = pcVar7 + 1;
-    }
-  }
-  UI_DrawText(param_1,param_2,(char *)&local_100,(int)DAT_00559c8c,1,0);
-  pptVar10 = &lpsz_07e113d0;
-  iVar3 = lstrlenA((LPCSTR)&local_100);
-  GetTextExtentPointA(DAT_055c9fec,(LPCSTR)&local_100,iVar3,(LPSIZE)pptVar10);
-  if ((0 < (int)ptVar2) && ((int)ptVar2 < (int)lpsz_07e113d0)) {
-    lpsz_07e113d0 = ptVar2;
-  }
-  // IDA:
-  //   TextSize.cx = (__int64)((double)TextSize.cx / g_fScreenRate_x);
-  //   TextSize.cy = (__int64)((double)TextSize.cy / g_fScreenRate_y);
-  // (Ghidra lo decompila como un `__ftol()` sin argumentos.)
-  // `lpsz_07e113d0` guarda el ANCHO del texto y es lo que posiciona el caret
-  // más abajo (`(int)&lpsz_07e113d0->cx + param_1`).
-  ScaleGlobalTextSize();
-  if (param_3 == DAT_07e11d78) {
-    uVar5 = DAT_07e11d2c & 0x80000001;
-    if ((int)uVar5 < 0) {
-      uVar5 = (uVar5 - 1 | 0xfffffffe) + 1;
-    }
-    DAT_07e11d2c = DAT_07e11d2c + 1;
-    if (uVar5 == 0) {
-      lpString = (LPCSTR *)(&DAT_07e11cec + param_3 * 4);
-      iVar3 = -1;
-      ppCVar8 = lpString;
-      do {
-        if (iVar3 == 0) break;
-        iVar3 = iVar3 + -1;
-        cVar1 = *(char *)ppCVar8;
-        ppCVar8 = (LPCSTR *)((int)ppCVar8 + 1);
-      } while (cVar1 != '\0');
-      if (iVar3 == -2) {
-        UI_DrawText((int)&lpsz_07e113d0->cx + param_1,param_2,(char *)&lpString_00559d40,0,1,0);
-        pptVar10 = &lpsz_07e113d0;
-        iVar3 = lstrlenA((LPCSTR)&lpString_00559d40);
-        lpString = (LPCSTR*)&lpString_00559d40;
-      }
-      else if (DAT_07e113d8[param_3] == '\x01') {
-        UI_DrawText((int)&lpsz_07e113d0->cx + param_1,param_2,(char *)&lpString_00559d3c,0,1,0);
-        pptVar10 = &lpsz_07e113d0;
-        iVar3 = lstrlenA((LPCSTR)&lpString_00559d3c);
-        lpString = (LPCSTR*)&lpString_00559d3c;
-      }
-      else {
-        UI_DrawText((int)&lpsz_07e113d0->cx + param_1,param_2,(char *)lpString,0,1,0);
-        pptVar10 = &lpsz_07e113d0;
-        iVar3 = lstrlenA((LPCSTR)lpString);
-      }
-      GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString,iVar3,(LPSIZE)pptVar10);
-      ScaleGlobalTextSize();   // era `__ftol()` sin args — ver helper arriba
-    }
-  }
-  return;
 }
 
 

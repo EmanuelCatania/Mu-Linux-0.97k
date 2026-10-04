@@ -250,7 +250,7 @@ void __cdecl OpenWorldModels(void) {
         World = 7;
     }
 
-    OpenJPG("Object8_drop01.jpg", 0x4d9, 0x2600, 0x2900, 0, '\x01');
+    OpenJPG("Object8/drop01.jpg", 0x4d9, 0x2600, 0x2900, 0, '\x01');
 
     if (DAT_0055a7c4 == '\0') {
         switch (World) {
@@ -350,9 +350,10 @@ void __cdecl OpenWorldModels(void) {
         OpenTexture(0xb2, "Object7/", 0x2600, '\x01');
         break;
     case 7:
-        // Peces de Atlans. IDA 0050C4D0 L171:
-        //   AccessModelWithTextures(v3, "Data\Object8\", "Fish", v3 - 180)  para v3 = 182..190
-        for (int i = 0xb6; i < 0xbf; i++) {
+        // IDA 0x50C4D0: ++v3; while (v3 - 181 < 9) loads 182..189
+        // (Fish02..Fish09). Slot 190 is Ice01: loading its textures from
+        // Object8 corrupts Ice Arrow for this map and subsequent maps.
+        for (int i = 182; i < 190; ++i) {
             AccessModel(i, "Data/Object8/", "Fish", i - 0xb4);
             OpenTexture(i, "Object8/", 0x2600, '\x01');
         }

@@ -599,7 +599,12 @@ LAB_0051c13d:
     goto LAB_0051ca70;
   case 0x72:
     DAT_00559c78 = 0xff0000ff;
-    crt_sprintf(local_c8,&DAT_07d46e60);
+    // IDA 0x51C36C: sprintf(String, GlobalText[397], CharactersClient + 916*SelectedHero + 0x1C1).
+    // GlobalText[397] es "Si deseas eliminar a %s," y el %s es el nombre del
+    // personaje seleccionado.  Sin ese argumento printf tomaba un slot cualquiera
+    // de la pila como char* -> AV de lectura dentro de ucrtbase.
+    crt_sprintf(local_c8,&DAT_07d46e60,
+                (const char *)(CharactersClient + 916 * SelectedHero + 0x1C1));
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
@@ -656,8 +661,15 @@ LAB_0051c13d:
     ppCVar11 = lpString_07d48e04;
     goto LAB_0051ca70;
   case 0x77:
-    FindCharacterIndex(DAT_07eaa0d8);
-    crt_sprintf(local_c8,DAT_07d486fc);
+    // IDA 0x51CD64: el indice que devuelve FindCharacterIndex indexa
+    // CharactersClient y el nombre (+0x1C1) es el %s del formato
+    // (GlobalText[418] = "%s").  El port descartaba el indice y no pasaba el
+    // argumento -> AV de lectura dentro de ucrtbase.
+    {
+    int nameIdx = FindCharacterIndex(DAT_07eaa0d8);
+    crt_sprintf(local_c8,(const char *)DAT_07d486fc,
+                (const char *)(CharactersClient + 916 * nameIdx + 0x1C1));
+    }
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
