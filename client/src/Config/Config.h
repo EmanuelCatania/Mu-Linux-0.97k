@@ -18,8 +18,8 @@
 // @ 0x0041E0A0
 int  Config_Load(void);
 
-// Read server IP and port from config.ini.
-// Stores results in PTR_s_connect_muonline_co_kr_005615b8 and g_ServerPort.
+// Server IP and port: DESVIACION, salen de Config/ServerConfig.h (el original
+// los lee de config.ini). Stores results in szServerIpAddress and g_ServerPort.
 // @ 0x0041E800
 int  Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned short* outPort);
 
@@ -35,16 +35,6 @@ extern DWORD m_MusicOnOff;
 extern DWORD g_Resolution; // lpData_055c9e38 (0-4)
 extern DWORD g_TextOut;    // lpData_055ca044
 
-// -- Overrides de server.cfg (DESVIACION DOCUMENTADA) ------------------------
-// El 0.97k solo lee estas opciones del registro (la clave Config de Webzen/Mu).
-// `server.cfg` acepta las mismas tres claves y, cuando estan, ganan sobre el
-// registro (permite distribuir el cliente preconfigurado sin launcher).
-//   MusicOnOff=0|1   SoundOnOff=0|1   Resolution=0..4  (o "800x600")
-// -1 = la clave no estaba en el archivo -> se respeta el registro.
-extern int g_CfgMusicOnOff;
-extern int g_CfgSoundOnOff;
-extern int g_CfgResolution;
-
 // -- Modo ventana (DESVIACION DELIBERADA) ------------------------------------
 // El 0.97k solo corre a pantalla completa con un modo de video de 16 bits
 // (WinMain + StartWindow, WS_POPUP en (0,0)), que en Windows 10/11 no existe.
@@ -53,6 +43,6 @@ extern int g_CfgResolution;
 // modo de video por la mayor profundidad de color disponible.
 //   WindowMode=0|1   (1 = ventana, default;  0 = pantalla completa)
 //   Borderless=0|1   (solo en modo ventana: sin barra de titulo ni borde)
-// Las dos salen de server.cfg, como el resto de los overrides de arriba.
+// Las dos salen de Config.ini [Window] (ver Config/UserSettings.h).
 extern int g_WindowMode;   // 1 = ventana
 extern int g_Borderless;   // 1 = ventana sin bordes

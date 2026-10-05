@@ -364,7 +364,7 @@ int Game_SceneUpdate(void)
         DAT_083a7c40 = 0;
 
         // ── Flujo ConnectServer ──────────────────────────────────
-        // Si server.cfg trae 2 líneas (línea 1 = ConnectServer), conectamos YA
+        // Si ServerConfig tiene ConnectServer (ConnectServerPort != 0), conectamos YA
         // al ConnectServer para recibir la lista real + el load. A diferencia
         // del GameServer, el ConnectServer NO responde JoinServer al conectar:
         // espera nuestro request C1 04 F4 02 (enviado en FD_CONNECT) y responde

@@ -56,8 +56,8 @@ lib/libjpeg/obj/
 #  NO puede hacerse público sin sacarlos antes.
 # ─────────────────────────────────────────────────────────────
 
-# Config con la dirección del server propio.
-# Se versiona server.cfg.example en su lugar.
+# server.cfg ya no se usa (la conexión está en src/Config/ServerConfig.h); se
+# sigue ignorando para que una copia vieja con una IP no se suba por error.
 bin/Client/server.cfg
 
 # ─────────────────────────────────────────────────────────────

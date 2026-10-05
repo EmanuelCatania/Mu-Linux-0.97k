@@ -259,9 +259,9 @@ void CServerSelWin_UpdateWhileActive(void)
                             extern void CS_SendPlain(const BYTE* data, int len);
                             CS_SendPlain(pkt6, 6);
                         } else {
-                            // ── Flujo directo (server.cfg 1 línea) ──────────────
+                            // ── Flujo directo (sin ConnectServer) ──────────────
                             // No hay ConnectServer: conectar directo al GameServer
-                            // de server.cfg. La transición a state 1 (Connecting)
+                            // de ServerConfig.h. La transición a state 1 (Connecting)
                             // arranca el progress bar + espera JoinServer.
                             extern void CreateSocket(const char *server, unsigned int port);
                             CreateSocket(PTR_s_connect_muonline_co_kr_005615b8,

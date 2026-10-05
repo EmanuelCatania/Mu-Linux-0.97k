@@ -855,9 +855,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     // MuExe_IntegrityCheck();
     // Client_GetSystemInfo(local_3d4); // IDA: FUN_004065F0
 
-    // 6: Config_ReadServerAddr — lee server.cfg ("IP PORT" o "IP:PORT") y
+    // 6: Config_ReadServerAddr — toma la dirección de Config/ServerConfig.h y
     // sobreescribe el buffer al que apunta PTR_s_connect_muonline_co_kr_005615b8.
-    // Si server.cfg no existe, se mantiene "connect.muonline.co.kr" (falla el connect).
     {
         extern char g_ServerIPBuf[128];
         unsigned short cfgPort = g_ServerPort;
@@ -923,7 +922,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
     //   Canales stride 0x1a a partir de +0x1c:
     //     +0x2c  ushort  channel_id     (display index = id%20+1)
     //     +0x2e  byte    load           (<100=LOW verde, 0x80+=FULL rojo, si no NORMAL)
-    // Solo en modo directo (server.cfg de 1 linea). Con ConnectServer la lista
+    // Solo en modo directo (sin ConnectServer en ServerConfig). Con ConnectServer la lista
     // la trae el F4/02 como en el original: si el CS no responde, queda vacia.
     if (!g_HasConnectServer) {
         char* srv0 = DAT_083a45d8;                           // entry index 0

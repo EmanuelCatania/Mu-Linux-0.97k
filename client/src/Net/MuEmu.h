@@ -33,8 +33,8 @@ namespace MuEmu {
 // -----------------------------------------------------------------------------
 // Clave efectiva, derivada en runtime
 // -----------------------------------------------------------------------------
-// `InitKeys` reproduce la derivacion del server y `server.cfg` puede traer
-// CustomerName/ServerSerial. Sin esas lineas quedan los valores de abajo, que
+// `InitKeys` reproduce la derivacion del server y Config/ServerConfig.h trae
+// CustomerName/ServerSerial. Hasta que corre InitKeys quedan los valores de abajo, que
 // son los que da la formula del server para CustomerName="MuLinux" +
 // ServerSerial="TbYehR2hFUPBKgZj".
 //

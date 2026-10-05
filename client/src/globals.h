@@ -302,10 +302,10 @@ extern char   *szServerIpAddress; // IDA: szServerIpAddress (0x005615B8)
 extern WORD    g_ServerPort; // IDA: g_ServerPort (0x005615BC)
 
 // ── ConnectServer flow ──────────────────────────────────────────
-extern int             g_HasConnectServer;       // server.cfg tiene 2 líneas → flujo CS
+extern int             g_HasConnectServer;       // ServerConfig tiene ConnectServer → flujo CS
 extern int             g_ConnectServerMode;      // 1 = socket actual habla con el ConnectServer
 extern int             g_ConnectServerRequested; // 1 = ya mandamos C1 04 F4 02
-extern char            g_GameServerIP[128];      // GameServer fallback (server.cfg línea 2)
+extern char            g_GameServerIP[128];      // GameServer fallback (ServerConfig)
 extern unsigned short  g_GameServerPort;
 // SceneFlag (in stdafx.h)
 // g_lpszMp3 @ 0x005615C4 — tabla de 6 rutas de BGM (ver globals.cpp).

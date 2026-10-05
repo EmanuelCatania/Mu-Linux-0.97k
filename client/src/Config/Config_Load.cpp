@@ -45,6 +45,8 @@
 #include "stdafx.h"
 #include "Config/Config.h"
 #include "Net/MuEmu.h"
+#include "Config/ServerConfig.h"
+#include "Config/UserSettings.h"
 
 extern "C" void DbgLogPublic(const char* msg);
 
@@ -58,12 +60,8 @@ DWORD g_SoundOn    = 1;      // DAT_?? (default 1 = sound on)
 DWORD g_Resolution = 0;      // DAT_?? (default 0 = 640x480)
 DWORD g_TextOut    = 0;      // DAT_?? (default 0)
 
-// Overrides de server.cfg (ver Config.h).  -1 = no vino en el archivo.
-int g_CfgMusicOnOff = -1;
-int g_CfgSoundOnOff = -1;
-int g_CfgResolution = -1;
-// Modo ventana (ver Config.h).  El DLL usa el mismo default: ventana on,
-// bordes on.  El binario original no tiene estas opciones.
+// Modo ventana (ver Config.h). Default del DLL: en ventana y con bordes; lo
+// pisa Config.ini [Window]. El binario original no tiene estas opciones.
 int g_WindowMode = 1;
 int g_Borderless = 0;
 // g_fScreenRate_x / _y — escala pixel -> layout 640x480. Las calcula
@@ -163,28 +161,37 @@ int Config_Load(void)
         RegCloseKey(hKey);
     }
 
-    // --- 4b. Overrides de server.cfg (DESVIACION DOCUMENTADA) -----------
-    // Config_ReadServerAddr ya corrio (WinMain lo llama antes que a esta
-    // funcion) y dejo lo que hubiera en server.cfg.  Se aplican DESPUES del
-    // registro a proposito: la idea es poder distribuir el cliente ya
-    // configurado sin depender de un launcher que escriba la clave.
-    if (g_CfgSoundOnOff >= 0) g_SoundOn    = (DWORD)g_CfgSoundOnOff;
-    if (g_CfgMusicOnOff >= 0) g_MusicOn    = (DWORD)g_CfgMusicOnOff;
-    if (g_CfgResolution >= 0) g_Resolution = (DWORD)g_CfgResolution;
+    // --- 4b. Preferencias de Config.ini (DESVIACION, ver UserSettings.h) ---
+    // Se aplican DESPUES del registro: lo que esté en Config.ini gana.
+    // `configPath` es el mismo archivo (en Windows "config.ini" y "Config.ini"
+    // son el mismo nombre).
+    gUserSettings.Load(configPath);
+    if (gUserSettings.GetEnableSound() >= 0) g_SoundOn    = (DWORD)gUserSettings.GetEnableSound();
+    if (gUserSettings.GetEnableMusic() >= 0) g_MusicOn    = (DWORD)gUserSettings.GetEnableMusic();
+    if (gUserSettings.GetWindowMode()  >= 0) g_WindowMode = gUserSettings.GetWindowMode();
+    if (gUserSettings.GetBorderless()  >= 0) g_Borderless = gUserSettings.GetBorderless();
+    if (gUserSettings.GetUsername()[0] != 0)
+        lstrcpynA((char*)lpData_055c9ba0, gUserSettings.GetUsername(), 11);
 
     // --- 5. Resolution -> screen dimensions ---
     //
     // IDA escribe WindowWidth/WindowHeight (DAT_0056156c/70) aca mismo
     // (0041E0A0 L121-138); el render entero (ventana, viewport, ortho,
     // proyeccion, mouse) lee esos dos.
-    switch (g_Resolution)
+    // Config.ini usa la tabla de resoluciones del DLL (ver UserSettings.h); si
+    // no trae Resolution, manda el índice del registro con la tabla del binario.
+    if (!CUserSettings::GetResolutionSize(gUserSettings.GetResolution(),
+                                          &WindowWidth, &WindowHeight))
     {
-    default:
-    case 0: WindowWidth = 640;  WindowHeight = 480;  break;
-    case 1: WindowWidth = 800;  WindowHeight = 600;  break;
-    case 2: WindowWidth = 1024; WindowHeight = 768;  break;
-    case 3: WindowWidth = 1280; WindowHeight = 1024; break;
-    case 4: WindowWidth = 1600; WindowHeight = 1200; break;
+        switch (g_Resolution)
+        {
+        default:
+        case 0: WindowWidth = 640;  WindowHeight = 480;  break;
+        case 1: WindowWidth = 800;  WindowHeight = 600;  break;
+        case 2: WindowWidth = 1024; WindowHeight = 768;  break;
+        case 3: WindowWidth = 1280; WindowHeight = 1024; break;
+        case 4: WindowWidth = 1600; WindowHeight = 1200; break;
+        }
     }
 
     // --- 6. Escalas de pixel -> layout logico 640x480 ---
@@ -325,229 +332,65 @@ static int FileVersion_Get(LPCSTR filename, unsigned short outVer[4])
 //   Config_ReadByEncKey @ 0x0041e450 — reads config.ini value by obfuscated key byte
 //   str_to_ushort       @ 0x0054261d — atoi variant returning unsigned short
 // -----------------------------------------------------------------------
-// Lee una línea "IP PORT" (o "IP:PORT") desde `server.cfg` en el directorio
-// actual. Reemplaza el lector original de config.ini encriptado (clave 0x75/0x70)
-// hasta que portemos Config_ReadByEncKey. Así el usuario puede apuntar al
-// ConnectServer local sin inyectar DLL ni recompilar.
+// DESVIACION: el original lee IP y puerto de config.ini con claves ofuscadas
+// (o de la línea de comandos que arma el launcher). Acá la conexión y la
+// identidad del server vienen compiladas en Config/ServerConfig.h, como en
+// MU 5.2. Ver ese archivo para apuntar a otro server.
 //
-// Formato aceptado (primera línea no vacía que empiece con dígito):
-//     127.0.0.1 44405
-//     127.0.0.1:44405
+// Con ConnectServerPort != 0 se usa el flujo ConnectServer: outIP/outPort
+// apuntan al ConnectServer y el GameServer queda como fallback. Con 0 se
+// conecta directo al GameServer.
 //
-// Además acepta líneas `clave=valor` con la identidad del server, que es de
-// donde sale la clave de encriptación de MuEmu:
-//     CustomerName=MuLinux
-//     ServerSerial=TbYehR2hFUPBKgZj
-// Tienen que coincidir con `GameServerInfo - StartUp.dat` del GameServer; si
-// faltan, se usan los valores por defecto de MuEmu.cpp. Ver MuEmu.h.
-//
-// Retorna 1 si encontró IP+puerto válidos (y los escribió en outIP/outPort),
-// 0 en caso contrario (el caller mantiene los valores por defecto —
-// s_connect_muonline_co_kr_005615b8 / g_ServerPort).
+// Además deja el serial y la versión que viajan en el login F1/01, y deriva la
+// clave de encriptación de MuEmu.
 int Config_ReadServerAddr(void* pConfig, char* lpCmdLine, char* outIP, unsigned short* outPort)
 {
     (void)pConfig; (void)lpCmdLine;
     if (outIP == nullptr || outPort == nullptr) return 0;
 
-    FILE* fp = fopen("server.cfg", "r");
-    if (fp == nullptr) fp = fopen("Server.cfg", "r");
-    if (fp == nullptr) return 0;
-
-    // server.cfg puede tener UNA o DOS líneas "IP PORT":
-    //   1 línea  → conexión directa al GameServer (comportamiento clásico).
-    //   2 líneas → línea 1 = ConnectServer (lista + load vía F4/02/04),
-    //              línea 2 = GameServer fallback (si el ConnectServer no responde
-    //              o el redirect F4/03 no llega). Activa el flujo ConnectServer.
-    char line[256];
-    int  found  = 0;   // ¿leímos al menos la línea 1?
-    int  nAddr  = 0;   // cuántas direcciones válidas leímos
-
-    // Identidad del server para derivar la clave de encriptación de MuEmu
-    // (líneas `clave=valor`). Ver MuEmu.h.
-    char cfgCustomerName[64] = "";
-    char cfgServerSerial[64] = "";
-
-    while (fgets(line, sizeof(line), fp) != nullptr) {
-        // Skip leading whitespace
-        char* p = line;
-        while (*p == ' ' || *p == '\t') p++;
-        if (*p == '\0' || *p == '\n' || *p == '\r' || *p == '#' || *p == ';')
-            continue;
-
-        // --- Líneas `clave=valor` (CustomerName / ServerSerial) --------------
-        // Se procesan antes que el parseo de IP porque no empiezan con dígito y
-        // el parser de abajo las descartaría en silencio.
-        {
-            char* eq = strchr(p, '=');
-            if (eq != nullptr) {
-                // Clave: recortar espacios de los dos lados.
-                char key[64];
-                int  keyLen = (int)(eq - p);
-                while (keyLen > 0 && (p[keyLen - 1] == ' ' || p[keyLen - 1] == '\t'))
-                    keyLen--;
-                if (keyLen > (int)sizeof(key) - 1) keyLen = (int)sizeof(key) - 1;
-                memcpy(key, p, keyLen);
-                key[keyLen] = 0;
-
-                // Valor: recortar espacios iniciales y el fin de línea.
-                char* val = eq + 1;
-                while (*val == ' ' || *val == '\t') val++;
-                int valLen = (int)strlen(val);
-                while (valLen > 0 && (val[valLen - 1] == '\n' || val[valLen - 1] == '\r' ||
-                                      val[valLen - 1] == ' '  || val[valLen - 1] == '\t'))
-                    valLen--;
-                val[valLen] = 0;
-
-                if (_stricmp(key, "CustomerName") == 0)
-                    lstrcpynA(cfgCustomerName, val, sizeof(cfgCustomerName));
-                else if (_stricmp(key, "ServerSerial") == 0) {
-                    lstrcpynA(cfgServerSerial, val, sizeof(cfgServerSerial));
-
-                    // El serial no sirve solo para derivar la clave: el server
-                    // TAMBIEN lo valida en el login F1/01
-                    // (Protocol.cpp:1193, memcmp contra m_ServerSerial ->
-                    // GCConnectAccountSend(6) si no coincide). Asi que el mismo
-                    // valor tiene que ir al buffer que se manda en el paquete,
-                    // o la clave saldria bien y el login fallaria igual.
-                    // Se rellena con ceros porque el server compara 16 bytes
-                    // contra su m_ServerSerial[17], que tambien viene en cero.
-                    memset(Serial, 0, sizeof(Serial));
-                    int serLen = (int)strlen(cfgServerSerial);
-                    if (serLen > (int)sizeof(Serial)) serLen = (int)sizeof(Serial);
-                    memcpy(Serial, cfgServerSerial, serLen);
-                }
-                else if (_stricmp(key, "ClientVersion") == 0) {
-                    // El server compara los 5 bytes contra su m_ServerVersion
-                    // (Protocol.cpp:1186) y devuelve el mismo error que el
-                    // serial si no coinciden.
-                    //
-                    // Se acepta tanto "0.97.11" (igual que ServerVersion en el
-                    // .dat del server, comodo para copiar y pegar) como "09711"
-                    // ya condensado. La forma con puntos se condensa tomando los
-                    // indices 0,2,3,5,6, que es exactamente lo que hace
-                    // CServerInfo::ReadStartupInfo.
-                    char v5[6] = { 0 };
-                    int  vlen  = (int)strlen(val);
-                    if (vlen >= 7 && val[1] == '.') {
-                        v5[0] = val[0]; v5[1] = val[2]; v5[2] = val[3];
-                        v5[3] = val[5]; v5[4] = val[6];
-                    } else if (vlen >= 5) {
-                        memcpy(v5, val, 5);
-                    }
-
-                    if (v5[0] != 0) {
-                        // El paquete lleva la version ofuscada: el cliente
-                        // guarda (v[i] + i + 1) y el receptor hace (b[i] - i - 1).
-                        for (int i = 0; i < 5; i++)
-                            Version[i] = (BYTE)(v5[i] + i + 1);
-
-                        char line[96];
-                        wsprintfA(line, "server.cfg: ClientVersion='%s'", v5);
-                        DbgLogPublic(line);
-                    }
-                }
-                else if (_stricmp(key, "WindowMode") == 0 ||
-                         _stricmp(key, "Borderless") == 0) {
-                    // DESVIACION DELIBERADA: modo ventana, portado
-                    // del DLL.  Ver la nota en Config.h.  Se aplican directo
-                    // (no hay valor en el registro que respetar).
-                    int parsed = -1;
-                    if      (_stricmp(val, "on")  == 0) parsed = 1;
-                    else if (_stricmp(val, "off") == 0) parsed = 0;
-                    else if (val[0] == '0' || val[0] == '1') parsed = val[0] - '0';
-                    if (parsed >= 0) {
-                        if (_stricmp(key, "WindowMode") == 0) g_WindowMode = parsed;
-                        else                                  g_Borderless = parsed;
-                    }
-
-                    char line[96];
-                    if (parsed >= 0) wsprintfA(line, "server.cfg: %s=%d", key, parsed);
-                    else             wsprintfA(line, "server.cfg: %s='%s' IGNORADO (valor invalido)", key, val);
-                    DbgLogPublic(line);
-                }
-                else if (_stricmp(key, "MusicOnOff") == 0 ||
-                         _stricmp(key, "SoundOnOff") == 0 ||
-                         _stricmp(key, "Resolution") == 0) {
-                    // DESVIACION DOCUMENTADA: el 0.97k lee estas tres del
-                    // registro y nada mas; se aceptan tambien aca y Config_Load
-                    // las aplica DESPUES del registro (ver 4b).
-                    int parsed = -1;
-                    if (_stricmp(key, "Resolution") == 0) {
-                        // Acepta el indice del binario (0..4) o "ANCHOxALTO".
-                        const char* x = strchr(val, 'x');
-                        if (x == nullptr) x = strchr(val, 'X');
-                        if (x != nullptr) {
-                            int w = atoi(val), h = atoi(x + 1);
-                            if      (w == 640  && h == 480)  parsed = 0;
-                            else if (w == 800  && h == 600)  parsed = 1;
-                            else if (w == 1024 && h == 768)  parsed = 2;
-                            else if (w == 1280 && h == 1024) parsed = 3;
-                            else if (w == 1600 && h == 1200) parsed = 4;
-                        } else if (val[0] >= '0' && val[0] <= '4' && val[1] == 0) {
-                            parsed = val[0] - '0';
-                        }
-                        if (parsed >= 0) g_CfgResolution = parsed;
-                    } else {
-                        // 0/1 (tambien se aceptan "on"/"off" por comodidad).
-                        if      (_stricmp(val, "on")  == 0) parsed = 1;
-                        else if (_stricmp(val, "off") == 0) parsed = 0;
-                        else if (val[0] == '0' || val[0] == '1') parsed = val[0] - '0';
-                        if (parsed >= 0) {
-                            if (_stricmp(key, "MusicOnOff") == 0) g_CfgMusicOnOff = parsed;
-                            else                                  g_CfgSoundOnOff = parsed;
-                        }
-                    }
-
-                    char line[96];
-                    if (parsed >= 0) wsprintfA(line, "server.cfg: %s=%d", key, parsed);
-                    else             wsprintfA(line, "server.cfg: %s='%s' IGNORADO (valor invalido)", key, val);
-                    DbgLogPublic(line);
-                }
-
-                continue;   // nunca es una dirección
-            }
-        }
-
-        // Extract IP (digits + dots)
-        char ipBuf[64];
-        int  ipLen = 0;
-        while (ipLen < 63 && p[ipLen] != '\0' &&
-               p[ipLen] != ' ' && p[ipLen] != '\t' &&
-               p[ipLen] != ':' && p[ipLen] != '\n' && p[ipLen] != '\r') {
-            ipBuf[ipLen] = p[ipLen];
-            ipLen++;
-        }
-        ipBuf[ipLen] = '\0';
-        if (ipLen == 0) continue;
-
-        p += ipLen;
-        while (*p == ' ' || *p == '\t' || *p == ':') p++;
-
-        int port = atoi(p);
-        if (port <= 0 || port > 65535) continue;
-
-        if (nAddr == 0) {
-            // Línea 1 → destino primario (ConnectServer si hay línea 2).
-            memcpy(outIP, ipBuf, ipLen + 1);
-            *outPort = (unsigned short)port;
-            found = 1;
-            nAddr++;
-        } else if (nAddr == 1) {
-            // Línea 2 → GameServer fallback + activa el flujo ConnectServer.
-            memcpy(g_GameServerIP, ipBuf, ipLen + 1);
-            g_GameServerPort  = (unsigned short)port;
-            g_HasConnectServer = 1;
-            nAddr++;
-        }
-        // Sin `break`: las direcciones extra se ignoran, pero seguimos leyendo
-        // para no perder líneas `clave=valor` que vengan después de las IPs.
+    if (ServerConfig::ConnectServerPort != 0) {
+        lstrcpynA(outIP, ServerConfig::ConnectServerIP, 128);
+        *outPort = ServerConfig::ConnectServerPort;
+        lstrcpynA(g_GameServerIP, ServerConfig::GameServerIP, sizeof(g_GameServerIP));
+        g_GameServerPort   = ServerConfig::GameServerPort;
+        g_HasConnectServer = 1;
+    } else {
+        lstrcpynA(outIP, ServerConfig::GameServerIP, 128);
+        *outPort = ServerConfig::GameServerPort;
+        g_HasConnectServer = 0;
     }
-    fclose(fp);
 
-    // Derivar la clave de MuEmu si server.cfg trajo la identidad del server.
-    // Sin esas líneas quedan los valores por defecto (CustomerName="MuLinux").
-    if (cfgCustomerName[0] != 0 || cfgServerSerial[0] != 0)
-        MuEmu::InitKeys(cfgCustomerName, cfgServerSerial);
+    // Serial del login: el server compara 16 bytes contra su m_ServerSerial[17],
+    // relleno de ceros (Protocol.cpp:1193).
+    memset(Serial, 0, sizeof(Serial));
+    int serLen = (int)strlen(ServerConfig::ServerSerial);
+    if (serLen > (int)sizeof(Serial)) serLen = (int)sizeof(Serial);
+    memcpy(Serial, ServerConfig::ServerSerial, serLen);
 
-    return found;
+    // Versión del login: "0.97.11" se condensa con los índices 0,2,3,5,6, igual
+    // que CServerInfo::ReadStartupInfo; "09711" se toma tal cual. El paquete la
+    // lleva ofuscada: el cliente guarda v[i] + i + 1 (Protocol.cpp:1186).
+    const char* ver  = ServerConfig::ClientVersion;
+    char        v5[6] = { 0 };
+    int         vlen = (int)strlen(ver);
+    if (vlen >= 7 && ver[1] == '.') {
+        v5[0] = ver[0]; v5[1] = ver[2]; v5[2] = ver[3];
+        v5[3] = ver[5]; v5[4] = ver[6];
+    } else if (vlen >= 5) {
+        memcpy(v5, ver, 5);
+    }
+    if (v5[0] != 0) {
+        for (int i = 0; i < 5; i++)
+            Version[i] = (BYTE)(v5[i] + i + 1);
+    }
+
+    MuEmu::InitKeys(ServerConfig::CustomerName, ServerConfig::ServerSerial);
+
+    char line[256];
+    wsprintfA(line, "ServerConfig: %s=%s:%u GameServer=%s:%u version='%s'",
+              g_HasConnectServer ? "ConnectServer" : "GameServer(directo)",
+              outIP, (unsigned)*outPort,
+              ServerConfig::GameServerIP, (unsigned)ServerConfig::GameServerPort, v5);
+    DbgLogPublic(line);
+    return 1;
 }
