@@ -94,6 +94,7 @@ set(MU_SOURCES
     src/Render/Render_Frame.cpp
     src/Net/Net_Process.cpp
     src/Config/Config_Load.cpp
+    src/Config/UserSettings.cpp
     src/Sound/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
     src/Terrain/Terrain_Utils.cpp
@@ -341,6 +342,8 @@ set(MU_HEADERS
     src/ghidra_compat.h
     src/types.h
     src/Config/Config.h
+    src/Config/ServerConfig.h
+    src/Config/UserSettings.h
     src/Combat/Combat.h
     src/Combat/Skills.h
     src/Game/Game_CharSelectTick.h
@@ -414,7 +417,7 @@ set_target_properties(mu97k PROPERTIES
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
     # Igual que el .vcxproj: se enlaza directo sobre bin/Client/, donde están
-    # Data/ y server.cfg.
+    # Data/ y Config.ini.
     RUNTIME_OUTPUT_DIRECTORY_DEBUG   "${CMAKE_CURRENT_SOURCE_DIR}/bin/Client"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_CURRENT_SOURCE_DIR}/bin/Client"
     PDB_OUTPUT_DIRECTORY_DEBUG       "${CMAKE_CURRENT_SOURCE_DIR}/bin/Client"

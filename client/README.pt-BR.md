@@ -99,106 +99,115 @@ Windows [MuEmu - Kayito](https://github.com/nicomuratona/MuEmu-0.97k-kayito)
 
 ## Compilar
 
-Requer **Visual Studio 2022** com o toolset de C++ para desktop.
+Requer o **Visual Studio 2022** com o toolset de C++ para desktop (ele já traz o
+CMake). Há duas formas equivalentes, que geram o mesmo exe:
 
-1. Abrir `mu97k.sln`.
-2. Selecionar a configuração **Debug** / plataforma **Win32**.
-3. Compilar.
+- **Visual Studio:** abrir `mu97k.sln`, escolher **Debug** ou **Release** com a
+  plataforma **Win32** e compilar.
+- **CMake:**
+  ```
+  cmake -S . -B build -A Win32 -T v143
+  cmake --build build --config Release
+  ```
+  O primeiro comando também gera `build/mu97k.sln`, caso você queira continuar
+  no Visual Studio com as pastas de `src/` como filtros.
+
+Enquanto os dois convivem, um `.cpp` novo entra no `.vcxproj` **e** no
+`CMakeLists.txt`; a CI falha se as duas listas não baterem.
 
 **A plataforma tem que ser Win32 (x86).** Todo o port assume ponteiros de 32
 bits: os endereços do binário original, os layouts de struct e os pools de
-memória. Em x64 não compila, e se compilasse não funcionaria.
+memória. Em x64 não compila, e se compilasse não serviria.
 
 Saída: `bin/Client/main.exe`. O projeto linka direto em `bin/Client/`, que é
-onde ficam os assets e o `server.cfg`, então não há cópia intermediária nem
-risco de acabar executando um binário antigo.
+onde ficam os assets e o `Config.ini`, então não há cópia intermediária nem
+risco de acabar executando um binário velho.
 
 Bibliotecas linkadas (todas do SDK do Windows, exceto a libjpeg, que vem
 incluída): `opengl32.lib`, `glu32.lib`, `winmm.lib`, `ws2_32.lib`.
 
-### Executar
+### Apontar para o seu servidor
 
-1. Copiar `server.cfg.example` para `bin/Client/server.cfg` e editar (é o único
-   arquivo que não vem no repo).
-2. Executar `bin/Client/main.exe`.
+O endereço e a identidade do servidor ficam **compilados no cliente**, como no
+MU 5.2: não há arquivo de configuração para distribuir. Eles ficam em
+`src/Config/ServerConfig.h` e apontam para o servidor de referência do projeto;
+para usar o seu, edite esse arquivo e recompile.
 
-#### `server.cfg`
+O endereço pode ser um IP ou um nome de host (o cliente resolve por DNS, como o
+original). Um nome é melhor: não fica um IP público fixo no código e o servidor
+pode mudar sem recompilar. Se o domínio estiver na Cloudflare, o registro tem
+que ficar **sem proxy** ("DNS only"): o proxy só deixa passar tráfego web e
+corta as conexões do jogo.
 
-Dois tipos de linha: os endereços (`<IP> <porta>`) e as de identidade do
-servidor (`chave=valor`). As que começam com `#` ou `;` são comentários.
-
+```cpp
+constexpr char           ConnectServerIP[]   = "mu.server-pups.space";
+constexpr unsigned short ConnectServerPort   = 44405;   // 0 = sem ConnectServer
+constexpr char           GameServerIP[]      = "mu.server-pups.space";
+constexpr unsigned short GameServerPort      = 55901;
+constexpr char           CustomerName[]      = "MuLinux";
+constexpr char           ServerSerial[]      = "TbYehR2hFUPBKgZj";
+constexpr char           ClientVersion[]     = "0.97.11";
 ```
-127.0.0.1 44405        <- ConnectServer (lista de servidores + barra de carga)
-127.0.0.1 55901        <- GameServer (fallback)
 
-CustomerName=MuLinux
-ServerSerial=TbYehR2hFUPBKgZj
-ClientVersion=0.97.11
-```
+**Endereços.** Com `ConnectServerPort` diferente de 0 é usado o fluxo do
+ConnectServer: o cliente pede a lista real (`F4/02`), o servidor responde com
+nomes e ocupação, e ao escolher um o `F4/03` redireciona para o GameServer; se o
+ConnectServer não responder, conecta no GameServer. Com `0` conecta direto no
+GameServer e o select-server mostra uma entrada fixa.
 
-**Endereços.** Com duas linhas usa-se o fluxo ConnectServer: o cliente pede a
-lista real (`F4/02`), o servidor responde com nomes e ocupação, e ao escolher um
-o `F4/03` redireciona para o GameServer. Com **uma única linha** conecta direto
-ao GameServer — o comportamento clássico, e nesse caso a tela de seleção de
-servidor mostra uma entrada estática de preenchimento.
+> O select-server aparece **sempre**, mesmo apontando direto para o GameServer:
+> é uma tela do fluxo original, não um sinal de que você está chegando ao
+> ConnectServer.
 
-> A tela de seleção de servidor aparece **sempre**, mesmo apontando direto para
-> o GameServer: é uma tela do fluxo original, não um indício de que você está
-> chegando ao ConnectServer.
-
-**Identidade do servidor.** Os três valores precisam coincidir com os do
+**Identidade do servidor.** Os três valores têm que coincidir com os do
 GameServer (`MuServer/GameServer/DATA/GameServerInfo - StartUp.dat`). Se algum
-não coincidir, o cliente **conecta mas não entra**, e sem nenhuma mensagem útil:
+não coincidir, o cliente **conecta mas não entra**, sem nenhuma mensagem útil:
 
-| Chave | De onde sai | O que acontece se não coincidir |
+| Valor | De onde vem | O que acontece se não coincidir |
 |---|---|---|
-| `CustomerName` | `CustomerName=` do `.dat` | O cliente conecta, descriptografa lixo e fica travado em *"conectando ao GameServer"* para sempre |
-| `ServerSerial` | `ServerSerial=` do `.dat` | Igual ao de cima, **e além disso** o login retorna *"versão incorreta"* |
-| `ClientVersion` | `ServerVersion=` do mesmo `.dat` | Login rejeitado com *"versão incorreta"* |
+| `CustomerName` | `CustomerName=` do `.dat` | O cliente conecta, descriptografa lixo e fica em *"conectando ao GameServer"* para sempre |
+| `ServerSerial` | `ServerSerial=` do `.dat` | Igual ao de cima, **e além disso** o login devolve *"versão incorreta"* |
+| `ClientVersion` | `ServerVersion=` do `.dat` | Login recusado com *"versão incorreta"* |
 
 `CustomerName` e `ServerSerial` alimentam a chave de criptografia, que o
-GameServer deriva da combinação dos dois
-(`GameServer/HackCheck.cpp::InitHackCheck`); é por isso que mudar o nome do
-cliente quebra a conexão mesmo com todo o resto correto. `ServerSerial` cumpre
-duas funções: entra nessa derivação e o servidor ainda o compara byte a byte no
-login.
+GameServer deriva dos dois combinados (`GameServer/HackCheck.cpp::InitHackCheck`).
+`ServerSerial` tem dupla função: entra nessa derivação e o servidor também o
+compara byte a byte no login. `ClientVersion` aceita `0.97.11` ou `09711`.
 
-Se forem omitidos, usam-se os valores padrão deste fork (os do bloco acima).
-`ClientVersion` aceita tanto `0.97.11` quanto `09711`.
-
-**Para diagnosticar**, `bin/Client/debug.log` registra a chave derivada na
-inicialização:
+**Para diagnosticar**, o `bin/Client/debug.log` registra ao iniciar o endereço
+usado e a chave derivada:
 
 ```
+ServerConfig: ConnectServer=mu.server-pups.space:44405 GameServer=mu.server-pups.space:55901 version='09711'
 MuEmu: InitKeys CustomerName='MuLinux' Serial='TbYehR2hFUPBKgZj' -> EncDecKey1=0xC2 EncDecKey2=0x01 (xor=0xC2 add=0xC2)
-server.cfg: ClientVersion='09711'
 ```
 
 Se o cliente travar conectando, essa linha é a primeira coisa a olhar: compare
 com o `CustomerName` do servidor.
 
-**Opções do cliente.** O 0.97k lê estas do registro do Windows, que é onde o
-launcher oficial as deixa. Aqui não há launcher, então também são aceitas no
-`server.cfg` e, quando presentes, ganham do registro — a ideia é poder
-distribuir o cliente já configurado. São aceitas como `0`/`1` ou `on`/`off`, e o
-que foi aplicado fica em `debug.log`; um valor inválido é ignorado e registrado
-como `IGNORADO`.
+### Executar e opções do jogador
 
-| Chave | Padrão do binário | Observações |
+Executar `bin/Client/main.exe`.
+
+As preferências do jogador são lidas de **`bin/Client/Config.ini`**, com as
+mesmas seções e chaves que o `Main.dll` de injeção usava, então o `Config.ini`
+que você já tem serve. O 0.97k original as lia do registro do Windows, onde o
+launcher oficial as deixava: se uma chave não está no `Config.ini`, vale o
+registro, e se também não estiver lá, o padrão do binário. O que foi aplicado
+fica no `debug.log` (linha `Config.ini: ...`).
+
+| Chave | Padrão do binário | Notas |
 |---|---|---|
-| `MusicOnOff` | `0` (desligada) | O `server.cfg.example` traz em `1`. Se você comentar, não vai ouvir BGM e isso **não é bug**: é o padrão original. O cliente não decodifica o mp3, ele executa `MuPlayer.exe` (incluído em `bin/Client/`). |
-| `SoundOnOff` | `1` | Efeitos sonoros (DirectSound). |
-| `Resolution` | `0` (640x480) | Índice `0..4` ou `LARGURAxALTURA`, mas **somente as cinco do binário**: 640x480, 800x600, 1024x768, 1280x1024, 1600x1200. Qualquer outra é ignorada e o cliente inicia em 640x480. |
-| `WindowMode` | — (desvio) | `1` = em janela, `0` = tela cheia. Portado da DLL de injeção: o 0.97k só roda em tela cheia e procura um modo de vídeo de 16 bits de cor que não existe no Windows 10/11, então a troca de modo falha em silêncio e a janela fica sem bordas num canto. |
-| `Borderless` | — (desvio) | `1` = sem barra de título nem borda. Só se aplica no modo janela. |
+| `[Window] WindowMode` | — (desvio) | `1` = em janela, `0` = tela cheia. O 0.97k só roda em tela cheia e procura um modo de vídeo de 16 bits que não existe no Windows 10/11. |
+| `[Window] Borderless` | — (desvio) | `1` = sem barra de título nem borda. Só vale em modo janela. |
+| `[Window] Resolution` | `0` (640x480) | Índices do DLL: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080. Atenção: o `4` não é o mesmo do registro (lá é 1600x1200). As widescreen (`4` a `7`) ainda não foram testadas neste cliente. |
+| `[Sound] EnableSound` | `1` | Efeitos sonoros (DirectSound). |
+| `[Sound] EnableMusic` | `0` (desligada) | O `Config.ini` do repositório vem com `1`. O cliente não decodifica o mp3: ele abre o `MuPlayer.exe` (incluído em `bin/Client/`). |
+| `[User] Username` | — | Preenche o campo de usuário do login. |
 
-Para adicionar uma resolução que não esteja entre essas cinco é preciso mexer em
-dois lugares de `src/Config/Config_Load.cpp`: o parser de `Resolution`, que mapeia
-`LARGURAxALTURA` para o índice, e o `switch` da seção 5, que é o que escreve
-`WindowWidth`/`WindowHeight`. Isso basta para o render escalar — as escalas de
-layout (`g_fScreenRate_x/y`) derivam dessas duas variáveis — mas nada do cliente
-foi testado fora das cinco originais, então uma resolução ampla pode expor
-problemas nos painéis e nos hit-tests.
+As seções `[Font]`, `[Antilag]`, `[MiniMap]` e `[Language]` do `Config.ini` do
+DLL vão ser lidas conforme esses sistemas forem integrados (Fase 2 do roteiro);
+`SoundLevel` e `MusicLevel` são lidos mas ainda não são aplicados.
 
 ---
 
@@ -377,8 +386,10 @@ hotfix.
 | `0.97.20` | encerramento da Fase 2, e assim por diante |
 
 O cliente e o [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) usam a
-mesma numeração: a mesma tag nos dois repositórios indica que funcionam juntos. Cada
-Season terá sua própria linha (`0.99.FH`, …).
+mesma numeração, mas o servidor só recebe uma tag nova quando muda. Cada
+Release do cliente indica com qual tag do servidor funciona (por exemplo, o
+cliente `0.97.10` funciona com o servidor `0.97.00`). Cada Season terá sua
+própria linha (`0.99.FH`, …).
 
 ### Branches
 

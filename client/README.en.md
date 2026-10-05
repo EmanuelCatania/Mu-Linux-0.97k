@@ -99,106 +99,116 @@ version [MuEmu - Kayito](https://github.com/nicomuratona/MuEmu-0.97k-kayito)
 
 ## Building
 
-Requires **Visual Studio 2022** with the C++ desktop toolset.
+Requires **Visual Studio 2022** with the C++ desktop toolset (it ships CMake).
+There are two equivalent ways, and both produce the same exe:
 
-1. Open `mu97k.sln`.
-2. Select the **Debug** configuration / **Win32** platform.
-3. Build.
+- **Visual Studio:** open `mu97k.sln`, pick **Debug** or **Release** with the
+  **Win32** platform, and build.
+- **CMake:**
+  ```
+  cmake -S . -B build -A Win32 -T v143
+  cmake --build build --config Release
+  ```
+  The first command also generates `build/mu97k.sln`, in case you want to keep
+  working in Visual Studio with the `src/` folders shown as filters.
 
-**The platform has to be Win32 (x86).** The whole port assumes 32-bit pointers:
-the original binary's addresses, the struct layouts and the memory pools. It
-does not compile on x64, and if it did it would not work.
+While both coexist, a new `.cpp` goes into the `.vcxproj` **and** into
+`CMakeLists.txt`; CI fails if the two lists don't match.
+
+**The platform must be Win32 (x86).** The whole port assumes 32-bit pointers:
+the original binary's addresses, struct layouts and memory pools. It does not
+build on x64, and it would be useless if it did.
 
 Output: `bin/Client/main.exe`. The project links straight into `bin/Client/`,
-which is where the assets and `server.cfg` live, so there is no intermediate
-copy and no risk of ending up running a stale binary.
+which is where the assets and `Config.ini` live, so there is no intermediate
+copy and no risk of running a stale binary.
 
-Linked libraries (all from the Windows SDK, except libjpeg which is bundled):
+Linked libraries (all from the Windows SDK, except libjpeg, which is bundled):
 `opengl32.lib`, `glu32.lib`, `winmm.lib`, `ws2_32.lib`.
 
-### Running
+### Pointing it at your server
 
-1. Copy `server.cfg.example` to `bin/Client/server.cfg` and edit it (it is the
-   only file not shipped in the repo).
-2. Run `bin/Client/main.exe`.
+The server address and identity are **compiled into the client**, as in MU 5.2:
+there is no config file to ship. They live in `src/Config/ServerConfig.h` and
+point to the project's reference server; to use yours, edit that file and
+rebuild.
 
-#### `server.cfg`
+The address can be an IP or a host name (the client resolves it through DNS,
+like the original). A name is better: no public IP is hardcoded and the server
+can move without a rebuild. If the domain is on Cloudflare, the record must be
+**unproxied** ("DNS only"): the proxy only lets web traffic through and cuts the
+game connections.
 
-Two kinds of line: the addresses (`<IP> <port>`) and the server identity ones
-(`key=value`). Lines starting with `#` or `;` are comments.
-
+```cpp
+constexpr char           ConnectServerIP[]   = "mu.server-pups.space";
+constexpr unsigned short ConnectServerPort   = 44405;   // 0 = no ConnectServer
+constexpr char           GameServerIP[]      = "mu.server-pups.space";
+constexpr unsigned short GameServerPort      = 55901;
+constexpr char           CustomerName[]      = "MuLinux";
+constexpr char           ServerSerial[]      = "TbYehR2hFUPBKgZj";
+constexpr char           ClientVersion[]     = "0.97.11";
 ```
-127.0.0.1 44405        <- ConnectServer (server list + load bar)
-127.0.0.1 55901        <- GameServer (fallback)
 
-CustomerName=MuLinux
-ServerSerial=TbYehR2hFUPBKgZj
-ClientVersion=0.97.11
-```
+**Addresses.** With a non-zero `ConnectServerPort` the ConnectServer flow is
+used: the client requests the real list (`F4/02`), the server answers with names
+and load, and picking one sends `F4/03`, which redirects to the GameServer; if
+the ConnectServer does not answer, it connects to the GameServer. With `0` it
+connects straight to the GameServer and the server-select shows a fixed entry.
 
-**Addresses.** With two lines the ConnectServer flow is used: the client asks
-for the real list (`F4/02`), the server answers with names and occupancy, and
-picking one makes `F4/03` redirect to the GameServer. With **a single line** it
-connects straight to the GameServer — the classic behavior, and in that case the
-server select screen shows a static placeholder entry.
+> The server-select **always** shows up, even when pointing straight at the
+> GameServer: it is a screen of the original flow, not a sign that you are
+> reaching the ConnectServer.
 
-> The server select screen **always** appears, even when pointing straight at
-> the GameServer: it is a screen from the original flow, not an indication that
-> you are reaching the ConnectServer.
+**Server identity.** All three values must match the GameServer's
+(`MuServer/GameServer/DATA/GameServerInfo - StartUp.dat`). If any of them does
+not match, the client **connects but never gets in**, with no useful message:
 
-**Server identity.** The three values have to match the GameServer's
-(`MuServer/GameServer/DATA/GameServerInfo - StartUp.dat`). If any one of them
-does not match, the client **connects but never gets in**, with no useful
-message:
-
-| Key | Where it comes from | What happens if it does not match |
+| Value | Where it comes from | What happens if it doesn't match |
 |---|---|---|
-| `CustomerName` | `CustomerName=` in the `.dat` | The client connects, decrypts garbage and hangs on *"connecting to GameServer"* forever |
-| `ServerSerial` | `ServerSerial=` in the `.dat` | Same as above, **plus** the login returns *"wrong version"* |
-| `ClientVersion` | `ServerVersion=` in the same `.dat` | Login rejected with *"wrong version"* |
+| `CustomerName` | `CustomerName=` in the `.dat` | The client connects, decrypts garbage and hangs on *"connecting to the GameServer"* forever |
+| `ServerSerial` | `ServerSerial=` in the `.dat` | Same as above, **and** the login returns *"wrong version"* |
+| `ClientVersion` | `ServerVersion=` in the `.dat` | Login rejected with *"wrong version"* |
 
 `CustomerName` and `ServerSerial` feed the encryption key, which the GameServer
-derives from the two combined
-(`GameServer/HackCheck.cpp::InitHackCheck`); that is why changing the client's
-name breaks the connection even when everything else is right. `ServerSerial`
-does double duty: it goes into that derivation and the server also compares it
-byte by byte at login.
+derives from both combined (`GameServer/HackCheck.cpp::InitHackCheck`).
+`ServerSerial` does double duty: it goes into that derivation and the server
+also compares it byte by byte at login. `ClientVersion` accepts `0.97.11` or
+`09711`.
 
-If they are omitted, this fork's defaults are used (the ones in the block
-above). `ClientVersion` accepts both `0.97.11` and `09711`.
-
-**For diagnostics**, `bin/Client/debug.log` records the derived key at startup:
+**To troubleshoot**, `bin/Client/debug.log` records the address in use and the
+derived key at startup:
 
 ```
+ServerConfig: ConnectServer=mu.server-pups.space:44405 GameServer=mu.server-pups.space:55901 version='09711'
 MuEmu: InitKeys CustomerName='MuLinux' Serial='TbYehR2hFUPBKgZj' -> EncDecKey1=0xC2 EncDecKey2=0x01 (xor=0xC2 add=0xC2)
-server.cfg: ClientVersion='09711'
 ```
 
-If the client hangs while connecting, that line is the first thing to look at:
-compare it against the server's `CustomerName`.
+If the client hangs while connecting, that line is the first thing to check:
+compare it with the server's `CustomerName`.
 
-**Client options.** The 0.97k reads these from the Windows registry, which is
-where the official launcher leaves them. There is no launcher here, so they are
-also accepted in `server.cfg` and, when present, they win over the registry —
-the point is being able to ship the client already configured. They are accepted
-as `0`/`1` or `on`/`off`, and whatever got applied ends up in `debug.log`; an
-invalid value is ignored and logged as `IGNORADO`.
+### Running and player options
+
+Run `bin/Client/main.exe`.
+
+Player preferences are read from **`bin/Client/Config.ini`**, with the same
+sections and keys the `Main.dll` injection DLL used, so the `Config.ini` you
+already have works. The original 0.97k read them from the Windows registry,
+where the official launcher left them: if a key is missing from `Config.ini`,
+the registry wins, and if it is not there either, the binary's default. What was
+applied is logged to `debug.log` (`Config.ini: ...` line).
 
 | Key | Binary default | Notes |
 |---|---|---|
-| `MusicOnOff` | `0` (off) | `server.cfg.example` ships it as `1`. If you comment it out you will not hear any BGM, and that is **not a bug**: it is the original default. The client does not decode the mp3, it launches `MuPlayer.exe` (included in `bin/Client/`). |
-| `SoundOnOff` | `1` | Sound effects (DirectSound). |
-| `Resolution` | `0` (640x480) | Index `0..4` or `WIDTHxHEIGHT`, but **only the binary's five**: 640x480, 800x600, 1024x768, 1280x1024, 1600x1200. Anything else is ignored and the client starts at 640x480. |
-| `WindowMode` | — (deviation) | `1` = windowed, `0` = fullscreen. Ported from the injection DLL: the 0.97k only runs fullscreen and looks for a 16-bit color video mode that does not exist on Windows 10/11, so the mode switch fails silently and the window ends up borderless in a corner. |
-| `Borderless` | — (deviation) | `1` = no title bar and no border. Only applies in windowed mode. |
+| `[Window] WindowMode` | — (deviation) | `1` = windowed, `0` = fullscreen. The 0.97k only runs fullscreen and looks for a 16-bit video mode that does not exist on Windows 10/11. |
+| `[Window] Borderless` | — (deviation) | `1` = no title bar or border. Windowed mode only. |
+| `[Window] Resolution` | `0` (640x480) | DLL indices: `0` 640x480, `1` 800x600, `2` 1024x768, `3` 1280x1024, `4` 1280x720, `5` 1366x768, `6` 1600x900, `7` 1920x1080. Note: `4` is not the registry's `4` (there it is 1600x1200). The widescreen ones (`4` to `7`) are not tested in this client yet. |
+| `[Sound] EnableSound` | `1` | Sound effects (DirectSound). |
+| `[Sound] EnableMusic` | `0` (off) | The repo's `Config.ini` ships it as `1`. The client does not decode the mp3: it launches `MuPlayer.exe` (bundled in `bin/Client/`). |
+| `[User] Username` | — | Prefills the login username field. |
 
-To add a resolution that is not one of those five you have to touch two places
-in `src/Config/Config_Load.cpp`: the `Resolution` parser, which maps
-`WIDTHxHEIGHT` to the index, and the `switch` in section 5, which is what writes
-`WindowWidth`/`WindowHeight`. That is enough for rendering to scale — the layout
-scales (`g_fScreenRate_x/y`) are derived from those two variables — but nothing
-in the client is tested outside the five original ones, so a wide resolution may
-expose problems in panels and hit-tests.
+The `[Font]`, `[Antilag]`, `[MiniMap]` and `[Language]` sections of the DLL's
+`Config.ini` will be read as those systems get integrated (Phase 2 of the
+roadmap); `SoundLevel` and `MusicLevel` are read but not applied yet.
 
 ---
 
@@ -376,8 +386,9 @@ hotfix.
 | `0.97.20` | close of Phase 2, and so on |
 
 The client and the [server](https://github.com/EmanuelCatania/Mu-Linux-0.97k) use the
-same numbering: the same tag in both repos means they work together. Each
-Season will have its own line (`0.99.FH`, …).
+same numbering, but the server only gets a new tag when it changes. Each client
+Release states which server tag it works with (for example, client `0.97.10`
+works with server `0.97.00`). Each Season will have its own line (`0.99.FH`, …).
 
 ### Branches
 

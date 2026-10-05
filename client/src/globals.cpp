@@ -315,9 +315,8 @@ float    CameraDistance  = 0.0f;        // DAT_083A45D0: current MoveMainCamera 
 DWORD    DAT_0056156c  = 640;   // WindowWidth default
 DWORD    DAT_00561570  = 480;   // WindowHeight default
 DWORD    DAT_00561574  = 0;
-// Buffer for server IP (writable — Config_ReadServerAddr fills it from server.cfg).
-// szServerIpAddress puntua a este buffer por defecto; si server.cfg existe, se sobreescribe
-// con la IP del ConnectServer local.
+// Buffer de la IP del server: Config_ReadServerAddr lo llena desde Config/ServerConfig.h.
+// szServerIpAddress apunta a este buffer; el valor inicial se reemplaza siempre.
 char     g_ServerIPBuf[128] = "connect.muonline.co.kr";
 // IDA: szServerIpAddress (0x005615B8)
 char    *szServerIpAddress  = g_ServerIPBuf; // IDA: szServerIpAddress (0x005615B8)
@@ -325,14 +324,14 @@ char    *szServerIpAddress  = g_ServerIPBuf; // IDA: szServerIpAddress (0x005615
 WORD     g_ServerPort  = 55901; // IDA: g_ServerPort (0x005615BC)
 
 // ── ConnectServer flow ──────────────────────────────────────────
-// Cuando server.cfg tiene 2 líneas: línea 1 = ConnectServer (szServerIpAddress/bc),
+// Con ConnectServer en ServerConfig: szServerIpAddress/g_ServerPort = ConnectServer,
 // línea 2 = GameServer fallback (g_GameServerIP/Port). g_HasConnectServer activa
 // el flujo original: conectar al CS → recibir lista+load (F4/04/F4/02) → al
 // elegir server mandar F4/03 → redirect al GameServer → login.
-int             g_HasConnectServer      = 0;  // server.cfg tiene 2 líneas
+int             g_HasConnectServer      = 0;  // ServerConfig tiene ConnectServer
 int             g_ConnectServerMode     = 0;  // 1 = socket actual habla con el CS
 int             g_ConnectServerRequested = 0; // 1 = ya mandamos C1 04 F4 02 en esta conexión CS
-char            g_GameServerIP[128]     = ""; // GameServer fallback (server.cfg línea 2)
+char            g_GameServerIP[128]     = ""; // GameServer fallback (ServerConfig)
 unsigned short  g_GameServerPort        = 0;
 // SceneFlag (above)
 // g_lpszMp3 @ 0x005615C4 — tabla de 6 punteros a las rutas de los BGM.

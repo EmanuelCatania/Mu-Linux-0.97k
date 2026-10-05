@@ -40,7 +40,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <!-- El cliente se enlaza directo sobre bin\Client\, que es donde viven los
-         assets (Data\) y server.cfg. Así hay un único main.exe: sin carpeta de
+         assets (Data\) y Config.ini. Así hay un único main.exe: sin carpeta de
          salida intermedia y sin paso de copia que pueda dejar un exe viejo. -->
     <OutDir>$(SolutionDir)bin\Client\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
@@ -114,6 +114,8 @@
     <ClInclude Include="src\ghidra_compat.h" />
     <ClInclude Include="src\types.h" />
     <ClInclude Include="src\Config\Config.h" />
+    <ClInclude Include="src\Config\ServerConfig.h" />
+    <ClInclude Include="src\Config\UserSettings.h" />
     <ClInclude Include="src\Combat\Combat.h" />
     <ClInclude Include="src\Combat\Skills.h" />
     <ClInclude Include="src\Game\Game_CharSelectTick.h" />
@@ -176,6 +178,7 @@
     <ClCompile Include="src\Render\Render_Frame.cpp" />
     <ClCompile Include="src\Net\Net_Process.cpp" />
     <ClCompile Include="src\Config\Config_Load.cpp" />
+    <ClCompile Include="src\Config\UserSettings.cpp" />
     <ClCompile Include="src\Sound\Sound_Queue.cpp" />
     <ClCompile Include="src\Monster\Monster_Data.cpp" />
     <ClCompile Include="src\Terrain\Terrain_Utils.cpp" />
