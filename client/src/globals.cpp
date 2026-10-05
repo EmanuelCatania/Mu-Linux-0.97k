@@ -240,7 +240,11 @@ float    _DAT_00559680 = 0.0f;
 DWORD    DAT_00559680  = 0;
 DWORD    DAT_00559684  = 0;
 char     DAT_005597a0  = 'p';               // PathFinder debug string sentinel
-DWORD    DAT_005597c4  = 0;
+// IDA .data 0x5597C4 = 1. Con 1, Skeleton_Transform (0x4404E0) usa la luz del
+// mundo (1.3, 0, 2). Con 0 usa la luz horizontal de la vista previa de crear
+// personaje (0, -1.5, 0), que oscurece las caras que miran hacia arriba.
+// Scene_CharSelect lo pone en 0 sólo para esa vista previa y lo vuelve a 1.
+DWORD    DAT_005597c4  = 1;
 float    _DAT_005597c8 = 1.0f;
 DWORD    DAT_005597c8  = 0;
 DWORD    DAT_0055987c  = 0;
