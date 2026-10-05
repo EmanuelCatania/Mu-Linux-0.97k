@@ -958,6 +958,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_DESTROY:
+        // IDA WndProc (0x4149D0) case WM_DESTROY: marca el cierre, corta la
+        // conexión, libera los 420 buffers de sonido y llama a KillGLWindow
+        // (OpenGL_Release: DirectSound, contexto OpenGL y modo de video). Sin
+        // esto, al cerrar en pantalla completa el escritorio quedaba en la
+        // resolución del juego.
+        DAT_055ca018 = 1;                                   // Destroy
+        CWsctlc_Close((int)(uintptr_t)SocketClient);
+        for (int buffer = 0; buffer < 420; ++buffer)
+            Sound_ReleaseBuffer(buffer);
+        OpenGL_Release();
         PostQuitMessage(0);
         break;
 
