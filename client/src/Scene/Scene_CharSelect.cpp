@@ -375,7 +375,7 @@ int Scene_CharSelect(void)
                     }
                     iVar4 = lstrlenA(aCStack_50);
                     GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, aCStack_50, iVar4, &tStack_68);
-                    UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / DAT_0056156c,
+                    UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / gWindow.GetWidth(),
                                  (nameProjY - tStack_68.cy) + -3,
                                  aCStack_50, (LPSIZE)0x0, '\0', 3);
                     // Class name + level (bottom, normal font) — IDA L202-209:
@@ -406,7 +406,7 @@ int Scene_CharSelect(void)
                     }
                     iVar4 = lstrlenA(aCStack_50);
                     GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, aCStack_50, iVar4, &tStack_68);
-                    UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / DAT_0056156c,
+                    UI_RenderText(local_6c - (uint)((tStack_68.cx / 2) * 0x280) / gWindow.GetWidth(),
                                  nameProjY, aCStack_50, (LPSIZE)0x0, '\0', 0);
                     pcVar5 = (char*)DAT_07abf5d0;
                 }
@@ -420,11 +420,11 @@ int Scene_CharSelect(void)
             SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
             iVar9 = lstrlenA((LPCSTR)lpString_07d49c14);
             GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)lpString_07d49c14, iVar9, &tStack_68);
-            UI_RenderText(0x140 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x14a,
+            UI_RenderText(0x140 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x14a,
                          (LPCSTR)lpString_07d49c14, (LPSIZE)0x0, '\0', 0);
             iVar9 = lstrlenA((LPCSTR)lpString_07d49d40);
             GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)lpString_07d49d40, iVar9, &tStack_68);
-            UI_RenderText(0x140 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x15c,
+            UI_RenderText(0x140 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x15c,
                          (LPCSTR)lpString_07d49d40, (LPSIZE)0x0, '\0', 0);
         }
 
@@ -433,15 +433,15 @@ int Scene_CharSelect(void)
         SelectObject((HDC)(uintptr_t)DAT_055c9fec, (HGDIOBJ)(uintptr_t)DAT_055ca00c);
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a3c);
         GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a3c, iVar9, &tStack_68);
-        UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x186,
+        UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x186,
                      (LPCSTR)&lpString_00561a3c, (LPSIZE)0x0, '\0', 0);
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a58);
         GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a58, iVar9, &tStack_68);
-        UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x19a,
+        UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x19a,
                      (LPCSTR)&lpString_00561a58, (LPSIZE)0x0, '\0', 0);
         iVar9 = lstrlenA((LPCSTR)&lpString_00561a68);
         GetTextExtentPointA((HDC)(uintptr_t)DAT_055c9fec, (LPCSTR)&lpString_00561a68, iVar9, &tStack_68);
-        UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / DAT_0056156c >> 1), 0x1ae,
+        UI_RenderText(0x1b8 - ((uint)(tStack_68.cx * 0x280) / gWindow.GetWidth() >> 1), 0x1ae,
                      (LPCSTR)&lpString_00561a68, (LPSIZE)0x0, '\0', 0);
 
         GL_End2D();

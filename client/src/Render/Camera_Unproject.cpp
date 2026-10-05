@@ -16,9 +16,9 @@ void __cdecl Camera_BuildMouseRay(int param_1, int param_2, float *param_3) {
     // compilador C++ los puede reubicar en cualquier orden, así que tienen que ser
     // arrays reales: Vector_InverseRotate lee/escribe 3 floats secuenciales.
     float view_dir[3];
-    view_dir[0] =  (float)(int)((UINT)(DAT_0056156c * param_1) / 0x280 - ViewportCenterX)
+    view_dir[0] =  (float)(int)((UINT)(gWindow.GetWidth() * param_1) / 0x280 - ViewportCenterX)
                  * _DAT_083a42a4 * Ff(DAT_00561550);
-    view_dir[1] = -((float)(int)((UINT)(DAT_00561570 * param_2) / 0x1e0 - ViewportCenterY)
+    view_dir[1] = -((float)(int)((UINT)(gWindow.GetHeight() * param_2) / 0x1e0 - ViewportCenterY)
                  * _DAT_083a42a8 * Ff(DAT_00561550));
     view_dir[2] = -Ff(DAT_00561550);
 

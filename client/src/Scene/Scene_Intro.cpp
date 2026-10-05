@@ -171,17 +171,17 @@ void __cdecl Scene_Intro(HDC param_1)
 
     // Webzen logo — centered
     uStack_4 = 0;
-    local_8 = (undefined1 *)DAT_0056156c;
+    local_8 = (undefined1 *)gWindow.GetWidth();
     GL_DrawTexture(0xc,
-        (float)DAT_0056156c * _DAT_00552504 - _DAT_005529bc,
-        (float)DAT_0056156c * _DAT_00552d3c - _DAT_00552d38,
+        (float)gWindow.GetWidth() * _DAT_00552504 - _DAT_005529bc,
+        (float)gWindow.GetWidth() * _DAT_00552d3c - _DAT_00552d38,
         256.0f, 195.0f, 0.0f, 0.0f, 1.0f, 0.76171875f, '\0', '\0');
 
     // ESRB "Everyone" badge — top right
     uStack_4 = 0;
-    local_8 = (undefined1 *)DAT_0056156c;
+    local_8 = (undefined1 *)gWindow.GetWidth();
     GL_DrawTexture(0xd,
-        (float)DAT_0056156c - _DAT_00552908,
+        (float)gWindow.GetWidth() - _DAT_00552908,
         0.0f, 120.0f, 60.0f, 0.0f, 0.0f, 0.9375f, 0.9375f, '\0', '\0');
 
     // Debug overlay (only in bypass mode)

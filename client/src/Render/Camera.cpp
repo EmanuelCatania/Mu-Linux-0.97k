@@ -182,9 +182,9 @@ void __cdecl Camera_SetupFrustum(float param_1, float *param_2)
 // out_ray[0..2] = world-space ray direction vector
 void __cdecl Camera_MouseRay(int mouseX, int mouseY, float *out_ray)
 {
-    float view_x = (Ff(DAT_0056156c) * (float)mouseX / 0x280 - Ff(ViewportCenterX)) *
+    float view_x = ((float)gWindow.GetWidth() * (float)mouseX / 0x280 - Ff(ViewportCenterX)) *
                    Ff(DAT_083a42a4) * Ff(DAT_00561550);
-    float view_y = -(Ff(DAT_00561570) * (float)mouseY / 0x1e0 - Ff(ViewportCenterY)) *
+    float view_y = -((float)gWindow.GetHeight() * (float)mouseY / 0x1e0 - Ff(ViewportCenterY)) *
                    Ff(DAT_083a42a8) * Ff(DAT_00561550);
     float view_z = -Ff(DAT_00561550);
 
@@ -328,8 +328,8 @@ void __cdecl Camera_ProjectWorldToScreen(float *param_1,int *param_2,int *param_
   // Scale from real-window pixels to logical 640×480
   // IDA: `*sx = 640 * *sx / (int)WindowWidth;` — aritmetica CON SIGNO (el cast
   // a (int) del divisor esta justamente para eso).
-  int ww = (int)DAT_0056156c;
-  int wh = (int)DAT_00561570;
+  int ww = (int)gWindow.GetWidth();
+  int wh = (int)gWindow.GetHeight();
   if (ww == 0) ww = 640;
   if (wh == 0) wh = 480;
   int outX = 640 * sx / ww;
@@ -354,10 +354,10 @@ void __cdecl GL_BeginViewport(int param_1,int param_2,int param_3,int param_4)
   uint uVar3;
   uint uVar4;
 
-  uVar1 = DAT_0056156c * param_1;
-  uVar2 = DAT_00561570 * param_2;
-  uVar3 = (uint)(DAT_0056156c * param_3) / 0x280;
-  uVar4 = (uint)(DAT_00561570 * param_4) / 0x1e0;
+  uVar1 = gWindow.GetWidth() * param_1;
+  uVar2 = gWindow.GetHeight() * param_2;
+  uVar3 = (uint)(gWindow.GetWidth() * param_3) / 0x280;
+  uVar4 = (uint)(gWindow.GetHeight() * param_4) / 0x1e0;
   glMatrixMode(0x1701);
   glPushMatrix();
   glLoadIdentity();

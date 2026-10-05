@@ -43,7 +43,7 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
     First = '\x01';
     CWsctlc_Startup(((int)(uintptr_t)SocketClient));
   }
-  CWsctlc_Create(&SocketClient,(int)(uintptr_t)DAT_055c9ffc);
+  CWsctlc_Create(&SocketClient,(int)(uintptr_t)gWindow.GetHwnd());
   iVar2 = Net_Connect(&SocketClient,(char*)param_1,(u_short)param_2,0x400);
   {
     char dbg[64];
@@ -64,7 +64,7 @@ void __cdecl CreateSocket(const char *param_1,unsigned int param_2)
     static bool s_ConnFailHandled = false;
     if (!s_ConnFailHandled) {
         s_ConnFailHandled = true;
-        MessageBoxA((HWND)(uintptr_t)DAT_055c9ffc,
+        MessageBoxA((HWND)(uintptr_t)gWindow.GetHwnd(),
                     "No se puede conectar con el servidor.",
                     "Mu Online",
                     MB_OK | MB_ICONERROR);

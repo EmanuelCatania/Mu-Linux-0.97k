@@ -136,12 +136,12 @@ int __cdecl GuildOverview_Render(void)
     }
     int len = lstrlenA(title);
     GetTextExtentPointA(hdc, title, len, &sz);
-    int cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
+    int cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     UI_RenderText(0x140 - cx, 0x46, title, (LPSIZE)0, '\0', 0);
 
     len = lstrlenA(subtitle);
     GetTextExtentPointA(hdc, subtitle, len, &sz);
-    cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
+    cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     UI_RenderText(0x140 - cx, 0x56, subtitle, (LPSIZE)0, '\0', 0);
 
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -154,7 +154,7 @@ int __cdecl GuildOverview_Render(void)
     wsprintfA(buf, &param_2_07d68e20);
     len = lstrlenA(buf);
     GetTextExtentPointA(hdc, buf, len, &sz);
-    cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
+    cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     UI_RenderText(0x140 - cx, 0x6a, buf, (LPSIZE)0, '\0', 0);
 
     int iY = 0x82;
@@ -163,7 +163,7 @@ int __cdecl GuildOverview_Render(void)
         wsprintfA(buf, &param_2_07d68f4c, DAT_083a7b0c);
         len = lstrlenA(buf);
         GetTextExtentPointA(hdc, buf, len, &sz);
-        cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
+        cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
         UI_RenderText(0x140 - cx, 0x82, buf, (LPSIZE)0, '\0', 0);
         iY = 0x9a;
     }
@@ -171,7 +171,7 @@ int __cdecl GuildOverview_Render(void)
     wsprintfA(buf, &param_2_07d69078, DAT_083a7b04);
     len = lstrlenA(buf);
     GetTextExtentPointA(hdc, buf, len, &sz);
-    cx = (int)((unsigned int)(sz.cx * 0x280) / DAT_0056156c >> 1);
+    cx = (int)((unsigned int)(sz.cx * 0x280) / gWindow.GetWidth() >> 1);
     return (int)UI_RenderText(0x140 - cx, iY, buf, (LPSIZE)0, '\0', 0);
 }
 

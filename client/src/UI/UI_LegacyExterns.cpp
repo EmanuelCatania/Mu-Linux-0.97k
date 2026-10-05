@@ -79,7 +79,6 @@ extern char    lpString_07e90798[];
 extern int     DAT_07e91708[30];
 extern int     DAT_07ea7b10[30];
 extern HDC     m_hFontDC;
-extern float   _DAT_055c9b74;
 }
 
 static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int count)
@@ -105,7 +104,7 @@ static void SkillTooltip_RenderLines(int sx, int sy, char lines[][100], int coun
     int drawY = sy - boxH - 8;
     if (drawY < 0) drawY = sy + 8;
     if (drawX < 0) drawX = 0;
-    if (drawX + boxW > (int)WindowWidth) drawX = (int)WindowWidth - boxW;
+    if (drawX + boxW > (int)gWindow.GetWidth()) drawX = (int)gWindow.GetWidth() - boxW;
     if (drawX < 0) drawX = 0;
 
     EnableAlphaTest(true);
@@ -270,7 +269,7 @@ static void FUN_004c9730_old(float a1, int a2, int a3)
     SIZE sz; sz.cx = 0; sz.cy = 0;
     GetTextExtentPointA(m_hFontDC, TextList0, 1, &sz);
     int v31 = 3 * sz.cy / 2 + sz.cy * (v16 - 3);
-    float yPos = (float)v31 / _DAT_055c9b74;
+    float yPos = (float)v31 / gWindow.GetScreenRateY();
 
     // Render. Our CharMenu_RenderTextList has 6-int signature (mode, startIdx, count, x, layout, border).
     // Best-effort mapping of IDA's 7-arg float-mixed call:
@@ -427,7 +426,7 @@ void __cdecl RenderSkillTooltip(float a1, int a2, int a3)
         sz.cy = 0;
         GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
         int v31 = (idx - 3) * sz.cy + (3 * sz.cy) / 2;
-        int yBox = a2 - (int)((float)v31 / _DAT_055c9b74);
+        int yBox = a2 - (int)((float)v31 / gWindow.GetScreenRateY());
         CharMenu_RenderTextList(skillTipX, yBox, idx, 0, 2, 1);
     }
 }
@@ -476,7 +475,7 @@ void __cdecl UI_DrawText(int param_1, int param_2, char *param_3, int param_4, i
     //   textW    -> logico (Text_MeasureOrthoWidth ya divide)
     //   x        -> logico + logico  -> lo convierte CUIRenderText_RenderText
     if (param_5 >= 2 && param_4 > 0 && DAT_055c9fec) {
-        const float rateX  = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
+        const float rateX  = (gWindow.GetScreenRateX() > 0.0f) ? gWindow.GetScreenRateX() : 1.0f;
         const int   boxLog = (int)((float)param_4 / rateX);
         int textW = Text_MeasureOrthoWidth(param_3);
         if (textW > 0 && textW < boxLog) {
@@ -571,8 +570,8 @@ void __cdecl CutText(void *param_1_v, int param_2, void *param_3_v, int param_4)
 // binario en sus seis sitios: `TextSize.cx / g_fScreenRate_x`).
 static void Text_PixelToOrthoScale(float* outX, float* outY)
 {
-    *outX = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
-    *outY = (g_fScreenRate_y > 0.0f) ? g_fScreenRate_y : 1.0f;
+    *outX = (gWindow.GetScreenRateX() > 0.0f) ? gWindow.GetScreenRateX() : 1.0f;
+    *outY = (gWindow.GetScreenRateY() > 0.0f) ? gWindow.GetScreenRateY() : 1.0f;
 }
 
 // Ancho del texto EN UNIDADES DEL ORTHO (que es donde vive todo el layout).
@@ -759,8 +758,8 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     // La conversion NO asume las 5 resoluciones del original: sale de
     // WindowWidth/WindowHeight, asi que cualquier tamano fisico de ventana
     // funciona.
-    const float kRateX = (g_fScreenRate_x > 0.0f) ? g_fScreenRate_x : 1.0f;
-    const float kRateY = (g_fScreenRate_y > 0.0f) ? g_fScreenRate_y : 1.0f;
+    const float kRateX = (gWindow.GetScreenRateX() > 0.0f) ? gWindow.GetScreenRateX() : 1.0f;
+    const float kRateY = (gWindow.GetScreenRateY() > 0.0f) ? gWindow.GetScreenRateY() : 1.0f;
     x = (int)((float)x * kRateX);
     y = (int)((float)y * kRateY);
     // A partir de aca TODO el cuerpo trabaja en PIXELES: los extents de GDI,
@@ -886,10 +885,8 @@ void __cdecl CUIRenderText_RenderText(HDC /*hdc_unused*/, int x, int y, const ch
     //     }
     // Width/Height son el extent en píxeles; acá los pasamos a unidades del
     // ortho con la misma escala que ya usa el fondo.
-    extern DWORD DAT_0056156c;  // ancho del ortho 2D
-    extern DWORD DAT_00561570;  // alto  del ortho 2D
-    DWORD vh = DAT_00561570 ? DAT_00561570 : 480;
-    DWORD vw = DAT_0056156c ? DAT_0056156c : 640;
+    DWORD vh = gWindow.GetHeight() ? gWindow.GetHeight() : 480;
+    DWORD vw = gWindow.GetWidth() ? gWindow.GetWidth() : 640;
     {
         // `x`/`y` ya vienen convertidos a pixel (ver arriba) y el extent de
         // GDI tambien es pixel, asi que el clamp es homogeneo y se compara

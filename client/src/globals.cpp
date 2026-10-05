@@ -7,7 +7,7 @@
 #include "stdafx.h"
 
 // ── Named globals: defined in WinMain.cpp, only extern-declared here ─────────
-// int SceneFlag, HWND g_hWnd, HINSTANCE g_hInst, HDC g_hDC — see WinMain.cpp
+// int SceneFlag — ver WinMain.cpp. g_hWnd, g_hInst y g_hDC viven en CWindow (Core/Window.h).
 
 // ── Low-address constants ─────────────────────────────────────────────────────
 float    _DAT_00000010 = 0.0f;
@@ -312,8 +312,6 @@ DWORD    DAT_00561550  = 0x44FA0000;  // 2000.0f  CameraViewFar
 DWORD    DAT_00561554  = 0x425C0000;  // 55.0f    CameraFOV (MoveMainCamera lo reescribe a 35.0)
 float    CameraDistanceTarget  = 0.0f;  // DAT_005616B4: MoveMainCamera target
 float    CameraDistance  = 0.0f;        // DAT_083A45D0: current MoveMainCamera distance
-DWORD    DAT_0056156c  = 640;   // WindowWidth default
-DWORD    DAT_00561570  = 480;   // WindowHeight default
 DWORD    DAT_00561574  = 0;
 // Buffer de la IP del server: Config_ReadServerAddr lo llena desde Config/ServerConfig.h.
 // szServerIpAddress apunta a este buffer; el valor inicial se reemplaza siempre.
@@ -570,9 +568,9 @@ int      DAT_055c9e58[100] = {};   // RandomTable — lo siembra WinMain
 DWORD    DAT_055c9ff0  = 0;  // HGLRC
 DWORD    DAT_055c9ff4  = 0;
 DWORD    DAT_055c9ff8  = 0;
-// DAT_055c9ffc = g_hWnd (above)
+// DAT_055c9ffc = g_hWnd (gWindow.GetHwnd())
 // Font memory DC (GDI-only, DIB-backed). Set by Font_BuildLayout.
-// NOT the window DC — that is g_hDC (DAT_055ca004) defined in WinMain.cpp.
+// NOT the window DC — that is g_hDC (DAT_055ca004) que vive en CWindow.
 HDC      DAT_055c9fec  = NULL;
 // DAT_055ca000 = g_hInst (above)
 // DAT_055ca004 = g_hDC — defined via macro in stdafx.h (no separate storage)

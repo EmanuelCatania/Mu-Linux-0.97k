@@ -517,9 +517,9 @@ uint __cdecl OpenTerrainHeight(char *filename)
     if (!fp) {
         crt_sprintf(Text, "%s file not found.", FileName);
         CErrorReport_Write(&DAT_055c9bf0, Text);
-        if (g_hWnd) {
-            MessageBoxA(g_hWnd, Text, nullptr, 0);
-            SendMessageA(g_hWnd, WM_DESTROY, 0, 0);
+        if (gWindow.GetHwnd()) {
+            MessageBoxA(gWindow.GetHwnd(), Text, nullptr, 0);
+            SendMessageA(gWindow.GetHwnd(), WM_DESTROY, 0, 0);
         }
         return 0;
     }
@@ -593,8 +593,8 @@ void __cdecl OpenJpegBuffer(char *path, int dst)
         sprintf(msg, "%s : File not exist!", full_path);
         CErrorReport__Write(0x55c9bf0, msg);
         CErrorReport__Write(0x55c9bf0, (char*)"\n");
-        MessageBoxA((HWND)DAT_055c9ffc, msg, NULL, 0);
-        SendMessageA((HWND)DAT_055c9ffc, WM_DESTROY, 0, 0);
+        MessageBoxA((HWND)gWindow.GetHwnd(), msg, NULL, 0);
+        SendMessageA((HWND)gWindow.GetHwnd(), WM_DESTROY, 0, 0);
         return;
     }
 

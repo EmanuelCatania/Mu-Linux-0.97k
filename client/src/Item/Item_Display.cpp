@@ -224,11 +224,11 @@ renderLabel:
         GetTextExtentPointA(m_hFontDC, String, textLen, &sz);
         if (Sort) {
             // Centrado sobre la posición de pantalla del item (o+0x5c / o+0x5e)
-            int x = (int)*(short*)(o + 0x5c) - 640 * (sz.cx / 2) / (int)WindowWidth;
+            int x = (int)*(short*)(o + 0x5c) - 640 * (sz.cx / 2) / (int)gWindow.GetWidth();
             int y = (int)*(short*)(o + 0x5e) - 15;
             RenderText(x, y, String, 0, 0, (SIZE*)3);
         } else {
-            int x = (int)MouseX - 640 * (sz.cx / 2) / (int)WindowWidth;
+            int x = (int)MouseX - 640 * (sz.cx / 2) / (int)gWindow.GetWidth();
             int y = (int)MouseY - 15;
             RenderText(x, y, String, 0, 0, (SIZE*)3);
         }

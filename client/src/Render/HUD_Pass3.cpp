@@ -170,7 +170,7 @@ SIZE* __cdecl RenderCenteredText(int iPos_x, int iPos_y, const char* pszText)
     SIZE sz = {0,0};
     int n = lstrlenA(pszText);
     GetTextExtentPointA(m_hFontDC, pszText, n, &sz);
-    int adjustedX = iPos_x - ((640 * sz.cx / (int)WindowWidth) >> 1);
+    int adjustedX = iPos_x - ((640 * sz.cx / (int)gWindow.GetWidth()) >> 1);
     RenderText(adjustedX, iPos_y, (char*)pszText, 0, 0, 0);
     return &TextSize;
 }
@@ -609,8 +609,8 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
     }
 
     byte_7E11D6E = 1;
-    int drawX = x * (int)WindowWidth / 640;
-    int drawY = y * (int)WindowHeight / 480;
+    int drawX = x * (int)gWindow.GetWidth() / 640;
+    int drawY = y * (int)gWindow.GetHeight() / 480;
     if (FontHeight > 32) FontHeight = 32;
 
     auto ClearFontRows = [&](int rows) {
@@ -640,8 +640,8 @@ void __cdecl RenderBoolean(int x, int y, DWORD c)
 
     int rectX = *(int*)(c + 568);
     int rectY = *(int*)(c + 572);
-    int rectW = 640 * (int)cx / (int)WindowWidth;
-    int rectH = 480 * (int)cy / (int)WindowHeight;
+    int rectW = 640 * (int)cx / (int)gWindow.GetWidth();
+    int rectH = 480 * (int)cy / (int)gWindow.GetHeight();
     if ((int)MouseX >= rectX && (int)MouseX < rectX + rectW &&
         (int)MouseY >= rectY && (int)MouseY < rectY + rectH &&
         InputEnable && Hero && *(BYTE*)((BYTE*)(uintptr_t)Hero + 846) &&

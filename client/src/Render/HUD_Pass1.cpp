@@ -268,7 +268,7 @@ void RenderBooleans_(void)
                 Projection(v0 + 5, &sx, &sy);
             }
             FloatingLabel_MeasureText((int)((LPCSTR)v0 - 564), 0, 0);
-            *((DWORD*)v0 + 1) = (DWORD)(sx - 640 * (int)*((DWORD*)v0 + 3) / (int)WindowWidth / 2);
+            *((DWORD*)v0 + 1) = (DWORD)(sx - 640 * (int)*((DWORD*)v0 + 3) / (int)gWindow.GetWidth() / 2);
             *((DWORD*)v0 + 2) = (DWORD)(sy - 36);
         }
         v0 += 149;
@@ -288,15 +288,15 @@ void RenderBooleans_(void)
 
             int v5 = v3[3];
             int v6 = v4[3];
-            if (v5 + 640 * v3[5] / (int)WindowWidth <= v6) continue;
-            if (v5 >= v6 + 640 * v4[5] / (int)WindowWidth) continue;
+            if (v5 + 640 * v3[5] / (int)gWindow.GetWidth() <= v6) continue;
+            if (v5 >= v6 + 640 * v4[5] / (int)gWindow.GetWidth()) continue;
 
             int v7 = v3[4];
             int v8 = v4[4];
-            int v13 = 480 * v3[6] / (int)WindowHeight;
+            int v13 = 480 * v3[6] / (int)gWindow.GetHeight();
             if (v7 + v13 <= v8) continue;
 
-            int v9 = 480 * v4[6] / (int)WindowHeight;
+            int v9 = 480 * v4[6] / (int)gWindow.GetHeight();
             if (v7 >= v9 + v8) continue;
 
             if (v7 >= v8 + v9 / 2) v3[4] = v9 + v8;
@@ -439,8 +439,8 @@ void Render_HotbarItems3D_(void)
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    GL_SetViewport(0, 0, (int)WindowWidth, (int)WindowHeight);
-    float aspectF = (float)((double)(int)WindowWidth / (double)(int)WindowHeight);
+    GL_SetViewport(0, 0, (int)gWindow.GetWidth(), (int)gWindow.GetHeight());
+    float aspectF = (float)((double)(int)gWindow.GetWidth() / (double)(int)gWindow.GetHeight());
     float fov1 = 1.0f;
     int   fovBits  = *(int*)&fov1;
     int   nearBits = *(int*)&CameraViewNear;

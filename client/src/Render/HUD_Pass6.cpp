@@ -117,8 +117,8 @@ extern "C" void __cdecl SyncPickedItemVisualState(void)
 
 // Aliases for IDA float constants used by sub_5126E0.
 // ConvertX/Y map 640×480 game coords to actual screen pixels.
-static inline float ConvertX(float x) { return x * (float)((double)WindowWidth  / 640.0); }
-static inline float ConvertY(float y) { return y * (float)((double)WindowHeight / 480.0); }
+static inline float ConvertX(float x) { return x * (float)((double)gWindow.GetWidth()  / 640.0); }
+static inline float ConvertY(float y) { return y * (float)((double)gWindow.GetHeight() / 480.0); }
 static inline void  BindTexture(int tex) { GL_BindTextureSlot(tex); }
 
 // =============================================================================
@@ -193,7 +193,7 @@ extern "C" void __cdecl sub_5126E0(int tex, float a2, float a3,
     float in2[3][4];
     AngleMatrix(angles, in2);
 
-    float yBase = (float)WindowHeight - v27;
+    float yBase = (float)gWindow.GetHeight() - v27;
 
     glBegin(GL_TRIANGLE_STRIP);
     for (int i = 0; i < 4; ++i) {
@@ -394,7 +394,7 @@ extern "C" void __cdecl RenderInventoryWindow(void)
     m_dwBackColor = 0xFF141414u;       // -15461356
     m_dwTextColor = 0xFFFFFFFFu;
     RenderText(InventoryStartX + 35, InventoryStartY + 12, GlobalText[223],
-               120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     float x = (float)((double)InventoryStartX + 50.0);
     float y = (float)((double)InventoryStartY + 367.7);
@@ -542,7 +542,7 @@ extern "C" void __cdecl RenderParty(int a1, int a2)
     m_dwTextColor = 0xFFDCDCDCu;
     SelectObject(m_hFontDC, g_hFontBold);
     RenderText(a1 + 35, a2 + 12, GlobalText[190],
-               120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;       // -1644826
@@ -787,7 +787,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
 
     m_dwBackColor = 0xFF141414u;
     SetPlayerColor(*(BYTE*)((char*)Hero + 0x2EA));
-    RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+    RenderText(iPosX + 35, iPosY + 12, Buffer, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     // Zone label: "ServerName - Channel" via GlobalText[460]/[461].
     // GlobalText[460]/[461] es el FORMATO (contiene "%s - %d"), no un dato.
@@ -820,9 +820,9 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     float pulse = (float)sin((double)WorldTime * 0.001) + 1.0f;
     float alpha = 2.0f - pulse;
     glColor4f(1.0f, 1.0f, 1.0f, alpha);
-    RenderText(iPosX + 22, iPosY + 22, String,  150 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 22, iPosY + 22, String,  150 * (int)gWindow.GetWidth() / 0x280, 1, 0);
     glColor4f(1.0f, 1.0f, 1.0f, pulse);
-    RenderText(iPosX + 22, iPosY + 22, pszText, 150 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 22, iPosY + 22, pszText, 150 * (int)gWindow.GetWidth() / 0x280, 1, 0);
     glColor3f(1.0f, 1.0f, 1.0f);
 
     // 5 stat-row backdrops (sprite 245) at y = (60-4)+i*60, x = (19-6)
@@ -847,14 +847,14 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
             (unsigned)g_MaxCharacterLevel);
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;
-    RenderText(iPosX + 14, iPosY + 60, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 14, iPosY + 60, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
     // ── Experience (cur / max) ──────────────────────────────────────────────
     SelectObject(m_hFontDC, g_hFont);
     sprintf(Buffer, GlobalText[201], *(int*)(CA + 16), *(int*)(CA + 52));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
-    RenderText(iPosX + 24, iPosY + 80, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 80, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── "Puntos: NNNN" (LevelUpPoint) — top-center, blue background ──────────
     // Per IDA `ReceiveAddPoint` line 48: `--*(_WORD *)(CharacterAttribute + 84);`
@@ -871,7 +871,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         const char* ptsFmt = GlobalText[217][0] ? GlobalText[217] : "Puntos: %d";
         wsprintfA(ptsBuf, ptsFmt, (int)levelUpPoint);
         RenderText(iPosX + 95, iPosY + 49, ptsBuf,
-                   80 * (int)WindowWidth / 0x280, 1, 0);
+                   80 * (int)gWindow.GetWidth() / 0x280, 1, 0);
     }
 
     // ── "Puntos de reposición: %d / %d" (reset points, CA+46/+48) ───────────
@@ -887,7 +887,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     SelectObject(m_hFontDC, g_hFontBold);
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFF9664u;
-    RenderText(iPosX + 24, iPosY + 95, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 95, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── Stat-add [+] buttons (sprites 0x120 / 0x121) ────────────────────────
     // La geometría sale de IDA sub_4E5DE0 L94-98, que es donde el binario testea
@@ -926,7 +926,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     sprintf(Buffer, GlobalText[202], (unsigned)*(unsigned short*)(CA + 20));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF66CCDFu;   // -9977889
-    RenderText(iPosX + 14, iPosY + 120, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 14, iPosY + 120, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
     SelectObject(m_hFontDC, g_hFont);
 
     // Compute damage range:  pick weapon slots, magic-class bonus, set bonus.
@@ -990,7 +990,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
     m_dwTextColor = dualBonus ? 0xFFFF9664u : 0xFFFFFFFFu;
     m_dwBackColor = 0x80000000u;
-    RenderText(iPosX + 24, iPosY + 140, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 140, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // Equipment-set bonus check — original walks 5 equipment slots looking
     // for matching set indexes (offset +740, stride 68 from +136..+408).
@@ -1003,7 +1003,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     sprintf(Buffer, GlobalText[205], (unsigned)*(unsigned short*)(CA + 22));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF67BFDFu;
-    RenderText(iPosX + 14, iPosY + 180, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 14, iPosY + 180, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
     SelectObject(m_hFontDC, g_hFont);
 
     bool agiBonus = false;
@@ -1027,13 +1027,13 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     }
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
-    RenderText(iPosX + 24, iPosY + 200, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 200, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // Defense rate (different field per class)
     unsigned short defRate = *(unsigned short*)(CA + 56);
     if ((CA[11] & 7) == 0) defRate = *(unsigned short*)(CA + 68);
     sprintf(Buffer, GlobalText[64], defRate);
-    RenderText(iPosX + 24, iPosY + 215, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 215, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── Vitality row + HP ───────────────────────────────────────────────────
     SelectObject(m_hFontDC, g_hFontBold);
@@ -1041,7 +1041,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     sprintf(Buffer, GlobalText[210], (unsigned)*(unsigned short*)(CA + 24));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF67BFDFu;
-    RenderText(iPosX + 14, iPosY + 240, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 14, iPosY + 240, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
     SelectObject(m_hFontDC, g_hFont);
     sprintf(Buffer, GlobalText[211],
@@ -1049,7 +1049,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
             *(unsigned short*)(CA + 32));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
-    RenderText(iPosX + 24, iPosY + 260, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 260, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── Energy row + Mana ───────────────────────────────────────────────────
     SelectObject(m_hFontDC, g_hFontBold);
@@ -1057,7 +1057,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
     sprintf(Buffer, GlobalText[212], (unsigned)*(unsigned short*)(CA + 26));
     m_dwBackColor = 0;
     m_dwTextColor = 0xFF67BFDFu;
-    RenderText(iPosX + 14, iPosY + 300, Buffer, 70 * (int)WindowWidth / 0x280, 1, 0);
+    RenderText(iPosX + 14, iPosY + 300, Buffer, 70 * (int)gWindow.GetWidth() / 0x280, 1, 0);
 
     SelectObject(m_hFontDC, g_hFont);
     sprintf(Buffer, GlobalText[213],
@@ -1065,7 +1065,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
             *(unsigned short*)(CA + 34));
     m_dwBackColor = 0x80000000u;
     m_dwTextColor = 0xFFFFFFFFu;
-    RenderText(iPosX + 24, iPosY + 320, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+    RenderText(iPosX + 24, iPosY + 320, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
 
     // ── DW (class 0) / MG (class 3): magic skill damage line ────────────────
     int classFlag = *(BYTE*)((char*)Hero + 444) & 7;
@@ -1093,7 +1093,7 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         } else {
             sprintf(Buffer, GlobalText[216], piMin, piMax);
         }
-        RenderText(iPosX + 24, yMagic, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+        RenderText(iPosX + 24, yMagic, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
     }
 
     // ── Class-specific extra text (Charisma / Command for DK/MG) ────────────
@@ -1101,11 +1101,11 @@ extern "C" void __cdecl RenderCharacterInfoWindow(int iPosX, int iPosY)
         // DK: Command from Energy/10 + 200
         sprintf(Buffer, GlobalText[582],
                 *(unsigned short*)(CA + 26) / 10 + 200);
-        RenderText(iPosX + 24, iPosY + 335, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+        RenderText(iPosX + 24, iPosY + 335, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
     } else if (classFlag == 3) {
         // MG: fixed 200
         sprintf(Buffer, GlobalText[582], 200);
-        RenderText(iPosX + 24, iPosY + 350, Buffer, 130 * (int)WindowWidth / 0x280, 0, 0);
+        RenderText(iPosX + 24, iPosY + 350, Buffer, 130 * (int)gWindow.GetWidth() / 0x280, 0, 0);
     }
 
     // The original IDA function ends here; close button is NOT drawn by
@@ -1142,7 +1142,7 @@ extern "C" void __cdecl RenderGuildList(int StartX, int StartY)
         sprintf(Text, "%s (Score:%d)",
                 Guild_GetMarkName(guildIdx), GuildTotalScore);
     }
-    RenderText(StartX + 35, StartY + 12, Text, 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+    RenderText(StartX + 35, StartY + 12, Text, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     m_dwBackColor = 0;
     m_dwTextColor = 0xFFE6E6E6u;
@@ -1212,7 +1212,7 @@ extern "C" void __cdecl RenderGuildCreation(int iPosX, int iPosY)
     m_dwTextColor = 0xFFDCDCDCu;
     SelectObject(m_hFontDC, g_hFontBold);
     RenderText(iPosX + 35, iPosY + 12, GlobalText[180],
-               120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     if (g_iKeyPadEnable) {
         // Name input field + virtual keypad (PIN-style).
@@ -1301,7 +1301,7 @@ extern "C" void __cdecl RenderTrade(void)
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(TradeInventoryStartX + 35, TradeInventoryStartY + 12,
-               GlobalText[226], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               GlobalText[226], 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     // IDA / mapeo C1:38-39: oferta remota arriba (Inventory) y oferta local
     // abajo (OffsetTradeItems). Sólo la última admite mover ítems.
@@ -1405,7 +1405,7 @@ extern "C" void __cdecl RenderShopInterface(void)
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
-               GlobalText[230], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               GlobalText[230], 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     // Shop items start at `&Inventory[32].WalkSpeed` in the original client.
     RenderItemsBoxes((float)((double)dword_7EAA0C8 + 15.0),
@@ -1531,7 +1531,7 @@ extern "C" void __cdecl RenderChaosMix(void)
     const int chaosCategory = (int)DAT_083a7c2c;
     const int chaosTitle = chaosCategory == 1 ? 736 : (chaosCategory ? 583 : 735);
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12, GlobalText[chaosTitle],
-               120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     if (DAT_07eaa140 >= 2) return; // el resultado/animación ocupa sólo la grilla
 
@@ -1641,7 +1641,7 @@ extern "C" void __cdecl RenderWarehouse(void)
     CHAR Title[128];
     wsprintfA(Title, "%s (%s)", GlobalText[234], GlobalText[240 + lock]);
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
-               Title, 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               Title, 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
     glColor3f(1.0f, 1.0f, 1.0f);
 
     // ── Barra del zen guardado (bitmap 271 = 0x10F) ──────────────────────────
@@ -1816,7 +1816,7 @@ extern "C" void __cdecl RenderEventWindow(void)
         else         sprintf_s(label, bloodCastle ? GlobalText[848] : GlobalText[646],
                                row + 1, minLevel);
         RenderText((int)x + (bloodCastle ? 10 : 12), (int)y + 12, label,
-                   (bloodCastle ? 120 : 116) * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+                   (bloodCastle ? 120 : 116) * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
         y += stride;
     }
@@ -1825,7 +1825,7 @@ extern "C" void __cdecl RenderEventWindow(void)
     m_dwBackColor = 0xFF141414u;
     m_dwTextColor = 0xFFDCDCDCu;
     RenderText(dword_7EAA0C8 + 35, dword_7EAA0CC + 12,
-               GlobalText[bloodCastle ? 846 : 39], 120 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+               GlobalText[bloodCastle ? 846 : 39], 120 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
 
     SelectObject(m_hFontDC, g_hFont);
     m_dwBackColor = 0;
@@ -1839,12 +1839,12 @@ extern "C" void __cdecl RenderEventWindow(void)
         const int n = SeparateTextIntoLines(GlobalText[832], lines, 7, 26);
         for (int i = 0, dy = 0; i < n; ++i, dy += 20)
             RenderText(dword_7EAA0C8 + 30, dy + dword_7EAA0CC + 64, lines + i * 26,
-                       130 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+                       130 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
     } else {
         // Seis filas consecutivas de GlobalText a partir de la 670.
         for (int dy = 80, i = 0; dy < 200; dy += 20, ++i)
             RenderText(dword_7EAA0C8 + 30, dy + dword_7EAA0CC, GlobalText[670 + i],
-                       130 * (int)WindowWidth / 0x280, 1, (SIZE*)3);
+                       130 * (int)gWindow.GetWidth() / 0x280, 1, (SIZE*)3);
     }
     GL_ResetState();   // = DisableAlphaBlend
 

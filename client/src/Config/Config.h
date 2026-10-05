@@ -36,13 +36,6 @@ extern DWORD g_Resolution; // lpData_055c9e38 (0-4)
 extern DWORD g_TextOut;    // lpData_055ca044
 
 // -- Modo ventana (DESVIACION DELIBERADA) ------------------------------------
-// El 0.97k solo corre a pantalla completa con un modo de video de 16 bits
-// (WinMain + StartWindow, WS_POPUP en (0,0)), que en Windows 10/11 no existe.
-// Se porta el modo ventana del DLL de inyeccion (Source/Client/Main/Window.cpp,
-// CWindow::StartWindow + ChangeDisplaySettingsFunction), que ademas elige el
-// modo de video por la mayor profundidad de color disponible.
-//   WindowMode=0|1   (1 = ventana, default;  0 = pantalla completa)
-//   Borderless=0|1   (solo en modo ventana: sin barra de titulo ni borde)
-// Las dos salen de Config.ini [Window] (ver Config/UserSettings.h).
-extern int g_WindowMode;   // 1 = ventana
-extern int g_Borderless;   // 1 = ventana sin bordes
+// El 0.97k sólo corre a pantalla completa con un modo de video de 16 bits, que en
+// Windows 10/11 no existe. Se porta el modo ventana del DLL; el estado vive en
+// CWindow (Core/Window.h) y lo configura Config.ini [Window].
