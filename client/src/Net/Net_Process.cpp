@@ -4479,9 +4479,9 @@ void Net_ProcessPacket(void)
                 // ReceiveCreateSummonViewport @ 0042A530.  MuEmu emits this
                 // como C2:1F, seguido de un contador y registros alineados de 22 bytes:
                 //   KeyH|CREATE, KeyL, Type, pad, ViewSkillState(WORD),
-                //   X, Y, TargetX, TargetY, Dir|PK, pad, OwnerName[10].
-                // El padding en los offsets 3 y 11 es parte del struct nativo del
-                // server; tratarlo como packed corre la posición en uno.
+                //   X, Y, TargetX, TargetY, Dir|PK, OwnerName[10], pad.
+                // Padding en los offsets 3 y 21; OwnerName arranca en +11.
+                // IDA 0x42A530 copia desde ReceiveBuffer+16 (la entrada arranca en +5).
                 const int hdrOff = (Msg[0] == 0xC1) ? 0 : 1;
                 const int countOff = 3 + hdrOff;
                 const int entryStart = 4 + hdrOff;
@@ -4538,7 +4538,7 @@ void Net_ProcessPacket(void)
                     // el storage de GlobalText mientras se portea el subsistema de texto.
                     char oldName[101] = {};
                     strncpy(oldName, (char*)(summon + 449), sizeof(oldName) - 1);
-                    memcpy(summon + 449, e + 12, 10);
+                    memcpy(summon + 449, e + 11, 10);
                     summon[459] = 0;
                     strncat((char*)(summon + 449), "'s ", 100 - strlen((char*)(summon + 449)));
                     strncat((char*)(summon + 449), oldName, 100 - strlen((char*)(summon + 449)));
@@ -4547,7 +4547,7 @@ void Net_ProcessPacket(void)
 
                     if (create) AppearMonster((DWORD)(uintptr_t)summon);
                     NetLog("NET:    0x1F summon id=%d type=%d owner=%.10s pos=(%d,%d)",
-                           key, type, (const char*)(e + 12), x, y);
+                           key, type, (const char*)(e + 11), x, y);
                 }
                 break;
             }
