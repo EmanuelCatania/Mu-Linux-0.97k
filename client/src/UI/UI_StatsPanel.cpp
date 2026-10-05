@@ -74,23 +74,23 @@ int RenderErrorMessage(void)
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d45ba0);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ba0,iVar3,ptVar17);
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x41,
                    (LPCSTR)lpString_07d45ba0,(LPSIZE)0x0,'\0',0);
       if (SceneFlag == 5) {
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
-        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x5f,
                      (LPCSTR)lpString_07d45ccc,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45df8);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45df8,iVar3,ptVar17);
-        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x7d,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x7d,
                      (LPCSTR)lpString_07d45df8,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
-        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x9b,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x9b,
                      (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45f24);
@@ -101,12 +101,12 @@ int RenderErrorMessage(void)
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45ccc);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45ccc,iVar3,ptVar17);
-        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x5f,
                      (LPCSTR)lpString_07d45ccc,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
-        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x7d,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x7d,
                      (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45f24);
@@ -117,14 +117,14 @@ int RenderErrorMessage(void)
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
-        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x5f,
                      (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
         ptVar17 = &local_e4;
         iVar3 = lstrlenA((LPCSTR)lpString_07d45f24);
         GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d45f24,iVar3,ptVar17);
         uVar10 = 0x7d;
       }
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),uVar10,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),uVar10,
                    (LPCSTR)lpString_07d45f24,(LPSIZE)0x0,'\0',0);
     }
     else if (DAT_083a7c24 == 0x96) {
@@ -147,7 +147,7 @@ int RenderErrorMessage(void)
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d46050);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46050,iVar3,ptVar17);
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x23,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x23,
                    (LPCSTR)lpString_07d46050,(LPSIZE)0x0,'\0',0);
       if (m_bAutoAttack == '\0') {
         pcVar14 = s__s_Off_00561854;
@@ -159,7 +159,7 @@ int RenderErrorMessage(void)
       ptVar17 = &local_e4;
       iVar3 = lstrlenA(local_64);
       GetTextExtentPointA(DAT_055c9fec,local_64,iVar3,ptVar17);
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x41,local_64,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x41,local_64,
                    (LPSIZE)0x0,'\0',0);
       if (m_bWhisperSound == '\0') {
         pcVar14 = s__s_Off_00561864;
@@ -171,12 +171,12 @@ int RenderErrorMessage(void)
       ptVar17 = &local_e4;
       iVar3 = lstrlenA(local_64);
       GetTextExtentPointA(DAT_055c9fec,local_64,iVar3,ptVar17);
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x5f,local_64,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x5f,local_64,
                    (LPSIZE)0x0,'\0',0);
       ptVar17 = &local_e4;
       iVar3 = lstrlenA((LPCSTR)lpString_07d463d4);
       GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d463d4,iVar3,ptVar17);
-      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),0x7d,
+      UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),0x7d,
                    (LPCSTR)lpString_07d463d4,(LPSIZE)0x0,'\0',0);
     }
     else if ((((DAT_083a7c24 == 0x8b) || (DAT_083a7c24 == 0x8e)) || (DAT_083a7c24 == 0x8d)) ||
@@ -318,7 +318,7 @@ LAB_0051c13d:
         cVar13 = '\0';
         ptVar12 = (LPSIZE)0x0;
         lVar8 = (longlong)(*(float*)&local_dc + 12.0f);   // IDA RenderErrorMessage case 143: (__int64)(Height + 12.0)
-        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(int)lVar8,pCVar6,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(int)lVar8,pCVar6,
                      ptVar12,cVar13,uVar10);
         { float _fdc = *(float*)&local_dc + _DAT_00552854; local_dc = *(unsigned int*)&_fdc; }
         SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
@@ -465,7 +465,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d477c0);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d477c0,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d477c0,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d478ec);
@@ -545,7 +545,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46adc);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46adc,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d46adc,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46c08);
@@ -608,7 +608,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46f8c);
@@ -620,7 +620,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d46884);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d46884,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d46884,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d469b0);
@@ -673,7 +673,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     crt_sprintf(local_c8,&DAT_07d493e0);
     ptVar17 = &local_e4;
@@ -696,7 +696,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     _snprintf_s(local_c8, sizeof(local_c8), _TRUNCATE,
                 (const char*)&DAT_07d48f30, inviterName);
@@ -717,7 +717,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 4),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 4),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
     crt_sprintf(local_c8, GlobalText[419]);
@@ -744,7 +744,7 @@ LAB_0051c13d:
     DAT_00559c78 = 0xff0000ff;
     iVar3 = lstrlenA((LPCSTR)lpString_07d49188);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d49188,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d49188,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d492b4);
@@ -764,7 +764,7 @@ LAB_0051c13d:
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)local_c8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)local_c8,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)local_c8,(LPSIZE)0x0,'\0',0);
     crt_sprintf(local_c8, GlobalText[EnableSoccer ? 432 : 431]);
     ptVar17 = &local_e4;
@@ -778,7 +778,7 @@ LAB_0051c13d:
     DAT_00559c78 = 0xff0000ff;
     iVar3 = lstrlenA((LPCSTR)lpString_07d470b8);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d470b8,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d470b8,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d471e4);
@@ -836,7 +836,7 @@ LAB_0051c13d:
         ptVar17 = &local_e4;
         iVar4 = lstrlenA(pCVar6);
         GetTextExtentPointA(DAT_055c9fec,pCVar6,iVar4,ptVar17);
-        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),iVar3,pCVar6,
+        UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),iVar3,pCVar6,
                      (LPSIZE)0x0,'\0',0);
         iVar3 = iVar3 + 0x12;
         local_dc = local_dc + 1;
@@ -866,7 +866,7 @@ LAB_0051c13d:
           ptVar17 = &local_d0;
           iVar4 = lstrlenA(pCVar6);
           GetTextExtentPointA(DAT_055c9fec,pCVar6,iVar4,ptVar17);
-          UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / DAT_0056156c >> 1),iVar3,pCVar6,
+          UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),iVar3,pCVar6,
                        (LPSIZE)0x0,'\0',0);
           iVar3 = iVar3 + 0x12;
           local_e4.cx = local_e4.cx + 1;
@@ -932,7 +932,7 @@ LAB_0051d2dd:
     pCVar6 = &DAT_07d29d24 + iVar3 * 300;
     iVar3 = lstrlenA(pCVar6);
     GetTextExtentPointA(DAT_055c9fec,pCVar6,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,
+    UI_RenderText(0x140 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 0x19),pCVar6,
                  (LPSIZE)0x0,'\0',0);
     local_dc = (unsigned int)(uintptr_t)(pCVar2 + 0x3b);
     SelectObject(DAT_055c9fec,(HGDIOBJ)(uintptr_t)DAT_055ca00c);
@@ -963,7 +963,7 @@ LAB_0051d3cf:
       iVar4 = lstrlenA(pCVar6);
       GetTextExtentPointA(DAT_055c9fec,pCVar6,iVar4,ptVar17);
       pCVar2 = (LPCSTR)(uintptr_t)local_dc;
-      UI_RenderText((int)local_d8 - ((uint)(local_d0.cx * 0x280) / DAT_0056156c >> 1),local_dc,pCVar6
+      UI_RenderText((int)local_d8 - ((uint)(local_d0.cx * 0x280) / gWindow.GetWidth() >> 1),local_dc,pCVar6
                    ,(LPSIZE)0x0,'\0',0);
       local_dc = (unsigned int)(uintptr_t)(pCVar2 + 0x12);
       iVar3 = iVar3 + 1;
@@ -976,7 +976,7 @@ LAB_0051d3cf:
     DAT_00559c78 = 0xff0000ff;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a448);
     GetTextExtentPointA(DAT_055c9fec,(LPCSTR)lpString_07d4a448,iVar3,ptVar17);
-    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
+    UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)(pCVar2 + 9),
                  (LPCSTR)lpString_07d4a448,(LPSIZE)0x0,'\0',0);
     ptVar17 = &local_e4;
     iVar3 = lstrlenA((LPCSTR)lpString_07d4a574);
@@ -984,14 +984,14 @@ LAB_0051d3cf:
     pCVar6 = pCVar2 + 0x15;
     ppCVar11 = lpString_07d4a574;
 LAB_0051ca70:
-    uVar9 = UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)pCVar6,
+    uVar9 = UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)pCVar6,
                          (LPCSTR)ppCVar11,(LPSIZE)0x0,'\0',0);
     return (int)uVar9;
   case 0x9a:
     uVar9 = GuildOverview_Render();
     return (int)uVar9;
   }
-  uVar9 = UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / DAT_0056156c >> 1),(unsigned int)(uintptr_t)pCVar6,
+  uVar9 = UI_RenderText(0x140 - ((uint)(local_e4.cx * 0x280) / gWindow.GetWidth() >> 1),(unsigned int)(uintptr_t)pCVar6,
                        (LPCSTR)ppCVar11,(LPSIZE)0x0,'\0',0);
   return (int)uVar9;
 }

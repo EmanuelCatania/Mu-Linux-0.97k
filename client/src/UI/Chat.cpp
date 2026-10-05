@@ -37,7 +37,7 @@
 // Guarda contra rate 0 (sin inicializar) para no dividir por cero.
 static void ScaleGlobalTextSize(void)
 {
-    float rx = _DAT_055c9b70, ry = _DAT_055c9b74;
+    float rx = gWindow.GetScreenRateX(), ry = gWindow.GetScreenRateY();
     if (rx <= 0.0f) rx = 1.0f;
     if (ry <= 0.0f) ry = 1.0f;
     lpsz_07e113d0 = (LPSIZE)(LONG)((double)(LONG)(intptr_t)lpsz_07e113d0 / (double)rx);
@@ -380,7 +380,7 @@ void UI_RenderNotices(void)
     if (g_bUseChatListBox == 1) {
       iVar1 = iVar2 + -0x118;
     }
-    UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / DAT_0056156c >> 1),iVar1,(char*)lpString,0,1,0);
+    UI_DrawText(0x140 - ((uint)(local_8.cx * 0x280) / gWindow.GetWidth() >> 1),iVar1,(char*)lpString,0,1,0);
     lpsz_00 = &lpsz_07e113d0;
     iVar1 = lstrlenA(lpString);
     GetTextExtentPointA(DAT_055c9fec,lpString,iVar1,(LPSIZE)lpsz_00);
@@ -488,7 +488,7 @@ void UI_RenderChatLogOverlay(void)
       // aterrice en el slot correcto.
       *(LONG *)((char *)&DAT_07df9494 + iVar5 * 0x118) = local_108.cx;
       uVar2 = SetBackgroundTextColor;
-      if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / DAT_0056156c))) &&
+      if (((((bVar8) && (iVar3 < (int)((uint)(local_108.cx * 0x280) / gWindow.GetWidth()))) &&
            (iVar7 <= DAT_083a4278)) && ((DAT_083a4278 < iVar7 + 0xd && (DAT_00559c84 != '\0')))) &&
          (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')) {
         pbVar4 = (byte *)(DAT_07abf5d8 + 0x1c1);
@@ -573,9 +573,9 @@ void UI_TickHoverBubbles(void)
       piVar7[0x82] = 0;
     }
     if ((piVar7[0x84] <= DAT_083a427c) &&
-       (DAT_083a427c < (int)((uint)(piVar7[0x86] * 0x280) / DAT_0056156c + piVar7[0x84]))) {
+       (DAT_083a427c < (int)((uint)(piVar7[0x86] * 0x280) / gWindow.GetWidth() + piVar7[0x84]))) {
       if ((piVar7[0x85] <= DAT_083a4278) &&
-         (((DAT_083a4278 < (int)((uint)(piVar7[0x87] * 0x1e0) / DAT_00561570 + piVar7[0x85]) &&
+         (((DAT_083a4278 < (int)((uint)(piVar7[0x87] * 0x1e0) / gWindow.GetHeight() + piVar7[0x85]) &&
            (DAT_00559c84 != '\0')) && (*(char *)(DAT_07abf5d8 + 0x34e) != '\0')))) {
         pbVar8 = (byte *)(DAT_07abf5d8 + 0x1c1);
         pbVar3 = (byte *)(piVar7 + -10);

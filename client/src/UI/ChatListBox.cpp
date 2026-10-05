@@ -1253,7 +1253,7 @@ static int __fastcall ChatLB_renderLine(DWORD* self, int /*edx*/, int row)
         if (m_hFontDC)
             GetTextExtentPointA(m_hFontDC, Buffer, lstrlenA(Buffer), &sz);
         // GetTextExtentPointA mide en pixeles de ventana; el layout es 640x480.
-        sz.cx = (LONG)((float)sz.cx / _DAT_055c9b70);   // g_fScreenRate_x
+        sz.cx = (LONG)((float)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
     }
 
     // Texto: segunda paleta (solo cambia el susurro).
@@ -2205,7 +2205,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
         char* line = (char*)(dst + off);
         SIZE sz;
         GetTextExtentPointA(m_hFontDC, cur, lstrlenA(cur), &sz);
-        int textW = (int)((double)sz.cx / _DAT_055c9b70);   // g_fScreenRate_x
+        int textW = (int)((double)sz.cx / gWindow.GetScreenRateX());   // g_fScreenRate_x
         if (!sz.cx) return lines;
         int avail = width - (lines == 0 ? (int)firstIndent : 0);
         if (textW <= avail) {
@@ -2223,7 +2223,7 @@ int __cdecl FUN_0040c2a0(LPCSTR text, int dst, int width, int maxLines,
             step = (int)(((double)half + 1.0) * 0.5);
             half = step;
             GetTextExtentPointA(m_hFontDC, cur, cut, &sz);
-            double cutW = (double)sz.cx / _DAT_055c9b70;
+            double cutW = (double)sz.cx / gWindow.GetScreenRateX();
             if (cutW <= (double)(avail + 4)) {
                 if (cutW >= (double)(avail - 4)) break;
                 cut += step;

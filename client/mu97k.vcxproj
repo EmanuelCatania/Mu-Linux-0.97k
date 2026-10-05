@@ -116,6 +116,7 @@
     <ClInclude Include="src\Config\Config.h" />
     <ClInclude Include="src\Config\ServerConfig.h" />
     <ClInclude Include="src\Config\UserSettings.h" />
+    <ClInclude Include="src\Core\Window.h" />
     <ClInclude Include="src\Combat\Combat.h" />
     <ClInclude Include="src\Combat\Skills.h" />
     <ClInclude Include="src\Game\Game_CharSelectTick.h" />
@@ -178,6 +179,7 @@
     <ClCompile Include="src\Render\Render_Frame.cpp" />
     <ClCompile Include="src\Net\Net_Process.cpp" />
     <ClCompile Include="src\Config\Config_Load.cpp" />
+    <ClCompile Include="src\Core\Window.cpp" />
     <ClCompile Include="src\Config\UserSettings.cpp" />
     <ClCompile Include="src\Sound\Sound_Queue.cpp" />
     <ClCompile Include="src\Monster\Monster_Data.cpp" />

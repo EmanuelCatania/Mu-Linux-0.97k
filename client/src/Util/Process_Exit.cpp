@@ -8,7 +8,7 @@
 // Shows the fatal error message at lpText_07d2aa08 then destroys the main window.
 void __cdecl ExitProgram(void)
 {
-    MessageBoxA(g_hWnd, lpText_07d2aa08, NULL, 0);
-    SendMessageA(g_hWnd, 2, 0, 0);  // WM_DESTROY
+    MessageBoxA(gWindow.GetHwnd(), lpText_07d2aa08, NULL, 0);
+    SendMessageA(gWindow.GetHwnd(), 2, 0, 0);  // WM_DESTROY
 }
 

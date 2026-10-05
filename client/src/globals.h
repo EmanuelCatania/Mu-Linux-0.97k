@@ -294,8 +294,6 @@ extern DWORD   DAT_00561550;
 extern DWORD   DAT_00561554;
 extern float   CameraDistanceTarget;   // DAT_005616B4: MoveMainCamera smoothing target
 extern float   CameraDistance;         // DAT_083A45D0: current MoveMainCamera distance
-extern DWORD   DAT_0056156c;
-extern DWORD   DAT_00561570;
 extern DWORD   DAT_00561574;
 extern char   *szServerIpAddress; // IDA: szServerIpAddress (0x005615B8)
 #define PTR_s_connect_muonline_co_kr_005615b8  szServerIpAddress
@@ -430,9 +428,7 @@ extern char    lpData_055c9ba0[12];     // version string buffer (login packet)
 extern DWORD   DAT_055c9b40;   // g_EnableSound
 extern DWORD   DAT_055c9b60;   // sound channel index offset
 extern DWORD   DAT_055c9b70;
-extern float  _DAT_055c9b70;
 extern DWORD   DAT_055c9b74;
-extern float  _DAT_055c9b74;   // g_fScreenRate_y
 extern DWORD   DAT_055c9b80;
 extern char    ConfigLoginVersion[12]; // IDA: m_ExeVersion — config.ini [LOGIN] Version string
 // Contexto de la ofuscación por HashTable — buffer contiguo (el binario original tiene el
@@ -464,8 +460,7 @@ extern int     DAT_055c9e58[100];
 extern DWORD   DAT_055c9ff0;   // HGLRC (OpenGL context)
 extern DWORD   DAT_055c9ff4;
 extern DWORD   DAT_055c9ff8;
-extern HINSTANCE DAT_055ca000;  // g_hInst (also in stdafx.h as g_hInst)
-// DAT_055ca004 = g_hDC — macro in stdafx.h; no separate storage.
+// DAT_055ca004 = g_hDC — vive en CWindow (gWindow.GetHdc()).
 extern DWORD   DAT_055ca008;
 extern DWORD   DAT_055ca00c;
 extern DWORD   DAT_055ca010;

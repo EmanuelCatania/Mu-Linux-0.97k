@@ -55,7 +55,7 @@ void __cdecl GL_DrawRotatedRect(int id, float x, float y, float w, float h, unsi
     float fSinW = (float)Screen_ToGLX(w);
     float fCosW = (float)Screen_ToGLY(h);
     GL_BindTextureSlot(id);
-    float sz = (float)DAT_00561570;
+    float sz = (float)gWindow.GetHeight();
     float depth = *(float*)&color;
 
     // Build rotation matrix from direction vector pointing at (depth)

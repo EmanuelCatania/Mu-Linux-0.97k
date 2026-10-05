@@ -389,9 +389,15 @@ void __cdecl Game_MainLoop(HDC param_1)
     }
     #endif
 
-    // Login BGM
+    // DESVIACION: IDA 0x525D40 pide g_lpszMp3[1] (MuTheme) en el login, el
+    // mismo slot que Lorencia. Acá el login pide su propio archivo,
+    // Data\Music\MuTheme.mp3, como el DLL (Patchs.cpp parchea ese nombre en
+    // 0x5616D0). El pack no lo trae, así que PlayMp3 no encuentra el archivo y
+    // el login queda sin música, como en el 0.97k con la opción de música en su
+    // default (apagada). Para tener música en el login alcanza con dejar un mp3
+    // con ese nombre. MuTheme es el Lorencia.mp3 del pack (mismo MD5).
     if (SceneFlag == 2)
-        Music_PlayTrack(PTR_DAT_005615c8, 0);
+        Music_PlayTrack((DWORD)(uintptr_t)"Data\\Music\\MuTheme.mp3", 0);
 
     if (SceneFlag != 5) return;
 

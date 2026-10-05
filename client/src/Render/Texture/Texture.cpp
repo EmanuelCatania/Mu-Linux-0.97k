@@ -435,9 +435,8 @@ int Texture_Load(const char* path, int id,
     if (!ok && show_err) {
         char msg[600];
         _snprintf_s(msg, _TRUNCATE, "File not found:\n%s", full);
-        extern HWND g_hWnd;
-        MessageBoxA(g_hWnd, msg, "IError", MB_OK);
-        if (g_hWnd) SendMessageA(g_hWnd, WM_CLOSE, 0, 0);
+        MessageBoxA(gWindow.GetHwnd(), msg, "IError", MB_OK);
+        if (gWindow.GetHwnd()) SendMessageA(gWindow.GetHwnd(), WM_CLOSE, 0, 0);
     }
     return ok;
 }

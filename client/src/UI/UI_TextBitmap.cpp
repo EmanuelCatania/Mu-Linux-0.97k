@@ -158,15 +158,15 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
   }
   if ( (BYTE)(a7) )
   {
-    v9 = 640 * LODWORD(Width) / WindowWidth;
+    v9 = 640 * LODWORD(Width) / gWindow.GetWidth();
     if ( (int)(v9 + v8) > a8 )
     {
       a1 = a8 - v9;
     }
   }
-  else if ( LODWORD(Width) + v8 > (int)WindowWidth )
+  else if ( LODWORD(Width) + v8 > (int)gWindow.GetWidth() )
   {
-    a1 = WindowWidth - LODWORD(Width);
+    a1 = gWindow.GetWidth() - LODWORD(Width);
   }
   if ( DAT_07e11d6e )
   {
@@ -178,7 +178,7 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
     }
     if ( (BYTE)(a7) )
     {
-      v11 = 480 * LODWORD(Height) / WindowHeight;
+      v11 = 480 * LODWORD(Height) / gWindow.GetHeight();
       if ( v11 + v10 > 0x1B1 )
       {
         a2 = 433 - v11;
@@ -186,7 +186,7 @@ void __cdecl Font_RenderBitmapText(int a1, int a2, float Width, float Height, in
     }
     else
     {
-      v12 = WindowHeight - (int)(47 * WindowHeight) / 640;
+      v12 = gWindow.GetHeight() - (int)(47 * gWindow.GetHeight()) / 640;
       if ( LODWORD(Height) + v10 > v12 )
       {
         a2 = v12 - LODWORD(Height);

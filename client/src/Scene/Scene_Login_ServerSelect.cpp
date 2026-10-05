@@ -323,7 +323,7 @@ LAB_0051f314:
             ptVar19 = &text_size;
             iVar5 = lstrlenA(lpString);
             GetTextExtentPointA(DAT_055c9fec, lpString, iVar5, ptVar19);
-            UI_RenderText((iVar10 - ((uint)(text_size.cx * 0x280) / DAT_0056156c >> 1)) + 0x23,
+            UI_RenderText((iVar10 - ((uint)(text_size.cx * 0x280) / gWindow.GetWidth() >> 1)) + 0x23,
                          iDrawY + 2, lpString, (LPSIZE)0x0, '\0', 0);
         }
         lpString = lpString + 0x21e;
@@ -456,7 +456,7 @@ LAB_0051f44c:
                     ptVar19 = &text_size;
                     iVar8 = lstrlenA(chanName);
                     GetTextExtentPointA(DAT_055c9fec, chanName, iVar8, ptVar19);
-                    UI_RenderText(0x129 - ((uint)(text_size.cx * 0x280) / DAT_0056156c >> 1),
+                    UI_RenderText(0x129 - ((uint)(text_size.cx * 0x280) / gWindow.GetWidth() >> 1),
                                  iStack00000004 + 1, chanName, (LPSIZE)0x0, '\0', 0);
                 }
 

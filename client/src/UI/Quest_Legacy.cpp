@@ -198,7 +198,7 @@ void __fastcall FUN_00403320(void* param_1) {
 
     int questIdx  = *(unsigned char*)(This + 116858);   // +0x1C87A
     int questBase = This + 584 * questIdx;
-    int nameW = 120 * (int)WindowWidth / 0x280;
+    int nameW = 120 * (int)gWindow.GetWidth() / 0x280;
     // getMonsterName devuelve NULL mientras MonsterScript no esté parseada; el
     // original no lo contempla.
     char* npcName = getMonsterName(*(unsigned char*)(questBase + 12));
@@ -206,7 +206,7 @@ void __fastcall FUN_00403320(void* param_1) {
 
     m_dwTextColor = 0xFFFFDCC8u;
     RenderText(472, 22, (char*)(questBase + 13),
-               150 * (int)WindowWidth / 0x280, 1, nullptr);
+               150 * (int)gWindow.GetWidth() / 0x280, 1, nullptr);
 
     FUN_00402ff0(This);      // texto del diálogo + respuestas
     glColor3f(1.0f, 1.0f, 1.0f);

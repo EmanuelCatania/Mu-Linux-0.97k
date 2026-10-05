@@ -90,7 +90,7 @@ void __cdecl GL_SetViewport(int param_1, int param_2, int param_3, int param_4) 
     OpenglWindowX = (DWORD)param_1;
     OpenglWindowY = (DWORD)param_2;
     OpenglWindowHeight = (DWORD)param_4;
-    glViewport(param_1, (int)(DAT_00561570 - param_2) - param_4, param_3, param_4);
+    glViewport(param_1, (int)(gWindow.GetHeight() - param_2) - param_4, param_3, param_4);
 }
 // gluPerspective2 @ 0x00511220 — GL_SetPerspective
 void __cdecl GL_SetPerspective(int fov, float aspect, int near_clip, float far_clip) {
@@ -100,20 +100,20 @@ void __cdecl GL_SetPerspective(int fov, float aspect, int near_clip, float far_c
     double tanHalfFov = tan((double)fovF * (double)_DAT_00552cc4);
     ViewportCenterX = OpenglWindowWidth / 2 + OpenglWindowX;
     ViewportCenterY = OpenglWindowHeight / 2 + OpenglWindowY;
-    ScreenCenterYFlip = (float)((int)DAT_0056156c - (int)ViewportCenterY);
+    ScreenCenterYFlip = (float)((int)gWindow.GetWidth() - (int)ViewportCenterY);
     _DAT_083a42a4 = (float)(tanHalfFov / (double)(OpenglWindowWidth / 2) * (double)aspect);
     _DAT_083a42a8 = (float)(tanHalfFov / (double)(OpenglWindowHeight / 2)
-                            * ((double)(int)DAT_00561570 / (double)(int)OpenglWindowHeight));
+                            * ((double)(int)gWindow.GetHeight() / (double)(int)OpenglWindowHeight));
 }
 // FUN_00511950 @ 0x00511950 — Screen_ToGLX
 // FUN_00511980 @ 0x00511980 — Screen_ToGLY
 // Formula: WindowWidth * x * (1/640)   and   WindowHeight * y * (1/480).
 // Used by RenderBitmap, RenderColor, CreateFrustrum2D, SetPositionIME_Wnd, etc.
 long double __cdecl Screen_ToGLX(float v) {
-    return (long double)((float)(int)DAT_0056156c * v * _DAT_0055283c);
+    return (long double)((float)(int)gWindow.GetWidth() * v * _DAT_0055283c);
 }
 long double __cdecl Screen_ToGLY(float v) {
-    return (long double)((float)(int)DAT_00561570 * v * _DAT_00552838);
+    return (long double)((float)(int)gWindow.GetHeight() * v * _DAT_00552838);
 }
 // WriteJpeg @ 0x00529000 — WriteJpeg(path, width, height, pixel_buf, quality)
 // Writes RGB pixel buffer to JPEG file using libjpeg compression.

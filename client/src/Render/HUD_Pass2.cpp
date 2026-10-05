@@ -125,8 +125,8 @@ SIZE* __cdecl Text_MeasureBox(int x, int y, const char* lpString,
 
     int n = lstrlenA(lpString);
     GetTextExtentPointA(m_hFontDC, lpString, n, &TextSize);
-    TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
-    TextSize.cy = (LONG)((double)TextSize.cy / _DAT_055c9b74);
+    TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
+    TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
     return &TextSize;
 }
 
@@ -227,11 +227,11 @@ void Render_ChatBox_(void)
     GL_DrawTexture(249, 320.0f, 415.0f, 134.0f, 29.0f, 0.0f, 0.0f, 0.51953125f, 0.90625f, 1, 1);
     EnableAlphaTest(true);
 
-    InputTextWidth = 180 * (int)WindowWidth / 0x280;
-    if ((int)(180 * WindowWidth / 0x280) > 256) InputTextWidth = 256;
+    InputTextWidth = 180 * (int)gWindow.GetWidth() / 0x280;
+    if ((int)(180 * gWindow.GetWidth() / 0x280) > 256) InputTextWidth = 256;
     RenderInputText(191, 422, 0);
 
-    InputTextWidth = 50 * (int)WindowWidth / 0x280;
+    InputTextWidth = 50 * (int)gWindow.GetWidth() / 0x280;
     RenderInputText(376, 422, 1);
 
     int v0 = (int)dword_55C9CC4;
@@ -248,9 +248,9 @@ void Render_ChatBox_(void)
             UI_DrawText(376, 15 * (v1 - v0) + 422, v2, 0, 1, 0);
             int n = lstrlenA(v2);
             GetTextExtentPointA(m_hFontDC, v2, n, &TextSize);
-            TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
+            TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
             v0 = (int)dword_55C9CC4;
-            TextSize.cy = (LONG)((double)TextSize.cy / _DAT_055c9b74);
+            TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
         }
         v2 += 256;
         ++v1;
@@ -447,7 +447,7 @@ int RenderEquipedHelperLife_(bool a2)
         // (x, y, texto), asi que el centrado se calcula aca.
         SIZE ts = { 0, 0 };
         GetTextExtentPointA(m_hFontDC, text, lstrlenA(text), &ts);
-        ts.cx = (LONG)((double)ts.cx / g_fScreenRate_x);
+        ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)x + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
         Text_MeasureBox(textX, (int)posY, text, 0, 0, 0);
@@ -472,7 +472,7 @@ int RenderEquipedHelperLife_(bool a2)
         const char* summonText = GlobalText[356] ? GlobalText[356] : "";
         SIZE ts = { 0, 0 };
         GetTextExtentPointA(m_hFontDC, summonText, lstrlenA(summonText), &ts);
-        ts.cx = (LONG)((double)ts.cx / g_fScreenRate_x);
+        ts.cx = (LONG)((double)ts.cx / gWindow.GetScreenRateX());
         int textX = (int)xs + (50 - ts.cx) / 2;
         if (textX < 0) textX = 0;
         Text_MeasureBox(textX, 4, summonText, 0, 0, 0);

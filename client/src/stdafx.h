@@ -61,20 +61,11 @@ static inline double    fsin(double x) { return sin(x); }
 // -----------------------------------------------------------------------
 extern int SceneFlag; // IDA: SceneFlag (0x005615C0)
 
-// Global HWND (DAT_055c9ffc)
-extern HWND g_hWnd;       // 0x055c9ffc
-#define DAT_055c9ffc g_hWnd
-
-// Global HINSTANCE
-extern HINSTANCE g_hInst; // 0x055ca000
-#define DAT_055ca000 g_hInst
-
-// Window device context (OpenGL double-buffered window DC, target of SwapBuffers)
-// Stored at DAT_055ca004 in original binary. NOT to be confused with the font
-// memory DC at DAT_055c9fec (used by Font_BuildLayout for GDI text rendering
-// into a DIB that later gets uploaded as a GL texture).
-extern HDC g_hDC; // 0x055ca004
-#define DAT_055ca004 ((DWORD)(uintptr_t)g_hDC)
+// Ventana, instancia, DC de OpenGL (el que recibe SwapBuffers) y tamaño:
+// CWindow (Core/Window.h), a través de gWindow. IDA: g_hWnd 0x055C9FFC,
+// g_hInst 0x055CA000, g_hDC 0x055CA004, WindowWidth/Height 0x0056156C/70.
+// El DC de OpenGL NO es el DC de memoria de las fuentes (DAT_055c9fec, abajo).
+#include "Core/Window.h"
 
 // Font memory DC (GDI compatible DC with DIB bitmap selected, used to rasterize
 // glyphs into a DIB surface). Assigned by Font_BuildLayout. Do NOT pass to

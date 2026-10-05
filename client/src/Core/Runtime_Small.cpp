@@ -114,10 +114,10 @@ void __cdecl InitPartyList(void) {
 }
 
 // CenterMouseX @ 0x005110D0 (13 bytes)
-void __cdecl CenterMouseX(void) { MouseX = (unsigned int)WindowWidth >> 1; }
+void __cdecl CenterMouseX(void) { MouseX = (unsigned int)gWindow.GetWidth() >> 1; }
 
 // CenterMouseY @ 0x005110F0 (13 bytes)
-void __cdecl CenterMouseY(void) { MouseY = (unsigned int)WindowHeight >> 1; }
+void __cdecl CenterMouseY(void) { MouseY = (unsigned int)gWindow.GetHeight() >> 1; }
 
 
 // ── 15-byte ─────────────────────────────────────────────────────────────────

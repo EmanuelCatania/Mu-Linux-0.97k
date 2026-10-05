@@ -55,8 +55,8 @@ void __cdecl OpenFilterFile(const char* path)
     FILE* Stream = fopen(path, "rb");
     if (!Stream) {
         sprintf(local_100, "%s - File not exist.", path);
-        MessageBoxA(g_hWnd, local_100, NULL, 0);
-        SendMessageA(g_hWnd, 2, 0, 0);
+        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
+        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
         return;
     }
     BYTE* Buffer = (BYTE*)operator_new(20000);
@@ -76,8 +76,8 @@ void __cdecl OpenFilterFile(const char* path)
     }
     if (Checksum != acc) {
         sprintf(local_100, "%s - File corrupted.", path);
-        MessageBoxA(g_hWnd, local_100, NULL, 0);
-        SendMessageA(g_hWnd, 2, 0, 0);
+        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
+        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
         operator_delete(Buffer);
         return;
     }
@@ -159,8 +159,8 @@ void __cdecl OpenNameFilterFile(const char* path)
     FILE* Stream = fopen(path, "rb");
     if (!Stream) {
         sprintf(local_100, "%s - File not exist.", path);
-        MessageBoxA(g_hWnd, local_100, NULL, 0);
-        SendMessageA(g_hWnd, 2, 0, 0);
+        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
+        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
         return;
     }
     BYTE* Buffer = (BYTE*)operator_new(20000);
@@ -179,8 +179,8 @@ void __cdecl OpenNameFilterFile(const char* path)
     }
     if (Checksum != acc) {
         sprintf(local_100, "%s - File corrupted.", path);
-        MessageBoxA(g_hWnd, local_100, NULL, 0);
-        SendMessageA(g_hWnd, 2, 0, 0);
+        MessageBoxA(gWindow.GetHwnd(), local_100, NULL, 0);
+        SendMessageA(gWindow.GetHwnd(), 2, 0, 0);
         operator_delete(Buffer);
         return;
     }

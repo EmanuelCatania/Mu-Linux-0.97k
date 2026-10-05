@@ -1705,7 +1705,7 @@ static void RenderItemInfo_IDA(int sx, int sy, ITEM* ip, bool Sell)
     SIZE sz = { 0, 0 };
     GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
     const int h = sz.cy * DAT_07eaa158 / 2 + sz.cy * (DAT_07eaa154 - DAT_07eaa158);
-    int y = sy - (int)((float)h / g_fScreenRate_y);
+    int y = sy - (int)((float)h / gWindow.GetScreenRateY());
     if (y < 0) y = sy + 20 * p->Height;
     CharMenu_RenderTextList(sx, y, DAT_07eaa154 < 30 ? DAT_07eaa154 : 30, 0, 2, 1);
 }
@@ -2035,7 +2035,7 @@ extern "C" void __cdecl RenderItemInfo_impl(void* param_1, void* param_2, void* 
         iVar21 = DAT_07eaa154;
         iStack_70 = (DAT_07eaa154 - DAT_07eaa158) * tStack_6c.cy +
                     (DAT_07eaa158 * tStack_6c.cy) / 2;
-        iVar15 = (int)(uintptr_t)param_2 - (int)((float)iStack_70 / _DAT_055c9b74);
+        iVar15 = (int)(uintptr_t)param_2 - (int)((float)iStack_70 / gWindow.GetScreenRateY());
         if (iVar15 < 0) {
             iVar15 = (int)(uintptr_t)param_2 +
                      (int)((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK)[itemType].Height * 0x14;
@@ -2195,7 +2195,7 @@ extern "C" void __cdecl RenderRepairInfo_impl(void* param_1, int param_2, void* 
         sz.cy = 0;
         GetTextExtentPointA(m_hFontDC, lpString_07e90798, 1, &sz);
         h = (DAT_07eaa154 - DAT_07eaa158) * sz.cy + (DAT_07eaa158 * sz.cy) / 2;
-        yBox = param_2 - (int)((unsigned int)(h * 15 * 32) / DAT_00561570);
+        yBox = param_2 - (int)((unsigned int)(h * 15 * 32) / gWindow.GetHeight());
         if (yBox < 0) {
             yBox = param_2 +
                    (int)((ITEM_ATTRIBUTE*)(uintptr_t)attrBaseOK_)[itemType].Height * 0x14;

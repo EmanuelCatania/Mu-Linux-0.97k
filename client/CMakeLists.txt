@@ -94,6 +94,7 @@ set(MU_SOURCES
     src/Render/Render_Frame.cpp
     src/Net/Net_Process.cpp
     src/Config/Config_Load.cpp
+    src/Core/Window.cpp
     src/Config/UserSettings.cpp
     src/Sound/Sound_Queue.cpp
     src/Monster/Monster_Data.cpp
@@ -344,6 +345,7 @@ set(MU_HEADERS
     src/Config/Config.h
     src/Config/ServerConfig.h
     src/Config/UserSettings.h
+    src/Core/Window.h
     src/Combat/Combat.h
     src/Combat/Skills.h
     src/Game/Game_CharSelectTick.h

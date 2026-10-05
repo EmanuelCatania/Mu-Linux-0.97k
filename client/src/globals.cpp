@@ -7,7 +7,7 @@
 #include "stdafx.h"
 
 // ── Named globals: defined in WinMain.cpp, only extern-declared here ─────────
-// int SceneFlag, HWND g_hWnd, HINSTANCE g_hInst, HDC g_hDC — see WinMain.cpp
+// int SceneFlag — ver WinMain.cpp. g_hWnd, g_hInst y g_hDC viven en CWindow (Core/Window.h).
 
 // ── Low-address constants ─────────────────────────────────────────────────────
 float    _DAT_00000010 = 0.0f;
@@ -312,8 +312,6 @@ DWORD    DAT_00561550  = 0x44FA0000;  // 2000.0f  CameraViewFar
 DWORD    DAT_00561554  = 0x425C0000;  // 55.0f    CameraFOV (MoveMainCamera lo reescribe a 35.0)
 float    CameraDistanceTarget  = 0.0f;  // DAT_005616B4: MoveMainCamera target
 float    CameraDistance  = 0.0f;        // DAT_083A45D0: current MoveMainCamera distance
-DWORD    DAT_0056156c  = 640;   // WindowWidth default
-DWORD    DAT_00561570  = 480;   // WindowHeight default
 DWORD    DAT_00561574  = 0;
 // Buffer de la IP del server: Config_ReadServerAddr lo llena desde Config/ServerConfig.h.
 // szServerIpAddress apunta a este buffer; el valor inicial se reemplaza siempre.
@@ -346,20 +344,16 @@ unsigned short  g_GameServerPort        = 0;
 // (data\music\ÁÖÁ¡.mp3 = taberna, ¹ÂÅ×¸¶ = MuTheme, ¼º´ç = catedral,
 //  µ¥ºñ¾Æ½º = Devias, ³ë¸®¾Æ = Noria, ´øÁ¯ = Dungeon) que NO existen en
 // bin/Client/Data/Music — nuestro pack de assets viene renombrado al ingles.
-// Se apunta a los archivos reales. El mapeo de MuTheme -> Lorencia.mp3 lo
-// confirma el DLL de inyeccion (Encoder/MapManager.txt: "THE LOGIN MUSIC IS
-// Data\Music\MuTheme.mp3") y encaja con que Game_MainLoop use este mismo slot
-// para el login (SceneFlag == 2) y para Lorencia.
+// Se apunta a los archivos reales. MuTheme (slot 1) es Lorencia.mp3 (mismo MD5
+// que el MuTheme.mp3 del cliente japonés 0.98). El login no usa este slot: pide
+// Data\Music\MuTheme.mp3 aparte (ver Game_MainLoop).
 //
-// ASSET FALTANTE: el track de la catedral de Devias (¼º´ç) no vino en el pack.
-// Se deja el nombre apuntando a un archivo inexistente a proposito: PlayMp3
-// hace fopen y sale sin tocar nada si falla, asi que dentro de la catedral
-// sigue sonando Devias.mp3 sin corte. Si algun dia aparece el asset, funciona
-// solo con dejarlo en Data\Music\Cathedral.mp3.
+// La catedral de Devias (¼º´ç) es el Church.mp3 del cliente japonés 0.98,
+// agregado al pack como Cathedral.mp3.
 char*    g_lpszMp3[6] = {
     (char*)"Data\\Music\\Pub.mp3",        // [0] 0x5615C4 — taberna de Lorencia (HeroTile == 4)
-    (char*)"Data\\Music\\Lorencia.mp3",   // [1] 0x5615C8 — MuTheme: login + Lorencia
-    (char*)"Data\\Music\\Cathedral.mp3",  // [2] 0x5615CC — catedral de Devias  [FALTA EL ASSET]
+    (char*)"Data\\Music\\Lorencia.mp3",   // [1] 0x5615C8 — MuTheme: Lorencia (el login va aparte)
+    (char*)"Data\\Music\\Cathedral.mp3",  // [2] 0x5615CC — catedral de Devias
     (char*)"Data\\Music\\Devias.mp3",     // [3] 0x5615D0 — Devias
     (char*)"Data\\Music\\Noria.mp3",      // [4] 0x5615D4 — Noria
     (char*)"Data\\Music\\Dungeon.mp3",    // [5] 0x5615D8 — Dungeon (World 1 y 5)
@@ -570,9 +564,9 @@ int      DAT_055c9e58[100] = {};   // RandomTable — lo siembra WinMain
 DWORD    DAT_055c9ff0  = 0;  // HGLRC
 DWORD    DAT_055c9ff4  = 0;
 DWORD    DAT_055c9ff8  = 0;
-// DAT_055c9ffc = g_hWnd (above)
+// DAT_055c9ffc = g_hWnd (gWindow.GetHwnd())
 // Font memory DC (GDI-only, DIB-backed). Set by Font_BuildLayout.
-// NOT the window DC — that is g_hDC (DAT_055ca004) defined in WinMain.cpp.
+// NOT the window DC — that is g_hDC (DAT_055ca004) que vive en CWindow.
 HDC      DAT_055c9fec  = NULL;
 // DAT_055ca000 = g_hInst (above)
 // DAT_055ca004 = g_hDC — defined via macro in stdafx.h (no separate storage)

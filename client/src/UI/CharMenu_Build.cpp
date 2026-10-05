@@ -66,9 +66,9 @@ void RenderHelpWindow(void)
     // ── Modo 3: tabla de valores de un item (DAT_07e11d24 = tipo) ─────────
     GL_ResetState();                        // DisableAlphaBlend
     int colW = 0, pad = 0, colW2 = 0, pad2 = 0;
-    if (DAT_0056156c > 1024) {
-        if (DAT_0056156c == 1280) { colW = 123; pad = 22; colW2 = 123; pad2 = 32; }
-    } else switch (DAT_0056156c) {
+    if (gWindow.GetWidth() > 1024) {
+        if (gWindow.GetWidth() == 1280) { colW = 123; pad = 22; colW2 = 123; pad2 = 32; }
+    } else switch (gWindow.GetWidth()) {
         case 1024: colW = 103; pad = 28; colW2 = 103; pad2 = 40; break;
         case 640:  colW = 90;  pad = 38; colW2 = 90;  pad2 = 52; break;
         case 800:  colW = 90;  pad = 33; colW2 = 90;  pad2 = 47; break;
@@ -82,8 +82,8 @@ void RenderHelpWindow(void)
     else if (id >= 224 && id < 384) { kind = 4; maxVal = 3000; }
     else if (id >= 480 && id < 512) {
         kind = 5;
-        if (DAT_0056156c == 640 || DAT_0056156c == 1280)      maxVal = 5940;
-        else if (DAT_0056156c == 800 || DAT_0056156c == 1024) maxVal = 5200;
+        if (gWindow.GetWidth() == 640 || gWindow.GetWidth() == 1280)      maxVal = 5940;
+        else if (gWindow.GetWidth() == 800 || gWindow.GetWidth() == 1024) maxVal = 5200;
     } else { DAT_07e11d20 = 0; return; }
     bool isKind5 = (kind == 5);
 
@@ -105,7 +105,7 @@ void RenderHelpWindow(void)
     crt_sprintf(TextList + 4 * 100, " ");
     crt_sprintf(TextList + 5 * 100, "\n");
     DAT_07e11d6e = 1;
-    unsigned spaces = (DAT_0056156c > 800) ? 51 : 46;
+    unsigned spaces = (gWindow.GetWidth() > 800) ? 51 : 46;
     memset(TextList + 6 * 100, ' ', spaces);
     TextList[6 * 100 + spaces] = 0;
     TextListColor[6] = 0;
@@ -310,7 +310,7 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
                    (GLubyte)((m_dwBackColor >> 24) & 0xff));  // A
         GL_DrawRect((float)iPos_x, (float)iPos_y,
                      (float)iBoxWidth / fTexScaleX,
-                     (float)local_8.cy / _DAT_055c9b74);
+                     (float)local_8.cy / gWindow.GetScreenRateY());
         glColor4fv(prevColor);
         // No volvemos a encender la textura: CUIRenderText_RenderText la apaga por su
         // cuenta para los glifos, y dejarla apagada mantiene GL y cache de
@@ -325,9 +325,9 @@ static float RenderText_0040fb70(int iPos_x, int iPos_y, const char *pszText,
     }
 
     if (*pszText != '\n') {
-        return ((float)local_8.cy / _DAT_055c9b74) / 1.0f;
+        return ((float)local_8.cy / gWindow.GetScreenRateY()) / 1.0f;
     }
-    return ((float)local_8.cy / _DAT_055c9b74) / 2.0f;
+    return ((float)local_8.cy / gWindow.GetScreenRateY()) / 2.0f;
 }
 
 void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
@@ -382,7 +382,7 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
     }
     param_3 = iVar1;
     Height = ((float)local_14 * (float)local_8.cy * 0.5f + (float)(local_10 * local_8.cy)) /
-             (_DAT_055c9b74 * 0.9090909f);
+             (gWindow.GetScreenRateY() * 0.9090909f);
     GL_SetBlendSrcOver(1);                             // EnableAlphaTest
     const float fTexScaleX = Text_GetOrthoScaleX();
     local_18 = local_18 / fTexScaleX;
@@ -394,8 +394,8 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
     if (param_4 < 0) {
         param_4 = 0;
     }
-    if ((float)DAT_0056156c / fTexScaleX < (float)param_4 + local_18) {
-        param_4 = (int)((float)DAT_0056156c / fTexScaleX - local_18 - 1.0f);
+    if ((float)gWindow.GetWidth() / fTexScaleX < (float)param_4 + local_18) {
+        param_4 = (int)((float)gWindow.GetWidth() / fTexScaleX - local_18 - 1.0f);
     }
     if (param_6 == 1) {
         glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
@@ -425,10 +425,10 @@ void __cdecl CharMenu_RenderTextList(int param_1, int param_2, int param_3,
             if ((*pCVar3 == '\n') || ((*pCVar3 == ' ') && (pCVar3[1] == '\0'))) {
                 GetTextExtentPointA(m_hFontDC, pCVar3, lstrlenA(pCVar3), &local_8);
                 if (*pCVar3 == '\n') {
-                    fAdvance = ((float)local_8.cy / _DAT_055c9b74) / 2.0f;
+                    fAdvance = ((float)local_8.cy / gWindow.GetScreenRateY()) / 2.0f;
                 }
                 else {
-                    fAdvance = ((float)local_8.cy / _DAT_055c9b74) / 1.0f;
+                    fAdvance = ((float)local_8.cy / gWindow.GetScreenRateY()) / 1.0f;
                 }
             }
             else {
@@ -562,7 +562,7 @@ void __cdecl CharMenu_RenderStatRow(int column, unsigned char *format, int *valu
     SIZE sz = { 0, 0 };
     const char* ref = widthRef ? widthRef : lpString_07e90798 + (DAT_07eaa154 - 1) * 100;
     GetTextExtentPointA((HDC)DAT_055c9fec, ref, lstrlenA(ref), &sz);
-    *value += (int)((double)sz.cx / _DAT_055c9b70);
+    *value += (int)((double)sz.cx / gWindow.GetScreenRateX());
     DAT_07eaa154 = DAT_07eaa154 - 1 - last;
 }
 

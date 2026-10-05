@@ -59,8 +59,8 @@ extern "C" int g_GoldenArcherCustom = 0;
 #define GA_InputNumber       InputNumber
 #define GA_InputTextWidth    DAT_00559c8c
 #define GA_InputIndex        DAT_07e11d78
-#define GA_WindowWidth       ((int)DAT_0056156c)
-#define GA_WindowHeight      ((int)DAT_00561570)
+#define GA_WindowWidth       ((int)gWindow.GetWidth())
+#define GA_WindowHeight      ((int)gWindow.GetHeight())
 
 static const int kItemRena = 469;   // GET_ITEM(14, 21)
 

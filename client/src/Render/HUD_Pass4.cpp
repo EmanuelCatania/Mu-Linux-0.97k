@@ -178,8 +178,8 @@ int Render_MacroTimer_(void)
         UI_DrawText((int)x, 392, (char*)aMacroTime, 0, 1, 0);
         int n = lstrlenA(aMacroTime);
         GetTextExtentPointA(m_hFontDC, aMacroTime, n, &TextSize);
-        TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
-        TextSize.cy = (LONG)((double)TextSize.cy / _DAT_055c9b74);
+        TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
+        TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
         float Bar = (float)v8;
         RenderBar(x, 404.0f, 50.0f, 2.0f, Bar, false, true);
     }
@@ -527,7 +527,7 @@ check_quest_overlay:
                 SelectObject(m_hFontDC, g_hFontBold);
                 m_dwTextColor = 0xFFFFFFFFu;
                 m_dwBackColor = 0xFF000052u;
-                int boxW = (int)((double)WindowWidth * sxe * 0.0015625);
+                int boxW = (int)((double)gWindow.GetWidth() * sxe * 0.0015625);
                 RenderText((int)xa, (int)v36, GlobalText[370], boxW, 0, 0);
             }
             ++v11;
@@ -592,8 +592,8 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
     // dividido, o sea en espacio lógico (UI_DrawText -> CUIRenderText_RenderText
     // convierte lógico -> físico con g_fScreenRate_x/y, igual que `sub_410AF0`).
     //   ancho medido -> píxel -> / g_fScreenRate_x -> lógico -> + x (lógico)
-    TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
-    TextSize.cy = (LONG)((double)TextSize.cy / _DAT_055c9b74);
+    TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
+    TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
 
     if (Index == InputIndex) {
         int v9 = InputFrame % 2;
@@ -612,8 +612,8 @@ extern "C" void __cdecl RenderInputText(int x, int y, int Index)
                 UI_DrawText(x + TextSize.cx, y, (char*)"_", 0, 1, 0);
                 GetTextExtentPointA(m_hFontDC, "_", 1, &TextSize);
             }
-            TextSize.cx = (LONG)((double)TextSize.cx / g_fScreenRate_x);
-            TextSize.cy = (LONG)((double)TextSize.cy / _DAT_055c9b74);
+            TextSize.cx = (LONG)((double)TextSize.cx / gWindow.GetScreenRateX());
+            TextSize.cy = (LONG)((double)TextSize.cy / gWindow.GetScreenRateY());
         }
     }
 }
@@ -642,8 +642,8 @@ extern "C" void __cdecl RenderTipText(int sx, int sy, const char* Text)
     float fx   = (float)sx;
     float boxX = fx - 2.0f;     // ≈ flt_55264C constant
     float boxY = fy - 1.0f;     // ≈ flt_552540 constant
-    float W    = (float)((double)sz.cx / g_fScreenRate_x + 4.0);
-    float H    = (float)((double)sz.cy / _DAT_055c9b74 + 4.0);
+    float W    = (float)((double)sz.cx / gWindow.GetScreenRateX() + 4.0);
+    float H    = (float)((double)sz.cy / gWindow.GetScreenRateY() + 4.0);
 
     // 4 thin border strips (top, left, right, bottom).
     GL_DrawRect(boxX, boxY, W, 1.0f);
@@ -817,20 +817,20 @@ extern "C" void __cdecl sub_47F4C0(int a1, int a2, float Width, float Height,
 
     int x_pos = (a1 < 0) ? 0 : a1;
     if ((BYTE)a7) {
-        DWORD wScale = 640u * (DWORD)Width / WindowWidth;
+        DWORD wScale = 640u * (DWORD)Width / gWindow.GetWidth();
         if ((int)(wScale + x_pos) > a8) x_pos = a8 - (int)wScale;
-    } else if ((int)Width + x_pos > (int)WindowWidth) {
-        x_pos = (int)WindowWidth - (int)Width;
+    } else if ((int)Width + x_pos > (int)gWindow.GetWidth()) {
+        x_pos = (int)gWindow.GetWidth() - (int)Width;
     }
 
     int y_pos = a2;
     if (DAT_07e11d6e) {
         if (a2 < 0) y_pos = 0;
         if ((BYTE)a7) {
-            DWORD hScale = 480u * (DWORD)Height / WindowHeight;
+            DWORD hScale = 480u * (DWORD)Height / gWindow.GetHeight();
             if ((int)(hScale + y_pos) > 0x1B1) y_pos = 433 - (int)hScale;
         } else {
-            int v12 = (int)WindowHeight - (47 * (int)WindowHeight) / 640;
+            int v12 = (int)gWindow.GetHeight() - (47 * (int)gWindow.GetHeight()) / 640;
             if ((int)Height + y_pos > v12) y_pos = v12 - (int)Height;
         }
     }

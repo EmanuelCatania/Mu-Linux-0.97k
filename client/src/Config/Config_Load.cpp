@@ -60,15 +60,6 @@ DWORD g_SoundOn    = 1;      // DAT_?? (default 1 = sound on)
 DWORD g_Resolution = 0;      // DAT_?? (default 0 = 640x480)
 DWORD g_TextOut    = 0;      // DAT_?? (default 0)
 
-// Modo ventana (ver Config.h). Default del DLL: en ventana y con bordes; lo
-// pisa Config.ini [Window]. El binario original no tiene estas opciones.
-int g_WindowMode = 1;
-int g_Borderless = 0;
-// g_fScreenRate_x / _y — escala pixel -> layout 640x480. Las calcula
-// Config_Load desde WindowWidth/WindowHeight; el 1.0f es solo el valor
-// previo a esa llamada (y el correcto para 640x480).
-float _DAT_055c9b70 = 1.0f;  // g_fScreenRate_x
-float _DAT_055c9b74 = 1.0f;  // g_fScreenRate_y
 char  ConfigLoginVersion[12] = {}; // IDA: m_ExeVersion — config.ini [LOGIN] Version string
 
 // Forward declarations
@@ -168,8 +159,13 @@ int Config_Load(void)
     gUserSettings.Load(configPath);
     if (gUserSettings.GetEnableSound() >= 0) g_SoundOn    = (DWORD)gUserSettings.GetEnableSound();
     if (gUserSettings.GetEnableMusic() >= 0) g_MusicOn    = (DWORD)gUserSettings.GetEnableMusic();
-    if (gUserSettings.GetWindowMode()  >= 0) g_WindowMode = gUserSettings.GetWindowMode();
-    if (gUserSettings.GetBorderless()  >= 0) g_Borderless = gUserSettings.GetBorderless();
+    {
+        const bool windowMode = gUserSettings.GetWindowMode() >= 0
+                              ? gUserSettings.GetWindowMode() != 0 : gWindow.IsWindowMode();
+        const bool borderless = gUserSettings.GetBorderless() >= 0
+                              ? gUserSettings.GetBorderless() != 0 : gWindow.IsBorderless();
+        gWindow.SetWindowMode(windowMode, borderless);
+    }
     if (gUserSettings.GetUsername()[0] != 0)
         lstrcpynA((char*)lpData_055c9ba0, gUserSettings.GetUsername(), 11);
 
@@ -180,32 +176,23 @@ int Config_Load(void)
     // proyeccion, mouse) lee esos dos.
     // Config.ini usa la tabla de resoluciones del DLL (ver UserSettings.h); si
     // no trae Resolution, manda el índice del registro con la tabla del binario.
-    if (!CUserSettings::GetResolutionSize(gUserSettings.GetResolution(),
-                                          &WindowWidth, &WindowHeight))
+    DWORD width = 640, height = 480;
+    if (!CUserSettings::GetResolutionSize(gUserSettings.GetResolution(), &width, &height))
     {
         switch (g_Resolution)
         {
         default:
-        case 0: WindowWidth = 640;  WindowHeight = 480;  break;
-        case 1: WindowWidth = 800;  WindowHeight = 600;  break;
-        case 2: WindowWidth = 1024; WindowHeight = 768;  break;
-        case 3: WindowWidth = 1280; WindowHeight = 1024; break;
-        case 4: WindowWidth = 1600; WindowHeight = 1200; break;
+        case 0: width = 640;  height = 480;  break;
+        case 1: width = 800;  height = 600;  break;
+        case 2: width = 1024; height = 768;  break;
+        case 3: width = 1280; height = 1024; break;
+        case 4: width = 1600; height = 1200; break;
         }
     }
 
-    // --- 6. Escalas de pixel -> layout logico 640x480 ---
-    //
-    // IDA (0041E0A0 L144-145):
-    //     g_fScreenRate_x = (double)WindowWidth  * 0.0015625;      // = /640
-    //     g_fScreenRate_y = (double)WindowHeight * 0.0020833334;   // = /480
-    //
-    // Lifecycle: se calculan UNA vez, aca. Es lo que hace el binario — el
-    // unico escritor de estas dos variables en todo el decompile es esta
-    // funcion. No se agrega recalculo por resize: la ventana es WS_POPUP y el
-    // WndProc no maneja WM_SIZE / WM_SIZING / WM_DISPLAYCHANGE.
-    g_fScreenRate_x = (float)((double)(int)WindowWidth  * 0.0015625);
-    g_fScreenRate_y = (float)((double)(int)WindowHeight * 0.0020833334);
+    // --- 6. Escalas de pixel -> layout lógico 640x480 ---
+    // CWindow::SetResolution las calcula con las fórmulas de IDA (L144-145).
+    gWindow.SetResolution(width, height);
 
     return 1;
 }
