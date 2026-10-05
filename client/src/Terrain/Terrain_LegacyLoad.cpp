@@ -550,10 +550,9 @@ void __cdecl OpenWorldModels(void) {
             OpenModel((int)0x98, "Data2/Object1/", "beer_02.smd");
             OpenModel((int)0x99, "Data2/Object1/", "beer_03.smd");
         }
-        // Desviación: carga explícita de los BMD de Object1. El bloque SMD de arriba
-        // está gated por `DAT_0055a7c4 == 0`, que en nuestro build siempre es 1, y la
-        // distribución sólo trae BMDs (House01.bmd, Tree01.bmd, Bridge01.bmd, etc.):
-        // acá se mapea cada slot SMD a su BMD equivalente.
+        // IDA OpenWorldModels (0x50C4D0): la tabla de BMD de Object1 sigue al bloque
+        // opcional de SMD. Se conservan los IDs de modelo originales y todas sus
+        // entradas; los nombres SMD difieren (jar_01.smd es Well01.bmd, por ejemplo).
         struct LorenciaSlot { int slot; const char* bmd; };
         static const LorenciaSlot lorenciaSlots[] = {
             // Trees (slots 0x00..0x0c → Tree01..Tree13)
@@ -562,10 +561,10 @@ void __cdecl OpenWorldModels(void) {
             { 0x05, "Tree06" }, { 0x06, "Tree07" }, { 0x07, "Tree08" },
             { 0x08, "Tree09" }, { 0x09, "Tree10" }, { 0x0a, "Tree11" },
             { 0x0b, "Tree12" }, { 0x0c, "Tree13" },
-            // Grass (0x14..0x19 → Grass01..Grass06)
+            // IDA: ocho modelos de pasto, slots 20..27.
             { 0x14, "Grass01" }, { 0x15, "Grass02" }, { 0x16, "Grass03" },
             { 0x17, "Grass04" }, { 0x18, "Grass05" }, { 0x19, "Grass06" },
-            // Mushrooms not distributed as BMDs (only OZJ texture)
+            { 0x1a, "Grass07" }, { 0x1b, "Grass08" },
             // Stones — IDA 0x0050C4D0: object/model IDs 30..34 (0x1e..0x22).
             // The .obj record type is used directly as the Models[] index by
             // Draw_RenderObject (0x004FAE00); these are not file ordinals.
@@ -574,6 +573,7 @@ void __cdecl OpenWorldModels(void) {
             // Statues / Tomb
             { 0x28, "StoneStatue01" }, { 0x29, "StoneStatue02" },
             { 0x2a, "StoneStatue03" },
+            { 0x2b, "SteelStatue01" },
             { 0x2c, "Tomb01" }, { 0x2d, "Tomb02" }, { 0x2e, "Tomb03" },
             // Fire / Light
             { 0x32, "FireLight01" }, { 0x33, "FireLight02" },
@@ -606,9 +606,11 @@ void __cdecl OpenWorldModels(void) {
             // Carriage
             { 0x62, "Carriage01" }, { 0x63, "Carriage02" },
             { 0x64, "Carriage03" }, { 0x65, "Carriage04" },
-            // Straw / waterspout (Jar01..04 not distributed)
+            // Paja / caño de agua / pozos (IDs de modelo de IDA 106..109).
             { 0x66, "Straw01" }, { 0x67, "Straw02" },
             { 0x69, "Waterspout01" },
+            { 0x6a, "Well01" }, { 0x6b, "Well02" },
+            { 0x6c, "Well03" }, { 0x6d, "Well04" },
             // Hanging / stair
             { 0x6e, "Hanging01" }, { 0x6f, "Stair01" },
             // Houses (0x73..0x77 → House01..House05)
