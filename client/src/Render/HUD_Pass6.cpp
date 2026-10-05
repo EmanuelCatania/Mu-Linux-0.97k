@@ -1522,6 +1522,10 @@ extern "C" void __cdecl RenderChaosMix(void)
     RenderInventoryInterface(dword_7EAA0C8, dword_7EAA0CC, 0);
     RenderItemsBoxes((float)dword_7EAA0C8 + 15.0f, (float)dword_7EAA0CC + 110.0f,
                      (DWORD)(uintptr_t)OffsetMixItems, 8, 4);
+    // IDA 004F27F0: RenderItemsBoxes deja puesto el color de la última celda
+    // (InventoryColor), y sin este reset los textos y el botón salían teñidos
+    // cuando el ítem arrastrado estaba sobre la celda de abajo a la derecha.
+    glColor3f(1.0f, 1.0f, 1.0f);
 
     SelectObject(m_hFontDC, g_hFontBold);
     m_dwBackColor = 0xFF141414u;
